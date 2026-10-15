@@ -4,41 +4,41 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_gui.py
-# Startscherm van de MecwayAsterBridge.
+# Start screen of the MecwayAsterBridge.
 #
-# Verantwoordelijkheid:
-#   1. Toon de huidige waarden uit CONFIG_BRIDGE (bridge_utils.py) in een
-#      venster met links een navigatielijst en rechts de gekozen pagina:
-#      "Algemeen", "Elementen", een pagina per analyse (titels in
-#      ANALYSIS_TITLES) en "Documentatie".
-#   2. Valideer de invoer.
-#   3. Pas CONFIG_BRIDGE in het geheugen aan (geldt direct voor deze run).
-#   4. Schrijf gewijzigde waarden terug in bridge_utils.py (alleen de
-#      betreffende regels; backup in bridge_utils.py.bak).
+# Responsibility:
+#   1. Show the current values from CONFIG_BRIDGE (bridge_utils.py) in a
+#      window with a navigation list on the left and the chosen page on the
+#      right: "Algemeen", "Elementen", one page per analysis (titles in
+#      ANALYSIS_TITLES) and "Documentatie".
+#   2. Validate the input.
+#   3. Update CONFIG_BRIDGE in memory (applies directly to this run).
+#   4. Write changed values back into bridge_utils.py (only the
+#      lines concerned; backup in bridge_utils.py.bak).
 #
-# Techniek:
-#   - De Mecway-API kent alleen mw.input() (een tekstveld) en mw.message().
-#     Voor een formulier met bestand-/mapkiezers wordt .NET Windows Forms
-#     via IronPython's 'clr' gebruikt. Of Mecway's scripting-engine dat
-#     toestaat is niet gedocumenteerd; lukt het laden niet, dan valt de
-#     dialoog terug op een reeks mw.input()-vragen.
-#   - FolderBrowserDialog/OpenFileDialog vereisen een STA-thread. Draait het
-#     script niet in een STA-thread, dan wordt de dialoog in een eigen
-#     STA-thread getoond.
+# Technique:
+#   - The Mecway API only has mw.input() (a text field) and mw.message().
+#     For a form with file/folder pickers .NET Windows Forms is used
+#     via IronPython's 'clr'. Whether Mecway's scripting engine
+#     allows that is not documented; if loading fails, the
+#     dialog falls back to a series of mw.input() questions.
+#   - FolderBrowserDialog/OpenFileDialog require an STA thread. If the
+#     script does not run in an STA thread, the dialog is shown in its own
+#     STA thread.
 #
-# Uitbreiden:
-#   - Nieuwe instelling = entry in GENERAL_SPECS of ANALYSIS_SPECS plus de
-#     sleutel in CONFIG_BRIDGE (bridge_utils.py). Analyse-instellingen
-#     worden alleen getoond voor analyses waarin de sleutel bestaat.
-#     Algemene sleutels in ELEMENT_KEYS staan op de pagina "Elementen".
-#   - Nieuwe analyse: titel in ANALYSIS_TITLES (anders wordt de sleutel
-#     getoond); de pagina en de regel in de navigatie komen vanzelf.
-#   - Nieuwe pagina van een ander soort: new_page(titel, groep) in
-#     _show_winforms_dialog (het enige registratiepunt van de navigatie).
-#   - Labels en titels zijn een paar (nl, en) (of een tekst die in beide
-#     talen gelijk is); de taal is CONFIG_BRIDGE["language"] bij de start.
+# Extending:
+#   - New setting = entry in GENERAL_SPECS or ANALYSIS_SPECS plus the
+#     key in CONFIG_BRIDGE (bridge_utils.py). Analysis settings
+#     are only shown for analyses in which the key exists.
+#     General keys in ELEMENT_KEYS are on the page "Elementen".
+#   - New analysis: title in ANALYSIS_TITLES (otherwise the key is
+#     shown); the page and the line in the navigation appear by themselves.
+#   - New page of another kind: new_page(title, group) in
+#     _show_winforms_dialog (the only registration point of the navigation).
+#   - Labels and titles are a pair (nl, en) (or a text that is the same in
+#     both languages); the language is CONFIG_BRIDGE["language"] at start.
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import os
 import re
@@ -56,23 +56,23 @@ from bridge_from_aster import RESULT_FIELD_SPECS
 
 
 def _t(text):
-    """Label of filter in de gekozen taal: een paar (nl, en) of een tekst
-    die in beide talen gelijk is."""
+    """Label or filter in the chosen language: a pair (nl, en) or a text
+    that is the same in both languages."""
     if isinstance(text, tuple):
         return tr(*text)
     return text
 
 
 # ==========================================
-# SCHEMA VAN DE INSTELLINGEN
-# (sleutel, label, soort, extra)
-#   soort  : 'file', 'folder', 'text', 'int', 'float_pos', 'float_range',
+# SCHEMA OF THE SETTINGS
+# (key, label, kind, extra)
+#   kind   : 'file', 'folder', 'text', 'int', 'float_pos', 'float_range',
 #            'bool', 'choice', 'analysis_choice', 'configuration_choice',
 #            'checklist'
-#   extra  : file -> bestandsfilter; int -> minimum; choice -> opties;
-#            float_range -> (minimum, maximum), grenzen inbegrepen
+#   extra  : file -> file filter; int -> minimum; choice -> options;
+#            float_range -> (minimum, maximum), bounds included
 # ==========================================
-#   label en bestandsfilter: tekst, of een paar (nl, en) dat _t() vertaalt.
+#   label and file filter: text, or a pair (nl, en) that _t() translates.
 GENERAL_SPECS = [
     ("language", "Taal / Language", "choice", ("nl", "en")),
     ("exe_aster", "Code-Aster launcher (run_aster.bat)", "file",
@@ -84,7 +84,7 @@ GENERAL_SPECS = [
     ("active_analysis", ("Actieve analyse (auto = volgens Mecway)",
                          "Active analysis (auto = follow Mecway)"),
      "analysis_choice", None),
-    # Keuzelijst met de configuraties van het open model (_MODEL_INFO)
+    # Choice list with the configurations of the open model (_MODEL_INFO)
     ("configuration", ("Configuratie (auto = volgens de regel)",
                        "Configuration (auto = by rule)"),
      "configuration_choice", None),
@@ -107,7 +107,7 @@ GENERAL_SPECS = [
      ("POU_D_E", "POU_D_T")),
 ]
 
-# Algemene sleutels die op de pagina "Elementen" staan.
+# General keys that are on the page "Elementen".
 ELEMENT_KEYS = ("elem_hex8", "elem_shell", "elem_beam")
 
 _ELEMENT_HELP = (
@@ -160,9 +160,9 @@ _ELEMENT_HELP = (
     u"with approximated shear coefficients,\n"
     u"     general section AY = AZ = 1.")
 
-# Leesbare titels van de analyses (pagina's en meldingen), in de volgorde
-# van de navigatie. Analyses die hier niet staan krijgen hun sleutel als
-# titel en komen achteraan.
+# Readable titles of the analyses (pages and messages), in the order
+# of the navigation. Analyses not listed here get their key as
+# title and come last.
 ANALYSIS_TITLES = [
     ("lin_static_3d", ("Statisch", "Static")),
     ("nonlin_static_3d", ("Niet-lineair statisch", "Nonlinear static")),
@@ -184,11 +184,11 @@ ANALYSIS_TITLES = [
                                "Vibroacoustics (harmonic)")),
 ]
 
-# Bewust niet op het scherm (horen bij de analyse zelf; docs/
-# Standaardinstellingen_en_aannames.md par. 3.1): "template" en
-# "solver_command" (alleen getoond, bovenaan de pagina), "type_resu",
-# "phenomene", "vibroacoustic" en "type_calcul" (sturen de analyse naar
-# haar bouwer in bridge_to_aster).
+# Deliberately not on the screen (belong to the analysis itself; docs/
+# Standaardinstellingen_en_aannames.md sec. 3.1): "template" and
+# "solver_command" (only shown, at the top of the page), "type_resu",
+# "phenomene", "vibroacoustic" and "type_calcul" (route the analysis to
+# its builder in bridge_to_aster).
 ANALYSIS_SPECS = [
     ("fields", ("Resultaatvelden naar Mecway", "Result fields to Mecway"),
      "checklist", None),
@@ -208,8 +208,8 @@ ANALYSIS_SPECS = [
     ("newton_max_iter", ("Max. Newton-iteraties (ITER_GLOB_MAXI)",
                          "Max. Newton iterations (ITER_GLOB_MAXI)"),
      "int", 1),
-    # REAC_ITER 0 (nooit herassembleren) stopte met DVP_2 (verificatie
-    # NL-02a, docs-review); daarom minimaal 1.
+    # REAC_ITER 0 (never reassemble) stopped with DVP_2 (verification
+    # NL-02a, docs review); hence at least 1.
     ("newton_reac_iter", "NEWTON REAC_ITER", "int", 1),
     ("default_time_end", ("Eindtijd zonder tijdsbelasting [s]",
                           "End time without time load [s]"), "float_pos",
@@ -234,14 +234,14 @@ ANALYSIS_SPECS = [
     ("deformation", "COMPORTEMENT DEFORMATION", "choice",
      ("PETIT", "PETIT_REAC", "GROT_GDEP", "GDEF_LOG", "GREEN_LAGRANGE",
       "SIMO_MIEHE")),
-    # SCHEMA_TEMPS SCHEMA (catalogus dyna_non_line.py kent ook NOHHT; die
-    # vertaalt de bridge niet). Impliciet: HHT/NEWMARK; expliciet:
+    # SCHEMA_TEMPS SCHEMA (catalog dyna_non_line.py also has NOHHT; the
+    # bridge does not translate it). Implicit: HHT/NEWMARK; explicit:
     # DIFF_CENT/TCHAMWA.
     ("schema", ("Tijdschema (SCHEMA_TEMPS)", "Time scheme (SCHEMA_TEMPS)"),
      "choice", ("HHT", "NEWMARK", "DIFF_CENT", "TCHAMWA")),
-    # HHT ALPHA: de catalogus begrenst de waarde niet (dyna_non_line.py,
-    # defaut -0.1); U2.06.13 noemt -0,3 als ondergrens van de gebruikelijke
-    # waarden (docs-review); HHT is onvoorwaardelijk stabiel voor
+    # HHT ALPHA: the catalog does not bound the value (dyna_non_line.py,
+    # default -0.1); U2.06.13 gives -0.3 as lower bound of the usual
+    # values (docs review); HHT is unconditionally stable for
     # -1/3 <= alpha <= 0.
     ("hht_alpha", "HHT ALPHA (-0.3 .. 0)", "float_range", (-0.3, 0.0)),
     ("substeps_per_output", ("Rekenstappen per uitvoerinterval",
@@ -249,11 +249,11 @@ ANALYSIS_SPECS = [
     ("explicit_dt_factor", ("Tijdstap / kritieke tijdstap",
                             "Time step / critical time step"), "float_pos",
      None),
-    # Thermisch transient: SCHEMA_TEMPS THETA, val_min 0 / val_max 1
-    # (catalogus ther_lineaire.py v17.4).
+    # Thermal transient: SCHEMA_TEMPS THETA, val_min 0 / val_max 1
+    # (catalog ther_lineaire.py v17.4).
     ("theta", ("Tijdschema THETA (0 .. 1)", "Time scheme THETA (0 .. 1)"),
      "float_range", (0.0, 1.0)),
-    # Bezwijken van elementen (bridge_failure.py; niet-lineair en dynamisch)
+    # Failure of elements (bridge_failure.py; nonlinear and dynamic)
     ("element_failure", ("Bezwijken van elementen (plastische rek)",
                          "Element failure (plastic strain)"), "bool", None),
     ("failure_plastic_strain", ("Bezwijkgrens alle plastische mat. (0 = uit)",
@@ -268,8 +268,8 @@ ANALYSIS_SPECS = [
     ("error_estimator", ("Foutschatter (CALC_ERREUR, alleen volumes)",
                          "Error estimator (CALC_ERREUR, solids only)"),
      "bool", None),
-    # Breukmechanica (bridge_fracture.py; alleen met SCHEUR_-selecties).
-    # R_INF/R_SUP: val_min 0 in calc_g.py v17.4; 0 en 0 = automatisch.
+    # Fracture mechanics (bridge_fracture.py; only with SCHEUR_ selections).
+    # R_INF/R_SUP: val_min 0 in calc_g.py v17.4; 0 and 0 = automatic.
     # DEGRE: 0 .. 7 (calc_g.py).
     ("fracture_r_inf", ("Scheur: R_INF [m] (0 = automatisch)",
                         "Crack: R_INF [m] (0 = automatic)"), "float_range",
@@ -283,7 +283,7 @@ ANALYSIS_SPECS = [
     ("fracture_legendre_degree", ("Scheur: Legendre-graad (0 .. 7)",
                                   "Crack: Legendre degree (0 .. 7)"),
      "int", 0),
-    # Adaptieve verfijning (bridge_adapt.py; docs/Foutschatter.md par. 6)
+    # Adaptive refinement (bridge_adapt.py; docs/Foutschatter.md sec. 6)
     ("adapt_refine", ("Adaptieve verfijning (Mecway refine_x2)",
                       "Adaptive refinement (Mecway refine_x2)"),
      "bool", None),
@@ -303,9 +303,9 @@ ANALYSIS_SPECS = [
     ("adapt_max_elements", ("Max. aantal elementen na verfijnen",
                             "Max. number of elements after refining"),
      "int", 100),
-    # Niet-lineaire knik (bridge_to_aster._crit_stab_args,
-    # _imperfection_plan; docs/Modaal_en_knik.md par. 5). Amplitude 0 =
-    # geen imperfectie; negatief keert de knikvorm om.
+    # Nonlinear buckling (bridge_to_aster._crit_stab_args,
+    # _imperfection_plan; docs/Modaal_en_knik.md sec. 5). Amplitude 0 =
+    # no imperfection; negative reverses the buckling shape.
     ("crit_stab", ("Stabiliteit per stap (CRIT_STAB)",
                    "Stability per step (CRIT_STAB)"), "bool", None),
     ("imperfection_amplitude", ("Imperfectie: amplitude (0 = geen)",
@@ -316,35 +316,35 @@ ANALYSIS_SPECS = [
     ("imperfection_unit", ("Imperfectie: amplitude in (m / x L)",
                            "Imperfection: amplitude in (m / x L)"),
      "choice", ("m", "L")),
-    # Modaal (CALC_MODES, bridge_to_aster._build_modal). NMAX_FREQ: val_min
-    # 0 in de catalogus calc_modes.py v17.4; 0 modes is zinloos, dus 1.
+    # Modal (CALC_MODES, bridge_to_aster._build_modal). NMAX_FREQ: val_min
+    # 0 in the catalog calc_modes.py v17.4; 0 modes is pointless, so 1.
     ("modal_modes", ("Aantal modes (zonder maxmode in Mecway)",
                      "Number of modes (without maxmode in Mecway)"),
      "int", 1),
     ("modal_shift_hz", ("Zoekfrequentie [Hz] (0 = laagste modes)",
                         "Search frequency [Hz] (0 = lowest modes)"),
      "float_range", (-1.0e9, 1.0e9)),
-    # NORM_MODE NORME (catalogus calc_modes.py v17.4: MASS_GENE, RIGI_GENE,
-    # EUCL, EUCL_TRAN, TRAN, TRAN_ROTA); de zinvolle voor Mecway.
+    # NORM_MODE NORME (catalog calc_modes.py v17.4: MASS_GENE, RIGI_GENE,
+    # EUCL, EUCL_TRAN, TRAN, TRAN_ROTA); the meaningful ones for Mecway.
     ("modal_norm", ("Normering trillings-/knikvormen (NORM_MODE)",
                     "Mode shape normalisation (NORM_MODE)"), "choice",
      ("MASS_GENE", "RIGI_GENE", "TRAN_ROTA", "TRAN", "EUCL")),
     ("modal_tolerance", ("Controle modes (VERI_MODE SEUIL)",
                          "Mode check (VERI_MODE SEUIL)"), "float_pos", None),
-    # Vibro-akoestiek (bridge_vibroacoustic._mode_search_block): > 0, want
-    # U_P_PHI geeft valse modes bij 0 Hz.
+    # Vibro-acoustics (bridge_vibroacoustic._mode_search_block): > 0,
+    # because U_P_PHI gives spurious modes at 0 Hz.
     ("vibro_freq_min", ("Ondergrens frequentie [Hz] (modes erboven)",
                         "Lower frequency bound [Hz] (modes above it)"),
      "float_pos", None),
-    # Modaal met voorspanning (bridge_to_aster._prestress_plan)
+    # Modal with prestress (bridge_to_aster._prestress_plan)
     ("modal_prestress", ("Voorspanning door belastingen (stress stiffening)",
                          "Prestress from loads (stress stiffening)"),
      "bool", None),
-    # Complexe modes met demping (bridge_modal_damping.py)
+    # Complex modes with damping (bridge_modal_damping.py)
     ("modal_complex", ("Complexe modes met demping (Rayleigh, dempers)",
                        "Complex modes with damping (Rayleigh, dampers)"),
      "bool", None),
-    # Cyclische symmetrie (bridge_cyclic.py, MODE_ITER_CYCL)
+    # Cyclic symmetry (bridge_cyclic.py, MODE_ITER_CYCL)
     ("cyclic_base_modes", ("Cyclische symmetrie: sectormodes in de basis "
                            "(0 = automatisch)",
                            "Cyclic symmetry: sector modes in the basis "
@@ -352,7 +352,7 @@ ANALYSIS_SPECS = [
     ("cyclic_full_wheel", ("Cyclische symmetrie: het hele wiel naar Mecway",
                            "Cyclic symmetry: the whole wheel to Mecway"),
      "bool", None),
-    # Respons op modale basis (bridge_dyna_modal.py)
+    # Response on modal basis (bridge_dyna_modal.py)
     ("steps_per_period", ("Rekenstappen per periode van de hoogste mode",
                           "Solver steps per period of the highest mode"),
      "int", 4),
@@ -363,7 +363,7 @@ ANALYSIS_SPECS = [
                            "(MACRO_ELAS_MULT)",
                            "Static correction truncated modes "
                            "(MACRO_ELAS_MULT)"), "bool", None),
-    # Responsspectrum (bridge_spectrum.py)
+    # Response spectrum (bridge_spectrum.py)
     ("spectrum_abscissa", ("Spectrumtabel: kolom 'time' is",
                            "Spectrum table: column 'time' is"), "choice",
      ("period", "frequency")),
@@ -378,8 +378,8 @@ ANALYSIS_SPECS = [
     ("missing_mass", ("Missing mass (pseudo-modes, MODE_CORR)",
                       "Missing mass (pseudo-modes, MODE_CORR)"), "bool",
      None),
-    # Akoestiek harmonisch (bridge_acoustic.build_acoustic_harm); de lijst
-    # is tekst ("0" = het bereik), zodat hij ook leeg-achtig kan blijven.
+    # Acoustics harmonic (bridge_acoustic.build_acoustic_harm); the list
+    # is text ("0" = the range), so that it can also stay empty-like.
     ("harm_freq_start", ("Startfrequentie [Hz]", "Start frequency [Hz]"),
      "float_pos", None),
     ("harm_freq_end", ("Eindfrequentie [Hz]", "End frequency [Hz]"),
@@ -391,7 +391,7 @@ ANALYSIS_SPECS = [
     ("harm_freq_list", ("Frequentielijst [Hz] (0 = bereik hierboven)",
                         "Frequency list [Hz] (0 = range above)"), "text",
      None),
-    # Harmonische respons (bridge_harmonic.py)
+    # Harmonic response (bridge_harmonic.py)
     ("harm_basis", ("Basis (GENE modaal / PHYS direct)",
                     "Basis (GENE modal / PHYS direct)"), "choice",
      ("GENE", "PHYS")),
@@ -401,14 +401,14 @@ ANALYSIS_SPECS = [
     ("source_velocity", ("Snelheid BRON_-vlakken [m/s]",
                          "Velocity SOURCE_ faces [m/s]"), "float_pos",
      None),
-    # Vibro-akoestiek harmonisch (bridge_vibroacoustic_harm.py)
+    # Vibro-acoustics harmonic (bridge_vibroacoustic_harm.py)
     ("incident_pressure", ("Amplitude invallende golf INVALLEND_ [Pa]",
                            "Amplitude incident wave INCIDENT_ [Pa]"),
      "float_pos", None),
 ]
 
-# Kopjes op de pagina's: het kopje staat boven de eerste getoonde
-# instelling van zijn groep (sleutel -> (nl, en)).
+# Headings on the pages: the heading is above the first shown
+# setting of its group (key -> (nl, en)).
 SECTION_BEFORE = {
     "language": ("Taal en installatie", "Language and installation"),
     "active_analysis": ("Analyse", "Analysis"),
@@ -440,8 +440,8 @@ SECTION_BEFORE = {
     "source_velocity": ("Bron", "Source"),
 }
 
-# Kleuren (R, G, B) en maten van de vensters: rustig grijs-wit met een
-# blauwe accentkleur, lettertype Segoe UI (Windows-standaard).
+# Colours (R, G, B) and sizes of the windows: calm grey-white with a
+# blue accent colour, font Segoe UI (Windows default).
 _STYLE = {
     "font": ("Segoe UI", 9.0),
     "header_bg": (36, 54, 75),
@@ -455,16 +455,16 @@ _STYLE = {
     "muted": (96, 106, 120),
     "status_bg": (236, 240, 245),
     "button_bg": (255, 255, 255),
-    "label_w": 300,      # breedte labelkolom
-    "row_h": 32,         # hoogte van een rij
-    "nav_w": 220,        # breedte navigatielijst links
-    "nav_row_h": 32,     # hoogte van een pagina in de navigatie
-    "nav_caption_h": 26,  # extra hoogte voor een groepskopje erboven
+    "label_w": 300,      # width of label column
+    "row_h": 32,         # height of a row
+    "nav_w": 220,        # width of navigation list on the left
+    "nav_row_h": 32,     # height of a page in the navigation
+    "nav_caption_h": 26,  # extra height for a group heading above it
 }
 
-# Standaardwaarden voor algemene sleutels die in een oudere bridge_utils.py
-# nog ontbreken (dan wordt de waarde wel gebruikt, maar niet opgeslagen).
-# Tijdschema's per dynamische analyse (keuzelijst 'schema').
+# Default values for general keys that are still missing in an older
+# bridge_utils.py (then the value is used, but not saved).
+# Time schemes per dynamic analysis (choice list 'schema').
 _SCHEMES = {"dyna_impl_3d": ("HHT", "NEWMARK"),
             "dyna_expl_3d": ("DIFF_CENT", "TCHAMWA")}
 
@@ -476,17 +476,17 @@ _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
 
 
 # ==========================================
-# HULPFUNCTIES: OPTIES, WEERGAVE, VALIDATIE
+# HELPER FUNCTIONS: OPTIONS, DISPLAY, VALIDATION
 # ==========================================
 def _analysis_names():
-    """Analyses in de volgorde van ANALYSIS_TITLES, onbekende daarna."""
+    """Analyses in the order of ANALYSIS_TITLES, unknown ones after."""
     names = list(CONFIG_BRIDGE["analyses"].keys())
     known = [k for k, _t in ANALYSIS_TITLES if k in names]
     return known + sorted(k for k in names if k not in known)
 
 
 def _analysis_title(name):
-    """Leesbare titel van een analyse (of de sleutel)."""
+    """Readable title of an analysis (or the key)."""
     for key, title in ANALYSIS_TITLES:
         if key == name:
             return _t(title)
@@ -494,14 +494,14 @@ def _analysis_title(name):
 
 
 def _page_title(name, active):
-    """Titel van de pagina van een analyse; de actieve krijgt een merk."""
+    """Title of the page of an analysis; the active one gets a mark."""
     return _analysis_title(name) + (tr(" (actief)", " (active)")
                                     if name == active else "")
 
 
 def _template_label(template):
-    """Templatenaam voor het venster; een eigen template buiten de
-    Scripts-map met het volledige pad, een ontbrekende met een melding."""
+    """Template name for the window; a custom template outside the
+    Scripts folder with the full path, a missing one with a message."""
     full = bridge_utils.template_path(template)
     if not full:
         return "?"
@@ -514,12 +514,12 @@ def _template_label(template):
 
 
 def _mecway_types_for(name):
-    """Mecway-analysetypen die bij 'auto' naar deze analyse leiden."""
+    """Mecway analysis types that lead to this analysis with 'auto'."""
     return sorted(k for k, v in MECWAY_ANALYSIS_TYPES.items() if v == name)
 
 
 def _where(analysis, key):
-    """Naam van de pagina van een instelling (voor meldingen)."""
+    """Name of the page of a setting (for messages)."""
     if analysis is not None:
         return _analysis_title(analysis)
     return (tr("Elementen", "Elements") if key in ELEMENT_KEYS
@@ -534,12 +534,12 @@ def _field_options(current):
     return opts
 
 
-# Keuzelijsten (combobox): vaste opties, analyses of configuraties.
+# Choice lists (combobox): fixed options, analyses or configurations.
 _CHOICE_KINDS = ("choice", "analysis_choice", "configuration_choice")
 
-# Configuraties van het model dat open is in Mecway (run_settings_dialog,
-# bridge_results_liml.configuration_names); leeg zonder model of zonder
-# configuraties.
+# Configurations of the model that is open in Mecway (run_settings_dialog,
+# bridge_results_liml.configuration_names); empty without a model or
+# without configurations.
 _MODEL_INFO = {"configurations": []}
 
 
@@ -552,24 +552,24 @@ def _choice_options(kind, extra):
 
 
 def _float_text(value):
-    """Kortste tekst die exact dezelfde float teruggeeft. repr() geeft in
-    IronPython 2.7.9 bijv. '-0.10000000000000001' en "{0:g}".format()
-    volgt de Windows-landinstelling ('-0,1'); %-opmaak geeft altijd een
-    punt (beide gezien in een test met Mecway's IronPython)."""
+    """Shortest text that gives back exactly the same float. repr() gives
+    e.g. '-0.10000000000000001' in IronPython 2.7.9 and "{0:g}".format()
+    follows the Windows locale ('-0,1'); %-formatting always gives a
+    point (both seen in a test with Mecway's IronPython)."""
     value = float(value)
     for digits in (12, 15, 17):
         text = ("%." + str(digits) + "g") % value
         if float(text) == value:
             break
     if "." not in text and "e" not in text and "n" not in text:
-        text += ".0"   # blijft een float in bridge_utils.py
+        text += ".0"   # stays a float in bridge_utils.py
     return text
 
 
 def exe_missing_text():
-    """Melding voor het statusvak (met lege regel erna) als run_aster.bat
-    niet bestaat, bijv. bij een eerste start met een andere
-    installatiemap; anders ""."""
+    """Message for the status box (with an empty line after it) if
+    run_aster.bat does not exist, e.g. at a first start with a different
+    installation folder; otherwise ""."""
     exe = exe_aster_path()
     if exe and os.path.isfile(exe):
         return u""
@@ -586,7 +586,7 @@ def exe_missing_text():
 
 
 def _format_value(value, kind):
-    """Tekstweergave van een waarde in een tekstveld of mw.input-prompt."""
+    """Text display of a value in a text field or mw.input prompt."""
     if kind in ("float_pos", "float_range"):
         return _float_text(value)
     if kind == "bool":
@@ -598,25 +598,25 @@ def _format_value(value, kind):
 
 def _parse_and_validate(key, kind, extra, raw):
     """
-    Zet invoer om naar een waarde en controleer die.
+    Convert input to a value and check it.
 
-    raw : str voor tekstsoorten; bool voor 'bool'; str voor keuzes;
-          list voor 'checklist'.
+    raw : str for text kinds; bool for 'bool'; str for choices;
+          list for 'checklist'.
 
     Returns
     -------
-    (value, error)  error is None als de invoer geldig is.
+    (value, error)  error is None if the input is valid.
     """
     if kind in ("text", "file", "folder"):
         value = raw.strip()
         if key == "work_dir" and (not value or os.path.normcase(
                 os.path.normpath(expand_path(value))) == os.path.normcase(
                     os.path.normpath(default_work_dir()))):
-            # leeg of de standaardmap: "" opslaan (bridge_utils.work_dir_path)
+            # empty or the default folder: save "" (bridge_utils.work_dir_path)
             return "", None
         if not value:
             return None, tr("mag niet leeg zijn.", "must not be empty.")
-        # omgevingsvariabelen (%LOCALAPPDATA%) blijven in de instelling staan
+        # environment variables (%LOCALAPPDATA%) stay in the setting
         if kind == "file" and not os.path.isfile(expand_path(value)):
             return None, tr("bestand bestaat niet: {0}",
                             "file does not exist: {0}").format(
@@ -664,8 +664,8 @@ def _parse_and_validate(key, kind, extra, raw):
         return bool(raw), None
 
     if kind == "configuration_choice":
-        # Elke naam mag: de instelling geldt ook voor andere modellen; een
-        # naam die daar niet bestaat geeft bij de run een WARNING en "auto"
+        # Any name is allowed: the setting also applies to other models; a
+        # name that does not exist there gives a WARNING and "auto" in the run
         # (bridge_utils.choose_configuration).
         return u"{0}".format(raw).strip() or "auto", None
 
@@ -689,7 +689,7 @@ def _parse_and_validate(key, kind, extra, raw):
 
 
 def _collect_current():
-    """Huidige waarden uit CONFIG_BRIDGE in de structuur van de dialoog."""
+    """Current values from CONFIG_BRIDGE in the structure of the dialog."""
     general = {}
     for key, _label, _kind, _extra in GENERAL_SPECS:
         general[key] = CONFIG_BRIDGE.get(key, _GENERAL_DEFAULTS.get(key))
@@ -704,15 +704,15 @@ def _collect_current():
 
 
 # ==========================================
-# TOEPASSEN IN HET GEHEUGEN
+# APPLYING IN MEMORY
 # ==========================================
 def _apply_values(new_values):
     """
-    Schrijf nieuwe waarden in CONFIG_BRIDGE (geheugen).
+    Write new values into CONFIG_BRIDGE (memory).
 
     Returns
     -------
-    list of (analysis_or_None, key, kind, old, new)  alleen gewijzigde.
+    list of (analysis_or_None, key, kind, old, new)  changed ones only.
     """
     changes = []
     for key, _label, kind, _extra in GENERAL_SPECS:
@@ -737,12 +737,12 @@ def _apply_values(new_values):
 
 
 # ==========================================
-# OPSLAAN IN bridge_utils.py
+# SAVING IN bridge_utils.py
 #
-# Alleen de regels van gewijzigde sleutels worden vervangen. Commentaar-
-# regels blijven onaangeroerd.
-# Vereiste vorm per sleutel:   "sleutel": waarde,   (een regel), behalve
-# lijsten ("fields"), die over meerdere regels mogen lopen.
+# Only the lines of changed keys are replaced. Comment
+# lines stay untouched.
+# Required form per key:   "key": value,   (one line), except
+# lists ("fields"), which may span several lines.
 # ==========================================
 def bridge_utils_path():
     path = os.path.abspath(bridge_utils.__file__)
@@ -770,7 +770,7 @@ def _render_value(value, kind):
 
 
 def _matching_brace(text, open_idx):
-    """Index van de '}' die hoort bij de '{' op open_idx (of -1)."""
+    """Index of the '}' that belongs to the '{' at open_idx (or -1)."""
     depth = 0
     quote = None
     i = open_idx
@@ -800,7 +800,7 @@ def _matching_brace(text, open_idx):
 
 
 def _block_span(text, header_pattern, lo=0, hi=None):
-    """(start, eind) van de inhoud van het dict-blok na header_pattern."""
+    """(start, end) of the content of the dict block after header_pattern."""
     if hi is None:
         hi = len(text)
     m = re.compile(header_pattern, re.M).search(text, lo, hi)
@@ -832,11 +832,11 @@ def _replace_in_span(text, span, key, rendered, is_list):
 
 def save_to_bridge_utils(changes, path=None):
     """
-    Schrijf gewijzigde waarden terug in bridge_utils.py.
+    Write changed values back into bridge_utils.py.
 
     Returns
     -------
-    list of str  foutmeldingen; leeg = alles opgeslagen.
+    list of str  error messages; empty = everything saved.
     """
     if not changes:
         return []
@@ -864,8 +864,8 @@ def save_to_bridge_utils(changes, path=None):
         rendered = _render_value(new, kind)
         is_list  = kind == "checklist"
         if analysis is None:
-            # Algemene sleutel: alleen buiten het "analyses"-blok zoeken,
-            # zodat een gelijknamige analyse-sleutel niet meetelt.
+            # General key: only search outside the "analyses" block,
+            # so that an analysis key with the same name does not count.
             where = "CONFIG_BRIDGE"
             if ana_span is None:
                 new_text, count = _replace_in_span(
@@ -900,9 +900,9 @@ def save_to_bridge_utils(changes, path=None):
             continue
         text = new_text
 
-    # Syntaxcontrole voor het wegschrijven. De coding-declaratie wordt
-    # voor de controle onschadelijk gemaakt (compile() op unicode-tekst
-    # met coding-regel geeft in Python 2 een SyntaxError).
+    # Syntax check before writing. The coding declaration is
+    # made harmless for the check (compile() on unicode text
+    # with a coding line gives a SyntaxError in Python 2).
     check = text.lstrip(u"﻿")
     check = re.sub(r"coding[:=]", "coding-", check, count=1)
     try:
@@ -928,12 +928,12 @@ def save_to_bridge_utils(changes, path=None):
 
 
 # ==========================================
-# WINDOWS FORMS-DIALOOG
+# WINDOWS FORMS DIALOG
 # ==========================================
 class _Look(object):
     """
-    Lettertypen, kleuren en opgemaakte knoppen/kopjes voor de vensters
-    (_STYLE). Alleen te maken nadat Windows Forms geladen is.
+    Fonts, colours and styled buttons/headings for the windows
+    (_STYLE). Can only be made after Windows Forms is loaded.
     """
 
     def __init__(self):
@@ -955,7 +955,7 @@ class _Look(object):
         self.white = Color.White
 
     def button(self, text, primary=False):
-        """Platte knop; primary = gevuld met de accentkleur."""
+        """Flat button; primary = filled with the accent colour."""
         from System.Windows.Forms import Button
         btn = Button()
         btn.Text = text
@@ -975,7 +975,7 @@ class _Look(object):
         return btn
 
     def header(self, form, title, subtitle):
-        """Donkere kopbalk bovenaan het venster (Dock Top)."""
+        """Dark header bar at the top of the window (Dock Top)."""
         from System.Windows.Forms import Panel, Label, DockStyle
         from System.Drawing import Point, Size
         bar = Panel()
@@ -1001,17 +1001,17 @@ class _Look(object):
 
 def _show_winforms_dialog(current, status=u"", model=None):
     """
-    Toon het hoofdvenster: navigatie links met de pagina's met instellingen
-    (met tooltips, bridge_glossary) en de pagina Documentatie (bridge_docs),
-    een statusvak (status: tekst over de vorige run) en de knoppen Starten,
-    Resultaten..., Convergentiescherm, Uitleg... en Sluiten.
+    Show the main window: navigation on the left with the settings pages
+    (with tooltips, bridge_glossary) and the page Documentatie (bridge_docs),
+    a status box (status: text about the previous run) and the buttons
+    Starten, Resultaten..., Convergentiescherm, Uitleg... and Sluiten.
 
-    Returns {"action": "run" | "results" | "close", "values": dict of None}
-    ("values" alleen bij "run": de gevalideerde nieuwe waarden). Het
-    convergentiescherm en de documentatie werken binnen het venster; voor
-    een run of de resultaten sluit het venster en opent MecwayAsterBridgeMain
-    het daarna opnieuw. Fouten bij het laden van Windows Forms worden als
-    ImportError doorgegeven; fouten in het venster zelf als RuntimeError.
+    Returns {"action": "run" | "results" | "close", "values": dict or None}
+    ("values" only for "run": the validated new values). The
+    convergence screen and the documentation work inside the window; for
+    a run or the results the window closes and MecwayAsterBridgeMain
+    opens it again afterwards. Errors when loading Windows Forms are
+    passed on as ImportError; errors in the window itself as RuntimeError.
     """
     try:
         import clr
@@ -1039,19 +1039,19 @@ def _show_winforms_dialog(current, status=u"", model=None):
             form.Text = "MecwayAsterBridge"
             form.Font = look.font
             form.BackColor = look.col("window_bg")
-            # Past met rand en titelbalk op een scherm van 768 hoog; groter
-            # slepen mag (velden en knoppen schuiven mee). Breder dan met
-            # tabbladen: de navigatielijst links neemt _STYLE["nav_w"].
+            # Fits with border and title bar on a screen 768 high; dragging
+            # it larger is allowed (fields and buttons move along). Wider than
+            # with tabs: the navigation list on the left takes _STYLE["nav_w"].
             form.ClientSize = Size(1120, 700)
             form.MinimumSize = Size(1000, 600)
             form.StartPosition = FormStartPosition.CenterScreen
             form.FormBorderStyle = FormBorderStyle.Sizable
             form.MinimizeBox = False
-            # Bij het openen boven Mecway, daarna een gewoon venster.
+            # On top of Mecway when opening, after that a normal window.
             form.TopMost = True
 
-            # Tooltips met uitleg per instelling (bridge_glossary); lang
-            # zichtbaar, want de teksten zijn soms een paar regels.
+            # Tooltips with an explanation per setting (bridge_glossary);
+            # visible for long, because the texts are sometimes a few lines.
             tip = ToolTip()
             tip.AutoPopDelay = 30000
             tip.InitialDelay = 400
@@ -1070,10 +1070,10 @@ def _show_winforms_dialog(current, status=u"", model=None):
             header = look.header(form, u"MecwayAsterBridge " +
                                  BRIDGE_VERSION, subtitle)
 
-            # Hoofdgedeelte (navigatie links, pagina rechts), statusvak en
-            # knoppenbalk. Docking gaat van achter naar voor in de
-            # z-volgorde: knoppenbalk onderaan, statusvak erboven, kop
-            # bovenaan, het hoofdgedeelte vult de rest.
+            # Main part (navigation left, page right), status box and
+            # button bar. Docking goes from back to front in the
+            # z-order: button bar at the bottom, status box above it, header
+            # at the top, the main part fills the rest.
             body = Panel()
             body.Dock = DockStyle.Fill
             body.Padding = Padding(12, 10, 12, 4)
@@ -1093,14 +1093,14 @@ def _show_winforms_dialog(current, status=u"", model=None):
             status_panel.SendToBack()
             footer.SendToBack()
 
-            # --- Navigatie links, gekozen pagina rechts ---
-            # Zoals Windows Instellingen: een zelf getekende lijst met de
-            # paginanamen (groepskopjes erboven), rechts de titel en de
-            # inhoud van de gekozen pagina. new_page() is het enige
-            # registratiepunt: elke pagina komt vanzelf in de lijst.
-            # Toetsenbord: pijltjes/Home/End in de lijst (die heeft bij het
-            # openen de focus), Ctrl+Tab/Ctrl+Shift+Tab en Ctrl+PageDown/
-            # PageUp vanuit het hele venster (zoals bij tabbladen).
+            # --- Navigation on the left, chosen page on the right ---
+            # Like Windows Settings: a self-drawn list with the
+            # page names (group headings above them), on the right the title
+            # and the content of the chosen page. new_page() is the only
+            # registration point: every page appears in the list by itself.
+            # Keyboard: arrows/Home/End in the list (which has the focus
+            # when opening), Ctrl+Tab/Ctrl+Shift+Tab and Ctrl+PageDown/
+            # PageUp from the whole window (as with tabs).
             from System.Windows.Forms import (DrawMode, TextRenderer,
                                               TextFormatFlags, DrawItemState,
                                               Keys)
@@ -1109,7 +1109,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             GROUP_ANALYSES = tr("Analyses", "Analyses")
             GROUP_HELP = tr("Hulp", "Help")
 
-            page_frame = Panel()   # dunne rand om de pagina
+            page_frame = Panel()   # thin border around the page
             page_frame.Dock = DockStyle.Fill
             page_frame.BackColor = look.col("line")
             page_frame.Padding = Padding(1)
@@ -1126,8 +1126,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
             nav.IntegralHeight = False
             nav.DrawMode = DrawMode.OwnerDrawVariable
             nav.TabIndex = 0
-            # Docking van achter naar voor: lijst links, tussenruimte, de
-            # pagina vult de rest.
+            # Docking from back to front: list on the left, spacing, the
+            # page fills the rest.
             body.Controls.Add(page_frame)
             body.Controls.Add(nav_gap)
             body.Controls.Add(nav)
@@ -1136,7 +1136,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             page_area.Dock = DockStyle.Fill
             page_area.BackColor = look.col("page_bg")
             page_frame.Controls.Add(page_area)
-            page_host = Panel()    # de pagina's (een tegelijk zichtbaar)
+            page_host = Panel()    # the pages (one visible at a time)
             page_host.Name = "pages"
             page_host.Dock = DockStyle.Fill
             page_area.Controls.Add(page_host)
@@ -1155,12 +1155,12 @@ def _show_winforms_dialog(current, status=u"", model=None):
             page_title.TextAlign = ContentAlignment.MiddleLeft
             page_area.Controls.Add(page_title)
 
-            pages = []   # per pagina {"page", "title", "group"}, op volgorde
+            pages = []   # per page {"page", "title", "group"}, in order
             nav_state = {"hover": -1}
 
             def new_page(title, group):
-                """Nieuwe pagina met een regel in de navigatie (onder het
-                groepskopje group); geeft het Panel terug."""
+                """New page with a line in the navigation (under the
+                group heading group); returns the Panel."""
                 page = Panel()
                 page.Dock = DockStyle.Fill
                 page.AutoScroll = True
@@ -1194,8 +1194,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 return i == 0 or pages[i]["group"] != pages[i - 1]["group"]
 
             def caption_h(i):
-                # Ruimte voor het groepskopje boven de eerste pagina van een
-                # groep (bovenaan iets minder).
+                # Space for the group heading above the first page of a
+                # group (a bit less at the top).
                 if not group_start(i):
                     return 0
                 return _STYLE["nav_caption_h"] - (6 if i == 0 else 0)
@@ -1233,7 +1233,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     g.FillRectangle(brush, r)
                     brush.Dispose()
                 if selected:
-                    # accentstreep links, zoals Windows Instellingen
+                    # accent bar on the left, as in Windows Settings
                     brush = SolidBrush(look.col("accent"))
                     g.FillRectangle(brush, Rectangle(r.X, r.Y + 6, 3,
                                                      r.Height - 12))
@@ -1277,8 +1277,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     fit_page(shown)
 
             def on_form_key(sender, e):
-                # Ctrl+Tab / Ctrl+PageDown: volgende pagina; met Shift of
-                # PageUp: vorige (rondgaand).
+                # Ctrl+Tab / Ctrl+PageDown: next page; with Shift or
+                # PageUp: previous (wrapping around).
                 if not e.Control or not pages:
                     return
                 if e.KeyCode == Keys.Tab:
@@ -1303,17 +1303,17 @@ def _show_winforms_dialog(current, status=u"", model=None):
 
             page_gen = new_page(tr("Algemeen", "General"), GROUP_SETTINGS)
             page_elem = new_page(tr("Elementen", "Elements"), GROUP_SETTINGS)
-            # Een pagina per analyse; de actieve krijgt "(actief)".
+            # One page per analysis; the active one gets "(actief)".
             analysis_pages = {}
             for name in _analysis_names():
                 analysis_pages[name] = new_page(_page_title(name, active),
                                                 GROUP_ANALYSES)
 
             controls = []   # (analysis_or_None, key, label, kind, extra, ctrl)
-            # Per pagina de elementen die met de breedte meegaan:
-            # (soort, element, knop of None); zie fit_page.
+            # Per page the elements that follow the width:
+            # (kind, element, button or None); see fit_page.
             stretch = {}
-            sections = {}   # pagina -> getoonde kopjes
+            sections = {}   # page -> shown headings
             x_ctrl = 16 + _STYLE["label_w"]
 
             def fit_page(page):
@@ -1355,7 +1355,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 return handler
 
             def add_section(parent, y, key):
-                """Kopje boven de eerste instelling van een groep."""
+                """Heading above the first setting of a group."""
                 title = SECTION_BEFORE.get(key)
                 shown = sections.setdefault(parent, set())
                 if title is None or title in shown:
@@ -1396,7 +1396,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     ctrl.Width = 420 if kind in ("file", "folder") else 220
                     ctrl.Text = _format_value(value, kind)
                     if key == "work_dir" and not value:
-                        # leeg = standaardmap: die tonen (opslaan als "")
+                        # empty = default folder: show it (save as "")
                         ctrl.Text = default_work_dir()
                     if kind in ("file", "folder"):
                         btn = look.button(tr("Bladeren...", "Browse..."))
@@ -1414,12 +1414,12 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     ctrl.Width = 220
                     opts = _choice_options(kind, extra)
                     if key == "schema" and analysis in _SCHEMES:
-                        # Impliciet of expliciet: alleen de passende
-                        # schema's (de andere zouden verborgen instellingen
-                        # van het andere soort gebruiken).
+                        # Implicit or explicit: only the matching
+                        # schemes (the others would use hidden settings
+                        # of the other kind).
                         opts = [o for o in opts if o in _SCHEMES[analysis]]
                     if value not in opts:
-                        opts.append(value)   # onbekende waarde zichtbaar
+                        opts.append(value)   # unknown value visible
                     for o in opts:
                         ctrl.Items.Add(o)
                     ctrl.SelectedItem = value
@@ -1445,7 +1445,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 if kind in _CHOICE_KINDS:
                     options = _choice_options(kind, extra)
                 elif kind == "checklist":
-                    # uitleg per resultaatveld (GLOSSARY) in de tooltip
+                    # explanation per result field (GLOSSARY) in the tooltip
                     options = _field_options(value)
                 else:
                     options = []
@@ -1459,8 +1459,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 return y + height
 
             def add_text(parent, y, text, height=None):
-                """Toelichting in gedempte kleur over de volle breedte;
-                height None: volgt uit het aantal regels."""
+                """Note in a muted colour over the full width;
+                height None: follows from the number of lines."""
                 if height is None:
                     height = 16 * (text.count("\n") + 1) + 8
                 lbl = Label()
@@ -1472,7 +1472,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 stretch.setdefault(parent, []).append(("text", lbl, None))
                 return y + height
 
-            # --- Pagina's Algemeen en Elementen ---
+            # --- Pages Algemeen and Elementen ---
             y_gen = 12
             y_elem = 12
             for key, label, kind, extra in GENERAL_SPECS:
@@ -1516,11 +1516,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
                             bridge_utils_path()))
             add_text(page_elem, y_elem + 12, tr(*_ELEMENT_HELP))
 
-            # --- Een pagina per analyse ---
+            # --- One page per analysis ---
             for name in _analysis_names():
                 page = analysis_pages[name]
-                # De template volgt uit de analyse (bridge_utils.
-                # template_path: naam in de Scripts-map); alleen tonen.
+                # The template follows from the analysis (bridge_utils.
+                # template_path: name in the Scripts folder); display only.
                 info = "Code-Aster: {0}   |   template: {1}".format(
                     CONFIG_BRIDGE["analyses"][name].get("solver_command",
                                                         "?"),
@@ -1538,7 +1538,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         y = make_row(page, y, name, key, label, kind,
                                      extra, current["analyses"][name][key])
 
-            # Paginatitels volgen de keuze voor de actieve analyse.
+            # Page titles follow the choice of the active analysis.
             def make_active_handler(combo):
                 def handler(sender, args):
                     chosen = "{0}".format(combo.SelectedItem)
@@ -1550,7 +1550,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 if analysis is None and key == "active_analysis":
                     ctrl.SelectedIndexChanged += make_active_handler(ctrl)
 
-            # --- Pagina Documentatie (bridge_docs) ---
+            # --- Page Documentatie (bridge_docs) ---
             page_docs = new_page(tr("Documentatie", "Documentation"), GROUP_HELP)
             page_docs.AutoScroll = False
             page_docs.Padding = Padding(8)
@@ -1562,7 +1562,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             doc_list.BorderStyle = getattr(BorderStyle, "None")
             doc_list.BackColor = look.col("status_bg")
             doc_list.IntegralHeight = False
-            # Zelf getekend: ruimere regels, selectie in de accentkleur.
+            # Self-drawn: wider lines, selection in the accent colour.
             doc_list.DrawMode = DrawMode.OwnerDrawFixed
             doc_list.ItemHeight = 28
             for title, _rel in doc_items:
@@ -1594,7 +1594,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 browser.ScriptErrorsSuppressed = True
                 browser.AllowWebBrowserDrop = False
             except Exception:
-                # Zonder browserelement: platte tekst (de Markdown zelf).
+                # Without a browser element: plain text (the Markdown itself).
                 browser = None
             viewer = browser if browser is not None else TextBox()
             if browser is None:
@@ -1607,17 +1607,17 @@ def _show_winforms_dialog(current, status=u"", model=None):
             page_docs.Controls.Add(gap)
             viewer.Dock = DockStyle.Fill
             page_docs.Controls.Add(viewer)
-            # Merkenvermelding onderaan, over de hele breedte
+            # Trademark notice at the bottom, over the full width
             notice = Label()
             notice.Text = tr(*bridge_docs.TRADEMARK_NOTICE)
             notice.ForeColor = look.col("muted")
             notice.Dock = DockStyle.Bottom
-            # twee regels ruimte: in een smal venster loopt de tekst door
+            # two lines of space: in a narrow window the text wraps
             notice.Height = 38
             notice.Padding = Padding(4, 6, 4, 0)
             page_docs.Controls.Add(notice)
-            # docking van achter naar voor: vermelding onderaan, lijst
-            # links, dan de tussenruimte, de viewer vult de rest
+            # docking from back to front: notice at the bottom, list
+            # on the left, then the spacing, the viewer fills the rest
             viewer.BringToFront()
             doc_list.SendToBack()
             notice.SendToBack()
@@ -1655,10 +1655,10 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     pass
 
             def on_navigating(sender, args):
-                # DocumentText laadt als about:blank; een relatieve link
-                # wordt about:<href> (een anker about:blank#<id>). Links naar
-                # .md openen hier (met anker), ankers scrollen, webadressen
-                # gaan naar de standaardbrowser, de rest niet.
+                # DocumentText loads as about:blank; a relative link
+                # becomes about:<href> (an anchor about:blank#<id>). Links to
+                # .md open here (with anchor), anchors scroll, web addresses
+                # go to the default browser, the rest does not.
                 url = "{0}".format(args.Url)
                 if url in ("about:blank", ""):
                     return
@@ -1682,8 +1682,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                             else:
                                 doc_list.SelectedIndex = rels.index(target)
                         else:
-                            # Buiten de lijst: geen selectie, zodat een klik
-                            # in de lijst weer naar een document gaat.
+                            # Outside the list: no selection, so that a click
+                            # in the list goes to a document again.
                             doc_list.ClearSelected()
                             show_doc(target)
                     elif kind == "web":
@@ -1694,7 +1694,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                            "Link not opened: {0}").format(e))
 
             def on_completed(sender, args):
-                # Na het laden naar het anker van de link springen.
+                # After loading, jump to the anchor of the link.
                 anchor = doc_state.pop("anchor", None)
                 if anchor:
                     scroll_to(anchor)
@@ -1702,7 +1702,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 browser.Navigating += on_navigating
                 browser.DocumentCompleted += on_completed
 
-            # --- Statusvak: uitkomst van de vorige run en meldingen ---
+            # --- Status box: outcome of the previous run and messages ---
             status_title = Label()
             status_title.Text = tr("Status", "Status")
             status_title.Font = look.bold
@@ -1736,8 +1736,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 status_box.Text = text.replace("\r\n", "\n").replace(
                     "\n", "\r\n")
 
-            # --- Knoppen: links de hulpknoppen, rechts Sluiten en de
-            # primaire knop Starten (fit_footer zet ze op hun plaats) ---
+            # --- Buttons: helper buttons on the left, on the right Sluiten
+            # and the primary button Starten (fit_footer places them) ---
             footer_line = Panel()
             footer_line.Dock = DockStyle.Top
             footer_line.Height = 1
@@ -1771,8 +1771,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
             footer.Resize += fit_footer
 
             def collect_values():
-                """Gevalideerde waarden van alle velden, of None (dan is
-                een melding getoond)."""
+                """Validated values of all fields, or None (then a
+                message has been shown)."""
                 values = {"general": {}, "analyses": {}}
                 errors = []
                 for analysis, key, label, kind, extra, ctrl in controls:
@@ -1806,9 +1806,9 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 return values
 
             def guarded(fn):
-                # Een fout in een knop mag het venster niet sluiten (de
-                # .NET-foutdialoog biedt 'Afsluiten'): melden in het
-                # statusvak.
+                # An error in a button must not close the window (the
+                # .NET error dialog offers 'Afsluiten'): report it in the
+                # status box.
                 def handler(sender, args):
                     try:
                         fn()
@@ -1817,9 +1817,9 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 return handler
 
             def leave(action):
-                # Starten en Resultaten nemen de gewijzigde instellingen
-                # mee (ook Resultaten, anders zijn ze bij het terugkomen
-                # van het venster weg).
+                # Starten and Resultaten take the changed settings
+                # along (also Resultaten, otherwise they are gone when the
+                # window comes back).
                 values = collect_values()
                 if values is None:
                     return
@@ -1877,8 +1877,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                                        "Close the bridge. Changed settings "
                                        "are only saved on Start or "
                                        "Results..."), right=True)
-            # Geen AcceptButton: Enter in een veld of de documentenlijst
-            # zou anders meteen een run starten.
+            # No AcceptButton: Enter in a field or the document list
+            # would otherwise start a run immediately.
             form.CancelButton = cancel_btn
 
             doc_list.SelectedIndex = 0
@@ -1895,13 +1895,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 for page in stretch:
                     fit_page(page)
             form.Shown += on_shown
-            # Niet-modaal: Show() plus een eigen berichtenlus. Draait het
-            # script op de UI-thread van Mecway, dan verwerkt
-            # Application.DoEvents ook Mecway's berichten en blijft Mecway
-            # bruikbaar (resultaten bekijken) terwijl dit venster open is;
-            # ShowDialog() zou Mecway blokkeren. In een eigen STA-thread
-            # (hieronder) werkt dezelfde lus ook. NIET in Mecway
-            # geverifieerd op welke thread scripts draaien.
+            # Non-modal: Show() plus its own message loop. If the
+            # script runs on Mecway's UI thread,
+            # Application.DoEvents also processes Mecway's messages and Mecway
+            # stays usable (viewing results) while this window is open;
+            # ShowDialog() would block Mecway. In its own STA thread
+            # (below) the same loop works too. NOT verified in Mecway
+            # on which thread scripts run.
             state = {"open": True}
 
             def on_closed(sender, args):
@@ -1914,8 +1914,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     Application.DoEvents()
                     Thread.CurrentThread.Join(20)
             finally:
-                # Venster en browserelement (ActiveX) vrijgeven: het
-                # venster wordt na elke run opnieuw opgebouwd.
+                # Release the window and browser element (ActiveX): the
+                # window is rebuilt after every run.
                 form.Dispose()
         except Exception as e:
             result["error"] = e
@@ -1937,10 +1937,10 @@ def _show_winforms_dialog(current, status=u"", model=None):
 
 def open_convergence_monitor(work_dir=None, model=None):
     """
-    Start het convergentiescherm (apart proces, blijft open) voor het
-    nieuwste .mess-bestand in work_dir (standaard de werkmap uit
-    CONFIG_BRIDGE; het hoofdvenster geeft de waarde uit het tekstveld).
-    Returns een statustekst.
+    Start the convergence screen (separate process, stays open) for the
+    newest .mess file in work_dir (default the work folder from
+    CONFIG_BRIDGE; the main window passes the value from the text field).
+    Returns a status text.
     """
     import bridge_run_aster
     work_dir = work_dir or work_dir_path()
@@ -1963,28 +1963,28 @@ def open_convergence_monitor(work_dir=None, model=None):
 
 
 # ==========================================
-# KEUZESCHERM RESULTATEN (knop Resultaten... in het hoofdvenster)
+# RESULTS SELECTION SCREEN (button Resultaten... in the main window)
 # ==========================================
 def _results_line(item):
-    """Regel in de lijst: datum/tijd, model, grootte."""
+    """Line in the list: date/time, model, size."""
     rid = item.get("run_id", "")
     when = ("{0}-{1}-{2} {3}:{4}:{5}".format(rid[0:4], rid[4:6], rid[6:8],
                                               rid[9:11], rid[11:13],
                                               rid[13:15])
             if len(rid) == 15 else os.path.basename(item["path"]))
     model = os.path.basename(item.get("model", "")) or "?"
-    # %-opmaak: altijd een punt (landinstelling, zie _float_text)
+    # %-formatting: always a point (locale, see _float_text)
     return u"{0}    {1}    {2} MB".format(when, model,
                                           "%.1f" % (item["size"] / 1.0e6))
 
 
 def results_dialog(items, work_dir):
     """
-    Keuzescherm voor de knop Resultaten... (MecwayAsterBridgeMain.
+    Selection screen for the button Resultaten... (MecwayAsterBridgeMain.
     _results_action). items: list_results(work_dir).
-    Returns {"action": "load", "path": resultaatbestand},
-    {"action": "strip"} of None (Annuleren). Zonder Windows Forms:
-    ImportError (het script valt dan terug op mw.input()).
+    Returns {"action": "load", "path": result file},
+    {"action": "strip"} or None (Annuleren). Without Windows Forms:
+    ImportError (the script then falls back to mw.input()).
     """
     try:
         import clr
@@ -2113,10 +2113,10 @@ def results_dialog(items, work_dir):
 
 
 # ==========================================
-# TERUGVAL: mw.input()-VRAGEN
+# FALLBACK: mw.input() QUESTIONS
 # ==========================================
 def _ask(mw, prompt, key, kind, extra):
-    """Vraag een waarde tot de invoer geldig is; leeg = None (houden)."""
+    """Ask for a value until the input is valid; empty = None (keep)."""
     while True:
         raw = mw.input(prompt)
         if raw is None or "{0}".format(raw).strip() == "":
@@ -2198,25 +2198,25 @@ def _run_input_fallback(mw, current, reason):
 
 
 # ==========================================
-# PUBLIEKE FUNCTIE
+# PUBLIC FUNCTION
 # ==========================================
-# Staat het hoofdvenster al open (zelfde Mecway-sessie)? Zie
+# Is the main window already open (same Mecway session)? See
 # run_settings_dialog.
 _HUB = {"open": False}
 
 
 def run_settings_dialog(mw, status=u""):
     """
-    Toon het hoofdvenster, pas CONFIG_BRIDGE aan en sla wijzigingen op
-    (bij Starten en Resultaten...). status: tekst over de vorige run voor
-    het statusvak.
+    Show the main window, update CONFIG_BRIDGE and save changes
+    (on Starten and Resultaten...). status: text about the previous run for
+    the status box.
 
     Returns
     -------
     dict  {"ok": bool, "action": "run" | "results" | "close",
            "changes": [...], "save_errors": [...],
-           "gui": "winforms" of "mw.input"}
-          ok=True alleen bij "run".
+           "gui": "winforms" or "mw.input"}
+          ok=True only for "run".
     """
     current = _collect_current()
     gui = "winforms"
@@ -2232,8 +2232,8 @@ def run_settings_dialog(mw, status=u""):
                 model = bridge_utils.model_stem(mw.file_name())
             except Exception:
                 model = None
-            # Configuraties van het open model voor de keuzelijst (van de
-            # schijf: de laatst opgeslagen versie)
+            # Configurations of the open model for the choice list (from
+            # disk: the last saved version)
             try:
                 _MODEL_INFO["configurations"] = \
                     bridge_results_liml.configuration_names(mw.file_name())
