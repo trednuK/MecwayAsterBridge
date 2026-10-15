@@ -4,49 +4,49 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_harmonic.py
-# Verantwoordelijkheid: harmonische (stationaire) respons van een
-# constructie in het frequentiedomein, analyse harmonic_3d. Mecway heeft
-# geen harmonische analyse (manual v33 hoofdstuk 6; D30 Dynamic Response is
-# transient): de bridge rekent een Mecway Frequency- (V30) of Dynamic-
-# Response-model (D30) met dezelfde mesh, materialen, opleggingen en
-# belastingen als harmonische last F e^(i w t):
-#   ASSEMBLAGE (RIGI_MECA, MASS_MECA) -> CALC_MODES (de laagste modes) ->
-#   frequentielijst (bereik of lijst, met extra punten rond de resonanties:
+# Responsibility: harmonic (steady-state) response of a
+# structure in the frequency domain, analysis harmonic_3d. Mecway has
+# no harmonic analysis (manual v33 chapter 6; D30 Dynamic Response is
+# transient): the bridge computes a Mecway Frequency (V30) or Dynamic
+# Response model (D30) with the same mesh, materials, supports and
+# loads as a harmonic load F e^(i w t):
+#   ASSEMBLAGE (RIGI_MECA, MASS_MECA) -> CALC_MODES (the lowest modes) ->
+#   frequency list (range or list, with extra points around the resonances:
 #   DEFI_LIST_FREQ RAFFINEMENT CRITERE='LARGEUR_3DB') ->
-#   GENE (standaard): PROJ_BASE -> DYNA_VIBRA TYPE_CALCUL='HARM'
-#                     BASE_CALCUL='GENE' (modale demping) -> REST_GENE_PHYS
-#   PHYS (controle):  DYNA_VIBRA HARM BASE_CALCUL='PHYS' op het hele model
-#                     (C = alpha M + beta K + dempers)
-#   -> CALC_CHAMP SIGM_NOEU (complex, volume-elementen) ->
-#   aster_harmonic_export (in de job): per frequentie een <mode
-#   frequency=".. Hz"> met amplitude, fase, Re/Im en meetpunten (CSV).
-# Syntax: Code-Aster-testcases sdld313d (DYNA_VIBRA HARM PHYS en GENE met
-# VECT_ASSE(_GENE), COEF_MULT, PHAS_DEG; REST_GENE_PHYS) en sdld21b
-# (DEFI_LIST_FREQ RAFFINEMENT LARGEUR_3DB, AMOR_REDUIT), catalogi
-# dyna_vibra.py en defi_list_freq.py (en MacroCommands/
-# defi_list_freq_ops.py: punten over 2 zeta f rond f sqrt(1 - 2 zeta^2)).
+#   GENE (default): PROJ_BASE -> DYNA_VIBRA TYPE_CALCUL='HARM'
+#                     BASE_CALCUL='GENE' (modal damping) -> REST_GENE_PHYS
+#   PHYS (check):     DYNA_VIBRA HARM BASE_CALCUL='PHYS' on the whole model
+#                     (C = alpha M + beta K + dampers)
+#   -> CALC_CHAMP SIGM_NOEU (complex, volume elements) ->
+#   aster_harmonic_export (in the job): per frequency a <mode
+#   frequency=".. Hz"> with amplitude, phase, Re/Im and probes (CSV).
+# Syntax: Code-Aster test cases sdld313d (DYNA_VIBRA HARM PHYS and GENE with
+# VECT_ASSE(_GENE), COEF_MULT, PHAS_DEG; REST_GENE_PHYS) and sdld21b
+# (DEFI_LIST_FREQ RAFFINEMENT LARGEUR_3DB, AMOR_REDUIT), catalogues
+# dyna_vibra.py and defi_list_freq.py (and MacroCommands/
+# defi_list_freq_ops.py: points over 2 zeta f around f sqrt(1 - 2 zeta^2)).
 #
-# Gemeten (Code-Aster 17.4, prototype op de hex20-console van MD-05,
-# 7 okt 2026):
-#   - DYNA_VIBRA HARM GENE geeft een HARM_GENE, REST_GENE_PHYS een
-#     DYNA_HARMO met per frequentie (toegangsparameter FREQ) complexe
-#     DEPL (FieldOnNodesComplex); CALC_CHAMP CONTRAINTE='SIGM_NOEU' op die
-#     DYNA_HARMO geeft complexe spanningen.
-#   - PHAS_DEG = 30 en een frequentie ver onder de eerste mode: arg(U) =
-#     29,4 graden (in fase met de last); bij de resonantie arg(U) = 30 -
-#     88,8 graden: U = F e^(i phi) / (k - m w^2 + i w c), u(t) =
-#     Re(U e^(i w t)) (naijlen = negatieve fase).
-#   - FONC_MULT met een DEFI_FONCTION(NOM_PARA='FREQ') werkt in GENE en
-#     PHYS (GENE = PHYS zonder demping, 6 modes).
-#   - Een keten res.getField(..).toSimpleFieldOnNodes().getValues() gaf
-#     NaN (de tussenobjecten vasthouden, zoals aster_acoustic_export).
+# Measured (Code-Aster 17.4, prototype on the hex20 console of MD-05,
+# 7 Oct 2026):
+#   - DYNA_VIBRA HARM GENE gives a HARM_GENE, REST_GENE_PHYS a
+#     DYNA_HARMO with complex DEPL per frequency (access parameter FREQ)
+#     (FieldOnNodesComplex); CALC_CHAMP CONTRAINTE='SIGM_NOEU' on that
+#     DYNA_HARMO gives complex stresses.
+#   - PHAS_DEG = 30 and a frequency far below the first mode: arg(U) =
+#     29.4 degrees (in phase with the load); at the resonance arg(U) = 30 -
+#     88.8 degrees: U = F e^(i phi) / (k - m w^2 + i w c), u(t) =
+#     Re(U e^(i w t)) (lagging = negative phase).
+#   - FONC_MULT with a DEFI_FONCTION(NOM_PARA='FREQ') works in GENE and
+#     PHYS (GENE = PHYS without damping, 6 modes).
+#   - A chain res.getField(..).toSimpleFieldOnNodes().getValues() gave
+#     NaN (hold on to the intermediate objects, like aster_acoustic_export).
 #
-#   build_harmonic(...) - builder (bridge_to_aster._build_dyna_modal stuurt
-#                         analyses met type_calcul 'HARM' hierheen)
-#   report_harmonic(...) - na de run: frequenties, modes in het bereik en
-#                         meetpunten in de log/het statusvak
+#   build_harmonic(...) - builder (bridge_to_aster._build_dyna_modal sends
+#                         analyses with type_calcul 'HARM' here)
+#   report_harmonic(...) - after the run: frequencies, modes in the range
+#                         and probes in the log/the status box
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import math
 import os
@@ -58,37 +58,37 @@ import bridge_dyna_modal as bdm
 from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
 
 HARM_ANALYSIS = "harmonic_3d"
-# Knoopselecties met de frequentierespons in de log en een CSV (op de
-# oorspronkelijke Mecway-naam, hoofdletters maken niet uit; NL en EN).
+# Node selections with the frequency response in the log and a CSV (by the
+# original Mecway name, case-insensitive; NL and EN).
 PROBE_PREFIXES = ("MEETPUNT_", "PROBE_")
 PROBE_SUFFIX = "_meetpunten.csv"
-# Velden naar Mecway (groepen uit "fields"); reacties en plastische rek
-# horen niet bij deze analyse.
+# Fields to Mecway (groups from "fields"); reactions and plastic strain
+# do not belong to this analysis.
 _FIELD_GROUPS = ("displacements", "velocities", "accelerations",
                  "stresses", "vonmises")
 _STRESS_GROUPS = ("stresses", "vonmises")
-# Verfijning rond een resonantie alleen bij 0 < zeta < 0,5:
-# defi_list_freq_ops.py centreert op f sqrt(1 - 2 zeta^2) (bestaat tot
-# zeta = 0,707) en bij zeta = 0 zou het midden precies op de (oneindige)
-# resonantie vallen.
+# Refinement around a resonance only for 0 < zeta < 0.5:
+# defi_list_freq_ops.py centres on f sqrt(1 - 2 zeta^2) (exists up to
+# zeta = 0.707) and with zeta = 0 the centre would fall exactly on the
+# (infinite) resonance.
 _REFINE_MAX_ZETA = 0.5
 
 
 def is_harmonic(analysis_cfg):
-    """True als de analyse-config de harmonische constructieanalyse is
-    (sleutel "type_calcul" 'HARM', niet akoestisch)."""
+    """True if the analysis config is the harmonic structural analysis
+    (key "type_calcul" 'HARM', not acoustic)."""
     return (str(analysis_cfg.get("type_calcul", "")).upper() == "HARM" and
             str(analysis_cfg.get("phenomene", "")).upper() != "ACOUSTIQUE")
 
 
 # ==========================================
-# INVOER
+# INPUT
 # ==========================================
 def _frequency_plan(analysis):
     """
-    {"list": [f, ...]} (harm_freq_list, precies deze frequenties) of
-    {"start", "end", "count", "spacing"} (bereik, met verfijning rond de
-    resonanties). None bij een fout (ERROR gelogd).
+    {"list": [f, ...]} (harm_freq_list, exactly these frequencies) or
+    {"start", "end", "count", "spacing"} (range, with refinement around the
+    resonances). None on an error (ERROR logged).
     """
     text = "{0}".format(analysis.get("harm_freq_list", "0") or "0").strip()
     if text not in ("", "0", "0.0"):
@@ -130,8 +130,8 @@ def _frequency_plan(analysis):
 
 
 def _phase_bodies(model_data):
-    """#ASTER-FASE selectie = graden -> ({Mecway-selectie: graden},
-    fouten)."""
+    """#ASTER-FASE selection = degrees -> ({Mecway selection: degrees},
+    errors)."""
     out, bad = OrderedDict(), []
     for body in model_data.get("aster_custom", {}).get("phases", []):
         name, sep, rest = body.partition("=")
@@ -152,8 +152,8 @@ def _phase_bodies(model_data):
 
 
 def _charge_groups(kws):
-    """Groepsnamen (GROUP_MA/GROUP_NO) in een excit-dict, of [] (bijv.
-    PESANTEUR op het hele model)."""
+    """Group names (GROUP_MA/GROUP_NO) in an excit dict, or [] (e.g.
+    PESANTEUR on the whole model)."""
     text = " ".join(e for es in kws.values() for e in es)
     found = []
     for g in re.findall(r"GROUP_(?:MA|NO)\s*=\s*'([^']+)'", text):
@@ -164,9 +164,9 @@ def _charge_groups(kws):
 
 def _excitation_phases(model_data, charges, extra, excitations):
     """
-    Fase [graden] per excitatie (#ASTER-FASE op de selectie van de last),
-    of None bij een fout (ERROR gelogd). Een last op meerdere selecties met
-    verschillende fasen (samengevoegde balklasten, gravity) kan niet.
+    Phase [degrees] per excitation (#ASTER-FASE on the selection of the
+    load), or None on an error (ERROR logged). A load on several selections
+    with different phases (merged beam loads, gravity) is not possible.
     """
     phases, bad = _phase_bodies(model_data)
     renames = model_data.get("selection_renames",
@@ -205,14 +205,14 @@ def _excitation_phases(model_data, charges, extra, excitations):
             "; ".join(bad)))
         return None
     for sel in phases:
-        log("INFO: Harmonisch: belasting op '{0}' met fase {1} graden "
+        log("INFO: Harmonic: load on '{0}' with phase {1} degrees "
             "(#ASTER-FASE).".format(sel, "%g" % phases[sel]))
     return out
 
 
 def _probes(model_data):
-    """OrderedDict {Mecway-naam: [knoopnummers]} van de knoopselecties
-    MEETPUNT_... / PROBE_...; vlak- en elementselecties: WARNING."""
+    """OrderedDict {Mecway name: [node numbers]} of the node selections
+    MEETPUNT_... / PROBE_...; face and element selections: WARNING."""
     out = OrderedDict()
     for kind, names in (("node", model_data.get("node_groups", {})),
                         ("face", model_data.get("face_selection_faces", {})),
@@ -242,8 +242,8 @@ def _dampers(model_data):
 
 
 def _check_model(model_data, analysis, basis):
-    """Wat de harmonische analyse niet kan: ERROR met de oplossing.
-    Returns True als het model te rekenen is."""
+    """What the harmonic analysis cannot do: ERROR with the solution.
+    Returns True if the model can be computed."""
     ok = True
     if not b2a._check_linear(model_data, tr("een harmonische analyse",
                                             "a harmonic analysis")):
@@ -262,8 +262,8 @@ def _check_model(model_data, analysis, basis):
         ok = False
     dampers = _dampers(model_data)
     if dampers and basis == "GENE":
-        # Een demper maakt de demping niet-proportioneel: de modale
-        # vergelijkingen zijn dan gekoppeld (geen AMOR_REDUIT per mode).
+        # A damper makes the damping non-proportional: the modal
+        # equations are then coupled (no AMOR_REDUIT per mode).
         log(tr("ERROR: Dempers ({0}) kunnen niet in de harmonische analyse "
                "op modale basis (Mecway's mode superposition ook niet, "
                "manual par. 6.4). Kies 'Basis' PHYS (direct, harm_basis) "
@@ -288,20 +288,20 @@ def _check_model(model_data, analysis, basis):
     if zeta >= 1.0 and basis == "GENE":
         log(damping_warning(None, zeta))
     if model_data.get("initial_velocities"):
-        log("INFO: Harmonisch: de beginsnelheid telt niet mee (stationaire "
-            "respons).")
+        log("INFO: Harmonic: the initial velocity is not used (steady-state "
+            "response).")
     return ok
 
 
 def damping_warning(mode, xi, count=1):
-    """WARNING bij een modale dempingsverhouding xi >= 1 (overkritisch).
-    mode None: de instelling modal_damping (voor de run); anders de mode
-    uit de .mess (BRIDGE_HARM_WAARSCHUWING DEMPING, na de run). De
-    berekening gaat door: de stationaire respons van een mode,
-    q = F / (k - w^2 m + 2 i xi w w_n m), bestaat ook voor xi >= 1; er is
-    alleen geen resonantiepiek (Clough & Penzien, 1993, hoofdstuk 3).
-    Doorgerekend (Code-Aster 17.4, 07-10-2026): HR-01a met modal_damping
-    1,5 (GENE) loopt door, |U| binnen 4,4e-8 van de exacte oplossing."""
+    """WARNING for a modal damping ratio xi >= 1 (overcritical).
+    mode None: the setting modal_damping (before the run); otherwise the
+    mode from the .mess (BRIDGE_HARM_WAARSCHUWING DEMPING, after the run).
+    The computation goes on: the steady-state response of a mode,
+    q = F / (k - w^2 m + 2 i xi w w_n m), also exists for xi >= 1; there is
+    only no resonance peak (Clough & Penzien, 1993, chapter 3).
+    Computed (Code-Aster 17.4, 07-10-2026): HR-01a with modal_damping
+    1.5 (GENE) runs through, |U| within 4.4e-8 of the exact solution."""
     if mode is None:
         where = "modal_damping = {0}".format("%g" % xi)
     else:
@@ -328,11 +328,11 @@ def damping_warning(mode, xi, count=1):
 # BUILDER
 # ==========================================
 def _freq_funcs_block(load_funcs):
-    """DEFI_FONCTION's van de Mecway-tabellen als functie van de
-    frequentie (kolom 'time' = Hz): FONC_MULT in DYNA_VIBRA HARM is een
-    functie van FREQ (prototype, kop)."""
+    """DEFI_FONCTIONs of the Mecway tables as a function of the
+    frequency (column 'time' = Hz): FONC_MULT in DYNA_VIBRA HARM is a
+    function of FREQ (prototype, header)."""
     if not load_funcs:
-        return "#-- geen tabellen (amplitude constant over de frequentie) --\n"
+        return "#-- no tables (amplitude constant over the frequency) --\n"
     blocks = []
     for name, history in load_funcs:
         vale = ",\n          ".join("{0!r}, {1!r}".format(float(t), float(v))
@@ -361,14 +361,14 @@ def _excit_entries(excitations, phases, basis):
 
 def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
                 cara_ref):
-    """Demping, frequentielijst, DYNA_VIBRA HARM (en REST_GENE_PHYS) ->
-    res. Python in de .comm: de frequenties zijn pas na CALC_MODES
-    bekend."""
+    """Damping, frequency list, DYNA_VIBRA HARM (and REST_GENE_PHYS) ->
+    res. Python in the .comm: the frequencies are only known after
+    CALC_MODES."""
     npts = max(0, int(analysis.get("harm_refine_points", 5) or 0))
     lines = [
-        "# Modale demping: Mecway's Rayleigh-demping C = alpha M + beta K is",
+        "# Modal damping: Mecway's Rayleigh damping C = alpha M + beta K is",
         "# per mode xi_i = alpha / (2 w_i) + beta w_i / 2 (Mecway manual par.",
-        "# 9.26), plus de instelling modal_damping (alleen GENE).",
+        "# 9.26), plus the setting modal_damping (GENE only).",
         "import math as _math",
         "bridge_freqs = [float(_f) for _f in "
         "modes.getAccessParameters()['FREQ']]",
@@ -378,8 +378,8 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
         "for _f in bridge_freqs:",
         "    _w = 2.0 * _math.pi * _f",
         "    if _w <= 0.0:",
-        "        # Starre beweging of mechanisme (bridge_run_aster meldt de",
-        "        # oorzaak, zoals bij de respons op modale basis).",
+        "        # Rigid motion or mechanism (bridge_run_aster reports the",
+        "        # cause, as for the response on a modal basis).",
         "        print('BRIDGE_DYNA_MODAL_FOUT FREQ mode=%d f=%g' % "
         "(len(bridge_xi) + 1, _f))",
         "        raise ValueError('harmonisch: mode met f <= 0')",
@@ -389,18 +389,18 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
         "    print('BRIDGE_DEMPING mode %d: %.6g Hz, xi = %.6g' % "
         "(_i + 1, _f, _x))",
         "if bridge_xi and max(bridge_xi) >= 1.0:",
-        "    # Overkritisch gedempte mode: geen resonantiepiek. Anders dan bij",
-        "    # de respons op modale basis in de tijd stopt de job niet;",
-        "    # bridge_harmonic.report_harmonic meldt het als WARNING.",
+        "    # Overcritically damped mode: no resonance peak. Unlike the",
+        "    # response on a modal basis in time, the job does not stop;",
+        "    # bridge_harmonic.report_harmonic reports it as a WARNING.",
         "    print('BRIDGE_HARM_WAARSCHUWING DEMPING MODE=%d XI=%.6g N=%d' % "
         "(bridge_xi.index(max(bridge_xi)) + 1, max(bridge_xi), "
         "len([_x for _x in bridge_xi if _x >= 1.0])))",
         "",
-        "# Frequenties: het bereik (lin/log) met {0} punten per mode over de"
+        "# Frequencies: the range (lin/log) with {0} points per mode over the"
         .format(npts),
-        "# halfwaardebreedte 2 xi f rond de piek f sqrt(1 - 2 xi^2)",
-        "# (DEFI_LIST_FREQ RAFFINEMENT CRITERE='LARGEUR_3DB', testcase",
-        "# sdld21b), of precies de lijst harm_freq_list.",
+        "# half-power bandwidth 2 xi f around the peak f sqrt(1 - 2 xi^2)",
+        "# (DEFI_LIST_FREQ RAFFINEMENT CRITERE='LARGEUR_3DB', test case",
+        "# sdld21b), or exactly the list harm_freq_list.",
     ]
     if "list" in plan:
         lines += [
@@ -456,16 +456,16 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
         "BASIS={0}' % (len(bridge_list), min(bridge_list), max(bridge_list),"
         " len(bridge_refine)))".format(basis),
         "if max(bridge_list) > max(bridge_freqs):",
-        "    # Modale truncatie: boven de hoogste mode van de basis volgt de",
-        "    # respons de last niet meer (docs/Respons_op_modale_basis.md).",
+        "    # Modal truncation: above the top mode of the basis the response",
+        "    # no longer follows the load (docs/Respons_op_modale_basis.md).",
         "    print('BRIDGE_HARM_WAARSCHUWING BASIS FMAX=%.10g FMODE=%.10g' % "
         "(max(bridge_list), max(bridge_freqs)))",
         "",
     ]
     if basis == "GENE":
         lines += [
-            "# Demping per vector van de basis (met statische verrijking ook",
-            "# de pseudo-modes boven de echte modes; dezelfde formule).",
+            "# Damping per vector of the basis (with static enrichment also",
+            "# the pseudo-modes above the real modes; the same formula).",
             "bridge_bfreqs = [float(_f) for _f in "
             "bridge_basis.getAccessParameters()['FREQ']]",
             "bridge_bxi = [0.5 * (bridge_alpha / (2.0 * _math.pi * _f) + "
@@ -519,8 +519,8 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
 
 
 def _damping_matrix_block(alpha, beta, dampers):
-    """PHYS: C = alpha M + beta K + C_dempers (COMB_MATR_ASSE, zoals
-    bridge_modal_damping.damping_block), of '' zonder demping."""
+    """PHYS: C = alpha M + beta K + C_dampers (COMB_MATR_ASSE, like
+    bridge_modal_damping.damping_block), or '' without damping."""
     terms = []
     if alpha:
         terms.append(("masse", alpha))
@@ -530,8 +530,8 @@ def _damping_matrix_block(alpha, beta, dampers):
         terms.append(("amor_dis", 1.0))
     if not terms:
         return ""
-    head = ("# Dempingsmatrix van de directe berekening: C = alpha M + beta "
-            "K (Mecway\n# manual par. 9.26) + dempers (AMOR_MECA)\n")
+    head = ("# Damping matrix of the direct computation: C = alpha M + beta "
+            "K (Mecway\n# manual par. 9.26) + dampers (AMOR_MECA)\n")
     if terms == [("amor_dis", 1.0)]:
         return head + "amor = amor_dis\n"
     return head + "amor = COMB_MATR_ASSE(COMB_R=(\n{0}))\n".format("".join(
@@ -541,8 +541,8 @@ def _damping_matrix_block(alpha, beta, dampers):
 
 def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer de .comm en .export voor de harmonische respons (analyse
-    harmonic_3d). Returns het pad van de .export, of None (ERROR gelogd).
+    Generate the .comm and .export for the harmonic response (analysis
+    harmonic_3d). Returns the path of the .export, or None (ERROR logged).
     """
     log("--- Generating Aster Files (DYNA_VIBRA HARM) ---")
     basis = "{0}".format(analysis.get("harm_basis", "GENE")).upper()
@@ -602,9 +602,9 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
                "in Mecway (the amplitude is the value of the load)."))
         return None
     if load_funcs:
-        log("INFO: Harmonisch: {0} belasting(en) met een Mecway-tabel: de "
-            "kolom 'time' is de frequentie in Hz, de waarde de amplitude "
-            "bij die frequentie (lineair ertussen, constant erbuiten)."
+        log("INFO: Harmonic: {0} load(s) with a Mecway table: the "
+            "column 'time' is the frequency in Hz, the value the amplitude "
+            "at that frequency (linear in between, constant outside)."
             .format(len(load_funcs)))
     phases = _excitation_phases(model_data, charges, extra, excitations)
     if phases is None:
@@ -618,12 +618,12 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     if "displacements" not in fields:
         fields.insert(0, "displacements")
     if ignored:
-        log("INFO: Harmonisch: velden {0} worden niet berekend (geen "
-            "reacties of plastische rek).".format(", ".join(ignored)))
+        log("INFO: Harmonic: fields {0} are not computed (no "
+            "reactions or plastic strain).".format(", ".join(ignored)))
     g3d, gsh, gbm = b2a._result_groups(model_data)
     stresses = any(f in fields for f in _STRESS_GROUPS)
     if stresses and (gsh or gbm or not g3d):
-        log("INFO: Harmonisch: spanningen alleen op volume-elementen{0}."
+        log("INFO: Harmonic: stresses only on volume elements{0}."
             .format("" if g3d else " (het model heeft er geen)"))
     stresses = stresses and bool(g3d)
 
@@ -645,9 +645,9 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
                "modal_damping {2}): the response may be unphysical.").format(
                    "%g" % alpha, "%g" % beta, "%g" % zeta))
     if dampers:
-        # AMOR_MECA van de dempers; demping 0 voor de andere discreten
+        # AMOR_MECA of the dampers; damping 0 for the other discrete elements
         # (bridge_modal_damping.zero_damping_entries via
-        # bridge_to_aster._build_cara_elem_block, anders DISCRETS_28).
+        # bridge_to_aster._build_cara_elem_block, otherwise DISCRETS_28).
         model_data["damping_matrix"] = True
 
     defigroup_block = b2a._build_defigroup_block(model_data)
@@ -707,17 +707,17 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     static_corr = basis == "GENE" and bool(analysis.get("static_correction",
                                                           True))
     if static_corr:
-        # Statische verrijking van de basis (zoals DYNA_LINE ENRI_STAT='OUI'
-        # met ORTHO, MacroCommands/dyna_line_ops.py): de statische respons
-        # op elke belastingsvector (MACRO_ELAS_MULT) bij de modes
-        # (DEFI_BASE_MODALE RITZ, K-orthogonaal), dan het eigenprobleem op
-        # die basis (CALC_MODES QZ op de geprojecteerde M en K) en terug
-        # (REST_GENE_PHYS): de extra vectoren worden "pseudo-modes" boven
-        # de echte modes, de basis blijft diagonaal. Zo is de respons bij
-        # lage frequenties exact statisch en ontbreekt alleen de dynamica
-        # van de weggelaten modes.
+        # Static enrichment of the basis (like DYNA_LINE ENRI_STAT='OUI'
+        # with ORTHO, MacroCommands/dyna_line_ops.py): the static response
+        # to each load vector (MACRO_ELAS_MULT) added to the modes
+        # (DEFI_BASE_MODALE RITZ, K-orthogonal), then the eigenproblem on
+        # that basis (CALC_MODES QZ on the projected M and K) and back
+        # (REST_GENE_PHYS): the extra vectors become "pseudo-modes" above
+        # the real modes, the basis stays diagonal. This way the response at
+        # low frequencies is exactly static and only the dynamics of the
+        # omitted modes are missing.
         proj += [
-            "# Statische verrijking van de modale basis (DYNA_LINE "
+            "# Static enrichment of the modal basis (DYNA_LINE "
             "ENRI_STAT)",
             "corr = MACRO_ELAS_MULT(",
             "    MODELE=model,",
@@ -752,8 +752,8 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "MODE_MECA=bridge_ritz)",
             "",
         ]
-        log("INFO: Harmonisch: statische verrijking van de modale basis "
-            "({0} vector(en), MACRO_ELAS_MULT + DEFI_BASE_MODALE, zoals "
+        log("INFO: Harmonic: static enrichment of the modal basis "
+            "({0} vector(s), MACRO_ELAS_MULT + DEFI_BASE_MODALE, like "
             "DYNA_LINE ENRI_STAT).".format(len(excitations)))
     elif basis == "GENE":
         proj.append("bridge_basis = modes")
@@ -801,7 +801,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "    CONTRAINTE=('SIGM_NOEU',),\n"
             ")\n").format(cara_ref, b2a._fmt_groups(g3d))
     else:
-        calc_champ_block = "#-- geen spanningen gevraagd (fields) --\n"
+        calc_champ_block = "#-- no stresses requested (fields) --\n"
     probe_text = "{" + ", ".join("{0}: [{1}]".format(
         b2a._py_str(name), ", ".join(str(n) for n in nids))
         for name, nids in probes.items()) + "}"
@@ -829,7 +829,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "    _F(RESULTAT=res, NOM_CHAM='DEPL', PARTIE='IMAG', "
             "NOM_CHAM_MED='DEPL_IMAG'),\n))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
     if "list" in plan:
         what = tr("{0} frequenties uit de lijst",
@@ -842,9 +842,9 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
                       "%g" % plan["start"], "%g" % plan["end"],
                       plan["count"], plan["spacing"],
                       int(analysis.get("harm_refine_points", 5) or 0))
-    log("INFO: Harmonisch ({0}): {1}; {2} modes, {3} belastingsvector(en), "
-        "Rayleigh alpha {4} 1/s, beta {5} s, extra modale demping {6}{7}; "
-        "{8} meetpunt(en).".format(
+    log("INFO: Harmonic ({0}): {1}; {2} modes, {3} load vector(s), "
+        "Rayleigh alpha {4} 1/s, beta {5} s, extra modal damping {6}{7}; "
+        "{8} probe(s).".format(
             "modale basis" if basis == "GENE" else "direct", what,
             b2a._mode_count(model_data, analysis), len(excitations),
             alpha, beta, zeta if basis == "GENE" else 0.0,
@@ -869,7 +869,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -885,7 +885,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
                 "F mess {0} R 6".format(os.path.join(work_dir,
                                                      run_name(".mess"))),
             ]) + b2a._export_result_lines(work_dir, resu_name))
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -897,7 +897,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
 
 
 # ==========================================
-# NA DE RUN (IronPython): LOG EN STATUSVAK
+# AFTER THE RUN (IronPython): LOG AND STATUS BOX
 # ==========================================
 _MESS_LIST = re.compile(r"BRIDGE_HARM_LIJST\s+(.*)")
 _MESS_WARN = re.compile(r"BRIDGE_HARM_WAARSCHUWING\s+BASIS\s+(.*)")
@@ -919,9 +919,9 @@ def _key_values(text):
 
 
 def read_mess_summary(mess_path):
-    """{"list": {N, FMIN, FMAX, VERFIJND, BASIS}, "warn": {FMAX, FMODE} of
-    None, "warn_xi": {MODE, XI, N} of None, "modes": [(nr, f, xi)]} uit de
-    .mess; leeg als hij ontbreekt."""
+    """{"list": {N, FMIN, FMAX, VERFIJND, BASIS}, "warn": {FMAX, FMODE} or
+    None, "warn_xi": {MODE, XI, N} or None, "modes": [(nr, f, xi)]} from
+    the .mess; empty if it is missing."""
     out = {"list": {}, "warn": None, "warn_xi": None, "modes": []}
     if not mess_path or not os.path.isfile(mess_path):
         return out
@@ -954,8 +954,8 @@ def read_mess_summary(mess_path):
 
 
 def read_probes(csv_path):
-    """[(naam, f, |u|, amplitude a)] uit de CSV van aster_harmonic_export;
-    [] als hij ontbreekt."""
+    """[(name, f, |u|, amplitude a)] from the CSV of aster_harmonic_export;
+    [] if it is missing."""
     import csv
     out = []
     if not csv_path or not os.path.isfile(csv_path):
@@ -976,10 +976,10 @@ def read_probes(csv_path):
 
 def report_harmonic(work_dir, frequencies):
     """
-    Na een harmonische run: frequenties, de modes in het bereik met hun
-    demping, per meetpunt de grootste amplitude; WARNING als de hoogste
-    frequentie boven de hoogste mode van de basis ligt. Returns de regels
-    voor het statusvak. frequencies: [(id, "frequency", f)] uit
+    After a harmonic run: frequencies, the modes in the range with their
+    damping, per probe the largest amplitude; WARNING if the highest
+    frequency is above the highest mode of the basis. Returns the lines
+    for the status box. frequencies: [(id, "frequency", f)] from
     read_modes().
     """
     mess = read_mess_summary(os.path.join(work_dir, run_name(".mess")))
