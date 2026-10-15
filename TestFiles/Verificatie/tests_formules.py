@@ -231,8 +231,8 @@ TESTS = [
                    ref=-4000.0, tol=1e-6, unit="N",
                    source="-int (2 x + 1) dA = -4 kN"),
          ], note="Drie lasten AFFE_CHAR_MECA_F met elk een eigen FORMULE in "
-                 "één EXCIT: elke last rekent met zijn eigen functie (geen "
-                 "KNOWN_BUGS 70)."),
+                 "één EXCIT: elke last rekent met zijn eigen functie (anders "
+                 "dan thermisch SOURCE, docs/Thermisch.md §3)."),
     Case("LS-42a", GROUP_LS, "Opgelegde verplaatsing Z = 0,001 x + 0,002 y "
          "mm", "lin_static_3d",
          _ls42_build("<x>0</x><y>0</y><z>1</z>", "0.001*x+0.002*y"), [

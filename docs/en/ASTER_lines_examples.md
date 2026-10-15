@@ -797,7 +797,8 @@ behind the source are within 1.2% of the same source folded analytically.
 Pitfalls:
 - Values in SI: coordinates in metres, also when the Mecway model is in mm.
 - A second source starts with a line beginning with `Q=`; each source gets its own
-  `t0`. All sources are put together in one load (`lasbron`, KNOWN_BUGS 70).
+  `t0`. All sources are put together in one load (`lasbron`), also with an *Internal
+  heat generation* as a formula or time table ([Thermal.md](Thermal.md) §3).
 - Only in a transient thermal analysis; in a mechanical analysis the line is ignored
   (WARNING).
 

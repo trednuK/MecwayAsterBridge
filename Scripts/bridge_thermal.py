@@ -636,6 +636,12 @@ class _Thermal(object):
         self.cell_index = None    # _list_group: {elementnaam: celnummer}
         self.node_flows = []      # (knoopgroep, waarde per knoop of tabel)
         self.birth = None         # toevoegmateriaal (bridge_welding._births)
+        # Bronnen als functie (SOURCE in AFFE_CHAR_THER_F) samen in een last
+        # (add_func_source, merged_sources): [{grp, sour, eids}]
+        self.func_sources = []
+        self.sources_taken = False  # bridge_welding zette ze in 'lasbron'
+        self.group_cells = {}     # groep -> [eid] (element_targets, schaalvlak)
+        self.func_params = {}     # functienaam -> NOM_PARA of constante
 
     # ---------- namen ----------
     def rn(self, name):
@@ -995,7 +1001,12 @@ class _Thermal(object):
                         grp = self._sub_group(g, "2D")
                     out.append(("shellface", grp, f, t))
         area = sum(p[1] for p in parts if p[0] in kinds)
+        shell_eids = list(OrderedDict.fromkeys(
+            p[5][0] for p in parts if p[0] == "shellface"))
         for kind, grp, _f, _t in out:
+            if kind == "shellface" and grp not in self.group_cells:
+                # schaalvlak-bron (SOURCE): de schaalelementen zelf
+                self.group_cells[grp] = shell_eids
             if kind == "solid" and grp not in self.skin3d:
                 self.skin3d.append(grp)
             if kind == "shelledge" and grp not in self.edges:
@@ -1015,12 +1026,13 @@ class _Thermal(object):
             done.add(key[0])
             nsides = len(sides[key[0]])
             by_key.setdefault((order.index((f, t)), nsides, f, t),
-                              []).append("M{0}".format(key[0]))
+                              []).append(key[0])
         out = []
         for k in sorted(by_key):
             _i, nsides, f, t = k
-            out.append(("shellface", self._list_group(by_key[k]),
-                        f * nsides, t))
+            grp = self._list_group(["M{0}".format(e) for e in by_key[k]])
+            self.group_cells[grp] = by_key[k]
+            out.append(("shellface", grp, f * nsides, t))
         return out
 
     def _edge_lists(self, sel, parts, label):
@@ -1086,13 +1098,18 @@ class _Thermal(object):
         g = self.rn(sel)
         out = []
         multi = len(kinds.get("shell", ())) > 1
+        def flat(kind):
+            return [e for lst in kinds[kind].values() for e in lst]
         if len(kinds) == 1 and not multi:
             kind = list(kinds)[0]
             f, t = list(kinds[kind])[0]
             out.append((kind, g, f, t))
+            self.group_cells[g] = flat(kind)
         elif kinds:
             if "solid" in kinds:
-                out.append(("solid", self._sub_group(g, "3D"), 1.0, 1.0))
+                grp = self._sub_group(g, "3D")
+                self.group_cells[grp] = flat("solid")
+                out.append(("solid", grp, 1.0, 1.0))
             if "shell" in kinds:
                 if multi:
                     for (f, t), lst in kinds["shell"].items():
@@ -1105,10 +1122,13 @@ class _Thermal(object):
                                 "{0}: element {1} not found in the mesh")
                                 .format(label, e))
                             return None
+                        self.group_cells[grp] = list(lst)
                         out.append(("shell", grp, f, t))
                 else:
                     f, t = list(kinds["shell"])[0]
-                    out.append(("shell", self._sub_group(g, "2D"), f, t))
+                    grp = self._sub_group(g, "2D")
+                    self.group_cells[grp] = flat("shell")
+                    out.append(("shell", grp, f, t))
         return (out, vol) if out and vol > 0.0 else None
 
     def selection_nodes(self, sel, kind):
@@ -1186,6 +1206,7 @@ class _Thermal(object):
         if not params:
             # Alleen t in een stationaire analyse: t = 1 s ingevuld
             params = ["INST"]
+        self.func_params[name] = list(params)
         self.funcs.append("{0} = FORMULE(\n    VALE='{1}',\n    NOM_PARA={2},"
                           "{3}\n)  # Mecway: {4}".format(
                               name, expr, _fmt_seq(
@@ -1251,12 +1272,14 @@ class _Thermal(object):
         self.counter += 1
         name = "FT{0}".format(self.counter)
         if isinstance(value, list):
+            self.func_params[name] = ["INST"]
             self.funcs.append(
                 "{0} = DEFI_FONCTION(NOM_PARA='INST', VALE=(\n    {1},\n), "
                 "PROL_GAUCHE='CONSTANT', PROL_DROITE='CONSTANT')".format(
                     name, ",\n    ".join("{0}, {1}".format(_r(t), _r(v))
                                          for t, v in value)))
         else:
+            self.func_params[name] = float(value)
             self.funcs.append("{0} = DEFI_CONSTANTE(VALE={1})".format(
                 name, _r(value)))
         return name
@@ -1271,18 +1294,144 @@ class _Thermal(object):
 
     def add_charge(self, kw_entries):
         """Een last: kw_entries = [(kw, {param: waarde of lijst}, groep)].
-        Met een tijdstabel wordt alles AFFE_CHAR_THER_F met functies."""
+        Met een tijdstabel wordt alles AFFE_CHAR_THER_F met functies; een
+        SOURCE met een functie gaat naar de gezamenlijke bronlast
+        (add_func_source)."""
         timed = any(_is_timed(v) for _k, p, _g in kw_entries
                     for v in p.values())
         excit = OrderedDict()
         for kw, params, grp in kw_entries:
+            if timed and kw == "SOURCE":
+                self.add_func_source(grp, self.func(params["SOUR"]))
+                continue
             parts = ["GROUP_MA='{0}'".format(grp)]
             for key, v in params.items():
                 parts.append("{0}={1}".format(
                     key, self.func(v) if timed else _r(v)))
             excit.setdefault(kw, []).append("_F({0})".format(", ".join(parts)))
-        self.charges.append(("AFFE_CHAR_THER_F" if timed else
-                             "AFFE_CHAR_THER", excit))
+        if excit:
+            self.charges.append(("AFFE_CHAR_THER_F" if timed else
+                                 "AFFE_CHAR_THER", excit))
+
+    def add_func_source(self, grp, name):
+        """SOURCE met functie 'name' op groep grp (de elementen staan in
+        self.group_cells). Alle functiebronnen komen samen in een last
+        (merged_sources): Code-Aster 17.4 rekent twee lasten
+        AFFE_CHAR_THER_F met SOURCE in een EXCIT-lijst allebei met de
+        functie van de eerste last (gemeten: twee helften met 2e6*t en een
+        tijdstabel gaven 2x de eerste, in omgekeerde volgorde 2x de
+        tweede). Een last met meer SOURCE-regels rekent goed, net als twee
+        functielasten met FLUX_REP, ECHANGE of SOUR_NL en met
+        AFFE_CHAR_MECA_F (FORCE_INTERNE, FORCE_FACE, PRES_REP) (gemeten met
+        Code-Aster 17.4). De oorzaak zit in de gecompileerde code: NIET
+        geverifieerd. De plaats van de eerste functiebron in self.charges
+        wordt een merkteken (None), zodat de volgorde van EXCIT blijft."""
+        if not self.func_sources:
+            self.charges.append(None)
+        self.func_sources.append({"grp": grp, "sour": name,
+                                  "eids": self.group_cells.get(grp)})
+
+    def source_items(self):
+        """De functiebronnen als items voor merged_sources: term (aanroep
+        in een FORMULE), ctx (argumenten van die FORMULE), params."""
+        items = []
+        for s in self.func_sources:
+            p = self.func_params.get(s["sour"], ["INST"])
+            if isinstance(p, float):
+                term, ctx, params = "({0})".format(_r(p)), OrderedDict(), []
+            else:
+                term = "{0}({1})".format(s["sour"], ", ".join(p))
+                ctx = OrderedDict([(s["sour"], s["sour"])])
+                params = list(p)
+            items.append({"grp": s["grp"], "sour": s["sour"],
+                          "eids": s["eids"], "term": term, "ctx": ctx,
+                          "params": params})
+        return items
+
+    def merged_sources(self, items, owner=None, born=None, prefix="FQ"):
+        """
+        SOURCE-regels voor een AFFE_CHAR_THER_F met alle functiebronnen
+        (items, zie source_items; bridge_welding voegt de lasbronnen toe).
+        In een last overschrijft een latere SOURCE-regel op hetzelfde
+        element de eerdere (gemeten met Code-Aster 17.4: de hele wand met
+        f1 en daarna een helft met f2 gaf op die helft alleen f2). Daarom
+        wordt het mesh
+        verdeeld naar de bronnen die op het element liggen (en owner[eid],
+        het toevoegmateriaal van een lasbron); per deel een FORMULE met de
+        som (FORMULEs en DEFI_FONCTIONs als argument aangeroepen),
+        met toevoegmateriaal alleen waar het al geboren is: born(j) =
+        (voorwaarde, {naam: argument}). Een bron die met niets overlapt
+        houdt zijn eigen groep en functie (de .comm met een bron blijft
+        gelijk). Gekozen boven een FORMULE met indicatortermen per groep:
+        die zou de groep uit X, Y, Z moeten afleiden, wat op de rand
+        tussen twee groepen niet eenduidig is.
+        Returns ([FORMULE-regels], [_F-regels]) of None (ERROR gemeld).
+        """
+        owner = owner or {}
+        member = OrderedDict()
+        for i, it in enumerate(items):
+            if it["eids"] is None:
+                log(tr("ERROR: Warmtebron op groep '{0}': de elementen zijn "
+                       "niet bekend, dus de bronnen kunnen niet in een last.",
+                       "ERROR: Heat source on group '{0}': the elements "
+                       "are not known, so the sources cannot be put in one "
+                       "load.").format(it["grp"]))
+                return None
+            for e in it["eids"]:
+                lst = member.setdefault(e, [])
+                if i not in lst:
+                    lst.append(i)
+        parts = OrderedDict()
+        for e, idx in member.items():
+            parts.setdefault((tuple(idx), owner.get(e)), []).append(e)
+        lines, entries = [], []
+        try:
+            for (idx, j), eids in parts.items():
+                it = items[idx[0]]
+                whole = len(idx) == 1 and j is None and \
+                    len(eids) == len(set(it["eids"]))
+                grp = it["grp"] if whole else self._list_group(
+                    ["M{0}".format(e) for e in eids])
+                if whole and it.get("sour"):
+                    entries.append("_F(GROUP_MA='{0}', SOUR={1})".format(
+                        grp, it["sour"]))
+                    continue
+                ctx = OrderedDict()
+                params = []
+                for i in idx:
+                    ctx.update(items[i]["ctx"])
+                    params += items[i]["params"]
+                vale = " + ".join(items[i]["term"] for i in idx)
+                if j is not None:
+                    cond, cctx = born(j)
+                    vale = "({0}) if {1} else 0.0".format(vale, cond)
+                    ctx.update(cctx)
+                    params += ["X", "Y", "Z", "INST"]
+                params = [p for p in ("X", "Y", "Z", "INST")
+                          if p in params] or ["INST"]
+                self.counter += 1
+                name = "{0}{1}".format(prefix, self.counter)
+                lines.append(
+                    "{0} = FORMULE(VALE='{1}',\n    NOM_PARA={2}{3})".format(
+                        name, vale, _fmt_seq(["'{0}'".format(p)
+                                              for p in params]),
+                        "".join(",\n    {0}={1}".format(k, v)
+                                for k, v in ctx.items())))
+                entries.append("_F(GROUP_MA='{0}', SOUR={1})".format(
+                    grp, name))
+        except ValueError as e:
+            log(tr("ERROR: Warmtebron: element {0} niet in het mesh "
+                   "gevonden.",
+                   "ERROR: Heat source: element {0} not found in the mesh.")
+                .format(e))
+            return None
+        overlap = sum(1 for k in parts if len(k[0]) > 1)
+        if len(items) > 1:
+            log("INFO: {0} warmtebronnen als functie in een last (Code-Aster "
+                "17.4 rekent meer functielasten met SOURCE als de eerste); "
+                "{1} deel/delen van het mesh met de som van overlappende "
+                "bronnen.".format(len(items), overlap))
+        return lines, entries
 
     # ---------- belastingen ----------
     def apply_loads(self):
@@ -1762,6 +1911,7 @@ class _Thermal(object):
                 _r(c), term("c", coef), term("a", amb), _r(KELVIN))
         self.counter += 1
         src = "FS{0}".format(self.counter)
+        self.func_params[src] = ["INST"]
         self.funcs.append("{0} = FORMULE(VALE='{1}', NOM_PARA='INST'{2})"
                           .format(src, expr, "".join(
                               ", {0}={1}".format(a, b)
@@ -1783,8 +1933,7 @@ class _Thermal(object):
                 temp += 5.0
         self.temp_func(sink, pts)
         self.has_exchange = True
-        self.charges.append(("AFFE_CHAR_THER_F", OrderedDict([
-            ("SOURCE", ["_F(GROUP_MA='{0}', SOUR={1})".format(grp, src)])])))
+        self.add_func_source(grp, src)
         self.charges.append(("AFFE_CHAR_THER_F", OrderedDict([
             ("SOUR_NL", ["_F(GROUP_MA='{0}', SOUR={1})".format(grp, sink)])]),
             names.get("c")))
@@ -1976,6 +2125,19 @@ class _Thermal(object):
             charges.insert(1 if self.temp_const else 0, (
                 "AFFE_CHAR_THER_F", OrderedDict(
                     [("TEMP_IMPO", self.temp_timed)])))
+        if None in charges:
+            # Het merkteken van add_func_source: alle functiebronnen in een
+            # last, of niets als bridge_welding ze in 'lasbron' zette
+            pos = charges.index(None)
+            if self.sources_taken:
+                del charges[pos]
+            else:
+                merged = self.merged_sources(self.source_items())
+                if merged is None:
+                    return None, None
+                self.funcs += merged[0]
+                charges[pos] = ("AFFE_CHAR_THER_F", OrderedDict(
+                    [("SOURCE", merged[1])]))
         blocks = []
         excit = []
         for k, charge in enumerate(charges):
@@ -2305,6 +2467,8 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     initial = tb.initial_block() if tb.transient else ""
     loads_block, excit = tb.loads_block(
         weld_excit + model_data.get("aster_custom", {}).get("excit", []))
+    if loads_block is None:
+        return None
     if not excit:
         log(tr("WARNING: Geen thermische randvoorwaarden of belastingen.",
                "WARNING: No thermal boundary conditions or loads."))

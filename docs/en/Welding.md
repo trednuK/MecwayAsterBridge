@@ -167,6 +167,12 @@ ERROR and the run stops (§8).
   `positionunit`/`timeunit` and the result with `unit` (mechanical loads: see
   [UserGuide.md](UserGuide.md), Formulas). In steady state (T30) a formula in t gets the value at t = 1 s (like
   a time table).
+- **Several sources together**: all sources given as a function (weld sources, and
+  *Internal heat generation*s with a formula or time table) are put in **one** load;
+  per part of the mesh a `FORMULE` adds up the sources that lie there. Otherwise
+  Code-Aster 17.4 computes two `AFFE_CHAR_THER_F` loads with `SOURCE` in one analysis
+  both with the function of the first. A weld source and a formula or table source can
+  therefore be combined (TH-42).
 - **Shells in the model** that the bridge computes as `PLAN` and rotates for that
   ([Thermal.md](Thermal.md) §3): the path and formulas are rotated along.
 
@@ -831,9 +837,10 @@ largest semi-axis; also the base material and earlier layers, which melt again),
   while they heated).
 - **The source** acts in a point of the filler only when that point has already been
   born (the same rule in the `FORMULE`, `_lb_born`); elsewhere as usual.
-- **Several sources** are put in **one** load (`lasbron`): Code-Aster 17.4 computes two
-  `AFFE_CHAR_THER_F` loads with `SOURCE` in one analysis both with the function of the
-  first (KNOWN_BUGS 70; found in this step). The energy check remains per source.
+- **Several sources** are put in **one** load (`lasbron`, also with Mecway sources as a
+  formula or time table): Code-Aster 17.4 computes two `AFFE_CHAR_THER_F` loads with
+  `SOURCE` in one analysis both with the function of the first (found in this step,
+  §3). The energy check remains per weld source.
 - **Mechanical** (chain, §9): a quiet copy of each material of the filler (E × 10⁻⁴,
   also `D_SIGM_EPSI`; a hardening curve with the strain / 10⁻⁴; yield stress unchanged,
   so the quiet element stays elastic) and `STAT_NON_LINE` **per birth step**: a new
@@ -916,7 +923,6 @@ largest semi-axis; also the base material and earlier layers, which melt again),
 | `ERROR: ... no element of the filler material is born` | the source does not pass the filler, or starts after the end of the analysis | check path/`t0` (coordinates in m) |
 | `WARNING: ... n filler element(s) are never born` | filler more than the lead beyond the end of the path, or the source or the analysis stops earlier | intended (the bead is longer than the weld)? Otherwise adjust `length`, `t1` or *Time period* |
 | `WARNING: ... lead without birth=...; ignored` | `lead` without `birth` | add `birth=` or remove `lead` |
-| `WARNING: #ASTER-LASBRON together with a Mecway heat source as a formula or time table ...` | an *Internal heat generation* with formula/table next to the weld source (KNOWN_BUGS 70) | put the heat generation in a second `#ASTER-LASBRON`, or make it constant |
 | `BRIDGE_ONVOLLEDIG` in the `.mess` with birth | the mechanical step after a birth does not converge | set `TC_CUT`, smaller *Time step*, E/SY above 1200 °C not extremely small (§9.8) |
 
 ## 12. Verification

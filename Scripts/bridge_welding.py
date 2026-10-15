@@ -18,7 +18,8 @@
 #   parse_specs(bodies, ...)  - sleutels lezen en controleren
 #   apply(tb, model_data, an) - FORMULE + AFFE_CHAR_THER_F per bron in de
 #                               .comm van bridge_thermal.build_thermal (meer
-#                               bronnen: een last, _merged_load)
+#                               bronnen, ook Mecway-functiebronnen: een
+#                               last, _merged_load)
 #   report_lines(mess_path)   - energiecontrole uit de .mess (statusvak),
 #                               plus de samenvatting van de keten
 #                               thermisch -> mechanisch (bridge_thermomech)
@@ -1225,35 +1226,21 @@ def apply(tb, model_data, analysis):
             entries.append("_F(GROUP_MA='{0}', SOUR={1})".format(grp, name))
         code.append("lasbron_{0} = AFFE_CHAR_THER_F(MODELE=model, SOURCE=("
                     "\n    {1},\n))".format(src.k, ",\n    ".join(entries)))
-    if len(sources) == 1:
+    if len(sources) == 1 and not tb.func_sources:
         excit.append("lasbron_1")
     else:
-        # Meer bronnen: een last met per deel van het mesh de som van de
-        # bronnen. Code-Aster 17.4 rekent twee lasten AFFE_CHAR_THER_F met
-        # SOURCE in een lijst (EXCIT, CALC_VECT_ELEM) allebei met de functie
-        # van de eerste last (gezien met constante FORMULEs op verschillende
-        # groepen: 2 x de eerste in plaats van de som; met AFFE_CHAR_THER
-        # constant of een last met twee SOURCE-regels wel goed; KNOWN_BUGS
-        # 70). lasbron_<k> blijven voor de energiecontrole per bron.
+        # Meer bronnen, of een lasbron naast Mecway-warmtebronnen als
+        # formule of tijdstabel: een last met per deel van het mesh de som
+        # van de bronnen. Code-Aster 17.4 rekent twee lasten
+        # AFFE_CHAR_THER_F met SOURCE in een lijst (EXCIT, CALC_VECT_ELEM)
+        # allebei met de functie van de eerste last (bridge_thermal.
+        # add_func_source). lasbron_<k> blijven voor de energiecontrole per
+        # bron.
         merged = _merged_load(tb, sources)
         if merged is None:
             return None
         code.append(merged)
         excit.append("lasbron")
-    if any(c[0] == "AFFE_CHAR_THER_F" and "SOURCE" in c[1]
-           for c in tb.charges):
-        log(tr("WARNING: #ASTER-LASBRON samen met een Mecway-warmtebron als "
-               "formule of tijdstabel (Internal heat generation): Code-Aster "
-               "17.4 rekent twee functielasten met SOURCE in een analyse "
-               "allebei met de eerste functie (KNOWN_BUGS 70). Zet de "
-               "warmteontwikkeling in een #ASTER-LASBRON of maak hem "
-               "constant.",
-               "WARNING: #ASTER-LASBRON together with a Mecway heat source "
-               "as a formula or time table (Internal heat generation): "
-               "Code-Aster 17.4 computes two function loads with SOURCE in "
-               "one analysis both with the first function (KNOWN_BUGS 70). "
-               "Put the heat generation in an #ASTER-LASBRON or make it "
-               "constant."))
     model_data["welding_sources"] = [
         {"index": s.k, "power": s.target, "t0": s.spec["t0"],
          "t_end": s.t_end, "group": s.group} for s in sources]
@@ -1264,50 +1251,45 @@ def apply(tb, model_data, analysis):
 
 def _merged_load(tb, sources):
     """
-    Een AFFE_CHAR_THER_F 'lasbron' met alle bronnen samen (zie apply: twee
-    functielasten met SOURCE in een lijst rekent Code-Aster 17.4 verkeerd).
-    Het mesh wordt verdeeld naar (de bronnen waarvan het element in de
-    brongroep ligt, het toevoegmateriaal waartoe het hoort); per deel een
-    FORMULE met de som van die bronnen, met toevoegmateriaal alleen waar het
-    al geboren is. Returns de .comm-tekst, of None (ERROR).
+    Een AFFE_CHAR_THER_F 'lasbron' met alle bronnen samen: de lasbronnen en
+    de Mecway-warmtebronnen als functie (tb.func_sources; die laat
+    bridge_thermal dan weg, tb.sources_taken). Het mesh wordt verdeeld
+    naar (de bronnen waarvan het element in de brongroep ligt, het
+    toevoegmateriaal waartoe het hoort); per deel een FORMULE met de som
+    van die bronnen, in toevoegmateriaal alleen waar het al geboren is
+    (bridge_thermal._Thermal.merged_sources). Returns de .comm-tekst, of
+    None (ERROR).
     """
     owner = {}
     for s in sources:
         for e in s.birth or []:
             owner[e] = s.k
-    member = OrderedDict()
+    items = []
     for s in sources:
-        for e in s.eids:
-            member.setdefault(e, []).append(s.k)
-    parts = OrderedDict()
-    for e, ks in member.items():
-        parts.setdefault((tuple(ks), owner.get(e)), []).append(e)
-    lines = ["# Alle lasbronnen in een last (bridge_welding._merged_load)"]
-    entries = []
-    try:
-        for n, ((ks, j), eids) in enumerate(parts.items()):
-            grp = tb._list_group(["M{0}".format(e) for e in eids])
-            name = "LBS{0}".format(n + 1)
-            total = " + ".join("_lb_goldak(X, Y, Z, INST, _LB{0})".format(k)
-                               for k in ks)
-            ctx = ", ".join("_LB{0}=_LB{0}".format(k) for k in ks)
-            if j is None:
-                vale = total
-            else:
-                vale = "({0}) if _lb_born(X, Y, Z, INST, _GB{1}) else " \
-                       "0.0".format(total, j)
-                ctx += ", _lb_born=_lb_born, _GB{0}=_GB{0}".format(j)
-            lines.append(
-                "{0} = FORMULE(VALE='{1}',\n    NOM_PARA=('X', 'Y', 'Z', "
-                "'INST'), _lb_goldak=_lb_goldak, {2})".format(name, vale, ctx))
-            entries.append("_F(GROUP_MA='{0}', SOUR={1})".format(grp, name))
-    except ValueError as e:
-        log(tr("ERROR: Lasbron: element {0} niet in het mesh gevonden.",
-               "ERROR: Weld source: element {0} not found in the mesh.")
-            .format(e))
+        items.append({
+            "grp": s.group, "sour": None, "eids": s.eids,
+            "term": "_lb_goldak(X, Y, Z, INST, _LB{0})".format(s.k),
+            "ctx": OrderedDict([("_lb_goldak", "_lb_goldak"),
+                                ("_LB{0}".format(s.k), "_LB{0}".format(s.k))]),
+            "params": ["X", "Y", "Z", "INST"]})
+    if tb.func_sources:
+        log("INFO: Lasbron: {0} Mecway-warmtebron(nen) als formule of "
+            "tijdstabel in dezelfde last 'lasbron'.".format(
+                len(tb.func_sources)))
+        items += tb.source_items()
+
+    def born(j):
+        return ("_lb_born(X, Y, Z, INST, _GB{0})".format(j),
+                OrderedDict([("_lb_born", "_lb_born"),
+                             ("_GB{0}".format(j), "_GB{0}".format(j))]))
+    merged = tb.merged_sources(items, owner, born, prefix="LBS")
+    if merged is None:
         return None
+    tb.sources_taken = True
+    lines = ["# Alle lasbronnen in een last (bridge_welding._merged_load)"]
+    lines += merged[0]
     lines.append("lasbron = AFFE_CHAR_THER_F(MODELE=model, SOURCE=(\n    {0},"
-                 "\n))".format(",\n    ".join(entries)))
+                 "\n))".format(",\n    ".join(merged[1])))
     return "\n".join(lines)
 
 

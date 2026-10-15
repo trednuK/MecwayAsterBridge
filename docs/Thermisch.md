@@ -66,6 +66,18 @@ met CCX (Mecway's interne solver telt een tabel als 0; de bridge waarschuwt dan)
 `temperature2` met een tijdsinterval (`starttime`/`endtime` ≠ 0) wordt de hele
 analyse opgelegd (gemeld).
 
+**Meer warmtebronnen met een formule of tijdstabel.** Code-Aster 17.4 rekent twee
+lasten `AFFE_CHAR_THER_F` met `SOURCE` in één analyse allebei met de functie van de
+**eerste** last (gemeten: twee helften met 2e6·t W/m³ en een tijdstabel gaven twee keer
+de eerste). De bridge zet daarom alle bronnen met een functie (`heatgeneration`,
+`heatflow` op elementen, `heatflux` op een schaalvlak, de bron van schaalvlak-convectie
+met een tijdstabel en `#ASTER-LASBRON`) in **één** last. Overlappen bronnen (bijv. een
+bron op het hele model en een op een deel), dan krijgt elk deel van het mesh een eigen
+`FORMULE` met de som, want in één last overschrijft een latere `SOURCE`-regel op
+hetzelfde element de eerdere. Een bron die nergens overlapt houdt zijn eigen groep en
+functie. Twee functielasten met `FLUX_REP`, `ECHANGE` of `SOUR_NL` rekent Code-Aster
+wel goed (gemeten); die blijven apart. Verificatie TH-40 .. TH-42.
+
 **Verlijmd contact.** In een T31 met *Thermal stress* (keten thermisch → mechanisch)
 krijgt het thermische deel de thermische koppeling hierboven en het mechanische deel
 de gewone mechanische `LIAISON_MAIL` (TYPE_RACCORD, [Mecway_functionaliteit.md](Mecway_functionaliteit.md));
@@ -124,7 +136,7 @@ temperaturen thermische rek (manual §9.23–9.25):
 ## 4. Aanvullende controles (Code-Aster 17.4, offline)
 
 De reproduceerbare tests met tolerantie en bronnen staan in
-[Verificatie.md](Verificatie.md) §8 (TH-01 .. TH-04). Daarnaast is de vertaling met de
+[Verificatie.md](Verificatie.md) §8 (TH-01 .. TH-04, TH-40 .. TH-42). Daarnaast is de vertaling met de
 hand gecontroleerd op deze modellen (analytische waarden volgens Incropera e.a.
 (2007), hfdst. 3; ConductionConvectionRadiation volgens de Mecway-handleiding §11.13):
 
@@ -161,6 +173,8 @@ Mecway rekent zonder GUI: `mecway.exe model.liml solve`, met
 | tijdsafhankelijke convectie/straling op een schaalvlak, `theta` 0,5 | 0,10–0,21 K |
 | verlijmd contact *Constraint equations*, niet-conform (volumes TH-04b, schalen TH-04d; Mecway 34) | 0,0024 / 0,0056 K |
 | verlijmd contact *Tie* en *Elastic* (TH-04a/c), Mecway 34 met CCX | < 0,002 K |
+| drie overlappende bronnen als formule, stationair (TH-40, Mecway 34) | 2e-12 K |
+| twee bronnen in de tijd (formule + tabel, TH-41) en drie schaalvlak-fluxen (formule, tabel, overlappend), `theta` 0,5, Mecway 34 | 0,2 / 0,1 K: Mecway neemt de last op het einde van de stap; de gemiddelde stijging van Mecway is precies die van dat schema (2,875 / 2,075 K tegen exact 2,75 / 2,0 K) |
 
 Mecway rekent transient Crank-Nicolson (θ = 0,5) met de belasting op het einde van
 de stap; Code-Aster neemt het θ-gewogen gemiddelde. Bij een tijdstabel blijft

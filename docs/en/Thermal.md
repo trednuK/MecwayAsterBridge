@@ -66,6 +66,18 @@ with CCX (Mecway's internal solver treats a table as 0; the bridge then warns). 
 `temperature2` with a time interval (`starttime`/`endtime` ≠ 0) is applied for the
 whole analysis (reported).
 
+**Several heat sources with a formula or time table.** Code-Aster 17.4 computes two
+`AFFE_CHAR_THER_F` loads with `SOURCE` in one analysis both with the function of the
+**first** load (measured: two halves with 2e6·t W/m³ and a time table gave twice the
+first). The bridge therefore puts all sources given as a function (`heatgeneration`,
+`heatflow` on elements, `heatflux` on a shell face, the source of shell-face convection
+with a time table and `#ASTER-LASBRON`) in **one** load. When sources overlap (e.g. one
+on the whole model and one on a part), each part of the mesh gets its own `FORMULE`
+with the sum, because within one load a later `SOURCE` entry on the same element
+overrides the earlier one. A source that overlaps nothing keeps its own group and
+function. Two function loads with `FLUX_REP`, `ECHANGE` or `SOUR_NL` are computed
+correctly by Code-Aster (measured); they stay separate. Verification TH-40 .. TH-42.
+
 **Bonded contact.** In a T31 with *Thermal stress* (thermal → mechanical chain) the
 thermal part gets the thermal coupling above and the mechanical part the usual
 mechanical `LIAISON_MAIL` (TYPE_RACCORD, [Mecway_features.md](Mecway_features.md));
@@ -126,7 +138,7 @@ thermal strain (manual §9.23–9.25):
 ## 4. Additional checks (Code-Aster 17.4, offline)
 
 The reproducible tests with tolerances and references are in
-[Verification.md](Verification.md) §8 (TH-01 .. TH-04). In addition, the translation
+[Verification.md](Verification.md) §8 (TH-01 .. TH-04, TH-40 .. TH-42). In addition, the translation
 was checked by hand on these models (analytical values according to Incropera et al.
 (2007), ch. 3; ConductionConvectionRadiation according to the Mecway manual §11.13):
 
@@ -164,6 +176,8 @@ contains `temperature`, no heat flux). Measured with Mecway 33 (KNOWN_BUGS 14 in
 | time-dependent convection/radiation on a shell face, `theta` 0.5 | 0.10–0.21 K |
 | bonded contact *Constraint equations*, non-conforming (solids TH-04b, shells TH-04d; Mecway 34) | 0.0024 / 0.0056 K |
 | bonded contact *Tie* and *Elastic* (TH-04a/c), Mecway 34 with CCX | < 0.002 K |
+| three overlapping sources as a formula, steady state (TH-40, Mecway 34) | 2e-12 K |
+| two sources in time (formula + table, TH-41) and three shell-face fluxes (formula, table, overlapping), `theta` 0.5, Mecway 34 | 0.2 / 0.1 K: Mecway takes the load at the end of the step; Mecway's mean rise is exactly that of this scheme (2.875 / 2.075 K against exactly 2.75 / 2.0 K) |
 
 Mecway's transient scheme is Crank-Nicolson (θ = 0.5) with the load at the end of
 the step; Code-Aster takes the θ-weighted average. With a time table a difference of

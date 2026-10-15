@@ -1,0 +1,129 @@
+<liml version="33">
+  <analysis type="T31" />
+  <timesteps timeperiod="2 s" stepsize="0.1 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.01" y="0" z="0" />
+  <node nid="3" x="0.01" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0" y="0" z="0.01" />
+  <node nid="6" x="0.01" y="0" z="0.01" />
+  <node nid="7" x="0.01" y="0.01" z="0.01" />
+  <node nid="8" x="0" y="0.01" z="0.01" />
+  <node nid="9" x="0.02" y="0" z="0" />
+  <node nid="10" x="0.02" y="0.01" z="0" />
+  <node nid="11" x="0.02" y="0" z="0.01" />
+  <node nid="12" x="0.02" y="0.01" z="0.01" />
+  <node nid="13" x="0.03" y="0" z="0" />
+  <node nid="14" x="0.03" y="0.01" z="0" />
+  <node nid="15" x="0.03" y="0" z="0.01" />
+  <node nid="16" x="0.03" y="0.01" z="0.01" />
+  <node nid="17" x="0.04" y="0" z="0" />
+  <node nid="18" x="0.04" y="0.01" z="0" />
+  <node nid="19" x="0.04" y="0" z="0.01" />
+  <node nid="20" x="0.04" y="0.01" z="0.01" />
+  <node nid="21" x="0.05" y="0" z="0" />
+  <node nid="22" x="0.05" y="0.01" z="0" />
+  <node nid="23" x="0.05" y="0" z="0.01" />
+  <node nid="24" x="0.05" y="0.01" z="0.01" />
+  <node nid="25" x="0.06" y="0" z="0" />
+  <node nid="26" x="0.06" y="0.01" z="0" />
+  <node nid="27" x="0.06" y="0" z="0.01" />
+  <node nid="28" x="0.06" y="0.01" z="0.01" />
+  <node nid="29" x="0.07" y="0" z="0" />
+  <node nid="30" x="0.07" y="0.01" z="0" />
+  <node nid="31" x="0.07" y="0" z="0.01" />
+  <node nid="32" x="0.07" y="0.01" z="0.01" />
+  <node nid="33" x="0.08" y="0" z="0" />
+  <node nid="34" x="0.08" y="0.01" z="0" />
+  <node nid="35" x="0.08" y="0" z="0.01" />
+  <node nid="36" x="0.08" y="0.01" z="0.01" />
+  <node nid="37" x="0.09" y="0" z="0" />
+  <node nid="38" x="0.09" y="0.01" z="0" />
+  <node nid="39" x="0.09" y="0" z="0.01" />
+  <node nid="40" x="0.09" y="0.01" z="0.01" />
+  <node nid="41" x="0.1" y="0" z="0" />
+  <node nid="42" x="0.1" y="0.01" z="0" />
+  <node nid="43" x="0.1" y="0" z="0.01" />
+  <node nid="44" x="0.1" y="0.01" z="0.01" />
+  <elset name="Wand" material="Mat">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="hex8" nodes="2 9 10 3 6 11 12 7" />
+    <elem eid="3" shape="hex8" nodes="9 13 14 10 11 15 16 12" />
+    <elem eid="4" shape="hex8" nodes="13 17 18 14 15 19 20 16" />
+    <elem eid="5" shape="hex8" nodes="17 21 22 18 19 23 24 20" />
+    <elem eid="6" shape="hex8" nodes="21 25 26 22 23 27 28 24" />
+    <elem eid="7" shape="hex8" nodes="25 29 30 26 27 31 32 28" />
+    <elem eid="8" shape="hex8" nodes="29 33 34 30 31 35 36 32" />
+    <elem eid="9" shape="hex8" nodes="33 37 38 34 35 39 40 36" />
+    <elem eid="10" shape="hex8" nodes="37 41 42 38 39 43 44 40" />
+  </elset>
+  <initialconditions>
+    <temperature2 selection="Alle"><value>300 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  </initialconditions>
+  <heatgeneration selection="Linkerhelft"><value unit="W/m³" timeunit="s" positionunit="m">2e6*t</value></heatgeneration>
+  <heatgeneration selection="Rechterhelft"><value time="0 s">0 W/m³</value><value time="1 s">1e6 W/m³</value><value time="2 s">1e6 W/m³</value></heatgeneration>
+  <mat name="Mat">
+    <density type="Simple" density="1000 kg/m³" />
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" specificheat="1000 J/kg/K" />
+  </mat>
+  <nodeselection name="Alle">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="16" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="19" />
+    <node nid="20" />
+    <node nid="21" />
+    <node nid="22" />
+    <node nid="23" />
+    <node nid="24" />
+    <node nid="25" />
+    <node nid="26" />
+    <node nid="27" />
+    <node nid="28" />
+    <node nid="29" />
+    <node nid="30" />
+    <node nid="31" />
+    <node nid="32" />
+    <node nid="33" />
+    <node nid="34" />
+    <node nid="35" />
+    <node nid="36" />
+    <node nid="37" />
+    <node nid="38" />
+    <node nid="39" />
+    <node nid="40" />
+    <node nid="41" />
+    <node nid="42" />
+    <node nid="43" />
+    <node nid="44" />
+  </nodeselection>
+  <elementselection name="Linkerhelft">
+    <element eid="1" />
+    <element eid="2" />
+    <element eid="3" />
+    <element eid="4" />
+    <element eid="5" />
+  </elementselection>
+  <elementselection name="Rechterhelft">
+    <element eid="6" />
+    <element eid="7" />
+    <element eid="8" />
+    <element eid="9" />
+    <element eid="10" />
+  </elementselection>
+</liml>

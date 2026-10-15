@@ -162,6 +162,11 @@ is, geeft een ERROR en de run stopt (§8).
   `positionunit`/`timeunit` en de uitkomst met `unit` (mechanische lasten: zie
   [Handleiding.md](Handleiding.md), Formules). Stationair (T30) krijgt een formule in t de waarde op t = 1 s
   (zoals een tijdstabel).
+- **Meer bronnen samen**: alle bronnen met een functie (lasbronnen, en *Internal heat
+  generation*s met een formule of tijdstabel) staan in **één** last; per deel van het
+  mesh telt een `FORMULE` de bronnen op die er liggen. Code-Aster 17.4 rekent twee
+  lasten `AFFE_CHAR_THER_F` met `SOURCE` in één analyse anders allebei met de functie
+  van de eerste. Een lasbron en een formule- of tabelbron kunnen dus samen (TH-42).
 - **Schalen in het model** die de bridge als `PLAN` rekent en daarvoor draait
   ([Thermisch.md](Thermisch.md) §3): baan en formules worden mee gedraaid.
 
@@ -825,9 +830,10 @@ gegeven is. De factoren van het stille materiaal (10⁻⁴; λ 10⁻⁸) zijn va
   geboorte, met een dip onder T0 terwijl die opwarmden).
 - **De bron** werkt in een punt van het toevoegmateriaal alleen als dat punt al
   geboren is (dezelfde regel in de `FORMULE`, `_lb_born`); elders gewoon.
-- **Meer bronnen** staan in **één** last (`lasbron`): Code-Aster 17.4 rekent twee
-  lasten `AFFE_CHAR_THER_F` met `SOURCE` in één analyse allebei met de functie van de
-  eerste (KNOWN_BUGS 70; gevonden bij deze stap). De energiecontrole blijft per bron.
+- **Meer bronnen** staan in **één** last (`lasbron`, ook met Mecway-bronnen als
+  formule of tijdstabel): Code-Aster 17.4 rekent twee lasten `AFFE_CHAR_THER_F` met
+  `SOURCE` in één analyse allebei met de functie van de eerste (gevonden bij deze stap,
+  §3). De energiecontrole blijft per lasbron.
 - **Mechanisch** (keten, §9): een stille kopie van elk materiaal van het
   toevoegmateriaal (E × 10⁻⁴, ook `D_SIGM_EPSI`; een hardingscurve met de rek / 10⁻⁴;
   vloeigrens gelijk, zodat het stille element elastisch blijft) en `STAT_NON_LINE` **per
@@ -913,7 +919,6 @@ gegeven is. De factoren van het stille materiaal (10⁻⁴; λ 10⁻⁸) zijn va
 | `ERROR: ... geen element van het toevoegmateriaal wordt geboren` | de bron komt niet langs het toevoegmateriaal, of start na het einde van de analyse | baan/`t0` controleren (coördinaten in m) |
 | `WARNING: ... n element(en) van het toevoegmateriaal worden nooit geboren` | toevoegmateriaal verder dan de voorloop voorbij het einde van de baan, of de bron of de analyse stopt eerder | bewust (de rups is langer dan de las)? Anders `lengte`, `t1` of *Time period* aanpassen |
 | `WARNING: ... voorloop zonder geboorte=...; genegeerd` | `voorloop` zonder `geboorte` | `geboorte=` toevoegen of `voorloop` weghalen |
-| `WARNING: #ASTER-LASBRON samen met een Mecway-warmtebron als formule of tijdstabel ...` | een *Internal heat generation* met formule/tabel naast de lasbron (KNOWN_BUGS 70) | de warmteontwikkeling als tweede `#ASTER-LASBRON` of constant |
 | `BRIDGE_ONVOLLEDIG` in de `.mess` met geboorte | de mechanische stap na een geboorte convergeert niet | `TC_CUT` zetten, kleinere *Time step*, E/SY boven 1200 °C niet extreem klein (§9.8) |
 
 ## 12. Verificatie

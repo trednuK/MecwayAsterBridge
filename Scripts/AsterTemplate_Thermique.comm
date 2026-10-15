@@ -75,7 +75,10 @@ mesh = DEFI_GROUP(
 # =====================================================
 # 6. RANDVOORWAARDEN EN BELASTINGEN
 # Elke Mecway-belasting een eigen last (EXCIT telt op); opgelegde
-# temperaturen samen in de eerste last(en).
+# temperaturen samen in de eerste last(en). Alle bronnen als functie
+# (SOURCE in AFFE_CHAR_THER_F) samen in een last, per deel van het mesh de
+# som (Code-Aster 17.4 rekent twee zulke lasten als de eerste;
+# bridge_thermal._Thermal.add_func_source).
 # =====================================================
 {loads_block}
 

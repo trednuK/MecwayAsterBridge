@@ -318,22 +318,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    (e) Geen boogslengtemethode (`PILOTAGE`): met een last als tijdstabel stopt de run
    op het grenspunt (`MECANONLINE9_7`, NK-04).
 
-70\. **Twee thermische functielasten met SOURCE rekenen als de eerste** (bevestigd met
-   een Code-Aster-run, Code-Aster 17.4; `bridge_thermal.add_charge`). Staan twee
-   lasten `AFFE_CHAR_THER_F` met `SOURCE` (een `FORMULE` of `DEFI_FONCTION`) in één
-   lijst (`EXCIT` van `THER_LINEAIRE`/`THER_NON_LINE`, ook `CALC_VECT_ELEM`), dan rekent
-   Code-Aster beide met de functie van de **eerste** last: twee constante `FORMULE`s
-   (1e9 en 2e9 W/m³) op verschillende groepen gaven 2 × 960 W in plaats van 960 + 135 W;
-   omgekeerd 2 × 135 W. Een `AFFE_CHAR_THER` met constante `SOURCE`, een constante
-   naast een functie, of één last met twee `SOURCE`-regels rekent wel goed. Gevolg:
-   twee Mecway-*Internal heat generation*s met een formule of tijdstabel (route B van
-   docs/Lassen.md) geven de verkeerde warmte. `#ASTER-LASBRON` met meer bronnen had
-   hetzelfde (de tweede bron werkte als een kopie van de eerste) en zet sinds stap S4c
-   alle bronnen in één last (`bridge_welding._merged_load`); naast een lasbron geeft een
-   Mecway-formulebron een WARNING. Open: de Mecway-formulebronnen ook samenvoegen
-   (per deel van het mesh de som); of `FLUX_REP`, `ECHANGE` en `AFFE_CHAR_MECA_F` het
-   ook hebben, is NIET nagegaan.
-
 82\. **Niet-lineair: heen-en-weer-plasticiteit met de standaardvervorming convergeert
    niet bij het terugbelasten** (bevestigd met een offline run, `bridge_to_aster.
    _deformation_for`; gevonden bij S8b). Staaf 0,1 × 0,01 × 0,01 m, 2 hex8, bilineair
@@ -669,8 +653,9 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    gebouwd: een pad dat dicht langs zichzelf terugloopt kan verkeerd geordend worden,
    NIET getest), met constante snelheid. Zonder `geboorte=` is de rups vanaf t = 0
    aanwezig; toevoegmateriaal dat geboren wordt heeft eigen grenzen (punt 71). Meer
-   bronnen staan in een last (punt 70: twee functielasten met SOURCE rekent Code-Aster
-   als de eerste). Geen latente warmte (via c(T)); de
+   bronnen staan in een last, samen met Mecway-bronnen als formule of tijdstabel (twee
+   functielasten met SOURCE rekent Code-Aster 17.4 als de eerste). Geen latente warmte
+   (via c(T)); de
    mechanische keten heeft eigen grenzen (punt 64). De formule wordt per Gauss-punt in Python uitgerekend:
    met een grote brongroep (route B op het hele model) duurt dat lang (WE-02: 9 700
    elementen in de brongroep, 60 stappen, ~2 min; met THER_NON_LINE, WE-05, ~9 min).

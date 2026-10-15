@@ -166,7 +166,8 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
   0.002%, WE-04b).
 - Two weld sources (`#ASTER-LASBRON`) acted as twice the first one: Code-Aster 17.4
   computes two `AFFE_CHAR_THER_F` loads with `SOURCE` in one analysis with the function
-  of the first (KNOWN_BUGS 70); the weld sources are now in one load (WE-11).
+  of the first; the weld sources are now in one load (WE-11), now also with the
+  Mecway sources as a formula or time table (TH-40 .. TH-42).
 - Filler material: with the consistent heat capacity a not-yet-born node heated up
   through the mass coupling (+138 K); now `3D_DIAG` (WE-13).
 
@@ -583,7 +584,7 @@ Route `tabel` (LS-30, LS-32, NL-31 with a fake solution in CPython): `beam_force
   (reactions 0, internal solver and CCX); the bridge does, with a WARNING. Pressure on
   shells goes through `FORCE_COQUE PRES` (`PRES_REP` with a function stops on DKT and
   COQUE_3D with `ELEMENTS4_92`). Three `AFFE_CHAR_MECA_F` loads, each with its own
-  `FORMULE`, in one `EXCIT` each use their own function (no KNOWN_BUGS 70); two
+  `FORMULE`, in one `EXCIT` each use their own function (unlike thermal `SOURCE`, [Thermal.md](Thermal.md) §3); two
   functions in one `DDL_IMPO` load (test run with two selections) as well.
 
 ### LS-70 … LS-78 Beam orientation (static)
@@ -2405,6 +2406,41 @@ transient, convection on a shell face → `THER_NON_LINE`; TH-03 with `lin_stati
   thermally by Code-Aster (CHARGES7_6 / CHARGES6_2, ERROR; [Thermal.md](Thermal.md)
   sec. 3).
 
+### TH-40 .. TH-42 Several heat sources with a formula or time table
+
+- **Purpose**: Code-Aster 17.4 computes two `AFFE_CHAR_THER_F` loads with `SOURCE` in
+  one analysis both with the function of the first load. The bridge puts all function
+  sources in one load, with per part of the mesh a `FORMULE` with the sum of the sources
+  that lie there ([Thermal.md](Thermal.md) §3). Before the fix TH-40 and TH-41 gave 37.50
+  instead of 39.58 K and 4.00 instead of 2.75 K (two or three times the first source).
+- **Model**: wall 0.1 × 0.01 × 0.01 m, 10 hex8 in x, λ = 50 W/mK, sides insulated.
+  TH-40 (T30): 300 K at x = 0 and L; three *Internal heat generation*s as a formula:
+  5e5 W/m³ on everything, 2e7·x W/m³ on the left half, 1.5e6 W/m³ on the right half (two
+  parts with a sum `FORMULE`). TH-41 (T31, 2 s, step 0.1 s, `theta` 0.5): insulated
+  everywhere, 2e6·t W/m³ (formula) on the left and a time table 0 → 1e6 W/m³ (0..1 s),
+  then constant, on the right (ρc = 1e6 J/m³K; two `SOURCE` entries without overlap).
+  TH-42 (T31, 2 s): block 40 × 10 × 10 mm (hex8 1 mm, ρc = 4.68e6 J/m³K) with an
+  `#ASTER-LASBRON` (Gauss r = 2 mm, Q = 100 W, `symmetrie=1`) and a time table
+  0 → 2e7 W/m³ on the whole block, together in the load `lasbron`.
+- **Reference**: TH-40: T(x) − T0 = 1/k ∫ G(x, s) q(s) ds with the Green's function of
+  the wall (Incropera et al., 2007, §3.5); with linear elements the nodal values are
+  exact in 1D (Strang & Fix §1.2). TH-41/42: energy balance ρc ∫(T − T0) dV =
+  ∫∫ q dV dt; with θ = 0.5 and q linear per step the scheme is exact, and ∫T dV follows
+  exactly from the nodal values (consistent capacity). TH-42: the energy of the weld
+  source from its own energy check (`BRIDGE_LASBRON`, absorbed power 50.0001 W = Q/2).
+- **Result**: TH-40 relative deviation ≤ 2.2e-13 (tolerance 1e-5); TH-41 0 (tolerance
+  1e-4); TH-42 residual of the energy balance −2e-6 J (tolerance 0.18 J), mean rise
+  9.61539 K (+1.0e-6).
+- **Mecway** (34, internal solver, without GUI): TH-40 difference per node 2e-12 K.
+  TH-41 0.2 K: Mecway takes the load at the end of the step (KNOWN_BUGS 14); its mean
+  rise 2.875 K is exactly the sum of that scheme (2.75 K exact). A scratch model with
+  three shell-face fluxes (formula, table and overlapping, `SOURCE` q/t) also gave
+  exactly 2.0 K, Mecway 2.075 K (same explanation).
+- **Also checked** (Code-Aster 17.4, scratch runs): two function loads with
+  `FLUX_REP`, `ECHANGE` or `SOUR_NL` and two `AFFE_CHAR_MECA_F` loads (`FORCE_INTERNE`,
+  `FORCE_FACE`, `PRES_REP`, `FORMULE` or `DEFI_FONCTION`) are computed correctly (energy /
+  reaction force exact); only `SOURCE` has the behaviour.
+
 ### Welding: moving heat source (WE)
 
 Module `tests_lassen.py` (group "Welding", run with
@@ -2711,8 +2747,8 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
   - Found and fixed in this step: (1) Code-Aster 17.4 computes two `AFFE_CHAR_THER_F`
     loads with `SOURCE` in one analysis both with the function of the first (with two
     sources WE-11 received 2 × the energy of source 1 and source 2 never acted; also
-    with constant `FORMULE`s): the weld sources are now in one load (KNOWN_BUGS 70, the
-    Mecway formula sources not yet); (2) with the consistent heat capacity a quiet node
+    with constant `FORMULE`s): the weld sources are now in one load (now also the
+    Mecway formula sources, TH-40 .. TH-42); (2) with the consistent heat capacity a quiet node
     followed the temperature rate of its hot neighbours through the mass coupling
     (WE-13: +138 K before birth, with a dip below T0 while they heated): the filler now
     uses `3D_DIAG`; (3) the source was sometimes off at the end time by rounding (v·

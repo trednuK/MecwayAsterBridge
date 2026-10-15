@@ -877,7 +877,8 @@ temperatuur van het begin van de geboortestap (ook LINE_QUAD, bilineair en
 hardingscurve). Gevonden en opgelost: (1) Code-Aster 17.4 rekent twee lasten
 `AFFE_CHAR_THER_F` met `SOURCE` in één lijst allebei met de functie van de eerste (de
 tweede `#ASTER-LASBRON` uit S4a werkte dus nooit): alle lasbronnen nu in één last
-(KNOWN_BUGS 70; Mecway-formulebronnen nog niet, WARNING naast een lasbron); (2) met
+(KNOWN_BUGS 70; Mecway-formulebronnen eerst nog niet, WARNING naast een lasbron; later
+opgelost: alle functiebronnen in één last, TH-40..42, KNOWN_BUGS 70 weg); (2) met
 de consistente warmtecapaciteit volgde een stil knooppunt via de massakoppeling zijn
 warme buren (+138 K): `3D_DIAG` in het toevoegmateriaal; (3) de bron stond op t_eind
 door afronding soms uit: marge 1e-9. Verificatie WE-11..13 (`tests_lassen_geboorte.py`,
@@ -892,7 +893,7 @@ restspanning in evenwicht (−0,25% SY·A), trek in de rups, druk ernaast (5,5 m
 Regressie 1018/1021 OK, 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; geen eerder OK-controle veranderd (WE-01..10 gelijk). Beperkingen: KNOWN_BUGS 71 (58 en 64 bijgewerkt). Open: Mecway-GUI-test (selectie
 `LASNAAD_`, regel in Custom model definition, stille elementen in de resultaten).
 Vragen gebruiker: (1) de Mecway-formulebronnen (*Internal heat generation* met formule)
-ook samenvoegen tot één last (KNOWN_BUGS 70)? (2) mechanisch spanningsvrij op de
+ook samenvoegen tot één last (KNOWN_BUGS 70; inmiddels gedaan)? (2) mechanisch spanningsvrij op de
 solidustemperatuur (bij het afkoelen) in plaats van bij de aankomst van de bron? (3)
 de factoren van het stille materiaal (1e-4) als sleutel? (4) toevoegmateriaal voorbij
 het einde van de baan (nu nooit geboren, WARNING) toch laten geboren worden?

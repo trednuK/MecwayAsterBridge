@@ -803,7 +803,8 @@ achter de bron liggen binnen 1,2% van dezelfde bron analytisch gevouwen.
 Valkuilen:
 - Waarden in SI: coördinaten in meter, ook als het Mecway-model in mm is.
 - Een tweede bron begint met een regel die met `Q=` begint; elke bron krijgt een eigen
-  `t0`. Alle bronnen staan samen in een last (`lasbron`, KNOWN_BUGS 70).
+  `t0`. Alle bronnen staan samen in een last (`lasbron`), ook met een *Internal heat
+  generation* als formule of tijdstabel ([Thermisch.md](Thermisch.md) §3).
 - Alleen in een transiente thermische analyse; in een mechanische analyse wordt de
   regel genegeerd (WARNING).
 

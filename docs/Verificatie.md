@@ -169,7 +169,8 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
   WE-04b).
 - Twee lasbronnen (`#ASTER-LASBRON`) werkten als twee keer de eerste: Code-Aster 17.4
   rekent twee lasten `AFFE_CHAR_THER_F` met `SOURCE` in één analyse met de functie van
-  de eerste (KNOWN_BUGS 70); de lasbronnen staan nu in één last (WE-11).
+  de eerste; de lasbronnen staan nu in één last (WE-11), nu ook met de
+  Mecway-bronnen als formule of tijdstabel (TH-40 .. TH-42).
 - Toevoegmateriaal: met de consistente warmtecapaciteit warmde een nog niet geboren
   knooppunt via de massakoppeling op (+138 K); nu `3D_DIAG` (WE-13).
 
@@ -585,7 +586,7 @@ Route `tabel` (LS-30, LS-32, NL-31 met een nep-solution in CPython): `beam_force
   (reacties 0, interne solver en CCX); de bridge wel, met een WARNING. Druk op schalen
   gaat via `FORCE_COQUE PRES` (`PRES_REP` met een functie stopt op DKT en COQUE_3D met
   `ELEMENTS4_92`). Drie lasten `AFFE_CHAR_MECA_F` met elk een `FORMULE` in één
-  `EXCIT` rekenen elk met hun eigen functie (geen KNOWN_BUGS 70); twee functies in één
+  `EXCIT` rekenen elk met hun eigen functie (anders dan thermisch `SOURCE`, [Thermisch.md](Thermisch.md) §3); twee functies in één
   `DDL_IMPO`-last (testrun met twee selecties) ook.
 
 ### LS-70 … LS-78 Balkorientatie (statisch)
@@ -2404,6 +2405,41 @@ transient, convectie op een schaalvlak → `THER_NON_LINE`; TH-03 met `lin_stati
   in één model kan Code-Aster thermisch niet koppelen (CHARGES7_6 / CHARGES6_2, ERROR;
   [Thermisch.md](Thermisch.md) §3).
 
+### TH-40 .. TH-42 Meer warmtebronnen met een formule of tijdstabel
+
+- **Doel**: Code-Aster 17.4 rekent twee lasten `AFFE_CHAR_THER_F` met `SOURCE` in één
+  analyse allebei met de functie van de eerste last. De bridge zet alle functiebronnen
+  in één last, met per deel van het mesh een `FORMULE` met de som van de bronnen die er
+  liggen ([Thermisch.md](Thermisch.md) §3). Voor de oplossing gaven TH-40 en TH-41
+  37,50 i.p.v. 39,58 K en 4,00 i.p.v. 2,75 K (twee of drie keer de eerste bron).
+- **Model**: wand 0,1 × 0,01 × 0,01 m, 10 hex8 in x, λ = 50 W/mK, zijkanten geïsoleerd.
+  TH-40 (T30): 300 K op x = 0 en L; drie *Internal heat generation*s als formule:
+  5e5 W/m³ op alles, 2e7·x W/m³ op de linkerhelft, 1,5e6 W/m³ op de rechterhelft (twee
+  delen met een som-`FORMULE`). TH-41 (T31, 2 s, stap 0,1 s, `theta` 0,5): overal
+  geïsoleerd, 2e6·t W/m³ (formule) links en een tijdstabel 0 → 1e6 W/m³ (0..1 s), daarna
+  constant, rechts (ρc = 1e6 J/m³K; twee `SOURCE`-regels zonder overlap). TH-42 (T31,
+  2 s): blok 40 × 10 × 10 mm (hex8 1 mm, ρc = 4,68e6 J/m³K) met een
+  `#ASTER-LASBRON` (Gauss r = 2 mm, Q = 100 W, `symmetrie=1`) en een tijdstabel
+  0 → 2e7 W/m³ op het hele blok, samen in de last `lasbron`.
+- **Referentie**: TH-40: T(x) − T0 = 1/k ∫ G(x, s) q(s) ds met de Green-functie van de
+  wand (Incropera e.a., 2007, §3.5); met lineaire elementen zijn de knoopwaarden in 1D
+  exact (Strang & Fix §1.2). TH-41/42: energiebalans ρc ∫(T − T0) dV = ∫∫ q dV dt;
+  met θ = 0,5 en q lineair per stap is het schema exact, en ∫T dV volgt exact uit de
+  knoopwaarden (consistente capaciteit). TH-42: de energie van de lasbron uit zijn eigen
+  energiecontrole (`BRIDGE_LASBRON`, opgenomen vermogen 50,0001 W = Q/2).
+- **Resultaat**: TH-40 relatieve afwijking ≤ 2,2e-13 (tolerantie 1e-5); TH-41 0
+  (tolerantie 1e-4); TH-42 restterm van de energiebalans −2e-6 J (tolerantie 0,18 J),
+  gemiddelde stijging 9,61539 K (+1,0e-6).
+- **Mecway** (34, interne solver, zonder GUI): TH-40 verschil per knoop 2e-12 K. TH-41
+  0,2 K: Mecway neemt de last op het einde van de stap (KNOWN_BUGS 14); zijn gemiddelde
+  stijging 2,875 K is precies de som van dat schema (2,75 K exact). Ook een scratch-model
+  met drie schaalvlak-fluxen (formule, tabel en overlappend, `SOURCE` q/t) gaf exact 2,0
+  K, Mecway 2,075 K (zelfde verklaring).
+- **Ook nagegaan** (Code-Aster 17.4, scratch-runs): twee functielasten met `FLUX_REP`,
+  `ECHANGE` of `SOUR_NL` en twee lasten `AFFE_CHAR_MECA_F` (`FORCE_INTERNE`,
+  `FORCE_FACE`, `PRES_REP`, `FORMULE` of `DEFI_FONCTION`) rekenen goed (energie /
+  reactiekracht exact); alleen `SOURCE` heeft het gedrag.
+
 ### Lassen: bewegende warmtebron (WE)
 
 Module `tests_lassen.py` (groep "Lassen" in `resultaten.md`, draaien met
@@ -2707,7 +2743,7 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
     `AFFE_CHAR_THER_F` met `SOURCE` in één analyse allebei met de functie van de
     eerste (met twee bronnen ging in WE-11 2 × de energie van bron 1 in het model en
     bron 2 nooit; ook constante `FORMULE`s): de lasbronnen staan nu in één last
-    (KNOWN_BUGS 70, Mecway-formulebronnen nog niet); (2) met de consistente
+    (nu ook de Mecway-formulebronnen, TH-40 .. TH-42); (2) met de consistente
     warmtecapaciteit volgde een stil knooppunt via de massakoppeling de temperatuur-
     snelheid van zijn warme buren (WE-13: +138 K voor de geboorte, met een dip onder T0
     tijdens het opwarmen): het toevoegmateriaal rekent nu met `3D_DIAG`; (3) de bron

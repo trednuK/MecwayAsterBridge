@@ -575,3 +575,218 @@ TESTS += [
               "(interne solver) verschil per knoop < 0,006 K. Tolerantie "
               "0,1 % (T) en 0,5 % (flux)"),
 ]
+
+
+# ==================================================================
+# TH-40 .. TH-42 MEER WARMTEBRONNEN MET EEN FORMULE OF TIJDSTABEL
+# ==================================================================
+# Code-Aster 17.4 rekent twee lasten AFFE_CHAR_THER_F met SOURCE in een
+# EXCIT-lijst allebei met de functie van de eerste last; de bridge zet alle
+# functiebronnen daarom in een last (bridge_thermal._Thermal.
+# merged_sources), met per deel van het mesh de som van de bronnen die er
+# liggen.
+# TH-40 (stationair, overlappend): wand x = 0..L, T vast op x = 0 en L,
+# zijkanten geisoleerd; bron A op alles (5e5 W/m3), B op de linkerhelft
+# (2e7 x W/m3, x in m), C op de rechterhelft (1,5e6 W/m3), alle drie als
+# formule. q(x) = 5e5 + 2e7 x (x < L/2), 2e6 (x > L/2).
+# T(x) - T0 = 1/k int_0^L G(x, s) q(s) ds, G de Green-functie van -T'' met
+# T(0) = T(L) = 0: G = s (L - x)/L (s < x), x (L - s)/L (s > x).
+# Lineaire elementen: knoopwaarden exact (1D, consistente belasting; de
+# Gauss-integratie van q N is exact voor q lineair).
+L40, K40, T40 = 0.1, 50.0, 300.0
+
+
+def _q40(s):
+    return 5.0e5 + (2.0e7 * s if s < L40 / 2 else 1.5e6)
+
+
+def _green_rise(q, x, length, k, breaks):
+    """T(x) - T0 met de Green-functie; Simpson per glad stuk (exact voor
+    stuksgewijs kwadratische integranden)."""
+    pts = sorted(set([0.0, x, length] + list(breaks)))
+    total = 0.0
+    for a, b in zip(pts[:-1], pts[1:]):
+        if b - a <= 0.0:
+            continue
+        m = 0.5 * (a + b)
+        e = 1e-12 * length    # kant van de knik in G of q kiezen
+
+        def f(s):
+            s_ = min(max(s, a + e), b - e)
+            g = s * (length - x) / length if s_ < x else \
+                x * (length - s) / length
+            return g * q(s_)
+        total += (b - a) / 6.0 * (f(a) + 4.0 * f(m) + f(b))
+    return total / k
+
+
+def build_th40():
+    m = Model("T30")
+    m.elset("Wand", "Staal")
+    g = hexmesh(m, "Wand", 10, 1, 1, box(0, L40, 0, B1, 0, B1))
+    _mat_th(m, "Staal", K40)
+    m.node_selection("Links", sorted(g["nodes"]["u0"]))
+    m.node_selection("Rechts", sorted(g["nodes"]["u1"]))
+    _all_elems(m)
+    m.element_selection("Linkerhelft", [g["elems"][(i, 0, 0)]
+                                        for i in range(5)])
+    m.element_selection("Rechterhelft", [g["elems"][(i, 0, 0)]
+                                         for i in range(5, 10)])
+    m.add(_temp("Links", T40))
+    m.add(_temp("Rechts", T40))
+    for sel, formula in (("Alles", "5e5+0*x"), ("Linkerhelft", "2e7*x"),
+                         ("Rechterhelft", "1.5e6+0*x")):
+        m.add(u'<heatgeneration selection="%s"><value unit="W/m³" '
+              u'timeunit="s" positionunit="m">%s</value></heatgeneration>'
+              % (sel, formula))
+    return m
+
+
+# TH-41 (transient, naast elkaar): zelfde wand, overal geisoleerd, begin
+# 300 K; linkerhelft 2e6 t W/m3 (formule), rechterhelft tijdstabel 0 s: 0,
+# 1 s: 1e6, 2 s: 1e6 W/m3. Energiebalans: rho cp int T dV = int int q dV dt;
+# met theta 0,5 en q stuksgewijs lineair in t (knik op een stap) is de
+# trapeziumregel van het theta-schema exact, en int T dV = sum T_i int N_i
+# dV (consistente massa) is exact uit de knoopwaarden.
+RC41, T41 = 1.0e6, 300.0
+
+
+def _e41(t):
+    """int q dV dt / V tot t (W s/m3, gemiddeld over de wand)."""
+    left = 1.0e6 * t * t
+    right = 0.5e6 * t * t if t <= 1.0 else 0.5e6 + 1.0e6 * (t - 1.0)
+    return 0.5 * (left + right)
+
+
+def build_th41():
+    m = Model("T31", timesteps={"timeperiod": "2 s", "stepsize": "0.1 s"})
+    m.elset("Wand", "Mat")
+    g = hexmesh(m, "Wand", 10, 1, 1, box(0, L40, 0, B1, 0, B1))
+    _mat_th(m, "Mat", K40, rho=1000.0, cp=RC41 / 1000.0)
+    m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+    m.element_selection("Linkerhelft", [g["elems"][(i, 0, 0)]
+                                        for i in range(5)])
+    m.element_selection("Rechterhelft", [g["elems"][(i, 0, 0)]
+                                         for i in range(5, 10)])
+    m.add(u"<initialconditions>\n    " + _temp("Alle", T41)
+          + u"\n  </initialconditions>")
+    m.add(u'<heatgeneration selection="Linkerhelft"><value unit="W/m³" '
+          u'timeunit="s" positionunit="m">2e6*t</value></heatgeneration>')
+    m.add(u'<heatgeneration selection="Rechterhelft">'
+          u'<value time="0 s">0 W/m³</value><value time="1 s">1e6 W/m³'
+          u'</value><value time="2 s">1e6 W/m³</value></heatgeneration>')
+    return m
+
+
+def _vol_mean(r, time):
+    """Volumegemiddelde van T uit de knoopwaarden: hex8 van gelijke
+    grootte, int N_i dV = V_e/8 per element."""
+    d = r.step(time)["temperature"]
+    tot, n = 0.0, 0
+    for _name, _mat, els in r.model.elsets:
+        for _eid, _s, nids, _a in els:
+            tot += sum(d[i] for i in nids) / 8.0
+            n += 1
+    return tot / n
+
+
+_SRC40 = "Green-functie, q stuksgewijs lineair (Incropera par. 3.5)"
+TESTS += [
+    Case("TH-40", GROUP, "Drie warmtebronnen als formule, overlappend",
+         "ther_3d", build_th40,
+         [Check("T - T0 (x = %g L)" % f,
+                (lambda x_: lambda r: r.at("temperature", (x_, 0, 0))
+                 - T40)(f * L40),
+                ref=_green_rise(_q40, f * L40, L40, K40, [L40 / 2]),
+                tol=1e-5, unit="K", source=_SRC40)
+          for f in (0.3, 0.5, 0.7)],
+         note="bron op alles + linker- en rechterhelft, alle drie een "
+              "FORMULE: een last, per deel de som (twee lasten met SOURCE "
+              "rekent Code-Aster als de eerste). " + _EXACT),
+    Case("TH-41", GROUP, "Twee warmtebronnen in de tijd (formule + tabel)",
+         "ther_3d", build_th41,
+         [Check("T_gem - T0 (t = %g s)" % t,
+                (lambda t_: lambda r: _vol_mean(r, t_) - T41)(t),
+                ref=_e41(t) / RC41, tol=1e-4, unit="K",
+                source="energiebalans rho cp dT = int q dt")
+          for t in (1.0, 2.0)],
+         settings={"theta": 0.5},
+         note="geisoleerd; formule 2e6 t links, tijdstabel rechts, elk een "
+              "eigen deel: een last met twee SOURCE-regels. theta 0,5 en q "
+              "lineair per stap: energie exact; tolerantie 1e-4 (float32 "
+              "in het resultaatbestand)"),
+]
+
+
+# TH-42 (transient): lasbron (#ASTER-LASBRON, Gauss r = 2 mm, symmetrie=1)
+# naast een Mecway-warmtebron met een tijdstabel op het hele blok (overlapt
+# de brongroep). Blok 40 x 10 x 10 mm (y = 0 symmetrievlak, z = 0 het
+# oppervlak), hex8 1 mm, geisoleerd, rho cp = 4,68e6 J/m3/K. Alles in een
+# last 'lasbron' (bridge_welding._merged_load). Energiebalans:
+# rho cp int (T - T0) dV = E_las + E_tabel; E_las uit het opgenomen
+# vermogen van de lasbron zelf (BRIDGE_LASBRON in de .mess, CALC_VECT_ELEM
+# van lasbron_1, trapeziumregel over de tijdstippen van de energiecontrole),
+# E_tabel = V int q dt (exact, theta 0,5).
+LX42, BY42, HZ42, RC42, T42 = 0.04, 0.01, 0.01, 7800.0 * 600.0, 293.15
+Q42, QV42 = 100.0, 2.0e7                # W (hele bron), W/m3 op t = 2 s
+
+
+def build_th42():
+    m = Model("T31", timesteps={"timeperiod": "2 s", "stepsize": "0.1 s"})
+    m.elset("Blok", "Staal")
+    hexmesh(m, "Blok", 40, 10, 10, box(0, LX42, 0, BY42, -HZ42, 0))
+    _mat_th(m, "Staal", 30.0, rho=7800.0, cp=600.0)
+    m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+    _all_elems(m)
+    m.add(u"<initialconditions>\n    " + _temp("Alle", T42)
+          + u"\n  </initialconditions>")
+    m.add(u'<heatgeneration selection="Alles">'
+          u'<value time="0 s">0 W/m³</value><value time="2 s">%g W/m³'
+          u'</value></heatgeneration>' % QV42)
+    m.add(u"<ccxmodeldefinition>%s</ccxmodeldefinition>" % "\n".join(
+        u"** ASTER-LASBRON " + line for line in (
+            "Q=%g, v=0.002, start=(0.015, 0, 0), richting=(1, 0, 0)" % Q42,
+            "r=0.002, symmetrie=1")))
+    return m
+
+
+def _weld_energy(r, t):
+    """int P dt van lasbron 1 van 0 tot t: P lineair tussen de
+    BRIDGE_LASBRON-regels van de .mess, constant voor de eerste en na de
+    laatste (de bron is de hele analyse aan)."""
+    import sys
+    from verif_lib import SCRIPTS
+    if SCRIPTS not in sys.path:
+        sys.path.insert(0, SCRIPTS)
+    import bridge_welding
+    rows = [(tt, p) for tt, p, _q in bridge_welding.read_energy(r.mess)[1]]
+    rows = [(0.0, rows[0][1])] + rows + [(t, rows[-1][1])]
+    return sum(0.5 * (p0 + p1) * (t1 - t0)
+               for (t0, p0), (t1, p1) in zip(rows, rows[1:]))
+
+
+def _th42_value(r):
+    v = LX42 * BY42 * HZ42
+    e_tab = v * 0.5 * QV42 * 2.0
+    return (_vol_mean(r, 2.0) - T42) * RC42 * v - _weld_energy(r, 2.0) - e_tab
+
+
+TESTS += [
+    Case("TH-42", GROUP, "Lasbron + Mecway-warmtebron als tijdstabel",
+         "ther_3d", build_th42,
+         [Check("energie: rho cp int dT dV - E_las - E_tabel",
+                _th42_value, ref=0.0,
+                tol_abs=1e-3 * (Q42 / 2 * 2.0 + LX42 * BY42 * HZ42 * QV42),
+                unit="J",
+                source="energiebalans, geisoleerd; E_las uit BRIDGE_LASBRON "
+                       "(job), E_tabel = V int q dt"),
+          Check("T_gem - T0 (t = 2 s)", lambda r: _vol_mean(r, 2.0) - T42,
+                ref=(Q42 / 2 * 2.0 + LX42 * BY42 * HZ42 * QV42)
+                / (RC42 * LX42 * BY42 * HZ42), tol=1e-3, unit="K",
+                source="energiebalans met E_las = Q/2 t (halve bron in het "
+                       "mesh); tolerantie 0,1 %: opgenomen vermogen van de "
+                       "Gauss-bron (r = 2 mm, mesh 1 mm) wijkt < 1e-5 af")],
+         settings={"theta": 0.5},
+         note="lasbron en tabelbron in een last 'lasbron' (eerder een "
+              "WARNING); de tabelbron overlapt de brongroep (som per deel)"),
+]
