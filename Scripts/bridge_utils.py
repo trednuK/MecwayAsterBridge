@@ -23,6 +23,13 @@ from datetime import datetime
 # bewust buiten CONFIG_BRIDGE: het startscherm herschrijft alleen dat blok.
 BRIDGE_VERSION = "V2026.1"
 
+# Geteste versies (bridge_version.py): een andere versie geeft alleen een
+# WARNING, de run gaat door. Mecway: het attribuut version van <liml>;
+# Code-Aster: major.minor. Bijwerken na een geslaagde regressie, zie
+# docs/Na_een_update.md.
+TESTED_MECWAY_VERSIONS = ("33", "34")
+TESTED_ASTER_VERSIONS = ("17.4",)
+
 
 # ==========================================
 # CONFIGURATIE

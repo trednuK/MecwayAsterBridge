@@ -29,6 +29,7 @@ Verwante documenten:
 | Eigen Code-Aster-invoer (`#ASTER`-regels) | [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) |
 | Meldingen van Code-Aster, oorzaak en oplossing | [`Foutmeldingen_CodeAster.md`](Foutmeldingen_CodeAster.md) |
 | Verificatie tegen analytische oplossingen | [`Verificatie.md`](Verificatie.md) |
+| Na een update van Mecway of Code-Aster: versiewaarschuwing, nieuwe versie controleren | [`Na_een_update.md`](Na_een_update.md) |
 | Bekende afwijkingen en beperkingen (ontwikkelbestand, Nederlands) | [`KNOWN_BUGS.md`](../KNOWN_BUGS.md) |
 
 ## 1. Benodigd

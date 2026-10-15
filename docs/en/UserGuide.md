@@ -36,6 +36,7 @@ Related documents:
 | Your own Code-Aster input (`#ASTER` lines) | [`ASTER_lines_examples.md`](ASTER_lines_examples.md) |
 | Code-Aster messages, cause and solution | [`CodeAster_error_messages.md`](CodeAster_error_messages.md) |
 | Verification against analytical solutions | [`Verification.md`](Verification.md) |
+| After an update of Mecway or Code-Aster: version warning, checking a new version | [`After_an_update.md`](After_an_update.md) |
 | Known deviations and limitations (developer file, Dutch) | [`KNOWN_BUGS.md`](../../KNOWN_BUGS.md) |
 
 ## 1. Requirements

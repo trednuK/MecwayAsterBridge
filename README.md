@@ -91,6 +91,7 @@ read on the *Documentation* page of the start screen.
 | Your own Code-Aster input (`#ASTER` lines) | [ASTER lines with examples](docs/en/ASTER_lines_examples.md) | [ASTER-regels met voorbeelden](docs/ASTER_regels_voorbeelden.md) |
 | Code-Aster messages: cause and solution | [Code-Aster error messages](docs/en/CodeAster_error_messages.md) | [Foutmeldingen Code-Aster](docs/Foutmeldingen_CodeAster.md) |
 | Verification | [Verification](docs/en/Verification.md) | [Verificatie](docs/Verificatie.md) |
+| After an update of Mecway or Code-Aster: version warning, checking a new version | [After an update](docs/en/After_an_update.md) | [Na een update](docs/Na_een_update.md) |
 
 The start screen, the messages and the convergence window are available in English and
 Dutch. Some developer-facing text stays Dutch: INFO/SUCCESS lines in the log, comments in

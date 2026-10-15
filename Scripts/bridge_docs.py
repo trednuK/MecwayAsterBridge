@@ -68,6 +68,9 @@ DOCS = [
     ("Verificatie.md", "en/Verification.md",
      u"Verificatie (FEM tegen analytisch)",
      u"Verification (FEM vs analytical)"),
+    ("Na_een_update.md", "en/After_an_update.md",
+     u"Na een update van Mecway of Code-Aster",
+     u"After an update of Mecway or Code-Aster"),
 ]
 
 GLOSSARY_PAGE = "woordenlijst"     # pseudo-bestand voor de woordenlijst

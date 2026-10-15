@@ -1,0 +1,84 @@
+# Na een update van Mecway of Code-Aster
+
+De bridge is getest met bepaalde versies van Mecway en Code-Aster. Een nieuwere versie werkt
+meestal ook, maar niet altijd. Deze pagina zegt wat de versiewaarschuwing betekent en hoe je een
+nieuwe versie controleert.
+
+## 1. De versiewaarschuwing
+
+Bij elke run kijkt de bridge welke versies er draaien:
+
+- **Mecway**: het attribuut `version` van `<liml>` in het opgeslagen model (Mecway 34 schrijft
+  `<liml version="34">`).
+- **Code-Aster**: vóór de run uit het pad van de launcher (`...\17.4\bin\run_aster.bat`), na de run
+  uit de kop van de `.mess` (`Version 17.4.0 ...`). De versie uit de `.mess` telt; het is de versie
+  die echt gerekend heeft. Vergeleken wordt alleen major.minor (17.4).
+
+Beide versies staan bovenaan het log van de run (`<model>_<run_id>_bridge_log.txt`), bijvoorbeeld
+`INFO: Mecway-versie 34 (getest).` en `INFO: Code-Aster-versie 17.4.0 volgens .mess (getest).`
+
+Is een versie niet getest, dan komt er een **WARNING** in het log en een melding in het statusvak
+aan het eind van de run. De run gaat gewoon door: het is alleen een waarschuwing. Controleer de
+resultaten dan extra (vergelijk bijvoorbeeld met Mecway's eigen solver) en voer bij gelegenheid de
+controle van §2 uit. Is een versie niet te bepalen (oud model zonder `version`, eigen
+Code-Aster-build op een ander pad), dan staat er alleen een INFO-regel in het log.
+
+De geteste versies staan in `Scripts/bridge_utils.py`, buiten `CONFIG_BRIDGE`:
+
+```python
+TESTED_MECWAY_VERSIONS = ("33", "34")
+TESTED_ASTER_VERSIONS = ("17.4",)
+```
+
+## 2. Een nieuwe versie controleren
+
+Nodig: CPython 3 en de repo (zie [`Verificatie.md`](Verificatie.md) §2).
+
+| Nieuwe versie van | Uitvoeren (in `TestFiles/Verificatie`) |
+|---|---|
+| Code-Aster | `python run_verificatie.py` (ongeveer een uur) en `python code_aster_testcases/run_code_aster_tests.py` (officiële Code-Aster-tests) |
+| Mecway | `python run_verificatie.py --mecway-opslaan`: Mecway opent en bewaart eerst elk testmodel, de bridge rekent daarna die door Mecway opgeslagen kopie |
+
+Waar je naar kijkt:
+
+- `resultaten/resultaten.md` (bij `--mecway-opslaan`: `resultaten/mecway/vergelijking.md`):
+  **0 NOK en 0 FOUT**. BEKEND mag, als het dezelfde bekende beperkingen zijn als in de basislijn.
+- Vergelijk de aantallen per groep met de basislijn in [`Verificatie.md`](Verificatie.md) §3.
+- De officiële Code-Aster-tests: alle OK, geen NOOK.
+
+## 3. Wat er typisch breekt
+
+**Mecway**
+
+- Tag- en attribuutnamen in de `.liml` (belastingen, randvoorwaarden, materialen, selecties):
+  een nieuwe naam wordt niet herkend en de belasting komt in de lijst "NIET vertaald" aan het
+  eind van de run (`bridge_from_liml.py`, `bridge_bcs.py`).
+- Het resultaatformaat in `<solution>`: resultaten laden niet of op de verkeerde plek
+  (`aster_results_export.py`, `bridge_results_liml.py`).
+- Eenheden die Mecway anders schrijft: een WARNING "Eenheid niet herkend" in het log.
+
+**Code-Aster**
+
+- Sleutelwoorden in de templates (`Scripts/AsterTemplate_*.comm`) en in de gegenereerde `.comm`:
+  een hernoemd of verwijderd sleutelwoord geeft een syntaxfout in de `.mess`.
+- De Python-API die de scripts in de job gebruiken: `aster_results_export.py`,
+  `aster_spectrum.py`, `aster_acoustic_export.py`, `aster_acoustic_complex.py`, `aster_cyclic.py`,
+  `aster_fatigue.py`. Een fout staat in de `.mess` of in `<model>_<run_id>_console.txt`.
+- De tekst van de `.mess` die de bridge leest (convergentiescherm en meldingen,
+  `bridge_convergence.py`, `bridge_run_aster.py`): andere opmaak geeft een leeg of onvolledig
+  convergentiescherm, of een gemiste fout.
+
+## 4. Een andere Code-Aster-versie kiezen
+
+Elke Code-Aster-versie heeft een eigen map met een eigen `run_aster.bat`. Kies op de pagina
+**Algemeen** van het startscherm bij *Code-Aster launcher (run_aster.bat)* met *Bladeren...* de
+`run_aster.bat` van de gewenste versie, bijvoorbeeld
+`%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`. De verificatie (§2) gebruikt dezelfde
+instelling. Terug naar de vorige versie: het oude pad weer kiezen.
+
+## 5. Na een geslaagde controle
+
+Voeg de nieuwe versie toe aan `TESTED_MECWAY_VERSIONS` of `TESTED_ASTER_VERSIONS` in
+`Scripts/bridge_utils.py` (met de hand; deze regels staan buiten `CONFIG_BRIDGE`, het startscherm
+verandert ze niet) en werk de basislijn in [`Verificatie.md`](Verificatie.md) §3 bij. Daarna geeft
+de bridge voor die versie geen waarschuwing meer.

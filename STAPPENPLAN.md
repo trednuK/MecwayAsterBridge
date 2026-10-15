@@ -49,6 +49,7 @@ S7, S8, S5, S9).
 | S15 | Pre-tension section (boutvoorspanning) | open | – | gekozen door de gebruiker 15 okt (C8) |
 | S16 | 2D- en axisymmetrische analyses (S20, D20, SA0, ook thermisch en akoestiek 2D) | open | – | gekozen door de gebruiker 15 okt (C9) |
 | S17 | Lasten op balkzijvlakken; hydrostatische druk op schaalranden (KNOWN_BUGS 5) | open | – | gekozen door de gebruiker 15 okt (C10) |
+| S18 | Nieuwe Code-Aster-versie (18) testen | later | Code-Aster 18 voor Windows beschikbaar | versiewaarschuwing en werkwijze klaar (`bridge_version.py`, docs/Na_een_update.md) |
 | – | Rotordynamica | later | – | |
 | – | Grond-constructie-interactie (MISS3D) | niet gepland | – | |
 | – | Hex-blokmesher als Tools-script | niet gepland | – | |
@@ -1224,3 +1225,20 @@ rekent ze als verdeelde balklast) en hydrostatische druk op schaalranden.
 `FORCE_ARETE` of knoopkrachten zoals `bridge_mesh._edge_loads`.
 **Klaar als:** balk met druk op een zijvlak = balk met de equivalente lijnlast (≤ 0,1%) en gelijk aan
 Mecway headless; hydrostatische druk op een schaalrand gelijk aan de handberekening; regressie D.5.
+
+### S18 – Nieuwe Code-Aster-versie (18) testen
+**Doel:** de bridge met Code-Aster 18 laten werken en die versie als getest opnemen; tot dan geeft
+een run met 18 alleen een WARNING (`bridge_version.py`, `TESTED_ASTER_VERSIONS` in `bridge_utils.py`).
+**Voorwaarde:** Code-Aster 18 voor Windows (code-aster-windows.com) is beschikbaar; tot dan status later.
+**Code-Aster:** sleutelwoorden in de templates (`AsterTemplate_*.comm`) en de gegenereerde `.comm`
+tegen de catalogus van 18; de Python-API in de job (`aster_results_export.py`, `aster_spectrum.py`,
+`aster_acoustic_export.py`, `aster_acoustic_complex.py`, `aster_cyclic.py`, `aster_fatigue.py`);
+de `.mess`-tekst die `bridge_version.py`, `bridge_convergence.py` en `bridge_run_aster.py` lezen (versieregel,
+convergentietabel, DIAGNOSTIC JOB).
+**Uitzoeken:** de release notes van 18 (vervallen/hernoemde sleutelwoorden), het standaardpad van de
+launcher (`exe_aster`) en of 17.4 en 18 naast elkaar geïnstalleerd kunnen blijven.
+**Klaar als:** volledige regressie (`run_verificatie.py`) met 0 NOK/FOUT en dezelfde BEKEND als de
+basislijn in docs/Verificatie.md §3, de officiële Code-Aster-tests (`run_code_aster_tests.py`) alle OK,
+templates/API aangepast waar nodig (17.4 blijft werken of het besluit om 17.4 te laten vallen staat in
+CHANGELOG.md), `TESTED_ASTER_VERSIONS` bijgewerkt en docs (Handleiding, Na_een_update, Verificatie) NL+EN
+nagelopen; regressie D.5.

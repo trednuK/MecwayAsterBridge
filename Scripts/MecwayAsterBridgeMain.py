@@ -125,6 +125,7 @@ from bridge_results_liml import (splice_results, read_step,
                                  read_error_summary, read_crit_stab,
                                  crit_stab_estimate, read_imperfection)
 from bridge_failure     import report_failures
+import bridge_version
 import bridge_acoustic
 import bridge_fracture
 import bridge_xfem
@@ -183,6 +184,14 @@ def _run(settings):
                                 CONFIG_BRIDGE["active_analysis"]))
     log("INFO: Werkmap {0}; Code-Aster {1}.".format(work_dir_path(),
                                                     exe_aster_path()))
+    # Versiecontrole (bridge_version.py): alleen een WARNING, de run gaat
+    # door. De meldingen komen aan het eind in het statusvak (finally).
+    # Code-Aster hier uit het launcherpad, na de run uit de .mess; Mecway
+    # na het opslaan uit de .liml (stap 2).
+    version_notes = {}
+    version_notes["aster"] = bridge_version.check_aster(
+        bridge_version.aster_version_from_launcher(exe_aster_path()),
+        "launcher-pad")
     for analysis, key, _kind, old, new in settings["changes"]:
         log("INSTELLING: {0}{1}: {2} -> {3}".format(
             "" if analysis is None else "analyses['{0}'].".format(analysis),
@@ -234,6 +243,7 @@ def _run(settings):
         # --- Stap 2: Opslaan ---
         mw.save()
         active_liml = mw.file_name()  # Pad naar het actieve .liml-bestand
+        version_notes["mecway"] = bridge_version.check_mecway(active_liml)[1]
 
         # --- Stap 3: Lees model_data uit het .liml-bestand ---
         model_data = extract_aster_data_from_liml(active_liml)
@@ -350,6 +360,15 @@ def _run(settings):
                           "{0}.").format(log_file_name()))
             return False
         mess_errors = aster_mess_errors(work_dir_path(), run_start)
+        # Versie die echt draaide (kop van de .mess van deze run); gaat
+        # voor de schatting uit het launcherpad.
+        mess_path = os.path.join(work_dir_path(), run_name(".mess"))
+        mess_version = (bridge_version.aster_version_from_mess(mess_path)
+                        if os.path.exists(mess_path) and
+                        os.path.getmtime(mess_path) >= run_start else None)
+        if mess_version is not None:
+            version_notes["aster"] = bridge_version.check_aster(
+                mess_version, ".mess")
         # Bezweken elementen (bridge_failure.py) in de log en een melding
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
@@ -422,6 +441,11 @@ def _run(settings):
                "ERROR: Unexpected error in main(): {0}").format(str(e)))
         raise  # Geef de fout door zodat het except-blok hieronder hem logt
     finally:
+        # Versiewaarschuwingen (bridge_version) altijd tonen, ook als de
+        # run hierboven stopte: een andere versie kan de oorzaak zijn.
+        for key in ("mecway", "aster"):
+            if version_notes.get(key):
+                _notify(version_notes[key])
         # Houdt Mecway de modules tussen twee runs in het geheugen (NIET
         # geverifieerd), dan zou de volgende run zonder terugzetten de
         # omgezette analyse i.p.v. "auto" tonen en opslaan.
