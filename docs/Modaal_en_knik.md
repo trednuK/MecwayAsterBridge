@@ -111,7 +111,7 @@ Klik *Starten*. Wat je ziet:
   (verificatietest MO-01): `Mode 1: 16.7103 Hz (eff. massa X/Y/Z 0.0/61.3/0.0%,
   RX/RY/RZ 0.0/0.0/97.1%)`. De log geeft ook de totale massa, het zwaartepunt en de
   traagheidsmomenten om de assen door de oorsprong en door het zwaartepunt
-  (`INFO: Massa 4.71 kg, zwaartepunt (0.5, 0, 0) m; ...`). Het statusvak toont de
+  (`INFO: Mass 4.71 kg, centre of gravity (0.5, 0, 0) m; ...`). Het statusvak toont de
   eerste 20 modes, de log alle. Dezelfde effectieve massa staat per mode ook in Mecway
   (§1.4).
 - **Convergentiescherm:** de meldingen en de diagnose; in de statusregel de eerste
@@ -425,7 +425,7 @@ Mecway (KNOWN_BUGS 112, 113).
 | WARNING: Mode 1 heeft ~0 Hz | starre beweging of mechanisme | opleggingen controleren |
 | Geen RX/RY/RZ achter de modes; in de `.mess`: `aster_results_export: WAARSCHUWING: effectieve massa rotaties niet ...` | de eigen berekening lukte niet of kwam voor de translaties niet uit op Code-Aster's waarden (bijv. een onbekend soort vrijheidsgraad) | de frequenties, vormen en translaties zijn goed; meld het model als fout (KNOWN_BUGS). Een rotatie-effectieve massa kun je dan in Mecway zelf opvragen (*modal effective mass*, interne solver) |
 | RX/RY/RZ-fracties lijken op de translaties | het model ligt ver van de oorsprong: een rotatie om de oorsprong is dan vooral een verplaatsing | leg de oorsprong in het punt waarom je de rotatie wilt (§1.5) |
-| INFO: Modes: ... genegeerd: reactions (of een ander veld) | bij modes gaan alleen vormen en spanningen naar Mecway | normaal; reacties horen niet bij een mode |
+| INFO: Modes: ... ignored: reactions (of een ander veld) | bij modes gaan alleen vormen en spanningen naar Mecway | normaal; reacties horen niet bij een mode |
 | De resultaatroute 'tabel' werkt niet ... | modes alleen via `liml` | zet *Resultaten naar Mecway* op `liml` |
 
 ## 5. Niet-lineaire knik

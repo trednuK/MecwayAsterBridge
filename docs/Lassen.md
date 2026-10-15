@@ -94,10 +94,10 @@ Hoofdvenster: *Actieve analyse* `auto` (of *Thermisch*), *Starten*. De log
 (`<model>_<run-id>_bridge_log.txt`) toont per bron:
 
 ```
-INFO: #ASTER-LASBRON 1: brongroep automatisch, 9718 elementen binnen 0.006 m van de baan.
-INFO: #ASTER-LASBRON 1: verspringing 0.0005 m per stap (0.167 x af + ar).
-INFO: #ASTER-LASBRON 1: elementen langs de baan tot 0.50 x de halve as (langs de lasrichting).
-INFO: #ASTER-LASBRON 1: Goldak, Q_eff = 1000 W (eta 0.8), v = 0.005 m/s, baan 0.03 m van t = 0.0 tot 6 s, ...
+INFO: #ASTER-LASBRON 1: source group automatic, 9718 elements within 0.006 m of the path.
+INFO: #ASTER-LASBRON 1: jump 0.0005 m per step (0.167 x af + ar).
+INFO: #ASTER-LASBRON 1: elements along the path up to 0.50 x the semi-axis (along the weld direction).
+INFO: #ASTER-LASBRON 1: Goldak, Q_eff = 1000 W (eta 0.8), v = 0.005 m/s, path 0.03 m from t = 0.0 to 6 s, ...
 ```
 
 Na de run staat in het statusvak de **energiecontrole**: welk deel van η·Q het mesh
@@ -503,7 +503,7 @@ patroon.
 
 | Melding (log) | Oorzaak | Oplossing |
 |---|---|---|
-| `INFO: Mechanische belasting '...' telt niet mee in de thermische analyse (alleen met een Thermal stress ...)` | T31 met opleggingen maar zonder Thermal stress | Thermal stress toevoegen (§9.1) als je restspanning wilt |
+| `INFO: Mechanical load '...' on '...' is ignored in the thermal analysis (only with a Thermal stress ...)` | T31 met opleggingen maar zonder Thermal stress | Thermal stress toevoegen (§9.1) als je restspanning wilt |
 | `ERROR: Thermomechanisch zonder mechanische randvoorwaarden` | geen Fixed support / Displacement | statisch bepaald vastleggen (§9.1 stap 3) |
 | `<SolverError> <MECANONLINE9_4>` in de `.mess`, `BRIDGE_ONVOLLEDIG 0.0` | matrix singulier: het werkstuk kan nog vrij bewegen (een Displacement is één richting) | per richting een eigen Displacement; zes starre bewegingen vastleggen |
 | `ERROR: Thermomechanisch ...: alleen volume-elementen` | schalen, balken of veren in het model | volume-elementen |
@@ -790,9 +790,9 @@ keten thermisch → mechanisch).
    (restspanning): Thermal stress, opleggingen en `#ASTER-MATERIAAL` zoals in §9.1; zet
    bij lassen `TC_CUT`.
 5. Hoofdvenster: *Actieve analyse* `auto` (of *Thermisch*), *Starten*. De log toont per
-   bron `INFO: #ASTER-LASBRON 1: toevoegmateriaal 180 elementen, geboren van t = 0 tot
-   4 s (voorloop 0.003 m).`, en in de keten `INFO: Thermomechanisch: toevoegmateriaal
-   ... STAT_NON_LINE per geboortestap.`
+   bron `INFO: #ASTER-LASBRON 1: filler material 180 elements, born from t = 0 to
+   4 s (lead 0.003 m).`, en in de keten `INFO: Thermomechanical: filler material
+   ... STAT_NON_LINE per birth step.`
 
 ### 11.2 Sleutels
 

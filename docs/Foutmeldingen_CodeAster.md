@@ -97,7 +97,7 @@ Alle bestanden van een run heten `<model>_<run-id>.*` (zie
    `<A>_ALARM` (gezien: `FACTOR_42` met `DIAGNOSTIC JOB : OK`). Beoordeel een run dus
    op de meldingskaders, niet op die regel; de bridge doet dat ook.
 3. **`<model>_<run-id>_bridge_log.txt`** in de werkmap: fouten vóór Code-Aster
-   (ERROR/WARNING per stap), hernoemde groepen (`INFO: Groepsnaam 'x' -> 'y'`),
+   (ERROR/WARNING per stap), hernoemde groepen (`INFO: Group name 'x' -> 'y'`),
    samengevoegde contactzones, overgeslagen belastingen.
 4. **Geen meldingskader.** Bij `<F>_ABNORMAL_ABORT` zonder kader staat de oorzaak
    alleen in het Code-Aster-venster (dat blijft dan open). Ontbreekt `<FIN>` in de

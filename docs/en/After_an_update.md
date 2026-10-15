@@ -15,8 +15,7 @@ On every run the bridge looks at which versions are running:
   is the version that actually computed. Only major.minor (17.4) is compared.
 
 Both versions are at the top of the run log (`<model>_<run_id>_bridge_log.txt`), for example
-`INFO: Mecway-versie 34 (getest).` and `INFO: Code-Aster-versie 17.4.0 volgens .mess (getest).`
-(INFO lines are always in Dutch).
+`INFO: Mecway version 34 (tested).` and `INFO: Code-Aster version 17.4.0 according to .mess (tested).`
 
 If a version has not been tested, a **WARNING** appears in the log and a message in the status box
 at the end of the run. The run simply continues: it is only a warning. Check the results more

@@ -109,7 +109,7 @@ Click "Start". What you see:
   Example (verification test MO-01): `Mode 1: 16.7103 Hz (eff. mass X/Y/Z
   0.0/61.3/0.0%, RX/RY/RZ 0.0/0.0/97.1%)`. The log also gives the total mass, the
   centre of mass and the moments of inertia about the axes through the origin and
-  through the centre of mass (`INFO: Massa 4.71 kg, zwaartepunt (0.5, 0, 0) m; ...`; INFO lines are in Dutch).
+  through the centre of mass (`INFO: Mass 4.71 kg, centre of gravity (0.5, 0, 0) m; ...`).
   The status box shows the first 20 modes, the log all of them. The same effective
   mass is also in Mecway per mode (§1.4).
 - **Convergence window:** the messages and the diagnosis; the status line shows the
@@ -421,7 +421,7 @@ torsional buckling differ from Mecway (KNOWN_BUGS 112, 113).
 | WARNING: Mode 1 has ~0 Hz | rigid motion or mechanism | check the supports |
 | No RX/RY/RZ after the modes; in the `.mess`: `aster_results_export: WARNING: effective mass of the rotations not ...` | the own computation failed or did not match Code-Aster's values for the translations (e.g. an unknown kind of degree of freedom) | frequencies, shapes and translations are fine; report the model as a bug (KNOWN_BUGS). You can then request a rotational effective mass in Mecway itself (*modal effective mass*, internal solver) |
 | RX/RY/RZ fractions look like the translations | the model lies far from the origin: a rotation about the origin is then mostly a translation | put the origin at the point about which you want the rotation (§1.5) |
-| INFO: Modes: ... genegeerd: reactions (or another field) | for modes only shapes and stresses go to Mecway | normal; reactions do not belong to a mode |
+| INFO: Modes: ... ignored: reactions (or another field) | for modes only shapes and stresses go to Mecway | normal; reactions do not belong to a mode |
 | The result route 'tabel' does not work ... | modes only via `liml` | set "Results to Mecway" to `liml` |
 
 ## 5. Nonlinear buckling

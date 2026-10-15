@@ -102,8 +102,8 @@ wordt afgekapt en dubbel krijgt `_1`, `_2`. Schrijf daarom altijd `<<Mecway-naam
 nooit de naam zelf. Voorbeelden uit de log:
 
 ```
-INFO: Groepsnaam '02 Last-punt' -> 'G02_Last_punt' (Code-Aster: letter eerst, ...)
-INFO: Groepsnaam '01 Contact onder' -> 'G01_Contact_onder' ...
+INFO: Group name '02 Last-punt' -> 'G02_Last_punt' (Code-Aster: letter first, ...)
+INFO: Group name '01 Contact onder' -> 'G01_Contact_onder' ...
 ```
 
 | Mecway | Code-Aster |
@@ -658,7 +658,7 @@ in `AMOR` en `FREQ` zijn; een `DEFI_FONCTION` alleen in `FREQ` geeft een fout va
 `COMB_SISM_MODAL`.
 
 Uitkomst (verificatie SP-01, de nabouw van sdld25a met Mecway-veren en -massa's): de
-log meldt `INFO: #ASTER-regels: 6 code, ..., 1 SPECTRE, ...` en de twee opties; de
+log meldt `INFO: #ASTER lines: 6 code, ..., 1 SPECTRE, ...` en de twee opties; de
 absolute versnellingen `accelx` zijn gelijk aan de TEST_RESU-waarden van sdld25a
 (bijv. P1 10,4498 m/s²).
 

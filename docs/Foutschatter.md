@@ -177,7 +177,7 @@ Vrij is een vlak van precies één volume-element, dat:
   compression only, elastic support);
 - niet samenvalt met een schaalelement.
 
-In de log: `Foutschatter: n vrije vlakken van volume-elementen als groep 'BRERRVRIJ'`.
+In de log: `INFO: Error estimator: n free faces of volume elements as group 'BRERRVRIJ'`.
 
 ### 2.3 Lasten in de schatter
 

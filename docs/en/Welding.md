@@ -91,14 +91,13 @@ Mecway attributes. The same route works for *Heat flux* on faces, *Convection*
 
 ### 1.4 Starting and following the run
 
-Main window: *Active analysis* `auto` (or *Thermal*), *Start*. The log (`<model>_<run-id>_bridge_log.txt`) shows per source (INFO lines stay
-Dutch):
+Main window: *Active analysis* `auto` (or *Thermal*), *Start*. The log (`<model>_<run-id>_bridge_log.txt`) shows per source:
 
 ```
-INFO: #ASTER-LASBRON 1: brongroep automatisch, 9718 elementen binnen 0.006 m van de baan.
-INFO: #ASTER-LASBRON 1: verspringing 0.0005 m per stap (0.167 x af + ar).
-INFO: #ASTER-LASBRON 1: elementen langs de baan tot 0.50 x de halve as (along the weld direction).
-INFO: #ASTER-LASBRON 1: Goldak, Q_eff = 1000 W (eta 0.8), v = 0.005 m/s, baan 0.03 m van t = 0.0 tot 6 s, ...
+INFO: #ASTER-LASBRON 1: source group automatic, 9718 elements within 0.006 m of the path.
+INFO: #ASTER-LASBRON 1: jump 0.0005 m per step (0.167 x af + ar).
+INFO: #ASTER-LASBRON 1: elements along the path up to 0.50 x the semi-axis (along the weld direction).
+INFO: #ASTER-LASBRON 1: Goldak, Q_eff = 1000 W (eta 0.8), v = 0.005 m/s, path 0.03 m from t = 0.0 to 6 s, ...
 ```
 
 (source group chosen automatically, jump per step, element size relative to the
@@ -504,7 +503,7 @@ qualitative pattern.
 
 | Message (log) | Cause | Solution |
 |---|---|---|
-| `INFO: Mechanische belasting '...' telt niet mee in de thermische analyse (alleen met een Thermal stress ...)` | T31 with supports but without Thermal stress | add a Thermal stress (§9.1) if you want residual stress |
+| `INFO: Mechanical load '...' on '...' is ignored in the thermal analysis (only with a Thermal stress ...)` | T31 with supports but without Thermal stress | add a Thermal stress (§9.1) if you want residual stress |
 | `ERROR: Thermomechanical without mechanical constraints` | no Fixed support / Displacement | hold statically determinate (§9.1 step 3) |
 | `<SolverError> <MECANONLINE9_4>` in the `.mess`, `BRIDGE_ONVOLLEDIG 0.0` | singular matrix: the part can still move freely (a Displacement is one direction) | a separate Displacement per direction; fix the six rigid-body motions |
 | `ERROR: Thermomechanical ...: solid elements only` | shells, beams or springs in the model | solid elements |
@@ -794,10 +793,9 @@ thermal → mechanical chain).
    (residual stress): Thermal stress, supports and `#ASTER-MATERIAL` as in §9.1; with
    welding set `TC_CUT`.
 5. Main window: *Active analysis* `auto` (or *Thermal*), *Start*. The log shows per
-   source `INFO: #ASTER-LASBRON 1: toevoegmateriaal 180 elementen, geboren van t = 0 tot
-   4 s (voorloop 0.003 m).` (filler elements, born from t = .. to .. s), and in the
-   chain `INFO: Thermomechanisch: toevoegmateriaal ... STAT_NON_LINE per
-   geboortestap.`
+   source `INFO: #ASTER-LASBRON 1: filler material 180 elements, born from t = 0 to
+   4 s (lead 0.003 m).`, and in the chain `INFO: Thermomechanical: filler material
+   ... STAT_NON_LINE per birth step.`
 
 ### 11.2 Keys
 

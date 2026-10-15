@@ -304,8 +304,8 @@ Computing time (measured): a room of 13,000 nodes (hex20) with 20 modes 14 s.
 | `aster_acoustic_complex: ERROR: ...` in the `.mess`, no results | e.g. ARPACK does not converge, or Q(σ) is singular | another search frequency or fewer modes; if it persists: report it (KNOWN_BUGS) |
 | ERROR: Acoustic Resonance 2D (A20) is not translated | 2D model | make a 3D model (A30) |
 | ERROR: 'contact2' / 'nodesurfacecoupling' / 'constraintequation' on ... is not translated in an acoustic analysis | coupling in acoustics | use one continuous mesh |
-| INFO: Load '...' on '...' does not count in an acoustic analysis (log in Dutch) | mechanical or thermal load in the model | normal |
-| INFO: Mode 1 has ~0 Hz: constant pressure (log in Dutch) | hard walls without a pressure node | normal (§3.1) |
+| INFO: Load '...' on '...' does not count in an acoustic analysis | mechanical or thermal load in the model | normal |
+| INFO: Mode 1 is at ~0 Hz: constant pressure | hard walls without a pressure node | normal (§3.1) |
 | alarm `ALGELINE3_82` (la borne minimale ... est une valeur propre) | the lower bound of the Sturm check falls on the 0 Hz mode (hard walls) | harmless; the frequencies are correct (AK-01, AK-05) |
 | `<EXCEPTION> <ALGELINE3_81>` | singular stiffness: a separate part of the volume without a pressure node while there are pressure nodes elsewhere, or only `#ASTER-EXCIT` loads | choose a small negative search frequency (e.g. −10 Hz); the 0 Hz mode is then included |
 | alarm `ALGELINE5_15` / `ALGELINE5_23` | a mode misses the accuracy / multiple mode at the boundary (e.g. a square cross-section) | as for modal ([`Modal_and_buckling.md`](Modal_and_buckling.md) §4) |

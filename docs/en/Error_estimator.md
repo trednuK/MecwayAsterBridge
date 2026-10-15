@@ -175,8 +175,7 @@ A free face is a face of exactly one solid element that:
   only, elastic support);
 - does not coincide with a shell element.
 
-In the log: `Foutschatter: n vrije vlakken van volume-elementen als groep 'BRERRVRIJ'`
-(Dutch log text).
+In the log: `INFO: Error estimator: n free faces of volume elements as group 'BRERRVRIJ'`.
 
 ### 2.3 Loads in the estimator
 

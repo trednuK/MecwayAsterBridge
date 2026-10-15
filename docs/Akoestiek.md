@@ -304,8 +304,8 @@ Rekentijd (gemeten): een ruimte van 13 000 knopen (hex20) met 20 modes 14 s.
 | `aster_acoustic_complex: FOUT: ...` in de `.mess`, geen resultaten | bijv. ARPACK convergeert niet, of Q(σ) is singulier | andere zoekfrequentie of minder modes; blijft het: melden (KNOWN_BUGS) |
 | ERROR: Acoustic Resonance 2D (A20) wordt niet vertaald | 2D-model | maak een 3D-model (A30) |
 | ERROR: 'contact2' / 'nodesurfacecoupling' / 'constraintequation' op ... wordt in een akoestische analyse niet vertaald | koppeling in de akoestiek | gebruik één doorlopend mesh |
-| INFO: Belasting '...' op '...' telt niet mee in een akoestische analyse | mechanische of thermische belasting in het model | normaal |
-| INFO: Mode 1 heeft ~0 Hz: constante druk | harde wanden zonder drukknoop | normaal (§3.1) |
+| INFO: Load '...' on '...' does not count in an acoustic analysis | mechanische of thermische belasting in het model | normaal |
+| INFO: Mode 1 is at ~0 Hz: constant pressure | harde wanden zonder drukknoop | normaal (§3.1) |
 | alarm `ALGELINE3_82` (la borne minimale ... est une valeur propre) | de ondergrens van de Sturm-controle valt op de 0-Hz-mode (harde wanden) | onschuldig; de frequenties zijn goed (AK-01, AK-05) |
 | `<EXCEPTION> <ALGELINE3_81>` | singuliere stijfheid: een los deel van het volume zonder drukknoop terwijl er elders wel drukknopen zijn, of alleen `#ASTER-EXCIT`-lasten | kies een kleine negatieve zoekfrequentie (bijv. −10 Hz); de 0-Hz-mode komt dan mee |
 | alarm `ALGELINE5_15` / `ALGELINE5_23` | een mode haalt de nauwkeurigheid niet / meervoudige mode op de grens (bijv. een vierkante doorsnede) | als bij modaal ([`Modaal_en_knik.md`](Modaal_en_knik.md) §4) |

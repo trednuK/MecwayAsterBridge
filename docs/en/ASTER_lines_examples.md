@@ -98,11 +98,11 @@ Code-Aster only accepts group names with a letter first, letters, digits and `_`
 most 24 characters. The bridge renames (`bridge_mesh._aster_names`): invalid characters
 become `_`, a name that does not start with a letter gets a `G` in front, too long is
 cut and duplicates get `_1`, `_2`. So always write `<<Mecway name>>`, never the name
-itself. Examples from the log (INFO lines are in Dutch):
+itself. Examples from the log:
 
 ```
-INFO: Groepsnaam '02 Last-punt' -> 'G02_Last_punt' (Code-Aster: letter eerst, ...)
-INFO: Groepsnaam '01 Contact onder' -> 'G01_Contact_onder' ...
+INFO: Group name '02 Last-punt' -> 'G02_Last_punt' (Code-Aster: letter first, ...)
+INFO: Group name '01 Contact onder' -> 'G01_Contact_onder' ...
 ```
 
 | Mecway | Code-Aster |
@@ -652,7 +652,7 @@ no gravity. The spectrum must be a `DEFI_NAPPE` (parameter `AMOR`) or a `FORMULE
 `COMB_SISM_MODAL`.
 
 Outcome (verification SP-01, the rebuild of sdld25a with Mecway springs and masses):
-the log reports `INFO: #ASTER-regels: 6 code, ..., 1 SPECTRE, ...` and the two options;
+the log reports `INFO: #ASTER lines: 6 code, ..., 1 SPECTRE, ...` and the two options;
 the absolute accelerations `accelx` equal the TEST_RESU values of sdld25a (e.g. P1
 10.4498 m/s²).
 

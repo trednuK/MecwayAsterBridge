@@ -99,7 +99,7 @@ All files of a run are named `<model>_<run-id>.*` (see
    `DIAGNOSTIC JOB : OK`). Judge a run by the message boxes, not by that line; the bridge
    does the same.
 3. **`<model>_<run-id>_bridge_log.txt`** in the work folder: errors before Code-Aster
-   (ERROR/WARNING per step), renamed groups (`INFO: Groepsnaam 'x' -> 'y'`; INFO lines are in Dutch), merged
+   (ERROR/WARNING per step), renamed groups (`INFO: Group name 'x' -> 'y'`), merged
    contact zones, skipped loads.
 4. **No message box.** With `<F>_ABNORMAL_ABORT` without a box, the cause is only shown
    in the Code-Aster window (which then stays open). If `<FIN>` is missing from the
