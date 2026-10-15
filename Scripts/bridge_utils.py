@@ -98,6 +98,13 @@ CONFIG_BRIDGE = {
     # "auto": volg het analysetype van het Mecway-model (zie
     # MECWAY_ANALYSIS_TYPES onder dit blok); de keuze geldt alleen voor die run.
     "active_analysis": "auto",
+    # Configuratie (Mecway: Edit > New configuration) die de bridge rekent
+    # en in welke <solution configuration=".."> de resultaten komen. "auto":
+    # de enige configuratie, anders de enige zonder onderdrukte items,
+    # anders de eerste (choose_configuration); of de naam van een
+    # configuratie. Een naam die niet in het model staat: WARNING en "auto".
+    # Het startscherm toont de configuraties van het open model.
+    "configuration":   "auto",
 
     # --- Registry van ondersteunde analyses ---
     # Template per analyse ("template"): een bestandsnaam staat in de map
@@ -794,6 +801,68 @@ def tr(nl, en):
     bewaar je daarom als paar (nl, en) en vertaal je bij gebruik: tr(*paar).
     """
     return en if CONFIG_BRIDGE.get("language", "en") == "en" else nl
+
+
+def choose_configuration(names, suppressed):
+    """
+    Te rekenen configuratie van een model, gedeeld door
+    bridge_from_liml._pick_configuration (welke lasten meetellen) en
+    bridge_results_liml.pick_configuration (in welke solution de resultaten
+    komen), zodat die twee altijd dezelfde kiezen. De Mecway-API kan de
+    actieve configuratie niet lezen (alleen mw.set_active_configuration),
+    daarom de instelling CONFIG_BRIDGE["configuration"].
+
+    names      : namen van de <configuration name=".."> in volgorde
+    suppressed : namen die ergens in een <suppressed configuration="..">
+                 staan
+    Returns (naam of None, hoe, ontbreekt):
+      hoe = "geen" (model zonder configuraties), "gekozen" (de instelling),
+            "enige" (het model heeft er een), "vrij" (de enige zonder
+            onderdrukte items) of "eerste" (geen of meerdere zonder
+            onderdrukte items: de eerste; dubbelzinnig);
+      ontbreekt = de naam uit de instelling als die niet in het model staat
+            (dan geldt "auto"), anders None.
+    """
+    if not names:
+        return None, "geen", None
+    wanted = (CONFIG_BRIDGE.get("configuration") or "auto").strip()
+    missing = None
+    if wanted != "auto":
+        if wanted in names:
+            return wanted, "gekozen", None
+        missing = wanted
+    if len(names) == 1:
+        return names[0], "enige", missing
+    free = [n for n in names if n not in suppressed]
+    if len(free) == 1:
+        return free[0], "vrij", missing
+    return names[0], "eerste", missing
+
+
+def configuration_warning(names, configuration, how, missing):
+    """WARNING-tekst (zonder "WARNING: ") bij choose_configuration, of ""
+    als de keuze eenduidig is."""
+    parts = []
+    if missing:
+        parts.append(tr(
+            u"Configuratie '{0}' (instelling Configuratie) staat niet in het "
+            u"model ({1}); de bridge kiest zelf.",
+            u"Configuration '{0}' (setting Configuration) is not in the "
+            u"model ({1}); the bridge chooses itself.").format(
+                missing, u", ".join(names)))
+    if how == "eerste":
+        parts.append(tr(
+            u"Model met configuraties ({0}): niet eenduidig welke bedoeld "
+            u"is; de bridge rekent '{1}' (items die daarin onderdrukt zijn, "
+            u"tellen niet mee) en zet de resultaten in de solution daarvan. "
+            u"Kies de configuratie op het startscherm (Algemeen, "
+            u"Configuratie).",
+            u"Model with configurations ({0}): not clear which one is "
+            u"meant; the bridge computes '{1}' (items suppressed in it are "
+            u"left out) and writes the results into its solution. Choose the "
+            u"configuration on the start screen (General, "
+            u"Configuration).").format(u", ".join(names), configuration))
+    return u" ".join(parts)
 
 
 # ==========================================

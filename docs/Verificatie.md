@@ -368,6 +368,26 @@ opeenvolgende meshes.
   temperature +50 K, `LINE_QUAD`): modaal met voorspanning 284,96 Hz tegen Mecway
   286,18 Hz, knik 3,3969 tegen 3,4010; in de bridge en in Mecway geven `temperature2`
   en `temperature3` dezelfde uitkomst (ook statisch, niet-lineair statisch en D30).
+### LS-20 Configuraties (lastgevallen G, Q en ULS)
+
+- **Doel**: de instelling *Configuratie* (`configuration`) kiest welke configuratie de
+  bridge rekent; `auto` volgt de regel (de enige, de enige zonder onderdrukte items,
+  anders de eerste).
+- **Model**: staaf 1 × 0,1 × 0,1 m, 4 × 1 × 1 hex20, staal (ρ = 7850 kg/m³),
+  symmetrievlakken x = 0, y = 0, z = 0. Configuraties G (gravity 9,81 m/s² langs x),
+  Q (trek 1 MPa op het eindvlak) en ULS (eigen lastitems 1,2 g en 1,5 q, zoals in
+  Mecway: een configuratie heeft geen factor); elk lastitem is in de andere twee
+  onderdrukt (`<suppressed configuration=".."/>`).
+- **Referentie**: eindverplaatsing u = ρgL²/(2E) + qL/E (eenassig) en reactiekracht
+  ρgAL + qA (evenwicht), met de factoren van de gekozen configuratie.
+- **Resultaat**: LS-20a/b/c (G, Q, ULS gekozen): reactiekracht exact, u ≤ 0,06% af
+  (bij G hindert u = 0 op x = 0 de dwarscontractie iets). ULS = 1,2 G + 1,5 Q op
+  4,6e-16 relatief (alle knopen, nagerekend uit de drie runs). LS-20d (`auto`, elke
+  configuratie heeft onderdrukte items): G met een WARNING. LS-20e (kopie met alleen
+  ULS, instelling Q die niet in het model staat): WARNING daarover, dan ULS; geen
+  WARNING meer over een dubbelzinnige keuze. Met Mecway's
+  IronPython: `pick_configuration` + `splice_results` zetten de resultaten in de
+  solution van de gekozen configuratie en laten die van de andere staan.
 
 ### Conclusie lineair statisch
 

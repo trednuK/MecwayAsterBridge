@@ -579,6 +579,12 @@ GLOSSARY = OrderedDict([
               u"Strain definition of the hardening curve: derived from the "
               u"first point ((0,0) or strain > 0 -> total, like Mecway; "
               u"(0, stress) -> plastic, with a warning).")),
+    ("auto (configuration)", ("other", u"Configuratie: de enige "
+              u"configuratie van het model, anders de enige zonder "
+              u"onderdrukte items, anders de eerste (met een waarschuwing).",
+              u"Configuration: the only configuration of the model, else "
+              u"the only one without suppressed items, else the first "
+              u"(with a warning).")),
     ("plastic", ("other", u"Rekdefinitie hardingscurve: de rek is de "
                  u"plastische rek.",
                  u"Strain definition of the hardening curve: the strain is "
@@ -911,6 +917,23 @@ SETTING_HELP = {
                         u"Explicit dynamics, harmonic response and "
                         u"vibroacoustics harmonic are always chosen by "
                         u"you."),
+    "configuration": (u"Welke configuratie (Mecway: Edit > New "
+                      u"configuration) de bridge rekent: lasten die daarin "
+                      u"onderdrukt zijn tellen niet mee, en de resultaten "
+                      u"komen in de solution van die configuratie (de "
+                      u"andere blijven staan). De lijst toont de "
+                      u"configuraties van het open model (laatst "
+                      u"opgeslagen versie). Mecway's API kan de actieve "
+                      u"configuratie niet lezen. Een naam die niet in het "
+                      u"model staat: waarschuwing en 'auto'.",
+                      u"Which configuration (Mecway: Edit > New "
+                      u"configuration) the bridge computes: loads suppressed "
+                      u"in it are left out, and the results go into the "
+                      u"solution of that configuration (the others stay). "
+                      u"The list shows the configurations of the open model "
+                      u"(last saved version). Mecway's API cannot read the "
+                      u"active configuration. A name that is not in the "
+                      u"model: warning and 'auto'."),
     "mecway_solve_first": (u"Eerst met Mecway's eigen solver rekenen als "
                            u"controle; de bridge vergelijkt daarna de "
                            u"resultaten (CSV in de werkmap). Standaard uit: "
@@ -1622,6 +1645,7 @@ SETTING_HELP = {
 # naam die per instelling iets anders betekenen.
 _OPTION_TERMS = {
     ("plastic_strain_definition", "auto"): "auto (curve)",
+    ("configuration", "auto"): "auto (configuration)",
     ("imperfection_unit", "m"): "m (imperfection)",
     ("imperfection_unit", "L"): "L (imperfection)",
 }

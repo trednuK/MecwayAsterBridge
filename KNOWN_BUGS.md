@@ -297,19 +297,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    (e) Geen boogslengtemethode (`PILOTAGE`): met een last als tijdstabel stopt de run
    op het grenspunt (`MECANONLINE9_7`, NK-04).
 
-68\. **Configuraties: één per run, niet te kiezen; onterechte WARNING bij één
-   configuratie** (bevestigd met een offline run, `bridge_from_liml._pick_configuration`
-   en `bridge_results_liml.pick_configuration`). Mecway rekent alle configuraties
-   (headless `mecway <model> solve`: een `<solution configuration="..">` per
-   configuratie); de bridge één: de enige zonder onderdrukte items, anders de eerste.
-   Met lastgevallen als configuraties (G onderdrukt Q, Q onderdrukt G) is dat altijd
-   de eerste; een andere kan alleen via een kopie zonder de andere configuraties
-   (docs/Handleiding.md §4). In zo'n kopie met één configuratie waarin
-   items onderdrukt zijn, geeft de bridge toch de WARNING "de actieve configuratie is
-   niet te lezen"; bij één configuratie is de keuze eenduidig. Het resultaat klopt
-   (bridge = Mecway op 1e-9). Het menu-item Delete van het configuratietabblad is
-   afgeleid uit mecway.exe, NIET in de GUI nagegaan.
-
 70\. **Twee thermische functielasten met SOURCE rekenen als de eerste** (bevestigd met
    een Code-Aster-run, Code-Aster 17.4; `bridge_thermal.add_charge`). Staan twee
    lasten `AFFE_CHAR_THER_F` met `SOURCE` (een `FORMULE` of `DEFI_FONCTION`) in één

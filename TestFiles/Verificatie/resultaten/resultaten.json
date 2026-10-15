@@ -28591,5 +28591,245 @@
   "n_elem": 25,
   "settings": {},
   "general": {}
+ },
+ "LS-20a": {
+  "id": "LS-20a",
+  "group": "Lineair statisch",
+  "title": "Configuraties G/Q/ULS: G gekozen",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Instelling Configuratie = G: alleen het eigen gewicht.",
+  "seconds": 5.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u eindvlak",
+    "fem": 1.8323990389308415e-07,
+    "ref": 1.8335357142857143e-07,
+    "rel": -0.0006199363044943765,
+    "dev": -1.1366753548727427e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig: rho g L^2/(2E) + q L/E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht X",
+    "fem": 770.0849999999956,
+    "ref": 770.085,
+    "rel": -5.757528936601836e-15,
+    "dev": -4.433786671143025e-12,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht: rho g A L + q A",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 56,
+  "n_elem": 4,
+  "settings": {},
+  "general": {
+   "configuration": "G"
+  }
+ },
+ "LS-20b": {
+  "id": "LS-20b",
+  "group": "Lineair statisch",
+  "title": "Configuraties G/Q/ULS: Q gekozen",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Instelling Configuratie = Q: alleen de trek.",
+  "seconds": 5.2,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u eindvlak",
+    "fem": 4.76190476190468e-06,
+    "ref": 4.7619047619047615e-06,
+    "rel": -1.7076184216646695e-14,
+    "dev": -8.131516293641283e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig: rho g L^2/(2E) + q L/E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht X",
+    "fem": 9999.999999999862,
+    "ref": 10000.0,
+    "rel": -1.3824319466948509e-14,
+    "dev": -1.382431946694851e-10,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht: rho g A L + q A",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 56,
+  "n_elem": 4,
+  "settings": {},
+  "general": {
+   "configuration": "Q"
+  }
+ },
+ "LS-20c": {
+  "id": "LS-20c",
+  "group": "Lineair statisch",
+  "title": "Configuraties G/Q/ULS: ULS gekozen",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "ULS met eigen lastitems 1,2 g en 1,5 q.",
+  "seconds": 5.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u eindvlak",
+    "fem": 7.362745027528723e-06,
+    "ref": 7.362881428571428e-06,
+    "rel": -1.8525497663999362e-05,
+    "dev": -1.3640104270530427e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig: rho g L^2/(2E) + q L/E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht X",
+    "fem": 15924.101999999782,
+    "ref": 15924.102,
+    "rel": -1.3707443498258348e-14,
+    "dev": -2.1827872842550278e-10,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht: rho g A L + q A",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 56,
+  "n_elem": 4,
+  "settings": {},
+  "general": {
+   "configuration": "ULS"
+  }
+ },
+ "LS-20d": {
+  "id": "LS-20d",
+  "group": "Lineair statisch",
+  "title": "Configuraties G/Q/ULS: auto (de eerste)",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Elke configuratie heeft onderdrukte items: auto kiest de eerste (G), met een WARNING.",
+  "seconds": 4.5,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u eindvlak",
+    "fem": 1.8323990389308415e-07,
+    "ref": 1.8335357142857143e-07,
+    "rel": -0.0006199363044943765,
+    "dev": -1.1366753548727427e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig: rho g L^2/(2E) + q L/E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht X",
+    "fem": 770.0849999999956,
+    "ref": 770.085,
+    "rel": -5.757528936601836e-15,
+    "dev": -4.433786671143025e-12,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht: rho g A L + q A",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 56,
+  "n_elem": 4,
+  "settings": {},
+  "general": {
+   "configuration": "auto"
+  }
+ },
+ "LS-20e": {
+  "id": "LS-20e",
+  "group": "Lineair statisch",
+  "title": "Alleen configuratie ULS, items onderdrukt",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Kopie met alleen configuratie ULS (G- en Q-items zijn in ULS onderdrukt) en een instelling die niet in het model staat (Q): WARNING daarover, dan de enige configuratie; geen WARNING meer over een dubbelzinnige keuze.",
+  "seconds": 6.3,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u eindvlak",
+    "fem": 7.362745027528723e-06,
+    "ref": 7.362881428571428e-06,
+    "rel": -1.8525497663999362e-05,
+    "dev": -1.3640104270530427e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig: rho g L^2/(2E) + q L/E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht X",
+    "fem": 15924.101999999782,
+    "ref": 15924.102,
+    "rel": -1.3707443498258348e-14,
+    "dev": -2.1827872842550278e-10,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht: rho g A L + q A",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 56,
+  "n_elem": 4,
+  "settings": {},
+  "general": {
+   "configuration": "Q"
+  }
  }
 }

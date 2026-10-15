@@ -129,6 +129,7 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Werkmap | leeg = `WorkDir` naast de map `Scripts` (het venster toont dat pad) | map voor mesh, `<model>_<run-id>.*`, log en resultaten (§5); wordt aangemaakt als hij niet bestaat |
 | Aantal CPU-kernen (ncpus) | 1 | `ncpus` (threads) in de `.export`; de bridge rekent zonder MPI (`mpi_nbcpu 1`) |
 | Actieve analyse (auto = volgens Mecway) | `auto` | `auto` volgt het Mecway-analysetype: S30 → Statisch, L30 → Niet-lineair statisch, D30 met *Mode superposition* → Respons op modale basis, D30 zonder en D31 → Dynamisch (impliciet), T30/T31 → Thermisch, V30 → Modaal (met een fluïdum-onderdeel: Vibro-akoestiek (modes)), B30 → Knik, A30 → Akoestiek (holtemodes; met een bron, `BRON_`-selectie, Akoestiek (harmonisch)); geldt alleen voor die run. Of kies zelf een analyse (Dynamisch (expliciet) kies je altijd zelf). Een ander Mecway-type (2D, ...) met `auto`: de bridge stopt met een melding |
+| Configuratie (auto = volgens de regel) | `auto` | welke configuratie de bridge rekent en in welke solution de resultaten komen; de lijst toont de configuraties van het open model (laatst opgeslagen versie). `auto`: de enige configuratie, anders de enige zonder onderdrukte items, anders de eerste (WARNING). Een naam die niet in het model staat: WARNING en `auto` (§4) |
 | Eerst Mecway-solve ter controle | uit | lost eerst in Mecway op en stopt bij een fout. Schrijft `<model>_<run-id>_vergelijking.csv` (Mecway- en Code-Aster-waarde per knoop) en logt per variabele het grootste verschil; bij modaal en knik vergelijkt de log de frequentie of factor per mode |
 | Resultaten naar Mecway | `liml` | `liml`: alle tijdstappen of modes, ook element-knoopwaarden; het model wordt heropend. `tabel`: alleen knoopwaarden van het laatste tijdstip, in de bestaande Mecway-solution; vraagt een solution die bij het mesh past; alleen voor Statisch en Niet-lineair statisch (niet voor dynamisch, thermisch, modaal en knik) |
 | Convergentie- en meldingenscherm | aan | opent bij elke run een apart venster: bij een niet-lineaire analyse residuen, voortgang en contact; bij de statische analyse de lineaire oplosser (tijd per fase, foutgrens, conditiegetal; bij GCPC het residu per iteratie); bij modaal en knik de eerste modes; bij elke analyse de meldingen (fouten en alarmen met uitleg) en de diagnose. Achteraf: knop *Convergentiescherm*. Zie [Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm) |
@@ -252,11 +253,17 @@ invoeren maar Code-Aster wel kent, voeg je toe met `#ASTER`-regels.
 Een eenheid die hij niet kent, gebruikt hij ongewijzigd met een WARNING in de log;
 controleer dan de invoer.
 
-**Configuraties.** De actieve configuratie is via de Mecway-API niet te lezen. De
-bridge rekent de configuratie waarin niets onderdrukt is; zijn er geen of meerdere,
-dan de eerste, met een WARNING. Items die daarin of via een onderdrukte groep
-onderdrukt zijn, laat hij weg. De resultaten komen in de solution van die
-configuratie.
+**Configuraties.** De actieve configuratie is via de Mecway-API niet te lezen; kies
+daarom op het startscherm (Algemeen) bij *Configuratie* welke de bridge rekent. De
+lijst toont de configuraties van het open model (de laatst opgeslagen versie: sla
+een nieuwe configuratie eerst op). Met `auto` rekent de bridge de enige
+configuratie, anders de configuratie waarin niets onderdrukt is; zijn er geen of
+meerdere, dan de eerste, met een WARNING. Items die in de gerekende configuratie of
+via een onderdrukte groep onderdrukt zijn, laat hij weg. De resultaten komen in de
+solution van die configuratie; de solutions van de andere configuraties blijven
+staan, en de bridge maakt de configuratie actief in Mecway
+(`mw.set_active_configuration`). De instelling geldt ook voor *Resultaten...*: zet
+haar op de configuratie van de run voordat je die resultaten inlaadt.
 
 **Lastgevallen en combinaties.** Mecway kent geen load cases meer (ze worden bij het
 openen omgezet naar configuraties) en een configuratie heeft geen factor: ze zet
@@ -270,13 +277,11 @@ gebouwd). Zo doe je het wel:
    (bijv. een tweede gravity met 1,2 × 9,81 m/s² en een tweede druk met 1,5 × q) en
    onderdruk in elke configuratie de items die er niet bij horen. Lineair statisch is
    dat gelijk aan de superpositie (Mecway headless: 1,2 G + 1,5 Q op 3e-15 relatief).
-2. De bridge rekent per run één configuratie (de regel hierboven); welke actief is,
-   kan hij niet lezen. Wil je een andere configuratie: sla het model op onder een
-   andere naam (File → Save as), verwijder in de kopie de andere configuraties
-   (rechtsklik op het tabblad → Delete) en start de bridge op de kopie. Herhaal dat
-   per lastgeval of combinatie. De bridge meldt daarbij ten onrechte dat de actieve
-   configuratie niet te lezen is (KNOWN_BUGS 68); het resultaat klopt (bridge en
-   Mecway op 1e-9 gelijk).
+2. De bridge rekent per run één configuratie: kies haar op het startscherm
+   (*Configuratie*) en start; herhaal dat per lastgeval of combinatie. Elke run zet
+   zijn resultaten in de solution van zijn configuratie, zodat je in Mecway tussen de
+   configuraties kunt wisselen. Verificatie LS-20: G, Q en ULS met de instelling
+   gekozen, ULS = 1,2 G + 1,5 Q op 5e-16 relatief.
 3. Mecway's eigen solver rekent alle configuraties (Solve all configurations;
    headless `mecway <model> solve` doet dat ook); daarmee kun je een bridge-run per
    configuratie controleren.
@@ -413,8 +418,8 @@ van de standaardwaarden, staat in
 
 - **Aanname:** het `.liml`-formaat van Mecway 33 (getest); andere versies zijn niet
   getest.
-- **Aanname:** de configuratie zonder onderdrukte items is de bedoelde (§4); de API
-  kan de actieve configuratie niet lezen.
+- **Aanname:** met *Configuratie* = `auto` is de enige configuratie of die zonder
+  onderdrukte items de bedoelde (§4); de API kan de actieve configuratie niet lezen.
 - **Aanname:** de bovenkant van een schaal in Code-Aster (`SUP`, kant van de positieve
   elementnormaal) is Mecway's `vonmisesu1`; NIET geverifieerd.
 - **Aanname:** een formule in t wordt bemonsterd zoals Mecway dat voor CCX doet (§4).

@@ -139,6 +139,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Work folder" | empty = `WorkDir` next to the `Scripts` folder (the window shows that path) | folder for the mesh, `<model>_<run-id>.*`, log and results (§5); created if it does not exist |
 | "Number of CPU cores (ncpus)" | 1 | `ncpus` (threads) in the `.export`; the bridge runs without MPI (`mpi_nbcpu 1`) |
 | "Active analysis (auto = follow Mecway)" | `auto` | `auto` follows the Mecway analysis type: S30 → Static, L30 → Nonlinear static, D30 with *Mode superposition* → Mode superposition, D30 without and D31 → Dynamic (implicit), T30/T31 → Thermal, V30 → Modal (with a fluid part: Vibroacoustics (modes)), B30 → Buckling, A30 → Acoustics (cavity modes; with a source, `SOURCE_` selection, Acoustics (harmonic)); applies only to that run. Or choose an analysis yourself (Dynamic (explicit) is always chosen by hand). Another Mecway type (2D, ...) with `auto`: the bridge stops with a message |
+| "Configuration (auto = by rule)" | `auto` | which configuration the bridge solves and which solution receives the results; the list shows the configurations of the open model (last saved version). `auto`: the only configuration, else the only one without suppressed items, else the first (WARNING). A name that is not in the model: WARNING and `auto` (§4) |
 | "Mecway solve first as a check" | off | solves in Mecway first and stops on an error. Writes `<model>_<run-id>_vergelijking.csv` (Mecway and Code-Aster value per node) and logs the largest difference per variable; for modal and buckling the log compares the frequency or factor per mode |
 | "Results to Mecway" | `liml` | `liml`: all time steps or modes, element-node values too; the model is reopened. `tabel` (table): nodal values of the last time only, into the existing Mecway solution; requires a solution that matches the mesh; Static and Nonlinear static only (not dynamic, thermal, modal or buckling) |
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
@@ -258,11 +259,17 @@ enter but Code-Aster does know, you add with `#ASTER` lines.
 **Units.** The bridge converts every Mecway value with a unit to SI. A unit it does
 not know is used unchanged with a WARNING in the log; check the input in that case.
 
-**Configurations.** The active configuration cannot be read through the Mecway API.
-The bridge solves the configuration in which nothing is suppressed; if there is none
-or more than one, the first, with a WARNING. Items suppressed in it or through a
-suppressed group are left out. The results go into the solution of that
-configuration.
+**Configurations.** The active configuration cannot be read through the Mecway API;
+so choose on the start screen (General) under *Configuration* which one the bridge
+solves. The list shows the configurations of the open model (the last saved version:
+save a new configuration first). With `auto` the bridge solves the only
+configuration, else the configuration in which nothing is suppressed; if there is
+none or more than one, the first, with a WARNING. Items suppressed in the solved
+configuration or through a suppressed group are left out. The results go into the
+solution of that configuration; the solutions of the other configurations stay, and
+the bridge makes the configuration active in Mecway (`mw.set_active_configuration`).
+The setting also applies to *Results...*: set it to the configuration of the run
+before loading those results.
 
 **Load cases and combinations.** Mecway no longer has load cases (they are converted
 to configurations when a file is opened) and a configuration has no factor: it only
@@ -277,12 +284,11 @@ This is how you do it instead:
    and suppress in each configuration the items that do not belong to it. For linear
    statics this equals the superposition (Mecway headless: 1.2 G + 1.5 Q to 3e-15
    relative).
-2. The bridge solves one configuration per run (the rule above); it cannot read
-   which one is active. For another configuration: save the model under another name
-   (File → Save as), delete the other configurations in the copy (right-click the
-   tab → Delete) and start the bridge on the copy. Repeat this for each load case or
-   combination. The bridge then wrongly reports that the active configuration cannot
-   be read (KNOWN_BUGS 68); the result is correct (bridge and Mecway equal to 1e-9).
+2. The bridge solves one configuration per run: choose it on the start screen
+   (*Configuration*) and start; repeat this for each load case or combination. Each
+   run puts its results into the solution of its configuration, so you can switch
+   between the configurations in Mecway. Verification LS-20: G, Q and ULS chosen with
+   the setting, ULS = 1.2 G + 1.5 Q to 5e-16 relative.
 3. Mecway's own solver solves all configurations (Solve all configurations;
    headless `mecway <model> solve` does so too); use it to check a bridge run per
    configuration.
@@ -414,8 +420,9 @@ is in [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.m
 
 - **Assumption:** the `.liml` format of Mecway 33 (tested); other versions have not
   been tested.
-- **Assumption:** the configuration without suppressed items is the intended one
-  (§4); the API cannot read the active configuration.
+- **Assumption:** with *Configuration* = `auto`, the only configuration or the one
+  without suppressed items is the intended one (§4); the API cannot read the active
+  configuration.
 - **Assumption:** the top of a shell in Code-Aster (`SUP`, side of the positive
   element normal) is Mecway's `vonmisesu1`; NOT verified.
 - **Assumption:** a formula in t is sampled the way Mecway does for CCX (§4).

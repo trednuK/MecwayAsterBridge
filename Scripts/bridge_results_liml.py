@@ -51,7 +51,7 @@ import io
 import os
 import re
 
-from bridge_utils import tr
+from bridge_utils import tr, choose_configuration, configuration_warning
 
 
 _CHUNK = 4 * 1024 * 1024
@@ -379,35 +379,43 @@ def _solutions(path, first):
     return out
 
 
+def _model_head(model_liml):
+    """Het model voor de eerste <solution> (klein; een oude solution kan
+    honderden MB zijn)."""
+    sol = _find_solution_start(model_liml)
+    return _read_range(model_liml, 0, sol if sol >= 0 else
+                       os.path.getsize(model_liml))
+
+
+def configuration_names(model_liml):
+    """Namen van de configuraties van het model (<configuration
+    name="..">), in volgorde; [] zonder configuraties of als het bestand
+    niet te lezen is. Voor de keuzelijst Configuratie op het startscherm."""
+    try:
+        return _CONF_NAME.findall(_model_head(model_liml))
+    except (IOError, OSError):
+        return []
+
+
 def pick_configuration(model_liml):
     """
     (configuratie, melding) voor splice_results. Zonder <configuration> in
     het model (None, ""). De Mecway-API kan de actieve configuratie niet
-    lezen (alleen mw.set_active_configuration); de bridge rekent daarom de
-    configuratie waarin niets onderdrukt is (bridge_from_liml.
-    _pick_configuration, zelfde regel) en zet het resultaat in haar
-    solution; zijn er geen of meerdere, dan de eerste. melding is dan een
-    WARNING-tekst (zonder "WARNING: ") voor de log.
+    lezen (alleen mw.set_active_configuration); de keuze komt uit
+    bridge_utils.choose_configuration (instelling "configuration" of de
+    regel daar), dezelfde als bridge_from_liml._pick_configuration voor de
+    lasten. melding: WARNING-tekst (zonder "WARNING: ") voor de log, of ""
+    als de keuze eenduidig is. De solutions van andere configuraties
+    blijven ongewijzigd (splice_results).
     """
-    sol = _find_solution_start(model_liml)
-    head = _read_range(model_liml, 0, sol if sol >= 0 else
-                       os.path.getsize(model_liml))
+    head = _model_head(model_liml)
     names = _CONF_NAME.findall(head)
-    if not names:
-        return None, ""
     suppressed = set(_SUPPRESSED_IN.findall(head))
-    free = [n for n in names if n not in suppressed]
-    if len(free) == 1:
-        return free[0], ""
-    return names[0], tr(
-        "Model met configuraties ({0}): de actieve configuratie is niet "
-        "te lezen; de bridge heeft '{1}' gerekend en zet de resultaten in "
-        "de solution daarvan. Die van de andere configuraties blijven "
-        "ongewijzigd.",
-        "Model with configurations ({0}): the active configuration cannot "
-        "be read; the bridge solved '{1}' and puts the results in its "
-        "solution. Those of the other configurations are unchanged.").format(
-            ", ".join(names), names[0])
+    configuration, how, missing = choose_configuration(names, suppressed)
+    if configuration is None:
+        return None, ""
+    return configuration, configuration_warning(names, configuration, how,
+                                                missing)
 
 
 def splice_results(model_liml, fragment_path, out_path, configuration=None):

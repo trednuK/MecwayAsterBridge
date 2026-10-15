@@ -48,6 +48,7 @@ import shutil
 import bridge_utils
 import bridge_docs
 import bridge_glossary
+import bridge_results_liml
 from bridge_utils import (CONFIG_BRIDGE, MECWAY_ANALYSIS_TYPES, tr,
                           work_dir_path, exe_aster_path, expand_path,
                           default_work_dir, BRIDGE_VERSION)
@@ -66,7 +67,8 @@ def _t(text):
 # SCHEMA VAN DE INSTELLINGEN
 # (sleutel, label, soort, extra)
 #   soort  : 'file', 'folder', 'text', 'int', 'float_pos', 'float_range',
-#            'bool', 'choice', 'analysis_choice', 'checklist'
+#            'bool', 'choice', 'analysis_choice', 'configuration_choice',
+#            'checklist'
 #   extra  : file -> bestandsfilter; int -> minimum; choice -> opties;
 #            float_range -> (minimum, maximum), grenzen inbegrepen
 # ==========================================
@@ -82,6 +84,10 @@ GENERAL_SPECS = [
     ("active_analysis", ("Actieve analyse (auto = volgens Mecway)",
                          "Active analysis (auto = follow Mecway)"),
      "analysis_choice", None),
+    # Keuzelijst met de configuraties van het open model (_MODEL_INFO)
+    ("configuration", ("Configuratie (auto = volgens de regel)",
+                       "Configuration (auto = by rule)"),
+     "configuration_choice", None),
     ("mecway_solve_first", ("Eerst Mecway-solve ter controle",
                             "Mecway solve first as a check"), "bool", None),
     ("result_route", ("Resultaten naar Mecway", "Results to Mecway"),
@@ -461,7 +467,7 @@ _STYLE = {
 _SCHEMES = {"dyna_impl_3d": ("HHT", "NEWMARK"),
             "dyna_expl_3d": ("DIFF_CENT", "TCHAMWA")}
 
-_GENERAL_DEFAULTS = {"language": "en",
+_GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "mecway_solve_first": False, "result_route": "liml",
                      "convergence_monitor": True, "med_export": False,
                      "elem_hex8": "3D",
@@ -527,9 +533,20 @@ def _field_options(current):
     return opts
 
 
+# Keuzelijsten (combobox): vaste opties, analyses of configuraties.
+_CHOICE_KINDS = ("choice", "analysis_choice", "configuration_choice")
+
+# Configuraties van het model dat open is in Mecway (run_settings_dialog,
+# bridge_results_liml.configuration_names); leeg zonder model of zonder
+# configuraties.
+_MODEL_INFO = {"configurations": []}
+
+
 def _choice_options(kind, extra):
     if kind == "analysis_choice":
         return ["auto"] + _analysis_names()
+    if kind == "configuration_choice":
+        return ["auto"] + list(_MODEL_INFO["configurations"])
     return list(extra)
 
 
@@ -645,7 +662,13 @@ def _parse_and_validate(key, kind, extra, raw):
     if kind == "bool":
         return bool(raw), None
 
-    if kind in ("choice", "analysis_choice"):
+    if kind == "configuration_choice":
+        # Elke naam mag: de instelling geldt ook voor andere modellen; een
+        # naam die daar niet bestaat geeft bij de run een WARNING en "auto"
+        # (bridge_utils.choose_configuration).
+        return u"{0}".format(raw).strip() or "auto", None
+
+    if kind in _CHOICE_KINDS:
         options = _choice_options(kind, extra)
         value = "{0}".format(raw).strip()
         if value not in options:
@@ -1383,7 +1406,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         parent.Controls.Add(btn)
                         stretch.setdefault(parent, []).append(
                             ("path", ctrl, btn))
-                elif kind in ("choice", "analysis_choice"):
+                elif kind in _CHOICE_KINDS:
                     ctrl = ComboBox()
                     ctrl.DropDownStyle = ComboBoxStyle.DropDownList
                     ctrl.Location = Point(x, y)
@@ -1418,7 +1441,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     raise RuntimeError(tr("Onbekend soort '{0}'.",
                                           "Unknown kind '{0}'.").format(kind))
                 parent.Controls.Add(ctrl)
-                if kind in ("choice", "analysis_choice"):
+                if kind in _CHOICE_KINDS:
                     options = _choice_options(kind, extra)
                 elif kind == "checklist":
                     # uitleg per resultaatveld (GLOSSARY) in de tooltip
@@ -1754,7 +1777,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 for analysis, key, label, kind, extra, ctrl in controls:
                     if kind == "bool":
                         raw = bool(ctrl.Checked)
-                    elif kind in ("choice", "analysis_choice"):
+                    elif kind in _CHOICE_KINDS:
                         raw = "{0}".format(ctrl.SelectedItem)
                     elif kind == "checklist":
                         raw = [ "{0}".format(ctrl.Items[i])
@@ -2137,7 +2160,7 @@ def _run_input_fallback(mw, current, reason):
         lines = ["[{0}] {1}".format(where, _t(label)),
                  tr("Huidig: {0}", "Current: {0}").format(
                      _format_value(value, kind))]
-        if kind in ("choice", "analysis_choice"):
+        if kind in _CHOICE_KINDS:
             lines.append(tr("Opties: ", "Options: ")
                          + ", ".join(_choice_options(kind, extra)))
         elif kind == "bool":
@@ -2208,6 +2231,13 @@ def run_settings_dialog(mw, status=u""):
                 model = bridge_utils.model_stem(mw.file_name())
             except Exception:
                 model = None
+            # Configuraties van het open model voor de keuzelijst (van de
+            # schijf: de laatst opgeslagen versie)
+            try:
+                _MODEL_INFO["configurations"] = \
+                    bridge_results_liml.configuration_names(mw.file_name())
+            except Exception:
+                _MODEL_INFO["configurations"] = []
             answer = _show_winforms_dialog(current, status, model)
         finally:
             _HUB["open"] = False

@@ -1169,7 +1169,8 @@ relatief t.o.v. max); bridge op een kopie met alleen configuratie ULS = Mecway U
 1,0e-9 (diagnose OK). (3) De bridge rekent één configuratie per run (de enige zonder
 onderdrukte items, anders de eerste) en kan de actieve niet lezen; werkwijze voor
 lastgevallen (kopie per configuratie) in `docs/Handleiding.md` §4 + EN; de onterechte
-WARNING bij één configuratie als KNOWN_BUGS 68. Niets gebouwd. **Open vragen:** (a)
+WARNING bij één configuratie als KNOWN_BUGS 68 (opgelost 15 okt: instelling
+Configuratie op het startscherm, verificatie LS-20). Niets gebouwd. **Open vragen:** (a)
 Toch een eigen invoer voor factoren (bijv. `#ASTER-COMBINATIE ULS = 1.2*G + 1.5*Q`
 op configuratienamen) met `MACRO_ELAS_MULT` en omhullende, buiten Mecway om? (b) Een
 keuzelijst "Configuratie" op het startscherm (namen uit de `.liml`, daarna

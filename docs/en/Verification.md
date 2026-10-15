@@ -365,6 +365,26 @@ meshes is given below.
   temperature +50 K, `LINE_QUAD`): modal with prestress 284.96 Hz against Mecway
   286.18 Hz, buckling 3.3969 against 3.4010; in the bridge and in Mecway `temperature2`
   and `temperature3` give the same result (also static, nonlinear static and D30).
+### LS-20 Configurations (load cases G, Q and ULS)
+
+- **Goal**: the setting *Configuration* (`configuration`) chooses which configuration
+  the bridge solves; `auto` follows the rule (the only one, the only one without
+  suppressed items, else the first).
+- **Model**: bar 1 × 0.1 × 0.1 m, 4 × 1 × 1 hex20, steel (ρ = 7850 kg/m³), symmetry
+  planes x = 0, y = 0, z = 0. Configurations G (gravity 9.81 m/s² along x), Q (traction
+  1 MPa on the end face) and ULS (own load items 1.2 g and 1.5 q, as in Mecway: a
+  configuration has no factor); each load item is suppressed in the other two
+  (`<suppressed configuration=".."/>`).
+- **Reference**: end displacement u = ρgL²/(2E) + qL/E (uniaxial) and reaction force
+  ρgAL + qA (equilibrium), with the factors of the chosen configuration.
+- **Result**: LS-20a/b/c (G, Q, ULS chosen): reaction force exact, u ≤ 0.06% off (with
+  G, u = 0 at x = 0 slightly restrains the lateral contraction). ULS = 1.2 G + 1.5 Q to
+  4.6e-16 relative (all nodes, recomputed from the three runs). LS-20d (`auto`, every
+  configuration has suppressed items): G with a WARNING. LS-20e (copy with only ULS,
+  setting Q that is not in the model): a WARNING about that, then ULS; no WARNING about
+  an ambiguous choice any more. With Mecway's IronPython:
+  `pick_configuration` + `splice_results` put the results into the solution of the
+  chosen configuration and keep those of the others.
 
 ### Conclusion linear static
 

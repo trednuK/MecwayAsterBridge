@@ -1,0 +1,152 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.25" y="0" z="0" />
+  <node nid="3" x="0.25" y="0.1" z="0" />
+  <node nid="4" x="0" y="0.1" z="0" />
+  <node nid="5" x="0" y="0" z="0.1" />
+  <node nid="6" x="0.25" y="0" z="0.1" />
+  <node nid="7" x="0.25" y="0.1" z="0.1" />
+  <node nid="8" x="0" y="0.1" z="0.1" />
+  <node nid="9" x="0.125" y="0" z="0" />
+  <node nid="10" x="0.25" y="0.05" z="0" />
+  <node nid="11" x="0.125" y="0.1" z="0" />
+  <node nid="12" x="0" y="0.05" z="0" />
+  <node nid="13" x="0" y="0" z="0.05" />
+  <node nid="14" x="0.25" y="0" z="0.05" />
+  <node nid="15" x="0.25" y="0.1" z="0.05" />
+  <node nid="16" x="0" y="0.1" z="0.05" />
+  <node nid="17" x="0.125" y="0" z="0.1" />
+  <node nid="18" x="0.25" y="0.05" z="0.1" />
+  <node nid="19" x="0.125" y="0.1" z="0.1" />
+  <node nid="20" x="0" y="0.05" z="0.1" />
+  <node nid="21" x="0.5" y="0" z="0" />
+  <node nid="22" x="0.5" y="0.1" z="0" />
+  <node nid="23" x="0.5" y="0" z="0.1" />
+  <node nid="24" x="0.5" y="0.1" z="0.1" />
+  <node nid="25" x="0.375" y="0" z="0" />
+  <node nid="26" x="0.5" y="0.05" z="0" />
+  <node nid="27" x="0.375" y="0.1" z="0" />
+  <node nid="28" x="0.5" y="0" z="0.05" />
+  <node nid="29" x="0.5" y="0.1" z="0.05" />
+  <node nid="30" x="0.375" y="0" z="0.1" />
+  <node nid="31" x="0.5" y="0.05" z="0.1" />
+  <node nid="32" x="0.375" y="0.1" z="0.1" />
+  <node nid="33" x="0.75" y="0" z="0" />
+  <node nid="34" x="0.75" y="0.1" z="0" />
+  <node nid="35" x="0.75" y="0" z="0.1" />
+  <node nid="36" x="0.75" y="0.1" z="0.1" />
+  <node nid="37" x="0.625" y="0" z="0" />
+  <node nid="38" x="0.75" y="0.05" z="0" />
+  <node nid="39" x="0.625" y="0.1" z="0" />
+  <node nid="40" x="0.75" y="0" z="0.05" />
+  <node nid="41" x="0.75" y="0.1" z="0.05" />
+  <node nid="42" x="0.625" y="0" z="0.1" />
+  <node nid="43" x="0.75" y="0.05" z="0.1" />
+  <node nid="44" x="0.625" y="0.1" z="0.1" />
+  <node nid="45" x="1" y="0" z="0" />
+  <node nid="46" x="1" y="0.1" z="0" />
+  <node nid="47" x="1" y="0" z="0.1" />
+  <node nid="48" x="1" y="0.1" z="0.1" />
+  <node nid="49" x="0.875" y="0" z="0" />
+  <node nid="50" x="1" y="0.05" z="0" />
+  <node nid="51" x="0.875" y="0.1" z="0" />
+  <node nid="52" x="1" y="0" z="0.05" />
+  <node nid="53" x="1" y="0.1" z="0.05" />
+  <node nid="54" x="0.875" y="0" z="0.1" />
+  <node nid="55" x="1" y="0.05" z="0.1" />
+  <node nid="56" x="0.875" y="0.1" z="0.1" />
+  <elset name="Staaf" material="Staal">
+    <elem eid="1" shape="hex20" nodes="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" />
+    <elem eid="2" shape="hex20" nodes="2 21 22 3 6 23 24 7 25 26 27 10 14 28 29 15 30 31 32 18" />
+    <elem eid="3" shape="hex20" nodes="21 33 34 22 23 35 36 24 37 38 39 26 28 40 41 29 42 43 44 31" />
+    <elem eid="4" shape="hex20" nodes="33 45 46 34 35 47 48 36 49 50 51 38 40 52 53 41 54 55 56 43" />
+  </elset>
+  <configuration name="G" />
+  <configuration name="Q" />
+  <configuration name="ULS" />
+  <displacement selection="SymX"><value>0 mm</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="SymY"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="SymZ"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <gravity><x>9.81 m/s²</x><y>0 m/s²</y><z>0 m/s²</z><suppressed configuration="Q" /><suppressed configuration="ULS" /></gravity>
+  <traction selection="Eindvlak"><x>1000000.0 Pa</x><y>0 Pa</y><z>0 Pa</z><suppressed configuration="G" /><suppressed configuration="ULS" /></traction>
+  <gravity><x>11.772 m/s²</x><y>0 m/s²</y><z>0 m/s²</z><suppressed configuration="G" /><suppressed configuration="Q" /></gravity>
+  <traction selection="Eindvlak"><x>1500000.0 Pa</x><y>0 Pa</y><z>0 Pa</z><suppressed configuration="G" /><suppressed configuration="Q" /></traction>
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="SymX">
+    <node nid="1" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="8" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="16" />
+    <node nid="20" />
+  </nodeselection>
+  <nodeselection name="SymY">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="9" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="17" />
+    <node nid="21" />
+    <node nid="23" />
+    <node nid="25" />
+    <node nid="28" />
+    <node nid="30" />
+    <node nid="33" />
+    <node nid="35" />
+    <node nid="37" />
+    <node nid="40" />
+    <node nid="42" />
+    <node nid="45" />
+    <node nid="47" />
+    <node nid="49" />
+    <node nid="52" />
+    <node nid="54" />
+  </nodeselection>
+  <nodeselection name="SymZ">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="21" />
+    <node nid="22" />
+    <node nid="25" />
+    <node nid="26" />
+    <node nid="27" />
+    <node nid="33" />
+    <node nid="34" />
+    <node nid="37" />
+    <node nid="38" />
+    <node nid="39" />
+    <node nid="45" />
+    <node nid="46" />
+    <node nid="49" />
+    <node nid="50" />
+    <node nid="51" />
+  </nodeselection>
+  <faceselection name="Eindvlak">
+    <face eid="4" faceid="4" />
+  </faceselection>
+  <nodeselection name="Eindknopen">
+    <node nid="45" />
+    <node nid="46" />
+    <node nid="47" />
+    <node nid="48" />
+    <node nid="50" />
+    <node nid="52" />
+    <node nid="53" />
+    <node nid="55" />
+  </nodeselection>
+</liml>

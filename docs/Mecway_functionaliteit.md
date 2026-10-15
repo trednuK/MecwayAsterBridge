@@ -174,5 +174,5 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
 | Automatic time stepping | Nee | Zonder melding; de bridge halveert de stap zelf bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |
-| Configuraties | Deels | Eén per run, niet te kiezen (KB68; [`Handleiding.md`](Handleiding.md) §4). |
+| Configuraties | Ja | Eén per run, te kiezen op het startscherm (*Configuratie*); resultaten in de solution van die configuratie ([`Handleiding.md`](Handleiding.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Deels | Alleen `#ASTER`-regels; gewone CCX-kaarten zonder melding genegeerd. |

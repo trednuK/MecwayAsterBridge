@@ -42,7 +42,8 @@
 import math
 import xml.etree.ElementTree as ET
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE,
-                          resolve_auto_analysis, tr)
+                          resolve_auto_analysis, tr,
+                          choose_configuration, configuration_warning)
 from bridge_bcs import SUPPORTED_BCS, _parse_direction, _parse_value
 import bridge_radioss
 import bridge_custom
@@ -782,25 +783,18 @@ def _suppressed_in(elem, configuration):
 
 def _pick_configuration(root):
     """
-    (configuratie, dubbelzinnig) met dezelfde regel als
-    bridge_results_liml.pick_configuration (die de resultaten in de
-    solution van die configuratie zet): zonder <configuration> (None,
-    False); de enige configuratie die nergens in een <suppressed
-    configuration=".."/> staat; anders de eerste (dubbelzinnig = True).
-    Hier op de geparste XML: pick_configuration leest bytes met
-    str-bewerkingen en werkt niet in CPython 3 (rooktest).
+    (configuratie, hoe, ontbreekt) uit bridge_utils.choose_configuration,
+    dezelfde keuze als bridge_results_liml.pick_configuration (die de
+    resultaten in de solution van die configuratie zet). Hier op de
+    geparste XML: pick_configuration leest bytes met str-bewerkingen en
+    werkt niet in CPython 3 (rooktest).
     """
     names = [c.get("name") for c in root.findall("configuration")]
-    if not names:
-        return None, False
     suppressed = set()
     for elem in root.iter():
         for sup in elem.findall("suppressed"):
             suppressed.add(sup.get("configuration"))
-    free = [n for n in names if n not in suppressed]
-    if len(free) == 1:
-        return free[0], False
-    return names[0], True
+    return choose_configuration(names, suppressed)
 
 
 def _apply_suppression(root, model_data):
@@ -815,28 +809,25 @@ def _apply_suppression(root, model_data):
     configuration=".."/> (Tutorials/AssemblyWithContact.liml,
     Samples/CylinderLifting.liml). De actieve configuratie staat niet in de
     .liml en de API kan haar niet lezen; de bridge rekent de configuratie
-    waarin ze de resultaten zet (_pick_configuration).
+    uit de instelling "configuration" (startscherm) of volgens de regel van
+    bridge_utils.choose_configuration, en zet de resultaten in de solution
+    daarvan (_pick_configuration).
     Groepen (manual par. 9, "Groups can be suppressed"): <group name="G"
     suppressed="true"/> en items met group="G"
     (Samples/VibratingTrussTower.liml).
     """
-    configuration, ambiguous = _pick_configuration(root)
+    configuration, how, missing = _pick_configuration(root)
     model_data["configuration"] = configuration
     names = [c.get("name") for c in root.findall("configuration")]
     if configuration is not None:
-        if not ambiguous:
-            log("INFO: Configuratie '{0}' gerekend (de enige zonder "
-                "onderdrukte items).".format(configuration))
-        else:
-            log(tr("WARNING: Model met configuraties ({0}): de actieve "
-                   "configuratie is niet te lezen; de bridge rekent '{1}' "
-                   "(items die daarin onderdrukt zijn, tellen niet mee) en "
-                   "zet de resultaten in de solution daarvan.",
-                   "WARNING: Model with configurations ({0}): the active "
-                   "configuration cannot be read; the bridge computes "
-                   "'{1}' (items suppressed in it are left out) and writes "
-                   "the results into its solution.").format(
-                       ", ".join(names), configuration))
+        log("INFO: Configuratie '{0}' gerekend ({1}).".format(
+            configuration, {"gekozen": "instelling Configuratie",
+                            "enige": "de enige configuratie",
+                            "vrij": "de enige zonder onderdrukte items",
+                            "eerste": "de eerste"}[how]))
+        warning = configuration_warning(names, configuration, how, missing)
+        if warning:
+            log(u"WARNING: " + warning)
     groups = set(g.get("name") for g in root.findall("group")
                  if _suppressed_in(g, configuration))
     items = list(root)

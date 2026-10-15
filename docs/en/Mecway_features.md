@@ -174,5 +174,5 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | No | Without a message; the bridge halves the step itself on divergence. |
 | Incompatible hex8 | No | KB1. |
-| Configurations | Partly | One per run, cannot be chosen (KB68; [`UserGuide.md`](UserGuide.md) §4). |
+| Configurations | Yes | One per run, chosen on the start screen (*Configuration*); results in the solution of that configuration ([`UserGuide.md`](UserGuide.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Partly | Only `#ASTER` lines; ordinary CCX cards are ignored without a message. |

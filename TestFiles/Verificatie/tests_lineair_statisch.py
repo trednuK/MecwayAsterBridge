@@ -8,7 +8,8 @@ Lineair statisch (Mecway S30 -> MECA_STATIQUE). Referenties: balktheorie,
 Roark's Formulas for Stress and Strain (Young & Budynas, 7e druk),
 Timoshenko & Woinowsky-Krieger (Theory of Plates and Shells, 2e druk),
 Timoshenko & Goodier (Theory of Elasticity, 3e druk) en NAFEMS LE1.
-Toelichting per test: doc_lineair_statisch.md.
+LS-20: configuraties (lastgevallen G, Q en ULS) met de instelling
+"configuration". Toelichting per test: doc_lineair_statisch.md.
 
 Tolerantie in een mesh-convergentiereeks: het fijnste mesh krijgt tol_f =
 modelfout van de analytische theorie (bijv. 3D-inklemming t.o.v. de
@@ -66,6 +67,69 @@ def build_ls01():
     m.add('<force selection="Tip"><x>0 N</x><y>0 N</y><z>-%g N</z></force>'
           % P1)
     return m
+
+
+# ------------------------------------------------------------------
+# LS-20 Configuraties: staaf onder eigen gewicht (G) en trek (Q), ULS met
+# eigen lastitems 1,2 G + 1,5 Q (zoals in Mecway: een configuratie heeft
+# geen factor, STAPPENPLAN S9). Elk lastitem is onderdrukt in de andere
+# configuraties; de instelling "configuration" kiest welke gerekend wordt.
+# ------------------------------------------------------------------
+L20, A20, RHO20, G20, Q20 = 1.0, 0.1, 7850.0, 9.81, 1.0e6
+CONFIGS20 = ("G", "Q", "ULS")
+
+
+def build_ls20(declared=CONFIGS20):
+    """declared: de <configuration>-elementen; de lastitems zijn er
+    altijd voor G, Q en ULS (elk onderdrukt in de andere twee)."""
+    def build():
+        m = Model("S30")
+        m.elset("Staaf", "Staal")
+        g = hexmesh(m, "Staaf", 4, 1, 1, box(0, L20, 0, A20, 0, A20),
+                    order=2)
+        _steel(m, extra=('<density type="Simple" density="%g kg/m³" />'
+                         % RHO20,))
+        for c in declared:
+            m.add('<configuration name="%s" />' % c)
+
+        def only(c):
+            return "".join('<suppressed configuration="%s" />' % o
+                           for o in CONFIGS20 if o != c)
+        for name, side, ax in (("SymX", "u0", "x"), ("SymY", "v0", "y"),
+                               ("SymZ", "w0", "z")):
+            m.node_selection(name, sorted(g["nodes"][side]))
+            d = dict((a, 1 if a == ax else 0) for a in "xyz")
+            m.add('<displacement selection="{0}"><value>0 mm</value>'
+                  '<x>{x}</x><y>{y}</y><z>{z}</z></displacement>'.format(
+                      name, **d))
+        m.face_selection("Eindvlak", g["faces"]["u1"])
+        m.node_selection("Eindknopen", sorted(g["nodes"]["u1"]))
+        for c, fg, fq in (("G", 1.0, 0.0), ("Q", 0.0, 1.0),
+                          ("ULS", 1.2, 1.5)):
+            if fg:
+                m.add('<gravity><x>%r m/s²</x><y>0 m/s²</y><z>0 m/s²</z>'
+                      '%s</gravity>' % (fg * G20, only(c)))
+            if fq:
+                m.add('<traction selection="Eindvlak"><x>%r Pa</x>'
+                      '<y>0 Pa</y><z>0 Pa</z>%s</traction>'
+                      % (fq * Q20, only(c)))
+        return m
+    return build
+
+
+def _ls20_checks(fg, fq):
+    """Eindverplaatsing: u = rho g L^2/(2E) + q L/E (eenassig; de
+    inklemming u = 0 op x = 0 hindert de dwarscontractie bij G iets:
+    tolerantie 0,5%). Reactiekracht: evenwicht, exact."""
+    u = (fg * RHO20 * G20 * L20 ** 2 / (2 * E) + fq * Q20 * L20 / E)
+    f = fg * RHO20 * G20 * A20 * A20 * L20 + fq * Q20 * A20 * A20
+    return [Check("u eindvlak", lambda r: _mean(r, "displx", "Eindknopen"),
+                  ref=u, tol=0.005, unit="m",
+                  source="eenassig: rho g L^2/(2E) + q L/E"),
+            Check("reactiekracht X", lambda r: -r.total("reactionforcex",
+                                                        "SymX"),
+                  ref=f, tol=1e-6, unit="N",
+                  source="evenwicht: rho g A L + q A")]
 
 
 TESTS = [
@@ -680,6 +744,30 @@ TESTS += [
               "LIAISON_MAIL interpoleert ze lineair tussen de knopen (4 mm "
               "elementen: -5 %, 12 mm: -11 %, 1,3 mm: -2 %). Leg de "
               "voetlijn op een meshlijn (LS-07c)."),
+    Case("LS-20a", GROUP, "Configuraties G/Q/ULS: G gekozen",
+         "lin_static_3d", build_ls20(), _ls20_checks(1.0, 0.0),
+         general={"configuration": "G"},
+         note="Instelling Configuratie = G: alleen het eigen gewicht."),
+    Case("LS-20b", GROUP, "Configuraties G/Q/ULS: Q gekozen",
+         "lin_static_3d", build_ls20(), _ls20_checks(0.0, 1.0),
+         general={"configuration": "Q"},
+         note="Instelling Configuratie = Q: alleen de trek."),
+    Case("LS-20c", GROUP, "Configuraties G/Q/ULS: ULS gekozen",
+         "lin_static_3d", build_ls20(), _ls20_checks(1.2, 1.5),
+         general={"configuration": "ULS"},
+         note="ULS met eigen lastitems 1,2 g en 1,5 q."),
+    Case("LS-20d", GROUP, "Configuraties G/Q/ULS: auto (de eerste)",
+         "lin_static_3d", build_ls20(), _ls20_checks(1.0, 0.0),
+         general={"configuration": "auto"},
+         note="Elke configuratie heeft onderdrukte items: auto kiest de "
+              "eerste (G), met een WARNING."),
+    Case("LS-20e", GROUP, "Alleen configuratie ULS, items onderdrukt",
+         "lin_static_3d", build_ls20(("ULS",)), _ls20_checks(1.2, 1.5),
+         general={"configuration": "Q"},
+         note="Kopie met alleen configuratie ULS (G- en Q-items zijn in "
+              "ULS onderdrukt) en een instelling die niet in het model "
+              "staat (Q): WARNING daarover, dan de enige configuratie; "
+              "geen WARNING meer over een dubbelzinnige keuze."),
     Case("LS-07e", GROUP, "T-stuk met gedeelde knopen (referentie)",
          "lin_static_3d", build_ls07_tee("doorlopend"),
          [Check("zijdelingse verplaatsing ribtop t.o.v. Mecway",
