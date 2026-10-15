@@ -344,7 +344,8 @@ class Results(object):
                     nid = ids.get(n) or ids[list(ids)[0]]
                     d[n] = dict(zip(nid, _values(nv)))
                 de = self.elems.setdefault(t, {})
-                for ev in st.findall("elementnodevariable"):
+                for ev in (st.findall("elementnodevariable")
+                           if sizes else ()):
                     vals, k, out = _values(ev), 0, {}
                     for eid in eids.get(ev.get("name"), ()):
                         out[eid] = list(vals[k:k + sizes[eid]])

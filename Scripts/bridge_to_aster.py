@@ -89,12 +89,14 @@ def bonded_nprec(model_data, analysis, lin=False):
                                          "MUMPS")).upper() == "GCPC":
         return analysis
     log(tr("WARNING: Verlijmd contact met een scheve of gekromde schaal als "
-           "master: MUMPS-controle op een singuliere matrix uit "
+           "master (of met schalen met een element offset op eigen "
+           "knopen): MUMPS-controle op een singuliere matrix uit "
            "(solver_nprec {0} -> -1), anders meldt Code-Aster ten onrechte "
            "FACTOR_11 (fictieve stijfheid van de rotatie om de "
            "schaalnormaal). Lineair statisch: RESI_RELA controleert de "
            "oplossing nog wel.",
-           "WARNING: Bonded contact with a skewed or curved shell as master: "
+           "WARNING: Bonded contact with a skewed or curved shell as master "
+           "(or with shells with an element offset on their own nodes): "
            "MUMPS singular-matrix check off (solver_nprec {0} -> -1), "
            "otherwise Code-Aster wrongly reports FACTOR_11 (fictitious "
            "stiffness of the rotation about the shell normal). Linear "

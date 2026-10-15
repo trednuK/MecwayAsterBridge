@@ -2392,6 +2392,42 @@ def _bonded(model_data, c, group_faces, rn):
                        "are also master nodes or lie beyond the "
                        "tolerance).").format(label))
                 relations = []
+    off = model_data.get("offset_elements") or {}
+    hit = sorted(set(f["eid"] for sel in (master, slave)
+                     for f in faces.get(sel, []) if f["eid"] in off))
+    if mech and hit:
+        # Element offset (bridge_offset) op de schalen van het contact:
+        # LIAISON_MAIL projecteert op de cellen van de master; bij de
+        # starre route liggen die op het verschoven vlak (eigen knopen),
+        # bij EXCENTREMENT en bij de eigen relaties (_bonded_relations,
+        # Mecway-coordinaten) op de knopen. Slave-knopen zijn altijd de
+        # Mecway-knopen. Wat Mecway doet: NIET nagelopen (KNOWN_BUGS 108).
+        shifted = relations is None and any(
+            off.get(f["eid"]) == "rigid" for f in faces.get(master, []))
+        if raccord == "COQUE" and any(off[e] == "rigid" for e in hit):
+            # quad8-strook met offset (eigen knopen) verlijmd aan een
+            # tweede strook: MUMPS meldde ten onrechte FACTOR_11 op DRX van
+            # een verschoven knoop; met NPREC = -1 tip -9,4266e-4 m tegen
+            # -9,41484e-4 (Mecway, doorlopende strook LS-07b; Code-Aster
+            # 17.4). Zoals bij een scheve master (bridge_to_aster
+            # .bonded_nprec).
+            model_data["_bonded_nprec_off"] = True
+        where = (tr("het verschoven middenvlak van de master (LIAISON_MAIL "
+                    "op de verschoven cellen)",
+                    "the offset mid-surface of the master (LIAISON_MAIL on "
+                    "the offset cells)") if shifted else
+                 tr("de knopen van de master (referentievlak, niet het "
+                    "verschoven middenvlak)",
+                    "the master nodes (reference surface, not the offset "
+                    "mid-surface)"))
+        log(tr("WARNING: {0}: schaalelementen {1} hebben een element "
+               "offset. De slave-knopen worden gekoppeld aan {2}; of Mecway "
+               "dat ook zo doet, is niet nagelopen (KNOWN_BUGS 108).",
+               "WARNING: {0}: shell elements {1} have an element offset. "
+               "The slave nodes are tied to {2}; whether Mecway does the "
+               "same has not been checked (KNOWN_BUGS 108).").format(
+                   label, ", ".join(str(e) for e in hit[:10]) +
+                   (" ..." if len(hit) > 10 else ""), where))
     if m_type == "MASSIF":
         groups = model_data.setdefault("extra_ma_groups", OrderedDict())
         name = "BRMAIT{0}".format(len(groups) + 1)

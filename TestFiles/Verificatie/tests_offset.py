@@ -448,3 +448,60 @@ TESTS += [
          note="Cellen op de verschoven knopen: koppeling aan de "
               "Mecway-elementen via BROFL (aster_results_export)."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-66 Verlijmd contact met een verschoven quad8-strook
+# ------------------------------------------------------------------
+# Als LS-07a, met quad8 (COQUE_3D) en een offset w = 1 mm op deel A (de
+# master, op eigen knopen met starre armen). De slave-knopen (rand van
+# deel B) worden aan de knopen van de master gekoppeld (bridge_mesh
+# ._bonded_relations); de offset verandert bij buiging zonder normaalkracht
+# niets aan de stijfheid: tip P L^3/(3EI). Zonder NPREC = -1 meldde MUMPS
+# ten onrechte FACTOR_11 (bridge_mesh._bonded, KNOWN_BUGS 108). Mecway
+# rekent het verlijmde model niet bruikbaar (LS-07a); referentie: Mecway op
+# de doorlopende strook (LS-07b).
+L66, B66, P66 = 0.2, 0.02, 1.0
+W66 = P66 * L66 ** 3 / (3 * E * I0)
+BOND66 = ('<contact2 selectionmaster="{0}" selectionslave="{1}" '
+          'type="bondedtie"><tolerance>0 m</tolerance><normalstiffness>0 '
+          'Pa/m</normalstiffness><tangentialstiffness>0 Pa/m'
+          '</tangentialstiffness><frictioncoefficient>0'
+          '</frictioncoefficient></contact2>')
+
+
+def build_ls66():
+    m = Model("S30")
+    m.mat("Plaat2", '<geometric type="Plate" thickness="2 mm" />', STEEL)
+    m.elset("Deel_A", "Plaat2")
+    a = quadmesh(m, "Deel_A", 10, 4, rect(0, L66 / 2, 0, B66), order=2)
+    m._index = {}                    # B: eigen knopen
+    m.elset("Deel_B", "Plaat2")
+    b = quadmesh(m, "Deel_B", 10, 7, rect(L66 / 2, L66, 0, B66), order=2)
+    m.face_selection("Lijm_A", [(a["elems"][(9, j)], 5) for j in range(4)])
+    m.face_selection("Lijm_B", b["edges"]["u0"])
+    m.add(BOND66.format("Lijm_A", "Lijm_B"))
+    m.face_selection("Inklemming", a["edges"]["u0"])
+    m.face_selection("Vrij_eind", b["edges"]["u1"])
+    m.node_selection("Tip", sorted(b["nodes"]["u1"]))
+    m.add('<fixed selection="Inklemming" />')
+    m.add('<force selection="Vrij_eind"><x>0 N</x><y>0 N</y><z>-%g N</z>'
+          '</force>' % P66)
+    m.element_selection("Verschoven", list(a["elems"].values()))
+    m.add(_offset_w("Verschoven", 0.001))
+    return m
+
+
+TESTS += [
+    Case("LS-66", GROUP, "Verlijmd contact met een verschoven quad8-strook "
+         "(COQUE_3D, starre armen)", "lin_static_3d", build_ls66,
+         [Check("doorbuiging tip", lambda r: -_mean(r, "displz", "Tip"),
+                ref=W66, tol=0.02, unit="m",
+                source="P L^3/(3EI) (Euler, E; inklemming -1 %)"),
+          Check("doorbuiging tip t.o.v. Mecway", lambda r: -_mean(
+              r, "displz", "Tip"), ref=9.41484e-4, tol=0.005, unit="m",
+                source="Mecway 34, doorlopende strook (LS-07b)",
+                in_series=False)],
+         note="Offset op de master van een verlijmd contact: WARNING, "
+              "koppeling aan de knopen, NPREC = -1."),
+]

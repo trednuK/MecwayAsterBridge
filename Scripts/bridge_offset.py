@@ -445,8 +445,16 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
     ["offset_shells"] voor bridge_to_aster."""
     model_data["offset_links"] = []
     model_data["offset_shells"] = OrderedDict()
+    # {eid: "rigid" (eigen knopen) of "exc" (EXCENTREMENT)}, voor de
+    # melding bij verlijmd contact (bridge_mesh._bonded)
+    model_data["offset_elements"] = {}
     if not plan:
         return
+    for eid in plan["cells"]:
+        model_data["offset_elements"][eid] = "rigid"
+    for eids in plan["exc"].values():
+        for eid in eids:
+            model_data["offset_elements"][eid] = "exc"
     # Een joint op een verschoven element vertaalt
     # bridge_mesh._flexible_joints niet (WARNING daar, KNOWN_BUGS 108d).
     cells = dict(("M{0}".format(e), cn) for e, cn in plan["cells"].items())
