@@ -775,8 +775,8 @@ verrijking)?
 ### S4a – Lassen: transiënt thermisch met bewegende bron
 **Doel:** temperatuurveld van een lasrups. Bouwt op `bridge_thermal.py` (T31).
 **Uitzoeken:** bewegende bron (Goldak dubbel-ellipsoïde of een eenvoudiger
-Gauss-bron) als Mecway-formule in x, y, z, t vraagt eerst KNOWN_BUGS 45 (x/y/z-formules
-→ ERROR); anders een `#ASTER`-sleutelwoord (lasbaan, snelheid, vermogen, afmetingen).
+Gauss-bron) als Mecway-formule in x, y, z, t vroeg eerst KNOWN_BUGS 45 (x/y/z-formules
+→ ERROR; inmiddels opgelost); anders een `#ASTER`-sleutelwoord (lasbaan, snelheid, vermogen, afmetingen).
 Analysekeuze: `auto` stuurt T31 naar `ther_3d`; lassen kiest de gebruiker op de pagina
 of via `#ASTER-OPTIE`.
 **Klaar als:** quasi-stationaire piektemperatuur buiten de smeltzone binnen 5% van
@@ -790,8 +790,8 @@ as), `symmetrie`. In de .comm een Python-functie + `FORMULE(X, Y, Z, INST)` +
 `AFFE_CHAR_THER_F SOURCE`; na de solve een energiecontrole in de job (`CALC_VECT_ELEM`
 `CHAR_THER`: opgenomen vermogen, regel `BRIDGE_LASBRON`, statusvak). Meldingen:
 v·Δt > ½(af + ar), element > 0,8× de halve as, opgenomen vermogen > 2% af. (B)
-Mecway-formules in x, y, z, t voor alle thermische lasten (KNOWN_BUGS 45 thermisch
-opgelost; Mecway's interne solver rekent zo'n model ook). Geen aparte analyse: T31 →
+Mecway-formules in x, y, z, t voor alle thermische lasten (toen KNOWN_BUGS 45, thermisch
+opgelost, mechanisch later ook; Mecway's interne solver rekent zo'n model ook). Geen aparte analyse: T31 →
 `ther_3d` (ook `auto`). Temperatuurafhankelijke λ/c werden niet vertaald: XML gelezen
 uit een met Mecway (script `mw.set_material_type(.., "TempDependent")`) opgeslagen
 model, nu `THER_NL` + `THER_NON_LINE`; gevonden: Code-Aster interpoleert de enthalpie

@@ -422,8 +422,9 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Aanname | Wat de bridge doet | Status |
 |---|---|---|
 | Alles in SI | elke Mecway-waarde met eenheid (`"210 GPa"`, `"10000 mm⁴"`) wordt omgerekend (`parse_and_convert`); een onbekende eenheid komt ongewijzigd terug met een WARNING | geverifieerd: alle verificatiemodellen gebruiken eenheden als MPa en mm (Verificatie, alle groepen) |
-| Formules in t | bemonsterd tot een tijdstabel (zoals Mecway voor CCX); formules in x, y, z niet | bron: Mecway-handleiding (Mecway, 2026) hoofdstuk 9; KNOWN_BUGS 45 |
-| Tijdsafhankelijke last in lineair statisch | waarde op de eindtijd | afwijking: Mecway intern negeert t, CCX neemt f(0) (KNOWN_BUGS 45) |
+| Formules in t | bemonsterd tot een tijdstabel (zoals Mecway voor CCX) | bron: Mecway-handleiding (Mecway, 2026) hoofdstuk 9; KNOWN_BUGS 104 |
+| Formules in x, y, z (mechanisch) | `FORMULE` van X, Y, Z (en `INST`) in `AFFE_CHAR_MECA_F` voor druk, traction, kracht, line pressure en opgelegde verplaatsing/rotatie; x, y, z in de positionunit, beginpositie | geverifieerd: LS-40..44, NL-40; druk en traction gelijk aan Mecway 34; afwijking: kracht, line pressure en verplaatsing/rotatie met x, y, z legt Mecway 34 niet op (KNOWN_BUGS 104) |
+| Tijdsafhankelijke last in lineair statisch | waarde op de eindtijd (ook t in een formule in x, y, z) | afwijking: Mecway intern negeert t, CCX neemt f(0) (KNOWN_BUGS 104) |
 | Niet-lineair statisch: Mecway's `stepsize` | rekenstappen dt, 2 dt, ... tot de periode plus de knikken van de lasttabellen; *automatic time stepping* niet nagebootst | uitvoertijden = Mecway's stappen (NL-20), plus een tijdstip op een knik tussen twee stappen |
 
 ### 4.2 Materiaal

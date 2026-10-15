@@ -14,6 +14,12 @@
   with a quadratic shell (tri6/quad8) as master: the bridge then writes the tie itself as
   `LIAISON_DDL` (skewed/curved: MUMPS `NPREC` −1 for that run, with a warning).
   Verification LS-07f–k (KNOWN_BUGS 90–92 solved).
+- **Formulas in x, y, z for mechanical loads** (also combined with t) are now translated
+  instead of skipped (KNOWN_BUGS 45): pressure, traction, force, line pressure and
+  prescribed displacement/rotation become a `FORMULE` of X, Y, Z (INST) in
+  `AFFE_CHAR_MECA_F`, e.g. a hydrostatic-like pressure `3*y^2`. Pressure and traction match
+  Mecway 34 exactly; force, line pressure and displacement with x, y, z are not applied by
+  Mecway 34 itself (warning). Verification LS-40–44, NL-40; limits KNOWN_BUGS 104.
 - **New overview** of which Mecway functionality the bridge does and does not translate
   (`docs/en/Mecway_features.md`, Dutch `docs/Mecway_functionaliteit.md`), also on the
   Documentation page of the start screen.

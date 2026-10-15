@@ -458,23 +458,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    in de overige thermische lasten en temperatuurafhankelijke λ/c worden wel vertaald,
    docs/Thermisch.md par. 3.)
 
-45\. **Formules in x, y, z bij mechanische lasten** (bevestigd,
-   `bridge_bcs._formula_value`). Thermisch opgelost: daar wordt elke formule een
-   `FORMULE` van X, Y, Z, INST (`bridge_thermal.Formula`, `bridge_bcs.aster_expression`;
-   WE-06 gelijk aan Mecway, WE-03 bewegende bron). Mechanisch: een waarde als
-   formule in t wordt een tijdshistorie (zoals Mecway voor CCX: 10001 monsters, punten
-   met <= 0,01% afwijking); plaatsafhankelijke formules (bijv. druk `3*y^2`) worden
-   gemeld (ERROR) en niet meegenomen. Mogelijk: AFFE_CHAR_MECA_F met FORMULE(X,Y,Z)
-   (dezelfde vertaling als thermisch).
-   Lineair statisch neemt de bridge f(eindtijd); Mecway intern negeert een last in t,
-   CCX neemt f(0). Elk functiepunt wordt in STAT_NON_LINE een rekenstap (met Mecway's
-   stapgrootte) of een interval met substeps_per_interval stappen (zonder stapgrootte;
-   `bridge_to_aster._build_listinst_block`): een sinus geeft honderden punten en dus
-   honderden tot duizenden stappen. Waarden die `bridge_from_liml` met
-   `parse_and_convert(findtext(...))` leest (bijv. `referencetemperature`) zouden een
-   constante formule (getal met unit-attribuut) als SI lezen, als Mecway daar ooit een
-   formule schrijft (NIET gezien).
-
 49\. **Modaal: grenzen van de voorspanning en van de complexe modes** (bevestigd
    met runs, `bridge_to_aster._prestress_plan`). Voorspanning door belastingen
    (stress stiffening, `modal_prestress`) werkt zoals Mecway (verificatie MP-01..07).
@@ -820,3 +803,37 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    kinematische versteviging met geboorte: NIET geverifieerd; (h) Mecway's eigen solver
    kent geen geboorte (geen vergelijking met Mecway); de weergave van stille elementen
    in de Mecway-GUI is NIET nagelopen.
+
+104\. **Formules: grenzen** (bevestigd met runs, `bridge_bcs.PositionFormula`,
+   `_formula_value`, `bridge_from_liml._check_position_formulas`; verificatie
+   LS-40..44, NL-40). Een formule in x, y, z (ook met t) wordt in de mechanische
+   analyses een `FORMULE` van X, Y, Z (INST) in `AFFE_CHAR_MECA_F` voor druk, traction,
+   kracht, line pressure en opgelegde verplaatsing/rotatie (waarde, vaste richting).
+   Grenzen: (a) **niet vertaald** (ERROR): een formule in x, y, z voor gravity,
+   centrifugaalkracht, moment, snelheid, frictionless, hydrostatische druk, elastic
+   support, de richtingsvector van displacement/node rotation (Mecway: "can be
+   functions of position"; Mecway 34 headless rekende zo'n model niet), druk of
+   traction op schaalranden en balkuiteinden (vaste knoopkrachten,
+   `bridge_mesh._edge_loads`), in expliciete dynamica, harmonisch, modale respons,
+   spectrum en de keten thermisch → mechanisch; een line pressure als formule naast
+   een tijdsafhankelijke line pressure op dezelfde balken (`_prepare_beam_loads`).
+   (b) **Mecway 34 rekent anders**: kracht, opgelegde verplaatsing/rotatie en line
+   pressure met x, y of z in de formule legt Mecway niet op (reacties 0; interne
+   solver en CCX); de bridge wel (WARNING). Kracht op vlakken/knopen: de formule is
+   het totaal, zoals een getal, dus per oppervlak f/A of per knoop f/n, op de plaats
+   van het integratiepunt of de knoop. (c) DKT/DST-schalen nemen een functie in de
+   knopen (`FORCE_COQUE`, druk 3y² op een 4 × 8-plaat +0,78%, LS-44a; `COQUE_3D`
+   exact). Druk met een formule op schalen gaat via `FORCE_COQUE PRES` (`PRES_REP`
+   met een functie: `<EXCEPTION> ELEMENTS4_92` op DKT en COQUE_3D) en blijft bij
+   grote verplaatsingen een vaste last (Mecway: alleen uniforme druk meebewegend).
+   (d) Lineair statisch, modaal en knik nemen f(eindtijd) (formule in t en x, y, z:
+   t = eindtijd); Mecway intern negeert een last in t, CCX neemt f(0). (e) Elk punt
+   van een tijdsfunctie wordt in STAT_NON_LINE een rekenstap (met Mecway's
+   stapgrootte) of een interval met `substeps_per_interval` stappen (zonder
+   stapgrootte; `_build_listinst_block`): een sinus geeft honderden punten en dus
+   honderden tot duizenden stappen. (f) Waarden die `bridge_from_liml` met
+   `parse_and_convert(findtext(...))` leest (bijv. `referencetemperature`) zouden
+   een constante formule (getal met unit-attribuut) als SI lezen, als Mecway daar
+   ooit een formule schrijft (NIET gezien). (g) De foutschatter (`CALC_ERREUR`, last
+   `load_err`) neemt alleen constante lasten mee: een vlak met een formule-last is voor
+   de schatter een spanningsvrije rand (INFO), dus daar een te grote lokale fout.

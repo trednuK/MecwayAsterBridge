@@ -44,7 +44,8 @@ import xml.etree.ElementTree as ET
 from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE,
                           resolve_auto_analysis, tr,
                           choose_configuration, configuration_warning)
-from bridge_bcs import SUPPORTED_BCS, _parse_direction, _parse_value
+from bridge_bcs import (SUPPORTED_BCS, _parse_direction, _parse_value,
+                        is_position)
 import bridge_radioss
 import bridge_custom
 import bridge_thermal
@@ -1199,6 +1200,56 @@ def _check_gravity_history(params, model_data):
     return True
 
 
+# Analyses waarin een formule in x, y, z (bridge_bcs.PositionFormula) als
+# FORMULE in AFFE_CHAR_MECA_F werkt (bridge_to_aster._build_charges):
+# statisch, niet-lineair statisch, impliciete dynamica en modaal/knik
+# (voorspanning). Niet: expliciete dynamica (een opgelegde verplaatsing
+# wordt daar een versnelling, bridge_to_aster._explicit_kinematics),
+# harmonisch, modale respons en spectrum (amplituden, NIET nagegaan).
+_POSITION_SOLVERS = ("MECA_STATIQUE", "STAT_NON_LINE", "DYNA_NON_LINE",
+                     "CALC_MODES")
+_EXPLICIT_SCHEMAS = ("DIFF_CENT", "TCHAMWA")
+
+
+def _check_position_formulas(tag, params, sel, run_cfg, model_data):
+    """
+    False (gemeld) als params een formule in x, y, z bevat
+    (bridge_bcs.PositionFormula) die in deze analyse niet vertaald wordt.
+    Anders True; bij een kracht, verplaatsing, rotatie of line pressure
+    een WARNING: Mecway 34 legt die met een formule in x, y, z niet op
+    (gemeten, zie de kop van bridge_bcs.py), de bridge wel.
+    """
+    found = [(k, v) for k, v in params.items()
+             if not k.startswith("_") and is_position(v)]
+    if not found:
+        return True
+    what = tr("{0} op '{1}'", "{0} on '{1}'").format(tag, sel)
+    solver = run_cfg.get("solver_command")
+    if solver not in _POSITION_SOLVERS or (
+            solver == "DYNA_NON_LINE" and
+            run_cfg.get("schema", "HHT") in _EXPLICIT_SCHEMAS):
+        _not_translated(model_data, what, tr(
+            "formule in x, y, z ({0}) wordt alleen vertaald in statisch, "
+            "niet-lineair statisch, impliciete dynamica, modaal en knik;",
+            "formula in x, y, z ({0}) is only translated in static, "
+            "nonlinear static, implicit dynamics, modal and buckling;")
+            .format(", ".join(v.text() for _k, v in found)))
+        return False
+    if tag in ("force", "displacement", "noderotation", "linepressure"):
+        log(tr("WARNING: {0}: formule in x, y, z ({1}). Mecway 34 legt "
+               "zo'n {2} niet op (gemeten: reacties en verplaatsingen 0, "
+               "interne solver en CCX); de bridge wel, met de waarde van "
+               "de formule op elke plaats. De resultaten verschillen dan "
+               "van Mecway.",
+               "WARNING: {0}: formula in x, y, z ({1}). Mecway 34 does not "
+               "apply such a {2} (measured: reactions and displacements 0, "
+               "internal solver and CCX); the bridge does, with the value "
+               "of the formula at each location. The results then differ "
+               "from Mecway.").format(
+                   what, ", ".join(v.text() for _k, v in found), tag))
+    return True
+
+
 def _check_bc_params(tag, item, params, sel, model_data):
     """False als de belasting niet vertaald kan worden (gemeld)."""
     if params.get("_skipped"):
@@ -2308,6 +2359,9 @@ def extract_aster_data_from_liml(file_path):
                 params = bc_handler.parse_xml(item, root)
                 if not _check_bc_params(tag, item, params, selection_name,
                                         model_data):
+                    continue
+                if not _check_position_formulas(tag, params, selection_name,
+                                                run_cfg, model_data):
                     continue
                 if tag == "gravity" and solver_cmd == "COMB_SISM_MODAL":
                     # Responsspectrum (bridge_spectrum.py): de gravity is

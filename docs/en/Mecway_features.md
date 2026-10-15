@@ -37,7 +37,7 @@ ignored with only an INFO, as Mecway itself does.
 | Mecway | Status | Remark |
 |---|---|---|
 | Force (nodes, faces, elements) | Yes | On nodes divided equally, on faces as force per area. |
-| Pressure | Yes | Follower load in nonlinear analyses. On shell edges and beam ends as nodal forces (KB5). |
+| Pressure | Yes | Follower load in nonlinear analyses (a formula in x, y, z stays fixed). On shell edges and beam ends as nodal forces (KB5). |
 | Traction | Yes | On a shell face with the moment of half the thickness, as in Mecway. |
 | Line pressure | Yes | Global or local (U, V, W). Combinations on one beam: KB20. |
 | Hydrostatic pressure | Partly | Not on shell edges (KB5). |
@@ -50,8 +50,8 @@ ignored with only an INFO, as Mecway itself does.
 | Rayleigh damping | Partly | Only on the whole model, not on a selection (KB27). |
 | Initial velocity | Yes | Dynamics only; not with mode superposition (KB54). |
 | Initial displacement | No | Reported. |
-| Value as a table or a formula in t | Yes | 10001 samples as Mecway does for CCX. Linear static, modal and buckling: the value at the end time. Many points = many steps (KB45). |
-| Formula in x, y, z (mechanical) | No | KB45. Alternative: your own load in an `#ASTER` line (`AFFE_CHAR_MECA_F` with a `FORMULE` of X, Y, Z; set up like example 3), NOT verified. |
+| Value as a table or a formula in t | Yes | 10001 samples as Mecway does for CCX. Linear static, modal and buckling: the value at the end time. Many points = many steps (KB104). |
+| Formula in x, y, z (mechanical) | Yes | Pressure, traction, force, line pressure, prescribed displacement/rotation: `FORMULE` of X, Y, Z (also with t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Mecway 34 itself does not apply force, line pressure and displacement/rotation with x, y, z (WARNING). Not: gravity, moment, centrifugal, direction as a formula, pressure on shell edges; not in explicit, harmonic, spectrum (KB104). |
 | Load on the side face of a beam | No | KB5. Put the load on an element selection of the beam. |
 | Pre-tension section | No | No alternative in the bridge. |
 | Electric potential, Charge, Current, Robin | No | No electric analyses (§1). |
@@ -69,7 +69,7 @@ ignored with only an INFO, as Mecway itself does.
 | Frictionless support | Partly | Not on beams; normal displacement ≠ 0 not on curved shells and shell edges (KB5). |
 | Elastic support | Yes | Faces of solids and shell faces. |
 | Compression only support | Partly | Only in nonlinear analyses, not together with contact; on shells the rotations stay free (KB22). |
-| Displacement, Node rotation | Yes | Direction as a formula in x, y, z: No (KB45). Prescribed rotations with large rotations: KB11. |
+| Displacement, Node rotation | Yes | Value as a formula in x, y, z: Yes; direction as a formula: No (KB104). Prescribed rotations with large rotations: KB11. |
 | Velocity | Yes | Dynamics. |
 | Symmetry | Yes | Faces of solids, shell edges and beam ends. |
 | Cyclic symmetry | Partly | Only in Frequency (V30) and only solid elements; in static and thermal reported and computed as a loose sector (KB61). |

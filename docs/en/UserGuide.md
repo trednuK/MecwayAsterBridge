@@ -293,17 +293,39 @@ This is how you do it instead:
    headless `mecway <model> solve` does so too); use it to check a bridge run per
    configuration.
 
-**Formulas.** A value entered as a formula (Mecway: Formula) is translated when it
-depends on time t only. The bridge samples it the way Mecway does for CCX: 10001
-times from 0 to the Time period, keeping only the points needed to stay within 0.01%
-of the range; the result is a `DEFI_FONCTION`. Mecway's units (value, time in s or
-min) are applied; a formula without t is a plain value. Formulas in x, y or z
-(position-dependent) and formulas the bridge cannot read are reported (ERROR) and not
-included. Allowed: `+ - * / ^`, parentheses, `pi`, `e`, `sin`, `cos`, `tan`, `asin`,
-`acos`, `atan`, `atan2`, `log` (natural), `abs`, `sqrt`, `heaviside`, `unittriangle`,
-`max`, `min`. In a linear static, modal or buckling analysis the value at the end
-time is used. A curved formula (e.g. a sine) gives many time points and therefore
-many solver steps (KNOWN_BUGS 45).
+**Formulas.** A value entered as a formula (Mecway: Formula) that depends on time t
+only is sampled the way Mecway does for CCX: 10001 times from 0 to the Time period,
+keeping only the points needed to stay within 0.01% of the range; the result is a
+`DEFI_FONCTION`. Mecway's units (value, time in s or min) are applied; a formula
+without t is a plain value. Formulas the bridge cannot read are reported (ERROR) and
+not included. Allowed: `+ - * / ^`, parentheses, `pi`, `e`, `sin`, `cos`, `tan`,
+`asin`, `acos`, `atan`, `atan2`, `log` (natural), `abs`, `sqrt`, `heaviside`,
+`unittriangle`, `max`, `min`. In a linear static, modal or buckling analysis the value
+at the end time is used. A curved formula (e.g. a sine) gives many time points and
+therefore many solver steps (KNOWN_BUGS 104).
+
+*Formulas in x, y, z* (position-dependent, possibly also with t) become a `FORMULE` of
+X, Y, Z (and `INST`) in `AFFE_CHAR_MECA_F`, with x, y, z in the formula's *Position
+unit* (the initial position, also with large displacements). This works for:
+- **Pressure** and **Traction** on faces of solids and on shell faces. Mecway computes
+  these formulas too (1, 7 or 9 points per face); example: pressure `3*y^2` with
+  position in m and pressure in kPa on a 1 × 2 m face gives 8 kN, in Mecway and in
+  the bridge (verification LS-40, LS-41). On DKT/DST shells Code-Aster takes the
+  formula at the nodes (small deviation on a coarse mesh, LS-44a); `COQUE_3D` is exact.
+- **Force**: like a number, the formula is the total force: per area f/A on faces,
+  per node f/n on nodes, evaluated at the location itself.
+- **Line pressure** on beams (`FORCE_POUTRE`) and shell edges (`FORCE_ARETE`), e.g. a
+  triangular load `-1000*x` N/m (LS-43).
+- **Displacement** and **Node rotation**: the value as a formula (at each node), with
+  a fixed direction (LS-42).
+
+Mecway 34 itself does **not** apply force, line pressure or prescribed
+displacement/rotation with x, y or z in the formula (measured: reactions 0); the
+bridge does and reports it with a WARNING. Formulas in x, y, z work in static,
+nonlinear static, implicit dynamics, modal and buckling; elsewhere, and for gravity,
+moment, centrifugal force, velocity, frictionless, a direction as a formula or
+pressure on shell edges and beam ends, the bridge reports them (ERROR) and leaves
+them out (KNOWN_BUGS 104).
 
 ### 4.1 Result fields
 

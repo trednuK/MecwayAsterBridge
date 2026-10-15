@@ -45,6 +45,7 @@ import bridge_xfem
 import bridge_fatigue
 import bridge_mesh
 import bridge_modal_damping
+from bridge_bcs import is_position, ASTER_FORMULA_PRELUDE
 from collections import OrderedDict
 from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
@@ -2777,7 +2778,9 @@ def _build_charges(model_data, func_names=None):
     _load_func_names). Zonder func_names mogen er geen tijdshistories meer
     zijn (MECA_STATIQUE neemt de laatste waarde, zie _build_lin_static).
     Een kracht- of momentcomponent 0 wordt weggelaten (geen effect); een
-    opgelegde verplaatsing 0 niet.
+    opgelegde verplaatsing 0 niet. Een formule in x, y, z
+    (bridge_bcs.PositionFormula) wordt een FORMULE (_position_formula);
+    zonder func_names (statisch) met t = eindtijd.
     """
     constraints = OrderedDict()
     timed_constraints = OrderedDict()
@@ -2797,6 +2800,7 @@ def _build_charges(model_data, func_names=None):
     sans = OrderedDict((k, tuple(v)) for k, v in sans.items())
     prelude = []
     beam_merged = []
+    static = func_names is None
     _sum_line_pressures(model_data)
     for idx, bc in enumerate(model_data["bcs"]):
         kw = bc["aster_keyword"]
@@ -2888,6 +2892,8 @@ def _build_charges(model_data, func_names=None):
         for k, v in bc["aster_dict"].items():
             if isinstance(v, list):
                 tdict[k] = func_names[(idx, k)]
+            elif is_position(v):
+                tdict[k] = _position_formula(prelude, v, bc, k, static)
             elif bc["type"] in ("force", "moment", "traction",
                                 "linepressure") and v == 0.0:
                 continue
@@ -2935,6 +2941,19 @@ def _build_charges(model_data, func_names=None):
                 prelude.append("{0} = DEFI_CONSTANTE(VALE={1!r})\n".format(
                     name, cdict.pop(k)))
                 tdict[k] = name
+        if (tdict and kw == "PRES_REP" and list(tdict) == ["PRES"]
+                and not attrs and is_position(bc["aster_dict"]["PRES"])
+                and _on_shells(model_data, bc["selection"])):
+            # Druk met een formule in x, y, z op schalen: FONC_MULT kan
+            # niet (functie van de plaats). PRES_REP met een functie gaf op
+            # DKT en COQUE_3D <EXCEPTION> ELEMENTS4_92 (Code-Aster 17.4,
+            # testrun); FORCE_COQUE PRES (AFFE_CHAR_MECA_F, catalogus
+            # affe_char_meca_f.py v17.4) rekent op beide, met hetzelfde teken
+            # als PRES_REP (testrun: constant 3 Pa met PRES_REP en 3*y^2 met
+            # FORCE_COQUE op dezelfde plaat, faceid 5 en 6; LS-44).
+            loads.append(_shell_pressure_formula(model_data, bc,
+                                                 tdict["PRES"]))
+            continue
         if (tdict and kw == "PRES_REP" and list(tdict) == ["PRES"]
                 and not attrs and _on_shell_faces(model_data,
                                                   bc["selection"])):
@@ -2993,6 +3012,64 @@ def _build_charges(model_data, func_names=None):
     return charges + _merge_beam_loads(model_data, loads)
 
 
+def _position_formula(prelude, value, bc, key, static):
+    """
+    Naam van een FORMULE (in prelude) voor een formule in x, y, z
+    (bridge_bcs.PositionFormula) als waarde key van bc. static: t wordt de
+    eindtijd van de analyse (zoals een tijdshistorie in MECA_STATIQUE de
+    laatste waarde krijgt, _build_lin_static), met een WARNING.
+    De FORMULE rekent met X, Y, Z van de beginpositie (U4.44.01
+    AFFE_CHAR_MECA_F; U4.31.05 FORMULE) en INST van de berekening.
+    """
+    if static and value.timed():
+        value = value.at_end()
+        log(tr("WARNING: {0} op '{1}': formule '{2}' hangt ook van t af; in "
+               "een statische berekening geldt t = {3} s (eindtijd, zoals "
+               "een tijdshistorie).",
+               "WARNING: {0} on '{1}': formula '{2}' also depends on t; in "
+               "a static calculation t = {3} s (end time, like a time "
+               "history).").format(bc["type"], bc["selection"],
+                                   value.text(), value.period))
+    if ASTER_FORMULA_PRELUDE not in prelude:
+        prelude.insert(0, ASTER_FORMULA_PRELUDE)
+    expr, nom_para, args = value.render()
+    name = "FPOS{0}".format(sum(1 for p in prelude
+                                if p.startswith("FPOS")) + 1)
+    text = "".join(c if 32 <= ord(c) < 128 else "?" for c in value.text())
+    prelude.append(
+        "{0} = FORMULE(\n    VALE='{1}',\n    NOM_PARA=({2}),{3}\n)  # "
+        "Mecway: {4} ({5} {6})\n".format(
+            name, expr, "".join("'{0}', ".format(p) for p in nom_para),
+            "".join("\n    {0}={1},".format(k, v)
+                    for k, v in sorted(args.items())),
+            text, bc["type"], key))
+    log("INFO: {0} op '{1}' ({2}): formule '{3}' -> FORMULE {4} van "
+        "{5}.".format(bc["type"], bc["selection"], key, value.text(), name,
+                      ", ".join(nom_para)))
+    return name
+
+
+def _shell_pressure_formula(model_data, bc, name):
+    """
+    Last (AFFE_CHAR_MECA_F) voor druk met een formule in x, y, z op
+    schaalvlakken: FORCE_COQUE PRES (catalogus affe_char_meca_f.py v17.4).
+    """
+    return ("AFFE_CHAR_MECA_F", OrderedDict([("FORCE_COQUE", [
+        "_F(GROUP_MA='{0}', PRES={1})".format(bc["selection"], name)])]),
+        None)
+
+
+def _on_shells(model_data, selection):
+    """True als de selectie schaalvlakken of schaalelementen bevat."""
+    if _on_shell_faces(model_data, selection):
+        return True
+    eids = model_data.get("element_selections", {}).get(selection) or ()
+    mods = model_data.get("elset_modelisations", {})
+    elem_elset = model_data.get("_elem_elset", {})
+    return any(mods.get(elem_elset.get(e)) in _SHELL_MODELISATIONS
+               for e in eids)
+
+
 def _on_shell_faces(model_data, selection):
     """True als de vlakselectie schaalvlakken bevat (bridge_mesh
     group_face_list, kind 'shellface')."""
@@ -3022,7 +3099,9 @@ def _follower_pressure_groups(model_data, analysis):
     for bc in model_data.get("bcs", []):
         if (bc["type"] != "surfacepressure" or bc.get("hydro") is not None
                 or bc.get("aster_keyword") != "PRES_REP"
-                or not bc.get("selection")):
+                or not bc.get("selection")
+                or is_position(bc["aster_dict"].get("PRES"))):
+            # druk met een formule in x, y, z: niet uniform, blijft vast
             continue
         ok = True
         for f in faces.get(bc["selection"], []):
@@ -3092,7 +3171,8 @@ def _sum_line_pressures(model_data):
     for bc in model_data["bcs"]:
         if bc["type"] != "linepressure" or \
                 bc["aster_keyword"] != "FORCE_POUTRE" or \
-                any(isinstance(v, list) for v in bc["aster_dict"].values()):
+                any(isinstance(v, list) or is_position(v)
+                    for v in bc["aster_dict"].values()):
             continue
         key = (bc["selection"], bool(bc["params"].get("_local")))
         if key not in first:
@@ -3175,6 +3255,7 @@ def _sum_values(values):
     historie op de unie van de tijden."""
     hists = [v for v in values if isinstance(v, list)]
     if not hists:
+        # ook met formules in x, y, z (PositionFormula telt op)
         return sum(values)
     times = sorted(set(t for h in hists for t, _v in h))
     return [(t, sum(_interp_history(v, t) for v in values)) for t in times]
@@ -3226,10 +3307,26 @@ def _prepare_beam_loads(model_data, solver_cmd):
                 and bc.get("aster_dict")):
             cells = _group_cells(model_data, bc["selection"]) or set()
             cells = set(c for c in cells if c in cell_set)
-            timed = timed_ok and any(isinstance(v, list)
-                                     for v in bc["aster_dict"].values())
+            # Een formule in x, y, z is altijd een functie
+            # (AFFE_CHAR_MECA_F), ook in MECA_STATIQUE.
+            timed = any((timed_ok and isinstance(v, list)) or is_position(v)
+                        for v in bc["aster_dict"].values())
             lps.append((idx, cells, timed))
     if not lps:
+        return
+    vals = [v for idx, _c, _t in lps for v in bcs[idx]["aster_dict"].values()]
+    if (any(is_position(v) for v in vals) and timed_ok and
+            any(isinstance(v, list) for v in vals)):
+        # Een som van een formule in x, y, z en een tijdshistorie is geen
+        # FORMULE en geen DEFI_FONCTION (_sum_values). KNOWN_BUGS 104.
+        log(tr("ERROR: Line pressures op balken met een formule in x, y, z "
+               "naast een tijdshistorie: niet samengevoegd tot een "
+               "verdeelde last per balk; Code-Aster kan stoppen met "
+               "CALCULEL2_92 (KNOWN_BUGS 104).",
+               "ERROR: Line pressures on beams with a formula in x, y, z "
+               "next to a time history: not combined into one distributed "
+               "load per beam; Code-Aster may stop with CALCULEL2_92 "
+               "(KNOWN_BUGS 104)."))
         return
     gravity = [bc for bc in bcs if bc["type"] == "gravity"
                and bc.get("aster_dict")]
@@ -3273,9 +3370,13 @@ def _prepare_beam_loads(model_data, solver_cmd):
     # testrun; STAT_NON_LINE zelf rekende wel). Dus met een
     # tijdsafhankelijke line pressure alle verdeelde balklasten in een
     # AFFE_CHAR_MECA_F (_build_charges, "_beam_merged").
+    # Gravity telt ook als de balken geen dichtheid hebben: de controle
+    # telt lasten met een verdeelde balklast, niet de belaste elementen
+    # (CALCULEL2_92 met een line pressure als formule in x, y, z naast
+    # PESANTEUR en balken zonder dichtheid, Code-Aster 17.4, testrun).
     mixed = bool(timed_ids) and (
-        len(lps) > 1 or bool((gravity or centri) and
-                             any(rho_a(g) for g in beam_sets)))
+        len(lps) > 1 or bool(gravity) or
+        bool(centri and any(rho_a(g) for g in beam_sets)))
     if not overlap and not mixed:
         return
     if mixed and centri and any(rho_a(g) for g in beam_sets):

@@ -159,8 +159,8 @@ is, geeft een ERROR en de run stopt (§8).
   is het vermogen dat het mesh opneemt. Regel `BRIDGE_LASBRON <bron> <t> <W> <doel W>`
   in de `.mess`, samengevat in log en statusvak.
 - **Route B** (formule): `FORMULE` met de Mecway-uitdrukking, x/y/z/t omgerekend met
-  `positionunit`/`timeunit` en de uitkomst met `unit` (KNOWN_BUGS 45 is voor thermische
-  lasten opgelost). Stationair (T30) krijgt een formule in t de waarde op t = 1 s
+  `positionunit`/`timeunit` en de uitkomst met `unit` (mechanische lasten: zie
+  [Handleiding.md](Handleiding.md), Formules). Stationair (T30) krijgt een formule in t de waarde op t = 1 s
   (zoals een tijdstabel).
 - **Schalen in het model** die de bridge als `PLAN` rekent en daarvoor draait
   ([Thermisch.md](Thermisch.md) §3): baan en formules worden mee gedraaid.

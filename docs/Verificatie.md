@@ -517,6 +517,42 @@ force*, *shear force*, *bending moment*, *torsion moment*, *stress*, *strain*, *
 per length*, *moment per length*, *failure*, *contact stress* en *contact state* aan.
 Route `tabel` (LS-30, LS-32, NL-31 met een nep-solution in CPython): `beam_forces` en
 `strain` (ook Green-Lagrange) gelijk aan route `liml`.
+### LS-40 .. LS-44 Formules in x, y, z
+
+- **Doel**: Mecway-formules in x, y, z (KNOWN_BUGS 45, opgelost; grenzen KNOWN_BUGS 104)
+  voor druk, traction, kracht, line pressure en opgelegde verplaatsing/rotatie →
+  `FORMULE` van X, Y, Z in `AFFE_CHAR_MECA_F`. Module `tests_formules.py`.
+- **Model**: blok 1 × 2 × 0,1 m (hex8 4 × 8 × 1), onderkant `fixed`; ingeklemde balk
+  (10 line2, Ø 20 mm, L = 1 m); plaat 1 × 2 m, t = 10 mm (quad4 4 × 8), rand y = 0
+  ingeklemd.
+- **Belasting**: (40a) druk `3*y^2` kPa op de bovenkant (positie in m); (40b) idem als
+  `3e-6*y^2` met positie in mm; (41) druk `3*y^2` op de helft y < 1, `10*x` op de helft
+  y > 1 en traction X = `2*x+1` kPa, drie functielasten in één run; (42a) opgelegde
+  verplaatsing Z = `0.001*x+0.002*y` mm op de bovenkant; (42b) idem langs (1, 1, 0) =
+  `0.001*(1+x)` mm (`LIAISON_OBLIQUE`); (42c) opgelegde rotatie om Y =
+  `0.001*(1+x)` rad aan de tip van de balk; (43a) line pressure Z = `-1000*x` N/m op de
+  balk; (43b) idem met gravity (ρ = 7850 kg/m³); (44a) druk `3*y^2` Pa op de plaat
+  (DKT), (44b) idem met `COQUE_3D`.
+- **Referentie**: de integraal van de formule: 40: reactie ∫3y² dA = 8 kN, moment om X
+  ∫3y³ dA = 12 kN·m, om Y −4 kN·m; 41: 1 + 5 = 6 kN, 0,75 + 7,5 = 8,25 kN·m, reactie X
+  −4 kN; 42: de formule in de knopen (42c: θ = 0,002 rad, zuiver moment w = θL/2); 43: reactie q₀L/2 (+ ρAgL), doorbuiging tip
+  11q₀L⁴/(120EI) (+ ρAgL⁴/(8EI)) (Roark tabel 8.1); 44: reactie 8 N en Mecway 34 (eigen
+  solver) voor de doorbuiging van de vrije rand.
+- **Resultaat**: 40a/b, 41, 42, 43 exact (≤ 1e-6). 44a: reactie 8,0625 N (+0,78 %,
+  tolerantie 1 %), doorbuiging +1,3 % t.o.v. Mecway (tolerantie 2 %); 44b: reactie
+  exact, doorbuiging +0,63 % (tolerantie 1 %; ook met een constante druk liggen
+  schalen ~0,7 % van Mecway, KNOWN_BUGS 2).
+- **Interpretatie**: Code-Aster integreert de formule op volumevlakken, `COQUE_3D` en
+  balken in de integratiepunten (exact voor deze veeltermen); DKT neemt een functie in
+  de knopen (trapeziumregel: +0,78 % op dit grove mesh, O(h²)). Mecway 34 (headless,
+  `mw_solve.py`) geeft voor 40 en 41 dezelfde reacties en momenten (8000 N,
+  12000 N·m; 6000 N, 8250 N·m), ook met positie in mm. Kracht, line pressure en
+  opgelegde verplaatsing/rotatie met x, y, z in de formule legt Mecway 34 niet op
+  (reacties 0, interne solver en CCX); de bridge wel, met een WARNING. Druk op schalen
+  gaat via `FORCE_COQUE PRES` (`PRES_REP` met een functie stopt op DKT en COQUE_3D met
+  `ELEMENTS4_92`). Drie lasten `AFFE_CHAR_MECA_F` met elk een `FORMULE` in één
+  `EXCIT` rekenen elk met hun eigen functie (geen KNOWN_BUGS 70); twee functies in één
+  `DDL_IMPO`-last (testrun met twee selecties) ook.
 
 ### Conclusie lineair statisch
 
@@ -1287,6 +1323,22 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   verlenging dan Mecway/CCX, NL-70b). Zonder *Quasi-static* neemt Mecway/CCX van een
   tabel de waarde op t = 1 s (de staptijd), ook als de tabel verder loopt; de bridge
   rekent dan tot t = 1 s (NL-75: 1,2e-4 m, exact en gelijk aan Mecway/CCX).
+### NL-40 Formule in y en t
+
+- **Doel**: een formule in x, y, z én t in `STAT_NON_LINE` (`FORMULE` van Y en `INST`)
+  naast een gewone krachttabel (`DEFI_FONCTION`, `FONC_MULT`).
+- **Model**: blok van LS-40, Mecway L30 met *Time period* 2 s.
+- **Belasting**: druk `3*y^2*t` kPa op de bovenkant en een kracht Z van 0 (t = 0) tot
+  −2000 N (t = 2 s) op dezelfde vlakken.
+- **Referentie**: reactie 8 kN·t + 1 kN·t: 9 kN bij t = 1 s, 18 kN bij t = 2 s; moment om
+  X bij t = 2 s 24 + 2 = 26 kN·m.
+- **Resultaat**: alle drie exact (≤ 1e-6).
+- **Interpretatie**: `INST` in de `FORMULE` is de rekentijd van `STAT_NON_LINE` (de
+  tijdstappen komen van de krachttabel; zonder tabel 0 tot de eindtijd in
+  `substeps_per_interval` stappen). Mecway 34 met CCX
+  rekent dezelfde formule ook (verplaatsing evenredig met t, zelfde verhouding tot de
+  bridge als bij een constante druk). In lineair statisch neemt de bridge t = eindtijd
+  (WARNING).
 
 ## 6. Dynamica (DY)
 

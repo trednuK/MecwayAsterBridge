@@ -423,8 +423,9 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Assumption | What the bridge does | Status |
 |---|---|---|
 | Everything in SI | every Mecway value with a unit (`"210 GPa"`, `"10000 mm⁴"`) is converted (`parse_and_convert`); an unknown unit is returned unchanged with a WARNING | verified: all verification models use units such as MPa and mm (Verification, all groups) |
-| Formulas in t | sampled to a time table (as Mecway does for CCX); formulas in x, y, z are not | source: Mecway manual (Mecway, 2026) chapter 9; KNOWN_BUGS 45 |
-| Time-dependent load in linear static | value at the end time | deviation: Mecway internal ignores t, CCX takes f(0) (KNOWN_BUGS 45) |
+| Formulas in t | sampled to a time table (as Mecway does for CCX) | source: Mecway manual (Mecway, 2026) chapter 9; KNOWN_BUGS 104 |
+| Formulas in x, y, z (mechanical) | `FORMULE` of X, Y, Z (and `INST`) in `AFFE_CHAR_MECA_F` for pressure, traction, force, line pressure and prescribed displacement/rotation; x, y, z in the position unit, initial position | verified: LS-40..44, NL-40; pressure and traction equal to Mecway 34; deviation: Mecway 34 does not apply force, line pressure and displacement/rotation with x, y, z (KNOWN_BUGS 104) |
+| Time-dependent load in linear static | value at the end time (also t in a formula in x, y, z) | deviation: Mecway internal ignores t, CCX takes f(0) (KNOWN_BUGS 104) |
 | Nonlinear static: Mecway's `stepsize` | solver steps dt, 2 dt, ... up to the period plus the kinks of the load tables; *automatic time stepping* not reproduced | output times = Mecway's steps (NL-20), plus a time at a kink between two steps |
 
 ### 4.2 Material

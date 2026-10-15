@@ -128,8 +128,8 @@ def _r(x):
 # ==========================================
 class Formula(object):
     """
-    Mecway-formule als belastingwaarde (KNOWN_BUGS 45 voor thermisch
-    opgelost): in de .comm een FORMULE van X, Y, Z en INST
+    Mecway-formule als belastingwaarde (mechanisch:
+    bridge_bcs.PositionFormula): in de .comm een FORMULE van X, Y, Z en INST
     (AFFE_CHAR_THER_F, catalogus affe_char_ther_f.py: SOURCE, FLUX_REP,
     ECHANGE, RAYONNEMENT, TEMP_IMPO accepteren een formule).
 

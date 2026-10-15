@@ -515,6 +515,42 @@ force*, *shear force*, *bending moment*, *torsion moment*, *stress*, *strain*, *
 per length*, *moment per length*, *failure*, *contact stress* and *contact state*.
 Route `tabel` (LS-30, LS-32, NL-31 with a fake solution in CPython): `beam_forces` and
 `strain` (also Green-Lagrange) equal to route `liml`.
+### LS-40 .. LS-44 Formulas in x, y, z
+
+- **Purpose**: Mecway formulas in x, y, z (KNOWN_BUGS 45, solved; limits KNOWN_BUGS 104)
+  for pressure, traction, force, line pressure and prescribed displacement/rotation →
+  `FORMULE` of X, Y, Z in `AFFE_CHAR_MECA_F`. Module `tests_formules.py`.
+- **Model**: block 1 × 2 × 0.1 m (hex8 4 × 8 × 1), bottom `fixed`; cantilever beam
+  (10 line2, Ø 20 mm, L = 1 m); plate 1 × 2 m, t = 10 mm (quad4 4 × 8), edge y = 0
+  clamped.
+- **Load**: (40a) pressure `3*y^2` kPa on the top (position in m); (40b) the same as
+  `3e-6*y^2` with position in mm; (41) pressure `3*y^2` on the half y < 1, `10*x` on
+  the half y > 1 and traction X = `2*x+1` kPa, three function loads in one run; (42a)
+  prescribed displacement Z = `0.001*x+0.002*y` mm on the top; (42b) the same along
+  (1, 1, 0) = `0.001*(1+x)` mm (`LIAISON_OBLIQUE`); (42c) prescribed rotation about Y =
+  `0.001*(1+x)` rad at the beam tip; (43a) line pressure Z = `-1000*x`
+  N/m on the beam; (43b) the same with gravity (ρ = 7850 kg/m³); (44a) pressure
+  `3*y^2` Pa on the plate (DKT), (44b) the same with `COQUE_3D`.
+- **Reference**: the integral of the formula: 40: reaction ∫3y² dA = 8 kN, moment about
+  X ∫3y³ dA = 12 kN·m, about Y −4 kN·m; 41: 1 + 5 = 6 kN, 0.75 + 7.5 = 8.25 kN·m,
+  reaction X −4 kN; 42: the formula at the nodes (42c: θ = 0.002 rad, pure moment w = θL/2); 43: reaction q₀L/2 (+ ρAgL), tip
+  deflection 11q₀L⁴/(120EI) (+ ρAgL⁴/(8EI)) (Roark table 8.1); 44: reaction 8 N and
+  Mecway 34 (internal solver) for the deflection of the free edge.
+- **Result**: 40a/b, 41, 42, 43 exact (≤ 1e-6). 44a: reaction 8.0625 N (+0.78%,
+  tolerance 1%), deflection +1.3% against Mecway (tolerance 2%); 44b: reaction exact,
+  deflection +0.63% (tolerance 1%; with a constant pressure shells are also ~0.7% from
+  Mecway, KNOWN_BUGS 2).
+- **Interpretation**: Code-Aster integrates the formula on solid faces, `COQUE_3D` and
+  beams at the integration points (exact for these polynomials); DKT takes a function at
+  the nodes (trapezoidal rule: +0.78% on this coarse mesh, O(h²)). Mecway 34 (headless,
+  `mw_solve.py`) gives the same reactions and moments for 40 and 41 (8000 N,
+  12000 N·m; 6000 N, 8250 N·m), also with position in mm. Mecway 34 does not apply
+  force, line pressure or prescribed displacement/rotation with x, y, z in the formula
+  (reactions 0, internal solver and CCX); the bridge does, with a WARNING. Pressure on
+  shells goes through `FORCE_COQUE PRES` (`PRES_REP` with a function stops on DKT and
+  COQUE_3D with `ELEMENTS4_92`). Three `AFFE_CHAR_MECA_F` loads, each with its own
+  `FORMULE`, in one `EXCIT` each use their own function (no KNOWN_BUGS 70); two
+  functions in one `DDL_IMPO` load (test run with two selections) as well.
 
 ### Conclusion linear static
 
@@ -1285,6 +1321,22 @@ samples) plus the kinks of the load tables (NL-20).
   elongation than Mecway/CCX, NL-70b). Without *Quasi-static* Mecway/CCX takes the table
   value at t = 1 s (the step time), also when the table runs further; the bridge then
   computes up to t = 1 s (NL-75: 1.2e-4 m, exact and equal to Mecway/CCX).
+### NL-40 Formula in y and t
+
+- **Purpose**: a formula in x, y, z and t in `STAT_NON_LINE` (`FORMULE` of Y and
+  `INST`) next to an ordinary force table (`DEFI_FONCTION`, `FONC_MULT`).
+- **Model**: block of LS-40, Mecway L30 with *Time period* 2 s.
+- **Load**: pressure `3*y^2*t` kPa on the top and a force Z from 0 (t = 0) to −2000 N
+  (t = 2 s) on the same faces.
+- **Reference**: reaction 8 kN·t + 1 kN·t: 9 kN at t = 1 s, 18 kN at t = 2 s; moment
+  about X at t = 2 s 24 + 2 = 26 kN·m.
+- **Result**: all three exact (≤ 1e-6).
+- **Interpretation**: `INST` in the `FORMULE` is the solution time of `STAT_NON_LINE`
+  (the time steps come from the force table; without a table 0 to the end time in
+  `substeps_per_interval` steps). Mecway 34
+  with CCX computes the same formula too (displacement proportional to t, same ratio to
+  the bridge as with a constant pressure). In linear static the bridge takes t = end
+  time (WARNING).
 
 ## 6. Dynamics (DY)
 

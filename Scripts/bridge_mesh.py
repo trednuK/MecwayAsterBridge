@@ -36,7 +36,7 @@ import re
 from collections import OrderedDict
 
 from bridge_utils import log, tr, error_estimator_requested
-from bridge_bcs import SUPPORTED_BCS, _angl_naut
+from bridge_bcs import SUPPORTED_BCS, _angl_naut, is_position
 
 
 # Maximale groepsnaamlengte in Code-Aster (ASTER-formaat, nagelopen).
@@ -1755,6 +1755,16 @@ def _edge_loads(model_data, bc, what):
     Mecway-knopen.
     """
     sel = bc["selection"]
+    if any(is_position(v) for v in bc["aster_dict"].values()):
+        # De knoopkrachten zijn vaste vectoren maal de waarde
+        # (_render_node_loads); een formule in x, y, z zou per knoop
+        # anders moeten wegen. KNOWN_BUGS 104.
+        _not_translated(model_data, bc, what, tr(
+            "formule in x, y, z op schaalranden of balkuiteinden "
+            "(KNOWN_BUGS 104)",
+            "formula in x, y, z on shell edges or beam ends "
+            "(KNOWN_BUGS 104)"))
+        return
     nodes = model_data["mesh_nodes"]
     conn = model_data["_conn"]
     faces_list = model_data.get("group_face_list", {}).get(sel, [])
@@ -2868,7 +2878,10 @@ def _ddl_kind(bc):
               if k in _ALL_DOFS]
     if not values:
         return None
-    return "timed" if any(isinstance(v, list) for v in values) else "const"
+    # een formule in x, y, z (PositionFormula) is ook een functie
+    # (AFFE_CHAR_MECA_F)
+    return "timed" if any(isinstance(v, list) or is_position(v)
+                          for v in values) else "const"
 
 
 def _ddl_values(bcs):

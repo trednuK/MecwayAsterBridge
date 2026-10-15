@@ -37,7 +37,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Mecway | Status | Opmerking |
 |---|---|---|
 | Force (knopen, vlakken, elementen) | Ja | Op knopen gelijk verdeeld, op vlakken als kracht per oppervlak. |
-| Pressure | Ja | Meebewegend in niet-lineaire analyses. Op schaalranden en balkuiteinden als knoopkrachten (KB5). |
+| Pressure | Ja | Meebewegend in niet-lineaire analyses (een formule in x, y, z blijft vast). Op schaalranden en balkuiteinden als knoopkrachten (KB5). |
 | Traction | Ja | Op een schaalvlak met het moment van de halve dikte, zoals Mecway. |
 | Line pressure | Ja | Globaal of lokaal (U, V, W). Combinaties op één balk: KB20. |
 | Hydrostatic pressure | Deels | Niet op schaalranden (KB5). |
@@ -50,8 +50,8 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Rayleigh damping | Deels | Alleen op het hele model, niet op een selectie (KB27). |
 | Initial velocity | Ja | Alleen in dynamica; niet bij mode superposition (KB54). |
 | Initial displacement | Nee | Gemeld. |
-| Waarde als tabel of formule in t | Ja | 10001 monsters zoals Mecway voor CCX. Lineair statisch, modaal en knik: de waarde op de eindtijd. Veel punten = veel stappen (KB45). |
-| Formule in x, y, z (mechanisch) | Nee | KB45. Alternatief: eigen last in een `#ASTER`-regel (`AFFE_CHAR_MECA_F` met een `FORMULE` van X, Y, Z; opzet zoals voorbeeld 3), NIET geverifieerd. |
+| Waarde als tabel of formule in t | Ja | 10001 monsters zoals Mecway voor CCX. Lineair statisch, modaal en knik: de waarde op de eindtijd. Veel punten = veel stappen (KB104). |
+| Formule in x, y, z (mechanisch) | Ja | Druk, traction, kracht, line pressure, opgelegde verplaatsing/rotatie: `FORMULE` van X, Y, Z (ook met t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Kracht, line pressure en verplaatsing/rotatie met x, y, z legt Mecway 34 zelf niet op (WARNING). Niet: gravity, moment, centrifugaal, richting als formule, druk op schaalranden; niet in expliciet, harmonisch, spectrum (KB104). |
 | Last op het zijvlak van een balk | Nee | KB5. Zet de last op een elementselectie van de balk. |
 | Pre-tension section | Nee | Geen alternatief in de bridge. |
 | Electric potential, Charge, Current, Robin | Nee | Geen elektrische analyses (§1). |
@@ -69,7 +69,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Frictionless support | Deels | Niet op balken; normaalverplaatsing ≠ 0 niet op gekromde schalen en schaalranden (KB5). |
 | Elastic support | Ja | Vlakken van volumes en schaalvlakken. |
 | Compression only support | Deels | Alleen in niet-lineaire analyses, niet samen met contact; op schalen blijven de rotaties vrij (KB22). |
-| Displacement, Node rotation | Ja | Richting als formule in x, y, z: Nee (KB45). Opgelegde rotaties bij grote rotaties: KB11. |
+| Displacement, Node rotation | Ja | Waarde als formule in x, y, z: Ja; richting als formule: Nee (KB104). Opgelegde rotaties bij grote rotaties: KB11. |
 | Velocity | Ja | Dynamica. |
 | Symmetry | Ja | Vlakken van volumes, schaalranden en balkuiteinden. |
 | Cyclic symmetry | Deels | Alleen in Frequency (V30) en alleen volume-elementen; in statisch en thermisch gemeld en als losse sector gerekend (KB61). |

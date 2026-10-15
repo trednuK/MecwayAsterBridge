@@ -164,8 +164,8 @@ ERROR and the run stops (§8).
   their sum is the power the mesh takes up. Line `BRIDGE_LASBRON <source> <t> <W>
   <target W>` in the `.mess`, summarised in the log and the status box.
 - **Route B** (formula): `FORMULE` with the Mecway expression, x/y/z/t converted with
-  `positionunit`/`timeunit` and the result with `unit` (KNOWN_BUGS 45 is solved for
-  thermal loads). In steady state (T30) a formula in t gets the value at t = 1 s (like
+  `positionunit`/`timeunit` and the result with `unit` (mechanical loads: see
+  [UserGuide.md](UserGuide.md), Formulas). In steady state (T30) a formula in t gets the value at t = 1 s (like
   a time table).
 - **Shells in the model** that the bridge computes as `PLAN` and rotates for that
   ([Thermal.md](Thermal.md) §3): the path and formulas are rotated along.

@@ -57,8 +57,32 @@ from bridge_utils import log, parse_and_convert, tr
 # tijden en houdt de punten over waarmee de stuksgewijs lineaire functie
 # hoogstens 0,01% van het bereik afwijkt (manual par. 9). De bridge doet
 # hetzelfde over 0..timeperiod (<timesteps>; zonder: 1 s, zoals
-# bridge_from_liml). Een formule zonder t is een gewone waarde. Formules
-# in x, y, z (plaatsafhankelijk) worden NIET vertaald (FormulaError).
+# bridge_from_liml). Een formule zonder t is een gewone waarde.
+#
+# Formules in x, y, z (plaatsafhankelijk, eventueel ook met t): een
+# PositionFormula (hieronder), in de .comm een FORMULE van X, Y, Z (en INST)
+# in AFFE_CHAR_MECA_F (bridge_to_aster._build_charges). Alleen voor de
+# lasten met position_ok = True (druk, traction, kracht, line pressure,
+# opgelegde verplaatsing en rotatie); elders blijft het een FormulaError.
+# Gemeten met Mecway 34 (headless, mw_solve.py, blok 1 x 2 x 0,1 m van
+# hex8 met de onderkant vast, interne solver en CCX):
+#   - druk 3*y^2 kPa (positionunit m) op de bovenkant: reactie 8000 N en
+#     moment 12000 N.m, exact (integraal); met positionunit mm en
+#     3e-6*y^2 hetzelfde, dus x, y, z in positionunit;
+#   - traction x = 2*x+1, z = y^3 kPa: reacties -4000 N en -4000 N
+#     (exact), moment -6399,96 N.m (exact -6400: Mecway bemonstert per
+#     vlak, manual par. 9.14: 1, 7 of 9 punten);
+#   - kracht (op vlakken en op knopen), opgelegde verplaatsing/rotatie en
+#     line pressure met x, y of z in de formule (ook 1000*(1+y)): Mecway
+#     legt NIETS op (reacties en verplaatsingen 0), met de interne solver
+#     en met CCX (ook niet-lineair); gravity met x in de formule en een
+#     richtingsvector als formule: Mecway rekent niet (geen oplossing);
+#   - druk 3*y^2*t met CCX (niet-lineair): rekent (verplaatsing evenredig
+#     met t; de beperking "not ... both time and position" in de handleiding
+#     staat bij de thermische lasten, par. 9.23 e.v.).
+# De bridge vertaalt de plaatsafhankelijke kracht, verplaatsing en line
+# pressure toch (de bedoeling van de formule) en meldt het verschil met
+# Mecway (WARNING, bridge_from_liml._check_position_formulas).
 # ==========================================
 _FORMULA_ATTRS = ("unit", "timeunit", "positionunit")
 _FORMULA_SAMPLES = 10000          # intervallen: 10001 tijden (Mecway)
@@ -270,6 +294,16 @@ def _unit_map(unit, quantity):
     return a, b
 
 
+def _unit_si(unit, quantity):
+    """SI-waarde van 1 eenheid (positionunit/timeunit); 1 als leeg of
+    onbekend."""
+    unit = (unit or "").strip()
+    if not unit:
+        return 1.0
+    v = parse_and_convert(u"1 " + unit, quantity)
+    return v if isinstance(v, float) and v > 0.0 else 1.0
+
+
 def _analysis_period(root):
     """Eindtijd van de analyse in s: <timesteps timeperiod> (zoals
     bridge_from_liml), anders 1 s."""
@@ -327,11 +361,158 @@ def _reduce_samples(values, tol):
     return keep
 
 
-def _formula_value(node, quantity, root):
+def _num(value):
+    """Getal voor een FORMULE-uitdrukking: 17 significante cijfers (exact
+    terug te lezen) met een decimale punt (%-opmaak volgt de landinstelling
+    niet, zie bridge_mesh._real)."""
+    txt = "%.17g" % value
+    if "." in txt or "n" in txt:
+        return txt
+    mant, sep, exp = txt.partition("e")
+    return mant + ".0" + sep + exp
+
+
+class PositionFormula(object):
     """
-    SI-waarde van een formule-knoop: een float (formule zonder t) of een
-    lijst (t, waarde) over 0..eindtijd van de analyse. FormulaError bij
-    x/y/z, een onleesbare formule of een rekenfout.
+    Mecway-formule in x, y, z (en eventueel t) als waarde van een
+    mechanische last of voorwaarde (grenzen: KNOWN_BUGS 104). In de .comm
+    een FORMULE van X, Y, Z en INST (bridge_to_aster._build_charges,
+    AFFE_CHAR_MECA_F; catalogus affe_char_meca_f.py v17.4: PRES_REP PRES,
+    FORCE_FACE, FORCE_ARETE, FORCE_COQUE, FORCE_POUTRE, FORCE_NODALE,
+    DDL_IMPO en LIAISON_OBLIQUE nemen een formule), met X, Y, Z de
+    beginpositie. Gemeten (Code-Aster 17.4, LS-40..44): volumevlakken,
+    COQUE_3D en balken integreren de formule exact (integratiepunten),
+    DKT neemt ze in de knopen; DDL_IMPO en FORCE_NODALE in de knopen.
+
+    Waarde in SI = som over de termen van
+        factor * (a * f(x/pu, y/pu, z/pu, t/tu) + b)
+    plus offset, met (a, b) de eenheid van de uitkomst (_unit_map), pu/tu
+    de SI-waarde van positionunit/timeunit (manual v33 par. 12.1) en
+    factor/offset van de vertaling (bijv. 1/oppervlak, een teken, de som
+    met een constante). Zo werken _scale, het delen door een oppervlak of
+    een aantal knopen en optellen (bridge_to_aster._sum_values) zonder de
+    formule te herschrijven. Geen float: float(f) geeft een TypeError, zodat
+    code die een getal verwacht niet stil iets verkeerds schrijft.
+    """
+
+    def __init__(self, text, a, b, pu, tu, period, used):
+        self.terms = [(text, a, b, pu, tu, 1.0)]
+        self.offset = 0.0
+        self.period = period          # eindtijd van de analyse (s)
+        self.t_fixed = None           # t ingevuld (statisch: eindtijd)
+        self.used = set(used)
+
+    def _copy(self):
+        new = PositionFormula.__new__(PositionFormula)
+        new.__dict__.update(self.__dict__)
+        new.terms = list(self.terms)
+        new.used = set(self.used)
+        return new
+
+    def scaled(self, k):
+        k = float(k)
+        new = self._copy()
+        new.terms = [(s, a, b, pu, tu, f * k)
+                     for s, a, b, pu, tu, f in self.terms]
+        new.offset = self.offset * k
+        return new
+
+    def __mul__(self, k):
+        if isinstance(k, (int, float)) and not isinstance(k, bool):
+            return self.scaled(k)
+        return NotImplemented
+
+    __rmul__ = __mul__
+
+    def __div__(self, k):
+        if isinstance(k, (int, float)) and not isinstance(k, bool):
+            return self.scaled(1.0 / k)
+        return NotImplemented
+
+    __truediv__ = __div__
+
+    def __neg__(self):
+        return self.scaled(-1.0)
+
+    def __add__(self, other):
+        if isinstance(other, PositionFormula):
+            new = self._copy()
+            new.terms = self.terms + other.terms
+            new.offset = self.offset + other.offset
+            new.used = self.used | other.used
+            new.period = max(self.period, other.period)
+            return new
+        if isinstance(other, (int, float)) and not isinstance(other, bool):
+            new = self._copy()
+            new.offset = self.offset + float(other)
+            return new
+        return NotImplemented
+
+    __radd__ = __add__
+
+    def timed(self):
+        """True als de formule ook van t afhangt (en t niet is ingevuld)."""
+        return "t" in self.used and self.t_fixed is None
+
+    def at_end(self):
+        """Kopie met t = eindtijd van de analyse (statische berekening,
+        zoals een tijdshistorie in MECA_STATIQUE de laatste waarde krijgt)."""
+        new = self._copy()
+        if "t" in self.used:
+            new.t_fixed = self.period
+        return new
+
+    def text(self):
+        """Mecway-tekst (voor meldingen en het commentaar in de .comm)."""
+        return " + ".join(t[0] for t in self.terms)
+
+    def __repr__(self):
+        return "PositionFormula({0!r})".format(self.text())
+
+    def render(self):
+        """(uitdrukking, NOM_PARA, {naam: argument}) voor FORMULE. INST
+        alleen als t niet is ingevuld."""
+        parts = []
+        args = {}
+        params = set()
+        for text, a, b, pu, tu, f in self.terms:
+            var = {}
+            for v in ("x", "y", "z"):
+                var[v] = "({0}/{1})".format(v.upper(), _num(pu))
+            if self.t_fixed is None:
+                var["t"] = "(INST/{0})".format(_num(tu))
+            else:
+                var["t"] = "({0})".format(_num(self.t_fixed / tu))
+            expr, used, fargs = aster_expression(text, var)
+            args.update(fargs)
+            for v in used:
+                if v in ("x", "y", "z"):
+                    params.add(v.upper())
+                elif self.t_fixed is None:
+                    params.add("INST")
+            parts.append("{0}*({1}*({2})+{3})".format(
+                _num(f), _num(a), expr, _num(b)))
+        if self.offset:
+            parts.append(_num(self.offset))
+        nom_para = [p for p in ("X", "Y", "Z", "INST") if p in params]
+        if not nom_para:
+            # Alleen t ingevuld: FORMULE vraagt minstens een parameter
+            nom_para = ["X"]
+        return " + ".join(parts), nom_para, args
+
+
+def is_position(value):
+    """True als value een PositionFormula is."""
+    return isinstance(value, PositionFormula)
+
+
+def _formula_value(node, quantity, root, allow_position=False):
+    """
+    SI-waarde van een formule-knoop: een float (formule zonder t), een
+    lijst (t, waarde) over 0..eindtijd van de analyse, of (met
+    allow_position) een PositionFormula voor een formule in x, y, z.
+    FormulaError bij x/y/z zonder allow_position, een onleesbare formule of
+    een rekenfout.
     """
     text = (node.text or "").strip()
     parser = _FormulaParser(text)
@@ -341,13 +522,28 @@ def _formula_value(node, quantity, root):
         raise FormulaError(u"formule '{0}' niet te lezen ({1});",
                            u"formula '{0}' cannot be read ({1});", text, e)
     places = sorted(parser.used - set(["t"]))
-    if places:
+    if places and not allow_position:
         raise FormulaError(
             u"formule '{0}' hangt af van de plaats ({1}); de bridge vertaalt "
-            u"alleen formules in de tijd t;",
+            u"hier alleen formules in de tijd t;",
             u"formula '{0}' depends on position ({1}); the bridge only "
-            u"translates formulas in time t;", text, ", ".join(places))
+            u"translates formulas in time t here;", text, ", ".join(places))
     a, b = _unit_map(node.get("unit"), quantity)
+    if places:
+        if node.get("time") is not None:
+            raise FormulaError(
+                u"formule '{0}' in x, y, z als tabelwaarde (time-attribuut);",
+                u"formula '{0}' in x, y, z as a table value (time "
+                u"attribute);", text)
+        pu = _unit_si(node.get("positionunit"), "length")
+        tu = _unit_si(node.get("timeunit"), "time")
+        log(u"INFO: Formule '{0}' hangt af van de plaats ({1}): FORMULE "
+            u"van X, Y, Z{2} (positionunit {3}).".format(
+                text, ", ".join(places),
+                ", INST" if "t" in parser.used else "",
+                node.get("positionunit") or "m"))
+        return PositionFormula(text, a, b, pu, tu, _analysis_period(root),
+                               parser.used)
 
     def value_at(t_formula, t_si):
         try:
@@ -533,13 +729,15 @@ class BaseBC(object):
 # ==========================================
 # HULPFUNCTIES: WAARDE MET TIJDSHISTORIE, RICHTING
 # ==========================================
-def _parse_value_strict(item, tag, quantity, default, root=None):
+def _parse_value_strict(item, tag, quantity, default, root=None,
+                        allow_position=False):
     """
     Waarde van <tag>: een float, of een lijst (t, waarde) als er meerdere
     <tag time="..."> staan (bijv. <value time="5 s">90 deg</value>) of als
     de waarde een formule in t is (zie FORMULES hierboven; root geeft de
     eindtijd). De lijst wordt een DEFI_FONCTION in STAT_NON_LINE;
-    MECA_STATIQUE neemt de laatste waarde (bridge_to_aster.py).
+    MECA_STATIQUE neemt de laatste waarde (bridge_to_aster.py). Met
+    allow_position wordt een formule in x, y, z een PositionFormula.
     FormulaError bij een formule die niet vertaald kan worden.
     """
     nodes = item.findall(tag)
@@ -549,7 +747,7 @@ def _parse_value_strict(item, tag, quantity, default, root=None):
     static = default
     for node in nodes:
         if _is_formula(node):
-            value = _formula_value(node, quantity, root)
+            value = _formula_value(node, quantity, root, allow_position)
         else:
             value = parse_and_convert(node.text, quantity)
         if node.get("time") is not None:
@@ -746,11 +944,14 @@ class DisplacementBC(BaseBC):
     quantity = "length"
     prefix = "D"
     skipped_params = {"value": 0.0, "dir": None}
+    # waarde als formule in x, y, z: DDL_IMPO/LIAISON_OBLIQUE met een
+    # FORMULE (PositionFormula); de richting moet vast zijn
+    position_ok = True
 
     @_skip_on_formula_error
     def parse_xml(self, item, root):
         return {"value": _parse_value_strict(item, "value", self.quantity,
-                                             0.0, root),
+                                             0.0, root, self.position_ok),
                 "dir": _parse_direction_strict(item)}
 
     def to_aster_dict(self, params):
@@ -813,13 +1014,16 @@ class ForceBC(BaseBC):
 
     quantity = "force"
     prefix = "F"
+    # componenten als formule in x, y, z (PositionFormula): kracht,
+    # traction, line pressure; niet bij een moment (MomentBC)
+    position_ok = True
 
     @_skip_on_formula_error
     def parse_xml(self, item, root):
         params = {}
         for coord in ['x', 'y', 'z']:
             value = _parse_value_strict(item, coord, self.quantity, None,
-                                        root)
+                                        root, self.position_ok)
             if value is not None:
                 params[coord] = value
         return params
@@ -845,6 +1049,9 @@ class ForceBC(BaseBC):
 class MomentBC(ForceBC):
     quantity = "moment"
     prefix = "M"
+    # verdeling over de vlakken met vaste knoopkrachten
+    # (bridge_mesh._moment_to_forces): geen formule in x, y, z
+    position_ok = False
 
 
 # ==========================================
@@ -949,7 +1156,7 @@ class SurfacePressureBC(BaseBC):
     def parse_xml(self, item, root):
         if item.find("normal") is not None:
             pres_val = _parse_value_strict(item, "normal", "pressure", 0.0,
-                                           root)
+                                           root, allow_position=True)
         else:
             pres_val = parse_and_convert(item.get("normal", "0"), 'pressure')
         return {"PRES": pres_val}
@@ -972,6 +1179,9 @@ class SurfacePressureBC(BaseBC):
 class VelocityBC(DisplacementBC):
     quantity = "velocity"
     prefix = "D"
+    # de snelheid wordt in de tijd geintegreerd (_integrate): alleen
+    # getallen en tijdshistories
+    position_ok = False
 
     def to_aster_dict(self, params):
         p = dict(params)
@@ -1082,7 +1292,7 @@ class LinePressureBC(ForceBC):
         local = OrderedDict()
         for coord in self._LOCAL:
             value = _parse_value_strict(item, coord, self.quantity, None,
-                                        root)
+                                        root, self.position_ok)
             if value is not None:
                 local[coord] = value
         if local:

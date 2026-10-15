@@ -525,7 +525,7 @@ TESTS = [
 
 
 # ------------------------------------------------------------------
-# WE-06: formules in x, y, z in andere thermische lasten (KNOWN_BUGS 45)
+# WE-06: formules in x, y, z in andere thermische lasten (voorheen KNOWN_BUGS 45)
 # ------------------------------------------------------------------
 def build_we06():
     """Staaf 100 x 10 x 10 mm (20 x 2 x 2 hex8), stationair: temperatuur

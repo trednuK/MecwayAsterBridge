@@ -286,18 +286,39 @@ gebouwd). Zo doe je het wel:
    headless `mecway <model> solve` doet dat ook); daarmee kun je een bridge-run per
    configuratie controleren.
 
-**Formules.** Een waarde als formule (Mecway: Formula) wordt vertaald als ze alleen
-van de tijd t afhangt. De bridge bemonstert de formule zoals Mecway voor CCX doet:
-10001 tijden van 0 tot de Time period, daarna alleen de punten waarmee de lijn
-hoogstens 0,01% van het bereik afwijkt; het resultaat is een `DEFI_FONCTION`. De
-eenheden uit Mecway (waarde, tijd in s of min) worden toegepast; een formule zonder t
-is een gewone waarde. Formules in x, y of z (plaatsafhankelijk) en formules die de
+**Formules.** Een waarde als formule (Mecway: Formula) die alleen van de tijd t
+afhangt, bemonstert de bridge zoals Mecway voor CCX doet: 10001 tijden van 0 tot de
+Time period, daarna alleen de punten waarmee de lijn hoogstens 0,01% van het bereik
+afwijkt; het resultaat is een `DEFI_FONCTION`. De eenheden uit Mecway (waarde, tijd in
+s of min) worden toegepast; een formule zonder t is een gewone waarde. Formules die de
 bridge niet kan lezen, worden gemeld (ERROR) en niet meegenomen. Toegestaan:
 `+ - * / ^`, haakjes, `pi`, `e`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`,
 `log` (natuurlijk), `abs`, `sqrt`, `heaviside`, `unittriangle`, `max`, `min`. In een
 lineair statische, modale of knikanalyse geldt de waarde op de eindtijd. Een gekromde
 formule (bijv. een sinus) geeft veel tijdspunten en dus veel rekenstappen
-(KNOWN_BUGS 45).
+(KNOWN_BUGS 104).
+
+*Formules in x, y, z* (plaatsafhankelijk, eventueel ook met t) worden een `FORMULE` van
+X, Y, Z (en `INST`) in `AFFE_CHAR_MECA_F`, met x, y, z in de *Position unit* van de
+formule (de beginpositie, ook bij grote verplaatsingen). Dat werkt voor:
+- **Pressure** en **Traction** op vlakken van volumes en op schaalvlakken. Mecway rekent
+  deze formules ook (per vlak 1, 7 of 9 punten); voorbeeld: druk `3*y^2` met
+  positie in m en druk in kPa op een vlak van 1 × 2 m geeft 8 kN, in Mecway en in de
+  bridge (verificatie LS-40, LS-41). Op DKT/DST-schalen neemt Code-Aster de formule
+  in de knopen (kleine afwijking op een grof mesh, LS-44a); `COQUE_3D` is exact.
+- **Force**: de formule is, zoals een getal, de totale kracht: per oppervlak f/A op
+  vlakken, per knoop f/n op knopen, geëvalueerd op de plaats zelf.
+- **Line pressure** op balken (`FORCE_POUTRE`) en schaalranden (`FORCE_ARETE`), bijv. een
+  driehoekslast `-1000*x` N/m (LS-43).
+- **Displacement** en **Node rotation**: de waarde als formule (in elke knoop), met
+  een vaste richting (LS-42).
+
+Mecway 34 zelf legt kracht, line pressure en opgelegde verplaatsing/rotatie met x, y
+of z in de formule **niet** op (gemeten: reacties 0); de bridge wel en meldt dat met een
+WARNING. Formules in x, y, z werken in statisch, niet-lineair statisch, impliciete
+dynamica, modaal en knik; elders, en bij gravity, moment, centrifugaalkracht,
+snelheid, frictionless, een richting als formule of druk op schaalranden en
+balkuiteinden, meldt de bridge ze (ERROR) en neemt ze niet mee (KNOWN_BUGS 104).
 
 ### 4.1 Resultaatvelden
 
