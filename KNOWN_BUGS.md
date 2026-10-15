@@ -99,27 +99,55 @@ Code-Aster value per node) and logs the largest difference per variable.
    follows the theory, do not compare with Mecway here (Mecway_functionaliteit §2,
    Standaardinstellingen §4.4).
 
-112\. **Buckling: pure torsional buckling of a beam higher in Mecway** (question, measured with
-   Mecway 34 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`). Fixed column
-   L = 1 m, I-section 100/50/10/8 mm, 20 elements, 1000 N compression: the flexural buckling factors
-   (109.72 / 987.46 / 1230.44) are equal, the torsional buckling is not: bridge 2413.87 =
-   G·J·A/I_p with I_p = I_V + I_W (torsional buckling without warping, Timoshenko & Gere, 1961,
-   sec. 5.3), Mecway 2743.03 (+13.6%). Which polar moment of inertia or geometric
-   stiffness Mecway uses for torsion has NOT been checked. No influence of the
-   beam orientation (equal for every orientation).
+112\. **Buckling: Mecway's beam has no torsional buckling; the bridge is right** (confirmed,
+   Mecway 34 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`; verification BU-30/31).
+   Fixed column L = 1 m, I 100/50/10/8 mm, 20 elements, 1000 N: bridge 109.72 / 987.46 /
+   1230.44 / 2413.87, Mecway 109.72 / 987.46 / 1230.44 / 2743.03. Mecway's 2743.03 is not a
+   torsional mode but the third flexural mode (25 × 109.72, the bridge's mode 6); Mecway's
+   own beam gives no torsional buckling at all (doubling J or A changes nothing). The bridge's
+   2413.87 = G·J·A/I_p (torsional buckling without warping, Timoshenko & Gere, 1961, sec. 5.3;
+   `RIGI_GEOM` of `POU_D_E` has the term N·(I_y + I_z)/A, R3.08.01 sec. 6). Independent:
+   the same column in hex20 (3000 elements) gives 2384.28 in Code-Aster, Mecway's own solver
+   and CCX alike (2367.7 with 12000 elements): −1.2% from the bridge, because the exact J
+   is 1.7% below Mecway's formula and the web distorts; with warping (`POU_D_TG`,
+   C_w = 4.22e-10 m⁶) 2552.5 would be too high. Without warping the factor does not
+   depend on the length, so it is a multiple eigenvalue (one per element; Sturm alarm
+   `ALGELINE5_23`, the INFO line of `bridge_to_aster._buckling_beam_notes` explains it).
+   Nothing to fix in the bridge; open sections with eccentric shear centre: item 115.
 
-113\. **Buckling with bending moments (frame): different from Mecway from mode 2 on** (question,
-   measured with Mecway 34 headless and Code-Aster 17.4, `RIGI_GEOM` of `POU_D_E`).
-   L-frame (column along Z 1 m, girder along X 1 m, RectBar 40 × 10 mm, 100 N downwards
-   at the end of the girder): mode 1 17.2718 in both; after that bridge (positive) 44.53 /
-   122.44 / 151.95, Mecway 19.71 / 127.30 / 155.45 / 173.90 (the bridge also gives
-   negative factors, KNOWN_BUGS 46). A frame of three members: 0.9814 / 1.0626 /
-   6.8453 versus Mecway 0.9824 / 1.0604 / 4.6178 / 7.3043. A cantilever beam with
-   only a transverse force (lateral-torsional buckling) is equal (127.9955 / 328.33 / 533.77), and
-   with or without orientation makes no difference. Suspected: a different geometric
-   stiffness for the moments at nodes where members meet at an angle
-   (semitangential or axial moments); which one is closer to reality has
-   NOT been checked.
+113\. **Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right**
+   (confirmed, Mecway 34 headless and Code-Aster 17.4; verification BU-32 … BU-34). L-frame
+   (column along Z 1 m, girder along X 1 m, RectBar 40 × 10 mm, 100 N downwards at the end of
+   the girder): bridge 17.27 / 44.53 / 122.44 / 151.95 / 155.45 (and −53.04 / −124.28 /
+   −159.97 under the reversed load), Mecway 17.27 / 19.71 / 127.30 / 155.45 / 173.90. The
+   same frame in hex20 gives 17.31 / 44.86 / 124.12 / 151.78 / 154.69 (Mecway's own solver,
+   200 × 8 × 4 elements per member; on a 100 × 4 × 2 mesh Code-Aster, Mecway and CCX agree
+   to 5 digits, also the negative −53.54): the out-of-plane mode of Mecway's beam is 56%
+   too low. Code-Aster test case ssll105 (right-angle frame of Argyris, `POU_D_E`): bridge
+   0.6813 / −1.0901 = the test (reference 0.68 / −1.088), Mecway's beam 0.4226 (F_X = −1)
+   and 0.5525 (F_X = +1, instead of 1.088); a DKT shell model of that frame gives 0.703 in
+   Code-Aster, Mecway and CCX. Cause: `RIGI_GEOM` of `POU_D_E` adds at each node the terms
+   of moderate rotations (±M/2 between the twist and the bending rotations, R3.08.01
+   sec. 6), so that a moment passes correctly through a joint where members meet at an
+   angle; Mecway's beam lacks those terms. An own beam code reproduces both: without the
+   terms 19.71 / 0.4225 / 0.5526 (Mecway), with them 44.53 / 0.6813 / 1.0901 (Code-Aster).
+   A straight member (a cantilever under a transverse force) does not need them, hence
+   the agreement there (127.9955). CCX's B32R (direct run of the L-frame) also gives a low
+   20.90 (its rigid knot at the joint is linear); Mecway with solver CCX gives no buckling
+   solution for beams headless. Nothing to fix in the bridge.
+
+114\. **Static step stops with `FACTOR_57` for slender volume models in bending** (confirmed,
+   Code-Aster 17.4; `bridge_to_aster._build_solveur_ref` / `_build_lin_solveur_ref`).
+   MUMPS' error bound exceeds `RESI_RELA` 1e-6 without a mechanism: hex20 cantilever
+   1000 × 40 × 10 mm (100 × 4 × 2 elements, 100 N transverse) 7.0e-6 in `lin_static_3d`;
+   the L-frame of item 113 in hex20 5.0e-5 in the `MECA_STATIQUE` of `buckling_3d`
+   (also with 50 elements per member, 2 over the width, or the members 0.5 m long
+   (3.1e-6); 0.3 m passes). `ELIM_LAGR`, `PRETRAITEMENTS='SANS'`, `RENUM='SCOTCH'` and
+   `POSTTRAITEMENTS='FORCE'` do not help. With `RESI_RELA=-1.0` the factors equal Mecway
+   and CCX on the same mesh to 5 digits, so the solution is good. Mecway solves these
+   models. In `lin_static_3d` the setting `lin_solver_resi` helps; for buckling, modal
+   with prestress and the other analyses there is no setting. `docs/Foutmeldingen_CodeAster.md`
+   calls `FACTOR_57` "almost always a mechanism", which is not the case here.
 
 ## Translation that works differently from Mecway
 
@@ -409,6 +437,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    the nodes in both (LS-60).
    Status: (a) and (b) left as is; (c) and (e) **question** (behaviour of Mecway); (d) and (f)
    confirmed, open.
+
+115\. **Buckling of T, C and L beams misses flexural-torsional buckling** (confirmed,
+   Code-Aster 17.4, `POU_D_E`/`POU_D_T` with `SECTION='GENERALE'` from
+   `bridge_from_liml._profile_props`; verification BU-35/36). The beam takes torsion about
+   the centroid and without warping (no `EY`/`EZ`, no `JG`). Fixed column L = 1 m, C
+   100 × 50 × 6 mm, 1000 N: bridge 136.02 / 616.43 (G·J·A/I_p, multiple) / 864.25; hex20
+   (3600 elements, Code-Aster = Mecway's own solver = CCX) 135.41 / 393.03 / 1090.36;
+   thin-walled theory with shear centre and warping (Timoshenko & Gere 1961 sec. 5.3)
+   386.1. The coupled mode is 57% too high, so the beam is unsafe here. Mecway's own beam
+   with a C profile gives no solution headless. The bridge warns in buckling for T, C and
+   L elsets (`bridge_to_aster._buckling_beam_notes`). A fix would be `POU_D_TG` with the
+   shear centre (`EY`, `EZ`), `JG` (C_w) and the warping DOF `GRX` at supports; not done.
 
 ## Open questions (Mecway behaviour not checked)
 

@@ -6878,6 +6878,61 @@ def _modal_stress_fields(analysis, buckling):
     return ["displacements"] + use, [f for f in wanted if f not in use]
 
 
+# Profiles whose shear centre is not the centroid (bridge_from_liml
+# _profile_props: T, C and L are open sections with at most one axis of
+# symmetry).
+_ECCENTRIC_PROFILES = ("T", "C", "L")
+
+
+def _buckling_beam_notes(model_data):
+    """
+    Log what linear buckling of beams does (KNOWN_BUGS 112, 113, 115).
+    RIGI_GEOM of POU_D_E/POU_D_T (R3.08.01 par. 6) contains the axial
+    force (for the twist with the Wagner term N (I_y + I_z)/A, about the
+    centroid), the bending moments and shear forces, and the terms of
+    moderate rotations at the nodes (+-M/2 between the twist and the
+    bending rotations), but no warping (POU_D_TG) and no shear centre
+    outside the centroid. Measured (docs/Verificatie.md, BU-30 ... BU-36):
+      - torsional buckling P = G J A/I_p without warping (Timoshenko &
+        Gere 1961 par. 5.3 with C_w = 0) does not depend on the length: a
+        multiple factor (one per element; Sturm alarm ALGELINE5_23);
+        hex20 of the same I column -1.2% (BU-30/31). Mecway's own beam
+        has no torsional buckling at all;
+      - frames with bending moments: equal to hex20/shell models and to
+        Code-Aster test case ssll105 (BU-32 ... BU-34); Mecway's beam
+        lacks the terms at the nodes and gives lower out-of-plane factors;
+      - T, C and L: no flexural-torsional coupling, so too high factors
+        (C 100 x 50 x 6 mm column: beam 616 and 864, hex20 393; BU-35/36).
+    """
+    secs = [(g, s.get("geom_type")) for g, s in
+            model_data.get("beam_sections", {}).items()
+            if not s.get("truss")]
+    if not secs:
+        return
+    log("INFO: Buckling of beams (RIGI_GEOM of POU_D_E/POU_D_T, R3.08.01 "
+        "par. 6): torsional buckling without warping, P = G J A/I_p, "
+        "independent of the length, appears as several equal factors "
+        "(Sturm alarm ALGELINE5_23); bending moments in frames count, "
+        "also at joints. Mecway's own beam computes neither (KNOWN_BUGS "
+        "112, 113).")
+    ecc = sorted(g for g, kind in secs if kind in _ECCENTRIC_PROFILES)
+    if ecc:
+        log(tr("WARNING: Knik met T-, C- of L-profielen ({0}): het "
+               "dwarskrachtcentrum ligt niet in het zwaartepunt, maar de "
+               "balkelementen rekenen torsie om het zwaartepunt en zonder "
+               "welving. Buig-torsieknik ontbreekt dan en de "
+               "kniklastfactoren kunnen te hoog zijn (C-profiel: balk 616, "
+               "volumemodel 393). Controleer met schaal- of "
+               "volume-elementen (KNOWN_BUGS 115).",
+               "WARNING: Buckling with T, C or L profiles ({0}): the shear "
+               "centre is not in the centroid, but the beam elements take "
+               "torsion about the centroid and without warping. "
+               "Flexural-torsional buckling is then missing and the "
+               "buckling factors can be too high (C profile: beam 616, "
+               "volume model 393). Check with shell or volume elements "
+               "(KNOWN_BUGS 115).").format(", ".join(ecc)))
+
+
 def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     """
     Generate study.comm and study.export for CALC_MODES:
@@ -6940,6 +6995,8 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "own solver; like Mecway, the bridge searches for the lowest "
             "buckling load factors.".format(
                 model_data["analysis_shift"]))
+    if buckling:
+        _buckling_beam_notes(model_data)
     # Complex modes with damping (setting modal_complex; default off =
     # real modes like Mecway): bridge_modal_damping.
     damping = bridge_modal_damping.plan(model_data, analysis, buckling)

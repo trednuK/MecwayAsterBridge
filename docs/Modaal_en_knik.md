@@ -401,7 +401,40 @@ uitwijking) en effectieve massa per richting gelijk aan Mecway en aan Euler-Bern
 Net als Mecway rekent `POU_D_E` met de polaire traagheid voor torsie, maar zonder
 rotatietraagheid van de doorsnede bij buiging en zonder verschoven dwarskrachtcentrum
 (T, L, C). Knik met buigende momenten (raamwerken) en zuivere torsieknik wijken af van
-Mecway (KNOWN_BUGS 112, 113).
+Mecway; daar heeft de bridge gelijk (§3.5).
+
+### 3.5 Knik van balken: torsie, raamwerken en open profielen
+
+`RIGI_GEOM` van `POU_D_E`/`POU_D_T` (Code-Aster R3.08.01 §6) bevat de normaalkracht (bij
+torsie met de term N·(I_y + I_z)/A om het zwaartepunt), de buigende momenten en
+dwarskrachten, en in de knopen de termen van matige rotaties (±M/2 tussen de torsie en
+de buigrotaties). Welving en een dwarskrachtcentrum buiten het zwaartepunt zitten er niet
+in. Nagerekend met volume- en schaalmodellen van dezelfde constructie, in Code-Aster,
+Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … BU-36):
+
+- **Zuivere torsieknik** (dubbelsymmetrisch profiel): de bridge geeft P = G·J·A/I_p
+  (torsieknik zonder welving, Timoshenko & Gere, 1961, §5.3). I-kolom 100/50/10/8 mm,
+  L = 1 m: 2413,9; hetzelfde model in hex20 2384,3 (−1,2%). Zonder welving hangt de factor
+  niet van de lengte af: hij komt als meervoudige factor terug (in theorie één per
+  element) en Code-Aster meldt dan het Sturm-alarm `ALGELINE5_23`. Dat is geen fout.
+  Mecway's eigen balk rekent geen torsieknik: zijn vierde factor (2743,0) is de derde
+  buigknikmode (KNOWN_BUGS 112).
+- **Raamwerken met buigende momenten**: de bridge komt overeen met volume- en
+  schaalmodellen en met Code-Aster-testcase ssll105 (haaks raamwerk van Argyris). Mecway's
+  balk mist de termen in de knopen en geeft voor de knik uit het vlak te lage factoren:
+  L-raamwerk 19,71 tegen 44,53 (bridge) en 44,86 (hex20) (KNOWN_BUGS 113). Bij een
+  rechte balk (kip van een uitkragende ligger) zijn beide gelijk.
+- **T-, C- en L-profielen**: het dwarskrachtcentrum ligt niet in het zwaartepunt, dus
+  buiging en torsie koppelen (buig-torsieknik). `POU_D_E` mist die koppeling en geeft
+  dan te hoge factoren: C-kolom 100 × 50 × 6 mm 616 tegen 393 (hex20). De bridge geeft
+  bij knik met deze profielen een WARNING; controleer zulke constructies met schaal- of
+  volume-elementen (KNOWN_BUGS 115).
+- **Negatieve factoren**: de bridge geeft ook de factoren voor de omgekeerde last (bij
+  het L-raamwerk −53,0). Mecway geeft alleen positieve factoren en slaat met zijn
+  standaard-*shift* 1 soms een factor onder 1 over (ssll105: 0,4226 pas met shift 0,3).
+- **Slanke volumemodellen**: de statische stap van de knikanalyse kan met `FACTOR_57`
+  stoppen zonder dat er een mechanisme is (hex20-raamwerk van 1 m, 40 × 10 mm;
+  KNOWN_BUGS 114). Er is nog geen instelling om dat te omzeilen.
 
 ## 4. Meldingen en oplossingen
 
@@ -422,6 +455,8 @@ Mecway (KNOWN_BUGS 112, 113).
 | alarm `ALGELINE5_15` ("... a une norme d'erreur ... supérieure au seuil admis") | een mode haalt de nauwkeurigheid niet | fijner/beter mesh, of *Controle modes* groter (1e-4) |
 | alarm `ALGELINE2_74` | een van de `VERI_MODE`-controles is niet gehaald | zie de alarmen ervoor en de tabel in de `.mess` |
 | WARNING: Negatieve kniklastfactor(en) | knik bij de omgekeerde last (bijv. trek in plaats van druk) | controleer de richting van de last; alleen positieve factoren horen bij de aangebrachte richting |
+| WARNING: Knik met T-, C- of L-profielen | buig-torsieknik ontbreekt in de balkelementen (dwarskrachtcentrum, welving) | controleer met schaal- of volume-elementen (§3.5, KNOWN_BUGS 115) |
+| INFO: Buckling of beams ... appears as several equal factors | torsieknik zonder welving: één factor per element (§3.5) | normaal; het Sturm-alarm `ALGELINE5_23` hoort erbij |
 | WARNING: Mode 1 heeft ~0 Hz | starre beweging of mechanisme | opleggingen controleren |
 | Geen RX/RY/RZ achter de modes; in de `.mess`: `aster_results_export: WAARSCHUWING: effectieve massa rotaties niet ...` | de eigen berekening lukte niet of kwam voor de translaties niet uit op Code-Aster's waarden (bijv. een onbekend soort vrijheidsgraad) | de frequenties, vormen en translaties zijn goed; meld het model als fout (KNOWN_BUGS). Een rotatie-effectieve massa kun je dan in Mecway zelf opvragen (*modal effective mass*, interne solver) |
 | RX/RY/RZ-fracties lijken op de translaties | het model ligt ver van de oorsprong: een rotatie om de oorsprong is dan vooral een verplaatsing | leg de oorsprong in het punt waarom je de rotatie wilt (§1.5) |
@@ -948,6 +983,14 @@ sdlv301a (waaier); catalogus `mode_iter_cycl.py` (code_aster 17.4).
   elastic stability. *Proceedings of the Royal Society of London A*, 135, 601–616. Niet
   lokaal ingezien; de methode is nagerekend in de verificatie (NK-03).
 - Timoshenko, S.P. & Gere, J.M. (1961). *Theory of Elastic Stability*, 2nd ed. New
-  York: McGraw-Hill, hoofdstuk 1 (staaf met beginkromming), §2.1, §2.3 en §9.2. Niet
-  lokaal ingezien; de formules zijn nagerekend in de verificatie (BU-01, BU-02, BU-04,
-  NK-03).
+  York: McGraw-Hill, hoofdstuk 1 (staaf met beginkromming), §2.1, §2.3, §5.3
+  (torsie- en buig-torsieknik) en §9.2. Niet lokaal ingezien; de formules zijn
+  nagerekend in de verificatie (BU-01, BU-02, BU-04, BU-30 … BU-36, NK-03).
+- EDF R&D (2019). *Code_Aster, documentation R3.08.01: Éléments "exacts" de poutres*.
+  Versie "default", 22-11-2019 (lokale Engelse machinevertaling), §6 (geometrische
+  stijfheid `RIGI_GEOM`: normaalkracht, momenten, dwarskrachten en de termen van
+  matige rotaties in de knopen).
+- EDF R&D (2025). *code_aster 17.4, testcase* ssll105a/b (haaks raamwerk, kip uit het
+  vlak, `POU_D_E`/`POU_D_T`; `VALE_REFE` 1,088 en 0,68 met `REFERENCE='NON_DEFINI'`),
+  `share/aster/tests` van de installatie. De literatuurbron achter die referentie is
+  niet nagegaan.

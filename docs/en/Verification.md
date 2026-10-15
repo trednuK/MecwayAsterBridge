@@ -1740,9 +1740,71 @@ along X and skew, with and without vector + 30°):
 - Buckling with only axial compression equals Mecway. Differences unrelated to the
   orientation: pure torsional buckling (I section: bridge 2414 = GJ·A/I_p, Mecway 2743;
   KNOWN_BUGS 112) and buckling with bending moments in a frame (from mode 2 on;
-  KNOWN_BUGS 113). Mecway gave no headless solution for a buckling model with an L
-  section (also not on a second try); the bridge gave the expected 135.1 (weak principal
-  axis) and 601.0 there.
+  KNOWN_BUGS 113). In both the bridge is right, see *Buckling of beams: torsion and
+  frames* below. Mecway gave no headless solution for a buckling model with an L
+  section (also not on a second try); the bridge gave 135.1 there (weak principal
+  axis) and 601.0 (G·J·A/I_p about the centroid; the real flexural-torsional factor of an
+  angle is lower, KNOWN_BUGS 115).
+
+### Buckling of beams: torsion and frames (BU-30 … BU-36)
+
+- **Purpose**: find out who is right in the two buckling differences with Mecway
+  (KNOWN_BUGS 112, 113), with a reference that does not come from a beam formulation: a
+  volume (hex20) or shell model of the same structure, computed by the bridge
+  (Code-Aster) and by Mecway 34 headless with its own solver and with CCX
+  (`TestFiles/Tools/mw_solve.py`, 15 Oct 2026, the same `.liml`), or Code-Aster test case
+  ssll105. Module `tests_knik_balk.py`, `python run_verificatie.py BU-3` (about 1 minute).
+- **Theory**: `RIGI_GEOM` of `POU_D_E` (R3.08.01 §6) contains N, the moments, the shear
+  forces, the torsion term N·(I_y + I_z)/A about the centroid and at the nodes the terms
+  of moderate rotations (±M/2 between twist and bending rotation). Torsional buckling
+  without warping: P = G·J·A/I_p, independent of the length (Timoshenko & Gere, 1961,
+  §5.3 with C_w = 0); with warping (fixed-free, effective length 2L)
+  P = (G·J + π²E·C_w/(2L)²)·A/I_p. An own beam code (Euler-Bernoulli, 3D) with and
+  without the nodal term reproduces Code-Aster (test case ssll105a to 1e-4) and Mecway
+  (L frame to 1e-4).
+
+| ID | Model | Reference | Result |
+|---|---|---|---|
+| BU-30 | fixed column L = 1 m, I 100/50/10/8 mm, 20 `POU_D_E`, 1000 N | Euler (factors 1–3); G·J·A/I_p = 2413.87; hex20 BU-31 | factors 1–3 and torsion exact; mode 4 pure torsion; +1.2% from hex20 |
+| BU-31 | the same column in hex20 (3000 el., foot fixed) | Mecway 34 on the same `.liml` (own solver and CCX 2384.28); G·J·A/I_p | equal to Mecway (< 1e-6); −1.2% from G·J·A/I_p |
+| BU-32 | L frame of KNOWN_BUGS 113 (column Z, girder X, 1 m, RectBar 40 × 10 mm, 100 N) | Euler of the column; hex20 of the frame (Mecway, 200 × 8 × 4 el. per member: 44.86 / 124.12; Code-Aster 100 × 4 × 2: −53.54) | 17.272 exact; 44.53 (−0.7%), 122.44 (−1.4%), −53.04 (−0.9%) |
+| BU-33 | right-angle frame ssll105 (legs 240 mm, 30 × 0.6 mm, E = 71 240 MPa, F_X = −1 N), 10 `POU_D_E` per leg | `VALE_REFE` 0.68 / −1.088; `VALE_CALC` of ssll105a | 0.6813 / −1.0901 (+0.2%); equal to ssll105a (< 1e-8) |
+| BU-34 | the same frame as a strip in DKT (5 mm) | Mecway 34 (own solver 0.7036; with F_X = +1: 1.1894; CCX 0.7085 / 1.2045); beam reference 0.68 | −0.06% / −0.18% from Mecway; +3.4% from the beam |
+| BU-35 | fixed column, C 100 × 50 × 6 mm, 20 `POU_D_E` | hex20 BU-36; G·J·A/I_p = 616.43 | factor 1 +0.45%; factor 2 616.43 against 393.03 (+57%, KNOWN, KNOWN_BUGS 115) |
+| BU-36 | the same C column in hex20 (3600 el.) | Mecway 34 on the same `.liml` (393.0329; CCX 393.033); thin-walled flexural-torsional 386.1 | equal to Mecway; +1.8% from the theory |
+
+- **Torsional buckling (KNOWN_BUGS 112)**: Mecway's beam has no torsional buckling. Its
+  fourth factor 2743.03 is the third flexural mode (25 × 109.72, mode 6 in the bridge);
+  with J or A doubled (UniformGeneralSection) Mecway's factors stay the same. The bridge
+  gives G·J·A/I_p as a multiple eigenvalue: with 20 elements the Sturm check counts 24
+  factors in [109, 2757] where 6 were computed (`ALGELINE5_23`). Hex20: 2384.28 (3000 el.)
+  and 2367.7 (12 000 el.), Mecway and CCX equal. That is below G·J·A/I_p despite the
+  restrained warping at the foot: the exact J (finite differences on the section,
+  h = 0.25 mm: 46.4e3 mm⁴, extrapolated ~46.3e3) is 1.7% below Mecway's formula
+  (47.13e3), and the section distorts (at the top the flanges rotate ~10% less than the
+  web). `POU_D_TG` with C_w = 4.22e-10 m⁶ (by hand in the `.comm`, `GRX` fixed at the
+  foot) gives 2552.48 = the warping formula; for this stocky column the value without
+  warping is closer to the volume model.
+- **Frames (KNOWN_BUGS 113)**: the difference is in the out-of-plane buckling. Mecway's
+  beam: L frame 19.71 (hex20 44.86), ssll105 0.4226 and with F_X = +1 0.5525 (reference
+  0.68 and 1.088). Mecway's own solver and CCX on the hex20 model and on the DKT model do
+  give the right values. Cause: Mecway's beam lacks the terms of moderate rotations at
+  the nodes; the own beam code gives without those terms exactly Mecway's values
+  (19.71 / 0.4225 / 0.5526) and with them those of Code-Aster (44.53 / 0.6813 / 1.0901).
+  CCX with B32R (`.inp` run directly) gives 17.35 / 20.90 for the L frame: CCX's rigid
+  knot is linear and lacks the same terms; Mecway with solver CCX gives no buckling
+  solution for beams headless. Mecway gives only positive factors, and with its default
+  shift 1 it skipped the factor 0.4226 in ssll105 (with shift 0.3 it did not).
+- **Flexural-torsional buckling (KNOWN_BUGS 115)**: in a C section, bending about the
+  strong axis couples with torsion about the shear centre. Theory (thin-walled,
+  centre-line dimensions b = 47, h = 94, t = 6 mm, e = 3b²t/(6bt + ht),
+  C_w = tb³h²/12·(3b + 2h)/(6b + h)): P_T = 490.5, P_x = 864.2, coupled 386.1; volume model
+  (hex20) 393.03. The beam gives 616.43: too high. The bridge now warns for buckling with T, C
+  and L profiles.
+- **Volume models of the L frame**: the static step stops with `FACTOR_57` (MUMPS error
+  5e-5 > `RESI_RELA` 1e-6) without a mechanism; the values above were computed with
+  `RESI_RELA=-1` in a copy of the `.comm` (KNOWN_BUGS 114). That is why the hex20 frame
+  is not a case in the module.
 
 ### Modal with prestress (MP)
 

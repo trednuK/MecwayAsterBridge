@@ -1743,9 +1743,69 @@ schuin, met en zonder vector + 30°):
 - Knik met alleen drukkracht in de staafas is gelijk aan Mecway. Afwijkingen die niet
   met de orientatie te maken hebben: zuivere torsieknik (I-profiel: bridge 2414 =
   GJ·A/I_p, Mecway 2743; KNOWN_BUGS 112) en knik met buigende momenten in een
-  raamwerk (vanaf mode 2; KNOWN_BUGS 113). Mecway gaf voor een knikmodel met een
+  raamwerk (vanaf mode 2; KNOWN_BUGS 113). In beide heeft de bridge gelijk, zie
+  *Knik van balken: torsie en raamwerken* hieronder. Mecway gaf voor een knikmodel met een
   L-profiel headless geen oplossing (ook niet bij een tweede poging); de bridge gaf
-  daar de verwachte 135,1 (zwakke hoofdas) en 601,0.
+  daar 135,1 (zwakke hoofdas) en 601,0 (G·J·A/I_p om het zwaartepunt; de echte
+  buig-torsieknik van een hoekprofiel ligt lager, KNOWN_BUGS 115).
+
+### Knik van balken: torsie en raamwerken (BU-30 … BU-36)
+
+- **Doel**: uitzoeken wie gelijk heeft bij de twee knikverschillen met Mecway
+  (KNOWN_BUGS 112, 113), met een referentie die niet uit een balkformulering komt: een
+  volume- (hex20) of schaalmodel van dezelfde constructie, gerekend door de bridge
+  (Code-Aster) en door Mecway 34 headless met de eigen solver en met CCX
+  (`TestFiles/Tools/mw_solve.py`, 15 okt 2026, dezelfde `.liml`), of Code-Aster-testcase
+  ssll105. Module `tests_knik_balk.py`, `python run_verificatie.py BU-3` (ca. 1 minuut).
+- **Theorie**: `RIGI_GEOM` van `POU_D_E` (R3.08.01 §6) bevat N, de momenten, de
+  dwarskrachten, de torsieterm N·(I_y + I_z)/A om het zwaartepunt en in de knopen de
+  termen van matige rotaties (±M/2 tussen torsie en buigrotatie). Torsieknik zonder
+  welving: P = G·J·A/I_p, onafhankelijk van de lengte (Timoshenko & Gere, 1961, §5.3 met
+  C_w = 0); met welving (ingeklemd-vrij, kniklengte 2L) P = (G·J + π²E·C_w/(2L)²)·A/I_p.
+  Een eigen balkcode (Euler-Bernoulli, 3D) met en zonder de knoopterm reproduceert
+  Code-Aster (testcase ssll105a tot 1e-4) en Mecway (L-raamwerk tot 1e-4).
+
+| ID | Model | Referentie | Resultaat |
+|---|---|---|---|
+| BU-30 | ingeklemde kolom L = 1 m, I 100/50/10/8 mm, 20 `POU_D_E`, 1000 N | Euler (factor 1–3); G·J·A/I_p = 2413,87; hex20 BU-31 | factoren 1–3 en torsie exact; mode 4 zuivere torsie; +1,2% t.o.v. hex20 |
+| BU-31 | dezelfde kolom in hex20 (3000 el., voet ingeklemd) | Mecway 34 op dezelfde `.liml` (eigen solver en CCX 2384,28); G·J·A/I_p | gelijk aan Mecway (< 1e-6); −1,2% t.o.v. G·J·A/I_p |
+| BU-32 | L-raamwerk van KNOWN_BUGS 113 (kolom Z, ligger X, 1 m, RectBar 40 × 10 mm, 100 N) | Euler van de kolom; hex20 van het raamwerk (Mecway, 200 × 8 × 4 el. per staaf: 44,86 / 124,12; Code-Aster 100 × 4 × 2: −53,54) | 17,272 exact; 44,53 (−0,7%), 122,44 (−1,4%), −53,04 (−0,9%) |
+| BU-33 | haaks raamwerk ssll105 (benen 240 mm, 30 × 0,6 mm, E = 71 240 MPa, F_X = −1 N), 10 `POU_D_E` per been | `VALE_REFE` 0,68 / −1,088; `VALE_CALC` van ssll105a | 0,6813 / −1,0901 (+0,2%); gelijk aan ssll105a (< 1e-8) |
+| BU-34 | hetzelfde raamwerk als strook in DKT (5 mm) | Mecway 34 (eigen solver 0,7036; met F_X = +1: 1,1894; CCX 0,7085 / 1,2045); balkreferentie 0,68 | −0,06% / −0,18% t.o.v. Mecway; +3,4% t.o.v. de balk |
+| BU-35 | ingeklemde kolom, C 100 × 50 × 6 mm, 20 `POU_D_E` | hex20 BU-36; G·J·A/I_p = 616,43 | factor 1 +0,45%; factor 2 616,43 tegen 393,03 (+57%, BEKEND, KNOWN_BUGS 115) |
+| BU-36 | dezelfde C-kolom in hex20 (3600 el.) | Mecway 34 op dezelfde `.liml` (393,0329; CCX 393,033); buig-torsieknik dunwandig 386,1 | gelijk aan Mecway; +1,8% t.o.v. de theorie |
+
+- **Torsieknik (KNOWN_BUGS 112)**: Mecway's balk heeft geen torsieknik. Zijn vierde
+  factor 2743,03 is de derde buigknikmode (25 × 109,72, bij de bridge mode 6); met J of A
+  verdubbeld (UniformGeneralSection) blijven Mecway's factoren gelijk. De bridge geeft
+  G·J·A/I_p als meervoudige eigenwaarde: met 20 elementen telt de Sturm-controle 24
+  factoren in [109, 2757] waar er 6 berekend zijn (`ALGELINE5_23`). Hex20: 2384,28
+  (3000 el.) en 2367,7 (12 000 el.), Mecway en CCX gelijk. Dat ligt onder G·J·A/I_p
+  ondanks de verhinderde welving in de voet: de exacte J (eindige differenties op de
+  doorsnede, h = 0,25 mm: 46,4e3 mm⁴, geëxtrapoleerd ~46,3e3) is 1,7% kleiner dan
+  Mecway's formule (47,13e3), en de doorsnede vervormt (in de top draaien de flenzen
+  ~10% minder dan het lijf). `POU_D_TG` met C_w = 4,22e-10 m⁶ (handmatig in de `.comm`,
+  `GRX` vast in de voet) geeft 2552,48 = de welvingsformule; voor deze gedrongen kolom
+  ligt de welvingsloze waarde dichter bij het volumemodel.
+- **Raamwerken (KNOWN_BUGS 113)**: het verschil zit in de knik uit het vlak. Mecway's
+  balk: L-raamwerk 19,71 (hex20 44,86), ssll105 0,4226 en met F_X = +1 0,5525 (referentie
+  0,68 en 1,088). Mecway's eigen solver en CCX op het hex20-model en op het DKT-model
+  geven wel de juiste waarden. Oorzaak: Mecway's balk mist de termen van matige rotaties
+  in de knopen; de eigen balkcode geeft zonder die termen precies Mecway's waarden
+  (19,71 / 0,4225 / 0,5526) en met die termen die van Code-Aster (44,53 / 0,6813 /
+  1,0901). CCX met B32R (`.inp` direct gerekend) geeft voor het L-raamwerk 17,35 / 20,90:
+  de starre knoop van CCX is lineair en mist dezelfde termen; Mecway met solver CCX geeft
+  voor balken headless geen knikoplossing. Mecway geeft alleen positieve factoren en met
+  zijn standaard-shift 1 sloeg het bij ssll105 de factor 0,4226 over (met shift 0,3 wel).
+- **Buig-torsieknik (KNOWN_BUGS 115)**: bij een C-profiel koppelt de buiging om de
+  sterke as met torsie om het dwarskrachtcentrum. Theorie (dunwandig, hartlijnmaten
+  b = 47, h = 94, t = 6 mm, e = 3b²t/(6bt + ht), C_w = tb³h²/12·(3b + 2h)/(6b + h)):
+  P_T = 490,5, P_x = 864,2, gekoppeld 386,1; volumemodel (hex20) 393,03. De balk geeft 616,43: te
+  hoog. De bridge waarschuwt nu bij knik met T-, C- en L-profielen.
+- **Volumemodellen van het L-raamwerk**: de statische stap stopt met `FACTOR_57` (fout
+  van MUMPS 5e-5 > `RESI_RELA` 1e-6) zonder mechanisme; de waarden hierboven zijn met
+  `RESI_RELA=-1` in een kopie van de `.comm` gerekend (KNOWN_BUGS 114). Daarom staat het
+  hex20-raamwerk niet als case in de module.
 
 ### Modaal met voorspanning (MP)
 

@@ -639,11 +639,17 @@ from contact (`SANS_GROUP_NO`).
   singularity and the error only shows in the inaccurate solution.
 - **Seen**: a mixed test model after the correct translation of pinned support: the
   plate can rotate freely. Mecway solves it, but shows ±499 N "reaction" on nodes without
-  support. Also test T1 (plate attached to the block along one line).
+  support. Also test T1 (plate attached to the block along one line). Without a
+  mechanism (also with `solver_nprec` 8): slender volume models in bending, e.g. a hex20
+  cantilever 1000 × 40 × 10 mm (error 7e-6) or a hex20 L frame in a buckling analysis
+  (5e-5); Mecway solves them and with `RESI_RELA=-1` the results are equal (KNOWN_BUGS
+  114).
 - **Solution**: in Mecway: fix the plate further or connect it over a face (see
   `FACTOR_10`). Temporarily setting `solver_nprec` = 8 gives a `FACTOR_10/11` with node
-  and component.
-- **Status**: model.
+  and component. Slender volume model without a mechanism: in *Static* raise
+  `lin_solver_resi` (e.g. 1e-4); in other analyses there is no setting yet (KNOWN_BUGS
+  114).
+- **Status**: model; slender volume models: bridge (KNOWN_BUGS 114).
 
 ### `ASSEMBLA_26` – degree of freedom blocked more than once
 

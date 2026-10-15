@@ -397,7 +397,40 @@ MO-20 … MO-29): frequencies, mode shapes (direction of the deflection) and eff
 mass per direction equal to Mecway and to Euler-Bernoulli. Like Mecway, `POU_D_E` uses
 the polar inertia for torsion, but no rotary inertia of the cross-section in bending and
 no offset shear centre (T, L, C). Buckling with bending moments (frames) and pure
-torsional buckling differ from Mecway (KNOWN_BUGS 112, 113).
+torsional buckling differ from Mecway; there the bridge is right (§3.5).
+
+### 3.5 Buckling of beams: torsion, frames and open sections
+
+`RIGI_GEOM` of `POU_D_E`/`POU_D_T` (Code-Aster R3.08.01 §6) contains the axial force
+(for torsion with the term N·(I_y + I_z)/A about the centroid), the bending moments and
+shear forces, and at the nodes the terms of moderate rotations (±M/2 between the twist
+and the bending rotations). Warping and a shear centre outside the centroid are not in
+it. Checked with volume and shell models of the same structure, in Code-Aster, Mecway's
+own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
+
+- **Pure torsional buckling** (doubly symmetric section): the bridge gives
+  P = G·J·A/I_p (torsional buckling without warping, Timoshenko & Gere, 1961, §5.3).
+  I column 100/50/10/8 mm, L = 1 m: 2413.9; the same model in hex20 2384.3 (−1.2%).
+  Without warping the factor does not depend on the length: it comes back as a multiple
+  factor (in theory one per element) and Code-Aster then gives the Sturm alarm
+  `ALGELINE5_23`. That is not an error. Mecway's own beam computes no torsional
+  buckling: its fourth factor (2743.0) is the third flexural mode (KNOWN_BUGS 112).
+- **Frames with bending moments**: the bridge agrees with volume and shell models and
+  with Code-Aster test case ssll105 (right-angle frame of Argyris). Mecway's beam lacks
+  the terms at the nodes and gives too low factors for buckling out of the plane:
+  L frame 19.71 against 44.53 (bridge) and 44.86 (hex20) (KNOWN_BUGS 113). For a
+  straight beam (lateral-torsional buckling of a cantilever) both are equal.
+- **T, C and L profiles**: the shear centre is not in the centroid, so bending and
+  torsion couple (flexural-torsional buckling). `POU_D_E` misses that coupling and then
+  gives too high factors: C column 100 × 50 × 6 mm 616 against 393 (hex20). The bridge
+  gives a WARNING for buckling with these profiles; check such structures with shell or
+  volume elements (KNOWN_BUGS 115).
+- **Negative factors**: the bridge also gives the factors for the reversed load (for the
+  L frame −53.0). Mecway gives only positive factors and with its default *shift* 1
+  sometimes skips a factor below 1 (ssll105: 0.4226 only with shift 0.3).
+- **Slender volume models**: the static step of the buckling analysis can stop with
+  `FACTOR_57` without a mechanism (hex20 frame of 1 m, 40 × 10 mm; KNOWN_BUGS 114).
+  There is no setting yet to avoid that.
 
 ## 4. Messages and solutions
 
@@ -418,6 +451,8 @@ torsional buckling differ from Mecway (KNOWN_BUGS 112, 113).
 | alarm `ALGELINE5_15` ("... a une norme d'erreur ... supérieure au seuil admis") | a mode does not reach the accuracy | finer/better mesh, or a larger "Mode check (VERI_MODE SEUIL)" (1e-4) |
 | alarm `ALGELINE2_74` | one of the `VERI_MODE` checks failed | see the alarms before it and the table in the `.mess` |
 | WARNING: Negative buckling factor(s) | buckling under the reversed load (e.g. tension instead of compression) | check the load direction; only positive factors belong to the applied direction |
+| WARNING: Buckling with T, C or L profiles | flexural-torsional buckling is missing in the beam elements (shear centre, warping) | check with shell or volume elements (§3.5, KNOWN_BUGS 115) |
+| INFO: Buckling of beams ... appears as several equal factors | torsional buckling without warping: one factor per element (§3.5) | normal; the Sturm alarm `ALGELINE5_23` belongs to it |
 | WARNING: Mode 1 has ~0 Hz | rigid motion or mechanism | check the supports |
 | No RX/RY/RZ after the modes; in the `.mess`: `aster_results_export: WARNING: effective mass of the rotations not ...` | the own computation failed or did not match Code-Aster's values for the translations (e.g. an unknown kind of degree of freedom) | frequencies, shapes and translations are fine; report the model as a bug (KNOWN_BUGS). You can then request a rotational effective mass in Mecway itself (*modal effective mass*, internal solver) |
 | RX/RY/RZ fractions look like the translations | the model lies far from the origin: a rotation about the origin is then mostly a translation | put the origin at the point about which you want the rotation (§1.5) |
@@ -938,6 +973,15 @@ sdlv301a (impeller); catalogue `mode_iter_cycl.py` (code_aster 17.4).
   elastic stability. *Proceedings of the Royal Society of London A*, 135, 601–616. Not
   consulted locally; the method has been recomputed in the verification (NK-03).
 - Timoshenko, S.P. & Gere, J.M. (1961). *Theory of Elastic Stability*, 2nd ed. New
-  York: McGraw-Hill, chapter 1 (bar with initial curvature), §2.1, §2.3 and §9.2. Not
-  consulted locally; the formulas have been recomputed in the verification (BU-01,
-  BU-02, BU-04, NK-03).
+  York: McGraw-Hill, chapter 1 (bar with initial curvature), §2.1, §2.3, §5.3
+  (torsional and flexural-torsional buckling) and §9.2. Not consulted locally; the
+  formulas have been recomputed in the verification (BU-01, BU-02, BU-04,
+  BU-30 … BU-36, NK-03).
+- EDF R&D (2019). *Code_Aster, documentation R3.08.01: Éléments "exacts" de poutres*.
+  Version "default", 22-11-2019 (local English machine translation), §6 (geometric
+  stiffness `RIGI_GEOM`: axial force, moments, shear forces and the terms of moderate
+  rotations at the nodes).
+- EDF R&D (2025). *code_aster 17.4, test case* ssll105a/b (right-angle frame,
+  out-of-plane buckling, `POU_D_E`/`POU_D_T`; `VALE_REFE` 1.088 and 0.68 with
+  `REFERENCE='NON_DEFINI'`), `share/aster/tests` of the installation. The literature
+  source behind that reference has not been checked.

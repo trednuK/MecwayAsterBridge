@@ -643,11 +643,16 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
   singulariteit en de fout blijkt pas uit de onnauwkeurige oplossing.
 - **Gezien**: een gemengd testmodel na de juiste vertaling van pinned support: de plaat
   kan vrij draaien. Mecway rekent het door, maar toont ±499 N "reactie" op knopen
-  zonder oplegging. Ook test T1 (plaat langs één lijn aan het blok).
+  zonder oplegging. Ook test T1 (plaat langs één lijn aan het blok). Zonder
+  mechanisme (ook met `solver_nprec` 8): slanke volumemodellen op buiging, bijv. een
+  hex20-uitkragende balk 1000 × 40 × 10 mm (fout 7e-6) of een hex20-L-raamwerk in een
+  knikanalyse (5e-5); Mecway rekent ze en met `RESI_RELA=-1` zijn de resultaten gelijk
+  (KNOWN_BUGS 114).
 - **Oplossing**: in Mecway: plaat extra vastzetten of over een vlak verbinden (zie
   `FACTOR_10`). Tijdelijk `solver_nprec` = 8 geeft een `FACTOR_10/11` met knoop en
-  component.
-- **Status**: model.
+  component. Slank volumemodel zonder mechanisme: bij *Statisch* `lin_solver_resi`
+  verhogen (bijv. 1e-4); bij andere analyses is er nog geen instelling (KNOWN_BUGS 114).
+- **Status**: model; slanke volumemodellen: bridge (KNOWN_BUGS 114).
 
 ### `ASSEMBLA_26` – vrijheidsgraad meer keer geblokkeerd
 
