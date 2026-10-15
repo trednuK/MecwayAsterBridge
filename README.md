@@ -76,6 +76,7 @@ read on the *Documentation* page of the start screen.
 | Topic | English | Dutch |
 |---|---|---|
 | Workflow, start screen, what is translated, files, errors | [User guide](docs/en/UserGuide.md) | [Handleiding](docs/Handleiding.md) |
+| Which Mecway features are and are not translated (analysis types, loads, constraints, contact, elements, materials, results, settings) | [Mecway features](docs/en/Mecway_features.md) | [Mecway-functionaliteit](docs/Mecway_functionaliteit.md) |
 | Linear and nonlinear static, implicit and explicit dynamics: contact, plasticity, large displacements, convergence window | [Settings contact and nonlinear](docs/en/Settings_contact_and_nonlinear.md) | [Instellingen contact en niet-lineair](docs/Instellingen_contact_en_nietlineair.md) |
 | Element failure | [Failure](docs/en/Failure.md) | [Bezwijken](docs/Bezwijken.md) |
 | Thermal, steady state and transient; thermo-mechanical | [Thermal](docs/en/Thermal.md) | [Thermisch](docs/Thermisch.md) |

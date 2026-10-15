@@ -19,6 +19,7 @@ Related documents:
 | Topic | Document |
 |---|---|
 | Installation (Code-Aster, scripts, menu item) | [`README.md`](../../README.md) |
+| Which Mecway features are and are not translated (Yes/Partly/No per item) | [`Mecway_features.md`](Mecway_features.md) |
 | Default settings and assumptions (why each default) | [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.md) |
 | Settings for contact and nonlinear analyses, convergence window | [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) |
 | Thermal analyses | [`Thermal.md`](Thermal.md) |
@@ -237,36 +238,21 @@ Details: [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md
 
 ## 4. What is translated
 
-The list follows the code (`SUPPORTED_BCS` in `Scripts/bridge_bcs.py`,
-`bridge_from_liml.py`, `bridge_mesh.py` and `bridge_thermal.py`).
+For each part of Mecway (analysis types, loads, constraints, couplings and contact,
+elements, materials and cross-sections, results, settings),
+[`Mecway_features.md`](Mecway_features.md) states whether it is translated (Yes,
+Partly or No), with the limitation and what you can do instead. In addition the bridge does:
 
 | Item | Supported |
 |---|---|
-| Analyses | static 3D (`MECA_STATIQUE`), nonlinear static 3D (`STAT_NON_LINE`), dynamic implicit and explicit (`DYNA_NON_LINE`), mode superposition (`CALC_MODES` + `DYNA_VIBRA` `GENE`; [`Mode_superposition.md`](Mode_superposition.md)), response spectrum (`CALC_MODES` + `COMB_SISM_MODAL`; [`Response_spectrum.md`](Response_spectrum.md)), thermal steady state and transient (`THER_LINEAIRE`, or `THER_NON_LINE` with radiation or convection on shell faces; [`Thermal.md`](Thermal.md)), modal (`CALC_MODES`: natural frequencies, mode shapes, effective mass) and linear buckling (`CALC_MODES` `MODE_FLAMB`: buckling factors and buckling mode shapes; [`Modal_and_buckling.md`](Modal_and_buckling.md)) and acoustic cavity modes (`ACOUSTIQUE` + `CALC_MODES`: frequencies and pressure field; [`Acoustics.md`](Acoustics.md)) and vibroacoustics (`3D_FLUIDE` + `FLUI_STRU` + `CALC_MODES`: coupled modes; [`Acoustics.md`](Acoustics.md) §6; per frequency with `3D_FLUI_ABSO` + `DYNA_VIBRA` `HARM`: §7). No 2D |
-| Elements | beam line2 (line3 gives an ERROR), truss line2 (bar `BARRE`, axial force only, small displacements; beams and trusses in one component become two groups, `<name>_TRUSS`), shell tri3/quad4 (DKT/DST/COQUE_3D) and tri6/quad8 (COQUE_3D), solid tet4/tet10, pyr5/pyr13, wedge6/wedge15, hex8/hex20, spring/damper/gap (line2, discrete, along the element's own axis), nodal mass |
-| Materials | isotropic (E, ν, ρ, thermal expansion), spring, damper, gap (`DIS_CHOC`), tension only (cable); plasticity: isotropic hardening curve, bilinear isotropic/kinematic (Mecway's *tangent modulus* is the plastic modulus H, as Mecway/CCX computes; Code-Aster `D_SIGM_EPSI` = E·H/(E+H); perfectly plastic: tangent modulus 0), kinematic curve with linear hardening (`VMIS_CINE_LINE`), Ramberg-Osgood, OpenRadioss `PLAS_TAB` (KNOWN_BUGS 6 and 34); thermal: conduction and heat capacity, also temperature dependent (*Temperature dependent*) |
-| Cross-sections | solid/hollow circular and rectangular, general section, I/T/L/C profile, plate thickness |
-| Boundary conditions and loads | fixed, pinned support, frictionless, symmetry, displacement, node rotation, velocity, force, moment, surface pressure, traction, line pressure, hydrostatic pressure, gravity (also with a time table, as long as its direction stays fixed: `PESANTEUR` with `FONC_MULT`), centrifugal, elastic support, compression only (nonlinear only) |
+| Mecway input | [`Mecway_features.md`](Mecway_features.md) |
 | Welding | moving heat source (Goldak double ellipsoid) in a transient thermal analysis via `#ASTER-LASBRON`, or as a Mecway formula in x, y, z, t (heat generation, heat flux); temperature-dependent conductivity and specific heat; with a Thermal stress then residual stress and distortion (`STAT_NON_LINE`, temperature-dependent E, yield strength and α via `#ASTER-MATERIAL`); phase transformations in steel and hardness (`CALC_META`, CCT diagram) via `#ASTER-METALLURGIE`, optionally with transformation strain in the residual stress: [`Welding.md`](Welding.md) |
 | Failure | elements whose plastic strain exceeds a limit get a very low stiffness and zero stress (nonlinear static and dynamic, solid elements and shells, not beams; limit via `#ASTER-BEZWIJKEN`, `PLAS_TAB` Eps_p_max or a setting): [`Failure.md`](Failure.md) |
 | Fatigue | damage D and life per node of solid elements and shells (top and bottom side) with a Wöhler or strain curve (Manson-Coffin) per material (`#ASTER-WOHLER`), rainflow and Miner, or a critical-plane criterion (Dang Van, Matake, Crossland; `#ASTER-FATIGUE criterion`); load history as blocks or a signal on a static run (`#ASTER-BLOCK`, `#ASTER-SIGNAL`) or the time steps of a nonlinear/dynamic run: [`Fatigue.md`](Fatigue.md) |
-| Other | node-surface coupling (rbe3, rigid body), constraint equation, contact (`contact2` unilateral, nonlinear only: in a linear analysis the bridge stops with an ERROR; no self-contact), bonded contact (`LIAISON_MAIL`, also shell on solid), point mass, rotational inertia, Rayleigh damping (dynamics), thermal stress with temperature, initial velocity |
 | Results | see §4.1 |
 
-Gap, tension only, compression only and contact require a nonlinear analysis: in a
-static, modal or buckling analysis the bridge stops with an ERROR. Not translated,
-and reported at the end of the run: among others self-contact, cyclic symmetry
-outside a modal analysis,
-pre-tension, OpenRadioss cards other than `/FUNCT` and `PLAS_TAB`, VOID materials, a
-nonlinear kinematic curve, loads on the side face of a beam, frictionless with a
-normal displacement on curved shells/shell edges, damping in a modal analysis
-(KNOWN_BUGS 49; cyclic symmetry in a modal analysis is translated:
-[`Modal_and_buckling.md`](Modal_and_buckling.md) §7; loads give stress stiffening, as in Mecway:
-[`Modal_and_buckling.md`](Modal_and_buckling.md) §2.5), and for thermal among others
-beams/fins and
-shells that are not parallel (`KNOWN_BUGS.md`, heading "Niet vertaald" (Not
-translated), and [`Thermal.md`](Thermal.md)). Whatever Mecway cannot enter but
-Code-Aster does know, you add with `#ASTER` lines.
+What is not translated is reported at the end of the run. Whatever Mecway cannot
+enter but Code-Aster does know, you add with `#ASTER` lines.
 
 **Units.** The bridge converts every Mecway value with a unit to SI. A unit it does
 not know is used unchanged with a WARNING in the log; check the input in that case.

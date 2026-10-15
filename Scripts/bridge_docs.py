@@ -24,6 +24,9 @@ import bridge_glossary
 # Volgorde in de lijst: (bestand nl, bestand en, titel nl, titel en)
 DOCS = [
     ("Handleiding.md", "en/UserGuide.md", u"Handleiding", u"User guide"),
+    ("Mecway_functionaliteit.md", "en/Mecway_features.md",
+     u"Mecway-functionaliteit: wat wel en niet",
+     u"Mecway features: what is and is not translated"),
     ("Standaardinstellingen_en_aannames.md",
      "en/Default_settings_and_assumptions.md",
      u"Standaardinstellingen en aannames",

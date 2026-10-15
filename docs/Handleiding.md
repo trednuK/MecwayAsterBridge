@@ -12,6 +12,7 @@ Verwante documenten:
 | Onderwerp | Document |
 |---|---|
 | Installatie (Code-Aster, scripts, menu-item) | [`README.md`](../README.md) |
+| Welke Mecway-functionaliteit wel en niet vertaald wordt (Ja/Deels/Nee per onderdeel) | [`Mecway_functionaliteit.md`](Mecway_functionaliteit.md) |
 | Standaardinstellingen en aannames (waarom elke standaardwaarde) | [`Standaardinstellingen_en_aannames.md`](Standaardinstellingen_en_aannames.md) |
 | Instellingen voor contact en niet-lineaire analyses, convergentiescherm | [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) |
 | Thermische analyses | [`Thermisch.md`](Thermisch.md) |
@@ -230,37 +231,21 @@ kies je `GROT_GDEP`, `GREEN_LAGRANGE`, `GDEF_LOG` of `SIMO_MIEHE`, dan krijgen v
 
 ## 4. Wat wordt vertaald
 
-De lijst volgt de code (`SUPPORTED_BCS` in `Scripts/bridge_bcs.py`,
-`bridge_from_liml.py`, `bridge_mesh.py` en `bridge_thermal.py`).
+Per onderdeel van Mecway (analysetypen, belastingen, randvoorwaarden, koppelingen en
+contact, elementen, materialen en doorsneden, resultaten, instellingen) staat in
+[`Mecway_functionaliteit.md`](Mecway_functionaliteit.md) of het vertaald wordt (Ja,
+Deels of Nee), met de beperking en wat je anders kunt doen. Daarnaast doet de bridge:
 
 | Onderdeel | Ondersteund |
 |---|---|
-| Analyses | statisch 3D (`MECA_STATIQUE`), niet-lineair statisch 3D (`STAT_NON_LINE`), dynamisch impliciet en expliciet (`DYNA_NON_LINE`), respons op modale basis
-(`CALC_MODES` + `DYNA_VIBRA` `GENE`; [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md)), responsspectrum (`CALC_MODES` + `COMB_SISM_MODAL`; [`Spectrumanalyse.md`](Spectrumanalyse.md)), thermisch stationair en transient (`THER_LINEAIRE`, of `THER_NON_LINE` bij straling of convectie op schaalvlakken; [`Thermisch.md`](Thermisch.md)), modaal (`CALC_MODES`: eigenfrequenties, trillingsvormen, effectieve massa) en lineaire knik (`CALC_MODES` `MODE_FLAMB`: kniklastfactoren en knikvormen; [`Modaal_en_knik.md`](Modaal_en_knik.md)) en akoestische holtemodes (`ACOUSTIQUE` + `CALC_MODES`: frequenties en drukveld; [`Akoestiek.md`](Akoestiek.md)) en vibro-akoestiek (`3D_FLUIDE` + `FLUI_STRU` + `CALC_MODES`: gekoppelde modes; [`Akoestiek.md`](Akoestiek.md) §6; per frequentie met `3D_FLUI_ABSO` + `DYNA_VIBRA` `HARM`: §7). Geen 2D |
-| Elementen | balk line2 (line3 geeft een ERROR), truss line2 (staaf `BARRE`, alleen normaalkracht, kleine verplaatsingen; balken en trusses in één component worden twee groepen, `<naam>_TRUSS`), schaal tri3/quad4 (DKT/DST/COQUE_3D) en tri6/quad8 (COQUE_3D), volume tet4/tet10, pyr5/pyr13, wedge6/wedge15, hex8/hex20, veer/demper/gap (line2, discreet, langs de eigen as), knoopmassa |
-| Materialen | isotroop (E, ν, ρ, thermische uitzetting), veer, demper, gap (`DIS_CHOC`), tension only (kabel); plasticiteit: isotrope hardingscurve, bilineair isotroop/kinematisch (Mecway's *tangent modulus* is de plastische modulus H, zoals Mecway/CCX rekent; Code-Aster `D_SIGM_EPSI` = E·H/(E+H); ideaal plastisch: tangentmodulus 0), kinematische curve met lineaire versteviging (`VMIS_CINE_LINE`), Ramberg-Osgood, OpenRadioss `PLAS_TAB` (KNOWN_BUGS 6 en 34); thermisch: geleiding en warmtecapaciteit, ook temperatuurafhankelijk (*Temperature dependent*) |
-| Doorsneden | massief/hol rond en rechthoekig, algemene doorsnede, I/T/L/C-profiel, plaatdikte |
-| Randvoorwaarden en lasten | fixed, pinned support, frictionless, symmetry, displacement, node rotation, velocity, force, moment, surface pressure, traction, line pressure, hydrostatic pressure, gravity (ook met een tijdstabel, zolang de richting vast blijft: `PESANTEUR` met `FONC_MULT`), centrifugal, elastic support, compression only (alleen niet-lineair) |
+| Mecway-invoer | [`Mecway_functionaliteit.md`](Mecway_functionaliteit.md) |
 | Lassen | bewegende warmtebron (Goldak dubbel-ellipsoïde) in een transiente thermische analyse via `#ASTER-LASBRON`, of als Mecway-formule in x, y, z, t (heat generation, heat flux); temperatuurafhankelijke geleidbaarheid en soortelijke warmte; met een Thermal stress daarna restspanning en vervorming (`STAT_NON_LINE`, temperatuurafhankelijke E, vloeigrens en α via `#ASTER-MATERIAAL`); fase-omzettingen in staal en hardheid (`CALC_META`, TRC-diagram) via `#ASTER-METALLURGIE`, als optie met transformatierek in de restspanning: [`Lassen.md`](Lassen.md) |
 | Bezwijken | elementen met een plastische rek boven een grens krijgen een zeer lage stijfheid en spanning nul (niet-lineair statisch en dynamisch, volume-elementen en schalen, niet balken; grens via `#ASTER-BEZWIJKEN`, `PLAS_TAB` Eps_p_max of een instelling): [`Bezwijken.md`](Bezwijken.md) |
 | Vermoeiing | schade D en levensduur per knoop van volume-elementen en schalen (boven- en onderzijde) met een Wöhler- of rekcurve (Manson-Coffin) per materiaal (`#ASTER-WOHLER`), rainflow en Miner, of een kritiekvlakcriterium (Dang Van, Matake, Crossland; `#ASTER-VERMOEIING criterium`); belastingsverloop als blokken of signaal op een statische run (`#ASTER-BLOK`, `#ASTER-SIGNAAL`) of de tijdstappen van een niet-lineaire/dynamische run: [`Vermoeiing.md`](Vermoeiing.md) |
-| Overig | node-surface coupling (rbe3, rigid body), constraint equation, contact (`contact2` unilateraal, alleen niet-lineair: lineair stopt de bridge met een ERROR; geen self-contact), verlijmd contact (`LIAISON_MAIL`, ook schaal op volume), puntmassa, rotatietraagheid, Rayleigh-demping (dynamica), thermal stress met temperatuur, beginsnelheid |
 | Resultaten | zie §4.1 |
 
-Gap, tension only, compression only en contact vragen een niet-lineaire analyse: in
-een statische, modale of knikanalyse stopt de bridge met een ERROR. Niet vertaald en
-gemeld aan het eind van de run: o.a. self-contact, cyclic symmetry buiten een modale
-analyse, pre-tension,
-OpenRadioss-kaarten behalve `/FUNCT` en `PLAS_TAB`, VOID-materialen, een niet-lineaire
-kinematische curve, lasten op het zijvlak van een balk, frictionless met een
-normaalverplaatsing op gekromde schalen/schaalranden, demping in een modale analyse
-(KNOWN_BUGS 49; cyclische symmetrie in een modale analyse wel:
-[`Modaal_en_knik.md`](Modaal_en_knik.md) §7; belastingen geven, zoals in Mecway,
-spanningsverstijving: [`Modaal_en_knik.md`](Modaal_en_knik.md) §2.5), en voor
-thermisch o.a.
-balken/fins en schalen die niet evenwijdig zijn (`KNOWN_BUGS.md`, kop "Niet
-vertaald", en [`Thermisch.md`](Thermisch.md)). Wat Mecway niet kan invoeren maar
-Code-Aster wel kent, voeg je toe met `#ASTER`-regels.
+Wat niet vertaald wordt, meldt de bridge aan het eind van de run. Wat Mecway niet kan
+invoeren maar Code-Aster wel kent, voeg je toe met `#ASTER`-regels.
 
 **Eenheden.** De bridge rekent alle Mecway-waarden met een eenheid om naar SI.
 Een eenheid die hij niet kent, gebruikt hij ongewijzigd met een WARNING in de log;
