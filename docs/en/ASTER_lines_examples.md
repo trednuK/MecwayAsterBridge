@@ -619,7 +619,7 @@ model (here L/1000); with `m` (default) it is a length in metres. Another buckli
 mode: `imperfection_mode = 2`.
 
 Result (the column of verification NK-03, hex20, load up to 0.9 Pcr): the log shows
-the four options (`INFO: #ASTER-OPTIE crit_stab = True (was False).` etc.),
+the three options (`INFO: #ASTER-OPTIE crit_stab = True (was False).` etc.),
 `Imperfectie: amplitude 0.001 x L, L = 1 m ... = 0.001 m`, the buckling factor of the
 imperfection step 1.11339 and per step the stability criterion (at t = 1: −2.70);
 `DIAGNOSTIC JOB : OK`, the same numbers as NK-03 with the settings on the page.

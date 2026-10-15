@@ -625,7 +625,7 @@ model (hier L/1000); met `m` (standaard) is het een lengte in meter. Een andere
 knikvorm: `imperfection_mode = 2`.
 
 Uitkomst (de kolom van verificatie NK-03, hex20, last tot 0,9 Pcr): de log toont de
-vier opties (`INFO: #ASTER-OPTIE crit_stab = True (was False).` enz.), `Imperfectie:
+drie opties (`INFO: #ASTER-OPTIE crit_stab = True (was False).` enz.), `Imperfectie:
 amplitude 0.001 x L, L = 1 m ... = 0.001 m`, de kniklastfactor van de imperfectiestap
 1,11339 en per stap het stabiliteitscriterium (op t = 1: −2,70); `DIAGNOSTIC JOB : OK`,
 dezelfde getallen als NK-03 met de instellingen op de pagina.
