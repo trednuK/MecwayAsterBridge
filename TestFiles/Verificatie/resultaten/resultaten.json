@@ -7,7 +7,7 @@
   "series": null,
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 5.0,
+  "seconds": 5.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -70,7 +70,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.1,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 4.6,
+  "seconds": 4.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -132,7 +132,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 4.9,
+  "seconds": 5.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -194,7 +194,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.025,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 5.7,
+  "seconds": 6.1,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -256,7 +256,7 @@
   "series": null,
   "h": null,
   "note": "20 balkelementen, vrije trilling rond de statische stand.",
-  "seconds": 7.1,
+  "seconds": 7.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -316,7 +316,7 @@
   "series": null,
   "h": null,
   "note": "100 x 1 x 1 hex8, DIFF_CENT, dt = 0,5 h/c; PETIT.",
-  "seconds": 10.0,
+  "seconds": 10.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -420,7 +420,7 @@
   "series": null,
   "h": null,
   "note": "Opgelegde snelheid als versnelling (FORMULATION='ACCELERATION'); PETIT.",
-  "seconds": 10.2,
+  "seconds": 10.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -510,7 +510,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde staaf als DY-03a; PETIT.",
-  "seconds": 11.8,
+  "seconds": 12.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -586,7 +586,7 @@
   "series": null,
   "h": null,
   "note": "Euler-Bernoulli-balk is exact voor een eindlast.",
-  "seconds": 4.1,
+  "seconds": 4.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -646,7 +646,7 @@
   "series": "LS-02 hex8 3D",
   "h": 0.1,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -708,7 +708,7 @@
   "series": "LS-02 hex8 3D",
   "h": 0.05,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -770,7 +770,7 @@
   "series": "LS-02 hex8 3D",
   "h": 0.025,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.7,
+  "seconds": 4.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -832,7 +832,7 @@
   "series": "LS-02 hex8 3D",
   "h": 0.0125,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 7.6,
+  "seconds": 8.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -894,7 +894,7 @@
   "series": "LS-02 hex8 3D",
   "h": 0.00625,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 33.5,
+  "seconds": 37.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -956,7 +956,7 @@
   "series": "LS-02 hex8 LINE_QUAD",
   "h": 0.1,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1018,7 +1018,7 @@
   "series": "LS-02 hex8 LINE_QUAD",
   "h": 0.05,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1080,7 +1080,7 @@
   "series": "LS-02 hex8 LINE_QUAD",
   "h": 0.025,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 5.2,
+  "seconds": 5.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1142,7 +1142,7 @@
   "series": "LS-02 hex20",
   "h": 0.1,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1202,7 +1202,7 @@
   "series": "LS-02 hex20",
   "h": 0.05,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1262,7 +1262,7 @@
   "series": "LS-02 hex20",
   "h": 0.025,
   "note": "Traction 1e+06 Pa op het eindvlak; inklemming: alle knopen van het vlak vast.",
-  "seconds": 5.7,
+  "seconds": 6.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1322,7 +1322,7 @@
   "series": "LS-03 DKT quad4",
   "h": 0.25,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1382,7 +1382,7 @@
   "series": "LS-03 DKT quad4",
   "h": 0.125,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1442,7 +1442,7 @@
   "series": "LS-03 DKT quad4",
   "h": 0.0625,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1502,7 +1502,7 @@
   "series": "LS-03 DKT quad4",
   "h": 0.03125,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.8,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1562,7 +1562,7 @@
   "series": "LS-03 COQUE_3D quad8",
   "h": 0.5,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1622,7 +1622,7 @@
   "series": "LS-03 COQUE_3D quad8",
   "h": 0.25,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1742,7 +1742,7 @@
   "series": "LS-03 COQUE_3D quad8",
   "h": 0.0625,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 4.6,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1802,7 +1802,7 @@
   "series": "LS-04 hex20",
   "h": 0.1,
   "note": "Kwartmodel: symmetry op x = 0 en y = 0, frictionless op beide eindvlakken (vlakke rek).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1862,7 +1862,7 @@
   "series": "LS-04 hex20",
   "h": 0.05,
   "note": "Kwartmodel: symmetry op x = 0 en y = 0, frictionless op beide eindvlakken (vlakke rek).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1922,7 +1922,7 @@
   "series": "LS-04 hex20",
   "h": 0.025,
   "note": "Kwartmodel: symmetry op x = 0 en y = 0, frictionless op beide eindvlakken (vlakke rek).",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -1982,7 +1982,7 @@
   "series": "LS-04 hex20",
   "h": 0.0125,
   "note": "Kwartmodel: symmetry op x = 0 en y = 0, frictionless op beide eindvlakken (vlakke rek).",
-  "seconds": 4.9,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2042,7 +2042,7 @@
   "series": "LS-05 COQUE_3D quad8",
   "h": 0.625,
   "note": "In D is sigma_xx = tau_xy = 0 (vrije rand, symmetrie), dus von Mises = sigma_yy.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2074,7 +2074,7 @@
   "series": "LS-05 COQUE_3D quad8",
   "h": 0.3125,
   "note": "In D is sigma_xx = tau_xy = 0 (vrije rand, symmetrie), dus von Mises = sigma_yy.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2106,7 +2106,7 @@
   "series": "LS-05 COQUE_3D quad8",
   "h": 0.15625,
   "note": "In D is sigma_xx = tau_xy = 0 (vrije rand, symmetrie), dus von Mises = sigma_yy.",
-  "seconds": 4.4,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2138,7 +2138,7 @@
   "series": "LS-05 COQUE_3D quad8",
   "h": 0.078125,
   "note": "In D is sigma_xx = tau_xy = 0 (vrije rand, symmetrie), dus von Mises = sigma_yy.",
-  "seconds": 5.1,
+  "seconds": 5.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2170,7 +2170,7 @@
   "series": "LS-05 hex20",
   "h": 0.625,
   "note": "Volumemodel, 1 element over de dikte, vlakken z vrij (sigma_yy over de dikte constant: vlakke spanning).",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2202,7 +2202,7 @@
   "series": "LS-05 hex20",
   "h": 0.3125,
   "note": "Volumemodel, 1 element over de dikte, vlakken z vrij (sigma_yy over de dikte constant: vlakke spanning).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2234,7 +2234,7 @@
   "series": "LS-05 hex20",
   "h": 0.15625,
   "note": "Volumemodel, 1 element over de dikte, vlakken z vrij (sigma_yy over de dikte constant: vlakke spanning).",
-  "seconds": 4.6,
+  "seconds": 4.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2266,7 +2266,7 @@
   "series": "LS-05 hex20",
   "h": 0.078125,
   "note": "Volumemodel, 1 element over de dikte, vlakken z vrij (sigma_yy over de dikte constant: vlakke spanning).",
-  "seconds": 5.7,
+  "seconds": 6.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2298,7 +2298,7 @@
   "series": null,
   "h": null,
   "note": "Standaardinstellingen. Homogeen: elk element is exact.",
-  "seconds": 4.6,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2414,7 +2414,7 @@
   "series": null,
   "h": null,
   "note": "Als NL-01 met de Code-Aster-standaard RESI_GLOB_RELA 1e-6: alleen RELA stagneert bij het ontlasten (GDEF_LOG) op ~2e-6 / ~1e-2 N; met RELA_OF_MAXI (VERIF='AU_MOINS_UN') rekent hij door.",
-  "seconds": 4.6,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2464,7 +2464,7 @@
   "series": null,
   "h": null,
   "note": "Elastica; volume-elementen, GREEN_LAGRANGE.",
-  "seconds": 7.1,
+  "seconds": 7.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -2566,7 +2566,7 @@
   "series": null,
   "h": null,
   "note": "Elastica; quad8 -> COQUE_3D (QUAD9), GROT_GDEP.",
-  "seconds": 9.0,
+  "seconds": 9.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -2670,7 +2670,7 @@
   "series": null,
   "h": null,
   "note": "Lagrange-contact (standaard), wrijvingsloos. Lijncontact op hex20: Code-Aster stopt met MECANONLINE9_4 (pivot op LAGS_C); gebruik PENALISATION (NL-03b).",
-  "seconds": 5.9,
+  "seconds": 6.2,
   "diagnostic": "<A>_ALARM",
   "errors": [
    "MECANONLINE9_4",
@@ -2735,7 +2735,7 @@
   "series": null,
   "h": null,
   "note": "Penalty met een stijve normalstiffness.",
-  "seconds": 5.9,
+  "seconds": 6.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -2797,7 +2797,7 @@
   "series": null,
   "h": null,
   "note": "Niet-passende hex20-meshes; de bridge zet bij een kwadratisch slave-vlak INTEGRATION='NCOTES' (met 'AUTO' 1,5..4,6% fout).",
-  "seconds": 5.3,
+  "seconds": 5.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -2859,7 +2859,7 @@
   "series": null,
   "h": null,
   "note": "kn = 1e13 Pa/m: penetratie p/kn = 1 um, even groot als de elastische indrukking van een blok.",
-  "seconds": 5.5,
+  "seconds": 5.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -2935,7 +2935,7 @@
   "series": null,
   "h": null,
   "note": "Als NL-03c met #ASTER-ZONE INTEGRATION='NCOTES' (nu gelijk aan de standaard van de bridge).",
-  "seconds": 5.4,
+  "seconds": 5.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -2997,7 +2997,7 @@
   "series": null,
   "h": null,
   "note": "Als NL-03d met #ASTER-ZONE INTEGRATION='NCOTES' (nu gelijk aan de standaard van de bridge).",
-  "seconds": 5.4,
+  "seconds": 5.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -3073,7 +3073,7 @@
   "series": null,
   "h": null,
   "note": "knoopwaarden exact (1D-Galerkin, lineaire elementen); tolerantie = afronding",
-  "seconds": 3.9,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3133,7 +3133,7 @@
   "series": null,
   "h": null,
   "note": "kwadratisch element: exact voor kwadratische T",
-  "seconds": 3.9,
+  "seconds": 4.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3193,7 +3193,7 @@
   "series": null,
   "h": null,
   "note": "h L/k = 0,5; T lineair, exact met hex8",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3239,7 +3239,7 @@
   "series": null,
   "h": null,
   "note": "Bi = hL/k = 0,5; knoopwaarden exact (1D-Galerkin, lineaire elementen); tolerantie = afronding",
-  "seconds": 3.9,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3299,7 +3299,7 @@
   "series": null,
   "h": null,
   "note": "schaal 2 mm als PLAN met diktefactor, convectie op vlak 5 als SOUR_NL; mL = 1,58, quad8 met 10 elementen: discretisatiefout ~(mh)^4 < 1e-4",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3345,7 +3345,7 @@
   "series": null,
   "h": null,
   "note": "tolerantie 0,5 K = 0,5 % van de sprong: geschatte tijdfout (orde dt door de sprong op t = 0) <= 0,25 K bij dt = 0,1 s, ruimtefout < 0,02 K bij h = 1 mm",
-  "seconds": 7.2,
+  "seconds": 8.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3463,7 +3463,7 @@
   "series": "TH-02 tijdstap (theta 0,5)",
   "h": 0.1,
   "note": "tolerantie 0,5 K = 0,5 % van de sprong: geschatte tijdfout (orde dt door de sprong op t = 0) <= 0,25 K bij dt = 0,1 s, ruimtefout < 0,02 K bij h = 1 mm",
-  "seconds": 7.2,
+  "seconds": 8.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3581,7 +3581,7 @@
   "series": "TH-02 tijdstap (theta 1,0)",
   "h": 0.1,
   "note": "tolerantie 0,5 K = 0,5 % van de sprong: geschatte tijdfout (orde dt door de sprong op t = 0) <= 0,25 K bij dt = 0,1 s, ruimtefout < 0,02 K bij h = 1 mm",
-  "seconds": 7.1,
+  "seconds": 8.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3699,7 +3699,7 @@
   "series": "TH-02 tijdstap (theta 0,5)",
   "h": 0.4,
   "note": "tijdstapreeks; tolerantie 1 K (grootste stap 0,4 s: geschatte fout 0,5 K)",
-  "seconds": 4.2,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3775,7 +3775,7 @@
   "series": "TH-02 tijdstap (theta 1,0)",
   "h": 0.4,
   "note": "tijdstapreeks; tolerantie 1 K (grootste stap 0,4 s: geschatte fout 0,5 K)",
-  "seconds": 4.2,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3851,7 +3851,7 @@
   "series": "TH-02 tijdstap (theta 0,5)",
   "h": 0.2,
   "note": "tijdstapreeks; tolerantie 1 K (grootste stap 0,4 s: geschatte fout 0,5 K)",
-  "seconds": 4.4,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3927,7 +3927,7 @@
   "series": "TH-02 tijdstap (theta 1,0)",
   "h": 0.2,
   "note": "tijdstapreeks; tolerantie 1 K (grootste stap 0,4 s: geschatte fout 0,5 K)",
-  "seconds": 4.5,
+  "seconds": 4.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4003,7 +4003,7 @@
   "series": "TH-02 tijdstap (theta 0,5)",
   "h": 0.05,
   "note": "tijdstapreeks; tolerantie 1 K (grootste stap 0,4 s: geschatte fout 0,5 K)",
-  "seconds": 5.7,
+  "seconds": 6.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4079,7 +4079,7 @@
   "series": "TH-02 tijdstap (theta 1,0)",
   "h": 0.05,
   "note": "tijdstapreeks; tolerantie 1 K (grootste stap 0,4 s: geschatte fout 0,5 K)",
-  "seconds": 5.5,
+  "seconds": 6.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4155,7 +4155,7 @@
   "series": null,
   "h": null,
   "note": "grove stap: schemafout tot ~3 K (1D-schatting), tolerantie 5 K; het doel is de vergelijking met hetzelfde schema in 1D en het verschil tussen de theta's",
-  "seconds": 4.1,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4231,7 +4231,7 @@
   "series": null,
   "h": null,
   "note": "grove stap: schemafout tot ~3 K (1D-schatting), tolerantie 5 K; het doel is de vergelijking met hetzelfde schema in 1D en het verschil tussen de theta's",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4307,7 +4307,7 @@
   "series": null,
   "h": null,
   "note": "grove stap: schemafout tot ~3 K (1D-schatting), tolerantie 5 K; het doel is de vergelijking met hetzelfde schema in 1D en het verschil tussen de theta's",
-  "seconds": 4.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4383,7 +4383,7 @@
   "series": null,
   "h": null,
   "note": "statisch bepaald opgelegd (drie symmetrievlakken); uniforme rek is exact met hex8",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4443,7 +4443,7 @@
   "series": null,
   "h": null,
   "note": "uniforme spanningstoestand: exact met hex8",
-  "seconds": 4.0,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4591,7 +4591,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; drukkracht 1000 N.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4651,7 +4651,7 @@
   "series": "BU-03 hex20",
   "h": 0.01,
   "note": "Volume-elementen; drukkracht als traction op de kop.",
-  "seconds": 5.5,
+  "seconds": 5.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4697,7 +4697,7 @@
   "series": "BU-03 hex20",
   "h": 0.005,
   "note": "Volume-elementen; drukkracht als traction op de kop.",
-  "seconds": 13.9,
+  "seconds": 14.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4743,7 +4743,7 @@
   "series": "BU-04 DKT",
   "h": 0.05,
   "note": "quad4 DKT; lijnlast 1 N/m op de rand x = a.",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4789,7 +4789,7 @@
   "series": "BU-04 DKT",
   "h": 0.025,
   "note": "quad4 DKT; lijnlast 1 N/m op de rand x = a.",
-  "seconds": 4.5,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4835,7 +4835,7 @@
   "series": "BU-04 DKT",
   "h": 0.0125,
   "note": "quad4 DKT; lijnlast 1 N/m op de rand x = a.",
-  "seconds": 5.2,
+  "seconds": 5.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4881,7 +4881,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E met consistente massa; 20 elementen.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5151,7 +5151,7 @@
   "series": "MO-02 hex20",
   "h": 0.01,
   "note": "Volume-elementen, mesh-convergentie.",
-  "seconds": 5.1,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5211,7 +5211,7 @@
   "series": "MO-02 hex20",
   "h": 0.005,
   "note": "Volume-elementen, mesh-convergentie.",
-  "seconds": 12.2,
+  "seconds": 13.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5271,7 +5271,7 @@
   "series": "MO-03 DKT",
   "h": 0.05,
   "note": "quad4 DKT, vrij opgelegd (hard).",
-  "seconds": 4.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5345,7 +5345,7 @@
   "series": "MO-03 DKT",
   "h": 0.025,
   "note": "quad4 DKT, vrij opgelegd (hard).",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5419,7 +5419,7 @@
   "series": "MO-03 DKT",
   "h": 0.0125,
   "note": "quad4 DKT, vrij opgelegd (hard).",
-  "seconds": 5.4,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5493,7 +5493,7 @@
   "series": null,
   "h": null,
   "note": "Geen opleggingen: zoekfrequentie onder 0 Hz (CENTRE).",
-  "seconds": 4.7,
+  "seconds": 4.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -5623,7 +5623,7 @@
   "series": null,
   "h": null,
   "note": "Discrete elementen: veer DIS_T en knoopmassa POI1.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -5669,7 +5669,7 @@
   "series": null,
   "h": null,
   "note": "Veer langs de globale Y-as (KNOWN_BUGS 47: werkte voorheen alleen in globaal X).",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5715,7 +5715,7 @@
   "series": null,
   "h": null,
   "note": "Veer schuin in het XY-vlak: werkt langs de eigen as.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5747,7 +5747,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; trek = 1 x de eerste kniklast: f1 = sqrt(2) f10.",
-  "seconds": 4.1,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -5877,7 +5877,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; druk = 0,5 x de eerste kniklast: f1 = f10/sqrt(2).",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6007,7 +6007,7 @@
   "series": null,
   "h": null,
   "note": "modal_prestress = False: frequenties zonder last.",
-  "seconds": 4.1,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6083,7 +6083,7 @@
   "series": null,
   "h": null,
   "note": "Volume-elementen; traction op beide eindvlakken.",
-  "seconds": 5.7,
+  "seconds": 6.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6157,7 +6157,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; RIGI_GEOM + RIGI_ROTA (spin softening).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6231,7 +6231,7 @@
   "series": null,
   "h": null,
   "note": "Thermische rek (thermal stress) als voorspanning.",
-  "seconds": 5.7,
+  "seconds": 6.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6333,7 +6333,7 @@
   "series": null,
   "h": null,
   "note": "Volume-elementen; RIGI_GEOM + RIGI_ROTA.",
-  "seconds": 5.4,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6407,7 +6407,7 @@
   "series": null,
   "h": 0.1,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6469,7 +6469,7 @@
   "series": null,
   "h": 0.05,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6531,7 +6531,7 @@
   "series": null,
   "h": 0.025,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 5.0,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6607,7 +6607,7 @@
   "series": null,
   "h": 0.0125,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 7.8,
+  "seconds": 8.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6683,7 +6683,7 @@
   "series": null,
   "h": 0.00625,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 35.2,
+  "seconds": 37.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6759,7 +6759,7 @@
   "series": null,
   "h": 0.1,
   "note": "Model van LS-04 (symmetry en frictionless op de randvlakken, druk binnen, buitenwand vrij).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6805,7 +6805,7 @@
   "series": null,
   "h": 0.05,
   "note": "Model van LS-04 (symmetry en frictionless op de randvlakken, druk binnen, buitenwand vrij).",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6865,7 +6865,7 @@
   "series": null,
   "h": 0.025,
   "note": "Model van LS-04 (symmetry en frictionless op de randvlakken, druk binnen, buitenwand vrij).",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6925,7 +6925,7 @@
   "series": null,
   "h": 0.0125,
   "note": "Model van LS-04 (symmetry en frictionless op de randvlakken, druk binnen, buitenwand vrij).",
-  "seconds": 5.1,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6985,7 +6985,7 @@
   "series": null,
   "h": null,
   "note": "Mesh van sslv153a (11 knopen, hexa/penta/pyram/tetra, door LINE_QUAD kwadratisch zoals de test); de groepen LIBRE/LIBRE2 (druk 1e-14 in de test) worden in de bridge vanzelf vrije vlakken.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7047,7 +7047,7 @@
   "series": null,
   "h": null,
   "note": "6 starre modes + 6 elastische; rotaties om de oorsprong.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7205,7 +7205,7 @@
   "series": null,
   "h": null,
   "note": "Spanningen per mode (fields) en effectieve massa rotaties.",
-  "seconds": 5.4,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7341,7 +7341,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E (PETIT): kritische lastfactor per stap; P tot 0,9 Pcr in 10 stappen.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7389,7 +7389,7 @@
   "series": null,
   "h": null,
   "note": "GREEN_LAGRANGE: lambda = -(kleinste eigenwaarde van K_T).",
-  "seconds": 8.9,
+  "seconds": 9.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7472,7 +7472,7 @@
   "series": null,
   "h": null,
   "note": "e0 = 0,001 L = 1 mm; P tot 0,9 Pcr in 20 stappen (stepsize 0,05 s).",
-  "seconds": 18.7,
+  "seconds": 18.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7578,7 +7578,7 @@
   "series": null,
   "h": null,
   "note": "fy = 25.9 MPa (Npl = 1,5 Pcr), H = 210 MPa; P tot 0,8 Pcr: de run stopt op het grenspunt (BRIDGE_ONVOLLEDIG, verwacht).",
-  "seconds": 45.8,
+  "seconds": 50.2,
   "diagnostic": "OK",
   "errors": [
    "MECANONLINE9_7",
@@ -7630,7 +7630,7 @@
   "series": null,
   "h": null,
   "note": "10 x line2 (POU_D_E), tipmassa 10 kg (mass2), balk 1 kg/m3; 3 modes; Mecway stepsize 0,01 s, 1 s.",
-  "seconds": 4.9,
+  "seconds": 5.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7704,7 +7704,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-01, Rayleigh alpha = 2 zeta w = 3,550 1/s.",
-  "seconds": 4.7,
+  "seconds": 4.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7764,7 +7764,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-02 met F = 100 sin(0,8 w t) N als tabel.",
-  "seconds": 5.9,
+  "seconds": 6.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7824,7 +7824,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-01 met modal_damping = 0,05.",
-  "seconds": 4.7,
+  "seconds": 4.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7872,7 +7872,7 @@
   "series": null,
   "h": null,
   "note": "10 x 2 x 1 hex20, ingeklemd, 1000 N in Z op het eindvlak; beta = 1e-4 s; stepsize 0,5 ms, 0,1 s.",
-  "seconds": 6.0,
+  "seconds": 6.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7932,7 +7932,7 @@
   "series": null,
   "h": null,
   "note": "20 x line2, staal 7850 kg/m3, alpha = 20 1/s, 2 s.",
-  "seconds": 5.1,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7992,7 +7992,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-06a met static_correction.",
-  "seconds": 5.1,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -8026,7 +8026,7 @@
   "series": null,
   "h": null,
   "note": "Model MD-01 zonder modesuperposition, stepsize 0,02 s.",
-  "seconds": 4.8,
+  "seconds": 5.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -8261,7 +8261,7 @@
   "series": null,
   "h": null,
   "note": "fluid pressure 0 op een knoopselectie.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -8605,7 +8605,7 @@
   "series": null,
   "h": null,
   "note": "Harde wanden; de modes (l, m, n) volgen uit de afmetingen.",
-  "seconds": 4.8,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -8861,7 +8861,7 @@
   "series": null,
   "h": null,
   "note": "Twee materialen zonder dichtheid; Mecway zelf weigert meer dan een akoestisch materiaal.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -8949,7 +8949,7 @@
   "series": null,
   "h": null,
   "note": "Lineaire wedge6; de fout groeit als (kh)^2, zoals bij hex8.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9121,7 +9121,7 @@
   "series": null,
   "h": null,
   "note": "Lineaire tet4; de fout groeit als (kh)^2, zoals bij hex8.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9293,7 +9293,7 @@
   "series": null,
   "h": null,
   "note": "Mecway Spring + mass2, Rayleigh beta = 5e-4 s; spectrum via #ASTER-code + #ASTER-SPECTRE X (LOG in f, LIN in xi); ACCE_ABSOLU met de automatische correctie van Code-Aster.",
-  "seconds": 4.0,
+  "seconds": 4.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9499,7 +9499,7 @@
   "series": null,
   "h": null,
   "note": "f1/f2 = 4.393/5.491 Hz, Sa = 6.0855/6.7684 m/s2 (lineair in T).",
-  "seconds": 3.9,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9589,7 +9589,7 @@
   "series": null,
   "h": null,
   "note": "rho_12 = 0.1656 (xi = 0.05); CQC t.o.v. SRSS u m2 -6.5%.",
-  "seconds": 4.0,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9679,7 +9679,7 @@
   "series": null,
   "h": null,
   "note": "Missing mass: pseudo-mode (MODE_STATIQUE) met het spectrum op de hoogste gerekende frequentie (hier f1).",
-  "seconds": 4.0,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9756,7 +9756,7 @@
   "series": null,
   "h": null,
   "note": "Zonder missing mass draagt mode 1 56% van de massa: de reactie is te laag (WARNING).",
-  "seconds": 4.0,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9805,7 +9805,7 @@
   "series": null,
   "h": null,
   "note": "Twee spectrumtabellen (gravity x en y); 100-30-30 rekent de bridge zelf uit VALE_DIRE.",
-  "seconds": 4.1,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9854,7 +9854,7 @@
   "series": null,
   "h": null,
   "note": "Twee spectrumtabellen (gravity x en y); 100-30-30 rekent de bridge zelf uit VALE_DIRE.",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9952,7 +9952,7 @@
   "series": null,
   "h": null,
   "note": "Spanningen en von Mises (per mode berekend en gecombineerd) op volume-elementen.",
-  "seconds": 5.3,
+  "seconds": 5.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -10063,7 +10063,7 @@
   "series": null,
   "h": null,
   "note": "BRON_-vlak (source_velocity 1 mm/s), ABSORBEREND_-vlak; 680 Hz = 10 hex20 per golflengte.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -10237,7 +10237,7 @@
   "series": null,
   "h": null,
   "note": "grens van de WARNING voor kwadratische elementen.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -10383,7 +10383,7 @@
   "series": null,
   "h": null,
   "note": "hex8: fasefout ~ (kh)^2/24 per golflengte; 2% grens.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -10529,7 +10529,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -10675,7 +10675,7 @@
   "series": null,
   "h": null,
   "note": "Geen demping (WARNING); frequenties tussen de resonanties.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -10821,7 +10821,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde mesh, materiaal en bron als ahlv100a; teken omgekeerd (VNOR de fluid in).",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11080,7 +11080,7 @@
   "series": null,
   "h": null,
   "note": "De CALC_MODES-stap van ahlv100a (harde wanden); de bridge-mode 1 is de constante druk (0 Hz).",
-  "seconds": 4.3,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11322,7 +11322,7 @@
   "series": null,
   "h": null,
   "note": "Z = 816 Pa.s/m reeel -> 3D_ABSO met c = Z / rho.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11440,7 +11440,7 @@
   "series": null,
   "h": null,
   "note": "fluid pressure != 0 is in de harmonische analyse een opgelegde druk (bron).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11544,7 +11544,7 @@
   "series": null,
   "h": null,
   "note": "#ASTER-BRON op een vlakselectie zonder voorvoegsel, frequenties met #ASTER-OPTIE; MICROFOON_-knoopselecties -> CSV.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11702,7 +11702,7 @@
   "series": null,
   "h": null,
   "note": "Veer 1000 N/m, mass2 2 kg, Damper 8.944 N.s/m (line2).",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -11778,7 +11778,7 @@
   "series": null,
   "h": null,
   "note": "Veer 1000 N/m, mass2 2 kg, Damper 44.72 N.s/m (line2).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -11854,7 +11854,7 @@
   "series": null,
   "h": null,
   "note": "C = alpha M op de knoopmassa (mass2).",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -11930,7 +11930,7 @@
   "series": null,
   "h": null,
   "note": "C = beta K op de veer (Spring).",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12006,7 +12006,7 @@
   "series": null,
   "h": null,
   "note": "Veren en demper (line2), mass2; de demper zit alleen aan m2.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12096,7 +12096,7 @@
   "series": null,
   "h": null,
   "note": "10 x 2 x 1 hex20, ingeklemd; alpha = 20 1/s, beta = 1e-4 s.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12368,7 +12368,7 @@
   "series": null,
   "h": null,
   "note": "Als MC-04 zonder inklemming, maxmode 10.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12500,7 +12500,7 @@
   "series": null,
   "h": null,
   "note": "Lage-frequentiebenadering 13.8285 Hz; exacte wortel 13.82768 Hz.",
-  "seconds": 5.0,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12588,7 +12588,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde model als VA-01, koppelvlakken handmatig (KOPPEL_).",
-  "seconds": 5.0,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12634,7 +12634,7 @@
   "series": null,
   "h": null,
   "note": "Staaf zijdelings geleid (DY = DZ = 0), nu = 0: zuiver 1D.",
-  "seconds": 5.5,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12708,7 +12708,7 @@
   "series": null,
   "h": null,
   "note": "Schaal (quad4, DKT) op een vlak van het fluidum: automatisch koppelvlak.",
-  "seconds": 6.0,
+  "seconds": 4.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12768,7 +12768,7 @@
   "series": null,
   "h": null,
   "note": "Geen constructie: 3D_FLUIDE met twee materialen; de 0-Hz-mode (constante potentiaal) valt onder vibro_freq_min.",
-  "seconds": 5.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12828,7 +12828,7 @@
   "series": null,
   "h": null,
   "note": "Bij een verwaarloosbare koppeling zijn de modes de losse plaat- en holtemodes, in volgorde.",
-  "seconds": 27.8,
+  "seconds": 21.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12958,7 +12958,7 @@
   "series": null,
   "h": null,
   "note": "Pompmode in vacuum 50.56 Hz; met de luchtveer (benadering) 55.23 Hz.",
-  "seconds": 28.3,
+  "seconds": 21.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12990,7 +12990,7 @@
   "series": null,
   "h": null,
   "note": "De eerste mode (pompmode 54,96 Hz) valt onder de ondergrens.",
-  "seconds": 21.2,
+  "seconds": 15.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -13050,7 +13050,7 @@
   "series": null,
   "h": null,
   "note": "#ASTER-LASBRON r = 0,75 mm, symmetrie = 1; hex8 0,5 mm langs de baan; dt = 0,05 s (v dt = (af+ar)/6)",
-  "seconds": 104.7,
+  "seconds": 110.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13180,7 +13180,7 @@
   "series": null,
   "h": null,
   "note": "de grens van de tijdstapmelding (bridge_welding.MAX_JUMP)",
-  "seconds": 46.2,
+  "seconds": 49.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13296,7 +13296,7 @@
   "series": null,
   "h": null,
   "note": "Q = 1250 W, eta = 0,8; dt = 0,1 s (v dt = (af+ar)/6); referentie: dezelfde bron analytisch gevouwen",
-  "seconds": 85.2,
+  "seconds": 91.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13426,7 +13426,7 @@
   "series": null,
   "h": null,
   "note": "heatgeneration op een elementselectie met de formule in x, y, z (mm) en t; zelfde bron als WE-01",
-  "seconds": 103.1,
+  "seconds": 109.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13668,7 +13668,7 @@
   "series": null,
   "h": null,
   "note": "Mecway TempDependent -> THER_NL, THER_NON_LINE",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13742,7 +13742,7 @@
   "series": null,
   "h": null,
   "note": "flux 1e7 W/m2 op x = 0; cp(T) 450..750 J/kg/K",
-  "seconds": 7.1,
+  "seconds": 7.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13830,7 +13830,7 @@
   "series": null,
   "h": null,
   "note": "lasbron + THER_NON_LINE; energiebalans met de enthalpie",
-  "seconds": 431.7,
+  "seconds": 473.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13876,7 +13876,7 @@
   "series": null,
   "h": null,
   "note": "TEMP_IMPO, ECHANGE COEF_H en FLUX_REP FLUN als FORMULE van X, Y, Z; eenheden mm/m/graden C uit de attributen",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14062,7 +14062,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a met Rayleigh alpha = 2,236 1/s.",
-  "seconds": 4.5,
+  "seconds": 4.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14351,7 +14351,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a; last met tabel F(f) en #ASTER-FASE Last = 90; frequenties met #ASTER-OPTIE.",
-  "seconds": 4.4,
+  "seconds": 4.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14430,7 +14430,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a met een tweede kracht 4 N op dezelfde knoop, fase 180 graden.",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14481,7 +14481,7 @@
   "series": null,
   "h": null,
   "note": "20 x line2 POU_D_E, RectBar 20 x 30 mm, 100 N in Y op de tip, alpha = 4.2 1/s (zeta 0,02 in mode 1, 16.71 Hz); 1 .. 200 Hz (100) + 5 per mode; modes in Y: 16,7 / 104,7 / 293 / 575 Hz.",
-  "seconds": 4.6,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14548,7 +14548,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a, harm_basis PHYS (C = alpha M).",
-  "seconds": 4.6,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14602,7 +14602,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a, static_correction uit: alleen de 8 modes.",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14781,7 +14781,7 @@
   "series": null,
   "h": null,
   "note": "Half model in x (symmetrie door het scheurmidden), a/b = 0,5, H/b = 3; de onderhelft heeft eigen knopen op de lippen (dubbele knopen, zoals Disconnect elements).",
-  "seconds": 10.2,
+  "seconds": 10.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14883,7 +14883,7 @@
   "series": null,
   "h": null,
   "note": "Alleen y >= 0; ligament symmetry, alleen SCHEUR_LIP_BOVEN.",
-  "seconds": 7.3,
+  "seconds": 7.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14957,7 +14957,7 @@
   "series": null,
   "h": null,
   "note": "Half model in de dikte (symmetrie op het middenvlak z = 0, vrij oppervlak z = 2a).",
-  "seconds": 31.8,
+  "seconds": 33.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -15045,7 +15045,7 @@
   "series": null,
   "h": null,
   "note": "Mesh uit forma07a.mmed met de kwartpuntknopen (NOEUD_QUART) al in de .liml; LEV_SUP/LEV_INF/LFF als SCHEUR_-selecties, FACE_AV/FACE_LAT frictionless, R_INF/R_SUP = 0,2/0,5 m zoals de test (met #ASTER-OPTIE).",
-  "seconds": 8.3,
+  "seconds": 8.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -15119,7 +15119,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde plaat als BR-01 met hex8 (volledig geintegreerd). POST_K1_K2_K3 geeft met hex8 ~10 % te laag (geen check; docs/Breukmechanica.md).",
-  "seconds": 10.0,
+  "seconds": 10.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -15181,7 +15181,7 @@
   "series": null,
   "h": null,
   "note": "Plaat x in [-b, b] zonder symmetrie in x; per front een eigen achtervoegsel (SCHEUR_FRONT_L met SCHEUR_LIP_BOVEN_L/_ONDER_L over de halve lippen, idem _R).",
-  "seconds": 16.5,
+  "seconds": 17.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -15255,7 +15255,7 @@
   "series": null,
   "h": null,
   "note": "hex20, 6 per segment; starre modes in ND 0 en 1; het hele wiel naar Mecway",
-  "seconds": 4.4,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -15707,7 +15707,7 @@
   "series": null,
   "h": null,
   "note": "zelfde mesh als 12 x CY-01, gewone modale route; MAC met het hele wiel van CY-01 (draai CY-01 eerst)",
-  "seconds": 4.9,
+  "seconds": 5.1,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -15991,7 +15991,7 @@
   "series": null,
   "h": null,
   "note": "bridge draait het model naar de Z-as en terug",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -16443,7 +16443,7 @@
   "series": null,
   "h": null,
   "note": "a = 0,5 m, h = 0,01 m; hex20 + wedge15 in het midden; interface AXE",
-  "seconds": 7.9,
+  "seconds": 8.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -17123,7 +17123,7 @@
   "series": null,
   "h": null,
   "note": "zelfde mesh als 12 x CY-05, gewone modale route; MAC met het hele wiel van CY-05 (draai CY-05 eerst)",
-  "seconds": 5.5,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -17757,7 +17757,7 @@
   "series": null,
   "h": null,
   "note": "T31 met Thermal stress (referentie T0); opgelegde temperatuur op alle knopen T0 -> T0 + 100 K (5 s) -> T0 (10 s), dt = 1 s; drie symmetrievlakken (statisch bepaald)",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -17859,7 +17859,7 @@
   "series": null,
   "h": null,
   "note": "x = 0 en x = L vast in x, y = 0 / z = 0 symmetrie; T0 -> T0 + 150 K (15 s) -> T0 (30 s), dt = 1 s; SY = 250 MPa, H = 20 GPa; vloeien vanaf dT = 99,2 K",
-  "seconds": 4.9,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -17989,7 +17989,7 @@
   "series": null,
   "h": null,
   "note": "E 210 -> 150 GPa, SY 300 -> 100 MPa, alpha 1,2 -> 1,4e-5 1/K lineair tussen 20 en 520 graden C; H = 0; T0 -> T0 + 400 K (40 s) -> T0 (80 s), dt = 1 s",
-  "seconds": 6.2,
+  "seconds": 6.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18077,7 +18077,7 @@
   "series": null,
   "h": null,
   "note": "halve plaat 40 x 15 x 5 mm (hex8 1 mm langs de las), Goldak 2/4/2/2 mm, 1000 W, 5 mm/s over 30 mm (6 s), afkoelen tot 60 s (rand y = 15 mm op T0), dt = 0,3 s; E/SY/alpha(T) via #ASTER-MATERIAAL, H = 1 GPa, TC_CUT = 1500; symmetrie + statisch bepaald; hex8 3D (locking, docs/Lassen.md par. 9.5)",
-  "seconds": 322.7,
+  "seconds": 352.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18207,7 +18207,7 @@
   "series": "AD-01 hex20",
   "h": 0.02,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 12 elementen geven.",
-  "seconds": 4.9,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18239,7 +18239,7 @@
   "series": "AD-01 hex20",
   "h": 0.01,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 96 elementen geven.",
-  "seconds": 4.6,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18271,7 +18271,7 @@
   "series": "AD-01 hex20",
   "h": 0.005,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 768 elementen geven.",
-  "seconds": 5.1,
+  "seconds": 5.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18335,7 +18335,7 @@
   "series": "AD-01 hex20",
   "h": 0.00125,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 49152 elementen geven.",
-  "seconds": 18.7,
+  "seconds": 19.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18367,7 +18367,7 @@
   "series": "AD-01 hex20",
   "h": 0.000625,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 393216 elementen geven.",
-  "seconds": 70.6,
+  "seconds": 74.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18399,7 +18399,7 @@
   "series": null,
   "h": null,
   "note": "Lus uit bridge_adapt (doel 1,5%, max. 6 lussen, Dorfler 0,5, geen buren) met headless Mecway (refine_x2); tussenmodellen modellen/AD-02-L<k>.liml.",
-  "seconds": 26.4,
+  "seconds": 27.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18515,7 +18515,7 @@
   "series": null,
   "h": null,
   "note": "Balk hex20 4x1x1, fixed op de knopen van x = 0 (knoopselectie), traction op het eindvlak; de grootste fout zit bij de inklemming.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18547,7 +18547,7 @@
   "series": null,
   "h": null,
   "note": "sigma = 100 MPa, #ASTER-BLOK 2.0, 0, 1e4: S_a = 200 MPa.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18593,7 +18593,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.0,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18625,7 +18625,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18657,7 +18657,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18689,7 +18689,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18735,7 +18735,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.5,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18837,7 +18837,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.6,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18897,7 +18897,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18945,7 +18945,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.8,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19041,7 +19041,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.8,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19073,7 +19073,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.4,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19105,7 +19105,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.5,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19137,7 +19137,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 0,5 Pa = ONDE_FLUI PRES 1 (zoals ahlv101a).",
-  "seconds": 6.7,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19284,7 +19284,7 @@
   "series": null,
   "h": null,
   "note": "source_velocity 0,014 m/s de fluid in; ahlv100b VNOR naar buiten (teken omgekeerd).",
-  "seconds": 7.1,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19417,7 +19417,7 @@
   "series": null,
   "h": null,
   "note": "De frequentie komt uit #ASTER-OPTIE (instelling 100 Hz).",
-  "seconds": 6.5,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19507,7 +19507,7 @@
   "series": null,
   "h": null,
   "note": "Een druk-eenheid in #ASTER-BRON maakt een invallende golf.",
-  "seconds": 6.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19583,7 +19583,7 @@
   "series": null,
   "h": null,
   "note": "m = 0.05 kg, k = 3000 N/m (f0 = 38.98 Hz), rho c A = 4.08 N.s/m (zeta = 0.167), F0 = 1 N.",
-  "seconds": 6.7,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19972,7 +19972,7 @@
   "series": null,
   "h": null,
   "note": "Z_in = rho c (1 + R e^(-2ikL)) / (1 - R e^(-2ikL)), R = 1/3.",
-  "seconds": 6.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20328,7 +20328,7 @@
   "series": null,
   "h": null,
   "note": "alpha = 200 1/s: alpha m = 10 N.s/m naast rho c A = 4,08 N.s/m; de demping werkt alleen op de constructie.",
-  "seconds": 5.9,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20684,7 +20684,7 @@
   "series": null,
   "h": null,
   "note": "Tabel: kolom 'time' = frequentie [Hz] (DEFI_FONCTION NOM_PARA='FREQ' als FONC_MULT), zoals harmonic_3d (HR-04).",
-  "seconds": 6.7,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20760,7 +20760,7 @@
   "series": null,
   "h": null,
   "note": "beta = 2e-3 s: beta k = 6 N.s/m.",
-  "seconds": 5.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21116,7 +21116,7 @@
   "series": null,
   "h": null,
   "note": "AMOR_MECA van de demper (DIS_T); alarm MODELISA8_13: veer en demper op dezelfde twee knopen (onschuldig).",
-  "seconds": 5.3,
+  "seconds": 4.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -21472,7 +21472,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 1 Pa (standaard); geen andere demping dan de inlaat (ONDE_FLUI is ook absorberend).",
-  "seconds": 6.7,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21618,7 +21618,7 @@
   "series": null,
   "h": null,
   "note": "OPEN_ = DDL_IMPO PRES = PHI = 0, zoals in de modes (S3b).",
-  "seconds": 7.1,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21722,7 +21722,7 @@
   "series": null,
   "h": null,
   "note": "Schaal op een vlak van het fluidum: automatisch koppelvlak; spanningen alleen op volumes (hier geen).",
-  "seconds": 7.5,
+  "seconds": 4.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -21854,7 +21854,7 @@
   "series": null,
   "h": null,
   "note": "f_n = n c / (2L), decay rate (c/L) artanh(rho c / Z) = 70,35 1/s; n = 0 is een niet-oscillerende mode (f = 0). De bridge geeft ook de constante druk (lambda = 0).",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -22604,7 +22604,7 @@
   "series": null,
   "h": null,
   "note": "Moet gelijk zijn aan AK-01 (harde wanden): decay rate (c/L) rho c / Z = 1,4e-4 1/s. De niet-oscillerende mode (n = 0, decay 1,4e-4) valt numeriek samen met de constante druk (lambda = 0) en wordt niet vergeleken.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -22944,7 +22944,7 @@
   "series": null,
   "h": null,
   "note": "Z = rho c: een vlakke golf wordt niet teruggekaatst; de buis heeft geen resonanties. De gevonden modes zijn discretisatiemodes met hoge decay rate (gelijk aan Mecway).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -23908,7 +23908,7 @@
   "series": null,
   "h": null,
   "note": "Zuiver reactief: geen demping (decay rate 0), f_n = 170 n + 20,96 Hz (tan(kL) = rho c / X).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -24318,7 +24318,7 @@
   "series": null,
   "h": null,
   "note": "p = 0 op x = 0 (fluid pressure 0, vlakselectie): f_n = (2n + 1) c / (4L), decay rate 70,35 1/s.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -24700,7 +24700,7 @@
   "series": null,
   "h": null,
   "note": "hex8 (20 per meter): analytisch alleen n <= 1; gemeten f +0,10 / +0,41 / +0,93% en decay rate +0,41 / +1,67 / +3,8% voor n = 1 / 2 / 3 (de decay rate is gevoeliger voor de mesh dan f), gelijk aan Mecway. 168 vrijheidsgraden in de gelineariseerde vorm: scipy.linalg.eig.",
-  "seconds": 4.5,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -24914,7 +24914,7 @@
   "series": null,
   "h": null,
   "note": "Twee impedantieranden (elk een eigen dempingsmatrix); 3D-modes (ook schuine) t.o.v. Mecway.",
-  "seconds": 5.0,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -25212,7 +25212,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde plaat als BR-01 (a/b = 0,5, H/b = 3) zonder scheur in het mesh; #ASTER-XFEM vorm=HALFVLAK, front=(a, 0, 0). Het scheurvlak y = 0 en het front x = a lopen midden door de elementen (h = a/20, 4 elementen over de dikte).",
-  "seconds": 13.1,
+  "seconds": 13.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -25314,7 +25314,7 @@
   "series": null,
   "h": null,
   "note": "Als BR-07 met hex20: Code-Aster 17.4 kent kwadratische XFEM-elementen (alarm XFEM_63, ajustement van de levelset).",
-  "seconds": 47.7,
+  "seconds": 51.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -25388,7 +25388,7 @@
   "series": null,
   "h": null,
   "note": "Als BR-07, maar met knopen op y = 0 en x = a: de levelset is daar 0.",
-  "seconds": 11.4,
+  "seconds": 12.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -25462,7 +25462,7 @@
   "series": null,
   "h": null,
   "note": "Kwartmodel, blok 5a x 5a x 10a, a = 20 mm, h = a/20 aan het front (hex8); #ASTER-XFEM vorm=CIRKEL, r=20 mm (lengte met eenheid). Het front snijdt de elementen schuin.",
-  "seconds": 70.1,
+  "seconds": 73.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -25536,7 +25536,7 @@
   "series": null,
   "h": null,
   "note": "Mesh forma07b.41 (HOMARD-verfijnd: hex8, pyr5, tet4) als .liml; FACE_AV/FACE_LAT symmetry, D DZ = 0, druk -1 MPa op FACE_SUP/FACE_INF; #ASTER-XFEM vorm=ELLIPSE (a = b = 2 m), glad=LAGRANGE, punten=20; R_INF/R_SUP = 2h/5h met #ASTER-OPTIE.",
-  "seconds": 36.8,
+  "seconds": 39.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -25596,7 +25596,7 @@
   "series": null,
   "h": null,
   "note": "Plaat x in [-b, b]; de rechthoek (halve assen a in x en a in z) steekt in z buiten de plaat (dikte a), dus er zijn twee rechte fronten x = -a en x = a (NUME_FOND 1 en 2).",
-  "seconds": 22.8,
+  "seconds": 24.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -25726,7 +25726,7 @@
   "series": null,
   "h": null,
   "note": "halve plaat 30 x 8 x 4 mm + rups 30 x 2,25 x 1,5 mm in twee stukken (LASNAAD_1/LASNAAD_2, geboorte=<<..>>), Goldak 1,5/3/1,5/1,5 mm, 500 W, 5 mm/s, stuk 1 0..2,4 s, stuk 2 4..6,4 s, dt = 0,1 s; THER_LINEAIRE (THER_FO van INST en NEUT1)",
-  "seconds": 19.9,
+  "seconds": 21.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -25842,7 +25842,7 @@
   "series": null,
   "h": null,
   "note": "als WE-11 met lambda 30 -> 25 W/m/K en c 500 -> 800 J/kg/K (300..1500 K); THER_NON_LINE per geboortestap met een stil THER_NL-materiaal (bridge_welding.ther_loop)",
-  "seconds": 57.1,
+  "seconds": 62.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -25958,7 +25958,7 @@
   "series": null,
   "h": null,
   "note": "staaf 100 x 10 x 10 mm, hex8 4 x 1 x 1; B (x > 50 mm) geboren op t = 6 s bij T0 + 100 K, afkoelen tot T0 (11 s); x = 0 en x = L vast in x; temperatuur opgelegd (bron alleen voor de geboortetijd)",
-  "seconds": 4.8,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26046,7 +26046,7 @@
   "series": null,
   "h": null,
   "note": "als WE-12 met SY = 250 MPa, H = 20 GPa (vloeit bij 99,2 K)",
-  "seconds": 4.8,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26134,7 +26134,7 @@
   "series": null,
   "h": null,
   "note": "als WE-12 met een Mecway-hardingscurve 250 -> 270 MPa bij plastische rek 0,01 (VMIS_ISOT_TRAC; stille kopie met de rek / 1e-4)",
-  "seconds": 4.9,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26222,7 +26222,7 @@
   "series": null,
   "h": null,
   "note": "halve plaat 30 x 8 x 4 mm + laag 1 (30 x 2,25 x 1,5 mm) en laag 2 (30 x 1,5 x 1,5 mm), elk geboren met de eigen bron (500 W, 5 mm/s, x 5..25 mm; laag 1 0..4 s, laag 2 6..10 s), afkoelen tot 30 s, dt = 0,2 s; E/SY/alpha(T) als WE-10; hex8 3D (locking, kwalitatief)",
-  "seconds": 173.7,
+  "seconds": 190.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26352,7 +26352,7 @@
   "series": null,
   "h": null,
   "note": "staaf 100 x 10 x 10 mm, 4 hex8; T = 900 - 5 t graden C op alle knopen, dt = 1 s; #ASTER-METALLURGIE staal=HSNV101A, begin=austeniet, mechanica=ja; Thermal stress T_ref = 900 C; traction 0 -> 360 MPa (0..60 s) op x = L, symmetrievlakken",
-  "seconds": 9.5,
+  "seconds": 10.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26566,7 +26566,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T = 900 - 1000 t graden C op alle knopen (0..0,88 s), dt = 0,02 s; staal=16MND5, begin=austeniet",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26696,7 +26696,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T = 600 + 10 t graden C (0..40 s), dt = 0,1 s; staal=16MND5, begin=ferriet",
-  "seconds": 7.3,
+  "seconds": 7.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26812,7 +26812,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T: 20 -> 1000 C (10 s), 2 s vast, -> 20 C in 0,98 s (1000 C/s); dt = 0,02 s; 16MND5 mechanica=ja, ALPHA_F = 1,4e-5, ALPHA_A = 2,2e-5, DEPS = 1e-2, SY = 1e10 (elastisch); Thermal stress T_ref = 20 C; symmetrievlakken",
-  "seconds": 25.8,
+  "seconds": 28.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26928,7 +26928,7 @@
   "series": null,
   "h": null,
   "note": "als MT-04, x = L vast in x",
-  "seconds": 26.4,
+  "seconds": 27.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27016,7 +27016,7 @@
   "series": null,
   "h": null,
   "note": "WE-10 (halve plaat 40 x 15 x 5 mm, Goldak 1000 W, 5 mm/s) alleen thermisch, met #ASTER-METALLURGIE staal=16MND5, begin=ferriet",
-  "seconds": 33.2,
+  "seconds": 36.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27118,7 +27118,7 @@
   "series": null,
   "h": null,
   "note": "WE-10 met #ASTER-METALLURGIE staal=16MND5, begin=ferriet, TAUX 0,001 s, mechanica=ja (ALPHA_A 2,35e-5, DEPS 1e-2, SY per fase illustratief); hex8 3D",
-  "seconds": 584.6,
+  "seconds": 641.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27192,7 +27192,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T = 900 - 100 t graden C (0..8,8 s), dt = 0,1 s; DEFI_TRC in #ASTER-code, #ASTER-METALLURGIE trc=TRC_EIGEN met eigen META_ACIER",
-  "seconds": 4.7,
+  "seconds": 4.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -27280,7 +27280,7 @@
   "series": null,
   "h": null,
   "note": "CALC_FATIGUE FATIGUE_MULTI DOMA_NOEUD, MATAKE_MODI_AC.",
-  "seconds": 5.0,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27356,7 +27356,7 @@
   "series": null,
   "h": null,
   "note": "CALC_FATIGUE FATIGUE_MULTI DOMA_NOEUD, DANG_VAN_MODI_AC.",
-  "seconds": 4.8,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27432,7 +27432,7 @@
   "series": null,
   "h": null,
   "note": "DANG_VAN_MODI_AV, PROJECTION UN_AXE.",
-  "seconds": 5.6,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27466,7 +27466,7 @@
   "series": null,
   "h": null,
   "note": "Zonder kopie (CREA_RESU) slaat CALC_FATIGUE t = 0 over: 56,25 MPa (gemeten).",
-  "seconds": 5.9,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27500,7 +27500,7 @@
   "series": null,
   "h": null,
   "note": "sigma = 120, tau = 80 MPa; signaal 0, 1, 0, -1, 0 (CREA_RESU).",
-  "seconds": 6.5,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27560,7 +27560,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 6.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27606,7 +27606,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 6.1,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27666,7 +27666,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.8,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27726,7 +27726,7 @@
   "series": null,
   "h": null,
   "note": "DKT quad4 10 x 2, t = 2 mm, randmomenten.",
-  "seconds": 5.3,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27800,7 +27800,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.5,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27848,7 +27848,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 6.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27880,7 +27880,7 @@
   "series": null,
   "h": null,
   "note": "Mesh van BR-09 (knopen op y = 0 en x = a) zonder #ASTER-XFEM: de scheur is de vlakselectie XFEM_midden (de vlakken op y = 0 voor x < a, afwisselend van de elementen onder en boven het vlak gekozen). DEFI_FISS GROUP_MA_FISS/GROUP_MA_FOND; vergelijk met BR-09 (dezelfde scheur als HALFVLAK).",
-  "seconds": 11.5,
+  "seconds": 12.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -27968,7 +27968,7 @@
   "series": null,
   "h": null,
   "note": "Plaat van BR-07 (HALFVLAK, scheurvlak midden door de elementen) met de instelling med_export: het mesh van POST_MAIL_XFEM met DEPL, SIGM_NOEU en SIEQ_NOEU als <model>_<run_id>_xfem.rmed, teruggelezen met de MEDCoupling van de Code-Aster-installatie (Python 3.11 van Code-Aster).",
-  "seconds": 13.1,
+  "seconds": 13.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -28030,7 +28030,7 @@
   "series": null,
   "h": null,
   "note": "Mecway bonded contact (bondedtie), slave = rand van deel B (7 elementen breed), master = schaalvlakken van deel A (4 breed) -> LIAISON_MAIL COQUE zonder DRZ (drilling).",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28132,7 +28132,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28206,7 +28206,7 @@
   "series": null,
   "h": null,
   "note": "Rib 13 elementen lang tegen 20 in de plaat (knopen vallen niet samen); het moment gaat via de rotaties in de lijm.",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28252,7 +28252,7 @@
   "series": null,
   "h": null,
   "note": "De rotatie van de plaat heeft een knik onder de rib; LIAISON_MAIL interpoleert ze lineair tussen de knopen (4 mm elementen: -5 %, 12 mm: -11 %, 1,3 mm: -2 %). Leg de voetlijn op een meshlijn (LS-07c).",
-  "seconds": 4.4,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28284,7 +28284,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28316,7 +28316,7 @@
   "series": null,
   "h": null,
   "note": "eigen knopen aan beide kanten, AFFE_CHAR_THER LIAISON_MAIL; T lineair -> exact. Mecway 34 met CCX: 350 K op de naad",
-  "seconds": 3.9,
+  "seconds": 4.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28390,7 +28390,7 @@
   "series": null,
   "h": null,
   "note": "naad 2x2 (master) tegen 3x3 (slave): knoop-op-vlak-koppeling is niet conform (tussen de slave-knopen een kleine sprong), dus niet exact: naad 350,067 K, flux +0,17 %; Mecway 34 (interne solver) zelfde koppeling, verschil per knoop < 0,003 K. Tolerantie 0,1 % (T) en 0,5 % (flux)",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28464,7 +28464,7 @@
   "series": null,
   "h": null,
   "note": "h = 2000 W/m\u00b2K (Mecway 'Thermal conductance per unit area', <conductanceperarea>), ECHANGE_PAROI; sprong q/h = 20 K; T lineair per blok -> exact. Mecway 34 met CCX: 340 / 360 K",
-  "seconds": 3.9,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28524,7 +28524,7 @@
   "series": null,
   "h": null,
   "note": "schalen als PLAN met diktefactor; naad 3 tegen 4 knopen, dus niet conform (zie TH-04b): naad 350,036 K; Mecway 34 (interne solver) verschil per knoop < 0,006 K. Tolerantie 0,1 % (T) en 0,5 % (flux)",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28598,7 +28598,7 @@
   "series": null,
   "h": null,
   "note": "Instelling Configuratie = G: alleen het eigen gewicht.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28646,7 +28646,7 @@
   "series": null,
   "h": null,
   "note": "Instelling Configuratie = Q: alleen de trek.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28694,7 +28694,7 @@
   "series": null,
   "h": null,
   "note": "ULS met eigen lastitems 1,2 g en 1,5 q.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28742,7 +28742,7 @@
   "series": null,
   "h": null,
   "note": "Elke configuratie heeft onderdrukte items: auto kiest de eerste (G), met een WARNING.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28790,7 +28790,7 @@
   "series": null,
   "h": null,
   "note": "Kopie met alleen configuratie ULS (G- en Q-items zijn in ULS onderdrukt) en een instelling die niet in het model staat (Q): WARNING daarover, dan de enige configuratie; geen WARNING meer over een dubbelzinnige keuze.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28838,7 +28838,7 @@
   "series": null,
   "h": null,
   "note": "Als DY-03b, de beweging als frictionless met normaalverplaatsing -v t op het eindvlak (FACE_IMPO DNOR, omgezet naar een versnelling).",
-  "seconds": 10.4,
+  "seconds": 10.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28928,7 +28928,7 @@
   "series": null,
   "h": null,
   "note": "LIAISON_DDL met COEF_IMPO als functie (AFFE_CHAR_MECA_F): C in de eerste rekenstap, daarna constant.",
-  "seconds": 10.1,
+  "seconds": 10.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28976,7 +28976,7 @@
   "series": null,
   "h": null,
   "note": "Vlak schaalvlak: LIAISON_OBLIQUE DX = -v t, omgezet naar een versnelling; de plaat beweegt star.",
-  "seconds": 6.1,
+  "seconds": 6.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29024,7 +29024,7 @@
   "series": null,
   "h": null,
   "note": "line3-balk -> twee SEG2-cellen per element (C4).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29126,7 +29126,7 @@
   "series": null,
   "h": null,
   "note": "Line pressure op een elementselectie met line3-balken.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29214,7 +29214,7 @@
   "series": null,
   "h": null,
   "note": "Orientatie per helft van het gesplitste element.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29274,7 +29274,7 @@
   "series": null,
   "h": null,
   "note": "<flexiblejoint><rotw/> -> eigen knoop + LIAISON_DDL (C6).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29348,7 +29348,7 @@
   "series": null,
   "h": null,
   "note": "Controleert de lokale assen: V = Y bij een balk langs X.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29394,7 +29394,7 @@
   "series": null,
   "h": null,
   "note": "Knoop zonder ander element met rotaties: POI1 DIS_TR.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29454,7 +29454,7 @@
   "series": null,
   "h": null,
   "note": "Joint met U, V en W vrij op het ingeklemde uiteinde.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29514,7 +29514,7 @@
   "series": null,
   "h": null,
   "note": "C4 + C6: joint op het uiteinde van een gesplitst element. Mecway rekent dit niet (line3 alleen met CCX, joint niet met CCX).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29592,7 +29592,7 @@
   "series": null,
   "h": null,
   "note": "Joint op het eindvlak van een verschoven element: niet vertaald (WARNING), star aan de arm.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29652,7 +29652,7 @@
   "series": null,
   "h": null,
   "note": "Middenknoop alleen nog in de arm en de joint: POI1 DIS_TR (J<N>).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29712,7 +29712,7 @@
   "series": null,
   "h": null,
   "note": "Cel van element 6 op de eigen knoop van de joint.",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29794,7 +29794,7 @@
   "series": null,
   "h": null,
   "note": "Line3 als twee SEG2-cellen: waarden van beide helften op het Mecway-element.",
-  "seconds": 4.1,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29890,7 +29890,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -30160,7 +30160,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -30374,7 +30374,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -30588,7 +30588,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -30886,7 +30886,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; orientationvx=\"0\" orientationvy=\"0\" orientationvz=\"1\"",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -31100,7 +31100,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; orientationvx=\"0\" orientationvy=\"0\" orientationvz=\"1\" angle=\"30 \u00b0\"",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -31756,7 +31756,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm; kolom Z (standaard), ligger X (vector (0,1,1) + 30 graden), schuine staaf (vector Z).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -31928,7 +31928,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 0,1 m, 20 POU_D_E.",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32062,7 +32062,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, 200, 300) N op de tip; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32150,7 +32150,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, 200, 300) N op de tip; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32238,7 +32238,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, 200, 300) N op de tip; geen orientatie (standaard)",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32326,7 +32326,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, 200, 300) N op de tip; orientationvx=\"0\" orientationvy=\"0\" orientationvz=\"1\"",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32414,7 +32414,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, 200, 300) N op de tip; orientationvx=\"0\" orientationvy=\"0\" orientationvz=\"1\" angle=\"30 \u00b0\"",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32502,7 +32502,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, 200, 300) N op de tip; orientationvx=\"1\" orientationvy=\"0\" orientationvz=\"0\" angle=\"30 \u00b0\"",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32650,7 +32650,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, staven als MO-28, F = (100, 200, 300) N.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -32798,7 +32798,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; orientationvx=\"0\" orientationvy=\"0\" orientationvz=\"1\"",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32844,7 +32844,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; standaard",
-  "seconds": 4.4,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32890,7 +32890,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; orientationvx=\"1\" orientationvy=\"0\" orientationvz=\"0\" angle=\"30 \u00b0\"",
-  "seconds": 4.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33084,7 +33084,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33130,7 +33130,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.9,
+  "seconds": 6.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33179,7 +33179,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.9,
+  "seconds": 6.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33211,7 +33211,7 @@
   "series": null,
   "h": null,
   "note": "PRES_REP met een FORMULE van Y (AFFE_CHAR_MECA_F).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33271,7 +33271,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33331,7 +33331,7 @@
   "series": null,
   "h": null,
   "note": "Drie lasten AFFE_CHAR_MECA_F met elk een eigen FORMULE in \u00e9\u00e9n EXCIT: elke last rekent met zijn eigen functie (anders dan thermisch SOURCE, docs/Thermisch.md \u00a73).",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33391,7 +33391,7 @@
   "series": null,
   "h": null,
   "note": "DDL_IMPO DZ met een FORMULE (in de knopen). Mecway 34 legt deze verplaatsing niet op (0).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33437,7 +33437,7 @@
   "series": null,
   "h": null,
   "note": "LIAISON_OBLIQUE DX met een FORMULE.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33529,7 +33529,7 @@
   "series": null,
   "h": null,
   "note": "FORCE_POUTRE FZ met een FORMULE van X. Mecway 34 legt deze line pressure niet op (0).",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33575,7 +33575,7 @@
   "series": null,
   "h": null,
   "note": "Een verdeelde last per balk (CALCULEL2_92): gravity wordt FORCE_POUTRE rho A g in dezelfde AFFE_CHAR_MECA_F.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33621,7 +33621,7 @@
   "series": null,
   "h": null,
   "note": "FORCE_COQUE PRES met een FORMULE (PRES_REP met een functie geeft op schalen ELEMENTS4_92). DKT neemt de functie in de knopen: +0,78 % op dit mesh (KNOWN_BUGS 104).",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33667,7 +33667,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33715,7 +33715,7 @@
   "series": null,
   "h": null,
   "note": "FORMULE van Y en INST; de krachttabel blijft een DEFI_FONCTION (FONC_MULT).",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33775,7 +33775,7 @@
   "series": null,
   "h": null,
   "note": "Master niet loodrecht op een globale as: de bridge schrijft de koppeling zelf (LIAISON_DDL), de rotaties alleen in het mastervlak; NPREC = -1 (gaf FACTOR_11).",
-  "seconds": 4.2,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33849,7 +33849,7 @@
   "series": null,
   "h": null,
   "note": "Gekromde master: LIAISON_DDL per slave-knoop, rotaties in het raakvlak van de master; NPREC = -1.",
-  "seconds": 4.5,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33895,7 +33895,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.4,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33941,7 +33941,7 @@
   "series": null,
   "h": null,
   "note": "Translaties met LIAISON_DDL (QUAD8-vormfuncties), rotaties met LIAISON_MAIL (de middenknoop van de QUAD9 telt mee); was CHARGES2_31.",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33973,7 +33973,7 @@
   "series": null,
   "h": null,
   "note": "Mecway rekent quad8-schalen met een eigen formulering (+1,2 % t.o.v. COQUE_3D).",
-  "seconds": 4.3,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34005,7 +34005,7 @@
   "series": null,
   "h": null,
   "note": "Rotaties met LIAISON_MAIL, alle drie (ook de drilling) en NPREC = -1.",
-  "seconds": 4.4,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34051,7 +34051,7 @@
   "series": null,
   "h": null,
   "note": "als TH-03b, met temperature3 i.p.v. temperature2",
-  "seconds": 4.1,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34125,7 +34125,7 @@
   "series": null,
   "h": null,
   "note": "hex20 beschrijft de exacte (kwadratische) verplaatsing; Mecway geeft hetzelfde",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34199,7 +34199,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34245,7 +34245,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34307,7 +34307,7 @@
   "series": null,
   "h": null,
   "note": "Als NL-01 met <timesteps stepsize=\"0.4 s\">: rekenstappen 0,4 .. 2,8, 3 plus de knikken 1 en 2; het lastpad blijft exact.",
-  "seconds": 4.3,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34423,7 +34423,7 @@
   "series": null,
   "h": null,
   "note": "Tabel (0; 10), (1; 100), (2; 50) K boven Tref; EVOL_THER met de referentie op t = 0 (KNOWN_BUGS 17).",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34691,7 +34691,7 @@
   "series": null,
   "h": null,
   "note": "Formule bemonsterd over 0..2 s (timeperiod), zoals Mecway.",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34891,7 +34891,7 @@
   "series": null,
   "h": null,
   "note": "Node temperature (constant) vanaf de eerste stap, samen met een tabel in hetzelfde EVOL_THER.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -34939,7 +34939,7 @@
   "series": null,
   "h": null,
   "note": "Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de waarde op het laatste tabelpunt (50 K).",
-  "seconds": 4.2,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35117,7 +35117,7 @@
   "series": null,
   "h": null,
   "note": "quad8 -> COQUE_3D kent geen excentrement (CALCULEL2_31): element op eigen knopen, LIAISON_DDL per arm.",
-  "seconds": 5.1,
+  "seconds": 4.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -35233,7 +35233,7 @@
   "series": null,
   "h": null,
   "note": "Zonder offset zou I = 2 B T^3/12 zijn (300x slapper).",
-  "seconds": 4.5,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -35307,7 +35307,7 @@
   "series": null,
   "h": null,
   "note": "Balk-offset in globale x/y/z (Mecway: 'Global coordinates (beams)'); zonder offset I = 4,2e-7 + 5,2e-10 m4.",
-  "seconds": 4.3,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35381,7 +35381,7 @@
   "series": null,
   "h": null,
   "note": "Flens quad8 -> COQUE_3D op eigen knopen met starre armen naar de knopen van het lijf.",
-  "seconds": 4.1,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -35455,7 +35455,7 @@
   "series": null,
   "h": null,
   "note": "Elke elset krijgt een eigen restgroep (BROFR) zonder EXCENTREMENT naast de BROFE-groep met offset.",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35557,7 +35557,7 @@
   "series": null,
   "h": null,
   "note": "Cellen op de verschoven knopen: koppeling aan de Mecway-elementen via BROFL (aster_results_export).",
-  "seconds": 4.6,
+  "seconds": 5.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -35684,7 +35684,7 @@
   "series": null,
   "h": null,
   "note": "Offset op de master van een verlijmd contact: WARNING, koppeling aan de knopen, NPREC = -1.",
-  "seconds": 4.4,
+  "seconds": 4.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -35730,7 +35730,7 @@
   "series": null,
   "h": null,
   "note": "Randlast op knopen gezet (FORCE_ARETE): extra moment P e t.o.v. Mecway.",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35776,7 +35776,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; EFGE_ELNO/EFGE_NOEU, Mecway-namen en -tekens.",
-  "seconds": 3.9,
+  "seconds": 4.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35878,7 +35878,7 @@
   "series": null,
   "h": null,
   "note": "Balk onder 30 graden in het XY-vlak.",
-  "seconds": 3.8,
+  "seconds": 4.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35980,7 +35980,7 @@
   "series": null,
   "h": null,
   "note": "Lokale assen van Code-Aster (projectie van X) en Mecway (rand 1-2) verschillen; de bridge draait beide.",
-  "seconds": 3.9,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36163,7 +36163,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.0,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36360,7 +36360,7 @@
   "series": null,
   "h": null,
   "note": "Mecway's U langs e2: N_u wordt forceperlengthv.",
-  "seconds": 4.0,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36428,7 +36428,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 3.9,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36511,7 +36511,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 3.9,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36580,7 +36580,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.3,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36642,7 +36642,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.2,
+  "seconds": 5.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -36704,7 +36704,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 5.5,
+  "seconds": 6.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -36766,7 +36766,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.0,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36806,7 +36806,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 3.9,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36908,7 +36908,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 3.9,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36945,7 +36945,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.4,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -36977,7 +36977,7 @@
   "series": null,
   "h": null,
   "note": "bron op alles + linker- en rechterhelft, alle drie een FORMULE: een last, per deel de som (twee lasten met SOURCE rekent Code-Aster als de eerste). knoopwaarden exact (1D-Galerkin, lineaire elementen); tolerantie = afronding",
-  "seconds": 3.9,
+  "seconds": 4.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37037,7 +37037,7 @@
   "series": null,
   "h": null,
   "note": "geisoleerd; formule 2e6 t links, tijdstabel rechts, elk een eigen deel: een last met twee SOURCE-regels. theta 0,5 en q lineair per stap: energie exact; tolerantie 1e-4 (float32 in het resultaatbestand)",
-  "seconds": 4.1,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37085,7 +37085,7 @@
   "series": null,
   "h": null,
   "note": "lasbron en tabelbron in een last 'lasbron' (eerder een WARNING); de tabelbron overlapt de brongroep (som per deel)",
-  "seconds": 34.5,
+  "seconds": 38.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37123,6 +37123,558 @@
   "settings": {
    "theta": 0.5
   },
+  "general": {}
+ },
+ "BU-30": {
+  "id": "BU-30",
+  "group": "Knik",
+  "title": "Torsional buckling, I column, beam (POU_D_E)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "I 100/50/10/8 mm, L = 1 m, 20 POU_D_E, P = 1000 N. The torsional factor is a multiple eigenvalue (one per element; Sturm alarm ALGELINE5_23). Mecway 34 beam: 109.72 / 987.46 / 1230.44 / 2743.03 = 25 x factor 1, no torsional buckling (KNOWN_BUGS 112).",
+  "seconds": 4.5,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor 1",
+    "fem": 109.717437043131,
+    "ref": 109.71743297277082,
+    "rel": 3.709857282134139e-08,
+    "dev": 4.070360176910981e-06,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "pi^2 E I_V/(4L^2) (Timoshenko & Gere 2.1)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 2",
+    "fem": 987.461095948907,
+    "ref": 987.4568967549375,
+    "rel": 4.2525339417829995e-06,
+    "dev": 0.004199193969498083,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "9 pi^2 E I_V/(4L^2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 3",
+    "fem": 1230.44364567352,
+    "ref": 1230.443582410991,
+    "rel": 5.141440852325739e-08,
+    "dev": 6.326252901089902e-05,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "pi^2 E I_W/(4L^2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 4 (torsion)",
+    "fem": 2413.87483231926,
+    "ref": 2413.8747681909426,
+    "rel": 2.656654690943956e-08,
+    "dev": 6.412831726265722e-05,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "P = G J A/I_p, I_p = I_V + I_W, J as Mecway (Timoshenko & Gere 5.3 without warping)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "mode 4 pure torsion",
+    "fem": 7.46165825863211e-14,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 7.46165825863211e-14,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "|u_tip| / (|rot_z| x 50 mm)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 4 vs hex20 (BU-31)",
+    "fem": 2413.87483231926,
+    "ref": 2384.2765,
+    "rel": 0.012413968060860371,
+    "dev": 29.598332319259953,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.025,
+    "tol_abs": null,
+    "source": "BU-31: hex20, Code-Aster = Mecway 34 = CCX",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
+  "settings": {},
+  "general": {}
+ },
+ "BU-31": {
+  "id": "BU-31",
+  "group": "Knik",
+  "title": "Torsional buckling, I column, volume (hex20)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "3000 hex20. Below G J A/I_p despite the restrained warping at the foot: the exact J of the section is 1.7% smaller than Mecway's formula (finite differences: 46.3e3 mm^4) and the web distorts. With warping (POU_D_TG, C_w = 4.22e-10 m^6): 2552.5.",
+  "seconds": 20.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor 1",
+    "fem": 109.725896393751,
+    "ref": 109.71743297277082,
+    "rel": 7.713834302228097e-05,
+    "dev": 0.008463420980177716,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "pi^2 E I_V/(4L^2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 4 (torsion) vs Mecway",
+    "fem": 2384.27692266507,
+    "ref": 2384.2765,
+    "rel": 1.772718348274966e-07,
+    "dev": 0.00042266506989108166,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same .liml (CCX: 2384.2767)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "factor 4 (torsion) vs G J A/I_p",
+    "fem": 2384.27692266507,
+    "ref": 2413.8747681909426,
+    "rel": -0.01226154973567856,
+    "dev": -29.5978455258728,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.025,
+    "tol_abs": null,
+    "source": "P = G J A/I_p, I_p = I_V + I_W, J as Mecway (Timoshenko & Gere 5.3 without warping)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 17145,
+  "n_elem": 3000,
+  "settings": {},
+  "general": {}
+ },
+ "BU-32": {
+  "id": "BU-32",
+  "group": "Knik",
+  "title": "Frame in L, bending moments, beams (POU_D_E)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "RectBar 40 x 10 mm, 20 POU_D_E per member, 100 N. Mecway 34 beam: 17.27 / 19.71 / 127.30 / 155.45 (only positive factors; the out-of-plane mode 19.71 is 56% too low, KNOWN_BUGS 113).",
+  "seconds": 4.5,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "positive factor 1 (in plane)",
+    "fem": 17.2718085920443,
+    "ref": 17.27180770190638,
+    "rel": 5.153704452048364e-08,
+    "dev": 8.901379224823813e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "pi^2 E I_V/(4L^2) of the column",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "positive factor 2 (out of plane)",
+    "fem": 44.5337862969338,
+    "ref": 44.8612,
+    "rel": -0.007298371489532135,
+    "dev": -0.327413703066199,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "hex20 of the frame (Mecway 34 / CCX / Code-Aster equal)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "positive factor 3 (out of plane)",
+    "fem": 122.437890918077,
+    "ref": 124.1153,
+    "rel": -0.013514925894897748,
+    "dev": -1.6774090819230025,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "hex20 of the frame (Mecway 34 / CCX / Code-Aster equal)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "negative factor 1 (reversed load)",
+    "fem": -53.0418961392761,
+    "ref": -53.543,
+    "rel": 0.009358905192535,
+    "dev": 0.5011038607239016,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "hex20 of the frame, Code-Aster (100 x 4 x 2)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 41,
+  "n_elem": 40,
+  "settings": {},
+  "general": {}
+ },
+ "BU-37": {
+  "id": "BU-37",
+  "group": "Knik",
+  "title": "Frame in L, bending moments, volume (hex20)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "RectBar 40 x 10 mm as hex20, 100 x 4 x 2 per member (1616 elements), 100 N. lin_solver_resi 1e-3: with the default 1e-6 the static step stops with FACTOR_57 (MUMPS error estimate 5.0e-5, no mechanism). Same factors as with RESI_RELA off (-1).",
+  "seconds": 11.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "positive factor 1 (in plane)",
+    "fem": 17.3149312606709,
+    "ref": 17.27180770190638,
+    "rel": 0.0024967600096520693,
+    "dev": 0.04312355876452045,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "pi^2 E I_V/(4L^2) of the column",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "positive factor 2 (out of plane) vs Mecway",
+    "fem": 45.0296058888626,
+    "ref": 44.8612,
+    "rel": 0.0037539318801681903,
+    "dev": 0.16840588886260122,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Mecway 34, hex20 200 x 8 x 4 per member (converged)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "positive factor 3 (out of plane) vs Mecway",
+    "fem": 124.642327334514,
+    "ref": 124.1153,
+    "rel": 0.00424627209146647,
+    "dev": 0.5270273345139884,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Mecway 34, hex20 200 x 8 x 4 per member (converged)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 10541,
+  "n_elem": 1616,
+  "settings": {
+   "lin_solver_resi": 0.001
+  },
+  "general": {}
+ },
+ "BU-33": {
+  "id": "BU-33",
+  "group": "Knik",
+  "title": "Right-angle frame ssll105, beams (POU_D_E)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "Legs 240 mm, A = 18 mm^2, I = 0.54 / 1350 mm^4, J = 2.16 mm^4, E = 71240 MPa, 10 POU_D_E per leg, F_X = -1 N at the free end. Mecway 34 beam: 0.4226 / 2.905 (shift 0.3; with shift 1 the 0.4226 is skipped), with F_X = +1: 0.5525 / 3.303; KNOWN_BUGS 113.",
+  "seconds": 4.5,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "positive factor 1",
+    "fem": 0.681323580675711,
+    "ref": 0.68,
+    "rel": 0.0019464421701631213,
+    "dev": 0.0013235806757109225,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "ssll105a/b VALE_REFE (REFERENCE 'NON_DEFINI'; the literature source behind it NOT verified)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "negative factor 1",
+    "fem": -1.09006434365421,
+    "ref": -1.088,
+    "rel": -0.0018973746821781446,
+    "dev": -0.0020643436542098215,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "ssll105a/b VALE_REFE (REFERENCE 'NON_DEFINI'; the literature source behind it NOT verified)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "positive factor 1 vs ssll105",
+    "fem": 0.681323580675711,
+    "ref": 0.681323581,
+    "rel": -4.759692004050137e-10,
+    "dev": -3.242890400656506e-10,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "ssll105a VALE_CALC (same mesh)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "negative factor 1 vs ssll105",
+    "fem": -1.09006434365421,
+    "ref": -1.090064344,
+    "rel": 3.17219864270463e-10,
+    "dev": 3.4579006324975126e-10,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "ssll105a VALE_CALC (same mesh)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
+  "settings": {},
+  "general": {}
+ },
+ "BU-34": {
+  "id": "BU-34",
+  "group": "Knik",
+  "title": "Right-angle frame ssll105, shell (DKT)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "Strip 30 x 0.6 mm, quad4 DKT 5 mm. Higher than the line model (+3% and +9%): the 30 x 30 mm corner is stiff and shortens the legs.",
+  "seconds": 5.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "positive factor 1 vs Mecway",
+    "fem": 0.703181599190849,
+    "ref": 0.7036,
+    "rel": -0.0005946572045921111,
+    "dev": -0.0004184008091510094,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same .liml (CCX 0.7085)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "negative factor 1 vs Mecway (F_X = +1)",
+    "fem": 1.18734909832099,
+    "ref": 1.1894,
+    "rel": -0.0017243161922061616,
+    "dev": -0.0020509016790100087,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same mesh with F_X = +1 (CCX 1.2045)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "positive factor 1 vs beam reference",
+    "fem": 0.703181599190849,
+    "ref": 0.68,
+    "rel": 0.03409058704536609,
+    "dev": 0.023181599190848945,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.05,
+    "tol_abs": null,
+    "source": "ssll105a/b VALE_REFE (REFERENCE 'NON_DEFINI'; the literature source behind it NOT verified)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 679,
+  "n_elem": 576,
+  "settings": {},
+  "general": {}
+ },
+ "BU-35": {
+  "id": "BU-35",
+  "group": "Knik",
+  "title": "Flexural-torsional buckling, C column, beam (POU_D_E)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "C 100 x 50 x 6 mm, L = 1 m, 20 POU_D_E, P = 1000 N. The beam misses the flexural-torsional mode (616 instead of 393, +57%): POU_D_E has no shear centre. The bridge warns for T, C and L in buckling.",
+  "seconds": 4.4,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor 1 (uncoupled)",
+    "fem": 136.023739206637,
+    "ref": 135.4126,
+    "rel": 0.004513163521245481,
+    "dev": 0.6111392066370058,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "BU-36: hex20, Code-Aster = Mecway 34",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "factor 2 vs G J A/I_p",
+    "fem": 616.430979784191,
+    "ref": 616.4309797842117,
+    "rel": -3.356580889652436e-14,
+    "dev": -2.0691004465334117e-11,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "what POU_D_E computes: torsion about the centroid, no warping",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 2 vs flexural-torsional",
+    "fem": 616.430979784191,
+    "ref": 393.0329,
+    "rel": 0.5683953678793582,
+    "dev": 223.398079784191,
+    "ok": false,
+    "unit": "-",
+    "tol": 0.05,
+    "tol_abs": null,
+    "source": "BU-36: hex20 (theory 386.1)",
+    "in_series": false,
+    "known": "KNOWN_BUGS 115"
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
+  "settings": {},
+  "general": {}
+ },
+ "BU-36": {
+  "id": "BU-36",
+  "group": "Knik",
+  "title": "Flexural-torsional buckling, C column, volume (hex20)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "3600 hex20. Theory (thin-walled, with warping) 386.1.",
+  "seconds": 23.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor 1 vs pi^2 E I_V/(4L^2)",
+    "fem": 135.412558786702,
+    "ref": 136.02373202197728,
+    "rel": -0.004493136794515689,
+    "dev": -0.6111732352752881,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Euler, bending in the plane of symmetry",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 2 vs Mecway",
+    "fem": 393.032884977637,
+    "ref": 393.0329,
+    "rel": -3.822164240936661e-08,
+    "dev": -1.5022362958916347e-05,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same .liml",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "factor 2 vs flexural-torsional theory",
+    "fem": 393.032884977637,
+    "ref": 386.0918010844997,
+    "rel": 0.017977807023201196,
+    "dev": 6.941083893137318,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.03,
+    "tol_abs": null,
+    "source": "Timoshenko & Gere 5.3, shear centre and C_w of the thin-walled channel (see _ft_channel)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 20493,
+  "n_elem": 3600,
+  "settings": {},
   "general": {}
  }
 }

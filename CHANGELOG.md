@@ -71,7 +71,7 @@
 - **Version check** (warning only): the log shows the Mecway version (from the `.liml`) and the
   Code-Aster version (launcher path, then the `.mess`); an untested version gives a WARNING. New page
   *After an update of Mecway or Code-Aster* (`docs/en/After_an_update.md`).
-- README: Mecway 34, acknowledgements. Verification: 277 test cases, 1643 checks.
+- README: Mecway 34, acknowledgements. Verification: 394 test cases, 2152 checks (2145 OK, 7 known, 0 unexpected).
 
 ## V2026.1 – first public release
 

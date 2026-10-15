@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge d019bca, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 24258f9, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2117 van 2123 controles binnen de tolerantie** (386 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2145 van 2152 controles binnen de tolerantie** (394 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -549,6 +549,35 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge d019bca, Code-Aster 17.4
 | BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | knikvorm 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | knikvorm 3 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | factor 1 t.o.v. Mecway | 1.7272 - | 1.7272 | -0.00% | 0.01% | OK |
+| BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 1 | 109.72 - | 109.72 | +0.00% | 0.2% | OK |
+| BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 2 | 987.46 - | 987.46 | +0.00% | 0.2% | OK |
+| BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 3 | 1230.4 - | 1230.4 | +0.00% | 0.2% | OK |
+| BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 4 (torsion) | 2413.9 - | 2413.9 | +0.00% | 0.01% | OK |
+| BU-30 | Torsional buckling, I column, beam (POU_D_E) | mode 4 pure torsion | 0 - | 7.4617e-14 | 7.4617e-14 | 1e-06 - | OK |
+| BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 4 vs hex20 (BU-31) | 2384.3 - | 2413.9 | +1.24% | 2.5% | OK |
+| BU-31 | Torsional buckling, I column, volume (hex20) | factor 1 | 109.72 - | 109.73 | +0.01% | 0.5% | OK |
+| BU-31 | Torsional buckling, I column, volume (hex20) | factor 4 (torsion) vs Mecway | 2384.3 - | 2384.3 | +0.00% | 0.01% | OK |
+| BU-31 | Torsional buckling, I column, volume (hex20) | factor 4 (torsion) vs G J A/I_p | 2413.9 - | 2384.3 | -1.23% | 2.5% | OK |
+| BU-32 | Frame in L, bending moments, beams (POU_D_E) | positive factor 1 (in plane) | 17.272 - | 17.272 | +0.00% | 0.2% | OK |
+| BU-32 | Frame in L, bending moments, beams (POU_D_E) | positive factor 2 (out of plane) | 44.861 - | 44.534 | -0.73% | 2% | OK |
+| BU-32 | Frame in L, bending moments, beams (POU_D_E) | positive factor 3 (out of plane) | 124.12 - | 122.44 | -1.35% | 2% | OK |
+| BU-32 | Frame in L, bending moments, beams (POU_D_E) | negative factor 1 (reversed load) | -53.543 - | -53.042 | +0.94% | 2% | OK |
+| BU-33 | Right-angle frame ssll105, beams (POU_D_E) | positive factor 1 | 0.68 - | 0.68132 | +0.19% | 1% | OK |
+| BU-33 | Right-angle frame ssll105, beams (POU_D_E) | negative factor 1 | -1.088 - | -1.0901 | -0.19% | 1% | OK |
+| BU-33 | Right-angle frame ssll105, beams (POU_D_E) | positive factor 1 vs ssll105 | 0.68132 - | 0.68132 | -0.00% | 0.01% | OK |
+| BU-33 | Right-angle frame ssll105, beams (POU_D_E) | negative factor 1 vs ssll105 | -1.0901 - | -1.0901 | +0.00% | 0.01% | OK |
+| BU-34 | Right-angle frame ssll105, shell (DKT) | positive factor 1 vs Mecway | 0.7036 - | 0.70318 | -0.06% | 0.2% | OK |
+| BU-34 | Right-angle frame ssll105, shell (DKT) | negative factor 1 vs Mecway (F_X = +1) | 1.1894 - | 1.1873 | -0.17% | 0.5% | OK |
+| BU-34 | Right-angle frame ssll105, shell (DKT) | positive factor 1 vs beam reference | 0.68 - | 0.70318 | +3.41% | 5% | OK |
+| BU-35 | Flexural-torsional buckling, C column, beam (POU_D_E) | factor 1 (uncoupled) | 135.41 - | 136.02 | +0.45% | 1% | OK |
+| BU-35 | Flexural-torsional buckling, C column, beam (POU_D_E) | factor 2 vs G J A/I_p | 616.43 - | 616.43 | -0.00% | 0.01% | OK |
+| BU-35 | Flexural-torsional buckling, C column, beam (POU_D_E) | factor 2 vs flexural-torsional | 393.03 - | 616.43 | +56.84% | 5% | BEKEND (KNOWN_BUGS 115) |
+| BU-36 | Flexural-torsional buckling, C column, volume (hex20) | factor 1 vs pi^2 E I_V/(4L^2) | 136.02 - | 135.41 | -0.45% | 1% | OK |
+| BU-36 | Flexural-torsional buckling, C column, volume (hex20) | factor 2 vs Mecway | 393.03 - | 393.03 | -0.00% | 0.01% | OK |
+| BU-36 | Flexural-torsional buckling, C column, volume (hex20) | factor 2 vs flexural-torsional theory | 386.09 - | 393.03 | +1.80% | 3% | OK |
+| BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 1 (in plane) | 17.272 - | 17.315 | +0.25% | 0.5% | OK |
+| BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 2 (out of plane) vs Mecway | 44.861 - | 45.03 | +0.38% | 1% | OK |
+| BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 3 (out of plane) vs Mecway | 124.12 - | 124.64 | +0.42% | 1% | OK |
 
 ## Cyclische symmetrie
 

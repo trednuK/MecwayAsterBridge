@@ -95,16 +95,10 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 15 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `71ecf2f`
-(all steps, the final check S11, the follow-ups of 7–8 October and bonded contact between
-shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (known),
-0 NOK/FOUT. Added afterwards and only rerun per group: TH-04 (bonded contact in thermal
-analyses), LS-08a–d (Node temperature) and LS-07f–k (bonded contact with a skewed,
-curved or quadratic shell as master; all of LS-07 rerun): 291 test cases, 1683 checks,
-1679 OK. After that buckling of beams BU-30 … BU-37 (§7, not in the table) and the
-regression `BU MO LS-0` on this state: 90 test cases, 383 checks, 382 OK, 1 BEKEND
-(KNOWN_BUGS 115), 0 NOK/FOUT.
+Status 16 October 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `24258f9`
+(all steps, the final check S11 and the extensions of 15 October; Code-Aster 17.4):
+394 test cases, 2152 checks, 2145 OK, 7 BEKEND (known), 0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -114,26 +108,26 @@ regression `BU MO LS-0` on this state: 90 test cases, 383 checks, 382 OK, 1 BEKE
 | Acoustics impedance | 10 | 227 | 227 | 0 |
 | Cyclic symmetry | 6 | 171 | 171 | 0 |
 | Fracture mechanics | 14 | 63 | 62 | 1 |
-| Dynamics | 8 | 30 | 30 | 0 |
+| Dynamics | 16 | 47 | 47 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 11 | 40 | 40 | 0 |
-| Buckling | 7 | 17 | 17 | 0 |
+| Buckling | 20 | 60 | 59 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 49 | 122 | 122 | 0 |
+| Linear static | 102 | 331 | 329 | 2 |
 | Metallurgy | 8 | 56 | 56 | 0 |
-| Modal | 10 | 64 | 64 | 0 |
+| Modal | 21 | 201 | 201 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 10 | 41 | 38 | 3 |
+| Nonlinear static | 25 | 97 | 94 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
-| Thermal | 21 | 85 | 85 | 0 |
+| Thermal | 24 | 92 | 92 | 0 |
 | Thermal stress | 2 | 7 | 7 | 0 |
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **291** | **1683** | **1679** | **4** |
+| **Total** | **394** | **2152** | **2145** | **7** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

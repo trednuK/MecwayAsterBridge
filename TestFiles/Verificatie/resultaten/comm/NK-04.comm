@@ -252,7 +252,7 @@ imp_stat = MECA_STATIQUE(
         _F(CHARGE=load_2),
     ),
     INST=1.0,
-    SOLVEUR=_F(METHODE='MUMPS', NPREC=8),
+    SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),
 )
 imp_sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
                      RESULTAT=imp_stat, NUME_ORDRE=1, NOM_CHAM='SIEF_ELGA')

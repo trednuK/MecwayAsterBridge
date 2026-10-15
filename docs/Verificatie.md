@@ -97,16 +97,10 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 15 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `71ecf2f`
-(alle stappen, de eindcontrole S11, de vervolgpunten van 7–8 oktober en verlijmd contact
-tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 4 BEKEND,
-0 NOK/FOUT. Daarna toegevoegd en alleen per groep gedraaid: TH-04 (verlijmd contact
-thermisch), LS-08a–d (Node temperature) en LS-07f–k (verlijmd contact met een scheve,
-gekromde of kwadratische schaal als master; LS-07 helemaal opnieuw): 291 testcases,
-1683 controles, 1679 OK. Daarna knik van balken BU-30 … BU-37 (§7, niet in de tabel)
-en de regressie `BU MO LS-0` op deze stand: 90 testcases, 383 controles, 382 OK,
-1 BEKEND (KNOWN_BUGS 115), 0 NOK/FOUT.
+Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `24258f9`
+(alle stappen, de eindcontrole S11 en de uitbreidingen van 15 oktober; Code-Aster 17.4):
+394 testcases, 2152 controles, 2145 OK, 7 BEKEND, 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -116,26 +110,26 @@ en de regressie `BU MO LS-0` op deze stand: 90 testcases, 383 controles, 382 OK,
 | Akoestiek impedantie | 10 | 227 | 227 | 0 |
 | Cyclische symmetrie | 6 | 171 | 171 | 0 |
 | Breukmechanica | 14 | 63 | 62 | 1 |
-| Dynamica | 8 | 30 | 30 | 0 |
+| Dynamica | 16 | 47 | 47 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 11 | 40 | 40 | 0 |
-| Knik | 7 | 17 | 17 | 0 |
+| Knik | 20 | 60 | 59 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 49 | 122 | 122 | 0 |
+| Lineair statisch | 102 | 331 | 329 | 2 |
 | Metallurgie | 8 | 56 | 56 | 0 |
-| Modaal | 10 | 64 | 64 | 0 |
+| Modaal | 21 | 201 | 201 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 10 | 41 | 38 | 3 |
+| Niet-lineair statisch | 25 | 97 | 94 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
-| Thermisch | 21 | 85 | 85 | 0 |
+| Thermisch | 24 | 92 | 92 | 0 |
 | Thermische spanning | 2 | 7 | 7 | 0 |
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **291** | **1683** | **1679** | **4** |
+| **Totaal** | **394** | **2152** | **2145** | **7** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

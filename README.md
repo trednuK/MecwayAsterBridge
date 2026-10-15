@@ -101,10 +101,10 @@ only: INFO/SUCCESS lines in the log, comments in the code and in the generated `
 ## Verification
 
 The chain Mecway model → bridge → Code-Aster 17.4 → results is checked with
-**277 test cases and 1643 checks** against analytical solutions and recognised
+**394 test cases and 2152 checks** against analytical solutions and recognised
 benchmarks (linear and nonlinear static, dynamics, modal, buckling, thermal, welding,
 acoustics, fracture, fatigue and more), including mesh-convergence series. At the last
-regression 1639 checks were within tolerance and 4 outside it because of a documented
+regression 2145 checks were within tolerance and 7 outside it because of a documented
 limitation; none unexpected. In addition, 19 official Code-Aster validation tests were
 run on the installation. Method, tolerances, results and how to rerun them:
 [`docs/en/Verification.md`](docs/en/Verification.md) (scripts in

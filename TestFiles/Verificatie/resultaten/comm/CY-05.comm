@@ -217,7 +217,7 @@ stat = MECA_STATIQUE(
         _F(CHARGE=load_2),
         _F(CHARGE=cycl_rel),
     ),
-    SOLVEUR=_F(METHODE='MUMPS', NPREC=8),
+    SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),
 )
 sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',
                  RESULTAT=stat, NUME_ORDRE=1, NOM_CHAM='SIEF_ELGA')
