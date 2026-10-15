@@ -1332,8 +1332,7 @@ samples) plus the kinks of the load tables (NL-20).
   about X at t = 2 s 24 + 2 = 26 kN·m.
 - **Result**: all three exact (≤ 1e-6).
 - **Interpretation**: `INST` in the `FORMULE` is the solution time of `STAT_NON_LINE`
-  (the time steps come from the force table; without a table 0 to the end time in
-  `substeps_per_interval` steps). Mecway 34
+  (the solver steps are Mecway's step size, 0.5 s). Mecway 34
   with CCX computes the same formula too (displacement proportional to t, same ratio to
   the bridge as with a constant pressure). In linear static the bridge takes t = end
   time (WARNING).

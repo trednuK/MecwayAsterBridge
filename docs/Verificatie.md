@@ -1334,8 +1334,7 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   X bij t = 2 s 24 + 2 = 26 kN·m.
 - **Resultaat**: alle drie exact (≤ 1e-6).
 - **Interpretatie**: `INST` in de `FORMULE` is de rekentijd van `STAT_NON_LINE` (de
-  tijdstappen komen van de krachttabel; zonder tabel 0 tot de eindtijd in
-  `substeps_per_interval` stappen). Mecway 34 met CCX
+  rekenstappen zijn Mecway's stapgrootte, 0,5 s). Mecway 34 met CCX
   rekent dezelfde formule ook (verplaatsing evenredig met t, zelfde verhouding tot de
   bridge als bij een constante druk). In lineair statisch neemt de bridge t = eindtijd
   (WARNING).
