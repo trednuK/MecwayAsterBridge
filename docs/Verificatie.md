@@ -156,7 +156,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 - *Node temperature* (`temperature3`) telde in een mechanische analyse niet mee (alleen
   een INFO); nu als temperatuur per knoop in het knoopveld (LS-08).
 - Een temperatuur gaf in `DYNA_NON_LINE` geen thermische spanning (het veld vanaf t = 0
-  telde als begintoestand, KNOWN_BUGS 94); nu een `EVOL_THER` vanaf de referentie
+  telde als begintoestand, KNOWN_BUGS 94, opgelost); nu een `EVOL_THER` vanaf de referentie
   (DY-70). Een tijdstabel van een *Temperature* werd niet vertaald; nu in L30 en D31
   (NL-70..74, DY-71).
 - Verlijmd contact tussen schalen stopte met `FACTOR_11` (de rotatie om de
@@ -1496,12 +1496,12 @@ U-documentatie gevonden):
 
 ### DY-70 .. DY-73 Temperatuur in dynamica
 
-- **Doel**: thermische rek in `DYNA_NON_LINE` (KNOWN_BUGS 94: het constante veld vanaf
+- **Doel**: thermische rek in `DYNA_NON_LINE` (KNOWN_BUGS 94, opgelost: het constante veld vanaf
   t = 0 gaf geen thermische spanning, alarm `MECANONLINE2_97`) en het weglaten in D30.
 - **Model**: staaf 10 × 10 mm, hex8, staal (ρ = 7850 kg/m³), α = 1,2e-5 1/K,
   Tref = 293,15 K, `temperature2` op alle knopen. DY-70: L = 0,2 m, 8 elementen, `fixed`
   op x = 0, u_x = 0 op x = L, +50 K constant, 1 N dwars op x = L, 2 ms (de reproductie van
-  KNOWN_BUGS 94). DY-71: L = 0,1 m, 4 elementen, vrij (symmetrievlakken), tabel van Tref
+  KNOWN_BUGS 94, opgelost). DY-71: L = 0,1 m, 4 elementen, vrij (symmetrievlakken), tabel van Tref
   naar +100 K in 10 ms, uitvoer elke 0,5 ms. DY-72: idem, +100 K constant, ν = 0,
   NEWMARK, stap T/40 van de axiale periode T = 4L/c = 77 µs, 3T. DY-73: als DY-72 als D30
   met 1 N axiaal.
@@ -1595,7 +1595,8 @@ VibratingCantileverBeam 7,07368 / 14,1474 / 44,3802 / 88,7605 / 125,082 Hz, vers
 Mecway 332,65 / 480,60 / 562,87 Hz (`COQUE_3D` QUAD9 t.o.v. Mecway's quad8);
 VibratingCantileverSolid (8 hex20, zonder Poisson-getal in de `.liml`) 7,206 tegen
 7,088 Hz (+1,7%) zolang de bridge zonder Poisson-getal ν = 0,3 nam; Mecway neemt dan ν = 0.
-Na die correctie (standaard ν = 0) gelijk: 7,08845 / 14,15294 Hz; BucklingBeam 41124,699
+Na die correctie (standaard ν = 0) gelijk: 7,08845 / 14,15294 Hz;
+met ν expliciet opgegeven gelijk binnen 1e-8 (ν = 0: 7,08845 Hz, ν = 0,3: 7,20627 Hz); BucklingBeam 41124,699
 / 41124,699 / 371034,90 (verschil < 2e-12; vierkante doorsnede, dus dubbele modes
 zonder unieke vorm) en BucklingPlate (hex20) 7,148014 / 8,600503 / 11,14455 / 11,97405
 (verschil < 2e-8, vormen per knoop gelijk op 4e-9). Een headless Mecway-script leest

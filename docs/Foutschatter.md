@@ -48,7 +48,7 @@ Voor één model kan het ook met een `#ASTER-OPTIE`-regel in Mecway's custom inp
 **Waarom standaard aan:** de schatting gebruikt de al berekende verplaatsingen
 (alleen elementberekeningen, geen tweede oplossing van Ku = F) en geeft altijd een
 indruk van de mesh-kwaliteit. Gemeten (tijdtabel in de `.mess`): de ingeklemde balk
-van FS-01 met 41.000 hex8 (46.500 knopen) kostte voor de schatter 1,8 s van de 17,6 s
+van FS-01 met 41 000 hex8 (46 500 knopen) kostte voor de schatter 1,8 s van de 17,6 s
 van de hele job (`CALC_ERREUR` 0,9 s, `SIGM_ELNO` 0,4 s, model en last 0,4 s; de
 oplossing `MECA_STATIQUE` zelf 9,2 s). De schatter groeit lineair met het aantal
 elementen, de oplossing sneller.

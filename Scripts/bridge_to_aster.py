@@ -2436,7 +2436,7 @@ def _build_temperature_field(model_data, timeline=None):
     EVOL_THER (CREA_RESU AFFE, U4.44.12) met de referentie op t0: een veld
     dat op t0 al van de referentie afwijkt, nam Code-Aster 17.4 als
     begintoestand zonder spanning (alarm MECANONLINE2_97, "on ne prend pas
-    en compte les éventuelles contraintes incompatibles"; KNOWN_BUGS 94
+    en compte les éventuelles contraintes incompatibles"; KNOWN_BUGS 94 (opgelost)
     voor DYNA_NON_LINE). Daarna volgt elke Temperature met tijdshistorie
     zijn tabel (lineair tussen de punten, constant buiten het bereik, zoals
     Mecway: manual par. 9 "Some loads and constraints can vary as a

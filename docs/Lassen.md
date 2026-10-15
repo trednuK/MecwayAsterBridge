@@ -64,10 +64,12 @@ Kies in *Analysis settings* de solver CCX (dan verschijnt in de outline-boom *CC
 - Alle waarden in **SI**: W, m/s, m, s (zoals alle `#ASTER`-regels). Coördinaten zijn
   die van het Mecway-model in meter: een punt op 10 mm schrijf je als 0.01.
 - Opeenvolgende regels horen bij één bron; een regel die met `Q=` begint (of met het
-  woord `nieuw`), start een volgende bron (meerdere lagen of lassen achter elkaar,
+  woord `nieuw`/`new`), start een volgende bron (meerdere lagen of lassen achter elkaar,
   elk met een eigen `t0`).
 - In een OpenRadioss-veld schrijf je `#ASTER-LASBRON`, in Mystran `$ASTER-LASBRON`
   ([ASTER_regels_voorbeelden.md](ASTER_regels_voorbeelden.md) §1). Ook `#ASTER-WELD`.
+- De sleutels hebben Engelse synoniemen (§2): `direction=` voor `richting=`, `symmetry=`
+  voor `symmetrie=`, enz.
 
 ### 1.3 Of: de bron als Mecway-formule (route B)
 

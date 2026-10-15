@@ -153,7 +153,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 - *Node temperature* (`temperature3`) was ignored in a mechanical analysis (only an
   INFO); now a temperature per node in the nodal field (LS-08).
 - A temperature gave no thermal stress in `DYNA_NON_LINE` (the field from t = 0 counted
-  as the initial state, KNOWN_BUGS 94); now an `EVOL_THER` from the reference (DY-70). A
+  as the initial state, KNOWN_BUGS 94, fixed); now an `EVOL_THER` from the reference (DY-70). A
   time table of a *Temperature* was not translated; now in L30 and D31 (NL-70..74,
   DY-71).
 - Bonded contact between shells stopped with `FACTOR_11` (the rotation about the
@@ -1494,12 +1494,12 @@ U documentation):
 
 ### DY-70 .. DY-73 Temperature in dynamics
 
-- **Purpose**: thermal strain in `DYNA_NON_LINE` (KNOWN_BUGS 94: the constant field from
+- **Purpose**: thermal strain in `DYNA_NON_LINE` (KNOWN_BUGS 94, fixed: the constant field from
   t = 0 gave no thermal stress, alarm `MECANONLINE2_97`) and leaving it out in D30.
 - **Model**: bar 10 × 10 mm, hex8, steel (ρ = 7850 kg/m³), α = 1.2e-5 1/K,
   Tref = 293.15 K, `temperature2` on all nodes. DY-70: L = 0.2 m, 8 elements, `fixed` at
   x = 0, u_x = 0 at x = L, +50 K constant, 1 N transverse at x = L, 2 ms (the reproduction of
-  KNOWN_BUGS 94). DY-71: L = 0.1 m, 4 elements, free (symmetry planes), table from Tref to
+  KNOWN_BUGS 94, fixed). DY-71: L = 0.1 m, 4 elements, free (symmetry planes), table from Tref to
   +100 K in 10 ms, output every 0.5 ms. DY-72: same, +100 K constant, ν = 0, NEWMARK, step
   T/40 of the axial period T = 4L/c = 77 µs, 3T. DY-73: DY-72 as D30 with 1 N axial.
 - **Reference**: DY-70 the same model static (S30, `MECA_STATIQUE`): mean σ_xx over the
