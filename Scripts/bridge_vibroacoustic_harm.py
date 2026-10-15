@@ -4,58 +4,58 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_vibroacoustic_harm.py
-# Verantwoordelijkheid: harmonische respons van een gekoppeld model
-# constructie + lucht/vloeistof (analyse vibroacoustic_harm_3d, STAPPENPLAN
-# S3c): per frequentie de verplaatsing van de constructie en de druk in het
-# fluidum, met absorberende randen, bronnen en microfoons. Mecway heeft geen
-# harmonische en geen gekoppelde analyse (manual v33 hoofdstuk 6); de bridge
-# rekent het model van de gekoppelde modes (S3b, bridge_vibroacoustic.py:
-# een Frequency-model V30 met een fluidum-onderdeel) als harmonische last.
+# Responsibility: harmonic response of a coupled model of
+# structure + air/liquid (analysis vibroacoustic_harm_3d, STAPPENPLAN
+# S3c): per frequency the displacement of the structure and the pressure in
+# the fluid, with absorbing boundaries, sources and microphones. Mecway has
+# no harmonic and no coupled analysis (manual v33 chapter 6); the bridge
+# computes the model of the coupled modes (S3b, bridge_vibroacoustic.py:
+# a Frequency model V30 with a fluid part) as a harmonic load.
 #
 #   build_vibroacoustic_harm(...) - builder (bridge_to_aster.
-#                         _build_dyna_modal stuurt een vibro-akoestische
-#                         analyse met type_calcul 'HARM' hierheen)
-#   report_harmonic(...)  - na de run: frequenties, microfoons en
-#                         meetpunten in de log en het statusvak
+#                         _build_dyna_modal sends a vibro-acoustic
+#                         analysis with type_calcul 'HARM' here)
+#   report_harmonic(...)  - after the run: frequencies, microphones and
+#                         probes in the log and the status box
 #
-# Invoer (naast die van S3b: fluidum-onderdeel, koppelvlakken, OPEN_):
-#   kracht/druk/gravity op de constructie   Mecway-belastingen (amplitude;
-#                       fase met #ASTER-FASE, tabel = amplitude tegen de
-#                       frequentie), zoals harmonic_3d (bridge_harmonic)
-#   snelheidsbron       vlakselectie BRON_/SOURCE_ op het fluidum
-#                       (normaalsnelheid source_velocity, de fluid in) of
-#                       '#ASTER-BRON selectie = v [m/s of mm/s] [, fase]'
+# Input (besides that of S3b: fluid part, coupling faces, OPEN_):
+#   force/pressure/gravity on the structure  Mecway loads (amplitude;
+#                       phase with #ASTER-FASE, table = amplitude against
+#                       frequency), like harmonic_3d (bridge_harmonic)
+#   velocity source     face selection BRON_/SOURCE_ on the fluid
+#                       (normal velocity source_velocity, into the fluid) or
+#                       '#ASTER-BRON selection = v [m/s or mm/s] [, phase]'
 #                       -> AFFE_CHAR_MECA VITE_FACE
-#   invallende golf     vlakselectie INVALLEND_/INCIDENT_ (amplitude van de
-#                       golf die het fluidum in loopt: incident_pressure)
-#                       of '#ASTER-BRON selectie = p [Pa] [, fase]'
+#   incident wave       face selection INVALLEND_/INCIDENT_ (amplitude of the
+#                       wave travelling into the fluid: incident_pressure)
+#                       or '#ASTER-BRON selection = p [Pa] [, phase]'
 #                       -> AFFE_CHAR_MECA ONDE_FLUI + matrix ONDE_FLUI
-#   absorberende rand   vlakselectie ABSORBEREND_/ABSORBING_ (rho c) of
-#                       Mecway's impedance met een reele Z
+#   absorbing boundary  face selection ABSORBEREND_/ABSORBING_ (rho c) or
+#                       Mecway's impedance with a real Z
 #                       -> MODELISATION '3D_FLUI_ABSO', matrix IMPE_MECA
-#   microfoon/meetpunt  knoopselecties MICROFOON_ (druk, SPL; CSV zoals
-#                       S3a) en MEETPUNT_ (verplaatsing; CSV zoals S10h)
+#   microphone/probe    node selections MICROFOON_ (pressure, SPL; CSV like
+#                       S3a) and MEETPUNT_ (displacement; CSV like S10h)
 #
-# Route (Code-Aster 17.4, testcases ahlv101a, ahlv100b en ahlv302a):
-#   ASSEMBLAGE RIGI_MECA / MASS_MECA (+ ONDE_FLUI met de golflasten) en
-#   IMPE_MECA -> DYNA_VIBRA TYPE_CALCUL='HARM' BASE_CALCUL='PHYS' met
-#   MATR_IMPE_PHI (catalogus dyna_vibra.py: MATR_IMPE_PHI matr_asse_depl_r,
-#   alleen PHYS of GENE) en EXCIT VECT_ASSE (bronnen met PUIS_PULS=1,
-#   PHAS_DEG=90: i w x vector, zoals ahlv101a/ahlv100b).
-# Waarom direct (PHYS) en niet op modale basis: (1) U_P_PHI geeft een valse
-# mode bij 0 Hz per vrijheidsgraad PHI (bridge_vibroacoustic, kop), dus een
-# modale basis vraagt de BANDE-zoektocht van S3b en kan de statische
-# bijdrage van die vrijheidsgraden niet missen; (2) de absorberende rand is
-# geen proportionele demping: de reele modes ontkoppelen niet en de
-# stralingsdemping is juist de grootheid die je wilt zien; (3) ahlv101a en
-# ahlv100b rekenen zo. De rekentijd groeit lineair met het aantal
-# frequenties (een factorisatie per frequentie).
+# Route (Code-Aster 17.4, test cases ahlv101a, ahlv100b and ahlv302a):
+#   ASSEMBLAGE RIGI_MECA / MASS_MECA (+ ONDE_FLUI with the wave loads) and
+#   IMPE_MECA -> DYNA_VIBRA TYPE_CALCUL='HARM' BASE_CALCUL='PHYS' with
+#   MATR_IMPE_PHI (catalogue dyna_vibra.py: MATR_IMPE_PHI matr_asse_depl_r,
+#   only PHYS or GENE) and EXCIT VECT_ASSE (sources with PUIS_PULS=1,
+#   PHAS_DEG=90: i w x vector, like ahlv101a/ahlv100b).
+# Why direct (PHYS) and not on a modal basis: (1) U_P_PHI gives a spurious
+# mode at 0 Hz per PHI degree of freedom (bridge_vibroacoustic, header), so
+# a modal basis needs the BANDE search of S3b and cannot miss the static
+# contribution of those degrees of freedom; (2) the absorbing boundary is
+# not proportional damping: the real modes do not decouple and the
+# radiation damping is exactly the quantity you want to see; (3) ahlv101a
+# and ahlv100b compute this way. The computing time grows linearly with
+# the number of frequencies (one factorization per frequency).
 #
-# Gemeten (verificatie VH, docs/Akoestiek.md par. 7): zie de kop van
-# TestFiles/Verificatie/tests_vibroakoestiek_harmonisch.py en de
-# commentaarregels bij de blokken hieronder.
+# Measured (verification VH, docs/Akoestiek.md par. 7): see the header of
+# TestFiles/Verificatie/tests_vibroakoestiek_harmonisch.py and the
+# comment lines at the blocks below.
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import os
 from collections import OrderedDict
@@ -68,18 +68,18 @@ import bridge_vibroacoustic as bva
 from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
 
 ANALYSIS = "vibroacoustic_harm_3d"
-MIC_SUFFIX = bac.MIC_SUFFIX            # <run>_microfoons.csv (zoals S3a)
-PROBE_SUFFIX = bh.PROBE_SUFFIX         # <run>_meetpunten.csv (zoals S10h)
+MIC_SUFFIX = bac.MIC_SUFFIX            # <run>_microfoons.csv (like S3a)
+PROBE_SUFFIX = bh.PROBE_SUFFIX         # <run>_meetpunten.csv (like S10h)
 _LABEL = ("Vibro-akoestiek harmonisch", "Vibroacoustics harmonic")
-# Velden naar Mecway naast de druk (die altijd meegaat): zoals harmonic_3d.
+# Fields to Mecway besides the pressure (always included): like harmonic_3d.
 _FIELD_GROUPS = ("displacements", "velocities", "accelerations",
                  "stresses", "vonmises")
 _STRESS_GROUPS = ("stresses", "vonmises")
 
 
 def is_vibro_harm(analysis_cfg):
-    """True voor de harmonische vibro-akoestiek (analyse-config met
-    "vibroacoustic" en type_calcul 'HARM')."""
+    """True for harmonic vibro-acoustics (analysis config with
+    "vibroacoustic" and type_calcul 'HARM')."""
     cfg = analysis_cfg or {}
     return (bva.is_vibroacoustic(cfg) and
             str(cfg.get("type_calcul", "")).upper() == "HARM")
@@ -96,17 +96,17 @@ def _err(text):
 
 
 # ==========================================
-# INVOER: bronnen, randen, microfoons
+# INPUT: sources, boundaries, microphones
 # ==========================================
 def _aster_sources(model_data):
-    """'#ASTER-BRON selectie = waarde [eenheid] [, fase]' -> ([(selectie,
-    soort 'velocity'/'pressure', waarde SI, fase graden)], fouten). De
-    waarde leest bridge_acoustic.source_value (hele tekst getal + eenheid):
-    een druk-eenheid (Pa, N/m2, kPa, kN/m2, MPa, N/mm2, GPa, bar, mbar,
-    psi; een keer omgerekend naar Pa) maakt een invallende golf, een
-    snelheidseenheid (m/s, mm/s, mm/ms, in/s, ft/s of geen eenheid = m/s)
-    een snelheidsbron; een andere eenheid of tekst zonder getal is een
-    fout (fataal in _inputs)."""
+    """'#ASTER-BRON selection = value [unit] [, phase]' -> ([(selection,
+    kind 'velocity'/'pressure', value SI, phase degrees)], errors). The
+    value is read by bridge_acoustic.source_value (whole text number +
+    unit): a pressure unit (Pa, N/m2, kPa, kN/m2, MPa, N/mm2, GPa, bar,
+    mbar, psi; converted to Pa once) makes an incident wave, a velocity
+    unit (m/s, mm/s, mm/ms, in/s, ft/s or no unit = m/s) a velocity
+    source; another unit or text without a number is an error (fatal in
+    _inputs)."""
     out, bad = [], []
     for body in model_data.get("aster_custom", {}).get("sources", []):
         name, sep, rest = body.partition("=")
@@ -144,9 +144,9 @@ def _aster_sources(model_data):
 
 
 def _face_fluid(model_data, vib, sel):
-    """Mecway-onderdelen (fluidum) van de elementen waar de vlakken van de
-    selectie aan liggen, en het aantal vlakken dat niet aan een fluidum
-    ligt."""
+    """Mecway parts (fluid) of the elements to which the faces of the
+    selection belong, and the number of faces that do not belong to a
+    fluid."""
     elem_elset = dict((eid, es) for eid, _s, _n, es
                       in model_data.get("mesh_elements", []))
     media, other = [], 0
@@ -162,12 +162,12 @@ def _face_fluid(model_data, vib, sel):
 
 def _inputs(model_data, analysis, vib, fluid_ca):
     """
-    Bronnen, absorberende vlakken en microfoons naar Code-Aster-namen.
-    Returns dict of None (ERROR gelogd):
-      "vite":  [(groep, v [m/s], fase, fluidum-onderdeel, omschrijving)]
-      "onde":  [(groep, p_in [Pa], fase, fluidum-onderdeel, omschrijving)]
-      "abso":  [(groep, Mecway-onderdeel, Z of None (= rho c), omschr.)]
-      "mics":  OrderedDict {Mecway-naam: [knoopnummers]}
+    Sources, absorbing faces and microphones to Code-Aster names.
+    Returns dict or None (ERROR logged):
+      "vite":  [(group, v [m/s], phase, fluid part, description)]
+      "onde":  [(group, p_in [Pa], phase, fluid part, description)]
+      "abso":  [(group, Mecway part, Z or None (= rho c), descr.)]
+      "mics":  OrderedDict {Mecway name: [node numbers]}
     """
     renames = model_data.get("selection_renames",
                              model_data.get("group_renames", {}))
@@ -186,7 +186,7 @@ def _inputs(model_data, analysis, vib, fluid_ca):
         roles[sel] = role
 
     def fluid_of(sel, what):
-        """Het ene fluidum-onderdeel van een vlakselectie, of None."""
+        """The single fluid part of a face selection, or None."""
         if sel not in faces:
             bad.append(tr("{0} '{1}' is geen vlakselectie",
                           "{0} '{1}' is not a face selection").format(
@@ -214,7 +214,7 @@ def _inputs(model_data, analysis, vib, fluid_ca):
             return None
         return name
 
-    # --- bronnen: BRON_ (snelheid), INVALLEND_ (golf), #ASTER-BRON ---
+    # --- sources: BRON_ (velocity), INVALLEND_ (wave), #ASTER-BRON ---
     v0 = float(analysis.get("source_velocity", 1.0e-3))
     p0 = float(analysis.get("incident_pressure", 1.0))
     items = OrderedDict()
@@ -240,16 +240,16 @@ def _inputs(model_data, analysis, vib, fluid_ca):
         out[key].append((name, value, phase, es,
                          "{0} {1}".format(how, sel)))
         if kind == "velocity":
-            log("INFO: Vibro-akoestiek harmonisch: bron '{0}' ({1}): "
-                "normaalsnelheid {2} m/s de fluid in, fase {3} graden."
+            log("INFO: Harmonic vibro-acoustics: source '{0}' ({1}): "
+                "normal velocity {2} m/s into the fluid, phase {3} degrees."
                 .format(sel, how, "%.6g" % value, "%g" % phase))
         else:
-            log("INFO: Vibro-akoestiek harmonisch: invallende golf op '{0}' "
-                "({1}): amplitude {2} Pa (de golf die het fluidum in loopt), "
-                "fase {3} graden; het vlak laat teruglopende golven door "
+            log("INFO: Harmonic vibro-acoustics: incident wave on '{0}' "
+                "({1}): amplitude {2} Pa (the wave travelling into the fluid), "
+                "phase {3} degrees; the face lets returning waves through "
                 "(ONDE_FLUI).".format(sel, how, "%.6g" % value, "%g" % phase))
 
-    # --- absorberende randen: ABSORBEREND_ en Mecway's impedance ---
+    # --- absorbing boundaries: ABSORBEREND_ and Mecway's impedance ---
     for sel, kind in named.get("absorbing", []):
         what = tr("absorberende rand", "absorbing boundary")
         claim(sel, what)
@@ -279,7 +279,7 @@ def _inputs(model_data, analysis, vib, fluid_ca):
             out["abso"].append((name, es, zr, "Z = {0} Pa.s/m".format(
                 "%g" % zr)))
 
-    # --- microfoons (druk) ---
+    # --- microphones (pressure) ---
     for sel, kind in named.get("microphone", []):
         if kind != "node":
             log(tr("WARNING: Vibro-akoestiek harmonisch: microfoon '{0}' is "
@@ -309,7 +309,7 @@ def _inputs(model_data, analysis, vib, fluid_ca):
 # BUILDER
 # ==========================================
 def _check(model_data, vib):
-    """Wat deze analyse niet kan: lijst met fouten (tekst)."""
+    """What this analysis cannot do: list of errors (text)."""
     bad = list(vib["bad"])
     bad += [tr("fluid pressure op '{0}' is {1}; een opgelegde druk != 0 "
                "vertaalt de bridge in de vibro-akoestiek niet (bron: BRON_, "
@@ -327,8 +327,8 @@ def _check(model_data, vib):
 
 
 def _orient_block(groups, renames, fluid_of):
-    """ORIE_PEAU van de randvlakken van het fluidum (normaal naar buiten,
-    GROUP_MA_INTERNE = het fluidum; zoals de koppelvlakken in S3b)."""
+    """ORIE_PEAU of the boundary faces of the fluid (normal outwards,
+    GROUP_MA_INTERNE = the fluid; like the coupling faces in S3b)."""
     if not groups:
         return ""
     return ("\n# Randvlakken van het fluidum (bronnen, invallende golf, "
@@ -344,9 +344,9 @@ def _orient_block(groups, renames, fluid_of):
 def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                              analysis):
     """
-    Genereer de .comm en .export voor de harmonische vibro-akoestiek
-    (vibroacoustic_harm_3d). Returns het pad naar de .export, of None
-    (ERROR gelogd).
+    Generate the .comm and .export for harmonic vibro-acoustics
+    (vibroacoustic_harm_3d). Returns the path to the .export, or None
+    (ERROR logged).
     """
     log("--- Generating Aster Files (DYNA_VIBRA HARM vibro-akoestisch) ---")
     if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
@@ -397,8 +397,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                     ", ".join("'{0}'".format(s) for s in nonzero)))
         return None
     if model_data.get("initial_velocities"):
-        log("INFO: Vibro-akoestiek harmonisch: de beginsnelheid telt niet "
-            "mee (stationaire respons).")
+        log("INFO: Harmonic vibro-acoustics: the initial velocity is not "
+            "used (steady-state response).")
 
     fluid_mats = set(m for m, p in vib["materials"].items()
                      if p.get("c") and not p.get("E"))
@@ -416,7 +416,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                "radiates no sound. Mesh them as one continuous mesh "
                "(shared nodes on the interface)."))
 
-    # --- belastingen op de constructie (zoals harmonic_3d) ---
+    # --- loads on the structure (like harmonic_3d) ---
     load_funcs, charges = [], []
     constraints, excitations, extra, phases = [], [], [], []
     if structure:
@@ -445,11 +445,11 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "#ASTER-BRON; the response is zero everywhere"))
         return None
     if load_funcs:
-        log("INFO: Vibro-akoestiek harmonisch: {0} belasting(en) met een "
-            "Mecway-tabel: de kolom 'time' is de frequentie in Hz, de waarde "
-            "de amplitude bij die frequentie.".format(len(load_funcs)))
+        log("INFO: Harmonic vibro-acoustics: {0} load(s) with a "
+            "Mecway table: the column 'time' is the frequency in Hz, the value "
+            "the amplitude at that frequency.".format(len(load_funcs)))
 
-    # --- demping van de constructie ---
+    # --- damping of the structure ---
     alpha, beta, _z = bdm._damping_text(model_data, analysis)
     dampers = bh._dampers(md_s)
     if not (inp["abso"] or alpha or beta or dampers):
@@ -472,7 +472,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                           freqs[-1])
     probes = bh._probes(model_data)
 
-    # --- velden ---
+    # --- fields ---
     fields = [f for f in analysis.get("fields", ["displacements"])
               if f in _FIELD_GROUPS]
     if "displacements" not in fields:
@@ -481,12 +481,12 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
     stresses = bool(g3d) and any(f in fields for f in _STRESS_GROUPS)
     if not stresses:
         if any(f in fields for f in _STRESS_GROUPS):
-            log("INFO: Vibro-akoestiek harmonisch: spanningen alleen op "
-                "volume-elementen van de constructie (het model heeft er "
-                "geen).")
+            log("INFO: Harmonic vibro-acoustics: stresses only on "
+                "volume elements of the structure (the model has "
+                "none).")
         fields = [f for f in fields if f not in _STRESS_GROUPS]
 
-    # --- mesh: groepen, orientatie ---
+    # --- mesh: groups, orientation ---
     defigroup_block = b2a._build_defigroup_block(md_s)
     if interfaces:
         defigroup_block += (
@@ -530,9 +530,9 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
     cara = structure and b2a._has_cara(md_s)
     cara_ref = "    CARA_ELEM=cara,\n" if cara else ""
     cara_elem_block = b2a._build_cara_elem_block(md_s) if structure else \
-        "#-- geen constructie --\n"
+        "#-- no structure --\n"
 
-    # --- materialen ---
+    # --- materials ---
     names = OrderedDict()
     mat_lines = []
     for k, mat in enumerate(sorted(set(fluid_ca.values()),
@@ -555,18 +555,18 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         if z is None:
             mname = names[mat]
         else:
-            # Impedantie Z: eigen materiaal met CELE_R = Z / rho op het vlak
-            # (IMPE_MECA van 3D_FLUI_ABSO hoort bij Z = rho c van het
-            # materiaal van het vlak; gemeten: verificatie VH-03, Z = 2 rho c
-            # op 1,2e-4).
+            # Impedance Z: own material with CELE_R = Z / rho on the face
+            # (IMPE_MECA of 3D_FLUI_ABSO belongs to Z = rho c of the
+            # material of the face; measured: verification VH-03, Z = 2 rho c
+            # to 1.2e-4).
             mname = "MAZ{0}".format(k + 1)
             mat_lines.append("# absorberende rand '{0}': {1} (Z / (rho c) = "
                              "{2})\n{3} = DEFI_MATERIAU(FLUIDE=_F(RHO={4}, "
                              "CELE_R={5}))".format(
                                  g, desc, "%.4g" % (z / (rho * c)), mname,
                                  _r(rho), _r(z / rho)))
-            log("INFO: Vibro-akoestiek harmonisch: impedantie {0} op '{1}' "
-                "(Z / (rho c) = {2}): 3D_FLUI_ABSO met c = Z / rho = {3} "
+            log("INFO: Harmonic vibro-acoustics: impedance {0} on '{1}' "
+                "(Z / (rho c) = {2}): 3D_FLUI_ABSO with c = Z / rho = {3} "
                 "m/s.".format(desc, g, "%.4g" % (z / (rho * c)),
                               "%.6g" % (z / rho)))
         assign.append("        _F(GROUP_MA='{0}', MATER={1}),\n".format(
@@ -586,7 +586,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "AFFE_MODELE/AFFE_MATERIAU not recognised (internal error)"))
         return None
 
-    # --- lasten ---
+    # --- loads ---
     if charges:
         loads_block, _excit = b2a._render_charges(charges, md_s)
     else:
@@ -610,7 +610,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             continue
         entries.append("        _F({0}='{1}', PRES=0.0, PHI=0.0),\n".format(
             "GROUP_NO" if kind == "node" else "GROUP_MA", name))
-        log("INFO: Vibro-akoestiek: drukknoop p = 0 op '{0}'.".format(sel))
+        log("INFO: Vibro-acoustics: pressure node p = 0 on '{0}'.".format(sel))
     charge_names = list(constraints)
     if entries:
         loads_block += ("\n# Drukknopen p = 0 (OPEN_-selecties, fluid "
@@ -619,8 +619,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                         "    DDL_IMPO=(\n{0}    ),\n)\n").format(
                             "".join(entries))
         charge_names.append("bc_flu")
-    # Bronnen: een last per vlak (de fase zit in EXCIT PHAS_DEG). VITE_FACE
-    # en ONDE_FLUI kennen alleen een reele waarde (catalogus
+    # Sources: one load per face (the phase is in EXCIT PHAS_DEG). VITE_FACE
+    # and ONDE_FLUI only accept a real value (catalogue
     # affe_char_meca.py v17.4).
     for k, (g, v, _ph, _es, desc) in enumerate(inp["vite"]):
         loads_block += ("\n# Bron {0}: normaalsnelheid (VITE_FACE)\n"
@@ -628,9 +628,9 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                         "VITE_FACE=_F(GROUP_MA='{2}', VNOR={3}))\n").format(
                             desc, k + 1, g, _r(v))
     for k, (g, p, _ph, _es, desc) in enumerate(inp["onde"]):
-        # ONDE_FLUI PRES = 2 p_in: Code-Aster's rand is (dp/dn + i k p) =
-        # i k PRES, dus de golf die het fluidum in loopt heeft amplitude
-        # PRES / 2 (ahlv101a: PRES 1 -> |p| = 0,5; verificatie VH-01/VH-04)
+        # ONDE_FLUI PRES = 2 p_in: Code-Aster's boundary is (dp/dn + i k p) =
+        # i k PRES, so the wave travelling into the fluid has amplitude
+        # PRES / 2 (ahlv101a: PRES 1 -> |p| = 0.5; verification VH-01/VH-04)
         loads_block += ("\n# Invallende golf {0}: amplitude {1} Pa het fluidum "
                         "in (ONDE_FLUI PRES = 2 x amplitude)\n"
                         "ch_onde_{2} = AFFE_CHAR_MECA(MODELE=model, "
@@ -645,10 +645,10 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
     struct_groups = list(md_s.get("elset_modelisations", {}).keys())
     matr = ["        _F(MATRICE=CO('rigidite'), OPTION='RIGI_MECA'),\n",
             "        _F(MATRICE=CO('masse'), OPTION='MASS_MECA'),\n"]
-    # ONDE_FLUI en IMPE_MECA in een eigen ASSEMBLAGE zonder CARA_ELEM
-    # (CALC_MATR_ELEM IMPE_MECA weigert CARA_ELEM: <EXCEPTION> SUPERVIS_4,
-    # gezien met een veer in het model; ahlv101a assembleert IMPE_MECA ook
-    # apart) op dezelfde NUME_DDL.
+    # ONDE_FLUI and IMPE_MECA in a separate ASSEMBLAGE without CARA_ELEM
+    # (CALC_MATR_ELEM IMPE_MECA refuses CARA_ELEM: <EXCEPTION> SUPERVIS_4,
+    # seen with a spring in the model; ahlv101a also assembles IMPE_MECA
+    # separately) on the same NUME_DDL.
     impe_matr = []
     if onde_names:
         impe_matr.append("        _F(MATRICE=CO('impe_onde'), "
@@ -657,18 +657,18 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         impe_matr.append("        _F(MATRICE=CO('impe_abso'), "
                          "OPTION='IMPE_MECA'),\n")
     if (alpha or beta) and struct_groups:
-        # Rayleigh-demping alleen op de constructie (C = alpha M_s + beta
-        # K_s): de matrices van het hele model bevatten ook het fluidum.
+        # Rayleigh damping only on the structure (C = alpha M_s + beta
+        # K_s): the matrices of the whole model also contain the fluid.
         matr += ["        _F(MATRICE=CO('rigi_s'), OPTION='RIGI_MECA', "
                  "GROUP_MA={0}),\n".format(b2a._fmt_groups(struct_groups)),
                  "        _F(MATRICE=CO('mass_s'), OPTION='MASS_MECA', "
                  "GROUP_MA={0}),\n".format(b2a._fmt_groups(struct_groups))]
     if dampers:
-        # AMOR_MECA op het hele model: met GROUP_MA gaf ASSEMBLAGE <EXCEPTION>
-        # DVP_1 (dismoi.F90; de elementaire RIGI/MASS gelden voor alle
-        # elementen). De andere elementen hebben geen Rayleigh-coefficienten
-        # (0); AMOR_FLUI='NON': de absorberende randen zitten in IMPE_MECA
-        # (zoals DYNA_LINE, dyna_line_ops.py). Gemeten: VH-04c.
+        # AMOR_MECA on the whole model: with GROUP_MA, ASSEMBLAGE gave
+        # <EXCEPTION> DVP_1 (dismoi.F90; the elementary RIGI/MASS apply to
+        # all elements). The other elements have no Rayleigh coefficients
+        # (0); AMOR_FLUI='NON': the absorbing boundaries are in IMPE_MECA
+        # (like DYNA_LINE, dyna_line_ops.py). Measured: VH-04c.
         matr.append("        _F(MATRICE=CO('amor_dis'), OPTION='AMOR_MECA', "
                     "AMOR_FLUI='NON'),\n")
     all_charges = charge_names + onde_names
@@ -723,7 +723,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "    _F(MATR_ASSE={0}, COEF_R={1!r}),\n".format(m, float(c))
                 for m, c in damp_terms))
 
-    # --- lastvectoren en EXCIT ---
+    # --- load vectors and EXCIT ---
     vec_lines, excit = [], []
     cara_kw = ", CARA_ELEM=cara" if cara else ""
     for k, (charge, fonc) in enumerate(excitations):
@@ -743,9 +743,9 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "vec_{0}_{1} = ASSE_VECTEUR(VECT_ELEM=vel_{0}_{1}, "
                 "NUME_DDL=numedd)".format(kind, k + 1)]
             # i w x vector (PUIS_PULS=1, PHAS_DEG=90; ahlv101a, ahlv100b).
-            # VITE_FACE: ahlv100b geeft met VNOR > 0 en COEF_MULT=+1 p = -rho
-            # c v (VNOR naar buiten); de bridge legt v de fluid in op:
-            # COEF_MULT=-1 (gemeten: VH-01b).
+            # VITE_FACE: with VNOR > 0 and COEF_MULT=+1 ahlv100b gives p =
+            # -rho c v (VNOR outwards); the bridge imposes v into the fluid:
+            # COEF_MULT=-1 (measured: VH-01b).
             coef = -1.0 if kind == "vite" else 1.0
             excit.append("        _F(VECT_ASSE=vec_{0}_{1}, COEF_MULT={2!r}, "
                          "PUIS_PULS=1, PHAS_DEG={3!r}),  # {4}".format(
@@ -774,8 +774,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             _r(freqs[-1]), cara=cara_ref,
             amor="    MATR_AMOR=amor,\n" if damp_terms else "",
             impe="    MATR_IMPE_PHI=impe,\n" if impe_terms else "",
-            # zoals DYNA_LINE (dyna_line_ops.py): met MATR_AMOR en
-            # MATR_IMPE_PHI samen AMOR_FLUI='NON'
+            # like DYNA_LINE (dyna_line_ops.py): with MATR_AMOR and
+            # MATR_IMPE_PHI together AMOR_FLUI='NON'
             flui="    AMOR_FLUI='NON',\n" if damp_terms and impe_terms
             else "",
             excit="\n".join(excit),
@@ -794,7 +794,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             "    CONTRAINTE=('SIGM_NOEU',),\n"
             ")\n").format(cara_ref, b2a._fmt_groups(g3d))
     else:
-        calc_champ_block = "#-- geen spanningen (fields of geen volumes) --\n"
+        calc_champ_block = "#-- no stresses (fields or no volumes) --\n"
 
     scripts = os.path.dirname(os.path.abspath(__file__))
 
@@ -834,13 +834,13 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             "    _F(RESULTAT=res, NOM_CHAM='DEPL', PARTIE='IMAG', "
             "NOM_CHAM_MED='DEPL_IMAG'),\n))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
-    log("INFO: Vibro-akoestiek harmonisch (direct, DYNA_VIBRA PHYS): {0} "
-        "frequentie(s) van {1} tot {2} Hz; {3} belasting(en) op de "
-        "constructie, {4} snelheidsbron(nen), {5} invallende golf/golven, "
-        "{6} absorberende rand(en), Rayleigh alpha {7} 1/s, beta {8} s{9}; "
-        "{10} microfoon(s), {11} meetpunt(en).".format(
+    log("INFO: Harmonic vibro-acoustics (direct, DYNA_VIBRA PHYS): {0} "
+        "frequency(ies) from {1} to {2} Hz; {3} load(s) on the "
+        "structure, {4} velocity source(s), {5} incident wave(s), "
+        "{6} absorbing boundary(ies), Rayleigh alpha {7} 1/s, beta {8} s{9}; "
+        "{10} microphone(s), {11} probe(s).".format(
             len(freqs), "%.6g" % freqs[0], "%.6g" % freqs[-1],
             len(excitations), len(inp["vite"]), len(inp["onde"]), len(abso),
             alpha, beta, ", dempers " + ", ".join(dampers) if dampers else "",
@@ -863,7 +863,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -879,7 +879,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "F mess {0} R 6".format(os.path.join(work_dir,
                                                      run_name(".mess"))),
             ]) + b2a._export_result_lines(work_dir, resu_name))
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -893,14 +893,14 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
 
 
 # ==========================================
-# NA DE RUN (IronPython): LOG EN STATUSVAK
+# AFTER THE RUN (IronPython): LOG AND STATUS BOX
 # ==========================================
 def report_harmonic(work_dir, frequencies):
     """
-    Na een harmonische vibro-akoestische run: aantal frequenties, per
-    microfoon het hoogste niveau en per meetpunt de grootste amplitude.
-    Returns de regels voor het statusvak. frequencies: [(id, "frequency",
-    f)] uit read_modes().
+    After a harmonic vibro-acoustic run: number of frequencies, per
+    microphone the highest level and per probe the largest amplitude.
+    Returns the lines for the status box. frequencies: [(id, "frequency",
+    f)] from read_modes().
     """
     fs = [f for _i, _k, f in frequencies]
     lines = [tr(u"Vibro-akoestiek harmonisch (direct): {0} frequentie(s), "
@@ -927,8 +927,8 @@ def report_harmonic(work_dir, frequencies):
                         u"(|p| = {3} Pa).").format(
                             name, "%.1f" % level, "%.6g" % f, "%.4g" % amp))
         for f, amp, phase, level in rows:
-            log(u"INFO: Microfoon {0}: f = {1} Hz, |p| = {2} Pa, fase = {3} "
-                u"graden, SPL = {4} dB.".format(
+            log(u"INFO: Microphone {0}: f = {1} Hz, |p| = {2} Pa, phase = {3} "
+                u"degrees, SPL = {4} dB.".format(
                     name, "%.6g" % f, "%.6g" % amp, "%.2f" % phase,
                     "%.2f" % level))
     if by_name:
