@@ -633,23 +633,34 @@ from contact (`SANS_GROUP_NO`).
 ### `FACTOR_57` – MUMPS: solution too inaccurate
 
 - **Message** (error): "La solution du système linéaire est trop imprécise: Erreur
-  calculée ... Erreur acceptable 1e-06 (RESI_RELA)". Code-Aster advises increasing
-  `RESI_RELA`; do not do that, it is almost always a mechanism.
-- **Cause**: as `FACTOR_10/11`, but with `solver_nprec` = -1: MUMPS does not look for a
-  singularity and the error only shows in the inaccurate solution.
-- **Seen**: a mixed test model after the correct translation of pinned support: the
+  calculée ... Erreur acceptable 1e-06 (RESI_RELA)". MUMPS estimates the relative error
+  of the solution (condition number × backward error) and stops if it is above
+  `RESI_RELA` (U4.50.01 §3.5.3). The size of the *Erreur calculée* tells what is going on.
+- **Cause**: (a) **error of order 1 or more**: a mechanism, as `FACTOR_10/11`, but with
+  `solver_nprec` = -1 MUMPS does not look for a singularity and the error only shows in
+  the inaccurate solution (measured: 13 and 64). With `solver_nprec` 8 a mechanism gives
+  `FACTOR_11`. (b) **small error (up to about 1e-4)**: no mechanism but a poorly
+  conditioned matrix, typically a slender volume model in bending.
+- **Seen**: (a) a mixed test model after the correct translation of pinned support: the
   plate can rotate freely. Mecway solves it, but shows ±499 N "reaction" on nodes without
-  support. Also test T1 (plate attached to the block along one line). Without a
-  mechanism (also with `solver_nprec` 8): slender volume models in bending, e.g. a hex20
-  cantilever 1000 × 40 × 10 mm (error 7e-6) or a hex20 L frame in a buckling analysis
-  (5e-5); Mecway solves them and with `RESI_RELA=-1` the results are equal (KNOWN_BUGS
-  114).
-- **Solution**: in Mecway: fix the plate further or connect it over a face (see
-  `FACTOR_10`). Temporarily setting `solver_nprec` = 8 gives a `FACTOR_10/11` with node
-  and component. Slender volume model without a mechanism: in *Static* raise
-  `lin_solver_resi` (e.g. 1e-4); in other analyses there is no setting yet (KNOWN_BUGS
-  114).
-- **Status**: model; slender volume models: bridge (KNOWN_BUGS 114).
+  support. Also test T1 (plate attached to the block along one line). (b) Code-Aster
+  17.4, `solver_nprec` 8: hex20 cantilever 1000 × 40 × 10 mm (100 × 4 × 2 elements,
+  100 N transverse) error 7.0e-6 in *Static*, in the static step of *Buckling* and of
+  *Modal* with prestress (condition number 1.8e10); the same bar in axial compression
+  (buckling) 1.1e-6; the hex20 L frame of BU-37 (buckling) 5.0e-5. With the raised
+  setting they run, with the same results as with `RESI_RELA=-1` and within 0.4% of the
+  analytical value / Mecway ([Verification §7](Verification.md)).
+- **Solution**: the bridge reads the *Erreur calculée* from `study.mess`. (a) Above 1e-3:
+  the message about a (nearly) singular matrix; in Mecway fix the plate further or
+  connect it over a face (see `FACTOR_10`). Temporarily setting `solver_nprec` = 8 gives
+  a `FACTOR_10/11` with node and component. (b) Below 1e-3: the message gives the page
+  and the value (the power of ten that is at least 10 × the error) for *Solver accuracy
+  (RESI_RELA)* (`lin_solver_resi`). That setting exists in *Static* (the whole
+  analysis), *Modal* (the static step for the prestress, also with cyclic symmetry),
+  *Buckling* (the static step) and *Nonlinear static* (the static step of the
+  imperfection). Do not raise it blindly above 1e-3: a mechanism with `solver_nprec` =
+  -1 would then no longer be reported.
+- **Status**: model (a) / setting (b).
 
 ### `ASSEMBLA_26` – degree of freedom blocked more than once
 

@@ -121,6 +121,37 @@ def _build_solveur_ref(analysis):
     return "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),\n".format(int(nprec))
 
 
+def _resi_rela(analysis):
+    """
+    SOLVEUR RESI_RELA as text (setting "lin_solver_resi"; catalogue
+    c_solveur.py v17.4: default 1e-6 for the linear commands such as
+    MECA_STATIQUE, -1 for CALC_MODES and STAT_NON_LINE). %-formatting:
+    always a decimal point; repr() gave in IronPython
+    9.9999999999999995e-07 for 1e-6.
+    """
+    return "%.10g" % float(analysis.get("lin_solver_resi", 1.0e-6))
+
+
+def _static_step_solveur(analysis):
+    """
+    SOLVEUR line (without indentation) for a MECA_STATIQUE that only
+    prepares another calculation: the stress state for buckling and for
+    modal with prestress (_build_modal, bridge_cyclic) and the buckling
+    step of an imperfection (_imperfection_blocks). Same RESI_RELA control
+    as Static (setting "lin_solver_resi" of the analysis): MUMPS estimates
+    the relative error of the solution (condition number x backward
+    error) and stops with FACTOR_57 if it is above RESI_RELA (U4.50.01
+    par. 3.5.3). Slender volume models in bending exceed 1e-6 without a
+    mechanism (hex20 cantilever 1000 x 40 x 10 mm: 7.0e-6, condition
+    number 1.8e10, componentwise backward error 4e-16; hex20 L frame:
+    5.0e-5), while a real mechanism stops with FACTOR_11 (NPREC 8) or
+    gives an error of order 10 (NPREC -1: 13 and 64 measured);
+    bridge_run_aster._resi_advice turns FACTOR_57 into advice.
+    """
+    return "SOLVEUR=_F(METHODE='MUMPS', NPREC={0}, RESI_RELA={1}),".format(
+        int(analysis.get("solver_nprec", 8)), _resi_rela(analysis))
+
+
 # Linear solvers for MECA_STATIQUE (setting "lin_solver").
 #   MUMPS : direct (catalogue c_solveur.py v17.4.0: default for 'LIN').
 #   GCPC  : conjugate gradient with incomplete LDLT as
@@ -166,9 +197,7 @@ def _build_lin_solveur_ref(analysis, refine=False):
     3.8e-17), with two refinement steps 3.9e-7.
     """
     solver = "{0}".format(analysis.get("lin_solver", "MUMPS")).upper()
-    # %-formatting: always a decimal point; repr() gave in IronPython
-    # 9.9999999999999995e-07 for 1e-6.
-    resi = "%.10g" % float(analysis.get("lin_solver_resi", 1.0e-6))
+    resi = _resi_rela(analysis)
     if solver == "GCPC":
         line = ("    SOLVEUR=_F(METHODE='GCPC', PRE_COND='LDLT_INC', "
                 "RESI_RELA={0}),\n".format(resi))
@@ -5982,7 +6011,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "    CHAM_MATER=fieldmat,\n"
         "{cara}{excit}\n"
         "    INST={t_end!r},\n"
-        "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}),\n"
+        "    {static_solveur}\n"
         ")\n"
         "imp_sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
         "                     RESULTAT=imp_stat, NUME_ORDRE=1, "
@@ -6024,7 +6053,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh,\n"
         "                     DEFORME=_F(OPTION='TRAN', DEPL=imp_def))\n"
     ).format(k=k, t_end=float(t_end), cara=cara_ref, excit=excit,
-             nprec=nprec, charge=charge_ref, amp=float(amp))
+             nprec=nprec, charge=charge_ref, amp=float(amp),
+             static_solveur=_static_step_solveur(analysis))
     restore = (
         "# --- Imperfection: mesh back to the Mecway geometry for the\n"
         "# export (displacements stay relative to the imperfect shape) ---\n"
@@ -7085,13 +7115,13 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "    MODELE=model,\n"
             "    CHAM_MATER=fieldmat,\n"
             "{cara}{excit}\n"
-            "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}),\n"
+            "    {solveur}\n"
             ")\n"
             "sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
             "                 RESULTAT=stat, NUME_ORDRE=1, "
             "NOM_CHAM='SIEF_ELGA')\n").format(
                 cara=cara_elem_ref, excit=excit_clause,
-                nprec=int(analysis.get("solver_nprec", 8)))
+                solveur=_static_step_solveur(analysis))
         second = ("        _F(MATRICE=CO('rigi_geo'), OPTION='RIGI_GEOM', "
                   "SIEF_ELGA=sig),\n")
     else:

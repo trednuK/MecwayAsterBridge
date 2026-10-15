@@ -2,6 +2,13 @@
 
 ## Unreleased (develop)
 
+- **`FACTOR_57` without a mechanism** (slender volume models in bending, MUMPS error estimate
+  just above `RESI_RELA` 1e-6): the setting *Solver accuracy (RESI_RELA)* (`lin_solver_resi`,
+  default 1e-6 as Code-Aster) is now also on the pages Modal (static step for the prestress,
+  also cyclic), Buckling (static step) and Nonlinear static (static step of the imperfection).
+  The error message reads the computed error from `study.mess`: below 1e-3 it names the page
+  and the value to enter, above it the mechanism advice. Verification BU-37 (hex20 L frame).
+  Was KNOWN_BUGS 114.
 - **Fix: results of a model with configurations** (e.g. load cases G, Q, ULS): Mecway 34 could
   not open the `.liml` after the bridge wrote the results into it ("Error opening file"). The
   model copy in `<solution configuration="X">` is now written as Mecway writes it: without the

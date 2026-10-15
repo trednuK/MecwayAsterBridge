@@ -104,7 +104,9 @@ tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 
 0 NOK/FOUT. Daarna toegevoegd en alleen per groep gedraaid: TH-04 (verlijmd contact
 thermisch), LS-08a–d (Node temperature) en LS-07f–k (verlijmd contact met een scheve,
 gekromde of kwadratische schaal als master; LS-07 helemaal opnieuw): 291 testcases,
-1683 controles, 1679 OK.
+1683 controles, 1679 OK. Daarna knik van balken BU-30 … BU-37 (§7, niet in de tabel)
+en de regressie `BU MO LS-0` op deze stand: 90 testcases, 383 controles, 382 OK,
+1 BEKEND (KNOWN_BUGS 115), 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -1749,7 +1751,7 @@ schuin, met en zonder vector + 30°):
   daar 135,1 (zwakke hoofdas) en 601,0 (G·J·A/I_p om het zwaartepunt; de echte
   buig-torsieknik van een hoekprofiel ligt lager, KNOWN_BUGS 115).
 
-### Knik van balken: torsie en raamwerken (BU-30 … BU-36)
+### Knik van balken: torsie en raamwerken (BU-30 … BU-37)
 
 - **Doel**: uitzoeken wie gelijk heeft bij de twee knikverschillen met Mecway
   (KNOWN_BUGS 112, 113), met een referentie die niet uit een balkformulering komt: een
@@ -1774,6 +1776,7 @@ schuin, met en zonder vector + 30°):
 | BU-34 | hetzelfde raamwerk als strook in DKT (5 mm) | Mecway 34 (eigen solver 0,7036; met F_X = +1: 1,1894; CCX 0,7085 / 1,2045); balkreferentie 0,68 | −0,06% / −0,18% t.o.v. Mecway; +3,4% t.o.v. de balk |
 | BU-35 | ingeklemde kolom, C 100 × 50 × 6 mm, 20 `POU_D_E` | hex20 BU-36; G·J·A/I_p = 616,43 | factor 1 +0,45%; factor 2 616,43 tegen 393,03 (+57%, BEKEND, KNOWN_BUGS 115) |
 | BU-36 | dezelfde C-kolom in hex20 (3600 el.) | Mecway 34 op dezelfde `.liml` (393,0329; CCX 393,033); buig-torsieknik dunwandig 386,1 | gelijk aan Mecway; +1,8% t.o.v. de theorie |
+| BU-37 | het L-raamwerk van BU-32 in hex20 (100 × 4 × 2 el. per staaf, 1616 el.), `lin_solver_resi` 1e-3 | Euler van de kolom; Mecway 34 hex20 200 × 8 × 4 per staaf (44,86 / 124,12) | 17,315 (+0,25%); 45,030 (+0,4%), 124,64 (+0,4%); gelijk aan `RESI_RELA` -1 |
 
 - **Torsieknik (KNOWN_BUGS 112)**: Mecway's balk heeft geen torsieknik. Zijn vierde
   factor 2743,03 is de derde buigknikmode (25 × 109,72, bij de bridge mode 6); met J of A
@@ -1802,10 +1805,17 @@ schuin, met en zonder vector + 30°):
   b = 47, h = 94, t = 6 mm, e = 3b²t/(6bt + ht), C_w = tb³h²/12·(3b + 2h)/(6b + h)):
   P_T = 490,5, P_x = 864,2, gekoppeld 386,1; volumemodel (hex20) 393,03. De balk geeft 616,43: te
   hoog. De bridge waarschuwt nu bij knik met T-, C- en L-profielen.
-- **Volumemodellen van het L-raamwerk**: de statische stap stopt met `FACTOR_57` (fout
-  van MUMPS 5e-5 > `RESI_RELA` 1e-6) zonder mechanisme; de waarden hierboven zijn met
-  `RESI_RELA=-1` in een kopie van de `.comm` gerekend (KNOWN_BUGS 114). Daarom staat het
-  hex20-raamwerk niet als case in de module.
+- **Volumemodel van het L-raamwerk (BU-37)**: met de standaard `RESI_RELA` 1e-6 stopt
+  de statische stap met `FACTOR_57` (fout van MUMPS 5,0e-5) zonder mechanisme. De
+  bridge meldt dan de waarde voor `lin_solver_resi` (hier 1e-3); daarmee rekent het door
+  en zijn de factoren gelijk aan een run met `RESI_RELA=-1` (en aan Mecway en CCX op dit
+  mesh). Dezelfde controle met Code-Aster 17.4 op een hex20-uitkragende balk 1000 × 40 ×
+  10 mm (100 × 4 × 2, 100 N dwars, fout 7,0e-6): *Statisch* met 1e-4 doorbuiging
+  47,43 mm (PL³/3EI 47,62, −0,4%); *Modaal* met voorspanning met 1e-4 f₁ = 8,3765 Hz
+  (zonder voorspanning gelijk, analytisch 8,355); *Knik* axiaal gedrukt (fout 1,1e-6,
+  met 1e-5) 17,317 (Euler 17,272). Een echt mechanisme (voet alleen in X vast) stopt met
+  `FACTOR_11`, met `solver_nprec` -1 met `FACTOR_57` en een fout van 13 (los deel: 64):
+  dan geeft de bridge de melding over een singuliere matrix.
 
 ### Modaal met voorspanning (MP)
 

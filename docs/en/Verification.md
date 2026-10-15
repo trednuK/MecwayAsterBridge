@@ -102,7 +102,9 @@ shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (
 0 NOK/FOUT. Added afterwards and only rerun per group: TH-04 (bonded contact in thermal
 analyses), LS-08a–d (Node temperature) and LS-07f–k (bonded contact with a skewed,
 curved or quadratic shell as master; all of LS-07 rerun): 291 test cases, 1683 checks,
-1679 OK.
+1679 OK. After that buckling of beams BU-30 … BU-37 (§7, not in the table) and the
+regression `BU MO LS-0` on this state: 90 test cases, 383 checks, 382 OK, 1 BEKEND
+(KNOWN_BUGS 115), 0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -1746,7 +1748,7 @@ along X and skew, with and without vector + 30°):
   axis) and 601.0 (G·J·A/I_p about the centroid; the real flexural-torsional factor of an
   angle is lower, KNOWN_BUGS 115).
 
-### Buckling of beams: torsion and frames (BU-30 … BU-36)
+### Buckling of beams: torsion and frames (BU-30 … BU-37)
 
 - **Purpose**: find out who is right in the two buckling differences with Mecway
   (KNOWN_BUGS 112, 113), with a reference that does not come from a beam formulation: a
@@ -1772,6 +1774,7 @@ along X and skew, with and without vector + 30°):
 | BU-34 | the same frame as a strip in DKT (5 mm) | Mecway 34 (own solver 0.7036; with F_X = +1: 1.1894; CCX 0.7085 / 1.2045); beam reference 0.68 | −0.06% / −0.18% from Mecway; +3.4% from the beam |
 | BU-35 | fixed column, C 100 × 50 × 6 mm, 20 `POU_D_E` | hex20 BU-36; G·J·A/I_p = 616.43 | factor 1 +0.45%; factor 2 616.43 against 393.03 (+57%, KNOWN, KNOWN_BUGS 115) |
 | BU-36 | the same C column in hex20 (3600 el.) | Mecway 34 on the same `.liml` (393.0329; CCX 393.033); thin-walled flexural-torsional 386.1 | equal to Mecway; +1.8% from the theory |
+| BU-37 | the L frame of BU-32 in hex20 (100 × 4 × 2 el. per member, 1616 el.), `lin_solver_resi` 1e-3 | Euler of the column; Mecway 34 hex20 200 × 8 × 4 per member (44.86 / 124.12) | 17.315 (+0.25%); 45.030 (+0.4%), 124.64 (+0.4%); equal to `RESI_RELA` -1 |
 
 - **Torsional buckling (KNOWN_BUGS 112)**: Mecway's beam has no torsional buckling. Its
   fourth factor 2743.03 is the third flexural mode (25 × 109.72, mode 6 in the bridge);
@@ -1801,10 +1804,17 @@ along X and skew, with and without vector + 30°):
   C_w = tb³h²/12·(3b + 2h)/(6b + h)): P_T = 490.5, P_x = 864.2, coupled 386.1; volume model
   (hex20) 393.03. The beam gives 616.43: too high. The bridge now warns for buckling with T, C
   and L profiles.
-- **Volume models of the L frame**: the static step stops with `FACTOR_57` (MUMPS error
-  5e-5 > `RESI_RELA` 1e-6) without a mechanism; the values above were computed with
-  `RESI_RELA=-1` in a copy of the `.comm` (KNOWN_BUGS 114). That is why the hex20 frame
-  is not a case in the module.
+- **Volume model of the L frame (BU-37)**: with the default `RESI_RELA` 1e-6 the static
+  step stops with `FACTOR_57` (MUMPS error 5.0e-5) without a mechanism. The bridge then
+  reports the value for `lin_solver_resi` (here 1e-3); with it the run completes and the
+  factors equal a run with `RESI_RELA=-1` (and Mecway and CCX on this mesh). The same
+  check with Code-Aster 17.4 on a hex20 cantilever 1000 × 40 × 10 mm (100 × 4 × 2, 100 N
+  transverse, error 7.0e-6): *Static* with 1e-4 deflection 47.43 mm (PL³/3EI 47.62,
+  −0.4%); *Modal* with prestress with 1e-4 f₁ = 8.3765 Hz (equal without prestress,
+  analytical 8.355); *Buckling* in axial compression (error 1.1e-6, with 1e-5) 17.317
+  (Euler 17.272). A real mechanism (foot held in X only) stops with `FACTOR_11`, with
+  `solver_nprec` -1 with `FACTOR_57` and an error of 13 (loose part: 64): then the
+  bridge gives the message about a singular matrix.
 
 ### Modal with prestress (MP)
 

@@ -637,22 +637,34 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
 ### `FACTOR_57` – MUMPS: oplossing te onnauwkeurig
 
 - **Melding** (fout): "La solution du système linéaire est trop imprécise: Erreur
-  calculée ... Erreur acceptable 1e-06 (RESI_RELA)". Code-Aster raadt aan `RESI_RELA`
-  te verhogen; doe dat niet, het is bijna altijd een mechanisme.
-- **Oorzaak**: als `FACTOR_10/11`, maar bij `solver_nprec` = -1: MUMPS zoekt geen
-  singulariteit en de fout blijkt pas uit de onnauwkeurige oplossing.
-- **Gezien**: een gemengd testmodel na de juiste vertaling van pinned support: de plaat
-  kan vrij draaien. Mecway rekent het door, maar toont ±499 N "reactie" op knopen
-  zonder oplegging. Ook test T1 (plaat langs één lijn aan het blok). Zonder
-  mechanisme (ook met `solver_nprec` 8): slanke volumemodellen op buiging, bijv. een
-  hex20-uitkragende balk 1000 × 40 × 10 mm (fout 7e-6) of een hex20-L-raamwerk in een
-  knikanalyse (5e-5); Mecway rekent ze en met `RESI_RELA=-1` zijn de resultaten gelijk
-  (KNOWN_BUGS 114).
-- **Oplossing**: in Mecway: plaat extra vastzetten of over een vlak verbinden (zie
-  `FACTOR_10`). Tijdelijk `solver_nprec` = 8 geeft een `FACTOR_10/11` met knoop en
-  component. Slank volumemodel zonder mechanisme: bij *Statisch* `lin_solver_resi`
-  verhogen (bijv. 1e-4); bij andere analyses is er nog geen instelling (KNOWN_BUGS 114).
-- **Status**: model; slanke volumemodellen: bridge (KNOWN_BUGS 114).
+  calculée ... Erreur acceptable 1e-06 (RESI_RELA)". MUMPS schat de relatieve fout van
+  de oplossing (conditiegetal × 'backward error') en stopt als die boven `RESI_RELA`
+  ligt (U4.50.01 §3.5.3). De grootte van de *Erreur calculée* zegt wat er aan de hand is.
+- **Oorzaak**: (a) **fout van orde 1 of meer**: een mechanisme, als `FACTOR_10/11`, maar
+  bij `solver_nprec` = -1 zoekt MUMPS geen singulariteit en blijkt de fout pas uit de
+  onnauwkeurige oplossing (gemeten: 13 en 64). Met `solver_nprec` 8 geeft een mechanisme
+  `FACTOR_11`. (b) **kleine fout (tot ca. 1e-4)**: geen mechanisme maar een slecht
+  geconditioneerde matrix, typisch een slank volumemodel op buiging.
+- **Gezien**: (a) een gemengd testmodel na de juiste vertaling van pinned support: de
+  plaat kan vrij draaien. Mecway rekent het door, maar toont ±499 N "reactie" op knopen
+  zonder oplegging. Ook test T1 (plaat langs één lijn aan het blok). (b) Code-Aster
+  17.4, `solver_nprec` 8: hex20-uitkragende balk 1000 × 40 × 10 mm (100 × 4 × 2
+  elementen, 100 N dwars) fout 7,0e-6 in *Statisch*, in de statische stap van *Knik* en
+  van *Modaal* met voorspanning (conditiegetal 1,8e10); dezelfde balk axiaal gedrukt
+  (knik) 1,1e-6; het hex20-L-raamwerk van BU-37 (knik) 5,0e-5. Met de verhoogde
+  instelling rekenen ze door, met dezelfde resultaten als met `RESI_RELA=-1` en
+  analytisch / Mecway binnen 0,4% ([Verificatie §7](Verificatie.md)).
+- **Oplossing**: de bridge leest de *Erreur calculée* uit `study.mess`. (a) Boven 1e-3:
+  de melding over een (bijna) singuliere matrix; in Mecway de plaat extra vastzetten of
+  over een vlak verbinden (zie `FACTOR_10`). Tijdelijk `solver_nprec` = 8 geeft een
+  `FACTOR_10/11` met knoop en component. (b) Onder 1e-3: de melding noemt de pagina en
+  de waarde (de macht van tien die minstens 10 × de fout is) voor *Nauwkeurigheid
+  oplosser (RESI_RELA)* (`lin_solver_resi`). Die instelling bestaat bij *Statisch* (de
+  hele berekening), *Modaal* (de statische stap voor de voorspanning, ook bij
+  cyclische symmetrie), *Knik* (de statische stap) en *Niet-lineair statisch* (de
+  statische stap van de imperfectie). Verhoog hem niet blind tot boven 1e-3: dan zou
+  een mechanisme met `solver_nprec` = -1 niet meer gemeld worden.
+- **Status**: model (a) / instelling (b).
 
 ### `ASSEMBLA_26` – vrijheidsgraad meer keer geblokkeerd
 

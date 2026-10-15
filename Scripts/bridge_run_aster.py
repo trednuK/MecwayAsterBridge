@@ -243,13 +243,104 @@ _CYCLIC_HINT = (
     u"the axis. Check in Mecway the axis, the number of segments and that "
     u"the master and slave nodes match; with 8 segments and nodes on the "
     u"axis: make a small hole on the axis (KNOWN_BUGS 61).")
+# FACTOR_57 (Messages/factor.py of Code-Aster 17.4): MUMPS' estimate of the
+# relative error of the solution ("Erreur calculee", condition number x
+# backward error) is above RESI_RELA ("Erreur acceptable"; U4.50.01 par.
+# 3.5.3). Measured (docs/Foutmeldingen_CodeAster.md, verification BU-37):
+# slender hex20 models in bending without a mechanism 1.1e-6 ... 5.0e-5;
+# a real mechanism stops with FACTOR_11 (NPREC 8) or, with NPREC -1, gives
+# 13 and 64. Below _RESI_ILL_LIMIT the advice is the setting
+# lin_solver_resi (_resi_advice), above it the singular hint.
+_RESI_ILL_LIMIT = 1.0e-3
+_RESI_HINT = (
+    u"MUMPS schat de fout van de oplossing groter dan RESI_RELA (Erreur "
+    u"calculée > Erreur acceptable). Is die fout klein (kleiner dan "
+    u"1e-3), dan is er geen mechanisme maar een slecht geconditioneerde "
+    u"matrix (bijv. een slank volumemodel op buiging): zet 'Nauwkeurigheid "
+    u"oplosser (RESI_RELA)' (lin_solver_resi) van de analyse ruim boven die "
+    u"fout. Is ze groot (orde 1 of meer): " + _SINGULAR_HINT[0],
+    u"MUMPS estimates the error of the solution above RESI_RELA (Erreur "
+    u"calculée > Erreur acceptable). If that error is small (below "
+    u"1e-3), there is no mechanism but a poorly conditioned matrix (e.g. "
+    u"a slender volume model in bending): set 'Solver accuracy "
+    u"(RESI_RELA)' (lin_solver_resi) of the analysis well above that "
+    u"error. If it is large (order 1 or more): " + _SINGULAR_HINT[1])
+_NUMBER_RE = re.compile(r"[0-9]+(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?")
+
+
+def _resi_advice(box_text, analysis_name=None):
+    """
+    Advice for FACTOR_57 from the text of its message box: the computed
+    and the acceptable error are the first two numbers in it (Code-Aster
+    17.4: "Erreur calculee : 7.04369e-06 Erreur acceptable : 1e-06
+    (RESI_RELA)"). analysis_name: the active analysis (default
+    CONFIG_BRIDGE["active_analysis"], resolved by main()). Returns the text
+    in the chosen language.
+    """
+    nums = []
+    for tok in _NUMBER_RE.findall(box_text.split(u"MUMPS", 1)[-1]):
+        try:
+            nums.append(float(tok))
+        except ValueError:
+            pass
+    if len(nums) < 2 or nums[0] <= 0.0:
+        return tr(*_RESI_HINT)
+    err, limit = nums[0], nums[1]
+    if err >= _RESI_ILL_LIMIT:
+        return tr(u"geschatte fout {0:.3g} (RESI_RELA {1:g}). ",
+                  u"estimated error {0:.3g} (RESI_RELA {1:g}). ").format(
+                      err, limit) + tr(*_SINGULAR_HINT)
+    # Suggestion: the power of ten at least 10 x the computed error.
+    exp = 0
+    while 10.0 ** exp < 10.0 * err * (1.0 - 1e-9):
+        exp += 1
+    while 10.0 ** (exp - 1) >= 10.0 * err * (1.0 - 1e-9):
+        exp -= 1
+    suggest = u"1e{0}".format(exp)
+    name = analysis_name or CONFIG_BRIDGE.get("active_analysis", u"")
+    cfg = CONFIG_BRIDGE.get("analyses", {}).get(name, {})
+    head = tr(u"MUMPS schat de fout van de oplossing op {0:.3g}, boven "
+              u"RESI_RELA {1:g}. Zo'n kleine fout is geen mechanisme maar "
+              u"een slecht geconditioneerde stijfheidsmatrix (bijv. een "
+              u"slank volumemodel op buiging, of grote "
+              u"stijfheidsverschillen). ",
+              u"MUMPS estimates the error of the solution at {0:.3g}, above "
+              u"RESI_RELA {1:g}. Such a small error is not a mechanism but a "
+              u"poorly conditioned stiffness matrix (e.g. a slender volume "
+              u"model in bending, or large differences in "
+              u"stiffness). ").format(err, limit)
+    if "lin_solver_resi" not in cfg:
+        return head + tr(u"Deze analyse ({0}) heeft geen instelling voor "
+                         u"RESI_RELA; zie docs/Foutmeldingen_CodeAster.md.",
+                         u"This analysis ({0}) has no setting for "
+                         u"RESI_RELA; see "
+                         u"docs/en/CodeAster_error_messages.md.").format(name)
+    title = name
+    try:
+        import bridge_gui
+        pair = dict(bridge_gui.ANALYSIS_TITLES).get(name)
+        if pair:
+            title = tr(*pair)
+    except Exception:
+        pass
+    return head + tr(u"Zet op de pagina {0} van het startscherm "
+                     u"'Nauwkeurigheid oplosser (RESI_RELA)' "
+                     u"(lin_solver_resi) op {1} en reken opnieuw. Zie "
+                     u"docs/Foutmeldingen_CodeAster.md.",
+                     u"On the page {0} of the start screen set 'Solver "
+                     u"accuracy (RESI_RELA)' (lin_solver_resi) to {1} and "
+                     u"run again. See "
+                     u"docs/en/CodeAster_error_messages.md.").format(
+                         title, suggest)
+
+
 _MESS_HINTS = {"FACTOR_10": _SINGULAR_HINT, "FACTOR_11": _SINGULAR_HINT,
                "ALGORITH16_52": _CYCLIC_HINT, "ALGORITH16_58": _CYCLIC_HINT,
                "ALGORITH14_94": _CYCLIC_HINT,
                "ALGELINE3_81": _MODES_SINGULAR_HINT,
                "ALGELINE5_49": _MODES_FEW_HINT,
                "ALGELINE3_78": _MODES_FEW_HINT,
-               "FACTOR_42": _SINGULAR_HINT, "FACTOR_57": _SINGULAR_HINT,
+               "FACTOR_42": _SINGULAR_HINT, "FACTOR_57": _RESI_HINT,
                "MECANONLINE9_7": _NEWTON_HINT,
                # "Arret pour cause de matrice non inversible" (STAT_NON_LINE
                # with contact, seen in study.mess); causes as FACTOR_*,
@@ -731,7 +822,10 @@ def aster_mess_errors(work_dir, since=None):
                 if code not in seen:
                     seen.add(code)
                     msg = u"{0}: {1}".format(code, _mess_box_text(lines, i))
-                    if m.group(2) in hints:
+                    if m.group(2) == "FACTOR_57":
+                        msg += u" -> " + _resi_advice(
+                            _mess_box_text(lines, i, max_chars=2000))
+                    elif m.group(2) in hints:
                         msg += u" -> " + hints[m.group(2)]
                     partial = _MESS_PARTIAL_RE.search(text)
                     if partial and m.group(2).startswith("MECANONLINE"):

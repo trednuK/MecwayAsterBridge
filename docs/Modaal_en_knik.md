@@ -89,6 +89,7 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
 | Zoekfrequentie [Hz] (0 = laagste modes; alleen modaal) | 0 | > 0: de modes het dichtst bij deze frequentie (`OPTION='CENTRE'`; dichtst bij gemeten in ω², niet in Hz), bijv. rond een excitatiefrequentie. < 0, bijv. -10 x de verwachte eerste elastische frequentie: ook de laagste modes, maar rekenbaar met een mechanisme dat massa heeft (§4). 0 zonder opleggingen: de bridge verschuift zelf (§3.2) |
 | Normering trillings-/knikvormen (NORM_MODE) | `MASS_GENE` (modaal), `RIGI_GENE` (knik) | zelden; zie §2.3. Alleen de vorm heeft betekenis. `MASS_GENE` bij knik wordt `RIGI_GENE` (WARNING: knik heeft geen massamatrix) |
 | Controle modes (VERI_MODE SEUIL) | 1e-6 | groter (bijv. 1e-4) als de log `ALGELINE5_15` meldt bij een grof of slecht geconditioneerd model |
+| Nauwkeurigheid oplosser (RESI_RELA) (knik, en modaal met voorspanning) | 1e-6 | alleen als de run stopt met `FACTOR_57` en een kleine fout (< 1e-3): de melding noemt de waarde (§3.5, §4) |
 | Voorspanning door belastingen (stress stiffening; alleen modaal) | aan | uit om de onbelaste frequenties te zien, of als een opgelegde verplaatsing ≠ 0 alleen als oplegging moet tellen (§2.5) |
 | Complexe modes met demping (Rayleigh, dempers; alleen modaal) | uit | aan voor de gedempte frequentie en de dempingsverhouding ζ per mode bij Rayleigh-demping of dempers (*Damper*); §6. Uit = zoals Mecway: de demping telt niet mee |
 | Resultaatvelden naar Mecway (alleen modaal) | `displacements` | vink `stresses` en/of `vonmises` aan voor **spanningen per mode** (§1.4): waar een trillingsvorm de grootste spanning geeft, bijv. om een sensor of een vermoeiingsgevoelige plek te kiezen. Andere velden (reacties, ...) worden genegeerd (INFO). Bij knik alleen de vormen |
@@ -432,9 +433,12 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 - **Negatieve factoren**: de bridge geeft ook de factoren voor de omgekeerde last (bij
   het L-raamwerk −53,0). Mecway geeft alleen positieve factoren en slaat met zijn
   standaard-*shift* 1 soms een factor onder 1 over (ssll105: 0,4226 pas met shift 0,3).
-- **Slanke volumemodellen**: de statische stap van de knikanalyse kan met `FACTOR_57`
-  stoppen zonder dat er een mechanisme is (hex20-raamwerk van 1 m, 40 × 10 mm;
-  KNOWN_BUGS 114). Er is nog geen instelling om dat te omzeilen.
+- **Slanke volumemodellen**: de statische stap van een knikanalyse of van modaal met
+  voorspanning kan met `FACTOR_57` stoppen zonder dat er een mechanisme is: MUMPS schat
+  de fout op 1e-6 tot 1e-4 (hex20-raamwerk van 1 m, 40 × 10 mm: 5,0e-5). De melding
+  noemt dan de waarde voor *Nauwkeurigheid oplosser (RESI_RELA)* (`lin_solver_resi`) op
+  de pagina *Knik* of *Modaal*; daarmee gelijk aan Mecway (BU-37). Zie
+  [Foutmeldingen](Foutmeldingen_CodeAster.md), `FACTOR_57`.
 
 ## 4. Meldingen en oplossingen
 
@@ -454,6 +458,7 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 | alarm `ALGELINE5_23` (Sturm) | meervoudige mode op de grens, of een gemiste mode | vraag een of twee modes meer en vergelijk |
 | alarm `ALGELINE5_15` ("... a une norme d'erreur ... supérieure au seuil admis") | een mode haalt de nauwkeurigheid niet | fijner/beter mesh, of *Controle modes* groter (1e-4) |
 | alarm `ALGELINE2_74` | een van de `VERI_MODE`-controles is niet gehaald | zie de alarmen ervoor en de tabel in de `.mess` |
+| `<EXCEPTION> <FACTOR_57>` in de statische stap; de bridge meldt de geschatte fout | fout < 1e-3: slecht geconditioneerd (slank volumemodel op buiging), geen mechanisme; groter: een mechanisme | kleine fout: *Nauwkeurigheid oplosser (RESI_RELA)* op de waarde uit de melding; anders opleggingen controleren ([Foutmeldingen](Foutmeldingen_CodeAster.md), `FACTOR_57`) |
 | WARNING: Negatieve kniklastfactor(en) | knik bij de omgekeerde last (bijv. trek in plaats van druk) | controleer de richting van de last; alleen positieve factoren horen bij de aangebrachte richting |
 | WARNING: Knik met T-, C- of L-profielen | buig-torsieknik ontbreekt in de balkelementen (dwarskrachtcentrum, welving) | controleer met schaal- of volume-elementen (§3.5, KNOWN_BUGS 115) |
 | INFO: Buckling of beams ... appears as several equal factors | torsieknik zonder welving: één factor per element (§3.5) | normaal; het Sturm-alarm `ALGELINE5_23` hoort erbij |
@@ -608,6 +613,7 @@ Wat de log en het statusvak tonen (voorbeelden uit de verificatie):
 | WARNING: Imperfectie: balken en DKT/DST-schalen ... rekenen geometrisch lineair | daar groeit de uitbuiging niet | volume-elementen of `elem_shell` = `COQUE_3D` |
 | WARNING: Imperfectie: knikvorm k hoort bij de omgekeerde last | negatieve kniklastfactor (bijv. trek) | kies een mode met een positieve factor, of controleer de lastrichting |
 | WARNING: Imperfectie: knikvorm k niet gevonden | minder modes gevonden dan k | kleiner modenummer; zie de `.mess` |
+| `<EXCEPTION> <FACTOR_57>` in de `MECA_STATIQUE` van de imperfectie | als §4 | als §4: *Nauwkeurigheid oplosser (RESI_RELA)* op de pagina Niet-lineair statisch |
 
 ## 6. Modaal met demping: complexe modes
 

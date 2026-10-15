@@ -60,7 +60,7 @@ What the nonlinear analyses support:
 | Group (heading on the page) | Keys | Analyses |
 |---|---|---|
 | Code-Aster run | `time_limit`, `memory_limit` | all |
-| Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; the last two static only |
+| Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
 | Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi` | nonlinear static, dynamic implicit; `default_time_end` also explicit |
 | Contact | `contact_algo` | nonlinear static, dynamic |
 | Material and kinematics | `plastic_strain_definition`, `deformation` | nonlinear static, dynamic |
@@ -346,7 +346,16 @@ solver statistics end up in the `.mess` (convergence window, §4.4). That is abo
   larger than `RESI_RELA`, Code-Aster stops with `FACTOR_57` (EDF R&D, U4.50.01
   §3.5.3; U2.08.03 §7.2.1). With `solver_nprec` = -1 this is the only check for a
   singular matrix (U2.08.03 table 7.1-1, case 5). Choose MUMPS unless you have a
-  reason: it is robust and usually the fastest.
+  reason: it is robust and usually the fastest. A slender volume model in bending can
+  exceed 1e-6 without a mechanism (hex20 cantilever 1000 × 40 × 10 mm: 7.0e-6; a
+  mechanism gives `FACTOR_11`, or with -1 an error of order 10); the bridge's message
+  then gives the value for `lin_solver_resi`
+  ([Error messages](CodeAster_error_messages.md), `FACTOR_57`).
+- **Other analyses**: `lin_solver_resi` is also on the pages *Modal* (the
+  `MECA_STATIQUE` for the prestress), *Buckling* (the static step) and *Nonlinear
+  static* (the `MECA_STATIQUE` of the imperfection). There the solver is always MUMPS
+  (`NPREC` = `solver_nprec`). `STAT_NON_LINE` and `CALC_MODES` do not check the error
+  bound (`RESI_RELA` -1, catalogue `c_solveur.py`).
 - **GCPC**: `RESI_RELA` is the convergence criterion ‖r‖/‖f‖ (residual force divided by
   the load). Maximum number of iterations: the number of equations / 2
   (`NMAX_ITER=0`; after that Code-Aster stops with `ALGELINE4_3`). GCPC uses less

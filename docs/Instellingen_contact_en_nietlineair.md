@@ -59,7 +59,7 @@ Wat de niet-lineaire analyses ondersteunen:
 | Groep (kopje op de pagina) | Sleutels | Analyses |
 |---|---|---|
 | Code-Aster-run | `time_limit`, `memory_limit` | alle |
-| Oplosser | `solver_nprec`; `lin_solver`, `lin_solver_resi` | alle; de laatste twee alleen statisch |
+| Oplosser | `solver_nprec`; `lin_solver`, `lin_solver_resi` | alle; `lin_solver` alleen statisch, `lin_solver_resi` statisch en de statische stap van modaal, knik en de imperfectie |
 | Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi` | niet-lineair statisch, dynamisch impliciet; `default_time_end` ook expliciet |
 | Contact | `contact_algo` | niet-lineair statisch, dynamisch |
 | Materiaal en kinematica | `plastic_strain_definition`, `deformation` | niet-lineair statisch, dynamisch |
@@ -347,7 +347,16 @@ bij, zodat de statistiek van de oplosser in de `.mess` komt (convergentiescherm,
   groter dan `RESI_RELA`, dan stopt Code-Aster met `FACTOR_57` (EDF R&D, U4.50.01
   §3.5.3; U2.08.03 §7.2.1). Met `solver_nprec` = -1 is dit de enige controle op een
   singuliere matrix (U2.08.03 tabel 7.1-1, geval 5). Kies MUMPS tenzij je een
-  reden hebt: het is robuust en meestal het snelst.
+  reden hebt: het is robuust en meestal het snelst. Een slank volumemodel op buiging
+  kan zonder mechanisme boven 1e-6 komen (hex20-uitkragende balk 1000 × 40 × 10 mm:
+  7,0e-6; een mechanisme geeft `FACTOR_11`, of met -1 een fout van orde 10); de melding
+  van de bridge noemt dan de waarde voor `lin_solver_resi`
+  ([Foutmeldingen](Foutmeldingen_CodeAster.md), `FACTOR_57`).
+- **Andere analyses**: `lin_solver_resi` staat ook op de pagina's *Modaal* (de
+  `MECA_STATIQUE` voor de voorspanning), *Knik* (de statische stap) en *Niet-lineair
+  statisch* (de `MECA_STATIQUE` van de imperfectie). Daar is de oplosser altijd MUMPS
+  (`NPREC` = `solver_nprec`). `STAT_NON_LINE` en `CALC_MODES` controleren de foutgrens
+  niet (`RESI_RELA` -1, catalogus `c_solveur.py`).
 - **GCPC**: `RESI_RELA` is het convergentiecriterium ‖r‖/‖f‖ (restkracht gedeeld
   door de belasting). Maximaal aantal iteraties: het aantal vergelijkingen / 2
   (`NMAX_ITER=0`; daarna stopt Code-Aster met `ALGELINE4_3`). GCPC gebruikt minder

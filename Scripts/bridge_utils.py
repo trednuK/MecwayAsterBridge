@@ -255,6 +255,10 @@ CONFIG_BRIDGE = {
             "imperfection_amplitude": 0.0,
             "imperfection_mode":     1,
             "imperfection_unit":     "m",
+            # RESI_RELA of the MECA_STATIQUE of the imperfection (linear
+            # buckling before STAT_NON_LINE; see lin_static_3d). STAT_NON_LINE
+            # itself does not check it (Code-Aster default -1).
+            "lin_solver_resi":       1.0e-6,
         },
         "dyna_impl_3d": {
             # Nonlinear dynamics, implicit (Mecway D31). Same
@@ -397,6 +401,9 @@ CONFIG_BRIDGE = {
             "memory_limit":   2048,
             # MUMPS NPREC (see lin_static_3d).
             "solver_nprec":   8,
+            # RESI_RELA of the static step for the prestress (see
+            # lin_static_3d; bridge_to_aster._static_step_solveur).
+            "lin_solver_resi": 1.0e-6,
         },
         "dyna_modal_3d": {
             # Response on a modal basis (Mecway D30 with Mode superposition):
@@ -519,6 +526,9 @@ CONFIG_BRIDGE = {
             "time_limit":     900,
             "memory_limit":   2048,
             "solver_nprec":   8,
+            # RESI_RELA of the static step (stress state; see
+            # lin_static_3d; bridge_to_aster._static_step_solveur).
+            "lin_solver_resi": 1.0e-6,
         },
         "acoustic_modes_3d": {
             # Acoustic cavity modes (Mecway A30, Acoustic Resonance 3D):

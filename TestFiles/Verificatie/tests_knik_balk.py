@@ -5,7 +5,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 """
 Linear buckling of beams: torsional buckling and frames with bending
-moments (BU-30 ... BU-34), the two differences with Mecway in KNOWN_BUGS
+moments (BU-30 ... BU-37), the two differences with Mecway in KNOWN_BUGS
 112 and 113. Each beam model has an independent reference that does not
 come from a beam formulation: a volume (hex20) or shell model of the same
 structure, computed by the bridge (Code-Aster) and by Mecway 34 headless
@@ -23,6 +23,10 @@ docs/Verificatie.md (par. Knik van balken: torsie en raamwerken).
   each, RectBar 40 x 10 mm, 100 N downwards at the end of the girder). The
   out-of-plane mode: bridge 44.53, hex20 44.86 (converged; Code-Aster,
   Mecway and CCX equal on the same mesh), Mecway beam 19.71.
+- BU-37: the same L frame in hex20 through the bridge (100 x 4 x 2
+  elements per member). Its static step needs RESI_RELA 1e-3 (MUMPS'
+  error estimate 5.0e-5 without a mechanism; the setting lin_solver_resi
+  of buckling_3d, docs/Foutmeldingen_CodeAster.md FACTOR_57).
 - BU-33/34: right-angle frame of Code-Aster test case ssll105 (legs
   240 mm, section 30 x 0.6 mm, E = 71240 MPa, end force F_X = -1 N):
   reference 0.68 and -1.088 (VALE_REFE of ssll105a/b). Mecway 34 beam:
@@ -176,9 +180,9 @@ P_LF1 = math.pi ** 2 * E * BO.I_V / (4 * L ** 2)
 # hex20 of the frame (column x = +-5 mm, girder z = 1 +- 5 mm, 40 mm along
 # Y; 200 x 8 x 4 elements per member): Mecway 34 own solver 17.3085 /
 # 44.8612 / 124.1153 (positive factors only). The same model with
-# 100 x 4 x 2 through the bridge (static step with RESI_RELA off,
-# KNOWN_BUGS 114): -53.543 / 17.315 / 45.030 / 124.64, equal to Mecway and
-# CCX on that mesh.
+# 100 x 4 x 2 through the bridge (BU-37, lin_solver_resi 1e-3):
+# -53.543 / 17.315 / 45.030 / 124.64, equal to Mecway and CCX on that mesh
+# (and to a run with RESI_RELA off).
 SOLID_L = {"pos2": 44.8612, "pos3": 124.1153, "neg1": -53.543}
 SRC_SOLID = "hex20 of the frame (Mecway 34 / CCX / Code-Aster equal)"
 
@@ -215,6 +219,48 @@ TESTS.append(Case(
     note="RectBar 40 x 10 mm, 20 POU_D_E per member, 100 N. Mecway 34 "
          "beam: 17.27 / 19.71 / 127.30 / 155.45 (only positive factors; "
          "the out-of-plane mode 19.71 is 56% too low, KNOWN_BUGS 113)."))
+
+
+def build_bu37():
+    """The L frame of BU-32 in hex20: column x = +-5 mm from z = 0 to
+    0.995 (2 x 4 x 100), corner block z = 0.995 ... 1.005 (2 x 4 x 2),
+    girder x = 0.005 ... 1 (100 x 4 x 2), 40 mm along Y; foot fixed,
+    100 N downwards as traction on the end face of the girder."""
+    m = Model("B30", attrs={"maxmode": 8, "shift": 1})
+    m.elset("Raam", "Staal")
+    col = hexmesh(m, "Raam", 2, 4, 100,
+                  box(-0.005, 0.005, -0.02, 0.02, 0.0, 0.995), order=2)
+    hexmesh(m, "Raam", 2, 4, 2,
+            box(-0.005, 0.005, -0.02, 0.02, 0.995, 1.005), order=2)
+    gir = hexmesh(m, "Raam", 100, 4, 2,
+                  box(0.005, L, -0.02, 0.02, 0.995, 1.005), order=2)
+    m.mat("Staal", STEEL, BO.DENS)
+    m.face_selection("Voet", col["faces"]["w0"])
+    m.face_selection("Tip", gir["faces"]["u1"])
+    m.add('<fixed selection="Voet" />')
+    m.add('<traction selection="Tip"><x>0 Pa</x><y>0 Pa</y><z>-%r Pa</z>'
+          '</traction>' % (F_L / (0.04 * 0.01)))
+    return m
+
+
+TESTS.append(Case(
+    "BU-37", GROUP, "Frame in L, bending moments, volume (hex20)",
+    "buckling_3d", build_bu37,
+    [Check("positive factor 1 (in plane)", lambda r: _pos(r, 1),
+           ref=P_LF1 / F_L, tol=0.005, unit="-",
+           source="pi^2 E I_V/(4L^2) of the column"),
+     Check("positive factor 2 (out of plane) vs Mecway", lambda r: _pos(r, 2),
+           ref=SOLID_L["pos2"], tol=0.01, unit="-", in_series=False,
+           source="Mecway 34, hex20 200 x 8 x 4 per member (converged)"),
+     Check("positive factor 3 (out of plane) vs Mecway", lambda r: _pos(r, 3),
+           ref=SOLID_L["pos3"], tol=0.01, unit="-", in_series=False,
+           source="Mecway 34, hex20 200 x 8 x 4 per member (converged)")],
+    settings={"lin_solver_resi": 1.0e-3},
+    note="RectBar 40 x 10 mm as hex20, 100 x 4 x 2 per member (1616 "
+         "elements), 100 N. lin_solver_resi 1e-3: with the default 1e-6 "
+         "the static step stops with FACTOR_57 (MUMPS error estimate "
+         "5.0e-5, no mechanism). Same factors as with "
+         "RESI_RELA off (-1)."))
 
 
 # ------------------------------------------------------------------

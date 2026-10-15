@@ -136,19 +136,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    20.90 (its rigid knot at the joint is linear); Mecway with solver CCX gives no buckling
    solution for beams headless. Nothing to fix in the bridge.
 
-114\. **Static step stops with `FACTOR_57` for slender volume models in bending** (confirmed,
-   Code-Aster 17.4; `bridge_to_aster._build_solveur_ref` / `_build_lin_solveur_ref`).
-   MUMPS' error bound exceeds `RESI_RELA` 1e-6 without a mechanism: hex20 cantilever
-   1000 × 40 × 10 mm (100 × 4 × 2 elements, 100 N transverse) 7.0e-6 in `lin_static_3d`;
-   the L-frame of item 113 in hex20 5.0e-5 in the `MECA_STATIQUE` of `buckling_3d`
-   (also with 50 elements per member, 2 over the width, or the members 0.5 m long
-   (3.1e-6); 0.3 m passes). `ELIM_LAGR`, `PRETRAITEMENTS='SANS'`, `RENUM='SCOTCH'` and
-   `POSTTRAITEMENTS='FORCE'` do not help. With `RESI_RELA=-1.0` the factors equal Mecway
-   and CCX on the same mesh to 5 digits, so the solution is good. Mecway solves these
-   models. In `lin_static_3d` the setting `lin_solver_resi` helps; for buckling, modal
-   with prestress and the other analyses there is no setting. `docs/Foutmeldingen_CodeAster.md`
-   calls `FACTOR_57` "almost always a mechanism", which is not the case here.
-
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces

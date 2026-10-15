@@ -776,14 +776,14 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             "    MODELE=model,\n"
             "    CHAM_MATER=fieldmat,\n"
             "{cara}{excit}\n"
-            "    SOLVEUR=_F(METHODE='MUMPS', NPREC={nprec}),\n"
+            "    {solveur}\n"
             ")\n"
             "sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
             "                 RESULTAT=stat, NUME_ORDRE=1, "
             "NOM_CHAM='SIEF_ELGA')\n").format(
                 cara="    CARA_ELEM=cara,\n" if b2a._has_cara(model_data)
                 else "", excit=excit,
-                nprec=int(analysis.get("solver_nprec", 8)))
+                solveur=b2a._static_step_solveur(analysis))
     cyclic_loads_block = "\n".join(cyc_lines) + "\n"
 
     cara_ref = "    CARA_ELEM=cara,\n" if b2a._has_cara(model_data) else ""

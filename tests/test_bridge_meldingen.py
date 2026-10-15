@@ -9,7 +9,11 @@
 #     WARNING, voor de run (modal_damping) en na de run (de regel
 #     BRIDGE_HARM_WAARSCHUWING DEMPING die de .comm in de .mess print);
 #   - akoestiek (bridge_acoustic._materials): twee media waarvan een zonder
-#     dichtheid geeft een WARNING; verschillende dichtheden een ERROR.
+#     dichtheid geeft een WARNING; verschillende dichtheden een ERROR;
+#   - FACTOR_57 (bridge_run_aster._resi_advice, aster_mess_errors): a small
+#     MUMPS error estimate gives the page and value for lin_solver_resi, a
+#     large one the singular-matrix hint; the SOLVEUR line of the static
+#     step of modal/buckling (bridge_to_aster._static_step_solveur).
 #
 #   python tests/test_bridge_meldingen.py
 
@@ -157,9 +161,67 @@ def test_acoustic_density():
           "_materials 1,2 / 12: ERROR verwacht: {0} {1}".format(mats, LOG))
 
 
+# FACTOR_57 box as Code-Aster 17.4 writes it (hex20 cantilever 1000 x 40 x
+# 10 mm, lin_static_3d; the error value is replaced per case).
+_BOX_57 = u"""\
+ \u2554\u2550\u2550\u2550\u2557
+ \u2551 <EXCEPTION> <FACTOR_57>                  \u2551
+ \u2551                                          \u2551
+ \u2551 Solveur MUMPS :                          \u2551
+ \u2551   La solution du syst\u00e8me lin\u00e9aire est trop impr\u00e9cise :  \u2551
+ \u2551   Erreur calcul\u00e9e   :                   \u2551
+ \u2551 {err}                                     \u2551
+ \u2551   Erreur acceptable : 1e-06   (RESI_RELA) \u2551
+ \u2551                                          \u2551
+ \u2551 Conseils :                               \u2551
+ \u2551   On peut augmenter la                   \u2551
+ \u2551 valeur du mot cl\u00e9 SOLVEUR/RESI_RELA.     \u2551
+ \u255a\u2550\u2550\u2550\u255d
+--- DIAGNOSTIC JOB : <F>_ERROR
+"""
+
+
+def test_factor57():
+    import bridge_run_aster as bra
+    bra.log = _log
+    cfg = bridge_utils.CONFIG_BRIDGE
+    old = cfg.get("active_analysis"), cfg.get("work_dir")
+    tmp = tempfile.mkdtemp()
+    try:
+        cfg["work_dir"] = tmp
+        for name, err, expect in (
+                ("buckling_3d", u"4.98968e-05", (u"Knik", u"op 1e-3")),
+                ("modal_3d", u"7.04369e-06", (u"Modaal", u"op 1e-4")),
+                ("lin_static_3d", u"1.09913e-06", (u"Statisch", u"op 1e-4")),
+                ("buckling_3d", u"13.4025", (u"singulier",)),
+                ("ther_3d", u"7.04369e-06", (u"geen instelling",))):
+            cfg["active_analysis"] = name
+            path = os.path.join(tmp, bridge_utils.run_name(".mess"))
+            with io.open(path, "w", encoding="utf-8") as f:
+                f.write(_BOX_57.format(err=err))
+            del LOG[:]
+            msgs = bra.aster_mess_errors(tmp)
+            check(len(msgs) == 1 and all(e in msgs[0] for e in expect),
+                  "FACTOR_57 {0} {1}: {2}".format(name, err, msgs))
+    finally:
+        cfg["active_analysis"], cfg["work_dir"] = old
+        shutil.rmtree(tmp, ignore_errors=True)
+    line = bridge_to_aster._static_step_solveur(
+        {"solver_nprec": 8, "lin_solver_resi": 1.0e-4})
+    check(line == "SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=0.0001),",
+          "_static_step_solveur: {0}".format(line))
+    line = bridge_to_aster._static_step_solveur({})
+    check(line == "SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),",
+          "_static_step_solveur default: {0}".format(line))
+    for name in ("lin_static_3d", "nonlin_static_3d", "modal_3d",
+                 "buckling_3d"):
+        check(cfg["analyses"][name].get("lin_solver_resi") == 1.0e-6,
+              "lin_solver_resi default in {0}".format(name))
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
-                 test_acoustic_density):
+                 test_acoustic_density, test_factor57):
         test()
     if FAILS:
         for f in FAILS:
@@ -167,7 +229,7 @@ def main():
                 "ascii"))
         return 1
     print("OK: meldingen (harmonisch xi >= 1, akoestiek medium zonder "
-          "dichtheid)")
+          "dichtheid, FACTOR_57)")
     return 0
 
 

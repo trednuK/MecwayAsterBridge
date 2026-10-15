@@ -87,6 +87,7 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
 | "Search frequency [Hz] (0 = lowest modes)" (modal only) | 0 | > 0: the modes closest to this frequency (`OPTION='CENTRE'`; closest measured in ω², not in Hz), e.g. around an excitation frequency. < 0, e.g. -10 x the expected first elastic frequency: also the lowest modes, but solvable with a mechanism that has mass (§4). 0 without supports: the bridge shifts by itself (§3.2) |
 | "Mode shape normalisation (NORM_MODE)" | `MASS_GENE` (modal), `RIGI_GENE` (buckling) | rarely; see §2.3. Only the shape is meaningful. `MASS_GENE` for buckling becomes `RIGI_GENE` (WARNING: buckling has no mass matrix) |
 | "Mode check (VERI_MODE SEUIL)" | 1e-6 | larger (e.g. 1e-4) if the log reports `ALGELINE5_15` for a coarse or ill-conditioned model |
+| "Solver accuracy (RESI_RELA)" (buckling, and modal with prestress) | 1e-6 | only if the run stops with `FACTOR_57` and a small error (< 1e-3): the message gives the value (§3.5, §4) |
 | "Prestress from loads (stress stiffening)" (modal only) | on | off to see the unloaded frequencies, or if an imposed displacement ≠ 0 should only count as a support (§2.5) |
 | "Complex modes with damping (Rayleigh, dampers)" (modal only) | off | on for the damped frequency and the damping ratio ζ per mode with Rayleigh damping or dampers (*Damper*); §6. Off = like Mecway: damping is not included |
 | "Result fields to Mecway" (modal only) | `displacements` | tick `stresses` and/or `vonmises` for **stresses per mode** (§1.4): where a mode shape gives the largest stress, e.g. to place a sensor or find a fatigue-sensitive spot. Other fields (reactions, ...) are ignored (INFO). Buckling: shapes only |
@@ -428,9 +429,12 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
 - **Negative factors**: the bridge also gives the factors for the reversed load (for the
   L frame −53.0). Mecway gives only positive factors and with its default *shift* 1
   sometimes skips a factor below 1 (ssll105: 0.4226 only with shift 0.3).
-- **Slender volume models**: the static step of the buckling analysis can stop with
-  `FACTOR_57` without a mechanism (hex20 frame of 1 m, 40 × 10 mm; KNOWN_BUGS 114).
-  There is no setting yet to avoid that.
+- **Slender volume models**: the static step of a buckling analysis or of modal with
+  prestress can stop with `FACTOR_57` without a mechanism: MUMPS estimates the error at
+  1e-6 to 1e-4 (hex20 frame of 1 m, 40 × 10 mm: 5.0e-5). The message then gives the
+  value for *Solver accuracy (RESI_RELA)* (`lin_solver_resi`) on the page *Buckling* or
+  *Modal*; with it the result equals Mecway (BU-37). See
+  [Error messages](CodeAster_error_messages.md), `FACTOR_57`.
 
 ## 4. Messages and solutions
 
@@ -450,6 +454,7 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
 | alarm `ALGELINE5_23` (Sturm) | multiple mode on the limit, or a missed mode | ask for one or two more modes and compare |
 | alarm `ALGELINE5_15` ("... a une norme d'erreur ... supérieure au seuil admis") | a mode does not reach the accuracy | finer/better mesh, or a larger "Mode check (VERI_MODE SEUIL)" (1e-4) |
 | alarm `ALGELINE2_74` | one of the `VERI_MODE` checks failed | see the alarms before it and the table in the `.mess` |
+| `<EXCEPTION> <FACTOR_57>` in the static step; the bridge reports the estimated error | error < 1e-3: poorly conditioned (slender volume model in bending), no mechanism; larger: a mechanism | small error: *Solver accuracy (RESI_RELA)* to the value from the message; otherwise check the supports ([Error messages](CodeAster_error_messages.md), `FACTOR_57`) |
 | WARNING: Negative buckling factor(s) | buckling under the reversed load (e.g. tension instead of compression) | check the load direction; only positive factors belong to the applied direction |
 | WARNING: Buckling with T, C or L profiles | flexural-torsional buckling is missing in the beam elements (shear centre, warping) | check with shell or volume elements (§3.5, KNOWN_BUGS 115) |
 | INFO: Buckling of beams ... appears as several equal factors | torsional buckling without warping: one factor per element (§3.5) | normal; the Sturm alarm `ALGELINE5_23` belongs to it |
@@ -602,6 +607,7 @@ What the log and the status box show (examples from the verification):
 | WARNING: Imperfection: beams and DKT/DST shells ... are geometrically linear | the deflection does not grow there | solid elements or `elem_shell` = `COQUE_3D` |
 | WARNING: Imperfection: buckling mode k belongs to the reversed load | negative buckling factor (e.g. tension) | choose a mode with a positive factor, or check the load direction |
 | WARNING: Imperfection: buckling mode k not found | fewer modes found than k | smaller mode number; see the `.mess` |
+| `<EXCEPTION> <FACTOR_57>` in the `MECA_STATIQUE` of the imperfection | as §4 | as §4: *Solver accuracy (RESI_RELA)* on the Nonlinear static page |
 
 ## 6. Modal with damping: complex modes
 
