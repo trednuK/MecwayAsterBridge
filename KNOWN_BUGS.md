@@ -347,6 +347,59 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    `K1_POST_K` of K uit G. In de verificatie toetst BR-10 deze K_I met dezelfde 5 % als
    de andere XFEM-controles; de afwijking telt als BEKEND.
 
+88\. **Thermisch: verlijmd contact valt stil weg** (bevestigd met een offline run,
+   `bridge_thermal.build_thermal`). `build_thermal` meldt `contacts` en `couplings` als
+   niet vertaald (`_skip`, punt 16), maar niet `model_data["bonded"]`: een `contact2`
+   `bondedtie`/`bondedce`/`bondedelastic` in een T30/T31-model komt niet in de `.comm`,
+   zonder ERROR en zonder `skipped_loads`. Erger: `bridge_mesh._bonded` logt wel
+   "INFO: verlijmd contact ... -> LIAISON_MAIL TYPE_RACCORD='MASSIF'". Mecway geleidt
+   warmte door verlijmd contact (manual par. 9.9: contact ook bij Thermal; elastic =
+   thermische weerstandslaag). Reproductie: twee hex8-blokken 0..0,05 en 0,05..0,1 m
+   met eigen knopen, `contact2 type="bondedtie"` tussen de grensvlakken, T = 300 K
+   links en 400 K rechts, `ther_3d`: run OK, `skipped_loads` leeg, T = 300 K in heel
+   blok A en 400 K in heel blok B (verwacht lineair, 350 K op het grensvlak).
+   Oplossing: minstens `bonded` meemelden in de lus in `build_thermal`; beter vertalen
+   met `AFFE_CHAR_THER` `LIAISON_MAIL` (catalogus affe_char_ther.py v17.4) voor
+   `bondedtie`/`bondedce` en `ECHANGE_PAROI` voor `bondedelastic` (warmtegeleiding per
+   oppervlak; NIET geverifieerd of dat met niet-conforme meshes werkt).
+
+89\. **Node temperature (`temperature3`) telt niet mee in een mechanische analyse**
+   (bevestigd met een offline run, `bridge_from_liml.extract_aster_data_from_liml`,
+   tak `not thermal_run and tag in bridge_thermal.THERMAL_TAGS`). `temperature3` staat
+   in `THERMAL_TAGS` (`bridge_thermal.py`) maar niet in `_MODEL_ITEM_TAGS`, dus in een
+   statische, niet-lineaire, modale of knikanalyse geeft het alleen
+   "INFO: Thermische belasting 'temperature3' op '' telt niet mee in een mechanische
+   analyse", zonder WARNING/ERROR en zonder `skipped_loads`. Mecway gebruikt node
+   temperature juist voor thermische spanning (manual par. 9.24: Static, Nonlinear
+   Static, Frequency, Buckling; temperaturen uit een thermische analyse als invoer voor
+   een statische). Reproductie: staaf 0,1 × 0,01 × 0,01 m, 4 hex8, beide uiteinden
+   fixed, α = 1,2e-5 1/K, `thermalstress` Tref 293 K en `temperature3` 393 K op alle
+   knopen, `lin_static_3d`: max |stressxx| 3e-7 Pa (spanningsloos); met `temperature2`
+   393 K op alle elementen 538 MPa. Oplossing: `temperature3` in een mechanische
+   analyse vertalen (per knoop een temperatuur naast `model_data["temperatures"]`,
+   bijv. `AFFE_CHAMP` `NOEU_TEMP_R` per knoop of per groep knopen met dezelfde waarde),
+   of anders minstens ERROR + `skipped_loads` als er een `thermalstress` is.
+
+90\. **Verlijmd contact met een kwadratische schaal (tri6/quad8) als master:
+   `CHARGES2_31`** (bevestigd met runs, Code-Aster 17.4,
+   `bridge_to_aster._resolve_line_quad`). Tri6/quad8 worden altijd `COQUE_3D` (QUAD9/
+   TRIA7 via `CREA_MAILLAGE` `QUAD8_9`/`TRIA6_7`); de DKT-terugval van punt 21 kijkt
+   alleen naar schalen met "LINE_QUAD" in `shell_upgrades` (`bonded &= set(shell_lq)`),
+   dus niet naar van zichzelf kwadratische schalen. `LIAISON_MAIL` legt dan DX op de
+   middenknoop van de QUAD9, die bij `COQUE_3D` alleen rotaties heeft. Dat gebeurt
+   alleen als een slave-knoop binnen een master-element projecteert (op een rand is de
+   vormfunctie van de middenknoop 0). Reproductie: quad8-plaat 0,1 × 0,04 m (10 × 4,
+   2 mm), ingeklemd op x = 0, een verticale schaalrib (quad8 of quad4) op y = 0,025 m
+   met de onderrand als slave op het plaatvlak (master), 10 N op de bovenrand:
+   `<EXCEPTION> <CHARGES2_31>` (ddl DX van knoop 221), geen resultaten. Dezelfde rib op
+   y = 0,02 (op de elementranden) en een hex20-blok onder de plaat met knopen op de
+   elementranden rekenen wel (gelijk aan quad4/DKT binnen 1%). Tri6 niet apart gerekend
+   (TRIA7 heeft dezelfde middenknoop). Oplossing: in `_resolve_line_quad` ook
+   master-schalen met `QUAD8_9`/`TRIA6_7` opsporen; DKT kan daar niet (kwadratische
+   cellen), dus vóór de run een duidelijke ERROR met advies (lineaire schalen, of master
+   en slave wisselen), of de middenknopen uit de relatie houden als Code-Aster dat
+   toelaat (NIET geverifieerd).
+
 ## Open vragen (gedrag van Mecway niet nagegaan)
 
 27\. **Niet geverifieerd in een .liml** (vraag). Constraint equation: `constant`
