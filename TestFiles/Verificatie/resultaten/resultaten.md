@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-08 (bridge e62a83d, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge f923537, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**1625 van 1629 controles binnen de tolerantie** (272 testcases); 4 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**1639 van 1643 controles binnen de tolerantie** (277 testcases); 4 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -916,6 +916,20 @@ Gemaakt door `run_verificatie.py` op 2026-10-08 (bridge e62a83d, Code-Aster 17.4
 | LS-06a | Ingeklemde balk met veer langs Y aan de tip | doorbuiging tip Y | 0.0016812 m | 0.0016812 | -0.00% | 0.1% | OK |
 | LS-06a | Ingeklemde balk met veer langs Y aan de tip | veerkracht (reactie grond Y) | 1.6812 N | 1.6812 | -0.00% | 0.1% | OK |
 | LS-06b | Ingeklemde balk met veer onder 45 graden | doorbuiging tip Y | 0.0018355 m | 0.0018355 | +0.00% | 0.2% | OK |
+| LS-07a | Plaatstrook uit twee verlijmde delen (schaal op schaal, eigen meshes) | doorbuiging tip | 9.5238e-04 m | 9.4220e-04 | -1.07% | 2% | OK |
+| LS-07a | Plaatstrook uit twee verlijmde delen (schaal op schaal, eigen meshes) | doorbuiging tip t.o.v. Mecway | 9.4148e-04 m | 9.4220e-04 | +0.08% | 0.5% | OK |
+| LS-07a | Plaatstrook uit twee verlijmde delen (schaal op schaal, eigen meshes) | rotatie tip | 0.0071429 rad | 0.0070899 | -0.74% | 2% | OK |
+| LS-07a | Plaatstrook uit twee verlijmde delen (schaal op schaal, eigen meshes) | rotatie tip t.o.v. Mecway | 0.0070901 rad | 0.0070899 | -0.00% | 0.5% | OK |
+| LS-07a | Plaatstrook uit twee verlijmde delen (schaal op schaal, eigen meshes) | rotatie naad, deel B | 0.0053571 rad | 0.0053061 | -0.95% | 2% | OK |
+| LS-07a | Plaatstrook uit twee verlijmde delen (schaal op schaal, eigen meshes) | rotatie naad B / A (geen scharnier) | 1 - | 0.99992 | -0.01% | 0.5% | OK |
+| LS-07b | Plaatstrook uit één mesh (referentie LS-07a) | doorbuiging tip | 9.5238e-04 m | 9.4257e-04 | -1.03% | 2% | OK |
+| LS-07b | Plaatstrook uit één mesh (referentie LS-07a) | doorbuiging tip t.o.v. Mecway | 9.4148e-04 m | 9.4257e-04 | +0.12% | 0.5% | OK |
+| LS-07b | Plaatstrook uit één mesh (referentie LS-07a) | rotatie tip | 0.0071429 rad | 0.0070938 | -0.69% | 2% | OK |
+| LS-07b | Plaatstrook uit één mesh (referentie LS-07a) | rotatie tip t.o.v. Mecway | 0.0070901 rad | 0.0070938 | +0.05% | 0.5% | OK |
+| LS-07c | T-stuk: rib met de rand verlijmd op een plaat, voetlijn op een meshlijn | zijdelingse verplaatsing ribtop | 2.9470e-06 m | 2.9442e-06 | -0.10% | 0.5% | OK |
+| LS-07c | T-stuk: rib met de rand verlijmd op een plaat, voetlijn op een meshlijn | idem t.o.v. Mecway | 2.9319e-06 m | 2.9442e-06 | +0.42% | 1% | OK |
+| LS-07d | T-stuk: voetlijn midden in de plaatelementen | zijdelingse verplaatsing ribtop | 2.9470e-06 m | 2.7951e-06 | -5.16% | 7% | OK |
+| LS-07e | T-stuk met gedeelde knopen (referentie) | zijdelingse verplaatsing ribtop t.o.v. Mecway | 2.9319e-06 m | 2.9470e-06 | +0.51% | 1% | OK |
 
 ## Modaal met demping
 
