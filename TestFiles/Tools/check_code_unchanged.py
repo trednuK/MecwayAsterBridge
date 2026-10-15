@@ -20,7 +20,8 @@ Python files: the abstract syntax tree of the old version (git show
     str.format placeholders, %-specifiers);
   - replacing every string constant that consists only of comment
     lines ("#...") by its signature (number of placeholders).
-Also checked: the coding line is unchanged, the new file compiles.
+Also checked: the coding line is unchanged, the new file compiles, and
+the number of backslashes and triple quotes is unchanged.
 
 .comm templates: all non-comment code (lines with their trailing comment
 removed, comment-only and empty lines skipped) must be identical, the
@@ -127,6 +128,13 @@ def check_py(ref, path):
     if _norm_py(old) != _norm_py(new):
         errors.append("code changed (AST differs after removing comments, "
                       "docstrings and INFO/SUCCESS texts)")
+    # Docstrings are not compared above, so a lost or added backslash
+    # (e.g. "\\b" in a Windows path becoming the escape "\b") or quote
+    # would pass unnoticed: these counts must not change.
+    for token in ("\\", '"""', "'''"):
+        if old.count(token) != new.count(token):
+            errors.append("number of {0!r} changed ({1} -> {2})".format(
+                token, old.count(token), new.count(token)))
     return errors
 
 
