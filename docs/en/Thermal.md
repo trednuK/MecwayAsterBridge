@@ -56,6 +56,9 @@ template `Scripts/AsterTemplate_Thermique.comm`). Code-Aster 17.4.
 | moving weld source | `#ASTER-LASBRON` ([Welding.md](Welding.md)) |
 | `convectionbc` | `ECHANGE` (shell face: `SOUR_NL`; with a time table a source plus a sink with `FONC_MULT`) |
 | `radiationbc` | `RAYONNEMENT` σ = 5.670374419e-8 (shell face: `SOUR_NL`, tabulated every 5 °C) |
+| bonded contact (`contact2`) *Tie* / *Constraint equations* | `AFFE_CHAR_THER` `LIAISON_MAIL`: the temperature of each slave node is the one at its projected point on the master face (manual §9.9.1); also non-conforming meshes and shells (`PLAN`) among themselves |
+| bonded contact *Elastic* (thermal resistive layer, *Thermal conductance per unit area* h) | `AFFE_CHAR_THER` `ECHANGE_PAROI` `COEF_H` = h between the faces of both sides (flux h·ΔT across the bond). Only solid faces that are node-to-node opposite each other; otherwise (non-conforming, shells, no h) ideally bonded (`LIAISON_MAIL`) with a WARNING and in the not-translated list |
+| bonded contact in a model with solids **and** shells | **not translated** (ERROR): Code-Aster cannot apply `LIAISON_MAIL` (CHARGES7_6) or `ECHANGE_PAROI` (CHARGES6_2) then; use shared nodes (*Merge nearby nodes*) |
 | `forcedconvection`, `massflowrate`, cavity radiation, formulas for convection/radiation on a shell face, a formula in x, y, z for a total `heatflow` or as an initial temperature, formulas in material properties | **not translated** (reported) |
 
 A steady-state analysis with a time table takes the value at t = 1 s, like Mecway
@@ -63,10 +66,19 @@ with CCX (Mecway's internal solver treats a table as 0; the bridge then warns). 
 `temperature2` with a time interval (`starttime`/`endtime` ≠ 0) is applied for the
 whole analysis (reported).
 
+**Bonded contact.** In a T31 with *Thermal stress* (thermal → mechanical chain) the
+thermal part gets the thermal coupling above and the mechanical part the usual
+mechanical `LIAISON_MAIL` (TYPE_RACCORD, [Mecway_features.md](Mecway_features.md));
+with *Elastic* the mechanical layer is rigid (reported), the thermal resistance is
+translated. Mecway's internal solver (Mecway 34, without GUI) solved *Tie* and
+*Elastic* in a T30 without any coupling (300 / 400 K on both sides); with the CCX
+solver it did couple (350 K, and 340 / 360 K with h = 2000 W/m²K), equal to the bridge
+(TH-04a/c).
+
 ## 4. Additional checks (Code-Aster 17.4, offline)
 
 The reproducible tests with tolerances and references are in
-[Verification.md](Verification.md) §8 (TH-01 .. TH-03). In addition, the translation
+[Verification.md](Verification.md) §8 (TH-01 .. TH-04). In addition, the translation
 was checked by hand on these models (analytical values according to Incropera et al.
 (2007), ch. 3; ConductionConvectionRadiation according to the Mecway manual §11.13):
 
@@ -102,6 +114,8 @@ contains `temperature`, no heat flux). Measured with Mecway 33 (KNOWN_BUGS 14 in
 | transient, constant load, `theta` = 0.5 | 1.5e-5 K |
 | OscillatingHeatFlow (1601 steps), `theta` 0.57 / 0.5 / 1.0 | max 1.40 / 1.49 / 2.61 K (RMS 0.13 / 0.14 / 0.06 K) |
 | time-dependent convection/radiation on a shell face, `theta` 0.5 | 0.10–0.21 K |
+| bonded contact *Constraint equations*, non-conforming (solids TH-04b, shells TH-04d; Mecway 34) | 0.0024 / 0.0056 K |
+| bonded contact *Tie* and *Elastic* (TH-04a/c), Mecway 34 with CCX | < 0.002 K |
 
 Mecway's transient scheme is Crank-Nicolson (θ = 0.5) with the load at the end of
 the step; Code-Aster takes the θ-weighted average. With a time table a difference of

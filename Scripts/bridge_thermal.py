@@ -1325,6 +1325,170 @@ class _Thermal(object):
                     self.apply_exchange(load, label)
         self.apply_node_temperatures()
 
+    # ---------- verlijmd contact ----------
+    def bonded_loads(self):
+        """
+        Verlijmd contact (contact2 bondedtie/bondedce/bondedelastic,
+        model_data["bonded"] uit bridge_mesh._bonded) in een thermische
+        analyse. Mecway: bij thermisch krijgt de slave-knoop de waarde in
+        het geprojecteerde punt op het master-vlak; 'elastic' is thermisch
+        een weerstandslaag met "Thermal conductance per unit area" (manual
+        v33 par. 9.9.1).
+          - tie / constraint equations (en elastic waar ECHANGE_PAROI niet
+            kan): AFFE_CHAR_THER LIAISON_MAIL (catalogus affe_char_ther.py
+            v17.4: GROUP_MA_MAIT, GROUP_NO_ESCL, DISTANCE_MAX; geen
+            TYPE_RACCORD of DDL, alleen TEMP). Master: de moederelementen
+            (volumes) of de schaalelementen, zoals mechanisch.
+          - elastic: AFFE_CHAR_THER ECHANGE_PAROI (GROUP_MA_1/GROUP_MA_2,
+            COEF_H = geleiding per oppervlak; U4.44.02, testcases ttlp101a
+            en tplv101c) tussen de randvlakken van beide kanten. Alleen
+            volumevlakken die knoop op knoop tegenover elkaar liggen
+            (_conforming_faces); anders tie + WARNING + skipped_loads.
+          - Volumes en schalen (PLAN) samen in het model: dan kan geen van
+            beide (Code-Aster 17.4: LIAISON_MAIL <EXCEPTION> CHARGES7_6
+            "mélange d'éléments 2D ... et 3D. Il n'est pas possible de
+            réaliser une liaison", schaalrand op een blok; ECHANGE_PAROI
+            <EXCEPTION> CHARGES6_2 "le modèle fourni doit être homogène en
+            dimension", twee blokken met een losse schaal); ERROR +
+            skipped_loads.
+        Verificatie TH-04 (tests_thermisch.py).
+        """
+        mixed = len(set(i["cls"] for i in self.elsets.values())) > 1
+        for b in self.md.get("bonded", []):
+            sel_m, sel_s = b.get("selections", (b["master"], b["slave"]))
+            label = tr("verlijmd contact '{0}' / '{1}'",
+                       "bonded contact '{0}' / '{1}'").format(sel_m, sel_s)
+            parts_m = self.face_parts(sel_m)
+            parts_s = self.face_parts(sel_s)
+            dropped = [sel for sel, parts in ((sel_m, parts_m),
+                                              (sel_s, parts_s))
+                       if not parts or any(p[0] == "inactive"
+                                           for p in parts)]
+            if dropped:
+                self.skip(tr("{0}: vlakken van niet-gemodelleerde elementen "
+                             "in {1} (balken, schalen buiten het PLAN-vlak "
+                             "of elsets zonder thermisch materiaal)",
+                             "{0}: faces of non-modelled elements in {1} "
+                             "(beams, shells outside the PLAN plane or "
+                             "elsets without thermal material)").format(
+                                 label, ", ".join("'{0}'".format(s)
+                                                  for s in dropped)))
+                continue
+            if mixed:
+                self.skip(tr("{0}: Code-Aster kan thermisch geen verlijmd "
+                             "contact (LIAISON_MAIL, ECHANGE_PAROI) leggen "
+                             "in een model met volumes en schalen samen "
+                             "(CHARGES7_6, CHARGES6_2); gebruik gedeelde "
+                             "knopen (Merge nearby nodes)",
+                             "{0}: Code-Aster cannot apply thermal bonded "
+                             "contact (LIAISON_MAIL, ECHANGE_PAROI) in a "
+                             "model with solids and shells together "
+                             "(CHARGES7_6, CHARGES6_2); use shared nodes "
+                             "(Merge nearby nodes)").format(label))
+                continue
+            why = None
+            if b.get("type") == "bondedelastic":
+                why = self._bonded_exchange(b, label, parts_m, parts_s)
+                if why is None:
+                    continue
+            if why:
+                self.md.setdefault("skipped_loads", []).append(tr(
+                    "{0}: thermische weerstand (elastic) niet vertaald, "
+                    "ideaal verlijmd", "{0}: thermal resistance (elastic) "
+                    "not translated, ideally bonded").format(label))
+                log(tr("WARNING: {0} is 'elastic' (weerstandslaag): {1}. "
+                       "Vertaald als ideaal verlijmd (LIAISON_MAIL, geen "
+                       "temperatuursprong over de naad).",
+                       "WARNING: {0} is 'elastic' (resistive layer): {1}. "
+                       "Translated as ideally bonded (LIAISON_MAIL, no "
+                       "temperature jump across the bond).").format(
+                           label, why))
+            groups = self._bonded_groups(b, label)
+            if groups is None:
+                continue
+            parts = ["GROUP_MA_MAIT='{0}'".format(groups[0]),
+                     "GROUP_NO_ESCL='{0}'".format(groups[1])]
+            if b.get("distance", 0.0) > 0.0:
+                parts.append("DISTANCE_MAX={0}".format(_r(b["distance"])))
+            self.charges.append(("AFFE_CHAR_THER", OrderedDict(
+                [("LIAISON_MAIL", ["_F({0})".format(", ".join(parts))])])))
+            log("INFO: {0} -> AFFE_CHAR_THER LIAISON_MAIL (TEMP van de "
+                "slave-knopen = TEMP op het master-vlak).".format(label))
+
+    def _bonded_groups(self, b, label):
+        """(master-elementgroep, slave-knoopgroep) in het thermische mesh.
+        BRMAIT/BRESCL (bridge_mesh._bonded) maakt alleen de mechanische
+        DEFI_GROUP aan (bridge_to_aster._build_defigroup_block); hier eigen
+        groepen, zodat de keten thermisch -> mechanisch (zelfde mesh) ze
+        niet twee keer aanmaakt."""
+        master = b["master"]
+        eids = self.md.get("extra_ma_groups", {}).get(master)
+        if eids is not None:
+            try:
+                master = self._list_group(["M{0}".format(e) for e in eids])
+            except ValueError as e:
+                self.skip(tr("{0}: element {1} niet in het mesh gevonden",
+                             "{0}: element {1} not found in the mesh")
+                          .format(label, e))
+                return None
+        nids = self.md.get("extra_node_groups", {}).get(b["slave"])
+        if not nids:
+            self.skip(tr("{0}: geen slave-knopen",
+                         "{0}: no slave nodes").format(label))
+            return None
+        slave = self.new_group("THN")
+        self.crea_no.append("_F(NOM='{0}', NOEUD={1})".format(
+            slave, _fmt_seq(["'N{0}'".format(n) for n in nids])))
+        return master, slave
+
+    def _bonded_exchange(self, b, label, parts_m, parts_s):
+        """Elastic: ECHANGE_PAROI als dat kan (None), anders de reden
+        (tekst; de aanroeper meldt en maakt er een tie van)."""
+        h = b.get("conductance")
+        if not h or h <= 0.0:
+            return tr("geen 'Thermal conductance per unit area' in de .liml",
+                      "no 'Thermal conductance per unit area' in the .liml")
+        if any(p[0] != "solid" for p in parts_m + parts_s):
+            return tr("weerstandslaag alleen tussen volumevlakken",
+                      "resistive layer only between solid faces")
+        if not self._conforming_faces(parts_m, parts_s):
+            return tr("de vlakken liggen niet knoop op knoop tegenover "
+                      "elkaar (niet-conform mesh); ECHANGE_PAROI vraagt "
+                      "gelijke vlakken aan beide kanten",
+                      "the faces are not node-to-node opposite each other "
+                      "(non-conforming mesh); ECHANGE_PAROI needs equal "
+                      "faces on both sides")
+        found_m = self.face_targets(b["selections"][0], label)
+        found_s = self.face_targets(b["selections"][1], label)
+        if found_m is None or found_s is None:
+            return tr("vlakken niet gevonden", "faces not found")
+        self.charges.append(("AFFE_CHAR_THER", OrderedDict([(
+            "ECHANGE_PAROI", ["_F(GROUP_MA_1={0}, GROUP_MA_2={1}, "
+                              "COEF_H={2})".format(
+                                  _fmt_groups([t[1] for t in found_m[0]]),
+                                  _fmt_groups([t[1] for t in found_s[0]]),
+                                  _r(h))])])))
+        log("INFO: {0} -> AFFE_CHAR_THER ECHANGE_PAROI COEF_H = {1} "
+            "W/m2/K (weerstandslaag).".format(label, _r(h)))
+        return None
+
+    def _conforming_faces(self, parts_m, parts_s):
+        """True als elk slave-vlak dezelfde knooppunten (coordinaten) heeft
+        als een master-vlak en omgekeerd."""
+        size = 0.0
+        if self.nodes:
+            for c in range(3):
+                vals = [p[c] for p in self.nodes.values()]
+                size = max(size, max(vals) - min(vals))
+        tol = 1.0e-6 * max(size, 1.0e-3)
+
+        def key(nodes):
+            return frozenset(tuple(int(round(self.nodes[n][c] / tol))
+                                   for c in range(3)) for n in nodes)
+        km = [key(p[2]) for p in parts_m]
+        ks = [key(p[2]) for p in parts_s]
+        return len(km) == len(ks) and set(km) == set(ks)
+
     def apply_temperature(self, load, label):
         start, end = load["interval"]
         if self.transient and (start != 0.0 or end != 0.0):
@@ -2104,6 +2268,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     if not tb.check_capacity():
         return None
     tb.apply_loads()
+    tb.bonded_loads()
     # Bewegende lasbron (#ASTER-LASBRON, bridge_welding.py)
     import bridge_welding
     welding = bridge_welding.apply(tb, model_data, analysis)

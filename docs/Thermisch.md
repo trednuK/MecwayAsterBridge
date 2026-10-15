@@ -56,6 +56,9 @@ template `Scripts/AsterTemplate_Thermique.comm`). Code-Aster 17.4.
 | bewegende lasbron | `#ASTER-LASBRON` ([Lassen.md](Lassen.md)) |
 | `convectionbc` | `ECHANGE` (schaalvlak: `SOUR_NL`; met een tijdstabel een bron plus een put met `FONC_MULT`) |
 | `radiationbc` | `RAYONNEMENT` σ = 5,670374419e-8 (schaalvlak: `SOUR_NL`, getabelleerd per 5 °C) |
+| verlijmd contact (`contact2`) *Tie* / *Constraint equations* | `AFFE_CHAR_THER` `LIAISON_MAIL`: de temperatuur van elke slave-knoop is die in het geprojecteerde punt op het master-vlak (manual §9.9.1); ook niet-conforme meshes en schalen (`PLAN`) onderling |
+| verlijmd contact *Elastic* (thermische weerstandslaag, *Thermal conductance per unit area* h) | `AFFE_CHAR_THER` `ECHANGE_PAROI` `COEF_H` = h tussen de vlakken van beide kanten (flux h·ΔT over de naad). Alleen volumevlakken die knoop op knoop tegenover elkaar liggen; anders (niet-conform, schalen, geen h) als ideaal verlijmd (`LIAISON_MAIL`) met een WARNING en in de lijst niet-vertaald |
+| verlijmd contact in een model met volumes **en** schalen | **niet vertaald** (ERROR): Code-Aster kan dan geen `LIAISON_MAIL` (CHARGES7_6) of `ECHANGE_PAROI` (CHARGES6_2) leggen; gebruik gedeelde knopen (*Merge nearby nodes*) |
 | `forcedconvection`, `massflowrate`, cavity-straling, formules voor convectie/straling op een schaalvlak, een formule in x, y, z voor een totale `heatflow` of als begintemperatuur, formules in materiaaleigenschappen | **niet vertaald** (gemeld) |
 
 Een stationaire analyse met een tijdstabel neemt de waarde op t = 1 s, zoals Mecway
@@ -63,10 +66,18 @@ met CCX (Mecway's interne solver telt een tabel als 0; de bridge waarschuwt dan)
 `temperature2` met een tijdsinterval (`starttime`/`endtime` ≠ 0) wordt de hele
 analyse opgelegd (gemeld).
 
+**Verlijmd contact.** In een T31 met *Thermal stress* (keten thermisch → mechanisch)
+krijgt het thermische deel de thermische koppeling hierboven en het mechanische deel
+de gewone mechanische `LIAISON_MAIL` (TYPE_RACCORD, [Mecway_functionaliteit.md](Mecway_functionaliteit.md));
+bij *Elastic* is de mechanische laag star (gemeld), de thermische weerstand wel
+vertaald. Mecway's interne solver (Mecway 34, zonder GUI) rekende *Tie* en *Elastic*
+in een T30 zonder koppeling (300 / 400 K aan beide kanten); met de CCX-solver wel
+(350 K, en 340 / 360 K met h = 2000 W/m²K), gelijk aan de bridge (TH-04a/c).
+
 ## 4. Aanvullende controles (Code-Aster 17.4, offline)
 
 De reproduceerbare tests met tolerantie en bronnen staan in
-[Verificatie.md](Verificatie.md) §8 (TH-01 .. TH-03). Daarnaast is de vertaling met de
+[Verificatie.md](Verificatie.md) §8 (TH-01 .. TH-04). Daarnaast is de vertaling met de
 hand gecontroleerd op deze modellen (analytische waarden volgens Incropera e.a.
 (2007), hfdst. 3; ConductionConvectionRadiation volgens de Mecway-handleiding §11.13):
 
@@ -101,6 +112,8 @@ Mecway rekent zonder GUI: `mecway.exe model.liml solve`, met
 | transient, constante belasting, `theta` = 0,5 | 1,5e-5 K |
 | OscillatingHeatFlow (1601 stappen), `theta` 0,57 / 0,5 / 1,0 | max 1,40 / 1,49 / 2,61 K (RMS 0,13 / 0,14 / 0,06 K) |
 | tijdsafhankelijke convectie/straling op een schaalvlak, `theta` 0,5 | 0,10–0,21 K |
+| verlijmd contact *Constraint equations*, niet-conform (volumes TH-04b, schalen TH-04d; Mecway 34) | 0,0024 / 0,0056 K |
+| verlijmd contact *Tie* en *Elastic* (TH-04a/c), Mecway 34 met CCX | < 0,002 K |
 
 Mecway rekent transient Crank-Nicolson (θ = 0,5) met de belasting op het einde van
 de stap; Code-Aster neemt het θ-gewogen gemiddelde. Bij een tijdstabel blijft

@@ -99,7 +99,9 @@ Status 15 October 2026. The whole table comes from one revision: the regression 
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `71ecf2f`
 (all steps, the final check S11, the follow-ups of 7–8 October and bonded contact between
 shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (known),
-0 NOK/FOUT.
+0 NOK/FOUT. TH-04 (bonded contact in thermal analyses) was added
+afterwards and only the groups TH and LS-07 were rerun: 281 test cases, 1658 checks,
+1654 OK.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -123,12 +125,12 @@ shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
-| Thermal | 17 | 70 | 70 | 0 |
+| Thermal | 21 | 85 | 85 | 0 |
 | Thermal stress | 2 | 7 | 7 | 0 |
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **277** | **1643** | **1639** | **4** |
+| **Total** | **281** | **1658** | **1654** | **4** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -1933,6 +1935,34 @@ transient, convection on a shell face → `THER_NON_LINE`; TH-03 with `lin_stati
   residual stress ≤ 1.2e-6 Pa (tolerance 252 Pa = 1e-6·EαΔT).
 - **Interpretation**: uniform strain and stress are exact with hex8; `ALPHA`, the
   reference temperature and the temperature field are translated correctly.
+
+### TH-04 Bonded contact in a thermal analysis
+
+- **Purpose**: Mecway *Bonded contact* (`contact2`) in T30: *Tie* / *Constraint equations*
+  → `AFFE_CHAR_THER` `LIAISON_MAIL`, *Elastic* (thermal resistive layer) →
+  `ECHANGE_PAROI` (previously no heat crossed the bond, without a message).
+- **Model**: bar 0.1 × 0.01 × 0.01 m made of two hex8 blocks with their own nodes
+  (x = 0..0.05 and 0.05..0.1 m), λ = 50 W/mK, bonded at x = 0.05 m (master block A),
+  300 K left and 400 K right, sides insulated. TH-04a: *Tie*, 5 × 1 × 1 elements per block
+  (conforming); TH-04b: *Constraint equations*, seam 2 × 2 (master) against 3 × 3
+  (slave); TH-04c: *Elastic*, h = 2000 W/m²K (`<conductanceperarea>`), conforming;
+  TH-04d: two shell strips (quad4, 2 mm, `PLAN`) in one plane, edge of B on the last
+  column of A, 3 against 4 nodes on the seam.
+- **Reference** (Incropera et al., 2007, §3.1): T linear, 350 K at the seam, q =
+  −k dT/dx = −50,000 W/m² (a, b, d); resistances in series L/2k + 1/h + L/2k: q =
+  40,000 W/m², 340 / 360 K on both sides of the seam (c).
+- **Result**: (a, c) relative deviation ≤ 1e-14 (tolerance 1e-6); (b) seam 350.067 K,
+  flux −50,083 W/m² (+0.17%); (d) seam 350.036 K, flux −0.04% (tolerance 0.1% on T,
+  0.5% on the flux).
+- **Interpretation**: with conforming meshes the node-to-face coupling is exact. With
+  non-conforming meshes it is not conforming in the FE sense (a small jump between the
+  slave nodes), so even a linear field is not exact; Mecway 34 (internal solver, no
+  GUI) computes the same coupling: difference per node 0.0024 K (b) and 0.0056 K (d).
+  Mecway's internal solver gave no coupling at all for *Tie* (a) and *Elastic* (c)
+  (300 / 400 K); with the CCX solver 350 K (a) and 340.0 / 360.0 K, flux −39,998 W/m²
+  (c), equal to the bridge. Solids and shells together in one model cannot be coupled
+  thermally by Code-Aster (CHARGES7_6 / CHARGES6_2, ERROR; [Thermal.md](Thermal.md)
+  sec. 3).
 
 ### Welding: moving heat source (WE)
 

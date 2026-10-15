@@ -1,0 +1,112 @@
+<liml version="33">
+  <analysis type="T30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.01" y="0" z="0" />
+  <node nid="3" x="0.01" y="0.005" z="0" />
+  <node nid="4" x="0" y="0.005" z="0" />
+  <node nid="5" x="0.01" y="0.01" z="0" />
+  <node nid="6" x="0" y="0.01" z="0" />
+  <node nid="7" x="0.02" y="0" z="0" />
+  <node nid="8" x="0.02" y="0.005" z="0" />
+  <node nid="9" x="0.02" y="0.01" z="0" />
+  <node nid="10" x="0.03" y="0" z="0" />
+  <node nid="11" x="0.03" y="0.005" z="0" />
+  <node nid="12" x="0.03" y="0.01" z="0" />
+  <node nid="13" x="0.04" y="0" z="0" />
+  <node nid="14" x="0.04" y="0.005" z="0" />
+  <node nid="15" x="0.04" y="0.01" z="0" />
+  <node nid="16" x="0.05" y="0" z="0" />
+  <node nid="17" x="0.05" y="0.005" z="0" />
+  <node nid="18" x="0.05" y="0.01" z="0" />
+  <node nid="19" x="0.05" y="0" z="0" />
+  <node nid="20" x="0.06" y="0" z="0" />
+  <node nid="21" x="0.06" y="0.00333333333333" z="0" />
+  <node nid="22" x="0.05" y="0.00333333333333" z="0" />
+  <node nid="23" x="0.06" y="0.00666666666667" z="0" />
+  <node nid="24" x="0.05" y="0.00666666666667" z="0" />
+  <node nid="25" x="0.06" y="0.01" z="0" />
+  <node nid="26" x="0.05" y="0.01" z="0" />
+  <node nid="27" x="0.07" y="0" z="0" />
+  <node nid="28" x="0.07" y="0.00333333333333" z="0" />
+  <node nid="29" x="0.07" y="0.00666666666667" z="0" />
+  <node nid="30" x="0.07" y="0.01" z="0" />
+  <node nid="31" x="0.08" y="0" z="0" />
+  <node nid="32" x="0.08" y="0.00333333333333" z="0" />
+  <node nid="33" x="0.08" y="0.00666666666667" z="0" />
+  <node nid="34" x="0.08" y="0.01" z="0" />
+  <node nid="35" x="0.09" y="0" z="0" />
+  <node nid="36" x="0.09" y="0.00333333333333" z="0" />
+  <node nid="37" x="0.09" y="0.00666666666667" z="0" />
+  <node nid="38" x="0.09" y="0.01" z="0" />
+  <node nid="39" x="0.1" y="0" z="0" />
+  <node nid="40" x="0.1" y="0.00333333333333" z="0" />
+  <node nid="41" x="0.1" y="0.00666666666667" z="0" />
+  <node nid="42" x="0.1" y="0.01" z="0" />
+  <elset name="Deel_A" material="Plaat">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="2 7 8 3" />
+    <elem eid="4" shape="quad4" nodes="3 8 9 5" />
+    <elem eid="5" shape="quad4" nodes="7 10 11 8" />
+    <elem eid="6" shape="quad4" nodes="8 11 12 9" />
+    <elem eid="7" shape="quad4" nodes="10 13 14 11" />
+    <elem eid="8" shape="quad4" nodes="11 14 15 12" />
+    <elem eid="9" shape="quad4" nodes="13 16 17 14" />
+    <elem eid="10" shape="quad4" nodes="14 17 18 15" />
+  </elset>
+  <elset name="Deel_B" material="Plaat">
+    <elem eid="11" shape="quad4" nodes="19 20 21 22" />
+    <elem eid="12" shape="quad4" nodes="22 21 23 24" />
+    <elem eid="13" shape="quad4" nodes="24 23 25 26" />
+    <elem eid="14" shape="quad4" nodes="20 27 28 21" />
+    <elem eid="15" shape="quad4" nodes="21 28 29 23" />
+    <elem eid="16" shape="quad4" nodes="23 29 30 25" />
+    <elem eid="17" shape="quad4" nodes="27 31 32 28" />
+    <elem eid="18" shape="quad4" nodes="28 32 33 29" />
+    <elem eid="19" shape="quad4" nodes="29 33 34 30" />
+    <elem eid="20" shape="quad4" nodes="31 35 36 32" />
+    <elem eid="21" shape="quad4" nodes="32 36 37 33" />
+    <elem eid="22" shape="quad4" nodes="33 37 38 34" />
+    <elem eid="23" shape="quad4" nodes="35 39 40 36" />
+    <elem eid="24" shape="quad4" nodes="36 40 41 37" />
+    <elem eid="25" shape="quad4" nodes="37 41 42 38" />
+  </elset>
+  <temperature2 selection="Links"><value>300 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <temperature2 selection="Rechts"><value>400 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <contact2 selectionmaster="Lijm_A" selectionslave="Lijm_B" type="bondedce"><tolerance>0 m</tolerance><normalstiffness>0 Pa/m</normalstiffness><tangentialstiffness>0 Pa/m</tangentialstiffness><frictioncoefficient>0</frictioncoefficient></contact2>
+  <mat name="Plaat">
+    <geometric type="Plate" thickness="0.002 m" />
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" />
+  </mat>
+  <faceselection name="Lijm_A">
+    <face eid="9" faceid="5" />
+    <face eid="10" faceid="5" />
+  </faceselection>
+  <faceselection name="Lijm_B">
+    <face eid="11" faceid="4" />
+    <face eid="12" faceid="4" />
+    <face eid="13" faceid="4" />
+  </faceselection>
+  <nodeselection name="Links">
+    <node nid="1" />
+    <node nid="4" />
+    <node nid="6" />
+  </nodeselection>
+  <nodeselection name="Rechts">
+    <node nid="39" />
+    <node nid="40" />
+    <node nid="41" />
+    <node nid="42" />
+  </nodeselection>
+  <nodeselection name="Naad_A">
+    <node nid="16" />
+    <node nid="17" />
+    <node nid="18" />
+  </nodeselection>
+  <nodeselection name="Naad_B">
+    <node nid="19" />
+    <node nid="22" />
+    <node nid="24" />
+    <node nid="26" />
+  </nodeselection>
+</liml>

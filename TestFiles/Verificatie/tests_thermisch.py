@@ -447,3 +447,131 @@ TESTS += [
                 source="E alpha dT A")],
          note="uniforme spanningstoestand: exact met hex8"),
 ]
+
+
+# ==================================================================
+# TH-04 VERLIJMD CONTACT (contact2 bonded) IN EEN THERMISCHE ANALYSE
+# ==================================================================
+# Twee blokken met eigen knopen, x = 0..L/2 (A) en L/2..L (B), verlijmd op
+# x = L/2; T vast links (TA4) en rechts (TB4), zijkanten geisoleerd.
+# Tie / constraint equations: T lineair, op de naad (TA4 + TB4) / 2.
+# Elastic (weerstandslaag, Mecway manual v33 par. 9.9.1): drie weerstanden
+# in serie, q = dT / (L/(2k) + 1/h + L/(2k)) (Incropera par. 3.1, vgl.
+# 3.19); sprong over de naad q / h.
+L4, B4, K4, TA4, TB4, H4 = 0.1, 0.01, 50.0, 300.0, 400.0, 2000.0
+Q4 = (TB4 - TA4) / (L4 / K4 + 1.0 / H4)
+BOND4 = ('<contact2 selectionmaster="Lijm_A" selectionslave="Lijm_B" '
+         'type="{0}"><tolerance>0 m</tolerance><normalstiffness>{1} Pa/m'
+         '</normalstiffness><tangentialstiffness>{1} Pa/m'
+         '</tangentialstiffness><frictioncoefficient>0'
+         '</frictioncoefficient>{2}</contact2>')
+
+
+def build_th04(kind, na, nb, order=1):
+    """kind: bondedtie / bondedce / bondedelastic; na, nb: (nx, ny) per
+    blok (ny = nz)."""
+    def build():
+        m = Model("T30")
+        _mat_th(m, "Staal", K4)
+        m.elset("Blok_A", "Staal")
+        a = hexmesh(m, "Blok_A", na[0], na[1], na[1],
+                    box(0, L4 / 2, 0, B4, 0, B4), order=order)
+        m._index = {}                    # B: eigen knopen
+        m.elset("Blok_B", "Staal")
+        b = hexmesh(m, "Blok_B", nb[0], nb[1], nb[1],
+                    box(L4 / 2, L4, 0, B4, 0, B4), order=order)
+        m.node_selection("Links", sorted(a["nodes"]["u0"]))
+        m.node_selection("Rechts", sorted(b["nodes"]["u1"]))
+        m.node_selection("Naad_A", sorted(a["nodes"]["u1"]))
+        m.node_selection("Naad_B", sorted(b["nodes"]["u0"]))
+        m.face_selection("Lijm_A", a["faces"]["u1"])
+        m.face_selection("Lijm_B", b["faces"]["u0"])
+        m.add(_temp("Links", TA4))
+        m.add(_temp("Rechts", TB4))
+        elastic = kind == "bondedelastic"
+        m.add(BOND4.format(
+            kind, "1e+12" if elastic else "0",
+            "<conductanceperarea>%g W/m²/K</conductanceperarea>" % H4
+            if elastic else ""))
+        return m
+    return build
+
+
+def build_th04d():
+    """Twee schaalstroken (quad4, 2 mm, PLAN) in een vlak met eigen
+    knopen: rand van B (4 knopen) op de laatste kolom van A (3 knopen op
+    de naad), constraint equations."""
+    m = Model("T30")
+    _mat_th(m, "Plaat", K4, plate=0.002)
+    m.elset("Deel_A", "Plaat")
+    a = quadmesh(m, "Deel_A", 5, 2, rect(0, L4 / 2, 0, B4))
+    m._index = {}
+    m.elset("Deel_B", "Plaat")
+    b = quadmesh(m, "Deel_B", 5, 3, rect(L4 / 2, L4, 0, B4))
+    m.face_selection("Lijm_A", [(a["elems"][(4, j)], 5) for j in range(2)])
+    m.face_selection("Lijm_B", b["edges"]["u0"])
+    m.node_selection("Links", sorted(a["nodes"]["u0"]))
+    m.node_selection("Rechts", sorted(b["nodes"]["u1"]))
+    m.node_selection("Naad_A", sorted(a["nodes"]["u1"]))
+    m.node_selection("Naad_B", sorted(b["nodes"]["u0"]))
+    m.add(_temp("Links", TA4))
+    m.add(_temp("Rechts", TB4))
+    m.add(BOND4.format("bondedce", "0", ""))
+    return m
+
+
+def _th04_tie_checks(tol=1e-6, tol_q=1e-5, src=""):
+    lin = "T lineair over de hele staaf (vlakke wand, Incropera par. 3.1)"
+    return [
+        Check("T naad (kant A)", lambda r: r.mean("temperature", "Naad_A"),
+              ref=(TA4 + TB4) / 2, tol=tol, unit="K", source=lin + src),
+        Check("T naad (kant B)", lambda r: r.mean("temperature", "Naad_B"),
+              ref=(TA4 + TB4) / 2, tol=tol, unit="K",
+              source="verlijmd: gelijk aan kant A" + src),
+        Check("T (x = L/5)", lambda r: r.at("temperature", (L4 / 5, 0, 0)),
+              ref=TA4 + (TB4 - TA4) / 5, tol=tol, unit="K", source=lin),
+        Check("flux x (x = 3L/4)",
+              lambda r: r.at("heatfluxx", (3 * L4 / 4, 0, 0)),
+              ref=-K4 * (TB4 - TA4) / L4, tol=tol_q, unit="W/m²",
+              source="-k dT/dx (Fourier)")]
+
+
+TESTS += [
+    Case("TH-04a", GROUP, "Verlijmd contact (tie), twee blokken, conform",
+         "ther_3d", build_th04("bondedtie", (5, 1), (5, 1)),
+         _th04_tie_checks(),
+         note="eigen knopen aan beide kanten, AFFE_CHAR_THER LIAISON_MAIL; "
+              "T lineair -> exact. Mecway 34 met CCX: 350 K op de naad"),
+    Case("TH-04b", GROUP, "Verlijmd contact (constraint eq.), niet-conform",
+         "ther_3d", build_th04("bondedce", (5, 2), (4, 3)),
+         _th04_tie_checks(1e-3, 5e-3, "; Mecway 34 (intern): 350,0668 K"),
+         note="naad 2x2 (master) tegen 3x3 (slave): knoop-op-vlak-koppeling "
+              "is niet conform (tussen de slave-knopen een kleine sprong), "
+              "dus niet exact: naad 350,067 K, flux +0,17 %; Mecway 34 "
+              "(interne solver) zelfde koppeling, verschil per knoop "
+              "< 0,003 K. Tolerantie 0,1 % (T) en 0,5 % (flux)"),
+    Case("TH-04c", GROUP, "Verlijmd contact elastic: thermische weerstand",
+         "ther_3d", build_th04("bondedelastic", (5, 1), (5, 1)),
+         [Check("T naad (kant A)", lambda r: r.mean("temperature", "Naad_A"),
+                ref=TA4 + Q4 * L4 / (2 * K4), tol=1e-6, unit="K",
+                source="weerstanden in serie L/(2k) + 1/h + L/(2k) "
+                       "(Incropera par. 3.1, vgl. 3.19)"),
+          Check("T naad (kant B)", lambda r: r.mean("temperature", "Naad_B"),
+                ref=TB4 - Q4 * L4 / (2 * K4), tol=1e-6, unit="K",
+                source="idem"),
+          Check("flux x (x = L/4)",
+                lambda r: r.at("heatfluxx", (L4 / 4, 0, 0)),
+                ref=-Q4, tol=1e-5, unit="W/m²",
+                source="q = dT / (L/k + 1/h)")],
+         note="h = 2000 W/m²K (Mecway 'Thermal conductance per unit "
+              "area', <conductanceperarea>), ECHANGE_PAROI; sprong q/h = "
+              "20 K; T lineair per blok -> exact. Mecway 34 met CCX: 340 / "
+              "360 K"),
+    Case("TH-04d", GROUP, "Verlijmd contact, schaalrand op schaalvlak (PLAN)",
+         "ther_3d", build_th04d,
+         _th04_tie_checks(1e-3, 5e-3, "; Mecway 34 (intern): 350,0366 K"),
+         note="schalen als PLAN met diktefactor; naad 3 tegen 4 knopen, "
+              "dus niet conform (zie TH-04b): naad 350,036 K; Mecway 34 "
+              "(interne solver) verschil per knoop < 0,006 K. Tolerantie "
+              "0,1 % (T) en 0,5 % (flux)"),
+]

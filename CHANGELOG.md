@@ -9,6 +9,12 @@
 - **New overview** of which Mecway functionality the bridge does and does not translate
   (`docs/en/Mecway_features.md`, Dutch `docs/Mecway_functionaliteit.md`), also on the
   Documentation page of the start screen.
+- **Bonded contact in thermal analyses** (T30/T31) is now translated instead of silently
+  dropped (KNOWN_BUGS 88): *Tie* / *Constraint equations* → `AFFE_CHAR_THER`
+  `LIAISON_MAIL`, *Elastic* → thermal resistance `ECHANGE_PAROI` with Mecway's *Thermal
+  conductance per unit area* (conforming solid faces; otherwise ideally bonded with a
+  warning). Models with solids and shells together: ERROR (Code-Aster cannot couple
+  them). Verification TH-04a–d.
 - KNOWN_BUGS 88–90 recorded (bonded contact in thermal analyses, node temperature in
   mechanical analyses, quadratic shell as bonded master).
 - README: Mecway 34, acknowledgements. Verification: 277 test cases, 1643 checks.

@@ -1991,6 +1991,17 @@ def extract_aster_data_from_liml(file_path):
                                        "bondedelastic"):
                     contact["tolerance"] = parse_and_convert(
                         item.findtext("tolerance") or "0", "length")
+                    # Thermisch 'elastic': warmteweerstandslaag met
+                    # "Thermal conductance per unit area" (manual v33 par.
+                    # 9.9.1), W/m²/K; bridge_thermal.bonded_loads ->
+                    # ECHANGE_PAROI. Tagnaam: Mecway 34 (CCX-solver,
+                    # headless) rekent met <conductanceperarea> de
+                    # weerstandslaag (TH-04c: 340/360 K), met
+                    # <thermalcontactconductance> niet.
+                    text = item.findtext("conductanceperarea")
+                    if text:
+                        contact["conductance"] = parse_and_convert(
+                            text, "heat_transfer")
                     model_data["bonded"].append(contact)
                     log("INFO: Verlijmd contact {0}".format(contact))
                     continue

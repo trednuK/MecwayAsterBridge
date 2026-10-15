@@ -1,0 +1,101 @@
+<liml version="33">
+  <analysis type="T30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.01" y="0" z="0" />
+  <node nid="3" x="0.01" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0" y="0" z="0.01" />
+  <node nid="6" x="0.01" y="0" z="0.01" />
+  <node nid="7" x="0.01" y="0.01" z="0.01" />
+  <node nid="8" x="0" y="0.01" z="0.01" />
+  <node nid="9" x="0.02" y="0" z="0" />
+  <node nid="10" x="0.02" y="0.01" z="0" />
+  <node nid="11" x="0.02" y="0" z="0.01" />
+  <node nid="12" x="0.02" y="0.01" z="0.01" />
+  <node nid="13" x="0.03" y="0" z="0" />
+  <node nid="14" x="0.03" y="0.01" z="0" />
+  <node nid="15" x="0.03" y="0" z="0.01" />
+  <node nid="16" x="0.03" y="0.01" z="0.01" />
+  <node nid="17" x="0.04" y="0" z="0" />
+  <node nid="18" x="0.04" y="0.01" z="0" />
+  <node nid="19" x="0.04" y="0" z="0.01" />
+  <node nid="20" x="0.04" y="0.01" z="0.01" />
+  <node nid="21" x="0.05" y="0" z="0" />
+  <node nid="22" x="0.05" y="0.01" z="0" />
+  <node nid="23" x="0.05" y="0" z="0.01" />
+  <node nid="24" x="0.05" y="0.01" z="0.01" />
+  <node nid="25" x="0.05" y="0" z="0" />
+  <node nid="26" x="0.06" y="0" z="0" />
+  <node nid="27" x="0.06" y="0.01" z="0" />
+  <node nid="28" x="0.05" y="0.01" z="0" />
+  <node nid="29" x="0.05" y="0" z="0.01" />
+  <node nid="30" x="0.06" y="0" z="0.01" />
+  <node nid="31" x="0.06" y="0.01" z="0.01" />
+  <node nid="32" x="0.05" y="0.01" z="0.01" />
+  <node nid="33" x="0.07" y="0" z="0" />
+  <node nid="34" x="0.07" y="0.01" z="0" />
+  <node nid="35" x="0.07" y="0" z="0.01" />
+  <node nid="36" x="0.07" y="0.01" z="0.01" />
+  <node nid="37" x="0.08" y="0" z="0" />
+  <node nid="38" x="0.08" y="0.01" z="0" />
+  <node nid="39" x="0.08" y="0" z="0.01" />
+  <node nid="40" x="0.08" y="0.01" z="0.01" />
+  <node nid="41" x="0.09" y="0" z="0" />
+  <node nid="42" x="0.09" y="0.01" z="0" />
+  <node nid="43" x="0.09" y="0" z="0.01" />
+  <node nid="44" x="0.09" y="0.01" z="0.01" />
+  <node nid="45" x="0.1" y="0" z="0" />
+  <node nid="46" x="0.1" y="0.01" z="0" />
+  <node nid="47" x="0.1" y="0" z="0.01" />
+  <node nid="48" x="0.1" y="0.01" z="0.01" />
+  <elset name="Blok_A" material="Staal">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="hex8" nodes="2 9 10 3 6 11 12 7" />
+    <elem eid="3" shape="hex8" nodes="9 13 14 10 11 15 16 12" />
+    <elem eid="4" shape="hex8" nodes="13 17 18 14 15 19 20 16" />
+    <elem eid="5" shape="hex8" nodes="17 21 22 18 19 23 24 20" />
+  </elset>
+  <elset name="Blok_B" material="Staal">
+    <elem eid="6" shape="hex8" nodes="25 26 27 28 29 30 31 32" />
+    <elem eid="7" shape="hex8" nodes="26 33 34 27 30 35 36 31" />
+    <elem eid="8" shape="hex8" nodes="33 37 38 34 35 39 40 36" />
+    <elem eid="9" shape="hex8" nodes="37 41 42 38 39 43 44 40" />
+    <elem eid="10" shape="hex8" nodes="41 45 46 42 43 47 48 44" />
+  </elset>
+  <temperature2 selection="Links"><value>300 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <temperature2 selection="Rechts"><value>400 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <contact2 selectionmaster="Lijm_A" selectionslave="Lijm_B" type="bondedelastic"><tolerance>0 m</tolerance><normalstiffness>1e+12 Pa/m</normalstiffness><tangentialstiffness>1e+12 Pa/m</tangentialstiffness><frictioncoefficient>0</frictioncoefficient><conductanceperarea>2000 W/m²/K</conductanceperarea></contact2>
+  <mat name="Staal">
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" />
+  </mat>
+  <nodeselection name="Links">
+    <node nid="1" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="8" />
+  </nodeselection>
+  <nodeselection name="Rechts">
+    <node nid="45" />
+    <node nid="46" />
+    <node nid="47" />
+    <node nid="48" />
+  </nodeselection>
+  <nodeselection name="Naad_A">
+    <node nid="21" />
+    <node nid="22" />
+    <node nid="23" />
+    <node nid="24" />
+  </nodeselection>
+  <nodeselection name="Naad_B">
+    <node nid="25" />
+    <node nid="28" />
+    <node nid="29" />
+    <node nid="32" />
+  </nodeselection>
+  <faceselection name="Lijm_A">
+    <face eid="5" faceid="4" />
+  </faceselection>
+  <faceselection name="Lijm_B">
+    <face eid="6" faceid="6" />
+  </faceselection>
+</liml>

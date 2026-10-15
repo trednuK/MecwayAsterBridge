@@ -350,22 +350,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    `K1_POST_K` of K uit G. In de verificatie toetst BR-10 deze K_I met dezelfde 5 % als
    de andere XFEM-controles; de afwijking telt als BEKEND.
 
-88\. **Thermisch: verlijmd contact valt stil weg** (bevestigd met een offline run,
-   `bridge_thermal.build_thermal`). `build_thermal` meldt `contacts` en `couplings` als
-   niet vertaald (`_skip`, punt 16), maar niet `model_data["bonded"]`: een `contact2`
-   `bondedtie`/`bondedce`/`bondedelastic` in een T30/T31-model komt niet in de `.comm`,
-   zonder ERROR en zonder `skipped_loads`. Erger: `bridge_mesh._bonded` logt wel
-   "INFO: verlijmd contact ... -> LIAISON_MAIL TYPE_RACCORD='MASSIF'". Mecway geleidt
-   warmte door verlijmd contact (manual par. 9.9: contact ook bij Thermal; elastic =
-   thermische weerstandslaag). Reproductie: twee hex8-blokken 0..0,05 en 0,05..0,1 m
-   met eigen knopen, `contact2 type="bondedtie"` tussen de grensvlakken, T = 300 K
-   links en 400 K rechts, `ther_3d`: run OK, `skipped_loads` leeg, T = 300 K in heel
-   blok A en 400 K in heel blok B (verwacht lineair, 350 K op het grensvlak).
-   Oplossing: minstens `bonded` meemelden in de lus in `build_thermal`; beter vertalen
-   met `AFFE_CHAR_THER` `LIAISON_MAIL` (catalogus affe_char_ther.py v17.4) voor
-   `bondedtie`/`bondedce` en `ECHANGE_PAROI` voor `bondedelastic` (warmtegeleiding per
-   oppervlak; NIET geverifieerd of dat met niet-conforme meshes werkt).
-
 89\. **Node temperature (`temperature3`) telt niet mee in een mechanische analyse**
    (bevestigd met een offline run, `bridge_from_liml.extract_aster_data_from_liml`,
    tak `not thermal_run and tag in bridge_thermal.THERMAL_TAGS`). `temperature3` staat
@@ -416,6 +400,19 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    is de doorbuiging gelijk aan LS-07a (9,4220e-4 m). Oplossing (NIET geverifieerd):
    de slave-rotaties met `LIAISON_DDL` per knoop in het lokale assenstelsel van de
    master koppelen, of de mastervlakken per normaal splitsen.
+
+92\. **Thermisch: mechanische meldingen van verlijmd contact schaal op schaal**
+   (vermoedelijk, uit de code; `bridge_mesh._bonded`). In een thermische analyse
+   (zonder keten naar mechanisch) slaat `_bonded` de mechanische INFO en de melding over
+   de verende laag over, maar roept voor `TYPE_RACCORD='COQUE'` nog `_coque_ddl` aan en
+   geeft voor een schaalrand op een volume nog de scharnier-WARNING. Liggen de schalen
+   (evenwijdig, `PLAN`) in een scheef vlak, dan verschijnt dus de WARNING over
+   `FACTOR_11`/`solver_nprec` (punt 91), die thermisch niet geldt; de thermische
+   vertaling (`bridge_thermal.bonded_loads`) gebruikt `ddl` niet. Een schaalrand op een
+   volume wordt thermisch toch al niet vertaald (ERROR, volumes en schalen samen). Niet
+   gereproduceerd. Oplossing: in `_bonded` `_coque_ddl` en de scharnier-WARNING alleen
+   bij `mech` (bewust niet gedaan bij de thermische vertaling, om de wijziging in
+   `_bonded` klein te houden; `_coque_ddl` wordt tegelijk aangepast voor punt 90/91).
 
 ## Open vragen (gedrag van Mecway niet nagegaan)
 

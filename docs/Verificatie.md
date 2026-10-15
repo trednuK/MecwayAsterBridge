@@ -101,7 +101,8 @@ Stand 15 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `71ecf2f`
 (alle stappen, de eindcontrole S11, de vervolgpunten van 7–8 oktober en verlijmd contact
 tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 4 BEKEND,
-0 NOK/FOUT.
+0 NOK/FOUT. Daarna TH-04 (verlijmd contact thermisch) toegevoegd en
+alleen de groepen TH en LS-07 opnieuw gedraaid: 281 testcases, 1658 controles, 1654 OK.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -125,12 +126,12 @@ tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
-| Thermisch | 17 | 70 | 70 | 0 |
+| Thermisch | 21 | 85 | 85 | 0 |
 | Thermische spanning | 2 | 7 | 7 | 0 |
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **277** | **1643** | **1639** | **4** |
+| **Totaal** | **281** | **1658** | **1654** | **4** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -1934,6 +1935,33 @@ transient, convectie op een schaalvlak → `THER_NON_LINE`; TH-03 met `lin_stati
   restspanning ≤ 1,2e-6 Pa (tolerantie 252 Pa = 1e-6·EαΔT).
 - **Interpretatie**: een uniforme rek en spanning zijn exact met hex8; `ALPHA`, de
   referentietemperatuur en het temperatuurveld zijn juist vertaald.
+
+### TH-04 Verlijmd contact in een thermische analyse
+
+- **Doel**: Mecway *Bonded contact* (`contact2`) in T30: *Tie* / *Constraint equations*
+  → `AFFE_CHAR_THER` `LIAISON_MAIL`, *Elastic* (thermische weerstandslaag) →
+  `ECHANGE_PAROI` (voorheen ging er zonder melding geen warmte over de naad).
+- **Model**: staaf 0,1 × 0,01 × 0,01 m uit twee hex8-blokken met eigen knopen (x = 0..0,05
+  en 0,05..0,1 m), λ = 50 W/mK, verlijmd op x = 0,05 m (master blok A), 300 K links en
+  400 K rechts, zijkanten geïsoleerd. TH-04a: *Tie*, 5 × 1 × 1 elementen per blok
+  (conform); TH-04b: *Constraint equations*, naad 2 × 2 (master) tegen 3 × 3 (slave);
+  TH-04c: *Elastic*, h = 2000 W/m²K (`<conductanceperarea>`), conform; TH-04d: twee
+  schaalstroken (quad4, 2 mm, `PLAN`) in één vlak, rand van B op de laatste kolom van A,
+  3 tegen 4 knopen op de naad.
+- **Referentie** (Incropera e.a., 2007, §3.1): T lineair, 350 K op de naad, q =
+  −k dT/dx = −50 000 W/m² (a, b, d); weerstanden in serie L/2k + 1/h + L/2k: q =
+  40 000 W/m², 340 / 360 K aan beide kanten van de naad (c).
+- **Resultaat**: (a, c) relatieve afwijking ≤ 1e-14 (tolerantie 1e-6); (b) naad 350,067 K,
+  flux −50 083 W/m² (+0,17 %); (d) naad 350,036 K, flux −0,04 % (tolerantie 0,1 % op T,
+  0,5 % op de flux).
+- **Interpretatie**: conform is de knoop-op-vlak-koppeling exact. Niet-conform is ze niet
+  conform in de FEM-zin (tussen de slave-knopen een kleine sprong), dus ook een lineair
+  veld niet exact; Mecway 34 (interne solver, zonder GUI) rekent dezelfde koppeling:
+  verschil per knoop 0,0024 K (b) en 0,0056 K (d). Mecway's interne solver gaf voor *Tie*
+  (a) en *Elastic* (c) géén koppeling (300 / 400 K); met de CCX-solver 350 K (a) en
+  340,0 / 360,0 K, flux −39 998 W/m² (c), gelijk aan de bridge. Volumes en schalen samen
+  in één model kan Code-Aster thermisch niet koppelen (CHARGES7_6 / CHARGES6_2, ERROR;
+  [Thermisch.md](Thermisch.md) §3).
 
 ### Lassen: bewegende warmtebron (WE)
 

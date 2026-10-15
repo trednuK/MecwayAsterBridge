@@ -1936,7 +1936,13 @@ def _bonded(model_data, c, group_faces, rn):
                    "contact.").format(label))
         else:
             raccord = "COQUE_MASSIF"
-    if c["type"] == "bondedelastic":
+    # Thermisch (T30/T31): bridge_thermal.bonded_loads vertaalt het contact
+    # (LIAISON_MAIL op TEMP of ECHANGE_PAROI) en meldt zelf wat niet lukt;
+    # de mechanische meldingen hieronder gelden dan alleen voor het
+    # mechanische deel van de keten thermisch -> mechanisch.
+    thermal = model_data.get("thermal_data") is not None
+    mech = not thermal or model_data.get("thermo_mech")
+    if c["type"] == "bondedelastic" and mech:
         model_data.setdefault("skipped_loads", []).append(
             tr("{0}: verende laag (kn={1}, kt={2} Pa/m) niet vertaald, star "
                "verlijmd",
@@ -1964,10 +1970,17 @@ def _bonded(model_data, c, group_faces, rn):
     slave_nodes = _extra_node_group(
         model_data, "BRESCL", set(n for f in faces.get(slave, [])
                                   for n in f["nodes"]))
-    log("INFO: {0} -> LIAISON_MAIL TYPE_RACCORD='{1}'.".format(label,
-                                                             raccord))
+    if mech:
+        log("INFO: {0} -> LIAISON_MAIL TYPE_RACCORD='{1}'{2}.".format(
+            label, raccord, " (mechanisch deel)" if thermal else ""))
+    if thermal:
+        log("INFO: {0}: thermische koppeling in bridge_thermal "
+            "(LIAISON_MAIL op TEMP of ECHANGE_PAROI).".format(label))
     out = {"master": master, "slave": slave_nodes, "raccord": raccord,
-           "distance": c.get("tolerance", 0.0), "type": c["type"]}
+           "distance": c.get("tolerance", 0.0), "type": c["type"],
+           "kinds": (m_type, s_type), "selections": (c["master"],
+                                                     c["slave"]),
+           "conductance": c.get("conductance")}
     if raccord == "COQUE":
         out["ddl"] = _coque_ddl(group_faces.get(rn(c["master"]), {}), label)
     if edge is not None:

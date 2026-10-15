@@ -82,7 +82,7 @@ ignored with only an INFO, as Mecway itself does.
 | Contact, Unilateral, on shell edges or beams | No | Reported. |
 | Contact, Bonded *Tie* / *Constraint equations* | Yes | `LIAISON_MAIL` (rigid), see the table below. Also works in linear analyses. Automatic tolerance: all slave nodes are tied (KB21). |
 | Contact, Bonded *Elastic* | Partly | Rigidly bonded; the stiffness is not translated (reported, KB21). |
-| Bonded contact in T30/T31 | No | Without a message: no heat transfer across the bond (KB88). Alternative: shared nodes (Merge nearby nodes). |
+| Bonded contact in T30/T31 | Yes | *Tie* / *Constraint equations*: `AFFE_CHAR_THER` `LIAISON_MAIL` (also non-conforming and shell on shell). *Elastic*: thermal resistance (*Thermal conductance per unit area*) as `ECHANGE_PAROI` for solid faces that are node-to-node opposite each other, otherwise ideally bonded (reported). Not in a model with solids and shells together (ERROR; shared nodes). [Thermal.md](Thermal.md) sec. 3, verification TH-04. |
 | Bonded contact in acoustics | No | Reported (KB55). |
 
 Bonded contact per combination (slave on master):

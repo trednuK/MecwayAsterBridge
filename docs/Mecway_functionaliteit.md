@@ -82,7 +82,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Contact, Unilateral, op schaalranden of balken | Nee | Gemeld. |
 | Contact, Bonded *Tie* / *Constraint equations* | Ja | `LIAISON_MAIL` (star), zie de tabel hieronder. Werkt ook in lineaire analyses. Automatische tolerantie: alle slave-knopen worden gekoppeld (KB21). |
 | Contact, Bonded *Elastic* | Deels | Star verlijmd; de stijfheid wordt niet vertaald (gemeld, KB21). |
-| Bonded contact in T30/T31 | Nee | Zonder melding: geen warmteoverdracht over de lijmnaad (KB88). Alternatief: gedeelde knopen (Merge nearby nodes). |
+| Bonded contact in T30/T31 | Ja | *Tie* / *Constraint equations*: `AFFE_CHAR_THER` `LIAISON_MAIL` (ook niet-conform en schaal op schaal). *Elastic*: thermische weerstand (*Thermal conductance per unit area*) als `ECHANGE_PAROI` bij volumevlakken die knoop op knoop tegenover elkaar liggen, anders ideaal verlijmd (gemeld). Niet in een model met volumes én schalen (ERROR; gedeelde knopen). [Thermisch.md](Thermisch.md) §3, verificatie TH-04. |
 | Bonded contact in de akoestiek | Nee | Gemeld (KB55). |
 
 Verlijmd contact per combinatie (slave op master):
