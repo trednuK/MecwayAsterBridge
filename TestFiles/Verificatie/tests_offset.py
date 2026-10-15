@@ -505,3 +505,47 @@ TESTS += [
          note="Offset op de master van een verlijmd contact: WARNING, "
               "koppeling aan de knopen, NPREC = -1."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-67 Randlast op een verschoven schaal (verschil met Mecway)
+# ------------------------------------------------------------------
+# Strook en offset als LS-60a (DKT, EXCENTREMENT), maar de trekkracht P
+# als last op het randvlak (faceid 2) in plaats van op de knopen. Mecway
+# 34 zet een randlast op de verschoven rand: geen moment, tip w = 0
+# (headless gemeten, 4e-16 m). De bridge zet hem op de randcel op de
+# Mecway-knopen (FORCE_ARETE), dus met het moment P e: tip zoals LS-60.
+# Bekend verschil (KNOWN_BUGS 108, WARNING in bridge_offset).
+
+
+def build_ls67():
+    m = Model("S30")
+    m.mat("Plaat2", '<geometric type="Plate" thickness="2 mm" />', STEEL)
+    m.elset("Plaat", "Plaat2")
+    q = quadmesh(m, "Plaat", 20, 4, rect(0, L0, 0, B0))
+    m.face_selection("Inklemming", q["edges"]["u0"])
+    m.face_selection("Rand", q["edges"]["u1"])
+    m.node_selection("Inklemming_knopen", sorted(q["nodes"]["u0"]))
+    m.node_selection("Tip", sorted(q["nodes"]["u1"]))
+    m.add('<fixed selection="Inklemming" />')
+    m.add('<force selection="Rand"><x>%g N</x><y>0 N</y><z>0 N</z>'
+          '</force>' % P0)
+    m.element_selection("Verschoven", list(q["elems"].values()))
+    m.add(_offset_w("Verschoven", E0))
+    return m
+
+
+TESTS += [
+    Case("LS-67", GROUP, "Randlast op een verschoven schaal (DKT; Mecway: "
+         "op de verschoven rand)", "lin_static_3d", build_ls67,
+         [Check("doorbuiging tip t.o.v. Mecway", lambda r: _mean(
+             r, "displz", "Tip"), ref=0.0, tol_abs=1e-6, unit="m",
+                source="Mecway 34, zelfde model (last op de verschoven "
+                "rand: geen moment)", in_series=False,
+                known="KNOWN_BUGS 108"),
+          Check("reactie X inklemming", lambda r: -_total(
+              r, "reactionforcex", "Inklemming_knopen"), ref=P0, tol=1e-3,
+                unit="N", source="evenwicht")],
+         note="Randlast op knopen gezet (FORCE_ARETE): extra moment P e "
+              "t.o.v. Mecway."),
+]

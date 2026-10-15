@@ -295,6 +295,7 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
     _report_ignored(model_data, ignored)
     if not assigned:
         return None
+    _report_edge_loads(model_data, assigned)
 
     # Starre route. Schalen: een extra knoop per (Mecway-knoop, w) op w maal
     # de gemiddelde normaal van de verschoven elementen in die knoop (een
@@ -377,6 +378,48 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
     model_data["offset_new_nids"] = [nid for nid, _xyz in new_nodes]
     return {"new_nodes": new_nodes, "cells": cells, "pairs": pairs,
             "no_rot": no_rot, "stiff": stiff, "exc": exc}
+
+
+# Belastingen die op een vlakselectie (ook schaalranden) aangrijpen
+_EDGE_LOADS = frozenset(["force", "surfacepressure", "traction",
+                         "linepressure", "hydrostaticpressure"])
+
+
+def _report_edge_loads(model_data, assigned):
+    """
+    WARNING voor een last op randen (faceid 1..4) van verschoven schalen.
+    Mecway 34 (headless, oktober 2026, strook als LS-60 met de trekkracht
+    als last op het randvlak in plaats van op de knopen): tip w = 4e-16 m,
+    dus de last grijpt aan op de verschoven rand (geen moment). De bridge
+    zet zo'n last op de randcel op de Mecway-knopen (FORCE_ARETE, ook bij
+    EXCENTREMENT): 7,08e-3 m (DKT) en 7,10e-3 m (COQUE_3D), het moment
+    w x F per lengte extra (KNOWN_BUGS 108). Een last op de knopen (knoop-
+    selectie) grijpt in Mecway wel op de knopen aan (LS-60).
+    """
+    faces = model_data.get("face_selection_faces", {})
+    for bc in model_data.get("bcs", []):
+        if bc.get("type") not in _EDGE_LOADS or bc.get("skip"):
+            continue
+        hit = sorted(set(eid for eid, fid in faces.get(bc.get("selection"),
+                                                       ())
+                         if eid in assigned and assigned[eid][0] in (
+                             "exc", "shell") and 1 <= fid <= 4))
+        if hit:
+            log(tr("WARNING: Last '{0}' op '{1}' grijpt aan op randen van "
+                   "schalen met een element offset ({2}): de bridge zet "
+                   "hem op de knopen, Mecway op de verschoven rand "
+                   "(gemeten); verschil: een moment w x F per lengte "
+                   "(KNOWN_BUGS 108). Een last op de knopen (knoopselectie) "
+                   "werkt in beide op de knopen.",
+                   "WARNING: Load '{0}' on '{1}' acts on edges of shells "
+                   "with an element offset ({2}): the bridge applies it at "
+                   "the nodes, Mecway at the offset edge (measured); "
+                   "difference: a moment w x F per length (KNOWN_BUGS "
+                   "108). A load on the nodes (node selection) acts at the "
+                   "nodes in both.").format(
+                       bc["type"], bc.get("selection"),
+                       ", ".join(str(e) for e in hit[:10]) +
+                       (" ..." if len(hit) > 10 else "")))
 
 
 def _report_ignored(model_data, ignored):
