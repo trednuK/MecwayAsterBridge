@@ -41,9 +41,10 @@ Related documents:
 
 ## 1. Requirements
 
-- **Mecway 33.** The bridge runs in Mecway's IronPython 2.7 scripting environment
-  (Mecway Ltd., 2026, §16.2) and has been tested with `.liml` files of version 33.
-  Other versions have not been tested (assumption: the `.liml` format is the same).
+- **Mecway 33 or 34.** The bridge runs in Mecway's IronPython 2.7 scripting environment
+  (Mecway Ltd., 2026, §16.2) and has been tested with `.liml` files of versions 33 and
+  34. Other versions have not been tested (assumption: the `.liml` format is the same);
+  the bridge then warns ([`After_an_update.md`](After_an_update.md)).
 - **Code-Aster 17.4 for Windows**; the path to `run_aster.bat` is in
   `CONFIG_BRIDGE["exe_aster"]` (`Scripts/bridge_utils.py`; default
   `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, the location of the
@@ -466,8 +467,8 @@ mesh is checked).
 The main assumptions for use; the full list, with the reasoning behind the defaults,
 is in [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.md).
 
-- **Assumption:** the `.liml` format of Mecway 33 (tested); other versions have not
-  been tested.
+- **Assumption:** the `.liml` format of Mecway 33 and 34 (tested); other versions have
+  not been tested (WARNING, [`After_an_update.md`](After_an_update.md)).
 - **Assumption:** with *Configuration* = `auto`, the only configuration or the one
   without suppressed items is the intended one (§4); the API cannot read the active
   configuration.

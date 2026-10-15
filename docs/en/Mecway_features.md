@@ -76,7 +76,7 @@ ignored with only an INFO, as Mecway itself does.
 | Constraint equation | Yes | KB27. Explicit: a constant ≠ 0 becomes an imposed motion (DY-20b; Mecway itself does not allow it there). |
 | Node-surface coupling, Rigid (RBE2) | Yes | `LIAISON_SOLIDE`; large rotations: KB11. Not in thermal (reported). |
 | Node-surface coupling, Distributing (RBE3) | Yes | `LIAISON_RBE3`. Not in thermal (reported). |
-| Flexible joint on beam | Yes | Free rotation about U, V and/or W (local beam axes as in Mecway) at a beam end: the element gets its own node there, coupled with `LIAISON_DDL` (translations and the rotations that are not free). Mecway has no stiffness in the joint, only free or fixed. Also on line3 beams and in Frequency, dynamics and buckling. Verification LS-51 (equal to Mecway). A constraint on an *element selection* that contains the element with the joint: see KB106. |
+| Flexible joint on beam | Yes | Free rotation about U, V and/or W (local beam axes as in Mecway) at a beam end: the element gets its own node there, coupled with `LIAISON_DDL` (translations and the rotations that are not free). Mecway has no stiffness in the joint, only free or fixed. Also on line3 beams and in Frequency, dynamics, buckling and nonlinear static (the latter not in Mecway; large rotations: KB106). Verification LS-51 (equal to Mecway). A constraint on an *element selection* that contains the element with the joint: see KB106. |
 | Contact, Unilateral (faces of solids and shell faces) | Yes | Nonlinear only, as in Mecway. Formulation and friction: KB43; shared slave nodes: KB10. |
 | Contact, Unilateral, *Self contact* | No | Reported. Make two separate face selections. |
 | Contact, Unilateral, on shell edges or beams | No | Reported. |
@@ -117,7 +117,7 @@ Bonded contact per combination (slave on master):
 | shells in a thermal analysis | Partly | `PLAN` with a thickness factor | Only shells in parallel planes (KB15); others: No (KB16). |
 | fin, fluid network element, resistor | No | – | Thermal 1D and DC current: KB16. |
 | Element offset (shell, beam) | Yes | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D and beams: element on its own nodes + rigid arm (`LIAISON_DDL`) | Shell: *Element coordinates*, only W counts (as in Mecway; u/v have no effect there either). Beam: *Global coordinates* x/y/z (u/v/w on a beam: no effect in Mecway, WARNING). Displacement, rotation and reaction at the Mecway nodes; stresses of the offset element shown at those nodes. In all mechanical analyses (Mecway: static only). Rigid arm: small rotations (KB108). Verification LS-60–63. |
-| Element orientation (local U/V axes per element) | Partly | – | Mecway stores the orientation per element (`orientationux`…`vz`, `angle`). Used for beams (section orientation) and gaps (direction). Ignored without a message for solids and shells; with an isotropic material that does not change the result. Only needed for orthotropic materials (§5, No). |
+| Element orientation (local U/V axes per element) | Partly | – | Mecway stores the orientation per element (`orientationux`…`vz`, `angle`). Used for beams (section orientation), gaps (direction) and for shells the U axis of the result field `shell_forces` (§6). Otherwise ignored without a message for solids and shells; with an isotropic material that does not change the result. Only needed for orthotropic materials (§5, No). |
 
 ## 5. Materials and cross-sections
 

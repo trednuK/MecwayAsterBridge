@@ -34,9 +34,10 @@ Verwante documenten:
 
 ## 1. Benodigd
 
-- **Mecway 33.** De bridge draait in Mecway's IronPython 2.7-scriptomgeving
-  (Mecway Ltd., 2026, §16.2) en is getest met `.liml`-bestanden van versie 33. Andere
-  versies zijn niet getest (aanname: het `.liml`-formaat is gelijk).
+- **Mecway 33 of 34.** De bridge draait in Mecway's IronPython 2.7-scriptomgeving
+  (Mecway Ltd., 2026, §16.2) en is getest met `.liml`-bestanden van versie 33 en 34.
+  Andere versies zijn niet getest (aanname: het `.liml`-formaat is gelijk); de bridge
+  waarschuwt dan ([`Na_een_update.md`](Na_een_update.md)).
 - **Code-Aster 17.4 voor Windows**; het pad naar `run_aster.bat` staat in
   `CONFIG_BRIDGE["exe_aster"]` (`Scripts/bridge_utils.py`; standaard
   `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, de plek van het
@@ -462,8 +463,8 @@ De belangrijkste aannames voor het gebruik; de volledige lijst, met de onderbouw
 van de standaardwaarden, staat in
 [`Standaardinstellingen_en_aannames.md`](Standaardinstellingen_en_aannames.md).
 
-- **Aanname:** het `.liml`-formaat van Mecway 33 (getest); andere versies zijn niet
-  getest.
+- **Aanname:** het `.liml`-formaat van Mecway 33 en 34 (getest); andere versies zijn
+  niet getest (WARNING, [`Na_een_update.md`](Na_een_update.md)).
 - **Aanname:** met *Configuratie* = `auto` is de enige configuratie of die zonder
   onderdrukte items de bedoelde (§4); de API kan de actieve configuratie niet lezen.
 - **Aanname:** de bovenkant van een schaal in Code-Aster (`SUP`, kant van de positieve
