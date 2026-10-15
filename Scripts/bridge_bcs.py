@@ -4,23 +4,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_bcs.py
-# Definieert de BC-klassen (randvoorwaarden / belastingen) en het SUPPORTED_BCS-register.
+# Defines the BC classes (boundary conditions / loads) and the SUPPORTED_BCS registry.
 #
-# Elk BC-type erft van BaseBC en implementeert twee methoden:
-#   parse_xml()     - leest parameters uit het Mecway .liml XML-element
-#   to_aster_dict() - vertaalt de parameters naar het Code-Aster sleutelwoord-formaat
+# Every BC type inherits from BaseBC and implements two methods:
+#   parse_xml()     - reads parameters from the Mecway .liml XML element
+#   to_aster_dict() - translates the parameters to the Code-Aster keyword format
 #
-# De scheiding tussen parse_xml() en to_aster_dict() maakt het mogelijk om
-# tussenstappen te doen (bijv. krachtverdeling over knopen, injectie van
-# model-niveau flags) voordat de uiteindelijke Code-Aster syntax wordt gegenereerd.
+# Separating parse_xml() and to_aster_dict() makes it possible to do
+# intermediate steps (e.g. distributing forces over nodes, injecting
+# model-level flags) before the final Code-Aster syntax is generated.
 #
-# Interne metadata-sleutels in params (prefix "_") worden door bridge_from_liml.py
-# (en eventueel bridge_mesh.py) geinjecteerd NA de parse_xml()-aanroep. Zo
-# hoeven de BC-klassen zelf geen kennis te hebben van het totale model.
-# Voorbeeld: "_has_rot_dofs" bepaalt in FixedBC.to_aster_dict() of de
-# inklemming DX=DY=DZ=0 of BLOCAGE=('DEPLACEMENT', 'ROTATION') wordt.
+# Internal metadata keys in params (prefix "_") are injected by bridge_from_liml.py
+# (and possibly bridge_mesh.py) AFTER the parse_xml() call. This way the
+# BC classes themselves need no knowledge of the whole model.
+# Example: "_has_rot_dofs" decides in FixedBC.to_aster_dict() whether the
+# clamping becomes DX=DY=DZ=0 or BLOCAGE=('DEPLACEMENT', 'ROTATION').
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import math
 import re
@@ -29,70 +29,70 @@ from bridge_utils import log, parse_and_convert, tr
 
 
 # ==========================================
-# FORMULES ALS WAARDE
-# Mecway schrijft een formule zonder eenheid in de tekst; de eenheden staan
-# als attributen (manual v33 par. 12.1: "in the case of formulas, appear as
-# separate XML attributes"), bijv. Samples/PipeClip.liml:
+# FORMULAS AS VALUE
+# Mecway writes a formula without a unit in the text; the units are
+# attributes (manual v33 par. 12.1: "in the case of formulas, appear as
+# separate XML attributes"), e.g. Samples/PipeClip.liml:
 #   <value unit="mm" timeunit="s" positionunit="mm">-12*t</value>
-# unit = eenheid van de uitkomst, timeunit = eenheid van t, positionunit =
-# eenheid van x, y, z. Een formule in t is een tijdshistorie (manual par. 9:
+# unit = unit of the result, timeunit = unit of t, positionunit =
+# unit of x, y, z. A formula in t is a time history (manual par. 9:
 # "a Formula with the variable t ... evaluated at each time step").
 #
-# Taal (Formula Help-venster van Mecway 33, teksten in mecway.exe):
+# Language (Formula Help window of Mecway 33, texts in mecway.exe):
 # + - * / ^ ( ), pi, e, sin, cos, tan, asin, acos, atan, atan2(y,x), log,
 # abs, sqrt, heaviside(x), unittriangle(w,x), max(x,y), min(x,y).
-# Nagemeten met Mecway 33 (headless, kracht als formule op een staafje van
-# 2 hex8, niet-lineair statisch met CCX en dynamisch met de interne solver):
-#   log = natuurlijke logaritme (log(10) = 2,3026); heaviside(0) = 0,5;
-#   unittriangle(w,x) = driehoek met basis w rond x = 0 en oppervlak 1
-#   (top 2/w); -2^2 = -4 (^ bindt sterker dan het minteken); 2^3^2 = 512
-#   (^ van rechts naar links); sin in radialen; timeunit "min" wordt
-#   toegepast (t in minuten); t loopt vanaf 0 s.
-# Lineair statisch (gemeten): de interne solver negeert een last in t
-# (ook een tabel; verplaatsing 0), CCX neemt de formule bij t = 0 en een
-# tabel bij t = 1. De bridge neemt in MECA_STATIQUE, zoals bij een tabel,
-# de laatste waarde (bridge_to_aster, met WARNING).
+# Verified with Mecway 33 (headless, force as formula on a bar of
+# 2 hex8, nonlinear static with CCX and dynamic with the internal solver):
+#   log = natural logarithm (log(10) = 2.3026); heaviside(0) = 0.5;
+#   unittriangle(w,x) = triangle with base w around x = 0 and area 1
+#   (peak 2/w); -2^2 = -4 (^ binds tighter than unary minus); 2^3^2 = 512
+#   (^ right to left); sin in radians; timeunit "min" is
+#   applied (t in minutes); t starts at 0 s.
+# Linear static (measured): the internal solver ignores a load in t
+# (also a table; displacement 0), CCX takes the formula at t = 0 and a
+# table at t = 1. In MECA_STATIQUE the bridge takes, as with a table,
+# the last value (bridge_to_aster, with WARNING).
 #
-# Mecway bemonstert een formule voor CCX en OpenRadioss op 10001 gelijke
-# tijden en houdt de punten over waarmee de stuksgewijs lineaire functie
-# hoogstens 0,01% van het bereik afwijkt (manual par. 9). De bridge doet
-# hetzelfde over 0..timeperiod (<timesteps>; zonder: 1 s, zoals
-# bridge_from_liml). Een formule zonder t is een gewone waarde.
+# Mecway samples a formula for CCX and OpenRadioss at 10001 equal
+# times and keeps the points with which the piecewise linear function
+# deviates at most 0.01% of the range (manual par. 9). The bridge does
+# the same over 0..timeperiod (<timesteps>; without: 1 s, as in
+# bridge_from_liml). A formula without t is an ordinary value.
 #
-# Formules in x, y, z (plaatsafhankelijk, eventueel ook met t): een
-# PositionFormula (hieronder), in de .comm een FORMULE van X, Y, Z (en INST)
-# in AFFE_CHAR_MECA_F (bridge_to_aster._build_charges). Alleen voor de
-# lasten met position_ok = True (druk, traction, kracht, line pressure,
-# opgelegde verplaatsing en rotatie); elders blijft het een FormulaError.
-# Gemeten met Mecway 34 (headless, mw_solve.py, blok 1 x 2 x 0,1 m van
-# hex8 met de onderkant vast, interne solver en CCX):
-#   - druk 3*y^2 kPa (positionunit m) op de bovenkant: reactie 8000 N en
-#     moment 12000 N.m, exact (integraal); met positionunit mm en
-#     3e-6*y^2 hetzelfde, dus x, y, z in positionunit;
-#   - traction x = 2*x+1, z = y^3 kPa: reacties -4000 N en -4000 N
-#     (exact), moment -6399,96 N.m (exact -6400: Mecway bemonstert per
-#     vlak, manual par. 9.14: 1, 7 of 9 punten);
-#   - kracht (op vlakken en op knopen), opgelegde verplaatsing/rotatie en
-#     line pressure met x, y of z in de formule (ook 1000*(1+y)): Mecway
-#     legt NIETS op (reacties en verplaatsingen 0), met de interne solver
-#     en met CCX (ook niet-lineair); gravity met x in de formule en een
-#     richtingsvector als formule: Mecway rekent niet (geen oplossing);
-#   - druk 3*y^2*t met CCX (niet-lineair): rekent (verplaatsing evenredig
-#     met t; de beperking "not ... both time and position" in de handleiding
-#     staat bij de thermische lasten, par. 9.23 e.v.).
-# De bridge vertaalt de plaatsafhankelijke kracht, verplaatsing en line
-# pressure toch (de bedoeling van de formule) en meldt het verschil met
-# Mecway (WARNING, bridge_from_liml._check_position_formulas).
+# Formulas in x, y, z (position dependent, possibly also with t): a
+# PositionFormula (below), in the .comm a FORMULE of X, Y, Z (and INST)
+# in AFFE_CHAR_MECA_F (bridge_to_aster._build_charges). Only for the
+# loads with position_ok = True (pressure, traction, force, line pressure,
+# imposed displacement and rotation); elsewhere it stays a FormulaError.
+# Measured with Mecway 34 (headless, mw_solve.py, block 1 x 2 x 0.1 m of
+# hex8 with the bottom fixed, internal solver and CCX):
+#   - pressure 3*y^2 kPa (positionunit m) on the top: reaction 8000 N and
+#     moment 12000 N.m, exact (integral); with positionunit mm and
+#     3e-6*y^2 the same, so x, y, z in positionunit;
+#   - traction x = 2*x+1, z = y^3 kPa: reactions -4000 N and -4000 N
+#     (exact), moment -6399.96 N.m (exact -6400: Mecway samples per
+#     face, manual par. 9.14: 1, 7 or 9 points);
+#   - force (on faces and on nodes), imposed displacement/rotation and
+#     line pressure with x, y or z in the formula (also 1000*(1+y)): Mecway
+#     imposes NOTHING (reactions and displacements 0), with the internal
+#     solver and with CCX (also nonlinear); gravity with x in the formula
+#     and a direction vector as formula: Mecway does not solve (no solution);
+#   - pressure 3*y^2*t with CCX (nonlinear): solves (displacement
+#     proportional to t; the restriction "not ... both time and position"
+#     in the manual is for the thermal loads, par. 9.23 ff.).
+# The bridge still translates the position-dependent force, displacement
+# and line pressure (the intent of the formula) and reports the difference
+# with Mecway (WARNING, bridge_from_liml._check_position_formulas).
 # ==========================================
 _FORMULA_ATTRS = ("unit", "timeunit", "positionunit")
-_FORMULA_SAMPLES = 10000          # intervallen: 10001 tijden (Mecway)
-_FORMULA_REL_TOL = 1.0e-4         # 0,01% van het bereik (Mecway)
+_FORMULA_SAMPLES = 10000          # intervals: 10001 times (Mecway)
+_FORMULA_REL_TOL = 1.0e-4         # 0.01% of the range (Mecway)
 
 
 class FormulaError(ValueError):
-    """Formule die niet vertaald kan worden. De tekst (NL en EN, met
-    dezelfde placeholders) eindigt op ';' en past in de melding
-    "ERROR: <last>: <tekst> NIET meegenomen." (zoals
+    """Formula that cannot be translated. The text (NL and EN, with
+    the same placeholders) ends with ';' and fits in the message
+    "ERROR: <load>: <text> NIET meegenomen." (as in
     bridge_from_liml._not_translated)."""
 
     def __init__(self, nl, en, *args):
@@ -123,8 +123,8 @@ def _unittriangle(w, x):
 
 
 def _power(a, b):
-    # math.pow geeft ValueError bij een negatief grondtal met een
-    # gebroken exponent (CPython 3: ** zou een complex getal geven).
+    # math.pow raises ValueError for a negative base with a
+    # fractional exponent (CPython 3: ** would give a complex number).
     return math.pow(a, b)
 
 
@@ -143,7 +143,7 @@ _FORMULA_TOKEN = re.compile(
 
 
 def _formula_tokens(text):
-    """[(soort, tekst)] met soort 'num', 'name' of 'op'."""
+    """[(kind, text)] with kind 'num', 'name' or 'op'."""
     tokens = []
     pos = 0
     text = text.rstrip()
@@ -163,15 +163,15 @@ def _formula_tokens(text):
 
 class _FormulaParser(object):
     """
-    Recursive descent; levert een functie f(t) (closures, geen eval) en de
-    gebruikte variabelen. Grammatica (zie de metingen hierboven):
+    Recursive descent; returns a function f(t) (closures, no eval) and the
+    variables used. Grammar (see the measurements above):
       expr   := term (('+' | '-') term)*
       term   := unary (('*' | '/') unary)*
       unary  := ('-' | '+') unary | power
-      power  := atom ('^' unary)?        (rechts-associatief)
-      atom   := getal | naam | naam '(' expr (',' expr)* ')' | '(' expr ')'
-    x, y en z worden als variabele herkend (voor de melding), maar niet
-    berekend.
+      power  := atom ('^' unary)?        (right-associative)
+      atom   := number | name | name '(' expr (',' expr)* ')' | '(' expr ')'
+    x, y and z are recognised as variables (for the message), but not
+    evaluated.
     """
 
     def __init__(self, text):
@@ -280,14 +280,14 @@ class _FormulaParser(object):
 
 
 def _is_formula(node):
-    """True als de waarde van node een Mecway-formule is (eenheden als
-    attributen)."""
+    """True if the value of node is a Mecway formula (units as
+    attributes)."""
     return any(node.get(a) is not None for a in _FORMULA_ATTRS)
 
 
 def _unit_map(unit, quantity):
-    """(a, b) met SI = a * waarde + b voor de eenheid unit (via
-    parse_and_convert; ook een verschuiving zoals degC)."""
+    """(a, b) with SI = a * value + b for the unit unit (via
+    parse_and_convert; also an offset such as degC)."""
     unit = (unit or "").strip()
     b = parse_and_convert(u"0 " + unit, quantity)
     a = parse_and_convert(u"1 " + unit, quantity) - b
@@ -295,8 +295,8 @@ def _unit_map(unit, quantity):
 
 
 def _unit_si(unit, quantity):
-    """SI-waarde van 1 eenheid (positionunit/timeunit); 1 als leeg of
-    onbekend."""
+    """SI value of 1 unit (positionunit/timeunit); 1 if empty or
+    unknown."""
     unit = (unit or "").strip()
     if not unit:
         return 1.0
@@ -305,8 +305,8 @@ def _unit_si(unit, quantity):
 
 
 def _analysis_period(root):
-    """Eindtijd van de analyse in s: <timesteps timeperiod> (zoals
-    bridge_from_liml), anders 1 s."""
+    """End time of the analysis in s: <timesteps timeperiod> (as in
+    bridge_from_liml), otherwise 1 s."""
     ts = root.find("timesteps") if root is not None else None
     if ts is None:
         return 1.0
@@ -316,10 +316,10 @@ def _analysis_period(root):
 
 def _reduce_samples(values, tol):
     """
-    Indices van de punten die over: per stuk zo ver mogelijk vooruit
-    (verdubbelen, dan halveren) zolang alle tussenliggende monsters
-    hoogstens tol van de rechte lijn afliggen. Elk stuk wordt volledig
-    gecontroleerd, dus de fout is overal <= tol (op de monsters).
+    Indices of the points to keep: per piece advance as far as possible
+    (doubling, then halving) as long as all intermediate samples are
+    at most tol away from the straight line. Every piece is fully
+    checked, so the error is <= tol everywhere (at the samples).
     """
     n = len(values)
 
@@ -362,9 +362,9 @@ def _reduce_samples(values, tol):
 
 
 def _num(value):
-    """Getal voor een FORMULE-uitdrukking: 17 significante cijfers (exact
-    terug te lezen) met een decimale punt (%-opmaak volgt de landinstelling
-    niet, zie bridge_mesh._real)."""
+    """Number for a FORMULE expression: 17 significant digits (exactly
+    readable back) with a decimal point (%-formatting does not follow the
+    locale, see bridge_mesh._real)."""
     txt = "%.17g" % value
     if "." in txt or "n" in txt:
         return txt
@@ -374,32 +374,32 @@ def _num(value):
 
 class PositionFormula(object):
     """
-    Mecway-formule in x, y, z (en eventueel t) als waarde van een
-    mechanische last of voorwaarde (grenzen: KNOWN_BUGS 104). In de .comm
-    een FORMULE van X, Y, Z en INST (bridge_to_aster._build_charges,
-    AFFE_CHAR_MECA_F; catalogus affe_char_meca_f.py v17.4: PRES_REP PRES,
+    Mecway formula in x, y, z (and possibly t) as the value of a
+    mechanical load or condition (limits: KNOWN_BUGS 104). In the .comm
+    a FORMULE of X, Y, Z and INST (bridge_to_aster._build_charges,
+    AFFE_CHAR_MECA_F; catalogue affe_char_meca_f.py v17.4: PRES_REP PRES,
     FORCE_FACE, FORCE_ARETE, FORCE_COQUE, FORCE_POUTRE, FORCE_NODALE,
-    DDL_IMPO en LIAISON_OBLIQUE nemen een formule), met X, Y, Z de
-    beginpositie. Gemeten (Code-Aster 17.4, LS-40..44): volumevlakken,
-    COQUE_3D en balken integreren de formule exact (integratiepunten),
-    DKT neemt ze in de knopen; DDL_IMPO en FORCE_NODALE in de knopen.
+    DDL_IMPO and LIAISON_OBLIQUE accept a formula), with X, Y, Z the
+    initial position. Measured (Code-Aster 17.4, LS-40..44): volume faces,
+    COQUE_3D and beams integrate the formula exactly (integration points),
+    DKT takes it at the nodes; DDL_IMPO and FORCE_NODALE at the nodes.
 
-    Waarde in SI = som over de termen van
+    Value in SI = sum over the terms of
         factor * (a * f(x/pu, y/pu, z/pu, t/tu) + b)
-    plus offset, met (a, b) de eenheid van de uitkomst (_unit_map), pu/tu
-    de SI-waarde van positionunit/timeunit (manual v33 par. 12.1) en
-    factor/offset van de vertaling (bijv. 1/oppervlak, een teken, de som
-    met een constante). Zo werken _scale, het delen door een oppervlak of
-    een aantal knopen en optellen (bridge_to_aster._sum_values) zonder de
-    formule te herschrijven. Geen float: float(f) geeft een TypeError, zodat
-    code die een getal verwacht niet stil iets verkeerds schrijft.
+    plus offset, with (a, b) the unit of the result (_unit_map), pu/tu
+    the SI value of positionunit/timeunit (manual v33 par. 12.1) and
+    factor/offset from the translation (e.g. 1/area, a sign, the sum
+    with a constant). This way _scale, dividing by an area or
+    a number of nodes and adding (bridge_to_aster._sum_values) work without
+    rewriting the formula. Not a float: float(f) raises a TypeError, so that
+    code expecting a number does not silently write something wrong.
     """
 
     def __init__(self, text, a, b, pu, tu, period, used):
         self.terms = [(text, a, b, pu, tu, 1.0)]
         self.offset = 0.0
-        self.period = period          # eindtijd van de analyse (s)
-        self.t_fixed = None           # t ingevuld (statisch: eindtijd)
+        self.period = period          # end time of the analysis (s)
+        self.t_fixed = None           # t filled in (static: end time)
         self.used = set(used)
 
     def _copy(self):
@@ -451,27 +451,27 @@ class PositionFormula(object):
     __radd__ = __add__
 
     def timed(self):
-        """True als de formule ook van t afhangt (en t niet is ingevuld)."""
+        """True if the formula also depends on t (and t is not filled in)."""
         return "t" in self.used and self.t_fixed is None
 
     def at_end(self):
-        """Kopie met t = eindtijd van de analyse (statische berekening,
-        zoals een tijdshistorie in MECA_STATIQUE de laatste waarde krijgt)."""
+        """Copy with t = end time of the analysis (static analysis,
+        as a time history in MECA_STATIQUE gets the last value)."""
         new = self._copy()
         if "t" in self.used:
             new.t_fixed = self.period
         return new
 
     def text(self):
-        """Mecway-tekst (voor meldingen en het commentaar in de .comm)."""
+        """Mecway text (for messages and the comment in the .comm)."""
         return " + ".join(t[0] for t in self.terms)
 
     def __repr__(self):
         return "PositionFormula({0!r})".format(self.text())
 
     def render(self):
-        """(uitdrukking, NOM_PARA, {naam: argument}) voor FORMULE. INST
-        alleen als t niet is ingevuld."""
+        """(expression, NOM_PARA, {name: argument}) for FORMULE. INST
+        only if t is not filled in."""
         parts = []
         args = {}
         params = set()
@@ -496,23 +496,23 @@ class PositionFormula(object):
             parts.append(_num(self.offset))
         nom_para = [p for p in ("X", "Y", "Z", "INST") if p in params]
         if not nom_para:
-            # Alleen t ingevuld: FORMULE vraagt minstens een parameter
+            # Only t filled in: FORMULE needs at least one parameter
             nom_para = ["X"]
         return " + ".join(parts), nom_para, args
 
 
 def is_position(value):
-    """True als value een PositionFormula is."""
+    """True if value is a PositionFormula."""
     return isinstance(value, PositionFormula)
 
 
 def _formula_value(node, quantity, root, allow_position=False):
     """
-    SI-waarde van een formule-knoop: een float (formule zonder t), een
-    lijst (t, waarde) over 0..eindtijd van de analyse, of (met
-    allow_position) een PositionFormula voor een formule in x, y, z.
-    FormulaError bij x/y/z zonder allow_position, een onleesbare formule of
-    een rekenfout.
+    SI value of a formula node: a float (formula without t), a
+    list (t, value) over 0..end time of the analysis, or (with
+    allow_position) a PositionFormula for a formula in x, y, z.
+    FormulaError for x/y/z without allow_position, an unreadable formula or
+    a calculation error.
     """
     text = (node.text or "").strip()
     parser = _FormulaParser(text)
@@ -537,8 +537,8 @@ def _formula_value(node, quantity, root, allow_position=False):
                 u"attribute);", text)
         pu = _unit_si(node.get("positionunit"), "length")
         tu = _unit_si(node.get("timeunit"), "time")
-        log(u"INFO: Formule '{0}' hangt af van de plaats ({1}): FORMULE "
-            u"van X, Y, Z{2} (positionunit {3}).".format(
+        log(u"INFO: Formula '{0}' depends on the position ({1}): FORMULE "
+            u"of X, Y, Z{2} (positionunit {3}).".format(
                 text, ", ".join(places),
                 ", INST" if "t" in parser.used else "",
                 node.get("positionunit") or "m"))
@@ -576,29 +576,29 @@ def _formula_value(node, quantity, root, allow_position=False):
     values = [value_at(t / t_unit, t) for t in times]
     vmin, vmax = min(values), max(values)
     if vmax - vmin <= 1.0e-12 * max(abs(vmin), abs(vmax)):
-        log("INFO: Formule '{0}' is constant over 0..{1} s: {2}.".format(
+        log("INFO: Formula '{0}' is constant over 0..{1} s: {2}.".format(
             text, period, values[0]))
         return values[0]
     keep = _reduce_samples(values, _FORMULA_REL_TOL * (vmax - vmin))
-    log("INFO: Formule '{0}' -> tijdshistorie met {1} punten over 0..{2} s "
-        "(afwijking <= 0,01% van het bereik).".format(text, len(keep),
+    log("INFO: Formula '{0}' -> time history with {1} points over 0..{2} s "
+        "(deviation <= 0.01% of the range).".format(text, len(keep),
                                                       period))
     return [(times[k], values[k]) for k in keep]
 
 
-# Mecway-functie -> naam in een Code-Aster-FORMULE (Python 3 in de job).
-# heaviside en unittriangle bestaan niet in Python: de .comm definieert ze
-# (ASTER_FORMULA_PRELUDE), met hetzelfde gedrag als _heaviside en
-# _unittriangle hierboven (nagemeten in Mecway 33).
+# Mecway function -> name in a Code-Aster FORMULE (Python 3 in the job).
+# heaviside and unittriangle do not exist in Python: the .comm defines them
+# (ASTER_FORMULA_PRELUDE), with the same behaviour as _heaviside and
+# _unittriangle above (verified in Mecway 33).
 _ASTER_FUNCS = {
     "sin": "sin", "cos": "cos", "tan": "tan", "asin": "asin",
     "acos": "acos", "atan": "atan", "atan2": "atan2", "log": "log",
     "abs": "abs", "sqrt": "sqrt", "max": "max", "min": "min",
     "heaviside": "_mw_heaviside", "unittriangle": "_mw_unittriangle",
 }
-# Argumenten voor FORMULE(...): naam=object in de .comm. FORMULE rekent de
-# uitdrukking met alleen de opgegeven argumenten en NOM_PARA (catalogus
-# formule.py: "**args" als context), dus ook abs/max/min expliciet.
+# Arguments for FORMULE(...): name=object in the .comm. FORMULE evaluates the
+# expression with only the given arguments and NOM_PARA (catalogue
+# formule.py: "**args" as context), so abs/max/min explicitly as well.
 _ASTER_FUNC_ARGS = {
     "sin": "_mw_math.sin", "cos": "_mw_math.cos", "tan": "_mw_math.tan",
     "asin": "_mw_math.asin", "acos": "_mw_math.acos",
@@ -621,16 +621,16 @@ ASTER_FORMULA_PRELUDE = (
 
 def aster_expression(text, variables):
     """
-    Mecway-formule als Python-uitdrukking voor een Code-Aster-FORMULE.
+    Mecway formula as a Python expression for a Code-Aster FORMULE.
 
-    variables : {"x"|"y"|"z"|"t": uitdrukking} (bijv. "(X/0.001)"); een
-                variabele die niet in de dict staat, geeft een ValueError.
-    Returns (uitdrukking, gebruikte variabelen, {naam: argument} voor
-    FORMULE). ValueError bij een onleesbare formule.
-    De formule wordt eerst met _FormulaParser gecontroleerd; daarna per
-    token omgezet: '^' -> '**' (Python: rechts-associatief en sterker dan
-    het minteken, zoals Mecway: -2^2 = -4, 2^3^2 = 512), pi/e als getal,
-    functies via _ASTER_FUNCS.
+    variables : {"x"|"y"|"z"|"t": expression} (e.g. "(X/0.001)"); a
+                variable that is not in the dict raises a ValueError.
+    Returns (expression, variables used, {name: argument} for
+    FORMULE). ValueError for an unreadable formula.
+    The formula is first checked with _FormulaParser; then converted per
+    token: '^' -> '**' (Python: right-associative and tighter than
+    unary minus, as in Mecway: -2^2 = -4, 2^3^2 = 512), pi/e as a number,
+    functions via _ASTER_FUNCS.
     """
     parser = _FormulaParser(text)
     parser.parse()
@@ -656,7 +656,7 @@ def aster_expression(text, variables):
 
 
 def time_function(text):
-    """f(t) van een Mecway-formule zonder x, y, z (ValueError anders)."""
+    """f(t) of a Mecway formula without x, y, z (ValueError otherwise)."""
     parser = _FormulaParser(text)
     fn = parser.parse()
     if parser.used - set(["t"]):
@@ -665,8 +665,8 @@ def time_function(text):
 
 
 def _scalar(node, quantity):
-    """Vaste SI-waarde van node (tekst met eenheid of formule zonder t);
-    FormulaError bij een formule in t of x/y/z."""
+    """Fixed SI value of node (text with unit or formula without t);
+    FormulaError for a formula in t or x/y/z."""
     if node is None:
         return 0.0
     if not _is_formula(node):
@@ -683,9 +683,9 @@ def _scalar(node, quantity):
 
 def _skip_on_formula_error(parse_xml):
     """
-    Decorator voor parse_xml: bij een FormulaError een ERROR en params =
-    skipped_params van de klasse (geeft geen last; to_aster_dict -> {})
-    plus "_skipped" = de omschrijving voor model_data["skipped_loads"].
+    Decorator for parse_xml: on a FormulaError an ERROR and params =
+    skipped_params of the class (gives no load; to_aster_dict -> {})
+    plus "_skipped" = the description for model_data["skipped_loads"].
     """
     def wrapper(self, item, root):
         try:
@@ -705,13 +705,13 @@ def _skip_on_formula_error(parse_xml):
 
 
 # ==========================================
-# BASIS-KLASSE
+# BASE CLASS
 # ==========================================
 class BaseBC(object):
     aster_keyword = ""
     valid_targets = []
-    # params van een last met een niet-vertaalbare formule
-    # (_skip_on_formula_error): vorm zoals parse_xml, zonder werking.
+    # params of a load with an untranslatable formula
+    # (_skip_on_formula_error): same form as parse_xml, without effect.
     skipped_params = {}
 
     def parse_xml(self, item, root):
@@ -721,24 +721,24 @@ class BaseBC(object):
         raise NotImplementedError("Moet worden overschreven door subklasse")
 
     def keyword(self, params):
-        """Code-Aster-sleutelwoord; kan per BC verschillen (schuine
-        richting -> LIAISON_OBLIQUE)."""
+        """Code-Aster keyword; can differ per BC (oblique
+        direction -> LIAISON_OBLIQUE)."""
         return self.aster_keyword
 
 
 # ==========================================
-# HULPFUNCTIES: WAARDE MET TIJDSHISTORIE, RICHTING
+# HELPER FUNCTIONS: VALUE WITH TIME HISTORY, DIRECTION
 # ==========================================
 def _parse_value_strict(item, tag, quantity, default, root=None,
                         allow_position=False):
     """
-    Waarde van <tag>: een float, of een lijst (t, waarde) als er meerdere
-    <tag time="..."> staan (bijv. <value time="5 s">90 deg</value>) of als
-    de waarde een formule in t is (zie FORMULES hierboven; root geeft de
-    eindtijd). De lijst wordt een DEFI_FONCTION in STAT_NON_LINE;
-    MECA_STATIQUE neemt de laatste waarde (bridge_to_aster.py). Met
-    allow_position wordt een formule in x, y, z een PositionFormula.
-    FormulaError bij een formule die niet vertaald kan worden.
+    Value of <tag>: a float, or a list (t, value) if there are several
+    <tag time="..."> (e.g. <value time="5 s">90 deg</value>) or if
+    the value is a formula in t (see FORMULAS above; root gives the
+    end time). The list becomes a DEFI_FONCTION in STAT_NON_LINE;
+    MECA_STATIQUE takes the last value (bridge_to_aster.py). With
+    allow_position a formula in x, y, z becomes a PositionFormula.
+    FormulaError for a formula that cannot be translated.
     """
     nodes = item.findall(tag)
     if not nodes:
@@ -761,8 +761,8 @@ def _parse_value_strict(item, tag, quantity, default, root=None,
 
 
 def _parse_value(item, tag, quantity, default, root=None):
-    """Als _parse_value_strict, maar zonder FormulaError (voor
-    bridge_from_liml, bijv. beginsnelheid): ERROR en default."""
+    """Like _parse_value_strict, but without FormulaError (for
+    bridge_from_liml, e.g. initial velocity): ERROR and default."""
     try:
         return _parse_value_strict(item, tag, quantity, default, root)
     except FormulaError as e:
@@ -773,16 +773,16 @@ def _parse_value(item, tag, quantity, default, root=None):
 
 
 def _scale(value, factor):
-    """value (float of lijst (t, v)) maal factor."""
+    """value (float or list (t, v)) times factor."""
     if isinstance(value, list):
         return [(t, v * factor) for t, v in value]
     return value * factor
 
 
 def _value_at(value, t):
-    """Waarde van value (float of lijst (t, v)) op tijd t: lineair
-    tussen de punten, constant buiten het bereik (zoals de DEFI_FONCTION
-    van de bridge: PROL_GAUCHE/PROL_DROITE='CONSTANT')."""
+    """Value of value (float or list (t, v)) at time t: linear
+    between the points, constant outside the range (like the DEFI_FONCTION
+    of the bridge: PROL_GAUCHE/PROL_DROITE='CONSTANT')."""
     if not isinstance(value, list):
         return value
     if t <= value[0][0]:
@@ -797,10 +797,10 @@ def _value_at(value, t):
 
 def _gravity_history(history):
     """
-    {"GRAVITE": [(t, g)], "DIRECTION": (dx, dy, dz)} voor een gravity met
-    tijdshistorie (history: {as: float of lijst (t, waarde)}), of {} als de
-    vector nul is of in de tijd van richting verandert (een PESANTEUR met
-    FONC_MULT heeft een vaste DIRECTION). g heeft een teken (de vector is
+    {"GRAVITE": [(t, g)], "DIRECTION": (dx, dy, dz)} for a gravity with
+    time history (history: {axis: float or list (t, value)}), or {} if the
+    vector is zero or changes direction in time (a PESANTEUR with
+    FONC_MULT has a fixed DIRECTION). g has a sign (the vector is
     g * DIRECTION).
     """
     times = sorted(set(tv[0] for v in history.values()
@@ -824,8 +824,8 @@ def _gravity_history(history):
 
 
 def _parse_direction_strict(item):
-    """Genormaliseerde richting uit <x>/<y>/<z>, of None bij nulvector.
-    FormulaError bij een formule in t of x/y/z."""
+    """Normalised direction from <x>/<y>/<z>, or None for a zero vector.
+    FormulaError for a formula in t or x/y/z."""
     d = [_scalar(item.find(coord), "dimensionless")
          for coord in ("x", "y", "z")]
     n = math.sqrt(sum(c * c for c in d))
@@ -835,8 +835,8 @@ def _parse_direction_strict(item):
 
 
 def _parse_direction(item):
-    """Als _parse_direction_strict, maar zonder FormulaError (voor
-    bridge_from_liml): ERROR en None (geen richting)."""
+    """Like _parse_direction_strict, but without FormulaError (for
+    bridge_from_liml): ERROR and None (no direction)."""
     try:
         return _parse_direction_strict(item)
     except FormulaError as e:
@@ -848,9 +848,9 @@ def _parse_direction(item):
 
 def _angl_naut(direction):
     """
-    ANGL_NAUT (graden) waarvan de lokale x-as langs direction ligt.
-    Code-Aster: lokale x = (cos a cos b, sin a cos b, -sin b) (U4.44.01,
-    LIAISON_OBLIQUE; nautische hoeken zoals in AFFE_CARA_ELEM ORIENTATION).
+    ANGL_NAUT (degrees) whose local x axis lies along direction.
+    Code-Aster: local x = (cos a cos b, sin a cos b, -sin b) (U4.44.01,
+    LIAISON_OBLIQUE; nautical angles as in AFFE_CARA_ELEM ORIENTATION).
     """
     dx, dy, dz = direction
     a = math.degrees(math.atan2(dy, dx))
@@ -860,10 +860,10 @@ def _angl_naut(direction):
 
 def _directional_dict(params, prefix):
     """
-    Mecway zet de component van de verplaatsing (of rotatie) langs de
-    richting op de waarde; loodrechte componenten blijven vrij (manual v33
-    par. 9.6/9.7). Langs een as: DDL_IMPO D<as> (met teken). Schuin:
-    LIAISON_OBLIQUE met de lokale x-as langs de richting.
+    Mecway sets the component of the displacement (or rotation) along the
+    direction to the value; perpendicular components stay free (manual v33
+    par. 9.6/9.7). Along an axis: DDL_IMPO D<axis> (with sign). Oblique:
+    LIAISON_OBLIQUE with the local x axis along the direction.
     """
     d = params.get("dir")
     if d is None:
@@ -876,21 +876,21 @@ def _directional_dict(params, prefix):
 
 
 # ==========================================
-# VASTE INKLEMMING  (tag: "fixed")
+# FIXED SUPPORT  (tag: "fixed")
 # Code-Aster: DDL_IMPO
-#   - model zonder rotatie-DOFs (puur 3D): DX=DY=DZ=0
-#   - model met rotatie-DOFs (balken/schalen/DIS_TR):
+#   - model without rotation DOFs (pure 3D): DX=DY=DZ=0
+#   - model with rotation DOFs (beams/shells/DIS_TR):
 #       BLOCAGE=('DEPLACEMENT', 'ROTATION')
-#     BLOCAGE is de opvolger van LIAISON='ENCASTRE' (code_aster
-#     Cata/Commands/affe_char_meca.py, compat_syntax, v17.4.0) en blokkeert
-#     per categorie de vrijheidsgraden van de knopen, zodat in een gemengd
-#     model geen DRX/DRY/DRZ wordt opgelegd op 3D-knopen die deze niet hebben.
-# Geldig op: GROUP_NO en GROUP_MA
+#     BLOCAGE is the successor of LIAISON='ENCASTRE' (code_aster
+#     Cata/Commands/affe_char_meca.py, compat_syntax, v17.4.0) and blocks
+#     the degrees of freedom of the nodes per category, so that in a mixed
+#     model no DRX/DRY/DRZ is imposed on 3D nodes that do not have them.
+# Valid on: GROUP_NO and GROUP_MA
 #
-# Opmerking: de "_has_rot_dofs"-vlag wordt NIET gelezen in parse_xml(),
-# maar in to_aster_dict() via params.get("_has_rot_dofs", False).
-# Deze vlag wordt door bridge_from_liml.py (en bridge_mesh.py bij
-# toegevoegde DIS_TR-knopen) geinjecteerd na de parse_xml()-aanroep.
+# Note: the "_has_rot_dofs" flag is NOT read in parse_xml(),
+# but in to_aster_dict() via params.get("_has_rot_dofs", False).
+# This flag is injected by bridge_from_liml.py (and bridge_mesh.py for
+# added DIS_TR nodes) after the parse_xml() call.
 # ==========================================
 class FixedBC(BaseBC):
     aster_keyword = "DDL_IMPO"
@@ -900,8 +900,8 @@ class FixedBC(BaseBC):
         return {"x": 0.0, "y": 0.0, "z": 0.0}
 
     def to_aster_dict(self, params):
-        # "_has_rot_dofs" is geinjecteerd door bridge_from_liml.py / bridge_mesh.py;
-        # GEEN globale variabele.
+        # "_has_rot_dofs" is injected by bridge_from_liml.py / bridge_mesh.py;
+        # NOT a global variable.
         if params.get("_has_rot_dofs", False):
             return {"BLOCAGE": ("DEPLACEMENT", "ROTATION")}
         return {"DX": 0.0, "DY": 0.0, "DZ": 0.0}
@@ -909,11 +909,11 @@ class FixedBC(BaseBC):
 
 # ==========================================
 # PINNED SUPPORT  (tag: "pinnedsupport")
-# Code-Aster: DDL_IMPO met DX=DY=DZ=0 (geen rotatie-blokkering)
-# Geldig op: GROUP_NO en GROUP_MA
+# Code-Aster: DDL_IMPO with DX=DY=DZ=0 (no rotation blocking)
+# Valid on: GROUP_NO and GROUP_MA
 #
-# Een pinned support laat rotaties vrij: DRX/DRY/DRZ worden bewust
-# NIET opgelegd, ongeacht het element-type.
+# A pinned support leaves rotations free: DRX/DRY/DRZ are deliberately
+# NOT imposed, regardless of the element type.
 # ==========================================
 class PinnedBC(BaseBC):
     aster_keyword = "DDL_IMPO"
@@ -927,15 +927,15 @@ class PinnedBC(BaseBC):
 
 
 # ==========================================
-# OPGELEGDE VERPLAATSING  (tag: "displacement")
-# Code-Aster: DDL_IMPO (richting langs een as) of LIAISON_OBLIQUE (schuin)
-# Geldig op: GROUP_NO en GROUP_MA
+# IMPOSED DISPLACEMENT  (tag: "displacement")
+# Code-Aster: DDL_IMPO (direction along an axis) or LIAISON_OBLIQUE (oblique)
+# Valid on: GROUP_NO and GROUP_MA
 #
-# Mecway XML-structuur:
-#   <value>      - waarde (met eenheid, bijv. "5 mm"); meerdere
-#                  <value time="..."> geven een tijdshistorie
-#   <x>/<y>/<z>  - richting (wordt genormaliseerd)
-# De component langs de richting krijgt de waarde, de andere blijven vrij
+# Mecway XML structure:
+#   <value>      - value (with unit, e.g. "5 mm"); several
+#                  <value time="..."> give a time history
+#   <x>/<y>/<z>  - direction (gets normalised)
+# The component along the direction gets the value, the others stay free
 # (manual v33 par. 9.6).
 # ==========================================
 class DisplacementBC(BaseBC):
@@ -944,8 +944,8 @@ class DisplacementBC(BaseBC):
     quantity = "length"
     prefix = "D"
     skipped_params = {"value": 0.0, "dir": None}
-    # waarde als formule in x, y, z: DDL_IMPO/LIAISON_OBLIQUE met een
-    # FORMULE (PositionFormula); de richting moet vast zijn
+    # value as formula in x, y, z: DDL_IMPO/LIAISON_OBLIQUE with a
+    # FORMULE (PositionFormula); the direction must be fixed
     position_ok = True
 
     @_skip_on_formula_error
@@ -964,13 +964,13 @@ class DisplacementBC(BaseBC):
 
 
 # ==========================================
-# OPGELEGDE ROTATIE  (tag: "noderotation")
-# Code-Aster: DDL_IMPO DRX/DRY/DRZ of LIAISON_OBLIQUE
-# Geldig op: GROUP_NO en GROUP_MA
+# IMPOSED ROTATION  (tag: "noderotation")
+# Code-Aster: DDL_IMPO DRX/DRY/DRZ or LIAISON_OBLIQUE
+# Valid on: GROUP_NO and GROUP_MA
 #
-# Alleen voor knopen met rotatie-DOFs (balk, schaal); op 3D-knopen geeft
-# Code-Aster een fout. Zelfde XML als displacement, eenheid 'angle'
-# (rad, of deg/° -> rad), richting = rotatie-as (manual v33 par. 9.7).
+# Only for nodes with rotation DOFs (beam, shell); on 3D nodes
+# Code-Aster gives an error. Same XML as displacement, unit 'angle'
+# (rad, or deg/° -> rad), direction = rotation axis (manual v33 par. 9.7).
 # ==========================================
 class NodeRotationBC(DisplacementBC):
     quantity = "angle"
@@ -978,44 +978,44 @@ class NodeRotationBC(DisplacementBC):
 
 
 # ==========================================
-# KRACHT  (tag: "force")
-# Code-Aster: FORCE_NODALE met FX/FY/FZ op knopen; op vlakken FORCE_FACE,
-# FORCE_COQUE of FORCE_ARETE (bridge_mesh._apply_to_model_data).
-# Geldig op: GROUP_NO en GROUP_MA
+# FORCE  (tag: "force")
+# Code-Aster: FORCE_NODALE with FX/FY/FZ on nodes; on faces FORCE_FACE,
+# FORCE_COQUE or FORCE_ARETE (bridge_mesh._apply_to_model_data).
+# Valid on: GROUP_NO and GROUP_MA
 #
-# BELANGRIJK: de verdeling gebeurt BUITEN deze klasse: over de knopen van
-# een nodeselection in bridge_from_liml.py, over de knopen van
-# balkuiteinden en over het oppervlak/de lengte van vlakken in
-# bridge_mesh.py. parse_xml() geeft hier de ongecorrigeerde TOTALE kracht
-# per as terug (SI, Newton).
+# IMPORTANT: the distribution happens OUTSIDE this class: over the nodes of
+# a nodeselection in bridge_from_liml.py, over the nodes of
+# beam ends and over the area/length of faces in
+# bridge_mesh.py. parse_xml() returns the uncorrected TOTAL force
+# per axis here (SI, Newton).
 #
-# Tijdshistorie:
-#   Mecway kan een kracht per tijdsstap geven via meerdere <x>/<y>/<z>
-#   elementen met een time-attribuut, bijv.:
+# Time history:
+#   Mecway can give a force per time step via several <x>/<y>/<z>
+#   elements with a time attribute, e.g.:
 #     <x time="0 s">0 N</x>
 #     <x time="1 s">1500 N</x>
 #     <x time="2 s">2000 N</x>
-#   parse_xml() geeft dan params[axis] terug als lijst van (t, F)-tuples
-#   in SI-eenheden. Als er geen time-attribuut staat, blijft params[axis]
-#   een float (statische kracht). Als zowel statische als tijdsstappen
-#   aanwezig zijn voor dezelfde as, krijgt de tijdshistorie voorrang.
+#   parse_xml() then returns params[axis] as a list of (t, F) tuples
+#   in SI units. Without a time attribute, params[axis] stays
+#   a float (static force). If both static values and time steps are
+#   present for the same axis, the time history takes precedence.
 #
-#   MECA_STATIQUE-builder collapsed de lijst naar de laatste waarde en
-#   logt een waarschuwing. STAT_NON_LINE-builder genereert een
-#   DEFI_FONCTION en gebruikt AFFE_CHAR_MECA_F.
+#   The MECA_STATIQUE builder collapses the list to the last value and
+#   logs a warning. The STAT_NON_LINE builder generates a
+#   DEFI_FONCTION and uses AFFE_CHAR_MECA_F.
 # ==========================================
 class ForceBC(BaseBC):
-    # Op knopen: FORCE_NODALE, gelijk verdeeld over de knopen. Op vlakken:
-    # FORCE_FACE; Mecway verdeelt de totale kracht gelijkmatig over het
-    # oppervlak (manual v33 par. 9.13), dus bridge_mesh.py deelt door het
-    # oppervlak van de vlakgroep en zet aster_keyword op FORCE_FACE.
+    # On nodes: FORCE_NODALE, distributed equally over the nodes. On faces:
+    # FORCE_FACE; Mecway distributes the total force uniformly over the
+    # area (manual v33 par. 9.13), so bridge_mesh.py divides by the
+    # area of the face group and sets aster_keyword to FORCE_FACE.
     aster_keyword = "FORCE_NODALE"
     valid_targets = ["GROUP_NO", "GROUP_MA"]
 
     quantity = "force"
     prefix = "F"
-    # componenten als formule in x, y, z (PositionFormula): kracht,
-    # traction, line pressure; niet bij een moment (MomentBC)
+    # components as formula in x, y, z (PositionFormula): force,
+    # traction, line pressure; not for a moment (MomentBC)
     position_ok = True
 
     @_skip_on_formula_error
@@ -1029,9 +1029,9 @@ class ForceBC(BaseBC):
         return params
 
     def to_aster_dict(self, params):
-        # Pass-through: waarden kunnen scalar zijn (lineair-statisch) of
-        # lijsten van (t, F) (niet-lineair-statisch). De rendering in
-        # bridge_to_aster.py beslist op basis van het type.
+        # Pass-through: values can be scalar (linear static) or
+        # lists of (t, F) (nonlinear static). The rendering in
+        # bridge_to_aster.py decides based on the type.
         return {"{0}{1}".format(self.prefix, ax.upper()): v
                 for ax, v in params.items()
                 if not ax.startswith("_")}
@@ -1039,63 +1039,63 @@ class ForceBC(BaseBC):
 
 # ==========================================
 # MOMENT  (tag: "moment")
-# Mecway (manual v33 par. 9.18): op een enkele knoop met rotatie-DOFs
-# (balk/schaal) -> FORCE_NODALE MX/MY/MZ; op vlakken (schaal of volume)
-# als krachten verdeeld over de vlakken, om de as door het zwaartepunt.
-# De verdeling over vlakken doet bridge_mesh.py (_moment_to_forces).
+# Mecway (manual v33 par. 9.18): on a single node with rotation DOFs
+# (beam/shell) -> FORCE_NODALE MX/MY/MZ; on faces (shell or volume)
+# as forces distributed over the faces, about the axis through the centroid.
+# The distribution over faces is done by bridge_mesh.py (_moment_to_forces).
 # XML: <moment selection="..."><x>2 N.m</x><y>..</y><z>..</z></moment>,
-# per component eventueel met time-attributen (zoals force).
+# per component possibly with time attributes (as for force).
 # ==========================================
 class MomentBC(ForceBC):
     quantity = "moment"
     prefix = "M"
-    # verdeling over de vlakken met vaste knoopkrachten
-    # (bridge_mesh._moment_to_forces): geen formule in x, y, z
+    # distribution over the faces with fixed nodal forces
+    # (bridge_mesh._moment_to_forces): no formula in x, y, z
     position_ok = False
 
 
 # ==========================================
 # GRAVITY  (tag: "gravity")
-# Code-Aster: PESANTEUR met GRAVITE=|g| en DIRECTION=(dx,dy,dz)
-# Geldig op: globaal (geen GROUP_MA in deze implementatie).
+# Code-Aster: PESANTEUR with GRAVITE=|g| and DIRECTION=(dx,dy,dz)
+# Valid on: global (no GROUP_MA in this implementation).
 #
-# Mecway XML-structuur:
+# Mecway XML structure:
 #   <gravity>
 #     <x>0 m/s2</x>
 #     <y>0 m/s2</y>
 #     <z>-9.81 m/s2</z>
 #   </gravity>
 #
-# Code-Aster verwacht de zwaartekrachtvector ontbonden in:
+# Code-Aster expects the gravity vector decomposed into:
 #   GRAVITE   = magnitude |g| = sqrt(gx^2 + gy^2 + gz^2)   [m/s^2]
-#   DIRECTION = genormaliseerde richting (gx/|g|, gy/|g|, gz/|g|)
+#   DIRECTION = normalised direction (gx/|g|, gy/|g|, gz/|g|)
 #
-# RHO komt uit DEFI_MATERIAU (bridge_to_aster.py voegt RHO toe in ELAS).
-# Materialen zonder dichtheid krijgen RHO=0 en leveren geen
-# zwaartekrachtbijdrage; Code-Aster geeft geen alarm in dat geval.
+# RHO comes from DEFI_MATERIAU (bridge_to_aster.py adds RHO in ELAS).
+# Materials without density get RHO=0 and give no
+# gravity contribution; Code-Aster gives no alarm in that case.
 #
-# BELANGRIJK: <gravity> in de .liml heeft GEEN selection-attribuut.
-# bridge_from_liml.py geeft selection_name="" door; bridge_to_aster.py
-# detecteert dit en laat de GROUP_MA-prefix weg in de _F(...) entry.
+# IMPORTANT: <gravity> in the .liml has NO selection attribute.
+# bridge_from_liml.py passes selection_name=""; bridge_to_aster.py
+# detects this and omits the GROUP_MA prefix in the _F(...) entry.
 #
-# valid_targets blijft ["GROUP_MA"] voor consistentie met de
-# bestaande target-validatie in bridge_from_liml.py (lege selection
-# valt automatisch op GROUP_MA). De daadwerkelijke render schrijft
-# geen GROUP_MA wanneer de selection leeg is.
+# valid_targets stays ["GROUP_MA"] for consistency with the
+# existing target validation in bridge_from_liml.py (an empty selection
+# falls back to GROUP_MA automatically). The actual render writes
+# no GROUP_MA when the selection is empty.
 #
-# Tijdshistorie (Samples/SaggingCable.liml, Mecway manual v33 par. 9.19
-# "constant or time-dependent"), per component zoals bij force:
+# Time history (Samples/SaggingCable.liml, Mecway manual v33 par. 9.19
+# "constant or time-dependent"), per component as for force:
 #   <y time="1 s">0 m/s²</y>
 #   <y time="2 s">-9.8 m/s²</y>
-# parse_xml() zet dan in params["_history"] per component een float of een
-# lijst (t, g) en in params x/y/z de waarde op de laatste tijd (voor
-# gebruikers die een vaste vector verwachten, bijv. hydrostatische druk).
-# to_aster_dict() maakt er GRAVITE = [(t, g(t))] (met teken) langs een vaste
-# DIRECTION van; Code-Aster: PESANTEUR in AFFE_CHAR_MECA (niet in
-# AFFE_CHAR_MECA_F, catalogus affe_char_meca.py) met FONC_MULT in EXCIT,
-# zoals testcase forma12b (PESANTEUR met EXCIT FONC_MULT). Draait de
-# richting in de tijd, dan geeft to_aster_dict() {} (niet te vertalen met
-# een functie; bridge_from_liml meldt dat).
+# parse_xml() then puts in params["_history"] per component a float or a
+# list (t, g) and in params x/y/z the value at the last time (for
+# users that expect a fixed vector, e.g. hydrostatic pressure).
+# to_aster_dict() turns it into GRAVITE = [(t, g(t))] (with sign) along a
+# fixed DIRECTION; Code-Aster: PESANTEUR in AFFE_CHAR_MECA (not in
+# AFFE_CHAR_MECA_F, catalogue affe_char_meca.py) with FONC_MULT in EXCIT,
+# as in test case forma12b (PESANTEUR with EXCIT FONC_MULT). If the
+# direction rotates in time, to_aster_dict() gives {} (cannot be translated
+# with a function; bridge_from_liml reports that).
 # ==========================================
 class GravityBC(BaseBC):
     aster_keyword = "PESANTEUR"
@@ -1128,9 +1128,9 @@ class GravityBC(BaseBC):
         g  = math.sqrt(gx * gx + gy * gy + gz * gz)
 
         if g < 1.0e-12:
-            # Volledig nul-vector: signaleer voor de aanroeper dat dit
-            # een no-op is. bridge_from_liml.py filtert een nul-vector al
-            # vooraf; bridge_to_aster.py slaat een lege aster_dict over.
+            # Fully zero vector: signal to the caller that this is
+            # a no-op. bridge_from_liml.py already filters a zero vector
+            # beforehand; bridge_to_aster.py skips an empty aster_dict.
             return {}
 
         return {
@@ -1140,12 +1140,12 @@ class GravityBC(BaseBC):
 
 
 # ==========================================
-# OPPERVLAKTEDRUK  (tag: "surfacepressure")
-# Code-Aster: PRES_REP met PRES=
-# Geldig op: GROUP_MA UITSLUITEND
+# SURFACE PRESSURE  (tag: "surfacepressure")
+# Code-Aster: PRES_REP with PRES=
+# Valid on: GROUP_MA ONLY
 #
-# Conventie: PRES > 0 = compressief (naar het oppervlak toe gedrukt).
-# Code-Aster berekent zelf de krachtvectoren via de oppervlaktenormaal.
+# Convention: PRES > 0 = compressive (pushed towards the surface).
+# Code-Aster computes the force vectors itself via the surface normal.
 # ==========================================
 class SurfacePressureBC(BaseBC):
     aster_keyword = "PRES_REP"
@@ -1164,23 +1164,23 @@ class SurfacePressureBC(BaseBC):
     def to_aster_dict(self, params):
         if params.get("_skipped"):
             return {}
-        # _sign: -1 voor schaalvlakken met faceid 6 (bridge_mesh.py)
+        # _sign: -1 for shell faces with faceid 6 (bridge_mesh.py)
         return {"PRES": _scale(params["PRES"], params.get("_sign", 1.0))}
 
 
 # ==========================================
-# OPGELEGDE SNELHEID  (tag: "velocity")
-# Mecway (manual v33 par. 9.8): zet de component van de snelheid langs de
-# richting; alleen bij dynamische analyses. Code-Aster legt in
-# DYNA_NON_LINE geen snelheid op, wel een verplaatsing als functie van de
-# tijd: u(t) = integraal van v (bij constante v: v*t). De eindtijd komt
-# uit <timesteps> (params["_t_end"], gezet door bridge_from_liml.py).
+# IMPOSED VELOCITY  (tag: "velocity")
+# Mecway (manual v33 par. 9.8): sets the component of the velocity along
+# the direction; only in dynamic analyses. Code-Aster does not impose a
+# velocity in DYNA_NON_LINE, but a displacement as a function of
+# time: u(t) = integral of v (for constant v: v*t). The end time comes
+# from <timesteps> (params["_t_end"], set by bridge_from_liml.py).
 # ==========================================
 class VelocityBC(DisplacementBC):
     quantity = "velocity"
     prefix = "D"
-    # de snelheid wordt in de tijd geintegreerd (_integrate): alleen
-    # getallen en tijdshistories
+    # the velocity is integrated in time (_integrate): only
+    # numbers and time histories
     position_ok = False
 
     def to_aster_dict(self, params):
@@ -1194,8 +1194,8 @@ class VelocityBC(DisplacementBC):
 
 
 def _integrate(value, t_end):
-    """Verplaatsingshistorie [(t, u)] bij snelheid value (float of
-    [(t, v)], lineair tussen de punten, constant erbuiten), van 0 tot
+    """Displacement history [(t, u)] for velocity value (float or
+    [(t, v)], linear between the points, constant outside), from 0 to
     t_end."""
     if not isinstance(value, list):
         return [(0.0, 0.0), (t_end, value * t_end)]
@@ -1222,13 +1222,13 @@ def _integrate(value, t_end):
 
 # ==========================================
 # FRICTIONLESS SUPPORT  (tag: "frictionless")
-# Mecway (manual v33 par. 9.2): normaalverplaatsing van de vlakken nul (of
-# <displacement>, positief = het vlak in); in een knoop de gemiddelde
-# normaal van de aangrenzende vlakken uit de selectie. Op schalen ook de
-# rotaties om de assen in het vlak.
-# Code-Aster: FACE_IMPO DNOR op de randelementen van volume-elementen
-# (DNOR langs de naar buiten gerichte normaal na ORIE_PEAU, dus -waarde);
-# vlakke schaalvlakken via bridge_mesh.py als LIAISON_OBLIQUE.
+# Mecway (manual v33 par. 9.2): normal displacement of the faces zero (or
+# <displacement>, positive = into the face); at a node the average
+# normal of the adjacent faces from the selection. On shells also the
+# rotations about the in-plane axes.
+# Code-Aster: FACE_IMPO DNOR on the boundary elements of volume elements
+# (DNOR along the outward normal after ORIE_PEAU, so -value);
+# flat shell faces via bridge_mesh.py as LIAISON_OBLIQUE.
 # ==========================================
 class FrictionlessBC(BaseBC):
     aster_keyword = "FACE_IMPO"
@@ -1246,7 +1246,7 @@ class FrictionlessBC(BaseBC):
             return {}
         value = _scale(params.get("value", 0.0), -1.0)
         if "_normal" in params:
-            # vlakke schaalvlakken (bridge_mesh._frictionless)
+            # flat shell faces (bridge_mesh._frictionless)
             return OrderedDict([("ANGL_NAUT", _angl_naut(params["_normal"])),
                                 ("DX", value), ("DRY", 0.0), ("DRZ", 0.0)])
         return {"DNOR": value}
@@ -1257,12 +1257,12 @@ class FrictionlessBC(BaseBC):
 
 # ==========================================
 # TRACTION  (tag: "traction")
-# Mecway (manual v33 par. 9.15): kracht per oppervlak in globale X/Y/Z, op
-# vlakken of elementen; per component eventueel een tijdshistorie.
+# Mecway (manual v33 par. 9.15): force per area in global X/Y/Z, on
+# faces or elements; per component possibly a time history.
 #   <traction selection=".."><x>1 MPa</x><y>2 MPa</y><z>3 MPa</z></traction>
-# Code-Aster: FORCE_FACE (vlakken van volume-elementen) of FORCE_COQUE
-# (schalen; PLAN volgt de kant, zie bridge_mesh._traction). De keuze maakt
-# bridge_mesh.py; hier alleen de componenten.
+# Code-Aster: FORCE_FACE (faces of volume elements) or FORCE_COQUE
+# (shells; PLAN follows the side, see bridge_mesh._traction). The choice is
+# made by bridge_mesh.py; here only the components.
 # ==========================================
 class TractionBC(ForceBC):
     aster_keyword = "FORCE_FACE"
@@ -1272,14 +1272,14 @@ class TractionBC(ForceBC):
 
 # ==========================================
 # LINE PRESSURE  (tag: "linepressure")
-# Mecway (manual v33 par. 9.16): kracht per lengte op line2/line3-elementen
-# of op lokaal 1D-vlakken (schaalranden), globaal X/Y/Z.
+# Mecway (manual v33 par. 9.16): force per length on line2/line3 elements
+# or on locally 1D faces (shell edges), global X/Y/Z.
 #   <linepressure selection=".."><x>0 N/m</x><y>10 N/m</y><z>-20 N/m</z>
-# Code-Aster: FORCE_POUTRE FX/FY/FZ (balken) of FORCE_ARETE (schaalranden),
-# beide kracht per lengte in het globale assenstelsel (U4.44.01).
-# Elementcoordinaten (alleen balken): <u>/<v>/<w> i.p.v. <x>/<y>/<z>
-# (XML gezien in Mecway 33) -> FORCE_POUTRE N/VY/VZ in het lokale stelsel;
-# Code-Aster lokaal y/z = Mecway V/W (zie bridge_from_liml.py, profielen).
+# Code-Aster: FORCE_POUTRE FX/FY/FZ (beams) or FORCE_ARETE (shell edges),
+# both force per length in the global coordinate system (U4.44.01).
+# Element coordinates (beams only): <u>/<v>/<w> instead of <x>/<y>/<z>
+# (XML seen in Mecway 33) -> FORCE_POUTRE N/VY/VZ in the local system;
+# Code-Aster local y/z = Mecway V/W (see bridge_from_liml.py, profiles).
 # ==========================================
 class LinePressureBC(ForceBC):
     aster_keyword = "FORCE_POUTRE"
@@ -1309,14 +1309,14 @@ class LinePressureBC(ForceBC):
 
 
 # ==========================================
-# HYDROSTATISCHE DRUK  (tag: "hydrostaticpressure")
-# Mecway (manual v33 par. 9.17): druk = rho * g * diepte onder het vrije
-# oppervlak (punt <x>/<y>/<z>), nul erboven; vraagt een aparte gravity.
+# HYDROSTATIC PRESSURE  (tag: "hydrostaticpressure")
+# Mecway (manual v33 par. 9.17): pressure = rho * g * depth below the free
+# surface (point <x>/<y>/<z>), zero above it; needs a separate gravity.
 #   <hydrostaticpressure selection=".."><fluiddensity>1000 kg/m3
 #   </fluiddensity><x>0 mm</x><y>0 mm</y><z>30 mm</z></hydrostaticpressure>
-# Code-Aster: AFFE_CHAR_MECA_F PRES_REP met een FORMULE van X, Y, Z
-# (U4.44.01 PRES_REP, "function" pressure). De formule maakt
-# bridge_to_aster.py met de zwaartekrachtvector (_hydrostatic_formula).
+# Code-Aster: AFFE_CHAR_MECA_F PRES_REP with a FORMULE of X, Y, Z
+# (U4.44.01 PRES_REP, "function" pressure). The formula is made by
+# bridge_to_aster.py with the gravity vector (_hydrostatic_formula).
 # ==========================================
 class HydrostaticPressureBC(BaseBC):
     aster_keyword = "PRES_REP"
@@ -1334,19 +1334,19 @@ class HydrostaticPressureBC(BaseBC):
     def to_aster_dict(self, params):
         if params.get("_skipped"):
             return {}
-        # De PRES-functie komt pas in bridge_to_aster.py (_build_charges).
+        # The PRES function only comes in bridge_to_aster.py (_build_charges).
         return {"PRES": params.get("_formula", "")}
 
 
 # ==========================================
 # ELASTIC SUPPORT  (tag: "elasticsupport")
-# Mecway (manual v33 par. 9.4): stijfheid per oppervlak, normaal en
-# tangentieel, op vlakken van volume-elementen en schaalvlakken.
+# Mecway (manual v33 par. 9.4): stiffness per area, normal and
+# tangential, on faces of volume elements and shell faces.
 #   <elasticsupport selection=".."><modulus>1E12 Pa/m</modulus>
 #   <tangential>2E11 Pa/m</tangential></elasticsupport>
-# Code-Aster: een veer naar de grond per knoop (POI1, DIS_T, K_T_N), met
-# stijfheid = k * knoopgewicht van het oppervlak; bridge_mesh.py maakt de
-# elementen (_build_discretes).
+# Code-Aster: a spring to ground per node (POI1, DIS_T, K_T_N), with
+# stiffness = k * nodal weight of the area; bridge_mesh.py creates the
+# elements (_build_discretes).
 # ==========================================
 class ElasticSupportBC(BaseBC):
     aster_keyword = "DISCRET"
@@ -1365,14 +1365,14 @@ class ElasticSupportBC(BaseBC):
 
 # ==========================================
 # COMPRESSION ONLY SUPPORT  (tag: "compressiononly")
-# Mecway (manual v33 par. 9.5): als frictionless waar de steun op druk
-# belast wordt, vrij waar hij op trek zou komen. De interne solver rekent
-# hard; <stiffness> en <tensilestress> zijn alleen voor CCX (veren) en
-# worden niet gelezen.
+# Mecway (manual v33 par. 9.5): like frictionless where the support is
+# loaded in compression, free where it would be in tension. The internal
+# solver is hard; <stiffness> and <tensilestress> are only for CCX
+# (springs) and are not read.
 # Code-Aster: DEFI_CONTACT FORMULATION='LIAISON_UNIL' (U4.44.11 par. 3.8):
-# per knoop n . u <= 0, met n de naar buiten gerichte normaal (naar de
-# steun). Alleen in STAT_NON_LINE/DYNA_NON_LINE. bridge_mesh.py
-# groepeert de knopen per normaal (_compression_only).
+# per node n . u <= 0, with n the outward normal (towards the
+# support). Only in STAT_NON_LINE/DYNA_NON_LINE. bridge_mesh.py
+# groups the nodes per normal (_compression_only).
 # ==========================================
 class CompressionOnlyBC(BaseBC):
     aster_keyword = "LIAISON_UNIL"
@@ -1387,12 +1387,12 @@ class CompressionOnlyBC(BaseBC):
 
 # ==========================================
 # SYMMETRY  (tag: "symmetry")
-# Mecway (manual v33 par. 9.40): verplaatsing loodrecht op het
-# symmetrievlak nul; rotaties om assen in het vlak nul (balkuiteinden),
-# op schaalranden alleen de rotatie om de rand. nodeplane="true": het vlak
-# volgt uit de knopen, anders normaal <x>/<y>/<z>.
-# Code-Aster: LIAISON_OBLIQUE met de lokale x-as langs de normaal
-# (bridge_mesh._symmetry zet richting en groepen).
+# Mecway (manual v33 par. 9.40): displacement perpendicular to the
+# symmetry plane zero; rotations about in-plane axes zero (beam ends),
+# on shell edges only the rotation about the edge. nodeplane="true": the
+# plane follows from the nodes, otherwise normal <x>/<y>/<z>.
+# Code-Aster: LIAISON_OBLIQUE with the local x axis along the normal
+# (bridge_mesh._symmetry sets direction and groups).
 # ==========================================
 class SymmetryBC(BaseBC):
     aster_keyword = "LIAISON_OBLIQUE"
@@ -1411,15 +1411,15 @@ class SymmetryBC(BaseBC):
 
 # ==========================================
 # CENTRIFUGAL FORCE  (tag: "centrifugal")
-# Mecway (manual v33 par. 9.20): rotatie om de globale X-, Y- of Z-as door
-# de oorsprong, F = m w^2 r op alle massa (elementen met dichtheid en
-# knoopmassa's).
+# Mecway (manual v33 par. 9.20): rotation about the global X, Y or Z axis
+# through the origin, F = m w^2 r on all mass (elements with density and
+# nodal masses).
 #   <centrifugal><x>0 rad/s</x><y>100000 r/min</y><z>0 rad/s</z>
 # Code-Aster: AFFE_CHAR_MECA ROTATION=_F(VITESSE, AXE, CENTRE) (U4.44.01;
-# catalogus affe_char_meca.py v17.4: VITESSE, AXE verplicht). VITESSE in
-# rad/s: NIET in de documentatie gevonden, nagerekend met een run (zie
-# bridge_to_aster._build_charges). Knoopmassa's (DIS_T) krijgen de kracht
-# apart (bridge_to_aster._centrifugal_loads).
+# catalogue affe_char_meca.py v17.4: VITESSE, AXE required). VITESSE in
+# rad/s: NOT found in the documentation, verified with a run (see
+# bridge_to_aster._build_charges). Nodal masses (DIS_T) get the force
+# separately (bridge_to_aster._centrifugal_loads).
 # ==========================================
 class CentrifugalBC(BaseBC):
     aster_keyword = "ROTATION"
@@ -1436,8 +1436,8 @@ class CentrifugalBC(BaseBC):
         return params
 
     def to_aster_dict(self, params):
-        """VITESSE en AXE, of {} als de as geen X, Y of Z is (of nul) of
-        als er een tijdshistorie is (bridge_from_liml.py meldt dat)."""
+        """VITESSE and AXE, or {} if the axis is not X, Y or Z (or zero) or
+        if there is a time history (bridge_from_liml.py reports that)."""
         comps = [(i, params.get(c, 0.0)) for i, c in enumerate("xyz")]
         if any(isinstance(v, list) for _, v in comps):
             return {}
@@ -1452,7 +1452,7 @@ class CentrifugalBC(BaseBC):
 
 
 # ==========================================
-# BC-REGISTER
+# BC REGISTRY
 # ==========================================
 SUPPORTED_BCS = {
     "fixed":           FixedBC(),
