@@ -4,30 +4,30 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_run_aster.py
-# Verantwoordelijkheid: start Code-Aster als extern proces via de
-# run_aster.bat launcher, en zoekt na de run fouten in study.mess
-# (aster_mess_errors). Geisoleerd van bestandsgeneratie (bridge_to_aster.py)
-# en resultaat-parsing (bridge_from_aster.py) omdat falen hier een andere
-# oorzaak heeft (launcher niet gevonden, permissie-probleem) dan falen
-# in die andere modules.
+# Responsibility: starts Code-Aster as an external process via the
+# run_aster.bat launcher, and after the run looks for errors in study.mess
+# (aster_mess_errors). Isolated from file generation (bridge_to_aster.py)
+# and result parsing (bridge_from_aster.py) because failure here has a
+# different cause (launcher not found, permission problem) than failure
+# in those other modules.
 #
-# Synchronisatie: Code-Aster draait in een apart cmd-venster. Deze module
-# wacht NIET tot de solver klaar is; in plaats daarvan toont mw.message()
-# een dialoog die de gebruiker handmatig moet bevestigen. Dat is een
-# bewuste keuze omdat run_aster.bat geen betrouwbaar exit-signaal geeft
-# en de solver-output (.mess) asynchroon wordt weggeschreven.
+# Synchronisation: Code-Aster runs in a separate cmd window. This module
+# does NOT wait until the solver has finished; instead mw.message() shows
+# a dialog that the user must confirm manually. That is a
+# deliberate choice because run_aster.bat gives no reliable exit signal
+# and the solver output (.mess) is written asynchronously.
 #
-# Console-uitvoer: de uitvoer van run_aster (ook stderr) gaat via "tee" uit
-# de Code-Aster-installatie (tools\tee.exe) naar het venster EN naar
-# study_console.txt. Een Python-fout in study.comm staat alleen daar (niet
-# in study.mess; KNOWN_BUGS 13 opgelost).
+# Console output: the output of run_aster (including stderr) goes via "tee"
+# from the Code-Aster installation (tools\tee.exe) to the window AND to
+# study_console.txt. A Python error in study.comm only appears there (not
+# in study.mess; KNOWN_BUGS 13 resolved).
 #
-# Convergentiescherm: bij elke run (instelling convergence_monitor) start
-# start_convergence_monitor() aster_convergence_monitor.py als apart proces
-# (de CPython van Code-Aster), zie de kop van dat bestand; achteraf via de
-# knop Convergentiescherm in het hoofdvenster (bridge_gui).
+# Convergence monitor: on every run (setting convergence_monitor)
+# start_convergence_monitor() starts aster_convergence_monitor.py as a separate
+# process (Code-Aster's CPython), see the header of that file; afterwards via
+# the button Convergentiescherm in the main window (bridge_gui).
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import os
 import re
@@ -39,21 +39,21 @@ from bridge_utils import (log, CONFIG_BRIDGE, tr, run_name, run_names,
 from bridge_convergence import python_errors
 
 
-# Meldingen in study.mess staan als "<F> <CODE>" in een kader; <A> is een
-# alarm. Een <EXCEPTION> stopt de commando's erna, maar de launcher meldt
-# dan soms alleen "DIAGNOSTIC JOB : <A>_ALARM" (gezien met Code-Aster 17.4
-# op Windows). Daarom wordt het .mess-bestand zelf doorzocht.
-# Ook <ConvergenceError> en andere <...Error>: STAT_NON_LINE stopte met
-# <ConvergenceError> <MECANONLINE9_7> terwijl de DIAGNOSTIC-regel "OK" gaf
-# (gezien in Mecway).
+# Messages in study.mess appear as "<F> <CODE>" in a box; <A> is an
+# alarm. An <EXCEPTION> stops the commands after it, but the launcher then
+# sometimes only reports "DIAGNOSTIC JOB : <A>_ALARM" (seen with Code-Aster
+# 17.4 on Windows). That is why the .mess file itself is searched.
+# Also <ConvergenceError> and other <...Error>: STAT_NON_LINE stopped with
+# <ConvergenceError> <MECANONLINE9_7> while the DIAGNOSTIC line gave "OK"
+# (seen in Mecway).
 _MESS_ERROR_RE = re.compile(
     r"<(EXCEPTION|F|S|E|[A-Za-z]+Error)>\s*<([A-Za-z0-9_]+)>")
-# Zonder meldingskader, na een Python-exceptie in een commando.
+# Without a message box, after a Python exception in a command.
 _MESS_UNCAUGHT = "after an uncaught exception"
 _MESS_ALARM_RE = re.compile(r"<A>\s*<([A-Za-z0-9_]+)>")
-# Uitleg bij alarmen van CALC_MODES (bridge_to_aster._calc_modes_block:
-# VERI_MODE STOP_ERREUR='NON', dus alarmen i.p.v. fouten). Tekst van de
-# meldingen uit Code-Aster 17.4 (gezien met Mecway's BucklingBeam).
+# Explanation of CALC_MODES alarms (bridge_to_aster._calc_modes_block:
+# VERI_MODE STOP_ERREUR='NON', so alarms instead of errors). Text of the
+# messages from Code-Aster 17.4 (seen with Mecway's BucklingBeam).
 _ALARM_HINTS = {
     "ALGELINE5_23": (
         u"de Sturm-controle telt in het interval van de berekende modes "
@@ -64,8 +64,8 @@ _ALARM_HINTS = {
         u"computed modes than were computed. Usually a multiple mode "
         u"(symmetry) falls on the limit of the number of modes; otherwise a "
         u"mode was missed. Ask for one or two more modes and compare."),
-    # Gezien met een vrij-vrij model en een negatieve zoekfrequentie
-    # (docs-review): de ondergrens van de Sturm-band valt op een starre mode.
+    # Seen with a free-free model and a negative search frequency
+    # (docs review): the lower bound of the Sturm band falls on a rigid mode.
     "ALGELINE3_82": (
         u"de ondergrens van het zoekinterval valt (bijna) op een eigenwaarde, "
         u"meestal een starre-lichaamsmode bij ~0 Hz (akoestiek: de constante "
@@ -77,10 +77,10 @@ _ALARM_HINTS = {
         u"constant pressure with hard walls). Usually harmless: "
         u"the Sturm count may be off because of it. Check the number of "
         u"modes or shift the search frequency slightly."),
-    # Dubbele cellen (zelfde knopen). Vibro-akoestiek: een schaal op een
-    # fluidumvlak heeft een eigen koppelvlak-cel (FLUI_STRU) met dezelfde
-    # knopen (bridge_vibroacoustic.interface_faces); gezien in verificatie
-    # VA-03/VA-05, frequenties exact.
+    # Duplicate cells (same nodes). Vibro-acoustics: a shell on a
+    # fluid face has its own interface cell (FLUI_STRU) with the same
+    # nodes (bridge_vibroacoustic.interface_faces); seen in verification
+    # VA-03/VA-05, frequencies exact.
     "MODELISA4_8": (
         u"dubbele cellen (zelfde knopen). Bij vibro-akoestiek normaal voor "
         u"een schaal op een lucht- of vloeistofvlak (schaal en koppelvlak "
@@ -97,9 +97,9 @@ _ALARM_HINTS = {
         u"niet gehaald; zie de tabel in study.mess.",
         u"the check of the modes (VERI_MODE: error per mode and Sturm) "
         u"failed; see the table in study.mess."),
-    # Complexe modes (bridge_modal_damping): Code-Aster geeft alleen de
-    # oscillerende modes (gezien: beta = 1e-3 s op een hex20-console gaf 3
-    # van de 6 modes; vrij-vrij met alpha: de 6 starre modes vielen weg).
+    # Complex modes (bridge_modal_damping): Code-Aster only gives the
+    # oscillating modes (seen: beta = 1e-3 s on a hex20 cantilever gave 3
+    # of the 6 modes; free-free with alpha: the 6 rigid modes dropped out).
     "ALGELINE5_79": (
         u"complexe modes: minder modes dan gevraagd. Overkritisch gedempte "
         u"modes (zeta >= 1, vaak hoge modes met Rayleigh-beta of lage met "
@@ -110,8 +110,8 @@ _ALARM_HINTS = {
         u">= 1, often high modes with Rayleigh beta or low ones with alpha) "
         u"and rigid body modes do not oscillate and are not given. Lower the "
         u"damping to see those modes; zeta per mode is in the log."),
-    # Gezien met complexe modes in een vrij-vrij model (de stijfheid is
-    # singulier); de elastische modes waren gelijk aan Mecway (MC-05).
+    # Seen with complex modes in a free-free model (the stiffness is
+    # singular); the elastic modes were equal to Mecway (MC-05).
     "FACTOR_11": (
         u"een (bijna) singuliere matrix bij het ontbinden. Bij complexe "
         u"modes in een model zonder opleggingen normaal (starre "
@@ -120,14 +120,14 @@ _ALARM_HINTS = {
         u"complex modes in a model without supports (rigid body motion); "
         u"otherwise: check the supports."),
 }
-_MESS_BOX_END = u"╚"        # onderrand van het meldingskader
-_MESS_BOX_SIDE = u"║ "      # zijkant van het kader en spatie
-# Laatste regel die run_aster in study.mess zet, ook na een <EXCEPTION>.
+_MESS_BOX_END = u"╚"        # bottom edge of the message box
+_MESS_BOX_SIDE = u"║ "      # side of the box and a space
+# Last line that run_aster writes to study.mess, also after an <EXCEPTION>.
 _MESS_DONE = "--- DIAGNOSTIC JOB :"
-# Uitleg bij meldingen die meestal op het model wijzen (tekst uit
-# Messages/factor.py van Code-Aster 17.4). Een vrij mechanisme geeft met
-# NPREC=-1 (geen singulariteitsdetectie) FACTOR_57 i.p.v. FACTOR_10/11/42.
-# Teksten als paar (nl, en); tr(*paar) kiest bij gebruik de taal.
+# Explanation of messages that usually point to the model (text from
+# Messages/factor.py of Code-Aster 17.4). A free mechanism with
+# NPREC=-1 (no singularity detection) gives FACTOR_57 instead of FACTOR_10/11/42.
+# Texts as a pair (nl, en); tr(*pair) picks the language when used.
 _SINGULAR_HINT = (u"De stijfheidsmatrix is (bijna) singulier: waarschijnlijk "
                   u"kan een deel van het model vrij bewegen (te weinig "
                   u"opleggingen; een pinned support houdt alleen de "
@@ -138,9 +138,9 @@ _SINGULAR_HINT = (u"De stijfheidsmatrix is (bijna) singulier: waarschijnlijk "
                   u"pinned support only fixes the average displacement) or "
                   u"supports are duplicated. See "
                   u"docs/en/CodeAster_error_messages.md.")
-# Newton convergeert niet (STAT_NON_LINE/DYNA_NON_LINE). De bridge laat de
-# job doorgaan met de stappen tot het laatste geconvergeerde tijdstip
-# (BRIDGE_ONVOLLEDIG); advies volgens U2.04.04 par. 4.1 en 4.5.
+# Newton does not converge (STAT_NON_LINE/DYNA_NON_LINE). The bridge lets the
+# job continue with the steps up to the last converged time
+# (BRIDGE_ONVOLLEDIG); advice according to U2.04.04 sec. 4.1 and 4.5.
 _NEWTON_HINT = (u"Newton convergeert niet; de resultaten tot het laatst "
                 u"bereikte tijdstip worden ingeladen. Controleer eerst het "
                 u"model: "
@@ -184,11 +184,11 @@ _NEWTON_HINT = (u"Newton convergeert niet; de resultaten tot het laatst "
                 u"stiffness) can help. See "
                 u"docs/en/Settings_contact_and_nonlinear.md and "
                 u"docs/en/CodeAster_error_messages.md.")
-# MECANONLINE9_4 met contact: pivot op LAGS_C (contact-Lagrange) bij
-# lijncontact (Tutorials/AssemblyWithContact Fixed_support, headless
-# vergeleken); met PENALISATION rekent het door. NPREC -1 rekent ook door
-# maar is onnauwkeurig (docs-review: -1,6% / +2,8% op een stijfheidscontrast),
-# dus geen advies.
+# MECANONLINE9_4 with contact: pivot on LAGS_C (contact Lagrange) for
+# line contact (Tutorials/AssemblyWithContact Fixed_support, compared
+# headless); with PENALISATION it computes. NPREC -1 also computes
+# but is inaccurate (docs review: -1,6% / +2,8% on a stiffness contrast),
+# so no advice.
 _NEWTON_SINGULAR_HINT = (
     _SINGULAR_HINT[0] + u" Met contact en 'LAGS_C' in de melding: een "
     u"contactvrijheidsgraad zonder steun (bijv. lijncontact); kies "
@@ -196,10 +196,10 @@ _NEWTON_SINGULAR_HINT = (
     _SINGULAR_HINT[1] + u" With contact and 'LAGS_C' in the message: a "
     u"contact degree of freedom without support (e.g. line contact); "
     u"choose Contact method = PENALISATION (Mecway's stiffness).")
-# CALC_MODES (bridge_to_aster._calc_modes_block): de stijfheid is bij de
-# zoekfrequentie singulier (ALGELINE3_81, gezien met een balk die alleen
-# scharnierend was vastgezet), of Sorensen vond te weinig modes
-# (ALGELINE5_49 / ALGELINE3_78, gezien met een zoekfrequentie ver van de
+# CALC_MODES (bridge_to_aster._calc_modes_block): the stiffness is singular
+# at the search frequency (ALGELINE3_81, seen with a beam that was only
+# supported by hinges), or Sorensen found too few modes
+# (ALGELINE5_49 / ALGELINE3_78, seen with a search frequency far from the
 # modes).
 _MODES_SINGULAR_HINT = (
     u"De stijfheidsmatrix is singulier: het model heeft een mechanisme of "
@@ -229,10 +229,10 @@ _MODES_FEW_HINT = (
     u"modes at ~0 Hz can be the cause (e.g. a membrane with a very small E "
     u"and prestress, KNOWN_BUGS 49): then choose a search frequency around "
     u"the expected frequency.")
-# MODE_ITER_CYCL (bridge_cyclic.py): de controle van de cyclische ligging
-# (gezien met Code-Aster 17.4: ALGORITH16_52 bij ruis rond 0 in de axiale
-# coordinaat, ALGORITH16_58 bij verwisselde snijvlakken, ALGORITH14_95 bij 8
-# segmenten met knopen op de as).
+# MODE_ITER_CYCL (bridge_cyclic.py): the check of the cyclic geometry
+# (seen with Code-Aster 17.4: ALGORITH16_52 for noise around 0 in the axial
+# coordinate, ALGORITH16_58 for swapped cut faces, ALGORITH14_95 for 8
+# sectors with nodes on the axis).
 _CYCLIC_HINT = (
     u"Cyclische symmetrie (MODE_ITER_CYCL): de snijvlakken passen niet als "
     u"herhaling om de as. Controleer in Mecway de as, het aantal segmenten "
@@ -252,26 +252,26 @@ _MESS_HINTS = {"FACTOR_10": _SINGULAR_HINT, "FACTOR_11": _SINGULAR_HINT,
                "FACTOR_42": _SINGULAR_HINT, "FACTOR_57": _SINGULAR_HINT,
                "MECANONLINE9_7": _NEWTON_HINT,
                # "Arret pour cause de matrice non inversible" (STAT_NON_LINE
-               # met contact, gezien in study.mess); oorzaken als FACTOR_*,
-               # of een pivot op een contact-Lagrange-vrijheidsgraad.
+               # with contact, seen in study.mess); causes as FACTOR_*,
+               # or a pivot on a contact Lagrange degree of freedom.
                "MECANONLINE9_4": _NEWTON_SINGULAR_HINT}
 
 
 def mess_hints():
-    """Uitleg per Code-Aster-meldingscode in de gekozen taal (dict)."""
+    """Explanation per Code-Aster message code, chosen language (dict)."""
     return dict((code, tr(*pair)) for code, pair in _MESS_HINTS.items())
-# Regel die de .comm print na een opgevangen ConvergenceError
+# Line that the .comm prints after a caught ConvergenceError
 # (bridge_to_aster._build_nonlin_static).
 _MESS_PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
-# Het FIN-commando schrijft "<I> <FIN> ARRET NORMAL DANS "FIN" ..." (in elke
-# afgeronde study.mess van de testmodellen, ook na een opgevangen
-# ConvergenceError). Ontbreekt het, dan is study.comm niet tot het eind
-# uitgevoerd (bijv. SyntaxError: study.mess heeft dan alleen
-# "DIAGNOSTIC JOB : OK"; gezien met Code-Aster 17.4).
+# The FIN command writes "<I> <FIN> ARRET NORMAL DANS "FIN" ..." (in every
+# completed study.mess of the test models, also after a caught
+# ConvergenceError). If it is missing, study.comm was not executed to the end
+# (e.g. SyntaxError: study.mess then only has
+# "DIAGNOSTIC JOB : OK"; seen with Code-Aster 17.4).
 _MESS_FIN = "<FIN>"
-# Regel die de .comm van de respons op modale basis print voordat hij stopt
-# (bridge_dyna_modal._dyna_block): een mode zonder frequentie of een
-# dempingsverhouding >= 1.
+# Line that the .comm of the response on a modal basis prints before it stops
+# (bridge_dyna_modal._dyna_block): a mode without frequency or a
+# damping ratio >= 1.
 _MESS_MODAL_RE = re.compile(r"BRIDGE_DYNA_MODAL_FOUT\s+(\w+)\s*(.*)")
 _MODAL_HINTS = {
     "FREQ": (u"Respons op modale basis: een mode met frequentie <= 0 ({0}): "
@@ -293,7 +293,7 @@ _MODAL_HINTS = {
                 u"BRIDGE_DEMPING), the setting modal_damping, or the number "
                 u"of modes."),
 }
-# Idem voor de responsspectrumanalyse (bridge_spectrum._spectrum_block).
+# Same for the response spectrum analysis (bridge_spectrum._spectrum_block).
 _MESS_SPECTRUM_RE = re.compile(r"BRIDGE_SPECTRUM_FOUT\s+(\w+)\s*(.*)")
 _SPECTRUM_HINTS = {
     "FREQ": (u"Spectrumanalyse: een mode met frequentie <= 0 ({0}): een "
@@ -308,13 +308,13 @@ _SPECTRUM_HINTS = {
                 u"Lower spectrum_damping or Mecway's Rayleigh damping (beta "
                 u"damps the highest modes), or the number of modes."),
 }
-# Console-uitvoer van run_aster (stdout + stderr), geschreven door tee.
-# Console-uitvoer van de run: <model>_<run_id>_console.txt (run_name).
+# Console output of run_aster (stdout + stderr), written by tee.
+# Console output of the run: <model>_<run_id>_console.txt (run_name).
 CONSOLE_SUFFIX = "_console.txt"
-# Een fout in aster_results_export.py (in de job) is een fout van de bridge,
-# niet van het model; die module print dan "aster_results_export: FOUT"
-# (taal nl) of "aster_results_export: ERROR" (en; de taal van de jobscripts
-# volgt CONFIG_BRIDGE["language"] via study.comm, bridge_to_aster).
+# An error in aster_results_export.py (in the job) is an error of the bridge,
+# not of the model; that module then prints "aster_results_export: FOUT"
+# (language nl) or "aster_results_export: ERROR" (en; the language of the job
+# scripts follows CONFIG_BRIDGE["language"] via study.comm, bridge_to_aster).
 _EXPORT_FAIL = (u"aster_results_export: FOUT", u"aster_results_export: ERROR")
 _EXPORT_HINT = (u"Het wegschrijven van de resultaten naar Mecway "
                 u"(aster_results_export.py) mislukte: een fout in de bridge, "
@@ -331,7 +331,7 @@ _PYTHON_HINT = (u"study.comm is niet (volledig) uitgevoerd. Een fout in "
 
 
 def _read_mess(mess_path):
-    """Tekst van study.mess (UTF-8, onleesbare tekens vervangen)."""
+    """Text of study.mess (UTF-8, unreadable characters replaced)."""
     f = open(mess_path, "rb")
     try:
         return f.read().decode("utf-8", "replace")
@@ -340,7 +340,7 @@ def _read_mess(mess_path):
 
 
 def _mess_diagnostic(text):
-    """Tekst na 'DIAGNOSTIC JOB :' (bijv. '<A>_ALARM'), of ''."""
+    """Text after 'DIAGNOSTIC JOB :' (e.g. '<A>_ALARM'), or ''."""
     if _MESS_DONE not in text:
         return u""
     rest = text[text.rindex(_MESS_DONE) + len(_MESS_DONE):].strip()
@@ -348,16 +348,16 @@ def _mess_diagnostic(text):
 
 
 def _diag_failed(diag):
-    """True als de DIAGNOSTIC-regel een fout aangeeft (<F>, <S> of <E>)."""
+    """True if the DIAGNOSTIC line indicates an error (<F>, <S> or <E>)."""
     return diag[:3] in (u"<F>", u"<S>", u"<E>")
 
 
 def _mess_finished(work_dir, since):
-    """True als study.mess van deze run is en met DIAGNOSTIC JOB eindigt."""
+    """True if study.mess is from this run and ends with DIAGNOSTIC JOB."""
     mess_path = os.path.join(work_dir, run_name(".mess"))
     try:
-        # run_aster kopieert fort.6 pas aan het eind naar study.mess
-        # ("Copying results" in het venster); 1 s marge voor de klok.
+        # run_aster only copies fort.6 to study.mess at the end
+        # ("Copying results" in the window); 1 s margin for the clock.
         if os.path.getmtime(mess_path) < since - 1.0:
             return False
         return _MESS_DONE in _read_mess(mess_path)
@@ -366,7 +366,7 @@ def _mess_finished(work_dir, since):
 
 
 def _mess_box_text(lines, start, max_chars=300):
-    """Inhoud van het meldingskader na regel 'start', op een regel."""
+    """Content of the message box after line 'start', on one line."""
     body = []
     for line in lines[start + 1:start + 40]:
         if _MESS_BOX_END in line:
@@ -381,23 +381,23 @@ def _mess_box_text(lines, start, max_chars=300):
 
 
 # ==========================================
-# CONSOLE-UITVOER EN CONVERGENTIESCHERM
+# CONSOLE OUTPUT AND CONVERGENCE MONITOR
 # ==========================================
 def aster_root():
-    """Installatiemap van Code-Aster (exe_aster = <map>\\bin\\run_aster.bat)."""
+    """Code-Aster install folder (exe_aster = <dir>\\bin\\run_aster.bat)."""
     return os.path.dirname(os.path.dirname(
         os.path.abspath(exe_aster_path())))
 
 
 def _launch_command(export_path, console_path):
     """
-    cmd-regel voor run_aster in een eigen venster. 'cmd /k' houdt het
-    venster open zodat de gebruiker fouten kan lezen; geneste quotes zijn
-    nodig omdat de paden spaties kunnen bevatten (cmd haalt het buitenste
-    paar weg). Met tools\\tee.exe uit de installatie gaat de uitvoer
-    (stdout en stderr, 2>&1) ook naar console_path.
+    cmd line for run_aster in its own window. 'cmd /k' keeps the
+    window open so the user can read errors; nested quotes are
+    needed because the paths may contain spaces (cmd removes the outer
+    pair). With tools\\tee.exe from the installation the output
+    (stdout and stderr, 2>&1) also goes to console_path.
 
-    Returns (commando, True als de uitvoer wordt vastgelegd).
+    Returns (command, True if the output is captured).
     """
     run = '"{0}" "{1}"'.format(exe_aster_path(), export_path)
     tee = os.path.join(aster_root(), "tools", "tee.exe")
@@ -408,7 +408,7 @@ def _launch_command(export_path, console_path):
 
 
 def _console_text(work_dir, since=None):
-    """Tekst van de console-uitvoer van deze run, of ""."""
+    """Text of the console output of this run, or ""."""
     path = os.path.join(work_dir, run_name(CONSOLE_SUFFIX))
     try:
         if not os.path.exists(path) or (
@@ -421,13 +421,13 @@ def _console_text(work_dir, since=None):
 
 def console_errors(work_dir, since=None):
     """
-    Python-fouten in study_console.txt van deze run (bijv. een SyntaxError
+    Python errors in study_console.txt of this run (e.g. a SyntaxError
     in study.comm), via bridge_convergence.python_errors().
 
     Returns
     -------
-    list of unicode - leeg als er geen fouten zijn of het bestand ontbreekt
-                      of van een eerdere run is.
+    list of unicode - empty if there are no errors or the file is missing
+                      or from an earlier run.
     """
     path = os.path.join(work_dir, run_name(CONSOLE_SUFFIX))
     try:
@@ -444,8 +444,8 @@ def console_errors(work_dir, since=None):
 
 
 def _monitor_python():
-    """pythonw.exe (zonder consolevenster) van de Code-Aster-installatie,
-    anders python.exe; None als geen van beide bestaat."""
+    """pythonw.exe (without console window) of the Code-Aster installation,
+    otherwise python.exe; None if neither exists."""
     root = aster_root()
     try:
         subdirs = sorted(d for d in os.listdir(root)
@@ -461,9 +461,9 @@ def _monitor_python():
 
 
 def latest_mess(work_dir, model=None):
-    """Pad van het nieuwste .mess-bestand in work_dir (de laatste run), of
-    None. model: naam van het Mecway-bestand (bridge_utils.model_stem); dan
-    bij voorkeur de laatste run van dat model."""
+    """Path of the newest .mess file in work_dir (the last run), or
+    None. model: name of the Mecway file (bridge_utils.model_stem); then
+    preferably the last run of that model."""
     def mtime(p):
         try:
             return os.path.getmtime(p)
@@ -484,7 +484,7 @@ def latest_mess(work_dir, model=None):
 
 
 def _monitor_log(mess_path):
-    """Logbestand van het convergentiescherm naast het .mess-bestand:
+    """Log file of the convergence monitor next to the .mess file:
     <model>_<run_id>.mess -> <model>_<run_id>_monitor_log.txt."""
     stem = os.path.splitext(os.path.abspath(mess_path))[0]
     return stem + "_monitor_log.txt"
@@ -492,23 +492,23 @@ def _monitor_log(mess_path):
 
 def start_convergence_monitor(mess_path, since=0.0, console_path=None):
     """
-    Start het convergentiescherm (aster_convergence_monitor.py) als apart
-    proces met de CPython van Code-Aster. Het proces is los van Mecway:
-    het blijft werken als het Mecway-script klaar is, en sluiten ervan
-    heeft geen invloed op de run.
+    Start the convergence monitor (aster_convergence_monitor.py) as a separate
+    process with Code-Aster's CPython. The process is independent of Mecway:
+    it keeps working when the Mecway script has finished, and closing it
+    has no effect on the run.
 
     Parameters
     ----------
-    mess_path    : str   - .mess-bestand uit de .export (live: de fort.6
-                           van de run die daarheen schrijft).
-    since        : float - time.time() bij de start van de run; 0 = achteraf
-                           (het bestaande .mess-bestand tonen).
-    console_path : str   - study_console.txt (Python-fouten), of None.
+    mess_path    : str   - .mess file from the .export (live: the fort.6
+                           of the run that writes there).
+    since        : float - time.time() at the start of the run; 0 = afterwards
+                           (show the existing .mess file).
+    console_path : str   - study_console.txt (Python errors), or None.
 
     Returns
     -------
-    bool - True als het proces gestart is (fouten worden gelogd, nooit
-           doorgegeven: de run gaat altijd door).
+    bool - True if the process was started (errors are logged, never
+           passed on: the run always continues).
     """
     try:
         python = _monitor_python()
@@ -523,19 +523,19 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None):
             return False
         work_dir = os.path.dirname(os.path.abspath(mess_path))
         args = [python, script, "--mess", mess_path,
-                # %-opmaak: altijd een punt (landinstelling, zie bridge_gui)
+                # %-formatting: always a point (locale, see bridge_gui)
                 "--since", "%.3f" % since,
                 "--log", _monitor_log(mess_path),
                 "--lang", tr("nl", "en")]
         if console_path:
             args += ["--console", console_path]
-        # PYTHONHOME/PYTHONPATH van een andere Python mogen de Python van
-        # Code-Aster niet in de war brengen.
+        # PYTHONHOME/PYTHONPATH of another Python must not confuse
+        # Code-Aster's Python.
         env = dict((k, v) for k, v in os.environ.items()
                    if k.upper() not in ("PYTHONHOME", "PYTHONPATH"))
         proc = subprocess.Popen(args, cwd=work_dir, env=env,
                                 creationflags=0x08000000)  # CREATE_NO_WINDOW
-        log("INFO: Convergentiescherm gestart (pid {0}).".format(proc.pid))
+        log("INFO: Convergence monitor started (pid {0}).".format(proc.pid))
         return True
     except Exception as e:
         log(tr("WARNING: Convergentiescherm niet gestart: {0}",
@@ -549,47 +549,47 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None):
 # ==========================================
 def run_AsterSolver(export_path, work_dir, resu_name, mw):
     """
-    Start Code-Aster via de run_aster.bat launcher in een apart cmd-venster.
+    Start Code-Aster via the run_aster.bat launcher in a separate cmd window.
 
     Parameters
     ----------
-    export_path : str  - Pad naar het door bridge_to_aster.py geschreven
-                         study.export-bestand.
-    work_dir    : str  - Werkmap (cwd voor het subprocess).
-    resu_name   : str  - Bestandsnaam van het .resu-bestand (uniek per run
-                         door de tijdstempel; alleen gebruikt voor de log).
-    mw          : obj  - Mecway API-object voor mw.message() (synchrone
-                         dialoog terwijl Code-Aster draait).
+    export_path : str  - Path to the study.export file written by
+                         bridge_to_aster.py.
+    work_dir    : str  - Work folder (cwd for the subprocess).
+    resu_name   : str  - File name of the .resu file (unique per run
+                         through the timestamp; only used for the log).
+    mw          : obj  - Mecway API object for mw.message() (synchronous
+                         dialog while Code-Aster runs).
 
     Returns
     -------
-    bool - True als het subprocess succesvol gestart is, False bij fout.
-           Let op: deze return-waarde zegt NIETS over of de solver
-           succesvol heeft gerekend.
+    bool - True if the subprocess was started successfully, False on error.
+           Note: this return value says NOTHING about whether the solver
+           computed successfully.
     """
     log("--- Running Code_Aster ---")
     exe = exe_aster_path()
     if not os.path.isfile(exe):
-        # 'cmd /k' start altijd; zonder deze controle zou het venster met
-        # "niet herkend" verschijnen en daarna gesloten worden.
+        # 'cmd /k' always starts; without this check the window would appear
+        # with "not recognised" and then be closed.
         log(tr("ERROR: Code-Aster-launcher niet gevonden: {0} (instelling "
                "op de pagina Algemeen).",
                "ERROR: Code-Aster launcher not found: {0} (setting on the "
                "General page).").format(exe))
         return False
 
-    # Het .resu-bestand wordt NIET vooraf aangemaakt: ontbreekt het na de
-    # run, dan meldt AsterToMecway_results() dat Code-Aster niets schreef.
-    # Alleen de tabelroute schrijft een .resu (bridge_to_aster.
-    # _export_result_lines); de liml-route een resultaatfragment.
+    # The .resu file is NOT created beforehand: if it is missing after the
+    # run, AsterToMecway_results() reports that Code-Aster wrote nothing.
+    # Only the table route writes a .resu (bridge_to_aster.
+    # _export_result_lines); the liml route a result fragment.
     if CONFIG_BRIDGE.get("result_route", "liml") == "tabel":
-        log("INFO: Verwacht resultaatbestand: {0}".format(resu_name))
+        log("INFO: Expected result file: {0}".format(resu_name))
 
     try:
         console_path = os.path.join(work_dir, run_name(CONSOLE_SUFFIX))
         try:
             if os.path.exists(console_path):
-                os.remove(console_path)   # niet verwarren met een oude run
+                os.remove(console_path)   # not to be confused with an old run
         except OSError:
             pass
         cmd_command, captured = _launch_command(export_path, console_path)
@@ -609,8 +609,8 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
         )
 
         monitor = False
-        # Ook bij lineaire analyses: dan de statistiek van de lineaire
-        # oplosser (MECA_STATIQUE met INFO=2), de meldingen en de diagnose.
+        # Also for linear analyses: then the statistics of the linear
+        # solver (MECA_STATIQUE with INFO=2), the messages and the diagnosis.
         if CONFIG_BRIDGE.get("convergence_monitor", True):
             monitor = start_convergence_monitor(
                 os.path.join(work_dir, run_name(".mess")), start_time,
@@ -625,8 +625,8 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
             tr("Klik op OK zodra de berekening klaar is.",
                "Click OK once the calculation has finished.")
         )
-        # Te vroeg op OK geklikt? Dan nog een keer vragen, want
-        # process.terminate() hieronder sluit het venster (gezien in Mecway).
+        # Clicked OK too early? Then ask once more, because
+        # process.terminate() below closes the window (seen in Mecway).
         if not _mess_finished(work_dir, start_time):
             log(tr("WARNING: study.mess is na de eerste OK nog niet "
                    "afgesloten.",
@@ -641,14 +641,14 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
                 "'DIAGNOSTIC JOB'."
             )))
 
-        # Bij een abort of een Python-fout (geen <FIN>) blijft het venster
-        # open: de traceback staat daar (en in study_console.txt).
+        # On an abort or a Python error (no <FIN>) the window stays
+        # open: the traceback is there (and in study_console.txt).
         mess_path = os.path.join(work_dir, run_name(".mess"))
         try:
             if (not os.path.exists(mess_path) or
                     os.path.getmtime(mess_path) < start_time - 1.0):
-                # Geen .mess van deze run: Code-Aster is niet (goed)
-                # gestart; de oorzaak staat alleen in het venster.
+                # No .mess from this run: Code-Aster did not start
+                # (properly); the cause is only in the window.
                 aborted = True
             else:
                 text = _read_mess(mess_path)
@@ -663,11 +663,11 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
                    "WARNING: Code-Aster aborted; the window stays open."))
             return True
 
-        # process.terminate() sluit het cmd-venster. Dat mag: fouten uit
-        # study.mess meldt main() via aster_mess_errors(). De Popen-handle
-        # wijst alleen naar het cmd-proces van het aparte venster, niet naar
-        # de Code-Aster-processen die daaruit gestart zijn. Een fout (bijv.
-        # venster al gesloten) wordt genegeerd.
+        # process.terminate() closes the cmd window. That is fine: errors from
+        # study.mess are reported by main() via aster_mess_errors(). The Popen
+        # handle only points to the cmd process of the separate window, not to
+        # the Code-Aster processes started from it. An error (e.g.
+        # window already closed) is ignored.
         try:
             process.terminate()
         except Exception:
@@ -681,30 +681,30 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
 
 
 # ==========================================
-# FOUTEN IN study.mess
+# ERRORS IN study.mess
 # ==========================================
 def aster_mess_errors(work_dir, since=None):
     """
-    Zoek fouten (<EXCEPTION>, <F>, <S>, <E>) in study.mess.
+    Search for errors (<EXCEPTION>, <F>, <S>, <E>) in study.mess.
 
     Parameters
     ----------
-    work_dir : str          - Werkmap met study.mess.
-    since    : float of None - Starttijd van de run (time.time()). Is
-                               study.mess ouder, dan hoort het bij een eerdere
-                               run en wordt het niet beoordeeld.
+    work_dir : str          - Work folder with study.mess.
+    since    : float or None - Start time of the run (time.time()). If
+                               study.mess is older, it belongs to an earlier
+                               run and is not assessed.
 
     Returns
     -------
-    list of str - Unieke meldingen in volgorde van voorkomen, bijv.
-                  "<EXCEPTION> <CALCULEL_58>"; leeg als er geen fouten zijn
-                  of het bestand ontbreekt/verouderd is (dat wordt gelogd).
+    list of str - Unique messages in order of occurrence, e.g.
+                  "<EXCEPTION> <CALCULEL_58>"; empty if there are no errors
+                  or the file is missing/outdated (this is logged).
     """
     mess_path = os.path.join(work_dir, run_name(".mess"))
     if not os.path.exists(mess_path) or (
             since is not None and os.path.getmtime(mess_path) < since):
-        # Geen .mess van deze run: Code-Aster startte niet of stopte
-        # direct; de oorzaak staat in het Code-Aster-venster (dat blijft
+        # No .mess from this run: Code-Aster did not start or stopped
+        # immediately; the cause is in the Code-Aster window (which stays
         # open, run_AsterSolver).
         msg = run_names(tr(u"Code-Aster schreef geen study.mess voor deze "
                            u"run; de oorzaak staat in het Code-Aster-venster "
@@ -752,7 +752,7 @@ def aster_mess_errors(work_dir, since=None):
             pair = hints.get(modal.group(1))
             if pair:
                 errors.append(tr(*pair).format(modal.group(2).strip()))
-        # Python-fout in study.comm: staat alleen in de console-uitvoer.
+        # Python error in study.comm: only appears in the console output.
         console = _console_text(work_dir, since)
         export_failed = any(key in console for key in _EXPORT_FAIL)
         for err in ([] if modal else console_errors(work_dir, since)):
@@ -775,10 +775,10 @@ def aster_mess_errors(work_dir, since=None):
                              u"study.mess is not closed: Code-Aster has not "
                              u"finished or was aborted."))
         elif not errors and _diag_failed(_mess_diagnostic(text)):
-            # Een crash in Python of C (bijv. "Windows fatal exception:
-            # access violation", gezien in Mecway) geeft geen meldingskader,
-            # alleen "DIAGNOSTIC JOB : <F>_ABNORMAL_ABORT". De traceback
-            # staat dan alleen in het Code-Aster-venster.
+            # A crash in Python or C (e.g. "Windows fatal exception:
+            # access violation", seen in Mecway) gives no message box,
+            # only "DIAGNOSTIC JOB : <F>_ABNORMAL_ABORT". The traceback
+            # then only appears in the Code-Aster window.
             errors.append(tr(u"DIAGNOSTIC JOB : {0}. Er staat geen melding "
                              u"in study.mess; de oorzaak staat in het "
                              u"Code-Aster-venster.",
@@ -787,8 +787,8 @@ def aster_mess_errors(work_dir, since=None):
                              u"Code-Aster window.").format(
                                  _mess_diagnostic(text)))
         elif not errors and _MESS_FIN not in text:
-            # Zonder vastgelegde console-uitvoer (geen tee.exe) is dit het
-            # enige teken van een Python-fout (SyntaxError: DIAGNOSTIC OK).
+            # Without captured console output (no tee.exe) this is the
+            # only sign of a Python error (SyntaxError: DIAGNOSTIC OK).
             errors.append(tr(u"Code-Aster kwam niet tot FIN (geen '<FIN>' "
                              u"in study.mess, DIAGNOSTIC JOB : {0}): {1}",
                              u"Code-Aster did not reach FIN (no '<FIN>' in "
@@ -806,7 +806,7 @@ def aster_mess_errors(work_dir, since=None):
             continue
         log(tr(u"WARNING: Code-Aster-alarm {0} in study.mess.",
                u"WARNING: Code-Aster alarm {0} in study.mess.").format(alarm))
-    # Meldingen met de bestandsnamen van deze run (getoond in mw.message)
+    # Messages with the file names of this run (shown in mw.message)
     errors = [run_names(msg) for msg in errors]
     for msg in errors:
         log(tr(u"ERROR: Code-Aster meldt {0}",

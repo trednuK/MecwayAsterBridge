@@ -4,104 +4,104 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_failure.py
-# Verantwoordelijkheid: bezwijken van elementen in STAT_NON_LINE en
-# DYNA_NON_LINE ("impliciete elementverwijdering"): een element waarvan de
-# plastische rek een grens haalt, krijgt een zeer slap materiaal en zijn
-# spanning wordt nul. Code-Aster kent zelf geen elementverwijdering (KNOWN_BUGS 9);
-# dit volgt de aanpak uit de literatuur waarin bezweken elementen in een
-# impliciete berekening een verwaarloosbare stijfheid krijgen in plaats
-# van te verdwijnen (bijv. PMC9821832).
+# Responsibility: failure of elements in STAT_NON_LINE and
+# DYNA_NON_LINE ("implicit element deletion"): an element whose
+# plastic strain reaches a limit gets a very soft material and its
+# stress becomes zero. Code-Aster itself has no element deletion (KNOWN_BUGS 9);
+# this follows the approach from the literature in which failed elements in
+# an implicit analysis get a negligible stiffness instead of
+# disappearing (e.g. PMC9821832).
 #
-# Werking in de .comm (build_solve_block):
-#   0. Een regel BRIDGE_TEND <eindtijd> in de .mess (convergentiescherm:
-#      voortgang over de hele lus, bridge_convergence).
-#   1. STAT_NON_LINE per tijdstap van 'times' (INST_INIT/INST_FIN, met
-#      reuse=res: een resultaat met alle stappen).
-#   2. Na elke stap per elset de vergelijkingsplastische rek uit VARI_ELGA,
-#      gemiddeld over de integratiepunten van een element. Gemiddelde >=
-#      grens: element bezwijkt.
-#      - isotroop (VMIS_ISOT_LINE/_TRAC): V1 = EPSPEQ (catalogus
-#        Behaviours/vmis_isot_*.py), de opgetelde plastische rek;
-#      - kinematisch (VMIS_CINE_LINE): geen EPSPEQ; V1..V6 = XCINXX..XCINYZ,
-#        de terugspanning X (catalogus vmis_cine_line.py). X = c epsp met
-#        c = 2/3 E Et / (E - Et) (Et = D_SIGM_EPSI): in een testrun (hex8,
-#        PETIT) was X / EPSP_ELGA in alle punten 3,34128878e8, gelijk aan
-#        die c, voor de normaal- en de schuifcomponenten (dus dezelfde
-#        tensorconventie). De rek is sqrt(2/3 X:X) / c: de HUIDIGE
-#        plastische rek, niet opgeteld (bij wisselende belasting kleiner
-#        dan EPSPEQ; WARNING). Met GDEF_LOG (logaritmische rek) dezelfde
-#        variabelen V1..V6 (gezien in de .mess); de waarden lagen iets
-#        onder die met PETIT (0,076..0,078 tegen 0,079..0,080 bij t = 1 s
-#        in de trekstaaf), zoals ln(1 + e) < e.
-#      Schalen (DKT, COQUE_3D): VARI_ELGA heeft subpunten over de dikte
-#      (COQUE_NCOU lagen, per laag onder/midden/boven; getValuesWithDescription
-#      geeft cellen, componenten, punten en subpunten, gezien in een
-#      testrun). Het gemiddelde loopt over alle (punt, subpunt)-paren van
-#      het element, net als bij volume-elementen over alle Gauss-punten
-#      (ook over de dikte): een maat voor de rek in het hele element. Bij
-#      buiging bezwijkt het element dus pas als de rek gemiddeld over de
-#      dikte de grens haalt (oppervlak dan boven de grens), niet bij de
-#      eerste vezel (maximum) en niet pas als de neutrale lijn vloeit
-#      (minimum, die haalt de grens bij zuivere buiging nooit). Met de
-#      standaard COQUE_NCOU = 1 zijn er 3 subpunten (gezien in een
-#      testrun: 4 Gauss-punten x 3 subpunten per quad4-DKT).
-#   3. Bij nieuwe bezweken elementen:
-#      - groep BZ<n>_<k> met alle bezweken cellen van elset k
-#        (mesh.setGroupOfCells), in een nieuwe AFFE_MATERIAU het zwakke
-#        materiaal: E en helling na vloeien x failure_stiffness_factor,
-#        vloeigrens ongewijzigd (zo blijft het element elastisch; een slap
-#        element dat verder vloeit had een raaklijnstijfheid van ~1e-9 x E
-#        en de matrix werd singulier, gezien in een testrun);
-#      - spanning (SIEF_ELGA) en interne variabelen op nul (CREA_CHAMP ASSE,
-#        GROUP_MA; zet ook alle subpunten van schalen op nul, gezien in een
-#        testrun). Bij isotrope versteviging blijft V1 staan (de
-#        plastische rek in de resultaten). Bij GDEF_LOG staat de spanning
-#        ook in de interne variabelen (TXX..TYZ: V3..V8 isotroop, V8..V13
-#        kinematisch, gezien in de .mess); alleen SIEF_ELGA op nul gaf
-#        <IntegrationError> MECANONLINE9_3. Bij SIMO_MIEHE zijn V3..V8
-#        SM1..SM6 (catalogus simo_miehe.py; welke tensor precies is NIET
-#        geverifieerd, in de theorie van Simo-Miehe de elastische
-#        Cauchy-Green-tensor): nul is de spanningsloze begintoestand (elke
-#        run zonder ETAT_INIT start met VARI = 0, "On prend un état initial
-#        nul" in de .mess; tijdens het vloeien waren de waarden ~1e-3, dus
-#        een afwijking van de eenheidstensor en niet de tensor zelf,
-#        testrun). Op nul zetten = terug naar spanningsloos, zoals gewenst;
-#      - de volgende stap start uit die velden (ETAT_INIT DEPL/SIGM/VARI)
-#        met NEWTON PREDICTION='ELASTIQUE'. Met de standaard 'TANGENTE'
-#        convergeerde de stap na het bezwijken niet (residu bleef ~13 kN,
-#        op alle deelniveaus); met 'ELASTIQUE' wel (testruns, Code-Aster
-#        17.4). Daarna weer 'TANGENTE' ('ELASTIQUE' vanaf het begin gaf bij
-#        GDEF_LOG 148 deelstappen in de eerste stap).
-#   4. Elke gebeurtenis komt als BRIDGE_BEZWIJKEN-regel in de .mess
-#      (bridge_run_aster.failure_events leest ze).
+# Operation in the .comm (build_solve_block):
+#   0. A line BRIDGE_TEND <end time> in the .mess (convergence monitor:
+#      progress over the whole loop, bridge_convergence).
+#   1. STAT_NON_LINE per time step of 'times' (INST_INIT/INST_FIN, with
+#      reuse=res: one result with all steps).
+#   2. After each step, per elset the equivalent plastic strain from
+#      VARI_ELGA, averaged over the integration points of an element.
+#      Average >= limit: the element fails.
+#      - isotropic (VMIS_ISOT_LINE/_TRAC): V1 = EPSPEQ (catalogue
+#        Behaviours/vmis_isot_*.py), the accumulated plastic strain;
+#      - kinematic (VMIS_CINE_LINE): no EPSPEQ; V1..V6 = XCINXX..XCINYZ,
+#        the back stress X (catalogue vmis_cine_line.py). X = c epsp with
+#        c = 2/3 E Et / (E - Et) (Et = D_SIGM_EPSI): in a test run (hex8,
+#        PETIT) X / EPSP_ELGA was 3,34128878e8 in all points, equal to
+#        that c, for the normal and the shear components (so the same
+#        tensor convention). The strain is sqrt(2/3 X:X) / c: the CURRENT
+#        plastic strain, not accumulated (smaller than EPSPEQ under
+#        alternating loading; WARNING). With GDEF_LOG (logarithmic strain)
+#        the same variables V1..V6 (seen in the .mess); the values were
+#        slightly below those with PETIT (0,076..0,078 versus 0,079..0,080
+#        at t = 1 s in the tension bar), as ln(1 + e) < e.
+#      Shells (DKT, COQUE_3D): VARI_ELGA has subpoints through the thickness
+#      (COQUE_NCOU layers, per layer bottom/middle/top; getValuesWithDescription
+#      gives cells, components, points and subpoints, seen in a
+#      test run). The average runs over all (point, subpoint) pairs of
+#      the element, just as for volume elements over all Gauss points
+#      (also through the thickness): a measure of the strain in the whole
+#      element. In bending the element therefore only fails when the strain
+#      averaged over the thickness reaches the limit (surface then above the
+#      limit), not at the first fibre (maximum) and not only when the
+#      neutral axis yields (minimum, which never reaches the limit in pure
+#      bending). With the default COQUE_NCOU = 1 there are 3 subpoints (seen
+#      in a test run: 4 Gauss points x 3 subpoints per quad4 DKT).
+#   3. For newly failed elements:
+#      - group BZ<n>_<k> with all failed cells of elset k
+#        (mesh.setGroupOfCells), in a new AFFE_MATERIAU the weak
+#        material: E and slope after yielding x failure_stiffness_factor,
+#        yield stress unchanged (so the element stays elastic; a soft
+#        element that kept yielding had a tangent stiffness of ~1e-9 x E
+#        and the matrix became singular, seen in a test run);
+#      - stress (SIEF_ELGA) and internal variables to zero (CREA_CHAMP ASSE,
+#        GROUP_MA; also sets all subpoints of shells to zero, seen in a
+#        test run). With isotropic hardening V1 is kept (the
+#        plastic strain in the results). With GDEF_LOG the stress is
+#        also in the internal variables (TXX..TYZ: V3..V8 isotropic, V8..V13
+#        kinematic, seen in the .mess); setting only SIEF_ELGA to zero gave
+#        <IntegrationError> MECANONLINE9_3. With SIMO_MIEHE V3..V8 are
+#        SM1..SM6 (catalogue simo_miehe.py; which tensor exactly is NOT
+#        verified, in the Simo-Miehe theory the elastic
+#        Cauchy-Green tensor): zero is the stress-free initial state (every
+#        run without ETAT_INIT starts with VARI = 0, "On prend un état initial
+#        nul" in the .mess; during yielding the values were ~1e-3, so
+#        a deviation from the identity tensor and not the tensor itself,
+#        test run). Setting to zero = back to stress-free, as intended;
+#      - the next step starts from those fields (ETAT_INIT DEPL/SIGM/VARI)
+#        with NEWTON PREDICTION='ELASTIQUE'. With the default 'TANGENTE'
+#        the step after the failure did not converge (residual stayed
+#        ~13 kN, at all subdivision levels); with 'ELASTIQUE' it did (test
+#        runs, Code-Aster 17.4). Then 'TANGENTE' again ('ELASTIQUE' from the
+#        start gave 148 substeps in the first step with GDEF_LOG).
+#   4. Each event appears as a BRIDGE_BEZWIJKEN line in the .mess
+#      (bridge_run_aster.failure_events reads them).
 #
-# Grens per materiaal (_criterion), eerste die bestaat:
-#   #ASTER-BEZWIJKEN <materiaal> = <rek>   (bridge_custom; '*' = alle
-#                                           plastische materialen)
+# Limit per material (_criterion), the first that exists:
+#   #ASTER-BEZWIJKEN <material> = <strain> (bridge_custom; '*' = all
+#                                           plastic materials)
 #   OpenRadioss PLAS_TAB Eps_p_max         (bridge_radioss)
-#   instelling failure_plastic_strain > 0  (alle plastische materialen)
+#   setting failure_plastic_strain > 0     (all plastic materials)
 #
-# Dynamica (DYNA_NON_LINE): dezelfde lus, gecontroleerd op de
-# uitvoertijden (outlist; die zijn ook rekenstappen, bridge_to_aster.
-# _build_dyna_listinst_block). Na een bezwijkmoment ook VITE en ACCE in
-# ETAT_INIT. Expliciet blijft PREDICTION 'TANGENTE' (MECANONLINE5_1). Impliciet (HHT/NEWMARK)
-# geeft Code-Aster bij SIGM in ETAT_INIT het alarm MECANONLINE4_50 ("de
-# beginversnelling wordt zonder dit spanningsveld berekend"); de bridge geeft
-# ACCE mee. Of dat de herberekening voorkomt is NIET geverifieerd; het
-# krachtverloop in de testrun was fysisch plausibel (val naar ~0, naslingering).
+# Dynamics (DYNA_NON_LINE): the same loop, checked at the
+# output times (outlist; these are also computation steps, bridge_to_aster.
+# _build_dyna_listinst_block). After a failure moment also VITE and ACCE in
+# ETAT_INIT. Explicit keeps PREDICTION 'TANGENTE' (MECANONLINE5_1). Implicit (HHT/NEWMARK)
+# Code-Aster gives alarm MECANONLINE4_50 for SIGM in ETAT_INIT ("the
+# initial acceleration is computed without this stress field"); the bridge
+# passes ACCE. Whether that prevents the recomputation is NOT verified; the
+# force history in the test run was physically plausible (drop to ~0, ringing).
 #
-# Beperkingen (met een melding): alleen volume-elementen en schalen
-# (_SUPPORTED_DEFORMATIONS); balken niet: Code-Aster kent plasticiteit
-# alleen in multivezelbalken (POU_D_EM/POU_D_TGM; <EXCEPTION> POUTRE0_61
-# met VMIS_ISOT_LINE op POU_D_E, testrun), die de bridge niet maakt.
-# Kinematische versteviging zonder helling (Et = 0: X blijft 0, geen maat
-# voor de plastische rek). Alleen STAT_NON_LINE en DYNA_NON_LINE
-# (MECA_STATIQUE: alleen de melding, bridge_to_aster._build_lin_static).
+# Limitations (with a message): only volume elements and shells
+# (_SUPPORTED_DEFORMATIONS); not beams: Code-Aster has plasticity
+# only in multifibre beams (POU_D_EM/POU_D_TGM; <EXCEPTION> POUTRE0_61
+# with VMIS_ISOT_LINE on POU_D_E, test run), which the bridge does not make.
+# Kinematic hardening without slope (Et = 0: X stays 0, no measure
+# of the plastic strain). Only STAT_NON_LINE and DYNA_NON_LINE
+# (MECA_STATIQUE: only the message, bridge_to_aster._build_lin_static).
 #
-# Meldingen tonen de Mecway-naam van een elset (mecway_name); de .comm en
-# de BRIDGE_BEZWIJKEN-regels gebruiken de Code-Aster-naam.
+# Messages show the Mecway name of an elset (mecway_name); the .comm and
+# the BRIDGE_BEZWIJKEN lines use the Code-Aster name.
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import io
 import re
@@ -109,10 +109,10 @@ from collections import OrderedDict
 
 from bridge_utils import log, tr, log_file_name
 
-# Per MODELISATION de DEFORMATION-vormen waarvoor het bezwijken met een
-# Code-Aster-run gecontroleerd is (krachtval na het bezwijken). DKT/COQUE_3D
-# met VMIS_ISOT_LINE: 2 interne variabelen, ook met GREEN_LAGRANGE/GROT_GDEP
-# (gezien in de .mess). DST wordt in niet-lineaire analyses DKT
+# Per MODELISATION the DEFORMATION forms for which failure has been
+# checked with a Code-Aster run (force drop after failure). DKT/COQUE_3D
+# with VMIS_ISOT_LINE: 2 internal variables, also with GREEN_LAGRANGE/GROT_GDEP
+# (seen in the .mess). DST becomes DKT in nonlinear analyses
 # (bridge_from_liml).
 _SUPPORTED_DEFORMATIONS = {
     "3D": ("PETIT", "PETIT_REAC", "GDEF_LOG", "SIMO_MIEHE"),
@@ -125,9 +125,9 @@ _KINEMATIC = "VMIS_CINE_LINE"
 
 
 def _cine_coefficient(props):
-    """c in X = c epsp voor VMIS_CINE_LINE: 2/3 E Et / (E - Et) met Et de
-    helling na vloeien (ECRO_LINE D_SIGM_EPSI); zie de kop. None als er
-    geen versteviging is (Et <= 0 of Et >= E)."""
+    """c in X = c epsp for VMIS_CINE_LINE: 2/3 E Et / (E - Et) with Et the
+    slope after yielding (ECRO_LINE D_SIGM_EPSI); see the header. None if
+    there is no hardening (Et <= 0 or Et >= E)."""
     try:
         e_mod = float(props["E"])
         e_t = float(props["plastic_bilinear"]["et"])
@@ -139,18 +139,18 @@ def _cine_coefficient(props):
 
 
 def _is_plastic(props):
-    """Heeft het materiaal plasticiteit (en dus een plastische rek)?"""
+    """Does the material have plasticity (and thus a plastic strain)?"""
     return bool(props.get("plastic_curve") or props.get("plastic_bilinear")
                 or props.get("eps_p_max"))
 
 
 def _criterion(mat_name, props, custom, default):
-    """(grens, bron) voor een materiaal, of (None, None). '*' en
-    failure_plastic_strain gelden alleen voor plastische materialen (een
-    elastisch materiaal of een veer kan niet bezwijken; met '*' gaf dat
-    per elastische elset een onterechte WARNING). Een materiaal dat bij
-    naam in #ASTER-BEZWIJKEN staat, gaat altijd door (failure_plan meldt
-    het als het niet plastisch is)."""
+    """(limit, source) for a material, or (None, None). '*' and
+    failure_plastic_strain only apply to plastic materials (an
+    elastic material or a spring cannot fail; with '*' that gave
+    an unjustified WARNING per elastic elset). A material named
+    in #ASTER-BEZWIJKEN always passes (failure_plan reports
+    it if it is not plastic)."""
     if mat_name in custom:
         return custom[mat_name], "#ASTER-BEZWIJKEN"
     if not _is_plastic(props):
@@ -165,9 +165,9 @@ def _criterion(mat_name, props, custom, default):
 
 
 def mecway_name(model_data, group):
-    """Mecway-naam van een Code-Aster-groep (bridge_mesh hernoemt:
-    model_data["group_renames"] = {Mecway-naam: Code-Aster-naam});
-    onbekend: ongewijzigd."""
+    """Mecway name of a Code-Aster group (bridge_mesh renames:
+    model_data["group_renames"] = {Mecway name: Code-Aster name});
+    unknown: unchanged."""
     for src, dst in model_data.get("group_renames", {}).items():
         if dst == group:
             return src
@@ -176,13 +176,13 @@ def mecway_name(model_data, group):
 
 def failure_plan(model_data, analysis, relation_for, deformation_for):
     """
-    Welke elsets kunnen bezwijken? Lijst van dicts
-    {"elset", "material", "limit", "relation", "deformation"}; leeg als er
-    niets te doen is. Wat niet kan, wordt gemeld (WARNING) en komt in
-    skipped_loads.
+    Which elsets can fail? List of dicts
+    {"elset", "material", "limit", "relation", "deformation"}; empty if
+    there is nothing to do. What is not possible is reported (WARNING) and
+    goes into skipped_loads.
 
-    relation_for(mat_name) en deformation_for(mod, relation, chosen,
-    elset) komen uit bridge_to_aster (geen kringimport).
+    relation_for(mat_name) and deformation_for(mod, relation, chosen,
+    elset) come from bridge_to_aster (no circular import).
     """
     custom = model_data.get("aster_custom", {}).get("failure", {})
     default = float(analysis.get("failure_plastic_strain", 0.0) or 0.0)
@@ -254,7 +254,7 @@ def failure_plan(model_data, analysis, relation_for, deformation_for):
                         "rek)",
                         "the material is not plastic (no plastic strain)")
         if reason is None and mod.startswith("POU_D"):
-            # <EXCEPTION> POUTRE0_61 met VMIS_ISOT_LINE op POU_D_E (testrun)
+            # <EXCEPTION> POUTRE0_61 with VMIS_ISOT_LINE on POU_D_E (test run)
             reason = tr("balken ({0}) niet: Code-Aster kent plasticiteit "
                         "alleen in multivezelbalken, die de bridge niet "
                         "maakt",
@@ -284,7 +284,7 @@ def failure_plan(model_data, analysis, relation_for, deformation_for):
             skipped.append(tr("bezwijken van elset {0}",
                               "failure of elset {0}").format(label[elset]))
             continue
-        log("INFO: Bezwijken: elset '{0}' ({1}) bij een plastische rek van "
+        log("INFO: Failure: elset '{0}' ({1}) at a plastic strain of "
             "{2} ({3}).".format(label[elset], mat_name, limit, source))
         if coef is not None:
             log(tr("WARNING: Elset '{0}' ({1}) heeft kinematische "
@@ -307,15 +307,15 @@ def failure_plan(model_data, analysis, relation_for, deformation_for):
 def weak_materials(model_data, plan, factor, concepts, elas_args, curves,
                    mat_comment):
     """
-    DEFI_MATERIAU per materiaal in plan: <MAT_n>_BZ. E en de helling na
-    vloeien x factor, vloeigrens ongewijzigd: het slappe element blijft
-    elastisch. TRACTION: rek / factor en dezelfde spanning, zodat het
-    eerste punt (sy / (E factor), sy) bij de nieuwe E past en de helling
-    kleiner blijft dan E (U4.43.01 TRACTION).
+    DEFI_MATERIAU per material in plan: <MAT_n>_BZ. E and the slope after
+    yielding x factor, yield stress unchanged: the soft element stays
+    elastic. TRACTION: strain / factor and the same stress, so that the
+    first point (sy / (E factor), sy) fits the new E and the slope
+    stays smaller than E (U4.43.01 TRACTION).
 
-    elas_args(props, factor) -> tekst voor ELAS=_F(...); curves: {materiaal:
-    [(rek, spanning)]} zoals in TRAC_<n>; mat_comment: commentaarregel.
-    Returns (tekst, {materiaal: conceptnaam}).
+    elas_args(props, factor) -> text for ELAS=_F(...); curves: {material:
+    [(strain, stress)]} as in TRAC_<n>; mat_comment: comment line.
+    Returns (text, {material: concept name}).
     """
     out = ""
     names = OrderedDict()
@@ -342,8 +342,8 @@ def weak_materials(model_data, plan, factor, concepts, elas_args, curves,
             extra = "    ECRO_LINE=_F(D_SIGM_EPSI={0!r}, SY={1!r}),\n".format(
                 bil["et"] * factor, bil["sy"])
         out += mat_comment(mat_name) + (
-            "# bezweken: E x {0!r}, vloeigrens ongewijzigd (blijft "
-            "elastisch)\n".format(factor))
+            "# failed: E x {0!r}, yield stress unchanged (stays "
+            "elastic)\n".format(factor))
         out += "{0} = DEFI_MATERIAU(\n    ELAS=_F({1}),\n{2})\n".format(
             concept, elas_args(props, factor), extra)
     return out, names
@@ -351,24 +351,24 @@ def weak_materials(model_data, plan, factor, concepts, elas_args, curves,
 
 def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
     """
-    Python-code voor de .comm: de bezwijklus in plaats van een enkele
-    STAT_NON_LINE (zie de kop van dit bestand).
+    Python code for the .comm: the failure loop instead of a single
+    STAT_NON_LINE (see the header of this file).
 
-    weak_names  : {materiaal: concept} uit weak_materials
-    affe_entries: regels "        _F(GROUP_MA=..., MATER=...),\n" van de
-                  gewone AFFE_MATERIAU (bridge_to_aster._fieldmat_parts)
-    varc        : AFFE_VARC-regels van die AFFE_MATERIAU (of "")
-    call_args   : dict met
-                  "args"     : argumenten van de solve zonder MODELE,
-                               CHAM_MATER, INCREMENT, NEWTON en ETAT_INIT;
-                  "newton"   : tekst binnen NEWTON=_F(...);
-                  "command"  : STAT_NON_LINE of DYNA_NON_LINE;
-                  "segments" : Python-uitdrukking met de tijdstippen waarop
-                               bezwijken wordt gecontroleerd (begin incl.);
-                  "first"    : Python-uitdrukking met extra argumenten van
-                               de eerste aanroep (bijv. de beginsnelheid);
-                  "dynamic"  : True: VITE en ACCE in de beginstand na een
-                               bezwijkmoment.
+    weak_names  : {material: concept} from weak_materials
+    affe_entries: lines "        _F(GROUP_MA=..., MATER=...),\n" of the
+                  normal AFFE_MATERIAU (bridge_to_aster._fieldmat_parts)
+    varc        : AFFE_VARC lines of that AFFE_MATERIAU (or "")
+    call_args   : dict with
+                  "args"     : arguments of the solve without MODELE,
+                               CHAM_MATER, INCREMENT, NEWTON and ETAT_INIT;
+                  "newton"   : text inside NEWTON=_F(...);
+                  "command"  : STAT_NON_LINE or DYNA_NON_LINE;
+                  "segments" : Python expression with the times at which
+                               failure is checked (start incl.);
+                  "first"    : Python expression with extra arguments of
+                               the first call (e.g. the initial velocity);
+                  "dynamic"  : True: VITE and ACCE in the initial state
+                               after a failure moment.
     """
     crit = "".join("    ({0!r}, {1!r}, {2}, {3}),\n".format(
         p["elset"], float(p["limit"]), weak_names[p["material"]],
@@ -493,8 +493,8 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
              segments=call_args.get("segments",
                                     "list(times.getValues())"),
              first=call_args.get("first", "{}"),
-             # Expliciet (DIFF_CENT/TCHAMWA) staat alleen TANGENTE toe
-             # (<EXCEPTION> MECANONLINE5_1, gezien met 17.4).
+             # Explicit (DIFF_CENT/TCHAMWA) only allows TANGENTE
+             # (<EXCEPTION> MECANONLINE5_1, seen with 17.4).
              after_pred=("TANGENTE" if call_args.get("explicit")
                          else "ELASTIQUE"),
              dyn_fields=(
@@ -504,7 +504,7 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
 
 
 # ==========================================
-# NA DE RUN: WELKE ELEMENTEN BEZWEKEN?
+# AFTER THE RUN: WHICH ELEMENTS FAILED?
 # ==========================================
 _EVENT_RE = re.compile(r"^BRIDGE_BEZWIJKEN t=(\S+) elset=(\S+) nieuw=(\d+) "
                        r"totaal=(\d+) cellen=([\d,]*)\s*$", re.M)
@@ -512,9 +512,9 @@ _EVENT_RE = re.compile(r"^BRIDGE_BEZWIJKEN t=(\S+) elset=(\S+) nieuw=(\d+) "
 
 def failure_events(mess_text, cell_names):
     """
-    BRIDGE_BEZWIJKEN-regels uit de .mess: lijst van (tijd, elset,
-    [Mecway-elementnummers]). cell_names: model_data["cell_names"]
-    (bridge_mesh); een onbekend celnummer blijft '#<nr>'.
+    BRIDGE_BEZWIJKEN lines from the .mess: list of (time, elset,
+    [Mecway element numbers]). cell_names: model_data["cell_names"]
+    (bridge_mesh); an unknown cell number stays '#<nr>'.
     """
     events = []
     for m in _EVENT_RE.finditer(mess_text):
@@ -524,7 +524,7 @@ def failure_events(mess_text, cell_names):
                 continue
             c = int(c)
             name = cell_names[c] if 0 <= c < len(cell_names) else None
-            # H<eid>: tweede helft van een gesplitste line3-balk (bridge_mesh)
+            # H<eid>: second half of a split line3 beam (bridge_mesh)
             eid = (name[1:] if name and name[:1] in ("M", "H")
                    else "#{0}".format(c))
             if eid not in eids:
@@ -535,8 +535,8 @@ def failure_events(mess_text, cell_names):
 
 def report_failures(mess_path, model_data):
     """
-    Log de bezweken elementen van een run (WARNING per gebeurtenis) en geef
-    een korte tekst voor mw.message terug ("" zonder bezwijken).
+    Log the failed elements of a run (WARNING per event) and return
+    a short text for mw.message ("" without failure).
     """
     try:
         f = io.open(mess_path, encoding="utf-8", errors="replace")
@@ -558,8 +558,8 @@ def report_failures(mess_path, model_data):
                "WARNING: Failure at t={0}: {1} element(s) of elset '{2}': "
                "{3}").format("%g s" % t, len(eids),
                              mecway_name(model_data, elset), shown))
-    # %g (geen '{:g}': IronPython drukte '{:.4g}' als 0 af, gezien in een
-    # IronPython-test)
+    # %g (no '{:g}': IronPython printed '{:.4g}' as 0, seen in an
+    # IronPython test)
     when = ("t=%g s" % events[0][0] if events[0][0] == events[-1][0]
             else "t=%g .. %g s" % (events[0][0], events[-1][0]))
     return tr("Bezwijken: {0} element(en) bezweken ({1}); hun spanning is "

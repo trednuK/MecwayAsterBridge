@@ -4,46 +4,46 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_dyna_modal.py
-# Verantwoordelijkheid: respons op modale basis, Mecway Dynamic Response
-# (D30) met de optie Mode superposition (manual v33 par. 6.4), naar
+# Responsibility: response on a modal basis, Mecway Dynamic Response
+# (D30) with the option Mode superposition (manual v33 sec. 6.4), to
 # Code-Aster:
-#   ASSEMBLAGE (RIGI_MECA, MASS_MECA)  -> CALC_MODES (de laagste maxmode
-#   modes) -> belastingsvectoren (CALC_VECT_ELEM + ASSE_VECTEUR) ->
-#   PROJ_BASE (gegeneraliseerde massa, stijfheid en krachten) ->
-#   DYNA_VIBRA TYPE_CALCUL='TRAN', BASE_CALCUL='GENE' (modale demping,
-#   NEWMARK) -> REST_GENE_PHYS (verplaatsingen en snelheden op de knopen)
-#   -> CALC_CHAMP (spanningen) -> aster_results_export (tijdstappen in de
-#   .liml, zoals Mecway's eigen oplossing).
-# Syntax: Code-Aster-testcase forma12d (17.4, share/aster/tests) en de
-# catalogi dyna_vibra.py, proj_base.py, rest_gene_phys.py, calc_vect_elem.py
-# van code_aster 17.4.
+#   ASSEMBLAGE (RIGI_MECA, MASS_MECA)  -> CALC_MODES (the lowest maxmode
+#   modes) -> load vectors (CALC_VECT_ELEM + ASSE_VECTEUR) ->
+#   PROJ_BASE (generalised mass, stiffness and forces) ->
+#   DYNA_VIBRA TYPE_CALCUL='TRAN', BASE_CALCUL='GENE' (modal damping,
+#   NEWMARK) -> REST_GENE_PHYS (displacements and velocities at the nodes)
+#   -> CALC_CHAMP (stresses) -> aster_results_export (time steps in the
+#   .liml, like Mecway's own solution).
+# Syntax: Code-Aster test case forma12d (17.4, share/aster/tests) and the
+# catalogues dyna_vibra.py, proj_base.py, rest_gene_phys.py, calc_vect_elem.py
+# of code_aster 17.4.
 #
-#   build_dyna_modal(...) - builder voor SOLVER_BUILDERS_ASTER["DYNA_VIBRA"]
+#   build_dyna_modal(...) - builder for SOLVER_BUILDERS_ASTER["DYNA_VIBRA"]
 #                           (bridge_to_aster._build_dyna_modal).
 #
-# Gedrag van Mecway (headless gemeten met Mecway 33, mecway.exe <model>
-# solve; verificatie MD in docs/Verificatie.md):
-#   - De modale vergelijkingen worden exact geintegreerd: een staplast op
-#     een massa aan een balk gaf met stepsize 0,02 s (omega dt = 0,71) en
-#     0,001 s dezelfde respons, binnen 1e-4 van u_st (1 - cos omega t).
-#     Code-Aster integreert met NEWMARK (gemiddelde versnelling); de bridge
-#     kiest de rekenstap zo klein dat de periodefout verwaarloosbaar is
-#     (steps_per_period per periode van de hoogste mode in de basis; de
-#     periodefout van NEWMARK is (omega dt)^2 / 12, Hughes 2000, par. 9.3).
-#   - Geen statische correctie voor de weggelaten modes: met 1 mode bleef
-#     de eindverplaatsing van een uitkragende balk (puntlast op de tip,
-#     gedempt) 0,9707 x de statische (de bijdrage van mode 1), met 6 modes
-#     0,9986. De instelling static_correction (standaard uit) voegt die
-#     correctie toe (MACRO_ELAS_MULT als MODE_CORR, CORR_STAT, testcase
+# Behaviour of Mecway (measured headless with Mecway 33, mecway.exe <model>
+# solve; verification MD in docs/Verificatie.md):
+#   - The modal equations are integrated exactly: a step load on
+#     a mass on a beam gave the same response with stepsize 0,02 s
+#     (omega dt = 0,71) and 0,001 s, within 1e-4 of u_st (1 - cos omega t).
+#     Code-Aster integrates with NEWMARK (average acceleration); the bridge
+#     chooses the time step so small that the period error is negligible
+#     (steps_per_period per period of the highest mode in the basis; the
+#     period error of NEWMARK is (omega dt)^2 / 12, Hughes 2000, sec. 9.3).
+#   - No static correction for the omitted modes: with 1 mode the
+#     final displacement of a cantilever beam (point load at the tip,
+#     damped) stayed 0,9707 x the static one (the contribution of mode 1),
+#     with 6 modes 0,9986. The setting static_correction (default off) adds
+#     that correction (MACRO_ELAS_MULT as MODE_CORR, CORR_STAT, test case
 #     forma12d).
-#   - Rayleigh-demping (alleen op het hele model, manual par. 9.26) als
-#     modale dempingsverhouding xi_i = (alpha / omega_i + beta omega_i) / 2
-#     (manual par. 9.26); xi_i < 1 voor elke mode (manual par. 6.4).
-#   - Uitvoer: t = 0 en elke keepeverynthtimestep-de stap van stepsize
-#     (bridge_to_aster._output_times); displacement, rotation, velocity en
-#     von Mises; geen versnellingen (manual par. 6.4).
+#   - Rayleigh damping (only on the whole model, manual sec. 9.26) as
+#     modal damping ratio xi_i = (alpha / omega_i + beta omega_i) / 2
+#     (manual sec. 9.26); xi_i < 1 for every mode (manual sec. 6.4).
+#   - Output: t = 0 and every keepeverynthtimestep-th step of stepsize
+#     (bridge_to_aster._output_times); displacement, rotation, velocity and
+#     von Mises; no accelerations (manual sec. 6.4).
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import math
 import os
@@ -54,21 +54,21 @@ import bridge_to_aster as b2a
 from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
 
 
-# Velden van de fysieke respons (REST_GENE_PHYS NOM_CHAM) per groep uit
-# "fields"; reacties en plastische rek horen niet bij deze analyse.
+# Fields of the physical response (REST_GENE_PHYS NOM_CHAM) per group from
+# "fields"; reactions and plastic strain do not belong to this analysis.
 _STRESS_GROUPS = ("stresses", "vonmises")
 _FIELD_GROUPS = ("displacements", "velocities") + _STRESS_GROUPS
 
 
 def _value_names(text):
-    """Namen van concepten die als waarde in een _F(...) staan (KW=naam);
-    een groepsnaam staat tussen aanhalingstekens en telt niet mee."""
+    """Names of concepts that appear as a value in a _F(...) (KW=name);
+    a group name is in quotes and does not count."""
     return set(re.findall(r"=\s*([A-Za-z_]\w*)", text))
 
 
 def _substitute(kws, mapping):
-    """Kopie van een excit-dict (_build_charges) met de functienamen uit
-    mapping vervangen (alleen als waarde: na '=', niet in een groepsnaam)."""
+    """Copy of an excit dict (_build_charges) with the function names from
+    mapping replaced (only as a value: after '=', not in a group name)."""
     out = OrderedDict()
     for kw, entries in kws.items():
         new = []
@@ -83,16 +83,16 @@ def _substitute(kws, mapping):
 
 def _excitations(charges, timed):
     """
-    Splits de lasten van _build_charges in vectoren met elk een
-    tijdsfunctie: F(t) = sum_j V_j f_j(t) (lineair in de functiewaarden).
-    timed: namen van de DEFI_FONCTION's in de tijd. Returns (opleggingen,
-    excitaties, extra lasten, fouten):
-      opleggingen : namen van de lasten zonder belasting (load_k)
-      excitaties  : [(last, functie of None)] (None = constant vanaf t = 0)
-      extra       : [(naam, commando, excit-dict)] nieuwe lasten (gload_*):
-                    een AFFE_CHAR_MECA_F met een functie op 1 en de andere
-                    tijdsfuncties op 0
-      fouten      : lasten met een tijdsafhankelijke oplegging
+    Splits the loads of _build_charges into vectors, each with one
+    time function: F(t) = sum_j V_j f_j(t) (linear in the function values).
+    timed: names of the DEFI_FONCTIONs in time. Returns (supports,
+    excitations, extra loads, errors):
+      supports    : names of the loads without loading (load_k)
+      excitations : [(load, function or None)] (None = constant from t = 0)
+      extra       : [(name, command, excit dict)] new loads (gload_*):
+                    an AFFE_CHAR_MECA_F with one function at 1 and the other
+                    time functions at 0
+      errors      : loads with a time-dependent support
     """
     constraints, excitations, extra, errors = [], [], [], []
     for k, (cmd, kws, fonc) in enumerate(charges):
@@ -110,8 +110,8 @@ def _excitations(charges, timed):
         used = [f for f in timed if f in names]
         others = sorted(n for n in names if n not in timed)
         if others:
-            # Constanten (DEFI_CONSTANTE van balklasten) en plaatsfuncties
-            # (hydrostatische druk): vanaf t = 0, de tijdsfuncties op 0.
+            # Constants (DEFI_CONSTANTE of beam loads) and space functions
+            # (hydrostatic pressure): from t = 0, the time functions at 0.
             gname = "gload_{0}_0".format(k + 1)
             extra.append((gname, cmd, _substitute(
                 kws, dict((f, "bridge_f0") for f in used))))
@@ -126,8 +126,8 @@ def _excitations(charges, timed):
 
 
 def _check_model(model_data, analysis):
-    """Wat de modale respons niet kan: ERROR met de oplossing. Returns
-    True als het model te rekenen is."""
+    """What the modal response cannot do: ERROR with the solution. Returns
+    True if the model can be computed."""
     ok = True
     if not b2a._check_linear(model_data, tr("een respons op modale basis",
                                             "a mode superposition analysis")):
@@ -180,9 +180,9 @@ def _check_model(model_data, analysis):
 
 
 def _regular_outputs(out):
-    """(interval, aantal) als de uitvoertijden out = k * interval (k = 1..n)
-    zijn, anders None. DYNA_VIBRA GENE rekent met een vaste stap (PAS); de
-    uitvoertijden moeten daarop vallen."""
+    """(interval, count) if the output times are out = k * interval
+    (k = 1..n), otherwise None. DYNA_VIBRA GENE uses a fixed step (PAS);
+    the output times must fall on it."""
     if not out:
         return None
     inc = out[0]
@@ -193,7 +193,7 @@ def _regular_outputs(out):
 
 
 def _damping_text(model_data, analysis):
-    """(alpha [1/s], beta [s], extra modale dempingsverhouding)."""
+    """(alpha [1/s], beta [s], extra modal damping ratio)."""
     ray = model_data.get("rayleigh") or {}
     zeta = float(analysis.get("modal_damping", 0.0) or 0.0)
     return float(ray.get("alpha", 0.0) or 0.0), \
@@ -203,14 +203,14 @@ def _damping_text(model_data, analysis):
 def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
                 static_corr, fields):
     """
-    Demping, tijdstap, DYNA_VIBRA en REST_GENE_PHYS (Python in de .comm:
-    de frequenties zijn pas na CALC_MODES bekend).
+    Damping, time step, DYNA_VIBRA and REST_GENE_PHYS (Python in the .comm:
+    the frequencies are only known after CALC_MODES).
     """
     nsteps = max(4, int(analysis.get("steps_per_period", 50)))
     lines = [
-        "# Modale demping: Mecway's Rayleigh-demping C = alpha M + beta K is",
-        "# per mode xi_i = (alpha / w_i + beta w_i) / 2 (Mecway manual par.",
-        "# 9.26), plus de instelling modal_damping.",
+        "# Modal damping: Mecway's Rayleigh damping C = alpha M + beta K is",
+        "# per mode xi_i = (alpha / w_i + beta w_i) / 2 (Mecway manual sec.",
+        "# 9.26), plus the setting modal_damping.",
         "import math as _math",
         "bridge_freqs = [float(_f) for _f in "
         "modes.getAccessParameters()['FREQ']]",
@@ -220,8 +220,8 @@ def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
         "for _f in bridge_freqs:",
         "    _w = 2.0 * _math.pi * _f",
         "    if _w <= 0.0:",
-        "        # Starre beweging of mechanisme: Mecway staat dat ook niet toe",
-        "        # (manual par. 6.4); bridge_run_aster meldt de oorzaak.",
+        "        # Rigid body motion or mechanism: Mecway does not allow it",
+        "        # either (manual sec. 6.4); bridge_run_aster reports the cause.",
         "        print('BRIDGE_DYNA_MODAL_FOUT FREQ mode=%d f=%g' % "
         "(len(bridge_xi) + 1, _f))",
         "        raise ValueError('mode superposition: mode met f <= 0')",
@@ -231,14 +231,14 @@ def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
         "    print('BRIDGE_DEMPING mode %d: %.6g Hz, xi = %.6g' % "
         "(_i + 1, _f, _x))",
         "if max(bridge_xi) >= 1.0:",
-        "    # Mecway: xi < 1 voor elke mode (manual par. 6.4, 9.26).",
+        "    # Mecway: xi < 1 for every mode (manual sec. 6.4, 9.26).",
         "    print('BRIDGE_DYNA_MODAL_FOUT DEMPING mode=%d xi=%g' % "
         "(bridge_xi.index(max(bridge_xi)) + 1, max(bridge_xi)))",
         "    raise ValueError('mode superposition: dempingsverhouding >= 1')",
         "",
-        "# Rekenstap: {0} stappen per periode van de hoogste mode (NEWMARK,".format(
+        "# Time step: {0} steps per period of the highest mode (NEWMARK,".format(
             nsteps),
-        "# periodefout (w dt)^2 / 12), een geheel aantal per uitvoerinterval.",
+        "# period error (w dt)^2 / 12), a whole number per output interval.",
         "bridge_inc, bridge_nout = {0!r}, {1}".format(inc, n_out),
         "bridge_nsub = max(1, int(_math.ceil(bridge_inc * max(bridge_freqs) * {0})))"
         .format(nsteps),
@@ -257,10 +257,10 @@ def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
                 "d2fdt_{0}".format(k + 1) if fonc else "bridge_f0")
         excit.append(entry + ")")
     if static_corr:
-        # Statische correctie (testcase forma12d): de statische respons op
-        # elke belastingsvector (MACRO_ELAS_MULT) als MODE_CORR, met de
-        # eerste en tweede afgeleide van de tijdsfunctie (CALC_FONCTION
-        # DERIVE; voor een constante last 0).
+        # Static correction (test case forma12d): the static response to
+        # each load vector (MACRO_ELAS_MULT) as MODE_CORR, with the
+        # first and second derivative of the time function (CALC_FONCTION
+        # DERIVE; 0 for a constant load).
         for k, (charge, fonc) in enumerate(excitations):
             if fonc:
                 lines += [
@@ -288,9 +288,9 @@ def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
     if "velocities" in fields:
         cham.append("VITE")
     if any(f in fields for f in _STRESS_GROUPS):
-        # SIPM_ELNO (balken) op een DYNA_TRANS zonder versnellingen gaf
+        # SIPM_ELNO (beams) on a DYNA_TRANS without accelerations gave
         # alarm CALCULEL3_1 "Il manque les accélérations" (Code-Aster 17.4,
-        # gezien); de versnellingen gaan niet naar Mecway (zoals Mecway).
+        # seen); the accelerations do not go to Mecway (like Mecway).
         cham.append("ACCE")
     lines += [
         "res = REST_GENE_PHYS(",
@@ -307,9 +307,9 @@ def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
 
 def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer de .comm en .export voor de respons op modale basis
-    (analyse dyna_modal_3d, solver_command DYNA_VIBRA). Returns het pad van
-    de .export, of None (ERROR gelogd).
+    Generate the .comm and .export for the response on a modal basis
+    (analysis dyna_modal_3d, solver_command DYNA_VIBRA). Returns the path of
+    the .export, or None (ERROR logged).
     """
     log("--- Generating Aster Files (DYNA_VIBRA GENE) ---")
     if not _check_model(model_data, analysis):
@@ -344,7 +344,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
     custom_excit = model_data.get("aster_custom", {}).get("excit", [])
     if not constraints and not custom_excit:
         # Mecway: "Rigid body motion is not allowed so the model must be
-        # fully constrained" (manual v33 par. 6.4).
+        # fully constrained" (manual v33 sec. 6.4).
         log(tr("ERROR: Respons op modale basis zonder opleggingen: starre "
                "bewegingen kunnen niet (ook niet in Mecway, manual par. "
                "6.4). Leg het model in Mecway vast.",
@@ -369,8 +369,8 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
                    out[0] if out else "?", out[-1] if out else "?"))
         return None
     inc, n_out = reg
-    log("INFO: Respons op modale basis: {0} uitvoertijden, interval {1} s, "
-        "eindtijd {2} s.".format(n_out, inc, out[-1]))
+    log("INFO: Response on a modal basis: {0} output times, interval {1} s, "
+        "end time {2} s.".format(n_out, inc, out[-1]))
 
     fields = [f for f in analysis.get("fields", ["displacements"])
               if f in _FIELD_GROUPS]
@@ -379,8 +379,8 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
     if "displacements" not in fields:
         fields.insert(0, "displacements")
     if ignored:
-        log("INFO: Respons op modale basis: velden {0} worden niet "
-            "berekend (geen reacties of plastische rek).".format(
+        log("INFO: Response on a modal basis: fields {0} are not "
+            "computed (no reactions or plastic strain).".format(
                 ", ".join(ignored)))
     static_corr = bool(analysis.get("static_correction", False))
     alpha, beta, zeta = _damping_text(model_data, analysis)
@@ -453,8 +453,8 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         proj.append("    ),")
     proj += [")", ""]
     if static_corr and excitations:
-        # Statische respons per belastingsvector (testcase forma12d:
-        # MACRO_ELAS_MULT met de opleggingen als CHAR_MECA_GLOBAL).
+        # Static response per load vector (test case forma12d:
+        # MACRO_ELAS_MULT with the supports as CHAR_MECA_GLOBAL).
         proj += [
             "corr = MACRO_ELAS_MULT(",
             "    MODELE=model,",
@@ -469,24 +469,24 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             ")",
             "",
         ]
-        log("INFO: Statische correctie voor de weggelaten modes "
+        log("INFO: Static correction for the omitted modes "
             "(MACRO_ELAS_MULT, CORR_STAT).")
     elif static_corr:
         static_corr = False
     projection_block = "\n".join(proj)
     if not excitations:
-        # Zonder belasting een nulvector, zodat DYNA_VIBRA een EXCIT heeft.
+        # Without loading a zero vector, so that DYNA_VIBRA has an EXCIT.
         excitations = []
     dyna_block = _dyna_block(analysis, excitations, inc, n_out, alpha, beta,
                              zeta, static_corr, fields)
     if not excitations:
         dyna_block = dyna_block.replace("    EXCIT=(\n    ),\n", "")
 
-    calc_champ_block = "#-- geen spanningen gevraagd (fields) --\n"
+    calc_champ_block = "#-- no stresses requested (fields) --\n"
     if any(f in fields for f in _STRESS_GROUPS):
         calc_champ_block = (
-            "# Spanningen op de fysieke respons (lineair in de "
-            "verplaatsingen)\n" + _with_model(b2a._build_calc_champ_block(
+            "# Stresses on the physical response (linear in the "
+            "displacements)\n" + _with_model(b2a._build_calc_champ_block(
                 model_data, reactions=False), bool(cara_ref)))
     export_block = b2a._custom_code(model_data, "post") + (
         "# Resultaten in Mecway's eigen formaat (bridge: "
@@ -505,10 +505,10 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
-    log("INFO: Respons op modale basis: {0} modes, {1} belastingsvector(en), "
-        "Rayleigh alpha {2} 1/s, beta {3} s, extra modale demping {4}{5}."
+    log("INFO: Response on a modal basis: {0} modes, {1} load vector(s), "
+        "Rayleigh alpha {2} 1/s, beta {3} s, extra modal damping {4}{5}."
         .format(b2a._mode_count(model_data, analysis), len(excitations),
                 alpha, beta, zeta, ", statische correctie" if static_corr
                 else ""))
@@ -530,7 +530,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         export_content = (
             "P actions make_etude\n"
@@ -551,7 +551,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         ) + b2a._export_result_lines(work_dir, resu_name)
         with open(export_path, "w") as f:
             f.write(export_content)
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -563,8 +563,8 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
 
 
 def _with_model(block, cara):
-    """CALC_CHAMP op het resultaat van REST_GENE_PHYS: MODELE, CHAM_MATER
-    (en CARA_ELEM) expliciet, achter elke 'RESULTAT=res,'."""
+    """CALC_CHAMP on the result of REST_GENE_PHYS: MODELE, CHAM_MATER
+    (and CARA_ELEM) explicitly, after each 'RESULTAT=res,'."""
     head = "res = CALC_CHAMP(\n    reuse=res,\n    RESULTAT=res,\n"
     add = "    MODELE=model,\n    CHAM_MATER=fieldmat,\n"
     if cara:

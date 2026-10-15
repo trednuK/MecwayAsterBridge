@@ -4,15 +4,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_docs.py
-# Documentatie in het hoofdvenster (bridge_gui, pagina "Documentatie"):
-# de lijst met documenten in docs/ (of docs/en/) en een eenvoudige omzetting
-# van Markdown naar HTML voor het ingebouwde browserelement. Plus de
-# woordenlijst (bridge_glossary) als HTML-pagina.
+# Documentation in the main window (bridge_gui, page "Documentatie"):
+# the list of documents in docs/ (or docs/en/) and a simple conversion
+# from Markdown to HTML for the built-in browser element. Plus the
+# glossary (bridge_glossary) as an HTML page.
 #
-# De omzetting kent alleen wat in docs/ gebruikt wordt: koppen (#..####),
-# alinea's, opsommingen (-, *, 1.) met inspringing, tabellen (| a | b |),
-# codeblokken (```), inline code, vet/cursief, links en horizontale lijnen.
-# Geen pip-pakketten (AGENTS.md). Compatibel met IronPython 2.7.9 en
+# The conversion only knows what is used in docs/: headings (#..####),
+# paragraphs, lists (-, *, 1.) with indentation, tables (| a | b |),
+# code blocks (```), inline code, bold/italic, links and horizontal rules.
+# No pip packages (AGENTS.md). Compatible with IronPython 2.7.9 and
 # Python 3.
 
 import io
@@ -21,7 +21,7 @@ import re
 
 import bridge_glossary
 
-# Volgorde in de lijst: (bestand nl, bestand en, titel nl, titel en)
+# Order in the list: (file nl, file en, title nl, title en)
 DOCS = [
     ("Handleiding.md", "en/UserGuide.md", u"Handleiding", u"User guide"),
     ("Mecway_functionaliteit.md", "en/Mecway_features.md",
@@ -73,10 +73,10 @@ DOCS = [
      u"After an update of Mecway or Code-Aster"),
 ]
 
-GLOSSARY_PAGE = "woordenlijst"     # pseudo-bestand voor de woordenlijst
+GLOSSARY_PAGE = "woordenlijst"     # pseudo-file for the glossary
 
-# Merkenvermelding onderaan de pagina Documentatie (bridge_gui); dezelfde
-# tekst staat in README.md, docs/Handleiding.md en docs/en/UserGuide.md.
+# Trademark notice at the bottom of the Documentation page (bridge_gui); the
+# same text is in README.md, docs/Handleiding.md and docs/en/UserGuide.md.
 TRADEMARK_NOTICE = (
     u"Mecway is een product van Mecway Ltd. Code_Aster is een handelsmerk "
     u"van EDF. Dit project is niet verbonden aan en niet goedgekeurd door "
@@ -103,13 +103,13 @@ _CSS = (u"body{font-family:Segoe UI,Arial,sans-serif;font-size:10pt;"
 
 
 def docs_dir():
-    """docs/ naast de map Scripts/."""
+    """docs/ next to the folder Scripts/."""
     here = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(os.path.dirname(here), "docs")
 
 
 def doc_list(tr):
-    """[(titel, relatief pad of GLOSSARY_PAGE)] in de gekozen taal."""
+    """[(title, relative path or GLOSSARY_PAGE)] in the chosen language."""
     items = [(tr(u"Uitleg van codes en namen (woordenlijst)",
                  u"Explanation of codes and names (glossary)"),
               GLOSSARY_PAGE)]
@@ -133,9 +133,9 @@ _ITAL_RE = re.compile(u"(?<![\\w*])\\*([^*\\s][^*]*?)\\*(?![\\w*])")
 
 
 def _inline(text):
-    """Inline-opmaak: code, links, vet, cursief. Code eerst als
-    plaatshouder, zodat * in code niet als cursief telt en vet of een link
-    om code heen ook werkt (**`x`-regel**, [`a.md`](a.md))."""
+    """Inline markup: code, links, bold, italic. Code first as a
+    placeholder, so that * in code does not count as italic and bold or a
+    link around code also works (**`x`-regel**, [`a.md`](a.md))."""
     codes = []
 
     def keep(m):
@@ -163,12 +163,12 @@ def _cells(line):
 
 
 def markdown_to_html(text, title=u""):
-    """HTML-pagina uit Markdown-tekst (zie de kop van dit bestand)."""
+    """HTML page from Markdown text (see the header of this file)."""
     lines = text.replace(u"\r\n", u"\n").split(u"\n")
     out = []
     para = []
-    item = []           # tekst van het lopende lijstpunt (meerdere regels)
-    lists = []          # stapel (inspringing, 'ul'/'ol')
+    item = []           # text of the current list item (several lines)
+    lists = []          # stack (indentation, 'ul'/'ol')
     i = 0
 
     def flush_para():
@@ -178,7 +178,7 @@ def markdown_to_html(text, title=u""):
             del para[:]
 
     def flush_item():
-        # In een keer door _inline: vet of code over een regelgrens heen.
+        # Through _inline in one go: bold or code across a line break.
         if item:
             out.append(_inline(u" ".join(item)))
             del item[:]
@@ -194,7 +194,7 @@ def markdown_to_html(text, title=u""):
         if stripped.startswith(u"```"):
             flush_para()
             flush_item()
-            # Een ingesprongen codeblok hoort bij het lopende lijstpunt.
+            # An indented code block belongs to the current list item.
             if not (lists and line.startswith(u" ")):
                 close_lists()
             code = []
@@ -256,7 +256,7 @@ def markdown_to_html(text, title=u""):
             i += 1
             continue
         if lists and line.startswith(u" "):
-            # vervolgregel van een lijstpunt
+            # continuation line of a list item
             item.append(stripped)
             i += 1
             continue
@@ -283,7 +283,7 @@ def _page(title, body):
 
 
 def glossary_html(tr):
-    """De woordenlijst (bridge_glossary) als HTML-pagina."""
+    """The glossary (bridge_glossary) as an HTML page."""
     body = [u"<h1>{0}</h1>".format(tr(u"Uitleg van codes en namen",
                                       u"Explanation of codes and names")),
             u"<p>{0}</p>".format(tr(
@@ -303,8 +303,8 @@ def glossary_html(tr):
 
 
 def doc_html(rel_path, tr):
-    """HTML van een document (rel_path t.o.v. docs/, of GLOSSARY_PAGE).
-    Ontbreekt het bestand, dan een pagina met die melding."""
+    """HTML of a document (rel_path relative to docs/, or GLOSSARY_PAGE).
+    If the file is missing, a page with that message."""
     if rel_path == GLOSSARY_PAGE:
         return glossary_html(tr)
     path = os.path.join(docs_dir(), rel_path.replace(u"/", os.sep))
@@ -322,9 +322,9 @@ def doc_html(rel_path, tr):
 
 
 def slug(heading):
-    """Anker van een kop zoals GitHub: kleine letters, zonder Markdown en
-    leestekens, spaties -> '-' (bijv. '4.4 Convergentiescherm' ->
-    '44-convergentiescherm')."""
+    """Anchor of a heading like GitHub: lower case, without Markdown and
+    punctuation, spaces -> '-' (e.g. '4.4 Convergence monitor' ->
+    '44-convergence-monitor')."""
     text = _LINK_RE.sub(lambda m: m.group(1), heading)
     text = text.replace(u"`", u"").replace(u"*", u"").lower()
     text = re.sub(u"[^\\w\\- ]", u"", text, flags=re.UNICODE)
@@ -333,12 +333,12 @@ def slug(heading):
 
 def resolve_link(current, href):
     """
-    Doel van een link in een document: ("doc", relatief pad, anker),
-    ("anchor", None, anker) voor een anker in hetzelfde document,
-    ("web", url, None) of (None, None, None). current is het relatieve pad
-    van het open document (t.o.v. docs/). README.md en KNOWN_BUGS.md naast
-    docs/ zijn bereikbaar als '../README.md'. Links naar code (.py) of
-    andere bestanden openen niet.
+    Target of a link in a document: ("doc", relative path, anchor),
+    ("anchor", None, anchor) for an anchor in the same document,
+    ("web", url, None) or (None, None, None). current is the relative path
+    of the open document (relative to docs/). README.md and KNOWN_BUGS.md
+    next to docs/ are reachable as '../README.md'. Links to code (.py) or
+    other files do not open.
     """
     anchor = href.split(u"#", 1)[1] if u"#" in href else None
     href = href.split(u"#")[0]

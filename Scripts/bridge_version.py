@@ -4,49 +4,49 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_version.py
-# Versiecontrole van Mecway en Code-Aster: alleen een waarschuwing, de run
-# gaat altijd door. Compatibel met IronPython 2.7.9 en Python 3 (offline
+# Version check of Mecway and Code-Aster: only a warning, the run always
+# continues. Compatible with IronPython 2.7.9 and Python 3 (offline
 # test: python tests/test_bridge_version.py).
 #
-#   Mecway     : attribuut version van de <liml>-root (Mecway 33 schrijft
-#                version="33", Mecway 34 version="34"; gezien in de
-#                testmodellen in TestFiles).
-#   Code-Aster : voor de run uit het pad van de launcher
-#                (...\<versie>\bin\run_aster.bat, de map van het Windows-
-#                pakket); na de run uit de kop van de .mess, de regel
-#                "Version 17.4.0 modifiée le 22/01/2026" (gezien in de
-#                .mess van Code-Aster 17.4 voor Windows; de kop is Frans,
-#                ook als de meldingen in een andere taal zijn).
-#   Getest     : TESTED_MECWAY_VERSIONS en TESTED_ASTER_VERSIONS in
-#                bridge_utils.py (buiten CONFIG_BRIDGE).
+#   Mecway     : attribute version of the <liml> root (Mecway 33 writes
+#                version="33", Mecway 34 version="34"; seen in the
+#                test models in TestFiles).
+#   Code-Aster : before the run from the path of the launcher
+#                (...\<version>\bin\run_aster.bat, the Windows package
+#                folder); after the run from the .mess header, the line
+#                "Version 17.4.0 modifiée le 22/01/2026" (seen in the
+#                .mess of Code-Aster 17.4 for Windows; the header is French,
+#                even when the messages are in another language).
+#   Tested     : TESTED_MECWAY_VERSIONS and TESTED_ASTER_VERSIONS in
+#                bridge_utils.py (outside CONFIG_BRIDGE).
 #
-# Elke functie vangt zelf fouten af: een vreemd bestand of pad geeft None
-# (onbekende versie, INFO in de log), nooit een exceptie.
+# Every function catches its own errors: an odd file or path gives None
+# (unknown version, INFO in the log), never an exception.
 
 import re
 
 from bridge_utils import (log, tr, TESTED_MECWAY_VERSIONS,
                           TESTED_ASTER_VERSIONS)
 
-# Alleen het begin van een bestand lezen: de <liml>-root staat bovenaan,
-# de versie van Code-Aster in de kop van de .mess.
+# Only read the start of a file: the <liml> root is at the top,
+# the Code-Aster version in the header of the .mess.
 _LIML_HEAD_BYTES = 8192
 _MESS_HEAD_BYTES = 65536
 
 _LIML_ROOT_RE = re.compile(r"<liml\b([^>]*)>")
 _VERSION_ATTR_RE = re.compile(
     r"(?:^|\s)version\s*=\s*(?:\"([^\"]*)\"|'([^']*)')")
-# "Version 17.4.0 modifiée le ..." (niet "Version de Python : 3.11.9" en
-# niet "Créée avec la version : 17.04.00": daar volgt geen getal direct
-# op het woord Version).
+# "Version 17.4.0 modifiée le ..." (not "Version de Python : 3.11.9" and
+# not "Créée avec la version : 17.04.00": there no number directly
+# follows the word Version).
 _MESS_VERSION_RE = re.compile(
     r"^[ \t]*Version[ \t]+(\d+\.\d+(?:\.\d+)*)\b", re.M)
 _DOTTED_RE = re.compile(r"^\d+\.\d+(?:\.\d+)*$")
 
 
 def _read_head(path, nbytes):
-    """Begin van een bestand als tekst (UTF-8, onleesbare tekens
-    vervangen), of None als het niet te lezen is."""
+    """Start of a file as text (UTF-8, unreadable characters
+    replaced), or None if it cannot be read."""
     try:
         f = open(path, "rb")
         try:
@@ -59,8 +59,8 @@ def _read_head(path, nbytes):
 
 
 def mecway_version_from_text(text):
-    """Waarde van version in de <liml>-root, of None (geen root, geen of
-    leeg attribuut)."""
+    """Value of version in the <liml> root, or None (no root, missing or
+    empty attribute)."""
     try:
         m = _LIML_ROOT_RE.search(text or u"")
         if not m:
@@ -76,12 +76,12 @@ def mecway_version_from_text(text):
 
 
 def mecway_version_from_liml(path):
-    """Mecway-versie die de .liml het laatst opsloeg, of None."""
+    """Mecway version that last saved the .liml, or None."""
     return mecway_version_from_text(_read_head(path, _LIML_HEAD_BYTES))
 
 
 def aster_version_from_mess_text(text):
-    """Code-Aster-versie uit de kop van een .mess ('17.4.0'), of None."""
+    """Code-Aster version from the header of a .mess ('17.4.0'), or None."""
     try:
         m = _MESS_VERSION_RE.search(text or u"")
         return m.group(1) if m else None
@@ -90,15 +90,16 @@ def aster_version_from_mess_text(text):
 
 
 def aster_version_from_mess(path):
-    """Code-Aster-versie die de .mess schreef, of None."""
+    """Code-Aster version that wrote the .mess, or None."""
     return aster_version_from_mess_text(_read_head(path, _MESS_HEAD_BYTES))
 
 
 def aster_version_from_launcher(path):
     """
-    Code-Aster-versie uit het launcherpad, of None. Alleen de map direct
-    boven 'bin' telt (Windows-pakket: ...\\v2025\\17.4\\bin\\run_aster.bat);
-    een ander pad (eigen build, snelkoppeling) geeft None, geen gok.
+    Code-Aster version from the launcher path, or None. Only the folder
+    directly above 'bin' counts (Windows package:
+    ...\\v2025\\17.4\\bin\\run_aster.bat); another path (own build,
+    shortcut) gives None, no guess.
     """
     try:
         parts = [p for p in re.split(r"[\\/]+", path or u"") if p]
@@ -112,8 +113,8 @@ def aster_version_from_launcher(path):
 
 
 def major_minor(version):
-    """'17.4.0' -> '17.4', '17.04.00' -> '17.4'; None als het geen
-    versienummer is."""
+    """'17.4.0' -> '17.4', '17.04.00' -> '17.4'; None if it is not a
+    version number."""
     try:
         m = re.match(r"\s*(\d+)\.(\d+)", version or u"")
         if not m:
@@ -124,8 +125,8 @@ def major_minor(version):
 
 
 def mecway_tested(version):
-    """True/False voor een bekende versie (vergelijkt het hoofdnummer:
-    '34' en '34.0' zijn beide 34), None als het geen getal is."""
+    """True/False for a known version (compares the major number:
+    '34' and '34.0' are both 34), None if it is not a number."""
     try:
         m = re.match(r"\s*(\d+)", version or u"")
         if not m:
@@ -137,8 +138,8 @@ def mecway_tested(version):
 
 
 def aster_tested(version):
-    """True/False (major.minor in TESTED_ASTER_VERSIONS), None als
-    onbekend."""
+    """True/False (major.minor in TESTED_ASTER_VERSIONS), None if
+    unknown."""
     mm = major_minor(version)
     if mm is None:
         return None
@@ -147,22 +148,22 @@ def aster_tested(version):
 
 def check_mecway(liml_path):
     """
-    Logt de Mecway-versie van de opgeslagen .liml (INFO) en een WARNING als
-    die niet getest is. Returns (versie of None, melding voor de gebruiker
-    of None).
+    Logs the Mecway version of the saved .liml (INFO) and a WARNING if
+    it is not tested. Returns (version or None, message for the user
+    or None).
     """
     version = mecway_version_from_liml(liml_path)
     if version is None:
-        log(u"INFO: Mecway-versie onbekend (geen attribuut version in "
-            "<liml>); geen versiecontrole.")
+        log(u"INFO: Mecway version unknown (no attribute version in "
+            "<liml>); no version check.")
         return None, None
     tested = mecway_tested(version)
     if tested is None:
-        log(u"INFO: Mecway-versie '{0}' is geen versienummer; geen "
-            "versiecontrole.".format(version))
+        log(u"INFO: Mecway version '{0}' is not a version number; no "
+            "version check.".format(version))
         return version, None
     if tested:
-        log(u"INFO: Mecway-versie {0} (getest).".format(version))
+        log(u"INFO: Mecway version {0} (tested).".format(version))
         return version, None
     note = tr(u"Mecway {0} is niet getest met deze bridge (getest: {1}). "
               u"De run gaat door; controleer de resultaten. Zie "
@@ -177,17 +178,17 @@ def check_mecway(liml_path):
 
 def check_aster(version, source):
     """
-    Logt de Code-Aster-versie (source: 'launcher-pad' of '.mess') en een
-    WARNING als major.minor niet getest is. Returns de melding voor de
-    gebruiker of None.
+    Logs the Code-Aster version (source: 'launcher-pad' or '.mess') and a
+    WARNING if major.minor is not tested. Returns the message for the
+    user or None.
     """
     tested = aster_tested(version)
     if tested is None:
-        log(u"INFO: Code-Aster-versie niet te bepalen uit {0}; geen "
-            "versiecontrole.".format(source))
+        log(u"INFO: Code-Aster version cannot be determined from {0}; no "
+            "version check.".format(source))
         return None
     if tested:
-        log(u"INFO: Code-Aster-versie {0} volgens {1} (getest).".format(
+        log(u"INFO: Code-Aster version {0} according to {1} (tested).".format(
             version, source))
         return None
     note = tr(u"Code-Aster {0} is niet getest met deze bridge (getest: {1}). "
