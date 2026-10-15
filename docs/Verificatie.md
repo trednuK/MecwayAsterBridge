@@ -97,11 +97,11 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 8 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `e62a83d`
-(alle stappen, de eindcontrole S11 en de vervolgpunten van 7–8 oktober; Code-Aster 17.4):
-272 testcases, 1629 controles, 1625 OK, 4 BEKEND, 0 NOK/FOUT. Daarna toegevoegd en
-apart gedraaid (15 oktober): LS-07a–e, verlijmd contact tussen schalen (14 controles, OK).
+Stand 15 oktober 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `71ecf2f`
+(alle stappen, de eindcontrole S11, de vervolgpunten van 7–8 oktober en verlijmd contact
+tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 4 BEKEND,
+0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|

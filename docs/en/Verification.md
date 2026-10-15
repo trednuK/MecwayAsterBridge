@@ -95,11 +95,11 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 8 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `e62a83d`
-(all steps, the final check S11 and the follow-ups of 7–8 October; Code-Aster 17.4):
-272 test cases, 1629 checks, 1625 OK, 4 BEKEND (known), 0 NOK/FOUT. Added afterwards and
-run separately (15 October): LS-07a–e, bonded contact between shells (14 checks, OK).
+Status 15 October 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `71ecf2f`
+(all steps, the final check S11, the follow-ups of 7–8 October and bonded contact between
+shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (known),
+0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|

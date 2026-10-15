@@ -131,9 +131,9 @@ NAFEMS-stijl: **weinig cases, maar bewijzend**, elk met een getal en een toleran
    `TestFiles/Verificatie`.
 5. Regressie: `VERIF_WORK=<eigen scratchmap>` zetten (de standaardmap wordt door andere
    sessies gewist) en `python TestFiles/Verificatie/run_verificatie.py` volledig draaien.
-   **Lat**: basislijn 1625 van 1629 controles OK (272 testcases), 4 BEKEND (KNOWN_BUGS
+   **Lat**: basislijn 1639 van 1643 controles OK (277 testcases), 4 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; KNOWN_BUGS 83: 1 in BR-10), 0 NOK/FOUT (volledige regressie op
-   bridge e62a83d, 2026-10-08, na de vervolgpunten van S11:
+   bridge 71ecf2f, 2026-10-15, na verlijmd contact tussen schalen LS-07:
    `TestFiles/Verificatie/resultaten/resultaten.md`). Na de stap: 0 NOK/FOUT en geen eerder OK-controle die nu
    BEKEND/NOK is. Gewijzigde `modellen/` en `resultaten/` meecommitten; de samenvatting
    in `docs/Verificatie.md` §3 en de EN-versie bijwerken.

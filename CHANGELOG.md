@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased (develop)
+
+- **Bonded (Tie) contact between shells** now works: a shell face or edge glued onto a
+  shell face no longer stops with a singular matrix (`FACTOR_11`); the drilling rotation is
+  left out of `LIAISON_MAIL`. Example `TestFiles/Voorbeelden/Voorbeeld_T.liml`, verification
+  LS-07a–e, docs §3.10 of the contact settings. Skewed or curved masters: KNOWN_BUGS 91.
+- **New overview** of which Mecway functionality the bridge does and does not translate
+  (`docs/en/Mecway_features.md`, Dutch `docs/Mecway_functionaliteit.md`), also on the
+  Documentation page of the start screen.
+- KNOWN_BUGS 88–90 recorded (bonded contact in thermal analyses, node temperature in
+  mechanical analyses, quadratic shell as bonded master).
+- README: Mecway 34, acknowledgements. Verification: 277 test cases, 1643 checks.
+
 ## V2026.1 – first public release
 
 First public version of the MecwayAsterBridge: a Mecway 33 model (`.liml`) is solved with
