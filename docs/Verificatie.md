@@ -588,6 +588,13 @@ Route `tabel` (LS-30, LS-32, NL-31 met een nep-solution in CPython): `beam_force
   `EXCIT` rekenen elk met hun eigen functie (geen KNOWN_BUGS 70); twee functies in één
   `DDL_IMPO`-last (testrun met twee selecties) ook.
 
+### LS-70 … LS-78 Balkorientatie (statisch)
+
+Uitkragende balk en raamwerk met en zonder Mecway-orientatie (*orientation vector* en
+*angle*); toelichting, model en resultaten in §7, *Balkorientatie*. Alle tipverplaatsingen
+en σ_xx max/min in de inklemming ≤ 1e-7 t.o.v. Euler-Bernoulli, het raamwerk gelijk aan
+Mecway (≤ 3e-8).
+
 ### Conclusie lineair statisch
 
 Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is
@@ -1612,6 +1619,74 @@ uit de door de bridge gevulde `.liml` met dezelfde waarden.
   (`ALGELINE5_49`, `ALGELINE3_78`); daarom alleen zonder opleggingen.
 - Teken: BucklingBeam (druk) geeft `CHAR_CRIT` = +41124,7; dezelfde kolom onder trek
   −10,36 / −23,32 / −93,27 (Mecway zelf 8,5e13; KNOWN_BUGS 46).
+
+### Balkorientatie (MO-20 … MO-29, LS-70 … LS-78, BU-20 … BU-24)
+
+- **Doel**: nagaan of de bridge de doorsnede van een balk net zo draait als Mecway, in
+  modaal, statisch en knik: zonder orientatie (Mecway-standaard), met een
+  *orientation vector* en met vector + *angle* (`orientationvx/vy/vz`, `angle` per
+  `<elem>`; bridge: groepen `BORnnnnn` met `AFFE_CARA_ELEM ORIENTATION CARA='VECT_Y'`,
+  zonder orientatie de standaard van Code-Aster). Module `tests_balkorientatie.py`,
+  `python run_verificatie.py MO-2 LS-7 BU-2` (ca. 2 minuten).
+- **Model**: uitkragende balk L = 1 m, 20 `POU_D_E`, staal, RectBar 40 × 10 mm (I_W =
+  16 I_V), langs X, Y, Z en schuin (1,1,1), en een I-profiel 100/50/10/8 mm langs Y
+  (vector X + 90°). Raamwerk (MO-28, LS-78): kolom langs Z (standaard), ligger langs X
+  (vector (0,1,1) + 30°), schuine staaf naar (1, 1, 1,5) (vector Z).
+- **Referentie**: de V-as met de hand uit de regel van de Mecway-handleiding (v33 §7.5:
+  vector loodrecht op U geprojecteerd, rechtsom om U gedraaid met *angle*; zonder
+  vector V = Z × U, langs Z V = Y), W = U × V, RectBar `recta` langs V. Daarmee:
+  Euler-Bernoulli-frequenties (Blevins, 1979, tabel 8-1) met I_V = recta·rectb³/12
+  (uitwijking langs W) en I_W = rectb·recta³/12 (langs V), de richting van de
+  tipverplaatsing per mode (|u·e|/|u| = 1, tolerantie 1e-4), de effectieve massa per
+  richting (0,6131·(e·W)², MO-23/25), torsie f = √(GJ/ρI_p)/(4L) (J uit Roark, 7e druk,
+  tabel 10.7; I_p = I_V + I_W) en langs √(E/ρ)/(4L) (MO-20); statisch u = F_U·L/(EA)·U +
+  F_V·L³/(3EI_W)·V + F_W·L³/(3EI_V)·W en σ_xx = N/A ± |M_V|·(rectb/2)/I_V ±
+  |M_W|·(recta/2)/I_W in de inklemming; knik met een geleiding (alle knopen in één
+  richting vast) Pcr = π²E·I/(4L²) met I = I_V(a·V)² + I_W(a·W)² om de krommingsas a
+  (Timoshenko & Gere, 1961). Daarnaast Mecway 34 headless op dezelfde `.liml`.
+- **Resultaat**: alle frequenties ≤ 0,026% van de analytische waarde (de torsie- en
+  langsmode door de lineaire interpolatie van 20 elementen), alle richtingen 1 op
+  < 3e-7, effectieve massa ≤ 1e-5 absoluut, statisch ≤ 1e-7, knik ≤ 5e-6. Tegen Mecway:
+  frequenties, tipverplaatsingen en kniklastfactoren gelijk op ≤ 2e-7 (ook het
+  raamwerk, met de vorm van mode 1–3). Een draaiing van de doorsnede over 90° wisselt
+  de zwakke en sterke as zoals verwacht: BU-20 1,7272 → BU-21 27,635 (= 16×), BU-22
+  (langs Z, standaard: sterke as) 27,635, BU-23 (vector X + 30°) 8,2041 = (0,75 +
+  0,25 × 16) × 1,7272.
+
+| Case | Orientatie | Analytisch | Bridge | Mecway |
+|---|---|---|---|---|
+| MO-20 | langs X, standaard (V = Y) | f1 / f2 8,35517 (W) / 33,4207 Hz (V) | +0,000% / +0,000% | +0,000% / +0,000% |
+| MO-20 | idem, torsie f7 / langs f14 | 357,052 / 1293,05 Hz | +0,026% / +0,026% | gelijk aan de bridge |
+| MO-21 … MO-26 | Y, Z, schuin, vector Z, schuin + 30°, Z + 30° | 8,35517 / 33,4207 Hz | +0,000% | +0,000%; vormen gelijk |
+| MO-27 | I-profiel langs Y, vector X + 90° | 32,8876 (W) / 108,253 (torsie) / 110,135 Hz (V) | +0,000 / +0,026 / +0,000% | gelijk (< 2e-9) |
+| MO-28 | raamwerk | – | 1,39869 / 1,67958 / 4,75549 Hz | gelijk (≤ 1,4e-7) |
+| MO-29 | L = 0,1 m (L/h = 2,5) | 835,516 / 3342,065 Hz (zonder rotatietraagheid) | +0,000% | +0,000% |
+| LS-70 … LS-77 | als MO-20 … MO-27 | u_tip, σ_xx max/min | ≤ 1e-7 | gelijk (≤ 1e-10) |
+| LS-78 | raamwerk | – | – | u en rotatie tip ≤ 3e-8 |
+| BU-20 … BU-23 | geleide kolom, zie boven | 1,7272 / 27,635 / 27,635 / 8,2041 | +0,000% | +0,000% |
+| BU-24 | schuin, vector Z + 30°, vrij | 1,7272 / 15,545 / 27,635; vorm 1 langs W, 3 langs V | ≤ 4e-6 | gelijk |
+
+Bevindingen (ook gemeten buiten de vaste cases: RectBar in 20 combinaties van richting
+en orientatie, RectTube, UniformGeneralSection, I, T, C, L en CircularBar langs X en
+schuin, met en zonder vector + 30°):
+- Modaal en statisch rekent de bridge in alle gevallen hetzelfde als Mecway (relatief
+  ≤ 1e-7, vormen gelijk). Welke as I_V en welke I_W draagt, klopt voor alle
+  doorsneden: RECTANGLE `HY` = recta langs V, `iyy` van de *UniformGeneralSection* =
+  `IY` (om V), en de profielen met I om V en W zoals Mecway ze toont (bij L de
+  hoofdassen). Bij de CircularBar zijn de buigmodes dubbel, de vorm is dan niet uniek.
+- Massamatrix: Mecway en `POU_D_E` nemen de polaire traagheid ρI_p (I_p = I_V + I_W)
+  mee voor torsie, maar geen rotatietraagheid van de doorsnede bij buiging: ook bij
+  L/h = 2,5 (MO-29) is de frequentie de Euler-Bernoulli-waarde. Een Rayleigh- of
+  Timoshenko-balk zou daar lager uitkomen; gebruik dan `POU_D_T` (instelling
+  `elem_beam`, niet als Mecway) of volume-elementen.
+- Geen van beide rekent met een verschoven dwarskrachtcentrum (T, L, C): buiging en
+  torsie zijn ontkoppeld, ook bij knik.
+- Knik met alleen drukkracht in de staafas is gelijk aan Mecway. Afwijkingen die niet
+  met de orientatie te maken hebben: zuivere torsieknik (I-profiel: bridge 2414 =
+  GJ·A/I_p, Mecway 2743; KNOWN_BUGS 112) en knik met buigende momenten in een
+  raamwerk (vanaf mode 2; KNOWN_BUGS 113). Mecway gaf voor een knikmodel met een
+  L-profiel headless geen oplossing (ook niet bij een tweede poging); de bridge gaf
+  daar de verwachte 135,1 (zwakke hoofdas) en 601,0.
 
 ### Modaal met voorspanning (MP)
 

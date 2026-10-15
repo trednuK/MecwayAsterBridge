@@ -898,7 +898,8 @@ def _build_cara_elem_block(model_data):
     lokale y-as van Code-Aster langs V. Zonder eigen orientatie zijn de
     standaarden van Mecway en Code-Aster gelijk (nagelopen met een
     vergelijking Mecway <-> Code-Aster voor balken langs X, langs Z en
-    schuin).
+    schuin; modaal, statisch en knik met en zonder orientatie in de
+    verificatie MO-20 ... MO-29, LS-70 ... LS-78, BU-20 ... BU-24).
     """
     shell_secs  = model_data.get("shell_sections",  {})
     beam_secs   = model_data.get("beam_sections",   {})

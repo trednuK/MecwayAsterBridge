@@ -389,6 +389,20 @@ bridge zoekt dan rond een kleine negatieve frequentie (`CENTRE`, regel
 - Contact, gaps, tension/compression only: niet in een modale of knikanalyse (ERROR).
 - Spanningen per knikvorm (alleen per trillingsvorm, §1.4).
 
+### 3.4 Balkorientatie en doorsneden
+
+De bridge draait de doorsnede van een balk zoals Mecway (*orientation vector* en
+*angle* per element, Mecway-handleiding v33 §7.5; zonder orientatie de standaard van
+Mecway: V = Z × U, langs Z V = Y). Nagelopen voor modaal, statisch en knik met balken
+langs X, Y, Z en schuin, zonder orientatie, met een vector en met vector + hoek, alle
+doorsneden van de bridge en een raamwerk ([`Verificatie.md`](Verificatie.md) §7,
+*Balkorientatie*, MO-20 … MO-29): frequenties, trillingsvormen (richting van de
+uitwijking) en effectieve massa per richting gelijk aan Mecway en aan Euler-Bernoulli.
+Net als Mecway rekent `POU_D_E` met de polaire traagheid voor torsie, maar zonder
+rotatietraagheid van de doorsnede bij buiging en zonder verschoven dwarskrachtcentrum
+(T, L, C). Knik met buigende momenten (raamwerken) en zuivere torsieknik wijken af van
+Mecway (KNOWN_BUGS 112, 113).
+
 ## 4. Meldingen en oplossingen
 
 | Melding | Oorzaak | Oplossing |

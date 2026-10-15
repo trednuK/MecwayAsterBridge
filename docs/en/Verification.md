@@ -586,6 +586,13 @@ Route `tabel` (LS-30, LS-32, NL-31 with a fake solution in CPython): `beam_force
   `FORMULE`, in one `EXCIT` each use their own function (no KNOWN_BUGS 70); two
   functions in one `DDL_IMPO` load (test run with two selections) as well.
 
+### LS-70 … LS-78 Beam orientation (static)
+
+Cantilever and frame with and without a Mecway orientation (*orientation vector* and
+*angle*); explanation, model and results in §7, *Beam orientation*. All tip
+displacements and σ_xx max/min at the clamp ≤ 1e-7 against Euler-Bernoulli, the frame
+equal to Mecway (≤ 3e-8).
+
 ### Conclusion linear static
 
 All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
@@ -1610,6 +1617,75 @@ reads `solution.modes()`, `frequency(m)` / `buckling_factor(m)` and
   f1 = 16.7 Hz) (`ALGELINE5_49`, `ALGELINE3_78`); hence only without supports.
 - Sign: BucklingBeam (compression) gives `CHAR_CRIT` = +41124.7; the same column in
   tension −10.36 / −23.32 / −93.27 (Mecway itself 8.5e13; KNOWN_BUGS 46).
+
+### Beam orientation (MO-20 … MO-29, LS-70 … LS-78, BU-20 … BU-24)
+
+- **Goal**: check that the bridge rotates a beam cross-section exactly like Mecway, in
+  modal, static and buckling: without orientation (Mecway default), with an
+  *orientation vector* and with vector + *angle* (`orientationvx/vy/vz`, `angle` per
+  `<elem>`; bridge: groups `BORnnnnn` with `AFFE_CARA_ELEM ORIENTATION CARA='VECT_Y'`,
+  without orientation Code-Aster's default). Module `tests_balkorientatie.py`,
+  `python run_verificatie.py MO-2 LS-7 BU-2` (about 2 minutes).
+- **Model**: cantilever L = 1 m, 20 `POU_D_E`, steel, RectBar 40 × 10 mm (I_W = 16
+  I_V), along X, Y, Z and skew (1,1,1), and an I section 100/50/10/8 mm along Y
+  (vector X + 90°). Frame (MO-28, LS-78): column along Z (default), beam along X
+  (vector (0,1,1) + 30°), skew member to (1, 1, 1.5) (vector Z).
+- **Reference**: the V axis by hand from the rule in the Mecway manual (v33 §7.5:
+  vector projected perpendicular to U, rotated right-handed about U by *angle*; without
+  a vector V = Z × U, along Z V = Y), W = U × V, RectBar `recta` along V. With that:
+  Euler-Bernoulli frequencies (Blevins, 1979, table 8-1) with I_V = recta·rectb³/12
+  (deflection along W) and I_W = rectb·recta³/12 (along V), the direction of the tip
+  displacement per mode (|u·e|/|u| = 1, tolerance 1e-4), the effective mass per
+  direction (0.6131·(e·W)², MO-23/25), torsion f = √(GJ/ρI_p)/(4L) (J from Roark, 7th
+  ed., table 10.7; I_p = I_V + I_W) and axial √(E/ρ)/(4L) (MO-20); static u =
+  F_U·L/(EA)·U + F_V·L³/(3EI_W)·V + F_W·L³/(3EI_V)·W and σ_xx = N/A ±
+  |M_V|·(rectb/2)/I_V ± |M_W|·(recta/2)/I_W at the clamp; buckling with a guide (all
+  nodes fixed in one direction) Pcr = π²E·I/(4L²) with I = I_V(a·V)² + I_W(a·W)² about
+  the curvature axis a (Timoshenko & Gere, 1961). In addition Mecway 34 headless on the
+  same `.liml`.
+- **Result**: all frequencies ≤ 0.026% from the analytical value (the torsion and
+  axial modes due to the linear interpolation of 20 elements), all directions 1 to
+  < 3e-7, effective mass ≤ 1e-5 absolute, static ≤ 1e-7, buckling ≤ 5e-6. Against
+  Mecway: frequencies, tip displacements and buckling factors equal to ≤ 2e-7 (the frame
+  as well, including the shape of modes 1–3). Rotating the section by 90° swaps the weak
+  and strong axis as expected: BU-20 1.7272 → BU-21 27.635 (= 16×), BU-22 (along Z,
+  default: strong axis) 27.635, BU-23 (vector X + 30°) 8.2041 = (0.75 + 0.25 × 16) ×
+  1.7272.
+
+| Case | Orientation | Analytical | Bridge | Mecway |
+|---|---|---|---|---|
+| MO-20 | along X, default (V = Y) | f1 / f2 8.35517 (W) / 33.4207 Hz (V) | +0.000% / +0.000% | +0.000% / +0.000% |
+| MO-20 | same, torsion f7 / axial f14 | 357.052 / 1293.05 Hz | +0.026% / +0.026% | equal to the bridge |
+| MO-21 … MO-26 | Y, Z, skew, vector Z, skew + 30°, Z + 30° | 8.35517 / 33.4207 Hz | +0.000% | +0.000%; shapes equal |
+| MO-27 | I section along Y, vector X + 90° | 32.8876 (W) / 108.253 (torsion) / 110.135 Hz (V) | +0.000 / +0.026 / +0.000% | equal (< 2e-9) |
+| MO-28 | frame | – | 1.39869 / 1.67958 / 4.75549 Hz | equal (≤ 1.4e-7) |
+| MO-29 | L = 0.1 m (L/h = 2.5) | 835.516 / 3342.065 Hz (no rotary inertia) | +0.000% | +0.000% |
+| LS-70 … LS-77 | as MO-20 … MO-27 | u_tip, σ_xx max/min | ≤ 1e-7 | equal (≤ 1e-10) |
+| LS-78 | frame | – | – | tip u and rotation ≤ 3e-8 |
+| BU-20 … BU-23 | guided column, see above | 1.7272 / 27.635 / 27.635 / 8.2041 | +0.000% | +0.000% |
+| BU-24 | skew, vector Z + 30°, free | 1.7272 / 15.545 / 27.635; shape 1 along W, 3 along V | ≤ 4e-6 | equal |
+
+Findings (also measured outside the fixed cases: RectBar in 20 combinations of
+direction and orientation, RectTube, UniformGeneralSection, I, T, C, L and CircularBar
+along X and skew, with and without vector + 30°):
+- In modal and static the bridge computes the same as Mecway in every case (relative
+  ≤ 1e-7, shapes equal). Which axis carries I_V and which I_W is right for all
+  sections: RECTANGLE `HY` = recta along V, `iyy` of the *UniformGeneralSection* = `IY`
+  (about V), and the profiles with I about V and W as Mecway shows them (principal axes
+  for L). For the CircularBar the bending modes are double, so the shape is not unique.
+- Mass matrix: Mecway and `POU_D_E` include the polar inertia ρI_p (I_p = I_V + I_W)
+  for torsion, but no rotary inertia of the cross-section in bending: even at L/h = 2.5
+  (MO-29) the frequency is the Euler-Bernoulli value. A Rayleigh or Timoshenko beam
+  would be lower there; use `POU_D_T` (setting `elem_beam`, unlike Mecway) or solid
+  elements.
+- Neither uses an offset shear centre (T, L, C): bending and torsion are uncoupled,
+  also in buckling.
+- Buckling with only axial compression equals Mecway. Differences unrelated to the
+  orientation: pure torsional buckling (I section: bridge 2414 = GJ·A/I_p, Mecway 2743;
+  KNOWN_BUGS 112) and buckling with bending moments in a frame (from mode 2 on;
+  KNOWN_BUGS 113). Mecway gave no headless solution for a buckling model with an L
+  section (also not on a second try); the bridge gave the expected 135.1 (weak principal
+  axis) and 601.0 there.
 
 ### Modal with prestress (MP)
 

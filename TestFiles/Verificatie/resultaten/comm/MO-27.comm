@@ -1,0 +1,161 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Code_Aster Command File - Gegenereerd via MecwayAsterBridge
+# Template voor CALC_MODES: modale analyse (Mecway V30, eigenfrequenties
+# en trillingsvormen) en lineaire knik (Mecway B30, kniklastfactoren en
+# knikvormen). Invulling via str.format() vanuit bridge_to_aster.py
+# (_build_modal).
+#
+# Placeholders (naam tussen enkele accolades):
+#   defigroup_block   -> DEFI_GROUP / CREA_MAILLAGE / MODI_MAILLAGE (zoals
+#                        MECA_STATIQUE)
+#   model_block       -> AFFE_MODELE per elset
+#   cara_elem_block   -> AFFE_CARA_ELEM (balken, schalen, veren, knoopmassa's)
+#   materials_block   -> DEFI_MATERIAU per materiaal (met RHO)
+#   fieldmat_block    -> AFFE_MATERIAU toewijzing
+#   loads_block       -> AFFE_CHAR_MECA's: modaal zonder voorspanning alleen
+#                        de opleggingen en koppelingen; knik en modaal met
+#                        voorspanning ook de belastingen
+#   static_block      -> knik en modaal met voorspanning: MECA_STATIQUE met
+#                        alle lasten en het spanningsveld SIEF_ELGA daaruit;
+#                        modaal zonder voorspanning: commentaar
+#   assemblage_block  -> ASSEMBLAGE: stijfheid (RIGI_MECA) en massa
+#                        (MASS_MECA) en/of geometrische stijfheid
+#                        (RIGI_GEOM); met voorspanning ook RIGI_ROTA
+#                        (centrifugaal) en COMB_MATR_ASSE K + Kg
+#   calc_modes_block  -> res = CALC_MODES(...)
+#   export_block      -> aster_results_export (Mecway-resultaten: een
+#                        <mode> per trillings-/knikvorm)
+#   impr_resu_block   -> IMPR_RESU MED (alleen met "med_export")
+#
+# Een accolade die geen placeholder is: verdubbelen ({ of }).
+
+# Taal van de meldingen van de jobscripts (aster_*.py)
+import os as _bridge_os
+_bridge_os.environ['BRIDGE_LANGUAGE'] = 'nl'
+DEBUT(LANG='EN')
+
+# =====================================================
+# 1. MESH (FORMAT='ASTER', bridge_mesh.py; UNITE=20 = 'F mail ... D 20')
+# =====================================================
+mesh = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+
+mesh = DEFI_GROUP(
+    reuse=mesh,
+    MAILLAGE=mesh,
+    CREA_GROUP_MA=_F(
+        NOM='all_elems',
+        TOUT='OUI',
+    ),
+    CREA_GROUP_NO=_F(
+        NOM='all_nodes',
+        GROUP_MA='all_elems',
+    ),
+)
+
+#-- not used in this analysis --
+
+
+# =====================================================
+# 2. MODEL, SECTIES, MATERIALEN (zoals MECA_STATIQUE)
+# =====================================================
+model = AFFE_MODELE(
+    MAILLAGE=mesh,
+    AFFE=(
+        _F(GROUP_MA='Balk', PHENOMENE='MECANIQUE', MODELISATION='POU_D_E'),
+    ),
+)
+
+
+cara = AFFE_CARA_ELEM(
+    MODELE=model,
+    POUTRE=_F(GROUP_MA='Balk',
+           SECTION='GENERALE',
+           CARA=('A', 'IY', 'IZ', 'JX',),
+           VALE=(0.00164, 2.1174666666666665e-07, 2.3746666666666665e-06, 4.713276113066667e-08,)),
+    ORIENTATION=_F(GROUP_MA='BOR00001', CARA='VECT_Y', VALE=(6.123233995736766e-17, 0.0, -1.0)),
+)
+
+
+# materiaal 'Mat'
+MAT_1 = DEFI_MATERIAU(ELAS=_F(E=210000000000.0, NU=0.3, RHO=7850.0),)
+
+
+fieldmat = AFFE_MATERIAU(
+    MAILLAGE=mesh,
+    MODELE=model,
+    AFFE=(
+        _F(GROUP_MA='Balk', MATER=MAT_1),
+    ),
+)
+
+
+# =====================================================
+# 3. RANDVOORWAARDEN (en bij knik de belastingen)
+# =====================================================
+load_1 = AFFE_CHAR_MECA(
+    MODELE=model,
+    DDL_IMPO=_F(GROUP_NO='Inklemming', BLOCAGE=('DEPLACEMENT', 'ROTATION')),
+)
+
+
+# =====================================================
+# 4. STATISCHE BEREKENING EN SPANNINGSVELD (KNIK; MODAAL MET VOORSPANNING)
+# =====================================================
+#-- niet van toepassing (modaal zonder voorspanning) --
+
+
+# =====================================================
+# 5. MATRICES (ASSEMBLAGE, U4.61.21)
+# De opleggingen (dualisatie, Lagrange-multiplicatoren) zitten in de
+# matrices via CHARGE; hun waarde speelt geen rol.
+# =====================================================
+ASSEMBLAGE(
+    MODELE=model,
+    CHAM_MATER=fieldmat,
+    CARA_ELEM=cara,
+    CHARGE=(load_1,),
+    NUME_DDL=CO('numedd'),
+    MATR_ASSE=(
+        _F(MATRICE=CO('rigidite'), OPTION='RIGI_MECA'),
+        _F(MATRICE=CO('masse'), OPTION='MASS_MECA'),
+    ),
+)
+
+
+# =====================================================
+# 6. EIGENWAARDEN (CALC_MODES, U4.52.02)
+# =====================================================
+res = CALC_MODES(
+    TYPE_RESU='DYNAMIQUE',
+    MATR_RIGI=rigidite,
+    MATR_MASS=masse,
+    OPTION='PLUS_PETITE',
+    CALC_FREQ=_F(NMAX_FREQ=3),
+    CHAM_MATER=fieldmat,
+    CARA_ELEM=cara,
+    NORM_MODE=_F(NORME='MASS_GENE'),
+    VERI_MODE=_F(SEUIL=1e-06, STOP_ERREUR='NON'),
+    SOLVEUR=_F(METHODE='MUMPS', NPREC=8),
+)
+
+
+# =====================================================
+# 7. RESULTATEN NAAR MECWAY
+# =====================================================
+# Resultaten in Mecway's eigen formaat (bridge: result_route='liml')
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+aster_results_export.print_modes(res, mass=masse)
+aster_results_export.export_results(
+    res, '<WORKDIR>\\MO-27\\MO-27_verif_results.xml', '<WORKDIR>\\MO-27\\MO-27.liml',
+    fields=['displacements'], precision='double')
+
+
+#-- geen MED-export (instelling med_export uit) --
+
+
+FIN()

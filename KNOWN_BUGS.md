@@ -97,6 +97,28 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    Volumes kloppen wel (TH-03, LS-08). Waarom Mecway bij schalen minder uitzet, is NIET
    nagegaan (vlakspanning of de temperatuur over de dikte?).
 
+112\. **Knik: zuivere torsieknik van een balk hoger in Mecway** (vraag, gemeten met
+   Mecway 34 headless en Code-Aster 17.4, `buckling_3d`, `POU_D_E`). Ingeklemde kolom
+   L = 1 m, I-profiel 100/50/10/8 mm, 20 elementen, 1000 N druk: de buigknikfactoren
+   (109,72 / 987,46 / 1230,44) zijn gelijk, de torsieknik niet: bridge 2413,87 =
+   G·J·A/I_p met I_p = I_V + I_W (torsieknik zonder welving, Timoshenko & Gere, 1961,
+   par. 5.3), Mecway 2743,03 (+13,6%). Welke polaire traagheid of geometrische
+   stijfheid Mecway voor torsie gebruikt, is NIET nagegaan. Geen invloed van de
+   balkorientatie (gelijk voor elke orientatie).
+
+113\. **Knik met buigende momenten (raamwerk): vanaf mode 2 anders dan Mecway** (vraag,
+   gemeten met Mecway 34 headless en Code-Aster 17.4, `RIGI_GEOM` van `POU_D_E`).
+   L-raamwerk (kolom langs Z 1 m, ligger langs X 1 m, RectBar 40 × 10 mm, 100 N omlaag
+   op het eind van de ligger): mode 1 17,2718 in beide; daarna bridge (positief) 44,53 /
+   122,44 / 151,95, Mecway 19,71 / 127,30 / 155,45 / 173,90 (de bridge geeft ook
+   negatieve factoren, KNOWN_BUGS 46). Een raamwerk van drie staven: 0,9814 / 1,0626 /
+   6,8453 tegen Mecway 0,9824 / 1,0604 / 4,6178 / 7,3043. Een uitkragende balk met
+   alleen een dwarskracht (kipknik) is wel gelijk (127,9955 / 328,33 / 533,77), en
+   met of zonder orientatie maakt niet uit. Vermoedelijk een andere geometrische
+   stijfheid voor de momenten in knopen waar staven onder een hoek samenkomen
+   (semitangentiele of axiale momenten); welke dichter bij de werkelijkheid ligt, is
+   NIET nagegaan.
+
 ## Vertaling die anders werkt dan Mecway
 
 8\. **Dubbele randvoorwaarden** (bevestigd, deels afgevangen). Mecway reduceert
