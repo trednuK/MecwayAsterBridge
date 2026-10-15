@@ -1987,7 +1987,7 @@ def _coque_ddl(info, label):
     1e-5) en MUMPS vindt dan nulpivots: <EXCEPTION> <FACTOR_11> op DRZ
     (Code-Aster 17.4, NPREC=8; plaatstrook met een lijmnaad in het vlak en
     een rib met de rand op een plaat, TestFiles/Verificatie/
-    tests_verlijmd.py; met NPREC=-1 dezelfde oplossing als zonder de
+    tests_lineair_statisch.py LS-07; met NPREC=-1 dezelfde oplossing als zonder de
     drilling-koppeling, ook met COEF_RIGI_DRZ=1e-3 nog FACTOR_11).
     Buiging en dwarskracht gaan via de verplaatsingen en de twee rotaties
     in het mastervlak. Ligt de master in een vlak loodrecht op een globale
