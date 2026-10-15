@@ -478,7 +478,7 @@ verified**, or **deviation** (deliberately different from Mecway).
 |---|---|---|
 | Initial acceleration | Code-Aster computes a₀ = M⁻¹F(0) | measured (Verification, DY) |
 | HHT, first step | Code-Aster uses F₀ = 0 in the term −αF₀ | measured: DY-01a peak −0.44 % (Verification, DY) |
-| Imposed motion explicit | converted to the acceleration imposed by the scheme (`FORMULATION='ACCELERATION'`) | verified: DY-03b exact; constraint equation with constant ≠ 0: KNOWN_BUGS 41 |
+| Imposed motion explicit | converted to the acceleration imposed by the scheme (`FORMULATION='ACCELERATION'`) | verified: DY-03b exact; frictionless (`FACE_IMPO` DY-20a, `LIAISON_OBLIQUE` DY-20c) and constraint equation with constant ≠ 0 (DY-20b, C in the first solver step) converted too; TCHAMWA with a variable step: KNOWN_BUGS 41 |
 | Mass | implicit consistent, explicit lumped (`MASS_DIAG='OUI'`) | DY-02, DY-03 |
 | Critical step | estimate smallest edge / c; Code-Aster checks itself | measured (§3.5, R-DT) |
 | Mode superposition (D30) | Rayleigh as modal ξ_i = α/(2ω_i) + β·ω_i/2; no prestress from the loads; no static correction (default); a load without a table = step load from t = 0 | verified against headless Mecway and analytically: MD-01..07 ([Mode_superposition.md](Mode_superposition.md)) |

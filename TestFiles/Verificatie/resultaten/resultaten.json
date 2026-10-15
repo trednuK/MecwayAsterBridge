@@ -7,7 +7,7 @@
   "series": null,
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 4.8,
+  "seconds": 6.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -70,7 +70,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.1,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 4.5,
+  "seconds": 5.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -132,7 +132,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 4.9,
+  "seconds": 5.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -194,7 +194,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.025,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 5.6,
+  "seconds": 8.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -256,7 +256,7 @@
   "series": null,
   "h": null,
   "note": "20 balkelementen, vrije trilling rond de statische stand.",
-  "seconds": 6.6,
+  "seconds": 8.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -316,7 +316,7 @@
   "series": null,
   "h": null,
   "note": "100 x 1 x 1 hex8, DIFF_CENT, dt = 0,5 h/c; PETIT.",
-  "seconds": 9.9,
+  "seconds": 16.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -420,7 +420,7 @@
   "series": null,
   "h": null,
   "note": "Opgelegde snelheid als versnelling (FORMULATION='ACCELERATION'); PETIT.",
-  "seconds": 10.3,
+  "seconds": 16.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -510,7 +510,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde staaf als DY-03a; PETIT.",
-  "seconds": 11.5,
+  "seconds": 17.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -28831,5 +28831,191 @@
   "general": {
    "configuration": "Q"
   }
+ },
+ "DY-20a": {
+  "id": "DY-20a",
+  "group": "Dynamica",
+  "title": "Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO)",
+  "analysis": "dyna_expl_3d",
+  "series": null,
+  "h": null,
+  "note": "Als DY-03b, de beweging als frictionless met normaalverplaatsing -v t op het eindvlak (FACE_IMPO DNOR, omgezet naar een versnelling).",
+  "seconds": 14.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "spanning midden",
+    "fem": 10158245.894736841,
+    "ref": 10150431.025330896,
+    "rel": 0.0007699051780602592,
+    "dev": 7814.869405945763,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.0032,
+    "tol_abs": null,
+    "source": "sigma = rho c v (Graff par. 2.1); gemiddelde 0,75..1,25 L/c; verwacht (1D-keten) +0.077%; tol = 1,5 x verwacht + 0.2%",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactie na reflectie",
+    "fem": 2029.1900361159753,
+    "ref": 2030.0862050661792,
+    "rel": -0.00044144379089295195,
+    "dev": -0.8961689502039007,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.0026000000000000003,
+    "tol_abs": null,
+    "source": "2 rho c v A tussen L/c en 3L/c; verwacht (1D-keten) -0.034%; tol = 1,5 x verwacht + 0.2%",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "tipverplaatsing eind",
+    "fem": 0.0001500000071246177,
+    "ref": 0.00015,
+    "rel": 4.7497451392992946e-08,
+    "dev": 7.124617708948941e-12,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "opgelegd: u = v t; verwacht (1D-keten) +0.000%; tol = 1,5 x verwacht + 0.01%",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "tipsnelheid",
+    "fem": 0.25,
+    "ref": 0.25,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "m/s",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "opgelegd; verwacht (1D-keten) +0.000%; tol = 1,5 x verwacht + 0.01%",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "verloop t.o.v. 1D-keten",
+    "fem": 4.6547212002967184e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 4.6547212002967184e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-05,
+    "source": "max |u_midden,FEM - u_midden,keten| / max u (bar_chain)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 404,
+  "n_elem": 100,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "DY-20b": {
+  "id": "DY-20b",
+  "group": "Dynamica",
+  "title": "Staaf, constraint equation ux = C, expliciet",
+  "analysis": "dyna_expl_3d",
+  "series": null,
+  "h": null,
+  "note": "LIAISON_DDL met COEF_IMPO als functie (AFFE_CHAR_MECA_F): C in de eerste rekenstap, daarna constant.",
+  "seconds": 21.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "tipverplaatsing eind",
+    "fem": 9.999999747378752e-06,
+    "ref": 1e-05,
+    "rel": -2.5262124918247905e-08,
+    "dev": -2.526212491824791e-13,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "constraint equation: u = C",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "tipverplaatsing vanaf de eerste uitvoertijd",
+    "fem": 2.5262124918247905e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 2.5262124918247905e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "max |u_tip - C| / C: C bereikt in de eerste rekenstap",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 404,
+  "n_elem": 100,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "DY-20c": {
+  "id": "DY-20c",
+  "group": "Dynamica",
+  "title": "Plaat, frictionless schaalvlak met normaalverplaatsing, expliciet (LIAISON_OBLIQUE)",
+  "analysis": "dyna_expl_3d",
+  "series": null,
+  "h": null,
+  "note": "Vlak schaalvlak: LIAISON_OBLIQUE DX = -v t, omgezet naar een versnelling; de plaat beweegt star.",
+  "seconds": 9.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "normaalverplaatsing eind (|uz| gemiddeld)",
+    "fem": 0.0001500000071246177,
+    "ref": 0.00015,
+    "rel": 4.7497451392992946e-08,
+    "dev": 7.124617708948941e-12,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "opgelegd: |u| = v t",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "normaalsnelheid (|vz| gemiddeld, laatste uitvoertijd)",
+    "fem": 0.25,
+    "ref": 0.25,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "m/s",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "opgelegd",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 15,
+  "n_elem": 8,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
  }
 }

@@ -73,7 +73,7 @@ ignored with only an INFO, as Mecway itself does.
 | Velocity | Yes | Dynamics. |
 | Symmetry | Yes | Faces of solids, shell edges and beam ends. |
 | Cyclic symmetry | Partly | Only in Frequency (V30) and only solid elements; in static and thermal reported and computed as a loose sector (KB61). |
-| Constraint equation | Yes | KB27, KB41. |
+| Constraint equation | Yes | KB27. Explicit: a constant ≠ 0 becomes an imposed motion (DY-20b; Mecway itself does not allow it there). |
 | Node-surface coupling, Rigid (RBE2) | Yes | `LIAISON_SOLIDE`; large rotations: KB11. Not in thermal (reported). |
 | Node-surface coupling, Distributing (RBE3) | Yes | `LIAISON_RBE3`. Not in thermal (reported). |
 | Flexible joint on beam | No | Alternative: two coincident nodes with constraint equations on only the degrees of freedom that must be shared (NOT verified). |

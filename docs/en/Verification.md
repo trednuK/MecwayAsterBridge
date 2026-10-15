@@ -1218,6 +1218,27 @@ U documentation):
   Implicit gives a smoother wave front on the same mesh (peak −2.7% against −0.6%
   explicit) with ~12× fewer steps.
 
+### DY-20 Explicit: frictionless and constraint equation as imposed motion
+
+- **Goal**: in explicit dynamics `FORMULATION='ACCELERATION'` also makes `FACE_IMPO`,
+  `LIAISON_OBLIQUE` and `LIAISON_DDL` impose the acceleration; the bridge converts those
+  values (`_explicit_kinematics`), as in DY-03b.
+- **Models**: DY-20a = DY-03b with frictionless on the end face and normal displacement
+  −v·t (positive = into the face; `FACE_IMPO DNOR`). DY-20b = the same bar without load,
+  a constraint equation 1·ux = C (C = 1e-5 m) on each node of the end face. DY-20c =
+  flat plate 0.2 × 0.1 m, 4 × 2 quad4 (DKT), frictionless on the whole shell face with
+  normal displacement −v·t (`LIAISON_OBLIQUE DX`).
+- **Reference**: DY-20a as DY-03b; DY-20b u = C from the first solver step (the
+  constant becomes a shock, like a prescribed displacement without a time history);
+  DY-20c rigid motion |u| = v·t, |v| = 0.25 m/s.
+- **Result**: DY-20a the same numbers as DY-03b (stress +0.08%, reaction −0.04%, u and
+  v exact, 1D chain 4.7e-8). DY-20b: u = C at all output times (2.5e-8 relative); with
+  the previous version 1.8e-12 m (the constant acted as an acceleration). DY-20c: u and
+  v exact.
+- **Interpretation**: the conversion works for all imposed motions. Mecway allows a
+  non-zero constant in a constraint equation only in static analyses (manual §9.42);
+  the bridge translates it anyway, with a WARNING.
+
 ## 7. Modal (MO) and buckling (BU)
 
 - **Modal**: Mecway V30 with `maxmode` → `modal_3d`: `ASSEMBLAGE` (`RIGI_MECA`,

@@ -11,7 +11,8 @@ periodefout van het tijdschema (Hughes, "The Finite Element Method", 2000,
 par. 9.3; Hilber, Hughes & Taylor 1977). Toelichting: doc_dynamisch.md.
 """
 import math
-from verif_lib import Case, Check, Model, linemesh, hexmesh, box
+from verif_lib import Case, Check, Model, linemesh, hexmesh, quadmesh, box, \
+    rect
 
 GROUP = "Dynamica"
 
@@ -595,6 +596,91 @@ DY03C = _analytic_checks([
 ]
 
 
+# ==========================================
+# DY-20 Expliciet: andere opgelegde bewegingen omgezet naar versnellingen
+# (bridge_to_aster._explicit_kinematics)
+# ==========================================
+UC20 = 1.0e-5                       # constante van de constraint equation [m]
+
+
+def build_dy20_frictionless():
+    """DY-03b met frictionless (FACE_IMPO DNOR) op het eindvlak in plaats
+    van een opgelegde snelheid: normaalverplaatsing -V3 t (positief = het
+    vlak in, manual v33 par. 9.2), dus dezelfde beweging u = V3 t."""
+    def build():
+        m = build_dy03("velocity", TEND3, DTO3)()
+        m.items = [i for i in m.items if "<velocity" not in i]
+        m.add('<frictionless selection="Eindvlak">'
+              '<displacement time="0 s">0 m</displacement>'
+              '<displacement time="%r s">%r m</displacement>'
+              '</frictionless>' % (TEND3, -V3 * TEND3))
+        return m
+    return build
+
+
+def build_dy20_constraint():
+    """DY-03-staaf zonder last; de vier knopen van het eindvlak elk met een
+    constraint equation 1 ux = UC20 (manual v33 par. 9.42)."""
+    def build():
+        m = build_dy03("velocity", TEND3, DTO3)()
+        m.items = [i for i in m.items if "<velocity" not in i]
+        tip = [i + 1 for i, p in enumerate(m.nodes)
+               if abs(p[0] - L3) < 1e-12]
+        m.node_selection("Tipknopen", tip)
+        for n in tip:
+            m.add('<constraintequation><term coefficient="1 1/m" nid="%d" '
+                  'dof="ux" /><constant>%r</constant></constraintequation>'
+                  % (n, UC20))
+        return m
+    return build
+
+
+def build_dy20_shell():
+    """Vlakke plaat (quad4, DKT) met frictionless op het hele schaalvlak
+    (LIAISON_OBLIQUE DX, bridge_bcs.FrictionlessBC) en normaalverplaatsing
+    -V3 t: de plaat beweegt als star lichaam langs z."""
+    def build():
+        m = Model("D31", timesteps=_timesteps(TEND3, DTO3))
+        m.elset("Plaat", "Staal")
+        g = quadmesh(m, "Plaat", 4, 2, rect(0, 0.2, 0, 0.1))
+        m.mat("Staal", '<geometric type="Plate" thickness="5 mm" />',
+              '<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+              'poissonratio="0.3" />',
+              u'<density type="Simple" density="7850 kg/m³" />')
+        m.face_selection("Vlak", g["faces"])
+        m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+        m.add('<frictionless selection="Vlak">'
+              '<displacement time="0 s">0 m</displacement>'
+              '<displacement time="%r s">%r m</displacement>'
+              '</frictionless>' % (TEND3, -V3 * TEND3))
+        return m
+    return build
+
+
+def _const_dev(hist, ref, t_min):
+    """Grootste |u - ref| / |ref| op de uitvoertijden vanaf t_min."""
+    return max(abs(u - ref) for t, u in hist if t >= t_min) / abs(ref)
+
+
+DY20B = [
+    Check("tipverplaatsing eind", lambda r: _tip3(r)[-1][1], ref=UC20,
+          tol=1e-6, unit="m", source="constraint equation: u = C"),
+    Check("tipverplaatsing vanaf de eerste uitvoertijd",
+          lambda r: _const_dev(_tip3(r), UC20, DTO3), ref=0.0,
+          tol_abs=1e-6, unit="-",
+          source="max |u_tip - C| / C: C bereikt in de eerste rekenstap"),
+]
+
+DY20C = [
+    Check("normaalverplaatsing eind (|uz| gemiddeld)",
+          lambda r: abs(r.mean("displz", "Alle")), ref=V3 * TEND3,
+          tol=1e-6, unit="m", source="opgelegd: |u| = v t"),
+    Check("normaalsnelheid (|vz| gemiddeld, laatste uitvoertijd)",
+          lambda r: abs(r.mean("velz", "Alle")), ref=V3, tol=1e-4,
+          unit="m/s", source="opgelegd"),
+]
+
+
 TESTS = [
     _dy01("DY-01a", "Massa-veer, staplast, HHT alpha=-0,1 (dt=T/20)",
           T1 / 20.0, "HHT", -0.1),
@@ -617,6 +703,24 @@ TESTS = [
          settings={"deformation": "PETIT"}, timeout=900,
          note="Opgelegde snelheid als versnelling "
               "(FORMULATION='ACCELERATION'); PETIT."),
+    Case("DY-20a", GROUP, "Staafgolf, frictionless met normaal"
+         "verplaatsing, expliciet (FACE_IMPO)", "dyna_expl_3d",
+         build_dy20_frictionless(), DY03B,
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="Als DY-03b, de beweging als frictionless met "
+              "normaalverplaatsing -v t op het eindvlak (FACE_IMPO DNOR, "
+              "omgezet naar een versnelling)."),
+    Case("DY-20b", GROUP, "Staaf, constraint equation ux = C, expliciet",
+         "dyna_expl_3d", build_dy20_constraint(), DY20B,
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="LIAISON_DDL met COEF_IMPO als functie (AFFE_CHAR_MECA_F): "
+              "C in de eerste rekenstap, daarna constant."),
+    Case("DY-20c", GROUP, "Plaat, frictionless schaalvlak met "
+         "normaalverplaatsing, expliciet (LIAISON_OBLIQUE)", "dyna_expl_3d",
+         build_dy20_shell(), DY20C,
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="Vlak schaalvlak: LIAISON_OBLIQUE DX = -v t, omgezet naar "
+              "een versnelling; de plaat beweegt star."),
     Case("DY-03c", GROUP, "Staafgolf, staplast, impliciet (HHT, dt=T/77)",
          "dyna_impl_3d", build_dy03("force", TENDI3, DTI3), DY03C,
          settings={"deformation": "PETIT"}, timeout=900,

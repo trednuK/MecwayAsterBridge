@@ -477,7 +477,7 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 |---|---|---|
 | Beginversnelling | Code-Aster rekent a₀ = M⁻¹F(0) | gemeten (Verificatie, DY) |
 | HHT, eerste stap | Code-Aster gebruikt F₀ = 0 in de term −αF₀ | gemeten: DY-01a piek −0,44 % (Verificatie, DY) |
-| Opgelegde beweging expliciet | omgezet naar de versnelling die het schema oplegt (`FORMULATION='ACCELERATION'`) | geverifieerd: DY-03b exact; constraint equation met constante ≠ 0: KNOWN_BUGS 41 |
+| Opgelegde beweging expliciet | omgezet naar de versnelling die het schema oplegt (`FORMULATION='ACCELERATION'`) | geverifieerd: DY-03b exact; frictionless (`FACE_IMPO` DY-20a, `LIAISON_OBLIQUE` DY-20c) en constraint equation met constante ≠ 0 (DY-20b, C in de eerste rekenstap) ook omgezet; TCHAMWA met een variabele stap: KNOWN_BUGS 41 |
 | Massa | impliciet consistent, expliciet diagonaal (`MASS_DIAG='OUI'`) | DY-02, DY-03 |
 | Kritieke stap | schatting kleinste ribbe / c; Code-Aster controleert zelf | gemeten (§3.5, R-DT) |
 | Respons op modale basis (D30) | Rayleigh als modale ξ_i = α/(2ω_i) + β·ω_i/2; geen voorspanning door de belastingen; geen statische correctie (standaard); last zonder tabel = staplast vanaf t = 0 | geverifieerd tegen Mecway headless en analytisch: MD-01..07 ([Respons_op_modale_basis.md](Respons_op_modale_basis.md)) |

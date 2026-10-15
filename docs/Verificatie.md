@@ -1219,6 +1219,28 @@ U-documentatie gevonden):
   Impliciet geeft met hetzelfde mesh een gladder golffront (piek −2,7% tegen −0,6%
   expliciet) met ~12× minder stappen.
 
+### DY-20 Expliciet: frictionless en constraint equation als opgelegde beweging
+
+- **Doel**: in expliciete dynamica legt `FORMULATION='ACCELERATION'` ook bij
+  `FACE_IMPO`, `LIAISON_OBLIQUE` en `LIAISON_DDL` de versnelling op; de bridge zet die
+  waarden om (`_explicit_kinematics`), zoals bij DY-03b.
+- **Modellen**: DY-20a = DY-03b met frictionless op het eindvlak en
+  normaalverplaatsing −v·t (positief = het vlak in; `FACE_IMPO DNOR`). DY-20b = dezelfde
+  staaf zonder last, op elke knoop van het eindvlak een constraint equation
+  1·ux = C (C = 1e-5 m). DY-20c = vlakke plaat 0,2 × 0,1 m, 4 × 2 quad4 (DKT),
+  frictionless op het hele schaalvlak met normaalverplaatsing −v·t
+  (`LIAISON_OBLIQUE DX`).
+- **Referentie**: DY-20a als DY-03b; DY-20b u = C vanaf de eerste rekenstap (de
+  constante wordt een stoot, zoals een opgelegde verplaatsing zonder tijdshistorie);
+  DY-20c starre beweging |u| = v·t, |v| = 0,25 m/s.
+- **Resultaat**: DY-20a dezelfde getallen als DY-03b (spanning +0,08%, reactie
+  −0,04%, u en v exact, 1D-keten 4,7e-8). DY-20b: u = C op alle uitvoertijden (2,5e-8
+  relatief); met de vorige versie 1,8e-12 m (de constante werkte als versnelling).
+  DY-20c: u en v exact.
+- **Interpretatie**: de omzetting werkt voor alle opgelegde bewegingen. Mecway staat een
+  constante ≠ 0 in een constraint equation alleen bij statisch toe (manual §9.42); de
+  bridge vertaalt haar toch, met een WARNING.
+
 ## 7. Modaal (MO) en knik (BU)
 
 - **Modaal**: Mecway V30 met `maxmode` → `modal_3d`: `ASSEMBLAGE` (`RIGI_MECA`,

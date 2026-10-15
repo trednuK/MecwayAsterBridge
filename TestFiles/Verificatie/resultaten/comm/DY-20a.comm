@@ -1,0 +1,428 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# Code_Aster Command File - Gegenereerd via MecwayAsterBridge
+# Template voor DYNA_NON_LINE (niet-lineaire dynamica, impliciet HHT/NEWMARK
+# of expliciet DIFF_CENT/TCHAMWA; keuze "schema" in CONFIG_BRIDGE).
+# Invulling via Python str.format() vanuit bridge_to_aster.py
+# (_build_nonlin_static; zelfde builder en placeholders als STAT_NON_LINE).
+#
+# Placeholders (zie AsterTemplate_StatNonLine.comm voor de gedeelde):
+#   listinst_block    -> outlist (uitvoertijden uit Mecway <timesteps>),
+#                        listinst (impliciet: DEFI_LIST_INST met automatisch
+#                        knippen; expliciet: per uitvoerinterval een gelijke
+#                        stap onder de geschatte CFL-grens, zodat elke
+#                        uitvoertijd een rekenstap is)
+#                        en vite0 (beginsnelheid, CREA_CHAMP) als die er is
+#   statnonline_block -> DEFI_CONTACT (als er contact2 is) en de
+#                        DYNA_NON_LINE-aanroep met SCHEMA_TEMPS, ETAT_INIT
+#                        en ARCHIVAGE op de uitvoertijden, of de bezwijklus
+#                        (bridge_failure.build_solve_block)
+#   postreleve_block  -> route 'tabel': POST_RELEVE_T over alle
+#                        gearchiveerde tijdstippen (TOUT_ORDRE), inclusief
+#                        snelheid (VITE); route 'liml': aster_results_export
+#
+# LETOP accolades: een letterlijke accolade schrijf je als { of }.
+
+# Taal van de meldingen van de jobscripts (aster_*.py)
+import os as _bridge_os
+_bridge_os.environ['BRIDGE_LANGUAGE'] = 'nl'
+DEBUT(LANG='EN')
+
+# =====================================================
+# 1. MESH INLEZEN
+# FORMAT='ASTER': mesh rechtstreeks uit de .liml (bridge_mesh.py)
+# UNITE=20 komt overeen met 'F mail ... D 20' in study.export
+# =====================================================
+mesh = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+
+# =====================================================
+# 2. STANDAARD GROEPEN AANMAKEN (alle elementen / knopen)
+# =====================================================
+mesh = DEFI_GROUP(
+    reuse=mesh,
+    MAILLAGE=mesh,
+    CREA_GROUP_MA=_F(
+        NOM='all_elems',
+        TOUT='OUI',
+    ),
+    CREA_GROUP_NO=_F(
+        NOM='all_nodes',
+        GROUP_MA='all_elems',
+    ),
+)
+
+# =====================================================
+# 2b. KNOOPGROEPEN VOOR RANDVOORWAARDEN (en mesh-aanpassingen)
+# Gegenereerd door _build_defigroup_block(), zelfde als MECA_STATIQUE.
+# =====================================================
+#-- not used in this analysis --
+
+mesh = MODI_MAILLAGE(
+    reuse=mesh,
+    MAILLAGE=mesh,
+    ORIE_PEAU=_F(GROUP_MA_PEAU=('Eindvlak',)),
+)
+
+
+# =====================================================
+# 3. MODEL DEFINITIE
+# Per elset wordt de bijbehorende MODELISATION gekozen:
+#   1D (line2)              -> POU_D_E   (Euler-balk; alleen SEG2)
+#   2D lineair (tri3/quad4)       -> DKT
+#   2D kwadratisch (tri6/quad8)   -> COQUE_3D (na CREA_MAILLAGE MODI_MAILLE)
+#   veren (1D met veer-materiaal) -> DIS_T
+#   vlakken met druk (op volume)  -> 3D (randelementen)
+#   losse knopen (POI1)           -> DIS_T / DIS_TR (zie bridge_mesh.py)
+#   3D (hex/tet/wedge/...)  -> 3D
+# Zonder elsets, drukvlakken en POI1-knopen wordt TOUT='OUI',
+# MODELISATION='3D' gebruikt.
+# =====================================================
+model = AFFE_MODELE(
+    MAILLAGE=mesh,
+    AFFE=(
+        _F(GROUP_MA='Staaf', PHENOMENE='MECANIQUE', MODELISATION='3D'),
+        _F(GROUP_MA='Eindvlak', PHENOMENE='MECANIQUE', MODELISATION='3D'),
+    ),
+)
+
+
+# =====================================================
+# 3b. SECTIE-EIGENSCHAPPEN (balken, schalen, veren)
+# =====================================================
+#-- not used in this analysis --
+
+
+# =====================================================
+# 3c. PLASTISCHE HARDINGSCURVES  (DEFI_FONCTION)
+# Per materiaal met <plastic>-blok in Mecway wordt een tractiefunctie
+# gedefinieerd. Code-Aster TRACTION / VMIS_ISOT_TRAC (U4.43.01 par. 5.1.1):
+#   - NOM_PARA='EPSI' : TOTALE rek
+#   - NOM_RESU='SIGM' : spanning
+#   - De ordinaat van het eerste punt is de elastische grens; een punt
+#     met abscis nul is NIET toegestaan. Het eerste punt is dus
+#     (sigma_y / E, sigma_y).
+#
+# De omrekening vanuit Mecway gebeurt in bridge_to_aster.py
+# (_to_aster_traction_curve), gestuurd door 'plastic_strain_definition'
+# in CONFIG_BRIDGE: 'plastic' -> EPSI = eps_p + sigma/E,
+# 'total' -> beginpunt (0, 0) vervalt, 'auto' -> afgeleid uit het
+# eerste punt. Ongeldige curves stoppen de generatie met een ERROR in
+# bridge_log.txt.
+# =====================================================
+#-- geen plastische curves in dit model --
+
+
+# =====================================================
+# 4. MATERIAAL-DEFINITIE
+# DEFI_MATERIAU met ELAS (altijd) en TRACTION (alleen bij plastische
+# materialen). RHO wordt altijd opgenomen voor PESANTEUR-compatibiliteit.
+# =====================================================
+# materiaal 'Staal'
+MAT_1 = DEFI_MATERIAU(ELAS=_F(E=210000000000.0, NU=0.0, RHO=7850.0),)
+
+
+# =====================================================
+# 5. MATERIAAL-TOEWIJZING
+# =====================================================
+fieldmat = AFFE_MATERIAU(
+    MAILLAGE=mesh,
+    MODELE=model,
+    AFFE=(
+        _F(GROUP_MA='Staaf', MATER=MAT_1),
+    ),
+)
+
+
+# =====================================================
+# 6a. TIJDSAFHANKELIJKE BELASTINGS-FUNCTIES  (DEFI_FONCTION)
+# Per <force>-component met time-attribuut wordt een functie van INST
+# gedefinieerd. Extrapolatie buiten het gedefinieerde tijdsdomein is
+# constant aan beide zijden.
+# =====================================================
+FN_Eindvlak_DNOR = DEFI_FONCTION(
+    NOM_PARA='INST',
+    VALE=(0.0, 599999.9999999999,
+          8.33333333333e-07, 0.0),
+    PROL_DROITE='CONSTANT',
+    PROL_GAUCHE='CONSTANT',
+)
+
+
+# =====================================================
+# 6b. TIJDSDISCRETISATIE EN BEGINSNELHEID
+# outlist: uitvoertijden (Mecway <timesteps>); listinst: rekenstappen
+# (zie de kop van dit bestand); vite0: beginsnelheid.
+# =====================================================
+outlist = DEFI_LIST_REEL(
+    VALE=(5e-06, 1e-05, 1.5e-05, 2e-05, 2.5e-05, 3e-05, 3.5e-05, 4e-05, 4.5e-05, 5e-05, 5.5e-05, 6e-05, 6.5e-05, 7e-05, 7.5e-05, 8e-05, 8.5e-05, 9e-05, 9.5e-05, 0.0001, 0.000105, 0.00011, 0.000115, 0.00012, 0.000125, 0.00013, 0.000135, 0.00014, 0.000145, 0.00015, 0.000155, 0.00016, 0.000165, 0.00017, 0.000175, 0.00018, 0.000185, 0.00019, 0.000195, 0.0002, 0.000205, 0.00021, 0.000215, 0.00022, 0.000225, 0.00023, 0.000235, 0.00024, 0.000245, 0.00025, 0.000255, 0.00026, 0.000265, 0.00027, 0.000275, 0.00028, 0.000285, 0.00029, 0.000295, 0.0003, 0.000305, 0.00031, 0.000315, 0.00032, 0.000325, 0.00033, 0.000335, 0.00034, 0.000345, 0.00035, 0.000355, 0.00036, 0.000365, 0.00037, 0.000375, 0.00038, 0.000385, 0.00039, 0.000395, 0.0004, 0.000405, 0.00041, 0.000415, 0.00042, 0.000425, 0.00043, 0.000435, 0.00044, 0.000445, 0.00045, 0.000455, 0.00046, 0.000465, 0.00047, 0.000475, 0.00048, 0.000485, 0.00049, 0.000495, 0.0005, 0.000505, 0.00051, 0.000515, 0.00052, 0.000525, 0.00053, 0.000535, 0.00054, 0.000545, 0.00055, 0.000555, 0.00056, 0.000565, 0.00057, 0.000575, 0.00058, 0.000585, 0.00059, 0.000595, 0.0006),
+)
+
+listinst = DEFI_LIST_REEL(
+    DEBUT=0.0,
+    INTERVALLE=(
+        _F(JUSQU_A=5e-06, NOMBRE=6),
+        _F(JUSQU_A=1e-05, NOMBRE=6),
+        _F(JUSQU_A=1.5e-05, NOMBRE=6),
+        _F(JUSQU_A=2e-05, NOMBRE=6),
+        _F(JUSQU_A=2.5e-05, NOMBRE=6),
+        _F(JUSQU_A=3e-05, NOMBRE=6),
+        _F(JUSQU_A=3.5e-05, NOMBRE=6),
+        _F(JUSQU_A=4e-05, NOMBRE=6),
+        _F(JUSQU_A=4.5e-05, NOMBRE=6),
+        _F(JUSQU_A=5e-05, NOMBRE=6),
+        _F(JUSQU_A=5.5e-05, NOMBRE=6),
+        _F(JUSQU_A=6e-05, NOMBRE=6),
+        _F(JUSQU_A=6.5e-05, NOMBRE=6),
+        _F(JUSQU_A=7e-05, NOMBRE=6),
+        _F(JUSQU_A=7.5e-05, NOMBRE=6),
+        _F(JUSQU_A=8e-05, NOMBRE=6),
+        _F(JUSQU_A=8.5e-05, NOMBRE=6),
+        _F(JUSQU_A=9e-05, NOMBRE=6),
+        _F(JUSQU_A=9.5e-05, NOMBRE=6),
+        _F(JUSQU_A=0.0001, NOMBRE=6),
+        _F(JUSQU_A=0.000105, NOMBRE=6),
+        _F(JUSQU_A=0.00011, NOMBRE=6),
+        _F(JUSQU_A=0.000115, NOMBRE=6),
+        _F(JUSQU_A=0.00012, NOMBRE=6),
+        _F(JUSQU_A=0.000125, NOMBRE=6),
+        _F(JUSQU_A=0.00013, NOMBRE=6),
+        _F(JUSQU_A=0.000135, NOMBRE=6),
+        _F(JUSQU_A=0.00014, NOMBRE=6),
+        _F(JUSQU_A=0.000145, NOMBRE=6),
+        _F(JUSQU_A=0.00015, NOMBRE=6),
+        _F(JUSQU_A=0.000155, NOMBRE=6),
+        _F(JUSQU_A=0.00016, NOMBRE=6),
+        _F(JUSQU_A=0.000165, NOMBRE=6),
+        _F(JUSQU_A=0.00017, NOMBRE=6),
+        _F(JUSQU_A=0.000175, NOMBRE=6),
+        _F(JUSQU_A=0.00018, NOMBRE=6),
+        _F(JUSQU_A=0.000185, NOMBRE=6),
+        _F(JUSQU_A=0.00019, NOMBRE=6),
+        _F(JUSQU_A=0.000195, NOMBRE=6),
+        _F(JUSQU_A=0.0002, NOMBRE=6),
+        _F(JUSQU_A=0.000205, NOMBRE=6),
+        _F(JUSQU_A=0.00021, NOMBRE=6),
+        _F(JUSQU_A=0.000215, NOMBRE=6),
+        _F(JUSQU_A=0.00022, NOMBRE=6),
+        _F(JUSQU_A=0.000225, NOMBRE=6),
+        _F(JUSQU_A=0.00023, NOMBRE=6),
+        _F(JUSQU_A=0.000235, NOMBRE=6),
+        _F(JUSQU_A=0.00024, NOMBRE=6),
+        _F(JUSQU_A=0.000245, NOMBRE=6),
+        _F(JUSQU_A=0.00025, NOMBRE=6),
+        _F(JUSQU_A=0.000255, NOMBRE=6),
+        _F(JUSQU_A=0.00026, NOMBRE=6),
+        _F(JUSQU_A=0.000265, NOMBRE=6),
+        _F(JUSQU_A=0.00027, NOMBRE=6),
+        _F(JUSQU_A=0.000275, NOMBRE=6),
+        _F(JUSQU_A=0.00028, NOMBRE=6),
+        _F(JUSQU_A=0.000285, NOMBRE=6),
+        _F(JUSQU_A=0.00029, NOMBRE=6),
+        _F(JUSQU_A=0.000295, NOMBRE=6),
+        _F(JUSQU_A=0.0003, NOMBRE=6),
+        _F(JUSQU_A=0.000305, NOMBRE=6),
+        _F(JUSQU_A=0.00031, NOMBRE=6),
+        _F(JUSQU_A=0.000315, NOMBRE=6),
+        _F(JUSQU_A=0.00032, NOMBRE=6),
+        _F(JUSQU_A=0.000325, NOMBRE=6),
+        _F(JUSQU_A=0.00033, NOMBRE=6),
+        _F(JUSQU_A=0.000335, NOMBRE=6),
+        _F(JUSQU_A=0.00034, NOMBRE=6),
+        _F(JUSQU_A=0.000345, NOMBRE=6),
+        _F(JUSQU_A=0.00035, NOMBRE=6),
+        _F(JUSQU_A=0.000355, NOMBRE=6),
+        _F(JUSQU_A=0.00036, NOMBRE=6),
+        _F(JUSQU_A=0.000365, NOMBRE=6),
+        _F(JUSQU_A=0.00037, NOMBRE=6),
+        _F(JUSQU_A=0.000375, NOMBRE=6),
+        _F(JUSQU_A=0.00038, NOMBRE=6),
+        _F(JUSQU_A=0.000385, NOMBRE=6),
+        _F(JUSQU_A=0.00039, NOMBRE=6),
+        _F(JUSQU_A=0.000395, NOMBRE=6),
+        _F(JUSQU_A=0.0004, NOMBRE=6),
+        _F(JUSQU_A=0.000405, NOMBRE=6),
+        _F(JUSQU_A=0.00041, NOMBRE=6),
+        _F(JUSQU_A=0.000415, NOMBRE=6),
+        _F(JUSQU_A=0.00042, NOMBRE=6),
+        _F(JUSQU_A=0.000425, NOMBRE=6),
+        _F(JUSQU_A=0.00043, NOMBRE=6),
+        _F(JUSQU_A=0.000435, NOMBRE=6),
+        _F(JUSQU_A=0.00044, NOMBRE=6),
+        _F(JUSQU_A=0.000445, NOMBRE=6),
+        _F(JUSQU_A=0.00045, NOMBRE=6),
+        _F(JUSQU_A=0.000455, NOMBRE=6),
+        _F(JUSQU_A=0.00046, NOMBRE=6),
+        _F(JUSQU_A=0.000465, NOMBRE=6),
+        _F(JUSQU_A=0.00047, NOMBRE=6),
+        _F(JUSQU_A=0.000475, NOMBRE=6),
+        _F(JUSQU_A=0.00048, NOMBRE=6),
+        _F(JUSQU_A=0.000485, NOMBRE=6),
+        _F(JUSQU_A=0.00049, NOMBRE=6),
+        _F(JUSQU_A=0.000495, NOMBRE=6),
+        _F(JUSQU_A=0.0005, NOMBRE=6),
+        _F(JUSQU_A=0.000505, NOMBRE=6),
+        _F(JUSQU_A=0.00051, NOMBRE=6),
+        _F(JUSQU_A=0.000515, NOMBRE=6),
+        _F(JUSQU_A=0.00052, NOMBRE=6),
+        _F(JUSQU_A=0.000525, NOMBRE=6),
+        _F(JUSQU_A=0.00053, NOMBRE=6),
+        _F(JUSQU_A=0.000535, NOMBRE=6),
+        _F(JUSQU_A=0.00054, NOMBRE=6),
+        _F(JUSQU_A=0.000545, NOMBRE=6),
+        _F(JUSQU_A=0.00055, NOMBRE=6),
+        _F(JUSQU_A=0.000555, NOMBRE=6),
+        _F(JUSQU_A=0.00056, NOMBRE=6),
+        _F(JUSQU_A=0.000565, NOMBRE=6),
+        _F(JUSQU_A=0.00057, NOMBRE=6),
+        _F(JUSQU_A=0.000575, NOMBRE=6),
+        _F(JUSQU_A=0.00058, NOMBRE=6),
+        _F(JUSQU_A=0.000585, NOMBRE=6),
+        _F(JUSQU_A=0.00059, NOMBRE=6),
+        _F(JUSQU_A=0.000595, NOMBRE=6),
+        _F(JUSQU_A=0.0006, NOMBRE=6),
+    ),
+)
+
+
+
+# =====================================================
+# 7. RANDVOORWAARDEN EN BELASTINGEN  (AFFE_CHAR_MECA / _F)
+# load_1: randvoorwaarden (DDL_IMPO, LIAISON_*) en couplings; daarna een
+# last per belasting (FORCE_*, PRES_REP, PESANTEUR), omdat Code-Aster
+# belastingen binnen een last overschrijft i.p.v. optelt. Componenten met
+# een tijdshistorie verwijzen naar de DEFI_FONCTION's uit stap 6a
+# (AFFE_CHAR_MECA_F, of FONC_MULT in EXCIT voor een moment op vlakken).
+# =====================================================
+load_1 = AFFE_CHAR_MECA(
+    MODELE=model,
+    DDL_IMPO=_F(GROUP_MA='Inklemming', DX=0.0, DY=0.0, DZ=0.0),
+)
+
+load_2 = AFFE_CHAR_MECA_F(
+    MODELE=model,
+    FACE_IMPO=_F(GROUP_MA='Eindvlak', DNOR=FN_Eindvlak_DNOR, SANS_GROUP_MA=('Inklemming',)),
+)
+
+
+# =====================================================
+# 8. SOLVER: NIET-LINEAIRE DYNAMICA  (DYNA_NON_LINE)
+# Impliciet (HHT/NEWMARK): Newton-Raphson per tijdstap; expliciet
+# (DIFF_CENT/TCHAMWA): diagonale massa, geen iteraties, STOP_CFL.
+# Contact (DEFI_CONTACT, CONTINUE) en de beginsnelheid (ETAT_INIT VITE)
+# staan in dit blok als het model ze heeft.
+#
+#   CARA_ELEM     - alleen als stap 3b een AFFE_CARA_ELEM bevat.
+#   EXCIT         - alle lasten uit stap 7 (load_1, load_2, ...).
+#   COMPORTEMENT  - per elset (en POI1-groep): RELATION ('ELAS',
+#                   'VMIS_ISOT_TRAC', 'VMIS_ISOT_LINE', 'VMIS_CINE_LINE',
+#                   'CABLE' of voor gaps 'DIS_CHOC') en DEFORMATION uit
+#                   CONFIG_BRIDGE ("deformation", standaard 'GROT_GDEP';
+#                   per elset de vorm die Code-Aster accepteert,
+#                   bridge_to_aster._deformation_for). Zonder elsets:
+#                   TOUT='OUI', 'ELAS'.
+#   INCREMENT     - LIST_INST koppelt aan listinst (stap 6b).
+#   SOLVEUR       - MUMPS met NPREC uit CONFIG_BRIDGE ("solver_nprec").
+#   NEWTON        - REAC_ITER uit CONFIG_BRIDGE ("newton_reac_iter",
+#                   standaard 1 = tangente matrix elke iteratie).
+#   CONVERGENCE   - RESI_GLOB_RELA en ITER_GLOB_MAXI uit CONFIG_BRIDGE
+#                   ("convergence_resi_rela", "newton_max_iter").
+# =====================================================
+try:
+    res = DYNA_NON_LINE(
+        MODELE=model,
+        CHAM_MATER=fieldmat,
+        EXCIT=(
+            _F(CHARGE=load_1),
+            _F(CHARGE=load_2),
+        ),
+        COMPORTEMENT=_F(GROUP_MA='Staaf', RELATION='ELAS', DEFORMATION='PETIT'),
+        INCREMENT=_F(LIST_INST=listinst),
+        MASS_DIAG='OUI',
+        SCHEMA_TEMPS=_F(SCHEMA='DIFF_CENT', FORMULATION='ACCELERATION'),
+        ARCHIVAGE=_F(LIST_INST=outlist),
+        SOLVEUR=_F(METHODE='MUMPS', NPREC=8),
+        NEWTON=_F(REAC_ITER=1),
+        CONVERGENCE=_F(RESI_GLOB_RELA=1e-06, ITER_GLOB_MAXI=20),
+    )
+except Exception as err:
+    if not str(getattr(err, 'id_message', '')).startswith('MECANONLINE'):
+        raise
+    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])
+t_res = res.getAccessParameters()['INST'][-1]
+
+
+# =====================================================
+# 9. POST-PROCESSING VELDEN BEREKENEN  (CALC_CHAMP)
+# Zelfde velden als MECA_STATIQUE; heeft minstens een materiaal een
+# hardingscurve, dan komen er op de 3D-elsets bij:
+#   EPSP_NOEU  - plastische strain tensor
+#   VARI_NOEU  - interne variabelen (V1 = eq. plastische strain)
+# =====================================================
+res = CALC_CHAMP(
+    reuse=res,
+    RESULTAT=res,
+    FORCE=('REAC_NODA', ),
+)
+
+# Spanningen per element-knoop voor Mecway (result_route 'liml').
+res = CALC_CHAMP(
+    reuse=res,
+    RESULTAT=res,
+    GROUP_MA=('Staaf',),
+    CONTRAINTE=('SIGM_ELNO', ),
+)
+res = CALC_CHAMP(
+    reuse=res,
+    RESULTAT=res,
+    GROUP_MA=('Staaf',),
+    CRITERES=('SIEQ_ELNO', ),
+)
+
+res = CALC_CHAMP(
+    reuse=res,
+    RESULTAT=res,
+    GROUP_MA=('Staaf',),
+    CONTRAINTE=('SIGM_NOEU', ),
+    CRITERES=('SIEQ_NOEU', ),
+)
+
+
+
+# =====================================================
+# 10. RESULTAAT-EXTRACTIE
+# Alle gearchiveerde tijdstippen: route 'liml' (standaard) via
+# aster_results_export, route 'tabel' met POST_RELEVE_T TOUT_ORDRE='OUI'
+# (de tabel heeft een kolom INST).
+# =====================================================
+#-- tabellen niet nodig (result_route='liml') --
+
+
+# =====================================================
+# 11. TABELLEN WEGSCHRIJVEN NAAR .resu  (IMPR_TABLE)
+# UNITE=8 -> 'F resu ... R 8' in study.export
+# =====================================================
+# Resultaten in Mecway's eigen formaat (bridge: result_route='liml')
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+aster_results_export.export_results(
+    res, '<WORKDIR>\\DY-20a\\DY-20a_verif_results.xml', '<WORKDIR>\\DY-20a\\DY-20a.liml',
+    extra_results=dict((k, globals()[k]) for k in
+                       ('res_sup', 'res_moy', 'res_inf',
+                        'res_flux', 'res_err')
+                       if k in globals()),
+    precision='single')
+
+
+# =====================================================
+# 12. EXPORT NAAR MED-FORMAAT (ParaView / Salome), alleen met de
+# instelling "med_export" (bridge_to_aster._build_impr_resu_block;
+# UNITE=80 -> 'F rmed ... R 80' in study.export). Mecway krijgt de
+# resultaten via de .liml of de tabellen, niet via een exportbestand.
+# =====================================================
+#-- geen MED-export (instelling med_export uit) --
+
+
+FIN()

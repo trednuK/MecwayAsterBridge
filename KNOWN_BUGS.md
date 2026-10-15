@@ -247,15 +247,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    een rechte kabel singulier; met N_INIT=2000 N gaf SaggingCable 3,06797 m (Mecway
    3,0680 m). Niet ingebouwd.
 
-41\. **Expliciet: constraint equation met constante ≠ 0 en schuine waarden**
-   (vermoedelijk, `bridge_to_aster._explicit_kinematics`). In expliciete dynamica
-   (DIFF_CENT/TCHAMWA, alleen `FORMULATION='ACCELERATION'`) zet de bridge opgelegde
-   verplaatsingen, rotaties en snelheden om naar de versnelling die het schema oplegt
-   (getest). Een constraint equation met een constante ≠ 0 werkt daar nog als
-   versnelling (niet omgezet, niet gemeld); LIAISON_OBLIQUE/FACE_IMPO met een waarde
-   wordt omgezet maar is NIET met een run nagelopen, net als TCHAMWA met een
-   variabele stap.
-
 43\. **Contact: harde en zachte formulering verschillen van Mecway** (bevestigd).
    `contact_algo` = STANDARD (Lagrange, standaard) laat geen penetratie toe; Mecway
    rekent penalty. Samples/PipeClip verliest met STANDARD het contact (1,1 mm penetratie
@@ -425,6 +416,15 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    zodat Mecway bruikbaar blijft terwijl het open is. Op welke thread Mecway scripts
    draait en of Mecway tijdens die lus alles toestaat (bijv. een ander model openen,
    het script nog eens starten: de bridge weigert een tweede venster) is niet getest.
+
+41\. **Expliciet: TCHAMWA met een variabele stap niet nagelopen** (vraag,
+   `bridge_to_aster._explicit_accelerations`). In expliciete dynamica (alleen
+   `FORMULATION='ACCELERATION'`) zet de bridge opgelegde verplaatsingen, rotaties,
+   snelheden, frictionless (`FACE_IMPO`, `LIAISON_OBLIQUE`) en de constante van een
+   constraint equation om naar de versnelling die het schema oplegt (DIFF_CENT:
+   DY-03b, DY-20a-c). De TCHAMWA-reeks is afgeleid voor een vaste stap; met
+   verschillende stappen per interval (knikken die geen veelvoud van de stap zijn) is
+   ze NIET met een run nagelopen.
 
 47\. **Veren en dempers: niet tegen een Mecway-oplossing vergeleken** (vraag). De bridge
    zet k en c langs de eigen as van het element (DISCRET `REPERE='LOCAL'`; voorheen

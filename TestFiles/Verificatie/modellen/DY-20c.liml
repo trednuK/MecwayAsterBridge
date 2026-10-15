@@ -1,0 +1,62 @@
+<liml version="33">
+  <analysis type="D31" />
+  <timesteps timeperiod="0.0006 s" automatictimestepping="false" outputtimes="regular" timepointsstart="0 s" timepointsincrement="5e-06 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.05" y="0" z="0" />
+  <node nid="3" x="0.05" y="0.05" z="0" />
+  <node nid="4" x="0" y="0.05" z="0" />
+  <node nid="5" x="0.05" y="0.1" z="0" />
+  <node nid="6" x="0" y="0.1" z="0" />
+  <node nid="7" x="0.1" y="0" z="0" />
+  <node nid="8" x="0.1" y="0.05" z="0" />
+  <node nid="9" x="0.1" y="0.1" z="0" />
+  <node nid="10" x="0.15" y="0" z="0" />
+  <node nid="11" x="0.15" y="0.05" z="0" />
+  <node nid="12" x="0.15" y="0.1" z="0" />
+  <node nid="13" x="0.2" y="0" z="0" />
+  <node nid="14" x="0.2" y="0.05" z="0" />
+  <node nid="15" x="0.2" y="0.1" z="0" />
+  <elset name="Plaat" material="Staal">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="2 7 8 3" />
+    <elem eid="4" shape="quad4" nodes="3 8 9 5" />
+    <elem eid="5" shape="quad4" nodes="7 10 11 8" />
+    <elem eid="6" shape="quad4" nodes="8 11 12 9" />
+    <elem eid="7" shape="quad4" nodes="10 13 14 11" />
+    <elem eid="8" shape="quad4" nodes="11 14 15 12" />
+  </elset>
+  <frictionless selection="Vlak"><displacement time="0 s">0 m</displacement><displacement time="0.0006 s">-0.00015 m</displacement></frictionless>
+  <mat name="Staal">
+    <geometric type="Plate" thickness="5 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <faceselection name="Vlak">
+    <face eid="1" faceid="5" />
+    <face eid="2" faceid="5" />
+    <face eid="3" faceid="5" />
+    <face eid="4" faceid="5" />
+    <face eid="5" faceid="5" />
+    <face eid="6" faceid="5" />
+    <face eid="7" faceid="5" />
+    <face eid="8" faceid="5" />
+  </faceselection>
+  <nodeselection name="Alle">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="15" />
+  </nodeselection>
+</liml>

@@ -2539,6 +2539,9 @@ def _build_charges(model_data, func_names=None):
         constraints.setdefault(kw, []).extend(entries)
     for kw, entries in _render_mpcs(model_data).items():
         constraints.setdefault(kw, []).extend(entries)
+    timed_mpcs = _timed_mpcs(model_data)
+    if timed_mpcs:
+        timed_constraints.setdefault("LIAISON_DDL", []).extend(timed_mpcs)
     model_data["_charge_prelude"] = "".join(
         prelude + model_data.pop("_extra_prelude", []))
 
@@ -3207,6 +3210,27 @@ def _centrifugal_loads(model_data, bc):
     return out
 
 
+def _liaison_ddl(ce, coef_impo):
+    """LIAISON_DDL-regel van constraint equation ce met COEF_IMPO (tekst:
+    getal of DEFI_FONCTION-naam)."""
+    terms = ce["terms"]
+    return "_F(NOEUD={0}, DDL={1}, COEF_MULT={2}, COEF_IMPO={3})".format(
+        _fmt_seq(["'N{0}'".format(n) for n, d, c in terms]),
+        _fmt_seq(["'{0}'".format(d) for n, d, c in terms]),
+        _fmt_seq(["{0!r}".format(c) for n, d, c in terms]),
+        coef_impo)
+
+
+def _timed_mpcs(model_data):
+    """LIAISON_DDL met een functie als COEF_IMPO (AFFE_CHAR_MECA_F, catalogus
+    affe_char_meca_f.py v17.4: COEF_IMPO fonction): constraint equations
+    met een constante die _explicit_kinematics naar een versnelling heeft
+    omgezet."""
+    return [_liaison_ddl(ce, ce["_explicit_func"][0])
+            for ce in model_data.get("constraint_equations", [])
+            if ce.get("_explicit_func")]
+
+
 def _render_mpcs(model_data):
     """
     Lineaire relaties die geen BC op een selectie zijn:
@@ -3217,13 +3241,10 @@ def _render_mpcs(model_data):
     """
     out = OrderedDict()
     for ce in model_data.get("constraint_equations", []):
-        terms = ce["terms"]
-        out.setdefault("LIAISON_DDL", []).append(
-            "_F(NOEUD={0}, DDL={1}, COEF_MULT={2}, COEF_IMPO={3!r})".format(
-                _fmt_seq(["'N{0}'".format(n) for n, d, c in terms]),
-                _fmt_seq(["'{0}'".format(d) for n, d, c in terms]),
-                _fmt_seq(["{0!r}".format(c) for n, d, c in terms]),
-                ce["constant"]))
+        if ce.get("_explicit_func"):
+            continue        # expliciet: AFFE_CHAR_MECA_F (_timed_mpcs)
+        out.setdefault("LIAISON_DDL", []).append(_liaison_ddl(
+            ce, "{0!r}".format(ce["constant"])))
     normals = OrderedDict()
     for b in model_data.get("bonded", []):
         parts = ["GROUP_MA_MAIT='{0}'".format(b["master"]),
@@ -3673,7 +3694,9 @@ def _collect_load_funcs(model_data):
     bcs = model_data["bcs"]
     return [(func_name, bcs[idx]["aster_dict"][kw_axis])
             for (idx, kw_axis), func_name
-            in _load_func_names(model_data).items()]
+            in _load_func_names(model_data).items()] + [
+        ce["_explicit_func"] for ce in model_data.get(
+            "constraint_equations", []) if ce.get("_explicit_func")]
 
 
 def _to_aster_traction_curve(mat_name, curve, e_mod, definition):
@@ -4750,7 +4773,7 @@ def _critical_time_step(model_data):
 # ==========================================
 # DIFF_CENT/TCHAMWA kennen alleen FORMULATION='ACCELERATION' (catalogus
 # dyna_non_line.py v17.4, b_explicit); DDL_IMPO (en LIAISON_OBLIQUE,
-# FACE_IMPO) leggen dan de versnelling op: een opgelegde u(t) = 0 -> 6 mm
+# FACE_IMPO, LIAISON_DDL: DY-20a-c) leggen dan de versnelling op: een opgelegde u(t) = 0 -> 6 mm
 # bewoog 5,5e-10 m (testrun; daarom zet _explicit_kinematics u(t) om naar
 # een versnelling, verificatie DY-03b). Een verplaatsing nul blijft
 # goed (versnelling nul, beginsnelheid nul).
@@ -4924,11 +4947,39 @@ def _explicit_kinematics(model_data, intervals, schema):
     wordt een DEFI_FONCTION in AFFE_CHAR_MECA_F (_build_charges).
     """
     kin = _explicit_kinematic_values(model_data)
-    if not kin:
+    ces = [ce for ce in model_data.get("constraint_equations", [])
+           if ce["constant"] != 0.0]
+    if not kin and not ces:
         return
     segs = _explicit_steps(intervals)
     boundaries = [t for t, _n in intervals]
     bcs = model_data["bcs"]
+    for k, ce in enumerate(ces):
+        # A u1 + B u2 + ... = C legt in het expliciete schema de
+        # versnellingen op (LIAISON_DDL met FORMULATION='ACCELERATION');
+        # omzetten zoals een constante opgelegde verplaatsing: C wordt in de
+        # eerste rekenstap bereikt (een stoot), daarna blijft de relatie.
+        # Mecway zelf staat een constante alleen bij statisch toe (manual
+        # v33 par. 9.42: "must be zero" bij dynamica en CCX).
+        ce["_explicit_func"] = ("FN_CE{0}".format(k + 1),
+                                _explicit_accelerations(
+                                    ce["constant"], segs, boundaries,
+                                    schema))
+        log(tr("WARNING: Constraint equation {0} = {1} in expliciete "
+               "dynamica: de constante wordt in de eerste rekenstap ({2} s) "
+               "bereikt (een stoot, zoals een opgelegde verplaatsing zonder "
+               "tijdshistorie) en blijft daarna gelden. Mecway staat een "
+               "constante ongelijk aan 0 alleen bij statisch toe (manual "
+               "par. 9.42).",
+               "WARNING: Constraint equation {0} = {1} in explicit "
+               "dynamics: the constant is reached in the first time step "
+               "({2} s) (a shock, like a prescribed displacement without a "
+               "time history) and holds afterwards. Mecway allows a "
+               "non-zero constant only in static analyses (manual par. "
+               "9.42).").format(
+                   " + ".join("{0!r} {1}(N{2})".format(c, d, n)
+                              for n, d, c in ce["terms"]),
+                   ce["constant"], "%.4g" % segs[0][2]))
     for idx, key, value in kin:
         bc = bcs[idx]
         if not isinstance(value, list):
@@ -4949,7 +5000,7 @@ def _explicit_kinematics(model_data, intervals, schema):
             "versnelling ({3} legt DDL_IMPO op de versnelling op; "
             "stoten op de knikken van u(t)).".format(
                 bc["type"], key, bc["selection"], schema))
-    if model_data.get("initial_velocities"):
+    if model_data.get("initial_velocities") and kin:
         log(tr("WARNING: Beginsnelheid en opgelegde verplaatsing in "
                "expliciete dynamica: op knopen met beide klopt de "
                "verplaatsing niet (de omzetting naar een versnelling gaat "

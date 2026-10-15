@@ -73,7 +73,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Velocity | Ja | Dynamica. |
 | Symmetry | Ja | Vlakken van volumes, schaalranden en balkuiteinden. |
 | Cyclic symmetry | Deels | Alleen in Frequency (V30) en alleen volume-elementen; in statisch en thermisch gemeld en als losse sector gerekend (KB61). |
-| Constraint equation | Ja | KB27, KB41. |
+| Constraint equation | Ja | KB27. Expliciet: een constante ≠ 0 wordt een opgelegde beweging (DY-20b; Mecway zelf staat haar dan niet toe). |
 | Node-surface coupling, Rigid (RBE2) | Ja | `LIAISON_SOLIDE`; grote rotaties: KB11. Niet in thermisch (gemeld). |
 | Node-surface coupling, Distributing (RBE3) | Ja | `LIAISON_RBE3`. Niet in thermisch (gemeld). |
 | Flexible joint on beam | Nee | Alternatief: twee samenvallende knopen met constraint equations op alleen de vrijheidsgraden die moeten meedoen (NIET geverifieerd). |
