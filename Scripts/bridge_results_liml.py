@@ -5,45 +5,45 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_results_liml.py
 #
-# Verantwoordelijkheid: zet een resultaatbestand (geschreven door
-# aster_results_export.py binnen de Code-Aster-job) in de <solution> van de
-# model-.liml, zodat Mecway de resultaten met mw.open() inleest; haalt
-# resultaten uit de .liml (strip_results), controleert of een
-# resultaatbestand bij het mesh past en somt ze op (knop Resultaten...); en
-# leest als terugval een tijdstap uit het fragment voor de
-# solution.set_variable()-route.
+# Responsibility: put a result file (written by aster_results_export.py
+# inside the Code-Aster job) into the <solution> of the model .liml, so
+# that Mecway reads the results with mw.open(); remove results from the
+# .liml (strip_results), check whether a result file matches the mesh and
+# list them (Results... button); and, as a fallback, read one time step
+# from the fragment for the
+# solution.set_variable() route.
 #
-# ROUTE ("binair"):
+# ROUTE ("binary"):
 #   Code-Aster-job: CALC_CHAMP -> aster_results_export.export_results()
-#       -> <werkmap>/<model>_<run_id>_results.xml  (<results
-#          precision="single|double">, alle tijdstappen, base64)
+#       -> <work folder>/<model>_<run_id>_results.xml  (<results
+#          precision="single|double">, all time steps, base64)
 #   IronPython:     splice_results(model.liml, fragment, model.liml)
-#       -> de .liml (vorige versie .bak) met <solution> = kopie van het
-#          model (zonder <fieldvariable>) + het fragment; daarna
+#       -> the .liml (previous version .bak) with <solution> = copy of the
+#          model (without <fieldvariable>) + the fragment; then
 #          mw.open(model.liml).
-#   Terugval:       read_step(fragment) -> {variabele: [waarde per knoop]}
-#       -> solution.set_variable() (alleen knoopwaarden, een tijdstap).
+#   Fallback:       read_step(fragment) -> {variable: [value per node]}
+#       -> solution.set_variable() (node values only, one time step).
 #
-# Wat Mecway in <solution> zet (nagelopen in door Mecway 33 opgeslagen
-# .liml-bestanden, zie TestFiles/): een kopie van alle top-level elementen
-# van het model op het moment van oplossen (analysis, timesteps, node,
-# elset/elem, belastingen, mat, selecties, ...), behalve <fieldvariable>
-# (weergave-instellingen), met dezelfde opmaak twee spaties dieper, en als
-# laatste <results>. <solution> is het laatste kind van <liml>.
+# What Mecway puts in <solution> (checked in 33 .liml files saved by
+# Mecway, see TestFiles/): a copy of all top-level elements
+# of the model at the moment of solving (analysis, timesteps, node,
+# elset/elem, loads, mat, selections, ...), except <fieldvariable>
+# (display settings), with the same formatting two spaces deeper, and as
+# the last one <results>. <solution> is the last child of <liml>.
 #
-# BESTANDSGROOTTES (gemeten, Code-Aster 17.4, STAT_NON_LINE op een hex8-
-# blok van 18.225 knopen, 51 gearchiveerde tijdstappen; DEPL, SIGM_NOEU,
-# SIEQ_NOEU en REAC_NODA = 13 componenten, 15 Mecway-variabelen):
-#   .resu (POST_RELEVE_T TOUT_ORDRE + IMPR_TABLE)  644 MB, ~53 bytes/waarde,
-#                                       ~80 s CPU voor tabellen + schrijven
+# FILE SIZES (measured, Code-Aster 17.4, STAT_NON_LINE on a hex8
+# block of 18,225 nodes, 51 archived time steps; DEPL, SIGM_NOEU,
+# SIEQ_NOEU and REAC_NODA = 13 components, 15 Mecway variables):
+#   .resu (POST_RELEVE_T TOUT_ORDRE + IMPR_TABLE)  644 MB, ~53 bytes/value,
+#                                       ~80 s CPU for tables + writing
 #   study.rmed (IMPR_RESU MED, double)  217 MB (incl. 17 SIEQ-componenten)
-#   resu_mesh.msh (IMPR_RESU GMSH)      3,4 GB, 159 s CPU
-#   fragment (export_results, single)   78 MB, ~5,6 bytes/waarde, 1,6 s
-#   splice_results (IronPython)         0,9 s; read_step: 1,8 s
-# Schatting ProfielBuigen (17.418 knopen, 101 stappen): fragment met 26
-# variabelen ~0,26 GB; .resu-tekst met ~20 componenten ~1,9 GB.
+#   resu_mesh.msh (IMPR_RESU GMSH)      3.4 GB, 159 s CPU
+#   fragment (export_results, single)   78 MB, ~5.6 bytes/value, 1.6 s
+#   splice_results (IronPython)         0.9 s; read_step: 1.8 s
+# Estimate ProfielBuigen (17,418 nodes, 101 steps): fragment with 26
+# variables ~0.26 GB; .resu text with ~20 components ~1.9 GB.
 #
-# Compatibel met IronPython 2.7.9 (alleen de standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import array
 import base64
@@ -58,20 +58,20 @@ _CHUNK = 4 * 1024 * 1024
 
 
 # ==========================================
-# POSITIES IN DE .LIML (zonder het hele bestand te lezen)
+# POSITIONS IN THE .LIML (without reading the whole file)
 # ==========================================
 def _find_solution_start(path, begin=0):
     """
-    Byte-positie van '<solution' (als element: gevolgd door '>', '/' of
-    spatie) vanaf byte begin, of -1. Leest in blokken; het model voor
-    <solution> is klein, een oude solution kan honderden MB zijn.
+    Byte position of '<solution' (as an element: followed by '>', '/' or
+    a space) from byte begin, or -1. Reads in blocks; the model before
+    <solution> is small, an old solution can be hundreds of MB.
     """
     return _find_from(path, "<solution", begin, ">/ \t\r\n")
 
 
 def _find_from(path, pat, begin=0, follow=None):
-    """Byte-positie van pat vanaf byte begin, of -1. Met follow: alleen
-    als het teken na pat daarin staat (een element, geen langere naam)."""
+    """Byte position of pat from byte begin, or -1. With follow: only
+    if the character after pat is in it (an element, not a longer name)."""
     offset = begin
     keep = ""
     f = open(path, "rb")
@@ -97,8 +97,8 @@ def _find_from(path, pat, begin=0, follow=None):
 
 
 def _find_last(path, pat):
-    """Byte-positie van het laatste voorkomen van pat, of -1 (zoekt vanaf
-    het eind in blokken)."""
+    """Byte position of the last occurrence of pat, or -1 (searches from
+    the end in blocks)."""
     size = os.path.getsize(path)
     f = open(path, "rb")
     try:
@@ -128,7 +128,7 @@ def _read_range(path, start, end):
 
 
 def _copy_range(src, dst_file, start, end):
-    """Kopieer de bytes [start, end) van src naar het open dst_file."""
+    """Copy the bytes [start, end) of src to the open dst_file."""
     f = open(src, "rb")
     try:
         f.seek(start)
@@ -144,7 +144,7 @@ def _copy_range(src, dst_file, start, end):
 
 
 def _copy_from(src, dst_file, start):
-    """Kopieer src vanaf byte start tot het eind naar het open dst_file."""
+    """Copy src from byte start to the end to the open dst_file."""
     f = open(src, "rb")
     try:
         f.seek(start)
@@ -158,20 +158,20 @@ def _copy_from(src, dst_file, start):
 
 
 # ==========================================
-# MODELKOPIE VOOR <solution>
+# MODEL COPY FOR <solution>
 # ==========================================
 _FIELDVAR_OPEN = re.compile(r"^\s*<fieldvariable[\s>/]")
 
 
 def _model_copy(head, nl):
     """
-    Regels van de modelkopie in <solution>: de top-level elementen uit head
-    (de tekst tussen <liml ...> en <solution>/</liml>) twee spaties dieper,
-    zonder <fieldvariable>.
+    Lines of the model copy in <solution>: the top-level elements of head
+    (the text between <liml ...> and <solution>/</liml>) two spaces deeper,
+    without <fieldvariable>.
 
-    Inspringen alleen op regels die met een tag beginnen terwijl de vorige
-    regel op '>' eindigt; vervolgregels van meerregelige tekst (comment,
-    radiossmodeldefinition) blijven ongewijzigd, zoals Mecway's eigen kopie.
+    Indent only lines that start with a tag while the previous line ends
+    with '>'; continuation lines of multi-line text (comment,
+    radiossmodeldefinition) stay unchanged, like Mecway's own copy.
     """
     body = head[head.index(">", head.index("<liml")) + 1:]
     lines = body.split(nl)
@@ -203,19 +203,19 @@ def _newline(text):
 
 
 # ==========================================
-# CYCLISCHE SYMMETRIE: HET HELE WIEL IN DE MODELKOPIE (S10i)
+# CYCLIC SYMMETRY: THE WHOLE WHEEL IN THE MODEL COPY (S10i)
 #
-# Mecway's eigen cyclische oplossing (headless gemeten met Mecway 33,
-# details in aster_cyclic.py): de modelkopie in <solution> heeft N kopieen
-# van de knopen en elementen. Knoop i van sector j (0 .. N-1) heet
-# i + j x n, gedraaid over +j x 360/N graden om de as door de oorsprong;
-# element e heet e + j x ne (ne = hoogste elementnummer), met de knopen van
-# zijn sector; per elset staan de elementen per sector achter elkaar. De
-# extra knopen staan direct na de laatste knoop van het model, de extra
-# elementen aan het eind van hun elset; de rest van de kopie (selecties,
-# belastingen, <cyclicsymmetry>) blijft die van de sector. Coordinaten met
-# 15 significante cijfers ("0.428682574873297", "4.22074656910206E-21"),
-# zoals Mecway.
+# Mecway's own cyclic solution (measured headless with Mecway 33,
+# details in aster_cyclic.py): the model copy in <solution> has N copies
+# of the nodes and elements. Node i of sector j (0 .. N-1) is numbered
+# i + j x n, rotated by +j x 360/N degrees about the axis through the
+# origin; element e is numbered e + j x ne (ne = highest element number),
+# with the nodes of its sector; per elset the elements are listed sector by
+# sector. The extra nodes follow directly after the last node of the
+# model, the extra elements are at the end of their elset; the rest of the
+# copy (selections, loads, <cyclicsymmetry>) stays that of the sector.
+# Coordinates with 15 significant digits ("0.428682574873297",
+# "4.22074656910206E-21"), like Mecway.
 # ==========================================
 _CYCLIC = re.compile(r"<cyclicsymmetry\b([^>]*)>")
 _NODE_LINE = re.compile(r'^(\s*)<node\s+nid="(\d+)"\s+x="([^"]*)"\s+'
@@ -225,8 +225,8 @@ _ELEM_LINE = re.compile(r'^(\s*<elem\s+eid=")(\d+)("[^>]*\bnodes=")'
 
 
 def cyclic_info(head):
-    """(as 0/1/2, segmenten) van de eerste <cyclicsymmetry> die niet
-    onderdrukt is in de modeltekst head, of None."""
+    """(axis 0/1/2, segments) of the first <cyclicsymmetry> that is not
+    suppressed in the model text head, or None."""
     import bridge_cyclic
     for m in _CYCLIC.finditer(head):
         attrs = dict(_ATTR.findall(m.group(1)))
@@ -243,7 +243,7 @@ def cyclic_info(head):
 
 
 def _coord(v):
-    """Coordinaat zoals Mecway (15 significante cijfers, "0" voor 0)."""
+    """Coordinate like Mecway (15 significant digits, "0" for 0)."""
     if v == 0.0:
         return "0"
     return "%.15G" % v
@@ -251,8 +251,8 @@ def _coord(v):
 
 def _wheel_copy(lines, segments, axis):
     """
-    De regels van de modelkopie (_model_copy) uitgebreid tot het hele wiel
-    (zie de kop van dit blok). Returns (regels, n, ne).
+    The lines of the model copy (_model_copy) extended to the whole wheel
+    (see the header of this block). Returns (lines, n, ne).
     """
     import math
     nodes = {}
@@ -284,7 +284,7 @@ def _wheel_copy(lines, segments, axis):
                                .format(indent, nid + j * n, _coord(q[0]),
                                        _coord(q[1]), _coord(q[2])))
     out = []
-    elems = None            # elem-regels van de lopende <elset>
+    elems = None            # elem lines of the current <elset>
     for k, line in enumerate(lines):
         stripped = line.strip()
         if elems is not None and stripped.startswith("</elset>"):
@@ -310,11 +310,11 @@ def _wheel_copy(lines, segments, axis):
 
 def _wheel_check(head, fragment_path):
     """
-    (info, fout) voor modeltekst head en resultaatbestand fragment_path:
-    info = (as, N) als het resultaat het hele wiel van een cyclisch model
-    is (knoopnummers boven het aantal knopen n van het model, tot N x n;
-    aster_results_export met cyclic=...), anders None; fout = melding als
-    de knoopnummers niet bij het model passen.
+    (info, error) for model text head and result file fragment_path:
+    info = (axis, N) if the result is the whole wheel of a cyclic model
+    (node numbers above the number of nodes n of the model, up to N x n;
+    aster_results_export with cyclic=...), otherwise None; error = message
+    if the node numbers do not match the model.
     """
     nids, _eids = _fragment_ids(fragment_path)
     n = len(set(_NODE_TAG.findall(head)))
@@ -331,8 +331,8 @@ def _wheel_check(head, fragment_path):
 
 
 def wheel_segments(model_liml, fragment_path):
-    """Aantal segmenten N als resultaatbestand fragment_path het hele wiel
-    van het cyclische model model_liml is (_wheel_check), anders None."""
+    """Number of segments N if result file fragment_path is the whole wheel
+    of the cyclic model model_liml (_wheel_check), otherwise None."""
     sol = _find_solution_start(model_liml)
     head = _read_range(model_liml, 0, sol if sol >= 0 else
                        os.path.getsize(model_liml))
@@ -350,13 +350,13 @@ _SUPPRESSED_IN = re.compile(r'<suppressed\s+configuration="([^"]*)"')
 
 def _solutions(path, first):
     """
-    [(begin, eind, configuratie of None)] van de top-level <solution>-
-    elementen vanaf byte first (de eerste <solution>). Mecway zet ze
-    achter elkaar als laatste kinderen van <liml>, een per configuratie
-    (<solution configuration="naam">, Samples/CylinderLifting.liml en
-    Tutorials/AssemblyWithContact.liml); zonder configuraties een
-    <solution> zonder attribuut. Streaming: alleen starttags en
-    sluittags worden gezocht.
+    [(begin, end, configuration or None)] of the top-level <solution>
+    elements from byte first (the first <solution>). Mecway writes them
+    one after another as the last children of <liml>, one per
+    configuration (<solution configuration="name">,
+    Samples/CylinderLifting.liml and Tutorials/AssemblyWithContact.liml);
+    without configurations one <solution> without attribute. Streaming:
+    only start tags and end tags are searched.
     """
     out = []
     pos = first
@@ -380,17 +380,17 @@ def _solutions(path, first):
 
 
 def _model_head(model_liml):
-    """Het model voor de eerste <solution> (klein; een oude solution kan
-    honderden MB zijn)."""
+    """The model before the first <solution> (small; an old solution can
+    be hundreds of MB)."""
     sol = _find_solution_start(model_liml)
     return _read_range(model_liml, 0, sol if sol >= 0 else
                        os.path.getsize(model_liml))
 
 
 def configuration_names(model_liml):
-    """Namen van de configuraties van het model (<configuration
-    name="..">), in volgorde; [] zonder configuraties of als het bestand
-    niet te lezen is. Voor de keuzelijst Configuratie op het startscherm."""
+    """Names of the configurations of the model (<configuration
+    name="..">), in order; [] without configurations or if the file
+    cannot be read. For the Configuration list on the start screen."""
     try:
         return _CONF_NAME.findall(_model_head(model_liml))
     except (IOError, OSError):
@@ -399,14 +399,14 @@ def configuration_names(model_liml):
 
 def pick_configuration(model_liml):
     """
-    (configuratie, melding) voor splice_results. Zonder <configuration> in
-    het model (None, ""). De Mecway-API kan de actieve configuratie niet
-    lezen (alleen mw.set_active_configuration); de keuze komt uit
-    bridge_utils.choose_configuration (instelling "configuration" of de
-    regel daar), dezelfde als bridge_from_liml._pick_configuration voor de
-    lasten. melding: WARNING-tekst (zonder "WARNING: ") voor de log, of ""
-    als de keuze eenduidig is. De solutions van andere configuraties
-    blijven ongewijzigd (splice_results).
+    (configuration, message) for splice_results. Without <configuration>
+    in the model (None, ""). The Mecway API cannot read the active
+    configuration (only mw.set_active_configuration); the choice comes from
+    bridge_utils.choose_configuration (setting "configuration" or the
+    rule there), the same as bridge_from_liml._pick_configuration for the
+    loads. message: WARNING text (without "WARNING: ") for the log, or ""
+    if the choice is unambiguous. The solutions of other configurations
+    stay unchanged (splice_results).
     """
     head = _model_head(model_liml)
     names = _CONF_NAME.findall(head)
@@ -420,21 +420,21 @@ def pick_configuration(model_liml):
 
 def splice_results(model_liml, fragment_path, out_path, configuration=None):
     """
-    Schrijf out_path = model_liml met een nieuwe <solution> (modelkopie +
-    fragment). Alles buiten die <solution> blijft byte-gelijk, ook de
-    solutions van andere configuraties. configuration: naam (zie
-    pick_configuration) of None (model zonder configuraties: de solution
-    zonder attribuut). Een bestaand out_path wordt out_path + ".bak"; er
-    wordt eerst naar out_path + ".tmp" geschreven. out_path mag gelijk zijn
-    aan model_liml.
+    Write out_path = model_liml with a new <solution> (model copy +
+    fragment). Everything outside that <solution> stays byte-identical,
+    including the solutions of other configurations. configuration: name
+    (see pick_configuration) or None (model without configurations: the
+    solution without attribute). An existing out_path becomes
+    out_path + ".bak"; writing goes to out_path + ".tmp" first. out_path
+    may be equal to model_liml.
 
-    Is het fragment het hele wiel van een cyclisch model (aster_results_
-    export met cyclic=...), dan krijgt de modelkopie de knopen en
-    elementen van alle sectoren, zoals Mecway (_wheel_copy).
+    If the fragment is the whole wheel of a cyclic model (aster_results_
+    export with cyclic=...), the model copy gets the nodes and
+    elements of all sectors, like Mecway (_wheel_copy).
 
     Returns
     -------
-    (bool, str) - (True, "") of (False, reden).
+    (bool, str) - (True, "") or (False, reason).
     """
     if not os.path.exists(model_liml):
         return False, tr("Model niet gevonden: {0}",
@@ -457,15 +457,15 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
                 model_liml)
         same = [s for s in sols if s[2] == configuration]
         if not same and configuration is not None:
-            # Solution zonder configuratie (oudere bridge-versie) vervangen
+            # Replace a solution without configuration (older bridge version)
             same = [s for s in sols if s[2] is None]
         if same:
-            # Bestaande solution vervangen; de rest blijft staan.
+            # Replace the existing solution; the rest stays.
             begin, tail_start = same[0][0], same[0][1]
-            indent = ""      # de tekst ervoor eindigt op de inspringing
+            indent = ""      # the text before it ends with the indentation
             lead = ""
         else:
-            # Nieuwe solution achter de laatste.
+            # New solution after the last one.
             begin = tail_start = sols[-1][1]
             indent = "  "
             lead = None
@@ -486,7 +486,7 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
     if err:
         return False, err
     if wheel:
-        # Cyclische symmetrie: het hele wiel, zoals Mecway's eigen oplossing
+        # Cyclic symmetry: the whole wheel, like Mecway's own solution
         copy_lines = _wheel_copy(copy_lines, wheel[1], wheel[0])[0]
 
     tmp = out_path + ".tmp"
@@ -508,7 +508,7 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
 
 
 def _replace_with_bak(tmp, out_path):
-    """out_path -> out_path.bak (een oude .bak vervalt), tmp -> out_path."""
+    """out_path -> out_path.bak (an old .bak is dropped), tmp -> out_path."""
     if os.path.exists(out_path):
         bak = out_path + ".bak"
         if os.path.exists(bak):
@@ -518,19 +518,19 @@ def _replace_with_bak(tmp, out_path):
 
 
 # ==========================================
-# RESULTATEN UIT DE .LIML HALEN (kleine .liml)
+# REMOVING RESULTS FROM THE .LIML (small .liml)
 # ==========================================
 def strip_results(model_liml):
     """
-    Verwijder alle <solution>-elementen (resultaten, ook die van andere
-    configuraties) uit model_liml; het model zelf blijft byte-gelijk. Zo
-    blijft de .liml klein; de resultaten van een bridge-run staan in
-    <model>_<run_id>_results.xml en zijn met splice_results opnieuw in te
-    laden. Vorige versie: model_liml.bak.
+    Remove all <solution> elements (results, also those of other
+    configurations) from model_liml; the model itself stays byte-identical.
+    This keeps the .liml small; the results of a bridge run are in
+    <model>_<run_id>_results.xml and can be loaded again with
+    splice_results. Previous version: model_liml.bak.
 
     Returns
     -------
-    (bool, str) - (True, "") of (False, reden).
+    (bool, str) - (True, "") or (False, reason).
     """
     if not os.path.exists(model_liml):
         return False, tr("Model niet gevonden: {0}",
@@ -548,8 +548,8 @@ def strip_results(model_liml):
     try:
         pos = 0
         for begin, end, _conf in sols:
-            # De regel van <solution> helemaal weg: inspringing en de
-            # regelovergang ervoor horen erbij.
+            # Remove the line of <solution> completely: the indentation and
+            # the line break before it belong to it.
             before = _read_range(model_liml, max(pos, begin - 256), begin)
             cut = begin - (len(before) - len(before.rstrip(" \t")))
             prev = _read_range(model_liml, max(pos, cut - 2), cut)
@@ -567,7 +567,7 @@ def strip_results(model_liml):
 
 
 # ==========================================
-# RESULTAATBESTANDEN IN DE WERKMAP
+# RESULT FILES IN THE WORK FOLDER
 # ==========================================
 RESULTS_SUFFIX = "_results.xml"     # <model>_<run_id>_results.xml
 _RUN_STEM = re.compile(r"^(.*)_(\d{8}_\d{6})$")   # <model>_<run_id>
@@ -576,11 +576,11 @@ _COMM_LIML = re.compile(r"export_results\(\s*res,\s*r'[^']*',\s*r'([^']*)'")
 
 def run_files(results_path):
     """
-    Bestanden van dezelfde run als results_path
+    Files of the same run as results_path
     (<model>_<run_id>_results.xml): {"run_id", "comm", "mail", "model"}.
-    "mail" is het mesh van de run (<model>_<run_id>.mail, of een ander
-    *_<run_id>.mail van een oudere versie; anders None), "model" de .liml
-    waarvoor de run rekende, gelezen uit de .comm (of "").
+    "mail" is the mesh of the run (<model>_<run_id>.mail, or another
+    *_<run_id>.mail of an older version; otherwise None), "model" the .liml
+    the run computed, read from the .comm (or "").
     """
     folder = os.path.dirname(os.path.abspath(results_path))
     name = os.path.basename(results_path)
@@ -615,8 +615,8 @@ def run_files(results_path):
 
 def list_results(work_dir):
     """
-    Resultaatbestanden in work_dir, nieuwste eerst: lijst van dicts
-    {"path", "size", "mtime"} plus de sleutels van run_files().
+    Result files in work_dir, newest first: list of dicts
+    {"path", "size", "mtime"} plus the keys of run_files().
     """
     out = []
     try:
@@ -636,7 +636,7 @@ def list_results(work_dir):
 
 
 # ==========================================
-# PAST EEN RESULTAATBESTAND BIJ HET MODEL?
+# DOES A RESULT FILE MATCH THE MODEL?
 # ==========================================
 _NODE_TAG = re.compile(r'<node\s+nid="(\d+)"\s+x="([^"]*)"\s+y="([^"]*)"'
                        r'\s+z="([^"]*)"')
@@ -645,7 +645,7 @@ _MAIL_NODE = re.compile(r'^\s*N(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$')
 
 
 def _model_mesh(model_liml):
-    """({nid: (x, y, z)}, set van eid) van het model (vóór <solution>)."""
+    """({nid: (x, y, z)}, set of eid) of the model (before <solution>)."""
     sol = _find_solution_start(model_liml)
     head = _read_range(model_liml, 0, sol if sol >= 0 else
                        os.path.getsize(model_liml))
@@ -657,10 +657,10 @@ def _model_mesh(model_liml):
 
 
 def _fragment_ids(fragment_path):
-    """(set van knoopnummers, set van elementnummers) uit de <nodeids>/
-    <elementnodeids> van een resultaatbestand. Die staan vooraan
-    (aster_results_export._write_fragment); er wordt gelezen tot de eerste
-    tijdstap of variabele."""
+    """(set of node numbers, set of element numbers) from the <nodeids>/
+    <elementnodeids> of a result file. These come first
+    (aster_results_export._write_fragment); reading stops at the first
+    time step or variable."""
     nids = set()
     eids = set()
     chunks = None
@@ -694,7 +694,7 @@ def _fragment_ids(fragment_path):
 
 
 def _mail_coords(mail_path):
-    """{nid: (x, y, z)} uit het COOR_3D-blok van een .mail-bestand."""
+    """{nid: (x, y, z)} from the COOR_3D block of a .mail file."""
     coords = {}
     inside = False
     f = open(mail_path, "r")
@@ -718,7 +718,7 @@ def _mail_coords(mail_path):
 
 
 def _worst_node(nodes, coords):
-    """(grootste coordinaatverschil, knoop) tussen nodes en coords
+    """(largest coordinate difference, node) between nodes and coords
     ({nid: (x, y, z)})."""
     worst, worst_nid = 0.0, None
     for nid, xyz in nodes.items():
@@ -730,16 +730,16 @@ def _worst_node(nodes, coords):
 
 def check_results_fit(model_liml, fragment_path, mail_path=None):
     """
-    Past resultaatbestand fragment_path bij het mesh van model_liml?
-    Resultaten op een ander mesh zouden stil op verkeerde knopen landen.
-    Controle: knoop- en elementnummers van het resultaat bestaan in het
-    model; met mail_path (het .mail-bestand van dezelfde run) ook de
-    knoopcoördinaten.
+    Does result file fragment_path match the mesh of model_liml?
+    Results on a different mesh would silently land on the wrong nodes.
+    Check: node and element numbers of the result exist in the
+    model; with mail_path (the .mail file of the same run) also the
+    node coordinates.
 
     Returns
     -------
-    (bool, str) - (past, melding). Bij True kan de melding een
-    waarschuwing zijn (bijv. geen .mail om de coördinaten te vergelijken).
+    (bool, str) - (matches, message). With True the message can be a
+    warning (e.g. no .mail to compare the coordinates).
     """
     nodes, model_eids = _model_mesh(model_liml)
     nids, eids = _fragment_ids(fragment_path)
@@ -751,9 +751,9 @@ def check_results_fit(model_liml, fragment_path, mail_path=None):
     if err:
         return False, err
     if wheel:
-        # Hele wiel van een cyclisch model: de knopen van sector 0 zijn die
-        # van het model (de coordinaten hieronder); de andere sectoren
-        # volgen uit de draaiing (_wheel_copy).
+        # Whole wheel of a cyclic model: the nodes of sector 0 are those
+        # of the model (the coordinates below); the other sectors
+        # follow from the rotation (_wheel_copy).
         n = max(nodes) if nodes else 0
         nids = set(k for k in nids if k <= n)
     if not nids.issubset(nodes):
@@ -786,10 +786,10 @@ def check_results_fit(model_liml, fragment_path, mail_path=None):
     worst, worst_nid = _worst_node(nodes, coords)
     cyc = cyclic_info(head)
     if worst > 1e-6 * span and cyc is not None and cyc[0] != 2:
-        # Cyclische symmetrie om X of Y: het .mail van de run staat in het
-        # rekenframe (as -> Z, bridge_cyclic._rewrite_mesh); terugdraaien.
-        # Alleen een modale run draait (bridge_cyclic.build_cyclic_modes),
-        # daarom beide frames proberen.
+        # Cyclic symmetry about X or Y: the .mail of the run is in the
+        # computation frame (axis -> Z, bridge_cyclic._rewrite_mesh); rotate
+        # back. Only a modal run rotates (bridge_cyclic.build_cyclic_modes),
+        # so try both frames.
         import bridge_cyclic
         back = dict((nid, bridge_cyclic.to_model_frame(xyz, cyc[0]))
                     for nid, xyz in coords.items())
@@ -807,7 +807,7 @@ def check_results_fit(model_liml, fragment_path, mail_path=None):
 
 
 # ==========================================
-# TERUGVAL: EEN TIJDSTAP LEZEN
+# FALLBACK: READING ONE TIME STEP
 # ==========================================
 _OPEN_TAG = re.compile(r'<(results|nodeids|elementnodeids|timestep|mode|'
                        r'nodevariable|elementnodevariable|valuessingle|'
@@ -817,30 +817,30 @@ _ATTR = re.compile(r'(\w+)="([^"]*)"')
 
 def read_step(fragment_path, step=-1, n_nodes=None):
     """
-    Lees de knoopvariabelen van een tijdstap uit een results-fragment (of
-    een .liml met <results>). Regel voor regel: werkt ook voor fragmenten
-    van honderden MB.
+    Read the node variables of one time step from a results fragment (or
+    a .liml with <results>). Line by line: also works for fragments
+    of hundreds of MB.
 
     Parameters
     ----------
-    step    : tijdstap-id (of mode-id bij <mode>, vanaf 1); -1 = de
-              laatste. Zonder <timestep>/<mode> (statisch) wordt step
-              genegeerd.
-    n_nodes : lengte van de lijsten (aantal knopen van de solution); None =
-              hoogste knoopnummer in het fragment.
+    step    : time step id (or mode id with <mode>, from 1); -1 = the
+              last one. Without <timestep>/<mode> (static) step is
+              ignored.
+    n_nodes : length of the lists (number of nodes of the solution); None =
+              highest node number in the fragment.
 
     Returns
     -------
-    dict {Mecway-variabele: [waarde of None per knoop 1..n]} - het formaat
-    van solution.set_variable(). Elementknoopvariabelen worden
-    overgeslagen.
+    dict {Mecway variable: [value or None per node 1..n]} - the format
+    of solution.set_variable(). Element node variables are
+    skipped.
     """
-    ids = {}            # naam -> base64-regels van <nodeids>
-    values = {}         # naam -> base64-regels in de gekozen tijdstap
+    ids = {}            # name -> base64 lines of <nodeids>
+    values = {}         # name -> base64 lines in the chosen time step
     typecode = "f"
-    keep = True         # hoort de lopende tijdstap bij de gevraagde?
-    var = None          # lopende <nodevariable>, None in elementvariabelen
-    target = None       # lijst waarin base64-regels worden verzameld
+    keep = True         # does the current time step belong to the request?
+    var = None          # current <nodevariable>, None in element variables
+    target = None       # list in which base64 lines are collected
     f = open(fragment_path, "rb")
     try:
         for line in f:
@@ -886,10 +886,10 @@ _MODE_TAG = re.compile(r'<mode\s+id="(\d+)"\s+(frequency|bucklingfactor)='
 
 def read_modes(fragment_path):
     """
-    Modes in een resultaatbestand (modaal/knik, aster_results_export):
-    lijst van (id, soort, waarde) met soort "frequency" (Hz) of
-    "bucklingfactor"; leeg zonder <mode>. Regel voor regel (de <mode>-
-    regels staan los van de base64-regels).
+    Modes in a result file (modal/buckling, aster_results_export):
+    list of (id, kind, value) with kind "frequency" (Hz) or
+    "bucklingfactor"; empty without <mode>. Line by line (the <mode>
+    lines are separate from the base64 lines).
     """
     out = []
     f = open(fragment_path, "rb")
@@ -910,7 +910,7 @@ _MESS_MASS = re.compile(r"^BRIDGE_MASSA\s+(.*)$")
 
 
 def _key_values(text):
-    """{sleutel: float of tekst} uit 'A=1 B=2 C=x,y,z'."""
+    """{key: float or text} from 'A=1 B=2 C=x,y,z'."""
     values = {}
     for part in text.split():
         if "=" in part:
@@ -924,11 +924,11 @@ def _key_values(text):
 
 def read_mode_summary(mess_path):
     """
-    {mode: {parameter: waarde}} uit de BRIDGE_MODE-regels die
-    aster_results_export.print_modes in de .mess zet (FREQ,
-    MASS_EFFE_UN_DX/DY/DZ, MASS_EFFE_UN_DRX/DRY/DRZ of CHAR_CRIT); {} als
-    ze ontbreken. Onder de sleutel "massa" de BRIDGE_MASSA-regel (M, JX,
-    JY, JZ, ZWP als tekst "x,y,z", JZX, JZY, JZZ), als die er is.
+    {mode: {parameter: value}} from the BRIDGE_MODE lines that
+    aster_results_export.print_modes writes to the .mess (FREQ,
+    MASS_EFFE_UN_DX/DY/DZ, MASS_EFFE_UN_DRX/DRY/DRZ or CHAR_CRIT); {} if
+    they are missing. Under the key "massa" the BRIDGE_MASSA line (M, JX,
+    JY, JZ, ZWP as text "x,y,z", JZX, JZY, JZZ), if present.
     """
     out = {}
     if not mess_path or not os.path.exists(mess_path):
@@ -936,7 +936,7 @@ def read_mode_summary(mess_path):
     f = open(mess_path, "rb")
     try:
         for line in f:
-            if not isinstance(line, str):     # CPython 3 (verificatie)
+            if not isinstance(line, str):     # CPython 3 (verification)
                 line = line.decode("utf-8", "replace")
             m = _MESS_MODE.match(line.strip())
             if m:
@@ -956,9 +956,9 @@ _MESS_CYCL = re.compile(r"^BRIDGE_CYCL\s+(.*)$")
 
 
 def read_cyclic_summary(mess_path):
-    """{N, NMAX_FREQ, MODES, WIEL} uit de regel BRIDGE_CYCL van
-    aster_cyclic.collect (WIEL = 1: de modes staan op het hele wiel), of
-    {} zonder die regel."""
+    """{N, NMAX_FREQ, MODES, WIEL} from the BRIDGE_CYCL line of
+    aster_cyclic.collect (WIEL = 1: the modes are on the whole wheel), or
+    {} without that line."""
     if not mess_path or not os.path.exists(mess_path):
         return {}
     out = {}
@@ -973,7 +973,7 @@ def read_cyclic_summary(mess_path):
     return out
 
 
-# Globale fout van CALC_ERREUR ERME in de .mess (Code-Aster 17.4, gezien):
+# Global error of CALC_ERREUR ERME in the .mess (Code-Aster 17.4, seen):
 #    MECANIQUE : ESTIMATEUR D'ERREUR EN RESIDU EXPLICITE
 #    ...
 #  NUMERO D'ORDRE:     1
@@ -982,8 +982,8 @@ def read_cyclic_summary(mess_path):
 #  TERME VOLUMIQUE   7.37849403D+05  35.181 %
 #  TERME SAUT        4.62616959D+05  22.936 %
 #  TERME NORMAL      3.30403568D+05  16.596 %
-# RELATIVE = 100 eta / sqrt(eta^2 + norm(sigma)^2) (nagerekend uit ERME_ELEM,
-# zie bridge_to_aster._error_estimator_block).
+# RELATIVE = 100 eta / sqrt(eta^2 + norm(sigma)^2) (recomputed from ERME_ELEM,
+# see bridge_to_aster._error_estimator_block).
 _ERR_HEAD = "ESTIMATEUR D'ERREUR EN RESIDU"
 _ERR_ORDER = re.compile(r"NUMERO D'ORDRE:\s*(\d+)")
 _ERR_ROW = re.compile(r"^\s*(TOTALE|TERME VOLUMIQUE|TERME SAUT|TERME NORMAL)\s+"
@@ -998,16 +998,16 @@ def _fortran_float(text):
 
 def read_error_summary(mess_path):
     """
-    Globale foutschatting per numero d'ordre uit de .mess: lijst van dicts
-    {"order": n, "abs": eta, "rel": %, "sigma": norm van sigma, "volume":
-    %, "jump": %, "boundary": %} in volgorde van de .mess; [] zonder
-    foutschatter. Alleen het mechanische blok (MECANIQUE).
+    Global error estimate per numero d'ordre from the .mess: list of dicts
+    {"order": n, "abs": eta, "rel": %, "sigma": norm of sigma, "volume":
+    %, "jump": %, "boundary": %} in the order of the .mess; [] without
+    error estimator. Only the mechanical block (MECANIQUE).
     """
     out = []
     if not mess_path or not os.path.exists(mess_path):
         return out
-    # io.open met UTF-8: de .mess bevat Franse accenten; zo ook bruikbaar
-    # in CPython (verificatie, TestFiles/Verificatie/verif_lib.py).
+    # io.open with UTF-8: the .mess contains French accents; this way also
+    # usable in CPython (verification, TestFiles/Verificatie/verif_lib.py).
     f = io.open(mess_path, "r", encoding="utf-8", errors="replace")
     try:
         current = None
@@ -1044,8 +1044,8 @@ def read_error_summary(mess_path):
     return out
 
 
-# Niet-lineaire knik (bridge_to_aster._crit_stab_report,
-# _imperfection_blocks): regels die de Code-Aster-job in de .mess zet.
+# Nonlinear buckling (bridge_to_aster._crit_stab_report,
+# _imperfection_blocks): lines that the Code-Aster job writes to the .mess.
 _CS_KIND = re.compile(r"^BRIDGE_CRIT_STAB_SOORT\s+(\w+)")
 _CS_ROW = re.compile(r"^BRIDGE_CRIT_STAB\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)")
 _IMP_MODE = re.compile(r"^BRIDGE_IMPERFECTIE_MODE\s+(\d+)\s+([-+0-9.eE]+)")
@@ -1054,9 +1054,9 @@ _IMP = re.compile(r"^BRIDGE_IMPERFECTIE\s+(\d+)\s+([-+0-9.eE]+)")
 
 def read_crit_stab(mess_path):
     """
-    Stabiliteitscriterium per stap (CRIT_STAB) uit de .mess:
-    {"kind": "factor" | "eigen", "rows": [(t, lambda)], "missing": tekst
-    of None}; None als CRIT_STAB niet aan stond. Betekenis van lambda:
+    Stability criterion per step (CRIT_STAB) from the .mess:
+    {"kind": "factor" | "eigen", "rows": [(t, lambda)], "missing": text
+    or None}; None if CRIT_STAB was not on. Meaning of lambda:
     bridge_to_aster._crit_stab_kind.
     """
     if not mess_path or not os.path.exists(mess_path):
@@ -1089,11 +1089,11 @@ def read_crit_stab(mess_path):
 
 def crit_stab_estimate(rows):
     """
-    Schatting van het knikpunt uit de 'eigen'-reeks (lambda -> 0):
-    ("kruising", t) als lambda tussen twee stappen van < 0 naar >= 0 gaat
-    (lineair geinterpoleerd); ("extrapolatie", t) als lambda nog < 0 is en
-    in de laatste twee stappen stijgt (lineair doorgetrokken naar 0);
-    anders None.
+    Estimate of the buckling point from the 'eigen' series (lambda -> 0):
+    ("kruising", t) if lambda goes from < 0 to >= 0 between two steps
+    (linearly interpolated); ("extrapolatie", t) if lambda is still < 0
+    and rises in the last two steps (linearly extended to 0);
+    otherwise None.
     """
     for (t0, l0), (t1, l1) in zip(rows, rows[1:]):
         if l0 < 0.0 <= l1:
@@ -1107,8 +1107,9 @@ def crit_stab_estimate(rows):
 
 def read_imperfection(mess_path):
     """
-    Imperfectie (knikvorm) uit de .mess: {"mode": k, "amplitude": e0 [m],
-    "factors": {mode: kniklastfactor}}; None zonder imperfectie.
+    Imperfection (buckling shape) from the .mess: {"mode": k,
+    "amplitude": e0 [m], "factors": {mode: buckling load factor}}; None
+    without imperfection.
     """
     if not mess_path or not os.path.exists(mess_path):
         return None
@@ -1134,7 +1135,7 @@ def read_imperfection(mess_path):
 
 
 def _collect(text, buf):
-    """Voeg het base64-deel van text (tot een eventuele sluittag) toe."""
+    """Add the base64 part of text (up to a possible end tag)."""
     text = text.split("<", 1)[0].strip()
     if text:
         buf.append(text)
@@ -1147,7 +1148,7 @@ def _decode(chunks, typecode):
 
 
 def _to_node_lists(ids, values, typecode, n_nodes):
-    """{naam: [waarde of None per knoop]} uit de base64-regels."""
+    """{name: [value or None per node]} from the base64 lines."""
     nids = dict((name, _decode(chunks, "i")) for name, chunks in ids.items())
     if n_nodes is None:
         n_nodes = max([max(a) for a in nids.values() if len(a)] + [0])
@@ -1160,7 +1161,7 @@ def _to_node_lists(ids, values, typecode, n_nodes):
         lst = [None] * n_nodes
         for nid, v in zip(ids_, vals):
             if 1 <= nid <= n_nodes:
-                # float(): IronPython geeft uit array('f') een System.Single.
+                # float(): IronPython returns a System.Single from array('f').
                 lst[nid - 1] = float(v)
         out[name] = lst
     return out
