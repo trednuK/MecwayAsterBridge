@@ -50,7 +50,8 @@ def report(where, msg):
 
 
 def read(path):
-    return io.open(path, encoding="utf-8").read()
+    with io.open(path, encoding="utf-8") as f:
+        return f.read()
 
 
 def rel(path):
