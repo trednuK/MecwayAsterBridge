@@ -75,8 +75,9 @@ in een T30 zonder koppeling (300 / 400 K aan beide kanten); met de CCX-solver we
 (350 K, en 340 / 360 K met h = 2000 W/m²K), gelijk aan de bridge (TH-04a/c).
 ### 3.1 Temperaturen in een mechanische analyse (thermische spanning)
 
-In een statische, niet-lineair statische, modale of knikanalyse geeft een *Thermal stress*
-(referentietemperatuur) samen met temperaturen thermische rek (manual §9.23–9.25):
+In een statische, niet-lineair statische, modale of knikanalyse en in een niet-lineaire
+dynamische respons geeft een *Thermal stress* (referentietemperatuur) samen met
+temperaturen thermische rek (manual §9.23–9.25):
 
 | Mecway | Code-Aster |
 |---|---|
@@ -94,15 +95,31 @@ In een statische, niet-lineair statische, modale of knikanalyse geeft een *Therm
 - Twee verschillende temperaturen op één knoop: Mecway rekent dan niet ("Conflicting
   temperatures on node"); de bridge geeft een WARNING en gebruikt de Node temperature
   (of bij twee Node temperatures de laatste).
-- Niet-lineair statisch: de temperatuur loopt op van de referentie op t = 0 naar de
-  waarde op de eindtijd (KNOWN_BUGS 17). Modaal en knik: de voorspanning door de
-  thermische rek telt mee (`modal_prestress`).
-- Dynamic Response (D30): Mecway negeert de temperaturen, de Node temperature valt
-  ook in de bridge weg (INFO). Nonlinear Dynamic Response (D31): Node temperature staat
-  niet bij Mecway's analysetypen (manual §9.24) en wordt gemeld (ERROR, niet vertaald);
-  een Temperature geeft daar geen thermische spanning (KNOWN_BUGS 94).
-- Een tijdshistorie van een Temperature wordt in een mechanische analyse niet vertaald
-  (gemeld).
+- Modaal en knik: de voorspanning door de thermische rek telt mee (`modal_prestress`).
+- Niet-lineair statisch (L30) en niet-lineaire dynamische respons (D31): het veld is een
+  `EVOL_THER` (`CREA_RESU`) met de referentie op het eerste tijdstip, zodat de thermische
+  rek vanaf de eerste stap spanning geeft (een veld dat al op t = 0 afwijkt, neemt
+  Code-Aster als spanningsloze begintoestand, alarm `MECANONLINE2_97`). Daarna, zoals
+  Mecway 34 met CCX in L30 (headless gezien):
+
+  | Temperature | Met *Quasi-static* (`<timesteps>`) en in D31 | L30 zonder *Quasi-static* |
+  |---|---|---|
+  | constant (ook Node temperature) | volle waarde vanaf de eerste stap | lineair oplopend tot de eindtijd (Mecway toont alleen de eindtoestand) |
+  | tijdstabel of formule in t | volgt de tabel: lineair tussen de punten, constant buiten het bereik; de knikpunten worden rekentijden | volgt de tabel tot t = 1 s en neemt daar de tabelwaarde (Mecway's staptijd) |
+
+  Een formule in t wordt bemonsterd over de *Time period* (zoals Mecway, 10001 punten,
+  0,01 %). Verificatie NL-70..75 en DY-70..72. In D31 is een plotselinge temperatuur een
+  staplast (de staaf slingert om de nieuwe lengte, DY-72); laat de temperatuur met een
+  tabel oplopen voor een quasi-statische opwarming (DY-71). Mecway rekent D31 headless
+  niet (eigen solver en CCX); het gedrag in D31 is daarom niet tegen Mecway vergeleken.
+- Statisch, modaal en knik met een tijdshistorie van een Temperature: weggelaten
+  (WARNING), zoals Mecway's eigen solver (Mecway 34 headless: geen uitzetting, dezelfde
+  frequentie en knikfactor als zonder temperatuur). Met CCX neemt Mecway in S30 de
+  tabelwaarde op t = 1 s; gebruik daar een constante temperatuur.
+- Dynamic Response (D30): Mecway negeert de temperaturen (headless gezien, ook met een
+  tijdstabel); Temperature en Node temperature vallen ook in de bridge weg (INFO, DY-73).
+  Nonlinear Dynamic Response (D31): Node temperature staat niet bij Mecway's
+  analysetypen (manual §9.24) en wordt gemeld (ERROR, niet vertaald).
 
 ## 4. Aanvullende controles (Code-Aster 17.4, offline)
 

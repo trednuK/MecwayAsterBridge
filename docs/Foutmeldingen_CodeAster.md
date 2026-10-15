@@ -714,11 +714,12 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
 - **Oorzaak**: een constant temperatuurveld vanaf t = 0 dat afwijkt van de
   referentietemperatuur.
 - **Gezien**: thermische-rektest C14_thermal (verplaatsing 6,0e-5 m, verwacht 6e-5).
-- **Oplossing**: in de bridge (`_build_temperature_field`): in `STAT_NON_LINE` loopt de
-  temperatuur op van de referentie (t = 0) naar het veld op de eindtijd. In
-  `DYNA_NON_LINE` is het veld constant vanaf t = 0; daar blijft het alarm
-  (KNOWN_BUGS 17).
-- **Status**: opgelost in de bridge (statisch) / beperking (dynamisch).
+- **Oplossing**: in de bridge (`_build_temperature_field`): in `STAT_NON_LINE` en
+  `DYNA_NON_LINE` is het veld een `EVOL_THER` met de referentie op het eerste tijdstip;
+  daarna de temperatuur vanaf de eerste stap, oplopend of volgens de tijdstabel
+  ([Thermisch.md](Thermisch.md) §3.1). In `DYNA_NON_LINE` gaf het constante veld geen
+  thermische spanning (verificatie DY-70).
+- **Status**: opgelost in de bridge.
 
 ### `MECANONLINE_78` – massamatrix bijna singulier
 
@@ -1446,7 +1447,7 @@ twee drukken en balken in het model).
 | `INDICATEUR_8` | [11](#indicateur_6-indicateur_7-indicateur_8--lasten-die-de-schatter-niet-kan) | opgelost in de bridge |
 | `JEVEUX_10` | [7](#jeveux_10--naam-bestaat-al) | opgelost in de bridge |
 | `JEVEUX_26` | [9](#jeveux_26--object-bestaat-niet) | vervolgfout |
-| `MECANONLINE2_97` | [3](#mecanonline2_97--temperatuurrek-in-de-begintoestand) | opgelost in de bridge (statisch) / beperking (dynamisch) |
+| `MECANONLINE2_97` | [3](#mecanonline2_97--temperatuurrek-in-de-begintoestand) | opgelost in de bridge |
 | `MECANONLINE4_50` | [5](#mecanonline4_50--beginspanning-bij-een-meerstapsschema) | onschuldig (verwacht; NIET geverifieerd) |
 | `MECANONLINE5_1` | [5](#mecanonline5_1--expliciet-alleen-prediction-tangente) | opgelost in de bridge |
 | `MECANONLINE5_15` | [4](#mecanonline5_15--energie-niet-met-continu-contact) | opgelost in de bridge (beperking van Code-Aster) |

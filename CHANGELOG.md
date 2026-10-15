@@ -28,6 +28,12 @@
   *Temperature*; nodes the bridge adds (`LINE_QUAD`, `COQUE_3D` centre node) get the
   interpolated temperature. Verification LS-08a–d. KNOWN_BUGS 89 fixed; 94 and 95
   recorded (no thermal stress in dynamics, Mecway expands shells less).
+- **Temperature in time** (`temperature2` with a time table or a formula in t) now gives
+  thermal strain in nonlinear static (L30) and nonlinear dynamic response (D31): an
+  `EVOL_THER` from the reference temperature, following the table like Mecway (with CCX).
+  A constant temperature acts from the first step (Quasi-static, D31) or ramps up (L30
+  without Quasi-static, up to t = 1 s like Mecway). Temperatures now give thermal stress in `DYNA_NON_LINE`
+  (KNOWN_BUGS 94 fixed); D30 ignores them like Mecway. Verification NL-70..75, DY-70..73.
 - KNOWN_BUGS 88–90 recorded (bonded contact in thermal analyses, node temperature in
   mechanical analyses, quadratic shell as bonded master).
 - **Version check** (warning only): the log shows the Mecway version (from the `.liml`) and the

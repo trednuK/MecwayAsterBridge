@@ -1,0 +1,91 @@
+<liml version="33">
+  <analysis type="D31" />
+  <timesteps timeperiod="0.01 s" automatictimestepping="false" outputtimes="regular" timepointsstart="0 s" timepointsincrement="0.0005 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.025" y="0" z="0" />
+  <node nid="3" x="0.025" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0" y="0" z="0.01" />
+  <node nid="6" x="0.025" y="0" z="0.01" />
+  <node nid="7" x="0.025" y="0.01" z="0.01" />
+  <node nid="8" x="0" y="0.01" z="0.01" />
+  <node nid="9" x="0.05" y="0" z="0" />
+  <node nid="10" x="0.05" y="0.01" z="0" />
+  <node nid="11" x="0.05" y="0" z="0.01" />
+  <node nid="12" x="0.05" y="0.01" z="0.01" />
+  <node nid="13" x="0.075" y="0" z="0" />
+  <node nid="14" x="0.075" y="0.01" z="0" />
+  <node nid="15" x="0.075" y="0" z="0.01" />
+  <node nid="16" x="0.075" y="0.01" z="0.01" />
+  <node nid="17" x="0.1" y="0" z="0" />
+  <node nid="18" x="0.1" y="0.01" z="0" />
+  <node nid="19" x="0.1" y="0" z="0.01" />
+  <node nid="20" x="0.1" y="0.01" z="0.01" />
+  <elset name="Staaf" material="Staal">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="hex8" nodes="2 9 10 3 6 11 12 7" />
+    <elem eid="3" shape="hex8" nodes="9 13 14 10 11 15 16 12" />
+    <elem eid="4" shape="hex8" nodes="13 17 18 14 15 19 20 16" />
+  </elset>
+  <displacement selection="X0"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Y0"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Z0"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <thermalstress><referencetemperature>293.15 K</referencetemperature></thermalstress>
+  <temperature2 selection="Alle"><value time="0.0 s">293.15 K</value><value time="0.01 s">393.15 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" thermalexpansion="1.2e-05 1/K" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Alle">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="16" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="19" />
+    <node nid="20" />
+  </nodeselection>
+  <nodeselection name="XL">
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="19" />
+    <node nid="20" />
+  </nodeselection>
+  <nodeselection name="Midden">
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+  </nodeselection>
+  <faceselection name="X0">
+    <face eid="1" faceid="6" />
+  </faceselection>
+  <faceselection name="XLv">
+    <face eid="4" faceid="4" />
+  </faceselection>
+  <faceselection name="Y0">
+    <face eid="1" faceid="3" />
+    <face eid="2" faceid="3" />
+    <face eid="3" faceid="3" />
+    <face eid="4" faceid="3" />
+  </faceselection>
+  <faceselection name="Z0">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+  </faceselection>
+</liml>

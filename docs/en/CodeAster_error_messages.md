@@ -710,11 +710,12 @@ from contact (`SANS_GROUP_NO`).
 - **Cause**: a constant temperature field from t = 0 that differs from the reference
   temperature.
 - **Seen**: thermal strain test C14_thermal (displacement 6.0e-5 m, expected 6e-5).
-- **Solution**: in the bridge (`_build_temperature_field`): in `STAT_NON_LINE` the
-  temperature ramps from the reference (t = 0) to the field at the end time. In
-  `DYNA_NON_LINE` the field is constant from t = 0; the alarm remains there
-  (KNOWN_BUGS 17).
-- **Status**: fixed in the bridge (static) / limitation (dynamic).
+- **Solution**: in the bridge (`_build_temperature_field`): in `STAT_NON_LINE` and
+  `DYNA_NON_LINE` the field is an `EVOL_THER` with the reference at the first time point;
+  after that the temperature from the first step, ramped or following the time table
+  ([Thermal.md](Thermal.md) §3.1). In `DYNA_NON_LINE` the constant field gave no thermal
+  stress (verification DY-70).
+- **Status**: fixed in the bridge.
 
 ### `MECANONLINE_78` – mass matrix nearly singular
 
@@ -1427,7 +1428,7 @@ and beams in the model).
 | `INDICATEUR_8` | [11](#indicateur_6-indicateur_7-indicateur_8--loads-the-estimator-cannot-handle) | fixed in the bridge |
 | `JEVEUX_10` | [7](#jeveux_10--name-already-exists) | fixed in the bridge |
 | `JEVEUX_26` | [9](#jeveux_26--object-does-not-exist) | follow-on error |
-| `MECANONLINE2_97` | [3](#mecanonline2_97--thermal-strain-in-the-initial-state) | fixed in the bridge (static) / limitation (dynamic) |
+| `MECANONLINE2_97` | [3](#mecanonline2_97--thermal-strain-in-the-initial-state) | fixed in the bridge |
 | `MECANONLINE4_50` | [5](#mecanonline4_50--initial-stress-with-a-multi-step-scheme) | harmless (expected; NOT verified) |
 | `MECANONLINE5_1` | [5](#mecanonline5_1--explicit-only-prediction-tangente) | fixed in the bridge |
 | `MECANONLINE5_15` | [4](#mecanonline5_15--energy-not-with-continuous-contact) | fixed in the bridge (limitation of Code-Aster) |

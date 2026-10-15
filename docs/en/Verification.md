@@ -152,6 +152,10 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 - Springs and dampers only acted in global X; now along their own axis (LS-06).
 - *Node temperature* (`temperature3`) was ignored in a mechanical analysis (only an
   INFO); now a temperature per node in the nodal field (LS-08).
+- A temperature gave no thermal stress in `DYNA_NON_LINE` (the field from t = 0 counted
+  as the initial state, KNOWN_BUGS 94); now an `EVOL_THER` from the reference (DY-70). A
+  time table of a *Temperature* was not translated; now in L30 and D31 (NL-70..74,
+  DY-71).
 - Bonded contact between shells stopped with `FACTOR_11` (the rotation about the
   plate normal was tied as well); now without that rotation (LS-07). A skewed or
   curved master and a quadratic shell (quad8/tri6) as master still stopped with
@@ -1207,6 +1211,36 @@ samples) plus the kinks of the load tables (NL-20).
   `NCOTES` has not been tested separately on tet10 or curved faces (the Mecway samples
   PipeClip and AssemblyWithContact do run with it, see `bridge_to_aster.py`).
 
+### NL-70 .. NL-75 Temperature in time (thermal strain)
+
+- **Purpose**: a *Temperature* with a time table or a formula in t, and a constant
+  temperature with and without *Quasi-static*, in `STAT_NON_LINE` (`EVOL_THER` from the
+  reference, [Thermal.md](Thermal.md) §3.1).
+- **Model**: bar 0.1 × 0.01 × 0.01 m, 4 × 1 × 1 hex8, E = 210 GPa, ν = 0.3,
+  α = 1.2e-5 1/K, *Thermal stress* Tref = 293.15 K, `temperature2` on all nodes (NL-74:
+  table on the nodes at x = 0 and *Node temperature* +200 K at x = L). *Quasi-static*
+  with *Time period* 2 s (NL-73b and NL-75 without `<timesteps>`). Table ΔT = (0 s; 10 K),
+  (1 s; 100 K), (2 s; 50 K); formula Tref + 100·t. `deformation` = `PETIT`; NL-70b with the
+  default `GROT_GDEP`.
+- **Boundary conditions**: symmetry planes x = 0, y = 0, z = 0 (free expansion); NL-71
+  also u_x = 0 at x = L (clamped in x, transverse free).
+- **Reference**: free u_x(L, t) = α·ΔT(t)·L, clamped σ_xx(t) = −E·α·ΔT(t) (Timoshenko &
+  Goodier, 1970, §150; uniform strain, exact with hex8); NL-74 like LS-08c with the
+  element averages; NL-70b with Green-Lagrange strain α·ΔT: L·(√(1 + 2αΔT) − 1). Also
+  Mecway 34 with CCX on the same models (headless; Mecway's own solver does not solve L30
+  without a window). Tolerance 1e-6 (analytical), 1e-4 and 0.5% (Mecway/CCX).
+- **Result**: all checks exact (≤ 1e-6) at t = 0.5/1/2 s (table), 1/2 s (formula), the
+  first step t = 0.25 s (NL-73a: full expansion) and t = 0.5 s (NL-73b: half the expansion,
+  ramped). Equal to Mecway/CCX (displacement exact; stress: CCX 0.2–0.4% lower, CCX's
+  hex8).
+- **Interpretation**: Mecway follows the table linearly, also between the points; with
+  *Quasi-static* a constant temperature acts from the first step (Mecway/CCX: full
+  expansion at t = 0.25 s), without it it ramps. The bridge does the same. With
+  `GROT_GDEP` the thermal strain counts as Green-Lagrange strain (0.03–0.06% less
+  elongation than Mecway/CCX, NL-70b). Without *Quasi-static* Mecway/CCX takes the table
+  value at t = 1 s (the step time), also when the table runs further; the bridge then
+  computes up to t = 1 s (NL-75: 1.2e-4 m, exact and equal to Mecway/CCX).
+
 ## 6. Dynamics (DY)
 
 Mecway D31 with `<timesteps>` (output interval `timepointsincrement`). Implicit:
@@ -1319,6 +1353,32 @@ U documentation):
 - **Interpretation**: the conversion works for all imposed motions. Mecway allows a
   non-zero constant in a constraint equation only in static analyses (manual §9.42);
   the bridge translates it anyway, with a WARNING.
+
+### DY-70 .. DY-73 Temperature in dynamics
+
+- **Purpose**: thermal strain in `DYNA_NON_LINE` (KNOWN_BUGS 94: the constant field from
+  t = 0 gave no thermal stress, alarm `MECANONLINE2_97`) and leaving it out in D30.
+- **Model**: bar 10 × 10 mm, hex8, steel (ρ = 7850 kg/m³), α = 1.2e-5 1/K,
+  Tref = 293.15 K, `temperature2` on all nodes. DY-70: L = 0.2 m, 8 elements, `fixed` at
+  x = 0, u_x = 0 at x = L, +50 K constant, 1 N transverse at x = L, 2 ms (the reproduction of
+  KNOWN_BUGS 94). DY-71: L = 0.1 m, 4 elements, free (symmetry planes), table from Tref to
+  +100 K in 10 ms, output every 0.5 ms. DY-72: same, +100 K constant, ν = 0, NEWMARK, step
+  T/40 of the axial period T = 4L/c = 77 µs, 3T. DY-73: DY-72 as D30 with 1 N axial.
+- **Reference**: DY-70 the same model static (S30, `MECA_STATIQUE`): mean σ_xx over the
+  cross-section x = L/2 = −1.32502e8 Pa (5% above −E·α·ΔT because `fixed` prevents the
+  transverse expansion, coarse mesh). DY-71 quasi-static α·ΔT(t)·L (the heating lasts 130
+  axial periods). DY-72 a step load F = E·A·α·ΔT on the free end: maximum 2·α·ΔT·L,
+  vibration about α·ΔT·L (Chopra, 2012, §4.3). DY-73: Mecway 34 ignores *Temperature* in
+  D30 (headless, also with a time table). Tolerance 1% (DY-70/71), 3% (DY-72),
+  1e-3·α·ΔT·L (DY-73).
+- **Result**: DY-70 −0.18% / −0.10% (t = 0.2 / 2 ms; with the old translation σ_xx ≈ 0 and
+  alarm `MECANONLINE2_97`). DY-71 −0.002% / −0.06% (t = 5 / 10 ms). DY-72 maximum −1.5%,
+  mean −1.4%. DY-73 max |u_x| = 9e-9 m (only the 1 N).
+- **Interpretation**: in D31 the temperature now acts as in Mecway's quasi-static L30: a
+  constant temperature is a step load from the first step, a table is followed. Mecway
+  does not solve D31 headless (own solver: no solution, CCX: an empty solution), so not
+  compared with Mecway. The maximum of DY-72 is slightly below 2·α·ΔT·L because of the
+  dispersion of 4 hex8 (with HHT α = −0.1 and ν = 0.3: −3.6%).
 
 ## 7. Modal (MO) and buckling (BU)
 

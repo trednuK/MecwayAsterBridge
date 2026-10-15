@@ -155,6 +155,10 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 - Veren en dempers werkten alleen in globaal X; nu langs de eigen as (LS-06).
 - *Node temperature* (`temperature3`) telde in een mechanische analyse niet mee (alleen
   een INFO); nu als temperatuur per knoop in het knoopveld (LS-08).
+- Een temperatuur gaf in `DYNA_NON_LINE` geen thermische spanning (het veld vanaf t = 0
+  telde als begintoestand, KNOWN_BUGS 94); nu een `EVOL_THER` vanaf de referentie
+  (DY-70). Een tijdstabel van een *Temperature* werd niet vertaald; nu in L30 en D31
+  (NL-70..74, DY-71).
 - Verlijmd contact tussen schalen stopte met `FACTOR_11` (de rotatie om de
   plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07). Een scheve of
   gekromde master en een kwadratische schaal (quad8/tri6) als master stopten nog met
@@ -1208,6 +1212,37 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   apart getest op tet10 of gekromde vlakken (wel rekenen de Mecway-voorbeelden
   PipeClip en AssemblyWithContact ermee door, zie `bridge_to_aster.py`).
 
+### NL-70 .. NL-75 Temperatuur in de tijd (thermische rek)
+
+- **Doel**: een *Temperature* met tijdstabel of formule in t, en een constante
+  temperatuur met en zonder *Quasi-static*, in `STAT_NON_LINE` (`EVOL_THER` vanaf de
+  referentie, [Thermisch.md](Thermisch.md) §3.1).
+- **Model**: staaf 0,1 × 0,01 × 0,01 m, 4 × 1 × 1 hex8, E = 210 GPa, ν = 0,3,
+  α = 1,2e-5 1/K, *Thermal stress* Tref = 293,15 K, `temperature2` op alle knopen
+  (NL-74: tabel op de knopen x = 0 en *Node temperature* +200 K op x = L). *Quasi-static*
+  met *Time period* 2 s (NL-73b en NL-75 zonder `<timesteps>`). Tabel ΔT = (0 s; 10 K),
+  (1 s; 100 K), (2 s; 50 K); formule Tref + 100·t. `deformation` = `PETIT`; NL-70b met de
+  standaard `GROT_GDEP`.
+- **Randvoorwaarden**: symmetrievlakken x = 0, y = 0, z = 0 (vrij uitzetten); NL-71 ook
+  u_x = 0 op x = L (ingeklemd in x, dwarsrichting vrij).
+- **Referentie**: vrij u_x(L, t) = α·ΔT(t)·L, ingeklemd σ_xx(t) = −E·α·ΔT(t)
+  (Timoshenko & Goodier, 1970, §150; uniforme rek, exact met hex8); NL-74 als LS-08c met
+  de elementgemiddelden; NL-70b met Green-Lagrange-rek α·ΔT: L·(√(1 + 2αΔT) − 1).
+  Daarnaast Mecway 34 met CCX op dezelfde modellen (headless; Mecway's eigen solver
+  rekent L30 niet zonder venster). Tolerantie 1e-6 (analytisch), 1e-4 resp. 0,5 %
+  (Mecway/CCX).
+- **Resultaat**: alle controles exact (≤ 1e-6) op t = 0,5/1/2 s (tabel), 1/2 s
+  (formule), de eerste stap t = 0,25 s (NL-73a: volle uitzetting) en t = 0,5 s (NL-73b:
+  halve uitzetting, oplopend). Gelijk aan Mecway/CCX (verplaatsing exact; spanning: CCX
+  0,2–0,4 % lager, hex8 van CCX).
+- **Interpretatie**: Mecway volgt de tabel lineair, ook tussen de punten; met
+  *Quasi-static* staat een constante temperatuur vanaf de eerste stap (Mecway/CCX: volle
+  uitzetting op t = 0,25 s), zonder loopt hij op. De bridge doet hetzelfde. Met
+  `GROT_GDEP` telt de thermische rek als Green-Lagrange-rek (0,03–0,06 % minder
+  verlenging dan Mecway/CCX, NL-70b). Zonder *Quasi-static* neemt Mecway/CCX van een
+  tabel de waarde op t = 1 s (de staptijd), ook als de tabel verder loopt; de bridge
+  rekent dan tot t = 1 s (NL-75: 1,2e-4 m, exact en gelijk aan Mecway/CCX).
+
 ## 6. Dynamica (DY)
 
 Mecway D31 met `<timesteps>` (uitvoerinterval `timepointsincrement`). Impliciet:
@@ -1320,6 +1355,33 @@ U-documentatie gevonden):
 - **Interpretatie**: de omzetting werkt voor alle opgelegde bewegingen. Mecway staat een
   constante ≠ 0 in een constraint equation alleen bij statisch toe (manual §9.42); de
   bridge vertaalt haar toch, met een WARNING.
+
+### DY-70 .. DY-73 Temperatuur in dynamica
+
+- **Doel**: thermische rek in `DYNA_NON_LINE` (KNOWN_BUGS 94: het constante veld vanaf
+  t = 0 gaf geen thermische spanning, alarm `MECANONLINE2_97`) en het weglaten in D30.
+- **Model**: staaf 10 × 10 mm, hex8, staal (ρ = 7850 kg/m³), α = 1,2e-5 1/K,
+  Tref = 293,15 K, `temperature2` op alle knopen. DY-70: L = 0,2 m, 8 elementen, `fixed`
+  op x = 0, u_x = 0 op x = L, +50 K constant, 1 N dwars op x = L, 2 ms (de reproductie van
+  KNOWN_BUGS 94). DY-71: L = 0,1 m, 4 elementen, vrij (symmetrievlakken), tabel van Tref
+  naar +100 K in 10 ms, uitvoer elke 0,5 ms. DY-72: idem, +100 K constant, ν = 0,
+  NEWMARK, stap T/40 van de axiale periode T = 4L/c = 77 µs, 3T. DY-73: als DY-72 als D30
+  met 1 N axiaal.
+- **Referentie**: DY-70 hetzelfde model statisch (S30, `MECA_STATIQUE`): gemiddelde
+  σ_xx over de doorsnede x = L/2 = −1,32502e8 Pa (5 % boven −E·α·ΔT door de verhinderde
+  dwarsuitzetting bij `fixed` en het grove mesh). DY-71 quasi-statisch α·ΔT(t)·L (de
+  opwarming duurt 130 axiale perioden). DY-72 een staplast F = E·A·α·ΔT op het vrije
+  einde: maximum 2·α·ΔT·L, trilling om α·ΔT·L (Chopra, 2012, §4.3). DY-73: Mecway 34
+  negeert *Temperature* in D30 (headless, ook met tijdstabel). Tolerantie 1 % (DY-70/71),
+  3 % (DY-72), 1e-3·α·ΔT·L (DY-73).
+- **Resultaat**: DY-70 −0,18 % / −0,10 % (t = 0,2 / 2 ms; met de oude vertaling
+  σ_xx ≈ 0 en alarm `MECANONLINE2_97`). DY-71 −0,002 % / −0,06 % (t = 5 / 10 ms). DY-72
+  maximum −1,5 %, gemiddelde −1,4 %. DY-73 max |u_x| = 9e-9 m (alleen de 1 N).
+- **Interpretatie**: de temperatuur werkt in D31 nu als in Mecway's quasi-statische
+  L30: een constante temperatuur is een staplast vanaf de eerste stap, een tabel wordt
+  gevolgd. Mecway rekent D31 headless niet (eigen solver: geen oplossing, CCX: een lege
+  oplossing), dus niet tegen Mecway vergeleken. Het maximum van DY-72 ligt door de
+  dispersie van 4 hex8 iets onder 2·α·ΔT·L (met HHT α = −0,1 en ν = 0,3: −3,6 %).
 
 ## 7. Modaal (MO) en knik (BU)
 

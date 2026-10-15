@@ -45,7 +45,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Gravity | Ja | Met een tijdstabel alleen bij een vaste richting. |
 | Centrifugal force | Deels | Alleen een constante hoeksnelheid, één per model (geen gyroscopisch effect); spin softening alleen op volumes (KB19). |
 | Mass, Rotational inertia | Ja | Alleen op knopen; rotatietraagheid op één knoop. |
-| Temperature (`temperature2`) + Thermal stress | Deels | Constante temperatuur; een tijdshistorie wordt overgeslagen (KB17). In dynamica (D31) geen thermische spanning (KB94). |
+| Temperature (`temperature2`) + Thermal stress | Ja | Constante temperatuur; een tijdstabel of formule in t in L30 en D31 (`EVOL_THER`, NL-70..75, DY-70..72). Statisch/modaal/knik: een tijdshistorie valt weg, zoals bij Mecway's eigen solver. D30 negeert hem zoals Mecway. |
 | Node temperature (`temperature3`) in een mechanische analyse | Ja | Ook na *Transfer temperatures from solution*. Statisch, niet-lineair statisch, modaal (voorspanning) en knik, zoals Temperature; knopen zonder temperatuur op de referentie van de Thermal stress (LS-08). D30 negeert hem zoals Mecway; D31 gemeld (niet in Mecway's lijst). |
 | Rayleigh damping | Deels | Alleen op het hele model, niet op een selectie (KB27). |
 | Initial velocity | Ja | Alleen in dynamica; niet bij mode superposition (KB54). |

@@ -76,8 +76,9 @@ solver it did couple (350 K, and 340 / 360 K with h = 2000 W/m²K), equal to the
 (TH-04a/c).
 ### 3.1 Temperatures in a mechanical analysis (thermal stress)
 
-In a static, nonlinear static, modal or buckling analysis a *Thermal stress* (reference
-temperature) together with temperatures gives thermal strain (manual §9.23–9.25):
+In a static, nonlinear static, modal or buckling analysis and in a nonlinear dynamic
+response a *Thermal stress* (reference temperature) together with temperatures gives
+thermal strain (manual §9.23–9.25):
 
 | Mecway | Code-Aster |
 |---|---|
@@ -95,15 +96,32 @@ temperature) together with temperatures gives thermal strain (manual §9.23–9.
 - Two different temperatures on one node: Mecway does not solve then ("Conflicting
   temperatures on node"); the bridge gives a WARNING and uses the Node temperature (or,
   with two Node temperatures, the last one).
-- Nonlinear static: the temperature ramps from the reference at t = 0 to the value at
-  the end time (KNOWN_BUGS 17). Modal and buckling: the prestress from the thermal
-  strain is included (`modal_prestress`).
-- Dynamic Response (D30): Mecway ignores the temperatures, the Node temperature is also
-  left out by the bridge (INFO). Nonlinear Dynamic Response (D31): Node temperature is not
-  among Mecway's analysis types (manual §9.24) and is reported (ERROR, not translated); a
-  Temperature gives no thermal stress there (KNOWN_BUGS 94).
-- A time history of a Temperature is not translated in a mechanical analysis
-  (reported).
+- Modal and buckling: the prestress from the thermal strain is included
+  (`modal_prestress`).
+- Nonlinear static (L30) and nonlinear dynamic response (D31): the field is an
+  `EVOL_THER` (`CREA_RESU`) with the reference at the first time point, so the thermal
+  strain gives stress from the first step (a field that already differs at t = 0 is taken
+  by Code-Aster as a stress-free initial state, alarm `MECANONLINE2_97`). After that, like
+  Mecway 34 with CCX in L30 (seen headless):
+
+  | Temperature | With *Quasi-static* (`<timesteps>`) and in D31 | L30 without *Quasi-static* |
+  |---|---|---|
+  | constant (also Node temperature) | full value from the first step | ramped linearly to the end time (Mecway only shows the final state) |
+  | time table or formula in t | follows the table: linear between the points, constant outside the range; the table points become solution times | follows the table up to t = 1 s and takes the table value there (Mecway's step time) |
+
+  A formula in t is sampled over the *Time period* (like Mecway, 10001 points, 0.01%).
+  Verification NL-70..75 and DY-70..72. In D31 a sudden temperature is a step load (the bar
+  vibrates about its new length, DY-72); ramp the temperature with a table for a
+  quasi-static heating (DY-71). Mecway does not solve D31 headless (own solver and CCX);
+  the D31 behaviour is therefore not compared with Mecway.
+- Static, modal and buckling with a time history of a Temperature: left out (WARNING),
+  like Mecway's own solver (Mecway 34 headless: no expansion, the same frequency and
+  buckling factor as without temperature). With CCX Mecway takes the table value at
+  t = 1 s in S30; use a constant temperature there.
+- Dynamic Response (D30): Mecway ignores the temperatures (seen headless, also with a time
+  table); Temperature and Node temperature are left out by the bridge too (INFO, DY-73).
+  Nonlinear Dynamic Response (D31): Node temperature is not among Mecway's analysis types
+  (manual §9.24) and is reported (ERROR, not translated).
 
 ## 4. Additional checks (Code-Aster 17.4, offline)
 

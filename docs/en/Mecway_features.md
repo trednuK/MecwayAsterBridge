@@ -45,7 +45,7 @@ ignored with only an INFO, as Mecway itself does.
 | Gravity | Yes | With a time table only for a fixed direction. |
 | Centrifugal force | Partly | Only a constant angular velocity, one per model (no gyroscopic effect); spin softening only on solids (KB19). |
 | Mass, Rotational inertia | Yes | Only on nodes; rotational inertia on one node. |
-| Temperature (`temperature2`) + Thermal stress | Partly | Constant temperature; a time history is skipped (KB17). No thermal stress in dynamics (D31) (KB94). |
+| Temperature (`temperature2`) + Thermal stress | Yes | Constant temperature; a time table or formula in t in L30 and D31 (`EVOL_THER`, NL-70..75, DY-70..72). Static/modal/buckling: a time history is left out, as with Mecway's own solver. D30 ignores it like Mecway. |
 | Node temperature (`temperature3`) in a mechanical analysis | Yes | Also after *Transfer temperatures from solution*. Static, nonlinear static, modal (prestress) and buckling, like Temperature; nodes without a temperature at the Thermal stress reference (LS-08). D30 ignores it like Mecway; D31 reported (not in Mecway's list). |
 | Rayleigh damping | Partly | Only on the whole model, not on a selection (KB27). |
 | Initial velocity | Yes | Dynamics only; not with mode superposition (KB54). |

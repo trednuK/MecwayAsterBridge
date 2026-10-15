@@ -726,3 +726,145 @@ TESTS = [
          settings={"deformation": "PETIT"}, timeout=900,
          note="Zelfde staaf als DY-03a; PETIT."),
 ]
+
+
+# ------------------------------------------------------------------
+# DY-70 .. DY-73 Temperatuur (thermische rek) in DYNA_NON_LINE
+# ------------------------------------------------------------------
+# De bridge zet het temperatuurveld als EVOL_THER met de referentie op
+# t = 0 (KNOWN_BUGS 94 opgelost: een vast veld vanaf t = 0 nam Code-Aster
+# als begintoestand zonder spanning, alarm MECANONLINE2_97). D31: een
+# constante temperatuur vanaf de eerste stap, een tijdstabel volgt de
+# tabel. D30: Mecway negeert temperaturen (headless gezien), de bridge
+# laat ze weg (INFO). Mecway rekent D31 headless niet (eigen solver: geen
+# oplossing; CCX: lege oplossing), dus alleen analytische referenties.
+ALPHA9, TREF9, E9, RHO9 = 1.2e-5, 293.15, 210e9, 7850.0
+C9 = math.sqrt(E9 / RHO9)
+
+
+def build_dy70(atype, length, nx, temp_xml, t_end, dt_out, clamped,
+               force=None, nu=0.3):
+    """Staaf length x 0,01 x 0,01 m (nx hex8), alpha = 1,2e-5 1/K.
+    clamped: fixed op x = 0 en u_x = 0 op x = L (KNOWN_BUGS 94); anders
+    vrij op drie symmetrievlakken."""
+    def build():
+        m = Model(atype, timesteps=_timesteps(t_end, dt_out))
+        m.elset("Staaf", "Staal")
+        g = hexmesh(m, "Staaf", nx, 1, 1, box(0, length, 0, 0.01, 0, 0.01))
+        m.mat("Staal", '<mechanical type="Isotropic" '
+              'youngsmodulus="210000 MPa" poissonratio="%g" '
+              'thermalexpansion="%g 1/K" />' % (nu, ALPHA9),
+              u'<density type="Simple" density="7850 kg/m³" />')
+        m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+        m.node_selection("XL", sorted(g["nodes"]["u1"]))
+        m.node_selection("Midden", [n for n, p in enumerate(m.nodes, 1)
+                                    if abs(p[0] - length / 2) < 1e-9])
+        m.face_selection("X0", g["faces"]["u0"])
+        m.face_selection("XLv", g["faces"]["u1"])
+        if clamped:
+            m.add('<fixed selection="X0" />')
+            m.add('<displacement selection="XLv"><value>0 m</value>'
+                  '<x>1</x><y>0</y><z>0</z></displacement>')
+        else:
+            m.face_selection("Y0", g["faces"]["v0"])
+            m.face_selection("Z0", g["faces"]["w0"])
+            for s, x, y, z in (("X0", 1, 0, 0), ("Y0", 0, 1, 0),
+                               ("Z0", 0, 0, 1)):
+                m.add('<displacement selection="%s"><value>0 m</value>'
+                      '<x>%d</x><y>%d</y><z>%d</z></displacement>'
+                      % (s, x, y, z))
+        if force:
+            m.add('<force selection="XL"><x>%r N</x><y>%r N</y>'
+                  '<z>0 N</z></force>' % force)
+        m.add('<thermalstress><referencetemperature>%g K'
+              '</referencetemperature></thermalstress>' % TREF9)
+        m.add('<temperature2 selection="Alle">%s<starttime>0 s</starttime>'
+              '<endtime>0 s</endtime></temperature2>' % temp_xml)
+        return m
+    return build
+
+
+def _hist9(points):
+    """<value time="t s">T K</value> voor elk (t, T)."""
+    return "".join('<value time="%r s">%.12g K</value>' % (t, v)
+                   for t, v in points)
+
+
+def _const9(dt):
+    return "<value>%.12g K</value>" % (TREF9 + dt)
+
+
+# DY-70: reproductie KNOWN_BUGS 94 (staaf 0,2 m, 8 hex8, fixed op x = 0,
+# u_x = 0 op x = L, +50 K, 1 N dwars op x = L, 2 ms). Verhinderde
+# uitzetting: sigma_xx = -E alpha dT = -1,26e8 Pa; de uniforme thermische
+# last is met u_x = 0 al in evenwicht, dus geen axiale trilling.
+# Gemiddelde over de doorsnede x = L/2 (de buiging door de dwarslast valt
+# weg). Referentie: hetzelfde model als S30 (MECA_STATIQUE, lin_static_3d,
+# Code-Aster 17.4): -1,32502e8 Pa; 5 % boven -E alpha dT doordat fixed de
+# dwarsuitzetting op x = 0 tegenhoudt (grof hex8-mesh, 1 element over de
+# doorsnede). Zonder de oplossing: 0 (alleen de buiging).
+S70 = -1.32502e8
+# DY-71: vrije staaf 0,1 m, temperatuur lineair van Tref naar +100 K in
+# 10 ms, ver boven de axiale periode 4 L/c = 7,7e-5 s: quasi-statisch,
+# u_x(L, t) = alpha dT(t) L (dynamische naijling ~ T/(2 pi t) < 0,3 %).
+L71, T71 = 0.1, 0.01
+# DY-72: vrije staaf 0,1 m (4 hex8), +100 K vanaf de eerste stap (D31,
+# constante temperatuur): een staplast, u_x(L) slingert tussen 0 en
+# 2 alpha dT L (als een staplast F = E A alpha dT op het vrije einde:
+# vergrotingsfactor 2, Chopra, Dynamics of Structures, par. 4.3); stap
+# T/40 van de axiale periode T = 4 L/c. nu = 0 (1D) en NEWMARK (geen
+# numerieke demping); met 4 hex8 blijft de piek 1,5 % onder 2 alpha dT L
+# (HHT alpha = -0,1 en nu = 0,3: 3,6 %).
+L72 = 0.1
+T72 = 4.0 * L72 / C9
+U72 = ALPHA9 * 100.0 * L72
+
+
+TESTS += [
+    Case("DY-70", GROUP, "Staaf met verhinderde uitzetting, constante "
+         "temperatuur (KNOWN_BUGS 94)", "dyna_impl_3d",
+         build_dy70("D31", 0.2, 8, _const9(50.0), 0.002, 0.0002, True,
+                    force=(0.0, 1.0)),
+         [Check("gemiddelde sigma_xx op x = L/2, t = %g s" % t,
+                lambda r, t=t: r.mean("stressxx", "Midden", t), ref=S70,
+                tol=0.01, unit="Pa",
+                source="zelfde model statisch (S30, MECA_STATIQUE); "
+                       "-E alpha dT = -1,26e8 Pa met vrije dwarsuitzetting")
+          for t in (0.0002, 0.002)],
+         note="Voorheen gelijk aan het model zonder temperatuur (alarm "
+              "MECANONLINE2_97)."),
+    Case("DY-71", GROUP, "Vrije staaf, temperatuur langzaam oplopend "
+         "(tijdstabel, quasi-statisch)", "dyna_impl_3d",
+         build_dy70("D31", L71, 4, _hist9(
+             [(0.0, TREF9), (T71, TREF9 + 100.0)]), T71, T71 / 20, False),
+         [Check("u_x(L) op t = %g s" % t,
+                lambda r, t=t: r.at("displx", (L71, 0, 0), t),
+                ref=ALPHA9 * 100.0 * t / T71 * L71, tol=0.01, unit="m",
+                source="alpha dT(t) L (quasi-statisch)")
+          for t in (T71 / 2, T71)]),
+    Case("DY-72", GROUP, "Vrije staaf, constante temperatuur vanaf de "
+         "eerste stap (staplast)", "dyna_impl_3d",
+         build_dy70("D31", L72, 4, _const9(100.0), 3 * T72, T72 / 40,
+                    False, nu=0.0),
+         [Check("max. u_x(L)",
+                lambda r: peak(r.history("displx", (L72, 0, 0)),
+                               t_max=1.5 * T72),
+                ref=2.0 * U72, tol=0.03, unit="m",
+                source="staplast: 2 alpha dT L"),
+          Check("gemiddelde u_x(L) over 0..3 T",
+                lambda r: mean_between(r.history("displx", (L72, 0, 0)),
+                                       0.0, 3 * T72),
+                ref=U72, tol=0.03, unit="m",
+                source="trilling om alpha dT L")],
+         settings={"deformation": "PETIT", "schema": "NEWMARK"}),
+    Case("DY-73", GROUP, "Dynamic Response (D30): temperatuur telt niet "
+         "mee", "dyna_impl_3d",
+         build_dy70("D30", L72, 4, _const9(100.0), 3 * T72, T72 / 40,
+                    False, force=(1.0, 0.0)),
+         [Check("max. |u_x(L)|",
+                lambda r: max(abs(v) for _t, v in r.history(
+                    "displx", (L72, 0, 0))),
+                ref=0.0, tol_abs=1e-3 * U72, unit="m",
+                source="Mecway 34 negeert Temperature in D30 (headless); "
+                       "1 N geeft < 1e-8 m (tolerantie 1e-3 alpha dT L)")]),
+]

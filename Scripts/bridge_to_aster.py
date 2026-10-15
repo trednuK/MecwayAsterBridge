@@ -46,6 +46,7 @@ import bridge_fatigue
 import bridge_mesh
 import bridge_modal_damping
 from collections import OrderedDict
+from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
                           run_name, template_path)
@@ -1968,7 +1969,7 @@ def _prepare_gaps(model_data):
 # ==========================================
 # HULPFUNCTIE: AFFE_MATERIAU
 # ==========================================
-def _build_fieldmat_block(model_data, t_ramp=None):
+def _build_fieldmat_block(model_data, timeline=None):
     """
     AFFE_MATERIAU-aanroep: per elset het materiaal (MAT_<n>,
     _material_concepts).
@@ -1982,6 +1983,8 @@ def _build_fieldmat_block(model_data, t_ramp=None):
 
     Zonder elsets, of als er geen toewijzing overblijft, krijgt het hele
     model het eerste materiaal (TOUT='OUI'), zodat AFFE nooit leeg is.
+    timeline: tijdsverloop van het temperatuurveld in STAT_NON_LINE/
+    DYNA_NON_LINE (_temperature_timeline), anders None.
     """
     materials        = model_data["materials"]
     concepts         = _material_concepts(model_data)
@@ -2014,7 +2017,7 @@ def _build_fieldmat_block(model_data, t_ramp=None):
         entries.append("        _F(GROUP_MA='{0}', MATER=MAT_{0}),\n".format(
             group))
 
-    temp_block, varc = _build_temperature_field(model_data, t_ramp)
+    temp_block, varc = _build_temperature_field(model_data, timeline)
     if not entries:
         # Alleen discrete elementen (veren, dempers): AFFE_MATERIAU vraagt
         # AFFE of CHAM_MATER (<EXCEPTION> SUPERVIS_4 met een lege AFFE,
@@ -2112,6 +2115,9 @@ def _check_temperature_conflicts(model_data, node_temps):
     clash = set()
     for t in model_data.get("temperatures", []):
         sel = t.get("selection")
+        if isinstance(t["value"], list):
+            # tijdshistorie: niet vergeleken
+            continue
         if sel in node_groups:
             nids = set(int(str(n).lstrip("N")) for n in node_groups[sel])
         elif sel in faces:
@@ -2138,7 +2144,62 @@ def _check_temperature_conflicts(model_data, node_temps):
                    ", ".join(str(n) for n in sorted(clash)[:10])))
 
 
-def _build_temperature_field(model_data, t_ramp=None):
+def _temperature_histories(model_data, t_cut=None):
+    """
+    [("_temp", [(t, K)])] van de Temperatures (temperature2) met een
+    tijdstabel of formule in t, voor de tijdstippen van de rekenstappen in
+    STAT_NON_LINE/DYNA_NON_LINE (_build_listinst_block en
+    _build_dyna_listinst_block gebruiken van een lastfunctie alleen de
+    tijden). Leeg zonder Thermal stress.
+    t_cut: Nonlinear Static zonder Quasi-static (geen <timesteps>): Mecway
+    rekent dan een stap met staptijd 1 s en neemt de tabelwaarde op t = 1 s
+    (Mecway 34 met CCX, headless gezien: tabel (0; +10), (1; +100),
+    (2; +50) K gaf de uitzetting van +100 K). De tijden na t_cut vallen
+    weg (de rekentijden lopen dan niet door tot het laatste tabelpunt);
+    t_cut zelf komt erbij.
+    """
+    if model_data.get("thermal_stress") is None:
+        return []
+    out = []
+    for t in model_data.get("temperatures", []):
+        h = t["value"]
+        if not isinstance(h, list):
+            continue
+        if t_cut is not None:
+            h = [(ti, v) for ti, v in h if ti < t_cut] + [
+                (t_cut, _value_at(h, t_cut))]
+        out.append(("_temp", h))
+    return out
+
+
+def _temperature_timeline(model_data, listinst_block, t_end, dynamic):
+    """
+    Tijdsverloop van het temperatuurveld in STAT_NON_LINE/DYNA_NON_LINE
+    (_build_temperature_field):
+      t0    : eerste tijdstip van de rekenstappen (DEBUT van de
+              DEFI_LIST_REEL in listinst_block; anders 0);
+      t_end : laatste tijdstip;
+      ramp  : True = constante temperaturen lopen lineair op van de
+              referentie op t0 naar hun waarde op t_end. Zo doet Mecway
+              het in Nonlinear Static zonder Quasi-static (geen
+              <timesteps>: "loads are automatically ramped up from zero",
+              manual v34 par. 6.2.2; Mecway 34 met CCX: alleen de
+              eindtoestand). False (Quasi-static, en dynamica) = vanaf de
+              eerste rekenstap de volle waarde ("loads that are specified
+              as constant are not ramped", par. 6.2.2; Mecway 34 met CCX,
+              L30 met <timesteps>: de volle uitzetting vanaf de eerste
+              stap, gezien in een headless run).
+    """
+    # DEBUT= (DEFI_LIST_REEL met INTERVALLE) of het eerste getal van VALE=
+    # (Mecway's stappen, _mecway_static_times)
+    m = (re.search(r"DEBUT=\s*([-+0-9.eE]+)", listinst_block or "") or
+         re.search(r"VALE=\(\s*([-+0-9.eE]+)", listinst_block or ""))
+    t0 = float(m.group(1)) if m else 0.0
+    return {"t0": t0, "t_end": t_end,
+            "ramp": not dynamic and not model_data.get("timesteps")}
+
+
+def _build_temperature_field(model_data, timeline=None):
     """
     Thermische rek (Mecway thermal stress + temperature, manual v33 par.
     9.23/9.25): knopen zonder temperatuur staan op de referentie-
@@ -2156,10 +2217,31 @@ def _build_temperature_field(model_data, t_ramp=None):
     middenknoop van QUAD9/TRIA7 bij COQUE_3D) krijgen dan de
     geinterpoleerde temperatuur van de Mecway-knopen, zoals het veld op
     het oorspronkelijke mesh.
+
+    timeline: None (MECA_STATIQUE, modaal, knik, ...): een vast veld
+    (CHAM_GD). Een Temperature met tijdshistorie valt dan weg (WARNING):
+    Mecway's eigen solver negeert hem in S30/V30/B30 ook (Mecway 34
+    headless: geen uitzetting, frequentie en knikfactor als zonder
+    temperatuur; met CCX neemt Mecway in S30 de tabelwaarde op t = 1 s).
+    Anders (STAT_NON_LINE/DYNA_NON_LINE, _temperature_timeline) een
+    EVOL_THER (CREA_RESU AFFE, U4.44.12) met de referentie op t0: een veld
+    dat op t0 al van de referentie afwijkt, nam Code-Aster 17.4 als
+    begintoestand zonder spanning (alarm MECANONLINE2_97, "on ne prend pas
+    en compte les éventuelles contraintes incompatibles"; KNOWN_BUGS 94
+    voor DYNA_NON_LINE). Daarna volgt elke Temperature met tijdshistorie
+    zijn tabel (lineair tussen de punten, constant buiten het bereik, zoals
+    Mecway: manual par. 9 "Some loads and constraints can vary as a
+    function of time"; Mecway 34 met CCX, L30, headless gezien) en lopen
+    constante temperaturen en Node temperatures op (ramp) of staan ze vanaf
+    t0 + delta op hun waarde (delta = 1e-4 van de duur, kleiner dan een
+    rekenstap). AFFE_VARC EVOL interpoleert lineair tussen de tijdstippen
+    van de EVOL_THER (U4.43.03; nagemeten in NL-70/71), dus de EVOL_THER
+    heeft alle knikpunten van de tabellen; PROL_GAUCHE/PROL_DROITE=
+    'CONSTANT' (catalogus c_affe_varc.py) voor tijden buiten het bereik.
     Returns (blok met CREA_CHAMP, "    AFFE_VARC=...,\\n") of ("", "").
     """
     ts = model_data.get("thermal_stress")
-    temps = model_data.get("temperatures", [])
+    temps = list(model_data.get("temperatures", []))
     node_temps = model_data.get("node_temperatures") or {}
     if ts is None:
         if temps or node_temps:
@@ -2167,6 +2249,56 @@ def _build_temperature_field(model_data, t_ramp=None):
                 "rek (zoals Mecway, manual v33 par. 9.25).")
         return "", ""
     tref = ts["tref"]
+    hist = [t for t in temps if isinstance(t["value"], list)]
+    if hist and timeline is None:
+        if not model_data.get("_temp_hist_warned"):
+            model_data["_temp_hist_warned"] = True
+            log(tr("WARNING: Temperature met tijdshistorie op {0}: alleen "
+                   "vertaald in Nonlinear Static en Nonlinear Dynamic "
+                   "Response, hier weggelaten (referentietemperatuur). "
+                   "Mecway's eigen solver negeert hem hier ook; met CCX "
+                   "neemt Mecway de waarde op t = 1 s. Gebruik een "
+                   "constante temperatuur.",
+                   "WARNING: Temperature with a time history on {0}: only "
+                   "translated in Nonlinear Static and Nonlinear Dynamic "
+                   "Response, left out here (reference temperature). "
+                   "Mecway's own solver ignores it here too; with CCX "
+                   "Mecway takes the value at t = 1 s. Use a constant "
+                   "temperature.").format(", ".join(
+                       "'{0}'".format(t["selection"]) for t in hist)))
+        temps = [t for t in temps if not isinstance(t["value"], list)]
+        hist = []
+    if node_temps:
+        _check_temperature_conflicts(model_data, node_temps)
+    new_nodes = bool(model_data.get("line_quad") or
+                     model_data.get("shell_upgrades"))
+    need_nt = bool(node_temps or (new_nodes and temps))
+    n_mw = len(model_data.get("mesh_nodes", {}))
+    nt_data = ""
+    if need_nt:
+        by_value = OrderedDict()
+        for nid in sorted(node_temps):
+            by_value.setdefault(node_temps[nid], []).append(
+                "{0}".format(nid))
+        nt_data = "".join("    {0!r}: {1},\n".format(
+            v, _fmt_seq(nids, per_line=12, indent="        "))
+            for v, nids in by_value.items())
+    ref_block = (
+        "temp_ref = CREA_CHAMP(\n"
+        "    TYPE_CHAM='NOEU_TEMP_R',\n"
+        "    OPERATION='AFFE',\n"
+        "    MAILLAGE=mesh,\n"
+        "    AFFE=_F(TOUT='OUI', NOM_CMP='TEMP', VALE={0!r}),\n"
+        ")\n").format(tref)
+    varc_evo = ("    AFFE_VARC=_F(TOUT='OUI', NOM_VARC='TEMP', EVOL=temp_evo, "
+                "VALE_REF={0!r},\n"
+                "               PROL_GAUCHE='CONSTANT', "
+                "PROL_DROITE='CONSTANT'),\n").format(tref)
+    if hist:
+        return _build_temperature_history(
+            model_data, temps, hist, tref, timeline, need_nt, nt_data,
+            n_mw, ref_block, varc_evo)
+
     affe = ["_F(TOUT='OUI', NOM_CMP='TEMP', VALE={0!r})".format(tref)]
     for t in temps:
         affe.append("_F({0}='{1}', NOM_CMP='TEMP', VALE={2!r})".format(
@@ -2178,52 +2310,133 @@ def _build_temperature_field(model_data, t_ramp=None):
         "    MAILLAGE=mesh,\n"
         "    AFFE=(\n        {0},\n    ),\n"
         ")\n").format(",\n        ".join(affe))
-    if node_temps:
-        _check_temperature_conflicts(model_data, node_temps)
-    new_nodes = bool(model_data.get("line_quad") or
-                     model_data.get("shell_upgrades"))
-    if node_temps or (new_nodes and temps):
-        by_value = OrderedDict()
-        for nid in sorted(node_temps):
-            by_value.setdefault(node_temps[nid], []).append(
-                "{0}".format(nid))
-        data = "".join("    {0!r}: {1},\n".format(
-            v, _fmt_seq(nids, per_line=12, indent="        "))
-            for v, nids in by_value.items())
+    if need_nt:
         block += _NODE_TEMPS_FUNC + (
             "# Node temperature (Mecway temperature3) per knoop: "
             "{{K: (Mecway-knoopnummers)}}\n"
             "_bridge_node_temps(temp_fld, mesh, {{\n{0}}}, {1})\n"
-        ).format(data, len(model_data.get("mesh_nodes", {})))
+        ).format(nt_data, n_mw)
     block += "\n"
-    if t_ramp is None:
+    if timeline is None:
         varc = ("    AFFE_VARC=_F(TOUT='OUI', NOM_VARC='TEMP', "
                 "CHAM_GD=temp_fld, VALE_REF={0!r}),\n").format(tref)
         return block, varc
-    # STAT_NON_LINE: een constant veld vanaf t = 0 gaf alarm
-    # MECANONLINE2_97 ("à l'état initial ... déformation anélastique non
-    # nulle ... on ne prend pas en compte les éventuelles contraintes
-    # incompatibles", Code-Aster 17.4). Daarom een EVOL_THER (CREA_RESU
-    # AFFE, U4.44.12) van de referentie op t = 0 lineair naar het veld op
-    # t_ramp (eindtijd), zoals een belasting die oploopt.
-    block += (
-        "temp_ref = CREA_CHAMP(\n"
-        "    TYPE_CHAM='NOEU_TEMP_R',\n"
-        "    OPERATION='AFFE',\n"
-        "    MAILLAGE=mesh,\n"
-        "    AFFE=_F(TOUT='OUI', NOM_CMP='TEMP', VALE={0!r}),\n"
-        ")\n"
+    t0, t_end = timeline["t0"], timeline["t_end"]
+    if timeline["ramp"] and t_end > t0:
+        # Nonlinear Static zonder Quasi-static: lineair van de referentie
+        # op t0 naar het veld op de eindtijd, zoals een belasting die
+        # oploopt.
+        t1 = t_end
+        what = "oplopend tot t = {0}".format(t1)
+    else:
+        # Quasi-static en dynamica: de volle waarde vanaf de eerste stap.
+        t1 = t0 + _temperature_delta(t0, t_end, [])
+        what = "vanaf de eerste stap (t = {0})".format(t1)
+    log("INFO: Temperatuurveld als EVOL_THER: referentie op t = {0}, "
+        "{1}.".format(t0, what))
+    block += ref_block + (
         "temp_evo = CREA_RESU(\n"
         "    OPERATION='AFFE',\n"
         "    TYPE_RESU='EVOL_THER',\n"
         "    AFFE=(\n"
-        "        _F(NOM_CHAM='TEMP', CHAM_GD=temp_ref, INST=0.0),\n"
+        "        _F(NOM_CHAM='TEMP', CHAM_GD=temp_ref, INST={0!r}),\n"
         "        _F(NOM_CHAM='TEMP', CHAM_GD=temp_fld, INST={1!r}),\n"
         "    ),\n"
-        ")\n\n").format(tref, t_ramp)
-    varc = ("    AFFE_VARC=_F(TOUT='OUI', NOM_VARC='TEMP', EVOL=temp_evo, "
-            "VALE_REF={0!r}),\n").format(tref)
-    return block, varc
+        ")\n\n").format(t0, t1)
+    return block, varc_evo
+
+
+def _temperature_delta(t0, t_end, hist):
+    """Tijd na t0 waarop constante temperaturen hun volle waarde hebben
+    (Quasi-static/dynamica): 1e-4 van de duur, ruim boven de precisie
+    waarmee Code-Aster tijdstippen vergelijkt (1e-6 relatief) en kleiner
+    dan een rekenstap."""
+    t_last = max([t_end] + [h[-1][0] for h in hist])
+    span = t_last - t0
+    if span <= 0.0:
+        span = 1.0
+    return 1.0e-4 * span
+
+
+def _build_temperature_history(model_data, temps, hist, tref, timeline,
+                               need_nt, nt_data, n_mw, ref_block, varc_evo):
+    """
+    EVOL_THER voor Temperatures met tijdshistorie (zie
+    _build_temperature_field): op t0 de referentie, daarna per tijdstip
+    een knoopveld met de waarde van elke Temperature (tabel: _value_at;
+    constant: tref + s (T - tref), s = 1 of de ramp) en de Node
+    temperatures (zelfde s). De velden maakt een lus in de .comm.
+    """
+    t0, t_end = timeline["t0"], timeline["t_end"]
+    ramp = timeline["ramp"] and t_end > t0
+    hvals = [t["value"] for t in hist]
+    ta = t0 + _temperature_delta(t0, t_end, hvals)
+    insts = [ta] + [t for h in hvals for t, _v in h if t > ta]
+    if ramp and t_end > ta:
+        insts.append(t_end)
+    insts = sorted(set(insts))
+    insts = _merge_times(insts, max(abs(insts[0]), abs(insts[-1])))
+    rows = []
+    for t in insts:
+        s = min(1.0, (t - t0) / (t_end - t0)) if ramp else 1.0
+        vals = []
+        for e in temps:
+            v = e["value"]
+            if isinstance(v, list):
+                vals.append(_value_at(v, t))
+            else:
+                vals.append(tref + (v - tref) * s)
+        rows.append("    ({0!r}, {1!r}, ({2},)),\n".format(
+            t, s, ", ".join("{0!r}".format(v) for v in vals)))
+    affe = ["            _F(TOUT='OUI', NOM_CMP='TEMP', VALE={0!r}),\n"
+            .format(tref)]
+    for i, e in enumerate(temps):
+        affe.append("            _F({0}='{1}', NOM_CMP='TEMP', "
+                    "VALE=_v[{2}]),\n".format(e["target"], e["selection"],
+                                              i))
+    block = ref_block
+    nt_call = ""
+    if need_nt:
+        block += _NODE_TEMPS_FUNC + (
+            "# Node temperature (Mecway temperature3) per knoop: "
+            "{{K: (Mecway-knoopnummers)}}\n"
+            "_temp_nt = {{\n{0}}}\n").format(nt_data)
+        nt_call = (
+            "    _bridge_node_temps(_fld, mesh, dict(\n"
+            "        ({0!r} + (_k - {0!r}) * _s, _n)\n"
+            "        for _k, _n in _temp_nt.items()), {1})\n").format(
+                tref, n_mw)
+    block += (
+        "# Temperature (Mecway temperature2) in de tijd, KNOWN_BUGS 17: per\n"
+        "# tijdstip (t, s, (waarde per AFFE hieronder)); s = fractie van de\n"
+        "# constante temperaturen (ramp) en Node temperatures. Op t = {t0!r}\n"
+        "# de referentie; EVOL_THER (CREA_RESU AFFE, U4.44.12).\n"
+        "_temp_tab = (\n{rows})\n"
+        "_temp_flds = []\n"
+        "_temp_affe = [_F(NOM_CHAM='TEMP', CHAM_GD=temp_ref, INST={t0!r})]\n"
+        "for _t, _s, _v in _temp_tab:\n"
+        "    _fld = CREA_CHAMP(\n"
+        "        TYPE_CHAM='NOEU_TEMP_R',\n"
+        "        OPERATION='AFFE',\n"
+        "        MAILLAGE=mesh,\n"
+        "        AFFE=(\n{affe}"
+        "        ),\n"
+        "    )\n"
+        "{nt_call}"
+        "    _temp_flds.append(_fld)\n"
+        "    _temp_affe.append(_F(NOM_CHAM='TEMP', CHAM_GD=_fld, INST=_t))\n"
+        "temp_evo = CREA_RESU(\n"
+        "    OPERATION='AFFE',\n"
+        "    TYPE_RESU='EVOL_THER',\n"
+        "    AFFE=_temp_affe,\n"
+        ")\n\n").format(t0=t0, rows="".join(rows), affe="".join(affe),
+                        nt_call=nt_call)
+    log("INFO: Temperatuurveld als EVOL_THER: referentie op t = {0}, "
+        "{1} tijdstippen van {2} tot {3} ({4}).".format(
+            t0, len(insts), insts[0], insts[-1],
+            "constante waarden oplopend" if ramp else
+            "constante waarden vanaf de eerste stap"))
+    return block, varc_evo
 
 
 # ==========================================
@@ -5532,6 +5745,12 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # BLOK F-pre: DEFI_FONCTION voor tijdsafhankelijke krachten
     # --------------------------------------------------
     load_funcs       = _collect_load_funcs(model_data)
+    # Knikpunten van een Temperature met tijdshistorie ook als rekentijd
+    # (alleen de tijden; geen DEFI_FONCTION, _build_temperature_field)
+    # (Zonder Quasi-static: tot t = 1 s zoals Mecway, _temperature_histories.)
+    temp_times = _temperature_histories(
+        model_data, None if dynamic or model_data.get("timesteps") else
+        analysis.get("default_time_end", 1.0))
 
     # --------------------------------------------------
     # BLOK F-pre2: DEFI_LIST_REEL
@@ -5539,7 +5758,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     if dynamic:
         try:
             listinst_block, t_end = _build_dyna_listinst_block(
-                model_data, load_funcs, analysis)
+                model_data, load_funcs + temp_times, analysis)
         except ValueError as e:
             log(tr("ERROR: Tijdsdiscretisatie DYNA_NON_LINE: {0}",
                    "ERROR: Time discretisation DYNA_NON_LINE: {0}").format(e))
@@ -5548,17 +5767,19 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         # (_explicit_kinematics); opnieuw verzamelen.
         load_funcs = _collect_load_funcs(model_data)
     else:
-        listinst_block, t_end = _build_listinst_block(load_funcs, analysis,
-                                                      model_data)
+        listinst_block, t_end = _build_listinst_block(
+            load_funcs + temp_times, analysis, model_data)
     load_funcs_block = _build_load_funcs_block(load_funcs)
     log("INFO: {0} tijdspad eindigt op t_end={1}".format(command, t_end))
 
     # --------------------------------------------------
-    # BLOK E: AFFE_MATERIAU (als MECA_STATIQUE; statisch loopt een
-    # temperatuurveld op van 0 tot t_end, _build_temperature_field)
+    # BLOK E: AFFE_MATERIAU (als MECA_STATIQUE; het temperatuurveld als
+    # EVOL_THER vanaf de referentie op het eerste tijdstip,
+    # _build_temperature_field)
     # --------------------------------------------------
     fieldmat_block = _build_fieldmat_block(
-        model_data, None if dynamic else t_end)
+        model_data, _temperature_timeline(model_data, listinst_block, t_end,
+                                          dynamic))
 
     # --------------------------------------------------
     # BLOK F: AFFE_CHAR_MECA (constanten) + AFFE_CHAR_MECA_F (tijdsafh.)

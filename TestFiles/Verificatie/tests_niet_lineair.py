@@ -550,3 +550,180 @@ TESTS = [
          note="Als NL-03d met #ASTER-ZONE INTEGRATION='NCOTES' (nu gelijk "
               "aan de standaard van de bridge)."),
 ]
+
+
+# ------------------------------------------------------------------
+# NL-70 .. NL-74 Temperatuur in de tijd (thermische rek, STAT_NON_LINE)
+# ------------------------------------------------------------------
+# Staaf 0,1 x 0,01 x 0,01 m (4 hex8 langs x), alpha = 1,2e-5 1/K,
+# Tref = 293,15 K, temperature2 op alle knopen. Vrij (drie
+# symmetrievlakken): u_x(L, t) = alpha dT(t) L; ingeklemd in x
+# (dwarsrichting vrij): sigma_xx(t) = -E alpha dT(t) (Timoshenko &
+# Goodier par. 150; uniforme rek, exact met hex8). Quasi-static
+# (<timesteps>): de tabel lineair tussen de punten (Mecway-manual v34
+# par. 9, tijdstabel); een constante temperatuur vanaf de eerste stap
+# (par. 6.2.2). Mecway's eigen solver rekent L30 headless niet; Mecway 34
+# met CCX (solver="ccx", TestFiles/Tools/mw_solve.py) gaf voor dezelfde
+# modellen (stap 0,25 s): vrij u_x(L) = 6,6e-5 / 1,2e-4 / 6,0e-5 m op
+# t = 0,5 / 1 / 2 s (tabel), 6,0e-5 / 1,2e-4 / 2,4e-4 m op t = 0,5 / 1 /
+# 2 s (formule),
+# 1,2e-4 m vanaf t = 0,25 s (constant); ingeklemd sigma_xx = -1,38311e8 /
+# -2,51055e8 / -1,25761e8 Pa (CCX-hex8 0,2-0,4 % onder -E alpha dT).
+ALPHA7, TREF7, E7 = 1.2e-5, 293.15, 210e9
+L7, B7 = 0.1, 0.01
+TAB7 = [(0.0, 10.0), (1.0, 100.0), (2.0, 50.0)]   # (t, dT)
+TS7 = {"timeperiod": "2 s", "stepsize": "0.25 s"}
+# Kleine rek: exact alpha dT L (Mecway/CCX gaf dat ook); de standaard
+# GROT_GDEP (GREEN_LAGRANGE) in NL-70b.
+PETIT7 = {"deformation": "PETIT"}
+
+
+def _dt7(t):
+    """dT van TAB7 op tijd t (lineair, constant buiten het bereik)."""
+    for (t0, v0), (t1, v1) in zip(TAB7, TAB7[1:]):
+        if t <= t1:
+            return v0 + (v1 - v0) * (t - t0) / (t1 - t0)
+    return TAB7[-1][1]
+
+
+def build_nl70(temp_xml, clamped=False, timesteps=TS7, node_temps=None,
+               sel="Alle"):
+    def build():
+        m = Model("L30", timesteps=timesteps)
+        m.elset("Staaf", "Staal")
+        g = hexmesh(m, "Staaf", 4, 1, 1, box(0, L7, 0, B7, 0, B7))
+        m.mat("Staal", '<mechanical type="Isotropic" youngsmodulus="210000 '
+              'MPa" poissonratio="0.3" thermalexpansion="%g 1/K" />'
+              % ALPHA7)
+        m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+        m.node_selection("X0N", sorted(g["nodes"]["u0"]))
+        m.node_selection("XL", sorted(g["nodes"]["u1"]))
+        m.face_selection("X0", g["faces"]["u0"])
+        m.face_selection("Y0", g["faces"]["v0"])
+        m.face_selection("Z0", g["faces"]["w0"])
+        faces = [("X0", 1, 0, 0), ("Y0", 0, 1, 0), ("Z0", 0, 0, 1)]
+        if clamped:
+            m.face_selection("XLv", g["faces"]["u1"])
+            faces.append(("XLv", 1, 0, 0))
+        for s, x, y, z in faces:
+            m.add('<displacement selection="%s"><value>0 m</value><x>%d</x>'
+                  '<y>%d</y><z>%d</z></displacement>' % (s, x, y, z))
+        m.add('<thermalstress><referencetemperature>%g K'
+              '</referencetemperature></thermalstress>' % TREF7)
+        m.add('<temperature2 selection="%s">%s<starttime>0 s</starttime>'
+              '<endtime>0 s</endtime></temperature2>' % (sel, temp_xml))
+        if node_temps:
+            m.add("<temperature3>" + "".join(
+                '<nodetemperature nid="%d" value="%.12g K" />'
+                % (n, TREF7 + dt) for n, dt in node_temps(g)) +
+                "</temperature3>")
+        return m
+    return build
+
+
+TAB7_XML = _history("value", [(t, TREF7 + d) for t, d in TAB7], "K")
+FORM7_XML = ('<value unit="K" timeunit="s">%g+100*t</value>' % TREF7)
+
+
+def _ux7(t, dt, src, mw=None):
+    checks = [Check("u_x(L) op t = %g s" % t,
+                    lambda r, t=t: r.at("displx", (L7, 0, 0), _t(r, t)),
+                    ref=ALPHA7 * dt * L7, tol=1e-6, unit="m",
+                    source="alpha dT(t) L, dT = %g K (%s)" % (dt, src))]
+    if mw is not None:
+        checks.append(Check(
+            "u_x(L) op t = %g s t.o.v. Mecway (CCX)" % t,
+            lambda r, t=t: r.at("displx", (L7, 0, 0), _t(r, t)), ref=mw,
+            tol=1e-4, unit="m", source="Mecway 34 met CCX, headless",
+            in_series=False))
+    return checks
+
+
+def _sxx7(t, mw):
+    dt = _dt7(t)
+    return [Check("sigma_xx op t = %g s" % t,
+                  lambda r, t=t: r.at("stressxx", (L7 / 2, B7 / 2, B7),
+                                      _t(r, t)),
+                  ref=-E7 * ALPHA7 * dt, tol=1e-6, unit="Pa",
+                  source="-E alpha dT(t), dT = %g K (tabel)" % dt),
+            Check("sigma_xx op t = %g s t.o.v. Mecway (CCX)" % t,
+                  lambda r, t=t: r.at("stressxx", (L7 / 2, B7 / 2, B7),
+                                      _t(r, t)),
+                  ref=mw, tol=0.005, unit="Pa",
+                  source="Mecway 34 met CCX (CCX-hex8 0,2-0,4 % lager)",
+                  in_series=False)]
+
+
+TESTS += [
+    Case("NL-70", GROUP, "Vrije staaf, temperatuur met tijdstabel "
+         "(quasi-static)", "nonlin_static_3d", build_nl70(TAB7_XML),
+         _ux7(0.5, _dt7(0.5), "tabel", 6.6e-5) +
+         _ux7(1.0, _dt7(1.0), "tabel", 1.2e-4) +
+         _ux7(2.0, _dt7(2.0), "tabel", 6.0e-5),
+         settings=PETIT7,
+         note="Tabel (0; 10), (1; 100), (2; 50) K boven Tref; EVOL_THER "
+              "met de referentie op t = 0 (KNOWN_BUGS 17)."),
+    Case("NL-70b", GROUP, "Als NL-70 met de standaard GROT_GDEP "
+         "(Green-Lagrange)", "nonlin_static_3d", build_nl70(TAB7_XML),
+         [Check("u_x(L) op t = %g s" % t,
+                lambda r, t=t: r.at("displx", (L7, 0, 0), _t(r, t)),
+                ref=L7 * (math.sqrt(1 + 2 * ALPHA7 * _dt7(t)) - 1),
+                tol=1e-6, unit="m",
+                source="Green-Lagrange-rek = alpha dT(t): "
+                       "L (sqrt(1 + 2 alpha dT) - 1)")
+          for t in (0.5, 1.0, 2.0)],
+         note="GREEN_LAGRANGE: de thermische rek telt als Green-Lagrange-"
+              "rek, u_x 0,03-0,06 % onder alpha dT L (Mecway/CCX gaf "
+              "alpha dT L)."),
+    Case("NL-71", GROUP, "Staaf ingeklemd in x, temperatuur met tijdstabel "
+         "(quasi-static)", "nonlin_static_3d",
+         build_nl70(TAB7_XML, clamped=True),
+         _sxx7(0.5, -1.38311e8) + _sxx7(1.0, -2.51055e8) +
+         _sxx7(2.0, -1.25761e8), settings=PETIT7),
+    Case("NL-72", GROUP, "Vrije staaf, temperatuur als formule in t "
+         "(quasi-static)", "nonlin_static_3d", build_nl70(FORM7_XML),
+         _ux7(1.0, 100.0, "formule Tref + 100 t", 1.2e-4) +
+         _ux7(2.0, 200.0, "formule Tref + 100 t", 2.4e-4),
+         settings=PETIT7,
+         note="Formule bemonsterd over 0..2 s (timeperiod), zoals Mecway."),
+    Case("NL-73a", GROUP, "Vrije staaf, constante temperatuur "
+         "(quasi-static: vanaf de eerste stap)", "nonlin_static_3d",
+         build_nl70("<value>%.12g K</value>" % (TREF7 + 100.0)),
+         _ux7(0.25, 100.0, "constant, vanaf de eerste stap", 1.2e-4) +
+         _ux7(1.0, 100.0, "constant"), settings=PETIT7,
+         note="Mecway 34 met CCX: 1,2e-4 m vanaf de eerste stap "
+              "(t = 0,25 s); de bridge rekent met Mecway's stap 0,25 s."),
+    Case("NL-73b", GROUP, "Vrije staaf, constante temperatuur (zonder "
+         "quasi-static: oplopend)", "nonlin_static_3d",
+         build_nl70("<value>%.12g K</value>" % (TREF7 + 100.0),
+                    timesteps=None),
+         _ux7(0.5, 50.0, "constant, lineair oplopend over 0..1 s") +
+         _ux7(1.0, 100.0, "constant", 1.2e-4), settings=PETIT7,
+         note="Zonder <timesteps> laat Mecway lasten oplopen en toont "
+              "alleen de eindtoestand (manual par. 6.2.2)."),
+    Case("NL-74", GROUP, "Vrije staaf: temperatuur met tijdstabel op x = 0 "
+         "en Node temperature op x = L (quasi-static)", "nonlin_static_3d",
+         build_nl70(TAB7_XML, sel="X0N",
+                    node_temps=lambda g: [(n, 200.0) for n in
+                                          sorted(g["nodes"]["u1"])]),
+         [Check("gemiddelde u_x op x = L, t = %g s" % t,
+                lambda r, t=t: r.mean("displx", "XL", _t(r, t)),
+                ref=ALPHA7 * (_dt7(t) / 2 + 100.0) * L7 / 4, tol=1e-6,
+                unit="m", source="alpha (dT0(t)/2 + 200/2) K L/4 "
+                                 "(elementgemiddelden, als LS-08c)")
+          for t in (0.5, 2.0)], settings=PETIT7,
+         note="Node temperature (constant) vanaf de eerste stap, samen "
+              "met een tabel in hetzelfde EVOL_THER."),
+    Case("NL-75", GROUP, "Vrije staaf, temperatuur met tijdstabel zonder "
+         "quasi-static (waarde op t = 1 s)", "nonlin_static_3d",
+         build_nl70(TAB7_XML, timesteps=None),
+         _ux7(1.0, 100.0, "tabelwaarde op t = 1 s, de staptijd van Mecway",
+              1.2e-4) +
+         [Check("laatste rekentijd", lambda r: r.times()[-1], ref=1.0,
+                tol=1e-9, unit="s",
+                source="Mecway zonder quasi-static: een stap tot t = 1 s "
+                       "(ook als de tabel tot 2 s loopt)")],
+         settings=PETIT7,
+         note="Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de "
+              "waarde op het laatste tabelpunt (50 K)."),
+]

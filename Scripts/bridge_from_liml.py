@@ -973,20 +973,34 @@ def _parse_model_item(item, root, model_data):
         # Mecway (manual v33 par. 9.23): in een mechanische analyse de
         # temperatuur voor thermische rek (met <thermalstress>).
         # <starttime>/<endtime> gelden alleen voor thermische analyses.
-        value = _parse_value(item, "value", "temperature", None)
-        if value is None or isinstance(value, list):
+        # Een tijdstabel of formule in t wordt een lijst (t, K) (formule:
+        # bemonsterd over de eindtijd van <timesteps>, daarom root);
+        # bridge_to_aster._build_temperature_field gebruikt die in
+        # STAT_NON_LINE en DYNA_NON_LINE (EVOL_THER) en laat hem elders weg,
+        # zoals Mecway's eigen solver (KNOWN_BUGS 17).
+        if model_data.get("analysis_type") == "D30":
+            # Mecway 34 negeert Temperature in Dynamic Response (headless
+            # gezien: gelijk resultaat met en zonder, ook met tijdstabel).
+            log("INFO: Temperature (temperature2) op '{0}' telt niet mee in "
+                "Dynamic Response (D30), zoals in Mecway.".format(sel))
+            return
+        value = _parse_value(item, "value", "temperature", None, root)
+        if value is None:
             _not_translated(model_data,
                             tr("temperatuur op '{0}'",
                                "temperature on '{0}'").format(sel),
-                            tr("alleen een constante temperatuur wordt "
-                               "vertaald (geen tijdshistorie);",
-                               "only a constant temperature is translated "
-                               "(no time history);"))
+                            tr("geen bruikbare waarde;",
+                               "no usable value;"))
             return
         model_data["temperatures"].append({
             "selection": sel, "target": _selection_kind(root, sel),
             "value": value})
-        log("INFO: Temperatuur {0} K op '{1}'.".format(value, sel))
+        if isinstance(value, list):
+            log("INFO: Temperatuur op '{0}' met tijdshistorie ({1} punten, "
+                "{2} .. {3} s).".format(sel, len(value), value[0][0],
+                                        value[-1][0]))
+        else:
+            log("INFO: Temperatuur {0} K op '{1}'.".format(value, sel))
     elif tag == "rayleighdamping":
         # Mecway (manual v33 par. 9.26): C = alpha M + beta K, op het hele
         # model of een selectie. Code-Aster: DEFI_MATERIAU ELAS AMOR_ALPHA
