@@ -60,7 +60,7 @@ check("EXCIT met kleine letters", out["excit"] == ["verb"])
 check("OPTIE", out["options"] == {"newton_max_iter": "40"})
 check("SPECTRE X en Y", sorted(out["spectrum"]) == ["X", "Y"])
 check("XFEM gelezen", len(out["xfem"]) == 1)
-summary = [l for l in LOG if l.startswith("INFO: #ASTER-regels:")]
+summary = [l for l in LOG if l.startswith("INFO: #ASTER lines:")]
 check("een INFO-samenvatting", len(summary) == 1)
 check("samenvatting telt XFEM", bool(summary) and
       summary[0].endswith(", 1 METALLURGIE, 1 XFEM."))

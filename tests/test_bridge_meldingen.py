@@ -83,7 +83,7 @@ def _comm_damping(alpha, beta, zeta, freqs):
     plan = {"start": 1.0, "end": 10.0, "count": 5, "spacing": "lin"}
     block = bh._harm_block({"harm_refine_points": 0}, plan, "GENE", [],
                            alpha, beta, zeta, False, "")
-    code = block.split("# Frequenties:")[0]
+    code = block.split("# Frequencies:")[0]
     out = []
     ns = {"modes": _Modes(freqs), "print": lambda s: out.append(s)}
     exec(code, ns)
