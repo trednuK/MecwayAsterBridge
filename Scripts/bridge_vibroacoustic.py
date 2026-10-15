@@ -4,73 +4,74 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_vibroacoustic.py
-# Verantwoordelijkheid: vibro-akoestiek, een constructie en een lucht- of
-# vloeistofvolume gekoppeld in een model (gekoppelde eigenmodes), vanuit
-# een Mecway Frequency-model (V30). Mecway heeft geen gekoppelde analyse
-# en rekent akoestiek (A30) met een materiaal; de bridge rekent het model
-# met Code-Aster PHENOMENE='MECANIQUE':
-#   fluidum     MODELISATION='3D_FLUIDE'  (vrijheidsgraden PRES en PHI)
-#   koppelvlak  MODELISATION='FLUI_STRU'  (DX, DY, DZ, PRES, PHI; er is
-#               geen '3D_FLUI_STRU')
-#   constructie de gewone mechanische elementen (3D, DKT, COQUE_3D, ...)
-# met FORMULATION='U_P_PHI' (catalogus affe_modele.py v17.4: U_P_PHI,
-# U_P of U_PSI, standaard U_P_PHI; testcases adlv100a, adlv100p, ahlv101a).
+# Responsibility: vibro-acoustics, a structure and an air or liquid
+# volume coupled in one model (coupled eigenmodes), from a Mecway
+# Frequency model (V30). Mecway has no coupled analysis
+# and computes acoustics (A30) with one material; the bridge computes the
+# model with Code-Aster PHENOMENE='MECANIQUE':
+#   fluid       MODELISATION='3D_FLUIDE'  (degrees of freedom PRES and PHI)
+#   interface   MODELISATION='FLUI_STRU'  (DX, DY, DZ, PRES, PHI; there is
+#               no '3D_FLUI_STRU')
+#   structure   the normal mechanical elements (3D, DKT, COQUE_3D, ...)
+# with FORMULATION='U_P_PHI' (catalogue affe_modele.py v17.4: U_P_PHI,
+# U_P or U_PSI, default U_P_PHI; test cases adlv100a, adlv100p, ahlv101a).
 #
-#   parse_vibro(root, model_data, run_cfg) - bridge_from_liml STAP 2c:
-#                         fluidum-onderdelen, materialen (c, rho), drukknopen
-#                         (OPEN_-selecties, fluid pressure 0), KOPPEL_.
-#   interface_faces(model_data, conn)      - bridge_mesh.write_mesh: de
-#                         koppelvlakken als randelementen (groepen BRFSI<k>).
+#   parse_vibro(root, model_data, run_cfg) - bridge_from_liml STEP 2c:
+#                         fluid parts, materials (c, rho), pressure nodes
+#                         (OPEN_ selections, fluid pressure 0), KOPPEL_.
+#   interface_faces(model_data, conn)      - bridge_mesh.write_mesh: the
+#                         coupling faces as boundary elements (groups
+#                         BRFSI<k>).
 #   resolve_auto(resolved, model_data)     - MecwayAsterBridgeMain: 'auto'
-#                         bij V30 met een fluidum -> vibroacoustic_modes_3d.
+#                         with V30 with a fluid -> vibroacoustic_modes_3d.
 #   build_vibroacoustic_modes(...)         - builder; bridge_to_aster.
-#                         _build_modal stuurt de analyse hierheen
+#                         _build_modal sends the analysis here
 #                         (analysis "vibroacoustic": True).
 #
-# Invoer in Mecway (STAPPENPLAN S3b, werkwijze B):
-#   - Een onderdeel (elset) is fluidum als zijn materiaal een geluids-
-#     snelheid heeft en geen elasticiteitsmodulus (Mecway's akoestische
-#     materiaal: <mechanical type="Isotropic" speedofsound="340 m/s" /> met
-#     <density>), of als de naam van het onderdeel begint met LUCHT_,
-#     VLOEISTOF_ of FLUID_ (dan is een geluidssnelheid ook nodig).
-#   - Koppelvlakken: automatisch, elk vlak van een fluidum-element dat
-#     samenvalt met een vlak van een constructie-volume-element of met een
-#     schaalelement (gedeelde knopen). Vlakselecties KOPPEL_... /
-#     COUPLING_...: dan alleen die vlakken (handmatige keuze).
-#   - Drukknoop p = 0 (vrij oppervlak, open einde): knoop- of vlakselectie
-#     OPEN_..., of Mecway's fluid pressure = 0 (bestaat in Mecway alleen
-#     bij Acoustic Resonance, manual v33 par. 9.34; staat hij in de .liml,
-#     dan telt hij mee).
-#   - Een vlak zonder voorwaarde is een harde wand (dp/dn = 0).
+# Input in Mecway (STAPPENPLAN S3b, approach B):
+#   - A part (elset) is fluid if its material has a speed of sound
+#     and no modulus of elasticity (Mecway's acoustic
+#     material: <mechanical type="Isotropic" speedofsound="340 m/s" /> with
+#     <density>), or if the name of the part starts with LUCHT_,
+#     VLOEISTOF_ or FLUID_ (then a speed of sound is needed as well).
+#   - Coupling faces: automatic, every face of a fluid element that
+#     coincides with a face of a structural volume element or with a
+#     shell element (shared nodes). Face selections KOPPEL_... /
+#     COUPLING_...: then only those faces (manual choice).
+#   - Pressure node p = 0 (free surface, open end): node or face selection
+#     OPEN_..., or Mecway's fluid pressure = 0 (exists in Mecway only
+#     in Acoustic Resonance, manual v33 par. 9.34; if it is in the .liml,
+#     it is used).
+#   - A face without a condition is a rigid wall (dp/dn = 0).
 #
-# Gemeten met Code-Aster 17.4 (scratch-runs, verificatie VA):
-#   - U_P_PHI: K heeft geen term voor PHI, dus elke vrijheidsgraad PHI
-#     geeft een eigenwaarde 0 (adlv100a-mesh: 40 van zulke modes bij |f| <
-#     1e-5 Hz met negatieve MASS_GENE). PLUS_PETITE stopt met ALGELINE3_81
-#     (K singulier) en CENTRE rond 1 Hz geeft eerst die valse modes. OPTION
-#     'BANDE' vanaf f_min > 0 geeft alleen de echte modes: de Sturm-telling
-#     (INFO_MODE) klopt (staaf + waterkolom: 6 van 6 analytische modes,
-#     <= 1e-4). De bridge zoekt daarom met INFO_MODE een band [f_min,
-#     f_max] met minstens het gevraagde aantal modes en neemt de eerste
-#     (_mode_search_block).
-#   - U_P (niet-symmetrisch) gaf met PLUS_PETITE een verkeerde reeks (1147
-#     Hz als eerste i.p.v. 13,83 Hz, adlv100a) en met CENTRE -10 Hz op de
-#     staaf <F> JEVEUX_26: niet gebruikt. U_PSI: DDL_IMPO PRES bestaat niet
+# Measured with Code-Aster 17.4 (scratch runs, verification VA):
+#   - U_P_PHI: K has no term for PHI, so every PHI degree of freedom
+#     gives an eigenvalue 0 (adlv100a mesh: 40 such modes at |f| <
+#     1e-5 Hz with negative MASS_GENE). PLUS_PETITE stops with ALGELINE3_81
+#     (K singular) and CENTRE around 1 Hz first gives those spurious modes.
+#     OPTION 'BANDE' from f_min > 0 gives only the real modes: the Sturm
+#     count (INFO_MODE) is correct (bar + water column: 6 of 6 analytical
+#     modes, <= 1e-4). The bridge therefore searches with INFO_MODE for a
+#     band [f_min, f_max] with at least the requested number of modes and
+#     takes the first ones (_mode_search_block).
+#   - U_P (non-symmetric) gave a wrong series with PLUS_PETITE (1147
+#     Hz first instead of 13.83 Hz, adlv100a) and with CENTRE -10 Hz on the
+#     bar <F> JEVEUX_26: not used. U_PSI: DDL_IMPO PRES does not exist
 #     (<F> CHARGES2_45).
-#   - De dichtheid zit wel in de matrices (anders dan RIGI_ACOU/MASS_ACOU,
-#     KNOWN_BUGS 55): staaf + waterkolom met rho 1000 en 1 gaf elk de eigen
-#     analytische frequenties.
-#   - De echte modes hebben MASS_GENE > 0 en NORM_MODE MASS_GENE werkt.
-#     BANDE kan ook een valse mode buiten de band teruggeven (gezien bij
-#     een kantelende schaal: 3e-5 Hz met MASS_GENE < 0; NORM_MODE gaf dan
-#     <EXCEPTION> DVP_2): de bridge filtert eerst (f >= f_min, MASS_GENE >
-#     0) en normeert daarna.
-#   - Drukknoop: DDL_IMPO PRES = 0 en PHI = 0 (adlv100p); de koppelvlakken
-#     krijgen het materiaal van het fluidum (adlv100a) en een normaal uit
-#     het fluidum (MODI_MAILLAGE ORIE_PEAU met GROUP_MA_INTERNE = fluidum,
+#   - The density is included in the matrices (unlike RIGI_ACOU/MASS_ACOU,
+#     KNOWN_BUGS 55): bar + water column with rho 1000 and 1 each gave its
+#     own analytical frequencies.
+#   - The real modes have MASS_GENE > 0 and NORM_MODE MASS_GENE works.
+#     BANDE can also return a spurious mode outside the band (seen with
+#     a tilting shell: 3e-5 Hz with MASS_GENE < 0; NORM_MODE then gave
+#     <EXCEPTION> DVP_2): the bridge filters first (f >= f_min, MASS_GENE >
+#     0) and normalizes afterwards.
+#   - Pressure node: DDL_IMPO PRES = 0 and PHI = 0 (adlv100p); the coupling
+#     faces get the material of the fluid (adlv100a) and a normal out of
+#     the fluid (MODI_MAILLAGE ORIE_PEAU with GROUP_MA_INTERNE = fluid,
 #     adlv100b, adls102a, fdlv112h).
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import os
 from collections import OrderedDict
@@ -80,30 +81,30 @@ from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
 
 ANALYSIS = "vibroacoustic_modes_3d"
 
-# Voorvoegsels (Mecway-naam, hoofdletters maken niet uit).
+# Prefixes (Mecway name, case-insensitive).
 FLUID_PREFIXES = ("LUCHT_", "VLOEISTOF_", "FLUID_")
 OPEN_PREFIXES = ("OPEN_",)
 COUPLING_PREFIXES = ("KOPPEL_", "COUPLING_")
-# Selecties van de harmonische (vibro-)akoestiek (bridge_acoustic._PREFIXES,
-# bridge_vibroacoustic_harm): in de modes zonder betekenis (INFO), in de
-# harmonische respons (vibroacoustic_harm_3d) per rol in "named".
+# Selections of harmonic (vibro-)acoustics (bridge_acoustic._PREFIXES,
+# bridge_vibroacoustic_harm): meaningless in the modes (INFO), in the
+# harmonic response (vibroacoustic_harm_3d) per role in "named".
 HARM_ROLES = (("source", ("BRON_", "SOURCE_")),
               ("absorbing", ("ABSORBEREND_", "ABSORBING_")),
               ("microphone", ("MICROFOON_", "MICROPHONE_")),
               ("incident", ("INVALLEND_", "INCIDENT_")))
 _HARM_PREFIXES = tuple(p for _role, ps in HARM_ROLES for p in ps)
 
-# Mecway-vormen met een 3D_FLUIDE-element (elem.1 van 17.4: MEFL_HEXA8/20,
+# Mecway shapes with a 3D_FLUIDE element (elem.1 of 17.4: MEFL_HEXA8/20,
 # MEFL_PENTA6/15, MEFL_TETRA4/10, MEFL_PYRAM5/13).
 _FLUID_SHAPES = frozenset(["hex8", "hex20", "wedge6", "wedge15", "tet4",
                            "tet10", "pyr5", "pyr13"])
 
-# Groepen van de koppelvlakken (een per fluidum-onderdeel) in het mesh.
+# Groups of the coupling faces (one per fluid part) in the mesh.
 INTERFACE_PREFIX = "BRFSI"
 
 
 def is_vibroacoustic(analysis_cfg):
-    """True als de analyse-config vibro-akoestisch is."""
+    """True if the analysis config is vibro-acoustic."""
     return bool((analysis_cfg or {}).get("vibroacoustic", False))
 
 
@@ -121,8 +122,8 @@ def _r(x):
 
 
 def _may_apply(run_cfg, model_data):
-    """True als deze run vibro-akoestisch is of het kan worden ('auto' bij
-    een Frequency-model, resolve_auto)."""
+    """True if this run is vibro-acoustic or can become so ('auto' with
+    a Frequency model, resolve_auto)."""
     if is_vibroacoustic(run_cfg):
         return True
     return (CONFIG_BRIDGE.get("active_analysis") == "auto" and
@@ -131,17 +132,17 @@ def _may_apply(run_cfg, model_data):
 
 
 def wanted():
-    """True als de actieve analyse vibro-akoestisch is (bridge_mesh: dan de
-    koppelvlakken in het mesh)."""
+    """True if the active analysis is vibro-acoustic (bridge_mesh: then the
+    coupling faces in the mesh)."""
     name = CONFIG_BRIDGE.get("active_analysis")
     return is_vibroacoustic(CONFIG_BRIDGE.get("analyses", {}).get(name))
 
 
 # ==========================================
-# PARSEN
+# PARSING
 # ==========================================
 def _materials(root):
-    """{materiaal: {"c": m/s of None, "rho": kg/m3 of None, "E": bool}}."""
+    """{material: {"c": m/s or None, "rho": kg/m3 or None, "E": bool}}."""
     out = OrderedDict()
     for mat in root.findall("mat"):
         name = mat.get("name", "UnknownMat")
@@ -170,23 +171,23 @@ def _selection_kind(model_data, name):
 
 def parse_vibro(root, model_data, run_cfg):
     """
-    Fluidum-onderdelen en hun voorwaarden naar model_data["vibro"] (None
-    als het model geen fluidum heeft):
-      "fluid_elsets": OrderedDict {Mecway-onderdeel: materiaal}
-      "fluid_eids":   set(element-id's)
-      "materials":    {materiaal: {"c", "rho", "E", "type"}}
-      "open":         [(selectie, "node"/"face")]  p = 0
-      "coupling":     [vlakselectie]  KOPPEL_ (handmatig)
-      "pressure_src": [(selectie, tekst)]  fluid pressure != 0
-      "impedances":   [selectie]
-      "impedance_values": [(selectie, Re Z, Im Z)]  (Pa.s/m; harmonisch)
-      "ignored":      [selectie]  BRON_/ABSORBEREND_/MICROFOON_/INVALLEND_
-      "named":        {rol: [(selectie, soort)]}  dezelfde selecties per
-                      rol (HARM_ROLES; vibroacoustic_harm_3d)
-      "bad":          [tekst]  fatale invoerfouten
-      "interfaces":   {groep: Mecway-onderdeel} (interface_faces)
-    Buiten een vibro-akoestische run alleen een WARNING (het fluidum zou
-    als vaste stof met de standaard-E van de bridge gerekend worden).
+    Fluid parts and their conditions to model_data["vibro"] (None
+    if the model has no fluid):
+      "fluid_elsets": OrderedDict {Mecway part: material}
+      "fluid_eids":   set(element ids)
+      "materials":    {material: {"c", "rho", "E", "type"}}
+      "open":         [(selection, "node"/"face")]  p = 0
+      "coupling":     [face selection]  KOPPEL_ (manual)
+      "pressure_src": [(selection, text)]  fluid pressure != 0
+      "impedances":   [selection]
+      "impedance_values": [(selection, Re Z, Im Z)]  (Pa.s/m; harmonic)
+      "ignored":      [selection]  BRON_/ABSORBEREND_/MICROFOON_/INVALLEND_
+      "named":        {role: [(selection, kind)]}  the same selections per
+                      role (HARM_ROLES; vibroacoustic_harm_3d)
+      "bad":          [text]  fatal input errors
+      "interfaces":   {group: Mecway part} (interface_faces)
+    Outside a vibro-acoustic run only a WARNING (the fluid would be
+    computed as a solid with the default E of the bridge).
     """
     model_data["vibro"] = None
     mats = _materials(root)
@@ -288,37 +289,37 @@ def parse_vibro(root, model_data, run_cfg):
             vib["open"].append((sel, kind))
     for elset, mat in fluid.items():
         props = mats.get(mat, {})
-        log("INFO: Vibro-akoestiek: onderdeel '{0}' is fluidum (materiaal "
+        log("INFO: Vibro-acoustics: part '{0}' is fluid (material "
             "'{1}': c = {2} m/s, rho = {3} kg/m3).".format(
                 elset, mat, props.get("c"), props.get("rho")))
     model_data["vibro"] = vib
 
 
 def resolve_auto(resolved, model_data):
-    """Analyse voor 'auto': een Frequency-model (V30 -> modal_3d) met een
-    fluidum -> vibroacoustic_modes_3d."""
+    """Analysis for 'auto': a Frequency model (V30 -> modal_3d) with a
+    fluid -> vibroacoustic_modes_3d."""
     if (resolved == "modal_3d" and model_data.get("vibro") and
             ANALYSIS in CONFIG_BRIDGE.get("analyses", {})):
-        log("INFO: Vibro-akoestiek: het Frequency-model heeft een fluidum "
-            "({0}); 'auto' kiest '{1}'.".format(
+        log("INFO: Vibro-acoustics: the Frequency model has a fluid "
+            "({0}); 'auto' chooses '{1}'.".format(
                 ", ".join(model_data["vibro"]["fluid_elsets"]), ANALYSIS))
         return ANALYSIS
     return resolved
 
 
 # ==========================================
-# KOPPELVLAKKEN IN HET MESH (bridge_mesh.write_mesh)
+# COUPLING FACES IN THE MESH (bridge_mesh.write_mesh)
 # ==========================================
 def interface_faces(model_data, conn):
     """
-    Koppelvlakken fluidum-constructie als randelementen: OrderedDict
-    {groep: [(type, knopen)]} met een groep BRFSI<k> per fluidum-onderdeel
-    (het koppelvlak krijgt het materiaal van dat fluidum); zet
-    model_data["vibro"]["interfaces"] = {groep: Mecway-onderdeel}. None bij
-    een fout (ERROR gelogd).
-    Automatisch: een vlak van een fluidum-element waarvan de hoekknopen
-    samenvallen met een vlak van een constructie-volume-element of met een
-    schaalelement. Met KOPPEL_-vlakselecties alleen die vlakken.
+    Fluid-structure coupling faces as boundary elements: OrderedDict
+    {group: [(type, nodes)]} with one group BRFSI<k> per fluid part
+    (the coupling face gets the material of that fluid); sets
+    model_data["vibro"]["interfaces"] = {group: Mecway part}. None on
+    an error (ERROR logged).
+    Automatic: a face of a fluid element whose corner nodes
+    coincide with a face of a structural volume element or with a
+    shell element. With KOPPEL_ face selections only those faces.
     """
     import bridge_mesh as bm
     vib = model_data.get("vibro") or {}
@@ -326,7 +327,7 @@ def interface_faces(model_data, conn):
     shapes = model_data.get("elem_shapes", {})
     elem_elset = dict((eid, es) for eid, _s, _n, es
                       in model_data.get("mesh_elements", []))
-    faces = OrderedDict()           # hoekknopen -> [(eid, hoeken)]
+    faces = OrderedDict()           # corner nodes -> [(eid, corners)]
     for eid in sorted(conn):
         if shapes.get(eid) not in bm._SOLID_SHAPES:
             continue
@@ -343,7 +344,7 @@ def interface_faces(model_data, conn):
         if shapes.get(eid) in bm._SHELL_SHAPES:
             shells.setdefault(frozenset(cn[:bm._N_CORNERS[atype]]),
                               []).append(eid)
-    auto = OrderedDict()            # hoekknopen -> (fluid-eid, hoeken)
+    auto = OrderedDict()            # corner nodes -> (fluid eid, corners)
     double = []
     for key, owners in faces.items():
         flu = [o for o in owners if o[0] in fluid]
@@ -353,8 +354,8 @@ def interface_faces(model_data, conn):
         if not solid and key not in shells:
             continue
         if len(flu) > 1:
-            # Schaal tussen twee fluidum-elementen met dezelfde knopen: de
-            # druk zou over de schaal doorlopen.
+            # Shell between two fluid elements with the same nodes: the
+            # pressure would be continuous across the shell.
             double.extend(shells.get(key, []))
             continue
         auto[key] = flu[0]
@@ -402,8 +403,8 @@ def interface_faces(model_data, conn):
                    "element.").format(", ".join(bad[:10])))
             return None
         missing = [k for k in auto if k not in chosen]
-        log("INFO: Vibro-akoestiek: koppelvlakken uit KOPPEL_-selecties "
-            "({0}): {1} vlak(ken).".format(", ".join(manual), len(chosen)))
+        log("INFO: Vibro-acoustics: coupling faces from KOPPEL_ selections "
+            "({0}): {1} face(s).".format(", ".join(manual), len(chosen)))
         if missing:
             log(tr("WARNING: Vibro-akoestiek: {0} vlak(ken) waar fluidum en "
                    "constructie knopen delen, staan niet in een KOPPEL_-"
@@ -423,8 +424,8 @@ def interface_faces(model_data, conn):
         groups[group] = es
     vib["interfaces"] = groups
     for group, es in groups.items():
-        log("INFO: Vibro-akoestiek: koppelvlak '{0}' ({1} vlakken) aan "
-            "fluidum '{2}'.".format(group, len(out[group]), es))
+        log("INFO: Vibro-acoustics: coupling face '{0}' ({1} faces) on "
+            "fluid '{2}'.".format(group, len(out[group]), es))
     return out
 
 
@@ -432,9 +433,9 @@ def interface_faces(model_data, conn):
 # BUILDER
 # ==========================================
 def _structure_view(model_data, fluid_ca, fluid_mats):
-    """Kopie van model_data met alleen de constructie (voor de blokken van
+    """Copy of model_data with only the structure (for the blocks of
     bridge_to_aster: AFFE_MODELE, AFFE_CARA_ELEM, DEFI_MATERIAU,
-    AFFE_MATERIAU, lasten)."""
+    AFFE_MATERIAU, loads)."""
     md = dict(model_data)
     md["elset_modelisations"] = OrderedDict(
         (es, m) for es, m in model_data.get("elset_modelisations",
@@ -452,8 +453,8 @@ def _structure_view(model_data, fluid_ca, fluid_mats):
 
 
 def _insert_affe(text, head, entries):
-    """Zet regels achter de laatste _F van AFFE=( ... ) van de aanroep die
-    met head begint (AFFE_MODELE/AFFE_MATERIAU van bridge_to_aster)."""
+    """Put lines after the last _F of AFFE=( ... ) of the call that
+    starts with head (AFFE_MODELE/AFFE_MATERIAU of bridge_to_aster)."""
     start = text.find(head)
     affe = text.find("    AFFE=(\n", start)
     end = text.find("\n    ),\n", affe)
@@ -463,7 +464,7 @@ def _insert_affe(text, head, entries):
 
 
 def _check_fluid(model_data, vib, fluid_ca):
-    """Vormen en materialen van het fluidum; lijst met fouten."""
+    """Shapes and materials of the fluid; list of errors."""
     bad = []
     wrong = OrderedDict()
     for eid, shape, _n, es in model_data.get("mesh_elements", []):
@@ -489,10 +490,10 @@ def _check_fluid(model_data, vib, fluid_ca):
                           "geluidssnelheid",
                           "fluid material '{0}' has no speed of "
                           "sound").format(mat))
-    # Twee fluida met gedeelde knopen: PHI is daar continu, en met p = rho
-    # w^2 PHI klopt dat alleen bij gelijke dichtheid (gemeten: buis met
-    # rho 1,2 / 12 en c 340 / 680 gaf 188,23 Hz, analytisch 306,47 Hz; met
-    # gelijke dichtheid exact, verificatie VA-04).
+    # Two fluids with shared nodes: PHI is continuous there, and with p =
+    # rho w^2 PHI that is only correct for equal density (measured: tube
+    # with rho 1.2 / 12 and c 340 / 680 gave 188.23 Hz, analytical
+    # 306.47 Hz; with equal density exact, verification VA-04).
     nodes = OrderedDict()
     for eid, _shape, enodes, es in model_data.get("mesh_elements", []):
         if eid in vib["fluid_eids"]:
@@ -520,15 +521,15 @@ def _check_fluid(model_data, vib, fluid_ca):
 
 def _mode_search_block(model_data, analysis, n):
     """
-    res = de eerste n modes boven vibro_freq_min (zie de kop: U_P_PHI geeft
-    valse modes bij 0 Hz, alleen OPTION 'BANDE' vanaf f_min > 0 is schoon).
-    INFO_MODE (Sturm-telling, catalogus info_mode.py v17.4: FREQ = lijst,
-    tabel NB_MODE) zoekt een bovengrens met >= n modes: x4 per stap, dan
-    twee halveringen (geometrisch) om niet veel meer modes te rekenen dan
-    nodig. CALC_MODES BANDE (SOLVEUR_MODAL COEF_DIM_ESPACE 4, zoals
-    adlv312a) zonder normering, dan de modes met f >= f_min en MASS_GENE >
-    0 (EXTR_MODE NUME_ORDRE, catalogus extr_mode.py) en NORM_MODE
-    MASS_GENE (catalogus norm_mode.py: reuse op MODE).
+    res = the first n modes above vibro_freq_min (see the header: U_P_PHI
+    gives spurious modes at 0 Hz, only OPTION 'BANDE' from f_min > 0 is
+    clean). INFO_MODE (Sturm count, catalogue info_mode.py v17.4: FREQ =
+    list, table NB_MODE) searches an upper limit with >= n modes: x4 per
+    step, then two bisections (geometric) so as not to compute many more
+    modes than needed. CALC_MODES BANDE (SOLVEUR_MODAL COEF_DIM_ESPACE 4,
+    like adlv312a) without normalization, then the modes with f >= f_min
+    and MASS_GENE > 0 (EXTR_MODE NUME_ORDRE, catalogue extr_mode.py) and
+    NORM_MODE MASS_GENE (catalogue norm_mode.py: reuse on MODE).
     """
     try:
         fmin = float(analysis.get("vibro_freq_min", 0.1))
@@ -542,13 +543,13 @@ def _mode_search_block(model_data, analysis, n):
         fmin = 0.1
     nprec = int(analysis.get("solver_nprec", 8))
     seuil = "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6))
-    log("INFO: CALC_MODES vibro-akoestisch: de eerste {0} modes boven {1} "
-        "Hz (OPTION 'BANDE', band gezocht met INFO_MODE).".format(
+    log("INFO: CALC_MODES vibro-acoustic: the first {0} modes above {1} "
+        "Hz (OPTION 'BANDE', band searched with INFO_MODE).".format(
             n, "%.6g" % fmin))
     lines = [
-        "# Gekoppelde modes (U_P_PHI): elke vrijheidsgraad PHI geeft een",
-        "# valse mode bij 0 Hz; daarom de band [f_min, f_max] met minstens",
-        "# bridge_n modes (Sturm-telling INFO_MODE) en CALC_MODES BANDE",
+        "# Coupled modes (U_P_PHI): every PHI degree of freedom gives a",
+        "# spurious mode at 0 Hz; hence the band [f_min, f_max] with at least",
+        "# bridge_n modes (Sturm count INFO_MODE) and CALC_MODES BANDE",
         "# (bridge_vibroacoustic._mode_search_block).",
         "bridge_n = {0}".format(n),
         "bridge_fmin = {0}".format(_r(fmin)),
@@ -578,9 +579,9 @@ def _mode_search_block(model_data, analysis, n):
         "if _nhi < 1:",
         "    raise ValueError('BRIDGE_VIBRO: geen modes tussen %g en %g Hz'"
         " % (bridge_fmin, _hi))",
-        "# Zonder NORM_MODE: BANDE kan ook een valse mode buiten de band",
-        "# teruggeven (gezien: 3e-5 Hz met MASS_GENE < 0); normeren op",
-        "# MASS_GENE gaf dan <EXCEPTION> DVP_2. Eerst filteren, dan normeren.",
+        "# Without NORM_MODE: BANDE can also return a spurious mode outside",
+        "# the band (seen: 3e-5 Hz with MASS_GENE < 0); normalizing on",
+        "# MASS_GENE gave <EXCEPTION> DVP_2. Filter first, then normalize.",
         "res_band = CALC_MODES(",
         "    TYPE_RESU='DYNAMIQUE',",
         "    MATR_RIGI=rigidite,",
@@ -612,10 +613,10 @@ def _mode_search_block(model_data, analysis, n):
 
 
 def _export_block(work_dir, model_data):
-    """BRIDGE_MODE-regels (alleen de frequentie: de effectieve massa van
-    Code-Aster heeft voor U_P_PHI-modes geen betekenis, adlv100a: 4,6e-20
-    voor de zuigermode) en aster_results_export met verplaatsingen
-    (constructie) en de druk (fluidum, component PRES van DEPL)."""
+    """BRIDGE_MODE lines (only the frequency: the effective mass of
+    Code-Aster has no meaning for U_P_PHI modes, adlv100a: 4.6e-20
+    for the piston mode) and aster_results_export with displacements
+    (structure) and the pressure (fluid, component PRES of DEPL)."""
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     return ("# Resultaten in Mecway's eigen formaat (result_route 'liml')\n"
@@ -637,8 +638,8 @@ def _export_block(work_dir, model_data):
 def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                               analysis):
     """
-    Genereer de .comm en .export voor de gekoppelde modes. Returns het pad
-    naar de .export, of None bij een fout (ERROR gelogd).
+    Generate the .comm and .export for the coupled modes. Returns the path
+    to the .export, or None on an error (ERROR logged).
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (CALC_MODES vibro-akoestisch) ---")
@@ -667,8 +668,8 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                "possible (pressure node)").format(s, t)
             for s, t in vib["pressure_src"]]
     if vib["impedances"]:
-        # Complexe gekoppelde modes: niet vertaald (KNOWN_BUGS 59; de
-        # holtemodes met impedantie wel, aster_acoustic_complex.py).
+        # Complex coupled modes: not translated (KNOWN_BUGS 59; the
+        # cavity modes with impedance are, aster_acoustic_complex.py).
         bad.append(tr("impedantie op {0} wordt in de modes niet vertaald "
                       "(complexe modes); onderdruk hem (Suppress) voor een "
                       "harde wand",
@@ -685,14 +686,14 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                "ERROR: Vibroacoustics: {0}.").format("; ".join(bad)))
         return None
     if vib["ignored"]:
-        log("INFO: Vibro-akoestiek: selecties {0} (bron, absorberend, "
-            "microfoon, invallende golf) tellen niet mee in de modes; "
-            "absorberende vlakken zijn harde wanden. Voor de respons per "
-            "frequentie: analyse 'vibroacoustic_harm_3d'.".format(
+        log("INFO: Vibro-acoustics: selections {0} (source, absorbing, "
+            "microphone, incident wave) are not used in the modes; "
+            "absorbing faces are rigid walls. For the response per "
+            "frequency: analysis 'vibroacoustic_harm_3d'.".format(
                 ", ".join(vib["ignored"])))
     if model_data.get("analysis_type") not in ("V30", "A30"):
-        log("INFO: Vibro-akoestiek op een Mecway-model van type '{0}' "
-            "(verwacht: Frequency, V30).".format(
+        log("INFO: Vibro-acoustics on a Mecway model of type '{0}' "
+            "(expected: Frequency, V30).".format(
                 model_data.get("analysis_type")))
     if not bta._check_linear(model_data, tr("een modale analyse",
                                             "a modal analysis")):
@@ -714,10 +715,10 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                "then uncoupled. Mesh them as one continuous mesh (shared "
                "nodes on the interface)."))
     if not structure:
-        log("INFO: Vibro-akoestiek: alleen fluidum (geen constructie); de "
-            "dichtheid telt mee, ook op een grensvlak tussen media.")
+        log("INFO: Vibro-acoustics: fluid only (no structure); the "
+            "density is used, also at an interface between media.")
 
-    # --- mesh: groepen, orientatie van de koppelvlakken ---
+    # --- mesh: groups, orientation of the coupling faces ---
     defigroup_block = bta._build_defigroup_block(md_s)
     if interfaces:
         defigroup_block += (
@@ -746,9 +747,9 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                        "    AFFE=(\n{0}    ),\n)\n").format(fluid_lines)
     cara_ref = "    CARA_ELEM=cara,\n" if bta._has_cara(md_s) else ""
     cara_elem_block = bta._build_cara_elem_block(md_s) if structure else \
-        "#-- geen constructie --\n"
+        "#-- no structure --\n"
 
-    # --- materialen ---
+    # --- materials ---
     names = OrderedDict()
     mat_lines = []
     for k, mat in enumerate(sorted(set(fluid_ca.values()),
@@ -780,7 +781,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                "recognised (internal error)."))
         return None
 
-    # --- randvoorwaarden: constructie (zonder belastingen) en p = 0 ---
+    # --- boundary conditions: structure (without loads) and p = 0 ---
     charges = bta._build_charges(md_s) if structure else []
     dropped = [c for c in charges if bta._is_load_charge(c)]
     if dropped:
@@ -817,7 +818,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
             continue
         entries.append("        _F({0}='{1}', PRES=0.0, PHI=0.0),\n".format(
             "GROUP_NO" if kind == "node" else "GROUP_MA", name))
-        log("INFO: Vibro-akoestiek: drukknoop p = 0 op '{0}'.".format(sel))
+        log("INFO: Vibro-acoustics: pressure node p = 0 on '{0}'.".format(sel))
     if entries:
         loads_block += ("\n# Drukknopen p = 0 (OPEN_-selecties, fluid "
                         "pressure 0): PRES en PHI\n"
@@ -827,9 +828,9 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
         charge_names.append("bc_flu")
     charge_names += [n for n in extra if n not in charge_names]
     if not charge_names:
-        log("INFO: Vibro-akoestiek: geen opleggingen en geen drukknopen; "
-            "modes bij 0 Hz (starre beweging, constante druk) vallen onder "
-            "de ondergrens vibro_freq_min.")
+        log("INFO: Vibro-acoustics: no supports and no pressure nodes; "
+            "modes at 0 Hz (rigid body motion, constant pressure) fall below "
+            "the lower limit vibro_freq_min.")
     assemblage_block = (
         "ASSEMBLAGE(\n"
         "    MODELE=model,\n"
@@ -851,7 +852,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:
@@ -868,7 +869,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -884,7 +885,7 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
                 "F mess {0} R 6".format(os.path.join(work_dir,
                                                      run_name(".mess"))),
             ]) + bta._export_result_lines(work_dir, resu_name))
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -898,8 +899,8 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
 
 
 def report_lines(work_dir):
-    """Regels voor het statusvak na de run (MecwayAsterBridgeMain): de
-    band van de modezoektocht en een tekort aan modes (uit de .mess)."""
+    """Lines for the status box after the run (MecwayAsterBridgeMain): the
+    band of the mode search and a shortage of modes (from the .mess)."""
     import re
     path = os.path.join(work_dir, run_name(".mess"))
     out = []
