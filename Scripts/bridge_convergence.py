@@ -4,36 +4,36 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_convergence.py
-# Verantwoordelijkheid: lees de convergentie-informatie van STAT_NON_LINE /
-# DYNA_NON_LINE uit de uitvoer van Code-Aster (fort.6 tijdens de run,
-# study.mess erna). Gebruikt door het convergentiescherm
-# (aster_convergence_monitor.py); zelf zonder GUI en zonder bestanden te
-# schrijven.
+# Responsibility: read the convergence information of STAT_NON_LINE /
+# DYNA_NON_LINE from the Code-Aster output (fort.6 during the run,
+# study.mess afterwards). Used by the convergence window
+# (aster_convergence_monitor.py); itself without GUI and without writing
+# files.
 #
-# Puur Python, alleen de standaardbibliotheek; draait in Python 2.7
-# (IronPython 2.7.9, Mecway) en Python 3 (de CPython 3.11 van Code-Aster).
+# Pure Python, standard library only; runs in Python 2.7
+# (IronPython 2.7.9, Mecway) and Python 3 (the CPython 3.11 of Code-Aster).
 #
-# Wat Code-Aster 17.4 per rekenstap schrijft (gezien in study.mess van de
-# testmodellen, o.a. statisch en impliciet dynamisch met contact):
+# What Code-Aster 17.4 writes per solver step (seen in study.mess of the
+# test models, e.g. static and implicit dynamic with contact):
 #
 #   Instant de calcul:  1.250000000000e-03 - Niveau de découpe: 2
-#   |     CONTACT    |     NEWTON     |     RESIDU     | ...   (kop, 3 regels)
-#   |     1        X |     0        X | 3.37162E-10    | ...   (een regel per
-#                                                               Newton-iteratie)
-#   Critère(s) de convergence atteint(s)        of  <Erreur> ... / <Action> ...
+#   |     CONTACT    |     NEWTON     |     RESIDU     | ...   (header, 3 lines)
+#   |     1        X |     0        X | 3.37162E-10    | ...   (one line per
+#                                                               Newton iteration)
+#   Critère(s) de convergence atteint(s)        or  <Erreur> ... / <Action> ...
 #   Le résidu de type <RESI_GLOB_RELA> vaut ... au noeud et degré de liberté <298 DY>
 #   Temps CPU consommé dans ce pas de temps    : 2.000 s
 #   * Nombre d'itérations de Newton            : 32
 #   * Nombre de liaisons de contact            : 8
 #   [  0%] Instant calculé : 1.25000e-03, ...
 #
-# De kolommen verschillen per model (zonder contact: 4 kolommen; discreet
-# contact, frottement, RESI_REFE_RELA ...). De kop wordt daarom per tabel
-# gelezen en via _COLUMN_KEYS op vaste sleutels gezet; onbekende kolommen
-# komen onder hun kopnaam in it["extra"]. Een "X" achter een waarde betekent
-# dat dat criterium nog niet gehaald is, "E" dat de iteratie in fout eindigt
-# (NIET geverifieerd in de U-doc; afgeleid uit de uitvoer: "E" staat op de
-# laatste iteratie voor "<Erreur> Le nombre maximum d'itérations ...").
+# The columns differ per model (without contact: 4 columns; discrete
+# contact, friction, RESI_REFE_RELA ...). The header is therefore read per
+# table and mapped to fixed keys via _COLUMN_KEYS; unknown columns
+# go under their header name in it["extra"]. An "X" after a value means
+# that this criterion is not met yet, "E" that the iteration ends in error
+# (NOT verified in the U-doc; derived from the output: "E" is on the
+# last iteration before "<Erreur> Le nombre maximum d'itérations ...").
 
 import io
 import os
@@ -41,13 +41,13 @@ import re
 
 try:
     from bridge_utils import tr
-except ImportError:      # pragma: no cover - bridge_utils naast dit bestand
+except ImportError:      # pragma: no cover - bridge_utils next to this file
     def tr(nl, en):
         return nl
 
 
 # ==========================================
-# HERKENNING VAN REGELS
+# LINE RECOGNITION
 # ==========================================
 _INSTANT_RE = re.compile(
     r"Instant de calcul:\s*([-+0-9.eEdD]+)\s*-\s*Niveau de d.coupe:\s*(\d+)")
@@ -68,23 +68,23 @@ _COMMAND_RE = re.compile(r"\b(STAT_NON_LINE|DYNA_NON_LINE|THER_NON_LINE)\s*\(")
 _RESI_CRIT_RE = re.compile(r"\bRESI_GLOB_RELA\s*=\s*([-+0-9.eE]+)")
 _ITER_MAX_RE = re.compile(r"\bITER_GLOB_MAXI\s*=\s*(\d+)")
 _PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
-# Bezwijken van elementen (bridge_failure.py, print in de .comm)
+# Element failure (bridge_failure.py, print in the .comm)
 _FAILURE_RE = re.compile(r"BRIDGE_BEZWIJKEN t=([-+0-9.eE]+) elset=(\S+) "
                          r"nieuw=(\d+) totaal=(\d+)")
-# Eindtijd van de bezwijklus (bridge_failure.py): die rekent met een
-# solve-aanroep per tijdstap, en '[ n%]' geldt dan per aanroep.
+# End time of the failure loop (bridge_failure.py): it solves with one
+# solve call per time step, and '[ n%]' then applies per call.
 _TEND_RE = re.compile(r"^BRIDGE_TEND\s+([-+0-9.eE]+)\s*$")
-# Expliciet schema in de commando-echo (geen Newton-iteraties).
+# Explicit scheme in the command echo (no Newton iterations).
 _EXPLICIT_RE = re.compile(r"SCHEMA\s*=\s*'(DIFF_CENT|TCHAMWA)'")
 _DIAG_MARK = "--- DIAGNOSTIC JOB :"
-_BOX_TOP = u"╔"     # bovenrand meldingskader
-_BOX_BOTTOM = u"╚"  # onderrand meldingskader
-_BOX_SIDE = u"║"    # zijkant meldingskader
+_BOX_TOP = u"╔"     # top edge of message box
+_BOX_BOTTOM = u"╚"  # bottom edge of message box
+_BOX_SIDE = u"║"    # side of message box
 _CONVERGED = u"Critère(s) de convergence atteint(s)"
 _NUM_CELL_RE = re.compile(r"^\s*([-+]?\d[\d.]*(?:[EeDd][-+]?\d+)?)\s*([A-Z]?)\s*$")
 
-# Kolomkop (samengevoegd over de drie kopregels) -> sleutel. Volgorde telt:
-# de eerste passende regel wint.
+# Column header (merged over the three header lines) -> key. Order matters:
+# the first matching rule wins.
 _COLUMN_KEYS = [
     ("BCL. GEOM.", "geom"),
     ("BCL. CONT.", "cont_loop"),
@@ -103,7 +103,7 @@ _COLUMN_KEYS = [
     ("DISCRET", "cont_discrete_iter"),
 ]
 
-# Samenvatting na elke stap ("* Nombre de ... : n") -> sleutel.
+# Summary after each step ("* Nombre de ... : n") -> key.
 _SUMMARY_KEYS = [
     (u"Nombre d'it", "newton_count"),
     (u"Nombre de liaisons de contact", "contact_links"),
@@ -113,8 +113,8 @@ _SUMMARY_KEYS = [
     (u"point fixe contact", "cycles_fixed_point"),
 ]
 
-# Gebeurtenissen in de convergentietabel (Frans in study.mess) met uitleg
-# (nl, en). Teksten gezien in de study.mess-bestanden van de testmodellen.
+# Events in the convergence table (French in study.mess) with explanation
+# (nl, en). Texts seen in the study.mess files of the test models.
 EVENT_TEXTS = [
     (u"nombre maximum d'it", u"Maximaal aantal Newton-iteraties "
      u"(ITER_GLOB_MAXI) bereikt zonder convergentie.",
@@ -136,8 +136,8 @@ EVENT_TEXTS = [
      u"Code-Aster stops the calculation."),
 ]
 
-# Uitleg bij een pivot nul, per soort vrijheidsgraad. De raad volgt de
-# tekst die Code-Aster zelf bij de pivot-melding geeft (study.mess:
+# Explanation for a zero pivot, per kind of degree of freedom. The advice
+# follows the text Code-Aster itself gives with the pivot message (study.mess:
 # "Si vous faites du contact, il ne faut pas que la structure ne 'tienne'
 # que par le contact" en "exclure certains noeuds des conditions de contact
 # (mots clés SANS_NOEUD et SANS_GROUP_NO)").
@@ -172,11 +172,11 @@ def _to_float(text):
 
 
 # ==========================================
-# LINEAIRE OPLOSSER (MECA_STATIQUE met INFO=2)
+# LINEAR SOLVER (MECA_STATIQUE with INFO=2)
 #
-# Wat Code-Aster 17.4 schrijft binnen "res = MECA_STATIQUE(...)" tot
-# "# Fin commande" (gezien in de .mess van een klein 3D-testmodel en een
-# blok van 37 389 vergelijkingen; MUMPS 5.6.2 met ICNTL(4)=2):
+# What Code-Aster 17.4 writes within "res = MECA_STATIQUE(...)" up to
+# "# Fin commande" (seen in the .mess of a small 3D test model and a
+# block of 37 389 equations; MUMPS 5.6.2 with ICNTL(4)=2):
 #
 #   Le système linéaire à résoudre a 252 degrés de liberté:
 #      - 228 sont des degrés de liberté physiques (... 76 noeuds ...)
@@ -185,29 +185,29 @@ def _to_float(text):
 #     Elle contient 4182 termes non nuls si elle est symétrique ...
 #     Soit un taux de remplissage de  12.774 %.
 #   TEMPS CPU/SYS/ELAPSED ASSEMBLAGE M        :  0.1000D-02 0.0000D+00 ...
-#   Entering DMUMPS 5.6.2 with JOB, N, NNZ =   1 ...   (1 analyse, 2
-#   ... Elapsed time in analysis driver=  0.0010      factorisatie,
-#   ... INFOG (12) Number of negative pivots = 24    3 oplossen)
+#   Entering DMUMPS 5.6.2 with JOB, N, NNZ =   1 ...   (1 analysis, 2
+#   ... Elapsed time in analysis driver=  0.0010      factorisation,
+#   ... INFOG (12) Number of negative pivots = 24    3 solve)
 #   ERROR ANALYSIS BEFORE ITERATIVE REFINEMENT / STATISTICS AFTER ...
 #      RINFOG(6):SCALED RESIDUAL, (7)/(8) backward errors W1/W2,
 #      (9) Upper bound ERROR, (10)/(11) CONDITION NUMBER (1)/(2)
-#   Champ stocké <DEPL> ...                            (oplossing klaar)
+#   Champ stocké <DEPL> ...                            (solution ready)
 #   Statistics:  - _computeMatrix called 1 times in 0.002843 s  ...
 #   # Fin commande #0011   user+syst: 0.06s (syst: 0.00s, elaps: 0.00s)
 #
-# GCPC (gcpc.F90): "* GCPC NORME DU RESIDU = ...", per iteratie
-# "* ITERATION n NORME DU RESIDU EN ABS/RELA = a r" (bij INFO=2 alleen als
-# het residu met een factor 10 gedaald is: paraaf = 0.1d0), daarna
-# "* NORME DU RESIDU INITIAL/FINAL/RELATIF=" en "* CONVERGENCE EN n
+# GCPC (gcpc.F90): "* GCPC NORME DU RESIDU = ...", per iteration
+# "* ITERATION n NORME DU RESIDU EN ABS/RELA = a r" (with INFO=2 only if
+# the residual has dropped by a factor 10: paraaf = 0.1d0), then
+# "* NORME DU RESIDU INITIAL/FINAL/RELATIF=" and "* CONVERGENCE EN n
 # ITERATIONS".
 #
-# Betekenis (U2.08.03 par. 7.2.1): de foutgrens RINFOG(9) is ongeveer
-# conditiegetal x 'backward error' en wordt door Code-Aster met
-# SOLVEUR/RESI_RELA vergeleken (U4.50.01 par. 3.5.3).
+# Meaning (U2.08.03 par. 7.2.1): the error bound RINFOG(9) is roughly
+# condition number x 'backward error' and is compared by Code-Aster with
+# SOLVEUR/RESI_RELA (U4.50.01 par. 3.5.3).
 # ==========================================
 _LIN_CMD_RE = re.compile(r"^\s*(?:[A-Za-z_]\w*\s*=\s*)?MECA_STATIQUE\s*\(")
-# Modaal/knik (bridge_to_aster._build_modal): de echo van CALC_MODES en de
-# regels die aster_results_export.print_modes na de berekening print:
+# Modal/buckling (bridge_to_aster._build_modal): the echo of CALC_MODES and
+# the lines that aster_results_export.print_modes prints after the solve:
 #   BRIDGE_MODE 1 FREQ=7.0737 MASS_EFFE_UN_DX=.. MASS_EFFE_UN_DY=.. ..
 #   BRIDGE_MODE 1 CHAR_CRIT=41124.7
 _MODES_CMD_RE = re.compile(r"^\s*(?:[A-Za-z_]\w*\s*=\s*)?CALC_MODES\s*\(")
@@ -237,7 +237,7 @@ _LIN_FLOPS_RE = re.compile(r"RINFOG\(1\)\)?\s*=\s*([-+0-9.eEdD]+)")
 _LIN_INFOG_RE = re.compile(r"(?<![RA-Z])INFOG\s*\(\s*(\d+)\s*\)[^=]*="
                            r"\s*([-+0-9.eEdD]+)")
 _LIN_MEM_RE = re.compile(r"\(INFOG\((17|19|22)\)\):\s*(\d+)")
-# Schattingen uit de analysefase (al bekend tijdens de factorisatie)
+# Estimates from the analysis phase (known during the factorisation)
 _LIN_FLOPS_EST_RE = re.compile(r"RINFOG\(1\) Operations during elimination "
                                r"\(estim\)\s*=\s*(\S+)")
 _LIN_ENTRIES_EST_RE = re.compile(r"\(20\) Number of entries in factors "
@@ -259,7 +259,7 @@ _LIN_STAT_RE = re.compile(r"^(\s*)- (\w+) called (\d+) times in "
                           r"([-+0-9.eE]+) s")
 _LIN_FIN_RE = re.compile(r"user\+syst:\s*([0-9.]+)s.*elaps:\s*([0-9.]+)s")
 
-# Fasen van een lineaire oplossing, in volgorde (sleutel, nl, en).
+# Phases of a linear solve, in order (key, nl, en).
 LIN_PHASES = [
     ("matrix", u"Stijfheidsmatrix (elementen + assemblage)",
      u"Stiffness matrix (elements + assembly)"),
@@ -274,8 +274,8 @@ _LIN_PHASE_KEYS = [p[0] for p in LIN_PHASES]
 
 
 def lin_phase_title(key, method="MUMPS"):
-    """Titel van een fase in de gekozen taal; bij GCPC is 'factor' de
-    voorconditionering (onvolledige factorisatie)."""
+    """Title of a phase in the chosen language; with GCPC 'factor' is the
+    preconditioning (incomplete factorisation)."""
     if key == "factor" and method == "GCPC":
         return tr(u"Voorconditionering (LDLT_INC)",
                   u"Preconditioner (LDLT_INC)")
@@ -288,45 +288,45 @@ def lin_phase_title(key, method="MUMPS"):
 
 
 class LinearSolve(object):
-    """Een MECA_STATIQUE-aanroep: matrix, oplosser, fasen en kwaliteit."""
+    """One MECA_STATIQUE call: matrix, solver, phases and quality."""
 
     def __init__(self, seen_at=None):
         self.command = "MECA_STATIQUE"
-        self.started_at = seen_at     # wandkloktijd (live), anders None
+        self.started_at = seen_at     # wall clock time (live), else None
         self.status = "bezig"         # bezig / klaar / mislukt
         self.solver = {}              # METHODE, PRE_COND, RESI_RELA, NPREC ..
-        self.dofs = None              # vrijheidsgraden totaal
+        self.dofs = None              # total degrees of freedom
         self.dofs_phys = None
         self.nodes = None
-        self.lagr_pairs = None        # Lagrange-parameters ("couples de
-        #                               paramètres de Lagrange", 2 per relatie)
-        self.relations = None         # gedualiseerde lineaire relaties
+        self.lagr_pairs = None        # Lagrange parameters ("couples de
+        #                               paramètres de Lagrange", 2 per relation)
+        self.relations = None         # dualised linear relations
         self.equations = None
-        self.nnz = None               # niet-nul-termen (symmetrisch)
-        self.fill_pct = None          # vullingsgraad [%]
+        self.nnz = None               # nonzero terms (symmetric)
+        self.fill_pct = None          # fill ratio [%]
         self.mumps = {}               # version, ordering, flops, entries,
         #                               neg_pivots, delayed, front, mem_*
-        self.refine_before = {}       # residu en kwaliteit voor verfijning
-        self.refine_after = {}        # ... na verfijning
+        self.refine_before = {}       # residual and quality before refinement
+        self.refine_after = {}        # ... after refinement
         self.refine_steps = None
-        self.gcpc_init = None         # beginresidu (absoluut)
-        self.gcpc_target = None       # (absoluut, relatief)
-        self.gcpc_iters = []          # (iteratie, absoluut, relatief)
-        self.gcpc_final = None        # (begin, eind, relatief)
-        self.gcpc_converged = None    # aantal iteraties bij convergentie
-        self.phases = {}              # sleutel -> {start, end, seconds}
-        self.current = None           # lopende fase
+        self.gcpc_init = None         # initial residual (absolute)
+        self.gcpc_target = None       # (absolute, relative)
+        self.gcpc_iters = []          # (iteration, absolute, relative)
+        self.gcpc_final = None        # (initial, final, relative)
+        self.gcpc_converged = None    # number of iterations at convergence
+        self.phases = {}              # key -> {start, end, seconds}
+        self.current = None           # current phase
         self.stats = {}               # "MumpsSolver.factorize" -> s
         self.cpu_total = None
         self.elapsed_total = None
-        self.detailed = False         # INFO=2-uitvoer gezien (ASSEMBLAGE ..)
+        self.detailed = False         # INFO=2 output seen (ASSEMBLAGE ..)
 
-    # ---------- fasen ----------
+    # ---------- phases ----------
     def method(self):
         return self.solver.get("METHODE", u"MUMPS")
 
     def phase_keys(self):
-        """De fasen die bij deze oplosser horen (volgorde van
+        """The phases that belong to this solver (order of
         LIN_PHASES)."""
         keys = list(_LIN_PHASE_KEYS)
         if self.method() != "MUMPS":
@@ -334,9 +334,9 @@ class LinearSolve(object):
         return keys
 
     def phase_seconds(self, key, now=None):
-        """Duur van een fase [s]: de waarde uit de uitvoer, anders de
-        wandklok (start..eind, of start..now als de fase loopt); None als
-        onbekend."""
+        """Duration of a phase [s]: the value from the output, else the
+        wall clock (start..end, or start..now if the phase is running); None
+        if unknown."""
         ph = self.phases.get(key)
         if not ph:
             return None
@@ -354,8 +354,8 @@ class LinearSolve(object):
         return self.status != "bezig"
 
     def forward_error(self):
-        """Geschatte relatieve fout op de oplossing (MUMPS RINFOG(9) na
-        verfijning), of None."""
+        """Estimated relative error of the solution (MUMPS RINFOG(9) after
+        refinement), or None."""
         return self.refine_after.get(9)
 
     def condition(self):
@@ -363,8 +363,8 @@ class LinearSolve(object):
 
 
 def _e(value, digits):
-    """Getal in e-notatie met een punt (%-opmaak: in IronPython geeft
-    str.format de decimale komma van de landinstelling); '-' bij None."""
+    """Number in e-notation with a point (%-formatting: in IronPython
+    str.format gives the decimal comma of the locale); '-' for None."""
     if value is None:
         return u"-"
     return u"%.*e" % (digits, value)
@@ -372,16 +372,16 @@ def _e(value, digits):
 
 def assess_linear(lin):
     """
-    Beoordeling van een lineaire oplossing: lijst (niveau, tekst) met
-    niveau "ok", "info", "let_op" of "fout", in de gekozen taal.
+    Assessment of a linear solve: list (level, text) with
+    level "ok", "info", "let_op" or "fout", in the chosen language.
 
-    Bronnen: U4.50.01 par. 3.5.3 (RESI_RELA: foutgrens van MUMPS; groter
-    = Code-Aster stopt), U2.08.03 par. 7.2.1 (conditiegetal 1e4 = goed
-    geconditioneerd, tot 1e20 = zeer slecht; 'backward error' bij een
-    goede oplossing in de orde van de machineprecisie 1e-15) en par. 7.1
-    (conditiegetal > 1e12 verraadt een singulariteit, gemeten zonder
-    voorbehandeling). De grens 1e-12 voor de 'backward error' is een
-    keuze van de bridge (NIET geverifieerd in de U-doc).
+    Sources: U4.50.01 par. 3.5.3 (RESI_RELA: error bound of MUMPS; larger
+    = Code-Aster stops), U2.08.03 par. 7.2.1 (condition number 1e4 = well
+    conditioned, up to 1e20 = very poor; 'backward error' for a
+    good solution in the order of the machine precision 1e-15) and par. 7.1
+    (condition number > 1e12 reveals a singularity, measured without
+    preprocessing). The limit 1e-12 for the 'backward error' is a
+    choice of the bridge (NOT verified in the U-doc).
     """
     out = []
     resi = lin.solver.get("RESI_RELA")
@@ -451,13 +451,13 @@ def assess_linear(lin):
                 u"Backward error {0} is large (normally ~1e-15): the "
                 u"factorization had numerical difficulty.").format(
                     _e(bw, 1))))
-        # Negatieve pivots: een stelsel met Lagrange-multiplicatoren is
-        # niet positief definiet; in de testruns was het aantal negatieve
-        # pivots gelijk aan het aantal Lagrange-parameters (252 en 268 569
-        # vergelijkingen); met een mechanisme (alleen DX vastgehouden,
-        # FACTOR_57) 10 bij 8. Meer negatieve pivots wijst op een niet positief
-        # definiete stijfheid (traagheidsstelling van Sylvester; NIET
-        # geverifieerd in de U-doc).
+        # Negative pivots: a system with Lagrange multipliers is
+        # not positive definite; in the test runs the number of negative
+        # pivots equalled the number of Lagrange parameters (252 and 268 569
+        # equations); with a mechanism (only DX held,
+        # FACTOR_57) 10 for 8. More negative pivots point to a non-positive
+        # definite stiffness (Sylvester's law of inertia; NOT
+        # verified in the U-doc).
         neg = lin.mumps.get("neg_pivots")
         if (neg is not None and lin.lagr_pairs is not None and
                 neg > lin.lagr_pairs):
@@ -485,8 +485,8 @@ def assess_linear(lin):
                 u"GCPC converged in {0} iterations (residual {1}, "
                 u"criterion {2}).").format(
                     lin.gcpc_converged, _e(rel, 2), _e(resi, 0))))
-            # Grens 20 % van de vergelijkingen: keuze van de bridge (NIET
-            # geverifieerd in de U-doc; NMAX_ITER 0 = 50 %).
+            # Limit 20 % of the equations: choice of the bridge (NOT
+            # verified in the U-doc; NMAX_ITER 0 = 50 %).
             if lin.equations and lin.gcpc_converged > 0.2 * lin.equations:
                 out.append(("let_op", tr(
                     u"Veel iteraties ({0} bij {1} vergelijkingen): trage "
@@ -517,7 +517,7 @@ def _column_key(name):
 
 
 def event_hint(text):
-    """Uitleg (gekozen taal) bij een <Erreur>/<Action>-tekst, of u''."""
+    """Explanation (chosen language) for an <Erreur>/<Action> text, or u''."""
     for pattern, nl, en in EVENT_TEXTS:
         if pattern in text:
             return tr(nl, en)
@@ -525,7 +525,7 @@ def event_hint(text):
 
 
 def pivot_hint(component):
-    """Uitleg bij een pivot nul op deze component (bijv. 'LAGS_C', 'DZ')."""
+    """Explanation for a zero pivot on this component (e.g. 'LAGS_C', 'DZ')."""
     comp = component.upper()
     if comp.startswith("LAGS_") or comp.startswith("LAG_C"):
         return tr(*_PIVOT_HINT_CONTACT)
@@ -535,62 +535,62 @@ def pivot_hint(component):
 
 
 # ==========================================
-# DATASTRUCTUREN
+# DATA STRUCTURES
 # ==========================================
 class Step(object):
-    """Een rekenpoging ("Instant de calcul"); een opgedeelde stap geeft
-    meerdere pogingen met een hoger niveau."""
+    """One solve attempt ("Instant de calcul"); a split step gives
+    several attempts with a higher level."""
 
     def __init__(self, index, instant, level, seen_at=None):
-        self.index = index            # volgnummer van de poging (0, 1, ...)
-        self.instant = instant        # doeltijdstip van de poging
-        self.level = level            # Niveau de découpe (1 = niet opgedeeld)
-        self.seen_at = seen_at        # wandkloktijd (live), anders None
-        self.iterations = []          # dicts per Newton-iteratie
+        self.index = index            # sequence number of the attempt (0, 1, ...)
+        self.instant = instant        # target time of the attempt
+        self.level = level            # Niveau de découpe (1 = not split)
+        self.seen_at = seen_at        # wall clock time (live), else None
+        self.iterations = []          # dicts per Newton iteration
         self.status = "bezig"         # bezig / geconvergeerd / mislukt
-        self.error = u""              # <Erreur>-tekst (Frans)
-        self.actions = []             # <Action>-teksten (Frans)
-        self.cpu = None               # CPU-tijd van de poging [s]
+        self.error = u""              # <Erreur> text (French)
+        self.actions = []             # <Action> texts (French)
+        self.cpu = None               # CPU time of the attempt [s]
         self.summary = {}             # newton_count, contact_links, cycles_*
-        self.resi_location = u""      # bijv. "knoop 298 DY"
-        self.contact_initial = None   # (in contact, uitgesloten)
-        self.energy = {}              # TOTAL-regel van BILAN D'ENERGIE
+        self.resi_location = u""      # e.g. "node 298 DY"
+        self.contact_initial = None   # (in contact, excluded)
+        self.energy = {}              # TOTAL line of BILAN D'ENERGIE
 
     def newton_count(self):
-        """Aantal Newton-iteraties (samenvatting, anders tabelregels)."""
+        """Number of Newton iterations (summary, else table rows)."""
         n = self.summary.get("newton_count")
         if n is not None:
             return int(n)
         return len(self.iterations)
 
     def geom_loops(self):
-        """Aantal geometrische contactlussen (BCL. GEOM.), of None."""
+        """Number of geometric contact loops (BCL. GEOM.), or None."""
         vals = [it["geom"] for it in self.iterations
                 if it.get("geom") is not None]
         return int(max(vals)) if vals else None
 
     def status_changes(self):
-        """Som van de contactstatuswisselingen (VARI. CONT.), of None."""
+        """Sum of the contact status changes (VARI. CONT.), or None."""
         vals = [it["cont_vari"] for it in self.iterations
                 if it.get("cont_vari") is not None]
         return int(sum(vals)) if vals else None
 
 
 class ConvergenceData(object):
-    """Alles wat tot nu toe uit de uitvoer gelezen is."""
+    """Everything read from the output so far."""
 
     def __init__(self):
         self.steps = []
         self.messages = []        # dicts: kind, code, text, hint, step
-        self.progress = []        # (procent, instant)
+        self.progress = []        # (percent, instant)
         self.command = None       # STAT_NON_LINE / DYNA_NON_LINE
-        self.resi_crit = None     # RESI_GLOB_RELA uit het commando
-        self.iter_max = None      # ITER_GLOB_MAXI uit het commando
-        self.diagnostic = u""     # DIAGNOSTIC JOB, leeg zolang bezig
-        self.partial_until = None  # BRIDGE_ONVOLLEDIG-tijdstip
-        self.t_end = None          # BRIDGE_TEND (bezwijklus), anders None
-        self.explicit = False      # expliciet schema gezien
-        self.fin = False           # "<I> <FIN>" gezien (study.comm tot FIN)
+        self.resi_crit = None     # RESI_GLOB_RELA from the command
+        self.iter_max = None      # ITER_GLOB_MAXI from the command
+        self.diagnostic = u""     # DIAGNOSTIC JOB, empty while running
+        self.partial_until = None  # BRIDGE_ONVOLLEDIG time
+        self.t_end = None          # BRIDGE_TEND (failure loop), else None
+        self.explicit = False      # explicit scheme seen
+        self.fin = False           # "<I> <FIN>" seen (study.comm up to FIN)
         self.linear = []           # LinearSolve per MECA_STATIQUE
         self.modes = []            # (nr, {FREQ/CHAR_CRIT/MASS_EFFE_UN_..})
         self.lines = 0
@@ -602,9 +602,9 @@ class ConvergenceData(object):
         return self.linear[-1] if self.linear else None
 
     def overall_progress(self):
-        """(procent, tijdstip) van de hele run, of None. Met BRIDGE_TEND
-        (bezwijklus, een solve per tijdstap) uit tijdstip / eindtijd; anders
-        de laatste '[ n%]' van Code-Aster."""
+        """(percent, time) of the whole run, or None. With BRIDGE_TEND
+        (failure loop, one solve per time step) from time / end time; else
+        the last '[ n%]' of Code-Aster."""
         if not self.progress:
             return None
         pct, inst = self.progress[-1]
@@ -620,16 +620,16 @@ class ConvergenceData(object):
 
 
 # ==========================================
-# PARSER (incrementeel)
+# PARSER (incremental)
 # ==========================================
 class ConvergenceParser(object):
     """
-    Leest de uitvoer regel voor regel; feed() mag met stukken tekst worden
-    aangeroepen die midden in een regel eindigen (live fort.6).
+    Reads the output line by line; feed() may be called with chunks of text
+    that end in the middle of a line (live fort.6).
 
-    hints : dict code -> uitleg in de gekozen taal (bijv.
+    hints : dict code -> explanation in the chosen language (e.g.
             bridge_run_aster.mess_hints()); optioneel.
-    clock : functie die de wandkloktijd geeft (live), of None.
+    clock : function that returns the wall clock time (live), or None.
     """
 
     def __init__(self, hints=None, clock=None):
@@ -637,22 +637,22 @@ class ConvergenceParser(object):
         self._hints = hints or {}
         self._clock = clock
         self._partial = u""
-        self._columns = None       # sleutels van de huidige tabel
-        self._names = None         # kopnamen van de huidige tabel
-        self._header = []          # kopregels in opbouw
+        self._columns = None       # keys of the current table
+        self._names = None         # header names of the current table
+        self._header = []          # header lines being built
         self._energy_cols = None
-        self._box = None           # [kind, code, regels] in opbouw
-        self._pending = u""        # regel die op de volgende doorloopt
+        self._box = None           # [kind, code, lines] being built
+        self._pending = u""        # line that continues on the next one
         self._msg_seen = {}
-        self._lin = None           # LinearSolve binnen MECA_STATIQUE
-        self._lin_refine = None    # "before" / "after" (MUMPS-verfijning)
-        self._lin_group = u""      # groep in het Statistics-blok
-        self._lin_prev = u""       # vorige regel binnen MECA_STATIQUE
+        self._lin = None           # LinearSolve within MECA_STATIQUE
+        self._lin_refine = None    # "before" / "after" (MUMPS refinement)
+        self._lin_group = u""      # group in the Statistics block
+        self._lin_prev = u""       # previous line within MECA_STATIQUE
 
-    # ---------- invoer ----------
+    # ---------- input ----------
     def feed(self, text):
-        """Verwerk een stuk tekst (unicode); een onvolledige laatste regel
-        wordt bewaard tot het volgende stuk."""
+        """Process a chunk of text (unicode); an incomplete last line
+        is kept until the next chunk."""
         text = self._partial + text
         lines = text.split(u"\n")
         self._partial = lines.pop()
@@ -660,7 +660,7 @@ class ConvergenceParser(object):
             self.feed_line(line.rstrip(u"\r"))
 
     def close(self):
-        """Verwerk een eventuele onvolledige laatste regel."""
+        """Process a possibly incomplete last line."""
         if self._partial:
             self.feed_line(self._partial.rstrip(u"\r"))
             self._partial = u""
@@ -671,7 +671,7 @@ class ConvergenceParser(object):
     def feed_line(self, line):
         self.data.lines += 1
         if self._pending:
-            # Doorloopregel (residu-plaats of "au numéro d'ordre :").
+            # Continuation line (residual location or "au numéro d'ordre :").
             line = self._pending.rstrip() + u" " + line.strip()
             self._pending = u""
         elif (u"au noeud et degr" in line and u">" not in
@@ -680,13 +680,13 @@ class ConvergenceParser(object):
             return
         self._handle(line)
 
-    # ---------- verwerking ----------
+    # ---------- processing ----------
     def _current(self):
         return self.data.steps[-1] if self.data.steps else None
 
     def _add_message(self, kind, code, text, hint=u""):
-        """Melding toevoegen; een herhaalde melding telt op (count) en
-        krijgt de laatste poging/tijdstip en een nieuw volgnummer (seq)."""
+        """Add a message; a repeated message adds up (count) and
+        gets the latest attempt/time and a new sequence number (seq)."""
         step = self._current()
         self._seq += 1
         key = (kind, code, text[:80])
@@ -710,7 +710,7 @@ class ConvergenceParser(object):
             data.fin = True
             return
 
-        # --- meldingskader ---
+        # --- message box ---
         if self._box is not None:
             if _BOX_BOTTOM in line:
                 kind, code, body = self._box
@@ -719,7 +719,7 @@ class ConvergenceParser(object):
                 if len(text) > 400:
                     text = text[:400] + u" ..."
                 if kind is None:
-                    return   # <I>-kader (bijv. lijst van alarmen)
+                    return   # <I> box (e.g. list of alarms)
                 self._add_message(kind, code, text, self._hints.get(code, u""))
                 if kind == "fout":
                     step = self._current()
@@ -741,11 +741,11 @@ class ConvergenceParser(object):
             return
         m = _BOX_CODE_RE.search(line)
         if m and _BOX_SIDE in line:
-            # Kader zonder herkende bovenrand (afgekapt bestand).
+            # Box without a recognised top edge (truncated file).
             self._box = [self._kind(m.group(1)), m.group(2), []]
             return
 
-        # --- lineaire oplosser (MECA_STATIQUE) ---
+        # --- linear solver (MECA_STATIQUE) ---
         if self._lin is not None:
             if self._lin_line(line, stripped):
                 return
@@ -754,7 +754,7 @@ class ConvergenceParser(object):
             self._lin_line(line, stripped)
             return
 
-        # --- modaal / knik ---
+        # --- modal / buckling ---
         if _MODES_CMD_RE.match(line):
             data.command = u"CALC_MODES"
             return
@@ -768,7 +768,7 @@ class ConvergenceParser(object):
             data.modes.append((int(m.group(1)), values))
             return
 
-        # --- convergentietabel ---
+        # --- convergence table ---
         if stripped.startswith(u"|"):
             self._table_line(stripped)
             return
@@ -797,9 +797,9 @@ class ConvergenceParser(object):
             if step is not None:
                 step.error = text
                 step.status = "mislukt"
-            # Een mislukte integratie van de materiaalwet lost Code-Aster op
-            # door de stap op te delen (o.a. na elk bezwijkmoment); pas als
-            # de run stopt is het een fout, en die komt apart als kader.
+            # A failed integration of the material law is solved by Code-Aster
+            # by splitting the step (e.g. after every failure moment); only if
+            # the run stops is it an error, and that comes separately as a box.
             kind = "alarm" if u"intégration" in text else "fout"
             self._add_message(kind, u"", text, event_hint(text))
             return
@@ -903,7 +903,7 @@ class ConvergenceParser(object):
     def _kind(tag):
         return "alarm" if tag == "A" else "fout"
 
-    # ---------- lineaire oplosser ----------
+    # ---------- linear solver ----------
     def _now(self):
         return self._clock() if self._clock else None
 
@@ -918,7 +918,7 @@ class ConvergenceParser(object):
         self._lin_phase("matrix")
 
     def _lin_phase(self, key):
-        """Fase 'key' begint (de lopende fase eindigt)."""
+        """Phase 'key' starts (the current phase ends)."""
         lin = self._lin
         now = self._now()
         if lin.current is not None and lin.current != key:
@@ -950,9 +950,9 @@ class ConvergenceParser(object):
             lin.elapsed_total = _to_float(m.group(2))
         if lin.current is not None:
             self._lin_phase_end(lin.current)
-        # Tijden uit het Statistics-blok (Python-timers van Code-Aster,
-        # wandklok) gaan voor de klok van het scherm; de MUMPS-fasen houden
-        # de 'Elapsed time in ... driver' van MUMPS zelf.
+        # Times from the Statistics block (Python timers of Code-Aster,
+        # wall clock) take precedence over the clock of the window; the MUMPS
+        # phases keep the 'Elapsed time in ... driver' of MUMPS itself.
         st = lin.stats
         solver = u"GcpcSolver" if lin.method() == "GCPC" else u"MumpsSolver"
 
@@ -983,17 +983,17 @@ class ConvergenceParser(object):
         self._lin_refine = None
 
     def _lin_line(self, line, stripped):
-        """Regel binnen MECA_STATIQUE; True als hij verwerkt is."""
+        """Line within MECA_STATIQUE; True if it was processed."""
         lin = self._lin
-        # Code-Aster breekt lange zinnen af ("taux de remplissage" /
-        # "de   0.028 %."): de vorige regel gaat mee voor _LIN_FILL_RE.
+        # Code-Aster breaks long sentences ("taux de remplissage" /
+        # "de   0.028 %."): the previous line is included for _LIN_FILL_RE.
         joined = self._lin_prev + u" " + stripped
         self._lin_prev = stripped
         if stripped.startswith(_LIN_END):
             self._lin_finish(stripped)
             return True
         if lin.dofs is None:
-            # Commando-echo: de waarden van SOLVEUR (incl. de defaults).
+            # Command echo: the values of SOLVEUR (incl. the defaults).
             for m in _LIN_TXT_KW_RE.finditer(line):
                 lin.solver.setdefault(m.group(1), m.group(2))
             for m in _LIN_NUM_KW_RE.finditer(line):
@@ -1008,7 +1008,7 @@ class ConvergenceParser(object):
                 lin.dofs = int(m.group(1))
                 return True
             return False
-        # --- matrix (eerste keer; GCPC herhaalt dit na RCMK) ---
+        # --- matrix (first time; GCPC repeats this after RCMK) ---
         if stripped.startswith(u"-"):
             m = _LIN_PHYS_RE.match(stripped)
             if m and lin.dofs_phys is None:
@@ -1135,7 +1135,7 @@ class ConvergenceParser(object):
             lin.gcpc_converged = int(m.group(1))
             self._lin_phase_end("solve")
             return True
-        # --- na de oplossing ---
+        # --- after the solve ---
         if stripped.startswith(u"Champ stock"):
             self._lin_phase("post")
             return True
@@ -1154,7 +1154,7 @@ class ConvergenceParser(object):
             return True
         return False
 
-    # ---------- tabellen ----------
+    # ---------- tables ----------
     def _cells(self, line):
         return line.strip().strip(u"|").split(u"|")
 
@@ -1217,10 +1217,10 @@ class ConvergenceParser(object):
 
 
 # ==========================================
-# HULPFUNCTIES
+# HELPER FUNCTIONS
 # ==========================================
 def read_text(path):
-    """Tekst van een .mess/fort.6 (UTF-8, onleesbare tekens vervangen)."""
+    """Text of a .mess/fort.6 (UTF-8, unreadable characters replaced)."""
     f = io.open(path, "rb")
     try:
         return f.read().decode("utf-8", "replace")
@@ -1229,7 +1229,7 @@ def read_text(path):
 
 
 def parse_file(path, hints=None):
-    """Lees een volledig .mess-bestand. Returns ConvergenceData."""
+    """Read a complete .mess file. Returns ConvergenceData."""
     parser = ConvergenceParser(hints=hints)
     parser.feed(read_text(path))
     parser.close()
@@ -1237,12 +1237,12 @@ def parse_file(path, hints=None):
 
 
 def modes_text(data, limit=6):
-    """Korte tekst met de eerste modes ('1: 7.074 Hz, 2: ...' of
-    kniklastfactoren), of '' zonder modes."""
+    """Short text with the first modes ('1: 7.074 Hz, 2: ...' or
+    buckling load factors), or '' without modes."""
     out = []
     for nr, values in data.modes[:limit]:
         if values.get("FREQ") is not None:
-            # %-opmaak: format() volgt in IronPython de landinstelling
+            # %-formatting: format() follows the locale in IronPython
             out.append(u"{0}: {1} Hz".format(nr, "%.4g" % values["FREQ"]))
         elif values.get("CHAR_CRIT") is not None:
             out.append(u"{0}: {1}".format(nr, "%.4g" % values["CHAR_CRIT"]))
@@ -1252,7 +1252,7 @@ def modes_text(data, limit=6):
 
 
 def summarize(data):
-    """Korte tekstsamenvatting (log, tests)."""
+    """Short text summary (log, tests)."""
     steps = data.steps
     conv = [s for s in steps if s.status == "geconvergeerd"]
     fail = [s for s in steps if s.status == "mislukt"]
@@ -1294,14 +1294,14 @@ def summarize(data):
 
 
 # ==========================================
-# PYTHON-FOUTEN IN DE CONSOLE-UITVOER
+# PYTHON ERRORS IN THE CONSOLE OUTPUT
 #
-# Een Python-fout in study.comm (bijv. een tikfout in #ASTER-regels) staat
-# niet in fort.6/study.mess: run_aster stuurt alleen stdout van de job via
-# "tee" naar fort.6, de traceback gaat naar stderr (het Code-Aster-venster).
-# Gezien met Code-Aster 17.4: een SyntaxError geeft dan "DIAGNOSTIC JOB : OK"
-# zonder <FIN>, een NameError "<F>_ABNORMAL_ABORT". De bridge legt de
-# console-uitvoer vast in study_console.txt (bridge_run_aster.py).
+# A Python error in study.comm (e.g. a typo in #ASTER lines) is
+# not in fort.6/study.mess: run_aster only sends stdout of the job via
+# "tee" to fort.6, the traceback goes to stderr (the Code-Aster window).
+# Seen with Code-Aster 17.4: a SyntaxError then gives "DIAGNOSTIC JOB : OK"
+# without <FIN>, a NameError "<F>_ABNORMAL_ABORT". The bridge captures the
+# console output in study_console.txt (bridge_run_aster.py).
 # ==========================================
 _PY_ERR_RE = re.compile(
     r"^([A-Za-z_][\w.]*(?:Error|Exception|Interrupt|Exit)):\s*(.*)$")
@@ -1310,25 +1310,25 @@ _PY_FILE_RE = re.compile(r'^\s*File "([^"]+)", line (\d+)')
 
 def python_errors(text, max_errors=5):
     """
-    Python-fouten (traceback of SyntaxError) uit console-uitvoer.
+    Python errors (traceback or SyntaxError) from console output.
 
-    Alleen een foutregel ("NameError: ...") aan het begin van een regel,
-    na een traceback of na een 'File "...", line n'-regel telt; zo geven
-    Code-Aster-meldingen zoals <ConvergenceError> geen valse treffers.
+    Only an error line ("NameError: ...") at the start of a line,
+    after a traceback or after a 'File "...", line n' line counts; this way
+    Code-Aster messages such as <ConvergenceError> give no false hits.
 
     Returns
     -------
-    list of unicode - bijv. "SyntaxError: keyword argument repeated:
-                      INCREMENT (regel: 'INCREMENT=_F(...)')", uniek, in
-                      volgorde van voorkomen.
+    list of unicode - e.g. "SyntaxError: keyword argument repeated:
+                      INCREMENT (line: 'INCREMENT=_F(...)')", unique, in
+                      order of occurrence.
     """
     lines = text.splitlines()
     found = []
     for i, line in enumerate(lines):
         m = _PY_ERR_RE.match(line.rstrip())
         if not m or m.group(1).startswith(u"libaster."):
-            # libaster.AsterError e.d.: Code-Aster-fout met een eigen
-            # meldingskader in study.mess (gezien bij FACTOR_11, DVP_2).
+            # libaster.AsterError etc.: Code-Aster error with its own
+            # message box in study.mess (seen with FACTOR_11, DVP_2).
             continue
         frame = None
         in_traceback = False
@@ -1337,15 +1337,15 @@ def python_errors(text, max_errors=5):
             if prev.startswith(u"Traceback (most recent call last)"):
                 in_traceback = True
                 if j > 0 and lines[j - 1].strip() == u"--- Logging error ---":
-                    # logging.Handler.handleError: een logregel kon niet
-                    # naar de console (geen console, bijv. een job zonder
-                    # venster: "De ingang is ongeldig"); de job rekent
-                    # gewoon door (DIAGNOSTIC JOB : OK, gezien 17.4)
+                    # logging.Handler.handleError: a log line could not
+                    # go to the console (no console, e.g. a job without
+                    # window: "De ingang is ongeldig"); the job just
+                    # keeps solving (DIAGNOSTIC JOB : OK, seen 17.4)
                     in_traceback = None
                 break
             fm = _PY_FILE_RE.match(prev)
             if fm and (frame is None or u".comm" in fm.group(1)):
-                frame = (fm.group(1), j)    # frame in study.comm wint
+                frame = (fm.group(1), j)    # frame in study.comm wins
             if not fm and not prev.startswith(u" ") and prev.strip():
                 break
         if in_traceback is None or (frame is None and not in_traceback):
@@ -1366,22 +1366,22 @@ def python_errors(text, max_errors=5):
 
 
 # ==========================================
-# LIVE fort.6 VAN EEN LOPENDE RUN
+# LIVE fort.6 OF A RUNNING RUN
 #
-# run_aster (Code-Aster 17.4, lib/aster/run_aster/run.py) draait de job in
-# een tijdelijke map (tempfile.mkdtemp(prefix="run_aster_"), in de map
-# "tmpdir" uit share/aster/config.json, anders %TEMP%) en schrijft de
-# uitvoer via "tee -a fort.6" live in die map. Pas aan het eind kopieert
-# hij fort.6 naar het .mess-bestand uit de .export en verwijdert hij de
-# map. In de map staat een kopie van de .export ("<pid>.export") met de
-# regel "F mess <pad> R 6"; daaraan herkennen we de run.
+# run_aster (Code-Aster 17.4, lib/aster/run_aster/run.py) runs the job in
+# a temporary folder (tempfile.mkdtemp(prefix="run_aster_"), in the folder
+# "tmpdir" from share/aster/config.json, else %TEMP%) and writes the
+# output live in that folder via "tee -a fort.6". Only at the end does it
+# copy fort.6 to the .mess file from the .export and remove the
+# folder. The folder holds a copy of the .export ("<pid>.export") with the
+# line "F mess <path> R 6"; that is how we recognise the run.
 # ==========================================
 def _norm(path):
     return os.path.normcase(os.path.normpath(path.replace("/", os.sep)))
 
 
 def run_dir_mess(run_dir):
-    """Het .mess-pad uit de .export in een run_aster-map, of None."""
+    """The .mess path from the .export in a run_aster folder, or None."""
     try:
         names = os.listdir(run_dir)
     except OSError:
@@ -1402,16 +1402,16 @@ def run_dir_mess(run_dir):
 
 def find_live_fort6(tmp_dirs, mess_path, since=0.0):
     """
-    Zoek de fort.6 van de lopende run die naar mess_path schrijft.
+    Find the fort.6 of the running run that writes to mess_path.
 
-    tmp_dirs : lijst mappen waarin run_aster zijn run_aster_*-map maakt.
-    since    : alleen mappen die na dit tijdstip (time.time()) zijn gemaakt
-               (2 s marge); 0 = alle.
+    tmp_dirs : list of folders in which run_aster creates its run_aster_* folder.
+    since    : only folders created after this time (time.time())
+               (2 s margin); 0 = all.
 
     Returns
     -------
-    (pad naar fort.6, aanmaaktijd van de map) van de nieuwste passende
-    map, of (None, None).
+    (path to fort.6, creation time of the folder) of the newest matching
+    folder, or (None, None).
     """
     target = _norm(mess_path)
     best = (None, None)
