@@ -4,58 +4,58 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_fatigue.py
-# Vermoeiing (STAPPENPLAN S8): schade D en levensduur per knoop uit een
-# belastingsverloop, met een Wohler-curve per materiaal en de regel van
-# Miner. Gebruikersdoc: docs/Vermoeiing.md (EN: docs/en/Fatigue.md).
-# Compatibel met IronPython 2.7.9 (Mecway); de berekening zelf draait in de
-# Code-Aster-job (aster_fatigue.py, Python 3 + numpy).
+# Fatigue (STAPPENPLAN S8): damage D and life per node from a
+# load history, with a Wohler curve per material and Miner's
+# rule. User doc: docs/Vermoeiing.md (EN: docs/en/Fatigue.md).
+# Compatible with IronPython 2.7.9 (Mecway); the calculation itself runs in
+# the Code-Aster job (aster_fatigue.py, Python 3 + numpy).
 #
-# Invoer (Mecway heeft geen vermoeiing: manual v33 en mecway.exe kennen
-# geen fatigue/S-N/Wohler), als #ASTER-regels (bridge_custom):
-#   #ASTER-WOHLER materiaal: K=V, ...      Wohler-curve van een Mecway-
-#                                          materiaal ('*' = de rest)
-#       tabel   S = [s1, s2, ..] MPa, N = [n1, n2, ..]   (S = amplitude)
-#       macht   S = 80 MPa, N = 2e6, m = 3               (N = N (S/s)^m)
+# Input (Mecway has no fatigue: manual v33 and mecway.exe know
+# no fatigue/S-N/Wohler), as #ASTER lines (bridge_custom):
+#   #ASTER-WOHLER material: K=V, ...       Wohler curve of a Mecway
+#                                          material ('*' = the rest)
+#       table   S = [s1, s2, ..] MPa, N = [n1, n2, ..]   (S = amplitude)
+#       power   S = 80 MPa, N = 2e6, m = 3               (N = N (S/s)^m)
 #       Basquin Sf = 900 MPa, b = -0.09                  (S = Sf (2N)^b)
-#       verder: Se (geen schade onder deze amplitude; macht/Basquin),
+#       further: Se (no damage below this amplitude; power/Basquin),
 #       INTERPOL = LOG|LIN, PROL_GAUCHE = EXCLU|CONSTANT|LINEAIRE,
-#       PROL_DROITE = LINEAIRE|CONSTANT (tabel), correctie = GEEN|GOODMAN|
-#       GERBER met Su (treksterkte)
-#       rek-levensduur (Manson-Coffin, S8b): Sf, b, ef, c (en E; standaard
-#       de E van het materiaal): Δε/2 = Sf/E (2N)^b + ef (2N)^c
-#   #ASTER-VERMOEIING K=V, ...             (ook #ASTER-FATIGUE)
+#       PROL_DROITE = LINEAIRE|CONSTANT (table), correctie = GEEN|GOODMAN|
+#       GERBER with Su (tensile strength)
+#       strain-life (Manson-Coffin, S8b): Sf, b, ef, c (and E; default
+#       the E of the material): Δε/2 = Sf/E (2N)^b + ef (2N)^c
+#   #ASTER-VERMOEIING K=V, ...             (also #ASTER-FATIGUE)
 #       spanning = VMIS_SG|PRIN, telling = RAINFLOW|ASTM, herhalingen = h,
-#       rek = PRIN|VMIS_SG (rekcurve),
-#       multiaxiaal (S8b): criterium = DANG_VAN|MATAKE|CROSSLAND|FORMULE
-#       met a, b (spanning), c, formule = '...', belasting = PERIODIEK|
+#       rek = PRIN|VMIS_SG (strain curve),
+#       multiaxial (S8b): criterium = DANG_VAN|MATAKE|CROSSLAND|FORMULE
+#       with a, b (stress), c, formule = '...', belasting = PERIODIEK|
 #       NIET_PERIODIEK, projectie = UN_AXE|DEUX_AXES
-#   #ASTER-BLOK a, m, n                    (ook #ASTER-BLOCK; lineair
-#                                          statisch: n cycli met amplitude
-#                                          a x en gemiddelde m x de
-#                                          statische spanning)
-#   #ASTER-SIGNAAL f1, f2, ...             (ook #ASTER-SIGNAL; lineair
-#                                          statisch: rainflow op f x de
-#                                          statische spanning)
-# Zonder BLOK/SIGNAAL in een niet-lineaire of dynamische analyse
-# (STAT_NON_LINE, DYNA_NON_LINE) zijn de tijdstappen van de run het
-# signaal per knoop.
+#   #ASTER-BLOK a, m, n                    (also #ASTER-BLOCK; linear
+#                                          static: n cycles with amplitude
+#                                          a x and mean m x the
+#                                          static stress)
+#   #ASTER-SIGNAAL f1, f2, ...             (also #ASTER-SIGNAL; linear
+#                                          static: rainflow on f x the
+#                                          static stress)
+# Without BLOK/SIGNAAL in a nonlinear or dynamic analysis
+# (STAT_NON_LINE, DYNA_NON_LINE) the time steps of the run are the
+# signal per node.
 #
-# Vertaling: na CALC_CHAMP (SIGM_NOEU op de volume-elsets) een aanroep van
-# aster_fatigue.compute in de .comm; het resultaat gaat als node_fields
-# (damage, life) naar aster_results_export. Na de run: report() leest de
-# regels BRIDGE_VERMOEIING_* uit de .mess (log en statusvak). Waarom geen
-# CALC_FATIGUE voor het veld: zie docs/Vermoeiing.md par. 4 (CUMUL_DOMMAGE
-# kent alleen VMIS_SG op ELNO/ELGA, geen gemiddelde-spanningscorrectie en
-# geen blokken; de bridge rekent hetzelfde, verificatie VM-04/VM-06).
-# Schalen (S8b): dezelfde route op SIEQ_NOEU van res_sup/res_inf (POST_CHAMP
-# EXTR_COQUE, _build_calc_champ_block), velden damage_top/damage_bottom.
-# Rekcurve (Manson-Coffin, S8b): dezelfde route op EPSI_NOEU.
-# Multiaxiaal (S8b, criterium = ...): CALC_FATIGUE TYPE_CALCUL=
-# 'FATIGUE_MULTI' OPTION='DOMA_NOEUD' (kritiek vlak, Code-Aster) op res
-# (tijdstappen) of op een uit de statische spanning opgebouwd resultaat
-# (CREA_RESU, signaal of een resultaat per blok); periodiek rekent de
-# bridge N uit SIGEQ met de eigen curve (aster_fatigue.compute_multi),
-# niet-periodiek neemt hij ENDO1 van Code-Aster over.
+# Translation: after CALC_CHAMP (SIGM_NOEU on the solid elsets) a call of
+# aster_fatigue.compute in the .comm; the result goes as node_fields
+# (damage, life) to aster_results_export. After the run: report() reads the
+# lines BRIDGE_VERMOEIING_* from the .mess (log and status box). Why not
+# CALC_FATIGUE for the field: see docs/Vermoeiing.md par. 4 (CUMUL_DOMMAGE
+# only knows VMIS_SG on ELNO/ELGA, no mean stress correction and
+# no blocks; the bridge computes the same, verification VM-04/VM-06).
+# Shells (S8b): the same route on SIEQ_NOEU of res_sup/res_inf (POST_CHAMP
+# EXTR_COQUE, _build_calc_champ_block), fields damage_top/damage_bottom.
+# Strain curve (Manson-Coffin, S8b): the same route on EPSI_NOEU.
+# Multiaxial (S8b, criterium = ...): CALC_FATIGUE TYPE_CALCUL=
+# 'FATIGUE_MULTI' OPTION='DOMA_NOEUD' (critical plane, Code-Aster) on res
+# (time steps) or on a result built from the static stress
+# (CREA_RESU, signal or one result per block); periodic: the
+# bridge computes N from SIGEQ with its own curve (aster_fatigue.compute_multi),
+# non-periodic: it takes over ENDO1 from Code-Aster.
 
 import io
 import os
@@ -66,12 +66,12 @@ from bridge_utils import (log, tr, run_name, CONFIG_BRIDGE, parse_and_convert,
 
 CSV_SUFFIX = "_vermoeiing.csv"
 
-# Soorten volume-elementen (MODELISATION in bridge_to_aster)
+# Kinds of solid elements (MODELISATION in bridge_to_aster)
 _VOLUME = ("3D", "3D_SI")
-# Schalen (bridge_to_aster._SHELL_MODELISATIONS)
+# Shells (bridge_to_aster._SHELL_MODELISATIONS)
 _SHELL = ("DKT", "DST", "COQUE_3D")
 
-# Toegestane spanningseenheden (bridge_utils.parse_and_convert 'pressure')
+# Allowed stress units (bridge_utils.parse_and_convert 'pressure')
 _STRESS_UNITS = ("pa", "kpa", "mpa", "gpa", "n/mm2", "n/m2", "kn/m2", "psi",
                  "ksi", "bar")
 
@@ -79,21 +79,21 @@ _CORRECTIONS = {"GEEN": "GEEN", "NONE": "GEEN", "GOODMAN": "GOODMAN",
                 "GERBER": "GERBER"}
 _STRESS_KINDS = ("VMIS_SG", "PRIN")
 _COUNTINGS = ("RAINFLOW", "ASTM")
-# Multiaxiale criteria (#ASTER-VERMOEIING criterium = ...) -> Code-Aster
-# CALC_FATIGUE CRITERE per TYPE_CHARGE (catalogus calc_fatigue.py v17.4:
+# Multiaxial criteria (#ASTER-VERMOEIING criterium = ...) -> Code-Aster
+# CALC_FATIGUE CRITERE per TYPE_CHARGE (catalogue calc_fatigue.py v17.4:
 # PERIODIQUE MATAKE_MODI_AC/DANG_VAN_MODI_AC/FORMULE_CRITERE, NON_PERIODIQUE
-# MATAKE_MODI_AV/DANG_VAN_MODI_AV/FORMULE_CRITERE). CROSSLAND bestaat in
-# CALC_FATIGUE niet als naam: FORMULE_CRITERE met AMPCIS (zoals szlz107a
-# "POUR RETROUVER LE CRITERE CROSSLAND"), alleen periodiek.
+# MATAKE_MODI_AV/DANG_VAN_MODI_AV/FORMULE_CRITERE). CROSSLAND does not exist
+# in CALC_FATIGUE as a name: FORMULE_CRITERE with AMPCIS (like szlz107a
+# "POUR RETROUVER LE CRITERE CROSSLAND"), periodic only.
 _CRITERIA = ("GEEN", "DANG_VAN", "MATAKE", "CROSSLAND", "FORMULE")
 _LOADINGS = {"PERIODIEK": "PERIODIQUE", "PERIODIC": "PERIODIQUE",
              "PERIODIQUE": "PERIODIQUE", "NIET_PERIODIEK": "NON_PERIODIQUE",
              "NON_PERIODIC": "NON_PERIODIQUE",
              "NON_PERIODIQUE": "NON_PERIODIQUE"}
 _PROJECTIONS = ("UN_AXE", "DEUX_AXES")
-# Parameters van FORMULE_GRDEQ: de namenlijst in libbibfor.a van Code-Aster
-# 17.4 (testcases sslv135a, szlz107a gebruiken DTAUMA, PHYDRM, NORMAX,
-# NORMOY, EPNMAX, EPNMOY, RAYSPH, AMPCIS, DSIGEQ); U4.83.02 NIET ingezien
+# Parameters of FORMULE_GRDEQ: the name list in libbibfor.a of Code-Aster
+# 17.4 (test cases sslv135a, szlz107a use DTAUMA, PHYDRM, NORMAX,
+# NORMOY, EPNMAX, EPNMOY, RAYSPH, AMPCIS, DSIGEQ); U4.83.02 NOT consulted
 FORMULA_PARAMS = ("DTAUMA", "PHYDRM", "NORMAX", "NORMOY", "EPNMAX",
                   "EPNMOY", "DEPSPE", "EPSPR1", "SIGNM1", "DENDIS", "DENDIE",
                   "APHYDR", "MPHYDR", "DSIGEQ", "SIGPR1", "EPSNM1", "INVA2S",
@@ -101,7 +101,7 @@ FORMULA_PARAMS = ("DTAUMA", "PHYDRM", "NORMAX", "NORMOY", "EPNMAX",
                   "DTAUCR", "DGAMCR", "DSINCR", "DEPNCR", "MTAUCR", "MGAMCR",
                   "MSINCR", "MEPNCR", "DGAMPC", "DEPNPC", "MGAMPC", "MEPNPC")
 
-# Sleutels van #ASTER-VERMOEIING (NL en EN) -> interne naam
+# Keys of #ASTER-VERMOEIING (NL and EN) -> internal name
 _OPTION_KEYS = {"spanning": "stress", "stress": "stress",
                 "telling": "counting", "counting": "counting",
                 "herhalingen": "repeats", "repeats": "repeats",
@@ -111,7 +111,7 @@ _OPTION_KEYS = {"spanning": "stress", "stress": "stress",
                 "formule": "formula", "formula": "formula",
                 "belasting": "loading", "loading": "loading",
                 "projectie": "projection", "projection": "projection"}
-# Sleutels van #ASTER-WOHLER -> interne naam
+# Keys of #ASTER-WOHLER -> internal name
 _CURVE_KEYS = {"s": "S", "n": "N", "m": "m", "sf": "Sf", "b": "b",
                "se": "Se", "su": "Su", "correctie": "correction",
                "correction": "correction", "interpol": "interpol",
@@ -120,17 +120,17 @@ _CURVE_KEYS = {"s": "S", "n": "N", "m": "m", "sf": "Sf", "b": "b",
 
 
 # ==========================================
-# LEZEN
+# READING
 # ==========================================
 def is_requested(model_data):
-    """True als het model #ASTER-WOHLER-regels heeft."""
+    """True if the model has #ASTER-WOHLER lines."""
     fat = model_data.get("aster_custom", {}).get("fatigue") or []
     return any(kind == "wohler" for kind, _b in fat)
 
 
 def _split_top(text):
-    """Splits op komma's buiten [ ], ( ) en aanhalingstekens (een formule
-    als 'max(PHYDRM,0)' blijft heel)."""
+    """Split on commas outside [ ], ( ) and quotes (a formula
+    like 'max(PHYDRM,0)' stays whole)."""
     out, depth, cur, quote = [], 0, [], None
     for ch in text:
         if quote:
@@ -160,7 +160,7 @@ _NUM_RE = re.compile(r"^\s*([-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][-+]?"
 
 def _numbers(text):
     """'[1e4, 2e5] MPa' -> ([1e4, 2e5], 'MPa'); '80 MPa' -> ([80.0],
-    'MPa', scalar). Returns (getallen, eenheid, lijst?) of None."""
+    'MPa', scalar). Returns (numbers, unit, list?) or None."""
     m = _LIST_RE.match(text.strip())
     if m:
         try:
@@ -175,8 +175,8 @@ def _numbers(text):
 
 
 def _stress(vals, unit, what, line):
-    """Spanningen naar Pa; ERROR (None) zonder of met een onbekende
-    eenheid."""
+    """Stresses to Pa; ERROR (None) without a unit or with an unknown
+    unit."""
     key = _unit_key(unit or u"")
     if key not in _STRESS_UNITS:
         log(tr(u"ERROR: #ASTER-WOHLER {0}: {1} heeft een spanningseenheid "
@@ -198,7 +198,7 @@ def _bad_curve(line, why_nl, why_en):
 
 
 def _parse_curve(body, materials):
-    """Een #ASTER-WOHLER-regel -> dict voor aster_fatigue.Curve, of None
+    """An #ASTER-WOHLER line -> dict for aster_fatigue.Curve, or None
     (ERROR)."""
     line = body.strip()
     name, sep, rest = line.partition(":")
@@ -273,7 +273,7 @@ def _parse_curve(body, materials):
                               u"INTERPOL = LOG or LIN.")
         if any(b <= a for a, b in zip(s[:-1], s[1:])) or \
                 any(b > a for a, b in zip(n[:-1], n[1:])):
-            # De voorbeelden in de meldingen moeten zelf geldig zijn
+            # The examples in the messages must themselves be valid
             # (tests/test_bridge_fatigue_examples.py).
             return _bad_curve(line, u"S moet oplopen en N mag niet stijgen "
                               u"(S is de spanningsamplitude, N het aantal "
@@ -309,7 +309,7 @@ def _parse_curve(body, materials):
         d.update({"form": "power", "S": scalar("S"), "N": scalar("N"),
                   "m": scalar("m")})
     elif "ef" in nums or "c" in nums:
-        # Rek-levensduur (Manson-Coffin-Basquin): Δε/2 = Sf/E (2N)^b +
+        # Strain-life (Manson-Coffin-Basquin): Δε/2 = Sf/E (2N)^b +
         # ef (2N)^c (Manson 1953, Coffin 1954, Morrow 1965)
         if not ("Sf" in nums and "b" in nums and "ef" in nums and
                 "c" in nums):
@@ -397,7 +397,7 @@ def _bad_option(body, why_nl, why_en):
 
 
 def _parse_options(bodies):
-    """#ASTER-VERMOEIING-regels -> dict, of None (ERROR)."""
+    """#ASTER-VERMOEIING lines -> dict, or None (ERROR)."""
     out = {"stress": "VMIS_SG", "counting": "RAINFLOW", "repeats": 1.0,
            "strain": "PRIN", "criterion": "GEEN", "loading": "PERIODIQUE",
            "projection": "UN_AXE"}
@@ -484,7 +484,7 @@ def _parse_options(bodies):
 
 
 def _check_criterion(out, body):
-    """Samenhang van de multiaxiale sleutels; dict of None (ERROR)."""
+    """Consistency of the multiaxial keys; dict or None (ERROR)."""
     crit = out["criterion"]
     given = [k for k in ("a", "b", "c", "formula") if k in out]
     if crit == "GEEN":
@@ -506,7 +506,7 @@ def _check_criterion(out, body):
                                u"criterion = FORMULE needs formula = '...' "
                                u"(e.g. formula = '1.5*(DTAUMA + "
                                u"max(PHYDRM,0))').")
-        # namen (niet de exponent van een getal zoals 1e5)
+        # names (not the exponent of a number such as 1e5)
         names = sorted(set(re.findall(r"(?<![0-9.A-Za-z_])[A-Za-z_]\w*",
                                       out["formula"])))
         params = [n for n in names if n in FORMULA_PARAMS]
@@ -547,7 +547,7 @@ def _check_criterion(out, body):
                            u"docs/en/Fatigue.md section 1.7.".format(
                                crit, u", ".join(missing)))
     if crit in ("DANG_VAN", "MATAKE") and not 1.0 <= out["c"] <= 1.7321:
-        # catalogus defi_materiau.py v17.4: COEF_CISA_TRAC/COEF_FLEX_TORS
+        # catalogue defi_materiau.py v17.4: COEF_CISA_TRAC/COEF_FLEX_TORS
         # val_min=1.0, val_max=1.7321
         return _bad_option(body, u"c = {0}: Code-Aster staat voor {1} 1 <= c "
                            u"<= 1,7321 toe (COEF_CISA_TRAC / "
@@ -566,7 +566,7 @@ def _check_criterion(out, body):
 
 
 def _parse_numbers(body, kind):
-    """Getallen van een #ASTER-BLOK/-SIGNAAL-regel, of None (ERROR)."""
+    """Numbers of an #ASTER-BLOK/-SIGNAAL line, or None (ERROR)."""
     try:
         return [float(v) for v in body.replace(";", ",").split(",")
                 if v.strip()]
@@ -580,9 +580,9 @@ def _parse_numbers(body, kind):
 
 def parse(model_data):
     """
-    Plan uit de #ASTER-regels: {"curves": [dict], "options": dict,
-    "blocks": [(a, m, n)] of None, "signal": [f] of None}; {} zonder
-    #ASTER-WOHLER; None bij een fout (ERROR in de log).
+    Plan from the #ASTER lines: {"curves": [dict], "options": dict,
+    "blocks": [(a, m, n)] or None, "signal": [f] or None}; {} without
+    #ASTER-WOHLER; None on an error (ERROR in the log).
     """
     fat = model_data.get("aster_custom", {}).get("fatigue") or []
     if not fat:
@@ -688,7 +688,7 @@ def parse(model_data):
 # .COMM
 # ==========================================
 def csv_path(work_dir=None):
-    """Cyclustabel van deze run (<model>_<run_id>_vermoeiing.csv)."""
+    """Cycle table of this run (<model>_<run_id>_vermoeiing.csv)."""
     return os.path.join(work_dir or work_dir_path(),
                         run_name(CSV_SUFFIX))
 
@@ -698,7 +698,7 @@ def _py(text):
 
 
 def _materials_of(model_data, modelisations):
-    """Materialen met minstens een elset met een van deze MODELISATIONs."""
+    """Materials with at least one elset with one of these MODELISATIONs."""
     mods = model_data.get("elset_modelisations", {})
     elsets = model_data.get("elsets", {})
     return set(elsets.get(g) for g, mod in mods.items()
@@ -706,13 +706,13 @@ def _materials_of(model_data, modelisations):
 
 
 def _volume_materials(model_data):
-    """Materialen met minstens een volume-elset."""
+    """Materials with at least one solid elset."""
     return _materials_of(model_data, _VOLUME)
 
 
 def _groups_of(model_data, mats, modelisations):
-    """Code-Aster-groepsnamen (bridge_mesh) van de elsets met deze
-    materialen en MODELISATIONs, op volgorde."""
+    """Code-Aster group names (bridge_mesh) of the elsets with these
+    materials and MODELISATIONs, in order."""
     mods = model_data.get("elset_modelisations", {})
     elsets = model_data.get("elsets", {})
     return sorted(g for g, mod in mods.items()
@@ -720,8 +720,8 @@ def _groups_of(model_data, mats, modelisations):
 
 
 def _curve_materials(model_data, curve, pool):
-    """Materialen (uit pool) waar deze curve voor geldt; '*' = alle
-    materialen zonder eigen curve."""
+    """Materials (from pool) to which this curve applies; '*' = all
+    materials without a curve of their own."""
     if curve["material"] != "*":
         return set([curve["material"]]) & pool
     named = set(c["material"] for c in model_data.get("_fat_curves", []))
@@ -729,8 +729,8 @@ def _curve_materials(model_data, curve, pool):
 
 
 def _resolve_strain_E(model_data, curve, mats):
-    """E voor een rekcurve: eigen E, anders die van het materiaal (bij '*'
-    moeten de materialen dezelfde E hebben). True of False (ERROR)."""
+    """E for a strain curve: own E, else that of the material (with '*'
+    the materials must have the same E). True or False (ERROR)."""
     if "E" in curve:
         return True
     props = model_data.get("materials", {})
@@ -752,16 +752,16 @@ def _resolve_strain_E(model_data, curve, mats):
 
 def wohler_points(curve, life_max=1.0e12):
     """
-    Wohler-curve als punten voor DEFI_FONCTION (Code-Aster: FATIGUE WOHLER
-    in DEFI_MATERIAU, nodig voor CALC_FATIGUE FATIGUE_MULTI). Returns
+    Wohler curve as points for DEFI_FONCTION (Code-Aster: FATIGUE WOHLER
+    in DEFI_MATERIAU, needed for CALC_FATIGUE FATIGUE_MULTI). Returns
     (S [Pa], N, INTERPOL, PROL_GAUCHE, PROL_DROITE).
-    Code-Aster trekt in de vermoeiingsroutines PROL 'LINEAIRE' lineair in
-    (S, N) door, ook bij INTERPOL='LOG' (gemeten, S8; docs/Vermoeiing.md
-    par. 3). Daarom zet de bridge een log-log-doortrekking als extra punten
-    in de tabel (tot N = life_max links en N = 1 rechts) en laat Code-Aster
-    daarbuiten EXCLU (geen schade, gemeten: NBRUP = 0 en ENDO ~ 1e-308) of
-    CONSTANT. Macht en Basquin zijn rechte lijnen in log-log: twee punten
-    zijn exact.
+    In the fatigue routines Code-Aster extends PROL 'LINEAIRE' linearly in
+    (S, N), also with INTERPOL='LOG' (measured, S8; docs/Vermoeiing.md
+    par. 3). Therefore the bridge puts a log-log extension as extra points
+    in the table (up to N = life_max on the left and N = 1 on the right)
+    and lets Code-Aster use EXCLU beyond that (no damage, measured:
+    NBRUP = 0 and ENDO ~ 1e-308) or CONSTANT. Power and Basquin are
+    straight lines in log-log: two points are exact.
     """
     import math
     form = curve["form"]
@@ -807,8 +807,8 @@ def wohler_points(curve, life_max=1.0e12):
 
 
 def _signal_cycles(signal):
-    """Aantal keerpunten binnen het signaal (periodiek gesloten) / 2: meer
-    dan 1 betekent meer dan een cyclus per periode."""
+    """Number of turning points within the signal (periodically closed) / 2:
+    more than 1 means more than one cycle per period."""
     r = []
     for v in signal:
         if r and v == r[-1]:
@@ -821,7 +821,7 @@ def _signal_cycles(signal):
 
 
 def _check_routes(model_data, plan, analysis):
-    """Lijst curves die meedoen (of None/[] met een melding)."""
+    """List of curves that take part (or None/[] with a message)."""
     multi = plan["options"]["criterion"] != "GEEN"
     vol = _volume_materials(model_data)
     shell = _materials_of(model_data, _SHELL)
@@ -876,10 +876,10 @@ def _check_routes(model_data, plan, analysis):
 
 def fatigue_block(model_data, analysis, work_dir):
     """
-    .comm-code na CALC_CHAMP (aster_fatigue.compute of, met criterium,
-    CALC_FATIGUE FATIGUE_MULTI + aster_fatigue.compute_multi) en het extra
-    argument voor export_results. Returns (code, export_arg); ("", "")
-    zonder vermoeiing (of overgeslagen met een WARNING); None bij een fout.
+    .comm code after CALC_CHAMP (aster_fatigue.compute or, with criterium,
+    CALC_FATIGUE FATIGUE_MULTI + aster_fatigue.compute_multi) and the extra
+    argument for export_results. Returns (code, export_arg); ("", "")
+    without fatigue (or skipped with a WARNING); None on an error.
     """
     plan = parse(model_data)
     if plan is None:
@@ -922,8 +922,8 @@ def fatigue_block(model_data, analysis, work_dir):
     scripts = os.path.dirname(os.path.abspath(__file__))
     route = ("blokken" if plan["blocks"] else "signaal" if plan["signal"]
              else "tijdstappen van de run")
-    log(u"INFO: Vermoeiing: {0} curve(s) ({1}), belastingsverloop: {2}, "
-        u"{3}, telling {4}, herhalingen {5}.".format(
+    log(u"INFO: Fatigue: {0} curve(s) ({1}), load history: {2}, "
+        u"{3}, counting {4}, repeats {5}.".format(
             len(curves), u", ".join(c["material"] for c in curves), route,
             (u"criterium {0} ({1})".format(opts["criterion"],
                                            opts["loading"])
@@ -933,8 +933,8 @@ def fatigue_block(model_data, analysis, work_dir):
     head = [
         "",
         "# " + "=" * 53,
-        "# VERMOEIING (bridge: #ASTER-WOHLER, bridge_fatigue.py,",
-        "# docs/Vermoeiing.md): schade en levensduur per knoop (Miner)",
+        "# FATIGUE (bridge: #ASTER-WOHLER, bridge_fatigue.py,",
+        "# docs/Vermoeiing.md): damage and life per node (Miner)",
         "# " + "=" * 53,
         "import sys",
         "sys.path.insert(0, {0})".format(_py(scripts)),
@@ -951,8 +951,8 @@ def fatigue_block(model_data, analysis, work_dir):
             ", node_fields=globals().get('_bridge_vermoeiing')"
     body = []
     if any(c["form"] == "strain" for c in curves) and vol_groups:
-        # Totale rek per knoop (EPSI_NOEU; bij DEFORMATION='PETIT' de
-        # lineaire rek, catalogus calc_champ.py DEFORMATION)
+        # Total strain per node (EPSI_NOEU; with DEFORMATION='PETIT' the
+        # linear strain, catalogue calc_champ.py DEFORMATION)
         body += ["res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
                  "DEFORMATION=('EPSI_NOEU', ))".format(_tuple(vol_groups))]
     shells = any(c["_shell"] for c in curves)
@@ -985,11 +985,11 @@ def _num(v):
 
 def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
     """
-    .comm-regels voor CALC_FATIGUE TYPE_CALCUL='FATIGUE_MULTI' (catalogus
-    calc_fatigue.py v17.4; testcase sslv135a). Per materiaal een eigen
-    DEFI_MATERIAU (ELAS, FATIGUE WOHLER, CISA_PLAN_CRIT) en AFFE_MATERIAU,
-    los van fieldmat (alleen voor CALC_FATIGUE). DOMA_NOEUD vraagt
-    SIGM_NOEU en EPSI_NOEU in het resultaat (gemeten: zonder EPSI_NOEU
+    .comm lines for CALC_FATIGUE TYPE_CALCUL='FATIGUE_MULTI' (catalogue
+    calc_fatigue.py v17.4; test case sslv135a). Per material its own
+    DEFI_MATERIAU (ELAS, FATIGUE WOHLER, CISA_PLAN_CRIT) and AFFE_MATERIAU,
+    separate from fieldmat (only for CALC_FATIGUE). DOMA_NOEUD requires
+    SIGM_NOEU and EPSI_NOEU in the result (measured: without EPSI_NOEU
     <EXCEPTION> CALCULEL_29).
     """
     opts = plan["options"]
@@ -997,8 +997,8 @@ def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
     periodic = opts["loading"] == "PERIODIQUE"
     props = model_data.get("materials", {})
     out = [
-        "# Multiaxiaal: kritiek vlak per knoop (CALC_FATIGUE FATIGUE_MULTI,",
-        "# DOMA_NOEUD); vraagt SIGM_NOEU en EPSI_NOEU",
+        "# Multiaxial: critical plane per node (CALC_FATIGUE FATIGUE_MULTI,",
+        "# DOMA_NOEUD); requires SIGM_NOEU and EPSI_NOEU",
         "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
         "DEFORMATION=('EPSI_NOEU', ))".format(_tuple(vol_groups)),
     ]
@@ -1016,7 +1016,7 @@ def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
             groups = _groups_of(model_data, set([mat]), _VOLUME)
             p = props.get(mat, {})
             out += [
-                "# materiaal {0}".format(_ascii(mat)),
+                "# material {0}".format(_ascii(mat)),
                 "_FW{0} = DEFI_FONCTION(NOM_PARA='SIGM', INTERPOL='{1}', "
                 "PROL_GAUCHE='{2}', PROL_DROITE='{3}', VALE=({4}))".format(
                     k, interp, left, right, ", ".join(
@@ -1025,8 +1025,8 @@ def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
             ]
             cisa = ""
             if crit == "DANG_VAN":
-                # D_VAN_B is verplicht maar telt niet mee in SIGEQ (gemeten:
-                # b = 2 en b = 100 geven dezelfde SIGEQ1, NBRUP1)
+                # D_VAN_B is required but does not count in SIGEQ (measured:
+                # b = 2 and b = 100 give the same SIGEQ1, NBRUP1)
                 cisa = (", CISA_PLAN_CRIT=_F(CRITERE='{0}', D_VAN_A={1}, "
                         "D_VAN_B={2}, COEF_CISA_TRAC={3})".format(
                             aster_crit, _num(opts["a"]),
@@ -1048,9 +1048,9 @@ def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
     extra = ""
     if crit in ("CROSSLAND", "FORMULE"):
         if crit == "CROSSLAND":
-            # Crossland: sqrt(J2) van de amplitude (AMPCIS) + a P_max;
+            # Crossland: sqrt(J2) of the amplitude (AMPCIS) + a P_max;
             # szlz107a: "POUR RETROUVER LE CRITERE CROSSLAND" AMPCIS +
-            # a*max(PHYDRM,0); gemeten: AMPCIS = sqrt(J2(delta sigma / 2))
+            # a*max(PHYDRM,0); measured: AMPCIS = sqrt(J2(delta sigma / 2))
             expr = "{0}*(AMPCIS + {1}*max(PHYDRM, 0))".format(
                 _num(opts["c"]), _num(opts["a"]))
             params = ["AMPCIS", "PHYDRM"]
@@ -1067,8 +1067,8 @@ def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
     if static:
         idx = "res.getIndexes()[0]"
         out += [
-            "# Statische spanning en rek x de factoren van het signaal of",
-            "# blok als resultaat met tijdstappen (CREA_RESU AFFE)",
+            "# Static stress and strain x the factors of the signal or",
+            "# block as a result with time steps (CREA_RESU AFFE)",
             "_FS0 = CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R', OPERATION='EXTR', "
             "RESULTAT=res, NOM_CHAM='SIGM_NOEU', NUME_ORDRE={0})".format(idx),
             "_FE0 = CREA_CHAMP(TYPE_CHAM='NOEU_EPSI_R', OPERATION='EXTR', "
@@ -1104,12 +1104,12 @@ def _multi_code(model_data, plan, curves, vol_groups, work_dir, static):
                        u"critical plane) or give blocks."))
     else:
         out += [
-            "# Kopie als EVOL_ELAS met alle tijdstappen: CALC_FATIGUE",
-            "# FATIGUE_MULTI slaat NUME_ORDRE 0 (de begintoestand van",
-            "# STAT_NON_LINE/DYNA_NON_LINE) over (alarm PREPOST4_27; gemeten:",
-            "# een ramp 0 -> 1 gaf de halve amplitude). Na CREA_RESU begint",
-            "# de nummering bij 1 en telt de begintoestand mee, zoals in de",
-            "# uniaxiale route.",
+            "# Copy as EVOL_ELAS with all time steps: CALC_FATIGUE",
+            "# FATIGUE_MULTI skips NUME_ORDRE 0 (the initial state of",
+            "# STAT_NON_LINE/DYNA_NON_LINE) (alarm PREPOST4_27; measured:",
+            "# a ramp 0 -> 1 gave half the amplitude). After CREA_RESU the",
+            "# numbering starts at 1 and the initial state counts, as in the",
+            "# uniaxial route.",
             "def _fat_copy(r):",
             "    _i = list(r.getIndexes())",
             "    _c = CREA_RESU(OPERATION='AFFE', TYPE_RESU='EVOL_ELAS', "
@@ -1152,8 +1152,8 @@ def _ascii(text):
 
 
 def unsupported_warning(model_data, solver_cmd):
-    """WARNING als er een Wohler-curve is in een analyse zonder
-    vermoeiing (alleen MECA_STATIQUE, STAT_NON_LINE, DYNA_NON_LINE)."""
+    """WARNING if there is a Wohler curve in an analysis without
+    fatigue (only MECA_STATIQUE, STAT_NON_LINE, DYNA_NON_LINE)."""
     if is_requested(model_data) and solver_cmd not in (
             "MECA_STATIQUE", "STAT_NON_LINE", "DYNA_NON_LINE"):
         log(tr(u"WARNING: Vermoeiing (#ASTER-WOHLER) werkt alleen bij "
@@ -1167,14 +1167,14 @@ def unsupported_warning(model_data, solver_cmd):
 
 
 # ==========================================
-# NA DE RUN
+# AFTER THE RUN
 # ==========================================
 _KV_RE = re.compile(r"(\w+)=(\S+)")
 
 
 def read_summary(mess_path):
-    """{"MAX": {...}, "INFO": {...}, "WARN": {...}, "FOUT": tekst} uit de
-    regels BRIDGE_VERMOEIING_* (aster_fatigue), of {}."""
+    """{"MAX": {...}, "INFO": {...}, "WARN": {...}, "FOUT": text} from the
+    lines BRIDGE_VERMOEIING_* (aster_fatigue), or {}."""
     out = {}
     if not mess_path or not os.path.isfile(mess_path):
         return out
@@ -1205,8 +1205,8 @@ def read_summary(mess_path):
 
 
 def report(work_dir=None, mess_path=None):
-    """Regels voor log en statusvak (leeg zonder vermoeiing). WARNING bij
-    D >= 1, cycli boven de Wohler-tabel en een gemiddelde >= Su."""
+    """Lines for log and status box (empty without fatigue). WARNING for
+    D >= 1, cycles above the Wohler table and a mean >= Su."""
     s = read_summary(mess_path)
     if not [k for k in s if k != "ONVOLLEDIG"]:
         return []
