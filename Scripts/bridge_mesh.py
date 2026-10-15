@@ -491,9 +491,27 @@ def _rot_terms(nid, axis, sign):
             if abs(c) > 1.0e-12]
 
 
+def _joint_ends(model_data, conn, elements, faces_of):
+    """{(eid, knoop)}: balkuiteinden in de vlakselecties van flexible joints
+    (zonder controles of meldingen; die doet _flexible_joints). Voor
+    bridge_offset.prepare: zo'n uiteinde zit niet meer aan de Mecway-knoop
+    en draagt daar dus geen rotaties."""
+    out = set()
+    shapes = dict((eid, shape) for eid, shape, en, es in elements)
+    faces_by_sel = model_data.get("face_selection_faces", {})
+    for j in model_data.get("flexible_joints") or []:
+        for eid, fid in faces_by_sel.get(j["selection"]) or []:
+            if eid not in conn or shapes.get(eid) not in _BEAM_SHAPES:
+                continue
+            fn = list(faces_of(eid, fid))
+            if len(fn) == 1:
+                out.add((eid, fn[0]))
+    return out
+
+
 def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                      cell_refs, split_line3, face_group_nodes, poi_rot,
-                     poi_any):
+                     poi_any, offset_cells=frozenset()):
     """
     Flexible joint on beam (Mecway manual v33 par. 9.12; XML in
     bridge_from_liml._parse_model_item): het uiteinde van een balkelement
@@ -517,6 +535,14 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     rotatie 0, gezien bij een scharnier met joints aan beide kanten), tenzij
     een voorwaarde op die knoop al rotaties vastlegt.
 
+    Element offset (bridge_offset, offset_cells: elementen op eigen
+    knopen): een joint op een verschoven element wordt niet vertaald
+    (WARNING; het element zit star aan de arm, KNOWN_BUGS 108d). Een
+    verschoven element zit niet meer aan de Mecway-knoop maar draagt zijn
+    rotaties wel via de arm; zit de knoop verder in geen cel, dan krijgt
+    hij een POI1 DIS_TR (zonder extra relaties), anders heeft hij geen
+    vrijheidsgraden voor de LIAISON_DDL.
+
     Returns (extra knopen {nid: xyz}, POI1-knopen) of (None, None) zonder
     joints. Resultaten: de extra knopen vallen weg (aster_results_export
     leest alleen de Mecway-knopen; hun reactie telt op bij de Mecway-knoop
@@ -529,6 +555,7 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     elem_info = dict((eid, (shape, es)) for eid, shape, en, es in elements)
     faces_by_sel = model_data.get("face_selection_faces", {})
     free_at = OrderedDict()     # (eid, nid) -> set van vrije assen
+    on_offset = []
     for j in joints:
         faces = faces_by_sel.get(j["selection"])
         if not faces:
@@ -563,7 +590,20 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                        "element {0} is not a beam (MODELISATION {1})")
                     .format(eid, mod))
                 continue
+            if eid in offset_cells:
+                on_offset.append(eid)
+                continue
             free_at.setdefault((eid, fn[0]), set()).update(j["free"])
+    if on_offset:
+        ids = sorted(set(on_offset))
+        log(tr("WARNING: Balkelementen {0} hebben een element offset en een "
+               "flexible joint; de joint wordt daar niet vertaald (het "
+               "element zit star aan de arm).",
+               "WARNING: Beam elements {0} have an element offset and a "
+               "flexible joint; the joint is not translated there (the "
+               "element is rigidly attached to the arm).").format(
+                   ", ".join(str(e) for e in ids[:10]) +
+                   (" ..." if len(ids) > 10 else "")))
     if not free_at:
         return None, None
 
@@ -598,6 +638,9 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
         others = at_node.get(nid, set()) - jointed
         rot_carrier = nid in poi_rot or any(
             mods.get(elem_info[e][1]) in _ROT_MODS for e in others)
+        # verschoven elementen dragen de rotaties via de arm, maar hun cel
+        # zit op eigen knopen (bridge_offset)
+        others = others - offset_cells
         tied_axes = []
         for eid, free in items:
             dup = next_nid
@@ -639,6 +682,11 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                     tuple(round(c, 6) for c in u),
                     tuple(round(c, 6) for c in v)))
         if rot_carrier:
+            if not others and nid not in poi_any:
+                # alleen verschoven elementen (en joints) in deze knoop:
+                # geen cel meer, wel de arm -> POI1 voor de
+                # vrijheidsgraden, rotaties via de arm
+                poi_nodes.append(nid)
             continue
         # Geen ander element met rotaties: knoop N<nid> krijgt een POI1
         # DIS_TR (anders heeft hij geen rotaties, of zelfs geen
@@ -1040,7 +1088,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     #     Mecway-knopen) of EXCENTREMENT
     # --------------------------------------------------
     import bridge_offset
-    offset_plan = bridge_offset.prepare(model_data, nodes, conn, elements)
+    offset_plan = bridge_offset.prepare(
+        model_data, nodes, conn, elements,
+        _joint_ends(model_data, conn, elements, faces_of))
 
     # --------------------------------------------------
     # 3. Losse knopen uit nodeselections -> POI1
@@ -1162,7 +1212,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             poi_rot.update(d["nodes"])
     joint_nodes, joint_poi = _flexible_joints(
         model_data, nodes, conn, elements, faces_of, by_type, cell_refs,
-        split_line3, face_group_nodes, poi_rot, poi_any)
+        split_line3, face_group_nodes, poi_rot, poi_any,
+        frozenset((offset_plan or {}).get("cells", {})))
     joint_nodes = joint_nodes or OrderedDict()
     if joint_poi:
         names = []

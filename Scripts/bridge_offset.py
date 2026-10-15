@@ -208,13 +208,16 @@ def _node_normals(atype, pts):
 # ==========================================
 # MESH: PLAN
 # ==========================================
-def prepare(model_data, nodes, conn, elements):
+def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
     """
     Plan voor bridge_mesh.write_mesh, of None zonder (bruikbare) offset.
 
     nodes    : {nid: (x, y, z)}
     conn     : {eid: (aster_type, [nid ...])} (Code-Aster-volgorde)
     elements : model_data["mesh_elements"]
+    joint_ends: {(eid, nid)} balkuiteinden met een flexible joint
+               (bridge_mesh._joint_ends); die zitten aan een eigen knoop en
+               dragen de rotaties van de Mecway-knoop niet
 
     Returns dict:
       new_nodes : [(nid, (x, y, z))] extra knopen (na de Mecway-knopen)
@@ -345,7 +348,7 @@ def prepare(model_data, nodes, conn, elements):
         mod = mods.get(elem_elset.get(eid), "")
         if eid not in cells and (mod.startswith("POU") or mod in (
                 "DKT", "DST", "COQUE_3D", "DIS_TR")):
-            rot_nodes.update(cn)
+            rot_nodes.update(n for n in cn if (eid, n) not in joint_ends)
     no_rot = sorted(set(p[0] for p in pairs) - rot_nodes)
     # Buigstijfheid E t^3 van de verschoven schalen per Mecway-knoop: maat
     # voor de veer op de vrije rotatie om de normaal (discretes()).
@@ -444,25 +447,13 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
     model_data["offset_shells"] = OrderedDict()
     if not plan:
         return
+    # Een joint op een verschoven element vertaalt
+    # bridge_mesh._flexible_joints niet (WARNING daar, KNOWN_BUGS 108d).
     cells = dict(("M{0}".format(e), cn) for e, cn in plan["cells"].items())
     if cells:
-        joints = set(model_data.get("joint_nodes", {}))
-        clash = []
         for atype, items in by_type.items():
-            for name, cn in items:
-                if name in cells and joints & set(cn):
-                    clash.append(name[1:])
             by_type[atype] = [(name, cells.get(name, cn))
                               for name, cn in items]
-        if clash:
-            # de eigen knoop van de joint (bridge_mesh._flexible_joints)
-            # valt weg; de arm gaat naar de Mecway-knoop (KNOWN_BUGS 108d)
-            log(tr("WARNING: Balkelementen {0} hebben een element offset en "
-                   "een flexible joint; de joint wordt daar niet vertaald "
-                   "(star verbonden).",
-                   "WARNING: Beam elements {0} have an element offset and a "
-                   "flexible joint; the joint is not translated there "
-                   "(rigidly connected).").format(", ".join(clash[:10])))
     taken = set(group_ma) | set(group_no)
     no_rot = set(plan["no_rot"])
     for k, (orig, new, d, kind) in enumerate(plan["pairs"]):

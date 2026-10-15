@@ -303,3 +303,68 @@ TESTS += [
           _mw("doorbuiging midden", "displx", (0, 0, L / 2), MW51F)],
          note="Balk langs Z: Mecway V = Y; last in X buigt om V."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-52 Flexible joint en element offset samen (bridge_offset)
+# ------------------------------------------------------------------
+# Balk en last als LS-51a (scharnier om W op het eindvlak rechts van het
+# midden), met een element offset z = e = 10 mm (globaal) op een helft.
+# De offset staat loodrecht op het buigvlak (XY), dus geen koppeling met
+# de buiging om Z; alleen een torsiemoment F e (verwaarloosbaar: extra
+# doorbuiging e theta_x ~ 0,2 %).
+# (a) offset op de rechterhelft, dus ook op het element met de joint:
+#     de joint vervalt (WARNING; KNOWN_BUGS 108d), het element zit star
+#     aan de arm: dubbel ingeklemd, w = PL^3/(192EI) (Roark tabel 8.1
+#     geval 1d). Mecway houdt de joint wel aan (PL^3/(48EI)): BEKEND.
+# (b) offset op de linkerhelft: de verschoven balk en de balk met de
+#     joint komen samen in de middenknoop N, die dan in geen enkele cel
+#     meer zit (alleen in de arm en de joint): POI1 J<N> (DIS_TR). Het
+#     scharnier werkt: w = PL^3/(48EI) zoals LS-51a.
+# Mecway 34 (eigen solver, headless) geeft voor (a) en (b) dezelfde
+# doorbuiging: ook in (a) werkt het scharnier.
+E52 = 0.01
+MW52 = 1.263627e-03
+
+
+def build_ls52(side):
+    def build():
+        m = build_ls51("w")()
+        eids = [e for e, _sh, _n, _a in m.elsets[0][2]]
+        m.element_selection("Verschoven",
+                            eids[5:] if side == "right" else eids[:5])
+        m.add('<offset selection="Verschoven"><x>0 m</x><y>0 m</y>'
+              '<z>%r m</z></offset>' % E52)
+        return m
+    return build
+
+
+TESTS += [
+    Case("LS-52a", GROUP, "Flexible joint op een balk met element offset "
+         "(joint vervalt)", "lin_static_3d", build_ls52("right"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W48 / 4.0, tol=0.01, unit="m",
+                source="PL^3/192EI (Roark tabel 8.1 geval 1d; joint "
+                       "vervalt, KNOWN_BUGS 108d)"),
+          Check("doorbuiging midden t.o.v. Mecway 34",
+                lambda r: -r.at("disply", MID), ref=MW52, tol=1e-3,
+                unit="m", source="Mecway 34, eigen solver (houdt de joint "
+                "aan: scharnier)", in_series=False,
+                known="KNOWN_BUGS 108d"),
+          Check("reactiekracht Y", lambda r: r.total("reactionforcey",
+                                                       "Inklemming"),
+                ref=P51, tol=1e-6, unit="N", source="evenwicht")],
+         note="Joint op het eindvlak van een verschoven element: niet "
+              "vertaald (WARNING), star aan de arm."),
+    Case("LS-52b", GROUP, "Flexible joint naast een balk met element "
+         "offset (zelfde knoop)", "lin_static_3d", build_ls52("left"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W48, tol=0.01, unit="m",
+                source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
+          _mw("doorbuiging midden", "disply", MID, MW52),
+          Check("reactiekracht Y", lambda r: r.total("reactionforcey",
+                                                       "Inklemming"),
+                ref=P51, tol=1e-6, unit="N", source="evenwicht")],
+         note="Middenknoop alleen nog in de arm en de joint: POI1 DIS_TR "
+              "(J<N>)."),
+]

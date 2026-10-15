@@ -357,6 +357,10 @@ TESTS += [
          [Check("doorbuiging tip (+W)", lambda r: _mean(r, "displz", "Tip"),
                 ref=W64, tol=0.02, unit="m",
                 source="3 P e L^2/(8EI) (kromming alleen over L/2)"),
+          Check("doorbuiging tip t.o.v. Mecway",
+                lambda r: _mean(r, "displz", "Tip"), ref=5.27678e-3,
+                tol=0.005, unit="m", source="Mecway 34, zelfde model",
+                in_series=False),
           Check("von Mises onderkant, x = L/4", lambda r: _mean(
               r, "vonmisesb", "Kwart"), ref=SB0, tol=0.02, unit="Pa",
                 source="P/(BT) + 6 P e/(B T^2)"),
