@@ -1993,7 +1993,7 @@ def _coque_ddl(info, label):
     in het mastervlak. Ligt de master in een vlak loodrecht op een globale
     as, dan blijft die rotatie (DRX/DRY/DRZ) hier weg; anders kan DDL dat
     niet uitdrukken (globale componenten) en blijven alle DDL gekoppeld
-    (WARNING, KNOWN_BUGS 94).
+    (WARNING, KNOWN_BUGS 91).
     Returns een tuple met DDL-namen of None (= Code-Aster-standaard).
     """
     normals = info.get("normals") or []
@@ -2007,12 +2007,12 @@ def _coque_ddl(info, label):
     log(tr("WARNING: {0}: de master ligt niet in één vlak loodrecht op een "
            "globale as; LIAISON_MAIL koppelt dan ook de rotatie om de "
            "schaalnormaal, wat Code-Aster als singuliere matrix kan melden "
-           "(FACTOR_11). Dan helpt solver_nprec = -1. Zie KNOWN_BUGS 94.",
+           "(FACTOR_11). Dan helpt solver_nprec = -1. Zie KNOWN_BUGS 91.",
            "WARNING: {0}: the master does not lie in one plane normal to a "
            "global axis; LIAISON_MAIL then also ties the rotation about the "
            "shell normal, which Code-Aster may report as a singular matrix "
            "(FACTOR_11). Then use solver_nprec = -1. See KNOWN_BUGS "
-           "94.").format(label))
+           "91.").format(label))
     return None
 
 

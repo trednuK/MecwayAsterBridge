@@ -151,7 +151,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
   (tot 4,6% fout); nu `INTEGRATION='NCOTES'` bij een kwadratisch slave-vlak (NL-03c–f).
 - Veren en dempers werkten alleen in globaal X; nu langs de eigen as (LS-06).
 - Verlijmd contact tussen schalen stopte met `FACTOR_11` (de rotatie om de
-  plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07, KNOWN_BUGS 94).
+  plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07, KNOWN_BUGS 91).
 - In expliciete dynamica gaf afronding in `DEFI_LIST_INST` een extra rekenstap.
 - Temperatuurafhankelijke ρc: `THER_NON_LINE` interpoleert de enthalpie lineair tussen
   de tabelpunten; de bridge verfijnt de tabel nu (energiebalans van −2,8% naar 0,002%,
@@ -328,7 +328,7 @@ opeenvolgende meshes.
   0,04 % van één doorlopende mesh. Zonder de correctie in `bridge_mesh._coque_ddl`
   koppelde `LIAISON_MAIL` ook de rotatie om de plaatnormaal (bij DKT alleen een
   fictieve stijfheid) en stopte Code-Aster met `FACTOR_11`; nu blijft die rotatie weg
-  als de master loodrecht op een globale as staat (anders KNOWN_BUGS 94). Bij (d)
+  als de master loodrecht op een globale as staat (anders KNOWN_BUGS 91). Bij (d)
   interpoleert `LIAISON_MAIL` de plaatrotatie lineair over de knik onder de rib: 12 mm
   elementen −11 %, 4 mm −5 %, 1,3 mm −2 %; leg de voetlijn op een meshlijn. Mecway's
   eigen solver rekent (a), (c) en (d) niet: bij een schaalrand als slave koppelt hij

@@ -629,7 +629,7 @@ with 12 mm. So put the foot line on a mesh line (or refine there).
 - The bridge can leave out the rotation about the normal only when the master is normal
   to a global axis (plane X, Y or Z = constant). With a skewed or curved master all DOFs
   stay tied (WARNING) and Code-Aster may report `FACTOR_11`; then set `solver_nprec` to
-  −1 (§2.6; tested: same result) (KNOWN_BUGS 94).
+  −1 (§2.6; tested: same result) (KNOWN_BUGS 91).
 - A quadratic shell (tri6/quad8) as master stops with `CHARGES2_31` when slave nodes lie
   inside a master element (KNOWN_BUGS 90).
 - A shell face on a solid only ties the displacements; beam ends as slave are not

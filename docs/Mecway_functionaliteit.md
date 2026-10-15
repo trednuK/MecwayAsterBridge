@@ -23,8 +23,8 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | D30 Dynamic Response 3D | Ja | `dyna_impl_3d` (`DYNA_NON_LINE`) | Gelijk aan Mecway (Newmark) met schema NEWMARK en deformation PETIT; anders een WARNING. |
 | D30 met *Mode superposition* | Ja | `dyna_modal_3d` (`CALC_MODES` + `DYNA_VIBRA` `GENE`) | Geen opgelegde verplaatsing ≠ 0, beginsnelheid of dempers (KB54); kies dan `dyna_impl_3d`. |
 | D31 Nonlinear Dynamic Response 3D | Ja | `dyna_impl_3d`; expliciet: `dyna_expl_3d` (zelf kiezen) | |
-| V30 Frequency | Ja | `modal_3d` (`CALC_MODES`) | Voorspanning door lasten zoals Mecway; demping standaard niet, als optie complexe modes (KB49). Met een fluïdum-onderdeel: vibro-akoestiek (KB59). |
-| B30 Buckling | Ja | `buckling_3d` (`CALC_MODES` `MODE_FLAMB`) | Mecway's *Shift point* wordt niet gebruikt; ook negatieve kniklastfactoren (KB46). |
+| V30 Frequency | Ja | `modal_3d` (`CALC_MODES`) | Voorspanning door lasten zoals Mecway; demping standaard niet, als optie complexe modes (KB49); cyclische symmetrie ([`Modaal_en_knik.md`](Modaal_en_knik.md) §2.5, §6, §7). Met een fluïdum-onderdeel: `vibroacoustic_modes_3d` / `vibroacoustic_harm_3d` ([`Akoestiek.md`](Akoestiek.md) §6, §7; KB59). |
+| B30 Buckling | Ja | `buckling_3d` (`CALC_MODES` `MODE_FLAMB`) | Mecway's *Shift point* wordt niet gebruikt; ook negatieve kniklastfactoren (KB46). Zie [`Modaal_en_knik.md`](Modaal_en_knik.md). |
 | T30 / T31 Thermal | Ja | `ther_3d` (`THER_LINEAIRE` / `THER_NON_LINE`) | Zie [`Thermisch.md`](Thermisch.md). Transient schema KB14. |
 | A30 Acoustic Resonance 3D | Ja | `acoustic_modes_3d`; met een bron `acoustic_harm_3d` | KB55, KB57; [`Akoestiek.md`](Akoestiek.md). |
 | 2D en axisymmetrisch (o.a. S20, SA0, D20, A20) | Nee | – | De run stopt ("analysetype wordt niet ondersteund"). Alternatief: modelleer in 3D, bijv. een plak met symmetry. |
@@ -90,7 +90,7 @@ Verlijmd contact per combinatie (slave op master):
 | Slave → master | Status | Code-Aster | Opmerking |
 |---|---|---|---|
 | volume → volume | Ja | `MASSIF` | |
-| schaal → schaal | Deels | `COQUE` | Lineaire schalen: Ja (de master blijft DKT, ook bij de keuze COQUE_3D). Kwadratische schaal (tri6/quad8) als master: Code-Aster stopt met CHARGES2_31 (KB90); maak de master lineair of draai master en slave om. Ook een schaalrand op een schaalvlak (naad in het vlak, T-stuk): stijf, de rotaties gaan mee (geen scharnier; Mecway's eigen solver doet dat niet). Geverifieerd in LS-07, voorbeeld `Voorbeeld_T.liml` ([contact §3.10](Instellingen_contact_en_nietlineair.md#310-voorbeeld-platen-verlijmen-bonded-contact-tussen-schalen)). Master scheef of gekromd: mogelijk FACTOR_11, dan `solver_nprec` = −1 (KB94). |
+| schaal → schaal | Deels | `COQUE` | Lineaire schalen: Ja (de master blijft DKT, ook bij de keuze COQUE_3D). Kwadratische schaal (tri6/quad8) als master: Code-Aster stopt met CHARGES2_31 (KB90); maak de master lineair of draai master en slave om. Ook een schaalrand op een schaalvlak (naad in het vlak, T-stuk): stijf, de rotaties gaan mee (geen scharnier; Mecway's eigen solver doet dat niet). Geverifieerd in LS-07, voorbeeld `Voorbeeld_T.liml` ([contact §3.10](Instellingen_contact_en_nietlineair.md#310-voorbeeld-platen-verlijmen-bonded-contact-tussen-schalen)). Master scheef of gekromd: mogelijk FACTOR_11, dan `solver_nprec` = −1 (KB91). |
 | schaalvlak → volume | Ja | `MASSIF` | Alleen de verplaatsingen; gemeten gelijk aan gedeelde knopen (KB21). |
 | schaalrand → volume | Deels | `COQUE_MASSIF` of `MASSIF` | Stijf als alle randen bij één component met een dikte horen; anders werkt de rand als scharnier (WARNING, KB21). Maak één verlijmd contact per component (voorbeeld 2). |
 | volume → schaal | Deels | `MASSIF_COQUE` | Kwadratische schaal als master: als schaal → schaal (KB90). |
@@ -117,7 +117,7 @@ Verlijmd contact per combinatie (slave op master):
 | schalen in een thermische analyse | Deels | `PLAN` met een diktefactor | Alleen schalen in evenwijdige vlakken (KB15); andere: Nee (KB16). |
 | fin, fluid network element, resistor | Nee | – | Thermisch 1D en DC-stroom: KB16. |
 | Element offset (schaal, balk) | Nee | – | Gemeld. Modelleer de excentriciteit met een Node-surface coupling (Rigid). |
-| Element orientation via Loads & Constraints | Nee | – | Gemeld. Zet de oriëntatie in *Element properties*. |
+| Element orientation via Loads & Constraints | Nee | – | Vermoedelijk gemeld (tag niet in een .liml gezien, NIET geverifieerd). Zet de oriëntatie in *Element properties*. |
 
 ## 5. Materialen en doorsneden
 
@@ -167,7 +167,7 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Analysetype | Ja | Kiest de analyse bij `auto` (§1). |
 | Solver (Internal, CCX, OpenRadioss) | Nee | De bridge rekent altijd met Code-Aster; alleen voor meldingen gelezen. |
 | Number of modes | Ja | Modaal, knik, mode superposition, akoestiek. |
-| Shift point (knik) | Nee | Gemeld (KB46). |
+| Shift point (knik) | Nee | Alleen INFO (KB46). |
 | Mode superposition (D30) | Ja | §1. |
 | Time period | Ja | |
 | Time step size | Deels | Gebruikt in D30 en T31; niet in L30 (KB44: instelling `substeps_per_interval`). |

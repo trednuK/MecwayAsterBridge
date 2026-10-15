@@ -634,7 +634,7 @@ elementen, 11 % bij 12 mm. Leg de voetlijn dus op een meshlijn (of verfijn daar)
 - De rotatie om de normaal kan de bridge alleen weglaten als de master loodrecht op een
   globale as staat (vlak X, Y of Z = constant). Bij een scheve of gekromde master
   blijven alle DDL gekoppeld (WARNING) en kan Code-Aster `FACTOR_11` melden; zet dan
-  `solver_nprec` op −1 (§2.6; getest: zelfde resultaat) (KNOWN_BUGS 94).
+  `solver_nprec` op −1 (§2.6; getest: zelfde resultaat) (KNOWN_BUGS 91).
 - Een kwadratische schaal (tri6/quad8) als master stopt met `CHARGES2_31` als
   slave-knopen binnen een master-element liggen (KNOWN_BUGS 90).
 - Een schaalvlak op een volume koppelt alleen de verplaatsingen; balkuiteinden als slave

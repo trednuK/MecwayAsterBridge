@@ -148,7 +148,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
   (up to 4.6% error); now `INTEGRATION='NCOTES'` for a quadratic slave face (NL-03c–f).
 - Springs and dampers only acted in global X; now along their own axis (LS-06).
 - Bonded contact between shells stopped with `FACTOR_11` (the rotation about the
-  plate normal was tied as well); now without that rotation (LS-07, KNOWN_BUGS 94).
+  plate normal was tied as well); now without that rotation (LS-07, KNOWN_BUGS 91).
 - In explicit dynamics, rounding in `DEFI_LIST_INST` gave an extra solver step.
 - Temperature-dependent ρc: `THER_NON_LINE` interpolates the enthalpy linearly between
   the table points; the bridge now refines the table (energy balance from −2.8% to
@@ -325,7 +325,7 @@ meshes is given below.
   0.04 % of one continuous mesh. Before the fix in `bridge_mesh._coque_ddl`,
   `LIAISON_MAIL` also tied the rotation about the plate normal (only a fictitious
   stiffness in DKT) and Code-Aster stopped with `FACTOR_11`; now that rotation is left
-  out when the master is normal to a global axis (otherwise KNOWN_BUGS 94). In (d)
+  out when the master is normal to a global axis (otherwise KNOWN_BUGS 91). In (d)
   `LIAISON_MAIL` interpolates the plate rotation linearly across the kink under the
   rib: 12 mm elements −11 %, 4 mm −5 %, 1.3 mm −2 %; put the foot line on a mesh line.
   Mecway's own solver does not solve (a), (c) and (d): with a shell edge as slave it ties

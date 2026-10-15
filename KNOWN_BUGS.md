@@ -194,7 +194,7 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    (LINE_QUAD + COQUE_3D) 0,788, balktheorie 0,785. Schaalranden van één component op een
    volume: COQUE_MASSIF (stijf, ook de rotaties); randen van meerdere componenten of
    gemengd met vlakken: MASSIF, de rand werkt dan als scharnier (WARNING). Of Mecway
-   een schaalrand ook stijf verbindt is NIET geverifieerd. Balkuiteinden als slave:
+   een schaalrand op een volume ook stijf verbindt is NIET geverifieerd. Balkuiteinden als slave:
    gemeld en overgeslagen. Schalen die master zijn, blijven DKT, ook met elem_shell =
    COQUE_3D (LIAISON_MAIL trekt anders de DX van de QUAD9-middenknoop erbij,
    CHARGES2_31; WARNING). Een automatische
@@ -403,7 +403,7 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    en slave wisselen), of de middenknopen uit de relatie houden als Code-Aster dat
    toelaat (NIET geverifieerd).
 
-94\. **Verlijmd contact schaal op schaal met een scheve of gekromde master:
+91\. **Verlijmd contact schaal op schaal met een scheve of gekromde master:
    `FACTOR_11`** (bevestigd met runs, Code-Aster 17.4, `bridge_mesh._coque_ddl`).
    `LIAISON_MAIL` `TYPE_RACCORD='COQUE'` koppelt standaard alle DDL, ook de rotatie om
    de schaalnormaal (drilling), die bij DKT alleen een fictieve stijfheid heeft; MUMPS

@@ -23,8 +23,8 @@ ignored with only an INFO, as Mecway itself does.
 | D30 Dynamic Response 3D | Yes | `dyna_impl_3d` (`DYNA_NON_LINE`) | Same as Mecway (Newmark) with schema NEWMARK and deformation PETIT; otherwise a WARNING. |
 | D30 with *Mode superposition* | Yes | `dyna_modal_3d` (`CALC_MODES` + `DYNA_VIBRA` `GENE`) | No prescribed displacement ≠ 0, initial velocity or dampers (KB54); then choose `dyna_impl_3d`. |
 | D31 Nonlinear Dynamic Response 3D | Yes | `dyna_impl_3d`; explicit: `dyna_expl_3d` (choose it yourself) | |
-| V30 Frequency | Yes | `modal_3d` (`CALC_MODES`) | Prestress from loads as in Mecway; no damping by default, complex modes as an option (KB49). With a fluid part: vibroacoustics (KB59). |
-| B30 Buckling | Yes | `buckling_3d` (`CALC_MODES` `MODE_FLAMB`) | Mecway's *Shift point* is not used; negative buckling factors too (KB46). |
+| V30 Frequency | Yes | `modal_3d` (`CALC_MODES`) | Prestress from loads as in Mecway; no damping by default, complex modes as an option (KB49); cyclic symmetry ([`Modal_and_buckling.md`](Modal_and_buckling.md) §2.5, §6, §7). With a fluid part: `vibroacoustic_modes_3d` / `vibroacoustic_harm_3d` ([`Acoustics.md`](Acoustics.md) §6, §7; KB59). |
+| B30 Buckling | Yes | `buckling_3d` (`CALC_MODES` `MODE_FLAMB`) | Mecway's *Shift point* is not used; negative buckling factors too (KB46). See [`Modal_and_buckling.md`](Modal_and_buckling.md). |
 | T30 / T31 Thermal | Yes | `ther_3d` (`THER_LINEAIRE` / `THER_NON_LINE`) | See [`Thermal.md`](Thermal.md). Transient scheme KB14. |
 | A30 Acoustic Resonance 3D | Yes | `acoustic_modes_3d`; with a source `acoustic_harm_3d` | KB55, KB57; [`Acoustics.md`](Acoustics.md). |
 | 2D and axisymmetric (e.g. S20, SA0, D20, A20) | No | – | The run stops ("analysis type is not supported"). Alternative: model in 3D, e.g. a slice with symmetry. |
@@ -90,7 +90,7 @@ Bonded contact per combination (slave on master):
 | Slave → master | Status | Code-Aster | Remark |
 |---|---|---|---|
 | solid → solid | Yes | `MASSIF` | |
-| shell → shell | Partly | `COQUE` | Linear shells: Yes (the master stays DKT, also with the choice COQUE_3D). Quadratic shell (tri6/quad8) as master: Code-Aster stops with CHARGES2_31 (KB90); make the master linear or swap master and slave. Also a shell edge on a shell face (in-plane seam, T-joint): rigid, the rotations are tied (no hinge; Mecway's own solver does not do this). Verified in LS-07, example `Voorbeeld_T.liml` ([contact §3.10](Settings_contact_and_nonlinear.md#310-example-bonding-plates-bonded-contact-between-shells)). Master skewed or curved: possibly FACTOR_11, then `solver_nprec` = −1 (KB94). |
+| shell → shell | Partly | `COQUE` | Linear shells: Yes (the master stays DKT, also with the choice COQUE_3D). Quadratic shell (tri6/quad8) as master: Code-Aster stops with CHARGES2_31 (KB90); make the master linear or swap master and slave. Also a shell edge on a shell face (in-plane seam, T-joint): rigid, the rotations are tied (no hinge; Mecway's own solver does not do this). Verified in LS-07, example `Voorbeeld_T.liml` ([contact §3.10](Settings_contact_and_nonlinear.md#310-example-bonding-plates-bonded-contact-between-shells)). Master skewed or curved: possibly FACTOR_11, then `solver_nprec` = −1 (KB91). |
 | shell face → solid | Yes | `MASSIF` | Displacements only; measured equal to shared nodes (KB21). |
 | shell edge → solid | Partly | `COQUE_MASSIF` or `MASSIF` | Rigid if all edges belong to one component with a thickness; otherwise the edge acts as a hinge (WARNING, KB21). Make one bonded contact per component (example 2). |
 | solid → shell | Partly | `MASSIF_COQUE` | Quadratic shell as master: as shell → shell (KB90). |
@@ -117,7 +117,7 @@ Bonded contact per combination (slave on master):
 | shells in a thermal analysis | Partly | `PLAN` with a thickness factor | Only shells in parallel planes (KB15); others: No (KB16). |
 | fin, fluid network element, resistor | No | – | Thermal 1D and DC current: KB16. |
 | Element offset (shell, beam) | No | – | Reported. Model the eccentricity with a Node-surface coupling (Rigid). |
-| Element orientation via Loads & Constraints | No | – | Reported. Set the orientation in *Element properties*. |
+| Element orientation via Loads & Constraints | No | – | Probably reported (tag not seen in a .liml, NOT verified). Set the orientation in *Element properties*. |
 
 ## 5. Materials and cross-sections
 
@@ -167,7 +167,7 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Analysis type | Yes | Chooses the analysis with `auto` (§1). |
 | Solver (Internal, CCX, OpenRadioss) | No | The bridge always computes with Code-Aster; read only for messages. |
 | Number of modes | Yes | Modal, buckling, mode superposition, acoustics. |
-| Shift point (buckling) | No | Reported (KB46). |
+| Shift point (buckling) | No | INFO only (KB46). |
 | Mode superposition (D30) | Yes | §1. |
 | Time period | Yes | |
 | Time step size | Partly | Used in D30 and T31; not in L30 (KB44: setting `substeps_per_interval`). |
