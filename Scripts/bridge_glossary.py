@@ -836,10 +836,16 @@ GLOSSARY = OrderedDict([
     ("shell_forces", ("file", u"Resultaatveld: krachten en momenten per "
                       u"lengte van schalen in Mecway's U,V-assen "
                       u"(forceperlengthu/v/uv, momentu/v/uv, shearuw/vw; "
-                      u"EFGE_ELNO).",
+                      u"EFGE_ELNO), per knoop en per element-knoop. "
+                      u"Resultaten ca. 2,5 keer zo groot (3500 "
+                      u"quad4-schalen: .liml 1,6 -> 3,5 MB), Code-Aster-job "
+                      u"+0,3 s; de andere resultaten veranderen niet.",
                       u"Result field: shell forces and moments per length "
                       u"in Mecway's U,V axes (forceperlengthu/v/uv, "
-                      u"momentu/v/uv, shearuw/vw; EFGE_ELNO).")),
+                      u"momentu/v/uv, shearuw/vw; EFGE_ELNO), per node and "
+                      u"per element node. Results about 2.5 times larger "
+                      u"(3500 quad4 shells: .liml 1.6 -> 3.5 MB), Code-Aster "
+                      u"job +0.3 s; the other results do not change.")),
     ("safety_factor", ("file", u"Resultaatveld: factor of safety bij een "
                        u"materiaal met Mecway's von Mises-faalcriterium "
                        u"(tensile strength / von Mises; schalen de kleinste "
@@ -1034,14 +1040,22 @@ SETTING_HELP = {
                u"per mode, alleen relatief betekenisvol (genormeerde "
                u"vormen). Standaard per analyse de velden die Mecway zelf "
                u"toont (docs/Standaardinstellingen_en_aannames.md par. 3); "
-               u"strain en shell_stresses staan uit (grotere .liml).",
+               u"strain en shell_stresses staan uit (grotere .liml). "
+               u"shell_forces staat bij statisch en niet-lineair aan: bij "
+               u"schalen ca. 2,5 keer zo grote resultaten (3500 "
+               u"quad4-schalen: .liml 1,6 -> 3,5 MB, Code-Aster-job "
+               u"+0,3 s); vink uit als je ze niet nodig hebt.",
                u"Which results go to Mecway (fewer fields = smaller file). "
                u"Modal: stresses/vonmises (also strain, beam_forces, "
                u"shell_stresses, shell_forces) give values per mode, only "
                u"meaningful relative to each other (normalised shapes). "
                u"Default per analysis: the fields Mecway itself shows "
                u"(docs/en/Default_settings_and_assumptions.md sec. 3); "
-               u"strain and shell_stresses are off (larger .liml)."),
+               u"strain and shell_stresses are off (larger .liml). "
+               u"shell_forces is on for static and nonlinear: with shells "
+               u"about 2.5 times larger results (3500 quad4 shells: .liml "
+               u"1.6 -> 3.5 MB, Code-Aster job +0.3 s); untick it if you "
+               u"do not need them."),
     "time_limit": (u"Maximale rekentijd van Code-Aster in seconden; daarna "
                    u"stopt de run; een afgebroken run levert geen volledige "
                    u"resultaten. Standaard 600 (statisch), 900 (modaal, "

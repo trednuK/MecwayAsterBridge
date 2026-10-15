@@ -39,19 +39,19 @@ ignored with only an INFO, as Mecway itself does.
 | Force (nodes, faces, elements) | Yes | On nodes divided equally, on faces as force per area. |
 | Pressure | Yes | Follower load in nonlinear analyses (a formula in x, y, z stays fixed). On shell edges and beam ends as nodal forces (KB5). |
 | Traction | Yes | On a shell face with the moment of half the thickness, as in Mecway. |
-| Line pressure | Yes | Global or local (U, V, W). Combinations on one beam: KB20. |
+| Line pressure | Yes | Global or local (U, V, W). Combinations on one beam are summed; local and global on the same beam: No (ERROR, KB20). |
 | Hydrostatic pressure | Partly | Not on shell edges (KB5). |
 | Moment | Yes | On one node with rotations, or as forces over faces. |
 | Gravity | Yes | With a time table only for a fixed direction. |
 | Centrifugal force | Partly | Only a constant angular velocity, one per model (no gyroscopic effect); spin softening only on solids (KB19). |
 | Mass, Rotational inertia | Yes | Only on nodes; rotational inertia on one node. |
-| Temperature (`temperature2`) + Thermal stress | Yes | Constant temperature; a time table or formula in t in L30 and D31 (`EVOL_THER`, NL-70..75, DY-70..72). Static/modal/buckling: a time history is left out, as with Mecway's own solver. D30 ignores it like Mecway. |
+| Temperature (`temperature2`) + Thermal stress | Yes | Constant temperature; a time table or formula in t in L30 and D31 (`EVOL_THER`, NL-70..75, DY-70..72). Static/modal/buckling: a time history is left out, as with Mecway's own solver. D30 ignores it like Mecway. Shells: Mecway expands less than the bridge; the bridge gives the theoretical free expansion αΔT·L (measured on a plate: bridge +3% (quad4) and +2% (quad8), Mecway −22% and −44%; solids equal to Mecway). So do not compare with Mecway for shells with thermal strain (KB95). |
 | Node temperature (`temperature3`) in a mechanical analysis | Yes | Also after *Transfer temperatures from solution*. Static, nonlinear static, modal (prestress) and buckling, like Temperature; nodes without a temperature at the Thermal stress reference (LS-08). D30 ignores it like Mecway; D31 reported (not in Mecway's list). |
 | Rayleigh damping | Partly | Only on the whole model, not on a selection (KB27). |
 | Initial velocity | Yes | Dynamics only; not with mode superposition (KB54). |
 | Initial displacement | No | Reported. |
 | Value as a table or a formula in t | Yes | 10001 samples as Mecway does for CCX. Linear static, modal and buckling: the value at the end time. Many points = many steps (KB104). |
-| Formula in x, y, z (mechanical) | Yes | Pressure, traction, force, line pressure, prescribed displacement/rotation: `FORMULE` of X, Y, Z (also with t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Mecway 34 itself does not apply force, line pressure and displacement/rotation with x, y, z (WARNING). Not: gravity, moment, centrifugal, direction as a formula, pressure on shell edges; not in explicit, harmonic, spectrum (KB104). |
+| Formula in x, y, z (mechanical) | Yes | Pressure, traction, force, line pressure, prescribed displacement/rotation: `FORMULE` of X, Y, Z (also with t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Mecway 34 itself does not apply force, line pressure and displacement/rotation with x, y, z (WARNING). Not: gravity, moment, centrifugal, direction as a formula, pressure on shell edges; not in explicit, harmonic, spectrum (KB104). DKT/DST shells take the formula at the nodes (+0.8% on a coarse mesh, LS-44a). Pressure as a formula stays a fixed load at large displacements. The error estimator treats a face with a formula load as unloaded (too large an error there). |
 | Load on the side face of a beam | No | KB5. Put the load on an element selection of the beam. |
 | Pre-tension section | No | No alternative in the bridge. |
 | Electric potential, Charge, Current, Robin | No | No electric analyses (§1). |
@@ -64,7 +64,7 @@ ignored with only an INFO, as Mecway itself does.
 
 | Mecway | Status | Remark |
 |---|---|---|
-| Fixed support | Yes | Overlap with other constraints: KB8. |
+| Fixed support | Yes | Overlap with other constraints: Code-Aster does not clean up duplicate constraints like Mecway; the bridge catches the known cases and reports the rest (WARNING, KB8). |
 | Pinned support | Yes | Nodes and faces of solid elements, as in Mecway. |
 | Frictionless support | Partly | Not on beams; normal displacement ≠ 0 not on curved shells and shell edges (KB5). |
 | Elastic support | Yes | Faces of solids and shell faces. |
@@ -76,8 +76,8 @@ ignored with only an INFO, as Mecway itself does.
 | Constraint equation | Yes | KB27. Explicit: a constant ≠ 0 becomes an imposed motion (DY-20b; Mecway itself does not allow it there). |
 | Node-surface coupling, Rigid (RBE2) | Yes | `LIAISON_SOLIDE`; large rotations: KB11. Not in thermal (reported). |
 | Node-surface coupling, Distributing (RBE3) | Yes | `LIAISON_RBE3`. Not in thermal (reported). |
-| Flexible joint on beam | Yes | Free rotation about U, V and/or W (local beam axes as in Mecway) at a beam end: the element gets its own node there, coupled with `LIAISON_DDL` (translations and the rotations that are not free). Mecway has no stiffness in the joint, only free or fixed. Also on line3 beams and in Frequency, dynamics, buckling and nonlinear static (the latter not in Mecway; large rotations: KB106). Verification LS-51 (equal to Mecway); section forces per element also next to the joint and on line3 (LS-53). A constraint on an *element selection* that contains the element with the joint: see KB106. With an element offset on the same element: see KB108 (LS-52). Not in the thermal → mechanical chain (WARNING). |
-| Contact, Unilateral (faces of solids and shell faces) | Yes | Nonlinear only, as in Mecway. Formulation and friction: KB43; shared slave nodes: KB10. |
+| Flexible joint on beam | Yes | Free rotation about U, V and/or W (local beam axes as in Mecway) at a beam end: the element gets its own node there, coupled with `LIAISON_DDL` (translations and the rotations that are not free). Mecway has no stiffness in the joint, only free or fixed. Also on line3 beams and in Frequency, dynamics, buckling and nonlinear static (the latter not in Mecway; large rotations: KB106). Verification LS-51 (equal to Mecway); section forces per element also next to the joint and on line3 (LS-53). A constraint on an *element selection* or component that contains the element with the joint acts on the joint's own node instead of on the nodes of the element as in Mecway: the result can differ and Code-Aster can stop with `FACTOR_11` (WARNING). Put it on nodes or faces (KB106). With an element offset on the same element: see KB108 (LS-52). Not in the thermal → mechanical chain (WARNING). |
+| Contact, Unilateral (faces of solids and shell faces) | Yes | Nonlinear only, as in Mecway. Formulation and friction: KB43; pairs with shared slave nodes become one zone (reported, KB10). |
 | Contact, Unilateral, *Self contact* | No | Reported. Make two separate face selections. |
 | Contact, Unilateral, on shell edges or beams | No | Reported. |
 | Contact, Bonded *Tie* / *Constraint equations* | Yes | `LIAISON_MAIL` (rigid), see the table below. Also works in linear analyses. Automatic tolerance: all slave nodes are tied (KB21). |
@@ -103,12 +103,12 @@ Bonded contact per combination (slave on master):
 | Mecway | Status | Code-Aster | Remark |
 |---|---|---|---|
 | hex8 | Partly | `3D` | Stiffer than Mecway (no incompatible modes, KB1). Better: *Elements* > hex8 `LINE_QUAD`. |
-| tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Yes | `3D` | Pyramids not in acoustics (KB55). Strongly curved hex20/wedge15: KB62. |
+| tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Yes | `3D` | Pyramids not in acoustics (KB55). Strongly curved hex20/wedge15: natural frequencies up to 0.8% higher than Mecway (KB62). |
 | tri3, quad4 (shell) | Yes | `DKT` (or `DST`/`COQUE_3D` as a choice) | ~0.7% different from Mecway (KB2). |
 | tri6, quad8 (shell) | Yes | `COQUE_3D` | As master of bonded contact: displacements with `LIAISON_DDL`, rotations with `LIAISON_MAIL` (LS-07i..k). |
 | linear and quadratic shells in one component | Partly | – | The quadratic ones are not modelled (ERROR). Split the component. |
 | beam line2 | Yes | `POU_D_E` (or `POU_D_T`) | Orientation from *Element properties*. No plasticity (KB6), no large rotations (KB11). |
-| beam line3 | Yes | `POU_D_E` (or `POU_D_T`) | Each element is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results on all three nodes. Mecway itself solves line3 beams only with CCX. Verification LS-50. Truss, spring, gap, damper and tension-only on line3: No (ERROR; line2 only in Mecway). |
+| beam line3 | Yes | `POU_D_E` (or `POU_D_T`) | Each element is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results on all three nodes. Mecway itself solves line3 beams only with CCX. A curved element (midside node off the chord) thus becomes two straight pieces with a kink, Mecway computes the curved shape (WARNING; refine the curve, KB107). Verification LS-50. Truss, spring, gap, damper and tension-only on line3: No (ERROR; line2 only in Mecway). |
 | truss line2 | Yes | `BARRE` | Small displacements (KB40). Beams and trusses in one component become two groups (`<name>_TRUSS`). |
 | spring, damper, gap (line2) | Yes | `DIS_T` (gap: `DIS_CHOC`) | Along the element's own axis. Gap nonlinear only (KB23); springs/dampers not compared with Mecway (KB47). |
 | tension only (line2, truss) | Partly | `CABLE` | Nonlinear only; compressive stiffness 1e-4 E (KB23). |
@@ -116,7 +116,7 @@ Bonded contact per combination (slave on master):
 | plane, axisymmetric (2D) | No | – | Only in 2D analyses (§1). |
 | shells in a thermal analysis | Partly | `PLAN` with a thickness factor | Only shells in parallel planes (KB15); others: No (KB16). |
 | fin, fluid network element, resistor | No | – | Thermal 1D and DC current: KB16. |
-| Element offset (shell, beam) | Yes | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D and beams: element on its own nodes + rigid arm (`LIAISON_DDL`) | Shell: *Element coordinates*, only W counts (as in Mecway; u/v have no effect there either). Beam: *Global coordinates* x/y/z (u/v/w on a beam: no effect in Mecway, WARNING). Displacement, rotation and reaction at the Mecway nodes; stresses of the offset element shown at those nodes, also as element values (LS-65). In all mechanical analyses (Mecway: static only), not in the thermal → mechanical chain (WARNING, KB64). Rigid arm: small rotations (KB108). A load on a face selection on edges of offset shells is applied at the nodes by the bridge, at the offset edge by Mecway (WARNING, KB108). A flexible joint on an offset beam element is not translated (WARNING; Mecway does apply it, KB108); bonded contact on offset shells: WARNING (KB108). Verification LS-60–67, LS-52. |
+| Element offset (shell, beam) | Yes | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D and beams: element on its own nodes + rigid arm (`LIAISON_DDL`) | Shell: *Element coordinates*, only W counts (as in Mecway; u/v have no effect there either). Beam: *Global coordinates* x/y/z (u/v/w on a beam: no effect in Mecway, WARNING). Displacement, rotation and reaction at the Mecway nodes; stresses of the offset element shown at those nodes, also as element values (LS-65). In all mechanical analyses (Mecway: static only), not in the thermal → mechanical chain (WARNING, KB64). Rigid arm: small rotations, also with `GROT_GDEP` (WARNING for offset shells, KB108). A node with a value of its own (other element) keeps it; the stress of the offset element does not count there (KB108). A load on a face selection on edges of offset shells is applied at the nodes by the bridge, at the offset edge by Mecway (WARNING, KB108). A flexible joint on an offset beam element is not translated (WARNING; Mecway does apply it, KB108); bonded contact on offset shells: WARNING (KB108). Verification LS-60–67, LS-52. |
 | Element orientation (local U/V axes per element) | Partly | – | Mecway stores the orientation per element (`orientationux`…`vz`, `angle`). Used for beams (section orientation), gaps (direction) and for shells the U axis of the result field `shell_forces` (§6). Otherwise ignored without a message for solids and shells; with an isotropic material that does not change the result. Only needed for orthotropic materials (§5, No). |
 
 ## 5. Materials and cross-sections
@@ -144,7 +144,7 @@ Bonded contact per combination (slave on master):
 | Displacement, rotation | Yes | Modal and buckling: the mode shapes. |
 | Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). Route `tabel`: KB7. |
 | von Mises (solids; shells top/middle/bottom) | Yes | KB3. |
-| Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`; route `liml` only. Mecway's *stress in element coordinates* (`stressuu` ..) not. Element orientation as a load: not read ([`UserGuide.md`](UserGuide.md) §4.1). |
+| Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`; route `liml` only. `shell_forces` is on for static and nonlinear and makes the results about 2.5 times larger with shells (WARNING; untick it on the page of the analysis). Mecway's *stress in element coordinates* (`stressuu` ..) not. Element orientation as a load: not read ([`UserGuide.md`](UserGuide.md) §4.1). |
 | Beam stress | Partly | Only smallest/largest axial stress for rectangular and circular sections (`beamsixxmin/max`). |
 | Section forces and moments of beams | Yes | Field `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), also per mode. |
 | Reaction forces and moments | Yes | Not with mode superposition, harmonic and vibroacoustics (KB54, KB59). |

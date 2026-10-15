@@ -458,6 +458,30 @@ def _selection_nodes(model_data, sel, conn, face_group_nodes):
     return set()
 
 
+# Curved line3 beam (KNOWN_BUGS 107): distance of the midside node to the
+# chord, relative to the chord length. 1e-3 = kink of about 0.23 degrees
+# between the two straight halves (angle ~ 4 * bow rad); below that the
+# split is practically exact (choice, NOT measured against Mecway).
+_LINE3_CURVED = 1.0e-3
+
+
+def _line3_bow(nodes, cn):
+    """Distance of the midside node cn[2] of a line3 element (Code-Aster
+    order: ends cn[0], cn[1]) to the chord, divided by the chord length;
+    0 if a node is missing or the chord has length 0."""
+    if any(n not in nodes for n in cn[:3]):
+        return 0.0
+    a, b, m = nodes[cn[0]], nodes[cn[1]], nodes[cn[2]]
+    chord = _vsub(b, a)
+    length = math.sqrt(_vdot(chord, chord))
+    if length <= 0.0:
+        return 0.0
+    am = _vsub(m, a)
+    t = _vdot(am, chord) / (length * length)
+    off = [am[i] - t * chord[i] for i in range(3)]
+    return math.sqrt(_vdot(off, off)) / length
+
+
 def _complement(axes):
     """Orthonormal basis of the complement of the span of axes (3D)."""
     basis = []
@@ -507,6 +531,52 @@ def _joint_ends(model_data, conn, elements, faces_of):
             if len(fn) == 1:
                 out.add((eid, fn[0]))
     return out
+
+
+def _warn_joint_element_constraints(model_data, jointed, elem_info):
+    """
+    WARNING for a constraint (_DIRICHLET_BCS) on an element selection or
+    component that contains a beam element with a flexible joint: in
+    Code-Aster it acts on the cells (GROUP_MA), so also on the joint's own
+    node, which the coupling (LIAISON_DDL) ties to the Mecway node; the
+    Mecway node itself is only constrained if another element of the
+    selection contains it (Mecway constrains the nodes of the elements). If
+    both are constrained, the relations are double: FACTOR_11 seen in a run
+    (KNOWN_BUGS 106a), but two offline LS-51a variants ran without it.
+    A selection of nodes or faces only acts on the Mecway node, like Mecway.
+    """
+    node_groups = model_data.get("node_groups", {})
+    faces = model_data.get("face_selection_faces", {})
+    elem_sel = model_data.get("element_selections", {})
+    hits = []
+    for bc in model_data.get("bcs", []):
+        if bc.get("type") not in _DIRICHLET_BCS or bc.get("skip"):
+            continue
+        sel = bc.get("selection")
+        if sel in node_groups or sel in faces:
+            continue
+        if sel in elem_sel:
+            eids = set(elem_sel[sel])
+        else:       # component (elset) name
+            eids = set(e for e, (_s, es) in elem_info.items() if es == sel)
+        if eids & jointed and sel not in hits:
+            hits.append(sel)
+    if hits:
+        log(tr("WARNING: Voorwaarde op elementselectie/component {0} met "
+               "een balkelement met een flexible joint: in Code-Aster werkt "
+               "die op de eigen knoop van de joint (aan de Mecway-knoop "
+               "gekoppeld), niet zoals in Mecway op de knopen van het "
+               "element. Het resultaat kan daardoor afwijken en een dubbele "
+               "voorwaarde kan Code-Aster laten stoppen met FACTOR_11. Zet "
+               "de voorwaarde op knopen of vlakken (KNOWN_BUGS 106).",
+               "WARNING: Constraint on element selection/component {0} "
+               "containing a beam element with a flexible joint: in "
+               "Code-Aster it acts on the joint's own node (coupled to the "
+               "Mecway node), not on the nodes of the element as in Mecway. "
+               "The result can therefore differ, and a double constraint "
+               "can make Code-Aster stop with FACTOR_11. Put the constraint "
+               "on nodes or faces (KNOWN_BUGS 106).").format(
+                   ", ".join("'{0}'".format(s) for s in hits)))
 
 
 def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
@@ -606,6 +676,8 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                    (" ..." if len(ids) > 10 else "")))
     if not free_at:
         return None, None
+    _warn_joint_element_constraints(model_data, set(e for e, _n in free_at),
+                                    elem_info)
 
     # Elements per node (all cells, also without joint)
     at_node = {}
@@ -835,6 +907,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     cell_refs = {}
     elset_mods = model_data.get("elset_modelisations", {})
     n_split = 0
+    curved = []        # [(eid, bow)] curved line3 beams (KNOWN_BUGS 107)
     for eid, shape, enodes, elset in elements:
         spec = _ASTER_TYPES.get(shape)
         if spec is None:
@@ -859,6 +932,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             # geometry (faces, lengths); the results go back per node,
             # so also at the mid node.
             n_split += 1
+            bow = _line3_bow(nodes, cn)
+            if bow > _LINE3_CURVED:
+                curved.append((eid, bow))
             for name, part in zip(_cell_names(eid, True),
                                   ([cn[0], cn[2]], [cn[2], cn[1]])):
                 items = by_type.setdefault("SEG2", [])
@@ -873,6 +949,25 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     if n_split:
         log("INFO: {0} line3 beam element(s) split into two SEG2 cells "
             "(M<eid> and H<eid>).".format(n_split))
+    if curved:
+        ids = [e for e, _b in curved]
+        log(tr("WARNING: {0} gekromde line3-balkelement(en) ({1}; "
+               "middenknoop tot {2}% van de elementlengte naast de koorde). "
+               "Code-Aster heeft geen gekromde balk: elk element wordt twee "
+               "rechte stukken met een knik in de middenknoop. Mecway (CCX) "
+               "rekent de gekromde vorm; verfijn de kromming voor een "
+               "betere benadering (KNOWN_BUGS 107).",
+               "WARNING: {0} curved line3 beam element(s) ({1}; midside "
+               "node up to {2}% of the element length off the chord). "
+               "Code-Aster has no curved beam: each element becomes two "
+               "straight pieces with a kink at the midside node. Mecway "
+               "(CCX) computes the curved shape; refine the curve for a "
+               "better approximation (KNOWN_BUGS 107).").format(
+                   len(ids), ", ".join(str(e) for e in ids[:10]) +
+                   (" ..." if len(ids) > 10 else ""),
+                   # %-formatting: '{0:.2g}' gave a decimal comma in
+                   # IronPython (bridge_to_aster._warn_large_rotations)
+                   "%.2g" % (100.0 * max(b for _e, b in curved))))
     split_line3 = set(e for e, refs in cell_refs.items() if len(refs) == 2)
 
     # --------------------------------------------------

@@ -95,7 +95,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    only restrains the transverse strain, which if anything increases u_x). A free quad8 plate with
    ΔT = 1000 K/m · x gave u_x(L, 0) = 4.87e-5 m in Mecway versus exactly αgL²/2 = 6.0e-5 m.
    Solids do agree (TH-03, LS-08). Why Mecway expands less with shells has NOT been
-   checked (plane stress, or the temperature through the thickness?).
+   checked (plane stress, or the temperature through the thickness?). User docs: the bridge
+   follows the theory, do not compare with Mecway here (Mecway_functionaliteit §2,
+   Standaardinstellingen §4.4).
 
 112\. **Buckling: pure torsional buckling of a beam higher in Mecway** (question, measured with
    Mecway 34 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`). Fixed column
@@ -352,7 +354,12 @@ Code-Aster value per node) and logs the largest difference per variable.
    element with the joint also fixes that own node in Code-Aster (`GROUP_MA`);
    together with the coupling that is double and Code-Aster stops with `FACTOR_11` (seen in
    a run: fixed on the end elements, joint on an end face). Put the constraint on
-   nodes or faces (then only on the Mecway node, like Mecway). Solution (NOT
+   nodes or faces (then only on the Mecway node, like Mecway); WARNING before the run
+   (`bridge_mesh._warn_joint_element_constraints`). Not always fatal: two offline runs of
+   LS-51a variants (fixed on elements 6+7 with the joint at N7; fixed on element 10 with the
+   joint at its end N10) ran without FACTOR_11; in the second the Mecway node N10 kept its free
+   rotation about Z (only the own node is in the `GROUP_MA`), whereas Mecway fixes the nodes
+   of the element. Solution (NOT
    verified): the own nodes as `SANS_GROUP_NO` for constraints on `GROUP_MA`.
    (b) The coupling of the rotations is fixed in the local axes of the undeformed
    element: with large rotations (`GROT_GDEP`) the axes do not rotate along (not
@@ -362,7 +369,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    `bridge_mesh.write_mesh`). Code-Aster has no quadratic beam element; each
    line3 element is split at the midside node. A curved line3 element (midside node
    not on the chord) thus becomes a kink of two straight pieces, each half with its own
-   orientation; Mecway (only with CCX, B32R) computes the curved shape. Exact for a straight
+   orientation; Mecway (only with CCX, B32R) computes the curved shape (WARNING when the
+   midside node is more than 0.1% of the length off the chord, `bridge_mesh._line3_bow`).
+   Exact for a straight
    beam (verification LS-50). Mecway's CCX result itself is 2–3 % below
    Euler theory (B32R expanded as one C3D20R over the cross-section; the same beam with line2
    in Mecway's own solver is exact); a round bar (SECTION=PIPE with inner radius 0)
@@ -372,7 +381,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    (confirmed, `bridge_offset.py`). Beams and COQUE_3D shells (tri6/quad8 or the option
    COQUE_3D) with an element offset lie on their own nodes, with a rigid
    arm per node as `LIAISON_DDL` (linear). (a) With `DEFORMATION` = `GROT_GDEP` the arm stays
-   linear (small rotations, like LIAISON_SOLIDE in KNOWN_BUGS 11); DKT/DST with
+   linear (small rotations, like LIAISON_SOLIDE in KNOWN_BUGS 11; WARNING for shell arms,
+   `bridge_to_aster._warn_linear_couplings`); DKT/DST with
    `EXCENTREMENT` not. (b) Stresses of the offset element are placed on the
    Mecway node in Mecway; if that node already has a value itself (other element), that value stays
    (`aster_results_export._offset_values`). (c) Mecway 34 itself gives a different result with a *Fixed

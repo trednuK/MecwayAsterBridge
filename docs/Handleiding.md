@@ -350,6 +350,22 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (fasefracties), `hardness` (als de dataset hardheid heeft); namen van de bridge | `META_NOEU`, `DURT_NOEU` | thermisch transient: met `#ASTER-METALLURGIE` altijd mee, alleen route `liml` ([`Lassen.md`](Lassen.md) §10) |
 | druk (akoestiek, niet in deze keuzelijst) | `pressure` per mode (Mecway's naam); harmonisch per frequentie ook `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibro-akoestiek: `DEPL` component `PRES`) | akoestiek, altijd ([`Akoestiek.md`](Akoestiek.md)) |
 
+**`shell_forces` staat standaard aan** (statisch en niet-lineair). Heeft het model
+schalen, dan meldt de bridge dat eenmaal per run met een WARNING. Het veld voegt 8
+variabelen per knoop en per element-knoop toe; de andere resultaten veranderen niet.
+Gemeten op een vlakke plaat (lineair statisch, de standaardvelden met en zonder
+`shell_forces`):
+
+| Model | Resultaten | `.liml` totaal | Code-Aster-job |
+|---|---|---|---|
+| 3500 quad4 (DKT) | 1,1 → 3,0 MB | 1,6 → 3,5 MB | 1,3 → 1,6 s |
+| 2000 quad8 (`COQUE_3D`) | 1,8 → 4,2 MB | 2,4 → 4,7 MB | 3,2 → 3,6 s |
+| 12000 quad4 (DKT) | 3,6 → 10,0 MB | 5,5 → 11,9 MB | 2,9 → 3,8 s |
+
+De hele run (7 tot 10 s, vooral het opstarten van Code-Aster) verschilde niet meetbaar;
+het openen van een grotere `.liml` in Mecway duurt langer (niet gemeten). Niet nodig?
+Vink `shell_forces` uit op de pagina van de analyse, *Resultaatvelden naar Mecway*.
+
 Bij modaal en knik geeft de bridge alleen de vormen (`displacements`), zoals Mecway;
 bij modaal kunnen `stresses`, `vonmises`, `strain`, `beam_forces`, `shell_stresses` en
 `shell_forces` per mode mee; andere gekozen velden worden genegeerd (INFO in de log).

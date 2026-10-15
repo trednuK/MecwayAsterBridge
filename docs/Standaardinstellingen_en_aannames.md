@@ -85,7 +85,9 @@ Mecway). De extra velden (`beam_forces`, `shell_forces`, `safety_factor`, `conta
 doen alleen iets als het model balken, schalen, een von Mises-faalcriterium of
 contact heeft; ze kosten dan weinig rekentijd. `strain` en `shell_stresses` staan
 standaard uit: ze maken de `.liml` duidelijk groter (6 resp. 18 variabelen per knoop
-en per element-knoop); `shell_forces` staat bij dynamica uit (per tijdstap). Zie
+en per element-knoop); `shell_forces` (8 variabelen) maakt de resultaten bij schalen
+ca. 2,5 keer zo groot (3500 quad4-schalen: `.liml` 1,6 → 3,5 MB, Code-Aster-job
++0,3 s; WARNING in de log) en staat bij dynamica uit (per tijdstap). Zie
 [`Handleiding.md`](Handleiding.md) §4.1.
 
 Niet instelbaar per analyse (vast in `CONFIG_BRIDGE`, niet op het startscherm):
@@ -445,6 +447,7 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Druk positief naar het element toe | `PRES_REP` met `PRES` > 0 = drukkend | bron: Mecway (2026) §9.14; geverifieerd: LS-03, LS-04, LS-05 |
 | Uniforme druk is meebewegend bij grote verplaatsingen | `TYPE_CHARGE='SUIV'` op volumes en `COQUE_3D`; op DKT vast (WARNING, `CALCUL_42`) | bron: Mecway (2026) §9.14; Code-Aster-test ssnv122a (Verificatie, officiële tests) |
 | Overlappende randvoorwaarden | deels opgelost (`SANS_GROUP_*`), anders gemeld | afwijking: Mecway reduceert zelf (KNOWN_BUGS 8) |
+| Voorwaarde op een elementselectie of component met een flexible joint | werkt op de cellen (`GROUP_MA`), dus op de eigen knoop van de joint; een dubbele voorwaarde kan `FACTOR_11` geven (WARNING) | afwijking: Mecway legt hem op de knopen van het element; zet hem op knopen of vlakken (KNOWN_BUGS 106) |
 | Veren en dempers langs hun eigen as | `DISCRET` met `REPERE='LOCAL'` | bron: Mecway (2026) §7.7 ("stiffness only in the direction of its length"); geverifieerd: LS-06 exact; vergelijking met een Mecway-oplossing ontbreekt (KNOWN_BUGS 47) |
 | Compression only | `LIAISON_UNIL` (hard) | KNOWN_BUGS 22 |
 | Rayleigh-demping | alleen op het hele model (`AMOR_ALPHA`/`AMOR_BETA` per materiaal) | KNOWN_BUGS 27 |
@@ -458,6 +461,8 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Schalen | DKT ~0,7 % anders dan Mecway, `COQUE_3D` via QUAD9/TRIA7 | gemeten (KNOWN_BUGS 2); LS-03, LS-05 |
 | Thermische schalen | `PLAN` (diepte 1) met factor f = t / t_ref op λ, ρc en de belastingen | geverifieerd: TH-01e (6e-7); KNOWN_BUGS 15 |
 | Trusses | `BARRE`, geometrisch lineair (ook met `GROT_GDEP`) | gemeten (KNOWN_BUGS 40) |
+| Line3-balken | twee rechte `SEG2`-cellen per element; gekromd (middenknoop naast de koorde): een knik in de middenknoop (WARNING) | recht exact (LS-50); gekromd afwijking: Mecway (CCX) rekent de kromme vorm (KNOWN_BUGS 107) |
+| Thermische rek in schalen | vrije uitzetting αΔT·L zoals de theorie | gemeten op een plaat: bridge +3% (DKT) en +2% (`COQUE_3D`), Mecway −22% (quad4) en −44% (quad8); de bridge volgt de theorie, waarom Mecway minder uitzet is NIET nagegaan (KNOWN_BUGS 95) |
 | Expliciet met DKT-schalen | geen `INER_ROTA` in `AFFE_CARA_ELEM` | gemeten bij deze review (R-STRIP): uitkragende strook DKT, expliciet en impliciet gelijk, periode +0,6 % / +0,3 %, piek 1,957 × statisch (verwacht ~1,966) |
 
 ### 4.5 Kinematica (`deformation`)
@@ -468,6 +473,7 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Vorm per element | volume elastisch `GREEN_LAGRANGE` (of `GDEF_LOG`), volume plastisch `GDEF_LOG` (of `SIMO_MIEHE`, niet met `VMIS_CINE_LINE`), DKT/DST `GREEN_LAGRANGE` (gaf dezelfde uitkomst als `PETIT`; met `VMIS_CINE_LINE` `PETIT`), `COQUE_3D` `GROT_GDEP`, balken `PETIT`, kabels `GROT_GDEP`, discreten `PETIT` | gemeten met runs op een gemengd model (`bridge_to_aster._deformation_for`); NL-02a (volume) en NL-02b (`COQUE_3D`) exact; grote verplaatsingen van DKT en balken: NIET mogelijk (KNOWN_BUGS 11); discreten met grote verplaatsingen: NIET geverifieerd |
 | Dynamica volgt de statische keuze | `GROT_GDEP` ook in `dyna_*` | Keuze, NIET tegen Mecway geverifieerd; DY-03: verschil met lineaire theorie 1,4e-4…6,9e-4 (fysisch) |
 | Opgelegde rotaties en starre koppelingen | blijven kleine rotaties; WARNING boven ~6° | KNOWN_BUGS 11 |
+| Starre arm van een element offset | `LIAISON_DDL` in de onvervormde assen: kleine rotaties, ook met `GROT_GDEP` (WARNING bij verschoven schalen) | KNOWN_BUGS 108 |
 
 ### 4.6 Contact
 

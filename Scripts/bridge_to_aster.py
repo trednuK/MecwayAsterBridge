@@ -1215,6 +1215,43 @@ def _failure_strengths(model_data):
                 if m in strengths)
 
 
+# Runs for which the shell_forces WARNING was already written
+# (_shell_forces_warning; once per run, also with several CALC_CHAMP blocks).
+_SHELL_FORCES_WARNED = set()
+
+
+def _shell_forces_warning():
+    """WARNING (once per run) that the result field shell_forces is on in a
+    model with shells: what it adds, its effect and how to switch it off.
+    Effect measured on flat static plates with 3500 and 12000 quad4 and
+    2000 quad8 elements (docs/Handleiding.md sec. 4.1). Only route 'liml' (route 'tabel'
+    reports the field as not available, _build_postreleve_block)."""
+    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
+        return
+    run = run_name("")          # <model>_<run_id>, outside a run "study"
+    if run in _SHELL_FORCES_WARNED:
+        return
+    _SHELL_FORCES_WARNED.add(run)
+    log(tr("WARNING: Resultaatveld shell_forces staat aan en het model heeft "
+           "schalen: 8 extra variabelen per knoop en per element-knoop in "
+           "Mecway (forceperlengthu/v/uv, momentu/v/uv, shearuw/vw: krachten "
+           "en momenten per lengte in Mecway's U,V-assen). Effect: ca. 2,5 "
+           "keer zo grote resultaten in de .liml (gemeten: 3500 "
+           "quad4-schalen, .liml 1,6 -> 3,5 MB), iets meer rekentijd "
+           "(Code-Aster-job +0,3 s) en meer items in Mecway's "
+           "resultatenlijst; de andere resultaten veranderen niet. Niet nodig? Vink shell_forces uit op het startscherm: "
+           "pagina van de analyse, Resultaatvelden naar Mecway.",
+           "WARNING: Result field shell_forces is on and the model has "
+           "shells: 8 extra variables per node and per element node in "
+           "Mecway (forceperlengthu/v/uv, momentu/v/uv, shearuw/vw: forces "
+           "and moments per length in Mecway's U,V axes). Effect: about "
+           "2.5 times larger results in the .liml (measured: 3500 quad4 "
+           "shells, .liml 1.6 -> 3.5 MB), slightly more run time "
+           "(Code-Aster job +0.3 s) and more items in Mecway's result "
+           "list; the other results do not change. Not needed? Untick shell_forces on the start screen: "
+           "page of the analysis, Result fields to Mecway."))
+
+
 def _optional_fields(model_data, fields, quiet=False):
     """The chosen extra result fields (aster_results_export.
     OPT_IN_GROUPS) that yield something in this model; for the rest an
@@ -1230,6 +1267,8 @@ def _optional_fields(model_data, fields, quiet=False):
     }
     out = [f for f in fields if applies.get(f)]
     idle = [f for f in fields if f in applies and not applies[f]]
+    if "shell_forces" in out and not quiet:
+        _shell_forces_warning()
     if idle and not quiet:
         log("INFO: Result fields with nothing to compute in this model "
             "(no matching elements, contact or failure criterion): "
@@ -4941,6 +4980,37 @@ def _warn_large_rotations(model_data, analysis):
         # message at the end says "NIET vertaald"; crit-review).
 
 
+def _warn_linear_couplings(model_data, analysis):
+    """
+    WARNING if large displacements are chosen (DEFORMATION GROT_GDEP etc.)
+    while shells (COQUE_3D, on their own nodes) have rigid offset arms
+    (bridge_offset, offset_links kind "shell"): the arm is a LIAISON_DDL
+    relation written once in the undeformed axes (U4.44.01: linear
+    relations between degrees of freedom), so it stays a small rotation
+    (KNOWN_BUGS 108a). Beams stay PETIT anyway (WARNING in
+    _deformation_for), so their arms and flexible joints (KNOWN_BUGS 106b)
+    add nothing to report.
+    """
+    if "{0}".format(analysis.get("deformation", "PETIT")).upper() \
+            not in _LARGE_DEFORMATIONS:
+        return
+    arms = [l for l in model_data.get("offset_links") or []
+            if l.get("kind") == "shell"]
+    if not arms:
+        return
+    log(tr("WARNING: DEFORMATION='{0}', maar de starre armen van het "
+           "element offset van schalen ({1} knopen) zijn lineaire "
+           "koppelingen (LIAISON_DDL) in de onvervormde assen: daar blijven "
+           "de rotaties klein. Bij rotaties van meer dan enkele graden "
+           "wijkt het resultaat daar af (KNOWN_BUGS 108).",
+           "WARNING: DEFORMATION='{0}', but the rigid arms of the element "
+           "offset of shells ({1} nodes) are linear couplings (LIAISON_DDL) "
+           "in the undeformed axes: rotations stay small there. With "
+           "rotations of more than a few degrees the result deviates there "
+           "(KNOWN_BUGS 108).").format(analysis.get("deformation"),
+                                       len(arms)))
+
+
 # ==========================================
 # HELPER FUNCTIONS FOR CONTACT AND DYNAMICS
 # ==========================================
@@ -6167,6 +6237,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # --------------------------------------------------
     comportement_block = _build_comportement_block(model_data, analysis)
     _warn_large_rotations(model_data, analysis)
+    _warn_linear_couplings(model_data, analysis)
 
     # --------------------------------------------------
     # BLOCK H: CALC_CHAMP, POST_RELEVE_T, IMPR_TABLE

@@ -357,6 +357,21 @@ are the same as those of Mecway's own solution where Mecway knows them.
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (phase fractions), `hardness` (if the dataset has hardness); names of the bridge | `META_NOEU`, `DURT_NOEU` | thermal transient: always included with `#ASTER-METALLURGIE`, route `liml` only ([`Welding.md`](Welding.md) §10) |
 | pressure (acoustics, not in this list) | `pressure` per mode (Mecway's name); harmonic per frequency also `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibroacoustics: `DEPL` component `PRES`) | acoustics, always ([`Acoustics.md`](Acoustics.md)) |
 
+**`shell_forces` is on by default** (static and nonlinear). If the model has
+shells, the bridge reports this once per run with a WARNING. The field adds 8 variables
+per node and per element node; the other results do not change. Measured on a flat
+plate (linear static, the default fields with and without `shell_forces`):
+
+| Model | Results | `.liml` total | Code-Aster job |
+|---|---|---|---|
+| 3500 quad4 (DKT) | 1.1 → 3.0 MB | 1.6 → 3.5 MB | 1.3 → 1.6 s |
+| 2000 quad8 (`COQUE_3D`) | 1.8 → 4.2 MB | 2.4 → 4.7 MB | 3.2 → 3.6 s |
+| 12000 quad4 (DKT) | 3.6 → 10.0 MB | 5.5 → 11.9 MB | 2.9 → 3.8 s |
+
+The whole run (7 to 10 s, mostly starting Code-Aster) did not differ measurably;
+opening a larger `.liml` in Mecway takes longer (not measured). Not needed? Untick
+`shell_forces` on the page of the analysis, *Result fields to Mecway*.
+
 For modal and buckling the bridge returns only the shapes (`displacements`), as
 Mecway does; for modal, `stresses`, `vonmises`, `strain`, `beam_forces`,
 `shell_stresses` and `shell_forces` can be included per mode; other selected fields

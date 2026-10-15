@@ -85,7 +85,9 @@ and buckling only `displacements` (the shapes, as in Mecway). The extra fields
 the model has beams, shells, a von Mises failure criterion or contact; they then
 cost little computing time. `strain` and `shell_stresses` are off by default: they
 make the `.liml` clearly larger (6 and 18 variables per node and per element node);
-`shell_forces` is off for dynamics (per time step). See
+`shell_forces` (8 variables) makes the results about 2.5 times larger with shells (3500
+quad4 shells: `.liml` 1.6 → 3.5 MB, Code-Aster job +0.3 s; WARNING in the log) and is
+off for dynamics (per time step). See
 [`UserGuide.md`](UserGuide.md) §4.1.
 
 Not settable per analysis (fixed in `CONFIG_BRIDGE`, not on the start screen):
@@ -446,6 +448,7 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Pressure positive towards the element | `PRES_REP` with `PRES` > 0 = compressive | source: Mecway (2026) §9.14; verified: LS-03, LS-04, LS-05 |
 | Uniform pressure follows large displacements | `TYPE_CHARGE='SUIV'` on solids and `COQUE_3D`; fixed on DKT (WARNING, `CALCUL_42`) | source: Mecway (2026) §9.14; Code-Aster test ssnv122a (Verification, official tests) |
 | Overlapping constraints | partly resolved (`SANS_GROUP_*`), otherwise reported | deviation: Mecway reduces them itself (KNOWN_BUGS 8) |
+| Constraint on an element selection or component with a flexible joint | acts on the cells (`GROUP_MA`), so on the joint's own node; a double constraint can give `FACTOR_11` (WARNING) | deviation: Mecway applies it to the nodes of the element; put it on nodes or faces (KNOWN_BUGS 106) |
 | Springs and dampers along their own axis | `DISCRET` with `REPERE='LOCAL'` | source: Mecway (2026) §7.7 ("stiffness only in the direction of its length"); verified: LS-06 exact; a comparison with a Mecway solution is missing (KNOWN_BUGS 47) |
 | Compression only | `LIAISON_UNIL` (hard) | KNOWN_BUGS 22 |
 | Rayleigh damping | only on the whole model (`AMOR_ALPHA`/`AMOR_BETA` per material) | KNOWN_BUGS 27 |
@@ -459,6 +462,8 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Shells | DKT ~0.7 % different from Mecway, `COQUE_3D` via QUAD9/TRIA7 | measured (KNOWN_BUGS 2); LS-03, LS-05 |
 | Thermal shells | `PLAN` (depth 1) with factor f = t / t_ref on λ, ρc and the loads | verified: TH-01e (6e-7); KNOWN_BUGS 15 |
 | Trusses | `BARRE`, geometrically linear (also with `GROT_GDEP`) | measured (KNOWN_BUGS 40) |
+| Line3 beams | two straight `SEG2` cells per element; curved (midside node off the chord): a kink at the midside node (WARNING) | straight exact (LS-50); curved deviation: Mecway (CCX) computes the curved shape (KNOWN_BUGS 107) |
+| Thermal strain in shells | free expansion αΔT·L as in theory | measured on a plate: bridge +3% (DKT) and +2% (`COQUE_3D`), Mecway −22% (quad4) and −44% (quad8); the bridge follows the theory, why Mecway expands less has NOT been checked (KNOWN_BUGS 95) |
 | Explicit with DKT shells | no `INER_ROTA` in `AFFE_CARA_ELEM` | measured in this review (R-STRIP): cantilever strip DKT, explicit and implicit equal, period +0.6 % / +0.3 %, peak 1.957 × static (expected ~1.966) |
 
 ### 4.5 Kinematics (`deformation`)
@@ -469,6 +474,7 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Form per element | elastic solid `GREEN_LAGRANGE` (or `GDEF_LOG`), plastic solid `GDEF_LOG` (or `SIMO_MIEHE`, not with `VMIS_CINE_LINE`), DKT/DST `GREEN_LAGRANGE` (gave the same result as `PETIT`; with `VMIS_CINE_LINE` `PETIT`), `COQUE_3D` `GROT_GDEP`, beams `PETIT`, cables `GROT_GDEP`, discrete elements `PETIT` | measured with runs on a mixed model (`bridge_to_aster._deformation_for`); NL-02a (solid) and NL-02b (`COQUE_3D`) exact; large displacements of DKT and beams: NOT possible (KNOWN_BUGS 11); discrete elements with large displacements: NOT verified |
 | Dynamics follows the static choice | `GROT_GDEP` also in `dyna_*` | Choice, NOT verified against Mecway; DY-03: difference with linear theory 1.4e-4…6.9e-4 (physical) |
 | Imposed rotations and rigid couplings | stay small rotations; WARNING above ~6° | KNOWN_BUGS 11 |
+| Rigid arm of an element offset | `LIAISON_DDL` in the undeformed axes: small rotations, also with `GROT_GDEP` (WARNING for offset shells) | KNOWN_BUGS 108 |
 
 ### 4.6 Contact
 

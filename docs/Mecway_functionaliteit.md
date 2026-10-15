@@ -39,19 +39,19 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Force (knopen, vlakken, elementen) | Ja | Op knopen gelijk verdeeld, op vlakken als kracht per oppervlak. |
 | Pressure | Ja | Meebewegend in niet-lineaire analyses (een formule in x, y, z blijft vast). Op schaalranden en balkuiteinden als knoopkrachten (KB5). |
 | Traction | Ja | Op een schaalvlak met het moment van de halve dikte, zoals Mecway. |
-| Line pressure | Ja | Globaal of lokaal (U, V, W). Combinaties op één balk: KB20. |
+| Line pressure | Ja | Globaal of lokaal (U, V, W). Combinaties op één balk worden opgeteld; lokaal en globaal op dezelfde balk: Nee (ERROR, KB20). |
 | Hydrostatic pressure | Deels | Niet op schaalranden (KB5). |
 | Moment | Ja | Op één knoop met rotaties of als krachten over vlakken. |
 | Gravity | Ja | Met een tijdstabel alleen bij een vaste richting. |
 | Centrifugal force | Deels | Alleen een constante hoeksnelheid, één per model (geen gyroscopisch effect); spin softening alleen op volumes (KB19). |
 | Mass, Rotational inertia | Ja | Alleen op knopen; rotatietraagheid op één knoop. |
-| Temperature (`temperature2`) + Thermal stress | Ja | Constante temperatuur; een tijdstabel of formule in t in L30 en D31 (`EVOL_THER`, NL-70..75, DY-70..72). Statisch/modaal/knik: een tijdshistorie valt weg, zoals bij Mecway's eigen solver. D30 negeert hem zoals Mecway. |
+| Temperature (`temperature2`) + Thermal stress | Ja | Constante temperatuur; een tijdstabel of formule in t in L30 en D31 (`EVOL_THER`, NL-70..75, DY-70..72). Statisch/modaal/knik: een tijdshistorie valt weg, zoals bij Mecway's eigen solver. D30 negeert hem zoals Mecway. Schalen: Mecway zet minder uit dan de bridge; de bridge geeft de theoretische vrije uitzetting αΔT·L (gemeten op een plaat: bridge +3% (quad4) en +2% (quad8), Mecway −22% en −44%; volumes gelijk aan Mecway). Vergelijk bij schalen met thermische rek dus niet met Mecway (KB95). |
 | Node temperature (`temperature3`) in een mechanische analyse | Ja | Ook na *Transfer temperatures from solution*. Statisch, niet-lineair statisch, modaal (voorspanning) en knik, zoals Temperature; knopen zonder temperatuur op de referentie van de Thermal stress (LS-08). D30 negeert hem zoals Mecway; D31 gemeld (niet in Mecway's lijst). |
 | Rayleigh damping | Deels | Alleen op het hele model, niet op een selectie (KB27). |
 | Initial velocity | Ja | Alleen in dynamica; niet bij mode superposition (KB54). |
 | Initial displacement | Nee | Gemeld. |
 | Waarde als tabel of formule in t | Ja | 10001 monsters zoals Mecway voor CCX. Lineair statisch, modaal en knik: de waarde op de eindtijd. Veel punten = veel stappen (KB104). |
-| Formule in x, y, z (mechanisch) | Ja | Druk, traction, kracht, line pressure, opgelegde verplaatsing/rotatie: `FORMULE` van X, Y, Z (ook met t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Kracht, line pressure en verplaatsing/rotatie met x, y, z legt Mecway 34 zelf niet op (WARNING). Niet: gravity, moment, centrifugaal, richting als formule, druk op schaalranden; niet in expliciet, harmonisch, spectrum (KB104). |
+| Formule in x, y, z (mechanisch) | Ja | Druk, traction, kracht, line pressure, opgelegde verplaatsing/rotatie: `FORMULE` van X, Y, Z (ook met t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Kracht, line pressure en verplaatsing/rotatie met x, y, z legt Mecway 34 zelf niet op (WARNING). Niet: gravity, moment, centrifugaal, richting als formule, druk op schaalranden; niet in expliciet, harmonisch, spectrum (KB104). DKT/DST-schalen nemen de formule in de knopen (+0,8% op een grof mesh, LS-44a). Druk als formule blijft bij grote verplaatsingen een vaste last. De foutschatter rekent een vlak met een formulelast als onbelast (te grote fout daar). |
 | Last op het zijvlak van een balk | Nee | KB5. Zet de last op een elementselectie van de balk. |
 | Pre-tension section | Nee | Geen alternatief in de bridge. |
 | Electric potential, Charge, Current, Robin | Nee | Geen elektrische analyses (§1). |
@@ -64,7 +64,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 
 | Mecway | Status | Opmerking |
 |---|---|---|
-| Fixed support | Ja | Overlap met andere voorwaarden: KB8. |
+| Fixed support | Ja | Overlap met andere voorwaarden: Code-Aster ruimt dubbele voorwaarden niet op zoals Mecway; de bekende gevallen vangt de bridge af, de rest meldt hij (WARNING, KB8). |
 | Pinned support | Ja | Knopen en vlakken van volume-elementen, zoals Mecway. |
 | Frictionless support | Deels | Niet op balken; normaalverplaatsing ≠ 0 niet op gekromde schalen en schaalranden (KB5). |
 | Elastic support | Ja | Vlakken van volumes en schaalvlakken. |
@@ -76,8 +76,8 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Constraint equation | Ja | KB27. Expliciet: een constante ≠ 0 wordt een opgelegde beweging (DY-20b; Mecway zelf staat haar dan niet toe). |
 | Node-surface coupling, Rigid (RBE2) | Ja | `LIAISON_SOLIDE`; grote rotaties: KB11. Niet in thermisch (gemeld). |
 | Node-surface coupling, Distributing (RBE3) | Ja | `LIAISON_RBE3`. Niet in thermisch (gemeld). |
-| Flexible joint on beam | Ja | Vrije rotatie om U, V en/of W (lokale balkassen zoals Mecway) aan een balkuiteinde: het element krijgt daar een eigen knoop, met `LIAISON_DDL` gekoppeld (translaties en de niet-vrije rotaties). Mecway kent geen stijfheid in de joint, alleen vrij of vast. Ook op line3-balken en in Frequency, dynamica, knik en niet-lineair statisch (dat laatste kent Mecway niet; grote rotaties: KB106). Verificatie LS-51 (gelijk aan Mecway); snedekrachten per element ook naast de joint en op line3 (LS-53). Een voorwaarde op een *elementselectie* met het element met de joint: zie KB106. Met een element offset op hetzelfde element: zie KB108 (LS-52). Niet in de keten thermisch → mechanisch (WARNING). |
-| Contact, Unilateral (vlakken van volumes en schaalvlakken) | Ja | Alleen niet-lineair, zoals in Mecway. Formulering en wrijving: KB43; gedeelde slave-knopen: KB10. |
+| Flexible joint on beam | Ja | Vrije rotatie om U, V en/of W (lokale balkassen zoals Mecway) aan een balkuiteinde: het element krijgt daar een eigen knoop, met `LIAISON_DDL` gekoppeld (translaties en de niet-vrije rotaties). Mecway kent geen stijfheid in de joint, alleen vrij of vast. Ook op line3-balken en in Frequency, dynamica, knik en niet-lineair statisch (dat laatste kent Mecway niet; grote rotaties: KB106). Verificatie LS-51 (gelijk aan Mecway); snedekrachten per element ook naast de joint en op line3 (LS-53). Een voorwaarde op een *elementselectie* of component met het element met de joint werkt op de eigen knoop van de joint in plaats van op de knopen van het element zoals in Mecway: het resultaat kan afwijken en Code-Aster kan stoppen met `FACTOR_11` (WARNING). Zet hem op knopen of vlakken (KB106). Met een element offset op hetzelfde element: zie KB108 (LS-52). Niet in de keten thermisch → mechanisch (WARNING). |
+| Contact, Unilateral (vlakken van volumes en schaalvlakken) | Ja | Alleen niet-lineair, zoals in Mecway. Formulering en wrijving: KB43; paren met gedeelde slave-knopen worden één zone (gemeld, KB10). |
 | Contact, Unilateral, *Self contact* | Nee | Gemeld. Maak twee aparte vlakselecties. |
 | Contact, Unilateral, op schaalranden of balken | Nee | Gemeld. |
 | Contact, Bonded *Tie* / *Constraint equations* | Ja | `LIAISON_MAIL` (star), zie de tabel hieronder. Werkt ook in lineaire analyses. Automatische tolerantie: alle slave-knopen worden gekoppeld (KB21). |
@@ -103,12 +103,12 @@ Verlijmd contact per combinatie (slave op master):
 | Mecway | Status | Code-Aster | Opmerking |
 |---|---|---|---|
 | hex8 | Deels | `3D` | Stijver dan Mecway (geen incompatibele modes, KB1). Beter: *Elementen* > hex8 `LINE_QUAD`. |
-| tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Ja | `3D` | Piramides niet in de akoestiek (KB55). Gekromde hex20/wedge15: KB62. |
+| tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Ja | `3D` | Piramides niet in de akoestiek (KB55). Sterk gekromde hex20/wedge15: eigenfrequenties tot 0,8% hoger dan Mecway (KB62). |
 | tri3, quad4 (schaal) | Ja | `DKT` (of `DST`/`COQUE_3D` als keuze) | ~0,7% anders dan Mecway (KB2). |
 | tri6, quad8 (schaal) | Ja | `COQUE_3D` | Als master van verlijmd contact: translaties met `LIAISON_DDL`, rotaties met `LIAISON_MAIL` (LS-07i..k). |
 | lineaire en kwadratische schalen in één component | Deels | – | De kwadratische worden niet gemodelleerd (ERROR). Splits de component. |
 | beam line2 | Ja | `POU_D_E` (of `POU_D_T`) | Oriëntatie uit *Element properties*. Geen plasticiteit (KB6), geen grote rotaties (KB11). |
-| beam line3 | Ja | `POU_D_E` (of `POU_D_T`) | Elk element wordt in de middenknoop in twee SEG2-cellen gesplitst (Code-Aster heeft geen kwadratische balk); resultaten op alle drie de knopen. Mecway rekent line3-balken zelf alleen met CCX. Verificatie LS-50. Truss, veer, gap, demper en tension-only op line3: Nee (ERROR; in Mecway alleen line2). |
+| beam line3 | Ja | `POU_D_E` (of `POU_D_T`) | Elk element wordt in de middenknoop in twee SEG2-cellen gesplitst (Code-Aster heeft geen kwadratische balk); resultaten op alle drie de knopen. Mecway rekent line3-balken zelf alleen met CCX. Een gekromd element (middenknoop naast de koorde) wordt zo twee rechte stukken met een knik, Mecway rekent de kromme vorm (WARNING; verfijn de kromming, KB107). Verificatie LS-50. Truss, veer, gap, demper en tension-only op line3: Nee (ERROR; in Mecway alleen line2). |
 | truss line2 | Ja | `BARRE` | Kleine verplaatsingen (KB40). Balken en trusses in één component worden twee groepen (`<naam>_TRUSS`). |
 | spring, damper, gap (line2) | Ja | `DIS_T` (gap: `DIS_CHOC`) | Langs de eigen as. Gap alleen niet-lineair (KB23); veren/dempers niet tegen Mecway vergeleken (KB47). |
 | tension only (line2, truss) | Deels | `CABLE` | Alleen niet-lineair; drukstijfheid 1e-4 E (KB23). |
@@ -116,7 +116,7 @@ Verlijmd contact per combinatie (slave op master):
 | plane, axisymmetric (2D) | Nee | – | Alleen in 2D-analyses (§1). |
 | schalen in een thermische analyse | Deels | `PLAN` met een diktefactor | Alleen schalen in evenwijdige vlakken (KB15); andere: Nee (KB16). |
 | fin, fluid network element, resistor | Nee | – | Thermisch 1D en DC-stroom: KB16. |
-| Element offset (schaal, balk) | Ja | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D en balken: element op eigen knopen + starre arm (`LIAISON_DDL`) | Schaal: *Element coordinates*, alleen W telt (zoals Mecway; u/v hebben ook daar geen effect). Balk: *Global coordinates* x/y/z (u/v/w op een balk: geen effect in Mecway, WARNING). Verplaatsing, rotatie en reactie op de Mecway-knopen; spanningen van het verschoven element op die knopen getoond, ook als elementwaarden (LS-65). In alle mechanische analyses (Mecway: alleen statisch), niet in de keten thermisch → mechanisch (WARNING, KB64). Starre arm: kleine rotaties (KB108). Een last op een vlakselectie op randen van verschoven schalen zet de bridge op de knopen, Mecway op de verschoven rand (WARNING, KB108). Een flexible joint op een verschoven balkelement wordt niet vertaald (WARNING; Mecway houdt hem wel aan, KB108); verlijmd contact op verschoven schalen: WARNING (KB108). Verificatie LS-60–67, LS-52. |
+| Element offset (schaal, balk) | Ja | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D en balken: element op eigen knopen + starre arm (`LIAISON_DDL`) | Schaal: *Element coordinates*, alleen W telt (zoals Mecway; u/v hebben ook daar geen effect). Balk: *Global coordinates* x/y/z (u/v/w op een balk: geen effect in Mecway, WARNING). Verplaatsing, rotatie en reactie op de Mecway-knopen; spanningen van het verschoven element op die knopen getoond, ook als elementwaarden (LS-65). In alle mechanische analyses (Mecway: alleen statisch), niet in de keten thermisch → mechanisch (WARNING, KB64). Starre arm: kleine rotaties, ook met `GROT_GDEP` (WARNING bij verschoven schalen, KB108). Een knoop met een eigen waarde (ander element) houdt die; de spanning van het verschoven element telt daar niet mee (KB108). Een last op een vlakselectie op randen van verschoven schalen zet de bridge op de knopen, Mecway op de verschoven rand (WARNING, KB108). Een flexible joint op een verschoven balkelement wordt niet vertaald (WARNING; Mecway houdt hem wel aan, KB108); verlijmd contact op verschoven schalen: WARNING (KB108). Verificatie LS-60–67, LS-52. |
 | Element orientation (lokale U/V-assen per element) | Deels | – | Mecway slaat de oriëntatie per element op (`orientationux`…`vz`, `angle`). Gebruikt voor balken (doorsnede-oriëntatie), gaps (richting) en bij schalen de U-as van het resultaatveld `shell_forces` (§6). Verder bij volumes en schalen genegeerd zonder melding; met isotroop materiaal verandert dat de uitkomst niet. Pas nodig bij orthotrope materialen (§5, Nee). |
 
 ## 5. Materialen en doorsneden
@@ -144,7 +144,7 @@ Verlijmd contact per combinatie (slave op master):
 | Verplaatsing, rotatie | Ja | Modaal en knik: de vormen. |
 | Spanningstensor volume-elementen (knoop en element-knoop) | Ja | Code-Aster-middeling, anders dan Mecway (KB3). Route `tabel`: KB7. |
 | von Mises (volumes; schalen boven/midden/onder) | Ja | KB3. |
-| Spanningstensor schalen (globaal, boven/midden/onder), krachten en momenten per lengte | Ja | Velden `shell_stresses` (standaard uit) en `shell_forces`; alleen route `liml`. Mecway's *stress in element coordinates* (`stressuu` ..) niet. Element orientation als last: niet gelezen ([`Handleiding.md`](Handleiding.md) §4.1). |
+| Spanningstensor schalen (globaal, boven/midden/onder), krachten en momenten per lengte | Ja | Velden `shell_stresses` (standaard uit) en `shell_forces`; alleen route `liml`. `shell_forces` staat aan bij statisch en niet-lineair en maakt de resultaten bij schalen ca. 2,5 keer zo groot (WARNING; uitvinken op de pagina van de analyse). Mecway's *stress in element coordinates* (`stressuu` ..) niet. Element orientation als last: niet gelezen ([`Handleiding.md`](Handleiding.md) §4.1). |
 | Balkspanning | Deels | Alleen kleinste/grootste axiale spanning bij rechthoekige en ronde doorsneden (`beamsixxmin/max`). |
 | Snedekrachten en -momenten van balken | Ja | Veld `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), ook per mode. |
 | Reactiekrachten en -momenten | Ja | Niet bij mode superposition, harmonisch en vibro-akoestiek (KB54, KB59). |
