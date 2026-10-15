@@ -4,35 +4,35 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_fracture.py
-# Breukmechanica met een gemeshte scheur (STAPPENPLAN S6a): K_I/K_II/K_III
-# en G langs het scheurfront als nabewerking van een lineair statische
-# analyse (lin_static_3d, MECA_STATIQUE). Gebruikersdoc:
+# Fracture mechanics with a meshed crack (STAPPENPLAN S6a): K_I/K_II/K_III
+# and G along the crack front as post-processing of a linear static
+# analysis (lin_static_3d, MECA_STATIQUE). User documentation:
 # docs/Breukmechanica.md (EN: docs/en/Fracture_mechanics.md).
-# Compatibel met IronPython 2.7.9 (Mecway); de .comm-code die
-# fracture_block() schrijft draait in Code-Aster (Python 3).
+# Compatible with IronPython 2.7.9 (Mecway); the .comm code that
+# fracture_block() writes runs in Code-Aster (Python 3).
 #
-# Invoer (Mecway heeft geen breukmechanica, manual v33; wel *Disconnect
-# elements*, par. 4.2.10, en *Merge nearby nodes* met een knoopselectie,
-# par. 4.2.11, waarmee je een scheur opent):
-#   knoopselectie  SCHEUR_FRONT     (of CRACK_FRONT)      knopen van het front
-#   vlakselectie   SCHEUR_LIP_BOVEN (of CRACK_LIP_UPPER)  bovenlip
-#   vlakselectie   SCHEUR_LIP_ONDER (of CRACK_LIP_LOWER)  onderlip; zonder
-#                  onderlip een half model met symmetrie (SYME='OUI')
-# Meer scheuren: hetzelfde achtervoegsel achter alle drie de namen
-# (SCHEUR_FRONT_A, SCHEUR_LIP_BOVEN_A, ...). Herkend op de oorspronkelijke
-# Mecway-naam, hoofdletterongevoelig.
+# Input (Mecway has no fracture mechanics, manual v33; it does have
+# *Disconnect elements*, par. 4.2.10, and *Merge nearby nodes* with a node
+# selection, par. 4.2.11, with which you open a crack):
+#   node selection SCHEUR_FRONT     (or CRACK_FRONT)      nodes of the front
+#   face selection SCHEUR_LIP_BOVEN (or CRACK_LIP_UPPER)  upper lip
+#   face selection SCHEUR_LIP_ONDER (or CRACK_LIP_LOWER)  lower lip; without
+#                  lower lip a half model with symmetry (SYME='OUI')
+# More cracks: the same suffix after all three names
+# (SCHEUR_FRONT_A, SCHEUR_LIP_BOVEN_A, ...). Recognized by the original
+# Mecway name, case-insensitive.
 #
-# Vertaling (catalogus Code-Aster 17.4, Cata/Commands):
-#   - bridge_mesh.write_mesh schrijft de ribben van de volume-elementen
-#     langs het front als SEG2/SEG3-cellen in groep BRSCHEUR<n>
-#     (front_cells); DEFI_FOND_FISS FOND_FISS kent alleen GROUP_MA of een
-#     geordende GROUP_NO (defi_fond_fiss.py), en Mecway kent geen ribben.
-#   - na MECA_STATIQUE en de resultaatexport (fracture_block):
+# Translation (catalogue Code-Aster 17.4, Cata/Commands):
+#   - bridge_mesh.write_mesh writes the edges of the volume elements
+#     along the front as SEG2/SEG3 cells in group BRSCHEUR<n>
+#     (front_cells); DEFI_FOND_FISS FOND_FISS only accepts GROUP_MA or an
+#     ordered GROUP_NO (defi_fond_fiss.py), and Mecway has no edges.
+#   - after MECA_STATIQUE and the result export (fracture_block):
 #     DEFI_FOND_FISS (CONFIG_INIT='COLLEE'), CALC_G OPTION=('G', 'K')
-#     (calc_g.py; THETA R_INF/R_SUP uit fracture_r_inf/_sup of automatisch)
-#     en POST_K1_K2_K3 (post_k1_k2_k3.py), tabellen in de .mess en als
-#     <model>_<run_id>_scheur.csv; report() zet een samenvatting in de log en
-#     het statusvak.
+#     (calc_g.py; THETA R_INF/R_SUP from fracture_r_inf/_sup or automatic)
+#     and POST_K1_K2_K3 (post_k1_k2_k3.py), tables in the .mess and as
+#     <model>_<run_id>_scheur.csv; report() puts a summary in the log and
+#     the status box.
 
 import io
 import math
@@ -42,18 +42,18 @@ from collections import OrderedDict
 from bridge_utils import (log, tr, run_name, CONFIG_BRIDGE,
                           get_active_analysis, work_dir_path)
 
-# Namen van de selecties (prefix, zonder achtervoegsel)
+# Names of the selections (prefix, without suffix)
 FRONT_NAMES = ("SCHEUR_FRONT", "CRACK_FRONT")
 UPPER_NAMES = ("SCHEUR_LIP_BOVEN", "CRACK_LIP_UPPER")
 LOWER_NAMES = ("SCHEUR_LIP_ONDER", "CRACK_LIP_LOWER")
-# Groep met de SEG-cellen van het front (+ volgnummer); gereserveerd in
+# Group with the SEG cells of the front (+ sequence number); reserved in
 # bridge_mesh._aster_names.
 FRONT_GROUP = "BRSCHEUR"
-# Achtervoegsel van de tabel in de werkmap
+# Suffix of the table in the work folder
 CSV_SUFFIX = "_scheur.csv"
 
-# Ribben per volumetype (hoekindices in Code-Aster-volgorde; de k-de rib
-# heeft bij een kwadratisch element middenknoop n_hoeken + k), zoals
+# Edges per volume type (corner indices in Code-Aster order; for a
+# quadratic element the k-th edge has mid-side node n_corners + k), like
 # bridge_mesh._MID_EDGES.
 _EDGES = {
     "TETRA": [(0, 1), (1, 2), (0, 2), (0, 3), (1, 3), (2, 3)],
@@ -66,11 +66,11 @@ _EDGES = {
 }
 _CORNERS = {"TETRA": 4, "PYRAM": 5, "PENTA": 6, "HEXA": 8}
 
-# Kolommen van de tabel (CSV): (kop, tabel, Code-Aster-parameter).
-# "g" = CALC_G OPTION=('G', 'K') (G: theta-methode; K1..K3:
-# interactie-integraal; G_IRWIN = (K1^2 + K2^2)(1 - nu^2)/E + K3^2 (1 + nu)
-# /E), "pk" = POST_K1_K2_K3 (extrapolatie van de sprong in de
-# verplaatsing over de lippen; zijn G is ook uit K berekend).
+# Columns of the table (CSV): (header, table, Code-Aster parameter).
+# "g" = CALC_G OPTION=('G', 'K') (G: theta method; K1..K3:
+# interaction integral; G_IRWIN = (K1^2 + K2^2)(1 - nu^2)/E + K3^2 (1 + nu)
+# /E), "pk" = POST_K1_K2_K3 (extrapolation of the jump in the
+# displacement across the lips; its G is also computed from K).
 CSV_COLUMNS = (
     ("crack", None, None), ("point", "g", "NUM_PT"), ("node", "g", "NOEUD"),
     ("x", "g", "COOR_X"), ("y", "g", "COOR_Y"), ("z", "g", "COOR_Z"),
@@ -82,11 +82,11 @@ CSV_COLUMNS = (
 
 
 # ==========================================
-# HERKENNEN
+# RECOGNITION
 # ==========================================
 def _match(name, prefixes):
-    """Achtervoegsel (hoofdletters) als name met een van de prefixen
-    begint, anders None."""
+    """Suffix (upper case) if name starts with one of the prefixes,
+    otherwise None."""
     up = (name or u"").upper()
     for p in prefixes:
         if up.startswith(p):
@@ -96,10 +96,10 @@ def _match(name, prefixes):
 
 def find_cracks(model_data):
     """
-    Scheuren uit de Mecway-selecties: lijst van dicts {"key": achtervoegsel,
-    "front": knoopselectie, "upper": vlakselectie, "lower": vlakselectie of
-    None} (oorspronkelijke Mecway-namen), gesorteerd op achtervoegsel.
-    Onvolledige invoer: ERROR en None. Geen scheur: [].
+    Cracks from the Mecway selections: list of dicts {"key": suffix,
+    "front": node selection, "upper": face selection, "lower": face
+    selection or None} (original Mecway names), sorted by suffix.
+    Incomplete input: ERROR and None. No crack: [].
     """
     nodes = model_data.get("node_groups", {})
     faces = model_data.get("face_selection_faces", {})
@@ -108,8 +108,8 @@ def find_cracks(model_data):
     ok = True
     for kind, prefixes in (("front", FRONT_NAMES), ("upper", UPPER_NAMES),
                            ("lower", LOWER_NAMES)):
-        # Een knoopselectie als lip of een vlakselectie als front is een
-        # vergissing; melden met de juiste soort.
+        # A node selection as lip or a face selection as front is a
+        # mistake; report it with the right kind.
         for name in list(nodes) + list(faces) + list(elems):
             key = _match(name, prefixes)
             if key is None:
@@ -165,7 +165,7 @@ def find_cracks(model_data):
 
 
 def is_requested(model_data):
-    """True als het model scheur-selecties heeft (ook onvolledige)."""
+    """True if the model has crack selections (also incomplete ones)."""
     names = (list(model_data.get("node_groups", {})) +
              list(model_data.get("face_selection_faces", {})))
     return any(_match(n, FRONT_NAMES + UPPER_NAMES + LOWER_NAMES)
@@ -173,8 +173,8 @@ def is_requested(model_data):
 
 
 def active_here():
-    """True als de actieve analyse lineair statisch (MECA_STATIQUE) is:
-    alleen daar bouwt de bridge de breukmechanica."""
+    """True if the active analysis is linear static (MECA_STATIQUE):
+    only there the bridge builds the fracture mechanics."""
     try:
         return get_active_analysis().get("solver_command") == "MECA_STATIQUE"
     except KeyError:
@@ -182,7 +182,7 @@ def active_here():
 
 
 # ==========================================
-# MESH: FRONT ALS SEG-CELLEN
+# MESH: FRONT AS SEG CELLS
 # ==========================================
 def _nid(value):
     return int(str(value).lstrip("N"))
@@ -190,9 +190,9 @@ def _nid(value):
 
 def _chain(edges):
     """
-    Orden de ribben [(a, b, mid)] tot een keten. Returns (geordende
-    ribben, gesloten) of (None, reden) bij een vertakking of meerdere
-    stukken.
+    Order the edges [(a, b, mid)] into a chain. Returns (ordered
+    edges, closed) or (None, reason) for a branch or several
+    pieces.
     """
     adj = {}
     for k, (a, b, _m) in enumerate(edges):
@@ -226,21 +226,21 @@ def _chain(edges):
 
 def front_cells(model_data, conn):
     """
-    SEG2/SEG3-cellen langs het scheurfront per scheur, voor
-    bridge_mesh.write_mesh. Een rib van een volume-element hoort bij het
-    front als zijn twee hoekknopen in SCHEUR_FRONT zitten (bij een
-    kwadratisch element komt de middenknoop mee, ook als die niet
-    geselecteerd is). Vult model_data["cracks"] (met "front_group",
+    SEG2/SEG3 cells along the crack front per crack, for
+    bridge_mesh.write_mesh. An edge of a volume element belongs to the
+    front if its two corner nodes are in SCHEUR_FRONT (for a
+    quadratic element the mid-side node is included, even if it is not
+    selected). Fills model_data["cracks"] (with "front_group",
     "closed", "front_xyz", "quadratic").
 
-    Returns OrderedDict {groep: [(type, [knopen])]} of None bij een fout
-    (ERROR in de log). Geen scheur of geen lineair statische analyse: {}.
+    Returns OrderedDict {group: [(type, [nodes])]} or None on an error
+    (ERROR in the log). No crack or no linear static analysis: {}.
     """
     model_data["cracks"] = []
     if not is_requested(model_data):
         return OrderedDict()
     if not active_here():
-        # generate_AsterSolver_files meldt het (WARNING) voor de analyse
+        # generate_AsterSolver_files reports it (WARNING) for the analysis
         return OrderedDict()
     cracks = find_cracks(model_data)
     if cracks is None:
@@ -314,8 +314,8 @@ def front_cells(model_data, conn):
                       "n_edges": len(chain), "front_eids": front_eids})
         if not _check_lips(model_data, crack, conn, on_line):
             return None
-        log("INFO: Breukmechanica: scheur {0}: front {1} ({2} ribben, "
-            "{3}, {4}), lippen {5}{6}.".format(
+        log("INFO: Fracture mechanics: crack {0}: front {1} ({2} edges, "
+            "{3}, {4}), lips {5}{6}.".format(
                 k + 1, crack["front"], len(chain),
                 "gesloten" if closed else "open",
                 "kwadratisch" if quadratic else "lineair", crack["upper"],
@@ -326,8 +326,8 @@ def front_cells(model_data, conn):
 
 
 def _face_nodes(model_data, conn, fname):
-    """Alle knopen van de vlakken van vlakselectie fname (hoek- en
-    middenknopen, uit de tabel van bridge_mesh), en de soorten elementen."""
+    """All nodes of the faces of face selection fname (corner and
+    mid-side nodes, from the table of bridge_mesh), and the element kinds."""
     import bridge_mesh
     shapes = model_data.get("elem_shapes", {})
     out = set()
@@ -347,9 +347,9 @@ def _face_nodes(model_data, conn, fname):
 
 def _check_lips(model_data, crack, conn, front_nodes):
     """
-    Lippen: vlakken van volume-elementen; bij twee lippen geen gedeelde
-    knopen behalve op het front (anders is de scheur dicht: Disconnect
-    elements vergeten). Fout: ERROR en False.
+    Lips: faces of volume elements; with two lips no shared
+    nodes except on the front (otherwise the crack is closed: Disconnect
+    elements forgotten). Error: ERROR and False.
     """
     upper, kinds_u = _face_nodes(model_data, conn, crack["upper"])
     lower, kinds_l = (_face_nodes(model_data, conn, crack["lower"])
@@ -398,7 +398,7 @@ def _check_lips(model_data, crack, conn, front_nodes):
 
 
 # ==========================================
-# GEOMETRIE VAN HET FRONT
+# GEOMETRY OF THE FRONT
 # ==========================================
 def _sub(a, b):
     return [a[i] - b[i] for i in range(3)]
@@ -419,12 +419,12 @@ def _norm(a):
 
 def front_shape(pts, tol=0.01):
     """
-    Vorm van het front: ("recht", None), ("cirkel", (straal, middelpunt))
-    of ("krom", None). Recht: alle punten binnen tol x lengte van de lijn
-    door de eindpunten (bij een gesloten front nooit). Cirkel: in een vlak
-    en op een straal binnen tol (middelpunt van de omgeschreven cirkel van
-    het eerste, middelste en laatste punt; bij een gesloten front het
-    eerste, een derde en twee derde).
+    Shape of the front: ("recht", None), ("cirkel", (radius, centre))
+    or ("krom", None). Straight: all points within tol x length of the line
+    through the end points (never for a closed front). Circle: in a plane
+    and on one radius within tol (centre of the circumscribed circle of
+    the first, middle and last point; for a closed front the
+    first, one third and two thirds).
     """
     if len(pts) < 3:
         return "recht", None
@@ -440,11 +440,11 @@ def front_shape(pts, tol=0.01):
         if dev <= tol * size:
             return "recht", None
     n = len(pts)
-    if lab <= tol * size:     # gesloten
+    if lab <= tol * size:     # closed
         p1, p2, p3 = pts[0], pts[n // 3], pts[(2 * n) // 3]
     else:
         p1, p2, p3 = pts[0], pts[n // 2], pts[-1]
-    # Omgeschreven cirkel van p1, p2, p3
+    # Circumscribed circle of p1, p2, p3
     u, v = _sub(p2, p1), _sub(p3, p1)
     w = _cross(u, v)
     ww = _dot(w, w)
@@ -465,26 +465,26 @@ def front_shape(pts, tol=0.01):
 # ==========================================
 # .COMM
 # ==========================================
-# Minimum aantal knopen langs het front voor DISCRETISATION='LINEAIRE':
-# met 3 knopen (plaat met 2 elementen over de dikte) oscilleerde G per knoop
-# (11739 / 4696 / 25826 J/m2 waar 9391 verwacht; hex8 en hex20 met
-# NB_POINT_FOND=3), met 5 knopen en meer niet (gemeten bij de bouw,
-# docs/Breukmechanica.md par. 3).
+# Minimum number of nodes along the front for DISCRETISATION='LINEAIRE':
+# with 3 nodes (plate with 2 elements through the thickness) G per node
+# oscillated (11739 / 4696 / 25826 J/m2 where 9391 expected; hex8 and
+# hex20 with NB_POINT_FOND=3), with 5 nodes and more it did not (measured
+# while building, docs/Breukmechanica.md par. 3).
 _MIN_POINTS_LINEAIRE = 5
 
 
 def _n_points(crack, line_quad=False):
-    """Aantal knopen langs het front (hoek- en middenknopen; met LINE_QUAD
-    krijgt elke rib een middenknoop)."""
+    """Number of nodes along the front (corner and mid-side nodes; with
+    LINE_QUAD every edge gets a mid-side node)."""
     quad = crack.get("quadratic") or line_quad
     n = crack.get("n_edges", 0) * (2 if quad else 1)
     return n if crack.get("closed") else n + 1
 
 
 def _smoothing(analysis, crack, line_quad=False):
-    """THETA-tekst voor DISCRETISATION ("" = LINEAIRE, de standaard van
-    CALC_G, catalogus calc_g.py), met een WARNING bij te weinig punten of
-    een te hoge graad. None bij een onbekende keuze (ERROR)."""
+    """THETA text for DISCRETISATION ("" = LINEAIRE, the default of
+    CALC_G, catalogue calc_g.py), with a WARNING for too few points or
+    too high a degree. None for an unknown choice (ERROR)."""
     choice = str(analysis.get("fracture_smoothing", "LINEAIRE")).upper()
     npts = _n_points(crack, line_quad)
     if choice == "LINEAIRE":
@@ -529,8 +529,8 @@ def _smoothing(analysis, crack, line_quad=False):
 
 
 def _r_bounds(analysis):
-    """(R_INF, R_SUP) in m uit de instellingen, of None (automatisch).
-    Onzinnige combinatie: ERROR en False."""
+    """(R_INF, R_SUP) in m from the settings, or None (automatic).
+    Nonsensical combination: ERROR and False."""
     r_inf = float(analysis.get("fracture_r_inf", 0.0) or 0.0)
     r_sup = float(analysis.get("fracture_r_sup", 0.0) or 0.0)
     if r_inf == 0.0 and r_sup == 0.0:
@@ -550,9 +550,9 @@ def _py(text):
     return "'{0}'".format(text.replace("\\", "\\\\").replace("'", "\\'"))
 
 
-# CSV-schrijver in de job (Python 3 van Code-Aster). EXTR_TABLE().values()
-# geeft per parameter een lijst (None waar leeg); de rijen van CALC_G en
-# POST_K1_K2_K3 worden op knoopnaam (NOEUD) gekoppeld.
+# CSV writer in the job (Python 3 of Code-Aster). EXTR_TABLE().values()
+# gives a list per parameter (None where empty); the rows of CALC_G and
+# POST_K1_K2_K3 are joined on node name (NOEUD).
 _CSV_WRITER = '''
 def _bridge_scheur_csv(path, cracks, columns):
     import io
@@ -589,16 +589,16 @@ def _bridge_scheur_csv(path, cracks, columns):
 
 def _material_block(model_data, concepts, excit_clause, cara_ref):
     """
-    Eigen materiaalveld en resultaat voor CALC_G/POST_K1_K2_K3. Waarom:
-    CALC_G rekent ook op de randcellen (lippen, belaste vlakken) in het
-    theta-gebied en vraagt daar een materiaal (<EXCEPTION> CALCUL_20 "Le
+    Own material field and result for CALC_G/POST_K1_K2_K3. Why:
+    CALC_G also computes on the boundary cells (lips, loaded faces) in the
+    theta region and needs a material there (<EXCEPTION> CALCUL_20 "Le
     matériau est nécessaire sur la maille", option CALC_K_G, MECA_FACE8;
-    gezien bij de bouw), terwijl de bridge het materiaal per elset geeft.
-    Hier krijgt eerst alles (TOUT='OUI') het materiaal van de elementen aan
-    het front, daarna elke elset zijn eigen materiaal (later wint); de
-    verplaatsingen en lasten zijn die van res (CREA_RESU AFFE met EXCIT,
-    catalogus crea_resu.py b_evol_elas). Returns (tekst, materiaalnamen aan
-    het front).
+    seen while building), while the bridge assigns the material per elset.
+    Here first everything (TOUT='OUI') gets the material of the elements at
+    the front, then every elset its own material (the later one wins); the
+    displacements and loads are those of res (CREA_RESU AFFE with EXCIT,
+    catalogue crea_resu.py b_evol_elas). Returns (text, material names at
+    the front).
     """
     elem_elset = model_data.get("_elem_elset", {})
     front_mats = []
@@ -636,13 +636,14 @@ def _material_block(model_data, concepts, excit_clause, cara_ref):
 def fracture_block(model_data, analysis, work_dir, concepts=None,
                    excit_clause="", cara_ref=""):
     """
-    .comm-code na MECA_STATIQUE en de resultaatexport: per scheur
-    DEFI_FOND_FISS, CALC_G en POST_K1_K2_K3 op een eigen resultaat
-    (_material_block), de tabellen in de .mess en de CSV (csv_path). Na de
-    export, zodat een fout hier de resultaten in Mecway niet tegenhoudt.
-    concepts: materiaalnaam -> DEFI_MATERIAU-concept (MAT_n); excit_clause
-    en cara_ref zoals in MECA_STATIQUE. "" zonder scheur; None bij een
-    fout.
+    .comm code after MECA_STATIQUE and the result export: per crack
+    DEFI_FOND_FISS, CALC_G and POST_K1_K2_K3 on a separate result
+    (_material_block), the tables in the .mess and the CSV (csv_path).
+    After the export, so that an error here does not block the results
+    in Mecway.
+    concepts: material name -> DEFI_MATERIAU concept (MAT_n); excit_clause
+    and cara_ref as in MECA_STATIQUE. "" without a crack; None on an
+    error.
     """
     cracks = model_data.get("cracks") or []
     if not cracks:
@@ -672,8 +673,8 @@ def fracture_block(model_data, analysis, work_dir, concepts=None,
     theta_r = ("" if bounds is None else
                ", R_INF={0!r}, R_SUP={1!r}".format(bounds[0], bounds[1]))
     lines = ["", "# " + "=" * 53,
-             "# BREUKMECHANICA (bridge: SCHEUR_-selecties, bridge_fracture.py,",
-             "# docs/Breukmechanica.md): K en G langs het scheurfront",
+             "# FRACTURE MECHANICS (bridge: SCHEUR_ selections, bridge_fracture.py,",
+             "# docs/Breukmechanica.md): K and G along the crack front",
              "# " + "=" * 53, mat_text]
     entries = []
     for k, c in enumerate(cracks):
@@ -686,9 +687,9 @@ def fracture_block(model_data, analysis, work_dir, concepts=None,
         shape, info = front_shape(c["front_xyz"])
         form = ""
         if shape == "cirkel" and _disc_crack(model_data, c, info):
-            # Krommingscorrectie van de interactie-integraal (calc_g.py
-            # b_courbure; forma07a zonder: K1 +5,6 %, met: +0,1 %, gemeten
-            # bij de bouw)
+            # Curvature correction of the interaction integral (calc_g.py
+            # b_courbure; forma07a without: K1 +5.6 %, with: +0.1 %, measured
+            # while building)
             form = ", FORM_FISS='CERCLE', RAYON={0!r}".format(info[0])
         c["front_shape"] = shape
         if shape == "krom" or c.get("front_shape_note") == "cirkel_buiten":
@@ -703,7 +704,7 @@ def fracture_block(model_data, analysis, work_dir, concepts=None,
                    "correction and can be a few percent off. Use G (CALC_G) "
                    "or K from POST_K1_K2_K3.").format(c["front"]))
         lines += [
-            "# Scheur {0}: front {1} ({2}), lippen {3}{4}".format(
+            "# Crack {0}: front {1} ({2}), lips {3}{4}".format(
                 i, c["front"], shape, c["upper"],
                 " / " + c["lower"] if lower else " (symmetrie)"),
             "fond_{0} = DEFI_FOND_FISS(".format(i),
@@ -725,8 +726,8 @@ def fracture_block(model_data, analysis, work_dir, concepts=None,
                 i, theta_r, smooth, form),
             ")",
             "IMPR_TABLE(TABLE=scheur_g_{0}, UNITE=6)".format(i),
-            "# POST_K1_K2_K3 (extrapolatie van de lipverplaatsingen) als",
-            "# controle; een fout hier stopt de tabel van CALC_G niet",
+            "# POST_K1_K2_K3 (extrapolation of the lip displacements) as a",
+            "# check; an error here does not stop the table of CALC_G",
             "try:",
             "    scheur_pk_{0} = POST_K1_K2_K3(RESULTAT=res_fiss, "
             "FOND_FISS=fond_{0})".format(i),
@@ -746,9 +747,9 @@ def fracture_block(model_data, analysis, work_dir, concepts=None,
 
 
 def _disc_crack(model_data, crack, info):
-    """True als de lip binnen de cirkel van het front ligt (een
-    schijfvormige scheur: FORM_FISS='CERCLE' van CALC_G). Ligt de lip
-    erbuiten (bijv. een omtrekscheur van buiten), dan geen correctie
+    """True if the lip lies inside the circle of the front (a
+    penny-shaped crack: FORM_FISS='CERCLE' of CALC_G). If the lip lies
+    outside it (e.g. a circumferential crack from outside), no correction
     (WARNING in report via front_shape 'cirkel_buiten')."""
     radius, centre = info
     nodes = model_data.get("mesh_nodes", {})
@@ -767,17 +768,17 @@ def _disc_crack(model_data, crack, info):
 
 
 def csv_path(work_dir=None):
-    """Pad van de tabel van deze run (<model>_<run_id>_scheur.csv)."""
+    """Path of the table of this run (<model>_<run_id>_scheur.csv)."""
     return os.path.join(work_dir or work_dir_path(),
                         run_name(CSV_SUFFIX))
 
 
 # ==========================================
-# NA DE RUN: TABEL LEZEN EN MELDEN
+# AFTER THE RUN: READING THE TABLE AND REPORTING
 # ==========================================
 def read_csv(path):
-    """Rijen van de tabel als dicts (getallen als float; leeg = None), of
-    [] als het bestand ontbreekt."""
+    """Rows of the table as dicts (numbers as float; empty = None), or
+    [] if the file is missing."""
     if not path or not os.path.isfile(path):
         return []
     with io.open(path, encoding="utf-8") as f:
@@ -812,7 +813,7 @@ def _fmt_range(rg, digits=4):
     if rg is None:
         return "-"
     fmt = "%." + str(digits) + "g"
-    # Gelijk binnen de getoonde cijfers: een waarde
+    # Equal within the digits shown: a value
     if fmt % rg[0] == fmt % rg[1]:
         return fmt % rg[0]
     return (fmt % rg[0]) + " .. " + (fmt % rg[1])
@@ -820,11 +821,11 @@ def _fmt_range(rg, digits=4):
 
 def report(work_dir=None, mess_path=None):
     """
-    Samenvatting van de tabel van deze run voor de log en het statusvak:
-    lijst teksten (leeg zonder scheur). WARNING's bij negatieve K1,
-    ontbrekende POST_K1_K2_K3 en een groot verschil tussen K uit CALC_G en
-    uit POST_K1_K2_K3 of tussen G en G_IRWIN. Waarden: Pa.sqrt(m) en J/m2
-    (SI); in de tekst MPa.sqrt(m).
+    Summary of the table of this run for the log and the status box:
+    list of texts (empty without a crack). WARNINGs for negative K1,
+    missing POST_K1_K2_K3 and a large difference between K from CALC_G and
+    from POST_K1_K2_K3 or between G and G_IRWIN. Values: Pa.sqrt(m) and J/m2
+    (SI); in the text MPa.sqrt(m).
     """
     path = csv_path(work_dir)
     rows = read_csv(path)
@@ -876,8 +877,8 @@ def _fmt_abs(rows, key):
     return "%.3g" % max(vals) if vals else "-"
 
 
-# Grenzen voor de meldingen (keuze van de bridge; verificatie
-# docs/Verificatie.md BR: op een goed mesh < 2 %)
+# Limits for the messages (choice of the bridge; verification
+# docs/Verificatie.md BR: on a good mesh < 2 %)
 _DIFF_WARN = 0.05
 
 
@@ -909,8 +910,8 @@ def _warnings(rows, key, postk_errors):
              isinstance(r.get("K1_POST_K"), float)]
     ref = max([abs(a) for a, _b in pairs] + [0.0])
     if pairs and ref > 0.0:
-        # Alleen binnenpunten: aan een vrij oppervlak verschillen de
-        # methoden altijd (randeffect, docs/Breukmechanica.md)
+        # Only interior points: at a free surface the methods always
+        # differ (edge effect, docs/Breukmechanica.md)
         inner = pairs[1:-1] if len(pairs) > 2 else pairs
         diff = max(abs(a - b) for a, b in inner) / ref
         if diff > _DIFF_WARN:
