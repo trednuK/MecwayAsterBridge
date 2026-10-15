@@ -1,9 +1,2 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-
-# Ontwikkelbestanden: niet in een export (git archive) van de publieke versie
-STAPPENPLAN.md export-ignore
-AGENTS.md export-ignore
-CLAUDE.md export-ignore
-.claude export-ignore
-.claude/** export-ignore

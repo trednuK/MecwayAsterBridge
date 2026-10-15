@@ -27,3 +27,7 @@ TestFiles/Verificatie/modellen/WE-10b.liml
 # Uitvoer van run_verificatie.py --mecway-opslaan (alleen de vergelijking in de repo)
 TestFiles/Verificatie/resultaten/mecway/*
 !TestFiles/Verificatie/resultaten/mecway/vergelijking.md
+
+# Lokale, pc-specifieke Claude Code-instellingen en -afspraken
+CLAUDE.local.md
+.claude/settings.local.json
