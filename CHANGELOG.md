@@ -37,8 +37,8 @@
 - **Node temperature** (`temperature3`, also after *Transfer temperatures from solution*) now
   gives thermal strain in static, nonlinear static, modal and buckling analyses, like
   *Temperature*; nodes the bridge adds (`LINE_QUAD`, `COQUE_3D` centre node) get the
-  interpolated temperature. Verification LS-08a–d. KNOWN_BUGS 89 fixed; 94 and 95
-  recorded (no thermal stress in dynamics, Mecway expands shells less).
+  interpolated temperature. Verification LS-08a–d. KNOWN_BUGS 89 fixed; 95 recorded
+  (Mecway expands shells less).
 - **Temperature in time** (`temperature2` with a time table or a formula in t) now gives
   thermal strain in nonlinear static (L30) and nonlinear dynamic response (D31): an
   `EVOL_THER` from the reference temperature, following the table like Mecway (with CCX).
@@ -51,8 +51,6 @@
   now in one load, overlapping sources summed per part of the mesh; a weld source next to
   a formula/table source no longer gives a warning (KNOWN_BUGS 70 solved). Verification
   TH-40–42.
-- KNOWN_BUGS 88–90 recorded (bonded contact in thermal analyses, node temperature in
-  mechanical analyses, quadratic shell as bonded master).
 - **Version check** (warning only): the log shows the Mecway version (from the `.liml`) and the
   Code-Aster version (launcher path, then the `.mess`); an untested version gives a WARNING. New page
   *After an update of Mecway or Code-Aster* (`docs/en/After_an_update.md`).

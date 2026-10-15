@@ -432,8 +432,8 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    zijn fixed, pinnedsupport, frictionless, displacement, noderotation, velocity
    (dynamica), force, moment, surfacepressure, gravity, traction, linepressure,
    hydrostaticpressure, elasticsupport, compressiononly, symmetry, centrifugal,
-   mass2, rotationalinertia, constraintequation, flexiblejoint, rayleighdamping,
-   temperature2 met
+   mass2, rotationalinertia, constraintequation, flexiblejoint, offset (element
+   offset), rayleighdamping, temperature2 en temperature3 met
    thermalstress, nodesurfacecoupling (rbe3/rigidbody), contact2 (unilateraal en
    verlijmd, geen self-contact), materialen Gap/Damper/TensionOnly en een
    beginsnelheid; OpenRadioss-materiaal PLAS_TAB (`bridge_radioss.py`); in de
@@ -475,7 +475,9 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    (`forcedconvection`, `massflowrate`; CoolantChannel.liml stopt met "temperatuur
    onbepaald"), cavity-straling, formules voor convectie/straling op een schaalvlak,
    een formule in x, y, z voor een totale `heatflow` of als begintemperatuur, formules
-   in materiaaleigenschappen, contact en koppelingen in een thermische analyse. Een
+   in materiaaleigenschappen, unilateraal contact en koppelingen (node-surface coupling)
+   in een thermische analyse (verlijmd contact wel: docs/Thermisch.md par. 3; niet in
+   een model met volumes en schalen samen). Een
    `temperature2` met `starttime`/`endtime` wordt de hele analyse opgelegd. (Formules
    in de overige thermische lasten en temperatuurafhankelijke λ/c worden wel vertaald,
    docs/Thermisch.md par. 3.)

@@ -6,7 +6,7 @@
 """
 Balkorientatie (Mecway orientationvx/vy/vz + angle per <elem>) in modaal
 (MO-20 ... MO-29), lineair statisch (LS-70 ... LS-78) en knik (BU-20 ...
-BU-25). Toelichting: docs/Verificatie.md (par. Balkorientatie).
+BU-24). Toelichting: docs/Verificatie.md (par. Balkorientatie).
 
 Mecway-regel (Mecway-manual v33 par. 7.5): U = balkas (knoop 1 -> 2); V =
 de orientatievector geprojecteerd loodrecht op U en daarna rechtsom om U
@@ -465,7 +465,7 @@ TESTS.append(Case(
 
 
 # ==================================================================
-# KNIK (BU-20 ... BU-25)
+# KNIK (BU-20 ... BU-24)
 # ==================================================================
 P = 1000.0                          # N drukkracht op de tip
 P_V = math.pi ** 2 * E * I_V / (4 * L ** 2)   # ingeklemd-vrij, zwak

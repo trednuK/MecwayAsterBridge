@@ -48,6 +48,13 @@ What to look at:
 - Compare the counts per group with the baseline in [`Verification.md`](Verification.md) §3.
 - The official Code-Aster tests: all OK, no NOOK.
 
+When you then update the documentation (tested versions, baseline), run
+`python TestFiles/Tools/check_docs.py` from the main folder: it checks links and anchors,
+references to `KNOWN_BUGS.md` and verification cases, the defaults in
+[`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.md) and the tooltips
+against `CONFIG_BRIDGE`, and whether the Dutch and English pages have the same structure
+(`--parity`: also the numbers per section). Expected: 0 findings.
+
 ## 3. What typically breaks
 
 **Mecway**

@@ -46,6 +46,13 @@ Waar je naar kijkt:
 - Vergelijk de aantallen per groep met de basislijn in [`Verificatie.md`](Verificatie.md) §3.
 - De officiële Code-Aster-tests: alle OK, geen NOOK.
 
+Werk je daarna de documentatie bij (geteste versies, basislijn), draai dan vanuit de hoofdmap
+`python TestFiles/Tools/check_docs.py`: het controleert links en ankers, verwijzingen naar
+`KNOWN_BUGS.md` en verificatiecases, de standaardwaarden in
+[`Standaardinstellingen_en_aannames.md`](Standaardinstellingen_en_aannames.md) en de tooltips
+tegen `CONFIG_BRIDGE`, en of de Nederlandse en Engelse pagina's dezelfde opbouw hebben
+(`--parity`: ook de getallen per sectie). Verwacht: 0 bevindingen.
+
 ## 3. Wat er typisch breekt
 
 **Mecway**
