@@ -4,26 +4,26 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_glossary.py
-# Uitleg voor het hoofdvenster (bridge_gui): een tooltip per instelling
-# (SETTING_HELP) en een woordenlijst met de codes en Code-Aster-namen die
-# op het scherm staan (GLOSSARY, venster "Uitleg..."). Alleen tekst, in
-# beide talen (nl, en); de inhoud volgt de docs (Handleiding.md,
+# Explanations for the main window (bridge_gui): a tooltip per setting
+# (SETTING_HELP) and a glossary with the codes and Code-Aster names that
+# appear on screen (GLOSSARY, window "Uitleg..."). Text only, in
+# both languages (nl, en); the content follows the docs (Handleiding.md,
 # Instellingen_contact_en_nietlineair.md, Bezwijken.md, Modaal_en_knik.md).
 #
-# Uitbreiden: een nieuwe instelling krijgt een regel in SETTING_HELP; een
-# nieuwe keuzewaarde of code een regel in GLOSSARY. Een keuzelijst toont in
-# zijn tooltip automatisch de uitleg van de opties die in GLOSSARY staan.
+# Extending: a new setting gets a line in SETTING_HELP; a
+# new choice value or code a line in GLOSSARY. A choice list shows in
+# its tooltip automatically the explanation of the options in GLOSSARY.
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import textwrap
 from collections import OrderedDict
 
-# Breedte van een tooltipregel (tekens): een WinForms-tooltip breekt zelf
-# niet af, dus lange regels worden schermbreed.
+# Width of a tooltip line (characters): a WinForms tooltip does not wrap
+# by itself, so long lines become as wide as the screen.
 _TIP_WIDTH = 80
 
-# Categorieen van de woordenlijst, in deze volgorde getoond.
+# Categories of the glossary, shown in this order.
 CATEGORIES = [
     ("mecway", (u"Mecway-analysetypen", u"Mecway analysis types")),
     ("analysis", (u"Analyses van de bridge", u"Bridge analyses")),
@@ -41,9 +41,9 @@ CATEGORIES = [
     ("other", (u"Overig", u"Other")),
 ]
 
-# term -> (categorie, uitleg nl, uitleg en)
+# term -> (category, explanation nl, explanation en)
 GLOSSARY = OrderedDict([
-    # --- Mecway-analysetypen (<analysis type="...">) ---
+    # --- Mecway analysis types (<analysis type="...">) ---
     ("S30", ("mecway", u"Mecway: statisch 3D (lineair). Bij 'auto' -> "
              u"lin_static_3d.",
              u"Mecway: static 3D (linear). With 'auto' -> lin_static_3d.")),
@@ -97,7 +97,7 @@ GLOSSARY = OrderedDict([
              u"acoustic_modes_3d, with a source (SOURCE_ selection or "
              u"#ASTER-BRON) acoustic_harm_3d. A20 (2D) is not "
              u"translated.")),
-    # --- analyses van de bridge ---
+    # --- analyses of the bridge ---
     ("auto", ("analysis", u"De analyse volgt het analysetype van het "
               u"Mecway-model (S30, L30, D30, D31, T30, T31, V30, B30, A30). Andere "
               u"typen stoppen de bridge met een melding.",
@@ -260,7 +260,7 @@ GLOSSARY = OrderedDict([
                                u"microphones (MICROPHONE_). Choose it "
                                u"yourself (docs/en/Acoustics.md section "
                                u"7).")),
-    # --- Code-Aster-commando's ---
+    # --- Code-Aster commands ---
     ("MECA_STATIQUE", ("command", u"Code-Aster: lineaire statische "
                        u"berekening (een stap).",
                        u"Code-Aster: linear static analysis (one step).")),
@@ -448,7 +448,7 @@ GLOSSARY = OrderedDict([
                        u"the lips (extrapolated to the front); in the bridge "
                        u"a check on CALC_G, accurate with quadratic "
                        u"elements.")),
-    # --- elementtypen ---
+    # --- element types ---
     ("3D", ("element", u"Volume-element, volledig geintegreerd. Hex8 is "
             u"stijver dan in Mecway (geen incompatibele modes).",
             u"Solid element, fully integrated. Hex8 is stiffer than in "
@@ -540,7 +540,7 @@ GLOSSARY = OrderedDict([
                     u"versteviging.",
                     u"Large plastic deformations (alternative to GDEF_LOG); "
                     u"not with kinematic hardening.")),
-    # --- materiaalwetten ---
+    # --- material laws ---
     ("ELAS", ("material", u"Lineair elastisch.", u"Linear elastic.")),
     ("VMIS_ISOT_TRAC", ("material", u"Von Mises-plasticiteit, isotrope "
                         u"versteviging volgens een spanning-rekcurve "
@@ -571,8 +571,8 @@ GLOSSARY = OrderedDict([
                    u"van.",
                    u"Failure limit (plastic strain) from PLAS_TAB; the bridge "
                    u"turns it into element failure.")),
-    # Een tweede 'auto' (rekdefinitie) heeft een eigen sleutel: een
-    # OrderedDict houdt per sleutel maar een waarde.
+    # A second 'auto' (strain definition) has its own key: an
+    # OrderedDict keeps only one value per key.
     ("auto (curve)", ("other", u"Rekdefinitie hardingscurve: afgeleid uit het "
               u"eerste punt ((0,0) of rek > 0 -> totaal, zoals Mecway; "
               u"(0, spanning) -> plastisch, met een waarschuwing).",
@@ -593,7 +593,7 @@ GLOSSARY = OrderedDict([
                u"rek (elastisch + plastisch).",
                u"Strain definition of the hardening curve: the strain is "
                u"the total strain (elastic + plastic).")),
-    # --- tijdschema's ---
+    # --- time schemes ---
     ("HHT", ("scheme", u"Impliciet schema met instelbare numerieke demping "
              u"(HHT ALPHA, -0.3 .. 0); dempt hoge frequenties.",
              u"Implicit scheme with adjustable numerical damping (HHT ALPHA, "
@@ -614,7 +614,7 @@ GLOSSARY = OrderedDict([
                u"Thermal time scheme (theta method): 0 = explicit, 0.5 = "
                u"Crank-Nicolson, 1 = implicit Euler; default 0.57 "
                u"(Code-Aster).")),
-    # --- oplosser en convergentie ---
+    # --- solver and convergence ---
     ("MUMPS", ("solver", u"Directe lineaire oplosser van Code-Aster "
                u"(factorisatie van de matrix; robuust, standaard).",
                u"Direct linear solver of Code-Aster (factorization of the "
@@ -715,7 +715,7 @@ GLOSSARY = OrderedDict([
     ("ncpus", ("solver", u"Aantal processorkernen (threads) dat Code-Aster "
                u"gebruikt.",
                u"Number of processor cores (threads) Code-Aster uses.")),
-    # --- bestanden en resultaten ---
+    # --- files and results ---
     ("liml", ("file", u"Resultaatroute: Code-Aster schrijft Mecway's eigen "
               u"resultaten; de bridge zet ze in de .liml (alle "
               u"tijdstappen of modes). Standaard.",
@@ -749,8 +749,8 @@ GLOSSARY = OrderedDict([
                      u"(optioneel, kan groot zijn).",
                      u"Result file for ParaView/Salome (optional, can be "
                      u"large).")),
-    # Resultaatvelden (instelling 'fields'; bridge_from_aster.
-    # RESULT_FIELD_SPECS): namen in de keuzelijst, Mecway-variabelen erbij.
+    # Result fields (setting 'fields'; bridge_from_aster.
+    # RESULT_FIELD_SPECS): names in the choice list, with Mecway variables.
     ("displacements", ("file", u"Resultaatveld: verplaatsingen (displx/y/z) "
                        u"en bij balken, schalen en discreten rotaties "
                        u"(rotx/y/z). Modaal en knik: de vormen.",
@@ -860,7 +860,7 @@ GLOSSARY = OrderedDict([
                        u"installatiemap (bin).",
                        u"Code-Aster's launcher in the installation folder "
                        u"(bin).")),
-    # --- overig ---
+    # --- other ---
     ("#ASTER", ("other", u"Regels in Mecway's custom model definition met "
                 u"eigen Code-Aster-invoer (docs/ASTER_regels_voorbeelden.md).",
                 u"Lines in Mecway's custom model definition with your own "
@@ -923,7 +923,7 @@ GLOSSARY = OrderedDict([
              u"must be smaller.")),
 ])
 
-# Instelling -> uitleg (tooltip). Sleutels zoals in CONFIG_BRIDGE.
+# Setting -> explanation (tooltip). Keys as in CONFIG_BRIDGE.
 SETTING_HELP = {
     "language": (u"Taal van het scherm, de meldingen, de WARNING/ERROR-"
                  u"regels in de log en de .mess en het convergentiescherm. "
@@ -1695,8 +1695,8 @@ SETTING_HELP = {
 }
 
 
-# (instelling, optie) -> term in GLOSSARY, voor opties met een algemene
-# naam die per instelling iets anders betekenen.
+# (setting, option) -> term in GLOSSARY, for options with a general
+# name that mean something different per setting.
 _OPTION_TERMS = {
     ("plastic_strain_definition", "auto"): "auto (curve)",
     ("configuration", "auto"): "auto (configuration)",
@@ -1707,9 +1707,9 @@ _OPTION_TERMS = {
 
 def setting_tooltip(key, options, tr):
     """
-    Tooltiptekst voor een instelling: de uitleg uit SETTING_HELP en, bij
-    een keuzelijst, per optie de uitleg uit GLOSSARY. tr(nl, en) kiest de
-    taal. Lege tekst als er niets bekend is.
+    Tooltip text for a setting: the explanation from SETTING_HELP and, for
+    a choice list, per option the explanation from GLOSSARY. tr(nl, en)
+    chooses the language. Empty text if nothing is known.
     """
     lines = []
     if key in SETTING_HELP:
@@ -1717,11 +1717,11 @@ def setting_tooltip(key, options, tr):
     opts = []
     for opt in options or []:
         opt = u"{0}".format(opt)
-        # Een optie die per instelling iets anders betekent (bijv. 'auto'
-        # bij de rekdefinitie en bij de analysekeuze) heeft een eigen term.
+        # An option that means something different per setting (e.g.
+        # 'auto' for strain definition and analysis choice) has its own term.
         entry = GLOSSARY.get(_OPTION_TERMS.get((key, opt), opt))
         if entry:
-            # opsomming met inspringing onder de optienaam
+            # list with indentation under the option name
             opts.extend(textwrap.wrap(
                 u"{0}: {1}".format(opt, tr(entry[1], entry[2])),
                 _TIP_WIDTH, initial_indent=u"\u2022 ",
@@ -1735,8 +1735,8 @@ def setting_tooltip(key, options, tr):
 
 
 def glossary_items(tr):
-    """[(categorietitel, [(term, uitleg)])] in de volgorde van
-    CATEGORIES, in de taal van tr."""
+    """[(category title, [(term, explanation)])] in the order of
+    CATEGORIES, in the language of tr."""
     out = []
     for cat, title in CATEGORIES:
         items = [(term, tr(nl, en)) for term, (c, nl, en)
