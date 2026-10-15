@@ -4,32 +4,32 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_mesh.py
-# Verantwoordelijkheid: het mesh rechtstreeks uit de .liml (model_data van
-# bridge_from_liml.py) schrijven in het ASTER-meshformaat (LIRE_MAILLAGE
-# FORMAT='ASTER') en model_data daarop afstemmen. Er is geen Gmsh-export
-# meer nodig.
+# Responsibility: write the mesh directly from the .liml (model_data of
+# bridge_from_liml.py) in the ASTER mesh format (LIRE_MAILLAGE
+# FORMAT='ASTER') and adjust model_data to it. A Gmsh export is no
+# longer needed.
 #
-# Waarom niet meer via Gmsh (nagelopen met Code-Aster 17.4):
-#   - LIRE_MAILLAGE FORMAT='GMSH' zet het bestand eerst om met PRE_GMSH; die
-#     kapt groepsnamen af op 8 tekens ('Sixteen_chars_16' -> 'Sixteen_').
-#     Het ASTER-formaat leest namen tot 24 tekens (25 gaf MODELISA7_82).
-#   - In Gmsh hoort een element bij een groep; hier mag een element in
-#     meerdere groepen (een vlak in twee selecties, balkorientatie).
-#   - Knoopgroepen kunnen direct in het mesh.
+# Why no longer via Gmsh (checked with Code-Aster 17.4):
+#   - LIRE_MAILLAGE FORMAT='GMSH' first converts the file with PRE_GMSH; that
+#     truncates group names to 8 characters ('Sixteen_chars_16' -> 'Sixteen_').
+#     The ASTER format reads names up to 24 characters (25 gave MODELISA7_82).
+#   - In Gmsh an element belongs to one group; here an element may be in
+#     several groups (a face in two selections, beam orientation).
+#   - Node groups can go directly into the mesh.
 #
-# Groepen: elke component (elset) wordt GROUP_MA, elke nodeselection
-# GROUP_NO, elke faceselection GROUP_MA van randelementen (of van de
-# schaalelementen zelf), elke elementselection GROUP_MA. De namen blijven
-# die van Mecway; alleen namen die Code-Aster niet accepteert worden
-# aangepast (zie _aster_name).
+# Groups: every component (elset) becomes GROUP_MA, every nodeselection
+# GROUP_NO, every faceselection GROUP_MA of boundary elements (or of the
+# shell elements themselves), every elementselection GROUP_MA. The names stay
+# those of Mecway; only names that Code-Aster does not accept are
+# adjusted (see _aster_name).
 #
-# Knoopvolgorde per elementtype (_ASTER_TYPES): voor 3D gelijk aan Mecway
-# (hoekknopen, dan middenknopen); afgeleid uit de geometrie van Mecway-
-# voorbeeldmodellen (middenknoop = midden van welke ribbe) en vergeleken
-# met de volgorde die PRE_GMSH schrijft. 1D/2D-elementen staan in de .liml
-# om en om (hoek, midden, hoek, ...); Code-Aster wil eerst de hoeken.
+# Node order per element type (_ASTER_TYPES): for 3D equal to Mecway
+# (corner nodes, then mid nodes); derived from the geometry of Mecway
+# example models (mid node = middle of which edge) and compared
+# with the order PRE_GMSH writes. 1D/2D elements are stored in the .liml
+# alternately (corner, mid, corner, ...); Code-Aster wants the corners first.
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import math
 import re
@@ -39,14 +39,14 @@ from bridge_utils import log, tr, error_estimator_requested
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, is_position
 
 
-# Maximale groepsnaamlengte in Code-Aster (ASTER-formaat, nagelopen).
+# Maximum group name length in Code-Aster (ASTER format, checked).
 ASTER_NAME_MAX = 24
 
-# Namen van de groepen voor losse knopen.
-POI1_GROUP_T = "BRPOI1T"    # DIS_T  (alleen translaties)
-POI1_GROUP_R = "BRPOI1R"    # DIS_TR (translaties + rotaties)
-# Randelementen op de vrije (onbelaste, niet opgelegde) vlakken van
-# volume-elementen, voor de foutschatter (_free_faces, bridge_to_aster
+# Names of the groups for free nodes.
+POI1_GROUP_T = "BRPOI1T"    # DIS_T  (translations only)
+POI1_GROUP_R = "BRPOI1R"    # DIS_TR (translations + rotations)
+# Boundary elements on the free (unloaded, unconstrained) faces of
+# volume elements, for the error estimator (_free_faces, bridge_to_aster
 # _error_estimator_block).
 ERR_FREE_GROUP = "BRERRVRIJ"
 
@@ -55,12 +55,12 @@ _SOLID_SHAPES = frozenset({"hex8", "hex20", "tet4", "tet10", "pyr5",
 _SHELL_SHAPES = frozenset({"tri3", "tri6", "quad4", "quad8"})
 _BEAM_SHAPES = frozenset({"line2", "line3"})
 
-# Mecway-vorm -> (Code-Aster-type, Mecway-index per Code-Aster-positie).
-# pyr13 komt in geen enkel Mecway-voorbeeld voor, wel in de overgangen van
-# Mecway's refine_x2 op hex20 (stap S7): daar liggen de middenknopen in deze
-# volgorde (hoeken + middens zoals Code-Aster; nagelopen op de positie van
-# elke middenknoop, tests_adaptief AD-02). Code-Aster rekent die meshes
-# zonder alarm.
+# Mecway shape -> (Code-Aster type, Mecway index per Code-Aster position).
+# pyr13 occurs in no Mecway example, but it does in the transitions of
+# Mecway's refine_x2 on hex20 (step S7): there the mid nodes are in this
+# order (corners + mids as in Code-Aster; checked on the position of
+# every mid node, tests_adaptief AD-02). Code-Aster solves those meshes
+# without alarm.
 _ASTER_TYPES = {
     "line2":   ("SEG2",    [0, 1]),
     "line3":   ("SEG3",    [0, 2, 1]),
@@ -77,25 +77,25 @@ _ASTER_TYPES = {
     "hex8":    ("HEXA8",   list(range(8))),
     "hex20":   ("HEXA20",  list(range(20))),
 }
-# Modelisaties waarvoor een line3-element in twee SEG2-cellen wordt
-# gesplitst. POU_D_E bestaat alleen op SEG2 (catalogus
-# phenomenons_modelisations.py, zie bridge_from_liml STAP 2b); voor POU_D_T
-# aangenomen (NIET geverifieerd), een kwadratisch balkelement kent de bridge
-# in Code-Aster niet. Twee Euler-cellen interpoleren elk kubisch, dus
-# minstens zo goed als een kwadratische balk (Mecway's line3-balk rekent
-# alleen met CCX, B32R; verificatie LS-50). Met POU_D_T gerekend: LS-51e
-# +0,09 % (afschuiving), Code-Aster 17.4.
-# De middenknoop wordt een gewone knoop met 6 vrijheidsgraden.
+# Modelisations for which a line3 element is split into two SEG2
+# cells. POU_D_E exists only on SEG2 (catalogue
+# phenomenons_modelisations.py, see bridge_from_liml STEP 2b); for POU_D_T
+# assumed (NOT verified), the bridge knows no quadratic beam element
+# in Code-Aster. Two Euler cells each interpolate cubically, so
+# at least as good as a quadratic beam (Mecway's line3 beam only solves
+# with CCX, B32R; verification LS-50). Solved with POU_D_T: LS-51e
+# +0.09 % (shear), Code-Aster 17.4.
+# The mid node becomes an ordinary node with 6 degrees of freedom.
 _LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T")
-# Groep van de POI1-cellen (DIS_TR, stijfheid 0) op knopen van een flexible
-# joint zonder ander element met rotaties (_flexible_joints)
+# Group of the POI1 cells (DIS_TR, stiffness 0) on nodes of a flexible
+# joint without another element with rotations (_flexible_joints)
 JOINT_GROUP = "BRJOINT"
 
 _N_CORNERS = {"SEG2": 2, "SEG3": 2, "TRIA3": 3, "TRIA6": 3, "QUAD4": 4,
               "QUAD8": 4, "TETRA4": 4, "TETRA10": 4, "PYRAM5": 5,
               "PYRAM13": 5, "PENTA6": 6, "PENTA15": 6, "HEXA8": 8,
               "HEXA20": 8}
-# Ribben van de middenknopen in Code-Aster-volgorde (hoekindices).
+# Edges of the mid nodes in Code-Aster order (corner indices).
 _MID_EDGES = {
     "SEG3":    [(0, 1)],
     "TRIA6":   [(0, 1), (1, 2), (2, 0)],
@@ -108,11 +108,11 @@ _MID_EDGES = {
     "HEXA20":  [(0, 1), (1, 2), (2, 3), (0, 3), (0, 4), (1, 5), (2, 6),
                 (3, 7), (4, 5), (5, 6), (6, 7), (4, 7)],
 }
-# Hoekknopen per faceid, in de volgorde van mw.face_nodes() in Mecway 33
-# (uitgelezen met een element van elke vorm). Alleen gebruikt zonder
-# Mecway-API (offline tests); in Mecway gebruikt de bridge mw.face_nodes()
-# en logt een verschil met deze tabel. Schalen: 1..3/4 zijn de randen,
-# 5 het vlak en 6 hetzelfde vlak met de omgekeerde normaal.
+# Corner nodes per faceid, in the order of mw.face_nodes() in Mecway 33
+# (read out with an element of every shape). Only used without the
+# Mecway API (offline tests); in Mecway the bridge uses mw.face_nodes()
+# and logs a difference with this table. Shells: 1..3/4 are the edges,
+# 5 the face and 6 the same face with the reversed normal.
 _FACE_CORNERS = {
     "HEXA":  {1: [0, 3, 2, 1], 2: [4, 5, 6, 7], 3: [0, 1, 5, 4],
               4: [1, 2, 6, 5], 5: [2, 3, 7, 6], 6: [3, 0, 4, 7]},
@@ -129,7 +129,7 @@ _FACE_CORNERS = {
 
 
 # ==========================================
-# VECTOREN
+# VECTORS
 # ==========================================
 def _vsub(a, b):
     return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
@@ -149,8 +149,8 @@ def _vunit(a):
     return (a[0] / n, a[1] / n, a[2] / n)
 
 
-# Integratiepunten (xi, eta, gewicht). Driehoek: 6-puntsregel, exact tot
-# graad 4 (Dunavant); vierhoek: 3x3 Gauss.
+# Integration points (xi, eta, weight). Triangle: 6-point rule, exact up to
+# degree 4 (Dunavant); quadrilateral: 3x3 Gauss.
 _TRI_GAUSS = []
 for _a, _w in ((0.445948490915965, 0.111690794839005),
                (0.091576213509771, 0.054975871827661)):
@@ -165,8 +165,8 @@ _QUAD_CORNERS = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
 
 
 def _face_shape(stype, xi, eta):
-    """Vormfuncties van een randelement in Code-Aster-volgorde (hoeken, dan
-    middenknoop k tussen hoek k en k+1)."""
+    """Shape functions of a boundary element in Code-Aster order (corners, then
+    mid node k between corner k and k+1)."""
     if stype.startswith("TRIA"):
         l = (1.0 - xi - eta, xi, eta)
         if stype == "TRIA3":
@@ -183,14 +183,14 @@ def _face_shape(stype, xi, eta):
 
 def _face_integrals(stype, pts):
     """
-    Integralen over het vlak (Gauss):
-      w[i] = int(N_i dA)      - som = oppervlak (ook gekromd kwadratisch);
-                                 knoopgewichten van een gemiddelde
-      m[i] = int(N_i x dA)    - eerste momenten per knoop (vector)
-      S    = int(x x^T dA)    - tweede moment (3x3), voor momentverdeling
+    Integrals over the face (Gauss):
+      w[i] = int(N_i dA)      - sum = area (also curved quadratic);
+                                 nodal weights of an average
+      m[i] = int(N_i x dA)    - first moments per node (vector)
+      S    = int(x x^T dA)    - second moment (3x3), for moment distribution
     """
     rule = _TRI_GAUSS if stype.startswith("TRIA") else _QUAD_GAUSS
-    h = 1.0e-3   # centrale differentie: exact voor kwadratische N
+    h = 1.0e-3   # central difference: exact for quadratic N
     w = [0.0] * len(pts)
     m = [[0.0, 0.0, 0.0] for _ in pts]
     S = [[0.0] * 3 for _ in range(3)]
@@ -218,7 +218,7 @@ def _face_integrals(stype, pts):
 
 
 def _inv3(a):
-    """Inverse van een 3x3-matrix (lijst van rijen)."""
+    """Inverse of a 3x3 matrix (list of rows)."""
     det = (a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
            a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
            a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]))
@@ -229,30 +229,30 @@ def _inv3(a):
 
 
 def _cell_names(eid, split):
-    """Namen van de mesh-cellen van Mecway-element eid: M<eid>, en voor een
-    gesplitste line3-balk ook H<eid> (tweede helft). Celnamen in het
-    ASTER-formaat hebben max. 8 tekens: eid tot 9999999."""
+    """Names of the mesh cells of Mecway element eid: M<eid>, and for a
+    split line3 beam also H<eid> (second half). Cell names in the
+    ASTER format have max. 8 characters: eid up to 9999999."""
     if split:
         return ["M{0}".format(eid), "H{0}".format(eid)]
     return ["M{0}".format(eid)]
 
 
 def cell_names_of(model_data, eid):
-    """Celnamen van Mecway-element eid na write_mesh (zie _cell_names);
-    voor andere modules (bridge_to_aster, DEFI_GROUP MAILLE)."""
+    """Cell names of Mecway element eid after write_mesh (see _cell_names);
+    for other modules (bridge_to_aster, DEFI_GROUP MAILLE)."""
     return _cell_names(eid, eid in model_data.get("line3_split", ()))
 
 
 def _mecway_v_axis(p1, p2, orient):
     """
-    V-as van een balkelement van p1 naar p2, zoals Mecway hem bepaalt
-    (Mecway-manual v33 par. 7.5):
-      - met vector: projectie van de vector op het vlak loodrecht op U,
-        daarna rotatie om U met 'angle' (rechtshandig; nagelopen met een
-        CCX-export van Mecway: U=+X, vector Z, angle -90 graden -> V=+Y);
-      - zonder vector: V loodrecht op Z, in het XY-vlak (V = Z x U); is
-        het element (bijna) evenwijdig aan Z (gradient < 0,01 %), dan V = Y.
-    orient: {"vec": (vx, vy, vz), "angle": rad} of None.
+    V axis of a beam element from p1 to p2, as Mecway determines it
+    (Mecway manual v33 par. 7.5):
+      - with vector: projection of the vector onto the plane normal to U,
+        then rotation about U by 'angle' (right-handed; checked with a
+        CCX export of Mecway: U=+X, vector Z, angle -90 degrees -> V=+Y);
+      - without vector: V perpendicular to Z, in the XY plane (V = Z x U); if
+        the element is (nearly) parallel to Z (gradient < 0.01 %), then V = Y.
+    orient: {"vec": (vx, vy, vz), "angle": rad} or None.
     """
     u = _vunit(_vsub(p2, p1))
     vec = orient["vec"] if orient else None
@@ -277,16 +277,16 @@ def _mecway_v_axis(p1, p2, orient):
 
 
 # ==========================================
-# NAMEN
+# NAMES
 # ==========================================
 def _aster_names(names, reserved=()):
     """
-    {Mecway-naam: Code-Aster-naam}. Code-Aster accepteert in het mesh alleen
-    namen die met een letter beginnen, met letters, cijfers en '_', tot 24
-    tekens (nagelopen met Code-Aster 17.4: '02Contact', 'Linear(2)', 'Fix-Z'
-    en 'a.b' gaven een fout bij LIRE_MAILLAGE). Ongeldige tekens worden '_',
-    een naam die niet met een letter begint krijgt 'G' ervoor; daarna
-    uniek gemaakt, ook tegen de namen die de bridge zelf maakt
+    {Mecway name: Code-Aster name}. In the mesh Code-Aster only accepts
+    names that start with a letter, with letters, digits and '_', up to 24
+    characters (checked with Code-Aster 17.4: '02Contact', 'Linear(2)', 'Fix-Z'
+    and 'a.b' gave an error in LIRE_MAILLAGE). Invalid characters become '_',
+    a name that does not start with a letter gets 'G' in front; then
+    made unique, also against the names the bridge creates itself
     (_GENERATED_NAME_RE).
     """
     used = set(reserved)
@@ -302,20 +302,20 @@ def _aster_names(names, reserved=()):
         used.add(cand)
         mapping[name] = cand
         if cand != name:
-            log("INFO: Groepsnaam '{0}' -> '{1}' (Code-Aster: letter eerst, "
-                "alleen letters/cijfers/_, max. {2} tekens, uniek).".format(
+            log("INFO: Group name '{0}' -> '{1}' (Code-Aster: letter first, "
+                "only letters/digits/_, max. {2} characters, unique).".format(
                     name, cand, ASTER_NAME_MAX))
     return mapping
 
 
-# Groepsnamen die de bridge zelf maakt (na het hernoemen, met een teller):
+# Group names the bridge creates itself (after renaming, with a counter):
 # bridge_mesh BRSY/BRCO/BRESCL/BROV/BRFR (_extra_node_group), BRMAIT
 # (_bonded), CMAIT/CESCL (_merge_contact_zones), BRES/BRMA/BRRI
-# (_build_discretes), BOR (balkorientatie), BRPOI1T/R; bridge_to_aster
-# BRGAP (gaps), BRCT (middenknopen) en tab_<concept>_n<i>
-# (resultaattabellen); bridge_thermal TH/THS/THN; bridge_xfem BRXF<n>S/F
-# (scheur uit een XFEM_-vlakselectie). Een gebruikersnaam van
-# die vorm wordt hernoemd, zodat hij niet met een gemaakte groep kan botsen.
+# (_build_discretes), BOR (beam orientation), BRPOI1T/R; bridge_to_aster
+# BRGAP (gaps), BRCT (mid nodes) and tab_<concept>_n<i>
+# (result tables); bridge_thermal TH/THS/THN; bridge_xfem BRXF<n>S/F
+# (crack from an XFEM_ face selection). A user name of
+# that form is renamed, so that it cannot clash with a generated group.
 _GENERATED_NAME_RE = re.compile(
     r"^(?:(?:BRSY|BRCO|BRESCL|BROV|BRFR|BRMAIT|CMAIT|CESCL|BRES|BRMA|BRRI|BOR|"
     r"BRGAP|BRCT|THS|THN|TH)\d+|BRXF\d+[SF]|BRPOI1[TR]|all_elems|all_nodes|"
@@ -323,8 +323,8 @@ _GENERATED_NAME_RE = re.compile(
 
 
 def _unique_name(cand, used):
-    """cand, of cand met '_1', '_2', ... (max. ASTER_NAME_MAX tekens) als
-    hij al gebruikt is of de vorm van een gemaakte groep heeft."""
+    """cand, or cand with '_1', '_2', ... (max. ASTER_NAME_MAX characters) if
+    it is already used or has the form of a generated group."""
     base, i = cand, 1
     while cand in used or _GENERATED_NAME_RE.match(cand):
         suffix = "_{0}".format(i)
@@ -335,13 +335,13 @@ def _unique_name(cand, used):
 
 def _selection_names(model_data, renames, reserved, elset_members):
     """
-    {Mecway-naam: Code-Aster-naam} voor selecties. Een face- of
-    elementselectie met dezelfde naam als een elset (component) zou als
-    GROUP_MA de elset-groep overschrijven (de elementen vielen dan stil uit
-    het model); zo'n selectie krijgt een eigen naam met '_1', '_2', ...
-    Alle verwijzingen naar de selectie (BC's, contact, koppelingen) gaan
-    via deze naam. Knoopselecties niet: een GROUP_NO mag dezelfde naam
-    hebben als een GROUP_MA.
+    {Mecway name: Code-Aster name} for selections. A face or
+    element selection with the same name as an elset (component) would
+    overwrite the elset group as GROUP_MA (the elements then silently dropped
+    out of the model); such a selection gets its own name with '_1', '_2', ...
+    All references to the selection (BCs, contact, couplings) go
+    via this name. Not node selections: a GROUP_NO may have the same name
+    as a GROUP_MA.
     """
     out = OrderedDict(renames)
     elsets = set(elset_members)
@@ -367,24 +367,24 @@ def _selection_names(model_data, renames, reserved, elset_members):
 
 
 def _real(value):
-    """Getal voor het ASTER-meshformaat: 15 significante cijfers en altijd
-    een decimale punt. '-1e-05' gaf <EXCEPTION> <MODELISA7_85> 'un nombre
-    est attendu' (Code-Aster 17.4); '-1.0e-05' en '0.0' worden gelezen."""
-    # %-opmaak: "{0:.15g}".format() volgt in Mecway's IronPython de
-    # landinstelling en gaf onder een Nederlandse locale '0,25' (gezien in
-    # de IronPython-harness); Code-Aster stopte dan met MODELISA7_66.
+    """Number for the ASTER mesh format: 15 significant digits and always
+    a decimal point. '-1e-05' gave <EXCEPTION> <MODELISA7_85> 'un nombre
+    est attendu' (Code-Aster 17.4); '-1.0e-05' and '0.0' are read."""
+    # %-formatting: "{0:.15g}".format() follows the locale in Mecway's
+    # IronPython and gave '0,25' under a Dutch locale (seen in
+    # the IronPython harness); Code-Aster then stopped with MODELISA7_66.
     txt = "%.15g" % value
-    if "." in txt or "n" in txt:          # al een punt, of inf/nan
+    if "." in txt or "n" in txt:          # already a point, or inf/nan
         return txt
     mant, sep, exp = txt.partition("e")
     return mant + ".0" + sep + exp
 
 
 def _wrap(items, width=79):
-    """Regels ' item item ...' van hoogstens width tekens. LIRE_MAILLAGE
-    FORMAT='ASTER' leest maximaal 80 tekens per regel: een langere HEXA20-
-    regel gaf <EXCEPTION> <MODELISA7_66> 'item attendu en debut de ligne'
-    (Code-Aster 17.4); een element mag over meerdere regels doorlopen."""
+    """Lines ' item item ...' of at most width characters. LIRE_MAILLAGE
+    FORMAT='ASTER' reads at most 80 characters per line: a longer HEXA20
+    line gave <EXCEPTION> <MODELISA7_66> 'item attendu en debut de ligne'
+    (Code-Aster 17.4); an element may continue over several lines."""
     lines = []
     cur = ""
     for it in items:
@@ -398,10 +398,10 @@ def _wrap(items, width=79):
 
 
 # ==========================================
-# VLAKKEN
+# FACES
 # ==========================================
 def _face_from_table(aster_type, conn, faceid):
-    """Hoekknopen van een vlak uit _FACE_CORNERS, of None."""
+    """Corner nodes of a face from _FACE_CORNERS, or None."""
     for prefix, table in _FACE_CORNERS.items():
         if aster_type.startswith(prefix):
             corners = table.get(faceid)
@@ -411,8 +411,8 @@ def _face_from_table(aster_type, conn, faceid):
 
 def _skin_element(aster_type, conn, face_nids):
     """
-    (type, knopen) van een randelement in Code-Aster-volgorde: hoekknopen in
-    de volgorde van face_nids, middenknopen per ribbe uit het moederelement.
+    (type, nodes) of a boundary element in Code-Aster order: corner nodes in
+    the order of face_nids, mid nodes per edge from the parent element.
     """
     nc = _N_CORNERS[aster_type]
     corner_set = set(conn[:nc])
@@ -432,21 +432,21 @@ def _skin_element(aster_type, conn, face_nids):
     return ("QUAD8" if mids else "QUAD4"), corners + mids
 
 
-# Voorwaarden die verplaatsingen opleggen: een vlak waarvan alle hoekknopen
-# zo vastliggen, telt voor de foutschatter als Dirichlet-rand (_free_faces).
+# Conditions that impose displacements: a face with all corner nodes fixed
+# this way is a Dirichlet boundary for the error estimator (_free_faces).
 _DIRICHLET_BCS = frozenset(["fixed", "pinnedsupport", "displacement",
                             "noderotation", "frictionless", "symmetry",
                             "compressiononly", "elasticsupport"])
 
 
-# Modelisaties met rotatievrijheidsgraden in de knopen (_flexible_joints)
+# Modelisations with rotational degrees of freedom at nodes (_flexible_joints)
 _ROT_MODS = frozenset(["POU_D_E", "POU_D_T", "POU_D_TG", "DKT", "DST",
                        "COQUE_3D", "DIS_TR"])
 _ROT_DOFS = ("DRX", "DRY", "DRZ")
 
 
 def _selection_nodes(model_data, sel, conn, face_group_nodes):
-    """Knopen van een Mecway-selectie (knopen, balkvlakken, elementen)."""
+    """Nodes of a Mecway selection (nodes, beam faces, elements)."""
     ids = model_data.get("node_groups", {}).get(sel)
     if ids is not None:
         return set(int(str(i).lstrip("N")) for i in ids)
@@ -459,7 +459,7 @@ def _selection_nodes(model_data, sel, conn, face_group_nodes):
 
 
 def _complement(axes):
-    """Orthonormale basis van het complement van de span van axes (3D)."""
+    """Orthonormal basis of the complement of the span of axes (3D)."""
     basis = []
     for a in list(axes) + [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
                            (0.0, 0.0, 1.0)]:
@@ -473,7 +473,7 @@ def _complement(axes):
 
 
 def _span(axes):
-    """Orthonormale basis van de span van axes."""
+    """Orthonormal basis of the span of axes."""
     basis = []
     for a in axes:
         v = list(a)
@@ -486,16 +486,16 @@ def _span(axes):
 
 
 def _rot_terms(nid, axis, sign):
-    """Termen (knoop, DDL, coef) van sign * (rotatie van nid langs axis)."""
+    """Terms (node, DDL, coef) of sign * (rotation of nid along axis)."""
     return [(nid, d, sign * c) for d, c in zip(_ROT_DOFS, axis)
             if abs(c) > 1.0e-12]
 
 
 def _joint_ends(model_data, conn, elements, faces_of):
-    """{(eid, knoop)}: balkuiteinden in de vlakselecties van flexible joints
-    (zonder controles of meldingen; die doet _flexible_joints). Voor
-    bridge_offset.prepare: zo'n uiteinde zit niet meer aan de Mecway-knoop
-    en draagt daar dus geen rotaties."""
+    """{(eid, node)}: beam ends in the face selections of flexible joints
+    (without checks or messages; _flexible_joints does those). For
+    bridge_offset.prepare: such an end is no longer attached to the Mecway node
+    and so carries no rotations there."""
     out = set()
     shapes = dict((eid, shape) for eid, shape, en, es in elements)
     faces_by_sel = model_data.get("face_selection_faces", {})
@@ -514,39 +514,39 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                      poi_any, offset_cells=frozenset()):
     """
     Flexible joint on beam (Mecway manual v33 par. 9.12; XML in
-    bridge_from_liml._parse_model_item): het uiteinde van een balkelement
-    roteert vrij om de gekozen lokale assen U (balkas), V en W.
+    bridge_from_liml._parse_model_item): the end of a beam element
+    rotates freely about the chosen local axes U (beam axis), V and W.
 
-    Vertaling: het element krijgt aan dat uiteinde een eigen knoop op
-    dezelfde plaats (nummer na de Mecway-knopen; in het mesh alleen voor die
-    cel, dus by_type krijgt een kopie van de knooplijst, conn blijft de
-    Mecway-knopen houden). Die knoop is met LIAISON_DDL (U4.44.01; via
-    model_data["constraint_equations"], bridge_to_aster._render_mpcs) aan de
-    Mecway-knoop gekoppeld: DX, DY, DZ gelijk en de rotatie langs elke
-    niet-vrije lokale as e gelijk (e . theta_nieuw = e . theta_oud). Lokale
-    assen zoals Mecway (_mecway_v_axis): U langs de (halve) cel, V uit de
-    orientatie, W = U x V (nagelopen met Mecway 34: beam langs X, <rotw />
-    = scharnier om Z).
+    Translation: at that end the element gets its own node at the
+    same place (number after the Mecway nodes; in the mesh only for that
+    cell, so by_type gets a copy of the node list, conn keeps the
+    Mecway nodes). That node is coupled with LIAISON_DDL (U4.44.01; via
+    model_data["constraint_equations"], bridge_to_aster._render_mpcs) to the
+    Mecway node: DX, DY, DZ equal and the rotation along every
+    non-free local axis e equal (e . theta_new = e . theta_old). Local
+    axes as in Mecway (_mecway_v_axis): U along the (half) cell, V from the
+    orientation, W = U x V (checked with Mecway 34: beam along X, <rotw />
+    = hinge about Z).
 
-    Heeft de Mecway-knoop geen ander element met rotaties (alle balken daar
-    hebben een joint, of alleen volume-elementen), dan krijgt hij een POI1
-    DIS_TR met stijfheid 0 (groep JOINT_GROUP) en worden de rotaties langs
-    het complement van de gekoppelde assen op 0 gezet (Mecway toont daar
-    rotatie 0, gezien bij een scharnier met joints aan beide kanten), tenzij
-    een voorwaarde op die knoop al rotaties vastlegt.
+    If the Mecway node has no other element with rotations (all beams there
+    have a joint, or only volume elements), it gets a POI1
+    DIS_TR with stiffness 0 (group JOINT_GROUP) and the rotations along
+    the complement of the coupled axes are set to 0 (Mecway shows
+    rotation 0 there, seen with a hinge with joints on both sides), unless
+    a condition on that node already fixes rotations.
 
-    Element offset (bridge_offset, offset_cells: elementen op eigen
-    knopen): een joint op een verschoven element wordt niet vertaald
-    (WARNING; het element zit star aan de arm, KNOWN_BUGS 108d). Een
-    verschoven element zit niet meer aan de Mecway-knoop maar draagt zijn
-    rotaties wel via de arm; zit de knoop verder in geen cel, dan krijgt
-    hij een POI1 DIS_TR (zonder extra relaties), anders heeft hij geen
-    vrijheidsgraden voor de LIAISON_DDL.
+    Element offset (bridge_offset, offset_cells: elements on their own
+    nodes): a joint on an offset element is not translated
+    (WARNING; the element is rigidly attached to the arm, KNOWN_BUGS 108d). An
+    offset element is no longer attached to the Mecway node but does carry its
+    rotations via the arm; if the node is in no other cell, it gets
+    a POI1 DIS_TR (without extra relations), otherwise it has no
+    degrees of freedom for the LIAISON_DDL.
 
-    Returns (extra knopen {nid: xyz}, POI1-knopen) of (None, None) zonder
-    joints. Resultaten: de extra knopen vallen weg (aster_results_export
-    leest alleen de Mecway-knopen; hun reactie telt op bij de Mecway-knoop
-    op dezelfde plaats).
+    Returns (extra nodes {nid: xyz}, POI1 nodes) or (None, None) without
+    joints. Results: the extra nodes are dropped (aster_results_export
+    only reads the Mecway nodes; their reaction adds to the Mecway node
+    at the same place).
     """
     joints = model_data.get("flexible_joints") or []
     if not joints:
@@ -554,7 +554,7 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     mods = model_data.get("elset_modelisations", {})
     elem_info = dict((eid, (shape, es)) for eid, shape, en, es in elements)
     faces_by_sel = model_data.get("face_selection_faces", {})
-    free_at = OrderedDict()     # (eid, nid) -> set van vrije assen
+    free_at = OrderedDict()     # (eid, nid) -> set of free axes
     on_offset = []
     for j in joints:
         faces = faces_by_sel.get(j["selection"])
@@ -579,8 +579,8 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                 continue
             mod = mods.get(es)
             if mod == "BARRE":
-                log("INFO: Flexible joint op truss-element {0}: een staaf "
-                    "scharniert al.".format(eid))
+                log("INFO: Flexible joint on truss element {0}: a bar "
+                    "is already pinned.".format(eid))
                 continue
             if mod not in _LINE3_SPLIT_MODS:
                 _not_translated(
@@ -607,12 +607,12 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     if not free_at:
         return None, None
 
-    # Elementen per knoop (alle cellen, ook zonder joint)
+    # Elements per node (all cells, also without joint)
     at_node = {}
     for eid, (atype, cn) in conn.items():
         for n in cn:
             at_node.setdefault(n, set()).add(eid)
-    # Rotaties die voorwaarden per knoop vastleggen
+    # Rotations that conditions fix per node
     bc_rot = {}
     for bc in model_data.get("bcs", []):
         if bc.get("type") not in _DIRICHLET_BCS or bc.get("skip"):
@@ -627,7 +627,7 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     by_node = OrderedDict()
     for (eid, nid), free in free_at.items():
         by_node.setdefault(nid, []).append((eid, free))
-    # na de knopen van verschoven elementen (bridge_offset.prepare)
+    # after the nodes of offset elements (bridge_offset.prepare)
     next_nid = max([max(nodes)] + list(model_data.get("offset_new_nids",
                                                       []))) + 1
     new_nodes = OrderedDict()
@@ -638,8 +638,8 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
         others = at_node.get(nid, set()) - jointed
         rot_carrier = nid in poi_rot or any(
             mods.get(elem_info[e][1]) in _ROT_MODS for e in others)
-        # verschoven elementen dragen de rotaties via de arm, maar hun cel
-        # zit op eigen knopen (bridge_offset)
+        # offset elements carry the rotations via the arm, but their cell
+        # is on its own nodes (bridge_offset)
         others = others - offset_cells
         tied_axes = []
         for eid, free in items:
@@ -647,8 +647,8 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
             next_nid += 1
             new_nodes[dup] = nodes[nid]
             model_data.setdefault("joint_nodes", {})[dup] = nid
-            # Cel met dit uiteinde (bij een gesplitste line3 een helft) en
-            # de lokale assen van die cel
+            # Cell with this end (for a split line3 one half) and
+            # the local axes of that cell
             cn = conn[eid][1]
             if eid in split_line3:
                 halves = ((cn[0], cn[2]), (cn[2], cn[1]))
@@ -676,38 +676,38 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                             _rot_terms(nid, ax, -1.0),
                             "constant": 0.0, "source": "flexiblejoint"})
             tied_axes.extend(fixed)
-            log("INFO: Flexible joint element {0}, knoop N{1}: eigen knoop "
-                "N{2}, vrij om {3} (U={4}, V={5}).".format(
+            log("INFO: Flexible joint element {0}, node N{1}: own node "
+                "N{2}, free about {3} (U={4}, V={5}).".format(
                     eid, nid, dup, "/".join(sorted(f.upper() for f in free)),
                     tuple(round(c, 6) for c in u),
                     tuple(round(c, 6) for c in v)))
         if rot_carrier:
             if not others and nid not in poi_any:
-                # alleen verschoven elementen (en joints) in deze knoop:
-                # geen cel meer, wel de arm -> POI1 voor de
-                # vrijheidsgraden, rotaties via de arm
+                # only offset elements (and joints) at this node:
+                # no cell any more, but the arm -> POI1 for the
+                # degrees of freedom, rotations via the arm
                 poi_nodes.append(nid)
             continue
-        # Geen ander element met rotaties: knoop N<nid> krijgt een POI1
-        # DIS_TR (anders heeft hij geen rotaties, of zelfs geen
-        # vrijheidsgraden als alleen balken met een joint er zitten)
+        # No other element with rotations: node N<nid> gets a POI1
+        # DIS_TR (otherwise it has no rotations, or even no
+        # degrees of freedom if only beams with a joint are attached)
         if not tied_axes and (others or nid in poi_any):
-            continue        # geen rotaties nodig, wel vrijheidsgraden
+            continue        # no rotations needed, but degrees of freedom
         poi_nodes.append(nid)
         if bc_rot.get(nid):
             continue
         for ax in _complement(tied_axes):
             eqs.append({"terms": _rot_terms(nid, ax, 1.0), "constant": 0.0,
                         "source": "flexiblejoint"})
-    log("INFO: Flexible joint: {0} balkuiteinde(n) met een eigen knoop "
-        "(LIAISON_DDL), {1} knoop/knopen met een POI1 DIS_TR.".format(
+    log("INFO: Flexible joint: {0} beam end(s) with their own node "
+        "(LIAISON_DDL), {1} node(s) with a POI1 DIS_TR.".format(
             len(new_nodes), len(poi_nodes)))
     return new_nodes, poi_nodes
 
 
 def _referenced_names(model_data):
-    """Namen van selecties die een voorwaarde, belasting, contact of
-    koppeling gebruikt (alle tekstwaarden van die dicts, een niveau diep)."""
+    """Names of selections used by a condition, load, contact or
+    coupling (all text values of those dicts, one level deep)."""
     names = set()
     for key in ("bcs", "contacts", "bonded", "couplings"):
         for item in model_data.get(key, []) or []:
@@ -720,26 +720,26 @@ def _referenced_names(model_data):
 
 def _free_faces(model_data, conn):
     """
-    Vrije vlakken van volume-elementen voor de foutschatter: [(type,
-    knopen)] als randelementen (Code-Aster-volgorde, _skin_element).
+    Free faces of volume elements for the error estimator: [(type,
+    nodes)] as boundary elements (Code-Aster order, _skin_element).
 
-    Waarom: CALC_ERREUR ERME_ELEM rekent een randterm (sigma.n - g) alleen
-    op vlakken waar een last op staat; een vlak zonder last behandelt het
-    als opgelegde verplaatsing, dus zonder randterm. Bron: testcase
-    sslv153a (Code-Aster 17.4), commentaar: zonder de groepen LIBRE/LIBRE2
-    met druk ~0 "ces bords sont consideres comme a deplacement impose par
+    Why: CALC_ERREUR ERME_ELEM computes a boundary term (sigma.n - g) only
+    on faces carrying a load; a face without load is treated
+    as imposed displacement, so without boundary term. Source: test case
+    sslv153a (Code-Aster 17.4), comment: without the groups LIBRE/LIBRE2
+    with pressure ~0 "ces bords sont consideres comme a deplacement impose par
     le calcul des indicateurs d'erreur"; sslv07a: "STRICTO SENSU, LE CALCUL
     DE ERME_ELEM EST FAUX CAR DES BORDS A CONTRAINTE NULLE N'ONT PAS ETE
-    DEFINIS". De bridge zet daarom PRES_REP ~0 op de vrije vlakken (1e-14
-    Pa, niet 0: zie bridge_to_aster._error_estimator_block).
+    DEFINIS". The bridge therefore puts PRES_REP ~0 on the free faces (1e-14
+    Pa, not 0: see bridge_to_aster._error_estimator_block).
 
-    Vrij = rand van het volume (vlak van precies een volume-element), niet
-    gedeeld met een schaalelement, niet in een vlakselectie die een
-    voorwaarde, last, contact of koppeling gebruikt (_referenced_names: die
-    vlakken hebben een eigen last of zijn Dirichlet), en niet met alle
-    hoekknopen in een knoopselectie van een opgelegde verplaatsing
-    (_DIRICHLET_BCS). Vlakken uit _FACE_CORNERS (hoekknopen; de volgorde is
-    voor PRES_REP ~0 niet van belang, ORIE_PEAU richt ze naar buiten).
+    Free = boundary of the volume (face of exactly one volume element), not
+    shared with a shell element, not in a face selection used by a
+    condition, load, contact or coupling (_referenced_names: those
+    faces have their own load or are Dirichlet), and not with all
+    corner nodes in a node selection of an imposed displacement
+    (_DIRICHLET_BCS). Faces from _FACE_CORNERS (corner nodes; the order
+    does not matter for PRES_REP ~0, ORIE_PEAU orients them outwards).
     """
     shapes = model_data.get("elem_shapes", {})
     counts = OrderedDict()
@@ -774,11 +774,11 @@ def _free_faces(model_data, conn):
         if bc.get("type") not in _DIRICHLET_BCS or not bc.get("selection"):
             continue
         sel = bc["selection"]
-        # Alleen knoopselecties: een vlakselectie met een voorwaarde valt al
-        # onder "taken" (zijn eigen vlakken). Met de knopen van een
-        # vlakselectie zou bijv. een buitenwand tussen twee opgelegde
-        # eindvlakken (een element dik) ten onrechte Dirichlet worden
-        # (gezien bij verificatie LS-04).
+        # Only node selections: a face selection with a condition is already
+        # covered by "taken" (its own faces). With the nodes of a
+        # face selection e.g. an outer wall between two constrained
+        # end faces (one element thick) would wrongly become Dirichlet
+        # (seen in verification LS-04).
         for i in model_data.get("node_groups", {}).get(sel, []):
             fixed.add(int(str(i).lstrip("N")))
     out = []
@@ -791,21 +791,21 @@ def _free_faces(model_data, conn):
 
 
 # ==========================================
-# HOOFDFUNCTIE
+# MAIN FUNCTION
 # ==========================================
 def write_mesh(mail_path, model_data, face_nodes=None):
     """
-    Schrijf het mesh van model_data naar mail_path (ASTER-formaat) en stem
-    model_data erop af (groepsnamen, POI1-groepen, balkorientatie,
-    oppervlakken voor krachten op vlakken).
+    Write the mesh of model_data to mail_path (ASTER format) and adjust
+    model_data to it (group names, POI1 groups, beam orientation,
+    areas for forces on faces).
 
-    face_nodes : functie (eid, faceid) -> [knoopnummers] of None. In Mecway
-                 mw.face_nodes(FaceId(eid, faceid)); zonder (offline tests)
-                 de tabel _FACE_CORNERS.
+    face_nodes : function (eid, faceid) -> [node numbers] or None. In Mecway
+                 mw.face_nodes(FaceId(eid, faceid)); without it (offline tests)
+                 the table _FACE_CORNERS.
 
     Returns
     -------
-    bool  True bij succes; False bij een fout (melding in bridge_log.txt).
+    bool  True on success; False on an error (message in bridge_log.txt).
     """
     log("--- Mesh schrijven (ASTER-formaat): {0} ---".format(mail_path))
     nodes = model_data.get("mesh_nodes", {})
@@ -816,8 +816,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         return False
     nids = sorted(nodes.keys())
     if nids != list(range(1, len(nids) + 1)):
-        # De resultaten worden op knoopindex teruggelezen; Mecway nummert
-        # na verfijnen en verwijderen 1..N door (gezien in Mecway).
+        # The results are read back by node index; Mecway renumbers
+        # 1..N after refining and deleting (seen in Mecway).
         log(tr("ERROR: Knoopnummers zijn niet 1..N aaneengesloten ({0} "
                "knopen, hoogste {1}).",
                "ERROR: Node numbers are not contiguous 1..N ({0} "
@@ -825,13 +825,13 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         return False
 
     # --------------------------------------------------
-    # 1. Elementen in Code-Aster-volgorde
+    # 1. Elements in Code-Aster order
     # --------------------------------------------------
     conn = {}          # eid -> (aster_type, [nid ...])
     by_type = OrderedDict()
     elset_members = OrderedDict()
-    # Cellen per element: {eid: [(aster_type, index in by_type[type])]};
-    # een line3-balk heeft er twee (_LINE3_SPLIT_MODS)
+    # Cells per element: {eid: [(aster_type, index in by_type[type])]};
+    # a line3 beam has two (_LINE3_SPLIT_MODS)
     cell_refs = {}
     elset_mods = model_data.get("elset_modelisations", {})
     n_split = 0
@@ -852,12 +852,12 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         cn = [enodes[i] for i in order]
         conn[eid] = (atype, cn)
         if shape == "line3" and elset_mods.get(elset) in _LINE3_SPLIT_MODS:
-            # Kwadratische balk -> twee SEG2-cellen M<eid> (eerste knoop -
-            # middenknoop) en H<eid> (middenknoop - tweede knoop): de
-            # balkelementen van Code-Aster bestaan alleen op SEG2 (zie
-            # _LINE3_SPLIT_MODS). conn houdt de Mecway-vorm (SEG3) voor de
-            # geometrie (vlakken, lengtes); de resultaten gaan per knoop
-            # terug, dus ook op de middenknoop.
+            # Quadratic beam -> two SEG2 cells M<eid> (first node -
+            # mid node) and H<eid> (mid node - second node): the
+            # beam elements of Code-Aster exist only on SEG2 (see
+            # _LINE3_SPLIT_MODS). conn keeps the Mecway shape (SEG3) for the
+            # geometry (faces, lengths); the results go back per node,
+            # so also at the mid node.
             n_split += 1
             for name, part in zip(_cell_names(eid, True),
                                   ([cn[0], cn[2]], [cn[2], cn[1]])):
@@ -871,24 +871,24 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         items.append(("M{0}".format(eid), cn))
         elset_members.setdefault(elset, []).append("M{0}".format(eid))
     if n_split:
-        log("INFO: {0} line3-balkelement(en) gesplitst in twee SEG2-cellen "
-            "(M<eid> en H<eid>).".format(n_split))
+        log("INFO: {0} line3 beam element(s) split into two SEG2 cells "
+            "(M<eid> and H<eid>).".format(n_split))
     split_line3 = set(e for e, refs in cell_refs.items() if len(refs) == 2)
 
     # --------------------------------------------------
-    # 2. Vlakselecties -> randelementen / schaalelementen / knopen
+    # 2. Face selections -> boundary elements / shell elements / nodes
     # --------------------------------------------------
     shapes = model_data.get("elem_shapes", {})
     skin_by_key = {}
     skin_count = [0]
-    face_groups = OrderedDict()       # naam -> [elementnamen]
-    face_group_nodes = OrderedDict()  # naam -> set(nid), alleen balkvlakken
+    face_groups = OrderedDict()       # name -> [element names]
+    face_group_nodes = OrderedDict()  # name -> set(nid), beam faces only
     group_areas = {}
-    group_weights = {}                # naam -> {nid: int(N dA)}, volumevlakken
-    group_integrals = {}              # naam -> [w, m, S] per knoop, alle vlakken
-    group_faces = {}                  # naam -> {"kinds": set, "normals": [..]}
-    # naam -> [{"kind", "stype", "nodes", "eid", "fid", "side"}] per vlak,
-    # voor belastingen die per knoop een normaal of gewicht nodig hebben
+    group_weights = {}                # name -> {nid: int(N dA)}, volume faces
+    group_integrals = {}              # name -> [w, m, S] per node, all faces
+    group_faces = {}                  # name -> {"kinds": set, "normals": [..]}
+    # name -> [{"kind", "stype", "nodes", "eid", "fid", "side"}] per face,
+    # for loads that need a normal or weight per node
     # (elastic support, compression only, symmetry)
     group_face_list = OrderedDict()
 
@@ -940,8 +940,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                         fid, atype, api, table))
         return api
 
-    # XFEM_-vlakselecties zijn een scheur (stap 2e, bridge_xfem.mesh_cells),
-    # geen randelementen
+    # XFEM_ face selections are a crack (step 2e, bridge_xfem.mesh_cells),
+    # not boundary elements
     import bridge_xfem
     xfem_sel = (set(bridge_xfem.selection_names(model_data))
                 if bridge_xfem.active_here() else set())
@@ -970,12 +970,12 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 note_list(fname, "beam", atype, fn, eid, fid)
                 continue
             if shape in _SHELL_SHAPES and set(fn) >= set(cn[:_N_CORNERS[atype]]):
-                members.append("M{0}".format(eid))   # schaalvlak = element
+                members.append("M{0}".format(eid))   # shell face = element
                 add_integrals(fname, atype, cn)
                 corner_set = set(cn[:_N_CORNERS[atype]])
-                # volgorde van het vlak: faceid 5 en 6 hebben tegengestelde
-                # normalen; side = +1 als de vlaknormaal gelijk is aan de
-                # elementnormaal (Code-Aster), anders -1
+                # order of the face: faceid 5 and 6 have opposite
+                # normals; side = +1 if the face normal equals the
+                # element normal (Code-Aster), otherwise -1
                 fpts = [nodes[n] for n in fn if n in corner_set]
                 epts = [nodes[n] for n in cn[:_N_CORNERS[atype]]]
                 fn_ = _vcross(_vsub(fpts[1], fpts[0]), _vsub(fpts[-1], fpts[0]))
@@ -1005,13 +1005,13 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 group_areas[fname] = group_areas.get(fname, 0.0) + sum(fw)
             members.append(skin_by_key[key])
         if members:
-            # Een cel één keer per groep: vlak 5 en 6 van hetzelfde
-            # schaalelement gaven alarm MODELISA5_8 bij LIRE_MAILLAGE (de
-            # integralen en vlaklijsten hierboven tellen beide zijden wel)
+            # A cell only once per group: face 5 and 6 of the same
+            # shell element gave alarm MODELISA5_8 in LIRE_MAILLAGE (the
+            # integrals and face lists above do count both sides)
             face_groups[fname] = list(OrderedDict.fromkeys(members))
 
     # --------------------------------------------------
-    # 2b. Foutschatter: randelementen op de vrije vlakken (_free_faces)
+    # 2b. Error estimator: boundary elements on the free faces (_free_faces)
     # --------------------------------------------------
     free_members = []
     if error_estimator_requested(
@@ -1025,13 +1025,13 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 by_type.setdefault(stype, []).append((name, snodes))
             free_members.append(skin_by_key[key])
         if free_members:
-            log("INFO: Foutschatter: {0} vrije vlakken van volume-elementen "
-                "als groep '{1}' (spanningsvrije rand, PRES_REP ~0 in "
+            log("INFO: Error estimator: {0} free faces of volume elements "
+                "as group '{1}' (stress-free boundary, PRES_REP ~0 in "
                 "CALC_ERREUR).".format(len(free_members), ERR_FREE_GROUP))
 
     # --------------------------------------------------
-    # 2c. Vibro-akoestiek: koppelvlakken fluidum-constructie als
-    #     randelementen (bridge_vibroacoustic.interface_faces)
+    # 2c. Vibro-acoustics: fluid-structure coupling faces as
+    #     boundary elements (bridge_vibroacoustic.interface_faces)
     # --------------------------------------------------
     vibro_members = OrderedDict()
     if model_data.get("vibro"):
@@ -1052,8 +1052,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                         skin_by_key[key])
 
     # --------------------------------------------------
-    # 2d. Breukmechanica: ribben langs het scheurfront als SEG-cellen
-    #     (bridge_fracture.front_cells; groepen BRSCHEUR<n>)
+    # 2d. Fracture mechanics: edges along the crack front as SEG cells
+    #     (bridge_fracture.front_cells; groups BRSCHEUR<n>)
     # --------------------------------------------------
     import bridge_fracture
     crack_cells = bridge_fracture.front_cells(model_data, conn)
@@ -1068,8 +1068,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             crack_members.setdefault(group, []).append(name)
 
     # --------------------------------------------------
-    # 2e. XFEM: scheurvlak en front uit XFEM_-vlakselecties als cellen
-    #     buiten het model (bridge_xfem.mesh_cells; groepen BRXF<n>S/F)
+    # 2e. XFEM: crack face and front from XFEM_ face selections as cells
+    #     outside the model (bridge_xfem.mesh_cells; groups BRXF<n>S/F)
     # --------------------------------------------------
     xfem_cells = bridge_xfem.mesh_cells(
         model_data, conn, faces_of if face_nodes is not None else None)
@@ -1083,9 +1083,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             crack_members.setdefault(group, []).append(name)
 
     # --------------------------------------------------
-    # 2f. Element offset (bridge_offset): verschoven schalen/balken op eigen
-    #     knopen (de vlakken en groepen hierboven blijven op de
-    #     Mecway-knopen) of EXCENTREMENT
+    # 2f. Element offset (bridge_offset): offset shells/beams on their own
+    #     nodes (the faces and groups above stay on the
+    #     Mecway nodes) or EXCENTREMENT
     # --------------------------------------------------
     import bridge_offset
     offset_plan = bridge_offset.prepare(
@@ -1093,7 +1093,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         _joint_ends(model_data, conn, elements, faces_of))
 
     # --------------------------------------------------
-    # 3. Losse knopen uit nodeselections -> POI1
+    # 3. Free nodes from nodeselections -> POI1
     # --------------------------------------------------
     used_nodes = set()
     for atype, cn in conn.values():
@@ -1145,22 +1145,22 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             names.append(name)
         poi1_members[gname] = names
         poi1_groups[gname] = "DIS_TR" if gname == POI1_GROUP_R else "DIS_T"
-        log("INFO: {0} losse knoop/knopen als POI1 in groep '{1}' ({2}): "
+        log("INFO: {0} free node(s) as POI1 in group '{1}' ({2}): "
             "{3}".format(len(pnids), gname, poi1_groups[gname],
                          ", ".join("N{0}".format(n) for n in pnids)))
 
     # --------------------------------------------------
-    # 4. Balkorientatie -> extra groepen met een eigen VECT_Y
+    # 4. Beam orientation -> extra groups with their own VECT_Y
     # --------------------------------------------------
-    # Een element mag in het ASTER-formaat in meerdere groepen, dus de
-    # elset blijft heel; elke V-richting krijgt een extra groep BORnnnnn
-    # met ORIENTATION VECT_Y (model_data["beam_vect_y"]).
+    # In the ASTER format an element may be in several groups, so the
+    # elset stays whole; every V direction gets an extra group BORnnnnn
+    # with ORIENTATION VECT_Y (model_data["beam_vect_y"]).
     beam_groups = OrderedDict()
     beam_vect_y = OrderedDict()
     orient = model_data.get("beam_orientations", {})
     if orient:
-        # Gesorteerd: een set gaf per Python-proces (hash-seed) een andere
-        # volgorde van de BOR-groepen in de .comm.
+        # Sorted: a set gave a different order of the BOR groups in the
+        # .comm per Python process (hash seed).
         oriented_elsets = sorted(set(es for eid, shape, en, es in elements
                                      if eid in orient))
         for elset in oriented_elsets:
@@ -1170,7 +1170,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                     continue
                 cn = conn[eid][1]
                 if eid in split_line3:
-                    # per helft (rechte SEG2): V loodrecht op die helft
+                    # per half (straight SEG2): V perpendicular to that half
                     parts = zip(_cell_names(eid, True),
                                 ((cn[0], cn[2]), (cn[2], cn[1])))
                 else:
@@ -1183,14 +1183,14 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 sub = "BOR{0:05d}".format(len(beam_groups) + 1)
                 beam_groups[sub] = members
                 beam_vect_y[sub] = v
-            log("INFO: Balkorientatie '{0}': {1} richting(en) van V."
+            log("INFO: Beam orientation '{0}': {1} direction(s) of V."
                 .format(elset, len(subgroups)))
 
     # --------------------------------------------------
-    # 4b. Discrete elementen op knopen (elastic support, knoopmassa's)
+    # 4b. Discrete elements on nodes (elastic support, nodal masses)
     # --------------------------------------------------
     discretes = _build_discretes(model_data, nodes, conn, group_face_list)
-    # Element offset: POI1 (DIS_TR) voor Mecway-knopen zonder eigen rotaties
+    # Element offset: POI1 (DIS_TR) for Mecway nodes without own rotations
     discretes.update(bridge_offset.discretes(offset_plan, model_data))
     k_poi = 0
     for dname, d in discretes.items():
@@ -1202,7 +1202,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         d["members"] = names
 
     # --------------------------------------------------
-    # 4c. Flexible joints: eigen knoop per balkuiteinde + LIAISON_DDL
+    # 4c. Flexible joints: own node per beam end + LIAISON_DDL
     # --------------------------------------------------
     poi_rot = set(poi1_nodes[POI1_GROUP_R])
     poi_any = set(poi1_nodes[POI1_GROUP_T]) | poi_rot
@@ -1224,7 +1224,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         poi1_groups[JOINT_GROUP] = "DIS_TR"
 
     # --------------------------------------------------
-    # 5. Namen
+    # 5. Names
     # --------------------------------------------------
     reserved = (["all_elems", "all_nodes", POI1_GROUP_T, POI1_GROUP_R,
                  ERR_FREE_GROUP, JOINT_GROUP] +
@@ -1242,11 +1242,11 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                                    elset_members)
 
     def rn(name):
-        """Code-Aster-naam van een selectie (node/face/element)."""
+        """Code-Aster name of a selection (node/face/element)."""
         return sel_renames.get(name, name)
 
     def rn_es(name):
-        """Code-Aster-naam van een elset (component)."""
+        """Code-Aster name of an elset (component)."""
         return renames.get(name, name)
 
     group_ma = OrderedDict()
@@ -1281,34 +1281,34 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             group_no[rn(name)] = ["N{0}".format(n) for n in sorted(nset)]
     bridge_offset.apply_to_mesh(offset_plan, model_data, by_type, group_ma,
                                 group_no, rn_es)
-    # Lege groepen (lege Mecway-selectie) niet schrijven: een voorwaarde of
-    # last erop wordt in _apply_to_model_data overgeslagen en gemeld.
+    # Do not write empty groups (empty Mecway selection): a condition or
+    # load on it is skipped and reported in _apply_to_model_data.
     for groups in (group_ma, group_no):
         for name in [n for n, m in groups.items() if not m]:
             del groups[name]
 
     # --------------------------------------------------
-    # 6. Schrijven
+    # 6. Writing
     # --------------------------------------------------
     try:
         out = ["TITRE", " Mecway-model via MecwayAsterBridge", "FINSF",
                "COOR_3D"]
         for nid in nids:
-            # 15 significante cijfers: de regel blijft onder 80 tekens.
+            # 15 significant digits: the line stays under 80 characters.
             out.append(" N{0} {1}".format(nid, " ".join(
                 _real(c) for c in nodes[nid])))
-        # Knopen van verschoven elementen (bridge_offset) en daarna die van
-        # flexible joints na de Mecway-knopen, oplopend genummerd (de
-        # resultaten worden op knoopindex teruggelezen: rij i < N blijft
-        # Mecway-knoop i+1)
+        # Nodes of offset elements (bridge_offset) and then those of
+        # flexible joints after the Mecway nodes, numbered ascending (the
+        # results are read back by node index: row i < N stays
+        # Mecway node i+1)
         for nid, xyz in ((offset_plan or {}).get("new_nodes", []) +
                          list(joint_nodes.items())):
             out.append(" N{0} {1}".format(nid, " ".join(
                 _real(c) for c in xyz)))
         out.append("FINSF")
-        # Celnaam per Code-Aster-celnummer (0-based, volgorde in het
-        # bestand); bridge_failure vertaalt er bezweken cellen mee naar
-        # Mecway-elementen (Code-Aster 17.4 heeft geen getCellName).
+        # Cell name per Code-Aster cell number (0-based, order in the
+        # file); bridge_failure uses it to map failed cells to
+        # Mecway elements (Code-Aster 17.4 has no getCellName).
         model_data["cell_names"] = [name for items in by_type.values()
                                     for name, _cn in items]
         for atype, items in by_type.items():
@@ -1337,21 +1337,21 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     model_data["group_ma_unions"] = OrderedDict()
     model_data["beam_vect_y"] = beam_vect_y
     model_data["node_groups_in_mesh"] = True
-    # Voor #ASTER-regels (<<Mecway-naam>> -> Code-Aster-naam) en voor de
-    # elsets van mesh_elements (bridge_to_aster, bridge_thermal): bij een
-    # selectie met dezelfde naam als een elset wint de elset
-    # (_selection_names meldt dat).
+    # For #ASTER lines (<<Mecway name>> -> Code-Aster name) and for the
+    # elsets of mesh_elements (bridge_to_aster, bridge_thermal): for a
+    # selection with the same name as an elset the elset wins
+    # (_selection_names reports that).
     model_data["group_renames"] = dict(renames)
-    # Selecties apart (een vlakselectie met de naam van een elset krijgt
-    # een eigen naam, _selection_names); gebruikt door bridge_acoustic.
+    # Selections separately (a face selection with the name of an elset gets
+    # its own name, _selection_names); used by bridge_acoustic.
     model_data["selection_renames"] = dict(sel_renames)
     model_data["mesh_group_names"] = set(group_ma) | set(group_no)
     model_data["face_node_groups"] = set(
         rn(n) for n in face_group_nodes if rn(n) not in group_ma)
     model_data["discretes"] = discretes
     model_data["_conn"] = conn
-    # Gesplitste line3-balken (cellen M<eid> en H<eid>, cell_names_of);
-    # extra knopen van flexible joints: model_data["joint_nodes"]
+    # Split line3 beams (cells M<eid> and H<eid>, cell_names_of);
+    # extra nodes of flexible joints: model_data["joint_nodes"]
     model_data["line3_split"] = split_line3
     model_data["_elem_elset"] = dict((eid, rn_es(es))
                                      for eid, shape, en, es in elements)
@@ -1365,19 +1365,19 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                          dict((rn(k), v) for k, v in group_weights.items()),
                          dict((rn(k), v) for k, v in group_integrals.items()),
                          dict((rn(k), v) for k, v in group_faces.items()))
-    # De vrije vlakken in het model (randelementen, ORIE_PEAU), zodat de
-    # foutschatter er een last op ziet (bridge_to_aster._error_estimator_block).
+    # The free faces in the model (boundary elements, ORIE_PEAU), so that the
+    # error estimator sees a load on them (bridge_to_aster._error_estimator_block).
     model_data["error_free_group"] = ERR_FREE_GROUP if free_members else None
     if free_members:
         model_data["skin_groups"].append(ERR_FREE_GROUP)
-    log("SUCCESS: Mesh geschreven: {0} knopen, {1} elementen, {2} randelementen, "
+    log("SUCCESS: Mesh written: {0} nodes, {1} elements, {2} boundary elements, "
         "{3} GROUP_MA, {4} GROUP_NO.".format(
             len(nids), len(conn), skin_count[0], len(group_ma), len(group_no)))
     return True
 
 
 def _per_area(params, area):
-    """Krachtparameters (float of tijdshistorie) gedeeld door area."""
+    """Force parameters (float or time history) divided by area."""
     out = {}
     for ax, v in params.items():
         if ax.startswith("_"):
@@ -1390,15 +1390,15 @@ def _per_area(params, area):
 
 
 # ==========================================
-# VLAKKEN PER KNOOP: GEWICHTEN EN NORMALEN
+# FACES PER NODE: WEIGHTS AND NORMALS
 # ==========================================
 def _lumped_weights(stype, pts):
     """
-    Knoopgewichten van een vlak (som = oppervlak): int(N_i dA), of bij een
-    niet-positief gewicht (hoeken van QUAD8/TRIA6) de HRZ-verdeling
+    Nodal weights of a face (sum = area): int(N_i dA), or for a
+    non-positive weight (corners of QUAD8/TRIA6) the HRZ distribution
     w_i = A * int(N_i^2 dA) / sum_j int(N_j^2 dA) (Hinton-Rock-Zienkiewicz,
-    zoals voor een gelumpte massamatrix). Hoe Mecway een elastic support over
-    de knopen verdeelt, is NIET geverifieerd.
+    as for a lumped mass matrix). How Mecway distributes an elastic support
+    over the nodes is NOT verified.
     """
     w = _face_integrals(stype, pts)[0]
     if min(w) > 0.0:
@@ -1425,9 +1425,9 @@ def _lumped_weights(stype, pts):
 
 def _face_normal(face, nodes, conn):
     """
-    Eenheidsnormaal van een vlak uit group_face_list, naar buiten gericht:
-    volumevlak van het moederelement af (via het zwaartepunt), schaalvlak
-    langs de vlaknormaal (side * elementnormaal; faceid 5 = elementnormaal).
+    Unit normal of a face from group_face_list, pointing outwards:
+    volume face away from the parent element (via the centroid), shell face
+    along the face normal (side * element normal; faceid 5 = element normal).
     """
     nc = 3 if face["stype"].startswith("TRIA") else 4
     p = [nodes[n] for n in face["nodes"][:nc]]
@@ -1449,9 +1449,9 @@ def _face_normal(face, nodes, conn):
 
 def _node_weights_normals(faces, nodes, conn):
     """
-    {nid: gewicht} en {nid: gemiddelde normaal} over de vlakken (2D-vlakken
-    van volumes en schalen). Normaal in een knoop: gewogen gemiddelde van de
-    normalen van de aangrenzende vlakken (zoals Mecway's frictionless,
+    {nid: weight} and {nid: average normal} over the faces (2D faces
+    of volumes and shells). Normal at a node: weighted average of the
+    normals of the adjacent faces (like Mecway's frictionless,
     manual v33 par. 9.2).
     """
     weights = OrderedDict()
@@ -1467,25 +1467,25 @@ def _node_weights_normals(faces, nodes, conn):
 
 
 def _round_key(values, scale):
-    """Sleutel om knopen met (vrijwel) gelijke waarden te groeperen."""
+    """Key to group nodes with (nearly) equal values."""
     return tuple(int(round(v / scale * 1.0e9)) for v in values)
 
 
 # ==========================================
-# DISCRETE ELEMENTEN OP KNOPEN (vóór het schrijven van het mesh)
+# DISCRETE ELEMENTS ON NODES (before writing the mesh)
 # ==========================================
 def _build_discretes(model_data, nodes, conn, face_list):
     """
-    POI1-discreten voor elastic support en knoopmassa's. Returns
-    OrderedDict {groep: {"nodes": [nid], "mod": "DIS_T"/"DIS_TR",
-    "cara": [(CARA, (waarden))]}}; knopen met gelijke waarden delen een
-    groep (AFFE_CARA_ELEM DISCRET kent alleen GROUP_MA, catalogus v17.4).
+    POI1 discretes for elastic support and nodal masses. Returns
+    OrderedDict {group: {"nodes": [nid], "mod": "DIS_T"/"DIS_TR",
+    "cara": [(CARA, (values))]}}; nodes with equal values share a
+    group (AFFE_CARA_ELEM DISCRET only knows GROUP_MA, catalogue v17.4).
 
-    Elastic support (manual v33 par. 9.4): per knoop een veer naar de grond
-    K = w_i * (kt I + (kn - kt) n n^T), w_i = knoopgewicht van het oppervlak
-    (_lumped_weights), n = gemiddelde normaal. K_T_N: volle symmetrische
-    3x3 in het globale stelsel, 6 waarden "triangulaire superieure par
-    colonne" (catalogus affe_cara_elem.py): K11, K12, K22, K13, K23, K33.
+    Elastic support (manual v33 par. 9.4): per node a spring to ground
+    K = w_i * (kt I + (kn - kt) n n^T), w_i = nodal weight of the area
+    (_lumped_weights), n = average normal. K_T_N: full symmetric
+    3x3 in the global system, 6 values "triangulaire superieure par
+    colonne" (catalogue affe_cara_elem.py): K11, K12, K22, K13, K23, K33.
     """
     out = OrderedDict()
 
@@ -1503,14 +1503,14 @@ def _build_discretes(model_data, nodes, conn, face_list):
     for bc in model_data.get("bcs", []):
         if bc["type"] != "elasticsupport":
             continue
-        bc["skip"] = True      # vertaald als discrete elementen
+        bc["skip"] = True      # translated as discrete elements
         sel = bc["selection"]
         faces = face_list.get(sel, [])
         kinds = set(f["kind"] for f in faces)
         if not faces:
-            # Mecway 33 slaat het op een elementselectie op, maar rekent er
-            # niet mee: headless gemeten (interne solver en CCX), blok met
-            # elastic support op 4 elementen = zelfde doorbuiging als zonder
+            # Mecway 33 stores it on an element selection, but does not
+            # use it: measured headless (internal solver and CCX), block with
+            # elastic support on 4 elements = same deflection as without
             model_data.setdefault("skipped_loads", []).append(
                 tr("elastic support op '{0}'",
                    "elastic support on '{0}'").format(sel))
@@ -1546,8 +1546,8 @@ def _build_discretes(model_data, nodes, conn, face_list):
         add("BRES", items, "DIS_T",
             lambda vals: [("K_T_N", vals), ("M_T_D_N", (0.0,))],
             "elastic support '{0}'".format(sel))
-        log("INFO: Elastic support '{0}': {1} knopen, oppervlak {2} m2, "
-            "kn={3} Pa/m, kt={4} Pa/m -> veren DIS_T K_T_N.".format(
+        log("INFO: Elastic support '{0}': {1} nodes, area {2} m2, "
+            "kn={3} Pa/m, kt={4} Pa/m -> springs DIS_T K_T_N.".format(
                 sel, len(weights), "%.6g" % sum(weights.values()), kn, kt))
 
     groups = model_data.get("node_groups", {})
@@ -1558,16 +1558,16 @@ def _build_discretes(model_data, nodes, conn, face_list):
             continue
         share = pm["value"] / float(len(ids))
         if pm["kind"] == "mass":
-            # Mecway (manual v33 par. 9.21): massa gelijk verdeeld over de
-            # knopen. M_T_D_N: 1 waarde (catalogus affe_cara_elem.py).
+            # Mecway (manual v33 par. 9.21): mass distributed equally over the
+            # nodes. M_T_D_N: 1 value (catalogue affe_cara_elem.py).
             add("BRMA", [(n, (share,)) for n in ids], "DIS_T",
                 lambda vals: [("K_T_D_N", (0.0, 0.0, 0.0)),
                               ("M_T_D_N", vals)],
                 "massa '{0}'".format(pm["selection"]))
         else:
             # M_TR_D_N: (M, IX, IY, IZ, IXY, IYZ, IXZ, EX, EY, EZ), U4.42.01
-            # par. DISCRET. Gelijk verdeeld over de knopen zoals de massa:
-            # NIET geverifieerd (manual zegt het alleen voor massa).
+            # par. DISCRET. Distributed equally over the nodes like the mass:
+            # NOT verified (the manual only says so for mass).
             if len(ids) > 1:
                 log(tr("WARNING: Rotatietraagheid op '{0}' ({1} knopen): "
                        "gelijk verdeeld (NIET geverifieerd tegen Mecway).",
@@ -1581,13 +1581,13 @@ def _build_discretes(model_data, nodes, conn, face_list):
                               ("M_TR_D_N", (0.0,) + tuple(vals) +
                                (0.0,) * 6)],
                 "rotatietraagheid '{0}'".format(pm["selection"]))
-        log("INFO: {0} op '{1}': {2} per knoop over {3} knopen.".format(
+        log("INFO: {0} on '{1}': {2} per node over {3} nodes.".format(
             pm["kind"], pm["selection"], share, len(ids)))
     return out
 
 
 # ==========================================
-# TRACTION, LINE PRESSURE, HYDROSTATISCHE DRUK
+# TRACTION, LINE PRESSURE, HYDROSTATIC PRESSURE
 # ==========================================
 def _not_translated(model_data, bc, what, why):
     bc["skip"] = True
@@ -1599,7 +1599,7 @@ def _not_translated(model_data, bc, what, why):
 
 
 def _element_kinds(model_data, sel):
-    """Modelisaties van de elementen van een elementselectie, of None."""
+    """Modelisations of the elements of an element selection, or None."""
     eids = model_data.get("element_selections", {}).get(sel)
     if eids is None:
         return None
@@ -1610,16 +1610,16 @@ def _element_kinds(model_data, sel):
 
 def _traction(model_data, bc, faces, skin_groups):
     """
-    Mecway (manual v33 par. 9.15): kracht per oppervlak, globaal.
-      - volumevlakken: FORCE_FACE (U4.44.01), randelementen in het model;
-      - schaalvlakken: FORCE_COQUE FX/FY/FZ met PLAN='SUP' (faceid 5, kant
-        van de elementnormaal) of 'INF' (faceid 6): Mecway legt de kracht
-        op het vlak op halve dikte, dus met een moment; PLAN SUP/INF doet
-        dat in Code-Aster (U4.44.01 FORCE_COQUE: "force applied to upper/
+    Mecway (manual v33 par. 9.15): force per area, global.
+      - volume faces: FORCE_FACE (U4.44.01), boundary elements in the model;
+      - shell faces: FORCE_COQUE FX/FY/FZ with PLAN='SUP' (faceid 5, side
+        of the element normal) or 'INF' (faceid 6): Mecway applies the force
+        on the face at half thickness, so with a moment; PLAN SUP/INF does
+        that in Code-Aster (U4.44.01 FORCE_COQUE: "force applied to upper/
         lower skin");
-      - schaalelementen (elementselectie): FORCE_COQUE PLAN='MOY'
-        (middenvlak, zoals Mecway);
-      - schaalranden en balkuiteinden: knoopkrachten (_edge_loads).
+      - shell elements (element selection): FORCE_COQUE PLAN='MOY'
+        (mid-surface, as in Mecway);
+      - shell edges and beam ends: nodal forces (_edge_loads).
     """
     sel = bc["selection"]
     kinds = faces.get("kinds", set()) if faces else set()
@@ -1650,15 +1650,15 @@ def _traction(model_data, bc, faces, skin_groups):
         return
     bc["aster_keyword"] = "FORCE_COQUE"
     d = OrderedDict(handler.to_aster_dict(bc["params"]))
-    d["PLAN"] = "'{0}'".format(plan)     # tekst in de .comm
+    d["PLAN"] = "'{0}'".format(plan)     # text in the .comm
     bc["aster_dict"] = d
-    log("INFO: Traction op schalen '{0}': FORCE_COQUE PLAN='{1}'.".format(
+    log("INFO: Traction on shells '{0}': FORCE_COQUE PLAN='{1}'.".format(
         sel, plan))
 
 
 def _shell_edge_parent(model_data, sel):
-    """MODELISATION van de schalen achter randgroep sel (DKT/DST/COQUE_3D),
-    of None als die niet eenduidig een schaaltype is."""
+    """MODELISATION of the shells behind edge group sel (DKT/DST/COQUE_3D),
+    or None if that is not unambiguously one shell type."""
     mods = model_data.get("elset_modelisations", {})
     elem_elset = model_data.get("_elem_elset", {})
     parents = set(mods.get(elem_elset.get(f["eid"]), "?") for f in
@@ -1669,8 +1669,8 @@ def _shell_edge_parent(model_data, sel):
 
 
 def _edge_length(model_data, sel):
-    """Totale lengte van de schaalranden in sel (SEG2; SEG3 via de
-    middenknoop als twee rechte stukken)."""
+    """Total length of the shell edges in sel (SEG2; SEG3 via the
+    mid node as two straight pieces)."""
     nodes = model_data["mesh_nodes"]
     total = 0.0
     for f in model_data.get("group_face_list", {}).get(sel, []):
@@ -1684,11 +1684,11 @@ def _edge_length(model_data, sel):
 
 def _line_pressure(model_data, bc, faces):
     """
-    Mecway (manual v33 par. 9.16): kracht per lengte op balkelementen
-    (FORCE_POUTRE, globaal FX/FY/FZ of lokaal N/VY/VZ) of op schaalranden
+    Mecway (manual v33 par. 9.16): force per length on beam elements
+    (FORCE_POUTRE, global FX/FY/FZ or local N/VY/VZ) or on shell edges
     (FORCE_ARETE, globaal; U4.44.01: "line forces to an edge of a volume
-    element or shell"). FORCE_POUTRE werkt ook op BARRE (trusses): run
-    17.4, staaf 2 m met FX=1000 N/m, EA=2,1e7 N -> u(2)=9,52381e-5 m exact.
+    element or shell"). FORCE_POUTRE also works on BARRE (trusses): run
+    17.4, bar 2 m with FX=1000 N/m, EA=2.1e7 N -> u(2)=9.52381e-5 m exact.
     """
     sel = bc["selection"]
     kinds = faces.get("kinds", set()) if faces else set()
@@ -1698,8 +1698,8 @@ def _line_pressure(model_data, bc, faces):
         bc["aster_keyword"] = "FORCE_POUTRE"
         return
     if kinds == set(["shelledge"]) and not local:
-        # De randen moeten in het model, met de modelisatie van de schaal
-        # (<EXCEPTION> MODELISA6_96 zonder, Code-Aster 17.4).
+        # The edges must be in the model, with the modelisation of the shell
+        # (<EXCEPTION> MODELISA6_96 without, Code-Aster 17.4).
         mods = model_data.get("elset_modelisations", {})
         elem_elset = model_data.get("_elem_elset", {})
         parents = set(mods.get(elem_elset.get(f["eid"]), "?") for f in
@@ -1726,15 +1726,15 @@ def _line_pressure(model_data, bc, faces):
 
 
 # ==========================================
-# DRUK EN TRACTION OP SCHAALRANDEN EN BALKUITEINDEN
+# PRESSURE AND TRACTION ON SHELL EDGES AND BEAM ENDS
 # ==========================================
 _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
               (0.774596669241483, 5.0 / 9.0)]
 
 
 def _seg_shape(nn, xi):
-    """Vormfuncties en afgeleiden van SEG2/SEG3 (Code-Aster-volgorde:
-    hoeken, dan middenknoop)."""
+    """Shape functions and derivatives of SEG2/SEG3 (Code-Aster order:
+    corners, then mid node)."""
     if nn == 2:
         return [0.5 * (1.0 - xi), 0.5 * (1.0 + xi)], [-0.5, 0.5]
     return ([0.5 * xi * (xi - 1.0), 0.5 * xi * (xi + 1.0), 1.0 - xi * xi],
@@ -1742,7 +1742,7 @@ def _seg_shape(nn, xi):
 
 
 def _shell_normal(nodes, cn, atype):
-    """Eenheidsnormaal van een schaalelement uit de hoekknopen."""
+    """Unit normal of a shell element from the corner nodes."""
     p = [nodes[n] for n in cn[:_N_CORNERS[atype]]]
     if len(p) == 3:
         return _vunit(_vcross(_vsub(p[1], p[0]), _vsub(p[2], p[0])))
@@ -1751,12 +1751,12 @@ def _shell_normal(nodes, cn, atype):
 
 def _edge_frames(model_data, faces_list):
     """
-    Per schaalrand (kind 'shelledge') de integraal over de randlengte:
+    Per shell edge (kind 'shelledge') the integral over the edge length:
     {nid: [int N_i t dl, int N_i t n dl, int N_i dl, int N_i e dl,
-    schaalnormaal]} met t de dikte, n de naar buiten gerichte normaal in
-    het schaalvlak (loodrecht op de rand, van het element af) en e de
-    raaklijn. Returns (dict, reden) met reden != None als een dikte
-    ontbreekt.
+    shell normal]} with t the thickness, n the outward normal in
+    the shell plane (perpendicular to the edge, away from the element) and e
+    the tangent. Returns (dict, reason) with reason != None if a thickness
+    is missing.
     """
     nodes = model_data["mesh_nodes"]
     conn = model_data["_conn"]
@@ -1792,7 +1792,7 @@ def _edge_frames(model_data, faces_list):
                 w = gw * jac * shp[i]
                 a[0] += w * t
                 a[2] += w
-                # raaklijn met een vaste zin (de zin van een rand is vrij)
+                # tangent with a fixed sense (the sense of an edge is free)
                 s = 1.0 if _vdot(e, a[3]) >= 0.0 else -1.0
                 for k in range(3):
                     a[1][k] += w * t * n[k]
@@ -1802,31 +1802,31 @@ def _edge_frames(model_data, faces_list):
 
 def _edge_loads(model_data, bc, what):
     """
-    Druk of traction op schaalranden en balkuiteinden als knoopkrachten
-    (FORCE_NODALE via bc["node_loads"], zoals een moment op vlakken;
-    bridge_to_aster._build_charges schaalt ze, ook met een tijdsfunctie).
+    Pressure or traction on shell edges and beam ends as nodal forces
+    (FORCE_NODALE via bc["node_loads"], like a moment on faces;
+    bridge_to_aster._build_charges scales them, also with a time function).
 
-    Mecway (manual v33 par. 9.14/9.15): druk = normaalkracht evenredig met
-    het oppervlak van het vlak, positief naar het element toe; traction =
-    kracht per oppervlak in X/Y/Z. Het oppervlak van een schaalrand is
-    lengte x dikte (het randvlak ligt symmetrisch om het middenvlak, dus
-    geen moment), dat van een balkuiteinde de doorsnede A. Zo vertaald:
-    schaalrand f_i = -p int(N_i t n dl) (n in het schaalvlak, van het
-    element af) of T int(N_i t dl); balkuiteinde -p A u (u = de as naar
-    buiten) of T A. Dat Mecway het randvlak zo rekent, is NIET
-    geverifieerd tegen een Mecway-oplossing (geen voorbeeld met druk op
-    een schaalrand of balkuiteinde). Code-Aster heeft geen druk op een
-    schaalrand (PRES_REP: "domaine de milieu continu 2D ou 3D, ou ...
-    coques", catalogus affe_char_meca.py v17.4); FORCE_ARETE zou een groep
-    per richting vragen. Statisch gelijkwaardig met de consistente
-    knoopkrachten van de rand; na LINE_QUAD blijven de krachten op de
-    Mecway-knopen.
+    Mecway (manual v33 par. 9.14/9.15): pressure = normal force proportional to
+    the area of the face, positive towards the element; traction =
+    force per area in X/Y/Z. The area of a shell edge is
+    length x thickness (the edge face is symmetric about the mid-surface, so
+    no moment), that of a beam end the cross-section A. Translated as:
+    shell edge f_i = -p int(N_i t n dl) (n in the shell plane, away from the
+    element) or T int(N_i t dl); beam end -p A u (u = the axis pointing
+    outwards) or T A. That Mecway computes the edge face this way is NOT
+    verified against a Mecway solution (no example with pressure on
+    a shell edge or beam end). Code-Aster has no pressure on a
+    shell edge (PRES_REP: "domaine de milieu continu 2D ou 3D, ou ...
+    coques", catalogue affe_char_meca.py v17.4); FORCE_ARETE would need a group
+    per direction. Statically equivalent to the consistent
+    nodal forces of the edge; after LINE_QUAD the forces stay on the
+    Mecway nodes.
     """
     sel = bc["selection"]
     if any(is_position(v) for v in bc["aster_dict"].values()):
-        # De knoopkrachten zijn vaste vectoren maal de waarde
-        # (_render_node_loads); een formule in x, y, z zou per knoop
-        # anders moeten wegen. KNOWN_BUGS 104.
+        # The nodal forces are fixed vectors times the value
+        # (_render_node_loads); a formula in x, y, z would have to be
+        # weighted differently per node. KNOWN_BUGS 104.
         _not_translated(model_data, bc, what, tr(
             "formule in x, y, z op schaalranden of balkuiteinden "
             "(KNOWN_BUGS 104)",
@@ -1840,7 +1840,7 @@ def _edge_loads(model_data, bc, what):
     ends = [f for f in faces_list if f["kind"] == "beam"]
     frames, why = _edge_frames(model_data, edges)
     elem_elset = model_data.get("_elem_elset", {})
-    per_node = OrderedDict()     # nid -> [gewicht, vector]  (druk: -vector)
+    per_node = OrderedDict()     # nid -> [weight, vector]  (pressure: -vector)
     for nid, a in frames.items():
         per_node[nid] = [a[0], list(a[1])]
     for f in ends:
@@ -1889,17 +1889,17 @@ def _edge_loads(model_data, bc, what):
                     for n, a in per_node.items()]
     bc["aster_keyword"] = "FORCE_NODALE"
     bc["node_loads"] = node_loads
-    log("INFO: {0} op '{1}': {2} schaalrand(en), {3} balkuiteinde(n) -> "
-        "knoopkrachten over {4} knopen (oppervlak {5} m2).".format(
+    log("INFO: {0} on '{1}': {2} shell edge(s), {3} beam end(s) -> "
+        "nodal forces over {4} nodes (area {5} m2).".format(
             what, sel, len(edges), len(ends), len(per_node),
             "%.6g" % sum(a[0] for a in per_node.values())))
 
 
 def _gravity_sum(grav, sel):
     """
-    Vectorsom (gx, gy, gz) van de gravity-items. Een tijdshistorie (lijst
-    (t, g); nu leest bridge_bcs.GravityBC alleen een vaste waarde, KNOWN_BUGS
-    32) telt met de laatste waarde mee: de druk-formule is constant (WARNING).
+    Vector sum (gx, gy, gz) of the gravity items. A time history (list
+    (t, g); bridge_bcs.GravityBC now only reads a fixed value, KNOWN_BUGS
+    32) counts with its last value: the pressure formula is constant (WARNING).
     """
     total = [0.0, 0.0, 0.0]
     history = False
@@ -1916,24 +1916,24 @@ def _gravity_sum(grav, sel):
                "WARNING: Hydrostatic pressure on '{0}': gravity with a "
                "time history; the last value is used.").format(sel))
     if len(grav) > 1:
-        log("INFO: Hydrostatische druk op '{0}': {1} gravity-items opgeteld "
-            "tot ({2}) m/s2.".format(sel, len(grav),
+        log("INFO: Hydrostatic pressure on '{0}': {1} gravity items summed "
+            "to ({2}) m/s2.".format(sel, len(grav),
                                      ", ".join("%.6g" % c for c in total)))
     return tuple(total)
 
 
 def _hydrostatic(model_data, bc, faces, skin_groups):
     """
-    Mecway (manual v33 par. 9.17): p = rho * g . (x - x0) onder het vrije
-    oppervlak (punt x0), 0 erboven; g = de gravity-belasting van het model.
-    Code-Aster: consistente knoopkrachten (FORCE_NODALE via node_loads,
-    _hydrostatic_forces), op volumevlakken of schaalvlakken aan een kant
-    (teken zoals surfacepressure); headless tegen Mecway: resultante exact,
-    hex20-blok DX 0,12%. Terugval voor andere vlaktypen: PRES_REP /
-    FORCE_COQUE met een FORMULE (bridge_to_aster._hydrostatic_formula).
-    Meerdere gravity-items: de vectorsom, zoals de
-    gravity-lasten zelf in Code-Aster opgeteld worden (elk een eigen last in
-    EXCIT, of een PESANTEUR in bridge_to_aster._sum_gravity).
+    Mecway (manual v33 par. 9.17): p = rho * g . (x - x0) below the free
+    surface (point x0), 0 above it; g = the gravity load of the model.
+    Code-Aster: consistent nodal forces (FORCE_NODALE via node_loads,
+    _hydrostatic_forces), on volume faces or shell faces on one side
+    (sign as for surfacepressure); headless against Mecway: resultant exact,
+    hex20 block DX 0.12%. Fallback for other face types: PRES_REP /
+    FORCE_COQUE with a FORMULE (bridge_to_aster._hydrostatic_formula).
+    Several gravity items: the vector sum, as the
+    gravity loads themselves are summed in Code-Aster (each its own load in
+    EXCIT, or one PESANTEUR in bridge_to_aster._sum_gravity).
     """
     grav = [b for b in model_data["bcs"]
             if b["type"] == "gravity" and not b.get("skip")]
@@ -1952,8 +1952,8 @@ def _hydrostatic(model_data, bc, faces, skin_groups):
         if bc["selection"] not in skin_groups:
             skin_groups.append(bc["selection"])
     elif kinds == set(["shellface"]) and len(faces.get("sides", ())) == 1:
-        # Een druk als functie op schalen moet via FORCE_COQUE PRES
-        # (<EXCEPTION> ELEMENTS4_92 met PRES_REP, Code-Aster 17.4).
+        # A pressure as a function on shells must go via FORCE_COQUE PRES
+        # (<EXCEPTION> ELEMENTS4_92 with PRES_REP, Code-Aster 17.4).
         sign = float(list(faces["sides"])[0])
         bc["aster_keyword"] = "FORCE_COQUE"
     else:
@@ -1968,8 +1968,8 @@ def _hydrostatic(model_data, bc, faces, skin_groups):
              "g": g, "sign": sign}
     forces = _hydrostatic_forces(model_data, bc["selection"], hydro)
     if forces is None:
-        # vlaktype zonder vormfuncties hier: PRES_REP/FORCE_COQUE met de
-        # formule (bridge_to_aster._hydrostatic_formula, Gausspunten)
+        # face type without shape functions here: PRES_REP/FORCE_COQUE with the
+        # formula (bridge_to_aster._hydrostatic_formula, Gauss points)
         bc["hydro"] = hydro
         bc["aster_dict"] = {"PRES": "hydro"}
         return
@@ -1979,17 +1979,17 @@ def _hydrostatic(model_data, bc, faces, skin_groups):
     bc["node_loads"] = OrderedDict([("HYD", forces)])
     bc["aster_dict"] = {"HYD": 1.0}
     tot = [sum(f[1][k] for f in forces) for k in range(3)]
-    log("INFO: Hydrostatische druk op '{0}': knoopkrachten over {1} knopen, "
-        "resultante ({2}) N.".format(bc["selection"], len(forces),
+    log("INFO: Hydrostatic pressure on '{0}': nodal forces over {1} nodes, "
+        "resultant ({2}) N.".format(bc["selection"], len(forces),
                                      ", ".join("%.6g" % c for c in tot)))
 
 
 def _sub_rule(stype, k):
     """
-    Integratieregel over k x k deelcellen (vierhoek) of k^2 deeldriehoeken,
-    met de regel van _face_integrals per deelcel. Voor een vlak dat het
-    vrije oppervlak snijdt: de knik in p = max(0, ...) valt dan in een
-    kleine cel (fout ~1/k^2).
+    Integration rule over k x k sub-cells (quadrilateral) or k^2 sub-triangles,
+    with the rule of _face_integrals per sub-cell. For a face that
+    intersects the free surface: the kink in p = max(0, ...) then falls in a
+    small cell (error ~1/k^2).
     """
     out = []
     if stype.startswith("TRIA"):
@@ -2018,14 +2018,14 @@ def _sub_rule(stype, k):
 
 def _hydrostatic_forces(model_data, sel, hydro):
     """
-    Consistente knoopkrachten f_i = -int(N_i p n dA) van de hydrostatische
-    druk (n = normaal van het vlak naar buiten, druk > 0 = het vlak in).
-    Mecway integreert stuksgewijs exact (manual v33 par. 9.17: "< 1%");
-    PRES_REP met een FORMULE neemt Gausspunten: blok 1x1x1 m, 2 hex8 over
-    de hoogte, waterlijn op 0,75 m: resultante 1,7% te groot, Mecway
-    (headless) 0,03%. Hier: vlakken die het vrije oppervlak snijden over
-    8 x 8 deelcellen. Returns [(nid, (fx, fy, fz))] of None als een vlak
-    geen bekend type heeft.
+    Consistent nodal forces f_i = -int(N_i p n dA) of the hydrostatic
+    pressure (n = outward normal of the face, pressure > 0 = into the face).
+    Mecway integrates piecewise exactly (manual v33 par. 9.17: "< 1%");
+    PRES_REP with a FORMULE uses Gauss points: block 1x1x1 m, 2 hex8 over
+    the height, water line at 0.75 m: resultant 1.7% too large, Mecway
+    (headless) 0.03%. Here: faces that intersect the free surface over
+    8 x 8 sub-cells. Returns [(nid, (fx, fy, fz))] or None if a face
+    has no known type.
     """
     nodes = model_data["mesh_nodes"]
     conn = model_data["_conn"]
@@ -2047,7 +2047,7 @@ def _hydrostatic_forces(model_data, sel, hydro):
         if f["kind"] == "shellface":
             orient = float(f.get("side") or 1)
         else:
-            # buitennormaal: weg van het zwaartepunt van het element
+            # outward normal: away from the centroid of the element
             cn = conn[f["eid"]][1]
             ce = [sum(nodes[n][c] for n in cn) / len(cn) for c in range(3)]
             cf = [sum(p[c] for p in pts) / len(pts) for c in range(3)]
@@ -2087,10 +2087,10 @@ def _hydrostatic_forces(model_data, sel, hydro):
 
 
 # ==========================================
-# COMPRESSION ONLY EN SYMMETRY: KNOOPGROEPEN PER RICHTING
+# COMPRESSION ONLY AND SYMMETRY: NODE GROUPS PER DIRECTION
 # ==========================================
 def _extra_node_group(model_data, prefix, nids):
-    """Nieuwe knoopgroep (DEFI_GROUP NOEUD in de .comm); returns naam."""
+    """New node group (DEFI_GROUP NOEUD in the .comm); returns name."""
     groups = model_data.setdefault("extra_node_groups", OrderedDict())
     name = "{0}{1}".format(prefix, len(groups) + 1)
     groups[name] = sorted(nids)
@@ -2099,12 +2099,12 @@ def _extra_node_group(model_data, prefix, nids):
 
 def _compression_only(model_data, bc, faces_list):
     """
-    Mecway (manual v33 par. 9.5): als frictionless waar de steun op druk
-    komt, vrij bij trek. Code-Aster: LIAISON_UNIL (U4.44.11 par. 3.8),
-    sum COEF_MULT_i * u_i < COEF_IMPO, per knoop n . u <= 0 met n de naar
-    buiten gerichte normaal (de steun ligt aan die kant). Knopen met
-    dezelfde normaal vormen een zone. Rotaties van schaalknopen worden niet
-    vastgehouden (Mecway's frictionless doet dat wel; NIET vertaald).
+    Mecway (manual v33 par. 9.5): like frictionless where the support is in
+    compression, free in tension. Code-Aster: LIAISON_UNIL (U4.44.11 par. 3.8),
+    sum COEF_MULT_i * u_i < COEF_IMPO, per node n . u <= 0 with n the
+    outward normal (the support is on that side). Nodes with
+    the same normal form a zone. Rotations of shell nodes are not
+    held (Mecway's frictionless does; NOT translated).
     """
     nodes = model_data["mesh_nodes"]
     conn = model_data["_conn"]
@@ -2129,12 +2129,12 @@ def _compression_only(model_data, bc, faces_list):
     bc["unil_zones"] = [(_extra_node_group(model_data, "BRCO", nids), v)
                         for v, nids in zones.values()]
     bc["aster_dict"] = {}
-    log("INFO: Compression only '{0}': {1} knopen in {2} zone(s) "
+    log("INFO: Compression only '{0}': {1} nodes in {2} zone(s) "
         "LIAISON_UNIL.".format(bc["selection"], len(normals), len(zones)))
 
 
 def _plane_normal(points):
-    """Normaal van het vlak door de punten (drie ver uit elkaar), of None."""
+    """Normal of the plane through the points (three far apart), or None."""
     if len(points) < 3:
         return None
     p0 = points[0]
@@ -2153,10 +2153,10 @@ def _plane_normal(points):
 
 def _angl_naut3(x, y):
     """
-    ANGL_NAUT (graden) met lokale x langs x en lokale y langs (de projectie
-    van) y. Nautische hoeken van Code-Aster: alpha om Z, beta om y1, gamma
-    om x2 (U4.42.01 ORIENTATION); na alpha en beta is y1 = (-sin a, cos a,
-    0), gamma draait y1 naar y.
+    ANGL_NAUT (degrees) with local x along x and local y along (the projection
+    of) y. Nautical angles of Code-Aster: alpha about Z, beta about y1, gamma
+    about x2 (U4.42.01 ORIENTATION); after alpha and beta y1 = (-sin a, cos a,
+    0), gamma rotates y1 to y.
     """
     a, b, _ = _angl_naut(x)
     ar = math.radians(a)
@@ -2167,11 +2167,11 @@ def _angl_naut3(x, y):
 
 def _symmetry(model_data, bc, faces_list):
     """
-    Mecway (manual v33 par. 9.40): verplaatsing loodrecht op het
-    symmetrievlak nul; balkuiteinden ook de rotaties om de assen in het
-    vlak, schaalranden alleen de rotatie om de rand. LIAISON_OBLIQUE met
-    lokaal x = normaal: volumeknopen DX=0, balkknopen DX=DRY=DRZ=0,
-    schaalranden (lokaal y = rand) DX=DRY=0.
+    Mecway (manual v33 par. 9.40): displacement perpendicular to the
+    symmetry plane zero; beam ends also the rotations about the in-plane
+    axes, shell edges only the rotation about the edge. LIAISON_OBLIQUE with
+    local x = normal: volume nodes DX=0, beam nodes DX=DRY=DRZ=0,
+    shell edges (local y = edge) DX=DRY=0.
     """
     nodes = model_data["mesh_nodes"]
     sel = bc["selection"]
@@ -2223,7 +2223,7 @@ def _symmetry(model_data, bc, faces_list):
         t = _vunit(_vsub(t, tuple(_vdot(t, nrm) * c for c in nrm)))
         if t[0] < -1.0e-9 or (abs(t[0]) <= 1.0e-9 and (
                 t[1] < -1.0e-9 or (abs(t[1]) <= 1.0e-9 and t[2] < 0.0))):
-            t = (-t[0], -t[1], -t[2])     # richting van de rand is vrij
+            t = (-t[0], -t[1], -t[2])     # direction of the edge is free
         edges.setdefault(_round_key(t, 1.0), [t, set()])[1].update(
             n for n in f["nodes"] if n not in beam)
     edge_nodes = set(n for _, ns in edges.values() for n in ns)
@@ -2241,33 +2241,33 @@ def _symmetry(model_data, bc, faces_list):
                         _angl_naut3(nrm, t), ("DX", "DRY")))
     bc["oblique"] = entries
     bc["aster_dict"] = {}
-    log("INFO: Symmetry '{0}': normaal ({1}), {2} groep(en) "
+    log("INFO: Symmetry '{0}': normal ({1}), {2} group(s) "
         "LIAISON_OBLIQUE.".format(sel, ", ".join("%.4g" % c for c in nrm),
                                   len(entries)))
 
 
 # ==========================================
-# VERLIJMD CONTACT -> LIAISON_MAIL
+# BONDED CONTACT -> LIAISON_MAIL
 # ==========================================
 def _bonded(model_data, c, group_faces, rn):
     """
-    Mecway bonded contact (manual v33 par. 9.9.1): de slave-knopen volgen
-    het geprojecteerde punt op het master-vlak. Code-Aster: AFFE_CHAR_MECA
+    Mecway bonded contact (manual v33 par. 9.9.1): the slave nodes follow
+    the projected point on the master face. Code-Aster: AFFE_CHAR_MECA
     LIAISON_MAIL (U4.44.01): "slave node movements are linked to the
-    movements of their projections on the master face". TYPE_RACCORD naar
-    de soort knopen (U4.44.01 LIAISON_MAIL): MASSIF (volume-volume), COQUE
-    (schaal-schaal), MASSIF_COQUE ("slave nodes ... massive type ... master
-    nodes ... shell type"). Schaal (slave) op volume (master): MASSIF met
-    de schaalknopen als slave; dat koppelt alleen DX/DY/DZ, de rotaties van
-    de schaal blijven vrij. Run 17.4 (balk 1x0,1x0,1 m hex8 + DKT-plaat
-    0,01 m op het bovenvlak, eindlast 100 N): DZ -1,11361e-5 m, gelijk aan
-    gedeelde knopen (-1,11362e-5); plaat met eigen mesh 7x3 -1,11430e-5
-    (zonder plaat -1,32381e-5). COQUE_MASSIF (EPAIS, CHAM_NORMALE,
-    catalogus affe_char_meca.py) is daar niet nodig. Schaalranden van één
-    component op een volume: COQUE_MASSIF, een stijve verbinding
-    (_shell_edge_joint); anders MASSIF, dan werkt de rand als scharnier
+    movements of their projections on the master face". TYPE_RACCORD by
+    the kind of nodes (U4.44.01 LIAISON_MAIL): MASSIF (volume-volume), COQUE
+    (shell-shell), MASSIF_COQUE ("slave nodes ... massive type ... master
+    nodes ... shell type"). Shell (slave) on volume (master): MASSIF with
+    the shell nodes as slave; that only couples DX/DY/DZ, the rotations of
+    the shell stay free. Run 17.4 (beam 1x0.1x0.1 m hex8 + DKT plate
+    0.01 m on the top face, end load 100 N): DZ -1.11361e-5 m, equal to
+    shared nodes (-1.11362e-5); plate with its own mesh 7x3 -1.11430e-5
+    (without plate -1.32381e-5). COQUE_MASSIF (EPAIS, CHAM_NORMALE,
+    catalogue affe_char_meca.py) is not needed there. Shell edges of one
+    component on a volume: COQUE_MASSIF, a rigid connection
+    (_shell_edge_joint); otherwise MASSIF, then the edge acts as a hinge
     (WARNING).
-    Returns een dict voor bridge_to_aster, of None.
+    Returns a dict for bridge_to_aster, or None.
     """
     master, slave = rn(c["master"]), rn(c["slave"])
     label = tr("verlijmd contact '{0}' / '{1}'",
@@ -2304,10 +2304,10 @@ def _bonded(model_data, c, group_faces, rn):
     raccord = {("MASSIF", "MASSIF"): "MASSIF", ("COQUE", "COQUE"): "COQUE",
                ("COQUE", "MASSIF"): "MASSIF_COQUE",
                ("MASSIF", "COQUE"): "MASSIF"}[(m_type, s_type)]
-    # Thermisch (T30/T31): bridge_thermal.bonded_loads vertaalt het contact
-    # (LIAISON_MAIL op TEMP of ECHANGE_PAROI) en meldt zelf wat niet lukt;
-    # de mechanische meldingen hieronder gelden dan alleen voor het
-    # mechanische deel van de keten thermisch -> mechanisch.
+    # Thermal (T30/T31): bridge_thermal.bonded_loads translates the contact
+    # (LIAISON_MAIL on TEMP or ECHANGE_PAROI) and reports itself what fails;
+    # the mechanical messages below then only apply to the
+    # mechanical part of the thermal -> mechanical chain.
     thermal = model_data.get("thermal_data") is not None
     mech = not thermal or model_data.get("thermo_mech")
     edge = None
@@ -2337,44 +2337,44 @@ def _bonded(model_data, c, group_faces, rn):
                "WARNING: {0} is 'elastic': Code-Aster LIAISON_MAIL is "
                "rigid; the stiffness is not translated.").format(label))
     if c.get("tolerance", 0.0) <= 0.0:
-        log("INFO: {0}: automatische tolerantie van Mecway; Code-Aster "
-            "koppelt alle slave-knopen (geen DISTANCE_MAX).".format(label))
-    # Master: bij volumes de moederelementen van de vlakken (<EXCEPTION>
-    # PROJECTION4_55 met de randvlakken: "les mailles maîtres doivent avoir
+        log("INFO: {0}: automatic tolerance of Mecway; Code-Aster "
+            "couples all slave nodes (no DISTANCE_MAX).".format(label))
+    # Master: for volumes the parent elements of the faces (<EXCEPTION>
+    # PROJECTION4_55 with boundary faces: "les mailles maîtres doivent avoir
     # la même dimension que l'espace de modélisation", Code-Aster 17.4);
-    # bij schalen de schaalelementen zelf (= de vlakgroep). Slave: de
-    # knopen van de vlakken (GROUP_NO_ESCL), dan hoeven de randvlakken niet
-    # in het model (MODELISA6_96).
+    # for shells the shell elements themselves (= the face group). Slave: the
+    # nodes of the faces (GROUP_NO_ESCL), then the boundary faces need not be
+    # in the model (MODELISA6_96).
     faces = model_data.get("group_face_list", {})
     slave_set = set(n for f in faces.get(slave, []) for n in f["nodes"])
     relations, ddl, rot_ddl = None, None, None
     if raccord == "COQUE" and mech:
-        # Schaal op schaal. LIAISON_MAIL kan niet op een kwadratische master
-        # (tri6/quad8 -> COQUE_3D: het vraagt DX van de middenknoop van de
-        # QUAD9/TRIA7, die alleen rotaties heeft, CHARGES2_31) en laat de
-        # drilling-rotatie alleen weg als de master loodrecht op een
-        # globale as staat (_coque_ddl). Dan schrijft de bridge de
-        # relaties zelf (_bonded_relations, LIAISON_DDL).
-        # Volume als slave (MASSIF_COQUE) op een kwadratische schaal rekent
-        # LIAISON_MAIL wel goed: quad8-plaat met een hex20-blok eronder,
-        # knopen op en midden in de plaatelementen, gelijk aan de relaties
-        # van _bonded_relations tot 7 cijfers (Code-Aster 17.4).
+        # Shell on shell. LIAISON_MAIL cannot handle a quadratic master
+        # (tri6/quad8 -> COQUE_3D: it asks for DX of the mid node of the
+        # QUAD9/TRIA7, which only has rotations, CHARGES2_31) and omits the
+        # drilling rotation only if the master is normal to a
+        # global axis (_coque_ddl). Then the bridge writes the
+        # relations itself (_bonded_relations, LIAISON_DDL).
+        # A volume as slave (MASSIF_COQUE) on a quadratic shell is solved
+        # correctly by LIAISON_MAIL: quad8 plate with a hex20 block below,
+        # nodes on and in the middle of the plate elements, equal to the
+        # relations of _bonded_relations to 7 digits (Code-Aster 17.4).
         conn = model_data.get("_conn", {})
         m_eids = sorted(set(f["eid"] for f in faces.get(master, [])))
         quadratic = any(conn[e][0] in ("QUAD8", "TRIA6") for e in m_eids
                         if e in conn)
         ddl = _coque_ddl(group_faces.get(master, {}))
         if quadratic:
-            # De rotaties kan LIAISON_MAIL wel (de middenknoop heeft
-            # DRX/DRY/DRZ en telt dan exact mee); de bridge schrijft alleen
-            # de translaties. Loodrecht op een globale as zonder de
-            # drilling-rotatie, anders alle drie (DDL kent geen lokaal
-            # assenstelsel) met NPREC = -1 (_bonded_relations). Gemeten
-            # (Code-Aster 17.4, quad8-plaat 10 x 4 met een rib midden in de
-            # elementen, LS-07i/k): in het XY-vlak 1,13419e-5 m, 30 graden
-            # gedraaid met alle drie de rotaties 1,13358e-5 m (-0,05 %); de
-            # rotaties met LIAISON_DDL zonder de middenknoop gaven
-            # 1,2330e-5 (+8,7 %, te slap).
+            # LIAISON_MAIL can do the rotations (the mid node has
+            # DRX/DRY/DRZ and then counts exactly); the bridge only writes
+            # the translations. Perpendicular to a global axis without the
+            # drilling rotation, otherwise all three (DDL knows no local
+            # coordinate system) with NPREC = -1 (_bonded_relations). Measured
+            # (Code-Aster 17.4, quad8 plate 10 x 4 with a rib mid-element,
+            # LS-07i/k): in the XY plane 1.13419e-5 m, rotated 30 degrees
+            # with all three rotations 1.13358e-5 m (-0.05 %); the
+            # rotations with LIAISON_DDL without the mid node gave
+            # 1.2330e-5 (+8.7 %, too flexible).
             if ddl is not None:
                 rot_ddl = tuple(d for d in ddl if d.startswith("DR"))
             else:
@@ -2396,20 +2396,20 @@ def _bonded(model_data, c, group_faces, rn):
     hit = sorted(set(f["eid"] for sel in (master, slave)
                      for f in faces.get(sel, []) if f["eid"] in off))
     if mech and hit:
-        # Element offset (bridge_offset) op de schalen van het contact:
-        # LIAISON_MAIL projecteert op de cellen van de master; bij de
-        # starre route liggen die op het verschoven vlak (eigen knopen),
-        # bij EXCENTREMENT en bij de eigen relaties (_bonded_relations,
-        # Mecway-coordinaten) op de knopen. Slave-knopen zijn altijd de
-        # Mecway-knopen. Wat Mecway doet: NIET nagelopen (KNOWN_BUGS 108).
+        # Element offset (bridge_offset) on the shells of the contact:
+        # LIAISON_MAIL projects onto the cells of the master; with the
+        # rigid route they lie on the offset face (own nodes),
+        # with EXCENTREMENT and with the own relations (_bonded_relations,
+        # Mecway coordinates) on the nodes. Slave nodes are always the
+        # Mecway nodes. What Mecway does: NOT checked (KNOWN_BUGS 108).
         shifted = relations is None and any(
             off.get(f["eid"]) == "rigid" for f in faces.get(master, []))
         if raccord == "COQUE" and any(off[e] == "rigid" for e in hit):
-            # quad8-strook met offset (eigen knopen) verlijmd aan een
-            # tweede strook: MUMPS meldde ten onrechte FACTOR_11 op DRX van
-            # een verschoven knoop; met NPREC = -1 tip -9,4266e-4 m tegen
-            # -9,41484e-4 (Mecway, doorlopende strook LS-07b; Code-Aster
-            # 17.4). Zoals bij een scheve master (bridge_to_aster
+            # quad8 strip with offset (own nodes) bonded to a
+            # second strip: MUMPS wrongly reported FACTOR_11 on DRX of
+            # an offset node; with NPREC = -1 tip -9.4266e-4 m versus
+            # -9.41484e-4 (Mecway, continuous strip LS-07b; Code-Aster
+            # 17.4). As with an oblique master (bridge_to_aster
             # .bonded_nprec).
             model_data["_bonded_nprec_off"] = True
         where = (tr("het verschoven middenvlak van de master (LIAISON_MAIL "
@@ -2440,15 +2440,15 @@ def _bonded(model_data, c, group_faces, rn):
                                                      c["slave"]),
            "conductance": c.get("conductance")}
     if thermal:
-        log("INFO: {0}: thermische koppeling in bridge_thermal "
-            "(LIAISON_MAIL op TEMP of ECHANGE_PAROI).".format(label))
+        log("INFO: {0}: thermal coupling in bridge_thermal "
+            "(LIAISON_MAIL on TEMP or ECHANGE_PAROI).".format(label))
     if relations is not None:
-        # mechanisch: LIAISON_DDL i.p.v. LIAISON_MAIL (_render_mpcs); bij
-        # rot_ddl daarnaast LIAISON_MAIL voor alleen de rotaties
+        # mechanical: LIAISON_DDL instead of LIAISON_MAIL (_render_mpcs); with
+        # rot_ddl also LIAISON_MAIL for the rotations only
         out["relations"] = relations
         if rot_ddl:
             out["ddl"] = rot_ddl
-            log("INFO: {0}: rotaties via LIAISON_MAIL TYPE_RACCORD='COQUE' "
+            log("INFO: {0}: rotations via LIAISON_MAIL TYPE_RACCORD='COQUE' "
                 "DDL={1}.".format(label, rot_ddl))
         return out
     if mech:
@@ -2457,31 +2457,31 @@ def _bonded(model_data, c, group_faces, rn):
     if raccord == "COQUE":
         out["ddl"] = ddl
     if edge is not None:
-        # bridge_to_aster: CHAM_NORMALE = CREA_CHAMP NOEU_GEOM_R NORMALE op
-        # de schaalcomponent (docs/ASTER_regels_voorbeelden.md voorbeeld 2)
+        # bridge_to_aster: CHAM_NORMALE = CREA_CHAMP NOEU_GEOM_R NORMALE on
+        # the shell component (docs/ASTER_regels_voorbeelden.md example 2)
         out["shell_group"], out["epais"] = edge
     return out
 
 
 def _coque_ddl(info):
     """
-    DDL van LIAISON_MAIL TYPE_RACCORD='COQUE' (schaal op schaal). Zonder DDL
-    koppelt Code-Aster alle DDL van de schalen ("par défaut tous les DDL
-    des coques", catalogus affe_char_meca.py v17.4), ook de rotatie om de
-    normaal van de master (drilling). Die heeft bij DKT alleen een
-    fictieve stijfheid (AFFE_CARA_ELEM COQUE COEF_RIGI_DRZ, standaard
-    1e-5) en MUMPS vindt dan nulpivots: <EXCEPTION> <FACTOR_11> op DRZ
-    (Code-Aster 17.4, NPREC=8; plaatstrook met een lijmnaad in het vlak en
-    een rib met de rand op een plaat, TestFiles/Verificatie/
-    tests_lineair_statisch.py LS-07; met NPREC=-1 dezelfde oplossing als zonder de
-    drilling-koppeling, ook met COEF_RIGI_DRZ=1e-3 nog FACTOR_11; de
-    strook van LS-07a 30 graden gedraaid (LS-07f) met alle DDL: idem).
-    Buiging en dwarskracht gaan via de verplaatsingen en de twee rotaties
-    in het mastervlak. Ligt de master in een vlak loodrecht op een globale
-    as, dan blijft die rotatie (DRX/DRY/DRZ) hier weg.
-    Returns een tuple met DDL-namen, of None als DDL (globale componenten)
-    dat niet kan uitdrukken (scheve of gekromde master): dan schrijft
-    _bonded de relaties zelf (_bonded_relations).
+    DDL of LIAISON_MAIL TYPE_RACCORD='COQUE' (shell on shell). Without DDL
+    Code-Aster couples all DDL of the shells ("par défaut tous les DDL
+    des coques", catalogue affe_char_meca.py v17.4), also the rotation about
+    the normal of the master (drilling). With DKT that only has a
+    fictitious stiffness (AFFE_CARA_ELEM COQUE COEF_RIGI_DRZ, default
+    1e-5) and MUMPS then finds zero pivots: <EXCEPTION> <FACTOR_11> on DRZ
+    (Code-Aster 17.4, NPREC=8; plate strip with a glue seam in the plane and
+    a rib with its edge on a plate, TestFiles/Verificatie/
+    tests_lineair_statisch.py LS-07; with NPREC=-1 the same solution as without the
+    drilling coupling, also with COEF_RIGI_DRZ=1e-3 still FACTOR_11; the
+    strip of LS-07a rotated 30 degrees (LS-07f) with all DDL: same).
+    Bending and shear go via the displacements and the two rotations
+    in the master plane. If the master lies in a plane normal to a global
+    axis, that rotation (DRX/DRY/DRZ) is left out here.
+    Returns a tuple with DDL names, or None if DDL (global components)
+    cannot express it (oblique or curved master): then
+    _bonded writes the relations itself (_bonded_relations).
     """
     normals = info.get("normals") or []
     if normals:
@@ -2495,9 +2495,9 @@ def _coque_ddl(info):
 
 
 def _face_point(atype, pts, xi, eta):
-    """Punt en raakvectoren (d/dxi, d/deta) van een schaalelement in
-    (xi, eta); vormfuncties van _face_shape (centrale differentie, exact
-    voor kwadratische N)."""
+    """Point and tangent vectors (d/dxi, d/deta) of a shell element at
+    (xi, eta); shape functions of _face_shape (central difference, exact
+    for quadratic N)."""
     h = 1.0e-3
     n = _face_shape(atype, xi, eta)
     dxi = [(a - b) / (2 * h) for a, b in zip(_face_shape(atype, xi + h, eta),
@@ -2514,8 +2514,8 @@ def _face_point(atype, pts, xi, eta):
 
 
 def _clamp_face(atype, xi, eta):
-    """(xi, eta) terug in het referentie-element (driehoek: xi, eta >= 0,
-    xi + eta <= 1; vierhoek: [-1, 1]^2)."""
+    """(xi, eta) back into the reference element (triangle: xi, eta >= 0,
+    xi + eta <= 1; quadrilateral: [-1, 1]^2)."""
     if atype.startswith("TRIA"):
         xi, eta = max(xi, 0.0), max(eta, 0.0)
         if xi + eta > 1.0:
@@ -2527,8 +2527,8 @@ def _clamp_face(atype, xi, eta):
 
 def _project_on_face(atype, pts, p):
     """
-    Dichtstbijzijnde punt van p op een schaalelement (Gauss-Newton op
-    |x(xi, eta) - p|^2, begrensd tot het element). Returns (afstand, N,
+    Closest point of p on a shell element (Gauss-Newton on
+    |x(xi, eta) - p|^2, bounded to the element). Returns (distance, N,
     x, tx, te).
     """
     xi, eta = (1.0 / 3.0, 1.0 / 3.0) if atype.startswith("TRIA") else \
@@ -2556,43 +2556,43 @@ def _project_on_face(atype, pts, p):
 def _bonded_relations(model_data, m_eids, slave_nids, rotations, distance,
                       label):
     """
-    Verlijmd contact met een schaal als master, door de bridge zelf
-    geschreven als lineaire relaties (LIAISON_DDL, U4.44.01), voor de
-    gevallen die LIAISON_MAIL niet aankan:
-    - kwadratische master (tri6/quad8 -> COQUE_3D, TRIA7/QUAD9): LIAISON_MAIL
-      interpoleert met de 9 (7) knopen en vraagt dan DX van de
-      middenknoop, die bij COQUE_3D alleen rotaties heeft
-      (<EXCEPTION> <CHARGES2_31>, Code-Aster 17.4, LS-07i). De translaties
-      van COQUE_3D horen bij de 8 (6) knopen van de Mecway-cel (R3.07.05,
-      NIET in de bron nagelopen; de middenknoop heeft volgens CHARGES2_31
-      geen DX). Hier alleen de translaties met de QUAD8/TRIA6-
-      vormfuncties (_face_shape, rotations False); de rotaties blijven bij
-      LIAISON_MAIL (_bonded: rot_ddl), waar de middenknoop meetelt.
-    - scheve of gekromde lineaire master: de rotatie om de
-      normaal van de master (drilling) mag niet meedoen (_coque_ddl:
-      FACTOR_11), en DDL van LIAISON_MAIL kent alleen globale componenten.
-      Hier per slave-knoop twee relaties voor de rotatie in het raakvlak
-      van de master in het projectiepunt (t1, t2):
+    Bonded contact with a shell as master, written by the bridge itself
+    as linear relations (LIAISON_DDL, U4.44.01), for the
+    cases LIAISON_MAIL cannot handle:
+    - quadratic master (tri6/quad8 -> COQUE_3D, TRIA7/QUAD9): LIAISON_MAIL
+      interpolates with the 9 (7) nodes and then asks for DX of the
+      mid node, which only has rotations with COQUE_3D
+      (<EXCEPTION> <CHARGES2_31>, Code-Aster 17.4, LS-07i). The translations
+      of COQUE_3D belong to the 8 (6) nodes of the Mecway cell (R3.07.05,
+      NOT checked in the source; according to CHARGES2_31 the mid node has
+      no DX). Here only the translations with the QUAD8/TRIA6
+      shape functions (_face_shape, rotations False); the rotations stay with
+      LIAISON_MAIL (_bonded: rot_ddl), where the mid node counts.
+    - oblique or curved linear master: the rotation about the
+      normal of the master (drilling) must not take part (_coque_ddl:
+      FACTOR_11), and DDL of LIAISON_MAIL only knows global components.
+      Here per slave node two relations for the rotation in the tangent plane
+      of the master at the projection point (t1, t2):
       t_k . theta_slave = sum N_i t_k . theta_i.
-      Staat t_k scheef (meer dan één globale component), dan zit de
-      drilling-rotatie van de slave (alleen de fictieve stijfheid
-      COEF_RIGI_DRZ) in dezelfde DDL als een relatie, en meldt MUMPS een
-      bijna-nulpivot (FACTOR_11) terwijl het stelsel regulier is (LS-07f,
-      Code-Aster 17.4: NPREC 8 en 10 FACTOR_11, NPREC 12 en -1 rekenen,
-      met dezelfde oplossing als LS-07a; COEF_RIGI_DRZ 1e-2 nog
-      FACTOR_11, 1e-1 rekent). De marge schaalt met COEF_RIGI_DRZ en de
-      dikte, dus geen vaste NPREC: model_data["_bonded_nprec_off"] zet
+      If t_k is oblique (more than one global component), the
+      drilling rotation of the slave (only the fictitious stiffness
+      COEF_RIGI_DRZ) is in the same DDL as a relation, and MUMPS reports a
+      near-zero pivot (FACTOR_11) while the system is regular (LS-07f,
+      Code-Aster 17.4: NPREC 8 and 10 FACTOR_11, NPREC 12 and -1 solve,
+      with the same solution as LS-07a; COEF_RIGI_DRZ 1e-2 still
+      FACTOR_11, 1e-1 solves). The margin scales with COEF_RIGI_DRZ and the
+      thickness, so no fixed NPREC: model_data["_bonded_nprec_off"] sets
       NPREC = -1 (bridge_to_aster.generate_AsterSolver_files; RESI_RELA
-      blijft het residu controleren: dezelfde strook zonder inklemming
-      stopt met FACTOR_57).
-    Zoals LIAISON_MAIL (U4.44.01): elke slave-knoop volgt het
-    geprojecteerde punt op het dichtstbijzijnde master-element (ook buiten
-    het element: dan de rand); met een tolerantie > 0 alleen knopen binnen
-    die afstand (DISTANCE_MAX). Slave-knopen die ook knoop van de master
-    zijn, blijven buiten de relaties (anders een lege relatie).
-    rotations: False bij een kwadratische master (zie boven): alleen de
-    translaties.
-    Returns [(knopen, ddl, coefficienten)] of None (niets te koppelen).
+      keeps checking the residual: the same strip without clamping
+      stops with FACTOR_57).
+    Like LIAISON_MAIL (U4.44.01): every slave node follows the
+    projected point on the closest master element (also outside
+    the element: then the edge); with a tolerance > 0 only nodes within
+    that distance (DISTANCE_MAX). Slave nodes that are also nodes of the master
+    stay out of the relations (otherwise an empty relation).
+    rotations: False for a quadratic master (see above): only the
+    translations.
+    Returns [(nodes, ddl, coefficients)] or None (nothing to couple).
     """
     nodes = model_data["mesh_nodes"]
     conn = model_data["_conn"]
@@ -2655,18 +2655,18 @@ def _bonded_relations(model_data, m_eids, slave_nids, rotations, distance,
                         coef.append(w * tc)
                 rel.append((nids, ddl, coef))
     if shared:
-        log("INFO: {0}: {1} slave-knopen zijn ook knoop van de master en "
-            "worden niet gekoppeld.".format(label, shared))
+        log("INFO: {0}: {1} slave nodes are also nodes of the master and "
+            "are not coupled.".format(label, shared))
     if far:
-        log("INFO: {0}: {1} slave-knopen liggen verder dan de tolerantie "
-            "van het mastervlak en worden niet gekoppeld.".format(label, far))
+        log("INFO: {0}: {1} slave nodes are farther than the tolerance "
+            "from the master face and are not coupled.".format(label, far))
     if not rel:
         return None
     if mixed:
         # bridge_to_aster.generate_AsterSolver_files: NPREC = -1
         model_data["_bonded_nprec_off"] = True
-    log("INFO: {0} -> LIAISON_DDL door de bridge ({1} relaties, {2} "
-        "slave-knopen, grootste afstand tot de master {3:.3g} m; {4}).".format(
+    log("INFO: {0} -> LIAISON_DDL by the bridge ({1} relations, {2} "
+        "slave nodes, largest distance to the master {3:.3g} m; {4}).".format(
             label, len(rel), len(rel) // (5 if rotations else 3), dmax,
             "translaties en rotaties in het mastervlak" if rotations
             else "alleen translaties"))
@@ -2675,15 +2675,15 @@ def _bonded_relations(model_data, m_eids, slave_nids, rotations, distance,
 
 def _shell_edge_joint(model_data, slave):
     """
-    (schaalcomponent, dikte) voor LIAISON_MAIL COQUE_MASSIF als de slave
-    alleen schaalranden van één component met een dikte bevat, anders None.
-    COQUE_MASSIF (U4.44.01, catalogus affe_char_meca.py: EPAIS en
-    CHAM_NORMALE verplicht) verbindt de rand stijf, ook de rotaties: de
-    rotatie van een schaalknoop volgt uit de verplaatsingen van het volume
-    over de dikte. Doorgerekend in docs/ASTER_regels_voorbeelden.md
-    voorbeeld 2 (model S, plaatrand in een blok: 0,00897 mm, ingeklemde
-    strook 0,00867 mm). Mecway/CCX zet schalen om in volume-elementen, dan
-    is de rand ook stijf (NIET in Mecway geverifieerd).
+    (shell component, thickness) for LIAISON_MAIL COQUE_MASSIF if the slave
+    only contains shell edges of one component with a thickness, else None.
+    COQUE_MASSIF (U4.44.01, catalogue affe_char_meca.py: EPAIS and
+    CHAM_NORMALE required) connects the edge rigidly, also the rotations: the
+    rotation of a shell node follows from the displacements of the volume
+    over the thickness. Computed in docs/ASTER_regels_voorbeelden.md
+    example 2 (model S, plate edge in a block: 0.00897 mm, clamped
+    strip 0.00867 mm). Mecway/CCX converts shells into volume elements, then
+    the edge is rigid too (NOT verified in Mecway).
     """
     faces = model_data.get("group_face_list", {}).get(slave, [])
     if not faces or any(f.get("kind") != "shelledge" for f in faces):
@@ -2700,16 +2700,16 @@ def _shell_edge_joint(model_data, slave):
 
 
 # ==========================================
-# PINNED SUPPORT: GEMIDDELDE VERPLAATSING NUL
+# PINNED SUPPORT: MEAN DISPLACEMENT ZERO
 # ==========================================
 def _pinned_to_mean(model_data, bc, group_weights):
     """
     Mecway: "A pinned support constrains mean displacement to zero in all
-    three directions" (manual v33 par. 9.3); in Mecway gezien: twee knopen
-    krijgen tegengestelde verplaatsingen en gelijke reacties. Code-Aster:
-    per richting een LIAISON_DDL sum(w_i * u_i) = 0 (U4.44.01). Gewichten:
-    gelijk per knoop voor knopen, int(N_i dA)/A voor vlakken van volume-
-    elementen. Eén knoop: gewoon DDL_IMPO.
+    three directions" (manual v33 par. 9.3); seen in Mecway: two nodes
+    get opposite displacements and equal reactions. Code-Aster:
+    per direction a LIAISON_DDL sum(w_i * u_i) = 0 (U4.44.01). Weights:
+    equal per node for nodes, int(N_i dA)/A for faces of volume
+    elements. One node: plain DDL_IMPO.
     """
     sel = bc["selection"]
     if sel in model_data.get("node_groups", {}):
@@ -2733,37 +2733,37 @@ def _pinned_to_mean(model_data, bc, group_weights):
     total = sum(weights.values())
     bc["aster_keyword"] = "LIAISON_DDL"
     bc["pin_weights"] = [(n, w / total) for n, w in weights.items()]
-    log("INFO: Pinned support '{0}': gemiddelde verplaatsing nul over {1} "
-        "knopen (LIAISON_DDL).".format(sel, len(weights)))
+    log("INFO: Pinned support '{0}': mean displacement zero over {1} "
+        "nodes (LIAISON_DDL).".format(sel, len(weights)))
 
 
 # ==========================================
-# MOMENT: OP EEN KNOOP OF ALS KRACHTEN OVER VLAKKEN
+# MOMENT: ON A NODE OR AS FORCES OVER FACES
 # ==========================================
 def _moment_to_forces(model_data, bc, group_integrals, group_weights=None):
     """
-    Mecway (manual v33 par. 9.18): een moment werkt op een enkele knoop met
-    rotatie-DOFs, of als krachten verdeeld over vlakken (schaal of volume)
-    om de as door hun zwaartepunt.
+    Mecway (manual v33 par. 9.18): a moment acts on a single node with
+    rotation DOFs, or as forces distributed over faces (shell or volume)
+    about the axis through their centroid.
 
-    Knopen: een nodeselection, of een faceselection van balkuiteinden
-    (faceid 2/3 = knoop 1/2, _FACE_CORNERS 'SEG'); die staat in het mesh als
-    GROUP_NO (zoals een kracht op balkuiteinden) en telt via group_weights.
-    Een uiteinde = een knoop: FORCE_NODALE MX/MY/MZ op die knoop.
+    Nodes: a nodeselection, or a faceselection of beam ends
+    (faceid 2/3 = node 1/2, _FACE_CORNERS 'SEG'); that is in the mesh as
+    GROUP_NO (like a force on beam ends) and counts via group_weights.
+    One end = one node: FORCE_NODALE MX/MY/MZ on that node.
 
-    Vlakken: lineair verdeelde oppervlaktekracht t(x) = omega x (x - c),
-    met omega = Theta^-1 M en Theta = int(|r|^2 I - r r^T) dA (r = x - c),
-    zodat int(r x t) dA = M en de resulterende kracht nul is. Consistente
-    knoopkrachten: f_i = omega x int(N_i (x - c) dA). Per momentcomponent
-    staan de knoopkrachten voor een eenheidsmoment in bc["node_loads"]
-    (bridge_to_aster._build_charges schaalt ze, ook met een tijdsfunctie).
+    Faces: linearly distributed surface traction t(x) = omega x (x - c),
+    with omega = Theta^-1 M and Theta = int(|r|^2 I - r r^T) dA (r = x - c),
+    so that int(r x t) dA = M and the resultant force is zero. Consistent
+    nodal forces: f_i = omega x int(N_i (x - c) dA). Per moment component
+    the nodal forces for a unit moment are stored in bc["node_loads"]
+    (bridge_to_aster._build_charges scales them, also with a time function).
     """
     sel = bc["selection"]
     if bc["aster_target"] == "GROUP_NO":
         if sel in model_data.get("node_groups", {}):
             n = len(model_data["node_groups"][sel])
         else:
-            # balkvlakken (face_node_groups): de knopen van de vlakken
+            # beam faces (face_node_groups): the nodes of the faces
             n = len((group_weights or {}).get(sel, ()))
         if n != 1:
             bc["skip"] = True
@@ -2790,7 +2790,7 @@ def _moment_to_forces(model_data, bc, group_integrals, group_weights=None):
     area = sum(w.values())
     c = [sum(mi[k] for mi in m.values()) / area for k in range(3)]
     rr = [[S[a][b] - area * c[a] * c[b] for b in range(3)] for a in range(3)]
-    # spoor van rr (niet 'tr' noemen: dat is de vertaalfunctie)
+    # trace of rr (do not call it 'tr': that is the translation function)
     trace = rr[0][0] + rr[1][1] + rr[2][2]
     theta_inv = _inv3([[(trace if a == b else 0.0) - rr[a][b]
                         for b in range(3)] for a in range(3)])
@@ -2804,33 +2804,33 @@ def _moment_to_forces(model_data, bc, group_integrals, group_weights=None):
             for n in w]
     bc["aster_keyword"] = "FORCE_NODALE"
     bc["node_loads"] = node_loads
-    log("INFO: Moment op vlakken '{0}': krachten over {1} knopen om het "
-        "zwaartepunt ({2}).".format(
+    log("INFO: Moment on faces '{0}': forces over {1} nodes about the "
+        "centroid ({2}).".format(
             sel, len(w), ", ".join("%.6g" % v for v in c)))
 
 
 # ==========================================
-# CONTACT: ZONES MET GEDEELDE SLAVE-KNOPEN SAMENVOEGEN
+# CONTACT: MERGE ZONES WITH SHARED SLAVE NODES
 # ==========================================
-# Voorwaarden die alle verplaatsingen van een knoop vastleggen; zit een
-# contact-slaveknoop daar ook in, dan is de matrix singulier (pivot op
-# LAGS_C, MECANONLINE9_4; gezien bij een buigmodel: profiel ingeklemd en
+# Conditions that fix all displacements of a node; if a
+# contact slave node is also in them, the matrix is singular (pivot on
+# LAGS_C, MECANONLINE9_4; seen in a bending model: profile clamped and
 # slave).
-# Gedeeltelijke voorwaarden (displacement met enkele componenten,
-# frictionless, symmetry) niet: die botsen alleen in de normaalrichting
-# (een symmetrievlak loodrecht op het contact is gewoon toegestaan).
+# Partial conditions (displacement with some components,
+# frictionless, symmetry) not: those only clash in the normal direction
+# (a symmetry plane perpendicular to the contact is simply allowed).
 _SLAVE_CONFLICT_BCS = ("fixed",)
 
 
 def _exclude_fixed_slaves(model_data, group_integrals):
     """
-    Slaveknopen die ook een kinematische voorwaarde hebben uit het contact
-    halen met SANS_GROUP_NO, zoals Code-Aster aanraadt (U4.44.11 par. 3.1.3:
+    Remove slave nodes that also have a kinematic condition from the contact
+    with SANS_GROUP_NO, as Code-Aster recommends (U4.44.11 par. 3.1.3:
     "recommended when the latter are subjected to boundary conditions in
     the expected direction of the contact (embedding for example)").
-    Zet per zone c["sans_groups"] (knoopgroepen) en vult
-    model_data["contact_sans_from_ma"] = {knoopgroep: vlakgroep} voor
-    DEFI_GROUP; logt per zone hoeveel knopen.
+    Sets c["sans_groups"] (node groups) per zone and fills
+    model_data["contact_sans_from_ma"] = {node group: face group} for
+    DEFI_GROUP; logs the number of nodes per zone.
     """
     node_groups = model_data.get("node_groups", {})
     unions = model_data.get("group_ma_unions", {})
@@ -2839,7 +2839,7 @@ def _exclude_fixed_slaves(model_data, group_integrals):
     def to_int(n):
         return int(str(n).lstrip("N"))
 
-    bc_nodes = []           # [(knoopgroepnaam, set knopen, bron)]
+    bc_nodes = []           # [(node group name, node set, source)]
     for bc in model_data.get("bcs", []):
         sel = bc.get("selection")
         if bc.get("type") not in _SLAVE_CONFLICT_BCS or not sel:
@@ -2867,21 +2867,21 @@ def _exclude_fixed_slaves(model_data, group_integrals):
             count |= common
         if sans:
             c["sans_groups"] = sans
-            log("INFO: Contact (slave '{0}'): {1} slave-knopen hebben ook een "
-                "vaste voorwaarde ({2}) en worden uitgesloten met "
+            log("INFO: Contact (slave '{0}'): {1} slave nodes also have a "
+                "fixed condition ({2}) and are excluded with "
                 "SANS_GROUP_NO (U4.44.11 par. 3.1.3).".format(
                     c["slave"], len(count), ", ".join(sans)))
 
 
-# Voorwaarden die als relatie (LIAISON_*) of gedeeltelijke DDL_IMPO worden
-# geschreven; overlap daartussen (of met fixed) kan een dubbele Lagrange-
-# voorwaarde geven (FACTOR_42/57). Fixed met fixed is gewoon dubbel DDL_IMPO.
+# Conditions written as a relation (LIAISON_*) or partial DDL_IMPO;
+# overlap between them (or with fixed) can give a double Lagrange
+# condition (FACTOR_42/57). Fixed with fixed is simply a double DDL_IMPO.
 _RELATION_BCS = ("pinnedsupport", "frictionless", "symmetry", "displacement",
                  "noderotation", "velocity")
 
-# Naast fixed sluit bridge_to_aster._build_charges de fixed-knopen al uit
-# (SANS_GROUP_* bij LIAISON_OBLIQUE, FACE_IMPO en de DDL_IMPO van deze
-# soorten); die overlap hoeft niet gemeld te worden.
+# Besides fixed, bridge_to_aster._build_charges already excludes the fixed
+# nodes (SANS_GROUP_* for LIAISON_OBLIQUE, FACE_IMPO and the DDL_IMPO of these
+# kinds); that overlap need not be reported.
 _SANS_FIXED_BCS = ("frictionless", "symmetry", "displacement",
                    "noderotation", "velocity")
 
@@ -2890,11 +2890,11 @@ _ALL_DOFS = ("DX", "DY", "DZ", "DRX", "DRY", "DRZ")
 
 
 def _global_dofs(ddls, angl):
-    """Globale vrijheidsgraden die ddls in het lokale stelsel van ANGL_NAUT
-    angl raken (None: ddls zijn al globaal). Lokaal x = (cos a cos b,
-    sin a cos b, -sin b) (U4.44.01 LIAISON_OBLIQUE, nautische hoeken); een
-    lokale y/z-component ligt in het vlak loodrecht op x: ruim genomen alle
-    globale assen die niet langs x liggen."""
+    """Global degrees of freedom that ddls in the local system of ANGL_NAUT
+    angl touch (None: ddls are already global). Local x = (cos a cos b,
+    sin a cos b, -sin b) (U4.44.01 LIAISON_OBLIQUE, nautical angles); a
+    local y/z component lies in the plane perpendicular to x: broadly all
+    global axes that do not lie along x."""
     if angl is None:
         return set(ddls)
     a, b = math.radians(angl[0]), math.radians(angl[1])
@@ -2911,10 +2911,10 @@ def _global_dofs(ddls, angl):
 
 
 def _local_axes(angl):
-    """Lokale x, y, z (globaal) bij ANGL_NAUT (alpha, beta, gamma) in graden:
-    R = Rz(alpha) Ry(beta) Rx(gamma), lokaal x = (cos a cos b, sin a cos b,
-    -sin b) (U4.44.01 LIAISON_OBLIQUE; U4.42.01 ORIENTATION). Gamma draait
-    y1 = (-sin a, cos a, 0) om x (zoals _angl_naut3)."""
+    """Local x, y, z (global) for ANGL_NAUT (alpha, beta, gamma) in degrees:
+    R = Rz(alpha) Ry(beta) Rx(gamma), local x = (cos a cos b, sin a cos b,
+    -sin b) (U4.44.01 LIAISON_OBLIQUE; U4.42.01 ORIENTATION). Gamma rotates
+    y1 = (-sin a, cos a, 0) about x (as in _angl_naut3)."""
     a, b, g = [math.radians(v) for v in angl]
     x = (math.cos(a) * math.cos(b), math.sin(a) * math.cos(b), -math.sin(b))
     y = (math.cos(a) * math.sin(b) * math.sin(g) - math.sin(a) * math.cos(g),
@@ -2924,9 +2924,9 @@ def _local_axes(angl):
 
 
 def _aligned_dofs(ddls, angl):
-    """Globale vrijheidsgraden die ddls in het lokale stelsel van angl
-    precies vastleggen, als elke gebruikte lokale as langs een globale as
-    ligt; anders None (de relatie mengt globale vrijheidsgraden)."""
+    """Global degrees of freedom that ddls in the local system of angl
+    fix exactly, if every local axis used lies along a global axis;
+    otherwise None (the relation mixes global degrees of freedom)."""
     if angl is None:
         return set(ddls)
     axes = dict(zip("XYZ", _local_axes(angl)))
@@ -2941,9 +2941,9 @@ def _aligned_dofs(ddls, angl):
 
 
 def _bc_dofs(bc, faces=None):
-    """Globale vrijheidsgraden die een kinematische voorwaarde vastlegt
-    (ruim: bij twijfel meer). faces: group_faces-entry van de selectie
-    (normalen, voor frictionless op een vlak volumevlak)."""
+    """Global degrees of freedom that a kinematic condition fixes
+    (broadly: more when in doubt). faces: group_faces entry of the selection
+    (normals, for frictionless on a flat volume face)."""
     t = bc["type"]
     d = bc.get("aster_dict") or {}
     if t == "fixed":
@@ -2951,12 +2951,12 @@ def _bc_dofs(bc, faces=None):
             k for k in d if k in _ALL_DOFS)
     if t == "pinnedsupport":
         return set(("DX", "DY", "DZ"))
-    if bc.get("oblique") is not None:   # symmetry, frictionless per knoop
+    if bc.get("oblique") is not None:   # symmetry, frictionless per node
         out = set()
         for _group, angl, ddls in bc["oblique"]:
             out |= _global_dofs(ddls, angl)
         return out
-    if "DNOR" in d:                      # frictionless op volumevlakken
+    if "DNOR" in d:                      # frictionless on volume faces
         normals = (faces or {}).get("normals") or []
         if normals and all(abs(_vdot(normals[0], n)) > 1.0 - 1.0e-6
                            for n in normals):
@@ -2968,10 +2968,10 @@ def _bc_dofs(bc, faces=None):
 
 
 def _ddl_kind(bc):
-    """'const' of 'timed' voor een gewone DDL_IMPO (displacement, node
-    rotation, velocity langs een globale as; pinned support op een knoop),
-    anders None. Alle constante DDL_IMPO staan in een AFFE_CHAR_MECA, alle
-    tijdsafhankelijke in een AFFE_CHAR_MECA_F (bridge_to_aster.
+    """'const' or 'timed' for an ordinary DDL_IMPO (displacement, node
+    rotation, velocity along a global axis; pinned support on a node),
+    otherwise None. All constant DDL_IMPO are in one AFFE_CHAR_MECA, all
+    time-dependent ones in one AFFE_CHAR_MECA_F (bridge_to_aster.
     _build_charges)."""
     if bc.get("aster_keyword") != "DDL_IMPO" or bc["type"] not in (
             "displacement", "noderotation", "velocity", "pinnedsupport"):
@@ -2982,14 +2982,14 @@ def _ddl_kind(bc):
               if k in _ALL_DOFS]
     if not values:
         return None
-    # een formule in x, y, z (PositionFormula) is ook een functie
+    # a formula in x, y, z (PositionFormula) is also a function
     # (AFFE_CHAR_MECA_F)
     return "timed" if any(isinstance(v, list) or is_position(v)
                           for v in values) else "const"
 
 
 def _ddl_values(bcs):
-    """{DOF: waarde} van de DDL_IMPO-voorwaarden bcs (de laatste wint, zoals
+    """{DOF: value} of the DDL_IMPO conditions bcs (the last one wins, as
     in Code-Aster)."""
     out = {}
     for bc in bcs:
@@ -3001,9 +3001,9 @@ def _ddl_values(bcs):
 
 def _exact_relation_dofs(model_data, bc, nodes_of, faces):
     """
-    {knoop: set(globale DOF)} die een relatie (symmetry, frictionless)
-    met waarde 0 precies vastlegt, alleen waar de lokale assen langs de
-    globale assen liggen; None als dat niet eenduidig is.
+    {node: set(global DOF)} that a relation (symmetry, frictionless)
+    with value 0 fixes exactly, only where the local axes lie along the
+    global axes; None if that is not unambiguous.
     """
     extra = model_data.get("extra_node_groups", {})
     d = bc.get("aster_dict") or {}
@@ -3039,17 +3039,17 @@ def _exact_relation_dofs(model_data, bc, nodes_of, faces):
 
 def _drop_covered_ddl(model_data, nodes_of, group_faces):
     """
-    Een opgelegde verplaatsing/rotatie 0 langs een globale as (DDL_IMPO) op
-    knopen die een symmetry of frictionless (waarde 0) al in precies die
-    richting vastlegt, is dezelfde voorwaarde. Mecway reduceert dat zelf
+    An imposed displacement/rotation 0 along a global axis (DDL_IMPO) on
+    nodes that a symmetry or frictionless (value 0) already fixes in exactly
+    that direction is the same condition. Mecway reduces that itself
     (manual v33 par. 9.6: "reduce them to a minimum equivalent set");
-    Code-Aster stopt met <EXCEPTION> FACTOR_42 (matrice singulière;
-    gezien met Code-Aster 17.4: displacement X=0 en symmetry/frictionless
-    met normaal X op hetzelfde vlak). De relatie blijft (die legt soms ook
-    rotaties vast); de DDL_IMPO krijgt een knoopgroep zonder die knopen
-    (KNOWN_BUGS 8). Alleen voor selecties waarvan de knopen vastliggen
-    (knopen, vlakken van volumes, schaalranden, balkuiteinden); niet voor
-    schaalvlakken en elementselecties (COQUE_3D: middenknoop in de job).
+    Code-Aster stops with <EXCEPTION> FACTOR_42 (matrice singulière;
+    seen with Code-Aster 17.4: displacement X=0 and symmetry/frictionless
+    with normal X on the same face). The relation stays (it sometimes also
+    fixes rotations); the DDL_IMPO gets a node group without those nodes
+    (KNOWN_BUGS 8). Only for selections whose nodes are fixed
+    (nodes, faces of volumes, shell edges, beam ends); not for
+    shell faces and element selections (COQUE_3D: mid node in the job).
     """
     rels = []
     for bc in model_data.get("bcs", []):
@@ -3087,8 +3087,8 @@ def _drop_covered_ddl(model_data, nodes_of, group_faces):
         if not covered:
             continue
         rest = nodes - covered
-        log("INFO: {0} '{1}' ({2}=0): {3} knoop/knopen vallen al onder {4} "
-            "en worden uit de DDL_IMPO gehaald (dubbele voorwaarde, "
+        log("INFO: {0} '{1}' ({2}=0): {3} node(s) already covered by {4} "
+            "and are removed from the DDL_IMPO (double condition, "
             "FACTOR_42).".format(bc["type"], sel, "/".join(sorted(dofs)),
                                  len(covered), ", ".join(by)))
         if not rest:
@@ -3099,8 +3099,8 @@ def _drop_covered_ddl(model_data, nodes_of, group_faces):
 
 
 def _unit_rows(ddls, angl=None):
-    """[(soort, vector)] voor vrijheidsgraden ddls ('DX', 'DRY', ...) in het
-    lokale stelsel van ANGL_NAUT angl (None: globaal); soort 'D' of 'DR'."""
+    """[(kind, vector)] for degrees of freedom ddls ('DX', 'DRY', ...) in the
+    local system of ANGL_NAUT angl (None: global); kind 'D' or 'DR'."""
     axes = _local_axes(angl) if angl is not None else (
         (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
     return [("DR" if d.startswith("DR") else "D", axes["XYZ".index(d[-1])])
@@ -3108,7 +3108,7 @@ def _unit_rows(ddls, angl=None):
 
 
 def _rank3(vectors):
-    """Rang van een stel 3D-vectoren (Gram-Schmidt, relatieve tolerantie)."""
+    """Rank of a set of 3D vectors (Gram-Schmidt, relative tolerance)."""
     basis = []
     for v in vectors:
         w = list(v)
@@ -3122,9 +3122,9 @@ def _rank3(vectors):
 
 
 def _dependent_dofs(rows_a, rows_b):
-    """Globale vrijheidsgraden waarin de voorwaarden rows_a en rows_b in een
-    knoop lineair afhankelijk zijn (samen een dubbele voorwaarde: rang van
-    de unie kleiner dan de som), of een lege set."""
+    """Global degrees of freedom in which the conditions rows_a and rows_b at a
+    node are linearly dependent (together a double condition: rank of
+    the union smaller than the sum), or an empty set."""
     out = set()
     for kind in ("D", "DR"):
         a = [v for k, v in rows_a if k == kind]
@@ -3140,10 +3140,10 @@ def _dependent_dofs(rows_a, rows_b):
 
 def _constraint_rows(model_data, bc):
     """
-    Functie knoop -> [(soort, vector)]: de richtingen die voorwaarde bc in
-    die knoop vastlegt (globaal; per knoop bij symmetry/frictionless met
-    knoopnormalen, FACE_IMPO DNOR met de gemiddelde vlaknormaal zoals
-    Code-Aster die per knoop neemt).
+    Function node -> [(kind, vector)]: the directions that condition bc fixes
+    at that node (global; per node for symmetry/frictionless with
+    nodal normals, FACE_IMPO DNOR with the average face normal as
+    Code-Aster takes it per node).
     """
     t = bc["type"]
     d = bc.get("aster_dict") or {}
@@ -3178,24 +3178,24 @@ def _constraint_rows(model_data, bc):
 
 def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
     """
-    Overlap van kinematische voorwaarden (en RBE-slaves) per paar dat in
-    gedeelde knopen een afhankelijke richting vastlegt (_dependent_dofs; een
-    normaal naast een raaklijn telt niet). Mecway lost overlap zelf op
-    (manual v33 par. 9.6), Code-Aster niet altijd:
-      - fixed naast frictionless/symmetry/displacement/noderotation/
-        velocity: al opgelost (SANS_GROUP_* in bridge_to_aster);
-      - DDL_IMPO 0 die al onder een symmetry/frictionless 0 in dezelfde
-        globale richting valt: opgelost (_drop_covered_ddl);
-      - twee DDL_IMPO in dezelfde last (beide constant of beide
-        tijdsafhankelijk): Code-Aster neemt de laatste (gezien met Code-
-        Aster 17.4, ook in AFFE_CHAR_MECA_F); alleen bij verschillende
-        waarden een WARNING;
-      - constant naast tijdsafhankelijk op dezelfde DOF: <EXCEPTION>
-        ASSEMBLA_26 (gezien met Code-Aster 17.4): WARNING;
-      - twee symmetry's met dezelfde relaties per knoop: Code-Aster laat de
-        dubbele relatie vallen (gezien met Code-Aster 17.4): geen melding;
-      - verder: WARNING met de selecties en de gedeelde vrijheidsgraden
-        (FACTOR_42/57 of een nulpivot, KNOWN_BUGS 8).
+    Overlap of kinematic conditions (and RBE slaves) per pair that fixes a
+    dependent direction in shared nodes (_dependent_dofs; a
+    normal next to a tangent does not count). Mecway resolves overlap itself
+    (manual v33 par. 9.6), Code-Aster not always:
+      - fixed next to frictionless/symmetry/displacement/noderotation/
+        velocity: already resolved (SANS_GROUP_* in bridge_to_aster);
+      - DDL_IMPO 0 already covered by a symmetry/frictionless 0 in the same
+        global direction: resolved (_drop_covered_ddl);
+      - two DDL_IMPO in the same load (both constant or both
+        time-dependent): Code-Aster takes the last one (seen with Code-
+        Aster 17.4, also in AFFE_CHAR_MECA_F); a WARNING only for different
+        values;
+      - constant next to time-dependent on the same DOF: <EXCEPTION>
+        ASSEMBLA_26 (seen with Code-Aster 17.4): WARNING;
+      - two symmetries with the same relations per node: Code-Aster drops the
+        double relation (seen with Code-Aster 17.4): no message;
+      - otherwise: WARNING with the selections and the shared degrees of
+        freedom (FACTOR_42/57 or a zero pivot, KNOWN_BUGS 8).
     """
     node_groups = model_data.get("node_groups", {})
     extra = model_data.get("extra_node_groups", {})
@@ -3220,9 +3220,9 @@ def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
 
     _drop_covered_ddl(model_data, nodes_of, group_faces)
 
-    # Per (soort, selectie) de vastgelegde vrijheidsgraden (globaal); een
-    # selectie met meerdere items van dezelfde soort (bv. displacement x en
-    # y) wordt een item, zodat elk paar een keer gemeld wordt.
+    # Per (kind, selection) the fixed degrees of freedom (global); a
+    # selection with several items of the same kind (e.g. displacement x and
+    # y) becomes one item, so that each pair is reported once.
     items = OrderedDict()
     for bc in model_data.get("bcs", []):
         if (bc.get("type") in _RELATION_BCS + ("fixed",)
@@ -3259,14 +3259,14 @@ def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
             (ta, sa, na, da, ba, ra), (tb, sb, nb, db, bb, rb) = (
                 sets[i], sets[j])
             if not da & db:
-                continue        # andere vrijheidsgraden: geen conflict
+                continue        # other degrees of freedom: no conflict
             if ta == "fixed" and tb == "fixed":
                 continue
             if "fixed" in (ta, tb) and set((ta, tb)) - set(
                     ("fixed",) + _SANS_FIXED_BCS) == set():
                 continue
-            # Alleen knopen waar de richtingen echt afhankelijk zijn (een
-            # normaal naast een raaklijn is geen dubbele voorwaarde).
+            # Only nodes where the directions are really dependent (a
+            # normal next to a tangent is not a double condition).
             common = set()
             dofs = set()
             for n in na & nb:
@@ -3311,7 +3311,7 @@ def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
             if ta == tb == "symmetry" and all(
                     oblique_spec(ba, n) == oblique_spec(bb, n)
                     for n in common):
-                continue    # dezelfde relaties: Code-Aster laat er een vallen
+                continue    # same relations: Code-Aster drops one of them
             log(tr("WARNING: Voorwaarden {0} '{1}' en {2} '{3}' delen "
                    "{4} knoop/knopen (o.a. N{5}) op {6}. Code-Aster kan dan "
                    "stoppen met FACTOR_42/57 of een nulpivot (dubbele "
@@ -3327,25 +3327,25 @@ def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
 
 def _check_contact_sides(label, master, slave, group_integrals):
     """
-    WARNING als de slave-kant duidelijk grover is dan de master. Code-Aster
-    controleert alleen de slave-punten tegen de master-vlakken (U2.04.04
-    par. 2.2: slave = de fijnste mesh, master = de stijfste/grofste kant);
-    een fijne master dringt dan tussen de grove slave-punten door zonder
-    contactkracht. Gezien bij een buigmodel: rol (60 vlakken) slave
-    op het profiel (4482 vlakken), de rol ging door het profiel heen; met
-    master/slave omgewisseld ontstond wel contact. De bridge wisselt niet
-    zelf: in Mecway is de keuze aan de gebruiker.
+    WARNING if the slave side is clearly coarser than the master. Code-Aster
+    only checks the slave points against the master faces (U2.04.04
+    par. 2.2: slave = the finest mesh, master = the stiffest/coarsest side);
+    a fine master then penetrates between the coarse slave points without
+    contact force. Seen in a bending model: roller (60 faces) slave
+    on the profile (4482 faces), the roller went through the profile; with
+    master/slave swapped contact did occur. The bridge does not swap
+    by itself: in Mecway the choice is up to the user.
     """
     def size(group):
-        # Karakteristieke elementmaat: sqrt(oppervlak / aantal knopen); het
-        # oppervlak is de som van de knoopgewichten (integraal N dA).
+        # Characteristic element size: sqrt(area / number of nodes); the
+        # area is the sum of the nodal weights (integral N dA).
         w = group_integrals.get(group, [{}])[0]
         area = sum(w.values())
         return (area / len(w)) ** 0.5 if w and area > 0 else None
     hm, hs = size(master), size(slave)
     if hm and hs and hs > 2.0 * hm:
-        # %-opmaak: "{0:.3g}".format() volgt in IronPython de landinstelling
-        # (zie bridge_mesh._real)
+        # %-formatting: "{0:.3g}".format() follows the locale in IronPython
+        # (see bridge_mesh._real)
         log(tr("WARNING: {0}: de slave-vlakken zijn {1}x zo grof als "
                "de master (elementmaat {2} tegen {3} m). Code-Aster "
                "controleert alleen slave-punten tegen master-vlakken; de "
@@ -3363,20 +3363,20 @@ def _check_contact_sides(label, master, slave, group_integrals):
 
 def _merge_contact_zones(pairs, group_integrals, unions):
     """
-    Code-Aster verbiedt knopen die in de slave-vlakken van twee zones zitten
-    (<EXCEPTION> <CONTACT2_16>, Code-Aster 17.4; SANS_GROUP_NO helpt niet,
-    de controle gaat over de vlakken). Mecway kent die beperking niet: een
-    profiel kan slave zijn tegen een mes en tegen een contour. Master en
-    slave wisselen (de hint van CONTACT2_16) maakt het gereedschap slave,
-    terwijl de master het stijfste vlak hoort te zijn (U2.04.04 par. 2.2);
-    bij een knipmodel (dynamisch, contact) divergeerde dat al in de eerste
-    stap.
+    Code-Aster forbids nodes that are in the slave faces of two zones
+    (<EXCEPTION> <CONTACT2_16>, Code-Aster 17.4; SANS_GROUP_NO does not help,
+    the check is about the faces). Mecway does not have that restriction: a
+    profile can be slave against a blade and against a contour. Swapping master
+    and slave (the hint of CONTACT2_16) makes the tool the slave,
+    while the master should be the stiffest face (U2.04.04 par. 2.2);
+    in a cutting model (dynamic, contact) that already diverged in the first
+    step.
 
-    Daarom worden paren waarvan de slave-vlakken knopen delen samengevoegd
-    tot een zone: master = unie van de masters, slave = unie van de slaves
-    (DEFI_GROUP CREA_GROUP_MA UNION via `unions`). Bij het koppelen zoekt
-    Code-Aster per slave-punt het dichtstbijzijnde master-element.
-    Wrijving van een samengevoegde zone: de grootste coefficient.
+    Therefore pairs whose slave faces share nodes are merged
+    into one zone: master = union of the masters, slave = union of the slaves
+    (DEFI_GROUP CREA_GROUP_MA UNION via `unions`). When coupling,
+    Code-Aster searches the closest master element per slave point.
+    Friction of a merged zone: the largest coefficient.
     """
     def nodes_of(group):
         return set(group_integrals.get(group, [{}])[0].keys())
@@ -3413,7 +3413,7 @@ def _merge_contact_zones(pairs, group_integrals, unions):
         zone["master"] = union("CMAIT", [p["master"] for p in ps], k + 1)
         zone["slave"] = union("CESCL", [p["slave"] for p in ps], k + 1)
         zone["friction"] = max(p.get("friction", 0.0) for p in ps)
-        # penalty-stijfheden (contact_algo PENALISATION): de grootste
+        # penalty stiffnesses (contact_algo PENALISATION): the largest
         zone["kn"] = max(p.get("kn", 0.0) for p in ps)
         zone["kt"] = max(p.get("kt", 0.0) for p in ps)
         if len(set(p.get("friction", 0.0) for p in ps)) > 1:
@@ -3439,13 +3439,13 @@ def _merge_contact_zones(pairs, group_integrals, unions):
 # ==========================================
 def _frictionless(model_data, bc, faces, faces_list=None):
     """
-    Volumevlakken: FACE_IMPO DNOR (bridge_bcs.FrictionlessBC); geeft True,
-    dan moeten de randelementen in het model (skin_groups, ORIE_PEAU).
-    Vlakke schaalvlakken: LIAISON_OBLIQUE met de lokale x-as langs de
-    normaal: DX = -waarde en DRY = DRZ = 0 (rotaties om de assen in het
-    vlak, manual v33 par. 9.2). Gekromde schaalvlakken en schaalranden:
-    LIAISON_OBLIQUE per knoopnormaal (_frictionless_per_node). Balken
-    worden gemeld en overgeslagen.
+    Volume faces: FACE_IMPO DNOR (bridge_bcs.FrictionlessBC); returns True,
+    then the boundary elements must be in the model (skin_groups, ORIE_PEAU).
+    Flat shell faces: LIAISON_OBLIQUE with the local x axis along the
+    normal: DX = -value and DRY = DRZ = 0 (rotations about the in-plane
+    axes, manual v33 par. 9.2). Curved shell faces and shell edges:
+    LIAISON_OBLIQUE per nodal normal (_frictionless_per_node). Beams
+    are reported and skipped.
     """
     sel = bc["selection"]
     kinds = faces["kinds"] if faces else set()
@@ -3470,8 +3470,8 @@ def _frictionless(model_data, bc, faces, faces_list=None):
             bc["params"]["_normal"] = n0
             bc["aster_keyword"] = handler.keyword(bc["params"])
             bc["aster_dict"] = handler.to_aster_dict(bc["params"])
-            log("INFO: Frictionless op vlakke schaalvlakken '{0}': "
-                "LIAISON_OBLIQUE, normaal ({1})."
+            log("INFO: Frictionless on flat shell faces '{0}': "
+                "LIAISON_OBLIQUE, normal ({1})."
                 .format(sel, ", ".join("%.4g" % v for v in (dx, dy, dz))))
             return False
     if kinds in (set(["shellface"]), set(["shelledge"])):
@@ -3491,23 +3491,23 @@ def _frictionless(model_data, bc, faces, faces_list=None):
 
 def _frictionless_per_node(model_data, bc, faces_list, kind):
     """
-    Frictionless op gekromde schaalvlakken of op schaalranden (KNOWN_BUGS 5).
-    Mecway (manual v33 par. 9.2): normaalverplaatsing nul, in een knoop
-    langs de gemiddelde normaal van de aangrenzende vlakken uit de
-    selectie; op schalen ook de rotaties om de assen in het vlak.
-    Code-Aster: LIAISON_OBLIQUE per groep knopen met dezelfde normaal
-    (bc["oblique"], zoals symmetry; U4.44.01 LIAISON_OBLIQUE, ANGL_NAUT
-    met lokaal x = de normaal):
-      - schaalvlakken: DX = DRY = DRZ = 0 (zoals de vlakke schaalvlakken);
-      - schaalranden: normaal in het schaalvlak (loodrecht op de rand), lokaal
-        y = de rand: DX = DRY = 0. Alleen de rotatie om de rand, zoals Mecway
-        bij symmetry op schaalranden (manual par. 9.40); of Mecway's
-        frictionless op een schaalrand ook de rotatie om de schaalnormaal
-        vastlegt, is NIET geverifieerd.
-    Alleen normaalverplaatsing 0 (bc["oblique"] schrijft 0.0). Na LINE_QUAD
-    (COQUE_3D) krijgen de nieuwe middenknopen geen voorwaarde (een groep per
-    normaal; bridge_to_aster vult alleen groepen aan waar beide eindknopen
-    in zitten). Returns None als vertaald, anders de reden.
+    Frictionless on curved shell faces or on shell edges (KNOWN_BUGS 5).
+    Mecway (manual v33 par. 9.2): normal displacement zero, at a node
+    along the average normal of the adjacent faces from the
+    selection; on shells also the rotations about the in-plane axes.
+    Code-Aster: LIAISON_OBLIQUE per group of nodes with the same normal
+    (bc["oblique"], like symmetry; U4.44.01 LIAISON_OBLIQUE, ANGL_NAUT
+    with local x = the normal):
+      - shell faces: DX = DRY = DRZ = 0 (like the flat shell faces);
+      - shell edges: normal in the shell plane (normal to the edge), local
+        y = the edge: DX = DRY = 0. Only the rotation about the edge, as Mecway
+        does for symmetry on shell edges (manual par. 9.40); whether Mecway's
+        frictionless on a shell edge also fixes the rotation about the shell
+        normal is NOT verified.
+    Only normal displacement 0 (bc["oblique"] writes 0.0). After LINE_QUAD
+    (COQUE_3D) the new mid nodes get no condition (one group per
+    normal; bridge_to_aster only completes groups containing both end
+    nodes). Returns None if translated, otherwise the reason.
     """
     value = bc["params"].get("value", 0.0)
     if isinstance(value, list) and all(v == 0.0 for _t, v in value):
@@ -3519,7 +3519,7 @@ def _frictionless_per_node(model_data, bc, faces_list, kind):
                   "or shell edges is not translated")
     nodes = model_data["mesh_nodes"]
     conn = model_data["_conn"]
-    groups = OrderedDict()           # sleutel -> [angl, ddls, [nid]]
+    groups = OrderedDict()           # key -> [angl, ddls, [nid]]
     if kind == "shellface":
         sums = OrderedDict()
         for f in faces_list:
@@ -3559,8 +3559,8 @@ def _frictionless_per_node(model_data, bc, faces_list, kind):
     bc["oblique"] = [(_extra_node_group(model_data, "BRFR", nids), angl,
                       ddls) for angl, ddls, nids in groups.values()]
     bc["aster_dict"] = {}
-    log("INFO: Frictionless op {0} '{1}': {2} knopen, {3} normaal/normalen, "
-        "LIAISON_OBLIQUE per groep.".format(
+    log("INFO: Frictionless on {0} '{1}': {2} nodes, {3} normal(s), "
+        "LIAISON_OBLIQUE per group.".format(
             "gekromde schaalvlakken" if kind == "shellface" else
             "schaalranden", bc["selection"],
             sum(len(g[2]) for g in groups.values()), len(groups)))
@@ -3568,16 +3568,16 @@ def _frictionless_per_node(model_data, bc, faces_list, kind):
 
 
 # ==========================================
-# KOPPELINGEN (RBE2/RBE3): NAMEN EN SLAVE-KNOOPGROEPEN
+# COUPLINGS (RBE2/RBE3): NAMES AND SLAVE NODE GROUPS
 # ==========================================
 def _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
                        known):
     """
-    Groepsnamen van de koppelingen naar Code-Aster; een slave-vlakgroep
-    krijgt een knoopgroep '<vlakgroep>_N' (DEFI_GROUP in bridge_to_aster).
-    Een koppeling met een lege of ontbrekende master- of slave-selectie
-    wordt overgeslagen en gemeld, zoals een BC (anders stopt Code-Aster op
-    de onbekende groep, MODELISA7_77).
+    Group names of the couplings for Code-Aster; a slave face group
+    gets a node group '<face group>_N' (DEFI_GROUP in bridge_to_aster).
+    A coupling with an empty or missing master or slave selection
+    is skipped and reported, like a BC (otherwise Code-Aster stops on
+    the unknown group, MODELISA7_77).
     """
     node_group_names = set(model_data.get("node_groups", {}).keys())
     kept = []
@@ -3587,7 +3587,7 @@ def _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
         face_group = rn(slave_mw)
         if c.get("slave_kind") == "GROUP_MA" and \
                 face_group in node_face_groups:
-            # Vlakken van balkuiteinden: alleen knopen in het mesh.
+            # Faces of beam ends: only nodes in the mesh.
             c["slave_kind"] = "GROUP_NO"
         if c.get("slave_kind") == "GROUP_MA":
             slave_ok = face_group in nonempty_names
@@ -3614,7 +3614,7 @@ def _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
         if c.get("slave_kind") != "GROUP_MA":
             c["slave_group"] = face_group
             continue
-        # Max. 24 tekens (Code-Aster-groepsnaam): inkorten voor "_N".
+        # Max. 24 characters (Code-Aster group name): shorten for "_N".
         no_name, k = face_group, 0
         while (no_name in node_group_names or no_name in nonempty_names
                or no_name in known):
@@ -3624,15 +3624,15 @@ def _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
         node_group_names.add(no_name)
         c["slave_group_ma"] = face_group
         c["slave_group"] = no_name
-        log("INFO: Koppeling: slave-knopen '{0}' worden afgeleid van "
-            "vlakgroep '{1}'.".format(no_name, face_group))
+        log("INFO: Coupling: slave nodes '{0}' are derived from "
+            "face group '{1}'.".format(no_name, face_group))
     model_data["couplings"] = kept
 
 
 # ==========================================
-# model_data AFSTEMMEN OP HET MESH
+# ADJUSTING model_data TO THE MESH
 # ==========================================
-# Dicts met een elset als sleutel (hernoemen, lege elsets weglaten).
+# Dicts with an elset as key (renaming, dropping empty elsets).
 _ELSET_KEYS = ("elsets", "elset_dims", "elset_modelisations", "beam_sections",
                "shell_sections", "spring_sections", "shell_upgrades",
                "cable_sections", "discrete_sections")
@@ -3641,8 +3641,8 @@ _ELSET_KEYS = ("elsets", "elset_dims", "elset_modelisations", "beam_sections",
 def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                          group_areas, group_weights, group_integrals,
                          group_faces):
-    """rn: Code-Aster-naam van een selectie, rn_es: van een elset."""
-    # --- Elset-gebonden dicts hernoemen ---
+    """rn: Code-Aster name of a selection, rn_es: of an elset."""
+    # --- Rename elset-bound dicts ---
     for key in _ELSET_KEYS:
         old = model_data.get(key, {})
         model_data[key] = OrderedDict((rn_es(k), v) for k, v in old.items())
@@ -3650,7 +3650,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         old = model_data.get(key, {})
         model_data[key] = OrderedDict((rn(k), v) for k, v in old.items())
 
-    # --- Elsets zonder elementen weglaten ---
+    # --- Drop elsets without elements ---
     for elset in list(model_data["elset_modelisations"].keys()):
         if elset not in nonempty_names:
             log(tr("WARNING: Elset '{0}' heeft geen elementen en wordt "
@@ -3660,7 +3660,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
             for key in _ELSET_KEYS:
                 model_data[key].pop(elset, None)
 
-    # --- BC's: namen en randelementen ---
+    # --- BCs: names and boundary elements ---
     skin_groups = []
     face_list = model_data.get("group_face_list", {})
     face_sel = model_data.get("face_selections", {})
@@ -3673,8 +3673,8 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         bc["selection"] = rn(bc["selection"])
         sel = bc["selection"]
         if sel not in known:
-            # Lege of ontbrekende selectie: overslaan (anders stopt Code-
-            # Aster met <EXCEPTION> MODELISA7_77 op de onbekende groep).
+            # Empty or missing selection: skip (otherwise Code-
+            # Aster stops with <EXCEPTION> MODELISA7_77 on the unknown group).
             bc["skip"] = True
             model_data.setdefault("skipped_loads", []).append(
                 tr("{0} op '{1}' (lege of ontbrekende selectie)",
@@ -3686,19 +3686,19 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                    "does not exist. NOT included.").format(bc["type"], sel))
             continue
         if bc["aster_target"] == "GROUP_MA" and sel in node_face_groups:
-            # Vlakken van balken: alleen knopen.
+            # Faces of beams: only nodes.
             bc["aster_target"] = "GROUP_NO"
             if bc["type"] == "force":
-                # Totale kracht, net als op een nodeselection gelijk
-                # verdeeld over de knopen (bridge_from_liml, STAP 2);
-                # FORCE_NODALE legt de waarde per knoop op.
+                # Total force, distributed equally over the nodes just like on
+                # a nodeselection (bridge_from_liml, STEP 2);
+                # FORCE_NODALE applies the value per node.
                 n = len(group_weights.get(sel, ()))
                 if n > 1:
                     bc["params"] = _per_area(bc["params"], float(n))
                     bc["aster_dict"] = SUPPORTED_BCS["force"].to_aster_dict(
                         bc["params"])
-                log("INFO: Kracht op balkuiteinden '{0}': verdeeld over {1} "
-                    "knopen (FORCE_NODALE).".format(sel, n))
+                log("INFO: Force on beam ends '{0}': distributed over {1} "
+                    "nodes (FORCE_NODALE).".format(sel, n))
         if bc["type"] == "pinnedsupport":
             _pinned_to_mean(model_data, bc, group_weights)
             continue
@@ -3729,14 +3729,14 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         if bc["type"] == "surfacepressure" and (
                 group_faces.get(sel, {}).get("kinds") or set(["?"])) <= set(
                     ["shelledge", "beam"]):
-            # Schaalranden en balkuiteinden (vóór de GROUP_NO-sprong
-            # hieronder: balkvlakken staan alleen als knopen in het mesh)
+            # Shell edges and beam ends (before the GROUP_NO jump
+            # below: beam faces are only nodes in the mesh)
             _edge_loads(model_data, bc, tr("Druk", "Pressure"))
             continue
         if bc["aster_target"] != "GROUP_MA":
             continue
-        # Kracht op vlakken: totale kracht / oppervlak -> FORCE_FACE op
-        # randelementen van volume-elementen (FORCE_FACE, U4.44.01).
+        # Force on faces: total force / area -> FORCE_FACE on
+        # boundary elements of volume elements (FORCE_FACE, U4.44.01).
         if bc["type"] == "force":
             parent = set(shapes.get(eid, "?") for eid in face_sel.get(sel, []))
             area = group_areas.get(sel, 0.0)
@@ -3748,25 +3748,25 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                     bc["params"])
                 if sel not in skin_groups:
                     skin_groups.append(sel)
-                log("INFO: Kracht op vlakken '{0}': oppervlak {1} m2 -> "
+                log("INFO: Force on faces '{0}': area {1} m2 -> "
                     "FORCE_FACE.".format(sel, area))
             elif (group_faces.get(sel, {}).get("kinds") == set(["shellface"])
                     and sel in group_integrals):
-                # Schaalvlakken: kracht per oppervlak op het middenvlak
-                # (FORCE_COQUE FX/FY/FZ, globaal assenstelsel, U4.44.01).
+                # Shell faces: force per area on the mid-surface
+                # (FORCE_COQUE FX/FY/FZ, global coordinate system, U4.44.01).
                 area = sum(group_integrals[sel][0].values())
                 bc["params"] = _per_area(bc["params"], area)
                 bc["aster_keyword"] = "FORCE_COQUE"
                 bc["aster_dict"] = SUPPORTED_BCS["force"].to_aster_dict(
                     bc["params"])
-                log("INFO: Kracht op schaalvlakken '{0}': oppervlak {1} m2 "
+                log("INFO: Force on shell faces '{0}': area {1} m2 "
                     "-> FORCE_COQUE.".format(sel, area))
             elif (group_faces.get(sel, {}).get("kinds") == set(["shelledge"])
                     and _shell_edge_parent(model_data, sel)):
-                # Schaalranden: totale kracht / randlengte -> FORCE_ARETE
-                # (kracht per lengte, globaal; U4.44.01 "line forces to an
-                # edge of a volume element or shell"). De randen komen met
-                # de modelisatie van de schaal in het model (edge_groups).
+                # Shell edges: total force / edge length -> FORCE_ARETE
+                # (force per length, global; U4.44.01 "line forces to an
+                # edge of a volume element or shell"). The edges enter the
+                # model with the modelisation of the shell (edge_groups).
                 length = _edge_length(model_data, sel)
                 if length > 0.0:
                     model_data.setdefault("edge_groups", OrderedDict())[sel] = \
@@ -3775,7 +3775,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                     bc["aster_keyword"] = "FORCE_ARETE"
                     bc["aster_dict"] = SUPPORTED_BCS["force"].to_aster_dict(
                         bc["params"])
-                    log("INFO: Kracht op schaalranden '{0}': lengte {1} m "
+                    log("INFO: Force on shell edges '{0}': length {1} m "
                         "-> FORCE_ARETE.".format(sel, length))
                 else:
                     _not_translated(model_data, bc, tr("Kracht", "Force"),
@@ -3794,8 +3794,8 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                        "or shell elements are supported (here: {1}). "
                        "Load NOT included.").format(sel, sorted(parent)))
             continue
-        # Druk op vlakken van volume-elementen: de vlakken moeten in
-        # AFFE_MODELE (MODELISATION='3D' -> randelementen).
+        # Pressure on faces of volume elements: the faces must be in
+        # AFFE_MODELE (MODELISATION='3D' -> boundary elements).
         if bc["type"] == "surfacepressure" and sel in face_sel:
             parent = set(shapes.get(eid, "?") for eid in face_sel[sel])
             faces = group_faces.get(sel, {})
@@ -3804,16 +3804,16 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                     skin_groups.append(sel)
             elif faces.get("kinds") == set(["shellface"]) and \
                     len(faces.get("sides", ())) == 1:
-                # Schaalvlakken: PRES_REP op de schaalelementen werkt tegen
-                # de elementnormaal in; Mecway-druk werkt het vlak in, dus
-                # tegen de vlaknormaal in (faceid 5 = elementnormaal,
-                # 6 = omgekeerd): teken = side.
+                # Shell faces: PRES_REP on the shell elements acts against
+                # the element normal; Mecway pressure acts into the face, so
+                # against the face normal (faceid 5 = element normal,
+                # 6 = reversed): sign = side.
                 side = list(faces["sides"])[0]
                 if side < 0:
                     bc["params"]["_sign"] = -1.0
                     bc["aster_dict"] = SUPPORTED_BCS[
                         "surfacepressure"].to_aster_dict(bc["params"])
-                log("INFO: Druk op schaalvlakken '{0}' (teken {1:+d})."
+                log("INFO: Pressure on shell faces '{0}' (sign {1:+d})."
                     .format(sel, side))
             else:
                 bc["skip"] = True
@@ -3832,10 +3832,10 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                         sel, ", ".join(sorted(faces.get("kinds", ())))
                         or sorted(parent)))
         elif bc["type"] == "surfacepressure":
-            # Elementselectie: PRES_REP werkt alleen op schaalelementen
-            # (en randelementen); op volume-elementen negeert Code-Aster
-            # hem met alarm CHARGES2_89 (gemeld in een review; de run zelf
-            # NIET nagelopen).
+            # Element selection: PRES_REP only acts on shell elements
+            # (and boundary elements); on volume elements Code-Aster ignores
+            # it with alarm CHARGES2_89 (reported in a review; the run itself
+            # NOT checked).
             mods = _element_kinds(model_data, sel)
             if mods is not None and not mods <= set(["DKT", "DST",
                                                      "COQUE_3D"]):
@@ -3848,9 +3848,9 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                                    "elements use a face selection").format(
                                     ", ".join(sorted(mods))))
     # --- Contact (contact2 -> DEFI_CONTACT) ---
-    # De vlakken moeten in het model (randelementen, ORIE_PEAU voor een
-    # naar buiten gerichte normaal; DEFI_CONTACT U4.44.11). Schaalvlakken
-    # zijn de schaalelementen zelf.
+    # The faces must be in the model (boundary elements, ORIE_PEAU for an
+    # outward normal; DEFI_CONTACT U4.44.11). Shell faces
+    # are the shell elements themselves.
     pairs = []
     for c in model_data.get("contacts", []):
         master, slave = rn(c["master"]), rn(c["slave"])
@@ -3884,8 +3884,8 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         pairs.append(dict(c, master=master, slave=slave))
     model_data["contacts"] = _merge_contact_zones(
         pairs, group_integrals, model_data["group_ma_unions"])
-    # --- Couplings (vóór de overlapcontrole: die kijkt met de Code-Aster-
-    # namen) ---
+    # --- Couplings (before the overlap check: it uses the Code-Aster
+    # names) ---
     _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
                        known)
     _exclude_fixed_slaves(model_data, group_integrals)
@@ -3900,14 +3900,14 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         dict(t, selection=rn(t["selection"]))
         for t in model_data.get("temperatures", [])]
 
-    # Volumevlakken die #ASTER-code noemt (<<naam>>): randelementen in het
-    # model, anders kan bijv. LIAISON_ELEM ze niet gebruiken (MODELISA4_50/
+    # Volume faces named by #ASTER code (<<name>>): boundary elements in the
+    # model, otherwise e.g. LIAISON_ELEM cannot use them (MODELISA4_50/
     # 4_51, Code-Aster 17.4).
     custom = model_data.get("aster_custom", {})
     text = " ".join(custom.get("code", []) + custom.get("post", []) +
                     custom.get("zone", []) + custom.get("contact", []))
     for name in re.findall(r"<<([^<>]+)>>", text):
-        # zoals bridge_custom.substitute (group_renames: elset wint)
+        # as bridge_custom.substitute (group_renames: elset wins)
         g = rn_es(name.strip())
         solid = "solid" in group_faces.get(g, {}).get("kinds", ())
         if solid and g not in skin_groups:
@@ -3919,7 +3919,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
     model_data["bcs"] = [bc for bc in model_data["bcs"]
                          if not bc.get("skip")]
 
-    # --- POI1-groepen en rotatie-DOFs ---
+    # --- POI1 groups and rotation DOFs ---
     model_data["poi1_groups"] = poi1_groups
     dis_tr = ("DIS_TR" in poi1_groups.values() or any(
         d["mod"] == "DIS_TR" for d in model_data.get("discretes", {}).values()))
@@ -3927,9 +3927,9 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         model_data["has_rot_dofs"] = True
         for bc in model_data["bcs"]:
             bc["params"]["_has_rot_dofs"] = True
-            # Alleen fixed hangt van de vlag af; de aster_dict van andere
-            # BC's is hierboven al aangepast (traction PLAN, druk-teken).
+            # Only fixed depends on the flag; the aster_dict of other
+            # BCs is already adjusted above (traction PLAN, pressure sign).
             if bc["type"] == "fixed":
                 bc["aster_dict"] = SUPPORTED_BCS[bc["type"]].to_aster_dict(
                     bc["params"])
-        log("INFO: has_rot_dofs = True door DIS_TR-knopen; BC's herberekend.")
+        log("INFO: has_rot_dofs = True due to DIS_TR nodes; BCs recomputed.")
