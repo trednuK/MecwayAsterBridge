@@ -184,7 +184,7 @@ def test_aster_check():
               "check_aster {0}: {1}".format(version, LOG))
     for version in (None, "", "onbekend"):
         del LOG[:]
-        note = bv.check_aster(version, "launcher-pad")
+        note = bv.check_aster(version, "launcher path")
         check(note is None and not _warnings() and len(_infos()) == 1,
               "check_aster onbekend {0!r}: {1}".format(version, LOG))
 

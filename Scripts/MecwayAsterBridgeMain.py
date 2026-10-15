@@ -191,9 +191,9 @@ def _run(settings):
     version_notes = {}
     version_notes["aster"] = bridge_version.check_aster(
         bridge_version.aster_version_from_launcher(exe_aster_path()),
-        "launcher-pad")
+        "launcher path")
     for analysis, key, _kind, old, new in settings["changes"]:
-        log("INSTELLING: {0}{1}: {2} -> {3}".format(
+        log("SETTING: {0}{1}: {2} -> {3}".format(
             "" if analysis is None else "analyses['{0}'].".format(analysis),
             key, old, new))
     for err in settings["save_errors"]:

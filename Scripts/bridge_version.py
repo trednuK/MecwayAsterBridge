@@ -178,7 +178,7 @@ def check_mecway(liml_path):
 
 def check_aster(version, source):
     """
-    Logs the Code-Aster version (source: 'launcher-pad' or '.mess') and a
+    Logs the Code-Aster version (source: 'launcher path' or '.mess') and a
     WARNING if major.minor is not tested. Returns the message for the
     user or None.
     """
