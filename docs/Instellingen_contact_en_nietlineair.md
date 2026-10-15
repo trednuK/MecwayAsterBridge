@@ -634,13 +634,32 @@ Mecway). Ligt de voetlijn midden in de plaatelementen, dan interpoleert `LIAISON
 de rotatie van de plaat lineair over de knik onder de rib: 5 % te stijf bij 4 mm
 elementen, 11 % bij 12 mm. Leg de voetlijn dus op een meshlijn (of verfijn daar).
 
+**Scheve of gekromde master** (LS-07f, g): `DDL` van `LIAISON_MAIL` kent alleen
+globale componenten, dus de rotatie om de normaal kan daar alleen weg als de master
+loodrecht op een globale as staat. Anders schrijft de bridge de koppeling zelf, per
+slave-knoop als `LIAISON_DDL`: de drie verplaatsingen en de twee rotaties in het
+raakvlak van de master in het geprojecteerde punt (dezelfde interpolatie als
+`LIAISON_MAIL`). MUMPS ziet dan nog steeds ten onrechte een bijna-singuliere matrix
+(de drilling-rotatie heeft alleen een fictieve stijfheid); de bridge zet daarom voor
+die run `solver_nprec` op −1 (WARNING). Bij lineair statisch controleert `RESI_RELA`
+de oplossing nog: dezelfde strook zonder inklemming stopt met `FACTOR_57`.
+
+| Model | Verlijmd (bridge) | Referentie |
+|---|---|---|
+| strook 30° gedraaid (LS-07f), doorbuiging tip | 0,94220 mm | 0,94220 mm (LS-07a, in het XY-vlak) |
+| buis R 20 mm, 16 en 24 elementen rond (LS-07g) | 2,7306e-4 mm | 2,7277e-4 mm (één mesh, 24 rond); Mecway 2,7235e-4 mm; Timoshenko 2,7233e-4 mm |
+
+**Kwadratische schaal (tri6/quad8, `COQUE_3D`) als master** (LS-07i..k): de
+middenknoop die Code-Aster toevoegt (QUAD9/TRIA7) heeft alleen rotaties, en
+`LIAISON_MAIL` vraagt daar een verplaatsing (`CHARGES2_31`). De bridge schrijft de
+verplaatsingen daarom zelf (`LIAISON_DDL` met de vormfuncties van de quad8/tri6) en laat
+de rotaties bij `LIAISON_MAIL` (`DDL` alleen rotaties, de middenknoop telt dan mee).
+Bij een scheve of gekromde kwadratische master zijn dat alle drie de rotaties, met
+`solver_nprec` −1. Quad8-plaat 10 × 4 met een rib midden in de elementen, zijlast op
+de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de rib),
+30° gedraaid 1,1336e-2 mm.
+
 **Beperkingen:**
-- De rotatie om de normaal kan de bridge alleen weglaten als de master loodrecht op een
-  globale as staat (vlak X, Y of Z = constant). Bij een scheve of gekromde master
-  blijven alle DDL gekoppeld (WARNING) en kan Code-Aster `FACTOR_11` melden; zet dan
-  `solver_nprec` op −1 (§2.6; getest: zelfde resultaat) (KNOWN_BUGS 91).
-- Een kwadratische schaal (tri6/quad8) als master stopt met `CHARGES2_31` als
-  slave-knopen binnen een master-element liggen (KNOWN_BUGS 90).
 - Een schaalvlak op een volume koppelt alleen de verplaatsingen; balkuiteinden als slave
   worden niet vertaald (KNOWN_BUGS 21).
 - Mecway's eigen solver koppelt bij een schaalrand als slave geen rotaties: de verlijmde

@@ -65,6 +65,36 @@ def _has_cara(model_data):
         "discretes", "discrete_sections", "cable_sections"))
 
 
+def bonded_nprec(model_data, analysis):
+    """
+    Verlijmd contact met een scheve of gekromde schaal als master: de
+    rotatierelaties van bridge_mesh._bonded_relations raken de
+    drilling-rotatie en MUMPS meldt dan ten onrechte een singuliere matrix
+    (FACTOR_11; metingen in de docstring daar). Dan NPREC = -1, alleen voor
+    deze run (kopie van de instellingen). Ook voor het mechanische deel
+    van de keten thermisch -> mechanisch (bridge_thermomech).
+    Returns de (eventueel aangepaste kopie van de) analyse-instellingen.
+    """
+    if not model_data.get("_bonded_nprec_off") or \
+            int(analysis.get("solver_nprec", 8)) < 0:
+        return analysis
+    log(tr("WARNING: Verlijmd contact met een scheve of gekromde schaal als "
+           "master: MUMPS-controle op een singuliere matrix uit "
+           "(solver_nprec {0} -> -1), anders meldt Code-Aster ten onrechte "
+           "FACTOR_11 (fictieve stijfheid van de rotatie om de "
+           "schaalnormaal). Lineair statisch: RESI_RELA controleert de "
+           "oplossing nog wel.",
+           "WARNING: Bonded contact with a skewed or curved shell as master: "
+           "MUMPS singular-matrix check off (solver_nprec {0} -> -1), "
+           "otherwise Code-Aster wrongly reports FACTOR_11 (fictitious "
+           "stiffness of the rotation about the shell normal). Linear "
+           "static: RESI_RELA still checks the solution.").format(
+               analysis.get("solver_nprec", 8)))
+    analysis = dict(analysis)
+    analysis["solver_nprec"] = -1
+    return analysis
+
+
 def _build_solveur_ref(analysis):
     """
     SOLVEUR-regel voor MECA_STATIQUE / STAT_NON_LINE.
@@ -3237,7 +3267,10 @@ def _render_mpcs(model_data):
       - constraint equations (Mecway manual v33 par. 9.42,
         A dof1 + B dof2 + ... = C) -> LIAISON_DDL sum(COEF_MULT_i u_i) =
         COEF_IMPO (U4.44.01 LIAISON_DDL), coefficienten in SI;
-      - verlijmd contact (bridge_mesh._bonded) -> LIAISON_MAIL (U4.44.01).
+      - verlijmd contact (bridge_mesh._bonded) -> LIAISON_MAIL (U4.44.01),
+        of LIAISON_DDL per slave-knoop als de bridge de relaties zelf
+        schrijft (schaal als master: kwadratisch, scheef of gekromd;
+        bridge_mesh._bonded_relations).
     """
     out = OrderedDict()
     for ce in model_data.get("constraint_equations", []):
@@ -3247,6 +3280,20 @@ def _render_mpcs(model_data):
             ce, "{0!r}".format(ce["constant"])))
     normals = OrderedDict()
     for b in model_data.get("bonded", []):
+        if "relations" in b:
+            # Schaal als master, kwadratisch of scheef/gekromd: de relaties
+            # per slave-knoop uit bridge_mesh._bonded_relations
+            # (LIAISON_DDL, U4.44.01) i.p.v. LIAISON_MAIL.
+            for nids, ddl, coef in b["relations"]:
+                out.setdefault("LIAISON_DDL", []).append(
+                    "_F(NOEUD={0}, DDL={1}, COEF_MULT={2}, COEF_IMPO=0.0)"
+                    .format(_fmt_seq(["'N{0}'".format(n) for n in nids]),
+                            _fmt_seq(["'{0}'".format(d) for d in ddl]),
+                            _fmt_seq(["{0:.15g}".format(c) for c in coef])))
+            if not b.get("ddl"):
+                continue
+            # kwadratische master loodrecht op een globale as: de rotaties
+            # wel met LIAISON_MAIL (DDL alleen rotaties)
         parts = ["GROUP_MA_MAIT='{0}'".format(b["master"]),
                  "GROUP_NO_ESCL='{0}'".format(b["slave"]),
                  "TYPE_RACCORD='{0}'".format(b["raccord"])]
@@ -6594,6 +6641,7 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     bridge_fatigue.unsupported_warning(model_data, solver_cmd)
     if mechanical:
         _resolve_line_quad(model_data)
+        analysis = bonded_nprec(model_data, analysis)
         if model_data.get("aster_custom", {}).get("welding"):
             # bridge_welding.py: alleen in ther_3d (bridge_thermal)
             log(tr("WARNING: #ASTER-LASBRON werkt alleen in een transiente "

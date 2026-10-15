@@ -90,10 +90,10 @@ Verlijmd contact per combinatie (slave op master):
 | Slave → master | Status | Code-Aster | Opmerking |
 |---|---|---|---|
 | volume → volume | Ja | `MASSIF` | |
-| schaal → schaal | Deels | `COQUE` | Lineaire schalen: Ja (de master blijft DKT, ook bij de keuze COQUE_3D). Kwadratische schaal (tri6/quad8) als master: Code-Aster stopt met CHARGES2_31 (KB90); maak de master lineair of draai master en slave om. Ook een schaalrand op een schaalvlak (naad in het vlak, T-stuk): stijf, de rotaties gaan mee (geen scharnier; Mecway's eigen solver doet dat niet). Geverifieerd in LS-07, voorbeeld `Voorbeeld_T.liml` ([contact §3.10](Instellingen_contact_en_nietlineair.md#310-voorbeeld-platen-verlijmen-bonded-contact-tussen-schalen)). Master scheef of gekromd: mogelijk FACTOR_11, dan `solver_nprec` = −1 (KB91). |
+| schaal → schaal | Ja | `COQUE` (of `LIAISON_DDL`) | Ook een schaalrand op een schaalvlak (naad in het vlak, T-stuk): stijf, de rotaties gaan mee (geen scharnier; Mecway's eigen solver doet dat niet). Lineaire schalen als master blijven DKT, ook bij de keuze COQUE_3D. Een kwadratische master (tri6/quad8) en een scheve of gekromde master: de bridge schrijft de koppeling (deels) zelf als `LIAISON_DDL`; scheef of gekromd zet `solver_nprec` voor die run op −1 (WARNING). Geverifieerd in LS-07a..k, voorbeeld `Voorbeeld_T.liml` ([contact §3.10](Instellingen_contact_en_nietlineair.md#310-voorbeeld-platen-verlijmen-bonded-contact-tussen-schalen)). |
 | schaalvlak → volume | Ja | `MASSIF` | Alleen de verplaatsingen; gemeten gelijk aan gedeelde knopen (KB21). |
 | schaalrand → volume | Deels | `COQUE_MASSIF` of `MASSIF` | Stijf als alle randen bij één component met een dikte horen; anders werkt de rand als scharnier (WARNING, KB21). Maak één verlijmd contact per component (voorbeeld 2). |
-| volume → schaal | Deels | `MASSIF_COQUE` | Kwadratische schaal als master: als schaal → schaal (KB90). |
+| volume → schaal | Ja | `MASSIF_COQUE` | Ook op een kwadratische schaal (quad8 met een hex20-blok, knopen midden in de plaatelementen: gemeten gelijk aan zelf geschreven relaties). |
 | balk → volume | Nee | – | Gemeld en overgeslagen. Alternatief: Node-surface coupling met het balkuiteinde als referentieknoop, of `#ASTER` `LIAISON_ELEM` `3D_POU` (voorbeeld 1). |
 | balk → schaal | Nee | – | Gemeld en overgeslagen. Alternatief: Node-surface coupling met het balkuiteinde als referentieknoop. |
 | balk → balk | Nee | – | Kan in Mecway ook niet (de master moet een vlak zijn). Verbind met een gedeelde knoop of constraint equations. |
@@ -105,7 +105,7 @@ Verlijmd contact per combinatie (slave op master):
 | hex8 | Deels | `3D` | Stijver dan Mecway (geen incompatibele modes, KB1). Beter: *Elementen* > hex8 `LINE_QUAD`. |
 | tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Ja | `3D` | Piramides niet in de akoestiek (KB55). Gekromde hex20/wedge15: KB62. |
 | tri3, quad4 (schaal) | Ja | `DKT` (of `DST`/`COQUE_3D` als keuze) | ~0,7% anders dan Mecway (KB2). |
-| tri6, quad8 (schaal) | Ja | `COQUE_3D` | Als master van verlijmd contact: KB90. |
+| tri6, quad8 (schaal) | Ja | `COQUE_3D` | Als master van verlijmd contact: translaties met `LIAISON_DDL`, rotaties met `LIAISON_MAIL` (LS-07i..k). |
 | lineaire en kwadratische schalen in één component | Deels | – | De kwadratische worden niet gemodelleerd (ERROR). Splits de component. |
 | beam line2 | Ja | `POU_D_E` (of `POU_D_T`) | Oriëntatie uit *Element properties*. Geen plasticiteit (KB6), geen grote rotaties (KB11). |
 | beam line3 | Nee | – | Niet gemodelleerd (ERROR). Gebruik line2. |

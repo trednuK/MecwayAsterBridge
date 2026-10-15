@@ -210,14 +210,22 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    volume: COQUE_MASSIF (stijf, ook de rotaties); randen van meerdere componenten of
    gemengd met vlakken: MASSIF, de rand werkt dan als scharnier (WARNING). Of Mecway
    een schaalrand op een volume ook stijf verbindt is NIET geverifieerd. Balkuiteinden als slave:
-   gemeld en overgeslagen. Schalen die master zijn, blijven DKT, ook met elem_shell =
-   COQUE_3D (LIAISON_MAIL trekt anders de DX van de QUAD9-middenknoop erbij,
-   CHARGES2_31; WARNING). Een automatische
+   gemeld en overgeslagen. Lineaire schalen die master zijn, blijven DKT, ook met
+   elem_shell = COQUE_3D (LIAISON_MAIL trekt anders de DX van de QUAD9-middenknoop
+   erbij, CHARGES2_31, en de middenknopen van LINE_QUAD kent de bridge niet; WARNING).
+   Een automatische
    tolerantie van Mecway (0) wordt geen DISTANCE_MAX: Code-Aster koppelt alle
    slave-knopen, ook ver van het master-vlak. Schaal op schaal (`COQUE`, ook een
    schaalrand op een schaalvlak) koppelt de rotaties wel (stijf, LS-07); Mecway's eigen
    solver doet dat bij een schaalrand als slave niet (headless gemeten, Mecway 34:
-   verlijmde strook en T-stuk van LS-07 worden een mechanisme, tip 3,7e6 m).
+   verlijmde strook en T-stuk van LS-07 worden een mechanisme, tip 3,7e6 m). Een
+   kwadratische schaal (tri6/quad8) als master of een scheve/gekromde master schrijft
+   de bridge zelf als `LIAISON_DDL` per slave-knoop (`_bonded_relations`; LS-07f..k);
+   bij een scheve of gekromde master zet de bridge `NPREC` voor die run op −1 (WARNING),
+   omdat MUMPS anders ten onrechte `FACTOR_11` meldt (fictieve drilling-stijfheid).
+   Die relaties projecteren elke slave-knoop op de master-elementen (voorselectie met
+   omhullende dozen; 500 slave-knopen op 3600 elementen: 1,3 s in CPython, in
+   IronPython enkele keren trager): bij heel grote lijmvlakken merkbaar.
 
 22\. **Compression only** (bevestigd). Hard (LIAISON_UNIL, zoals de interne solver),
    alleen in niet-lineaire analyses (MECA_STATIQUE stopt met een ERROR), niet in een
@@ -329,53 +337,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    `K1_POST_K` of K uit G. In de verificatie toetst BR-10 deze K_I met dezelfde 5 % als
    de andere XFEM-controles; de afwijking telt als BEKEND.
 
-
-90\. **Verlijmd contact met een kwadratische schaal (tri6/quad8) als master:
-   `CHARGES2_31`** (bevestigd met runs, Code-Aster 17.4,
-   `bridge_to_aster._resolve_line_quad`). Tri6/quad8 worden altijd `COQUE_3D` (QUAD9/
-   TRIA7 via `CREA_MAILLAGE` `QUAD8_9`/`TRIA6_7`); de DKT-terugval van punt 21 kijkt
-   alleen naar schalen met "LINE_QUAD" in `shell_upgrades` (`bonded &= set(shell_lq)`),
-   dus niet naar van zichzelf kwadratische schalen. `LIAISON_MAIL` legt dan DX op de
-   middenknoop van de QUAD9, die bij `COQUE_3D` alleen rotaties heeft. Dat gebeurt
-   alleen als een slave-knoop binnen een master-element projecteert (op een rand is de
-   vormfunctie van de middenknoop 0). Reproductie: quad8-plaat 0,1 × 0,04 m (10 × 4,
-   2 mm), ingeklemd op x = 0, een verticale schaalrib (quad8 of quad4) op y = 0,025 m
-   met de onderrand als slave op het plaatvlak (master), 10 N op de bovenrand:
-   `<EXCEPTION> <CHARGES2_31>` (ddl DX van knoop 221), geen resultaten. Dezelfde rib op
-   y = 0,02 (op de elementranden) en een hex20-blok onder de plaat met knopen op de
-   elementranden rekenen wel (gelijk aan quad4/DKT binnen 1%). Tri6 niet apart gerekend
-   (TRIA7 heeft dezelfde middenknoop). Oplossing: in `_resolve_line_quad` ook
-   master-schalen met `QUAD8_9`/`TRIA6_7` opsporen; DKT kan daar niet (kwadratische
-   cellen), dus vóór de run een duidelijke ERROR met advies (lineaire schalen, of master
-   en slave wisselen), of de middenknopen uit de relatie houden als Code-Aster dat
-   toelaat (NIET geverifieerd).
-
-91\. **Verlijmd contact schaal op schaal met een scheve of gekromde master:
-   `FACTOR_11`** (bevestigd met runs, Code-Aster 17.4, `bridge_mesh._coque_ddl`).
-   `LIAISON_MAIL` `TYPE_RACCORD='COQUE'` koppelt standaard alle DDL, ook de rotatie om
-   de schaalnormaal (drilling), die bij DKT alleen een fictieve stijfheid heeft; MUMPS
-   meldt dan nulpivots op DRZ (`<EXCEPTION> <FACTOR_11>` bij `solver_nprec` = 8, ook
-   met `COEF_RIGI_DRZ` = 1e-3). De bridge laat die rotatie weg (`DDL` zonder DRX, DRY
-   of DRZ) als alle mastervlakken loodrecht op één globale as staan (LS-07a/c/d). Bij
-   een master in een scheef vlak of gekromd kan `DDL` (globale componenten) dat niet
-   uitdrukken: alle DDL blijven gekoppeld, met een WARNING. Reproductie: de strook van
-   LS-07a 30° gedraaid om de x-as: `FACTOR_11`; met `solver_nprec` = -1 rekent hij en
-   is de doorbuiging gelijk aan LS-07a (9,4220e-4 m). Oplossing (NIET geverifieerd):
-   de slave-rotaties met `LIAISON_DDL` per knoop in het lokale assenstelsel van de
-   master koppelen, of de mastervlakken per normaal splitsen.
-
-92\. **Thermisch: mechanische meldingen van verlijmd contact schaal op schaal**
-   (vermoedelijk, uit de code; `bridge_mesh._bonded`). In een thermische analyse
-   (zonder keten naar mechanisch) slaat `_bonded` de mechanische INFO en de melding over
-   de verende laag over, maar roept voor `TYPE_RACCORD='COQUE'` nog `_coque_ddl` aan en
-   geeft voor een schaalrand op een volume nog de scharnier-WARNING. Liggen de schalen
-   (evenwijdig, `PLAN`) in een scheef vlak, dan verschijnt dus de WARNING over
-   `FACTOR_11`/`solver_nprec` (punt 91), die thermisch niet geldt; de thermische
-   vertaling (`bridge_thermal.bonded_loads`) gebruikt `ddl` niet. Een schaalrand op een
-   volume wordt thermisch toch al niet vertaald (ERROR, volumes en schalen samen). Niet
-   gereproduceerd. Oplossing: in `_bonded` `_coque_ddl` en de scharnier-WARNING alleen
-   bij `mech` (bewust niet gedaan bij de thermische vertaling, om de wijziging in
-   `_bonded` klein te houden; `_coque_ddl` wordt tegelijk aangepast voor punt 90/91).
 94\. **Dynamica (DYNA_NON_LINE): de temperatuur geeft geen thermische spanning**
    (bevestigd met runs, Code-Aster 17.4, `bridge_to_aster._build_temperature_field`
    met `t_ramp=None` voor `dyna_impl_3d`). Het temperatuurveld staat vanaf t = 0

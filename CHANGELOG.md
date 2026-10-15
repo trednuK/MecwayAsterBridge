@@ -5,7 +5,10 @@
 - **Bonded (Tie) contact between shells** now works: a shell face or edge glued onto a
   shell face no longer stops with a singular matrix (`FACTOR_11`); the drilling rotation is
   left out of `LIAISON_MAIL`. Example `TestFiles/Voorbeelden/Voorbeeld_T.liml`, verification
-  LS-07a–e, docs §3.10 of the contact settings. Skewed or curved masters: KNOWN_BUGS 91.
+  LS-07a–e, docs §3.10 of the contact settings. Also with a skewed or curved master and
+  with a quadratic shell (tri6/quad8) as master: the bridge then writes the tie itself as
+  `LIAISON_DDL` (skewed/curved: MUMPS `NPREC` −1 for that run, with a warning).
+  Verification LS-07f–k (KNOWN_BUGS 90–92 solved).
 - **New overview** of which Mecway functionality the bridge does and does not translate
   (`docs/en/Mecway_features.md`, Dutch `docs/Mecway_functionaliteit.md`), also on the
   Documentation page of the start screen.

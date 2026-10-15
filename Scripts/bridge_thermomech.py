@@ -868,6 +868,8 @@ def build_blocks(tb, model_data, analysis):
     md["couplings"], md["contacts"] = [], []
     if not bta._check_materials(md, analysis):
         return None
+    # verlijmd contact met een scheve/gekromde schaal: NPREC = -1
+    analysis = bta.bonded_nprec(md, analysis)
     # LINE_QUAD (pagina Elementen): het mechanische mesh wordt kwadratisch;
     # het temperatuurveld gaat dan met PROJ_CHAMP naar het nieuwe mesh.
     bta._resolve_line_quad(md)

@@ -777,6 +777,223 @@ TESTS += [
 ]
 
 
+# (f) LS-07a 30 graden gedraaid om de x-as: master in een scheef vlak
+# (gaf FACTOR_11). Last langs de plaatnormaal; doorbuiging en
+# rotatie in het eigen assenstelsel van de strook.
+# (g, h) Dunwandige buis (straal RT7, wand T7) als uitkragende balk, eindlast
+# P (-Z) op de vrije rand: (g) twee delen met eigen meshes (16 en 24
+# elementen rond) verlijmd langs x = L/2, master gekromd (deel A, 16 rond);
+# (h) één mesh met 24 elementen rond (referentie; met 16 rond 2,7707e-7 m,
+# de verlijmde buis ligt daartussen). Analytisch: Timoshenko,
+# I = pi R^3 t, schuifoppervlak A/2 = pi R t (dunne buis).
+# (i, j, k) Kwadratische master: quad8-plaat (COQUE_3D) 10 x 4, quad8-rib
+# met de voetlijn midden in de plaatelementen (y = 0,025 m); (j) dezelfde
+# rib met gedeelde knopen (plaat 10 x 8); (k) model (i) 30 graden gedraaid
+# om de x-as (scheve kwadratische master). Plaat ingeklemd op x = 0,
+# zijlast P9 loodrecht op de rib op de bovenrand. Voor het mesh: rib op
+# een meshlijn (plaat 10 x 8, eigen knopen) 1,15442e-5 m (LS-07j +0,07 %);
+# rib midden in de elementen met plaat 10 x 12 1,14838e-5, 20 x 20
+# 1,15457e-5, gedeelde knopen 20 x 16 1,15776e-5 (de knik in de rotatie
+# onder de rib past niet in een element: iets te stijf, zoals LS-07d).
+ROT7 = math.radians(30.0)
+C7, S7 = math.cos(ROT7), math.sin(ROT7)
+RT7, NT7A, NT7B = 0.02, 16, 24
+IT7 = math.pi * RT7 ** 3 * T7
+WT7 = P7 * L7 ** 3 / (3 * E * IT7) + P7 * L7 / (G * math.pi * RT7 * T7)
+AX9, AY9, Y9, BZ9, P9 = 0.1, 0.04, 0.025, 0.02, 10.0
+# Referenties (Code-Aster 17.4 op LS-07h/i/j; Mecway 34 headless,
+# TestFiles/Tools/mw_solve.py, op de doorlopende meshes LS-07h en LS-07j)
+REF_H, MW_H = 2.727677e-7, 2.723463e-7
+REF_I, REF_J, MW_J = 1.134186e-5, 1.153610e-5, 1.140397e-5
+
+
+def _rot_x(f):
+    def g(u, v):
+        x, y, z = f(u, v)
+        return (x, y * C7 - z * S7, y * S7 + z * C7)
+    return g
+
+
+def build_ls07_strip_rot():
+    def build():
+        m = Model("S30")
+        m.mat("Plaat2", PLATE2, STEEL)
+        m.elset("Deel_A", "Plaat2")
+        a = quadmesh(m, "Deel_A", 10, 4, _rot_x(rect(0, L7 / 2, 0, B7)))
+        m._index = {}
+        m.elset("Deel_B", "Plaat2")
+        b = quadmesh(m, "Deel_B", 10, 7, _rot_x(rect(L7 / 2, L7, 0, B7)))
+        m.face_selection("Lijm_A", [(a["elems"][(9, j)], 5)
+                                    for j in range(4)])
+        m.face_selection("Lijm_B", b["edges"]["u0"])
+        m.node_selection("Naad_A", sorted(a["nodes"]["u1"]))
+        m.node_selection("Naad_B", sorted(b["nodes"]["u0"]))
+        m.add(BOND.format("Lijm_A", "Lijm_B"))
+        m.face_selection("Inklemming", a["edges"]["u0"])
+        m.face_selection("Vrij_eind", b["edges"]["u1"])
+        m.node_selection("Tip", sorted(b["nodes"]["u1"]))
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Vrij_eind"><x>0 N</x><y>%r N</y>'
+              '<z>%r N</z></force>' % (P7 * S7, -P7 * C7))
+        return m
+    return build
+
+
+def _w_rot(r, sel):
+    """Verplaatsing tegen de plaatnormaal (0, -sin, cos) in."""
+    return S7 * _mean(r, "disply", sel) - C7 * _mean(r, "displz", sel)
+
+
+def _r_rot(r, sel):
+    """Rotatie om de dwarsas van de strook (0, cos, sin)."""
+    return C7 * _mean(r, "roty", sel) + S7 * _mean(r, "rotz", sel)
+
+
+def build_ls07_tube(glued):
+    def tube(x0, x1):
+        def f(u, v):
+            t = 2 * math.pi * v
+            return (x0 + u * (x1 - x0), RT7 * math.cos(t), RT7 * math.sin(t))
+        return f
+
+    def build():
+        m = Model("S30")
+        m.mat("Plaat2", PLATE2, STEEL)
+        if glued:
+            m.elset("Deel_A", "Plaat2")
+            a = quadmesh(m, "Deel_A", 10, NT7A, tube(0, L7 / 2))
+            m._index = {}
+            m.elset("Deel_B", "Plaat2")
+            b = quadmesh(m, "Deel_B", 10, NT7B, tube(L7 / 2, L7))
+            m.face_selection("Lijm_A", [(a["elems"][(9, j)], 5)
+                                        for j in range(NT7A)])
+            m.face_selection("Lijm_B", b["edges"]["u0"])
+            m.add(BOND.format("Lijm_A", "Lijm_B"))
+            root, tip = a, b
+        else:
+            m.elset("Buis", "Plaat2")
+            root = tip = quadmesh(m, "Buis", 20, NT7B, tube(0, L7))
+        m.face_selection("Inklemming", root["edges"]["u0"])
+        m.face_selection("Vrij_eind", tip["edges"]["u1"])
+        m.node_selection("Tip", sorted(tip["nodes"]["u1"]))
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Vrij_eind"><x>0 N</x><y>0 N</y><z>-%g N</z>'
+              '</force>' % P7)
+        return m
+    return build
+
+
+def build_ls07_quad8_rib(glued, rot=False):
+    def tr(f):
+        return _rot_x(f) if rot else f
+
+    def build():
+        m = Model("S30")
+        m.mat("Plaat2", PLATE2, STEEL)
+        m.elset("Plaat", "Plaat2")
+        if glued:
+            a = quadmesh(m, "Plaat", 10, 4, tr(rect(0, AX9, 0, AY9)), order=2)
+            faces, clamp = a["faces"], a["edges"]["u0"]
+            m._index = {}
+        else:
+            a1 = quadmesh(m, "Plaat", 10, 5, tr(rect(0, AX9, 0, Y9)), order=2)
+            a2 = quadmesh(m, "Plaat", 10, 3, tr(rect(0, AX9, Y9, AY9)),
+                          order=2)
+            clamp = a1["edges"]["u0"] + a2["edges"]["u0"]
+        m.elset("Rib", "Plaat2")
+        b = quadmesh(m, "Rib", 10, 4, tr(lambda u, v: (u * AX9, Y9, v * BZ9)),
+                     order=2)
+        m.face_selection("Inklemming", clamp)
+        m.face_selection("Ribtop", b["edges"]["v1"])
+        m.node_selection("Ribtop_knopen", sorted(b["nodes"]["v1"]))
+        if glued:
+            m.face_selection("Lijm_plaat", faces)
+            m.face_selection("Lijm_rib", b["edges"]["v0"])
+            m.add(BOND.format("Lijm_plaat", "Lijm_rib"))
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Ribtop"><x>0 N</x><y>%r N</y><z>%r N</z>'
+              '</force>' % ((P9 * C7, P9 * S7) if rot else (P9, 0.0)))
+        return m
+    return build
+
+
+def _rib_y(r):
+    """Verplaatsing van de ribtop loodrecht op de rib (niet gedraaid)."""
+    return _mean(r, "disply", "Ribtop_knopen")
+
+
+def _rib_rot(r):
+    """Idem voor het gedraaide model: langs (0, cos, sin)."""
+    return (C7 * _mean(r, "disply", "Ribtop_knopen") +
+            S7 * _mean(r, "displz", "Ribtop_knopen"))
+
+
+TESTS += [
+    Case("LS-07f", GROUP, "Plaatstrook uit twee verlijmde delen, 30 graden "
+         "gedraaid (scheve master)", "lin_static_3d", build_ls07_strip_rot(),
+         [Check("doorbuiging tip", lambda r: _w_rot(r, "Tip"), ref=W7,
+                tol=0.02, unit="m", source="P L^3/(3EI) (Euler, E)"),
+          Check("doorbuiging tip t.o.v. LS-07a", lambda r: _w_rot(r, "Tip"),
+                ref=9.4220e-4, tol=0.001, unit="m",
+                source="LS-07a (zelfde model in het XY-vlak)",
+                in_series=False),
+          Check("rotatie tip", lambda r: _r_rot(r, "Tip"), ref=R7, tol=0.02,
+                unit="rad", source="P L^2/(2EI)"),
+          Check("rotatie naad B / A (geen scharnier)", lambda r: _r_rot(
+              r, "Naad_B") / _r_rot(r, "Naad_A"), ref=1.0, tol=0.005,
+                unit="-", source="doorlopende rotatie", in_series=False)],
+         note="Master niet loodrecht op een globale as: de bridge schrijft "
+              "de koppeling zelf (LIAISON_DDL), de rotaties alleen in het "
+              "mastervlak; NPREC = -1 (gaf FACTOR_11)."),
+    Case("LS-07g", GROUP, "Buis uit twee verlijmde delen (gekromde master, "
+         "16 en 24 elementen rond)", "lin_static_3d", build_ls07_tube(True),
+         [Check("doorbuiging tip", lambda r: -_mean(r, "displz", "Tip"),
+                ref=WT7, tol=0.03, unit="m",
+                source="Timoshenko, I = pi R^3 t, A_s = pi R t"),
+          Check("doorbuiging tip t.o.v. LS-07h",
+                lambda r: -_mean(r, "displz", "Tip"), ref=REF_H, tol=0.005,
+                unit="m", source="LS-07h (één mesh, 24 rond, Code-Aster)",
+                in_series=False)],
+         note="Gekromde master: LIAISON_DDL per slave-knoop, rotaties in "
+              "het raakvlak van de master; NPREC = -1."),
+    Case("LS-07h", GROUP, "Buis uit één mesh (referentie LS-07g)",
+         "lin_static_3d", build_ls07_tube(False),
+         [Check("doorbuiging tip", lambda r: -_mean(r, "displz", "Tip"),
+                ref=WT7, tol=0.03, unit="m",
+                source="Timoshenko, I = pi R^3 t, A_s = pi R t"),
+          Check("doorbuiging tip t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Tip"), ref=MW_H, tol=0.01,
+                unit="m", source="Mecway 34 (eigen solver)",
+                in_series=False)]),
+    Case("LS-07i", GROUP, "Quad8-plaat (COQUE_3D) als master, rib midden in "
+         "de plaatelementen", "lin_static_3d", build_ls07_quad8_rib(True),
+         [Check("zijdelingse verplaatsing ribtop", _rib_y, ref=REF_J,
+                tol=0.03, unit="m", source="LS-07j (gedeelde knopen)",
+                in_series=False)],
+         note="Translaties met LIAISON_DDL (QUAD8-vormfuncties), rotaties "
+              "met LIAISON_MAIL (de middenknoop van de QUAD9 telt mee); was "
+              "CHARGES2_31."),
+    Case("LS-07j", GROUP, "Quad8-plaat met rib, gedeelde knopen (referentie "
+         "LS-07i)", "lin_static_3d", build_ls07_quad8_rib(False),
+         [Check("zijdelingse verplaatsing ribtop t.o.v. Mecway", _rib_y,
+                ref=MW_J, tol=0.02, unit="m",
+                source="Mecway 34 (eigen solver)", in_series=False)],
+         note="Mecway rekent quad8-schalen met een eigen formulering "
+              "(+1,2 % t.o.v. COQUE_3D)."),
+    Case("LS-07k", GROUP, "Quad8-plaat met rib, 30 graden gedraaid (scheve "
+         "kwadratische master)", "lin_static_3d",
+         build_ls07_quad8_rib(True, rot=True),
+         [Check("verplaatsing ribtop t.o.v. LS-07i", _rib_rot, ref=REF_I,
+                tol=0.002, unit="m", source="LS-07i (zelfde model in het "
+                "XY-vlak)", in_series=False),
+          Check("verplaatsing ribtop t.o.v. LS-07j", _rib_rot, ref=REF_J,
+                tol=0.03, unit="m", source="LS-07j (gedeelde knopen)",
+                in_series=False)],
+         note="Rotaties met LIAISON_MAIL, alle drie (ook de drilling) en "
+              "NPREC = -1."),
+]
+
+
 # ------------------------------------------------------------------
 # LS-08 Node temperature (Mecway temperature3) voor thermische spanning
 # ------------------------------------------------------------------

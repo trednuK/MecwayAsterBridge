@@ -102,7 +102,9 @@ Stand 15 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 (alle stappen, de eindcontrole S11, de vervolgpunten van 7–8 oktober en verlijmd contact
 tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 4 BEKEND,
 0 NOK/FOUT. Daarna toegevoegd en alleen per groep gedraaid: TH-04 (verlijmd contact
-thermisch) en LS-08a–d (Node temperature): 285 testcases, 1671 controles, 1667 OK.
+thermisch), LS-08a–d (Node temperature) en LS-07f–k (verlijmd contact met een scheve,
+gekromde of kwadratische schaal als master; LS-07 helemaal opnieuw): 291 testcases,
+1683 controles, 1679 OK.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -117,7 +119,7 @@ thermisch) en LS-08a–d (Node temperature): 285 testcases, 1671 controles, 1667
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 7 | 17 | 17 | 0 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 43 | 110 | 110 | 0 |
+| Lineair statisch | 49 | 122 | 122 | 0 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 10 | 64 | 64 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
@@ -131,7 +133,7 @@ thermisch) en LS-08a–d (Node temperature): 285 testcases, 1671 controles, 1667
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **285** | **1671** | **1667** | **4** |
+| **Totaal** | **291** | **1683** | **1679** | **4** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -154,7 +156,9 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 - *Node temperature* (`temperature3`) telde in een mechanische analyse niet mee (alleen
   een INFO); nu als temperatuur per knoop in het knoopveld (LS-08).
 - Verlijmd contact tussen schalen stopte met `FACTOR_11` (de rotatie om de
-  plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07, KNOWN_BUGS 91).
+  plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07). Een scheve of
+  gekromde master en een kwadratische schaal (quad8/tri6) als master stopten nog met
+  `FACTOR_11` en `CHARGES2_31`; nu schrijft de bridge die koppeling zelf (LS-07f–k).
 - In expliciete dynamica gaf afronding in `DEFI_LIST_INST` een extra rekenstap.
 - Temperatuurafhankelijke ρc: `THER_NON_LINE` interpoleert de enthalpie lineair tussen
   de tabelpunten; de bridge verfijnt de tabel nu (energiebalans van −2,8% naar 0,002%,
@@ -331,12 +335,35 @@ opeenvolgende meshes.
   0,04 % van één doorlopende mesh. Zonder de correctie in `bridge_mesh._coque_ddl`
   koppelde `LIAISON_MAIL` ook de rotatie om de plaatnormaal (bij DKT alleen een
   fictieve stijfheid) en stopte Code-Aster met `FACTOR_11`; nu blijft die rotatie weg
-  als de master loodrecht op een globale as staat (anders KNOWN_BUGS 91). Bij (d)
+  als de master loodrecht op een globale as staat (anders zie (f–k)). Bij (d)
   interpoleert `LIAISON_MAIL` de plaatrotatie lineair over de knik onder de rib: 12 mm
   elementen −11 %, 4 mm −5 %, 1,3 mm −2 %; leg de voetlijn op een meshlijn. Mecway's
   eigen solver rekent (a), (c) en (d) niet: bij een schaalrand als slave koppelt hij
   geen rotaties (mechanisme, tip 3,7e6 m), daarom is Mecway alleen op de doorlopende
   meshes vergeleken.
+- **Model (f–k)**: (f) strook (a) 30° gedraaid om de x-as (scheve master), last langs
+  de plaatnormaal; (g) dunwandige buis R = 20 mm, t = 2 mm, L = 200 mm, ingeklemd, 1 N
+  in −Z op de vrije rand, uit twee delen (16 en 24 elementen rond) verlijmd op
+  x = 100 mm (gekromde master); (h) dezelfde buis als één mesh, 24 rond; (i) quad8-plaat
+  100 × 40 mm (`COQUE_3D`, 10 × 4), ingeklemd op x = 0, met een quad8-rib (hoogte 20 mm)
+  waarvan de voetlijn midden in de plaatelementen ligt (y = 25 mm), 10 N zijlast op de
+  bovenrand; (j) idem met gedeelde knopen (plaat 10 × 8); (k) model (i) 30° gedraaid.
+- **Referentie (f–k)**: (f) model (a) en Euler; (g) model (h) en Timoshenko
+  (I = πR³t, schuifoppervlak πRt); (h) Timoshenko en Mecway 34; (i) model (j);
+  (j) Mecway 34; (k) model (i) (zelfde model in het XY-vlak) en (j).
+- **Resultaat (f–k)**: (f) δ 0,94220 mm, gelijk aan (a); rotatie B/A 0,99992. (g)
+  2,7306e-7 m: +0,11 % t.o.v. (h), +0,27 % t.o.v. Timoshenko (de buis met 16 rond als
+  één mesh: 2,7707e-7 m; de verlijmde buis ligt daartussen). (h) +0,16 % t.o.v.
+  Timoshenko, +0,15 % t.o.v. Mecway. (i) −1,7 % onder (j) (de knik onder de rib, zoals
+  (d); plaat 10 × 12: −0,5 %, 20 × 20: +0,1 % t.o.v. (j)). (j) +1,2 % t.o.v. Mecway
+  (eigen quad8-schaal). (k) −0,05 % t.o.v. (i).
+- **Interpretatie (f–k)**: bij een scheve of gekromde master schrijft de bridge per
+  slave-knoop `LIAISON_DDL` (verplaatsingen en de twee rotaties in het raakvlak van de
+  master) en zet `NPREC` op −1: anders meldt MUMPS ten onrechte `FACTOR_11` (gemeten:
+  NPREC 8 en 10 stoppen, 12 en −1 geven dezelfde oplossing). Bij een kwadratische master
+  schrijft de bridge alleen de verplaatsingen (`LIAISON_MAIL` vroeg DX van de
+  QUAD9-middenknoop, `CHARGES2_31`); de rotaties blijven bij `LIAISON_MAIL`, zodat de
+  middenknoop meetelt. Met de rotaties zonder middenknoop was (i) 8,7 % te slap.
 
 ### LS-08 Node temperature (thermische spanning per knoop)
 
@@ -391,7 +418,7 @@ opeenvolgende meshes.
 
 ### Conclusie lineair statisch
 
-Alle 43 cases (110 controles) liggen binnen de tolerantie. Waar de theorie exact is
+Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is
 (Navier, Lamé, LE1, Euler-balk), convergeren de vertaalde modellen met de verwachte orde
 naar de referentie; in LS-02 is het verschil met Timoshenko een modelfout, dezelfde in
 Mecway en CCX. Geverifieerd zijn: `traction` op volumevlakken, `surfacepressure` op

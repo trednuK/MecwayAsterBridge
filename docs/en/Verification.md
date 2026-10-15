@@ -100,7 +100,9 @@ Status 15 October 2026. The whole table comes from one revision: the regression 
 (all steps, the final check S11, the follow-ups of 7–8 October and bonded contact between
 shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (known),
 0 NOK/FOUT. Added afterwards and only rerun per group: TH-04 (bonded contact in thermal
-analyses) and LS-08a–d (Node temperature): 285 test cases, 1671 checks, 1667 OK.
+analyses), LS-08a–d (Node temperature) and LS-07f–k (bonded contact with a skewed,
+curved or quadratic shell as master; all of LS-07 rerun): 291 test cases, 1683 checks,
+1679 OK.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -115,7 +117,7 @@ analyses) and LS-08a–d (Node temperature): 285 test cases, 1671 checks, 1667 O
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 7 | 17 | 17 | 0 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 43 | 110 | 110 | 0 |
+| Linear static | 49 | 122 | 122 | 0 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 10 | 64 | 64 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
@@ -129,7 +131,7 @@ analyses) and LS-08a–d (Node temperature): 285 test cases, 1671 checks, 1667 O
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **285** | **1671** | **1667** | **4** |
+| **Total** | **291** | **1683** | **1679** | **4** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -151,7 +153,9 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 - *Node temperature* (`temperature3`) was ignored in a mechanical analysis (only an
   INFO); now a temperature per node in the nodal field (LS-08).
 - Bonded contact between shells stopped with `FACTOR_11` (the rotation about the
-  plate normal was tied as well); now without that rotation (LS-07, KNOWN_BUGS 91).
+  plate normal was tied as well); now without that rotation (LS-07). A skewed or
+  curved master and a quadratic shell (quad8/tri6) as master still stopped with
+  `FACTOR_11` and `CHARGES2_31`; now the bridge writes that tie itself (LS-07f–k).
 - In explicit dynamics, rounding in `DEFI_LIST_INST` gave an extra solver step.
 - Temperature-dependent ρc: `THER_NON_LINE` interpolates the enthalpy linearly between
   the table points; the bridge now refines the table (energy balance from −2.8% to
@@ -328,12 +332,37 @@ meshes is given below.
   0.04 % of one continuous mesh. Before the fix in `bridge_mesh._coque_ddl`,
   `LIAISON_MAIL` also tied the rotation about the plate normal (only a fictitious
   stiffness in DKT) and Code-Aster stopped with `FACTOR_11`; now that rotation is left
-  out when the master is normal to a global axis (otherwise KNOWN_BUGS 91). In (d)
+  out when the master is normal to a global axis (otherwise see (f–k)). In (d)
   `LIAISON_MAIL` interpolates the plate rotation linearly across the kink under the
   rib: 12 mm elements −11 %, 4 mm −5 %, 1.3 mm −2 %; put the foot line on a mesh line.
   Mecway's own solver does not solve (a), (c) and (d): with a shell edge as slave it ties
   no rotations (mechanism, tip 3.7e6 m), so Mecway is only compared on the continuous
   meshes.
+- **Model (f–k)**: (f) strip (a) rotated 30° about the x axis (skewed master), load
+  along the plate normal; (g) thin-walled tube R = 20 mm, t = 2 mm, L = 200 mm, clamped,
+  1 N in −Z on the free edge, made of two parts (16 and 24 elements around) bonded at
+  x = 100 mm (curved master); (h) the same tube as one mesh, 24 around; (i) quad8 plate
+  100 × 40 mm (`COQUE_3D`, 10 × 4), clamped at x = 0, with a quad8 rib (height 20 mm)
+  whose foot line lies in the middle of the plate elements (y = 25 mm), 10 N side load
+  on the top edge; (j) the same with shared nodes (plate 10 × 8); (k) model (i) rotated
+  30°.
+- **Reference (f–k)**: (f) model (a) and Euler; (g) model (h) and Timoshenko
+  (I = πR³t, shear area πRt); (h) Timoshenko and Mecway 34; (i) model (j); (j) Mecway 34;
+  (k) model (i) (the same model in the XY plane) and (j).
+- **Result (f–k)**: (f) δ 0.94220 mm, equal to (a); rotation B/A 0.99992. (g)
+  2.7306e-7 m: +0.11 % from (h), +0.27 % from Timoshenko (the tube with 16 around as
+  one mesh: 2.7707e-7 m; the bonded tube lies in between). (h) +0.16 % from Timoshenko,
+  +0.15 % from Mecway. (i) −1.7 % below (j) (the kink under the rib, as in (d); plate
+  10 × 12: −0.5 %, 20 × 20: +0.1 % from (j)). (j) +1.2 % from Mecway (its own quad8
+  shell). (k) −0.05 % from (i).
+- **Interpretation (f–k)**: with a skewed or curved master the bridge writes
+  `LIAISON_DDL` per slave node (displacements and the two rotations in the tangent plane
+  of the master) and sets `NPREC` to −1: otherwise MUMPS wrongly reports `FACTOR_11`
+  (measured: NPREC 8 and 10 stop, 12 and −1 give the same solution). With a quadratic
+  master the bridge only writes the displacements (`LIAISON_MAIL` asked for DX of the
+  QUAD9 centre node, `CHARGES2_31`); the rotations stay with `LIAISON_MAIL`, so the
+  centre node counts. With the rotations without the centre node, (i) was 8.7 % too
+  flexible.
 
 ### LS-08 Node temperature (thermal stress per node)
 
@@ -388,7 +417,7 @@ meshes is given below.
 
 ### Conclusion linear static
 
-All 43 cases (110 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
+All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
 LE1, Euler beam), the translated models converge with the expected order to the
 reference; in LS-02 the difference with Timoshenko is a model error, the same in Mecway
 and CCX. Verified: `traction` on solid faces, `surfacepressure` on solid, shell and

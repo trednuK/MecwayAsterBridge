@@ -1920,10 +1920,18 @@ def _bonded(model_data, c, group_faces, rn):
     raccord = {("MASSIF", "MASSIF"): "MASSIF", ("COQUE", "COQUE"): "COQUE",
                ("COQUE", "MASSIF"): "MASSIF_COQUE",
                ("MASSIF", "COQUE"): "MASSIF"}[(m_type, s_type)]
+    # Thermisch (T30/T31): bridge_thermal.bonded_loads vertaalt het contact
+    # (LIAISON_MAIL op TEMP of ECHANGE_PAROI) en meldt zelf wat niet lukt;
+    # de mechanische meldingen hieronder gelden dan alleen voor het
+    # mechanische deel van de keten thermisch -> mechanisch.
+    thermal = model_data.get("thermal_data") is not None
+    mech = not thermal or model_data.get("thermo_mech")
     edge = None
     if (m_type, s_type) == ("MASSIF", "COQUE") and "shelledge" in sk:
         edge = _shell_edge_joint(model_data, slave)
-        if edge is None:
+        if edge is not None:
+            raccord = "COQUE_MASSIF"
+        elif mech:
             log(tr("WARNING: {0}: schaalrand op een volume koppelt hier "
                    "alleen de verplaatsingen (randen van meerdere "
                    "componenten of ook schaalvlakken); de rand werkt als "
@@ -1934,14 +1942,6 @@ def _bonded(model_data, c, group_faces, rn):
                    "also shell faces); the edge acts as a hinge (no "
                    "moment). Rigid: one component per bonded "
                    "contact.").format(label))
-        else:
-            raccord = "COQUE_MASSIF"
-    # Thermisch (T30/T31): bridge_thermal.bonded_loads vertaalt het contact
-    # (LIAISON_MAIL op TEMP of ECHANGE_PAROI) en meldt zelf wat niet lukt;
-    # de mechanische meldingen hieronder gelden dan alleen voor het
-    # mechanische deel van de keten thermisch -> mechanisch.
-    thermal = model_data.get("thermal_data") is not None
-    mech = not thermal or model_data.get("thermo_mech")
     if c["type"] == "bondedelastic" and mech:
         model_data.setdefault("skipped_loads", []).append(
             tr("{0}: verende laag (kn={1}, kt={2} Pa/m) niet vertaald, star "
@@ -1962,27 +1962,80 @@ def _bonded(model_data, c, group_faces, rn):
     # knopen van de vlakken (GROUP_NO_ESCL), dan hoeven de randvlakken niet
     # in het model (MODELISA6_96).
     faces = model_data.get("group_face_list", {})
+    slave_set = set(n for f in faces.get(slave, []) for n in f["nodes"])
+    relations, ddl, rot_ddl = None, None, None
+    if raccord == "COQUE" and mech:
+        # Schaal op schaal. LIAISON_MAIL kan niet op een kwadratische master
+        # (tri6/quad8 -> COQUE_3D: het vraagt DX van de middenknoop van de
+        # QUAD9/TRIA7, die alleen rotaties heeft, CHARGES2_31) en laat de
+        # drilling-rotatie alleen weg als de master loodrecht op een
+        # globale as staat (_coque_ddl). Dan schrijft de bridge de
+        # relaties zelf (_bonded_relations, LIAISON_DDL).
+        # Volume als slave (MASSIF_COQUE) op een kwadratische schaal rekent
+        # LIAISON_MAIL wel goed: quad8-plaat met een hex20-blok eronder,
+        # knopen op en midden in de plaatelementen, gelijk aan de relaties
+        # van _bonded_relations tot 7 cijfers (Code-Aster 17.4).
+        conn = model_data.get("_conn", {})
+        m_eids = sorted(set(f["eid"] for f in faces.get(master, [])))
+        quadratic = any(conn[e][0] in ("QUAD8", "TRIA6") for e in m_eids
+                        if e in conn)
+        ddl = _coque_ddl(group_faces.get(master, {}))
+        if quadratic:
+            # De rotaties kan LIAISON_MAIL wel (de middenknoop heeft
+            # DRX/DRY/DRZ en telt dan exact mee); de bridge schrijft alleen
+            # de translaties. Loodrecht op een globale as zonder de
+            # drilling-rotatie, anders alle drie (DDL kent geen lokaal
+            # assenstelsel) met NPREC = -1 (_bonded_relations). Gemeten
+            # (Code-Aster 17.4, quad8-plaat 10 x 4 met een rib midden in de
+            # elementen, LS-07i/k): in het XY-vlak 1,13419e-5 m, 30 graden
+            # gedraaid met alle drie de rotaties 1,13358e-5 m (-0,05 %); de
+            # rotaties met LIAISON_DDL zonder de middenknoop gaven
+            # 1,2330e-5 (+8,7 %, te slap).
+            if ddl is not None:
+                rot_ddl = tuple(d for d in ddl if d.startswith("DR"))
+            else:
+                rot_ddl = ("DRX", "DRY", "DRZ")
+                model_data["_bonded_nprec_off"] = True
+        if quadratic or ddl is None:
+            relations = _bonded_relations(
+                model_data, m_eids, slave_set, rot_ddl is None,
+                c.get("tolerance", 0.0), label)
+            if relations is None:
+                log(tr("WARNING: {0}: geen slave-knoop te koppelen (alle "
+                       "slave-knopen zijn ook knoop van de master of liggen "
+                       "verder dan de tolerantie).",
+                       "WARNING: {0}: no slave node to tie (all slave nodes "
+                       "are also master nodes or lie beyond the "
+                       "tolerance).").format(label))
+                relations = []
     if m_type == "MASSIF":
         groups = model_data.setdefault("extra_ma_groups", OrderedDict())
         name = "BRMAIT{0}".format(len(groups) + 1)
         groups[name] = sorted(set(f["eid"] for f in faces.get(master, [])))
         master = name
-    slave_nodes = _extra_node_group(
-        model_data, "BRESCL", set(n for f in faces.get(slave, [])
-                                  for n in f["nodes"]))
-    if mech:
-        log("INFO: {0} -> LIAISON_MAIL TYPE_RACCORD='{1}'{2}.".format(
-            label, raccord, " (mechanisch deel)" if thermal else ""))
-    if thermal:
-        log("INFO: {0}: thermische koppeling in bridge_thermal "
-            "(LIAISON_MAIL op TEMP of ECHANGE_PAROI).".format(label))
-    out = {"master": master, "slave": slave_nodes, "raccord": raccord,
+    out = {"master": master, "raccord": raccord,
+           "slave": _extra_node_group(model_data, "BRESCL", slave_set),
            "distance": c.get("tolerance", 0.0), "type": c["type"],
            "kinds": (m_type, s_type), "selections": (c["master"],
                                                      c["slave"]),
            "conductance": c.get("conductance")}
+    if thermal:
+        log("INFO: {0}: thermische koppeling in bridge_thermal "
+            "(LIAISON_MAIL op TEMP of ECHANGE_PAROI).".format(label))
+    if relations is not None:
+        # mechanisch: LIAISON_DDL i.p.v. LIAISON_MAIL (_render_mpcs); bij
+        # rot_ddl daarnaast LIAISON_MAIL voor alleen de rotaties
+        out["relations"] = relations
+        if rot_ddl:
+            out["ddl"] = rot_ddl
+            log("INFO: {0}: rotaties via LIAISON_MAIL TYPE_RACCORD='COQUE' "
+                "DDL={1}.".format(label, rot_ddl))
+        return out
+    if mech:
+        log("INFO: {0} -> LIAISON_MAIL TYPE_RACCORD='{1}'{2}.".format(
+            label, raccord, " (mechanisch deel)" if thermal else ""))
     if raccord == "COQUE":
-        out["ddl"] = _coque_ddl(group_faces.get(rn(c["master"]), {}), label)
+        out["ddl"] = ddl
     if edge is not None:
         # bridge_to_aster: CHAM_NORMALE = CREA_CHAMP NOEU_GEOM_R NORMALE op
         # de schaalcomponent (docs/ASTER_regels_voorbeelden.md voorbeeld 2)
@@ -1990,7 +2043,7 @@ def _bonded(model_data, c, group_faces, rn):
     return out
 
 
-def _coque_ddl(info, label):
+def _coque_ddl(info):
     """
     DDL van LIAISON_MAIL TYPE_RACCORD='COQUE' (schaal op schaal). Zonder DDL
     koppelt Code-Aster alle DDL van de schalen ("par défaut tous les DDL
@@ -2001,13 +2054,14 @@ def _coque_ddl(info, label):
     (Code-Aster 17.4, NPREC=8; plaatstrook met een lijmnaad in het vlak en
     een rib met de rand op een plaat, TestFiles/Verificatie/
     tests_lineair_statisch.py LS-07; met NPREC=-1 dezelfde oplossing als zonder de
-    drilling-koppeling, ook met COEF_RIGI_DRZ=1e-3 nog FACTOR_11).
+    drilling-koppeling, ook met COEF_RIGI_DRZ=1e-3 nog FACTOR_11; de
+    strook van LS-07a 30 graden gedraaid (LS-07f) met alle DDL: idem).
     Buiging en dwarskracht gaan via de verplaatsingen en de twee rotaties
     in het mastervlak. Ligt de master in een vlak loodrecht op een globale
-    as, dan blijft die rotatie (DRX/DRY/DRZ) hier weg; anders kan DDL dat
-    niet uitdrukken (globale componenten) en blijven alle DDL gekoppeld
-    (WARNING, KNOWN_BUGS 91).
-    Returns een tuple met DDL-namen of None (= Code-Aster-standaard).
+    as, dan blijft die rotatie (DRX/DRY/DRZ) hier weg.
+    Returns een tuple met DDL-namen, of None als DDL (globale componenten)
+    dat niet kan uitdrukken (scheve of gekromde master): dan schrijft
+    _bonded de relaties zelf (_bonded_relations).
     """
     normals = info.get("normals") or []
     if normals:
@@ -2017,16 +2071,186 @@ def _coque_ddl(info, label):
                 if abs(n0[k]) > 1.0 - 1.0e-6:
                     return tuple(d for d in ("DX", "DY", "DZ", "DRX", "DRY",
                                              "DRZ") if d != comp)
-    log(tr("WARNING: {0}: de master ligt niet in één vlak loodrecht op een "
-           "globale as; LIAISON_MAIL koppelt dan ook de rotatie om de "
-           "schaalnormaal, wat Code-Aster als singuliere matrix kan melden "
-           "(FACTOR_11). Dan helpt solver_nprec = -1. Zie KNOWN_BUGS 91.",
-           "WARNING: {0}: the master does not lie in one plane normal to a "
-           "global axis; LIAISON_MAIL then also ties the rotation about the "
-           "shell normal, which Code-Aster may report as a singular matrix "
-           "(FACTOR_11). Then use solver_nprec = -1. See KNOWN_BUGS "
-           "91.").format(label))
     return None
+
+
+def _face_point(atype, pts, xi, eta):
+    """Punt en raakvectoren (d/dxi, d/deta) van een schaalelement in
+    (xi, eta); vormfuncties van _face_shape (centrale differentie, exact
+    voor kwadratische N)."""
+    h = 1.0e-3
+    n = _face_shape(atype, xi, eta)
+    dxi = [(a - b) / (2 * h) for a, b in zip(_face_shape(atype, xi + h, eta),
+                                             _face_shape(atype, xi - h, eta))]
+    deta = [(a - b) / (2 * h) for a, b in zip(_face_shape(atype, xi, eta + h),
+                                              _face_shape(atype, xi, eta - h))]
+    x = tuple(sum(n[i] * pts[i][c] for i in range(len(pts)))
+              for c in range(3))
+    tx = tuple(sum(dxi[i] * pts[i][c] for i in range(len(pts)))
+               for c in range(3))
+    te = tuple(sum(deta[i] * pts[i][c] for i in range(len(pts)))
+               for c in range(3))
+    return n, x, tx, te
+
+
+def _clamp_face(atype, xi, eta):
+    """(xi, eta) terug in het referentie-element (driehoek: xi, eta >= 0,
+    xi + eta <= 1; vierhoek: [-1, 1]^2)."""
+    if atype.startswith("TRIA"):
+        xi, eta = max(xi, 0.0), max(eta, 0.0)
+        if xi + eta > 1.0:
+            s = min(max(0.5 * (xi - eta + 1.0), 0.0), 1.0)
+            xi, eta = s, 1.0 - s
+        return xi, eta
+    return min(max(xi, -1.0), 1.0), min(max(eta, -1.0), 1.0)
+
+
+def _project_on_face(atype, pts, p):
+    """
+    Dichtstbijzijnde punt van p op een schaalelement (Gauss-Newton op
+    |x(xi, eta) - p|^2, begrensd tot het element). Returns (afstand, N,
+    x, tx, te).
+    """
+    xi, eta = (1.0 / 3.0, 1.0 / 3.0) if atype.startswith("TRIA") else \
+        (0.0, 0.0)
+    for _ in range(30):
+        n, x, tx, te = _face_point(atype, pts, xi, eta)
+        r = _vsub(p, x)
+        a11, a12, a22 = _vdot(tx, tx), _vdot(tx, te), _vdot(te, te)
+        b1, b2 = _vdot(tx, r), _vdot(te, r)
+        det = a11 * a22 - a12 * a12
+        if det <= 0.0:
+            break
+        dxi = (a22 * b1 - a12 * b2) / det
+        deta = (a11 * b2 - a12 * b1) / det
+        nxi, neta = _clamp_face(atype, xi + dxi, eta + deta)
+        moved = abs(nxi - xi) + abs(neta - eta)
+        xi, eta = nxi, neta
+        if moved < 1.0e-12:
+            break
+    n, x, tx, te = _face_point(atype, pts, xi, eta)
+    d = _vsub(p, x)
+    return math.sqrt(_vdot(d, d)), n, x, tx, te
+
+
+def _bonded_relations(model_data, m_eids, slave_nids, rotations, distance,
+                      label):
+    """
+    Verlijmd contact met een schaal als master, door de bridge zelf
+    geschreven als lineaire relaties (LIAISON_DDL, U4.44.01), voor de
+    gevallen die LIAISON_MAIL niet aankan:
+    - kwadratische master (tri6/quad8 -> COQUE_3D, TRIA7/QUAD9): LIAISON_MAIL
+      interpoleert met de 9 (7) knopen en vraagt dan DX van de
+      middenknoop, die bij COQUE_3D alleen rotaties heeft
+      (<EXCEPTION> <CHARGES2_31>, Code-Aster 17.4, LS-07i). De translaties
+      van COQUE_3D horen bij de 8 (6) knopen van de Mecway-cel (R3.07.05,
+      NIET in de bron nagelopen; de middenknoop heeft volgens CHARGES2_31
+      geen DX). Hier alleen de translaties met de QUAD8/TRIA6-
+      vormfuncties (_face_shape, rotations False); de rotaties blijven bij
+      LIAISON_MAIL (_bonded: rot_ddl), waar de middenknoop meetelt.
+    - scheve of gekromde lineaire master: de rotatie om de
+      normaal van de master (drilling) mag niet meedoen (_coque_ddl:
+      FACTOR_11), en DDL van LIAISON_MAIL kent alleen globale componenten.
+      Hier per slave-knoop twee relaties voor de rotatie in het raakvlak
+      van de master in het projectiepunt (t1, t2):
+      t_k . theta_slave = sum N_i t_k . theta_i.
+      Staat t_k scheef (meer dan één globale component), dan zit de
+      drilling-rotatie van de slave (alleen de fictieve stijfheid
+      COEF_RIGI_DRZ) in dezelfde DDL als een relatie, en meldt MUMPS een
+      bijna-nulpivot (FACTOR_11) terwijl het stelsel regulier is (LS-07f,
+      Code-Aster 17.4: NPREC 8 en 10 FACTOR_11, NPREC 12 en -1 rekenen,
+      met dezelfde oplossing als LS-07a; COEF_RIGI_DRZ 1e-2 nog
+      FACTOR_11, 1e-1 rekent). De marge schaalt met COEF_RIGI_DRZ en de
+      dikte, dus geen vaste NPREC: model_data["_bonded_nprec_off"] zet
+      NPREC = -1 (bridge_to_aster.generate_AsterSolver_files; RESI_RELA
+      blijft het residu controleren: dezelfde strook zonder inklemming
+      stopt met FACTOR_57).
+    Zoals LIAISON_MAIL (U4.44.01): elke slave-knoop volgt het
+    geprojecteerde punt op het dichtstbijzijnde master-element (ook buiten
+    het element: dan de rand); met een tolerantie > 0 alleen knopen binnen
+    die afstand (DISTANCE_MAX). Slave-knopen die ook knoop van de master
+    zijn, blijven buiten de relaties (anders een lege relatie).
+    rotations: False bij een kwadratische master (zie boven): alleen de
+    translaties.
+    Returns [(knopen, ddl, coefficienten)] of None (niets te koppelen).
+    """
+    nodes = model_data["mesh_nodes"]
+    conn = model_data["_conn"]
+    elems = []
+    m_nodes = set()
+    for eid in m_eids:
+        atype, cn = conn[eid]
+        pts = [nodes[n] for n in cn]
+        lo = [min(q[c] for q in pts) for c in range(3)]
+        hi = [max(q[c] for q in pts) for c in range(3)]
+        elems.append((atype, cn, pts, lo, hi))
+        m_nodes.update(cn)
+    rel = []
+    shared, far, dmax = 0, 0, 0.0
+    mixed = False
+    for s in sorted(slave_nids):
+        if s in m_nodes:
+            shared += 1
+            continue
+        p = nodes[s]
+        boxes = []
+        for k, (atype, cn, pts, lo, hi) in enumerate(elems):
+            gap = [max(lo[c] - p[c], 0.0, p[c] - hi[c]) for c in range(3)]
+            boxes.append((math.sqrt(_vdot(gap, gap)), k))
+        boxes.sort()
+        best = None
+        for bd, k in boxes:
+            if best is not None and bd > best[0] * (1.0 + 1.0e-9) + 1.0e-15:
+                break
+            atype, cn, pts = elems[k][:3]
+            res = _project_on_face(atype, pts, p)
+            if best is None or res[0] < best[0] - 1.0e-15:
+                best = (res[0], k) + res[1:]
+        if best is None:
+            continue
+        d, k, n, x, tx, te = best
+        if distance > 0.0 and d > distance:
+            far += 1
+            continue
+        dmax = max(dmax, d)
+        cn = elems[k][1]
+        terms = [(m, w) for m, w in zip(cn, n) if abs(w) > 1.0e-10]
+        for comp in ("DX", "DY", "DZ"):
+            rel.append(([s] + [m for m, w in terms], [comp] * (len(terms) + 1),
+                        [1.0] + [-w for m, w in terms]))
+        if rotations:
+            nrm = _vunit(_vcross(tx, te))
+            t1 = _vunit(tx)
+            t2 = _vcross(nrm, t1)
+            for t in (t1, t2):
+                comps = [(c, t[i]) for i, c in enumerate(("DRX", "DRY", "DRZ"))
+                         if abs(t[i]) > 1.0e-12]
+                if len(comps) > 1:
+                    mixed = True
+                nids, ddl, coef = [], [], []
+                for nid, w in [(s, 1.0)] + [(m, -w) for m, w in terms]:
+                    for c, tc in comps:
+                        nids.append(nid)
+                        ddl.append(c)
+                        coef.append(w * tc)
+                rel.append((nids, ddl, coef))
+    if shared:
+        log("INFO: {0}: {1} slave-knopen zijn ook knoop van de master en "
+            "worden niet gekoppeld.".format(label, shared))
+    if far:
+        log("INFO: {0}: {1} slave-knopen liggen verder dan de tolerantie "
+            "van het mastervlak en worden niet gekoppeld.".format(label, far))
+    if not rel:
+        return None
+    if mixed:
+        # bridge_to_aster.generate_AsterSolver_files: NPREC = -1
+        model_data["_bonded_nprec_off"] = True
+    log("INFO: {0} -> LIAISON_DDL door de bridge ({1} relaties, {2} "
+        "slave-knopen, grootste afstand tot de master {3:.3g} m; {4}).".format(
+            label, len(rel), len(rel) // (5 if rotations else 3), dmax,
+            "translaties en rotaties in het mastervlak" if rotations
+            else "alleen translaties"))
+    return rel
 
 
 def _shell_edge_joint(model_data, slave):

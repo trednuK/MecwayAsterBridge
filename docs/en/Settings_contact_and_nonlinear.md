@@ -629,13 +629,32 @@ foot line in the middle of the plate elements, `LIAISON_MAIL` interpolates the p
 rotation linearly across the kink under the rib: 5 % too stiff with 4 mm elements, 11 %
 with 12 mm. So put the foot line on a mesh line (or refine there).
 
+**Skewed or curved master** (LS-07f, g): `DDL` of `LIAISON_MAIL` only knows global
+components, so the rotation about the normal can only be left out there when the
+master is normal to a global axis. Otherwise the bridge writes the tie itself, per
+slave node as `LIAISON_DDL`: the three displacements and the two rotations in the
+tangent plane of the master at the projected point (the same interpolation as
+`LIAISON_MAIL`). MUMPS then still wrongly sees a nearly singular matrix (the drilling
+rotation only has a fictitious stiffness); the bridge therefore sets `solver_nprec`
+to −1 for that run (WARNING). In a linear static analysis `RESI_RELA` still checks
+the solution: the same strip without clamping stops with `FACTOR_57`.
+
+| Model | Bonded (bridge) | Reference |
+|---|---|---|
+| strip rotated 30° (LS-07f), tip deflection | 0.94220 mm | 0.94220 mm (LS-07a, in the XY plane) |
+| tube R 20 mm, 16 and 24 elements around (LS-07g) | 2.7306e-4 mm | 2.7277e-4 mm (one mesh, 24 around); Mecway 2.7235e-4 mm; Timoshenko 2.7233e-4 mm |
+
+**Quadratic shell (tri6/quad8, `COQUE_3D`) as master** (LS-07i..k): the centre node
+that Code-Aster adds (QUAD9/TRIA7) only has rotations, and `LIAISON_MAIL` asks for a
+displacement there (`CHARGES2_31`). The bridge therefore writes the displacements
+itself (`LIAISON_DDL` with the quad8/tri6 shape functions) and leaves the rotations to
+`LIAISON_MAIL` (`DDL` rotations only, the centre node then counts). With a skewed or
+curved quadratic master these are all three rotations, with `solver_nprec` −1. Quad8
+plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
+1.1342e-2 mm, shared nodes 1.1536e-2 mm (−1.7 %, the kink under the rib), rotated 30°
+1.1336e-2 mm.
+
 **Limitations:**
-- The bridge can leave out the rotation about the normal only when the master is normal
-  to a global axis (plane X, Y or Z = constant). With a skewed or curved master all DOFs
-  stay tied (WARNING) and Code-Aster may report `FACTOR_11`; then set `solver_nprec` to
-  −1 (§2.6; tested: same result) (KNOWN_BUGS 91).
-- A quadratic shell (tri6/quad8) as master stops with `CHARGES2_31` when slave nodes lie
-  inside a master element (KNOWN_BUGS 90).
 - A shell face on a solid only ties the displacements; beam ends as slave are not
   translated (KNOWN_BUGS 21).
 - Mecway's own solver ties no rotations for a shell edge as slave: the bonded strip and

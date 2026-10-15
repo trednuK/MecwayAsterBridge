@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 01aa2e2, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**1654 van 1658 controles binnen de tolerantie** (281 testcases); 4 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**1666 van 1670 controles binnen de tolerantie** (287 testcases); 4 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -930,6 +930,18 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 01aa2e2, Code-Aster 17.4
 | LS-07c | T-stuk: rib met de rand verlijmd op een plaat, voetlijn op een meshlijn | idem t.o.v. Mecway | 2.9319e-06 m | 2.9442e-06 | +0.42% | 1% | OK |
 | LS-07d | T-stuk: voetlijn midden in de plaatelementen | zijdelingse verplaatsing ribtop | 2.9470e-06 m | 2.7951e-06 | -5.16% | 7% | OK |
 | LS-07e | T-stuk met gedeelde knopen (referentie) | zijdelingse verplaatsing ribtop t.o.v. Mecway | 2.9319e-06 m | 2.9470e-06 | +0.51% | 1% | OK |
+| LS-07f | Plaatstrook uit twee verlijmde delen, 30 graden gedraaid (scheve master) | doorbuiging tip | 9.5238e-04 m | 9.4220e-04 | -1.07% | 2% | OK |
+| LS-07f | Plaatstrook uit twee verlijmde delen, 30 graden gedraaid (scheve master) | doorbuiging tip t.o.v. LS-07a | 9.4220e-04 m | 9.4220e-04 | +0.00% | 0.1% | OK |
+| LS-07f | Plaatstrook uit twee verlijmde delen, 30 graden gedraaid (scheve master) | rotatie tip | 0.0071429 rad | 0.0070899 | -0.74% | 2% | OK |
+| LS-07f | Plaatstrook uit twee verlijmde delen, 30 graden gedraaid (scheve master) | rotatie naad B / A (geen scharnier) | 1 - | 0.99992 | -0.01% | 0.5% | OK |
+| LS-07g | Buis uit twee verlijmde delen (gekromde master, 16 en 24 elementen rond) | doorbuiging tip | 2.7233e-07 m | 2.7306e-07 | +0.27% | 3% | OK |
+| LS-07g | Buis uit twee verlijmde delen (gekromde master, 16 en 24 elementen rond) | doorbuiging tip t.o.v. LS-07h | 2.7277e-07 m | 2.7306e-07 | +0.11% | 0.5% | OK |
+| LS-07h | Buis uit één mesh (referentie LS-07g) | doorbuiging tip | 2.7233e-07 m | 2.7277e-07 | +0.16% | 3% | OK |
+| LS-07h | Buis uit één mesh (referentie LS-07g) | doorbuiging tip t.o.v. Mecway | 2.7235e-07 m | 2.7277e-07 | +0.15% | 1% | OK |
+| LS-07i | Quad8-plaat (COQUE_3D) als master, rib midden in de plaatelementen | zijdelingse verplaatsing ribtop | 1.1536e-05 m | 1.1342e-05 | -1.68% | 3% | OK |
+| LS-07j | Quad8-plaat met rib, gedeelde knopen (referentie LS-07i) | zijdelingse verplaatsing ribtop t.o.v. Mecway | 1.1404e-05 m | 1.1536e-05 | +1.16% | 2% | OK |
+| LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07i | 1.1342e-05 m | 1.1336e-05 | -0.05% | 0.2% | OK |
+| LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07j | 1.1536e-05 m | 1.1336e-05 | -1.74% | 3% | OK |
 
 ## Modaal met demping
 

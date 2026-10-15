@@ -90,10 +90,10 @@ Bonded contact per combination (slave on master):
 | Slave → master | Status | Code-Aster | Remark |
 |---|---|---|---|
 | solid → solid | Yes | `MASSIF` | |
-| shell → shell | Partly | `COQUE` | Linear shells: Yes (the master stays DKT, also with the choice COQUE_3D). Quadratic shell (tri6/quad8) as master: Code-Aster stops with CHARGES2_31 (KB90); make the master linear or swap master and slave. Also a shell edge on a shell face (in-plane seam, T-joint): rigid, the rotations are tied (no hinge; Mecway's own solver does not do this). Verified in LS-07, example `Voorbeeld_T.liml` ([contact §3.10](Settings_contact_and_nonlinear.md#310-example-bonding-plates-bonded-contact-between-shells)). Master skewed or curved: possibly FACTOR_11, then `solver_nprec` = −1 (KB91). |
+| shell → shell | Yes | `COQUE` (or `LIAISON_DDL`) | Also a shell edge on a shell face (in-plane seam, T-joint): rigid, the rotations are tied (no hinge; Mecway's own solver does not do this). Linear shells as master stay DKT, also with the choice COQUE_3D. A quadratic master (tri6/quad8) and a skewed or curved master: the bridge writes the tie (partly) itself as `LIAISON_DDL`; skewed or curved sets `solver_nprec` to −1 for that run (WARNING). Verified in LS-07a..k, example `Voorbeeld_T.liml` ([contact §3.10](Settings_contact_and_nonlinear.md#310-example-bonding-plates-bonded-contact-between-shells)). |
 | shell face → solid | Yes | `MASSIF` | Displacements only; measured equal to shared nodes (KB21). |
 | shell edge → solid | Partly | `COQUE_MASSIF` or `MASSIF` | Rigid if all edges belong to one component with a thickness; otherwise the edge acts as a hinge (WARNING, KB21). Make one bonded contact per component (example 2). |
-| solid → shell | Partly | `MASSIF_COQUE` | Quadratic shell as master: as shell → shell (KB90). |
+| solid → shell | Yes | `MASSIF_COQUE` | Also on a quadratic shell (quad8 with a hex20 block, nodes in the middle of the plate elements: measured equal to relations written by the bridge). |
 | beam → solid | No | – | Reported and skipped. Alternative: Node-surface coupling with the beam end as reference node, or `#ASTER` `LIAISON_ELEM` `3D_POU` (example 1). |
 | beam → shell | No | – | Reported and skipped. Alternative: Node-surface coupling with the beam end as reference node. |
 | beam → beam | No | – | Not possible in Mecway either (the master must be a face). Connect with a shared node or constraint equations. |
@@ -105,7 +105,7 @@ Bonded contact per combination (slave on master):
 | hex8 | Partly | `3D` | Stiffer than Mecway (no incompatible modes, KB1). Better: *Elements* > hex8 `LINE_QUAD`. |
 | tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Yes | `3D` | Pyramids not in acoustics (KB55). Strongly curved hex20/wedge15: KB62. |
 | tri3, quad4 (shell) | Yes | `DKT` (or `DST`/`COQUE_3D` as a choice) | ~0.7% different from Mecway (KB2). |
-| tri6, quad8 (shell) | Yes | `COQUE_3D` | As master of bonded contact: KB90. |
+| tri6, quad8 (shell) | Yes | `COQUE_3D` | As master of bonded contact: displacements with `LIAISON_DDL`, rotations with `LIAISON_MAIL` (LS-07i..k). |
 | linear and quadratic shells in one component | Partly | – | The quadratic ones are not modelled (ERROR). Split the component. |
 | beam line2 | Yes | `POU_D_E` (or `POU_D_T`) | Orientation from *Element properties*. No plasticity (KB6), no large rotations (KB11). |
 | beam line3 | No | – | Not modelled (ERROR). Use line2. |
