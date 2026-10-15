@@ -17,6 +17,9 @@
   them). Verification TH-04a–d.
 - KNOWN_BUGS 88–90 recorded (bonded contact in thermal analyses, node temperature in
   mechanical analyses, quadratic shell as bonded master).
+- **Version check** (warning only): the log shows the Mecway version (from the `.liml`) and the
+  Code-Aster version (launcher path, then the `.mess`); an untested version gives a WARNING. New page
+  *After an update of Mecway or Code-Aster* (`docs/en/After_an_update.md`).
 - README: Mecway 34, acknowledgements. Verification: 277 test cases, 1643 checks.
 
 ## V2026.1 – first public release
