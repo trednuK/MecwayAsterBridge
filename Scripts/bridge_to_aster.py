@@ -68,7 +68,7 @@ def _has_cara(model_data):
         "discretes", "discrete_sections", "cable_sections"))
 
 
-def bonded_nprec(model_data, analysis):
+def bonded_nprec(model_data, analysis, lin=False):
     """
     Verlijmd contact met een scheve of gekromde schaal als master: de
     rotatierelaties van bridge_mesh._bonded_relations raken de
@@ -76,10 +76,17 @@ def bonded_nprec(model_data, analysis):
     (FACTOR_11; metingen in de docstring daar). Dan NPREC = -1, alleen voor
     deze run (kopie van de instellingen). Ook voor het mechanische deel
     van de keten thermisch -> mechanisch (bridge_thermomech).
+    lin: True als de analyse _build_lin_solveur_ref gebruikt
+    (MECA_STATIQUE). Met lin_solver GCPC gebruikt Code-Aster dan geen MUMPS
+    en dus geen NPREC: niets te doen. De andere analyses en de keten
+    gebruiken altijd MUMPS (_build_solveur_ref).
     Returns de (eventueel aangepaste kopie van de) analyse-instellingen.
     """
     if not model_data.get("_bonded_nprec_off") or \
             int(analysis.get("solver_nprec", 8)) < 0:
+        return analysis
+    if lin and "{0}".format(analysis.get("lin_solver",
+                                         "MUMPS")).upper() == "GCPC":
         return analysis
     log(tr("WARNING: Verlijmd contact met een scheve of gekromde schaal als "
            "master: MUMPS-controle op een singuliere matrix uit "
@@ -7170,7 +7177,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
                "WARNING: Error estimator (error_estimator) only works for "
                "linear static (MECA_STATIQUE), not for {0}; no error "
                "estimate.").format(solver_cmd))
-    if bridge_fracture.is_requested(model_data) and             solver_cmd != "MECA_STATIQUE":
+    if (bridge_fracture.is_requested(model_data) and
+            solver_cmd != "MECA_STATIQUE"):
         # Breukmechanica alleen lineair statisch (docs/Breukmechanica.md)
         log(tr("WARNING: Breukmechanica (SCHEUR_-selecties) werkt alleen "
                "bij lineair statisch (MECA_STATIQUE), niet bij {0}; geen K "
@@ -7178,7 +7186,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
                "WARNING: Fracture mechanics (CRACK_ selections) only works "
                "for linear static (MECA_STATIQUE), not for {0}; no K and "
                "G.").format(solver_cmd))
-    if bridge_xfem.is_requested(model_data) and             solver_cmd != "MECA_STATIQUE":
+    if (bridge_xfem.is_requested(model_data) and
+            solver_cmd != "MECA_STATIQUE"):
         # XFEM alleen lineair statisch (docs/Breukmechanica.md par. 7)
         log(tr("WARNING: XFEM (#ASTER-XFEM, XFEM_-selecties) werkt alleen "
                "bij lineair statisch (MECA_STATIQUE), niet bij {0}; de "
@@ -7191,7 +7200,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     bridge_fatigue.unsupported_warning(model_data, solver_cmd)
     if mechanical:
         _resolve_line_quad(model_data)
-        analysis = bonded_nprec(model_data, analysis)
+        analysis = bonded_nprec(model_data, analysis,
+                                lin=solver_cmd == "MECA_STATIQUE")
         if model_data.get("aster_custom", {}).get("welding"):
             # bridge_welding.py: alleen in ther_3d (bridge_thermal)
             log(tr("WARNING: #ASTER-LASBRON werkt alleen in een transiente "

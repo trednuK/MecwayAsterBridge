@@ -1690,7 +1690,8 @@ class _Thermal(object):
             return
         targets, area = found
         q = load["value"]
-        if load["tag"] == "heatflow" and isinstance(q, Formula) and                 q.positional():
+        if (load["tag"] == "heatflow" and isinstance(q, Formula) and
+                q.positional()):
             self.skip(tr("{0}: formule in x, y, z voor een totale "
                          "warmtestroom (gebruik heat flux of internal heat "
                          "generation)",

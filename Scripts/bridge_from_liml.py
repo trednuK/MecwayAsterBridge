@@ -309,6 +309,19 @@ def _parse_failure(fail_node, mat_name, model_data):
     if kind == "VonMises":
         strength = parse_and_convert(fail_node.get("tensilestrength", "0"),
                                      'pressure')
+        # parse_and_convert geeft een float (onbekende eenheid: het getal
+        # ongewijzigd, met een WARNING); defensief, want een tekst in
+        # failure_strengths zou de hele resultaatexport laten vallen
+        # (aster_results_export._fos_vars)
+        if not isinstance(strength, (int, float)):
+            log(tr("WARNING: Faalcriterium von Mises van materiaal '{0}': "
+                   "tensile strength '{1}' niet te lezen; geen factor of "
+                   "safety.",
+                   "WARNING: Von Mises failure criterion of material '{0}': "
+                   "tensile strength '{1}' cannot be read; no factor of "
+                   "safety.").format(
+                       mat_name, fail_node.get("tensilestrength", "")))
+            return
         if strength > 0.0:
             model_data.setdefault("failure_strengths", {})[mat_name] = \
                 strength
@@ -1113,7 +1126,8 @@ def _parse_model_item(item, root, model_data):
         # bridge_mesh._flexible_joints (dubbele knoop + LIAISON_DDL).
         free = tuple(a for a in ("u", "v", "w")
                      if item.find("rot" + a) is not None)
-        if _selection_kind(root, sel) != "GROUP_MA" or                 not _has_selection(root, "faceselection", sel):
+        if (_selection_kind(root, sel) != "GROUP_MA" or
+                not _has_selection(root, "faceselection", sel)):
             _not_translated(model_data,
                             tr("flexible joint op '{0}'",
                                "flexible joint on '{0}'").format(sel),
@@ -1450,7 +1464,8 @@ def extract_aster_data_from_liml(file_path):
                             tuple(float(e.get(k, "0")) for k in (
                                 "orientationux", "orientationuy",
                                 "orientationuz"))
-                    if eid and s in _DIM_1D_SHAPES and                             e.get("truss") != "true":
+                    if (eid and s in _DIM_1D_SHAPES and
+                            e.get("truss") != "true"):
                         # Een truss heeft geen orientatie nodig (manual
                         # v33 par. 7.6); BARRE kent geen VECT_Y.
                         orient = _parse_beam_orientation(e)
