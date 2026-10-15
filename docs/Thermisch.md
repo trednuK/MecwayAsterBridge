@@ -73,6 +73,36 @@ bij *Elastic* is de mechanische laag star (gemeld), de thermische weerstand wel
 vertaald. Mecway's interne solver (Mecway 34, zonder GUI) rekende *Tie* en *Elastic*
 in een T30 zonder koppeling (300 / 400 K aan beide kanten); met de CCX-solver wel
 (350 K, en 340 / 360 K met h = 2000 W/m²K), gelijk aan de bridge (TH-04a/c).
+### 3.1 Temperaturen in een mechanische analyse (thermische spanning)
+
+In een statische, niet-lineair statische, modale of knikanalyse geeft een *Thermal stress*
+(referentietemperatuur) samen met temperaturen thermische rek (manual §9.23–9.25):
+
+| Mecway | Code-Aster |
+|---|---|
+| *Thermal stress* | `VALE_REF` van `AFFE_VARC` `NOM_VARC='TEMP'` en `ALPHA` in `ELAS` |
+| *Temperature* (`temperature2`) op knopen, vlakken of elementen | knoopveld `TEMP` (`CREA_CHAMP` `NOEU_TEMP_R` `AFFE`) |
+| *Node temperature* (`temperature3`), ook het resultaat van *Transfer temperatures from solution* (manual §17.10) | dezelfde waarde per knoop in dat veld |
+
+- Knopen zonder temperatuur staan op de referentietemperatuur, ook naast knopen met een
+  temperatuur (zoals Mecway; Temperature en Node temperature op verschillende knopen
+  tellen samen, LS-08c).
+- De temperatuur wordt in het element geïnterpoleerd; een lineair verloop over de dikte
+  geeft de exacte kromming (LS-08b, gelijk aan Mecway 34). Knopen die de bridge in de
+  job toevoegt (`LINE_QUAD`, de middenknoop van `COQUE_3D`) krijgen de geïnterpoleerde
+  temperatuur van de Mecway-knopen (LS-08d).
+- Twee verschillende temperaturen op één knoop: Mecway rekent dan niet ("Conflicting
+  temperatures on node"); de bridge geeft een WARNING en gebruikt de Node temperature
+  (of bij twee Node temperatures de laatste).
+- Niet-lineair statisch: de temperatuur loopt op van de referentie op t = 0 naar de
+  waarde op de eindtijd (KNOWN_BUGS 17). Modaal en knik: de voorspanning door de
+  thermische rek telt mee (`modal_prestress`).
+- Dynamic Response (D30): Mecway negeert de temperaturen, de Node temperature valt
+  ook in de bridge weg (INFO). Nonlinear Dynamic Response (D31): Node temperature staat
+  niet bij Mecway's analysetypen (manual §9.24) en wordt gemeld (ERROR, niet vertaald);
+  een Temperature geeft daar geen thermische spanning (KNOWN_BUGS 94).
+- Een tijdshistorie van een Temperature wordt in een mechanische analyse niet vertaald
+  (gemeld).
 
 ## 4. Aanvullende controles (Code-Aster 17.4, offline)
 

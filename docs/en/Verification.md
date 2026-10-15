@@ -99,9 +99,8 @@ Status 15 October 2026. The whole table comes from one revision: the regression 
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `71ecf2f`
 (all steps, the final check S11, the follow-ups of 7–8 October and bonded contact between
 shells LS-07; Code-Aster 17.4): 277 test cases, 1643 checks, 1639 OK, 4 BEKEND (known),
-0 NOK/FOUT. TH-04 (bonded contact in thermal analyses) was added
-afterwards and only the groups TH and LS-07 were rerun: 281 test cases, 1658 checks,
-1654 OK.
+0 NOK/FOUT. Added afterwards and only rerun per group: TH-04 (bonded contact in thermal
+analyses) and LS-08a–d (Node temperature): 285 test cases, 1671 checks, 1667 OK.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -116,7 +115,7 @@ afterwards and only the groups TH and LS-07 were rerun: 281 test cases, 1658 che
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 7 | 17 | 17 | 0 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 39 | 97 | 97 | 0 |
+| Linear static | 43 | 110 | 110 | 0 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 10 | 64 | 64 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
@@ -130,7 +129,7 @@ afterwards and only the groups TH and LS-07 were rerun: 281 test cases, 1658 che
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **281** | **1658** | **1654** | **4** |
+| **Total** | **285** | **1671** | **1667** | **4** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -149,6 +148,8 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 - Contact on quadratic faces did not pass the patch test with the default integration
   (up to 4.6% error); now `INTEGRATION='NCOTES'` for a quadratic slave face (NL-03c–f).
 - Springs and dampers only acted in global X; now along their own axis (LS-06).
+- *Node temperature* (`temperature3`) was ignored in a mechanical analysis (only an
+  INFO); now a temperature per node in the nodal field (LS-08).
 - Bonded contact between shells stopped with `FACTOR_11` (the rotation about the
   plate normal was tied as well); now without that rotation (LS-07, KNOWN_BUGS 91).
 - In explicit dynamics, rounding in `DEFI_LIST_INST` gave an extra solver step.
@@ -334,9 +335,40 @@ meshes is given below.
   no rotations (mechanism, tip 3.7e6 m), so Mecway is only compared on the continuous
   meshes.
 
+### LS-08 Node temperature (thermal stress per node)
+
+- **Purpose**: Mecway's *Node temperature* (`temperature3`, a temperature per node, also
+  the result of *Transfer temperatures from solution*) with a *Thermal stress* → nodal
+  field `TEMP` in `AFFE_VARC`, like *Temperature* (`temperature2`).
+- **Model**: α = 1.2e-5 1/K, E = 210 GPa, ν = 0.3, Tref = 293.15 K. (a) bar as TH-03b
+  (1 × 0.1 × 0.1 m, 4 hex8, u_x = 0 at both ends, transversely free), Node temperature
+  Tref + 100 K on all nodes. (b) free beam 100 × 10 × 10 mm (10 × 1 × 4 hex20) with
+  T = Tref + 100 K · z/h on every node (linear through the thickness); u_x = 0 at x = 0,
+  u_y = 0 at y = 0, u_z = 0 at the origin. (c) free bar 100 × 10 × 10 mm (4 hex8):
+  `temperature2` Tref + 100 K on the nodes at x = 0 and Node temperature Tref + 200 K on
+  those at x = L; the nodes in between get no temperature. (d) as (b) with hex8 and
+  `elem_hex8` = `LINE_QUAD`.
+- **Reference**: (a) σ_xx = −EαΔT, u_y = (1+ν)αΔT·b, reaction EαΔT·A. (b, d) linear
+  temperature in a free body: stress-free, u_z = −αg(x² + y² − z²)/2 with g = ΔT/h
+  (Timoshenko & Goodier §150): u_z(L, 0, 0) = −6.0e-4 m. (c) nodes without a temperature
+  at Tref, element means +50 and +100 K: u_x(L) = α·150 K·L/4 = 4.5e-5 m. In addition
+  Mecway 34 (own solver, headless) on (a)–(c).
+- **Result**: all quantities exact (≤ 2e-10); max |σ_xx| in (b) and (d) 0.04 Pa.
+  Mecway: (a) reaction 2.52e6 N, (b) −6.0000e-4 m, (c) 4.5000e-5 m, all three equal.
+- **Interpretation**: Node temperature works like Temperature; nodes without a
+  temperature are at the reference, also next to nodes with a temperature (c, equal to
+  Mecway). Mecway 34 interpolates the nodal temperature inside the element (b: exact
+  even with one layer of hex20), not the element average of the manual (KNOWN_BUGS 17).
+  In (d) the midside nodes added by `LINE_QUAD` get the interpolated temperature; with
+  the reference temperature the beam would be wrong. Mecway itself solves (d) with
+  incompatible hex8: −6.28e-4 m (+4.7 %). Also compared headless (8 hex8, Node
+  temperature +50 K, `LINE_QUAD`): modal with prestress 284.96 Hz against Mecway
+  286.18 Hz, buckling 3.3969 against 3.4010; in the bridge and in Mecway `temperature2`
+  and `temperature3` give the same result (also static, nonlinear static and D30).
+
 ### Conclusion linear static
 
-All 39 cases (97 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
+All 43 cases (110 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
 LE1, Euler beam), the translated models converge with the expected order to the
 reference; in LS-02 the difference with Timoshenko is a model error, the same in Mecway
 and CCX. Verified: `traction` on solid faces, `surfacepressure` on solid, shell and

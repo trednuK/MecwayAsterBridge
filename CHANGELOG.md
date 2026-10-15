@@ -15,6 +15,11 @@
   conductance per unit area* (conforming solid faces; otherwise ideally bonded with a
   warning). Models with solids and shells together: ERROR (Code-Aster cannot couple
   them). Verification TH-04a–d.
+- **Node temperature** (`temperature3`, also after *Transfer temperatures from solution*) now
+  gives thermal strain in static, nonlinear static, modal and buckling analyses, like
+  *Temperature*; nodes the bridge adds (`LINE_QUAD`, `COQUE_3D` centre node) get the
+  interpolated temperature. Verification LS-08a–d. KNOWN_BUGS 89 fixed; 94 and 95
+  recorded (no thermal stress in dynamics, Mecway expands shells less).
 - KNOWN_BUGS 88–90 recorded (bonded contact in thermal analyses, node temperature in
   mechanical analyses, quadratic shell as bonded master).
 - **Version check** (warning only): the log shows the Mecway version (from the `.liml`) and the

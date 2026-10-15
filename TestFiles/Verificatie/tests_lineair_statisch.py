@@ -687,3 +687,189 @@ TESTS += [
                 ref=2.93195e-6, tol=0.01, unit="m",
                 source="Mecway 34 (eigen solver)", in_series=False)]),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-08 Node temperature (Mecway temperature3) voor thermische spanning
+# ------------------------------------------------------------------
+# Mecway Node temperature (manual v34 par. 9.24): een temperatuur per
+# knoop, bijv. overgenomen uit een thermische analyse ("Transfer
+# temperatures from solution"). Knopen zonder temperatuur staan op de
+# referentietemperatuur van de Thermal stress (par. 9.25). De bridge zet de
+# waarden in het knoopveld TEMP (AFFE_VARC), net als temperature2.
+ALPHA8, TREF8, DT8 = 1.2e-5, 293.15, 100.0
+STEEL_T = ('<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+           'poissonratio="0.3" thermalexpansion="%g 1/K" />' % ALPHA8)
+# Mecway 34 headless (TestFiles/Tools/mw_solve.py) op modellen/LS-08*.liml
+# (eigen solver). LS-08d in Mecway (hex8, incompatibele modes):
+# u_z(L, 0, 0) = -6,2815e-4 m (+4,7 %); niet als controle, de bridge rekent
+# met LINE_QUAD.
+MW_LS08A = 2520000.0
+MW_LS08B = -5.99999999987e-4
+MW_LS08C = 4.5e-5
+
+
+def _node_temps(pairs):
+    """<temperature3> met (nid, K) per knoop."""
+    return ("<temperature3>" + "".join(
+        '<nodetemperature nid="%d" value="%.12g K" />' % p for p in pairs)
+        + "</temperature3>")
+
+
+def _tref8(m):
+    m.add('<thermalstress><referencetemperature>%g K'
+          '</referencetemperature></thermalstress>' % TREF8)
+
+
+def _roll(m, sel, x, y, z):
+    m.add('<displacement selection="%s"><value>0 m</value><x>%d</x>'
+          '<y>%d</y><z>%d</z></displacement>' % (sel, x, y, z))
+
+
+L8A, B8A = 1.0, 0.1
+
+
+def build_ls08a():
+    """Staaf als TH-03b (ingeklemd in x, dwarsrichting vrij), maar met
+    Node temperature Tref + 100 K op alle knopen."""
+    m = Model("S30")
+    m.elset("Staaf", "Staal")
+    g = hexmesh(m, "Staaf", 4, 1, 1, box(0, L8A, 0, B8A, 0, B8A))
+    m.mat("Staal", STEEL_T)
+    m.face_selection("X0", g["faces"]["u0"])
+    m.face_selection("Y0", g["faces"]["v0"])
+    m.face_selection("Z0", g["faces"]["w0"])
+    m.face_selection("XLv", g["faces"]["u1"])
+    m.node_selection("XL", sorted(g["nodes"]["u1"]))
+    for sel, x, y, z in (("X0", 1, 0, 0), ("Y0", 0, 1, 0), ("Z0", 0, 0, 1),
+                         ("XLv", 1, 0, 0)):
+        _roll(m, sel, x, y, z)
+    _tref8(m)
+    m.add(_node_temps([(n, TREF8 + DT8)
+                       for n in range(1, len(m.nodes) + 1)]))
+    return m
+
+
+# LS-08b/d: vrije balk met een lineair temperatuurverloop over de dikte,
+# T = Tref + DT z / h. Exacte oplossing (Timoshenko & Goodier par. 150,
+# lineaire temperatuur: spanningsloos): eps = alpha g z in alle richtingen
+# (g = DT / h), u_x = alpha g x z, u_y = alpha g y z,
+# u_z = -alpha g (x^2 + y^2 - z^2) / 2. Opgelegd zoals die oplossing het
+# toelaat: u_x = 0 op x = 0, u_y = 0 op y = 0, u_z = 0 in (0, 0, 0).
+# Doorbuiging op (L, 0, 0): -alpha g L^2 / 2.
+L8B, B8B, H8B = 0.1, 0.01, 0.01
+G8B = DT8 / H8B
+W8B = -ALPHA8 * G8B * L8B ** 2 / 2.0
+
+
+def build_ls08_bend(order, nx):
+    def build():
+        m = Model("S30")
+        m.elset("Balk", "Staal")
+        g = hexmesh(m, "Balk", nx, 1, 4, box(0, L8B, 0, B8B, 0, H8B),
+                    order=order)
+        m.mat("Staal", STEEL_T)
+        m.face_selection("X0", g["faces"]["u0"])
+        m.face_selection("Y0", g["faces"]["v0"])
+        m.node_selection("O", [m.node(0, 0, 0)])
+        _roll(m, "X0", 1, 0, 0)
+        _roll(m, "Y0", 0, 1, 0)
+        _roll(m, "O", 0, 0, 1)
+        _tref8(m)
+        m.add(_node_temps([(i + 1, TREF8 + G8B * p[2])
+                           for i, p in enumerate(m.nodes)]))
+        return m
+    return build
+
+
+def _ls08_bend_checks(mecway=None):
+    checks = [
+        Check("u_z op (L, 0, 0)", lambda r: r.at("displz", (L8B, 0, 0)),
+              ref=W8B, tol=1e-4, unit="m",
+              source="-alpha g L^2/2 (Timoshenko & Goodier par. 150)"),
+        Check("u_z op (L, 0, h)", lambda r: r.at("displz", (L8B, 0, H8B)),
+              ref=W8B + ALPHA8 * G8B * H8B ** 2 / 2.0, tol=1e-4, unit="m",
+              source="-alpha g (L^2 - h^2)/2"),
+        Check("max |sigma_xx|",
+              lambda r: max(abs(v) for v in r.step()["stressxx"].values()),
+              ref=0.0, tol_abs=1e-4 * E * ALPHA8 * DT8, unit="Pa",
+              source="lineaire temperatuur, vrij: spanningsloos "
+                     "(tolerantie 1e-4 E alpha dT)")]
+    if mecway is not None:
+        checks.append(Check(
+            "u_z op (L, 0, 0) t.o.v. Mecway", lambda r: r.at(
+                "displz", (L8B, 0, 0)), ref=mecway, tol=1e-4, unit="m",
+            source="Mecway 34 (eigen solver; interpoleert de "
+                   "knooptemperatuur in het element)", in_series=False))
+    return checks
+
+
+# LS-08c: vrije staaf (4 hex8 langs x), temperature2 op de knopen in
+# x = 0 (+100 K) en Node temperature op de knopen in x = L (+200 K); de
+# knopen ertussen staan op de referentie. Per element is de gemiddelde
+# temperatuur +50 K (eerste) en +100 K (laatste): u_x(L) = alpha (50 +
+# 100) K L/4 (Mecway en een lineair knoopveld geven hetzelfde).
+U8C = ALPHA8 * (50.0 + 100.0) * (0.1 / 4)
+
+
+def build_ls08c():
+    m = Model("S30")
+    m.elset("Staaf", "Staal")
+    g = hexmesh(m, "Staaf", 4, 1, 1, box(0, 0.1, 0, 0.01, 0, 0.01))
+    m.mat("Staal", STEEL_T)
+    m.face_selection("X0", g["faces"]["u0"])
+    m.face_selection("Y0", g["faces"]["v0"])
+    m.face_selection("Z0", g["faces"]["w0"])
+    for sel, x, y, z in (("X0", 1, 0, 0), ("Y0", 0, 1, 0), ("Z0", 0, 0, 1)):
+        _roll(m, sel, x, y, z)
+    m.node_selection("X0N", sorted(g["nodes"]["u0"]))
+    m.node_selection("XL", sorted(g["nodes"]["u1"]))
+    _tref8(m)
+    m.add('<temperature2 selection="X0N"><value>%.12g K</value>'
+          '<starttime>0 s</starttime><endtime>0 s</endtime></temperature2>'
+          % (TREF8 + DT8))
+    m.add(_node_temps([(n, TREF8 + 2 * DT8) for n in sorted(
+        g["nodes"]["u1"])]))
+    return m
+
+
+TESTS += [
+    Case("LS-08a", GROUP, "Staaf ingeklemd in x, Node temperature op alle "
+         "knopen", "lin_static_3d", build_ls08a,
+         [Check("sigma_xx", lambda r: r.at("stressxx", (L8A / 2, B8A / 2,
+                                                        B8A)),
+                ref=-E * ALPHA8 * DT8, tol=1e-6, unit="Pa",
+                source="-E alpha dT (verhinderde uitzetting, dwarsrichting "
+                       "vrij)"),
+          Check("u_y zijkant", lambda r: r.at("disply", (L8A / 2, B8A, 0)),
+                ref=(1 + NU) * ALPHA8 * DT8 * B8A, tol=1e-6, unit="m",
+                source="(1+nu) alpha dT b"),
+          Check("|reactie x| op x = L",
+                lambda r: abs(r.total("reactionforcex", "XL")),
+                ref=E * ALPHA8 * DT8 * B8A * B8A, tol=1e-6, unit="N",
+                source="E alpha dT A"),
+          Check("|reactie x| op x = L t.o.v. Mecway",
+                lambda r: abs(r.total("reactionforcex", "XL")),
+                ref=MW_LS08A, tol=1e-6, unit="N",
+                source="Mecway 34 (eigen solver)", in_series=False)],
+         note="als TH-03b, met temperature3 i.p.v. temperature2"),
+    Case("LS-08b", GROUP, "Vrije balk, lineaire temperatuur over de dikte "
+         "(Node temperature, hex20)", "lin_static_3d",
+         build_ls08_bend(2, 10), _ls08_bend_checks(MW_LS08B),
+         note="hex20 beschrijft de exacte (kwadratische) verplaatsing; "
+              "Mecway geeft hetzelfde"),
+    Case("LS-08c", GROUP, "Vrije staaf: temperature2 en Node temperature "
+         "op verschillende knopen, overige op de referentie",
+         "lin_static_3d", build_ls08c,
+         [Check("gemiddelde u_x op x = L", lambda r: r.mean("displx", "XL"),
+                ref=U8C, tol=0.01, unit="m",
+                source="alpha (50 + 100) K L/4 (elementgemiddelden)"),
+          Check("gemiddelde u_x op x = L t.o.v. Mecway",
+                lambda r: r.mean("displx", "XL"), ref=MW_LS08C, tol=0.01,
+                unit="m", source="Mecway 34 (eigen solver)",
+                in_series=False)]),
+    Case("LS-08d", GROUP, "Als LS-08b met hex8 en LINE_QUAD (middenknopen "
+         "krijgen de geinterpoleerde temperatuur)", "lin_static_3d",
+         build_ls08_bend(1, 10), _ls08_bend_checks(),
+         general={"elem_hex8": "LINE_QUAD"}),
+]

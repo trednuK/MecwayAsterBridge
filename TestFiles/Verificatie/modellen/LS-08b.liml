@@ -1,0 +1,457 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.01" y="0" z="0" />
+  <node nid="3" x="0.01" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0" y="0" z="0.0025" />
+  <node nid="6" x="0.01" y="0" z="0.0025" />
+  <node nid="7" x="0.01" y="0.01" z="0.0025" />
+  <node nid="8" x="0" y="0.01" z="0.0025" />
+  <node nid="9" x="0.005" y="0" z="0" />
+  <node nid="10" x="0.01" y="0.005" z="0" />
+  <node nid="11" x="0.005" y="0.01" z="0" />
+  <node nid="12" x="0" y="0.005" z="0" />
+  <node nid="13" x="0" y="0" z="0.00125" />
+  <node nid="14" x="0.01" y="0" z="0.00125" />
+  <node nid="15" x="0.01" y="0.01" z="0.00125" />
+  <node nid="16" x="0" y="0.01" z="0.00125" />
+  <node nid="17" x="0.005" y="0" z="0.0025" />
+  <node nid="18" x="0.01" y="0.005" z="0.0025" />
+  <node nid="19" x="0.005" y="0.01" z="0.0025" />
+  <node nid="20" x="0" y="0.005" z="0.0025" />
+  <node nid="21" x="0" y="0" z="0.005" />
+  <node nid="22" x="0.01" y="0" z="0.005" />
+  <node nid="23" x="0.01" y="0.01" z="0.005" />
+  <node nid="24" x="0" y="0.01" z="0.005" />
+  <node nid="25" x="0" y="0" z="0.00375" />
+  <node nid="26" x="0.01" y="0" z="0.00375" />
+  <node nid="27" x="0.01" y="0.01" z="0.00375" />
+  <node nid="28" x="0" y="0.01" z="0.00375" />
+  <node nid="29" x="0.005" y="0" z="0.005" />
+  <node nid="30" x="0.01" y="0.005" z="0.005" />
+  <node nid="31" x="0.005" y="0.01" z="0.005" />
+  <node nid="32" x="0" y="0.005" z="0.005" />
+  <node nid="33" x="0" y="0" z="0.0075" />
+  <node nid="34" x="0.01" y="0" z="0.0075" />
+  <node nid="35" x="0.01" y="0.01" z="0.0075" />
+  <node nid="36" x="0" y="0.01" z="0.0075" />
+  <node nid="37" x="0" y="0" z="0.00625" />
+  <node nid="38" x="0.01" y="0" z="0.00625" />
+  <node nid="39" x="0.01" y="0.01" z="0.00625" />
+  <node nid="40" x="0" y="0.01" z="0.00625" />
+  <node nid="41" x="0.005" y="0" z="0.0075" />
+  <node nid="42" x="0.01" y="0.005" z="0.0075" />
+  <node nid="43" x="0.005" y="0.01" z="0.0075" />
+  <node nid="44" x="0" y="0.005" z="0.0075" />
+  <node nid="45" x="0" y="0" z="0.01" />
+  <node nid="46" x="0.01" y="0" z="0.01" />
+  <node nid="47" x="0.01" y="0.01" z="0.01" />
+  <node nid="48" x="0" y="0.01" z="0.01" />
+  <node nid="49" x="0" y="0" z="0.00875" />
+  <node nid="50" x="0.01" y="0" z="0.00875" />
+  <node nid="51" x="0.01" y="0.01" z="0.00875" />
+  <node nid="52" x="0" y="0.01" z="0.00875" />
+  <node nid="53" x="0.005" y="0" z="0.01" />
+  <node nid="54" x="0.01" y="0.005" z="0.01" />
+  <node nid="55" x="0.005" y="0.01" z="0.01" />
+  <node nid="56" x="0" y="0.005" z="0.01" />
+  <node nid="57" x="0.02" y="0" z="0" />
+  <node nid="58" x="0.02" y="0.01" z="0" />
+  <node nid="59" x="0.02" y="0" z="0.0025" />
+  <node nid="60" x="0.02" y="0.01" z="0.0025" />
+  <node nid="61" x="0.015" y="0" z="0" />
+  <node nid="62" x="0.02" y="0.005" z="0" />
+  <node nid="63" x="0.015" y="0.01" z="0" />
+  <node nid="64" x="0.02" y="0" z="0.00125" />
+  <node nid="65" x="0.02" y="0.01" z="0.00125" />
+  <node nid="66" x="0.015" y="0" z="0.0025" />
+  <node nid="67" x="0.02" y="0.005" z="0.0025" />
+  <node nid="68" x="0.015" y="0.01" z="0.0025" />
+  <node nid="69" x="0.02" y="0" z="0.005" />
+  <node nid="70" x="0.02" y="0.01" z="0.005" />
+  <node nid="71" x="0.02" y="0" z="0.00375" />
+  <node nid="72" x="0.02" y="0.01" z="0.00375" />
+  <node nid="73" x="0.015" y="0" z="0.005" />
+  <node nid="74" x="0.02" y="0.005" z="0.005" />
+  <node nid="75" x="0.015" y="0.01" z="0.005" />
+  <node nid="76" x="0.02" y="0" z="0.0075" />
+  <node nid="77" x="0.02" y="0.01" z="0.0075" />
+  <node nid="78" x="0.02" y="0" z="0.00625" />
+  <node nid="79" x="0.02" y="0.01" z="0.00625" />
+  <node nid="80" x="0.015" y="0" z="0.0075" />
+  <node nid="81" x="0.02" y="0.005" z="0.0075" />
+  <node nid="82" x="0.015" y="0.01" z="0.0075" />
+  <node nid="83" x="0.02" y="0" z="0.01" />
+  <node nid="84" x="0.02" y="0.01" z="0.01" />
+  <node nid="85" x="0.02" y="0" z="0.00875" />
+  <node nid="86" x="0.02" y="0.01" z="0.00875" />
+  <node nid="87" x="0.015" y="0" z="0.01" />
+  <node nid="88" x="0.02" y="0.005" z="0.01" />
+  <node nid="89" x="0.015" y="0.01" z="0.01" />
+  <node nid="90" x="0.03" y="0" z="0" />
+  <node nid="91" x="0.03" y="0.01" z="0" />
+  <node nid="92" x="0.03" y="0" z="0.0025" />
+  <node nid="93" x="0.03" y="0.01" z="0.0025" />
+  <node nid="94" x="0.025" y="0" z="0" />
+  <node nid="95" x="0.03" y="0.005" z="0" />
+  <node nid="96" x="0.025" y="0.01" z="0" />
+  <node nid="97" x="0.03" y="0" z="0.00125" />
+  <node nid="98" x="0.03" y="0.01" z="0.00125" />
+  <node nid="99" x="0.025" y="0" z="0.0025" />
+  <node nid="100" x="0.03" y="0.005" z="0.0025" />
+  <node nid="101" x="0.025" y="0.01" z="0.0025" />
+  <node nid="102" x="0.03" y="0" z="0.005" />
+  <node nid="103" x="0.03" y="0.01" z="0.005" />
+  <node nid="104" x="0.03" y="0" z="0.00375" />
+  <node nid="105" x="0.03" y="0.01" z="0.00375" />
+  <node nid="106" x="0.025" y="0" z="0.005" />
+  <node nid="107" x="0.03" y="0.005" z="0.005" />
+  <node nid="108" x="0.025" y="0.01" z="0.005" />
+  <node nid="109" x="0.03" y="0" z="0.0075" />
+  <node nid="110" x="0.03" y="0.01" z="0.0075" />
+  <node nid="111" x="0.03" y="0" z="0.00625" />
+  <node nid="112" x="0.03" y="0.01" z="0.00625" />
+  <node nid="113" x="0.025" y="0" z="0.0075" />
+  <node nid="114" x="0.03" y="0.005" z="0.0075" />
+  <node nid="115" x="0.025" y="0.01" z="0.0075" />
+  <node nid="116" x="0.03" y="0" z="0.01" />
+  <node nid="117" x="0.03" y="0.01" z="0.01" />
+  <node nid="118" x="0.03" y="0" z="0.00875" />
+  <node nid="119" x="0.03" y="0.01" z="0.00875" />
+  <node nid="120" x="0.025" y="0" z="0.01" />
+  <node nid="121" x="0.03" y="0.005" z="0.01" />
+  <node nid="122" x="0.025" y="0.01" z="0.01" />
+  <node nid="123" x="0.04" y="0" z="0" />
+  <node nid="124" x="0.04" y="0.01" z="0" />
+  <node nid="125" x="0.04" y="0" z="0.0025" />
+  <node nid="126" x="0.04" y="0.01" z="0.0025" />
+  <node nid="127" x="0.035" y="0" z="0" />
+  <node nid="128" x="0.04" y="0.005" z="0" />
+  <node nid="129" x="0.035" y="0.01" z="0" />
+  <node nid="130" x="0.04" y="0" z="0.00125" />
+  <node nid="131" x="0.04" y="0.01" z="0.00125" />
+  <node nid="132" x="0.035" y="0" z="0.0025" />
+  <node nid="133" x="0.04" y="0.005" z="0.0025" />
+  <node nid="134" x="0.035" y="0.01" z="0.0025" />
+  <node nid="135" x="0.04" y="0" z="0.005" />
+  <node nid="136" x="0.04" y="0.01" z="0.005" />
+  <node nid="137" x="0.04" y="0" z="0.00375" />
+  <node nid="138" x="0.04" y="0.01" z="0.00375" />
+  <node nid="139" x="0.035" y="0" z="0.005" />
+  <node nid="140" x="0.04" y="0.005" z="0.005" />
+  <node nid="141" x="0.035" y="0.01" z="0.005" />
+  <node nid="142" x="0.04" y="0" z="0.0075" />
+  <node nid="143" x="0.04" y="0.01" z="0.0075" />
+  <node nid="144" x="0.04" y="0" z="0.00625" />
+  <node nid="145" x="0.04" y="0.01" z="0.00625" />
+  <node nid="146" x="0.035" y="0" z="0.0075" />
+  <node nid="147" x="0.04" y="0.005" z="0.0075" />
+  <node nid="148" x="0.035" y="0.01" z="0.0075" />
+  <node nid="149" x="0.04" y="0" z="0.01" />
+  <node nid="150" x="0.04" y="0.01" z="0.01" />
+  <node nid="151" x="0.04" y="0" z="0.00875" />
+  <node nid="152" x="0.04" y="0.01" z="0.00875" />
+  <node nid="153" x="0.035" y="0" z="0.01" />
+  <node nid="154" x="0.04" y="0.005" z="0.01" />
+  <node nid="155" x="0.035" y="0.01" z="0.01" />
+  <node nid="156" x="0.05" y="0" z="0" />
+  <node nid="157" x="0.05" y="0.01" z="0" />
+  <node nid="158" x="0.05" y="0" z="0.0025" />
+  <node nid="159" x="0.05" y="0.01" z="0.0025" />
+  <node nid="160" x="0.045" y="0" z="0" />
+  <node nid="161" x="0.05" y="0.005" z="0" />
+  <node nid="162" x="0.045" y="0.01" z="0" />
+  <node nid="163" x="0.05" y="0" z="0.00125" />
+  <node nid="164" x="0.05" y="0.01" z="0.00125" />
+  <node nid="165" x="0.045" y="0" z="0.0025" />
+  <node nid="166" x="0.05" y="0.005" z="0.0025" />
+  <node nid="167" x="0.045" y="0.01" z="0.0025" />
+  <node nid="168" x="0.05" y="0" z="0.005" />
+  <node nid="169" x="0.05" y="0.01" z="0.005" />
+  <node nid="170" x="0.05" y="0" z="0.00375" />
+  <node nid="171" x="0.05" y="0.01" z="0.00375" />
+  <node nid="172" x="0.045" y="0" z="0.005" />
+  <node nid="173" x="0.05" y="0.005" z="0.005" />
+  <node nid="174" x="0.045" y="0.01" z="0.005" />
+  <node nid="175" x="0.05" y="0" z="0.0075" />
+  <node nid="176" x="0.05" y="0.01" z="0.0075" />
+  <node nid="177" x="0.05" y="0" z="0.00625" />
+  <node nid="178" x="0.05" y="0.01" z="0.00625" />
+  <node nid="179" x="0.045" y="0" z="0.0075" />
+  <node nid="180" x="0.05" y="0.005" z="0.0075" />
+  <node nid="181" x="0.045" y="0.01" z="0.0075" />
+  <node nid="182" x="0.05" y="0" z="0.01" />
+  <node nid="183" x="0.05" y="0.01" z="0.01" />
+  <node nid="184" x="0.05" y="0" z="0.00875" />
+  <node nid="185" x="0.05" y="0.01" z="0.00875" />
+  <node nid="186" x="0.045" y="0" z="0.01" />
+  <node nid="187" x="0.05" y="0.005" z="0.01" />
+  <node nid="188" x="0.045" y="0.01" z="0.01" />
+  <node nid="189" x="0.06" y="0" z="0" />
+  <node nid="190" x="0.06" y="0.01" z="0" />
+  <node nid="191" x="0.06" y="0" z="0.0025" />
+  <node nid="192" x="0.06" y="0.01" z="0.0025" />
+  <node nid="193" x="0.055" y="0" z="0" />
+  <node nid="194" x="0.06" y="0.005" z="0" />
+  <node nid="195" x="0.055" y="0.01" z="0" />
+  <node nid="196" x="0.06" y="0" z="0.00125" />
+  <node nid="197" x="0.06" y="0.01" z="0.00125" />
+  <node nid="198" x="0.055" y="0" z="0.0025" />
+  <node nid="199" x="0.06" y="0.005" z="0.0025" />
+  <node nid="200" x="0.055" y="0.01" z="0.0025" />
+  <node nid="201" x="0.06" y="0" z="0.005" />
+  <node nid="202" x="0.06" y="0.01" z="0.005" />
+  <node nid="203" x="0.06" y="0" z="0.00375" />
+  <node nid="204" x="0.06" y="0.01" z="0.00375" />
+  <node nid="205" x="0.055" y="0" z="0.005" />
+  <node nid="206" x="0.06" y="0.005" z="0.005" />
+  <node nid="207" x="0.055" y="0.01" z="0.005" />
+  <node nid="208" x="0.06" y="0" z="0.0075" />
+  <node nid="209" x="0.06" y="0.01" z="0.0075" />
+  <node nid="210" x="0.06" y="0" z="0.00625" />
+  <node nid="211" x="0.06" y="0.01" z="0.00625" />
+  <node nid="212" x="0.055" y="0" z="0.0075" />
+  <node nid="213" x="0.06" y="0.005" z="0.0075" />
+  <node nid="214" x="0.055" y="0.01" z="0.0075" />
+  <node nid="215" x="0.06" y="0" z="0.01" />
+  <node nid="216" x="0.06" y="0.01" z="0.01" />
+  <node nid="217" x="0.06" y="0" z="0.00875" />
+  <node nid="218" x="0.06" y="0.01" z="0.00875" />
+  <node nid="219" x="0.055" y="0" z="0.01" />
+  <node nid="220" x="0.06" y="0.005" z="0.01" />
+  <node nid="221" x="0.055" y="0.01" z="0.01" />
+  <node nid="222" x="0.07" y="0" z="0" />
+  <node nid="223" x="0.07" y="0.01" z="0" />
+  <node nid="224" x="0.07" y="0" z="0.0025" />
+  <node nid="225" x="0.07" y="0.01" z="0.0025" />
+  <node nid="226" x="0.065" y="0" z="0" />
+  <node nid="227" x="0.07" y="0.005" z="0" />
+  <node nid="228" x="0.065" y="0.01" z="0" />
+  <node nid="229" x="0.07" y="0" z="0.00125" />
+  <node nid="230" x="0.07" y="0.01" z="0.00125" />
+  <node nid="231" x="0.065" y="0" z="0.0025" />
+  <node nid="232" x="0.07" y="0.005" z="0.0025" />
+  <node nid="233" x="0.065" y="0.01" z="0.0025" />
+  <node nid="234" x="0.07" y="0" z="0.005" />
+  <node nid="235" x="0.07" y="0.01" z="0.005" />
+  <node nid="236" x="0.07" y="0" z="0.00375" />
+  <node nid="237" x="0.07" y="0.01" z="0.00375" />
+  <node nid="238" x="0.065" y="0" z="0.005" />
+  <node nid="239" x="0.07" y="0.005" z="0.005" />
+  <node nid="240" x="0.065" y="0.01" z="0.005" />
+  <node nid="241" x="0.07" y="0" z="0.0075" />
+  <node nid="242" x="0.07" y="0.01" z="0.0075" />
+  <node nid="243" x="0.07" y="0" z="0.00625" />
+  <node nid="244" x="0.07" y="0.01" z="0.00625" />
+  <node nid="245" x="0.065" y="0" z="0.0075" />
+  <node nid="246" x="0.07" y="0.005" z="0.0075" />
+  <node nid="247" x="0.065" y="0.01" z="0.0075" />
+  <node nid="248" x="0.07" y="0" z="0.01" />
+  <node nid="249" x="0.07" y="0.01" z="0.01" />
+  <node nid="250" x="0.07" y="0" z="0.00875" />
+  <node nid="251" x="0.07" y="0.01" z="0.00875" />
+  <node nid="252" x="0.065" y="0" z="0.01" />
+  <node nid="253" x="0.07" y="0.005" z="0.01" />
+  <node nid="254" x="0.065" y="0.01" z="0.01" />
+  <node nid="255" x="0.08" y="0" z="0" />
+  <node nid="256" x="0.08" y="0.01" z="0" />
+  <node nid="257" x="0.08" y="0" z="0.0025" />
+  <node nid="258" x="0.08" y="0.01" z="0.0025" />
+  <node nid="259" x="0.075" y="0" z="0" />
+  <node nid="260" x="0.08" y="0.005" z="0" />
+  <node nid="261" x="0.075" y="0.01" z="0" />
+  <node nid="262" x="0.08" y="0" z="0.00125" />
+  <node nid="263" x="0.08" y="0.01" z="0.00125" />
+  <node nid="264" x="0.075" y="0" z="0.0025" />
+  <node nid="265" x="0.08" y="0.005" z="0.0025" />
+  <node nid="266" x="0.075" y="0.01" z="0.0025" />
+  <node nid="267" x="0.08" y="0" z="0.005" />
+  <node nid="268" x="0.08" y="0.01" z="0.005" />
+  <node nid="269" x="0.08" y="0" z="0.00375" />
+  <node nid="270" x="0.08" y="0.01" z="0.00375" />
+  <node nid="271" x="0.075" y="0" z="0.005" />
+  <node nid="272" x="0.08" y="0.005" z="0.005" />
+  <node nid="273" x="0.075" y="0.01" z="0.005" />
+  <node nid="274" x="0.08" y="0" z="0.0075" />
+  <node nid="275" x="0.08" y="0.01" z="0.0075" />
+  <node nid="276" x="0.08" y="0" z="0.00625" />
+  <node nid="277" x="0.08" y="0.01" z="0.00625" />
+  <node nid="278" x="0.075" y="0" z="0.0075" />
+  <node nid="279" x="0.08" y="0.005" z="0.0075" />
+  <node nid="280" x="0.075" y="0.01" z="0.0075" />
+  <node nid="281" x="0.08" y="0" z="0.01" />
+  <node nid="282" x="0.08" y="0.01" z="0.01" />
+  <node nid="283" x="0.08" y="0" z="0.00875" />
+  <node nid="284" x="0.08" y="0.01" z="0.00875" />
+  <node nid="285" x="0.075" y="0" z="0.01" />
+  <node nid="286" x="0.08" y="0.005" z="0.01" />
+  <node nid="287" x="0.075" y="0.01" z="0.01" />
+  <node nid="288" x="0.09" y="0" z="0" />
+  <node nid="289" x="0.09" y="0.01" z="0" />
+  <node nid="290" x="0.09" y="0" z="0.0025" />
+  <node nid="291" x="0.09" y="0.01" z="0.0025" />
+  <node nid="292" x="0.085" y="0" z="0" />
+  <node nid="293" x="0.09" y="0.005" z="0" />
+  <node nid="294" x="0.085" y="0.01" z="0" />
+  <node nid="295" x="0.09" y="0" z="0.00125" />
+  <node nid="296" x="0.09" y="0.01" z="0.00125" />
+  <node nid="297" x="0.085" y="0" z="0.0025" />
+  <node nid="298" x="0.09" y="0.005" z="0.0025" />
+  <node nid="299" x="0.085" y="0.01" z="0.0025" />
+  <node nid="300" x="0.09" y="0" z="0.005" />
+  <node nid="301" x="0.09" y="0.01" z="0.005" />
+  <node nid="302" x="0.09" y="0" z="0.00375" />
+  <node nid="303" x="0.09" y="0.01" z="0.00375" />
+  <node nid="304" x="0.085" y="0" z="0.005" />
+  <node nid="305" x="0.09" y="0.005" z="0.005" />
+  <node nid="306" x="0.085" y="0.01" z="0.005" />
+  <node nid="307" x="0.09" y="0" z="0.0075" />
+  <node nid="308" x="0.09" y="0.01" z="0.0075" />
+  <node nid="309" x="0.09" y="0" z="0.00625" />
+  <node nid="310" x="0.09" y="0.01" z="0.00625" />
+  <node nid="311" x="0.085" y="0" z="0.0075" />
+  <node nid="312" x="0.09" y="0.005" z="0.0075" />
+  <node nid="313" x="0.085" y="0.01" z="0.0075" />
+  <node nid="314" x="0.09" y="0" z="0.01" />
+  <node nid="315" x="0.09" y="0.01" z="0.01" />
+  <node nid="316" x="0.09" y="0" z="0.00875" />
+  <node nid="317" x="0.09" y="0.01" z="0.00875" />
+  <node nid="318" x="0.085" y="0" z="0.01" />
+  <node nid="319" x="0.09" y="0.005" z="0.01" />
+  <node nid="320" x="0.085" y="0.01" z="0.01" />
+  <node nid="321" x="0.1" y="0" z="0" />
+  <node nid="322" x="0.1" y="0.01" z="0" />
+  <node nid="323" x="0.1" y="0" z="0.0025" />
+  <node nid="324" x="0.1" y="0.01" z="0.0025" />
+  <node nid="325" x="0.095" y="0" z="0" />
+  <node nid="326" x="0.1" y="0.005" z="0" />
+  <node nid="327" x="0.095" y="0.01" z="0" />
+  <node nid="328" x="0.1" y="0" z="0.00125" />
+  <node nid="329" x="0.1" y="0.01" z="0.00125" />
+  <node nid="330" x="0.095" y="0" z="0.0025" />
+  <node nid="331" x="0.1" y="0.005" z="0.0025" />
+  <node nid="332" x="0.095" y="0.01" z="0.0025" />
+  <node nid="333" x="0.1" y="0" z="0.005" />
+  <node nid="334" x="0.1" y="0.01" z="0.005" />
+  <node nid="335" x="0.1" y="0" z="0.00375" />
+  <node nid="336" x="0.1" y="0.01" z="0.00375" />
+  <node nid="337" x="0.095" y="0" z="0.005" />
+  <node nid="338" x="0.1" y="0.005" z="0.005" />
+  <node nid="339" x="0.095" y="0.01" z="0.005" />
+  <node nid="340" x="0.1" y="0" z="0.0075" />
+  <node nid="341" x="0.1" y="0.01" z="0.0075" />
+  <node nid="342" x="0.1" y="0" z="0.00625" />
+  <node nid="343" x="0.1" y="0.01" z="0.00625" />
+  <node nid="344" x="0.095" y="0" z="0.0075" />
+  <node nid="345" x="0.1" y="0.005" z="0.0075" />
+  <node nid="346" x="0.095" y="0.01" z="0.0075" />
+  <node nid="347" x="0.1" y="0" z="0.01" />
+  <node nid="348" x="0.1" y="0.01" z="0.01" />
+  <node nid="349" x="0.1" y="0" z="0.00875" />
+  <node nid="350" x="0.1" y="0.01" z="0.00875" />
+  <node nid="351" x="0.095" y="0" z="0.01" />
+  <node nid="352" x="0.1" y="0.005" z="0.01" />
+  <node nid="353" x="0.095" y="0.01" z="0.01" />
+  <elset name="Balk" material="Staal">
+    <elem eid="1" shape="hex20" nodes="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" />
+    <elem eid="2" shape="hex20" nodes="5 6 7 8 21 22 23 24 17 18 19 20 25 26 27 28 29 30 31 32" />
+    <elem eid="3" shape="hex20" nodes="21 22 23 24 33 34 35 36 29 30 31 32 37 38 39 40 41 42 43 44" />
+    <elem eid="4" shape="hex20" nodes="33 34 35 36 45 46 47 48 41 42 43 44 49 50 51 52 53 54 55 56" />
+    <elem eid="5" shape="hex20" nodes="2 57 58 3 6 59 60 7 61 62 63 10 14 64 65 15 66 67 68 18" />
+    <elem eid="6" shape="hex20" nodes="6 59 60 7 22 69 70 23 66 67 68 18 26 71 72 27 73 74 75 30" />
+    <elem eid="7" shape="hex20" nodes="22 69 70 23 34 76 77 35 73 74 75 30 38 78 79 39 80 81 82 42" />
+    <elem eid="8" shape="hex20" nodes="34 76 77 35 46 83 84 47 80 81 82 42 50 85 86 51 87 88 89 54" />
+    <elem eid="9" shape="hex20" nodes="57 90 91 58 59 92 93 60 94 95 96 62 64 97 98 65 99 100 101 67" />
+    <elem eid="10" shape="hex20" nodes="59 92 93 60 69 102 103 70 99 100 101 67 71 104 105 72 106 107 108 74" />
+    <elem eid="11" shape="hex20" nodes="69 102 103 70 76 109 110 77 106 107 108 74 78 111 112 79 113 114 115 81" />
+    <elem eid="12" shape="hex20" nodes="76 109 110 77 83 116 117 84 113 114 115 81 85 118 119 86 120 121 122 88" />
+    <elem eid="13" shape="hex20" nodes="90 123 124 91 92 125 126 93 127 128 129 95 97 130 131 98 132 133 134 100" />
+    <elem eid="14" shape="hex20" nodes="92 125 126 93 102 135 136 103 132 133 134 100 104 137 138 105 139 140 141 107" />
+    <elem eid="15" shape="hex20" nodes="102 135 136 103 109 142 143 110 139 140 141 107 111 144 145 112 146 147 148 114" />
+    <elem eid="16" shape="hex20" nodes="109 142 143 110 116 149 150 117 146 147 148 114 118 151 152 119 153 154 155 121" />
+    <elem eid="17" shape="hex20" nodes="123 156 157 124 125 158 159 126 160 161 162 128 130 163 164 131 165 166 167 133" />
+    <elem eid="18" shape="hex20" nodes="125 158 159 126 135 168 169 136 165 166 167 133 137 170 171 138 172 173 174 140" />
+    <elem eid="19" shape="hex20" nodes="135 168 169 136 142 175 176 143 172 173 174 140 144 177 178 145 179 180 181 147" />
+    <elem eid="20" shape="hex20" nodes="142 175 176 143 149 182 183 150 179 180 181 147 151 184 185 152 186 187 188 154" />
+    <elem eid="21" shape="hex20" nodes="156 189 190 157 158 191 192 159 193 194 195 161 163 196 197 164 198 199 200 166" />
+    <elem eid="22" shape="hex20" nodes="158 191 192 159 168 201 202 169 198 199 200 166 170 203 204 171 205 206 207 173" />
+    <elem eid="23" shape="hex20" nodes="168 201 202 169 175 208 209 176 205 206 207 173 177 210 211 178 212 213 214 180" />
+    <elem eid="24" shape="hex20" nodes="175 208 209 176 182 215 216 183 212 213 214 180 184 217 218 185 219 220 221 187" />
+    <elem eid="25" shape="hex20" nodes="189 222 223 190 191 224 225 192 226 227 228 194 196 229 230 197 231 232 233 199" />
+    <elem eid="26" shape="hex20" nodes="191 224 225 192 201 234 235 202 231 232 233 199 203 236 237 204 238 239 240 206" />
+    <elem eid="27" shape="hex20" nodes="201 234 235 202 208 241 242 209 238 239 240 206 210 243 244 211 245 246 247 213" />
+    <elem eid="28" shape="hex20" nodes="208 241 242 209 215 248 249 216 245 246 247 213 217 250 251 218 252 253 254 220" />
+    <elem eid="29" shape="hex20" nodes="222 255 256 223 224 257 258 225 259 260 261 227 229 262 263 230 264 265 266 232" />
+    <elem eid="30" shape="hex20" nodes="224 257 258 225 234 267 268 235 264 265 266 232 236 269 270 237 271 272 273 239" />
+    <elem eid="31" shape="hex20" nodes="234 267 268 235 241 274 275 242 271 272 273 239 243 276 277 244 278 279 280 246" />
+    <elem eid="32" shape="hex20" nodes="241 274 275 242 248 281 282 249 278 279 280 246 250 283 284 251 285 286 287 253" />
+    <elem eid="33" shape="hex20" nodes="255 288 289 256 257 290 291 258 292 293 294 260 262 295 296 263 297 298 299 265" />
+    <elem eid="34" shape="hex20" nodes="257 290 291 258 267 300 301 268 297 298 299 265 269 302 303 270 304 305 306 272" />
+    <elem eid="35" shape="hex20" nodes="267 300 301 268 274 307 308 275 304 305 306 272 276 309 310 277 311 312 313 279" />
+    <elem eid="36" shape="hex20" nodes="274 307 308 275 281 314 315 282 311 312 313 279 283 316 317 284 318 319 320 286" />
+    <elem eid="37" shape="hex20" nodes="288 321 322 289 290 323 324 291 325 326 327 293 295 328 329 296 330 331 332 298" />
+    <elem eid="38" shape="hex20" nodes="290 323 324 291 300 333 334 301 330 331 332 298 302 335 336 303 337 338 339 305" />
+    <elem eid="39" shape="hex20" nodes="300 333 334 301 307 340 341 308 337 338 339 305 309 342 343 310 344 345 346 312" />
+    <elem eid="40" shape="hex20" nodes="307 340 341 308 314 347 348 315 344 345 346 312 316 349 350 317 351 352 353 319" />
+  </elset>
+  <displacement selection="X0"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Y0"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="O"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <thermalstress><referencetemperature>293.15 K</referencetemperature></thermalstress>
+  <temperature3><nodetemperature nid="1" value="293.15 K" /><nodetemperature nid="2" value="293.15 K" /><nodetemperature nid="3" value="293.15 K" /><nodetemperature nid="4" value="293.15 K" /><nodetemperature nid="5" value="318.15 K" /><nodetemperature nid="6" value="318.15 K" /><nodetemperature nid="7" value="318.15 K" /><nodetemperature nid="8" value="318.15 K" /><nodetemperature nid="9" value="293.15 K" /><nodetemperature nid="10" value="293.15 K" /><nodetemperature nid="11" value="293.15 K" /><nodetemperature nid="12" value="293.15 K" /><nodetemperature nid="13" value="305.65 K" /><nodetemperature nid="14" value="305.65 K" /><nodetemperature nid="15" value="305.65 K" /><nodetemperature nid="16" value="305.65 K" /><nodetemperature nid="17" value="318.15 K" /><nodetemperature nid="18" value="318.15 K" /><nodetemperature nid="19" value="318.15 K" /><nodetemperature nid="20" value="318.15 K" /><nodetemperature nid="21" value="343.15 K" /><nodetemperature nid="22" value="343.15 K" /><nodetemperature nid="23" value="343.15 K" /><nodetemperature nid="24" value="343.15 K" /><nodetemperature nid="25" value="330.65 K" /><nodetemperature nid="26" value="330.65 K" /><nodetemperature nid="27" value="330.65 K" /><nodetemperature nid="28" value="330.65 K" /><nodetemperature nid="29" value="343.15 K" /><nodetemperature nid="30" value="343.15 K" /><nodetemperature nid="31" value="343.15 K" /><nodetemperature nid="32" value="343.15 K" /><nodetemperature nid="33" value="368.15 K" /><nodetemperature nid="34" value="368.15 K" /><nodetemperature nid="35" value="368.15 K" /><nodetemperature nid="36" value="368.15 K" /><nodetemperature nid="37" value="355.65 K" /><nodetemperature nid="38" value="355.65 K" /><nodetemperature nid="39" value="355.65 K" /><nodetemperature nid="40" value="355.65 K" /><nodetemperature nid="41" value="368.15 K" /><nodetemperature nid="42" value="368.15 K" /><nodetemperature nid="43" value="368.15 K" /><nodetemperature nid="44" value="368.15 K" /><nodetemperature nid="45" value="393.15 K" /><nodetemperature nid="46" value="393.15 K" /><nodetemperature nid="47" value="393.15 K" /><nodetemperature nid="48" value="393.15 K" /><nodetemperature nid="49" value="380.65 K" /><nodetemperature nid="50" value="380.65 K" /><nodetemperature nid="51" value="380.65 K" /><nodetemperature nid="52" value="380.65 K" /><nodetemperature nid="53" value="393.15 K" /><nodetemperature nid="54" value="393.15 K" /><nodetemperature nid="55" value="393.15 K" /><nodetemperature nid="56" value="393.15 K" /><nodetemperature nid="57" value="293.15 K" /><nodetemperature nid="58" value="293.15 K" /><nodetemperature nid="59" value="318.15 K" /><nodetemperature nid="60" value="318.15 K" /><nodetemperature nid="61" value="293.15 K" /><nodetemperature nid="62" value="293.15 K" /><nodetemperature nid="63" value="293.15 K" /><nodetemperature nid="64" value="305.65 K" /><nodetemperature nid="65" value="305.65 K" /><nodetemperature nid="66" value="318.15 K" /><nodetemperature nid="67" value="318.15 K" /><nodetemperature nid="68" value="318.15 K" /><nodetemperature nid="69" value="343.15 K" /><nodetemperature nid="70" value="343.15 K" /><nodetemperature nid="71" value="330.65 K" /><nodetemperature nid="72" value="330.65 K" /><nodetemperature nid="73" value="343.15 K" /><nodetemperature nid="74" value="343.15 K" /><nodetemperature nid="75" value="343.15 K" /><nodetemperature nid="76" value="368.15 K" /><nodetemperature nid="77" value="368.15 K" /><nodetemperature nid="78" value="355.65 K" /><nodetemperature nid="79" value="355.65 K" /><nodetemperature nid="80" value="368.15 K" /><nodetemperature nid="81" value="368.15 K" /><nodetemperature nid="82" value="368.15 K" /><nodetemperature nid="83" value="393.15 K" /><nodetemperature nid="84" value="393.15 K" /><nodetemperature nid="85" value="380.65 K" /><nodetemperature nid="86" value="380.65 K" /><nodetemperature nid="87" value="393.15 K" /><nodetemperature nid="88" value="393.15 K" /><nodetemperature nid="89" value="393.15 K" /><nodetemperature nid="90" value="293.15 K" /><nodetemperature nid="91" value="293.15 K" /><nodetemperature nid="92" value="318.15 K" /><nodetemperature nid="93" value="318.15 K" /><nodetemperature nid="94" value="293.15 K" /><nodetemperature nid="95" value="293.15 K" /><nodetemperature nid="96" value="293.15 K" /><nodetemperature nid="97" value="305.65 K" /><nodetemperature nid="98" value="305.65 K" /><nodetemperature nid="99" value="318.15 K" /><nodetemperature nid="100" value="318.15 K" /><nodetemperature nid="101" value="318.15 K" /><nodetemperature nid="102" value="343.15 K" /><nodetemperature nid="103" value="343.15 K" /><nodetemperature nid="104" value="330.65 K" /><nodetemperature nid="105" value="330.65 K" /><nodetemperature nid="106" value="343.15 K" /><nodetemperature nid="107" value="343.15 K" /><nodetemperature nid="108" value="343.15 K" /><nodetemperature nid="109" value="368.15 K" /><nodetemperature nid="110" value="368.15 K" /><nodetemperature nid="111" value="355.65 K" /><nodetemperature nid="112" value="355.65 K" /><nodetemperature nid="113" value="368.15 K" /><nodetemperature nid="114" value="368.15 K" /><nodetemperature nid="115" value="368.15 K" /><nodetemperature nid="116" value="393.15 K" /><nodetemperature nid="117" value="393.15 K" /><nodetemperature nid="118" value="380.65 K" /><nodetemperature nid="119" value="380.65 K" /><nodetemperature nid="120" value="393.15 K" /><nodetemperature nid="121" value="393.15 K" /><nodetemperature nid="122" value="393.15 K" /><nodetemperature nid="123" value="293.15 K" /><nodetemperature nid="124" value="293.15 K" /><nodetemperature nid="125" value="318.15 K" /><nodetemperature nid="126" value="318.15 K" /><nodetemperature nid="127" value="293.15 K" /><nodetemperature nid="128" value="293.15 K" /><nodetemperature nid="129" value="293.15 K" /><nodetemperature nid="130" value="305.65 K" /><nodetemperature nid="131" value="305.65 K" /><nodetemperature nid="132" value="318.15 K" /><nodetemperature nid="133" value="318.15 K" /><nodetemperature nid="134" value="318.15 K" /><nodetemperature nid="135" value="343.15 K" /><nodetemperature nid="136" value="343.15 K" /><nodetemperature nid="137" value="330.65 K" /><nodetemperature nid="138" value="330.65 K" /><nodetemperature nid="139" value="343.15 K" /><nodetemperature nid="140" value="343.15 K" /><nodetemperature nid="141" value="343.15 K" /><nodetemperature nid="142" value="368.15 K" /><nodetemperature nid="143" value="368.15 K" /><nodetemperature nid="144" value="355.65 K" /><nodetemperature nid="145" value="355.65 K" /><nodetemperature nid="146" value="368.15 K" /><nodetemperature nid="147" value="368.15 K" /><nodetemperature nid="148" value="368.15 K" /><nodetemperature nid="149" value="393.15 K" /><nodetemperature nid="150" value="393.15 K" /><nodetemperature nid="151" value="380.65 K" /><nodetemperature nid="152" value="380.65 K" /><nodetemperature nid="153" value="393.15 K" /><nodetemperature nid="154" value="393.15 K" /><nodetemperature nid="155" value="393.15 K" /><nodetemperature nid="156" value="293.15 K" /><nodetemperature nid="157" value="293.15 K" /><nodetemperature nid="158" value="318.15 K" /><nodetemperature nid="159" value="318.15 K" /><nodetemperature nid="160" value="293.15 K" /><nodetemperature nid="161" value="293.15 K" /><nodetemperature nid="162" value="293.15 K" /><nodetemperature nid="163" value="305.65 K" /><nodetemperature nid="164" value="305.65 K" /><nodetemperature nid="165" value="318.15 K" /><nodetemperature nid="166" value="318.15 K" /><nodetemperature nid="167" value="318.15 K" /><nodetemperature nid="168" value="343.15 K" /><nodetemperature nid="169" value="343.15 K" /><nodetemperature nid="170" value="330.65 K" /><nodetemperature nid="171" value="330.65 K" /><nodetemperature nid="172" value="343.15 K" /><nodetemperature nid="173" value="343.15 K" /><nodetemperature nid="174" value="343.15 K" /><nodetemperature nid="175" value="368.15 K" /><nodetemperature nid="176" value="368.15 K" /><nodetemperature nid="177" value="355.65 K" /><nodetemperature nid="178" value="355.65 K" /><nodetemperature nid="179" value="368.15 K" /><nodetemperature nid="180" value="368.15 K" /><nodetemperature nid="181" value="368.15 K" /><nodetemperature nid="182" value="393.15 K" /><nodetemperature nid="183" value="393.15 K" /><nodetemperature nid="184" value="380.65 K" /><nodetemperature nid="185" value="380.65 K" /><nodetemperature nid="186" value="393.15 K" /><nodetemperature nid="187" value="393.15 K" /><nodetemperature nid="188" value="393.15 K" /><nodetemperature nid="189" value="293.15 K" /><nodetemperature nid="190" value="293.15 K" /><nodetemperature nid="191" value="318.15 K" /><nodetemperature nid="192" value="318.15 K" /><nodetemperature nid="193" value="293.15 K" /><nodetemperature nid="194" value="293.15 K" /><nodetemperature nid="195" value="293.15 K" /><nodetemperature nid="196" value="305.65 K" /><nodetemperature nid="197" value="305.65 K" /><nodetemperature nid="198" value="318.15 K" /><nodetemperature nid="199" value="318.15 K" /><nodetemperature nid="200" value="318.15 K" /><nodetemperature nid="201" value="343.15 K" /><nodetemperature nid="202" value="343.15 K" /><nodetemperature nid="203" value="330.65 K" /><nodetemperature nid="204" value="330.65 K" /><nodetemperature nid="205" value="343.15 K" /><nodetemperature nid="206" value="343.15 K" /><nodetemperature nid="207" value="343.15 K" /><nodetemperature nid="208" value="368.15 K" /><nodetemperature nid="209" value="368.15 K" /><nodetemperature nid="210" value="355.65 K" /><nodetemperature nid="211" value="355.65 K" /><nodetemperature nid="212" value="368.15 K" /><nodetemperature nid="213" value="368.15 K" /><nodetemperature nid="214" value="368.15 K" /><nodetemperature nid="215" value="393.15 K" /><nodetemperature nid="216" value="393.15 K" /><nodetemperature nid="217" value="380.65 K" /><nodetemperature nid="218" value="380.65 K" /><nodetemperature nid="219" value="393.15 K" /><nodetemperature nid="220" value="393.15 K" /><nodetemperature nid="221" value="393.15 K" /><nodetemperature nid="222" value="293.15 K" /><nodetemperature nid="223" value="293.15 K" /><nodetemperature nid="224" value="318.15 K" /><nodetemperature nid="225" value="318.15 K" /><nodetemperature nid="226" value="293.15 K" /><nodetemperature nid="227" value="293.15 K" /><nodetemperature nid="228" value="293.15 K" /><nodetemperature nid="229" value="305.65 K" /><nodetemperature nid="230" value="305.65 K" /><nodetemperature nid="231" value="318.15 K" /><nodetemperature nid="232" value="318.15 K" /><nodetemperature nid="233" value="318.15 K" /><nodetemperature nid="234" value="343.15 K" /><nodetemperature nid="235" value="343.15 K" /><nodetemperature nid="236" value="330.65 K" /><nodetemperature nid="237" value="330.65 K" /><nodetemperature nid="238" value="343.15 K" /><nodetemperature nid="239" value="343.15 K" /><nodetemperature nid="240" value="343.15 K" /><nodetemperature nid="241" value="368.15 K" /><nodetemperature nid="242" value="368.15 K" /><nodetemperature nid="243" value="355.65 K" /><nodetemperature nid="244" value="355.65 K" /><nodetemperature nid="245" value="368.15 K" /><nodetemperature nid="246" value="368.15 K" /><nodetemperature nid="247" value="368.15 K" /><nodetemperature nid="248" value="393.15 K" /><nodetemperature nid="249" value="393.15 K" /><nodetemperature nid="250" value="380.65 K" /><nodetemperature nid="251" value="380.65 K" /><nodetemperature nid="252" value="393.15 K" /><nodetemperature nid="253" value="393.15 K" /><nodetemperature nid="254" value="393.15 K" /><nodetemperature nid="255" value="293.15 K" /><nodetemperature nid="256" value="293.15 K" /><nodetemperature nid="257" value="318.15 K" /><nodetemperature nid="258" value="318.15 K" /><nodetemperature nid="259" value="293.15 K" /><nodetemperature nid="260" value="293.15 K" /><nodetemperature nid="261" value="293.15 K" /><nodetemperature nid="262" value="305.65 K" /><nodetemperature nid="263" value="305.65 K" /><nodetemperature nid="264" value="318.15 K" /><nodetemperature nid="265" value="318.15 K" /><nodetemperature nid="266" value="318.15 K" /><nodetemperature nid="267" value="343.15 K" /><nodetemperature nid="268" value="343.15 K" /><nodetemperature nid="269" value="330.65 K" /><nodetemperature nid="270" value="330.65 K" /><nodetemperature nid="271" value="343.15 K" /><nodetemperature nid="272" value="343.15 K" /><nodetemperature nid="273" value="343.15 K" /><nodetemperature nid="274" value="368.15 K" /><nodetemperature nid="275" value="368.15 K" /><nodetemperature nid="276" value="355.65 K" /><nodetemperature nid="277" value="355.65 K" /><nodetemperature nid="278" value="368.15 K" /><nodetemperature nid="279" value="368.15 K" /><nodetemperature nid="280" value="368.15 K" /><nodetemperature nid="281" value="393.15 K" /><nodetemperature nid="282" value="393.15 K" /><nodetemperature nid="283" value="380.65 K" /><nodetemperature nid="284" value="380.65 K" /><nodetemperature nid="285" value="393.15 K" /><nodetemperature nid="286" value="393.15 K" /><nodetemperature nid="287" value="393.15 K" /><nodetemperature nid="288" value="293.15 K" /><nodetemperature nid="289" value="293.15 K" /><nodetemperature nid="290" value="318.15 K" /><nodetemperature nid="291" value="318.15 K" /><nodetemperature nid="292" value="293.15 K" /><nodetemperature nid="293" value="293.15 K" /><nodetemperature nid="294" value="293.15 K" /><nodetemperature nid="295" value="305.65 K" /><nodetemperature nid="296" value="305.65 K" /><nodetemperature nid="297" value="318.15 K" /><nodetemperature nid="298" value="318.15 K" /><nodetemperature nid="299" value="318.15 K" /><nodetemperature nid="300" value="343.15 K" /><nodetemperature nid="301" value="343.15 K" /><nodetemperature nid="302" value="330.65 K" /><nodetemperature nid="303" value="330.65 K" /><nodetemperature nid="304" value="343.15 K" /><nodetemperature nid="305" value="343.15 K" /><nodetemperature nid="306" value="343.15 K" /><nodetemperature nid="307" value="368.15 K" /><nodetemperature nid="308" value="368.15 K" /><nodetemperature nid="309" value="355.65 K" /><nodetemperature nid="310" value="355.65 K" /><nodetemperature nid="311" value="368.15 K" /><nodetemperature nid="312" value="368.15 K" /><nodetemperature nid="313" value="368.15 K" /><nodetemperature nid="314" value="393.15 K" /><nodetemperature nid="315" value="393.15 K" /><nodetemperature nid="316" value="380.65 K" /><nodetemperature nid="317" value="380.65 K" /><nodetemperature nid="318" value="393.15 K" /><nodetemperature nid="319" value="393.15 K" /><nodetemperature nid="320" value="393.15 K" /><nodetemperature nid="321" value="293.15 K" /><nodetemperature nid="322" value="293.15 K" /><nodetemperature nid="323" value="318.15 K" /><nodetemperature nid="324" value="318.15 K" /><nodetemperature nid="325" value="293.15 K" /><nodetemperature nid="326" value="293.15 K" /><nodetemperature nid="327" value="293.15 K" /><nodetemperature nid="328" value="305.65 K" /><nodetemperature nid="329" value="305.65 K" /><nodetemperature nid="330" value="318.15 K" /><nodetemperature nid="331" value="318.15 K" /><nodetemperature nid="332" value="318.15 K" /><nodetemperature nid="333" value="343.15 K" /><nodetemperature nid="334" value="343.15 K" /><nodetemperature nid="335" value="330.65 K" /><nodetemperature nid="336" value="330.65 K" /><nodetemperature nid="337" value="343.15 K" /><nodetemperature nid="338" value="343.15 K" /><nodetemperature nid="339" value="343.15 K" /><nodetemperature nid="340" value="368.15 K" /><nodetemperature nid="341" value="368.15 K" /><nodetemperature nid="342" value="355.65 K" /><nodetemperature nid="343" value="355.65 K" /><nodetemperature nid="344" value="368.15 K" /><nodetemperature nid="345" value="368.15 K" /><nodetemperature nid="346" value="368.15 K" /><nodetemperature nid="347" value="393.15 K" /><nodetemperature nid="348" value="393.15 K" /><nodetemperature nid="349" value="380.65 K" /><nodetemperature nid="350" value="380.65 K" /><nodetemperature nid="351" value="393.15 K" /><nodetemperature nid="352" value="393.15 K" /><nodetemperature nid="353" value="393.15 K" /></temperature3>
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" thermalexpansion="1.2e-05 1/K" />
+  </mat>
+  <faceselection name="X0">
+    <face eid="1" faceid="6" />
+    <face eid="2" faceid="6" />
+    <face eid="3" faceid="6" />
+    <face eid="4" faceid="6" />
+  </faceselection>
+  <faceselection name="Y0">
+    <face eid="1" faceid="3" />
+    <face eid="2" faceid="3" />
+    <face eid="3" faceid="3" />
+    <face eid="4" faceid="3" />
+    <face eid="5" faceid="3" />
+    <face eid="6" faceid="3" />
+    <face eid="7" faceid="3" />
+    <face eid="8" faceid="3" />
+    <face eid="9" faceid="3" />
+    <face eid="10" faceid="3" />
+    <face eid="11" faceid="3" />
+    <face eid="12" faceid="3" />
+    <face eid="13" faceid="3" />
+    <face eid="14" faceid="3" />
+    <face eid="15" faceid="3" />
+    <face eid="16" faceid="3" />
+    <face eid="17" faceid="3" />
+    <face eid="18" faceid="3" />
+    <face eid="19" faceid="3" />
+    <face eid="20" faceid="3" />
+    <face eid="21" faceid="3" />
+    <face eid="22" faceid="3" />
+    <face eid="23" faceid="3" />
+    <face eid="24" faceid="3" />
+    <face eid="25" faceid="3" />
+    <face eid="26" faceid="3" />
+    <face eid="27" faceid="3" />
+    <face eid="28" faceid="3" />
+    <face eid="29" faceid="3" />
+    <face eid="30" faceid="3" />
+    <face eid="31" faceid="3" />
+    <face eid="32" faceid="3" />
+    <face eid="33" faceid="3" />
+    <face eid="34" faceid="3" />
+    <face eid="35" faceid="3" />
+    <face eid="36" faceid="3" />
+    <face eid="37" faceid="3" />
+    <face eid="38" faceid="3" />
+    <face eid="39" faceid="3" />
+    <face eid="40" faceid="3" />
+  </faceselection>
+  <nodeselection name="O">
+    <node nid="1" />
+  </nodeselection>
+</liml>

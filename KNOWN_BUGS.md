@@ -86,6 +86,17 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    Vermoedelijk een andere integratie van vervormde kwadratische elementen in Mecway
    of Code-Aster (NIET nagegaan; welke dichter bij de werkelijkheid ligt, ook niet).
 
+95\. **Thermische rek in schalen: Mecway zet minder uit dan de bridge** (vraag, gemeten
+   met Mecway 34 headless en Code-Aster 17.4). Plaat 100 × 40 × 2 mm (4 × 2 elementen),
+   `fixed` op de rand x = 0, α = 1,2e-5 1/K, uniform +100 K (`temperature2` op alle
+   elementen of `temperature3` op alle knopen, in beide programma's hetzelfde): max u_x
+   quad8 Mecway 6,68e-5 m, bridge (`COQUE_3D`) 1,224e-4 m; quad4 Mecway 9,37e-5 m,
+   bridge (DKT) 1,236e-4 m. De vrije uitzetting is αΔT·L = 1,2e-4 m (de ingeklemde rand
+   verhindert alleen de dwarsrek, wat u_x eerder vergroot). Een vrije quad8-plaat met
+   ΔT = 1000 K/m · x gaf in Mecway u_x(L, 0) = 4,87e-5 m tegen exact αgL²/2 = 6,0e-5 m.
+   Volumes kloppen wel (TH-03, LS-08). Waarom Mecway bij schalen minder uitzet, is NIET
+   nagegaan (vlakspanning of de temperatuur over de dikte?).
+
 ## Vertaling die anders werkt dan Mecway
 
 8\. **Dubbele randvoorwaarden** (bevestigd, deels afgevangen). Mecway reduceert
@@ -153,13 +164,17 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    (MODI_MAILLAGE ROTATION) en de flux terug; alarm MODELE1_53 blijft en is
    onschuldig. Schalen die niet allemaal evenwijdig zijn: niet vertaald (punt 16).
 
-17\. **Thermische rek: knoopveld i.p.v. elementgemiddelde** (bevestigd, bewuste keuze,
-   `bridge_to_aster._build_temperature_field`). Mecway rekent per element met de
-   gemiddelde knooptemperatuur (manual v33 par. 9.25); Code-Aster interpoleert het
-   knoopveld in het element. Gelijk voor elementen geheel binnen of buiten de
-   selectie. STAT_NON_LINE: de temperatuur loopt van de referentie op t = 0 naar de
-   waarde op de eindtijd; DYNA_NON_LINE: constant vanaf t = 0 (alarm
-   MECANONLINE2_97). Een tijdshistorie van `temperature2` wordt gemeld en niet vertaald.
+17\. **Thermische rek: verloop in de tijd** (bevestigd, bewuste keuze,
+   `bridge_to_aster._build_temperature_field`). Volgens de manual (v33 par. 9.25) rekent
+   Mecway per element met de gemiddelde knooptemperatuur; Mecway 34 (eigen solver,
+   headless) interpoleert de knooptemperatuur echter in het element, net als
+   Code-Aster: een lineair temperatuurverloop over de dikte van een vrije balk (één
+   laag hex20) geeft in beide de exacte doorbuiging (zie LS-08b), met `temperature2` op
+   knoopselecties en met `temperature3`. STAT_NON_LINE: de temperatuur loopt van de
+   referentie op t = 0 naar de waarde op de eindtijd (Mecway met CCX legt hem in L30
+   vanaf de eerste stap op; de eindtoestand is gelijk); DYNA_NON_LINE: constant vanaf
+   t = 0 (zie punt 94). Een tijdshistorie van `temperature2` wordt gemeld en niet
+   vertaald; `temperature3` heeft alleen een waarde per knoop.
 
 19\. **Centrifugaalkracht** (bevestigd). Alleen een constante hoeksnelheid (een
    tijdshistorie wordt gemeld), geen tweede centrifugaalkracht (gyroscopisch effect).
@@ -350,22 +365,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    `K1_POST_K` of K uit G. In de verificatie toetst BR-10 deze K_I met dezelfde 5 % als
    de andere XFEM-controles; de afwijking telt als BEKEND.
 
-89\. **Node temperature (`temperature3`) telt niet mee in een mechanische analyse**
-   (bevestigd met een offline run, `bridge_from_liml.extract_aster_data_from_liml`,
-   tak `not thermal_run and tag in bridge_thermal.THERMAL_TAGS`). `temperature3` staat
-   in `THERMAL_TAGS` (`bridge_thermal.py`) maar niet in `_MODEL_ITEM_TAGS`, dus in een
-   statische, niet-lineaire, modale of knikanalyse geeft het alleen
-   "INFO: Thermische belasting 'temperature3' op '' telt niet mee in een mechanische
-   analyse", zonder WARNING/ERROR en zonder `skipped_loads`. Mecway gebruikt node
-   temperature juist voor thermische spanning (manual par. 9.24: Static, Nonlinear
-   Static, Frequency, Buckling; temperaturen uit een thermische analyse als invoer voor
-   een statische). Reproductie: staaf 0,1 × 0,01 × 0,01 m, 4 hex8, beide uiteinden
-   fixed, α = 1,2e-5 1/K, `thermalstress` Tref 293 K en `temperature3` 393 K op alle
-   knopen, `lin_static_3d`: max |stressxx| 3e-7 Pa (spanningsloos); met `temperature2`
-   393 K op alle elementen 538 MPa. Oplossing: `temperature3` in een mechanische
-   analyse vertalen (per knoop een temperatuur naast `model_data["temperatures"]`,
-   bijv. `AFFE_CHAMP` `NOEU_TEMP_R` per knoop of per groep knopen met dezelfde waarde),
-   of anders minstens ERROR + `skipped_loads` als er een `thermalstress` is.
 
 90\. **Verlijmd contact met een kwadratische schaal (tri6/quad8) als master:
    `CHARGES2_31`** (bevestigd met runs, Code-Aster 17.4,
@@ -413,6 +412,22 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    gereproduceerd. Oplossing: in `_bonded` `_coque_ddl` en de scharnier-WARNING alleen
    bij `mech` (bewust niet gedaan bij de thermische vertaling, om de wijziging in
    `_bonded` klein te houden; `_coque_ddl` wordt tegelijk aangepast voor punt 90/91).
+94\. **Dynamica (DYNA_NON_LINE): de temperatuur geeft geen thermische spanning**
+   (bevestigd met runs, Code-Aster 17.4, `bridge_to_aster._build_temperature_field`
+   met `t_ramp=None` voor `dyna_impl_3d`). Het temperatuurveld staat vanaf t = 0
+   constant in `AFFE_VARC`; `DYNA_NON_LINE` neemt de thermische rek dan als begintoestand
+   (alarm `MECANONLINE2_97`, "on ne prend pas en compte les éventuelles contraintes
+   incompatibles") en rekent geen thermische spanning of uitzetting. Reproductie: staaf
+   0,2 × 0,01 × 0,01 m, 8 hex8, `fixed` op x = 0 en u_x = 0 op x = L, α = 1,2e-5 1/K,
+   Tref 293 K, `temperature2` 343 K op alle elementen, 1 N dwars op x = L, D30 zonder
+   mode superposition (`dyna_impl_3d`, 2 ms): verplaatsingen en spanningen gelijk aan
+   het model zonder temperatuur, alleen een ALARM. In D30 klopt dat toevallig met
+   Mecway (Mecway 34 negeert Temperature en Node temperature in Dynamic Response,
+   headless gezien), maar in D31 hoort de temperatuur volgens de manual (v34 par. 9.23)
+   mee te tellen; Mecway's eigen solver rekent D31 headless niet, dus niet tegen Mecway
+   vergeleken. Oplossing: in D31 het veld laten oplopen zoals in STAT_NON_LINE (EVOL_THER
+   van de referentie op t = 0, NIET geverifieerd in DYNA_NON_LINE), in D30
+   `temperature2` net als `temperature3` melden en weglaten.
 
 ## Open vragen (gedrag van Mecway niet nagegaan)
 

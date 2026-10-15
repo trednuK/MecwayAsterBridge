@@ -74,6 +74,36 @@ translated. Mecway's internal solver (Mecway 34, without GUI) solved *Tie* and
 *Elastic* in a T30 without any coupling (300 / 400 K on both sides); with the CCX
 solver it did couple (350 K, and 340 / 360 K with h = 2000 W/m²K), equal to the bridge
 (TH-04a/c).
+### 3.1 Temperatures in a mechanical analysis (thermal stress)
+
+In a static, nonlinear static, modal or buckling analysis a *Thermal stress* (reference
+temperature) together with temperatures gives thermal strain (manual §9.23–9.25):
+
+| Mecway | Code-Aster |
+|---|---|
+| *Thermal stress* | `VALE_REF` of `AFFE_VARC` `NOM_VARC='TEMP'` and `ALPHA` in `ELAS` |
+| *Temperature* (`temperature2`) on nodes, faces or elements | nodal field `TEMP` (`CREA_CHAMP` `NOEU_TEMP_R` `AFFE`) |
+| *Node temperature* (`temperature3`), also the result of *Transfer temperatures from solution* (manual §17.10) | the same value per node in that field |
+
+- Nodes without a temperature are at the reference temperature, also next to nodes with
+  a temperature (like Mecway; Temperature and Node temperature on different nodes add
+  up, LS-08c).
+- The temperature is interpolated inside the element; a linear distribution through the
+  thickness gives the exact curvature (LS-08b, equal to Mecway 34). Nodes the bridge
+  adds in the job (`LINE_QUAD`, the centre node of `COQUE_3D`) get the interpolated
+  temperature of the Mecway nodes (LS-08d).
+- Two different temperatures on one node: Mecway does not solve then ("Conflicting
+  temperatures on node"); the bridge gives a WARNING and uses the Node temperature (or,
+  with two Node temperatures, the last one).
+- Nonlinear static: the temperature ramps from the reference at t = 0 to the value at
+  the end time (KNOWN_BUGS 17). Modal and buckling: the prestress from the thermal
+  strain is included (`modal_prestress`).
+- Dynamic Response (D30): Mecway ignores the temperatures, the Node temperature is also
+  left out by the bridge (INFO). Nonlinear Dynamic Response (D31): Node temperature is not
+  among Mecway's analysis types (manual §9.24) and is reported (ERROR, not translated); a
+  Temperature gives no thermal stress there (KNOWN_BUGS 94).
+- A time history of a Temperature is not translated in a mechanical analysis
+  (reported).
 
 ## 4. Additional checks (Code-Aster 17.4, offline)
 

@@ -29,7 +29,8 @@
 #   (_apply_suppression).
 #
 # Mechanische modelitems zonder selectie-BC (_parse_model_item):
-#   thermalstress + temperature2, rayleighdamping, constraintequation,
+#   thermalstress + temperature2 (+ temperature3 per knoop,
+#   _parse_node_temperatures), rayleighdamping, constraintequation,
 #   mass2, rotationalinertia; verlijmd contact2 -> model_data["bonded"].
 #
 # Ondersteunde <nodesurfacecoupling>-typen:
@@ -868,6 +869,89 @@ def _has_selection(root, tag, name):
     return False
 
 
+def _parse_node_temperatures(item, model_data):
+    """
+    Mecway Node temperature (<temperature3><nodetemperature nid=".."
+    value="393 K" /></temperature3>, manual v34 par. 9.24; ook het resultaat
+    van "Transfer temperatures from solution", manual par. 6.8 en 17.10) in
+    een mechanische analyse: de temperatuur per knoop voor thermische rek,
+    net als temperature2 (alleen met <thermalstress>).
+    Gedrag van Mecway 34 (headless gezien, staaf van 4 hex8, vrije
+    uitzetting en ingeklemd):
+      - knopen zonder temperatuur staan op de referentietemperatuur
+        (manual par. 9.25); temperature2 en temperature3 op verschillende
+        knopen tellen samen;
+      - S30, V30 (voorspanning) en B30: hetzelfde resultaat als
+        temperature2 met dezelfde waarde op dezelfde knopen; L30 met CCX
+        ook (zonder ramp, net als temperature2);
+      - D30 (Dynamic Response): temperature2 en temperature3 tellen niet
+        mee (gelijk resultaat met en zonder);
+      - twee verschillende temperaturen op een knoop (temperature3 twee
+        keer, of temperature3 en temperature2): Mecway rekent niet
+        ("Conflicting temperatures on node"); dezelfde waarde mag.
+    D31 staat niet bij de analysetypen van Node temperature (manual par.
+    9.24); de internal solver rekent L30/D31 headless niet, dus niet
+    gezien: gemeld en niet vertaald.
+    Resultaat: model_data["node_temperatures"] {nid: K};
+    bridge_to_aster._build_temperature_field zet ze in het knoopveld.
+    """
+    atype = model_data.get("analysis_type")
+    if atype == "D30":
+        log("INFO: Node temperature (temperature3) telt niet mee in Dynamic "
+            "Response (D30), zoals in Mecway.")
+        return
+    if atype == "D31":
+        _not_translated(model_data,
+                        tr("Node temperature (temperature3)",
+                           "Node temperature (temperature3)"),
+                        tr("Mecway gebruikt Node temperature niet in "
+                           "Nonlinear Dynamic Response (manual par. 9.24); "
+                           "gebruik Temperature (temperature2);",
+                           "Mecway does not use Node temperature in "
+                           "Nonlinear Dynamic Response (manual par. 9.24); "
+                           "use Temperature (temperature2);"))
+        return
+    temps = model_data["node_temperatures"]
+    nodes = model_data.get("mesh_nodes", {})
+    conflicts, bad = [], []
+    n = 0
+    for nt in item.findall("nodetemperature"):
+        try:
+            nid = int(nt.get("nid"))
+            value = bridge_thermal._value(nt.get("value"), "temperature")
+        except (TypeError, ValueError):
+            bad.append(nt.get("nid"))
+            continue
+        if nodes and nid not in nodes:
+            bad.append(nt.get("nid"))
+            continue
+        if nid in temps and abs(temps[nid] - value) > 1e-9 * max(
+                1.0, abs(value)):
+            conflicts.append(nid)
+        temps[nid] = value
+        n += 1
+    if bad:
+        _not_translated(model_data,
+                        tr("Node temperature op {0} knoop/knopen",
+                           "Node temperature on {0} node(s)").format(
+                               len(bad)),
+                        tr("onbekende knoop of geen getal met eenheid "
+                           "(knopen {0});",
+                           "unknown node or not a number with a unit "
+                           "(nodes {0});").format(
+                               ", ".join(str(b) for b in bad[:10])))
+    if conflicts:
+        log(tr("WARNING: Node temperature: knoop/knopen {0} hebben twee "
+               "verschillende temperaturen; Mecway rekent dan niet "
+               "(\"Conflicting temperatures on node\"). De bridge gebruikt "
+               "de laatste waarde.",
+               "WARNING: Node temperature: node(s) {0} have two different "
+               "temperatures; Mecway does not solve then (\"Conflicting "
+               "temperatures on node\"). The bridge uses the last value.")
+            .format(", ".join(str(c) for c in conflicts[:10])))
+    log("INFO: Node temperature op {0} knopen.".format(n))
+
+
 def _selection_kind(root, sel):
     """'GROUP_NO' voor een nodeselection, anders 'GROUP_MA'."""
     if _has_selection(root, "nodeselection", sel):
@@ -1173,6 +1257,9 @@ def extract_aster_data_from_liml(file_path):
         # Mechanische modelitems (_parse_model_item):
         "thermal_stress":       None,  # {"tref": K}
         "temperatures":         [],    # [{"selection", "target", "value"}]
+        # Node temperature (temperature3) in een mechanische analyse:
+        # {nid: K} (_parse_node_temperatures)
+        "node_temperatures":    {},
         "rayleigh":             None,  # {"alpha": 1/s, "beta": s}
         "constraint_equations": [],    # [{"terms": [(nid, DDL, coef)], ...}]
         "point_masses":         [],    # [{"selection", "kind", "value", ..}]
@@ -2080,6 +2167,13 @@ def extract_aster_data_from_liml(file_path):
                         "mechanisch, docs/Lassen.md par. 9).".format(
                             tag, item.get("selection", "")))
                 continue
+            elif not thermal_run and tag == "temperature3":
+                # Node temperature in een mechanische analyse: thermische
+                # rek per knoop.
+                if item.get("suppressed", "") == "true":
+                    log("INFO: temperature3 overgeslagen (suppressed).")
+                    continue
+                _parse_node_temperatures(item, model_data)
             elif (not thermal_run and tag in bridge_thermal.THERMAL_TAGS
                   and tag not in _MODEL_ITEM_TAGS):
                 # Thermische belastingen (convectie, warmtestroom, ...)

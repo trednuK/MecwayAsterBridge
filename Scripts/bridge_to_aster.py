@@ -2001,6 +2001,110 @@ def _build_fieldmat_block(model_data, t_ramp=None):
     )
 
 
+# Waarden per knoop in het temperatuurveld (Node temperature) en de
+# temperatuur van knopen die de bridge in de job toevoegt. Indeling van het
+# veld: getValuesWithDescription(cmp) geeft (waarden, (knopen, cmps)), zoals
+# in MacroCommands/Contrib/diffusion_H2.py (v17.4); setValues(array) zet
+# alle waarden in de volgorde van getValues() (idem). Met alleen TEMP op
+# elke knoop is dat een waarde per knoop; dat controleert de functie.
+# Nieuwe knopen (index >= aantal Mecway-knopen): een middenknoop van een
+# rand (LINE_QUAD) krijgt het gemiddelde van de eindknopen, de middenknoop
+# van QUAD9/TRIA7 (laatste knoop van de cel) de waarde van QUAD8/TRIA6 in
+# het midden (vormfuncties: hoeken -1/4 en randmiddens 1/2, resp. -1/9 en
+# 4/9). Knoopnummers van getConnectivity() zijn 0-gebaseerd, zoals in
+# _LQ_NODEGROUPS.
+_NODE_TEMPS_FUNC = (
+    "def _bridge_node_temps(fld, mesh, temps, n_mw):\n"
+    "    import numpy as np\n"
+    "    vals = np.array(fld.getValues(), dtype=float)\n"
+    "    tv, desc = fld.getValuesWithDescription('TEMP')\n"
+    "    nodes = list(desc[0])\n"
+    "    nn = mesh.getNumberOfNodes()\n"
+    "    if (len(tv) != len(vals) or len(nodes) != nn or\n"
+    "            not np.allclose(np.asarray(tv), vals)):\n"
+    "        raise ValueError('BRIDGE: onverwachte indeling van het '\n"
+    "                         'temperatuurveld (Node temperature)')\n"
+    "    base = min(nodes)\n"
+    "    pos = np.zeros(nn, dtype=int)\n"
+    "    for i, n in enumerate(nodes):\n"
+    "        pos[n - base] = i\n"
+    "    for value, nids in temps.items():\n"
+    "        vals[pos[np.asarray(nids, dtype=int) - 1]] = value\n"
+    "    if nn > n_mw:\n"
+    "        xyz = np.asarray(mesh.getCoordinates().getValues(),\n"
+    "                         dtype=float).reshape(-1, 3)\n"
+    "        scale = 1.0e9 / max(1.0e-30, float(np.abs(xyz).max()))\n"
+    "        key = lambda p: tuple(int(round(c * scale)) for c in p)\n"
+    "        conn = mesh.getConnectivity()\n"
+    "        mids = {}\n"
+    "        centres = {}\n"
+    "        for cell in conn:\n"
+    "            if len(cell) in (7, 9) and cell[-1] >= n_mw:\n"
+    "                centres[cell[-1]] = cell\n"
+    "            old = [n for n in cell if n < n_mw]\n"
+    "            for i in range(len(old)):\n"
+    "                for j in range(i + 1, len(old)):\n"
+    "                    a, b = old[i], old[j]\n"
+    "                    mids[key(0.5 * (xyz[a] + xyz[b]))] = (a, b)\n"
+    "        n_mid = 0\n"
+    "        for m in range(n_mw, nn):\n"
+    "            ab = None if m in centres else mids.get(key(xyz[m]))\n"
+    "            if ab is not None:\n"
+    "                vals[pos[m]] = 0.5 * (vals[pos[ab[0]]] + vals[pos[ab[1]]])\n"
+    "                n_mid += 1\n"
+    "        for m, cell in centres.items():\n"
+    "            nc = 4 if len(cell) == 9 else 3\n"
+    "            wc, wm = (-0.25, 0.5) if nc == 4 else (-1.0 / 9, 4.0 / 9)\n"
+    "            vals[pos[m]] = (wc * sum(vals[pos[n]] for n in cell[:nc]) +\n"
+    "                            wm * sum(vals[pos[n]] for n in cell[nc:-1]))\n"
+    "        print('BRIDGE TEMP: {0} middenknopen, {1} celmiddens '\n"
+    "              'geinterpoleerd'.format(n_mid, len(centres)))\n"
+    "    fld.setValues(vals)\n"
+    "\n"
+)
+
+
+def _check_temperature_conflicts(model_data, node_temps):
+    """
+    WARNING als een knoop met een Node temperature ook in een selectie met
+    een andere temperature2-waarde ligt: Mecway rekent dan niet
+    ("Conflicting temperatures on node", headless gezien met Mecway 34);
+    de bridge gebruikt de Node temperature (_bridge_node_temps na de
+    AFFE's).
+    """
+    node_groups = model_data.get("node_groups", {})
+    faces = model_data.get("group_face_list", {})
+    elem_sel = model_data.get("element_selections", {})
+    conn = model_data.get("_conn", {})
+    clash = set()
+    for t in model_data.get("temperatures", []):
+        sel = t.get("selection")
+        if sel in node_groups:
+            nids = set(int(str(n).lstrip("N")) for n in node_groups[sel])
+        elif sel in faces:
+            nids = set(n for f in faces[sel] for n in f.get("nodes", []))
+        elif sel in elem_sel:
+            nids = set(n for e in elem_sel[sel] if e in conn
+                       for n in conn[e][1])
+        else:
+            continue
+        for n in nids:
+            v = node_temps.get(n)
+            if v is not None and abs(v - t["value"]) > 1e-9 * max(
+                    1.0, abs(v)):
+                clash.add(n)
+    if clash:
+        log(tr("WARNING: Knoop/knopen {0} hebben een Node temperature en een "
+               "andere Temperature; Mecway rekent dan niet (\"Conflicting "
+               "temperatures on node\"). De bridge gebruikt de Node "
+               "temperature.",
+               "WARNING: Node(s) {0} have a Node temperature and a "
+               "different Temperature; Mecway does not solve then "
+               "(\"Conflicting temperatures on node\"). The bridge uses the "
+               "Node temperature.").format(
+                   ", ".join(str(n) for n in sorted(clash)[:10])))
+
+
 def _build_temperature_field(model_data, t_ramp=None):
     """
     Thermische rek (Mecway thermal stress + temperature, manual v33 par.
@@ -2008,15 +2112,24 @@ def _build_temperature_field(model_data, t_ramp=None):
     temperatuur. Code-Aster: knoopveld TEMP (CREA_CHAMP NOEU_TEMP_R AFFE,
     later AFFE wint) als commandovariabele (AFFE_MATERIAU AFFE_VARC
     NOM_VARC='TEMP', VALE_REF = referentie; U4.43.03), en ALPHA in ELAS.
-    Mecway rekent per element met de gemiddelde knooptemperatuur; Code-
-    Aster interpoleert het knoopveld in het element (Code-Aster-standaard;
-    gelijk voor elementen die geheel binnen of buiten de selectie liggen).
+    Code-Aster interpoleert het knoopveld in het element; Mecway 34 ook
+    (headless gezien, LS-08b; de manual spreekt van het elementgemiddelde,
+    KNOWN_BUGS 17).
+    Node temperature (temperature3, model_data["node_temperatures"]):
+    de waarden per knoop zet _bridge_node_temps
+    in het veld (na de AFFE's; Mecway staat geen twee verschillende
+    temperaturen op een knoop toe, de volgorde doet er dus niet toe).
+    Knopen die de bridge in de job toevoegt (LINE_QUAD-middenknopen,
+    middenknoop van QUAD9/TRIA7 bij COQUE_3D) krijgen dan de
+    geinterpoleerde temperatuur van de Mecway-knopen, zoals het veld op
+    het oorspronkelijke mesh.
     Returns (blok met CREA_CHAMP, "    AFFE_VARC=...,\\n") of ("", "").
     """
     ts = model_data.get("thermal_stress")
     temps = model_data.get("temperatures", [])
+    node_temps = model_data.get("node_temperatures") or {}
     if ts is None:
-        if temps:
+        if temps or node_temps:
             log("INFO: Temperaturen zonder thermal stress: geen thermische "
                 "rek (zoals Mecway, manual v33 par. 9.25).")
         return "", ""
@@ -2031,7 +2144,25 @@ def _build_temperature_field(model_data, t_ramp=None):
         "    OPERATION='AFFE',\n"
         "    MAILLAGE=mesh,\n"
         "    AFFE=(\n        {0},\n    ),\n"
-        ")\n\n").format(",\n        ".join(affe))
+        ")\n").format(",\n        ".join(affe))
+    if node_temps:
+        _check_temperature_conflicts(model_data, node_temps)
+    new_nodes = bool(model_data.get("line_quad") or
+                     model_data.get("shell_upgrades"))
+    if node_temps or (new_nodes and temps):
+        by_value = OrderedDict()
+        for nid in sorted(node_temps):
+            by_value.setdefault(node_temps[nid], []).append(
+                "{0}".format(nid))
+        data = "".join("    {0!r}: {1},\n".format(
+            v, _fmt_seq(nids, per_line=12, indent="        "))
+            for v, nids in by_value.items())
+        block += _NODE_TEMPS_FUNC + (
+            "# Node temperature (Mecway temperature3) per knoop: "
+            "{{K: (Mecway-knoopnummers)}}\n"
+            "_bridge_node_temps(temp_fld, mesh, {{\n{0}}}, {1})\n"
+        ).format(data, len(model_data.get("mesh_nodes", {})))
+    block += "\n"
     if t_ramp is None:
         varc = ("    AFFE_VARC=_F(TOUT='OUI', NOM_VARC='TEMP', "
                 "CHAM_GD=temp_fld, VALE_REF={0!r}),\n").format(tref)

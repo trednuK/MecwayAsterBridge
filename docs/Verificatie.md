@@ -101,8 +101,8 @@ Stand 15 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `71ecf2f`
 (alle stappen, de eindcontrole S11, de vervolgpunten van 7–8 oktober en verlijmd contact
 tussen schalen LS-07; Code-Aster 17.4): 277 testcases, 1643 controles, 1639 OK, 4 BEKEND,
-0 NOK/FOUT. Daarna TH-04 (verlijmd contact thermisch) toegevoegd en
-alleen de groepen TH en LS-07 opnieuw gedraaid: 281 testcases, 1658 controles, 1654 OK.
+0 NOK/FOUT. Daarna toegevoegd en alleen per groep gedraaid: TH-04 (verlijmd contact
+thermisch) en LS-08a–d (Node temperature): 285 testcases, 1671 controles, 1667 OK.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -117,7 +117,7 @@ alleen de groepen TH en LS-07 opnieuw gedraaid: 281 testcases, 1658 controles, 1
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 7 | 17 | 17 | 0 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 39 | 97 | 97 | 0 |
+| Lineair statisch | 43 | 110 | 110 | 0 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 10 | 64 | 64 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
@@ -131,7 +131,7 @@ alleen de groepen TH en LS-07 opnieuw gedraaid: 281 testcases, 1658 controles, 1
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **281** | **1658** | **1654** | **4** |
+| **Totaal** | **285** | **1671** | **1667** | **4** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -151,6 +151,8 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 - Contact op kwadratische vlakken haalde de patchtest niet met de standaardintegratie
   (tot 4,6% fout); nu `INTEGRATION='NCOTES'` bij een kwadratisch slave-vlak (NL-03c–f).
 - Veren en dempers werkten alleen in globaal X; nu langs de eigen as (LS-06).
+- *Node temperature* (`temperature3`) telde in een mechanische analyse niet mee (alleen
+  een INFO); nu als temperatuur per knoop in het knoopveld (LS-08).
 - Verlijmd contact tussen schalen stopte met `FACTOR_11` (de rotatie om de
   plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07, KNOWN_BUGS 91).
 - In expliciete dynamica gaf afronding in `DEFI_LIST_INST` een extra rekenstap.
@@ -336,9 +338,40 @@ opeenvolgende meshes.
   geen rotaties (mechanisme, tip 3,7e6 m), daarom is Mecway alleen op de doorlopende
   meshes vergeleken.
 
+### LS-08 Node temperature (thermische spanning per knoop)
+
+- **Doel**: Mecway's *Node temperature* (`temperature3`, een temperatuur per knoop, ook
+  het resultaat van *Transfer temperatures from solution*) met een *Thermal stress* →
+  knoopveld `TEMP` in `AFFE_VARC`, zoals *Temperature* (`temperature2`).
+- **Model**: α = 1,2e-5 1/K, E = 210 GPa, ν = 0,3, Tref = 293,15 K. (a) staaf als
+  TH-03b (1 × 0,1 × 0,1 m, 4 hex8, u_x = 0 op beide uiteinden, dwarsrichting vrij),
+  Node temperature Tref + 100 K op alle knopen. (b) vrije balk 100 × 10 × 10 mm (10 × 1
+  × 4 hex20) met T = Tref + 100 K · z/h op elke knoop (lineair over de dikte); u_x = 0 op
+  x = 0, u_y = 0 op y = 0, u_z = 0 in de oorsprong. (c) vrije staaf 100 × 10 × 10 mm (4
+  hex8): `temperature2` Tref + 100 K op de knopen in x = 0 en Node temperature
+  Tref + 200 K op die in x = L; de knopen ertussen krijgen geen temperatuur. (d) als (b)
+  met hex8 en `elem_hex8` = `LINE_QUAD`.
+- **Referentie**: (a) σ_xx = −EαΔT, u_y = (1+ν)αΔT·b, reactie EαΔT·A. (b, d) lineaire
+  temperatuur in een vrij lichaam: spanningsloos, u_z = −αg(x² + y² − z²)/2 met
+  g = ΔT/h (Timoshenko & Goodier §150): u_z(L, 0, 0) = −6,0e-4 m. (c) knopen zonder
+  temperatuur op Tref, elementgemiddelden +50 en +100 K: u_x(L) = α·150 K·L/4 =
+  4,5e-5 m. Daarnaast Mecway 34 (eigen solver, headless) op (a)–(c).
+- **Resultaat**: alle grootheden exact (≤ 2e-10); max |σ_xx| in (b) en (d) 0,04 Pa.
+  Mecway: (a) reactie 2,52e6 N, (b) −6,0000e-4 m, (c) 4,5000e-5 m, alle drie gelijk.
+- **Interpretatie**: Node temperature werkt als Temperature; knopen zonder temperatuur
+  staan op de referentie, ook naast knopen met een temperatuur (c, gelijk aan Mecway).
+  Mecway 34 interpoleert de knooptemperatuur in het element (b: ook met één laag hex20
+  exact), niet het elementgemiddelde uit de manual (KNOWN_BUGS 17). In (d) krijgen de
+  middenknopen die `LINE_QUAD` toevoegt de geïnterpoleerde temperatuur; met de
+  referentietemperatuur zou de balk niet kloppen. Mecway zelf rekent (d) met
+  incompatibele hex8: −6,28e-4 m (+4,7 %). Verder headless vergeleken (8 hex8, Node
+  temperature +50 K, `LINE_QUAD`): modaal met voorspanning 284,96 Hz tegen Mecway
+  286,18 Hz, knik 3,3969 tegen 3,4010; in de bridge en in Mecway geven `temperature2`
+  en `temperature3` dezelfde uitkomst (ook statisch, niet-lineair statisch en D30).
+
 ### Conclusie lineair statisch
 
-Alle 39 cases (97 controles) liggen binnen de tolerantie. Waar de theorie exact is
+Alle 43 cases (110 controles) liggen binnen de tolerantie. Waar de theorie exact is
 (Navier, Lamé, LE1, Euler-balk), convergeren de vertaalde modellen met de verwachte orde
 naar de referentie; in LS-02 is het verschil met Timoshenko een modelfout, dezelfde in
 Mecway en CCX. Geverifieerd zijn: `traction` op volumevlakken, `surfacepressure` op
