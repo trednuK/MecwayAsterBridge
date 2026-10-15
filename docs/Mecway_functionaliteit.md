@@ -90,7 +90,7 @@ Verlijmd contact per combinatie (slave op master):
 | Slave → master | Status | Code-Aster | Opmerking |
 |---|---|---|---|
 | volume → volume | Ja | `MASSIF` | |
-| schaal → schaal | Deels | `COQUE` | Lineaire schalen: Ja (de master blijft DKT, ook bij de keuze COQUE_3D). Kwadratische schaal (tri6/quad8) als master: Code-Aster stopt met CHARGES2_31 (KB90); maak de master lineair of draai master en slave om. |
+| schaal → schaal | Deels | `COQUE` | Lineaire schalen: Ja (de master blijft DKT, ook bij de keuze COQUE_3D). Kwadratische schaal (tri6/quad8) als master: Code-Aster stopt met CHARGES2_31 (KB90); maak de master lineair of draai master en slave om. Ook een schaalrand op een schaalvlak (naad in het vlak, T-stuk): stijf, de rotaties gaan mee (geen scharnier; Mecway's eigen solver doet dat niet). Geverifieerd in LS-07, voorbeeld `Voorbeeld_T.liml` ([contact §3.10](Instellingen_contact_en_nietlineair.md#310-voorbeeld-platen-verlijmen-bonded-contact-tussen-schalen)). Master scheef of gekromd: mogelijk FACTOR_11, dan `solver_nprec` = −1 (KB94). |
 | schaalvlak → volume | Ja | `MASSIF` | Alleen de verplaatsingen; gemeten gelijk aan gedeelde knopen (KB21). |
 | schaalrand → volume | Deels | `COQUE_MASSIF` of `MASSIF` | Stijf als alle randen bij één component met een dikte horen; anders werkt de rand als scharnier (WARNING, KB21). Maak één verlijmd contact per component (voorbeeld 2). |
 | volume → schaal | Deels | `MASSIF_COQUE` | Kwadratische schaal als master: als schaal → schaal (KB90). |

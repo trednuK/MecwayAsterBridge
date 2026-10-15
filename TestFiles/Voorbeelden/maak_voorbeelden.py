@@ -5,10 +5,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 """
 Testmodellen A, C en S van docs/ASTER_regels_voorbeelden.md par. 5
-(voorbeelden 1 tot 8), gebouwd met TestFiles/Verificatie/verif_lib.py
+(voorbeelden 1 tot 8) en model T (verlijmd contact tussen platen,
+docs/Instellingen_contact_en_nietlineair.md), gebouwd met TestFiles/Verificatie/verif_lib.py
 (CPython 3, ontwikkelgereedschap; draait niet in Mecway).
 
-    python maak_voorbeelden.py          schrijft Voorbeeld_A/C/S.liml hier
+    python maak_voorbeelden.py          schrijft Voorbeeld_A/C/S/T.liml hier
                                         (zonder #ASTER-regels)
     python maak_voorbeelden.py --run [namen]
                                         rekent de varianten van de
@@ -33,6 +34,7 @@ VERIF = os.path.join(os.path.dirname(HERE), "Verificatie")
 sys.path.insert(0, VERIF)
 from verif_lib import (Model, Results, hexmesh, quadmesh, linemesh,  # noqa
                        box, HEX_FACE)
+from tests_lineair_statisch import build_ls07_strip  # noqa
 
 STEEL = ('<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
          'poissonratio="0.3" />')
@@ -135,6 +137,18 @@ def model_s(analysis="S30", custom=None):
     return m
 
 
+# ------------------------------------------------------------------
+# Model T: ingeklemde plaatstrook 200 x 20 mm, 2 mm (DKT quad4) uit twee
+# delen met eigen knopen: Deel_A (x = 0 .. 100 mm, 10 x 4) en Deel_B
+# (x = 100 .. 200 mm, 10 x 7), verlijmd langs de naad (bonded contact
+# bondedtie: master Lijm_A = laatste rij schaalvlakken van A, slave
+# Lijm_B = rand van B); Inklemming (x = 0) vast, 1 N in -Z op Vrij_eind.
+# Zelfde model als verificatiecase LS-07a.
+# ------------------------------------------------------------------
+def model_t():
+    return build_ls07_strip(True)()
+
+
 def _custom(m, custom):
     for tag, lines in (custom or {}).items():
         text = "\n".join(lines).replace("&", "&amp;").replace(
@@ -230,6 +244,7 @@ RUNS = [
      lambda: model_s("S30", custom={MY: EX2}), {}),
     ("S_nietlin", "nonlin_static_3d",
      lambda: model_s("L30", custom={MY: EX2}), {}),
+    ("T_statisch", "lin_static_3d", model_t, {}),
     ("C_lagrange", "nonlin_static_3d",
      lambda: model_c(custom={RM: ex7("Bodem")}), {}),
     ("C_vb5", "nonlin_static_3d",
@@ -286,6 +301,9 @@ def run_all(root, only=()):
             d = r.step()
             print("   PlaatTop DX gemiddeld %.4e m" % (
                 sum(d["displx"][n] for n in top) / len(top)))
+        if name.startswith("T_"):
+            print("   Tip DZ gemiddeld %.5e m, rotatie Y %.5e rad" % (
+                r.mean("displz", "Tip"), r.mean("roty", "Tip")))
         if run.get("mess"):
             for line in _tables(run["mess"]):
                 print("   " + line)
@@ -297,7 +315,8 @@ def main(argv):
             tempfile.gettempdir(), "mab_voorbeelden"),
             [a for a in argv if a != "--run"])
         return
-    for name, build in (("A", model_a), ("C", model_c), ("S", model_s)):
+    for name, build in (("A", model_a), ("C", model_c), ("S", model_s),
+                        ("T", model_t)):
         path = build().write(os.path.join(HERE, "Voorbeeld_%s.liml" % name))
         print("model", path)
 

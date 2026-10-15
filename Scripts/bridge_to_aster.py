@@ -3115,6 +3115,10 @@ def _render_mpcs(model_data):
                     "\n".format(normals[group], group))
             parts += ["EPAIS={0!r}".format(float(b["epais"])),
                       "CHAM_NORMALE={0}".format(normals[group])]
+        if b.get("ddl"):
+            # COQUE: zonder de drilling-rotatie (bridge_mesh._coque_ddl)
+            parts.append("DDL=({0})".format(", ".join(
+                "'{0}'".format(d) for d in b["ddl"])))
         if b.get("distance", 0.0) > 0.0:
             parts.append("DISTANCE_MAX={0!r}".format(b["distance"]))
         out.setdefault("LIAISON_MAIL", []).append(

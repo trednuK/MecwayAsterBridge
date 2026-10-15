@@ -431,7 +431,8 @@ contact = DEFI_CONTACT(
   `bondedelastic`, `bondedtie` and `bondedce` (bonded). Only `unilateralelastic`
   becomes `DEFI_CONTACT`. A bonded pair becomes `AFFE_CHAR_MECA/LIAISON_MAIL` (rigid;
   `bondedelastic` without its stiffness, reported): `TYPE_RACCORD='MASSIF'` (solid on
-  solid, master = the solid elements behind the faces), `'COQUE'` (shell on shell) or
+  solid, master = the solid elements behind the faces), `'COQUE'` (shell on shell, also a shell edge on a shell face; rigid, without
+  the rotation about the normal, §3.10) or
   `'MASSIF_COQUE'` (solid slave on shell master). Shell slave on solid master: a shell
   face couples the displacements (`'MASSIF'` with the shell nodes); shell edges of a
   single component are connected rigidly (`'COQUE_MASSIF'` with the thickness and the
@@ -439,7 +440,8 @@ contact = DEFI_CONTACT(
   as slave are reported and skipped (KNOWN_BUGS 21).
 - **Nonlinear only.** `contact2` only goes to `STAT_NON_LINE`/`DYNA_NON_LINE`; with
   `lin_static_3d` (also S30 via `auto`) the bridge stops with an ERROR. Choose
-  `nonlin_static_3d` for contact.
+  `nonlin_static_3d` for contact. Bonded contact (`LIAISON_MAIL`) also works in a
+  linear analysis.
 - **Compression only support** (Mecway) becomes `DEFI_CONTACT
   FORMULATION='LIAISON_UNIL'` (U4.44.11 §3.8), only in a model without `contact2` (one
   `DEFI_CONTACT` per analysis; KNOWN_BUGS 22).
@@ -571,6 +573,70 @@ For what Mecway cannot enter, put `#ASTER` lines in a free text field of Mecway
 (`<<Mecway selection>>`), pitfalls and worked examples (including `#ASTER-CONTACT`,
 `#ASTER-ZONE` and `#ASTER-OPTIE` for contact) are in
 [`ASTER_lines_examples.md`](ASTER_lines_examples.md).
+
+### 3.10 Example: bonding plates (bonded contact between shells)
+
+You connect two plate parts that each have their own mesh with Mecway's bonded
+contact; the meshes do not have to match. Example model:
+[`TestFiles/Voorbeelden/Voorbeeld_T.liml`](../../TestFiles/Voorbeelden/Voorbeeld_T.liml)
+(made with `maak_voorbeelden.py`, the same model as verification case LS-07a).
+
+**Model.** Cantilever plate strip 200 × 20 mm, thickness 2 mm, steel, in two parts:
+`Deel_A` (x = 0..100 mm, 10 × 4 quad4) and `Deel_B` (x = 100..200 mm, 10 × 7 quad4, own
+nodes). Clamped at x = 0, 1 N in −Z on the free edge.
+
+**Setting it up in Mecway:**
+1. Mesh the two parts separately (own nodes, do not merge). Each part gets a material
+   with a plate thickness (*Plate*).
+2. Make two face selections: the **master** = shell faces of part A along the seam
+   (here the last row of elements, `Lijm_A`; all faces of A is fine too), the **slave**
+   = the edge of part B that lies on A (`Lijm_B`; shell edges are selected as faces of
+   the elements). Use the finer side as slave.
+3. Add a contact with master `Lijm_A`, slave `Lijm_B` and type bonded (*bonded*, in the
+   `.liml` `type="bondedtie"`). Tolerance 0 (automatic) is fine: the bridge then ties
+   all slave nodes (no `DISTANCE_MAX`). *Bonded elastic* is bonded rigidly (the
+   stiffness is not translated, reported).
+4. Analysis linear static (`lin_static_3d`): bonded contact is not `DEFI_CONTACT` and
+   also works in a linear analysis.
+
+**What the bridge makes of it:** `AFFE_CHAR_MECA` with `LIAISON_MAIL`
+(`GROUP_MA_MAIT` = the shell elements of the master, `GROUP_NO_ESCL` = the nodes of the
+slave edge, `TYPE_RACCORD='COQUE'`, `DDL=('DX','DY','DZ','DRX','DRY')`). The rotations in
+the master plane are tied, so the seam carries a moment (no hinge). The bridge leaves
+out the rotation about the plate normal (*drilling*, only a fictitious stiffness in
+DKT): with that tie Code-Aster stops with `FACTOR_11` (singular matrix).
+
+**Result (verified, [Verification.md](Verification.md) LS-07):**
+
+| Quantity | Bonded (bridge) | One mesh (bridge) | Mecway, one mesh | Analytical |
+|---|---|---|---|---|
+| tip deflection | 0.94220 mm | 0.94257 mm | 0.94148 mm | 0.95238 mm |
+| tip rotation | 7.0899 mrad | 7.0938 mrad | 7.0901 mrad | 7.1429 mrad |
+
+Analytical is the Euler beam P L³/(3EI) and P L²/(2EI) with E (not E/(1−ν²)): with free
+side edges the strip bends like a beam; the clamping makes it slightly stiffer
+(−1.0 %). The bonded strip differs 0.04 % from one continuous mesh and 0.08 % from
+Mecway; the rotation is equal on both sides of the seam (0.01 %).
+
+**T-joint** (edge of a rib bonded onto the face of a plate, LS-07c..e): the rib passes
+its moment through the bond into the plate. With the foot line on a mesh line of the
+plate, the rib deflection is within 0.1 % of shared nodes (0.4 % of Mecway). With the
+foot line in the middle of the plate elements, `LIAISON_MAIL` interpolates the plate
+rotation linearly across the kink under the rib: 5 % too stiff with 4 mm elements, 11 %
+with 12 mm. So put the foot line on a mesh line (or refine there).
+
+**Limitations:**
+- The bridge can leave out the rotation about the normal only when the master is normal
+  to a global axis (plane X, Y or Z = constant). With a skewed or curved master all DOFs
+  stay tied (WARNING) and Code-Aster may report `FACTOR_11`; then set `solver_nprec` to
+  −1 (§2.6; tested: same result) (KNOWN_BUGS 94).
+- A quadratic shell (tri6/quad8) as master stops with `CHARGES2_31` when slave nodes lie
+  inside a master element (KNOWN_BUGS 90).
+- A shell face on a solid only ties the displacements; beam ends as slave are not
+  translated (KNOWN_BUGS 21).
+- Mecway's own solver ties no rotations for a shell edge as slave: the bonded strip and
+  the T-joint become a mechanism there (measured headless, Mecway 34). A comparison with
+  Mecway is therefore only possible with a continuous mesh.
 
 ---
 

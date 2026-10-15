@@ -90,7 +90,7 @@ Bonded contact per combination (slave on master):
 | Slave → master | Status | Code-Aster | Remark |
 |---|---|---|---|
 | solid → solid | Yes | `MASSIF` | |
-| shell → shell | Partly | `COQUE` | Linear shells: Yes (the master stays DKT, also with the choice COQUE_3D). Quadratic shell (tri6/quad8) as master: Code-Aster stops with CHARGES2_31 (KB90); make the master linear or swap master and slave. |
+| shell → shell | Partly | `COQUE` | Linear shells: Yes (the master stays DKT, also with the choice COQUE_3D). Quadratic shell (tri6/quad8) as master: Code-Aster stops with CHARGES2_31 (KB90); make the master linear or swap master and slave. Also a shell edge on a shell face (in-plane seam, T-joint): rigid, the rotations are tied (no hinge; Mecway's own solver does not do this). Verified in LS-07, example `Voorbeeld_T.liml` ([contact §3.10](Settings_contact_and_nonlinear.md#310-example-bonding-plates-bonded-contact-between-shells)). Master skewed or curved: possibly FACTOR_11, then `solver_nprec` = −1 (KB94). |
 | shell face → solid | Yes | `MASSIF` | Displacements only; measured equal to shared nodes (KB21). |
 | shell edge → solid | Partly | `COQUE_MASSIF` or `MASSIF` | Rigid if all edges belong to one component with a thickness; otherwise the edge acts as a hinge (WARNING, KB21). Make one bonded contact per component (example 2). |
 | solid → shell | Partly | `MASSIF_COQUE` | Quadratic shell as master: as shell → shell (KB90). |

@@ -98,7 +98,8 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 Status 8 October 2026. The whole table comes from one revision: the regression in
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `e62a83d`
 (all steps, the final check S11 and the follow-ups of 7–8 October; Code-Aster 17.4):
-272 test cases, 1629 checks, 1625 OK, 4 BEKEND (known), 0 NOK/FOUT.
+272 test cases, 1629 checks, 1625 OK, 4 BEKEND (known), 0 NOK/FOUT. Added afterwards and
+run separately (15 October): LS-07a–e, bonded contact between shells (14 checks, OK).
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -113,7 +114,7 @@ Status 8 October 2026. The whole table comes from one revision: the regression i
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 7 | 17 | 17 | 0 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 34 | 83 | 83 | 0 |
+| Linear static | 39 | 97 | 97 | 0 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 10 | 64 | 64 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
@@ -127,7 +128,7 @@ Status 8 October 2026. The whole table comes from one revision: the regression i
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **272** | **1629** | **1625** | **4** |
+| **Total** | **277** | **1643** | **1639** | **4** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -146,6 +147,8 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 - Contact on quadratic faces did not pass the patch test with the default integration
   (up to 4.6% error); now `INTEGRATION='NCOTES'` for a quadratic slave face (NL-03c–f).
 - Springs and dampers only acted in global X; now along their own axis (LS-06).
+- Bonded contact between shells stopped with `FACTOR_11` (the rotation about the
+  plate normal was tied as well); now without that rotation (LS-07, KNOWN_BUGS 94).
 - In explicit dynamics, rounding in `DEFI_LIST_INST` gave an extra solver step.
 - Temperature-dependent ρc: `THER_NON_LINE` interpolates the enthalpy linearly between
   the table points; the bridge now refines the table (energy balance from −2.8% to
@@ -293,9 +296,45 @@ meshes is given below.
   acted in global X, even when it lay along Y (KNOWN_BUGS 47 describes what has not yet
   been compared with Mecway).
 
+### LS-07 Bonded contact between shells
+
+- **Purpose**: Mecway's bonded contact (`bondedtie`) between plates with non-matching
+  meshes → `LIAISON_MAIL` `TYPE_RACCORD='COQUE'`; does the seam carry a moment?
+- **Model**: (a) cantilever plate strip 200 × 20 × 2 mm (DKT quad4) in two parts with
+  their own nodes: A (x = 0..100 mm, 10 × 4) and B (x = 100..200 mm, 10 × 7), bonded
+  along the seam (slave = edge of B, master = shell faces of A); (b) the same strip as
+  one mesh 20 × 4. (c–e) T-joint: plate 100 × 60 mm, long edges clamped, with a rib
+  60 × 40 mm (plane y = 30 mm) whose bottom edge is bonded onto the plate: (c) rib 13
+  elements long against 20 in the plate, foot line on a mesh line of the plate; (d) foot
+  line in the middle of the plate elements (15 across the width); (e) shared nodes.
+  Example model (a): `TestFiles/Voorbeelden/Voorbeeld_T.liml`.
+- **Boundary conditions and load**: (a, b) `fixed` on the edge x = 0, P = 1 N in −Z on
+  the free edge; (c–e) 1 N in +Y on the top edge of the rib (the rib bends out of its
+  plane; if the bond were a hinge, the model would be a mechanism).
+- **Reference**: (a, b) Euler beam δ = PL³/(3EI), φ = PL²/(2EI) with E: with free side
+  edges M_y = 0 and the bending stiffness per width is E t³/12; the clamping prevents
+  the anticlastic curvature over a strip ~b (b/L = 0.1), which makes the plate slightly
+  stiffer (tolerance 2 %). Also Mecway 34 (own solver) on model (b) (tolerance 0.5 %)
+  and the rotation on both sides of the seam (equal, 0.5 %). (c, d) model (e) (same
+  scheme) and Mecway 34 on (e).
+- **Result**: (a) δ −1.07 % against Euler, +0.08 % against Mecway; φ −0.74 % and
+  −0.00 %; rotation B/A across the seam 0.99992. (b) δ −1.03 %, Mecway +0.12 %.
+  (c) +0.10 % below (e), +0.42 % against Mecway. (d) −5.2 % (tolerance 7 %). (e) +0.51 %
+  against Mecway.
+- **Interpretation**: the seam is rigid, also in bending: the bonded strip is within
+  0.04 % of one continuous mesh. Before the fix in `bridge_mesh._coque_ddl`,
+  `LIAISON_MAIL` also tied the rotation about the plate normal (only a fictitious
+  stiffness in DKT) and Code-Aster stopped with `FACTOR_11`; now that rotation is left
+  out when the master is normal to a global axis (otherwise KNOWN_BUGS 94). In (d)
+  `LIAISON_MAIL` interpolates the plate rotation linearly across the kink under the
+  rib: 12 mm elements −11 %, 4 mm −5 %, 1.3 mm −2 %; put the foot line on a mesh line.
+  Mecway's own solver does not solve (a), (c) and (d): with a shell edge as slave it ties
+  no rotations (mechanism, tip 3.7e6 m), so Mecway is only compared on the continuous
+  meshes.
+
 ### Conclusion linear static
 
-All 34 cases (83 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
+All 39 cases (97 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
 LE1, Euler beam), the translated models converge with the expected order to the
 reference; in LS-02 the difference with Timoshenko is a model error, the same in Mecway
 and CCX. Verified: `traction` on solid faces, `surfacepressure` on solid, shell and
@@ -2232,7 +2271,8 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
 - kinematic hardening and Ramberg-Osgood (bilinear isotropic is covered: NL-01, WE-08,
   VM-11a; a hardening curve: WE-12c; see the variants in [Failure.md](Failure.md) §5),
   element failure ([Failure.md](Failure.md) §5);
-- friction (NL-03 is frictionless), bonded contact, contact in dynamics (implicit and
+- friction (NL-03 is frictionless), bonded contact except shell on shell (LS-07),
+  contact in dynamics (implicit and
   explicit);
 - beams and DKT at large displacements (KNOWN_BUGS 11; NL-02 only solids and
   `COQUE_3D`);

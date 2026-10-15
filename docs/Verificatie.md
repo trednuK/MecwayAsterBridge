@@ -100,7 +100,8 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 Stand 8 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `e62a83d`
 (alle stappen, de eindcontrole S11 en de vervolgpunten van 7–8 oktober; Code-Aster 17.4):
-272 testcases, 1629 controles, 1625 OK, 4 BEKEND, 0 NOK/FOUT.
+272 testcases, 1629 controles, 1625 OK, 4 BEKEND, 0 NOK/FOUT. Daarna toegevoegd en
+apart gedraaid (15 oktober): LS-07a–e, verlijmd contact tussen schalen (14 controles, OK).
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -115,7 +116,7 @@ Stand 8 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 7 | 17 | 17 | 0 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 34 | 83 | 83 | 0 |
+| Lineair statisch | 39 | 97 | 97 | 0 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 10 | 64 | 64 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
@@ -129,7 +130,7 @@ Stand 8 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **272** | **1629** | **1625** | **4** |
+| **Totaal** | **277** | **1643** | **1639** | **4** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -149,6 +150,8 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 - Contact op kwadratische vlakken haalde de patchtest niet met de standaardintegratie
   (tot 4,6% fout); nu `INTEGRATION='NCOTES'` bij een kwadratisch slave-vlak (NL-03c–f).
 - Veren en dempers werkten alleen in globaal X; nu langs de eigen as (LS-06).
+- Verlijmd contact tussen schalen stopte met `FACTOR_11` (de rotatie om de
+  plaatnormaal werd meegekoppeld); nu zonder die rotatie (LS-07, KNOWN_BUGS 94).
 - In expliciete dynamica gaf afronding in `DEFI_LIST_INST` een extra rekenstap.
 - Temperatuurafhankelijke ρc: `THER_NON_LINE` interpoleert de enthalpie lineair tussen
   de tabelpunten; de bridge verfijnt de tabel nu (energiebalans van −2,8% naar 0,002%,
@@ -296,9 +299,45 @@ opeenvolgende meshes.
   veer altijd in globaal X, ook als hij langs Y lag (KNOWN_BUGS 47 beschrijft wat nog
   niet met Mecway is vergeleken).
 
+### LS-07 Verlijmd contact tussen schalen
+
+- **Doel**: Mecway's verlijmde contact (`bondedtie`) tussen platen met niet-passende
+  meshes → `LIAISON_MAIL` `TYPE_RACCORD='COQUE'`; draagt de lijmnaad een moment?
+- **Model**: (a) ingeklemde plaatstrook 200 × 20 × 2 mm (DKT quad4) uit twee delen met
+  eigen knopen: A (x = 0..100 mm, 10 × 4) en B (x = 100..200 mm, 10 × 7), verlijmd langs
+  de naad (slave = rand van B, master = schaalvlakken van A); (b) dezelfde strook als
+  één mesh 20 × 4. (c–e) T-stuk: plaat 100 × 60 mm, lange randen ingeklemd, met een
+  rib 60 × 40 mm (vlak y = 30 mm) waarvan de onderrand op de plaat is verlijmd: (c) rib
+  13 elementen lang tegen 20 in de plaat, voetlijn op een meshlijn van de plaat;
+  (d) voetlijn midden in de plaatelementen (15 over de breedte); (e) gedeelde knopen.
+  Voorbeeldmodel (a): `TestFiles/Voorbeelden/Voorbeeld_T.liml`.
+- **Randvoorwaarden en belasting**: (a, b) `fixed` op de rand x = 0, P = 1 N in −Z op de
+  vrije rand; (c–e) 1 N in +Y op de bovenrand van de rib (de rib buigt uit zijn vlak;
+  als de lijm een scharnier was, zou het model een mechanisme zijn).
+- **Referentie**: (a, b) Euler-balk δ = PL³/(3EI), φ = PL²/(2EI) met E: met vrije
+  zijranden is M_y = 0 en is de buigstijfheid per breedte E t³/12; de inklemming
+  verhindert de anticlastische kromming over een strook ~b (b/L = 0,1), daardoor is de
+  plaat iets stijver (tolerantie 2 %). Daarnaast Mecway 34 (eigen solver) op model (b)
+  (tolerantie 0,5 %) en de rotatie aan beide kanten van de naad (gelijk, 0,5 %).
+  (c, d) model (e) (zelfde schema) en Mecway 34 op (e).
+- **Resultaat**: (a) δ −1,07 % t.o.v. Euler, +0,08 % t.o.v. Mecway; φ −0,74 % en
+  −0,00 %; rotatie B/A over de naad 0,99992. (b) δ −1,03 %, Mecway +0,12 %.
+  (c) +0,10 % onder (e), +0,42 % t.o.v. Mecway. (d) −5,2 % (tolerantie 7 %). (e) +0,51 %
+  t.o.v. Mecway.
+- **Interpretatie**: de naad is stijf, ook voor buiging: de verlijmde strook ligt binnen
+  0,04 % van één doorlopende mesh. Zonder de correctie in `bridge_mesh._coque_ddl`
+  koppelde `LIAISON_MAIL` ook de rotatie om de plaatnormaal (bij DKT alleen een
+  fictieve stijfheid) en stopte Code-Aster met `FACTOR_11`; nu blijft die rotatie weg
+  als de master loodrecht op een globale as staat (anders KNOWN_BUGS 94). Bij (d)
+  interpoleert `LIAISON_MAIL` de plaatrotatie lineair over de knik onder de rib: 12 mm
+  elementen −11 %, 4 mm −5 %, 1,3 mm −2 %; leg de voetlijn op een meshlijn. Mecway's
+  eigen solver rekent (a), (c) en (d) niet: bij een schaalrand als slave koppelt hij
+  geen rotaties (mechanisme, tip 3,7e6 m), daarom is Mecway alleen op de doorlopende
+  meshes vergeleken.
+
 ### Conclusie lineair statisch
 
-Alle 34 cases (83 controles) liggen binnen de tolerantie. Waar de theorie exact is
+Alle 39 cases (97 controles) liggen binnen de tolerantie. Waar de theorie exact is
 (Navier, Lamé, LE1, Euler-balk), convergeren de vertaalde modellen met de verwachte orde
 naar de referentie; in LS-02 is het verschil met Timoshenko een modelfout, dezelfde in
 Mecway en CCX. Geverifieerd zijn: `traction` op volumevlakken, `surfacepressure` op
@@ -2231,7 +2270,8 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
 - kinematische versteviging en Ramberg-Osgood (wel bilineair isotroop: NL-01, WE-08,
   VM-11a; een hardingscurve: WE-12c; zie de varianten in [Bezwijken.md](Bezwijken.md)
   §5), bezwijken van elementen ([Bezwijken.md](Bezwijken.md) §5);
-- wrijving (NL-03 is wrijvingsloos), verlijmd contact, contact in dynamica (impliciet
+- wrijving (NL-03 is wrijvingsloos), verlijmd contact behalve schaal op schaal (LS-07),
+  contact in dynamica (impliciet
   en expliciet);
 - balken en DKT bij grote verplaatsingen (KNOWN_BUGS 11; NL-02 alleen volumes en
   `COQUE_3D`);

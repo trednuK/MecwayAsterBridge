@@ -434,7 +434,8 @@ contact = DEFI_CONTACT(
   `unilateralelastic` wordt `DEFI_CONTACT`. Een verlijmd paar wordt
   `AFFE_CHAR_MECA/LIAISON_MAIL` (star; `bondedelastic` zonder de stijfheid, gemeld):
   `TYPE_RACCORD='MASSIF'` (volume op volume, master = de volume-elementen achter de
-  vlakken), `'COQUE'` (schaal op schaal) of `'MASSIF_COQUE'` (volume-slave op
+  vlakken), `'COQUE'` (schaal op schaal, ook een schaalrand op een schaalvlak; stijf,
+  zonder de rotatie om de normaal, §3.10) of `'MASSIF_COQUE'` (volume-slave op
   schaal-master). Schaal-slave op volume-master: een schaalvlak koppelt de
   verplaatsingen (`'MASSIF'` met de schaalknopen); schaalranden van één component
   worden stijf verbonden (`'COQUE_MASSIF'` met de dikte en het normaalveld van de
@@ -442,7 +443,8 @@ contact = DEFI_CONTACT(
   worden gemeld en overgeslagen (KNOWN_BUGS 21).
 - **Alleen niet-lineair.** `contact2` gaat alleen naar `STAT_NON_LINE`/
   `DYNA_NON_LINE`; met `lin_static_3d` (ook S30 via `auto`) stopt de bridge met een
-  ERROR. Kies bij contact `nonlin_static_3d`.
+  ERROR. Kies bij contact `nonlin_static_3d`. Verlijmd contact (`LIAISON_MAIL`) werkt
+  ook lineair.
 - **Compression only support** (Mecway) wordt `DEFI_CONTACT
   FORMULATION='LIAISON_UNIL'` (U4.44.11 §3.8), alleen in een model zonder
   `contact2` (één `DEFI_CONTACT` per berekening; KNOWN_BUGS 22).
@@ -576,6 +578,70 @@ van Mecway (OpenRadioss: `#ASTER`, Mystran: `$ASTER`, CCX: `**ASTER`). Syntax,
 selectienamen (`<<Mecway-selectie>>`), valkuilen en doorgerekende voorbeelden
 (o.a. `#ASTER-CONTACT`, `#ASTER-ZONE` en `#ASTER-OPTIE` bij contact) staan in
 [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md).
+
+### 3.10 Voorbeeld: platen verlijmen (bonded contact tussen schalen)
+
+Twee plaatdelen met elk een eigen mesh verbind je met Mecway's verlijmde contact; de
+meshes hoeven niet op elkaar te passen. Voorbeeldmodel:
+[`TestFiles/Voorbeelden/Voorbeeld_T.liml`](../TestFiles/Voorbeelden/Voorbeeld_T.liml)
+(gemaakt met `maak_voorbeelden.py`, zelfde model als verificatiecase LS-07a).
+
+**Model.** Ingeklemde plaatstrook 200 × 20 mm, dikte 2 mm, staal, uit twee delen:
+`Deel_A` (x = 0..100 mm, 10 × 4 quad4) en `Deel_B` (x = 100..200 mm, 10 × 7 quad4, eigen
+knopen). Ingeklemd op x = 0, 1 N in −Z op de vrije rand.
+
+**Zo zet je het op in Mecway:**
+1. Mesh de twee delen apart (eigen knopen, niet samenvoegen). Elk deel krijgt een
+   materiaal met een plaatdikte (*Plate*).
+2. Maak twee vlakselecties: de **master** = schaalvlakken van deel A langs de naad (hier
+   de laatste rij elementen, `Lijm_A`; alle vlakken van A mag ook), de **slave** = de
+   rand van deel B die op A ligt (`Lijm_B`; schaalranden selecteer je als vlakken van de
+   elementen). Neem de fijnste kant als slave.
+3. Voeg een contact toe met master `Lijm_A`, slave `Lijm_B` en als type verlijmd
+   (*bonded*, in de `.liml` `type="bondedtie"`). Tolerantie 0 (automatisch) is goed:
+   de bridge koppelt dan alle slave-knopen (geen `DISTANCE_MAX`). *Bonded elastic*
+   wordt star verlijmd (de stijfheid wordt niet vertaald, gemeld).
+4. Analyse lineair statisch (`lin_static_3d`): verlijmd contact is geen `DEFI_CONTACT`
+   en werkt ook lineair.
+
+**Wat de bridge ervan maakt:** `AFFE_CHAR_MECA` met `LIAISON_MAIL`
+(`GROUP_MA_MAIT` = de schaalelementen van de master, `GROUP_NO_ESCL` = de knopen van de
+slave-rand, `TYPE_RACCORD='COQUE'`, `DDL=('DX','DY','DZ','DRX','DRY')`). De rotaties in
+het mastervlak gaan mee, dus de naad draagt een moment (geen scharnier). De rotatie om
+de plaatnormaal (*drilling*, bij DKT alleen een fictieve stijfheid) laat de bridge weg:
+met die koppeling stopt Code-Aster met `FACTOR_11` (singuliere matrix).
+
+**Resultaat (geverifieerd, [Verificatie.md](Verificatie.md) LS-07):**
+
+| Grootheid | Verlijmd (bridge) | Eén mesh (bridge) | Mecway, één mesh | Analytisch |
+|---|---|---|---|---|
+| doorbuiging tip | 0,94220 mm | 0,94257 mm | 0,94148 mm | 0,95238 mm |
+| rotatie tip | 7,0899 mrad | 7,0938 mrad | 7,0901 mrad | 7,1429 mrad |
+
+Analytisch is de Euler-balk P L³/(3EI) en P L²/(2EI) met E (niet E/(1−ν²)): met vrije
+zijranden buigt de strook als een balk; de inklemming maakt hem iets stijver (−1,0 %).
+De verlijmde strook wijkt 0,04 % af van één doorlopende mesh en 0,08 % van Mecway; de
+rotatie is aan beide kanten van de naad gelijk (0,01 %).
+
+**T-stuk** (rand van een rib verlijmd op het vlak van een plaat, LS-07c..e): de rib
+brengt zijn moment via de lijm in de plaat. Ligt de voetlijn op een meshlijn van de
+plaat, dan is de uitbuiging van de rib 0,1 % van die met gedeelde knopen (0,4 % van
+Mecway). Ligt de voetlijn midden in de plaatelementen, dan interpoleert `LIAISON_MAIL`
+de rotatie van de plaat lineair over de knik onder de rib: 5 % te stijf bij 4 mm
+elementen, 11 % bij 12 mm. Leg de voetlijn dus op een meshlijn (of verfijn daar).
+
+**Beperkingen:**
+- De rotatie om de normaal kan de bridge alleen weglaten als de master loodrecht op een
+  globale as staat (vlak X, Y of Z = constant). Bij een scheve of gekromde master
+  blijven alle DDL gekoppeld (WARNING) en kan Code-Aster `FACTOR_11` melden; zet dan
+  `solver_nprec` op −1 (§2.6; getest: zelfde resultaat) (KNOWN_BUGS 94).
+- Een kwadratische schaal (tri6/quad8) als master stopt met `CHARGES2_31` als
+  slave-knopen binnen een master-element liggen (KNOWN_BUGS 90).
+- Een schaalvlak op een volume koppelt alleen de verplaatsingen; balkuiteinden als slave
+  worden niet vertaald (KNOWN_BUGS 21).
+- Mecway's eigen solver koppelt bij een schaalrand als slave geen rotaties: de verlijmde
+  strook en het T-stuk worden daar een mechanisme (headless gemeten, Mecway 34). Een
+  vergelijking met Mecway kan dus alleen met een doorlopende mesh.
 
 ---
 

@@ -199,7 +199,10 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    COQUE_3D (LIAISON_MAIL trekt anders de DX van de QUAD9-middenknoop erbij,
    CHARGES2_31; WARNING). Een automatische
    tolerantie van Mecway (0) wordt geen DISTANCE_MAX: Code-Aster koppelt alle
-   slave-knopen, ook ver van het master-vlak.
+   slave-knopen, ook ver van het master-vlak. Schaal op schaal (`COQUE`, ook een
+   schaalrand op een schaalvlak) koppelt de rotaties wel (stijf, LS-07); Mecway's eigen
+   solver doet dat bij een schaalrand als slave niet (headless gemeten, Mecway 34:
+   verlijmde strook en T-stuk van LS-07 worden een mechanisme, tip 3,7e6 m).
 
 22\. **Compression only** (bevestigd). Hard (LIAISON_UNIL, zoals de interne solver),
    alleen in niet-lineaire analyses (MECA_STATIQUE stopt met een ERROR), niet in een
@@ -399,6 +402,20 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    cellen), dus vóór de run een duidelijke ERROR met advies (lineaire schalen, of master
    en slave wisselen), of de middenknopen uit de relatie houden als Code-Aster dat
    toelaat (NIET geverifieerd).
+
+94\. **Verlijmd contact schaal op schaal met een scheve of gekromde master:
+   `FACTOR_11`** (bevestigd met runs, Code-Aster 17.4, `bridge_mesh._coque_ddl`).
+   `LIAISON_MAIL` `TYPE_RACCORD='COQUE'` koppelt standaard alle DDL, ook de rotatie om
+   de schaalnormaal (drilling), die bij DKT alleen een fictieve stijfheid heeft; MUMPS
+   meldt dan nulpivots op DRZ (`<EXCEPTION> <FACTOR_11>` bij `solver_nprec` = 8, ook
+   met `COEF_RIGI_DRZ` = 1e-3). De bridge laat die rotatie weg (`DDL` zonder DRX, DRY
+   of DRZ) als alle mastervlakken loodrecht op één globale as staan (LS-07a/c/d). Bij
+   een master in een scheef vlak of gekromd kan `DDL` (globale componenten) dat niet
+   uitdrukken: alle DDL blijven gekoppeld, met een WARNING. Reproductie: de strook van
+   LS-07a 30° gedraaid om de x-as: `FACTOR_11`; met `solver_nprec` = -1 rekent hij en
+   is de doorbuiging gelijk aan LS-07a (9,4220e-4 m). Oplossing (NIET geverifieerd):
+   de slave-rotaties met `LIAISON_DDL` per knoop in het lokale assenstelsel van de
+   master koppelen, of de mastervlakken per normaal splitsen.
 
 ## Open vragen (gedrag van Mecway niet nagegaan)
 

@@ -523,3 +523,167 @@ TESTS += [
                        "verplaatsing)")],
          note="Veer schuin in het XY-vlak: werkt langs de eigen as."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-07 Verlijmd contact tussen schalen (Mecway bonded contact, type
+# bondedtie -> LIAISON_MAIL TYPE_RACCORD='COQUE', bridge_mesh._bonded)
+# ------------------------------------------------------------------
+# (a, b) Ingeklemde plaatstrook L x B x T (DKT quad4), eindlast P (-Z) op
+# de vrije rand. (a): twee delen met eigen knopen, A (x = 0 .. L/2, 10 x 4)
+# en B (x = L/2 .. L, 10 x 7), verlijmd langs de naad x = L/2 (slave =
+# rand van B, master = de laatste rij schaalvlakken van A); (b): één mesh
+# 20 x 4. Referentie: Euler-balk P L^3/(3EI) met E (niet E/(1-nu^2)): bij
+# lineaire plaattheorie met vrije zijranden is M_y = 0, dus kromming
+# kappa_y = -nu kappa_x en buigstijfheid per breedte E T^3/12 (balk); alleen
+# de inklemming verhindert de anticlastische kromming over een strook ~B
+# (B/L = 0,1), daardoor is de plaat iets stijver (FE: -1,0 %). Daarnaast
+# Mecway 34 (eigen solver) op model (b): -9,41484e-4 m, rotatie
+# 7,09010e-3 rad. Mecway zelf rekent model (a) niet bruikbaar: de eigen
+# solver koppelt bij verlijmd contact met een schaalrand geen rotaties
+# (tip 3,7e6 m, een mechanisme).
+# (c, d, e) T-stuk: plaat AX x AY (XY-vlak, lange randen y = 0 en y = AY
+# ingeklemd) met een rib (vlak y = AY/2, x = 0,02 .. 0,08, hoogte BZ),
+# zijlast P (+Y) op de bovenrand van de rib. De rib buigt uit zijn vlak;
+# het moment aan de voet moet in de plaat (als scharnier: mechanisme).
+# (c): rib met eigen knopen (13 x 8 tegen 20 langs x in de plaat),
+# voetlijn op een meshlijn van de plaat (10 elementen over AY); (d):
+# voetlijn midden in de plaatelementen (15 over AY); (e): gedeelde knopen.
+# Referentie: (e) (zelfde schema, in_series False) en Mecway 34 op (e):
+# 2,93195e-6 m.
+L7, B7, T7, P7 = 0.2, 0.02, 0.002, 1.0
+I7 = B7 * T7 ** 3 / 12.0
+AX7, AY7, BZ7, BX07, BX17 = 0.1, 0.06, 0.04, 0.02, 0.08
+W7 = P7 * L7 ** 3 / (3 * E * I7)
+R7 = P7 * L7 ** 2 / (2 * E * I7)
+R7H = P7 * (L7 * L7 / 2 - L7 ** 2 / 8) / (E * I7)     # rotatie in x = L/2
+BOND = ('<contact2 selectionmaster="{0}" selectionslave="{1}" '
+        'type="bondedtie"><tolerance>0 m</tolerance><normalstiffness>0 Pa/m'
+        '</normalstiffness><tangentialstiffness>0 Pa/m</tangentialstiffness>'
+        '<frictioncoefficient>0</frictioncoefficient></contact2>')
+PLATE2 = '<geometric type="Plate" thickness="2 mm" />'
+
+
+def build_ls07_strip(glued):
+    def build():
+        m = Model("S30")
+        m.mat("Plaat2", PLATE2, STEEL)
+        if glued:
+            m.elset("Deel_A", "Plaat2")
+            a = quadmesh(m, "Deel_A", 10, 4, rect(0, L7 / 2, 0, B7))
+            m._index = {}                    # B: eigen knopen
+            m.elset("Deel_B", "Plaat2")
+            b = quadmesh(m, "Deel_B", 10, 7, rect(L7 / 2, L7, 0, B7))
+            m.face_selection("Lijm_A", [(a["elems"][(9, j)], 5)
+                                        for j in range(4)])
+            m.face_selection("Lijm_B", b["edges"]["u0"])
+            m.node_selection("Naad_A", sorted(a["nodes"]["u1"]))
+            m.node_selection("Naad_B", sorted(b["nodes"]["u0"]))
+            m.add(BOND.format("Lijm_A", "Lijm_B"))
+            root, tip = a, b
+        else:
+            m.elset("Plaat", "Plaat2")
+            root = tip = quadmesh(m, "Plaat", 20, 4, rect(0, L7, 0, B7))
+        m.face_selection("Inklemming", root["edges"]["u0"])
+        m.face_selection("Vrij_eind", tip["edges"]["u1"])
+        m.node_selection("Tip", sorted(tip["nodes"]["u1"]))
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Vrij_eind"><x>0 N</x><y>0 N</y><z>-%g N</z>'
+              '</force>' % P7)
+        return m
+    return build
+
+
+def build_ls07_tee(mode):
+    """mode: "rand" (voetlijn op een meshlijn), "midden" (in de
+    elementen) of "doorlopend" (gedeelde knopen)."""
+    def build():
+        m = Model("S30")
+        m.mat("Plaat2", PLATE2, STEEL)
+        m.elset("Plaat", "Plaat2")
+        nay = {"rand": 10, "midden": 15, "doorlopend": 10}[mode]
+        a = quadmesh(m, "Plaat", 20, nay, rect(0, AX7, 0, AY7))
+        if mode != "doorlopend":
+            m._index = {}
+        m.elset("Rib", "Plaat2")
+        b = quadmesh(m, "Rib", 12 if mode == "doorlopend" else 13, 8,
+                     lambda u, v: (BX07 + u * (BX17 - BX07), AY7 / 2,
+                                   v * BZ7))
+        m.face_selection("Inklemming", a["edges"]["v0"] + a["edges"]["v1"])
+        m.face_selection("Ribtop", b["edges"]["v1"])
+        m.node_selection("Ribtop_knopen", sorted(b["nodes"]["v1"]))
+        if mode != "doorlopend":
+            m.face_selection("Lijm_plaat", a["faces"])
+            m.face_selection("Lijm_rib", b["edges"]["v0"])
+            m.add(BOND.format("Lijm_plaat", "Lijm_rib"))
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Ribtop"><x>0 N</x><y>%g N</y><z>0 N</z>'
+              '</force>' % P7)
+        return m
+    return build
+
+
+def _ls07_strip_checks():
+    return [
+        Check("doorbuiging tip", lambda r: -_mean(r, "displz", "Tip"),
+              ref=W7, tol=0.02, unit="m",
+              source="P L^3/(3EI) (Euler, E; inklemming -1 %)"),
+        Check("doorbuiging tip t.o.v. Mecway", lambda r: -_mean(
+            r, "displz", "Tip"), ref=9.41484e-4, tol=0.005, unit="m",
+              source="Mecway 34, doorlopende strook (LS-07b)",
+              in_series=False),
+        Check("rotatie tip", lambda r: _mean(r, "roty", "Tip"), ref=R7,
+              tol=0.02, unit="rad", source="P L^2/(2EI)"),
+        Check("rotatie tip t.o.v. Mecway", lambda r: _mean(r, "roty", "Tip"),
+              ref=7.09010e-3, tol=0.005, unit="rad",
+              source="Mecway 34, doorlopende strook (LS-07b)",
+              in_series=False)]
+
+
+TESTS += [
+    Case("LS-07a", GROUP, "Plaatstrook uit twee verlijmde delen (schaal "
+         "op schaal, eigen meshes)", "lin_static_3d",
+         build_ls07_strip(True), _ls07_strip_checks() + [
+             Check("rotatie naad, deel B", lambda r: _mean(
+                 r, "roty", "Naad_B"), ref=R7H, tol=0.02, unit="rad",
+                   source="P (L x - x^2/2)/(EI), x = L/2"),
+             Check("rotatie naad B / A (geen scharnier)", lambda r: _mean(
+                 r, "roty", "Naad_B") / _mean(r, "roty", "Naad_A"), ref=1.0,
+                   tol=0.005, unit="-", source="doorlopende rotatie",
+                   in_series=False)],
+         note="Mecway bonded contact (bondedtie), slave = rand van deel B "
+              "(7 elementen breed), master = schaalvlakken van deel A (4 "
+              "breed) -> LIAISON_MAIL COQUE zonder DRZ (drilling)."),
+    Case("LS-07b", GROUP, "Plaatstrook uit één mesh (referentie LS-07a)",
+         "lin_static_3d", build_ls07_strip(False), _ls07_strip_checks()),
+    Case("LS-07c", GROUP, "T-stuk: rib met de rand verlijmd op een plaat, "
+         "voetlijn op een meshlijn", "lin_static_3d", build_ls07_tee("rand"),
+         [Check("zijdelingse verplaatsing ribtop",
+                lambda r: _mean(r, "disply", "Ribtop_knopen"),
+                ref=2.947048e-6, tol=0.005, unit="m",
+                source="LS-07e (gedeelde knopen, Code-Aster)",
+                in_series=False),
+          Check("idem t.o.v. Mecway",
+                lambda r: _mean(r, "disply", "Ribtop_knopen"),
+                ref=2.93195e-6, tol=0.01, unit="m",
+                source="Mecway 34 op LS-07e", in_series=False)],
+         note="Rib 13 elementen lang tegen 20 in de plaat (knopen vallen "
+              "niet samen); het moment gaat via de rotaties in de lijm."),
+    Case("LS-07d", GROUP, "T-stuk: voetlijn midden in de plaatelementen",
+         "lin_static_3d", build_ls07_tee("midden"),
+         [Check("zijdelingse verplaatsing ribtop",
+                lambda r: _mean(r, "disply", "Ribtop_knopen"),
+                ref=2.947048e-6, tol=0.07, unit="m",
+                source="LS-07e (gedeelde knopen, Code-Aster)",
+                in_series=False)],
+         note="De rotatie van de plaat heeft een knik onder de rib; "
+              "LIAISON_MAIL interpoleert ze lineair tussen de knopen (4 mm "
+              "elementen: -5 %, 12 mm: -11 %, 1,3 mm: -2 %). Leg de "
+              "voetlijn op een meshlijn (LS-07c)."),
+    Case("LS-07e", GROUP, "T-stuk met gedeelde knopen (referentie)",
+         "lin_static_3d", build_ls07_tee("doorlopend"),
+         [Check("zijdelingse verplaatsing ribtop t.o.v. Mecway",
+                lambda r: _mean(r, "disply", "Ribtop_knopen"),
+                ref=2.93195e-6, tol=0.01, unit="m",
+                source="Mecway 34 (eigen solver)", in_series=False)]),
+]

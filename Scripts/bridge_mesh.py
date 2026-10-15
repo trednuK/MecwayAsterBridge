@@ -1968,11 +1968,52 @@ def _bonded(model_data, c, group_faces, rn):
                                                              raccord))
     out = {"master": master, "slave": slave_nodes, "raccord": raccord,
            "distance": c.get("tolerance", 0.0), "type": c["type"]}
+    if raccord == "COQUE":
+        out["ddl"] = _coque_ddl(group_faces.get(rn(c["master"]), {}), label)
     if edge is not None:
         # bridge_to_aster: CHAM_NORMALE = CREA_CHAMP NOEU_GEOM_R NORMALE op
         # de schaalcomponent (docs/ASTER_regels_voorbeelden.md voorbeeld 2)
         out["shell_group"], out["epais"] = edge
     return out
+
+
+def _coque_ddl(info, label):
+    """
+    DDL van LIAISON_MAIL TYPE_RACCORD='COQUE' (schaal op schaal). Zonder DDL
+    koppelt Code-Aster alle DDL van de schalen ("par défaut tous les DDL
+    des coques", catalogus affe_char_meca.py v17.4), ook de rotatie om de
+    normaal van de master (drilling). Die heeft bij DKT alleen een
+    fictieve stijfheid (AFFE_CARA_ELEM COQUE COEF_RIGI_DRZ, standaard
+    1e-5) en MUMPS vindt dan nulpivots: <EXCEPTION> <FACTOR_11> op DRZ
+    (Code-Aster 17.4, NPREC=8; plaatstrook met een lijmnaad in het vlak en
+    een rib met de rand op een plaat, TestFiles/Verificatie/
+    tests_verlijmd.py; met NPREC=-1 dezelfde oplossing als zonder de
+    drilling-koppeling, ook met COEF_RIGI_DRZ=1e-3 nog FACTOR_11).
+    Buiging en dwarskracht gaan via de verplaatsingen en de twee rotaties
+    in het mastervlak. Ligt de master in een vlak loodrecht op een globale
+    as, dan blijft die rotatie (DRX/DRY/DRZ) hier weg; anders kan DDL dat
+    niet uitdrukken (globale componenten) en blijven alle DDL gekoppeld
+    (WARNING, KNOWN_BUGS 94).
+    Returns een tuple met DDL-namen of None (= Code-Aster-standaard).
+    """
+    normals = info.get("normals") or []
+    if normals:
+        n0 = normals[0]
+        if all(abs(_vdot(n, n0)) > 1.0 - 1.0e-6 for n in normals):
+            for k, comp in enumerate(("DRX", "DRY", "DRZ")):
+                if abs(n0[k]) > 1.0 - 1.0e-6:
+                    return tuple(d for d in ("DX", "DY", "DZ", "DRX", "DRY",
+                                             "DRZ") if d != comp)
+    log(tr("WARNING: {0}: de master ligt niet in één vlak loodrecht op een "
+           "globale as; LIAISON_MAIL koppelt dan ook de rotatie om de "
+           "schaalnormaal, wat Code-Aster als singuliere matrix kan melden "
+           "(FACTOR_11). Dan helpt solver_nprec = -1. Zie KNOWN_BUGS 94.",
+           "WARNING: {0}: the master does not lie in one plane normal to a "
+           "global axis; LIAISON_MAIL then also ties the rotation about the "
+           "shell normal, which Code-Aster may report as a singular matrix "
+           "(FACTOR_11). Then use solver_nprec = -1. See KNOWN_BUGS "
+           "94.").format(label))
+    return None
 
 
 def _shell_edge_joint(model_data, slave):
