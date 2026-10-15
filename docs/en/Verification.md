@@ -415,6 +415,58 @@ meshes is given below.
   `pick_configuration` + `splice_results` put the results into the solution of the
   chosen configuration and keep those of the others.
 
+### LS-50 Cantilever with line3 elements
+
+- **Purpose**: quadratic beam elements (line3). Code-Aster has no quadratic beam element;
+  the bridge splits each line3 element at its midside node into two SEG2 cells
+  (`POU_D_E`), with the orientation per half (KNOWN_BUGS 107). Module `tests_balken.py`.
+- **Model**: L = 1 m, 5 line3 elements along X, rectangular bar (RectBar); (a, b)
+  20 × 20 mm, (c) 20 × 10 mm with orientation vector (0, 0, 1) per element (V = Z).
+- **Constraints and load**: fixed at x = 0; (a) P = 100 N in −Z at the tip; (b) line
+  pressure q = 100 N/m in −Z on an element selection with all elements (`FORCE_POUTRE`);
+  (c) P = 100 N in −Y at the tip (bending about V, I = a b³/12).
+- **Reference**: Euler beam (Roark table 8.1 cases 1a and 2a): δ = PL³/(3EI),
+  φ = PL²/(2EI), w(x) at the midside node x = 0.1 m, δ = qL⁴/(8EI); reaction =
+  equilibrium. Also Mecway 34 headless: (1) the same beam with 10 line2 elements on the
+  same nodes in Mecway's own solver (which has no line3 beam; tolerance 0.1 %) and (2) the
+  line3 model with CCX (B32R; tolerance 4 %, see interpretation).
+- **Result**: all quantities exact (< 1e-6) against Euler and against Mecway with line2;
+  the midside nodes too. Mecway/CCX: −2.3 % (a), −3.0 % (b), −3.2 % (c).
+- **Interpretation**: two Euler cells per element are exact for an end load and a uniform
+  load; the midside node gets ordinary results. The orientation vector works per half
+  (without it, (c) would be four times as stiff). CCX expands the B32R into one C3D20R per
+  element (one element across the section) and is therefore 2–3 % stiffer than theory;
+  that is a property of CCX. Mecway/CCX cannot solve a round bar (Mecway writes
+  `SECTION=PIPE` with inner radius 0, CCX: "nonpositive jacobian"), hence a rectangle.
+
+### LS-51 Flexible joint on beam
+
+- **Purpose**: Mecway's *Flexible joint on beam* (`<flexiblejoint><rotu/><rotv/><rotw/>`,
+  manual v33 sec. 9.12): the end of a beam element rotates freely about the chosen local
+  axes. Translation: an own node for that end, coupled to the Mecway node with
+  `LIAISON_DDL` (translations and the rotations that are not free, in the local axes as in
+  Mecway: U along the beam, V from the orientation, W = U × V).
+- **Model**: L = 1 m, Ø 20 mm, 10 line2 (e: 4 line3), both ends fixed, P = 100 N at
+  mid-span; joint on the end face of the element right of the middle. (a) beam along X,
+  load −Y, joint about W (= Z); (b) the same, joint about V (= Y); (c) joint about W on
+  both sides of the middle node; (d) joint about U, V and W on the fixed end face at
+  x = L; (e) as (a) with line3 elements; (f) beam along Z, load +X, joint about V
+  (Mecway: V = Y for a vertical beam; bending about Y).
+- **Reference**: (a, c, e, f) two cantilevers L/2 with P/2 at the tip: δ = PL³/(48EI),
+  rotation left of the hinge PL²/(16EI); (b) no effect, δ = PL³/(192EI) (Roark 1d);
+  (d) fixed-pinned: δ = 7PL³/(768EI), moment at the fixed end 3PL/16 (Roark 1c). Also
+  Mecway 34 (own solver) on the same model; (c) middle node: rotation 0, as in Mecway.
+  Mecway does not solve (e) (line3 only with CCX, the joint not with CCX).
+- **Result**: all checks exact (< 1e-9) against theory and against Mecway. A modal
+  analysis of (a) with density also gives the same frequencies as Mecway
+  (57.887 / 92.089 / 253.905 Hz); Code-Aster solves model (c) modally, Mecway does not.
+- **Interpretation**: the local axes and the choice of free rotations agree with Mecway;
+  (b) and (f) would fail with swapped axes. If the node has no other element with
+  rotations (c, d), it gets a POI1 `DIS_TR` without stiffness and the remaining
+  rotation(s) set to 0 (unless a constraint fixes them, d). A fixed constraint on an
+  *element selection* containing the element with the joint stops with `FACTOR_11`
+  (KNOWN_BUGS 106); put it on nodes or faces.
+
 ### Conclusion linear static
 
 All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,

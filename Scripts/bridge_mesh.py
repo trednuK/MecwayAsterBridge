@@ -77,6 +77,20 @@ _ASTER_TYPES = {
     "hex8":    ("HEXA8",   list(range(8))),
     "hex20":   ("HEXA20",  list(range(20))),
 }
+# Modelisaties waarvoor een line3-element in twee SEG2-cellen wordt
+# gesplitst. POU_D_E bestaat alleen op SEG2 (catalogus
+# phenomenons_modelisations.py, zie bridge_from_liml STAP 2b); voor POU_D_T
+# aangenomen (NIET geverifieerd), een kwadratisch balkelement kent de bridge
+# in Code-Aster niet. Twee Euler-cellen interpoleren elk kubisch, dus
+# minstens zo goed als een kwadratische balk (Mecway's line3-balk rekent
+# alleen met CCX, B32R; verificatie LS-50). Met POU_D_T gerekend: LS-51e
+# +0,09 % (afschuiving), Code-Aster 17.4.
+# De middenknoop wordt een gewone knoop met 6 vrijheidsgraden.
+_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T")
+# Groep van de POI1-cellen (DIS_TR, stijfheid 0) op knopen van een flexible
+# joint zonder ander element met rotaties (_flexible_joints)
+JOINT_GROUP = "BRJOINT"
+
 _N_CORNERS = {"SEG2": 2, "SEG3": 2, "TRIA3": 3, "TRIA6": 3, "QUAD4": 4,
               "QUAD8": 4, "TETRA4": 4, "TETRA10": 4, "PYRAM5": 5,
               "PYRAM13": 5, "PENTA6": 6, "PENTA15": 6, "HEXA8": 8,
@@ -212,6 +226,21 @@ def _inv3(a):
             a[(r + 1) % 3][(c + 2) % 3] * a[(r + 2) % 3][(c + 1) % 3]
             for r in range(3)] for c in range(3)]
     return [[cof[r][c] / det for c in range(3)] for r in range(3)]
+
+
+def _cell_names(eid, split):
+    """Namen van de mesh-cellen van Mecway-element eid: M<eid>, en voor een
+    gesplitste line3-balk ook H<eid> (tweede helft). Celnamen in het
+    ASTER-formaat hebben max. 8 tekens: eid tot 9999999."""
+    if split:
+        return ["M{0}".format(eid), "H{0}".format(eid)]
+    return ["M{0}".format(eid)]
+
+
+def cell_names_of(model_data, eid):
+    """Celnamen van Mecway-element eid na write_mesh (zie _cell_names);
+    voor andere modules (bridge_to_aster, DEFI_GROUP MAILLE)."""
+    return _cell_names(eid, eid in model_data.get("line3_split", ()))
 
 
 def _mecway_v_axis(p1, p2, orient):
@@ -410,6 +439,222 @@ _DIRICHLET_BCS = frozenset(["fixed", "pinnedsupport", "displacement",
                             "compressiononly", "elasticsupport"])
 
 
+# Modelisaties met rotatievrijheidsgraden in de knopen (_flexible_joints)
+_ROT_MODS = frozenset(["POU_D_E", "POU_D_T", "POU_D_TG", "DKT", "DST",
+                       "COQUE_3D", "DIS_TR"])
+_ROT_DOFS = ("DRX", "DRY", "DRZ")
+
+
+def _selection_nodes(model_data, sel, conn, face_group_nodes):
+    """Knopen van een Mecway-selectie (knopen, balkvlakken, elementen)."""
+    ids = model_data.get("node_groups", {}).get(sel)
+    if ids is not None:
+        return set(int(str(i).lstrip("N")) for i in ids)
+    if sel in face_group_nodes:
+        return set(face_group_nodes[sel])
+    eids = model_data.get("element_selections", {}).get(sel)
+    if eids is not None:
+        return set(n for e in eids if e in conn for n in conn[e][1])
+    return set()
+
+
+def _complement(axes):
+    """Orthonormale basis van het complement van de span van axes (3D)."""
+    basis = []
+    for a in list(axes) + [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
+                           (0.0, 0.0, 1.0)]:
+        v = list(a)
+        for b in basis:
+            d = _vdot(v, b)
+            v = [v[i] - d * b[i] for i in range(3)]
+        if _vdot(v, v) > 1.0e-12:
+            basis.append(_vunit(v))
+    return basis[len(_span(axes)):]
+
+
+def _span(axes):
+    """Orthonormale basis van de span van axes."""
+    basis = []
+    for a in axes:
+        v = list(a)
+        for b in basis:
+            d = _vdot(v, b)
+            v = [v[i] - d * b[i] for i in range(3)]
+        if _vdot(v, v) > 1.0e-12:
+            basis.append(_vunit(v))
+    return basis
+
+
+def _rot_terms(nid, axis, sign):
+    """Termen (knoop, DDL, coef) van sign * (rotatie van nid langs axis)."""
+    return [(nid, d, sign * c) for d, c in zip(_ROT_DOFS, axis)
+            if abs(c) > 1.0e-12]
+
+
+def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
+                     cell_refs, split_line3, face_group_nodes, poi_rot,
+                     poi_any):
+    """
+    Flexible joint on beam (Mecway manual v33 par. 9.12; XML in
+    bridge_from_liml._parse_model_item): het uiteinde van een balkelement
+    roteert vrij om de gekozen lokale assen U (balkas), V en W.
+
+    Vertaling: het element krijgt aan dat uiteinde een eigen knoop op
+    dezelfde plaats (nummer na de Mecway-knopen; in het mesh alleen voor die
+    cel, dus by_type krijgt een kopie van de knooplijst, conn blijft de
+    Mecway-knopen houden). Die knoop is met LIAISON_DDL (U4.44.01; via
+    model_data["constraint_equations"], bridge_to_aster._render_mpcs) aan de
+    Mecway-knoop gekoppeld: DX, DY, DZ gelijk en de rotatie langs elke
+    niet-vrije lokale as e gelijk (e . theta_nieuw = e . theta_oud). Lokale
+    assen zoals Mecway (_mecway_v_axis): U langs de (halve) cel, V uit de
+    orientatie, W = U x V (nagelopen met Mecway 34: beam langs X, <rotw />
+    = scharnier om Z).
+
+    Heeft de Mecway-knoop geen ander element met rotaties (alle balken daar
+    hebben een joint, of alleen volume-elementen), dan krijgt hij een POI1
+    DIS_TR met stijfheid 0 (groep JOINT_GROUP) en worden de rotaties langs
+    het complement van de gekoppelde assen op 0 gezet (Mecway toont daar
+    rotatie 0, gezien bij een scharnier met joints aan beide kanten), tenzij
+    een voorwaarde op die knoop al rotaties vastlegt.
+
+    Returns (extra knopen {nid: xyz}, POI1-knopen) of (None, None) zonder
+    joints. Resultaten: de extra knopen vallen weg (aster_results_export
+    leest alleen de Mecway-knopen; hun reactie telt op bij de Mecway-knoop
+    op dezelfde plaats).
+    """
+    joints = model_data.get("flexible_joints") or []
+    if not joints:
+        return None, None
+    mods = model_data.get("elset_modelisations", {})
+    elem_info = dict((eid, (shape, es)) for eid, shape, en, es in elements)
+    faces_by_sel = model_data.get("face_selection_faces", {})
+    free_at = OrderedDict()     # (eid, nid) -> set van vrije assen
+    for j in joints:
+        faces = faces_by_sel.get(j["selection"])
+        if not faces:
+            _not_translated(model_data, {"selection": j["selection"]},
+                            "Flexible joint",
+                            tr("lege of onbekende vlakselectie",
+                               "empty or unknown face selection"))
+            continue
+        for eid, fid in faces:
+            shape, es = elem_info.get(eid, (None, None))
+            fn = list(faces_of(eid, fid)) if eid in conn else []
+            if shape not in _BEAM_SHAPES or len(fn) != 1:
+                _not_translated(
+                    model_data, {"selection": j["selection"]},
+                    "Flexible joint",
+                    tr("vlak {0} van element {1} is geen eindvlak van een "
+                       "balkelement (Mecway: alleen eindvlakken van balken)",
+                       "face {0} of element {1} is not an end face of a beam "
+                       "element (Mecway: beam end faces only)").format(
+                           fid, eid))
+                continue
+            mod = mods.get(es)
+            if mod == "BARRE":
+                log("INFO: Flexible joint op truss-element {0}: een staaf "
+                    "scharniert al.".format(eid))
+                continue
+            if mod not in _LINE3_SPLIT_MODS:
+                _not_translated(
+                    model_data, {"selection": j["selection"]},
+                    "Flexible joint",
+                    tr("element {0} is geen balk (MODELISATION {1})",
+                       "element {0} is not a beam (MODELISATION {1})")
+                    .format(eid, mod))
+                continue
+            free_at.setdefault((eid, fn[0]), set()).update(j["free"])
+    if not free_at:
+        return None, None
+
+    # Elementen per knoop (alle cellen, ook zonder joint)
+    at_node = {}
+    for eid, (atype, cn) in conn.items():
+        for n in cn:
+            at_node.setdefault(n, set()).add(eid)
+    # Rotaties die voorwaarden per knoop vastleggen
+    bc_rot = {}
+    for bc in model_data.get("bcs", []):
+        if bc.get("type") not in _DIRICHLET_BCS or bc.get("skip"):
+            continue
+        rot = _bc_dofs(bc) & set(_ROT_DOFS)
+        if not rot:
+            continue
+        for n in _selection_nodes(model_data, bc.get("selection"), conn,
+                                  face_group_nodes):
+            bc_rot.setdefault(n, set()).update(rot)
+
+    by_node = OrderedDict()
+    for (eid, nid), free in free_at.items():
+        by_node.setdefault(nid, []).append((eid, free))
+    next_nid = max(nodes) + 1
+    new_nodes = OrderedDict()
+    poi_nodes = []
+    eqs = model_data.setdefault("constraint_equations", [])
+    for nid, items in by_node.items():
+        jointed = set(e for e, _f in items)
+        others = at_node.get(nid, set()) - jointed
+        rot_carrier = nid in poi_rot or any(
+            mods.get(elem_info[e][1]) in _ROT_MODS for e in others)
+        tied_axes = []
+        for eid, free in items:
+            dup = next_nid
+            next_nid += 1
+            new_nodes[dup] = nodes[nid]
+            model_data.setdefault("joint_nodes", {})[dup] = nid
+            # Cel met dit uiteinde (bij een gesplitste line3 een helft) en
+            # de lokale assen van die cel
+            cn = conn[eid][1]
+            if eid in split_line3:
+                halves = ((cn[0], cn[2]), (cn[2], cn[1]))
+                k = 0 if nid == cn[0] else 1
+                a, b = halves[k]
+                atype, idx = cell_refs[eid][k]
+            else:
+                a, b = cn[0], cn[1]
+                atype, idx = cell_refs[eid][0]
+            name, cell = by_type[atype][idx]
+            by_type[atype][idx] = (name, [dup if n == nid else n
+                                          for n in cell])
+            u = _vunit(_vsub(nodes[b], nodes[a]))
+            v = _mecway_v_axis(nodes[a], nodes[b],
+                               model_data.get("beam_orientations",
+                                              {}).get(eid))
+            w = _vcross(u, v)
+            for d in ("DX", "DY", "DZ"):
+                eqs.append({"terms": [(dup, d, 1.0), (nid, d, -1.0)],
+                            "constant": 0.0, "source": "flexiblejoint"})
+            fixed = [ax for key, ax in (("u", u), ("v", v), ("w", w))
+                     if key not in free]
+            for ax in fixed:
+                eqs.append({"terms": _rot_terms(dup, ax, 1.0) +
+                            _rot_terms(nid, ax, -1.0),
+                            "constant": 0.0, "source": "flexiblejoint"})
+            tied_axes.extend(fixed)
+            log("INFO: Flexible joint element {0}, knoop N{1}: eigen knoop "
+                "N{2}, vrij om {3} (U={4}, V={5}).".format(
+                    eid, nid, dup, "/".join(sorted(f.upper() for f in free)),
+                    tuple(round(c, 6) for c in u),
+                    tuple(round(c, 6) for c in v)))
+        if rot_carrier:
+            continue
+        # Geen ander element met rotaties: knoop N<nid> krijgt een POI1
+        # DIS_TR (anders heeft hij geen rotaties, of zelfs geen
+        # vrijheidsgraden als alleen balken met een joint er zitten)
+        if not tied_axes and (others or nid in poi_any):
+            continue        # geen rotaties nodig, wel vrijheidsgraden
+        poi_nodes.append(nid)
+        if bc_rot.get(nid):
+            continue
+        for ax in _complement(tied_axes):
+            eqs.append({"terms": _rot_terms(nid, ax, 1.0), "constant": 0.0,
+                        "source": "flexiblejoint"})
+    log("INFO: Flexible joint: {0} balkuiteinde(n) met een eigen knoop "
+        "(LIAISON_DDL), {1} knoop/knopen met een POI1 DIS_TR.".format(
+            len(new_nodes), len(poi_nodes)))
+    return new_nodes, poi_nodes
+
+
 def _referenced_names(model_data):
     """Namen van selecties die een voorwaarde, belasting, contact of
     koppeling gebruikt (alle tekstwaarden van die dicts, een niveau diep)."""
@@ -535,6 +780,11 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     conn = {}          # eid -> (aster_type, [nid ...])
     by_type = OrderedDict()
     elset_members = OrderedDict()
+    # Cellen per element: {eid: [(aster_type, index in by_type[type])]};
+    # een line3-balk heeft er twee (_LINE3_SPLIT_MODS)
+    cell_refs = {}
+    elset_mods = model_data.get("elset_modelisations", {})
+    n_split = 0
     for eid, shape, enodes, elset in elements:
         spec = _ASTER_TYPES.get(shape)
         if spec is None:
@@ -551,8 +801,29 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             return False
         cn = [enodes[i] for i in order]
         conn[eid] = (atype, cn)
-        by_type.setdefault(atype, []).append(("M{0}".format(eid), cn))
+        if shape == "line3" and elset_mods.get(elset) in _LINE3_SPLIT_MODS:
+            # Kwadratische balk -> twee SEG2-cellen M<eid> (eerste knoop -
+            # middenknoop) en H<eid> (middenknoop - tweede knoop): de
+            # balkelementen van Code-Aster bestaan alleen op SEG2 (zie
+            # _LINE3_SPLIT_MODS). conn houdt de Mecway-vorm (SEG3) voor de
+            # geometrie (vlakken, lengtes); de resultaten gaan per knoop
+            # terug, dus ook op de middenknoop.
+            n_split += 1
+            for name, part in zip(_cell_names(eid, True),
+                                  ([cn[0], cn[2]], [cn[2], cn[1]])):
+                items = by_type.setdefault("SEG2", [])
+                cell_refs.setdefault(eid, []).append(("SEG2", len(items)))
+                items.append((name, part))
+                elset_members.setdefault(elset, []).append(name)
+            continue
+        items = by_type.setdefault(atype, [])
+        cell_refs[eid] = [(atype, len(items))]
+        items.append(("M{0}".format(eid), cn))
         elset_members.setdefault(elset, []).append("M{0}".format(eid))
+    if n_split:
+        log("INFO: {0} line3-balkelement(en) gesplitst in twee SEG2-cellen "
+            "(M<eid> en H<eid>).".format(n_split))
+    split_line3 = set(e for e, refs in cell_refs.items() if len(refs) == 2)
 
     # --------------------------------------------------
     # 2. Vlakselecties -> randelementen / schaalelementen / knopen
@@ -838,11 +1109,16 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 if es != elset or shape not in _BEAM_SHAPES:
                     continue
                 cn = conn[eid][1]
-                v = _mecway_v_axis(nodes[cn[0]], nodes[cn[1]],
-                                   orient.get(eid))
-                key = tuple(round(c, 9) for c in v)
-                subgroups.setdefault(key, [v, []])[1].append(
-                    "M{0}".format(eid))
+                if eid in split_line3:
+                    # per helft (rechte SEG2): V loodrecht op die helft
+                    parts = zip(_cell_names(eid, True),
+                                ((cn[0], cn[2]), (cn[2], cn[1])))
+                else:
+                    parts = [("M{0}".format(eid), (cn[0], cn[1]))]
+                for name, (a, b) in parts:
+                    v = _mecway_v_axis(nodes[a], nodes[b], orient.get(eid))
+                    key = tuple(round(c, 9) for c in v)
+                    subgroups.setdefault(key, [v, []])[1].append(name)
             for v, members in subgroups.values():
                 sub = "BOR{0:05d}".format(len(beam_groups) + 1)
                 beam_groups[sub] = members
@@ -864,10 +1140,31 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         d["members"] = names
 
     # --------------------------------------------------
+    # 4c. Flexible joints: eigen knoop per balkuiteinde + LIAISON_DDL
+    # --------------------------------------------------
+    poi_rot = set(poi1_nodes[POI1_GROUP_R])
+    poi_any = set(poi1_nodes[POI1_GROUP_T]) | poi_rot
+    for d in discretes.values():
+        poi_any.update(d["nodes"])
+        if d.get("mod") == "DIS_TR":
+            poi_rot.update(d["nodes"])
+    joint_nodes, joint_poi = _flexible_joints(
+        model_data, nodes, conn, elements, faces_of, by_type, cell_refs,
+        split_line3, face_group_nodes, poi_rot, poi_any)
+    joint_nodes = joint_nodes or OrderedDict()
+    if joint_poi:
+        names = []
+        for nid in joint_poi:
+            names.append("J{0}".format(nid))
+            by_type.setdefault("POI1", []).append((names[-1], [nid]))
+        poi1_members[JOINT_GROUP] = names
+        poi1_groups[JOINT_GROUP] = "DIS_TR"
+
+    # --------------------------------------------------
     # 5. Namen
     # --------------------------------------------------
     reserved = (["all_elems", "all_nodes", POI1_GROUP_T, POI1_GROUP_R,
-                 ERR_FREE_GROUP] +
+                 ERR_FREE_GROUP, JOINT_GROUP] +
                 list(beam_groups.keys()) + list(discretes.keys()) +
                 list(vibro_members.keys()) + list(crack_members.keys()))
     renames = _aster_names(
@@ -895,7 +1192,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     for name, members in face_groups.items():
         group_ma[rn(name)] = members
     for name, eids in model_data.get("element_selections", {}).items():
-        members = ["M{0}".format(e) for e in eids if e in conn]
+        members = [c for e in eids if e in conn
+                   for c in _cell_names(e, e in split_line3)]
         if members:
             group_ma[rn(name)] = members
     for name, members in poi1_members.items():
@@ -934,6 +1232,11 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             # 15 significante cijfers: de regel blijft onder 80 tekens.
             out.append(" N{0} {1}".format(nid, " ".join(
                 _real(c) for c in nodes[nid])))
+        # Extra knopen van flexible joints na de Mecway-knopen (de
+        # resultaten worden op knoopindex teruggelezen)
+        for nid, xyz in joint_nodes.items():
+            out.append(" N{0} {1}".format(nid, " ".join(
+                _real(c) for c in xyz)))
         out.append("FINSF")
         # Celnaam per Code-Aster-celnummer (0-based, volgorde in het
         # bestand); bridge_failure vertaalt er bezweken cellen mee naar
@@ -979,6 +1282,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         rn(n) for n in face_group_nodes if rn(n) not in group_ma)
     model_data["discretes"] = discretes
     model_data["_conn"] = conn
+    # Gesplitste line3-balken (cellen M<eid> en H<eid>, cell_names_of);
+    # extra knopen van flexible joints: model_data["joint_nodes"]
+    model_data["line3_split"] = split_line3
     model_data["_elem_elset"] = dict((eid, rn_es(es))
                                      for eid, shape, en, es in elements)
     model_data["group_face_list"] = OrderedDict(

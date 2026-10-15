@@ -76,7 +76,7 @@ ignored with only an INFO, as Mecway itself does.
 | Constraint equation | Yes | KB27. Explicit: a constant ≠ 0 becomes an imposed motion (DY-20b; Mecway itself does not allow it there). |
 | Node-surface coupling, Rigid (RBE2) | Yes | `LIAISON_SOLIDE`; large rotations: KB11. Not in thermal (reported). |
 | Node-surface coupling, Distributing (RBE3) | Yes | `LIAISON_RBE3`. Not in thermal (reported). |
-| Flexible joint on beam | No | Alternative: two coincident nodes with constraint equations on only the degrees of freedom that must be shared (NOT verified). |
+| Flexible joint on beam | Yes | Free rotation about U, V and/or W (local beam axes as in Mecway) at a beam end: the element gets its own node there, coupled with `LIAISON_DDL` (translations and the rotations that are not free). Mecway has no stiffness in the joint, only free or fixed. Also on line3 beams and in Frequency, dynamics and buckling. Verification LS-51 (equal to Mecway). A constraint on an *element selection* that contains the element with the joint: see KB106. |
 | Contact, Unilateral (faces of solids and shell faces) | Yes | Nonlinear only, as in Mecway. Formulation and friction: KB43; shared slave nodes: KB10. |
 | Contact, Unilateral, *Self contact* | No | Reported. Make two separate face selections. |
 | Contact, Unilateral, on shell edges or beams | No | Reported. |
@@ -108,7 +108,7 @@ Bonded contact per combination (slave on master):
 | tri6, quad8 (shell) | Yes | `COQUE_3D` | As master of bonded contact: displacements with `LIAISON_DDL`, rotations with `LIAISON_MAIL` (LS-07i..k). |
 | linear and quadratic shells in one component | Partly | – | The quadratic ones are not modelled (ERROR). Split the component. |
 | beam line2 | Yes | `POU_D_E` (or `POU_D_T`) | Orientation from *Element properties*. No plasticity (KB6), no large rotations (KB11). |
-| beam line3 | No | – | Not modelled (ERROR). Use line2. |
+| beam line3 | Yes | `POU_D_E` (or `POU_D_T`) | Each element is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results on all three nodes. Mecway itself solves line3 beams only with CCX. Verification LS-50. Truss, spring, gap, damper and tension-only on line3: No (ERROR; line2 only in Mecway). |
 | truss line2 | Yes | `BARRE` | Small displacements (KB40). Beams and trusses in one component become two groups (`<name>_TRUSS`). |
 | spring, damper, gap (line2) | Yes | `DIS_T` (gap: `DIS_CHOC`) | Along the element's own axis. Gap nonlinear only (KB23); springs/dampers not compared with Mecway (KB47). |
 | tension only (line2, truss) | Partly | `CABLE` | Nonlinear only; compressive stiffness 1e-4 E (KB23). |

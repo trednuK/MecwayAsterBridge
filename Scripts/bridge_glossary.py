@@ -974,10 +974,12 @@ SETTING_HELP = {
                    u"DKT (dunne plaat, Kirchhoff).",
                    u"Which shell element for tri3/quad4 shells. Default DKT "
                    u"(thin plate, Kirchhoff)."),
-    "elem_beam": (u"Welk balkelement voor line2-balken. Standaard POU_D_E "
-                  u"(Euler-Bernoulli, zoals Mecway).",
-                  u"Which beam element for line2 beams. Default POU_D_E "
-                  u"(Euler-Bernoulli, like Mecway)."),
+    "elem_beam": (u"Welk balkelement voor line2- en line3-balken (line3 "
+                  u"wordt in de middenknoop in twee SEG2-cellen gesplitst). "
+                  u"Standaard POU_D_E (Euler-Bernoulli, zoals Mecway).",
+                  u"Which beam element for line2 and line3 beams (line3 is "
+                  u"split at its midside node into two SEG2 cells). Default "
+                  u"POU_D_E (Euler-Bernoulli, like Mecway)."),
     "fields": (u"Welke resultaten naar Mecway gaan (minder velden = kleiner "
                u"bestand). Modaal: stresses/vonmises geven spanningen per "
                u"mode, alleen relatief betekenisvol (genormeerde vormen). "

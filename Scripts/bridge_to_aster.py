@@ -642,14 +642,17 @@ def _build_defigroup_block(model_data):
     for name, eids in model_data.get("extra_ma_groups", {}).items():
         refs = []
         for e in eids:
-            pos = cell_pos.get("M{0}".format(e)) if cell_pos else e
-            if pos is None:
-                log(tr("ERROR: Element {0} van groep '{1}' staat niet in het "
-                       "mesh; de groep is onvolledig.",
-                       "ERROR: Element {0} of group '{1}' is not in the "
-                       "mesh; the group is incomplete.").format(e, name))
-                continue
-            refs.append("'M{0}'".format(pos))
+            # Een gesplitste line3-balk heeft twee cellen (M<e> en H<e>,
+            # bridge_mesh.cell_names_of)
+            for cname in bridge_mesh.cell_names_of(model_data, e):
+                pos = cell_pos.get(cname) if cell_pos else e
+                if pos is None:
+                    log(tr("ERROR: Element {0} van groep '{1}' staat niet in "
+                           "het mesh; de groep is onvolledig.",
+                           "ERROR: Element {0} of group '{1}' is not in the "
+                           "mesh; the group is incomplete.").format(e, name))
+                    continue
+                refs.append("'M{0}'".format(pos))
         copy_entries.append("        _F(NOM='{0}', MAILLE={1}),".format(
             name, _fmt_seq(refs, indent="            ")))
 

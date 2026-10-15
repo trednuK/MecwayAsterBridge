@@ -1,0 +1,35 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.125" y="0" z="0" />
+  <node nid="3" x="0.25" y="0" z="0" />
+  <node nid="4" x="0.375" y="0" z="0" />
+  <node nid="5" x="0.5" y="0" z="0" />
+  <node nid="6" x="0.625" y="0" z="0" />
+  <node nid="7" x="0.75" y="0" z="0" />
+  <node nid="8" x="0.875" y="0" z="0" />
+  <node nid="9" x="1" y="0" z="0" />
+  <elset name="Balk" material="Rond20">
+    <elem eid="1" shape="line3" nodes="1 2 3" />
+    <elem eid="2" shape="line3" nodes="3 4 5" />
+    <elem eid="3" shape="line3" nodes="5 6 7" />
+    <elem eid="4" shape="line3" nodes="7 8 9" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <force selection="Midden"><x>0 N</x><y>-100 N</y><z>0 N</z></force>
+  <flexiblejoint selection="Joint"><rotw /></flexiblejoint>
+  <mat name="Rond20">
+    <geometric type="CircularBar" roundod="20 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+    <node nid="9" />
+  </nodeselection>
+  <nodeselection name="Midden">
+    <node nid="5" />
+  </nodeselection>
+  <faceselection name="Joint">
+    <face eid="3" faceid="2" />
+  </faceselection>
+</liml>

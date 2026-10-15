@@ -76,7 +76,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Constraint equation | Ja | KB27. Expliciet: een constante ≠ 0 wordt een opgelegde beweging (DY-20b; Mecway zelf staat haar dan niet toe). |
 | Node-surface coupling, Rigid (RBE2) | Ja | `LIAISON_SOLIDE`; grote rotaties: KB11. Niet in thermisch (gemeld). |
 | Node-surface coupling, Distributing (RBE3) | Ja | `LIAISON_RBE3`. Niet in thermisch (gemeld). |
-| Flexible joint on beam | Nee | Alternatief: twee samenvallende knopen met constraint equations op alleen de vrijheidsgraden die moeten meedoen (NIET geverifieerd). |
+| Flexible joint on beam | Ja | Vrije rotatie om U, V en/of W (lokale balkassen zoals Mecway) aan een balkuiteinde: het element krijgt daar een eigen knoop, met `LIAISON_DDL` gekoppeld (translaties en de niet-vrije rotaties). Mecway kent geen stijfheid in de joint, alleen vrij of vast. Ook op line3-balken en in Frequency, dynamica en knik. Verificatie LS-51 (gelijk aan Mecway). Een voorwaarde op een *elementselectie* met het element met de joint: zie KB106. |
 | Contact, Unilateral (vlakken van volumes en schaalvlakken) | Ja | Alleen niet-lineair, zoals in Mecway. Formulering en wrijving: KB43; gedeelde slave-knopen: KB10. |
 | Contact, Unilateral, *Self contact* | Nee | Gemeld. Maak twee aparte vlakselecties. |
 | Contact, Unilateral, op schaalranden of balken | Nee | Gemeld. |
@@ -108,7 +108,7 @@ Verlijmd contact per combinatie (slave op master):
 | tri6, quad8 (schaal) | Ja | `COQUE_3D` | Als master van verlijmd contact: translaties met `LIAISON_DDL`, rotaties met `LIAISON_MAIL` (LS-07i..k). |
 | lineaire en kwadratische schalen in één component | Deels | – | De kwadratische worden niet gemodelleerd (ERROR). Splits de component. |
 | beam line2 | Ja | `POU_D_E` (of `POU_D_T`) | Oriëntatie uit *Element properties*. Geen plasticiteit (KB6), geen grote rotaties (KB11). |
-| beam line3 | Nee | – | Niet gemodelleerd (ERROR). Gebruik line2. |
+| beam line3 | Ja | `POU_D_E` (of `POU_D_T`) | Elk element wordt in de middenknoop in twee SEG2-cellen gesplitst (Code-Aster heeft geen kwadratische balk); resultaten op alle drie de knopen. Mecway rekent line3-balken zelf alleen met CCX. Verificatie LS-50. Truss, veer, gap, demper en tension-only op line3: Nee (ERROR; in Mecway alleen line2). |
 | truss line2 | Ja | `BARRE` | Kleine verplaatsingen (KB40). Balken en trusses in één component worden twee groepen (`<naam>_TRUSS`). |
 | spring, damper, gap (line2) | Ja | `DIS_T` (gap: `DIS_CHOC`) | Langs de eigen as. Gap alleen niet-lineair (KB23); veren/dempers niet tegen Mecway vergeleken (KB47). |
 | tension only (line2, truss) | Deels | `CABLE` | Alleen niet-lineair; drukstijfheid 1e-4 E (KB23). |

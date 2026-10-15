@@ -154,7 +154,7 @@ zelf *Harmonische respons* (`harmonic_3d`) voor een *Frequency*- of
 |---|---|---|
 | Hex8-volume-elementen | `3D` | `3D`: volledig geïntegreerd; stijver dan Mecway's hex8 met incompatibele modes (KNOWN_BUGS 1; de bridge geeft een WARNING). `3D_SI`: onderintegratie, alleen voor elsets met uitsluitend hex8 en niet expliciet; met één element over de dikte ~0 buigspanning. `LINE_QUAD`: Code-Aster maakt alle lineaire volume-elementen kwadratisch (hex8 → hex20, tet4 → tet10, ~3x zoveel knopen); alleen als verder niets lineair blijft (geen balken, veren, DKT-schalen), het model geen kwadratische volume-elementen heeft en niet expliciet; anders blijft het `3D` met een WARNING. Resultaten op de hoekknopen |
 | Lineaire schalen (tri3/quad4) | `DKT` | `DKT` (Kirchhoff, dun), `DST` (met dwarskrachtvervorming; alleen in de statische analyse, anders DKT met een WARNING) of `COQUE_3D`: de schalen worden eerst kwadratisch (quad9/tria7, met rotatie om de normaal); delen ze knopen met elementen die lineair blijven, of zijn ze master van verlijmd contact, dan DKT (KNOWN_BUGS 2). Kwadratische schalen (tri6/quad8) zijn altijd `COQUE_3D` |
-| Balken (line2) | `POU_D_E` | `POU_D_E` (Euler-Bernoulli, zoals Mecway) of `POU_D_T` (Timoshenko, met afschuifvervorming) |
+| Balken (line2/line3) | `POU_D_E` | `POU_D_E` (Euler-Bernoulli, zoals Mecway) of `POU_D_T` (Timoshenko, met afschuifvervorming). Een line3-balk wordt in de middenknoop in twee SEG2-cellen gesplitst (Code-Aster heeft geen kwadratische balk); de resultaten komen op alle drie de knopen terug |
 
 **Een pagina per analyse**: Statisch, Niet-lineair statisch, Dynamisch (impliciet),
 Dynamisch (expliciet), Thermisch, Modaal, Respons op modale basis, Harmonische

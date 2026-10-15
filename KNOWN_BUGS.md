@@ -354,6 +354,30 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    van de referentie op t = 0, NIET geverifieerd in DYNA_NON_LINE), in D30
    `temperature2` net als `temperature3` melden en weglaten.
 
+106\. **Flexible joint: voorwaarde op een elementselectie, grote rotaties**
+   (bevestigd resp. vermoedelijk, `bridge_mesh._flexible_joints`). Het balkuiteinde met
+   een joint krijgt een eigen knoop op dezelfde plaats, met `LIAISON_DDL` aan de
+   Mecway-knoop gekoppeld (verificatie LS-51, gelijk aan Mecway). (a) Een vaste
+   voorwaarde (fixed, displacement, ...) op een *elementselectie* of component die het
+   element met de joint bevat, legt in Code-Aster (`GROUP_MA`) ook die eigen knoop vast;
+   samen met de koppeling is dat dubbel en Code-Aster stopt met `FACTOR_11` (gezien in
+   een run: fixed op de eindelementen, joint op een eindvlak). Leg de voorwaarde op
+   knopen of vlakken (dan alleen op de Mecway-knoop, zoals Mecway). Oplossing (NIET
+   geverifieerd): de eigen knopen als `SANS_GROUP_NO` bij voorwaarden op `GROUP_MA`.
+   (b) De koppeling van de rotaties ligt vast in de lokale assen van het onvervormde
+   element: bij grote rotaties (`GROT_GDEP`) draaien de assen niet mee (niet
+   gereproduceerd; Mecway kent de joint niet in Nonlinear Static, manual v33 par. 9.12).
+
+107\. **Line3-balken: twee rechte SEG2-cellen** (bevestigd, keuze;
+   `bridge_mesh.write_mesh`). Code-Aster heeft geen kwadratisch balkelement; elk
+   line3-element wordt in de middenknoop gesplitst. Een gekromd line3-element (middenknoop
+   niet op de koorde) wordt zo een knik van twee rechte stukken, met per helft een eigen
+   oriëntatie; Mecway (alleen met CCX, B32R) rekent de gekromde vorm. Voor een rechte
+   balk exact (verificatie LS-50). Mecway's CCX-uitkomst zelf ligt 2–3 % onder de
+   Euler-theorie (B32R uitgezet als één C3D20R over de doorsnede; dezelfde balk met line2
+   in Mecway's eigen solver is exact); een ronde staaf (SECTION=PIPE met binnenstraal 0)
+   rekent CCX daar niet ("nonpositive jacobian").
+
 ## Open vragen (gedrag van Mecway niet nagegaan)
 
 27\. **Niet geverifieerd in een .liml** (vraag). Constraint equation: `constant`
@@ -402,13 +426,14 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    zijn fixed, pinnedsupport, frictionless, displacement, noderotation, velocity
    (dynamica), force, moment, surfacepressure, gravity, traction, linepressure,
    hydrostaticpressure, elasticsupport, compressiononly, symmetry, centrifugal,
-   mass2, rotationalinertia, constraintequation, rayleighdamping, temperature2 met
+   mass2, rotationalinertia, constraintequation, flexiblejoint, rayleighdamping,
+   temperature2 met
    thermalstress, nodesurfacecoupling (rbe3/rigidbody), contact2 (unilateraal en
    verlijmd, geen self-contact), materialen Gap/Damper/TensionOnly en een
    beginsnelheid; OpenRadioss-materiaal PLAS_TAB (`bridge_radioss.py`); in de
    akoestiek fluidpressure 0 (`bridge_acoustic.py`, punt 55). Andere tags
    met een selectie (self-contact, cyclic symmetry buiten een modale analyse (punt
-   61), pre-tension, flexible joint, ...),
+   61), pre-tension, ...),
    OpenRadioss-kaarten behalve /FUNCT (o.a. /RBODY, /BCS, /IMPDISP), andere
    OpenRadioss-wetten en VOID-materialen komen in `model_data["skipped_loads"]`.
    Via `#ASTER`-regels kan de gebruiker zelf Code-Aster-commando's toevoegen.

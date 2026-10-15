@@ -416,6 +416,59 @@ opeenvolgende meshes.
   IronPython: `pick_configuration` + `splice_results` zetten de resultaten in de
   solution van de gekozen configuratie en laten die van de andere staan.
 
+### LS-50 Ingeklemde balk met line3-elementen
+
+- **Doel**: kwadratische balkelementen (line3). Code-Aster heeft geen kwadratisch
+  balkelement; de bridge splitst elk line3-element in de middenknoop in twee SEG2-cellen
+  (`POU_D_E`), met de oriëntatie per helft (KNOWN_BUGS 107). Module `tests_balken.py`.
+- **Model**: L = 1 m, 5 line3-elementen langs X, rechthoekige staaf (RectBar);
+  (a, b) 20 × 20 mm, (c) 20 × 10 mm met oriëntatievector (0, 0, 1) per element (V = Z).
+- **Randvoorwaarden en belasting**: ingeklemd in x = 0; (a) P = 100 N in −Z op de tip;
+  (b) line pressure q = 100 N/m in −Z op een elementselectie met alle elementen
+  (`FORCE_POUTRE`); (c) P = 100 N in −Y op de tip (buiging om V, I = a b³/12).
+- **Referentie**: Euler-balk (Roark tabel 8.1 gevallen 1a en 2a): δ = PL³/(3EI),
+  φ = PL²/(2EI), w(x) op de middenknoop x = 0,1 m, δ = qL⁴/(8EI); reactie = evenwicht.
+  Daarnaast Mecway 34 headless: (1) dezelfde balk met 10 line2-elementen op dezelfde
+  knopen in Mecway's eigen solver (die kent geen line3-balk; tolerantie 0,1 %) en (2) het
+  line3-model met CCX (B32R; tolerantie 4 %, zie interpretatie).
+- **Resultaat**: alle grootheden exact (< 1e-6) t.o.v. Euler en t.o.v. Mecway met line2;
+  ook de middenknopen. Mecway/CCX: −2,3 % (a), −3,0 % (b), −3,2 % (c).
+- **Interpretatie**: twee Euler-cellen per element zijn exact voor een eindlast en een
+  gelijkmatige last; de middenknoop krijgt gewone resultaten. De oriëntatievector werkt
+  per helft (zonder zou (c) vier keer zo stijf zijn). CCX zet de B32R uit in een C3D20R per
+  element (één element over de doorsnede) en is daardoor 2–3 % stijver dan de theorie;
+  dat is een eigenschap van CCX. Een ronde staaf rekent Mecway/CCX niet (Mecway schrijft
+  `SECTION=PIPE` met binnenstraal 0, CCX: "nonpositive jacobian"), daarom een rechthoek.
+
+### LS-51 Flexible joint on beam
+
+- **Doel**: Mecway's *Flexible joint on beam* (`<flexiblejoint><rotu/><rotv/><rotw/>`,
+  manual v33 par. 9.12): het uiteinde van een balkelement roteert vrij om de gekozen
+  lokale assen. Vertaling: een eigen knoop voor dat uiteinde, met `LIAISON_DDL` aan de
+  Mecway-knoop gekoppeld (translaties en de niet-vrije rotaties, in de lokale assen
+  zoals Mecway: U langs de balk, V uit de oriëntatie, W = U × V).
+- **Model**: L = 1 m, Ø 20 mm, 10 line2 (e: 4 line3), beide uiteinden ingeklemd, P = 100 N
+  in het midden; joint op het eindvlak van het element rechts van het midden.
+  (a) balk langs X, last −Y, joint om W (= Z); (b) idem, joint om V (= Y); (c) joint om W
+  aan beide kanten van de middenknoop; (d) joint om U, V en W op het ingeklemde eindvlak
+  bij x = L; (e) als (a) met line3-elementen; (f) balk langs Z, last +X, joint om V
+  (Mecway: V = Y bij een verticale balk; buiging om Y).
+- **Referentie**: (a, c, e, f) twee ingeklemde balken L/2 met P/2 aan de tip:
+  δ = PL³/(48EI), rotatie links van het scharnier PL²/(16EI); (b) geen effect,
+  δ = PL³/(192EI) (Roark 1d); (d) ingeklemd-scharnierend: δ = 7PL³/(768EI), moment in de
+  inklemming 3PL/16 (Roark 1c). Daarnaast Mecway 34 (eigen solver) op hetzelfde model;
+  (c) middenknoop: rotatie 0, zoals Mecway. Mecway rekent (e) niet (line3 alleen met
+  CCX, de joint niet met CCX).
+- **Resultaat**: alle controles exact (< 1e-9) t.o.v. de theorie en t.o.v. Mecway. Ook
+  een modale analyse van (a) met dichtheid geeft dezelfde frequenties als Mecway
+  (57,887 / 92,089 / 253,905 Hz); model (c) modaal rekent Code-Aster wel, Mecway niet.
+- **Interpretatie**: de lokale assen en de keuze van de vrije rotaties komen overeen met
+  Mecway; (b) en (f) zouden met verwisselde assen fout gaan. Heeft de knoop geen ander
+  element met rotaties (c, d), dan krijgt hij een POI1 `DIS_TR` zonder stijfheid en de
+  overgebleven rotatie(s) op 0 (tenzij een voorwaarde ze vastlegt, d). Een vaste
+  voorwaarde op een *elementselectie* met het element met de joint stopt met `FACTOR_11`
+  (KNOWN_BUGS 106); leg hem op knopen of vlakken.
+
 ### Conclusie lineair statisch
 
 Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is

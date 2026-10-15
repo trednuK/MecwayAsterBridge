@@ -1,0 +1,305 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+"""
+Balken: kwadratische balkelementen (line3, LS-50) en Mecway's *Flexible
+joint on beam* (LS-51). Mecway S30 -> MECA_STATIQUE. Referenties: Euler-
+balktheorie (Roark's Formulas for Stress and Strain, 7e druk, tabel 8.1) en
+Mecway 34 (headless, TestFiles/Tools/mw_solve.py): line3 met CCX (Mecway's
+eigen solver kent geen line3-balk, manual v33 par. 7.5), flexible joint met
+de eigen solver (CCX kent hem niet, manual par. 9.12). Toelichting:
+docs/Verificatie.md par. 4 (LS-50, LS-51).
+"""
+import math
+from verif_lib import Case, Check, Model, linemesh
+
+GROUP = "Lineair statisch"
+E = 210e9
+STEEL = ('<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+         'poissonratio="0.3" />')
+ROND = '<geometric type="CircularBar" roundod="20 mm" />'
+# Mecway 34 headless (TestFiles/Tools/mw_solve.py), doorbuiging in m:
+# - LS-50, eigen solver, hetzelfde model met 10 line2 op dezelfde knopen
+#   (de eigen solver kent geen line3-balk): MW50x;
+# - LS-50, CCX op het line3-model (B32R, als C3D20R uitgezet; gemiddelde
+#   over de knopen van de doorsnede): MW50x_CCX;
+# - LS-51, eigen solver op hetzelfde model: MW51x.
+MW50A, MW50B, MW50C = 1.190476e-02, 4.464286e-03, 9.523810e-02
+MW50A_CCX, MW50B_CCX, MW50C_CCX = 1.163280e-02, 4.329228e-03, 9.214860e-02
+MW51A = MW51C = MW51F = 1.263134e-03
+MW51B, MW51D = 3.157836e-04, 5.526213e-04
+D = 0.020
+I = math.pi * D ** 4 / 64.0
+L = 1.0
+
+
+def line3mesh(m, elset, n, p0, p1, attrs=""):
+    """n line3-elementen van p0 naar p1 (Mecway-volgorde: eind, midden,
+    eind; bridge_mesh._ASTER_TYPES). Returns (eids, nids) met nids langs
+    de lijn (2n + 1)."""
+    nids = [m.node(*[p0[d] + (p1[d] - p0[d]) * i / (2.0 * n)
+                     for d in range(3)]) for i in range(2 * n + 1)]
+    eids = [m.elem(elset, "line3", [nids[2 * i], nids[2 * i + 1],
+                                    nids[2 * i + 2]], attrs)
+            for i in range(n)]
+    return eids, nids
+
+
+# ------------------------------------------------------------------
+# LS-50 Ingeklemde balk met line3-elementen
+# ------------------------------------------------------------------
+# 5 line3 (de bridge splitst elk in twee SEG2-cellen, POU_D_E), L = 1 m,
+# rechthoekige staaf (RectBar) a x b: a langs V, b langs W (bridge_from_liml,
+# profielen). (a, b) vierkant 20 x 20 mm: (a) eindlast P = 100 N in -Z;
+# (b) gelijkmatige line pressure q = 100 N/m in -Z op alle elementen
+# (elementselectie, FORCE_POUTRE). (c) 20 x 10 mm met orientatievector
+# (0, 0, 1) per element (V = Z, a staat verticaal), eindlast P in -Y:
+# buiging om V, I = a b^3/12 (zonder orientatie zou V = Y zijn en I vier
+# keer zo groot).
+# Euler: eindlast w(x) = P x^2 (3L - x) / (6EI), phi(L) = PL^2/(2EI);
+# verdeeld w(L) = qL^4/(8EI), w(x) = q x^2 (6L^2 - 4Lx + x^2) / (24EI).
+# Twee Euler-cellen per element zijn exact voor beide (de bridge zet een
+# verdeelde last consistent op de knopen, met momenten).
+# Mecway 34 rekent line3-balken alleen met CCX (B32R, als volume-elementen
+# uitgezet; Timoshenko, afschuiving hier 0,03 %). Een ronde staaf kan daar
+# niet: Mecway schrijft SECTION=PIPE met binnenstraal 0 en CCX stopt met
+# "nonpositive jacobian" (CCX 2.23); daarom een rechthoek.
+P50, Q50, N50 = 100.0, 100.0, 5
+X50 = 0.1                      # middenknoop van het eerste element
+A50, B50 = 0.020, 0.020
+I50 = A50 * B50 ** 3 / 12.0
+I50C = 0.020 * 0.010 ** 3 / 12.0
+
+
+def build_ls50(load, solver=None):
+    def build():
+        m = Model("S30", solver=solver)
+        m.elset("Balk", "Staaf")
+        attrs = ('orientationvx="0" orientationvy="0" orientationvz="1"'
+                 if load == "orient" else "")
+        eids, nids = line3mesh(m, "Balk", N50, (0, 0, 0), (L, 0, 0), attrs)
+        m.mat("Staaf", '<geometric type="RectBar" recta="20 mm" '
+              'rectb="%g mm" />' % (10 if load == "orient" else 20), STEEL)
+        m.node_selection("Inklemming", [nids[0]])
+        m.node_selection("Tip", [nids[-1]])
+        m.add('<fixed selection="Inklemming" />')
+        if load == "tip":
+            m.add('<force selection="Tip"><x>0 N</x><y>0 N</y>'
+                  '<z>-%g N</z></force>' % P50)
+        elif load == "orient":
+            m.add('<force selection="Tip"><x>0 N</x><y>-%g N</y>'
+                  '<z>0 N</z></force>' % P50)
+        else:
+            m.element_selection("Alle", eids)
+            m.add('<linepressure selection="Alle"><x>0 N/m</x><y>0 N/m</y>'
+                  '<z>-%g N/m</z></linepressure>' % Q50)
+        return m
+    return build
+
+
+def _w_tip_load(x, inertia=I50):
+    return P50 * x * x * (3 * L - x) / (6 * E * inertia)
+
+
+def _w_uniform(x):
+    return Q50 * x * x * (6 * L * L - 4 * L * x + x * x) / (24 * E * I50)
+
+
+def _mw_line2(name, var, point, ref):
+    """Vergelijking met Mecway 34 (eigen solver) op dezelfde balk met
+    line2-elementen."""
+    return Check("%s t.o.v. Mecway 34, line2" % name,
+                 lambda r: -r.at(var, point), ref=ref, tol=1e-3, unit="m",
+                 source="Mecway 34, eigen solver, 10 line2 (Euler)",
+                 in_series=False)
+
+
+def _mw_ccx(name, var, point, ref):
+    """Vergelijking met Mecway 34 (CCX, B32R) op hetzelfde line3-model.
+    Tolerantie 4 %: CCX zet de B32R uit in een C3D20R per element (een
+    element over de doorsnede); dat is hier 2,3-3,2 % stijver dan de
+    Euler-theorie, terwijl dezelfde balk met line2 in Mecway's eigen solver
+    exact is. De afwijking is van CCX, niet van de bridge."""
+    return Check("%s t.o.v. Mecway 34, CCX" % name,
+                 lambda r: -r.at(var, point), ref=ref, tol=0.04, unit="m",
+                 source="Mecway 34, solver CCX (line3 -> B32R)",
+                 in_series=False)
+
+
+TESTS = [
+    Case("LS-50a", GROUP, "Ingeklemde balk, line3-elementen, eindlast",
+         "lin_static_3d", build_ls50("tip"),
+         [Check("doorbuiging tip", lambda r: -r.at("displz", (L, 0, 0)),
+                ref=_w_tip_load(L), tol=1e-3, unit="m",
+                source="PL^3/3EI (Roark tabel 8.1 geval 1a)"),
+          Check("doorbuiging middenknoop x = 0,1 m",
+                lambda r: -r.at("displz", (X50, 0, 0)),
+                ref=_w_tip_load(X50), tol=1e-3, unit="m",
+                source="P x^2 (3L - x)/6EI (Roark tabel 8.1 geval 1a)"),
+          Check("rotatie tip", lambda r: abs(r.at("roty", (L, 0, 0))),
+                ref=P50 * L ** 2 / (2 * E * I50), tol=1e-3, unit="rad",
+                source="PL^2/2EI (Roark tabel 8.1 geval 1a)"),
+          Check("reactiekracht Z", lambda r: r.total("reactionforcez",
+                                                       "Inklemming"),
+                ref=P50, tol=1e-6, unit="N", source="evenwicht"),
+          _mw_line2("doorbuiging tip", "displz", (L, 0, 0), MW50A),
+          _mw_ccx("doorbuiging tip", "displz", (L, 0, 0), MW50A_CCX)],
+         note="line3-balk -> twee SEG2-cellen per element (C4)."),
+    Case("LS-50b", GROUP, "Ingeklemde balk, line3-elementen, line pressure",
+         "lin_static_3d", build_ls50("q"),
+         [Check("doorbuiging tip", lambda r: -r.at("displz", (L, 0, 0)),
+                ref=_w_uniform(L), tol=1e-3, unit="m",
+                source="qL^4/8EI (Roark tabel 8.1 geval 2a)"),
+          Check("doorbuiging middenknoop x = 0,1 m",
+                lambda r: -r.at("displz", (X50, 0, 0)),
+                ref=_w_uniform(X50), tol=1e-3, unit="m",
+                source="q x^2 (6L^2 - 4Lx + x^2)/24EI (Roark tabel 8.1 "
+                       "geval 2a)"),
+          Check("reactiekracht Z", lambda r: r.total("reactionforcez",
+                                                       "Inklemming"),
+                ref=Q50 * L, tol=1e-6, unit="N", source="evenwicht"),
+          _mw_line2("doorbuiging tip", "displz", (L, 0, 0), MW50B),
+          _mw_ccx("doorbuiging tip", "displz", (L, 0, 0), MW50B_CCX)],
+         note="Line pressure op een elementselectie met line3-balken."),
+    Case("LS-50c", GROUP, "Line3-balk met orientatievector, eindlast",
+         "lin_static_3d", build_ls50("orient"),
+         [Check("doorbuiging tip", lambda r: -r.at("disply", (L, 0, 0)),
+                ref=_w_tip_load(L, I50C), tol=1e-3, unit="m",
+                source="PL^3/3EI met I = a b^3/12 (V = Z)"),
+          _mw_line2("doorbuiging tip", "disply", (L, 0, 0), MW50C),
+          _mw_ccx("doorbuiging tip", "disply", (L, 0, 0), MW50C_CCX)],
+         note="Orientatie per helft van het gesplitste element."),
+]
+
+
+# ------------------------------------------------------------------
+# LS-51 Flexible joint on beam (scharnier in een balk)
+# ------------------------------------------------------------------
+# Balk L = 1 m, 10 line2 (of 4 line3), Ø 20 mm, beide uiteinden
+# ingeklemd, P = 100 N in het midden. Joint op het eindvlak van het
+# element rechts van het midden (faceid 2 = eerste knoop).
+# Lokale assen (Mecway, manual v33 par. 7.5): balk langs X -> U = X,
+# V = Z x U = Y, W = Z; balk langs Z -> V = Y, W = U x V = -X.
+# (a) langs X, last -Y, <rotw/>: scharnier om Z. Elke helft is een
+#     ingeklemde balk L/2 met P/2 aan de tip: w = (P/2)(L/2)^3/(3EI) =
+#     PL^3/(48EI); rotatie links van het scharnier (P/2)(L/2)^2/(2EI) =
+#     PL^2/(16EI).
+# (b) idem met <rotv/>: vrij om Y, maar buiging om Z -> geen effect,
+#     w = PL^3/(192EI) (Roark tabel 8.1 geval 1d).
+# (c) joint <rotw/> aan beide kanten van de middenknoop: zelfde als (a);
+#     de middenknoop zelf heeft dan geen rotatiestijfheid (POI1 DIS_TR,
+#     rotatie om Z op 0, zoals Mecway).
+# (d) joint met alle drie de rotaties vrij op het eindvlak bij x = L:
+#     inklemming wordt scharnier; ingeklemd-scharnierend met P in het
+#     midden: w(L/2) = 7PL^3/(768EI) (Roark tabel 8.1 geval 1c).
+# (e) als (a) met 4 line3-elementen (joint op een line3-uiteinde).
+# (f) verticale balk (langs Z), last +X: buiging om Y = V; <rotv/> ->
+#     scharnier, w = PL^3/(48EI).
+P51 = 100.0
+W48 = P51 * L ** 3 / (48 * E * I)
+
+
+def build_ls51(free, faces="right", axis="x", shape="line2", end_joint=False):
+    def build():
+        m = Model("S30")
+        m.elset("Balk", "Rond20")
+        p1 = (L, 0, 0) if axis == "x" else (0, 0, L)
+        if shape == "line3":
+            eids, nids = line3mesh(m, "Balk", 4, (0, 0, 0), p1)
+            mid_left, mid_right = eids[1], eids[2]
+        else:
+            eids, nids = linemesh(m, "Balk", 10, (0, 0, 0), p1)
+            mid_left, mid_right = eids[4], eids[5]
+        m.mat("Rond20", ROND, STEEL)
+        m.node_selection("Inklemming", [nids[0], nids[-1]])
+        m.node_selection("Midden", [nids[len(nids) // 2]])
+        if end_joint:
+            fj = [(eids[-1], 3)]
+        elif faces == "both":
+            fj = [(mid_left, 3), (mid_right, 2)]
+        else:
+            fj = [(mid_right, 2)]
+        m.face_selection("Joint", fj)
+        m.add('<fixed selection="Inklemming" />')
+        if axis == "x":
+            m.add('<force selection="Midden"><x>0 N</x><y>-%g N</y>'
+                  '<z>0 N</z></force>' % P51)
+        else:
+            m.add('<force selection="Midden"><x>%g N</x><y>0 N</y>'
+                  '<z>0 N</z></force>' % P51)
+        m.add('<flexiblejoint selection="Joint">%s</flexiblejoint>'
+              % "".join("<rot%s />" % a for a in free))
+        return m
+    return build
+
+
+def _mw(name, var, point, ref, unit="m"):
+    """Vergelijking met Mecway 34 (eigen solver) op hetzelfde model."""
+    return Check("%s t.o.v. Mecway 34" % name,
+                 lambda r: abs(r.at(var, point)), ref=ref, tol=1e-3,
+                 unit=unit,
+                 source="Mecway 34, eigen solver", in_series=False)
+
+
+MID = (L / 2, 0, 0)
+TESTS += [
+    Case("LS-51a", GROUP, "Flexible joint: scharnier om W in het midden",
+         "lin_static_3d", build_ls51("w"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W48, tol=1e-3, unit="m",
+                source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
+          Check("rotatie links van het scharnier",
+                lambda r: -r.at("rotz", MID),
+                ref=P51 * L ** 2 / (16 * E * I), tol=1e-3, unit="rad",
+                source="(P/2)(L/2)^2/2EI"),
+          Check("reactiekracht Y", lambda r: r.total("reactionforcey",
+                                                       "Inklemming"),
+                ref=P51, tol=1e-6, unit="N", source="evenwicht"),
+          _mw("doorbuiging midden", "disply", MID, MW51A)],
+         note="<flexiblejoint><rotw/> -> eigen knoop + LIAISON_DDL (C6)."),
+    Case("LS-51b", GROUP, "Flexible joint om V: geen effect bij buiging om W",
+         "lin_static_3d", build_ls51("v"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W48 / 4.0, tol=1e-3, unit="m",
+                source="PL^3/192EI (Roark tabel 8.1 geval 1d)"),
+          _mw("doorbuiging midden", "disply", MID, MW51B)],
+         note="Controleert de lokale assen: V = Y bij een balk langs X."),
+    Case("LS-51c", GROUP, "Flexible joint aan beide kanten van de knoop",
+         "lin_static_3d", build_ls51("w", faces="both"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W48, tol=1e-3, unit="m",
+                source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
+          Check("rotatie middenknoop", lambda r: r.at("rotz", MID),
+                ref=0.0, tol_abs=1e-12, unit="rad",
+                source="Mecway 34: 0 (knoop zonder rotatiestijfheid)"),
+          _mw("doorbuiging midden", "disply", MID, MW51C)],
+         note="Knoop zonder ander element met rotaties: POI1 DIS_TR."),
+    Case("LS-51d", GROUP, "Flexible joint als scharnieroplegging",
+         "lin_static_3d", build_ls51("uvw", end_joint=True),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=7 * P51 * L ** 3 / (768 * E * I), tol=1e-3, unit="m",
+                source="7PL^3/768EI (Roark tabel 8.1 geval 1c)"),
+          Check("reactiemoment Z", lambda r: abs(r.total(
+              "reactionmomz", "Inklemming")),
+                ref=3 * P51 * L / 16.0, tol=1e-3, unit="N m",
+                source="3PL/16 (Roark tabel 8.1 geval 1c)"),
+          _mw("doorbuiging midden", "disply", MID, MW51D)],
+         note="Joint met U, V en W vrij op het ingeklemde uiteinde."),
+    Case("LS-51e", GROUP, "Flexible joint op een line3-balk",
+         "lin_static_3d", build_ls51("w", shape="line3"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W48, tol=1e-3, unit="m",
+                source="twee ingeklemde balken L/2 met P/2: PL^3/48EI")],
+         note="C4 + C6: joint op het uiteinde van een gesplitst element. "
+              "Mecway rekent dit niet (line3 alleen met CCX, joint niet "
+              "met CCX)."),
+    Case("LS-51f", GROUP, "Flexible joint om V op een verticale balk",
+         "lin_static_3d", build_ls51("v", axis="z"),
+         [Check("doorbuiging midden", lambda r: r.at("displx", (0, 0, L / 2)),
+                ref=W48, tol=1e-3, unit="m",
+                source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
+          _mw("doorbuiging midden", "displx", (0, 0, L / 2), MW51F)],
+         note="Balk langs Z: Mecway V = Y; last in X buigt om V."),
+]

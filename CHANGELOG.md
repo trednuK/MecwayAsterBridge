@@ -2,6 +2,11 @@
 
 ## Unreleased (develop)
 
+- **Quadratic beams (line3)** are now translated (were not modelled): each element is
+  split at its midside node into two SEG2 beam cells; results on all three nodes.
+  **Flexible joint on beam** is translated: an own node per beam end, coupled with
+  `LIAISON_DDL` in Mecway's local axes. Verification LS-50 and LS-51 (equal to
+  Mecway); limits KNOWN_BUGS 106–107.
 - **Bonded (Tie) contact between shells** now works: a shell face or edge glued onto a
   shell face no longer stops with a singular matrix (`FACTOR_11`); the drilling rotation is
   left out of `LIAISON_MAIL`. Example `TestFiles/Voorbeelden/Voorbeeld_T.liml`, verification

@@ -524,8 +524,11 @@ def failure_events(mess_text, cell_names):
                 continue
             c = int(c)
             name = cell_names[c] if 0 <= c < len(cell_names) else None
-            eids.append(name[1:] if name and name.startswith("M")
-                        else "#{0}".format(c))
+            # H<eid>: tweede helft van een gesplitste line3-balk (bridge_mesh)
+            eid = (name[1:] if name and name[:1] in ("M", "H")
+                   else "#{0}".format(c))
+            if eid not in eids:
+                eids.append(eid)
         events.append((float(m.group(1)), m.group(2), eids))
     return events
 

@@ -361,6 +361,8 @@ class _Fields(object):
         self.data = {}
         self.layouts = {}     # (resultaat, veld) -> _cell_layout()
         self.scales = {}      # {index: factor} voor DEPL (knikvormen)
+        # {extra knoop: Mecway-knoop} op dezelfde plaats (_coincident_extra)
+        self.coincident = {}
 
     def set_index(self, index):
         self.index = index
@@ -435,6 +437,14 @@ def _reaction_lumping(mesh, conn, n):
                 src.append(cn[-1])
                 dst.append(c)
                 wgt.append(1.0 / len(corners))
+    # Extra knoop op de plaats van een Mecway-knoop (flexible joint,
+    # bridge_mesh._flexible_joints): de hele reactie naar die knoop
+    for m, c in sorted(_coincident_extra(xyz, n).items()):
+        if m not in done:
+            done.add(m)
+            src.append(m)
+            dst.append(c)
+            wgt.append(1.0)
     rest = set(range(n, xyz.shape[0])) - done
     if rest:
         scale = 1.0e9 / max(1.0e-30, float(np.abs(xyz).max()))
@@ -468,6 +478,34 @@ def _reaction_lumping(mesh, conn, n):
         return None
     return (np.array(src, dtype=int), np.array(dst, dtype=int),
             np.array(wgt, dtype=float))
+
+
+def _coincident_extra(xyz, n):
+    """
+    {index extra knoop: index Mecway-knoop} voor mesh-knopen na de
+    Mecway-knopen (index >= n) die op dezelfde plaats liggen als een
+    Mecway-knoop: de eigen knoop van een balkuiteinde met een flexible
+    joint (bridge_mesh._flexible_joints, met LIAISON_DDL aan die knoop
+    gekoppeld). Liggen er meer Mecway-knopen op die plaats, dan de laagste.
+    """
+    if xyz.shape[0] <= n:
+        return {}
+    scale = 1.0e9 / max(1.0e-30, float(np.abs(xyz).max()))
+
+    def key(p):
+        return tuple(int(round(c * scale)) for c in p)
+    extra = dict((key(xyz[m]), m) for m in range(n, xyz.shape[0]))
+    out = {}
+    for c in range(n):
+        m = extra.get(key(xyz[c]))
+        if m is not None and m not in out:
+            out[m] = c
+    # meer extra knopen op dezelfde plaats (joints aan beide kanten)
+    for m in range(n, xyz.shape[0]):
+        c = out.get(extra.get(key(xyz[m])))
+        if m not in out and c is not None:
+            out[m] = c
+    return out
 
 
 def _lump_nodes(vals, mask, lump):
@@ -630,6 +668,10 @@ def _plan_elno_node(fields, rkey, field, cmp_, name, kind, conn):
     for c, cn in enumerate(conn):
         if nbpt[c] == len(cn) and nbsp[c] == 1:
             pt_node[start[c]:start[c] + nbpt[c]] = cn
+    # balkuiteinde met een flexible joint: zijn waarde telt bij de
+    # Mecway-knoop op dezelfde plaats (_coincident_extra)
+    for m, c in fields.coincident.items():
+        pt_node[pt_node == m] = c
     pt_node[pt_node >= fields.n] = -1
     ok = (pt_node >= 0) & d[2][:, icmp]
     rows = np.unique(pt_node[ok])
@@ -1402,6 +1444,8 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
     if rows is None and (groups is None or "reactions" in groups):
         lump = _reaction_lumping(mesh, conn, n)
     data = _Fields(results, n, lump, rows)
+    if rows is None:
+        data.coincident = _coincident_extra(xyz.reshape(-1, 3), n)
     mode_values = _mode_values(res, modes) if modes else None
     if modes == "buckling" and rigi_geo is not None:
         data.scales = _stiffness_scales(res, rigi_geo, mode_values)

@@ -102,7 +102,8 @@ GENERAL_SPECS = [
     ("elem_shell", ("Lineaire schalen (tri3/quad4)",
                     "Linear shells (tri3/quad4)"), "choice",
      ("DKT", "DST", "COQUE_3D")),
-    ("elem_beam", ("Balken (line2)", "Beams (line2)"), "choice",
+    ("elem_beam", ("Balken (line2/line3)", "Beams (line2/line3)"),
+     "choice",
      ("POU_D_E", "POU_D_T")),
 ]
 
@@ -129,7 +130,7 @@ _ELEMENT_HELP = (
     u"     niet bij gedeelde knopen met elementen die lineair blijven (dan "
     u"DKT). Kwadratische schalen blijven COQUE_3D.\n"
     u"\n"
-    u"Balken (line2)\n"
+    u"Balken (line2/line3; line3 in twee SEG2-cellen gesplitst)\n"
     u"  \u2022 POU_D_E: Euler-Bernoulli, zoals Mecway.\n"
     u"  \u2022 POU_D_T: Timoshenko (met afschuifvervorming); I/T/C/L-profielen "
     u"met benaderde afschuifco\u00ebffici\u00ebnten,\n"
@@ -153,7 +154,7 @@ _ELEMENT_HELP = (
     u"     not when they share nodes with elements that stay linear (then "
     u"DKT). Quadratic shells stay COQUE_3D.\n"
     u"\n"
-    u"Beams (line2)\n"
+    u"Beams (line2/line3; line3 split into two SEG2 cells)\n"
     u"  \u2022 POU_D_E: Euler-Bernoulli, like Mecway.\n"
     u"  \u2022 POU_D_T: Timoshenko (with shear deformation); I/T/C/L profiles "
     u"with approximated shear coefficients,\n"

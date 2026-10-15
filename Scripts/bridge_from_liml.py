@@ -685,7 +685,8 @@ def _section_area(geom):
 # (thermische rek, demping, MPC's, knoopmassa's); _parse_model_item zet ze
 # in model_data, bridge_mesh.py / bridge_to_aster.py vertalen ze.
 _MODEL_ITEM_TAGS = ("thermalstress", "temperature2", "rayleighdamping",
-                    "constraintequation", "mass2", "rotationalinertia")
+                    "constraintequation", "mass2", "rotationalinertia",
+                    "flexiblejoint")
 
 # DOF-namen van een constraint equation. ux/uy/uz staan in de .liml van
 # het testmodel (Mecway 33). rx/ry/rz: in mecway.exe staan "rx", "ry",
@@ -1042,6 +1043,36 @@ def _parse_model_item(item, root, model_data):
         model_data["constraint_equations"].append(
             {"terms": terms, "constant": constant})
         log("INFO: Constraint equation {0} = {1}.".format(terms, constant))
+    elif tag == "flexiblejoint":
+        # Mecway (manual v33 par. 9.12, "Flexible joint on beam"): laat het
+        # uiteinde van een balkelement vrij roteren om een combinatie van
+        # zijn lokale assen U (as), V en W, ook als het aan een ander
+        # element vastzit of de rotatie is opgelegd; alleen op eindvlakken
+        # van balkelementen. Geen stijfheid: alleen vrij of vast. XML
+        # (Mecway 34 opgeslagen, tekst "Free rotation about U/V/W" in
+        # mecway.exe): <flexiblejoint selection="FJ"><rotu /><rotw />
+        # </flexiblejoint>; een aanwezig kind = vrij (inhoud genegeerd,
+        # <rotu>false</rotu> slaat Mecway op als <rotu />). Vertaling:
+        # bridge_mesh._flexible_joints (dubbele knoop + LIAISON_DDL).
+        free = tuple(a for a in ("u", "v", "w")
+                     if item.find("rot" + a) is not None)
+        if _selection_kind(root, sel) != "GROUP_MA" or                 not _has_selection(root, "faceselection", sel):
+            _not_translated(model_data,
+                            tr("flexible joint op '{0}'",
+                               "flexible joint on '{0}'").format(sel),
+                            tr("alleen op eindvlakken van balkelementen "
+                               "(vlakselectie);",
+                               "only on end faces of beam elements (face "
+                               "selection);"))
+            return
+        if not free:
+            log("INFO: Flexible joint op '{0}' zonder vrije rotatie; geen "
+                "effect.".format(sel))
+            return
+        model_data["flexible_joints"].append({"selection": sel,
+                                              "free": free})
+        log("INFO: Flexible joint op '{0}': vrije rotatie om {1}.".format(
+            sel, "/".join(a.upper() for a in free)))
     elif tag in ("mass2", "rotationalinertia"):
         # Mecway (manual v33 par. 9.21/9.22): knoopmassa (gelijk verdeeld
         # over de knopen) of rotatietraagheid om de X/Y/Z-as (axis="3" = Z
@@ -1262,6 +1293,9 @@ def extract_aster_data_from_liml(file_path):
         "line_discretes":       {},
         "discrete_sections":    {},    # {elset: {"kind": "gap"/"damper",..}}
         "cable_sections":       {},    # {elset: {"area": m2}}
+        # Flexible joint on beam: [{"selection": vlakselectie,
+        # "free": ("u", "v", "w")}] (bridge_mesh._flexible_joints)
+        "flexible_joints":      [],
     }
 
     try:
@@ -1808,16 +1842,14 @@ def extract_aster_data_from_liml(file_path):
                     modelisation = beam_mod
                     model_data["has_1d"] = True
                     if "line3" in shapes and not thermal_run:
-                        model_data["skipped_loads"].append(tr(
-                            "elset '{0}': line3-balken niet gemodelleerd",
-                            "elset '{0}': line3 beams not modelled").format(
-                                elset_name))
-                        log(tr("ERROR: Elset '{0}' bevat line3-balken; {1} "
-                               "ondersteunt alleen SEG2 (line2). Code-Aster "
-                               "zal deze elementen niet modelleren.",
-                               "ERROR: Elset '{0}' contains line3 beams; {1} "
-                               "only supports SEG2 (line2). Code-Aster will "
-                               "not model these elements.").format(
+                        # Kwadratische balk (Mecway: alleen met CCX, manual
+                        # v33 par. 7.5): bridge_mesh.write_mesh splitst elk
+                        # line3-element in de middenknoop in twee SEG2-cellen
+                        # (KNOWN_BUGS-keuze C4); de controle op niet-balken
+                        # (truss, veer, ...) staat na STAP 3.
+                        log("INFO: Elset '{0}' bevat line3-balken; elk "
+                            "element wordt in de middenknoop gesplitst in "
+                            "twee SEG2-cellen ({1}).".format(
                                 elset_name, beam_mod))
                 elif shapes & _DIM_2D_SHAPES:
                     dim          = "2D"
@@ -2448,6 +2480,29 @@ def extract_aster_data_from_liml(file_path):
                            "WARNING: Elset '{0}' is 2D but '{1}' has no "
                            "thickness.").format(
                                elset_name, geom.get("geom_type", "?")))
+
+        # line3 alleen als balk: bridge_mesh splitst line3-balken in twee
+        # SEG2-cellen (POU_D_E/POU_D_T bestaan alleen op SEG2). Truss, veer,
+        # gap, demper en tension-only staan in Mecway alleen op line2
+        # (manual v33 par. 7.6-7.10); twee staven of veren in serie zouden
+        # een mechanisme of de halve stijfheid geven, dus melden.
+        if not thermal_run:
+            for elset_name, mod in sorted(
+                    model_data["elset_modelisations"].items()):
+                if ("line3" in elset_shapes_map.get(elset_name, ()) and
+                        model_data["elset_dims"].get(elset_name) == "1D" and
+                        mod not in ("POU_D_E", "POU_D_T")):
+                    _not_translated(
+                        model_data,
+                        tr("elset '{0}': line3-elementen ({1})",
+                           "elset '{0}': line3 elements ({1})").format(
+                               elset_name, mod),
+                        tr("alleen line3-balken worden vertaald; truss, "
+                           "veer, gap, demper en tension-only alleen op "
+                           "line2 (zoals Mecway);",
+                           "only line3 beams are translated; truss, spring, "
+                           "gap, damper and tension-only only on line2 "
+                           "(as in Mecway);"))
 
         # BARRE is in Code-Aster 17.4 geometrisch lineair: een staaf die
         # star 30 graden draait gaf met DEFORMATION='GROT_GDEP' dezelfde
