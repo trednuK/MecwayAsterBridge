@@ -135,7 +135,7 @@ _NO = ("nee", "no", "n", "0", "uit", "off", "false", "onwaar")
 # with lambda x 1e-6 still 3.3% (only the nodes on the interface with the
 # plate are warm); WE-11 with the default: +1.2..1.6%. Thermally the
 # filler material uses a diagonal heat capacity (bridge_thermal
-# model_block, 3D_DIAG). Zie docs/Lassen.md par. 10.
+# model_block, 3D_DIAG). See docs/Lassen.md par. 10.
 QUIET = 1.0e-4
 
 # Lead of the birth (default, x af): an element is born
