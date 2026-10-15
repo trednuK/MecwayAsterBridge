@@ -139,7 +139,7 @@ EVENT_TEXTS = [
 # Explanation for a zero pivot, per kind of degree of freedom. The advice
 # follows the text Code-Aster itself gives with the pivot message (study.mess:
 # "Si vous faites du contact, il ne faut pas que la structure ne 'tienne'
-# que par le contact" en "exclure certains noeuds des conditions de contact
+# que par le contact" and "exclure certains noeuds des conditions de contact
 # (mots clés SANS_NOEUD et SANS_GROUP_NO)").
 _PIVOT_HINT_CONTACT = (u"Contact-Lagrange (LAGS_C/LAGS_F): de contactvoorwaarde "
                        u"is overbepaald (knoop zit ook in een oplegging of in "
