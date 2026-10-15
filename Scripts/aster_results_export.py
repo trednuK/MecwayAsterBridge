@@ -427,10 +427,13 @@ def _check_node_order(mesh, coords):
 class _Fields(object):
     """Zet per tijdstap elk gevraagd veld een keer om naar numpy."""
 
-    def __init__(self, results, n_nodes, lump=None, rows=None):
+    def __init__(self, results, n_nodes, lump=None, rows=None, pairs=None):
         self.results = results
         self.n = n_nodes
         self.lump = lump      # _reaction_lumping(): REAC_NODA extra knopen
+        # _offset_pairs(): (Mecway-knoop, knoop van het verschoven element,
+        # arm) van een element offset, of None
+        self.pairs = pairs
         # rows: rij van het mesh per Mecway-knoop (hele wiel bij cyclische
         # symmetrie, aster_cyclic.node_rows); None = rij i is knoop i+1.
         self.rows = rows
@@ -462,6 +465,10 @@ class _Fields(object):
                     vals, mask = sf.getValues()
                     if field == "REAC_NODA" and self.lump is not None:
                         vals, mask = _lump_nodes(vals, mask, self.lump)
+                    if self.pairs is not None:
+                        vals, mask = _offset_values(
+                            field, list(sf.getComponents()), vals, mask,
+                            self.pairs)
                     if self.rows is not None:
                         vals, mask = vals[self.rows], mask[self.rows]
                     else:
@@ -482,7 +489,7 @@ class _Fields(object):
 # ==========================================
 # REACTIES VAN EXTRA KNOPEN (LINE_QUAD, QUAD9/TRIA7)
 # ==========================================
-def _reaction_lumping(mesh, conn, n):
+def _reaction_lumping(mesh, conn, n, offset_nodes=None):
     """
     Verdeling van de knoopreacties van mesh-knopen die Mecway niet kent
     (index >= n: middenknopen van CREA_MAILLAGE LINE_QUAD, middenknoop van
@@ -497,6 +504,9 @@ def _reaction_lumping(mesh, conn, n):
     Een kracht in het midden van een rand of van een parallellogram heeft
     zo ook hetzelfde moment om elk punt. Alleen voor REAC_NODA (een
     verplaatsing middelen zou iets anders zijn).
+    offset_nodes: knopen van verschoven elementen (bridge_offset, >= n);
+    die tellen als hoekknoop en gaan daarna via _offset_values naar hun
+    Mecway-knoop.
     Returns (src, dst, gewicht) als numpy-arrays, of None zonder extra
     knopen.
     """
@@ -504,8 +514,10 @@ def _reaction_lumping(mesh, conn, n):
                      dtype=float).reshape(-1, 3)
     if xyz.shape[0] <= n:
         return None
+    known = set() if offset_nodes is None else set(int(i)
+                                                   for i in offset_nodes)
     src, dst, wgt = [], [], []
-    done = set()
+    done = set(known)
     for cn in conn:
         if len(cn) in (7, 9) and cn[-1] >= n and cn[-1] not in done:
             corners = list(cn[:4] if len(cn) == 9 else cn[:3])
@@ -530,7 +542,7 @@ def _reaction_lumping(mesh, conn, n):
             return tuple(int(round(c * scale)) for c in p)
         mids = {}
         for cn in conn:
-            corners = [c for c in cn if c < n]
+            corners = [c for c in cn if c < n or c in known]
             for i in range(len(corners)):
                 for j in range(i + 1, len(corners)):
                     a, b = corners[i], corners[j]
@@ -594,6 +606,93 @@ def _lump_nodes(vals, mask, lump):
     new_mask = mask.copy()
     np.logical_or.at(new_mask, dst, mask[src])
     return out, new_mask
+
+
+# ==========================================
+# ELEMENT OFFSET (bridge_offset): VERSCHOVEN KNOPEN -> MECWAY-KNOPEN
+# ==========================================
+# Knoopgroepen met dit voorvoegsel bevatten precies een Mecway-knoop en de
+# knoop van het verschoven element (bridge_offset.LINK_PREFIX).
+OFFSET_GROUP_PREFIX = "BROFL"
+# Velden die op de Mecway-knoop zelf al de juiste waarde hebben (de knoop
+# beweegt met de starre arm mee).
+_KINEMATIC_FIELDS = ("DEPL", "VITE", "ACCE")
+
+
+def _offset_pairs(mesh, n):
+    """
+    (o, f, arm) als numpy-arrays (0-based knoopindices, arm = x_f - x_o)
+    uit de knoopgroepen BROFL<k> van bridge_offset, of None zonder offset.
+    mesh.getGroupsOfNodes()/getNodes(groep) (testcase sdll157a, 17.4).
+    """
+    try:
+        names = [g for g in mesh.getGroupsOfNodes()
+                 if str(g).strip().startswith(OFFSET_GROUP_PREFIX)]
+    except Exception:
+        return None
+    if not names:
+        return None
+    xyz = np.asarray(mesh.getCoordinates().getValues(),
+                     dtype=float).reshape(-1, 3)
+    orig, new = [], []
+    for g in names:
+        ids = sorted(int(i) for i in mesh.getNodes(str(g).strip()))
+        if len(ids) != 2 or not (ids[0] < n <= ids[1] < xyz.shape[0]):
+            continue
+        orig.append(ids[0])
+        new.append(ids[1])
+    if not orig:
+        return None
+    orig, new = np.array(orig, dtype=int), np.array(new, dtype=int)
+    return orig, new, xyz[new] - xyz[orig]
+
+
+def _offset_values(field, comps, vals, mask, pairs):
+    """
+    Waarden van de knopen van verschoven elementen naar de Mecway-knoop:
+      REAC_NODA: de reactie van de verschoven knoop f gaat met het moment
+          van de arm naar de Mecway-knoop o (F_o += F_f, M_o += M_f +
+          arm x F_f). De krachten van de starre arm zelf (LIAISON_DDL) zijn
+          onderling in evenwicht en vallen zo weg; over blijft de reactie
+          van een oplegging op o (Mecway: reacties op de knopen).
+      DEPL/VITE/ACCE: ongewijzigd (o heeft zijn eigen waarde).
+      Andere velden (spanningen van schalen per knoop): waar o geen waarde
+          heeft, het gemiddelde van zijn verschoven knopen (Mecway: de
+          elementwaarden horen bij het verschoven element).
+    """
+    orig, new, arm = pairs
+    if field in _KINEMATIC_FIELDS:
+        return vals, mask
+    vals = np.array(vals, dtype=float, copy=True)
+    mask = np.array(mask, copy=True)
+    if field == "REAC_NODA":
+        idx = dict((c, i) for i, c in enumerate(comps))
+        out = np.where(mask, vals, 0.0)
+        forces = [idx.get(c) for c in ("DX", "DY", "DZ")]
+        moments = [idx.get(c) for c in ("DRX", "DRY", "DRZ")]
+        f = np.zeros((len(new), 3))
+        for k, i in enumerate(forces):
+            if i is not None:
+                f[:, k] = out[new, i]
+                np.add.at(out[:, i], orig, out[new, i])
+                out[new, i] = 0.0
+        moment = np.cross(arm, f)
+        for k, i in enumerate(moments):
+            if i is not None:
+                np.add.at(out[:, i], orig, out[new, i] + moment[:, k])
+                out[new, i] = 0.0
+        for i in [j for j in forces + moments if j is not None]:
+            np.logical_or.at(mask[:, i], orig, mask[new, i])
+        return out, mask
+    total = np.zeros((vals.shape[0], vals.shape[1]))
+    count = np.zeros((vals.shape[0], vals.shape[1]))
+    have = mask[new]
+    np.add.at(total, orig, np.where(have, vals[new], 0.0))
+    np.add.at(count, orig, have.astype(float))
+    fill = (~mask) & (count > 0)
+    vals[fill] = total[fill] / count[fill]
+    mask = mask | fill
+    return vals, mask
 
 
 # ==========================================
@@ -767,6 +866,12 @@ def _plan_elno_node(fields, rkey, field, cmp_, name, kind, conn):
     # Mecway-knoop op dezelfde plaats (_coincident_extra)
     for m, c in fields.coincident.items():
         pt_node[pt_node == m] = c
+    if fields.pairs is not None:
+        # verschoven element (bridge_offset): waarde naar de Mecway-knoop
+        alias = np.arange(max(int(pt_node.max()) + 1, fields.n,
+                              int(fields.pairs[1].max()) + 1))
+        alias[fields.pairs[1]] = fields.pairs[0]
+        pt_node = np.where(pt_node >= 0, alias[np.maximum(pt_node, 0)], -1)
     pt_node[pt_node >= fields.n] = -1
     ok = (pt_node >= 0) & d[2][:, icmp]
     rows = np.unique(pt_node[ok])
@@ -1989,9 +2094,11 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
     groups = set(fields) if fields is not None else None
     conn = mesh.getConnectivity()
     lump = None
+    pairs = _offset_pairs(mesh, n) if rows is None else None
     if rows is None and (groups is None or "reactions" in groups):
-        lump = _reaction_lumping(mesh, conn, n)
-    data = _Fields(results, n, lump, rows)
+        lump = _reaction_lumping(mesh, conn, n,
+                                 None if pairs is None else pairs[1])
+    data = _Fields(results, n, lump, rows, pairs)
     if rows is None:
         data.coincident = _coincident_extra(xyz.reshape(-1, 3), n)
     mode_values = _mode_values(res, modes) if modes else None

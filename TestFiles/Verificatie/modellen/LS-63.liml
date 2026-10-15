@@ -1,0 +1,127 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0.1" />
+  <node nid="2" x="0.3" y="0" z="0.1" />
+  <node nid="3" x="0.6" y="0" z="0.1" />
+  <node nid="4" x="0.6" y="0" z="0.05" />
+  <node nid="5" x="0.6" y="0" z="0" />
+  <node nid="6" x="0.3" y="0" z="0" />
+  <node nid="7" x="0" y="0" z="0" />
+  <node nid="8" x="0" y="0" z="0.05" />
+  <node nid="9" x="0.6" y="0" z="-0.05" />
+  <node nid="10" x="0.6" y="0" z="-0.1" />
+  <node nid="11" x="0.3" y="0" z="-0.1" />
+  <node nid="12" x="0" y="0" z="-0.1" />
+  <node nid="13" x="0" y="0" z="-0.05" />
+  <node nid="14" x="0.9" y="0" z="0.1" />
+  <node nid="15" x="1.2" y="0" z="0.1" />
+  <node nid="16" x="1.2" y="0" z="0.05" />
+  <node nid="17" x="1.2" y="0" z="0" />
+  <node nid="18" x="0.9" y="0" z="0" />
+  <node nid="19" x="1.2" y="0" z="-0.05" />
+  <node nid="20" x="1.2" y="0" z="-0.1" />
+  <node nid="21" x="0.9" y="0" z="-0.1" />
+  <node nid="22" x="1.5" y="0" z="0.1" />
+  <node nid="23" x="1.8" y="0" z="0.1" />
+  <node nid="24" x="1.8" y="0" z="0.05" />
+  <node nid="25" x="1.8" y="0" z="0" />
+  <node nid="26" x="1.5" y="0" z="0" />
+  <node nid="27" x="1.8" y="0" z="-0.05" />
+  <node nid="28" x="1.8" y="0" z="-0.1" />
+  <node nid="29" x="1.5" y="0" z="-0.1" />
+  <node nid="30" x="2.1" y="0" z="0.1" />
+  <node nid="31" x="2.4" y="0" z="0.1" />
+  <node nid="32" x="2.4" y="0" z="0.05" />
+  <node nid="33" x="2.4" y="0" z="0" />
+  <node nid="34" x="2.1" y="0" z="0" />
+  <node nid="35" x="2.4" y="0" z="-0.05" />
+  <node nid="36" x="2.4" y="0" z="-0.1" />
+  <node nid="37" x="2.1" y="0" z="-0.1" />
+  <node nid="38" x="2.7" y="0" z="0.1" />
+  <node nid="39" x="3" y="0" z="0.1" />
+  <node nid="40" x="3" y="0" z="0.05" />
+  <node nid="41" x="3" y="0" z="0" />
+  <node nid="42" x="2.7" y="0" z="0" />
+  <node nid="43" x="3" y="0" z="-0.05" />
+  <node nid="44" x="3" y="0" z="-0.1" />
+  <node nid="45" x="2.7" y="0" z="-0.1" />
+  <node nid="46" x="3.3" y="0" z="0.1" />
+  <node nid="47" x="3.6" y="0" z="0.1" />
+  <node nid="48" x="3.6" y="0" z="0.05" />
+  <node nid="49" x="3.6" y="0" z="0" />
+  <node nid="50" x="3.3" y="0" z="0" />
+  <node nid="51" x="3.6" y="0" z="-0.05" />
+  <node nid="52" x="3.6" y="0" z="-0.1" />
+  <node nid="53" x="3.3" y="0" z="-0.1" />
+  <elset name="Flens" material="Flens">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="7 6 5 9 10 11 12 13" />
+    <elem eid="3" shape="quad8" nodes="3 14 15 16 17 18 5 4" />
+    <elem eid="4" shape="quad8" nodes="5 18 17 19 20 21 10 9" />
+    <elem eid="5" shape="quad8" nodes="15 22 23 24 25 26 17 16" />
+    <elem eid="6" shape="quad8" nodes="17 26 25 27 28 29 20 19" />
+    <elem eid="7" shape="quad8" nodes="23 30 31 32 33 34 25 24" />
+    <elem eid="8" shape="quad8" nodes="25 34 33 35 36 37 28 27" />
+    <elem eid="9" shape="quad8" nodes="31 38 39 40 41 42 33 32" />
+    <elem eid="10" shape="quad8" nodes="33 42 41 43 44 45 36 35" />
+    <elem eid="11" shape="quad8" nodes="39 46 47 48 49 50 41 40" />
+    <elem eid="12" shape="quad8" nodes="41 50 49 51 52 53 44 43" />
+  </elset>
+  <elset name="Lijf" material="Lijf">
+    <elem eid="13" shape="line2" nodes="7 6" />
+    <elem eid="14" shape="line2" nodes="6 5" />
+    <elem eid="15" shape="line2" nodes="5 18" />
+    <elem eid="16" shape="line2" nodes="18 17" />
+    <elem eid="17" shape="line2" nodes="17 26" />
+    <elem eid="18" shape="line2" nodes="26 25" />
+    <elem eid="19" shape="line2" nodes="25 34" />
+    <elem eid="20" shape="line2" nodes="34 33" />
+    <elem eid="21" shape="line2" nodes="33 42" />
+    <elem eid="22" shape="line2" nodes="42 41" />
+    <elem eid="23" shape="line2" nodes="41 50" />
+    <elem eid="24" shape="line2" nodes="50 49" />
+  </elset>
+  <fixed selection="Inklemming_flens" />
+  <fixed selection="Lijf_begin" />
+  <moment selection="Tip"><x>6 N.m</x><y>0 N.m</y><z>0 N.m</z></moment>
+  <offset selection="Flens_offset"><u>0 m</u><v>0 m</v><w>0.105 m</w></offset>
+  <mat name="Lijf">
+    <geometric type="RectBar" recta="0.2 m" rectb="0.01 m" />
+    <mechanical type="Isotropic" youngsmodulus="5200000000 Pa" poissonratio="0.3" />
+  </mat>
+  <mat name="Flens">
+    <geometric type="Plate" thickness="0.01 m" />
+    <mechanical type="Isotropic" youngsmodulus="2600000000 Pa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Inklemming_flens">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+  </faceselection>
+  <nodeselection name="Inklemming_knopen">
+    <node nid="1" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="12" />
+    <node nid="13" />
+  </nodeselection>
+  <nodeselection name="Lijf_begin">
+    <node nid="7" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="49" />
+  </nodeselection>
+  <elementselection name="Flens_offset">
+    <element eid="1" />
+    <element eid="2" />
+    <element eid="3" />
+    <element eid="4" />
+    <element eid="5" />
+    <element eid="6" />
+    <element eid="7" />
+    <element eid="8" />
+    <element eid="9" />
+    <element eid="10" />
+    <element eid="11" />
+    <element eid="12" />
+  </elementselection>
+</liml>

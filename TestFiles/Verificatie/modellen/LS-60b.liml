@@ -1,0 +1,496 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.005" y="0" z="0" />
+  <node nid="3" x="0.01" y="0" z="0" />
+  <node nid="4" x="0.01" y="0.0025" z="0" />
+  <node nid="5" x="0.01" y="0.005" z="0" />
+  <node nid="6" x="0.005" y="0.005" z="0" />
+  <node nid="7" x="0" y="0.005" z="0" />
+  <node nid="8" x="0" y="0.0025" z="0" />
+  <node nid="9" x="0.01" y="0.0075" z="0" />
+  <node nid="10" x="0.01" y="0.01" z="0" />
+  <node nid="11" x="0.005" y="0.01" z="0" />
+  <node nid="12" x="0" y="0.01" z="0" />
+  <node nid="13" x="0" y="0.0075" z="0" />
+  <node nid="14" x="0.01" y="0.0125" z="0" />
+  <node nid="15" x="0.01" y="0.015" z="0" />
+  <node nid="16" x="0.005" y="0.015" z="0" />
+  <node nid="17" x="0" y="0.015" z="0" />
+  <node nid="18" x="0" y="0.0125" z="0" />
+  <node nid="19" x="0.01" y="0.0175" z="0" />
+  <node nid="20" x="0.01" y="0.02" z="0" />
+  <node nid="21" x="0.005" y="0.02" z="0" />
+  <node nid="22" x="0" y="0.02" z="0" />
+  <node nid="23" x="0" y="0.0175" z="0" />
+  <node nid="24" x="0.015" y="0" z="0" />
+  <node nid="25" x="0.02" y="0" z="0" />
+  <node nid="26" x="0.02" y="0.0025" z="0" />
+  <node nid="27" x="0.02" y="0.005" z="0" />
+  <node nid="28" x="0.015" y="0.005" z="0" />
+  <node nid="29" x="0.02" y="0.0075" z="0" />
+  <node nid="30" x="0.02" y="0.01" z="0" />
+  <node nid="31" x="0.015" y="0.01" z="0" />
+  <node nid="32" x="0.02" y="0.0125" z="0" />
+  <node nid="33" x="0.02" y="0.015" z="0" />
+  <node nid="34" x="0.015" y="0.015" z="0" />
+  <node nid="35" x="0.02" y="0.0175" z="0" />
+  <node nid="36" x="0.02" y="0.02" z="0" />
+  <node nid="37" x="0.015" y="0.02" z="0" />
+  <node nid="38" x="0.025" y="0" z="0" />
+  <node nid="39" x="0.03" y="0" z="0" />
+  <node nid="40" x="0.03" y="0.0025" z="0" />
+  <node nid="41" x="0.03" y="0.005" z="0" />
+  <node nid="42" x="0.025" y="0.005" z="0" />
+  <node nid="43" x="0.03" y="0.0075" z="0" />
+  <node nid="44" x="0.03" y="0.01" z="0" />
+  <node nid="45" x="0.025" y="0.01" z="0" />
+  <node nid="46" x="0.03" y="0.0125" z="0" />
+  <node nid="47" x="0.03" y="0.015" z="0" />
+  <node nid="48" x="0.025" y="0.015" z="0" />
+  <node nid="49" x="0.03" y="0.0175" z="0" />
+  <node nid="50" x="0.03" y="0.02" z="0" />
+  <node nid="51" x="0.025" y="0.02" z="0" />
+  <node nid="52" x="0.035" y="0" z="0" />
+  <node nid="53" x="0.04" y="0" z="0" />
+  <node nid="54" x="0.04" y="0.0025" z="0" />
+  <node nid="55" x="0.04" y="0.005" z="0" />
+  <node nid="56" x="0.035" y="0.005" z="0" />
+  <node nid="57" x="0.04" y="0.0075" z="0" />
+  <node nid="58" x="0.04" y="0.01" z="0" />
+  <node nid="59" x="0.035" y="0.01" z="0" />
+  <node nid="60" x="0.04" y="0.0125" z="0" />
+  <node nid="61" x="0.04" y="0.015" z="0" />
+  <node nid="62" x="0.035" y="0.015" z="0" />
+  <node nid="63" x="0.04" y="0.0175" z="0" />
+  <node nid="64" x="0.04" y="0.02" z="0" />
+  <node nid="65" x="0.035" y="0.02" z="0" />
+  <node nid="66" x="0.045" y="0" z="0" />
+  <node nid="67" x="0.05" y="0" z="0" />
+  <node nid="68" x="0.05" y="0.0025" z="0" />
+  <node nid="69" x="0.05" y="0.005" z="0" />
+  <node nid="70" x="0.045" y="0.005" z="0" />
+  <node nid="71" x="0.05" y="0.0075" z="0" />
+  <node nid="72" x="0.05" y="0.01" z="0" />
+  <node nid="73" x="0.045" y="0.01" z="0" />
+  <node nid="74" x="0.05" y="0.0125" z="0" />
+  <node nid="75" x="0.05" y="0.015" z="0" />
+  <node nid="76" x="0.045" y="0.015" z="0" />
+  <node nid="77" x="0.05" y="0.0175" z="0" />
+  <node nid="78" x="0.05" y="0.02" z="0" />
+  <node nid="79" x="0.045" y="0.02" z="0" />
+  <node nid="80" x="0.055" y="0" z="0" />
+  <node nid="81" x="0.06" y="0" z="0" />
+  <node nid="82" x="0.06" y="0.0025" z="0" />
+  <node nid="83" x="0.06" y="0.005" z="0" />
+  <node nid="84" x="0.055" y="0.005" z="0" />
+  <node nid="85" x="0.06" y="0.0075" z="0" />
+  <node nid="86" x="0.06" y="0.01" z="0" />
+  <node nid="87" x="0.055" y="0.01" z="0" />
+  <node nid="88" x="0.06" y="0.0125" z="0" />
+  <node nid="89" x="0.06" y="0.015" z="0" />
+  <node nid="90" x="0.055" y="0.015" z="0" />
+  <node nid="91" x="0.06" y="0.0175" z="0" />
+  <node nid="92" x="0.06" y="0.02" z="0" />
+  <node nid="93" x="0.055" y="0.02" z="0" />
+  <node nid="94" x="0.065" y="0" z="0" />
+  <node nid="95" x="0.07" y="0" z="0" />
+  <node nid="96" x="0.07" y="0.0025" z="0" />
+  <node nid="97" x="0.07" y="0.005" z="0" />
+  <node nid="98" x="0.065" y="0.005" z="0" />
+  <node nid="99" x="0.07" y="0.0075" z="0" />
+  <node nid="100" x="0.07" y="0.01" z="0" />
+  <node nid="101" x="0.065" y="0.01" z="0" />
+  <node nid="102" x="0.07" y="0.0125" z="0" />
+  <node nid="103" x="0.07" y="0.015" z="0" />
+  <node nid="104" x="0.065" y="0.015" z="0" />
+  <node nid="105" x="0.07" y="0.0175" z="0" />
+  <node nid="106" x="0.07" y="0.02" z="0" />
+  <node nid="107" x="0.065" y="0.02" z="0" />
+  <node nid="108" x="0.075" y="0" z="0" />
+  <node nid="109" x="0.08" y="0" z="0" />
+  <node nid="110" x="0.08" y="0.0025" z="0" />
+  <node nid="111" x="0.08" y="0.005" z="0" />
+  <node nid="112" x="0.075" y="0.005" z="0" />
+  <node nid="113" x="0.08" y="0.0075" z="0" />
+  <node nid="114" x="0.08" y="0.01" z="0" />
+  <node nid="115" x="0.075" y="0.01" z="0" />
+  <node nid="116" x="0.08" y="0.0125" z="0" />
+  <node nid="117" x="0.08" y="0.015" z="0" />
+  <node nid="118" x="0.075" y="0.015" z="0" />
+  <node nid="119" x="0.08" y="0.0175" z="0" />
+  <node nid="120" x="0.08" y="0.02" z="0" />
+  <node nid="121" x="0.075" y="0.02" z="0" />
+  <node nid="122" x="0.085" y="0" z="0" />
+  <node nid="123" x="0.09" y="0" z="0" />
+  <node nid="124" x="0.09" y="0.0025" z="0" />
+  <node nid="125" x="0.09" y="0.005" z="0" />
+  <node nid="126" x="0.085" y="0.005" z="0" />
+  <node nid="127" x="0.09" y="0.0075" z="0" />
+  <node nid="128" x="0.09" y="0.01" z="0" />
+  <node nid="129" x="0.085" y="0.01" z="0" />
+  <node nid="130" x="0.09" y="0.0125" z="0" />
+  <node nid="131" x="0.09" y="0.015" z="0" />
+  <node nid="132" x="0.085" y="0.015" z="0" />
+  <node nid="133" x="0.09" y="0.0175" z="0" />
+  <node nid="134" x="0.09" y="0.02" z="0" />
+  <node nid="135" x="0.085" y="0.02" z="0" />
+  <node nid="136" x="0.095" y="0" z="0" />
+  <node nid="137" x="0.1" y="0" z="0" />
+  <node nid="138" x="0.1" y="0.0025" z="0" />
+  <node nid="139" x="0.1" y="0.005" z="0" />
+  <node nid="140" x="0.095" y="0.005" z="0" />
+  <node nid="141" x="0.1" y="0.0075" z="0" />
+  <node nid="142" x="0.1" y="0.01" z="0" />
+  <node nid="143" x="0.095" y="0.01" z="0" />
+  <node nid="144" x="0.1" y="0.0125" z="0" />
+  <node nid="145" x="0.1" y="0.015" z="0" />
+  <node nid="146" x="0.095" y="0.015" z="0" />
+  <node nid="147" x="0.1" y="0.0175" z="0" />
+  <node nid="148" x="0.1" y="0.02" z="0" />
+  <node nid="149" x="0.095" y="0.02" z="0" />
+  <node nid="150" x="0.105" y="0" z="0" />
+  <node nid="151" x="0.11" y="0" z="0" />
+  <node nid="152" x="0.11" y="0.0025" z="0" />
+  <node nid="153" x="0.11" y="0.005" z="0" />
+  <node nid="154" x="0.105" y="0.005" z="0" />
+  <node nid="155" x="0.11" y="0.0075" z="0" />
+  <node nid="156" x="0.11" y="0.01" z="0" />
+  <node nid="157" x="0.105" y="0.01" z="0" />
+  <node nid="158" x="0.11" y="0.0125" z="0" />
+  <node nid="159" x="0.11" y="0.015" z="0" />
+  <node nid="160" x="0.105" y="0.015" z="0" />
+  <node nid="161" x="0.11" y="0.0175" z="0" />
+  <node nid="162" x="0.11" y="0.02" z="0" />
+  <node nid="163" x="0.105" y="0.02" z="0" />
+  <node nid="164" x="0.115" y="0" z="0" />
+  <node nid="165" x="0.12" y="0" z="0" />
+  <node nid="166" x="0.12" y="0.0025" z="0" />
+  <node nid="167" x="0.12" y="0.005" z="0" />
+  <node nid="168" x="0.115" y="0.005" z="0" />
+  <node nid="169" x="0.12" y="0.0075" z="0" />
+  <node nid="170" x="0.12" y="0.01" z="0" />
+  <node nid="171" x="0.115" y="0.01" z="0" />
+  <node nid="172" x="0.12" y="0.0125" z="0" />
+  <node nid="173" x="0.12" y="0.015" z="0" />
+  <node nid="174" x="0.115" y="0.015" z="0" />
+  <node nid="175" x="0.12" y="0.0175" z="0" />
+  <node nid="176" x="0.12" y="0.02" z="0" />
+  <node nid="177" x="0.115" y="0.02" z="0" />
+  <node nid="178" x="0.125" y="0" z="0" />
+  <node nid="179" x="0.13" y="0" z="0" />
+  <node nid="180" x="0.13" y="0.0025" z="0" />
+  <node nid="181" x="0.13" y="0.005" z="0" />
+  <node nid="182" x="0.125" y="0.005" z="0" />
+  <node nid="183" x="0.13" y="0.0075" z="0" />
+  <node nid="184" x="0.13" y="0.01" z="0" />
+  <node nid="185" x="0.125" y="0.01" z="0" />
+  <node nid="186" x="0.13" y="0.0125" z="0" />
+  <node nid="187" x="0.13" y="0.015" z="0" />
+  <node nid="188" x="0.125" y="0.015" z="0" />
+  <node nid="189" x="0.13" y="0.0175" z="0" />
+  <node nid="190" x="0.13" y="0.02" z="0" />
+  <node nid="191" x="0.125" y="0.02" z="0" />
+  <node nid="192" x="0.135" y="0" z="0" />
+  <node nid="193" x="0.14" y="0" z="0" />
+  <node nid="194" x="0.14" y="0.0025" z="0" />
+  <node nid="195" x="0.14" y="0.005" z="0" />
+  <node nid="196" x="0.135" y="0.005" z="0" />
+  <node nid="197" x="0.14" y="0.0075" z="0" />
+  <node nid="198" x="0.14" y="0.01" z="0" />
+  <node nid="199" x="0.135" y="0.01" z="0" />
+  <node nid="200" x="0.14" y="0.0125" z="0" />
+  <node nid="201" x="0.14" y="0.015" z="0" />
+  <node nid="202" x="0.135" y="0.015" z="0" />
+  <node nid="203" x="0.14" y="0.0175" z="0" />
+  <node nid="204" x="0.14" y="0.02" z="0" />
+  <node nid="205" x="0.135" y="0.02" z="0" />
+  <node nid="206" x="0.145" y="0" z="0" />
+  <node nid="207" x="0.15" y="0" z="0" />
+  <node nid="208" x="0.15" y="0.0025" z="0" />
+  <node nid="209" x="0.15" y="0.005" z="0" />
+  <node nid="210" x="0.145" y="0.005" z="0" />
+  <node nid="211" x="0.15" y="0.0075" z="0" />
+  <node nid="212" x="0.15" y="0.01" z="0" />
+  <node nid="213" x="0.145" y="0.01" z="0" />
+  <node nid="214" x="0.15" y="0.0125" z="0" />
+  <node nid="215" x="0.15" y="0.015" z="0" />
+  <node nid="216" x="0.145" y="0.015" z="0" />
+  <node nid="217" x="0.15" y="0.0175" z="0" />
+  <node nid="218" x="0.15" y="0.02" z="0" />
+  <node nid="219" x="0.145" y="0.02" z="0" />
+  <node nid="220" x="0.155" y="0" z="0" />
+  <node nid="221" x="0.16" y="0" z="0" />
+  <node nid="222" x="0.16" y="0.0025" z="0" />
+  <node nid="223" x="0.16" y="0.005" z="0" />
+  <node nid="224" x="0.155" y="0.005" z="0" />
+  <node nid="225" x="0.16" y="0.0075" z="0" />
+  <node nid="226" x="0.16" y="0.01" z="0" />
+  <node nid="227" x="0.155" y="0.01" z="0" />
+  <node nid="228" x="0.16" y="0.0125" z="0" />
+  <node nid="229" x="0.16" y="0.015" z="0" />
+  <node nid="230" x="0.155" y="0.015" z="0" />
+  <node nid="231" x="0.16" y="0.0175" z="0" />
+  <node nid="232" x="0.16" y="0.02" z="0" />
+  <node nid="233" x="0.155" y="0.02" z="0" />
+  <node nid="234" x="0.165" y="0" z="0" />
+  <node nid="235" x="0.17" y="0" z="0" />
+  <node nid="236" x="0.17" y="0.0025" z="0" />
+  <node nid="237" x="0.17" y="0.005" z="0" />
+  <node nid="238" x="0.165" y="0.005" z="0" />
+  <node nid="239" x="0.17" y="0.0075" z="0" />
+  <node nid="240" x="0.17" y="0.01" z="0" />
+  <node nid="241" x="0.165" y="0.01" z="0" />
+  <node nid="242" x="0.17" y="0.0125" z="0" />
+  <node nid="243" x="0.17" y="0.015" z="0" />
+  <node nid="244" x="0.165" y="0.015" z="0" />
+  <node nid="245" x="0.17" y="0.0175" z="0" />
+  <node nid="246" x="0.17" y="0.02" z="0" />
+  <node nid="247" x="0.165" y="0.02" z="0" />
+  <node nid="248" x="0.175" y="0" z="0" />
+  <node nid="249" x="0.18" y="0" z="0" />
+  <node nid="250" x="0.18" y="0.0025" z="0" />
+  <node nid="251" x="0.18" y="0.005" z="0" />
+  <node nid="252" x="0.175" y="0.005" z="0" />
+  <node nid="253" x="0.18" y="0.0075" z="0" />
+  <node nid="254" x="0.18" y="0.01" z="0" />
+  <node nid="255" x="0.175" y="0.01" z="0" />
+  <node nid="256" x="0.18" y="0.0125" z="0" />
+  <node nid="257" x="0.18" y="0.015" z="0" />
+  <node nid="258" x="0.175" y="0.015" z="0" />
+  <node nid="259" x="0.18" y="0.0175" z="0" />
+  <node nid="260" x="0.18" y="0.02" z="0" />
+  <node nid="261" x="0.175" y="0.02" z="0" />
+  <node nid="262" x="0.185" y="0" z="0" />
+  <node nid="263" x="0.19" y="0" z="0" />
+  <node nid="264" x="0.19" y="0.0025" z="0" />
+  <node nid="265" x="0.19" y="0.005" z="0" />
+  <node nid="266" x="0.185" y="0.005" z="0" />
+  <node nid="267" x="0.19" y="0.0075" z="0" />
+  <node nid="268" x="0.19" y="0.01" z="0" />
+  <node nid="269" x="0.185" y="0.01" z="0" />
+  <node nid="270" x="0.19" y="0.0125" z="0" />
+  <node nid="271" x="0.19" y="0.015" z="0" />
+  <node nid="272" x="0.185" y="0.015" z="0" />
+  <node nid="273" x="0.19" y="0.0175" z="0" />
+  <node nid="274" x="0.19" y="0.02" z="0" />
+  <node nid="275" x="0.185" y="0.02" z="0" />
+  <node nid="276" x="0.195" y="0" z="0" />
+  <node nid="277" x="0.2" y="0" z="0" />
+  <node nid="278" x="0.2" y="0.0025" z="0" />
+  <node nid="279" x="0.2" y="0.005" z="0" />
+  <node nid="280" x="0.195" y="0.005" z="0" />
+  <node nid="281" x="0.2" y="0.0075" z="0" />
+  <node nid="282" x="0.2" y="0.01" z="0" />
+  <node nid="283" x="0.195" y="0.01" z="0" />
+  <node nid="284" x="0.2" y="0.0125" z="0" />
+  <node nid="285" x="0.2" y="0.015" z="0" />
+  <node nid="286" x="0.195" y="0.015" z="0" />
+  <node nid="287" x="0.2" y="0.0175" z="0" />
+  <node nid="288" x="0.2" y="0.02" z="0" />
+  <node nid="289" x="0.195" y="0.02" z="0" />
+  <elset name="Plaat" material="Plaat2">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="7 6 5 9 10 11 12 13" />
+    <elem eid="3" shape="quad8" nodes="12 11 10 14 15 16 17 18" />
+    <elem eid="4" shape="quad8" nodes="17 16 15 19 20 21 22 23" />
+    <elem eid="5" shape="quad8" nodes="3 24 25 26 27 28 5 4" />
+    <elem eid="6" shape="quad8" nodes="5 28 27 29 30 31 10 9" />
+    <elem eid="7" shape="quad8" nodes="10 31 30 32 33 34 15 14" />
+    <elem eid="8" shape="quad8" nodes="15 34 33 35 36 37 20 19" />
+    <elem eid="9" shape="quad8" nodes="25 38 39 40 41 42 27 26" />
+    <elem eid="10" shape="quad8" nodes="27 42 41 43 44 45 30 29" />
+    <elem eid="11" shape="quad8" nodes="30 45 44 46 47 48 33 32" />
+    <elem eid="12" shape="quad8" nodes="33 48 47 49 50 51 36 35" />
+    <elem eid="13" shape="quad8" nodes="39 52 53 54 55 56 41 40" />
+    <elem eid="14" shape="quad8" nodes="41 56 55 57 58 59 44 43" />
+    <elem eid="15" shape="quad8" nodes="44 59 58 60 61 62 47 46" />
+    <elem eid="16" shape="quad8" nodes="47 62 61 63 64 65 50 49" />
+    <elem eid="17" shape="quad8" nodes="53 66 67 68 69 70 55 54" />
+    <elem eid="18" shape="quad8" nodes="55 70 69 71 72 73 58 57" />
+    <elem eid="19" shape="quad8" nodes="58 73 72 74 75 76 61 60" />
+    <elem eid="20" shape="quad8" nodes="61 76 75 77 78 79 64 63" />
+    <elem eid="21" shape="quad8" nodes="67 80 81 82 83 84 69 68" />
+    <elem eid="22" shape="quad8" nodes="69 84 83 85 86 87 72 71" />
+    <elem eid="23" shape="quad8" nodes="72 87 86 88 89 90 75 74" />
+    <elem eid="24" shape="quad8" nodes="75 90 89 91 92 93 78 77" />
+    <elem eid="25" shape="quad8" nodes="81 94 95 96 97 98 83 82" />
+    <elem eid="26" shape="quad8" nodes="83 98 97 99 100 101 86 85" />
+    <elem eid="27" shape="quad8" nodes="86 101 100 102 103 104 89 88" />
+    <elem eid="28" shape="quad8" nodes="89 104 103 105 106 107 92 91" />
+    <elem eid="29" shape="quad8" nodes="95 108 109 110 111 112 97 96" />
+    <elem eid="30" shape="quad8" nodes="97 112 111 113 114 115 100 99" />
+    <elem eid="31" shape="quad8" nodes="100 115 114 116 117 118 103 102" />
+    <elem eid="32" shape="quad8" nodes="103 118 117 119 120 121 106 105" />
+    <elem eid="33" shape="quad8" nodes="109 122 123 124 125 126 111 110" />
+    <elem eid="34" shape="quad8" nodes="111 126 125 127 128 129 114 113" />
+    <elem eid="35" shape="quad8" nodes="114 129 128 130 131 132 117 116" />
+    <elem eid="36" shape="quad8" nodes="117 132 131 133 134 135 120 119" />
+    <elem eid="37" shape="quad8" nodes="123 136 137 138 139 140 125 124" />
+    <elem eid="38" shape="quad8" nodes="125 140 139 141 142 143 128 127" />
+    <elem eid="39" shape="quad8" nodes="128 143 142 144 145 146 131 130" />
+    <elem eid="40" shape="quad8" nodes="131 146 145 147 148 149 134 133" />
+    <elem eid="41" shape="quad8" nodes="137 150 151 152 153 154 139 138" />
+    <elem eid="42" shape="quad8" nodes="139 154 153 155 156 157 142 141" />
+    <elem eid="43" shape="quad8" nodes="142 157 156 158 159 160 145 144" />
+    <elem eid="44" shape="quad8" nodes="145 160 159 161 162 163 148 147" />
+    <elem eid="45" shape="quad8" nodes="151 164 165 166 167 168 153 152" />
+    <elem eid="46" shape="quad8" nodes="153 168 167 169 170 171 156 155" />
+    <elem eid="47" shape="quad8" nodes="156 171 170 172 173 174 159 158" />
+    <elem eid="48" shape="quad8" nodes="159 174 173 175 176 177 162 161" />
+    <elem eid="49" shape="quad8" nodes="165 178 179 180 181 182 167 166" />
+    <elem eid="50" shape="quad8" nodes="167 182 181 183 184 185 170 169" />
+    <elem eid="51" shape="quad8" nodes="170 185 184 186 187 188 173 172" />
+    <elem eid="52" shape="quad8" nodes="173 188 187 189 190 191 176 175" />
+    <elem eid="53" shape="quad8" nodes="179 192 193 194 195 196 181 180" />
+    <elem eid="54" shape="quad8" nodes="181 196 195 197 198 199 184 183" />
+    <elem eid="55" shape="quad8" nodes="184 199 198 200 201 202 187 186" />
+    <elem eid="56" shape="quad8" nodes="187 202 201 203 204 205 190 189" />
+    <elem eid="57" shape="quad8" nodes="193 206 207 208 209 210 195 194" />
+    <elem eid="58" shape="quad8" nodes="195 210 209 211 212 213 198 197" />
+    <elem eid="59" shape="quad8" nodes="198 213 212 214 215 216 201 200" />
+    <elem eid="60" shape="quad8" nodes="201 216 215 217 218 219 204 203" />
+    <elem eid="61" shape="quad8" nodes="207 220 221 222 223 224 209 208" />
+    <elem eid="62" shape="quad8" nodes="209 224 223 225 226 227 212 211" />
+    <elem eid="63" shape="quad8" nodes="212 227 226 228 229 230 215 214" />
+    <elem eid="64" shape="quad8" nodes="215 230 229 231 232 233 218 217" />
+    <elem eid="65" shape="quad8" nodes="221 234 235 236 237 238 223 222" />
+    <elem eid="66" shape="quad8" nodes="223 238 237 239 240 241 226 225" />
+    <elem eid="67" shape="quad8" nodes="226 241 240 242 243 244 229 228" />
+    <elem eid="68" shape="quad8" nodes="229 244 243 245 246 247 232 231" />
+    <elem eid="69" shape="quad8" nodes="235 248 249 250 251 252 237 236" />
+    <elem eid="70" shape="quad8" nodes="237 252 251 253 254 255 240 239" />
+    <elem eid="71" shape="quad8" nodes="240 255 254 256 257 258 243 242" />
+    <elem eid="72" shape="quad8" nodes="243 258 257 259 260 261 246 245" />
+    <elem eid="73" shape="quad8" nodes="249 262 263 264 265 266 251 250" />
+    <elem eid="74" shape="quad8" nodes="251 266 265 267 268 269 254 253" />
+    <elem eid="75" shape="quad8" nodes="254 269 268 270 271 272 257 256" />
+    <elem eid="76" shape="quad8" nodes="257 272 271 273 274 275 260 259" />
+    <elem eid="77" shape="quad8" nodes="263 276 277 278 279 280 265 264" />
+    <elem eid="78" shape="quad8" nodes="265 280 279 281 282 283 268 267" />
+    <elem eid="79" shape="quad8" nodes="268 283 282 284 285 286 271 270" />
+    <elem eid="80" shape="quad8" nodes="271 286 285 287 288 289 274 273" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <force selection="Tip"><x>100 N</x><y>0 N</y><z>0 N</z></force>
+  <offset selection="Verschoven"><u>0 m</u><v>0 m</v><w>0.01 m</w></offset>
+  <mat name="Plaat2">
+    <geometric type="Plate" thickness="2 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Inklemming">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+    <face eid="3" faceid="4" />
+    <face eid="4" faceid="4" />
+  </faceselection>
+  <nodeselection name="Inklemming_knopen">
+    <node nid="1" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="22" />
+    <node nid="23" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="277" />
+    <node nid="278" />
+    <node nid="279" />
+    <node nid="281" />
+    <node nid="282" />
+    <node nid="284" />
+    <node nid="285" />
+    <node nid="287" />
+    <node nid="288" />
+  </nodeselection>
+  <nodeselection name="Midden">
+    <node nid="137" />
+    <node nid="142" />
+    <node nid="148" />
+  </nodeselection>
+  <elementselection name="Verschoven">
+    <element eid="1" />
+    <element eid="2" />
+    <element eid="3" />
+    <element eid="4" />
+    <element eid="5" />
+    <element eid="6" />
+    <element eid="7" />
+    <element eid="8" />
+    <element eid="9" />
+    <element eid="10" />
+    <element eid="11" />
+    <element eid="12" />
+    <element eid="13" />
+    <element eid="14" />
+    <element eid="15" />
+    <element eid="16" />
+    <element eid="17" />
+    <element eid="18" />
+    <element eid="19" />
+    <element eid="20" />
+    <element eid="21" />
+    <element eid="22" />
+    <element eid="23" />
+    <element eid="24" />
+    <element eid="25" />
+    <element eid="26" />
+    <element eid="27" />
+    <element eid="28" />
+    <element eid="29" />
+    <element eid="30" />
+    <element eid="31" />
+    <element eid="32" />
+    <element eid="33" />
+    <element eid="34" />
+    <element eid="35" />
+    <element eid="36" />
+    <element eid="37" />
+    <element eid="38" />
+    <element eid="39" />
+    <element eid="40" />
+    <element eid="41" />
+    <element eid="42" />
+    <element eid="43" />
+    <element eid="44" />
+    <element eid="45" />
+    <element eid="46" />
+    <element eid="47" />
+    <element eid="48" />
+    <element eid="49" />
+    <element eid="50" />
+    <element eid="51" />
+    <element eid="52" />
+    <element eid="53" />
+    <element eid="54" />
+    <element eid="55" />
+    <element eid="56" />
+    <element eid="57" />
+    <element eid="58" />
+    <element eid="59" />
+    <element eid="60" />
+    <element eid="61" />
+    <element eid="62" />
+    <element eid="63" />
+    <element eid="64" />
+    <element eid="65" />
+    <element eid="66" />
+    <element eid="67" />
+    <element eid="68" />
+    <element eid="69" />
+    <element eid="70" />
+    <element eid="71" />
+    <element eid="72" />
+    <element eid="73" />
+    <element eid="74" />
+    <element eid="75" />
+    <element eid="76" />
+    <element eid="77" />
+    <element eid="78" />
+    <element eid="79" />
+    <element eid="80" />
+  </elementselection>
+</liml>

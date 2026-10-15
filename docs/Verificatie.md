@@ -399,6 +399,40 @@ opeenvolgende meshes.
   temperature +50 K, `LINE_QUAD`): modaal met voorspanning 284,96 Hz tegen Mecway
   286,18 Hz, knik 3,3969 tegen 3,4010; in de bridge en in Mecway geven `temperature2`
   en `temperature3` dezelfde uitkomst (ook statisch, niet-lineair statisch en D30).
+### LS-60 – LS-63 Element offset (schalen en balken)
+
+- **Doel**: Mecway's *Element offset* (`<offset>` op een elementselectie,
+  `bridge_offset.py`). Schaal: middenvlak op afstand w langs +W (elementnormaal);
+  DKT/DST krijgen `EXCENTREMENT` (+ `INER_ROTA`), COQUE_3D kent dat niet
+  (`CALCULEL2_31`) en ligt op eigen knopen met een starre arm (`LIAISON_DDL`) naar elke
+  Mecway-knoop. Balk: as op (x, y, z) globaal van de knopen, ook met starre armen.
+- **Model**: (60a/b) ingeklemde strook 200 × 20 × 2 mm, 20 × 4 quad4 (a, DKT) of quad8
+  (b, COQUE_3D), w = 10 mm, 100 N trek (+X) op de knopen van de vrije rand. (61) twee
+  DKT-lagen op hetzelfde knoopnet, w = +10 en −10 mm, 100 N eindlast. (62) T-balk:
+  flens DKT 1000 × 50 × 5 mm, lijf RectBar 5 × 100 mm op de middellijn met offset
+  z = −52,5 mm, 100 N eindlast. (63) samengestelde balk als Mecway's voorbeeld
+  *CompositeBeam* (manual par. 11.2): lijf RectBar 0,2 × 0,01 m (E = 5,2 GPa),
+  flens 6 × 2 quad8 (t = 0,01 m, E = 2,6 GPa) met w = 0,105 m, torsiemoment 6 N m.
+- **Referentie**: (60) uniforme kromming P e/(EI): tip w = P e L²/(2EI) = 7,143 mm,
+  σ = P/(BT) ± 6Pe/(BT²) = 77,5 / 72,5 MPa; (61) I = 2(BT³/12 + BTe²) (Steiner),
+  w = PL³/(3EI) = 0,1582 mm; (62) T-doorsnede (Steiner), 0,18108 mm; (63) hoek
+  ML/(J(G_f + G_w)) = 0,108 rad (manual), draaiing om het dwarskrachtcentrum. Daarnaast
+  Mecway 34 (eigen solver, headless) op elk model; reacties: evenwicht.
+- **Resultaat**: (60a) 7,085 mm (Mecway 7,090, −0,07 %), (60b) 7,097 mm (Mecway 7,096,
+  +0,02 %), rotatie ≤ 0,2 % van Mecway, von Mises onder/boven 77,50 / 72,50 MPa; (61)
+  0,15657 mm (Steiner −1,0 %, Mecway 0,16090: −2,7 %); (62) 0,18100 mm (Steiner
+  −0,05 %, Mecway 0,18490: −2,1 %); (63) 0,10918 rad (Mecway 0,10913) en
+  zijverplaatsing 11,407 mm (Mecway 11,405); som van de reacties overal gelijk aan de
+  last (moment om de X-as in 63: 6,000 N m).
+- **Interpretatie**: het teken van w en de starre arm komen overeen met Mecway; de
+  verschillen in 61/62 zitten in de plaat (Mecway's MITC4 iets slapper), de bridge
+  ligt daar dichter bij Steiner. Met de starre armen nemen de knopen de reactie op
+  (de krachten in de arm zelf vallen weg). Met *Fixed support* op een knoopselectie
+  rekent Mecway in model 63 met een fijner mesh anders dan met de vlakken (KNOWN_BUGS
+  108c); de bridge is in beide gelijk. Zonder `POSTTRAITEMENTS='FORCE'` stopte
+  CompositeBeam met `FACTOR_57` (foutgrens 5e-6); de bridge zet die verfijning aan
+  zodra er starre armen zijn.
+
 ### LS-20 Configuraties (lastgevallen G, Q en ULS)
 
 - **Doel**: de instelling *Configuratie* (`configuration`) kiest welke configuratie de

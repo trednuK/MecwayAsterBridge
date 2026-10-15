@@ -587,7 +587,9 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     by_node = OrderedDict()
     for (eid, nid), free in free_at.items():
         by_node.setdefault(nid, []).append((eid, free))
-    next_nid = max(nodes) + 1
+    # na de knopen van verschoven elementen (bridge_offset.prepare)
+    next_nid = max([max(nodes)] + list(model_data.get("offset_new_nids",
+                                                      []))) + 1
     new_nodes = OrderedDict()
     poi_nodes = []
     eqs = model_data.setdefault("constraint_equations", [])
@@ -1033,6 +1035,14 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             crack_members.setdefault(group, []).append(name)
 
     # --------------------------------------------------
+    # 2f. Element offset (bridge_offset): verschoven schalen/balken op eigen
+    #     knopen (de vlakken en groepen hierboven blijven op de
+    #     Mecway-knopen) of EXCENTREMENT
+    # --------------------------------------------------
+    import bridge_offset
+    offset_plan = bridge_offset.prepare(model_data, nodes, conn, elements)
+
+    # --------------------------------------------------
     # 3. Losse knopen uit nodeselections -> POI1
     # --------------------------------------------------
     used_nodes = set()
@@ -1130,6 +1140,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # 4b. Discrete elementen op knopen (elastic support, knoopmassa's)
     # --------------------------------------------------
     discretes = _build_discretes(model_data, nodes, conn, group_face_list)
+    # Element offset: POI1 (DIS_TR) voor Mecway-knopen zonder eigen rotaties
+    discretes.update(bridge_offset.discretes(offset_plan, model_data))
     k_poi = 0
     for dname, d in discretes.items():
         names = []
@@ -1216,6 +1228,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     for name, nset in face_group_nodes.items():
         if rn(name) not in group_ma:
             group_no[rn(name)] = ["N{0}".format(n) for n in sorted(nset)]
+    bridge_offset.apply_to_mesh(offset_plan, model_data, by_type, group_ma,
+                                group_no, rn_es)
     # Lege groepen (lege Mecway-selectie) niet schrijven: een voorwaarde of
     # last erop wordt in _apply_to_model_data overgeslagen en gemeld.
     for groups in (group_ma, group_no):
@@ -1232,9 +1246,12 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             # 15 significante cijfers: de regel blijft onder 80 tekens.
             out.append(" N{0} {1}".format(nid, " ".join(
                 _real(c) for c in nodes[nid])))
-        # Extra knopen van flexible joints na de Mecway-knopen (de
-        # resultaten worden op knoopindex teruggelezen)
-        for nid, xyz in joint_nodes.items():
+        # Knopen van verschoven elementen (bridge_offset) en daarna die van
+        # flexible joints na de Mecway-knopen, oplopend genummerd (de
+        # resultaten worden op knoopindex teruggelezen: rij i < N blijft
+        # Mecway-knoop i+1)
+        for nid, xyz in ((offset_plan or {}).get("new_nodes", []) +
+                         list(joint_nodes.items())):
             out.append(" N{0} {1}".format(nid, " ".join(
                 _real(c) for c in xyz)))
         out.append("FINSF")

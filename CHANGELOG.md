@@ -7,6 +7,11 @@
   **Flexible joint on beam** is translated: an own node per beam end, coupled with
   `LIAISON_DDL` in Mecway's local axes. Verification LS-50 and LS-51 (equal to
   Mecway); limits KNOWN_BUGS 106–107.
+- **Element offset** (Loads & Constraints) for shells and beams is now translated instead
+  of skipped: linear shells (DKT/DST) with `EXCENTREMENT`, quadratic shells (COQUE_3D) and
+  beams on their own nodes with rigid arms to the Mecway nodes. Results stay on the Mecway
+  nodes (reactions include the arm). Verification LS-60–63 (incl. Mecway's CompositeBeam
+  sample).
 - **Bonded (Tie) contact between shells** now works: a shell face or edge glued onto a
   shell face no longer stops with a singular matrix (`FACTOR_11`); the drilling rotation is
   left out of `LIAISON_MAIL`. Example `TestFiles/Voorbeelden/Voorbeeld_T.liml`, verification

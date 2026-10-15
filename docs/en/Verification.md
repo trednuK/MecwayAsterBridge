@@ -398,6 +398,40 @@ meshes is given below.
   temperature +50 K, `LINE_QUAD`): modal with prestress 284.96 Hz against Mecway
   286.18 Hz, buckling 3.3969 against 3.4010; in the bridge and in Mecway `temperature2`
   and `temperature3` give the same result (also static, nonlinear static and D30).
+### LS-60 – LS-63 Element offset (shells and beams)
+
+- **Goal**: Mecway's *Element offset* (`<offset>` on an element selection,
+  `bridge_offset.py`). Shell: mid-surface at distance w along +W (element normal);
+  DKT/DST get `EXCENTREMENT` (+ `INER_ROTA`), COQUE_3D has no offset (`CALCULEL2_31`)
+  and is placed on its own nodes with a rigid arm (`LIAISON_DDL`) to each Mecway node.
+  Beam: axis at (x, y, z) global from the nodes, also with rigid arms.
+- **Model**: (60a/b) clamped strip 200 × 20 × 2 mm, 20 × 4 quad4 (a, DKT) or quad8 (b,
+  COQUE_3D), w = 10 mm, 100 N tension (+X) on the nodes of the free edge. (61) two DKT
+  layers on the same nodes, w = +10 and −10 mm, 100 N tip load. (62) T-beam: flange DKT
+  1000 × 50 × 5 mm, web RectBar 5 × 100 mm on the centre line with offset z = −52.5 mm,
+  100 N tip load. (63) composite beam as Mecway's sample *CompositeBeam* (manual §11.2):
+  web RectBar 0.2 × 0.01 m (E = 5.2 GPa), flange 6 × 2 quad8 (t = 0.01 m, E = 2.6 GPa)
+  with w = 0.105 m, torque 6 N m.
+- **Reference**: (60) uniform curvature P e/(EI): tip w = P e L²/(2EI) = 7.143 mm,
+  σ = P/(BT) ± 6Pe/(BT²) = 77.5 / 72.5 MPa; (61) I = 2(BT³/12 + BTe²) (parallel axis),
+  w = PL³/(3EI) = 0.1582 mm; (62) T-section (parallel axis), 0.18108 mm; (63) angle
+  ML/(J(G_f + G_w)) = 0.108 rad (manual), rotation about the shear centre. Plus Mecway 34
+  (own solver, headless) on each model; reactions: equilibrium.
+- **Result**: (60a) 7.085 mm (Mecway 7.090, −0.07 %), (60b) 7.097 mm (Mecway 7.096,
+  +0.02 %), rotation within 0.2 % of Mecway, von Mises bottom/top 77.50 / 72.50 MPa;
+  (61) 0.15657 mm (parallel axis −1.0 %, Mecway 0.16090: −2.7 %); (62) 0.18100 mm
+  (parallel axis −0.05 %, Mecway 0.18490: −2.1 %); (63) 0.10918 rad (Mecway 0.10913)
+  and lateral displacement 11.407 mm (Mecway 11.405); sum of the reactions equals the
+  load everywhere (moment about the X axis in 63: 6.000 N m).
+- **Interpretation**: the sign of w and the rigid arm agree with Mecway; the differences
+  in 61/62 are in the plate (Mecway's MITC4 slightly softer), the bridge is closer to the
+  parallel-axis value there. With rigid arms the nodes carry the reaction (the forces in
+  the arm itself cancel). With a *Fixed support* on a node selection Mecway computes
+  model 63 with a finer mesh differently from the faces (KNOWN_BUGS 108c); the bridge
+  gives the same in both. Without `POSTTRAITEMENTS='FORCE'` CompositeBeam stopped with
+  `FACTOR_57` (error bound 5e-6); the bridge switches that refinement on whenever there
+  are rigid arms.
+
 ### LS-20 Configurations (load cases G, Q and ULS)
 
 - **Goal**: the setting *Configuration* (`configuration`) chooses which configuration

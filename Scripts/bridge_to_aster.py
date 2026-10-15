@@ -46,6 +46,7 @@ import bridge_fatigue
 import bridge_mesh
 import bridge_modal_damping
 from bridge_bcs import is_position, ASTER_FORMULA_PRELUDE
+import bridge_offset
 from collections import OrderedDict
 from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
@@ -124,7 +125,7 @@ def _build_solveur_ref(analysis):
 LIN_SOLVERS = ("MUMPS", "GCPC")
 
 
-def _build_lin_solveur_ref(analysis):
+def _build_lin_solveur_ref(analysis, refine=False):
     """
     SOLVEUR- en INFO-regels voor MECA_STATIQUE (alleen lin_static_3d; de
     andere analyses gebruiken _build_solveur_ref ongewijzigd).
@@ -147,6 +148,13 @@ def _build_lin_solveur_ref(analysis):
               dan stopt Code-Aster (U4.50.01 par. 3.5.3, U2.08.03 par.
               7.2.1).
       GCPC  : convergentiecriterium ||r|| / ||f|| (U4.50.01 par. 3.6).
+
+    refine True (starre armen van een element offset, bridge_offset): MUMPS
+    met POSTTRAITEMENTS='FORCE' (iteratieve verfijning; catalogus
+    c_solveur.py v17.4, U4.50.01 par. MUMPS). CompositeBeam (Mecway-
+    voorbeeld) gaf zonder verfijning foutgrens 5,0e-6 > RESI_RELA
+    (<EXCEPTION> FACTOR_57; conditiegetal 1,2e10, geschaald residu
+    3,8e-17), met twee stappen verfijning 3,9e-7.
     """
     solver = "{0}".format(analysis.get("lin_solver", "MUMPS")).upper()
     # %-opmaak: altijd een punt; repr() gaf in IronPython
@@ -162,8 +170,9 @@ def _build_lin_solveur_ref(analysis):
                    "WARNING: Unknown linear solver '{0}' (lin_solver); "
                    "MUMPS used.").format(solver))
         line = ("    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}, "
-                "RESI_RELA={1}),\n".format(
-                    int(analysis.get("solver_nprec", 8)), resi))
+                "RESI_RELA={1}{2}),\n".format(
+                    int(analysis.get("solver_nprec", 8)), resi,
+                    ", POSTTRAITEMENTS='FORCE'" if refine else ""))
     return line + "    INFO=2,\n"
 
 
@@ -906,12 +915,16 @@ def _build_cara_elem_block(model_data):
         shell_entries = []
         for elset_name, sec in shell_secs.items():
             vect = _shell_ref_vector(model_data, elset_name)
-            shell_entries.append(
-                "        _F(GROUP_MA='{0}', EPAIS={1}{2}),".format(
-                    elset_name, sec["thickness"],
-                    "" if vect is None else
-                    ", VECTEUR=({0}, {1}, {2})".format(*vect))
-            )
+            # Element offset op DKT/DST: eigen groep met EXCENTREMENT
+            # (bridge_offset.coque_groups)
+            for group, extra in bridge_offset.coque_groups(model_data,
+                                                           elset_name):
+                shell_entries.append(
+                    "        _F(GROUP_MA='{0}', EPAIS={1}{2}{3}),".format(
+                        group, sec["thickness"],
+                        "" if vect is None else
+                        ", VECTEUR=({0}, {1}, {2})".format(*vect), extra)
+                )
         if len(shell_entries) == 1:
             lines.append("    COQUE={0},".format(
                 shell_entries[0].strip().rstrip(",")))
@@ -3001,6 +3014,11 @@ def _build_charges(model_data, func_names=None):
     timed_mpcs = _timed_mpcs(model_data)
     if timed_mpcs:
         timed_constraints.setdefault("LIAISON_DDL", []).extend(timed_mpcs)
+    # Element offset: starre arm tussen knoop en verschoven element
+    # (bridge_offset)
+    links = bridge_offset.link_entries(model_data)
+    if links:
+        constraints.setdefault("LIAISON_DDL", []).extend(links)
     model_data["_charge_prelude"] = "".join(
         prelude + model_data.pop("_extra_prelude", []))
 
@@ -4092,7 +4110,8 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
             loads_block      = loads_block,
             excit_clause     = excit_clause,
             cara_elem_ref    = cara_elem_ref,
-            solveur_ref      = _build_lin_solveur_ref(analysis),
+            solveur_ref      = _build_lin_solveur_ref(
+                analysis, refine=bool(model_data.get("offset_links"))),
             calc_champ_block = calc_champ_block,
             postreleve_block = postreleve_block,
             impr_table_block = impr_table_block,

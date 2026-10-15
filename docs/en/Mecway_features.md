@@ -116,7 +116,7 @@ Bonded contact per combination (slave on master):
 | plane, axisymmetric (2D) | No | – | Only in 2D analyses (§1). |
 | shells in a thermal analysis | Partly | `PLAN` with a thickness factor | Only shells in parallel planes (KB15); others: No (KB16). |
 | fin, fluid network element, resistor | No | – | Thermal 1D and DC current: KB16. |
-| Element offset (shell, beam) | No | – | Reported. Model the eccentricity with a Node-surface coupling (Rigid). |
+| Element offset (shell, beam) | Yes | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D and beams: element on its own nodes + rigid arm (`LIAISON_DDL`) | Shell: *Element coordinates*, only W counts (as in Mecway; u/v have no effect there either). Beam: *Global coordinates* x/y/z (u/v/w on a beam: no effect in Mecway, WARNING). Displacement, rotation and reaction at the Mecway nodes; stresses of the offset element shown at those nodes. In all mechanical analyses (Mecway: static only). Rigid arm: small rotations (KB108). Verification LS-60–63. |
 | Element orientation (local U/V axes per element) | Partly | – | Mecway stores the orientation per element (`orientationux`…`vz`, `angle`). Used for beams (section orientation) and gaps (direction). Ignored without a message for solids and shells; with an isotropic material that does not change the result. Only needed for orthotropic materials (§5, No). |
 
 ## 5. Materials and cross-sections

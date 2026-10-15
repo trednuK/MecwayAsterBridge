@@ -116,7 +116,7 @@ Verlijmd contact per combinatie (slave op master):
 | plane, axisymmetric (2D) | Nee | – | Alleen in 2D-analyses (§1). |
 | schalen in een thermische analyse | Deels | `PLAN` met een diktefactor | Alleen schalen in evenwijdige vlakken (KB15); andere: Nee (KB16). |
 | fin, fluid network element, resistor | Nee | – | Thermisch 1D en DC-stroom: KB16. |
-| Element offset (schaal, balk) | Nee | – | Gemeld. Modelleer de excentriciteit met een Node-surface coupling (Rigid). |
+| Element offset (schaal, balk) | Ja | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D en balken: element op eigen knopen + starre arm (`LIAISON_DDL`) | Schaal: *Element coordinates*, alleen W telt (zoals Mecway; u/v hebben ook daar geen effect). Balk: *Global coordinates* x/y/z (u/v/w op een balk: geen effect in Mecway, WARNING). Verplaatsing, rotatie en reactie op de Mecway-knopen; spanningen van het verschoven element op die knopen getoond. In alle mechanische analyses (Mecway: alleen statisch). Starre arm: kleine rotaties (KB108). Verificatie LS-60–63. |
 | Element orientation (lokale U/V-assen per element) | Deels | – | Mecway slaat de oriëntatie per element op (`orientationux`…`vz`, `angle`). Gebruikt voor balken (doorsnede-oriëntatie) en gaps (richting). Bij volumes en schalen genegeerd zonder melding; met isotroop materiaal verandert dat de uitkomst niet. Pas nodig bij orthotrope materialen (§5, Nee). |
 
 ## 5. Materialen en doorsneden

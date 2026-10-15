@@ -362,6 +362,22 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    in Mecway's eigen solver is exact); een ronde staaf (SECTION=PIPE met binnenstraal 0)
    rekent CCX daar niet ("nonpositive jacobian").
 
+108\. **Element offset met starre armen: kleine rotaties en waarden op de knopen**
+   (bevestigd, `bridge_offset.py`). Balken en COQUE_3D-schalen (tri6/quad8 of de keuze
+   COQUE_3D) met een element offset liggen op eigen knopen, met per knoop een starre
+   arm als `LIAISON_DDL` (lineair). (a) Bij `DEFORMATION` = `GROT_GDEP` blijft de arm
+   lineair (kleine rotaties, zoals LIAISON_SOLIDE in KNOWN_BUGS 11); DKT/DST met
+   `EXCENTREMENT` niet. (b) Spanningen van het verschoven element staan in Mecway op de
+   Mecway-knoop; heeft die knoop zelf al een waarde (ander element), dan blijft die staan
+   (`aster_results_export._offset_values`). (c) Mecway 34 zelf geeft met een *Fixed
+   support* op een knoopselectie een andere uitkomst dan op de vlakken van hetzelfde
+   model (LS-63-model met 24 balk- en 12 x 2 quad8-elementen: torsiehoek 0,1117 tegen
+   0,1046 rad, zijverplaatsing +1,6 tegen −10,9 mm; de bridge geeft in beide 0,1092 rad
+   en −11,4 mm); nagegaan met het voorbeeld zelf en LS-63 (vlakken, gelijk aan Mecway).
+   (d) Een balkelement met zowel een offset als een flexible joint: de joint vervalt
+   (WARNING; de arm gaat naar de Mecway-knoop). Niet gecombineerd getest.
+   Status: (a), (b) en (d) zo gelaten; (c) **vraag** (gedrag van Mecway).
+
 ## Open vragen (gedrag van Mecway niet nagegaan)
 
 27\. **Niet geverifieerd in een .liml** (vraag). Constraint equation: `constant`

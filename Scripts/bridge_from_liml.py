@@ -52,6 +52,7 @@ import bridge_thermal
 import bridge_acoustic
 import bridge_vibroacoustic
 import bridge_cyclic
+import bridge_offset
 
 # ------------------------------------------------------------------
 # CONSTANTEN: elementvormen per dimensie
@@ -724,7 +725,7 @@ def _section_area(geom):
 # in model_data, bridge_mesh.py / bridge_to_aster.py vertalen ze.
 _MODEL_ITEM_TAGS = ("thermalstress", "temperature2", "rayleighdamping",
                     "constraintequation", "mass2", "rotationalinertia",
-                    "flexiblejoint")
+                    "flexiblejoint", bridge_offset.TAG)
 
 # DOF-namen van een constraint equation. ux/uy/uz staan in de .liml van
 # het testmodel (Mecway 33). rx/ry/rz: in mecway.exe staan "rx", "ry",
@@ -993,7 +994,11 @@ def _parse_model_item(item, root, model_data):
     """Vul model_data aan voor een tag uit _MODEL_ITEM_TAGS."""
     tag = item.tag
     sel = item.get("selection", "")
-    if tag == "thermalstress":
+    if tag == bridge_offset.TAG:
+        # Element offset van schalen en balken (manual v34 par. 7.4.3,
+        # 7.5.1); bridge_mesh/bridge_to_aster vertalen het (bridge_offset).
+        bridge_offset.parse(item, model_data)
+    elif tag == "thermalstress":
         # Mecway (manual v33 par. 9.25): een referentietemperatuur; knopen
         # zonder temperatuur staan op die temperatuur.
         if model_data.get("thermal_stress") is not None:
