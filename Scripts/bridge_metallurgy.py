@@ -4,54 +4,54 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_metallurgy.py
-# Verantwoordelijkheid: metallurgie van staal bij lassen (stap S5): de
-# fase-omzettingen (ferriet, perliet, bainiet, martensiet; austeniet bij
-# opwarmen) uit het temperatuurverloop van een transiente thermische
-# analyse (Mecway T31 -> ther_3d, bridge_thermal.py), de hardheid, en als
-# optie hun invloed op de restspanning in de keten thermisch -> mechanisch
-# (bridge_thermomech.py).
+# Responsibility: metallurgy of steel in welding (step S5): the
+# phase transformations (ferrite, pearlite, bainite, martensite; austenite
+# on heating) from the temperature history of a transient thermal
+# analysis (Mecway T31 -> ther_3d, bridge_thermal.py), the hardness, and
+# optionally their influence on the residual stress in the chain
+# thermal -> mechanical (bridge_thermomech.py).
 #
-# Invoer: Mecway kent geen metallurgie. Een regel in een vrij tekstveld
-# (bridge_custom.py), per Mecway-materiaal, zoals #ASTER-MATERIAAL:
+# Input: Mecway has no metallurgy. A line in a free text field
+# (bridge_custom.py), per Mecway material, like #ASTER-MATERIAAL:
 #   #ASTER-METALLURGIE Staal: staal=16MND5
 #   #ASTER-METALLURGIE Staal: staal=16MND5, begin=bainiet, mechanica=ja,
 #   #ASTER-METALLURGIE     ALPHA_A=2.35e-5, DEPS=1.0e-2
 #   #ASTER-METALLURGIE Staal: trc=MIJN_TRC, AR3=830, MS0=415, ...
-# (een regel die met '<materiaal>:' begint, start een materiaal; ook
-# #ASTER-METALLURGY). 'staal' kiest een standaard-dataset (DATASETS: TRC-
-# diagram en META_ACIER uit een Code-Aster-testcase); 'trc' een DEFI_TRC
-# die de gebruiker in #ASTER-code schrijft. Zie docs/Lassen.md par. 10.
+# (a line that starts with '<material>:' starts a material; also
+# #ASTER-METALLURGY). 'staal' picks a standard data set (DATASETS: CCT
+# diagram and META_ACIER from a Code-Aster test case); 'trc' a DEFI_TRC
+# that the user writes in #ASTER code. See docs/Lassen.md par. 10.
 #
-# Code-Aster 17.4 (catalogi calc_meta.py, defi_trc.py, defi_materiau.py
-# META_ACIER / DURT_META / ELAS_META_FO / META_ECRO_LINE; syntaxbron
-# testcases hsnv101a, mtlp100b, mtlp103a):
-#   - META_ACIER (en DURT_META) in de thermische DEFI_MATERIAU (zoals
-#     hsnv101a: THER + META_ACIER in een materiaal; een aparte CHAM_MATER
-#     voor CALC_META gaf per stap alarm RESULT1_39);
+# Code-Aster 17.4 (catalogues calc_meta.py, defi_trc.py, defi_materiau.py
+# META_ACIER / DURT_META / ELAS_META_FO / META_ECRO_LINE; syntax source
+# test cases hsnv101a, mtlp100b, mtlp103a):
+#   - META_ACIER (and DURT_META) in the thermal DEFI_MATERIAU (like
+#     hsnv101a: THER + META_ACIER in one material; a separate CHAM_MATER
+#     for CALC_META gave alarm RESULT1_39 at every step);
 #   - CALC_META reuse=res, ETAT_INIT META_INIT_ELNO (CART_VAR2_R V1..V7 =
-#     ferriet, perliet, bainiet, martensiet, austeniet, som koude fasen,
-#     korrelgrootte), COMPORTEMENT RELATION='ACIER' (Waeckel), OPTION
-#     META_ELNO/META_NOEU en DURT_ELNO/DURT_NOEU;
-#   - META_NOEU heeft V1..V9: de vijf fasen, V6 som koude fasen, V7
-#     korrelgrootte, V8 temperatuur, V9 Ms (gezien in een run, MT-01);
-#   - mechanisch (mechanica=ja): AFFE_VARC NOM_VARC='M_ACIER' (EVOL =
-#     thermisch resultaat, NOM_CHAM='META_ELNO'), ELAS_META_FO +
+#     ferrite, pearlite, bainite, martensite, austenite, sum of cold
+#     phases, grain size), COMPORTEMENT RELATION='ACIER' (Waeckel), OPTION
+#     META_ELNO/META_NOEU and DURT_ELNO/DURT_NOEU;
+#   - META_NOEU has V1..V9: the five phases, V6 sum of cold phases, V7
+#     grain size, V8 temperature, V9 Ms (seen in a run, MT-01);
+#   - mechanical (mechanica=ja): AFFE_VARC NOM_VARC='M_ACIER' (EVOL =
+#     thermal result, NOM_CHAM='META_ELNO'), ELAS_META_FO +
 #     META_ECRO_LINE, COMPORTEMENT RELATION='META_P_IL' RELATION_KIT=
-#     ('ACIER',) (hsnv101a); interne variabelen V1..V5 versteviging per
-#     fase, V6 som koude fasen, V7 EPSPEQ, V8 INDIPLAS (gezien in de .mess
-#     van hsnv101a).
-# Temperaturen in de .comm staan in graden Celsius (bridge_thermal), zoals
-# AR3/MS0/AC1/AC3 en de TRC-diagrammen.
+#     ('ACIER',) (hsnv101a); internal variables V1..V5 hardening per
+#     phase, V6 sum of cold phases, V7 EPSPEQ, V8 INDIPLAS (seen in the
+#     .mess of hsnv101a).
+# Temperatures in the .comm are in degrees Celsius (bridge_thermal), as
+# are AR3/MS0/AC1/AC3 and the CCT diagrams.
 #
-#   parse_specs(bodies)             - #ASTER-METALLURGIE-regels lezen
-#   apply(tb, model_data, analysis) - (blok voor de materialen, blok na de
-#                                     thermische solve); zet tb.meta_kw
-#   mech_material(...)              - DEFI_MATERIAU met ELAS_META_FO voor de
-#                                     keten (bridge_thermomech._materials)
-#   patch_comportement / varc_entries - keten: RELATION en AFFE_VARC
-#   report_lines(mess_path)         - samenvatting na de run (statusvak)
+#   parse_specs(bodies)             - read #ASTER-METALLURGIE lines
+#   apply(tb, model_data, analysis) - (block for the materials, block after
+#                                     the thermal solve); sets tb.meta_kw
+#   mech_material(...)              - DEFI_MATERIAU with ELAS_META_FO for
+#                                     the chain (bridge_thermomech._materials)
+#   patch_comportement / varc_entries - chain: RELATION and AFFE_VARC
+#   report_lines(mess_path)         - summary after the run (status box)
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import re
 from collections import OrderedDict
@@ -60,23 +60,24 @@ from bridge_utils import log, tr
 
 KELVIN = 273.15
 
-# Fasen in de volgorde van Code-Aster (Behaviours/acier.py nom_vari:
-# FERRITE, PERLITE, BAINITE, MARTENSITE, AUSTENITE) met de Mecway-namen
-# van de bridge (aster_results_export FIELD_TABLE, groep "metallurgy").
+# Phases in the order of Code-Aster (Behaviours/acier.py nom_vari:
+# FERRITE, PERLITE, BAINITE, MARTENSITE, AUSTENITE) with the Mecway names
+# of the bridge (aster_results_export FIELD_TABLE, group "metallurgy").
 PHASES = ("ferrite", "pearlite", "bainite", "martensite", "austenite")
 FIELD_GROUP = "metallurgy"
 
 # ==========================================
-# STANDAARD-DATASETS
+# STANDARD DATA SETS
 # ==========================================
-# TRC-diagram (DEFI_TRC HIST_EXP: per afkoelgeschiedenis de afkoelsnelheid
-# bij 700 graden C [C/s], de korrelgrootte, zes coefficienten en daarna
-# viertallen (Z_ferriet, Z_perliet, Z_bainiet, T [C])), TEMP_MS, en
-# META_ACIER/DURT_META zoals in de testcase.
+# CCT diagram (DEFI_TRC HIST_EXP: per cooling history the cooling rate
+# at 700 degrees C [C/s], the grain size, six coefficients and then
+# groups of four (Z_ferrite, Z_pearlite, Z_bainite, T [C])), TEMP_MS, and
+# META_ACIER/DURT_META as in the test case.
 #
-# 16MND5 (A508 cl. 3, drukvatstaal): testcase mtlp103a (V4.61.103, "trempe
-# d'un barreau cylindrique en 16MND5"), 29 afkoelgeschiedenissen van 0,05
-# tot 400 C/s, GRAIN_AUST DREF = 11, hardheid per fase (HV).
+# 16MND5 (A508 cl. 3, pressure vessel steel): test case mtlp103a
+# (V4.61.103, "trempe d'un barreau cylindrique en 16MND5"), 29 cooling
+# histories from 0.05 to 400 C/s, GRAIN_AUST DREF = 11, hardness per
+# phase (HV).
 _TRC_16MND5 = (
     (
         -0.05, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 830, 0, 0, 0, 758.5,
@@ -182,10 +183,10 @@ _TRC_16MND5 = (
         -400, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 830),
 )
 
-# HSNV101A: testcase hsnv101a (staaf, afkoelen 900 -> 0 graden C in 180 s,
-# omzetting naar bainiet tussen 600 en 345 graden C). Fictieve gegevens van
-# de testcase (verificatie MT-01), geen echt staal; met de mechanische
-# gegevens van de testcase (ELAS_META_FO, META_ECRO_LINE).
+# HSNV101A: test case hsnv101a (bar, cooling 900 -> 0 degrees C in 180 s,
+# transformation to bainite between 600 and 345 degrees C). Fictitious data
+# of the test case (verification MT-01), not a real steel; with the
+# mechanical data of the test case (ELAS_META_FO, META_ECRO_LINE).
 _TRC_HSNV101A = (
     (
         -1106, 11, 8.563, -0.0276, 0.000122, -2.955e-07, 3.402e-10,
@@ -194,8 +195,8 @@ _TRC_HSNV101A = (
         -2206, 11, 8.563, -0.0276, 0.000122, -2.955e-07, 3.402e-10,
         -1.517e-13, 0, 0, 0, 836, 0, 0, 0, 600.1, 0, 0, 1, 345),
 )
-# hsnv101a FBM1 / AUS1: D_SIGM_EPSI [Pa] van de koude fasen / austeniet,
-# FBM2 / AUS2: vloeigrens [Pa], als (T [C], waarde)-paren.
+# hsnv101a FBM1 / AUS1: D_SIGM_EPSI [Pa] of the cold phases / austenite,
+# FBM2 / AUS2: yield stress [Pa], as (T [C], value) pairs.
 _FBM1 = (
     0, 4.35314e+09, 20, 4.2574e+09, 40, 4.16157e+09, 60, 4.06564e+09, 80,
     3.96962e+09, 100, 3.8735e+09, 120, 3.77729e+09, 140, 3.68098e+09, 160,
@@ -271,11 +272,11 @@ DATASETS = OrderedDict([
 ])
 
 # ==========================================
-# SLEUTELS
+# KEYS
 # ==========================================
 _META_KEYS = ("AR3", "ALPHA", "MS0", "AC1", "AC3", "TAUX_1", "TAUX_3")
 _META_OPT = ("LAMBDA0", "QSR_K", "D10", "WSR_K")
-_PH = ("F", "P", "B", "M", "A")         # fase-achtervoegsels
+_PH = ("F", "P", "B", "M", "A")         # phase suffixes
 _KEYS = OrderedDict(
     [("STAAL", ("staal", "steel", "dataset")),
      ("TRC", ("trc",)),
@@ -296,7 +297,7 @@ _KEYS = OrderedDict(
     [("{0}_{1}".format(q, p), ("{0}_{1}".format(q, p).lower(),))
      for q in ("SY", "ET", "H") for p in _PH])
 _ALIAS = dict((a, k) for k, names in _KEYS.items() for a in names)
-# Lijsten (over T/TC) of constanten in de mechanische gegevens
+# Lists (over T/TC) or constants in the mechanical data
 _TABLE_KEYS = (("ALPHA_F", "ALPHA_A", "SY", "ET", "H") +
                tuple("{0}_{1}".format(q, p) for q in ("SY", "ET", "H")
                      for p in _PH))
@@ -317,7 +318,7 @@ _NO = ("nee", "no", "non", "0", "false")
 
 
 def enabled(model_data):
-    """True als het model #ASTER-METALLURGIE-regels heeft."""
+    """True if the model has #ASTER-METALLURGIE lines."""
     return bool(model_data.get("aster_custom", {}).get("metallurgy"))
 
 
@@ -327,11 +328,11 @@ def _err(label, nl, en, *args):
 
 def parse_specs(bodies):
     """
-    {Mecway-materiaal: spec} uit de #ASTER-METALLURGIE-regels, of None
-    (ERROR in de log). spec: "dataset" (naam uit DATASETS of None), "trc"
-    (DEFI_TRC-concept van de gebruiker of None), "meta" (META_ACIER-
-    waarden), "hv" (5 waarden of None), "begin" (5 fracties), "grain",
-    "mech" (bool) en de mechanische gegevens ("T", lijsten zoals
+    {Mecway material: spec} from the #ASTER-METALLURGIE lines, or None
+    (ERROR in the log). spec: "dataset" (name from DATASETS or None), "trc"
+    (DEFI_TRC concept of the user or None), "meta" (META_ACIER
+    values), "hv" (5 values or None), "begin" (5 fractions), "grain",
+    "mech" (bool) and the mechanical data ("T", lists like
     #ASTER-MATERIAAL).
     """
     import bridge_thermomech as btm
@@ -488,7 +489,7 @@ def _make_spec(raw, label):
         elif low not in _NO:
             _bad(label, "mechanica")
             return None
-    # Mechanische gegevens (alleen met mechanica=ja; zoals #ASTER-MATERIAAL)
+    # Mechanical data (only with mechanica=ja; like #ASTER-MATERIAAL)
     try:
         for k in ("T", "TC"):
             if k in raw:
@@ -541,7 +542,7 @@ def _make_spec(raw, label):
 
 
 # ==========================================
-# THERMISCH DEEL: META_ACIER + CALC_META
+# THERMAL PART: META_ACIER + CALC_META
 # ==========================================
 def _r(x):
     import bridge_mesh
@@ -571,7 +572,7 @@ def _trc_block(name, ds):
 
 
 def _material_kw(spec):
-    """', META_ACIER=_F(...), DURT_META=_F(...)' voor de thermische
+    """', META_ACIER=_F(...), DURT_META=_F(...)' for the thermal
     DEFI_MATERIAU."""
     trc = spec["trc"] or "trc_{0}".format(spec["dataset"])
     parts = ["TRC={0}".format(trc)] + [
@@ -589,9 +590,9 @@ def _fmt_groups(groups):
     return "({0},)".format(", ".join("'{0}'".format(g) for g in groups))
 
 
-# Samenvatting in de job (na CALC_META): regels 'BRIDGE_META <sleutel>
-# <waarde>' in de .mess (report_lines). Een fout hier mag de job niet
-# stoppen.
+# Summary in the job (after CALC_META): lines 'BRIDGE_META <key>
+# <value>' in the .mess (report_lines). An error here must not stop the
+# job.
 _REPORT = '''# Samenvatting metallurgie (bridge_metallurgy): fasen op het laatste
 # tijdstip, grootste austenietfractie tijdens de run (warmte-beinvloede
 # zone), hardheid. Regels BRIDGE_META in de .mess.
@@ -642,11 +643,11 @@ _bridge_meta_report(res, {n_nodes}, {with_hv}, {ac3})
 
 def apply(tb, model_data, analysis):
     """
-    Metallurgie in de thermische builder tb (bridge_thermal._Thermal).
-    Returns (blok voor de materialen (DEFI_TRC), blok na de thermische
-    solve (CALC_META + samenvatting)) of None (ERROR); ("", "") zonder
-    #ASTER-METALLURGIE. Zet tb.meta_kw = {Mecway-materiaal: tekst voor
-    DEFI_MATERIAU} en model_data["metallurgy"] (voor de keten en de
+    Metallurgy in the thermal builder tb (bridge_thermal._Thermal).
+    Returns (block for the materials (DEFI_TRC), block after the thermal
+    solve (CALC_META + summary)) or None (ERROR); ("", "") without
+    #ASTER-METALLURGIE. Sets tb.meta_kw = {Mecway material: text for
+    DEFI_MATERIAU} and model_data["metallurgy"] (for the chain and the
     export).
     """
     tb.meta_kw = {}
@@ -703,7 +704,7 @@ def apply(tb, model_data, analysis):
                    "phases (docs/en/Welding.md sec. 10.4).").format(name))
     if not groups:
         return "", ""
-    # TRC-diagrammen van de gebruikte datasets (een keer per dataset)
+    # CCT diagrams of the data sets used (once per data set)
     pre = []
     for ds_name in OrderedDict((specs[n]["dataset"], True) for n in groups
                                if specs[n]["dataset"]):
@@ -711,12 +712,12 @@ def apply(tb, model_data, analysis):
     users = [specs[n]["trc"] for n in groups if specs[n]["trc"]]
     sep = ""
     if users:
-        # Een eigen DEFI_TRC staat in #ASTER-code, die in de .comm na de
-        # materialen komt (bridge_thermal: loads_block). META_ACIER gaat dan
-        # in een eigen materiaal en CHAM_MATER voor CALC_META (alarm
-        # RESULT1_39 "materiau different" is dan bedoeld; gezien in een run,
-        # de fasen zijn gelijk aan die met META_ACIER in het thermische
-        # materiaal).
+        # A user DEFI_TRC is in #ASTER code, which comes after the
+        # materials in the .comm (bridge_thermal: loads_block). META_ACIER
+        # then goes into its own material and CHAM_MATER for CALC_META
+        # (alarm RESULT1_39 "materiau different" is then intended; seen in
+        # a run, the phases are equal to those with META_ACIER in the
+        # thermal material).
         log(tr("INFO: #ASTER-METALLURGIE: eigen TRC-diagram(men) {0} uit "
                "#ASTER-code; META_ACIER in een eigen CHAM_MATER (alarm "
                "RESULT1_39 is dan bedoeld).", "INFO: #ASTER-METALLURGY: own "
@@ -744,7 +745,7 @@ def apply(tb, model_data, analysis):
                         _fmt_groups(els), _r(z[0]), _r(z[1]), _r(z[2]),
                         _r(z[3]), _r(z[4]), _r(z[0] + z[1] + z[2] + z[3]),
                         _r(spec["grain"])))
-        log("INFO: #ASTER-METALLURGIE '{0}': {1}, begin {2}, korrel {3}, "
+        log("INFO: #ASTER-METALLURGIE '{0}': {1}, begin {2}, grain {3}, "
             "AR3/MS0/AC1/AC3 = {4}/{5}/{6}/{7} C, ALPHA {8}{9}{10}; elsets "
             "{11}.".format(
                 name, "dataset {0} ({1})".format(
@@ -785,7 +786,7 @@ def apply(tb, model_data, analysis):
     post += _REPORT.format(n_nodes=len(model_data.get("mesh_nodes", {})),
                            with_hv=with_hv, ac3=_r(max(
                                specs[n]["meta"]["AC3"] for n in groups)))
-    post += "# --- einde metallurgie ---\n"
+    post += "# --- end of metallurgy ---\n"
     model_data["metallurgy"] = {
         "specs": specs, "groups": groups, "with_hv": with_hv,
         "mech": OrderedDict((n, specs[n]) for n in groups
@@ -794,11 +795,11 @@ def apply(tb, model_data, analysis):
 
 
 def fields(fields_in, model_data):
-    """Velden voor de export: met metallurgie ook FIELD_GROUP."""
+    """Fields for the export: with metallurgy also FIELD_GROUP."""
     out = list(fields_in or [])
     if model_data.get("metallurgy") and FIELD_GROUP not in out:
         out.append(FIELD_GROUP)
-        log("INFO: Metallurgie: fasen{0} naar Mecway ({1}).".format(
+        log("INFO: Metallurgy: phases{0} to Mecway ({1}).".format(
             " en hardheid" if model_data["metallurgy"]["with_hv"] else "",
             ", ".join(PHASES + (("hardness",) if model_data["metallurgy"]
                                 ["with_hv"] else ()))))
@@ -806,29 +807,30 @@ def fields(fields_in, model_data):
 
 
 # ==========================================
-# MECHANISCH DEEL (keten thermisch -> mechanisch, mechanica=ja)
+# MECHANICAL PART (chain thermal -> mechanical, mechanica=ja)
 # ==========================================
 def mech_specs(model_data):
-    """{Mecway-materiaal: spec} met mechanica=ja (leeg zonder)."""
+    """{Mecway material: spec} with mechanica=ja (empty without)."""
     return (model_data.get("metallurgy") or {}).get("mech") or {}
 
 
 def mech_fields(fields_in, model_data):
-    """Velden van de keten zonder 'plastic_strain_eq' bij de metallurgische
-    wet: bij META_P_IL zijn de interne variabelen V1..V5 verstevigingen per
-    fase en V7 een spanning (gezien in hsnv101a en MT-07), geen cumulatieve
-    plastische rek; de plastische rektensor (plastic_strain) blijft."""
+    """Fields of the chain without 'plastic_strain_eq' with the
+    metallurgical law: with META_P_IL the internal variables V1..V5 are
+    hardenings per phase and V7 a stress (seen in hsnv101a and MT-07), not
+    a cumulative plastic strain; the plastic strain tensor (plastic_strain)
+    stays."""
     out = list(fields_in or [])
     if mech_specs(model_data) and "plastic_strain_eq" in out:
         out.remove("plastic_strain_eq")
-        log("INFO: Metallurgische wet (META_P_IL): geen "
-            "equivalentplasticstrain (interne variabelen per fase); de "
-            "plastische rek staat in plasticstrain*.")
+        log("INFO: Metallurgical law (META_P_IL): no "
+            "equivalentplasticstrain (internal variables per phase); the "
+            "plastic strain is in plasticstrain*.")
     return out
 
 
 def _user_table(spec, key):
-    """[(T_K of None, v)] uit de gebruikerswaarden, of None."""
+    """[(T_K or None, v)] from the user values, or None."""
     vals = spec["user_mech"].get(key)
     if vals is None:
         return None
@@ -838,8 +840,8 @@ def _user_table(spec, key):
 
 
 def _et_from_h(h, e_tab):
-    """D_SIGM_EPSI(T) = E H / (E + H) uit een plastische modulus H(T)
-    (zoals bridge_thermomech._slope_table; Mecway's tangent modulus is
+    """D_SIGM_EPSI(T) = E H / (E + H) from a plastic modulus H(T)
+    (like bridge_thermomech._slope_table; Mecway's tangent modulus is
     H)."""
     import bridge_thermomech as btm
     temps = sorted(set(t for t, _v in list(h) + list(e_tab)
@@ -855,19 +857,20 @@ def _et_from_h(h, e_tab):
 
 def mech_material(concept, mat, spec, tab, tref, t_alpha, t_cut, label):
     """
-    DEFI_MATERIAU (ELAS_META_FO + META_ECRO_LINE) voor een materiaal met
-    mechanica=ja, of None (ERROR). tab: de tabellen van
-    bridge_thermomech._materials ("E", "NU", "ALPHA" (secans t.o.v.
-    t_alpha, al afgekapt boven t_cut) en "SY"/"ET" als het Mecway-materiaal
-    of #ASTER-MATERIAAL plastisch is); temperaturen in K.
+    DEFI_MATERIAU (ELAS_META_FO + META_ECRO_LINE) for a material with
+    mechanica=ja, or None (ERROR). tab: the tables of
+    bridge_thermomech._materials ("E", "NU", "ALPHA" (secant relative to
+    t_alpha, already cut off above t_cut) and "SY"/"ET" if the Mecway
+    material or #ASTER-MATERIAAL is plastic); temperatures in K.
 
-    Thermische en metallurgische rek (ELAS_META_FO), met DEPS =
-    EPSF_EPSC_TREF (rek van de koude fasen min die van austeniet bij T_ref
-    = TEMP_DEF_ALPHA = t_alpha) en Z_a de austenietfractie; 'FROID' met de
-    hand nagerekend in MT-04/MT-05, 'CHAUD' via hsnv101a (MT-01); de U-doc
-    NIET gelezen. PHASE_REFE='CHAUD' (austeniet is de referentie):
+    Thermal and metallurgical strain (ELAS_META_FO), with DEPS =
+    EPSF_EPSC_TREF (strain of the cold phases minus that of austenite at
+    T_ref = TEMP_DEF_ALPHA = t_alpha) and Z_a the austenite fraction;
+    'FROID' recomputed by hand in MT-04/MT-05, 'CHAUD' via hsnv101a
+    (MT-01); the U-doc NOT read. PHASE_REFE='CHAUD' (austenite is the
+    reference):
         eps = Z_a alpha_a (T - T_ref) + (1 - Z_a) (alpha_f (T - T_ref) + DEPS)
-    'FROID' (koude fasen de referentie):
+    'FROID' (cold phases the reference):
         eps = (1 - Z_a) alpha_f (T - T_ref) + Z_a (alpha_a (T - T_ref) - DEPS)
     """
     import bridge_thermomech as btm
@@ -894,12 +897,12 @@ def mech_material(concept, mat, spec, tab, tref, t_alpha, t_cut, label):
         if alpha_f is not None:
             alpha_f = btm._cut_alpha(alpha_f, t_alpha, t_cut)
     if alpha_f is None:
-        alpha_f = tab["ALPHA"]       # Mecway / #ASTER-MATERIAAL (al afgekapt)
+        alpha_f = tab["ALPHA"]       # Mecway / #ASTER-MATERIAAL (cut off)
     ref = spec["user_mech"].get("REF") or dmech.get("REF") or (
         "CHAUD" if spec["begin"][4] > 0.5 else "FROID")
-    # Vloeigrens en helling per fase: eigen waarde (SY_F, ...), anders SY
-    # voor alle fasen, anders de dataset, anders het Mecway-materiaal /
-    # #ASTER-MATERIAAL (tab["SY"], tab["ET"]).
+    # Yield stress and slope per phase: own value (SY_F, ...), otherwise SY
+    # for all phases, otherwise the data set, otherwise the Mecway material
+    # / #ASTER-MATERIAAL (tab["SY"], tab["ET"]).
     sy, et = OrderedDict(), OrderedDict()
     for p in _PH:
         sy[p] = (_user_table(spec, "SY_" + p) or _user_table(spec, "SY") or
@@ -965,7 +968,7 @@ def mech_material(concept, mat, spec, tab, tref, t_alpha, t_cut, label):
         "{0} = DEFI_MATERIAU(\n    ELAS_META_FO=_F(\n        {1},\n    ),\n"
         "    META_ECRO_LINE=_F(\n        {2},\n    ),\n)".format(
             concept, ",\n        ".join(kw), ",\n        ".join(ecro)))
-    log("INFO: Thermomechanisch: materiaal '{0}': ELAS_META_FO + "
+    log("INFO: Thermomechanical: material '{0}': ELAS_META_FO + "
         "META_ECRO_LINE (META_P_IL), PHASE_REFE {1}, DEPS {2}, T_ref = {3} "
         "K{4}.".format(mat, ref, _r(deps), "%.6g" % t_alpha,
                        ", dataset {0}".format(spec["dataset"])
@@ -974,8 +977,8 @@ def mech_material(concept, mat, spec, tab, tref, t_alpha, t_cut, label):
 
 
 def varc_entries(model_data, evol):
-    """AFFE_VARC M_ACIER (fasen uit het thermische resultaat) voor de
-    elsets met mechanica=ja."""
+    """AFFE_VARC M_ACIER (phases from the thermal result) for the
+    elsets with mechanica=ja."""
     mm = model_data.get("metallurgy") or {}
     groups = [e for n in mech_specs(model_data) for e in mm["groups"][n]]
     if not groups:
@@ -985,7 +988,7 @@ def varc_entries(model_data, evol):
 
 
 def patch_comportement(text, model_data):
-    """RELATION='META_P_IL', RELATION_KIT=('ACIER',) voor de elsets met
+    """RELATION='META_P_IL', RELATION_KIT=('ACIER',) for the elsets with
     mechanica=ja (hsnv101a)."""
     mm = model_data.get("metallurgy") or {}
     for n in mech_specs(model_data):
@@ -997,7 +1000,7 @@ def patch_comportement(text, model_data):
 
 
 def check_chain(model_data, projected):
-    """False (ERROR) als de keten de metallurgische wet niet kan rekenen."""
+    """False (ERROR) if the chain cannot compute the metallurgical law."""
     if mech_specs(model_data) and projected:
         log(tr("ERROR: #ASTER-METALLURGIE mechanica=ja werkt niet met "
                "elem_hex8 = LINE_QUAD (de fasen staan op het lineaire mesh). "
@@ -1012,13 +1015,13 @@ def check_chain(model_data, projected):
 
 
 # ==========================================
-# NA DE RUN
+# AFTER THE RUN
 # ==========================================
 _ROW = re.compile(r"^BRIDGE_META\s+(\w+)\s+([-+0-9.eEinfa]+)\s*$")
 
 
 def read_summary(mess_path):
-    """{sleutel: waarde} uit de BRIDGE_META-regels van de .mess."""
+    """{key: value} from the BRIDGE_META lines of the .mess."""
     import io
     import os
     out = OrderedDict()
@@ -1041,13 +1044,13 @@ def read_summary(mess_path):
 
 
 def report_lines(mess_path):
-    """Regels voor log en statusvak: fasen op het laatste tijdstip, de
-    warmte-beinvloede zone en de hardheid."""
+    """Lines for log and status box: phases at the last time, the
+    heat-affected zone and the hardness."""
     s = read_summary(mess_path)
     if not s:
         return []
     if "_fout" in s:
-        log("INFO: Metallurgische samenvatting niet volledig: {0}".format(
+        log("INFO: Metallurgical summary incomplete: {0}".format(
             s["_fout"]))
     if "t" not in s or "austenite_max" not in s:
         return []
@@ -1073,10 +1076,10 @@ def report_lines(mess_path):
                 rng("HV")) if "HV_max" in s else u"")
     log(u"INFO: " + line)
     if s.get("n_lag", 0.0) > 0:
-        # Gemeten (Code-Aster 17.4, docs/Lassen.md par. 10.5): bij snel
-        # opwarmen met een grote temperatuurstap per tijdstap volgt de
-        # austenitisering de tijdconstante TAUX niet (40 C per stap: ~8 x
-        # trager; 4 C per stap: exact).
+        # Measured (Code-Aster 17.4, docs/Lassen.md par. 10.5): with fast
+        # heating and a large temperature step per time step the
+        # austenitization does not follow the time constant TAUX (40 C per
+        # step: ~8 x slower; 4 C per step: exact).
         msg = tr(u"WARNING: Metallurgie: {0} knopen kwamen ruim boven Ac3 "
                  u"maar werden niet volledig austeniet (< 90%): de "
                  u"austenitisering loopt achter. Bij lassen (snel opwarmen) "
