@@ -4,43 +4,43 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_radioss.py
-# Verantwoordelijkheid: OpenRadioss-invoer uit de .liml lezen die Mecway
-# voor de OpenRadioss-solver bewaart, voor zover de bridge die naar
-# Code-Aster kan vertalen:
-#   - <radiossmodeldefinition>: /FUNCT/<id> (tabellen) en /BEGIN (alleen de
-#     eenheden, voor een melding); andere kaarten worden alleen opgesomd
-#     (melding "niet vertaald");
+# Responsibility: read the OpenRadioss input from the .liml that Mecway
+# stores for the OpenRadioss solver, as far as the bridge can translate it
+# to Code-Aster:
+#   - <radiossmodeldefinition>: /FUNCT/<id> (tables) and /BEGIN (only the
+#     units, for a message); other cards are only listed
+#     (message "not translated");
 #   - <mat><openradioss type="Custom" law="PLAS_TAB">: /MAT/LAW36
-#     (elastisch-plastisch met een tabel vloeispanning - plastische rek)
-#     -> E, NU, RHO en een hardingscurve; een /FAIL/JOHNSON met een vaste
-#     breukrek in hetzelfde veld -> eps_p_max (bridge_failure.py);
-#   - law="VOID": materiaal zonder stijfheid (in Radioss o.a. voor starre
-#     lichamen met /RBODY); niet te vertalen.
+#     (elastic-plastic with a table yield stress - plastic strain)
+#     -> E, NU, RHO and a hardening curve; a /FAIL/JOHNSON with a fixed
+#     failure strain in the same field -> eps_p_max (bridge_failure.py);
+#   - law="VOID": material without stiffness (in Radioss used e.g. for rigid
+#     bodies with /RBODY); cannot be translated.
 #
-# Kaartformaat (OpenRadioss/Altair Radioss Reference Guide, /MAT/LAW36,
-# /FUNCT, /FAIL/JOHNSON, /BEGIN): vaste kolommen van 10 of 20 tekens;
-# regels die met '#' beginnen zijn commentaar, een regel die met '/' begint
-# start een nieuwe kaart. De waarden staan in het eenhedenstelsel van het
-# Radioss-model. Mecway rekent in SI (de templates: RHO 7800, E 206E9,
-# vloeispanning 228.03E6) en zet bij de export zelf een /BEGIN ('kg' staat
-# bij de /BEGIN-tekst in mecway.exe); de bridge rekent niets om en meldt
-# waarden die op een ander stelsel wijzen (_check_units).
+# Card format (OpenRadioss/Altair Radioss Reference Guide, /MAT/LAW36,
+# /FUNCT, /FAIL/JOHNSON, /BEGIN): fixed columns of 10 or 20 characters;
+# lines starting with '#' are comments, a line starting with '/'
+# starts a new card. The values are in the unit system of the
+# Radioss model. Mecway computes in SI (the templates: RHO 7800, E 206E9,
+# yield stress 228.03E6) and writes a /BEGIN itself on export ('kg' is
+# next to the /BEGIN text in mecway.exe); the bridge converts nothing and
+# reports values that point to another system (_check_units).
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 from bridge_utils import log, tr
 
-# Radioss-standaard voor "niet actief" bij breukrekken (Eps_p_max, Eps_t,
-# Eps_m, Eps_f: 1e20 tot 3e20 volgens de Reference Guide /MAT/LAW36); een
-# waarde vanaf deze grens telt als niet ingevuld.
+# Radioss default for "not active" for failure strains (Eps_p_max, Eps_t,
+# Eps_m, Eps_f: 1e20 to 3e20 according to the Reference Guide /MAT/LAW36); a
+# value from this limit upwards counts as not filled in.
 _RADIOSS_INFINITE = 1.0e19
 
-# SI-invoereenheden in /BEGIN (massa, lengte, tijd)
+# SI input units in /BEGIN (mass, length, time)
 _SI_UNITS = ("kg", "m", "s")
 
 
 def _data_lines(text):
-    """Regels zonder commentaar (#), tot de eerste kaartregel (/...)."""
+    """Lines without comments (#), up to the first card line (/...)."""
     out = []
     for line in (text or "").splitlines():
         if line.startswith("#"):
@@ -52,7 +52,7 @@ def _data_lines(text):
 
 
 def _field(line, start, width):
-    """Veld uit een vaste kolom als float, of None als het leeg is."""
+    """Field from a fixed column as float, or None if it is empty."""
     txt = line[start:start + width].strip() if line else ""
     if not txt:
         return None
@@ -63,16 +63,16 @@ def _field(line, start, width):
 
 
 def _active(value):
-    """True voor een ingevulde breukrek (> 0 en onder de Radioss-standaard
-    'oneindig'); 0 of leeg betekent in Radioss de standaardwaarde."""
+    """True for a filled-in failure strain (> 0 and below the Radioss
+    default 'infinite'); 0 or empty means the default value in Radioss."""
     return value is not None and 0.0 < value < _RADIOSS_INFINITE
 
 
 def parse_cards(text):
     """
-    [(kaartnaam, [dataregels])] uit een Radioss-tekst, bijv.
+    [(card name, [data lines])] from a Radioss text, e.g.
     ("/FUNCT/99", ["TRUE_Stress_strain", "  0.0  228.03E6", ...]).
-    Commentaarregels vallen weg.
+    Comment lines are dropped.
     """
     cards = []
     for line in (text or "").splitlines():
@@ -88,13 +88,13 @@ def parse_cards(text):
 
 def _point(line):
     """
-    (x, y) van een /FUNCT-regel, of None. Eerst de vaste kolommen van de
-    Reference Guide (X in kolom 1-20, Y in 21-40): twee volle velden staan
-    dan zonder spatie tegen elkaar ('-1.0000000000E+00-2.0E+00'), wat
-    split() niet kan scheiden. Lukt dat niet (vrij formaat, bijv.
-    '  0.0  228.03E6', dat over de grens van kolom 20 loopt), dan split().
-    Vrij formaat dat in de vaste kolommen wel leesbaar is, geeft dezelfde
-    waarden: elk veld moet dan precies een getal bevatten.
+    (x, y) of a /FUNCT line, or None. First the fixed columns of the
+    Reference Guide (X in columns 1-20, Y in 21-40): two full fields are
+    then adjacent without a space ('-1.0000000000E+00-2.0E+00'), which
+    split() cannot separate. If that fails (free format, e.g.
+    '  0.0  228.03E6', which runs across the column-20 boundary), split().
+    Free format that is readable in the fixed columns gives the same
+    values: each field must then contain exactly one number.
     """
     x, y = _field(line, 0, 20), _field(line, 20, 20)
     if x is not None and y is not None:
@@ -110,7 +110,7 @@ def _point(line):
 
 
 def parse_functions(text):
-    """{id: [(x, y), ...]} van alle /FUNCT/<id>-kaarten."""
+    """{id: [(x, y), ...]} of all /FUNCT/<id> cards."""
     funcs = {}
     for name, lines in parse_cards(text):
         parts = name.split("/")
@@ -121,7 +121,7 @@ def parse_functions(text):
         except ValueError:
             continue
         points = []
-        for line in lines[1:]:          # eerste regel = titel
+        for line in lines[1:]:          # first line = title
             point = _point(line)
             if point is None:
                 if line.strip():
@@ -137,7 +137,7 @@ def parse_functions(text):
 
 
 def other_cards(text):
-    """Namen van kaarten die de bridge niet vertaalt (alles behalve
+    """Names of cards that the bridge does not translate (everything except
     /FUNCT)."""
     return [name for name, _ in parse_cards(text)
             if not name.startswith("/FUNCT/")]
@@ -145,9 +145,9 @@ def other_cards(text):
 
 def begin_units(text):
     """
-    Invoereenheden (massa, lengte, tijd) uit een /BEGIN-kaart, of None.
-    /BEGIN (Reference Guide): titel, Invers/Irun, invoereenheden (3 velden
-    van 20 tekens), werkeenheden.
+    Input units (mass, length, time) from a /BEGIN card, or None.
+    /BEGIN (Reference Guide): title, Invers/Irun, input units (3 fields
+    of 20 characters), work units.
     """
     for name, lines in parse_cards(text):
         if name != "/BEGIN" or len(lines) < 3:
@@ -161,10 +161,10 @@ def begin_units(text):
 
 def _check_units(mat_name, e_mod, rho, units, notes):
     """
-    Meld een waarschijnlijk niet-SI-eenhedenstelsel (de waarden worden
-    ongewijzigd gebruikt). Grenzen: E van vaste stoffen ligt in SI tussen
-    ~1e6 Pa (rubber) en ~1e12 Pa (diamant), dichtheden tussen ~1 en
-    ~25000 kg/m3; N-mm-t geeft E ~2e5 en RHO ~8e-9.
+    Report a probably non-SI unit system (the values are used
+    unchanged). Limits: E of solids lies in SI between
+    ~1e6 Pa (rubber) and ~1e12 Pa (diamond), densities between ~1 and
+    ~25000 kg/m3; N-mm-t gives E ~2e5 and RHO ~8e-9.
     """
     reasons = []
     if units is not None and tuple(u.lower() for u in units) != _SI_UNITS:
@@ -191,17 +191,17 @@ def _check_units(mat_name, e_mod, rho, units, notes):
 
 def _ignored_fields(mat_name, lines, n_funct, notes):
     """
-    Meld velden van /MAT/LAW36 die de bridge niet vertaalt (Reference Guide
-    /MAT/LAW36; standaarden tussen haakjes):
-      Eps_t, Eps_m (1e20, 2e20): spanning neemt af vanaf hoofdrek Eps_t en
-          is nul bij Eps_m;
-      Eps_f (3e20): element weg bij trekrek Eps_f;
-      C_hard (0 = isotroop, 1 = kinematisch Prager-Ziegler, ertussen
-          gemengd);
-      fct_IDp (0): vloeigrens afhankelijk van de druk;
-      Fct_IDE (0), EInf, CE: E neemt af met de plastische rek;
-      F_smooth, F_cut, VP: alleen voor de reksnelheid.
-    Wat de berekening verandert gaat ook in notes (skipped_loads).
+    Report fields of /MAT/LAW36 that the bridge does not translate
+    (Reference Guide /MAT/LAW36; defaults in brackets):
+      Eps_t, Eps_m (1e20, 2e20): stress decreases from principal strain
+          Eps_t and is zero at Eps_m;
+      Eps_f (3e20): element deleted at tensile strain Eps_f;
+      C_hard (0 = isotropic, 1 = kinematic Prager-Ziegler, in between
+          mixed);
+      fct_IDp (0): yield stress depending on pressure;
+      Fct_IDE (0), EInf, CE: E decreases with plastic strain;
+      F_smooth, F_cut, VP: strain rate only.
+    What changes the calculation also goes into notes (skipped_loads).
     """
     eps_t = _field(lines[1], 60, 20)
     eps_m = _field(lines[1], 80, 20)
@@ -215,7 +215,7 @@ def _ignored_fields(mat_name, lines, n_funct, notes):
     e_inf = _field(lines[3], 40, 20)
     ce = _field(lines[3], 60, 20)
 
-    changed = []          # (veld, Nederlandse uitleg, Engelse uitleg)
+    changed = []          # (field, Dutch explanation, English explanation)
     if _active(eps_t) or _active(eps_m):
         changed.append(("Eps_t/Eps_m",
                         "afname van de spanning bij een grote hoofdrek",
@@ -249,21 +249,21 @@ def _ignored_fields(mat_name, lines, n_funct, notes):
     rate = [n for n, v in (("F_smooth", f_smooth), ("F_cut", f_cut),
                            ("VP", vp)) if v]
     if rate:
-        log("INFO: PLAS_TAB '{0}': {1} (reksnelheid) niet gebruikt; "
-            "Code-Aster rekent met een curve ({2} functie(s)).".format(
+        log("INFO: PLAS_TAB '{0}': {1} (strain rate) not used; "
+            "Code-Aster computes with one curve ({2} function(s)).".format(
                 mat_name, ", ".join(rate), n_funct))
 
 
 def _johnson_strain(mat_name, lines):
     """
-    Vaste breukrek uit /FAIL/JOHNSON, of None. Reference Guide
-    /FAIL/JOHNSON: regel 1 D1..D5 (20 tekens elk);
-    eps_f = [D1 + D2 exp(D3 s*)] [1 + D4 ln(eps_dot*)] [1 + D5 T*] en
-    schade D = som(d eps_p / eps_f), bezwijken bij D >= 1. Met D4 = D5 = 0
-    en D2 = 0 of D3 = 0 is eps_f constant (D1 + D2) en is D >= 1 hetzelfde
-    als eps_p >= eps_f: precies het criterium van bridge_failure.py
-    (equivalente plastische rek). Anders hangt eps_f af van de
-    triaxialiteit, reksnelheid of temperatuur: niet vertaald.
+    Fixed failure strain from /FAIL/JOHNSON, or None. Reference Guide
+    /FAIL/JOHNSON: line 1 D1..D5 (20 characters each);
+    eps_f = [D1 + D2 exp(D3 s*)] [1 + D4 ln(eps_dot*)] [1 + D5 T*] and
+    damage D = sum(d eps_p / eps_f), failure at D >= 1. With D4 = D5 = 0
+    and D2 = 0 or D3 = 0, eps_f is constant (D1 + D2) and D >= 1 is the
+    same as eps_p >= eps_f: exactly the criterion of bridge_failure.py
+    (equivalent plastic strain). Otherwise eps_f depends on the
+    triaxiality, strain rate or temperature: not translated.
     """
     if not lines:
         return None
@@ -273,18 +273,18 @@ def _johnson_strain(mat_name, lines):
     eps_f = d[0] + (d[1] if d[2] == 0.0 else 0.0)
     if eps_f <= 0.0:
         return None
-    log("INFO: PLAS_TAB '{0}': /FAIL/JOHNSON met vaste breukrek {1} "
-        "(D1={2}, D2={3}, D3=D4=D5=0) -> bezwijkgrens plastische rek."
+    log("INFO: PLAS_TAB '{0}': /FAIL/JOHNSON with fixed failure strain {1} "
+        "(D1={2}, D2={3}, D3=D4=D5=0) -> failure limit plastic strain."
         .format(mat_name, eps_f, d[0], d[1]))
     return eps_f
 
 
 def _failure_cards(mat_name, fieldcontents, notes):
     """
-    Kaarten na de LAW36-gegevens in hetzelfde <fieldcontents> (in het
-    Mecway-sjabloon staat daar een uitgecommentarieerde /FAIL/BIQUAD).
-    Returns de breukrek van een vertaalbare /FAIL/JOHNSON of None; de rest
-    wordt gemeld (ERROR + notes).
+    Cards after the LAW36 data in the same <fieldcontents> (the Mecway
+    template has a commented-out /FAIL/BIQUAD there).
+    Returns the failure strain of a translatable /FAIL/JOHNSON or None; the
+    rest is reported (ERROR + notes).
     """
     eps = None
     for name, lines in parse_cards(fieldcontents):
@@ -318,29 +318,29 @@ def _failure_cards(mat_name, fieldcontents, notes):
 
 def parse_plas_tab(fieldcontents, functions, mat_name, units=None):
     """
-    /MAT/LAW36 (PLAS_TAB) uit <fieldcontents>.
+    /MAT/LAW36 (PLAS_TAB) from <fieldcontents>.
 
-    Kolommen (OpenRadioss Reference Guide, /MAT/LAW36):
+    Columns (OpenRadioss Reference Guide, /MAT/LAW36):
       1: RHO_I(20)
       2: E(20) Nu(20) Eps_p_max(20) Eps_t(20) Eps_m(20)
       3: N_funct(10) F_smooth(10) C_hard(20) F_cut(20) Eps_f(20) VP(20)
       4: fct_IDp(10) Fscale(20) Fct_IDE(10) EInf(20) CE(20)
-      5: func_ID1..5 (10 elk)
-      6: Fscale_1..5 (20 elk)
-      7: Eps_dot_1..5 (20 elk)
-    De functies geven de vloeispanning als functie van de plastische rek,
-    per reksnelheid Eps_dot_i. Code-Aster (VMIS_ISOT_TRAC) is
-    reksnelheidsonafhankelijk: de functie met de laagste reksnelheid wordt
-    gebruikt. Niet vertaalde velden: _ignored_fields; /FAIL-kaarten in
-    hetzelfde veld: _failure_cards. units: invoereenheden uit /BEGIN
-    (begin_units) of None.
+      5: func_ID1..5 (10 each)
+      6: Fscale_1..5 (20 each)
+      7: Eps_dot_1..5 (20 each)
+    The functions give the yield stress as a function of the plastic
+    strain, per strain rate Eps_dot_i. Code-Aster (VMIS_ISOT_TRAC) is
+    strain-rate independent: the function with the lowest strain rate is
+    used. Fields not translated: _ignored_fields; /FAIL cards in
+    the same field: _failure_cards. units: input units from /BEGIN
+    (begin_units) or None.
 
     Returns
     -------
     (props, notes)
-        props : {"E", "NU", "rho", "plastic_curve", "curve_definition"} of
-                None bij een fout
-        notes : [str] - wat niet vertaald is (voor skipped_loads)
+        props : {"E", "NU", "rho", "plastic_curve", "curve_definition"} or
+                None on an error
+        notes : [str] - what is not translated (for skipped_loads)
     """
     notes = []
     lines = _data_lines(fieldcontents)
@@ -402,13 +402,13 @@ def parse_plas_tab(fieldcontents, functions, mat_name, units=None):
         "rho": rho or 0.0,
         "plastic_type": "Isotropic",
         "plastic_curve": sorted(curve),
-        # Radioss LAW36: x = plastische rek (Reference Guide)
+        # Radioss LAW36: x = plastic strain (Reference Guide)
         "curve_definition": "plastic",
-        # Bezwijkgrens (plastische rek); bridge_failure.py maakt er
-        # bezwijken van elementen van. 0 = geen bezwijken.
+        # Failure limit (plastic strain); bridge_failure.py turns it into
+        # failure of elements. 0 = no failure.
         "eps_p_max": eps_p_max or 0.0,
     }
-    log("INFO: PLAS_TAB '{0}': E={1} Pa, NU={2}, rho={3}, /FUNCT/{4} met "
-        "{5} punten (schaal {6}).".format(mat_name, e_mod, nu, rho, fid,
+    log("INFO: PLAS_TAB '{0}': E={1} Pa, NU={2}, rho={3}, /FUNCT/{4} with "
+        "{5} points (scale {6}).".format(mat_name, e_mod, nu, rho, fid,
                                           len(curve), scale))
     return props, notes

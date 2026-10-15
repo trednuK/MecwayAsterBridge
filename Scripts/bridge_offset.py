@@ -5,76 +5,76 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_offset.py
 #
-# Verantwoordelijkheid: Mecway's Element offset (Loads & Constraints) voor
-# schalen en balken naar Code-Aster.
+# Responsibility: Mecway's Element offset (Loads & Constraints) for
+# shells and beams to Code-Aster.
 #
-#   parse(item, model_data)        <offset> uit de .liml (bridge_from_liml)
+#   parse(item, model_data)        <offset> from the .liml (bridge_from_liml)
 #   prepare(model_data, nodes, conn, elements)
-#                                  plan: extra knopen, nieuwe connectiviteit,
-#                                  starre paren, EXCENTREMENT-groepen
-#                                  (bridge_mesh.write_mesh, voor de POI1)
-#   apply_to_mesh(plan, ...)       cellen omzetten, groepen in het mesh
-#                                  (bridge_mesh.write_mesh, na de namen)
-#   coque_groups(model_data, elset) COQUE-entries van AFFE_CARA_ELEM
+#                                  plan: extra nodes, new connectivity,
+#                                  rigid pairs, EXCENTREMENT groups
+#                                  (bridge_mesh.write_mesh, before the POI1)
+#   apply_to_mesh(plan, ...)       convert cells, groups in the mesh
+#                                  (bridge_mesh.write_mesh, after the names)
+#   coque_groups(model_data, elset) COQUE entries of AFFE_CARA_ELEM
 #                                  (bridge_to_aster._build_cara_elem_block)
-#   discretes(plan, model_data)    POI1 (DIS_TR) voor Mecway-knopen zonder
-#                                  eigen rotaties (bridge_mesh.write_mesh)
-#   link_entries(model_data)       LIAISON_DDL per starre arm
+#   discretes(plan, model_data)    POI1 (DIS_TR) for Mecway nodes without
+#                                  own rotations (bridge_mesh.write_mesh)
+#   link_entries(model_data)       LIAISON_DDL per rigid arm
 #                                  (bridge_to_aster._build_charges)
 #
-# MECWAY (manual v34 par. 7.4.3 en 7.5.1; headless gemeten met Mecway 34,
-# TestFiles/Tools/mw_solve.py, oktober 2026):
-#   <offset selection="elementselectie">
-#       <u>0 m</u><v>0 m</v><w>0.105 m</w>      schalen (elementassen)
+# MECWAY (manual v34 par. 7.4.3 and 7.5.1; measured headless with Mecway 34,
+# TestFiles/Tools/mw_solve.py, October 2026):
+#   <offset selection="elementselection">
+#       <u>0 m</u><v>0 m</v><w>0.105 m</w>      shells (element axes)
 #   </offset>
 #   <offset selection="..."><x>..</x><y>..</y><z>..</z></offset>
-#                                                balken (globale assen)
-#   In mecway.exe staan de keuzes "Element coordinates (shells)" en "Global
-#   coordinates (beams, internal solver)". Gemeten:
-#   - schaal: het middenvlak ligt op afstand w in de +W-richting (de
-#     elementnormaal, rechtshandig over de knopen). Een strook met w = +10 mm
-#     en een trekkracht in de knopen buigt naar +W (tip +7,09 mm, rotatie
-#     -0,0713 rad om Y; analytisch P e L^2/(2EI) = 7,14 mm). u en v hebben
-#     geen invloed (gelijk aan zonder offset), x/y/z op een schaal ook niet.
-#   - balk: de as ligt op (x, y, z) globaal van de knopen; u/v/w op een
-#     balk hebben geen invloed. RectBar 10 x 20 mm, 100 N trek, z = 10 mm:
-#     tip 0,357 mm (= P e L^2/(2EI)), y = 10 mm: 1,429 mm.
+#                                                beams (global axes)
+#   mecway.exe contains the choices "Element coordinates (shells)" and
+#   "Global coordinates (beams, internal solver)". Measured:
+#   - shell: the midsurface lies at distance w in the +W direction (the
+#     element normal, right-handed over the nodes). A strip with w = +10 mm
+#     and a tensile force in the nodes bends towards +W (tip +7.09 mm,
+#     rotation -0.0713 rad about Y; analytical P e L^2/(2EI) = 7.14 mm). u
+#     and v have no effect (as without offset); x/y/z on a shell neither.
+#   - beam: the axis lies at (x, y, z) global from the nodes; u/v/w on a
+#     beam have no effect. RectBar 10 x 20 mm, 100 N tension, z = 10 mm:
+#     tip 0.357 mm (= P e L^2/(2EI)), y = 10 mm: 1.429 mm.
 #   - "An offset shell behaves the same as if there were rigid beams
 #     connected between the nodes and the shell located at the midsurface"
-#     (manual par. 7.4.3). Knoopwaarden (verplaatsing, rotatie, reactie)
-#     horen bij de knopen, elementwaarden (spanning, snedekrachten) bij het
-#     verschoven element (par. 7.5.1).
-#   - Mecway zelf kent de offset alleen in statische analyses (interne
-#     solver); de bridge vertaalt hem in elke mechanische analyse.
+#     (manual par. 7.4.3). Nodal values (displacement, rotation, reaction)
+#     belong to the nodes, element values (stress, section forces) to the
+#     offset element (par. 7.5.1).
+#   - Mecway itself only knows the offset in static analyses (internal
+#     solver); the bridge translates it in every mechanical analysis.
 #
 # CODE-ASTER (17.4):
-#   1. Schalen DKT/DST: AFFE_CARA_ELEM COQUE EXCENTREMENT = w met
-#      INER_ROTA='OUI' (catalogus affe_cara_elem.py: regel
-#      PRESENT_PRESENT('EXCENTREMENT', 'INER_ROTA')). Het middenvlak ligt
-#      op +EXCENTREMENT langs de normaal van de cel (U4.42.01 par. COQUE);
-#      de cel heeft dezelfde knoopvolgorde als Mecway, dus dezelfde normaal
-#      (gemeten: zelfde teken als Mecway, LS-60). Testcases met
+#   1. Shells DKT/DST: AFFE_CARA_ELEM COQUE EXCENTREMENT = w with
+#      INER_ROTA='OUI' (catalogue affe_cara_elem.py: rule
+#      PRESENT_PRESENT('EXCENTREMENT', 'INER_ROTA')). The midsurface lies
+#      at +EXCENTREMENT along the normal of the cell (U4.42.01 par. COQUE);
+#      the cell has the same node order as Mecway, hence the same normal
+#      (measured: same sign as Mecway, LS-60). Test cases with
 #      EXCENTREMENT: ssls111a (DST), ssls111b (DKT), sdls124a.
-#   2. COQUE_3D (tri6/quad8, of de keuze COQUE_3D) kent geen excentrement:
+#   2. COQUE_3D (tri6/quad8, or the choice COQUE_3D) has no excentrement:
 #      <EXCEPTION> CALCULEL2_31 "un excentrement non nul ... sur un element
-#      qui ne sait pas traiter l'excentrement" (gezien op CompositeBeam).
-#      POU_D_E/POU_D_T hebben geen offset (catalogus affe_cara_elem.py
-#      POUTRE: geen excentriciteit; alleen multivezelbalken kunnen een
-#      doorsnede uit het midden leggen). Daarom, zoals de manual het
-#      beschrijft: het element komt op eigen knopen op de verschoven plek
-#      (knoop + offset) en elk paar (knoop, verschoven knoop) wordt star
-#      verbonden met LIAISON_DDL-relaties (link_entries; LIAISON_SOLIDE gaf
-#      FACTOR_11 op de drilling-rotatie). Een Mecway-knoop zonder eigen
-#      rotaties krijgt een POI1 met DIS_TR (discretes()). MECA_STATIQUE
-#      krijgt dan MUMPS POSTTRAITEMENTS='FORCE' (bridge_to_aster
-#      _build_lin_solveur_ref). Kleine rotaties (KNOWN_BUGS 108).
-#   Knoopgroepen BROFL<k> (een per paar) gebruikt ook aster_results_export:
-#   verplaatsingen blijven op de Mecway-knoop, de reactie van de
-#   verschoven knoop gaat met het moment van de arm naar de Mecway-knoop en
-#   spanningen van het verschoven element worden aan de Mecway-knoop
-#   getoond.
+#      qui ne sait pas traiter l'excentrement" (seen on CompositeBeam).
+#      POU_D_E/POU_D_T have no offset (catalogue affe_cara_elem.py
+#      POUTRE: no eccentricity; only multifibre beams can place a
+#      cross-section off-centre). Hence, as the manual describes it:
+#      the element gets its own nodes at the shifted location
+#      (node + offset) and each pair (node, shifted node) is rigidly
+#      connected with LIAISON_DDL relations (link_entries; LIAISON_SOLIDE
+#      gave FACTOR_11 on the drilling rotation). A Mecway node without own
+#      rotations gets a POI1 with DIS_TR (discretes()). MECA_STATIQUE
+#      then gets MUMPS POSTTRAITEMENTS='FORCE' (bridge_to_aster
+#      _build_lin_solveur_ref). Small rotations (KNOWN_BUGS 108).
+#   Node groups BROFL<k> (one per pair) are also used by
+#   aster_results_export: displacements stay on the Mecway node, the
+#   reaction of the shifted node goes with the moment of the arm to the
+#   Mecway node and stresses of the shifted element are shown at the
+#   Mecway node.
 #
-# Compatibel met IronPython 2.7.9 (Mecway scripting engine).
+# Compatible with IronPython 2.7.9 (Mecway scripting engine).
 
 import math
 import re
@@ -83,9 +83,9 @@ from collections import OrderedDict
 from bridge_utils import log, tr, parse_and_convert
 
 TAG = "offset"
-LINK_PREFIX = "BROFL"      # knoopgroep per star paar (ook aster_results_export)
-EXC_PREFIX = "BROFE"       # cellen met EXCENTREMENT
-REST_PREFIX = "BROFR"      # rest van een elset zonder offset
+LINK_PREFIX = "BROFL"      # node group per rigid pair (also aster_results_export)
+EXC_PREFIX = "BROFE"       # cells with EXCENTREMENT
+REST_PREFIX = "BROFR"      # rest of an elset without offset
 
 _SHELLS = frozenset(["tri3", "tri6", "quad4", "quad8"])
 _BEAMS = frozenset(["line2"])
@@ -93,8 +93,8 @@ _EXC_MODELISATIONS = ("DKT", "DST")
 _NUMBER = re.compile(r"^\s*[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?\s*"
                      r"[^\s\d()*+/^-]*\s*$")
 
-# Natuurlijke coordinaten van de knopen in Code-Aster-volgorde
-# (bridge_mesh._ASTER_TYPES: hoeken, dan middens).
+# Natural coordinates of the nodes in Code-Aster order
+# (bridge_mesh._ASTER_TYPES: corners, then midsides).
 _NAT = {
     "TRIA3": [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)],
     "TRIA6": [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (0.5, 0.0), (0.5, 0.5),
@@ -106,7 +106,7 @@ _NAT = {
 
 
 # ==========================================
-# INLEZEN
+# READING
 # ==========================================
 def parse(item, model_data):
     """<offset> -> model_data["element_offsets"]."""
@@ -134,12 +134,12 @@ def parse(item, model_data):
         xyz = tuple(comps.get(k, 0.0) for k in "xyz")
     model_data.setdefault("element_offsets", []).append(
         {"selection": sel, "uvw": uvw, "xyz": xyz})
-    log("INFO: Element offset op '{0}': uvw={1}, xyz={2} (m).".format(
+    log("INFO: Element offset on '{0}': uvw={1}, xyz={2} (m).".format(
         sel, uvw, xyz))
 
 
 # ==========================================
-# MEETKUNDE
+# GEOMETRY
 # ==========================================
 def _sub(a, b):
     return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
@@ -162,7 +162,7 @@ def _unit(a):
 
 
 def _dshape(atype, xi, eta):
-    """Afgeleiden (dN/dxi, dN/deta) per knoop in Code-Aster-volgorde."""
+    """Derivatives (dN/dxi, dN/deta) per node in Code-Aster order."""
     if atype == "TRIA3":
         return [(-1.0, -1.0), (1.0, 0.0), (0.0, 1.0)]
     if atype == "TRIA6":
@@ -176,24 +176,24 @@ def _dshape(atype, xi, eta):
         if atype == "QUAD4":
             out.append((0.25 * xi_i * (1.0 + eta * eta_i),
                         0.25 * eta_i * (1.0 + xi * xi_i)))
-        elif xi_i != 0.0 and eta_i != 0.0:          # hoek QUAD8
+        elif xi_i != 0.0 and eta_i != 0.0:          # corner QUAD8
             out.append((0.25 * xi_i * (1.0 + eta * eta_i) *
                         (2.0 * xi * xi_i + eta * eta_i),
                         0.25 * eta_i * (1.0 + xi * xi_i) *
                         (xi * xi_i + 2.0 * eta * eta_i)))
-        elif xi_i == 0.0:                            # midden, eta = +-1
+        elif xi_i == 0.0:                            # midside, eta = +-1
             out.append((-xi * (1.0 + eta * eta_i),
                         0.5 * eta_i * (1.0 - xi * xi)))
-        else:                                        # midden, xi = +-1
+        else:                                        # midside, xi = +-1
             out.append((0.5 * xi_i * (1.0 - eta * eta),
                         -eta * (1.0 + xi * xi_i)))
     return out
 
 
 def _node_normals(atype, pts):
-    """Eenheidsnormaal (W) van een schaalelement in elke knoop; Mecway: de
-    W-as staat loodrecht op het oppervlak in elk punt (manual par. 7.4.2),
-    rechtshandig over de knopen zoals de normaal van de Code-Aster-cel."""
+    """Unit normal (W) of a shell element at each node; Mecway: the
+    W axis is perpendicular to the surface at each point (manual par.
+    7.4.2), right-handed over the nodes like the Code-Aster cell normal."""
     out = []
     for xi, eta in _NAT[atype]:
         a, b = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
@@ -210,22 +210,22 @@ def _node_normals(atype, pts):
 # ==========================================
 def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
     """
-    Plan voor bridge_mesh.write_mesh, of None zonder (bruikbare) offset.
+    Plan for bridge_mesh.write_mesh, or None without (usable) offset.
 
     nodes    : {nid: (x, y, z)}
-    conn     : {eid: (aster_type, [nid ...])} (Code-Aster-volgorde)
+    conn     : {eid: (aster_type, [nid ...])} (Code-Aster order)
     elements : model_data["mesh_elements"]
-    joint_ends: {(eid, nid)} balkuiteinden met een flexible joint
-               (bridge_mesh._joint_ends); die zitten aan een eigen knoop en
-               dragen de rotaties van de Mecway-knoop niet
+    joint_ends: {(eid, nid)} beam ends with a flexible joint
+               (bridge_mesh._joint_ends); these sit on a node of their own
+               and do not carry the rotations of the Mecway node
 
     Returns dict:
-      new_nodes : [(nid, (x, y, z))] extra knopen (na de Mecway-knopen)
-      cells     : {eid: [nid ...]} nieuwe connectiviteit (starre route)
-      pairs     : [(Mecway-knoop, extra knoop, arm (m), "shell"/"beam")]
-      no_rot    : [nid] Mecway-knopen van een paar zonder rotaties uit een
-                  ander element (POI1 DIS_TR, discretes())
-      stiff     : {nid: E t^3} van de verschoven schalen in die knoop
+      new_nodes : [(nid, (x, y, z))] extra nodes (after the Mecway nodes)
+      cells     : {eid: [nid ...]} new connectivity (rigid route)
+      pairs     : [(Mecway node, extra node, arm (m), "shell"/"beam")]
+      no_rot    : [nid] Mecway nodes of a pair without rotations from
+                  another element (POI1 DIS_TR, discretes())
+      stiff     : {nid: E t^3} of the shifted shells at that node
       exc       : OrderedDict {(elset, w): [eid]} (EXCENTREMENT)
     """
     offsets = model_data.get("element_offsets") or []
@@ -235,8 +235,8 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
     shapes = dict((e[0], e[1]) for e in elements)
     mods = model_data.get("elset_modelisations", {})
     selections = model_data.get("element_selections", {})
-    assigned = {}            # eid -> ("exc", w) of ("rigid", [vector])
-    ignored = OrderedDict()  # reden -> set(eid)
+    assigned = {}            # eid -> ("exc", w) or ("rigid", [vector])
+    ignored = OrderedDict()  # reason -> set(eid)
 
     def ignore(why, eid):
         ignored.setdefault(why, set()).add(eid)
@@ -297,11 +297,11 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
         return None
     _report_edge_loads(model_data, assigned)
 
-    # Starre route. Schalen: een extra knoop per (Mecway-knoop, w) op w maal
-    # de gemiddelde normaal van de verschoven elementen in die knoop (een
-    # doorlopend verschoven vlak; Mecway verschuift per element, bij een
-    # gekromde schaal een verschil van de tweede orde). Balken: een extra
-    # knoop per (Mecway-knoop, offsetvector).
+    # Rigid route. Shells: one extra node per (Mecway node, w) at w times
+    # the average normal of the shifted elements at that node (a
+    # continuous shifted surface; Mecway shifts per element, for a
+    # curved shell a second-order difference). Beams: one extra
+    # node per (Mecway node, offset vector).
     normal_sum = {}
     for eid, (kind, data) in assigned.items():
         if kind == "shell":
@@ -341,9 +341,9 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
                 next_nid += 1
             new_cn.append(by_key[key])
         cells[eid] = new_cn
-    # Mecway-knopen van een paar zonder rotatievrijheidsgraden uit een
-    # ander element (alleen nog via de arm, of alleen volumes/veren): POI1
-    # met DIS_TR (discretes()).
+    # Mecway nodes of a pair without rotational degrees of freedom from
+    # another element (only via the arm, or only volumes/springs): POI1
+    # with DIS_TR (discretes()).
     rot_nodes = set()
     for eid, (atype, cn) in conn.items():
         mod = mods.get(elem_elset.get(eid), "")
@@ -351,8 +351,8 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
                 "DKT", "DST", "COQUE_3D", "DIS_TR")):
             rot_nodes.update(n for n in cn if (eid, n) not in joint_ends)
     no_rot = sorted(set(p[0] for p in pairs) - rot_nodes)
-    # Buigstijfheid E t^3 van de verschoven schalen per Mecway-knoop: maat
-    # voor de veer op de vrije rotatie om de normaal (discretes()).
+    # Bending stiffness E t^3 of the shifted shells per Mecway node: scale
+    # for the spring on the free rotation about the normal (discretes()).
     stiff = {}
     mats = model_data.get("materials", {})
     for eid, (kind, data) in assigned.items():
@@ -368,33 +368,33 @@ def prepare(model_data, nodes, conn, elements, joint_ends=frozenset()):
         for nid in conn[eid][1]:
             stiff[nid] = max(stiff.get(nid, 0.0), k)
     for (elset, w), eids in exc.items():
-        log("INFO: Element offset: {0} schaalelement(en) van '{1}' met "
+        log("INFO: Element offset: {0} shell element(s) of '{1}' with "
             "EXCENTREMENT = {2} m.".format(len(eids), elset, w))
     if cells:
-        log("INFO: Element offset: {0} element(en) op eigen knopen op de "
-            "verschoven plek, {1} starre armen (LIAISON_DDL), {2} "
-            "Mecway-knopen met een POI1 (DIS_TR) voor hun rotaties.".format(
+        log("INFO: Element offset: {0} element(s) on own nodes at the "
+            "shifted location, {1} rigid arms (LIAISON_DDL), {2} "
+            "Mecway nodes with a POI1 (DIS_TR) for their rotations.".format(
                 len(cells), len(pairs), len(no_rot)))
     model_data["offset_new_nids"] = [nid for nid, _xyz in new_nodes]
     return {"new_nodes": new_nodes, "cells": cells, "pairs": pairs,
             "no_rot": no_rot, "stiff": stiff, "exc": exc}
 
 
-# Belastingen die op een vlakselectie (ook schaalranden) aangrijpen
+# Loads acting on a face selection (also shell edges)
 _EDGE_LOADS = frozenset(["force", "surfacepressure", "traction",
                          "linepressure", "hydrostaticpressure"])
 
 
 def _report_edge_loads(model_data, assigned):
     """
-    WARNING voor een last op randen (faceid 1..4) van verschoven schalen.
-    Mecway 34 (headless, oktober 2026, strook als LS-60 met de trekkracht
-    als last op het randvlak in plaats van op de knopen): tip w = 4e-16 m,
-    dus de last grijpt aan op de verschoven rand (geen moment). De bridge
-    zet zo'n last op de randcel op de Mecway-knopen (FORCE_ARETE, ook bij
-    EXCENTREMENT): 7,08e-3 m (DKT) en 7,10e-3 m (COQUE_3D), het moment
-    w x F per lengte extra (KNOWN_BUGS 108). Een last op de knopen (knoop-
-    selectie) grijpt in Mecway wel op de knopen aan (LS-60).
+    WARNING for a load on edges (faceid 1..4) of shifted shells.
+    Mecway 34 (headless, October 2026, strip as LS-60 with the tensile
+    force as a load on the edge face instead of on the nodes): tip w =
+    4e-16 m, so the load acts on the shifted edge (no moment). The bridge
+    puts such a load on the edge cell on the Mecway nodes (FORCE_ARETE,
+    also with EXCENTREMENT): 7.08e-3 m (DKT) and 7.10e-3 m (COQUE_3D),
+    the moment w x F per length extra (KNOWN_BUGS 108). A load on the
+    nodes (node selection) does act on the nodes in Mecway (LS-60).
     """
     faces = model_data.get("face_selection_faces", {})
     for bc in model_data.get("bcs", []):
@@ -469,11 +469,11 @@ def _report_ignored(model_data, ignored):
 
 
 # ==========================================
-# MESH: TOEPASSEN (na de namen)
+# MESH: APPLY (after the names)
 # ==========================================
 def _free_name(prefix, k, taken):
-    """Vrije groepsnaam <prefix><k>; de naam gaat meteen in taken, zodat
-    een volgende aanroep hem niet nog eens geeft."""
+    """Free group name <prefix><k>; the name goes straight into taken, so
+    that a next call does not return it again."""
     name = "{0}{1}".format(prefix, k)
     while name in taken:
         k += 1000000
@@ -483,13 +483,13 @@ def _free_name(prefix, k, taken):
 
 
 def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
-    """Cellen van de starre route op hun nieuwe knopen, knoopgroep per paar,
-    EXCENTREMENT- en restgroepen; model_data["offset_links"] en
-    ["offset_shells"] voor bridge_to_aster."""
+    """Cells of the rigid route on their new nodes, node group per pair,
+    EXCENTREMENT and rest groups; model_data["offset_links"] and
+    ["offset_shells"] for bridge_to_aster."""
     model_data["offset_links"] = []
     model_data["offset_shells"] = OrderedDict()
-    # {eid: "rigid" (eigen knopen) of "exc" (EXCENTREMENT)}, voor de
-    # melding bij verlijmd contact (bridge_mesh._bonded)
+    # {eid: "rigid" (own nodes) or "exc" (EXCENTREMENT)}, for the
+    # message on bonded contact (bridge_mesh._bonded)
     model_data["offset_elements"] = {}
     if not plan:
         return
@@ -498,8 +498,8 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
     for eids in plan["exc"].values():
         for eid in eids:
             model_data["offset_elements"][eid] = "exc"
-    # Een joint op een verschoven element vertaalt
-    # bridge_mesh._flexible_joints niet (WARNING daar, KNOWN_BUGS 108d).
+    # A joint on a shifted element is not translated by
+    # bridge_mesh._flexible_joints (WARNING there, KNOWN_BUGS 108d).
     cells = dict(("M{0}".format(e), cn) for e, cn in plan["cells"].items())
     if cells:
         for atype, items in by_type.items():
@@ -521,7 +521,7 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
         info = model_data["offset_shells"].setdefault(
             group, {"rest": group, "parts": []})
         info["parts"].append((name, w))
-    k_rest = 0      # een restgroep per elset (eigen nummer)
+    k_rest = 0      # one rest group per elset (own number)
     for group, info in model_data["offset_shells"].items():
         offset_members = set()
         for name, _w in info["parts"]:
@@ -538,18 +538,18 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
 
 def discretes(plan, model_data):
     """
-    POI1-discreten (bridge_mesh._build_discretes-formaat: {groep: {"nodes",
-    "mod", "cara", "label"}}) voor de Mecway-knopen zonder eigen rotaties
-    (plan["no_rot"]): DIS_TR, zodat de arm (u_f = u_o + theta_o x d) hun
-    rotaties heeft. Hangt zo'n knoop alleen aan schaalarmen langs dezelfde
-    normaal n, dan hangt zijn rotatie om n nergens aan (link_entries koppelt
-    die drilling niet): een veer k n n^T op alleen die rotatie (K_TR_N, 21
-    waarden, bovendriehoek per kolom zoals K_T_N, catalogus
-    affe_cara_elem.py), met k = E t^3 van de schaal (orde van de
-    buigstijfheid; de waarde doet er niet toe, de vrijheidsgraad is
-    ontkoppeld). Een losse Lagrange-relatie theta . n = 0 botste met een
-    inklemming op dezelfde knoop (<EXCEPTION> ASSEMBLA_26, "bloque
-    plusieurs fois"). Andere knopen: stijfheid 0 (K_TR_D_N).
+    POI1 discretes (bridge_mesh._build_discretes format: {group: {"nodes",
+    "mod", "cara", "label"}}) for the Mecway nodes without own rotations
+    (plan["no_rot"]): DIS_TR, so that the arm (u_f = u_o + theta_o x d) has
+    their rotations. If such a node hangs only on shell arms along the same
+    normal n, its rotation about n is attached to nothing (link_entries does
+    not couple that drilling): a spring k n n^T on that rotation only
+    (K_TR_N, 21 values, upper triangle per column like K_T_N, catalogue
+    affe_cara_elem.py), with k = E t^3 of the shell (order of the
+    bending stiffness; the value does not matter, the degree of freedom is
+    decoupled). A separate Lagrange relation theta . n = 0 clashed with a
+    clamp on the same node (<EXCEPTION> ASSEMBLA_26, "bloque
+    plusieurs fois"). Other nodes: stiffness 0 (K_TR_D_N).
     """
     out = OrderedDict()
     if not plan or not plan.get("no_rot"):
@@ -587,12 +587,12 @@ def discretes(plan, model_data):
 
 
 # ==========================================
-# COMMANDOBESTAND
+# COMMAND FILE
 # ==========================================
 def coque_groups(model_data, elset):
-    """[(GROUP_MA, extra tekst)] voor de COQUE-entries van een schaalelset:
-    zonder offset [(elset, "")], anders de rest en per offset een groep met
-    EXCENTREMENT en INER_ROTA (verplicht samen, catalogus
+    """[(GROUP_MA, extra text)] for the COQUE entries of a shell elset:
+    without offset [(elset, "")], otherwise the rest and per offset a group
+    with EXCENTREMENT and INER_ROTA (required together, catalogue
     affe_cara_elem.py)."""
     info = model_data.get("offset_shells", {}).get(elset)
     if not info:
@@ -607,7 +607,7 @@ def coque_groups(model_data, elset):
 
 
 def _relation(terms):
-    """LIAISON_DDL-entry sum(coef * ddl) = 0; termen met coef ~0 vallen weg."""
+    """LIAISON_DDL entry sum(coef * ddl) = 0; terms with coef ~0 drop out."""
     terms = [(n, ddl, c) for n, ddl, c in terms if abs(c) > 1.0e-12]
     return ("_F(NOEUD=({0},), DDL=({1},), COEF_MULT=({2},), "
             "COEF_IMPO=0.0)").format(
@@ -617,7 +617,7 @@ def _relation(terms):
 
 
 def _in_plane(n):
-    """Twee eenheidsvectoren loodrecht op n (en op elkaar)."""
+    """Two unit vectors perpendicular to n (and to each other)."""
     ref = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
     t1 = _unit(_cross(n, ref))
     return t1, _cross(n, t1)
@@ -625,26 +625,26 @@ def _in_plane(n):
 
 def link_entries(model_data):
     """
-    LIAISON_DDL-relaties van de starre armen (U4.44.01 LIAISON_DDL: lineaire
-    relatie sum(COEF_MULT_i u_i) = COEF_IMPO). Per paar (Mecway-knoop o,
-    knoop f van het verschoven element, arm d = x_f - x_o), kleine rotaties:
-      u_f = u_o + theta_o x d                    (3 relaties)
-      balk:   theta_f = theta_o                  (3 relaties)
-      schaal: theta_f = theta_o loodrecht op d   (2 relaties; d is de
-              normaal)
-    De rotatie om de normaal van een schaal (drilling) wordt niet gekoppeld:
-    de schaal heeft daar alleen een fictieve stijfheid (Code-Aster
+    LIAISON_DDL relations of the rigid arms (U4.44.01 LIAISON_DDL: linear
+    relation sum(COEF_MULT_i u_i) = COEF_IMPO). Per pair (Mecway node o,
+    node f of the shifted element, arm d = x_f - x_o), small rotations:
+      u_f = u_o + theta_o x d                    (3 relations)
+      beam:   theta_f = theta_o                  (3 relations)
+      shell:  theta_f = theta_o perpendicular to d (2 relations; d is the
+              normal)
+    The rotation about the normal of a shell (drilling) is not coupled:
+    the shell only has a fictitious stiffness there (Code-Aster
     COEF_RIGI_DRZ, Mecway "arbitrary small stiffness", manual par. 7.4.1).
-    Met LIAISON_SOLIDE (die ook die rotatie koppelt) stopte Code-Aster met
-    <EXCEPTION> FACTOR_11 op DRY/DRZ van de verschoven knopen (gezien met
-    een strook en CompositeBeam, ook met een arm van lengte ~0). Hangt een
-    Mecway-knoop alleen nog aan een schaalarm, dan houdt een veer op zijn
-    rotatie om de normaal die vrijheidsgraad vast (discretes()).
-    Starre-lichaamsbewegingen van het paar voldoen aan de koppelrelaties,
-    dus de krachten van de koppeling zijn onderling in evenwicht (de reactie
-    gaat in aster_results_export met het moment van de arm naar de
-    Mecway-knoop).
-    Returns [entry-tekst].
+    With LIAISON_SOLIDE (which also couples that rotation) Code-Aster
+    stopped with <EXCEPTION> FACTOR_11 on DRY/DRZ of the shifted nodes (seen
+    with a strip and CompositeBeam, also with an arm of length ~0). If a
+    Mecway node only hangs on a shell arm, a spring on its rotation about
+    the normal holds that degree of freedom (discretes()).
+    Rigid-body motions of the pair satisfy the coupling relations, so the
+    forces of the coupling are in mutual equilibrium (the reaction goes
+    in aster_results_export with the moment of the arm to the Mecway
+    node).
+    Returns [entry text].
     """
     out = []
     for link in model_data.get("offset_links", []):

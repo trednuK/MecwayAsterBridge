@@ -4,38 +4,38 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_spectrum.py
-# Verantwoordelijkheid: responsspectrumanalyse (aardbeving, schok) naar
-# Code-Aster; analyse spectrum_3d:
-#   ASSEMBLAGE (RIGI_MECA, MASS_MECA) -> CALC_MODES (de laagste modes) ->
-#   CALC_CHAMP op de modes (REAC_NODA, SIGM_ELNO/SIGM_NOEU) ->
+# Responsibility: response spectrum analysis (earthquake, shock) to
+# Code-Aster; analysis spectrum_3d:
+#   ASSEMBLAGE (RIGI_MECA, MASS_MECA) -> CALC_MODES (the lowest modes) ->
+#   CALC_CHAMP on the modes (REAC_NODA, SIGM_ELNO/SIGM_NOEU) ->
 #   [MODE_STATIQUE PSEUDO_MODE: missing mass] -> COMB_SISM_MODAL
-#   (MONO_APPUI: spectrale respons per mode, combinatie over de modes en de
-#   richtingen) -> aster_spectrum.maxima (een resultaat met de maxima) ->
-#   aster_results_export (een stap in Mecway).
-# Syntax: Code-Aster-testcases sdld25a (8 massa's en veren, DEFI_NAPPE in
-# AMOR en FREQ, ACCE_ABSOLU) en sdlx02a (MODE_STATIQUE PSEUDO_MODE met
-# MODE_CORR, REAC_NODA), catalogus comb_sism_modal.py en de macro
+#   (MONO_APPUI: spectral response per mode, combination over the modes and
+#   the directions) -> aster_spectrum.maxima (one result with the maxima) ->
+#   aster_results_export (one step in Mecway).
+# Syntax: Code-Aster test cases sdld25a (8 masses and springs, DEFI_NAPPE
+# in AMOR and FREQ, ACCE_ABSOLU) and sdlx02a (MODE_STATIQUE PSEUDO_MODE
+# with MODE_CORR, REAC_NODA), catalogue comb_sism_modal.py and the macro
 # code_aster/MacroCommands/comb_sism_modal_ops.py (17.4).
 #
-# Mecway heeft geen spectrumanalyse (manual v33 hoofdstuk 6; geen tekst
-# "spectrum" in mecway.exe). Invoer (docs/Spectrumanalyse.md):
-#   - het Mecway-model is een Frequency-analyse (V30: Number of modes,
-#     dichtheid, opleggingen);
-#   - het spectrum is een Gravity met per richting een tabel: de
-#     "tijd"-kolom is de periode in s (instelling spectrum_abscissa
-#     'period') of de frequentie in Hz ('frequency'), de waarde de spectrale
-#     versnelling; een vaste waarde zonder tabel is een vlak spectrum. De
-#     gravity is in deze analyse geen last (bridge_from_liml:
+# Mecway has no spectrum analysis (manual v33 chapter 6; no text
+# "spectrum" in mecway.exe). Input (docs/Spectrumanalyse.md):
+#   - the Mecway model is a Frequency analysis (V30: Number of modes,
+#     density, supports);
+#   - the spectrum is a Gravity with a table per direction: the
+#     "time" column is the period in s (setting spectrum_abscissa
+#     'period') or the frequency in Hz ('frequency'), the value the spectral
+#     acceleration; a fixed value without a table is a flat spectrum. The
+#     gravity is not a load in this analysis (bridge_from_liml:
 #     model_data["spectrum_gravity"]);
-#   - of per richting een eigen Code-Aster-spectrum (DEFI_NAPPE in AMOR en
-#     FREQ, of FORMULE) uit #ASTER-code met '#ASTER-SPECTRE X = naam'
-#     (bridge_custom), bijv. spectra voor meerdere dempingen.
+#   - or per direction a Code-Aster spectrum of its own (DEFI_NAPPE in AMOR
+#     and FREQ, or FORMULE) from #ASTER code with '#ASTER-SPECTRE X = name'
+#     (bridge_custom), e.g. spectra for several damping ratios.
 #
-#   build_spectrum(...)  - builder voor SOLVER_BUILDERS_ASTER
+#   build_spectrum(...)  - builder for SOLVER_BUILDERS_ASTER
 #                          ["COMB_SISM_MODAL"] (bridge_to_aster)
-#   report_summary(mess) - log en statusvak na de run (MecwayAsterBridgeMain)
+#   report_summary(mess) - log/status box after the run (MecwayAsterBridgeMain)
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import os
 import re
@@ -46,25 +46,25 @@ from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
 
 _DIRS = ("X", "Y", "Z")
 _MODAL_RULES = ("CQC", "SRSS", "ABS")
-# Instelling -> COMB_DIRECTION (100-30-30 rekent aster_spectrum zelf uit de
-# richtingen; catalogus: ABS, QUAD, NEWMARK = 100-40-40).
+# Setting -> COMB_DIRECTION (aster_spectrum computes 100-30-30 itself from
+# the directions; catalogue: ABS, QUAD, NEWMARK = 100-40-40).
 _DIRECTION_RULES = {"SRSS": "QUAD", "100-30-30": "QUAD",
                     "100-40-40": "NEWMARK", "ABS": "ABS"}
 _ABSCISSAE = ("period", "frequency")
 _FIELD_GROUPS = ("displacements", "accelerations", "stresses", "vonmises",
                  "reactions")
-# Belastingtypen die in een spectrumanalyse alleen opleggingen zijn.
+# Load types that are only supports in a spectrum analysis.
 _CONSTRAINT_TYPES = ("fixed", "displacement", "pinnedsupport",
                      "noderotation", "frictionless", "symmetry",
                      "elasticsupport")
 
 
 # ==========================================
-# SPECTRUM UIT DE GRAVITY
+# SPECTRUM FROM THE GRAVITY
 # ==========================================
 def _value_at(value, x):
-    """Waarde (getal of tabel [(x, y)]) in x: lineair, constant buiten de
-    tabel (Mecway manual v33 hoofdstuk 9)."""
+    """Value (number or table [(x, y)]) at x: linear, constant outside the
+    table (Mecway manual v33 chapter 9)."""
     if not isinstance(value, list):
         return value
     if x <= value[0][0]:
@@ -80,9 +80,9 @@ def _value_at(value, x):
 
 
 def gravity_spectra(model_data):
-    """{richting: getal of tabel [(x, versnelling)]} uit de gravities
-    (som per component; een tabel en een getal tellen op zoals in Mecway).
-    Richtingen zonder waarde ontbreken."""
+    """{direction: number or table [(x, acceleration)]} from the gravities
+    (sum per component; a table and a number add up as in Mecway).
+    Directions without a value are missing."""
     out = {}
     for d, ax in zip(_DIRS, "xyz"):
         parts = []
@@ -103,8 +103,8 @@ def gravity_spectra(model_data):
 
 
 def _points(value, abscissa, d):
-    """(xs, ys) voor aster_spectrum.table, of None (ERROR gelogd). Waarden
-    zonder teken (het teken van een spectrum speelt geen rol)."""
+    """(xs, ys) for aster_spectrum.table, or None (ERROR logged). Values
+    without sign (the sign of a spectrum does not matter)."""
     if not isinstance(value, list):
         return [0.0], [abs(float(value))]
     xs = [float(x) for x, _y in value]
@@ -118,8 +118,8 @@ def _points(value, abscissa, d):
                    else tr("frequentie", "frequency"), xs[0]))
         return None
     if any(float(y) < 0.0 for _x, y in value):
-        log("INFO: Spectrum {0}: negatieve waarden in de tabel; de bridge "
-            "neemt de absolute waarde (het teken speelt geen rol).".format(d))
+        log("INFO: Spectrum {0}: negative values in the table; the bridge "
+            "takes the absolute value (the sign does not matter).".format(d))
     return xs, ys
 
 
@@ -134,11 +134,11 @@ def _setting(analysis, key, allowed, default):
 
 
 # ==========================================
-# CONTROLES
+# CHECKS
 # ==========================================
 def _check_model(model_data, analysis):
-    """Wat de spectrumanalyse niet kan: ERROR met de oplossing. Returns
-    True als het model te rekenen is."""
+    """What the spectrum analysis cannot do: ERROR with the solution. Returns
+    True if the model can be computed."""
     ok = True
     if not b2a._check_linear(model_data, tr("een spectrumanalyse",
                                             "a response spectrum analysis")):
@@ -191,9 +191,9 @@ def _check_model(model_data, analysis):
 
 
 def _drop_loads(model_data):
-    """Belastingen (geen opleggingen) doen niet mee: WARNING en
-    skipped_loads. Tijdstabellen van belastingen vervallen stil (de last
-    verdwijnt toch)."""
+    """Loads (not supports) do not take part: WARNING and
+    skipped_loads. Time tables of loads are dropped silently (the load
+    disappears anyway)."""
     names = []
     for bc in model_data["bcs"]:
         if bc["type"] in _CONSTRAINT_TYPES:
@@ -216,11 +216,11 @@ def _drop_loads(model_data):
 
 
 # ==========================================
-# BLOKKEN VAN DE .COMM
+# BLOCKS OF THE .COMM
 # ==========================================
 def _spec_call(d, name, extra):
-    """aster_spectrum-dict voor report()/von_mises() (zelfde ECHELLE,
-    NATURE, CORR_FREQ als in SPECTRE)."""
+    """aster_spectrum dict for report()/von_mises() (same ECHELLE,
+    NATURE, CORR_FREQ as in SPECTRE)."""
     kw = {"ECHELLE": "1.0", "NATURE": "'ACCE'", "CORR_FREQ": "'NON'"}
     for e in extra:
         k, _sep, v = e.partition("=")
@@ -232,9 +232,9 @@ def _spec_call(d, name, extra):
 
 def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
                     options, missing, cara_ref, dir_rule, dirs):
-    """Spectra (FORMULE per richting), demping per mode, pseudo-modes en
-    COMB_SISM_MODAL (Python in de .comm: de frequenties zijn pas na
-    CALC_MODES bekend)."""
+    """Spectra (FORMULE per direction), damping per mode, pseudo-modes and
+    COMB_SISM_MODAL (Python in the .comm: the frequencies are only known
+    after CALC_MODES)."""
     lines = []
     entries, specs = [], []
     for d in dirs:
@@ -247,10 +247,10 @@ def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
         xs, ys = spectra[d]
         arg = "1.0 / FREQ" if abscissa == "period" else "FREQ"
         lines += [
-            "# Spectrum {0}: Mecway-gravity, {1} -> versnelling [m/s2],".format(
+            "# Spectrum {0}: Mecway gravity, {1} -> acceleration [m/s2],".format(
                 d, "periode [s]" if abscissa == "period"
                 else "frequentie [Hz]"),
-            "# lineair tussen de punten, constant buiten de tabel.",
+            "# linear between the points, constant outside the table.",
             "bridge_xs_{0} = {1!r}".format(d, xs),
             "bridge_ys_{0} = {1!r}".format(d, ys),
             "bridge_spec_{0} = FORMULE(".format(d),
@@ -266,9 +266,9 @@ def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
                        .format(d))
         specs.append(_spec_call(d, "bridge_spec_{0}".format(d), []))
     lines += [
-        "# Modale demping: Mecway's Rayleigh-demping C = alpha M + beta K is",
+        "# Modal damping: Mecway's Rayleigh damping C = alpha M + beta K is",
         "# per mode xi_i = (alpha / w_i + beta w_i) / 2 (Mecway manual par.",
-        "# 9.26), plus de instelling spectrum_damping.",
+        "# 9.26), plus the setting spectrum_damping.",
         "import math as _math",
         "bridge_freqs = [float(_f) for _f in "
         "modes.getAccessParameters()['FREQ']]",
@@ -291,11 +291,11 @@ def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
     ] + ["    {0},".format(s) for s in specs] + ["]", ""]
     if missing:
         lines += [
-            "# Missing mass: pseudo-modes = statische respons op een",
-            "# eenheidsversnelling per richting (MODE_STATIQUE PSEUDO_MODE,",
-            "# testcase sdlx02a); COMB_SISM_MODAL MODE_CORR telt de rest",
-            "# (pseudo-mode min de bijdrage van de modes) op met het spectrum",
-            "# op de afsnijfrequentie = de hoogste gerekende mode.",
+            "# Missing mass: pseudo-modes = static response to a",
+            "# unit acceleration per direction (MODE_STATIQUE PSEUDO_MODE,",
+            "# test case sdlx02a); COMB_SISM_MODAL MODE_CORR adds the rest",
+            "# (pseudo-mode minus the contribution of the modes) with the",
+            "# spectrum at the cut-off frequency = the highest computed mode.",
             "bridge_fcut = max(bridge_freqs)",
             "psmod = MODE_STATIQUE(",
             "    MATR_RIGI=rigidite,",
@@ -340,12 +340,12 @@ def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
 
 
 def _modal_fields_block(concept, g3d, stress, model_data):
-    """CALC_CHAMP op de modes of de pseudo-modes: REAC_NODA (reacties en de
-    totale reactie) en, voor spanningen, SIGM_ELNO/SIGM_NOEU op de
-    volume-elementen (testcase sdlx02a: CALC_CHAMP op MODE_MECA en op
-    MODE_STATIQUE voor COMB_SISM_MODAL). REAC_NODA zonder de veren van
-    elastic support (BRES*), zoals statisch (bridge_to_aster.
-    _build_calc_champ_block): dan is de veerkracht de reactie."""
+    """CALC_CHAMP on the modes or the pseudo-modes: REAC_NODA (reactions and
+    the total reaction) and, for stresses, SIGM_ELNO/SIGM_NOEU on the
+    volume elements (test case sdlx02a: CALC_CHAMP on MODE_MECA and on
+    MODE_STATIQUE for COMB_SISM_MODAL). REAC_NODA without the springs of
+    elastic support (BRES*), as in static (bridge_to_aster.
+    _build_calc_champ_block): then the spring force is the reaction."""
     springs = [g for g in model_data.get("discretes", {})
                if g.startswith("BRES")]
     where = ""
@@ -363,9 +363,9 @@ def _modal_fields_block(concept, g3d, stress, model_data):
 
 def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer de .comm en .export voor de responsspectrumanalyse (analyse
-    spectrum_3d, solver_command COMB_SISM_MODAL). Returns het pad van de
-    .export, of None (ERROR gelogd).
+    Generate the .comm and .export for the response spectrum analysis
+    (analysis spectrum_3d, solver_command COMB_SISM_MODAL). Returns the path
+    of the .export, or None (ERROR logged).
     """
     log("--- Generating Aster Files (CALC_MODES + COMB_SISM_MODAL) ---")
     if not _check_model(model_data, analysis):
@@ -391,13 +391,13 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
         return None
     missing = bool(analysis.get("missing_mass", True))
 
-    # Spectra per richting
+    # Spectra per direction
     custom = model_data.get("aster_custom", {}).get("spectrum", {})
     grav = gravity_spectra(model_data)
     spectra = {}
     for d, v in grav.items():
         if d in custom:
-            log("INFO: Spectrum {0}: #ASTER-SPECTRE {1} in plaats van de "
+            log("INFO: Spectrum {0}: #ASTER-SPECTRE {1} instead of the "
                 "gravity.".format(d, custom[d][0]))
             continue
         pts = _points(v, abscissa, d)
@@ -420,12 +420,12 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     for d in dirs:
         if d in spectra:
             xs, ys = spectra[d]
-            log("INFO: Spectrum {0}: {1} punt(en), {2} {3} .. {4}, "
-                "versnelling {5} .. {6} m/s2.".format(
+            log("INFO: Spectrum {0}: {1} point(s), {2} {3} .. {4}, "
+                "acceleration {5} .. {6} m/s2.".format(
                     d, len(xs), abscissa, min(xs), max(xs), min(ys),
                     max(ys)))
 
-    # Opleggingen; belastingen vervallen
+    # Supports; loads are dropped
     _drop_loads(model_data)
     charges = b2a._build_charges(model_data)
     charges = [c for c in charges if not b2a._is_load_charge(c)]
@@ -447,17 +447,17 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     if "displacements" not in fields:
         fields.insert(0, "displacements")
     if ignored:
-        log("INFO: Spectrumanalyse: velden {0} worden niet berekend."
+        log("INFO: Spectrum analysis: fields {0} are not computed."
             .format(", ".join(ignored)))
     g3d, gsh, gbm = b2a._result_groups(model_data)
     stress = any(f in fields for f in ("stresses", "vonmises"))
     if stress and not g3d:
-        log("INFO: Spectrumanalyse: spanningen alleen op volume-elementen; "
-            "het model heeft er geen.")
+        log("INFO: Spectrum analysis: stresses only on volume elements; "
+            "the model has none.")
         stress = False
     elif stress and (gsh or gbm):
-        log("INFO: Spectrumanalyse: spanningen alleen op de volume-"
-            "elementen, niet op schalen en balken ({0}).".format(
+        log("INFO: Spectrum analysis: stresses only on the volume "
+            "elements, not on shells and beams ({0}).".format(
                 ", ".join(list(gsh) + list(gbm))))
     options = ["DEPL"]
     if "accelerations" in fields:
@@ -471,8 +471,8 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     alpha = float(ray.get("alpha", 0.0) or 0.0)
     beta = float(ray.get("beta", 0.0) or 0.0)
     if alpha or beta:
-        log("INFO: Spectrumanalyse: Mecway's Rayleigh-demping (alpha {0} "
-            "1/s, beta {1} s) telt per mode mee, plus spectrum_damping "
+        log("INFO: Spectrum analysis: Mecway's Rayleigh damping (alpha {0} "
+            "1/s, beta {1} s) counts per mode, plus spectrum_damping "
             "{2}.".format(alpha, beta, zeta))
         if any(d in spectra for d in dirs):
             log(tr("WARNING: De demping verschilt per mode (Rayleigh), maar "
@@ -527,7 +527,7 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     affe = "MODELE=model, CHAM_MATER=fieldmat" + (
         ", CARA_ELEM=cara" if cara_ref else "")
     result = [
-        "# De maxima als een resultaat (een index; ACCE_ABSOLU -> ACCE)",
+        "# The maxima as one result (one index; ACCE_ABSOLU -> ACCE)",
         "res = aster_spectrum.maxima(sism, {0!r}, '{1}', {2!r}, {3})".format(
             options, dir_rule, dirs, affe),
     ]
@@ -538,7 +538,7 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     extra = "{}"
     if stress and "vonmises" in fields:
         result += [
-            "# von Mises per mode berekend en gecombineerd (aster_spectrum)",
+            "# von Mises computed per mode and combined (aster_spectrum)",
             "bridge_vm = aster_spectrum.von_mises(modes, bridge_specs, "
             "bridge_xi, '{0}', '{1}'{2})".format(
                 modal_rule, _DIRECTION_RULES[dir_rule]
@@ -565,10 +565,10 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
-    log("INFO: Spectrumanalyse: {0} modes, richting(en) {1}, modale "
-        "combinatie {2}, richtingen {3}, demping {4}{5}.".format(
+    log("INFO: Spectrum analysis: {0} modes, direction(s) {1}, modal "
+        "combination {2}, directions {3}, damping {4}{5}.".format(
             b2a._mode_count(model_data, analysis), ", ".join(dirs),
             modal_rule, dir_rule, zeta,
             ", missing mass" if missing else ""))
@@ -589,7 +589,7 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         export_content = (
             "P actions make_etude\n"
@@ -610,7 +610,7 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
         ) + b2a._export_result_lines(work_dir, resu_name)
         with open(export_path, "w") as f:
             f.write(export_content)
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -622,7 +622,7 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
 
 
 # ==========================================
-# NA DE RUN: LOG EN STATUSVAK
+# AFTER THE RUN: LOG AND STATUS BOX
 # ==========================================
 _LINE_RE = re.compile(r"^BRIDGE_SPECTRUM_(MODE|MASSA|CUT|REACTIE)\s*(.*)$")
 _KV_RE = re.compile(r"(\w+)=(\S+)")
@@ -630,14 +630,14 @@ _KV_RE = re.compile(r"(\w+)=(\S+)")
 
 def read_summary(mess_path):
     """{"modes": {nr: {..}}, "massa": {..}, "cut": {..}, "reactie": {..}}
-    uit de BRIDGE_SPECTRUM-regels (aster_spectrum.report); {} zonder."""
+    from the BRIDGE_SPECTRUM lines (aster_spectrum.report); {} without."""
     out = {}
     if not mess_path or not os.path.exists(mess_path):
         return out
     f = open(mess_path, "rb")
     try:
         for line in f:
-            if not isinstance(line, str):     # CPython 3 (verificatie)
+            if not isinstance(line, str):     # CPython 3 (verification)
                 line = line.decode("utf-8", "replace")
             m = _LINE_RE.match(line.strip())
             if not m:
@@ -660,9 +660,9 @@ def read_summary(mess_path):
 
 
 def report_summary(mess_path, analysis):
-    """Regels voor log en statusvak na de run: effectieve massa per
-    richting (WARNING onder 90% zonder missing mass), het spectrum op de
-    afsnijfrequentie en de totale reactie. Returns de lijst regels."""
+    """Lines for log and status box after the run: effective mass per
+    direction (WARNING below 90% without missing mass), the spectrum at the
+    cut-off frequency and the total reaction. Returns the list of lines."""
     s = read_summary(mess_path)
     lines = []
     if not s:

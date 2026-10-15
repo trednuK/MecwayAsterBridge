@@ -4,92 +4,93 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_custom.py
-# Verantwoordelijkheid: #ASTER-regels lezen die de gebruiker in Mecway in een
-# vrij tekstveld zet, en ze klaarzetten voor bridge_to_aster.py. Zo kan een
-# model Code-Aster-functies gebruiken waar Mecway geen invoer voor heeft
-# (bijv. LIAISON_ELEM voor balk-volume-verbindingen) zonder de bridge aan te
-# passen.
+# Responsibility: read #ASTER lines that the user puts in a free text field
+# in Mecway, and prepare them for bridge_to_aster.py. This way a model can
+# use Code-Aster functions for which Mecway has no input
+# (e.g. LIAISON_ELEM for beam-volume connections) without changing the
+# bridge.
 #
-# Waar: de vrije tekstvelden van Mecway (XML-tags, gevonden in mecway.exe):
+# Where: Mecway's free text fields (XML tags, found in mecway.exe):
 #   <ccxmodeldefinition>      CCX > Custom model definition
 #   <ccxstep>                 CCX > Custom step contents
 #   <radiossmodeldefinition>  OpenRadioss > Custom model definition
 #   <radiossengineinput>      OpenRadioss > Custom engine input
 #   <nastranbulkdata>         Mystran > Custom bulk data
-# Een regel begint met '#' (commentaar voor OpenRadioss), '**' (CCX) of '$'
-# (Mystran/Nastran), daarna ASTER; de Mecway-solver negeert de regel dus.
-# Praktisch: dynamica/contact in een OpenRadioss-analyse, statica in een
-# Mystran-analyse; de bridge leest de velden ongeacht de gekozen solver.
+# A line starts with '#' (comment for OpenRadioss), '**' (CCX) or '$'
+# (Mystran/Nastran), then ASTER; so the Mecway solver ignores the line.
+# In practice: dynamics/contact in an OpenRadioss analysis, statics in a
+# Mystran analysis; the bridge reads the fields regardless of the solver.
 #
-# Regels (voorvoegsel '#', '**' of '$', spaties ervoor mogen):
-#   #ASTER <code>            Code-Aster-code, letterlijk vóór de solve
-#                            (na de lasten van de bridge). Opeenvolgende
-#                            regels vormen een blok; de inspringing na
-#                            '#ASTER ' blijft behouden.
-#   #ASTER-EXCIT naam, ...   last(en) uit #ASTER-code toevoegen aan EXCIT
-#   #ASTER-CONTACT K=V, ...  extra sleutelwoorden voor DEFI_CONTACT (globaal)
-#   #ASTER-ZONE K=V, ...     extra sleutelwoorden voor elke contactzone
-#   #ASTER-OPTIE sleutel = waarde
-#                            instelling van de actieve analyse voor dit
-#                            model (bijv. newton_max_iter = 50)
-#   #ASTER-POST <code>       Code-Aster-code na de solve (vóór IMPR_RESU)
-#   #ASTER-BEZWIJKEN materiaal = rek
-#                            elementen van dit Mecway-materiaal bezwijken
-#                            bij deze vergelijkingsplastische rek ('*' =
-#                            alle plastische materialen); ook
-#                            #ASTER-FAILURE. Zie bridge_failure.py.
-#   #ASTER-SPECTRE X, Y = naam [, K=V, ...]
-#                            responsspectrum (analyse spectrum_3d) voor
-#                            deze richtingen: een DEFI_NAPPE/DEFI_FONCTION/
-#                            FORMULE uit #ASTER-code (SPEC_OSCI), met
-#                            eventueel extra sleutelwoorden voor SPECTRE
-#                            (ECHELLE, NATURE, CORR_FREQ); ook
-#                            #ASTER-SPECTRUM. Zie bridge_spectrum.py.
-#   #ASTER-BRON selectie = snelheid [, fase]
-#                            akoestiek harmonisch (acoustic_harm_3d): een
-#                            vlakselectie als bron met normaalsnelheid de
-#                            fluid in (m/s of mm/s) en fase in graden; ook
-#                            #ASTER-SOURCE. Zie bridge_acoustic.py. In de
-#                            vibro-akoestiek harmonisch (vibroacoustic_
-#                            harm_3d) ook met een druk (Pa): een invallende
-#                            golf. Zie bridge_vibroacoustic_harm.py.
-#   #ASTER-LASBRON K=V, ...  bewegende lasbron (transient thermisch; ook
-#                            #ASTER-WELD). Zie bridge_welding.py.
-#   #ASTER-FASE selectie = graden
-#                            harmonische respons (harmonic_3d): de
-#                            belasting op deze selectie krijgt deze fase
-#                            (EXCIT PHAS_DEG); ook #ASTER-PHASE. Zie
+# Lines (prefix '#', '**' or '$', leading spaces allowed):
+#   #ASTER <code>            Code-Aster code, literally before the solve
+#                            (after the loads of the bridge). Consecutive
+#                            lines form a block; the indentation after
+#                            '#ASTER ' is preserved.
+#   #ASTER-EXCIT name, ...   add load(s) from #ASTER code to EXCIT
+#   #ASTER-CONTACT K=V, ...  extra keywords for DEFI_CONTACT (global)
+#   #ASTER-ZONE K=V, ...     extra keywords for each contact zone
+#   #ASTER-OPTIE key = value
+#                            setting of the active analysis for this
+#                            model (e.g. newton_max_iter = 50)
+#   #ASTER-POST <code>       Code-Aster code after the solve (before IMPR_RESU)
+#   #ASTER-BEZWIJKEN material = strain
+#                            elements of this Mecway material fail
+#                            at this equivalent plastic strain ('*' =
+#                            all plastic materials); also
+#                            #ASTER-FAILURE. See bridge_failure.py.
+#   #ASTER-SPECTRE X, Y = name [, K=V, ...]
+#                            response spectrum (analysis spectrum_3d) for
+#                            these directions: a DEFI_NAPPE/DEFI_FONCTION/
+#                            FORMULE from #ASTER code (SPEC_OSCI), with
+#                            optionally extra keywords for SPECTRE
+#                            (ECHELLE, NATURE, CORR_FREQ); also
+#                            #ASTER-SPECTRUM. See bridge_spectrum.py.
+#   #ASTER-BRON selection = velocity [, phase]
+#                            harmonic acoustics (acoustic_harm_3d): a
+#                            face selection as source with normal velocity
+#                            into the fluid (m/s or mm/s) and phase in
+#                            degrees; also #ASTER-SOURCE. See
+#                            bridge_acoustic.py. In harmonic vibro-acoustics
+#                            (vibroacoustic_harm_3d) also with a pressure
+#                            (Pa): an incident wave. See
+#                            bridge_vibroacoustic_harm.py.
+#   #ASTER-LASBRON K=V, ...  moving weld source (transient thermal; also
+#                            #ASTER-WELD). See bridge_welding.py.
+#   #ASTER-FASE selection = degrees
+#                            harmonic response (harmonic_3d): the
+#                            load on this selection gets this phase
+#                            (EXCIT PHAS_DEG); also #ASTER-PHASE. See
 #                            bridge_harmonic.py.
-#   #ASTER-MATERIAAL naam: K=V, ...
-#                            temperatuurafhankelijke E, nu, alpha, SY, ET
-#                            van een Mecway-materiaal (keten thermisch ->
-#                            mechanisch; ook #ASTER-MATERIAL). Zie
+#   #ASTER-MATERIAAL name: K=V, ...
+#                            temperature-dependent E, nu, alpha, SY, ET
+#                            of a Mecway material (chain thermal ->
+#                            mechanical; also #ASTER-MATERIAL). See
 #                            bridge_thermomech.py.
-#   #ASTER-WOHLER materiaal: K=V, ...
-#                            Wohler-curve voor vermoeiing; ook
-#                            #ASTER-VERMOEIING/-FATIGUE K=V (opties),
-#                            #ASTER-BLOK/-BLOCK a, m, n en #ASTER-SIGNAAL/
-#                            -SIGNAL f1, f2, ... Zie bridge_fatigue.py.
-#   #ASTER-METALLURGIE naam: K=V, ...
-#                            fase-omzettingen in staal (TRC, CALC_META) voor
-#                            een Mecway-materiaal (transient thermisch; ook
-#                            #ASTER-METALLURGY). Zie bridge_metallurgy.py.
-#   #ASTER-XFEM K=V, ...     XFEM-scheur zonder hem te meshen (lineair
-#                            statisch: K en G langs het front). Zie
+#   #ASTER-WOHLER material: K=V, ...
+#                            Wohler curve for fatigue; also
+#                            #ASTER-VERMOEIING/-FATIGUE K=V (options),
+#                            #ASTER-BLOK/-BLOCK a, m, n and #ASTER-SIGNAAL/
+#                            -SIGNAL f1, f2, ... See bridge_fatigue.py.
+#   #ASTER-METALLURGIE name: K=V, ...
+#                            phase transformations in steel (TRC, CALC_META)
+#                            for a Mecway material (transient thermal; also
+#                            #ASTER-METALLURGY). See bridge_metallurgy.py.
+#   #ASTER-XFEM K=V, ...     XFEM crack without meshing it (linear
+#                            static: K and G along the front). See
 #                            bridge_xfem.py.
-#   <<Mecway-selectie>>      in alle regels: de Code-Aster-groepsnaam van
-#                            die selectie (bridge_mesh hernoemt namen)
+#   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
+#                            that selection (bridge_mesh renames names)
 #
-# Voorbeeld (balkknoop aan een volumevlak, LIAISON_ELEM OPTION='3D_POU'):
+# Example (beam node on a volume face, LIAISON_ELEM OPTION='3D_POU'):
 #   #ASTER verb = AFFE_CHAR_MECA(MODELE=model,
 #   #ASTER     LIAISON_ELEM=_F(OPTION='3D_POU', GROUP_MA_1='<<Vlak>>',
 #   #ASTER                     GROUP_NO_2='<<Knoop>>'))
 #   #ASTER-EXCIT verb
 #
-# De bridge controleert de Code-Aster-syntax van #ASTER-code niet; fouten
-# komen uit Code-Aster (study.mess).
+# The bridge does not check the Code-Aster syntax of #ASTER code; errors
+# come from Code-Aster (study.mess).
 #
-# Compatibel met IronPython 2.7.9.
+# Compatible with IronPython 2.7.9.
 
 import re
 
@@ -98,13 +99,13 @@ from bridge_utils import log, tr, parse_yes_no
 CUSTOM_TAGS = ("ccxmodeldefinition", "ccxstep", "radiossmodeldefinition",
                "radiossengineinput", "nastranbulkdata")
 
-# Soort ook in kleine letters herkennen, zodat '#ASTER-Excit' niet stil
-# wegvalt maar als soort (of als onbekende soort) wordt gemeld.
+# Also recognise the kind in lower case, so that '#ASTER-Excit' is not
+# silently dropped but reported as a kind (or as an unknown kind).
 _LINE_RE = re.compile(r"^\s*(?:#|\*\*|\$)\s*ASTER(-[A-Za-z]+)?(?:\s(.*))?$")
-# Lijkt op een #ASTER-regel (voorvoegsel direct gevolgd door ASTER) maar
-# past niet in _LINE_RE, bijv. '#ASTER_EXCIT' of '#ASTER:': melden i.p.v.
-# stil overslaan. Zonder spatie na het voorvoegsel, zodat gewone CCX-
-# commentaarregels ('** ...') niet geraakt worden.
+# Looks like an #ASTER line (prefix directly followed by ASTER) but
+# does not match _LINE_RE, e.g. '#ASTER_EXCIT' or '#ASTER:': report
+# instead of silently skipping. Without a space after the prefix, so that
+# ordinary CCX comment lines ('** ...') are not affected.
 _NEAR_RE = re.compile(r"^\s*(?:#|\*\*|\$)ASTER")
 _PLACEHOLDER_RE = re.compile(r"<<([^<>]+)>>")
 _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
@@ -114,14 +115,14 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
           "-XFEM")
-# Vermoeiing (bridge_fatigue.py): soort -> sleutel in out["fatigue"]
+# Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
                   "-SIGNAAL": "signal", "-SIGNAL": "signal"}
 
 
 def empty():
-    """Lege structuur zoals parse() hem teruggeeft."""
+    """Empty structure as parse() returns it."""
     return {"code": [], "excit": [], "contact": [], "zone": [],
             "options": {}, "post": [], "failure": {}, "spectrum": {},
             "sources": [], "welding": [],
@@ -132,11 +133,11 @@ def empty():
 
 def parse(texts):
     """
-    #ASTER-regels uit de vrije tekstvelden.
+    #ASTER lines from the free text fields.
 
-    texts : lijst van strings (inhoud van de CUSTOM_TAGS)
-    Returns dict met "code"/"post" (regels), "excit" (namen),
-    "contact"/"zone" (stukken 'K=V'), "options" ({sleutel: tekst}).
+    texts : list of strings (contents of the CUSTOM_TAGS)
+    Returns dict with "code"/"post" (lines), "excit" (names),
+    "contact"/"zone" (pieces 'K=V'), "options" ({key: text}).
     """
     out = empty()
     for text in texts:
@@ -178,7 +179,7 @@ def parse(texts):
             elif kind in ("-SPECTRE", "-SPECTRUM"):
                 _parse_spectrum(body, out["spectrum"])
             elif kind in ("-BRON", "-SOURCE"):
-                # uitgewerkt in bridge_acoustic._parse_aster_sources en
+                # worked out in bridge_acoustic._parse_aster_sources and
                 # bridge_vibroacoustic_harm._aster_sources
                 if body.strip():
                     out["sources"].append(body.strip())
@@ -186,24 +187,24 @@ def parse(texts):
                 if body.strip():
                     out["welding"].append(body.strip())
             elif kind in _FATIGUE_KINDS:
-                # uitgewerkt in bridge_fatigue.parse
+                # worked out in bridge_fatigue.parse
                 if body.strip():
                     out["fatigue"].append((_FATIGUE_KINDS[kind],
                                            body.strip()))
             elif kind in ("-FASE", "-PHASE"):
-                # uitgewerkt in bridge_harmonic._phase_bodies
+                # worked out in bridge_harmonic._phase_bodies
                 if body.strip():
                     out["phases"].append(body.strip())
             elif kind == "-XFEM":
-                # uitgewerkt in bridge_xfem.parse_specs
+                # worked out in bridge_xfem.parse_specs
                 if body.strip():
                     out["xfem"].append(body.strip())
             elif kind in ("-MATERIAAL", "-MATERIAL"):
-                # uitgewerkt in bridge_thermomech.parse_materials
+                # worked out in bridge_thermomech.parse_materials
                 if body.strip():
                     out["materials"].append(body.strip())
             elif kind in ("-METALLURGIE", "-METALLURGY"):
-                # uitgewerkt in bridge_metallurgy.parse_specs
+                # worked out in bridge_metallurgy.parse_specs
                 if body.strip():
                     out["metallurgy"].append(body.strip())
             else:
@@ -217,7 +218,7 @@ def parse(texts):
                 out["options"][key.strip()] = value.strip()
     n = sum(len(v) for v in out.values())
     if n:
-        log("INFO: #ASTER-regels: {0} code, {1} EXCIT, {2} CONTACT, {3} ZONE, "
+        log("INFO: #ASTER lines: {0} code, {1} EXCIT, {2} CONTACT, {3} ZONE, "
             "{4} OPTIE, {5} POST, {6} BEZWIJKEN, {7} SPECTRE, {8} BRON, "
             "{9} LASBRON, {10} FASE, {11} MATERIAAL, {12} VERMOEIING, "
             "{13} METALLURGIE, {14} XFEM.".format(
@@ -236,8 +237,8 @@ _SPECTRUM_RE = re.compile(r"^\s*([XYZxyz](?:\s*,\s*[XYZxyz])*)\s*=\s*"
 
 
 def _parse_spectrum(body, spectrum):
-    """'#ASTER-SPECTRE X, Y = naam, ECHELLE=9.81' -> spectrum[richting] =
-    (naam, ['ECHELLE=9.81']) (bridge_spectrum.py: SPECTRE van
+    """'#ASTER-SPECTRE X, Y = name, ECHELLE=9.81' -> spectrum[direction] =
+    (name, ['ECHELLE=9.81']) (bridge_spectrum.py: SPECTRE of
     COMB_SISM_MODAL)."""
     m = _SPECTRUM_RE.match(body)
     extra = []
@@ -256,7 +257,7 @@ def _parse_spectrum(body, spectrum):
 
 
 def _parse_failure(body, failure):
-    """'#ASTER-BEZWIJKEN materiaal = rek' -> failure[materiaal] = rek."""
+    """'#ASTER-BEZWIJKEN material = strain' -> failure[material] = strain."""
     name, sep, value = body.rpartition("=")
     try:
         limit = float(value.strip().replace(",", "."))
@@ -275,12 +276,12 @@ def _parse_failure(body, failure):
 
 def substitute(text, renames, known):
     """
-    Vervang <<Mecway-selectie>> door de Code-Aster-groepsnaam.
+    Replace <<Mecway-selectie>> with the Code-Aster group name.
 
-    renames : {Mecway-naam: Code-Aster-naam} (bridge_mesh)
-    known   : verzameling Code-Aster-groepsnamen in het mesh
-    Een onbekende selectie wordt gelogd als ERROR en blijft staan, zodat
-    Code-Aster er een duidelijke fout op geeft.
+    renames : {Mecway name: Code-Aster name} (bridge_mesh)
+    known   : set of Code-Aster group names in the mesh
+    An unknown selection is logged as ERROR and stays in place, so that
+    Code-Aster gives a clear error on it.
     """
     def repl(m):
         name = m.group(1).strip()
@@ -296,11 +297,11 @@ def substitute(text, renames, known):
 
 def apply_options(analysis, options):
     """
-    Kopie van de analyse-instellingen met de #ASTER-OPTIE-waarden. Alleen
-    sleutels die de analyse al heeft; het type volgt de bestaande waarde.
-    Een ja/nee-instelling kent de woorden van bridge_utils.parse_yes_no
-    (ja/nee, aan/uit, yes/no, on/off, true/false, 1/0, oui/non); een andere
-    tekst geeft een WARNING en de bestaande waarde blijft.
+    Copy of the analysis settings with the #ASTER-OPTIE values. Only
+    keys the analysis already has; the type follows the existing value.
+    A yes/no setting accepts the words of bridge_utils.parse_yes_no
+    (ja/nee, aan/uit, yes/no, on/off, true/false, 1/0, oui/non); any other
+    text gives a WARNING and the existing value stays.
     """
     result = dict(analysis)
     for key, raw in options.items():

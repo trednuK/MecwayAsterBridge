@@ -4,54 +4,54 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_adapt.py
-# Verantwoordelijkheid: adaptieve verfijning (stap S7) van een lineair
-# statisch model (lin_static_3d) met Mecway's eigen verfijning: na een run
-# met de foutschatter (CALC_ERREUR ERME, bridge_to_aster.
-# _error_estimator_block) de elementen met de grootste geschatte fout
-# kiezen, ze in Mecway verfijnen (mw.refine_x2) en opnieuw rekenen, tot een
-# doel (globale relatieve fout) of een grens (aantal lussen, elementen).
-# Gebruikersdoc: docs/Foutschatter.md par. 6.
+# Responsibility: adaptive refinement (step S7) of a linear static
+# model (lin_static_3d) with Mecway's own refinement: after a run
+# with the error estimator (CALC_ERREUR ERME, bridge_to_aster.
+# _error_estimator_block) select the elements with the largest estimated
+# error, refine them in Mecway (mw.refine_x2) and solve again, until a
+# target (global relative error) or a limit (number of loops, elements).
+# User doc: docs/Foutschatter.md par. 6.
 #
-#   adapt_settings(analysis, options) - instellingen (+ #ASTER-OPTIE), of
-#                                       None als de verfijning uit staat
-#   read_element_errors(fragment, ..) - eta_e per element uit het
-#                                       resultaatbestand (ERME_ELNO)
-#   select_elements(errors, ..)       - te verfijnen elementen (Dorfler,
-#                                       fractie of factor x gemiddelde)
-#   node_bc_conflicts(model_data, ..) - knoopselecties met een voorwaarde
-#                                       op een rand die verfijnd wordt
-#   after_run(history, ...)           - beslissing na een run (lus van het
-#                                       hoofdscript, MecwayAsterBridgeMain)
-#   refine_in_mecway(mw, eids)        - mw.refine_x2 + controle
+#   adapt_settings(analysis, options) - settings (+ #ASTER-OPTIE), or
+#                                       None if refinement is off
+#   read_element_errors(fragment, ..) - eta_e per element from the
+#                                       result file (ERME_ELNO)
+#   select_elements(errors, ..)       - elements to refine (Dorfler,
+#                                       fraction or factor x mean)
+#   node_bc_conflicts(model_data, ..) - node selections with a condition
+#                                       on an edge that gets refined
+#   after_run(history, ...)           - decision after a run (loop of the
+#                                       main script, MecwayAsterBridgeMain)
+#   refine_in_mecway(mw, eids)        - mw.refine_x2 + check
 #
-# Wat Mecway's refine_x2 doet (headless gemeten, mecway.exe <model> script,
+# What Mecway's refine_x2 does (measured headless, mecway.exe <model> script,
 # Mecway 33; docs/Foutschatter.md par. 6.4):
-# - elk gekozen element wordt 2 x 2 x 2 elementen van dezelfde vorm; de
-#   buren krijgen overgangselementen (hex8 -> hex8 + pyr5 + tet4, hex20 ->
-#   hex20 + pyr13 + tet10), het mesh blijft conform (geen hangende knopen;
-#   manual par. 4.4.1 "correctly connected"). Middenknopen van pyr13/tet10
-#   liggen op het midden van hun ribbe, in de volgorde van bridge_mesh.
-#   _MID_EDGES (nagelopen op alle elementen van een verfijnd hex20-blok);
-# - vlakselecties (en dus vlaklasten en -voorwaarden), elementselecties en
-#   onderdelen (elset, materiaal) gaan mee naar de nieuwe elementen;
-#   knoopselecties NIET: de nieuwe knopen op een rand of vlak van een
-#   knoopselectie horen er niet bij (ook manual par. 9: "loads and
+# - each selected element becomes 2 x 2 x 2 elements of the same shape; the
+#   neighbours get transition elements (hex8 -> hex8 + pyr5 + tet4, hex20 ->
+#   hex20 + pyr13 + tet10), the mesh stays conforming (no hanging nodes;
+#   manual par. 4.4.1 "correctly connected"). Midside nodes of pyr13/tet10
+#   lie at the middle of their edge, in the order of bridge_mesh.
+#   _MID_EDGES (checked on all elements of a refined hex20 block);
+# - face selections (and hence face loads and conditions), element
+#   selections and parts (elset, material) carry over to the new elements;
+#   node selections do NOT: the new nodes on an edge or face of a
+#   node selection are not included (also manual par. 9: "loads and
 #   constraints applied to nodes remain at the same point locations");
-# - nieuwe knopen liggen op de (kwadratische) elementgeometrie: bij hex20
-#   blijft een cirkelrand een cirkel (afwijking 5e-4 r na een verfijning
-#   van een 45-gradenboog), bij hex8 op de koorde (de rand blijft de
-#   veelhoek van het grove mesh);
-# - elementen en knopen worden hernummerd (de verfijnde en de
-#   overgangselementen krijgen nieuwe nummers);
-# - na een paar lussen kunnen de overgangen slechte elementen geven: bij
-#   dunne elementen (dikte 1/40 van de breedte) na 2 lussen bijna platte
-#   hex20 (geschaalde Jacobiaan 0,015) en een stijgende foutschatting; bij
-#   tet10 al na de eerste lus (overgangen met wedge15/pyr13); bij hex20 met
-#   een verhouding ~1 (verificatie AD-02) daalde de fout in 5 lussen
-#   monotoon (docs/Verificatie.md, AD).
+# - new nodes lie on the (quadratic) element geometry: with hex20
+#   a circular edge stays a circle (deviation 5e-4 r after one refinement
+#   of a 45-degree arc), with hex8 on the chord (the edge stays the
+#   polygon of the coarse mesh);
+# - elements and nodes are renumbered (the refined and the
+#   transition elements get new numbers);
+# - after a few loops the transitions can produce bad elements: with
+#   thin elements (thickness 1/40 of the width) after 2 loops nearly flat
+#   hex20 (scaled Jacobian 0.015) and a rising error estimate; with
+#   tet10 already after the first loop (transitions with wedge15/pyr13);
+#   with hex20 at an aspect ratio ~1 (verification AD-02) the error
+#   decreased monotonically over 5 loops (docs/Verificatie.md, AD).
 #
-# Compatibel met IronPython 2.7.9 en CPython 3 (verificatie; alleen de
-# standaardbibliotheek).
+# Compatible with IronPython 2.7.9 and CPython 3 (verification; standard
+# library only).
 
 import base64
 import math
@@ -60,8 +60,8 @@ import struct
 
 from bridge_utils import log, tr, parse_yes_no
 
-# Standaardinstellingen (ook in CONFIG_BRIDGE["analyses"]["lin_static_3d"];
-# hier als terugval voor een oudere bridge_utils.py).
+# Default settings (also in CONFIG_BRIDGE["analyses"]["lin_static_3d"];
+# here as a fallback for an older bridge_utils.py).
 DEFAULTS = {
     "adapt_refine":       False,
     "adapt_target_error": 2.0,
@@ -73,19 +73,19 @@ DEFAULTS = {
 }
 SELECT_METHODS = ("dorfler", "fraction", "factor")
 
-# Foutveld per element in het resultaatbestand (aster_results_export
+# Error field per element in the result file (aster_results_export
 # FIELD_TABLE: ERME_ELNO ERREST -> elementnodevariable "errorestimate").
 ERROR_VARIABLE = "errorestimate"
 
-# Groei van het aantal elementen per verfijnd element (8 kinderen plus de
-# overgangselementen in de buren), voor de grens adapt_max_elements
-# vooraf. Gemeten (headless Mecway 33): 2 van 8 hex8 -> 46 elementen (19
-# per verfijnd element); plaat met gat hex20 38 tot 70 per element. Na de
-# eerste lus telt de gemeten groei van de vorige lus (_growth).
+# Growth of the number of elements per refined element (8 children plus the
+# transition elements in the neighbours), for the limit adapt_max_elements
+# in advance. Measured (headless Mecway 33): 2 of 8 hex8 -> 46 elements (19
+# per refined element); plate with hole hex20 38 to 70 per element. After
+# the first loop the measured growth of the previous loop counts (_growth).
 _GROWTH = 40.0
 
-# Hoekparen van de ribben per volumevorm (Mecway-knoopvolgorde = Code-
-# Aster-volgorde voor volumes, bridge_mesh._ASTER_TYPES; ribben als
+# Corner pairs of the edges per volume shape (Mecway node order = Code-
+# Aster order for volumes, bridge_mesh._ASTER_TYPES; edges as
 # bridge_mesh._MID_EDGES).
 _EDGES = {
     "hex": [(0, 1), (1, 2), (2, 3), (0, 3), (0, 4), (1, 5), (2, 6), (3, 7),
@@ -98,12 +98,12 @@ _EDGES = {
 
 
 # ==========================================
-# INSTELLINGEN
+# SETTINGS
 # ==========================================
 def _option_value(old, raw):
-    """#ASTER-OPTIE-tekst naar het type van de standaardwaarde (zoals
-    bridge_custom.apply_options). Geen geldig ja/nee-woord of getal:
-    ValueError (de standaardwaarde blijft; apply_options geeft de
+    """#ASTER-OPTIE text to the type of the default value (like
+    bridge_custom.apply_options). Not a valid yes/no word or number:
+    ValueError (the default value stays; apply_options gives the
     WARNING)."""
     if isinstance(old, bool):
         value = parse_yes_no(raw)
@@ -119,12 +119,12 @@ def _option_value(old, raw):
 
 def adapt_settings(analysis, options=None):
     """
-    Instellingen van de adaptieve verfijning voor de analyse (dict uit
-    CONFIG_BRIDGE["analyses"]) met de #ASTER-OPTIE-waarden van het model
-    (model_data["aster_custom"]["options"]; die winnen, ongeldige waarden
-    meldt bridge_custom.apply_options al). Returns de dict met de adapt_*-
-    sleutels, of None als de verfijning uit staat of niet kan (geen
-    MECA_STATIQUE of geen foutschatter).
+    Settings of the adaptive refinement for the analysis (dict from
+    CONFIG_BRIDGE["analyses"]) with the #ASTER-OPTIE values of the model
+    (model_data["aster_custom"]["options"]; these win, invalid values
+    are already reported by bridge_custom.apply_options). Returns the dict
+    with the adapt_* keys, or None if refinement is off or not possible (no
+    MECA_STATIQUE or no error estimator).
     """
     options = options or {}
     out = {}
@@ -162,7 +162,7 @@ def adapt_settings(analysis, options=None):
 
 
 # ==========================================
-# FOUT PER ELEMENT UIT HET RESULTAATBESTAND
+# ERROR PER ELEMENT FROM THE RESULT FILE
 # ==========================================
 _TAG = re.compile(r'<(results|elementnodeids|elementnodevariable|'
                   r'nodevariable|valuessingle|valuesdouble)\b([^>]*)>')
@@ -183,16 +183,16 @@ def _unpack(chunks, code):
 
 def read_element_errors(fragment_path, elements, variable=ERROR_VARIABLE):
     """
-    Geschatte fout eta_e per element (ERME_ELNO, component ERREST; per
-    element constant) uit een resultaatbestand van de bridge
-    (aster_results_export, ook een .liml met <results>).
+    Estimated error eta_e per element (ERME_ELNO, component ERREST;
+    constant per element) from a result file of the bridge
+    (aster_results_export, also a .liml with <results>).
 
-    elements : [(eid, vorm, [nid, ...], elset)] van het model
-               (model_data["mesh_elements"]): het aantal waarden per element
-               is zijn aantal knopen (elementnodevariable, knopen in de
-               volgorde van <elem nodes>).
-    Returns {eid: eta_e}; {} als het veld ontbreekt (foutschatter uit, of
-    route 'tabel').
+    elements : [(eid, shape, [nid, ...], elset)] of the model
+               (model_data["mesh_elements"]): the number of values per
+               element is its number of nodes (elementnodevariable, nodes in
+               the order of <elem nodes>).
+    Returns {eid: eta_e}; {} if the field is missing (error estimator off,
+    or route 'tabel').
     """
     n_nodes = dict((e[0], len(e[2])) for e in elements)
     ids_chunks, val_chunks = None, None
@@ -254,26 +254,26 @@ def read_element_errors(fragment_path, elements, variable=ERROR_VARIABLE):
                    "does not fit the model; error values not read.").format(
                        eid))
             return {}
-        # float(): IronPython geeft uit struct een System.Single/Double.
+        # float(): IronPython returns a System.Single/Double from struct.
         out[eid] = float(vals[pos])
         pos += n
     return out
 
 
 # ==========================================
-# KEUZE VAN DE ELEMENTEN
+# SELECTION OF THE ELEMENTS
 # ==========================================
 def select_elements(errors, method="dorfler", value=0.5):
     """
-    Te verfijnen elementen uit {eid: eta_e}:
-      dorfler  - de kleinste groep elementen met de grootste fout die samen
-                 een fractie value (0 < value <= 1) van de totale fout in
-                 het kwadraat (sum eta_e^2) dragen ("bulk criterion",
-                 Dorfler 1996); standaard 0,5;
-      fraction - de fractie value van de elementen met de grootste fout
-                 (0,1 = 10%);
-      factor   - de elementen met eta_e > value x het gemiddelde van eta_e.
-    Gelijke waarden: lager elementnummer eerst. Returns gesorteerde lijst.
+    Elements to refine from {eid: eta_e}:
+      dorfler  - the smallest group of elements with the largest error that
+                 together carry a fraction value (0 < value <= 1) of the
+                 total squared error (sum eta_e^2) ("bulk criterion",
+                 Dorfler 1996); default 0.5;
+      fraction - the fraction value of the elements with the largest error
+                 (0.1 = 10%);
+      factor   - the elements with eta_e > value x the mean of eta_e.
+    Equal values: lower element number first. Returns a sorted list.
     """
     items = sorted(errors.items(), key=lambda kv: (-kv[1], kv[0]))
     if not items:
@@ -305,16 +305,16 @@ def _shape_family(shape):
 
 def add_neighbours(elements, eids):
     """
-    eids plus alle volume-elementen die een knoop met een van eids delen
-    (een bufferlaag; instelling adapt_neighbours). Gemeten (headless
-    Mecway 33, dunne plaat met gat, hex20 van 1/40 van de breedte dik):
-    refine_x2 op alleen de gekozen elementen gaf in de tweede lus, waar de
-    keuze aan de overgangselementen van de eerste lus grensde, bijna
-    platte hex20 (geschaalde Jacobiaan 0,015; globale schatting van 3,7%
-    naar 19,6%); met de bufferlaag bleef de slechtste hex tot en met lus 3
-    0,68 en kwam het pas in lus 4 (0,009). Bij de dikke plaat (AD-02)
-    kost de buffer alleen elementen: Kt binnen 2% bij 22956 i.p.v. 15810
-    elementen. elements: model_data["mesh_elements"].
+    eids plus all volume elements that share a node with one of eids
+    (a buffer layer; setting adapt_neighbours). Measured (headless
+    Mecway 33, thin plate with hole, hex20 1/40 of the width thick):
+    refine_x2 on only the selected elements gave, in the second loop where
+    the selection bordered the transition elements of the first loop,
+    nearly flat hex20 (scaled Jacobian 0.015; global estimate from 3.7%
+    to 19.6%); with the buffer layer the worst hex stayed 0.68 up to and
+    including loop 3, dropping only in loop 4 (0.009). For the thick plate
+    (AD-02) the buffer only costs elements: Kt within 2% at 22956 instead of
+    15810 elements. elements: model_data["mesh_elements"].
     """
     wanted = set(eids)
     by_node = {}
@@ -333,9 +333,9 @@ def add_neighbours(elements, eids):
     return sorted(out)
 
 
-# Hoekknopen van elk hoekpunt en zijn drie ribben (Mecway-volgorde):
-# hex via de afgeleiden van de trilineaire afbeelding in de hoeken; tet,
-# wedge, pyr (basis) met de drie ribben uit dat hoekpunt.
+# Corner nodes of each vertex and its three edges (Mecway order):
+# hex via the derivatives of the trilinear mapping at the corners; tet,
+# wedge, pyr (base) with the three edges from that vertex.
 _HEX_RST = [(-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
             (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)]
 _CORNER_EDGES = {
@@ -363,9 +363,9 @@ def _scaled(a, b, c):
 
 def scaled_jacobian(shape, pts):
     """
-    Kleinste geschaalde Jacobiaan in de hoeken (|det| van de drie ribben /
-    hun lengtes; 1 = rechte hoeken, 0 = plat), alleen de hoekknopen
-    (middenknopen niet). pts: knoopcoordinaten in Mecway-volgorde.
+    Smallest scaled Jacobian at the corners (|det| of the three edges /
+    their lengths; 1 = right angles, 0 = flat), corner nodes only
+    (not midside nodes). pts: node coordinates in Mecway order.
     """
     fam = _shape_family(shape)
     if fam == "hex":
@@ -389,16 +389,17 @@ def scaled_jacobian(shape, pts):
     return worst
 
 
-# Grens voor een "slecht" element (geschaalde Jacobiaan van een hex):
-# keuze van de bridge; het grove plaatmodel heeft 0,71, de slechte
-# overgangen 0,002 tot 0,02. Alleen hex: bij tet/pyr/wedge hangt de maat
-# ook van de slankheid af (een gave tet in een dunne laag geeft al 0,02).
+# Limit for a "bad" element (scaled Jacobian of a hex):
+# choice of the bridge; the coarse plate model has 0.71, the bad
+# transitions 0.002 to 0.02. Hex only: for tet/pyr/wedge the measure
+# also depends on the slenderness (a sound tet in a thin layer already
+# gives 0.02).
 BAD_ELEMENT = 0.1
 
 
 def bad_elements(model_data):
-    """Hex-elementen met een geschaalde Jacobiaan < BAD_ELEMENT:
-    [(eid, waarde)], slechtste eerst."""
+    """Hex elements with a scaled Jacobian < BAD_ELEMENT:
+    [(eid, value)], worst first."""
     nodes = model_data.get("mesh_nodes", {})
     out = []
     for eid, shape, nids, _elset in model_data.get("mesh_elements", []):
@@ -415,17 +416,18 @@ def bad_elements(model_data):
 
 def node_bc_conflicts(model_data, eids):
     """
-    Knoopselecties met een belasting of voorwaarde (aster_target GROUP_NO)
-    waarvan twee hoekknopen een ribbe van een te verfijnen element vormen:
-    Mecway zet de nieuwe knoop op die ribbe niet in de selectie, dus na het
-    verfijnen zou de voorwaarde daar ontbreken. Returns [(selectie, soort)].
+    Node selections with a load or condition (aster_target GROUP_NO)
+    of which two corner nodes form an edge of an element to be refined:
+    Mecway does not put the new node on that edge in the selection, so
+    after refinement the condition would be missing there. Returns
+    [(selection, kind)].
     """
     groups = model_data.get("node_groups", {})
     node_bcs = []
     for bc in model_data.get("bcs", []):
         if bc.get("aster_target") != "GROUP_NO":
             continue
-        # node_groups: Code-Aster-namen "N<nid>" (bridge_from_liml STAP 1)
+        # node_groups: Code-Aster names "N<nid>" (bridge_from_liml STAP 1)
         nodes = set()
         for n in groups.get(bc.get("selection"), []):
             try:
@@ -454,16 +456,16 @@ def node_bc_conflicts(model_data, eids):
 
 
 # ==========================================
-# BESLISSING NA EEN RUN
+# DECISION AFTER A RUN
 # ==========================================
 def _fmt(v, digits=3):
-    # %-opmaak: "{0:.3g}".format() volgt in IronPython de Windows-
-    # landinstelling (MecwayAsterBridgeMain._report_modes).
+    # %-formatting: "{0:.3g}".format() follows the Windows locale in
+    # IronPython (MecwayAsterBridgeMain._report_modes).
     return ("%." + str(digits) + "g") % v
 
 
 def summary_lines(history):
-    """Tabel van de lussen voor log en statusvak."""
+    """Table of the loops for log and status box."""
     lines = [tr(u"Adaptieve verfijning: lus, elementen (volume), globale "
                 u"relatieve fout, verfijnd:",
                 u"Adaptive refinement: loop, elements (solid), global "
@@ -476,8 +478,8 @@ def summary_lines(history):
 
 
 def _growth(history):
-    """Nieuwe elementen per verfijnd element in de vorige lus (history[-2]
-    -> history[-1]), anders _GROWTH. Telt alleen volume-elementen."""
+    """New elements per refined element in the previous loop (history[-2]
+    -> history[-1]), otherwise _GROWTH. Counts volume elements only."""
     if len(history) >= 2 and history[-2].get("n_refined"):
         grow = (history[-1]["n_elem"] - history[-2]["n_elem"]) / float(
             history[-2]["n_refined"])
@@ -488,18 +490,18 @@ def _growth(history):
 
 def after_run(history, settings, model_data, fragment_path, error_summary):
     """
-    Beslissing na een run van de lus (MecwayAsterBridgeMain._adapt_step).
+    Decision after a run of the loop (MecwayAsterBridgeMain._adapt_step).
 
-    history       : lijst van eerdere lussen (wordt hier aangevuld met een
+    history       : list of previous loops (extended here with a
                     dict {"loop", "n_elem", "rel", "abs", "n_refined"})
     settings      : adapt_settings()
-    model_data    : van deze run (mesh_elements, bcs, node_groups)
-    fragment_path : resultaatbestand van deze run
-    error_summary : laatste dict van bridge_results_liml.read_error_summary
-                    (globale fout uit de .mess) of None
+    model_data    : of this run (mesh_elements, bcs, node_groups)
+    fragment_path : result file of this run
+    error_summary : last dict of bridge_results_liml.read_error_summary
+                    (global error from the .mess) or None
 
-    Returns {"refine": bool, "elements": [eid], "notes": [tekst voor het
-    statusvak]}; alle meldingen staan ook in de log.
+    Returns {"refine": bool, "elements": [eid], "notes": [text for the
+    status box]}; all messages are also in the log.
     """
     notes = []
 
@@ -526,8 +528,8 @@ def after_run(history, settings, model_data, fragment_path, error_summary):
     rec = {"loop": loop, "n_elem": len(errors), "rel": error_summary["rel"],
            "abs": error_summary.get("abs")}
     history.append(rec)
-    log(u"INFO: Adaptieve verfijning lus {0}: {1} volume-elementen, "
-        u"globale relatieve fout {2}%.".format(loop, len(errors),
+    log(u"INFO: Adaptive refinement loop {0}: {1} volume elements, "
+        u"global relative error {2}%.".format(loop, len(errors),
                                                _fmt(rec["rel"])))
     bad = bad_elements(model_data)
     if bad:
@@ -578,7 +580,7 @@ def after_run(history, settings, model_data, fragment_path, error_summary):
                        u"route 'liml' needed)."), "WARNING")
     chosen = select_elements(errors, settings["adapt_select"],
                              float(settings["adapt_fraction"]))
-    # Optioneel een bufferlaag (add_neighbours; dunne elementen).
+    # Optionally a buffer layer (add_neighbours; thin elements).
     eids = chosen
     if settings.get("adapt_neighbours"):
         eids = add_neighbours(model_data.get("mesh_elements", []), chosen)
@@ -633,13 +635,13 @@ def after_run(history, settings, model_data, fragment_path, error_summary):
 
 
 # ==========================================
-# VERFIJNEN IN MECWAY
+# REFINING IN MECWAY
 # ==========================================
 def refine_in_mecway(mw, eids):
     """
-    mw.refine_x2 op de elementen eids (API: refine_x2(node_ids, face_ids,
-    element_ids), precies een van de drie). Returns het aantal elementen
-    erna, of None bij een fout (ERROR in de log).
+    mw.refine_x2 on the elements eids (API: refine_x2(node_ids, face_ids,
+    element_ids), exactly one of the three). Returns the number of elements
+    afterwards, or None on an error (ERROR in the log).
     """
     before = len(mw.all_elements())
     try:
@@ -649,8 +651,8 @@ def refine_in_mecway(mw, eids):
                u"ERROR: Mecway refinement (refine_x2) failed: {0}").format(e))
         return None
     after = len(mw.all_elements())
-    log(u"INFO: Adaptieve verfijning: refine_x2 op {0} elementen: {1} -> "
-        u"{2} elementen, {3} knopen.".format(len(eids), before, after,
+    log(u"INFO: Adaptive refinement: refine_x2 on {0} elements: {1} -> "
+        u"{2} elements, {3} nodes.".format(len(eids), before, after,
                                               len(mw.all_nodes())))
     if after <= before:
         log(tr(u"ERROR: Mecway-verfijning (refine_x2) gaf geen nieuwe "
