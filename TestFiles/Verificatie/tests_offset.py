@@ -71,11 +71,11 @@ SB0 = P0 / (B0 * T0) + 6 * P0 * E0 / (B0 * T0 ** 2)
 ST0 = 6 * P0 * E0 / (B0 * T0 ** 2) - P0 / (B0 * T0)
 
 
-def build_ls60(order):
+def build_ls60(order, extra=()):
     def build():
         m = Model("S30")
         m.mat("Plaat2", '<geometric type="Plate" thickness="2 mm" />',
-              STEEL)
+              STEEL, *extra)
         m.elset("Plaat", "Plaat2")
         q = quadmesh(m, "Plaat", 20, 4, rect(0, L0, 0, B0), order=order)
         m.face_selection("Inklemming", q["edges"]["u0"])
@@ -375,4 +375,76 @@ TESTS += [
                 unit="N", source="evenwicht")],
          note="Elke elset krijgt een eigen restgroep (BROFR) zonder "
               "EXCENTREMENT naast de BROFE-groep met offset."),
+]
+
+
+# ------------------------------------------------------------------
+# LS-65 Resultaatvelden van verschoven quad8-schalen (starre route)
+# ------------------------------------------------------------------
+# Model LS-60b (quad8 -> COQUE_3D op eigen knopen), met de extra velden
+# shell_stresses, shell_forces, strain en safety_factor (S = 250 MPa). De
+# cellen van de verschoven schalen liggen op de knopen na de
+# Mecway-knopen; aster_results_export koppelt ze via de knoopgroepen BROFL
+# terug aan de Mecway-elementen. Controle: elk schaalelement heeft
+# waarden, en bij x = L/2: sigma_xx onder/boven = P/(BT) +- 6 P e/(B T^2),
+# N_u = P/B, eps_xx onder = sigma/E (vlakspanning, sigma_yy = 0), factor
+# of safety S/sigma_vM(onder).
+S65 = 250e6
+FIELDS65 = ["displacements", "stresses", "vonmises", "reactions",
+            "shell_stresses", "shell_forces", "strain", "safety_factor"]
+
+
+build_ls65 = build_ls60(2, ['<failure type="VonMises" '
+                            'tensilestrength="%g MPa" />' % (S65 / 1e6)])
+
+
+def _middle_elems(r):
+    """Elementen met het midden tussen x = 0,4 L en 0,6 L."""
+    out = []
+    for _name, _mat, elems in r.model.elsets:
+        for eid, _sh, nids, _a in elems:
+            x = sum(r.model.nodes[n - 1][0] for n in nids) / len(nids)
+            if 0.4 * L0 < x < 0.6 * L0:
+                out.append(eid)
+    return out
+
+
+def _elem_mean(r, var):
+    d = r.elem(var)
+    vals = [v for e in _middle_elems(r) for v in d[e]]
+    return sum(vals) / float(len(vals))
+
+
+def _elem_count(r, var):
+    return len(r.elem(var))
+
+
+TESTS += [
+    Case("LS-65", GROUP, "Resultaatvelden van verschoven quad8-schalen "
+         "(COQUE_3D, starre armen)", "lin_static_3d", build_ls65,
+         [Check("elementen met spanning onder (stressxxb1)",
+                lambda r: _elem_count(r, "stressxxb1"), ref=80, tol_abs=0,
+                unit="", source="alle 20 x 4 schaalelementen",
+                in_series=False),
+          Check("sigma_xx onder, elementen bij x = L/2",
+                lambda r: _elem_mean(r, "stressxxb1"), ref=SB0, tol=0.02,
+                unit="Pa", source="P/(BT) + 6 P e/(B T^2)"),
+          Check("sigma_xx boven, elementen bij x = L/2",
+                lambda r: _elem_mean(r, "stressxxu1"), ref=-ST0, tol=0.02,
+                unit="Pa", source="P/(BT) - 6 P e/(B T^2)"),
+          Check("sigma_xx onder, knopen bij x = L/2",
+                lambda r: _mean(r, "stressxxb1", "Midden"), ref=SB0,
+                tol=0.02, unit="Pa", source="P/(BT) + 6 P e/(B T^2)"),
+          Check("N_u (forceperlengthu), elementen bij x = L/2",
+                lambda r: _elem_mean(r, "forceperlengthu"), ref=P0 / B0,
+                tol=0.02, unit="N/m", source="P/B"),
+          Check("eps_xx onder (lstrainxxb), elementen bij x = L/2",
+                lambda r: _elem_mean(r, "lstrainxxb"), ref=SB0 / E,
+                tol=0.02, unit="", source="sigma/E (vlakspanning)"),
+          Check("factor of safety, elementen bij x = L/2",
+                lambda r: _elem_mean(r, "factorofsafety"), ref=S65 / SB0,
+                tol=0.02, unit="", source="S / sigma_vM onder")],
+         settings={"fields": FIELDS65},
+         note="Cellen op de verschoven knopen: koppeling aan de "
+              "Mecway-elementen via BROFL (aster_results_export)."),
 ]

@@ -307,19 +307,26 @@ class Results(object):
       modes : {mode-id: frequentie [Hz] of kniklastfactor} bij een modale
               of knikanalyse (<mode id=".." frequency="f Hz"> of
               bucklingfactor=".."); de stappen hebben dan t = mode-id.
+      elems : {t: {variabele: {eid: [waarde per knoop van het element]}}}
+              (<elementnodevariable>; elem())
     """
 
     def __init__(self, results_path, model):
         txt = io.open(results_path, encoding="utf-8").read()
         root = ET.fromstring("<r>" + txt + "</r>")
         steps = {}
+        self.elems = {}
+        sizes = dict((e[0], len(e[2])) for es in getattr(model, "elsets", [])
+                     for e in es[2])
         self.modes = {}
         self.globals = {}       # {mode-id: {naam: waarde}} (<globalvariable>)
         for res in root.iter("results"):
-            ids = {}
-            for e in res.findall("nodeids"):
-                b = base64.b64decode(e.text)
-                ids[e.get("name")] = struct.unpack("<%di" % (len(b) // 4), b)
+            ids, eids = {}, {}
+            for tag, out in (("nodeids", ids), ("elementnodeids", eids)):
+                for e in res.findall(tag):
+                    b = base64.b64decode(e.text)
+                    out[e.get("name")] = struct.unpack("<%di" % (len(b) // 4),
+                                                       b)
             for st in (res.findall("timestep") or res.findall("mode")
                        or [res]):
                 if st.tag == "mode":
@@ -336,6 +343,13 @@ class Results(object):
                     n = nv.get("name")
                     nid = ids.get(n) or ids[list(ids)[0]]
                     d[n] = dict(zip(nid, _values(nv)))
+                de = self.elems.setdefault(t, {})
+                for ev in st.findall("elementnodevariable"):
+                    vals, k, out = _values(ev), 0, {}
+                    for eid in eids.get(ev.get("name"), ()):
+                        out[eid] = list(vals[k:k + sizes[eid]])
+                        k += sizes[eid]
+                    de[ev.get("name")] = out
         self.steps = sorted(steps.items())
         self.model = model
         self.mess = None            # pad van de .mess (run_verificatie)
@@ -401,6 +415,15 @@ class Results(object):
 
     def node(self, var, nid, time=None):
         return self.step(time)[var][nid]
+
+    def elem(self, var, time=None):
+        """{eid: [waarde per knoop, in de volgorde van het element]} van
+        een elementnodevariable (leeg als die ontbreekt)."""
+        ts = sorted(self.elems)
+        if not ts:
+            return {}
+        t = ts[-1] if time is None else min(ts, key=lambda s: abs(s - time))
+        return self.elems[t].get(var, {})
 
     def total(self, var, selection, time=None):
         """Som van var over een knoopselectie (bijv. reactiekrachten)."""

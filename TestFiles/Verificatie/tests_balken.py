@@ -368,3 +368,60 @@ TESTS += [
          note="Middenknoop alleen nog in de arm en de joint: POI1 DIS_TR "
               "(J<N>)."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-53 Snedekrachten per element bij een flexible joint en line3
+# ------------------------------------------------------------------
+# LS-51a (line2) en LS-51e (line3) met beam_forces: Mecway's
+# elementnodevariable bendingmomw/sheary per element. De cel van het
+# element met de joint begint op een eigen knoop, een line3-balk bestaat
+# uit twee SEG2-cellen (M<eid>, H<eid>); aster_results_export koppelt ze
+# terug aan het Mecway-element. Elke helft is een ingeklemde balk L/2 met
+# P/2 op het scharnier: M(x) = (P/2) |x - L/2|, V = P/2. Element rechts
+# van het midden: M = 0 in het scharnier, (P/2) h aan het andere eind
+# (h = 0,1 m line2; line3 0,25 m met middenknoop op h/2).
+FIELDS53 = ["displacements", "stresses", "vonmises", "reactions",
+            "beam_forces"]
+
+
+def _elem_abs(var, eid, k):
+    return lambda r: abs(r.elem(var)[eid][k])
+
+
+TESTS += [
+    Case("LS-53a", GROUP, "Snedekrachten per element naast een flexible "
+         "joint (line2)", "lin_static_3d", build_ls51("w"),
+         [Check("elementen met bendingmomw", lambda r: len(
+             r.elem("bendingmomw")), ref=10, tol_abs=0, unit="",
+                source="alle 10 balkelementen", in_series=False),
+          Check("M in het scharnier (element 6, knoop 1)",
+                _elem_abs("bendingmomw", 6, 0), ref=0.0, tol_abs=1e-6,
+                unit="N m", source="scharnier: M = 0"),
+          Check("M element 6, knoop 2 (x = 0,6 m)",
+                _elem_abs("bendingmomw", 6, 1), ref=P51 / 2 * 0.1,
+                tol=1e-3, unit="N m", source="(P/2) h"),
+          Check("V element 6", _elem_abs("sheary", 6, 0), ref=P51 / 2,
+                tol=1e-3, unit="N", source="P/2")],
+         settings={"fields": FIELDS53},
+         note="Cel van element 6 op de eigen knoop van de joint."),
+    Case("LS-53b", GROUP, "Snedekrachten per element, line3-balk met "
+         "flexible joint", "lin_static_3d", build_ls51("w", shape="line3"),
+         [Check("elementen met bendingmomw", lambda r: len(
+             r.elem("bendingmomw")), ref=4, tol_abs=0, unit="",
+                source="alle 4 balkelementen", in_series=False),
+          Check("M in het scharnier (element 3, knoop 1)",
+                _elem_abs("bendingmomw", 3, 0), ref=0.0, tol_abs=1e-6,
+                unit="N m", source="scharnier: M = 0"),
+          Check("M element 3, middenknoop (x = 0,625 m)",
+                _elem_abs("bendingmomw", 3, 1), ref=P51 / 2 * 0.125,
+                tol=1e-3, unit="N m", source="(P/2) h/2"),
+          Check("M element 3, knoop 3 (x = 0,75 m)",
+                _elem_abs("bendingmomw", 3, 2), ref=P51 / 2 * 0.25,
+                tol=1e-3, unit="N m", source="(P/2) h"),
+          Check("V element 2, middenknoop", _elem_abs("sheary", 2, 1),
+                ref=P51 / 2, tol=1e-3, unit="N", source="P/2")],
+         settings={"fields": FIELDS53},
+         note="Line3 als twee SEG2-cellen: waarden van beide helften op "
+              "het Mecway-element."),
+]

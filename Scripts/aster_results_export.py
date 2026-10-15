@@ -148,7 +148,7 @@ def tr(nl, en):
 #                          (alleen volume-elementen). Alleen als het veld
 #                          in res staat: CALC_CHAMP CONTRAINTE=('SIGM_ELNO',)
 #                          / CRITERES=('SIEQ_ELNO',) moet het berekenen.
-#               ELEMKNOOP_LIJN  idem voor line2-elementen (balken: EFGE_ELNO)
+#               ELEMKNOOP_LIJN  idem voor line2/line3 (balken: EFGE_ELNO)
 # Afgeleide velden (schaaltensor, -rek en -krachten, factor of safety,
 # contactstatus) staan niet in deze tabel: _plan_derived.
 # Code-Aster-volgorde van de spanningscomponenten is SIXX SIYY SIZZ SIXY
@@ -333,7 +333,7 @@ OPTIONAL_PARTS = frozenset(["heatfluxz"])
 SOLID_SHAPES = frozenset(["hex8", "hex20", "tet4", "tet10", "pyr5", "pyr13",
                           "wedge6", "wedge15"])
 SHELL_SHAPES = frozenset(["tri3", "quad4", "tri6", "quad8"])
-LINE_SHAPES = frozenset(["line2"])
+LINE_SHAPES = frozenset(["line2", "line3"])
 
 _NL = b"\r\n"            # Mecway schrijft CRLF
 _B64_LINE = 64           # base64-regellengte in Mecway's .liml
@@ -441,8 +441,9 @@ class _Fields(object):
         self.data = {}
         self.layouts = {}     # (resultaat, veld) -> _cell_layout()
         self.scales = {}      # {index: factor} voor DEPL (knikvormen)
-        # {extra knoop: Mecway-knoop} op dezelfde plaats (_coincident_extra)
-        self.coincident = {}
+        # Mecway-knoopindex per mesh-knoop (_node_alias), of None (hele
+        # wiel, cyclisch: alleen knoopvelden)
+        self.alias = None
 
     def set_index(self, index):
         self.index = index
@@ -569,13 +570,16 @@ def _reaction_lumping(mesh, conn, n, offset_nodes=None):
             np.array(wgt, dtype=float))
 
 
-def _coincident_extra(xyz, n):
+def _coincident_extra(xyz, n, exclude=()):
     """
     {index extra knoop: index Mecway-knoop} voor mesh-knopen na de
     Mecway-knopen (index >= n) die op dezelfde plaats liggen als een
     Mecway-knoop: de eigen knoop van een balkuiteinde met een flexible
     joint (bridge_mesh._flexible_joints, met LIAISON_DDL aan die knoop
     gekoppeld). Liggen er meer Mecway-knopen op die plaats, dan de laagste.
+    exclude: extra knopen die hier niet meedoen (knopen van verschoven
+    elementen, _offset_pairs: die horen via de arm bij hun eigen
+    Mecway-knoop, ook als ze toevallig op een andere Mecway-knoop liggen).
     """
     if xyz.shape[0] <= n:
         return {}
@@ -583,7 +587,9 @@ def _coincident_extra(xyz, n):
 
     def key(p):
         return tuple(int(round(c * scale)) for c in p)
-    extra = dict((key(xyz[m]), m) for m in range(n, xyz.shape[0]))
+    skip = set(int(i) for i in exclude)
+    extra = dict((key(xyz[m]), m) for m in range(n, xyz.shape[0])
+                 if m not in skip)
     out = {}
     for c in range(n):
         m = extra.get(key(xyz[c]))
@@ -592,9 +598,29 @@ def _coincident_extra(xyz, n):
     # meer extra knopen op dezelfde plaats (joints aan beide kanten)
     for m in range(n, xyz.shape[0]):
         c = out.get(extra.get(key(xyz[m])))
-        if m not in out and c is not None:
+        if m not in out and m not in skip and c is not None:
             out[m] = c
     return out
+
+
+def _node_alias(n_mesh, n, coincident, pairs):
+    """
+    Mecway-knoopindex (0-based) per mesh-knoop, -1 voor knopen zonder
+    Mecway-knoop (middenknopen van LINE_QUAD, QUAD9/TRIA7):
+      index < n                        : zichzelf;
+      eigen knoop van een joint        : de Mecway-knoop op die plaats
+                                         (_coincident_extra);
+      knoop van een verschoven element : zijn Mecway-knoop (_offset_pairs;
+                                         Mecway: elementwaarden van het
+                                         verschoven element bij de knoop).
+    """
+    alias = np.full(max(n_mesh, n), -1, dtype=int)
+    alias[:n] = np.arange(n)
+    for m, c in coincident.items():
+        alias[m] = c
+    if pairs is not None:
+        alias[pairs[1]] = pairs[0]
+    return alias
 
 
 def _lump_nodes(vals, mask, lump):
@@ -727,25 +753,82 @@ def _cell_layout(sf, conn, nrows):
     return start, nbpt, nbsp
 
 
-def _match_cells(conn, elements, nbpt, nbsp, n_nodes):
+def _cell_nodes(fields, cn):
+    """Mecway-knoopindices (0-based, -1 = geen) van de knopen van een
+    cel (_node_alias)."""
+    if fields.alias is None:
+        return [c if c < fields.n else -1 for c in cn]
+    return [int(fields.alias[c]) if c < len(fields.alias) else -1
+            for c in cn]
+
+
+_LOST_REPORTED = set()
+
+
+def _element_points(fields, conn, elements, nbpt, nbsp, label,
+                    all_elements=None):
     """
-    {eid: celindex} voor cellen met een ELNO-waarde per knoop (nbpt gelijk
-    aan het aantal knopen, een subpunt). Koppeling op de knopenverzameling
-    van de Mecway-knopen (index < n_nodes): na CREA_MAILLAGE LINE_QUAD heeft
-    een HEXA20-cel 12 extra middenknopen, de 8 hoekknopen zijn die van het
-    Mecway-element. Randelementen hebben geen waarden en vallen af.
+    {eid: [(cel, punt) per knoop van het Mecway-element, in de volgorde
+    van zijn nodes-attribuut]} voor cellen met een ELNO-waarde per knoop
+    (nbpt gelijk aan het aantal knopen, een subpunt). Koppeling op de
+    knopenverzameling na _cell_nodes:
+      - na CREA_MAILLAGE LINE_QUAD heeft een HEXA20-cel 12 extra
+        middenknopen (-1), de 8 hoekknopen zijn die van het element;
+      - de cel van een verschoven element (bridge_offset, starre route)
+        ligt op eigen knopen, de cel van een balkuiteinde met een flexible
+        joint begint op een eigen knoop: via _node_alias terug naar de
+        Mecway-knopen;
+      - een gesplitste line3-balk (bridge_mesh, twee SEG2-cellen M<eid> =
+        [eind 1, midden] en H<eid> = [midden, eind 2]): eind 1 en midden
+        uit de eerste cel, eind 2 uit de tweede.
+    Randelementen hebben geen waarden en vallen af. all_elements (het hele
+    model): cellen met waarden die bij geen enkel Mecway-element horen,
+    worden een keer per label gemeld (anders zouden die waarden stil
+    ontbreken).
     """
-    by_nodes = {}
-    for eid, (_shape, nids) in elements.items():
-        by_nodes[tuple(sorted(nids))] = eid
-    out = {}
+    cells = {}
     for c, cn in enumerate(conn):
         if nbpt[c] != len(cn) or nbsp[c] != 1:
             continue
-        eid = by_nodes.get(tuple(sorted(n + 1 for n in cn
-                                        if n < n_nodes)))
-        if eid is not None and eid not in out:
-            out[eid] = c
+        mapped = _cell_nodes(fields, cn)
+        key = tuple(sorted(m for m in mapped if m >= 0))
+        if len(key) >= 2 and key not in cells:
+            cells[key] = (c, mapped)
+
+    def lookup(idx):
+        hit = cells.get(tuple(sorted(idx)))
+        if hit is None:
+            return None
+        c, mapped = hit
+        return [(c, mapped.index(m)) for m in idx]
+
+    out = {}
+    for eid, (shape, nids) in elements.items():
+        idx = [m - 1 for m in nids]
+        pts = lookup(idx)
+        if pts is None and shape == "line3" and len(idx) == 3:
+            first, second = lookup(idx[:2]), lookup(idx[1:])
+            if first is not None and second is not None:
+                pts = first + second[1:]
+        if pts is not None:
+            out[eid] = pts
+    if all_elements is not None and label not in _LOST_REPORTED:
+        known = set()
+        for shape, nids in all_elements.values():
+            idx = [m - 1 for m in nids]
+            known.add(tuple(sorted(idx)))
+            if shape == "line3" and len(idx) == 3:
+                known.add(tuple(sorted(idx[:2])))
+                known.add(tuple(sorted(idx[1:])))
+        lost = [c for key, (c, _m) in cells.items() if key not in known]
+        if lost:
+            _LOST_REPORTED.add(label)
+            print(tr("aster_results_export: WAARSCHUWING: {0}: {1} cel(len) "
+                     "met waarden horen bij geen Mecway-element; die "
+                     "waarden ontbreken in Mecway.",
+                     "aster_results_export: WARNING: {0}: {1} cell(s) with "
+                     "values belong to no Mecway element; those values are "
+                     "missing in Mecway.").format(label, len(lost)))
     return out
 
 
@@ -858,21 +941,12 @@ def _plan_elno_node(fields, rkey, field, cmp_, name, kind, conn):
     if found is None:
         return None
     d, icmp, (start, nbpt, nbsp) = found
+    # Mecway-knoop per punt (_cell_nodes: balkuiteinde met een flexible
+    # joint en verschoven elementen naar hun Mecway-knoop)
     pt_node = np.full(d[1].shape[0], -1, dtype=int)
     for c, cn in enumerate(conn):
         if nbpt[c] == len(cn) and nbsp[c] == 1:
-            pt_node[start[c]:start[c] + nbpt[c]] = cn
-    # balkuiteinde met een flexible joint: zijn waarde telt bij de
-    # Mecway-knoop op dezelfde plaats (_coincident_extra)
-    for m, c in fields.coincident.items():
-        pt_node[pt_node == m] = c
-    if fields.pairs is not None:
-        # verschoven element (bridge_offset): waarde naar de Mecway-knoop
-        alias = np.arange(max(int(pt_node.max()) + 1, fields.n,
-                              int(fields.pairs[1].max()) + 1))
-        alias[fields.pairs[1]] = fields.pairs[0]
-        pt_node = np.where(pt_node >= 0, alias[np.maximum(pt_node, 0)], -1)
-    pt_node[pt_node >= fields.n] = -1
+            pt_node[start[c]:start[c] + nbpt[c]] = _cell_nodes(fields, cn)
     ok = (pt_node >= 0) & d[2][:, icmp]
     rows = np.unique(pt_node[ok])
     if not len(rows):
@@ -890,17 +964,17 @@ def _plan_elem(fields, rkey, field, cmp_, name, conn, model,
     d, icmp, (start, nbpt, nbsp) = found
     solids = dict((e, v) for e, v in model["elements"].items()
                   if v[0] in shapes)
-    cells = _match_cells(conn, solids, nbpt, nbsp, fields.n)
+    cells = _element_points(fields, conn, solids, nbpt, nbsp,
+                            "{0}:{1}".format(rkey, field),
+                            model["elements"])
     eids, gather = [], []
     for eid in sorted(cells):
-        c = cells[eid]
-        if not d[2][start[c]:start[c] + nbpt[c], icmp].all():
+        # ELNO-punt k van cel c; Mecway wil de volgorde van het
+        # nodes-attribuut van <elem> (_element_points)
+        rows = [start[c] + k for c, k in cells[eid]]
+        if not d[2][rows, icmp].all():
             continue
-        cn = list(conn[c])
-        # ELNO-punt k hoort bij knoop conn[c][k]; Mecway wil de volgorde van
-        # het nodes-attribuut van <elem>.
-        gather.extend(start[c] + cn.index(nid - 1)
-                      for nid in solids[eid][1])
+        gather.extend(rows)
         eids.append(eid)
     if not eids:
         return None
@@ -1088,10 +1162,12 @@ def _shell_points(fields, rkey, field, cmp0, conn, model, xyz, vectors,
     d, _icmp, (start, nbpt, nbsp) = found
     shells = dict((e, v) for e, v in model["elements"].items()
                   if v[0] in SHELL_SHAPES)
-    cells = _match_cells(conn, shells, nbpt, nbsp, fields.n)
+    cells = _element_points(fields, conn, shells, nbpt, nbsp,
+                            "{0}:{1}".format(rkey, field),
+                            model["elements"])
     rows, node, rot, cs, gather, eids = [], [], [], [], [], []
     for eid in sorted(cells):
-        c = cells[eid]
+        c = cells[eid][0][0]
         cn = list(conn[c])
         if eid not in frames:
             frames[eid] = _shell_frame(model, xyz, cn, eid, vectors,
@@ -1101,15 +1177,16 @@ def _shell_points(fields, rkey, field, cmp0, conn, model, xyz, vectors,
         r, co, si = frames[eid]
         base = len(rows)
         rows.extend(range(start[c], start[c] + nbpt[c]))
-        node.extend(cn)
+        # knoopwaarden bij de Mecway-knopen (ook van verschoven cellen)
+        node.extend(_cell_nodes(fields, cn))
         rot.extend([r] * nbpt[c])
         cs.extend([(co, si)] * nbpt[c])
-        gather.extend(base + cn.index(nid - 1) for nid in shells[eid][1])
+        gather.extend(base + k for _c, k in cells[eid])
         eids.append(eid)
     if not eids:
         return None
     node = np.array(node)
-    ok = node < fields.n
+    ok = node >= 0
     uniq, inv = np.unique(node[ok], return_inverse=True)
     return {"rows": np.array(rows), "rot": np.array(rot),
             "cs": np.array(cs), "gather": np.array(gather),
@@ -1251,13 +1328,11 @@ def _fos_vars(fields, model, conn, strengths):
         solids = dict((e, v) for e, v in model["elements"].items()
                       if v[0] in SOLID_SHAPES and
                       strengths.get(elset_of.get(e), 0.0) > 0.0)
-        cells = _match_cells(conn, solids, nbpt, nbsp, n)
+        cells = _element_points(fields, conn, solids, nbpt, nbsp,
+                                "res:SIEQ_ELNO", model["elements"])
         eids, gather, svals = [], [], []
         for eid in sorted(cells):
-            c = cells[eid]
-            cn = list(conn[c])
-            gather.extend(start[c] + cn.index(nid - 1)
-                          for nid in solids[eid][1])
+            gather.extend(start[c] + k for c, k in cells[eid])
             svals += [strengths[elset_of[eid]]] * len(solids[eid][1])
             eids.append(eid)
         if eids:
@@ -1272,13 +1347,11 @@ def _fos_vars(fields, model, conn, strengths):
         shells = dict((e, v) for e, v in model["elements"].items()
                       if v[0] in SHELL_SHAPES and
                       strengths.get(elset_of.get(e), 0.0) > 0.0)
-        cells = _match_cells(conn, shells, nbpt, nbsp, n)
+        cells = _element_points(fields, conn, shells, nbpt, nbsp,
+                                rkey + ":SIEQ_ELNO", model["elements"])
         eids, gather, svals = [], [], []
         for eid in sorted(cells):
-            c = cells[eid]
-            cn = list(conn[c])
-            gather.extend(start[c] + cn.index(nid - 1)
-                          for nid in shells[eid][1])
+            gather.extend(start[c] + k for c, k in cells[eid])
             svals += [strengths[elset_of[eid]]] * len(shells[eid][1])
             eids.append(eid)
         if eids:
@@ -2100,7 +2173,11 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
                                  None if pairs is None else pairs[1])
     data = _Fields(results, n, lump, rows, pairs)
     if rows is None:
-        data.coincident = _coincident_extra(xyz.reshape(-1, 3), n)
+        data.alias = _node_alias(
+            xyz.size // 3, n,
+            _coincident_extra(xyz.reshape(-1, 3), n,
+                              () if pairs is None else pairs[1]),
+            pairs)
     mode_values = _mode_values(res, modes) if modes else None
     if modes == "buckling" and rigi_geo is not None:
         data.scales = _stiffness_scales(res, rigi_geo, mode_values)
@@ -2122,7 +2199,9 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
         print(tr("aster_results_export: FOUT: geen enkel veld gevonden.",
                  "aster_results_export: ERROR: no field found at all."))
         return None
-    _report_missing(results, groups, opt_in)
+    _report_missing(results, groups, opt_in,
+                    any(v[0] in SOLID_SHAPES
+                        for v in model["elements"].values()))
     elset_nodes, free_nodes = _group_nodes(model, n)
     for var in variables:
         _assign_groups(var, model, elset_nodes, free_nodes)
@@ -2241,8 +2320,12 @@ def _value_count(var, model):
     return sum(len(model["elements"][e][1]) for e in var.ids)
 
 
-def _report_missing(results, groups_wanted, opt_in=frozenset()):
-    """Meld velden uit FIELD_TABLE die niet in het resultaat staan."""
+def _report_missing(results, groups_wanted, opt_in=frozenset(),
+                    solids=True):
+    """Meld velden uit FIELD_TABLE die niet in het resultaat staan.
+    solids False (geen volume-elementen): de rek van res (EPSI/EPSG,
+    alleen volumes) hoort er niet; schalen hebben hun rek in eps_sup/
+    eps_moy/eps_inf (_plan_derived)."""
     missing = set()
     names = {}
     for rkey, r in results.items():
@@ -2260,6 +2343,8 @@ def _report_missing(results, groups_wanted, opt_in=frozenset()):
         if group == "strain" and not field.startswith(
                 "EPSG" if "EPSG_NOEU" in names[rkey] else "EPSI"):
             continue    # kleine rekken of Green-Lagrange, een van beide
+        if group == "strain" and rkey == "res" and not solids:
+            continue    # alleen schalen/balken: geen volumerek
         if field not in names[rkey]:
             missing.add("{0}:{1}".format(rkey, field))
     if missing:
