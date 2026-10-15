@@ -739,6 +739,10 @@ def _section_area(geom):
 _MODEL_ITEM_TAGS = ("thermalstress", "temperature2", "rayleighdamping",
                     "constraintequation", "mass2", "rotationalinertia",
                     "flexiblejoint", bridge_offset.TAG)
+# Daarvan in de keten thermisch -> mechanisch niet vertaald, met een
+# WARNING (de andere doen er in de quasi-statische solve niet toe).
+_CHAIN_DROPPED_TAGS = ("constraintequation", "flexiblejoint",
+                       bridge_offset.TAG)
 
 # DOF-namen van een constraint equation. ux/uy/uz staan in de .liml van
 # het testmodel (Mecway 33). rx/ry/rz: in mecway.exe staan "rx", "ry",
@@ -2309,12 +2313,39 @@ def extract_aster_data_from_liml(file_path):
                 # 9: per belasting de analysetypen), behalve in de keten
                 # thermisch -> mechanisch (thermo_mech, hierboven): dan
                 # gaan ze door naar 2d / _parse_model_item.
-                if (tag not in bridge_thermal.THERMAL_TAGS and
-                        item.get("suppressed", "") != "true"):
+                if (tag in bridge_thermal.THERMAL_TAGS or
+                        item.get("suppressed", "") == "true"):
+                    continue
+                if thermo_mech and tag in _CHAIN_DROPPED_TAGS:
+                    # In de keten loopt de mechanische solve op het mesh
+                    # en de modelisaties van het thermische deel (schalen
+                    # als PLAN, geen balken; bridge_thermal): element
+                    # offset (eigen knopen/EXCENTREMENT), flexible joints
+                    # (eigen knoop) en constraint equations worden daar
+                    # niet vertaald.
+                    model_data["skipped_loads"].append(
+                        tr("{0} op '{1}' (keten thermisch -> mechanisch)",
+                           "{0} on '{1}' (thermal -> mechanical chain)")
+                        .format(tag, item.get("selection", "")))
+                    log(tr("WARNING: {0} op '{1}' wordt in de keten "
+                           "thermisch -> mechanisch (Thermal stress in een "
+                           "T31-model) niet vertaald; de mechanische "
+                           "berekening rekent zonder.",
+                           "WARNING: {0} on '{1}' is not translated in the "
+                           "thermal -> mechanical chain (Thermal stress in "
+                           "a T31 model); the mechanical solve runs "
+                           "without it.").format(
+                               tag, item.get("selection", "")))
+                elif thermo_mech:
+                    log("INFO: '{0}' op '{1}' telt niet mee in de keten "
+                        "thermisch -> mechanisch (quasi-statisch, "
+                        "temperatuur uit het thermische deel).".format(
+                            tag, item.get("selection", "")))
+                else:
                     log("INFO: Mechanische belasting '{0}' op '{1}' telt "
                         "niet mee in de thermische analyse (alleen met een "
-                        "Thermal stress in een T31-model: keten thermisch -> "
-                        "mechanisch, docs/Lassen.md par. 9).".format(
+                        "Thermal stress in een T31-model: keten thermisch "
+                        "-> mechanisch, docs/Lassen.md par. 9).".format(
                             tag, item.get("selection", "")))
                 continue
             elif not thermal_run and tag == "temperature3":
