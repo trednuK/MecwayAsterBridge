@@ -4,18 +4,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_thermal.py
-# Verantwoordelijkheid: thermische analyses van Mecway (T30 stationair, T31
-# transient) naar Code-Aster THER_LINEAIRE / THER_NON_LINE.
+# Responsibility: thermal analyses from Mecway (T30 steady state, T31
+# transient) to Code-Aster THER_LINEAIRE / THER_NON_LINE.
 #
-#   parse_thermal(root, model_data)  - aangeroepen door bridge_from_liml.py
-#                                      (alleen als de analyse thermisch is):
-#                                      materialen, belastingen,
-#                                      beginvoorwaarden en tijdstappen.
-#   build_thermal(...)               - builder voor SOLVER_BUILDERS_ASTER
+#   parse_thermal(root, model_data)  - called by bridge_from_liml.py
+#                                      (only if the analysis is thermal):
+#                                      materials, loads,
+#                                      initial conditions and time steps.
+#   build_thermal(...)               - builder for SOLVER_BUILDERS_ASTER
 #                                      (bridge_to_aster._build_thermal):
 #                                      study.comm + study.export.
 #
-# Mecway-XML (Mecway 33; voorbeelden in C:\Program Files\Mecway\Samples:
+# Mecway XML (Mecway 33; examples in C:\Program Files\Mecway\Samples:
 # ConductionConvectionRadiation, FinConvection, OscillatingHeatFlow,
 # CoolantChannel):
 #   <analysis type="T30|T31" />  <timesteps timeperiod=".." stepsize=".." />
@@ -23,60 +23,60 @@
 #        thermalconductivity=".." specificheat=".." /></mat>
 #   <temperature2 selection=".."><value>500 K</value><starttime>..
 #   <temperature3><nodetemperature nid="1" value="300 K" /></temperature3>
-#   <heatflow selection=".."><value>500 W</value> (of <value time="..">)
-#   <heatflux selection="vlakken"><value>1000 W/m²</value>
-#   <heatgeneration selection="elementen"><value>1e6 W/m³</value>
+#   <heatflow selection=".."><value>500 W</value> (or <value time="..">)
+#   <heatflux selection="faces"><value>1000 W/m²</value>
+#   <heatgeneration selection="elements"><value>1e6 W/m³</value>
 #   <convectionbc selection=".."><ambienttemp>..<coefficient>..
 #   <radiationbc selection=".."><ambienttemp>..<emissivity>..
 #   <initialconditions><temperature2 selection=".."><value>..
 #
-# Vertaling (Code-Aster 17.4; U4.44.02 AFFE_CHAR_THER, U4.54.01
+# Translation (Code-Aster 17.4; U4.44.02 AFFE_CHAR_THER, U4.54.01
 # THER_LINEAIRE, U4.54.02 THER_NON_LINE, U4.43.01 DEFI_MATERIAU THER/THER_NL):
-#   - Temperaturen in Code-Aster in graden CELSIUS: RAYONNEMENT rekent met
-#     sigma*eps*((T+273,15)^4 - (T_ext+273,15)^4) (U4.44.02, "temperature
+#   - Temperatures in Code-Aster are in degrees CELSIUS: RAYONNEMENT uses
+#     sigma*eps*((T+273.15)^4 - (T_ext+273.15)^4) (U4.44.02, "temperature
 #     expressed in Celsius ... use only degrees Celsius for the whole
-#     study"). Mecway-waarden (K) worden T - 273,15; aster_results_export
-#     telt bij 'temperature' 273,15 op (VALUE_OFFSETS).
-#   - Volume-elementen: MODELISATION '3D'; vlakken met een belasting zijn
-#     randelementen ('3D' op de huidcellen, ORIE_PEAU).
-#   - Schalen: Mecway rekent geleiding in het vlak van de schaal (manual
-#     v33 par. 7.4, 6.7). Code-Aster's thermische 'COQUE' heeft drie
-#     temperaturen door de dikte en randbelastingen alleen op TRIA
-#     (U4.44.02 FLUX_REP/ECHANGE), dus de bridge gebruikt 'PLAN' (2D, diepte
-#     1) voor schalen in een vlak Z = constant (anders "les résultats
-#     seront faux", alarm MODELE1_53). Liggen alle schalen in evenwijdige
-#     vlakken buiten Z = constant, dan draait de .comm het mesh eerst
-#     (_Thermal._shell_rotation). Een schaal met dikte t wordt een
-#     PLAN-laag met factor f = t / t_ref op LAMBDA en RHO_CP en op alle
-#     belastingen per lengte (randen) en per oppervlak (bronnen); t_ref =
-#     1 m als er volume-elementen zijn (dan klopt de koppeling met de
-#     volumes), anders de meest gebruikte schaaldikte. Schalen van
-#     verschillende dikte in één selectie krijgen elk een eigen deelgroep.
-#     Een belasting op het schaalvlak (faceid 5/6) wordt een volumebron q/t
-#     (SOURCE), convectie en straling op het schaalvlak een
-#     temperatuurafhankelijke bron (SOUR_NL, THER_NON_LINE). De warmteflux
-#     rekent CALC_CHAMP met de echte lambda (fieldmat_post, zie
+#     study"). Mecway values (K) become T - 273.15; aster_results_export
+#     adds 273.15 to 'temperature' (VALUE_OFFSETS).
+#   - Volume elements: MODELISATION '3D'; faces with a load become
+#     boundary elements ('3D' on the skin cells, ORIE_PEAU).
+#   - Shells: Mecway computes conduction in the plane of the shell (manual
+#     v33 sec. 7.4, 6.7). Code-Aster's thermal 'COQUE' has three
+#     temperatures through the thickness and edge loads only on TRIA
+#     (U4.44.02 FLUX_REP/ECHANGE), so the bridge uses 'PLAN' (2D, depth
+#     1) for shells in a plane Z = constant (otherwise "les résultats
+#     seront faux", alarm MODELE1_53). If all shells lie in parallel
+#     planes other than Z = constant, the .comm first rotates the mesh
+#     (_Thermal._shell_rotation). A shell with thickness t becomes a
+#     PLAN layer with factor f = t / t_ref on LAMBDA and RHO_CP and on all
+#     loads per length (edges) and per area (sources); t_ref =
+#     1 m if there are volume elements (then the coupling with the
+#     volumes is correct), otherwise the most used shell thickness. Shells
+#     of different thickness in one selection each get their own subgroup.
+#     A load on the shell face (faceid 5/6) becomes a volume source q/t
+#     (SOURCE), convection and radiation on the shell face a
+#     temperature-dependent source (SOUR_NL, THER_NON_LINE). The heat flux
+#     is computed by CALC_CHAMP with the real lambda (fieldmat_post, see
 #     _Thermal.calc_champ_block).
-#     Verificatie (Code-Aster 17.4): ConductionConvectionRadiation geeft
-#     380,278 K en 3591,65 W/m2 in schaal en volume, zoals Mecway-manual
-#     v33 par. 11.13.
-#   - Vergelijking met Mecway 33 (headless 'mecway <model> solve' met
-#     <solutionfile filename=".."/>, interne solver): stationair gelijk tot
-#     ~1e-11 K (zonder straling); transient rekent Mecway Crank-Nicolson
-#     (THETA 0,5) met de belasting op het einde van de stap (zie
+#     Verification (Code-Aster 17.4): ConductionConvectionRadiation gives
+#     380.278 K and 3591.65 W/m2 in shell and volume, as in Mecway manual
+#     v33 sec. 11.13.
+#   - Comparison with Mecway 33 (headless 'mecway <model> solve' with
+#     <solutionfile filename=".."/>, internal solver): steady state equal
+#     to ~1e-11 K (without radiation); in transient Mecway uses
+#     Crank-Nicolson (THETA 0.5) with the load at the end of the step (see
 #     KNOWN_BUGS 14).
-#   - Balken (Mecway fin-elementen): Code-Aster heeft geen thermisch
-#     1D-element (catalogus affe_modele.py, PHENOMENE='THERMIQUE'); niet
-#     vertaald.
-#   - Formules als waarde (x, y, z, t) -> FORMULE in AFFE_CHAR_THER_F
-#     (class Formula); temperatuurafhankelijk materiaal (TempDependent) ->
-#     THER_NL met functies van TEMP (_Thermal._tempdep_funcs); bewegende
-#     lasbron (#ASTER-LASBRON) -> bridge_welding.py.
-#   - Straling en schaalvlak-convectie -> THER_NON_LINE met THER_NL
-#     (ELEMENTS2_63 "On ne trouve pas le comportement THER_NL" met THER,
-#     gezien in een run met Code-Aster 17.4); anders THER_LINEAIRE met THER.
+#   - Beams (Mecway fin elements): Code-Aster has no thermal
+#     1D element (catalog affe_modele.py, PHENOMENE='THERMIQUE'); not
+#     translated.
+#   - Formulas as value (x, y, z, t) -> FORMULE in AFFE_CHAR_THER_F
+#     (class Formula); temperature-dependent material (TempDependent) ->
+#     THER_NL with functions of TEMP (_Thermal._tempdep_funcs); moving
+#     welding source (#ASTER-LASBRON) -> bridge_welding.py.
+#   - Radiation and shell-face convection -> THER_NON_LINE with THER_NL
+#     (ELEMENTS2_63 "On ne trouve pas le comportement THER_NL" with THER,
+#     seen in a run with Code-Aster 17.4); otherwise THER_LINEAIRE with THER.
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import math
 import os
@@ -88,38 +88,38 @@ from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
 import bridge_mesh
 
 
-# Tags die parse_thermal() leest (bridge_from_liml.py slaat ze dan over).
+# Tags read by parse_thermal() (bridge_from_liml.py then skips them).
 THERMAL_TAGS = frozenset(["temperature2", "temperature3", "heatflow",
                           "heatflux", "heatgeneration", "convectionbc",
                           "radiationbc", "forcedconvection",
                           "massflowrate"])
 
-# Kelvin -> Celsius (Code-Aster rekent thermisch in Celsius, zie kop).
+# Kelvin -> Celsius (Code-Aster computes thermal in Celsius, see header).
 KELVIN = 273.15
-# Stefan-Boltzmann [W/m2/K4], CODATA 2018 (Mecway-manual v33 par. 11.13
-# noemt 5,67037e-8).
+# Stefan-Boltzmann [W/m2/K4], CODATA 2018 (Mecway manual v33 sec. 11.13
+# gives 5.67037e-8).
 STEFAN_BOLTZMANN = 5.670374419e-8
-# Mecway: knopen zonder begintemperatuur beginnen op 0 K (manual v33
-# par. 6.7.2).
+# Mecway: nodes without an initial temperature start at 0 K (manual v33
+# sec. 6.7.2).
 MECWAY_DEFAULT_T0 = 0.0
 
-# Getal gevolgd door alleen een eenheid (geen formule zoals 100*cos(t)).
+# Number followed by only a unit (no formula such as 100*cos(t)).
 _NUMBER_UNIT = re.compile(
     u"^\\s*[-+]?(\\d+\\.?\\d*|\\.\\d+)([eE][-+]?\\d+)?"
     u"[\\sA-Za-z0-9/\\.\u00b0\u00b2\u00b3\u2074\u00b5\u03bc\u00b7]*$")
 
 
 def is_thermal(analysis_cfg):
-    """True als de analyse-config thermisch is (THER_LINEAIRE/_NON_LINE)."""
+    """True if the analysis config is thermal (THER_LINEAIRE/_NON_LINE)."""
     return str(analysis_cfg.get("solver_command", "")).startswith("THER")
 
 
 def _r(x):
-    """Getal voor de .comm: 15 significante cijfers met een decimale punt
-    (bridge_mesh._real, %-opmaak volgt de landinstelling niet). Zo wordt
-    300 - 273.15 '26.85' en niet 26.850000000000023 (CPython-repr) of
-    26.850000000000001 (IronPython-repr, 17 cijfers; gezien in de
-    IronPython-harness)."""
+    """Number for the .comm: 15 significant digits with a decimal point
+    (bridge_mesh._real, %-formatting does not follow the locale). So
+    300 - 273.15 becomes '26.85' and not 26.850000000000023 (CPython repr)
+    or 26.850000000000001 (IronPython repr, 17 digits; seen in the
+    IronPython harness)."""
     return bridge_mesh._real(float(x))
 
 
@@ -128,22 +128,22 @@ def _r(x):
 # ==========================================
 class Formula(object):
     """
-    Mecway-formule als belastingwaarde (mechanisch:
-    bridge_bcs.PositionFormula): in de .comm een FORMULE van X, Y, Z en INST
-    (AFFE_CHAR_THER_F, catalogus affe_char_ther_f.py: SOURCE, FLUX_REP,
-    ECHANGE, RAYONNEMENT, TEMP_IMPO accepteren een formule).
+    Mecway formula as load value (mechanical:
+    bridge_bcs.PositionFormula): in the .comm a FORMULE of X, Y, Z and INST
+    (AFFE_CHAR_THER_F, catalog affe_char_ther_f.py: SOURCE, FLUX_REP,
+    ECHANGE, RAYONNEMENT, TEMP_IMPO accept a formula).
 
-    Waarde in SI = factor * (a * f(x/pu, y/pu, z/pu, t/tu) + b) + offset,
-    met (a, b) de eenheid van de uitkomst (bridge_bcs._unit_map), pu/tu de
-    SI-waarde van positionunit/timeunit (Mecway schrijft de eenheden als
-    attributen, manual v33 par. 12.1). factor/offset komen van de
-    vertaling (bijv. 1/oppervlak, K -> Celsius).
+    Value in SI = factor * (a * f(x/pu, y/pu, z/pu, t/tu) + b) + offset,
+    with (a, b) the unit of the result (bridge_bcs._unit_map), pu/tu the
+    SI value of positionunit/timeunit (Mecway writes the units as
+    attributes, manual v33 sec. 12.1). factor/offset come from the
+    translation (e.g. 1/area, K -> Celsius).
     """
 
     def __init__(self, text, qtype, unit, posunit, timeunit):
         import bridge_bcs
         self.text = (text or "").strip()
-        # Controle van de syntax; ValueError (gemeld) bij een fout.
+        # Syntax check; ValueError (reported) on an error.
         _expr, self.used, _args = bridge_bcs.aster_expression(
             self.text, dict((v, v) for v in ("x", "y", "z", "t")))
         self.a, self.b = bridge_bcs._unit_map(unit, qtype)
@@ -172,16 +172,16 @@ class Formula(object):
         return bool(self.used & set(["x", "y", "z"]))
 
     def at_time(self, t):
-        """Waarde op tijdstip t (s); alleen zonder x, y, z."""
+        """Value at time t (s); only without x, y, z."""
         import bridge_bcs
         fn = bridge_bcs.time_function(self.text)
         return self.factor * (self.a * float(fn(t / self.tu)) + self.b) + \
             self.offset
 
     def render(self, coords, inst="INST"):
-        """(uitdrukking, NOM_PARA, {naam: argument}) voor FORMULE.
-        coords: {"x": uitdrukking in X, Y, Z} (gedraaid mesh); inst:
-        uitdrukking voor de tijd (stationair: '1.0')."""
+        """(expression, NOM_PARA, {name: argument}) for FORMULE.
+        coords: {"x": expression in X, Y, Z} (rotated mesh); inst:
+        expression for the time (steady state: '1.0')."""
         import bridge_bcs
         var = {}
         for v in ("x", "y", "z"):
@@ -202,7 +202,7 @@ class Formula(object):
 
 
 def _unit_si(unit, qtype):
-    """SI-waarde van 1 eenheid (positionunit/timeunit); 1 als leeg."""
+    """SI value of 1 unit (positionunit/timeunit); 1 if empty."""
     unit = (unit or "").strip()
     if not unit:
         return 1.0
@@ -215,7 +215,7 @@ def _is_timed(value):
 
 
 def _value(text, qtype):
-    """Getal met eenheid naar SI; ValueError bij een formule of leeg."""
+    """Number with unit to SI; ValueError for a formula or empty."""
     if text is None or not _NUMBER_UNIT.match(text):
         raise ValueError(tr(
             "waarde '{0}' is geen getal met eenheid (formules "
@@ -230,11 +230,11 @@ _BARE_NUMBER = re.compile(r"^\s*[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?\s*$")
 
 def _with_unit(node):
     """
-    Tekst van een waarde-knoop. Een formule schrijft Mecway als
-    <x unit="°C" timeunit="s" positionunit="m">20</x>: zonder eenheid
-    in de tekst; is de formule alleen een getal, dan hoort de eenheid uit
-    het attribuut erbij (anders 20 -> 20 K). Een echte formule blijft
-    tekst en wordt door _value geweigerd (gemeld).
+    Text of a value node. Mecway writes a formula as
+    <x unit="°C" timeunit="s" positionunit="m">20</x>: without a unit
+    in the text; if the formula is just a number, the unit from the
+    attribute belongs to it (otherwise 20 -> 20 K). A real formula stays
+    text and is rejected by _value (reported).
     """
     text = node.text
     unit = node.get("unit")
@@ -244,8 +244,8 @@ def _with_unit(node):
 
 
 def _formula_node(node):
-    """True als node een Mecway-formule is: eenheden als attributen en
-    geen kaal getal (_with_unit)."""
+    """True if node is a Mecway formula: units as attributes and
+    not a bare number (_with_unit)."""
     if not any(node.get(a) is not None for a in
                ("unit", "timeunit", "positionunit")):
         return False
@@ -253,8 +253,8 @@ def _formula_node(node):
 
 
 def _values(item, tag, qtype, formulas=True):
-    """float, lijst (t, waarde) bij <tag time="..">, Formula (formule in
-    x, y, z, t; alleen met formulas=True), of None."""
+    """float, list (t, value) for <tag time="..">, Formula (formula in
+    x, y, z, t; only with formulas=True), or None."""
     nodes = item.findall(tag)
     if not nodes:
         return None
@@ -288,17 +288,17 @@ def _values(item, tag, qtype, formulas=True):
 
 def _tempdep_tables(node, name):
     """
-    Tabellen van een temperatuurafhankelijk thermisch materiaal (Mecway
-    manual v33 par. 8.6; XML gezien in een met Mecway 33 opgeslagen model,
+    Tables of a temperature-dependent thermal material (Mecway
+    manual v33 sec. 8.6; XML seen in a model saved with Mecway 33,
     mw.set_material_type(.., "thermal", "TempDependent")):
       <thermal type="TempDependent" thermalconductivity=".." ..>
         <specificheat temp="300 K" value="450 J/kg/K" />
         <thermalconductivity temp="300 K" value="50 W/m/K" />
       </thermal>
-    (de attributen op <thermal> zijn resten van het type Isotropic en
-    tellen niet als er een tabel is). Returns {"lambda_T": [(T in Celsius,
-    W/m/K)], "cp_T": [(T, J/kg/K)]}, oplopend in T; ValueError bij een
-    formule of een lege tabel.
+    (the attributes on <thermal> are leftovers of the type Isotropic and
+    do not count if there is a table). Returns {"lambda_T": [(T in Celsius,
+    W/m/K)], "cp_T": [(T, J/kg/K)]}, ascending in T; ValueError for a
+    formula or an empty table.
     """
     out = {}
     for tag, key, qtype in (("thermalconductivity", "lambda_T",
@@ -326,8 +326,8 @@ def _tempdep_tables(node, name):
 
 
 def _selection_kind(root, name):
-    # Zonder XPath-predicaat ([@name='...']): een apostrof in de
-    # selectienaam gaf daar een SyntaxError.
+    # Without an XPath predicate ([@name='...']): an apostrophe in the
+    # selection name gave a SyntaxError there.
     for tag, kind in (("nodeselection", "node"), ("faceselection", "face"),
                       ("elementselection", "element")):
         for node in root.findall(tag):
@@ -344,12 +344,12 @@ def _skip(model_data, text):
 
 def parse_thermal(root, model_data):
     """
-    Lees de thermische gegevens in model_data:
+    Read the thermal data into model_data:
       "thermal"           : True
       "thermal_materials" : {mat: {"lambda", "rho", "cp"}}
       "thermal_data"      : {"materials", "loads", "node_temps",
                              "initial", "transient", "timesteps"}
-    Niet-vertaalbare onderdelen gaan naar model_data["skipped_loads"].
+    Untranslatable parts go to model_data["skipped_loads"].
     """
     th = {"materials": OrderedDict(), "loads": [], "node_temps": [],
           "initial": [], "transient": model_data.get("analysis_type") == "T31",
@@ -358,7 +358,7 @@ def parse_thermal(root, model_data):
     model_data["thermal_materials"] = th["materials"]
     model_data["thermal_data"] = th
 
-    # --- Materialen ---
+    # --- Materials ---
     for mat in root.findall("mat"):
         name = mat.get("name", "UnknownMat")
         node = mat.find("thermal")
@@ -383,7 +383,7 @@ def parse_thermal(root, model_data):
             node.set("thermalconductivity", "{0} W/m/K".format(
                 _r(tables["lambda_T"][0][1])))
         if not node.get("thermalconductivity"):
-            # Bijv. het water van een vloeistofnetwerk (alleen specificheat,
+            # E.g. the water of a fluid network (only specificheat,
             # CoolantChannel.liml).
             log(tr("WARNING: Materiaal '{0}' heeft geen thermalconductivity; "
                    "elementen ermee worden niet thermisch gerekend.",
@@ -409,29 +409,29 @@ def parse_thermal(root, model_data):
             continue
         props.update(tables)
         if "cp_T" in tables:
-            # check_capacity: rho*cp > 0 over de hele tabel
+            # check_capacity: rho*cp > 0 over the whole table
             props["cp"] = min(v for _t, v in tables["cp_T"])
         th["materials"][name] = props
         if tables:
-            log("INFO: Thermisch materiaal '{0}' temperatuurafhankelijk "
-                "(Mecway TempDependent): lambda(T) {1} punten, cp(T) {2} "
-                "punten, rho={3} kg/m3; THER_NON_LINE.".format(
+            log("INFO: Thermal material '{0}' temperature-dependent "
+                "(Mecway TempDependent): lambda(T) {1} points, cp(T) {2} "
+                "points, rho={3} kg/m3; THER_NON_LINE.".format(
                     name, len(tables.get("lambda_T", [])),
                     len(tables.get("cp_T", [])), props["rho"]))
         else:
-            log("INFO: Thermisch materiaal '{0}': lambda={1} W/m/K, rho={2} "
+            log("INFO: Thermal material '{0}': lambda={1} W/m/K, rho={2} "
                 "kg/m3, cp={3} J/kg/K".format(name, props["lambda"],
                                               props["rho"], props["cp"]))
 
-    # --- Belastingen en randvoorwaarden ---
+    # --- Loads and boundary conditions ---
     for item in root:
         tag = item.tag
         if tag not in THERMAL_TAGS or item.get("suppressed", "") == "true":
             continue
         sel = item.get("selection", "")
         if tag in ("forcedconvection", "massflowrate"):
-            # Vloeistofnetwerk (manual v33 par. 7.12, 9.31, 9.33; alleen
-            # CCX): geen equivalent in de bridge.
+            # Fluid network (manual v33 sec. 7.12, 9.31, 9.33; only
+            # CCX): no equivalent in the bridge.
             _skip(model_data, tr("{0} op '{1}' (vloeistofnetwerk)",
                                  "{0} on '{1}' (fluid network)").format(
                 tag, sel or item.get("selectionfaces", "")))
@@ -484,10 +484,10 @@ def parse_thermal(root, model_data):
                 else tr("selectie onbekend", "unknown selection")))
             continue
         th["loads"].append(load)
-        log("INFO: Thermisch: {0} op '{1}' ({2}).".format(
+        log("INFO: Thermal: {0} on '{1}' ({2}).".format(
             tag, sel, load["target"]))
 
-    # --- Beginvoorwaarden ---
+    # --- Initial conditions ---
     ic_root = root.find("initialconditions")
     for ic in (list(ic_root) if ic_root is not None else []):
         if ic.tag != "temperature2" or ic.get("suppressed", "") == "true":
@@ -513,7 +513,7 @@ def parse_thermal(root, model_data):
             continue
         th["initial"].append((sel, kind, v))
 
-    # --- Tijdstappen (T31: stepsize; D31 schreef timepointsincrement) ---
+    # --- Time steps (T31: stepsize; D31 wrote timepointsincrement) ---
     ts = root.find("timesteps")
     if ts is not None:
         step = ts.get("stepsize") or ts.get("timepointsincrement")
@@ -528,15 +528,15 @@ def parse_thermal(root, model_data):
                    "(alleen timeperiod en stepsize).",
                    "WARNING: <timesteps> attributes {0} are not used "
                    "(only timeperiod and stepsize).").format(other))
-    log("INFO: Thermisch: {0} materialen, {1} belastingen, {2} knoop"
-        "temperaturen, {3} beginvoorwaarden, {4}.".format(
+    log("INFO: Thermal: {0} materials, {1} loads, {2} node"
+        "temperatures, {3} initial conditions, {4}.".format(
             len(th["materials"]), len(th["loads"]), len(th["node_temps"]),
             len(th["initial"]), "transient" if th["transient"]
             else "stationair"))
 
 
 # ==========================================
-# GEOMETRIE
+# GEOMETRY
 # ==========================================
 def _sub(a, b):
     return [a[i] - b[i] for i in range(3)]
@@ -556,14 +556,14 @@ def _dist(a, b):
 
 
 def _seg_length(pts):
-    """Lengte van een SEG2 (2 punten) of SEG3 (hoek, hoek, midden; 3-punts
-    Gauss op de kwadratische kromme)."""
+    """Length of a SEG2 (2 points) or SEG3 (corner, corner, middle; 3-point
+    Gauss on the quadratic curve)."""
     if len(pts) == 2:
         return _dist(pts[0], pts[1])
     total = 0.0
     for xi, w in ((-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
                   (0.774596669241483, 5.0 / 9.0)):
-        # dN/dxi voor N0 = xi(xi-1)/2, N1 = xi(xi+1)/2, N2 = 1-xi^2
+        # dN/dxi for N0 = xi(xi-1)/2, N1 = xi(xi+1)/2, N2 = 1-xi^2
         d = (xi - 0.5, xi + 0.5, -2.0 * xi)
         t = [sum(d[k] * pts[k][c] for k in range(3)) for c in range(3)]
         total += w * math.sqrt(sum(c * c for c in t))
@@ -574,8 +574,8 @@ def _face_area(stype, pts):
     return sum(bridge_mesh._face_integrals(stype, pts)[0])
 
 
-# Tetraeders (hoekindices, Code-Aster-volgorde) per volumetype; exact voor
-# elementen met rechte ribben en vlakke zijvlakken (anders een benadering).
+# Tetrahedra (corner indices, Code-Aster order) per volume type; exact for
+# elements with straight edges and flat faces (otherwise an approximation).
 _TETS = {
     "TETRA": [(0, 1, 2, 3)],
     "PYRAM": [(0, 1, 2, 4), (0, 2, 3, 4)],
@@ -604,7 +604,7 @@ def _solid_volume(atype, pts):
 # BUILDER
 # ==========================================
 class _Thermal(object):
-    """Verzamelt groepen, modelisaties, functies en lasten voor de .comm."""
+    """Collects groups, modelisations, functions and loads for the .comm."""
 
     def __init__(self, model_data, th, analysis):
         self.md = model_data
@@ -617,33 +617,33 @@ class _Thermal(object):
         self.nonlinear = False
         self.has_exchange = False  # ECHANGE / RAYONNEMENT / SOUR_NL
         self.counter = 0
-        self.crea_ma = []         # DEFI_GROUP stap 1 (CREA_GROUP_MA)
-        self.crea_ma2 = []        # DEFI_GROUP stap 2 (DIFFE/INTERSEC)
+        self.crea_ma = []         # DEFI_GROUP step 1 (CREA_GROUP_MA)
+        self.crea_ma2 = []        # DEFI_GROUP step 2 (DIFFE/INTERSEC)
         self.crea_no = []         # CREA_GROUP_NO
-        self.skin3d = []          # randgroepen van volumes ('3D', ORIE_PEAU)
-        self.edges = []           # randgroepen van schalen ('PLAN')
+        self.skin3d = []          # skin groups of volumes ('3D', ORIE_PEAU)
+        self.edges = []           # boundary groups of shells ('PLAN')
         self.funcs = []           # DEFI_FONCTION / DEFI_CONSTANTE
-        self.charges = []         # (commando, OrderedDict kw -> [_F])
+        self.charges = []         # (command, OrderedDict kw -> [_F])
         self.temp_const = []      # TEMP_IMPO constant
-        self.temp_timed = []      # TEMP_IMPO met functie
+        self.temp_timed = []      # TEMP_IMPO with function
         self.face_cache = {}
         self.inactive_faces = {}
         self.shells_union = None
-        self.rotation = None      # classify: (Q, as, hoek) of None
-        self.msh_path = None      # geschreven mesh (build_thermal)
-        self.mesh_segs = None     # _edge_names: {naam: knopen} van SEG
-        self.mesh_groups = None   # _edge_names: {groep: [elementnamen]}
-        self.cell_index = None    # _list_group: {elementnaam: celnummer}
-        self.node_flows = []      # (knoopgroep, waarde per knoop of tabel)
-        self.birth = None         # toevoegmateriaal (bridge_welding._births)
-        # Bronnen als functie (SOURCE in AFFE_CHAR_THER_F) samen in een last
-        # (add_func_source, merged_sources): [{grp, sour, eids}]
+        self.rotation = None      # classify: (Q, axis, angle) or None
+        self.msh_path = None      # written mesh (build_thermal)
+        self.mesh_segs = None     # _edge_names: {name: nodes} of SEG
+        self.mesh_groups = None   # _edge_names: {group: [element names]}
+        self.cell_index = None    # _list_group: {element name: cell number}
+        self.node_flows = []      # (node group, value per node or table)
+        self.birth = None         # filler material (bridge_welding._births)
+        # Sources as functions (SOURCE in AFFE_CHAR_THER_F) together in one
+        # load (add_func_source, merged_sources): [{grp, sour, eids}]
         self.func_sources = []
-        self.sources_taken = False  # bridge_welding zette ze in 'lasbron'
-        self.group_cells = {}     # groep -> [eid] (element_targets, schaalvlak)
-        self.func_params = {}     # functienaam -> NOM_PARA of constante
+        self.sources_taken = False  # bridge_welding put them in 'lasbron'
+        self.group_cells = {}     # grp -> [eid] (element_targets, shell face)
+        self.func_params = {}     # function name -> NOM_PARA or constant
 
-    # ---------- namen ----------
+    # ---------- names ----------
     def rn(self, name):
         return self.renames.get(name, name)
 
@@ -658,11 +658,11 @@ class _Thermal(object):
     def skip(self, text):
         _skip(self.md, text)
 
-    # ---------- elementen ----------
+    # ---------- elements ----------
     def classify(self):
-        """Welke elsets worden gemodelleerd (volume '3D', vlakke schaal
-        'PLAN'); balken, gekromde schalen en elsets zonder thermisch
-        materiaal niet. Returns False als er niets te rekenen is."""
+        """Which elsets are modelled (volume '3D', flat shell
+        'PLAN'); not beams, curved shells and elsets without thermal
+        material. Returns False if there is nothing to compute."""
         md = self.md
         mats = self.th["materials"]
         self.elsets = OrderedDict()   # elset -> dict(cls, mat, t, f)
@@ -678,12 +678,12 @@ class _Thermal(object):
                 vals = [p[c] for p in self.nodes.values()]
                 size = max(size, max(vals) - min(vals))
         tol = 1.0e-9 * max(size, 1.0e-3)
-        # Alle schalen in evenwijdige vlakken buiten Z = constant: het mesh
-        # wordt in de .comm gedraaid (zie _shell_rotation).
+        # All shells in parallel planes other than Z = constant: the mesh
+        # is rotated in the .comm (see _shell_rotation).
         self.rotation = self._shell_rotation(members, mats)
         zrow = self.rotation[0][2] if self.rotation else (0.0, 0.0, 1.0)
-        # Volgorde van de .liml (de dicts in model_data hebben in IronPython
-        # geen vaste volgorde).
+        # Order of the .liml (the dicts in model_data have no fixed order
+        # in IronPython).
         for elset, elems in members.items():
             dim = md.get("elset_dims", {}).get(elset)
             mat = md["elsets"].get(elset)
@@ -746,7 +746,7 @@ class _Thermal(object):
         for i in shells:
             i["f"] = i["t"] / self.t_ref
         if shells:
-            log("INFO: Schalen als PLAN met referentiedikte {0} m; factoren "
+            log("INFO: Shells as PLAN with reference thickness {0} m; factors "
                 "f = t / t_ref: {1}".format(self.t_ref, dict(
                     (k, v["f"]) for k, v in self.elsets.items()
                     if v["cls"] == "shell")))
@@ -754,21 +754,23 @@ class _Thermal(object):
                             for n in cn)
         if any("lambda_T" in mats[i["mat"]] or "cp_T" in mats[i["mat"]]
                for i in self.elsets.values()):
-            # THER_NL met functies van TEMP (_tempdep_funcs)
+            # THER_NL with functions of TEMP (_tempdep_funcs)
             self.nonlinear = True
         return True
 
     def _shell_rotation(self, members, mats):
-        """(Q, as, hoek in graden) als alle schaalelementen evenwijdig zijn
-        maar niet in een vlak Z = constant liggen, anders None. Q (rijen)
-        draait de schaalnormaal n op Z (Rodrigues, rechtsom om as = n x Z).
+        """(Q, axis, angle in degrees) if all shell elements are parallel
+        but do not lie in a plane Z = constant, otherwise None. Q (rows)
+        rotates the shell normal n onto Z (Rodrigues, clockwise about
+        axis = n x Z).
 
-        PLAN rekent in het XY-vlak (AFFE_MODELE: alarm MODELE1_53 "les
-        résultats seront faux" voor een element buiten Z = constant). De
-        .comm draait daarom het hele mesh (MODI_MAILLAGE ROTATION, star:
-        volumes, temperaturen en oppervlakken veranderen niet) en draait de
-        warmteflux na CALC_CHAMP terug (calc_champ_block). Getest met Code-
-        Aster 17.4 tegen Mecway (vlak XZ en schuin vlak, KNOWN_BUGS 15)."""
+        PLAN computes in the XY plane (AFFE_MODELE: alarm MODELE1_53 "les
+        résultats seront faux" for an element outside Z = constant). The
+        .comm therefore rotates the whole mesh (MODI_MAILLAGE ROTATION,
+        rigid: volumes, temperatures and areas do not change) and rotates
+        the heat flux back after CALC_CHAMP (calc_champ_block). Tested with
+        Code-Aster 17.4 against Mecway (plane XZ and inclined plane,
+        KNOWN_BUGS 15)."""
         n0 = None
         md = self.md
         for elset, elems in members.items():
@@ -803,17 +805,17 @@ class _Thermal(object):
         kx = ((0.0, -k[2], k[1]), (k[2], 0.0, -k[0]), (-k[1], k[0], 0.0))
         q = tuple(tuple((cs if i == j else 0.0) + (1.0 - cs) * k[i] * k[j] +
                         sn * kx[i][j] for j in range(3)) for i in range(3))
-        log("INFO: Schalen liggen in evenwijdige vlakken met normaal ({0}, "
-            "{1}, {2}); het mesh wordt {3} graden om ({4}, {5}, 0) gedraaid "
-            "zodat ze in een vlak Z = constant liggen (PLAN).".format(
+        log("INFO: Shells lie in parallel planes with normal ({0}, "
+            "{1}, {2}); the mesh is rotated {3} degrees about ({4}, {5}, 0) "
+            "so that they lie in a plane Z = constant (PLAN).".format(
                 _r(n0[0]), _r(n0[1]), _r(n0[2]), _r(math.degrees(ang)),
                 _r(k[0]), _r(k[1])))
         return q, k, math.degrees(ang)
 
-    # ---------- doelgroepen ----------
+    # ---------- target groups ----------
     def face_parts(self, sel):
-        """[(soort, oppervlak, knopen, f, t, (eid, faceid))] van een
-        vlakselectie; soort solid / shelledge / shellface / inactive."""
+        """[(kind, area, nodes, f, t, (eid, faceid))] of a
+        face selection; kind solid / shelledge / shellface / inactive."""
         parts = []
         for eid, fid in self.md.get("face_selection_faces", {}).get(sel, []):
             key = (eid, fid)
@@ -851,7 +853,7 @@ class _Thermal(object):
         return self.shells_union
 
     def _sub_group(self, src, type_maille):
-        """Deelgroep van src met alleen de elementen van één dimensie
+        """Subgroup of src with only the elements of one dimension
         (DEFI_GROUP TYPE_MAILLE)."""
         sub = self.new_group()
         self.crea_ma.append("_F(NOM='{0}', GROUP_MA='{1}', "
@@ -859,17 +861,17 @@ class _Thermal(object):
         return sub
 
     def _list_group(self, names):
-        """Deelgroep met een MAILLE-lijst van elementen uit het mesh (namen
-        zoals bridge_mesh ze schrijft: 'M<eid>', 'K<n>').
+        """Subgroup with a MAILLE list of elements from the mesh (names
+        as bridge_mesh writes them: 'M<eid>', 'K<n>').
 
-        Code-Aster 17.4 bewaart de elementnamen van het ASTER-mesh niet:
-        MAILLE='M<n>' is de n-de cel in het bestand (char8_to_int.F90 leest
-        het getal na de letter; 'K5' gaf "Fortran runtime error: Bad integer
-        for item 1 in list input", 'M1001' in een mesh met 20 cellen
-        MODELISA6_10 "ne fait pas partie du maillage"; gezien met Code-
-        Aster 17.4). De bridge vertaalt de naam daarom naar het celnummer
-        uit model_data["cell_names"] (bridge_mesh, volgorde in het
-        bestand)."""
+        Code-Aster 17.4 does not keep the element names of the ASTER mesh:
+        MAILLE='M<n>' is the n-th cell in the file (char8_to_int.F90 reads
+        the number after the letter; 'K5' gave "Fortran runtime error: Bad
+        integer for item 1 in list input", 'M1001' in a mesh with 20 cells
+        MODELISA6_10 "ne fait pas partie du maillage"; seen with Code-
+        Aster 17.4). So the bridge translates the name to the cell number
+        from model_data["cell_names"] (bridge_mesh, order in the
+        file)."""
         if self.cell_index is None:
             self.cell_index = dict(
                 (n, i + 1) for i, n in enumerate(self.md.get("cell_names", [])))
@@ -885,11 +887,11 @@ class _Thermal(object):
         return sub
 
     def _edge_names(self, sel):
-        """{frozenset(knopen): elementnaam} van de randelementen (SEG) in
-        de mesh-groep van de selectie. bridge_mesh bewaart de namen van de
-        randelementen niet in model_data, dus ze komen uit het geschreven
-        mesh (self.msh_path; alleen nodig voor schaalranden van
-        verschillende dikte in één selectie)."""
+        """{frozenset(nodes): element name} of the boundary elements (SEG)
+        in the mesh group of the selection. bridge_mesh does not keep the
+        names of the boundary elements in model_data, so they come from the
+        written mesh (self.msh_path; only needed for shell edges of
+        different thickness in one selection)."""
         if self.mesh_segs is None:
             self.mesh_segs, self.mesh_groups = _read_mesh_segments(
                 self.msh_path)
@@ -898,15 +900,15 @@ class _Thermal(object):
                     if name in members)
 
     def face_targets(self, sel, label):
-        """([(soort, groep, f, t)], oppervlak) voor belastingen op
-        vlakken; soort solid / shelledge / shellface, oppervlak = totaal
-        van de vertaalde vlakken (randen: lengte x dikte). None als er
-        niets overblijft.
+        """([(kind, group, f, t)], area) for loads on
+        faces; kind solid / shelledge / shellface, area = total
+        of the translated faces (edges: length x thickness). None if
+        nothing is left.
 
-        Schalen met verschillende dikte in één selectie (KNOWN_BUGS 15)
-        en schaalelementen met beide zijden (faceid 5 en 6) geselecteerd
-        krijgen eigen deelgroepen met een MAILLE-lijst per (f, t, aantal
-        zijden), zodat elke dikte zijn eigen factor krijgt."""
+        Shells with different thickness in one selection (KNOWN_BUGS 15)
+        and shell elements with both sides (faceid 5 and 6) selected
+        get their own subgroups with a MAILLE list per (f, t, number of
+        sides), so that each thickness gets its own factor."""
         if sel in self.face_cache:
             return self.face_cache[sel]
         try:
@@ -921,7 +923,7 @@ class _Thermal(object):
 
     def _face_targets(self, sel, label):
         parts = self.face_parts(sel)
-        kinds = OrderedDict()     # soort -> OrderedDict((f, t) -> True)
+        kinds = OrderedDict()     # kind -> OrderedDict((f, t) -> True)
         for kind, _a, _n, f, t, _key in parts:
             if kind != "inactive":
                 kinds.setdefault(kind, OrderedDict())[(f, t)] = True
@@ -932,31 +934,31 @@ class _Thermal(object):
                    "WARNING: {0}: {1} face(s) of beams or non-modelled "
                    "elements in '{2}' are dropped.").format(
                        label, self.inactive_faces[sel], sel))
-        # Schaalvlakken: faceid 5 en 6 van hetzelfde element staan in de
-        # mesh-groep twee keer als hetzelfde element (bridge_mesh); Code-
-        # Aster haalt de dubbele weg (alarm MODELISA5_8), dus de last zou
-        # maar op één zijde werken terwijl heatflow over beide zijden (2A)
-        # verdeeld wordt. De bridge legt de last daarom op beide zijden: een
-        # eigen groep met f x 2 (convectie, straling, flux, heatflow).
-        # Mecway doet hetzelfde (Mecway 33, interne solver, headless
-        # 'mecway <model> solve'): een plaat met heatflux of convectie op
-        # faceid 5 en 6 geeft 2x de opwarming / de fin met 2h, en heatflow
-        # wordt over beide zijden verdeeld; Code-Aster via de bridge wijkt
-        # < 1e-11 K af (headless Mecway-run).
+        # Shell faces: faceid 5 and 6 of the same element appear in the
+        # mesh group twice as the same element (bridge_mesh); Code-
+        # Aster removes the duplicate (alarm MODELISA5_8), so the load would
+        # act on only one side while heatflow is distributed over both
+        # sides (2A). So the bridge puts the load on both sides: a
+        # separate group with f x 2 (convection, radiation, flux, heatflow).
+        # Mecway does the same (Mecway 33, internal solver, headless
+        # 'mecway <model> solve'): a plate with heatflux or convection on
+        # faceid 5 and 6 gives 2x the heating / the fin with 2h, and heatflow
+        # is distributed over both sides; Code-Aster via the bridge deviates
+        # < 1e-11 K (headless Mecway run).
         sides = OrderedDict()
         for kind, _a, _n, _f, _t, key in parts:
             if kind == "shellface":
                 sides.setdefault(key[0], set()).add(key[1])
         double = [e for e, fids in sides.items() if len(fids) > 1]
         if double:
-            log("INFO: {0}: {1} schaalelement(en) in '{2}' hebben beide "
-                "zijden (faceid 5 en 6) geselecteerd; de belasting werkt op "
-                "beide zijden (factor 2), zoals in Mecway.".format(
+            log("INFO: {0}: {1} shell element(s) in '{2}' have both "
+                "sides (faceid 5 and 6) selected; the load acts on "
+                "both sides (factor 2), as in Mecway.".format(
                     label, len(double), sel))
         split_face = "shellface" in kinds and (
             bool(double) or len(kinds["shellface"]) > 1)
         split_edge = len(kinds.get("shelledge", ())) > 1
-        out = []                  # (soort, groep, f, t)
+        out = []                  # (kind, group, f, t)
         g = self.rn(sel)
         if len(kinds) == 1 and not (split_face or split_edge):
             kind = list(kinds)[0]
@@ -973,8 +975,8 @@ class _Thermal(object):
                 else:
                     f, t = list(kinds["shelledge"])[0]
                     out.append(("shelledge", self._sub_group(g, "1D"), f, t))
-            # Volumevlakken en schaalvlakken zijn allebei 2D: scheiden met
-            # de groep van alle schalen.
+            # Volume faces and shell faces are both 2D: separate them with
+            # the group of all shells.
             both = "solid" in kinds and "shellface" in kinds
             tmp = self._sub_group(g, "2D") if both else None
             if "solid" in kinds:
@@ -1005,7 +1007,7 @@ class _Thermal(object):
             p[5][0] for p in parts if p[0] == "shellface"))
         for kind, grp, _f, _t in out:
             if kind == "shellface" and grp not in self.group_cells:
-                # schaalvlak-bron (SOURCE): de schaalelementen zelf
+                # shell-face source (SOURCE): the shell elements themselves
                 self.group_cells[grp] = shell_eids
             if kind == "solid" and grp not in self.skin3d:
                 self.skin3d.append(grp)
@@ -1014,9 +1016,9 @@ class _Thermal(object):
         return (out, area) if out and area > 0.0 else None
 
     def _face_lists(self, parts, sides, fts):
-        """Schaalvlakken per (f, t, aantal zijden) in een eigen groep
-        (elementnamen 'M<eid>', bridge_mesh); f maal het aantal zijden.
-        Volgorde: per dikte eerst de enkelzijdige, dan de dubbelzijdige."""
+        """Shell faces per (f, t, number of sides) in their own group
+        (element names 'M<eid>', bridge_mesh); f times the number of sides.
+        Order: per thickness first the single-sided, then the double-sided."""
         order = list(fts)
         by_key = OrderedDict()
         done = set()
@@ -1036,8 +1038,8 @@ class _Thermal(object):
         return out
 
     def _edge_lists(self, sel, parts, label):
-        """Schaalranden per (f, t) in een eigen groep; None (gemeld) als
-        een randelement niet in het mesh gevonden wordt."""
+        """Shell edges per (f, t) in their own group; None (reported) if
+        a boundary element is not found in the mesh."""
         try:
             names = self._edge_names(sel)
         except (IOError, OSError, ValueError, IndexError) as e:
@@ -1068,11 +1070,11 @@ class _Thermal(object):
                 for (f, t), lst in by_ft.items()]
 
     def element_targets(self, sel, label):
-        """([(soort, groep, f, t)], volume) voor bronnen op elementen;
-        soort solid / shell. Schalen van verschillende dikte krijgen elk
-        een eigen groep (MAILLE-lijst per (f, t), KNOWN_BUGS 15)."""
+        """([(kind, group, f, t)], volume) for sources on elements;
+        kind solid / shell. Shells of different thickness each get
+        their own group (MAILLE list per (f, t), KNOWN_BUGS 15)."""
         eids = self.md.get("element_selections", {}).get(self.rn(sel), [])
-        kinds = OrderedDict()     # soort -> OrderedDict((f, t) -> [eid])
+        kinds = OrderedDict()     # kind -> OrderedDict((f, t) -> [eid])
         vol = 0.0
         dropped = 0
         for eid in eids:
@@ -1146,7 +1148,7 @@ class _Thermal(object):
         out = set()
         for part in self.face_parts(sel):
             out.update(part[2])
-        # Vlakken van balken: knopen uit de Mecway-tabel van het lijnelement
+        # Faces of beams: nodes from the Mecway table of the line element
         conn = dict((e, en) for e, s, en, _es in
                     self.md.get("mesh_elements", []) if s.startswith("line"))
         for eid, fid in self.md.get("face_selection_faces", {}).get(sel, []):
@@ -1156,8 +1158,8 @@ class _Thermal(object):
         return out
 
     def node_target(self, sel, kind, label):
-        """('GROUP_MA'|'GROUP_NO', groep) voor TEMP_IMPO / beginwaarden;
-        alleen gemodelleerde knopen (anders een eigen knoopgroep)."""
+        """('GROUP_MA'|'GROUP_NO', group) for TEMP_IMPO / initial values;
+        only modelled nodes (otherwise a separate node group)."""
         nodes = self.selection_nodes(sel, kind)
         keep = sorted(nodes & self.modelled)
         if not keep:
@@ -1181,10 +1183,10 @@ class _Thermal(object):
             sub, _fmt_seq(["'N{0}'".format(n) for n in keep])))
         return ("GROUP_NO", sub)
 
-    # ---------- waarden en functies ----------
+    # ---------- values and functions ----------
     def formula_coords(self):
-        """{"x"|"y"|"z": uitdrukking in X, Y, Z van Code-Aster}. Met een
-        gedraaid mesh (_shell_rotation: x_rot = Q x) is x = Q^T x_rot."""
+        """{"x"|"y"|"z": expression in X, Y, Z of Code-Aster}. With a
+        rotated mesh (_shell_rotation: x_rot = Q x), x = Q^T x_rot."""
         if not self.rotation:
             return {"x": "X", "y": "Y", "z": "Z"}
         q = self.rotation[0]
@@ -1195,7 +1197,7 @@ class _Thermal(object):
         return out
 
     def formula(self, fobj):
-        """Naam van een FORMULE voor een Formula (Mecway-formule)."""
+        """Name of a FORMULE for a Formula (Mecway formula)."""
         import bridge_bcs
         expr, params, args = fobj.render(
             self.formula_coords(), "INST" if self.transient else "1.0")
@@ -1204,7 +1206,7 @@ class _Thermal(object):
         self.counter += 1
         name = "FF{0}".format(self.counter)
         if not params:
-            # Alleen t in een stationaire analyse: t = 1 s ingevuld
+            # Only t in a steady-state analysis: t = 1 s filled in
             params = ["INST"]
         self.func_params[name] = list(params)
         self.funcs.append("{0} = FORMULE(\n    VALE='{1}',\n    NOM_PARA={2},"
@@ -1217,19 +1219,19 @@ class _Thermal(object):
         return name
 
     def steady(self, value, label):
-        """Stationair: een tijdstabel wordt de waarde op t = 1 s, zoals
-        Mecway met CCX. Gemeten met Mecway 33 (headless 'mecway <model>
+        """Steady state: a time table becomes the value at t = 1 s, as
+        Mecway with CCX. Measured with Mecway 33 (headless 'mecway <model>
         solve', T30):
-          - CCX (solver="ccx"): lineair geïnterpoleerd op t = 1 s, het einde
-            van de stap (temperature2 0 s/300 K, 2 s/500 K -> 400 K; 0,5 s/
-            300 K, 0,8 s/600 K, 2 s/500 K -> 583,33 K; ook met <timesteps
-            timeperiod="2 s">; convectie en heatgeneration idem);
-          - interne solver: een grootheid met een tabel telt als 0
-            (heatgeneration met elke tabel: geen bron; convectie met een
-            tabel voor T_omg: rekent met 0 K, voor h: geen convectie;
-            temperature2 met een tabel: niet opgelegd).
-        De bridge volgt CCX en meldt het verschil met de interne solver.
-        Een formule in t krijgt t = 1 s (NIET met Mecway vergeleken)."""
+          - CCX (solver="ccx"): linearly interpolated at t = 1 s, the end
+            of the step (temperature2 0 s/300 K, 2 s/500 K -> 400 K; 0.5 s/
+            300 K, 0.8 s/600 K, 2 s/500 K -> 583.33 K; also with <timesteps
+            timeperiod="2 s">; convection and heatgeneration likewise);
+          - internal solver: a quantity with a table counts as 0
+            (heatgeneration with any table: no source; convection with a
+            table for T_amb: computes with 0 K, for h: no convection;
+            temperature2 with a table: not imposed).
+        The bridge follows CCX and reports how the internal solver differs.
+        A formula in t gets t = 1 s (NOT compared with Mecway)."""
         if isinstance(value, Formula):
             if "t" not in value.used:
                 return value
@@ -1244,8 +1246,8 @@ class _Thermal(object):
         if isinstance(value, list):
             v = _interpolate(value, 1.0)
             if str(self.md.get("analysis_solver", "")).lower() == "ccx":
-                log("INFO: {0}: tijdstabel in een stationaire analyse; "
-                    "waarde op t = 1 s gebruikt ({1}), zoals Mecway met "
+                log("INFO: {0}: time table in a steady-state analysis; "
+                    "value at t = 1 s used ({1}), as Mecway does with "
                     "CCX.".format(label, _r(v)))
             else:
                 log(tr("WARNING: {0}: tijdstabel in een stationaire analyse; "
@@ -1265,8 +1267,8 @@ class _Thermal(object):
         return value
 
     def func(self, value):
-        """Naam van een DEFI_FONCTION (lijst), FORMULE (Formula) of
-        DEFI_CONSTANTE (getal)."""
+        """Name of a DEFI_FONCTION (list), FORMULE (Formula) or
+        DEFI_CONSTANTE (number)."""
         if isinstance(value, Formula):
             return self.formula(value)
         self.counter += 1
@@ -1285,7 +1287,7 @@ class _Thermal(object):
         return name
 
     def temp_func(self, name, values_c):
-        """DEFI_FONCTION van TEMP (Celsius), lineair verlengd."""
+        """DEFI_FONCTION of TEMP (Celsius), extended linearly."""
         self.funcs.append(
             "{0} = DEFI_FONCTION(NOM_PARA='TEMP', VALE=(\n    {1},\n), "
             "PROL_GAUCHE='LINEAIRE', PROL_DROITE='LINEAIRE')".format(
@@ -1293,9 +1295,9 @@ class _Thermal(object):
                                      for t, v in values_c)))
 
     def add_charge(self, kw_entries):
-        """Een last: kw_entries = [(kw, {param: waarde of lijst}, groep)].
-        Met een tijdstabel wordt alles AFFE_CHAR_THER_F met functies; een
-        SOURCE met een functie gaat naar de gezamenlijke bronlast
+        """One load: kw_entries = [(kw, {param: value or list}, group)].
+        With a time table it all becomes AFFE_CHAR_THER_F with functions;
+        a SOURCE with a function goes to the combined source load
         (add_func_source)."""
         timed = any(_is_timed(v) for _k, p, _g in kw_entries
                     for v in p.values())
@@ -1314,26 +1316,26 @@ class _Thermal(object):
                                  "AFFE_CHAR_THER", excit))
 
     def add_func_source(self, grp, name):
-        """SOURCE met functie 'name' op groep grp (de elementen staan in
-        self.group_cells). Alle functiebronnen komen samen in een last
-        (merged_sources): Code-Aster 17.4 rekent twee lasten
-        AFFE_CHAR_THER_F met SOURCE in een EXCIT-lijst allebei met de
-        functie van de eerste last (gemeten: twee helften met 2e6*t en een
-        tijdstabel gaven 2x de eerste, in omgekeerde volgorde 2x de
-        tweede). Een last met meer SOURCE-regels rekent goed, net als twee
-        functielasten met FLUX_REP, ECHANGE of SOUR_NL en met
-        AFFE_CHAR_MECA_F (FORCE_INTERNE, FORCE_FACE, PRES_REP) (gemeten met
-        Code-Aster 17.4). De oorzaak zit in de gecompileerde code: NIET
-        geverifieerd. De plaats van de eerste functiebron in self.charges
-        wordt een merkteken (None), zodat de volgorde van EXCIT blijft."""
+        """SOURCE with function 'name' on group grp (the elements are in
+        self.group_cells). All function sources go together into one load
+        (merged_sources): Code-Aster 17.4 computes two loads
+        AFFE_CHAR_THER_F with SOURCE in one EXCIT list both with the
+        function of the first load (measured: two halves with 2e6*t and a
+        time table gave 2x the first, in reverse order 2x the
+        second). One load with several SOURCE lines is correct, as are two
+        function loads with FLUX_REP, ECHANGE or SOUR_NL and with
+        AFFE_CHAR_MECA_F (FORCE_INTERNE, FORCE_FACE, PRES_REP) (measured with
+        Code-Aster 17.4). The cause is in the compiled code: NOT
+        verified. The place of the first function source in self.charges
+        becomes a marker (None), so that the order of EXCIT is kept."""
         if not self.func_sources:
             self.charges.append(None)
         self.func_sources.append({"grp": grp, "sour": name,
                                   "eids": self.group_cells.get(grp)})
 
     def source_items(self):
-        """De functiebronnen als items voor merged_sources: term (aanroep
-        in een FORMULE), ctx (argumenten van die FORMULE), params."""
+        """The function sources as items for merged_sources: term (call
+        in a FORMULE), ctx (arguments of that FORMULE), params."""
         items = []
         for s in self.func_sources:
             p = self.func_params.get(s["sour"], ["INST"])
@@ -1350,22 +1352,22 @@ class _Thermal(object):
 
     def merged_sources(self, items, owner=None, born=None, prefix="FQ"):
         """
-        SOURCE-regels voor een AFFE_CHAR_THER_F met alle functiebronnen
-        (items, zie source_items; bridge_welding voegt de lasbronnen toe).
-        In een last overschrijft een latere SOURCE-regel op hetzelfde
-        element de eerdere (gemeten met Code-Aster 17.4: de hele wand met
-        f1 en daarna een helft met f2 gaf op die helft alleen f2). Daarom
-        wordt het mesh
-        verdeeld naar de bronnen die op het element liggen (en owner[eid],
-        het toevoegmateriaal van een lasbron); per deel een FORMULE met de
-        som (FORMULEs en DEFI_FONCTIONs als argument aangeroepen),
-        met toevoegmateriaal alleen waar het al geboren is: born(j) =
-        (voorwaarde, {naam: argument}). Een bron die met niets overlapt
-        houdt zijn eigen groep en functie (de .comm met een bron blijft
-        gelijk). Gekozen boven een FORMULE met indicatortermen per groep:
-        die zou de groep uit X, Y, Z moeten afleiden, wat op de rand
-        tussen twee groepen niet eenduidig is.
-        Returns ([FORMULE-regels], [_F-regels]) of None (ERROR gemeld).
+        SOURCE lines for an AFFE_CHAR_THER_F with all function sources
+        (items, see source_items; bridge_welding adds the welding sources).
+        Within one load a later SOURCE line on the same element overrides
+        the earlier one (measured with Code-Aster 17.4: the whole wall with
+        f1 and then one half with f2 gave only f2 on that half). Therefore
+        the mesh is
+        split by the sources that lie on the element (and owner[eid],
+        the filler material of a welding source); per part a FORMULE with
+        the sum (FORMULEs and DEFI_FONCTIONs called as argument),
+        with filler material only where it is already born: born(j) =
+        (condition, {name: argument}). A source that overlaps nothing
+        keeps its own group and function (the .comm with one source stays
+        the same). Chosen over a FORMULE with indicator terms per group:
+        that would have to derive the group from X, Y, Z, which is not
+        unambiguous on the boundary between two groups.
+        Returns ([FORMULE lines], [_F lines]) or None (ERROR reported).
         """
         owner = owner or {}
         member = OrderedDict()
@@ -1427,13 +1429,13 @@ class _Thermal(object):
             return None
         overlap = sum(1 for k in parts if len(k[0]) > 1)
         if len(items) > 1:
-            log("INFO: {0} warmtebronnen als functie in een last (Code-Aster "
-                "17.4 rekent meer functielasten met SOURCE als de eerste); "
-                "{1} deel/delen van het mesh met de som van overlappende "
-                "bronnen.".format(len(items), overlap))
+            log("INFO: {0} heat sources as functions in one load (Code-Aster "
+                "17.4 computes multiple SOURCE function loads as the first); "
+                "{1} part(s) of the mesh with the sum of overlapping "
+                "sources.".format(len(items), overlap))
         return lines, entries
 
-    # ---------- belastingen ----------
+    # ---------- loads ----------
     def apply_loads(self):
         for load in self.th["loads"]:
             tag, sel, target = load["tag"], load["sel"], load["target"]
@@ -1474,33 +1476,33 @@ class _Thermal(object):
                     self.apply_exchange(load, label)
         self.apply_node_temperatures()
 
-    # ---------- verlijmd contact ----------
+    # ---------- bonded contact ----------
     def bonded_loads(self):
         """
-        Verlijmd contact (contact2 bondedtie/bondedce/bondedelastic,
-        model_data["bonded"] uit bridge_mesh._bonded) in een thermische
-        analyse. Mecway: bij thermisch krijgt de slave-knoop de waarde in
-        het geprojecteerde punt op het master-vlak; 'elastic' is thermisch
-        een weerstandslaag met "Thermal conductance per unit area" (manual
-        v33 par. 9.9.1).
-          - tie / constraint equations (en elastic waar ECHANGE_PAROI niet
-            kan): AFFE_CHAR_THER LIAISON_MAIL (catalogus affe_char_ther.py
-            v17.4: GROUP_MA_MAIT, GROUP_NO_ESCL, DISTANCE_MAX; geen
-            TYPE_RACCORD of DDL, alleen TEMP). Master: de moederelementen
-            (volumes) of de schaalelementen, zoals mechanisch.
+        Bonded contact (contact2 bondedtie/bondedce/bondedelastic,
+        model_data["bonded"] from bridge_mesh._bonded) in a thermal
+        analysis. Mecway: in thermal analysis the slave node gets the value
+        at the projected point on the master face; 'elastic' is thermally
+        a resistance layer with "Thermal conductance per unit area" (manual
+        v33 sec. 9.9.1).
+          - tie / constraint equations (and elastic where ECHANGE_PAROI is
+            not possible): AFFE_CHAR_THER LIAISON_MAIL (catalog
+            affe_char_ther.py v17.4: GROUP_MA_MAIT, GROUP_NO_ESCL,
+            DISTANCE_MAX; no TYPE_RACCORD or DDL, only TEMP). Master: the
+            parent elements (volumes) or the shell elements, as mechanical.
           - elastic: AFFE_CHAR_THER ECHANGE_PAROI (GROUP_MA_1/GROUP_MA_2,
-            COEF_H = geleiding per oppervlak; U4.44.02, testcases ttlp101a
-            en tplv101c) tussen de randvlakken van beide kanten. Alleen
-            volumevlakken die knoop op knoop tegenover elkaar liggen
-            (_conforming_faces); anders tie + WARNING + skipped_loads.
-          - Volumes en schalen (PLAN) samen in het model: dan kan geen van
-            beide (Code-Aster 17.4: LIAISON_MAIL <EXCEPTION> CHARGES7_6
+            COEF_H = conductance per area; U4.44.02, test cases ttlp101a
+            and tplv101c) between the boundary faces of both sides. Only
+            volume faces that face each other node for node
+            (_conforming_faces); otherwise tie + WARNING + skipped_loads.
+          - Volumes and shells (PLAN) together in the model: then neither
+            works (Code-Aster 17.4: LIAISON_MAIL <EXCEPTION> CHARGES7_6
             "mélange d'éléments 2D ... et 3D. Il n'est pas possible de
-            réaliser une liaison", schaalrand op een blok; ECHANGE_PAROI
+            réaliser une liaison", shell edge on a block; ECHANGE_PAROI
             <EXCEPTION> CHARGES6_2 "le modèle fourni doit être homogène en
-            dimension", twee blokken met een losse schaal); ERROR +
+            dimension", two blocks with a loose shell); ERROR +
             skipped_loads.
-        Verificatie TH-04 (tests_thermisch.py).
+        Verification TH-04 (tests_thermisch.py).
         """
         mixed = len(set(i["cls"] for i in self.elsets.values())) > 1
         for b in self.md.get("bonded", []):
@@ -1561,15 +1563,15 @@ class _Thermal(object):
                 parts.append("DISTANCE_MAX={0}".format(_r(b["distance"])))
             self.charges.append(("AFFE_CHAR_THER", OrderedDict(
                 [("LIAISON_MAIL", ["_F({0})".format(", ".join(parts))])])))
-            log("INFO: {0} -> AFFE_CHAR_THER LIAISON_MAIL (TEMP van de "
-                "slave-knopen = TEMP op het master-vlak).".format(label))
+            log("INFO: {0} -> AFFE_CHAR_THER LIAISON_MAIL (TEMP of the "
+                "slave nodes = TEMP on the master face).".format(label))
 
     def _bonded_groups(self, b, label):
-        """(master-elementgroep, slave-knoopgroep) in het thermische mesh.
-        BRMAIT/BRESCL (bridge_mesh._bonded) maakt alleen de mechanische
-        DEFI_GROUP aan (bridge_to_aster._build_defigroup_block); hier eigen
-        groepen, zodat de keten thermisch -> mechanisch (zelfde mesh) ze
-        niet twee keer aanmaakt."""
+        """(master element group, slave node group) in the thermal mesh.
+        BRMAIT/BRESCL (bridge_mesh._bonded) only creates the mechanical
+        DEFI_GROUP (bridge_to_aster._build_defigroup_block); here separate
+        groups, so that the chain thermal -> mechanical (same mesh) does
+        not create them twice."""
         master = b["master"]
         eids = self.md.get("extra_ma_groups", {}).get(master)
         if eids is not None:
@@ -1591,8 +1593,8 @@ class _Thermal(object):
         return master, slave
 
     def _bonded_exchange(self, b, label, parts_m, parts_s):
-        """Elastic: ECHANGE_PAROI als dat kan (None), anders de reden
-        (tekst; de aanroeper meldt en maakt er een tie van)."""
+        """Elastic: ECHANGE_PAROI if possible (None), otherwise the reason
+        (text; the caller reports it and makes it a tie)."""
         h = b.get("conductance")
         if not h or h <= 0.0:
             return tr("geen 'Thermal conductance per unit area' in de .liml",
@@ -1618,12 +1620,12 @@ class _Thermal(object):
                                   _fmt_groups([t[1] for t in found_s[0]]),
                                   _r(h))])])))
         log("INFO: {0} -> AFFE_CHAR_THER ECHANGE_PAROI COEF_H = {1} "
-            "W/m2/K (weerstandslaag).".format(label, _r(h)))
+            "W/m2/K (resistance layer).".format(label, _r(h)))
         return None
 
     def _conforming_faces(self, parts_m, parts_s):
-        """True als elk slave-vlak dezelfde knooppunten (coordinaten) heeft
-        als een master-vlak en omgekeerd."""
+        """True if every slave face has the same nodes (coordinates)
+        as a master face and vice versa."""
         size = 0.0
         if self.nodes:
             for c in range(3):
@@ -1700,10 +1702,10 @@ class _Thermal(object):
                       .format(label))
             return
         if load["tag"] == "heatflow":
-            # Totaal over alle vlakken, gelijkmatig per oppervlak (manual
-            # v33 par. 9.27); schaalranden: lengte x dikte.
+            # Total over all faces, uniform per area (manual
+            # v33 sec. 9.27); shell edges: length x thickness.
             q = _scale(q, 1.0 / area)
-            log("INFO: {0}: totaal oppervlak {1} m2.".format(label, area))
+            log("INFO: {0}: total area {1} m2.".format(label, area))
             if self.inactive_faces.get(load["sel"]):
                 self.skip(tr("{0}: deel op vlakken van balken; het totaal "
                              "is over de overige vlakken verdeeld",
@@ -1716,19 +1718,19 @@ class _Thermal(object):
                 entries.append(("FLUX_REP", {"FLUN": q}, grp))
             elif kind == "shelledge":
                 entries.append(("FLUX_REP", {"FLUN": _scale(q, f)}, grp))
-            else:   # schaalvlak: bron q/t per volume (maal f)
+            else:   # shell face: source q/t per volume (times f)
                 entries.append(("SOURCE", {"SOUR": _scale(q, f / t)}, grp))
         self.add_charge(entries)
 
     def apply_node_flow(self, load, label):
-        """heatflow op knopen: Mecway verdeelt de warmtestroom gelijk over
-        de knopen (manual v33 par. 9.27, "divided equally between each
-        node"). AFFE_CHAR_THER kent geen puntbron en THER_LINEAIRE/
-        THER_NON_LINE geen EXCIT met een vector (catalogi
-        affe_char_ther.py, ther_lineaire.py, ther_non_line.py), wel SOURCE
-        SOUR_CALCULEE met een knoopveld s (W/m3). Dat geeft knooplasten
-        M s met M = int(N_i N_j dV) (MASS_THER met RHO_CP = 1); met
-        s = M^-1 F (RESOUDRE) zijn de knooplasten precies F (zie
+        """heatflow on nodes: Mecway distributes the heat flow equally over
+        the nodes (manual v33 sec. 9.27, "divided equally between each
+        node"). AFFE_CHAR_THER has no point source and THER_LINEAIRE/
+        THER_NON_LINE no EXCIT with a vector (catalogs
+        affe_char_ther.py, ther_lineaire.py, ther_non_line.py), but SOURCE
+        SOUR_CALCULEE with a nodal field s (W/m3) works. That gives nodal
+        loads M s with M = int(N_i N_j dV) (MASS_THER with RHO_CP = 1); with
+        s = M^-1 F (RESOUDRE) the nodal loads are exactly F (see
         node_flow_block)."""
         if isinstance(load["value"], Formula) and load["value"].positional():
             self.skip(tr("{0}: formule in x, y, z op knopen",
@@ -1745,22 +1747,22 @@ class _Thermal(object):
                          "{0}: {1} of {2} nodes without a modelled element; "
                          "their share of the heat flow is dropped").format(
                              label, len(nodes) - keep, len(nodes)))
-        # Per knoop; met schalen als PLAN in modeleenheden (diepte t_ref).
+        # Per node; with shells as PLAN in model units (depth t_ref).
         self.node_flows.append((tgt[1], _scale(
             load["value"], 1.0 / (len(nodes) * self.t_ref))))
-        log("INFO: {0}: warmtestroom gelijk verdeeld over {1} knopen.".format(
+        log("INFO: {0}: heat flow split equally over {1} nodes.".format(
             label, len(nodes)))
 
     def node_flow_block(self):
-        """(.comm-blok, [EXCIT-entries]) voor heatflow op knopen: per last
-        de knooplasten F (NOEU_TEMP_R), een bronveld s = M^-1 F
-        (CALC_MATR_ELEM MASS_THER met RHO_CP = 1, RESOUDRE) en een last
-        SOURCE SOUR_CALCULEE = s; met een tijdstabel s voor 1 W per knoop
-        en FONC_MULT = de tabel."""
+        """(.comm block, [EXCIT entries]) for heatflow on nodes: per load
+        the nodal loads F (NOEU_TEMP_R), a source field s = M^-1 F
+        (CALC_MATR_ELEM MASS_THER with RHO_CP = 1, RESOUDRE) and a load
+        SOURCE SOUR_CALCULEE = s; with a time table s for 1 W per node
+        and FONC_MULT = the table."""
         if not self.node_flows:
             return "", []
         lines = [
-            "# heatflow op knopen: bron s = M^-1 F (bridge_thermal."
+            "# heatflow on nodes: source s = M^-1 F (bridge_thermal."
             "apply_node_flow)",
             "MTHUNIT = DEFI_MATERIAU(THER=_F(LAMBDA=1.0, RHO_CP=1.0))",
             "fm_unit = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, "
@@ -1783,7 +1785,7 @@ class _Thermal(object):
                 "NOM_CMP='TEMP', VALE={2})))".format(
                     k + 1, grp, "1.0" if timed else _r(value)),
                 "tn_{0} = RESOUDRE(MATR=ma_unit, CHAM_NO=qn_{0})".format(k + 1),
-                # SOUR_CALCULEE wil grandeur SOUR_R (CALCUL_5 met TEMP_R)
+                # SOUR_CALCULEE wants grandeur SOUR_R (CALCUL_5 with TEMP_R)
                 "sn_{0} = CREA_CHAMP(TYPE_CHAM='NOEU_SOUR_R', "
                 "OPERATION='ASSE', MODELE=model, ASSE=_F(TOUT='OUI', "
                 "CHAM_GD=tn_{0}, NOM_CMP='TEMP', NOM_CMP_RESU='SOUR'))"
@@ -1813,7 +1815,7 @@ class _Thermal(object):
             return
         if not per_volume:
             s = _scale(s, 1.0 / vol)
-            log("INFO: {0}: totaal volume {1} m3.".format(label, vol))
+            log("INFO: {0}: total volume {1} m3.".format(label, vol))
         entries = []
         for _kind, grp, f, _t in targets:
             entries.append(("SOURCE", {"SOUR": _scale(s, f)}, grp))
@@ -1849,8 +1851,8 @@ class _Thermal(object):
             self.add_charge(entries)
 
     def shell_face_exchange(self, load, label, grp, f, t, amb, conv):
-        """Convectie/straling op een schaalvlak (PLAN): bron f/t * q(T)
-        (SOUR_NL, functie van TEMP; U4.44.02 SOUR_NL)."""
+        """Convection/radiation on a shell face (PLAN): source f/t * q(T)
+        (SOUR_NL, function of TEMP; U4.44.02 SOUR_NL)."""
         vals = [load.get("coef"), load.get("emissivity"), amb]
         if any(isinstance(v, Formula) for v in vals):
             self.skip(tr("{0}: formule voor convectie/straling op een "
@@ -1883,16 +1885,16 @@ class _Thermal(object):
             ("SOUR_NL", ["_F(GROUP_MA='{0}', SOUR={1})".format(grp, name)])])))
 
     def shell_face_exchange_timed(self, grp, k, amb, load, conv):
-        """Idem met een tijdstabel (h, T_omg of emissiviteit). SOUR_NL
-        geeft de functie alleen TEMP (een FORMULE van TEMP en INST gaf in
+        """Same with a time table (h, T_amb or emissivity). SOUR_NL
+        gives the function only TEMP (a FORMULE of TEMP and INST gave in
         THER_NON_LINE "NameError: name 'INST' is not defined", Code-Aster
-        17.4), dus gesplitst in een bron en een put:
-          convectie: k*h*(Ta - T) = k*h(t)*Ta(t)  (SOURCE, FORMULE van INST)
-                                  - k*h(t)*T      (SOUR_NL van TEMP)
-          straling:  k*sigma*eps(t)*((Ta(t)+273,15)^4 - (T+273,15)^4) idem.
-        Een tabel voor h of eps gaat in de put als EXCIT FONC_MULT (de
-        SOUR_NL-functie dan met coëfficiënt 1). Tabellen: DEFI_FONCTION van
-        INST, PROL CONSTANT (zoals Mecway, manual v33 par. 9)."""
+        17.4), so split into a source and a sink:
+          convection: k*h*(Ta - T) = k*h(t)*Ta(t)  (SOURCE, FORMULE of INST)
+                                   - k*h(t)*T      (SOUR_NL of TEMP)
+          radiation:  k*sigma*eps(t)*((Ta(t)+273.15)^4 - (T+273.15)^4) idem.
+        A table for h or eps goes into the sink as EXCIT FONC_MULT (the
+        SOUR_NL function then with coefficient 1). Tables: DEFI_FONCTION of
+        INST, PROL CONSTANT (as Mecway, manual v33 sec. 9)."""
         coef = load["coef"] if conv else load["emissivity"]
         args = OrderedDict()
         names = {}
@@ -1917,7 +1919,7 @@ class _Thermal(object):
                           .format(src, expr, "".join(
                               ", {0}={1}".format(a, b)
                               for a, b in args.items())))
-        # Put: -c*coef*T (convectie) of -c*coef*(T+273,15)^4 (straling)
+        # Sink: -c*coef*T (convection) or -c*coef*(T+273.15)^4 (radiation)
         timed_coef = isinstance(coef, list)
         c0 = c * (1.0 if timed_coef else coef)
         self.counter += 1
@@ -1939,15 +1941,15 @@ class _Thermal(object):
             ("SOUR_NL", ["_F(GROUP_MA='{0}', SOUR={1})".format(grp, sink)])]),
             names.get("c")))
 
-    # ---------- blokken ----------
+    # ---------- blocks ----------
     def defigroup_block(self):
         out = []
         if self.rotation:
             _q, k, ang = self.rotation
-            # Alarm MODELE1_53 ("Le maillage est 3D ...") blijft: Code-Aster
-            # bepaalt de dimensie van het mesh bij LIRE_MAILLAGE; de
-            # schalen liggen na de draaiing wel in een vlak Z = constant
-            # (resultaten gelijk aan Mecway, zie _shell_rotation).
+            # Alarm MODELE1_53 ("Le maillage est 3D ...") remains: Code-Aster
+            # determines the dimension of the mesh at LIRE_MAILLAGE; after
+            # the rotation the shells do lie in a plane Z = constant
+            # (results equal to Mecway, see _shell_rotation).
             out.append("# Schalen naar een vlak Z = constant (PLAN), zie "
                        "bridge_thermal._shell_rotation\nmesh = MODI_MAILLAGE("
                        "\n    reuse=mesh,\n    MAILLAGE=mesh,\n    ROTATION="
@@ -1969,12 +1971,12 @@ class _Thermal(object):
                        "\n    CREA_GROUP_MA=(\n        {0},\n    ),\n)\n".format(
                            ",\n        ".join(self.crea_ma2)))
         if self.skin3d:
-            # Vlakken van volumes met de normaal naar buiten (MODI_MAILLAGE
-            # ORIE_PEAU, zoals de mechanische builders).
+            # Faces of volumes with the normal pointing outward (MODI_MAILLAGE
+            # ORIE_PEAU, as in the mechanical builders).
             out.append("mesh = MODI_MAILLAGE(\n    reuse=mesh,\n    MAILLAGE="
                        "mesh,\n    ORIE_PEAU=_F(GROUP_MA_PEAU={0}),\n)\n".format(
                            _fmt_groups(self.skin3d)))
-        return "\n".join(out) if out else "#-- geen extra groepen --\n"
+        return "\n".join(out) if out else "#-- no extra groups --\n"
 
     def model_block(self):
         solids = [g for g, i in self.elsets.items() if i["cls"] == "solid"]
@@ -1987,22 +1989,22 @@ class _Thermal(object):
                             "MODELISATION='{1}')".format(_fmt_groups(groups),
                                                          mod))
         if self.birth:
-            # Toevoegmateriaal (bridge_welding): diagonale warmtecapaciteit
-            # (3D_DIAG, testcase ttnp201a), na de volumes (de laatste
-            # toewijzing telt). Met de consistente capaciteit volgde een
-            # stil knooppunt via de massakoppeling de temperatuursnelheid
-            # van zijn warme buren (WE-13: +138 K voor de geboorte, met een
-            # dip eronder bij het opwarmen); diagonaal niet.
+            # Filler material (bridge_welding): diagonal heat capacity
+            # (3D_DIAG, test case ttnp201a), after the volumes (the last
+            # assignment counts). With the consistent capacity a node at rest
+            # followed the temperature rate of its hot neighbours via the mass
+            # coupling (WE-13: +138 K before birth, with a dip below it during
+            # heating); not with the diagonal one.
             affe.append("_F(GROUP_MA='{0}', PHENOMENE='THERMIQUE', "
                         "MODELISATION='3D_DIAG')".format(self.birth["all"]))
         return ("model = AFFE_MODELE(\n    MAILLAGE=mesh,\n    AFFE=(\n"
                 "        {0},\n    ),\n)\n").format(",\n        ".join(affe))
 
     def materials_blocks(self):
-        """(DEFI_MATERIAU-blok, AFFE_MATERIAU-blok). Met schalen f != 1 ook
-        'fieldmat_post' zonder factor: CALC_CHAMP rekent de warmteflux
-        daarmee (-lambda grad T met de echte lambda; CALC_CHAMP CHAM_MATER,
-        catalogus calc_champ.py)."""
+        """(DEFI_MATERIAU block, AFFE_MATERIAU block). With shells f != 1
+        also 'fieldmat_post' without factor: CALC_CHAMP computes the heat
+        flux with it (-lambda grad T with the real lambda; CALC_CHAMP
+        CHAM_MATER, catalog calc_champ.py)."""
         lines = []
         fieldmat = self._fieldmat("fieldmat", "MTH", True, lines)
         if self.scaled():
@@ -2013,7 +2015,7 @@ class _Thermal(object):
         return any(abs(i["f"] - 1.0) > 1.0e-12 for i in self.elsets.values())
 
     def _fieldmat(self, concept, prefix, with_f, lines):
-        # Lokaal, zoals in build_thermal (bridge_to_aster importeert deze
+        # Local, as in build_thermal (bridge_to_aster imports this
         # module).
         import bridge_to_aster as bta
         mats = self.th["materials"]
@@ -2028,11 +2030,11 @@ class _Thermal(object):
                 lam = p["lambda"] * f
                 rcp = p["rho"] * p["cp"] * f
                 if "lambda_T" in p or "cp_T" in p:
-                    # Temperatuurafhankelijk (Mecway TempDependent, manual
-                    # v33 par. 8.6: lineair geïnterpoleerd, buiten de tabel
-                    # het dichtstbijzijnde punt -> PROL CONSTANT). THER_NL
-                    # met RHO_CP als functie van TEMP: Code-Aster bepaalt
-                    # daaruit de enthalpie BETA (U4.43.01 THER_NL; R5.02.02).
+                    # Temperature-dependent (Mecway TempDependent, manual
+                    # v33 sec. 8.6: linearly interpolated, outside the table
+                    # the nearest point -> PROL CONSTANT). THER_NL
+                    # with RHO_CP as a function of TEMP: Code-Aster derives
+                    # the enthalpy BETA from it (U4.43.01 THER_NL; R5.02.02).
                     lines.append(self._tempdep_funcs(
                         names[key], p, f, lam, rcp))
                     body = ("THER_NL=_F(LAMBDA={0}_L, RHO_CP={0}_C)"
@@ -2047,8 +2049,8 @@ class _Thermal(object):
                 if with_f:
                     # META_ACIER / DURT_META (bridge_metallurgy.apply)
                     body += getattr(self, "meta_kw", {}).get(info["mat"], "")
-                # Naam gefilterd zoals in de mechanische builders (alleen
-                # ASCII, geen regeleinde; bridge_to_aster._mat_comment).
+                # Name filtered as in the mechanical builders (only
+                # ASCII, no line break; bridge_to_aster._mat_comment).
                 lines.append("{0}{1}\n{2} = DEFI_MATERIAU({3})".format(
                     bta._mat_comment(info["mat"]).rstrip("\n"),
                     "" if f == 1.0 else " (schaal, f = {0})".format(_r(f)),
@@ -2057,9 +2059,9 @@ class _Thermal(object):
                 elset, names[key]))
         varc = ""
         if self.birth and with_f:
-            # Toevoegmateriaal dat geboren wordt (#ASTER-LASBRON geboorte=,
-            # bridge_welding): eigen materiaal op de elementen, na de elsets
-            # (de laatste toewijzing telt, U4.43.03 AFFE_MATERIAU).
+            # Filler material that is born (#ASTER-LASBRON geboorte=,
+            # bridge_welding): own material on the elements, after the elsets
+            # (the last assignment counts, U4.43.03 AFFE_MATERIAU).
             import bridge_welding
             b_lines, b_affe, varc = bridge_welding.birth_materials(self, names)
             lines += b_lines
@@ -2072,23 +2074,23 @@ class _Thermal(object):
 
     @staticmethod
     def _tempdep_funcs(name, p, f, lam, rcp, f_lambda=None):
-        """DEFI_FONCTION van TEMP (Celsius) voor LAMBDA ({name}_L) en
-        RHO_CP ({name}_C); zonder tabel een constante functie. f_lambda:
-        eigen factor voor lambda (anders f; toevoegmateriaal, bridge_welding
+        """DEFI_FONCTION of TEMP (Celsius) for LAMBDA ({name}_L) and
+        RHO_CP ({name}_C); without a table a constant function. f_lambda:
+        own factor for lambda (else f; filler material, bridge_welding
         .birth_materials)."""
         def func(concept, table, scale, const):
             if not table:
                 return "{0} = DEFI_CONSTANTE(VALE={1})".format(concept,
                                                              _r(const))
-            # De tabel expliciet constant verlengen tot 0 K en tot 10 000 K
-            # boven het laatste punt, en RHO_CP verfijnen (_refine_table).
-            # Gemeten (Code-Aster 17.4, verificatie WE-04b, staaf met cp
-            # 450..750 J/kg/K op 300/800/1300 K, start op 293,15 K): met de
-            # Mecway-tabel zelf miste na de eerste stap 13% van de
-            # ingebrachte energie (na 2 s 2,8%); verlengd 10%; verlengd en
-            # verfijnd 0,01%. THER_NON_LINE leidt de enthalpie BETA af uit
-            # de tabelpunten van RHO_CP (zie _refine_table); buiten het
-            # bereik telde de verlenging van RHO_CP niet volledig mee.
+            # Extend the table explicitly (constant) to 0 K and to 10 000 K
+            # above the last point, and refine RHO_CP (_refine_table).
+            # Measured (Code-Aster 17.4, verification WE-04b, bar with cp
+            # 450..750 J/kg/K at 300/800/1300 K, start at 293.15 K): with the
+            # Mecway table itself 13% of the input energy was missing after
+            # the first step (2.8% after 2 s); extended 10%; extended and
+            # refined 0.01%. THER_NON_LINE derives the enthalpy BETA from
+            # the table points of RHO_CP (see _refine_table); outside the
+            # range the extension of RHO_CP did not fully count.
             table = [(-KELVIN, table[0][1])] + \
                 [r for r in table if r[0] > -KELVIN] + \
                 [(table[-1][0] + 1.0e4, table[-1][1])]
@@ -2105,7 +2107,7 @@ class _Thermal(object):
             func(name + "_C", p.get("cp_T"), p["rho"] * f, rcp)])
 
     def check_capacity(self):
-        """Transient: elke elset heeft rho*cp > 0 nodig."""
+        """Transient: every elset needs rho*cp > 0."""
         bad = [g for g, i in self.elsets.items()
                if self.th["materials"][i["mat"]]["rho"] *
                self.th["materials"][i["mat"]]["cp"] <= 0.0]
@@ -2127,8 +2129,8 @@ class _Thermal(object):
                 "AFFE_CHAR_THER_F", OrderedDict(
                     [("TEMP_IMPO", self.temp_timed)])))
         if None in charges:
-            # Het merkteken van add_func_source: alle functiebronnen in een
-            # last, of niets als bridge_welding ze in 'lasbron' zette
+            # The marker of add_func_source: all function sources in one
+            # load, or nothing if bridge_welding put them in 'lasbron'
             pos = charges.index(None)
             if self.sources_taken:
                 del charges[pos]
@@ -2142,7 +2144,7 @@ class _Thermal(object):
         blocks = []
         excit = []
         for k, charge in enumerate(charges):
-            # (commando, kw's) of (commando, kw's, FONC_MULT)
+            # (command, kws) or (command, kws, FONC_MULT)
             command, kws = charge[0], charge[1]
             mult = charge[2] if len(charge) > 2 else None
             name = "load_{0}".format(k + 1)
@@ -2160,7 +2162,7 @@ class _Thermal(object):
         return "\n".join(blocks), excit
 
     def initial_block(self):
-        """CREA_CHAMP met de begintemperatuur (Celsius) voor ETAT_INIT."""
+        """CREA_CHAMP with the initial temperature (Celsius) for ETAT_INIT."""
         affe = ["_F(TOUT='OUI', NOM_CMP='TEMP', VALE={0})".format(
             _r(MECWAY_DEFAULT_T0 - KELVIN))]
         if not self.th["initial"]:
@@ -2196,10 +2198,10 @@ class _Thermal(object):
                    "{1} s; {2} gelijke stappen.",
                    "WARNING: Duration {0} s is not a multiple of the step "
                    "{1} s; {2} equal steps.").format(period, step, n))
-        log("INFO: Transient thermisch: {0} stappen tot {1} s.".format(
+        log("INFO: Transient thermal: {0} steps up to {1} s.".format(
             n, period))
-        # Tijden expliciet (k * period / n, 15 cijfers): INTERVALLE/NOMBRE
-        # telt de stap op en gaf tijden als 39.9999999999999 s in Mecway.
+        # Explicit times (k * period / n, 15 digits): INTERVALLE/NOMBRE
+        # adds up the step and gave times like 39.9999999999999 s in Mecway.
         vals = [_r(period * k / float(n)) for k in range(n + 1)]
         return ("times = DEFI_LIST_REEL(VALE=(\n    {0},\n))\n".format(
             ",\n    ".join(", ".join(vals[i:i + 8])
@@ -2207,20 +2209,20 @@ class _Thermal(object):
 
     def calc_champ_block(self):
         """
-        Warmteflux (-lambda grad T) in een eigen resultaat res_flux
-        (aster_results_export leest 'heat_flux' daaruit). Met geschaalde
-        schalen (f != 1) rekent CALC_CHAMP met fieldmat_post (echte
-        lambda). Twee stappen, gezien met Code-Aster 17.4:
-          - CALC_CHAMP reuse=res met een andere CHAM_MATER is verboden
+        Heat flux (-lambda grad T) in a separate result res_flux
+        (aster_results_export reads 'heat_flux' from it). With scaled
+        shells (f != 1) CALC_CHAMP computes with fieldmat_post (real
+        lambda). Two steps, seen with Code-Aster 17.4:
+          - CALC_CHAMP reuse=res with a different CHAM_MATER is forbidden
             (CALCULEL_33);
-          - in een nieuw resultaat in een aanroep FLUX_ELGA, FLUX_ELNO en
-            FLUX_NOEU vragen gaf FLUX_NOEU op schaalknopen f x de flux
-            (FLUX_ELNO kwam uit de FLUX_ELGA van res, die THER_NON_LINE met
-            de geschaalde lambda opslaat); eerst FLUX_ELGA, dan in een
-            tweede aanroep FLUX_ELNO/FLUX_NOEU gaf overal 3591,65 W/m2
+          - asking for FLUX_ELGA, FLUX_ELNO and FLUX_NOEU in one call in a
+            new result gave FLUX_NOEU on shell nodes f x the flux
+            (FLUX_ELNO came from the FLUX_ELGA of res, which THER_NON_LINE
+            stores with the scaled lambda); first FLUX_ELGA, then in a
+            second call FLUX_ELNO/FLUX_NOEU gave 3591.65 W/m2 everywhere
             (ConductionConvectionRadiation).
-        Alarm RESULT1_39 (ander materiaal dan in het resultaat) is dan
-        bedoeld.
+        Alarm RESULT1_39 (different material than in the result) is then
+        intended.
         """
         groups = _fmt_groups(list(self.elsets))
         return ("res_flux = CALC_CHAMP(\n    RESULTAT=res,\n{0}"
@@ -2232,12 +2234,12 @@ class _Thermal(object):
                     groups) + self.flux_rotation_block()
 
     def flux_rotation_block(self):
-        """Gedraaid mesh (_shell_rotation): FLUX_NOEU per tijdstap terug naar
-        de globale assen, v_glob = Q^T v (CREA_CHAMP ASSE met COEF_R per
-        component, Result.setField; zelfde NUME_ORDRE als res, dat
-        aster_results_export gebruikt). PLAN-knopen hebben geen FLUZ
-        (MODI_REPERE VECT_3D weigert dat: ALGORITH2_12, Code-Aster 17.4);
-        FLUZ telt alleen mee als er volume-elementen zijn."""
+        """Rotated mesh (_shell_rotation): FLUX_NOEU per time step back to
+        the global axes, v_glob = Q^T v (CREA_CHAMP ASSE with COEF_R per
+        component, Result.setField; same NUME_ORDRE as res, which
+        aster_results_export uses). PLAN nodes have no FLUZ
+        (MODI_REPERE VECT_3D refuses that: ALGORITH2_12, Code-Aster 17.4);
+        FLUZ only counts if there are volume elements."""
         if not self.rotation:
             return ""
         q = self.rotation[0]
@@ -2276,10 +2278,10 @@ class _Thermal(object):
 
 
 def _read_mesh_segments(path):
-    """({naam: frozenset(knoop-id's)} van de SEG2/SEG3-elementen,
-    {groep: [elementnamen]}) uit een mesh in ASTER-formaat
-    (bridge_mesh.write_mesh: blokken 'SEG2' / 'GROUP_MA' tot 'FINSF',
-    knopen 'N<id>')."""
+    """({name: frozenset(node ids)} of the SEG2/SEG3 elements,
+    {group: [element names]}) from a mesh in ASTER format
+    (bridge_mesh.write_mesh: blocks 'SEG2' / 'GROUP_MA' to 'FINSF',
+    nodes 'N<id>')."""
     segs = {}
     groups = {}
     block = None
@@ -2312,9 +2314,9 @@ def _read_mesh_segments(path):
 
 
 def _interpolate(table, time):
-    """Waarde van een tijdstabel [(t, v)] op tijdstip time: lineair
-    tussen de punten, daarbuiten constant (manual v33 par. 9: "constant
-    extrapolation")."""
+    """Value of a time table [(t, v)] at time time: linear
+    between the points, constant outside them (manual v33 sec. 9:
+    "constant extrapolation")."""
     if time <= table[0][0]:
         return table[0][1]
     for (t0, v0), (t1, v1) in zip(table, table[1:]):
@@ -2325,20 +2327,20 @@ def _interpolate(table, time):
     return table[-1][1]
 
 
-# Stap (graden) waarmee een RHO_CP-tabel verfijnd wordt (_refine_table).
+# Step (degrees) by which a RHO_CP table is refined (_refine_table).
 _CP_TABLE_STEP = 10.0
 
 
 def _refine_table(table, step):
-    """Tabel [(T, v)] met tussenpunten (lineair geïnterpoleerd) zodat de
-    afstand tussen twee punten met verschillende waarde <= step is.
+    """Table [(T, v)] with extra points (linearly interpolated) so that
+    the distance between two points with different values is <= step.
 
-    Gemeten (Code-Aster 17.4, verificatie WE-04b): THER_NON_LINE rekent met
-    de enthalpie BETA uit RHO_CP, maar interpoleert BETA lineair tussen de
-    tabelpunten van RHO_CP; tussen twee punten werkt dan de gemiddelde
-    rho*cp van dat interval (energiebalans -2,8% met cp 450..750 J/kg/K op
-    300/800/1300 K). Met punten om de 10 graden is BETA vrijwel exact.
-    Een interval met gelijke waarden blijft één interval."""
+    Measured (Code-Aster 17.4, verification WE-04b): THER_NON_LINE computes
+    with the enthalpy BETA from RHO_CP, but interpolates BETA linearly
+    between the table points of RHO_CP; between two points the mean
+    rho*cp of that interval then applies (energy balance -2.8% with cp
+    450..750 J/kg/K at 300/800/1300 K). With points every 10 degrees BETA
+    is nearly exact. An interval with equal values stays one interval."""
     out = [table[0]]
     for (t0, v0), (t1, v1) in zip(table, table[1:]):
         n = 1
@@ -2351,8 +2353,8 @@ def _refine_table(table, step):
 
 
 def _ascii(text):
-    """Tekst voor een commentaarregel in de .comm: alleen ASCII, op een
-    regel."""
+    """Text for a comment line in the .comm: ASCII only, on one
+    line."""
     return "".join(c if 32 <= ord(c) < 127 else "?" for c in (text or ""))
 
 
@@ -2383,10 +2385,10 @@ def _shift(value, offset):
 
 
 def _med_block():
-    """IMPR_RESU MED (study.rmed) alleen met de instelling "med_export";
-    Mecway krijgt de resultaten via de .liml."""
+    """IMPR_RESU MED (study.rmed) only with the setting "med_export";
+    Mecway gets the results via the .liml."""
     if not CONFIG_BRIDGE.get("med_export", False):
-        return "#-- geen MED-export (instelling med_export uit) --\n"
+        return "#-- no MED export (setting med_export off) --\n"
     return ("IMPR_RESU(\n"
             "    FORMAT='MED',\n"
             "    UNITE=80,\n"
@@ -2399,9 +2401,9 @@ def _med_block():
 
 def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer study.comm en study.export voor een thermische analyse
-    (THER_LINEAIRE, of THER_NON_LINE bij straling / schaalvlak-convectie).
-    Returns het pad naar study.export, of None bij een fout.
+    Generate study.comm and study.export for a thermal analysis
+    (THER_LINEAIRE, or THER_NON_LINE with radiation / shell-face convection).
+    Returns the path to study.export, or None on an error.
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (thermisch) ---")
@@ -2432,22 +2434,22 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
         return None
     tb.apply_loads()
     tb.bonded_loads()
-    # Bewegende lasbron (#ASTER-LASBRON, bridge_welding.py)
+    # Moving welding source (#ASTER-LASBRON, bridge_welding.py)
     import bridge_welding
     welding = bridge_welding.apply(tb, model_data, analysis)
     if welding is None:
         return None
     weld_code, weld_excit, weld_post = welding
-    # Metallurgie (#ASTER-METALLURGIE, bridge_metallurgy.py): META_ACIER in
-    # de thermische materialen (tb.meta_kw), CALC_META na de solve
+    # Metallurgy (#ASTER-METALLURGIE, bridge_metallurgy.py): META_ACIER in
+    # the thermal materials (tb.meta_kw), CALC_META after the solve
     import bridge_metallurgy
     meta = bridge_metallurgy.apply(tb, model_data, analysis)
     if meta is None:
         return None
     meta_pre, meta_post = meta
     if not (tb.transient or tb.temp_const or tb.temp_timed or tb.has_exchange):
-        # Stationair zonder opgelegde temperatuur of warmte-uitwisseling:
-        # de temperatuur is onbepaald (singuliere matrix).
+        # Steady state without imposed temperature or heat exchange:
+        # the temperature is undetermined (singular matrix).
         if model_data.get("aster_custom", {}).get("code"):
             log(tr("WARNING: Stationair zonder temperatuur, convectie of "
                    "straling; aangenomen dat de #ASTER-code dat regelt.",
@@ -2482,7 +2484,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
         " - straling of convectie/straling op schaalvlakken" if tb.nonlinear
         else ""))
 
-    # --- Oplossen ---
+    # --- Solve ---
     solve = ["res = {0}(".format(command),
              "    MODELE=model,",
              "    CHAM_MATER=fieldmat,",
@@ -2506,7 +2508,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     solve.append(")")
     solve_block = "\n".join(line for line in solve if line) + "\n"
     if tb.birth and tb.nonlinear:
-        # Toevoegmateriaal met THER_NL: THER_NON_LINE per geboortestap
+        # Filler material with THER_NL: THER_NON_LINE per birth step
         # (bridge_welding.ther_loop)
         skip = ("res = ", "    CHAM_MATER=", "    ETAT_INIT=", "    INCREMENT=",
                 ")")
@@ -2514,8 +2516,8 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
             tb, tb.fieldmat_affe,
             [line for line in solve if line and not line.startswith(skip)])
 
-    # --- Keten thermisch -> mechanisch (Thermal stress in een T31-model,
-    # bridge_thermomech.py): mechanische blokken en een eigen template ---
+    # --- Chain thermal -> mechanical (Thermal stress in a T31 model,
+    # bridge_thermomech.py): mechanical blocks and a separate template ---
     import bridge_thermomech
     mech = None
     template_name = analysis["template"]
@@ -2532,10 +2534,10 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
                "a transient thermal model (thermal -> mechanical chain); "
                "ignored here."))
 
-    # --- Nabewerking: warmteflux (FLUX_NOEU = -lambda grad T) ---
-    # De energiecontrole van de lasbron vóór calc_champ_block: daar wordt een
-    # gedraaid mesh (schalen) teruggedraaid. In de keten staat #ASTER-POST
-    # na de mechanische solve (bridge_thermomech).
+    # --- Post-processing: heat flux (FLUX_NOEU = -lambda grad T) ---
+    # The energy check of the welding source before calc_champ_block: there
+    # a rotated mesh (shells) is rotated back. In the chain #ASTER-POST is
+    # after the mechanical solve (bridge_thermomech).
     calc = weld_post + meta_post + tb.calc_champ_block() + (
         "" if mech else bta._custom_code(model_data, "post"))
     fields = bridge_metallurgy.fields(
@@ -2552,8 +2554,8 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
 
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:
-        # UTF-8 zoals de mechanische builders (bridge_to_aster._write_comm):
-        # Code-Aster leest de .comm als UTF-8.
+        # UTF-8 as in the mechanical builders (bridge_to_aster._write_comm):
+        # Code-Aster reads the .comm as UTF-8.
         template = bta._read_template(template_name)
         bta._write_comm(comm_path, template.format(
             defigroup_block=tb.defigroup_block(),
@@ -2561,9 +2563,9 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
             materials_block=materials_block,
             fieldmat_block=fieldmat_block,
             funcs_block=("\n".join(tb.funcs) + "\n") if tb.funcs
-            else "#-- geen functies --\n",
+            else "#-- no functions --\n",
             listinst_block=listinst + initial,
-            loads_block=loads_block or "#-- geen lasten --\n",
+            loads_block=loads_block or "#-- no loads --\n",
             solve_block=solve_block,
             calc_champ_block=calc,
             export_block=export_block,
@@ -2571,7 +2573,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
                        else _med_block()),
             **(mech or {})
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -2588,7 +2590,7 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
             ] + (["F rmed {0} R 80".format(os.path.join(work_dir,
                                                        run_name(".rmed")))]
                  if CONFIG_BRIDGE.get("med_export", False) else [])))
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
