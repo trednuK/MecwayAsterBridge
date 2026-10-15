@@ -117,7 +117,7 @@ Bonded contact per combination (slave on master):
 | shells in a thermal analysis | Partly | `PLAN` with a thickness factor | Only shells in parallel planes (KB15); others: No (KB16). |
 | fin, fluid network element, resistor | No | – | Thermal 1D and DC current: KB16. |
 | Element offset (shell, beam) | No | – | Reported. Model the eccentricity with a Node-surface coupling (Rigid). |
-| Element orientation via Loads & Constraints | No | – | Probably reported (tag not seen in a .liml, NOT verified). Set the orientation in *Element properties*. |
+| Element orientation (local U/V axes per element) | Partly | – | Mecway stores the orientation per element (`orientationux`…`vz`, `angle`). Used for beams (section orientation) and gaps (direction). Ignored without a message for solids and shells; with an isotropic material that does not change the result. Only needed for orthotropic materials (§5, No). |
 
 ## 5. Materials and cross-sections
 

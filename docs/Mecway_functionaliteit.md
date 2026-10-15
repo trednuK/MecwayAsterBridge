@@ -117,7 +117,7 @@ Verlijmd contact per combinatie (slave op master):
 | schalen in een thermische analyse | Deels | `PLAN` met een diktefactor | Alleen schalen in evenwijdige vlakken (KB15); andere: Nee (KB16). |
 | fin, fluid network element, resistor | Nee | – | Thermisch 1D en DC-stroom: KB16. |
 | Element offset (schaal, balk) | Nee | – | Gemeld. Modelleer de excentriciteit met een Node-surface coupling (Rigid). |
-| Element orientation via Loads & Constraints | Nee | – | Vermoedelijk gemeld (tag niet in een .liml gezien, NIET geverifieerd). Zet de oriëntatie in *Element properties*. |
+| Element orientation (lokale U/V-assen per element) | Deels | – | Mecway slaat de oriëntatie per element op (`orientationux`…`vz`, `angle`). Gebruikt voor balken (doorsnede-oriëntatie) en gaps (richting). Bij volumes en schalen genegeerd zonder melding; met isotroop materiaal verandert dat de uitkomst niet. Pas nodig bij orthotrope materialen (§5, Nee). |
 
 ## 5. Materialen en doorsneden
 
