@@ -51,7 +51,7 @@ Werk je daarna de documentatie bij (geteste versies, basislijn), draai dan vanui
 `KNOWN_BUGS.md` en verificatiecases, de standaardwaarden in
 [`Standaardinstellingen_en_aannames.md`](Standaardinstellingen_en_aannames.md) en de tooltips
 tegen `CONFIG_BRIDGE`, en of de Nederlandse en Engelse pagina's dezelfde opbouw hebben
-(`--parity`: ook de getallen per sectie). Verwacht: 0 bevindingen.
+(`--parity`: ook de getallen per sectie). Verwacht: `0 finding(s)`.
 
 ## 3. Wat er typisch breekt
 

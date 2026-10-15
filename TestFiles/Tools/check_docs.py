@@ -3,30 +3,30 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-"""Controle van de documentatie (CPython 3, ontwikkelgereedschap).
+"""Documentation check (CPython 3, development tool).
 
-Gebruik (vanuit de hoofdmap van de repo):
-    python TestFiles/Tools/check_docs.py            # alle controles
-    python TestFiles/Tools/check_docs.py --parity   # ook NL/EN-getallen per sectie
+Usage (from the root of the repo):
+    python TestFiles/Tools/check_docs.py            # all checks
+    python TestFiles/Tools/check_docs.py --parity   # also NL/EN numbers per section
 
-Wat het controleert (uitvoer: een regel per bevinding, exitcode 1 als er
-bevindingen zijn):
-- instellingen: elke sleutel van CONFIG_BRIDGE (ook per analyse) staat in
-  GENERAL_SPECS/ANALYSIS_SPECS (bridge_gui.py) en heeft een tooltip in
-  bridge_glossary.SETTING_HELP in beide talen; de standaard in de tooltip
-  ("Standaard x" / "Default x") en in de tabellen van
-  Standaardinstellingen_en_aannames.md (+ EN) is gelijk aan CONFIG_BRIDGE;
-- instellingsnamen in de docs (`snake_case` tussen backticks) bestaan in de
+What it checks (output: one line per finding, exit code 1 if there are
+findings):
+- settings: every key of CONFIG_BRIDGE (also per analysis) is in
+  GENERAL_SPECS/ANALYSIS_SPECS (bridge_gui.py) and has a tooltip in
+  bridge_glossary.SETTING_HELP in both languages; the default in the tooltip
+  ("Standaard x" / "Default x") and in the tables of
+  Standaardinstellingen_en_aannames.md (+ EN) equals CONFIG_BRIDGE;
+- setting names in the docs (`snake_case` between backticks) exist in the
   code;
-- links en ankers (GitHub-slugs) tussen de docs, README en CHANGELOG;
-- verwijzingen KNOWN_BUGS n / KBn bestaan in KNOWN_BUGS.md (behalve in een
-  zin met "opgelost"/"fixed"/"solved"/"resolved");
-- verificatiecases (LS-07a, TH-04c, ...) bestaan in TestFiles/Verificatie;
-- "voorbeeld n" / "example n" bestaat in ASTER_regels_voorbeelden.md (+ EN);
-- "§n.m" verwijst naar een bestaande genummerde kop;
-- NL/EN-pariteit per paar uit bridge_docs.DOCS: koppen, tabellen en rijen,
-  KNOWN_BUGS-nummers, cases, links, `code`-woorden per document.
-De bridge zelf wordt niet aangeroepen; het startscherm wordt niet geopend.
+- links and anchors (GitHub slugs) between the docs, README and CHANGELOG;
+- references KNOWN_BUGS n / KBn exist in KNOWN_BUGS.md (except in a
+  sentence with "opgelost"/"fixed"/"solved"/"resolved");
+- verification cases (LS-07a, TH-04c, ...) exist in TestFiles/Verificatie;
+- "voorbeeld n" / "example n" exists in ASTER_regels_voorbeelden.md (+ EN);
+- "§n.m" refers to an existing numbered heading;
+- NL/EN parity per pair from bridge_docs.DOCS: headings, tables and rows,
+  KNOWN_BUGS numbers, cases, links, `code` words per document.
+The bridge itself is not called; the start screen is not opened.
 """
 from __future__ import print_function
 
@@ -59,10 +59,10 @@ def rel(path):
 
 
 # ------------------------------------------------------------------
-# Markdown-hulpjes
+# Markdown helpers
 # ------------------------------------------------------------------
 def strip_code_blocks(text):
-    """Vervang regels in ``` blokken door lege regels (regelnummers blijven)."""
+    """Replace lines in ``` blocks by empty lines (line numbers are kept)."""
     out, inside = [], False
     for line in text.split("\n"):
         if line.lstrip().startswith("```"):
@@ -74,7 +74,7 @@ def strip_code_blocks(text):
 
 
 def headings(text):
-    """[(niveau, tekst, regelnummer)] buiten codeblokken."""
+    """[(level, text, line number)] outside code blocks."""
     res = []
     for i, line in enumerate(strip_code_blocks(text).split("\n"), 1):
         m = re.match(r"^(#{1,6})\s+(.*?)\s*#*\s*$", line)
@@ -84,8 +84,8 @@ def headings(text):
 
 
 def slug(title):
-    """GitHub-anker van een kop."""
-    t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", title)   # link -> tekst
+    """GitHub anchor of a heading."""
+    t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", title)   # link -> text
     t = t.replace("`", "").lower()
     out = []
     for ch in t:
@@ -129,7 +129,7 @@ def md_files():
 
 
 # ------------------------------------------------------------------
-# 1. Instellingen
+# 1. Settings
 # ------------------------------------------------------------------
 def _literal(src, name):
     tree = ast.parse(src)
@@ -140,14 +140,14 @@ def _literal(src, name):
     raise KeyError(name)
 
 
-# Vaste sleutels per analyse die niet op het startscherm staan
+# Fixed keys per analysis that are not on the start screen
 # (Standaardinstellingen §3.1).
 FIXED_KEYS = {"template", "solver_command", "type_resu", "phenomene",
               "vibroacoustic", "type_calcul"}
 
 
 def _norm_value(v):
-    """Waarde uit een doc/tooltip -> vergelijkbare vorm."""
+    """Value from a doc/tooltip -> comparable form."""
     s = v.strip().strip("`*").strip()
     s = s.replace(u"−", "-").replace(u" ", " ")
     low = s.lower()
@@ -173,10 +173,10 @@ def _same(doc_value, real):
         return isinstance(d, float) and abs(d - float(real)) <= 1e-12 * max(
             1.0, abs(real))
     if isinstance(real, (list, tuple)):
-        return True          # lijsten (fields) niet vergelijken
+        return True          # do not compare lists (fields)
     if real == "":
-        return True          # lege standaard: beschrijving in woorden
-    if isinstance(d, float):  # tekstwaarde "0" (harm_freq_list)
+        return True          # empty default: described in words
+    if isinstance(d, float):  # text value "0" (harm_freq_list)
         d = doc_value.strip().strip("`*").strip()
     return isinstance(d, str) and d.strip('"').lower() == str(real).lower()
 
@@ -190,14 +190,14 @@ def check_settings():
     aspecs = {s[0] for s in _literal(gui_src, "ANALYSIS_SPECS")}
     help_ = g.SETTING_HELP
 
-    # waarden per sleutel (algemeen + per analyse)
+    # values per key (general + per analysis)
     values = {}
     for k, v in cfg.items():
         if k == "analyses":
             continue
         values.setdefault(k, {})["*"] = v
         if k not in gspecs:
-            report("bridge_gui.GENERAL_SPECS", "sleutel ontbreekt: " + k)
+            report("bridge_gui.GENERAL_SPECS", "key missing: " + k)
     for an, ad in cfg["analyses"].items():
         for k, v in ad.items():
             if k in FIXED_KEYS:
@@ -205,20 +205,20 @@ def check_settings():
             values.setdefault(k, {})[an] = v
             if k not in aspecs:
                 report("bridge_gui.ANALYSIS_SPECS",
-                       "sleutel ontbreekt: {0} ({1})".format(k, an))
+                       "key missing: {0} ({1})".format(k, an))
     for k in sorted(gspecs | aspecs):
         if k not in values:
-            report("bridge_gui", "spec zonder CONFIG_BRIDGE-sleutel: " + k)
+            report("bridge_gui", "spec without CONFIG_BRIDGE key: " + k)
 
     # tooltips
     for k in sorted(values):
         h = help_.get(k)
         if not h:
-            report("bridge_glossary.SETTING_HELP", "geen tooltip: " + k)
+            report("bridge_glossary.SETTING_HELP", "no tooltip: " + k)
             continue
         if not (isinstance(h, tuple) and len(h) == 2 and h[0] and h[1]):
             report("bridge_glossary.SETTING_HELP",
-                   "tooltip niet in beide talen: " + k)
+                   "tooltip not in both languages: " + k)
             continue
         reals = list(values[k].values())
         for lang, txt, word in (("nl", h[0], u"standaard"),
@@ -243,9 +243,9 @@ def check_settings():
                         "met", "zoals", "as", "and", "en", "of", "or"):
                     continue
                 if not any(_same(val, r) for r in reals):
-                    report("tooltip " + k, u"{0}: '{1} {2}' maar CONFIG_BRIDGE "
+                    report("tooltip " + k, u"{0}: '{1} {2}' but CONFIG_BRIDGE "
                            u"{3}".format(lang, word, val, values[k]))
-    # tabellen in Standaardinstellingen (+ EN)
+    # tables in Standaardinstellingen (+ EN)
     for name, analysis_word in (("Standaardinstellingen_en_aannames.md", None),
                                 ("en/Default_settings_and_assumptions.md",
                                  None)):
@@ -263,7 +263,7 @@ def check_settings():
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
             if len(cells) < 2:
                 continue
-            # alleen instellingen (kleine letters); Code-Aster-woorden niet
+            # only settings (lower case); not Code-Aster words
             keys = re.findall(r"`([a-z]\w*)`", cells[0].split("(")[0])
             dvals = [x.strip() for x in re.split(r"\s/\s|,\s", cells[1])]
             if len(keys) != len(dvals):
@@ -271,7 +271,7 @@ def check_settings():
             for key, dv in zip(keys, dvals):
                 if key not in values:
                     report("{0}:{1}".format(name, i),
-                           "onbekende instelling `{0}`".format(key))
+                           "unknown setting `{0}`".format(key))
                     continue
                 vals = values[key]
                 real = vals.get(current, vals.get("*"))
@@ -285,18 +285,18 @@ def check_settings():
                     continue          # "600 (statisch), 1800 (...)"
                 if not any(_same(dv0, r) for r in reals):
                     report("{0}:{1}".format(name, i),
-                           u"`{0}` standaard '{1}' maar CONFIG_BRIDGE {2}"
+                           u"`{0}` default '{1}' but CONFIG_BRIDGE {2}"
                            .format(key, dv, vals))
     return values
 
 
-# Namen buiten de code: Mecway-API en voorbeeldnamen in de tekst
+# Names outside the code: Mecway API and example names in the text
 EXTRA_NAMES = {"node_value", "element_node_value", "verbinding_balk",
                "b_3d_pou", "cqc_array"}
 
 
 def check_setting_names_in_docs(values):
-    """`snake_case` in de docs moet in de code voorkomen."""
+    """`snake_case` in the docs must occur in the code."""
     code = []
     for d in (SCRIPTS, os.path.join(ROOT, "TestFiles", "Verificatie"),
               os.path.join(ROOT, "TestFiles", "Tools")):
@@ -308,25 +308,25 @@ def check_setting_names_in_docs(values):
     for path in md_files():
         full = read(path)
         text = strip_code_blocks(full)
-        # namen die het document zelf in een codeblok gebruikt (selecties
-        # in een voorbeeld)
+        # names the document itself uses in a code block (selections
+        # in an example)
         local = set(w.lower() for w in re.findall(
             r"[A-Za-z_][A-Za-z0-9_]*", "\n".join(
                 a for a, b in zip(full.split("\n"), text.split("\n"))
                 if a != b)))
         for i, line in enumerate(text.split("\n"), 1):
             for w in re.findall(r"`([a-z][a-z0-9]*_[a-z0-9_]+)`", line):
-                # Code-Aster-bron (`x.py`, catalogus) of eigen voorbeeld
+                # Code-Aster source (`x.py`, catalogue) or own example
                 if w in words or w in local or w in EXTRA_NAMES or re.search(
                         r"\.py`|\.F90|catalog", line):
                     continue
                 if True:
                     report("{0}:{1}".format(rel(path), i),
-                           "`{0}` komt niet voor in de code".format(w))
+                           "`{0}` does not occur in the code".format(w))
 
 
 # ------------------------------------------------------------------
-# 2. Links, ankers, verwijzingen
+# 2. Links, anchors, references
 # ------------------------------------------------------------------
 LINK_RE = re.compile(r"(?<!!)\[([^\]]*)\]\(([^)\s]+)\)")
 
@@ -346,14 +346,14 @@ def check_links():
                     if file_part else path
                 if not os.path.exists(tpath):
                     report("{0}:{1}".format(rel(path), i),
-                           "link naar ontbrekend bestand " + target)
+                           "link to missing file " + target)
                     continue
                 if anchor and tpath.endswith(".md"):
                     if tpath not in cache:
                         cache[tpath] = anchors(read(tpath))
                     if anchor not in cache[tpath]:
                         report("{0}:{1}".format(rel(path), i),
-                               "anker bestaat niet: " + target)
+                               "anchor does not exist: " + target)
 
 
 def known_bug_numbers():
@@ -374,7 +374,7 @@ def check_known_bugs():
                           for f in os.listdir(SCRIPTS) if f.endswith(".py")]
     for path in files:
         if path.endswith("CHANGELOG.md"):
-            continue          # historie: verwijst ook naar opgeloste punten
+            continue          # history: also refers to solved items
         text = read(path)
         for i, line in enumerate(text.split("\n"), 1):
             if path.endswith("KNOWN_BUGS.md"):
@@ -385,7 +385,7 @@ def check_known_bugs():
                     for n in re.findall(r"\d+", m.group(1)):
                         if int(n) not in nums:
                             report("{0}:{1}".format(rel(path), i),
-                                   "item {0} bestaat niet".format(n))
+                                   "item {0} does not exist".format(n))
             for m in KB_RE.finditer(line):
                 refs = [int(x) for x in re.findall(r"\d+", m.group(1))]
                 for n in refs:
@@ -394,7 +394,7 @@ def check_known_bugs():
                     if SOLVED_RE.search(line):
                         continue
                     report("{0}:{1}".format(rel(path), i),
-                           "KNOWN_BUGS {0} bestaat niet".format(n))
+                           "KNOWN_BUGS {0} does not exist".format(n))
 
 
 CASE_RE = re.compile(r"\b((?:AD|AH|AI|AK|BR|BU|CY|DY|FS|HR|LS|MC|MD|MO|MP|"
@@ -411,17 +411,17 @@ def check_cases():
         text = read(path)
         for i, line in enumerate(text.split("\n"), 1):
             for cid in CASE_RE.findall(line):
-                # ook als voorvoegsel: TH-02d -> TH-02d1, of "MO-2" als
-                # selectie voor run_verificatie.py
+                # also as a prefix: TH-02d -> TH-02d1, or "MO-2" as a
+                # selection for run_verificatie.py
                 if not re.search(re.escape(cid), blob):
-                    # formaat "LS-%02d" of "SP-06%s"
+                    # format "LS-%02d" or "SP-06%s"
                     pref, num = cid.split("-")
                     n = re.match(r"\d+", num).group(0)
                     if re.search(r'"{0}-%0{1}d'.format(pref, len(n)), blob) \
                             or re.search(r'"{0}-{1}%s'.format(pref, n), blob):
                         continue
                     report("{0}:{1}".format(rel(path), i),
-                           "verificatiecase {0} niet gevonden".format(cid))
+                           "verification case {0} not found".format(cid))
 
 
 def check_examples():
@@ -430,7 +430,7 @@ def check_examples():
     have_nl = set(re.findall(r"^###\s+Voorbeeld\s+(\d+)", nl, re.M))
     have_en = set(re.findall(r"^###\s+Example\s+(\d+)", en, re.M))
     if have_nl != have_en:
-        report("ASTER-voorbeelden", "NL {0} / EN {1}".format(
+        report("ASTER examples", "NL {0} / EN {1}".format(
             sorted(have_nl - have_en), sorted(have_en - have_nl)))
     for path in md_files():
         text = strip_code_blocks(read(path))
@@ -440,8 +440,8 @@ def check_examples():
             for m in re.finditer(r"\b(?:[Vv]oorbeeld(?:en)?|[Ee]xamples?)\s+"
                                  r"(\d+(?:\s*(?:,|en|and|of|or)\s*\d+)*)",
                                  line):
-                # alleen als de regel naar de ASTER-regels verwijst of in dat
-                # document staat
+                # only if the line refers to the ASTER lines or is in that
+                # document
                 if not ("ASTER" in line or "voorbeelden" in path
                         or "examples" in path):
                     continue
@@ -450,18 +450,18 @@ def check_examples():
                 for n in re.findall(r"\d+", m.group(1)):
                     if n not in have:
                         report("{0}:{1}".format(rel(path), i),
-                               "voorbeeld {0} bestaat niet".format(n))
+                               "example {0} does not exist".format(n))
 
 
 SEC_RE = re.compile(r"§\s?(\d+(?:\.\d+)*)")
-# [tekst met §n](bestand.md) of [..](bestand.md) §n / par. n
+# [text with §n](file.md) or [..](file.md) §n / par. n
 SEC_LINK_RE = re.compile(r"\[([^\]]*)\]\(([^)\s#]*\.md)(?:#[^)]*)?\)"
                          r"((?:[\s,]*(?:§\s?|par\.\s)\d+(?:\.\d+)*)*)")
 
 
 def check_section_refs():
-    """Alleen verwijzingen die aan een link naar een .md hangen (een kale
-    § kan ook de Mecway-handleiding of een U-document zijn)."""
+    """Only references attached to a link to a .md (a bare § can also be
+    the Mecway manual or a U document)."""
     cache = {}
     for path in md_files():
         text = strip_code_blocks(read(path))
@@ -478,15 +478,15 @@ def check_section_refs():
                 for r in refs:
                     if r not in cache[target]:
                         report("{0}:{1}".format(rel(path), i),
-                               u"§{0} bestaat niet in {1}".format(
+                               u"§{0} does not exist in {1}".format(
                                    r, rel(target)))
 
 
 # ------------------------------------------------------------------
-# 3. NL/EN-pariteit
+# 3. NL/EN parity
 # ------------------------------------------------------------------
 def _tables(text):
-    """[(regelnummer, aantal rijen)] van de tabellen."""
+    """[(line number, number of rows)] of the tables."""
     res, start, rows = [], None, 0
     for i, line in enumerate(strip_code_blocks(text).split("\n"), 1):
         if re.match(r"^\|[\s:-]", line):
@@ -502,7 +502,7 @@ def _tables(text):
 
 
 def _sections(text):
-    """Tekst per kop (op volgorde)."""
+    """Text per heading (in order)."""
     out, cur, buf = [], None, []
     for line in strip_code_blocks(text).split("\n"):
         if re.match(r"^#{1,6}\s", line):
@@ -515,7 +515,7 @@ def _sections(text):
 
 
 def _numbers(text, lang):
-    """Getallen als waarde (NL: 0,66 en 20 169; EN: 0.66 en 20,169)."""
+    """Numbers as values (NL: 0,66 and 20 169; EN: 0.66 and 20,169)."""
     t = re.sub(r"`[^`]*`|\([^)]*\.md[^)]*\)|\[[^\]]*\]", " ", text)
     t = re.sub(r"(?<=\d)[ \xa0\u202f](?=\d{3}\b)", "", t)
     if lang == "nl":
@@ -540,11 +540,11 @@ def check_parity(numbers):
         where = u"{0} <> {1}".format(nl_name, en_name)
         hn, he = headings(nl), headings(en)
         if [h[0] for h in hn] != [h[0] for h in he]:
-            report(where, "koppen verschillen: NL {0}, EN {1}".format(
+            report(where, "headings differ: NL {0}, EN {1}".format(
                 len(hn), len(he)))
             for a, b in zip(hn, he):
                 if a[0] != b[0]:
-                    report(where, u"eerste afwijking NL r{0} '{1}' / EN r{2} "
+                    report(where, u"first difference NL r{0} '{1}' / EN r{2} "
                            u"'{3}'".format(a[2], a[1], b[2], b[1]))
                     break
         else:
@@ -552,25 +552,25 @@ def check_parity(numbers):
                 na = re.match(r"(\d+(?:\.\d+)*)", a[1])
                 nb = re.match(r"(\d+(?:\.\d+)*)", b[1])
                 if (na and na.group(1)) != (nb and nb.group(1)):
-                    report(where, u"kopnummer NL r{0} '{1}' / EN r{2} '{3}'"
+                    report(where, u"heading number NL r{0} '{1}' / EN r{2} '{3}'"
                            .format(a[2], a[1], b[2], b[1]))
         tn, te = _tables(nl), _tables(en)
         if [t[1] for t in tn] != [t[1] for t in te]:
             for a, b in zip(tn, te):
                 if a[1] != b[1]:
-                    report(where, "tabel NL r{0} {1} rijen / EN r{2} {3} rijen"
+                    report(where, "table NL r{0} {1} rows / EN r{2} {3} rows"
                            .format(a[0], a[1], b[0], b[1]))
                     break
             if len(tn) != len(te):
-                report(where, "aantal tabellen NL {0} / EN {1}".format(
+                report(where, "number of tables NL {0} / EN {1}".format(
                     len(tn), len(te)))
         for label, rx in (("KNOWN_BUGS", r"(?:KNOWN_BUGS|KB)\s*(\d+)"),
                           ("case", CASE_RE.pattern)):
             a, b = set(re.findall(rx, nl)), set(re.findall(rx, en))
             if a != b:
-                report(where, u"{0}: alleen NL {1}, alleen EN {2}".format(
+                report(where, u"{0}: only NL {1}, only EN {2}".format(
                     label, sorted(a - b), sorted(b - a)))
-        # links: doelen naar paar vertalen
+        # links: map targets to their pair
         pair = {}
         for x in bridge_docs.DOCS:
             pair[os.path.basename(x[0])] = os.path.basename(x[1])
@@ -584,7 +584,7 @@ def check_parity(numbers):
             os.path.basename(nl_name))
         ln.discard(""); le.discard("")
         if ln != le:
-            report(where, u"links: alleen NL {0}, alleen EN {1}".format(
+            report(where, u"links: only NL {0}, only EN {1}".format(
                 sorted(ln - le), sorted(le - ln)))
         if numbers:
             sn, se = _sections(nl), _sections(en)
@@ -594,19 +594,19 @@ def check_parity(numbers):
                     if a != b:
                         from collections import Counter
                         ca, cb = Counter(a), Counter(b)
-                        report(where, u"getallen in '{0}': alleen NL {1}, "
-                               u"alleen EN {2}".format(
+                        report(where, u"numbers in '{0}': only NL {1}, "
+                               u"only EN {2}".format(
                                    (h1 or "")[:50],
                                    sorted((ca - cb).elements())[:12],
                                    sorted((cb - ca).elements())[:12]))
 
 
 # ------------------------------------------------------------------
-# 4. Labels van het startscherm in de docs
+# 4. Start screen labels in the docs
 # ------------------------------------------------------------------
 def check_labels():
-    """Een label tussen *..* (NL) of "..." (EN) dat bijna gelijk is aan een
-    label van het startscherm, moet er precies gelijk aan zijn."""
+    """A label between *..* (NL) or "..." (EN) that is almost equal to a
+    start screen label must be exactly equal to it."""
     import difflib
     src = read(os.path.join(SCRIPTS, "bridge_gui.py"))
     labels = {"nl": set(), "en": set()}
@@ -626,14 +626,14 @@ def check_labels():
         for i, line in enumerate(text.split("\n"), 1):
             for m in re.finditer(rx, line):
                 q = m.group(1).strip()
-                # ingekort label (zonder eenheid of toelichting) is goed
+                # shortened label (without unit or explanation) is fine
                 if q in labels[lang] or any(l.startswith(q) for l in
                                             labels[lang]):
                     continue
                 best = difflib.get_close_matches(q, labels[lang], 1, 0.75)
                 if best:
                     report("{0}:{1}".format(rel(path), i),
-                           u"label '{0}' wijkt af van het startscherm '{1}'"
+                           u"label '{0}' differs from the start screen '{1}'"
                            .format(q, best[0]))
 
 
@@ -650,7 +650,7 @@ def main():
     check_labels()
     for p in PROBLEMS:
         print(p)
-    print("{0} bevinding(en)".format(len(PROBLEMS)))
+    print("{0} finding(s)".format(len(PROBLEMS)))
     return 1 if PROBLEMS else 0
 
 

@@ -52,7 +52,7 @@ When you then update the documentation (tested versions, baseline), run
 references to `KNOWN_BUGS.md` and verification cases, the defaults in
 [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.md) and the tooltips
 against `CONFIG_BRIDGE`, and whether the Dutch and English pages have the same structure
-(`--parity`: also the numbers per section). Expected: 0 findings.
+(`--parity`: also the numbers per section). Expected: `0 finding(s)`.
 
 ## 3. What typically breaks
 
