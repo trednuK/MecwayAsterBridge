@@ -1,0 +1,47 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.01" y="0" z="0" />
+  <node nid="3" x="0.01" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0" y="0" z="0.01" />
+  <node nid="6" x="0.01" y="0" z="0.01" />
+  <node nid="7" x="0.01" y="0.01" z="0.01" />
+  <node nid="8" x="0" y="0.01" z="0.01" />
+  <elset name="Kubus" material="Staal">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" />
+  </elset>
+  <traction selection="F_u0"><x>0 MPa</x><y>-50 MPa</y><z>0 Pa</z></traction>
+  <traction selection="F_u1"><x>0 MPa</x><y>50 MPa</y><z>0 Pa</z></traction>
+  <traction selection="F_v0"><x>-50 MPa</x><y>0 MPa</y><z>0 Pa</z></traction>
+  <traction selection="F_v1"><x>50 MPa</x><y>0 MPa</y><z>0 Pa</z></traction>
+  <fixed selection="P0" />
+  <displacement selection="PX"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="PX"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="PY"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <failure type="VonMises" tensilestrength="250 MPa" />
+  </mat>
+  <faceselection name="F_u0">
+    <face eid="1" faceid="6" />
+  </faceselection>
+  <faceselection name="F_u1">
+    <face eid="1" faceid="4" />
+  </faceselection>
+  <faceselection name="F_v0">
+    <face eid="1" faceid="3" />
+  </faceselection>
+  <faceselection name="F_v1">
+    <face eid="1" faceid="5" />
+  </faceselection>
+  <nodeselection name="P0">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="PX">
+    <node nid="2" />
+  </nodeselection>
+  <nodeselection name="PY">
+    <node nid="4" />
+  </nodeselection>
+</liml>

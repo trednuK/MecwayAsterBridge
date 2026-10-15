@@ -289,6 +289,43 @@ def _parse_beam_orientation(elem):
     return {"vec": vec, "angle": angle}
 
 
+def _parse_failure(fail_node, mat_name, model_data):
+    """
+    Mecway's faalcriterium van een materiaal (Failure criteria, manual v34
+    par. 8.7): <failure type="VonMises" tensilestrength="250 MPa" />
+    (attribuutnaam gezien in een .liml die Mecway 34 zelf schreef met
+    mw.set_material_property). Alleen von Mises wordt gebruikt: de factor
+    of safety = tensilestrength / von Mises (resultaatveld safety_factor,
+    aster_results_export._fos_vars). Andere criteria (Tsai-Wu, ...):
+    WARNING. Resultaat in model_data["failure_strengths"] {mat: Pa}.
+    """
+    if fail_node is None:
+        return
+    kind = fail_node.get("type", "None")
+    if kind in ("None", ""):
+        return
+    if kind == "VonMises":
+        strength = parse_and_convert(fail_node.get("tensilestrength", "0"),
+                                     'pressure')
+        if strength > 0.0:
+            model_data.setdefault("failure_strengths", {})[mat_name] = \
+                strength
+            log("INFO: Faalcriterium von Mises voor materiaal '{0}': "
+                "S = {1} Pa (factor of safety).".format(mat_name, strength))
+            return
+        log(tr("WARNING: Faalcriterium von Mises van materiaal '{0}' zonder "
+               "tensile strength; geen factor of safety.",
+               "WARNING: Von Mises failure criterion of material '{0}' "
+               "without a tensile strength; no factor of safety.").format(
+                   mat_name))
+        return
+    log(tr("WARNING: Faalcriterium '{1}' van materiaal '{0}' wordt niet "
+           "vertaald (alleen von Mises); geen factor of safety.",
+           "WARNING: Failure criterion '{1}' of material '{0}' is not "
+           "translated (von Mises only); no factor of safety.").format(
+               mat_name, kind))
+
+
 def _make_generale_section(A, IY, IZ, JX):
     """
     Retourneer een GENERALE-sectie dict voor Code-Aster POUTRE.
@@ -1569,6 +1606,7 @@ def extract_aster_data_from_liml(file_path):
                 mech_node = item.find("mechanical")
                 geom_node = item.find("geometric")
                 dens_node = item.find("density")
+                _parse_failure(item.find("failure"), mat_name, model_data)
 
                 if mech_node is not None:
                     mech_type = mech_node.get("type", "Isotropic")
@@ -1815,6 +1853,10 @@ def extract_aster_data_from_liml(file_path):
                 mat_assigned = item.get("material", None)
                 if mat_assigned:
                     model_data["elsets"][elset_name] = mat_assigned
+                    # Met de Mecway-naam (bridge_mesh hernoemt "elsets"):
+                    # factor of safety per elset (aster_results_export).
+                    model_data.setdefault("mecway_elset_materials", {})[
+                        elset_name] = mat_assigned
 
                 shapes = elset_shapes_map.get(elset_name, set())
                 # Een elset krijgt één MODELISATION (1D boven 2D boven 3D);

@@ -808,6 +808,54 @@ GLOSSARY = OrderedDict([
                     u"Result field: phases and hardness (#ASTER-METALLURGIE; "
                     u"ferrite .. austenite, hardness); always included with "
                     u"#ASTER-METALLURGIE.")),
+    ("strain", ("file", u"Resultaatveld: totale rek. Volumes: lstrainxx.. "
+                u"(niet-lineair met grote verplaatsingen "
+                u"greenlagrangestrainxx..), schalen boven/midden/onder "
+                u"lstrainxxu/m/b, globale assen; schuif als hoekverdraaiing "
+                u"(zoals Mecway). Standaard uit.",
+                u"Result field: total strain. Solids: lstrainxx.. "
+                u"(nonlinear with large displacements "
+                u"greenlagrangestrainxx..), shells top/middle/bottom "
+                u"lstrainxxu/m/b, global axes; shear as engineering strain "
+                u"(like Mecway). Off by default.")),
+    ("beam_forces", ("file", u"Resultaatveld: snedekrachten van balken in "
+                     u"de lokale assen (tensileforce, sheary, shearz, "
+                     u"torsion, bendingmomv, bendingmomw; EFGE_ELNO), "
+                     u"Mecway's namen en tekens.",
+                     u"Result field: beam section forces in the local axes "
+                     u"(tensileforce, sheary, shearz, torsion, bendingmomv, "
+                     u"bendingmomw; EFGE_ELNO), Mecway's names and signs.")),
+    ("shell_stresses", ("file", u"Resultaatveld: spanningstensor van "
+                        u"schalen in globale assen op boven-, midden- en "
+                        u"ondervlak (stressxxu1/m1/b1 ..). Standaard uit "
+                        u"(18 variabelen).",
+                        u"Result field: shell stress tensor in global axes "
+                        u"on the top, middle and bottom surface "
+                        u"(stressxxu1/m1/b1 ..). Off by default (18 "
+                        u"variables).")),
+    ("shell_forces", ("file", u"Resultaatveld: krachten en momenten per "
+                      u"lengte van schalen in Mecway's U,V-assen "
+                      u"(forceperlengthu/v/uv, momentu/v/uv, shearuw/vw; "
+                      u"EFGE_ELNO).",
+                      u"Result field: shell forces and moments per length "
+                      u"in Mecway's U,V axes (forceperlengthu/v/uv, "
+                      u"momentu/v/uv, shearuw/vw; EFGE_ELNO).")),
+    ("safety_factor", ("file", u"Resultaatveld: factor of safety bij een "
+                       u"materiaal met Mecway's von Mises-faalcriterium "
+                       u"(tensile strength / von Mises; schalen de kleinste "
+                       u"van boven en onder; factorofsafety).",
+                       u"Result field: factor of safety for a material with "
+                       u"Mecway's von Mises failure criterion (tensile "
+                       u"strength / von Mises; shells the smallest of top and "
+                       u"bottom; factorofsafety).")),
+    ("contact", ("file", u"Resultaatveld: contactdruk (contactpressure, "
+                 u"-LAGS_C) en contactstatus (contactstate: 0 open, 1 "
+                 u"gesloten, 2 glijdend) op de slave-knopen; niet-lineair "
+                 u"en dynamisch.",
+                 u"Result field: contact pressure (contactpressure, "
+                 u"-LAGS_C) and contact state (contactstate: 0 open, 1 "
+                 u"closed, 2 sliding) on the slave nodes; nonlinear and "
+                 u"dynamic.")),
     ("run_aster.bat", ("file", u"Het startprogramma van Code-Aster in de "
                        u"installatiemap (bin).",
                        u"Code-Aster's launcher in the installation folder "
@@ -981,15 +1029,19 @@ SETTING_HELP = {
                   u"split at its midside node into two SEG2 cells). Default "
                   u"POU_D_E (Euler-Bernoulli, like Mecway)."),
     "fields": (u"Welke resultaten naar Mecway gaan (minder velden = kleiner "
-               u"bestand). Modaal: stresses/vonmises geven spanningen per "
-               u"mode, alleen relatief betekenisvol (genormeerde vormen). "
-               u"Standaard per analyse de velden die Mecway zelf toont "
-               u"(docs/Standaardinstellingen_en_aannames.md par. 3).",
+               u"bestand). Modaal: stresses/vonmises (ook strain, "
+               u"beam_forces, shell_stresses, shell_forces) geven waarden "
+               u"per mode, alleen relatief betekenisvol (genormeerde "
+               u"vormen). Standaard per analyse de velden die Mecway zelf "
+               u"toont (docs/Standaardinstellingen_en_aannames.md par. 3); "
+               u"strain en shell_stresses staan uit (grotere .liml).",
                u"Which results go to Mecway (fewer fields = smaller file). "
-               u"Modal: stresses/vonmises give stresses per mode, only "
+               u"Modal: stresses/vonmises (also strain, beam_forces, "
+               u"shell_stresses, shell_forces) give values per mode, only "
                u"meaningful relative to each other (normalised shapes). "
                u"Default per analysis: the fields Mecway itself shows "
-               u"(docs/en/Default_settings_and_assumptions.md sec. 3)."),
+               u"(docs/en/Default_settings_and_assumptions.md sec. 3); "
+               u"strain and shell_stresses are off (larger .liml)."),
     "time_limit": (u"Maximale rekentijd van Code-Aster in seconden; daarna "
                    u"stopt de run; een afgebroken run levert geen volledige "
                    u"resultaten. Standaard 600 (statisch), 900 (modaal, "

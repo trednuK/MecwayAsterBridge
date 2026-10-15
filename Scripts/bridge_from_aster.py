@@ -162,6 +162,44 @@ RESULT_FIELD_SPECS = OrderedDict([
     # veld gaat alleen via result_route 'liml' (aster_results_export
     # FIELD_TABLE groep "error_estimate") en hangt aan de instelling
     # error_estimator, niet aan "fields" (docs/Foutschatter.md).
+    # ----------------------------------------------------------
+    # EXTRA VELDEN (alleen als ze gekozen zijn; aster_results_export
+    # OPT_IN_GROUPS, bridge_to_aster._optional_fields). Mecway-namen
+    # headless nagelopen in Mecway 34 (zie aster_results_export FIELD_TABLE
+    # en _plan_derived).
+    # strain: totale rek van volume-elementen (EPSI_NOEU; lineair, Mecway
+    # lstrain*). Niet-lineair met grote verplaatsingen: Green-Lagrange
+    # (EPSG_NOEU, STRUCT_FIELD_SPECS strain_gl). Schuif x 2 (_VALUE_SCALES).
+    # Schalen (lstrain<ij>u/m/b) alleen via route 'liml'.
+    ('strain', OrderedDict([
+        ('EPXX', 'lstrainxx'),
+        ('EPYY', 'lstrainyy'),
+        ('EPZZ', 'lstrainzz'),
+        ('EPXY', 'lstrainxy'),
+        ('EPYZ', 'lstrainyz'),
+        ('EPXZ', 'lstrainzx'),
+    ])),
+    # beam_forces: snedekrachten van balken (EFGE_NOEU, lokale assen).
+    ('beam_forces', OrderedDict([
+        ('N', 'tensileforce'),
+        ('VY', 'sheary'),
+        ('VZ', 'shearz'),
+        ('MT', 'torsion'),
+        ('MFY', 'bendingmomv'),
+        ('MFZ', 'bendingmomw'),
+    ])),
+    # Alleen via route 'liml' (in de job berekend, geen tabel):
+    #   shell_stresses: stress<ij>u1/m1/b1 (globale tensor boven/midden/
+    #                   onder);
+    #   shell_forces:   forceperlengthu/v/uv, momentu/v/uv, shearuw/vw;
+    #   safety_factor:  factorofsafety (von Mises-faalcriterium);
+    #   contact:        contactpressure (-LAGS_C) en contactstate.
+    ('shell_stresses', OrderedDict()),
+    ('shell_forces', OrderedDict()),
+    ('safety_factor', OrderedDict()),
+    ('contact', OrderedDict([
+        ('LAGS_C', 'contactpressure'),
+    ])),
 ])
 
 
@@ -206,7 +244,25 @@ STRUCT_FIELD_SPECS = OrderedDict([
         ('SIXXMIN', 'beamsixxmin'),
         ('SIXXMAX', 'beamsixxmax'),
     ]))),
+    # Totale rek bij grote verplaatsingen (EPSG_NOEU, Green-Lagrange;
+    # bridge_to_aster._strain_kind): Mecway's namen voor L30/D31.
+    ('strain_gl', ('strain', OrderedDict([
+        ('EPXX', 'greenlagrangestrainxx'),
+        ('EPYY', 'greenlagrangestrainyy'),
+        ('EPZZ', 'greenlagrangestrainzz'),
+        ('EPXY', 'greenlagrangestrainxy'),
+        ('EPYZ', 'greenlagrangestrainyz'),
+        ('EPXZ', 'greenlagrangestrainzx'),
+    ]))),
 ])
+
+# Vaste factor per Mecway-variabele: Mecway's schuifrek is de technische
+# hoekverdraaiing gamma = 2 eps (headless gemeten, Mecway 34), Code-Aster's
+# EPXY/EPXZ/EPYZ zijn tensorcomponenten (zelfde tabel als
+# aster_results_export.VALUE_SCALES).
+_VALUE_SCALES = dict(
+    (p + s, 2.0) for p in ("lstrain", "greenlagrangestrain")
+    for s in ("xy", "yz", "zx"))
 
 # Samenvoegen als een knoop meerdere rijen heeft (ELNO-velden: een rij per
 # aansluitend element). Niet genoemd = laatste waarde.
@@ -214,9 +270,10 @@ _MERGE_MIN = frozenset(['beamsixxmin'])
 _MERGE_MAX = frozenset(['beamsixxmax'])
 
 # Schaal-spanningscomponenten uit Mecway's eigen solve (namen gezien in een
-# door Mecway opgeloste .liml). De bridge levert die niet (lokaal assenstelsel
-# in Code-Aster); als ze bestaan worden ze leeggemaakt zodat er geen Mecway-
-# waarden naast Code-Aster-waarden blijven staan.
+# door Mecway opgeloste .liml). In deze tabelroute levert de bridge ze niet
+# (de route 'liml' wel: resultaatveld shell_stresses, in de job naar
+# globale assen gedraaid); als ze bestaan worden ze leeggemaakt zodat er
+# geen Mecway-waarden naast Code-Aster-waarden blijven staan.
 _MECWAY_SHELL_TENSOR_VARS = tuple(
     "stress{0}{1}".format(c, lvl)
     for lvl in ("b1", "m1", "u1")
@@ -608,7 +665,8 @@ def AsterToMecway_results(work_dir, resu_name, mw, solution):
                     if col is None or col >= len(parts):
                         continue
                     try:
-                        value = float(parts[col])
+                        value = float(parts[col]) * _VALUE_SCALES.get(
+                            mecway_name, 1.0)
                     except ValueError:
                         continue
                     old = arrays[mecway_name][idx]

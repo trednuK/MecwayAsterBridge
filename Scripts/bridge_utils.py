@@ -121,7 +121,12 @@ CONFIG_BRIDGE = {
             # Resultaatvelden die geextraheerd moeten worden.
             # Namen verwijzen naar entries in RESULT_FIELD_SPECS in bridge_from_aster.py.
             # Onbekende namen worden overgeslagen met een log-waarschuwing.
-            "fields":         ["displacements", "stresses", "vonmises", "reactions"],
+            # Extra velden (bridge_to_aster._optional_fields; alleen iets als
+            # het model er elementen voor heeft): beam_forces, shell_forces,
+            # safety_factor standaard aan; strain en shell_stresses uit
+            # (grotere .liml).
+            "fields":         ["displacements", "stresses", "vonmises", "reactions",
+                               "beam_forces", "shell_forces", "safety_factor"],
             # study.export: tijdslimiet [s] en geheugenlimiet [MB] voor run_aster.
             "time_limit":     600,
             "memory_limit":   2048,
@@ -172,7 +177,8 @@ CONFIG_BRIDGE = {
             "solver_command": "STAT_NON_LINE",
             "fields":         ["displacements", "stresses", "vonmises",
                                "reactions", "plastic_strain",
-                               "plastic_strain_eq"],
+                               "plastic_strain_eq", "beam_forces",
+                               "shell_forces", "safety_factor", "contact"],
             # Tunables voor STAT_NON_LINE.
             # substeps_per_interval: rekenstappen per interval van de
             #   lasttabel, alleen zonder Mecway's stapgrootte (<timesteps
@@ -256,7 +262,8 @@ CONFIG_BRIDGE = {
             "template":       "AsterTemplate_DynaNonLine.comm",
             "solver_command": "DYNA_NON_LINE",
             "fields":         ["displacements", "stresses", "vonmises",
-                               "velocities", "reactions", "plastic_strain_eq"],
+                               "velocities", "reactions", "plastic_strain_eq",
+                               "beam_forces", "safety_factor", "contact"],
             # SCHEMA_TEMPS (U4.53.01): "HHT" (numerieke demping via
             # hht_alpha, -0.3..0) of "NEWMARK" (gemiddelde versnelling).
             "schema":                "HHT",
@@ -294,7 +301,8 @@ CONFIG_BRIDGE = {
             "template":       "AsterTemplate_DynaNonLine.comm",
             "solver_command": "DYNA_NON_LINE",
             "fields":         ["displacements", "stresses", "vonmises",
-                               "velocities", "reactions", "plastic_strain_eq"],
+                               "velocities", "reactions", "plastic_strain_eq",
+                               "beam_forces", "safety_factor", "contact"],
             "schema":                "DIFF_CENT",
             # Tijdstap = factor * geschatte kritieke tijdstap (STOP_CFL
             # controleert de echte grens).

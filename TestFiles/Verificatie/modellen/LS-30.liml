@@ -1,0 +1,27 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.25" y="0" z="0" />
+  <node nid="3" x="0.5" y="0" z="0" />
+  <node nid="4" x="0.75" y="0" z="0" />
+  <node nid="5" x="1" y="0" z="0" />
+  <elset name="Balk" material="Rect">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <force selection="Tip"><x>1000.0 N</x><y>200.0 N</y><z>-300.0 N</z></force>
+  <moment selection="Tip"><x>50.0 N.m</x><y>0.0 N.m</y><z>0 N.m</z></moment>
+  <mat name="Rect">
+    <geometric type="RectBar" recta="0.02 m" rectb="0.03 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="5" />
+  </nodeselection>
+</liml>

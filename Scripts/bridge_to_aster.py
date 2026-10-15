@@ -814,7 +814,7 @@ def _model_groups(model_data):
     return out
 
 
-def _shell_ref_vector(model_data, group):
+def _shell_ref_vector(model_data, group, quiet=False):
     """
     Referentievector voor het lokale assenstelsel van een schaalgroep.
 
@@ -853,7 +853,7 @@ def _shell_ref_vector(model_data, group):
     if worst[0] < 0.9:
         return None
     axis = min(range(3), key=lambda k: worst[k])
-    if worst[axis] >= 0.9:
+    if worst[axis] >= 0.9 and not quiet:
         log(tr("WARNING: Schaalgroep '{0}' heeft normalen langs alle "
                "globale assen; geen referentievector (VECTEUR) die voor elk "
                "element werkt. Splits de selectie in Mecway per vlak als "
@@ -864,8 +864,9 @@ def _shell_ref_vector(model_data, group):
                "Code-Aster stops with PLATE1_40.").format(group))
     vect = [0.0, 0.0, 0.0]
     vect[axis] = 1.0
-    log("INFO: Schaalgroep '{0}' ligt (deels) loodrecht op X; lokaal "
-        "assenstelsel via VECTEUR=({1}, {2}, {3}).".format(group, *vect))
+    if not quiet:
+        log("INFO: Schaalgroep '{0}' ligt (deels) loodrecht op X; lokaal "
+            "assenstelsel via VECTEUR=({1}, {2}, {3}).".format(group, *vect))
     return vect
 
 
@@ -1151,10 +1152,152 @@ def _result_groups(model_data, verbose=False):
     return g3d, gsh, gbm
 
 
-def _build_calc_champ_block(model_data, with_plastic=False, reactions=True):
+def _active_analysis():
+    """De actieve analyse-config, of {} als er (nog) geen is."""
+    try:
+        return get_active_analysis()
+    except KeyError:
+        return {}
+
+
+def _beam_groups(model_data):
+    """Alle balk-elsets (POU_D_E/POU_D_T), ook met een doorsnede zonder
+    SIPM_ELNO; trusses (BARRE) niet."""
+    return [g for g, mod in model_data.get("elset_modelisations", {}).items()
+            if mod in _BEAM_MODELISATIONS]
+
+
+def _strain_kind(analysis):
+    """'EPSG' (Green-Lagrange) bij STAT_NON_LINE/DYNA_NON_LINE met grote
+    verplaatsingen, zoals Mecway's niet-lineaire analyses (L30/D31:
+    greenlagrangestrain*, headless gezien met CCX); anders 'EPSI' (kleine
+    rekken, Mecway lstrain*). Catalogus calc_champ.py v17.4: DEFORMATION
+    EPSI_ELNO/EPSI_NOEU, EPSG_ELNO/EPSG_NOEU."""
+    if (analysis.get("solver_command") in ("STAT_NON_LINE", "DYNA_NON_LINE")
+            and "{0}".format(analysis.get("deformation", "PETIT")).upper()
+            != "PETIT"):
+        return "EPSG"
+    return "EPSI"
+
+
+def _failure_strengths(model_data):
+    """{Mecway-elset: tensilestrength [Pa]} van elsets met een materiaal
+    met Mecway's von Mises-faalcriterium (bridge_from_liml)."""
+    strengths = model_data.get("failure_strengths", {})
+    return dict((e, strengths[m]) for e, m in
+                model_data.get("mecway_elset_materials", {}).items()
+                if m in strengths)
+
+
+def _optional_fields(model_data, fields, quiet=False):
+    """De gekozen extra resultaatvelden (aster_results_export.
+    OPT_IN_GROUPS) die in dit model iets opleveren; voor de rest een
+    INFO (niet met quiet)."""
+    g3d, gsh, _gbm = _result_groups(model_data)
+    applies = {
+        "strain": bool(g3d or gsh),
+        "beam_forces": bool(_beam_groups(model_data)),
+        "shell_stresses": bool(gsh),
+        "shell_forces": bool(gsh),
+        "safety_factor": bool(_failure_strengths(model_data)),
+        "contact": bool(model_data.get("contacts")),
+    }
+    out = [f for f in fields if applies.get(f)]
+    idle = [f for f in fields if f in applies and not applies[f]]
+    if idle and not quiet:
+        log("INFO: Resultaatvelden zonder iets om te berekenen in dit model "
+            "(geen bijbehorende elementen, contact of faalcriterium): "
+            "{0}.".format(", ".join(idle)))
+    return out
+
+
+def _shell_vectors(model_data):
+    """{Mecway-elset: VECTEUR} van de schaalgroepen met een eigen
+    referentievector (_shell_ref_vector), voor aster_results_export."""
+    back = dict((new, old) for old, new in
+                model_data.get("group_renames", {}).items())
+    out = {}
+    for group in model_data.get("shell_sections", {}):
+        vect = _shell_ref_vector(model_data, group, quiet=True)
+        if vect is not None:
+            out[back.get(group, group)] = tuple(vect)
+    return out
+
+
+def _optional_field_blocks(model_data, fields, strain_kind):
+    """
+    CALC_CHAMP/POST_CHAMP voor de extra resultaatvelden (fields, alleen
+    de gekozen; zie _optional_fields). Code-Aster v17.4:
+      - strain: DEFORMATION EPSI_ELNO/EPSI_NOEU (of EPSG_* bij grote
+        verplaatsingen) op de volumes; schalen EPSI_ELNO (per laag) en
+        POST_CHAMP EXTR_COQUE naar eps_sup/eps_moy/eps_inf, zoals de
+        spanningen (gezien in een run: EPSI_ELNO van DKT heeft 3
+        subpunten, EPZZ = 0). EPSI_ELNO EEN keer over volume + schalen
+        aanvragen, zoals SIGM_ELNO (CALCULEL2_15, zie
+        _build_calc_champ_block).
+      - beam_forces: EFGE_ELNO en EFGE_NOEU op de balken (N, VY, VZ, MT,
+        MFY, MFZ in de lokale assen; gezien in een run: gelijk aan
+        Mecway's tensileforce .. bendingmomw).
+      - shell_forces: EFGE_ELNO van de schalen (NXX..MXY, QX, QY) in een
+        eigen resultaat res_efs: in res zou het veld de componenten van de
+        balken en de schalen mengen, en dan herkent aster_results_export
+        de indeling niet.
+    shell_stresses (res_sup/res_moy/res_inf), safety_factor en contact
+    hebben geen extra CALC_CHAMP nodig.
+    """
+    g3d, gsh, _gbm = _result_groups(model_data)
+    gbeam = _beam_groups(model_data)
+    out = []
+    if "strain" in fields and (g3d or gsh):
+        out.append("# Totale rek (resultaatveld strain).")
+        if strain_kind == "EPSG":
+            if g3d:
+                out.append("res = CALC_CHAMP(reuse=res, RESULTAT=res, "
+                           "GROUP_MA={0}, DEFORMATION=('EPSG_ELNO', "
+                           "'EPSG_NOEU', ))".format(_fmt_groups(g3d)))
+            if gsh:
+                out.append("res = CALC_CHAMP(reuse=res, RESULTAT=res, "
+                           "GROUP_MA={0}, DEFORMATION=('EPSI_ELNO', ))"
+                           .format(_fmt_groups(gsh)))
+        else:
+            out.append("res = CALC_CHAMP(reuse=res, RESULTAT=res, "
+                       "GROUP_MA={0}, DEFORMATION=('EPSI_ELNO', ))".format(
+                           _fmt_groups(list(g3d) + list(gsh))))
+            if g3d:
+                out.append("res = CALC_CHAMP(reuse=res, RESULTAT=res, "
+                           "GROUP_MA={0}, DEFORMATION=('EPSI_NOEU', ))"
+                           .format(_fmt_groups(g3d)))
+        for concept, level in (("eps_sup", "SUP"), ("eps_moy", "MOY"),
+                               ("eps_inf", "INF")):
+            if gsh:
+                out.append(
+                    "{0} = POST_CHAMP(RESULTAT=res, GROUP_MA={1}, "
+                    "EXTR_COQUE=_F(NOM_CHAM=('EPSI_ELNO', ), NUME_COUCHE=1, "
+                    "NIVE_COUCHE='{2}'))".format(concept, _fmt_groups(gsh),
+                                                 level))
+        out.append("")
+    if "beam_forces" in fields and gbeam:
+        out += ["# Snedekrachten van balken (resultaatveld beam_forces).",
+                "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
+                "CONTRAINTE=('EFGE_ELNO', 'EFGE_NOEU', ))".format(
+                    _fmt_groups(gbeam)), ""]
+    if "shell_forces" in fields and gsh:
+        out += ["# Krachten en momenten per lengte van schalen "
+                "(resultaatveld shell_forces).",
+                "res_efs = CALC_CHAMP(RESULTAT=res, GROUP_MA={0}, "
+                "CONTRAINTE=('EFGE_ELNO', ))".format(_fmt_groups(gsh)), ""]
+    return "\n".join(out) + ("\n" if out else "")
+
+
+def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
+                            fields=None, strain_kind="EPSI"):
     """
     Genereer de CALC_CHAMP-aanroepen (en POST_CHAMP voor schalen).
     reactions False: zonder REAC_NODA (spanningen per mode, _build_modal).
+    fields: de gekozen resultaatgroepen; alleen dan ook de extra velden
+    (_optional_field_blocks; strain_kind 'EPSI' of 'EPSG'). Zonder fields
+    (respons op modale basis, harmonisch, spectrum, thermomechanisch)
+    ongewijzigd.
 
     Code-Aster v17.4.0, geverifieerd in catalogus en testcases:
 
@@ -1309,7 +1452,11 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True):
             "",
         ]
 
-    return "\n".join(out) + "\n"
+    extra = ""
+    if fields is not None:
+        extra = _optional_field_blocks(
+            model_data, _optional_fields(model_data, fields), strain_kind)
+    return "\n".join(out) + "\n" + extra
 
 
 # ==========================================
@@ -1589,8 +1736,15 @@ def _result_tables(model_data, with_plastic=False, with_velocity=False):
 
     De INTITULE moet overeenkomen met een sleutel in RESULT_FIELD_SPECS
     of STRUCT_FIELD_SPECS in bridge_from_aster.py.
+
+    Van de extra velden (_optional_fields) alleen de totale rek van
+    volume-elementen en de snedekrachten van balken (knoopwaarden, gekozen
+    in de actieve analyse); de rest gaat alleen via route 'liml'.
     """
     g3d, gsh, gbm = _result_groups(model_data)
+    analysis = _active_analysis()
+    chosen = _optional_fields(model_data, analysis.get("fields", []),
+                              quiet=True)
     tables = [("tab_depl", "displacements", "res", "DEPL",
                "TOUT_CMP='OUI'", None)]
     if with_velocity:
@@ -1618,6 +1772,18 @@ def _result_tables(model_data, with_plastic=False, with_velocity=False):
                        "TOUT_CMP='OUI'", gbm))
     tables.append(("tab_reac", "reactions", "res", "REAC_NODA",
                    "TOUT_CMP='OUI'", None))
+    if "strain" in chosen and g3d:
+        # Zelfde veld als _optional_field_blocks; Green-Lagrange onder een
+        # eigen INTITULE (STRUCT_FIELD_SPECS strain_gl).
+        if _strain_kind(analysis) == "EPSG":
+            tables.append(("tab_epsg", "strain_gl", "res", "EPSG_NOEU",
+                           "TOUT_CMP='OUI'", None))
+        else:
+            tables.append(("tab_epsi", "strain", "res", "EPSI_NOEU",
+                           "TOUT_CMP='OUI'", None))
+    if "beam_forces" in chosen:
+        tables.append(("tab_efge", "beam_forces", "res", "EFGE_NOEU",
+                       "TOUT_CMP='OUI'", _beam_groups(model_data)))
     if with_plastic and g3d:
         tables.append(("tab_epsp", "plastic_strain", "res", "EPSP_NOEU",
                        "TOUT_CMP='OUI'", None))
@@ -1673,6 +1839,23 @@ def results_file(work_dir):
     return os.path.join(work_dir, run_name(RESULTS_SUFFIX))
 
 
+def _derived_args(model_data, chosen):
+    """Extra argumenten voor aster_results_export.export_results bij de
+    gekozen extra velden (opt_in, schaalvectoren, sterktes voor de factor
+    of safety); "" zonder."""
+    if not chosen:
+        return ""
+    out = ", opt_in={0!r}".format([str(f) for f in chosen])
+    if any(f in chosen for f in ("strain", "shell_stresses",
+                                 "shell_forces")):
+        vectors = _shell_vectors(model_data)
+        if vectors:
+            out += ", shell_vectors={0!r}".format(vectors)
+    if "safety_factor" in chosen:
+        out += ", strengths={0!r}".format(_failure_strengths(model_data))
+    return out
+
+
 def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
                    precision, static=None, fields=None, extra=""):
     """
@@ -1687,10 +1870,20 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
     argumenten (bijv. ", node_fields=..." van bridge_fatigue).
     Returns (postreleve_block, impr_table_block).
     """
+    analysis = _active_analysis()
+    chosen = (_optional_fields(model_data, analysis.get("fields", []),
+                               quiet=True) if fields is None else [])
     if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
+        only_liml = [f for f in chosen if f not in ("strain", "beam_forces")]
+        if "contact" in chosen:
+            only_liml.append("contactstate")
+        if only_liml:
+            log("INFO: Resultaatvelden alleen via route 'liml' (niet in de "
+                "tabellen): {0}.".format(", ".join(only_liml)))
         return postreleve_block, impr_table_block
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
+    extra = _derived_args(model_data, chosen) + extra
     block = (
         "# Resultaten in Mecway's eigen formaat (bridge: result_route='liml')@N"
         "import sys@N"
@@ -1700,7 +1893,8 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
         "    res, {fragment}, {liml},@N"
         "    extra_results=dict((k, globals()[k]) for k in@N"
         "                       ('res_sup', 'res_moy', 'res_inf',@N"
-        "                        'res_flux', 'res_err')@N"
+        "                        'res_flux', 'res_err', 'eps_sup', 'eps_moy',@N"
+        "                        'eps_inf', 'res_efs')@N"
         "                       if k in globals()),@N"
         "    precision='{precision}'{static}{fields}{extra})@N"
     ).replace("@N", chr(10)).format(
@@ -3763,7 +3957,8 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
         calc_champ_block = (bridge_xfem.result_block(model_data) +
                             _custom_code(model_data, 'post'))
     else:
-        calc_champ_block = (_build_calc_champ_block(model_data) + err_block +
+        calc_champ_block = (_build_calc_champ_block(
+            model_data, fields=analysis.get("fields", [])) + err_block +
                             _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block  = _build_postreleve_block(model_data)
     impr_table_block  = _build_impr_table_block(model_data)
@@ -5835,7 +6030,9 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     if fatigue is None:
         return None
     calc_champ_block = (_build_calc_champ_block(
-        model_data, with_plastic=with_plastic) +
+        model_data, with_plastic=with_plastic,
+        fields=analysis.get("fields", []),
+        strain_kind=_strain_kind(analysis)) +
         _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block = _build_postreleve_block(
         model_data, result_selector=result_selector,
@@ -6409,8 +6606,14 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
     extra = ""
     if len(fields) > 1:
         extra = ("    extra_results=dict((k, globals()[k]) for k in@N"
-                 "                       ('res_sup', 'res_moy', 'res_inf')@N"
+                 "                       ('res_sup', 'res_moy', 'res_inf',@N"
+                 "                        'eps_sup', 'eps_moy', 'eps_inf',@N"
+                 "                        'res_efs')@N"
                  "                       if k in globals()),@N")
+        vectors = _shell_vectors(model_data)
+        if vectors and any(f in fields for f in ("strain", "shell_stresses",
+                                                 "shell_forces")):
+            extra += "    shell_vectors={0!r},@N".format(vectors)
     return (
         "# Resultaten in Mecway's eigen formaat (bridge: result_route='liml')@N"
         "import sys@N"
@@ -6434,7 +6637,8 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
 # "fields" op de pagina Modaal; Mecway rekent ze ook per mode als je ze
 # vóór het oplossen onder Solution aanvraagt, nagelopen headless met
 # Mecway 33: stressxx.. en vonmises als node- en elementnodevariable).
-_MODAL_STRESS_GROUPS = ("stresses", "vonmises")
+_MODAL_STRESS_GROUPS = ("stresses", "vonmises", "strain", "beam_forces",
+                        "shell_stresses", "shell_forces")
 
 
 def _modal_stress_fields(analysis, buckling):
@@ -6661,7 +6865,8 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         # vorm (sigma = D B phi).
         stress_block = ("# Spanningen per trillingsvorm (instelling fields "
                         "van modal_3d)\n" + _build_calc_champ_block(
-                            model_data, reactions=False) + "\n")
+                            model_data, reactions=False,
+                            fields=fields) + "\n")
     export_block = (stress_block + _custom_code(model_data, 'post') +
                     _modes_export_block(
                         work_dir, model_data, buckling and _mode_norm(

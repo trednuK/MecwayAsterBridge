@@ -1,0 +1,97 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="0.1 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.05" y="0" z="0" />
+  <node nid="3" x="0.05" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0" y="0" z="0.01" />
+  <node nid="6" x="0.05" y="0" z="0.01" />
+  <node nid="7" x="0.05" y="0.01" z="0.01" />
+  <node nid="8" x="0" y="0.01" z="0.01" />
+  <node nid="9" x="0.025" y="0" z="0" />
+  <node nid="10" x="0.05" y="0.005" z="0" />
+  <node nid="11" x="0.025" y="0.01" z="0" />
+  <node nid="12" x="0" y="0.005" z="0" />
+  <node nid="13" x="0" y="0" z="0.005" />
+  <node nid="14" x="0.05" y="0" z="0.005" />
+  <node nid="15" x="0.05" y="0.01" z="0.005" />
+  <node nid="16" x="0" y="0.01" z="0.005" />
+  <node nid="17" x="0.025" y="0" z="0.01" />
+  <node nid="18" x="0.05" y="0.005" z="0.01" />
+  <node nid="19" x="0.025" y="0.01" z="0.01" />
+  <node nid="20" x="0" y="0.005" z="0.01" />
+  <node nid="21" x="0.1" y="0" z="0" />
+  <node nid="22" x="0.1" y="0.01" z="0" />
+  <node nid="23" x="0.1" y="0" z="0.01" />
+  <node nid="24" x="0.1" y="0.01" z="0.01" />
+  <node nid="25" x="0.075" y="0" z="0" />
+  <node nid="26" x="0.1" y="0.005" z="0" />
+  <node nid="27" x="0.075" y="0.01" z="0" />
+  <node nid="28" x="0.1" y="0" z="0.005" />
+  <node nid="29" x="0.1" y="0.01" z="0.005" />
+  <node nid="30" x="0.075" y="0" z="0.01" />
+  <node nid="31" x="0.1" y="0.005" z="0.01" />
+  <node nid="32" x="0.075" y="0.01" z="0.01" />
+  <elset name="Staaf" material="Staal">
+    <elem eid="1" shape="hex20" nodes="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" />
+    <elem eid="2" shape="hex20" nodes="2 21 22 3 6 23 24 7 25 26 27 10 14 28 29 15 30 31 32 18" />
+  </elset>
+  <displacement selection="SymX"><value>0 mm</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="SymY"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="SymZ"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="Trek"><value time="0 s">0 mm</value><value time="1 s">5 mm</value><x>1</x><y>0</y><z>0</z></displacement>
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="SymX">
+    <node nid="1" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="8" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="16" />
+    <node nid="20" />
+  </nodeselection>
+  <nodeselection name="SymY">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="9" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="17" />
+    <node nid="21" />
+    <node nid="23" />
+    <node nid="25" />
+    <node nid="28" />
+    <node nid="30" />
+  </nodeselection>
+  <nodeselection name="SymZ">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="21" />
+    <node nid="22" />
+    <node nid="25" />
+    <node nid="26" />
+    <node nid="27" />
+  </nodeselection>
+  <nodeselection name="Trek">
+    <node nid="21" />
+    <node nid="22" />
+    <node nid="23" />
+    <node nid="24" />
+    <node nid="26" />
+    <node nid="28" />
+    <node nid="29" />
+    <node nid="31" />
+  </nodeselection>
+</liml>

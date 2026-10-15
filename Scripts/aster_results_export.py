@@ -148,6 +148,9 @@ def tr(nl, en):
 #                          (alleen volume-elementen). Alleen als het veld
 #                          in res staat: CALC_CHAMP CONTRAINTE=('SIGM_ELNO',)
 #                          / CRITERES=('SIEQ_ELNO',) moet het berekenen.
+#               ELEMKNOOP_LIJN  idem voor line2-elementen (balken: EFGE_ELNO)
+# Afgeleide velden (schaaltensor, -rek en -krachten, factor of safety,
+# contactstatus) staan niet in deze tabel: _plan_derived.
 # Code-Aster-volgorde van de spanningscomponenten is SIXX SIYY SIZZ SIXY
 # SIXZ SIYZ (nagelopen met getComponents()); de koppeling gaat op naam.
 # ==========================================
@@ -155,6 +158,7 @@ KNOOP = "knoop"
 ELNO_MIN = "elno_min"
 ELNO_MAX = "elno_max"
 ELEMKNOOP = "elementknoop"
+ELEMKNOOP_LIJN = "elementknoop_lijn"
 
 _STRESS_CMPS = (("SIXX", "xx"), ("SIYY", "yy"), ("SIZZ", "zz"),
                 ("SIXY", "xy"), ("SIYZ", "yz"), ("SIXZ", "zx"))
@@ -240,8 +244,69 @@ FIELD_TABLE = (
     [("pressure", "res", "PRES", "PRES", "pressure", KNOOP)] +
     # Vibro-akoestiek (bridge_vibroacoustic.py, 3D_FLUIDE U_P_PHI): de druk
     # is component PRES van DEPL (alleen op de knopen van het fluidum).
-    [("pressure", "res", "DEPL", "PRES", "pressure", KNOOP)]
+    [("pressure", "res", "DEPL", "PRES", "pressure", KNOOP)] +
+    # Totale rek van volume-elementen (bridge_to_aster._strain_blocks).
+    # Mecway-namen (headless gezien, Mecway 34): lineair (S30, D30, V30)
+    # lstrainxx..lstrainzx, niet-lineair (L30, D31, CCX) greenlagrange-
+    # strainxx..; schuifcomponenten zijn de technische hoekverdraaiing
+    # gamma = 2 eps (gemeten: enkelvoudige afschuiving, lstrainzx =
+    # tau/G), Code-Aster's EPXY/EPXZ/EPYZ zijn tensorcomponenten
+    # (VALUE_SCALES). EPSI = kleine rekken, EPSG = Green-Lagrange
+    # (catalogus calc_champ.py, DEFORMATION).
+    [("strain", "res", f, c, n + s, k)
+     for f, n, k in (("EPSI_NOEU", "lstrain", KNOOP),
+                     ("EPSI_ELNO", "lstrain", ELEMKNOOP),
+                     ("EPSG_NOEU", "greenlagrangestrain", KNOOP),
+                     ("EPSG_ELNO", "greenlagrangestrain", ELEMKNOOP))
+     for c, s in _EPS_CMPS] +
+    # Snedekrachten van balken (EFGE_ELNO/EFGE_NOEU, POU_D_E/POU_D_T,
+    # lokale assen: x langs de balk, y = Mecway's V, z = W; zie
+    # bridge_to_aster._build_cara_elem_block). Mecway-namen en tekens
+    # headless nagelopen (Mecway 34, ingeklemde balk met kracht en
+    # moment op de tip, ook schuin): tensileforce = N, sheary = VY,
+    # shearz = VZ, torsion = MT, bendingmomv = MFY, bendingmomw = MFZ.
+    [("beam_forces", "res", f, c, name, k)
+     for f, k in (("EFGE_NOEU", KNOOP), ("EFGE_ELNO", ELEMKNOOP_LIJN))
+     for c, name in (("N", "tensileforce"), ("VY", "sheary"),
+                     ("VZ", "shearz"), ("MT", "torsion"),
+                     ("MFY", "bendingmomv"), ("MFZ", "bendingmomw"))] +
+    # Contactdruk (DEFI_CONTACT CONTINUE): de Lagrange-multiplicator LAGS_C
+    # van DEPL op de slave-knopen is de contactdruk, negatief bij druk
+    # (testcase forma04b: "Pression de contact"; gemeten in de patchtest
+    # NL-03: LAGS_C = -p). Mecway: contactpressure, positief bij druk
+    # (CCX-oplossing headless gezien). Contactstatus: _plan_derived.
+    [("contact", "res", "DEPL", "LAGS_C", "contactpressure", KNOOP)]
 )
+
+# Groepen die alleen meegaan als ze gekozen zijn: hun velden staan soms
+# altijd in het resultaat (LAGS_C in DEPL, SIGM_ELNO van schalen in res_sup),
+# en zonder "fields" (statisch, niet-lineair) schrijft export_results alles
+# wat er is. bridge_to_aster._results_route geeft de gekozen groepen mee
+# (opt_in).
+OPT_IN_GROUPS = frozenset(["strain", "beam_forces", "shell_stresses",
+                           "shell_forces", "safety_factor", "contact"])
+
+# Vaste factor per Mecway-variabele (waarde = Code-Aster x factor), na
+# VALUE_OFFSETS niet nodig (geen overlap): contactdruk positief bij druk,
+# schuifrek als technische hoekverdraaiing (zie FIELD_TABLE).
+VALUE_SCALES = dict(
+    [("contactpressure", -1.0)] +
+    [(p + s, 2.0) for p in ("lstrain", "greenlagrangestrain")
+     for s in ("xy", "yz", "zx")])
+
+# Ondergrens per Mecway-variabele (na VALUE_SCALES): contactdruk is nooit
+# negatief. Met PENALISATION is LAGS_C op open slave-knopen positief
+# (gezien in NL-03b: tot +3e4 Pa naast gesloten knopen), dus -LAGS_C < 0;
+# Mecway (CCX) toont daar 0.
+VALUE_MIN = {"contactpressure": 0.0}
+
+# Contactstatus zonder CONT_NOEU: gesloten boven deze fractie van de
+# grootste contactdruk (_contact_state_var).
+CONTACT_CLOSED = 0.01
+
+# Factor of safety bij von Mises = 0 (onbelast): een grote eindige waarde
+# (Mecway toont standaard tot 15, manual v34 par. 8.7).
+FOS_MAX = 1.0e6
 
 # Vaste verschuiving per Mecway-variabele (waarde = Code-Aster + offset).
 # Code-Aster's RAYONNEMENT rekent met T + 273,15 (U4.44.02: temperaturen in
@@ -267,6 +332,8 @@ OPTIONAL_PARTS = frozenset(["heatfluxz"])
 
 SOLID_SHAPES = frozenset(["hex8", "hex20", "tet4", "tet10", "pyr5", "pyr13",
                           "wedge6", "wedge15"])
+SHELL_SHAPES = frozenset(["tri3", "quad4", "tri6", "quad8"])
+LINE_SHAPES = frozenset(["line2"])
 
 _NL = b"\r\n"            # Mecway schrijft CRLF
 _B64_LINE = 64           # base64-regellengte in Mecway's .liml
@@ -286,10 +353,14 @@ def read_liml_model(liml_path):
       "coords"   : np.ndarray (N, 3), rij i = knoop i+1
       "elsets"   : OrderedDict {elsetnaam: [eid, ...]} in modelvolgorde
       "elements" : dict {eid: (vorm, [nid, ...])}
+      "uaxes"    : dict {eid: (ux, uy, uz)}: Mecway's U-richting per
+                   element (attributen orientationux/uy/uz, Element
+                   properties), alleen waar opgegeven
     """
     nodes = {}
     elsets = OrderedDict()
     elements = {}
+    uaxes = {}
     depth = 0
     with open(liml_path, "rb") as f:
         for event, el in ET.iterparse(f, events=("start", "end")):
@@ -312,6 +383,11 @@ def read_liml_model(liml_path):
                     elements[eid] = (e.get("shape"),
                                      [int(n) for n in e.get("nodes").split()])
                     eids.append(eid)
+                    keys = ("orientationux", "orientationuy",
+                            "orientationuz")
+                    if any(e.get(k) is not None for k in keys):
+                        uaxes[eid] = tuple(float(e.get(k, "0"))
+                                           for k in keys)
             el.clear()
     n = max(nodes) if nodes else 0
     if sorted(nodes) != list(range(1, n + 1)):
@@ -320,7 +396,8 @@ def read_liml_model(liml_path):
                             "Node numbers in {0} are not contiguous "
                             "1..N.").format(liml_path))
     coords = np.array([nodes[i] for i in range(1, n + 1)], dtype=float)
-    return {"coords": coords, "elsets": elsets, "elements": elements}
+    return {"coords": coords, "elsets": elsets, "elements": elements,
+            "uaxes": uaxes}
 
 
 def _check_node_order(mesh, coords):
@@ -629,6 +706,10 @@ def _plan_node(fields, rkey, field, cmp_, name):
     getter = _node_var(rkey, field, cmp_, rows)
     if name in VALUE_OFFSETS:
         getter = _offset(getter, VALUE_OFFSETS[name])
+    if name in VALUE_SCALES:
+        getter = _scaled(getter, VALUE_SCALES[name])
+    if name in VALUE_MIN:
+        getter = _at_least(getter, VALUE_MIN[name])
     return _Var(name, False, (rows + 1).astype("<i4"), getter)
 
 
@@ -637,6 +718,20 @@ def _offset(getter, offset):
         vals = getter(fields)
         return None if vals is None else vals + offset
     return shifted
+
+
+def _scaled(getter, factor):
+    def scaled(fields):
+        vals = getter(fields)
+        return None if vals is None else vals * factor
+    return scaled
+
+
+def _at_least(getter, lower):
+    def clipped(fields):
+        vals = getter(fields)
+        return None if vals is None else np.maximum(vals, lower)
+    return clipped
 
 
 def _cells_field(fields, rkey, field, cmp_, conn):
@@ -682,13 +777,14 @@ def _plan_elno_node(fields, rkey, field, cmp_, name, kind, conn):
                                kind == ELNO_MIN))
 
 
-def _plan_elem(fields, rkey, field, cmp_, name, conn, model):
+def _plan_elem(fields, rkey, field, cmp_, name, conn, model,
+               shapes=SOLID_SHAPES):
     found = _cells_field(fields, rkey, field, cmp_, conn)
     if found is None:
         return None
     d, icmp, (start, nbpt, nbsp) = found
     solids = dict((e, v) for e, v in model["elements"].items()
-                  if v[0] in SOLID_SHAPES)
+                  if v[0] in shapes)
     cells = _match_cells(conn, solids, nbpt, nbsp, fields.n)
     eids, gather = [], []
     for eid in sorted(cells):
@@ -703,16 +799,29 @@ def _plan_elem(fields, rkey, field, cmp_, name, conn, model):
         eids.append(eid)
     if not eids:
         return None
-    return _Var(name, True, np.array(eids, dtype="<i4"),
-                _elem_var(rkey, field, cmp_, np.array(gather)))
+    getter = _elem_var(rkey, field, cmp_, np.array(gather))
+    if name in VALUE_SCALES:
+        getter = _scaled(getter, VALUE_SCALES[name])
+    return _Var(name, True, np.array(eids, dtype="<i4"), getter)
 
 
-def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True):
+def _wanted(group, groups_wanted, opt_in):
+    """Hoort groep bij de export? Met een lijst groepen (fields) precies
+    die; zonder lijst alles behalve de OPT_IN_GROUPS die niet in opt_in
+    staan."""
+    if groups_wanted is not None:
+        return group in groups_wanted
+    return group not in OPT_IN_GROUPS or group in opt_in
+
+
+def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
+                    opt_in=(), derived=None):
     """Lijst _Var in Mecway-volgorde (grootte voor de componenten; zonder
-    grootte als magnitudes False is, zoals Mecway's trillingsvormen)."""
+    grootte als magnitudes False is, zoals Mecway's trillingsvormen).
+    derived: argumenten voor _plan_derived (schaalvectoren, sterktes)."""
     node_vars, elem_vars = OrderedDict(), OrderedDict()
     for group, rkey, field, cmp_, name, kind in FIELD_TABLE:
-        if groups_wanted is not None and group not in groups_wanted:
+        if not _wanted(group, groups_wanted, opt_in):
             continue
         if rkey not in fields.results:
             continue
@@ -722,6 +831,9 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True):
             var = _plan_node(fields, rkey, field, cmp_, name)
         elif kind in (ELNO_MIN, ELNO_MAX):
             var = _plan_elno_node(fields, rkey, field, cmp_, name, kind, conn)
+        elif kind == ELEMKNOOP_LIJN:
+            var = _plan_elem(fields, rkey, field, cmp_, name, conn, model,
+                             LINE_SHAPES)
         else:
             var = _plan_elem(fields, rkey, field, cmp_, name, conn, model)
         if var is None:
@@ -734,6 +846,14 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True):
                      "FIELD_TABLE, second source ignored.").format(name))
             continue
         target[name] = var
+    if fields.rows is None:
+        wanted = [g for g in OPT_IN_GROUPS
+                  if _wanted(g, groups_wanted, opt_in)]
+        for var in _plan_derived(fields, model, conn, wanted,
+                                 **(derived or {})):
+            target = elem_vars if var.element else node_vars
+            if var.name not in target:
+                target[var.name] = var
     out = []
     for name, var in node_vars.items():
         for mag, parts in (MAGNITUDES.items() if magnitudes else ()):
@@ -771,6 +891,426 @@ def _magnitude_var(name, parts, optional=()):
                 sq[here] += v[k] ** 2
         return np.sqrt(sq)
     return _Var(name, False, ids.astype("<i4"), getter)
+
+
+# ==========================================
+# AFGELEIDE VELDEN: SCHALEN, FACTOR OF SAFETY, CONTACTSTATUS
+# ==========================================
+# Schalen (DKT/DST/COQUE_3D): Code-Aster geeft SIGM_ELNO, EPSI_ELNO en
+# EFGE_ELNO in het lokale assenstelsel van het element: x = projectie van
+# de referentievector (AFFE_CARA_ELEM COQUE VECTEUR, zonder: globaal X) op
+# het elementvlak, n = normaal uit de knoopvolgorde, y = n x x (U4.42.01,
+# COQUE/VECTEUR). Nagelopen met een run: strook in het XY-vlak onder 30
+# graden, SIGM_ELNO SIXX = sigma_xx globaal; SUP = kant van +n.
+# Mecway (headless gezien, Mecway 34, strook onder 30 graden en recht):
+#   - spanningstensor in GLOBALE XYZ op boven-, midden- en ondervlak:
+#     stress<ij>u1 / m1 / b1 (laag 1); boven = +W;
+#   - totale rek idem: lstrain<ij>u / m / b, schuif als hoekverdraaiing
+#     gamma, lstrainzz = 0 (vlakke spanning; Code-Aster EPZZ = 0);
+#   - krachten en momenten per lengte in Mecway's eigen U,V,W:
+#     forceperlengthu/v/uv (N/m), momentu/v/uv (N.m/m; momentu > 0 geeft
+#     trek boven), shearuw/shearvw (dwarskracht per lengte). U = projectie
+#     van de orientatievector of de rand van knoop 1 naar 2 (kwadratisch:
+#     1 naar 3), V = W x U (manual v34 par. 7.4.2).
+# Knoopwaarden zijn het gemiddelde van de elementwaarden in de knoop
+# (zoals Mecway en Code-Aster's _NOEU); daarnaast als elementnodevariable.
+# Gekromde kwadratische schalen: de normaal is die van het vlak door de
+# hoekknopen (Code-Aster en Mecway variëren hem per punt; NIET
+# geverifieerd voor sterk gekromde elementen).
+_TENSOR_ORDER = (("xx", 0, 0), ("yy", 1, 1), ("zz", 2, 2), ("xy", 0, 1),
+                 ("yz", 1, 2), ("zx", 2, 0))
+_SIGM_IJ = {"SIXX": (0, 0), "SIYY": (1, 1), "SIZZ": (2, 2), "SIXY": (0, 1),
+            "SIXZ": (0, 2), "SIYZ": (1, 2)}
+_EPSI_IJ = {"EPXX": (0, 0), "EPYY": (1, 1), "EPZZ": (2, 2), "EPXY": (0, 1),
+            "EPXZ": (0, 2), "EPYZ": (1, 2)}
+_SHELL_LEVELS = (("sup", "u"), ("moy", "m"), ("inf", "b"))
+_SHELL_FORCE_NAMES = ("forceperlengthu", "forceperlengthv",
+                      "forceperlengthuv", "momentu", "momentv", "momentuv",
+                      "shearuw", "shearvw")
+
+
+def _elset_of(model):
+    out = {}
+    for name, eids in model["elsets"].items():
+        for e in eids:
+            out.setdefault(e, name)
+    return out
+
+
+def _shell_frame(model, xyz, cell_nodes, eid, vectors, elset_of):
+    """(R, cos, sin): R met kolommen x, y, n van Code-Aster's lokale
+    schaalassen (zie de kop hierboven) en de hoek van Mecway's U in dat
+    stelsel, of None bij een ontaard element."""
+    shape, nids = model["elements"][eid]
+    ncorner = 3 if shape.startswith("tri") else 4
+    p = xyz[list(cell_nodes[:ncorner])]
+    if ncorner == 4:
+        n = np.cross(p[2] - p[0], p[3] - p[1])
+    else:
+        n = np.cross(p[1] - p[0], p[2] - p[0])
+    if np.linalg.norm(n) == 0.0:
+        return None
+    n = n / np.linalg.norm(n)
+    v = np.asarray(vectors.get(elset_of.get(eid), (1.0, 0.0, 0.0)),
+                   dtype=float)
+    x = v - v.dot(n) * n
+    if np.linalg.norm(x) == 0.0:
+        return None
+    x = x / np.linalg.norm(x)
+    y = np.cross(n, x)
+    u = model.get("uaxes", {}).get(eid)
+    if u is None:
+        coords = model["coords"]
+        j = 2 if shape in ("tri6", "quad8") else 1
+        u = coords[nids[j] - 1] - coords[nids[0] - 1]
+    u = np.asarray(u, dtype=float)
+    u = u - u.dot(n) * n
+    if np.linalg.norm(u) == 0.0:
+        u = x
+    u = u / np.linalg.norm(u)
+    return np.column_stack((x, y, n)), float(u.dot(x)), float(u.dot(y))
+
+
+def _shell_points(fields, rkey, field, cmp0, conn, model, xyz, vectors,
+                  elset_of, frames):
+    """Punten van de schaalcellen van een ELNO-veld (een subpunt per
+    knoop, dus na POST_CHAMP EXTR_COQUE of EFGE_ELNO), met per punt de
+    knoop, het assenstelsel en de verzamelvolgorde voor Mecway's
+    elementnodevariable; of None. frames: cache {eid: _shell_frame}."""
+    found = _cells_field(fields, rkey, field, cmp0, conn)
+    if found is None:
+        return None
+    d, _icmp, (start, nbpt, nbsp) = found
+    shells = dict((e, v) for e, v in model["elements"].items()
+                  if v[0] in SHELL_SHAPES)
+    cells = _match_cells(conn, shells, nbpt, nbsp, fields.n)
+    rows, node, rot, cs, gather, eids = [], [], [], [], [], []
+    for eid in sorted(cells):
+        c = cells[eid]
+        cn = list(conn[c])
+        if eid not in frames:
+            frames[eid] = _shell_frame(model, xyz, cn, eid, vectors,
+                                       elset_of)
+        if frames[eid] is None:
+            continue
+        r, co, si = frames[eid]
+        base = len(rows)
+        rows.extend(range(start[c], start[c] + nbpt[c]))
+        node.extend(cn)
+        rot.extend([r] * nbpt[c])
+        cs.extend([(co, si)] * nbpt[c])
+        gather.extend(base + cn.index(nid - 1) for nid in shells[eid][1])
+        eids.append(eid)
+    if not eids:
+        return None
+    node = np.array(node)
+    ok = node < fields.n
+    uniq, inv = np.unique(node[ok], return_inverse=True)
+    return {"rows": np.array(rows), "rot": np.array(rot),
+            "cs": np.array(cs), "gather": np.array(gather),
+            "eids": np.array(eids, dtype="<i4"), "ok": ok, "uniq": uniq,
+            "inv": inv, "count": np.bincount(inv).astype(float)}
+
+
+def _cached(fields, key, compute):
+    """Waarde per tijdstap een keer berekenen (fields.data wordt per index
+    geleegd)."""
+    k = ("afgeleid",) + key
+    if k not in fields.data:
+        fields.data[k] = compute()
+    return fields.data[k]
+
+
+def _shell_tensor(fields, plan, rkey, field, cmap):
+    """(punten, 6) globale tensor xx, yy, zz, xy, yz, zx (R T R^T), of
+    None."""
+    d = fields.get(rkey, field, True)
+    if d is None:
+        return None
+    vals = d[1][plan["rows"]]
+    t = np.zeros((len(vals), 3, 3))
+    for name, (i, j) in cmap.items():
+        if name in d[0]:
+            v = vals[:, d[0].index(name)]
+            t[:, i, j] = v
+            t[:, j, i] = v
+    g = np.einsum("pik,pkl,pjl->pij", plan["rot"], t, plan["rot"])
+    return np.column_stack([g[:, i, j] for _s, i, j in _TENSOR_ORDER])
+
+
+def _shell_forces(fields, plan, rkey):
+    """(punten, 8) krachten en momenten per lengte in Mecway's U,V (zie
+    _SHELL_FORCE_NAMES), uit EFGE_ELNO (NXX..MXY, QX, QY in Code-Aster's
+    x,y), of None. U = cos x + sin y, V = -sin x + cos y."""
+    d = fields.get(rkey, "EFGE_ELNO", True)
+    if d is None:
+        return None
+    vals = d[1][plan["rows"]]
+
+    def col(name):
+        if name in d[0]:
+            return vals[:, d[0].index(name)]
+        return np.zeros(len(vals))
+    c, s = plan["cs"][:, 0], plan["cs"][:, 1]
+    out = []
+    for p in ("N", "M"):
+        xx, yy, xy = col(p + "XX"), col(p + "YY"), col(p + "XY")
+        out += [c * c * xx + 2 * c * s * xy + s * s * yy,
+                s * s * xx - 2 * c * s * xy + c * c * yy,
+                c * s * (yy - xx) + (c * c - s * s) * xy]
+    qx, qy = col("QX"), col("QY")
+    out += [c * qx + s * qy, -s * qx + c * qy]
+    return np.column_stack(out)
+
+
+def _point_vars(plan, name_cols, compute, key):
+    """Knoop- en elementnodevariabelen uit een functie die per tijdstap
+    een (punten, k)-matrix geeft. name_cols: [(Mecway-naam, kolom,
+    factor)]."""
+    out = []
+    for name, col, factor in name_cols:
+        def node_get(fields, col=col, factor=factor):
+            m = _cached(fields, key, compute(fields))
+            if m is None:
+                return None
+            v = m[plan["ok"], col] * factor
+            return np.bincount(plan["inv"], weights=v) / plan["count"]
+
+        def elem_get(fields, col=col, factor=factor):
+            m = _cached(fields, key, compute(fields))
+            if m is None:
+                return None
+            return m[plan["gather"], col] * factor
+        out.append(_Var(name, False, (plan["uniq"] + 1).astype("<i4"),
+                        node_get))
+        out.append(_Var(name, True, plan["eids"], elem_get))
+    return out
+
+
+def _fos_vars(fields, model, conn, strengths):
+    """
+    Factor of safety bij Mecway's von Mises-faalcriterium (manual v34 par.
+    8.7: de factor waarmee alle spanningscomponenten de faalgrens bereiken;
+    bij von Mises dus S / sigma_vM, met S = tensilestrength van het
+    materiaal; schalen: de kleinste van boven- en onderkant). Mecway
+    rekent hem pas bij het tonen (headless niet in de oplossing, naam
+    factorofsafety nagelopen met solution.node_value); variabele
+    factorofsafety, Mecway maakt er het item "failure" bij.
+    Knoop: kleinste S van de elsets met een criterium in die knoop
+    gedeeld door de grootste von Mises (volume, schaal boven/onder);
+    element: per element-knoop met de eigen S. Onbelast: FOS_MAX.
+    """
+    if not strengths:
+        return []
+    elset_of = _elset_of(model)
+    n = fields.n
+    s_node = np.full(n, np.inf)
+    for name, eids in model["elsets"].items():
+        if strengths.get(name, 0.0) > 0.0:
+            nids = [nid - 1 for e in eids for nid in model["elements"][e][1]]
+            np.minimum.at(s_node, np.array(nids, dtype=int),
+                          float(strengths[name]))
+    sources = [(r, f) for r, f in (("res", "SIEQ_NOEU"),
+                                   ("res_sup", "SIEQ_NOEU"),
+                                   ("res_inf", "SIEQ_NOEU"))
+               if r in fields.results]
+    have = np.zeros(n, dtype=bool)
+    for r, f in sources:
+        d = fields.get(r, f, False)
+        if d is not None and "VMIS" in d[0]:
+            have |= d[2][:, d[0].index("VMIS")]
+    rows = np.nonzero(have & np.isfinite(s_node))[0]
+    out = []
+    if len(rows):
+        def node_get(fields):
+            sig = np.zeros(len(rows))
+            found = False
+            for r, f in sources:
+                d = fields.get(r, f, False)
+                if d is None or "VMIS" not in d[0]:
+                    continue
+                k = d[0].index("VMIS")
+                v = np.where(d[2][rows, k], np.abs(d[1][rows, k]), 0.0)
+                sig = np.maximum(sig, v)
+                found = True
+            if not found:
+                return None
+            return _fos(s_node[rows], sig)
+        out.append(_Var("factorofsafety", False, (rows + 1).astype("<i4"),
+                        node_get))
+    # Per element: volumes uit res, schalen uit res_sup en res_inf.
+    parts = []      # (eids, [(rkey, gather)], S per waarde)
+    found = _cells_field(fields, "res", "SIEQ_ELNO", "VMIS", conn)
+    if found is not None:
+        d, icmp, (start, nbpt, nbsp) = found
+        solids = dict((e, v) for e, v in model["elements"].items()
+                      if v[0] in SOLID_SHAPES and
+                      strengths.get(elset_of.get(e), 0.0) > 0.0)
+        cells = _match_cells(conn, solids, nbpt, nbsp, n)
+        eids, gather, svals = [], [], []
+        for eid in sorted(cells):
+            c = cells[eid]
+            cn = list(conn[c])
+            gather.extend(start[c] + cn.index(nid - 1)
+                          for nid in solids[eid][1])
+            svals += [strengths[elset_of[eid]]] * len(solids[eid][1])
+            eids.append(eid)
+        if eids:
+            parts.append((eids, [("res", np.array(gather))], svals))
+    shell_g = []
+    for rkey in ("res_sup", "res_inf"):
+        found = (_cells_field(fields, rkey, "SIEQ_ELNO", "VMIS", conn)
+                 if rkey in fields.results else None)
+        if found is None:
+            continue
+        d, icmp, (start, nbpt, nbsp) = found
+        shells = dict((e, v) for e, v in model["elements"].items()
+                      if v[0] in SHELL_SHAPES and
+                      strengths.get(elset_of.get(e), 0.0) > 0.0)
+        cells = _match_cells(conn, shells, nbpt, nbsp, n)
+        eids, gather, svals = [], [], []
+        for eid in sorted(cells):
+            c = cells[eid]
+            cn = list(conn[c])
+            gather.extend(start[c] + cn.index(nid - 1)
+                          for nid in shells[eid][1])
+            svals += [strengths[elset_of[eid]]] * len(shells[eid][1])
+            eids.append(eid)
+        if eids:
+            shell_g.append((eids, (rkey, np.array(gather)), svals))
+    if shell_g and all(g[0] == shell_g[0][0] for g in shell_g):
+        parts.append((shell_g[0][0], [g[1] for g in shell_g], shell_g[0][2]))
+    if parts:
+        # Volgorde van Mecway: elementnummers oplopend, per element de
+        # waarden (een per knoop) achter elkaar.
+        blocks = []
+        for p, (eids, _src, _svals) in enumerate(parts):
+            off = 0
+            for eid in eids:
+                size = len(model["elements"][eid][1])
+                blocks.append((eid, p, off, size))
+                off += size
+        blocks.sort()
+        order = [(p, off + i) for _e, p, off, size in blocks
+                 for i in range(size)]
+        all_eids = np.array([b[0] for b in blocks], dtype="<i4")
+
+        def elem_get(fields):
+            vals = []
+            for eids, src, svals in parts:
+                sig = None
+                for rkey, gather in src:
+                    d = fields.get(rkey, "SIEQ_ELNO", True)
+                    if d is None or "VMIS" not in d[0]:
+                        return None
+                    v = np.abs(d[1][gather, d[0].index("VMIS")])
+                    sig = v if sig is None else np.maximum(sig, v)
+                vals.append(_fos(np.array(svals, dtype=float), sig))
+            return np.array([vals[p][i] for p, i in order])
+        out.append(_Var("factorofsafety", True, all_eids, elem_get))
+    return out
+
+
+def _fos(strength, sigma):
+    """S / sigma, met FOS_MAX waar sigma (bijna) 0 is."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        f = np.where(sigma > 0.0, strength / np.where(sigma > 0.0, sigma, 1.0),
+                     FOS_MAX)
+    return np.minimum(f, FOS_MAX)
+
+
+def _contact_state_var(fields):
+    """
+    contactstate op de slave-knopen: 0 open, 1 gesloten, 2 gesloten en
+    glijdend (alleen met wrijving en CONT_NOEU). Mecway: 1 in contact, 0
+    niet (manual v34 par. 9.9). Bron:
+      - CONT_NOEU, component CONT (0 geen contact, 1 kleven, 2 glijden;
+        U4.44.11, waarde 2 met wrijving NIET geverifieerd). Code-Aster
+        17.4 maakt het veld alleen bij integratie in de knopen (lineaire
+        vlakken), anders alarm CONTACT3_16 "le champ CONT_NOEU n'est pas
+        créé" (gezien). Zonder wrijving (geen LAGS_F1 in DEPL) geeft CONT
+        2 voor elk gesloten punt (gezien in NL-30): dan 1.
+      - anders de contactdruk p = -LAGS_C: gesloten waar p > 1% van de
+        grootste p in die stap. Open knopen hebben geen exacte 0 (gezien
+        met PENALISATION en hex20: |p| tot ~0,1% van de piek naast het
+        contact), vandaar de marge; glijden is zo niet te onderscheiden.
+    """
+    d = fields.get("res", "DEPL", False)
+    if d is None or "LAGS_C" not in d[0]:
+        return []
+    k = d[0].index("LAGS_C")
+    rows = np.nonzero(d[2][:, k])[0]
+    if not len(rows):
+        return []
+
+    def getter(fields):
+        dd = fields.get("res", "DEPL", False)
+        if dd is None or "LAGS_C" not in dd[0]:
+            return None
+        cont = fields.get("res", "CONT_NOEU", False)
+        if cont is not None and "CONT" in cont[0]:
+            j = cont[0].index("CONT")
+            state = np.where(cont[2][rows, j], cont[1][rows, j], 0.0)
+            if "LAGS_F1" not in dd[0]:
+                state = np.minimum(state, 1.0)
+            return state
+        p = -dd[1][rows, dd[0].index("LAGS_C")]
+        tol = CONTACT_CLOSED * max(float(p.max()), 0.0)
+        return np.where(p > tol, 1.0, 0.0)
+    return [_Var("contactstate", False, (rows + 1).astype("<i4"), getter)]
+
+
+def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
+                  strengths=None):
+    """_Var's van de afgeleide velden (zie de kop van dit blok) voor de
+    gekozen groepen (wanted). shell_vectors: {Mecway-elset: VECTEUR} van
+    AFFE_CARA_ELEM COQUE (zonder: globaal X); strengths: {Mecway-elset:
+    tensilestrength in Pa} van materialen met een von Mises-
+    faalcriterium."""
+    out = []
+    if "contact" in wanted:
+        out += _contact_state_var(fields)
+    if "safety_factor" in wanted:
+        out += _fos_vars(fields, model, conn, strengths or {})
+    shell_groups = [g for g in ("shell_stresses", "strain", "shell_forces")
+                    if g in wanted]
+    if not shell_groups:
+        return out
+    xyz = np.asarray(fields.results["res"].getMesh().getCoordinates()
+                     .getValues(), dtype=float).reshape(-1, 3)
+    vectors = shell_vectors or {}
+    elset_of = _elset_of(model)
+    frames = {}
+    specs = []
+    if "shell_stresses" in wanted:
+        specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _SIGM_IJ, "stress",
+                   suf + "1", 1.0) for lvl, suf in _SHELL_LEVELS]
+    if "strain" in wanted:
+        specs += [("eps_" + lvl, "EPSI_ELNO", "EPXX", _EPSI_IJ, "lstrain",
+                   suf, 2.0) for lvl, suf in _SHELL_LEVELS]
+    for rkey, field, cmp0, cmap, prefix, suffix, shear in specs:
+        if rkey not in fields.results:
+            continue
+        plan = _shell_points(fields, rkey, field, cmp0, conn, model, xyz,
+                             vectors, elset_of, frames)
+        if plan is None:
+            continue
+
+        def compute(fields, plan=plan, rkey=rkey, field=field, cmap=cmap):
+            return lambda: _shell_tensor(fields, plan, rkey, field, cmap)
+        cols = [(prefix + s + suffix, k, shear if i != j else 1.0)
+                for k, (s, i, j) in enumerate(_TENSOR_ORDER)]
+        out += _point_vars(plan, cols, compute, (rkey, field))
+    if "shell_forces" in wanted and "res_efs" in fields.results:
+        plan = _shell_points(fields, "res_efs", "EFGE_ELNO", "NXX", conn,
+                             model, xyz, vectors, elset_of, frames)
+        if plan is not None:
+            def compute(fields, plan=plan):
+                return lambda: _shell_forces(fields, plan, "res_efs")
+            out += _point_vars(plan, [(name, k, 1.0) for k, name in
+                                      enumerate(_SHELL_FORCE_NAMES)],
+                               compute, ("res_efs", "EFGE_ELNO"))
+    return out
 
 
 def _assign_groups(var, model, elset_nodes, free_nodes):
@@ -1349,7 +1889,8 @@ def _times(res, indexes):
 
 def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
-                   mass=None, node_fields=None, cyclic=None):
+                   mass=None, node_fields=None, cyclic=None, opt_in=None,
+                   shell_vectors=None, strengths=None):
     """
     Schrijf alle gearchiveerde tijdstappen van res als Mecway-<results>-
     fragment (bytes, CRLF, ingesprongen voor plaatsing in <solution>).
@@ -1385,6 +1926,12 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     wiel, aster_cyclic.collect), dan gaat het resultaat op
                     Mecway's hele wiel (aster_cyclic.wheel_model: knoop i
                     + j x n, element e + j x ne), alleen knoopvelden.
+    opt_in        : zonder fields: de gekozen groepen uit OPT_IN_GROUPS
+                    (bridge_to_aster._results_route); None = geen.
+    shell_vectors : {Mecway-elset: (vx, vy, vz)} referentievector van de
+                    schalen (AFFE_CARA_ELEM COQUE VECTEUR); zonder: X.
+    strengths     : {Mecway-elset: tensilestrength [Pa]} voor de factor
+                    of safety (von Mises-faalcriterium).
 
     Returns
     -------
@@ -1395,7 +1942,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
     try:
         return _export(res, out_path, liml_path, fields, extra_results,
                        precision, static, t0, rigi_geo, mass, node_fields,
-                       cyclic)
+                       cyclic, opt_in, {"shell_vectors": shell_vectors,
+                                        "strengths": strengths})
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -1406,7 +1954,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
 
 def _export(res, out_path, liml_path, fields, extra_results, precision,
             static, t0, rigi_geo=None, mass=None, node_fields=None,
-            cyclic=None):
+            cyclic=None, opt_in=None, derived=None):
     """Werk van export_results (zonder de foutafvang)."""
     model = read_liml_model(liml_path)
     n = model["coords"].shape[0]
@@ -1458,14 +2006,16 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
         mode_values = dict((i, c["fd"]) for i, c in cplx.items())
         decays = dict((i, c["decay"]) for i, c in cplx.items())
     data.set_index(indexes[-1])
+    opt_in = frozenset(opt_in or ())
     variables = _plan_variables(data, model, conn, groups,
-                                magnitudes=modes != "frequency")
+                                magnitudes=modes != "frequency",
+                                opt_in=opt_in, derived=derived)
     variables += _constant_vars(node_fields, n)
     if not variables:
         print(tr("aster_results_export: FOUT: geen enkel veld gevonden.",
                  "aster_results_export: ERROR: no field found at all."))
         return None
-    _report_missing(results, groups)
+    _report_missing(results, groups, opt_in)
     elset_nodes, free_nodes = _group_nodes(model, n)
     for var in variables:
         _assign_groups(var, model, elset_nodes, free_nodes)
@@ -1584,21 +2134,26 @@ def _value_count(var, model):
     return sum(len(model["elements"][e][1]) for e in var.ids)
 
 
-def _report_missing(results, groups_wanted):
+def _report_missing(results, groups_wanted, opt_in=frozenset()):
     """Meld velden uit FIELD_TABLE die niet in het resultaat staan."""
     missing = set()
+    names = {}
+    for rkey, r in results.items():
+        try:
+            names[rkey] = list(r.getFieldsNames())
+        except Exception:
+            names[rkey] = []
     for group, rkey, field, _c, _n, _k in FIELD_TABLE:
-        if groups_wanted is not None and group not in groups_wanted:
+        if not _wanted(group, groups_wanted, opt_in):
             continue
         if groups_wanted is None and group in ("temperature", "heat_flux"):
             continue    # thermisch: alleen als ze gevraagd zijn
         if rkey not in results:
             continue
-        try:
-            names = results[rkey].getFieldsNames()
-        except Exception:
-            names = []
-        if field not in names:
+        if group == "strain" and not field.startswith(
+                "EPSG" if "EPSG_NOEU" in names[rkey] else "EPSI"):
+            continue    # kleine rekken of Green-Lagrange, een van beide
+        if field not in names[rkey]:
             missing.add("{0}:{1}".format(rkey, field))
     if missing:
         print(tr("aster_results_export: niet in het resultaat "
