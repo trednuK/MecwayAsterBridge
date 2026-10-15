@@ -84,7 +84,7 @@ CONFIG_BRIDGE = {
     # niet in Code-Aster, dan DKT); kwadratische schalen blijven COQUE_3D.
     # "COQUE_3D": lineaire schalen eerst kwadratisch (LINE_QUAD + QUAD8_9).
     "elem_shell":      "DKT",
-    # Balken (line2): "POU_D_E" (Euler, zoals Mecway) of "POU_D_T"
+    # Balken (line2/line3): "POU_D_E" (Euler, zoals Mecway) of "POU_D_T"
     # (Timoshenko; AY/AZ voor algemene doorsneden: bridge_from_liml.py).
     "elem_beam":       "POU_D_E",
 
