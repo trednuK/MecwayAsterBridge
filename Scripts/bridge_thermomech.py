@@ -4,74 +4,74 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_thermomech.py
-# Verantwoordelijkheid: de keten thermisch -> mechanisch (stap S4b,
-# lassen: restspanning en vervorming) in een job: eerst de transiente
-# thermische analyse van bridge_thermal.build_thermal (THER_LINEAIRE /
-# THER_NON_LINE, met #ASTER-LASBRON), daarna STAT_NON_LINE met het
-# temperatuurveld als commandovariabele.
+# Responsibility: the chain thermal -> mechanical (step S4b,
+# welding: residual stress and distortion) in one job: first the transient
+# thermal analysis of bridge_thermal.build_thermal (THER_LINEAIRE /
+# THER_NON_LINE, with #ASTER-LASBRON), then STAT_NON_LINE with the
+# temperature field as command variable.
 #
-# Wanneer: een Mecway-model Thermal transient (T31, analyse ther_3d) met
-# een Thermal stress (Mecway-manual v33 par. 9.25; in een thermische
-# analyse gebruikt Mecway die niet). De referentietemperatuur van de
-# Thermal stress is VALE_REF; de mechanische randvoorwaarden en lasten
-# (Fixed support, Displacement, ...) staan in hetzelfde model (Mecway
-# bewaart ze ook in een thermische analyse; manual par. 17.10 rekent zo
-# een model eerst thermisch en dan statisch). bridge_from_liml leest ze dan
+# When: a Mecway model Thermal transient (T31, analysis ther_3d) with
+# a Thermal stress (Mecway manual v33 par. 9.25; Mecway does not use it in
+# a thermal analysis). The reference temperature of the
+# Thermal stress is VALE_REF; the mechanical boundary conditions and loads
+# (Fixed support, Displacement, ...) are in the same model (Mecway
+# keeps them in a thermal analysis too; manual par. 17.10 computes a model
+# this way, first thermal and then static). bridge_from_liml then reads them
 # (model_data["thermo_mech"]).
 #
-# Materiaal: E, nu, alpha en de plasticiteit van het Mecway-materiaal
-# (BilinearIsotropic/-Kinematic, hardingscurve). Mecway kent
-# temperatuurafhankelijkheid alleen voor lambda en c (manual par. 8.6);
-# E(T), nu(T), alpha(T), SY(T) en ET(T) via een regel
+# Material: E, nu, alpha and the plasticity of the Mecway material
+# (BilinearIsotropic/-Kinematic, hardening curve). Mecway supports
+# temperature dependence only for lambda and c (manual par. 8.6);
+# E(T), nu(T), alpha(T), SY(T) and ET(T) via a line
 #   #ASTER-MATERIAAL <Mecway-materiaal>: TC=(20, 600, 1200),
 #   #ASTER-MATERIAAL     E=(210e9, 120e9, 20e9), SY=(355e6, 150e6, 10e6)
-# (parse_materials; alle waarden SI, temperaturen T in K of TC in graden
-# C). Zie docs/Lassen.md par. 9.
+# (parse_materials; all values SI, temperatures T in K or TC in degrees
+# C). See docs/Lassen.md par. 9.
 #
-# Code-Aster 17.4 (syntaxbron: testcase hsnv100e, THER_LINEAIRE ->
-# AFFE_MATERIAU AFFE_VARC EVOL -> STAT_NON_LINE met ECRO_LINE_FO;
-# catalogi defi_materiau.py, affe_materiau.py, proj_champ.py):
-#   - AFFE_VARC NOM_VARC='TEMP', EVOL=<thermisch resultaat>,
-#     NOM_CHAM='TEMP', VALE_REF = referentietemperatuur (graden C: de
-#     thermische berekening staat in Celsius, bridge_thermal);
-#   - ELAS (constant) of ELAS_FO (functies van TEMP; ALPHA is dan de
-#     gemiddelde (secans) uitzettingscoefficient t.o.v. TEMP_DEF_ALPHA,
-#     U4.43.01 ELAS_FO; nagerekend in WE-09), ECRO_LINE / ECRO_LINE_FO (SY,
-#     D_SIGM_EPSI = ET), TRACTION (hardingscurve, constant in T);
-#   - de mechanische tijdstappen zijn de thermische (DEFI_LIST_INST op
-#     'times', knippen bij divergentie; ARCHIVAGE op 'times', zodat de
-#     NUME_ORDRE van beide resultaten gelijk lopen voor
+# Code-Aster 17.4 (syntax source: test case hsnv100e, THER_LINEAIRE ->
+# AFFE_MATERIAU AFFE_VARC EVOL -> STAT_NON_LINE with ECRO_LINE_FO;
+# catalogues defi_materiau.py, affe_materiau.py, proj_champ.py):
+#   - AFFE_VARC NOM_VARC='TEMP', EVOL=<thermal result>,
+#     NOM_CHAM='TEMP', VALE_REF = reference temperature (degrees C: the
+#     thermal computation is in Celsius, bridge_thermal);
+#   - ELAS (constant) or ELAS_FO (functions of TEMP; ALPHA is then the
+#     mean (secant) expansion coefficient relative to TEMP_DEF_ALPHA,
+#     U4.43.01 ELAS_FO; recomputed in WE-09), ECRO_LINE / ECRO_LINE_FO (SY,
+#     D_SIGM_EPSI = ET), TRACTION (hardening curve, constant in T);
+#   - the mechanical time steps are the thermal ones (DEFI_LIST_INST on
+#     'times', cutting on divergence; ARCHIVAGE on 'times', so that the
+#     NUME_ORDRE of both results run in step for
 #     aster_results_export).
 #
-#   enabled(model_data)            - keten actief?
-#   parse_materials(bodies)        - #ASTER-MATERIAAL-regels
-#   build_blocks(tb, md, analysis) - de mechanische .comm-blokken
-#   report_lines(mess_path)        - samenvatting na de run (statusvak)
+#   enabled(model_data)            - chain active?
+#   parse_materials(bodies)        - #ASTER-MATERIAAL lines
+#   build_blocks(tb, md, analysis) - the mechanical .comm blocks
+#   report_lines(mess_path)        - summary after the run (status box)
 #
-# Toevoegmateriaal dat geboren wordt (#ASTER-LASBRON geboorte=, stap S4c;
-# model_data["welding_birth"] van bridge_welding._births): een stille kopie
-# van het materiaal (_materials, quiet: E en de versteviging x QUIET) en
-# STAT_NON_LINE per geboortestap (_birth_solve). docs/Lassen.md par. 10.
+# Filler material that is born (#ASTER-LASBRON geboorte=, step S4c;
+# model_data["welding_birth"] from bridge_welding._births): a quiet copy
+# of the material (_materials, quiet: E and the hardening x QUIET) and
+# STAT_NON_LINE per birth step (_birth_solve). docs/Lassen.md par. 10.
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import re
 from collections import OrderedDict
 
 from bridge_utils import log, tr, CONFIG_BRIDGE
 
-# Eigen template met de thermische en de mechanische solve.
+# Own template with the thermal and the mechanical solve.
 TEMPLATE = "AsterTemplate_ThermoMeca.comm"
 
-# Velden naar Mecway als de gebruiker op de pagina Thermisch geen
-# mechanisch veld gekozen heeft.
+# Fields to Mecway if the user has not chosen a mechanical field on the
+# Thermal page.
 MECH_FIELDS = ["displacements", "stresses", "vonmises", "reactions",
                "plastic_strain", "plastic_strain_eq"]
 _MECH_FIELD_SET = frozenset(MECH_FIELDS + ["velocities", "accelerations"])
 
 KELVIN = 273.15
 
-# Sleutels van #ASTER-MATERIAAL: naam -> (synoniemen)
+# Keys of #ASTER-MATERIAAL: name -> (synonyms)
 _MAT_KEYS = OrderedDict([
     ("T", ("t", "temp")),
     ("TC", ("tc", "temp_c")),
@@ -92,19 +92,19 @@ _TABLE_KEYS = ("E", "NU", "ALPHA", "SY", "ET", "H")
 
 
 def enabled(model_data):
-    """True als de keten thermisch -> mechanisch actief is (T31 met een
+    """True if the chain thermal -> mechanical is active (T31 with a
     Thermal stress, bridge_from_liml)."""
     return bool(model_data.get("thermo_mech"))
 
 
 def mech_fields(fields):
-    """Velden voor export_results: de gekozen velden plus, zonder
-    mechanisch veld, MECH_FIELDS."""
+    """Fields for export_results: the chosen fields plus, without a
+    mechanical field, MECH_FIELDS."""
     out = list(fields or [])
     if not any(f in _MECH_FIELD_SET for f in out):
         out += MECH_FIELDS
-        log("INFO: Thermomechanisch: geen mechanisch resultaatveld gekozen; "
-            "standaard {0}.".format(", ".join(MECH_FIELDS)))
+        log("INFO: Thermomechanical: no mechanical result field chosen; "
+            "default {0}.".format(", ".join(MECH_FIELDS)))
     return out
 
 
@@ -112,7 +112,7 @@ def mech_fields(fields):
 # #ASTER-MATERIAAL
 # ==========================================
 def _split(body):
-    """Stukken gescheiden door komma's buiten haakjes."""
+    """Pieces separated by commas outside brackets."""
     parts, depth, cur = [], 0, []
     for ch in body:
         if ch in "([":
@@ -129,7 +129,7 @@ def _split(body):
 
 
 def _numbers(raw):
-    """Getal of lijst '(a, b, c)' / '[a, b, c]' -> [floats]."""
+    """Number or list '(a, b, c)' / '[a, b, c]' -> [floats]."""
     text = raw.strip()
     if text[:1] in "([" and text[-1:] in ")]":
         text = text[1:-1]
@@ -140,9 +140,9 @@ def _numbers(raw):
 
 
 def _group(bodies):
-    """Regels samenvoegen: een regel '<naam>: ...' begint een materiaal;
-    een regel zonder naam (eerste ':' na een '=' of geen ':') hoort bij het
-    vorige. Returns [(naam, tekst)] of None (ERROR)."""
+    """Merge lines: a line '<name>: ...' starts a material; a line
+    without a name (first ':' after a '=' or no ':') belongs to the
+    previous one. Returns [(name, text)] or None (ERROR)."""
     out = []
     for body in bodies:
         text = body.strip()
@@ -159,7 +159,7 @@ def _group(bodies):
                    "Steel: TC=(20, 600), SY=(355e6, 150e6)').").format(text))
             return None
         prev = out[-1][1]
-        # Een lijst die over twee regels loopt: met een spatie verbinden.
+        # A list spanning two lines: join with a space.
         glue = " " if prev.count("(") + prev.count("[") > \
             prev.count(")") + prev.count("]") else ", "
         out[-1][1] = prev + glue + text if prev else text
@@ -168,10 +168,10 @@ def _group(bodies):
 
 def parse_materials(bodies):
     """
-    {Mecway-materiaal: spec} uit de #ASTER-MATERIAAL-regels; spec =
-    {"T": [K, ...] (oplopend) of None, "E"/"NU"/"ALPHA"/"SY"/"ET": [waarden]
-    (1 waarde = constant, anders evenveel als T), "T_ALPHA": K of None,
-    "kinematic": True/False/None}. None (ERROR in de log) bij een fout.
+    {Mecway material: spec} from the #ASTER-MATERIAAL lines; spec =
+    {"T": [K, ...] (ascending) or None, "E"/"NU"/"ALPHA"/"SY"/"ET": [values]
+    (1 value = constant, otherwise as many as T), "T_ALPHA": K or None,
+    "kinematic": True/False/None}. None (ERROR in the log) on an error.
     """
     specs = OrderedDict()
     grouped = _group(bodies)
@@ -272,8 +272,8 @@ def _check_spec(spec, label):
 
 
 def _table(spec, key, const):
-    """[(T_K, waarde)] van een eigenschap: de lijst uit spec, een
-    constante (1 waarde in spec, of de Mecway-waarde const) als [(None,
+    """[(T_K, value)] of a property: the list from spec, a
+    constant (1 value in spec, or the Mecway value const) as [(None,
     v)]."""
     vals = spec.get(key) if spec else None
     if vals is None:
@@ -284,11 +284,11 @@ def _table(spec, key, const):
 
 
 def _slope_table(spec, e_tab, bil):
-    """D_SIGM_EPSI(T) (helling na de vloeigrens in totale rek): ET uit
-    spec, of uit de plastische modulus H (spec, anders het Mecway-
-    materiaal: Mecway's 'Tangent modulus' is H, bridge_from_liml.
-    _parse_bilinear) als ET = E H / (E + H), per temperatuurpunt van E en
-    H (daartussen lineair, zoals elke tabel)."""
+    """D_SIGM_EPSI(T) (slope after the yield point in total strain): ET
+    from spec, or from the plastic modulus H (spec, otherwise the Mecway
+    material: Mecway's 'Tangent modulus' is H, bridge_from_liml.
+    _parse_bilinear) as ET = E H / (E + H), per temperature point of E and
+    H (linear in between, like every table)."""
     if spec and "ET" in spec:
         return _table(spec, "ET", 0.0)
     if spec and "H" in spec:
@@ -297,7 +297,7 @@ def _slope_table(spec, e_tab, bil):
         bil = bil or {}
         h = bil.get("h")
         if h is None:
-            # _kinematic_curve geeft alleen et (bij de Mecway-E)
+            # _kinematic_curve returns only et (at the Mecway E)
             et = bil.get("et", 0.0)
             e0 = _value_at(e_tab, e_tab[0][0] or 0.0)
             h = e0 * et / (e0 - et) if e0 > et else 0.0
@@ -313,13 +313,13 @@ def _slope_table(spec, e_tab, bil):
 
 
 def _cut_alpha(a_tab, t_def, t_cut):
-    """Secans-alpha met thermische rek constant boven t_cut (smelten:
-    vloeistof heeft geen stijfheid; zonder afkap groeit de rek boven de
-    smelttemperatuur lineair door, bijv. 4,6% bij 3400 K, en convergeert
-    STAT_NON_LINE slecht, WE-10b). eps_th(T) = alpha(T) (T - t_def) tot
-    t_cut, daarboven eps_cut: alpha(T) = eps_cut / (T - t_def), in
-    punten met 2% groei van T - t_def tot t_cut + 10 000 K (lineaire
-    interpolatie: relatieve fout op eps_th < 1e-4)."""
+    """Secant alpha with thermal strain constant above t_cut (melting:
+    liquid has no stiffness; without the cut-off the strain keeps growing
+    linearly above the melting temperature, e.g. 4.6% at 3400 K, and
+    STAT_NON_LINE converges poorly, WE-10b). eps_th(T) = alpha(T) (T -
+    t_def) up to t_cut, above it eps_cut: alpha(T) = eps_cut / (T - t_def),
+    in points with 2% growth of T - t_def up to t_cut + 10 000 K (linear
+    interpolation: relative error on eps_th < 1e-4)."""
     pts = [(t, v) for t, v in a_tab if t is not None and t < t_cut]
     a_cut = _value_at(a_tab, t_cut)
     eps_cut = a_cut * (t_cut - t_def)
@@ -336,7 +336,7 @@ def _is_const(table):
 
 
 def _value_at(table, t_k):
-    """Lineair geinterpoleerd, buiten de tabel constant."""
+    """Linearly interpolated, constant outside the table."""
     if _is_const(table):
         return table[0][1]
     if t_k <= table[0][0]:
@@ -348,7 +348,7 @@ def _value_at(table, t_k):
 
 
 # ==========================================
-# .COMM-BLOKKEN
+# .COMM BLOCKS
 # ==========================================
 def _r(x):
     import bridge_mesh
@@ -356,8 +356,8 @@ def _r(x):
 
 
 def _func(concept, table):
-    """DEFI_FONCTION van TEMP (graden C, PROL constant zoals Mecway's eigen
-    tabellen, manual par. 8.6) of DEFI_CONSTANTE."""
+    """DEFI_FONCTION of TEMP (degrees C, PROL constant like Mecway's own
+    tables, manual par. 8.6) or DEFI_CONSTANTE."""
     if _is_const(table):
         return "{0} = DEFI_CONSTANTE(VALE={1})".format(concept,
                                                        _r(table[0][1]))
@@ -368,13 +368,13 @@ def _func(concept, table):
 
 
 def _tref(model_data):
-    """Referentietemperatuur [K] (Thermal stress)."""
+    """Reference temperature [K] (Thermal stress)."""
     return (model_data.get("thermal_stress") or {}).get("tref", 0.0)
 
 
 def _check_reference(tb, model_data, tref):
-    """WARNING als de begintemperatuur niet uniform gelijk is aan de
-    referentietemperatuur (dan is er op t = 0 al thermische rek)."""
+    """WARNING if the initial temperature is not uniformly equal to the
+    reference temperature (then there is already thermal strain at t = 0)."""
     th = tb.th
     values = set(round(v, 9) for _s, _k, v in th.get("initial", []))
     if not values:
@@ -395,8 +395,8 @@ def _check_reference(tb, model_data, tref):
 
 
 def _check_elements(tb, model_data):
-    """Alleen volume-elementen, en elke mechanische elset ook thermisch.
-    False (ERROR) anders."""
+    """Volume elements only, and every mechanical elset also thermal.
+    False (ERROR) otherwise."""
     mods = model_data.get("elset_modelisations", {})
     other = sorted(e for e, m in mods.items() if m not in ("3D", "3D_SI"))
     if other or model_data.get("poi1_groups") or model_data.get("discretes"):
@@ -424,14 +424,14 @@ def _check_elements(tb, model_data):
 
 def _materials(md, specs, tref, analysis, quiet=None):
     """
-    (DEFI_MATERIAU-blok, {mat: concept}, with_plastic) of None (ERROR).
-    Zet in md["materials"][mat] "plastic_bilinear" voor een
-    #ASTER-MATERIAAL met SY, zodat _relation_for (bridge_to_aster)
-    VMIS_ISOT_LINE / VMIS_CINE_LINE kiest.
-    quiet (toevoegmateriaal, build_blocks): {"mats": {materiaal: groep},
-    "quiet": factor, "blocks": {}, "concepts": {}}; voor die materialen
-    vult _materials "blocks" (DEFI_MATERIAU van de stille kopie <MAT_n>_Q,
-    zonder de TRACTION-curve: _quiet_block) en "concepts".
+    (DEFI_MATERIAU block, {mat: concept}, with_plastic) or None (ERROR).
+    Sets "plastic_bilinear" in md["materials"][mat] for an
+    #ASTER-MATERIAAL with SY, so that _relation_for (bridge_to_aster)
+    chooses VMIS_ISOT_LINE / VMIS_CINE_LINE.
+    quiet (filler material, build_blocks): {"mats": {material: group},
+    "quiet": factor, "blocks": {}, "concepts": {}}; for those materials
+    _materials fills "blocks" (DEFI_MATERIAU of the quiet copy <MAT_n>_Q,
+    without the TRACTION curve: _quiet_block) and "concepts".
     """
     import bridge_to_aster as bta
     import bridge_metallurgy
@@ -500,7 +500,7 @@ def _materials(md, specs, tref, analysis, quiet=None):
             if spec and spec["kinematic"] is not None:
                 bil = dict(bil, kinematic=spec["kinematic"])
                 props["plastic_bilinear"] = bil
-        # Controles over het temperatuurbereik van de tabellen
+        # Checks over the temperature range of the tables
         temps = sorted(set(t for v in tab.values() for t, _x in v
                            if t is not None)) or [tref]
         for t_k in temps:
@@ -536,7 +536,7 @@ def _materials(md, specs, tref, analysis, quiet=None):
                 return None
             tab["ALPHA"] = _cut_alpha(tab["ALPHA"], t_alpha, t_cut)
         if mat in meta_mech:
-            # Metallurgische wet (#ASTER-METALLURGIE mechanica=ja,
+            # Metallurgical law (#ASTER-METALLURGIE mechanica=ja,
             # bridge_metallurgy.py): ELAS_META_FO + META_ECRO_LINE
             block = bridge_metallurgy.mech_material(
                 concept, mat, meta_mech[mat], tab, tref, t_alpha, t_cut,
@@ -549,15 +549,15 @@ def _materials(md, specs, tref, analysis, quiet=None):
                                             tab["ALPHA"]))
 
         def render(name, scale, trac):
-            """DEFI_MATERIAU-regels van dit materiaal als concept name; E
-            en de versteviging x scale (stil toevoegmateriaal, S4c: E x
-            QUIET en ET x QUIET, vloeigrens gelijk, zodat het stille element
-            elastisch blijft; TRACTION: trac = de curve met rek / QUIET,
-            zoals bridge_failure.weak_materials)."""
+            """DEFI_MATERIAU lines of this material as concept name; E
+            and the hardening x scale (quiet filler material, S4c: E x
+            QUIET and ET x QUIET, yield stress equal, so that the quiet
+            element stays elastic; TRACTION: trac = the curve with strain
+            / QUIET, like bridge_failure.weak_materials)."""
             e_tab = [(t, v * scale) for t, v in tab["E"]]
             out_lines = [bta._mat_comment(mat).rstrip("\n")]
             if scale != 1.0:
-                out_lines.append("# stil toevoegmateriaal (nog niet geboren): "
+                out_lines.append("# quiet filler material (not born yet): "
                                  "E x {0}".format(_r(scale)))
             if fo:
                 t_alpha_c = t_alpha - KELVIN
@@ -566,11 +566,11 @@ def _materials(md, specs, tref, analysis, quiet=None):
                     out_lines.append(_func("{0}_{1}".format(name, k), t))
                 out_lines.append(_func("{0}_RHO".format(name),
                                        [(None, props.get("rho", 0.0))]))
-                # ALPHA in ELAS_FO: gemiddelde (secans) coefficient t.o.v.
-                # TEMP_DEF_ALPHA; Code-Aster rekent eps_th = alpha(T) (T -
-                # T_def) - alpha(T_ref) (T_ref - T_def) (U4.43.01 ELAS_FO; de
-                # tweede term NIET geverifieerd); met T_def = T_ref
-                # (standaard) alpha(T) (T - T_ref), nagerekend in WE-09
+                # ALPHA in ELAS_FO: mean (secant) coefficient relative to
+                # TEMP_DEF_ALPHA; Code-Aster computes eps_th = alpha(T) (T -
+                # T_def) - alpha(T_ref) (T_ref - T_def) (U4.43.01 ELAS_FO; the
+                # second term NOT verified); with T_def = T_ref
+                # (default) alpha(T) (T - T_ref), recomputed in WE-09
                 # (4e-8).
                 elas = ("    ELAS_FO=_F(E={0}_E, NU={0}_NU, RHO={0}_RHO, "
                         "ALPHA={0}_ALPHA, TEMP_DEF_ALPHA={1}),\n").format(
@@ -592,7 +592,7 @@ def _materials(md, specs, tref, analysis, quiet=None):
                     ext = ("    ECRO_LINE_FO=_F(D_SIGM_EPSI={0}_ET, "
                            "SY={0}_SY),\n").format(name)
             elif props.get("plastic_curve"):
-                # Hardingscurve (TRACTION, _build_plastic_curves_block):
+                # Hardening curve (TRACTION, _build_plastic_curves_block):
                 # constant in T.
                 ext = "    TRACTION=_F(SIGM={0}),\n".format(trac)
             out_lines.append("{0} = DEFI_MATERIAU(\n{1}{2})".format(
@@ -614,7 +614,7 @@ def _materials(md, specs, tref, analysis, quiet=None):
             plast = ", TRACTION (hardingscurve)"
         else:
             plast = ", elastisch"
-        log("INFO: Thermomechanisch: {0}: {1}{2}{3}.".format(
+        log("INFO: Thermomechanical: {0}: {1}{2}{3}.".format(
             label, "ELAS_FO (E, nu, alpha als functie van T)" if fo
             else "ELAS", plast,
             "" if not spec else " (#ASTER-MATERIAAL, T_ref = {0} K)".format(
@@ -623,10 +623,10 @@ def _materials(md, specs, tref, analysis, quiet=None):
 
 
 def _fieldmat(md, concepts, tref, projected, quiet=None):
-    """AFFE_MATERIAU (fieldmat) met de temperatuur als commandovariabele.
-    Met toevoegmateriaal (quiet): het stille materiaal op de elementen die
-    nog geboren worden (na de elsets: de laatste toewijzing telt, U4.43.03).
-    Returns (tekst, [AFFE-entries], AFFE_VARC-tekst)."""
+    """AFFE_MATERIAU (fieldmat) with the temperature as command variable.
+    With filler material (quiet): the quiet material on the elements that
+    are still to be born (after the elsets: the last assignment counts,
+    U4.43.03). Returns (text, [AFFE entries], AFFE_VARC text)."""
     entries = []
     for elset, mat in md.get("elsets", {}).items():
         if elset in md.get("elset_modelisations", {}) and mat in concepts:
@@ -638,8 +638,8 @@ def _fieldmat(md, concepts, tref, projected, quiet=None):
                 entries.append("_F(GROUP_MA='{0}', MATER={1})".format(
                     grp, quiet["concepts"][mat]))
     evol = "res_tm" if projected else "res_ther"
-    # Fasen (META_ELNO) als commandovariabele M_ACIER (#ASTER-METALLURGIE
-    # mechanica=ja, bridge_metallurgy.varc_entries); AFFE_VARC als tuple.
+    # Phases (META_ELNO) as command variable M_ACIER (#ASTER-METALLURGIE
+    # mechanica=ja, bridge_metallurgy.varc_entries); AFFE_VARC as a tuple.
     import bridge_metallurgy
     varc_list = ["_F(TOUT='OUI', NOM_VARC='TEMP', EVOL={0}, NOM_CHAM='TEMP', "
                  "VALE_REF={1})".format(evol, _r(tref - KELVIN))] + \
@@ -652,8 +652,8 @@ def _fieldmat(md, concepts, tref, projected, quiet=None):
 
 
 def _quiet_block(md, quiet):
-    """Stille materialen van het toevoegmateriaal (na de hardingscurves:
-    een TRACTION-curve krijgt een stille kopie met rek / QUIET, zoals
+    """Quiet materials of the filler material (after the hardening curves:
+    a TRACTION curve gets a quiet copy with strain / QUIET, like
     bridge_failure.weak_materials)."""
     out = []
     q = quiet["quiet"]
@@ -672,9 +672,9 @@ def _quiet_block(md, quiet):
     return "\n".join(out) + "\n" if out else ""
 
 
-# Samenvatting in de job (na CALC_CHAMP): regels 'BRIDGE_THERMOMECA
-# <sleutel> <waarde>' in de .mess (report_lines). Een fout hier mag de job
-# niet stoppen.
+# Summary in the job (after CALC_CHAMP): lines 'BRIDGE_THERMOMECA
+# <key> <value>' in the .mess (report_lines). An error here must not stop
+# the job.
 _REPORT = '''# Samenvatting thermomechanisch (bridge_thermomech): restspanning en
 # vervorming op het laatste tijdstip, regels BRIDGE_THERMOMECA in de .mess.
 def _bridge_tm_report(res, res_ther, n_nodes):
@@ -735,24 +735,24 @@ _bridge_tm_report(res, res_ther, {n_nodes})
 
 def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
     """
-    STAT_NON_LINE met toevoegmateriaal dat geboren wordt (#ASTER-LASBRON
-    geboorte=, bridge_welding._births; stap S4c). Per geboortestap k
-    (elementen levend vanaf times[k]):
-      1. STAT_NON_LINE tot times[k-1] met het huidige materiaal (stille
-         elementen: E x QUIET, _materials);
-      2. een nieuw AFFE_MATERIAU met de geboren elementen op hun gewone
-         materiaal (na de stille toewijzing: de laatste telt);
-      3. de volgende STAT_NON_LINE start uit de toestand op times[k-1] met
-         spanning en interne variabelen van de nieuwe elementen op nul
-         (ETAT_INIT DEPL/SIGM/VARI, CREA_CHAMP ASSE zoals bridge_failure)
-         en NEWTON PREDICTION='ELASTIQUE' (zoals na bezwijken).
-    Het element is daarmee spanningsvrij in zijn vervormde stand op de
-    temperatuur van times[k-1]: daarna telt alleen de rek en de thermische
-    rek vanaf daar (de relaties zijn incrementeel; met het nieuwe
-    AFFE_MATERIAU is E- = E+ in de eerste stap). Gezien in een prototype
-    (Code-Aster 17.4, staaf WE-12): krimpspanning na de geboorte op T0 +
-    100 K en afkoelen E alpha 100 K tot 1e-4, ook met VMIS_ISOT_LINE.
-    call: dict met excit, comp, solveur, reac, rech, conv (tekst zoals in
+    STAT_NON_LINE with filler material that is born (#ASTER-LASBRON
+    geboorte=, bridge_welding._births; step S4c). Per birth step k
+    (elements alive from times[k]):
+      1. STAT_NON_LINE up to times[k-1] with the current material (quiet
+         elements: E x QUIET, _materials);
+      2. a new AFFE_MATERIAU with the born elements on their normal
+         material (after the quiet assignment: the last one counts);
+      3. the next STAT_NON_LINE starts from the state at times[k-1] with
+         stress and internal variables of the new elements at zero
+         (ETAT_INIT DEPL/SIGM/VARI, CREA_CHAMP ASSE like bridge_failure)
+         and NEWTON PREDICTION='ELASTIQUE' (as after failure).
+    The element is thus stress-free in its deformed position at the
+    temperature of times[k-1]: after that only the strain and the thermal
+    strain from there count (the relations are incremental; with the new
+    AFFE_MATERIAU E- = E+ in the first step). Seen in a prototype
+    (Code-Aster 17.4, bar WE-12): shrinkage stress after birth at T0 +
+    100 K and cooling E alpha 100 K to 1e-4, also with VMIS_ISOT_LINE.
+    call: dict with excit, comp, solveur, reac, rech, conv (text as in
     build_blocks).
     """
     import bridge_welding
@@ -836,8 +836,8 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
 
 def build_blocks(tb, model_data, analysis):
     """
-    De mechanische blokken voor TEMPLATE (dict placeholder -> tekst), of
-    None (ERROR in de log). tb: de thermische builder
+    The mechanical blocks for TEMPLATE (dict placeholder -> text), or
+    None (ERROR in the log). tb: the thermal builder
     (bridge_thermal._Thermal), na apply_loads.
     """
     import bridge_to_aster as bta
@@ -855,10 +855,10 @@ def build_blocks(tb, model_data, analysis):
         "materials", []))
     if specs is None:
         return None
-    # Eigen kopie: de mechanische hulpfuncties van bridge_to_aster zetten
-    # sleutels in model_data; de thermische delen blijven ongemoeid.
-    # #ASTER-code en #ASTER-EXCIT horen bij het thermische deel
-    # (bridge_thermal), contact en koppelingen rekent de keten niet.
+    # Own copy: the mechanical helper functions of bridge_to_aster set
+    # keys in model_data; the thermal parts stay untouched.
+    # #ASTER code and #ASTER-EXCIT belong to the thermal part
+    # (bridge_thermal); the chain does not compute contact and couplings.
     md = dict(model_data)
     md["materials"] = OrderedDict((k, dict(v)) for k, v in
                                   model_data["materials"].items())
@@ -868,18 +868,18 @@ def build_blocks(tb, model_data, analysis):
     md["couplings"], md["contacts"] = [], []
     if not bta._check_materials(md, analysis):
         return None
-    # verlijmd contact met een scheve/gekromde schaal: NPREC = -1
+    # bonded contact with a skewed/curved shell: NPREC = -1
     analysis = bta.bonded_nprec(md, analysis)
-    # LINE_QUAD (pagina Elementen): het mechanische mesh wordt kwadratisch;
-    # het temperatuurveld gaat dan met PROJ_CHAMP naar het nieuwe mesh.
+    # LINE_QUAD (Elements page): the mechanical mesh becomes quadratic;
+    # the temperature field then goes to the new mesh with PROJ_CHAMP.
     bta._resolve_line_quad(md)
     projected = bool(md.get("line_quad"))
     import bridge_metallurgy
     meta_mech = bridge_metallurgy.mech_specs(md)
     if not bridge_metallurgy.check_chain(md, projected):
         return None
-    # Toevoegmateriaal dat geboren wordt (#ASTER-LASBRON geboorte=,
-    # bridge_welding._births): een stille kopie van het materiaal
+    # Filler material that is born (#ASTER-LASBRON geboorte=,
+    # bridge_welding._births): a quiet copy of the material
     birth = model_data.get("welding_birth")
     quiet = None
     if birth:
@@ -901,11 +901,11 @@ def build_blocks(tb, model_data, analysis):
     with_plastic = any(bta._relation_for(md, m) != "ELAS" or m in meta_mech
                        for m in used)
     if with_plastic:
-        # Lineaire hex8 'lockt' bij plastisch vloeien (WE-10: met '3D' tot
-        # 1,3-2,6 x SY in de las; LINE_QUAD advies).
+        # Linear hex8 'locks' in plastic flow (WE-10: with '3D' up to
+        # 1.3-2.6 x SY in the weld; LINE_QUAD advice).
         bta._warn_plastic_hex8(md, [])
 
-    # Lasten en randvoorwaarden (zoals _build_nonlin_static)
+    # Loads and boundary conditions (as _build_nonlin_static)
     md["_follower_groups"] = bta._follower_pressure_groups(md, analysis)
     md["_follower_rotation"] = bta._follower_rotation(md, analysis,
                                                       "STAT_NON_LINE")
@@ -968,18 +968,19 @@ def build_blocks(tb, model_data, analysis):
             excit=bta._indent(excit_clause), comp=bta._indent(comportement),
             solveur=bta._indent(bta._build_solveur_ref(analysis)),
             reac=int(analysis.get("newton_reac_iter", 1)),
-            # Lijnzoeken (U4.51.03 RECH_LINEAIRE): met plasticiteit en een
-            # steil, snel wisselend temperatuurveld divergeerde Newton op
-            # hex20 (WE-10b, LINE_QUAD: tweede stap na 20 iteraties nog
-            # residu 0,5, ook na 3x knippen); met ITER_LINE_MAXI=5 9-10
-            # iteraties per stap. Zonder plasticiteit niet nodig.
+            # Line search (U4.51.03 RECH_LINEAIRE): with plasticity and a
+            # steep, rapidly changing temperature field Newton diverged on
+            # hex20 (WE-10b, LINE_QUAD: second step after 20 iterations
+            # still residual 0.5, also after cutting 3x); with
+            # ITER_LINE_MAXI=5 9-10 iterations per step. Not needed
+            # without plasticity.
             rech=("        RECH_LINEAIRE=_F(ITER_LINE_MAXI=5),\n"
                   if with_plastic else ""),
             conv=bta._convergence_args(analysis))
     fm_text, fm_entries, fm_varc = _fieldmat(md, concepts, tref, projected,
                                              quiet)
     if birth:
-        # Toevoegmateriaal: STAT_NON_LINE per geboortestap (_birth_solve)
+        # Filler material: STAT_NON_LINE per birth step (_birth_solve)
         deep = " " * 12
         solve = _birth_solve(birth, concepts, fm_entries, fm_varc, {
             "excit": bta._indent(excit_clause, deep),
@@ -989,19 +990,19 @@ def build_blocks(tb, model_data, analysis):
             "rech": ("                RECH_LINEAIRE=_F(ITER_LINE_MAXI=5),\n"
                      if with_plastic else ""),
             "conv": bta._convergence_args(analysis)}, with_plastic)
-        log("INFO: Thermomechanisch: toevoegmateriaal {0} elementen, stil "
-            "(E x {1}) tot de geboorte, daarna spanningsvrij in de "
-            "toestand van het begin van de geboortestap; STAT_NON_LINE per "
-            "geboortestap.".format(len(birth["elements"]),
+        log("INFO: Thermomechanical: filler material {0} elements, quiet "
+            "(E x {1}) until birth, then stress-free in the "
+            "state at the start of the birth step; STAT_NON_LINE per "
+            "birth step.".format(len(birth["elements"]),
                                    "%.3g" % birth["quiet"]))
     calc = bta._build_calc_champ_block(md, with_plastic=with_plastic)
-    # Cumulatieve plastische rek: V1 bij VMIS_*; bij META_P_IL zijn V1..V5
-    # verstevigingen per fase en V7 een spanning (hsnv101a, MT-07), dus
-    # geen P_max (bridge_metallurgy.mech_fields).
+    # Cumulative plastic strain: V1 with VMIS_*; with META_P_IL V1..V5 are
+    # hardenings per phase and V7 a stress (hsnv101a, MT-07), so
+    # no P_max (bridge_metallurgy.mech_fields).
     report = _REPORT.format(n_nodes=len(model_data.get("mesh_nodes", {})),
                             p_cmp="" if meta_mech else "V1")
-    log("INFO: Thermomechanisch: STAT_NON_LINE op de thermische tijden, "
-        "AFFE_VARC TEMP (EVOL = thermisch resultaat{0}), VALE_REF = {1} K, "
+    log("INFO: Thermomechanical: STAT_NON_LINE on the thermal times, "
+        "AFFE_VARC TEMP (EVOL = thermal result{0}), VALE_REF = {1} K, "
         "DEFORMATION {2}, {3}.".format(
             ", via PROJ_CHAMP naar LINE_QUAD" if projected else "",
             "%.6g" % tref, analysis.get("deformation", "PETIT"),
@@ -1021,13 +1022,13 @@ def build_blocks(tb, model_data, analysis):
 
 
 def export_block(work_dir, model_data, fields):
-    """aster_results_export met het mechanische resultaat als 'res' en het
-    thermische als extra resultaat 'res_ther' (temperatuur) en 'res_flux'
-    (warmteflux); zelfde NUME_ORDRE (ARCHIVAGE op de thermische tijden)."""
+    """aster_results_export with the mechanical result as 'res' and the
+    thermal one as extra result 'res_ther' (temperature) and 'res_flux'
+    (heat flux); same NUME_ORDRE (ARCHIVAGE on the thermal times)."""
     import bridge_to_aster as bta
     import os
     if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
-        return "#-- geen export (result_route is niet 'liml') --\n"
+        return "#-- no export (result_route is not 'liml') --\n"
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
         "# Resultaten in Mecway's eigen formaat (mechanisch + thermisch)\n"
@@ -1046,9 +1047,9 @@ def export_block(work_dir, model_data, fields):
 
 
 def med_block():
-    """IMPR_RESU MED alleen met de instelling med_export."""
+    """IMPR_RESU MED only with the setting med_export."""
     if not CONFIG_BRIDGE.get("med_export", False):
-        return "#-- geen MED-export (instelling med_export uit) --\n"
+        return "#-- no MED export (setting med_export off) --\n"
     return ("IMPR_RESU(\n    FORMAT='MED',\n    UNITE=80,\n    RESU=(\n"
             "        _F(RESULTAT=res_ther, NOM_CHAM=('TEMP',)),\n"
             "        _F(RESULTAT=res, NOM_CHAM=('DEPL', 'SIGM_NOEU', "
@@ -1056,13 +1057,13 @@ def med_block():
 
 
 # ==========================================
-# NA DE RUN
+# AFTER THE RUN
 # ==========================================
 _ROW = re.compile(r"^BRIDGE_THERMOMECA\s+(\w+)\s+([-+0-9.eEinfa]+)\s*$")
 
 
 def read_summary(mess_path):
-    """{sleutel: waarde} uit de BRIDGE_THERMOMECA-regels van de .mess."""
+    """{key: value} from the BRIDGE_THERMOMECA lines of the .mess."""
     import io
     import os
     out = OrderedDict()
@@ -1087,8 +1088,8 @@ def read_summary(mess_path):
 
 
 def report_lines(mess_path):
-    """Regels voor log en statusvak: restspanning en vervorming op het
-    laatste tijdstip."""
+    """Lines for log and status box: residual stress and distortion at the
+    last time."""
     s = read_summary(mess_path)
     if not s:
         return []
@@ -1102,7 +1103,7 @@ def report_lines(mess_path):
                "and the thermal result differ ({0}); the temperature in "
                "Mecway may belong to another step.").format(s["_tijden"]))
     if "_fout" in s:
-        log("INFO: Thermomechanische samenvatting niet volledig: {0}".format(
+        log("INFO: Thermomechanical summary incomplete: {0}".format(
             s["_fout"]))
     if "t" not in s or "VMIS_max" not in s:
         return lines
