@@ -1,881 +1,881 @@
-# KNOWN_BUGS.md – bekende fouten in de code (develop)
+# KNOWN_BUGS.md – known bugs in the code (develop)
 
-Fouten die gevonden zijn maar nog niet opgelost. Een nieuwe fout krijgt een
-genummerd punt onder de juiste kop (het volgende vrije nummer, geschreven als `52\.`
-zodat Markdown het niet hernummert; binnen een kop op nummer): bestand en functie, wat
-er misgaat, en de status. Nummers worden niet hergebruikt, zodat verwijzingen
-("KNOWN_BUGS 43") in code en docs blijven kloppen. Is een fout opgelost, haal het punt
-dan in dezelfde commit weg en pas de verwijzingen aan.
-Status: **bevestigd** = nagelopen in de code of met een offline run;
-**vermoedelijk** = volgt uit de code, maar is niet gereproduceerd;
-**vraag** = hangt af van gedrag van Mecway of Code-Aster dat niet in de repo staat.
+Bugs that have been found but not yet fixed. A new bug gets a numbered item under the
+right heading (the next free number, written as `52\.` so that Markdown does not
+renumber it; ordered by number within a heading): file and function, what goes wrong,
+and the status. Numbers are not reused, so that references ("KNOWN_BUGS 43") in code
+and docs stay correct. Once a bug is fixed, remove the item in the same commit and
+update the references.
+Status: **confirmed** = checked in the code or with an offline run;
+**suspected** = follows from the code, but has not been reproduced;
+**question** = depends on behaviour of Mecway or Code-Aster that is not in the repo.
 
-Vergelijken met Mecway: zet in het startscherm "Eerst Mecway-solve ter controle" aan.
-De bridge schrijft dan `WorkDir/<model>_<run-id>_vergelijking.csv` (Mecway- en
-Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
+Comparing with Mecway: turn on "Mecway solve first as a check" on the start screen.
+The bridge then writes `WorkDir/<model>_<run-id>_vergelijking.csv` (Mecway and
+Code-Aster value per node) and logs the largest difference per variable.
 
-## Afwijkingen van Mecway (gemeten)
+## Deviations from Mecway (measured)
 
-1\. **Hex8 is stijver dan in Mecway** (bevestigd, `bridge_from_liml.py`
-   MODELISATION='3D'). Mecway rekent hex8 met incompatibele modes (C3D8I in de
-   CCX-export, "Incompatible hex8 elements" in de analyse-instellingen); Code-Aster
-   heeft die niet. Gemeten met Code-Aster 17.4:
-   - uitkragende balk 100x10x10 mm, 10 hex8 (1 dik), 100 N: Mecway 0.1892 mm,
-     Code-Aster 0.1234 mm (analytisch 0.1905);
-   - staaf 11 mm met plasticiteit (250 MPa): Mecway 0.251 mm, Code-Aster 0.039 mm
-     (handberekening 0.251).
-   `3D_SI` gaf de juiste verplaatsingen, maar buigspanning ~0 en foute REAC_NODA
-   (onderintegratie). Oplossing als keuze: `elem_hex8` = "LINE_QUAD" (pagina
-   Elementen) laat Code-Aster alle lineaire volume-elementen kwadratisch maken
-   (CREA_MAILLAGE LINE_QUAD); dezelfde balk geeft dan 0.1886 mm. Alleen als verder
-   niets lineair blijft (alleen volume-elementen, eventueel schalen met COQUE_3D) en
-   niet expliciet; met de standaard "3D" waarschuwt de bridge bij hex8
+1\. **Hex8 is stiffer than in Mecway** (confirmed, `bridge_from_liml.py`
+   MODELISATION='3D'). Mecway computes hex8 with incompatible modes (C3D8I in the
+   CCX export, "Incompatible hex8 elements" in the analysis settings); Code-Aster
+   does not have those. Measured with Code-Aster 17.4:
+   - cantilever beam 100x10x10 mm, 10 hex8 (1 thick), 100 N: Mecway 0.1892 mm,
+     Code-Aster 0.1234 mm (analytical 0.1905);
+   - bar 11 mm with plasticity (250 MPa): Mecway 0.251 mm, Code-Aster 0.039 mm
+     (hand calculation 0.251).
+   `3D_SI` gave the correct displacements, but bending stress ~0 and wrong REAC_NODA
+   (under-integration). Solution as an option: `elem_hex8` = "LINE_QUAD" (page
+   Elements) lets Code-Aster make all linear solid elements quadratic
+   (CREA_MAILLAGE LINE_QUAD); the same beam then gives 0.1886 mm. Only if nothing
+   else stays linear (only solid elements, possibly shells with COQUE_3D) and not
+   explicitly; with the default "3D" the bridge warns for hex8
    (`bridge_to_aster._resolve_line_quad`).
-   Met LINE_QUAD blijven knoopkrachten op de hoekknopen staan: op hex20 zijn dat
-   puntlasten met lokale vervorming (gezien in een klein hex20-testmodel: +21% op de
-   belaste knopen, met druk op hetzelfde vlak +0,04%); gebruik een vlakbelasting.
+   With LINE_QUAD, nodal forces stay on the corner nodes: on hex20 these are
+   point loads with local deformation (seen in a small hex20 test model: +21% at the
+   loaded nodes, with pressure on the same face +0.04%); use a surface load.
 
-2\. **Schaalelementen ~0,7% anders dan Mecway** (bevestigd). Vlakke quad4-plaat
-   100x20 mm, 1 mm, ingeklemd op een rand: verplaatsingen DKT (Code-Aster) en
-   Mecway verschillen 0,66%, rotaties tot ~10%. Keuze `elem_shell` = "COQUE_3D"
-   (lineaire schalen via LINE_QUAD naar QUAD9/TRIA7, met drilling-rotatie) geeft
-   0,03% / 0,83% op de verplaatsingen, de rotaties wijken vergelijkbaar af; geen
-   formulering volgt Mecway exact. Bij een grof mesh is het verschil groter: wand
-   1x1 m, 20 mm, 2x2 quad4, druk: DKT 8% meer doorbuiging dan Mecway (headless). COQUE_3D valt terug op DKT als de schalen knopen
-   delen met elementen die lineair blijven (`bridge_to_aster._resolve_line_quad`).
+2\. **Shell elements ~0.7% different from Mecway** (confirmed). Flat quad4 plate
+   100x20 mm, 1 mm, fixed on one edge: displacements DKT (Code-Aster) and
+   Mecway differ by 0.66%, rotations up to ~10%. Option `elem_shell` = "COQUE_3D"
+   (linear shells via LINE_QUAD to QUAD9/TRIA7, with drilling rotation) gives
+   0.03% / 0.83% on the displacements, the rotations deviate similarly; no
+   formulation follows Mecway exactly. With a coarse mesh the difference is larger: wall
+   1x1 m, 20 mm, 2x2 quad4, pressure: DKT 8% more deflection than Mecway (headless). COQUE_3D falls back to DKT if the shells share nodes
+   with elements that stay linear (`bridge_to_aster._resolve_line_quad`).
 
-3\. **Knoopspanningen en von Mises anders dan Mecway** (bevestigd in Mecway; bewuste
-   keuze). De bridge volgt de Code-Aster-standaard: SIGM_NOEU (extrapolatie van
-   SIEF_ELGA naar de knopen, gemiddeld) en SIEQ_NOEU (von Mises per element, daarna
-   gemiddeld). Hex20-balk 100x10x10 mm met torsie en buiging: verplaatsingen en
-   reacties gelijk, knoopspanningen aan het oppervlak tot ~12% lager dan Mecway; in
-   het torsiecentrum geeft SIEQ_NOEU 7,5 MPa, Mecway (von Mises uit de gemiddelde
-   tensor) 0,09 MPa. Niet "repareren" naar Mecway (wens gebruiker).
+3\. **Nodal stresses and von Mises different from Mecway** (confirmed in Mecway; deliberate
+   choice). The bridge follows the Code-Aster standard: SIGM_NOEU (extrapolation of
+   SIEF_ELGA to the nodes, averaged) and SIEQ_NOEU (von Mises per element, then
+   averaged). Hex20 beam 100x10x10 mm with torsion and bending: displacements and
+   reactions equal, nodal stresses at the surface up to ~12% lower than Mecway; at
+   the torsion centre SIEQ_NOEU gives 7.5 MPa, Mecway (von Mises from the averaged
+   tensor) 0.09 MPa. Do not "fix" towards Mecway (user's wish).
 
-7\. **Spanningen per element-knoop blijven van Mecway in de tabelroute** (bevestigd
-   in Mecway). Alleen bij `result_route` "tabel": `solution.set_variable()` schrijft
-   alleen knoopwaarden, de `<elementnodevariable>` (o.a. `stressxx`) van de laatste
-   Mecway-solve blijft staan. De standaardroute "liml" schrijft SIGM_ELNO/SIEQ_ELNO
-   van volume-elementen wel mee (`bridge_to_aster._build_calc_champ_block`).
+7\. **Stresses per element node stay from Mecway in the table route** (confirmed
+   in Mecway). Only with `result_route` "tabel": `solution.set_variable()` writes
+   only nodal values, the `<elementnodevariable>` (e.g. `stressxx`) of the last
+   Mecway solve remains. The default route "liml" does write SIGM_ELNO/SIEQ_ELNO
+   of solid elements (`bridge_to_aster._build_calc_champ_block`).
 
-46\. **Knik: negatieve kniklastfactoren en Mecway's shift** (bevestigd met runs,
-   `bridge_to_aster._calc_modes_block`). De bridge zoekt de kleinste |CHAR_CRIT|
-   (`PLUS_PETITE`) en toont ook negatieve factoren (knik bij de omgekeerde last;
-   WARNING). Mecway zoekt alleen positieve factoren boven zijn *Shift point*: een
-   kolom onder trek gaf in Mecway 8,5e13 (zinloos), in de bridge -10,36 / -23,32 /
-   -93,27 (de drukknik met minteken). Mecway's shift is een instelling van zijn
-   oplosser en wordt niet gebruikt (alleen gemeld); zoeken rond een kniklastfactor
-   kan niet (`OPTION='CENTRE'` negeert Code-Aster 17.4 bij knik). Starre modes van een
-   vrij model krijgen in de bridge een frequentie van ~1e-4 Hz, soms negatief
-   (numeriek nul); Mecway schrijft 0 of een klein positief getal.
+46\. **Buckling: negative buckling load factors and Mecway's shift** (confirmed with runs,
+   `bridge_to_aster._calc_modes_block`). The bridge searches for the smallest |CHAR_CRIT|
+   (`PLUS_PETITE`) and also shows negative factors (buckling under the reversed load;
+   WARNING). Mecway only searches for positive factors above its *Shift point*: a
+   column in tension gave 8.5e13 in Mecway (meaningless), in the bridge -10.36 / -23.32 /
+   -93.27 (the compression buckling with a minus sign). Mecway's shift is a setting of its
+   solver and is not used (only reported); searching around a buckling load factor
+   is not possible (Code-Aster 17.4 ignores `OPTION='CENTRE'` for buckling). Rigid-body
+   modes of a free model get a frequency of ~1e-4 Hz in the bridge, sometimes negative
+   (numerically zero); Mecway writes 0 or a small positive number.
 
-60\. **Isotroop materiaal zonder Young's modulus: bridge E = 210 GPa, Mecway E = 0**
-   (vermoedelijk, `bridge_from_liml.py`, materiaalblok: `youngsmodulus` met standaard
-   "210000000000"). Gezien met headless Mecway op een Frequency-model waarvan een
-   materiaal alleen *Speed of sound* en *Density* had: modes van ~1e-7 Hz (E = 0). De
-   bridge rekent zo'n materiaal stil als staal; alleen met een geluidssnelheid (een
-   fluidum) geeft hij buiten `vibroacoustic_modes_3d` een WARNING
-   (`bridge_vibroacoustic.parse_vibro`). Zonder geluidssnelheid NIET nagelopen.
+60\. **Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0**
+   (suspected, `bridge_from_liml.py`, material block: `youngsmodulus` with default
+   "210000000000"). Seen with headless Mecway on a Frequency model in which one
+   material had only *Speed of sound* and *Density*: modes of ~1e-7 Hz (E = 0). The
+   bridge silently computes such a material as steel; only with a speed of sound (a
+   fluid) does it give a WARNING outside `vibroacoustic_modes_3d`
+   (`bridge_vibroacoustic.parse_vibro`). Without a speed of sound NOT checked.
 
-62\. **Sterk gekromde hex20/wedge15: frequenties tot 0,8% hoger dan Mecway** (vraag,
-   gemeten met Mecway's voorbeeld Impeller, 66 hex20 + 21 wedge15 met middenknopen tot
-   18% van de ribbelengte buiten het midden). De sector als gewoon modaal model
-   (`modal_3d`, zonder centrifugaalkracht en cyclische symmetrie) gaf +0,02 ... +0,79%
-   t.o.v. Mecway (6 modes); de cyclische route (S10g) wijkt evenveel af (+0,01 ...
-   +0,92%). Bij rechte hex20 is de bridge gelijk aan Mecway (MP-07, CY-01, CY-05).
-   Vermoedelijk een andere integratie van vervormde kwadratische elementen in Mecway
-   of Code-Aster (NIET nagegaan; welke dichter bij de werkelijkheid ligt, ook niet).
+62\. **Strongly curved hex20/wedge15: frequencies up to 0.8% higher than Mecway** (question,
+   measured with Mecway's example Impeller, 66 hex20 + 21 wedge15 with midside nodes up to
+   18% of the edge length off-centre). The sector as a plain modal model
+   (`modal_3d`, without centrifugal force and cyclic symmetry) gave +0.02 ... +0.79%
+   relative to Mecway (6 modes); the cyclic route (S10g) deviates by the same amount (+0.01 ...
+   +0.92%). With straight hex20 the bridge equals Mecway (MP-07, CY-01, CY-05).
+   Suspected: a different integration of distorted quadratic elements in Mecway
+   or Code-Aster (NOT checked; which one is closer to reality, also not).
 
-95\. **Thermische rek in schalen: Mecway zet minder uit dan de bridge** (vraag, gemeten
-   met Mecway 34 headless en Code-Aster 17.4). Plaat 100 × 40 × 2 mm (4 × 2 elementen),
-   `fixed` op de rand x = 0, α = 1,2e-5 1/K, uniform +100 K (`temperature2` op alle
-   elementen of `temperature3` op alle knopen, in beide programma's hetzelfde): max u_x
-   quad8 Mecway 6,68e-5 m, bridge (`COQUE_3D`) 1,224e-4 m; quad4 Mecway 9,37e-5 m,
-   bridge (DKT) 1,236e-4 m. De vrije uitzetting is αΔT·L = 1,2e-4 m (de ingeklemde rand
-   verhindert alleen de dwarsrek, wat u_x eerder vergroot). Een vrije quad8-plaat met
-   ΔT = 1000 K/m · x gaf in Mecway u_x(L, 0) = 4,87e-5 m tegen exact αgL²/2 = 6,0e-5 m.
-   Volumes kloppen wel (TH-03, LS-08). Waarom Mecway bij schalen minder uitzet, is NIET
-   nagegaan (vlakspanning of de temperatuur over de dikte?).
+95\. **Thermal strain in shells: Mecway expands less than the bridge** (question, measured
+   with Mecway 34 headless and Code-Aster 17.4). Plate 100 × 40 × 2 mm (4 × 2 elements),
+   `fixed` on the edge x = 0, α = 1.2e-5 1/K, uniform +100 K (`temperature2` on all
+   elements or `temperature3` on all nodes, the same in both programs): max u_x
+   quad8 Mecway 6.68e-5 m, bridge (`COQUE_3D`) 1.224e-4 m; quad4 Mecway 9.37e-5 m,
+   bridge (DKT) 1.236e-4 m. The free expansion is αΔT·L = 1.2e-4 m (the fixed edge
+   only restrains the transverse strain, which if anything increases u_x). A free quad8 plate with
+   ΔT = 1000 K/m · x gave u_x(L, 0) = 4.87e-5 m in Mecway versus exactly αgL²/2 = 6.0e-5 m.
+   Solids do agree (TH-03, LS-08). Why Mecway expands less with shells has NOT been
+   checked (plane stress, or the temperature through the thickness?).
 
-112\. **Knik: zuivere torsieknik van een balk hoger in Mecway** (vraag, gemeten met
-   Mecway 34 headless en Code-Aster 17.4, `buckling_3d`, `POU_D_E`). Ingeklemde kolom
-   L = 1 m, I-profiel 100/50/10/8 mm, 20 elementen, 1000 N druk: de buigknikfactoren
-   (109,72 / 987,46 / 1230,44) zijn gelijk, de torsieknik niet: bridge 2413,87 =
-   G·J·A/I_p met I_p = I_V + I_W (torsieknik zonder welving, Timoshenko & Gere, 1961,
-   par. 5.3), Mecway 2743,03 (+13,6%). Welke polaire traagheid of geometrische
-   stijfheid Mecway voor torsie gebruikt, is NIET nagegaan. Geen invloed van de
-   balkorientatie (gelijk voor elke orientatie).
+112\. **Buckling: pure torsional buckling of a beam higher in Mecway** (question, measured with
+   Mecway 34 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`). Fixed column
+   L = 1 m, I-section 100/50/10/8 mm, 20 elements, 1000 N compression: the flexural buckling factors
+   (109.72 / 987.46 / 1230.44) are equal, the torsional buckling is not: bridge 2413.87 =
+   G·J·A/I_p with I_p = I_V + I_W (torsional buckling without warping, Timoshenko & Gere, 1961,
+   sec. 5.3), Mecway 2743.03 (+13.6%). Which polar moment of inertia or geometric
+   stiffness Mecway uses for torsion has NOT been checked. No influence of the
+   beam orientation (equal for every orientation).
 
-113\. **Knik met buigende momenten (raamwerk): vanaf mode 2 anders dan Mecway** (vraag,
-   gemeten met Mecway 34 headless en Code-Aster 17.4, `RIGI_GEOM` van `POU_D_E`).
-   L-raamwerk (kolom langs Z 1 m, ligger langs X 1 m, RectBar 40 × 10 mm, 100 N omlaag
-   op het eind van de ligger): mode 1 17,2718 in beide; daarna bridge (positief) 44,53 /
-   122,44 / 151,95, Mecway 19,71 / 127,30 / 155,45 / 173,90 (de bridge geeft ook
-   negatieve factoren, KNOWN_BUGS 46). Een raamwerk van drie staven: 0,9814 / 1,0626 /
-   6,8453 tegen Mecway 0,9824 / 1,0604 / 4,6178 / 7,3043. Een uitkragende balk met
-   alleen een dwarskracht (kipknik) is wel gelijk (127,9955 / 328,33 / 533,77), en
-   met of zonder orientatie maakt niet uit. Vermoedelijk een andere geometrische
-   stijfheid voor de momenten in knopen waar staven onder een hoek samenkomen
-   (semitangentiele of axiale momenten); welke dichter bij de werkelijkheid ligt, is
-   NIET nagegaan.
+113\. **Buckling with bending moments (frame): different from Mecway from mode 2 on** (question,
+   measured with Mecway 34 headless and Code-Aster 17.4, `RIGI_GEOM` of `POU_D_E`).
+   L-frame (column along Z 1 m, girder along X 1 m, RectBar 40 × 10 mm, 100 N downwards
+   at the end of the girder): mode 1 17.2718 in both; after that bridge (positive) 44.53 /
+   122.44 / 151.95, Mecway 19.71 / 127.30 / 155.45 / 173.90 (the bridge also gives
+   negative factors, KNOWN_BUGS 46). A frame of three members: 0.9814 / 1.0626 /
+   6.8453 versus Mecway 0.9824 / 1.0604 / 4.6178 / 7.3043. A cantilever beam with
+   only a transverse force (lateral-torsional buckling) is equal (127.9955 / 328.33 / 533.77), and
+   with or without orientation makes no difference. Suspected: a different geometric
+   stiffness for the moments at nodes where members meet at an angle
+   (semitangential or axial moments); which one is closer to reality has
+   NOT been checked.
 
-## Vertaling die anders werkt dan Mecway
+## Translation that works differently from Mecway
 
-8\. **Dubbele randvoorwaarden** (bevestigd, deels afgevangen). Mecway reduceert
-   overlappende voorwaarden zelf (manual v33 par. 9.6), Code-Aster niet. Opgelost:
-   fixed naast schuine voorwaarden, displacement, node rotation of velocity
-   (SANS_GROUP_*, `bridge_to_aster._build_charges`); contact-slaves
-   (`_exclude_fixed_slaves`); een DDL_IMPO 0 die al onder een symmetry/frictionless 0
-   in dezelfde globale richting valt (`bridge_mesh._drop_covered_ddl`). Twee DDL_IMPO
-   in dezelfde last: Code-Aster neemt de laatste (alleen gemeld bij verschillende
-   waarden). Gemeld met selecties en DOF's, niet opgelost (`_report_constraint_overlaps`,
-   rangtest per knoop): constant naast tijdsafhankelijk op dezelfde DOF (ASSEMBLA_26),
-   pinned support, koppelingen, frictionless/symmetry onderling met verschillende
-   relaties en schuine overlap.
+8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
+   overlapping conditions itself (manual v33 sec. 9.6), Code-Aster does not. Fixed:
+   fixed next to skewed conditions, displacement, node rotation or velocity
+   (SANS_GROUP_*, `bridge_to_aster._build_charges`); contact slaves
+   (`_exclude_fixed_slaves`); a DDL_IMPO 0 that already falls under a symmetry/frictionless 0
+   in the same global direction (`bridge_mesh._drop_covered_ddl`). Two DDL_IMPO
+   in the same load: Code-Aster takes the last one (only reported for different
+   values). Reported with selections and DOFs, not fixed (`_report_constraint_overlaps`,
+   rank test per node): constant next to time-dependent on the same DOF (ASSEMBLA_26),
+   pinned support, couplings, frictionless/symmetry among each other with different
+   relations, and skewed overlap.
 
-9\. **Bezwijken niet voor balken; kinematische versteviging met de huidige plastische
-   rek** (bevestigd; `bridge_failure.py`, `docs/Bezwijken.md`). Code-Aster verwijdert
-   geen elementen; de bridge geeft bezweken elementen (plastische rek boven
-   `#ASTER-BEZWIJKEN`, PLAS_TAB Eps_p_max of `failure_plastic_strain`) een zeer lage
-   stijfheid en spanning nul, in STAT_NON_LINE en DYNA_NON_LINE. Dat werkt voor
-   volume-elementen (PETIT, GDEF_LOG, SIMO_MIEHE) en schalen (DKT: PETIT/GREEN_LAGRANGE;
-   COQUE_3D: PETIT/GROT_GDEP), met als criterium het gemiddelde over alle
-   integratiepunten, bij schalen ook over de subpunten in de dikte. Niet gedaan
-   (melding + skipped_loads): balken (Code-Aster kent plasticiteit alleen in
-   multivezelbalken, POUTRE0_61). Bij `VMIS_CINE_LINE` komt de rek uit de terugspanning
-   (X = 2/3 H εp, H = Mecway's tangent modulus): dat is de huidige, niet de opgetelde
-   plastische rek (WARNING), en zonder versteviging (tangent modulus 0) bezwijkt er
-   niets. OpenRadioss `/FAIL`: alleen
-   /FAIL/JOHNSON met een vaste breukrek (D4=D5=0, D2·D3=0) in het materiaalveld wordt
-   Eps_p_max; andere /FAIL-kaarten en /FAIL in de model definition worden gemeld.
-   Dynamisch alleen gecontroleerd op de uitvoertijden; impliciet geeft het alarm
+9\. **Failure not for beams; kinematic hardening with the current plastic
+   strain** (confirmed; `bridge_failure.py`, `docs/Bezwijken.md`). Code-Aster does not remove
+   elements; the bridge gives failed elements (plastic strain above
+   `#ASTER-BEZWIJKEN`, PLAS_TAB Eps_p_max or `failure_plastic_strain`) a very low
+   stiffness and zero stress, in STAT_NON_LINE and DYNA_NON_LINE. That works for
+   solid elements (PETIT, GDEF_LOG, SIMO_MIEHE) and shells (DKT: PETIT/GREEN_LAGRANGE;
+   COQUE_3D: PETIT/GROT_GDEP), with as criterion the average over all
+   integration points, for shells also over the sub-points through the thickness. Not done
+   (message + skipped_loads): beams (Code-Aster only supports plasticity in
+   multifibre beams, POUTRE0_61). With `VMIS_CINE_LINE` the strain comes from the back stress
+   (X = 2/3 H εp, H = Mecway's tangent modulus): that is the current, not the accumulated
+   plastic strain (WARNING), and without hardening (tangent modulus 0) nothing
+   fails. OpenRadioss `/FAIL`: only
+   /FAIL/JOHNSON with a fixed failure strain (D4=D5=0, D2·D3=0) in the material field becomes
+   Eps_p_max; other /FAIL cards and /FAIL in the model definition are reported.
+   Dynamic: only checked at the output times; implicit gives the alarm
    MECANONLINE4_50.
 
-10\. **Contactparen met gedeelde slave-knopen worden samengevoegd** (bevestigd,
-   `bridge_mesh._merge_contact_zones`). Code-Aster verbiedt gedeelde slave-knopen
-   tussen zones (CONTACT2_16); de bridge maakt er een zone van (master = unie,
-   slave = unie, grootste wrijvingscoefficient) en logt dat.
+10\. **Contact pairs with shared slave nodes are merged** (confirmed,
+   `bridge_mesh._merge_contact_zones`). Code-Aster forbids shared slave nodes
+   between zones (CONTACT2_16); the bridge makes one zone of them (master = union,
+   slave = union, largest friction coefficient) and logs that.
 
-11\. **Grote rotaties: balken, opgelegde rotaties en starre koppelingen** (bevestigd).
-   Met `deformation` = GROT_GDEP kiest de bridge per elementtype een vorm voor grote
-   verplaatsingen (`_deformation_for`). Niet: balken (POU_D_E blijft PETIT; POU_D_T_GD
-   met ELAS_POUTRE_GR convergeerde al slecht bij een starre draaiing), DDL_IMPO op
-   DRX/DRY/DRZ en LIAISON_SOLIDE (met TYPE_CHARGE='SUIV' niet als een knoop rotatie-
-   vrijheidsgraden heeft, CHARGES_36). Werkt wel: een star deel aandrijven met de
-   exacte starre beweging via #ASTER (FORMULE, docs/ASTER_regels_voorbeelden.md
-   voorbeeld 9). Een buigmodel (profiel om een mal, met een rol) is zo impliciet tot 90 graden gerekend; het
-   contact rol/profiel convergeert daar nog moeizaam (rol grof als slave: WARNING).
+11\. **Large rotations: beams, prescribed rotations and rigid couplings** (confirmed).
+   With `deformation` = GROT_GDEP the bridge chooses a large-displacement formulation per
+   element type (`_deformation_for`). Not: beams (POU_D_E stays PETIT; POU_D_T_GD
+   with ELAS_POUTRE_GR already converged poorly for a rigid rotation), DDL_IMPO on
+   DRX/DRY/DRZ and LIAISON_SOLIDE (with TYPE_CHARGE='SUIV' not if a node has rotational
+   degrees of freedom, CHARGES_36). What does work: driving a rigid part with the
+   exact rigid motion via #ASTER (FORMULE, docs/ASTER_regels_voorbeelden.md
+   example 9). A bending model (profile around a die, with a roller) has been computed implicitly up to 90 degrees this way; the
+   roller/profile contact still converges with difficulty there (roller coarse as slave: WARNING).
 
-14\. **Thermisch: transient schema anders dan Mecway** (bevestigd, `bridge_thermal`,
-   `theta`). Mecway 33 rekent Crank-Nicolson met de belasting op het einde van de
-   stap (headless gemeten: `mecway.exe model.liml solve` met `<solutionfile>`);
-   Code-Aster neemt het θ-gewogen gemiddelde (standaard 0,57). Bij constante
-   belasting geeft θ = 0,5 Mecway tot 1,5e-5 K; met een tijdstabel blijft een
-   O(Δt)-verschil (OscillatingHeatFlow max 1,4 K bij θ 0,57, RMS 0,13 K). Stationair
-   met een tijdstabel: Mecway's interne solver telt de tabel als 0, CCX neemt t = 1 s;
-   de bridge neemt t = 1 s en waarschuwt bij de interne solver. Met een bewegende bron
-   (formule in x, y, z, t) loopt Mecway's bron daardoor v·Δt/2 voor: naast de bron
-   +4,6%, op de lasas erachter −2,1% t.o.v. de bridge bij Δt = 0,05 s (WE-03; de
-   bridge ligt binnen 1% van de analytische oplossing).
+14\. **Thermal: transient scheme different from Mecway** (confirmed, `bridge_thermal`,
+   `theta`). Mecway 33 computes Crank-Nicolson with the load at the end of the
+   step (measured headless: `mecway.exe model.liml solve` with `<solutionfile>`);
+   Code-Aster takes the θ-weighted average (default 0.57). With constant
+   load, θ = 0.5 gives Mecway to within 1.5e-5 K; with a time table an
+   O(Δt) difference remains (OscillatingHeatFlow max 1.4 K at θ 0.57, RMS 0.13 K). Steady state
+   with a time table: Mecway's internal solver counts the table as 0, CCX takes t = 1 s;
+   the bridge takes t = 1 s and warns with the internal solver. With a moving source
+   (formula in x, y, z, t), Mecway's source therefore runs v·Δt/2 ahead: next to the source
+   +4.6%, on the weld axis behind it −2.1% relative to the bridge at Δt = 0.05 s (WE-03; the
+   bridge is within 1% of the analytical solution).
 
-15\. **Thermische schalen als PLAN met een diktefactor** (bevestigd, keuze).
-   Code-Aster's thermische `COQUE` heeft drie temperaturen door de dikte en
-   randbelastingen alleen op TRIA; de bridge rekent schalen als `PLAN` (diepte 1)
-   met f = t / t_ref op λ, ρc en de belastingen, per dikte een eigen deelgroep.
-   Schalen in evenwijdige vlakken buiten Z = constant: de .comm draait het mesh
-   (MODI_MAILLAGE ROTATION) en de flux terug; alarm MODELE1_53 blijft en is
-   onschuldig. Schalen die niet allemaal evenwijdig zijn: niet vertaald (punt 16).
+15\. **Thermal shells as PLAN with a thickness factor** (confirmed, choice).
+   Code-Aster's thermal `COQUE` has three temperatures through the thickness and
+   edge loads only on TRIA; the bridge computes shells as `PLAN` (depth 1)
+   with f = t / t_ref on λ, ρc and the loads, with a separate sub-group per thickness.
+   Shells in parallel planes other than Z = constant: the .comm rotates the mesh
+   (MODI_MAILLAGE ROTATION) and the flux back; alarm MODELE1_53 remains and is
+   harmless. Shells that are not all parallel: not translated (item 16).
 
-17\. **Thermische rek: temperatuur in het element en in de tijd** (bevestigd, bewuste keuze,
-   `bridge_to_aster._build_temperature_field`). Volgens de manual (v33 par. 9.25) rekent
-   Mecway per element met de gemiddelde knooptemperatuur; Mecway 34 (eigen solver,
-   headless) interpoleert de knooptemperatuur echter in het element, net als
-   Code-Aster: een lineair temperatuurverloop over de dikte van een vrije balk (één
-   laag hex20) geeft in beide de exacte doorbuiging (zie LS-08b), met `temperature2` op
-   knoopselecties en met `temperature3`. Het verloop in de tijd (L30, D31: `EVOL_THER`
-   vanaf de referentie, constant vanaf de eerste stap of oplopend zonder Quasi-static,
-   een tijdstabel gevolgd) staat in docs/Thermisch.md par. 3.1 (NL-70..75, DY-70..72).
-   Statisch, modaal en knik: een tijdshistorie valt weg, net als in Mecway's eigen
-   solver (Mecway 34 headless); Mecway met CCX neemt in S30 de waarde op t = 1 s.
+17\. **Thermal strain: temperature within the element and in time** (confirmed, deliberate choice,
+   `bridge_to_aster._build_temperature_field`). According to the manual (v33 sec. 9.25) Mecway
+   computes per element with the average nodal temperature; Mecway 34 (own solver,
+   headless) however interpolates the nodal temperature within the element, just like
+   Code-Aster: a linear temperature distribution through the thickness of a free beam (one
+   layer of hex20) gives the exact deflection in both (see LS-08b), with `temperature2` on
+   node selections and with `temperature3`. The variation in time (L30, D31: `EVOL_THER`
+   from the reference, constant from the first step or ramped without Quasi-static,
+   a time table followed) is described in docs/Thermisch.md sec. 3.1 (NL-70..75, DY-70..72).
+   Static, modal and buckling: a time history is dropped, just as in Mecway's own
+   solver (Mecway 34 headless); Mecway with CCX takes the value at t = 1 s in S30.
 
-19\. **Centrifugaalkracht** (bevestigd). Alleen een constante hoeksnelheid (een
-   tijdshistorie wordt gemeld), geen tweede centrifugaalkracht (gyroscopisch effect).
-   Spin softening (Mecway: automatisch in Nonlinear Static): ROTATION met
-   TYPE_CHARGE='SUIV' in STAT_NON_LINE bij grote vervormingen, alleen als ROTATION
-   alleen op volumes staat (getest: staaf 0,1 m, extra reactie = ρAω²∫u). Met schalen
-   (formules van de beginpositie) en in dynamica blijft de last vast. Zonder schalen
-   ROTATION op de elsets, in een model met schalen formules per elset
-   (FORCE_INTERNE/FORCE_COQUE/FORCE_POUTRE); knoopmassa's krijgen FORCE_NODALE m w^2 r
-   (`bridge_to_aster._centrifugal_loads`). Kabels (tension only) krijgen nooit
-   centrifugaalkracht (CALCUL_37 "MECABL2", geen FORCE_POUTRE voor kabels): ERROR en
-   gemeld. In een model met schalen krijgen andere elementen met dichtheid (geen
-   volume, schaal of balk) hem ook niet (gemeld).
+19\. **Centrifugal force** (confirmed). Only a constant angular velocity (a
+   time history is reported), no second centrifugal force (gyroscopic effect).
+   Spin softening (Mecway: automatic in Nonlinear Static): ROTATION with
+   TYPE_CHARGE='SUIV' in STAT_NON_LINE with large deformations, only if ROTATION
+   is on solids only (tested: bar 0.1 m, extra reaction = ρAω²∫u). With shells
+   (formulas of the initial position) and in dynamics the load stays fixed. Without shells
+   ROTATION on the elsets, in a model with shells formulas per elset
+   (FORCE_INTERNE/FORCE_COQUE/FORCE_POUTRE); nodal masses get FORCE_NODALE m w^2 r
+   (`bridge_to_aster._centrifugal_loads`). Cables (tension only) never get
+   centrifugal force (CALCUL_37 "MECABL2", no FORCE_POUTRE for cables): ERROR and
+   reported. In a model with shells, other elements with density (not
+   solid, shell or beam) do not get it either (reported).
 
-20\. **Meerdere verdeelde lasten op een balk** (bevestigd,
-   `bridge_to_aster._prepare_beam_loads`). Code-Aster telt lasten met een verdeelde
-   balklast (CALCULEL2_92, ook in CALC_CHAMP SIPM_ELNO). De bridge verdeelt de balken
-   in disjuncte groepen (BRLP) met de som; met een tijdsafhankelijke line pressure
-   alles in één AFFE_CHAR_MECA_F (gravity op balken als ρAg, elders als kracht). Nog
-   niet: lokale en globale line pressure op dezelfde balk en centrifugaal met een
-   tijdsafhankelijke line pressure (ERROR), gravity met historie samen met line
-   pressures op balken (WARNING). FORCE_INTERNE/FORCE_COQUE in dat pad zijn niet met
-   een run nagelopen.
+20\. **Multiple distributed loads on a beam** (confirmed,
+   `bridge_to_aster._prepare_beam_loads`). Code-Aster sums loads with a distributed
+   beam load (CALCULEL2_92, also in CALC_CHAMP SIPM_ELNO). The bridge divides the beams
+   into disjoint groups (BRLP) with the sum; with a time-dependent line pressure
+   everything in one AFFE_CHAR_MECA_F (gravity on beams as ρAg, elsewhere as force). Not
+   yet: local and global line pressure on the same beam, and centrifugal with a
+   time-dependent line pressure (ERROR), gravity with a history together with line
+   pressures on beams (WARNING). FORCE_INTERNE/FORCE_COQUE in that path have not been
+   checked with a run.
 
-21\. **Verlijmd contact (LIAISON_MAIL)** (bevestigd, `bridge_mesh._bonded`).
-   `bondedelastic` wordt star verlijmd (stijfheid niet vertaald, gemeld). Schaalvlak
-   (slave) op volume (master): alleen de verplaatsingen worden gekoppeld (MASSIF;
-   gemeten gelijk aan gedeelde knopen). Mecway wijkt hier zelf af (headless gemeten,
-   balk 1x0,1x0,1 m met een plaat van 10 mm erop verlijmd, eindlast): de interne
-   solver verbindt de plaat niet (plaat in rust, doorbuiging gelijk aan zonder
-   plaat); met CCX daalt de doorbuiging tot 0,869 van die zonder plaat, Code-Aster
-   (LINE_QUAD + COQUE_3D) 0,788, balktheorie 0,785. Schaalranden van één component op een
-   volume: COQUE_MASSIF (stijf, ook de rotaties); randen van meerdere componenten of
-   gemengd met vlakken: MASSIF, de rand werkt dan als scharnier (WARNING). Of Mecway
-   een schaalrand op een volume ook stijf verbindt is NIET geverifieerd. Balkuiteinden als slave:
-   gemeld en overgeslagen. Lineaire schalen die master zijn, blijven DKT, ook met
-   elem_shell = COQUE_3D (LIAISON_MAIL trekt anders de DX van de QUAD9-middenknoop
-   erbij, CHARGES2_31, en de middenknopen van LINE_QUAD kent de bridge niet; WARNING).
-   Een automatische
-   tolerantie van Mecway (0) wordt geen DISTANCE_MAX: Code-Aster koppelt alle
-   slave-knopen, ook ver van het master-vlak. Schaal op schaal (`COQUE`, ook een
-   schaalrand op een schaalvlak) koppelt de rotaties wel (stijf, LS-07); Mecway's eigen
-   solver doet dat bij een schaalrand als slave niet (headless gemeten, Mecway 34:
-   verlijmde strook en T-stuk van LS-07 worden een mechanisme, tip 3,7e6 m). Een
-   kwadratische schaal (tri6/quad8) als master of een scheve/gekromde master schrijft
-   de bridge zelf als `LIAISON_DDL` per slave-knoop (`_bonded_relations`; LS-07f..k);
-   bij een scheve of gekromde master zet de bridge `NPREC` voor die run op −1 (WARNING),
-   omdat MUMPS anders ten onrechte `FACTOR_11` meldt (fictieve drilling-stijfheid).
-   Die relaties projecteren elke slave-knoop op de master-elementen (voorselectie met
-   omhullende dozen; 500 slave-knopen op 3600 elementen: 1,3 s in CPython, in
-   IronPython enkele keren trager): bij heel grote lijmvlakken merkbaar.
+21\. **Bonded contact (LIAISON_MAIL)** (confirmed, `bridge_mesh._bonded`).
+   `bondedelastic` becomes rigidly bonded (stiffness not translated, reported). Shell face
+   (slave) on solid (master): only the displacements are coupled (MASSIF;
+   measured equal to shared nodes). Mecway itself deviates here (measured headless,
+   beam 1x0.1x0.1 m with a 10 mm plate bonded on top, end load): the internal
+   solver does not connect the plate (plate at rest, deflection equal to without
+   plate); with CCX the deflection drops to 0.869 of that without plate, Code-Aster
+   (LINE_QUAD + COQUE_3D) 0.788, beam theory 0.785. Shell edges of one component on a
+   solid: COQUE_MASSIF (rigid, also the rotations); edges of several components or
+   mixed with faces: MASSIF, the edge then acts as a hinge (WARNING). Whether Mecway
+   also connects a shell edge on a solid rigidly has NOT been verified. Beam ends as slave:
+   reported and skipped. Linear shells that are master stay DKT, also with
+   elem_shell = COQUE_3D (LIAISON_MAIL would otherwise drag in the DX of the QUAD9 centre node,
+   CHARGES2_31, and the bridge does not know the midside nodes of LINE_QUAD; WARNING).
+   An automatic
+   tolerance of Mecway (0) does not become DISTANCE_MAX: Code-Aster couples all
+   slave nodes, also far from the master face. Shell on shell (`COQUE`, also a
+   shell edge on a shell face) does couple the rotations (rigid, LS-07); Mecway's own
+   solver does not do that with a shell edge as slave (measured headless, Mecway 34:
+   bonded strip and T-piece of LS-07 become a mechanism, tip 3.7e6 m). A
+   quadratic shell (tri6/quad8) as master or a skewed/curved master is written
+   by the bridge itself as `LIAISON_DDL` per slave node (`_bonded_relations`; LS-07f..k);
+   with a skewed or curved master the bridge sets `NPREC` to −1 for that run (WARNING),
+   because MUMPS otherwise wrongly reports `FACTOR_11` (fictitious drilling stiffness).
+   Those relations project each slave node onto the master elements (preselection with
+   bounding boxes; 500 slave nodes on 3600 elements: 1.3 s in CPython, in
+   IronPython several times slower): noticeable for very large bonded faces.
 
-22\. **Compression only** (bevestigd). Hard (LIAISON_UNIL, zoals de interne solver),
-   alleen in niet-lineaire analyses (MECA_STATIQUE stopt met een ERROR), niet in een
-   model met contact2 (een DEFI_CONTACT per berekening; gemeld). Op schaalvlakken
-   alleen de normaalverplaatsing, de rotaties blijven vrij.
+22\. **Compression only** (confirmed). Hard (LIAISON_UNIL, like the internal solver),
+   only in nonlinear analyses (MECA_STATIQUE stops with an ERROR), not in a
+   model with contact2 (one DEFI_CONTACT per calculation; reported). On shell faces
+   only the normal displacement, the rotations stay free.
 
-23\. **Gap- en tension-only-elementen** (bevestigd). Gap (DIS_CHOC): geen trek-gap
-   (U tegen knoop 1 -> 2 in), schuine U of samenvallende knopen (gemeld, element
-   zonder stijfheid); de 'force of open gap' van CCX wordt niet gebruikt. Tension
-   only (CABLE, GROT_GDEP): drukstijfheid 1e-4 E (Code-Aster EC_SUR_E), een kabel
-   zonder voorspanning heeft geen dwarsstijfheid. Beide alleen niet-lineair.
+23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap
+   (U against node 1 -> 2), skewed U or coincident nodes (reported, element
+   without stiffness); the 'force of open gap' of CCX is not used. Tension
+   only (CABLE, GROT_GDEP): compressive stiffness 1e-4 E (Code-Aster EC_SUR_E), a cable
+   without prestress has no transverse stiffness. Both only nonlinear.
 
-34\. **PLAS_TAB: niet vertaalde velden** (bevestigd, `bridge_radioss.parse_plas_tab`).
-   Kinematische/gemengde versteviging (C_hard > 0; 0 is isotroop, Altair /MAT/LAW36),
-   Eps_t/Eps_m/Eps_f, fct_IDp en de E-evolutie (Fct_IDE/EInf/CE) worden gemeld
-   (WARNING) en isotroop gerekend; F_smooth/F_cut/VP (reksnelheid) alleen INFO. Een
-   ander eenhedenstelsel (`/BEGIN`, of E/RHO buiten het SI-bereik) wordt gemeld, niet
-   omgerekend. Kinematisch met een curve: VMIS_ECMI_TRAC is alleen exact bij een
-   bilineaire curve, dus niet ingebouwd.
+34\. **PLAS_TAB: untranslated fields** (confirmed, `bridge_radioss.parse_plas_tab`).
+   Kinematic/mixed hardening (C_hard > 0; 0 is isotropic, Altair /MAT/LAW36),
+   Eps_t/Eps_m/Eps_f, fct_IDp and the E evolution (Fct_IDE/EInf/CE) are reported
+   (WARNING) and computed as isotropic; F_smooth/F_cut/VP (strain rate) only INFO. A
+   different unit system (`/BEGIN`, or E/RHO outside the SI range) is reported, not
+   converted. Kinematic with a curve: VMIS_ECMI_TRAC is only exact for a
+   bilinear curve, so not built in.
 
-40\. **Trusses bij grote verplaatsingen** (bevestigd met runs, `bridge_from_liml`
-   `_split_trusses`). BARRE is in Code-Aster 17.4 geometrisch lineair: GROT_GDEP wordt
-   stil genegeerd (een staaf die star 30° draait, geeft dezelfde normaalkracht als met
-   PETIT); de bridge waarschuwt. Samples/SaggingCable.liml (rechte kabel onder dwarse
-   gravity) is daardoor een mechanisme: de run stopt (singulier, BRIDGE_ONVOLLEDIG). CABLE met EC_SUR_E=1.0 is wel een geometrisch
-   niet-lineaire staaf (gemeten: starre rotatie N=0), maar zonder voorspanning blijft
-   een rechte kabel singulier; met N_INIT=2000 N gaf SaggingCable 3,06797 m (Mecway
-   3,0680 m). Niet ingebouwd.
+40\. **Trusses with large displacements** (confirmed with runs, `bridge_from_liml`
+   `_split_trusses`). BARRE is geometrically linear in Code-Aster 17.4: GROT_GDEP is
+   silently ignored (a bar that rotates rigidly by 30° gives the same normal force as with
+   PETIT); the bridge warns. Samples/SaggingCable.liml (straight cable under transverse
+   gravity) is therefore a mechanism: the run stops (singular, BRIDGE_ONVOLLEDIG). CABLE with EC_SUR_E=1.0 is a geometrically
+   nonlinear bar (measured: rigid rotation N=0), but without prestress a
+   straight cable stays singular; with N_INIT=2000 N SaggingCable gave 3.06797 m (Mecway
+   3.0680 m). Not built in.
 
-43\. **Contact: harde en zachte formulering verschillen van Mecway** (bevestigd).
-   `contact_algo` = STANDARD (Lagrange, standaard) laat geen penetratie toe; Mecway
-   rekent penalty. Samples/PipeClip verliest met STANDARD het contact (1,1 mm penetratie
-   op t = 0,8), AssemblyWithContact (Fixed_support) stopt met MECANONLINE9_4 (pivot op
-   LAGS_C); met PENALISATION (Mecway's stijfheid) volgen beide Mecway (2..8% en −1,1%,
-   headless). Configuratie Quadratic_ramp van AssemblyWithContact (wrijving 0,5 +
-   elastic support) convergeert ook met penalty niet in stap 1 (onverklaard).
-   Lijncontact tussen hex20-volumes (verificatie NL-03a: twee balken met de tips
-   op elkaar) lukt met STANDARD niet: met de standaard INTEGRATION='NCOTES' (bridge,
-   kwadratisch slave-vlak) dringt de rand tussen de integratiepunten door (contactkracht
-   ~0) en stopt de run bij t = 0,028 met MECANONLINE9_4; met AUTO een pivot op LAGS_C
-   van een hoekknoop in de eerste stap, ook met master/slave omgedraaid. PENALISATION is
+43\. **Contact: hard and soft formulation differ from Mecway** (confirmed).
+   `contact_algo` = STANDARD (Lagrange, default) allows no penetration; Mecway
+   computes penalty. Samples/PipeClip loses contact with STANDARD (1.1 mm penetration
+   at t = 0.8), AssemblyWithContact (Fixed_support) stops with MECANONLINE9_4 (pivot on
+   LAGS_C); with PENALISATION (Mecway's stiffness) both follow Mecway (2..8% and −1.1%,
+   headless). Configuration Quadratic_ramp of AssemblyWithContact (friction 0.5 +
+   elastic support) does not converge in step 1 with penalty either (unexplained).
+   Line contact between hex20 solids (verification NL-03a: two beams with their tips
+   on each other) does not work with STANDARD: with the default INTEGRATION='NCOTES' (bridge,
+   quadratic slave face) the edge penetrates between the integration points (contact force
+   ~0) and the run stops at t = 0.028 with MECANONLINE9_4; with AUTO a pivot on LAGS_C
+   of a corner node in the first step, also with master/slave swapped. PENALISATION is
    exact (NL-03b).
 
-48\. **Modaal: mechanisme in een opgelegd model** (bevestigd met runs,
-   `bridge_to_aster._calc_modes_block`). Is K singulier terwijl er wel opleggingen
-   zijn (bijv. een balk die alleen scharnierend vastzit), dan stopt Code-Aster met
-   `<EXCEPTION> ALGELINE3_81`; Mecway geeft de starre modes met 0 Hz (zelfde model:
-   Mecway 0 / 0 / 0,0007 / 73,277 / 109,916 / 237,467 Hz). De bridge gebruikt de
-   verschoven zoekfrequentie alleen zonder enige oplegging (vrij-vrij); met een
-   negatieve `modal_shift_hz` (bijv. -500 Hz) geeft de bridge dezelfde waarden als
-   Mecway. Altijd verschuiven werkt niet: een vaste factor ver boven de eerste mode
-   gaf bij een fijn hex20-mesh geen enkele mode (ALGELINE5_49/3_78).
+48\. **Modal: mechanism in a supported model** (confirmed with runs,
+   `bridge_to_aster._calc_modes_block`). If K is singular while there are
+   supports (e.g. a beam that is only held by a hinge), Code-Aster stops with
+   `<EXCEPTION> ALGELINE3_81`; Mecway gives the rigid-body modes at 0 Hz (same model:
+   Mecway 0 / 0 / 0.0007 / 73.277 / 109.916 / 237.467 Hz). The bridge uses the
+   shifted search frequency only without any support (free-free); with a
+   negative `modal_shift_hz` (e.g. -500 Hz) the bridge gives the same values as
+   Mecway. Always shifting does not work: a fixed factor far above the first mode
+   gave not a single mode with a fine hex20 mesh (ALGELINE5_49/3_78).
 
-53\. **Niet-lineaire knik: grenzen van CRIT_STAB en de imperfectie** (bevestigd met
+53\. **Nonlinear buckling: limits of CRIT_STAB and the imperfection** (confirmed with
    runs, `bridge_to_aster._crit_stab_kind`, `_imperfection_blocks`;
-   docs/Modaal_en_knik.md par. 5). Mecway kent geen van beide (eigen invoer).
-   (a) Met grote verplaatsingen (de standaard voor volumes en COQUE_3D; één elset is
-   genoeg) is `CHAR_CRIT` van CRIT_STAB geen lastfactor maar −(kleinste eigenwaarde
-   van K_T); de bridge schat het knikpunt lineair uit de laatste twee stappen (NK-02a,
-   laatste stap op 0,9 Pcr: +0,4 %; dezelfde kolom met de laatste stap op 0,27 Pcr:
-   +4,7 %, de reeks is licht gekromd). SIMO_MIEHE NIET
-   geverifieerd. (b) De imperfectie is altijd de lineaire knikvorm onder de lasten op
-   de eindtijd (meebewegende druk daar als vaste last); niet met contact, compression
-   only, gaps of tension only (ERROR), niet in dynamica. (c) Balken en DKT/DST blijven
-   geometrisch lineair: daar versterkt de imperfectie niet (WARNING). (d) De
-   verplaatsingen in Mecway zijn t.o.v. de imperfecte vorm; de imperfectie zelf gaat
-   niet als veld naar Mecway, de knikvorm van CRIT_STAB (`MODE_FLAMB`) ook niet.
-   (e) Geen boogslengtemethode (`PILOTAGE`): met een last als tijdstabel stopt de run
-   op het grenspunt (`MECANONLINE9_7`, NK-04).
+   docs/Modaal_en_knik.md sec. 5). Mecway has neither (own input).
+   (a) With large displacements (the default for solids and COQUE_3D; one elset is
+   enough) `CHAR_CRIT` of CRIT_STAB is not a load factor but −(smallest eigenvalue
+   of K_T); the bridge estimates the buckling point linearly from the last two steps (NK-02a,
+   last step at 0.9 Pcr: +0.4 %; the same column with the last step at 0.27 Pcr:
+   +4.7 %, the series is slightly curved). SIMO_MIEHE NOT
+   verified. (b) The imperfection is always the linear buckling mode under the loads at
+   the end time (follower pressure there as a fixed load); not with contact, compression
+   only, gaps or tension only (ERROR), not in dynamics. (c) Beams and DKT/DST stay
+   geometrically linear: there the imperfection does not amplify (WARNING). (d) The
+   displacements in Mecway are relative to the imperfect shape; the imperfection itself is
+   not sent to Mecway as a field, nor is the buckling mode of CRIT_STAB (`MODE_FLAMB`).
+   (e) No arc-length method (`PILOTAGE`): with a load as a time table the run stops
+   at the limit point (`MECANONLINE9_7`, NK-04).
 
-82\. **Niet-lineair: heen-en-weer-plasticiteit met de standaardvervorming convergeert
-   niet bij het terugbelasten** (bevestigd met een offline run, `bridge_to_aster.
-   _deformation_for`; gevonden bij S8b). Staaf 0,1 × 0,01 × 0,01 m, 2 hex8, bilineair
-   plastisch (vloeigrens 250 MPa, tangentmodulus 10 GPa), opgelegde verlenging 0 →
-   +0,6 → −0,6 → 0 mm (t = 0..3 s, stap 0,25 s), symmetrievlakken (model van VM-11a
-   zonder `deformation = PETIT`): met de standaard `GROT_GDEP` (plastisch volume →
-   `GDEF_LOG`) stopt `STAT_NON_LINE` op t = 2,29 s (`MECANONLINE9_7` na 7 keer
-   halveren, `BRIDGE_ONVOLLEDIG`); met `PETIT` rekent dezelfde staaf door (VM-11a).
-   Oorzaak niet gezocht (GDEF_LOG bij het omkeren van de rek, of de Newton-instellingen).
-   Advies in docs/Vermoeiing.md §1.9: `deformation = PETIT` bij heen-en-weer-plasticiteit.
+82\. **Nonlinear: back-and-forth plasticity with the default deformation does not converge
+   on reloading in reverse** (confirmed with an offline run, `bridge_to_aster.
+   _deformation_for`; found in S8b). Bar 0.1 × 0.01 × 0.01 m, 2 hex8, bilinear
+   plastic (yield stress 250 MPa, tangent modulus 10 GPa), prescribed elongation 0 →
+   +0.6 → −0.6 → 0 mm (t = 0..3 s, step 0.25 s), symmetry planes (model of VM-11a
+   without `deformation = PETIT`): with the default `GROT_GDEP` (plastic solid →
+   `GDEF_LOG`) `STAT_NON_LINE` stops at t = 2.29 s (`MECANONLINE9_7` after halving 7
+   times, `BRIDGE_ONVOLLEDIG`); with `PETIT` the same bar runs through (VM-11a).
+   Cause not investigated (GDEF_LOG when the strain reverses, or the Newton settings).
+   Advice in docs/Vermoeiing.md §1.9: `deformation = PETIT` for back-and-forth plasticity.
 
-83\. **XFEM: K_I uit `CALC_G_XFEM` op een gekromd front een paar procent te hoog**
-   (bevestigd met runs, Code-Aster 17.4; `bridge_xfem._warn_curved`; verificatie BR-10).
-   Cirkelvormige scheur (penny crack, a = 20 mm) in een blok onder trek, hex8, front
-   schuin door de elementen: K_I van `CALC_G_XFEM` (`OPTION='CALC_K_G'`) in het midden
-   van het front +5,3 % t.o.v. 2σ√(a/π) bij h = a/20, +10 % bij a/10 en +15 % bij a/5;
-   op hetzelfde mesh K_I van `POST_K1_K2_K3` +1,6 % en K uit G +1,0 %
-   (docs/Breukmechanica.md §7.4). Op een recht front (BR-07..09, BR-12) ligt
-   `CALC_G_XFEM` binnen 0,3 %. Oorzaak vermoedelijk de ontbrekende krommingscorrectie
-   van de interactie-integraal (de gemeshte scheur heeft die met `FORM_FISS='CERCLE'`:
-   forma07a +5,6 % → +0,1 %); dat `CALC_G_XFEM` geen krommingscorrectie kent, is NIET
-   in de U-doc nagegaan. De bridge geeft bij CIRKEL/ELLIPSE een WARNING en adviseert
-   `K1_POST_K` of K uit G. In de verificatie toetst BR-10 deze K_I met dezelfde 5 % als
-   de andere XFEM-controles; de afwijking telt als BEKEND.
+83\. **XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high**
+   (confirmed with runs, Code-Aster 17.4; `bridge_xfem._warn_curved`; verification BR-10).
+   Circular crack (penny crack, a = 20 mm) in a block under tension, hex8, front
+   running obliquely through the elements: K_I of `CALC_G_XFEM` (`OPTION='CALC_K_G'`) at the middle
+   of the front +5.3 % relative to 2σ√(a/π) at h = a/20, +10 % at a/10 and +15 % at a/5;
+   on the same mesh K_I of `POST_K1_K2_K3` +1.6 % and K from G +1.0 %
+   (docs/Breukmechanica.md §7.4). On a straight front (BR-07..09, BR-12)
+   `CALC_G_XFEM` is within 0.3 %. Cause suspected to be the missing curvature correction
+   of the interaction integral (the meshed crack has it with `FORM_FISS='CERCLE'`:
+   forma07a +5.6 % → +0.1 %); that `CALC_G_XFEM` has no curvature correction has NOT
+   been checked in the U-doc. With CIRKEL/ELLIPSE the bridge gives a WARNING and advises
+   `K1_POST_K` or K from G. In the verification BR-10 tests this K_I with the same 5 % as
+   the other XFEM checks; the deviation counts as BEKEND.
 
 
-106\. **Flexible joint: voorwaarde op een elementselectie, grote rotaties**
-   (bevestigd resp. vermoedelijk, `bridge_mesh._flexible_joints`). Het balkuiteinde met
-   een joint krijgt een eigen knoop op dezelfde plaats, met `LIAISON_DDL` aan de
-   Mecway-knoop gekoppeld (verificatie LS-51, gelijk aan Mecway). (a) Een vaste
-   voorwaarde (fixed, displacement, ...) op een *elementselectie* of component die het
-   element met de joint bevat, legt in Code-Aster (`GROUP_MA`) ook die eigen knoop vast;
-   samen met de koppeling is dat dubbel en Code-Aster stopt met `FACTOR_11` (gezien in
-   een run: fixed op de eindelementen, joint op een eindvlak). Leg de voorwaarde op
-   knopen of vlakken (dan alleen op de Mecway-knoop, zoals Mecway). Oplossing (NIET
-   geverifieerd): de eigen knopen als `SANS_GROUP_NO` bij voorwaarden op `GROUP_MA`.
-   (b) De koppeling van de rotaties ligt vast in de lokale assen van het onvervormde
-   element: bij grote rotaties (`GROT_GDEP`) draaien de assen niet mee (niet
-   gereproduceerd; Mecway kent de joint niet in Nonlinear Static, manual v33 par. 9.12).
+106\. **Flexible joint: constraint on an element selection, large rotations**
+   (confirmed resp. suspected, `bridge_mesh._flexible_joints`). The beam end with
+   a joint gets its own node at the same location, coupled to the Mecway node with
+   `LIAISON_DDL` (verification LS-51, equal to Mecway). (a) A fixed
+   constraint (fixed, displacement, ...) on an *element selection* or component that contains the
+   element with the joint also fixes that own node in Code-Aster (`GROUP_MA`);
+   together with the coupling that is double and Code-Aster stops with `FACTOR_11` (seen in
+   a run: fixed on the end elements, joint on an end face). Put the constraint on
+   nodes or faces (then only on the Mecway node, like Mecway). Solution (NOT
+   verified): the own nodes as `SANS_GROUP_NO` for constraints on `GROUP_MA`.
+   (b) The coupling of the rotations is fixed in the local axes of the undeformed
+   element: with large rotations (`GROT_GDEP`) the axes do not rotate along (not
+   reproduced; Mecway does not support the joint in Nonlinear Static, manual v33 sec. 9.12).
 
-107\. **Line3-balken: twee rechte SEG2-cellen** (bevestigd, keuze;
-   `bridge_mesh.write_mesh`). Code-Aster heeft geen kwadratisch balkelement; elk
-   line3-element wordt in de middenknoop gesplitst. Een gekromd line3-element (middenknoop
-   niet op de koorde) wordt zo een knik van twee rechte stukken, met per helft een eigen
-   oriëntatie; Mecway (alleen met CCX, B32R) rekent de gekromde vorm. Voor een rechte
-   balk exact (verificatie LS-50). Mecway's CCX-uitkomst zelf ligt 2–3 % onder de
-   Euler-theorie (B32R uitgezet als één C3D20R over de doorsnede; dezelfde balk met line2
-   in Mecway's eigen solver is exact); een ronde staaf (SECTION=PIPE met binnenstraal 0)
-   rekent CCX daar niet ("nonpositive jacobian").
+107\. **Line3 beams: two straight SEG2 cells** (confirmed, choice;
+   `bridge_mesh.write_mesh`). Code-Aster has no quadratic beam element; each
+   line3 element is split at the midside node. A curved line3 element (midside node
+   not on the chord) thus becomes a kink of two straight pieces, each half with its own
+   orientation; Mecway (only with CCX, B32R) computes the curved shape. Exact for a straight
+   beam (verification LS-50). Mecway's CCX result itself is 2–3 % below
+   Euler theory (B32R expanded as one C3D20R over the cross-section; the same beam with line2
+   in Mecway's own solver is exact); a round bar (SECTION=PIPE with inner radius 0)
+   is not computed by CCX there ("nonpositive jacobian").
 
-108\. **Element offset: kleine rotaties, waarden op de knopen en combinaties**
-   (bevestigd, `bridge_offset.py`). Balken en COQUE_3D-schalen (tri6/quad8 of de keuze
-   COQUE_3D) met een element offset liggen op eigen knopen, met per knoop een starre
-   arm als `LIAISON_DDL` (lineair). (a) Bij `DEFORMATION` = `GROT_GDEP` blijft de arm
-   lineair (kleine rotaties, zoals LIAISON_SOLIDE in KNOWN_BUGS 11); DKT/DST met
-   `EXCENTREMENT` niet. (b) Spanningen van het verschoven element staan in Mecway op de
-   Mecway-knoop; heeft die knoop zelf al een waarde (ander element), dan blijft die staan
-   (`aster_results_export._offset_values`). (c) Mecway 34 zelf geeft met een *Fixed
-   support* op een knoopselectie een andere uitkomst dan op de vlakken van hetzelfde
-   model (LS-63-model met 24 balk- en 12 x 2 quad8-elementen: torsiehoek 0,1117 tegen
-   0,1046 rad, zijverplaatsing +1,6 tegen −10,9 mm; de bridge geeft in beide 0,1092 rad
-   en −11,4 mm); nagegaan met het voorbeeld zelf en LS-63 (vlakken, gelijk aan Mecway).
-   (d) Een balkelement met zowel een offset als een flexible joint: de joint wordt niet
-   vertaald (WARNING in `bridge_mesh._flexible_joints`), het element zit star aan de arm.
-   Mecway 34 houdt de joint wel aan (LS-52a: Mecway 1,264e-3 m = scharnier, bridge
-   3,16e-4 m = star). Vertalen kan met een eigen knoop naast de verschoven knoop
-   (open). Een verschoven balk en een balk met een joint in dezelfde knoop werken wel
-   (LS-52b, gelijk aan Mecway). (e) Verlijmd contact op schalen met een offset: de
-   slave-knopen (altijd de Mecway-knopen) worden aan de knopen van de master gekoppeld
-   (EXCENTREMENT, of de eigen relaties bij quad8/tri6), maar bij `LIAISON_MAIL` op een
-   master op eigen knopen (volume op een quad8-schaal, `MASSIF_COQUE`) aan het
-   verschoven vlak (WARNING met het gebruikte vlak, `bridge_mesh._bonded`). Wat Mecway
-   doet is niet nagelopen. Schaal op schaal met een offset op eigen knopen: NPREC = -1
-   (anders onterecht FACTOR_11; LS-66). (f) Een last op randen van verschoven schalen
-   (vlakselectie) zet Mecway op de verschoven rand (gemeten: trek op de rand buigt de
-   strook niet), de bridge op de knopen (`FORCE_ARETE` op de randcel, ook bij
-   EXCENTREMENT): een extra moment w x F per lengte (LS-67, WARNING in
-   `bridge_offset._report_edge_loads`). Een last op een knoopselectie werkt in beide op
-   de knopen (LS-60).
-   Status: (a) en (b) zo gelaten; (c) en (e) **vraag** (gedrag van Mecway); (d) en (f)
-   bevestigd, open.
+108\. **Element offset: small rotations, values at the nodes and combinations**
+   (confirmed, `bridge_offset.py`). Beams and COQUE_3D shells (tri6/quad8 or the option
+   COQUE_3D) with an element offset lie on their own nodes, with a rigid
+   arm per node as `LIAISON_DDL` (linear). (a) With `DEFORMATION` = `GROT_GDEP` the arm stays
+   linear (small rotations, like LIAISON_SOLIDE in KNOWN_BUGS 11); DKT/DST with
+   `EXCENTREMENT` not. (b) Stresses of the offset element are placed on the
+   Mecway node in Mecway; if that node already has a value itself (other element), that value stays
+   (`aster_results_export._offset_values`). (c) Mecway 34 itself gives a different result with a *Fixed
+   support* on a node selection than on the faces of the same
+   model (LS-63 model with 24 beam and 12 x 2 quad8 elements: twist angle 0.1117 versus
+   0.1046 rad, lateral displacement +1.6 versus −10.9 mm; the bridge gives 0.1092 rad
+   and −11.4 mm in both); checked with the example itself and LS-63 (faces, equal to Mecway).
+   (d) A beam element with both an offset and a flexible joint: the joint is not
+   translated (WARNING in `bridge_mesh._flexible_joints`), the element is rigidly attached to the arm.
+   Mecway 34 does keep the joint (LS-52a: Mecway 1.264e-3 m = hinge, bridge
+   3.16e-4 m = rigid). Translating it is possible with an own node next to the offset node
+   (open). An offset beam and a beam with a joint at the same node do work
+   (LS-52b, equal to Mecway). (e) Bonded contact on shells with an offset: the
+   slave nodes (always the Mecway nodes) are coupled to the nodes of the master
+   (EXCENTREMENT, or the own relations for quad8/tri6), but with `LIAISON_MAIL` on a
+   master on its own nodes (solid on a quad8 shell, `MASSIF_COQUE`) to the
+   offset face (WARNING with the face used, `bridge_mesh._bonded`). What Mecway
+   does has not been checked. Shell on shell with an offset on own nodes: NPREC = -1
+   (otherwise wrongly FACTOR_11; LS-66). (f) A load on edges of offset shells
+   (face selection) is applied by Mecway on the offset edge (measured: tension on the edge does not bend the
+   strip), by the bridge on the nodes (`FORCE_ARETE` on the edge cell, also with
+   EXCENTREMENT): an extra moment w x F per length (LS-67, WARNING in
+   `bridge_offset._report_edge_loads`). A load on a node selection acts on
+   the nodes in both (LS-60).
+   Status: (a) and (b) left as is; (c) and (e) **question** (behaviour of Mecway); (d) and (f)
+   confirmed, open.
 
-## Open vragen (gedrag van Mecway niet nagegaan)
+## Open questions (Mecway behaviour not checked)
 
-27\. **Niet geverifieerd in een .liml** (vraag). Constraint equation: `constant`
-   (element of attribuut; de bridge leest beide) en de DOF-namen rx/ry/rz (afgeleid
-   uit de stringvolgorde in mecway.exe); rotational inertia: as 1/2 = X/Y (alleen 3 = Z
-   gezien); meer dan één knoop geeft een ERROR (mecway.exe: "can only be applied to a
-   single node"). Rayleigh-demping alleen op het hele model en niet op discrete
-   elementen (Mecway: α op elke knoop met massa, manual par. 9.26). Bevestigd: de
-   Rayleigh-XML (DampedVibratingStrip) en de gap-attributen
+27\. **Not verified in a .liml** (question). Constraint equation: `constant`
+   (element or attribute; the bridge reads both) and the DOF names rx/ry/rz (derived
+   from the string order in mecway.exe); rotational inertia: axis 1/2 = X/Y (only 3 = Z
+   seen); more than one node gives an ERROR (mecway.exe: "can only be applied to a
+   single node"). Rayleigh damping only on the whole model and not on discrete
+   elements (Mecway: α on every node with mass, manual par. 9.26). Confirmed: the
+   Rayleigh XML (DampedVibratingStrip) and the gap attributes
    `initialclearance`/`openforce` (mecway.exe).
 
-37\. **Tweede run in dezelfde sessie: `solution` na `mw.open`** (vraag,
-   `MecwayAsterBridgeMain`). Het hoofdvenster blijft open, dus een tweede run gebruikt
-   de `solution` die Mecway bij de start van het script gaf, terwijl run 1 het model
-   met `mw.open` opnieuw opende. Alleen van belang voor route `tabel` en "Eerst
-   Mecway-solve ter controle" (vergelijking). Of Mecway dat object meeverhuist staat
-   niet in de API-documentatie; bij twijfel de bridge opnieuw starten.
+37\. **Second run in the same session: `solution` after `mw.open`** (question,
+   `MecwayAsterBridgeMain`). The main window stays open, so a second run uses
+   the `solution` that Mecway gave at the start of the script, while run 1 reopened the
+   model with `mw.open`. Only relevant for route `tabel` and "Mecway solve first as a
+   check" (comparison). Whether Mecway carries that object along is not stated
+   in the API documentation; if in doubt, restart the bridge.
 
-38\. **Hoofdvenster niet-modaal: NIET in Mecway geverifieerd** (vraag, `bridge_gui`).
-   Het venster gebruikt `Show()` met een eigen berichtenlus (`Application.DoEvents`),
-   zodat Mecway bruikbaar blijft terwijl het open is. Op welke thread Mecway scripts
-   draait en of Mecway tijdens die lus alles toestaat (bijv. een ander model openen,
-   het script nog eens starten: de bridge weigert een tweede venster) is niet getest.
+38\. **Main window non-modal: NOT verified in Mecway** (question, `bridge_gui`).
+   The window uses `Show()` with its own message loop (`Application.DoEvents`),
+   so Mecway stays usable while it is open. On which thread Mecway runs scripts
+   and whether Mecway allows everything during that loop (e.g. opening another model,
+   starting the script again: the bridge refuses a second window) has not been tested.
 
-41\. **Expliciet: TCHAMWA met een variabele stap niet nagelopen** (vraag,
-   `bridge_to_aster._explicit_accelerations`). In expliciete dynamica (alleen
-   `FORMULATION='ACCELERATION'`) zet de bridge opgelegde verplaatsingen, rotaties,
-   snelheden, frictionless (`FACE_IMPO`, `LIAISON_OBLIQUE`) en de constante van een
-   constraint equation om naar de versnelling die het schema oplegt (DIFF_CENT:
-   DY-03b, DY-20a-c). De TCHAMWA-reeks is afgeleid voor een vaste stap; met
-   verschillende stappen per interval (knikken die geen veelvoud van de stap zijn) is
-   ze NIET met een run nagelopen.
+41\. **Explicit: TCHAMWA with a variable step not checked** (question,
+   `bridge_to_aster._explicit_accelerations`). In explicit dynamics (only
+   `FORMULATION='ACCELERATION'`) the bridge converts imposed displacements, rotations,
+   velocities, frictionless (`FACE_IMPO`, `LIAISON_OBLIQUE`) and the constant of a
+   constraint equation into the acceleration imposed by the scheme (DIFF_CENT:
+   DY-03b, DY-20a-c). The TCHAMWA series is derived for a fixed step; with
+   different steps per interval (kinks that are not a multiple of the step) it
+   has NOT been checked with a run.
 
-47\. **Veren en dempers: niet tegen een Mecway-oplossing vergeleken** (vraag). De bridge
-   zet k en c langs de eigen as van het element (DISCRET `REPERE='LOCAL'`; voorheen
-   werkten ze in globaal X, ook langs Y: verificatie LS-06, nu exact). Dat volgt
-   Mecway's CCX-export (`*ELEMENT,TYPE=SPRINGA` = axiale veer, string in mecway.exe).
-   Headless kon Mecway een met de hand geschreven veer (line2 + Spring-materiaal) niet
-   rekenen: de interne solver negeerde hem (doorbuiging gelijk aan zonder veer; een
-   losse veer gaf een singulier stelsel) en CCX gaf geen oplossing. Te controleren
-   met een veer die in de Mecway-GUI is gemaakt.
+47\. **Springs and dampers: not compared against a Mecway solution** (question). The bridge
+   applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`; previously
+   they acted in global X, even along Y: verification LS-06, now exact). This follows
+   Mecway's CCX export (`*ELEMENT,TYPE=SPRINGA` = axial spring, string in mecway.exe).
+   Headless, Mecway could not solve a hand-written spring (line2 + Spring material):
+   the internal solver ignored it (deflection equal to that without the spring; a
+   separate spring gave a singular system) and CCX gave no solution. To be checked
+   with a spring created in the Mecway GUI.
 
-## Niet vertaald (de bridge meldt het aan het eind van de run)
+## Not translated (the bridge reports it at the end of the run)
 
-4\. **Belastingen en randvoorwaarden die de bridge niet kent** (bevestigd). Ondersteund
-   zijn fixed, pinnedsupport, frictionless, displacement, noderotation, velocity
-   (dynamica), force, moment, surfacepressure, gravity, traction, linepressure,
+4\. **Loads and boundary conditions the bridge does not know** (confirmed). Supported
+   are fixed, pinnedsupport, frictionless, displacement, noderotation, velocity
+   (dynamics), force, moment, surfacepressure, gravity, traction, linepressure,
    hydrostaticpressure, elasticsupport, compressiononly, symmetry, centrifugal,
    mass2, rotationalinertia, constraintequation, flexiblejoint, offset (element
-   offset), rayleighdamping, temperature2 en temperature3 met
-   thermalstress, nodesurfacecoupling (rbe3/rigidbody), contact2 (unilateraal en
-   verlijmd, geen self-contact), materialen Gap/Damper/TensionOnly en een
-   beginsnelheid; OpenRadioss-materiaal PLAS_TAB (`bridge_radioss.py`); in de
-   akoestiek fluidpressure 0 (`bridge_acoustic.py`, punt 55). Andere tags
-   met een selectie (self-contact, cyclic symmetry buiten een modale analyse (punt
+   offset), rayleighdamping, temperature2 and temperature3 with
+   thermalstress, nodesurfacecoupling (rbe3/rigidbody), contact2 (unilateral and
+   bonded, no self-contact), materials Gap/Damper/TensionOnly and an
+   initial velocity; OpenRadioss material PLAS_TAB (`bridge_radioss.py`); in
+   acoustics fluidpressure 0 (`bridge_acoustic.py`, item 55). Other tags
+   with a selection (self-contact, cyclic symmetry outside a modal analysis (item
    61), pre-tension, ...),
-   OpenRadioss-kaarten behalve /FUNCT (o.a. /RBODY, /BCS, /IMPDISP), andere
-   OpenRadioss-wetten en VOID-materialen komen in `model_data["skipped_loads"]`.
-   Via `#ASTER`-regels kan de gebruiker zelf Code-Aster-commando's toevoegen.
+   OpenRadioss cards except /FUNCT (e.g. /RBODY, /BCS, /IMPDISP), other
+   OpenRadioss laws and VOID materials end up in `model_data["skipped_loads"]`.
+   Via `#ASTER` lines the user can add Code-Aster commands themselves.
 
-5\. **Belastingen op balkzijvlakken en frictionless met verplaatsing op gekromde
-   schalen** (bevestigd). Druk en traction op schaalranden (lengte × dikte, in het
-   schaalvlak) en balkuiteinden (doorsnede A) worden knoopkrachten; frictionless op
-   gekromde schaalvlakken en schaalranden wordt LIAISON_OBLIQUE per knoopnormaal
-   (`bridge_mesh._edge_loads`, `_frictionless_per_node`). Headless tegen Mecway:
-   druk op een schaalrand exact gelijk, traction dwars op de rand 0,5% (DKT, punt 2);
-   frictionless per knoopnormaal niet tegen Mecway gerekend. Nog niet: lasten op het zijvlak van een balk (gebruik
-   een elementselectie), frictionless met normaalverplaatsing ≠ 0 op gekromde
-   schalen/schaalranden, hydrostatische druk op schaalranden. Met LINE_QUAD krijgen
-   nieuwe middenknopen geen frictionless.
+5\. **Loads on beam side faces and frictionless with displacement on curved
+   shells** (confirmed). Pressure and traction on shell edges (length × thickness, in the
+   shell plane) and beam ends (cross-section A) become nodal forces; frictionless on
+   curved shell faces and shell edges becomes LIAISON_OBLIQUE per nodal normal
+   (`bridge_mesh._edge_loads`, `_frictionless_per_node`). Headless against Mecway:
+   pressure on a shell edge exactly equal, traction across the edge 0.5% (DKT, item 2);
+   frictionless per nodal normal not computed against Mecway. Not yet: loads on the side face of a beam (use
+   an element selection), frictionless with normal displacement ≠ 0 on curved
+   shells/shell edges, hydrostatic pressure on shell edges. With LINE_QUAD,
+   new midside nodes get no frictionless.
 
-6\. **Kinematische versteviging: geen equivalentplasticstrain; niet-lineaire
-   kinematische curve** (bevestigd). Vertaald: isotrope hardingscurve
-   (VMIS_ISOT_TRAC), BilinearIsotropic/-Kinematic (ECRO_LINE met
-   D_SIGM_EPSI = E H/(E+H), H = Mecway's tangent modulus als plastische modulus;
-   VMIS_ISOT_LINE/VMIS_CINE_LINE, ideaal plastisch met tangent modulus 0),
-   RambergOsgood (bemonsterde curve, VMIS_ISOT_TRAC; incrementeel, bij ontlasten
-   anders dan CCX) en een Kinematic-curve met lineaire versteviging (VMIS_CINE_LINE,
-   `bridge_from_liml._kinematic_curve`). Een niet-lineaire Kinematic-curve wordt
-   gemeld en elastisch gerekend. Bij kinematische versteviging gaat geen
-   equivalentplasticstrain naar Mecway (VARI V1 is daar de terugspanning), wel
-   EPSP_NOEU. Plasticiteit op balken wordt elastisch gerekend (WARNING; Code-Aster kent
-   plasticiteit alleen in multivezelbalken). ('Simple' is geen plasticiteitstype maar
-   het type van `<density>`.)
+6\. **Kinematic hardening: no equivalentplasticstrain; non-linear
+   kinematic curve** (confirmed). Translated: isotropic hardening curve
+   (VMIS_ISOT_TRAC), BilinearIsotropic/-Kinematic (ECRO_LINE with
+   D_SIGM_EPSI = E H/(E+H), H = Mecway's tangent modulus as plastic modulus;
+   VMIS_ISOT_LINE/VMIS_CINE_LINE, perfectly plastic with tangent modulus 0),
+   RambergOsgood (sampled curve, VMIS_ISOT_TRAC; incremental, on unloading
+   different from CCX) and a Kinematic curve with linear hardening (VMIS_CINE_LINE,
+   `bridge_from_liml._kinematic_curve`). A non-linear Kinematic curve is
+   reported and computed elastically. With kinematic hardening no
+   equivalentplasticstrain goes to Mecway (VARI V1 is the back stress there), but
+   EPSP_NOEU does. Plasticity on beams is computed elastically (WARNING; Code-Aster knows
+   plasticity only in multifibre beams). ('Simple' is not a plasticity type but
+   the type of `<density>`.)
 
-16\. **Thermisch: niet vertaald** (bevestigd, `bridge_thermal.py`). Balken /
-   fin-elementen (Code-Aster heeft geen thermisch 1D-element; FinConvection.liml
-   draait daarom niet), schalen die niet allemaal evenwijdig zijn, vloeistofnetwerk
-   (`forcedconvection`, `massflowrate`; CoolantChannel.liml stopt met "temperatuur
-   onbepaald"), cavity-straling, formules voor convectie/straling op een schaalvlak,
-   een formule in x, y, z voor een totale `heatflow` of als begintemperatuur, formules
-   in materiaaleigenschappen, unilateraal contact en koppelingen (node-surface coupling)
-   in een thermische analyse (verlijmd contact wel: docs/Thermisch.md par. 3; niet in
-   een model met volumes en schalen samen). Een
-   `temperature2` met `starttime`/`endtime` wordt de hele analyse opgelegd. (Formules
-   in de overige thermische lasten en temperatuurafhankelijke λ/c worden wel vertaald,
+16\. **Thermal: not translated** (confirmed, `bridge_thermal.py`). Beams /
+   fin elements (Code-Aster has no thermal 1D element; FinConvection.liml
+   therefore does not run), shells that are not all parallel, fluid network
+   (`forcedconvection`, `massflowrate`; CoolantChannel.liml stops with "temperature
+   undetermined"), cavity radiation, formulas for convection/radiation on a shell face,
+   a formula in x, y, z for a total `heatflow` or as initial temperature, formulas
+   in material properties, unilateral contact and couplings (node-surface coupling)
+   in a thermal analysis (bonded contact is supported: docs/Thermisch.md par. 3; not in
+   a model with solids and shells together). A
+   `temperature2` with `starttime`/`endtime` is imposed for the whole analysis. (Formulas
+   in the other thermal loads and temperature-dependent λ/c are translated,
    docs/Thermisch.md par. 3.)
 
-49\. **Modaal: grenzen van de voorspanning en van de complexe modes** (bevestigd
-   met runs, `bridge_to_aster._prestress_plan`). Voorspanning door belastingen
-   (stress stiffening, `modal_prestress`) werkt zoals Mecway (verificatie MP-01..07).
-   Afwijkingen: (a) een draaiende **balk** (`POU_D_E`, centrifugal) geeft in het
-   rotatievlak tot 0,5% lagere frequenties dan Mecway (MP-04: 20,795 tegen 20,903 Hz;
-   een eigen FE-berekening met consistente Hermite-matrices gaf 20,918 Hz), uit het
-   vlak gelijk, met hex20 ook in het vlak gelijk (MP-07): vermoedelijk Code-Aster's
-   `RIGI_ROTA` van balken (NIET geverifieerd in de broncode). (b) Centrifugaalkracht
-   met **schalen** (formule-last, geen `ROTATION`) of op **knoopmassa's**: geen spin
-   softening (WARNING). (c) Een **membraan met kunstmatig kleine E** (Mecway's
-   VibratingMembrane: E = 0,001 Pa, tri6 → `COQUE_3D`): de rotatievrijheidsgraden
-   zonder stijfheid geven valse modes (0,33 en 2,04 Hz, effectieve massa 0) en
-   Sorensen vindt met `PLUS_PETITE` geen mode (`ALGELINE5_49`); met zoekfrequentie
-   2 Hz komt de trommelmode 2,00746 Hz (Mecway 2,00746), met de valse modes ertussen.
-   Demping: standaard niet (zoals Mecway, headless gemeten: V30 negeert Rayleigh en
-   geeft met een Damper geen oplossing); met `modal_complex` complexe modes
-   (`bridge_modal_damping.py`, verificatie MC-01..05). Grenzen daarvan: alleen de vorm
-   (reëel deel) naar Mecway, geen spanningen per mode; overkritisch gedempte en starre
-   modes ontbreken (ALGELINE5_79); bij dempers (niet-proportioneel) is de effectieve
-   massa uit het reële deel een benadering (MC-03: som 107%); geen hysteretische
-   demping; de `decayrate` en f_d in de Mecway-GUI NIET bekeken (de API leest f_d en de vorm).
-   Cyclische symmetrie: punt 61. De effectieve
-   massa voor de rotaties rekent de bridge zelf (om de oorsprong, zoals Mecway; fractie
-   van de totale traagheid incl. opgelegde knopen, Mecway deelt door de vrije); in
-   Mecway (*modal effective mass (fraction)*, S12) staat daarom Code-Aster's fractie,
-   niet Mecway's; of de GUI de eigen variabele `cumulativeeffectivemassfraction*`
-   toont, is NIET geverifieerd (Mecway bewaart hem wel); spanningen per mode
-   alleen bij modaal (`fields`), niet per knikvorm.
+49\. **Modal: limits of the prestress and of the complex modes** (confirmed
+   with runs, `bridge_to_aster._prestress_plan`). Prestress from loads
+   (stress stiffening, `modal_prestress`) works like Mecway (verification MP-01..07).
+   Deviations: (a) a rotating **beam** (`POU_D_E`, centrifugal) gives in the
+   plane of rotation up to 0.5% lower frequencies than Mecway (MP-04: 20.795 vs 20.903 Hz;
+   an independent FE calculation with consistent Hermite matrices gave 20.918 Hz), out of
+   plane equal, with hex20 also equal in plane (MP-07): suspected Code-Aster's
+   `RIGI_ROTA` of beams (NOT verified in the source code). (b) Centrifugal force
+   with **shells** (formula load, no `ROTATION`) or on **nodal masses**: no spin
+   softening (WARNING). (c) A **membrane with artificially small E** (Mecway's
+   VibratingMembrane: E = 0.001 Pa, tri6 → `COQUE_3D`): the rotational degrees of freedom
+   without stiffness give spurious modes (0.33 and 2.04 Hz, effective mass 0) and
+   Sorensen finds no mode with `PLUS_PETITE` (`ALGELINE5_49`); with search frequency
+   2 Hz the drum mode comes out at 2.00746 Hz (Mecway 2.00746), with the spurious modes in between.
+   Damping: not by default (like Mecway, measured headless: V30 ignores Rayleigh and
+   gives no solution with a Damper); with `modal_complex` complex modes
+   (`bridge_modal_damping.py`, verification MC-01..05). Their limits: only the shape
+   (real part) goes to Mecway, no stresses per mode; overcritically damped and rigid
+   modes are missing (ALGELINE5_79); with dampers (non-proportional) the effective
+   mass from the real part is an approximation (MC-03: sum 107%); no hysteretic
+   damping; the `decayrate` and f_d in the Mecway GUI NOT checked (the API reads f_d and the shape).
+   Cyclic symmetry: item 61. The effective
+   mass for the rotations is computed by the bridge itself (about the origin, like Mecway; fraction
+   of the total inertia incl. constrained nodes, Mecway divides by the free ones); in
+   Mecway (*modal effective mass (fraction)*, S12) therefore Code-Aster's fraction is shown,
+   not Mecway's; whether the GUI shows its own variable `cumulativeeffectivemassfraction*`
+   is NOT verified (Mecway does store it); stresses per mode
+   only for modal (`fields`), not per buckling shape.
 
-51\. **Foutschatter: alleen lineair statisch en volume-elementen** (bevestigd,
+51\. **Error estimator: only linear static and solid elements** (confirmed,
    `bridge_to_aster._error_estimator_block`, `bridge_mesh._free_faces`,
-   docs/Foutschatter.md). `CALC_ERREUR` ERME alleen bij `MECA_STATIQUE` en alleen op
-   volume-elementen; niet bij niet-lineair, dynamica, modaal, knik en thermisch (ERTH),
-   niet op schalen en balken. In de schatter ontbreken: puntlasten (`FORCE_NODALE`, ook
-   een moment op vlakken), lasten op schalen/balken/schaalranden en hydrostatische druk
-   (formule); daar en op een overgang volume → schaal/balk is de rand voor de schatter
-   spanningsvrij (geschatte fout te groot). Vlakken met symmetry, frictionless of
-   elastic support hebben geen randterm (zoals een opgelegde rand). Twee vlaklasten van
-   dezelfde soort op een vlak: de schatter neemt er een mee (WARNING). Een vlak telt als
-   opgelegd als al zijn hoekknopen in een knoopselectie van een opgelegde verplaatsing
-   liggen, ook als die maar een richting vastlegt. Bij een (vrijwel) spanningsloos
-   model is de globale relatieve fout betekenisloos (TH-03a: 64%). `FORCE_FACE` telt
-   in `ERME` met het omgekeerde teken (gemeten); de bridge keert het om in de last van
-   de schatter (`_erme_force_face`), alleen de normaalcomponent telt in de randterm.
-   De adaptieve verfijning erft deze grenzen (punt 65).
+   docs/Foutschatter.md). `CALC_ERREUR` ERME only with `MECA_STATIQUE` and only on
+   solid elements; not with non-linear, dynamics, modal, buckling and thermal (ERTH),
+   not on shells and beams. Missing in the estimator: point loads (`FORCE_NODALE`, also
+   a moment on faces), loads on shells/beams/shell edges and hydrostatic pressure
+   (formula); there and at a transition solid → shell/beam the boundary is
+   stress-free for the estimator (estimated error too large). Faces with symmetry, frictionless or
+   elastic support have no boundary term (like a constrained boundary). Two face loads of
+   the same kind on one face: the estimator takes one of them into account (WARNING). A face counts as
+   constrained if all its corner nodes lie in a node selection of an imposed displacement,
+   even if that fixes only one direction. For an (almost) stress-free
+   model the global relative error is meaningless (TH-03a: 64%). `FORCE_FACE` counts
+   in `ERME` with the opposite sign (measured); the bridge reverses it in the load of
+   the estimator (`_erme_force_face`), only the normal component counts in the boundary term.
+   The adaptive refinement inherits these limits (item 65).
 
-54\. **Respons op modale basis en harmonische respons: grenzen** (bevestigd,
+54\. **Response on modal basis and harmonic response: limits** (confirmed,
    `bridge_dyna_modal.py`, `bridge_harmonic.py`, docs/Respons_op_modale_basis.md).
-   Mecway D30 met Mode superposition wordt `CALC_MODES` + `DYNA_VIBRA` GENE
-   (verificatie MD-01..07, gelijk aan Mecway). Niet vertaald (ERROR met de oplossing
-   `dyna_impl_3d`): een opgelegde verplaatsing of rotatie <> 0, ook met een
-   tijdstabel (vraagt statische modes / `MULT_APPUI`), een beginsnelheid
-   (`ETAT_INIT` op modale basis), thermische rek, dempers (Mecway ook niet) en
-   uitvoertijden die niet op een regelmatig raster vanaf 0 liggen. Versnellingen en
-   reacties gaan niet naar Mecway. Lasten uit `#ASTER-EXCIT` tellen alleen als
-   oplegging (in `ASSEMBLAGE`). De statische correctie (`static_correction`) is met
-   een constante last exact (MD-06b) en met een tabel alleen buiten de regressie
-   gemeten (console, 1 mode, sinus op 0,5 f1: 0,13% t.o.v. 12 modes, zonder
-   correctie 2,0%).
-   Harmonische respons (`harmonic_3d`, eigen analyse: Mecway heeft geen harmonisch
-   analysetype; verificatie HR-01..05): niet vertaald (ERROR) een opgelegde
-   (basis)beweging <> 0, dempers op modale basis (wel met `harm_basis` PHYS),
-   `modal_damping` met PHYS, thermische rek en niet-lineaire onderdelen; niet
-   gebouwd: hysteretische demping (`AMOR_HYST`, verliesfactor), spanningen in
-   schalen en balken (alleen verplaatsingen/rotaties), reacties en element-
-   knoopspanningen. Zonder demping en met een lijst valt een frequentie mogelijk op
-   een (oneindige) resonantie; de bridge waarschuwt alleen dat er geen demping is.
-   Een gelijkmatige basisversnelling als gravity (relatieve beweging) is theorie, NIET
-   met een testcase nagelopen. Mecway-GUI: de frequenties komen als `<mode
-   frequency>` met o.a. `displx`/`displix`/`displamp*`/`displphase*`; Mecway's API
-   leest ze (headless script op HR-02a), de weergave in de GUI (lijst *Mode 1..n*,
-   contour, animatie zonder decay rate) is NIET bekeken (vraag).
+   Mecway D30 with Mode superposition becomes `CALC_MODES` + `DYNA_VIBRA` GENE
+   (verification MD-01..07, equal to Mecway). Not translated (ERROR with the solution
+   `dyna_impl_3d`): an imposed displacement or rotation <> 0, also with a
+   time table (requires static modes / `MULT_APPUI`), an initial velocity
+   (`ETAT_INIT` on modal basis), thermal strain, dampers (Mecway neither) and
+   output times that do not lie on a regular grid from 0. Accelerations and
+   reactions do not go to Mecway. Loads from `#ASTER-EXCIT` count only as
+   constraint (in `ASSEMBLAGE`). The static correction (`static_correction`) is exact with
+   a constant load (MD-06b) and with a table measured only outside the regression
+   (console, 1 mode, sine at 0.5 f1: 0.13% relative to 12 modes, without
+   correction 2.0%).
+   Harmonic response (`harmonic_3d`, own analysis: Mecway has no harmonic
+   analysis type; verification HR-01..05): not translated (ERROR) an imposed
+   (base) motion <> 0, dampers on modal basis (supported with `harm_basis` PHYS),
+   `modal_damping` with PHYS, thermal strain and non-linear parts; not
+   built: hysteretic damping (`AMOR_HYST`, loss factor), stresses in
+   shells and beams (only displacements/rotations), reactions and element
+   nodal stresses. Without damping and with a list, a frequency may fall on
+   an (infinite) resonance; the bridge only warns that there is no damping.
+   A uniform base acceleration as gravity (relative motion) is theory, NOT
+   checked with a test case. Mecway GUI: the frequencies come as `<mode
+   frequency>` with e.g. `displx`/`displix`/`displamp*`/`displphase*`; Mecway's API
+   reads them (headless script on HR-02a), the display in the GUI (list *Mode 1..n*,
+   contour, animation without decay rate) has NOT been checked (question).
 
-55\. **Akoestiek: 2D, acoustic displacement en media met verschillende dichtheid niet
-   vertaald; grenzen van de impedantie** (bevestigd, `bridge_acoustic.py`,
-   `aster_acoustic_complex.py`, docs/Akoestiek.md §3). Holtemodes met harde wanden en
-   drukknopen (*fluid pressure* 0) zijn gelijk aan Mecway (verificatie AK). *Impedance*
-   (S2b): complexe modes met frequentie, *decay rate* en `pressure`/`pressurei` (het
-   kwadratische eigenwaardeprobleem met scipy in de job, omdat `CALC_MODES` `MATR_AMOR`
-   alleen als `matr_asse_depl_r`/`gene_r` neemt); gelijk aan Mecway ≤ 1e-8 en aan de
-   analytische buis (verificatie AI). Grenzen: een frequentieafhankelijke Z niet (ook
-   Mecway niet); de lijst modes kan op de 0-Hz-modes van Mecway verschillen (Mecway laat
-   ze door afrondingsruis willekeurig weg, de bridge geeft ze altijd een keer); de schaal
-   van P is anders (Mecway willekeurig, de bridge P^H M P = 1); geen Code-Aster-resultaat
-   (geen MED-export, `#ASTER-POST` heeft geen `res`); de factorisatie (scipy `splu`) is
-   gemeten tot 13 000 knopen (14 s), grotere modellen NIET geverifieerd (geheugen).
-   Mecway's API leest de modes (headless script: `modes()`, `frequency`, `node_value`
-   van `pressure`/`pressurei`; de decay rate heeft geen API). De
-   weergave van de complexe modes in de Mecway-GUI (decay rate onder *Solution*,
-   animatie van `pressure` + `pressurei`) is NIET bekeken (vraag). Ook niet:
-   Acoustic Resonance 2D (A20, ERROR), Mecway's *acoustic displacement* als veld, contact,
-   koppelingen en constraint equations in de akoestiek (ERROR, skipped_loads), piramides.
-   Code-Aster's `RIGI_ACOU`/`MASS_ACOU` bevatten de dichtheid niet (gemeten): op een
-   grensvlak is dp/dn continu, juist alleen bij gelijke dichtheid; media met
-   verschillende dichtheid: ERROR. Mecway-GUI: het veld `pressure` per mode is headless
-   met Mecway's eigen oplossing vergeleken, NIET in de GUI bekeken.
+55\. **Acoustics: 2D, acoustic displacement and media with different density not
+   translated; limits of the impedance** (confirmed, `bridge_acoustic.py`,
+   `aster_acoustic_complex.py`, docs/Akoestiek.md §3). Cavity modes with rigid walls and
+   pressure nodes (*fluid pressure* 0) are equal to Mecway (verification AK). *Impedance*
+   (S2b): complex modes with frequency, *decay rate* and `pressure`/`pressurei` (the
+   quadratic eigenvalue problem with scipy in the job, because `CALC_MODES` takes `MATR_AMOR`
+   only as `matr_asse_depl_r`/`gene_r`); equal to Mecway ≤ 1e-8 and to the
+   analytical tube (verification AI). Limits: a frequency-dependent Z not (nor
+   Mecway); the list of modes may differ from Mecway in the 0 Hz modes (Mecway drops
+   them randomly due to round-off noise, the bridge always gives them once); the scaling
+   of P differs (Mecway arbitrary, the bridge P^H M P = 1); no Code-Aster result
+   (no MED export, `#ASTER-POST` has no `res`); the factorisation (scipy `splu`) has been
+   measured up to 13,000 nodes (14 s), larger models NOT verified (memory).
+   Mecway's API reads the modes (headless script: `modes()`, `frequency`, `node_value`
+   of `pressure`/`pressurei`; the decay rate has no API). The
+   display of the complex modes in the Mecway GUI (decay rate under *Solution*,
+   animation of `pressure` + `pressurei`) has NOT been checked (question). Also not:
+   Acoustic Resonance 2D (A20, ERROR), Mecway's *acoustic displacement* as a field, contact,
+   couplings and constraint equations in acoustics (ERROR, skipped_loads), pyramids.
+   Code-Aster's `RIGI_ACOU`/`MASS_ACOU` do not contain the density (measured): at an
+   interface dp/dn is continuous, correct only for equal density; media with
+   different density: ERROR. Mecway GUI: the field `pressure` per mode has been compared headless
+   with Mecway's own solution, NOT checked in the GUI.
 
-56\. **Responsspectrum: grenzen** (bevestigd, `bridge_spectrum.py`,
-   `aster_spectrum.py`, docs/Spectrumanalyse.md). Mecway heeft geen spectrumanalyse;
-   de bridge rekent hem op een Frequency-model met een Gravity-tabel als spectrum
-   (analyse `spectrum_3d`, zelf kiezen: `auto` kiest bij V30 `modal_3d`). Niet
-   vertaald: een spectrum per steunpunt (`MULT_APPUI`, `ENVELOPPE`), opgelegde
-   verplaatsingen <> 0 of met een tabel (ERROR), belastingen (vervallen, WARNING),
-   snelheden, spanningen op schalen en balken (alleen volume-elementen; INFO), en een
-   spectrum dat met de demping varieert uit een gravity-tabel (dan `#ASTER-SPECTRE` met
-   een `DEFI_NAPPE`). von Mises is per mode berekend uit `SIGM_NOEU` en gecombineerd
-   (bij CQC een bovengrens), alleen per knoop (geen element-knoopwaarde). De
-   resultaatstap staat als statisch resultaat onder een V30-analyse: Mecway's API leest
-   de waarden (headless nagelopen: `node_value`, `modes()` leeg); de weergave in de
-   Mecway-GUI is NIET geverifieerd (vraag).
+56\. **Response spectrum: limits** (confirmed, `bridge_spectrum.py`,
+   `aster_spectrum.py`, docs/Spectrumanalyse.md). Mecway has no spectrum analysis;
+   the bridge computes it on a Frequency model with a Gravity table as spectrum
+   (analysis `spectrum_3d`, choose it yourself: `auto` picks `modal_3d` for V30). Not
+   translated: a spectrum per support (`MULT_APPUI`, `ENVELOPPE`), imposed
+   displacements <> 0 or with a table (ERROR), loads (dropped, WARNING),
+   velocities, stresses on shells and beams (only solid elements; INFO), and a
+   spectrum that varies with damping from a gravity table (then `#ASTER-SPECTRE` with
+   a `DEFI_NAPPE`). von Mises is computed per mode from `SIGM_NOEU` and combined
+   (an upper bound with CQC), only per node (no element-nodal value). The
+   result step is stored as a static result under a V30 analysis: Mecway's API reads
+   the values (checked headless: `node_value`, `modes()` empty); the display in the
+   Mecway GUI is NOT verified (question).
 
-57\. **Akoestiek harmonisch: grenzen** (bevestigd, `bridge_acoustic.py`
+57\. **Harmonic acoustics: limits** (confirmed, `bridge_acoustic.py`
    `build_acoustic_harm`, `aster_acoustic_export.py`, docs/Akoestiek.md par. 5.6).
-   Gebouwd en geverifieerd (AH-01..08): snelheidsbron (`BRON_`, `#ASTER-BRON`),
-   opgelegde druk, drukknopen, rho-c-rand (`ABSORBEREND_`) en een reele impedantie
-   (Mecway *impedance*, `3D_ABSO` met `CELE_R = Z / rho`). Niet: een **complexe
-   impedantie** (Im Z != 0; `CELE_I` op het `3D_ABSO`-vlak gaf voor c = 340(1 + i) een
-   staande-golfverhouding 2,19 waar Z = rho c (1 + i) 2,62 geeft, en -340 gaf 2,29: de
-   betekenis van `CELE_I` in `AMOR_ACOU` is NIET uitgezocht) en een
-   frequentieafhankelijke impedantie: ERROR. Mogelijke route (NIET uitgezocht): per
-   frequentie zelf `COMB_MATR_ASSE` (K - w^2 M + i w (rho/Z) A) en `RESOUDRE`, zoals
-   het "calcul decompose" van ahlv100a, of zoals de complexe holtemodes (S2b,
-   `aster_acoustic_complex.py`: A = int N N dA met `AMOR_ACOU` en `CELE_R = 1`, dan
-   scipy in de job; Z mag dan ook per frequentie verschillen). Ook niet: volumedemping / complexe
-   geluidssnelheid, een puntbron, microfoons op vlak- of elementselecties (WARNING),
-   `#ASTER-EXCIT` (WARNING), koppeling met een constructie (daarvoor
-   `vibroacoustic_modes_3d` en `vibroacoustic_harm_3d`, punt 59). Een **resonantie**
-   zonder absorberende rand geeft een (bijna) singuliere matrix; de bridge waarschuwt
-   alleen dat er geen absorptie is, niet welke frequentie op een holtemode valt.
-   Mecway-GUI: de frequenties komen als `<mode frequency>` met de velden `pressure`,
-   `pressurei`, `pressuremag`, `pressurephase`, `spl`; Mecway's API leest ze (headless
-   script, `solution.modes()`, `node_value(.., mode=m)`), maar de weergave in de GUI
-   (lijst *Mode 1..n*, contour, animatie van een complexe "mode" zonder decay rate) is
-   NIET bekeken (vraag).
+   Built and verified (AH-01..08): velocity source (`BRON_`, `#ASTER-BRON`),
+   imposed pressure, pressure nodes, rho-c boundary (`ABSORBEREND_`) and a real impedance
+   (Mecway *impedance*, `3D_ABSO` with `CELE_R = Z / rho`). Not: a **complex
+   impedance** (Im Z != 0; `CELE_I` on the `3D_ABSO` face gave for c = 340(1 + i) a
+   standing-wave ratio of 2.19 where Z = rho c (1 + i) gives 2.62, and -340 gave 2.29: the
+   meaning of `CELE_I` in `AMOR_ACOU` has NOT been investigated) and a
+   frequency-dependent impedance: ERROR. Possible route (NOT investigated): per
+   frequency do `COMB_MATR_ASSE` (K - w^2 M + i w (rho/Z) A) and `RESOUDRE` yourself, like
+   the "calcul decompose" of ahlv100a, or like the complex cavity modes (S2b,
+   `aster_acoustic_complex.py`: A = int N N dA with `AMOR_ACOU` and `CELE_R = 1`, then
+   scipy in the job; Z may then also differ per frequency). Also not: volume damping / complex
+   speed of sound, a point source, microphones on face or element selections (WARNING),
+   `#ASTER-EXCIT` (WARNING), coupling with a structure (for that
+   `vibroacoustic_modes_3d` and `vibroacoustic_harm_3d`, item 59). A **resonance**
+   without an absorbing boundary gives an (almost) singular matrix; the bridge only warns
+   that there is no absorption, not which frequency falls on a cavity mode.
+   Mecway GUI: the frequencies come as `<mode frequency>` with the fields `pressure`,
+   `pressurei`, `pressuremag`, `pressurephase`, `spl`; Mecway's API reads them (headless
+   script, `solution.modes()`, `node_value(.., mode=m)`), but the display in the GUI
+   (list *Mode 1..n*, contour, animation of a complex "mode" without decay rate) has
+   NOT been checked (question).
 
-59\. **Vibro-akoestiek: gekoppelde modes en harmonische respons; grenzen** (bevestigd,
-   `bridge_vibroacoustic.py`, `bridge_vibroacoustic_harm.py`, docs/Akoestiek.md §6.6 en
-   §7.6). Gebouwd en geverifieerd: (a) gekoppelde modes (VA-01..05c) van een
-   constructie (volumes, schalen) en een fluidum (`3D_FLUIDE` + `FLUI_STRU`, `U_P_PHI`)
-   op een Mecway Frequency-model, koppelvlakken automatisch of met `KOPPEL_`, p = 0 met
-   `OPEN_`; (b) de harmonische respons (`vibroacoustic_harm_3d`, VH-01..08:
-   `DYNA_VIBRA` `HARM` `PHYS` met `MATR_IMPE_PHI`) met belastingen op de constructie,
-   snelheidsbronnen (`BRON_`, `VITE_FACE`), een invallende golf (`INVALLEND_`,
-   `ONDE_FLUI`), `#ASTER-BRON` (snelheid of druk), absorberende randen (`ABSORBEREND_`,
-   reele Mecway-impedantie, `3D_FLUI_ABSO`), Rayleigh-demping (alleen de constructie)
-   en dempers, microfoons en meetpunten. Niet: twee fluida met gedeelde knopen en een
-   **verschillende dichtheid** (gemeten fout: 188,23 i.p.v. 306,47 Hz; ERROR); een
-   schaal met fluidum aan beide kanten (ERROR); impedantie en *fluid pressure* != 0 in
-   de modes (ERROR); in de harmonische respons een **complexe of
-   frequentieafhankelijke impedantie** en *fluid pressure* != 0 (ERROR), volumedemping,
-   `AMOR_HYST`, `modal_damping`, een basisbeweging (ERROR), spanningen in schalen en
-   balken, reacties; voorspanning, zwaartekracht op een vrij oppervlak (klotsen);
-   effectieve massa per mode; modes onder `vibro_freq_min` (ook starre modes).
-   `ONDE_FLUI` en `3D_FLUI_ABSO` zijn exact voor loodrechte inval (schuin: deels
-   reflectie, NIET gemeten). NIET geverifieerd: `elem_hex8` = `LINE_QUAD` met een
-   fluidum, bonded contact tussen fluidum en constructie, wedge/tet/piramide-fluidum
-   (alleen hex8/hex20 getest), kwadratische schalen (`COQUE_3D`, QUAD9) op een
-   hex20-fluidumvlak (de middenknoop van de schaal doet dan niet mee in de koppeling),
-   meer bronnen met verschillende fase tegelijk (elk apart wel: VH-02t, VH-07, VH-08).
-   Mecway-GUI: de velden per mode (`displ`, `pressure`, headless script op VA-01) en per frequentie
-   (`displx`/`displix`, `pressure`/`pressurei`/`spl`, headless script op VH-02) leest
-   Mecway's API; de weergave in de GUI (contour, animatie, lijst *Mode 1..n* van een
-   harmonische respons) is NIET bekeken (vraag). Een mechanisme in de constructie
-   (bijv. een schaal met maar een rotatie vast) kan `CALC_MODES BANDE` minder modes
-   laten vinden dan de Sturm-telling (WARNING met het aantal).
+59\. **Vibro-acoustics: coupled modes and harmonic response; limits** (confirmed,
+   `bridge_vibroacoustic.py`, `bridge_vibroacoustic_harm.py`, docs/Akoestiek.md §6.6 and
+   §7.6). Built and verified: (a) coupled modes (VA-01..05c) of a
+   structure (solids, shells) and a fluid (`3D_FLUIDE` + `FLUI_STRU`, `U_P_PHI`)
+   on a Mecway Frequency model, coupling faces automatic or with `KOPPEL_`, p = 0 with
+   `OPEN_`; (b) the harmonic response (`vibroacoustic_harm_3d`, VH-01..08:
+   `DYNA_VIBRA` `HARM` `PHYS` with `MATR_IMPE_PHI`) with loads on the structure,
+   velocity sources (`BRON_`, `VITE_FACE`), an incident wave (`INVALLEND_`,
+   `ONDE_FLUI`), `#ASTER-BRON` (velocity or pressure), absorbing boundaries (`ABSORBEREND_`,
+   real Mecway impedance, `3D_FLUI_ABSO`), Rayleigh damping (structure only)
+   and dampers, microphones and measuring points. Not: two fluids with shared nodes and a
+   **different density** (measured error: 188.23 instead of 306.47 Hz; ERROR); a
+   shell with fluid on both sides (ERROR); impedance and *fluid pressure* != 0 in
+   the modes (ERROR); in the harmonic response a **complex or
+   frequency-dependent impedance** and *fluid pressure* != 0 (ERROR), volume damping,
+   `AMOR_HYST`, `modal_damping`, a base motion (ERROR), stresses in shells and
+   beams, reactions; prestress, gravity on a free surface (sloshing);
+   effective mass per mode; modes below `vibro_freq_min` (including rigid modes).
+   `ONDE_FLUI` and `3D_FLUI_ABSO` are exact for normal incidence (oblique: partial
+   reflection, NOT measured). NOT verified: `elem_hex8` = `LINE_QUAD` with a
+   fluid, bonded contact between fluid and structure, wedge/tet/pyramid fluid
+   (only hex8/hex20 tested), quadratic shells (`COQUE_3D`, QUAD9) on a
+   hex20 fluid face (the midside node of the shell then does not take part in the coupling),
+   several sources with different phase at the same time (each separately is: VH-02t, VH-07, VH-08).
+   Mecway GUI: the fields per mode (`displ`, `pressure`, headless script on VA-01) and per frequency
+   (`displx`/`displix`, `pressure`/`pressurei`/`spl`, headless script on VH-02) are read by
+   Mecway's API; the display in the GUI (contour, animation, list *Mode 1..n* of a
+   harmonic response) has NOT been checked (question). A mechanism in the structure
+   (e.g. a shell with only one rotation fixed) can make `CALC_MODES BANDE` find fewer modes
+   than the Sturm count (WARNING with the number).
 
-58\. **Lasbron: grenzen** (bevestigd, `bridge_welding.py`, docs/Lassen.md).
-   `#ASTER-LASBRON` (Goldak dubbel-ellipsoïde, verificatie WE-01..05) werkt alleen in
-   een transiente thermische analyse (T31) en alleen op volume-elementen; een baan is
-   recht of stuksgewijs recht door de knopen van `pad` (de keten wordt op afstand
-   gebouwd: een pad dat dicht langs zichzelf terugloopt kan verkeerd geordend worden,
-   NIET getest), met constante snelheid. Zonder `geboorte=` is de rups vanaf t = 0
-   aanwezig; toevoegmateriaal dat geboren wordt heeft eigen grenzen (punt 71). Meer
-   bronnen staan in een last, samen met Mecway-bronnen als formule of tijdstabel (twee
-   functielasten met SOURCE rekent Code-Aster 17.4 als de eerste). Geen latente warmte
-   (via c(T)); de
-   mechanische keten heeft eigen grenzen (punt 64). De formule wordt per Gauss-punt in Python uitgerekend:
-   met een grote brongroep (route B op het hele model) duurt dat lang (WE-02: 9 700
-   elementen in de brongroep, 60 stappen, ~2 min; met THER_NON_LINE, WE-05, ~9 min).
-   De energiecontrole rekent op vijf tijdstippen, niet per stap.
+58\. **Welding heat source: limits** (confirmed, `bridge_welding.py`, docs/Lassen.md).
+   `#ASTER-LASBRON` (Goldak double ellipsoid, verification WE-01..05) works only in
+   a transient thermal analysis (T31) and only on solid elements; a path is
+   straight or piecewise straight through the nodes of `pad` (the chain is built
+   by distance: a path that runs back close along itself may be ordered wrongly,
+   NOT tested), at constant speed. Without `geboorte=` the bead is present from t = 0;
+   filler material that is born has its own limits (item 71). Several
+   sources are in one load, together with Mecway sources as a formula or time table (two
+   function loads with SOURCE are computed by Code-Aster 17.4 as the first). No latent heat
+   (via c(T)); the
+   mechanical chain has its own limits (item 64). The formula is evaluated per Gauss point in Python:
+   with a large source group (route B on the whole model) that takes long (WE-02: 9,700
+   elements in the source group, 60 steps, ~2 min; with THER_NON_LINE, WE-05, ~9 min).
+   The energy check computes at five instants, not per step.
 
-61\. **Cyclische symmetrie: grenzen** (bevestigd met runs, `bridge_cyclic.py`,
-   `aster_cyclic.py`, docs/Modaal_en_knik.md par. 7). Vertaald: Mecway *Cyclic
-   symmetry* in een *Frequency*-analyse (V30) met `MODE_ITER_CYCL` (verificatie
-   CY-01..06: volledig model en Mecway <= 0,03%). Niet:
-   (a) cyclische symmetrie in statisch, niet-lineair statisch en thermisch: ERROR en
-   skipped_loads, het model rekent als losse sector (Mecway kan het wel; voor de
-   voorspanning bouwt de bridge de relaties van ND 0 al, `_relations`);
-   (b) schalen, balken, veren en `LINE_QUAD` (ERROR; Mecway staat schalen en balken
-   in een Frequency-analyse ook niet toe);
-   (c) een gedeeltelijke oplegging of relatie op een snijvlakknoop (ERROR; Mecway
-   staat axiaal verplaatsen en een radiale 0 toe): de interfaces van
-   `MODE_ITER_CYCL` hebben per knoop dezelfde vrijheidsgraden;
-   (d) 8 segmenten met knopen op de as: Code-Aster 17.4 stopt met `ALGORITH14_95`
-   (`bibfor/algorith/ctetax.F90` draait de vector (1, 1, 1) van actieve
-   vrijheidsgraden over 45 graden: cos - sin = 0, dus "ontbreekt" DX); de bridge
-   geeft een ERROR (oplossing: klein gat op de as);
-   (e) een dubbele eigenwaarde binnen ND 0 (ring-mode met n = N golven): de tweede
-   +1,3% (CY-01 met 3-4 modes per ND, ook met 80 sectormodes); in ND N/2 ging het
-   goed. NIET uitgezocht waarom (inverse iteratie van MODE_ITER_CYCL);
-   (f) bij een X- of Y-as: lasten met een functie of formule, `LIAISON_OBLIQUE` en
-   `ANGL_NAUT` (ERROR); `#ASTER`-code rekent in het gedraaide frame (WARNING);
-   (g) naar Mecway het hele wiel zoals Mecway's eigen oplossing (S10i, instelling
-   `cyclic_full_wheel`, standaard aan; zelfde knoop- en elementnummers, headless
-   nagelopen), maar van een paar alleen het eerste lid (welke staande golf, dus de stand
-   van de knooplijnen, is willekeurig en kan van Mecway's keuze verschillen) en alleen
-   verplaatsingen (geen spanningen per mode, geen complexe modes, geen effectieve massa,
-   die Mecway ook niet geeft). Lukt het skelet van Code-Aster niet, dan gaat alleen de
-   sector naar Mecway (WARNING in de `.mess`; NIET voorgekomen in CY-01..06).
-   De schaal van de vormen is die van `REST_SOUS_STRUC` (`modal_norm` geldt niet; Mecway
-   normeert anders). De weergave in de Mecway-GUI is NIET bekeken (de API leest het
-   wiel, de modes en de waarden, headless). De hoogste modes per ND hangen af van
+61\. **Cyclic symmetry: limits** (confirmed with runs, `bridge_cyclic.py`,
+   `aster_cyclic.py`, docs/Modaal_en_knik.md par. 7). Translated: Mecway *Cyclic
+   symmetry* in a *Frequency* analysis (V30) with `MODE_ITER_CYCL` (verification
+   CY-01..06: full model and Mecway <= 0.03%). Not:
+   (a) cyclic symmetry in static, non-linear static and thermal: ERROR and
+   skipped_loads, the model is computed as a separate sector (Mecway can do it; for the
+   prestress the bridge already builds the relations of ND 0, `_relations`);
+   (b) shells, beams, springs and `LINE_QUAD` (ERROR; Mecway does not allow shells and beams
+   in a Frequency analysis either);
+   (c) a partial constraint or relation on a cut-face node (ERROR; Mecway
+   allows axial displacement and a radial 0): the interfaces of
+   `MODE_ITER_CYCL` have the same degrees of freedom per node;
+   (d) 8 segments with nodes on the axis: Code-Aster 17.4 stops with `ALGORITH14_95`
+   (`bibfor/algorith/ctetax.F90` rotates the vector (1, 1, 1) of active
+   degrees of freedom by 45 degrees: cos - sin = 0, so DX is "missing"); the bridge
+   gives an ERROR (solution: small hole on the axis);
+   (e) a double eigenvalue within ND 0 (ring mode with n = N waves): the second
+   +1.3% (CY-01 with 3-4 modes per ND, also with 80 sector modes); in ND N/2 it went
+   fine. NOT investigated why (inverse iteration of MODE_ITER_CYCL);
+   (f) with an X or Y axis: loads with a function or formula, `LIAISON_OBLIQUE` and
+   `ANGL_NAUT` (ERROR); `#ASTER` code computes in the rotated frame (WARNING);
+   (g) to Mecway the whole wheel like Mecway's own solution (S10i, setting
+   `cyclic_full_wheel`, on by default; same node and element numbers, checked
+   headless), but of a pair only the first member (which standing wave, i.e. the position
+   of the nodal lines, is arbitrary and may differ from Mecway's choice) and only
+   displacements (no stresses per mode, no complex modes, no effective mass,
+   which Mecway does not give either). If Code-Aster's skeleton fails, only the
+   sector goes to Mecway (WARNING in the `.mess`; NOT encountered in CY-01..06).
+   The scaling of the shapes is that of `REST_SOUS_STRUC` (`modal_norm` does not apply; Mecway
+   normalises differently). The display in the Mecway GUI has NOT been checked (the API reads the
+   wheel, the modes and the values, headless). The highest modes per ND depend on
    `cyclic_base_modes`.
 
-63\. **Breukmechanica: alleen lineair statisch, geen veld, geen kwartpunten** (bevestigd,
-   `bridge_fracture.py`, docs/Breukmechanica.md). Gebouwd en geverifieerd (BR-01..06):
-   K_I/K_II/K_III en G langs een gemeshte scheur (`SCHEUR_`-selecties) met `CALC_G`
-   en `POST_K1_K2_K3` na `MECA_STATIQUE`, in de log, het statusvak en
-   `<model>_<run>_scheur.csv`. Niet: (a) niet-lineair statisch, dynamica en
-   thermische modellen (WARNING, geen K/G); (b) contact op de lippen (een scheur onder
-   druk geeft overlappende lippen en K_I < 0: WARNING); (c) K/G als veld in Mecway
-   (alleen de tabel); (d) kwartpuntknopen (`MODI_MAILLAGE NOEUD_QUART`): de bridge
-   verplaatst geen knopen, want de resultaatexport controleert de coördinaten tegen
-   de `.liml` (`aster_results_export._check_node_order`); met kwartpunten in de
-   `.liml` zelf werkt het wel (BR-04), maar Mecway kan ze niet maken. Zonder
-   kwartpunten is `POST_K1_K2_K3` met hex20 3-5 % en met hex8 9-14 % te laag
-   (`CALC_G` < 1 % resp. 2 % op K); (e) XFEM (`#ASTER-XFEM`, `bridge_xfem.py`,
-   S6b, BR-07..12; docs/Breukmechanica.md §7): alleen lineair statisch en alleen
-   volume-elementen met MODELISATION `3D` (ERROR anders); geen contact op de lippen,
-   geen scheurgroei (`PROPA_FISS`); K uit `CALC_G_XFEM` heeft op een gekromd front
-   geen krommingscorrectie (BR-10: +5 %; WARNING, gebruik `POST_K1_K2_K3` of G);
-   naar Mecway gaan alleen knoopvelden (verplaatsing en spanning via `POST_CHAM_XFEM`
-   + `PROJ_CHAMP`, geen `SIGM_ELNO`); een knoop precies op het scheurvlak krijgt de
-   waarde van één lip; `REAC_NODA` op knopen van gesneden elementen is alleen het
-   klassieke deel (NIET geverifieerd); foutschatter en vermoeiing niet samen met XFEM
-   (WARNING); tet10/wedge15/pyr13 en `groep=` (`GROUP_MA_ENRI`) NIET geverifieerd,
-   `LINE_QUAD` alleen buiten de regressie (BR-07 met LINE_QUAD: K_I 0,0 %), `result_route`
-   `tabel` NIET geverifieerd; een scheur uit een `XFEM_`-vlakselectie (BR-13) ligt
-   altijd op een knooplaag; een gekromd scheurvlak of front, tet- en kwadratische
-   elementen uit een selectie NIET geverifieerd; (f) een scheur op
-   een grensvlak tussen materialen, thermische rek en druk op de lippen in `CALC_G`:
-   NIET geverifieerd; (g) een krom front dat geen cirkel is: K uit `CALC_G` zonder
-   krommingscorrectie (WARNING; forma07a zonder correctie +5,6 %). In de Mecway-GUI
-   NIET nagelopen: het openen van een scheur met *Disconnect elements* en *Merge
-   nearby nodes* met een knoopselectie (manual v33 par. 4.2.10/4.2.11) en de tekst in
-   het statusvak.
+63\. **Fracture mechanics: only linear static, no field, no quarter points** (confirmed,
+   `bridge_fracture.py`, docs/Breukmechanica.md). Built and verified (BR-01..06):
+   K_I/K_II/K_III and G along a meshed crack (`SCHEUR_` selections) with `CALC_G`
+   and `POST_K1_K2_K3` after `MECA_STATIQUE`, in the log, the status box and
+   `<model>_<run>_scheur.csv`. Not: (a) non-linear static, dynamics and
+   thermal models (WARNING, no K/G); (b) contact on the crack lips (a crack under
+   compression gives overlapping lips and K_I < 0: WARNING); (c) K/G as a field in Mecway
+   (only the table); (d) quarter-point nodes (`MODI_MAILLAGE NOEUD_QUART`): the bridge
+   does not move nodes, because the result export checks the coordinates against
+   the `.liml` (`aster_results_export._check_node_order`); with quarter points in the
+   `.liml` itself it does work (BR-04), but Mecway cannot create them. Without
+   quarter points `POST_K1_K2_K3` is 3-5 % too low with hex20 and 9-14 % with hex8
+   (`CALC_G` < 1 % resp. 2 % on K); (e) XFEM (`#ASTER-XFEM`, `bridge_xfem.py`,
+   S6b, BR-07..12; docs/Breukmechanica.md §7): only linear static and only
+   solid elements with MODELISATION `3D` (ERROR otherwise); no contact on the lips,
+   no crack growth (`PROPA_FISS`); K from `CALC_G_XFEM` has no curvature correction
+   on a curved front (BR-10: +5 %; WARNING, use `POST_K1_K2_K3` or G);
+   only nodal fields go to Mecway (displacement and stress via `POST_CHAM_XFEM`
+   + `PROJ_CHAMP`, no `SIGM_ELNO`); a node exactly on the crack plane gets the
+   value of one lip; `REAC_NODA` on nodes of cut elements is only the
+   classical part (NOT verified); error estimator and fatigue not together with XFEM
+   (WARNING); tet10/wedge15/pyr13 and `groep=` (`GROUP_MA_ENRI`) NOT verified,
+   `LINE_QUAD` only outside the regression (BR-07 with LINE_QUAD: K_I 0.0 %), `result_route`
+   `tabel` NOT verified; a crack from an `XFEM_` face selection (BR-13) always lies
+   on a node layer; a curved crack plane or front, tet and quadratic
+   elements from a selection NOT verified; (f) a crack on
+   an interface between materials, thermal strain and pressure on the lips in `CALC_G`:
+   NOT verified; (g) a curved front that is not a circle: K from `CALC_G` without
+   curvature correction (WARNING; forma07a without correction +5.6 %). In the Mecway GUI
+   NOT checked: opening a crack with *Disconnect elements* and *Merge
+   nearby nodes* with a node selection (manual v33 par. 4.2.10/4.2.11) and the text in
+   the status box.
 
-64\. **Lassen: grenzen van de keten thermisch → mechanisch** (bevestigd,
-   `bridge_thermomech.py`, docs/Lassen.md §9). Alleen in een transiente thermische
-   analyse (T31 met een Thermal stress) en alleen met volume-elementen (ERROR bij
-   schalen, balken, veren); contact en koppelingen rekent de keten niet, element
-   offset, flexible joint en constraint equation ook niet (WARNING). De
-   mechanische stappen zijn de thermische (één Mecway-*Time step*, ook voor het
-   afkoelen). Zonder `geboorte=` is de rups vanaf t = 0 aanwezig en draagt mee
-   (toevoegmateriaal dat geboren wordt: punt 71); metallurgie alleen
-   met `#ASTER-METALLURGIE` (punt 72), geen herstel van de versteviging boven de
-   smelttemperatuur; de hardingscurve
-   (`TRACTION`) is niet temperatuurafhankelijk, alleen bilineair via `#ASTER-MATERIAAL`.
-   Lineaire hex8 ('3D') 'locken' bij plastisch vloeien: WE-10 gaf σxx in de las
-   1,3–2,6 × SY (boven–onder) en σzz 190 MPa midden in een plaat van 5 mm (WARNING, advies
-   LINE_QUAD). Met LINE_QUAD en plasticiteit convergeerde Newton alleen met
-   lijnzoeken (`RECH_LINEAIRE`, nu altijd bij plasticiteit) en duurt een stap ~35 s
-   CPU op 2 000 hex20 (WE-10b, ~1 uur; niet in de standaardregressie). `GDEF_LOG`
-   in de keten en kinematische versteviging met temperatuurafhankelijke ET: NIET
-   geverifieerd. Of Mecway's GUI Thermal stress, Fixed support en Displacement in een
-   T31-model laat toevoegen of tonen: NIET nagelopen (headless bewaart en negeert
-   Mecway 33 ze, WE-08).
+64\. **Welding: limits of the thermal → mechanical chain** (confirmed,
+   `bridge_thermomech.py`, docs/Lassen.md §9). Only in a transient thermal
+   analysis (T31 with a Thermal stress) and only with solid elements (ERROR with
+   shells, beams, springs); the chain does not compute contact and couplings, nor element
+   offset, flexible joint and constraint equation (WARNING). The
+   mechanical steps are the thermal ones (one Mecway *Time step*, also for
+   cooling). Without `geboorte=` the bead is present from t = 0 and carries load
+   (filler material that is born: item 71); metallurgy only
+   with `#ASTER-METALLURGIE` (item 72), no recovery of the hardening above the
+   melting temperature; the hardening curve
+   (`TRACTION`) is not temperature-dependent, only bilinear via `#ASTER-MATERIAAL`.
+   Linear hex8 ('3D') 'lock' under plastic yielding: WE-10 gave σxx in the weld
+   1.3–2.6 × SY (top–bottom) and σzz 190 MPa in the middle of a 5 mm plate (WARNING, advice
+   LINE_QUAD). With LINE_QUAD and plasticity Newton converged only with
+   line search (`RECH_LINEAIRE`, now always with plasticity) and a step takes ~35 s
+   CPU on 2,000 hex20 (WE-10b, ~1 hour; not in the standard regression). `GDEF_LOG`
+   in the chain and kinematic hardening with temperature-dependent ET: NOT
+   verified. Whether Mecway's GUI lets you add or shows Thermal stress, Fixed support and Displacement in a
+   T31 model: NOT checked (headless, Mecway 33 stores and ignores
+   them, WE-08).
 
-65\. **Adaptieve verfijning: grenzen** (bevestigd, `bridge_adapt.py`,
-   docs/Foutschatter.md §6). Alleen lineair statisch en alleen volume-elementen (de
-   foutschatter, punt 51). Mecway's `refine_x2` maakt na een paar lussen slechte
-   overgangselementen: bij dunne elementen (dikte 1/40 van de breedte) in lus 2, bij
-   tet10 al in lus 1; de globale schatting stijgt dan en de lus stopt (WARNING). Ook in
-   AD-02 zakt de slechtste hex20 naar 0,04 (WARNING) zonder dat de fout stijgt.
-   Knoopselecties met een voorwaarde verfijnt Mecway niet mee: ERROR vóór het
-   verfijnen (AD-03). HOMARD (`MACR_ADAP_MAIL`) is niet gebouwd: het nieuwe mesh kan
-   niet terug naar Mecway. Elke lus vraagt een OK-klik na Code-Aster. De lus in de
-   Mecway-GUI is NIET nagelopen, alleen headless (`mecway.exe <model> script`).
+65\. **Adaptive refinement: limits** (confirmed, `bridge_adapt.py`,
+   docs/Foutschatter.md §6). Only linear static and only solid elements (the
+   error estimator, item 51). Mecway's `refine_x2` creates poor transition elements
+   after a few loops: with thin elements (thickness 1/40 of the width) in loop 2, with
+   tet10 already in loop 1; the global estimate then rises and the loop stops (WARNING). Also in
+   AD-02 the worst hex20 drops to 0.04 (WARNING) without the error rising.
+   Node selections with a condition are not refined along by Mecway: ERROR before
+   refining (AD-03). HOMARD (`MACR_ADAP_MAIL`) is not built: the new mesh cannot
+   go back to Mecway. Each loop requires an OK click after Code-Aster. The loop in the
+   Mecway GUI has NOT been checked, only headless (`mecway.exe <model> script`).
 
-66\. **Vermoeiing: grenzen (volumes en schalen, Miner, kritiek vlak alleen op
-   volumes)** (bevestigd, `bridge_fatigue.py`, `aster_fatigue.py`, docs/Vermoeiing.md).
-   Gebouwd en geverifieerd (VM-01..11): schade en levensduur per knoop met
-   `#ASTER-WOHLER` (tabel, machtsvorm, Basquin, Manson-Coffin), rainflow (periodiek
-   zoals `POST_FATIGUE`, of ASTM E1049) en Miner, op blokken of een signaal bij lineair
-   statisch of de tijdstappen van `STAT_NON_LINE`/`DYNA_NON_LINE`; schalen op de boven-
-   en onderzijde (`SIEQ_NOEU` van `POST_CHAMP EXTR_COQUE`); multiaxiaal met
-   `CALC_FATIGUE FATIGUE_MULTI DOMA_NOEUD` (Dang Van, Matake, Crossland, eigen formule;
-   sslv135a). Niet: (a) balken (WARNING); schalen met een rekcurve of een criterium
-   (WARNING, schalen overgeslagen); (b) multiaxiaal per Gauss-punt (`DOMA_ELGA`),
-   Papadopoulos (alleen via `criterium = FORMULE` met `RAYSPH`), Fatemi-Socie
-   (`FATESOCI_MODI_AV`), `COEF_PREECROU`, `INST_INIT_CYCL`, constanten a/b/c per
-   materiaal (nu voor alle materialen gelijk); rek: geen Morrow/SWT-correctie en geen
-   vermoeiingsgrens, Taheri, Lemaitre; trillingsvermoeiing (`FATIGUE_VIBR`) en random
-   (`POST_FATI_ALEA`); in respons op modale basis, harmonisch en spectrum alleen een
-   WARNING; (c) schade per element-knoop (alleen knoopgemiddelde spanning; op een grens
-   van twee materialen de grootste van de twee curves); (d) een filter op kleine cycli
-   (`DELTA_OSCI`); (e) het kritieke vlak zoekt Code-Aster op een raster van normalen:
-   bij Matake SIGEQ +0,06 % t.o.v. de handberekening (VM-09c), bij Dang Van −2·10⁻⁶;
-   multiaxiaal kopieert de bridge het hele niet-lineaire/dynamische resultaat
-   (`CREA_RESU`, zodat t = 0 meetelt), bij een groot model met veel tijdstappen het
-   dubbele geheugen voor `SIGM_NOEU`/`EPSI_NOEU` (NIET gemeten);
-   (f) `PROL_GAUCHE`/`PROL_DROITE` `LINEAIRE` trekt de bridge log-log door, Code-Aster's
-   `POST_FATIGUE`/`CALC_FATIGUE` lineair in (S, N) (gemeten; boven de tabel daar zelfs
-   negatieve schade), dus buiten de tabel wijkt de bridge bewust af van Code-Aster.
-   Bij een tijdsverloop staan `damage`/`life` in elke tijdstap met dezelfde waarde
-   (Mecway's API leest ze, headless); de weergave in de Mecway-GUI is NIET bekeken
-   (vraag). De geschiedenis staat in het geheugen als knopen × tijdstappen (float64);
-   de rainflow per knoop is Python (gemeten buiten Code-Aster: 20 000 knopen × 200
-   stappen met ruis, 1,26 miljoen cycli, 3,3 s); een groot dynamisch model in een echte
-   run is NIET gemeten.
+66\. **Fatigue: limits (solids and shells, Miner, critical plane only on
+   solids)** (confirmed, `bridge_fatigue.py`, `aster_fatigue.py`, docs/Vermoeiing.md).
+   Built and verified (VM-01..11): damage and life per node with
+   `#ASTER-WOHLER` (table, power law, Basquin, Manson-Coffin), rainflow (periodic
+   like `POST_FATIGUE`, or ASTM E1049) and Miner, on blocks or a signal for linear
+   static or the time steps of `STAT_NON_LINE`/`DYNA_NON_LINE`; shells on the top
+   and bottom surface (`SIEQ_NOEU` of `POST_CHAMP EXTR_COQUE`); multiaxial with
+   `CALC_FATIGUE FATIGUE_MULTI DOMA_NOEUD` (Dang Van, Matake, Crossland, own formula;
+   sslv135a). Not: (a) beams (WARNING); shells with a strain curve or a criterion
+   (WARNING, shells skipped); (b) multiaxial per Gauss point (`DOMA_ELGA`),
+   Papadopoulos (only via `criterium = FORMULE` with `RAYSPH`), Fatemi-Socie
+   (`FATESOCI_MODI_AV`), `COEF_PREECROU`, `INST_INIT_CYCL`, constants a/b/c per
+   material (now equal for all materials); strain: no Morrow/SWT correction and no
+   fatigue limit, Taheri, Lemaitre; vibration fatigue (`FATIGUE_VIBR`) and random
+   (`POST_FATI_ALEA`); in response on modal basis, harmonic and spectrum only a
+   WARNING; (c) damage per element node (only node-averaged stress; at a boundary
+   between two materials the larger of the two curves); (d) a filter on small cycles
+   (`DELTA_OSCI`); (e) Code-Aster searches the critical plane on a grid of normals:
+   for Matake SIGEQ +0.06 % relative to the hand calculation (VM-09c), for Dang Van −2·10⁻⁶;
+   for multiaxial the bridge copies the whole non-linear/dynamic result
+   (`CREA_RESU`, so that t = 0 counts), for a large model with many time steps
+   double the memory for `SIGM_NOEU`/`EPSI_NOEU` (NOT measured);
+   (f) `PROL_GAUCHE`/`PROL_DROITE` `LINEAIRE` is extended log-log by the bridge, but linearly in (S, N)
+   by Code-Aster's `POST_FATIGUE`/`CALC_FATIGUE` (measured; above the table there even
+   negative damage), so outside the table the bridge deliberately deviates from Code-Aster.
+   With a time history `damage`/`life` are in every time step with the same value
+   (Mecway's API reads them, headless); the display in the Mecway GUI has NOT been checked
+   (question). The history is held in memory as nodes × time steps (float64);
+   the rainflow per node is Python (measured outside Code-Aster: 20,000 nodes × 200
+   steps with noise, 1.26 million cycles, 3.3 s); a large dynamic model in a real
+   run has NOT been measured.
 
-72\. **Lassen: grenzen van de metallurgie** (bevestigd met runs, `bridge_metallurgy.py`,
-   docs/Lassen.md §10). `#ASTER-METALLURGIE` werkt alleen in een transiente
-   thermische analyse (T31) en alleen op volume-elementen; alleen het staalmodel
-   `ACIER` (geen ontlaten `ACIER_REVENU`); mechanisch alleen `META_P_IL` (geen
-   kinematische versteviging, viscoplasticiteit of transformatieplasticiteit
-   `META_PT`) en niet met `elem_hex8 = LINE_QUAD` (ERROR). Gemeten gedrag van
-   `CALC_META` (Code-Aster 17.4), oorzaak niet uitgezocht: (a) bij snel opwarmen met
-   een grote temperatuurstap per tijdstap loopt de austenitisering achter op de
-   tijdconstante (1000 °C/s: 4 °C per stap exact, 40 °C per stap ~8× trager; de
-   bridge meldt knopen die ruim boven Ac3 kwamen maar < 90% austeniet werden; advies
-   bij lassen `TAUX_1=TAUX_3=0.001`); (b) de martensietvorming stopt bij ~0,4–0,7%
-   austeniet, ook waar Koistinen-Marburger verder gaat (MT-02); (c) 16MND5 vormt bij
-   200 °C/s nog 3% bainiet, hoewel de snelste TRC-geschiedenis met omzetting
-   80 °C/s is. Dataset 16MND5 (mtlp103a) heeft geen mechanische gegevens per fase:
-   `ALPHA_A`, `DEPS` en de vloeigrens per fase geeft de gebruiker (MT-07 rekent met
-   illustratieve waarden). Of Mecway de velden `ferrite` .. `hardness` per tijdstap
-   toont: NIET in de Mecway-GUI nagelopen.
+72\. **Welding: limits of the metallurgy** (confirmed with runs, `bridge_metallurgy.py`,
+   docs/Lassen.md §10). `#ASTER-METALLURGIE` works only in a transient
+   thermal analysis (T31) and only on solid elements; only the steel model
+   `ACIER` (no tempering `ACIER_REVENU`); mechanically only `META_P_IL` (no
+   kinematic hardening, viscoplasticity or transformation plasticity
+   `META_PT`) and not with `elem_hex8 = LINE_QUAD` (ERROR). Measured behaviour of
+   `CALC_META` (Code-Aster 17.4), cause not investigated: (a) with fast heating and
+   a large temperature step per time step the austenitisation lags behind the
+   time constant (1000 °C/s: 4 °C per step exact, 40 °C per step ~8× slower; the
+   bridge reports nodes that went well above Ac3 but became < 90% austenite; advice
+   for welding `TAUX_1=TAUX_3=0.001`); (b) martensite formation stops at ~0.4–0.7%
+   austenite, even where Koistinen-Marburger continues (MT-02); (c) 16MND5 still forms
+   3% bainite at 200 °C/s, although the fastest CCT history with transformation is
+   80 °C/s. Dataset 16MND5 (mtlp103a) has no mechanical data per phase:
+   `ALPHA_A`, `DEPS` and the yield stress per phase are given by the user (MT-07 computes with
+   illustrative values). Whether Mecway shows the fields `ferrite` .. `hardness` per time step:
+   NOT checked in the Mecway GUI.
 
-71\. **Lassen: toevoegmateriaal dat geboren wordt, grenzen** (bevestigd, `bridge_welding.
+71\. **Welding: filler material that is born, limits** (confirmed, `bridge_welding.
    _births`, `birth_materials`, `ther_loop`, `bridge_thermomech._birth_solve`;
-   docs/Lassen.md §11). `geboorte=` in `#ASTER-LASBRON` is de "quiet element"-methode
-   (Code-Aster 17.4 kent geen element birth): stil = ρ·c × 1e-4, λ × 1e-8, E × 1e-4
-   (vaste factoren), de bron niet in stil materiaal; verificatie WE-11..13. Grenzen:
-   (a) de geboorte volgt de booglengte langs de baan (niet de afstand tot de boog) en
-   is per element en per tijdstap: spanningsvrij op de temperatuur van het begin van de
-   geboortestap; (b) bij de geboorte neemt een element de temperatuur van zijn knopen
-   over; die op het grensvlak zijn al warm: +1,2..1,6% energie in WE-11; (c) het
-   toevoegmateriaal rekent thermisch met een diagonale warmtecapaciteit (`3D_DIAG`;
-   met de consistente capaciteit volgde een stil knooppunt via de massakoppeling zijn
-   warme buren, WE-13 +138 K); (d) met λ(T)/c(T) of straling (`THER_NON_LINE`) en in de
-   keten een solve per geboortestap (langere rekentijd); (e) de plastische rek en
-   versteviging van het stille element gaan bij de geboorte naar nul; (f) alleen
-   volume-elementen, elk element bij hoogstens één bron; (g) `GDEF_LOG` en
-   kinematische versteviging met geboorte: NIET geverifieerd; (h) Mecway's eigen solver
-   kent geen geboorte (geen vergelijking met Mecway); de weergave van stille elementen
-   in de Mecway-GUI is NIET nagelopen.
+   docs/Lassen.md §11). `geboorte=` in `#ASTER-LASBRON` is the "quiet element" method
+   (Code-Aster 17.4 has no element birth): quiet = ρ·c × 1e-4, λ × 1e-8, E × 1e-4
+   (fixed factors), the source not in quiet material; verification WE-11..13. Limits:
+   (a) the birth follows the arc length along the path (not the distance to the arc) and
+   is per element and per time step: stress-free at the temperature at the start of the
+   birth step; (b) at birth an element takes over the temperature of its nodes;
+   those on the interface are already hot: +1.2..1.6% energy in WE-11; (c) the
+   filler material is computed thermally with a diagonal heat capacity (`3D_DIAG`;
+   with the consistent capacity a quiet node followed its hot neighbours via the mass
+   coupling, WE-13 +138 K); (d) with λ(T)/c(T) or radiation (`THER_NON_LINE`) and in the
+   chain one solve per birth step (longer computing time); (e) the plastic strain and
+   hardening of the quiet element are reset to zero at birth; (f) only
+   solid elements, each element with at most one source; (g) `GDEF_LOG` and
+   kinematic hardening with birth: NOT verified; (h) Mecway's own solver
+   has no birth (no comparison with Mecway); the display of quiet elements
+   in the Mecway GUI has NOT been checked.
 
-104\. **Formules: grenzen** (bevestigd met runs, `bridge_bcs.PositionFormula`,
-   `_formula_value`, `bridge_from_liml._check_position_formulas`; verificatie
-   LS-40..44, NL-40). Een formule in x, y, z (ook met t) wordt in de mechanische
-   analyses een `FORMULE` van X, Y, Z (INST) in `AFFE_CHAR_MECA_F` voor druk, traction,
-   kracht, line pressure en opgelegde verplaatsing/rotatie (waarde, vaste richting).
-   Grenzen: (a) **niet vertaald** (ERROR): een formule in x, y, z voor gravity,
-   centrifugaalkracht, moment, snelheid, frictionless, hydrostatische druk, elastic
-   support, de richtingsvector van displacement/node rotation (Mecway: "can be
-   functions of position"; Mecway 34 headless rekende zo'n model niet), druk of
-   traction op schaalranden en balkuiteinden (vaste knoopkrachten,
-   `bridge_mesh._edge_loads`), in expliciete dynamica, harmonisch, modale respons,
-   spectrum en de keten thermisch → mechanisch; een line pressure als formule naast
-   een tijdsafhankelijke line pressure op dezelfde balken (`_prepare_beam_loads`).
-   (b) **Mecway 34 rekent anders**: kracht, opgelegde verplaatsing/rotatie en line
-   pressure met x, y of z in de formule legt Mecway niet op (reacties 0; interne
-   solver en CCX); de bridge wel (WARNING). Kracht op vlakken/knopen: de formule is
-   het totaal, zoals een getal, dus per oppervlak f/A of per knoop f/n, op de plaats
-   van het integratiepunt of de knoop. (c) DKT/DST-schalen nemen een functie in de
-   knopen (`FORCE_COQUE`, druk 3y² op een 4 × 8-plaat +0,78%, LS-44a; `COQUE_3D`
-   exact). Druk met een formule op schalen gaat via `FORCE_COQUE PRES` (`PRES_REP`
-   met een functie: `<EXCEPTION> ELEMENTS4_92` op DKT en COQUE_3D) en blijft bij
-   grote verplaatsingen een vaste last (Mecway: alleen uniforme druk meebewegend).
-   (d) Lineair statisch, modaal en knik nemen f(eindtijd) (formule in t en x, y, z:
-   t = eindtijd); Mecway intern negeert een last in t, CCX neemt f(0). (e) Elk punt
-   van een tijdsfunctie wordt in STAT_NON_LINE een rekenstap (met Mecway's
-   stapgrootte) of een interval met `substeps_per_interval` stappen (zonder
-   stapgrootte; `_build_listinst_block`): een sinus geeft honderden punten en dus
-   honderden tot duizenden stappen. (f) Waarden die `bridge_from_liml` met
-   `parse_and_convert(findtext(...))` leest (bijv. `referencetemperature`) zouden
-   een constante formule (getal met unit-attribuut) als SI lezen, als Mecway daar
-   ooit een formule schrijft (NIET gezien). (g) De foutschatter (`CALC_ERREUR`, last
-   `load_err`) neemt alleen constante lasten mee: een vlak met een formule-last is voor
-   de schatter een spanningsvrije rand (INFO), dus daar een te grote lokale fout.
+104\. **Formulas: limits** (confirmed with runs, `bridge_bcs.PositionFormula`,
+   `_formula_value`, `bridge_from_liml._check_position_formulas`; verification
+   LS-40..44, NL-40). A formula in x, y, z (also with t) becomes in the mechanical
+   analyses a `FORMULE` of X, Y, Z (INST) in `AFFE_CHAR_MECA_F` for pressure, traction,
+   force, line pressure and imposed displacement/rotation (value, fixed direction).
+   Limits: (a) **not translated** (ERROR): a formula in x, y, z for gravity,
+   centrifugal force, moment, velocity, frictionless, hydrostatic pressure, elastic
+   support, the direction vector of displacement/node rotation (Mecway: "can be
+   functions of position"; Mecway 34 headless did not solve such a model), pressure or
+   traction on shell edges and beam ends (fixed nodal forces,
+   `bridge_mesh._edge_loads`), in explicit dynamics, harmonic, modal response,
+   spectrum and the thermal → mechanical chain; a line pressure as a formula next to
+   a time-dependent line pressure on the same beams (`_prepare_beam_loads`).
+   (b) **Mecway 34 computes differently**: force, imposed displacement/rotation and line
+   pressure with x, y or z in the formula are not applied by Mecway (reactions 0; internal
+   solver and CCX); the bridge does apply them (WARNING). Force on faces/nodes: the formula is
+   the total, like a number, so per area f/A or per node f/n, at the location
+   of the integration point or the node. (c) DKT/DST shells take a function at the
+   nodes (`FORCE_COQUE`, pressure 3y² on a 4 × 8 plate +0.78%, LS-44a; `COQUE_3D`
+   exact). Pressure with a formula on shells goes via `FORCE_COQUE PRES` (`PRES_REP`
+   with a function: `<EXCEPTION> ELEMENTS4_92` on DKT and COQUE_3D) and remains a fixed load
+   at large displacements (Mecway: only uniform pressure follows the deformation).
+   (d) Linear static, modal and buckling take f(end time) (formula in t and x, y, z:
+   t = end time); Mecway internal ignores a load in t, CCX takes f(0). (e) Each point
+   of a time function becomes a computation step in STAT_NON_LINE (with Mecway's
+   step size) or an interval with `substeps_per_interval` steps (without
+   step size; `_build_listinst_block`): a sine gives hundreds of points and thus
+   hundreds to thousands of steps. (f) Values that `bridge_from_liml` reads with
+   `parse_and_convert(findtext(...))` (e.g. `referencetemperature`) would
+   read a constant formula (number with unit attribute) as SI, if Mecway ever
+   writes a formula there (NOT seen). (g) The error estimator (`CALC_ERREUR`, load
+   `load_err`) only takes constant loads into account: a face with a formula load is
+   a stress-free boundary for the estimator (INFO), so a too-large local error there.

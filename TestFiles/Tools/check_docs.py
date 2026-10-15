@@ -378,13 +378,14 @@ def check_known_bugs():
         text = read(path)
         for i, line in enumerate(text.split("\n"), 1):
             if path.endswith("KNOWN_BUGS.md"):
-                # binnen KNOWN_BUGS.md: "(punt 16)"
-                for m in re.finditer(r"\bpunt(?:en)?\s+((?:\d+(?:\s*(?:,|en|/)"
-                                     r"\s*)?)+)", line):
+                # within KNOWN_BUGS.md: "(item 16)", "items 3 and 4"
+                # (the older Dutch wording "punt 16" is accepted too)
+                for m in re.finditer(r"\b(?:items?|punt(?:en)?)\s+((?:\d+"
+                                     r"(?:\s*(?:,|and|en|/)\s*)?)+)", line):
                     for n in re.findall(r"\d+", m.group(1)):
                         if int(n) not in nums:
                             report("{0}:{1}".format(rel(path), i),
-                                   "punt {0} bestaat niet".format(n))
+                                   "item {0} bestaat niet".format(n))
             for m in KB_RE.finditer(line):
                 refs = [int(x) for x in re.findall(r"\d+", m.group(1))]
                 for n in refs:
