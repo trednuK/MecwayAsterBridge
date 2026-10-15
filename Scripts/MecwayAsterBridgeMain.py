@@ -4,19 +4,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # MecwayAsterBridgeMain.py
-# Hoofdscript voor de Mecway-naar-Code-Aster-brug.
-# Wordt uitgevoerd vanuit de Mecway scripting-engine (IronPython 2.7.9).
+# Main script of the Mecway-to-Code-Aster bridge.
+# Run from the Mecway scripting engine (IronPython 2.7.9).
 #
-# De objecten 'mw' (Mecway API) en 'solution' (actieve solution) zijn
-# impliciet beschikbaar vanuit de Mecway scripting-context; ze worden
-# NIET hier gedefinieerd maar wel doorgegeven aan functies in
-# bridge_gui.py, bridge_run_aster.py en bridge_from_aster.py die buiten de
-# scripting-context draaien.
+# The objects 'mw' (Mecway API) and 'solution' (active solution) are
+# implicitly available in the Mecway scripting context; they are NOT
+# defined here but are passed on to functions in
+# bridge_gui.py, bridge_run_aster.py and bridge_from_aster.py, which run
+# outside the scripting context.
 #
-# Module-architectuur:
-#   bridge_utils         : config, logging, eenheidsconversie  (gedeelde basis)
-#   bridge_gui           : run_settings_dialog()                (startscherm)
-#   bridge_bcs           : BC-klassen + SUPPORTED_BCS-registry
+# Module architecture:
+#   bridge_utils         : config, logging, unit conversion     (shared base)
+#   bridge_gui           : run_settings_dialog()                (start screen)
+#   bridge_bcs           : BC classes + SUPPORTED_BCS registry
 #   bridge_from_liml     : extract_aster_data_from_liml()       (Mecway -> dict)
 #   bridge_mesh          : write_mesh()                         (.liml -> mesh)
 #   bridge_to_aster      : generate_AsterSolver_files()         (dict -> .comm/.export)
@@ -24,87 +24,87 @@
 #   bridge_from_aster    : AsterToMecway_results()              (.resu -> Mecway)
 #   bridge_thermal       : parse_thermal() / build_thermal()    (T30/T31 ->
 #                          THER_LINEAIRE / THER_NON_LINE)
-#   (modaal V30 / knik B30: bridge_to_aster._build_modal -> CALC_MODES;
-#    de modes komen als <mode> in de .liml, zie _report_modes)
+#   (modal V30 / buckling B30: bridge_to_aster._build_modal -> CALC_MODES;
+#    the modes go into the .liml as <mode>, see _report_modes)
 #   bridge_welding       : apply() / report_lines()             (#ASTER-LASBRON:
-#                          bewegende lasbron in ther_3d)
-#   bridge_thermomech    : build_blocks() / report_lines()      (T31 met
-#                          Thermal stress: daarna STAT_NON_LINE, restspanning)
+#                          moving welding heat source in ther_3d)
+#   bridge_thermomech    : build_blocks() / report_lines()      (T31 with
+#                          Thermal stress: then STAT_NON_LINE, residual stress)
 #   bridge_metallurgy    : apply() / report_lines()             (#ASTER-
-#                          METALLURGIE: fasen en hardheid met CALC_META,
-#                          optie metallurgische wet in de keten)
-#   bridge_dyna_modal    : build_dyna_modal()                   (D30 met mode
+#                          METALLURGIE: phases and hardness with CALC_META,
+#                          optional metallurgical law in the chain)
+#   bridge_dyna_modal    : build_dyna_modal()                   (D30 with mode
 #                          superposition -> DYNA_VIBRA GENE)
 #   bridge_acoustic      : parse_acoustic() / build_acoustic_modes()
-#                          (A30 holtemodes -> ACOUSTIQUE + CALC_MODES) /
-#                          build_acoustic_harm() (A30 met bron ->
-#                          DYNA_VIBRA HARM, drukveld per frequentie)
+#                          (A30 cavity modes -> ACOUSTIQUE + CALC_MODES) /
+#                          build_acoustic_harm() (A30 with a source ->
+#                          DYNA_VIBRA HARM, pressure field per frequency)
 #   bridge_vibroacoustic : parse_vibro() / build_vibroacoustic_modes()
-#                          (V30 met een fluidum -> 3D_FLUIDE + FLUI_STRU,
-#                          gekoppelde modes)
+#                          (V30 with a fluid -> 3D_FLUIDE + FLUI_STRU,
+#                          coupled modes)
 #   bridge_vibroacoustic_harm : build_vibroacoustic_harm() / report_harmonic()
-#                          (hetzelfde model per frequentie -> DYNA_VIBRA
-#                          HARM PHYS, 3D_FLUI_ABSO, bronnen, microfoons)
-#   bridge_spectrum     : build_spectrum()                     (responsspectrum
+#                          (the same model per frequency -> DYNA_VIBRA
+#                          HARM PHYS, 3D_FLUI_ABSO, sources, microphones)
+#   bridge_spectrum     : build_spectrum()                     (response spectrum
 #                          -> CALC_MODES + COMB_SISM_MODAL)
-#   bridge_harmonic      : build_harmonic()                     (harmonische
-#                          respons -> DYNA_VIBRA HARM, per frequentie)
+#   bridge_harmonic      : build_harmonic()                     (harmonic
+#                          response -> DYNA_VIBRA HARM, per frequency)
 #   bridge_fracture      : front_cells() / fracture_block() / report()
-#                          (SCHEUR_-selecties bij lineair statisch ->
-#                          DEFI_FOND_FISS + CALC_G + POST_K1_K2_K3, K en G
-#                          in <model>_<run_id>_scheur.csv en het statusvak)
+#                          (SCHEUR_ selections in linear static ->
+#                          DEFI_FOND_FISS + CALC_G + POST_K1_K2_K3, K and G
+#                          in <model>_<run_id>_scheur.csv and the status box)
 #   bridge_xfem          : mesh_cells() / model_block() / result_block() /
-#                          k_block() / report() (#ASTER-XFEM of XFEM_-
-#                          vlakselectie: scheur zonder mesh ->
+#                          k_block() / report() (#ASTER-XFEM or XFEM_
+#                          face selection: crack without a mesh ->
 #                          DEFI_FISS_XFEM + CALC_G_XFEM + POST_K1_K2_K3;
-#                          met med_export ook <model>_<run_id>_xfem.rmed)
+#                          with med_export also <model>_<run_id>_xfem.rmed)
 #   bridge_fatigue       : fatigue_block() / report()          (#ASTER-WOHLER:
-#                          vermoeiing, schade en levensduur per knoop via
-#                          aster_fatigue.py in de job; velden damage/life)
-#   AsterTemplate_*.comm : een .comm-template per analysetype (bestandsnaam
-#                          per analyse in CONFIG_BRIDGE["analyses"], gezocht
-#                          in de map van de scripts: template_path)
+#                          fatigue, damage and life per node via
+#                          aster_fatigue.py in the job; fields damage/life)
+#   AsterTemplate_*.comm : one .comm template per analysis type (file name
+#                          per analysis in CONFIG_BRIDGE["analyses"], looked
+#                          up in the scripts folder: template_path)
 #
-# Werkvolgorde:
-#   0. Hoofdvenster (bridge_gui): instellingen (opgeslagen in
-#      bridge_utils.py bij Starten), documentatie, convergentiescherm en
-#      resultaten (Resultaten...). Na een run komt het venster terug, met de
-#      uitkomst in het statusvak; Sluiten stopt de bridge.
-#   1. Optioneel: solve het model in Mecway (controle: zijn er fouten?)
-#   1b. Past de Mecway-solution bij het model? Anders stoppen (de resultaten
-#      kunnen alleen op de knopen van de solution worden ingeladen)
-#   2. Sla het model op (.liml)
-#   3. Lees mesh, BC's, materialen en selecties uit het .liml-bestand
-#      (stopt als er geen materialen zijn). Bij active_analysis = "auto"
-#      volgt de analyse het Mecway-analysetype (alleen voor deze run).
-#   3b. Schrijf het mesh in het ASTER-formaat (bridge_mesh)
-#   4. Genereer <model>_<run_id>.comm en .export
-#   5. Start Code-Aster; wacht op bevestiging van de gebruiker
-#   6. Laad de resultaten terug in Mecway
-#   7. Optioneel (adapt_refine, lineair statisch): verfijn de elementen met
-#      de grootste geschatte fout in Mecway en begin weer bij 2
+# Work order:
+#   0. Main window (bridge_gui): settings (saved in bridge_utils.py on
+#      Start), documentation, convergence screen and results
+#      (Results...). After a run the window comes back, with the outcome
+#      in the status box; Close stops the bridge.
+#   1. Optional: solve the model in Mecway (check: are there errors?)
+#   1b. Does the Mecway solution match the model? Otherwise stop (the
+#      results can only be loaded on the nodes of the solution)
+#   2. Save the model (.liml)
+#   3. Read mesh, BCs, materials and selections from the .liml file
+#      (stops if there are no materials). With active_analysis = "auto"
+#      the analysis follows the Mecway analysis type (for this run only).
+#   3b. Write the mesh in ASTER format (bridge_mesh)
+#   4. Generate <model>_<run_id>.comm and .export
+#   5. Start Code-Aster; wait for confirmation by the user
+#   6. Load the results back into Mecway
+#   7. Optional (adapt_refine, linear static): refine the elements with
+#      the largest estimated error in Mecway and start again at 2
 #      (bridge_adapt, _adapt_step)
 #
-# Configuratie (paden, CPU-aantallen, actieve analyse) staat in
-# bridge_utils.py (CONFIG_BRIDGE) en is via het startscherm aan te passen.
+# Configuration (paths, CPU counts, active analysis) is in
+# bridge_utils.py (CONFIG_BRIDGE) and can be changed on the start screen.
 #
-# Bestanden in de werkmap: alles van een run heet <model>_<run_id>... met
-# <model> de naam van het Mecway-bestand en run_id de tijdstempel
+# Files in the work folder: everything of a run is named <model>_<run_id>...
+# with <model> the name of the Mecway file and run_id the timestamp
 # (bridge_utils.run_name): _bridge_log.txt, .mail, .comm, .export, .mess,
-# _console.txt, _results.xml (de resultaten, later opnieuw in te laden met
-# de knop Resultaten... in het hoofdvenster) en, afhankelijk van de
-# instellingen, .rmed, .resu en _vergelijking.csv.
+# _console.txt, _results.xml (the results, which can be reloaded later with
+# the Results... button in the main window) and, depending on the
+# settings, .rmed, .resu and _vergelijking.csv.
 
 import os
 import shutil
 import time
 from datetime import datetime
 
-# Module-imports volgen de dataflow: utils -> gui -> from_liml -> mesh ->
-# to_aster -> run_aster -> from_aster. Alle modules importeren bridge_utils,
-# dat zelf geen bridge_*-modules importeert. Daarnaast importeren
-# bridge_from_liml en bridge_mesh bridge_bcs, en bridge_gui
-# RESULT_FIELD_SPECS uit bridge_from_aster; geen daarvan importeert terug.
+# Module imports follow the data flow: utils -> gui -> from_liml -> mesh ->
+# to_aster -> run_aster -> from_aster. All modules import bridge_utils,
+# which itself imports no bridge_* modules. In addition,
+# bridge_from_liml and bridge_mesh import bridge_bcs, and bridge_gui imports
+# RESULT_FIELD_SPECS from bridge_from_aster; none of these imports back.
 from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 set_run_log, log_file_name, tr, run_name,
                                 run_names, path_too_long, work_dir_path,
@@ -139,33 +139,33 @@ import bridge_adapt
 
 
 # ==========================================
-# VLAKKNOPEN UIT MECWAY
+# FACE NODES FROM MECWAY
 # ==========================================
 def _face_nodes(eid, faceid):
-    """Knopen van vlak faceid van element eid, zoals Mecway ze kent
-    (mw.face_nodes; FaceId-nummers zijn die van <face> in de .liml)."""
+    """Nodes of face faceid of element eid, as Mecway knows them
+    (mw.face_nodes; FaceId numbers are those of <face> in the .liml)."""
     return list(mw.face_nodes(FaceId(eid, faceid)))
 
 
 # ==========================================
-# HOOFDFUNCTIE
+# MAIN FUNCTION
 # ==========================================
 def _run(settings):
     """
-    Een bridge-run met de instellingen van het hoofdvenster: model opslaan,
-    vertalen, Code-Aster starten en de resultaten inladen. Meldingen gaan
-    via _notify (statusvak van het hoofdvenster). Returns True als de
-    resultaten in Mecway staan.
+    One bridge run with the settings of the main window: save the model,
+    translate it, start Code-Aster and load the results. Messages go
+    through _notify (status box of the main window). Returns True if the
+    results are in Mecway.
     """
-    # Unieke run-ID (datum/tijd) voor alle bestanden van deze simulatie
-    # (zie de kop van dit bestand). Eerst, zodat het statusvak ook bij een
-    # fout hieronder de naam van deze run toont.
-    # Bestandsnamen: <Mecway-bestand>_<run_id>... (mw.file_name(): het
-    # open model; nog niet opgeslagen: "model").
+    # Unique run ID (date/time) for all files of this simulation
+    # (see the header of this file). First, so that the status box also
+    # shows the name of this run on an error below.
+    # File names: <Mecway file>_<run_id>... (mw.file_name(): the open
+    # model; not saved yet: "model").
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     set_run_log(run_id, mw.file_name())
 
-    # Maak de werkmap aan als die nog niet bestaat
+    # Create the work folder if it does not exist yet
     if not os.path.exists(work_dir_path()):
         os.makedirs(work_dir_path())
     if path_too_long():
@@ -182,12 +182,12 @@ def _run(settings):
     log("START: MecwayAsterBridge {0} (startscherm via {1}), actieve "
         "analyse '{2}'.".format(BRIDGE_VERSION, settings["gui"],
                                 CONFIG_BRIDGE["active_analysis"]))
-    log("INFO: Werkmap {0}; Code-Aster {1}.".format(work_dir_path(),
+    log("INFO: Work folder {0}; Code-Aster {1}.".format(work_dir_path(),
                                                     exe_aster_path()))
-    # Versiecontrole (bridge_version.py): alleen een WARNING, de run gaat
-    # door. De meldingen komen aan het eind in het statusvak (finally).
-    # Code-Aster hier uit het launcherpad, na de run uit de .mess; Mecway
-    # na het opslaan uit de .liml (stap 2).
+    # Version check (bridge_version.py): only a WARNING, the run goes
+    # on. The messages appear in the status box at the end (finally).
+    # Code-Aster here from the launcher path, after the run from the .mess;
+    # Mecway after saving from the .liml (step 2).
     version_notes = {}
     version_notes["aster"] = bridge_version.check_aster(
         bridge_version.aster_version_from_launcher(exe_aster_path()),
@@ -202,11 +202,11 @@ def _run(settings):
 
     configured_analysis = CONFIG_BRIDGE["active_analysis"]
     try:
-        # --- Stap 1: Solve in Mecway (optionele controle op fouten) ---
-        # De Mecway-API documenteert geen returnwaarde voor mw.solve(); een
-        # fout wordt daarom alleen herkend als mw.solve() een exceptie geeft.
+        # --- Step 1: Solve in Mecway (optional check for errors) ---
+        # The Mecway API documents no return value for mw.solve(); an
+        # error is therefore only detected if mw.solve() raises an exception.
         if CONFIG_BRIDGE.get("mecway_solve_first", False):
-            log("INFO: Mecway-solve ter controle gestart.")
+            log("INFO: Mecway solve started as a check.")
             try:
                 mw.solve()
             except Exception as e:
@@ -217,15 +217,15 @@ def _run(settings):
                               "Mecway solve failed:\n{0}\n\nCode-Aster is "
                               "not started.").format(str(e)))
                 return False
-            log("INFO: Mecway-solve voltooid.")
+            log("INFO: Mecway solve completed.")
 
-        # --- Stap 1b: Past de solution bij het model? ---
-        # solution.set_variable() kan alleen waarden kwijt op de knopen van
-        # de laatste Mecway-solve. Na een modelwijziging (gezien in Mecway:
-        # mesh verfijnd van 12 naar 45 knopen) werden de resultaten op 33
-        # knopen stil weggelaten. Daarom vóór de Code-Aster-run controleren.
-        # Alleen nodig voor de tabelroute (set_variable); de liml-route
-        # schrijft de solution zelf.
+        # --- Step 1b: Does the solution match the model? ---
+        # solution.set_variable() can only store values on the nodes of
+        # the last Mecway solve. After a model change (seen in Mecway:
+        # mesh refined from 12 to 45 nodes) the results on 33 nodes were
+        # silently dropped. Hence the check before the Code-Aster run.
+        # Only needed for the table route (set_variable); the liml route
+        # writes the solution itself.
         route = CONFIG_BRIDGE.get("result_route", "liml")
         sol_ok, sol_reason = (check_solution_mesh(mw, solution)
                               if route == "tabel" else (True, ""))
@@ -240,31 +240,31 @@ def _run(settings):
                               sol_reason))
             return False
 
-        # --- Stap 2: Opslaan ---
+        # --- Step 2: Save ---
         mw.save()
-        active_liml = mw.file_name()  # Pad naar het actieve .liml-bestand
+        active_liml = mw.file_name()  # Path to the active .liml file
         version_notes["mecway"] = bridge_version.check_mecway(active_liml)[1]
 
-        # --- Stap 3: Lees model_data uit het .liml-bestand ---
+        # --- Step 3: Read model_data from the .liml file ---
         model_data = extract_aster_data_from_liml(active_liml)
-        _LAST["model_data"] = model_data      # adaptieve verfijning
+        _LAST["model_data"] = model_data      # adaptive refinement
         if model_data is None:
             _notify(tr("Het model kon niet gelezen worden. Controleer {0}.",
                        "The model could not be read. Check {0}.").format(
                            log_file_name()))
             return False
 
-        # --- Stap 3a: "auto" -> analyse volgens het Mecway-analysetype ---
-        # Alleen in het geheugen en alleen voor deze run (de finally
-        # hieronder zet "auto" terug); get_active_analysis() in
-        # bridge_to_aster/bridge_from_aster ziet zo de gekozen analyse.
+        # --- Step 3a: "auto" -> analysis according to the Mecway type ---
+        # Only in memory and only for this run (the finally below
+        # resets "auto"); get_active_analysis() in
+        # bridge_to_aster/bridge_from_aster thus sees the chosen analysis.
         if CONFIG_BRIDGE["active_analysis"] == "auto":
             mecway_type = model_data.get("analysis_type", "")
             resolved = resolve_auto_analysis(
                 mecway_type, model_data.get("mode_superposition"))
-            # A30 met een bron (BRON_, #ASTER-BRON): harmonisch drukveld
+            # A30 with a source (BRON_, #ASTER-BRON): harmonic pressure field
             resolved = bridge_acoustic.resolve_auto(resolved, model_data)
-            # V30 met een fluidum-onderdeel: vibro-akoestiek
+            # V30 with a fluid part: vibro-acoustics
             resolved = bridge_vibroacoustic.resolve_auto(resolved,
                                                          model_data)
             if resolved is None:
@@ -292,14 +292,14 @@ def _run(settings):
                         mecway_type))
                 return False
             CONFIG_BRIDGE["active_analysis"] = resolved
-            log("INFO: Actieve analyse 'auto': Mecway-analysetype '{0}' -> "
+            log("INFO: Active analysis 'auto': Mecway analysis type '{0}' -> "
                 "'{1}'.".format(mecway_type, resolved))
 
-        # De tabelroute leest alleen een tijdstap uit tabellen met alle
-        # stappen (bridge_from_aster): bij dynamica (TOUT_ORDRE) zou hij
-        # stappen mengen en heeft de Mecway-solution tijdstappen. Modes
-        # (CALC_MODES) zijn geen tijdstappen; set_variable() zou ze niet
-        # als <mode> zetten.
+        # The table route reads only one time step from tables with all
+        # steps (bridge_from_aster): with dynamics (TOUT_ORDRE) it would
+        # mix steps, and the Mecway solution has time steps. Modes
+        # (CALC_MODES) are not time steps; set_variable() would not set
+        # them as <mode>.
         if route == "tabel" and CONFIG_BRIDGE["analyses"].get(
                 CONFIG_BRIDGE["active_analysis"], {}).get(
                     "solver_command") in ("DYNA_NON_LINE", "CALC_MODES",
@@ -312,8 +312,8 @@ def _run(settings):
                        "page). Code-Aster is not started."))
             return False
 
-        # Pre-flight check: er moeten materialen zijn voor een zinvolle analyse
-        # (thermisch: materialen met <thermal>, bridge_thermal.py)
+        # Pre-flight check: materials are needed for a meaningful analysis
+        # (thermal: materials with <thermal>, bridge_thermal.py)
         if not (model_data.get("thermal_materials")
                 if model_data.get("thermal") else model_data["materials"]):
             _notify(tr(
@@ -324,8 +324,8 @@ def _run(settings):
             ))
             return False
 
-        # --- Stap 3b: Mesh rechtstreeks uit de .liml (ASTER-formaat) ---
-        # Geen Gmsh-export: die kapte groepsnamen af op 8 tekens. Zie
+        # --- Step 3b: Mesh directly from the .liml (ASTER format) ---
+        # No Gmsh export: it truncated group names to 8 characters. See
         # bridge_mesh.py.
         mesh_file = os.path.join(work_dir_path(), run_name(".mail"))
         if not write_mesh(mesh_file, model_data, face_nodes=_face_nodes):
@@ -338,7 +338,7 @@ def _run(settings):
         resu_name = run_name(".resu")
         _LAST["analysis"] = CONFIG_BRIDGE["active_analysis"]
 
-        # --- Stap 4: Genereer .comm en .export ---
+        # --- Step 4: Generate .comm and .export ---
         export_file = generate_AsterSolver_files(
             work_dir_path(), model_data, mesh_file, resu_name
         )
@@ -349,9 +349,9 @@ def _run(settings):
                           "{0}.").format(log_file_name()))
             return False
 
-        # --- Stap 5 & 6: Start solver; laad resultaten terug ---
-        # 'mw' en 'solution' worden doorgegeven zodat de externe modules
-        # buiten de scripting-context pop-ups en resultaten kunnen beheren.
+        # --- Step 5 & 6: Start solver; load results back ---
+        # 'mw' and 'solution' are passed on so that the external modules
+        # can handle pop-ups and results outside the scripting context.
         run_start = time.time()
         if not run_AsterSolver(export_file, work_dir_path(), resu_name, mw):
             _notify(tr("Code-Aster kon niet gestart worden. Controleer "
@@ -360,8 +360,8 @@ def _run(settings):
                           "{0}.").format(log_file_name()))
             return False
         mess_errors = aster_mess_errors(work_dir_path(), run_start)
-        # Versie die echt draaide (kop van de .mess van deze run); gaat
-        # voor de schatting uit het launcherpad.
+        # Version that actually ran (header of the .mess of this run);
+        # takes precedence over the estimate from the launcher path.
         mess_path = os.path.join(work_dir_path(), run_name(".mess"))
         mess_version = (bridge_version.aster_version_from_mess(mess_path)
                         if os.path.exists(mess_path) and
@@ -369,7 +369,7 @@ def _run(settings):
         if mess_version is not None:
             version_notes["aster"] = bridge_version.check_aster(
                 mess_version, ".mess")
-        # Bezweken elementen (bridge_failure.py) in de log en een melding
+        # Failed elements (bridge_failure.py) in the log and a message
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
             model_data)
@@ -380,30 +380,30 @@ def _run(settings):
                                            resu_name, mw, solution)
         if failure_note:
             _notify(failure_note)
-        # Globale foutschatting (CALC_ERREUR, instelling error_estimator)
+        # Global error estimate (CALC_ERREUR, setting error_estimator)
         _report_error_estimate()
-        # Breukmechanica: K en G langs het scheurfront (bridge_fracture)
+        # Fracture mechanics: K and G along the crack front (bridge_fracture)
         for line in bridge_fracture.report(
                 work_dir_path(),
                 os.path.join(work_dir_path(), run_name(".mess"))):
             _notify(line)
-        # XFEM-scheuren: K en G langs het front (bridge_xfem)
+        # XFEM cracks: K and G along the front (bridge_xfem)
         for line in bridge_xfem.report(
                 work_dir_path(),
                 os.path.join(work_dir_path(), run_name(".mess"))):
             _notify(line)
-        # Vermoeiing: schade en levensduur (bridge_fatigue)
+        # Fatigue: damage and life (bridge_fatigue)
         for line in bridge_fatigue.report(
                 work_dir_path(),
                 os.path.join(work_dir_path(), run_name(".mess"))):
             _notify(line)
-        # Niet-lineaire knik: imperfectie en CRIT_STAB per stap
+        # Nonlinear buckling: imperfection and CRIT_STAB per step
         _report_stability()
-        # Lasbron: opgenomen vermogen (bridge_welding.report_lines)
+        # Welding source: absorbed power (bridge_welding.report_lines)
         for line in report_welding(os.path.join(work_dir_path(),
                                                 run_name(".mess"))):
             _notify(line)
-        # Metallurgie: fasen, warmte-beinvloede zone, hardheid
+        # Metallurgy: phases, heat-affected zone, hardness
         # (bridge_metallurgy.report_lines)
         for line in bridge_metallurgy.report_lines(
                 os.path.join(work_dir_path(), run_name(".mess"))):
@@ -439,21 +439,21 @@ def _run(settings):
     except Exception as e:
         log(tr("ERROR: Onverwachte fout in main(): {0}",
                "ERROR: Unexpected error in main(): {0}").format(str(e)))
-        raise  # Geef de fout door zodat het except-blok hieronder hem logt
+        raise  # Pass the error on so that the except block below logs it
     finally:
-        # Versiewaarschuwingen (bridge_version) altijd tonen, ook als de
-        # run hierboven stopte: een andere versie kan de oorzaak zijn.
+        # Always show version warnings (bridge_version), also if the
+        # run above stopped: a different version may be the cause.
         for key in ("mecway", "aster"):
             if version_notes.get(key):
                 _notify(version_notes[key])
-        # Houdt Mecway de modules tussen twee runs in het geheugen (NIET
-        # geverifieerd), dan zou de volgende run zonder terugzetten de
-        # omgezette analyse i.p.v. "auto" tonen en opslaan.
+        # If Mecway keeps the modules in memory between two runs (NOT
+        # verified), the next run would, without resetting, show and save
+        # the converted analysis instead of "auto".
         CONFIG_BRIDGE["active_analysis"] = configured_analysis
 
 
-# Uitvoer van oudere bridge-versies zonder tijdstempel; elke run schrijft
-# nu eigen bestanden (run_name), deze worden nergens meer gelezen.
+# Output of older bridge versions without a timestamp; every run now
+# writes its own files (run_name), these are no longer read anywhere.
 _LEGACY_OUTPUTS = ("resu_mesh.msh", "study.comm", "study.export",
                    "study.mess", "study.resu", "study.rmed",
                    "study_console.txt", "study_results.xml",
@@ -463,17 +463,17 @@ _LEGACY_OUTPUTS = ("resu_mesh.msh", "study.comm", "study.export",
 
 def _remove_stale_outputs():
     """
-    Verwijder uitvoer van oudere bridge-versies zonder tijdstempel (zie
-    _LEGACY_OUTPUTS), zodat er geen verouderde of overbodige bestanden in
-    de werkmap blijven. Bestanden met een tijdstempel horen bij een run en
-    blijven staan.
+    Remove output of older bridge versions without a timestamp (see
+    _LEGACY_OUTPUTS), so that no outdated or superfluous files remain in
+    the work folder. Files with a timestamp belong to a run and are
+    kept.
     """
     for name in _LEGACY_OUTPUTS:
         path = os.path.join(work_dir_path(), name)
         if os.path.exists(path):
             try:
                 os.remove(path)
-                log("INFO: Oud uitvoerbestand verwijderd: {0}".format(path))
+                log("INFO: Old output file removed: {0}".format(path))
             except OSError as e:
                 log(tr("WARNING: Kon {0} niet verwijderen: {1}",
                        "WARNING: Could not delete {0}: {1}").format(path, e))
@@ -481,10 +481,10 @@ def _remove_stale_outputs():
 
 def _load_liml_results(active_liml, model_data, run_start):
     """
-    result_route "liml": Code-Aster schreef Mecway's eigen <results>
-    (aster_results_export.py). Vergelijk eventueel met de Mecway-solve,
-    plak het fragment in de .liml (vorige versie: .bak) en open die
-    opnieuw. Returns True als de resultaten in Mecway staan.
+    result_route "liml": Code-Aster wrote Mecway's own <results>
+    (aster_results_export.py). Optionally compare with the Mecway solve,
+    paste the fragment into the .liml (previous version: .bak) and open it
+    again. Returns True if the results are in Mecway.
     """
     fragment = results_file(work_dir_path())
     if (not os.path.exists(fragment) or
@@ -498,32 +498,32 @@ def _load_liml_results(active_liml, model_data, run_start):
     active = CONFIG_BRIDGE["analyses"].get(CONFIG_BRIDGE["active_analysis"],
                                            {})
     spectrum = active.get("solver_command") == "COMB_SISM_MODAL"
-    # Akoestiek harmonisch: de <mode>-blokken zijn frequenties van de
-    # respons, geen eigenmodes (bridge_acoustic.build_acoustic_harm).
-    # Idem de harmonische respons van een constructie (bridge_harmonic).
+    # Harmonic acoustics: the <mode> blocks are frequencies of the
+    # response, not eigenmodes (bridge_acoustic.build_acoustic_harm).
+    # The same for the harmonic response of a structure (bridge_harmonic).
     harmonic = (active.get("solver_command") == "DYNA_VIBRA" and
                 (bridge_acoustic.is_acoustic(active) or
                  bridge_harmonic.is_harmonic(active)))
     vibro = bridge_vibroacoustic.is_vibroacoustic(active)
     if CONFIG_BRIDGE.get("mecway_solve_first", False) and spectrum:
-        # Mecway rekent alleen de modes; de maxima van het spectrum zijn
-        # niet met een Mecway-oplossing te vergelijken.
-        log("INFO: Spectrumanalyse: geen vergelijking met de Mecway-solve "
-            "(Mecway heeft geen spectrumanalyse).")
+        # Mecway computes only the modes; the maxima of the spectrum cannot
+        # be compared with a Mecway solution.
+        log("INFO: Spectrum analysis: no comparison with the Mecway solve "
+            "(Mecway has no spectrum analysis).")
     elif CONFIG_BRIDGE.get("mecway_solve_first", False) and harmonic:
-        log("INFO: Harmonische analyse: Mecway heeft geen harmonische "
-            "analyse; geen vergelijking met de Mecway-solve.")
+        log("INFO: Harmonic analysis: Mecway has no harmonic "
+            "analysis; no comparison with the Mecway solve.")
     elif CONFIG_BRIDGE.get("mecway_solve_first", False) and vibro:
-        # Mecway rekent een fluidum zonder E als vaste stof met E = 0
-        # (headless gezien: modes van 1e-7 Hz); niet vergelijkbaar.
-        log("INFO: Vibro-akoestiek: Mecway heeft geen gekoppelde analyse; "
-            "geen vergelijking met de Mecway-solve.")
+        # Mecway computes a fluid without E as a solid with E = 0
+        # (seen headless: modes of 1e-7 Hz); not comparable.
+        log("INFO: Vibro-acoustics: Mecway has no coupled analysis; "
+            "no comparison with the Mecway solve.")
     elif CONFIG_BRIDGE.get("mecway_solve_first", False):
         if modes:
-            # Trillings-/knikvormen hebben een willekeurig teken en zijn bij
-            # meervoudige modes niet uniek: alleen de waarden vergelijken.
-            # Complexe modes: Mecway rekent zonder demping, dus met f_n =
-            # |s| / 2 pi vergelijken (bridge_modal_damping).
+            # Vibration/buckling shapes have an arbitrary sign and are not
+            # unique for multiple modes: compare only the values.
+            # Complex modes: Mecway computes without damping, so compare
+            # with f_n = |s| / 2 pi (bridge_modal_damping).
             summary = read_mode_summary(os.path.join(
                 work_dir_path(), run_name(".mess")))
             undamped = [(m, k, summary.get(m, {}).get("FREQ_NAT", v))
@@ -533,9 +533,9 @@ def _load_liml_results(active_liml, model_data, run_start):
                        "demping) op f_n = f_d / sqrt(1 - zeta^2).",
                        "INFO: Complex modes: comparison with Mecway (without "
                        "damping) on f_n = f_d / sqrt(1 - zeta^2)."))
-            # Complexe akoestische modes (impedantie): Mecway rekent hetzelfde
-            # probleem, maar de nummers lopen door de 0-Hz-modes niet gelijk
-            # (aster_acoustic_complex): op de dichtstbijzijnde frequentie.
+            # Complex acoustic modes (impedance): Mecway computes the same
+            # problem, but the numbers do not match because of the 0 Hz
+            # modes (aster_acoustic_complex): use the nearest frequency.
             nearest = any("DECAY" in summary.get(m, {}) and
                           "AMOR_REDUIT" not in summary.get(m, {})
                           for m, _k, _v in modes)
@@ -554,13 +554,13 @@ def _load_liml_results(active_liml, model_data, run_start):
                "ERROR: Results not written into the .liml: {0}").format(
                    reason))
         return False
-    log("SUCCESS: Resultaten in '{0}' gezet (vorige versie: .bak); model "
-        "opnieuw geopend.".format(active_liml))
-    # Het resultaatbestand blijft staan: met de knop Resultaten... zijn de
-    # resultaten later opnieuw in te laden, ook nadat ze uit de .liml zijn
-    # verwijderd (kleine .liml).
-    log("INFO: Resultaatbestand (opnieuw in te laden met "
-        "de knop Resultaten...): {0}".format(fragment))
+    log("SUCCESS: Results written to '{0}' (previous version: .bak); model "
+        "reopened.".format(active_liml))
+    # The result file is kept: with the Results... button the results
+    # can be reloaded later, also after they have been removed from the
+    # .liml (small .liml).
+    log("INFO: Result file (can be reloaded with "
+        "the Results... button): {0}".format(fragment))
     if harmonic:
         report = (bridge_acoustic.report_harmonic
                   if bridge_acoustic.is_acoustic(active)
@@ -572,8 +572,8 @@ def _load_liml_results(active_liml, model_data, run_start):
         _report_modes(modes, extra=bridge_vibroacoustic.report_lines(
             work_dir_path()) if vibro else None, in_mecway=True)
     else:
-        # Respons op modale basis (bridge_dyna_modal): de resultaten zijn
-        # tijdstappen; de gebruikte modes staan als BRIDGE_MODE in de .mess.
+        # Response on a modal basis (bridge_dyna_modal): the results are
+        # time steps; the modes used are in the .mess as BRIDGE_MODE.
         summary = read_mode_summary(os.path.join(work_dir_path(),
                                                  run_name(".mess")))
         basis = [(k, "frequency", v["FREQ"]) for k, v in sorted(
@@ -585,8 +585,8 @@ def _load_liml_results(active_liml, model_data, run_start):
                        len(basis)))
             _report_modes(basis)
         if spectrum:
-            # Responsspectrum (bridge_spectrum): effectieve massa per
-            # richting, missing mass en de totale reactie.
+            # Response spectrum (bridge_spectrum): effective mass per
+            # direction, missing mass and the total reaction.
             import bridge_spectrum
             lines = bridge_spectrum.report_summary(
                 os.path.join(work_dir_path(), run_name(".mess")),
@@ -596,7 +596,7 @@ def _load_liml_results(active_liml, model_data, run_start):
                 _notify(u"\n".join(lines))
     mw.open(active_liml)
     if configuration:
-        # De configuratie met de nieuwe resultaten tonen (API:
+        # Show the configuration with the new results (API:
         # mw.set_active_configuration).
         try:
             mw.set_active_configuration(configuration)
@@ -607,22 +607,22 @@ def _load_liml_results(active_liml, model_data, run_start):
     return True
 
 
-_MODES_SHOWN = 20     # zoveel modes in het statusvak; alle in de log
+_MODES_SHOWN = 20     # this many modes in the status box; all in the log
 
 
 def _report_modes(modes, extra=None, in_mecway=False):
     """
-    Frequenties (met effectieve massa) of kniklastfactoren in de log en
-    het statusvak. modes: read_modes() van het resultaatbestand; de
-    effectieve massa komt uit de BRIDGE_MODE-regels in de .mess
-    (aster_results_export.print_modes). extra: regels die achteraan in het
-    statusvak komen (vibro-akoestiek: bridge_vibroacoustic.report_lines,
-    al gelogd). in_mecway: de modes zelf staan in Mecway (niet de modale
-    basis van een respons); dan staat de effectieve massa ook als Mecway-
-    variabele per mode in het resultaat (aster_results_export, S12).
+    Frequencies (with effective mass) or buckling load factors in the log
+    and the status box. modes: read_modes() of the result file; the
+    effective mass comes from the BRIDGE_MODE lines in the .mess
+    (aster_results_export.print_modes). extra: lines added at the end of
+    the status box (vibro-acoustics: bridge_vibroacoustic.report_lines,
+    already logged). in_mecway: the modes themselves are in Mecway (not
+    the modal basis of a response); then the effective mass is also a
+    Mecway variable per mode in the result (aster_results_export, S12).
     """
-    # %-opmaak: "{0:.6g}".format() volgt in IronPython de Windows-
-    # landinstelling (komma; gezien, zie bridge_gui._float_text).
+    # %-formatting: in IronPython "{0:.6g}".format() follows the Windows
+    # locale (comma; seen, see bridge_gui._float_text).
     summary = read_mode_summary(os.path.join(work_dir_path(),
                                              run_name(".mess")))
     buckling = modes[0][1] == "bucklingfactor"
@@ -640,7 +640,7 @@ def _report_modes(modes, extra=None, in_mecway=False):
                 mid, "%.6g" % value)
             zeta = summary.get(mid, {}).get("AMOR_REDUIT")
             if zeta is not None:
-                # Complexe modes (bridge_modal_damping): value = f_d
+                # Complex modes (bridge_modal_damping): value = f_d
                 line = tr(u"Mode {0}: {1} Hz gedempt (zeta {2}, f_n {3} Hz)",
                           u"Mode {0}: {1} Hz damped (zeta {2}, f_n {3} "
                           u"Hz)").format(
@@ -648,8 +648,8 @@ def _report_modes(modes, extra=None, in_mecway=False):
                               "%.6g" % summary[mid].get("FREQ_NAT", value))
             decay = summary.get(mid, {}).get("DECAY")
             if decay is not None and zeta is None:
-                # Complexe akoestische modes (impedantie,
-                # aster_acoustic_complex): decay rate, nagalmtijd, Q
+                # Complex acoustic modes (impedance,
+                # aster_acoustic_complex): decay rate, reverberation time, Q
                 line += tr(u", decay rate {0} 1/s", u", decay rate {0} 1/s"
                            ).format("%.6g" % decay)
                 if decay > 0.0:
@@ -658,7 +658,7 @@ def _report_modes(modes, extra=None, in_mecway=False):
                                         "%.4g" % summary[mid].get("Q", 0.0))
             fractions = [summary.get(mid, {}).get(k) for k in (
                 "MASS_EFFE_UN_DX", "MASS_EFFE_UN_DY", "MASS_EFFE_UN_DZ")]
-            # Rotaties om de globale assen door de oorsprong (zoals Mecway;
+            # Rotations about the global axes through the origin (as Mecway;
             # aster_results_export._effective_masses)
             rotations = [summary.get(mid, {}).get(k) for k in (
                 "MASS_EFFE_UN_DRX", "MASS_EFFE_UN_DRY", "MASS_EFFE_UN_DRZ")]
@@ -674,7 +674,7 @@ def _report_modes(modes, extra=None, in_mecway=False):
                         *["%.1f" % (100.0 * f) for f in rotations])
                 line += tr(u" (eff. massa {0})", u" (eff. mass {0})").format(
                     text)
-            # Cyclische symmetrie (aster_cyclic): aantal nodal diameters
+            # Cyclic symmetry (aster_cyclic): number of nodal diameters
             nd = summary.get(mid, {}).get("ND")
             if nd is not None and nd >= 0:
                 line += u" (ND {0})".format(int(nd))
@@ -682,7 +682,7 @@ def _report_modes(modes, extra=None, in_mecway=False):
         lines.append(line)
     if not buckling and any(summary.get(m, {}).get("ND") is not None
                             for m, _k, _v in modes):
-        # Hele wiel of alleen de sector (aster_cyclic.collect, BRIDGE_CYCL)
+        # Whole wheel or only the sector (aster_cyclic.collect, BRIDGE_CYCL)
         cyc = read_cyclic_summary(os.path.join(work_dir_path(),
                                                run_name(".mess")))
         if cyc.get("WIEL") == 1:
@@ -734,7 +734,7 @@ def _report_modes(modes, extra=None, in_mecway=False):
                      if summary.get(m, {}).get("DECAY") is not None and
                      summary[m].get("AMOR_REDUIT") is None]
     if acoustic_cplx and not buckling:
-        # aster_acoustic_complex (impedantie, docs/Akoestiek.md par. 3.3)
+        # aster_acoustic_complex (impedance, docs/Akoestiek.md par. 3.3)
         note = tr(u"Complexe modes (impedantie): p(t) = Re(P exp((i 2 pi f "
                   u"- decay) t)), velden pressure (Re P) en pressurei (Im P); "
                   u"T60 = 6,91 / decay is de nagalmtijd (60 dB), Q = |lambda| "
@@ -792,8 +792,8 @@ def _report_modes(modes, extra=None, in_mecway=False):
             lines.append(note)
     mass = summary.get("massa")
     if not buckling and mass and "M" in mass:
-        # Noemers van de fracties (R^T M R) en het zwaartepunt: zo kan de
-        # gebruiker de rotaties om de oorsprong duiden.
+        # Denominators of the fractions (R^T M R) and the centre of gravity:
+        # this lets the user interpret the rotations about the origin.
         cog = u"{0}".format(mass.get("ZWP", "?"))
         try:
             c = [float(v) for v in cog.split(",")]
@@ -802,9 +802,9 @@ def _report_modes(modes, extra=None, in_mecway=False):
                              for v in c)
         except ValueError:
             pass
-        log(u"INFO: Massa {0} kg, zwaartepunt ({1}) m; traagheidsmoment om "
-            u"de assen door de oorsprong X/Y/Z {2}/{3}/{4} kg.m2, door het "
-            u"zwaartepunt {5}/{6}/{7} kg.m2.".format(
+        log(u"INFO: Mass {0} kg, centre of gravity ({1}) m; moment of inertia "
+            u"about the axes through the origin X/Y/Z {2}/{3}/{4} kg.m2, through "
+            u"the centre of gravity {5}/{6}/{7} kg.m2.".format(
                 "%.6g" % mass["M"], cog,
                 *["%.6g" % mass.get(k, 0.0) for k in (
                     "JX", "JY", "JZ", "JZX", "JZY", "JZZ")]))
@@ -816,9 +816,9 @@ def _report_modes(modes, extra=None, in_mecway=False):
                u"reversed load (e.g. tension instead of compression). Only "
                u"a positive factor belongs to the applied direction."))
     if not buckling and any(v < -1.0e-2 for _m, _k, v in modes):
-        # Negatieve omega^2: K + Kg niet positief (modaal met voorspanning,
-        # bridge_to_aster._prestress_plan). Starre modes van een vrij
-        # model komen op ~ -1e-4 Hz (numeriek nul), vandaar de grens.
+        # Negative omega^2: K + Kg not positive (modal with prestress,
+        # bridge_to_aster._prestress_plan). Rigid body modes of a free
+        # model come out at ~ -1e-4 Hz (numerically zero), hence the limit.
         log(tr(u"WARNING: Negatieve frequentie(s): de drukvoorspanning is "
                u"hoger dan de kniklast van die mode (instabiel; Mecway geeft "
                u"dan 0 Hz). Verlaag de drukbelasting of controleer met een "
@@ -830,10 +830,10 @@ def _report_modes(modes, extra=None, in_mecway=False):
     elif not buckling and modes and modes[0][2] < 1.0e-2 and CONFIG_BRIDGE[
             "analyses"].get(CONFIG_BRIDGE["active_analysis"], {}).get(
                 "phenomene") == "ACOUSTIQUE":
-        # Holtemodes met harde wanden: mode 1 is de constante druk
-        # (bridge_acoustic.py), geen fout.
-        log(u"INFO: Mode 1 heeft ~0 Hz: constante druk (harde wanden "
-            u"zonder drukknoop), zoals in Mecway.")
+        # Cavity modes with rigid walls: mode 1 is the constant pressure
+        # (bridge_acoustic.py), not an error.
+        log(u"INFO: Mode 1 is at ~0 Hz: constant pressure (rigid walls "
+            u"without a pressure node), as in Mecway.")
     elif not buckling and modes and modes[0][2] < 1.0e-2:
         log(tr(u"WARNING: Mode 1 heeft ~0 Hz: een starre-lichaamsbeweging "
                u"of mechanisme (te weinig opleggingen).",
@@ -844,19 +844,19 @@ def _report_modes(modes, extra=None, in_mecway=False):
 
 def _report_error_estimate():
     """
-    Globale relatieve fout van de foutschatter (CALC_ERREUR ERME, zie
-    bridge_to_aster._error_estimator_block) in de log en het statusvak,
-    gelezen uit het blok dat Code-Aster in de .mess zet
-    (read_error_summary). Niets als de schatter niet gedraaid heeft.
-    Waarden: docs/Foutschatter.md (interpretatie).
+    Global relative error of the error estimator (CALC_ERREUR ERME, see
+    bridge_to_aster._error_estimator_block) in the log and the status box,
+    read from the block that Code-Aster writes to the .mess
+    (read_error_summary). Nothing if the estimator did not run.
+    Values: docs/Foutschatter.md (interpretation).
     """
     summary = read_error_summary(os.path.join(work_dir_path(),
                                               run_name(".mess")))
     if not summary:
         return
     s = summary[-1]
-    # %-opmaak: "{0:.3g}".format() volgt in IronPython de Windows-
-    # landinstelling (zie _report_modes).
+    # %-formatting: in IronPython "{0:.3g}".format() follows the Windows
+    # locale (see _report_modes).
     line = tr(u"Foutschatter: globale relatieve fout {0}% (residu-schatter "
               u"ERME; deel volume {1}%, sprongen {2}%, rand {3}%). Veld in "
               u"Mecway: errorestimate (absoluut) en errorestimaterel (%).",
@@ -875,20 +875,20 @@ def _report_error_estimate():
     _notify(line)
 
 
-# Adaptieve verfijning (bridge_adapt): model_data en analyse van de laatste
-# run, en de lussen van de lopende reeks (main() maakt history leeg).
+# Adaptive refinement (bridge_adapt): model_data and analysis of the last
+# run, and the loops of the current sequence (main() clears history).
 _LAST = {}
 _ADAPT = {"history": []}
 
 
 def _adapt_step():
     """
-    Na een geslaagde run: adaptieve verfijning (instelling adapt_refine,
-    lineair statisch met foutschatter; docs/Foutschatter.md par. 6).
-    bridge_adapt.after_run beslist op de globale fout (.mess) en de fout
-    per element (resultaatbestand); bij verfijnen eerst een kopie van het
-    oorspronkelijke model in de werkmap (eerste lus), dan mw.refine_x2 en
-    mw.save(). Returns True als het model verfijnd is (nog een run).
+    After a successful run: adaptive refinement (setting adapt_refine,
+    linear static with error estimator; docs/Foutschatter.md par. 6).
+    bridge_adapt.after_run decides on the global error (.mess) and the
+    error per element (result file); when refining, first a copy of the
+    original model in the work folder (first loop), then mw.refine_x2 and
+    mw.save(). Returns True if the model was refined (another run).
     """
     analysis = CONFIG_BRIDGE["analyses"].get(_LAST.get("analysis"), {})
     model_data = _LAST.get("model_data") or {}
@@ -915,13 +915,13 @@ def _adapt_step():
         return False
     liml = mw.file_name()
     if len(_ADAPT["history"]) == 1:
-        # Mecway's verfijning is via de API niet terug te draaien: het
-        # oorspronkelijke model (met zijn resultaten) blijft als kopie.
+        # Mecway's refinement cannot be undone through the API: the
+        # original model (with its results) is kept as a copy.
         backup = os.path.join(work_dir, run_name("_voor_verfijning.liml"))
         try:
             shutil.copy(liml, backup)
-            log(u"INFO: Adaptieve verfijning: oorspronkelijk model bewaard "
-                u"als {0}.".format(backup))
+            log(u"INFO: Adaptive refinement: original model saved "
+                u"as {0}.".format(backup))
             _notify(tr(u"Het oorspronkelijke model staat als {0}.",
                        u"The original model is kept as {0}.").format(backup))
         except (IOError, OSError) as e:
@@ -937,23 +937,23 @@ def _adapt_step():
     return True
 
 
-# Grens voor de melding "mesh is grof" (globale relatieve fout in %); zie
-# docs/Foutschatter.md (interpretatie).
+# Limit for the message "mesh is coarse" (global relative error in %); see
+# docs/Foutschatter.md (interpretation).
 _ERROR_COARSE_PCT = 20
 
-# CRIT_STAB bij grote verplaatsingen: "dicht bij knik" als |lambda| onder
-# deze fractie van de eerste |lambda| komt (keuze van de bridge; NK-04:
-# 0,7% vlak voor het grenspunt).
+# CRIT_STAB with large displacements: "close to buckling" if |lambda| drops
+# below this fraction of the first |lambda| (choice of the bridge; NK-04:
+# 0.7% just before the limit point).
 _CRIT_NEAR = 0.05
 
 
 def _report_stability():
     """
-    Niet-lineaire knik (docs/Modaal_en_knik.md par. 5) in de log en het
-    statusvak: de imperfectie (knikvorm, kniklastfactor, amplitude) en het
-    stabiliteitscriterium CRIT_STAB per stap, met een melding als knik
-    bereikt is. Betekenis van lambda: bridge_to_aster._crit_stab_kind.
-    Niets als beide uit stonden.
+    Nonlinear buckling (docs/Modaal_en_knik.md par. 5) in the log and the
+    status box: the imperfection (buckling shape, buckling load factor,
+    amplitude) and the stability criterion CRIT_STAB per step, with a
+    message when buckling is reached. Meaning of lambda:
+    bridge_to_aster._crit_stab_kind. Nothing if both were off.
     """
     mess = os.path.join(work_dir_path(), run_name(".mess"))
     imp = read_imperfection(mess)
@@ -997,7 +997,7 @@ def _report_stability():
     t_last, lam_last = rows[-1]
     if cs["kind"] == "factor":
         for t, lam in rows:
-            log(u"INFO: CRIT_STAB t = %.6g: kritische lastfactor %.6g" %
+            log(u"INFO: CRIT_STAB t = %.6g: critical load factor %.6g" %
                 (t, lam))
         line = tr(u"Stabiliteit (CRIT_STAB): op t = {0} kritische "
                   u"lastfactor {1}: de last van dat moment x {1} geeft knik "
@@ -1028,8 +1028,8 @@ def _report_stability():
                        u" Negative: buckling under the reversed load.")
     else:
         for t, lam in rows:
-            log(u"INFO: CRIT_STAB t = %.6g: stabiliteitscriterium %.6g "
-                u"(< 0 stabiel, 0 = knik)" % (t, lam))
+            log(u"INFO: CRIT_STAB t = %.6g: stability criterion %.6g "
+                u"(< 0 stable, 0 = buckling)" % (t, lam))
         line = tr(u"Stabiliteit (CRIT_STAB, grote verplaatsingen): op t = "
                   u"{0} criterium {1} (kleinste eigenwaarde van de "
                   u"tangentstijfheid met omgekeerd teken: < 0 stabiel, 0 = "
@@ -1075,11 +1075,11 @@ def _report_stability():
 
 
 # ==========================================
-# MELDINGEN EN HOOFDVENSTER
+# MESSAGES AND MAIN WINDOW
 # ==========================================
-# Meldingen van een run of een resultaatactie. Met het hoofdvenster
-# (WinForms) komen ze in het statusvak; zonder (mw.input-terugval) als
-# mw.message.
+# Messages of a run or a result action. With the main window
+# (WinForms) they go to the status box; without it (mw.input fallback)
+# as mw.message.
 _NOTES = {"list": [], "popup": True}
 
 
@@ -1090,7 +1090,7 @@ def _notify(text):
 
 
 def _status_text(ok, what):
-    """Tekst voor het statusvak na een run of resultaatactie."""
+    """Text for the status box after a run or result action."""
     head = (tr(u"{0}: klaar.", u"{0}: done.") if ok else
             tr(u"{0}: gestopt (zie de meldingen hieronder en {1}).",
                u"{0}: stopped (see the messages below and {1}).")).format(
@@ -1100,9 +1100,9 @@ def _status_text(ok, what):
 
 def _results_action():
     """
-    Knop Resultaten...: een eerdere run inladen of de resultaten uit het
-    open model halen (kleine .liml). Zie bridge_results_liml en
-    docs/Handleiding.md par. 5.1. Returns (ok, tekst voor het statusvak).
+    Results... button: load an earlier run or remove the results from the
+    open model (small .liml). See bridge_results_liml and
+    docs/Handleiding.md par. 5.1. Returns (ok, text for the status box).
     """
     set_run_log(None)
     work_dir = work_dir_path()
@@ -1128,7 +1128,7 @@ def _results_action():
         ok, reason = strip_results(liml)
         if not ok:
             return False, reason
-        log("INFO: Resultaten uit '{0}' verwijderd.".format(liml))
+        log("INFO: Results removed from '{0}'.".format(liml))
         mw.open(liml)
         return True, tr("Resultaten uit het model verwijderd; de .liml is nu "
                         "{0} kB (vorige versie: .bak).",
@@ -1154,7 +1154,7 @@ def _results_action():
     if not ok:
         return False, tr("Resultaten niet ingeladen: {0}",
                          "Results not loaded: {0}").format(reason)
-    log("SUCCESS: Resultaten '{0}' in '{1}' gezet.".format(path, liml))
+    log("SUCCESS: Results '{0}' written to '{1}'.".format(path, liml))
     mw.open(liml)
     if configuration:
         try:
@@ -1170,15 +1170,15 @@ def _results_action():
 
 def main():
     """
-    Het hoofdvenster blijft terugkomen tot de gebruiker op Sluiten klikt:
-    Starten doet een run, Resultaten... laadt of verwijdert resultaten; het
-    convergentiescherm en de documentatie werken in het venster zelf
-    (bridge_gui). Zonder WinForms (mw.input-terugval): een run.
+    The main window keeps coming back until the user clicks Close:
+    Start does a run, Results... loads or removes results; the
+    convergence screen and the documentation work in the window itself
+    (bridge_gui). Without WinForms (mw.input fallback): one run.
     """
     status = u""
     while True:
-        # Buiten een run logt de bridge in bridge_log.txt (niet in het log
-        # van de vorige run).
+        # Outside a run the bridge logs to bridge_log.txt (not to the log
+        # of the previous run).
         set_run_log(None)
         settings = run_settings_dialog(mw, status)
         action = settings.get("action", "run" if settings["ok"] else "close")
@@ -1198,8 +1198,8 @@ def main():
         try:
             _ADAPT["history"] = []
             ok = _run(settings)
-            # Adaptieve verfijning: verfijnen en opnieuw rekenen zolang
-            # bridge_adapt dat zegt (elke run vraagt weer om OK na
+            # Adaptive refinement: refine and compute again as long as
+            # bridge_adapt says so (each run asks again for OK after
             # Code-Aster, run_AsterSolver).
             while ok and _adapt_step():
                 ok = _run(dict(settings, changes=[], save_errors=[]))
@@ -1222,7 +1222,7 @@ def main():
 
 # ==========================================
 # ENTRY POINT
-# Mecway voert dit script direct uit; main() wordt hier aangeroepen.
+# Mecway runs this script directly; main() is called here.
 # ==========================================
 try:
     main()
