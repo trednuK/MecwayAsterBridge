@@ -44,6 +44,11 @@ S7, S8, S5, S9).
 | S5b | Lassen: metallurgie vervolg (ontlaten, TRIP, kinematische versteviging) | open | S5 | niet gebouwd; vraag aan de gebruiker of dit gewenst is (zie §S5) |
 | S9 | Loadcase-combinaties via Mecway-configuraties (go/no-go) | vervallen | – | no-go: een Mecway-configuratie zet lasten alleen aan/uit, geen factor; combinaties niet in Mecway in te stellen; werkwijze per configuratie in Handleiding §4 |
 | S11 | Afsluiting: crit-review verificatie, docs nalopen met de bridge, integrale controle, push naar `main` | klaar | alle andere stappen klaar en op `develop` | 7 okt: crit-review op Fable (gate verwerkt: 8742df0), instellingen/tooltips/aannames (feabce4), docs met de bridge nagelopen (345c400, 088244e, 3c336e4), KB 74/84/85/86 opgelost, alle 270 cases via door Mecway opgeslagen .liml identiek (f1539a2), GUI-steekproeven VM-02b/CY-01/AH-08/WE-02, eindregressie zie Verificatie.md §3 |
+| S13 | Orthotrope en anisotrope materialen, met *Element orientation* als materiaalrichting | open | – | gekozen door de gebruiker 15 okt (C1) |
+| S14 | Hyperelastisch materiaal (Neo-Hooke, Mooney-Rivlin) | open | – | gekozen door de gebruiker 15 okt (C7) |
+| S15 | Pre-tension section (boutvoorspanning) | open | – | gekozen door de gebruiker 15 okt (C8) |
+| S16 | 2D- en axisymmetrische analyses (S20, D20, SA0, ook thermisch en akoestiek 2D) | open | – | gekozen door de gebruiker 15 okt (C9) |
+| S17 | Lasten op balkzijvlakken; hydrostatische druk op schaalranden (KNOWN_BUGS 5) | open | – | gekozen door de gebruiker 15 okt (C10) |
 | – | Rotordynamica | later | – | |
 | – | Grond-constructie-interactie (MISS3D) | niet gepland | – | |
 | – | Hex-blokmesher als Tools-script | niet gepland | – | |
@@ -1169,3 +1174,53 @@ op configuratienamen) met `MACRO_ELAS_MULT` en omhullende, buiten Mecway om? (b)
 keuzelijst "Configuratie" op het startscherm (namen uit de `.liml`, daarna
 `mw.set_active_configuration`) of alle configuraties in één run met `MACRO_ELAS_MULT`
 (zelfde randvoorwaarden), zonder factoren?
+
+### S13 – Orthotrope en anisotrope materialen
+**Doel:** Mecway-materialen *Orthotropic* en *Anisotropic* (stijfheids- of compliantiematrix)
+vertalen in plaats van de run te stoppen, met Mecway's *Element orientation* (per element
+`orientationux`…`vz`, `angle`) als materiaalrichting; ook in schalen.
+**Code-Aster:** `DEFI_MATERIAU` `ELAS_ORTH` (en `ELAS_ISTR`), anisotroop via `ELAS_ORTH` als dat
+volstaat, anders NIET mogelijk melden; richting met `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`/`ANGL_EULER`
+per element(groep), schalen `COQUE` `ANGL_REP`/`VECTEUR`; composiet `DEFI_COMPOSITE`.
+**Uitzoeken:** Mecway's XML van Orthotropic/StiffnessMatrix/ComplianceMatrix (Samples, mecway.exe),
+de definitie van U/V en `angle` (manual §7), hoe Mecway spanningen in lokale assen toont; groeperen
+van elementen met dezelfde oriëntatie; thermische orthotropie (`THER_ORTH`).
+**Klaar als:** een orthotrope balk in twee oriëntaties (analytisch, buiging met E_L en E_T) en een
+geroteerd blok onder trek (Hooke in lokale assen) binnen 1%, en gelijk aan Mecway headless; regressie D.5.
+
+### S14 – Hyperelastisch materiaal
+**Doel:** Mecway *Neo Hooke* en *Mooney-Rivlin* vertalen (nu: WARNING en de run stopt).
+**Code-Aster:** `ELAS_HYPER` (C01, C10, C20, K) met `RELATION='ELAS_HYPER'`, `DEFORMATION='GDEF_LOG'`
+of `'GREEN_LAGRANGE'` in `STAT_NON_LINE`; testcases `ssnv187a`, `ssnp154`.
+**Uitzoeken:** Mecway's parameters en eenheden (XML), bijna-onsamendrukbaarheid (`INCO_UPG`?),
+welke analyses (alleen niet-lineair).
+**Klaar als:** uniaxiale trek tot 100% rek gelijk aan de analytische Neo-Hooke-/Mooney-Rivlin-curve
+(≤ 1%) en aan Mecway headless; regressie D.5.
+
+### S15 – Pre-tension section (boutvoorspanning)
+**Doel:** Mecway's *Pre-tension section* (`pretensionsection`, Samples/BoltedJoint) vertalen.
+**Code-Aster:** voorspanning via een opgelegde verkorting over een snede (`LIAISON_DDL` tussen de
+twee kanten van de snede, of de bout opknippen met `CREA_MAILLAGE` en `DDL_IMPO`), in twee fasen:
+eerst kracht, dan vastgezet (`STAT_NON_LINE` met twee lasten/`ETAT_INIT`); alternatief thermische
+krimp. Code-Aster-documentatie over boutvoorspanning nagaan (U2-doc).
+**Uitzoeken:** Mecway's XML (snedevlak, kracht of verkorting, fasen), gedrag in lineair statisch.
+**Klaar als:** BoltedJoint: boutkracht na voorspannen = opgegeven kracht (≤ 1%), resultaten gelijk aan
+Mecway headless binnen de bekende contactverschillen (KNOWN_BUGS 43); regressie D.5.
+
+### S16 – 2D- en axisymmetrische analyses
+**Doel:** Mecway's 2D-analysetypen (S20, D20, SA0, ook A20 en thermisch 2D) vertalen; nu stopt de run.
+**Code-Aster:** modelisaties `C_PLAN`, `D_PLAN`, `AXIS` (thermisch `PLAN`/`AXIS`, akoestiek `2D_FLUIDE`);
+mesh in het XY-vlak, dikte bij vlakspanning; resultaten terug in Mecway's 2D-velden.
+**Uitzoeken:** Mecway's 2D-elementen en dikte-invoer, analysecodes (DA0, V20 komen voor in mecway.exe),
+welke lasten/voorwaarden in 2D bestaan, Mecway's veldnamen voor 2D/axisymmetrisch (hoepelspanning).
+**Klaar als:** plaat met gat in vlakspanning (Kt), dikwandige cilinder axisymmetrisch (Lamé) en een
+2D-dynamisch geval binnen de toleranties van de 3D-tegenhangers en gelijk aan Mecway headless;
+regressie D.5. Mag in deelstappen (S16a statisch, S16b dynamisch/thermisch/akoestiek).
+
+### S17 – Lasten op balkzijvlakken en hydrostatische druk op schaalranden
+**Doel:** de twee open punten van KNOWN_BUGS 5: druk/traction op het zijvlak van een balk (Mecway
+rekent ze als verdeelde balklast) en hydrostatische druk op schaalranden.
+**Code-Aster:** `FORCE_POUTRE` (ook als functie van X, Y, Z via `AFFE_CHAR_MECA_F`); schaalranden via
+`FORCE_ARETE` of knoopkrachten zoals `bridge_mesh._edge_loads`.
+**Klaar als:** balk met druk op een zijvlak = balk met de equivalente lijnlast (≤ 0,1%) en gelijk aan
+Mecway headless; hydrostatische druk op een schaalrand gelijk aan de handberekening; regressie D.5.
