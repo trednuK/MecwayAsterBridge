@@ -1,0 +1,1502 @@
+<liml version="34">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.01" y="0" z="0" />
+  <node nid="3" x="0.01" y="0.005" z="0" />
+  <node nid="4" x="0" y="0.005" z="0" />
+  <node nid="5" x="0.01" y="0.01" z="0" />
+  <node nid="6" x="0" y="0.01" z="0" />
+  <node nid="7" x="0.01" y="0.015" z="0" />
+  <node nid="8" x="0" y="0.015" z="0" />
+  <node nid="9" x="0.01" y="0.02" z="0" />
+  <node nid="10" x="0" y="0.02" z="0" />
+  <node nid="11" x="0.02" y="0" z="0" />
+  <node nid="12" x="0.02" y="0.005" z="0" />
+  <node nid="13" x="0.02" y="0.01" z="0" />
+  <node nid="14" x="0.02" y="0.015" z="0" />
+  <node nid="15" x="0.02" y="0.02" z="0" />
+  <node nid="16" x="0.03" y="0" z="0" />
+  <node nid="17" x="0.03" y="0.005" z="0" />
+  <node nid="18" x="0.03" y="0.01" z="0" />
+  <node nid="19" x="0.03" y="0.015" z="0" />
+  <node nid="20" x="0.03" y="0.02" z="0" />
+  <node nid="21" x="0.04" y="0" z="0" />
+  <node nid="22" x="0.04" y="0.005" z="0" />
+  <node nid="23" x="0.04" y="0.01" z="0" />
+  <node nid="24" x="0.04" y="0.015" z="0" />
+  <node nid="25" x="0.04" y="0.02" z="0" />
+  <node nid="26" x="0.05" y="0" z="0" />
+  <node nid="27" x="0.05" y="0.005" z="0" />
+  <node nid="28" x="0.05" y="0.01" z="0" />
+  <node nid="29" x="0.05" y="0.015" z="0" />
+  <node nid="30" x="0.05" y="0.02" z="0" />
+  <node nid="31" x="0.06" y="0" z="0" />
+  <node nid="32" x="0.06" y="0.005" z="0" />
+  <node nid="33" x="0.06" y="0.01" z="0" />
+  <node nid="34" x="0.06" y="0.015" z="0" />
+  <node nid="35" x="0.06" y="0.02" z="0" />
+  <node nid="36" x="0.07" y="0" z="0" />
+  <node nid="37" x="0.07" y="0.005" z="0" />
+  <node nid="38" x="0.07" y="0.01" z="0" />
+  <node nid="39" x="0.07" y="0.015" z="0" />
+  <node nid="40" x="0.07" y="0.02" z="0" />
+  <node nid="41" x="0.08" y="0" z="0" />
+  <node nid="42" x="0.08" y="0.005" z="0" />
+  <node nid="43" x="0.08" y="0.01" z="0" />
+  <node nid="44" x="0.08" y="0.015" z="0" />
+  <node nid="45" x="0.08" y="0.02" z="0" />
+  <node nid="46" x="0.09" y="0" z="0" />
+  <node nid="47" x="0.09" y="0.005" z="0" />
+  <node nid="48" x="0.09" y="0.01" z="0" />
+  <node nid="49" x="0.09" y="0.015" z="0" />
+  <node nid="50" x="0.09" y="0.02" z="0" />
+  <node nid="51" x="0.1" y="0" z="0" />
+  <node nid="52" x="0.1" y="0.005" z="0" />
+  <node nid="53" x="0.1" y="0.01" z="0" />
+  <node nid="54" x="0.1" y="0.015" z="0" />
+  <node nid="55" x="0.1" y="0.02" z="0" />
+  <node nid="56" x="0.1" y="0" z="0" />
+  <node nid="57" x="0.11" y="0" z="0" />
+  <node nid="58" x="0.11" y="0.00285714285714" z="0" />
+  <node nid="59" x="0.1" y="0.00285714285714" z="0" />
+  <node nid="60" x="0.11" y="0.00571428571429" z="0" />
+  <node nid="61" x="0.1" y="0.00571428571429" z="0" />
+  <node nid="62" x="0.11" y="0.00857142857143" z="0" />
+  <node nid="63" x="0.1" y="0.00857142857143" z="0" />
+  <node nid="64" x="0.11" y="0.0114285714286" z="0" />
+  <node nid="65" x="0.1" y="0.0114285714286" z="0" />
+  <node nid="66" x="0.11" y="0.0142857142857" z="0" />
+  <node nid="67" x="0.1" y="0.0142857142857" z="0" />
+  <node nid="68" x="0.11" y="0.0171428571429" z="0" />
+  <node nid="69" x="0.1" y="0.0171428571429" z="0" />
+  <node nid="70" x="0.11" y="0.02" z="0" />
+  <node nid="71" x="0.1" y="0.02" z="0" />
+  <node nid="72" x="0.12" y="0" z="0" />
+  <node nid="73" x="0.12" y="0.00285714285714" z="0" />
+  <node nid="74" x="0.12" y="0.00571428571429" z="0" />
+  <node nid="75" x="0.12" y="0.00857142857143" z="0" />
+  <node nid="76" x="0.12" y="0.0114285714286" z="0" />
+  <node nid="77" x="0.12" y="0.0142857142857" z="0" />
+  <node nid="78" x="0.12" y="0.0171428571429" z="0" />
+  <node nid="79" x="0.12" y="0.02" z="0" />
+  <node nid="80" x="0.13" y="0" z="0" />
+  <node nid="81" x="0.13" y="0.00285714285714" z="0" />
+  <node nid="82" x="0.13" y="0.00571428571429" z="0" />
+  <node nid="83" x="0.13" y="0.00857142857143" z="0" />
+  <node nid="84" x="0.13" y="0.0114285714286" z="0" />
+  <node nid="85" x="0.13" y="0.0142857142857" z="0" />
+  <node nid="86" x="0.13" y="0.0171428571429" z="0" />
+  <node nid="87" x="0.13" y="0.02" z="0" />
+  <node nid="88" x="0.14" y="0" z="0" />
+  <node nid="89" x="0.14" y="0.00285714285714" z="0" />
+  <node nid="90" x="0.14" y="0.00571428571429" z="0" />
+  <node nid="91" x="0.14" y="0.00857142857143" z="0" />
+  <node nid="92" x="0.14" y="0.0114285714286" z="0" />
+  <node nid="93" x="0.14" y="0.0142857142857" z="0" />
+  <node nid="94" x="0.14" y="0.0171428571429" z="0" />
+  <node nid="95" x="0.14" y="0.02" z="0" />
+  <node nid="96" x="0.15" y="0" z="0" />
+  <node nid="97" x="0.15" y="0.00285714285714" z="0" />
+  <node nid="98" x="0.15" y="0.00571428571429" z="0" />
+  <node nid="99" x="0.15" y="0.00857142857143" z="0" />
+  <node nid="100" x="0.15" y="0.0114285714286" z="0" />
+  <node nid="101" x="0.15" y="0.0142857142857" z="0" />
+  <node nid="102" x="0.15" y="0.0171428571429" z="0" />
+  <node nid="103" x="0.15" y="0.02" z="0" />
+  <node nid="104" x="0.16" y="0" z="0" />
+  <node nid="105" x="0.16" y="0.00285714285714" z="0" />
+  <node nid="106" x="0.16" y="0.00571428571429" z="0" />
+  <node nid="107" x="0.16" y="0.00857142857143" z="0" />
+  <node nid="108" x="0.16" y="0.0114285714286" z="0" />
+  <node nid="109" x="0.16" y="0.0142857142857" z="0" />
+  <node nid="110" x="0.16" y="0.0171428571429" z="0" />
+  <node nid="111" x="0.16" y="0.02" z="0" />
+  <node nid="112" x="0.17" y="0" z="0" />
+  <node nid="113" x="0.17" y="0.00285714285714" z="0" />
+  <node nid="114" x="0.17" y="0.00571428571429" z="0" />
+  <node nid="115" x="0.17" y="0.00857142857143" z="0" />
+  <node nid="116" x="0.17" y="0.0114285714286" z="0" />
+  <node nid="117" x="0.17" y="0.0142857142857" z="0" />
+  <node nid="118" x="0.17" y="0.0171428571429" z="0" />
+  <node nid="119" x="0.17" y="0.02" z="0" />
+  <node nid="120" x="0.18" y="0" z="0" />
+  <node nid="121" x="0.18" y="0.00285714285714" z="0" />
+  <node nid="122" x="0.18" y="0.00571428571429" z="0" />
+  <node nid="123" x="0.18" y="0.00857142857143" z="0" />
+  <node nid="124" x="0.18" y="0.0114285714286" z="0" />
+  <node nid="125" x="0.18" y="0.0142857142857" z="0" />
+  <node nid="126" x="0.18" y="0.0171428571429" z="0" />
+  <node nid="127" x="0.18" y="0.02" z="0" />
+  <node nid="128" x="0.19" y="0" z="0" />
+  <node nid="129" x="0.19" y="0.00285714285714" z="0" />
+  <node nid="130" x="0.19" y="0.00571428571429" z="0" />
+  <node nid="131" x="0.19" y="0.00857142857143" z="0" />
+  <node nid="132" x="0.19" y="0.0114285714286" z="0" />
+  <node nid="133" x="0.19" y="0.0142857142857" z="0" />
+  <node nid="134" x="0.19" y="0.0171428571429" z="0" />
+  <node nid="135" x="0.19" y="0.02" z="0" />
+  <node nid="136" x="0.2" y="0" z="0" />
+  <node nid="137" x="0.2" y="0.00285714285714" z="0" />
+  <node nid="138" x="0.2" y="0.00571428571429" z="0" />
+  <node nid="139" x="0.2" y="0.00857142857143" z="0" />
+  <node nid="140" x="0.2" y="0.0114285714286" z="0" />
+  <node nid="141" x="0.2" y="0.0142857142857" z="0" />
+  <node nid="142" x="0.2" y="0.0171428571429" z="0" />
+  <node nid="143" x="0.2" y="0.02" z="0" />
+  <elset name="Deel_A" colorrgb="000000" material="Plaat2">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="6 5 7 8" />
+    <elem eid="4" shape="quad4" nodes="8 7 9 10" />
+    <elem eid="5" shape="quad4" nodes="2 11 12 3" />
+    <elem eid="6" shape="quad4" nodes="3 12 13 5" />
+    <elem eid="7" shape="quad4" nodes="5 13 14 7" />
+    <elem eid="8" shape="quad4" nodes="7 14 15 9" />
+    <elem eid="9" shape="quad4" nodes="11 16 17 12" />
+    <elem eid="10" shape="quad4" nodes="12 17 18 13" />
+    <elem eid="11" shape="quad4" nodes="13 18 19 14" />
+    <elem eid="12" shape="quad4" nodes="14 19 20 15" />
+    <elem eid="13" shape="quad4" nodes="16 21 22 17" />
+    <elem eid="14" shape="quad4" nodes="17 22 23 18" />
+    <elem eid="15" shape="quad4" nodes="18 23 24 19" />
+    <elem eid="16" shape="quad4" nodes="19 24 25 20" />
+    <elem eid="17" shape="quad4" nodes="21 26 27 22" />
+    <elem eid="18" shape="quad4" nodes="22 27 28 23" />
+    <elem eid="19" shape="quad4" nodes="23 28 29 24" />
+    <elem eid="20" shape="quad4" nodes="24 29 30 25" />
+    <elem eid="21" shape="quad4" nodes="26 31 32 27" />
+    <elem eid="22" shape="quad4" nodes="27 32 33 28" />
+    <elem eid="23" shape="quad4" nodes="28 33 34 29" />
+    <elem eid="24" shape="quad4" nodes="29 34 35 30" />
+    <elem eid="25" shape="quad4" nodes="31 36 37 32" />
+    <elem eid="26" shape="quad4" nodes="32 37 38 33" />
+    <elem eid="27" shape="quad4" nodes="33 38 39 34" />
+    <elem eid="28" shape="quad4" nodes="34 39 40 35" />
+    <elem eid="29" shape="quad4" nodes="36 41 42 37" />
+    <elem eid="30" shape="quad4" nodes="37 42 43 38" />
+    <elem eid="31" shape="quad4" nodes="38 43 44 39" />
+    <elem eid="32" shape="quad4" nodes="39 44 45 40" />
+    <elem eid="33" shape="quad4" nodes="41 46 47 42" />
+    <elem eid="34" shape="quad4" nodes="42 47 48 43" />
+    <elem eid="35" shape="quad4" nodes="43 48 49 44" />
+    <elem eid="36" shape="quad4" nodes="44 49 50 45" />
+    <elem eid="37" shape="quad4" nodes="46 51 52 47" />
+    <elem eid="38" shape="quad4" nodes="47 52 53 48" />
+    <elem eid="39" shape="quad4" nodes="48 53 54 49" />
+    <elem eid="40" shape="quad4" nodes="49 54 55 50" />
+  </elset>
+  <elset name="Deel_B" colorrgb="000000" material="Plaat2">
+    <elem eid="41" shape="quad4" nodes="56 57 58 59" />
+    <elem eid="42" shape="quad4" nodes="59 58 60 61" />
+    <elem eid="43" shape="quad4" nodes="61 60 62 63" />
+    <elem eid="44" shape="quad4" nodes="63 62 64 65" />
+    <elem eid="45" shape="quad4" nodes="65 64 66 67" />
+    <elem eid="46" shape="quad4" nodes="67 66 68 69" />
+    <elem eid="47" shape="quad4" nodes="69 68 70 71" />
+    <elem eid="48" shape="quad4" nodes="57 72 73 58" />
+    <elem eid="49" shape="quad4" nodes="58 73 74 60" />
+    <elem eid="50" shape="quad4" nodes="60 74 75 62" />
+    <elem eid="51" shape="quad4" nodes="62 75 76 64" />
+    <elem eid="52" shape="quad4" nodes="64 76 77 66" />
+    <elem eid="53" shape="quad4" nodes="66 77 78 68" />
+    <elem eid="54" shape="quad4" nodes="68 78 79 70" />
+    <elem eid="55" shape="quad4" nodes="72 80 81 73" />
+    <elem eid="56" shape="quad4" nodes="73 81 82 74" />
+    <elem eid="57" shape="quad4" nodes="74 82 83 75" />
+    <elem eid="58" shape="quad4" nodes="75 83 84 76" />
+    <elem eid="59" shape="quad4" nodes="76 84 85 77" />
+    <elem eid="60" shape="quad4" nodes="77 85 86 78" />
+    <elem eid="61" shape="quad4" nodes="78 86 87 79" />
+    <elem eid="62" shape="quad4" nodes="80 88 89 81" />
+    <elem eid="63" shape="quad4" nodes="81 89 90 82" />
+    <elem eid="64" shape="quad4" nodes="82 90 91 83" />
+    <elem eid="65" shape="quad4" nodes="83 91 92 84" />
+    <elem eid="66" shape="quad4" nodes="84 92 93 85" />
+    <elem eid="67" shape="quad4" nodes="85 93 94 86" />
+    <elem eid="68" shape="quad4" nodes="86 94 95 87" />
+    <elem eid="69" shape="quad4" nodes="88 96 97 89" />
+    <elem eid="70" shape="quad4" nodes="89 97 98 90" />
+    <elem eid="71" shape="quad4" nodes="90 98 99 91" />
+    <elem eid="72" shape="quad4" nodes="91 99 100 92" />
+    <elem eid="73" shape="quad4" nodes="92 100 101 93" />
+    <elem eid="74" shape="quad4" nodes="93 101 102 94" />
+    <elem eid="75" shape="quad4" nodes="94 102 103 95" />
+    <elem eid="76" shape="quad4" nodes="96 104 105 97" />
+    <elem eid="77" shape="quad4" nodes="97 105 106 98" />
+    <elem eid="78" shape="quad4" nodes="98 106 107 99" />
+    <elem eid="79" shape="quad4" nodes="99 107 108 100" />
+    <elem eid="80" shape="quad4" nodes="100 108 109 101" />
+    <elem eid="81" shape="quad4" nodes="101 109 110 102" />
+    <elem eid="82" shape="quad4" nodes="102 110 111 103" />
+    <elem eid="83" shape="quad4" nodes="104 112 113 105" />
+    <elem eid="84" shape="quad4" nodes="105 113 114 106" />
+    <elem eid="85" shape="quad4" nodes="106 114 115 107" />
+    <elem eid="86" shape="quad4" nodes="107 115 116 108" />
+    <elem eid="87" shape="quad4" nodes="108 116 117 109" />
+    <elem eid="88" shape="quad4" nodes="109 117 118 110" />
+    <elem eid="89" shape="quad4" nodes="110 118 119 111" />
+    <elem eid="90" shape="quad4" nodes="112 120 121 113" />
+    <elem eid="91" shape="quad4" nodes="113 121 122 114" />
+    <elem eid="92" shape="quad4" nodes="114 122 123 115" />
+    <elem eid="93" shape="quad4" nodes="115 123 124 116" />
+    <elem eid="94" shape="quad4" nodes="116 124 125 117" />
+    <elem eid="95" shape="quad4" nodes="117 125 126 118" />
+    <elem eid="96" shape="quad4" nodes="118 126 127 119" />
+    <elem eid="97" shape="quad4" nodes="120 128 129 121" />
+    <elem eid="98" shape="quad4" nodes="121 129 130 122" />
+    <elem eid="99" shape="quad4" nodes="122 130 131 123" />
+    <elem eid="100" shape="quad4" nodes="123 131 132 124" />
+    <elem eid="101" shape="quad4" nodes="124 132 133 125" />
+    <elem eid="102" shape="quad4" nodes="125 133 134 126" />
+    <elem eid="103" shape="quad4" nodes="126 134 135 127" />
+    <elem eid="104" shape="quad4" nodes="128 136 137 129" />
+    <elem eid="105" shape="quad4" nodes="129 137 138 130" />
+    <elem eid="106" shape="quad4" nodes="130 138 139 131" />
+    <elem eid="107" shape="quad4" nodes="131 139 140 132" />
+    <elem eid="108" shape="quad4" nodes="132 140 141 133" />
+    <elem eid="109" shape="quad4" nodes="133 141 142 134" />
+    <elem eid="110" shape="quad4" nodes="134 142 143 135" />
+  </elset>
+  <contact2 selectionmaster="Lijm_A" selectionslave="Lijm_B" type="bondedtie" selfcontact="false">
+    <tolerance>0 m</tolerance>
+    <stiffnessfactor>1</stiffnessfactor>
+    <normalstiffness>0 Pa/m</normalstiffness>
+    <tangentialstiffness>0 Pa/m</tangentialstiffness>
+    <frictioncoefficient>0</frictioncoefficient>
+    <conductanceperarea>0 W/m²/K</conductanceperarea>
+    <tolerancetype>infinite</tolerancetype>
+  </contact2>
+  <fixed selection="Inklemming" />
+  <force selection="Vrij_eind">
+    <x>0 N</x>
+    <y>0 N</y>
+    <z>-1 N</z>
+  </force>
+  <mat name="Plaat2">
+    <geometric type="Plate" thickness="2 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="Naad_A">
+    <node nid="51" />
+    <node nid="52" />
+    <node nid="53" />
+    <node nid="54" />
+    <node nid="55" />
+  </nodeselection>
+  <nodeselection name="Naad_B">
+    <node nid="56" />
+    <node nid="59" />
+    <node nid="61" />
+    <node nid="63" />
+    <node nid="65" />
+    <node nid="67" />
+    <node nid="69" />
+    <node nid="71" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="136" />
+    <node nid="137" />
+    <node nid="138" />
+    <node nid="139" />
+    <node nid="140" />
+    <node nid="141" />
+    <node nid="142" />
+    <node nid="143" />
+  </nodeselection>
+  <faceselection name="Lijm_A">
+    <face eid="37" faceid="5" />
+    <face eid="38" faceid="5" />
+    <face eid="39" faceid="5" />
+    <face eid="40" faceid="5" />
+  </faceselection>
+  <faceselection name="Lijm_B">
+    <face eid="41" faceid="4" />
+    <face eid="42" faceid="4" />
+    <face eid="43" faceid="4" />
+    <face eid="44" faceid="4" />
+    <face eid="45" faceid="4" />
+    <face eid="46" faceid="4" />
+    <face eid="47" faceid="4" />
+  </faceselection>
+  <faceselection name="Inklemming">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+    <face eid="3" faceid="4" />
+    <face eid="4" faceid="4" />
+  </faceselection>
+  <faceselection name="Vrij_eind">
+    <face eid="104" faceid="2" />
+    <face eid="105" faceid="2" />
+    <face eid="106" faceid="2" />
+    <face eid="107" faceid="2" />
+    <face eid="108" faceid="2" />
+    <face eid="109" faceid="2" />
+    <face eid="110" faceid="2" />
+  </faceselection>
+  <solution>
+    <analysis type="S30" />
+    <node nid="1" x="0" y="0" z="0" />
+    <node nid="2" x="0.01" y="0" z="0" />
+    <node nid="3" x="0.01" y="0.005" z="0" />
+    <node nid="4" x="0" y="0.005" z="0" />
+    <node nid="5" x="0.01" y="0.01" z="0" />
+    <node nid="6" x="0" y="0.01" z="0" />
+    <node nid="7" x="0.01" y="0.015" z="0" />
+    <node nid="8" x="0" y="0.015" z="0" />
+    <node nid="9" x="0.01" y="0.02" z="0" />
+    <node nid="10" x="0" y="0.02" z="0" />
+    <node nid="11" x="0.02" y="0" z="0" />
+    <node nid="12" x="0.02" y="0.005" z="0" />
+    <node nid="13" x="0.02" y="0.01" z="0" />
+    <node nid="14" x="0.02" y="0.015" z="0" />
+    <node nid="15" x="0.02" y="0.02" z="0" />
+    <node nid="16" x="0.03" y="0" z="0" />
+    <node nid="17" x="0.03" y="0.005" z="0" />
+    <node nid="18" x="0.03" y="0.01" z="0" />
+    <node nid="19" x="0.03" y="0.015" z="0" />
+    <node nid="20" x="0.03" y="0.02" z="0" />
+    <node nid="21" x="0.04" y="0" z="0" />
+    <node nid="22" x="0.04" y="0.005" z="0" />
+    <node nid="23" x="0.04" y="0.01" z="0" />
+    <node nid="24" x="0.04" y="0.015" z="0" />
+    <node nid="25" x="0.04" y="0.02" z="0" />
+    <node nid="26" x="0.05" y="0" z="0" />
+    <node nid="27" x="0.05" y="0.005" z="0" />
+    <node nid="28" x="0.05" y="0.01" z="0" />
+    <node nid="29" x="0.05" y="0.015" z="0" />
+    <node nid="30" x="0.05" y="0.02" z="0" />
+    <node nid="31" x="0.06" y="0" z="0" />
+    <node nid="32" x="0.06" y="0.005" z="0" />
+    <node nid="33" x="0.06" y="0.01" z="0" />
+    <node nid="34" x="0.06" y="0.015" z="0" />
+    <node nid="35" x="0.06" y="0.02" z="0" />
+    <node nid="36" x="0.07" y="0" z="0" />
+    <node nid="37" x="0.07" y="0.005" z="0" />
+    <node nid="38" x="0.07" y="0.01" z="0" />
+    <node nid="39" x="0.07" y="0.015" z="0" />
+    <node nid="40" x="0.07" y="0.02" z="0" />
+    <node nid="41" x="0.08" y="0" z="0" />
+    <node nid="42" x="0.08" y="0.005" z="0" />
+    <node nid="43" x="0.08" y="0.01" z="0" />
+    <node nid="44" x="0.08" y="0.015" z="0" />
+    <node nid="45" x="0.08" y="0.02" z="0" />
+    <node nid="46" x="0.09" y="0" z="0" />
+    <node nid="47" x="0.09" y="0.005" z="0" />
+    <node nid="48" x="0.09" y="0.01" z="0" />
+    <node nid="49" x="0.09" y="0.015" z="0" />
+    <node nid="50" x="0.09" y="0.02" z="0" />
+    <node nid="51" x="0.1" y="0" z="0" />
+    <node nid="52" x="0.1" y="0.005" z="0" />
+    <node nid="53" x="0.1" y="0.01" z="0" />
+    <node nid="54" x="0.1" y="0.015" z="0" />
+    <node nid="55" x="0.1" y="0.02" z="0" />
+    <node nid="56" x="0.1" y="0" z="0" />
+    <node nid="57" x="0.11" y="0" z="0" />
+    <node nid="58" x="0.11" y="0.00285714285714" z="0" />
+    <node nid="59" x="0.1" y="0.00285714285714" z="0" />
+    <node nid="60" x="0.11" y="0.00571428571429" z="0" />
+    <node nid="61" x="0.1" y="0.00571428571429" z="0" />
+    <node nid="62" x="0.11" y="0.00857142857143" z="0" />
+    <node nid="63" x="0.1" y="0.00857142857143" z="0" />
+    <node nid="64" x="0.11" y="0.0114285714286" z="0" />
+    <node nid="65" x="0.1" y="0.0114285714286" z="0" />
+    <node nid="66" x="0.11" y="0.0142857142857" z="0" />
+    <node nid="67" x="0.1" y="0.0142857142857" z="0" />
+    <node nid="68" x="0.11" y="0.0171428571429" z="0" />
+    <node nid="69" x="0.1" y="0.0171428571429" z="0" />
+    <node nid="70" x="0.11" y="0.02" z="0" />
+    <node nid="71" x="0.1" y="0.02" z="0" />
+    <node nid="72" x="0.12" y="0" z="0" />
+    <node nid="73" x="0.12" y="0.00285714285714" z="0" />
+    <node nid="74" x="0.12" y="0.00571428571429" z="0" />
+    <node nid="75" x="0.12" y="0.00857142857143" z="0" />
+    <node nid="76" x="0.12" y="0.0114285714286" z="0" />
+    <node nid="77" x="0.12" y="0.0142857142857" z="0" />
+    <node nid="78" x="0.12" y="0.0171428571429" z="0" />
+    <node nid="79" x="0.12" y="0.02" z="0" />
+    <node nid="80" x="0.13" y="0" z="0" />
+    <node nid="81" x="0.13" y="0.00285714285714" z="0" />
+    <node nid="82" x="0.13" y="0.00571428571429" z="0" />
+    <node nid="83" x="0.13" y="0.00857142857143" z="0" />
+    <node nid="84" x="0.13" y="0.0114285714286" z="0" />
+    <node nid="85" x="0.13" y="0.0142857142857" z="0" />
+    <node nid="86" x="0.13" y="0.0171428571429" z="0" />
+    <node nid="87" x="0.13" y="0.02" z="0" />
+    <node nid="88" x="0.14" y="0" z="0" />
+    <node nid="89" x="0.14" y="0.00285714285714" z="0" />
+    <node nid="90" x="0.14" y="0.00571428571429" z="0" />
+    <node nid="91" x="0.14" y="0.00857142857143" z="0" />
+    <node nid="92" x="0.14" y="0.0114285714286" z="0" />
+    <node nid="93" x="0.14" y="0.0142857142857" z="0" />
+    <node nid="94" x="0.14" y="0.0171428571429" z="0" />
+    <node nid="95" x="0.14" y="0.02" z="0" />
+    <node nid="96" x="0.15" y="0" z="0" />
+    <node nid="97" x="0.15" y="0.00285714285714" z="0" />
+    <node nid="98" x="0.15" y="0.00571428571429" z="0" />
+    <node nid="99" x="0.15" y="0.00857142857143" z="0" />
+    <node nid="100" x="0.15" y="0.0114285714286" z="0" />
+    <node nid="101" x="0.15" y="0.0142857142857" z="0" />
+    <node nid="102" x="0.15" y="0.0171428571429" z="0" />
+    <node nid="103" x="0.15" y="0.02" z="0" />
+    <node nid="104" x="0.16" y="0" z="0" />
+    <node nid="105" x="0.16" y="0.00285714285714" z="0" />
+    <node nid="106" x="0.16" y="0.00571428571429" z="0" />
+    <node nid="107" x="0.16" y="0.00857142857143" z="0" />
+    <node nid="108" x="0.16" y="0.0114285714286" z="0" />
+    <node nid="109" x="0.16" y="0.0142857142857" z="0" />
+    <node nid="110" x="0.16" y="0.0171428571429" z="0" />
+    <node nid="111" x="0.16" y="0.02" z="0" />
+    <node nid="112" x="0.17" y="0" z="0" />
+    <node nid="113" x="0.17" y="0.00285714285714" z="0" />
+    <node nid="114" x="0.17" y="0.00571428571429" z="0" />
+    <node nid="115" x="0.17" y="0.00857142857143" z="0" />
+    <node nid="116" x="0.17" y="0.0114285714286" z="0" />
+    <node nid="117" x="0.17" y="0.0142857142857" z="0" />
+    <node nid="118" x="0.17" y="0.0171428571429" z="0" />
+    <node nid="119" x="0.17" y="0.02" z="0" />
+    <node nid="120" x="0.18" y="0" z="0" />
+    <node nid="121" x="0.18" y="0.00285714285714" z="0" />
+    <node nid="122" x="0.18" y="0.00571428571429" z="0" />
+    <node nid="123" x="0.18" y="0.00857142857143" z="0" />
+    <node nid="124" x="0.18" y="0.0114285714286" z="0" />
+    <node nid="125" x="0.18" y="0.0142857142857" z="0" />
+    <node nid="126" x="0.18" y="0.0171428571429" z="0" />
+    <node nid="127" x="0.18" y="0.02" z="0" />
+    <node nid="128" x="0.19" y="0" z="0" />
+    <node nid="129" x="0.19" y="0.00285714285714" z="0" />
+    <node nid="130" x="0.19" y="0.00571428571429" z="0" />
+    <node nid="131" x="0.19" y="0.00857142857143" z="0" />
+    <node nid="132" x="0.19" y="0.0114285714286" z="0" />
+    <node nid="133" x="0.19" y="0.0142857142857" z="0" />
+    <node nid="134" x="0.19" y="0.0171428571429" z="0" />
+    <node nid="135" x="0.19" y="0.02" z="0" />
+    <node nid="136" x="0.2" y="0" z="0" />
+    <node nid="137" x="0.2" y="0.00285714285714" z="0" />
+    <node nid="138" x="0.2" y="0.00571428571429" z="0" />
+    <node nid="139" x="0.2" y="0.00857142857143" z="0" />
+    <node nid="140" x="0.2" y="0.0114285714286" z="0" />
+    <node nid="141" x="0.2" y="0.0142857142857" z="0" />
+    <node nid="142" x="0.2" y="0.0171428571429" z="0" />
+    <node nid="143" x="0.2" y="0.02" z="0" />
+    <elset name="Deel_A" colorrgb="000000" material="Plaat2">
+      <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+      <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+      <elem eid="3" shape="quad4" nodes="6 5 7 8" />
+      <elem eid="4" shape="quad4" nodes="8 7 9 10" />
+      <elem eid="5" shape="quad4" nodes="2 11 12 3" />
+      <elem eid="6" shape="quad4" nodes="3 12 13 5" />
+      <elem eid="7" shape="quad4" nodes="5 13 14 7" />
+      <elem eid="8" shape="quad4" nodes="7 14 15 9" />
+      <elem eid="9" shape="quad4" nodes="11 16 17 12" />
+      <elem eid="10" shape="quad4" nodes="12 17 18 13" />
+      <elem eid="11" shape="quad4" nodes="13 18 19 14" />
+      <elem eid="12" shape="quad4" nodes="14 19 20 15" />
+      <elem eid="13" shape="quad4" nodes="16 21 22 17" />
+      <elem eid="14" shape="quad4" nodes="17 22 23 18" />
+      <elem eid="15" shape="quad4" nodes="18 23 24 19" />
+      <elem eid="16" shape="quad4" nodes="19 24 25 20" />
+      <elem eid="17" shape="quad4" nodes="21 26 27 22" />
+      <elem eid="18" shape="quad4" nodes="22 27 28 23" />
+      <elem eid="19" shape="quad4" nodes="23 28 29 24" />
+      <elem eid="20" shape="quad4" nodes="24 29 30 25" />
+      <elem eid="21" shape="quad4" nodes="26 31 32 27" />
+      <elem eid="22" shape="quad4" nodes="27 32 33 28" />
+      <elem eid="23" shape="quad4" nodes="28 33 34 29" />
+      <elem eid="24" shape="quad4" nodes="29 34 35 30" />
+      <elem eid="25" shape="quad4" nodes="31 36 37 32" />
+      <elem eid="26" shape="quad4" nodes="32 37 38 33" />
+      <elem eid="27" shape="quad4" nodes="33 38 39 34" />
+      <elem eid="28" shape="quad4" nodes="34 39 40 35" />
+      <elem eid="29" shape="quad4" nodes="36 41 42 37" />
+      <elem eid="30" shape="quad4" nodes="37 42 43 38" />
+      <elem eid="31" shape="quad4" nodes="38 43 44 39" />
+      <elem eid="32" shape="quad4" nodes="39 44 45 40" />
+      <elem eid="33" shape="quad4" nodes="41 46 47 42" />
+      <elem eid="34" shape="quad4" nodes="42 47 48 43" />
+      <elem eid="35" shape="quad4" nodes="43 48 49 44" />
+      <elem eid="36" shape="quad4" nodes="44 49 50 45" />
+      <elem eid="37" shape="quad4" nodes="46 51 52 47" />
+      <elem eid="38" shape="quad4" nodes="47 52 53 48" />
+      <elem eid="39" shape="quad4" nodes="48 53 54 49" />
+      <elem eid="40" shape="quad4" nodes="49 54 55 50" />
+    </elset>
+    <elset name="Deel_B" colorrgb="000000" material="Plaat2">
+      <elem eid="41" shape="quad4" nodes="56 57 58 59" />
+      <elem eid="42" shape="quad4" nodes="59 58 60 61" />
+      <elem eid="43" shape="quad4" nodes="61 60 62 63" />
+      <elem eid="44" shape="quad4" nodes="63 62 64 65" />
+      <elem eid="45" shape="quad4" nodes="65 64 66 67" />
+      <elem eid="46" shape="quad4" nodes="67 66 68 69" />
+      <elem eid="47" shape="quad4" nodes="69 68 70 71" />
+      <elem eid="48" shape="quad4" nodes="57 72 73 58" />
+      <elem eid="49" shape="quad4" nodes="58 73 74 60" />
+      <elem eid="50" shape="quad4" nodes="60 74 75 62" />
+      <elem eid="51" shape="quad4" nodes="62 75 76 64" />
+      <elem eid="52" shape="quad4" nodes="64 76 77 66" />
+      <elem eid="53" shape="quad4" nodes="66 77 78 68" />
+      <elem eid="54" shape="quad4" nodes="68 78 79 70" />
+      <elem eid="55" shape="quad4" nodes="72 80 81 73" />
+      <elem eid="56" shape="quad4" nodes="73 81 82 74" />
+      <elem eid="57" shape="quad4" nodes="74 82 83 75" />
+      <elem eid="58" shape="quad4" nodes="75 83 84 76" />
+      <elem eid="59" shape="quad4" nodes="76 84 85 77" />
+      <elem eid="60" shape="quad4" nodes="77 85 86 78" />
+      <elem eid="61" shape="quad4" nodes="78 86 87 79" />
+      <elem eid="62" shape="quad4" nodes="80 88 89 81" />
+      <elem eid="63" shape="quad4" nodes="81 89 90 82" />
+      <elem eid="64" shape="quad4" nodes="82 90 91 83" />
+      <elem eid="65" shape="quad4" nodes="83 91 92 84" />
+      <elem eid="66" shape="quad4" nodes="84 92 93 85" />
+      <elem eid="67" shape="quad4" nodes="85 93 94 86" />
+      <elem eid="68" shape="quad4" nodes="86 94 95 87" />
+      <elem eid="69" shape="quad4" nodes="88 96 97 89" />
+      <elem eid="70" shape="quad4" nodes="89 97 98 90" />
+      <elem eid="71" shape="quad4" nodes="90 98 99 91" />
+      <elem eid="72" shape="quad4" nodes="91 99 100 92" />
+      <elem eid="73" shape="quad4" nodes="92 100 101 93" />
+      <elem eid="74" shape="quad4" nodes="93 101 102 94" />
+      <elem eid="75" shape="quad4" nodes="94 102 103 95" />
+      <elem eid="76" shape="quad4" nodes="96 104 105 97" />
+      <elem eid="77" shape="quad4" nodes="97 105 106 98" />
+      <elem eid="78" shape="quad4" nodes="98 106 107 99" />
+      <elem eid="79" shape="quad4" nodes="99 107 108 100" />
+      <elem eid="80" shape="quad4" nodes="100 108 109 101" />
+      <elem eid="81" shape="quad4" nodes="101 109 110 102" />
+      <elem eid="82" shape="quad4" nodes="102 110 111 103" />
+      <elem eid="83" shape="quad4" nodes="104 112 113 105" />
+      <elem eid="84" shape="quad4" nodes="105 113 114 106" />
+      <elem eid="85" shape="quad4" nodes="106 114 115 107" />
+      <elem eid="86" shape="quad4" nodes="107 115 116 108" />
+      <elem eid="87" shape="quad4" nodes="108 116 117 109" />
+      <elem eid="88" shape="quad4" nodes="109 117 118 110" />
+      <elem eid="89" shape="quad4" nodes="110 118 119 111" />
+      <elem eid="90" shape="quad4" nodes="112 120 121 113" />
+      <elem eid="91" shape="quad4" nodes="113 121 122 114" />
+      <elem eid="92" shape="quad4" nodes="114 122 123 115" />
+      <elem eid="93" shape="quad4" nodes="115 123 124 116" />
+      <elem eid="94" shape="quad4" nodes="116 124 125 117" />
+      <elem eid="95" shape="quad4" nodes="117 125 126 118" />
+      <elem eid="96" shape="quad4" nodes="118 126 127 119" />
+      <elem eid="97" shape="quad4" nodes="120 128 129 121" />
+      <elem eid="98" shape="quad4" nodes="121 129 130 122" />
+      <elem eid="99" shape="quad4" nodes="122 130 131 123" />
+      <elem eid="100" shape="quad4" nodes="123 131 132 124" />
+      <elem eid="101" shape="quad4" nodes="124 132 133 125" />
+      <elem eid="102" shape="quad4" nodes="125 133 134 126" />
+      <elem eid="103" shape="quad4" nodes="126 134 135 127" />
+      <elem eid="104" shape="quad4" nodes="128 136 137 129" />
+      <elem eid="105" shape="quad4" nodes="129 137 138 130" />
+      <elem eid="106" shape="quad4" nodes="130 138 139 131" />
+      <elem eid="107" shape="quad4" nodes="131 139 140 132" />
+      <elem eid="108" shape="quad4" nodes="132 140 141 133" />
+      <elem eid="109" shape="quad4" nodes="133 141 142 134" />
+      <elem eid="110" shape="quad4" nodes="134 142 143 135" />
+    </elset>
+    <contact2 selectionmaster="Lijm_A" selectionslave="Lijm_B" type="bondedtie" selfcontact="false">
+      <tolerance>0 m</tolerance>
+      <stiffnessfactor>1</stiffnessfactor>
+      <normalstiffness>0 Pa/m</normalstiffness>
+      <tangentialstiffness>0 Pa/m</tangentialstiffness>
+      <frictioncoefficient>0</frictioncoefficient>
+      <conductanceperarea>0 W/m²/K</conductanceperarea>
+      <tolerancetype>infinite</tolerancetype>
+    </contact2>
+    <fixed selection="Inklemming" />
+    <force selection="Vrij_eind">
+      <x>0 N</x>
+      <y>0 N</y>
+      <z>-1 N</z>
+    </force>
+    <mat name="Plaat2">
+      <geometric type="Plate" thickness="2 mm" />
+      <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    </mat>
+    <nodeselection name="Naad_A">
+      <node nid="51" />
+      <node nid="52" />
+      <node nid="53" />
+      <node nid="54" />
+      <node nid="55" />
+    </nodeselection>
+    <nodeselection name="Naad_B">
+      <node nid="56" />
+      <node nid="59" />
+      <node nid="61" />
+      <node nid="63" />
+      <node nid="65" />
+      <node nid="67" />
+      <node nid="69" />
+      <node nid="71" />
+    </nodeselection>
+    <nodeselection name="Tip">
+      <node nid="136" />
+      <node nid="137" />
+      <node nid="138" />
+      <node nid="139" />
+      <node nid="140" />
+      <node nid="141" />
+      <node nid="142" />
+      <node nid="143" />
+    </nodeselection>
+    <faceselection name="Lijm_A">
+      <face eid="37" faceid="5" />
+      <face eid="38" faceid="5" />
+      <face eid="39" faceid="5" />
+      <face eid="40" faceid="5" />
+    </faceselection>
+    <faceselection name="Lijm_B">
+      <face eid="41" faceid="4" />
+      <face eid="42" faceid="4" />
+      <face eid="43" faceid="4" />
+      <face eid="44" faceid="4" />
+      <face eid="45" faceid="4" />
+      <face eid="46" faceid="4" />
+      <face eid="47" faceid="4" />
+    </faceselection>
+    <faceselection name="Inklemming">
+      <face eid="1" faceid="4" />
+      <face eid="2" faceid="4" />
+      <face eid="3" faceid="4" />
+      <face eid="4" faceid="4" />
+    </faceselection>
+    <faceselection name="Vrij_eind">
+      <face eid="104" faceid="2" />
+      <face eid="105" faceid="2" />
+      <face eid="106" faceid="2" />
+      <face eid="107" faceid="2" />
+      <face eid="108" faceid="2" />
+      <face eid="109" faceid="2" />
+      <face eid="110" faceid="2" />
+    </faceselection>
+    <results precision="double">
+      <nodeids name="displmag">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="displx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="disply">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="displz">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="rotx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="roty">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="rotz">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="vonmisesu1">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="vonmisesm">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="vonmisesb">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionforcemag">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionforcex">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionforcey">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionforcez">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionmommag">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionmomx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionmomy">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodeids name="reactionmomz">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAACMAAAAkAAAA
+JQAAACYAAAAnAAAAKAAAACkAAAAqAAAAKwAAACwAAAAtAAAALgAAAC8AAAAwAAAA
+MQAAADIAAAAzAAAANAAAADUAAAA2AAAANwAAADgAAAA5AAAAOgAAADsAAAA8AAAA
+PQAAAD4AAAA/AAAAQAAAAEEAAABCAAAAQwAAAEQAAABFAAAARgAAAEcAAABIAAAA
+SQAAAEoAAABLAAAATAAAAE0AAABOAAAATwAAAFAAAABRAAAAUgAAAFMAAABUAAAA
+VQAAAFYAAABXAAAAWAAAAFkAAABaAAAAWwAAAFwAAABdAAAAXgAAAF8AAABgAAAA
+YQAAAGIAAABjAAAAZAAAAGUAAABmAAAAZwAAAGgAAABpAAAAagAAAGsAAABsAAAA
+bQAAAG4AAABvAAAAcAAAAHEAAAByAAAAcwAAAHQAAAB1AAAAdgAAAHcAAAB4AAAA
+eQAAAHoAAAB7AAAAfAAAAH0AAAB+AAAAfwAAAIAAAACBAAAAggAAAIMAAACEAAAA
+hQAAAIYAAACHAAAAiAAAAIkAAACKAAAAiwAAAIwAAACNAAAAjgAAAI8AAAA=
+</nodeids>
+      <nodevariable name="displmag">
+        <maxandmin>
+          <component name="Deel_A" max="0.000293102391639113" min="0" />
+          <component name="Deel_B" max="0.000942220819526007" min="0.000292566998289592" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAeHOcCnOzHPsUVxDVUQ8w+AAAAAAAAAADwxq4Af3DNPgAAAAAAAAAA
+v+i9NVRDzD4AAAAAAAAAAIu42gKc7Mc+AAAAAAAAAADzkJq2K1/qPsbvtNrZxes+
+/yExMJs77D6n4bDa2cXrPrF0krYrX+o+C+WaJ2I0/j50DtoQZOj+PkW6rRALJP8+
+E73WEGTo/j5TQpQnYjT+Pi2PINakzQo/7sFYA4gjCz9u5mnzIEALP8ZzVgOIIws/
+4vIb1qTNCj+0qSTQQ8AUP8WVe5Wq6BQ/cy+rHSH2FD/yG3qVqugUPxK2IdBDwBQ/
+ZKz0qkeBHT/ZUdTtBKcdPxZk1zCZsx0/TYXS7QSnHT9IE/GqR4EdPw8R/BHsyCM/
+8dYWLHTaIz+YF30fTOAjP0zHFSx02iM/zPH5EezIIz8kpO1NAG0pP5HLMBYvfSk/
+RcRvg5aCKT9/ki8WL30pPwIy600AbSk/qTDj58qgLz+DvZ8FzK8vPzcUFwi4tC8/
+4FqeBcyvLz9fa+DnyqAvP/9qh7B1LDM/0PVjl+8yMz/8dLwvcTUzP5UvY5fvMjM/
+k96FsHUsMz//aoewdSwzP3Of0RxswzY/RIxXEFzHNj/g3uAPKTAzPzaK/BzcyTY/
+RZpwP0szMz+fmOAGKcs2PxQso9+5NDM/91ngBinLNj9h86LfuTQzP07O+xzcyTY/
+YvBvP0szMz/OUlYQXMc2P3zD3w8pMDM/3ejPHGzDNj+T3oWwdSwzP6BZe4B3kDo/
+2W6L0/STOj8V/oNZTJY6P8VvAgp0lzo/PisCCnSXOj+dMINZTJY6PyoYitP0kzo/
+Fnp5gHeQOj8syIsrdo0+P5FhHTOKkD4/b2DFdpaSPj9McGNnnZM+Pz4mY2edkz4/
+SoLEdpaSPj/97hszipA+P2jBiSt2jT4/xNykOjVaQT9vrxIjh1tBP1wmDXpoXEE/
+ItwODNlcQT9mtA4M2VxBPy2vDHpoXEE/qOgRI4dbQT+ExqM6NVpBP+EqMlSpf0M/
+J5vhEcOAQz/w2dXgfoFDP0IdKc3cgUM/D/MozdyBQz9sW9XgfoFDP07I4BHDgEM/
+2wMxVKl/Qz/jz2E9GLRFPw8focD5tEU/8FCKHZC1RT/28YxM27VFP4HFjEzbtUU/
+l8uJHZC1RT/HQKDA+bRFP8mYYD0YtEU/XlV+u4L0Rz8jBUBSLPVHP/hIiXed9Uc/
+vt4dEdb1Rz80sB0R1vVHP3m9iHed9Uc/xRw/Uiz1Rz9DEH27gvRHP2VjwfPoPUo/
+QtpdAVw+Sj/wxfoEqT5KPw/Tn6HPPko/tKKfoc8+Sj/sNPoEqT5KP6PoXAFcPko/
+RRHA8+g9Sj9V2NX6R41MP9LepkaKjUw/O3Q1MbiNTD+5Ice4z41MPxjwxrjPjUw/
+ZN80MbiNTD/C5qVGio1MPxJ91PpHjUw/AyFjEZjfTj+/MtxZvt9OP8WACuzb304/
+ZjCAzevfTj8//n/N699OP0XqCezb304/2jfbWb7fTj/OwWERmN9OPw==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="displx">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="0" />
+          <component name="Deel_B" max="0" min="0" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="disply">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="0" />
+          <component name="Deel_B" max="0" min="0" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="displz">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="-0.000293102391639113" />
+          <component name="Deel_B" max="-0.000292566998289592" min="-0.000942220819526007" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAeHOcCnOzHvsUVxDVUQ8y+AAAAAAAAAADwxq4Af3DNvgAAAAAAAAAA
+v+i9NVRDzL4AAAAAAAAAAIu42gKc7Me+AAAAAAAAAADzkJq2K1/qvsbvtNrZxeu+
+/yExMJs77L6n4bDa2cXrvrF0krYrX+q+C+WaJ2I0/r50DtoQZOj+vkW6rRALJP++
+E73WEGTo/r5TQpQnYjT+vi2PINakzQq/7sFYA4gjC79u5mnzIEALv8ZzVgOIIwu/
+4vIb1qTNCr+0qSTQQ8AUv8WVe5Wq6BS/cy+rHSH2FL/yG3qVqugUvxK2IdBDwBS/
+ZKz0qkeBHb/ZUdTtBKcdvxZk1zCZsx2/TYXS7QSnHb9IE/GqR4Edvw8R/BHsyCO/
+8dYWLHTaI7+YF30fTOAjv0zHFSx02iO/zPH5EezII78kpO1NAG0pv5HLMBYvfSm/
+RcRvg5aCKb9/ki8WL30pvwIy600AbSm/qTDj58qgL7+DvZ8FzK8vvzcUFwi4tC+/
+4FqeBcyvL79fa+DnyqAvv/9qh7B1LDO/0PVjl+8yM7/8dLwvcTUzv5UvY5fvMjO/
+k96FsHUsM7//aoewdSwzv3Of0Rxswza/RIxXEFzHNr/g3uAPKTAzvzaK/BzcyTa/
+RZpwP0szM7+fmOAGKcs2vxQso9+5NDO/91ngBinLNr9h86LfuTQzv07O+xzcyTa/
+YvBvP0szM7/OUlYQXMc2v3zD3w8pMDO/3ejPHGzDNr+T3oWwdSwzv6BZe4B3kDq/
+2W6L0/STOr8V/oNZTJY6v8VvAgp0lzq/PisCCnSXOr+dMINZTJY6vyoYitP0kzq/
+Fnp5gHeQOr8syIsrdo0+v5FhHTOKkD6/b2DFdpaSPr9McGNnnZM+vz4mY2edkz6/
+SoLEdpaSPr/97hszipA+v2jBiSt2jT6/xNykOjVaQb9vrxIjh1tBv1wmDXpoXEG/
+ItwODNlcQb9mtA4M2VxBvy2vDHpoXEG/qOgRI4dbQb+ExqM6NVpBv+EqMlSpf0O/
+J5vhEcOAQ7/w2dXgfoFDv0IdKc3cgUO/D/MozdyBQ79sW9XgfoFDv07I4BHDgEO/
+2wMxVKl/Q7/jz2E9GLRFvw8focD5tEW/8FCKHZC1Rb/28YxM27VFv4HFjEzbtUW/
+l8uJHZC1Rb/HQKDA+bRFv8mYYD0YtEW/XlV+u4L0R78jBUBSLPVHv/hIiXed9Ue/
+vt4dEdb1R780sB0R1vVHv3m9iHed9Ue/xRw/Uiz1R79DEH27gvRHv2VjwfPoPUq/
+QtpdAVw+Sr/wxfoEqT5Kvw/Tn6HPPkq/tKKfoc8+Sr/sNPoEqT5Kv6PoXAFcPkq/
+RRHA8+g9Sr9V2NX6R41Mv9LepkaKjUy/O3Q1MbiNTL+5Ice4z41MvxjwxrjPjUy/
+ZN80MbiNTL/C5qVGio1MvxJ91PpHjUy/AyFjEZjfTr+/MtxZvt9Ov8WACuzb306/
+ZjCAzevfTr8//n/N699Ov0XqCezb306/2jfbWb7fTr/OwWERmN9Ovw==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="rotx">
+        <maxandmin>
+          <component name="Deel_A" max="0.000179925075397428" min="-0.000179925075250169" />
+          <component name="Deel_B" max="9.54575897433632E-05" min="-9.54575891346834E-05" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAABI8p1KqL4kv3w6yHYCBw+/AAAAAAAAAACO0UuZKykTPQAAAAAAAAAA
+5I8WdwIHDz8AAAAAAAAAABuUsEqoviQ/AAAAAAAAAAAa+VqozHMnvyF8vLE9JRe/
+piNoVkZaKT2WyiGyPSUXP1LPjajMcyc/r2i7oEiVJ79i/Q8XbFIXvxweuI5lvDQ9
+bOa1F2xSFz/XTg6hSJUnPx2gfwBpXia/D2j1jHRaFr9sGNiUFdE8PbXt2410WhY/
+XuXyAGleJj/Jnm4EcQ0lv/B4c/I9CRW/CPk6ZNRyQj13oprzPQkVPzYzAgVxDSU/
+97pML0KmI79ugt2/PKgTv3JLobKBfEY92VJFwTyoEz9kpAAwQqYjP8NLb0UMSSK/
+z6sKMyxBEr+4EO+9SodKPcUXszQsQRI/wXtDRgxJIj/YrN+MNsMgv98PJ3jd5hC/
+1NYn4OCSTj3ROhB63eYQP0k+1I02wyA/TO8fNJDxH7/g7tqSQNAOv8garvl0UFE9
+pEkvl0DQDj+QHko2kPEfP/lKVpF7HBi/3AJDWtDVDb9S3k8Enl1TPXx4GV/Q1Q0/
+ZHnBk3scGD/5SlaRexwYv1Yp2uQMBhm/dalhZiGKEb8oAu8OldsSv2O1LGNOwwS/
+PPEplrKSCb+v4kUC67nrvtNbjAt3DPG+942wF+u56z41KjwVdwzxPkKHh2hOwwQ/
+zkcAm7KSCT/Yfw9pIYoRP4WIWhGV2xI/WHmH5wwGGT9kecGTexwYP7pBpRjoVha/
+cPdnACnmD7/Bmq7lXxgDv1SGbeNfeOm+9ePZ+l946T4FrYjrXxgDPzOKQwYp5g8/
+HKiSG+hWFj8qKpIGYaATv00haemMBwy/LhvPH+bSAL/VTOoS3mXmvnb/OSzeZeY+
+/hMkJubSAD98zr/vjAcMPyOxvQlhoBM/p3zBDlrZEL+8jaV+bxAIv4+mo8hQ3vy+
+aOC/JUlC4772yOlASULjPpVjOdZQ3vw+g/xxhW8QCD93picSWtkQP6wSkKyNFQy/
+JR1d2LcPBL889MdSPhP4vjOSQduDC+C+iXAZ+IML4D55pS9hPhP4Puh0kN+3DwQ/
+3lHCs40VDD/+yAlCHnsGv30GJhA1DwC/n+rwwdpF877YVEXKsLPZvvUeDQexs9k+
+5j4i0dpF8z5sn74XNQ8AP/weokkeewY/G8YZ5BXmAL+HG1L8uyn4vpwPz0qXA+2+
+xLzD8PtY076namAw/FjTPgSJjmqXA+0+aTAuDLwp+D7juwbsFeYAP/aTaHvT4va+
+yTFeL6Ns8L4s3v+37MbjvgOFpi3Ra8q+ZajbsdFryj5/sQbZ7MbjPhST3j+jbPA+
+HRfoi9Pi9j6nlvxJr+LpvgnrCP7eTeO+VlQnIezs174bytBnDTjAvpA9ge8NOMA+
+TXr5ZOzs1z668vEf303jPjrs6Wuv4uk+K0T7O+5l274g9CM4KPTXvqKiNxJa2s++
+QQYNJOQvtr5zlVU25S+2PiwVeJta2s8+h2zAfCj01z4zf4iA7mXbPg==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="roty">
+        <maxandmin>
+          <component name="Deel_A" max="0.00531251213579662" min="0" />
+          <component name="Deel_B" max="0.00709088209398725" min="0.0053023471633738" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAACOj5Ya9VpEP1YgpIpnv0U/AAAAAAAAAADB0xwZ9FNGPwAAAAAAAAAA
+/Vmgime/RT8AAAAAAAAAANM3jxr1WkQ/AAAAAAAAAADfETVi0mVVP5DEB/t4dlU/
+jpThc/p7VT96wQX7eHZVPz4MMWLSZVU/tzhH9XKtXz/aoF/XrKVfP3gKmJkRo18/
+AJxd16ylXz8ML0P1cq1fP5oqoC2drGQ/Bo1RPRylZD9s83YHoaJkP2mKUD0cpWQ/
+dSWeLZ2sZD9jglNt1zVpPy6o1eCmLWk/Qn2qkOwqaT+epdTgpi1pP0F9UW3XNWk/
+hDkBM/FzbT9UJHfwl2ttP8D9fXXPaG0/zSF28JdrbT+TNP8y8XNtP5R4BROYs3A/
+Ngn7+F2vcD9wAqy++q1wP9uH+vhdr3A/+HUEE5izcD84k5WHbodyP2QpPqaEg3I/
+krOEZwGCcj/Dpz2mhINyP8iPlIduh3I/DCFEfdE2dD9y4A9YRjJ0P2l2WwnaMXQ/
+YF4PWEYydD/LHEN90TZ0P+smIJ6SwnU/6+/Pb7q3dT8VjOo6B7l1P8Zrz2+6t3U/
+uiAfnpLCdT/rJiCeksJ1PzPLQAsMHnc/XB37kVkddz/OmYQ6YLx1P7oUsdmRG3c/
+hJiK+um3dT8iqSQ0lxp3P+Q6dSWouHU/BYQkNJcadz8bFXUlqLh1P9KksNmRG3c/
+RCeK+um3dT/HYvqRWR13P0vegzpgvHU/EsY/Cwwedz+6IB+eksJ1P6S7lq2HXXg/
+CeNn0vhaeD9wdbJibFl4PzZyc4qtWHg/vk5ziq1YeD/XCrJibFl4PzExZ9L4Wng/
+oMGVrYddeD/IvGPznXZ5PxTy3lfvc3k/SgCtNRdyeT/G5QX1MnF5P2vDBfUycXk/
+upisNRdyeT8uRd5X73N5P6bKYvOddnk/fufGEw1qej9oePkLUWd6P8/3W0V/ZXo/
+mwE2VJVkej824TVUlWR6Pw6XW0V/ZXo/5tj4C1Fnej/5CMYTDWp6P59p3CEJOHs/
+gu0hYUo1ez9y+0YZdTN7Px8EmSSLMns/zOaYJIsyez8oo0YZdTN7P89aIWFKNXs/
+VpzbIQk4ez+xo+anjOB7Pz9k7dHP3Xs/Tz+97fvbez+WtDRqEtt7P6KZNGoS23s/
+su287fvbez+t3ezRz917P3Hn5aeM4Hs/3Ynn05ZjfD+wSJxV5GB8P+EmwlQVX3w/
+MsC+ii9efD+ap76KL158PzHdwVQVX3w//s6bVeRgfD/j3+bTlmN8Pxa5kiQWwXw/
+NZDOLYy+fD94utaA07x8PztxXXn8u3w/Sl1defy7fD/yfNaA07x8Pzcpzi2Mvnw/
+uyiSJBbBfD/HN5gvqPh8P8vdsTjD9nw/Zi+sQo/1fD8v4FHX+fR8P7nVUdf59Hw/
+xA6sQo/1fD9cp7E4w/Z8P//ply+o+Hw/GXEYK1QLfT80P79aSwp9P3QxvbzvCX0/
+xTsBl8IJfT/UNwGXwgl9PxcjvbzvCX0/WSW/WksKfT9DShgrVAt9Pw==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="rotz">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="0" />
+          <component name="Deel_B" max="0" min="0" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="vonmisesu1">
+        <maxandmin>
+          <component name="Deel_A" max="16328792.8285043" min="7302638.90516422" />
+          <component name="Deel_B" max="7977299.62830395" min="126116.691239161" />
+        </maxandmin>
+        <valuesdouble>YEfft2Q1Y0GpvYIaCyVvQazon7Tlg2lBeccCO/BFa0EBCHdrm2NoQaWG4fdlEG1B
+g8ugtOWDaUE9/vo68EVrQWQbgxoLJW9BQ2DQt2Q1Y0HUqsYSCItpQfs2fcwXiWlB
+Mbi3J85MaUGgWX3MF4lpQYzyxhIIi2lBn9jn4/pnaEGSfcjwaj9oQZDL9QcMM2hB
+FWzI8Go/aEH4rufj+mdoQYe4hbz44WZBnmZU4MzgZkFSb3UXG9xmQY5BVODM4GZB
+nXeFvPjhZkFyuSVLNXhlQaoHvReodGVBjgdF6pNzZUEI3bwXqHRlQY9rJUs1eGVB
+fuRVKOsGZEHrhlVpmQdkQdwXg3ycBmRBGFdVaZkHZEHilFUo6wZkQdBDtxlGoGJB
+PCnUGwuYYkFA2VAyIZpiQULz0xsLmGJBpOK2GUagYkFZPjIF4xRhQdRpfQlDM2FB
+xICwBcgjYUGfK30JQzNhQXLdMQXjFGFBFRMfnXn5X0EplZaMoXpfQUKgkPDnqF9B
++0WWjKF6X0Ff/h2deflfQeKJE9caXlxBluDuuXvbW0FPhrXAwaVcQeQ17rl721tB
+uhkR1xpeXEHN0H8GK/5bQUJLjgUgPVpBPEk6FhvGWUGGWaOJjW9cQVrM05slZ1lB
+wiE26FRuXkFs/ub7WuBZQemKF5LdAFxB+tfm+1rgWUFoaReS3QBcQdZJ05slZ1lB
+oVo16FRuXkGPVDoWG8ZZQfQ9oomNb1xBWC+PBSA9WkGRlH8GK/5bQZhxhzqe61ZB
+pxsGZoTtVkHePRAXdOVWQe7FpQqTy1ZBR+elCpPLVkHUeBAXdOVWQcQLBmaE7VZB
+4SuHOp7rVkEqmuBS7AlUQRScQz3UClRBMIZo+fsFVEGNsHVGUgdUQaKHdUZSB1RB
+8exn+fsFVEFrr0I91ApUQVCC31LsCVRBVc3jBlY0UUHtXD0XZC9RQXOC574KLFFB
+3CiU7AsqUUF5SZTsCypRQaAE6L4KLFFBZTk+F2QvUUEVlOUGVjRRQbb64dZmr0xB
+kLNJQFioTEFUtqH2jKBMQepQoCzanExBp9qfLNqcTEF/VKD2jKBMQeEcR0BYqExB
+lHDd1mavTEGcET3Wr/xGQbINkUlK8kZBU3rSKXnpRkGkqtwD6ORGQXBV3APo5EZB
+DlTSKXnpRkHNrpFJSvJGQRhHQNav/EZBZllLh31KQUENESQzPz5BQYBx/l9bNEFB
+U+nQZRovQUHg+c9lGi9BQa4//F9bNEFBbosgMz8+QUGS+UWHfUpBQViBDbjaOjdB
+4B0O0zkeN0F5SPWmMQo3QX0k0K6qBDdBtf7PrqoEN0EF/PWmMQo3QWICENM5HjdB
+vaUTuNo6N0F68W09st0mQaxwp42miSdBG746G3XmJ0HoM2m4diIoQfoabLh2IihB
+wm1GG3XmJ0Gs+7uNpoknQWqUjz2y3SZBHh5REEvK/kBCHu79OKsAQTKXOr1pKQVB
+k3KUR661B0H6rJdHrrUHQcQJLr1pKQVBU0WI/TirAEF9y1APS8r+QA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="vonmisesm">
+        <maxandmin>
+          <component name="Deel_A" max="644449.552452145" min="52878.0483852017" />
+          <component name="Deel_B" max="1554772.20787176" min="56646.5360079334" />
+        </maxandmin>
+        <valuesdouble>WxK/GsOqI0GoeGshj2USQU664Q464Q9BXKxLzVH1HUG2dG5Z6nMOQfbU3+KWLxhB
+5OzHDjrhD0EP11LNUfUdQXBFfCGPZRJB8QHbGsOqI0EoEFhKExr4QGP+aCF8mvBA
+YN4NZBfd8EBC5mMhfJrwQKjIUEoTGvhA6JGKMoJ18kCgg8cIrZTtQBl2Ok/9/O1A
+RZfGCK2U7UDk+4cygnXyQIYhXzC8duxAKQMxn+pg7EDwdNTDW4LsQIy7MJ/qYOxA
+/GNfMLx27EA69eiNBW/sQLyN2dKzEOxA+yT79wIq7EBD0NnSsxDsQHxj6I0Fb+xA
+1NFpO0Fg7EDXFJF/awHsQJCNJP6cFexAHmuRf2sB7EA0smk7QWDsQC5rc6V3ROtA
++qixIQBJ7EAogohAo1DsQNQMsiEASexAmtBzpXdE60CKMpWO6O3wQNKzuIY4de1A
+XR9fjMHR6UBA4LiGOHXtQB/alY7o7fBASgKRHrfe+kDcI1vAEHD0QO4jjEsl/vJA
+0YldwBBw9EAuuZQet976QBasAot3vRJB3M1M0LCqC0ECNToRCXIEQQlzUNCwqgtB
+p1sGi3e9EkGRwDM1VLk3Qapj0z6oqBZBTOqPhfZUGEHuIo7EbIk3Qd0AhTj/kRFB
+whS9lfkPMUFhg8gjCZ0AQVZDNkqWKRhBvrrLIwmdAEFb8D1KlikYQcY+hTj/kRFB
+3Li9lfkPMUHt5Y+F9lQYQRurjsRsiTdBjP7VPqioFkFdFTc1VLk3QYA5Yp/z2/pA
+eYZvmntv9kBqSjaESQX4QD74bbQRr/BAxEpttBGv8EAEjjmESQX4QMSzdJp7b/ZA
+7Ndhn/Pb+kAXILpEch3sQMzE7KzKAO9A7ob6JtGo60CVHziJlensQJZgNYmV6exA
+Dhz6JtGo60Chu+CsygDvQOSWokRyHexA3NHCm+WM7EAZ2uaBIrrrQBfim4azgOxA
+VpGOnyzz60Dp/YifLPPrQCtIlYazgOxA09TigSK660D7csGb5YzsQHa9bHmwAexA
+Jidtf5Ij7EArAupjZfzrQPplv62KGOxAhBfBrYoY7EBTBeZjZfzrQEJUa3+SI+xA
+JhpuebAB7EBmmjYK6yPsQOVfUUUmB+xA3GOmamYY7EBk5iXYpw7sQIwJItinDuxA
+TbClamYY7ECqbU5FJgfsQIaYMwrrI+xAiYvt9S9J7ECtHVCHLg/sQMHy8+YfH+xA
+lsizk+4Y7EBZgq+T7hjsQBaK7uYfH+xAXnhGhy4P7EDlV+H1L0nsQMJY03pR+exA
+VK2+Wy4v7ED60Ao4FTvsQAb1fuTTPexAYSF65NM97ED2IQc4FTvsQBAZo1suL+xA
+6QimelH57EBqUPBjiebrQP9M0JcGCe1A/zWnNTJt7UBLPOjieJztQHmQ6eJ4nO1A
+XvW5NTJt7UA0TeKXBgntQPJOAmSJ5utAM11kISru7kC+e8f8ixrwQHCuw59o9O5A
+EmqPAtLp7kDn56QC0unuQB6o5Z9o9O5AutvY/Isa8ECKyYAhKu7uQA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="vonmisesb">
+        <maxandmin>
+          <component name="Deel_A" max="16328792.8285043" min="7302638.90516422" />
+          <component name="Deel_B" max="7977299.62830395" min="126116.691239161" />
+        </maxandmin>
+        <valuesdouble>YEfft2Q1Y0GpvYIaCyVvQazon7Tlg2lBeccCO/BFa0EBCHdrm2NoQaWG4fdlEG1B
+g8ugtOWDaUE9/vo68EVrQWQbgxoLJW9BQ2DQt2Q1Y0HUqsYSCItpQfs2fcwXiWlB
+Mbi3J85MaUGgWX3MF4lpQYzyxhIIi2lBn9jn4/pnaEGSfcjwaj9oQZDL9QcMM2hB
+FWzI8Go/aEH4rufj+mdoQYe4hbz44WZBnmZU4MzgZkFSb3UXG9xmQY5BVODM4GZB
+nXeFvPjhZkFyuSVLNXhlQaoHvReodGVBjgdF6pNzZUEI3bwXqHRlQY9rJUs1eGVB
+fuRVKOsGZEHrhlVpmQdkQdwXg3ycBmRBGFdVaZkHZEHilFUo6wZkQdBDtxlGoGJB
+PCnUGwuYYkFA2VAyIZpiQULz0xsLmGJBpOK2GUagYkFZPjIF4xRhQdRpfQlDM2FB
+xICwBcgjYUGfK30JQzNhQXLdMQXjFGFBFRMfnXn5X0EplZaMoXpfQUKgkPDnqF9B
++0WWjKF6X0Ff/h2deflfQeKJE9caXlxBluDuuXvbW0FPhrXAwaVcQeQ17rl721tB
+uhkR1xpeXEHN0H8GK/5bQUJLjgUgPVpBPEk6FhvGWUGGWaOJjW9cQVrM05slZ1lB
+wiE26FRuXkFs/ub7WuBZQemKF5LdAFxB+tfm+1rgWUFoaReS3QBcQdZJ05slZ1lB
+oVo16FRuXkGPVDoWG8ZZQfQ9oomNb1xBWC+PBSA9WkGRlH8GK/5bQZhxhzqe61ZB
+pxsGZoTtVkHePRAXdOVWQe7FpQqTy1ZBR+elCpPLVkHUeBAXdOVWQcQLBmaE7VZB
+4SuHOp7rVkEqmuBS7AlUQRScQz3UClRBMIZo+fsFVEGNsHVGUgdUQaKHdUZSB1RB
+8exn+fsFVEFrr0I91ApUQVCC31LsCVRBVc3jBlY0UUHtXD0XZC9RQXOC574KLFFB
+3CiU7AsqUUF5SZTsCypRQaAE6L4KLFFBZTk+F2QvUUEVlOUGVjRRQbb64dZmr0xB
+kLNJQFioTEFUtqH2jKBMQepQoCzanExBp9qfLNqcTEF/VKD2jKBMQeEcR0BYqExB
+lHDd1mavTEGcET3Wr/xGQbINkUlK8kZBU3rSKXnpRkGkqtwD6ORGQXBV3APo5EZB
+DlTSKXnpRkHNrpFJSvJGQRhHQNav/EZBZllLh31KQUENESQzPz5BQYBx/l9bNEFB
+U+nQZRovQUHg+c9lGi9BQa4//F9bNEFBbosgMz8+QUGS+UWHfUpBQViBDbjaOjdB
+4B0O0zkeN0F5SPWmMQo3QX0k0K6qBDdBtf7PrqoEN0EF/PWmMQo3QWICENM5HjdB
+vaUTuNo6N0F68W09st0mQaxwp42miSdBG746G3XmJ0HoM2m4diIoQfoabLh2IihB
+wm1GG3XmJ0Gs+7uNpoknQWqUjz2y3SZBHh5REEvK/kBCHu79OKsAQTKXOr1pKQVB
+k3KUR661B0H6rJdHrrUHQcQJLr1pKQVBU0WI/TirAEF9y1APS8r+QA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionforcemag">
+        <maxandmin>
+          <component name="Deel_A" max="3.8057490515814" min="2.54241072639161E-14" />
+          <component name="Deel_B" max="7.33516598363298" min="2.6647573037053E-12" />
+        </maxandmin>
+        <valuesdouble>SPTijixyDkAAAAAAAFAzPQAAAAAAoBw9HA0nXVLgBkAAAAAAAPZRPQoIgGO0IwdA
+AAAAAABwND12IhhdUuAGQAAAAAAAoDU93JkKjyxyDkAAAAAAADAhPQAAAAAA6l89
+AAAAAABqXT0AAAAAAIxIPQAAAAAA9GM9AAAAAAAsZz0AAAAAALRCPQAAAAAAIEg9
+AAAAAACYND0AAAAAAFBXPQAAAAAAeHE9AAAAAIDAcz0AAAAAAHxjPQAAAADgTJE9
+AAAAAABYUD0AAAAAACl+PQAAAAAAEn09AAAAAGBGkT0AAAAAAKWKPQAAAAAAQEI9
+AAAAAAAPgT0AAAAAAJZzPQAAAACANI49AAAAAICijT0AAAAAADBKPQAAAAAAcYE9
+AAAAAIBuiT0AAAAAAExPPQAAAACAv5I9AAAAAACAiD0AAAAAIPiPPQAAAACAfos9
+AAAAAECIhz0AAAAAAK+MPQAAAACAE4o9AAAAAADidT0AAAAAiNemPQAAAACgHYc9
+AAAAAHjwpz0AAAAAAF5rPS6UPEycltI/I6VunelK0T+VH2JX2aXwPy6+d53pStE/
+APuaTZyW0j+6jimcAXkLQAAAAACwD649AAAAAFj+xD2mTWnANVcdQAAAAADIM8k9
+fgkGuqmlFEAAAACAMQLEPaiJvx7TK/w/AAAAAOJ1yj3wldEe0yv8PwAAAAA84dg9
+W64GuqmlFEAAAAAAwMSWPca9acA1Vx1AAAAAAGQNzT0a6licAXkLQAAAAAAgQ5g9
+AAAAANDlnj0AAAAAVgLPPQAAAAA0H7c9AAAAAGLYxT0AAACAVgrXPQAAAACRauI9
+AAAAANC5uz0AAAAAuIC1PQAAAADU7a49AAAAANCqvT0AAAAAa9nFPQAAAAB0PKE9
+AAAAgHri0j0AAAAAtj+2PQAAAACAj6o9AAAAANRAxD0AAACAA/bUPQAAAADg2JY9
+AAAAwI0L4D0AAACAftnjPQAAAABwoNU9AAAAwAOF1j0AAACAzOzhPQAAAACQvJk9
+AAAAALw4tz0AAAAA/OatPQAAAACH1bA9AAAAgLpU4j0AAADANCvnPQAAAIDzz9g9
+AAAAAHE51T0AAAAAL4/ZPQAAAMCuNfM9AAAAAFj2qz0AAAAAqRjePQAAAIDytM09
+AAAAAEFT3z0AAAAA2iDQPQAAAAAwM7o9AAAAAAnI0T0AAAAAmhG0PQAAAICA+9E9
+AAAAQATY0D0AAADo8SL0PQAAAGCz8dU9AAAAAFqCqT0AAAAAmRfUPQAAAADL0tU9
+AAAAANdw6D0AAAAAgHCHPQAAAMCE7OU9AAAAgBn+wz0AAADw8PzmPQAAAMBRKuM9
+AAAAAMhjqz0AAAAAiLuhPQAAAIBbfd89AAAAAJ0/2T0AAADApLrbPQAAACCe/+w9
+AAAAIGgV5T0AAACAptrRPQAAAEATHuo9AAAAQBAD2z0AAAAAgX/HPQAAAABiHso9
+AAAAABeb2j0AAACAj8jlPQAAAAAojMU9AAAAAEIV2D0AAAAAEGa3PQ==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionforcex">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="0" />
+          <component name="Deel_B" max="0" min="0" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionforcey">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="0" />
+          <component name="Deel_B" max="0" min="0" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionforcez">
+        <maxandmin>
+          <component name="Deel_A" max="2.89243390783759" min="-3.8057490515814" />
+          <component name="Deel_B" max="7.33516598363298" min="-5.16178026834276" />
+        </maxandmin>
+        <valuesdouble>SPTijixyDsAAAAAAAFAzvQAAAAAAoBy9HA0nXVLgBkAAAAAAAPZRPQoIgGO0IwdA
+AAAAAABwND12IhhdUuAGQAAAAAAAoDU93JkKjyxyDsAAAAAAADAhPQAAAAAA6l+9
+AAAAAABqXT0AAAAAAIxIPQAAAAAA9GM9AAAAAAAsZ70AAAAAALRCPQAAAAAAIEi9
+AAAAAACYND0AAAAAAFBXPQAAAAAAeHE9AAAAAIDAcz0AAAAAAHxjPQAAAADgTJE9
+AAAAAABYUL0AAAAAACl+vQAAAAAAEn09AAAAAGBGkb0AAAAAAKWKPQAAAAAAQEK9
+AAAAAAAPgb0AAAAAAJZzPQAAAACANI49AAAAAICijT0AAAAAADBKPQAAAAAAcYE9
+AAAAAIBuib0AAAAAAExPPQAAAACAv5I9AAAAAACAiL0AAAAAIPiPPQAAAACAfos9
+AAAAAECIh70AAAAAAK+MPQAAAACAE4q9AAAAAADidT0AAAAAiNemPQAAAACgHYe9
+AAAAAHjwpz0AAAAAAF5rvS6UPEycltI/I6VunelK0b+VH2JX2aXwvy6+d53pStG/
+APuaTZyW0j+6jimcAXkLwAAAAACwD649AAAAAFj+xL2mTWnANVcdQAAAAADIM8m9
+fgkGuqmlFMAAAACAMQLEPaiJvx7TK/w/AAAAAOJ1yj3wldEe0yv8PwAAAAA84di9
+W64GuqmlFMAAAAAAwMSWPca9acA1Vx1AAAAAAGQNzT0a6licAXkLwAAAAAAgQ5g9
+AAAAANDlnj0AAAAAVgLPvQAAAAA0H7c9AAAAAGLYxb0AAACAVgrXvQAAAACRauI9
+AAAAANC5uz0AAAAAuIC1PQAAAADU7a49AAAAANCqvb0AAAAAa9nFPQAAAAB0PKG9
+AAAAgHri0r0AAAAAtj+2vQAAAACAj6o9AAAAANRAxD0AAACAA/bUvQAAAADg2JY9
+AAAAwI0L4D0AAACAftnjPQAAAABwoNW9AAAAwAOF1j0AAACAzOzhPQAAAACQvJm9
+AAAAALw4t70AAAAA/OatPQAAAACH1bA9AAAAgLpU4j0AAADANCvnPQAAAIDzz9i9
+AAAAAHE51b0AAAAAL4/ZPQAAAMCuNfO9AAAAAFj2q70AAAAAqRjevQAAAIDytM29
+AAAAAEFT3z0AAAAA2iDQvQAAAAAwM7o9AAAAAAnI0T0AAAAAmhG0PQAAAICA+9G9
+AAAAQATY0L0AAADo8SL0PQAAAGCz8dU9AAAAAFqCqT0AAAAAmRfUvQAAAADL0tU9
+AAAAANdw6L0AAAAAgHCHPQAAAMCE7OW9AAAAgBn+wz0AAADw8PzmPQAAAMBRKuM9
+AAAAAMhjq70AAAAAiLuhvQAAAIBbfd+9AAAAAJ0/2T0AAADApLrbvQAAACCe/+w9
+AAAAIGgV5T0AAACAptrRPQAAAEATHuo9AAAAQBAD270AAAAAgX/HPQAAAABiHso9
+AAAAABeb2j0AAACAj8jlPQAAAAAojMW9AAAAAEIV2D0AAAAAEGa3PQ==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionmommag">
+        <maxandmin>
+          <component name="Deel_A" max="0.0562132599627774" min="4.1796239838579E-17" />
+          <component name="Deel_B" max="0.0150728668997942" min="2.20743911650478E-15" />
+        </maxandmin>
+        <valuesdouble>EFCYV6Idlj/ZgAdMCRiIPFWv1+PAQaA8dFwBwixLqj94cv6T0biqPKKJSAL8x6w/
+Ke1guEB6tTyG6PjBLEuqPxfql9yLWqg8YfiHV6Idlj9fpYhBOo3XPBKyfgy6C9w8
+YBhEV2eRrTwI2yl1xF7GPLK2GU8kh7s82f4C77Y94Dyit4MC5yjaPJ2CTOM00rE8
+FtDaPVnXvzwaqtPzMjbKPCSoPSV9yLQ8ragFCurWvTz7xkTxTyrePFkAAeUSeOU8
++XVkJyUjuDz+dqzRR1cBPaLEh1kgaAM9anVLhqeU9TzZ2HUdOBD0PM3o6gzXcfE8
+JloqowvE7DwK4PJjq+f8PPW1C6szsxE9aAHOW+Os5jz8D0llJG/wPFDM6gMes/I8
+Pygj6eRa+jxLGTG6lZ/4POvL+3fZcNY8co/eoQ5c8DyUjYcAt47rPPiZRCsFtQo9
+lytDkWs69DzEmYUSFQPzPA7Tz7Wef/o87RdkcW/sBT1c5+q+d7AFPabTO6rt6fA8
+68Kkn3isCD1sox1Vf/zmPIPXh5Xer4s/eBOHwPtcmT9As0ob0cyYPzDQhsD7XJk/
+cciHld6viz+u30S4Pi1+P//Gt6hTUfk8ipqA5SgaJT0s8yHzhd6OP1h6nZnw/iQ9
+G8GkUcP/jD8nu3c7z7tBPV7UXahiXY0/FERwib/sFD3rLl2oYl2NP/1FwdlFRDo9
+jwOlUcP/jD8krd6slq8rPc/nIfOF3o4/Ohskne20Nz39NUO4Pi1+P68/O2Rm5Ak9
+IJIVJXGQNT26PSXicMY9Pbt/TAQ/IyA9a7SwrSsABD1KddWSb2ERPZsVNtBIRyk9
+qxzUCsNbJT0EHZ+6tUg3PU0TkiSsxkA96z35gjq55Tw+YO1B3qs7PdTEkNk51TQ9
+6gCeAw7GSz2A0prNfcD+PNMKyPmyOjk9qSMyyoaO/TxL3CAvoWA0PUpv8yyJvDI9
+xw6F2knBIT11h+Rulak2PT0tANn/Tjo9ctnrO3yyOj0lcOUPAuLjPOvSfW3x+DU9
+3oy8aGjUFD2nxbruE40HPYWMXqoqlRg9PK0S9RS7FD0AcEQF1KMPPSufM+xZXzs9
+AuAN1o1KID2jR2uDiiFAPcOsbHP8Skw9ZMB3kTQFPj1Rl4RXOGT2PPClWbSmoUA9
+Lc4bufB/JT0/yR5dWfBJPWfPkDq9wxA9zLz7afO2Hj3rxDOsT4BAPf8Yk3shAzM9
+R/nADsTRQD1hxpAEmvwkPVY1ou7fFjA9pm9H4uqrNj0Y4f4kXDxAPcRPGGywFTo9
+KIhU910iDj2+uoevrZIZPV2kU0vFUiM9tRMuytl5PD3cXBH+TXkuPUwDHYVRPVQ9
+QwDbjPwWPz0s9m9Zpvc2PRDGnKC3VR09X9bFtDQ9YD3mjFp9DpkyPfqGY/WmCEA9
+gmo+IFfJRj2UMLh+2mNaPYdiTYnRRD09Okoaf/laEz06309c39E0PVfZyO1N2Ec9
+3764YdXwAj0Oy/BzEuFAPeeV/n8uEy09EiZItvj/OT1SxvdoyyU5PQ==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionmomx">
+        <maxandmin>
+          <component name="Deel_A" max="0.00667885837904323" min="-0.00667885837770745" />
+          <component name="Deel_B" max="0.00314190340162617" min="-0.00314190340155876" />
+        </maxandmin>
+        <valuesdouble>aG8AZUpbez8AAAAAAABRvAAAAAAAMKA8gBWO+p6jIr8AAAAAAICXPAAAAAAAXOk8
+AAAAAADQsTwA9oj6nqMiPwAAAAAAmKS8l+/oZEpbe78AAAAAAE/XvAAAAACAU9u8
+AAAAAACAjzwAAAAAADa+PAAAAAAAsLq8AAAAAHA94LwAAAAAIEbZvAAAAAAARJ08
+AAAAAADyvjwAAAAAQJ7IvAAAAABgx6Q8AAAAAEBRqLwAAAAA+JHYvAAAAABouuO8
+AAAAAJAisTwAAAAAqU8BvQAAAPAfaAO9AAAAAOOQ9bwAAADg+Qb0vAAAAAChcPE8
+AAAAAKbi6zwAAAAAWNj8vAAAAGDoqxG9AAAAADkk4zwAAAAADNXvvAAAAAB+rfK8
+AAAAAOEL9LwAAAAAxKX1vAAAAADglc28AAAAABBW8DwAAAAAoI3rvAAAAAArmwo9
+AAAAAJ7B87wAAAAAgLbyPAAAAAAw6vk8AAAAACDRBT0AAAAAXK4FPQAAAADglPC8
+AAAAAFjGBr0AAAAAQNnhvLaRWPxmnmo/o6nVSpm6Kz8AAAAAKP0iPfKqFUuZuiu/
+3LFa/Gaear9LnGuLDL1pvwAAAAAANN08AAAAAHgCJT2Q3P87mG4wvwAAAADU7CQ9
+NEroCVdLSD8AAAAAY7dBvU5xy8CsLWS/AAAAAFhwFL31sMnArC1kPwAAAAAQRDo9
+8M3SCVdLSL8AAAAAgJsrvRAqFDyYbjA/AAAAAEKpN71m+22LDL1pPwAAAABk7wg9
+AAAAAC6QNT0AAACAN8Q9vQAAAAD4IiA9AAAAAOSkAz0AAAAAWCoQvQAAAAByQym9
+AAAAAIVWJb0AAACg50A3PQAAADBkw0A9AAAAAFRg5DwAAAC4I547vQAAACBNzjS9
+AAAAALnESz0AAAAAIPqzPAAAAEB6Ojk9AAAAAMz56DwAAADwjE00PQAAANguuTI9
+AAAApEnBIb0AAADQQag2PQAAAOiITDo9AAAAgH2vOj0AAAAA9P/evAAAAFDx+DW9
+AAAAwGq2ET0AAACA9i/yvAAAABAmTBi9AAAAgLXODD0AAAAADy4CvQAAAFBLXzs9
+AAAA4Ek1IL0AAABAtx1APQAAAPSpREw9AAAA+NwDPj0AAAAArMf1vAAAAIT0oEC9
+AAAAIBScIj0AAADQmu1JPQAAAICITA29AAAAwJhUGj0AAAA8XmlAPQAAAICzhzK9
+AAAAiCm5QD0AAADgefckvQAAAKCZGi29AAAA6BSqNr0AAACwKjZAvQAAAAD/9zm9
+AAAAAEAEDj0AAAAATGgRvQAAAAALTCM9AAAAgFxyPL0AAAAA4XMuPQAAAFBOPVQ9
+AAAAkGgVPz0AAABQ3+U2vQAAAABaQh29AAAAIOg8YD0AAAAANmsyPQAAAIBJA0C9
+AAAAgHbGRr0AAABggGNaPQAAANBaQj29AAAAEFBZE70AAAAA+780PQAAAACFx0c9
+AAAAADDVAb0AAAAAz99AvQAAAACUyiw9AAAAAIj/OT0AAABurCI5vQ==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionmomy">
+        <maxandmin>
+          <component name="Deel_A" max="0.024767862565461" min="-0.0562132599627774" />
+          <component name="Deel_B" max="1.66390339007005E-14" min="-0.0150707813251955" />
+        </maxandmin>
+        <valuesdouble>UrSoFB4Ilb8AAAAAAACIPAAAAAAAAGg8OFW9JiZLqr8AAAAAAACoPKKJSAL8x6y/
+AAAAAAAAqDxM4bQmJkuqvwAAAAAAAJo8Dm6ZFB4Ilb8AAAAAAACrPAAAAAAAQLk8
+AAAAAACArDwAAAAAAIDAPAAAAAAAAJs8AAAAAAAAeLwAAAAAAAC7vAAAAAAAQLA8
+AAAAAAAAnrwAAAAAAACyPAAAAAAAALK8AAAAAABAu7wAAAAAAIDRPAAAAAAA8NC8
+AAAAAAAAsTwAAAAAAEDAvAAAAAAAAGC8AAAAAACAqTwAAAAAAECzvAAAAAAAAJq8
+AAAAAABAzLwAAAAAAMC9PAAAAAAAENA8AAAAAABQ2LwAAAAAAGDQvAAAAAAAAK28
+AAAAAAAc8TwAAAAAAHjnvAAAAAAA4NC8AAAAAAAArDwAAAAAAACPPAAAAAAAkNK8
+AAAAAABg0bwAAAAAAODKPAAAAAAAINa8AAAAAABI0TwAAAAAACCzPAAAAAAAsMq8
+AAAAAAD88rwAAAAAAPjcvBXcpAsX4Io/cYfXHr9cmT9As0ob0cyYPxBD1x6/XJk/
+3qqkCxfgij9PKEmjhkt7vwAAAAAAPvi8AAAAAACW77xaxlUHbt2OvwAAAAAAjus8
+KJDKXpT1jL8AAAAAAAv5vNYW2qyg7Yy/AAAAAADv8bxwgtmsoO2MvwAAAAAAmMq8
+ueTKXpT1jL8AAAAAAKrwvEm4VQdu3Y6/AAAAAACD97yOwkajhkt7vwAAAAAA5uu8
+AAAAAADoyrwAAAAAAATnPAAAAAAA8Lc8AAAAAAAU3jwAAAAAAIr5PAAAAAAA3Ns8
+AAAAAADs3bwAAAAAAA/zvAAAAAAA+/S8AAAAAAAgzrwAAAAAAI37vAAAAAAA+/C8
+AAAAAAA08bwAAAAAALr+vAAAAAAAwMq8AAAAAADK+rwAAAAAANz7vAAAAAAAaua8
+AAAAAAAAdjwAAAAAAATfPAAAAAAAxua8AAAAAABK6TwAAAAAAOjYvAAAAAAAAIK8
+AAAAAADsBb0AAAAAgLkFvQAAAAAA3+08AAAAAMDRDT0AAAAAQOUJvQAAAAAASLw8
+AAAAAABK6rwAAAAAgDb2vAAAAAAA6QK9AAAAAAD04TwAAAAAAMrUvAAAAAAAP+M8
+AAAAAICIFb0AAAAAgNz3vAAAAACATQC9AAAAAAChD70AAAAAwHoLvQAAAACgBBG9
+AAAAAEC6DD0AAAAAAFTdPAAAAABAdBu9AAAAAAA/4rwAAAAAAFr8vAAAAABAqAO9
+AAAAAABI1bwAAAAA4LsSPQAAAACAHuA8AAAAAMCl9DwAAAAAgC7ivAAAAAAAysY8
+AAAAAIDP47wAAAAAAI78vAAAAADA1+C8AAAAAIDv+LwAAAAAAJkEvQAAAACAOfo8
+AAAAAGDm9rwAAAAA4D3xPAAAAABABOi8AAAAAEAKwLwAAAAAqEX7vAAAAADqRQy9
+AAAAAFyI6bwAAAAANB/qPAAAAABQNAC9AAAAAJQj0zwAAAAAAA7pPA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+      <nodevariable name="reactionmomz">
+        <maxandmin>
+          <component name="Deel_A" max="0" min="0" />
+          <component name="Deel_B" max="0" min="0" />
+        </maxandmin>
+        <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</valuesdouble>
+        <nodes />
+        <values />
+      </nodevariable>
+    </results>
+  </solution>
+</liml>
