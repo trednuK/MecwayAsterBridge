@@ -244,6 +244,9 @@ res = CALC_CHAMP(
     FORCE=('REAC_NODA', ),
 )
 
+# Snedekrachten van balken (resultaatveld beam_forces).
+res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA=('Balk',), CONTRAINTE=('EFGE_ELNO', 'EFGE_NOEU', ))
+
 
 
 # =====================================================
@@ -275,9 +278,10 @@ aster_results_export.export_results(
     res, '<WORKDIR>\\LS-77\\LS-77_verif_results.xml', '<WORKDIR>\\LS-77\\LS-77.liml',
     extra_results=dict((k, globals()[k]) for k in
                        ('res_sup', 'res_moy', 'res_inf',
-                        'res_flux', 'res_err')
+                        'res_flux', 'res_err', 'eps_sup', 'eps_moy',
+                        'eps_inf', 'res_efs')
                        if k in globals()),
-    precision='double')
+    precision='double', opt_in=['beam_forces'])
 
 
 # =====================================================
