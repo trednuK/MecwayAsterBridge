@@ -5,61 +5,62 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_cyclic.py
 #
-# Verantwoordelijkheid: modale analyse met cyclische symmetrie (Mecway
-# Frequency (V30) met een Cyclic symmetry-constraint, manual v33 par. 9.41)
-# naar Code-Aster's cyclische substructurering (R4.06.03, U4.52.05):
-#   sectormodes met vaste snijvlakken (CALC_MODES, Craig-Bampton) ->
+# Responsibility: modal analysis with cyclic symmetry (Mecway
+# Frequency (V30) with a Cyclic symmetry constraint, manual v33 par. 9.41)
+# to Code-Aster's cyclic substructuring (R4.06.03, U4.52.05):
+#   sector modes with fixed cut faces (CALC_MODES, Craig-Bampton) ->
 #   DEFI_INTERF_DYNA (DROITE/GAUCHE/AXE, TYPE 'CRAIGB') -> DEFI_BASE_MODALE
-#   CLASSIQUE (+ statische modes van de snijvlakken) -> MODE_ITER_CYCL
-#   (modes per aantal nodal diameters) -> REST_SOUS_STRUC SECTEUR=1 (en,
-#   instelling cyclic_full_wheel, DEFI_SQUELETTE CYCLIQUE + REST_SOUS_STRUC
-#   SQUELETTE: het hele wiel) -> aster_cyclic.collect (Mecway's volgorde,
-#   terug naar het assenstelsel van het model) -> aster_results_export (de
-#   modes op het hele wiel in Mecway's nummering, of op de sector) ->
-#   bridge_results_liml.splice_results (de knopen en elementen van de N
-#   sectoren in de modelkopie van <solution>, zoals Mecway).
-# Syntax: Code-Aster-testcases sdlv134a, sdls04a, sdlv301a (17.4,
-# share/aster/tests) en de catalogus mode_iter_cycl.py van code_aster 17.4.
+#   CLASSIQUE (+ static modes of the cut faces) -> MODE_ITER_CYCL
+#   (modes per number of nodal diameters) -> REST_SOUS_STRUC SECTEUR=1 (and,
+#   setting cyclic_full_wheel, DEFI_SQUELETTE CYCLIQUE + REST_SOUS_STRUC
+#   SQUELETTE: the whole wheel) -> aster_cyclic.collect (Mecway's order,
+#   back to the coordinate system of the model) -> aster_results_export (the
+#   modes on the whole wheel in Mecway's numbering, or on the sector) ->
+#   bridge_results_liml.splice_results (the nodes and elements of the N
+#   sectors in the model copy of <solution>, like Mecway).
+# Syntax: Code-Aster test cases sdlv134a, sdls04a, sdlv301a (17.4,
+# share/aster/tests) and the catalogue mode_iter_cycl.py of code_aster 17.4.
 #
-#   parse(item, model_data, run_cfg)  <cyclicsymmetry> uit de .liml
+#   parse(item, model_data, run_cfg)  <cyclicsymmetry> from the .liml
 #                                     (bridge_from_liml)
-#   is_cyclic(model_data)             cyclische symmetrie in het model
+#   is_cyclic(model_data)             cyclic symmetry in the model
 #   build_cyclic_modes(...)           builder (bridge_to_aster._build_modal)
 #
-# Mecway-invoer (headless gemeten met Mecway 33, TestFiles/Tools/
+# Mecway input (measured headless with Mecway 33, TestFiles/Tools/
 # mw_solve.py; Samples/Impeller.liml):
 #   <cyclicsymmetry axis="3" segments="12" selectionmaster="A"
 #                   selectionslave="B" />
-#   axis: 1 = X, 2 = Y, 3 = Z (ringsector om Z: axis 3 gaf de frequenties
-#   van de volledige ring, 1 en 2 niet; om Y: axis 2; "0" gaf hetzelfde als
-#   1). De as gaat door de oorsprong (er is geen attribuut voor een punt).
-#   Master en slave zijn knoop- of vlakselecties; de slave ligt op +360/N
-#   of -360/N graden van de master (Mecway bepaalt zelf de richting).
-#   Mecway rekent per aantal nodal diameters ND = 0 .. N/2 (afgerond naar
-#   beneden) maxmode modes, en zet ze op volgorde van ND en frequentie
-#   (manual par. 9.41: "5 modes ... 7 segments ... 20 modes"); de
-#   oplossing toont het volledige wiel. Een paar staande golven (ND > 0)
-#   telt als een mode.
+#   axis: 1 = X, 2 = Y, 3 = Z (ring sector about Z: axis 3 gave the
+#   frequencies of the full ring, 1 and 2 did not; about Y: axis 2; "0"
+#   gave the same as 1). The axis passes through the origin (there is no
+#   attribute for a point).
+#   Master and slave are node or face selections; the slave lies at +360/N
+#   or -360/N degrees from the master (Mecway determines the direction).
+#   Mecway computes maxmode modes per number of nodal diameters ND = 0 ..
+#   N/2 (rounded down), and sorts them by ND and frequency
+#   (manual par. 9.41: "5 modes ... 7 segments ... 20 modes"); the
+#   solution shows the full wheel. A pair of standing waves (ND > 0)
+#   counts as one mode.
 #
 # Code-Aster:
-#   - De symmetrieas moet de Z-as zijn (U4.52.05 par. 1); DROITE en GAUCHE
-#     volgen de trigonometrische richting in het XY-vlak: GAUCHE ligt op
-#     +360/N graden van DROITE. Omgekeerd gaf <EXCEPTION> ALGORITH16_58
-#     "INVERSION INTERFACE DROITE/GAUCHE" (gezien, Code-Aster 17.4). Bij een
-#     X- of Y-as schrijft de bridge de coordinaten in het mesh-bestand met
-#     een cyclische verwisseling van de assen (_rewrite_mesh; = ROTATION
-#     hieronder) en zet hij de richtingen in de lasten om
-#     (_permute_charges); aster_cyclic draait mesh en vormen terug.
-#   - REST_SOUS_STRUC heeft NOM_CHAM standaard 'ACCE' (gezien): de bridge
-#     vraagt 'DEPL'.
-#   - De knopen van DROITE en GAUCHE staan in dezelfde volgorde (paren);
-#     MODE_ITER_CYCL controleert de ligging (VERI_CYCL).
-#   - Knopen op de as: interface AXE ("points communs a tous les secteurs",
-#     U4.52.05 par. 3.4.1; testcase sdlv134a).
-#   - De nauwkeurigheid hangt af van het aantal sectormodes in de basis
-#     (cyclic_base_modes; gemeten in docs/Verificatie.md, CY).
+#   - The symmetry axis must be the Z axis (U4.52.05 par. 1); DROITE and
+#     GAUCHE follow the trigonometric direction in the XY plane: GAUCHE
+#     lies at +360/N degrees from DROITE. The other way round gave
+#     <EXCEPTION> ALGORITH16_58 "INVERSION INTERFACE DROITE/GAUCHE" (seen,
+#     Code-Aster 17.4). With an X or Y axis the bridge writes the
+#     coordinates in the mesh file with a cyclic permutation of the axes
+#     (_rewrite_mesh; = ROTATION below) and converts the directions in the
+#     loads (_permute_charges); aster_cyclic rotates mesh and shapes back.
+#   - REST_SOUS_STRUC has NOM_CHAM 'ACCE' by default (seen): the bridge
+#     asks for 'DEPL'.
+#   - The nodes of DROITE and GAUCHE are in the same order (pairs);
+#     MODE_ITER_CYCL checks their positions (VERI_CYCL).
+#   - Nodes on the axis: interface AXE ("points communs a tous les secteurs",
+#     U4.52.05 par. 3.4.1; test case sdlv134a).
+#   - The accuracy depends on the number of sector modes in the basis
+#     (cyclic_base_modes; measured in docs/Verificatie.md, CY).
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import math
 import os
@@ -70,46 +71,46 @@ from bridge_utils import log, tr, CONFIG_BRIDGE, run_name
 
 TAG = "cyclicsymmetry"
 
-# Mecway axis -> index (0 = X, 1 = Y, 2 = Z); zie de kop.
+# Mecway axis -> index (0 = X, 1 = Y, 2 = Z); see the header.
 _AXES = {"0": 0, "1": 0, "2": 1, "3": 2}
 _AXIS_NAMES = "XYZ"
 
-# Mesh draaien naar de Z-as (MODE_ITER_CYCL): rotatie om (1, 1, 1) over
-# ANGLE graden. +120: e_x -> e_y -> e_z -> e_x, dus as Y -> Z en een punt
-# (x, y, z) -> (z, x, y); -120: as X -> Z, (x, y, z) -> (y, z, x).
-# Componentnamen in de lasten gaan mee (_RENAME), vectoren als tuple
-# (_TUPLE: nieuwe volgorde van de oude componenten).
+# Rotate the mesh to the Z axis (MODE_ITER_CYCL): rotation about (1, 1, 1)
+# by ANGLE degrees. +120: e_x -> e_y -> e_z -> e_x, so axis Y -> Z and a
+# point (x, y, z) -> (z, x, y); -120: axis X -> Z, (x, y, z) -> (y, z, x).
+# Component names in the loads follow (_RENAME), vectors as a tuple
+# (_TUPLE: new order of the old components).
 ROTATION = {"X": -120.0, "Y": 120.0}
 _RENAME = {"Y": {"X": "Y", "Y": "Z", "Z": "X"},
            "X": {"X": "Z", "Y": "X", "Z": "Y"}}
 _TUPLE = {"Y": (1, 2, 0), "X": (2, 0, 1)}
 
-# Groepen in het mesh (bridge_mesh-namen zijn Mecway-namen; deze
-# voorvoegsels gebruikt Mecway niet).
-GROUP_RIGHT = "BRCYC_D"     # DROITE (lagere hoek)
+# Groups in the mesh (bridge_mesh names are Mecway names; Mecway does not
+# use these prefixes).
+GROUP_RIGHT = "BRCYC_D"     # DROITE (lower angle)
 GROUP_LEFT = "BRCYC_G"      # GAUCHE (+360/N)
-GROUP_AXIS = "BRCYC_A"      # knopen op de as
-GROUP_FIX = "BRCYC_F"       # vrije knoop van een paar met een vaste knoop
+GROUP_AXIS = "BRCYC_A"      # nodes on the axis
+GROUP_FIX = "BRCYC_F"       # free node of a pair with a fixed node
 
 TEMPLATE = "AsterTemplate_ModeIterCycl.comm"
 
-# Coordinaten kleiner dan _SNAP x de modelgrootte worden 0 (_rewrite_mesh).
+# Coordinates smaller than _SNAP x the model size become 0 (_rewrite_mesh).
 _SNAP = 1.0e-12
 
-# BC's die vrijheidsgraden vastleggen (per richting): op een snijvlak
-# alleen volledig vast (alle drie de verplaatsingen) toegestaan.
+# BCs that fix degrees of freedom (per direction): on a cut face only
+# fully fixed (all three displacements) is allowed.
 _DOF_BCS = ("fixed", "displacement")
-# BC's met relaties tussen richtingen of knopen: niet op een snijvlak.
+# BCs with relations between directions or nodes: not on a cut face.
 _RELATION_BCS = ("pinnedsupport", "symmetry", "frictionless",
                  "compressiononly", "velocity")
 
 
 # ==========================================
-# INVOER UIT DE .LIML
+# INPUT FROM THE .LIML
 # ==========================================
 def accepts(run_cfg):
-    """True als de analyse cyclische symmetrie kan vertalen: modaal
-    (CALC_MODES DYNAMIQUE), niet akoestisch."""
+    """True if the analysis can translate cyclic symmetry: modal
+    (CALC_MODES DYNAMIQUE), not acoustic."""
     return (run_cfg.get("solver_command") == "CALC_MODES" and
             run_cfg.get("type_resu", "DYNAMIQUE") == "DYNAMIQUE" and
             run_cfg.get("phenomene", "MECANIQUE") != "ACOUSTIQUE")
@@ -117,12 +118,12 @@ def accepts(run_cfg):
 
 def parse(item, model_data, run_cfg):
     """
-    <cyclicsymmetry axis segments selectionmaster selectionslave> naar
-    model_data["cyclic"]. Niet in een modale analyse, of een tweede
-    cyclische symmetrie: ERROR en skipped_loads (niet vertaald).
+    <cyclicsymmetry axis segments selectionmaster selectionslave> to
+    model_data["cyclic"]. Not in a modal analysis, or a second
+    cyclic symmetry: ERROR and skipped_loads (not translated).
     """
     if item.get("suppressed", "") == "true":
-        log("INFO: Cyclische symmetrie overgeslagen (suppressed).")
+        log("INFO: Cyclic symmetry skipped (suppressed).")
         return
     master = item.get("selectionmaster", "")
     slave = item.get("selectionslave", "")
@@ -160,7 +161,7 @@ def parse(item, model_data, run_cfg):
         return
     model_data["cyclic"] = {"axis": axis, "segments": segments,
                             "master": master, "slave": slave}
-    log("INFO: Cyclische symmetrie: {0} segmenten om de {1}-as, master "
+    log("INFO: Cyclic symmetry: {0} segments about the {1} axis, master "
         "'{2}', slave '{3}'.".format(segments, _AXIS_NAMES[axis], master,
                                      slave))
 
@@ -170,16 +171,16 @@ def is_cyclic(model_data):
 
 
 def axis_index(text):
-    """Mecway's axis-attribuut ("1"/"2"/"3", "0" = X) naar 0/1/2, of
+    """Mecway's axis attribute ("1"/"2"/"3", "0" = X) to 0/1/2, or
     None."""
     return _AXES.get((text or "3").strip(), None)
 
 
 # ==========================================
-# KNOPEN VAN SELECTIES
+# NODES OF SELECTIONS
 # ==========================================
 def _elem_nodes(model_data):
-    """{eid: (aster_type, [nid in Code-Aster-volgorde])} (bridge_mesh)."""
+    """{eid: (aster_type, [nid in Code-Aster order])} (bridge_mesh)."""
     conn = model_data.get("_conn")
     if conn:
         return conn
@@ -193,9 +194,9 @@ def _elem_nodes(model_data):
 
 
 def _face_nodes(conn, eid, fid):
-    """Hoek- en middenknopen van vlak fid van element eid (tabel van
-    bridge_mesh, zoals zonder Mecway-API; in Mecway gelijk aan
-    mw.face_nodes, nagelopen door bridge_mesh)."""
+    """Corner and mid-side nodes of face fid of element eid (table of
+    bridge_mesh, as without the Mecway API; in Mecway equal to
+    mw.face_nodes, checked by bridge_mesh)."""
     import bridge_mesh
     if eid not in conn:
         return []
@@ -208,8 +209,8 @@ def _face_nodes(conn, eid, fid):
 
 def _selection_nodes(model_data, name, conn):
     """
-    Knoopnummers van een selectie (Mecway- of Code-Aster-naam): knoop-,
-    vlak- of elementselectie; None als ze niet bestaat.
+    Node numbers of a selection (Mecway or Code-Aster name): node,
+    face or element selection; None if it does not exist.
     """
     renames = model_data.get("selection_renames", {})
     reverse = dict((v, k) for k, v in renames.items())
@@ -237,10 +238,10 @@ def _selection_nodes(model_data, name, conn):
 
 
 # ==========================================
-# PAREN MASTER-SLAVE
+# MASTER-SLAVE PAIRS
 # ==========================================
 def _rotate(p, axis, angle):
-    """Punt p gedraaid om de as (index) door de oorsprong."""
+    """Point p rotated about the axis (index) through the origin."""
     c, s = math.cos(angle), math.sin(angle)
     i, j = (axis + 1) % 3, (axis + 2) % 3
     q = list(p)
@@ -250,7 +251,7 @@ def _rotate(p, axis, angle):
 
 
 class _Grid(object):
-    """Ruimtelijk raster om knopen op coordinaat te vinden."""
+    """Spatial grid to find nodes by coordinate."""
 
     def __init__(self, coords, nids, h):
         self.h = h
@@ -280,8 +281,8 @@ class _Grid(object):
 
 def _pairs(coords, master, slave, axis, n_seg, tol):
     """
-    (paren [(droite, gauche)], asknopen, fout) met gauche op +360/N graden
-    van droite; fout = melding of None.
+    (pairs [(droite, gauche)], axis nodes, error) with gauche at +360/N
+    degrees from droite; error = message or None.
     """
     def radius(p):
         return math.sqrt(sum(p[a] ** 2 for a in range(3) if a != axis))
@@ -324,12 +325,12 @@ def _pairs(coords, master, slave, axis, n_seg, tol):
 
 
 # ==========================================
-# OPLEGGINGEN OP DE SNIJVLAKKEN
+# SUPPORTS ON THE CUT FACES
 # ==========================================
 def _constrained(model_data, conn):
     """
-    ({knoop: set(DX/DY/DZ) vastgelegd}, set(knopen met een relatie)) uit
-    de BC's, constraint equations en koppelingen.
+    ({node: set(DX/DY/DZ) fixed}, set(nodes with a relation)) from
+    the BCs, constraint equations and couplings.
     """
     dofs = {}
     related = set()
@@ -358,10 +359,10 @@ def _constrained(model_data, conn):
 
 
 # ==========================================
-# LASTEN IN HET REKENFRAME (as -> Z)
+# LOADS IN THE COMPUTATION FRAME (axis -> Z)
 # ==========================================
 def _permute_entry(text, axis_name):
-    """Een _F(...)-tekst met de richtingen in het gedraaide frame."""
+    """An _F(...) text with the directions in the rotated frame."""
     ren = _RENAME[axis_name]
     order = _TUPLE[axis_name]
     text = re.sub(r"\b([DF])([XYZ])(\s*=)",
@@ -387,8 +388,8 @@ _NOT_PERMUTED = re.compile(r"\bANGL_NAUT\s*=|\bDR[XYZ]\b|\bM[XYZ]\s*=")
 
 def _permute_charges(charges, axis_name):
     """
-    Kopie van de lasten (_build_charges) in het gedraaide frame, of
-    (None, reden) als een last niet om te zetten is.
+    Copy of the loads (_build_charges) in the rotated frame, or
+    (None, reason) if a load cannot be converted.
     """
     out = []
     for command, kws, fonc in charges:
@@ -398,8 +399,9 @@ def _permute_charges(charges, axis_name):
                                 ", ".join(kws))
         new = OrderedDict()
         for kw, entries in kws.items():
-            # Schuine assenstelsels en rotaties/momenten zet de bridge niet
-            # om (bij volume-elementen komen ze normaal niet voor).
+            # The bridge does not convert skewed coordinate systems and
+            # rotations/moments (with volume elements they normally do not
+            # occur).
             if kw in ("LIAISON_OBLIQUE",) or any(
                     _NOT_PERMUTED.search(e) for e in entries):
                 return None, kw
@@ -409,10 +411,10 @@ def _permute_charges(charges, axis_name):
 
 
 # ==========================================
-# CONTROLE VAN HET MODEL
+# MODEL CHECK
 # ==========================================
 def _check_model(model_data, analysis):
-    """Wat de cyclische route niet kan: ERROR met de oplossing."""
+    """What the cyclic route cannot do: ERROR with the solution."""
     import bridge_to_aster as b2a
     ok = True
     cyc = model_data["cyclic"]
@@ -427,7 +429,7 @@ def _check_model(model_data, analysis):
     other = [e for e, d in dims.items() if d != "3D"]
     if other:
         # Mecway: "Shells and beams are not allowed in frequency analysis"
-        # met de interne solver (manual v33 par. 9.41).
+        # with the internal solver (manual v33 par. 9.41).
         log(tr("ERROR: Cyclische symmetrie alleen met volume-elementen (ook "
                "in Mecway, manual par. 9.41); niet met {0}.",
                "ERROR: Cyclic symmetry only with solid elements (also in "
@@ -454,8 +456,8 @@ def _check_model(model_data, analysis):
 
 
 def _base_count(analysis, n):
-    """Aantal sectormodes (vaste snijvlakken) in de basis: instelling
-    cyclic_base_modes, 0 = automatisch max(20, 4 n)."""
+    """Number of sector modes (fixed cut faces) in the basis: setting
+    cyclic_base_modes, 0 = automatic max(20, 4 n)."""
     nb = int(analysis.get("cyclic_base_modes", 0) or 0)
     if nb <= 0:
         nb = max(20, 4 * n)
@@ -470,11 +472,11 @@ def _fmt_names(nids, per_line=10):
 
 def to_model_frame(xyz, axis):
     """
-    Coordinaten uit het .mail van een cyclische run terug naar het frame
-    van het model: de inverse van de verwisseling in _rewrite_mesh (daar
-    nieuw[_TUPLE[a]] = oud[a], dus model[a] = mesh[_TUPLE[a]]). axis: index
-    0/1/2 (X/Y/Z, bridge_results_liml.cyclic_info); bij Z ongewijzigd.
-    Voor bridge_results_liml.check_results_fit (knop Resultaten...).
+    Coordinates from the .mail of a cyclic run back to the frame of
+    the model: the inverse of the permutation in _rewrite_mesh (there
+    new[_TUPLE[a]] = old[a], so model[a] = mesh[_TUPLE[a]]). axis: index
+    0/1/2 (X/Y/Z, bridge_results_liml.cyclic_info); unchanged for Z.
+    For bridge_results_liml.check_results_fit (Results... button).
     """
     order = _TUPLE.get(_AXIS_NAMES[axis]) if axis in (0, 1, 2) else None
     if order is None:
@@ -484,16 +486,17 @@ def to_model_frame(xyz, axis):
 
 def _rewrite_mesh(msh_path, groups, axis_name, size):
     """
-    Knoopgroepen (in deze volgorde) achteraan het ASTER-mesh, en de
-    coordinaten in het rekenframe (_TUPLE bij een X- of Y-as: as -> Z).
-    Een exacte verwisseling in het bestand, geen MODI_MAILLAGE ROTATION
-    vooraf, en coordinaten kleiner dan _SNAP x de modelgrootte worden 0:
-    MODE_ITER_CYCL vergelijkt de axiale coordinaat van de paren relatief,
-    en ruis rond 0 (1e-17 na een rotatie; 1,9e-20 tegen 6,0e-20 m in
-    Mecway's eigen Impeller.liml) gaf <EXCEPTION> ALGORITH16_52 "axe de
-    symetrie cyclique different de Oz" (gezien met Code-Aster 17.4). De
-    verschuiving (< 1e-12 x de modelgrootte) valt binnen de controle van
-    de knoopvolgorde in aster_results_export (1e-9).
+    Node groups (in this order) at the end of the ASTER mesh, and the
+    coordinates in the computation frame (_TUPLE with an X or Y axis:
+    axis -> Z). An exact permutation in the file, no MODI_MAILLAGE
+    ROTATION beforehand, and coordinates smaller than _SNAP x the model
+    size become 0:
+    MODE_ITER_CYCL compares the axial coordinate of the pairs relatively,
+    and noise around 0 (1e-17 after a rotation; 1.9e-20 against 6.0e-20 m
+    in Mecway's own Impeller.liml) gave <EXCEPTION> ALGORITH16_52 "axe de
+    symetrie cyclique different de Oz" (seen with Code-Aster 17.4). The
+    shift (< 1e-12 x the model size) is within the check of the
+    node order in aster_results_export (1e-9).
     """
     with open(msh_path, "r") as f:
         text = f.read()
@@ -532,7 +535,7 @@ def _rewrite_mesh(msh_path, groups, axis_name, size):
 
 
 def _relations(pairs, n_seg):
-    """LIAISON_DDL voor ND 0 in het Z-frame: u_G = R_z(360/N) u_D."""
+    """LIAISON_DDL for ND 0 in the Z frame: u_G = R_z(360/N) u_D."""
     a = 2.0 * math.pi / n_seg
     c, s = math.cos(a), math.sin(a)
     out = []
@@ -554,9 +557,9 @@ def _relations(pairs, n_seg):
 # ==========================================
 def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer de .comm en .export voor modes met cyclische symmetrie
-    (MODE_ITER_CYCL). Returns het pad van de .export, of None (ERROR
-    gelogd). Aanroep vanuit bridge_to_aster._build_modal (V30 met
+    Generate the .comm and .export for modes with cyclic symmetry
+    (MODE_ITER_CYCL). Returns the path of the .export, or None (ERROR
+    logged). Called from bridge_to_aster._build_modal (V30 with
     <cyclicsymmetry>), na _collapse_histories.
     """
     import bridge_to_aster as b2a
@@ -570,7 +573,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     conn = _elem_nodes(model_data)
     coords = model_data.get("mesh_nodes", {})
 
-    # --- snijvlakken ---
+    # --- cut faces ---
     master = _selection_nodes(model_data, cyc["master"], conn)
     slave = _selection_nodes(model_data, cyc["slave"], conn)
     for name, nodes in ((cyc["master"], master), (cyc["slave"], slave)):
@@ -594,7 +597,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                "9.41).").format(err))
         return None
 
-    # --- opleggingen op de snijvlakken ---
+    # --- supports on the cut faces ---
     dofs, related = _constrained(model_data, conn)
     full = set(n for n, d in dofs.items() if len(d) == 3)
     cut = set(n for p in pairs for n in p) | on_axis
@@ -627,11 +630,11 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                "cyclic symmetry."))
         return None
     if axis_nodes and n_seg == 8:
-        # Code-Aster 17.4, bibfor/algorith/ctetax.F90: de controle van de
-        # asknopen draait het vector (1, 1, 1) van actieve vrijheidsgraden
-        # over 360/N graden; bij 45 graden is cos - sin = 0, dus "ontbreekt"
-        # DX: <EXCEPTION> ALGORITH14_95 "il manque un ddl sur un noeud axe"
-        # (gezien met een cirkelvormige plaat, N = 8; met N = 6 en 12 niet).
+        # Code-Aster 17.4, bibfor/algorith/ctetax.F90: the check of the
+        # axis nodes rotates the vector (1, 1, 1) of active degrees of
+        # freedom by 360/N degrees; at 45 degrees cos - sin = 0, so DX is
+        # "missing": <EXCEPTION> ALGORITH14_95 "il manque un ddl sur un noeud
+        # axe" (seen with a circular plate, N = 8; not with N = 6 and 12).
         log(tr("ERROR: Cyclische symmetrie met 8 segmenten en knopen op de "
                "as ({0}) kan Code-Aster 17.4 niet rekenen (MODE_ITER_CYCL "
                "stopt met ALGORITH14_95, een fout in Code-Aster bij 45 "
@@ -645,17 +648,17 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                    len(axis_nodes)))
         return None
     if extra_fix:
-        log("INFO: Cyclische symmetrie: {0} knoop/knopen op een snijvlak "
-            "vastgelegd omdat de bijbehorende knoop op het andere snijvlak "
-            "vastligt.".format(len(extra_fix)))
-    log("INFO: Cyclische symmetrie: {0} knopenparen{1}{2}, as {3}, {4} "
-        "segmenten ({5:.6g} graden).".format(
+        log("INFO: Cyclic symmetry: {0} node(s) on a cut face "
+            "fixed because the corresponding node on the other cut face "
+            "is fixed.".format(len(extra_fix)))
+    log("INFO: Cyclic symmetry: {0} node pairs{1}{2}, axis {3}, {4} "
+        "segments ({5:.6g} degrees).".format(
             len(free_pairs), ", {0} knopen op de as".format(len(axis_nodes))
             if axis_nodes else "", ", {0} paren met een vaste knoop".format(
                 len(pairs) - len(free_pairs)) if len(pairs) != len(
                     free_pairs) else "", axis_name, n_seg, 360.0 / n_seg))
 
-    # --- instellingen ---
+    # --- settings ---
     n = b2a._mode_count(model_data, analysis)
     nb = _base_count(analysis, n)
     shift = float(analysis.get("modal_shift_hz", 0.0) or 0.0)
@@ -669,15 +672,15 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     wanted = [f for f in analysis.get("fields", ["displacements"])
               if f != "displacements"]
     if wanted:
-        log("INFO: Cyclische symmetrie: naar Mecway gaan alleen de "
-            "trillingsvormen; genegeerd: {0}.".format(", ".join(wanted)))
+        log("INFO: Cyclic symmetry: only the mode shapes go to "
+            "Mecway; ignored: {0}.".format(", ".join(wanted)))
     norm = str(analysis.get("modal_norm", "MASS_GENE")).upper()
     if norm != "MASS_GENE":
-        log("INFO: Cyclische symmetrie: de normering ({0}) geldt alleen voor "
-            "de sectorbasis; de schaal van de cyclische modes is die van "
+        log("INFO: Cyclic symmetry: the normalization ({0}) applies only to "
+            "the sector basis; the scale of the cyclic modes is that of "
             "REST_SOUS_STRUC.".format(norm))
 
-    # --- lasten ---
+    # --- loads ---
     prestress_on = bool(analysis.get("modal_prestress", True))
     charges, names_bc, names_load = b2a._modal_charges(model_data, False,
                                                        prestress_on)
@@ -687,7 +690,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                                         names_load)
         if prestress is None:
             return None
-    rotate_block = "#-- symmetrieas is Z: geen rotatie --\n"
+    rotate_block = "#-- symmetry axis is Z: no rotation --\n"
     if axis_name != "Z":
         perm, why = _permute_charges(charges, axis_name)
         if perm is None or model_data.get("_charge_prelude"):
@@ -711,11 +714,11 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                    "is computed in the rotated frame (axis {0} -> Z); "
                    "directions in it apply in that frame.").format(axis_name))
         rotate_block = (
-            "# Symmetrieas {0} -> Z: MODE_ITER_CYCL eist de Z-as (U4.52.05\n"
-            "# par. 1). Het mesh-bestand staat al in het rekenframe (cyclische\n"
-            "# verwisseling van de assen = rotatie {1!r} graden om (1, 1, 1),\n"
-            "# bridge_cyclic._rewrite_mesh), de lasten ook\n"
-            "# (_permute_charges); aster_cyclic draait mesh en vormen terug.\n"
+            "# Symmetry axis {0} -> Z: MODE_ITER_CYCL needs the Z axis (U4.52.05\n"
+            "# par. 1). The mesh file is already in the computation frame (cyclic\n"
+            "# permutation of the axes = rotation {1!r} degrees about (1, 1, 1),\n"
+            "# bridge_cyclic._rewrite_mesh), and so are the loads\n"
+            "# (_permute_charges); aster_cyclic rotates mesh and shapes back.\n"
             ).format(axis_name, ROTATION[axis_name])
     try:
         _rewrite_mesh(msh_path, [
@@ -731,8 +734,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     loads_block, excit_clause = b2a._render_charges(charges, model_data)
     cyc_names = ["cycl_if"]
     cyc_lines = [
-        "# Cyclische symmetrie (bridge_cyclic): snijvlakken vast voor de",
-        "# sectorbasis (Craig-Bampton, U4.52.05; testcase sdlv134a).",
+        "# Cyclic symmetry (bridge_cyclic): cut faces fixed for the",
+        "# sector basis (Craig-Bampton, U4.52.05; test case sdlv134a).",
         "cycl_if = AFFE_CHAR_MECA(MODELE=model, DDL_IMPO=_F(",
         "    GROUP_NO=({0}), DX=0.0, DY=0.0, DZ=0.0))".format(", ".join(
             "'{0}'".format(g) for g in [GROUP_RIGHT, GROUP_LEFT] +
@@ -742,10 +745,10 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     if extra_fix:
         fix_names = ["cycl_fix"]
         cyc_lines += [
-            "# Vrije knoop van een paar waarvan de andere knoop vastligt.",
+            "# Free node of a pair whose other node is fixed.",
             "cycl_fix = AFFE_CHAR_MECA(MODELE=model, DDL_IMPO=_F(",
             "    GROUP_NO='{0}', DX=0.0, DY=0.0, DZ=0.0))".format(GROUP_FIX)]
-    static_block = "#-- niet van toepassing (geen voorspanning) --\n"
+    static_block = "#-- not applicable (no prestress) --\n"
     if prestress:
         rel = _relations(free_pairs, n_seg)
         ddl = ""
@@ -753,14 +756,14 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             ddl = ("    DDL_IMPO=_F(GROUP_NO='{0}', DX=0.0, DY=0.0),\n"
                    .format(GROUP_AXIS))
         cyc_lines += [
-            "# Voorspanning: de statische toestand is cyclisch symmetrisch",
-            "# (ND 0): u_gauche = R_z(360/N) u_droite; knopen op de as alleen",
-            "# axiaal.",
+            "# Prestress: the static state is cyclically symmetric",
+            "# (ND 0): u_gauche = R_z(360/N) u_droite; nodes on the axis only",
+            "# axially.",
             "cycl_rel = AFFE_CHAR_MECA(MODELE=model,",
             ddl + "    LIAISON_DDL=(",
         ] + ["        {0},".format(r) for r in rel] + ["    ),", ")"]
-        # Alle lasten zijn hier constant (_collapse_histories); de EXCIT
-        # van _render_charges plus de cyclische relaties.
+        # All loads are constant here (_collapse_histories); the EXCIT
+        # of _render_charges plus the cyclic relations.
         names = (["load_{0}".format(k + 1) for k in range(len(charges))] +
                  list(model_data.get("aster_custom", {}).get("excit", [])) +
                  ["cycl_rel"] + fix_names)
@@ -823,8 +826,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         interfaces.append("        _F(NOM='AXE', TYPE='CRAIGB', "
                           "GROUP_NO='{0}'),".format(GROUP_AXIS))
     base_block = "\n".join([
-        "# Sectormodes met vaste snijvlakken (basis voor de cyclische",
-        "# substructurering)",
+        "# Sector modes with fixed cut faces (basis for the cyclic",
+        "# substructuring)",
         "modes = CALC_MODES(",
         "    TYPE_RESU='DYNAMIQUE',",
         "    MATR_RIGI=rigidite,",
@@ -844,47 +847,47 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     ] + interfaces + [
         "    ),",
         ")",
-        "# Basis: de sectormodes plus de statische modes van de snijvlakken",
+        "# Basis: the sector modes plus the static modes of the cut faces",
         "bamo = DEFI_BASE_MODALE(CLASSIQUE=_F(INTERF_DYNA=lint, "
         "MODE_MECA=modes, NMAX_MODE={0}))".format(nb),
     ]) + "\n"
     diameters = list(range(n_seg // 2 + 1))
-    # NB_DIAM 0 .. N/2 (naar beneden afgerond), zoals Mecway. TOUT_DIAM
-    # rekent bij een oneven N ook (N + 1)/2, gelijk aan (N - 1)/2 (gezien:
+    # NB_DIAM 0 .. N/2 (rounded down), like Mecway. With an odd N,
+    # TOUT_DIAM also computes (N + 1)/2, equal to (N - 1)/2 (seen:
     # Impeller, N = 17, ND 9 = ND 8).
     calcul = ["NB_DIAM={0}".format(tuple(diameters) if len(diameters) > 1
                                    else "({0},)".format(diameters[0])),
               "NMAX_FREQ={0}".format(n)]
     if shift > 0.0:
         calcul += ["OPTION='CENTRE'", "FREQ={0!r}".format(shift)]
-        log("INFO: Cyclische symmetrie: per nodal diameter de {0} modes "
-            "het dichtst bij {1} Hz (OPTION 'CENTRE').".format(n, shift))
+        log("INFO: Cyclic symmetry: per nodal diameter the {0} modes "
+            "closest to {1} Hz (OPTION 'CENTRE').".format(n, shift))
     elif shift < 0.0:
-        log("INFO: Cyclische symmetrie: een negatieve zoekfrequentie is niet "
-            "nodig (de sector met vaste snijvlakken heeft geen starre "
-            "modes); de laagste modes.")
+        log("INFO: Cyclic symmetry: a negative shift frequency is not "
+            "needed (the sector with fixed cut faces has no rigid body "
+            "modes); the lowest modes.")
     scripts = os.path.dirname(os.path.abspath(__file__))
     full_wheel = bool(analysis.get("cyclic_full_wheel", True))
     liml = model_data.get("liml_path", "")
     wheel_lines = []
     wheel_args = ""
     if full_wheel:
-        # Het hele wiel zoals Mecway (S10i): skelet met alle N sectoren
-        # (DEFI_SQUELETTE CYCLIQUE, SECTEUR TOUT='OUI') en de modes daarop
-        # (REST_SOUS_STRUC SQUELETTE: sector j met de fase van de ND;
-        # syntax testcases sdlv134a, sdls04a, sdls01c, 17.4). Lukt het
-        # niet, dan gaat alleen de sector naar Mecway (aster_cyclic).
+        # The whole wheel like Mecway (S10i): skeleton with all N sectors
+        # (DEFI_SQUELETTE CYCLIQUE, SECTEUR TOUT='OUI') and the modes on it
+        # (REST_SOUS_STRUC SQUELETTE: sector j with the phase of the ND;
+        # syntax test cases sdlv134a, sdls04a, sdls01c, 17.4). If it
+        # fails, only the sector goes to Mecway (aster_cyclic).
         wheel_lines = [
-            "# Het hele wiel (instelling cyclic_full_wheel): skelet met de N",
-            "# sectoren en de modes daarop; anders alleen de sector.",
+            "# The whole wheel (setting cyclic_full_wheel): skeleton with the N",
+            "# sectors and the modes on it; otherwise only the sector.",
             "try:",
             "    squel = DEFI_SQUELETTE(CYCLIQUE=_F(MODE_CYCL=modcyc),",
             "                           SECTEUR=_F(TOUT='OUI'))",
             "    modwiel = REST_SOUS_STRUC(RESU_GENE=modcyc, SQUELETTE=squel,",
             "                              NOM_CHAM='DEPL')",
             "except Exception as exc:",
-            # Melding in de taal van de bridge (zonder
-            # apostrof: staat tussen '...').
+            # Message in the language of the bridge (without an
+            # apostrophe: it is between '...').
             "    print('{0}: %r' % (exc,))".format(tr(
                 "aster_cyclic: WAARSCHUWING: skelet van het hele wiel niet "
                 "gemaakt",
@@ -894,8 +897,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         ]
         wheel_args = ", wheel=modwiel, skeleton=squel, liml={0}".format(
             b2a._py_str(liml))
-        log("INFO: Cyclische symmetrie: de modes gaan op het hele wiel "
-            "naar Mecway ({0} sectoren, zoals Mecway; instelling "
+        log("INFO: Cyclic symmetry: the modes go to Mecway on the whole "
+            "wheel ({0} sectors, like Mecway; setting "
             "cyclic_full_wheel).".format(n_seg))
     cycl_block = "\n".join([
         "modcyc = MODE_ITER_CYCL(",
@@ -906,7 +909,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             ", AXE='AXE'" if axis_nodes else ""),
         "    CALCUL=_F({0}),".format(", ".join(calcul)),
         ")",
-        "# Modes op sector 1 (per mode het veld DEPL)",
+        "# Modes on sector 1 (field DEPL per mode)",
         "modsec = REST_SOUS_STRUC(RESU_GENE=modcyc, SECTEUR=1, NOM_CHAM='DEPL')",
     ] + wheel_lines + [
         "import sys",
@@ -932,9 +935,9 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
     log("INFO: MODE_ITER_CYCL: {0} modes per nodal diameter (ND 0 .. {1}), "
-        "{2} sectormodes in de basis (cyclic_base_modes){3}.".format(
+        "{2} sector modes in the basis (cyclic_base_modes){3}.".format(
             n, diameters[-1], nb, ", voorgespannen" if prestress else ""))
 
     comm_path = os.path.join(work_dir, run_name(".comm"))
@@ -956,7 +959,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         export_content = (
             "P actions make_etude\n"
@@ -977,7 +980,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         ) + b2a._export_result_lines(work_dir, resu_name)
         with open(export_path, "w") as f:
             f.write(export_content)
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
