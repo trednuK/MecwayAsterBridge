@@ -114,8 +114,10 @@ def _build_solveur_ref(analysis):
     NPREC (catalogue c_solveur.py v17.4.0: integer, default 8) is the
     number of digits that may be lost during factorisation before
     Code-Aster declares the matrix singular; -1 disables that check.
-    RESI_RELA (default 1e-6) still checks the residual of the solution
-    afterwards.
+    RESI_RELA is not set here, so the catalogue default applies: 1e-6
+    for MECA_STATIQUE (the residual of the solution is checked
+    afterwards), -1 (no check) for STAT_NON_LINE, where Newton's own
+    convergence criteria take over (catalogue c_solveur.py v17.4).
     """
     nprec = analysis.get("solver_nprec", 8)
     return "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),\n".format(int(nprec))
