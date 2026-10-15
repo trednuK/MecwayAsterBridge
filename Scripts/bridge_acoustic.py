@@ -775,7 +775,7 @@ def _export_block(work_dir, model_data):
 # COMPLEX CAVITY MODES WITH IMPEDANCE (S2b)
 #
 # Mecway A30 with <impedance>: quadratic eigenvalue problem (K + lambda C
-# + lambda^2 M) P = 0 met C = int rho/Z N N^T dA (manual v33 par. 6.9.2).
+# + lambda^2 M) P = 0 with C = int rho/Z N N^T dA (manual v33 par. 6.9.2).
 # CALC_MODES cannot do that (MATR_AMOR only matr_asse_depl_r/gene_r,
 # catalogue calc_modes.py v17.4; AFFE_CHAR_ACOU has no impedance;
 # a complex Z gives a complex C). Route:
