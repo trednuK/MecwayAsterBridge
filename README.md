@@ -17,8 +17,9 @@ Version: **V2026.1** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 
 ## Requirements
 
-- **Windows** with **Mecway 33** (the bridge runs in Mecway's built-in IronPython 2.7
-  scripting environment; other Mecway versions have not been tested).
+- **Windows** with **Mecway 33 or 34** (the bridge runs in Mecway's built-in IronPython 2.7
+  scripting environment, which Mecway 34 still ships; the bridge was developed and verified
+  with Mecway 33, older versions have not been tested).
 - **Code-Aster 17.4 for Windows**. Windows builds are available from
   <https://simulease.com/en/download/> (MSI installer "Code_Aster 2025", which installs
   version 17.4; accessed 6 October 2026). The official site
@@ -137,6 +138,13 @@ also proprietary, work. MPL-2.0 is compatible with the GNU GPL, which matters be
 Code-Aster itself (EDF R&D) is licensed under the GNU GPL version 3 or later and is
 **not** included; you install it separately. Mecway is commercial software of Mecway Ltd
 and is not included either.
+
+## Acknowledgements
+
+- This work was inspired by **Efficient** from Moonish Engineering:
+  <https://engineering.moonish.biz/software/efficient.html>.
+- Want to learn more about Code-Aster and how to use its commands? Use the work of
+  **Jean-Pierre Aubry**: <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 
 ## Trademarks
 
