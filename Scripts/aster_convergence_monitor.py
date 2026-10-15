@@ -4,37 +4,37 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # aster_convergence_monitor.py
-# Convergentiescherm: toont de convergentie van STAT_NON_LINE/DYNA_NON_LINE
-# (Newton-residuen, voortgang, opdelingen, contact, meldingen) live tijdens
-# een Code-Aster-run, of achteraf uit een .mess-bestand. Bij MECA_STATIQUE
-# (lineair statisch) toont het de lineaire oplosser: stelsel, tijd per fase
-# (live), foutgrens/conditiegetal (MUMPS) of residu per iteratie (GCPC) en
-# een beoordeling.
+# Convergence window: shows the convergence of STAT_NON_LINE/DYNA_NON_LINE
+# (Newton residuals, progress, step splits, contact, messages) live during
+# a Code-Aster run, or afterwards from a .mess file. For MECA_STATIQUE
+# (linear static) it shows the linear solver: system, time per phase
+# (live), error bound/condition number (MUMPS) or residual per iteration
+# (GCPC) and an assessment.
 #
-# Draait NIET in Mecway maar als apart proces in de CPython 3 van de
-# Code-Aster-installatie (<installatie>\Python311\pythonw.exe), met tkinter
-# uit diezelfde installatie (getest met Code-Aster 17.4 / Python 3.11.9 /
-# Tk 8.6.12). Waarom een apart proces:
-#   - Mecway's script draait op de UI-thread van Mecway en wacht na de start
-#     van Code-Aster in mw.message(); een eigen venster in dat proces zou
-#     van die wachtlus afhangen en stopt of hangt mee met het script.
-#   - Een apart proces blijft werken als het Mecway-script klaar is, en
-#     sluiten van dit venster heeft geen invloed op de run of op Mecway.
-#   - De parser (bridge_convergence.py) is gedeeld met de bridge.
-# Gestart door bridge_run_aster.start_convergence_monitor() (automatisch bij
-# elke run, instelling convergence_monitor) of door de knop
-# Convergentiescherm in het hoofdvenster (achteraf).
+# Does NOT run in Mecway but as a separate process in the CPython 3 of the
+# Code-Aster installation (<installation>\Python311\pythonw.exe), with tkinter
+# from that same installation (tested with Code-Aster 17.4 / Python 3.11.9 /
+# Tk 8.6.12). Why a separate process:
+#   - Mecway's script runs on Mecway's UI thread and, after starting
+#     Code-Aster, waits in mw.message(); a window of its own in that process
+#     would depend on that wait loop and stop or hang along with the script.
+#   - A separate process keeps working when the Mecway script has finished,
+#     and closing this window has no effect on the run or on Mecway.
+#   - The parser (bridge_convergence.py) is shared with the bridge.
+# Started by bridge_run_aster.start_convergence_monitor() (automatically on
+# every run, setting convergence_monitor) or by the button
+# Convergence window in the main window (afterwards).
 #
-# Gebruik:
-#   pythonw aster_convergence_monitor.py --mess <werkmap>\study.mess
-#           [--since <time.time() van de start>] [--resi 1e-6]
-#           [--iter-max 20] [--log <logbestand>] [--exit-after-finish <s>]
+# Usage:
+#   pythonw aster_convergence_monitor.py --mess <workdir>\study.mess
+#           [--since <time.time() of the start>] [--resi 1e-6]
+#           [--iter-max 20] [--log <log file>] [--exit-after-finish <s>]
 #           [--lang nl|en]
 #
-# Databron: zie bridge_convergence.find_live_fort6(). Tijdens de run leest het
-# scherm de fort.6 in de tijdelijke run_aster-map (Code-Aster schrijft het
-# .mess-bestand pas aan het eind); daarna het .mess-bestand zelf. Start een
-# nieuwe run naar hetzelfde .mess-bestand, dan volgt het scherm die.
+# Data source: see bridge_convergence.find_live_fort6(). During the run the
+# window reads the fort.6 in the temporary run_aster folder (Code-Aster writes
+# the .mess file only at the end); after that the .mess file itself. If a
+# new run to the same .mess file starts, the window follows it.
 
 import argparse
 import codecs
@@ -57,17 +57,17 @@ from bridge_utils import tr      # noqa: E402
 try:
     import tkinter as tk
     from tkinter import filedialog
-except ImportError:      # pragma: no cover - alleen zonder tkinter
+except ImportError:      # pragma: no cover - only without tkinter
     tk = None
 
 _LOG_PATH = None
-_CHUNK = 4 * 1024 * 1024          # max. bytes per leesbeurt
-_POLL_MS = 1000                   # leesinterval tijdens een run
+_CHUNK = 4 * 1024 * 1024          # max. bytes per read
+_POLL_MS = 1000                   # read interval during a run
 _FONT = ("Segoe UI", 9)
 _FONT_B = ("Segoe UI", 10, "bold")
 _STATUS_COLORS = {"geconvergeerd": "#2e7d32", "mislukt": "#c62828",
                   "bezig": "#1565c0"}
-# Weergave van Step.status (interne sleutels blijven Nederlands).
+# Display of Step.status (internal keys stay Dutch).
 _STATUS_TEXT = {"geconvergeerd": ("geconvergeerd", "converged"),
                 "mislukt": ("mislukt", "failed"),
                 "bezig": ("bezig", "running")}
@@ -79,7 +79,7 @@ def _status_text(status):
 
 
 def log(text):
-    """Regel in het logbestand van het scherm (als --log is gegeven)."""
+    """Line in the log file of the window (if --log is given)."""
     if not _LOG_PATH:
         return
     try:
@@ -91,7 +91,7 @@ def log(text):
 
 
 def _hints():
-    """Uitleg per Code-Aster-meldingscode uit de bridge (gekozen taal)."""
+    """Explanation per Code-Aster message code (bridge, chosen language)."""
     try:
         from bridge_run_aster import mess_hints
         return mess_hints()
@@ -103,9 +103,9 @@ def _hints():
 
 
 def _tmp_dirs():
-    """Mappen waarin run_aster zijn run_aster_*-map maakt: "tmpdir" uit
-    share/aster/config.json van deze installatie, anders %TEMP% (run_aster
-    gebruikt tempfile.mkdtemp(dir=tmpdir); run_aster/run.py)."""
+    """Folders in which run_aster creates its run_aster_* folder: "tmpdir" from
+    share/aster/config.json of this installation, else %TEMP% (run_aster
+    uses tempfile.mkdtemp(dir=tmpdir); run_aster/run.py)."""
     dirs = []
     root = os.path.dirname(os.path.dirname(os.path.abspath(sys.executable)))
     cfg = os.path.join(root, "share", "aster", "config.json")
@@ -124,25 +124,25 @@ def _tmp_dirs():
 
 
 # ==========================================
-# DATABRON: live fort.6 of het .mess-bestand
+# DATA SOURCE: live fort.6 or the .mess file
 # ==========================================
 class Source(object):
-    """Levert nieuwe tekst uit de juiste bron; poll() -> (reset, tekst)."""
+    """Delivers new text from the right source; poll() -> (reset, text)."""
 
     def __init__(self, mess_path, since):
         self.mess = mess_path
         self.since = since or 0.0
         self.tmp_dirs = _tmp_dirs()
         self.path = None
-        self.kind = None             # "fort6" of "mess"
+        self.kind = None             # "fort6" or "mess"
         self.offset = 0
         self.decoder = None
-        self.run_created = None      # aanmaaktijd van de run_aster-map
+        self.run_created = None      # creation time of the run_aster folder
         self.mess_mtime = None
-        self.last_growth = None      # laatste keer dat de bron groeide
-        self.backlog = False         # er staat nog ongelezen tekst
+        self.last_growth = None      # last time the source grew
+        self.backlog = False         # there is still unread text
         self._last_scan = 0.0
-        log("INFO: bron {0}, since {1}, tijdelijke mappen {2}".format(
+        log("INFO: source {0}, since {1}, temporary folders {2}".format(
             mess_path, self.since, self.tmp_dirs))
 
     def _start(self, path, kind, created=None):
@@ -156,7 +156,7 @@ class Source(object):
             except OSError:
                 self.mess_mtime = None
         self.last_growth = time.time()
-        log("INFO: lees {0} ({1})".format(path, kind))
+        log("INFO: reading {0} ({1})".format(path, kind))
 
     def _mess_mtime(self):
         try:
@@ -168,7 +168,7 @@ class Source(object):
         now = time.time()
         reset = False
         live = self.kind == "fort6" and os.path.exists(self.path)
-        # Nieuwe (of eerste) live run zoeken; niet tijdens het lezen ervan.
+        # Look for a new (or the first) live run; not while reading one.
         if not live and now - self._last_scan > 1.0:
             self._last_scan = now
             since = self.since
@@ -183,7 +183,7 @@ class Source(object):
                 self._start(fort6, "fort6", created)
                 return True, self._read()
         if self.kind == "fort6" and not os.path.exists(self.path):
-            # run_aster heeft de map opgeruimd: het .mess-bestand is compleet.
+            # run_aster has cleaned up the folder: the .mess file is complete.
             mtime = self._mess_mtime()
             if mtime is not None and mtime >= (self.run_created or 0) - 1.0:
                 self._start(self.mess, "mess")
@@ -208,14 +208,14 @@ class Source(object):
                                       (self.mess_mtime is not None and
                                        mtime > self.mess_mtime + 0.5 and
                                        not self.backlog)):
-                self._start(self.mess, "mess")   # opnieuw geschreven
+                self._start(self.mess, "mess")   # rewritten
                 reset = True
         return reset, self._read()
 
     def _read(self):
         try:
-            with open(self.path, "rb") as f:     # kort open: run_aster
-                f.seek(self.offset)               # moet de map kunnen wissen
+            with open(self.path, "rb") as f:     # open briefly: run_aster
+                f.seek(self.offset)               # can delete the folder
                 raw = f.read(_CHUNK)
         except (IOError, OSError):
             return u""
@@ -236,9 +236,9 @@ class Source(object):
 
 class ConsoleWatcher(object):
     """
-    Leest study_console.txt (stdout + stderr van run_aster, vastgelegd door
-    bridge_run_aster) en zoekt Python-fouten in study.comm; die staan niet
-    in fort.6/study.mess (bridge_convergence.python_errors).
+    Reads study_console.txt (stdout + stderr of run_aster, captured by
+    bridge_run_aster) and looks for Python errors in study.comm; those are
+    not in fort.6/study.mess (bridge_convergence.python_errors).
     """
 
     def __init__(self, path, since):
@@ -251,7 +251,7 @@ class ConsoleWatcher(object):
         self.mtime = None
 
     def poll(self):
-        """True als er nieuwe fouten zijn."""
+        """True if there are new errors."""
         if not self.path:
             return False
         try:
@@ -261,7 +261,7 @@ class ConsoleWatcher(object):
             return False
         if mtime < self.since - 1.0:
             return False
-        if size < self.offset:          # nieuwe run: opnieuw beginnen
+        if size < self.offset:          # new run: start over
             self.offset, self.tail, self.errors = 0, u"", []
             self.decoder = codecs.getincrementaldecoder("utf-8")("replace")
         self.mtime = mtime
@@ -274,8 +274,8 @@ class ConsoleWatcher(object):
         except (IOError, OSError):
             return False
         self.offset += len(raw)
-        # De laatste 80 regels gaan mee: een traceback kan over twee
-        # leesbeurten verdeeld zijn.
+        # The last 80 lines are included: a traceback can be split over two
+        # reads.
         text = self.tail + self.decoder.decode(raw, final=False)
         self.tail = u"\n".join(text.split(u"\n")[-80:])
         new = [e for e in bc.python_errors(text) if e not in self.errors]
@@ -288,7 +288,7 @@ class ConsoleWatcher(object):
 
 
 # ==========================================
-# GRAFIEK OP EEN tk.Canvas
+# PLOT ON A tk.Canvas
 # ==========================================
 def _nice_ticks(lo, hi, n=5):
     if hi <= lo:
@@ -417,7 +417,7 @@ class Plot(object):
             return Y
         Ys = dict((side, make_Y(side)) for side in axes)
 
-        # Rooster en assen
+        # Grid and axes
         c.create_rectangle(px0, py0, px1, py1, outline="#888888")
         for side in axes:
             lo, hi, ticks = axes[side]
@@ -458,7 +458,7 @@ class Plot(object):
                           text=cfg["ylabel_right"], font=_FONT,
                           fill="#555555")
 
-        # Verticale en horizontale hulplijnen
+        # Vertical and horizontal guide lines
         for vx, color, label, dash in cfg.get("vlines", []):
             if x0 <= vx <= x1:
                 x = X(vx)
@@ -475,7 +475,7 @@ class Plot(object):
                     c.create_text(px1 - 4, y - 2, anchor="se", text=label,
                                   font=_FONT, fill=color)
 
-        # Reeksen
+        # Series
         nx = max(1.0, x1 - x0)
         for s in series:
             side = s.get("axis", "left")
@@ -531,8 +531,8 @@ class Plot(object):
                     c.create_oval(x - r, y - r, x + r, y + r, fill=col,
                                   outline=col)
 
-        # Legenda
-        # Legenda: een regel tussen titel en grafiek.
+        # Legend
+        # Legend: one line between title and plot.
         lx = px0
         ly = py0 - 12
         for s in series:
@@ -547,12 +547,12 @@ class Plot(object):
 
 
 # ==========================================
-# LINEAIRE ANALYSE (MECA_STATIQUE): kaarten op een tk.Canvas
+# LINEAR ANALYSIS (MECA_STATIQUE): cards on a tk.Canvas
 #
-# Zoals gebruikelijk in pre/post-software (solver-monitor): een overzicht
-# van het stelsel en de oplosser, het tijdverloop per fase (live), de
-# kwaliteit van de oplossing (residu, foutgrens, conditiegetal; bij GCPC
-# het residu per iteratie) en een beoordeling met uitleg.
+# As usual in pre/post software (solver monitor): an overview
+# of the system and the solver, the time course per phase (live), the
+# quality of the solution (residual, error bound, condition number; with
+# GCPC the residual per iteration) and an assessment with explanation.
 # ==========================================
 _C_TEXT = "#222222"
 _C_LABEL = "#555555"
@@ -570,7 +570,7 @@ _FONT_VALUE = ("Segoe UI", 9, "bold")
 
 
 def _int(n):
-    """Geheel getal met spatie als duizendtalscheiding: 268 569."""
+    """Integer with a space as thousands separator: 268 569."""
     if n is None:
         return u"-"
     return u"{0:,}".format(int(n)).replace(u",", u" ")
@@ -593,8 +593,8 @@ def _secs(s):
 
 
 class Card(object):
-    """Canvas met titel in de stijl van Plot; draw(fn) tekent de inhoud
-    met fn(canvas, breedte, hoogte, y_onder_titel)."""
+    """Canvas with a title in the style of Plot; draw(fn) draws the content
+    with fn(canvas, width, height, y_below_title)."""
 
     def __init__(self, master, title):
         self.c = tk.Canvas(master, background="white", highlightthickness=1,
@@ -622,7 +622,7 @@ class Card(object):
 
 
 def _rows(c, x, y, w, rows, label_w=170, dy=19):
-    """Tabel label/waarde; rows = [(label, waarde, kleur of None)]."""
+    """Label/value table; rows = [(label, value, colour or None)]."""
     for label, value, color in rows:
         c.create_text(x, y, anchor="nw", text=label, font=_FONT,
                       fill=_C_LABEL)
@@ -642,11 +642,11 @@ def _log_x(v, lo, hi, x0, x1):
 def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
                step=3):
     """
-    Puntendiagram op een log-as (een rij per waarde), zoals een
-    solver-rapport: items = [(label, waarde, kleur)], zones = [(van, tot,
-    kleur)] als achtergrond (exponenten), lines = [(waarde, kleur,
-    label)], step = afstand tussen de asmerken (decaden). Returns y
-    onder de strip.
+    Dot plot on a log axis (one row per value), like a
+    solver report: items = [(label, value, colour)], zones = [(from, to,
+    colour)] as background (exponents), lines = [(value, colour,
+    label)], step = distance between the axis ticks (decades). Returns y
+    below the strip.
     """
     c.create_text(x0, y, anchor="nw", text=title, font=_FONT_VALUE,
                   fill=_C_TEXT)
@@ -689,7 +689,7 @@ def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
                               anchor=anchor, text=_sci(value), font=_FONT,
                               fill=_C_TEXT)
             bbox = c.bbox(t)
-            if bbox:     # leesbaar over hulplijnen heen
+            if bbox:     # readable on top of guide lines
                 c.tag_lower(c.create_rectangle(
                     bbox[0] - 1, bbox[1], bbox[2] + 1, bbox[3],
                     fill="white", outline=""), t)
@@ -698,7 +698,7 @@ def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
 
 
 # ==========================================
-# HOOFDVENSTER
+# MAIN WINDOW
 # ==========================================
 class Monitor(object):
 
@@ -710,7 +710,7 @@ class Monitor(object):
         self.console = ConsoleWatcher(args.console, args.since)
         self.parser = None
         self._new_parser()
-        self.sel = None              # geselecteerde poging (None = laatste)
+        self.sel = None              # selected attempt (None = latest)
         self._last_draw = 0.0
         self.started = time.time()
 
@@ -813,7 +813,7 @@ class Monitor(object):
 
         root.after(50, self.tick)
 
-    # ---------- bediening ----------
+    # ---------- controls ----------
     def _new_parser(self):
         clock = time.time if self.source.kind == "fort6" else None
         self.parser = bc.ConvergenceParser(hints=self.hints, clock=clock)
@@ -827,7 +827,7 @@ class Monitor(object):
 
     def _scale_moved(self, value):
         steps = self.parser.data.steps
-        idx = int(float(value)) - 1   # schaal telt vanaf 1
+        idx = int(float(value)) - 1   # scale counts from 1
         if steps and idx < len(steps) - 1:
             self.var_follow.set(False)
         self.sel = idx
@@ -855,11 +855,11 @@ class Monitor(object):
                        (tr(u"Alle bestanden", u"All files"), "*.*")])
         if not path:
             return
-        log("INFO: gebruiker opent {0}".format(path))
+        log("INFO: user opens {0}".format(path))
         self.args.mess = path
         self.source = Source(path, 0.0)
-        # Console-uitvoer van dezelfde run: <model>_<run_id>_console.txt
-        # naast <model>_<run_id>.mess (oudere runs: study_console.txt).
+        # Console output of the same run: <model>_<run_id>_console.txt
+        # next to <model>_<run_id>.mess (older runs: study_console.txt).
         console = _run_file(path, "_console.txt")
         self.console = ConsoleWatcher(
             console if path.lower().endswith(".mess") and
@@ -872,8 +872,8 @@ class Monitor(object):
             os.path.basename(path)))
 
     def _names(self, text):
-        """study.comm / study_console.txt in een melding -> de bestanden
-        van de getoonde run (<model>_<run_id>.comm, ...)."""
+        """study.comm / study_console.txt in a message -> the files
+        of the shown run (<model>_<run_id>.comm, ...)."""
         mess = self.args.mess
         return (text.replace(u"study.comm", os.path.basename(
                     _run_file(mess, ".comm")))
@@ -885,7 +885,7 @@ class Monitor(object):
         self.console = ConsoleWatcher(self.console.path, self.console.since)
         self._new_parser()
 
-    # ---------- lus ----------
+    # ---------- loop ----------
     def tick(self):
         try:
             reset, text = self.source.poll()
@@ -903,10 +903,10 @@ class Monitor(object):
             lin = data.last_linear()
             if (lin is not None and not lin.finished() and
                     self.source.kind == "fort6"):
-                self.dirty = True     # lopende fase: tijd telt door
+                self.dirty = True     # running phase: time keeps counting
             if data.finished() and self.finished_at is None:
                 self.finished_at = time.time()
-                log(u"INFO: run klaar ({0}); samenvatting:\n{1}".format(
+                log(u"INFO: run finished ({0}); summary:\n{1}".format(
                     data.diagnostic, bc.summarize(data)))
             self.redraw()
             if (self.args.exit_after_finish is not None and
@@ -914,8 +914,8 @@ class Monitor(object):
                     self.source.kind == "mess" and not self.source.backlog
                     and time.time() - self.finished_at >
                     self.args.exit_after_finish):
-                log(u"INFO: --exit-after-finish: venster gesloten; "
-                    u"bron {0}\n{1}".format(self.source.describe(),
+                log(u"INFO: --exit-after-finish: window closed; "
+                    u"source {0}\n{1}".format(self.source.describe(),
                                             bc.summarize(data)))
                 self.root.destroy()
                 return
@@ -923,7 +923,7 @@ class Monitor(object):
             log("ERROR: " + traceback.format_exc())
         self.root.after(50 if self.source.backlog else _POLL_MS, self.tick)
 
-    # ---------- tekenen ----------
+    # ---------- drawing ----------
     def redraw(self, force=False):
         now = time.time()
         if not force and (not self.dirty or now - self._last_draw < 0.9):
@@ -1042,10 +1042,10 @@ class Monitor(object):
         self.lbl_status.configure(text=u"   |   ".join(parts))
         self.lbl_source.configure(text=src.describe())
 
-    # ---------- lineaire analyse (MECA_STATIQUE) ----------
+    # ---------- linear analysis (MECA_STATIQUE) ----------
     def _build_linear(self, grid):
-        """Kaarten voor MECA_STATIQUE; ze staan in hetzelfde 2x2-rooster
-        als de grafieken en worden alleen in de lineaire modus getoond."""
+        """Cards for MECA_STATIQUE; they sit in the same 2x2 grid
+        as the plots and are only shown in linear mode."""
         self.k_system = Card(grid, tr(u"(a) Stelsel en oplosser",
                                       u"(a) System and solver"))
         self.k_time = Card(grid, tr(u"(b) Tijdverloop per fase",
@@ -1061,8 +1061,8 @@ class Monitor(object):
         self._mode_key = None
 
     def _set_mode(self, mode, gcpc=False):
-        """Wissel tussen de niet-lineaire grafieken en de lineaire kaarten
-        (en tussen de kwaliteitskaart en de GCPC-grafiek)."""
+        """Switch between the nonlinear plots and the linear cards
+        (and between the quality card and the GCPC plot)."""
         key = (mode, gcpc)
         if self._mode_key == key:
             return
@@ -1081,7 +1081,7 @@ class Monitor(object):
         for w, r, col in shown:
             w.grid(row=r, column=col, sticky="nsew", padx=2, pady=2)
         if mode == "linear":
-            # Geen rekenpogingen: schuifbalk en pogingdetails weg.
+            # No solve attempts: slider and attempt details hidden.
             self.ctl.pack_forget()
             self.lbl_step.pack_forget()
         else:
@@ -1333,9 +1333,9 @@ class Monitor(object):
         resi = lin.solver.get("RESI_RELA")
         if lin.gcpc_target:
             resi = lin.gcpc_target[1]
-        # Trap: Code-Aster schrijft alleen de eerste iteratie waarbij het
-        # residu onder 1/10 van de vorige geschreven waarde komt
-        # (gcpc.F90); ertussen lag het residu daarboven.
+        # Staircase: Code-Aster only writes the first iteration at which the
+        # residual drops below 1/10 of the previously written value
+        # (gcpc.F90); in between the residual was above it.
         self.p_gcpc.set(
             series=[{"points": pts, "color": _C_BLUE, "kind": "step"},
                     {"name": tr(u"relatief residu ||r|| / ||f||",
@@ -1419,14 +1419,14 @@ class Monitor(object):
                           u"nonlinear)."))
 
     def _iter_points(self, window):
-        """x-positie per iteratie (doorlopend) en scheidingslijnen."""
+        """x position per iteration (continuous) and separator lines."""
         out = []
         vlines = []
         x = 0
         for step in window:
             color = _STATUS_COLORS.get(step.status, "#555555")
-            # Label kort houden: poging en niveau (tijdstip staat in de
-            # details onder de grafieken).
+            # Keep the label short: attempt and level (the time is in the
+            # details below the plots).
             vlines.append((x + 0.5, color, u"#{0} n{1}".format(
                 step.index + 1, step.level), (2, 2)))
             prev_geom = None
@@ -1438,7 +1438,7 @@ class Monitor(object):
                                    (1, 3)))
                 prev_geom = g
                 out.append((x, step, it))
-            out.append(None)      # onderbreking tussen pogingen
+            out.append(None)      # break between attempts
         return out, vlines
 
     def _draw_resi(self, data):
@@ -1700,8 +1700,8 @@ class Monitor(object):
 
 
 def _run_file(mess_path, suffix):
-    """Bestand van dezelfde run als mess_path: <model>_<run_id>.mess ->
-    <model>_<run_id><suffix> (bijv. ".comm", "_console.txt")."""
+    """File of the same run as mess_path: <model>_<run_id>.mess ->
+    <model>_<run_id><suffix> (e.g. ".comm", "_console.txt")."""
     return os.path.splitext(mess_path)[0] + suffix
 
 
@@ -1739,17 +1739,17 @@ def main(argv=None):
         bridge_utils.CONFIG_BRIDGE["language"] = args.lang
     _LOG_PATH = args.log
     if args.log:
-        try:     # pythonw heeft geen console: fouten naar het logbestand
+        try:     # pythonw has no console: errors to the log file
             sys.stderr = open(args.log, "a", encoding="utf-8")
         except Exception:
             pass
-    log(u"INFO: convergentiescherm gestart (pid {0}, Python {1})".format(
+    log(u"INFO: convergence window started (pid {0}, Python {1})".format(
         os.getpid(), sys.version.split()[0]))
     if tk is None:
         log(tr("ERROR: tkinter ontbreekt in deze Python.",
                "ERROR: tkinter is missing in this Python."))
         return 1
-    try:   # scherpe tekst op schermen met schaalfactor
+    try:   # sharp text on screens with a scale factor
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception:
@@ -1761,7 +1761,7 @@ def main(argv=None):
     except Exception:
         log("ERROR: " + traceback.format_exc())
         return 1
-    log("INFO: convergentiescherm gesloten.")
+    log("INFO: convergence window closed.")
     return 0
 
 
