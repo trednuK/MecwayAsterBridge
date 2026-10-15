@@ -1,129 +1,145 @@
 # AGENTS.md
 
-Mecway → Code-Aster bridge: `.liml` → mesh (ASTER-formaat) + `study.comm`/`.export` → Code-Aster →
-resultaten terug in Mecway (standaard in de `.liml` zelf, `aster_results_export.py`). Entry point, architectuur en werkvolgorde staan in
-`Scripts/MecwayAsterBridgeMain.py`. De code is leidend; gebruikersdocs in `docs/` bijhouden.
+Mecway → Code-Aster bridge: `.liml` → mesh (ASTER format) + `study.comm`/`.export` → Code-Aster →
+results back in Mecway (by default in the `.liml` itself, `aster_results_export.py`). Entry point, architecture
+and order of work are described in `Scripts/MecwayAsterBridgeMain.py`. The code is leading; keep the user docs
+in `docs/` up to date.
 
-Bekende fouten staan in `KNOWN_BUGS.md`. Vind je een fout die niet bij je huidige taak hoort, los hem dan
-niet op, maar zet hem daar (in het formaat bovenin dat bestand). Los je er een op, haal hem er dan uit.
-Geplande uitbreidingen en de werkwijze daarvoor staan in `STAPPENPLAN.md` (uitvoeren met `/stappenplan`).
+Known bugs are listed in `KNOWN_BUGS.md`. If you find a bug that does not belong to your current task, do not
+fix it, but add it there (in the format described at the top of that file). If you fix one, remove it there.
+Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with `/stappenplan`).
 
 ## Runtime
 
-- Draait in **IronPython 2.7.9** (Mecway). Schrijf Python 2.7-code: geen f-strings,
-  type hints of `pathlib`, en gebruik `"{0}".format(x)`.
-- Alleen de standaardbibliotheek, plus `clr`/WinForms in `bridge_gui.py`. Geen pip-pakketten.
-- Uitzonderingen (Python 3 van Code-Aster): `aster_results_export.py` en
-  `aster_spectrum.py`, `aster_acoustic_export.py`, `aster_acoustic_complex.py` (ook scipy uit de
-  Code-Aster-installatie), `aster_cyclic.py`, `aster_fatigue.py` (in de job) en
-  het convergentiescherm `aster_convergence_monitor.py` (apart proces, tkinter). De
-  parser `bridge_convergence.py` is gedeeld en moet in 2.7 en 3 werken
+- Runs in **IronPython 2.7.9** (Mecway). Write Python 2.7 code: no f-strings,
+  type hints or `pathlib`; use `"{0}".format(x)`.
+- Standard library only, plus `clr`/WinForms in `bridge_gui.py`. No pip packages.
+- Exceptions (Code-Aster's Python 3): `aster_results_export.py` and
+  `aster_spectrum.py`, `aster_acoustic_export.py`, `aster_acoustic_complex.py` (also scipy from the
+  Code-Aster installation), `aster_cyclic.py`, `aster_fatigue.py` (inside the job) and
+  the convergence window `aster_convergence_monitor.py` (separate process, tkinter). The
+  parser `bridge_convergence.py` is shared and must work in both 2.7 and 3
   (test: `python tests/test_bridge_convergence.py`).
-- `mw` en `solution` bestaan alleen in het hoofdscript; geef ze als parameter door aan de `bridge_*`-modules.
-- Mecway-API: alleen wat in Mecway's scripting-documentatie staat (Mecway-handleiding;
-  lokaal eventueel `API_reference Mecway.txt`, auteursrecht Mecway Ltd, niet in de repo). Er is geen API om
-  loads/constraints te lezen, dus haal BC's, materialen en selecties uit de
-  `.liml`-XML (`bridge_from_liml.py`). Code-Aster: v17.4.
+- `mw` and `solution` exist only in the main script; pass them as parameters to the `bridge_*` modules.
+- Mecway API: only what is in Mecway's scripting documentation (Mecway manual;
+  locally possibly `API_reference Mecway.txt`, copyright Mecway Ltd, not in the repo). There is no API to
+  read loads/constraints, so take BCs, materials and selections from the
+  `.liml` XML (`bridge_from_liml.py`). Code-Aster: v17.4.
 
-## Branches en bestanden
+## Branches and files
 
-- Werk op `develop`. `main` werkt de gebruiker zelf bij vanuit `develop` (release); push `main` niet zelf.
-- Mecway draait de scripts uit de hoofdcheckout (de map van deze repo waaruit Mecway
-  `MecwayAsterBridgeMain.py` start). Wissel daar niet van branch.
-- `WorkDir/` is gegenereerde output (gitignored); test in een tijdelijke map.
-  `TestFiles/*.liml` zijn testmodellen.
-- Deze repo is openbaar: inhoud, commitboodschap en tijdstip van elke commit zijn publiek. Commit geen
-  persoonsgegevens of eigen paden (ook niet via een door het startscherm opgeslagen `bridge_utils.py`, zie
-  hieronder) en wis de auteursnaam in de metadata van Office- en pdf-bestanden.
-- Afspraken en paden die alleen voor één pc gelden horen in `CLAUDE.local.md` (gitignored, door Claude Code
-  naast `CLAUDE.md` gelezen), niet in dit bestand.
+- Work on `develop`. The user updates `main` from `develop` (release); do not push `main` yourself.
+- Mecway runs the scripts from the main checkout (the folder of this repo from which Mecway
+  starts `MecwayAsterBridgeMain.py`). Do not switch branches there.
+- `WorkDir/` is generated output (gitignored); test in a temporary folder.
+  `TestFiles/*.liml` are test models.
+- This repo is public: the content, commit message and time of every commit are public. Do not commit
+  personal data or own paths (not even through a `bridge_utils.py` saved by the start screen, see
+  below), and clear the author name in the metadata of Office and PDF files.
+- Agreements and paths that apply to one PC only belong in `CLAUDE.local.md` (gitignored, read by Claude Code
+  next to `CLAUDE.md`), not in this file.
 
 ## `bridge_utils.py` / `CONFIG_BRIDGE`
 
-Het startscherm (`bridge_gui.save_to_bridge_utils`) herschrijft dit blok regel voor regel
-met een regex. Een diff hier kan dus een opgeslagen instelling zijn; `.bak` is normaal.
+The start screen (`bridge_gui.save_to_bridge_utils`) rewrites this block line by line
+with a regex. A diff here may therefore be a saved setting; a `.bak` is normal.
 
-- Eén sleutel per regel: `"sleutel":   waarde,`. Alleen lijsten mogen over meerdere
-  regels lopen. Zet in dit blok geen expressies of variabelen.
-- Een nieuwe instelling: sleutel in `CONFIG_BRIDGE` + entry in `GENERAL_SPECS`/`ANALYSIS_SPECS` (`bridge_gui.py`)
-  + uitleg (tooltip) in `bridge_glossary.SETTING_HELP`; een nieuwe keuzewaarde of code in `GLOSSARY`.
-- Een nieuw document in `docs/` (en `docs/en/`) ook in `bridge_docs.DOCS` (pagina Documentatie).
-- Paden zonder persoonsgegevens: `exe_aster` standaard `%LOCALAPPDATA%\code_aster\...`, `work_dir`
-  standaard `""` (= `WorkDir` naast `Scripts/`). Lees ze altijd via `bridge_utils.exe_aster_path()` en
-  `work_dir_path()` (omgevingsvariabelen ingevuld, standaardwerkmap), nooit rechtstreeks uit `CONFIG_BRIDGE`.
-- `BRIDGE_VERSION` (buiten `CONFIG_BRIDGE`) is de versie op het startscherm en in het log; bij een
-  release ook `CHANGELOG.md` bijwerken.
+- One key per line: `"key":   value,`. Only lists may span several
+  lines. Do not put expressions or variables in this block.
+- A new setting: key in `CONFIG_BRIDGE` + entry in `GENERAL_SPECS`/`ANALYSIS_SPECS` (`bridge_gui.py`)
+  + explanation (tooltip) in `bridge_glossary.SETTING_HELP`; a new choice value or code in `GLOSSARY`.
+- A new document in `docs/` (and `docs/en/`) also goes into `bridge_docs.DOCS` (page Documentation).
+- Paths without personal data: `exe_aster` defaults to `%LOCALAPPDATA%\code_aster\...`, `work_dir`
+  defaults to `""` (= `WorkDir` next to `Scripts/`). Always read them through `bridge_utils.exe_aster_path()` and
+  `work_dir_path()` (environment variables expanded, default work folder), never directly from `CONFIG_BRIDGE`.
+- `BRIDGE_VERSION` (outside `CONFIG_BRIDGE`) is the version on the start screen and in the log; for a
+  release also update `CHANGELOG.md`.
 
-## Uitbreiden
+## Extending
 
-| Wat | Waar |
+| What | Where |
 |---|---|
-| BC/belasting | subklasse van `BaseBC` in `bridge_bcs.py` (`parse_xml`, `to_aster_dict`) + `SUPPORTED_BCS` onder de `.liml`-tagnaam |
-| Analysetype | `Scripts/AsterTemplate_<Naam>.comm` + builder in `bridge_to_aster.py` + `SOLVER_BUILDERS_ASTER` + entry in `CONFIG_BRIDGE["analyses"]` |
-| Resultaatveld | groep in `RESULT_FIELD_SPECS` (`bridge_from_aster.py`; ook de keuzelijst op het startscherm) + `FIELD_TABLE` in `aster_results_export.py` (route `liml`, standaard) + voor route `tabel` POST_RELEVE_T met dezelfde INTITULE in `bridge_to_aster._result_tables` |
-| Sectie-/materiaaltype | `_parse_geometric_props()` / materiaalblok in `bridge_from_liml.py`; OpenRadioss-kaarten (PLAS_TAB, /FUNCT) in `bridge_radioss.py` |
-| Code-Aster-functie zonder Mecway-invoer | gebruiker: `#ASTER`-regels in Mecway's custom model definition (`bridge_custom.py`; voorbeelden in `docs/ASTER_regels_voorbeelden.md`) |
+| BC/load | subclass of `BaseBC` in `bridge_bcs.py` (`parse_xml`, `to_aster_dict`) + `SUPPORTED_BCS` under the `.liml` tag name |
+| Analysis type | `Scripts/AsterTemplate_<Name>.comm` + builder in `bridge_to_aster.py` + `SOLVER_BUILDERS_ASTER` + entry in `CONFIG_BRIDGE["analyses"]` |
+| Result field | group in `RESULT_FIELD_SPECS` (`bridge_from_aster.py`; also the selection list on the start screen) + `FIELD_TABLE` in `aster_results_export.py` (route `liml`, default) + for route `tabel` POST_RELEVE_T with the same INTITULE in `bridge_to_aster._result_tables` |
+| Section/material type | `_parse_geometric_props()` / material block in `bridge_from_liml.py`; OpenRadioss cards (PLAS_TAB, /FUNCT) in `bridge_radioss.py` |
+| Code-Aster feature without Mecway input | user: `#ASTER` lines in Mecway's custom model definition (`bridge_custom.py`; examples in `docs/ASTER_regels_voorbeelden.md`) |
 
-`model_data` (uit `extract_aster_data_from_liml`, aangevuld door `write_mesh`) is het
-contract tussen de modules. Lees optionele sleutels met `.get()`.
+`model_data` (from `extract_aster_data_from_liml`, completed by `write_mesh`) is the
+contract between the modules. Read optional keys with `.get()`.
 
-## Valkuilen
+## Pitfalls
 
-- Mecway-waarden hebben eenheden (`"210 GPa"`, `"10000 mm⁴"`): altijd naar SI via
-  `parse_and_convert(val, type)`. Een onbekende eenheid komt ongewijzigd terug
-  (met een WARNING in de log); een nieuwe eenheid hoort in de tabellen daar.
-- In de templates vult `str.format()` de placeholders `{naam}` in. Een letterlijke
-  accolade schrijf je als `{{ }}`.
-- `bridge_mesh.py` schrijft het mesh rechtstreeks uit de `.liml` (geen Gmsh: die kapte
-  namen af op 8 tekens). Groepsnamen in Code-Aster: letter eerst, alleen letters/cijfers/_,
-  max. 24 tekens; `bridge_mesh` hernoemt in `model_data`, dus gebruik groepsnamen uit
-  `model_data`. `INTITULE` ≤ 16 tekens.
-- Uitvoerbestanden van een run heten `<model>_<run_id><suffix>` (naam van het Mecway-bestand +
-  tijdstempel): naam via `bridge_utils.run_name(suffix)`, nooit een vaste naam. Zonder
-  `set_run_log()` (rooktest) is het `study<suffix>`.
-- `solution.set_variable()` verwacht één waarde per knoop van de laatste Mecway-solve.
-- `run_AsterSolver()` wacht niet op Code-Aster; de gebruiker bevestigt via `mw.message()`.
+- Mecway values have units (`"210 GPa"`, `"10000 mm⁴"`): always convert to SI with
+  `parse_and_convert(val, type)`. An unknown unit comes back unchanged
+  (with a WARNING in the log); a new unit belongs in the tables there.
+- In the templates `str.format()` fills in the placeholders `{name}`. Write a literal
+  brace as `{{ }}`.
+- `bridge_mesh.py` writes the mesh directly from the `.liml` (no Gmsh: it truncated
+  names to 8 characters). Group names in Code-Aster: letter first, only letters/digits/_,
+  max. 24 characters; `bridge_mesh` renames in `model_data`, so use group names from
+  `model_data`. `INTITULE` ≤ 16 characters.
+- Output files of a run are named `<model>_<run_id><suffix>` (name of the Mecway file +
+  timestamp): get the name from `bridge_utils.run_name(suffix)`, never use a fixed name. Without
+  `set_run_log()` (smoke test) it is `study<suffix>`.
+- `solution.set_variable()` expects one value per node of the last Mecway solve.
+- `run_AsterSolver()` does not wait for Code-Aster; the user confirms via `mw.message()`.
 
-## Controleren
+## Checking
 
-Een echte run kan alleen in Mecway. Hulpmiddelen zonder Mecway-GUI in `TestFiles/Tools/`: `run_ipy.ps1`
-(script draaien met Mecway's IronPython 2.7.9), `gui_cap.py` (hoofdvenster offscreen naar PNG), `mw_solve.py`
-(Mecway headless laten rekenen als referentie). Offline syntaxcheck (Python 3; Python 2.7-compatibiliteit zelf nalopen):
+A real run is only possible in Mecway. Tools without the Mecway GUI in `TestFiles/Tools/`: `run_ipy.ps1`
+(run a script with Mecway's IronPython 2.7.9), `gui_cap.py` (main window offscreen to PNG), `mw_solve.py`
+(let Mecway solve headless as a reference). Offline syntax check (Python 3; check Python 2.7 compatibility yourself):
 
 ```bash
-cd Scripts && for f in *.py; do python -c "import ast,io;ast.parse(io.open('$f',encoding='utf-8').read())" || echo "FOUT: $f"; done
+cd Scripts && for f in *.py; do python -c "import ast,io;ast.parse(io.open('$f',encoding='utf-8').read())" || echo "ERROR: $f"; done
 ```
 
-Rooktest liml → mesh/`.comm`/`.export` (CPython, tijdelijke map `T` met `model.liml`, bijv. een
-kopie van `TestFiles/Voorbeelden/Voorbeeld_A.liml` (statisch) of `TestFiles/BezwijkenTrekstaaf.liml`
-(niet-lineair); de templates staan als bestandsnaam in `CONFIG_BRIDGE` en worden in de map van de
-scripts gezocht, `bridge_utils.template_path`):
+Also in `TestFiles/Tools/` (CPython 3):
+
+- `python TestFiles/Tools/check_docs.py` checks the documentation: settings and defaults against
+  `CONFIG_BRIDGE`, tooltips in both languages, links and anchors, `KNOWN_BUGS n` references, verification
+  cases, § references and NL/EN parity of the docs (`--parity`: also the numbers per section). Must report
+  0 findings.
+- `python TestFiles/Tools/check_code_unchanged.py <git-ref> [files...]` checks that a text-only change
+  (comments, docstrings, INFO/SUCCESS log texts, comment lines in the `.comm` templates) leaves the code
+  unchanged (syntax tree of `.py`, code lines and placeholders of `.comm`).
+
+Smoke test liml → mesh/`.comm`/`.export` (CPython, temporary folder `T` with `model.liml`, e.g. a
+copy of `TestFiles/Voorbeelden/Voorbeeld_A.liml` (static) or `TestFiles/BezwijkenTrekstaaf.liml`
+(nonlinear); the templates are file names in `CONFIG_BRIDGE` and are looked up in the folder of the
+scripts, `bridge_utils.template_path`):
 
 ```python
 import sys, shutil; sys.path.insert(0, "Scripts")
-import bridge_utils as u; u.CONFIG_BRIDGE["work_dir"] = T   # alleen in geheugen
+import bridge_utils as u; u.CONFIG_BRIDGE["work_dir"] = T   # in memory only
 from bridge_from_liml import extract_aster_data_from_liml
 from bridge_mesh import write_mesh
 from bridge_to_aster import generate_AsterSolver_files
 for name in ("lin_static_3d", "nonlin_static_3d"):
     u.CONFIG_BRIDGE["active_analysis"] = name
     md = extract_aster_data_from_liml(T + "/model.liml")
-    assert write_mesh(T + "/model_mesh.mail", md)   # zonder Mecway: faceid-tabel
+    assert write_mesh(T + "/model_mesh.mail", md)   # without Mecway: faceid table
     assert generate_AsterSolver_files(T, md, T + "/model_mesh.mail", "test.resu")
 ```
 
-Bekijk daarna `T/study.comm` en `T/bridge_log.txt`. Roep de opslagfuncties van
-`bridge_gui` niet aan (die herschrijven `bridge_utils.py`).
+Then look at `T/study.comm` and `T/bridge_log.txt`. Do not call the save functions of
+`bridge_gui` (they rewrite `bridge_utils.py`).
 
-## Conventies
+## Conventions
 
-- Licentie: MPL-2.0 (`LICENSE`). Een nieuw bronbestand (.py, .comm) krijgt bovenaan (na een
-  eventuele coderingsregel) de kop uit `Scripts/bridge_utils.py` (Copyright + MPL-2.0-verwijzing).
+- License: MPL-2.0 (`LICENSE`). A new source file (.py, .comm) gets at the top (after an
+  optional coding line) the header from `Scripts/bridge_utils.py` (Copyright + MPL-2.0 notice).
 
-- Nederlands in commentaar, logregels en commits. Log met `log("INFO|WARNING|ERROR|SUCCESS: ...")`.
-- Tekst voor de gebruiker (startscherm, `mw.message()`, WARNING/ERROR-regels, `skipped_loads`,
-  convergentiescherm) in beide talen (`CONFIG_BRIDGE["language"]`):
-  `log(tr("WARNING: ... {0}", "WARNING: ... {0}").format(x))` met `tr` uit `bridge_utils`;
-  zelfde voorvoegsel en placeholders. INFO/SUCCESS, commentaar en `study.comm` blijven Nederlands.
-- Fatale fout in een module: `log("ERROR: ...")` en `None`/`False` teruggeven; `main()` stopt dan met `mw.message()`.
-- Onderbouw Code-Aster-gedrag in commentaar met een bron (U-doc, catalogus, `.F90`), anders "NIET geverifieerd".
+- English for developer text: code comments, docstrings, comments in the `.comm` templates (and so in
+  the generated `study.comm`), INFO/SUCCESS log lines, `AGENTS.md`, `KNOWN_BUGS.md`, `STAPPENPLAN.md`
+  and commit messages. Log with `log("INFO|WARNING|ERROR|SUCCESS: ...")`. Older Dutch text may still
+  occur; translate it when you touch it.
+- Text for the user stays bilingual (`CONFIG_BRIDGE["language"]`, `nl`/`en`): start screen,
+  `mw.message()`, WARNING/ERROR lines, `skipped_loads`, convergence window:
+  `log(tr("WARNING: ... {0}", "WARNING: ... {0}").format(x))` with `tr` from `bridge_utils` (Dutch first,
+  then English); same prefix and placeholders in both.
+- User documentation is bilingual too: Dutch in `docs/`, English in `docs/en/`, with the same structure
+  (`check_docs.py` checks the parity); update both.
+- Fatal error in a module: `log("ERROR: ...")` and return `None`/`False`; `main()` then stops with `mw.message()`.
+- Support Code-Aster behaviour in a comment with a source (U doc, catalogue, `.F90`), otherwise "NOT verified".
