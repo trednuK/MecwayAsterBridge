@@ -532,7 +532,7 @@ def parse_thermal(root, model_data):
         "temperatures, {3} initial conditions, {4}.".format(
             len(th["materials"]), len(th["loads"]), len(th["node_temps"]),
             len(th["initial"]), "transient" if th["transient"]
-            else "stationair"))
+            else "steady-state"))
 
 
 # ==========================================
@@ -1950,7 +1950,7 @@ class _Thermal(object):
             # determines the dimension of the mesh at LIRE_MAILLAGE; after
             # the rotation the shells do lie in a plane Z = constant
             # (results equal to Mecway, see _shell_rotation).
-            out.append("# Schalen naar een vlak Z = constant (PLAN), zie "
+            out.append("# Shells to a plane Z = constant (PLAN), see "
                        "bridge_thermal._shell_rotation\nmesh = MODI_MAILLAGE("
                        "\n    reuse=mesh,\n    MAILLAGE=mesh,\n    ROTATION="
                        "_F(POIN_1=(0.0, 0.0, 0.0), DIR=({0}, {1}, {2}), "
@@ -2253,8 +2253,8 @@ class _Thermal(object):
                                  "NOM_CMP_RESU='{1}', COEF_R={2}, "
                                  "CUMUL='OUI')".format(cmps[j], cmps[i],
                                                        _r(q[j][i])))
-        return ("# Warmteflux terug naar de globale assen (mesh gedraaid, "
-                "zie defigroup)\n"
+        return ("# Heat flux back to the global axes (mesh rotated, "
+                "see defigroup)\n"
                 "fl_zero = CREA_CHAMP(TYPE_CHAM='NOEU_FLUX_R', "
                 "OPERATION='AFFE', MODELE=model, AFFE=_F(TOUT='OUI', "
                 "NOM_CMP=('FLUX', 'FLUY', 'FLUZ'), VALE=(0.0, 0.0, 0.0)))\n"
@@ -2267,8 +2267,8 @@ class _Thermal(object):
                 "        _F(TOUT='OUI', CHAM_GD=fl_zero),\n"
                 "        {0},\n    ))\n"
                 "    res_flux.setField(fl_g, 'FLUX_NOEU', nume_r)\n"
-                "# Mesh terug in de oorspronkelijke stand (aster_results_export "
-                "vergelijkt de knoopcoördinaten met de .liml)\n"
+                "# Mesh back to its original position (aster_results_export "
+                "compares the node coordinates with the .liml)\n"
                 "mesh = MODI_MAILLAGE(\n    reuse=mesh,\n    MAILLAGE=mesh,\n"
                 "    ROTATION=_F(POIN_1=(0.0, 0.0, 0.0), DIR=({1}, {2}, {3}), "
                 "ANGLE={4}),\n)\n").format(
@@ -2480,8 +2480,8 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
     materials_block = meta_pre + materials_block
     command = "THER_NON_LINE" if tb.nonlinear else "THER_LINEAIRE"
     log("INFO: {0} ({1}){2}.".format(
-        command, "transient" if tb.transient else "stationair",
-        " - straling of convectie/straling op schaalvlakken" if tb.nonlinear
+        command, "transient" if tb.transient else "steady-state",
+        " - radiation or convection/radiation on shell faces" if tb.nonlinear
         else ""))
 
     # --- Solve ---

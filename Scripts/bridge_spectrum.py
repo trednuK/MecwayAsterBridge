@@ -248,8 +248,8 @@ def _spectrum_block(spectra, custom, abscissa, analysis, alpha, beta, zeta,
         arg = "1.0 / FREQ" if abscissa == "period" else "FREQ"
         lines += [
             "# Spectrum {0}: Mecway gravity, {1} -> acceleration [m/s2],".format(
-                d, "periode [s]" if abscissa == "period"
-                else "frequentie [Hz]"),
+                d, "period [s]" if abscissa == "period"
+                else "frequency [Hz]"),
             "# linear between the points, constant outside the table.",
             "bridge_xs_{0} = {1!r}".format(d, xs),
             "bridge_ys_{0} = {1!r}".format(d, ys),
@@ -509,13 +509,13 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
         model_data, analysis, False, cara_ref).replace(
             "res = CALC_MODES(", "modes = CALC_MODES(", 1)
     calc_modes_block += (
-        "# Modeoverzicht (frequentie, effectieve massa) in de .mess\n"
+        "# Mode overview (frequency, effective mass) in the .mess\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
         "import aster_results_export\n"
         "import aster_spectrum\n"
         "aster_results_export.print_modes(modes, mass=masse)\n"
-        "# Modale velden voor COMB_SISM_MODAL\n").format(b2a._py_str(scripts))
+        "# Modal fields for COMB_SISM_MODAL\n").format(b2a._py_str(scripts))
     calc_modes_block += _modal_fields_block("modes", g3d, stress,
                                             model_data)
     spectrum_block = _spectrum_block(
@@ -552,8 +552,8 @@ def build_spectrum(work_dir, model_data, msh_path, resu_name, analysis):
     result_block = "\n".join(result)
 
     export_block = b2a._custom_code(model_data, "post") + (
-        "# Resultaten in Mecway's eigen formaat (bridge: "
-        "result_route='liml'), een stap met de maxima@N"
+        "# Results in Mecway's own format (bridge: "
+        "result_route='liml'), one step with the maxima@N"
         "aster_results_export.export_results(@N"
         "    res_mecway, {fragment}, {liml},@N"
         "    precision='single', static=True, fields={fields!r})@N"

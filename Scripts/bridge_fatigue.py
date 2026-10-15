@@ -920,15 +920,15 @@ def fatigue_block(model_data, analysis, work_dir):
                u"the cycle table."))
     opts = plan["options"]
     scripts = os.path.dirname(os.path.abspath(__file__))
-    route = ("blokken" if plan["blocks"] else "signaal" if plan["signal"]
-             else "tijdstappen van de run")
+    route = ("blocks" if plan["blocks"] else "signal" if plan["signal"]
+             else "time steps of the run")
     log(u"INFO: Fatigue: {0} curve(s) ({1}), load history: {2}, "
         u"{3}, counting {4}, repeats {5}.".format(
             len(curves), u", ".join(c["material"] for c in curves), route,
-            (u"criterium {0} ({1})".format(opts["criterion"],
+            (u"criterion {0} ({1})".format(opts["criterion"],
                                            opts["loading"])
              if opts["criterion"] != "GEEN" else
-             u"spanning {0}".format(opts["stress"])),
+             u"stress {0}".format(opts["stress"])),
             opts["counting"], opts["repeats"]))
     head = [
         "",

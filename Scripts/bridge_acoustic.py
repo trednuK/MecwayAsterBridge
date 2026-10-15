@@ -673,7 +673,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     charges = []
     loads_block = ""
     if entries:
-        loads_block = ("# Drukknopen (Mecway fluid pressure = 0)\n"
+        loads_block = ("# Pressure nodes (Mecway fluid pressure = 0)\n"
                        "bc_pres = AFFE_CHAR_ACOU(\n    MODELE=model,\n"
                        "    PRES_IMPO=(\n        {0},\n    ),\n)\n").format(
                            ",\n        ".join(entries))
@@ -696,7 +696,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         "        _F(MATRICE=CO('mass_c'), OPTION='MASS_ACOU'),\n"
         "    ),\n"
         ")\n"
-        "# Reele delen (de akoestische matrices zijn complex; ahlv100a)\n"
+        "# Real parts (the acoustic matrices are complex; ahlv100a)\n"
         "rigidite = COMB_MATR_ASSE(COMB_R=_F(MATR_ASSE=rigi_c, "
         "PARTIE='REEL', COEF_R=1.0))\n"
         "masse = COMB_MATR_ASSE(COMB_R=_F(MATR_ASSE=mass_c, "
@@ -759,7 +759,7 @@ def _export_block(work_dir, model_data):
     does that for MODE_ACOU with MASS_GENE), and the BRIDGE_MODE lines."""
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
-    return ("# Resultaten in Mecway's eigen formaat (result_route 'liml')\n"
+    return ("# Results in Mecway's own format (result_route 'liml')\n"
             "import sys\n"
             "sys.path.insert(0, {0})\n"
             "import aster_results_export\n"
@@ -924,9 +924,9 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                          "CELE_R={3}))".format(bta._mat_comment(mat),
                                                names[mat], _r(rho), _r(c)))
     mat_lines.append(
-        "# Impedantievlakken: CELE_R = 1 geeft AMOR_ACOU = int N N dA "
-        "(bridge_acoustic,\n# complexe modes); de andere impedantievlakken "
-        "in dezelfde matrix ~0.\n"
+        "# Impedance faces: CELE_R = 1 gives AMOR_ACOU = int N N dA "
+        "(bridge_acoustic,\n# complex modes); the other impedance faces "
+        "in the same matrix ~0.\n"
         "MAZ1 = DEFI_MATERIAU(FLUIDE=_F(RHO=1.0, CELE_R=1.0))\n"
         "MAZ0 = DEFI_MATERIAU(FLUIDE=_F(RHO=1.0, CELE_R={0}))".format(
             _r(_CELE_OTHER)))
@@ -963,7 +963,7 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                "without loads.").format(", ".join(extra)))
     loads_block = ("#-- pressure nodes: eliminated in aster_acoustic_complex "
                    "({0}) --\n".format(", ".join(n for _k, n in dirichlet)
-                                       or "geen") +
+                                       or "none") +
                    bta._custom_code(model_data, "code"))
 
     lines = ["ASSEMBLAGE(",
@@ -1003,10 +1003,10 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
     size = -0.1 * c_min / (2.0 * free) if free < 0.0 else 1.0
     scripts = os.path.dirname(os.path.abspath(__file__))
     calc_modes_block = (
-        "# Complexe modes (impedantie): kwadratisch eigenwaardeprobleem\n"
+        "# Complex modes (impedance): quadratic eigenvalue problem\n"
         "# (K + l C + l^2 M) P = 0, C = sum rho/Z int N N dA (Mecway manual\n"
-        "# par. 6.9.2), opgelost met scipy in aster_acoustic_complex\n"
-        "# (CALC_MODES neemt MATR_AMOR niet voor drukmatrices).\n"
+        "# par. 6.9.2), solved with scipy in aster_acoustic_complex\n"
+        "# (CALC_MODES does not take MATR_AMOR for pressure matrices).\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
         "import aster_acoustic_complex\n"
@@ -1024,9 +1024,9 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
             "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6)))
     log("INFO: Acoustics: {0} impedance boundary(ies): complex modes "
         "(frequency and decay rate), {1} modes{2}.".format(
-            len(imps), n, (" rond {0} Hz".format("%.6g" % shift)
-                           if shift > 0.0 else " met de kleinste |lambda| "
-                           "(zoals Mecway)")))
+            len(imps), n, (" around {0} Hz".format("%.6g" % shift)
+                           if shift > 0.0 else " with the smallest |lambda| "
+                           "(as in Mecway)")))
     if shift < 0.0:
         log(tr("WARNING: Akoestiek: een negatieve zoekfrequentie telt bij "
                "complexe modes niet; de modes met de kleinste |lambda| "
@@ -1566,7 +1566,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
         else:
             # impedance: own material with c = Z / rho (see above)
             mname = "MAZ{0}".format(k + 1)
-            mat_lines.append("# absorberende rand '{0}': {1}\n{2} = "
+            mat_lines.append("# absorbing boundary '{0}': {1}\n{2} = "
                              "DEFI_MATERIAU(FLUIDE=_F(RHO={3}, CELE_R={4}))"
                              .format(g, desc, mname, _r(rho), _r(c)))
         assign.append("        _F(GROUP_MA='{0}', MATER={1}),\n".format(
@@ -1578,13 +1578,13 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
     # --- loads ---
     loads = []
     if inp["vite"]:
-        loads.append("# Bron: normaalsnelheid de fluid in (VITE_FACE VNOR)\n"
+        loads.append("# Source: normal velocity into the fluid (VITE_FACE VNOR)\n"
                      "ch_vite = AFFE_CHAR_ACOU(\n    MODELE=model,\n"
                      "    VITE_FACE=(\n{0}    ),\n)\n".format("".join(
                          "        _F(GROUP_MA='{0}', VNOR={1}),  # {2}\n"
                          .format(g, _ri(v), d) for g, v, d in inp["vite"])))
     if inp["pres"]:
-        loads.append("# Opgelegde druk (fluid pressure; 0 = drukknoop)\n"
+        loads.append("# Imposed pressure (fluid pressure; 0 = pressure node)\n"
                      "bc_pres = AFFE_CHAR_ACOU(\n    MODELE=model,\n"
                      "    PRES_IMPO=(\n{0}    ),\n)\n".format("".join(
                          "        _F({0}='{1}', PRES={2}),\n".format(
@@ -1715,7 +1715,7 @@ def _harm_export_block(work_dir, model_data, mics):
     mic_text = "{" + ", ".join("{0}: [{1}]".format(
         bta._py_str(name), ", ".join(str(n) for n in nids))
         for name, nids in mics.items()) + "}"
-    return ("# Resultaten in Mecway's eigen formaat (result_route 'liml')\n"
+    return ("# Results in Mecway's own format (result_route 'liml')\n"
             "import sys\n"
             "sys.path.insert(0, {0})\n"
             "import aster_acoustic_export\n"

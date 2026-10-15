@@ -721,7 +721,7 @@ def mesh_cells(model_data, conn, faces_of=None):
         log("INFO: XFEM, crack {0} from face selection '{1}': {2} faces, "
             "front {3} edges in {4} piece(s) ({5}), groups {6}/{7}."
             .format(name, sel, len(faces), len(front), len(pieces),
-                    "gekromd" if curved else "recht", spec["fiss_group"],
+                    "curved" if curved else "straight", spec["fiss_group"],
                     spec["front_group"]))
     return out
 
@@ -885,7 +885,7 @@ def model_block(model_data, analysis, block):
             "{3} at the front (element size normal to the front {4:.4g} "
             "m{5}).".format(
                 c["name"], c["kind"], len(cut), len(front), h,
-                "" if size is None else ", scheurmaat {0:.4g} m".format(size)))
+                "" if size is None else ", crack size {0:.4g} m".format(size)))
         if size is not None and h > size / _H_RATIO:
             log(tr("WARNING: #ASTER-XFEM (scheur {0}): de elementen aan het "
                    "front ({1:.3g} m) zijn groter dan 1/{2:g} van de "
@@ -979,16 +979,16 @@ def warn_oblique(model_data, selection, group):
 # ==========================================
 _RESULT_BLOCK = """
 # =====================================================
-# XFEM: resultaten op het oorspronkelijke mesh (bridge_xfem.result_block)
-# De verplaatsing van het XFEM-model heeft extra vrijheidsgraden (H1X..,
-# K1..) en is op een knoop van een gesneden element niet de fysische
-# verplaatsing. POST_MAIL_XFEM maakt een mesh dat de scheur volgt,
-# POST_CHAM_XFEM zet DEPL en SIEF_ELGA daarop; elke knoop van het
-# oorspronkelijke mesh is een knoop van dat mesh, dus PROJ_CHAMP
-# COLLOCATION geeft de waarde aan de eigen kant van de scheur. Het
-# hulpmodel krijgt alleen de volume-elsets (het mesh van POST_MAIL_XFEM houdt
-# de groepen; zijn frontcellen en randen zonder volume gaven alarm
-# MODELE1_63). REAC_NODA komt uit het XFEM-resultaat (DX, DY, DZ).
+# XFEM: results on the original mesh (bridge_xfem.result_block)
+# The displacement of the XFEM model has extra degrees of freedom (H1X..,
+# K1..) and at a node of a cut element it is not the physical
+# displacement. POST_MAIL_XFEM makes a mesh that follows the crack,
+# POST_CHAM_XFEM puts DEPL and SIEF_ELGA on it; every node of the
+# original mesh is a node of that mesh, so PROJ_CHAMP
+# COLLOCATION gives the value on its own side of the crack. The
+# auxiliary model only gets the solid elsets (the mesh of POST_MAIL_XFEM
+# keeps the groups; its front cells and edges without volume raised the
+# alarm MODELE1_63). REAC_NODA comes from the XFEM result (DX, DY, DZ).
 # =====================================================
 res_xfem = res
 res_xfem = CALC_CHAMP(reuse=res_xfem, RESULTAT=res_xfem, FORCE=('REAC_NODA',))
@@ -1034,7 +1034,7 @@ def result_block(model_data):
         # ParaView: the mesh that follows the crack (the lips have their own
         # nodes, so the opening can be seen) with the fields; IMPR_RESU
         # writes the mesh of the result along (measured, BR-14)
-        med = ("# MED voor ParaView (med_export): mesh dat de scheur volgt\n"
+        med = ("# MED for ParaView (med_export): mesh that follows the crack\n"
                "IMPR_RESU(FORMAT='MED', UNITE={0}, RESU=_F(\n"
                "    RESULTAT=res_xvisu,\n"
                "    NOM_CHAM=('DEPL', 'SIGM_NOEU', 'SIEQ_NOEU')))\n"

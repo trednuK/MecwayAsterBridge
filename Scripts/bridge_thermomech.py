@@ -607,15 +607,15 @@ def _materials(md, specs, tref, analysis, quiet=None):
             quiet["blocks"][mat] = "\n".join(q_lines)
             quiet["concepts"][mat] = concept + "_Q"
         if "ECRO_LINE_FO" in extra:
-            plast = ", ECRO_LINE_FO (SY, ET als functie van T)"
+            plast = ", ECRO_LINE_FO (SY, ET as a function of T)"
         elif "ECRO_LINE" in extra:
             plast = ", ECRO_LINE"
         elif extra:
-            plast = ", TRACTION (hardingscurve)"
+            plast = ", TRACTION (hardening curve)"
         else:
-            plast = ", elastisch"
+            plast = ", elastic"
         log("INFO: Thermomechanical: {0}: {1}{2}{3}.".format(
-            label, "ELAS_FO (E, nu, alpha als functie van T)" if fo
+            label, "ELAS_FO (E, nu, alpha as a function of T)" if fo
             else "ELAS", plast,
             "" if not spec else " (#ASTER-MATERIAAL, T_ref = {0} K)".format(
                 "%.6g" % tref)))
@@ -675,8 +675,8 @@ def _quiet_block(md, quiet):
 # Summary in the job (after CALC_CHAMP): lines 'BRIDGE_THERMOMECA
 # <key> <value>' in the .mess (report_lines). An error here must not stop
 # the job.
-_REPORT = '''# Samenvatting thermomechanisch (bridge_thermomech): restspanning en
-# vervorming op het laatste tijdstip, regels BRIDGE_THERMOMECA in de .mess.
+_REPORT = '''# Thermomechanical summary (bridge_thermomech): residual stress and
+# deformation at the last time, lines BRIDGE_THERMOMECA in the .mess.
 def _bridge_tm_report(res, res_ther, n_nodes):
     import numpy as np
     out = []
@@ -757,8 +757,8 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
     """
     import bridge_welding
     return (
-        "# --- Toevoegmateriaal (bridge_thermomech._birth_solve): "
-        "STAT_NON_LINE per geboortestap ---\n"
+        "# --- Filler material (bridge_thermomech._birth_solve): "
+        "STAT_NON_LINE per birth step ---\n"
         "_gm_affe = [\n    {affe},\n]\n"
         "{born}"
         "_gm_t = list(times.getValues())\n"
@@ -777,7 +777,7 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
         "            _gm_pred = 'TANGENTE'\n"
         "            _gm_kw = {{}}\n"
         "            if res is not None and _gm_new:\n"
-        "                # nieuw geboren: spanning en interne variabelen op nul\n"
+        "                # newly born: stress and internal variables to zero\n"
         "                _gm_last = res.getLastIndex()\n"
         "                _gm_s = res.getField('SIEF_ELGA', _gm_last)\n"
         "                _gm_ei = dict(DEPL=res.getField('DEPL', _gm_last), "
@@ -931,15 +931,15 @@ def build_blocks(tb, model_data, analysis):
     defigroup = pre + "mesh_th = mesh\n" + bta._build_defigroup_block(md)
     if projected:
         defigroup += (
-            "\n# Temperatuurveld naar het kwadratische mesh (LINE_QUAD): "
-            "middenknopen lineair\n# tussen de hoekknopen, zoals in het "
-            "lineaire element (PROJ_CHAMP COLLOCATION)\n"
+            "\n# Temperature field to the quadratic mesh (LINE_QUAD): "
+            "midside nodes linear\n# between the corner nodes, as in the "
+            "linear element (PROJ_CHAMP COLLOCATION)\n"
             "res_tm = PROJ_CHAMP(RESULTAT=res_ther, MAILLAGE_1=mesh_th, "
             "MAILLAGE_2=mesh, METHODE='COLLOCATION', NOM_CHAM='TEMP', "
             "TOUT_ORDRE='OUI')\n")
     listinst = (
-        "# Mechanische stappen = de thermische tijden; bij divergentie "
-        "knippen (ECHEC DECOUPE)\n"
+        "# Mechanical steps = the thermal times; on divergence "
+        "cut the step (ECHEC DECOUPE)\n"
         "listinst = DEFI_LIST_INST(\n"
         "    DEFI_LIST=_F(LIST_INST=times),\n"
         "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
@@ -1004,9 +1004,9 @@ def build_blocks(tb, model_data, analysis):
     log("INFO: Thermomechanical: STAT_NON_LINE on the thermal times, "
         "AFFE_VARC TEMP (EVOL = thermal result{0}), VALE_REF = {1} K, "
         "DEFORMATION {2}, {3}.".format(
-            ", via PROJ_CHAMP naar LINE_QUAD" if projected else "",
+            ", via PROJ_CHAMP to LINE_QUAD" if projected else "",
             "%.6g" % tref, analysis.get("deformation", "PETIT"),
-            "plastisch" if with_plastic else "elastisch"))
+            "plastic" if with_plastic else "elastic"))
     return {
         "mech_defigroup_block": defigroup,
         "mech_model_block": bta._build_model_block(md),
@@ -1031,7 +1031,7 @@ def export_block(work_dir, model_data, fields):
         return "#-- no export (result_route is not 'liml') --\n"
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
-        "# Resultaten in Mecway's eigen formaat (mechanisch + thermisch)\n"
+        "# Results in Mecway's own format (mechanical + thermal)\n"
         "import sys\n"
         "sys.path.insert(0, {scripts})\n"
         "import aster_results_export\n"

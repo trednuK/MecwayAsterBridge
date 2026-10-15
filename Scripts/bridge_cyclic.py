@@ -653,8 +653,8 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             "is fixed.".format(len(extra_fix)))
     log("INFO: Cyclic symmetry: {0} node pairs{1}{2}, axis {3}, {4} "
         "segments ({5:.6g} degrees).".format(
-            len(free_pairs), ", {0} knopen op de as".format(len(axis_nodes))
-            if axis_nodes else "", ", {0} paren met een vaste knoop".format(
+            len(free_pairs), ", {0} nodes on the axis".format(len(axis_nodes))
+            if axis_nodes else "", ", {0} pairs with a fixed node".format(
                 len(pairs) - len(free_pairs)) if len(pairs) != len(
                     free_pairs) else "", axis_name, n_seg, 360.0 / n_seg))
 
@@ -770,7 +770,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         excit = "    EXCIT=(\n{0}    ),".format("".join(
             "        _F(CHARGE={0}),\n".format(x) for x in names))
         static_block = (
-            "# Voorspanning: spanningstoestand onder de aangebrachte lasten\n"
+            "# Prestress: stress state under the applied loads\n"
             "# (Mecway manual v33 par. 6.3, stress stiffening).\n"
             "stat = MECA_STATIQUE(\n"
             "    MODELE=model,\n"
@@ -813,7 +813,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     if prestress:
         terms = ["rigi_ela", "rigi_geo"] + (["rigi_rot"] if rotation else [])
         assemblage_block += (
-            "# Voorgespannen stijfheid (stress stiffening)\n"
+            "# Prestressed stiffness (stress stiffening)\n"
             "rigidite = COMB_MATR_ASSE(COMB_R=(\n{0}))\n").format("".join(
                 "    _F(MATR_ASSE={0}, COEF_R=1.0),\n".format(m)
                 for m in terms))
@@ -921,7 +921,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                                  ROTATION.get(axis_name, 0.0), wheel_args),
     ]) + "\n"
     export_block = b2a._custom_code(model_data, "post") + (
-        "# Resultaten in Mecway's eigen formaat (bridge: result_route='liml')@N"
+        "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import aster_results_export@N"
         "aster_results_export.export_results(@N"
         "    res, {fragment}, {liml},@N"
@@ -938,7 +938,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         impr_resu_block = "#-- no MED export (setting med_export off) --\n"
     log("INFO: MODE_ITER_CYCL: {0} modes per nodal diameter (ND 0 .. {1}), "
         "{2} sector modes in the basis (cyclic_base_modes){3}.".format(
-            n, diameters[-1], nb, ", voorgespannen" if prestress else ""))
+            n, diameters[-1], nb, ", prestressed" if prestress else ""))
 
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:

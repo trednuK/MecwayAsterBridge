@@ -608,7 +608,7 @@ _ASTER_FUNC_ARGS = {
     "unittriangle": "_mw_unittriangle",
 }
 ASTER_FORMULA_PRELUDE = (
-    "# Mecway-formules (bridge_bcs.aster_expression): hulpfuncties\n"
+    "# Mecway formulas (bridge_bcs.aster_expression): helper functions\n"
     "import math as _mw_math\n"
     "def _mw_heaviside(x):\n"
     "    return 1.0 if x > 0.0 else (0.0 if x < 0.0 else 0.5)\n"

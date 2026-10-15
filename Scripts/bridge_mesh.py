@@ -2453,7 +2453,7 @@ def _bonded(model_data, c, group_faces, rn):
         return out
     if mech:
         log("INFO: {0} -> LIAISON_MAIL TYPE_RACCORD='{1}'{2}.".format(
-            label, raccord, " (mechanisch deel)" if thermal else ""))
+            label, raccord, " (mechanical part)" if thermal else ""))
     if raccord == "COQUE":
         out["ddl"] = ddl
     if edge is not None:
@@ -2668,8 +2668,8 @@ def _bonded_relations(model_data, m_eids, slave_nids, rotations, distance,
     log("INFO: {0} -> LIAISON_DDL by the bridge ({1} relations, {2} "
         "slave nodes, largest distance to the master {3:.3g} m; {4}).".format(
             label, len(rel), len(rel) // (5 if rotations else 3), dmax,
-            "translaties en rotaties in het mastervlak" if rotations
-            else "alleen translaties"))
+            "translations and rotations in the master face" if rotations
+            else "translations only"))
     return rel
 
 
@@ -3561,8 +3561,8 @@ def _frictionless_per_node(model_data, bc, faces_list, kind):
     bc["aster_dict"] = {}
     log("INFO: Frictionless on {0} '{1}': {2} nodes, {3} normal(s), "
         "LIAISON_OBLIQUE per group.".format(
-            "gekromde schaalvlakken" if kind == "shellface" else
-            "schaalranden", bc["selection"],
+            "curved shell faces" if kind == "shellface" else
+            "shell edges", bc["selection"],
             sum(len(g[2]) for g in groups.values()), len(groups)))
     return None
 

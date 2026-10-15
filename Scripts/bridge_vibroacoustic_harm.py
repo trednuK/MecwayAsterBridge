@@ -331,8 +331,8 @@ def _orient_block(groups, renames, fluid_of):
     GROUP_MA_INTERNE = the fluid; like the coupling faces in S3b)."""
     if not groups:
         return ""
-    return ("\n# Randvlakken van het fluidum (bronnen, invallende golf, "
-            "absorberend):\n# normaal uit het fluidum (ORIE_PEAU met "
+    return ("\n# Boundary faces of the fluid (sources, incident wave, "
+            "absorbing):\n# normal out of the fluid (ORIE_PEAU with "
             "GROUP_MA_INTERNE)\n"
             "mesh = MODI_MAILLAGE(\n    reuse=mesh,\n    MAILLAGE=mesh,\n"
             "    ORIE_PEAU=(\n{0}    ),\n)\n").format("".join(
@@ -490,8 +490,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
     defigroup_block = b2a._build_defigroup_block(md_s)
     if interfaces:
         defigroup_block += (
-            "\n# Koppelvlakken: normaal uit het fluidum (ORIE_PEAU met "
-            "GROUP_MA_INTERNE,\n# zoals adlv100b/adls102a)\n"
+            "\n# Coupling faces: normal out of the fluid (ORIE_PEAU with "
+            "GROUP_MA_INTERNE,\n# as in adlv100b/adls102a)\n"
             "mesh = MODI_MAILLAGE(\n    reuse=mesh,\n    MAILLAGE=mesh,\n"
             "    ORIE_PEAU=(\n{0}    ),\n)\n").format("".join(
                 "        _F(GROUP_MA_PEAU='{0}', GROUP_MA_INTERNE='{1}'),\n"
@@ -560,7 +560,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             # material of the face; measured: verification VH-03, Z = 2 rho c
             # to 1.2e-4).
             mname = "MAZ{0}".format(k + 1)
-            mat_lines.append("# absorberende rand '{0}': {1} (Z / (rho c) = "
+            mat_lines.append("# absorbing boundary '{0}': {1} (Z / (rho c) = "
                              "{2})\n{3} = DEFI_MATERIAU(FLUIDE=_F(RHO={4}, "
                              "CELE_R={5}))".format(
                                  g, desc, "%.4g" % (z / (rho * c)), mname,
@@ -613,8 +613,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         log("INFO: Vibro-acoustics: pressure node p = 0 on '{0}'.".format(sel))
     charge_names = list(constraints)
     if entries:
-        loads_block += ("\n# Drukknopen p = 0 (OPEN_-selecties, fluid "
-                        "pressure 0): PRES en PHI\n"
+        loads_block += ("\n# Pressure nodes p = 0 (OPEN_ selections, fluid "
+                        "pressure 0): PRES and PHI\n"
                         "bc_flu = AFFE_CHAR_MECA(\n    MODELE=model,\n"
                         "    DDL_IMPO=(\n{0}    ),\n)\n").format(
                             "".join(entries))
@@ -623,7 +623,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
     # and ONDE_FLUI only accept a real value (catalogue
     # affe_char_meca.py v17.4).
     for k, (g, v, _ph, _es, desc) in enumerate(inp["vite"]):
-        loads_block += ("\n# Bron {0}: normaalsnelheid (VITE_FACE)\n"
+        loads_block += ("\n# Source {0}: normal velocity (VITE_FACE)\n"
                         "ch_vite_{1} = AFFE_CHAR_MECA(MODELE=model, "
                         "VITE_FACE=_F(GROUP_MA='{2}', VNOR={3}))\n").format(
                             desc, k + 1, g, _r(v))
@@ -631,8 +631,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         # ONDE_FLUI PRES = 2 p_in: Code-Aster's boundary is (dp/dn + i k p) =
         # i k PRES, so the wave travelling into the fluid has amplitude
         # PRES / 2 (ahlv101a: PRES 1 -> |p| = 0.5; verification VH-01/VH-04)
-        loads_block += ("\n# Invallende golf {0}: amplitude {1} Pa het fluidum "
-                        "in (ONDE_FLUI PRES = 2 x amplitude)\n"
+        loads_block += ("\n# Incident wave {0}: amplitude {1} Pa into the "
+                        "fluid (ONDE_FLUI PRES = 2 x amplitude)\n"
                         "ch_onde_{2} = AFFE_CHAR_MECA(MODELE=model, "
                         "ONDE_FLUI=_F(GROUP_MA='{3}', PRES={4}))\n").format(
                             desc, "%.6g" % p, k + 1, g, _r(2.0 * p))
@@ -684,8 +684,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             if all_charges else ""))
     if impe_matr:
         assemblage_block += (
-            "# Randen van het fluidum: invallende golf (ONDE_FLUI, met de "
-            "golflasten)\n# en absorberend (IMPE_MECA, 3D_FLUI_ABSO), zoals "
+            "# Boundaries of the fluid: incident wave (ONDE_FLUI, with the "
+            "wave loads)\n# and absorbing (IMPE_MECA, 3D_FLUI_ABSO), as in "
             "ahlv101a\n"
             "ASSEMBLAGE(\n"
             "    MODELE=model,\n"
@@ -700,8 +700,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         (["impe_abso"] if abso else [])
     if len(impe_terms) == 2:
         assemblage_block += (
-            "# Impedantie van de randen: invallende golf (ONDE_FLUI) + "
-            "absorberend\n# (IMPE_MECA), zoals ahlv101a\n"
+            "# Impedance of the boundaries: incident wave (ONDE_FLUI) + "
+            "absorbing\n# (IMPE_MECA), as in ahlv101a\n"
             "impe = COMB_MATR_ASSE(COMB_R=(\n"
             "    _F(MATR_ASSE=impe_onde, COEF_R=1.0),\n"
             "    _F(MATR_ASSE=impe_abso, COEF_R=1.0),\n))\n")
@@ -717,8 +717,8 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         damp_terms.append(("amor_dis", 1.0))
     if damp_terms:
         assemblage_block += (
-            "# Demping van de constructie: C = alpha M_s + beta K_s (Mecway "
-            "manual\n# par. 9.26) + dempers (AMOR_MECA)\n"
+            "# Damping of the structure: C = alpha M_s + beta K_s (Mecway "
+            "manual\n# par. 9.26) + dampers (AMOR_MECA)\n"
             "amor = COMB_MATR_ASSE(COMB_R=(\n{0}))\n").format("".join(
                 "    _F(MATR_ASSE={0}, COEF_R={1!r}),\n".format(m, float(c))
                 for m, c in damp_terms))
@@ -783,7 +783,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
 
     if stresses:
         calc_champ_block = (
-            "# Complexe spanningen in de volume-elementen van de constructie\n"
+            "# Complex stresses in the solid elements of the structure\n"
             "res = CALC_CHAMP(\n"
             "    reuse=res,\n"
             "    RESULTAT=res,\n"
@@ -803,9 +803,9 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
             b2a._py_str(name), ", ".join(str(n) for n in nids))
             for name, nids in d.items()) + "}"
     export_block = b2a._custom_code(model_data, "post") + (
-        "# Resultaten in Mecway's eigen formaat (result_route 'liml'): een\n"
-        "# <mode frequency> per frequentie met de verplaatsing van de\n"
-        "# constructie en de druk in het fluidum (aster_harmonic_export)\n"
+        "# Results in Mecway's own format (result_route 'liml'): one\n"
+        "# <mode frequency> per frequency with the displacement of the\n"
+        "# structure and the pressure in the fluid (aster_harmonic_export)\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
         "import aster_harmonic_export\n"
@@ -843,7 +843,7 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
         "{10} microphone(s), {11} probe(s).".format(
             len(freqs), "%.6g" % freqs[0], "%.6g" % freqs[-1],
             len(excitations), len(inp["vite"]), len(inp["onde"]), len(abso),
-            alpha, beta, ", dempers " + ", ".join(dampers) if dampers else "",
+            alpha, beta, ", dampers " + ", ".join(dampers) if dampers else "",
             len(inp["mics"]), len(probes)))
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:

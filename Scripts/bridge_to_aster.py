@@ -215,7 +215,7 @@ def _language_lines():
     """Lines for study.comm that pass the language of the run to the job
     scripts (os.environ in the Code-Aster process)."""
     lang = "nl" if CONFIG_BRIDGE.get("language", "en") == "nl" else "en"
-    return (u"# Taal van de meldingen van de jobscripts (aster_*.py)\n"
+    return (u"# Language of the messages of the job scripts (aster_*.py)\n"
             u"import os as _bridge_os\n"
             u"_bridge_os.environ['{0}'] = '{1}'\n".format(
                 JOB_LANGUAGE_ENV, lang))
@@ -463,7 +463,7 @@ def _resolve_line_quad(model_data):
     if model_data["line_quad"]:
         log("INFO: LINE_QUAD ({0}): linear cells become quadratic; "
             "results in Mecway on the corner nodes.".format(
-                "alle cellen" if tout else ", ".join(shell_lq)))
+                "all cells" if tout else ", ".join(shell_lq)))
         if CONFIG_BRIDGE.get("result_route", "liml") == "tabel":
             # The "liml" route distributes the reactions of the mid-side
             # nodes over the corner nodes (aster_results_export.
@@ -513,8 +513,8 @@ def _line_quad_nodes_call(model_data):
     if not model_data.get("line_quad"):
         return ""
     wanted = model_data.get("line_quad_nodegroups") or []
-    return ("\n# Middenknopen (LINE_QUAD) toevoegen aan knoopgroepen van "
-            "voorwaarden\n_bridge_lq_nodegroups(mesh, _n_lin, {0})\n".format(
+    return ("\n# Add the midside nodes (LINE_QUAD) to node groups of "
+            "constraints\n_bridge_lq_nodegroups(mesh, _n_lin, {0})\n".format(
                 _fmt_groups(wanted) if wanted else "()"))
 
 
@@ -582,7 +582,7 @@ _LQ_NODEGROUPS = (
     "        s = members[g]\n"
     "        extra = [m for m, (a, b) in pairs.items() if a in s and b in s]\n"
     "        if extra:\n"
-    "            # Bestaande groep eerst weg (anders SOUSTRUC_37).\n"
+    "            # Remove the existing group first (otherwise SOUSTRUC_37).\n"
     "            DEFI_GROUP(reuse=mesh, MAILLAGE=mesh,\n"
     "                       DETR_GROUP_NO=_F(NOM=g))\n"
     "            mesh.setGroupOfNodes(g, sorted(s | set(extra)))\n"
@@ -741,7 +741,7 @@ def _build_defigroup_block(model_data):
     centre = _centre_node_groups(model_data)
     if centre:
         block += (
-            "\n# Middenknopen QUAD9/TRIA7 (alleen rotaties) buiten "
+            "\n# Midside nodes QUAD9/TRIA7 (rotations only) outside "
             "LIAISON_OBLIQUE DX/DY/DZ\nmesh = DEFI_GROUP(\n"
             "    reuse=mesh,\n    MAILLAGE=mesh,\n    CREA_GROUP_NO=(\n{0}\n"
             "    ),\n)\n").format("\n".join(
@@ -2539,8 +2539,8 @@ def _build_temperature_field(model_data, timeline=None):
         ")\n").format(",\n        ".join(affe))
     if need_nt:
         block += _NODE_TEMPS_FUNC + (
-            "# Node temperature (Mecway temperature3) per knoop: "
-            "{{K: (Mecway-knoopnummers)}}\n"
+            "# Node temperature (Mecway temperature3) per node: "
+            "{{K: (Mecway node numbers)}}\n"
             "_bridge_node_temps(temp_fld, mesh, {{\n{0}}}, {1})\n"
         ).format(nt_data, n_mw)
     block += "\n"
@@ -2554,11 +2554,11 @@ def _build_temperature_field(model_data, timeline=None):
         # at t0 to the field at the end time, like a load that
         # ramps up.
         t1 = t_end
-        what = "oplopend tot t = {0}".format(t1)
+        what = "ramping up to t = {0}".format(t1)
     else:
         # Quasi-static and dynamics: the full value from the first step.
         t1 = t0 + _temperature_delta(t0, t_end, [])
-        what = "vanaf de eerste stap (t = {0})".format(t1)
+        what = "from the first step (t = {0})".format(t1)
     log("INFO: Temperature field as EVOL_THER: reference at t = {0}, "
         "{1}.".format(t0, what))
     block += ref_block + (
@@ -2625,8 +2625,8 @@ def _build_temperature_history(model_data, temps, hist, tref, timeline,
     nt_call = ""
     if need_nt:
         block += _NODE_TEMPS_FUNC + (
-            "# Node temperature (Mecway temperature3) per knoop: "
-            "{{K: (Mecway-knoopnummers)}}\n"
+            "# Node temperature (Mecway temperature3) per node: "
+            "{{K: (Mecway node numbers)}}\n"
             "_temp_nt = {{\n{0}}}\n").format(nt_data)
         nt_call = (
             "    _bridge_node_temps(_fld, mesh, dict(\n"
@@ -2634,10 +2634,10 @@ def _build_temperature_history(model_data, temps, hist, tref, timeline,
             "        for _k, _n in _temp_nt.items()), {1})\n").format(
                 tref, n_mw)
     block += (
-        "# Temperature (Mecway temperature2) in de tijd, KNOWN_BUGS 17: per\n"
-        "# tijdstip (t, s, (waarde per AFFE hieronder)); s = fractie van de\n"
-        "# constante temperaturen (ramp) en Node temperatures. Op t = {t0!r}\n"
-        "# de referentie; EVOL_THER (CREA_RESU AFFE, U4.44.12).\n"
+        "# Temperature (Mecway temperature2) in time, KNOWN_BUGS 17: per\n"
+        "# time (t, s, (value per AFFE below)); s = fraction of the\n"
+        "# constant temperatures (ramp) and Node temperatures. At t = {t0!r}\n"
+        "# the reference; EVOL_THER (CREA_RESU AFFE, U4.44.12).\n"
         "_temp_tab = (\n{rows})\n"
         "_temp_flds = []\n"
         "_temp_affe = [_F(NOM_CHAM='TEMP', CHAM_GD=temp_ref, INST={t0!r})]\n"
@@ -2661,8 +2661,8 @@ def _build_temperature_history(model_data, temps, hist, tref, timeline,
     log("INFO: Temperature field as EVOL_THER: reference at t = {0}, "
         "{1} times from {2} to {3} ({4}).".format(
             t0, len(insts), insts[0], insts[-1],
-            "constante waarden oplopend" if ramp else
-            "constante waarden vanaf de eerste stap"))
+            "constant values ramping up" if ramp else
+            "constant values from the first step"))
     return block, varc_evo
 
 
@@ -3548,7 +3548,7 @@ def _prepare_beam_loads(model_data, solver_cmd):
     log("INFO: Distributed beam loads per beam element added up in {0} "
         "disjoint group(s) ({1}){2} (CALCULEL2_92).".format(
             len(new_bcs), ", ".join(b["selection"] for b in new_bcs),
-            "; gravity op de balken als FORCE_POUTRE rho A g"
+            "; gravity on the beams as FORCE_POUTRE rho A g"
             if mixed and any(grav_vec) else ""))
 
 
@@ -3651,7 +3651,7 @@ def _custom_code(model_data, kind):
         model_data.get("mesh_group_names", set()))
     title = ("#ASTER code from the user" if kind == "code"
              else "#ASTER-POST code from the user")
-    return "# --- {0} (Mecway custom input) ---\n{1}\n# --- einde ---\n".format(
+    return "# --- {0} (Mecway custom input) ---\n{1}\n# --- end ---\n".format(
         title, text)
 
 
@@ -4609,7 +4609,7 @@ def _mecway_static_times(load_funcs, model_data):
     log("INFO: Time steps from Mecway: step {0} s up to {1} s, {2} "
         "calculation steps{3}; substeps_per_interval not used.".format(
             dt, t_end, len(times) - 1,
-            " (waarvan {0} op knikken van de lasttabel)".format(extra)
+            " (of which {0} at kinks of the load table)".format(extra)
             if extra > 0 else ""))
     return times
 
@@ -5905,8 +5905,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
     excit = excit_clause.replace(", TYPE_CHARGE='SUIV'", "")
     nprec = int(analysis.get("solver_nprec", 8))
     pre = (
-        "# --- Imperfectie: knikvorm {k} van de lineaire knik onder de\n"
-        "# lasten op t = {t_end!r} (bridge_to_aster._imperfection_blocks) ---\n"
+        "# --- Imperfection: buckling shape {k} of the linear buckling under\n"
+        "# the loads at t = {t_end!r} (bridge_to_aster._imperfection_blocks) ---\n"
         "imp_stat = MECA_STATIQUE(\n"
         "    MODELE=model,\n"
         "    CHAM_MATER=fieldmat,\n"
@@ -5941,8 +5941,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "imp_phi = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='NOEU_DEPL_R',\n"
         "                     RESULTAT=imp_modes, NOM_CHAM='DEPL', "
         "NUME_ORDRE={k})\n"
-        "# Kniklastfactoren (CHAR_CRIT staat niet in getAccessParameters;\n"
-        "# RECU_TABLE NOM_PARA zoals aster_results_export._table_values)\n"
+        "# Buckling load factors (CHAR_CRIT is not in getAccessParameters;\n"
+        "# RECU_TABLE NOM_PARA as in aster_results_export._table_values)\n"
         "imp_tab = RECU_TABLE(CO=imp_modes, NOM_PARA=('CHAR_CRIT',))"
         ".EXTR_TABLE().values()\n"
         "for imp_i, imp_nr in enumerate(imp_tab['NUME_ORDRE']):\n"
@@ -5956,8 +5956,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
     ).format(k=k, t_end=float(t_end), cara=cara_ref, excit=excit,
              nprec=nprec, charge=charge_ref, amp=float(amp))
     restore = (
-        "# --- Imperfectie: mesh terug naar de Mecway-geometrie voor de\n"
-        "# export (verplaatsingen blijven t.o.v. de imperfecte vorm) ---\n"
+        "# --- Imperfection: mesh back to the Mecway geometry for the\n"
+        "# export (displacements stay relative to the imperfect shape) ---\n"
         "imp_terug = CREA_CHAMP(OPERATION='COMB', TYPE_CHAM='NOEU_DEPL_R',\n"
         "                       COMB=_F(CHAM_GD=imp_phi, COEF_R={0!r}))\n"
         "mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh,\n"
@@ -6000,7 +6000,7 @@ def _crit_stab_report(kind):
     BRIDGE_CRIT_STAB lines in the .mess
     (bridge_results_liml.read_crit_stab)."""
     return (
-        "# Stabiliteitscriterium per stap (CRIT_STAB) naar de .mess\n"
+        "# Stability criterion per step (CRIT_STAB) to the .mess\n"
         "print('BRIDGE_CRIT_STAB_SOORT {0}')\n"
         "try:\n"
         "    _cs = RECU_TABLE(CO=res, NOM_TABLE='ANALYSE_MODALE')"
@@ -6250,9 +6250,9 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         extra += _crit_stab_args()
         crit_kind = _crit_stab_kind(comportement_block)
         log("INFO: CRIT_STAB per step ({0}).".format(
-            "kritische lastfactor van de huidige last" if crit_kind ==
-            "factor" else "kleinste eigenwaarde van de tangentstijfheid, "
-            "grote verplaatsingen"))
+            "critical load factor of the current load" if crit_kind ==
+            "factor" else "smallest eigenvalue of the tangent stiffness, "
+            "large displacements"))
     # Without convergence Code-Aster raises a ConvergenceError (id
     # MECANONLINE*), but 'res' then contains all archived steps up to the
     # last converged time (seen with Code-Aster 17.4). The job therefore
@@ -6641,7 +6641,7 @@ def _mode_norm(analysis, buckling, quiet=False):
 #     supported model gives ALGELINE3_81 (explanation in bridge_run_aster;
 #     the user can then choose a negative shift frequency).
 _FREE_SHIFT_BLOCK = (
-    "# Vrij-vrij: zoekfrequentie onder 0 (bridge_to_aster._FREE_SHIFT_BLOCK)\n"
+    "# Free-free: search frequency below 0 (bridge_to_aster._FREE_SHIFT_BLOCK)\n"
     "import numpy as _np\n"
     "def _bridge_diag(_m):\n"
     "    _v, _r, _c, _n = _m.getValuesWithDescription()\n"
@@ -6882,7 +6882,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     if ignored:
         log("INFO: Modes: to Mecway go the vibration/buckling modes "
             "(displacements){0}; ignored: {1}.".format(
-                " en spanningen per mode" if len(fields) > 1 else "",
+                " and stresses per mode" if len(fields) > 1 else "",
                 ", ".join(ignored)))
     if len(fields) > 1:
         log("INFO: Stresses per mode ({0}): the shapes are normalised "
@@ -6922,7 +6922,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         # RIGI_GEOM (U4.61.21: CHARGE supplies the kinematic conditions);
         # computed with example 1 of docs/ASTER_regels_voorbeelden.md.
         log("INFO: #ASTER-EXCIT loads {0}: in the matrices (ASSEMBLAGE "
-            "CHARGE){1}.".format(", ".join(extra), " en in MECA_STATIQUE"
+            "CHARGE){1}.".format(", ".join(extra), " and in MECA_STATIQUE"
                                  if (buckling or prestress) else ""))
     if not names_bc:
         if buckling:
@@ -7003,7 +7003,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     if prestress:
         terms = ["rigi_ela", "rigi_geo"] + (["rigi_rot"] if rotation else [])
         assemblage_block += (
-            "# Voorgespannen stijfheid (stress stiffening)\n"
+            "# Prestressed stiffness (stress stiffening)\n"
             "rigidite = COMB_MATR_ASSE(COMB_R=(\n{0}))\n").format("".join(
                 "    _F(MATR_ASSE={0}, COEF_R=1.0),\n".format(m)
                 for m in terms))

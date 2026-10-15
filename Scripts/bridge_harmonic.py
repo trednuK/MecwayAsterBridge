@@ -338,7 +338,7 @@ def _freq_funcs_block(load_funcs):
         vale = ",\n          ".join("{0!r}, {1!r}".format(float(t), float(v))
                                     for t, v in history)
         blocks.append(
-            "# Mecway-tabel: kolom 'time' = frequentie [Hz]\n"
+            "# Mecway table: column 'time' = frequency [Hz]\n"
             "{0} = DEFI_FONCTION(\n"
             "    NOM_PARA='FREQ',\n"
             "    VALE=({1}),\n"
@@ -624,7 +624,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     stresses = any(f in fields for f in _STRESS_GROUPS)
     if stresses and (gsh or gbm or not g3d):
         log("INFO: Harmonic: stresses only on volume elements{0}."
-            .format("" if g3d else " (het model heeft er geen)"))
+            .format("" if g3d else " (the model has none)"))
     stresses = stresses and bool(g3d)
 
     alpha, beta, zeta = bdm._damping_text(model_data, analysis)
@@ -688,7 +688,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
         model_data, analysis, False, cara_ref).replace(
             "res = CALC_MODES(", "modes = CALC_MODES(", 1)
     calc_modes_block += (
-        "# Modeoverzicht (frequentie, effectieve massa) in de .mess\n"
+        "# Mode overview (frequency, effective mass) in the .mess\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
         "import aster_results_export\n"
@@ -788,9 +788,9 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
 
     if stresses:
         calc_champ_block = (
-            "# Complexe spanningen (lineair in de verplaatsingen; alleen\n"
-            "# volume-elementen: een NOEU-veld van schalen/balken heeft\n"
-            "# lagen/vezels, bridge_to_aster._build_calc_champ_block)\n"
+            "# Complex stresses (linear in the displacements; only\n"
+            "# solid elements: a NOEU field of shells/beams has\n"
+            "# layers/fibres, bridge_to_aster._build_calc_champ_block)\n"
             "res = CALC_CHAMP(\n"
             "    reuse=res,\n"
             "    RESULTAT=res,\n"
@@ -806,8 +806,8 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
         b2a._py_str(name), ", ".join(str(n) for n in nids))
         for name, nids in probes.items()) + "}"
     export_block = b2a._custom_code(model_data, "post") + (
-        "# Resultaten in Mecway's eigen formaat (result_route 'liml'): een\n"
-        "# <mode frequency> per frequentie (aster_harmonic_export)\n"
+        "# Results in Mecway's own format (result_route 'liml'): one\n"
+        "# <mode frequency> per frequency (aster_harmonic_export)\n"
         "import aster_harmonic_export\n"
         "aster_harmonic_export.export_harmonic(\n"
         "    res, {0}, {1},\n"
@@ -845,10 +845,10 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     log("INFO: Harmonic ({0}): {1}; {2} modes, {3} load vector(s), "
         "Rayleigh alpha {4} 1/s, beta {5} s, extra modal damping {6}{7}; "
         "{8} probe(s).".format(
-            "modale basis" if basis == "GENE" else "direct", what,
+            "modal basis" if basis == "GENE" else "direct", what,
             b2a._mode_count(model_data, analysis), len(excitations),
             alpha, beta, zeta if basis == "GENE" else 0.0,
-            ", dempers " + ", ".join(dampers) if dampers else "",
+            ", dampers " + ", ".join(dampers) if dampers else "",
             len(probes)))
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:

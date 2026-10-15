@@ -439,14 +439,14 @@ def _dist_to_path(p, pts):
 # ==========================================
 # .COMM
 # ==========================================
-GOLDAK_FUNC = '''# Bewegende lasbron (bridge_welding.py): Goldak dubbel-ellipsoide langs
-# een baan. P = (t0, v, L, punten, cum. lengtes, assenstelsels, qf, qr, af,
-# ar, b, c, afkap); q in W/m3.
+GOLDAK_FUNC = '''# Moving welding source (bridge_welding.py): Goldak double ellipsoid along
+# a path. P = (t0, v, L, points, cum. lengths, coordinate frames, qf, qr,
+# af, ar, b, c, cut-off); q in W/m3.
 def _lb_goldak(X, Y, Z, INST, P):
     t0, v, L, pts, cum, frames, qf, qr, af, ar, b, c, cut = P
     s = v * (INST - t0)
-    # aan op [t0, t_eind], ook op t_eind zelf (marge voor de afronding:
-    # v (t_eind - t0) lag in een test net boven L, S4c)
+    # on in [t0, t_end], also at t_end itself (margin for rounding:
+    # v (t_end - t0) was just above L in a test, S4c)
     if s < 0.0 or s > L * (1.0 + 1.0e-9):
         return 0.0
     k = 0
@@ -716,14 +716,14 @@ def _check_mesh(tb, src, eids, label):
 # The same code in the .comm and here in the bridge (exec below), so that
 # the birth of a point (source) and of an element (material) are computed
 # in the same way.
-BORN_FUNC = '''# Geboorte van toevoegmateriaal (bridge_welding.py, S4c): 1 als het punt
-# (X, Y, Z) op tijd INST al geboren is: INST > tb = max(t0, t0 + (s -
-# voorloop) / v), s = booglengte van het dichtstbijzijnde punt van de baan;
-# nooit als tb na het einde van de bron ligt. B = (t0, v, voorloop, t_eind,
-# punten, cum. lengtes).
+BORN_FUNC = '''# Birth of filler material (bridge_welding.py, S4c): 1 if the point
+# (X, Y, Z) is already born at time INST: INST > tb = max(t0, t0 + (s -
+# lead) / v), s = arc length of the nearest point of the path;
+# never if tb lies after the end of the source. B = (t0, v, lead, t_end,
+# points, cum. lengths).
 def _lb_arc(X, Y, Z, pts, cum):
-    # voorbij het einde van de baan doorgetrokken (s > L): daar komt de bron
-    # niet, zodat dat materiaal nooit geboren wordt (verder dan de voorloop)
+    # extended beyond the end of the path (s > L): the source does not get
+    # there, so that material is never born (further than the lead)
     best, s_best = None, 0.0
     last = len(pts) - 2
     for k in range(len(pts) - 1):
@@ -751,7 +751,7 @@ def _lb_born(X, Y, Z, INST, B):
         return 0.0
     if INST > tb:
         return 1.0
-    # geboren bij de start van de bron (tb = t0): vanaf t0 zelf
+    # born at the start of the source (tb = t0): from t0 itself
     return 1.0 if (tb <= B[0] and INST >= B[0] - 1.0e-9) else 0.0
 '''
 _BORN_NS = {}
@@ -1012,8 +1012,8 @@ def birth_materials(tb, names):
     birth["concepts"] = {}
     if not tb.nonlinear:
         lines.append(
-            "# Toevoegmateriaal (bridge_welding.birth_materials): het midden "
-            "van de geboortestap\n# per element als NEUT1 (nooit geboren: "
+            "# Filler material (bridge_welding.birth_materials): the middle "
+            "of the birth step\n# per element as NEUT1 (never born: "
             "1e30)\n"
             "gb_tb = CREA_CHAMP(TYPE_CHAM='CART_NEUT_R', OPERATION='AFFE', "
             "MAILLAGE=mesh, AFFE=(\n    {0},\n))".format(",\n    ".join(
@@ -1043,7 +1043,7 @@ def birth_materials(tb, names):
                          "RHO_CP={0}_C))".format(concept))
         else:
             lines.append(
-                "# stil (nog niet geboren)\n"
+                "# quiet (not yet born)\n"
                 "{0} = DEFI_MATERIAU(THER_NL=_F(LAMBDA=DEFI_CONSTANTE(VALE="
                 "{1}), RHO_CP=DEFI_CONSTANTE(VALE={2})))".format(
                     concept, _real(lam * q * q), _real(rcp * q)))
@@ -1082,8 +1082,8 @@ def ther_loop(tb, affe, args):
     """
     birth = tb.birth
     return (
-        "# --- Toevoegmateriaal (bridge_welding.ther_loop): THER_NON_LINE "
-        "per geboortestap ---\n"
+        "# --- Filler material (bridge_welding.ther_loop): THER_NON_LINE "
+        "per birth step ---\n"
         "_gb_affe = [\n    {affe},\n]\n"
         "{born}"
         "_gb_t = list(times.getValues())\n"

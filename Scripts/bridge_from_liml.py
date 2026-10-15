@@ -120,7 +120,7 @@ def _parse_bilinear(plastic_node, mat_name, plastic_type, E=None):
     log("INFO: Material '{0}': bilinear {1} hardening, SY={2} Pa, "
         "H={3} Pa (Mecway tangent modulus) -> D_SIGM_EPSI={4} Pa "
         "({5}).".format(
-            mat_name, "kinematische" if kinematic else "isotrope", sy, h, et,
+            mat_name, "kinematic" if kinematic else "isotropic", sy, h, et,
             "VMIS_CINE_LINE" if kinematic else "VMIS_ISOT_LINE"))
     return {"sy": sy, "et": et, "h": h, "kinematic": kinematic}
 
@@ -878,10 +878,10 @@ def _apply_suppression(root, model_data):
     names = [c.get("name") for c in root.findall("configuration")]
     if configuration is not None:
         log("INFO: Configuration '{0}' solved ({1}).".format(
-            configuration, {"gekozen": "instelling Configuratie",
-                            "enige": "de enige configuratie",
-                            "vrij": "de enige zonder onderdrukte items",
-                            "eerste": "de eerste"}[how]))
+            configuration, {"gekozen": "setting Configuration",
+                            "enige": "the only configuration",
+                            "vrij": "the only one without suppressed items",
+                            "eerste": "the first"}[how]))
         warning = configuration_warning(names, configuration, how, missing)
         if warning:
             log(u"WARNING: " + warning)
@@ -896,9 +896,9 @@ def _apply_suppression(root, model_data):
             continue
         why = None
         if _suppressed_in(item, configuration):
-            why = "configuratie '{0}'".format(configuration)
+            why = "configuration '{0}'".format(configuration)
         elif item.get("group") in groups:
-            why = "groep '{0}'".format(item.get("group"))
+            why = "group '{0}'".format(item.get("group"))
         if why is None:
             continue
         item.set("suppressed", "true")

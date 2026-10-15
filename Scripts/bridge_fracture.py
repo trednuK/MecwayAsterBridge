@@ -317,8 +317,8 @@ def front_cells(model_data, conn):
         log("INFO: Fracture mechanics: crack {0}: front {1} ({2} edges, "
             "{3}, {4}), lips {5}{6}.".format(
                 k + 1, crack["front"], len(chain),
-                "gesloten" if closed else "open",
-                "kwadratisch" if quadratic else "lineair", crack["upper"],
+                "closed" if closed else "open",
+                "quadratic" if quadratic else "linear", crack["upper"],
                 " + " + crack["lower"] if crack["lower"] else
                 " (half model, SYME='OUI')"))
         model_data["cracks"].append(crack)
@@ -626,7 +626,7 @@ def _material_block(model_data, concepts, excit_clause, cara_ref):
         "            CHAM_MATER=fieldmat_fiss,{0} INST=0.0),\n"
         "{1}"
         ")\n"
-        "# CALC_G OPTION 'G' leest SIEF_ELGA (<EXCEPTION> RUPTURE0_94 zonder)\n"
+        "# CALC_G OPTION 'G' reads SIEF_ELGA (<EXCEPTION> RUPTURE0_94 without it)\n"
         "res_fiss = CALC_CHAMP(reuse=res_fiss, RESULTAT=res_fiss,\n"
         "                      CONTRAINTE=('SIEF_ELGA',))\n").format(
             " CARA_ELEM=cara," if cara_ref else "", excit_clause)

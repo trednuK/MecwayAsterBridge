@@ -619,7 +619,7 @@ def _export_block(work_dir, model_data):
     (structure) and the pressure (fluid, component PRES of DEPL)."""
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
-    return ("# Resultaten in Mecway's eigen formaat (result_route 'liml')\n"
+    return ("# Results in Mecway's own format (result_route 'liml')\n"
             "_tf = RECU_TABLE(CO=res, NOM_PARA=('FREQ',)).EXTR_TABLE()"
             ".values()\n"
             "for _i, _f in zip(_tf['NUME_ORDRE'], _tf['FREQ']):\n"
@@ -722,8 +722,8 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
     defigroup_block = bta._build_defigroup_block(md_s)
     if interfaces:
         defigroup_block += (
-            "\n# Koppelvlakken: normaal uit het fluidum (ORIE_PEAU met "
-            "GROUP_MA_INTERNE,\n# zoals adlv100b/adls102a)\n"
+            "\n# Coupling faces: normal out of the fluid (ORIE_PEAU with "
+            "GROUP_MA_INTERNE,\n# as in adlv100b/adls102a)\n"
             "mesh = MODI_MAILLAGE(\n    reuse=mesh,\n    MAILLAGE=mesh,\n"
             "    ORIE_PEAU=(\n{0}    ),\n)\n").format("".join(
                 "        _F(GROUP_MA_PEAU='{0}', GROUP_MA_INTERNE='{1}'),\n"
@@ -820,8 +820,8 @@ def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,
             "GROUP_NO" if kind == "node" else "GROUP_MA", name))
         log("INFO: Vibro-acoustics: pressure node p = 0 on '{0}'.".format(sel))
     if entries:
-        loads_block += ("\n# Drukknopen p = 0 (OPEN_-selecties, fluid "
-                        "pressure 0): PRES en PHI\n"
+        loads_block += ("\n# Pressure nodes p = 0 (OPEN_ selections, fluid "
+                        "pressure 0): PRES and PHI\n"
                         "bc_flu = AFFE_CHAR_MECA(\n    MODELE=model,\n"
                         "    DDL_IMPO=(\n{0}    ),\n)\n").format(
                             "".join(entries))

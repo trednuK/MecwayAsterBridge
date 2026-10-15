@@ -564,7 +564,7 @@ def _trc_block(name, ds):
     if ds.get("grain_aust"):
         grain = "    GRAIN_AUST=_F({0}),\n".format(", ".join(
             "{0}={1}".format(k, _r(v)) for k, v in ds["grain_aust"].items()))
-    return ("# TRC-diagram {0} ({1})\n"
+    return ("# TRC diagram {0} ({1})\n"
             "trc_{0} = DEFI_TRC(\n    HIST_EXP=(\n{2},\n    ),\n"
             "    TEMP_MS=_F(SEUIL={3}, AKM={4}, BKM={5}, TPLM={6}),\n"
             "{7})\n").format(name, ds["source"], hist, _r(seuil), _r(akm),
@@ -593,9 +593,9 @@ def _fmt_groups(groups):
 # Summary in the job (after CALC_META): lines 'BRIDGE_META <key>
 # <value>' in the .mess (report_lines). An error here must not stop the
 # job.
-_REPORT = '''# Samenvatting metallurgie (bridge_metallurgy): fasen op het laatste
-# tijdstip, grootste austenietfractie tijdens de run (warmte-beinvloede
-# zone), hardheid. Regels BRIDGE_META in de .mess.
+_REPORT = '''# Metallurgy summary (bridge_metallurgy): phases at the last time,
+# largest austenite fraction during the run (heat-affected zone),
+# hardness. Lines BRIDGE_META in the .mess.
 def _bridge_meta_report(res, n_nodes, with_hv, ac3):
     import numpy as np
     out = []
@@ -626,8 +626,8 @@ def _bridge_meta_report(res, n_nodes, with_hv, ac3):
                 ('n_haz', int((zmax > 0.01).sum())),
                 ('n_full', int((zmax > 0.99).sum())),
                 ('T_peak', float(tmax.max()) + 273.15),
-                # ruim boven Ac3 geweest maar niet (bijna) volledig
-                # austeniet: de austenitisering loopt achter
+                # well above Ac3 but not (nearly) fully
+                # austenite: the austenitisation lags behind
                 ('n_lag', int(((tmax > ac3 + 50.0) & (zmax < 0.9)).sum()))]
         if with_hv:
             c, v, m = vals('DURT_NOEU', idx[-1])
@@ -754,9 +754,9 @@ def apply(tb, model_data, analysis):
                 spec["begin_name"], _r(spec["grain"]),
                 *[_r(spec["meta"][k]) for k in ("AR3", "MS0", "AC1", "AC3",
                                                 "ALPHA")] +
-                [", hardheid HV {0}".format("/".join(
+                [", hardness HV {0}".format("/".join(
                     "%g" % v for v in spec["hv"])) if spec["hv"] else "",
-                 ", mechanica: META_P_IL" if spec["mech"] else "",
+                 ", mechanics: META_P_IL" if spec["mech"] else "",
                  ", ".join(els)]))
     with_hv = all(specs[n]["hv"] for n in groups)
     if any(specs[n]["hv"] for n in groups) and not with_hv:
@@ -767,9 +767,9 @@ def apply(tb, model_data, analysis):
     cham = ("    MODELE=model,\n    CHAM_MATER=fieldmat_meta,\n" if sep
             else "")
     post = (
-        "# --- Metallurgie (#ASTER-METALLURGIE, bridge_metallurgy.py) ---\n"
-        "# Begintoestand: V1..V5 = ferriet, perliet, bainiet, martensiet, "
-        "austeniet,\n# V6 = som koude fasen, V7 = korrelgrootte "
+        "# --- Metallurgy (#ASTER-METALLURGIE, bridge_metallurgy.py) ---\n"
+        "# Initial state: V1..V5 = ferrite, pearlite, bainite, martensite, "
+        "austenite,\n# V6 = sum of the cold phases, V7 = grain size "
         "(hsnv101a, mtlp103a)\n"
         "{2}meta_init = CREA_CHAMP(\n    OPERATION='AFFE',\n"
         "    TYPE_CHAM='CART_VAR2_R',\n    MAILLAGE=mesh,\n    AFFE=(\n"
@@ -800,7 +800,7 @@ def fields(fields_in, model_data):
     if model_data.get("metallurgy") and FIELD_GROUP not in out:
         out.append(FIELD_GROUP)
         log("INFO: Metallurgy: phases{0} to Mecway ({1}).".format(
-            " en hardheid" if model_data["metallurgy"]["with_hv"] else "",
+            " and hardness" if model_data["metallurgy"]["with_hv"] else "",
             ", ".join(PHASES + (("hardness",) if model_data["metallurgy"]
                                 ["with_hv"] else ()))))
     return out
@@ -962,9 +962,9 @@ def mech_material(concept, mat, spec, tab, tref, t_alpha, t_cut, label):
     ecro = ["{0}_D_SIGM_EPSI={1}".format(ca, func("ET" + p, et[p]))
             for ca, p in names]
     lines.append(
-        "# Metallurgische wet (#ASTER-METALLURGIE mechanica=ja; "
-        "ELAS_META_FO + META_ECRO_LINE,\n# hsnv101a): per fase vloeigrens "
-        "en helling, mengregel lineair (SY_MELANGE)\n"
+        "# Metallurgical law (#ASTER-METALLURGIE mechanica=ja; "
+        "ELAS_META_FO + META_ECRO_LINE,\n# hsnv101a): per phase yield strength "
+        "and slope, linear mixing rule (SY_MELANGE)\n"
         "{0} = DEFI_MATERIAU(\n    ELAS_META_FO=_F(\n        {1},\n    ),\n"
         "    META_ECRO_LINE=_F(\n        {2},\n    ),\n)".format(
             concept, ",\n        ".join(kw), ",\n        ".join(ecro)))

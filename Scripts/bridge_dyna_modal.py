@@ -420,7 +420,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         model_data, analysis, False, cara_ref).replace(
             "res = CALC_MODES(", "modes = CALC_MODES(", 1)
     calc_modes_block += (
-        "# Modeoverzicht (frequentie, effectieve massa) in de .mess\n"
+        "# Mode overview (frequency, effective mass) in the .mess\n"
         "import sys\n"
         "sys.path.insert(0, {0})\n"
         "import aster_results_export\n"
@@ -489,7 +489,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "displacements)\n" + _with_model(b2a._build_calc_champ_block(
                 model_data, reactions=False), bool(cara_ref)))
     export_block = b2a._custom_code(model_data, "post") + (
-        "# Resultaten in Mecway's eigen formaat (bridge: "
+        "# Results in Mecway's own format (bridge: "
         "result_route='liml')@N"
         "aster_results_export.export_results(@N"
         "    res, {fragment}, {liml},@N"
@@ -510,7 +510,7 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
     log("INFO: Response on a modal basis: {0} modes, {1} load vector(s), "
         "Rayleigh alpha {2} 1/s, beta {3} s, extra modal damping {4}{5}."
         .format(b2a._mode_count(model_data, analysis), len(excitations),
-                alpha, beta, zeta, ", statische correctie" if static_corr
+                alpha, beta, zeta, ", static correction" if static_corr
                 else ""))
     try:
         template = b2a._read_template(analysis["template"])
