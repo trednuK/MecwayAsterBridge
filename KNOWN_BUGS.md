@@ -368,7 +368,7 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    in Mecway's eigen solver is exact); een ronde staaf (SECTION=PIPE met binnenstraal 0)
    rekent CCX daar niet ("nonpositive jacobian").
 
-108\. **Element offset met starre armen: kleine rotaties en waarden op de knopen**
+108\. **Element offset: kleine rotaties, waarden op de knopen en combinaties**
    (bevestigd, `bridge_offset.py`). Balken en COQUE_3D-schalen (tri6/quad8 of de keuze
    COQUE_3D) met een element offset liggen op eigen knopen, met per knoop een starre
    arm als `LIAISON_DDL` (lineair). (a) Bij `DEFORMATION` = `GROT_GDEP` blijft de arm
@@ -380,9 +380,25 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    model (LS-63-model met 24 balk- en 12 x 2 quad8-elementen: torsiehoek 0,1117 tegen
    0,1046 rad, zijverplaatsing +1,6 tegen −10,9 mm; de bridge geeft in beide 0,1092 rad
    en −11,4 mm); nagegaan met het voorbeeld zelf en LS-63 (vlakken, gelijk aan Mecway).
-   (d) Een balkelement met zowel een offset als een flexible joint: de joint vervalt
-   (WARNING; de arm gaat naar de Mecway-knoop). Niet gecombineerd getest.
-   Status: (a), (b) en (d) zo gelaten; (c) **vraag** (gedrag van Mecway).
+   (d) Een balkelement met zowel een offset als een flexible joint: de joint wordt niet
+   vertaald (WARNING in `bridge_mesh._flexible_joints`), het element zit star aan de arm.
+   Mecway 34 houdt de joint wel aan (LS-52a: Mecway 1,264e-3 m = scharnier, bridge
+   3,16e-4 m = star). Vertalen kan met een eigen knoop naast de verschoven knoop
+   (open). Een verschoven balk en een balk met een joint in dezelfde knoop werken wel
+   (LS-52b, gelijk aan Mecway). (e) Verlijmd contact op schalen met een offset: de
+   slave-knopen (altijd de Mecway-knopen) worden aan de knopen van de master gekoppeld
+   (EXCENTREMENT, of de eigen relaties bij quad8/tri6), maar bij `LIAISON_MAIL` op een
+   master op eigen knopen (volume op een quad8-schaal, `MASSIF_COQUE`) aan het
+   verschoven vlak (WARNING met het gebruikte vlak, `bridge_mesh._bonded`). Wat Mecway
+   doet is niet nagelopen. Schaal op schaal met een offset op eigen knopen: NPREC = -1
+   (anders onterecht FACTOR_11; LS-66). (f) Een last op randen van verschoven schalen
+   (vlakselectie) zet Mecway op de verschoven rand (gemeten: trek op de rand buigt de
+   strook niet), de bridge op de knopen (`FORCE_ARETE` op de randcel, ook bij
+   EXCENTREMENT): een extra moment w x F per lengte (LS-67, WARNING in
+   `bridge_offset._report_edge_loads`). Een last op een knoopselectie werkt in beide op
+   de knopen (LS-60).
+   Status: (a) en (b) zo gelaten; (c) en (e) **vraag** (gedrag van Mecway); (d) en (f)
+   bevestigd, open.
 
 ## Open vragen (gedrag van Mecway niet nagegaan)
 
@@ -732,7 +748,8 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
 64\. **Lassen: grenzen van de keten thermisch → mechanisch** (bevestigd,
    `bridge_thermomech.py`, docs/Lassen.md §9). Alleen in een transiente thermische
    analyse (T31 met een Thermal stress) en alleen met volume-elementen (ERROR bij
-   schalen, balken, veren); contact en koppelingen rekent de keten niet. De
+   schalen, balken, veren); contact en koppelingen rekent de keten niet, element
+   offset, flexible joint en constraint equation ook niet (WARNING). De
    mechanische stappen zijn de thermische (één Mecway-*Time step*, ook voor het
    afkoelen). Zonder `geboorte=` is de rups vanaf t = 0 aanwezig en draagt mee
    (toevoegmateriaal dat geboren wordt: punt 71); metallurgie alleen

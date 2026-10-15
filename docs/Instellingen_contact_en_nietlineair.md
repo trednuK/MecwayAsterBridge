@@ -665,6 +665,12 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
 - Mecway's eigen solver koppelt bij een schaalrand als slave geen rotaties: de verlijmde
   strook en het T-stuk worden daar een mechanisme (headless gemeten, Mecway 34). Een
   vergelijking met Mecway kan dus alleen met een doorlopende mesh.
+- Schalen met een *Element offset* in het contact: de slave-knopen (altijd de
+  Mecway-knopen) gaan naar de knopen van de master; alleen bij `LIAISON_MAIL` op een
+  master op eigen knopen (volume op een quad8-schaal) naar het verschoven vlak. De
+  bridge meldt welk vlak (WARNING); wat Mecway doet is niet nagelopen (KNOWN_BUGS 108).
+  Schaal op schaal met een offset op eigen knopen (quad8/tri6): `solver_nprec` −1,
+  anders onterecht `FACTOR_11` (LS-66: 0,94266 mm, Mecway doorlopend 0,94148 mm).
 
 ---
 

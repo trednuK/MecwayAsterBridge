@@ -433,6 +433,37 @@ meshes is given below.
   `FACTOR_57` (error bound 5e-6); the bridge switches that refinement on whenever there
   are rigid arms.
 
+### LS-64 – LS-67 Element offset: combinations
+
+- **Goal**: element offset together with other input (`tests_offset.py`). (64) two
+  shell elsets that are each partly offset: each elset gets its own rest group without
+  `EXCENTREMENT` (before, the second elset got the same group name and the first no
+  `COQUE`: `CALCULEL_6`). (65) the extra result fields of offset quad8 shells (cells on
+  their own nodes, mapped back to the Mecway elements via the `BROFL` node groups;
+  before, they were silently missing). (66) bonded contact with an offset quad8 strip as
+  master (before, a false `FACTOR_11`). (67) a load on the edge face of an offset shell.
+- **Model**: strip 200 × 20 × 2 mm as LS-60. (64) two elsets of 20 × 2 quad4 (DKT) across
+  the width, w = 10 mm on the elements with x < L/2, 100 N tension on the nodes of the
+  free edge. (65) LS-60b (quad8) with `shell_stresses`, `shell_forces`, `strain` and
+  `safety_factor` (S = 250 MPa). (66) LS-07a with quad8, w = 1 mm on part A (master),
+  1 N end load. (67) LS-60a with the 100 N as a load on the edge face.
+- **Reference**: (64) curvature P e/(EI) only over x < L/2: tip 3 P e L²/(8EI) =
+  5.357 mm; σ at L/4 as LS-60, at 3L/4 only P/(BT) = 2.5 MPa. (65) at x = L/2:
+  σxx bottom/top 77.5 / −72.5 MPa, N_u = P/B = 5000 N/m, εxx bottom = σ/E, factor of
+  safety S/σ_vM = 3.226; each of the 80 elements has a value. (66) P L³/(3EI) =
+  0.95238 mm; Mecway does not solve the bonded model (LS-07a), hence the continuous
+  strip (0.94148 mm). (67) Mecway 34: tip 0 (the load acts at the offset edge). Also
+  Mecway 34 headless on 64.
+- **Result**: (64) 5.268 mm (−1.7 %; Mecway 5.277 mm, −0.16 %), σ 77.19 MPa (L/4) and
+  2.500 MPa (3L/4). (65) all 80 elements, values equal to the theory within 1e-5, also
+  the nodal values. (66) 0.94266 mm (−1.0 % vs Euler, +0.13 % vs Mecway continuous).
+  (67) 7.085 mm against 0 in Mecway: **KNOWN** (KNOWN_BUGS 108).
+- **Interpretation**: (67) the bridge applies a load on a face selection to the edge
+  cell on the Mecway nodes (`FORCE_ARETE`, also with `EXCENTREMENT`), Mecway at the
+  offset edge; the difference is a moment w × F per length (WARNING). A load on a node
+  selection acts at the nodes in both (LS-60). For bonded contact on offset shells the
+  bridge reports which surface it ties to (KNOWN_BUGS 108).
+
 ### LS-20 Configurations (load cases G, Q and ULS)
 
 - **Goal**: the setting *Configuration* (`configuration`) chooses which configuration
@@ -505,6 +536,31 @@ meshes is given below.
   rotation(s) set to 0 (unless a constraint fixes them, d). A fixed constraint on an
   *element selection* containing the element with the joint stops with `FACTOR_11`
   (KNOWN_BUGS 106); put it on nodes or faces.
+
+### LS-52, LS-53 Flexible joint with element offset and section forces per element
+
+- **Goal**: (52) flexible joint together with an element offset (`tests_balken.py`).
+  Before, a joint on an offset element got its own node that was in no cell, and a node
+  with only an offset beam and a beam with a joint had no degrees of freedom (both
+  `CHARGES2_31`). (53) the section forces per element (`beam_forces` as element values)
+  next to a joint and on line3 beams; before, the element with the joint and every line3
+  beam were silently missing.
+- **Model**: LS-51a (joint about W right of the middle) with an offset z = 10 mm
+  (global, normal to the bending plane) on (52a) the right half, so also on the element
+  with the joint, or (52b) the left half. (53a) LS-51a, (53b) LS-51e (4 line3), with
+  `beam_forces`.
+- **Reference**: (52a) the joint is dropped (WARNING), clamped at both ends:
+  δ = PL³/(192EI) = 0.31578 mm; (52b) hinge: δ = PL³/(48EI) = 1.2631 mm; Mecway 34 (own
+  solver) gives 1.2636 mm in both. (53) each half is a cantilever L/2 with P/2: M = 0 at
+  the hinge, (P/2) h further along the element, V = P/2.
+- **Result**: (52a) 0.31628 mm (+0.16 %; vs Mecway **KNOWN**, KNOWN_BUGS 108); (52b)
+  1.2636 mm (+0.04 %, equal to Mecway); reactions = load. (53a) all 10 elements, M at
+  the hinge 2e-13 N m, 5.000 N m at x = 0.6 m, V = 50 N; (53b) all 4 elements with
+  three values: 0 / 6.25 / 12.5 N m.
+- **Interpretation**: Mecway does apply a joint on an offset element; the bridge then
+  connects the element rigidly to the arm (open, KNOWN_BUGS 108). A line3 beam gets its
+  element values from both SEG2 halves (end 1 and middle from the first, end 2 from the
+  second).
 
 ### Extra result fields (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 

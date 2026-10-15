@@ -660,6 +660,12 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
 - Mecway's own solver ties no rotations for a shell edge as slave: the bonded strip and
   the T-joint become a mechanism there (measured headless, Mecway 34). A comparison with
   Mecway is therefore only possible with a continuous mesh.
+- Shells with an *Element offset* in the contact: the slave nodes (always the Mecway
+  nodes) are tied to the master nodes; only with `LIAISON_MAIL` on a master on its own
+  nodes (solid on a quad8 shell) to the offset surface. The bridge reports which
+  surface (WARNING); what Mecway does has not been checked (KNOWN_BUGS 108). Shell on
+  shell with an offset on own nodes (quad8/tri6): `solver_nprec` −1, otherwise a false
+  `FACTOR_11` (LS-66: 0.94266 mm, Mecway continuous 0.94148 mm).
 
 ---
 

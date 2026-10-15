@@ -434,6 +434,38 @@ opeenvolgende meshes.
   CompositeBeam met `FACTOR_57` (foutgrens 5e-6); de bridge zet die verfijning aan
   zodra er starre armen zijn.
 
+### LS-64 – LS-67 Element offset: combinaties
+
+- **Doel**: element offset samen met andere invoer (`tests_offset.py`). (64) twee
+  schaalelsets die elk voor een deel verschoven zijn: elke elset krijgt een eigen
+  restgroep zonder `EXCENTREMENT` (eerder kreeg de tweede elset dezelfde groepsnaam en de
+  eerste geen `COQUE`: `CALCULEL_6`). (65) de extra resultaatvelden van verschoven
+  quad8-schalen (cellen op eigen knopen, via de knoopgroepen `BROFL` terug naar de
+  Mecway-elementen; eerder ontbraken ze stil). (66) verlijmd contact met een verschoven
+  quad8-strook als master (eerder onterecht `FACTOR_11`). (67) een last op het randvlak
+  van een verschoven schaal.
+- **Model**: strook 200 × 20 × 2 mm als LS-60. (64) in de breedte twee elsets van 20 × 2
+  quad4 (DKT), w = 10 mm op de elementen met x < L/2, 100 N trek op de knopen van de
+  vrije rand. (65) LS-60b (quad8) met `shell_stresses`, `shell_forces`, `strain` en
+  `safety_factor` (S = 250 MPa). (66) LS-07a met quad8, w = 1 mm op deel A (master),
+  1 N eindlast. (67) LS-60a met de 100 N als last op het randvlak.
+- **Referentie**: (64) kromming P e/(EI) alleen over x < L/2: tip 3 P e L²/(8EI) =
+  5,357 mm; σ bij L/4 als LS-60, bij 3L/4 alleen P/(BT) = 2,5 MPa. (65) bij x = L/2:
+  σxx onder/boven 77,5 / −72,5 MPa, N_u = P/B = 5000 N/m, εxx onder = σ/E, factor of
+  safety S/σ_vM = 3,226; elk van de 80 elementen een waarde. (66) P L³/(3EI) =
+  0,95238 mm; Mecway rekent het verlijmde model niet (LS-07a), dus de doorlopende strook
+  (0,94148 mm). (67) Mecway 34: tip 0 (de last grijpt aan op de verschoven rand).
+  Daarnaast Mecway 34 headless op 64.
+- **Resultaat**: (64) 5,268 mm (−1,7 %; Mecway 5,277 mm, −0,16 %), σ 77,19 MPa (L/4)
+  en 2,500 MPa (3L/4). (65) alle 80 elementen, waarden op 1e-5 gelijk aan de theorie,
+  ook de knoopwaarden. (66) 0,94266 mm (−1,0 % t.o.v. Euler, +0,13 % t.o.v. Mecway
+  doorlopend). (67) 7,085 mm tegen 0 in Mecway: **BEKEND** (KNOWN_BUGS 108).
+- **Interpretatie**: (67) de bridge zet een last op een vlakselectie op de randcel op de
+  Mecway-knopen (`FORCE_ARETE`, ook bij `EXCENTREMENT`), Mecway op de verschoven rand;
+  het verschil is een moment w × F per lengte (WARNING). Een last op een knoopselectie
+  werkt in beide op de knopen (LS-60). Bij verlijmd contact op verschoven schalen meldt
+  de bridge aan welk vlak hij koppelt (KNOWN_BUGS 108).
+
 ### LS-20 Configuraties (lastgevallen G, Q en ULS)
 
 - **Doel**: de instelling *Configuratie* (`configuration`) kiest welke configuratie de
@@ -507,6 +539,31 @@ opeenvolgende meshes.
   overgebleven rotatie(s) op 0 (tenzij een voorwaarde ze vastlegt, d). Een vaste
   voorwaarde op een *elementselectie* met het element met de joint stopt met `FACTOR_11`
   (KNOWN_BUGS 106); leg hem op knopen of vlakken.
+
+### LS-52, LS-53 Flexible joint met element offset en snedekrachten per element
+
+- **Doel**: (52) flexible joint samen met een element offset (`tests_balken.py`). Eerder
+  kreeg een joint op een verschoven element een eigen knoop die in geen cel zat, en een
+  knoop met alleen een verschoven balk en een balk met een joint had geen
+  vrijheidsgraden (beide `CHARGES2_31`). (53) de snedekrachten per element
+  (`beam_forces` als elementwaarden) naast een joint en op line3-balken; eerder ontbrak
+  het element met de joint en elke line3-balk stil.
+- **Model**: LS-51a (joint om W rechts van het midden) met een offset z = 10 mm
+  (globaal, loodrecht op het buigvlak) op (52a) de rechterhelft, dus ook op het element
+  met de joint, of (52b) de linkerhelft. (53a) LS-51a, (53b) LS-51e (4 line3), met
+  `beam_forces`.
+- **Referentie**: (52a) de joint vervalt (WARNING), dubbel ingeklemd: δ = PL³/(192EI) =
+  0,31578 mm; (52b) scharnier: δ = PL³/(48EI) = 1,2631 mm; Mecway 34 (eigen solver)
+  geeft in beide 1,2636 mm. (53) elke helft is een ingeklemde balk L/2 met P/2: M = 0 in
+  het scharnier, (P/2) h verder op het element, V = P/2.
+- **Resultaat**: (52a) 0,31628 mm (+0,16 %; t.o.v. Mecway **BEKEND**, KNOWN_BUGS 108);
+  (52b) 1,2636 mm (+0,04 %, gelijk aan Mecway); reacties = last. (53a) alle 10
+  elementen, M in het scharnier 2e-13 N m, 5,000 N m op x = 0,6 m, V = 50 N; (53b)
+  alle 4 elementen met drie waarden: 0 / 6,25 / 12,5 N m.
+- **Interpretatie**: Mecway houdt een joint op een verschoven element wel aan; de bridge
+  verbindt het element dan star met de arm (open, KNOWN_BUGS 108). Een line3-balk
+  krijgt zijn elementwaarden uit beide SEG2-helften (eind 1 en midden uit de eerste,
+  eind 2 uit de tweede).
 
 ### Extra resultaatvelden (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
