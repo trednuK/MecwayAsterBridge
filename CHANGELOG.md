@@ -2,6 +2,11 @@
 
 ## Unreleased (develop)
 
+- **Fix: results of a model with configurations** (e.g. load cases G, Q, ULS): Mecway 34 could
+  not open the `.liml` after the bridge wrote the results into it ("Error opening file"). The
+  model copy in `<solution configuration="X">` is now written as Mecway writes it: without the
+  `<configuration>` definitions and `<suppressed configuration>` children, with
+  `suppressed="true"` on the items suppressed in X. Test `tests/test_results_configuration.py`.
 - **Developer text in English**: code comments, docstrings, comments in the `.comm`
   templates (and the generated `study.comm`), INFO/SUCCESS log lines, `AGENTS.md`,
   `KNOWN_BUGS.md` and `STAPPENPLAN.md`. The user interface, messages, WARNING/ERROR lines,

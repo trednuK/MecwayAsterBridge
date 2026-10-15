@@ -30,6 +30,9 @@
 # elset/elem, loads, mat, selections, ...), except <fieldvariable>
 # (display settings), with the same formatting two spaces deeper, and as
 # the last one <results>. <solution> is the last child of <liml>.
+# With configurations: one <solution configuration="X"> per configuration;
+# the bridge replaces only that of the solved configuration, with the
+# model copy as Mecway writes it for X (_configuration_copy).
 #
 # FILE SIZES (measured, Code-Aster 17.4, STAT_NON_LINE on a hex8
 # block of 18,225 nodes, 51 archived time steps; DEPL, SIGM_NOEU,
@@ -200,6 +203,160 @@ def _model_copy(head, nl):
 
 def _newline(text):
     return "\r\n" if "\r\n" in text else "\n"
+
+
+# ==========================================
+# CONFIGURATIONS IN THE MODEL COPY
+#
+# Mecway's own solution of a model with configurations (measured
+# headless with Mecway 34, mecway.exe <model> solve on LS-20a with
+# loads, a <fixed> and <group>s suppressed per configuration): the model
+# copy in <solution configuration="X"> has
+#   - no <configuration name=".."/> elements;
+#   - no <suppressed configuration=".."/> children;
+#   - suppressed="true" as the last attribute of every item suppressed in
+#     X (<gravity suppressed="true">, <traction selection=".."
+#     suppressed="true">);
+#   - an item without children left is self-closing
+#     (<fixed selection="SymX" suppressed="true" />, <group name="G" />).
+# Items suppressed only through a suppressed group keep their tag as is.
+# Mecway 34 refuses a copy with the <configuration> definitions and
+# <suppressed> children ("Error opening file").
+# ==========================================
+_TAG = re.compile(r'<(/?)([A-Za-z_][\w.:-]*)((?:[^>"\']|"[^"]*"|\'[^\']*\')*?)'
+                  r'(/?)>')
+_SUPPRESSED_TRUE = re.compile(r'\bsuppressed\s*=\s*"true"')
+
+
+class _Open(object):
+    """An element that is open while scanning the model copy."""
+    __slots__ = ("m", "kept", "removed", "suppress", "drop")
+
+    def __init__(self, m, drop):
+        self.m = m              # match of the start tag
+        self.kept = 0           # child elements that stay
+        self.removed = []       # (start, end) of removed <suppressed> children
+        self.suppress = False   # suppressed in the solved configuration
+        self.drop = drop        # the whole element goes (<configuration>)
+
+
+def _start_tag(m, suppress, close):
+    """Start tag of match m with suppressed="true" (if suppress and not yet
+    there) as the last attribute; close is ">" or " />"."""
+    attrs = m.group(3).rstrip()
+    if suppress and not _SUPPRESSED_TRUE.search(attrs):
+        attrs += ' suppressed="true"'
+    return "<" + m.group(2) + attrs + close
+
+
+def _blank_lines(text, edits, nl):
+    """Removals ("" edits) that leave only whitespace on their line remove
+    the whole line, line break included."""
+    by_line = {}
+    for k, (a, b, rep) in enumerate(edits):
+        if rep:
+            continue
+        ls = text.rfind(nl, 0, a)
+        ls = 0 if ls < 0 else ls + len(nl)
+        le = text.find(nl, b)
+        le = len(text) if le < 0 else le
+        if text.find(nl, a, b) >= 0:
+            continue                    # removal over more lines
+        by_line.setdefault((ls, le), []).append(k)
+    drop = set()
+    extra = []
+    for (ls, le), ks in by_line.items():
+        line = text[ls:le]
+        for k in sorted(ks, reverse=True):
+            a, b = edits[k][0] - ls, edits[k][1] - ls
+            line = line[:a] + line[b:]
+        if line.strip():
+            continue
+        drop.update(ks)
+        if le < len(text):
+            extra.append((ls, le + len(nl), ""))
+        elif ls > 0:
+            extra.append((ls - len(nl), le, ""))
+        else:
+            extra.append((ls, le, ""))
+    return [e for k, e in enumerate(edits) if k not in drop] + extra
+
+
+def _configuration_copy(text, configuration, nl):
+    """
+    The model copy text (the lines of _model_copy joined with nl) as Mecway
+    writes it in <solution configuration="configuration">; see the header
+    of this block. Text without <configuration>/<suppressed> comes back
+    unchanged.
+    """
+    edits = []       # (start, end, replacement); "" = remove
+    stack = []
+    for m in _TAG.finditer(text):
+        closing, name, attrs, selfclose = m.groups()
+        if closing:
+            if not stack:
+                continue
+            node = stack.pop()
+            if node.drop:
+                edits = [e for e in edits if e[0] < node.m.start()]
+                edits.append((node.m.start(), m.end(), ""))
+                continue
+            if not node.removed and not node.suppress:
+                continue
+            inner = text[node.m.end():m.start()]
+            for a, b in reversed(node.removed):
+                inner = (inner[:a - node.m.end()] + inner[b - node.m.end():])
+            if node.kept == 0 and not inner.strip():
+                # Nothing left inside: self-closing, like Mecway
+                edits = [e for e in edits if e[0] < node.m.start()]
+                edits.append((node.m.start(), m.end(),
+                              _start_tag(node.m, node.suppress, " />")))
+            elif node.suppress:
+                tag = _start_tag(node.m, True, ">")
+                if tag != node.m.group(0):
+                    edits.append((node.m.start(), node.m.end(), tag))
+            continue
+        if name == "configuration" and not stack:
+            # Configuration definition at the top of the model: drop it
+            if selfclose:
+                edits.append((m.start(), m.end(), ""))
+            else:
+                stack.append(_Open(m, True))
+            continue
+        conf = _CONF_ATTR.search(attrs)
+        if name == "suppressed" and stack and selfclose and conf:
+            parent = stack[-1]
+            parent.removed.append((m.start(), m.end()))
+            if conf.group(1) == configuration:
+                parent.suppress = True
+            edits.append((m.start(), m.end(), ""))
+            continue
+        if stack:
+            stack[-1].kept += 1
+        if not selfclose:
+            stack.append(_Open(m, False))
+    if not edits:
+        return text
+    edits = sorted(_blank_lines(text, edits, nl))
+    out = []
+    pos = 0
+    for a, b, rep in edits:
+        if a < pos:           # inside a part that was already replaced
+            continue
+        out.append(text[pos:a])
+        out.append(rep)
+        pos = b
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def _solution_copy(head, nl, configuration):
+    """Lines of the model copy for <solution> (_model_copy); for a model
+    with configurations as Mecway writes it (_configuration_copy)."""
+    lines = _model_copy(head, nl)
+    if configuration is None:
+        return lines
+    return _configuration_copy(nl.join(lines), configuration, nl).split(nl)
 
 
 # ==========================================
@@ -481,7 +638,7 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
     nl = _newline(head)
     if lead is None:
         lead = nl
-    copy_lines = _model_copy(head, nl)
+    copy_lines = _solution_copy(head, nl, configuration)
     wheel, err = _wheel_check(head, fragment_path)
     if err:
         return False, err
