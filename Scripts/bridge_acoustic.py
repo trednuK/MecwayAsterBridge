@@ -4,76 +4,76 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_acoustic.py
-# Verantwoordelijkheid: Mecway Acoustic Resonance 3D (A30, holtemodes) naar
-# Code-Aster PHENOMENE='ACOUSTIQUE' + CALC_MODES, en hetzelfde model als
-# harmonisch drukveld (bron, absorberende randen, microfoons) met
-# DYNA_VIBRA HARM (Mecway heeft daar geen analysetype voor).
+# Responsibility: Mecway Acoustic Resonance 3D (A30, cavity modes) to
+# Code-Aster PHENOMENE='ACOUSTIQUE' + CALC_MODES, and the same model as a
+# harmonic pressure field (source, absorbing boundaries, microphones) with
+# DYNA_VIBRA HARM (Mecway has no analysis type for that).
 #
-#   note_tag(item, model_data)        - aangeroepen door bridge_from_liml.py
-#                                       voor elke belasting/voorwaarde in een
-#                                       akoestische run (melden of bewaren).
-#   parse_acoustic(root, model_data)  - na de lus in bridge_from_liml.py:
-#                                       materialen (geluidssnelheid,
-#                                       dichtheid) en drukknopen.
+#   note_tag(item, model_data)        - called by bridge_from_liml.py
+#                                       for every load/constraint in an
+#                                       acoustic run (report or keep).
+#   parse_acoustic(root, model_data)  - after the loop in bridge_from_liml.py:
+#                                       materials (speed of sound,
+#                                       density) and pressure nodes.
 #   build_acoustic_modes(...)         - builder; bridge_to_aster._build_modal
-#                                       stuurt een akoestische analyse
-#                                       hierheen (CALC_MODES is de sleutel in
+#                                       sends an acoustic analysis
+#                                       here (CALC_MODES is the key in
 #                                       SOLVER_BUILDERS_ASTER).
-#   build_acoustic_harm(...)          - builder harmonisch drukveld
+#   build_acoustic_harm(...)          - builder harmonic pressure field
 #                                       (acoustic_harm_3d, DYNA_VIBRA HARM;
 #                                       via bridge_to_aster._build_dyna_modal);
-#                                       zie het blok HARMONISCH DRUKVELD.
-#   resolve_auto(), report_harmonic() - MecwayAsterBridgeMain: 'auto' met
-#                                       een bron, microfoons in de log.
+#                                       see the block HARMONIC PRESSURE FIELD.
+#   resolve_auto(), report_harmonic() - MecwayAsterBridgeMain: 'auto' with
+#                                       a source, microphones in the log.
 #
-# Mecway-XML (Mecway 33, vastgesteld met headless 'mecway <model> solve',
-# TestFiles/Tools/mw_solve.py; tagnamen ook in mecway.exe):
-#   <analysis type="A30" maxmode="5" />            (A20 = 2D, niet vertaald)
+# Mecway XML (Mecway 33, determined with headless 'mecway <model> solve',
+# TestFiles/Tools/mw_solve.py; tag names also in mecway.exe):
+#   <analysis type="A30" maxmode="5" />            (A20 = 2D, not translated)
 #   <mat><mechanical type="Isotropic" speedofsound="340 m/s" />
 #        <density type="Simple" density="1.2 kg/m³" /></mat>
-#     (dichtheid optioneel: Mecway rekent zonder; alleen een impedantie
-#     vraagt hem. Eén materiaal: met twee materialen geeft Mecway geen
-#     oplossing, gezien met headless solve.)
-#   <fluidpressure selection="knopen of vlakken"><value>0 Pa</value>
-#     (manual v33 par. 9.34: drukknoop p = 0; een andere waarde weigert
-#     Mecway, "Pressure must be zero.")
-#   <impedance selection="vlakken"><specificimpedancer>408</...r>
-#     <specificimpedancei>0</...i></impedance>    (manual par. 9.35; getal
-#     zonder eenheid = Pa.s/m; Z = r + i i; met impedantie complexe modes:
-#     velden pressure + pressurei, <mode .. frequency=".." decayrate="..">;
-#     vertaald in _complex_modes_comm + aster_acoustic_complex.py, S2b.)
-#   Oplossing: per mode <mode id="k" frequency="f Hz"> met de knoopvariabele
-#   "pressure"; Mecway normeert p^T M p = 1 met M = int N^T N / c^2 dV
-#   (nagerekend: constante mode van een buis met volume V: p = c / sqrt(V);
-#   manual v33 par. 6.9.1: amplitudes zijn willekeurig).
+#     (density optional: Mecway solves without it; only an impedance
+#     needs it. One material: with two materials Mecway gives no
+#     solution, seen with headless solve.)
+#   <fluidpressure selection="nodes or faces"><value>0 Pa</value>
+#     (manual v33 par. 9.34: pressure node p = 0; Mecway refuses another
+#     value, "Pressure must be zero.")
+#   <impedance selection="faces"><specificimpedancer>408</...r>
+#     <specificimpedancei>0</...i></impedance>    (manual par. 9.35; number
+#     without unit = Pa.s/m; Z = r + i i; with impedance complex modes:
+#     fields pressure + pressurei, <mode .. frequency=".." decayrate="..">;
+#     translated in _complex_modes_comm + aster_acoustic_complex.py, S2b.)
+#   Solution: per mode <mode id="k" frequency="f Hz"> with the node variable
+#   "pressure"; Mecway normalises p^T M p = 1 with M = int N^T N / c^2 dV
+#   (checked: constant mode of a tube with volume V: p = c / sqrt(V);
+#   manual v33 par. 6.9.1: amplitudes are arbitrary).
 #
-# Vertaling (Code-Aster 17.4; syntax als testcases ahlv100a en adlv101f):
-#   - AFFE_MODELE PHENOMENE='ACOUSTIQUE', MODELISATION='3D' op de volumes
-#     (elementen ACOU_HEXA8/20, ACOU_PENTA6/15, ACOU_TETRA4/10 in elem.1;
-#     geen piramides).
-#   - DEFI_MATERIAU FLUIDE=_F(RHO, CELE_R) (catalogus defi_materiau.py;
-#     RHO is verplicht). Zonder dichtheid RHO = 1. RIGI_ACOU en MASS_ACOU
-#     bevatten rho niet (gemeten, NIET in de broncode nagelopen: RHO 1,2
-#     gaf dezelfde frequenties en MASS_GENE als RHO 1, en een buis van twee
-#     media met rho 1,2 / 12 gaf de frequenties van gelijke dichtheid,
-#     248,98 Hz i.p.v. analytisch 306,47 Hz). Net als Mecway (K = int
-#     grad N^T grad N, manual v33 par. 6.9.1) is het grensvlak tussen twee
-#     media dus dp/dn continu: alleen juist bij gelijke dichtheid. Media
-#     met verschillende dichtheid: ERROR (_materials).
-#   - Drukknoop: AFFE_CHAR_ACOU PRES_IMPO PRES=0j (adlv101f).
-#   - ASSEMBLAGE RIGI_ACOU / MASS_ACOU (complexe matrices) en
-#     COMB_MATR_ASSE PARTIE='REEL' (ahlv100a), dan CALC_MODES (resultaat
-#     MODE_ACOU, veld PRES, component PRES; gezien in een run).
-#   - Harde wanden zonder drukknoop: de stijfheid is singulier (constante
-#     druk, 0 Hz). PLUS_PETITE stopt dan met <EXCEPTION> ALGELINE3_81
-#     (gezien); de bridge zoekt rond een kleine negatieve frequentie
-#     (OPTION 'CENTRE', _free_shift), zoals vrij-vrij bij modaal.
-#   - NORM_MODE werkt niet voor MODE_ACOU (MASS_GENE als norm gaf toch
-#     max |p| = 1 en een MASS_GENE van 8,65e-8, gezien): aster_results_
-#     export schaalt de vormen zelf met 1/sqrt(MASS_GENE), dus p^T M p = 1
-#     zoals Mecway.
+# Translation (Code-Aster 17.4; syntax as test cases ahlv100a and adlv101f):
+#   - AFFE_MODELE PHENOMENE='ACOUSTIQUE', MODELISATION='3D' on the volumes
+#     (elements ACOU_HEXA8/20, ACOU_PENTA6/15, ACOU_TETRA4/10 in elem.1;
+#     no pyramids).
+#   - DEFI_MATERIAU FLUIDE=_F(RHO, CELE_R) (catalogue defi_materiau.py;
+#     RHO is required). Without density RHO = 1. RIGI_ACOU and MASS_ACOU
+#     do not contain rho (measured, NOT checked in the source code: RHO 1.2
+#     gave the same frequencies and MASS_GENE as RHO 1, and a tube of two
+#     media with rho 1.2 / 12 gave the frequencies of equal density,
+#     248.98 Hz instead of analytically 306.47 Hz). Like Mecway (K = int
+#     grad N^T grad N, manual v33 par. 6.9.1) the interface between two
+#     media therefore has continuous dp/dn: only correct for equal
+#     density. Media with different density: ERROR (_materials).
+#   - Pressure node: AFFE_CHAR_ACOU PRES_IMPO PRES=0j (adlv101f).
+#   - ASSEMBLAGE RIGI_ACOU / MASS_ACOU (complex matrices) and
+#     COMB_MATR_ASSE PARTIE='REEL' (ahlv100a), then CALC_MODES (result
+#     MODE_ACOU, field PRES, component PRES; seen in a run).
+#   - Hard walls without a pressure node: the stiffness is singular (constant
+#     pressure, 0 Hz). PLUS_PETITE then stops with <EXCEPTION> ALGELINE3_81
+#     (seen); the bridge searches around a small negative frequency
+#     (OPTION 'CENTRE', _free_shift), like free-free in modal.
+#   - NORM_MODE does not work for MODE_ACOU (MASS_GENE as norm still gave
+#     max |p| = 1 and a MASS_GENE of 8.65e-8, seen): aster_results_
+#     export scales the shapes itself by 1/sqrt(MASS_GENE), so p^T M p = 1
+#     like Mecway.
 #
-# Compatibel met IronPython 2.7.9 (alleen standaardbibliotheek).
+# Compatible with IronPython 2.7.9 (standard library only).
 
 import math
 import re
@@ -84,59 +84,59 @@ from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
                           run_name, _normalize_unit_string)
 
 
-# Mecway-belastingen die alleen in Acoustic Resonance bestaan (manual v33
-# par. 9.34, 9.35); in een mechanische of thermische analyse spelen ze
-# geen rol (INFO in bridge_from_liml).
+# Mecway loads that only exist in Acoustic Resonance (manual v33
+# par. 9.34, 9.35); in a mechanical or thermal analysis they play
+# no role (INFO in bridge_from_liml).
 ACOUSTIC_TAGS = frozenset(["fluidpressure", "impedance"])
 
-# Voorwaarden die Mecway ook in de akoestiek gebruikt (manual v33 par. 9.9:
-# bonded contact koppelt de druk; testmodellen in mecway.exe: "A30
-# node-surface coupling", "A30 Constraint Equations"), maar die de bridge
-# daar niet vertaalt: melden en overslaan.
+# Constraints that Mecway also uses in acoustics (manual v33 par. 9.9:
+# bonded contact couples the pressure; test models in mecway.exe: "A30
+# node-surface coupling", "A30 Constraint Equations"), but that the bridge
+# does not translate there: report and skip.
 _NOT_IN_ACOUSTICS = frozenset(["contact2", "nodesurfacecoupling",
                                "constraintequation"])
 
-# Mecway-vormen met een akoestisch Code-Aster-element (elem.1 van 17.4:
-# ACOU_HEXA8/20/27, ACOU_PENTA6/15, ACOU_TETRA4/10; geen piramide).
+# Mecway shapes with an acoustic Code-Aster element (elem.1 of 17.4:
+# ACOU_HEXA8/20/27, ACOU_PENTA6/15, ACOU_TETRA4/10; no pyramid).
 _ACOUSTIC_SHAPES = frozenset(["hex8", "hex20", "wedge6", "wedge15",
                               "tet4", "tet10"])
 _LINEAR_SHAPES = frozenset(["hex8", "wedge6", "tet4"])
 
-# Harmonische analyse (S3a): analysenaam en de voorvoegsels van speciale
-# Mecway-selecties (hoofdletters maken niet uit; NL en EN).
+# Harmonic analysis (S3a): analysis name and the prefixes of special
+# Mecway selections (case does not matter; NL and EN).
 HARM_ANALYSIS = "acoustic_harm_3d"
 _PREFIXES = (("source", ("BRON_", "SOURCE_")),
              ("absorbing", ("ABSORBEREND_", "ABSORBING_")),
              ("microphone", ("MICROFOON_", "MICROPHONE_")))
 
-# #ASTER-BRON (source_value; ook bridge_vibroacoustic_harm): getal met
-# eenheid, de hele tekst. Snelheidseenheden die parse_and_convert(..,
-# "velocity") omrekent (leeg = m/s) en druk-eenheden die parse_and_convert(..,
-# "pressure") omrekent (kleine letters; mPa/MPa beslist parse_and_convert
-# op de hoofdletter). Hier geeft een druk een duidelijke ERROR; in
-# vibroacoustic_harm_3d is een druk een invallende golf.
+# #ASTER-BRON (source_value; also bridge_vibroacoustic_harm): number with
+# unit, the whole text. Velocity units that parse_and_convert(..,
+# "velocity") converts (empty = m/s) and pressure units that parse_and_convert(..,
+# "pressure") converts (lower case; parse_and_convert decides mPa/MPa
+# by the capital letter). Here a pressure gives a clear ERROR; in
+# vibroacoustic_harm_3d a pressure is an incident wave.
 _NUMBER_UNIT_RE = re.compile(
     r"^[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?\s*([A-Za-z0-9/]*)\s*$")
 _VELOCITY_UNITS = ("", "m/s", "mm/s", "mm/ms", "in/s", "ft/s")
 _PRESSURE_UNITS = ("pa", "n/m2", "kpa", "kn/m2", "mpa", "n/mm2", "gpa",
                    "bar", "mbar", "psi")
 
-# Elementen per golflengte bij de hoogste frequentie waaronder de bridge
-# waarschuwt (lineair / kwadratisch). Gemeten (verificatie AH-01/01b/02,
-# docs/Akoestiek.md par. 5.4), vlakke golf over 2 golflengten: hex8 10 per
-# golflengte fase -1,6% (~ (kh)^2/24) en |p| +1,7%, 20 per golflengte
-# -0,4%; hex20 10 per golflengte <= 0,02%, 5 per golflengte |p| -0,25% en
-# fase -0,16%.
+# Elements per wavelength at the highest frequency below which the bridge
+# warns (linear / quadratic). Measured (verification AH-01/01b/02,
+# docs/Akoestiek.md par. 5.4), plane wave over 2 wavelengths: hex8 10 per
+# wavelength phase -1.6% (~ (kh)^2/24) and |p| +1.7%, 20 per wavelength
+# -0.4%; hex20 10 per wavelength <= 0.02%, 5 per wavelength |p| -0.25% and
+# phase -0.16%.
 _MIN_PER_WAVELENGTH = {True: 10.0, False: 5.0}
 
 
 def is_acoustic(analysis_cfg):
-    """True als de analyse-config akoestisch is (sleutel "phenomene")."""
+    """True if the analysis config is acoustic (key "phenomene")."""
     return str(analysis_cfg.get("phenomene", "")).upper() == "ACOUSTIQUE"
 
 
 def _r(x):
-    """Getal voor de .comm (15 cijfers, decimale punt; bridge_mesh._real)."""
+    """Number for the .comm (15 digits, decimal point; bridge_mesh._real)."""
     import bridge_mesh
     return bridge_mesh._real(float(x))
 
@@ -146,16 +146,16 @@ def _skip(model_data, text):
 
 
 # ==========================================
-# PARSEN
+# PARSING
 # ==========================================
 def note_tag(item, model_data):
     """
-    Een belasting of voorwaarde in een akoestische run (bridge_from_liml
-    slaat ze daar over). Akoestische tags leest parse_acoustic; wat Mecway
-    in de akoestiek gebruikt maar de bridge niet vertaalt: ERROR en
-    skipped_loads; mechanische en thermische belastingen: INFO (ze doen in
-    Acoustic Resonance niet mee, manual v33 hoofdstuk 9: analysetypen per
-    belasting).
+    A load or constraint in an acoustic run (bridge_from_liml
+    skips them there). Acoustic tags are read by parse_acoustic; what Mecway
+    uses in acoustics but the bridge does not translate: ERROR and
+    skipped_loads; mechanical and thermal loads: INFO (they do not take
+    part in Acoustic Resonance, manual v33 chapter 9: analysis types per
+    load).
     """
     tag = item.tag
     # contact2: selectionmaster/-slave, nodesurfacecoupling:
@@ -176,8 +176,8 @@ def note_tag(item, model_data):
                "analysis and is NOT included (use a continuous mesh without "
                "contact or couplings).").format(tag, sel))
         return
-    log("INFO: Belasting '{0}' op '{1}' telt niet mee in een akoestische "
-        "analyse.".format(tag, sel))
+    log("INFO: Load '{0}' on '{1}' does not count in an acoustic "
+        "analysis.".format(tag, sel))
 
 
 def _selection_kind(model_data, name):
@@ -191,8 +191,8 @@ def _selection_kind(model_data, name):
 
 
 def _prefix_role(name):
-    """'source'/'absorbing'/'microphone' als de Mecway-naam met een
-    voorvoegsel uit _PREFIXES begint (hoofdletters maken niet uit), anders
+    """'source'/'absorbing'/'microphone' if the Mecway name starts with a
+    prefix from _PREFIXES (case does not matter), else
     None."""
     upper = (name or "").upper()
     for role, prefixes in _PREFIXES:
@@ -203,8 +203,8 @@ def _prefix_role(name):
 
 
 def _named_groups(model_data):
-    """{rol: [(Mecway-naam, soort)]} van de selecties met een speciaal
-    voorvoegsel (op de oorspronkelijke Mecway-naam, STAPPENPLAN B.2)."""
+    """{role: [(Mecway name, kind)]} of the selections with a special
+    prefix (by the original Mecway name, STAPPENPLAN B.2)."""
     out = {"source": [], "absorbing": [], "microphone": []}
     seen = set()
     for kind, names in (("face", model_data.get("face_selection_faces", {})),
@@ -221,13 +221,13 @@ def _named_groups(model_data):
 
 def source_value(text):
     """
-    Waarde van een #ASTER-BRON: 'getal [eenheid]' als hele tekst ->
-    (soort, waarde SI, eenheid zoals getypt). soort 'velocity' (eenheid uit
-    _VELOCITY_UNITS, zonder eenheid m/s; waarde in m/s), 'pressure'
-    (_PRESSURE_UNITS; waarde in Pa, een keer omgerekend door
-    parse_and_convert) of None (geen getal, of een andere eenheid; waarde
-    None). parse_and_convert zou een onbekende eenheid ongewijzigd en tekst
-    zonder getal als 0.0 teruggeven, daarom eerst deze controle.
+    Value of an #ASTER-BRON: 'number [unit]' as the whole text ->
+    (kind, value SI, unit as typed). kind 'velocity' (unit from
+    _VELOCITY_UNITS, without unit m/s; value in m/s), 'pressure'
+    (_PRESSURE_UNITS; value in Pa, converted once by
+    parse_and_convert) or None (no number, or another unit; value
+    None). parse_and_convert would return an unknown unit unchanged and text
+    without a number as 0.0, hence this check first.
     """
     text = _normalize_unit_string(u"{0}".format(text).strip())
     m = _NUMBER_UNIT_RE.match(text)
@@ -244,15 +244,15 @@ def source_value(text):
 
 
 def _parse_aster_sources(model_data, ac):
-    """#ASTER-BRON selectie = snelheid [eenheid] [, fase] (bridge_custom)
-    -> ac["aster_sources"] = [(selectie, v [m/s], fase [graden])].
-    Alleen een snelheid: zonder eenheid m/s, verder de snelheidseenheden
-    van parse_and_convert (_VELOCITY_UNITS). Een druk-eenheid (in
-    vibroacoustic_harm_3d een invallende golf) of een andere eenheid en
-    tekst zonder getal geven een ERROR (parse_and_convert zou de waarde
-    ongewijzigd als m/s of als 0.0 teruggeven)."""
+    """#ASTER-BRON selection = velocity [unit] [, phase] (bridge_custom)
+    -> ac["aster_sources"] = [(selection, v [m/s], phase [degrees])].
+    Only a velocity: without unit m/s, otherwise the velocity units
+    of parse_and_convert (_VELOCITY_UNITS). A pressure unit (in
+    vibroacoustic_harm_3d an incident wave) or another unit and
+    text without a number give an ERROR (parse_and_convert would return the
+    value unchanged as m/s or as 0.0)."""
     for body in model_data.get("aster_custom", {}).get("sources", []):
-        # 'Sel = 2 mm/s' of 'Sel = 2 mm/s, 90' of 'Sel = 2 mm/s, fase = 90'
+        # 'Sel = 2 mm/s' or 'Sel = 2 mm/s, 90' or 'Sel = 2 mm/s, fase = 90'
         name, sep, rest = body.partition("=")
         parts = [p.strip() for p in rest.split(",")]
         v = None
@@ -292,19 +292,19 @@ def _parse_aster_sources(model_data, ac):
 
 def parse_acoustic(root, model_data):
     """
-    Materialen (geluidssnelheid, dichtheid) en akoestische voorwaarden uit
-    de .liml naar model_data["acoustic_data"]:
-      "materials":  {mat: {"c": m/s of None, "rho": kg/m3 of None}}
-      "pressure0":  [(selectie, "node"/"face")]   drukknopen p = 0
-      "pressure_src": [(selectie, soort, p [Pa], tekst)]  fluid pressure
-                    != 0: in de harmonische analyse een opgelegde druk, in
-                    de holtemodes een fout
-      "impedances": [selectie]
-      "impedance_values": [(selectie, Re Z, Im Z)]  (Pa.s/m)
-      "named":      {rol: [(selectie, soort)]}  BRON_/ABSORBEREND_/
-                    MICROFOON_ (harmonisch, _named_groups)
-      "aster_sources": [(selectie, v, fase)]   #ASTER-BRON
-      "bad":        [tekst]                       fatale invoerfouten
+    Materials (speed of sound, density) and acoustic conditions from
+    the .liml to model_data["acoustic_data"]:
+      "materials":  {mat: {"c": m/s or None, "rho": kg/m3 or None}}
+      "pressure0":  [(selection, "node"/"face")]   pressure nodes p = 0
+      "pressure_src": [(selection, kind, p [Pa], text)]  fluid pressure
+                    != 0: in the harmonic analysis an imposed pressure, in
+                    the cavity modes an error
+      "impedances": [selection]
+      "impedance_values": [(selection, Re Z, Im Z)]  (Pa.s/m)
+      "named":      {role: [(selection, kind)]}  BRON_/ABSORBEREND_/
+                    MICROFOON_ (harmonic, _named_groups)
+      "aster_sources": [(selection, v, phase)]   #ASTER-BRON
+      "bad":        [text]                        fatal input errors
     """
     ac = {"materials": OrderedDict(), "pressure0": [], "pressure_src": [],
           "impedances": [], "impedance_values": [],
@@ -320,7 +320,7 @@ def parse_acoustic(root, model_data):
         ac["materials"][name] = {
             "c": parse_and_convert(c, "velocity") if c else None,
             "rho": parse_and_convert(rho, "density") if rho else None}
-        log("INFO: Akoestisch materiaal '{0}': c = {1} m/s, rho = {2} "
+        log("INFO: Acoustic material '{0}': c = {1} m/s, rho = {2} "
             "kg/m3.".format(name, ac["materials"][name]["c"],
                             ac["materials"][name]["rho"]))
     for item in root:
@@ -328,7 +328,7 @@ def parse_acoustic(root, model_data):
             continue
         sel = item.get("selection", "")
         if item.get("suppressed", "") == "true":
-            log("INFO: {0} op '{1}' overgeslagen (suppressed).".format(
+            log("INFO: {0} on '{1}' skipped (suppressed).".format(
                 item.tag, sel))
             continue
         kind = _selection_kind(model_data, sel)
@@ -354,9 +354,9 @@ def parse_acoustic(root, model_data):
                 "fluid pressure on '{0}': choose a node or face "
                 "selection").format(sel))
         elif abs(value) > 0.0:
-            # Holtemodes: Mecway weigert dit ook ("Pressure must be
-            # zero."), build_acoustic_modes geeft een ERROR; harmonisch:
-            # een opgelegde druk (bron).
+            # Cavity modes: Mecway refuses this too ("Pressure must be
+            # zero."), build_acoustic_modes gives an ERROR; harmonic:
+            # an imposed pressure (source).
             ac["pressure_src"].append((sel, kind, value, text))
         else:
             ac["pressure0"].append((sel, kind))
@@ -364,8 +364,8 @@ def parse_acoustic(root, model_data):
 
 
 def _number(text):
-    """Getal uit een Mecway-veld zonder eenheid (impedantie), 0 als leeg;
-    None als het geen getal is."""
+    """Number from a Mecway field without unit (impedance), 0 if empty;
+    None if it is not a number."""
     if text is None or not text.strip():
         return 0.0
     try:
@@ -375,9 +375,9 @@ def _number(text):
 
 
 def has_source(model_data):
-    """True als het model een harmonische bron heeft (vlakselectie BRON_/
-    SOURCE_, #ASTER-BRON of fluid pressure != 0): active_analysis 'auto'
-    kiest dan bij A30 de harmonische analyse (MecwayAsterBridgeMain,
+    """True if the model has a harmonic source (face selection BRON_/
+    SOURCE_, #ASTER-BRON or fluid pressure != 0): active_analysis 'auto'
+    then picks the harmonic analysis for A30 (MecwayAsterBridgeMain,
     resolve_auto)."""
     ac = model_data.get("acoustic_data") or {}
     return bool(ac.get("named", {}).get("source") or
@@ -385,14 +385,14 @@ def has_source(model_data):
 
 
 def resolve_auto(resolved, model_data):
-    """Analyse voor 'auto': A30 met een bron -> acoustic_harm_3d (als die
-    bestaat), anders ongewijzigd."""
+    """Analysis for 'auto': A30 with a source -> acoustic_harm_3d (if it
+    exists), else unchanged."""
     if (resolved == "acoustic_modes_3d" and has_source(model_data) and
             HARM_ANALYSIS in CONFIG_BRIDGE.get("analyses", {})):
-        log("INFO: Akoestiek: het model heeft een bron (BRON_-selectie, "
-            "#ASTER-BRON of fluid pressure != 0); 'auto' kiest de "
-            "harmonische analyse '{0}'. Voor "
-            "de holtemodes: kies 'acoustic_modes_3d' als actieve "
+        log("INFO: Acoustics: the model has a source (BRON_ selection, "
+            "#ASTER-BRON or fluid pressure != 0); 'auto' picks the "
+            "harmonic analysis '{0}'. For "
+            "the cavity modes: choose 'acoustic_modes_3d' as active "
             "analyse.".format(HARM_ANALYSIS))
         return HARM_ANALYSIS
     return resolved
@@ -406,9 +406,9 @@ def _fmt_groups(groups):
 
 
 def _elsets(model_data):
-    """[(Code-Aster-elset, Mecway-materiaal)] van de volumes, of None bij
-    een fout (ERROR gelogd). Na write_mesh zijn de sleutels van "elsets"
-    de Code-Aster-namen (bridge_mesh._apply_to_model_data)."""
+    """[(Code-Aster elset, Mecway material)] of the volumes, or None on
+    an error (ERROR logged). After write_mesh the keys of "elsets" are
+    the Code-Aster names (bridge_mesh._apply_to_model_data)."""
     shapes_of = OrderedDict()
     elem_elset = model_data.get("_elem_elset", {})
     for eid, shape, _nodes, elset in model_data.get("mesh_elements", []):
@@ -442,9 +442,9 @@ def _elsets(model_data):
 
 
 def _materials(elsets, ac):
-    """{Mecway-materiaal: (c, rho)} of None (ERROR). Zonder dichtheid rho
-    = 1. Meer media: alleen met gelijke (of geen) dichtheid, want de
-    matrices bevatten rho niet (zie de kop)."""
+    """{Mecway material: (c, rho)} or None (ERROR). Without density rho
+    = 1. Several media: only with equal (or no) density, because the
+    matrices do not contain rho (see the header)."""
     used = []
     for _es, mat in elsets:
         if mat not in used:
@@ -478,13 +478,13 @@ def _materials(elsets, ac):
         return None
     missing = [m for m in used if not rhos[m] > 0.0]
     if given and missing:
-        # Eén medium met en een zonder dichtheid: de matrices bevatten rho
-        # niet (zie de kop), dus het grensvlak (p en dp/dn continu) rekent
-        # alsof de dichtheden gelijk zijn. Het medium zonder dichtheid
-        # krijgt RHO = 1 in DEFI_MATERIAU; dat telt alleen voor een bron
-        # of impedantie op dat medium, en die eisen zelf een dichtheid.
-        # Doorgerekend (07-10-2026): AK-05 met 1,2 kg/m3 / geen geeft de
-        # frequenties van AK-05 (gelijke dichtheid), RHO 1.2 en 1.0.
+        # One medium with and one without density: the matrices do not
+        # contain rho (see the header), so the interface (p and dp/dn
+        # continuous) behaves as if the densities are equal. The medium
+        # without density gets RHO = 1 in DEFI_MATERIAU; that only counts for
+        # a source or impedance on that medium, and those require a density.
+        # Computed (07-10-2026): AK-05 with 1.2 kg/m3 / none gives the
+        # frequencies of AK-05 (equal density), RHO 1.2 and 1.0.
         log(tr("WARNING: Akoestiek: medium {0} heeft geen dichtheid, "
                "medium {1} wel ({2}). Op het grensvlak rekent de bridge "
                "alsof de dichtheden gelijk zijn (druk en dp/dn continu): "
@@ -507,22 +507,22 @@ def _materials(elsets, ac):
     for m in used:
         out[m] = (props[m]["c"], rhos[m] if rhos[m] > 0.0 else 1.0)
     if len(used) > 1:
-        log("INFO: Akoestiek: {0} media ({1}) met gelijke (of zonder) "
-            "dichtheid; op het "
-            "grensvlak is de druk en dp/dn continu. Mecway zelf rekent "
-            "akoestiek met maar een materiaal.".format(
+        log("INFO: Acoustics: {0} media ({1}) with equal (or no) "
+            "density; at the "
+            "interface the pressure and dp/dn are continuous. Mecway itself "
+            "solves acoustics with only one material.".format(
                 len(used), ", ".join(used)))
     return out
 
 
 def _free_shift(model_data, elsets, mats):
     """
-    Zoekfrequentie [Hz] < 0 voor harde wanden zonder drukknoop: -0,1 x
-    c_min / (2 D), D = diagonaal van het omhullende blok van de volumes.
-    Voor een convex volume ligt de eerste mode met druk-variatie boven
-    c / (2 D) (Payne-Weinberger, eigenwaarde >= pi^2 / D^2); de shift ligt
-    dus ruim onder die mode en dicht bij de 0-Hz-mode. Gemeten: een buis
-    van 1 m met CENTRE -10 Hz gaf dezelfde modes als Mecway (verificatie
+    Search frequency [Hz] < 0 for hard walls without a pressure node: -0.1 x
+    c_min / (2 D), D = diagonal of the bounding box of the volumes.
+    For a convex volume the first mode with pressure variation lies above
+    c / (2 D) (Payne-Weinberger, eigenvalue >= pi^2 / D^2); the shift is
+    therefore well below that mode and close to the 0 Hz mode. Measured: a tube
+    of 1 m with CENTRE -10 Hz gave the same modes as Mecway (verification
     AK-01).
     """
     keep = set(es for es, _m in elsets)
@@ -547,8 +547,8 @@ def _free_shift(model_data, elsets, mats):
 
 
 def _calc_modes_block(model_data, analysis, shift_free):
-    """res = CALC_MODES(...) zoals bridge_to_aster._calc_modes_block
-    (modaal), zonder NORM_MODE (werkt niet voor MODE_ACOU, zie de kop)."""
+    """res = CALC_MODES(...) like bridge_to_aster._calc_modes_block
+    (modal), without NORM_MODE (does not work for MODE_ACOU, see the header)."""
     import bridge_to_aster as bta
     n = bta._mode_count(model_data, analysis)
     shift = float(analysis.get("modal_shift_hz", 0.0) or 0.0)
@@ -558,8 +558,8 @@ def _calc_modes_block(model_data, analysis, shift_free):
              "    MATR_MASS=masse,"]
     if shift == 0.0 and shift_free is not None:
         shift = shift_free
-        log("INFO: Akoestiek: harde wanden zonder drukknoop; de eerste "
-            "mode is de constante druk (0 Hz). Zoekfrequentie {0} Hz "
+        log("INFO: Acoustics: hard walls without a pressure node; the first "
+            "mode is the constant pressure (0 Hz). Search frequency {0} Hz "
             "(OPTION 'CENTRE').".format("%.6g" % shift))
     if shift != 0.0:
         lines += ["    OPTION='CENTRE',",
@@ -573,14 +573,14 @@ def _calc_modes_block(model_data, analysis, shift_free):
               "    SOLVEUR=_F(METHODE='MUMPS', NPREC={0}),".format(
                   int(analysis.get("solver_nprec", 8))),
               ")"]
-    log("INFO: CALC_MODES akoestisch: {0} modes.".format(n))
+    log("INFO: CALC_MODES acoustic: {0} modes.".format(n))
     return "\n".join(lines) + "\n"
 
 
 def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer study.comm en study.export voor de holtemodes (Mecway A30).
-    Returns het pad naar study.export, of None bij een fout.
+    Generate study.comm and study.export for the cavity modes (Mecway A30).
+    Returns the path to study.export, or None on an error.
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (CALC_MODES akoestisch) ---")
@@ -600,7 +600,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                "'acoustic_modes_3d'?"))
         return None
     bad = list(ac["bad"])
-    # Mecway zelf weigert dit ook ("Pressure must be zero.").
+    # Mecway itself refuses this too ("Pressure must be zero.").
     bad += [tr("fluid pressure op '{0}' is {1}; alleen 0 kan (drukknoop; "
                "als bron: de harmonische analyse '{2}')",
                "fluid pressure on '{0}' is {1}; only 0 is possible "
@@ -611,15 +611,15 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         log(tr("ERROR: Akoestiek: {0}.", "ERROR: Acoustics: {0}.").format(
             "; ".join(bad)))
         return None
-    # (geen list comprehensions met losse namen: in Python 2.7 lekken die
-    # naar de functie, bijv. _r over de module-functie _r)
+    # (no list comprehensions with loose names: in Python 2.7 they leak
+    # into the function, e.g. _r over the module function _r)
     named = list(item[0] for role in ("source", "absorbing")
                  for item in ac.get("named", {}).get(role, []))
     named += list(item[0] for item in ac.get("aster_sources", []))
     if named:
-        log("INFO: Akoestiek: bron- en absorberende selecties ({0}) tellen "
-            "alleen in de harmonische analyse '{1}'; bij de holtemodes zijn "
-            "het harde wanden.".format(", ".join(named), HARM_ANALYSIS))
+        log("INFO: Acoustics: source and absorbing selections ({0}) only count "
+            "in the harmonic analysis '{1}'; for the cavity modes they are "
+            "hard walls.".format(", ".join(named), HARM_ANALYSIS))
     if model_data.get("analysis_type") == "A20":
         log(tr("ERROR: Acoustic Resonance 2D (A20) wordt niet vertaald; de "
                "bridge rekent alleen 3D (A30).",
@@ -633,12 +633,12 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     if mats is None:
         return None
     if ac["impedances"]:
-        # Impedantie: complexe modes (S2b), eigen route (zie
-        # _complex_modes_comm en aster_acoustic_complex.py).
+        # Impedance: complex modes (S2b), own route (see
+        # _complex_modes_comm and aster_acoustic_complex.py).
         return _complex_modes_comm(work_dir, model_data, msh_path, resu_name,
                                    analysis, ac, elsets, mats)
 
-    # --- model, materialen ---
+    # --- model, materials ---
     model_block = ("model = AFFE_MODELE(\n    MAILLAGE=mesh,\n    AFFE=_F(\n"
                    "        GROUP_MA={0},\n        PHENOMENE='ACOUSTIQUE',\n"
                    "        MODELISATION='3D',\n    ),\n)\n").format(
@@ -655,7 +655,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                           "".join("        _F(GROUP_MA='{0}', MATER={1}),\n"
                                   .format(es, names[m]) for es, m in elsets))
 
-    # --- drukknopen ---
+    # --- pressure nodes ---
     renames = model_data.get("selection_renames",
                              model_data.get("group_renames", {}))
     known = model_data.get("mesh_group_names", set())
@@ -682,7 +682,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     charges += [n for n in extra if n not in charges]
     loads_block += bta._custom_code(model_data, "code")
     if not loads_block:
-        loads_block = "#-- geen drukknopen (harde wanden) --\n"
+        loads_block = "#-- no pressure nodes (hard walls) --\n"
     charge_ref = ("    CHARGE=({0},),\n".format(", ".join(charges))
                   if charges else "")
     assemblage_block = (
@@ -711,7 +711,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('PRES',)))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:
@@ -726,7 +726,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -741,7 +741,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
                 "F mess {0} R 6".format(os.path.join(work_dir,
                                                      run_name(".mess"))),
             ]) + bta._export_result_lines(work_dir, resu_name))
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -754,9 +754,9 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
 
 
 def _export_block(work_dir, model_data):
-    """aster_results_export: modes als <mode> met de knoopvariabele
-    'pressure' (Mecway's naam), genormeerd p^T M p = 1 (export_results
-    doet dat voor MODE_ACOU met MASS_GENE), en de BRIDGE_MODE-regels."""
+    """aster_results_export: modes as <mode> with the node variable
+    'pressure' (Mecway's name), normalised p^T M p = 1 (export_results
+    does that for MODE_ACOU with MASS_GENE), and the BRIDGE_MODE lines."""
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     return ("# Resultaten in Mecway's eigen formaat (result_route 'liml')\n"
@@ -772,37 +772,37 @@ def _export_block(work_dir, model_data):
 
 
 # ==========================================
-# COMPLEXE HOLTEMODES MET IMPEDANTIE (S2b)
+# COMPLEX CAVITY MODES WITH IMPEDANCE (S2b)
 #
-# Mecway A30 met <impedance>: kwadratisch eigenwaardeprobleem (K + lambda C
+# Mecway A30 with <impedance>: quadratic eigenvalue problem (K + lambda C
 # + lambda^2 M) P = 0 met C = int rho/Z N N^T dA (manual v33 par. 6.9.2).
-# CALC_MODES kan dat niet (MATR_AMOR alleen matr_asse_depl_r/gene_r,
-# catalogus calc_modes.py v17.4; AFFE_CHAR_ACOU kent geen impedantie;
-# een complexe Z geeft een complexe C). Route:
-#   - AFFE_MODELE: volumes '3D' en de impedantievlakken '3D_ABSO';
-#   - ASSEMBLAGE RIGI_ACOU / MASS_ACOU zonder CHARGE (de drukknopen
-#     elimineert aster_acoustic_complex zelf);
-#   - per impedantie CALC_MATR_ELEM AMOR_ACOU met een eigen CHAM_MATER:
-#     CELE_R = 1 op dat vlak (de 3D_ABSO-matrix is (1/c) int N N^T dA, zonder
-#     rho, gemeten in S3a; met c = 1 het oppervlaktemassa-achtige int N N^T
-#     dA, som = oppervlak, gemeten), _CELE_OTHER op de andere
-#     impedantievlakken (bijdrage 1e-30: verwaarloosbaar);
-#   - aster_acoustic_complex.solve_modes (scipy, in de job): C = sum
-#     rho/Z_g A_g, linearisering + shift-invert, export als Mecway's
-#     complexe modes (frequency + decayrate, pressure + pressurei).
-# Gemeten (buis hard / Z, hex20; verificatie AI): gelijk aan Mecway 33
-# headless tot 1e-9 en aan de analytische wortels.
+# CALC_MODES cannot do that (MATR_AMOR only matr_asse_depl_r/gene_r,
+# catalogue calc_modes.py v17.4; AFFE_CHAR_ACOU has no impedance;
+# a complex Z gives a complex C). Route:
+#   - AFFE_MODELE: volumes '3D' and the impedance faces '3D_ABSO';
+#   - ASSEMBLAGE RIGI_ACOU / MASS_ACOU without CHARGE (the pressure nodes
+#     are eliminated by aster_acoustic_complex itself);
+#   - per impedance CALC_MATR_ELEM AMOR_ACOU with its own CHAM_MATER:
+#     CELE_R = 1 on that face (the 3D_ABSO matrix is (1/c) int N N^T dA, without
+#     rho, measured in S3a; with c = 1 the surface-mass-like int N N^T
+#     dA, sum = area, measured), _CELE_OTHER on the other
+#     impedance faces (contribution 1e-30: negligible);
+#   - aster_acoustic_complex.solve_modes (scipy, in the job): C = sum
+#     rho/Z_g A_g, linearisation + shift-invert, export as Mecway's
+#     complex modes (frequency + decayrate, pressure + pressurei).
+# Measured (tube hard / Z, hex20; verification AI): equal to Mecway 33
+# headless up to 1e-9 and to the analytical roots.
 # ==========================================
 _CELE_OTHER = 1.0e30
 
 
 def _impedance_inputs(model_data, ac, mats):
     """
-    Impedantieranden voor de complexe modes: [(Code-Aster-groep, rho / Z
-    (complex), omschrijving, Mecway-selectie)], of None (ERROR gelogd).
-    Mecway's Z = specificimpedancer + i specificimpedancei (Pa.s/m, getal
-    zonder eenheid); headless gemeten: Z = 2000 - 1000i geeft dezelfde
-    eigenwaarden als C = rho/Z int N N dA in een eigen berekening.
+    Impedance boundaries for the complex modes: [(Code-Aster group, rho / Z
+    (complex), description, Mecway selection)], or None (ERROR logged).
+    Mecway's Z = specificimpedancer + i specificimpedancei (Pa.s/m, number
+    without unit); measured headless: Z = 2000 - 1000i gives the same
+    eigenvalues as C = rho/Z int N N dA in a separate calculation.
     """
     renames = model_data.get("selection_renames",
                              model_data.get("group_renames", {}))
@@ -839,9 +839,9 @@ def _impedance_inputs(model_data, ac, mats):
         mat = media[0]
         rho = ac["materials"].get(mat, {}).get("rho") or 0.0
         if rho <= 0.0:
-            # Mecway rekent zonder dichtheid met rho = 0: de impedantie
-            # werkt dan niet (headless gezien: Z = 2000 zonder dichtheid gaf
-            # de modes van een harde wand, decay rate ~1e-10).
+            # Without density Mecway solves with rho = 0: the impedance
+            # then has no effect (seen headless: Z = 2000 without density gave
+            # the modes of a hard wall, decay rate ~1e-10).
             bad.append(tr("impedantie op '{0}': materiaal '{1}' heeft geen "
                           "dichtheid; de randterm is rho / Z (Mecway rekent "
                           "zonder dichtheid met rho = 0: een harde wand)",
@@ -860,9 +860,9 @@ def _impedance_inputs(model_data, ac, mats):
         c = mats[mat][0]
         ratio = z / (rho * c)
         refl = (z - rho * c) / (z + rho * c)
-        log("INFO: Akoestiek: impedantie Z = {0} {1} {2}i Pa.s/m op '{3}' "
-            "(Z / (rho c) = {4} {5} {6}i; reflectiefactor bij loodrechte "
-            "inval |R| = {7}).".format(
+        log("INFO: Acoustics: impedance Z = {0} {1} {2}i Pa.s/m on '{3}' "
+            "(Z / (rho c) = {4} {5} {6}i; reflection factor at normal "
+            "incidence |R| = {7}).".format(
                 "%.6g" % z.real, "-" if z.imag < 0 else "+",
                 "%.6g" % abs(z.imag), sel, "%.4g" % ratio.real,
                 "-" if ratio.imag < 0 else "+", "%.4g" % abs(ratio.imag),
@@ -889,17 +889,17 @@ def _impedance_inputs(model_data, ac, mats):
 
 
 def _cplx(z):
-    """complex(..) als Python-literal voor de .comm."""
+    """complex(..) as a Python literal for the .comm."""
     return "complex({0}, {1})".format(_r(z.real), _r(z.imag))
 
 
 def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                         ac, elsets, mats):
     """
-    .comm en .export voor de complexe holtemodes (impedantie, zie het blok
-    hierboven). Zelfde template als de reele holtemodes
-    (AsterTemplate_Akoestiek.comm); de 'CALC_MODES'-sectie roept
-    aster_acoustic_complex aan. Returns het pad naar de .export of None.
+    .comm and .export for the complex cavity modes (impedance, see the block
+    above). Same template as the real cavity modes
+    (AsterTemplate_Akoestiek.comm); the 'CALC_MODES' section calls
+    aster_acoustic_complex. Returns the path to the .export or None.
     """
     import bridge_to_aster as bta
     imps = _impedance_inputs(model_data, ac, mats)
@@ -939,7 +939,7 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                               "        _F(GROUP_MA='{0}', MATER={1}),\n"
                               .format(g, face_mat[g]) for g in faces))
 
-    # --- drukknopen: in aster_acoustic_complex geelimineerd ---
+    # --- pressure nodes: eliminated in aster_acoustic_complex ---
     dirichlet = []
     renames = model_data.get("selection_renames",
                              model_data.get("group_renames", {}))
@@ -961,7 +961,7 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                "WARNING: Acoustics: #ASTER-EXCIT ({0}) is not used for "
                "complex modes (impedance): the matrices are assembled "
                "without loads.").format(", ".join(extra)))
-    loads_block = ("#-- drukknopen: in aster_acoustic_complex geelimineerd "
+    loads_block = ("#-- pressure nodes: eliminated in aster_acoustic_complex "
                    "({0}) --\n".format(", ".join(n for _k, n in dirichlet)
                                        or "geen") +
                    bta._custom_code(model_data, "code"))
@@ -978,7 +978,7 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
     damping = []
     for k, (g, coef, label, _sel, _mat) in enumerate(imps):
         idx = k + 1
-        lines += ["# Impedantie {0}".format(label),
+        lines += ["# Impedance {0}".format(label),
                   "chz{0} = AFFE_MATERIAU(".format(idx),
                   "    MAILLAGE=mesh,",
                   "    MODELE=model,",
@@ -1022,8 +1022,8 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
             bta._py_str(model_data.get("liml_path", "")), n,
             repr(dirichlet), _r(shift), _r(free), _r(c_min), _r(size),
             "%.10g" % float(analysis.get("modal_tolerance", 1.0e-6)))
-    log("INFO: Akoestiek: {0} impedantierand(en): complexe modes "
-        "(frequentie en decay rate), {1} modes{2}.".format(
+    log("INFO: Acoustics: {0} impedance boundary(ies): complex modes "
+        "(frequency and decay rate), {1} modes{2}.".format(
             len(imps), n, (" rond {0} Hz".format("%.6g" % shift)
                            if shift > 0.0 else " met de kleinste |lambda| "
                            "(zoals Mecway)")))
@@ -1047,19 +1047,18 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
                   fieldmat_block=fieldmat_block, loads_block=loads_block,
                   assemblage_block=assemblage_block,
                   calc_modes_block=calc_modes_block,
-                  export_block=export_block or "#-- geen #ASTER-POST --\n",
-                  impr_resu_block="#-- geen MED-export (complexe modes: geen "
-                                  "Code-Aster-resultaat) --\n")
+                  export_block=export_block or "#-- no #ASTER-POST --\n",
+                  impr_resu_block="#-- no MED export (complex modes: no "
+                                  "Code-Aster result) --\n")
     return _write_modes_files(work_dir, analysis, msh_path, resu_name, blocks,
                               med=False)
 
 
 def _write_modes_files(work_dir, analysis, msh_path, resu_name, blocks,
                        med=True):
-    """De .comm (template analysis["template"], placeholders blocks) en de
-    .export; returns het pad naar de .export of None (ERROR gelogd). med
-    False: geen .rmed in de .export (er wordt niets naar UNITE 80
-    geschreven)."""
+    """The .comm (template analysis["template"], placeholders blocks) and the
+    .export; returns the path to the .export or None (ERROR logged). med
+    False: no .rmed in the .export (nothing is written to UNITE 80)."""
     import bridge_to_aster as bta
     result_lines = bta._export_result_lines(work_dir, resu_name)
     if not med:
@@ -1070,7 +1069,7 @@ def _write_modes_files(work_dir, analysis, msh_path, resu_name, blocks,
     try:
         template = bta._read_template(analysis["template"])
         bta._write_comm(comm_path, template.format(**blocks))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -1085,7 +1084,7 @@ def _write_modes_files(work_dir, analysis, msh_path, resu_name, blocks,
                 "F mess {0} R 6".format(os.path.join(work_dir,
                                                      run_name(".mess"))),
             ]) + result_lines)
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -1098,41 +1097,41 @@ def _write_modes_files(work_dir, analysis, msh_path, resu_name, blocks,
 
 
 # ==========================================
-# HARMONISCH DRUKVELD (S3a): DYNA_VIBRA TYPE_CALCUL='HARM'
+# HARMONIC PRESSURE FIELD (S3a): DYNA_VIBRA TYPE_CALCUL='HARM'
 #
-# Mecway heeft geen harmonische analyse (manual v33 hoofdstuk 6); de bridge
-# rekent het A30-model (materialen, fluid pressure, impedance) met:
-#   bron        vlakselectie BRON_... / SOURCE_... (normaalsnelheid
-#               source_velocity, de fluid in) of #ASTER-BRON selectie =
-#               v [, fase]  -> AFFE_CHAR_ACOU VITE_FACE VNOR
-#               fluid pressure != 0  -> opgelegde druk (PRES_IMPO)
-#   absorberend vlakselectie ABSORBEREND_... / ABSORBING_... -> 3D_ABSO
-#               (rho c van het medium); Mecway impedance met reele Z
-#               -> 3D_ABSO met een eigen materiaal CELE_R = Z / rho
-#   microfoon   knoopselectie MICROFOON_... / MICROPHONE_... -> CSV en
-#               BRIDGE_MIC-regels (aster_acoustic_export)
-# Code-Aster-route: testcase ahlv100a (ASSEMBLAGE RIGI_ACOU, MASS_ACOU,
-# AMOR_ACOU en VECT_ASSE CHAR_ACOU; DYNA_VIBRA HARM PHYS met EXCIT
+# Mecway has no harmonic analysis (manual v33 chapter 6); the bridge
+# solves the A30 model (materials, fluid pressure, impedance) with:
+#   source      face selection BRON_... / SOURCE_... (normal velocity
+#               source_velocity, into the fluid) or #ASTER-BRON selection =
+#               v [, phase]  -> AFFE_CHAR_ACOU VITE_FACE VNOR
+#               fluid pressure != 0  -> imposed pressure (PRES_IMPO)
+#   absorbing   face selection ABSORBEREND_... / ABSORBING_... -> 3D_ABSO
+#               (rho c of the medium); Mecway impedance with real Z
+#               -> 3D_ABSO with its own material CELE_R = Z / rho
+#   microphone  node selection MICROFOON_... / MICROPHONE_... -> CSV and
+#               BRIDGE_MIC lines (aster_acoustic_export)
+# Code-Aster route: test case ahlv100a (ASSEMBLAGE RIGI_ACOU, MASS_ACOU,
+# AMOR_ACOU and VECT_ASSE CHAR_ACOU; DYNA_VIBRA HARM PHYS with EXCIT
 # VECT_ASSE, PUIS_PULS=1, PHAS_DEG=90).
-# Gemeten in runs (Code-Aster 17.4, buis 1 x 0,1 x 0,1 m, hex20):
-#   - de matrices bevatten rho niet (zie de kop); de bron wel: VITE_FACE
-#     VNOR = v met EXCIT COEF_MULT=+1, PUIS_PULS=1, PHAS_DEG=90 (= i w v)
-#     gaf p = +rho c v op het bronvlak bij een absorberend einde; met
-#     COEF_MULT=-1 (ahlv100a) -rho c v. +1 betekent dus: v de fluid in
-#     (een zuiger die duwt), p(t) = Re(P e^(i w t)).
-#   - VITE_FACE vraagt de vlakken in het model (MODELISATION '3D',
-#     elementen ACOUNA_FACE*) met een materiaal (anders <EXCEPTION>
-#     CALCUL_20, gezien).
-#   - 3D_ABSO: AMOR_ACOU = (1/c) int N N dA met c van het materiaal van
-#     het vlak, zonder rho (RHO 2,4 i.p.v. 1,2 op het vlak: geen verschil;
-#     CELE_R 680 i.p.v. 340: reflectie 1/3, max/min van |p| = 2,000, zoals
-#     een impedantie Z = 2 rho c). Een impedantie Z wordt dus CELE_R =
-#     Z / rho van het medium (Mecway: C = int rho/Z N N dA, manual v33
-#     par. 6.9.2). CELE_I (complexe c) gaf NIET de verwachte reflectie van
-#     een complexe Z (gemeten 2,19 i.p.v. 2,62): complexe Z -> ERROR.
-#   - PRES_IMPO != 0 in VECT_ASSE CHAR_ACOU (met de matrices geassembleerd
-#     met CHARGE) geeft de opgelegde druk; als aparte EXCIT zonder
-#     PUIS_PULS (p = 2 Pa: |p| = 2,000000 langs de buis, gezien).
+# Measured in runs (Code-Aster 17.4, tube 1 x 0.1 x 0.1 m, hex20):
+#   - the matrices do not contain rho (see the header); the source does:
+#     VITE_FACE VNOR = v with EXCIT COEF_MULT=+1, PUIS_PULS=1, PHAS_DEG=90
+#     (= i w v) gave p = +rho c v on the source face with an absorbing end;
+#     with COEF_MULT=-1 (ahlv100a) -rho c v. +1 therefore means: v into the
+#     fluid (a piston that pushes), p(t) = Re(P e^(i w t)).
+#   - VITE_FACE needs the faces in the model (MODELISATION '3D',
+#     elements ACOUNA_FACE*) with a material (otherwise <EXCEPTION>
+#     CALCUL_20, seen).
+#   - 3D_ABSO: AMOR_ACOU = (1/c) int N N dA with c of the material of
+#     the face, without rho (RHO 2.4 instead of 1.2 on the face: no difference;
+#     CELE_R 680 instead of 340: reflection 1/3, max/min of |p| = 2.000, like
+#     an impedance Z = 2 rho c). An impedance Z therefore becomes CELE_R =
+#     Z / rho of the medium (Mecway: C = int rho/Z N N dA, manual v33
+#     par. 6.9.2). CELE_I (complex c) did NOT give the expected reflection of
+#     a complex Z (measured 2.19 instead of 2.62): complex Z -> ERROR.
+#   - PRES_IMPO != 0 in VECT_ASSE CHAR_ACOU (with the matrices assembled
+#     with CHARGE) gives the imposed pressure; as a separate EXCIT without
+#     PUIS_PULS (p = 2 Pa: |p| = 2.000000 along the tube, seen).
 # ==========================================
 _EDGES = {
     "hex": ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4),
@@ -1144,10 +1143,10 @@ _EDGES = {
 
 
 def _frequencies(analysis, label=None):
-    """Oplopende lijst frequenties [Hz] uit harm_freq_list (tekst, "0" =
-    niet gebruikt) of harm_freq_start/_end/_count/_spacing; None bij een
-    fout (ERROR gelogd). label: (nl, en) voor de melding (standaard
-    akoestiek harmonisch; ook bridge_vibroacoustic_harm)."""
+    """Ascending list of frequencies [Hz] from harm_freq_list (text, "0" =
+    not used) or harm_freq_start/_end/_count/_spacing; None on an
+    error (ERROR logged). label: (nl, en) for the message (default
+    acoustics harmonic; also bridge_vibroacoustic_harm)."""
     nl, en = label or ("Akoestiek harmonisch", "Acoustics harmonic")
     text = "{0}".format(analysis.get("harm_freq_list", "0") or "0").strip()
     vals = []
@@ -1197,8 +1196,8 @@ def _frequencies(analysis, label=None):
 
 
 def _face_media(model_data, sel, mats):
-    """Mecway-materialen van de volume-elementen waar de vlakken van de
-    selectie (Mecway-naam) op liggen."""
+    """Mecway materials of the solid elements on which the faces of the
+    selection (Mecway name) lie."""
     elem_elset = model_data.get("_elem_elset", {})
     elsets = model_data.get("elsets", {})
     out = []
@@ -1210,9 +1209,9 @@ def _face_media(model_data, sel, mats):
 
 
 def _wavelength_check(model_data, elsets, mats, f_max):
-    """WARNING als de grootste elementrand meer is dan lambda / N bij de
-    hoogste frequentie (N = _MIN_PER_WAVELENGTH, lineair/kwadratisch);
-    INFO met het kleinste aantal elementen per golflengte."""
+    """WARNING if the largest element edge is more than lambda / N at the
+    highest frequency (N = _MIN_PER_WAVELENGTH, linear/quadratic);
+    INFO with the smallest number of elements per wavelength."""
     keep = dict(elsets)
     nodes = model_data.get("mesh_nodes", {})
     elem_elset = model_data.get("_elem_elset", {})
@@ -1243,8 +1242,8 @@ def _wavelength_check(model_data, elsets, mats, f_max):
             worst = (per, linear)
     if worst is None:
         return
-    log("INFO: Akoestiek harmonisch: kleinste aantal elementen per "
-        "golflengte bij {0} Hz: {1} (grootste elementrand).".format(
+    log("INFO: Acoustics harmonic: smallest number of elements per "
+        "wavelength at {0} Hz: {1} (largest element edge).".format(
             "%.6g" % f_max, "%.3g" % worst[0]))
     if n_bad:
         log(tr("WARNING: Akoestiek harmonisch: {0} element(en) hebben bij de "
@@ -1263,19 +1262,19 @@ def _wavelength_check(model_data, elsets, mats, f_max):
 
 
 def _ri(z):
-    """Complex getal als ('RI', re, im) voor de .comm (ahlv100a)."""
+    """Complex number as ('RI', re, im) for the .comm (ahlv100a)."""
     return "('RI', {0}, {1})".format(_r(z.real), _r(z.imag))
 
 
 def _harm_inputs(model_data, analysis, ac, mats):
     """
-    Bronnen, absorberende vlakken en microfoons naar Code-Aster-namen.
-    Returns dict of None (ERROR gelogd):
-      "vite":  [(groep, complexe v [m/s], omschrijving)]
-      "pres":  [(GROUP_NO/GROUP_MA, groep, complexe p [Pa])]  (ook p = 0)
-      "abso":  [(groep, c [m/s], rho, omschrijving)]
-      "mics":  OrderedDict {Mecway-naam: [knoopnummers]}
-      "source_media": {groep: Mecway-materiaal} (materiaal op het bronvlak)
+    Sources, absorbing faces and microphones to Code-Aster names.
+    Returns dict or None (ERROR logged):
+      "vite":  [(group, complex v [m/s], description)]
+      "pres":  [(GROUP_NO/GROUP_MA, group, complex p [Pa])]  (also p = 0)
+      "abso":  [(group, c [m/s], rho, description)]
+      "mics":  OrderedDict {Mecway name: [node numbers]}
+      "source_media": {group: Mecway material} (material on the source face)
     """
     renames = model_data.get("selection_renames",
                              model_data.get("group_renames", {}))
@@ -1310,7 +1309,7 @@ def _harm_inputs(model_data, analysis, ac, mats):
             return None
         return media[0]
 
-    # --- bronnen: snelheid ---
+    # --- sources: velocity ---
     v0 = float(analysis.get("source_velocity", 1.0e-3))
     how = tr("BRON_-selectie", "SOURCE_ selection")
     vel = [(sel, complex(v0, 0.0), how)
@@ -1328,7 +1327,7 @@ def _harm_inputs(model_data, analysis, ac, mats):
                           "selection").format(sel))
             continue
         rad = math.radians(phase)
-        # cos(90 graden) = 6e-17: afronden, zodat 90 graden zuiver imaginair is
+        # cos(90 degrees) = 6e-17: round, so that 90 degrees is purely imaginary
         re, im = [0.0 if abs(t) < 1.0e-12 else t
                   for t in (math.cos(rad), math.sin(rad))]
         vel = [x for x in vel if x[0] != sel]
@@ -1347,12 +1346,12 @@ def _harm_inputs(model_data, analysis, ac, mats):
             continue
         out["vite"].append((name, z, "{0} {1}".format(how, sel)))
         out["source_media"][name] = mat
-        log("INFO: Akoestiek: bron '{0}' ({1}): normaalsnelheid {2} m/s, "
-            "fase {3} graden (de fluid in).".format(
+        log("INFO: Acoustics: source '{0}' ({1}): normal velocity {2} m/s, "
+            "phase {3} degrees (into the fluid).".format(
                 sel, how, "%.6g" % abs(z),
                 "%.6g" % math.degrees(math.atan2(z.imag, z.real))))
 
-    # --- opgelegde druk (fluid pressure; 0 = drukknoop) ---
+    # --- imposed pressure (fluid pressure; 0 = pressure node) ---
     for sel, kind in ac.get("pressure0", []):
         name = aster(sel)
         if name is None:
@@ -1370,10 +1369,10 @@ def _harm_inputs(model_data, analysis, ac, mats):
             continue
         out["pres"].append(("GROUP_NO" if kind == "node" else "GROUP_MA",
                             name, complex(value, 0.0)))
-        log("INFO: Akoestiek: opgelegde druk {0} Pa op '{1}' (fluid "
-            "pressure; bron).".format("%.6g" % value, sel))
+        log("INFO: Acoustics: imposed pressure {0} Pa on '{1}' (fluid "
+            "pressure; source).".format("%.6g" % value, sel))
 
-    # --- absorberende randen ---
+    # --- absorbing boundaries ---
     for sel, kind in named.get("absorbing", []):
         if kind != "face":
             bad.append(tr("absorberende rand '{0}' is een {1}selectie; "
@@ -1426,13 +1425,13 @@ def _harm_inputs(model_data, analysis, ac, mats):
         out["abso"].append((name, zr / rho_given, rho_given,
                             "Z = {0} Pa.s/m ({1})".format("%g" % zr, mat)))
         out["abso_media"][name] = mat
-        log("INFO: Akoestiek: impedantie Z = {0} Pa.s/m op '{1}' "
-            "(Z / (rho c) = {2}): absorberende rand 3D_ABSO met c = Z / rho "
+        log("INFO: Acoustics: impedance Z = {0} Pa.s/m on '{1}' "
+            "(Z / (rho c) = {2}): absorbing boundary 3D_ABSO with c = Z / rho "
             "= {3} m/s.".format("%g" % zr, sel,
                                 "%.4g" % (zr / (rho_given * mats[mat][0])),
                                 "%.6g" % (zr / rho_given)))
 
-    # --- microfoons ---
+    # --- microphones ---
     for sel, kind in named.get("microphone", []):
         if kind != "node":
             log(tr("WARNING: Akoestiek: microfoon '{0}' is een {1}selectie; "
@@ -1475,10 +1474,10 @@ def _harm_inputs(model_data, analysis, ac, mats):
 
 def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
     """
-    Genereer de .comm en .export voor het harmonische drukveld
-    (acoustic_harm_3d; bridge_to_aster._build_dyna_modal stuurt een
-    akoestische DYNA_VIBRA-analyse hierheen). Returns het pad naar de
-    .export, of None bij een fout.
+    Generate the .comm and .export for the harmonic pressure field
+    (acoustic_harm_3d; bridge_to_aster._build_dyna_modal sends an
+    acoustic DYNA_VIBRA analysis here). Returns the path to the
+    .export, or None on an error.
     """
     import bridge_to_aster as bta
     log("--- Generating Aster Files (DYNA_VIBRA HARM akoestisch) ---")
@@ -1519,8 +1518,8 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
         return None
     no_rho = [m for m in mats if not ac["materials"].get(m, {}).get("rho")]
     if inp["vite"] and no_rho:
-        # De bron is i w rho v (VITE_FACE): zonder dichtheid zou p = c v
-        # i.p.v. rho c v zijn (RHO = 1).
+        # The source is i w rho v (VITE_FACE): without density p would be
+        # c v instead of rho c v (RHO = 1).
         log(tr("ERROR: Akoestiek harmonisch: materiaal {0} heeft geen "
                "dichtheid; een snelheidsbron geeft p = rho c v. Vul in "
                "Mecway bij het materiaal een dichtheid in (bijv. 1.2 kg/m3 "
@@ -1531,10 +1530,10 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                    ", ".join("'%s'" % m for m in no_rho)))
         return None
     _wavelength_check(model_data, elsets, mats, freqs[-1])
-    log("INFO: Akoestiek harmonisch: {0} frequentie(s) van {1} tot {2} "
+    log("INFO: Acoustics harmonic: {0} frequency(ies) from {1} to {2} "
         "Hz.".format(len(freqs), "%.6g" % freqs[0], "%.6g" % freqs[-1]))
 
-    # --- model: volumes en bronvlakken 3D, absorberende vlakken 3D_ABSO ---
+    # --- model: volumes and source faces 3D, absorbing faces 3D_ABSO ---
     vol = [es for es, _m in elsets]
     src = list(item[0] for item in inp["vite"] if item[0] not in vol)
     src = [g for k, g in enumerate(src) if g not in src[:k]]
@@ -1548,7 +1547,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                             _fmt_groups(abso))
     model_block += "    ),\n)\n"
 
-    # --- materialen ---
+    # --- materials ---
     names = OrderedDict()
     mat_lines = []
     for k, (mat, (c, rho)) in enumerate(mats.items()):
@@ -1565,7 +1564,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
         if abs(c - mats[mat][0]) <= 1.0e-12 * mats[mat][0]:
             mname = names[mat]
         else:
-            # impedantie: eigen materiaal met c = Z / rho (zie hierboven)
+            # impedance: own material with c = Z / rho (see above)
             mname = "MAZ{0}".format(k + 1)
             mat_lines.append("# absorberende rand '{0}': {1}\n{2} = "
                              "DEFI_MATERIAU(FLUIDE=_F(RHO={3}, CELE_R={4}))"
@@ -1576,7 +1575,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                       "    MODELE=model,\n    AFFE=(\n{0}    ),\n)\n").format(
                           "".join(assign))
 
-    # --- lasten ---
+    # --- loads ---
     loads = []
     if inp["vite"]:
         loads.append("# Bron: normaalsnelheid de fluid in (VITE_FACE VNOR)\n"
@@ -1592,9 +1591,9 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                              kw, g, _ri(p)) for kw, g, p in inp["pres"])))
     loads_block = "\n".join(loads) + bta._custom_code(model_data, "code")
     if model_data.get("aster_custom", {}).get("excit"):
-        # DYNA_VIBRA HARM neemt hier alleen VECT_ASSE (catalogus
-        # dyna_vibra.py: CHARGE alleen char_meca); eigen akoestische lasten
-        # kan de bridge niet in EXCIT zetten.
+        # DYNA_VIBRA HARM only takes VECT_ASSE here (catalogue
+        # dyna_vibra.py: CHARGE only char_meca); the bridge cannot put its
+        # own acoustic loads in EXCIT.
         log(tr("WARNING: Akoestiek harmonisch: #ASTER-EXCIT wordt niet "
                "gebruikt ({0}); gebruik #ASTER-BRON of een eigen DYNA_VIBRA "
                "in #ASTER-POST.",
@@ -1604,7 +1603,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                    model_data["aster_custom"]["excit"])))
     p_source = any(abs(p) > 0.0 for _kw, _g, p in inp["pres"])
 
-    # --- matrices en vectoren (ahlv100a) ---
+    # --- matrices and vectors (ahlv100a) ---
     vect = []
     if inp["vite"]:
         vect.append("        _F(VECTEUR=CO('vec_v'), OPTION='CHAR_ACOU', "
@@ -1629,10 +1628,10 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
             "        _F(MATRICE=CO('amor_c'), OPTION='AMOR_ACOU'),\n"
             if abso else "", "".join(vect))
 
-    # --- harmonische berekening ---
+    # --- harmonic calculation ---
     excit = []
     if inp["vite"]:
-        # i w x vec_v (zie de kop van dit blok: v de fluid in)
+        # i w x vec_v (see the header of this block: v into the fluid)
         excit.append("        _F(VECT_ASSE=vec_v, COEF_MULT=1.0, "
                      "PUIS_PULS=1, PHAS_DEG=90.0),\n")
     if p_source:
@@ -1663,7 +1662,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
             "    _F(RESULTAT=res, NOM_CHAM='PRES', PARTIE='IMAG', "
             "NOM_CHAM_MED='PRES_IMAG'),\n))\n")
     else:
-        impr_resu_block = "#-- geen MED-export (instelling med_export uit) --\n"
+        impr_resu_block = "#-- no MED export (setting med_export off) --\n"
 
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:
@@ -1678,7 +1677,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
             export_block=export_block,
             impr_resu_block=impr_resu_block,
         ))
-        log("SUCCESS: .comm geschreven naar '{0}'.".format(comm_path))
+        log("SUCCESS: .comm written to '{0}'.".format(comm_path))
         export_path = os.path.join(work_dir, run_name(".export"))
         with open(export_path, "w") as f:
             f.write("\n".join([
@@ -1693,7 +1692,7 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
                 "F mess {0} R 6".format(os.path.join(work_dir,
                                                      run_name(".mess"))),
             ]) + bta._export_result_lines(work_dir, resu_name))
-        log("SUCCESS: .export geschreven naar '{0}'.".format(export_path))
+        log("SUCCESS: .export written to '{0}'.".format(export_path))
         return export_path
     except KeyError as e:
         log(tr("ERROR: Template placeholder ontbreekt: {0}.",
@@ -1709,8 +1708,8 @@ MIC_SUFFIX = "_microfoons.csv"
 
 
 def _harm_export_block(work_dir, model_data, mics):
-    """aster_acoustic_export: een <mode> per frequentie (pressure,
-    pressurei, pressuremag, pressurephase, spl) en de microfoons."""
+    """aster_acoustic_export: one <mode> per frequency (pressure,
+    pressurei, pressuremag, pressurephase, spl) and the microphones."""
     import bridge_to_aster as bta
     scripts = os.path.dirname(os.path.abspath(__file__))
     mic_text = "{" + ", ".join("{0}: [{1}]".format(
@@ -1732,11 +1731,11 @@ def _harm_export_block(work_dir, model_data, mics):
 
 
 # ==========================================
-# NA DE RUN: MICROFOONS IN DE LOG (IronPython)
+# AFTER THE RUN: MICROPHONES IN THE LOG (IronPython)
 # ==========================================
 def read_microphones(csv_path):
-    """[(naam, f, amplitude, fase, spl)] uit de CSV van
-    aster_acoustic_export; [] als hij ontbreekt."""
+    """[(name, f, amplitude, phase, spl)] from the CSV of
+    aster_acoustic_export; [] if it is missing."""
     import csv
     out = []
     if not csv_path or not os.path.isfile(csv_path):
@@ -1757,9 +1756,9 @@ def read_microphones(csv_path):
 
 def report_harmonic(work_dir, frequencies):
     """
-    Na een harmonische run: aantal frequenties en per microfoon het
-    hoogste geluidsdrukniveau in de log; de regels voor het statusvak.
-    frequencies: [(id, "frequency", f)] uit read_modes().
+    After a harmonic run: number of frequencies and per microphone the
+    highest sound pressure level in the log; the lines for the status box.
+    frequencies: [(id, "frequency", f)] from read_modes().
     """
     path = os.path.join(work_dir, run_name(MIC_SUFFIX))
     lines = [tr(u"Akoestiek harmonisch: {0} frequentie(s), {1} .. {2} Hz. "
@@ -1787,8 +1786,8 @@ def report_harmonic(work_dir, frequencies):
                         u"(|p| = {3} Pa).").format(
                             name, "%.1f" % level, "%.6g" % f, "%.4g" % amp))
         for f, amp, phase, level in rows:
-            log(u"INFO: Microfoon {0}: f = {1} Hz, |p| = {2} Pa, fase = {3} "
-                u"graden, SPL = {4} dB.".format(
+            log(u"INFO: Microphone {0}: f = {1} Hz, |p| = {2} Pa, phase = {3} "
+                u"degrees, SPL = {4} dB.".format(
                     name, "%.6g" % f, "%.6g" % amp, "%.2f" % phase,
                     "%.2f" % level))
     if by_name:
