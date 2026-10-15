@@ -5,74 +5,74 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # aster_cyclic.py
 #
-# Verantwoordelijkheid: de stappen van de modale analyse met cyclische
-# symmetrie (bridge_cyclic.py) die BINNEN de Code-Aster-job draaien
-# (CPython 3.11, zoals aster_results_export.py; NIET in IronPython):
-#   collect()  de modes van MODE_ITER_CYCL (via REST_SOUS_STRUC SECTEUR=1)
-#              in Mecway's volgorde als een MODE_MECA-resultaat op de
-#              sector, of (instelling cyclic_full_wheel) op het hele wiel
-#              (REST_SOUS_STRUC SQUELETTE), terug in het globale
-#              assenstelsel van het model, met een regel BRIDGE_MODE <nr>
+# Responsibility: the steps of the modal analysis with cyclic
+# symmetry (bridge_cyclic.py) that run INSIDE the Code-Aster job
+# (CPython 3.11, like aster_results_export.py; NOT in IronPython):
+#   collect()  the modes of MODE_ITER_CYCL (via REST_SOUS_STRUC SECTEUR=1)
+#              in Mecway's order as a MODE_MECA result on the
+#              sector, or (setting cyclic_full_wheel) on the full wheel
+#              (REST_SOUS_STRUC SQUELETTE), back in the global
+#              coordinate system of the model, with a line BRIDGE_MODE <nr>
 #              FREQ=.. ND=.. per mode.
-#   wheel_model(), node_rows()  het hele wiel in Mecway's nummering
-#              (ook gebruikt door aster_results_export).
+#   wheel_model(), node_rows()  the full wheel in Mecway's numbering
+#              (also used by aster_results_export).
 #
-# HET HELE WIEL ZOALS MECWAY (headless gemeten met Mecway 33 op
-# TestFiles/Verificatie/modellen/CY-01, CY-04, CY-05, Samples/Impeller en
-# varianten met twee elsets, een losse knoop en verwisselde master/slave):
-# de <solution> bevat N kopieen van het model. Sector j (0 .. N-1) is de
-# sector gedraaid over +j x 360/N graden (rechtsom-positief om de as door
-# de oorsprong, onafhankelijk van welke kant master is); knoop i van
-# sector j heet i + j x n (n = aantal knopen van het model), element e
-# heet e + j x ne (ne = hoogste elementnummer). Elke knoop wordt
-# gekopieerd, ook die op de snijvlakken en op de as (dubbel, niet
-# samengevoegd). Per elset staan de elementen per sector achter elkaar
-# (sector 0, 1, ...). Code-Aster's skelet (DEFI_SQUELETTE CYCLIQUE,
-# SECTEUR TOUT='OUI') heeft (gezien met CY-01) dezelfde opbouw: N x n
-# knopen, blok j = de sector gedraaid over +j x 360/N om Z, en op blok j
-# het veld van REST_SOUS_STRUC SECTEUR=j+1 gedraaid naar dat blok;
-# node_rows() koppelt de knopen toch op coordinaat.
+# THE FULL WHEEL AS IN MECWAY (measured headless with Mecway 33 on
+# TestFiles/Verificatie/modellen/CY-01, CY-04, CY-05, Samples/Impeller and
+# variants with two elsets, a loose node and swapped master/slave):
+# the <solution> contains N copies of the model. Sector j (0 .. N-1) is the
+# sector rotated by +j x 360/N degrees (right-hand positive about the axis
+# through the origin, regardless of which side is master); node i of
+# sector j is called i + j x n (n = number of nodes of the model), element
+# e is e + j x ne (ne = highest element number). Every node is
+# copied, including those on the cut faces and on the axis (duplicated,
+# not merged). Per elset the elements are listed sector by sector
+# (sector 0, 1, ...). Code-Aster's skeleton (DEFI_SQUELETTE CYCLIQUE,
+# SECTEUR TOUT='OUI') has (seen with CY-01) the same layout: N x n
+# nodes, block j = the sector rotated by +j x 360/N about Z, and on block j
+# the field of REST_SOUS_STRUC SECTEUR=j+1 rotated to that block;
+# node_rows() still matches the nodes by coordinate.
 #
-# Volgorde (gemeten met Code-Aster 17.4, testcase sdls04a en de ring van
-# docs/Verificatie.md, CY): REST_SOUS_STRUC SECTEUR=1 geeft de modes per
-# aantal nodal diameters (ND) in de volgorde van CALCUL NB_DIAM/TOUT_DIAM
-# (0, 1, ..., N/2), per ND NMAX_FREQ modes; voor 0 < ND < N/2 staat elke
-# mode twee keer (het paar staande golven cos/sin, zelfde FREQ), voor ND
-# 0 en ND N/2 een keer. Binnen een ND zijn ze niet altijd oplopend
-# (gezien: 1420,8 voor 1404,7 Hz). Mecway (manual v33 par. 9.41, headless
-# nagelopen) geeft per ND het gevraagde aantal modes, elk een keer,
-# oplopend in ND en binnen een ND in frequentie: collect() doet hetzelfde
-# (van een paar het eerste lid).
+# Order (measured with Code-Aster 17.4, test case sdls04a and the ring of
+# docs/Verificatie.md, CY): REST_SOUS_STRUC SECTEUR=1 gives the modes per
+# number of nodal diameters (ND) in the order of CALCUL NB_DIAM/TOUT_DIAM
+# (0, 1, ..., N/2), NMAX_FREQ modes per ND; for 0 < ND < N/2 each
+# mode appears twice (the pair of standing waves cos/sin, same FREQ), for
+# ND 0 and ND N/2 once. Within an ND they are not always ascending
+# (seen: 1420.8 before 1404.7 Hz). Mecway (manual v33 par. 9.41, checked
+# headless) gives the requested number of modes per ND, each once,
+# ascending in ND and within an ND in frequency: collect() does the same
+# (the first member of a pair).
 #
-# Gebruik geen f-strings: zelfde stijl als de rest van de bridge.
+# Do not use f-strings: same style as the rest of the bridge.
 
-# Rekenframe: MODE_ITER_CYCL eist de Z-as als symmetrieas (U4.52.05 par.
-# 1). Bij een X- of Y-as draait de .comm het mesh vooraf met een
-# cyclische verwisseling van de assen (MODI_MAILLAGE ROTATION 120 graden
-# om (1, 1, 1); bridge_cyclic.ROTATION):
-#   as Y: p' = (z, x, y), dus u = (u'_y, u'_z, u'_x);
-#   as X: p' = (y, z, x), dus u = (u'_z, u'_x, u'_y).
-# _BACK: de componenten van het rekenframe die DX, DY, DZ van het model
-# worden.
-from aster_results_export import tr   # taal van de meldingen
+# Computation frame: MODE_ITER_CYCL requires the Z axis as symmetry axis
+# (U4.52.05 par. 1). For an X or Y axis the .comm first rotates the mesh
+# with a cyclic permutation of the axes (MODI_MAILLAGE ROTATION 120
+# degrees about (1, 1, 1); bridge_cyclic.ROTATION):
+#   axis Y: p' = (z, x, y), so u = (u'_y, u'_z, u'_x);
+#   axis X: p' = (y, z, x), so u = (u'_z, u'_x, u'_y).
+# _BACK: the components of the computation frame that become DX, DY, DZ
+# of the model.
+from aster_results_export import tr   # language of the messages
 
 _BACK = {"Z": ("DX", "DY", "DZ"), "Y": ("DY", "DZ", "DX"),
          "X": ("DZ", "DX", "DY")}
 _AXIS_INDEX = {"X": 0, "Y": 1, "Z": 2}
 
-# Koppeling van de knopen op coordinaat (node_rows): binnen _MATCH x de
-# modelgrootte (de bridge zet coordinaten < 1e-12 x de modelgrootte op 0,
-# bridge_cyclic._rewrite_mesh; draaien geeft ~1e-16).
+# Matching of the nodes by coordinate (node_rows): within _MATCH x the
+# model size (the bridge sets coordinates < 1e-12 x the model size to 0,
+# bridge_cyclic._rewrite_mesh; rotating gives ~1e-16).
 _MATCH = 1.0e-6
 
 
 # ==========================================
-# HET HELE WIEL (Mecway's nummering, zie de kop)
+# THE FULL WHEEL (Mecway's numbering, see the header)
 # ==========================================
 def wheel_coords(coords, axis, n_sectors):
-    """(N x n, 3)-array: rij j x n + i = knoop i+1 van sector j, gedraaid
-    over +j x 360/N graden om de as (index 0/1/2 = X/Y/Z) door de
-    oorsprong (zoals bridge_cyclic._rotate)."""
+    """(N x n, 3) array: row j x n + i = node i+1 of sector j, rotated
+    by +j x 360/N degrees about the axis (index 0/1/2 = X/Y/Z) through the
+    origin (like bridge_cyclic._rotate)."""
     import numpy as np
     coords = np.asarray(coords, dtype=float)
     i, k = (axis + 1) % 3, (axis + 2) % 3
@@ -89,10 +89,10 @@ def wheel_coords(coords, axis, n_sectors):
 
 def wheel_model(model, axis, n_sectors):
     """
-    Het model van aster_results_export.read_liml_model ("coords",
-    "elsets", "elements") uitgebreid tot het hele wiel in Mecway's
-    nummering: knoop i + j x n, element e + j x ne (ne = hoogste
-    elementnummer), per elset de sectoren achter elkaar.
+    The model of aster_results_export.read_liml_model ("coords",
+    "elsets", "elements") extended to the full wheel in Mecway's
+    numbering: node i + j x n, element e + j x ne (ne = highest
+    element number), per elset the sectors one after another.
     """
     from collections import OrderedDict
     n = model["coords"].shape[0]
@@ -112,10 +112,10 @@ def wheel_model(model, axis, n_sectors):
 
 def node_rows(mesh_xyz, coords):
     """
-    (rijen, fout): rijen[i] = de knoop (rij) van het mesh op de plaats van
-    knoop i+1 van coords (binnen _MATCH x de modelgrootte), of (None,
-    melding). Eerst de identieke volgorde (zo bouwt Code-Aster het skelet),
-    anders op coordinaat (raster met de buurcellen).
+    (rows, error): rows[i] = the node (row) of the mesh at the location of
+    node i+1 of coords (within _MATCH x the model size), or (None,
+    message). First the identical order (that is how Code-Aster builds the
+    skeleton), otherwise by coordinate (grid with the neighbouring cells).
     """
     import numpy as np
     mesh_xyz = np.asarray(mesh_xyz, dtype=float).reshape(-1, 3)
@@ -151,15 +151,15 @@ def node_rows(mesh_xyz, coords):
 
 
 def _multiplicity(nd, n_sectors):
-    """1 voor ND 0 en ND N/2 (een staande golf), anders 2 (paar)."""
+    """1 for ND 0 and ND N/2 (one standing wave), otherwise 2 (pair)."""
     return 1 if (nd == 0 or 2 * nd == n_sectors) else 2
 
 
 def mode_table(freqs, n_sectors, nmax_freq, diameters):
     """
-    [(frequentie, positie in REST_SOUS_STRUC (0-based), ND)] in Mecway's
-    volgorde, of None als het aantal modes niet klopt met de volgorde
-    hierboven (dan is de ND niet te bepalen).
+    [(frequency, position in REST_SOUS_STRUC (0-based), ND)] in Mecway's
+    order, or None if the number of modes does not match the order
+    above (then the ND cannot be determined).
     """
     expected = sum(nmax_freq * _multiplicity(d, n_sectors)
                    for d in diameters)
@@ -180,13 +180,13 @@ def mode_table(freqs, n_sectors, nmax_freq, diameters):
 
 def _attach(modsec, mesh, numbering):
     """
-    Het resultaat van REST_SOUS_STRUC SECTEUR=1 heeft in de Python-laag van
-    Code-Aster 17.4 geen mesh en geen velden: getFieldsNames() was leeg,
-    getField() gaf KeyError en CREA_CHAMP EXTR <EXCEPTION> JEVEUX_26 (geen
-    mesh, gezien). Met setMesh, setDOFNumbering (de nummering van de
-    sectorbasis, waarop REST_SOUS_STRUC de velden schrijft) en build() zijn
-    de velden DEPL leesbaar (gezien; build() meldt dan "NUME_EQUA already
-    exists", onschuldig).
+    In the Python layer of Code-Aster 17.4 the result of REST_SOUS_STRUC
+    SECTEUR=1 has no mesh and no fields: getFieldsNames() was empty,
+    getField() gave KeyError and CREA_CHAMP EXTR <EXCEPTION> JEVEUX_26 (no
+    mesh, seen). With setMesh, setDOFNumbering (the numbering of the
+    sector basis, onto which REST_SOUS_STRUC writes the fields) and build()
+    the DEPL fields are readable (seen; build() then reports "NUME_EQUA
+    already exists", harmless).
     """
     modsec.setMesh(mesh)
     modsec.setDOFNumbering(numbering)
@@ -198,8 +198,8 @@ def _attach(modsec, mesh, numbering):
 
 
 def _rotate_back(target, axis, angle):
-    """Mesh of skelet terug naar het assenstelsel van het model
-    (MODI_MAILLAGE ROTATION om (1, 1, 1) met -angle graden)."""
+    """Mesh or skeleton back to the coordinate system of the model
+    (MODI_MAILLAGE ROTATION about (1, 1, 1) by -angle degrees)."""
     from code_aster.Commands import MODI_MAILLAGE
     if axis != "Z":
         MODI_MAILLAGE(reuse=target, MAILLAGE=target,
@@ -209,16 +209,16 @@ def _rotate_back(target, axis, angle):
 
 
 def _modes_on(source, target, table, axis):
-    """MODE_MECA op mesh target met de velden DEPL van resultaat source in
-    de volgorde van table (mode_table), componenten terug (_BACK)."""
+    """MODE_MECA on mesh target with the DEPL fields of result source in
+    the order of table (mode_table), components back (_BACK)."""
     from code_aster.Commands import CREA_CHAMP, CREA_RESU
     orders = list(source.getAccessParameters()["NUME_ORDRE"])
     affe = []
     for k, (f, pos, _nd) in enumerate(table):
         fld = source.getField("DEPL", orders[pos])
-        # Een eigen veld op het mesh (ook bij de Z-as), zonder de Lagrange-
-        # vrijheidsgraden van de sectorbasis, met de componenten terug in
-        # het assenstelsel van het model.
+        # A separate field on the mesh (also for the Z axis), without the
+        # Lagrange DOFs of the sector basis, with the components back in
+        # the coordinate system of the model.
         new = CREA_CHAMP(OPERATION="ASSE", TYPE_CHAM="NOEU_DEPL_R",
                          MAILLAGE=target,
                          ASSE={"CHAM_GD": fld, "TOUT": "OUI",
@@ -231,10 +231,10 @@ def _modes_on(source, target, table, axis):
 
 def _wheel(wheel, skeleton, table, axis, angle, n_sectors, liml):
     """
-    De modes op het hele wiel (REST_SOUS_STRUC SQUELETTE op het skelet van
-    DEFI_SQUELETTE CYCLIQUE), of (None, reden). Controle vooraf: zelfde
-    frequenties als de sector, en elke knoop van Mecway's wiel (wheel_model
-    op de .liml) heeft een knoop van het skelet op dezelfde plaats.
+    The modes on the full wheel (REST_SOUS_STRUC SQUELETTE on the skeleton
+    of DEFI_SQUELETTE CYCLIQUE), or (None, reason). Check beforehand: same
+    frequencies as the sector, and every node of Mecway's wheel (wheel_model
+    on the .liml) has a skeleton node at the same location.
     """
     import numpy as np
     import aster_results_export
@@ -266,16 +266,16 @@ def _wheel(wheel, skeleton, table, axis, angle, n_sectors, liml):
 def collect(modsec, mesh, numbering, n_sectors, nmax_freq, diameters,
             axis="Z", angle=0.0, wheel=None, skeleton=None, liml=None):
     """
-    MODE_MECA met de modes in Mecway's volgorde (mode_table), in het
-    assenstelsel van het model: op het hele wiel als wheel (REST_SOUS_STRUC
-    SQUELETTE), skeleton (het skelet) en liml (de .liml van het model)
-    gegeven zijn en het wiel klopt (_wheel), anders op de sector (mesh).
-    numbering: de NUME_DDL van de sectorbasis (_attach). axis: "X", "Y" of
-    "Z" (de symmetrieas in Mecway); bij X/Y draaien mesh en skelet terug
-    (MODI_MAILLAGE ROTATION om (1, 1, 1) met -angle graden) en worden de
-    componenten van DEPL teruggezet (_BACK). Drukt per mode
+    MODE_MECA with the modes in Mecway's order (mode_table), in the
+    coordinate system of the model: on the full wheel if wheel
+    (REST_SOUS_STRUC SQUELETTE), skeleton (the skeleton) and liml (the
+    model's .liml) are given and the wheel checks out (_wheel), otherwise
+    on the sector (mesh). numbering: the NUME_DDL of the sector basis
+    (_attach). axis: "X", "Y" or "Z" (the symmetry axis in Mecway); for X/Y
+    mesh and skeleton rotate back (MODI_MAILLAGE ROTATION about (1, 1, 1)
+    by -angle degrees) and the DEPL components are restored (_BACK). Prints
     BRIDGE_MODE <nr> FREQ=<Hz> ND=<k> (bridge_results_liml.read_mode_summary)
-    en BRIDGE_CYCL N=.. NMAX_FREQ=.. MODES=.. WIEL=0|1 af.
+    per mode and BRIDGE_CYCL N=.. NMAX_FREQ=.. MODES=.. WIEL=0|1.
     """
     _attach(modsec, mesh, numbering)
     acc = modsec.getAccessParameters()

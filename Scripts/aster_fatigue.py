@@ -5,43 +5,43 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # aster_fatigue.py
 #
-# Vermoeiing (STAPPENPLAN S8) BINNEN de Code-Aster-job (CPython 3.11 met
-# numpy, meegeleverd met Code-Aster 17.4), NIET in IronPython. De invoer
-# leest bridge_fatigue.py (IronPython) uit de #ASTER-regels; die schrijft
-# in de .comm na CALC_CHAMP:
+# Fatigue (STAPPENPLAN S8) INSIDE the Code-Aster job (CPython 3.11 with
+# numpy, shipped with Code-Aster 17.4), NOT in IronPython. The input is
+# read by bridge_fatigue.py (IronPython) from the #ASTER lines; it writes
+# into the .comm after CALC_CHAMP:
 #     import aster_fatigue
 #     _bridge_vermoeiing = aster_fatigue.compute(res, liml, csv, curves,
 #                                                options, blocks, signal)
-# en geeft _bridge_vermoeiing als node_fields aan
-# aster_results_export.export_results (velden damage en life in Mecway).
-# Gebruikersdoc: docs/Vermoeiing.md (EN: docs/en/Fatigue.md).
+# and passes _bridge_vermoeiing as node_fields to
+# aster_results_export.export_results (fields damage and life in Mecway).
+# User doc: docs/Vermoeiing.md (EN: docs/en/Fatigue.md).
 #
-# Werkwijze per knoop van een volume-element met een Wohler-curve:
-#   1. equivalente spanning per tijdstap uit SIGM_NOEU: VMIS_SG (von Mises
-#      met het teken van het spoor, zoals CALC_FATIGUE CUMUL_DOMMAGE,
-#      catalogus calc_fatigue.py EQUI_GD='VMIS_SG') of PRIN (de
-#      hoofdspanning met de grootste absolute waarde, met teken);
-#   2. cycli: rainflow (RAINFLOW = het signaal als periodiek, beginnend bij
-#      de grootste absolute waarde: alleen gesloten cycli, zoals
-#      POST_FATIGUE COMPTAGE='RAINFLOW' en CALC_FATIGUE; gemeten: het
-#      ASTM-signaal geeft in POST_FATIGUE dezelfde 4 cycli, szlz105a
-#      dezelfde schade) of ASTM (ASTM E1049-85 par. 5.4.4, een doorgang,
-#      restcycli als halve cyclus); bij een statische run een signaal of
-#      blokken als factor op de statische spanning;
-#   3. per cyclus N uit de Wohler-curve (amplitude S_a = (max - min)/2,
-#      zoals DEFI_MATERIAU FATIGUE WOHLER: szlz100a cyclus 600/-500 ->
-#      N(550)), eventueel met de gemiddelde-spanningscorrectie van
+# Procedure per node of a volume element with a Wohler curve:
+#   1. equivalent stress per time step from SIGM_NOEU: VMIS_SG (von Mises
+#      with the sign of the trace, as in CALC_FATIGUE CUMUL_DOMMAGE,
+#      catalogue calc_fatigue.py EQUI_GD='VMIS_SG') or PRIN (the
+#      principal stress with the largest absolute value, with sign);
+#   2. cycles: rainflow (RAINFLOW = the signal as periodic, starting at
+#      the largest absolute value: only closed cycles, as in
+#      POST_FATIGUE COMPTAGE='RAINFLOW' and CALC_FATIGUE; measured: the
+#      ASTM signal gives the same 4 cycles in POST_FATIGUE, szlz105a
+#      the same damage) or ASTM (ASTM E1049-85 par. 5.4.4, a single pass,
+#      residual cycles as half cycles); for a static run a signal or
+#      blocks as factor on the static stress;
+#   3. per cycle N from the Wohler curve (amplitude S_a = (max - min)/2,
+#      as in DEFI_MATERIAU FATIGUE WOHLER: szlz100a cycle 600/-500 ->
+#      N(550)), optionally with the mean stress correction of
 #      POST_FATIGUE (GOODMAN S_a/(1 - S_m/S_u), GERBER S_a/(1 - (S_m/
-#      S_u)^2); gemeten: Code-Aster neemt het teken van S_m mee, ook bij
-#      druk);
-#   4. Miner: D = herhalingen x sum(n_i / N_i); life = 1 / sum(n_i / N_i)
-#      herhalingen van het signaal of blokkenspectrum (begrensd op
+#      S_u)^2); measured: Code-Aster includes the sign of S_m, also in
+#      compression);
+#   4. Miner: D = repeats x sum(n_i / N_i); life = 1 / sum(n_i / N_i)
+#      repeats of the signal or block spectrum (capped at
 #      LIFE_MAX).
-# De knoop met de grootste schade krijgt een cyclustabel
-# (<model>_<run_id>_vermoeiing.csv); regels BRIDGE_VERMOEIING_* in de
-# .mess voor bridge_fatigue.report.
+# The node with the largest damage gets a cycle table
+# (<model>_<run_id>_vermoeiing.csv); lines BRIDGE_VERMOEIING_* in the
+# .mess for bridge_fatigue.report.
 #
-# Gebruik geen f-strings: zelfde stijl als de rest van de bridge.
+# Do not use f-strings: same style as the rest of the bridge.
 
 import io
 import math
@@ -49,10 +49,10 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from aster_results_export import tr   # taal van de meldingen
+from aster_results_export import tr   # language of the messages
 
-# Levensduur zonder schade (D = 0) of daarboven: deze waarde (herhalingen);
-# zo blijft de contour in Mecway leesbaar (keuze van de bridge,
+# Life without damage (D = 0) or above it: this value (repeats);
+# this keeps the contour in Mecway readable (choice of the bridge,
 # docs/Vermoeiing.md).
 LIFE_MAX = 1.0e12
 
@@ -63,11 +63,11 @@ _STRESS = ("SIXX", "SIYY", "SIZZ", "SIXY", "SIXZ", "SIYZ")
 
 
 # ==========================================
-# CYCLI TELLEN
+# COUNTING CYCLES
 # ==========================================
 def reversals(x):
-    """Keerpunten van de reeks x (gelijke en tussenliggende punten op een
-    monotoon stuk vallen weg). Returns lijst floats."""
+    """Turning points of the series x (equal and intermediate points on a
+    monotonic segment are dropped). Returns list of floats."""
     out = []
     for v in x:
         v = float(v)
@@ -82,9 +82,10 @@ def reversals(x):
 
 def rainflow_astm(x):
     """
-    Rainflow volgens ASTM E1049-85 (2017) par. 5.4.4, een doorgang: een
-    bereik met het beginpunt telt als halve cyclus, de rest aan het eind
-    ook. Returns [(laag, hoog, aantal)] met aantal 0,5 of 1.
+    Rainflow according to ASTM E1049-85 (2017) par. 5.4.4, a single pass:
+    a range with the start point counts as a half cycle, as do the
+    remaining ones at the end. Returns [(low, high, count)] with count
+    0.5 or 1.
     """
     st = []
     out = []
@@ -112,10 +113,10 @@ def rainflow_astm(x):
 
 def rainflow_periodic(x):
     """
-    Rainflow voor een periodiek herhaald signaal (ASTM E1049 par. 5.4.4
-    voor herhalende reeksen; POST_FATIGUE COMPTAGE='RAINFLOW'): begin bij
-    de grootste absolute waarde, sluit de reeks met datzelfde punt; dan
-    zijn alle cycli gesloten. Returns [(laag, hoog, 1.0)].
+    Rainflow for a periodically repeated signal (ASTM E1049 par. 5.4.4
+    for repeating histories; POST_FATIGUE COMPTAGE='RAINFLOW'): start at
+    the largest absolute value, close the series with that same point; then
+    all cycles are closed. Returns [(low, high, 1.0)].
     """
     r = reversals(x)
     if len(r) < 2:
@@ -141,32 +142,32 @@ def rainflow_periodic(x):
 
 
 def count_cycles(x, method):
-    """Cycli van reeks x: method 'RAINFLOW' (periodiek) of 'ASTM'."""
+    """Cycles of series x: method 'RAINFLOW' (periodic) or 'ASTM'."""
     if method == "ASTM":
         return rainflow_astm(x)
     return rainflow_periodic(x)
 
 
 # ==========================================
-# WOHLER-CURVE
+# WOHLER CURVE
 # ==========================================
 class Curve(object):
     """
-    Wohler-curve uit de dict van bridge_fatigue (SI: spanning in Pa,
-    amplitude). Vormen:
-      "table"   S = [..], N = [..] (S oplopend), interpolatie LOG (log-log,
-                DEFI_FONCTION INTERPOL='LOG') of LIN; PROL_GAUCHE (onder de
-                tabel) EXCLU (geen schade, zoals Code-Aster's standaard:
-                gemeten D = 0), CONSTANT (N van het eerste punt) of
-                LINEAIRE (eerste stuk doorgetrokken); PROL_DROITE (boven de
-                tabel) LINEAIRE of CONSTANT.
-      "power"   N = N_ref (S_ref / S)^m, onder Se geen schade.
-      "basquin" S = Sf (2 N)^b, dus N = 0,5 (S / Sf)^(1/b), onder Se geen
-                schade.
-      "strain"  rek-levensduur (Manson-Coffin-Basquin, S8b): de amplitude
-                is een rekamplitude ea = Sf/E (2N)^b + ef (2N)^c; N
-                opgelost per cyclus (bisectie in log(2N)).
-    correction: GEEN, GOODMAN of GERBER met Su.
+    Wohler curve from the dict of bridge_fatigue (SI: stress in Pa,
+    amplitude). Forms:
+      "table"   S = [..], N = [..] (S ascending), interpolation LOG (log-log,
+                DEFI_FONCTION INTERPOL='LOG') or LIN; PROL_GAUCHE (below the
+                table) EXCLU (no damage, like Code-Aster's default:
+                measured D = 0), CONSTANT (N of the first point) or
+                LINEAIRE (first segment extended); PROL_DROITE (above the
+                table) LINEAIRE or CONSTANT.
+      "power"   N = N_ref (S_ref / S)^m, no damage below Se.
+      "basquin" S = Sf (2 N)^b, so N = 0.5 (S / Sf)^(1/b), no damage below
+                Se.
+      "strain"  strain-life (Manson-Coffin-Basquin, S8b): the amplitude
+                is a strain amplitude ea = Sf/E (2N)^b + ef (2N)^c; N
+                solved per cycle (bisection in log(2N)).
+    correction: GEEN, GOODMAN or GERBER with Su.
     """
 
     def __init__(self, d):
@@ -182,18 +183,18 @@ class Curve(object):
             self.left = d.get("prol_gauche", "EXCLU")
             self.right = d.get("prol_droite", "LINEAIRE")
         self.se = d.get("Se")
-        # grootheid van de amplitude: spanning [Pa] of rek [-]
+        # quantity of the amplitude: stress [Pa] or strain [-]
         self.quantity = "strain" if self.form == "strain" else "stress"
 
     def lowest_damaging(self):
-        """Kleinste amplitude met schade (zonder correctie), of 0."""
+        """Smallest amplitude with damage (without correction), or 0."""
         if self.form == "table":
             return float(self.s[0]) if self.left == "EXCLU" else 0.0
         return float(self.se or 0.0)
 
     def cycles(self, s):
-        """N(S) per amplitude (np.ndarray); inf = geen schade. Returns
-        (N, aantal boven de tabel)."""
+        """N(S) per amplitude (np.ndarray); inf = no damage. Returns
+        (N, number above the table)."""
         s = np.asarray(s, dtype=float)
         n = np.full(s.shape, np.inf)
         pos = s > 0.0
@@ -239,11 +240,11 @@ class Curve(object):
         return n, above
 
     def strain_life(self, ea):
-        """N uit de rekamplitude ea (> 0): ea = Sf/E (2N)^b + ef (2N)^c.
-        Rechterlid daalt strikt in x = ln(2N) (b, c < 0): bisectie op
-        [ln 1, ln 2e30] tot een interval < 1e-13 (relatief in N). Boven
-        de curve bij N = 0,5 (2N = 1) komt N = 0,5 terug (daarna N = 1 in
-        damage()); onder 2N = 2e30: N = inf."""
+        """N from the strain amplitude ea (> 0): ea = Sf/E (2N)^b + ef (2N)^c.
+        The right-hand side decreases strictly in x = ln(2N) (b, c < 0):
+        bisection on [ln 1, ln 2e30] to an interval < 1e-13 (relative in
+        N). Above the curve at N = 0.5 (2N = 1) N = 0.5 is returned (then
+        N = 1 in damage()); below 2N = 2e30: N = inf."""
         d = self.d
         ea = np.asarray(ea, dtype=float)
         se, b, ef, c = d["Sf"] / d["E"], d["b"], d["ef"], d["c"]
@@ -264,10 +265,10 @@ class Curve(object):
         return np.where(ea <= g(math.log(2.0e30)), np.inf, n)
 
     def equivalent_amplitude(self, sa, sm):
-        """Amplitude na de gemiddelde-spanningscorrectie (POST_FATIGUE
-        CORR_SIGM_MOYE, gemeten in Code-Aster 17.4: GOODMAN S_a/(1 -
-        S_m/S_u), GERBER S_a/(1 - (S_m/S_u)^2)). Returns (S_eq, aantal
-        cycli met |S_m| >= S_u: daar N = 1)."""
+        """Amplitude after the mean stress correction (POST_FATIGUE
+        CORR_SIGM_MOYE, measured in Code-Aster 17.4: GOODMAN S_a/(1 -
+        S_m/S_u), GERBER S_a/(1 - (S_m/S_u)^2)). Returns (S_eq, number of
+        cycles with |S_m| >= S_u: there N = 1)."""
         sa = np.asarray(sa, dtype=float)
         sm = np.asarray(sm, dtype=float)
         if self.correction == "GOODMAN":
@@ -281,8 +282,8 @@ class Curve(object):
             int(bad.sum())
 
     def damage(self, sa, sm, count):
-        """(som n/N, N per cyclus, S_eq per cyclus, boven de tabel,
-        gemiddelde >= Su, N < 1)."""
+        """(sum n/N, N per cycle, S_eq per cycle, above the table,
+        mean >= Su, N < 1)."""
         seq, bad = self.equivalent_amplitude(sa, sm)
         finite = np.isfinite(seq)
         n, above = self.cycles(np.where(finite, seq, 0.0))
@@ -294,11 +295,11 @@ class Curve(object):
 
 
 # ==========================================
-# SPANNINGEN EN REKKEN
+# STRESSES AND STRAINS
 # ==========================================
 def _principal(t):
-    """Eigenwaarden per rij van t (n, 6) in volgorde xx, yy, zz, xy, xz,
-    yz (tensorcomponenten). Returns (n, 3), oplopend."""
+    """Eigenvalues per row of t (n, 6) in the order xx, yy, zz, xy, xz,
+    yz (tensor components). Returns (n, 3), ascending."""
     mats = np.empty((t.shape[0], 3, 3))
     mats[:, 0, 0], mats[:, 1, 1], mats[:, 2, 2] = t[:, 0], t[:, 1], t[:, 2]
     mats[:, 0, 1] = mats[:, 1, 0] = t[:, 3]
@@ -313,9 +314,9 @@ def _largest_abs(ev):
 
 
 def equivalent(sig, kind):
-    """Equivalente spanning per rij van sig (n, 6) in volgorde _STRESS:
-    VMIS_SG (von Mises x teken van het spoor) of PRIN (hoofdspanning met de
-    grootste absolute waarde)."""
+    """Equivalent stress per row of sig (n, 6) in the order _STRESS:
+    VMIS_SG (von Mises x sign of the trace) or PRIN (principal stress with
+    the largest absolute value)."""
     sxx, syy, szz, sxy, sxz, syz = [sig[:, k] for k in range(6)]
     if kind == "PRIN":
         return _largest_abs(_principal(sig))
@@ -326,12 +327,12 @@ def equivalent(sig, kind):
 
 
 def equivalent_strain(eps, kind):
-    """Equivalente rek per rij van eps (n, 6) in volgorde _STRAIN
-    (tensorcomponenten: EPXY = eps_xy, de helft van de hoekverandering;
-    Code-Aster R4.20.01, NIET in de U-doc nagelezen, wel gemeten in de
-    verificatie VM-11): PRIN = de hoofdrek met de grootste absolute waarde
-    (bij een staaf de rek in de lengterichting); VMIS_SG = sqrt(2/3 e:e)
-    van de deviator e, met het teken van het spoor."""
+    """Equivalent strain per row of eps (n, 6) in the order _STRAIN
+    (tensor components: EPXY = eps_xy, half the change in angle;
+    Code-Aster R4.20.01, NOT checked in the U-doc, but measured in
+    verification VM-11): PRIN = the principal strain with the largest
+    absolute value (for a bar the strain in the length direction);
+    VMIS_SG = sqrt(2/3 e:e) of the deviator e, with the sign of the trace."""
     if kind == "PRIN":
         return _largest_abs(_principal(eps))
     tr = eps[:, 0] + eps[:, 1] + eps[:, 2]
@@ -345,9 +346,9 @@ _STRAIN = ("EPXX", "EPYY", "EPZZ", "EPXY", "EPXZ", "EPYZ")
 
 
 def _rows(res, field, comps_wanted, index, n):
-    """Waarden van een knoopveld in tijdstap index: (waarden (n, k), masker
-    (n,)) of None (component ontbreekt). Rij i = Mecway-knoop i+1
-    (bridge_mesh-volgorde)."""
+    """Values of a node field at time step index: (values (n, k), mask
+    (n,)) or None (component missing). Row i = Mecway node i+1
+    (bridge_mesh order)."""
     fld = res.getField(field, index)
     sf = fld.toSimpleFieldOnNodes()
     vals, mask = sf.getValues()
@@ -362,16 +363,16 @@ def _rows(res, field, comps_wanted, index, n):
 
 
 def _stress_rows(res, index, n):
-    """SIGM_NOEU van tijdstap index (zie _rows)."""
+    """SIGM_NOEU of time step index (see _rows)."""
     return _rows(res, "SIGM_NOEU", _STRESS, index, n)
 
 
 def _history(res, indexes, n, source, kind):
-    """Equivalente grootheid per knoop en tijdstap: (hist (n, stappen),
-    masker (n,)). source: "stress" (SIGM_NOEU), "strain" (EPSI_NOEU) of
-    "shell" (SIEQ_NOEU van res_sup/res_inf: VMIS_SG of de PRIN_i met de
-    grootste absolute waarde; invarianten, dus onafhankelijk van het lokale
-    assenstelsel van de schaal)."""
+    """Equivalent quantity per node and time step: (hist (n, steps),
+    mask (n,)). source: "stress" (SIGM_NOEU), "strain" (EPSI_NOEU) or
+    "shell" (SIEQ_NOEU of res_sup/res_inf: VMIS_SG or the PRIN_i with the
+    largest absolute value; invariants, so independent of the local
+    coordinate system of the shell)."""
     hist = []
     have = np.ones(n, dtype=bool)
     for idx in indexes:
@@ -409,9 +410,9 @@ SHELL_SHAPES = frozenset(["tri3", "tri6", "quad4", "quad8", "quad9"])
 
 
 def read_model(liml_path):
-    """Knopen, elsets (naam -> materiaal) en elementen uit de .liml
-    (top-level). Returns (coords (n, 3), {elset: materiaal}, {elset:
-    [(vorm, [nid])]})."""
+    """Nodes, elsets (name -> material) and elements from the .liml
+    (top level). Returns (coords (n, 3), {elset: material}, {elset:
+    [(shape, [nid])]})."""
     nodes = {}
     mats = {}
     elems = {}
@@ -445,9 +446,9 @@ def read_model(liml_path):
 
 
 def _node_curves(n, mats, elems, curves, shapes=SOLID_SHAPES):
-    """Per curve-index een booleaans masker van de knopen (elementen van
-    deze vormen en van de materialen van die curve; '*' = alle materialen
-    zonder eigen curve)."""
+    """Per curve index a boolean mask of the nodes (elements of
+    these shapes and of the materials of that curve; '*' = all materials
+    without their own curve)."""
     named = set(c.material for c in curves if c.material != "*")
     out = []
     for c in curves:
@@ -466,31 +467,31 @@ def _node_curves(n, mats, elems, curves, shapes=SOLID_SHAPES):
 
 
 # ==========================================
-# HOOFDFUNCTIE (uniaxiaal: spanning of rek, volumes en schalen)
+# MAIN FUNCTION (uniaxial: stress or strain, volumes and shells)
 # ==========================================
 def compute(res, liml_path, csv_path, curves, options, blocks=None,
             signal=None, shells=None):
     """
-    Schade en levensduur per knoop (zie de kop).
+    Damage and life per node (see the header).
 
-    res      : Code-Aster-resultaat met SIGM_NOEU (alle tijdstappen); met
-               een rekcurve ook EPSI_NOEU.
-    curves   : lijst dicts (bridge_fatigue._parse_curve; zie Curve).
+    res      : Code-Aster result with SIGM_NOEU (all time steps); with
+               a strain curve also EPSI_NOEU.
+    curves   : list of dicts (bridge_fatigue._parse_curve; see Curve).
     options  : {"stress": VMIS_SG|PRIN, "strain": PRIN|VMIS_SG,
                 "counting": RAINFLOW|ASTM, "repeats": float}
-    blocks   : [(amplitudefactor, gemiddelde factor, aantal)] of None
-               (statische run: factoren op de statische spanning).
-    signal   : [factor, ...] of None (statische run: rainflow op het
-               signaal x de statische spanning).
-    shells   : {"res_sup": .., "res_inf": ..} (POST_CHAMP EXTR_COQUE met
-               SIEQ_NOEU) of None: schalen krijgen schade op de boven- en
-               onderzijde (velden damage_top, damage_bottom; damage en
-               life = de grootste schade van de twee).
-    Zonder blocks en signal: de tijdstappen van res zijn het signaal.
+    blocks   : [(amplitude factor, mean factor, count)] or None
+               (static run: factors on the static stress).
+    signal   : [factor, ...] or None (static run: rainflow on the
+               signal x the static stress).
+    shells   : {"res_sup": .., "res_inf": ..} (POST_CHAMP EXTR_COQUE with
+               SIEQ_NOEU) or None: shells get damage on the top and
+               bottom side (fields damage_top, damage_bottom; damage and
+               life = the largest damage of the two).
+    Without blocks and signal: the time steps of res are the signal.
 
-    Returns OrderedDict {"damage": (nids, D), "life": (nids, L), ...} voor
-    export_results(node_fields=...), of None bij een fout (regel
-    BRIDGE_VERMOEIING_FOUT in de .mess).
+    Returns OrderedDict {"damage": (nids, D), "life": (nids, L), ...} for
+    export_results(node_fields=...), or None on an error (line
+    BRIDGE_VERMOEIING_FOUT in the .mess).
     """
     try:
         return _compute(res, liml_path, csv_path, curves, options, blocks,
@@ -503,8 +504,8 @@ def compute(res, liml_path, csv_path, curves, options, blocks=None,
 
 
 def _node_damage(h, curve_ids, cv, route, blocks, base_cycles, counting):
-    """Schade per herhaling van een knoop met geschiedenis h (equivalente
-    grootheid per tijdstap). Returns None (geen cyclus met schade) of
+    """Damage per repeat of a node with history h (equivalent
+    quantity per time step). Returns None (no cycle with damage) or
     (d, k, lo, hi, sa, sm, cnt, seq, nn, above, bad, low)."""
     if route == "blocks":
         s0 = h[0]
@@ -519,7 +520,7 @@ def _node_damage(h, curve_ids, cv, route, blocks, base_cycles, counting):
                    (hi_ * s0, lo_ * s0, c)
                    for lo_, hi_, c in base_cycles]
         else:
-            # Snel overslaan: geen enkele cyclus kan schade geven
+            # Quick skip: no cycle at all can cause damage
             span = 0.5 * (float(h.max()) - float(h.min()))
             if all(cv[k].correction == "GEEN" and
                    span < cv[k].lowest_damaging() for k in curve_ids):
@@ -556,7 +557,7 @@ def _compute(res, liml_path, csv_path, curves, options, blocks, signal,
         indexes = indexes[:1]
     route = "blocks" if blocks else ("signal" if signal else "history")
     base_cycles = count_cycles(signal, counting) if signal else None
-    # Bronnen: (laag, resultaat, soort veld, equivalent, curves, maskers)
+    # Sources: (layer, result, field kind, equivalent, curves, masks)
     sources = []
     for qty, kind in (("stress", stress_kind), ("strain", strain_kind)):
         ids = [k for k, c in enumerate(cv) if c.quantity == qty]
@@ -637,8 +638,8 @@ def _compute(res, liml_path, csv_path, curves, options, blocks, signal,
 
 
 def _life(d_rep):
-    """Levensduur in herhalingen: 1 / D per herhaling, begrensd op
-    LIFE_MAX (ook bij D = 0)."""
+    """Life in repeats: 1 / D per repeat, capped at
+    LIFE_MAX (also for D = 0)."""
     with np.errstate(divide="ignore"):
         life = np.where(d_rep > 0.0, 1.0 / np.where(d_rep > 0.0, d_rep, 1.0),
                         LIFE_MAX)
@@ -656,8 +657,8 @@ def _print_max(best, repeats, i, coords, material, cycles):
 
 
 def _write_csv(path, best, curves, repeats):
-    """Cyclustabel van de knoop met de grootste schade (laag: volume, top
-    of bottom; bij een rekcurve zijn s_* rekken)."""
+    """Cycle table of the node with the largest damage (layer: volume, top
+    or bottom; for a strain curve s_* are strains)."""
     head = ("node,material,layer,cycle,s_min,s_max,amplitude,mean,count,"
             "s_eq,n_failure,damage")
     lines = [head]
@@ -676,10 +677,10 @@ def _write_csv(path, best, curves, repeats):
 
 
 # ==========================================
-# MULTIAXIAAL (CALC_FATIGUE FATIGUE_MULTI, S8b)
+# MULTIAXIAL (CALC_FATIGUE FATIGUE_MULTI, S8b)
 # ==========================================
 def _cham_values(cham, n, comps_wanted):
-    """{component: (n,) array} en masker (n,) van een cham_no van
+    """{component: (n,) array} and mask (n,) of a cham_no of
     CALC_FATIGUE (DOMA_NOEUD)."""
     sf = cham.toSimpleFieldOnNodes()
     vals, mask = sf.getValues()
@@ -697,26 +698,26 @@ def _cham_values(cham, n, comps_wanted):
 
 def compute_multi(chams, liml_path, csv_path, curves, options):
     """
-    Schade en levensduur per knoop uit CALC_FATIGUE TYPE_CALCUL=
-    'FATIGUE_MULTI' OPTION='DOMA_NOEUD' (kritiek vlak in Code-Aster).
+    Damage and life per node from CALC_FATIGUE TYPE_CALCUL=
+    'FATIGUE_MULTI' OPTION='DOMA_NOEUD' (critical plane in Code-Aster).
 
-    chams   : [(cham_no, aantal)]: een veld per resultaat (de tijdstappen
-              van de run of het signaal: aantal 1; een blok: aantal n).
-    curves  : dicts van bridge_fatigue (Wohler: tabel, macht, Basquin).
+    chams   : [(cham_no, count)]: one field per result (the time steps
+              of the run or the signal: count 1; a block: count n).
+    curves  : dicts of bridge_fatigue (Wohler: table, power, Basquin).
     options : #ASTER-VERMOEIING (criterion, loading, a, b, c, repeats).
 
-    PERIODIQUE: de equivalente spanning SIGEQ = max(SIGEQ1, SIGEQ2) (de
-    twee vlakken met de grootste schuifamplitude; gemeten sslv135a: SIGEQ =
-    c (dtau/2 + a max(P_max, 0)) bij DANG_VAN_MODI_AC, met N_max bij
-    MATAKE_MODI_AC; D_VAN_B/MATAKE_B tellen niet mee) is de amplitude op de
-    Wohler-curve van de bridge (Curve.cycles, dezelfde als uniaxiaal): N per
-    resultaat, D = herhalingen x sum(aantal / N). Code-Aster's eigen NBRUP1
-    is afgerond op een geheel getal (gemeten 10946,0 bij N = 10946,1).
-    NON_PERIODIQUE: D = herhalingen x ENDO1 van Code-Aster (rainflow op het
-    kritieke vlak, met de Wohler-functie van bridge_fatigue.wohler_points).
-    Extra velden: fatigue_eq (SIGEQ, periodiek) en fatigue_ratio = SIGEQ /
-    (c b) (DANG_VAN, MATAKE, CROSSLAND) of SIGEQ / b (FORMULE) als b
-    gegeven is.
+    PERIODIQUE: the equivalent stress SIGEQ = max(SIGEQ1, SIGEQ2) (the
+    two planes with the largest shear amplitude; measured sslv135a: SIGEQ =
+    c (dtau/2 + a max(P_max, 0)) for DANG_VAN_MODI_AC, with N_max for
+    MATAKE_MODI_AC; D_VAN_B/MATAKE_B do not count) is the amplitude on the
+    bridge's Wohler curve (Curve.cycles, the same as uniaxial): N per
+    result, D = repeats x sum(count / N). Code-Aster's own NBRUP1
+    is rounded to an integer (measured 10946.0 for N = 10946.1).
+    NON_PERIODIQUE: D = repeats x ENDO1 of Code-Aster (rainflow on the
+    critical plane, with the Wohler function of bridge_fatigue.wohler_points).
+    Extra fields: fatigue_eq (SIGEQ, periodic) and fatigue_ratio = SIGEQ /
+    (c b) (DANG_VAN, MATAKE, CROSSLAND) or SIGEQ / b (FORMULE) if b
+    is given.
     """
     try:
         return _compute_multi(chams, liml_path, csv_path, curves, options)
@@ -746,8 +747,8 @@ def _compute_multi(chams, liml_path, csv_path, curves, options):
             eqs.append(np.maximum(v["SIGEQ1"], v["SIGEQ2"]))
         else:
             v, ok = _cham_values(cham, n, ("ENDO1",))
-            # onder de Wohler-tabel (EXCLU): NBRUP = 0, ENDO ~ 1e-308
-            # (gemeten) = geen schade
+            # below the Wohler table (EXCLU): NBRUP = 0, ENDO ~ 1e-308
+            # (measured) = no damage
             endo.append(np.where(v["ENDO1"] > 1e-300, v["ENDO1"], 0.0))
         counts.append(float(cnt))
         sel &= ok
@@ -760,7 +761,7 @@ def _compute_multi(chams, liml_path, csv_path, curves, options):
     counts = np.array(counts)
     above = low = 0
     if periodic:
-        eq = np.array(eqs)                 # (resultaten, n)
+        eq = np.array(eqs)                 # (results, n)
         dk_all = np.full((len(cv), n), -1.0)
         nn_all = []
         for k, c in enumerate(cv):

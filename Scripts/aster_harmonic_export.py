@@ -5,51 +5,51 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # aster_harmonic_export.py
 #
-# Verantwoordelijkheid: de harmonische respons van een constructie
-# (DYNA_VIBRA TYPE_CALCUL='HARM', bridge_harmonic.build_harmonic) naar
-# Mecway's resultaatformaat, plus de frequentierespons op de meetpunten
-# (CSV en BRIDGE_PROBE-regels in de .mess). Draait BINNEN de Code-Aster-job
-# (CPython 3.11 met numpy, zoals aster_results_export.py), NIET in
+# Responsibility: converts the harmonic response of a structure
+# (DYNA_VIBRA TYPE_CALCUL='HARM', bridge_harmonic.build_harmonic) to
+# Mecway's result format, plus the frequency response at the probes
+# (CSV and BRIDGE_PROBE lines in the .mess). Runs INSIDE the Code-Aster job
+# (CPython 3.11 with numpy, like aster_results_export.py), NOT in
 # IronPython.
 #
-# Code-Aster 17.4 (gezien in een run): REST_GENE_PHYS op een HARM_GENE en
-# DYNA_VIBRA HARM PHYS geven een DYNA_HARMO met per frequentie (NUME_ORDRE,
-# toegangsparameter FREQ) de complexe DEPL (componenten DX DY DZ, en DRX
-# DRY DRZ bij balken/schalen); CALC_CHAMP SIGM_NOEU daarop is complex
-# (SIXX SIYY SIZZ SIXY SIXZ SIYZ). De tijdsfunctie is u(t) = Re(U e^(i w t))
-# (bridge_harmonic, kop). Houd de tussenobjecten vast: een keten
-# res.getField(..).toSimpleFieldOnNodes().getValues() gaf NaN (gezien).
+# Code-Aster 17.4 (seen in a run): REST_GENE_PHYS on a HARM_GENE and
+# DYNA_VIBRA HARM PHYS give a DYNA_HARMO with, per frequency (NUME_ORDRE,
+# access parameter FREQ), the complex DEPL (components DX DY DZ, and DRX
+# DRY DRZ for beams/shells); CALC_CHAMP SIGM_NOEU on it is complex
+# (SIXX SIYY SIZZ SIXY SIXZ SIYZ). The time function is u(t) = Re(U e^(i w t))
+# (bridge_harmonic, header). Keep the intermediate objects: a chain
+# res.getField(..).toSimpleFieldOnNodes().getValues() gave NaN (seen).
 #
-# Uitvoer per frequentie een blok <mode id="k" frequency="f Hz">
-# (aster_results_export._write_fragment, zoals S3a) met de knoopvariabelen
+# Output per frequency is a block <mode id="k" frequency="f Hz">
+# (aster_results_export._write_fragment, like S3a) with the node variables
 #   displmag            sqrt(|Ux|^2 + |Uy|^2 + |Uz|^2)       [m]
-#   displx/y/z          Re(U): de verplaatsing op fase 0     [m]
-#   displix/y/z         Im(U)  (zoals Mecway's pressurei)    [m]
-#   displampx/y/z       |U|  (amplitude per richting)        [m]
-#   displphasex/y/z     arg(U) [graden], -180..180; t.o.v. de last met
-#                       fase 0; negatief = naijlen
-#   rotx/y/z, rotampx/y/z      balk-/schaalknopen: Re en amplitude [rad]
+#   displx/y/z          Re(U): the displacement at phase 0   [m]
+#   displix/y/z         Im(U)  (like Mecway's pressurei)     [m]
+#   displampx/y/z       |U|  (amplitude per direction)       [m]
+#   displphasex/y/z     arg(U) [degrees], -180..180; relative to the load
+#                       with phase 0; negative = lagging
+#   rotx/y/z, rotampx/y/z      beam/shell nodes: Re and amplitude [rad]
 #   velmag, velampx/y/z        w |U|        (velocities)
 #   accelmag, accelampx/y/z    w^2 |U|      (accelerations)
-#   stressxx..zx               Re(S) (fase 0)                 [Pa]
+#   stressxx..zx               Re(S) (phase 0)                [Pa]
 #   stressampxx..zx            |S_ij|                         [Pa]
-#   vonmises                   grootste von Mises-spanning over een periode
-# Met pressure=True (vibro-akoestiek, bridge_vibroacoustic_harm: DEPL heeft
-# ook de component PRES op de knopen van het fluidum, U_P_PHI) daarnaast de
-# velden van de harmonische akoestiek (aster_acoustic_export, S3a):
+#   vonmises                   largest von Mises stress over a period
+# With pressure=True (vibro-acoustics, bridge_vibroacoustic_harm: DEPL also
+# has the component PRES on the fluid nodes, U_P_PHI) additionally the
+# fields of the harmonic acoustics (aster_acoustic_export, S3a):
 #   pressure, pressurei        Re(P), Im(P)                   [Pa]
-#   pressuremag, pressurephase |P|, arg(P) [graden]
+#   pressuremag, pressurephase |P|, arg(P) [degrees]
 #   spl                        20 log10(|P| / (sqrt(2) 20 uPa)) [dB]
-# en de microfoons (CSV en BRIDGE_MIC-regels zoals aster_acoustic_export).
-# Grootste von Mises over een periode: sigma(theta) = Re(S e^(i theta)) =
-# R cos(theta) - I sin(theta) en q = sigma_vm^2 is een kwadratische vorm,
-# dus q(theta) = (q_RR + q_II)/2 + (q_RR - q_II)/2 cos 2 theta - q_RI
-# sin 2 theta, met maximum (q_RR + q_II)/2 + sqrt(((q_RR - q_II)/2)^2 +
-# q_RI^2) (exact; R en I in fase: de von Mises van |S|). Op de
-# knoopgemiddelde spanning SIGM_NOEU (Code-Aster's SIEQ_NOEU middelt de von
-# Mises per element; bij een fijn mesh gelijk).
+# and the microphones (CSV and BRIDGE_MIC lines like aster_acoustic_export).
+# Largest von Mises over a period: sigma(theta) = Re(S e^(i theta)) =
+# R cos(theta) - I sin(theta) and q = sigma_vm^2 is a quadratic form,
+# so q(theta) = (q_RR + q_II)/2 + (q_RR - q_II)/2 cos 2 theta - q_RI
+# sin 2 theta, with maximum (q_RR + q_II)/2 + sqrt(((q_RR - q_II)/2)^2 +
+# q_RI^2) (exact; R and I in phase: the von Mises of |S|). Based on the
+# node-averaged stress SIGM_NOEU (Code-Aster's SIEQ_NOEU averages the von
+# Mises per element; equal for a fine mesh).
 #
-# Gebruik geen f-strings: zelfde stijl als de rest van de bridge.
+# Do not use f-strings: same style as the rest of the bridge.
 
 import csv
 import math
@@ -81,8 +81,8 @@ _CSV_HEAD = {
 
 
 def von_mises_max(s):
-    """Grootste von Mises-spanning over een periode van de complexe
-    spanning s (..., 6) in de volgorde xx yy zz xy yz zx (zie kop)."""
+    """Largest von Mises stress over a period of the complex
+    stress s (..., 6) in the order xx yy zz xy yz zx (see header)."""
     r, i = s.real, s.imag
 
     def q(a, b):
@@ -97,8 +97,8 @@ def von_mises_max(s):
 
 
 class _HarmFields(object):
-    """Complexe DEPL en SIGM_NOEU per frequentie (rij i = Mecway-knoop
-    i+1); de rol van aster_results_export._Fields voor _write_fragment."""
+    """Complex DEPL and SIGM_NOEU per frequency (row i = Mecway node
+    i+1); the role of aster_results_export._Fields for _write_fragment."""
 
     def __init__(self, res, n, freqs):
         self.res = res
@@ -115,7 +115,7 @@ class _HarmFields(object):
         return 2.0 * math.pi * float(self.freqs.get(self.index, 0.0))
 
     def field(self, name):
-        """(componenten, complexe waarden (n, ncmp), masker) of None."""
+        """(components, complex values (n, ncmp), mask) or None."""
         if name not in self.cache:
             self.cache[name] = None
             try:
@@ -137,7 +137,7 @@ class _HarmFields(object):
 
 
 def _rows(data, name, cmps):
-    """Rijen (knoopindex) waar alle componenten cmps een waarde hebben."""
+    """Rows (node index) where all components cmps have a value."""
     d = data.field(name)
     if d is None or not all(c in d[0] for c in cmps):
         return None
@@ -213,7 +213,7 @@ def _pres_fn(part):
 
 
 def _plan(data, fields, pressure=False):
-    """Lijst _Var in Mecway-volgorde (grootte voor de componenten)."""
+    """List of _Var in Mecway order (size for the components)."""
     out = []
     rows = _rows(data, "DEPL", _DISP)
     if rows is not None:
@@ -263,7 +263,7 @@ def _plan(data, fields, pressure=False):
 
 
 def _pressures(data, indexes):
-    """{index: complexe druk (n,)} (0 waar geen PRES) voor de microfoons
+    """{index: complex pressure (n,)} (0 where no PRES) for the microphones
     (aster_acoustic_export.microphone_rows)."""
     out = OrderedDict()
     for idx in indexes:
@@ -280,10 +280,10 @@ def _pressures(data, indexes):
 
 def probe_rows(data, indexes, probes):
     """
-    [(naam, f, [Ux, Uy, Uz] complex, aantal knopen)] per meetpunt en
-    frequentie. Bij meer knopen per component het gemiddelde van U met
-    als amplitude de kwadratisch gemiddelde |U| (sqrt(mean |U|^2), zoals
-    de microfoons van aster_acoustic_export).
+    [(name, f, [Ux, Uy, Uz] complex, number of nodes)] per probe and
+    frequency. For several nodes, per component the mean of U with the
+    root mean square |U| as amplitude (sqrt(mean |U|^2), like
+    the microphones of aster_acoustic_export).
     """
     out = []
     for idx in indexes:
@@ -312,18 +312,18 @@ def export_harmonic(res, out_path, liml_path, fields=None, probes=None,
                     precision="single", pressure=False, microphones=None,
                     mic_csv_path=None):
     """
-    Schrijf de harmonische respons als Mecway-<results>-fragment (een
-    <mode> per frequentie) en de meetpunten.
+    Write the harmonic response as a Mecway <results> fragment (one
+    <mode> per frequency) and the probes.
 
-    fields   : groepen ("displacements", "velocities", "accelerations",
-               "stresses", "vonmises"); None = alles.
-    probes   : {naam: [Mecway-knoopnummers]} (bridge_harmonic, selecties
-               MEETPUNT_... / PROBE_...), of None.
-    csv_path : CSV met de frequentierespons per meetpunt, of None.
-    pressure : ook de druk (component PRES van DEPL, vibro-akoestiek).
-    microphones, mic_csv_path : {naam: [knoopnummers]} en de CSV van de
-               microfoons (zoals aster_acoustic_export), of None.
-    Returns dict met statistiek, of None bij een fout (melding in de
+    fields   : groups ("displacements", "velocities", "accelerations",
+               "stresses", "vonmises"); None = all.
+    probes   : {name: [Mecway node numbers]} (bridge_harmonic, selections
+               MEETPUNT_... / PROBE_...), or None.
+    csv_path : CSV with the frequency response per probe, or None.
+    pressure : also the pressure (component PRES of DEPL, vibro-acoustics).
+    microphones, mic_csv_path : {name: [node numbers]} and the CSV of the
+               microphones (like aster_acoustic_export), or None.
+    Returns dict with statistics, or None on an error (message in the
     .mess).
     """
     t0 = time.time()
@@ -409,8 +409,8 @@ def _amp(vals):
 
 
 def _print_probes(rows):
-    """BRIDGE_PROBE-regels in de .mess (naam als laatste: mag spaties
-    hebben)."""
+    """BRIDGE_PROBE lines in the .mess (name last: may contain
+    spaces)."""
     for name, f, vals, count in rows:
         w = 2.0 * math.pi * f
         print("BRIDGE_PROBE F={0} UAMP={1} AAMP={2} {3} N={4} NAAM={5}"

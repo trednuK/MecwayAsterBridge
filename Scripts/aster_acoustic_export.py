@@ -5,36 +5,36 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # aster_acoustic_export.py
 #
-# Verantwoordelijkheid: het harmonische akoestische resultaat (DYNA_VIBRA
-# TYPE_CALCUL='HARM' op PHENOMENE='ACOUSTIQUE', bridge_acoustic.
-# build_acoustic_harm) naar Mecway's resultaatformaat, plus de
-# frequentierespons op de microfoonknopen (CSV en BRIDGE_MIC-regels in de
-# .mess). Draait BINNEN de Code-Aster-job (CPython 3.11 met numpy, zoals
-# aster_results_export.py), NIET in IronPython.
+# Responsibility: converts the harmonic acoustic result (DYNA_VIBRA
+# TYPE_CALCUL='HARM' on PHENOMENE='ACOUSTIQUE', bridge_acoustic.
+# build_acoustic_harm) to Mecway's result format, plus the frequency
+# response at the microphone nodes (CSV and BRIDGE_MIC lines in the
+# .mess). Runs INSIDE the Code-Aster job (CPython 3.11 with numpy, like
+# aster_results_export.py), NOT in IronPython.
 #
-# Code-Aster 17.4 (gezien in een run): DYNA_VIBRA geeft een resultaat van
-# het type ACOU_HARMO (FullHarmonicAcousticResult) met per frequentie
-# (NUME_ORDRE, toegangsparameter FREQ) het complexe veld PRES
-# (FieldOnNodesComplex, component PRES). Houd de tussenobjecten vast:
-# res.getField(..).toSimpleFieldOnNodes().getValues() in een keten gaf een
-# keer een <EXCEPTION> DVP_2 (floating point exception), los niet.
+# Code-Aster 17.4 (seen in a run): DYNA_VIBRA returns a result of
+# type ACOU_HARMO (FullHarmonicAcousticResult) with, per frequency
+# (NUME_ORDRE, access parameter FREQ), the complex field PRES
+# (FieldOnNodesComplex, component PRES). Keep the intermediate objects:
+# res.getField(..).toSimpleFieldOnNodes().getValues() in one chain once
+# gave an <EXCEPTION> DVP_2 (floating point exception), separately not.
 #
-# Uitvoer per frequentie een blok
+# Output per frequency is a block
 #     <mode id="k" frequency="f Hz">
-# (aster_results_export._write_fragment, zoals de modes: Mecway toont ze als
-# lijst met de frequentie) met de knoopvariabelen
-#     pressure       Re(P)   [Pa]  (Mecway's naam voor de druk; met
-#     pressurei      Im(P)   [Pa]   pressurei zoals Mecway's complexe modes)
+# (aster_results_export._write_fragment, like the modes: Mecway shows them
+# as a list with the frequency) with the node variables
+#     pressure       Re(P)   [Pa]  (Mecway's name for the pressure; with
+#     pressurei      Im(P)   [Pa]   pressurei like Mecway's complex modes)
 #     pressuremag    |P|     [Pa]  amplitude
-#     pressurephase  arg(P)  [graden], -180..180
+#     pressurephase  arg(P)  [degrees], -180..180
 #     spl            20 log10(|P| / (sqrt(2) p_ref)) [dB], p_ref = 20 uPa
-# met p(t) = Re(P e^(i w t)) (Code-Aster; zelfde conventie als Mecway's
-# complexe modes, manual v33 par. 6.9.2). Het geluidsdrukniveau is op de
-# effectieve waarde |P|/sqrt(2) gebaseerd; Code-Aster's PRAC_ELNO DB
-# (ahlv100a) gebruikt |P| zelf en ligt dus 20 log10(sqrt(2)) = 3,0103 dB
-# hoger (nagerekend: |P| 6,2426 Pa -> DB 109,886).
+# with p(t) = Re(P e^(i w t)) (Code-Aster; same convention as Mecway's
+# complex modes, manual v33 par. 6.9.2). The sound pressure level is based
+# on the RMS value |P|/sqrt(2); Code-Aster's PRAC_ELNO DB (ahlv100a) uses
+# |P| itself and is therefore 20 log10(sqrt(2)) = 3.0103 dB higher
+# (checked: |P| 6.2426 Pa -> DB 109.886).
 #
-# Gebruik geen f-strings: zelfde stijl als de rest van de bridge.
+# Do not use f-strings: same style as the rest of the bridge.
 
 import csv
 import math
@@ -47,10 +47,10 @@ import numpy as np
 
 import aster_results_export as are
 
-P_REF = 2.0e-5           # Pa, referentiedruk lucht (ISO 1683)
+P_REF = 2.0e-5           # Pa, reference pressure in air (ISO 1683)
 _SQRT2 = math.sqrt(2.0)
-# Ondergrens voor de log in het geluidsdrukniveau (een drukknoop heeft
-# p = 0): -200 dB i.p.v. -inf, zodat er geen inf/NaN in de .liml komt.
+# Lower bound for the log in the sound pressure level (a pressure node has
+# p = 0): -200 dB instead of -inf, so no inf/NaN ends up in the .liml.
 _SPL_FLOOR = P_REF * 1.0e-10
 
 _CSV_HEAD = {
@@ -62,15 +62,15 @@ _CSV_HEAD = {
 
 
 def spl(amplitude):
-    """Geluidsdrukniveau [dB re 20 uPa] van een amplitude |P| (numpy of
+    """Sound pressure level [dB re 20 uPa] of an amplitude |P| (numpy or
     float): 20 log10(|P| / (sqrt(2) p_ref))."""
     a = np.maximum(np.asarray(amplitude, dtype=float) / _SQRT2, _SPL_FLOOR)
     return 20.0 * np.log10(a / P_REF)
 
 
 class _Harm(object):
-    """Complexe druk per frequentie (rij i = Mecway-knoop i+1); dezelfde
-    rol als aster_results_export._Fields voor _write_fragment."""
+    """Complex pressure per frequency (row i = Mecway node i+1); same
+    role as aster_results_export._Fields for _write_fragment."""
 
     def __init__(self, pressures):
         self.pressures = pressures
@@ -99,7 +99,7 @@ _VARIABLES = (
 
 
 def _pressures(res, n):
-    """({index: complexe druk (n,)}, rijen met een waarde, {index: f})."""
+    """({index: complex pressure (n,)}, rows with a value, {index: f})."""
     indexes = list(res.getIndexes())
     acc = res.getAccessParameters()
     freqs = dict(zip(acc["NUME_ORDRE"], acc["FREQ"]))
@@ -121,11 +121,11 @@ def _pressures(res, n):
 
 def microphone_rows(pressures, freqs, microphones):
     """
-    [(naam, f, P, aantal knopen)] per microfoon en frequentie. P is de
-    complexe druk van een knoop; bij meer knopen het gemiddelde van P met
-    als amplitude de kwadratisch gemiddelde |P| (sqrt(mean |P|^2), de
-    energie over de knopen; zo geeft een selectie op een plaats met
-    tegengestelde fasen geen schijnbare stilte).
+    [(name, f, P, number of nodes)] per microphone and frequency. P is the
+    complex pressure of a node; for several nodes the mean of P with the
+    root mean square |P| as amplitude (sqrt(mean |P|^2), the energy over
+    the nodes; this way a selection at a location with opposite phases
+    does not give an apparent silence).
     """
     out = []
     for name, nids in (microphones or {}).items():
@@ -145,14 +145,14 @@ def microphone_rows(pressures, freqs, microphones):
 def export_harmonic(res, out_path, liml_path, microphones=None,
                     csv_path=None, language="en", precision="double"):
     """
-    Schrijf het harmonische drukveld als Mecway-<results>-fragment (een
-    <mode> per frequentie) en de microfoonrespons.
+    Write the harmonic pressure field as a Mecway <results> fragment (one
+    <mode> per frequency) and the microphone response.
 
-    microphones : {naam: [Mecway-knoopnummers]} (bridge_acoustic,
-                  selecties MICROFOON_...), of None.
-    csv_path    : CSV met de microfoonrespons (komma's, punt als
-                  decimaalteken, zoals _vergelijking.csv), of None.
-    Returns dict met statistiek, of None bij een fout (melding in de
+    microphones : {name: [Mecway node numbers]} (bridge_acoustic,
+                  selections MICROFOON_...), or None.
+    csv_path    : CSV with the microphone response (commas, point as
+                  decimal separator, like _vergelijking.csv), or None.
+    Returns dict with statistics, or None on an error (message in the
     .mess).
     """
     t0 = time.time()
@@ -210,8 +210,8 @@ def _export(res, out_path, liml_path, microphones, csv_path, language,
 
 
 def _print_microphones(mic):
-    """BRIDGE_MIC-regels in de .mess (naam als laatste: mag spaties
-    hebben)."""
+    """BRIDGE_MIC lines in the .mess (name last: may contain
+    spaces)."""
     for name, f, p, count in mic:
         print("BRIDGE_MIC F={0} RE={1} IM={2} AMP={3} FASE={4} SPL={5} "
               "N={6} NAAM={7}".format(
