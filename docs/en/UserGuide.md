@@ -325,13 +325,39 @@ are the same as those of Mecway's own solution where Mecway knows them.
 | `heat_flux` | `heatfluxx/y/z/mag` | `FLUX_NOEU` | thermal |
 | error estimator (setting *Error estimator*, not in this list) | `errorestimate`, `errorestimaterel` (solid elements, nodal values and per element; bridge names) | `ERME_NOEU`, `ERME_ELNO` | static ([`Error_estimator.md`](Error_estimator.md)) |
 | fatigue (`#ASTER-WOHLER`, not in this list) | `damage` (damage D), `life` (repetitions until D = 1); shells also `damage_top`/`damage_bottom`, with a criterion `fatigue_eq`/`fatigue_ratio`; nodal values, bridge names | from `SIGM_NOEU`/`EPSI_NOEU`/`SIEQ_NOEU` (rainflow, Miner; `aster_fatigue.py`) or `CALC_FATIGUE FATIGUE_MULTI` | static, nonlinear, dynamic ([`Fatigue.md`](Fatigue.md)) |
+| `strain` | solids: `lstrainxx` .. `lstrainzx` (linear), `greenlagrangestrainxx` .. (nonlinear with large displacements, like Mecway's L30/D31); shells: `lstrainxxu`/`m`/`b` .. (top/middle/bottom, global axes); node and element-node values; shear as engineering strain γ = 2ε (like Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), shells `EPSI_ELNO` + `EXTR_COQUE` | off (larger `.liml`) |
+| `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V along Mecway's V and W), `torsion`, `bendingmomv`, `bendingmomw`; local axes and signs as in Mecway; node and element-node values | `EFGE_NOEU`, `EFGE_ELNO` | static, nonlinear, dynamic |
+| `shell_stresses` | `stressxxu1` .. `stresszxu1`, likewise `m1` (middle) and `b1` (bottom): shell stress tensor in global axes, as in Mecway | `SIGM_ELNO` after `EXTR_COQUE`, rotated in the job from the local shell axes to global | off (18 variables) |
+| `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 gives tension on top), `shearuw`/`shearvw` (shear force per length) in Mecway's U,V axes (U = `orientationu*` or the edge node 1→2) | `EFGE_ELNO`, rotated in the job to Mecway's U,V | static, nonlinear |
+| `safety_factor` | `factorofsafety` (Mecway shows the item *failure*): tensile strength / von Mises for materials with Mecway's von Mises failure criterion; shells the smallest of top and bottom; unloaded 1e6 | from `SIEQ_NOEU`/`SIEQ_ELNO` (in the job) | static, nonlinear, dynamic |
+| `contact` | `contactpressure` (Pa, positive in compression; negative becomes 0), `contactstate` (0 open, 1 closed, 2 sliding) on the slave nodes | `-LAGS_C` (`DEPL`); state from `CONT_NOEU` (linear contact faces only) or from the pressure (> 1% of the largest) | nonlinear, dynamic |
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (phase fractions), `hardness` (if the dataset has hardness); names of the bridge | `META_NOEU`, `DURT_NOEU` | thermal transient: always included with `#ASTER-METALLURGIE`, route `liml` only ([`Welding.md`](Welding.md) §10) |
 | pressure (acoustics, not in this list) | `pressure` per mode (Mecway's name); harmonic per frequency also `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibroacoustics: `DEPL` component `PRES`) | acoustics, always ([`Acoustics.md`](Acoustics.md)) |
 
 For modal and buckling the bridge returns only the shapes (`displacements`), as
-Mecway does; other selected fields are ignored (INFO in the log). Nodal stresses
-follow the Code-Aster standard (extrapolation and averaging per node) and therefore
-differ from Mecway (KNOWN_BUGS 3). Shell stress tensors (local axes) are not loaded.
+Mecway does; for modal, `stresses`, `vonmises`, `strain`, `beam_forces`,
+`shell_stresses` and `shell_forces` can be included per mode; other selected fields
+are ignored (INFO in the log). Nodal stresses follow the Code-Aster standard
+(extrapolation and averaging per node) and therefore differ from Mecway (KNOWN_BUGS 3).
+
+The extra fields (`strain` .. `contact`) are only included when selected and when the
+model has something for them (otherwise an INFO). Via route `tabel` only `strain`
+(solids) and `beam_forces` (nodal values); the rest via route `liml` only. Not in mode
+superposition, harmonic, spectrum and the thermal → mechanical chain. Mecway's names,
+axes and signs were checked headless in Mecway 34; compared with Mecway's own solution
+in [`Verification.md`](Verification.md) (LS-30 .. LS-32, NL-30). Limits:
+
+- shells: the axes of Code-Aster (projection of X or the group's `VECTEUR`) and of
+  Mecway (edge 1→2 or *Element properties* → `orientationu*`) are determined per
+  element from the corner nodes; an *Element orientation* as a load (Loads &
+  Constraints) is not read (Mecway's default U then). Strongly curved quadratic
+  shells: NOT verified;
+- `contactstate` 2 (sliding) only comes from `CONT_NOEU` with friction: NOT verified;
+  with hex20/tet10 contact faces (integration not at the nodes) there is no
+  `CONT_NOEU` and the state follows from the pressure;
+- `factorofsafety`: Mecway itself only computes it when displaying (not in a headless
+  solution), so it was only checked against the definition (manual v34 sec. 8.7); only
+  the von Mises criterion (Tsai-Wu etc.: WARNING).
 
 ## 5. Files in the working directory
 

@@ -76,10 +76,17 @@ Pagina's *Algemeen* en *Elementen* van het startscherm. Ze gelden voor alle anal
 | `solver_nprec` (MUMPS NPREC) | 8 | `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`: aantal decimalen dat bij de factorisatie verloren mag gaan voor de matrix singulier heet | 8 = CA (`c_solveur.py`), in alle analyses | zie §3.2 | R-FREE (§5) |
 
 Resultaatvelden per analyse: statisch `displacements`, `stresses`, `vonmises`,
-`reactions`; niet-lineair statisch daarnaast `plastic_strain`, `plastic_strain_eq`;
-dynamisch `displacements`, `stresses`, `vonmises`, `velocities`, `reactions`,
-`plastic_strain_eq`; thermisch `temperature`, `heat_flux`; modaal en knik alleen
-`displacements` (de vormen, zoals Mecway).
+`reactions`, `beam_forces`, `shell_forces`, `safety_factor`; niet-lineair statisch
+daarnaast `plastic_strain`, `plastic_strain_eq` en `contact`; dynamisch
+`displacements`, `stresses`, `vonmises`, `velocities`, `reactions`,
+`plastic_strain_eq`, `beam_forces`, `safety_factor`, `contact`; thermisch
+`temperature`, `heat_flux`; modaal en knik alleen `displacements` (de vormen, zoals
+Mecway). De extra velden (`beam_forces`, `shell_forces`, `safety_factor`, `contact`)
+doen alleen iets als het model balken, schalen, een von Mises-faalcriterium of
+contact heeft; ze kosten dan weinig rekentijd. `strain` en `shell_stresses` staan
+standaard uit: ze maken de `.liml` duidelijk groter (6 resp. 18 variabelen per knoop
+en per element-knoop); `shell_forces` staat bij dynamica uit (per tijdstap). Zie
+[`Handleiding.md`](Handleiding.md) §4.1.
 
 Niet instelbaar per analyse (vast in `CONFIG_BRIDGE`, niet op het startscherm):
 `template` (de `.comm`-template in `Scripts/`), `solver_command` en bij modaal/knik
@@ -202,7 +209,7 @@ per uitvoerinterval). Voor andere elementvormen is de verhouding NIET gemeten.
 | `modal_complex` | uit (`False`) | aan + Rayleigh-demping en/of dempers in het model: complexe modes, `CALC_MODES` met `MATR_AMOR` (C = αM + βK + C_dempers); per mode de gedempte frequentie f_d (in Mecway's `<mode>`), ζ en f_n in log en statusvak; vorm = reëel deel (φᵀMφ = 1), `decayrate` = ζ·2πf_n; geen spanningen per mode. Uit: de demping telt niet mee (INFO) | Mecway's Frequency-analyse negeert Rayleigh-demping en rekent niet met een Damper (headless gemeten); complexe modes zijn de Code-Aster-route (testcase sdld21c) | de gedempte frequenties en de dempingsverhouding per mode willen zien, bijv. om Rayleigh-coëfficiënten te controleren of het effect van dempers te zien | MC-01..05 ([Verificatie.md](Verificatie.md) §7): ζ en f_d ≤ 1e-6 analytisch, f_n gelijk aan Mecway |
 | `cyclic_base_modes` | 0 (= max(20, 4 × modes per ND)) | alleen met Mecway's *Cyclic symmetry*: aantal modes van de sector met vaste snijvlakken in de basis van `MODE_ITER_CYCL` (`CALC_MODES NMAX_FREQ`, `DEFI_BASE_MODALE NMAX_MODE`, `NB_MODE`) | Keuze: met 20 waren de modes van de ring en de schijf gelijk aan het volledige model (≤ 0,001%); de basis bepaalt de nauwkeurigheid van de hoogste modes per ND | hoge modes per ND; ter controle verdubbelen (de frequenties moeten gelijk blijven) | CY-01..05 ([Verificatie.md](Verificatie.md) §7); [Modaal_en_knik.md](Modaal_en_knik.md) §7 |
 | `cyclic_full_wheel` | aan | alleen met Mecway's *Cyclic symmetry*: de modes op het **hele wiel** naar Mecway (alle N sectoren met hun fase: `DEFI_SQUELETTE CYCLIQUE` + `REST_SOUS_STRUC SQUELETTE`), met dezelfde knoop- en elementnummers als Mecway's eigen cyclische oplossing (knoop i van sector j = i + j·n, element e + j·ne); uit = alleen de sector | Mecway: de eigen oplossing toont het hele wiel (headless gemeten) | uit bij een groot model als het resultaatbestand te groot wordt (N keer zo groot) | CY-01..06 ([Verificatie.md](Verificatie.md) §7); [Modaal_en_knik.md](Modaal_en_knik.md) §7 |
-| `fields` | `["displacements"]` | met `stresses`/`vonmises`: spanningen per mode (`CALC_CHAMP` op de modes, zonder `REAC_NODA`); andere velden genegeerd (INFO) | Mecway's standaardoplossing van een mode heeft alleen de vorm; spanningen zijn bij genormeerde vormen alleen relatief betekenisvol | waar een mode de grootste spanning geeft | MO-07 (σ_xx mode 1 +0,43% Euler-Bernoulli, +0,01% Mecway) |
+| `fields` | `["displacements"]` | met `stresses`/`vonmises` (ook `strain`, `beam_forces`, `shell_stresses`, `shell_forces`): waarden per mode (`CALC_CHAMP` op de modes, zonder `REAC_NODA`); andere velden genegeerd (INFO) | Mecway's standaardoplossing van een mode heeft alleen de vorm; spanningen zijn bij genormeerde vormen alleen relatief betekenisvol | waar een mode de grootste spanning geeft | MO-07 (σ_xx mode 1 +0,43% Euler-Bernoulli, +0,01% Mecway) |
 | (vast) effectieve massa rotaties | om de globale assen door de oorsprong | RX/RY/RZ per mode in log en statusvak (eigen berekening, Γ = φᵀMR); fractie van RᵀMR inclusief opgelegde knopen, zoals Code-Aster's translaties | zoals Mecway (manual §6.3, headless nagelopen); Code-Aster kent geen `MASS_EFFE_UN_DRX` | ander rotatiepunt: oorsprong in Mecway verleggen | MO-01, MO-04, MO-06, MO-07 ([Modaal_en_knik.md](Modaal_en_knik.md) §1.5) |
 | `solver_nprec`, `time_limit`, `memory_limit` | 8, 900, 2048 | zie §3.1 | | | |
 

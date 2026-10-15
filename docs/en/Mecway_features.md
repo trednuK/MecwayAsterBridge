@@ -130,7 +130,7 @@ Bonded contact per combination (slave on master):
 | Plastic, Ramberg-Osgood | Yes | Sampled curve (KB6). |
 | Spring, Damper, Gap, Tension only | Yes | Only on line2 (§4). Gap: *force of open gap* not used (KB23). |
 | Orthotropic, Anisotropic (matrix), Composite, Neo Hooke, Mooney-Rivlin, piezo | No | WARNING, then the run stops ("elset without a usable material"). No alternative in the bridge. |
-| Failure criterion (factor of safety) | No | Without a message. For plastic failure: [`Failure.md`](Failure.md). |
+| Failure criterion (factor of safety) | Partly | Von Mises (*tensile strength*): `factorofsafety` to Mecway (result field `safety_factor`, §6). Tsai-Wu and other criteria: WARNING, no factor of safety. For plastic failure: [`Failure.md`](Failure.md). |
 | Thermal: conductivity, specific heat, also *Temperature dependent* | Yes | [`Thermal.md`](Thermal.md). Formulas in material properties: No (KB16). |
 | Speed of sound (acoustics) | Yes | Media with different density: No (KB55, KB59). |
 | OpenRadioss law `PLAS_TAB` | Partly | Fields not translated: KB34. Law `VOID`: elements left out (reported); other laws: No. |
@@ -144,15 +144,15 @@ Bonded contact per combination (slave on master):
 | Displacement, rotation | Yes | Modal and buckling: the mode shapes. |
 | Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). Route `tabel`: KB7. |
 | von Mises (solids; shells top/middle/bottom) | Yes | KB3. |
-| Stress tensor of shells, forces and moments per length | No | Alternative: compute it yourself with `#ASTER-POST` (e.g. into the `.mess`, example 8). |
+| Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`; route `liml` only. Mecway's *stress in element coordinates* (`stressuu` ..) not. Element orientation as a load: not read ([`UserGuide.md`](UserGuide.md) §4.1). |
 | Beam stress | Partly | Only smallest/largest axial stress for rectangular and circular sections (`beamsixxmin/max`). |
-| Section forces and moments of beams | No | See above. |
+| Section forces and moments of beams | Yes | Field `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), also per mode. |
 | Reaction forces and moments | Yes | Not with mode superposition, harmonic and vibroacoustics (KB54, KB59). |
 | Velocity, acceleration | Yes | Dynamics; acceleration not with mode superposition (KB54). |
 | Plastic strain, equivalent plastic strain | Partly | Equivalent plastic strain not with kinematic hardening (KB6). |
-| Total strain | No | See `#ASTER-POST`. |
-| Contact pressure, contact state | No | See `#ASTER-POST`. |
-| Factor of safety | No | §5. |
+| Total strain | Yes | Field `strain` (off by default): `lstrain*`, nonlinear `greenlagrangestrain*`; shells top/middle/bottom. No logarithmic strain and no principal strains. |
+| Contact pressure, contact state | Partly | Field `contact`: `contactpressure`, `contactstate` (0/1/2). No contact shear stress and displacement; sliding (2) NOT verified. |
+| Factor of safety | Yes | Field `safety_factor` (von Mises, §5). |
 | Temperature, heat flux | Yes | Thermal. |
 | Natural frequencies, buckling factors, effective mass | Yes | Effective mass fraction differs from Mecway (KB49). |
 | Acoustic pressure | Yes | [`Acoustics.md`](Acoustics.md). |

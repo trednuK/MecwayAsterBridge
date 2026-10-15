@@ -76,10 +76,17 @@ Pages *General* and *Elements* of the start screen. They apply to all analyses.
 | `solver_nprec` (MUMPS NPREC) | 8 | `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`: number of digits that may be lost in the factorisation before the matrix is called singular | 8 = CA (`c_solveur.py`), in all analyses | see §3.2 | R-FREE (§5) |
 
 Result fields per analysis: static `displacements`, `stresses`, `vonmises`,
-`reactions`; nonlinear static also `plastic_strain`, `plastic_strain_eq`;
-dynamic `displacements`, `stresses`, `vonmises`, `velocities`, `reactions`,
-`plastic_strain_eq`; thermal `temperature`, `heat_flux`; modal and buckling only
-`displacements` (the shapes, as in Mecway).
+`reactions`, `beam_forces`, `shell_forces`, `safety_factor`; nonlinear static also
+`plastic_strain`, `plastic_strain_eq` and `contact`; dynamic `displacements`,
+`stresses`, `vonmises`, `velocities`, `reactions`, `plastic_strain_eq`,
+`beam_forces`, `safety_factor`, `contact`; thermal `temperature`, `heat_flux`; modal
+and buckling only `displacements` (the shapes, as in Mecway). The extra fields
+(`beam_forces`, `shell_forces`, `safety_factor`, `contact`) only do something when
+the model has beams, shells, a von Mises failure criterion or contact; they then
+cost little computing time. `strain` and `shell_stresses` are off by default: they
+make the `.liml` clearly larger (6 and 18 variables per node and per element node);
+`shell_forces` is off for dynamics (per time step). See
+[`UserGuide.md`](UserGuide.md) §4.1.
 
 Not settable per analysis (fixed in `CONFIG_BRIDGE`, not on the start screen):
 `template` (the `.comm` template in `Scripts/`), `solver_command` and for modal/buckling
@@ -202,7 +209,7 @@ element shapes the ratio is NOT measured.
 | `modal_complex` | off (`False`) | on + Rayleigh damping and/or dampers in the model: complex modes, `CALC_MODES` with `MATR_AMOR` (C = αM + βK + C_dampers); per mode the damped frequency f_d (in Mecway's `<mode>`), ζ and f_n in the log and status box; shape = real part (φᵀMφ = 1), `decayrate` = ζ·2πf_n; no stresses per mode. Off: damping is not included (INFO) | Mecway's Frequency analysis ignores Rayleigh damping and does not solve with a Damper (measured headless); complex modes are the Code-Aster route (testcase sdld21c) | you want the damped frequencies and the damping ratio per mode, e.g. to check Rayleigh coefficients or to see the effect of dampers | MC-01..05 ([Verification.md](Verification.md) §7): ζ and f_d ≤ 1e-6 analytical, f_n equal to Mecway |
 | `cyclic_base_modes` | 0 (= max(20, 4 × modes per ND)) | only with Mecway's *Cyclic symmetry*: number of modes of the sector with fixed cut faces in the basis of `MODE_ITER_CYCL` (`CALC_MODES NMAX_FREQ`, `DEFI_BASE_MODALE NMAX_MODE`, `NB_MODE`) | Choice: with 20 the modes of the ring and the disc equalled the full model (≤ 0.001%); the basis determines the accuracy of the highest modes per ND | high modes per ND; double it as a check (the frequencies should stay the same) | CY-01..05 ([Verification.md](Verification.md) §7); [Modal_and_buckling.md](Modal_and_buckling.md) §7 |
 | `cyclic_full_wheel` | on | only with Mecway's *Cyclic symmetry*: the modes on the **whole wheel** to Mecway (all N sectors with their phase: `DEFI_SQUELETTE CYCLIQUE` + `REST_SOUS_STRUC SQUELETTE`), with the same node and element numbers as Mecway's own cyclic solution (node i of sector j = i + j·n, element e + j·ne); off = only the sector | Mecway: its own solution shows the whole wheel (measured headless) | off for a large model if the result file becomes too large (N times as large) | CY-01..06 ([Verification.md](Verification.md) §7); [Modal_and_buckling.md](Modal_and_buckling.md) §7 |
-| `fields` | `["displacements"]` | with `stresses`/`vonmises`: stresses per mode (`CALC_CHAMP` on the modes, without `REAC_NODA`); other fields ignored (INFO) | Mecway's default solution of a mode has only the shape; with normalised shapes stresses are only meaningful relative to each other | where a mode gives the largest stress | MO-07 (σ_xx mode 1 +0.43% Euler-Bernoulli, +0.01% Mecway) |
+| `fields` | `["displacements"]` | with `stresses`/`vonmises` (also `strain`, `beam_forces`, `shell_stresses`, `shell_forces`): values per mode (`CALC_CHAMP` on the modes, without `REAC_NODA`); other fields ignored (INFO) | Mecway's default solution of a mode has only the shape; with normalised shapes stresses are only meaningful relative to each other | where a mode gives the largest stress | MO-07 (σ_xx mode 1 +0.43% Euler-Bernoulli, +0.01% Mecway) |
 | (fixed) effective mass rotations | about the global axes through the origin | RX/RY/RZ per mode in log and status box (own computation, Γ = φᵀMR); fraction of RᵀMR including supported nodes, as Code-Aster's translations | as Mecway (manual §6.3, checked headless); Code-Aster has no `MASS_EFFE_UN_DRX` | other rotation point: move the origin in Mecway | MO-01, MO-04, MO-06, MO-07 ([Modal_and_buckling.md](Modal_and_buckling.md) §1.5) |
 | `solver_nprec`, `time_limit`, `memory_limit` | 8, 900, 2048 | see §3.1 | | | |
 

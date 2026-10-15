@@ -130,7 +130,7 @@ Verlijmd contact per combinatie (slave op master):
 | Plastic, Ramberg-Osgood | Ja | Bemonsterde curve (KB6). |
 | Spring, Damper, Gap, Tension only | Ja | Alleen op line2 (§4). Gap: *force of open gap* niet gebruikt (KB23). |
 | Orthotropic, Anisotropic (matrix), Composite, Neo Hooke, Mooney-Rivlin, piëzo | Nee | WARNING en daarna stopt de run ("elset zonder bruikbaar materiaal"). Geen alternatief in de bridge. |
-| Failure criterion (factor of safety) | Nee | Zonder melding. Voor plastisch bezwijken: [`Bezwijken.md`](Bezwijken.md). |
+| Failure criterion (factor of safety) | Deels | Von Mises (*tensile strength*): `factorofsafety` naar Mecway (resultaatveld `safety_factor`, §6). Tsai-Wu en andere criteria: WARNING, geen factor of safety. Voor plastisch bezwijken: [`Bezwijken.md`](Bezwijken.md). |
 | Thermisch: geleiding, soortelijke warmte, ook *Temperature dependent* | Ja | [`Thermisch.md`](Thermisch.md). Formules in materiaaleigenschappen: Nee (KB16). |
 | Speed of sound (akoestiek) | Ja | Media met verschillende dichtheid: Nee (KB55, KB59). |
 | OpenRadioss law `PLAS_TAB` | Deels | Niet vertaalde velden: KB34. Law `VOID`: elementen weggelaten (gemeld); andere laws: Nee. |
@@ -144,15 +144,15 @@ Verlijmd contact per combinatie (slave op master):
 | Verplaatsing, rotatie | Ja | Modaal en knik: de vormen. |
 | Spanningstensor volume-elementen (knoop en element-knoop) | Ja | Code-Aster-middeling, anders dan Mecway (KB3). Route `tabel`: KB7. |
 | von Mises (volumes; schalen boven/midden/onder) | Ja | KB3. |
-| Spanningstensor schalen, krachten en momenten per lengte | Nee | Alternatief: zelf uitrekenen met `#ASTER-POST` (bijv. in de `.mess`, voorbeeld 8). |
+| Spanningstensor schalen (globaal, boven/midden/onder), krachten en momenten per lengte | Ja | Velden `shell_stresses` (standaard uit) en `shell_forces`; alleen route `liml`. Mecway's *stress in element coordinates* (`stressuu` ..) niet. Element orientation als last: niet gelezen ([`Handleiding.md`](Handleiding.md) §4.1). |
 | Balkspanning | Deels | Alleen kleinste/grootste axiale spanning bij rechthoekige en ronde doorsneden (`beamsixxmin/max`). |
-| Snedekrachten en -momenten van balken | Nee | Zie hierboven. |
+| Snedekrachten en -momenten van balken | Ja | Veld `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), ook per mode. |
 | Reactiekrachten en -momenten | Ja | Niet bij mode superposition, harmonisch en vibro-akoestiek (KB54, KB59). |
 | Snelheid, versnelling | Ja | Dynamica; versnelling niet bij mode superposition (KB54). |
 | Plastische rek, equivalente plastische rek | Deels | Equivalente plastische rek niet bij kinematische versteviging (KB6). |
-| Totale rek | Nee | Zie `#ASTER-POST`. |
-| Contactdruk, contactstatus | Nee | Zie `#ASTER-POST`. |
-| Factor of safety | Nee | §5. |
+| Totale rek | Ja | Veld `strain` (standaard uit): `lstrain*`, niet-lineair `greenlagrangestrain*`; schalen boven/midden/onder. Geen logaritmische rek en geen hoofdrekken. |
+| Contactdruk, contactstatus | Deels | Veld `contact`: `contactpressure`, `contactstate` (0/1/2). Geen contactschuifspanning en -verplaatsing; glijden (2) NIET geverifieerd. |
+| Factor of safety | Ja | Veld `safety_factor` (von Mises, §5). |
 | Temperatuur, warmteflux | Ja | Thermisch. |
 | Eigenfrequenties, kniklastfactoren, effectieve massa | Ja | Fractie van de effectieve massa anders dan Mecway (KB49). |
 | Akoestische druk | Ja | [`Akoestiek.md`](Akoestiek.md). |

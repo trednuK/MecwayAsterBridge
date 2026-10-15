@@ -319,14 +319,39 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `heat_flux` | `heatfluxx/y/z/mag` | `FLUX_NOEU` | thermisch |
 | foutschatter (instelling *Foutschatter*, niet in deze keuzelijst) | `errorestimate`, `errorestimaterel` (volume-elementen, knoopwaarden en per element; namen van de bridge) | `ERME_NOEU`, `ERME_ELNO` | statisch ([`Foutschatter.md`](Foutschatter.md)) |
 | vermoeiing (`#ASTER-WOHLER`, niet in deze keuzelijst) | `damage` (schade D), `life` (herhalingen tot D = 1); schalen ook `damage_top`/`damage_bottom`, met een criterium `fatigue_eq`/`fatigue_ratio`; knoopwaarden, namen van de bridge | uit `SIGM_NOEU`/`EPSI_NOEU`/`SIEQ_NOEU` (rainflow, Miner; `aster_fatigue.py`) of `CALC_FATIGUE FATIGUE_MULTI` | statisch, niet-lineair, dynamisch ([`Vermoeiing.md`](Vermoeiing.md)) |
+| `strain` | volumes: `lstrainxx` .. `lstrainzx` (lineair), `greenlagrangestrainxx` .. (niet-lineair met grote verplaatsingen, zoals Mecway's L30/D31); schalen: `lstrainxxu`/`m`/`b` .. (boven/midden/onder, globale assen); knoop- en elementknoopwaarden; schuif als hoekverdraaiing γ = 2ε (zoals Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), schalen `EPSI_ELNO` + `EXTR_COQUE` | uit (grotere `.liml`) |
+| `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V langs Mecway's V en W), `torsion`, `bendingmomv`, `bendingmomw`; lokale assen en tekens zoals Mecway; knoop- en elementknoopwaarden | `EFGE_NOEU`, `EFGE_ELNO` | statisch, niet-lineair, dynamisch |
+| `shell_stresses` | `stressxxu1` .. `stresszxu1`, idem `m1` (midden) en `b1` (onder): spanningstensor van schalen in globale assen, zoals Mecway | `SIGM_ELNO` na `EXTR_COQUE`, in de job van het lokale schaalassenstelsel naar globaal gedraaid | uit (18 variabelen) |
+| `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 geeft trek boven), `shearuw`/`shearvw` (dwarskracht per lengte) in Mecway's U,V-assen (U = `orientationu*` of de rand knoop 1→2) | `EFGE_ELNO`, in de job naar Mecway's U,V gedraaid | statisch, niet-lineair |
+| `safety_factor` | `factorofsafety` (Mecway toont het item *failure*): tensile strength / von Mises van materialen met Mecway's von Mises-faalcriterium; schalen de kleinste van boven en onder; onbelast 1e6 | uit `SIEQ_NOEU`/`SIEQ_ELNO` (in de job) | statisch, niet-lineair, dynamisch |
+| `contact` | `contactpressure` (Pa, positief bij druk; negatief wordt 0), `contactstate` (0 open, 1 gesloten, 2 glijdend) op de slave-knopen | `-LAGS_C` (`DEPL`); status uit `CONT_NOEU` (alleen lineaire contactvlakken) of uit de druk (> 1% van de grootste) | niet-lineair, dynamisch |
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (fasefracties), `hardness` (als de dataset hardheid heeft); namen van de bridge | `META_NOEU`, `DURT_NOEU` | thermisch transient: met `#ASTER-METALLURGIE` altijd mee, alleen route `liml` ([`Lassen.md`](Lassen.md) §10) |
 | druk (akoestiek, niet in deze keuzelijst) | `pressure` per mode (Mecway's naam); harmonisch per frequentie ook `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibro-akoestiek: `DEPL` component `PRES`) | akoestiek, altijd ([`Akoestiek.md`](Akoestiek.md)) |
 
 Bij modaal en knik geeft de bridge alleen de vormen (`displacements`), zoals Mecway;
-andere gekozen velden worden genegeerd (INFO in de log). Knoopspanningen volgen de
-Code-Aster-standaard (extrapolatie en middeling per knoop) en wijken daardoor af van
-Mecway (KNOWN_BUGS 3). Schaalspanningstensoren (lokaal assenstelsel) worden niet
-geladen.
+bij modaal kunnen `stresses`, `vonmises`, `strain`, `beam_forces`, `shell_stresses` en
+`shell_forces` per mode mee; andere gekozen velden worden genegeerd (INFO in de log).
+Knoopspanningen volgen de Code-Aster-standaard (extrapolatie en middeling per knoop)
+en wijken daardoor af van Mecway (KNOWN_BUGS 3).
+
+De extra velden (`strain` .. `contact`) gaan alleen mee als ze gekozen zijn en het
+model er iets voor heeft (anders een INFO). Via route `tabel` alleen `strain` (volumes)
+en `beam_forces` (knoopwaarden); de rest alleen via route `liml`. Niet in respons op
+modale basis, harmonisch, spectrum en de keten thermisch → mechanisch. Mecway's namen,
+assen en tekens zijn headless nagelopen in Mecway 34; met Mecway's eigen oplossing
+vergeleken in [`Verificatie.md`](Verificatie.md) (LS-30 .. LS-32, NL-30). Grenzen:
+
+- schalen: de assen van Code-Aster (projectie van X of de `VECTEUR` van de groep) en
+  van Mecway (rand 1→2 of *Element properties* → `orientationu*`) worden per element
+  uit de hoekknopen bepaald; een *Element orientation* als last (Loads & Constraints)
+  wordt niet gelezen (dan Mecway's standaard-U). Sterk gekromde kwadratische schalen:
+  NIET geverifieerd;
+- `contactstate` 2 (glijden) komt alleen uit `CONT_NOEU` met wrijving: NIET
+  geverifieerd; met hex20/tet10-contactvlakken (integratie niet in de knopen) is er
+  geen `CONT_NOEU` en volgt de status uit de druk;
+- `factorofsafety`: Mecway rekent hem zelf pas bij het tonen (niet in een headless
+  oplossing), dus alleen tegen de definitie (manual v34 par. 8.7) gecontroleerd;
+  alleen het von Mises-criterium (Tsai-Wu e.a.: WARNING).
 
 ## 5. Bestanden in de werkmap
 

@@ -473,6 +473,51 @@ opeenvolgende meshes.
   voorwaarde op een *elementselectie* met het element met de joint stopt met `FACTOR_11`
   (KNOWN_BUGS 106); leg hem op knopen of vlakken.
 
+### Extra resultaatvelden (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
+
+Velden `beam_forces`, `shell_stresses`, `shell_forces`, `strain`, `safety_factor` en
+`contact` ([`Handleiding.md`](Handleiding.md) §4.1), getest onder Mecway's eigen
+variabelenamen (`TestFiles/Verificatie/tests_resultaatvelden.py`). De namen, assen en
+tekens zijn eerst headless in Mecway 34 nagelopen op dezelfde modellen; daaronder de
+vergelijking met Mecway's oplossing.
+
+| Case | Model | Gecontroleerd | Referentie | Resultaat |
+|---|---|---|---|---|
+| LS-30 / LS-30b | ingeklemde balk 1 m (4 POU_D_E, 20 x 30 mm), tipkracht N 1000 / V_v 200 / V_w -300 N en T 50 N.m; recht en onder 30° | `tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv` (inklemming), `bendingmomw` (midden) | statica | alle exact (≤ 1e-12); Mecway headless: zelfde waarden en tekens |
+| LS-31 | schaalstrook 100 x 20 x 2 mm scheef in de ruimte (quad4, DKT), trek 600 N + dwarskracht 3 N | `forceperlengthu`, `momentu`, `stress<ij>u1/m1/b1` (globaal), `lstrain<ij>u/b`, `factorofsafety` op x = L/2 | plaattheorie, σ = N/t ± 6M/t², eenassig e1 e1^T | ≤ 0,8% (lstrainxxb), de rest ≤ 0,2% |
+| LS-31b | idem quad8 (COQUE_3D) | idem + `shearuw` (gemiddeld over de breedte) | -P/b = -150 N/m | ≤ 0,6%; Q exact |
+| LS-31c | idem quad4 met `orientationu*` langs de breedte | `forceperlengthv` = N_u, `momentv`, `forceperlengthu` ≈ 0 | idem | exact |
+| LS-32 / LS-32b | staaf hex8 eenassige trek 100 MPa; kubus zuivere afschuiving 50 MPa | `lstrainxx/yy/zz`, `lstrainxy` (γ), `factorofsafety` | σ/E, -νσ/E, τ/G; S/σ, S/(√3 τ) | exact |
+| NL-30 / NL-30b | contact-patchtest hex8 passend (STANDARD, `CONT_NOEU`) en hex20 (PENALISATION, alleen `LAGS_C`) | `contactpressure` (gemiddeld, kleinste), `contactstate` | p = F/A = 10 MPa, status 1 | exact |
+| NL-30c | twee balken met de tips op elkaar (NL-03b) | `contactstate` tip 1, begin slave-zone 0; `contactpressure` daar | open: 0 | status exact; druk 448 Pa (0,06% van de piek, numeriek) |
+| NL-31 | staaf hex20, 5% opgelegde rek | `greenlagrangestrainxx` | (λ² - 1)/2 = 0,05125 | exact |
+| NL-32 | model van LS-30 in STAT_NON_LINE | als LS-30 | statica | exact |
+| MO-30 | ingeklemde balk (20 POU_D_E), mode 1 | M(0) / w(L) (grootte) | E I λ1² / L² (Blevins tabel 8-1) | exact (14767) |
+| DY-30 | balk van LS-30, last in 2 s opgebouwd (DYNA_NON_LINE) | `bendingmomv` inklemming op t = 2,5 s | statica 300 N.m | +0,05% |
+
+Vergelijking met Mecway (headless, Mecway 34, zelfde modellen, interne solver; contact
+met CCX):
+
+- balken (LS-30, LS-30b): alle zes snedekrachten in elke knoop gelijk (≤ 1e-11);
+- schaalstrook in het XY-vlak onder 30° en scheef in de ruimte (= LS-31, quad4 en
+  quad8): membraankrachten gelijk (< 1e-6), op x = L/2 globale spanningen en rekken
+  0,0 .. 0,2% verschil, momenten < 1%; bij de inklemming tot ~15% (DKT/COQUE_3D tegen
+  MITC4/MITC8, zie KNOWN_BUGS 2); de dwarskracht verloopt in beide over de breedte
+  (Mecway quad8 -253 / -150 / -47 N/m, de bridge -247 / -150 / -53);
+- totale rek staaf (S30): `lstrainxx` 4,7619e-4 in beide; enkelvoudige afschuiving:
+  Mecway's `lstrainzx` = τ/G, dus γ (de bridge rekent EPXY x 2);
+- contact-patchtest (CCX): `contactpressure` 9,99974 MPa (Mecway) tegen 10,000 MPa;
+  `greenlagrangestrain*` gelijk (zz -4,76e-5);
+- `factorofsafety`: Mecway schrijft hem headless niet (hij rekent hem bij het tonen);
+  een door de bridge geschreven `factorofsafety` toont Mecway als item *failure*.
+
+Mecway leest de gesplitste resultaten (IronPython `bridge_results_liml.splice_results`,
+daarna headless `mw.open` en `solution.node_value`) en maakt zelf de items *tensile
+force*, *shear force*, *bending moment*, *torsion moment*, *stress*, *strain*, *force
+per length*, *moment per length*, *failure*, *contact stress* en *contact state* aan.
+Route `tabel` (LS-30, LS-32, NL-31 met een nep-solution in CPython): `beam_forces` en
+`strain` (ook Green-Lagrange) gelijk aan route `liml`.
+
 ### Conclusie lineair statisch
 
 Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is

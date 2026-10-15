@@ -471,6 +471,51 @@ meshes is given below.
   *element selection* containing the element with the joint stops with `FACTOR_11`
   (KNOWN_BUGS 106); put it on nodes or faces.
 
+### Extra result fields (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
+
+Fields `beam_forces`, `shell_stresses`, `shell_forces`, `strain`, `safety_factor` and
+`contact` ([`UserGuide.md`](UserGuide.md) §4.1), tested under Mecway's own variable
+names (`TestFiles/Verificatie/tests_resultaatvelden.py`). The names, axes and signs
+were first checked headless in Mecway 34 on the same models; the comparison with
+Mecway's solution follows the table.
+
+| Case | Model | Checked | Reference | Result |
+|---|---|---|---|---|
+| LS-30 / LS-30b | cantilever 1 m (4 POU_D_E, 20 x 30 mm), tip force N 1000 / V_v 200 / V_w -300 N and T 50 N.m; straight and at 30° | `tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv` (root), `bendingmomw` (middle) | statics | all exact (≤ 1e-12); Mecway headless: same values and signs |
+| LS-31 | shell strip 100 x 20 x 2 mm skewed in space (quad4, DKT), tension 600 N + transverse 3 N | `forceperlengthu`, `momentu`, `stress<ij>u1/m1/b1` (global), `lstrain<ij>u/b`, `factorofsafety` at x = L/2 | plate theory, σ = N/t ± 6M/t², uniaxial e1 e1^T | ≤ 0.8% (lstrainxxb), the rest ≤ 0.2% |
+| LS-31b | same, quad8 (COQUE_3D) | same + `shearuw` (mean over the width) | -P/b = -150 N/m | ≤ 0.6%; Q exact |
+| LS-31c | same, quad4 with `orientationu*` along the width | `forceperlengthv` = N_u, `momentv`, `forceperlengthu` ≈ 0 | same | exact |
+| LS-32 / LS-32b | hex8 bar uniaxial tension 100 MPa; cube pure shear 50 MPa | `lstrainxx/yy/zz`, `lstrainxy` (γ), `factorofsafety` | σ/E, -νσ/E, τ/G; S/σ, S/(√3 τ) | exact |
+| NL-30 / NL-30b | contact patch test hex8 matching (STANDARD, `CONT_NOEU`) and hex20 (PENALISATION, `LAGS_C` only) | `contactpressure` (mean, smallest), `contactstate` | p = F/A = 10 MPa, state 1 | exact |
+| NL-30c | two beams with their tips touching (NL-03b) | `contactstate` tip 1, start of the slave zone 0; `contactpressure` there | open: 0 | state exact; pressure 448 Pa (0.06% of the peak, numerical) |
+| NL-31 | hex20 bar, 5% imposed strain | `greenlagrangestrainxx` | (λ² - 1)/2 = 0.05125 | exact |
+| NL-32 | model of LS-30 in STAT_NON_LINE | as LS-30 | statics | exact |
+| MO-30 | cantilever (20 POU_D_E), mode 1 | M(0) / w(L) (magnitude) | E I λ1² / L² (Blevins table 8-1) | exact (14767) |
+| DY-30 | beam of LS-30, load built up in 2 s (DYNA_NON_LINE) | `bendingmomv` root at t = 2.5 s | statics 300 N.m | +0.05% |
+
+Comparison with Mecway (headless, Mecway 34, same models, internal solver; contact with
+CCX):
+
+- beams (LS-30, LS-30b): all six section forces equal at every node (≤ 1e-11);
+- shell strip in the XY plane at 30° and skewed in space (= LS-31, quad4 and quad8):
+  membrane forces equal (< 1e-6), at x = L/2 global stresses and strains 0.0 .. 0.2%
+  apart, moments < 1%; near the clamp up to ~15% (DKT/COQUE_3D against MITC4/MITC8,
+  see KNOWN_BUGS 2); the shear force varies over the width in both (Mecway quad8
+  -253 / -150 / -47 N/m, the bridge -247 / -150 / -53);
+- total strain bar (S30): `lstrainxx` 4.7619e-4 in both; simple shear: Mecway's
+  `lstrainzx` = τ/G, so γ (the bridge computes EPXY x 2);
+- contact patch test (CCX): `contactpressure` 9.99974 MPa (Mecway) against 10.000 MPa;
+  `greenlagrangestrain*` equal (zz -4.76e-5);
+- `factorofsafety`: Mecway does not write it headless (it computes it when displaying);
+  a `factorofsafety` written by the bridge is shown by Mecway as the item *failure*.
+
+Mecway reads the spliced results (IronPython `bridge_results_liml.splice_results`, then
+headless `mw.open` and `solution.node_value`) and itself creates the items *tensile
+force*, *shear force*, *bending moment*, *torsion moment*, *stress*, *strain*, *force
+per length*, *moment per length*, *failure*, *contact stress* and *contact state*.
+Route `tabel` (LS-30, LS-32, NL-31 with a fake solution in CPython): `beam_forces` and
+`strain` (also Green-Lagrange) equal to route `liml`.
+
 ### Conclusion linear static
 
 All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
