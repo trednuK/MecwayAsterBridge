@@ -1,1246 +1,1246 @@
-# STAPPENPLAN.md – uitbreidingen met Code-Aster
+# STAPPENPLAN.md – extensions with Code-Aster
 
-Wensenlijst van de gebruiker (6 okt 2026) als uitvoerbaar plan, herzien na een
-crit-review. Uitvoeren: typ in Claude Code **`/stappenplan`** (de eerste open stap in
-tabelvolgorde waarvan de voorwaarde klopt; daarna door met de volgende) of
-**`/stappenplan S4a`** (een bepaalde stap; `S10` = de eerste open S10-deelstap). Het
-commando staat in `.claude/commands/stappenplan.md` en volgt de werkwijze hieronder.
+The user's wish list (6 Oct 2026) as an executable plan, revised after a
+crit-review. To run: type **`/stappenplan`** in Claude Code (the first open step in
+table order whose prerequisite holds; then continue with the next one) or
+**`/stappenplan S4a`** (a specific step; `S10` = the first open S10 sub-step). The
+command lives in `.claude/commands/stappenplan.md` and follows the procedure below.
 
-Commit-hashes in de kolom Resultaat van stappen tot en met V2026.1 verwijzen naar de
-ontwikkelgeschiedenis vóór de eerste openbare versie; die staan niet in deze repo.
+Commit hashes in the Result column of steps up to and including V2026.1 refer to the
+development history before the first public version; they are not in this repo.
 
 ## Status
 
-**De tabelvolgorde is de bouwvolgorde** (keuze gebruiker: S1, S10, S2, S3, S4, S6,
+**The table order is the build order** (user's choice: S1, S10, S2, S3, S4, S6,
 S7, S8, S5, S9).
 
-| Id | Stap | Status | Voorwaarde | Resultaat |
+| Id | Step | Status | Prerequisite | Result |
 |---|---|---|---|---|
-| S0 | Hoofdvenster: navigatielijst links i.p.v. tabbladen | klaar | – | 1741e04 (merge b0afe8e); in Mecway getest 6 okt (navigatie, Documentatie, run met resultaten) |
-| S1 | Foutschatter (discretisatiefout) | klaar | – | 7a0cda0 (merge e15b36b); in Mecway getest: velden zichtbaar, contour per element |
-| S10a | Modaal met voorspanning (KNOWN_BUGS 49) | klaar | – | aa19b0c; in Mecway getest (MP-04: per mode −0,52/0/−0,09/0% t.o.v. Mecway) |
-| S10b | Spanningen per mode; effectieve massa voor rotaties | klaar | – | 2c8b7cd; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S10c | Niet-lineaire knik (`CRIT_STAB`), knikvorm als imperfectie | klaar | – | 4d831b4; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S10d | Respons op modale basis (Mecway D30 *mode superposition*) | klaar | – | e10121a; transiënt, harmonisch afgesplitst als S10h; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S10e | Spectrumanalyse (aardbeving, schok) | klaar | S10d | be706a0; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S10f | Demping: complexe modes | klaar | – | 6038d88; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S10g | Cyclische symmetrie (`MODE_ITER_CYCL`) | klaar | – | c668f42; in Mecway getest 7 okt (CY-01: hele wiel, 25,74..333,1 Hz = verificatie) |
-| S10i | Cyclische symmetrie: het hele wiel in Mecway (vormen uitbreiden naar N sectoren in `<solution>`, zoals Mecway) | klaar | S10g | b030096; instelling `cyclic_full_wheel` (standaard aan); in Mecway getest 7 okt (CY-01: 12 sectoren, 960 knopen in Mecway) |
-| S10h | Harmonische respons in het frequentiedomein (`DYNA_VIBRA` `HARM`, op modale basis) | klaar | S10d | 5ce93a2; eigen analyse harmonic_3d; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S2 | Akoestiek: holtemodes (`PHENOMENE='ACOUSTIQUE'`) | klaar | – | 7c360ec; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S2b | Akoestiek: impedantieranden (complexe modes, KNOWN_BUGS 55) | klaar | S2 | stap-S2b; Code-Aster-matrices + scipy in de job (`aster_acoustic_complex.py`); via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S3a | Akoestiek: harmonisch drukveld (`ACOUSTIQUE`, `DYNA_VIBRA`) | klaar | S2 | 1072641; in Mecway getest 7 okt (AH-08: microfoon 89,2029 dB = verificatie, drukfaseveld) |
-| S3b | Vibro-akoestiek (`MECANIQUE`, `3D_FLUIDE` + `FLUI_STRU`, `U_P_PHI`) | klaar | – | b6cfd07; gekoppelde modes, harmonisch afgesplitst als S3c; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S3c | Vibro-akoestiek harmonisch (`DYNA_VIBRA` `HARM`, `3D_FLUI_ABSO`, ahlv101a) | klaar | S3b | a70dd4c; eigen analyse vibroacoustic_harm_3d (zelf kiezen); via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S4a | Lassen: transiënt thermisch met bewegende bron | klaar | – | 75ae3f2; `#ASTER-LASBRON` + Mecway-formules + temperatuurafhankelijke λ/c; in Mecway getest 7 okt (WE-02: 100,0% van 500 W, temperatuur en warmtestroom) |
-| S4b | Lassen: keten thermisch → mechanisch (restspanning, vervorming) | klaar | S4a | 3a7a941; Thermal stress in T31 + `#ASTER-MATERIAAL`; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S4c | Lassen: toevoegmateriaal | klaar | S4b | 7f2551a; `geboorte=` in `#ASTER-LASBRON` (quiet element), thermisch + mechanisch; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S6a | Breukmechanica: gemeshte scheur (`CALC_G`, `POST_K1_K2_K3`) | klaar | – | 5c33ac7; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S6b | Breukmechanica: XFEM | klaar | S6a | 2740a4c; `#ASTER-XFEM` (CIRKEL/ELLIPSE/RECHTHOEK/HALFVLAK), velden via POST_CHAM_XFEM + PROJ_CHAMP; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S7 | Adaptieve verfijning (Mecway `refine_x2` of HOMARD) | klaar | S1 | cac0922; Mecway-route (`bridge_adapt.py`), HOMARD niet gebouwd; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S8 | Vermoeiing | klaar | – | 0a889dd; `#ASTER-WOHLER`, rainflow + Miner, velden damage/life; in Mecway getest 7 okt (VM-02b: damage 0,004329 = referentie) |
-| S8b | Vermoeiing: multiaxiaal (`CALC_FATIGUE FATIGUE_MULTI`, Dang Van/Matake/Crossland), schalen, rek-gebaseerd (Manson-Coffin) | klaar | S8 | 04367b8; `#ASTER-VERMOEIING criterium`, schalen boven/onder, Manson-Coffin in `#ASTER-WOHLER`; VM-08..11; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S5 | Lassen: metallurgie | klaar | S4b | d8d8f31; `#ASTER-METALLURGIE` (datasets 16MND5/mtlp103a, HSNV101A), CALC_META, optie META_P_IL in de keten; via door Mecway opgeslagen .liml getest (S11, identiek) |
-| S5b | Lassen: metallurgie vervolg (ontlaten, TRIP, kinematische versteviging) | open | S5 | niet gebouwd; vraag aan de gebruiker of dit gewenst is (zie §S5) |
-| S9 | Loadcase-combinaties via Mecway-configuraties (go/no-go) | vervallen | – | no-go: een Mecway-configuratie zet lasten alleen aan/uit, geen factor; combinaties niet in Mecway in te stellen; werkwijze per configuratie in Handleiding §4 |
-| S11 | Afsluiting: crit-review verificatie, docs nalopen met de bridge, integrale controle, push naar `main` | klaar | alle andere stappen klaar en op `develop` | 7 okt: crit-review op Fable (gate verwerkt: 8742df0), instellingen/tooltips/aannames (feabce4), docs met de bridge nagelopen (345c400, 088244e, 3c336e4), KB 74/84/85/86 opgelost, alle 270 cases via door Mecway opgeslagen .liml identiek (f1539a2), GUI-steekproeven VM-02b/CY-01/AH-08/WE-02, eindregressie zie Verificatie.md §3 |
-| S13 | Orthotrope en anisotrope materialen, met *Element orientation* als materiaalrichting | open | – | gekozen door de gebruiker 15 okt (C1) |
-| S14 | Hyperelastisch materiaal (Neo-Hooke, Mooney-Rivlin) | open | – | gekozen door de gebruiker 15 okt (C7) |
-| S15 | Pre-tension section (boutvoorspanning) | open | – | gekozen door de gebruiker 15 okt (C8) |
-| S16 | 2D- en axisymmetrische analyses (S20, D20, SA0, ook thermisch en akoestiek 2D) | open | – | gekozen door de gebruiker 15 okt (C9) |
-| S17 | Lasten op balkzijvlakken; hydrostatische druk op schaalranden (KNOWN_BUGS 5) | open | – | gekozen door de gebruiker 15 okt (C10) |
-| S18 | Nieuwe Code-Aster-versie (18) testen | later | Code-Aster 18 voor Windows beschikbaar | versiewaarschuwing en werkwijze klaar (`bridge_version.py`, docs/Na_een_update.md) |
-| – | Rotordynamica | later | – | |
-| – | Grond-constructie-interactie (MISS3D) | niet gepland | – | |
-| – | Hex-blokmesher als Tools-script | niet gepland | – | |
-| – | Topologie-optimalisatie | niet gepland | – | |
+| S0 | Main window: navigation list on the left instead of tabs | done | – | 1741e04 (merge b0afe8e); tested in Mecway 6 Oct (navigation, Documentation, run with results) |
+| S1 | Error estimator (discretisation error) | done | – | 7a0cda0 (merge e15b36b); tested in Mecway: fields visible, contour per element |
+| S10a | Modal with prestress (KNOWN_BUGS 49) | done | – | aa19b0c; tested in Mecway (MP-04: per mode −0.52/0/−0.09/0% relative to Mecway) |
+| S10b | Stresses per mode; effective mass for rotations | done | – | 2c8b7cd; tested via a .liml saved by Mecway (S11, identical) |
+| S10c | Nonlinear buckling (`CRIT_STAB`), buckling shape as imperfection | done | – | 4d831b4; tested via a .liml saved by Mecway (S11, identical) |
+| S10d | Response on a modal basis (Mecway D30 *mode superposition*) | done | – | e10121a; transient, harmonic split off as S10h; tested via a .liml saved by Mecway (S11, identical) |
+| S10e | Spectrum analysis (earthquake, shock) | done | S10d | be706a0; tested via a .liml saved by Mecway (S11, identical) |
+| S10f | Damping: complex modes | done | – | 6038d88; tested via a .liml saved by Mecway (S11, identical) |
+| S10g | Cyclic symmetry (`MODE_ITER_CYCL`) | done | – | c668f42; tested in Mecway 7 Oct (CY-01: whole wheel, 25.74..333.1 Hz = verification) |
+| S10i | Cyclic symmetry: the whole wheel in Mecway (expand shapes to N sectors in `<solution>`, like Mecway) | done | S10g | b030096; setting `cyclic_full_wheel` (on by default); tested in Mecway 7 Oct (CY-01: 12 sectors, 960 nodes in Mecway) |
+| S10h | Harmonic response in the frequency domain (`DYNA_VIBRA` `HARM`, on a modal basis) | done | S10d | 5ce93a2; own analysis harmonic_3d; tested via a .liml saved by Mecway (S11, identical) |
+| S2 | Acoustics: cavity modes (`PHENOMENE='ACOUSTIQUE'`) | done | – | 7c360ec; tested via a .liml saved by Mecway (S11, identical) |
+| S2b | Acoustics: impedance boundaries (complex modes, KNOWN_BUGS 55) | done | S2 | stap-S2b; Code-Aster matrices + scipy in the job (`aster_acoustic_complex.py`); tested via a .liml saved by Mecway (S11, identical) |
+| S3a | Acoustics: harmonic pressure field (`ACOUSTIQUE`, `DYNA_VIBRA`) | done | S2 | 1072641; tested in Mecway 7 Oct (AH-08: microphone 89.2029 dB = verification, pressure phase field) |
+| S3b | Vibro-acoustics (`MECANIQUE`, `3D_FLUIDE` + `FLUI_STRU`, `U_P_PHI`) | done | – | b6cfd07; coupled modes, harmonic split off as S3c; tested via a .liml saved by Mecway (S11, identical) |
+| S3c | Vibro-acoustics harmonic (`DYNA_VIBRA` `HARM`, `3D_FLUI_ABSO`, ahlv101a) | done | S3b | a70dd4c; own analysis vibroacoustic_harm_3d (select manually); tested via a .liml saved by Mecway (S11, identical) |
+| S4a | Welding: transient thermal with moving source | done | – | 75ae3f2; `#ASTER-LASBRON` + Mecway formulas + temperature-dependent λ/c; tested in Mecway 7 Oct (WE-02: 100.0% of 500 W, temperature and heat flux) |
+| S4b | Welding: chain thermal → mechanical (residual stress, distortion) | done | S4a | 3a7a941; Thermal stress in T31 + `#ASTER-MATERIAAL`; tested via a .liml saved by Mecway (S11, identical) |
+| S4c | Welding: filler material | done | S4b | 7f2551a; `geboorte=` in `#ASTER-LASBRON` (quiet element), thermal + mechanical; tested via a .liml saved by Mecway (S11, identical) |
+| S6a | Fracture mechanics: meshed crack (`CALC_G`, `POST_K1_K2_K3`) | done | – | 5c33ac7; tested via a .liml saved by Mecway (S11, identical) |
+| S6b | Fracture mechanics: XFEM | done | S6a | 2740a4c; `#ASTER-XFEM` (CIRKEL/ELLIPSE/RECHTHOEK/HALFVLAK), fields via POST_CHAM_XFEM + PROJ_CHAMP; tested via a .liml saved by Mecway (S11, identical) |
+| S7 | Adaptive refinement (Mecway `refine_x2` or HOMARD) | done | S1 | cac0922; Mecway route (`bridge_adapt.py`), HOMARD not built; tested via a .liml saved by Mecway (S11, identical) |
+| S8 | Fatigue | done | – | 0a889dd; `#ASTER-WOHLER`, rainflow + Miner, fields damage/life; tested in Mecway 7 Oct (VM-02b: damage 0.004329 = reference) |
+| S8b | Fatigue: multiaxial (`CALC_FATIGUE FATIGUE_MULTI`, Dang Van/Matake/Crossland), shells, strain-based (Manson-Coffin) | done | S8 | 04367b8; `#ASTER-VERMOEIING criterium`, shells top/bottom, Manson-Coffin in `#ASTER-WOHLER`; VM-08..11; tested via a .liml saved by Mecway (S11, identical) |
+| S5 | Welding: metallurgy | done | S4b | d8d8f31; `#ASTER-METALLURGIE` (datasets 16MND5/mtlp103a, HSNV101A), CALC_META, option META_P_IL in the chain; tested via a .liml saved by Mecway (S11, identical) |
+| S5b | Welding: metallurgy continued (tempering, TRIP, kinematic hardening) | open | S5 | not built; question to the user whether this is wanted (see §S5) |
+| S9 | Load case combinations via Mecway configurations (go/no-go) | dropped | – | no-go: a Mecway configuration only switches loads on/off, no factor; combinations cannot be set in Mecway; procedure per configuration in Handleiding §4 |
+| S11 | Wrap-up: crit-review of verification, check docs against the bridge, integral check, push to `main` | done | all other steps done and on `develop` | 7 Oct: crit-review on Fable (gate processed: 8742df0), settings/tooltips/assumptions (feabce4), docs checked against the bridge (345c400, 088244e, 3c336e4), KB 74/84/85/86 solved, all 270 cases identical via a .liml saved by Mecway (f1539a2), GUI spot checks VM-02b/CY-01/AH-08/WE-02, final regression see Verificatie.md §3 |
+| S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | open | – | chosen by the user 15 Oct (C1) |
+| S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | open | – | chosen by the user 15 Oct (C7) |
+| S15 | Pre-tension section (bolt prestress) | open | – | chosen by the user 15 Oct (C8) |
+| S16 | 2D and axisymmetric analyses (S20, D20, SA0, also thermal and acoustics 2D) | open | – | chosen by the user 15 Oct (C9) |
+| S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
+| S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
+| – | Rotordynamics | later | – | |
+| – | Soil-structure interaction (MISS3D) | not planned | – | |
+| – | Hex block mesher as Tools script | not planned | – | |
+| – | Topology optimisation | not planned | – | |
 
-Status: **open**, **klaar** (met commit), **vervallen** (met reden), **later** /
-**niet gepland** (slaat `/stappenplan` over, behalve als je de stap noemt). Een stap is
-*bezig* als er een branch `stap-<id>` bestaat (zie A.4).
+Status: **open**, **done** (with commit), **dropped** (with reason), **later** /
+**not planned** (skipped by `/stappenplan`, unless you name the step). A step is
+*in progress* if a branch `stap-<id>` exists (see A.4).
 
-## Werkwijze per stap
+## Procedure per step
 
-### A. Voorbereiden
-1. `git fetch`; maak een worktree op een nieuwe branch `stap-<id>` vanaf `develop`
-   (`git worktree add … -b stap-<id> develop`, of EnterWorktree). In de hoofdcheckout
-   (de map waaruit Mecway de scripts start) wordt niet bewerkt: daar draait
-   Mecway (en een hook blokkeert edits).
-2. Lees **daarna, vanaf schijf in de worktree** (niet uit de geladen context, die kan
-   van een oude commit zijn): `AGENTS.md`, `KNOWN_BUGS.md`, dit bestand, en de docs van
-   het onderwerp.
-3. Controleer de voorwaarde. Klopt die niet: neem (zonder argument) de volgende open
-   stap en meld welke stap is overgeslagen en waarom.
-4. Bestaat `stap-<id>` al: loopt hij voor op `develop`, rebase en ga verder; is hij al
-   gemerged, verwijder hem en begin opnieuw.
-5. Andere sessies (`git worktree list`, branches voor op `develop`, ongecommitte
-   wijzigingen): een **conflict** is hetzelfde onderwerp, of ongecommitte wijzigingen in
-   dezelfde functies (bekijk de diff). Alleen dezelfde gedeelde bestanden
+### A. Prepare
+1. `git fetch`; create a worktree on a new branch `stap-<id>` from `develop`
+   (`git worktree add … -b stap-<id> develop`, or EnterWorktree). No edits are made in the
+   main checkout (the folder from which Mecway starts the scripts): Mecway runs
+   there (and a hook blocks edits).
+2. **Then** read, **from disk in the worktree** (not from the loaded context, which may
+   be from an old commit): `AGENTS.md`, `KNOWN_BUGS.md`, this file, and the docs of
+   the topic.
+3. Check the prerequisite. If it does not hold: (without argument) take the next open
+   step and report which step was skipped and why.
+4. If `stap-<id>` already exists: if it is ahead of `develop`, rebase and continue; if it
+   has already been merged, delete it and start over.
+5. Other sessions (`git worktree list`, branches ahead of `develop`, uncommitted
+   changes): a **conflict** is the same topic, or uncommitted changes in
+   the same functions (look at the diff). Only the same shared files
    (`bridge_utils.py`, `bridge_gui.py`, `bridge_docs.py`, `KNOWN_BUGS.md`, docs) is
-   **geen** stopreden: rebase en los conflicten op.
+   **not** a reason to stop: rebase and resolve conflicts.
 
-### B. Uitzoeken
-Leg de invoerroute niet aan de gebruiker voor: zoek uit, kies, bouw en documenteer.
-Volgorde voor de invoer:
-1. **Mecway zelf**: maak een klein testmodel (in Mecway of met
-   `TestFiles/Verificatie/verif_lib.py`) en lees de tags in de `.liml`. Bronnen:
-   `C:\Program Files\Mecway\Samples` en `Tutorials`, `manual.pdf` (met `pdftotext`),
-   de tagnamen in `mecway.exe` (UTF-16), de API in
+### B. Research
+Do not put the input route to the user: research, choose, build and document.
+Order for the input:
+1. **Mecway itself**: make a small test model (in Mecway or with
+   `TestFiles/Verificatie/verif_lib.py`) and read the tags in the `.liml`. Sources:
+   `C:\Program Files\Mecway\Samples` and `Tutorials`, `manual.pdf` (with `pdftotext`),
+   the tag names in `mecway.exe` (UTF-16), the API in
    `<hoofdcheckout>\API_reference Mecway.txt`
-   (gitignored; staat niet in een worktree).
-2. **Speciale groepsnamen**: een Mecway-selectie, -elset of -onderdeel met een vast
-   voorvoegsel (bijv. `LUCHT_`, `KOPPEL_`, `LASNAAD_`, `SCHEUR_`) wijst elementen of
-   vlakken aan. Herken op de **oorspronkelijke** Mecway-naam
-   (`bridge_mesh._aster_names` hernoemt voor Code-Aster).
-3. **Eigen `#ASTER-...`-sleutelwoord** in `bridge_custom.py`: nieuwe soort in `_KINDS`,
-   `empty()` en `parse()`; voorbeeld in `docs/ASTER_regels_voorbeelden.md`.
+   (gitignored; not present in a worktree).
+2. **Special group names**: a Mecway selection, elset or part with a fixed
+   prefix (e.g. `LUCHT_`, `KOPPEL_`, `LASNAAD_`, `SCHEUR_`) designates elements or
+   faces. Recognise them by the **original** Mecway name
+   (`bridge_mesh._aster_names` renames for Code-Aster).
+3. **Own `#ASTER-...` keyword** in `bridge_custom.py`: new kind in `_KINDS`,
+   `empty()` and `parse()`; example in `docs/ASTER_regels_voorbeelden.md`.
 
-Code-Aster: de catalogus (`…\17.4\lib\aster\code_aster\Cata\Commands\*.py`), de U-docs
-(v17.4-site; lokaal alleen v14/v15 als achtergrond) en de testcases in
-`%LOCALAPPDATA%\code_aster\v2025\17.4\share\aster\tests` (draaien:
-`run_aster.bat --ctest <naam>.export`). **Testcases zijn een syntaxbron; de
-bridge-verificatie is altijd 3D** (de bridge kent geen 2D/AXIS, `MECWAY_ANALYSIS_TYPES`).
-Onderbouw gedrag in commentaar met een bron, anders "NIET geverifieerd" (AGENTS.md).
+Code-Aster: the catalogue (`…\17.4\lib\aster\code_aster\Cata\Commands\*.py`), the U-docs
+(v17.4 site; locally only v14/v15 as background) and the test cases in
+`%LOCALAPPDATA%\code_aster\v2025\17.4\share\aster\tests` (run:
+`run_aster.bat --ctest <naam>.export`). **Test cases are a syntax source; the
+bridge verification is always 3D** (the bridge has no 2D/AXIS, `MECWAY_ANALYSIS_TYPES`).
+Back up behaviour in comments with a source, otherwise "NOT verified" (AGENTS.md).
 
-### C. Bouwen
-- Uitbreidingstabel in `AGENTS.md`: analyse = template + builder +
-  `SOLVER_BUILDERS_ASTER` + `CONFIG_BRIDGE["analyses"]` + `MECWAY_ANALYSIS_TYPES`; veld =
-  `RESULT_FIELD_SPECS` + `FIELD_TABLE` in `aster_results_export.py`; instelling =
-  `CONFIG_BRIDGE` + `GENERAL_SPECS`/`ANALYSIS_SPECS` + uitleg in `bridge_glossary.py`.
-- `SOLVER_BUILDERS_ASTER` heeft het Code-Aster-commando als sleutel (`CALC_MODES` is
-  bezet door `_build_modal`). Een **variant op een bestaand commando**: dispatch binnen
-  de builder op een analysesleutel (zoals `type_resu` bij modaal/knik), geen tweede
-  entry. Een **keten** (statisch → modes, thermisch → mechanisch): één eigen template met
-  beide solves; `export_results` krijgt het hoofdresultaat als `res`, de rest via
+### C. Build
+- Extension table in `AGENTS.md`: analysis = template + builder +
+  `SOLVER_BUILDERS_ASTER` + `CONFIG_BRIDGE["analyses"]` + `MECWAY_ANALYSIS_TYPES`; field =
+  `RESULT_FIELD_SPECS` + `FIELD_TABLE` in `aster_results_export.py`; setting =
+  `CONFIG_BRIDGE` + `GENERAL_SPECS`/`ANALYSIS_SPECS` + explanation in `bridge_glossary.py`.
+- `SOLVER_BUILDERS_ASTER` has the Code-Aster command as key (`CALC_MODES` is
+  taken by `_build_modal`). A **variant of an existing command**: dispatch inside
+  the builder on an analysis key (like `type_resu` for modal/buckling), no second
+  entry. A **chain** (static → modes, thermal → mechanical): one own template with
+  both solves; `export_results` gets the main result as `res`, the rest via
   `extra_results`.
-- Een nieuwe pagina in het hoofdvenster komt vanzelf in de navigatielijst
+- A new page in the main window automatically appears in the navigation list
   (`new_page(titel, groep)` in `bridge_gui.py`).
-- IronPython 2.7 in `Scripts/` (behalve wat in de Code-Aster-job draait), teksten via
-  `tr()` in NL en EN (standaardtaal Engels).
-- Duidelijke meldingen boven automatisch rechttrekken: zegt de invoer iets onmogelijks,
-  geef een ERROR met de oplossing.
+- IronPython 2.7 in `Scripts/` (except what runs in the Code-Aster job), texts via
+  `tr()` in NL and EN (default language English).
+- Clear messages over automatic straightening: if the input says something impossible,
+  give an ERROR with the solution.
 
-### D. Verifiëren
-NAFEMS-stijl: **weinig cases, maar bewijzend**, elk met een getal en een tolerantie.
-1. Syntaxcheck en rooktest uit `AGENTS.md`; Python 2.7-controle met Mecway's
+### D. Verify
+NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
+1. Syntax check and smoke test from `AGENTS.md`; Python 2.7 check with Mecway's
    IronPython: `powershell -ExecutionPolicy Bypass -File TestFiles/Tools/run_ipy.ps1
    -Script <script.py>`.
-2. Een echte Code-Aster-run per nieuwe route (diagnose OK, of een verklaard alarm).
-3. Referenties: (a) een **analytische controle** (Roark's Formulas for Stress and
-   Strain, handboekformules) op een eenvoudig 3D-model; (b) waar het kan **Mecway's
-   eigen oplossing**, headless: `python TestFiles/Tools/mw_solve.py <in.liml> <uit>`;
-   (c) waar nuttig een **Code-Aster-testcase**: de TEST_RESU-waarden nagebootst op een
-   3D-model. Het klaar-criterium van de stap noemt de tolerantie.
-4. Nieuwe cases: `TestFiles/Verificatie/tests_<groep>.py` en een sectie in
-   `docs/Verificatie.md` + `docs/en/Verification.md` (opzet zoals de bestaande: model,
-   referentie met bron, resultaat, verschil). Er staan geen `doc_*.md` meer in
+2. A real Code-Aster run per new route (diagnosis OK, or an explained alarm).
+3. References: (a) an **analytical check** (Roark's Formulas for Stress and
+   Strain, handbook formulas) on a simple 3D model; (b) where possible **Mecway's
+   own solution**, headless: `python TestFiles/Tools/mw_solve.py <in.liml> <uit>`;
+   (c) where useful a **Code-Aster test case**: the TEST_RESU values reproduced on a
+   3D model. The done criterion of the step states the tolerance.
+4. New cases: `TestFiles/Verificatie/tests_<groep>.py` and a section in
+   `docs/Verificatie.md` + `docs/en/Verification.md` (layout like the existing ones: model,
+   reference with source, result, difference). There are no `doc_*.md` files left in
    `TestFiles/Verificatie`.
-5. Regressie: `VERIF_WORK=<eigen scratchmap>` zetten (de standaardmap wordt door andere
-   sessies gewist) en `python TestFiles/Verificatie/run_verificatie.py` volledig draaien.
-   **Lat**: basislijn 1639 van 1643 controles OK (277 testcases), 4 BEKEND (KNOWN_BUGS
-   43: 3 in NL-03a; KNOWN_BUGS 83: 1 in BR-10), 0 NOK/FOUT (volledige regressie op
-   bridge 71ecf2f, 2026-10-15, na verlijmd contact tussen schalen LS-07:
-   `TestFiles/Verificatie/resultaten/resultaten.md`). Na de stap: 0 NOK/FOUT en geen eerder OK-controle die nu
-   BEKEND/NOK is. Gewijzigde `modellen/` en `resultaten/` meecommitten; de samenvatting
-   in `docs/Verificatie.md` §3 en de EN-versie bijwerken.
-6. GUI: offscreen met `TestFiles/Tools/gui_cap.py` (via `run_ipy.ps1`). Een test in
-   de Mecway-GUI zelf kan pas **na F.2** (Mecway draait de hoofdcheckout), alleen als het
-   scherm vrij is (open Mecway-instantie gebruiken, geen tweede starten). Faalt hij: een
-   herstel-commit op `develop` en de status terug naar open.
+5. Regression: set `VERIF_WORK=<eigen scratchmap>` (the default folder is wiped by other
+   sessions) and run `python TestFiles/Verificatie/run_verificatie.py` in full.
+   **Bar**: baseline 1639 of 1643 checks OK (277 test cases), 4 BEKEND (KNOWN_BUGS
+   43: 3 in NL-03a; KNOWN_BUGS 83: 1 in BR-10), 0 NOK/FOUT (full regression on
+   bridge 71ecf2f, 2026-10-15, after bonded contact between shells LS-07:
+   `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
+   BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; update the summary
+   in `docs/Verificatie.md` §3 and the EN version.
+6. GUI: offscreen with `TestFiles/Tools/gui_cap.py` (via `run_ipy.ps1`). A test in
+   the Mecway GUI itself is only possible **after F.2** (Mecway runs the main checkout), only if the
+   screen is free (use the open Mecway instance, do not start a second one). If it fails: a
+   fix commit on `develop` and the status back to open.
 
-### E. Documenteren
-- Gebruikersdoc `docs/<Onderwerp>.md` + `docs/en/<Topic>.md`, opgenomen in `DOCS` van
-  `bridge_docs.py` en verwezen vanuit `Handleiding.md`/`UserGuide.md`. Opbouw zoals
-  `docs/Modaal_en_knik.md`: werkwijze in Mecway stap voor stap, instellingen met
-  standaard en **wanneer aanpassen**, hoe de bridge vertaalt, interpretatie, wat niet
-  kan, en een tabel **meldingen → oorzaak → oplossing** zodat de gebruiker fouten zelf
-  kan oplossen. De juiste instellingen die bij het verifiëren gevonden zijn, horen hier.
-- Instellingen in `docs/Standaardinstellingen_en_aannames.md` (+EN); speciale
-  groepsnamen en `#ASTER`-sleutelwoorden met voorbeelden in
-  `docs/ASTER_regels_voorbeelden.md` (+EN); nieuwe Code-Aster-meldingen in
-  `docs/Foutmeldingen_CodeAster.md` (+EN); beperkingen in `KNOWN_BUGS.md`.
+### E. Document
+- User doc `docs/<Onderwerp>.md` + `docs/en/<Topic>.md`, included in `DOCS` of
+  `bridge_docs.py` and referenced from `Handleiding.md`/`UserGuide.md`. Structure like
+  `docs/Modaal_en_knik.md`: procedure in Mecway step by step, settings with
+  default and **when to change**, how the bridge translates, interpretation, what is not
+  possible, and a table **messages → cause → solution** so the user can solve errors
+  themselves. The correct settings found during verification belong here.
+- Settings in `docs/Standaardinstellingen_en_aannames.md` (+EN); special
+  group names and `#ASTER` keywords with examples in
+  `docs/ASTER_regels_voorbeelden.md` (+EN); new Code-Aster messages in
+  `docs/Foutmeldingen_CodeAster.md` (+EN); limitations in `KNOWN_BUGS.md`.
 
-### F. Afronden
-1. Werk de statusregel bij (klaar + commit, of vervallen + reden) en vul
-   **Bevindingen** van de stap aan (gekozen invoerroute, gemeten verschillen, open
-   vragen voor de gebruiker).
-2. Commit (Nederlands), rebase op `develop`, en fast-forward `develop` in de
-   hoofdcheckout:
-   - `git -C <hoofd> status --porcelain`. Alleen `Scripts/bridge_utils.py` gewijzigd
-     (een opgeslagen instelling van de gebruiker): bewaar de diff
-     (`git -C <hoofd> diff Scripts/bridge_utils.py > <scratch>/settings.patch`), dan
+### F. Finish
+1. Update the status line (done + commit, or dropped + reason) and fill in the
+   **Findings** of the step (chosen input route, measured differences, open
+   questions for the user).
+2. Commit (in Dutch), rebase on `develop`, and fast-forward `develop` in the
+   main checkout:
+   - `git -C <hoofd> status --porcelain`. Only `Scripts/bridge_utils.py` changed
+     (a setting saved by the user): save the diff
+     (`git -C <hoofd> diff Scripts/bridge_utils.py > <scratch>/settings.patch`), then
      `git -C <hoofd> checkout -- Scripts/bridge_utils.py`, `merge --ff-only stap-<id>`,
-     en zet de instellingswaarden daarna **met de hand** terug in het
-     `CONFIG_BRIDGE`-blok (regel voor regel; geen `git apply` als de stap dat blok
-     wijzigde). Laat de teruggezette instelling ongecommit.
-   - Andere wijzigingen in de hoofdcheckout: niet mergen, stoppen en melden.
-   - Push **alleen `develop`**, nooit `main`.
-3. Opruimen: `git worktree remove <pad>` en `git branch -d stap-<id>`.
-4. Doe de Mecway-GUI-test als die nodig is (D.6).
-5. Geen stopreden: begin direct aan de volgende open stap in dezelfde sessie. Vragen
-   voor de gebruiker verzamel je in Bevindingen en in het eindrapport, niet tussendoor.
+     and afterwards restore the setting values **by hand** in the
+     `CONFIG_BRIDGE` block (line by line; no `git apply` if the step changed that
+     block). Leave the restored setting uncommitted.
+   - Other changes in the main checkout: do not merge, stop and report.
+   - Push **only `develop`**, never `main`.
+3. Clean up: `git worktree remove <pad>` and `git branch -d stap-<id>`.
+4. Do the Mecway GUI test if it is needed (D.6).
+5. No reason to stop: start the next open step directly in the same session. Collect
+   questions for the user in Findings and in the final report, not in between.
 
-**Stoppen en melden** als een voorwaarde niet klopt, een andere sessie aan hetzelfde
-onderwerp werkt, de hoofdcheckout andere wijzigingen dan `bridge_utils.py` heeft, of de
-verificatie faalt en niet op te lossen is. Is een stap groter dan één run: bouw een
-bruikbaar, geverifieerd deel en splits de rest als nieuwe regels in de statustabel.
+**Stop and report** if a prerequisite does not hold, another session is working on the same
+topic, the main checkout has changes other than `bridge_utils.py`, or the
+verification fails and cannot be fixed. If a step is larger than one run: build a
+usable, verified part and split the rest off as new rows in the status table.
 
-### S11 – Afsluiting (opdracht gebruiker, 7 okt 2026)
-Pas als alle andere stappen klaar en op `develop` gepusht zijn, in deze volgorde:
-1. Eén crit-review gericht op de verificatie (zie hieronder) en de bevindingen verwerken;
-   daarna alle documentatie nalopen door de beschreven instellingen met de bridge uit te voeren.
-2. **Integrale controle** van alle functionaliteit: alles werkt; alle aannames en verborgen
-   instellingen staan in de documentatie en waar mogelijk in de tooltips bij de invoervelden;
-   de documentatie is consistent; alle testcases werken vanuit modellen die **in Mecway zijn
-   opgebouwd** en via de bridge in Code-Aster gerekend (GUI-route). Gevonden fouten oplossen.
-   Vragen bewaren tot er niets meer kan zonder iets te breken.
-3. Daarna (en alleen dan) mag `develop` naar `main` gepusht worden (toestemming gebruiker).
+### S11 – Wrap-up (user's instruction, 7 Oct 2026)
+Only when all other steps are done and pushed to `develop`, in this order:
+1. One crit-review focused on the verification (see below) and process the findings;
+   then check all documentation by running the described settings with the bridge.
+2. **Integral check** of all functionality: everything works; all assumptions and hidden
+   settings are in the documentation and where possible in the tooltips of the input fields;
+   the documentation is consistent; all test cases work from models **built
+   in Mecway** and computed in Code-Aster via the bridge (GUI route). Fix errors found.
+   Keep questions until nothing more can be done without breaking something.
+3. After that (and only then) `develop` may be pushed to `main` (user's permission).
 
-**Aan het eind van een reeks stappen** (opdracht gebruiker): één crit-review gericht
-op de verificatie (genoeg Code-Aster-testcases en analytische controles om de werking
-te bewijzen, vastgelegd in `docs/Verificatie.md`), de bevindingen verwerken, en daarna
-**alle documentatie nalopen door de beschreven instellingen met de bridge zelf uit te
-voeren**.
+**At the end of a series of steps** (user's instruction): one crit-review focused
+on the verification (enough Code-Aster test cases and analytical checks to prove that it
+works, recorded in `docs/Verificatie.md`), process the findings, and then
+**check all documentation by running the described settings with the bridge
+itself**.
 
-## Stappen
+## Steps
 
-### S0 – Hoofdvenster: navigatielijst links
-Klaar (1741e04): de TabControl is vervangen door een getekende navigatielijst links
-(groepen Instellingen / Analyses / Hulp) met de pagina rechts; `new_page(titel, groep)`
-is het enige registratiepunt. Offscreen getest in NL en EN, opslaan byte-voor-byte gelijk
-aan de oude versie. **Open:** test in de Mecway-GUI (modeless gedrag, muis).
-**Bevindingen:** het dubbele kopje "Algemeen" onder de paginatitel heet nu "Taal en
-installatie". Mecway-GUI-test op 6 okt niet gedaan: toegang tot Mecway geweigerd
-(gebruiker afwezig).
+### S0 – Main window: navigation list on the left
+Done (1741e04): the TabControl has been replaced by a drawn navigation list on the left
+(groups Settings / Analyses / Help) with the page on the right; `new_page(titel, groep)`
+is the only registration point. Tested offscreen in NL and EN, saving byte-for-byte identical
+to the old version. **Open:** test in the Mecway GUI (modeless behaviour, mouse).
+**Findings:** the duplicate heading "General" under the page title is now called "Language and
+installation". Mecway GUI test on 6 Oct not done: access to Mecway refused
+(user absent).
 
-### S1 – Foutschatter
-**Doel:** de geschatte discretisatiefout als veld in Mecway en de globale relatieve fout
-in de log, zodat je ziet waar de mesh te grof is.
-**Code-Aster:** `CALC_ERREUR`: `ERME_ELEM`/`ERME_ELNO`/`ERME_NOEU` (residu; componenten
-`ERREST`, `NUEST`), `ERZ1_ELEM`/`ERZ2_ELEM` (Zienkiewicz-Zhu), `QIRE_*` (doelgericht;
-vraagt een duaal probleem `RESU_DUAL`, niet standaard), `ERTH_*` (thermisch). 3D-testcases:
+### S1 – Error estimator
+**Goal:** the estimated discretisation error as a field in Mecway and the global relative error
+in the log, so you can see where the mesh is too coarse.
+**Code-Aster:** `CALC_ERREUR`: `ERME_ELEM`/`ERME_ELNO`/`ERME_NOEU` (residual; components
+`ERREST`, `NUEST`), `ERZ1_ELEM`/`ERZ2_ELEM` (Zienkiewicz-Zhu), `QIRE_*` (goal-oriented;
+requires a dual problem `RESU_DUAL`, not standard), `ERTH_*` (thermal). 3D test cases:
 `sslv07a`, `sslv111f` (ERZ1), `sslv153a` (ERME_NOEU, QIRE), `ssnv301a`. (`forma01b`,
-`forma20a` zijn C_PLAN: alleen syntax.)
+`forma20a` are C_PLAN: syntax only.)
 **Route:** `ERME_NOEU` → `nodevariable` (KNOOP in `FIELD_TABLE`); `ERME_ELNO` →
-`elementnodevariable` (ELEMKNOOP, alleen volume-elementen). Globale relatieve fout uit
-de .mess ("ESTIMATEUR D'ERREUR EN RESIDU EXPLICITE … RELATIVE").
-**Uitzoeken:** welke elementen/analyses (schalen, balken, `LINE_QUAD`, niet-lineair,
-thermisch); of Mecway een eigen variabelenaam toont (Mecway-GUI na F.2).
-**Klaar als:** op de reeks `LS-02-h8-n1…n16` (TestFiles/Verificatie) daalt de globale
-relatieve fout monotoon met orde ≈ 1 (±0,2); de fout is het grootst bij de inklemming;
-regressie volgens D.5.
-**Bevindingen:** Invoerroute: geen invoer nodig, instelling `error_estimator`
-(lin_static_3d, standaard aan; ook `#ASTER-OPTIE`). Alleen `ERME` op volume-elementen bij
-`MECA_STATIQUE`; de bridge zet de vrije vlakken zelf als randelementen met druk 1e-14
-(Code-Aster ziet een onbelast vlak als opgelegd; 0 werkt niet) en rekent de schatter in
-een eigen model/last/resultaat (balken: CALCUL_37; meerdere drukken: INDICATEUR_7/8;
-puntlasten: INDICATEUR_6/8; reuse met andere EXCIT: CALCULEL_39). Velden
-`errorestimate`/`errorestimaterel` (knoop en per element), globale fout uit de `.mess`
-in log en statusvak. FS-01 (hex8): orde 0,88/0,96/0,96, effectiviteit 1,3-2,2; FS-02
-(hex20): orde ~1,9; FS-03 = sslv153a exact. Niet: niet-lineair, thermisch (ERTH),
-schalen/balken, ZZ en QIRE (KNOWN_BUGS 51).
+`elementnodevariable` (ELEMKNOOP, solid elements only). Global relative error from
+the .mess ("ESTIMATEUR D'ERREUR EN RESIDU EXPLICITE … RELATIVE").
+**Research:** which elements/analyses (shells, beams, `LINE_QUAD`, nonlinear,
+thermal); whether Mecway shows its own variable name (Mecway GUI after F.2).
+**Done when:** on the series `LS-02-h8-n1…n16` (TestFiles/Verificatie) the global
+relative error decreases monotonically with order ≈ 1 (±0.2); the error is largest at the fixed support;
+regression according to D.5.
+**Findings:** Input route: no input needed, setting `error_estimator`
+(lin_static_3d, on by default; also `#ASTER-OPTIE`). Only `ERME` on solid elements with
+`MECA_STATIQUE`; the bridge itself sets the free faces as boundary elements with pressure 1e-14
+(Code-Aster treats an unloaded face as supported; 0 does not work) and computes the estimator in
+a separate model/load/result (beams: CALCUL_37; multiple pressures: INDICATEUR_7/8;
+point loads: INDICATEUR_6/8; reuse with different EXCIT: CALCULEL_39). Fields
+`errorestimate`/`errorestimaterel` (node and per element), global error from the `.mess`
+in log and status box. FS-01 (hex8): order 0.88/0.96/0.96, effectivity 1.3-2.2; FS-02
+(hex20): order ~1.9; FS-03 = sslv153a exact. Not: nonlinear, thermal (ERTH),
+shells/beams, ZZ and QIRE (KNOWN_BUGS 51).
 
-### S10 – Modaal en knik uitbreiden
-Lees eerst `docs/Modaal_en_knik.md` en KNOWN_BUGS 46-49. Bestaande route:
-`_build_modal` (één builder voor modaal en knik, dispatch op `type_resu`),
+### S10 – Extend modal and buckling
+First read `docs/Modaal_en_knik.md` and KNOWN_BUGS 46-49. Existing route:
+`_build_modal` (one builder for modal and buckling, dispatch on `type_resu`),
 `AsterTemplate_CalcModes.comm`.
 
-- **S10a – Modaal met voorspanning.** Mecway rekent een frequentieanalyse mét
-  belastingen als voorgespannen (*stress stiffening*); de bridge negeert de lasten nu
-  (WARNING). Keten: `MECA_STATIQUE` → `SIEF_ELGA` → `RIGI_GEOM` → `CALC_MODES` met
-  K + Kg (dezelfde stappen als de knikroute, dispatch in `_build_modal`).
-  **Klaar als:** frequenties binnen 1% van headless Mecway met belasting
-  (`mw_solve.py`), plus een analytische controle: snaar/balk onder trek
-  (f = f0·sqrt(1 + P/Pcr) of een snaarformule, Roark/Blevins), ≤ 1%.
-- **S10b – Spanningen per mode; effectieve massa voor rotaties.** Code-Aster heeft
-  alleen `MASS_EFFE_UN_DX/DY/DZ`; rotaties zelf berekenen (participatie met starre
-  rotatievectoren om het zwaartepunt) of documenteren dat het niet kan. Spanningen per
-  mode: `CALC_CHAMP` op het modale resultaat; toon ze alleen als Mecway ze kan tonen.
-  **Klaar als:** de som van de effectieve rotatiemassa over alle modes nadert het
-  massatraagheidsmoment (≤ 1% bij voldoende modes) op een balkmodel.
-- **S10c – Niet-lineaire knik.** `CRIT_STAB` in `STAT_NON_LINE` (testcases `ssll105d`,
-  `ssll105e`, `ssll105f`) en een knikvorm als imperfectie (`MODI_MAILLAGE`
-  `DEFORME`, schaalbare amplitude) vóór een niet-lineaire analyse. Invoer zoeken in
-  Mecway/`#ASTER-OPTIE`. **Klaar als:** `CRIT_STAB` op een Euler-kolom binnen 2% van
-  de lineaire knikroute en van pi²EI/(kL)²; met imperfectie daalt de draagkracht
-  (Southwell/Ayrton-Perry als controle).
-- **S10d – Respons op modale basis.** Mecway *Dynamic Response* (D30) heeft een optie
-  *mode superposition* (manual §6.4); D30 staat nog niet in `MECWAY_ANALYSIS_TYPES`.
-  Code-Aster `DYNA_VIBRA` `BASE_CALCUL='GENE'`, harmonisch en transiënt (testcase
-  `forma12d`: `MACRO_ELAS_MULT` als statische correctie). Tags van D30 eerst in een
-  Mecway-model lezen. **Klaar als:** 1-vrijheidsgraad-achtig model (massa op veer/balk)
-  binnen 1% van de analytische respons (dynamische vergrotingsfactor), en gelijk aan
+- **S10a – Modal with prestress.** Mecway computes a frequency analysis with
+  loads as prestressed (*stress stiffening*); the bridge currently ignores the loads
+  (WARNING). Chain: `MECA_STATIQUE` → `SIEF_ELGA` → `RIGI_GEOM` → `CALC_MODES` with
+  K + Kg (the same steps as the buckling route, dispatch in `_build_modal`).
+  **Done when:** frequencies within 1% of headless Mecway with load
+  (`mw_solve.py`), plus an analytical check: string/beam under tension
+  (f = f0·sqrt(1 + P/Pcr) or a string formula, Roark/Blevins), ≤ 1%.
+- **S10b – Stresses per mode; effective mass for rotations.** Code-Aster only has
+  `MASS_EFFE_UN_DX/DY/DZ`; compute rotations ourselves (participation with rigid
+  rotation vectors about the centre of gravity) or document that it is not possible. Stresses per
+  mode: `CALC_CHAMP` on the modal result; only show them if Mecway can show them.
+  **Done when:** the sum of the effective rotational mass over all modes approaches the
+  mass moment of inertia (≤ 1% with enough modes) on a beam model.
+- **S10c – Nonlinear buckling.** `CRIT_STAB` in `STAT_NON_LINE` (test cases `ssll105d`,
+  `ssll105e`, `ssll105f`) and a buckling shape as imperfection (`MODI_MAILLAGE`
+  `DEFORME`, scalable amplitude) before a nonlinear analysis. Find the input in
+  Mecway/`#ASTER-OPTIE`. **Done when:** `CRIT_STAB` on an Euler column within 2% of
+  the linear buckling route and of pi²EI/(kL)²; with imperfection the load capacity drops
+  (Southwell/Ayrton-Perry as check).
+- **S10d – Response on a modal basis.** Mecway *Dynamic Response* (D30) has an option
+  *mode superposition* (manual §6.4); D30 is not yet in `MECWAY_ANALYSIS_TYPES`.
+  Code-Aster `DYNA_VIBRA` `BASE_CALCUL='GENE'`, harmonic and transient (test case
+  `forma12d`: `MACRO_ELAS_MULT` as static correction). Read the D30 tags in a
+  Mecway model first. **Done when:** single-degree-of-freedom-like model (mass on spring/beam)
+  within 1% of the analytical response (dynamic amplification factor), and equal to
   headless Mecway D30 (≤ 2%).
-- **S10e – Spectrumanalyse.** `COMB_SISM_MODAL` (testcase `sdld25a`); invoer van het
-  spectrum uitzoeken (Mecway-tabel of `#ASTER`). **Klaar als:** `sdld25a`-waarden binnen
-  1% op een 3D-nabouw, en SRSS/CQC met de hand nagerekend op een 2-modesysteem.
-- **S10f – Demping: complexe modes.** Rayleigh/modale demping in `CALC_MODES` (complexe
-  modes) of als modale dempingsfactor in S10d. **Klaar als:** dempingsverhouding van
-  een 1-vrijheidsgraadsysteem binnen 1% van de opgegeven waarde.
-- **S10g – Cyclische symmetrie.** Mecway heeft een *Cyclic symmetry*-constraint
-  (manual §9.41). Code-Aster `MODE_ITER_CYCL` vraagt `BASE_MODALE`, `NB_SECTEUR` en
-  `LIAISON` links/rechts (substructurering): grote vertaalklus. **Klaar als:** sector
-  van een ring/schijf geeft dezelfde frequenties als het volledige model (≤ 1%).
-**Bevindingen:**
-- *S10a (klaar):* Mecway rekent altijd voorgespannen zodra er een belasting is
-  (manual §6.3), ook thermische rek (voorbeeld VibratingMembrane) en centrifugaal
-  met spin softening (Impeller). Gebouwd: instelling `modal_prestress` (standaard
-  aan = Mecway; pagina Modaal), dispatch in `_build_modal` via `_prestress_plan`:
-  `MECA_STATIQUE` → `SIEF_ELGA` → `RIGI_GEOM` (+ `RIGI_ROTA` bij `ROTATION`) →
-  `COMB_MATR_ASSE` (COEF_R 1, testcases sdll101a/sdll133a). Opgelegde verplaatsing
-  ≠ 0 met voorspanning: ERROR (Mecway geeft dan headless geen oplossing); zonder
-  opleggingen: ERROR; contact bleef al ERROR. Negatieve frequentie (druk > kniklast):
-  WARNING (Mecway geeft 0 Hz). Verificatie MP-01..07 (`tests_modaal_voorspanning.py`):
-  balk trek/druk analytisch ≤ 0,001% en gelijk aan Mecway; hex20 −0,05/−0,11%
-  analytisch, gelijk aan Mecway; plaat met thermische druk analytisch ≤ 0,05%, Mecway
-  −0,25%; draaiende hex20-balk gelijk aan Mecway; draaiende `POU_D_E`-balk −0,52% in
-  het rotatievlak (KNOWN_BUGS 49). Open: Mecway-GUI-test; VibratingMembrane (E =
-  0,001 Pa) vindt met de laagste modes niets (valse `COQUE_3D`-rotatiemodes; met
-  zoekfrequentie wel, KNOWN_BUGS 49). Vraag gebruiker: valse modes zonder effectieve
-  massa automatisch weglaten, of zo laten (nu: zo laten, melding)?
-- *S10b (klaar):* Mecway (headless, fieldvariables `modal effective mass (fraction)`
-  en `stress` vóór het oplossen) geeft per mode `<globalvariable>`
-  `modaleffectivemass{tx..rz}` en `...fraction..`, rotatie om de **oorsprong**
-  (nagerekend: J_X = 524,15 kg·m² van een blok op (1, 2, 3) m), fractie van de *vrije*
-  massa; en ook spanningen per mode (`stressxx`.., `vonmises`; docs §1.4 zei ten
-  onrechte van niet). Gebouwd: effectieve massa voor de rotaties in de job
-  (`aster_results_export._effective_masses`, Γ = φᵀMR met de massamatrix `masse`,
-  `getNodeAndComponentFromDOF`), om de oorsprong zoals Mecway, fractie van RᵀMR
-  inclusief opgelegde knopen zoals Code-Aster's translaties; controle per run: eigen
-  translaties = `MASS_EFFE_UN_D*` (≤ 1e-4), anders geen rotaties. Log/statusvak
-  RX/RY/RZ + som, regel `BRIDGE_MASSA` (massa, zwaartepunt, J om oorsprong en
-  zwaartepunt). Spanningen per mode als optie via de bestaande instelling `fields`
-  van `modal_3d` (`stresses`/`vonmises`, standaard uit; geen nieuwe instelling;
-  `CALC_CHAMP` zonder `REAC_NODA`, ook schalen en balken). Verificatie: MO-06 (vrij
-  blok, som = Steiner exact), MO-07 (hex20: rotatie mode 1 −0,03% t.o.v. Euler 0,97069,
-  som 6 modes −0,15%, σ_xx mode 1 +0,43% analytisch / +0,01% Mecway), MO-01/MO-04
-  extra controles; Mecway's API leest de spanningen per mode uit de bridge-`.liml`.
-  Open: Mecway-GUI-test (spanningen per mode tonen);  Vragen gebruiker:
-  de effectieve massa ook als Mecway-veld (`<globalvariable>`, met de bridge-fractie
-  i.p.v. Mecway's vrije massa) schrijven? (Besluit: ja, gebouwd in S12: altijd bij
-  modaal en complexe modes, Mecway's eigen namen + `cumulativeeffectivemassfraction*`;
-  verificatie MO-01/MO-06; open: Mecway-GUI-test van de cumulatieve variabele.)
-  Rotatie om het zwaartepunt als optie (nu:
-  oorsprong verleggen)? Spanningen per knikvorm?
-- *S10c (klaar):* Mecway heeft geen invoer voor niet-lineaire knik (manual §6.2, §6.6;
-  voorbeeld BucklingPlateNonlinear gebruikt een kleine verstoringskracht). Invoerroute:
-  instellingen op de pagina Niet-lineair statisch (`crit_stab`, standaard uit;
-  `imperfection_amplitude` 0 = geen, `imperfection_mode` 1, `imperfection_unit` m of
-  L = fractie van de grootste modelafmeting), ook per model met `#ASTER-OPTIE`. Gebouwd
+- **S10e – Spectrum analysis.** `COMB_SISM_MODAL` (test case `sdld25a`); research the input of the
+  spectrum (Mecway table or `#ASTER`). **Done when:** `sdld25a` values within
+  1% on a 3D replica, and SRSS/CQC recalculated by hand on a 2-mode system.
+- **S10f – Damping: complex modes.** Rayleigh/modal damping in `CALC_MODES` (complex
+  modes) or as modal damping ratio in S10d. **Done when:** damping ratio of
+  a single-degree-of-freedom system within 1% of the specified value.
+- **S10g – Cyclic symmetry.** Mecway has a *Cyclic symmetry* constraint
+  (manual §9.41). Code-Aster `MODE_ITER_CYCL` requires `BASE_MODALE`, `NB_SECTEUR` and
+  `LIAISON` left/right (substructuring): a big translation job. **Done when:** a sector
+  of a ring/disc gives the same frequencies as the full model (≤ 1%).
+**Findings:**
+- *S10a (done):* Mecway always computes prestressed as soon as there is a load
+  (manual §6.3), also thermal strain (example VibratingMembrane) and centrifugal
+  with spin softening (Impeller). Built: setting `modal_prestress` (on by default
+  = Mecway; page Modal), dispatch in `_build_modal` via `_prestress_plan`:
+  `MECA_STATIQUE` → `SIEF_ELGA` → `RIGI_GEOM` (+ `RIGI_ROTA` with `ROTATION`) →
+  `COMB_MATR_ASSE` (COEF_R 1, test cases sdll101a/sdll133a). Prescribed displacement
+  ≠ 0 with prestress: ERROR (Mecway then gives no solution headless); without
+  supports: ERROR; contact was already ERROR. Negative frequency (compression > buckling load):
+  WARNING (Mecway gives 0 Hz). Verification MP-01..07 (`tests_modaal_voorspanning.py`):
+  beam tension/compression analytical ≤ 0.001% and equal to Mecway; hex20 −0.05/−0.11%
+  analytical, equal to Mecway; plate with thermal compression analytical ≤ 0.05%, Mecway
+  −0.25%; rotating hex20 beam equal to Mecway; rotating `POU_D_E` beam −0.52% in
+  the plane of rotation (KNOWN_BUGS 49). Open: Mecway GUI test; VibratingMembrane (E =
+  0.001 Pa) finds nothing with the lowest modes (spurious `COQUE_3D` rotation modes; with
+  a search frequency it does, KNOWN_BUGS 49). Question to user: omit spurious modes without effective
+  mass automatically, or leave as is (now: leave as is, message)?
+- *S10b (done):* Mecway (headless, fieldvariables `modal effective mass (fraction)`
+  and `stress` before solving) gives per mode `<globalvariable>`
+  `modaleffectivemass{tx..rz}` and `...fraction..`, rotation about the **origin**
+  (recalculated: J_X = 524.15 kg·m² of a block at (1, 2, 3) m), fraction of the *free*
+  mass; and also stresses per mode (`stressxx`.., `vonmises`; docs §1.4 wrongly said
+  it did not). Built: effective mass for the rotations in the job
+  (`aster_results_export._effective_masses`, Γ = φᵀMR with the mass matrix `masse`,
+  `getNodeAndComponentFromDOF`), about the origin like Mecway, fraction of RᵀMR
+  including supported nodes like Code-Aster's translations; check per run: own
+  translations = `MASS_EFFE_UN_D*` (≤ 1e-4), otherwise no rotations. Log/status box
+  RX/RY/RZ + sum, line `BRIDGE_MASSA` (mass, centre of gravity, J about origin and
+  centre of gravity). Stresses per mode as an option via the existing setting `fields`
+  of `modal_3d` (`stresses`/`vonmises`, off by default; no new setting;
+  `CALC_CHAMP` without `REAC_NODA`, also shells and beams). Verification: MO-06 (free
+  block, sum = Steiner exact), MO-07 (hex20: rotation mode 1 −0.03% relative to Euler 0.97069,
+  sum of 6 modes −0.15%, σ_xx mode 1 +0.43% analytical / +0.01% Mecway), MO-01/MO-04
+  extra checks; Mecway's API reads the stresses per mode from the bridge `.liml`.
+  Open: Mecway GUI test (show stresses per mode);  Questions to user:
+  also write the effective mass as a Mecway field (`<globalvariable>`, with the bridge fraction
+  instead of Mecway's free mass)? (Decision: yes, built in S12: always for
+  modal and complex modes, Mecway's own names + `cumulativeeffectivemassfraction*`;
+  verification MO-01/MO-06; open: Mecway GUI test of the cumulative variable.)
+  Rotation about the centre of gravity as an option (now:
+  move the origin)? Stresses per buckling shape?
+- *S10c (done):* Mecway has no input for nonlinear buckling (manual §6.2, §6.6;
+  example BucklingPlateNonlinear uses a small perturbation force). Input route:
+  settings on the page Nonlinear static (`crit_stab`, off by default;
+  `imperfection_amplitude` 0 = none, `imperfection_mode` 1, `imperfection_unit` m or
+  L = fraction of the largest model dimension), also per model with `#ASTER-OPTIE`. Built
   (`bridge_to_aster._crit_stab_*`, `_imperfection_*`): `CRIT_STAB` PLUS_PETITE 1 mode
-  in `STAT_NON_LINE`, tabel `ANALYSE_MODALE` als `BRIDGE_CRIT_STAB` in de `.mess`, log
-  en statusvak met melding "knik bereikt"; imperfectie = lineaire knik (zoals
-  `buckling_3d`, lasten op de eindtijd, `NORM_MODE` TRAN) → `MODI_MAILLAGE DEFORME`
-  (+ `AFFE_CARA_ELEM` opnieuw) → `STAT_NON_LINE` → `CALC_CHAMP` → mesh terug met
-  −e0·φ, zodat `_check_node_order` klopt (verplaatsingen t.o.v. de imperfecte vorm).
-  Gemeten: CRIT_STAB is bij kleine verplaatsingen een lastfactor (det(K_T + λK_g)), bij
-  grote (standaard voor volumes, één elset is genoeg) −(kleinste eigenwaarde van K_T)
-  (det(K_T + λI), "produits B*X = 0"); de bridge schat dan het nulpunt. Verificatie
-  NK-01..04 (`tests_niet_lineaire_knik.py`): balk λP = Pcr < 0,001%; hex20 knikpunt
-  +0,38% (groot) en +0,20% (PETIT, = BU-03); imperfectie L/1000: versterking
-  e0/(1 − P/Pcr) tot 0,675 Pcr ≤ 0,44%, Southwell-Pcr +0,20%; plastisch met e0 = L/200:
-  draagkracht 0,488 Pcr tussen Ayrton-Perry 0,419 en scharnier 0,563, CRIT_STAB → 0.
-  Beperkingen: KNOWN_BUGS 53. Open: Mecway-GUI-test (statusvak, velden na
-  imperfectie). Vragen gebruiker: (1) de imperfectie ook als veld naar Mecway, of de
-  verplaatsingen inclusief imperfectie tonen (nu t.o.v. de imperfecte vorm)? (2)
-  CRIT_STAB ook in dynamica (`DYNA_NON_LINE`)? (3) boogslengtemethode (`PILOTAGE`)
-  om voorbij het grenspunt te rekenen (nieuwe stap)?
-- *S10d (klaar, transiënt):* Mecway-invoer `<analysis type="D30"
-  modesuperposition="true" maxmode="n" />` met `<timesteps timeperiod stepsize
-  [keepeverynthtimestep]>` (DampedVibratingStrip, strings in mecway.exe). Headless
-  gemeten: Mecway integreert de modale vergelijkingen **exact** (stap 0,02 en 0,001 s
-  gelijk, 1e-4 van u_st(1 − cos ωt)), zonder statische correctie (1 mode: 0,9707 ×
-  statisch = 12/λ₁⁴) en zonder voorspanning door de lasten; uitvoer op t = 0 en elke
-  n-de stap; velden displ/rot/vel/angularvel/von Mises. Gebouwd: analyse
+  in `STAT_NON_LINE`, table `ANALYSE_MODALE` as `BRIDGE_CRIT_STAB` in the `.mess`, log
+  and status box with message "buckling reached"; imperfection = linear buckling (like
+  `buckling_3d`, loads at the end time, `NORM_MODE` TRAN) → `MODI_MAILLAGE DEFORME`
+  (+ `AFFE_CARA_ELEM` again) → `STAT_NON_LINE` → `CALC_CHAMP` → mesh back with
+  −e0·φ, so that `_check_node_order` holds (displacements relative to the imperfect shape).
+  Measured: with small displacements CRIT_STAB is a load factor (det(K_T + λK_g)), with
+  large ones (default for solids, one elset is enough) −(smallest eigenvalue of K_T)
+  (det(K_T + λI), "produits B*X = 0"); the bridge then estimates the zero crossing. Verification
+  NK-01..04 (`tests_niet_lineaire_knik.py`): beam λP = Pcr < 0.001%; hex20 buckling point
+  +0.38% (large) and +0.20% (PETIT, = BU-03); imperfection L/1000: amplification
+  e0/(1 − P/Pcr) up to 0.675 Pcr ≤ 0.44%, Southwell Pcr +0.20%; plastic with e0 = L/200:
+  load capacity 0.488 Pcr between Ayrton-Perry 0.419 and hinge 0.563, CRIT_STAB → 0.
+  Limitations: KNOWN_BUGS 53. Open: Mecway GUI test (status box, fields after
+  imperfection). Questions to user: (1) also send the imperfection as a field to Mecway, or show the
+  displacements including imperfection (now relative to the imperfect shape)? (2)
+  CRIT_STAB in dynamics too (`DYNA_NON_LINE`)? (3) arc-length method (`PILOTAGE`)
+  to compute beyond the limit point (new step)?
+- *S10d (done, transient):* Mecway input `<analysis type="D30"
+  modesuperposition="true" maxmode="n" />` with `<timesteps timeperiod stepsize
+  [keepeverynthtimestep]>` (DampedVibratingStrip, strings in mecway.exe). Measured
+  headless: Mecway integrates the modal equations **exactly** (step 0.02 and 0.001 s
+  equal, 1e-4 of u_st(1 − cos ωt)), without static correction (1 mode: 0.9707 ×
+  static = 12/λ₁⁴) and without prestress from the loads; output at t = 0 and every
+  n-th step; fields displ/rot/vel/angularvel/von Mises. Built: analysis
   `dyna_modal_3d` (`bridge_dyna_modal.py`, `AsterTemplate_DynaVibra.comm`,
   `SOLVER_BUILDERS_ASTER["DYNA_VIBRA"]`), `auto`: D30 + mode superposition →
-  `dyna_modal_3d`, D30 zonder → `dyna_impl_3d` (uitvoertijden uit `stepsize`; WARNING
-  tenzij NEWMARK + PETIT, dan gelijk aan Mecway). Keten `CALC_MODES` → lasten per
-  tijdsfunctie gesplitst (variant van elke `AFFE_CHAR_MECA_F` met die functie op 1,
-  de rest 0) → `CALC_VECT_ELEM`/`ASSE_VECTEUR` → `PROJ_BASE` → `DYNA_VIBRA` GENE
-  (NEWMARK, `steps_per_period` 50 van de hoogste mode; Rayleigh als `AMOR_REDUIT`
-  ξ = α/2ω + βω/2 + `modal_damping`) → `REST_GENE_PHYS` (`DEPL`, `VITE`, `ACCE` voor
-  `SIPM_ELNO`) → `CALC_CHAMP` met `MODELE`/`CHAM_MATER`. Optie `static_correction`
-  (`MACRO_ELAS_MULT` + `CORR_STAT`, forma12d). Hoeksnelheid `angularvel*` nu ook in
-  `FIELD_TABLE`. Verificatie MD-01..07 (`tests_dynamisch_modaal.py`, 21 controles):
-  SDOF stap/gedempt/harmonisch analytisch ≤ 0,17% (verloop), piek 0,00–0,17%; t.o.v.
-  headless Mecway ≤ 1,4e-5 (SDOF), hex20 4e-5 / 1,4e-4 / 4e-4 (u / v / σ_xx), console
-  1 mode 3,4e-3; statische correctie exact; D30 direct 3e-8. DampedVibratingStrip
-  (schalen): 1,9% (frequenties schalen −0,6/+0,3%, KNOWN_BUGS 2). Regressie 390/393
-  OK, 3 BEKEND (KNOWN_BUGS 43), 0 NOK. Beperkingen: KNOWN_BUGS 54. Harmonisch in het
-  frequentiedomein afgesplitst als **S10h** (Mecway heeft geen analysetype; invoer
-  frequentielijst + belasting uitzoeken, `DYNA_VIBRA TYPE_CALCUL='HARM'`
-  `BASE_CALCUL='GENE'`, testcases sdld21b en sdld313d (`HARM` + `GENE`) als syntaxbron; klaar als: DAF
-  1/√((1−r²)² + (2ζr)²) ≤ 1% op het SDOF-model van MD). Open: Mecway-GUI-test.
-  Vragen gebruiker: D30 zonder mode superposition automatisch met NEWMARK + PETIT
-  rekenen (nu: `dyna_impl_3d` met de eigen instellingen + WARNING)? Een beginsnelheid
-  en opgelegde bewegingen op modale basis bouwen (statische modes)?
-- *S10e (klaar):* Mecway heeft geen spectrumanalyse (manual hoofdstuk 6; geen
-  "spectrum"/"seism" in mecway.exe). Invoerroute: Mecway *Frequency* (V30, Number of
-  modes) met een **Gravity met per richting een tabel** (kolom *time* = periode [s],
-  instelling `spectrum_abscissa` ook frequentie; waarde = spectrale versnelling; zonder
-  tabel = vlak spectrum; de gravity is geen last), analyse `spectrum_3d` zelf kiezen
-  (`auto` blijft `modal_3d`). Eigen spectrum (`DEFI_NAPPE`/`FORMULE` in AMOR en FREQ,
-  bijv. meerdere dempingen) met het nieuwe `#ASTER-SPECTRE X, Y = naam [, K=V]`.
-  Gebouwd: `bridge_spectrum.py`, `AsterTemplate_Spectre.comm`, job-module
-  `aster_spectrum.py`; keten `CALC_MODES` → `CALC_CHAMP` (REAC_NODA, SIGM) →
-  `MODE_STATIQUE PSEUDO_MODE` → `COMB_SISM_MODAL MONO_APPUI` → maxima als een
-  statische stap (`CREA_RESU`); instellingen `spectrum_damping` (0,05 + Rayleigh),
-  `modal_combination` (CQC), `direction_combination` (SRSS; 100-30-30 rekent de bridge
-  uit `VALE_DIRE`; 100-40-40 = `NEWMARK`), `missing_mass` (aan, `FREQ_COUP` = hoogste
-  mode). Velden: verplaatsing, absolute versnelling (nieuw `accelx/y/z`), spanning
-  (volumes), von Mises (per mode berekend en gecombineerd: SRSS = verwachtingswaarde
-  van σᵀPσ, CQC bovengrens), reacties; log: effectieve massa per richting (WARNING
-  < 90% zonder missing mass), afsnijfrequentie, gecombineerde totale reactie (de som
-  van knoopmaxima is te groot). Verificatie SP-01..07 (9 cases, 41 controles):
-  sdld25a (8 massa's/veren, Rayleigh β, DEFI_NAPPE via #ASTER-SPECTRE) frequenties ≤
-  3e-14, ACCE_ABSOLU ≤ 3,5e-8 (klaar-criterium 1%); twee massa's SRSS, CQC (ρ = 0,17),
-  missing mass met 1 mode en de totale reactie ≤ 1e-6 van de handberekening
-  (criterium 0,5%); richtingen SRSS/100-30-30/100-40-40 ≤ 4e-8; hex20-console t.o.v.
-  Euler-Bernoulli u −0,02%, σ/von Mises +0,38%, reactie −0,12%. Mecway leest de stap
-  onder V30 via de API (headless script: `node_value`, `modes()` leeg); GUI-weergave
-  NIET geverifieerd. Regressie 444/447 OK, 3 BEKEND (KNOWN_BUGS 43), 0 NOK. Beperkingen:
-  KNOWN_BUGS 56. Open: Mecway-GUI-test (stap onder een Frequency-analyse, `accel*`).
-  Vragen gebruiker: (1) `auto` bij V30 + gravity met tabel naar `spectrum_3d` (nu zelf
-  kiezen)? (2) missing mass standaard aan (nu) of uit (Code-Aster-standaard)?
-  (3) richtingscombinatie standaard SRSS (nu), 100-30-30 (EC8) of 100-40-40
-  (Code-Aster)? (4) spectrum per steunpunt (`MULT_APPUI`) nodig? (5) een EC8-spectrum
-  uit a_g en grondtype laten maken i.p.v. een tabel?
-- *S10f (klaar):* Mecway (headless gemeten) heeft geen gedempte modes: V30 negeert
-  Rayleigh-demping (zelfde frequenties, geen decay rate; Rayleigh hoort volgens manual
-  §9.26 bij D30/D31) en geeft met een Damper-element geen oplossing (D30 negeerde de
-  hand-geschreven demper ook, vgl. KNOWN_BUGS 47). Complexe modes kent Mecway alleen
-  akoestisch (`<mode frequency=".. Hz" decayrate=".. 1/s">`, headless gezien). Gebouwd
-  als optie: instelling `modal_complex` (pagina Modaal, standaard uit = reële modes
-  zoals Mecway, INFO bij demping in het model), `bridge_modal_damping.py`: C = αM + βK
-  (`COMB_MATR_ASSE` op de matrices van het eigenwaardeprobleem, dus ook knoopmassa's en
-  veren, met voorspanning K + K_g) + `AMOR_MECA` van de dempers (andere discreten
-  `A_*` 0 tegen `DISCRETS_28`); `CALC_MODES` met `MATR_AMOR`, `PLUS_PETITE` +
-  `TRI_DIAG` (Sorensen kan niet: `ALGELINE2_71`), met zoekfrequentie of vrij-vrij
-  `CENTRE` + Sorensen. Gemeten: Code-Aster's `FREQ` = gedempte frequentie,
-  `AMOR_REDUIT` = ζ; overkritische en starre modes vallen weg (`ALGELINE5_79`, hint in
-  bridge_run_aster). Export: `<mode frequency="f_d Hz" decayrate="ζ·2πf_n 1/s">`, vorm
-  = reëel deel na fasedraaiing (½·arg φᵀMφ), φᵀMφ = 1 (bij Rayleigh gelijk aan de
-  reële mode, 2e-9); log/statusvak per mode f_d, ζ, f_n en effectieve massa; Mecway-
-  vergelijking op f_n. Mecway's API leest de modes (headless script, `frequency` = f_d);
-  GUI NIET bekeken. Verificatie MC-01..05 (`tests_modaal_demping.py`): massa-veer-
-  demper ζ = 0,1/0,5 en Rayleigh α/β (ζ = 0,2): ζ, f_d en f_n ≤ 1,3e-15 analytisch
-  (criterium 1%); 2 massa's met demper (niet-proportioneel) ≤ 1,1e-14 t.o.v.
-  det(s²M + sC + K) = 0; hex20-console α = 20, β = 1e-4: ζ_n = α/2ω_n + βω_n/2 ≤ 2e-11
-  per mode (6 modes), f_n gelijk aan Mecway (≤ 8,4e-11); vrij-vrij: 6 starre modes weg,
-  elastische gelijk aan Mecway (≤ 3e-11). Regressie 569/572 OK, 3 BEKEND (NL-03a,
-  KNOWN_BUGS 43), 0 NOK/FOUT. dyna_modal_3d: dezelfde ξ_i (docs). Grenzen: KNOWN_BUGS 49. Open:
-  Mecway-GUI-test (f_d en decay rate onder *Solution*). Vragen gebruiker: (1) de
-  frequentie in Mecway gedempt (nu, zoals Mecway's akoestiek) of ongedempt? (2) het
-  imaginaire deel van de vorm ook naar Mecway (veldnaam onbekend)? (3) hysteretische
-  demping (`AMOR_HYST`) of `modal_damping` als ζ per mode ook in modaal nodig?
-- *S10h (klaar):* Mecway heeft geen harmonische analyse (manual hoofdstuk 6; D30 is
-  transient). Invoerroute: eigen analyse `harmonic_3d` (pagina *Harmonische respons*,
-  zelf kiezen; `auto` blijft V30 → modaal) op een V30- of D30-model; de belastingen
-  zijn de amplitude, fase per selectie met het nieuwe `#ASTER-FASE selectie = graden`
-  (`PHAS_DEG`), een Mecway-tabel van een last = amplitude tegen frequentie (kolom
-  *time* = Hz, `DEFI_FONCTION NOM_PARA='FREQ'` als `FONC_MULT`), meetpunten met
-  knoopselecties `MEETPUNT_`/`PROBE_` (log, statusvak, `_meetpunten.csv`). Frequenties
-  met de sleutels van S3a (`harm_freq_start/_end/_count/_spacing/_list`) plus
-  `harm_refine_points` (5 punten per mode over 2ξf rond de piek: `DEFI_LIST_FREQ`
-  `RAFFINEMENT` `LARGEUR_3DB`, sdld21b), `harm_basis` GENE (standaard) / PHYS (direct,
-  C = αM + βK + dempers), `modal_damping`, `static_correction` (standaard aan:
-  statische verrijking van de basis zoals `DYNA_LINE` `ENRI_STAT`: `MACRO_ELAS_MULT` +
-  `DEFI_BASE_MODALE RITZ ORTHO` + `CALC_MODES QZ` + `REST_GENE_PHYS`). Gebouwd:
-  `bridge_harmonic.py` (dispatch in `_build_dyna_modal` op `type_calcul` 'HARM'),
-  `AsterTemplate_Harmonisch.comm`, job-module `aster_harmonic_export.py` (per
-  frequentie `<mode frequency>` met `displx/y/z` = Re, `displix/y/z` = Im,
+  `dyna_modal_3d`, D30 without → `dyna_impl_3d` (output times from `stepsize`; WARNING
+  unless NEWMARK + PETIT, then equal to Mecway). Chain `CALC_MODES` → loads split per
+  time function (variant of each `AFFE_CHAR_MECA_F` with that function at 1,
+  the rest 0) → `CALC_VECT_ELEM`/`ASSE_VECTEUR` → `PROJ_BASE` → `DYNA_VIBRA` GENE
+  (NEWMARK, `steps_per_period` 50 of the highest mode; Rayleigh as `AMOR_REDUIT`
+  ξ = α/2ω + βω/2 + `modal_damping`) → `REST_GENE_PHYS` (`DEPL`, `VITE`, `ACCE` for
+  `SIPM_ELNO`) → `CALC_CHAMP` with `MODELE`/`CHAM_MATER`. Option `static_correction`
+  (`MACRO_ELAS_MULT` + `CORR_STAT`, forma12d). Angular velocity `angularvel*` now also in
+  `FIELD_TABLE`. Verification MD-01..07 (`tests_dynamisch_modaal.py`, 21 checks):
+  SDOF step/damped/harmonic analytical ≤ 0.17% (time history), peak 0.00–0.17%; relative to
+  headless Mecway ≤ 1.4e-5 (SDOF), hex20 4e-5 / 1.4e-4 / 4e-4 (u / v / σ_xx), cantilever
+  1 mode 3.4e-3; static correction exact; D30 direct 3e-8. DampedVibratingStrip
+  (shells): 1.9% (frequencies shells −0.6/+0.3%, KNOWN_BUGS 2). Regression 390/393
+  OK, 3 BEKEND (KNOWN_BUGS 43), 0 NOK. Limitations: KNOWN_BUGS 54. Harmonic in the
+  frequency domain split off as **S10h** (Mecway has no analysis type; research input
+  frequency list + load, `DYNA_VIBRA TYPE_CALCUL='HARM'`
+  `BASE_CALCUL='GENE'`, test cases sdld21b and sdld313d (`HARM` + `GENE`) as syntax source; done when: DAF
+  1/√((1−r²)² + (2ζr)²) ≤ 1% on the SDOF model of MD). Open: Mecway GUI test.
+  Questions to user: compute D30 without mode superposition automatically with NEWMARK + PETIT
+  (now: `dyna_impl_3d` with its own settings + WARNING)? Build an initial velocity
+  and prescribed motions on a modal basis (static modes)?
+- *S10e (done):* Mecway has no spectrum analysis (manual chapter 6; no
+  "spectrum"/"seism" in mecway.exe). Input route: Mecway *Frequency* (V30, Number of
+  modes) with a **Gravity with a table per direction** (column *time* = period [s],
+  setting `spectrum_abscissa` also frequency; value = spectral acceleration; without
+  table = flat spectrum; the gravity is not a load), analysis `spectrum_3d` selected manually
+  (`auto` remains `modal_3d`). Own spectrum (`DEFI_NAPPE`/`FORMULE` in AMOR and FREQ,
+  e.g. multiple damping values) with the new `#ASTER-SPECTRE X, Y = naam [, K=V]`.
+  Built: `bridge_spectrum.py`, `AsterTemplate_Spectre.comm`, job module
+  `aster_spectrum.py`; chain `CALC_MODES` → `CALC_CHAMP` (REAC_NODA, SIGM) →
+  `MODE_STATIQUE PSEUDO_MODE` → `COMB_SISM_MODAL MONO_APPUI` → maxima as a
+  static step (`CREA_RESU`); settings `spectrum_damping` (0.05 + Rayleigh),
+  `modal_combination` (CQC), `direction_combination` (SRSS; 100-30-30 is computed by the bridge
+  from `VALE_DIRE`; 100-40-40 = `NEWMARK`), `missing_mass` (on, `FREQ_COUP` = highest
+  mode). Fields: displacement, absolute acceleration (new `accelx/y/z`), stress
+  (solids), von Mises (computed per mode and combined: SRSS = expected value
+  of σᵀPσ, CQC upper bound), reactions; log: effective mass per direction (WARNING
+  < 90% without missing mass), cut-off frequency, combined total reaction (the sum
+  of nodal maxima is too large). Verification SP-01..07 (9 cases, 41 checks):
+  sdld25a (8 masses/springs, Rayleigh β, DEFI_NAPPE via #ASTER-SPECTRE) frequencies ≤
+  3e-14, ACCE_ABSOLU ≤ 3.5e-8 (done criterion 1%); two masses SRSS, CQC (ρ = 0.17),
+  missing mass with 1 mode and the total reaction ≤ 1e-6 of the hand calculation
+  (criterion 0.5%); directions SRSS/100-30-30/100-40-40 ≤ 4e-8; hex20 cantilever relative to
+  Euler-Bernoulli u −0.02%, σ/von Mises +0.38%, reaction −0.12%. Mecway reads the step
+  under V30 via the API (headless script: `node_value`, `modes()` empty); GUI display
+  NOT verified. Regression 444/447 OK, 3 BEKEND (KNOWN_BUGS 43), 0 NOK. Limitations:
+  KNOWN_BUGS 56. Open: Mecway GUI test (step under a Frequency analysis, `accel*`).
+  Questions to user: (1) `auto` with V30 + gravity with table to `spectrum_3d` (now select
+  manually)? (2) missing mass on by default (now) or off (Code-Aster default)?
+  (3) direction combination default SRSS (now), 100-30-30 (EC8) or 100-40-40
+  (Code-Aster)? (4) spectrum per support (`MULT_APPUI`) needed? (5) have an EC8 spectrum
+  generated from a_g and ground type instead of a table?
+- *S10f (done):* Mecway (measured headless) has no damped modes: V30 ignores
+  Rayleigh damping (same frequencies, no decay rate; according to manual
+  §9.26 Rayleigh belongs to D30/D31) and gives no solution with a Damper element (D30 ignored the
+  hand-written damper too, cf. KNOWN_BUGS 47). Mecway only knows complex modes
+  acoustically (`<mode frequency=".. Hz" decayrate=".. 1/s">`, seen headless). Built
+  as an option: setting `modal_complex` (page Modal, off by default = real modes
+  like Mecway, INFO when there is damping in the model), `bridge_modal_damping.py`: C = αM + βK
+  (`COMB_MATR_ASSE` on the matrices of the eigenvalue problem, so also nodal masses and
+  springs, with prestress K + K_g) + `AMOR_MECA` of the dampers (other discrete elements
+  `A_*` 0 against `DISCRETS_28`); `CALC_MODES` with `MATR_AMOR`, `PLUS_PETITE` +
+  `TRI_DIAG` (Sorensen is not possible: `ALGELINE2_71`), with search frequency or free-free
+  `CENTRE` + Sorensen. Measured: Code-Aster's `FREQ` = damped frequency,
+  `AMOR_REDUIT` = ζ; overcritical and rigid modes drop out (`ALGELINE5_79`, hint in
+  bridge_run_aster). Export: `<mode frequency="f_d Hz" decayrate="ζ·2πf_n 1/s">`, shape
+  = real part after phase rotation (½·arg φᵀMφ), φᵀMφ = 1 (with Rayleigh equal to the
+  real mode, 2e-9); log/status box per mode f_d, ζ, f_n and effective mass; Mecway
+  comparison on f_n. Mecway's API reads the modes (headless script, `frequency` = f_d);
+  GUI NOT inspected. Verification MC-01..05 (`tests_modaal_demping.py`): mass-spring-
+  damper ζ = 0.1/0.5 and Rayleigh α/β (ζ = 0.2): ζ, f_d and f_n ≤ 1.3e-15 analytical
+  (criterion 1%); 2 masses with damper (non-proportional) ≤ 1.1e-14 relative to
+  det(s²M + sC + K) = 0; hex20 cantilever α = 20, β = 1e-4: ζ_n = α/2ω_n + βω_n/2 ≤ 2e-11
+  per mode (6 modes), f_n equal to Mecway (≤ 8.4e-11); free-free: 6 rigid modes removed,
+  elastic ones equal to Mecway (≤ 3e-11). Regression 569/572 OK, 3 BEKEND (NL-03a,
+  KNOWN_BUGS 43), 0 NOK/FOUT. dyna_modal_3d: the same ξ_i (docs). Limits: KNOWN_BUGS 49. Open:
+  Mecway GUI test (f_d and decay rate under *Solution*). Questions to user: (1) the
+  frequency in Mecway damped (now, like Mecway's acoustics) or undamped? (2) also send the
+  imaginary part of the shape to Mecway (field name unknown)? (3) hysteretic
+  damping (`AMOR_HYST`) or `modal_damping` as ζ per mode also needed in modal?
+- *S10h (done):* Mecway has no harmonic analysis (manual chapter 6; D30 is
+  transient). Input route: own analysis `harmonic_3d` (page *Harmonic response*,
+  select manually; `auto` remains V30 → modal) on a V30 or D30 model; the loads
+  are the amplitude, phase per selection with the new `#ASTER-FASE selectie = graden`
+  (`PHAS_DEG`), a Mecway table of a load = amplitude versus frequency (column
+  *time* = Hz, `DEFI_FONCTION NOM_PARA='FREQ'` as `FONC_MULT`), measurement points with
+  node selections `MEETPUNT_`/`PROBE_` (log, status box, `_meetpunten.csv`). Frequencies
+  with the keys of S3a (`harm_freq_start/_end/_count/_spacing/_list`) plus
+  `harm_refine_points` (5 points per mode over 2ξf around the peak: `DEFI_LIST_FREQ`
+  `RAFFINEMENT` `LARGEUR_3DB`, sdld21b), `harm_basis` GENE (default) / PHYS (direct,
+  C = αM + βK + dampers), `modal_damping`, `static_correction` (on by default:
+  static enrichment of the basis like `DYNA_LINE` `ENRI_STAT`: `MACRO_ELAS_MULT` +
+  `DEFI_BASE_MODALE RITZ ORTHO` + `CALC_MODES QZ` + `REST_GENE_PHYS`). Built:
+  `bridge_harmonic.py` (dispatch in `_build_dyna_modal` on `type_calcul` 'HARM'),
+  `AsterTemplate_Harmonisch.comm`, job module `aster_harmonic_export.py` (per
+  frequency `<mode frequency>` with `displx/y/z` = Re, `displix/y/z` = Im,
   `displamp*`, `displphase*`, `displmag`, `rot*`/`rotamp*`, `velamp*`/`accelamp*`,
-  `stressxx..` = Re, `stressamp..`, `vonmises` = maximum over de periode, exact uit de
-  complexe `SIGM_NOEU`). Gemeten: U = F·e^{iφ}/(k − mω² + iωc) (`PHAS_DEG` +,
-  naijlen negatief); `FONC_MULT` als functie van `FREQ` werkt in GENE en PHYS; een
-  keten `getField(..).toSimpleFieldOnNodes().getValues()` gaf NaN (tussenobjecten
-  vasthouden). Verificatie HR-01..05 (`tests_harmonisch.py`, 11 cases, 40 controles):
-  (a) 1 vrijheidsgraad (veer + massa) met modale demping, Rayleigh α (GENE en PHYS) en
-  een demper ζ = 0,2: |U| ≤ 5,5e-8 en fase ≤ 7,5e-6° over het hele bereik
-  (criterium 1% en 1°), piek en piekfrequentie exact; (b) Euler-Bernoulli-console
-  (exacte receptantie, Rayleigh α): GENE met verrijking en PHYS 6,6e-4 over 1–200 Hz,
-  GENE = PHYS 1,9e-5 (criterium 1%); zonder verrijking het statische deel van de
-  weggelaten modes 6,22e-4 = 1 − Σ12/λ⁴ en 64% fout in de antiresonantie; hex20-console
-  GENE = PHYS (tip 4,3e-6, von Mises 4,3e-5, |σ_xx| 2,3e-3); fase, tabel, tegenfase en
-  meetpunt-CSV exact. Mecway's API leest het resultaat (headless `mecway.exe <model>
-  script <script.py>`: 120 frequenties en de velden). Regressie (`VERIF_WORK` eigen
-  map): 712/715 OK (162 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, geen
-  eerder OK-controle slechter. Beperkingen: KNOWN_BUGS 54. Open: Mecway-GUI-test (lijst
-  per frequentie, contour van `displamp*`, animatie). Vragen gebruiker: (1)
-  `static_correction` standaard aan (nu, Code-Aster `DYNA_LINE`) of uit? (2)
-  hysteretische demping (verliesfactor η, `AMOR_HYST`) nodig? (3) basisbeweging
-  (opgelegde versnelling/verplaatsing, `MULT_APPUI`/statische modes) bouwen? (4)
-  de frequentierespons ook als Mecway-grafiek (bijv. `<globalvariable>`) i.p.v. CSV?
-  (5) `harm_freq_end` automatisch op de hoogste mode zetten?
-- *S10g (klaar):* Mecway-invoer (headless gemeten, Samples/Impeller.liml en eigen
-  ringsectoren): `<cyclicsymmetry axis segments selectionmaster selectionslave>`,
-  `axis` 1/2/3 = X/Y/Z door de oorsprong, master/slave knoop- of vlakselecties, slave op
-  ±360°/N. Mecway rekent per ND 0 … N/2 *Number of modes* modes (een paar staande
-  golven één keer), op volgorde van ND, en zet het hele wiel (eigen knopen en
-  elementen) in `<solution>`. Gekozen route: Code-Aster `MODE_ITER_CYCL` (geen
-  volledig model): `bridge_cyclic.py` (paren op ±360°/N, GAUCHE = +360°/N, knopen op de
-  as → `AXE`, volledig vaste snijvlakknopen uit de interfaces, X/Y-as → exacte
-  verwisseling van de coördinaten en de lastrichtingen, voorspanning met de relaties
-  van ND 0), template `AsterTemplate_ModeIterCycl.comm` (Craig-Bampton-basis:
-  `CALC_MODES` met vaste snijvlakken, `DEFI_INTERF_DYNA`, `DEFI_BASE_MODALE`,
+  `stressxx..` = Re, `stressamp..`, `vonmises` = maximum over the period, exact from the
+  complex `SIGM_NOEU`). Measured: U = F·e^{iφ}/(k − mω² + iωc) (`PHAS_DEG` +,
+  lagging negative); `FONC_MULT` as a function of `FREQ` works in GENE and PHYS; a
+  chain `getField(..).toSimpleFieldOnNodes().getValues()` gave NaN (keep intermediate objects
+  alive). Verification HR-01..05 (`tests_harmonisch.py`, 11 cases, 40 checks):
+  (a) 1 degree of freedom (spring + mass) with modal damping, Rayleigh α (GENE and PHYS) and
+  a damper ζ = 0.2: |U| ≤ 5.5e-8 and phase ≤ 7.5e-6° over the whole range
+  (criterion 1% and 1°), peak and peak frequency exact; (b) Euler-Bernoulli cantilever
+  (exact receptance, Rayleigh α): GENE with enrichment and PHYS 6.6e-4 over 1–200 Hz,
+  GENE = PHYS 1.9e-5 (criterion 1%); without enrichment the static part of the
+  omitted modes 6.22e-4 = 1 − Σ12/λ⁴ and 64% error in the antiresonance; hex20 cantilever
+  GENE = PHYS (tip 4.3e-6, von Mises 4.3e-5, |σ_xx| 2.3e-3); phase, table, antiphase and
+  measurement point CSV exact. Mecway's API reads the result (headless `mecway.exe <model>
+  script <script.py>`: 120 frequencies and the fields). Regression (`VERIF_WORK` own
+  folder): 712/715 OK (162 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, no
+  previously OK check worse. Limitations: KNOWN_BUGS 54. Open: Mecway GUI test (list
+  per frequency, contour of `displamp*`, animation). Questions to user: (1)
+  `static_correction` on by default (now, Code-Aster `DYNA_LINE`) or off? (2)
+  hysteretic damping (loss factor η, `AMOR_HYST`) needed? (3) build base motion
+  (prescribed acceleration/displacement, `MULT_APPUI`/static modes)? (4)
+  the frequency response also as a Mecway graph (e.g. `<globalvariable>`) instead of CSV?
+  (5) set `harm_freq_end` automatically to the highest mode?
+- *S10g (done):* Mecway input (measured headless, Samples/Impeller.liml and own
+  ring sectors): `<cyclicsymmetry axis segments selectionmaster selectionslave>`,
+  `axis` 1/2/3 = X/Y/Z through the origin, master/slave node or face selections, slave at
+  ±360°/N. Mecway computes *Number of modes* modes per ND 0 … N/2 (a pair of standing
+  waves once), in order of ND, and puts the whole wheel (own nodes and
+  elements) in `<solution>`. Chosen route: Code-Aster `MODE_ITER_CYCL` (no
+  full model): `bridge_cyclic.py` (pairs at ±360°/N, GAUCHE = +360°/N, nodes on the
+  axis → `AXE`, fully fixed cut-face nodes from the interfaces, X/Y axis → exact
+  swap of the coordinates and the load directions, prestress with the relations
+  of ND 0), template `AsterTemplate_ModeIterCycl.comm` (Craig-Bampton basis:
+  `CALC_MODES` with fixed cut faces, `DEFI_INTERF_DYNA`, `DEFI_BASE_MODALE`,
   `MODE_ITER_CYCL` `NB_DIAM` 0 … N/2, `REST_SOUS_STRUC SECTEUR=1 NOM_CHAM='DEPL'`),
-  job-module `aster_cyclic.py` (Mecway's volgorde, `BRIDGE_MODE .. ND=..`; het resultaat
-  van REST_SOUS_STRUC kreeg pas velden na `setMesh`/`setDOFNumbering`/`build`); log en
-  statusvak met ND; instelling `cyclic_base_modes` (0 = max(20, 4 × modes per ND)).
-  Code-Aster-valkuilen gevonden: ruis rond 0 in de axiale coördinaat →
-  `ALGORITH16_52` (de bridge zet < 1e-12 × modelgrootte op 0, MODI_MAILLAGE-rotatie
-  vermeden), `TOUT_DIAM` rekent bij oneven N één ND te veel, `REST_SOUS_STRUC`
-  `NOM_CHAM` is standaard `'ACCE'`, 8 segmenten met knopen op de as → `ALGORITH14_95`
-  (fout in `ctetax.F90`, ERROR). Verificatie CY-01..06 (`tests_cyclisch.py`, 134
-  controles): ring (12 segmenten, Z en X) en draaiende schijf (Y, 3000 r/min,
-  voorspanning) t.o.v. het volledige model ≤ 0,0012% (criterium 1%), t.o.v. Mecway's
-  cyclische oplossing ≤ 0,03% (criterium 1%), ring t.o.v. Blevins +0,59 … +1,18% en
-  ingeklemde plaat (6 segmenten, knopen op de as) t.o.v. Leissa +0,58 … +0,66%
-  (criterium 2%). Mecway's Impeller (Y, 100 000 r/min): 27 modes +0,01 … +0,92% t.o.v.
-  Mecway, de sector zonder cyclische symmetrie wijkt evenveel af (KNOWN_BUGS 62).
-  Mecway's API leest de modes van de bridge (headless script); GUI NIET bekeken.
-  Grenzen: KNOWN_BUGS 61 (o.a. dubbele eigenwaarde in ND 0 +1,3%, alleen modaal,
-  alleen volume-elementen, alleen de sector naar Mecway). Afgesplitst: **S10i** (het
-  hele wiel in Mecway). Open: Mecway-GUI-test (sector-oplossing van een cyclisch
-  model in de GUI, lijst *Mode 1..n*, animatie). Vragen gebruiker: (1) het hele wiel
-  tonen (S10i) of is de sector genoeg? (2) cyclische symmetrie ook in statisch en
-  thermisch (Mecway kan het; nu ERROR en losse sector)? (3) een gedeeltelijke
-  oplegging op een snijvlak (axiaal vrij) nodig? (4) bij een dubbele eigenwaarde in
-  ND 0 liever het volledige model als optie (`cyclic_method`)?
-- *S10i (klaar):* Mecway's formaat (headless `mw_solve.py` op CY-01, CY-04, CY-05,
-  Impeller en varianten: twee elsets, losse knoop, master/slave verwisseld): de
-  modelkopie in `<solution>` heeft N kopieen; knoop i van sector j = i + j·n, gedraaid
-  over +j·360°/N (rechtsom-positief, onafhankelijk van master/slave), element e + j·ne
-  (ne = hoogste eid), per elset de sectoren achter elkaar, alle knopen gekopieerd (ook
-  snijvlakken en as). Code-Aster: `DEFI_SQUELETTE` (`CYCLIQUE`, `SECTEUR TOUT='OUI'`) +
-  `REST_SOUS_STRUC SQUELETTE NOM_CHAM='DEPL'` geeft precies die opbouw (N·n knopen,
-  blok j = sector over +j·360°/N, met de fase; blok j = `SECTEUR=j+1` gedraaid; gezien
-  met CY-01), ook om X/Y (skelet terug gedraaid) en met knopen op de as; het resultaat
-  kreeg zonder `setMesh` velden. Gebouwd: `aster_cyclic.collect` (wiel of terugval naar
-  de sector met WARNING, `BRIDGE_CYCL ... WIEL=0|1`), `wheel_model`/`node_rows`
-  (koppeling op coordinaat), `aster_results_export(cyclic=...)`,
-  `bridge_results_liml.splice_results`/`check_results_fit` (knopen en elementen van
-  het wiel in de modelkopie), instelling `cyclic_full_wheel` (standaard aan). Gemeten:
-  modelkopie gelijk aan Mecway's eigen (ids, volgorde, elementen; coordinaten ≤ 1,1e-15
-  m), Mecway's API leest het wiel van de bridge zoals zijn eigen (CY-01, Impeller);
-  vormen t.o.v. het volledige model 1 − MAC ≤ 5,1e-7 (CY-01) en ≤ 2,1e-8 (CY-05),
-  criterium 1e-3; snijvlakken doorlopend ≤ 1,3e-14; op de as (CY-04, ND 1) 6,2e-4,
-  Mecway's eigen oplossing 9,4e-4; t.o.v. Mecway's wiel ND 0 MAC 1,000000 (CY-05),
-  Impeller 0,9996 … 0,99994. 37 nieuwe controles in `tests_cyclisch.py` (CY 171/171).
-  Regressie (`VERIF_WORK` eigen map): 1055/1058 OK (216 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, geen eerder OK-controle slechter. Gevonden: KNOWN_BUGS 78 (Resultaten... bij X/Y-as; opgelost 15 okt, `check_results_fit` draait het frame terug).
-  Open: Mecway-GUI-test (wiel tonen, animatie per mode). Vragen gebruiker: (1) de
-  schaal van de vormen gelijk aan Mecway maken (massanormering over het hele wiel; nu
-  die van REST_SOUS_STRUC)? (2) bij een paar ook het tweede lid als extra mode tonen?
+  job module `aster_cyclic.py` (Mecway's order, `BRIDGE_MODE .. ND=..`; the result
+  of REST_SOUS_STRUC only got fields after `setMesh`/`setDOFNumbering`/`build`); log and
+  status box with ND; setting `cyclic_base_modes` (0 = max(20, 4 × modes per ND)).
+  Code-Aster pitfalls found: noise around 0 in the axial coordinate →
+  `ALGORITH16_52` (the bridge sets < 1e-12 × model size to 0, MODI_MAILLAGE rotation
+  avoided), `TOUT_DIAM` computes one ND too many for odd N, `REST_SOUS_STRUC`
+  `NOM_CHAM` defaults to `'ACCE'`, 8 segments with nodes on the axis → `ALGORITH14_95`
+  (bug in `ctetax.F90`, ERROR). Verification CY-01..06 (`tests_cyclisch.py`, 134
+  checks): ring (12 segments, Z and X) and rotating disc (Y, 3000 rpm,
+  prestress) relative to the full model ≤ 0.0012% (criterion 1%), relative to Mecway's
+  cyclic solution ≤ 0.03% (criterion 1%), ring relative to Blevins +0.59 … +1.18% and
+  clamped plate (6 segments, nodes on the axis) relative to Leissa +0.58 … +0.66%
+  (criterion 2%). Mecway's Impeller (Y, 100,000 rpm): 27 modes +0.01 … +0.92% relative to
+  Mecway, the sector without cyclic symmetry deviates by the same amount (KNOWN_BUGS 62).
+  Mecway's API reads the modes from the bridge (headless script); GUI NOT inspected.
+  Limits: KNOWN_BUGS 61 (among others double eigenvalue in ND 0 +1.3%, modal only,
+  solid elements only, only the sector to Mecway). Split off: **S10i** (the
+  whole wheel in Mecway). Open: Mecway GUI test (sector solution of a cyclic
+  model in the GUI, list *Mode 1..n*, animation). Questions to user: (1) show the whole wheel
+  (S10i) or is the sector enough? (2) cyclic symmetry also in static and
+  thermal (Mecway can do it; now ERROR and a separate sector)? (3) a partial
+  support on a cut face (axially free) needed? (4) with a double eigenvalue in
+  ND 0, rather the full model as an option (`cyclic_method`)?
+- *S10i (done):* Mecway's format (headless `mw_solve.py` on CY-01, CY-04, CY-05,
+  Impeller and variants: two elsets, loose node, master/slave swapped): the
+  model copy in `<solution>` has N copies; node i of sector j = i + j·n, rotated
+  by +j·360°/N (clockwise-positive, independent of master/slave), element e + j·ne
+  (ne = highest eid), per elset the sectors one after another, all nodes copied (also
+  cut faces and axis). Code-Aster: `DEFI_SQUELETTE` (`CYCLIQUE`, `SECTEUR TOUT='OUI'`) +
+  `REST_SOUS_STRUC SQUELETTE NOM_CHAM='DEPL'` gives exactly that structure (N·n nodes,
+  block j = sector rotated by +j·360°/N, with the phase; block j = `SECTEUR=j+1` rotated; seen
+  with CY-01), also about X/Y (skeleton rotated back) and with nodes on the axis; the result
+  got fields without `setMesh`. Built: `aster_cyclic.collect` (wheel or fallback to
+  the sector with WARNING, `BRIDGE_CYCL ... WIEL=0|1`), `wheel_model`/`node_rows`
+  (matching on coordinate), `aster_results_export(cyclic=...)`,
+  `bridge_results_liml.splice_results`/`check_results_fit` (nodes and elements of
+  the wheel in the model copy), setting `cyclic_full_wheel` (on by default). Measured:
+  model copy equal to Mecway's own (ids, order, elements; coordinates ≤ 1.1e-15
+  m), Mecway's API reads the bridge's wheel like its own (CY-01, Impeller);
+  shapes relative to the full model 1 − MAC ≤ 5.1e-7 (CY-01) and ≤ 2.1e-8 (CY-05),
+  criterion 1e-3; cut faces continuous ≤ 1.3e-14; on the axis (CY-04, ND 1) 6.2e-4,
+  Mecway's own solution 9.4e-4; relative to Mecway's wheel ND 0 MAC 1.000000 (CY-05),
+  Impeller 0.9996 … 0.99994. 37 new checks in `tests_cyclisch.py` (CY 171/171).
+  Regression (`VERIF_WORK` own folder): 1055/1058 OK (216 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, no previously OK check worse. Found: KNOWN_BUGS 78 (Resultaten... with X/Y axis; solved 15 Oct, `check_results_fit` rotates the frame back).
+  Open: Mecway GUI test (show wheel, animation per mode). Questions to user: (1) make the
+  scale of the shapes equal to Mecway (mass normalisation over the whole wheel; now
+  that of REST_SOUS_STRUC)? (2) for a pair, also show the second member as an extra mode?
 
-### S2 – Akoestiek: holtemodes
-**Doel:** Mecway *Acoustic Resonance* (manual §6.9, §9.34) via Code-Aster: eigenmodes
-van een lucht- of vloeistofvolume met drukknopen (p = 0) en impedantieranden.
-**Code-Aster:** `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='3D'` (rand: `3D_ABSO`), een
-drukformulering zonder koppeling met de constructie; `CALC_MODES` op de akoestische
-matrices. Testcases: zoek op `ACOUSTIQUE` (o.a. `ahlv100a` voor syntax). Het
-analysetype en de tags in Mecway eerst lezen (waarschijnlijk A30; niet bevestigd), plus
-de naam van het drukveld in Mecway's oplossing; modes als lijst in de `.liml`
-(hergebruik van de modale resultaatroute).
-**Klaar als:** 3D-buis met harde wanden en open/gesloten einden: f_n = n·c/(2L) binnen
-0,5%, en gelijk aan headless Mecway van hetzelfde model (≤ 1%). De orgelpijp-tutorial
-(2D) alleen als illustratie.
-**Bevindingen:** Invoerroute: Mecway zelf (headless vastgesteld met `mw_solve.py`):
-`<analysis type="A30" maxmode="..">`, materiaal `<mechanical type="Isotropic"
-speedofsound="340 m/s" />` (dichtheid optioneel, Mecway rekent zonder),
-`<fluidpressure selection=".."><value>0 Pa</value>` op knopen of vlakken (≠ 0 weigert
-Mecway), `<impedance selection=".."><specificimpedancer>408</..><specificimpedancei>0</..>`
-(getal zonder eenheid; "Pa*s/m" weigert Mecway). Mecway's oplossing: per mode
-`<mode frequency>` met de knoopvariabele `pressure`, genormeerd pᵀMp = 1 met
-M = ∫NᵀN/c²; met impedantie complexe modes (`decayrate`, `pressure` + `pressurei`).
-Mecway rekent akoestiek met **één** materiaal (twee: geen oplossing). Gebouwd:
-`bridge_acoustic.py` (parse + builder, dispatch in `_build_modal` op
-`analysis["phenomene"]`), `AsterTemplate_Akoestiek.comm`, analyse `acoustic_modes_3d`
-(A30), `PRES` → `pressure` in `aster_results_export`. Code-Aster: `NORM_MODE` werkt niet
-voor `MODE_ACOU` (de bridge schaalt met 1/√`MASS_GENE`, dan gelijk aan Mecway); harde
-wanden zonder drukknoop geven met `PLUS_PETITE` `ALGELINE3_81` (bridge: `CENTRE` rond
-−0,1·c/(2D), alarm `ALGELINE3_82` onschuldig); `RIGI_ACOU`/`MASS_ACOU` bevatten ρ niet
-(gemeten), dus media met verschillende dichtheid geven een ERROR. Verificatie AK-01..07
-(`tests_akoestiek.py`, 78 controles OK): hex20-buis gesloten-gesloten en open-gesloten
-≤ 0,017%, ruimte 3D ≤ 0,026%, hex8/wedge6/tet4 ≤ 0,36% (Δf/f ≈ (kh)²/24), twee media
-≤ 0,024%; t.o.v. headless Mecway < 4e-10 (frequenties én ∣p∣). Regressie 447/450 OK,
-3 BEKEND, 0 NOK/FOUT. **S2b (afgesplitst):** impedantie niet gebouwd (ERROR): `CALC_MODES`
-neemt `MATR_AMOR` niet voor drukmatrices, `AFFE_CHAR_ACOU` kent geen impedantie,
-`3D_ABSO` alleen ρc; route nog uitzoeken (eigen kwadratisch eigenwaardeprobleem in de
-job, of projectie op reële modes). Controlegeval: buis hard/Z (reëel, Z > ρc) heeft
-f_n = n·c/(2L) en decay rate (c/L)·artanh(ρc/Z). Open: Mecway-GUI-test (veld `pressure`
-per mode). Vragen gebruiker: impedantie (S2b) bouwen, en via welke route? *Acoustic
-displacement* als veld gewenst? Media met verschillende dichtheid nodig (dan andere
-formulering)?
-**S2b (klaar):** Invoerroute: Mecway's eigen *Impedance* (geen nieuwe invoer). Mecway
-(manual §6.9.2, headless nagegaan) rekent (K + λC + λ²M)P = 0 met C = ∫ρ/Z NNᵀdA,
-Z = `specificimpedancer` + i·`specificimpedancei`, λ = iω − σ; zonder dichtheid ρ = 0
-(impedantie werkt niet: bridge ERROR); de 2 × maxmode kleinste |λ|, daarvan f ≥ 0 (dus
-niet altijd maxmode modes; 0-Hz-modes willekeurig door ruis); vorm geschaald op
-Euclidische norm 1 met willekeurige fase. Route: (2) eigen kwadratisch probleem in de
-job, met scipy (zit in Code-Aster's Python311, 1.16.2) i.p.v. alleen numpy: Code-Aster
-maakt `RIGI_ACOU`/`MASS_ACOU` (= Mecway's K, M) en per rand `AMOR_ACOU` met
-`CELE_R = 1` (= ∫NNᵀdA, gemeten; andere randen in die matrix `CELE_R` 1e30), de job
-(`aster_acoustic_complex.py`) leest ze met `getValuesWithDescription`, elimineert de
-drukknopen, lineariseert (2n) en lost shift-invert op met ARPACK/`splu` (< 300
-vrijheidsgraden dicht). Route (1) projectie op reële modes viel af (afkapfout, complexe
-C past niet in `gene_r`), route (3) `3D_FLUIDE` ook (valse φ-modes, geen complexe C).
-Gebouwd: `bridge_acoustic._impedance_inputs`/`_complex_modes_comm`/`_write_modes_files`
-(tak in `build_acoustic_modes`), `aster_acoustic_complex.py`, rapport per mode (decay
-rate, T60, Q, residu-WARNING) in `MecwayAsterBridgeMain._report_modes`, vergelijking met
-Mecway op de dichtstbijzijnde frequentie (`bridge_from_aster`). Normering: fase met
-PᵀMP reëel, PᴴMP = 1 (Z → ∞ = de reële mode). Verificatie AI-01..10
-(`tests_akoestiek_impedantie.py`, 227 controles OK): buis hard/Z reëel (Z = 2000, 200,
-1e9, ρc), complex (2000 − 1000i, 1000 + 3000i, 1000i), drukknoop/Z, hex8 (dicht pad),
-ruimte met twee impedanties; analytisch (tanh(λL/c) = −ρc/Z) hex20 f ≤ 0,037%,
-σ ≤ 0,14%, P(L)/P(0) ≤ 2e-8 (criterium 1%); t.o.v. headless Mecway ≤ 1e-8 (f, σ en
-P-verhouding/fase; criterium 1%); Z = ρc: alle modes σ ≥ 1588 1/s (geen resonantie);
-hex8: σ gevoeliger voor de mesh dan f (+1,7% vs +0,41% bij 340 Hz). Mecway's API leest
-de modes (headless script: `modes()`, `frequency`, `node_value` van `pressure`/
-`pressurei`). Rekentijd 13 000 knopen/20 modes 14 s. Regressie (`VERIF_WORK` eigen
-map): 1245 van 1248 controles OK (226 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT, geen
-eerder OK-controle slechter; in `resultaten.*` alleen de AI-cases. Grenzen: KNOWN_BUGS
-55 (ook: geen MED/`res`, groot model NIET geverifieerd). Open: Mecway-GUI-test (decay
-rate onder *Solution*, animatie van een complexe mode). Vragen gebruiker: (1) 0-Hz-
-modes (constante druk, niet-oscillerend) altijd tonen (nu) of weglaten? (2) aantal modes
-zoals Mecway (≈ maxmode, nu) of precies maxmode? (3) complexe Z ook in de harmonische
-analyse (KNOWN_BUGS 57; nu met dezelfde scipy-route haalbaar)?
+### S2 – Acoustics: cavity modes
+**Goal:** Mecway *Acoustic Resonance* (manual §6.9, §9.34) via Code-Aster: eigenmodes
+of an air or liquid volume with pressure nodes (p = 0) and impedance boundaries.
+**Code-Aster:** `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='3D'` (boundary: `3D_ABSO`), a
+pressure formulation without coupling to the structure; `CALC_MODES` on the acoustic
+matrices. Test cases: search for `ACOUSTIQUE` (e.g. `ahlv100a` for syntax). First read
+the analysis type and the tags in Mecway (probably A30; not confirmed), plus the name
+of the pressure field in Mecway's solution; modes as a list in the `.liml`
+(reuse of the modal result route).
+**Done when:** 3D tube with hard walls and open/closed ends: f_n = n·c/(2L) within
+0.5%, and equal to headless Mecway for the same model (≤ 1%). The organ-pipe tutorial
+(2D) only as an illustration.
+**Findings:** Input route: Mecway itself (established headless with `mw_solve.py`):
+`<analysis type="A30" maxmode="..">`, material `<mechanical type="Isotropic"
+speedofsound="340 m/s" />` (density optional, Mecway solves without it),
+`<fluidpressure selection=".."><value>0 Pa</value>` on nodes or faces (≠ 0 is rejected
+by Mecway), `<impedance selection=".."><specificimpedancer>408</..><specificimpedancei>0</..>`
+(number without unit; "Pa*s/m" is rejected by Mecway). Mecway's solution: per mode
+`<mode frequency>` with the node variable `pressure`, normalised pᵀMp = 1 with
+M = ∫NᵀN/c²; with impedance complex modes (`decayrate`, `pressure` + `pressurei`).
+Mecway solves acoustics with **one** material (two: no solution). Built:
+`bridge_acoustic.py` (parse + builder, dispatch in `_build_modal` on
+`analysis["phenomene"]`), `AsterTemplate_Akoestiek.comm`, analysis `acoustic_modes_3d`
+(A30), `PRES` → `pressure` in `aster_results_export`. Code-Aster: `NORM_MODE` does not work
+for `MODE_ACOU` (the bridge scales with 1/√`MASS_GENE`, then equal to Mecway); hard
+walls without a pressure node give `ALGELINE3_81` with `PLUS_PETITE` (bridge: `CENTRE` around
+−0.1·c/(2D), alarm `ALGELINE3_82` harmless); `RIGI_ACOU`/`MASS_ACOU` do not contain ρ
+(measured), so media with different densities give an ERROR. Verification AK-01..07
+(`tests_akoestiek.py`, 78 checks OK): hex20 tube closed-closed and open-closed
+≤ 0.017%, 3D room ≤ 0.026%, hex8/wedge6/tet4 ≤ 0.36% (Δf/f ≈ (kh)²/24), two media
+≤ 0.024%; vs. headless Mecway < 4e-10 (frequencies and ∣p∣). Regression 447/450 OK,
+3 BEKEND, 0 NOK/FOUT. **S2b (split off):** impedance not built (ERROR): `CALC_MODES`
+does not take `MATR_AMOR` for pressure matrices, `AFFE_CHAR_ACOU` has no impedance,
+`3D_ABSO` only ρc; route still to be researched (own quadratic eigenvalue problem in the
+job, or projection onto real modes). Check case: tube hard/Z (real, Z > ρc) has
+f_n = n·c/(2L) and decay rate (c/L)·artanh(ρc/Z). Open: Mecway GUI test (field `pressure`
+per mode). Questions for the user: build impedance (S2b), and via which route? *Acoustic
+displacement* wanted as a field? Media with different densities needed (then a different
+formulation)?
+**S2b (done):** Input route: Mecway's own *Impedance* (no new input). Mecway
+(manual §6.9.2, checked headless) solves (K + λC + λ²M)P = 0 with C = ∫ρ/Z NNᵀdA,
+Z = `specificimpedancer` + i·`specificimpedancei`, λ = iω − σ; without density ρ = 0
+(impedance does not work: bridge ERROR); the 2 × maxmode smallest |λ|, of those f ≥ 0 (so
+not always maxmode modes; 0 Hz modes random due to noise); shape scaled to
+Euclidean norm 1 with a random phase. Route: (2) own quadratic problem in the
+job, with scipy (included in Code-Aster's Python311, 1.16.2) instead of numpy only: Code-Aster
+builds `RIGI_ACOU`/`MASS_ACOU` (= Mecway's K, M) and per boundary `AMOR_ACOU` with
+`CELE_R = 1` (= ∫NNᵀdA, measured; other boundaries in that matrix `CELE_R` 1e30), the job
+(`aster_acoustic_complex.py`) reads them with `getValuesWithDescription`, eliminates the
+pressure nodes, linearises (2n) and solves shift-invert with ARPACK/`splu` (< 300
+degrees of freedom dense). Route (1) projection onto real modes was dropped (truncation error,
+complex C does not fit in `gene_r`), route (3) `3D_FLUIDE` too (spurious φ modes, no complex C).
+Built: `bridge_acoustic._impedance_inputs`/`_complex_modes_comm`/`_write_modes_files`
+(branch in `build_acoustic_modes`), `aster_acoustic_complex.py`, report per mode (decay
+rate, T60, Q, residual WARNING) in `MecwayAsterBridgeMain._report_modes`, comparison with
+Mecway at the nearest frequency (`bridge_from_aster`). Normalisation: phase with
+PᵀMP real, PᴴMP = 1 (Z → ∞ = the real mode). Verification AI-01..10
+(`tests_akoestiek_impedantie.py`, 227 checks OK): tube hard/Z real (Z = 2000, 200,
+1e9, ρc), complex (2000 − 1000i, 1000 + 3000i, 1000i), pressure node/Z, hex8 (dense path),
+room with two impedances; analytical (tanh(λL/c) = −ρc/Z) hex20 f ≤ 0.037%,
+σ ≤ 0.14%, P(L)/P(0) ≤ 2e-8 (criterion 1%); vs. headless Mecway ≤ 1e-8 (f, σ and
+P ratio/phase; criterion 1%); Z = ρc: all modes σ ≥ 1588 1/s (no resonance);
+hex8: σ more sensitive to the mesh than f (+1.7% vs +0.41% at 340 Hz). Mecway's API reads
+the modes (headless script: `modes()`, `frequency`, `node_value` of `pressure`/
+`pressurei`). Run time 13,000 nodes/20 modes 14 s. Regression (`VERIF_WORK` own
+folder): 1245 of 1248 checks OK (226 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT, no
+previously OK check worse; in `resultaten.*` only the AI cases. Limits: KNOWN_BUGS
+55 (also: no MED/`res`, large model NOT verified). Open: Mecway GUI test (decay
+rate under *Solution*, animation of a complex mode). Questions for the user: (1) always show 0 Hz
+modes (constant pressure, non-oscillating) (now) or omit them? (2) number of modes
+like Mecway (≈ maxmode, now) or exactly maxmode? (3) complex Z also in the harmonic
+analysis (KNOWN_BUGS 57; now feasible with the same scipy route)?
 
-### S3a – Akoestiek: harmonisch drukveld
-**Doel:** drukveld per frequentie bij een bron of opgelegde snelheid, met absorberende
-randen. **Code-Aster:** `ACOUSTIQUE` + `DYNA_VIBRA` (harmonisch); testcase `ahlv100a`
-(draait: diagnose OK).
-**Invoer:** Mecway heeft geen harmonische analyse (manual hoofdstuk 6): frequentiebereik
-op een pagina *Akoestiek* in het hoofdvenster + `#ASTER-OPTIE`; bron/snelheid via
-Mecway-randvoorwaarden of `#ASTER`; geluidsniveau in dB op "microfoon"-knopen via
-`#ASTER-POST`. Resultaten per frequentie als stappen (amplitude, fase, dB).
-**Klaar als:** vlakke golf in een buis met absorberend einde: |p| constant en fase
-lineair, binnen 1% van de analytische oplossing; `ahlv100a`-waarden op een 3D-nabouw ≤ 1%.
-**Bevindingen:** Invoerroute: het A30-model zelf (Mecway heeft geen harmonische
-analyse, manual hoofdstuk 6) met een eigen analyse `acoustic_harm_3d` (pagina
-*Akoestiek (harmonisch)*; `auto` kiest hem bij A30 met een bron) en speciale
-selectienamen: vlakselectie `BRON_`/`SOURCE_` (normaalsnelheid `source_velocity`,
-standaard 1 mm/s, de fluid in), `ABSORBEREND_`/`ABSORBING_` (rho-c-rand),
-knoopselectie `MICROFOON_`/`MICROPHONE_`; sleutelwoord `#ASTER-BRON selectie = v [,
-fase]` (bridge_custom); Mecway's *fluid pressure* != 0 = opgelegde druk, *impedance*
-met reele Z = absorberende rand. Frequenties: `harm_freq_start/_end/_count/_spacing`
-of `harm_freq_list` (ook `#ASTER-OPTIE`). Gebouwd: `bridge_acoustic.build_acoustic_harm`
-(dispatch in `bridge_to_aster._build_dyna_modal` op `phenomene`),
-`AsterTemplate_AkoestiekHarm.comm`, `aster_acoustic_export.py` (in de job: per
-frequentie een `<mode frequency>` met `pressure`, `pressurei`, `pressuremag`,
-`pressurephase`, `spl`; microfoon-CSV en `BRIDGE_MIC`), rapport in de log/het statusvak
-(`report_harmonic`). Code-Aster (route ahlv100a, gemeten): `VITE_FACE` vraagt de
-bronvlakken in het model met een materiaal (`CALCUL_20`); `EXCIT` `COEF_MULT=+1`,
-`PUIS_PULS=1`, `PHAS_DEG=90` geeft p = +rho c v (v de fluid in; ahlv100a -1);
-`3D_ABSO`-demping = (1/c) int NN dA zonder rho, dus Z wordt `CELE_R = Z/rho` (Z = 2 rho c:
-reflectie 1/3 gemeten); `CELE_I` geeft niet de reflectie van een complexe Z (ERROR,
-KNOWN_BUGS 57); opgelegde druk als aparte lastvector zonder `PUIS_PULS`; een keten
-`getField().toSimpleFieldOnNodes()` gaf een keer `DVP_2` (FPE), los niet. SPL op de
-effectieve waarde (Code-Aster's `PRAC_ELNO` DB is 3,01 dB hoger). Verificatie AH-01..08
-(`tests_akoestiek_harmonisch.py`, 10 cases, 103 controles OK): (a) vlakke golf hex20 10
-per golflengte |p| -0,018%, fase -0,011% (5 per golflengte -0,25% / -0,16%; hex8 10 per
-golflengte +1,7% / -1,6%, 20 per golflengte +0,41% / -0,41%); (b) harde wand: |P - P_exact|
-<= 1,2e-4 van max|P| (100/250/420 Hz); (c) ahlv100a 500 Hz: Re/Im binnen de
-TEST_RESU-precisie van VALE_REFE (Im in NO751 +0,33%, ook Code-Aster zelf) en gelijk aan
-VALE_CALC (<= 1e-6), DB 109,887; CALC_MODES-deel van ahlv100a (8 modes) gelijk aan
-VALE_CALC; impedantie Z = 2 rho c <= 7e-6; opgelegde druk 2 Pa exact; `#ASTER-BRON` met 90
-graden en microfoons (SPL 89,20 dB, fase 90 - kL binnen 0,02 graden). Mecway's API leest de
-frequenties en de vijf velden (headless script). Regressie (`VERIF_WORK` eigen map): 584 van 587 controles OK (135 cases), 3 BEKEND
-(NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; in `resultaten.json` alleen de AH-cases
-bijgewerkt. Open:
-Mecway-GUI-test (lijst per frequentie, contour van `spl`/`pressuremag`, animatie van
-`pressure` + `pressurei` zonder decay rate). Vragen gebruiker: (1) complexe of
-frequentieafhankelijke impedantie bouwen (eigen frequentielus met `COMB_MATR_ASSE` +
-`RESOUDRE`)? (2) volumedemping / poreuze materialen nodig? (3) SPL op de effectieve
-waarde (nu) of op de amplitude zoals Code-Aster? (4) frequentierespons ook als Mecway-
-grafiek (bijv. `<globalvariable>` per frequentie) in plaats van alleen CSV?
+### S3a – Acoustics: harmonic pressure field
+**Goal:** pressure field per frequency for a source or imposed velocity, with absorbing
+boundaries. **Code-Aster:** `ACOUSTIQUE` + `DYNA_VIBRA` (harmonic); test case `ahlv100a`
+(runs: diagnosis OK).
+**Input:** Mecway has no harmonic analysis (manual chapter 6): frequency range
+on a page *Acoustics* in the main window + `#ASTER-OPTIE`; source/velocity via
+Mecway boundary conditions or `#ASTER`; sound level in dB at "microphone" nodes via
+`#ASTER-POST`. Results per frequency as steps (amplitude, phase, dB).
+**Done when:** plane wave in a tube with an absorbing end: |p| constant and phase
+linear, within 1% of the analytical solution; `ahlv100a` values on a 3D rebuild ≤ 1%.
+**Findings:** Input route: the A30 model itself (Mecway has no harmonic
+analysis, manual chapter 6) with its own analysis `acoustic_harm_3d` (page
+*Acoustics (harmonic)*; `auto` picks it for A30 with a source) and special
+selection names: face selection `BRON_`/`SOURCE_` (normal velocity `source_velocity`,
+default 1 mm/s, into the fluid), `ABSORBEREND_`/`ABSORBING_` (rho-c boundary),
+node selection `MICROFOON_`/`MICROPHONE_`; keyword `#ASTER-BRON selectie = v [,
+fase]` (bridge_custom); Mecway's *fluid pressure* != 0 = imposed pressure, *impedance*
+with real Z = absorbing boundary. Frequencies: `harm_freq_start/_end/_count/_spacing`
+or `harm_freq_list` (also `#ASTER-OPTIE`). Built: `bridge_acoustic.build_acoustic_harm`
+(dispatch in `bridge_to_aster._build_dyna_modal` on `phenomene`),
+`AsterTemplate_AkoestiekHarm.comm`, `aster_acoustic_export.py` (in the job: per
+frequency a `<mode frequency>` with `pressure`, `pressurei`, `pressuremag`,
+`pressurephase`, `spl`; microphone CSV and `BRIDGE_MIC`), report in the log/status box
+(`report_harmonic`). Code-Aster (route ahlv100a, measured): `VITE_FACE` requires the
+source faces in the model with a material (`CALCUL_20`); `EXCIT` `COEF_MULT=+1`,
+`PUIS_PULS=1`, `PHAS_DEG=90` gives p = +rho c v (v into the fluid; ahlv100a -1);
+`3D_ABSO` damping = (1/c) int NN dA without rho, so Z becomes `CELE_R = Z/rho` (Z = 2 rho c:
+reflection 1/3 measured); `CELE_I` does not give the reflection of a complex Z (ERROR,
+KNOWN_BUGS 57); imposed pressure as a separate load vector without `PUIS_PULS`; a chain
+`getField().toSimpleFieldOnNodes()` once gave `DVP_2` (FPE), separately not. SPL on the
+effective (RMS) value (Code-Aster's `PRAC_ELNO` DB is 3.01 dB higher). Verification AH-01..08
+(`tests_akoestiek_harmonisch.py`, 10 cases, 103 checks OK): (a) plane wave hex20 10
+per wavelength |p| -0.018%, phase -0.011% (5 per wavelength -0.25% / -0.16%; hex8 10 per
+wavelength +1.7% / -1.6%, 20 per wavelength +0.41% / -0.41%); (b) hard wall: |P - P_exact|
+<= 1.2e-4 of max|P| (100/250/420 Hz); (c) ahlv100a 500 Hz: Re/Im within the
+TEST_RESU precision of VALE_REFE (Im in NO751 +0.33%, Code-Aster itself too) and equal to
+VALE_CALC (<= 1e-6), DB 109.887; CALC_MODES part of ahlv100a (8 modes) equal to
+VALE_CALC; impedance Z = 2 rho c <= 7e-6; imposed pressure 2 Pa exact; `#ASTER-BRON` with 90
+degrees and microphones (SPL 89.20 dB, phase 90 - kL within 0.02 degrees). Mecway's API reads the
+frequencies and the five fields (headless script). Regression (`VERIF_WORK` own folder): 584 of 587 checks OK (135 cases), 3 BEKEND
+(NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; in `resultaten.json` only the AH cases
+updated. Open:
+Mecway GUI test (list per frequency, contour of `spl`/`pressuremag`, animation of
+`pressure` + `pressurei` without decay rate). Questions for the user: (1) build complex or
+frequency-dependent impedance (own frequency loop with `COMB_MATR_ASSE` +
+`RESOUDRE`)? (2) volume damping / porous materials needed? (3) SPL on the effective
+value (now) or on the amplitude like Code-Aster? (4) frequency response also as a Mecway
+graph (e.g. `<globalvariable>` per frequency) instead of CSV only?
 
-### S3b – Vibro-akoestiek
-**Doel:** constructie en lucht/vloeistof gekoppeld (trillend paneel in een ruimte, tank
-met vloeistof). **Code-Aster:** `PHENOMENE='MECANIQUE'`, `3D_FLUIDE`, `FLUI_STRU`
-(koppelvlak; er bestaat geen `3D_FLUI_STRU`), `3D_FLUI_ABSO`,
-`FORMULATION='U_P_PHI'`. Testcases `adlv100a` (zuiger + vloeistofkolom, gekoppelde
-modes, analytisch 13,8285 Hz) en `ahlv101a` (harmonisch met absorptie).
-**Invoer (voorstel):** lucht = onderdeel met Mecway's akoestische materiaal of groepsnaam
-`LUCHT_`; koppelvlakken automatisch (vlakken die lucht en constructie delen), `KOPPEL_`
-als handmatige keuze.
-**Klaar als:** `adlv100a` op een 3D-nabouw binnen 0,5% van 13,8285 Hz; harmonische
-koppeling volgens `ahlv101a` ≤ 1%.
-**Bevindingen:** Invoerroute: een Mecway *Frequency*-model (V30; Mecway heeft geen
-gekoppelde analyse en rekent akoestiek met één materiaal) met het fluïdum als eigen
-onderdeel: materiaal met *Speed of sound* + *Density* zonder Young's modulus (Mecway's
-akoestische materiaal), of een onderdeelnaam `LUCHT_`/`VLOEISTOF_`/`FLUID_`;
-koppelvlakken automatisch (fluïdumvlakken die samenvallen met een vlak van een
-constructie-volume-element of met een schaal), `KOPPEL_`/`COUPLING_`-vlakselecties als
-handmatige keuze; p = 0 met knoop-/vlakselecties `OPEN_` (Mecway's *fluid pressure*
-bestaat alleen bij A30; staat hij in de `.liml`, dan telt 0 mee). Analyse
-`vibroacoustic_modes_3d` (pagina *Vibro-akoestiek (modes)*, `auto` kiest hem bij V30 met
-een fluïdum; elders een WARNING), instelling `vibro_freq_min` (0,1 Hz). Gebouwd:
-`bridge_vibroacoustic.py` (parse, koppelvlakken, builder, rapport),
-`AsterTemplate_VibroAkoestiek.comm`, stap 2c in `bridge_mesh.write_mesh` (randelementen
+### S3b – Vibroacoustics
+**Goal:** structure and air/liquid coupled (vibrating panel in a room, tank
+with liquid). **Code-Aster:** `PHENOMENE='MECANIQUE'`, `3D_FLUIDE`, `FLUI_STRU`
+(coupling surface; there is no `3D_FLUI_STRU`), `3D_FLUI_ABSO`,
+`FORMULATION='U_P_PHI'`. Test cases `adlv100a` (piston + liquid column, coupled
+modes, analytical 13.8285 Hz) and `ahlv101a` (harmonic with absorption).
+**Input (proposal):** air = part with Mecway's acoustic material or group name
+`LUCHT_`; coupling surfaces automatic (faces shared by air and structure), `KOPPEL_`
+as a manual choice.
+**Done when:** `adlv100a` on a 3D rebuild within 0.5% of 13.8285 Hz; harmonic
+coupling according to `ahlv101a` ≤ 1%.
+**Findings:** Input route: a Mecway *Frequency* model (V30; Mecway has no
+coupled analysis and solves acoustics with one material) with the fluid as its own
+part: material with *Speed of sound* + *Density* without Young's modulus (Mecway's
+acoustic material), or a part name `LUCHT_`/`VLOEISTOF_`/`FLUID_`;
+coupling surfaces automatic (fluid faces that coincide with a face of a
+structural solid element or with a shell), `KOPPEL_`/`COUPLING_` face selections as
+a manual choice; p = 0 with node/face selections `OPEN_` (Mecway's *fluid pressure*
+only exists for A30; if it is in the `.liml`, 0 counts). Analysis
+`vibroacoustic_modes_3d` (page *Vibroacoustics (modes)*, `auto` picks it for V30 with
+a fluid; elsewhere a WARNING), setting `vibro_freq_min` (0.1 Hz). Built:
+`bridge_vibroacoustic.py` (parse, coupling surfaces, builder, report),
+`AsterTemplate_VibroAkoestiek.comm`, step 2c in `bridge_mesh.write_mesh` (boundary elements
 `BRFSI<k>`), dispatch in `_build_modal` (analysis `"vibroacoustic"`), `FIELD_TABLE`
-`pressure` uit `DEPL`/`PRES`. Code-Aster (gemeten): `FORMULATION='U_P_PHI'`
-(standaard, symmetrisch); elke vrijheidsgraad φ geeft een valse mode bij 0 Hz
-(`PLUS_PETITE`: `ALGELINE3_81`; `CENTRE`: eerst de valse modes), dus `INFO_MODE`
-(Sturm-telling klopt) zoekt een band vanaf `vibro_freq_min`, `CALC_MODES BANDE`
-(`COEF_DIM_ESPACE` 4), filteren op f en `MASS_GENE` > 0 (een valse mode met
-`MASS_GENE` < 0 gaf bij normeren `DVP_2`), `EXTR_MODE`, `NORM_MODE MASS_GENE`; `U_P`
-gaf een verkeerde reeks / `JEVEUX_26`, `U_PSI` kent `DDL_IMPO PRES` niet. De dichtheid
-zit wel in de matrices (anders dan `ACOUSTIQUE`, KNOWN_BUGS 55): staaf + water met ρ 1000
-en 1 gaven elk de eigen analytische frequenties; twee fluïda met gedeelde knopen en een
-andere dichtheid gaven 188,23 i.p.v. 306,47 Hz (φ continu): ERROR. Koppelvlakken
-`ORIE_PEAU` met `GROUP_MA_INTERNE` = fluïdum; schaal + koppelvlak geven het alarm
-`MODELISA4_8`/`8_13` (dubbele cellen, onschuldig; uitleg in `bridge_run_aster`).
-Verificatie VA (`tests_vibroakoestiek.py`, 8 cases, 29 controles OK): (a) adlv100a 3D
-(hex20) 13,82767 Hz: −6,0e-5 t.o.v. VALE_REFE 13,8285 (= de lage-frequentiebenadering),
-−9,8e-7 t.o.v. de exacte wortel, mode 2 +5,1e-5, p/u op beide zuigervlakken 2e-6, ook
-met `KOPPEL_` (VA-01k); (b) elastische staaf + waterkolom (Zs·cot + Zf·cot = 0) 4 modes
-≤ 2,4e-5 (criterium 1%); schaalzuiger (DKT) op een luchtkolom ≤ 6,6e-4; buis van twee
-media (gelijke ρ) ≤ 8,6e-5; paneel op luchtholte met 1000× lichtere lucht = losse plaat-
-en holtemodes ≤ 0,61% (DKT-discretisatie), met gewone lucht pompmode +8,8% (−0,48%
-t.o.v. de een-mode-benadering); `#ASTER-OPTIE vibro_freq_min` (voorbeeld 14). Officiële
-testcases adlv100a en ahlv101a draaien (ctest, geen NOOK). Mecway's API leest frequenties,
-`displ` en `pressure` per mode (headless script op VA-01). Regressie (`VERIF_WORK`
-eigen map): 651 van 654 controles OK (151 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT, geen
-eerder OK-controle slechter; daarna VA-05c erbij (657/654). (c) Harmonisch niet gebouwd:
-**afgesplitst als S3c** (`DYNA_VIBRA HARM` op de gekoppelde matrices, `3D_FLUI_ABSO` met
-`IMPE_MECA`/`ONDE_FLUI` → `MATR_IMPE_PHI`, bron als kracht op de constructie, `VITE_FACE`
-of invallende golf; klaar als: ahlv101a op een 3D-nabouw ≤ 1% en een harmonisch
-aangedreven zuiger + kolom ≤ 1%). Beperkingen: KNOWN_BUGS 59; een materiaal zonder E
-rekent de bridge als staal, Mecway als E = 0 (KNOWN_BUGS 60). Open: Mecway-GUI-test
-(modes met `displ` en `pressure`, contour en animatie). Vragen gebruiker: (1) is de
-invoer via het materiaal (Speed of sound zonder E) + `OPEN_` werkbaar, of liever een
-`#ASTER`-sleutelwoord? (2) lucht boven water (twee dichtheden) nodig? Dan een
-koppelvlak tussen de fluïda bouwen; (3) klotsen (zwaartekracht op het vrije oppervlak)
-gewenst? (4) S3c (harmonisch) als volgende stap?
+`pressure` from `DEPL`/`PRES`. Code-Aster (measured): `FORMULATION='U_P_PHI'`
+(default, symmetric); every φ degree of freedom gives a spurious mode at 0 Hz
+(`PLUS_PETITE`: `ALGELINE3_81`; `CENTRE`: the spurious modes first), so `INFO_MODE`
+(Sturm count is correct) searches a band from `vibro_freq_min`, `CALC_MODES BANDE`
+(`COEF_DIM_ESPACE` 4), filter on f and `MASS_GENE` > 0 (a spurious mode with
+`MASS_GENE` < 0 gave `DVP_2` during normalisation), `EXTR_MODE`, `NORM_MODE MASS_GENE`; `U_P`
+gave a wrong series / `JEVEUX_26`, `U_PSI` does not know `DDL_IMPO PRES`. The density
+is in the matrices (unlike `ACOUSTIQUE`, KNOWN_BUGS 55): bar + water with ρ 1000
+and 1 each gave their own analytical frequencies; two fluids with shared nodes and a
+different density gave 188.23 instead of 306.47 Hz (φ continuous): ERROR. Coupling surfaces
+`ORIE_PEAU` with `GROUP_MA_INTERNE` = fluid; shell + coupling surface give the alarm
+`MODELISA4_8`/`8_13` (duplicate cells, harmless; explanation in `bridge_run_aster`).
+Verification VA (`tests_vibroakoestiek.py`, 8 cases, 29 checks OK): (a) adlv100a 3D
+(hex20) 13.82767 Hz: −6.0e-5 vs. VALE_REFE 13.8285 (= the low-frequency approximation),
+−9.8e-7 vs. the exact root, mode 2 +5.1e-5, p/u on both piston faces 2e-6, also
+with `KOPPEL_` (VA-01k); (b) elastic bar + water column (Zs·cot + Zf·cot = 0) 4 modes
+≤ 2.4e-5 (criterion 1%); shell piston (DKT) on an air column ≤ 6.6e-4; tube of two
+media (equal ρ) ≤ 8.6e-5; panel on an air cavity with 1000× lighter air = separate plate
+and cavity modes ≤ 0.61% (DKT discretisation), with ordinary air pumping mode +8.8% (−0.48%
+vs. the one-mode approximation); `#ASTER-OPTIE vibro_freq_min` (example 14). Official
+test cases adlv100a and ahlv101a run (ctest, no NOOK). Mecway's API reads frequencies,
+`displ` and `pressure` per mode (headless script on VA-01). Regression (`VERIF_WORK`
+own folder): 651 of 654 checks OK (151 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT, no
+previously OK check worse; then VA-05c added (657/654). (c) Harmonic not built:
+**split off as S3c** (`DYNA_VIBRA HARM` on the coupled matrices, `3D_FLUI_ABSO` with
+`IMPE_MECA`/`ONDE_FLUI` → `MATR_IMPE_PHI`, source as a force on the structure, `VITE_FACE`
+or incident wave; done when: ahlv101a on a 3D rebuild ≤ 1% and a harmonically
+driven piston + column ≤ 1%). Limitations: KNOWN_BUGS 59; a material without E
+is computed by the bridge as steel, by Mecway as E = 0 (KNOWN_BUGS 60). Open: Mecway GUI test
+(modes with `displ` and `pressure`, contour and animation). Questions for the user: (1) is the
+input via the material (Speed of sound without E) + `OPEN_` workable, or rather an
+`#ASTER` keyword? (2) air above water (two densities) needed? Then build a
+coupling surface between the fluids; (3) sloshing (gravity on the free surface)
+wanted? (4) S3c (harmonic) as the next step?
 
-### S3c – Vibro-akoestiek harmonisch
-**Doel:** harmonische respons van een gekoppeld constructie-fluïdum-model (trillend
-paneel dat geluid afstraalt, zuiger op een luchtkolom met absorberend einde): per
-frequentie verplaatsingen in de constructie en druk/SPL in het fluïdum, met
-absorberende randen (`3D_FLUI_ABSO`), bronnen en microfoons. **Code-Aster:**
-`DYNA_VIBRA` `HARM` op de gekoppelde `U_P_PHI`-matrices met `MATR_IMPE_PHI`; testcase
+### S3c – Vibroacoustics harmonic
+**Goal:** harmonic response of a coupled structure-fluid model (vibrating
+panel radiating sound, piston on an air column with an absorbing end): per
+frequency displacements in the structure and pressure/SPL in the fluid, with
+absorbing boundaries (`3D_FLUI_ABSO`), sources and microphones. **Code-Aster:**
+`DYNA_VIBRA` `HARM` on the coupled `U_P_PHI` matrices with `MATR_IMPE_PHI`; test case
 ahlv101a.
-**Klaar als:** ahlv101a (TEST_RESU) binnen 1% op een 3D-nabouw; zuiger (massa-veer) op
-een luchtkolom met ρc-einde: u = F/(k − mω² + iωρcA) en de druk binnen 1%; regressie
-volgens D.5.
-**Bevindingen:** Invoerroute: hetzelfde Mecway *Frequency*-model als S3b (fluïdum-
-onderdeel, koppelvlakken automatisch/`KOPPEL_`, `OPEN_`) met een eigen analyse
-`vibroacoustic_harm_3d` (pagina *Vibro-akoestiek (harmonisch)*, zelf kiezen; `auto`
-blijft de modes van S3b). Bronnen: Mecway-belastingen op de constructie (amplitude,
-`#ASTER-FASE`, tabel = amplitude tegen de frequentie, zoals S10h), vlakselecties
-`BRON_`/`SOURCE_` (snelheid de fluid in, `source_velocity`) en nieuw
-`INVALLEND_`/`INCIDENT_` (invallende golf, nieuwe instelling `incident_pressure`, 1 Pa),
-`#ASTER-BRON` met een snelheid of (nieuw) een druk-eenheid = invallende golf; randen
-`ABSORBEREND_` (ρc) en Mecway's *impedance* (reëel, `CELE_R = Z/ρ`); `MICROFOON_`
-(druk/SPL, CSV zoals S3a), `MEETPUNT_` (verplaatsing, CSV zoals S10h); frequenties
-`harm_freq_*` (20–500 Hz, 50). Gebouwd: `bridge_vibroacoustic_harm.py` (builder en
-rapport; dispatch in `_build_dyna_modal` op `vibroacoustic` + `type_calcul` HARM),
-`AsterTemplate_VibroAkoestiekHarm.comm`, `aster_harmonic_export` uitgebreid met
-`pressure=True` (velden `pressure`, `pressurei`, `pressuremag`, `pressurephase`, `spl`
-uit component `PRES` van `DEPL`) en microfoons (route van `aster_acoustic_export`);
-`parse_vibro` bewaart de rollen van de speciale selecties en de impedantiewaarden.
-Gekozen route: direct (`BASE_CALCUL='PHYS'`): `U_P_PHI` heeft valse modes bij 0 Hz, de
-absorptie is niet proportioneel en ahlv101a/ahlv100b rekenen zo. Code-Aster (gemeten):
-`ONDE_FLUI` met `PRES` geeft een binnenlopende golf `PRES`/2 en laat de teruggekaatste
-golf door (de bridge schrijft 2 × `incident_pressure`); `VITE_FACE` in `U_P_PHI` geeft met
-`COEF_MULT=+1` p = −ρcv (de bridge: −1, v de fluid in); `IMPE_MECA` weigert `CARA_ELEM`
-(`SUPERVIS_4`: eigen `ASSEMBLAGE`), `AMOR_MECA` met `GROUP_MA` gaf `DVP_1` (dus op het hele
-model met `AMOR_FLUI='NON'`); Rayleigh alleen op de constructie (`RIGI_MECA`/`MASS_MECA`
-met `GROUP_MA`); `DYNA_VIBRA AMOR_FLUI='NON'` met `MATR_AMOR` + `MATR_IMPE_PHI` (zoals
-`DYNA_LINE`). Verificatie VH (`tests_vibroakoestiek_harmonisch.py`, 13 cases, 175
-controles): (a) ahlv101a 3D (invallende golf + absorberende uitlaat): VALE_REFE
-≤ 8,0e-4 (PRECISION 1e-3), VALE_CALC ≤ 1,3e-7; ahlv100b (snelheidsbron) VALE_REFE ≤
-8,9e-4, VALE_CALC ≤ 2,3e-7; `#ASTER-BRON` met fase (×i, ×e^{−i30°}) ≤ 2,3e-7; (b) zuiger
-(m 0,05 kg, k 3000 N/m, ζ_straling 0,17) op een luchtkolom met ρc-einde: U ≤ 1,3e-4,
-fase ≤ 7e-4°, druk ≤ 2,9e-5 van de handformule over 5–200 Hz (criterium 1%); met Z =
-2ρc ≤ 1,2e-4, met Rayleigh α/β en een demper ≤ 1,3e-4, met een krachttabel + fase ≤
-1,3e-4, schaalzuiger (DKT, hex8-lucht) U ≤ 2,5e-4, p ≤ 3,3e-3; invallende golf op een
-harde wand / `OPEN_` ≤ 1,2e-4. Mecway's API leest het resultaat (headless script op
-VH-02: 8 frequenties, `displx`/`displix`, `pressure`/`pressurei`/`spl`). Regressie (`VERIF_WORK`
-eigen map, groepen na Lassen parallel): 1193 van 1196 controles OK (229 cases), 3 BEKEND
-(NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, geen eerder OK-controle slechter; in
-`resultaten.json` alleen de VH-cases bijgewerkt. Gevonden (KNOWN_BUGS 74, niet opgelost): in
-`acoustic_harm_3d` wordt `#ASTER-BRON .. = 2 Pa` stil 2 m/s en tekst zonder getal 0 m/s.
-Beperkingen: KNOWN_BUGS 59. Open: Mecway-GUI-test (lijst per frequentie met
-verplaatsing én druk, contour van `spl`, animatie). Vragen gebruiker: (1) `auto` bij
-V30 + fluïdum + bron (`BRON_`/`INVALLEND_`/`ABSORBEREND_`) naar de harmonische analyse
-(nu: modes, zelf kiezen)? (2) complexe of frequentieafhankelijke impedantie bouwen
-(eigen frequentielus met `COMB_MATR_ASSE` + `RESOUDRE`)? (3) Rayleigh-demping ook op het
-fluïdum (nu alleen de constructie)? (4) het stralingsvermogen of de intensiteit op een
-vlak (`CALC_CHAMP` `INTE_ELNO`) als resultaat? (5) een modale basis (GENE) voor grote
-modellen met veel frequenties (vraagt de `BANDE`-zoektocht van S3b en statische
-verrijking)?
+**Done when:** ahlv101a (TEST_RESU) within 1% on a 3D rebuild; piston (mass-spring) on
+an air column with a ρc end: u = F/(k − mω² + iωρcA) and the pressure within 1%; regression
+according to D.5.
+**Findings:** Input route: the same Mecway *Frequency* model as S3b (fluid
+part, coupling surfaces automatic/`KOPPEL_`, `OPEN_`) with its own analysis
+`vibroacoustic_harm_3d` (page *Vibroacoustics (harmonic)*, chosen by the user; `auto`
+stays with the modes of S3b). Sources: Mecway loads on the structure (amplitude,
+`#ASTER-FASE`, table = amplitude versus frequency, as in S10h), face selections
+`BRON_`/`SOURCE_` (velocity into the fluid, `source_velocity`) and new
+`INVALLEND_`/`INCIDENT_` (incident wave, new setting `incident_pressure`, 1 Pa),
+`#ASTER-BRON` with a velocity or (new) a pressure unit = incident wave; boundaries
+`ABSORBEREND_` (ρc) and Mecway's *impedance* (real, `CELE_R = Z/ρ`); `MICROFOON_`
+(pressure/SPL, CSV as in S3a), `MEETPUNT_` (displacement, CSV as in S10h); frequencies
+`harm_freq_*` (20–500 Hz, 50). Built: `bridge_vibroacoustic_harm.py` (builder and
+report; dispatch in `_build_dyna_modal` on `vibroacoustic` + `type_calcul` HARM),
+`AsterTemplate_VibroAkoestiekHarm.comm`, `aster_harmonic_export` extended with
+`pressure=True` (fields `pressure`, `pressurei`, `pressuremag`, `pressurephase`, `spl`
+from component `PRES` of `DEPL`) and microphones (route of `aster_acoustic_export`);
+`parse_vibro` keeps the roles of the special selections and the impedance values.
+Chosen route: direct (`BASE_CALCUL='PHYS'`): `U_P_PHI` has spurious modes at 0 Hz, the
+absorption is not proportional, and ahlv101a/ahlv100b compute this way. Code-Aster (measured):
+`ONDE_FLUI` with `PRES` gives an incoming wave `PRES`/2 and lets the reflected
+wave through (the bridge writes 2 × `incident_pressure`); `VITE_FACE` in `U_P_PHI` gives with
+`COEF_MULT=+1` p = −ρcv (the bridge: −1, v into the fluid); `IMPE_MECA` rejects `CARA_ELEM`
+(`SUPERVIS_4`: own `ASSEMBLAGE`), `AMOR_MECA` with `GROUP_MA` gave `DVP_1` (so on the whole
+model with `AMOR_FLUI='NON'`); Rayleigh only on the structure (`RIGI_MECA`/`MASS_MECA`
+with `GROUP_MA`); `DYNA_VIBRA AMOR_FLUI='NON'` with `MATR_AMOR` + `MATR_IMPE_PHI` (as in
+`DYNA_LINE`). Verification VH (`tests_vibroakoestiek_harmonisch.py`, 13 cases, 175
+checks): (a) ahlv101a 3D (incident wave + absorbing outlet): VALE_REFE
+≤ 8.0e-4 (PRECISION 1e-3), VALE_CALC ≤ 1.3e-7; ahlv100b (velocity source) VALE_REFE ≤
+8.9e-4, VALE_CALC ≤ 2.3e-7; `#ASTER-BRON` with phase (×i, ×e^{−i30°}) ≤ 2.3e-7; (b) piston
+(m 0.05 kg, k 3000 N/m, ζ_radiation 0.17) on an air column with a ρc end: U ≤ 1.3e-4,
+phase ≤ 7e-4°, pressure ≤ 2.9e-5 of the hand formula over 5–200 Hz (criterion 1%); with Z =
+2ρc ≤ 1.2e-4, with Rayleigh α/β and a damper ≤ 1.3e-4, with a force table + phase ≤
+1.3e-4, shell piston (DKT, hex8 air) U ≤ 2.5e-4, p ≤ 3.3e-3; incident wave on a
+hard wall / `OPEN_` ≤ 1.2e-4. Mecway's API reads the result (headless script on
+VH-02: 8 frequencies, `displx`/`displix`, `pressure`/`pressurei`/`spl`). Regression (`VERIF_WORK`
+own folder, groups after Welding in parallel): 1193 of 1196 checks OK (229 cases), 3 BEKEND
+(NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, no previously OK check worse; in
+`resultaten.json` only the VH cases updated. Found (KNOWN_BUGS 74, not fixed): in
+`acoustic_harm_3d` `#ASTER-BRON .. = 2 Pa` silently becomes 2 m/s and text without a number 0 m/s.
+Limitations: KNOWN_BUGS 59. Open: Mecway GUI test (list per frequency with
+displacement and pressure, contour of `spl`, animation). Questions for the user: (1) `auto` for
+V30 + fluid + source (`BRON_`/`INVALLEND_`/`ABSORBEREND_`) to the harmonic analysis
+(now: modes, chosen by the user)? (2) build complex or frequency-dependent impedance
+(own frequency loop with `COMB_MATR_ASSE` + `RESOUDRE`)? (3) Rayleigh damping also on the
+fluid (now only the structure)? (4) the radiated power or the intensity on a
+surface (`CALC_CHAMP` `INTE_ELNO`) as a result? (5) a modal basis (GENE) for large
+models with many frequencies (requires the `BANDE` search of S3b and static
+enrichment)?
 
-### S4a – Lassen: transiënt thermisch met bewegende bron
-**Doel:** temperatuurveld van een lasrups. Bouwt op `bridge_thermal.py` (T31).
-**Uitzoeken:** bewegende bron (Goldak dubbel-ellipsoïde of een eenvoudiger
-Gauss-bron) als Mecway-formule in x, y, z, t vroeg eerst KNOWN_BUGS 45 (x/y/z-formules
-→ ERROR; inmiddels opgelost); anders een `#ASTER`-sleutelwoord (lasbaan, snelheid, vermogen, afmetingen).
-Analysekeuze: `auto` stuurt T31 naar `ther_3d`; lassen kiest de gebruiker op de pagina
-of via `#ASTER-OPTIE`.
-**Klaar als:** quasi-stationaire piektemperatuur buiten de smeltzone binnen 5% van
-Rosenthal (puntbron op een dikke plaat).
-**Bevindingen:** Invoerroute (docs/Lassen.md): (A) `#ASTER-LASBRON` in Mecway's custom
-model definition (`bridge_welding.py`): Goldak dubbel-ellipsoïde (af, ar, b, c of r;
-ff/fr standaard continu), Q, η, v, rechte baan (`start`, `richting`, `lengte`) of
-`pad=<<knoopselectie>>` (stuksgewijs recht), `diepte`, `t0`/`t1`, `groep` (standaard
-selecties/componenten met `LASNAAD_`, anders automatisch binnen 3× de grootste halve
-as), `symmetrie`. In de .comm een Python-functie + `FORMULE(X, Y, Z, INST)` +
-`AFFE_CHAR_THER_F SOURCE`; na de solve een energiecontrole in de job (`CALC_VECT_ELEM`
-`CHAR_THER`: opgenomen vermogen, regel `BRIDGE_LASBRON`, statusvak). Meldingen:
-v·Δt > ½(af + ar), element > 0,8× de halve as, opgenomen vermogen > 2% af. (B)
-Mecway-formules in x, y, z, t voor alle thermische lasten (toen KNOWN_BUGS 45, thermisch
-opgelost, mechanisch later ook; Mecway's interne solver rekent zo'n model ook). Geen aparte analyse: T31 →
-`ther_3d` (ook `auto`). Temperatuurafhankelijke λ/c werden niet vertaald: XML gelezen
-uit een met Mecway (script `mw.set_material_type(.., "TempDependent")`) opgeslagen
-model, nu `THER_NL` + `THER_NON_LINE`; gevonden: Code-Aster interpoleert de enthalpie
-lineair tussen de `RHO_CP`-tabelpunten (13% energie weg na de eerste stap), de bridge
-verlengt en verfijnt de tabel. Verificatie WE-01..06 (`tests_lassen.py`, 53
-controles): Rosenthal −0,94..+0,90% (tolerantie 5%; met v·Δt op de meldingsgrens
-3,6%), Goldak analytisch gevouwen ≤ 1,2%, energiebalans ≤ 0,06% (tolerantie 2%),
-opgenomen vermogen ≤ 0,09%, λ(T) exact (Kirchhoff, ook Mecway), energie met c(T)
-0,003%, formules in temperatuur/convectie/flux gelijk aan Mecway (5e-15). Mecway
-headless met de bron als formule: energie gelijk (1e-9), temperaturen −2,9/+1,6%
-door Mecway's last op het einde van de stap (KNOWN_BUGS 14). Regressie 456/459 OK,
-3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK. Beperkingen: KNOWN_BUGS 56. Open:
-Mecway-GUI-test (tekst in Custom model definition, statusvak). Vragen gebruiker: (1)
-de bron normaliseren op het opgenomen vermogen (nu alleen melden)? (2) een eigen
-pagina in het hoofdvenster voor de lasbron i.p.v. `#ASTER`? (3) andere bronvormen
-(conisch, oppervlakte-Gauss) als sleutel? (4) een grotere tijdstap voor de
-afkoelfase (nu één vaste stap)?
+### S4a – Welding: transient thermal with a moving source
+**Goal:** temperature field of a weld bead. Builds on `bridge_thermal.py` (T31).
+**Research:** a moving source (Goldak double ellipsoid or a simpler
+Gaussian source) as a Mecway formula in x, y, z, t first required KNOWN_BUGS 45 (x/y/z formulas
+→ ERROR; fixed in the meantime); otherwise an `#ASTER` keyword (weld path, speed, power, dimensions).
+Analysis choice: `auto` sends T31 to `ther_3d`; welding is chosen by the user on the page
+or via `#ASTER-OPTIE`.
+**Done when:** quasi-steady peak temperature outside the fusion zone within 5% of
+Rosenthal (point source on a thick plate).
+**Findings:** Input route (docs/Lassen.md): (A) `#ASTER-LASBRON` in Mecway's custom
+model definition (`bridge_welding.py`): Goldak double ellipsoid (af, ar, b, c or r;
+ff/fr continuous by default), Q, η, v, straight path (`start`, `richting`, `lengte`) or
+`pad=<<knoopselectie>>` (piecewise straight), `diepte`, `t0`/`t1`, `groep` (default
+selections/components with `LASNAAD_`, otherwise automatic within 3× the largest semi-
+axis), `symmetrie`. In the .comm a Python function + `FORMULE(X, Y, Z, INST)` +
+`AFFE_CHAR_THER_F SOURCE`; after the solve an energy check in the job (`CALC_VECT_ELEM`
+`CHAR_THER`: absorbed power, line `BRIDGE_LASBRON`, status box). Messages:
+v·Δt > ½(af + ar), element > 0.8× the semi-axis, absorbed power off by > 2%. (B)
+Mecway formulas in x, y, z, t for all thermal loads (then KNOWN_BUGS 45, thermal
+fixed, mechanical later too; Mecway's internal solver also solves such a model). No separate analysis: T31 →
+`ther_3d` (also `auto`). Temperature-dependent λ/c were not translated: XML read
+from a model saved with Mecway (script `mw.set_material_type(.., "TempDependent")`),
+now `THER_NL` + `THER_NON_LINE`; found: Code-Aster interpolates the enthalpy
+linearly between the `RHO_CP` table points (13% energy lost after the first step), the bridge
+extends and refines the table. Verification WE-01..06 (`tests_lassen.py`, 53
+checks): Rosenthal −0.94..+0.90% (tolerance 5%; with v·Δt at the message limit
+3.6%), Goldak analytically folded ≤ 1.2%, energy balance ≤ 0.06% (tolerance 2%),
+absorbed power ≤ 0.09%, λ(T) exact (Kirchhoff, Mecway too), energy with c(T)
+0.003%, formulas in temperature/convection/flux equal to Mecway (5e-15). Mecway
+headless with the source as a formula: energy equal (1e-9), temperatures −2.9/+1.6%
+due to Mecway's load at the end of the step (KNOWN_BUGS 14). Regression 456/459 OK,
+3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK. Limitations: KNOWN_BUGS 56. Open:
+Mecway GUI test (text in Custom model definition, status box). Questions for the user: (1)
+normalise the source to the absorbed power (now only reported)? (2) a dedicated
+page in the main window for the welding source instead of `#ASTER`? (3) other source shapes
+(conical, surface Gaussian) as a key? (4) a larger time step for the
+cooling phase (now one fixed step)?
 
-### S4b – Lassen: keten thermisch → mechanisch
-**Doel:** restspanning en vervorming. Eén template met `THER_NON_LINE` en
-`STAT_NON_LINE` (`AFFE_VARC` `TEMP` met `EVOL_THER`), tijdstappen gelijk.
-**Uitzoeken:** temperatuurafhankelijke E, vloeigrens en α: Mecway kent
-temperatuurafhankelijkheid alleen voor geleidbaarheid en soortelijke warmte (manual
-§8.6), dus via een `#ASTER`-sleutelwoord of tabel (documenteren).
-**Klaar als:** (1) vrij uitzettende staaf met uniforme ΔT: rek α·ΔT exact (≤ 0,1%);
-(2) volledig ingeklemde staaf: σ = −E·α·ΔT tot de vloeigrens (≤ 1%); (3) lasrups op
-een plaat: restspanningspatroon (trek in de las, druk ernaast) kwalitatief, met de
-gemeten waarden in de doc.
-**Bevindingen:** Invoerroute (docs/Lassen.md §9): geen aparte analyse en geen
-instelling: een *Thermal stress* in een T31-model zet de keten aan (Mecway bewaart
-Thermal stress, Fixed support en Displacement ook in een thermisch model; headless
-nagelopen met Mecway 33: ze blijven in de opgeslagen `.liml` en het thermische deel
-rekent zonder melding). `auto` → `ther_3d`; `bridge_from_liml` leest dan de
-mechanische voorwaarden, `bridge_thermomech.py` bouwt na de thermische solve (eigen
-template `AsterTemplate_ThermoMeca.comm`) `STAT_NON_LINE` met `AFFE_VARC` `TEMP`
-(`EVOL` = thermisch resultaat, `VALE_REF` = referentietemperatuur, in °C), op de
-thermische tijden (`ARCHIVAGE` op dezelfde tijden: temperatuur en spanning per stap in
-Mecway). Temperatuurafhankelijke E, ν, α, SY en H/ET via `#ASTER-MATERIAAL <Mecway-
-materiaal>: TC=(..), E=(..), ...` (`ELAS_FO`, `ECRO_LINE_FO`; α = secans t.o.v.
-`T_ALPHA`; `TC_CUT`: thermische rek constant boven de smelttemperatuur); zonder de regel
-de constante Mecway-waarden incl. bilineair/hardingscurve. Nieuwe instellingen in
-`ther_3d`: `deformation` (PETIT), `plastic_strain_definition`. Verificatie WE-07..10
-(`tests_lassen_mech.py`): vrij uitzetten, eenassig verhinderd met bilineaire
-versteviging en restspanning na terugkoelen, E(T)/SY(T)/α(T) met omgekeerd vloeien:
-alle ≤ 4·10⁻⁸ t.o.v. de handberekening (tolerantie 0,1% / 1%). Lasrups WE-10 (hex8):
-evenwicht N 0,02% / M 1% van SY·A, vloeien in de las (von Mises = SY + H·p, 0,2%),
-trek in de las, druk ernaast, hoekverdraaiing 8,9 mrad naar de laskant, langs- en
-dwarskrimp (0,077 mm, bovengrens α·q/(v·ρ·c·t) = 0,103 mm). Gevonden: lineaire hex8
-locken bij plasticiteit (σxx in de las 1,3–2,6 × SY, triaxiaal; WARNING, advies
-LINE_QUAD); met LINE_QUAD divergeerde Newton zonder lijnzoeken (nu `RECH_LINEAIRE`
-bij plasticiteit) en zonder afkap van de thermische rek boven de smelttemperatuur
-(4,6% bij 3400 K; nu `TC_CUT`); WE-10b (LINE_QUAD, 53 min, alleen met
-`VERIF_ZWAAR=1`): langsspanning in de las 400–450 MPa = SY + H·p (1,13 × SY), σzz ≈ 0, evenwicht 0,05%, hoekverdraaiing 12,4 mrad. Mecway's *Displacement* is één richting (LIAISON_OBLIQUE bij x én z):
-per richting een eigen voorwaarde (in de doc). Beperkingen: KNOWN_BUGS 64. Open:
-Mecway-GUI-test (Thermal stress/Fixed support in een T31-model toevoegen en tonen,
-resultaten per stap). Vragen gebruiker: (1) een grotere tijdstap voor het afkoelen (één
-Mecway-*Time step* maakt lange afkoeling duur); (2) temperatuurafhankelijke
-hardingscurve (`TRACTION` per temperatuur) nodig?; (3) de lijst van `#ASTER-MATERIAAL`
-liever als eigen pagina/tabel in het hoofdvenster?; (4) LINE_QUAD standaard in de keten
-bij plasticiteit (nauwkeuriger, ~5× trager)?
+### S4b – Welding: thermal → mechanical chain
+**Goal:** residual stress and distortion. One template with `THER_NON_LINE` and
+`STAT_NON_LINE` (`AFFE_VARC` `TEMP` with `EVOL_THER`), equal time steps.
+**Research:** temperature-dependent E, yield strength and α: Mecway supports
+temperature dependence only for conductivity and specific heat (manual
+§8.6), so via an `#ASTER` keyword or table (document it).
+**Done when:** (1) freely expanding bar with uniform ΔT: strain α·ΔT exact (≤ 0.1%);
+(2) fully restrained bar: σ = −E·α·ΔT up to the yield strength (≤ 1%); (3) weld bead on
+a plate: residual stress pattern (tension in the weld, compression next to it) qualitatively, with the
+measured values in the doc.
+**Findings:** Input route (docs/Lassen.md §9): no separate analysis and no
+setting: a *Thermal stress* in a T31 model switches the chain on (Mecway keeps
+Thermal stress, Fixed support and Displacement in a thermal model too; checked headless
+with Mecway 33: they remain in the saved `.liml` and the thermal part
+solves without a message). `auto` → `ther_3d`; `bridge_from_liml` then reads the
+mechanical conditions, `bridge_thermomech.py` builds after the thermal solve (own
+template `AsterTemplate_ThermoMeca.comm`) `STAT_NON_LINE` with `AFFE_VARC` `TEMP`
+(`EVOL` = thermal result, `VALE_REF` = reference temperature, in °C), at the
+thermal times (`ARCHIVAGE` at the same times: temperature and stress per step in
+Mecway). Temperature-dependent E, ν, α, SY and H/ET via `#ASTER-MATERIAAL <Mecway-
+materiaal>: TC=(..), E=(..), ...` (`ELAS_FO`, `ECRO_LINE_FO`; α = secant relative to
+`T_ALPHA`; `TC_CUT`: thermal strain constant above the melting temperature); without the line
+the constant Mecway values incl. bilinear/hardening curve. New settings in
+`ther_3d`: `deformation` (PETIT), `plastic_strain_definition`. Verification WE-07..10
+(`tests_lassen_mech.py`): free expansion, uniaxially restrained with bilinear
+hardening and residual stress after cooling back, E(T)/SY(T)/α(T) with reverse yielding:
+all ≤ 4·10⁻⁸ vs. the hand calculation (tolerance 0.1% / 1%). Weld bead WE-10 (hex8):
+equilibrium N 0.02% / M 1% of SY·A, yielding in the weld (von Mises = SY + H·p, 0.2%),
+tension in the weld, compression next to it, angular distortion 8.9 mrad towards the weld side, longitudinal and
+transverse shrinkage (0.077 mm, upper bound α·q/(v·ρ·c·t) = 0.103 mm). Found: linear hex8
+locks with plasticity (σxx in the weld 1.3–2.6 × SY, triaxial; WARNING, advice
+LINE_QUAD); with LINE_QUAD Newton diverged without line search (now `RECH_LINEAIRE`
+with plasticity) and without capping the thermal strain above the melting temperature
+(4.6% at 3400 K; now `TC_CUT`); WE-10b (LINE_QUAD, 53 min, only with
+`VERIF_ZWAAR=1`): longitudinal stress in the weld 400–450 MPa = SY + H·p (1.13 × SY), σzz ≈ 0, equilibrium 0.05%, angular distortion 12.4 mrad. Mecway's *Displacement* is one direction (LIAISON_OBLIQUE for x and z):
+a separate condition per direction (in the doc). Limitations: KNOWN_BUGS 64. Open:
+Mecway GUI test (add and show Thermal stress/Fixed support in a T31 model,
+results per step). Questions for the user: (1) a larger time step for cooling (one
+Mecway *Time step* makes long cooling expensive); (2) temperature-dependent
+hardening curve (`TRACTION` per temperature) needed?; (3) the list of `#ASTER-MATERIAAL`
+rather as a dedicated page/table in the main window?; (4) LINE_QUAD by default in the chain
+with plasticity (more accurate, ~5× slower)?
 
-### S4c – Lassen: toevoegmateriaal
-Elementen "geboren" laten worden (groepsnaam `LASNAAD_`) of versimpelen (vanaf het
-begin aanwezig, zacht boven de smelttemperatuur). Uitzoeken wat Code-Aster kan; kiezen
-en de beperking documenteren. **Klaar als:** een rups in twee lagen geeft een
-plausibele temperatuurgeschiedenis en geen spanning in nog niet "geboren" materiaal.
-**Bevindingen:** Invoerroute (docs/Lassen.md §10): sleutel `geboorte=ja` of
-`geboorte=<<selectie>>` (+ `voorloop`, standaard 2 × af) in `#ASTER-LASBRON`; het
-toevoegmateriaal is de `LASNAAD_`-selectie/-component (ja) of de genoemde selectie, de
-bron werkt dan automatisch op alle elementen bij de baan. Code-Aster 17.4 heeft geen
-element birth (catalogus en testcases doorzocht); gekozen: de "quiet
-element"-methode: vóór de geboorte ρ·c × 1e-4, λ × 1e-8, E (en versteviging) × 1e-4,
-geen bron. Geboortetijd per element uit de booglengte van zijn achterste knoop langs de
-baan (dezelfde code in de .comm en de bridge, `exec`), per tijdstap gekwantiseerd.
-Thermisch: `THER_LINEAIRE` met `THER_FO` van `INST` en `NEUT1` (CART, testcases
-ttnp201a/ssnp160a); met λ(T)/c(T) of straling mogen `BETA`/`RHO_CP` van `THER_NL` geen
-formule of nappe zijn (`MODELISA6_31`/`58`): `THER_NON_LINE` per geboortestap met een
-stil `THER_NL`-materiaal (in een prototype gelijk aan de eerste route tot 1e-6);
-toevoegmateriaal met `3D_DIAG`. Mechanisch: `STAT_NON_LINE` per geboortestap met een
-nieuw `AFFE_MATERIAU`, `ETAT_INIT` met spanning en interne variabelen van de nieuwe
-elementen op nul, `PREDICTION='ELASTIQUE'`: spanningsvrij in de vervormde stand op de
-temperatuur van het begin van de geboortestap (ook LINE_QUAD, bilineair en
-hardingscurve). Gevonden en opgelost: (1) Code-Aster 17.4 rekent twee lasten
-`AFFE_CHAR_THER_F` met `SOURCE` in één lijst allebei met de functie van de eerste (de
-tweede `#ASTER-LASBRON` uit S4a werkte dus nooit): alle lasbronnen nu in één last
-(KNOWN_BUGS 70; Mecway-formulebronnen eerst nog niet, WARNING naast een lasbron; later
-opgelost: alle functiebronnen in één last, TH-40..42, KNOWN_BUGS 70 weg); (2) met
-de consistente warmtecapaciteit volgde een stil knooppunt via de massakoppeling zijn
-warme buren (+138 K): `3D_DIAG` in het toevoegmateriaal; (3) de bron stond op t_eind
-door afronding soms uit: marge 1e-9. Verificatie WE-11..13 (`tests_lassen_geboorte.py`,
-37 controles): (a) rups in twee stukken: energie van het levende volume +1,2..1,6%
-t.o.v. het θ-schema (tolerantie 2%; de geboorte brengt de warmte van de knopen op het
-grensvlak mee), in het ongeboren stuk T0 + 0,5 K, ook met c(T) (WE-11b); (b) staaf
-halverwege geboren: spanning in het ongeboren deel 1,8e-4 × E·α·ΔT (tolerantie 1e-3),
-krimpspanning t.o.v. de geboortetemperatuur −0,01% (1%), bilineair en hardingscurve
-0,00%; (c) twee lagen (keten): laag 1 smelt (2 690 K), koelt af (530 K), wordt
-opnieuw opgewarmd (1 750 K); laag 2 vóór de geboorte 4,7e-4 × SY en T0 + 0,03 K;
-restspanning in evenwicht (−0,25% SY·A), trek in de rups, druk ernaast (5,5 min).
-Regressie 1018/1021 OK, 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; geen eerder OK-controle veranderd (WE-01..10 gelijk). Beperkingen: KNOWN_BUGS 71 (58 en 64 bijgewerkt). Open: Mecway-GUI-test (selectie
-`LASNAAD_`, regel in Custom model definition, stille elementen in de resultaten).
-Vragen gebruiker: (1) de Mecway-formulebronnen (*Internal heat generation* met formule)
-ook samenvoegen tot één last (KNOWN_BUGS 70; inmiddels gedaan)? (2) mechanisch spanningsvrij op de
-solidustemperatuur (bij het afkoelen) in plaats van bij de aankomst van de bron? (3)
-de factoren van het stille materiaal (1e-4) als sleutel? (4) toevoegmateriaal voorbij
-het einde van de baan (nu nooit geboren, WARNING) toch laten geboren worden?
+### S4c – Welding: filler material
+Let elements be "born" (group name `LASNAAD_`) or simplify (present from the
+start, soft above the melting temperature). Research what Code-Aster can do; choose
+and document the limitation. **Done when:** a bead in two layers gives a
+plausible temperature history and no stress in not-yet-"born" material.
+**Findings:** Input route (docs/Lassen.md §10): key `geboorte=ja` or
+`geboorte=<<selectie>>` (+ `voorloop`, default 2 × af) in `#ASTER-LASBRON`; the
+filler material is the `LASNAAD_` selection/component (ja) or the named selection, the
+source then automatically acts on all elements along the path. Code-Aster 17.4 has no
+element birth (catalogue and test cases searched); chosen: the "quiet
+element" method: before birth ρ·c × 1e-4, λ × 1e-8, E (and hardening) × 1e-4,
+no source. Birth time per element from the arc length of its rearmost node along the
+path (the same code in the .comm and the bridge, `exec`), quantised per time step.
+Thermal: `THER_LINEAIRE` with `THER_FO` of `INST` and `NEUT1` (CART, test cases
+ttnp201a/ssnp160a); with λ(T)/c(T) or radiation, `BETA`/`RHO_CP` of `THER_NL` may not be a
+formula or nappe (`MODELISA6_31`/`58`): `THER_NON_LINE` per birth step with a
+quiet `THER_NL` material (in a prototype equal to the first route to within 1e-6);
+filler material with `3D_DIAG`. Mechanical: `STAT_NON_LINE` per birth step with a
+new `AFFE_MATERIAU`, `ETAT_INIT` with stress and internal variables of the new
+elements at zero, `PREDICTION='ELASTIQUE'`: stress-free in the deformed position at the
+temperature at the start of the birth step (also LINE_QUAD, bilinear and
+hardening curve). Found and fixed: (1) Code-Aster 17.4 computes two loads
+`AFFE_CHAR_THER_F` with `SOURCE` in one list both with the function of the first (the
+second `#ASTER-LASBRON` from S4a thus never worked): all welding sources now in one load
+(KNOWN_BUGS 70; Mecway formula sources not yet at first, WARNING next to a welding source; later
+fixed: all function sources in one load, TH-40..42, KNOWN_BUGS 70 removed); (2) with
+the consistent heat capacity a quiet node followed its warm neighbours via the mass coupling
+(+138 K): `3D_DIAG` in the filler material; (3) due to rounding the source was sometimes off at t_end:
+margin 1e-9. Verification WE-11..13 (`tests_lassen_geboorte.py`,
+37 checks): (a) bead in two pieces: energy of the living volume +1.2..1.6%
+vs. the θ scheme (tolerance 2%; birth brings along the heat of the nodes on the
+interface), in the unborn piece T0 + 0.5 K, also with c(T) (WE-11b); (b) bar
+born halfway: stress in the unborn part 1.8e-4 × E·α·ΔT (tolerance 1e-3),
+shrinkage stress relative to the birth temperature −0.01% (1%), bilinear and hardening curve
+0.00%; (c) two layers (chain): layer 1 melts (2,690 K), cools down (530 K), is
+reheated (1,750 K); layer 2 before birth 4.7e-4 × SY and T0 + 0.03 K;
+residual stress in equilibrium (−0.25% SY·A), tension in the bead, compression next to it (5.5 min).
+Regression 1018/1021 OK, 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; no previously OK check changed (WE-01..10 equal). Limitations: KNOWN_BUGS 71 (58 and 64 updated). Open: Mecway GUI test (selection
+`LASNAAD_`, line in Custom model definition, quiet elements in the results).
+Questions for the user: (1) also merge the Mecway formula sources (*Internal heat generation* with a formula)
+into one load (KNOWN_BUGS 70; done in the meantime)? (2) mechanically stress-free at the
+solidus temperature (during cooling) instead of at the arrival of the source? (3)
+the factors of the quiet material (1e-4) as a key? (4) let filler material beyond
+the end of the path (now never born, WARNING) be born anyway?
 
-### S6a – Breukmechanica: gemeshte scheur
-**Code-Aster:** `DEFI_FOND_FISS`, `CALC_G`, `POST_K1_K2_K3`; 3D-testcase `forma07a`
-(`forma05a` is D_PLAN: alleen syntax). **Invoer:** scheurfront en lippen als
-groepsnamen (`SCHEUR_FRONT`, `SCHEUR_LIP_BOVEN`/`_ONDER`). Uitvoer: K en G langs het
-front in de log en als tabel.
-**Klaar als:** dikke plaat met doorgaande middenscheur onder trek: K_I binnen 3% van
-σ·sqrt(πa)·F(a/W) (Tada/Roark), en G = K²/E' consistent.
-**Bevindingen:** Invoerroute: Mecway heeft geen breukmechanica; de scheur wordt open
-gemaakt met *Disconnect elements* + *Merge nearby nodes* op ligament en front (manual
-v33 §4.2.10/4.2.11) of als half model met symmetrie. Speciale selectienamen:
-knoopselectie `SCHEUR_FRONT`/`CRACK_FRONT`, vlakselecties `SCHEUR_LIP_BOVEN`/`_ONDER`
-(`CRACK_LIP_UPPER`/`_LOWER`); zonder onderlip `SYME='OUI'`; meer scheuren met een
-achtervoegsel. `bridge_fracture.py`: front als SEG2/SEG3 (`BRSCHEUR<n>`, ribben met
-beide knopen in de selectie, controle op één lijn en open lippen), na de resultaat-
-export `DEFI_FOND_FISS` + `CALC_G` `OPTION=('G','K')` + `POST_K1_K2_K3` op een eigen
-resultaat (materiaal op alle cellen: anders `CALCUL_20` op de lippen; `SIEF_ELGA`:
-anders `RUPTURE0_94`), `FORM_FISS='CERCLE'` bij een cirkelvormig front. Uitvoer:
-`<model>_<run>_scheur.csv`, log en statusvak; geen veld. Instellingen
+### S6a – Fracture mechanics: meshed crack
+**Code-Aster:** `DEFI_FOND_FISS`, `CALC_G`, `POST_K1_K2_K3`; 3D test case `forma07a`
+(`forma05a` is D_PLAN: syntax only). **Input:** crack front and lips as
+group names (`SCHEUR_FRONT`, `SCHEUR_LIP_BOVEN`/`_ONDER`). Output: K and G along the
+front in the log and as a table.
+**Done when:** thick plate with a through centre crack under tension: K_I within 3% of
+σ·sqrt(πa)·F(a/W) (Tada/Roark), and G = K²/E' consistent.
+**Findings:** Input route: Mecway has no fracture mechanics; the crack is opened
+with *Disconnect elements* + *Merge nearby nodes* on ligament and front (manual
+v33 §4.2.10/4.2.11) or as a half model with symmetry. Special selection names:
+node selection `SCHEUR_FRONT`/`CRACK_FRONT`, face selections `SCHEUR_LIP_BOVEN`/`_ONDER`
+(`CRACK_LIP_UPPER`/`_LOWER`); without a lower lip `SYME='OUI'`; more cracks with a
+suffix. `bridge_fracture.py`: front as SEG2/SEG3 (`BRSCHEUR<n>`, edges with
+both nodes in the selection, check for a single line and open lips), after the result
+export `DEFI_FOND_FISS` + `CALC_G` `OPTION=('G','K')` + `POST_K1_K2_K3` on a separate
+result (material on all cells: otherwise `CALCUL_20` on the lips; `SIEF_ELGA`:
+otherwise `RUPTURE0_94`), `FORM_FISS='CERCLE'` for a circular front. Output:
+`<model>_<run>_scheur.csv`, log and status box; no field. Settings
 `fracture_r_inf`/`_r_sup` (0 = Code-Aster: 2h/4h), `fracture_smoothing`,
-`fracture_legendre_degree`. Verificatie BR-01..06: K_I (`CALC_G`) −0,10 % t.o.v. Tada
-(vlakke rek, hex20, h = a/40), G −0,41 %, G/(K²/E') 0,998; half model gelijk;
-dikke plaat middenvlak +0,7 %; forma07a K1 MAX exact (1 607 011,55), G +0,8 %; hex8
-K −0,7 %, G −2,0 %; twee scheuren met achtervoegsel (_L/_R) per front als BR-01.
-`POST_K1_K2_K3` zonder kwartpunten −3,5 % (hex20) / −10 % (hex8).
-Regressie (eigen VERIF_WORK): 727 van 730 controles OK (165 cases), 3 BEKEND
-(NL-03a), 0 NOK/FOUT; geen eerder OK-controle veranderd. Niet: niet-lineair, contact
-op de lippen, K als veld,
-kwartpuntknopen door de bridge (de resultaatexport controleert de coördinaten),
-XFEM (S6b); NIET geverifieerd: gesloten front, tet10, grensvlak, thermische rek, druk
-op de lippen, de GUI-werkwijze (KNOWN_BUGS 63). **Open vragen:** (1) K/G als veld op
-de frontknopen in Mecway gewenst? (2) Kwartpuntknopen als optie (vraagt een
-uitzondering in de knoopcontrole van `aster_results_export`)? (3) Werkt *Disconnect
-elements* + *Merge nearby nodes* met een knoopselectie in de GUI zoals de manual
-zegt?
+`fracture_legendre_degree`. Verification BR-01..06: K_I (`CALC_G`) −0.10 % vs. Tada
+(plane strain, hex20, h = a/40), G −0.41 %, G/(K²/E') 0.998; half model equal;
+thick plate mid-plane +0.7 %; forma07a K1 MAX exact (1,607,011.55), G +0.8 %; hex8
+K −0.7 %, G −2.0 %; two cracks with suffix (_L/_R) per front as BR-01.
+`POST_K1_K2_K3` without quarter points −3.5 % (hex20) / −10 % (hex8).
+Regression (own VERIF_WORK): 727 of 730 checks OK (165 cases), 3 BEKEND
+(NL-03a), 0 NOK/FOUT; no previously OK check changed. Not: nonlinear, contact
+on the lips, K as a field,
+quarter-point nodes by the bridge (the result export checks the coordinates),
+XFEM (S6b); NOT verified: closed front, tet10, interface, thermal strain, pressure
+on the lips, the GUI procedure (KNOWN_BUGS 63). **Open questions:** (1) K/G as a field on
+the front nodes in Mecway wanted? (2) Quarter-point nodes as an option (requires an
+exception in the node check of `aster_results_export`)? (3) Does *Disconnect
+elements* + *Merge nearby nodes* with a node selection work in the GUI as the manual
+says?
 
-### S6b – Breukmechanica: XFEM
-Scheur zonder hermeshen via levelsets (`DEFI_FISS_XFEM`), invoer via `#ASTER`.
-**Klaar als:** zelfde geval als S6a binnen 5%.
-**Bevindingen:** Invoerroute: Mecway heeft geen scheur-invoer; een eigen sleutelwoord
-`#ASTER-XFEM vorm=CIRKEL|ELLIPSE|RECHTHOEK|HALFVLAK, ...` (`bridge_custom` soort
-`-XFEM`, uitgewerkt in `bridge_xfem.py`; Engelse sleutels werken ook; lengtes in m of
-met eenheid; een regel met `vorm=` start een nieuwe scheur; `groep=<<elementselectie>>`
-→ `GROUP_MA_ENRI`). Geen groepsnaam-route: de vorm heeft maten nodig, een selectie geeft
-die niet. Instellingen zoals S6a (`fracture_r_inf`/`_sup`, per scheur `r_inf=`/
-`r_sup=`), plus per scheur `glad`, `graad`, `punten` (NB_POINT_FOND). Vertaling: het
-model van de bridge heet `model_sain`, `DEFI_FISS_XFEM` + `MODI_MODELE_XFEM` → `model`
-voor lasten en `MECA_STATIQUE`; daarna `POST_MAIL_XFEM` + `POST_CHAM_XFEM` en
-`PROJ_CHAMP` `COLLOCATION` terug naar de Mecway-knopen (DEPL, SIGM_NOEU, SIEQ_NOEU,
-fysisch per kant van de scheur; REAC_NODA uit het XFEM-resultaat), zodat de gewone
-export naar Mecway werkt; na de export per scheur en per front (`NUME_FOND`,
-`getCrackTipMultiplicity`) `CALC_G_XFEM` `CALC_K_G` en `POST_K1_K2_K3`, tabel
-`<model>_<run>_xfem.csv`, log en statusvak. Controles vooraf: alleen volume-elementen
-met `3D` (ERROR), de scheur moet elementen snijden en een front in het model hebben
-(ERROR, vaak mm i.p.v. m), mesh-advies (WARNING boven a/10). Gevonden bij het
-verifiëren: (1) *Symmetry* als `LIAISON_OBLIQUE` legt de XFEM-vrijheidsgraden van
-gesneden elementen niet vast (forma07b K1 MAX +3,8 % aan het symmetrievlak): bij XFEM
-wordt een symmetrie langs een globale as `DDL_IMPO` (daarna exact), schuin op zulke
-knopen een WARNING; (2) hex20 werkt (kwadratische XFEM-elementen, alarm XFEM_63), geen
-ERROR nodig; (3) `LAGRANGE` oscilleert op een gekromd front (onregelmatige snijpunten),
-`LEGENDRE` ≥ 2 op een kort recht front: standaard per vorm; (4) `CALC_G_XFEM` heeft geen
-krommingscorrectie (penny +5,3 %): WARNING, `POST_K1_K2_K3` of G gebruiken. Verificatie
-BR-07..12 (tests_breukmechanica_xfem.py): plaat van BR-01 met HALFVLAK, hex8 h = a/20:
-K_I −0,08 %, G −0,18 %, POST_K −0,24 % (klaar-criterium 5 %); hex20 +0,10 %; scheurvlak
-door knopen −0,06 %; twee fronten (RECHTHOEK) −0,09 %; penny crack K_I POST_K +1,6 %,
-uit G +1,0 %, CALC_G_XFEM +5,3 %, opening +3,3 % (Sneddon); forma07b via de bridge K1
-MAX CALC_G_XFEM en POST_K gelijk aan de TEST_TABLE (< 1e-6). Regressie (eigen VERIF_WORK op D:): 1047 van 1050 controles OK (222 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT; geen eerder OK-controle veranderd. Niet:
-contact op de lippen, scheurgroei (PROPA_FISS), FONC_LN/FONC_LT, schalen/balken in het
-model, foutschatter en vermoeiing samen met XFEM, SIGM_ELNO in Mecway; NIET
-geverifieerd: tet10/wedge15/pyr13, `groep=`, ELLIPSE met a ≠ b, meer XFEM-scheuren in
-één model, REAC_NODA op gesneden elementen (KNOWN_BUGS 63). **Open vragen:** (1) Een
-MED-bestand met het mesh van POST_MAIL_XFEM (de scheur zichtbaar in ParaView) als optie
-gewenst? (2) Moet `groep=` ook een `XFEM_`-elementselectie automatisch oppakken?
-(3) Scheurgroei (`PROPA_FISS`, vermoeiingsgroei) als vervolgstap?
+### S6b – Fracture mechanics: XFEM
+Crack without remeshing via level sets (`DEFI_FISS_XFEM`), input via `#ASTER`.
+**Done when:** same case as S6a within 5%.
+**Findings:** Input route: Mecway has no crack input; a dedicated keyword
+`#ASTER-XFEM vorm=CIRKEL|ELLIPSE|RECHTHOEK|HALFVLAK, ...` (`bridge_custom` kind
+`-XFEM`, worked out in `bridge_xfem.py`; English keys work too; lengths in m or
+with a unit; a line with `vorm=` starts a new crack; `groep=<<elementselectie>>`
+→ `GROUP_MA_ENRI`). No group-name route: the shape needs dimensions, a selection does not
+give them. Settings as in S6a (`fracture_r_inf`/`_sup`, per crack `r_inf=`/
+`r_sup=`), plus per crack `glad`, `graad`, `punten` (NB_POINT_FOND). Translation: the
+bridge's model is called `model_sain`, `DEFI_FISS_XFEM` + `MODI_MODELE_XFEM` → `model`
+for loads and `MECA_STATIQUE`; then `POST_MAIL_XFEM` + `POST_CHAM_XFEM` and
+`PROJ_CHAMP` `COLLOCATION` back to the Mecway nodes (DEPL, SIGM_NOEU, SIEQ_NOEU,
+physical per side of the crack; REAC_NODA from the XFEM result), so that the normal
+export to Mecway works; after the export per crack and per front (`NUME_FOND`,
+`getCrackTipMultiplicity`) `CALC_G_XFEM` `CALC_K_G` and `POST_K1_K2_K3`, table
+`<model>_<run>_xfem.csv`, log and status box. Checks up front: only solid elements
+with `3D` (ERROR), the crack must cut elements and have a front in the model
+(ERROR, often mm instead of m), mesh advice (WARNING above a/10). Found while
+verifying: (1) *Symmetry* as `LIAISON_OBLIQUE` does not fix the XFEM degrees of freedom of
+cut elements (forma07b K1 MAX +3.8 % at the symmetry plane): with XFEM
+a symmetry along a global axis becomes `DDL_IMPO` (then exact), oblique on such
+nodes a WARNING; (2) hex20 works (quadratic XFEM elements, alarm XFEM_63), no
+ERROR needed; (3) `LAGRANGE` oscillates on a curved front (irregular intersection points),
+`LEGENDRE` ≥ 2 on a short straight front: default per shape; (4) `CALC_G_XFEM` has no
+curvature correction (penny +5.3 %): WARNING, use `POST_K1_K2_K3` or G. Verification
+BR-07..12 (tests_breukmechanica_xfem.py): plate of BR-01 with HALFVLAK, hex8 h = a/20:
+K_I −0.08 %, G −0.18 %, POST_K −0.24 % (done criterion 5 %); hex20 +0.10 %; crack plane
+through nodes −0.06 %; two fronts (RECHTHOEK) −0.09 %; penny crack K_I POST_K +1.6 %,
+from G +1.0 %, CALC_G_XFEM +5.3 %, opening +3.3 % (Sneddon); forma07b via the bridge K1
+MAX CALC_G_XFEM and POST_K equal to the TEST_TABLE (< 1e-6). Regression (own VERIF_WORK on D:): 1047 of 1050 checks OK (222 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT; no previously OK check changed. Not:
+contact on the lips, crack growth (PROPA_FISS), FONC_LN/FONC_LT, shells/beams in the
+model, error estimator and fatigue together with XFEM, SIGM_ELNO in Mecway; NOT
+verified: tet10/wedge15/pyr13, `groep=`, ELLIPSE with a ≠ b, multiple XFEM cracks in
+one model, REAC_NODA on cut elements (KNOWN_BUGS 63). **Open questions:** (1) A
+MED file with the mesh of POST_MAIL_XFEM (the crack visible in ParaView) wanted as an
+option? (2) Should `groep=` also pick up an `XFEM_` element selection automatically?
+(3) Crack growth (`PROPA_FISS`, fatigue crack growth) as a follow-up step?
 
-### S7 – Adaptieve verfijning
-**Twee routes, Mecway eerst:** (1) Mecway's eigen `mw.refine_x2(element_ids=…)` op de
-elementen met de grootste fout uit S1: selecties en randvoorwaarden blijven intact,
-lus vanuit het hoofdscript; (2) HOMARD (`MACR_ADAP_MAIL`; werkt op deze installatie,
-`forma01b` diagnose OK) binnen Code-Aster. Een HOMARD-mesh kan niet via de huidige
-resultaatroute terug (`export_results` controleert de knoopvolgorde tegen de `.liml`):
-dan een nieuw model schrijven of route 1 kiezen. 3D-testcases `sslv110f`, `sslv319a`.
-**Klaar als:** plaat met gat onder trek (eindige breedte): Kt binnen 2% van
-Peterson/Heywood na de verfijningslus, met minder elementen dan uniform verfijnen.
-**Bevindingen:** Route (1) gebouwd, HOMARD niet (docs/Foutschatter.md §6.6: werkt in
-3D op deze installatie, sslv110f gedraaid, maar het mesh kan niet terug naar Mecway
-zonder een nieuwe `.liml` met alle selecties/lasten). `Scripts/bridge_adapt.py`: na de
-run `after_run` (fout per element uit het resultaatbestand, `ERME_ELNO`; keuze Dörfler
-0,5 / fractie / factor; stoppen bij doel, max. lussen, max. elementen (groei van de
-vorige lus), stijgende fout; ERROR als een knoopselectie met voorwaarde op een te
-verfijnen ribbe ligt; WARNING bij platte hex), `refine_in_mecway` (`mw.refine_x2`); lus
-in `MecwayAsterBridgeMain.main()` (`_adapt_step`, kopie van het oorspronkelijke model
-`_voor_verfijning.liml`, elke lus een OK-klik). Instellingen (pagina Statisch,
-`#ASTER-OPTIE`): `adapt_refine` (uit), `adapt_target_error` 2%, `adapt_max_loops` 5,
-`adapt_select` dorfler, `adapt_fraction` 0,5, `adapt_neighbours` uit,
-`adapt_max_elements` 200000. Headless gemeten (`mecway.exe <model> script`): refine_x2
-houdt het mesh conform (overgangen pyr/tet/wedge), vlak- en elementselecties en
-onderdelen gaan mee, knoopselecties niet; hex20 volgt een gebogen rand, hex8 niet;
-pyr13-volgorde van bridge_mesh bevestigd. **S1-fout gevonden en opgelost:** `ERME`
-rekent `FORCE_FACE` met omgekeerd teken (uniforme trek: 15% i.p.v. 0); de bridge keert
-het om in de last van de schatter (FS ongewijzigd: tangentieel telt niet). Verificatie
-(`tests_adaptief.py`, AD): plaat met gat d/W = 0,2, hex20, plak in vlakke rek; uniform
-AD-01 n = 1…32 −27,2…−0,14% (Peterson 2,519); lus AD-02 (doel 1,5%, headless Mecway): 5
-lussen, globale fout 4,57 → 1,11% elke lus dalend, Kt +0,82% met 15 810 elementen, uniform
-Refine x2 tot 2%: 49 152 (factor 0,32), 98% van de verfijning binnen 3r van het gat;
-AD-03 knoopselectie → ERROR. Buiten de regressie: dunne plaat (aspect 1:40) en tet10
-geven na 1-2 lussen slechte overgangselementen en een stijgende schatting (lus stopt).
-Beperkingen: KNOWN_BUGS 65 (en 51). `#ASTER-OPTIE`-voorbeeld 18. Regressie (`VERIF_WORK` eigen map): 767 van 770 controles OK
-(175 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT, geen eerder OK-controle slechter (FS-01 door de
-tekencorrectie ≤ 3e-4 anders); in `resultaten.json` alleen de AD-cases bijgewerkt. Open: Mecway-GUI-test (lus met OK-klikken, statusvak).
-Vragen gebruiker: (1) elke lus vraagt een OK-klik; automatisch wachten op Code-Aster in
-de lus gewenst? (2) standaarddoel 2% (energienorm) of lager voor piekspanningen? (3) bij
-tet-meshes liever opnieuw automeshen met Mecway's verfijningspunten (`automesh_3d`
-`refinements`) dan `refine_x2`? (4) HOMARD-route alsnog bouwen (nieuwe `.liml` schrijven)?
+### S7 – Adaptive refinement
+**Two routes, Mecway first:** (1) Mecway's own `mw.refine_x2(element_ids=…)` on the
+elements with the largest error from S1: selections and boundary conditions stay intact,
+loop from the main script; (2) HOMARD (`MACR_ADAP_MAIL`; works on this installation,
+`forma01b` diagnosis OK) inside Code-Aster. A HOMARD mesh cannot come back via the current
+result route (`export_results` checks the node order against the `.liml`):
+then write a new model or choose route 1. 3D test cases `sslv110f`, `sslv319a`.
+**Done when:** plate with a hole under tension (finite width): Kt within 2% of
+Peterson/Heywood after the refinement loop, with fewer elements than uniform refinement.
+**Findings:** Route (1) built, HOMARD not (docs/Foutschatter.md §6.6: works in
+3D on this installation, sslv110f run, but the mesh cannot go back to Mecway
+without a new `.liml` with all selections/loads). `Scripts/bridge_adapt.py`: after the
+run `after_run` (error per element from the result file, `ERME_ELNO`; choice Dörfler
+0.5 / fraction / factor; stop at target, max. loops, max. elements (growth of the
+previous loop), rising error; ERROR if a node selection with a condition lies on an edge to be
+refined; WARNING for flat hex), `refine_in_mecway` (`mw.refine_x2`); loop
+in `MecwayAsterBridgeMain.main()` (`_adapt_step`, copy of the original model
+`_voor_verfijning.liml`, each loop an OK click). Settings (page Static,
+`#ASTER-OPTIE`): `adapt_refine` (off), `adapt_target_error` 2%, `adapt_max_loops` 5,
+`adapt_select` dorfler, `adapt_fraction` 0.5, `adapt_neighbours` off,
+`adapt_max_elements` 200000. Measured headless (`mecway.exe <model> script`): refine_x2
+keeps the mesh conforming (transitions pyr/tet/wedge), face and element selections and
+parts follow, node selections do not; hex20 follows a curved edge, hex8 does not;
+pyr13 order of bridge_mesh confirmed. **S1 bug found and fixed:** `ERME`
+computes `FORCE_FACE` with the opposite sign (uniform tension: 15% instead of 0); the bridge reverses
+it in the load of the estimator (FS unchanged: tangential does not count). Verification
+(`tests_adaptief.py`, AD): plate with hole d/W = 0.2, hex20, slice in plane strain; uniform
+AD-01 n = 1…32 −27.2…−0.14% (Peterson 2.519); loop AD-02 (target 1.5%, headless Mecway): 5
+loops, global error 4.57 → 1.11% decreasing every loop, Kt +0.82% with 15,810 elements, uniform
+Refine x2 to 2%: 49,152 (factor 0.32), 98% of the refinement within 3r of the hole;
+AD-03 node selection → ERROR. Outside the regression: thin plate (aspect 1:40) and tet10
+give poor transition elements and a rising estimate after 1-2 loops (loop stops).
+Limitations: KNOWN_BUGS 65 (and 51). `#ASTER-OPTIE` example 18. Regression (`VERIF_WORK` own folder): 767 of 770 checks OK
+(175 cases), 3 BEKEND (NL-03a), 0 NOK/FOUT, no previously OK check worse (FS-01 different by ≤ 3e-4 due to the
+sign correction); in `resultaten.json` only the AD cases updated. Open: Mecway GUI test (loop with OK clicks, status box).
+Questions for the user: (1) each loop requires an OK click; automatic waiting for Code-Aster in
+the loop wanted? (2) default target 2% (energy norm) or lower for peak stresses? (3) for
+tet meshes rather re-automesh with Mecway's refinement points (`automesh_3d`
+`refinements`) than `refine_x2`? (4) build the HOMARD route after all (write a new `.liml`)?
 
-### S8 – Vermoeiing
-**Code-Aster:** `POST_FATIGUE`, `CALC_FATIGUE` (rainflow, Wöhler, Miner; multiaxiaal).
-Testcases `szlz100a`, `sslv135a` (draait: diagnose OK).
-**Uitzoeken:** Wöhler-curve (geen Mecway-invoer: `#ASTER`-sleutelwoord of tabel);
-belastingsverloop (tijdstappen van een niet-lineaire/dynamische run, of twee
-belastingstoestanden); schade/levensduur als veld.
-**Klaar als:** constante amplitude: schade exact volgens Miner (≤ 0,1%); een
-twee-niveau-spectrum met de hand nagerekend (≤ 0,1%).
-**Bevindingen:** Mecway heeft geen vermoeiing (manual en `mecway.exe`: geen
-fatigue/S-N/Wöhler). Invoerroute: `#ASTER`-regels (geen instellingen in het
-hoofdvenster, modelgegevens zoals `#ASTER-LASBRON`): `#ASTER-WOHLER materiaal: K=V`
-(tabel `S = [..] MPa, N = [..]` log-log of `INTERPOL = LIN`, machtsvorm `S, N, m`,
+### S8 – Fatigue
+**Code-Aster:** `POST_FATIGUE`, `CALC_FATIGUE` (rainflow, Wöhler, Miner; multiaxial).
+Test cases `szlz100a`, `sslv135a` (runs: diagnosis OK).
+**Research:** Wöhler curve (no Mecway input: `#ASTER` keyword or table);
+load history (time steps of a nonlinear/dynamic run, or two
+load states); damage/life as a field.
+**Done when:** constant amplitude: damage exactly according to Miner (≤ 0.1%); a
+two-level spectrum recalculated by hand (≤ 0.1%).
+**Findings:** Mecway has no fatigue (manual and `mecway.exe`: no
+fatigue/S-N/Wöhler). Input route: `#ASTER` lines (no settings in the
+main window, model data like `#ASTER-LASBRON`): `#ASTER-WOHLER materiaal: K=V`
+(table `S = [..] MPa, N = [..]` log-log or `INTERPOL = LIN`, power form `S, N, m`,
 Basquin `Sf, b`; `Se`, `PROL_GAUCHE` EXCLU/CONSTANT/LINEAIRE, `PROL_DROITE`,
-`correctie` GOODMAN/GERBER met `Su`; `*` = overige materialen), `#ASTER-VERMOEIING`
-(`spanning` VMIS_SG/PRIN, `telling` RAINFLOW/ASTM, `herhalingen`), en bij lineair
-statisch `#ASTER-BLOK a, m, n` (factoren op de statische spanning) of `#ASTER-SIGNAAL
-f1, f2, ...`; bij `STAT_NON_LINE`/`DYNA_NON_LINE` zijn de tijdstappen het signaal.
-Gebouwd: `bridge_fatigue.py` (parse, blok in de `.comm`, rapport), job-module
-`aster_fatigue.py` (σ_eq uit `SIGM_NOEU`, rainflow, Wöhler, Miner, cyclustabel
-`<model>_<run>_vermoeiing.csv`, regels `BRIDGE_VERMOEIING_*`), `node_fields` in
-`aster_results_export.export_results` (velden `damage`, `life` = herhalingen tot D = 1,
-max. 10¹²; bij een tijdsverloop in elke stap gelijk), haak in `_build_lin_static` en
-`_build_nonlin_static`, rapport in het statusvak (WARNING bij D ≥ 1). Gemeten in
-Code-Aster 17.4: S van `WOHLER` is de amplitude; `POST_FATIGUE`/`CALC_FATIGUE`
-`RAINFLOW` telt periodiek (ASTM-signaal → 4 gesloten cycli; szlz105a); Goodman/Gerber
-nemen het teken van S_m mee; Basquin `A_BASQUIN`: 1/N = A·S^β; onder de tabel met
-`EXCLU` D = 0, erboven een fout; `PROL_*='LINEAIRE'` trekt in de vermoeiingsroutines
-lineair in (S, N) door, ook bij `INTERPOL='LOG'` (boven de tabel negatieve schade),
-terwijl de functie zelf log-log geeft: de bridge trekt log-log door (gedocumenteerde
-afwijking). Eigen rainflow i.p.v. `CALC_FATIGUE` omdat `CUMUL_DOMMAGE` geen blokken,
-geen gemiddelde-spanningscorrectie en één materiaal kent; gelijk aan Code-Aster.
-Verificatie VM-01..07 (`tests_vermoeiing.py`, 14 cases, 24 controles): (a) constante
-amplitude tabel/Basquin/machtsvorm met Se ≤ 2·10⁻¹⁴ (criterium 0,1 %); (b)
-twee-niveau-spectrum (tabel; Basquin + Goodman, 5 herhalingen) ≤ 6·10⁻¹⁴; (c) ASTM
-E1049: cycli exact (0,5/1,5/0,5/1/0,5), schade 1·10⁻¹⁴, periodiek gelijk aan
-`POST_FATIGUE` 2·10⁻¹⁴; (d) szlz105a 3D (niet-lineair statisch) 3·10⁻⁶ van `VALE_REFE`
-en gelijk aan `CALC_FATIGUE` (0), szlz100a 3D (geen correctie/Gerber/Goodman) ≤
-5·10⁻⁸; sslv135a (`FATIGUE_MULTI`, kritiek vlak) niet nagebouwd: multiaxiale criteria
-niet gebouwd (afgesplitst als **S8b**); dynamisch (`DYNA_NON_LINE`) gelijk aan
-`CALC_FATIGUE` 2·10⁻⁸; VMIS_SG/PRIN tweeassig exact. Mecway's API leest `damage`/`life`
-(headless script, statisch en 101 tijdstappen). Regressie (`VERIF_WORK` eigen map op D:): 978 van 981 controles OK (204 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, geen eerder OK-controle slechter; in `resultaten.json` alleen de VM-cases toegevoegd. Beperkingen: KNOWN_BUGS
-66. Open: Mecway-GUI-test (contour van `damage`/`life`, tekst in Custom model
-definition, statusvak). Vragen gebruiker: (1) `life` begrensd op 10¹² (nu) of een
-eigen "oneindig"-waarde/log10-veld? (2) gemiddelde druk bij Goodman als voordeel
-meetellen (nu, zoals Code-Aster) of op 0 zetten? (3) `PROL_DROITE` standaard
-doortrekken (nu, met WARNING) of stoppen zoals Code-Aster? (4) S8b (multiaxiaal,
-schalen, Manson-Coffin) of trillingsvermoeiing op modale basis/harmonisch nodig?
+`correctie` GOODMAN/GERBER with `Su`; `*` = other materials), `#ASTER-VERMOEIING`
+(`spanning` VMIS_SG/PRIN, `telling` RAINFLOW/ASTM, `herhalingen`), and for linear
+static `#ASTER-BLOK a, m, n` (factors on the static stress) or `#ASTER-SIGNAAL
+f1, f2, ...`; for `STAT_NON_LINE`/`DYNA_NON_LINE` the time steps are the signal.
+Built: `bridge_fatigue.py` (parse, block in the `.comm`, report), job module
+`aster_fatigue.py` (σ_eq from `SIGM_NOEU`, rainflow, Wöhler, Miner, cycle table
+`<model>_<run>_vermoeiing.csv`, lines `BRIDGE_VERMOEIING_*`), `node_fields` in
+`aster_results_export.export_results` (fields `damage`, `life` = repetitions until D = 1,
+max. 10¹²; with a time history equal in every step), hook in `_build_lin_static` and
+`_build_nonlin_static`, report in the status box (WARNING at D ≥ 1). Measured in
+Code-Aster 17.4: S of `WOHLER` is the amplitude; `POST_FATIGUE`/`CALC_FATIGUE`
+`RAINFLOW` counts periodically (ASTM signal → 4 closed cycles; szlz105a); Goodman/Gerber
+take the sign of S_m into account; Basquin `A_BASQUIN`: 1/N = A·S^β; below the table with
+`EXCLU` D = 0, above it an error; `PROL_*='LINEAIRE'` extrapolates linearly in (S, N) in the
+fatigue routines, also with `INTERPOL='LOG'` (negative damage above the table),
+while the function itself gives log-log: the bridge extrapolates log-log (documented
+deviation). Own rainflow instead of `CALC_FATIGUE` because `CUMUL_DOMMAGE` has no blocks,
+no mean-stress correction and only one material; equal to Code-Aster.
+Verification VM-01..07 (`tests_vermoeiing.py`, 14 cases, 24 checks): (a) constant
+amplitude table/Basquin/power form with Se ≤ 2·10⁻¹⁴ (criterion 0.1 %); (b)
+two-level spectrum (table; Basquin + Goodman, 5 repetitions) ≤ 6·10⁻¹⁴; (c) ASTM
+E1049: cycles exact (0.5/1.5/0.5/1/0.5), damage 1·10⁻¹⁴, periodic equal to
+`POST_FATIGUE` 2·10⁻¹⁴; (d) szlz105a 3D (nonlinear static) 3·10⁻⁶ of `VALE_REFE`
+and equal to `CALC_FATIGUE` (0), szlz100a 3D (no correction/Gerber/Goodman) ≤
+5·10⁻⁸; sslv135a (`FATIGUE_MULTI`, critical plane) not rebuilt: multiaxial criteria
+not built (split off as **S8b**); dynamic (`DYNA_NON_LINE`) equal to
+`CALC_FATIGUE` 2·10⁻⁸; VMIS_SG/PRIN biaxial exact. Mecway's API reads `damage`/`life`
+(headless script, static and 101 time steps). Regression (`VERIF_WORK` own folder on D:): 978 of 981 checks OK (204 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, no previously OK check worse; in `resultaten.json` only the VM cases added. Limitations: KNOWN_BUGS
+66. Open: Mecway GUI test (contour of `damage`/`life`, text in Custom model
+definition, status box). Questions for the user: (1) `life` capped at 10¹² (now) or a
+dedicated "infinite" value/log10 field? (2) count mean compression in Goodman as a benefit
+(now, like Code-Aster) or set it to 0? (3) `PROL_DROITE` extrapolate by default
+(now, with WARNING) or stop like Code-Aster? (4) S8b (multiaxial,
+shells, Manson-Coffin) or vibration fatigue on a modal basis/harmonic needed?
 
-**Bevindingen S8b** (7 okt 2026): invoerroute uitbreiding van de bestaande regels
-(geen instellingen in het hoofdvenster): `#ASTER-VERMOEIING criterium = DANG_VAN|MATAKE|
+**Findings S8b** (7 Oct 2026): input route an extension of the existing lines
+(no settings in the main window): `#ASTER-VERMOEIING criterium = DANG_VAN|MATAKE|
 CROSSLAND|FORMULE, a = .., b = .. MPa, c = .., formule = '..', belasting = PERIODIEK|
-NIET_PERIODIEK, projectie = UN_AXE|DEUX_AXES`, `rek = PRIN|VMIS_SG`, en in
-`#ASTER-WOHLER` de rekvorm `Sf, b, ef, c` (E van het materiaal of `E = ..`). Gebouwd:
-(1) multiaxiaal: per materiaal een eigen `DEFI_MATERIAU` (`ELAS`, `FATIGUE WOHLER`,
+NIET_PERIODIEK, projectie = UN_AXE|DEUX_AXES`, `rek = PRIN|VMIS_SG`, and in
+`#ASTER-WOHLER` the strain form `Sf, b, ef, c` (E of the material or `E = ..`). Built:
+(1) multiaxial: per material a separate `DEFI_MATERIAU` (`ELAS`, `FATIGUE WOHLER`,
 `CISA_PLAN_CRIT`) + `AFFE_MATERIAU`, `CALC_CHAMP EPSI_NOEU`, `CALC_FATIGUE
-FATIGUE_MULTI DOMA_NOEUD`; bij lineair statisch een resultaat uit statische spanning/rek
-× signaal of per blok (m ± a) via `CREA_RESU`, bij niet-lineair/dynamisch een kopie van
-`res` (CALC_FATIGUE slaat `NUME_ORDRE` 0 over, alarm PREPOST4_27: een ramp gaf de halve
-amplitude); periodiek N uit max(SIGEQ1, SIGEQ2) met de curve van de bridge, niet-periodiek
-`ENDO1`; velden `fatigue_eq`, `fatigue_ratio` = SIGEQ/(c b) (`aster_fatigue.compute_multi`);
-(2) schalen: uniaxiale route op `SIEQ_NOEU` van `res_sup`/`res_inf`, velden
-`damage_top`/`damage_bottom`; (3) Manson-Coffin op `EPSI_NOEU` (bisectie in ln 2N).
-Gemeten in Code-Aster 17.4: SIGEQ = c (Δτ/2 + a max(P_max, 0)) (Dang Van) resp. met N_max
-(Matake), `D_VAN_B`/`MATAKE_B` tellen niet mee; Crossland = `FORMULE_CRITERE` met `AMPCIS`
-= √J₂ van de amplitudetensor (szlz107a); `DOMA_NOEUD` zonder `EPSI_NOEU`: CALCULEL_29;
-onder de Wöhler-tabel met EXCLU NBRUP = 0, ENDO ≈ 1e-308; PROL LINEAIRE ook hier lineair
-in (S, N) (de bridge zet log-log-punten in de functie); NBRUP1 afgerond op een geheel
-getal, ENDO1 niet; PERIODIQUE telt één cyclus per verloop, NON_PERIODIQUE rainflow;
-MATAKE_MODI_AV kiest een ander vlak dan _AC; `EPSI_NOEU` is ook met GDEF_LOG de lineaire
-rek. Verificatie (`tests_vermoeiing.py`, 11 nieuwe cases, 28 controles): (1) sslv135a in
-3D: SIGEQ 300/275 MPa exact, NBRUP 1,2·10⁻⁵/1,5·10⁻⁵ (afronding), ENDO ≤ 1·10⁻¹⁴ t.o.v.
-`VALE_REFE` (tolerantie 1 %); Dang Van niet-periodiek 4·10⁻¹⁵; ramp 0 → 1 exact (VM-08d);
-trek + afschuiving met de hand (σ = 120, τ = 80 MPa): Dang Van SIGEQ −2,3·10⁻⁶, D −1·10⁻⁵,
-twee blokken −2,3·10⁻⁵; Crossland 3·10⁻¹⁵; Matake SIGEQ +5,8·10⁻⁴, D +2,6·10⁻³ (zoekraster
-van het kritieke vlak; binnen 1 %); (2) schaalplaat zuivere buiging, σ = 6m/t² (7·10⁻¹³),
-schade boven/onder met Goodman 8·10⁻¹² / 6·10⁻¹² (≤ 0,1 %); (3) Manson-Coffin met
-opgelegde plastische rek: rekamplitude exact, D 1,6·10⁻⁹; elastisch met `rek = VMIS_SG`
-exact. Rooktests (niet in de regressie): Dang Van in `dyna_impl_3d` en een model met
-volume + schaal, diagnose OK. IronPython 2.7.9: parse, meldingen, .comm-code en report.
-Regressie (`VERIF_WORK` op D:): 1046 van 1049 controles OK (227 cases), 3 BEKEND (NL-03a,
-KNOWN_BUGS 43), 0 NOK/FOUT, geen eerder OK-controle slechter; in `resultaten.json` alleen
-de VM-cases (VM-01..07 ontbraken in de basislijn en zijn er weer bij). Gevonden en niet
-opgelost: KNOWN_BUGS 82 (heen-en-weer-plasticiteit met de standaardvervorming GDEF_LOG
-convergeert niet bij het terugbelasten). Beperkingen: KNOWN_BUGS 66. Open: Mecway-GUI-test
-(velden `fatigue_eq`, `fatigue_ratio`, `damage_top/bottom` als contour). Vragen
-gebruiker: (1) a, b, c per materiaal (nu één set voor alle materialen) of liever
-standaard uit σ₋₁/τ₋₁ (`#ASTER-WOHLER ... sigma_1 = .., tau_1 = ..`)? (2) multiaxiaal op
-schalen (boven/onder via `CALC_FATIGUE` op `res_sup`) en per Gauss-punt (`DOMA_ELGA`)
-nodig (als S8c)? (3) Morrow/SWT-correctie voor de rekcurve gewenst? (4) bij heen-en-weer-
-plasticiteit standaard `PETIT` voorstellen (WARNING) of KNOWN_BUGS 82 eerst uitzoeken?
+FATIGUE_MULTI DOMA_NOEUD`; for linear static a result from static stress/strain
+× signal or per block (m ± a) via `CREA_RESU`, for nonlinear/dynamic a copy of
+`res` (CALC_FATIGUE skips `NUME_ORDRE` 0, alarm PREPOST4_27: a ramp gave half the
+amplitude); periodic N from max(SIGEQ1, SIGEQ2) with the bridge's curve, non-periodic
+`ENDO1`; fields `fatigue_eq`, `fatigue_ratio` = SIGEQ/(c b) (`aster_fatigue.compute_multi`);
+(2) shells: uniaxial route on `SIEQ_NOEU` of `res_sup`/`res_inf`, fields
+`damage_top`/`damage_bottom`; (3) Manson-Coffin on `EPSI_NOEU` (bisection in ln 2N).
+Measured in Code-Aster 17.4: SIGEQ = c (Δτ/2 + a max(P_max, 0)) (Dang Van) or with N_max
+(Matake) respectively, `D_VAN_B`/`MATAKE_B` do not count; Crossland = `FORMULE_CRITERE` with `AMPCIS`
+= √J₂ of the amplitude tensor (szlz107a); `DOMA_NOEUD` without `EPSI_NOEU`: CALCULEL_29;
+below the Wöhler table with EXCLU NBRUP = 0, ENDO ≈ 1e-308; PROL LINEAIRE here too linear
+in (S, N) (the bridge puts log-log points in the function); NBRUP1 rounded to an
+integer, ENDO1 not; PERIODIQUE counts one cycle per history, NON_PERIODIQUE rainflow;
+MATAKE_MODI_AV picks a different plane than _AC; `EPSI_NOEU` is the linear
+strain even with GDEF_LOG. Verification (`tests_vermoeiing.py`, 11 new cases, 28 checks): (1) sslv135a in
+3D: SIGEQ 300/275 MPa exact, NBRUP 1.2·10⁻⁵/1.5·10⁻⁵ (rounding), ENDO ≤ 1·10⁻¹⁴ vs.
+`VALE_REFE` (tolerance 1 %); Dang Van non-periodic 4·10⁻¹⁵; ramp 0 → 1 exact (VM-08d);
+tension + shear by hand (σ = 120, τ = 80 MPa): Dang Van SIGEQ −2.3·10⁻⁶, D −1·10⁻⁵,
+two blocks −2.3·10⁻⁵; Crossland 3·10⁻¹⁵; Matake SIGEQ +5.8·10⁻⁴, D +2.6·10⁻³ (search grid
+of the critical plane; within 1 %); (2) shell plate pure bending, σ = 6m/t² (7·10⁻¹³),
+damage top/bottom with Goodman 8·10⁻¹² / 6·10⁻¹² (≤ 0.1 %); (3) Manson-Coffin with
+imposed plastic strain: strain amplitude exact, D 1.6·10⁻⁹; elastic with `rek = VMIS_SG`
+exact. Smoke tests (not in the regression): Dang Van in `dyna_impl_3d` and a model with
+solid + shell, diagnosis OK. IronPython 2.7.9: parse, messages, .comm code and report.
+Regression (`VERIF_WORK` on D:): 1046 of 1049 checks OK (227 cases), 3 BEKEND (NL-03a,
+KNOWN_BUGS 43), 0 NOK/FOUT, no previously OK check worse; in `resultaten.json` only
+the VM cases (VM-01..07 were missing from the baseline and are back). Found and not
+fixed: KNOWN_BUGS 82 (reversed plasticity with the default deformation GDEF_LOG
+does not converge on unloading). Limitations: KNOWN_BUGS 66. Open: Mecway GUI test
+(fields `fatigue_eq`, `fatigue_ratio`, `damage_top/bottom` as a contour). Questions
+for the user: (1) a, b, c per material (now one set for all materials) or rather
+by default from σ₋₁/τ₋₁ (`#ASTER-WOHLER ... sigma_1 = .., tau_1 = ..`)? (2) multiaxial on
+shells (top/bottom via `CALC_FATIGUE` on `res_sup`) and per Gauss point (`DOMA_ELGA`)
+needed (as S8c)? (3) Morrow/SWT correction for the strain curve wanted? (4) with reversed
+plasticity propose `PETIT` by default (WARNING) or research KNOWN_BUGS 82 first?
 
-### S5 – Lassen: metallurgie
-**Code-Aster:** `CALC_META`, `DEFI_TRC`, `META_ACIER`. `hsnv101a`/`hsnv102a` zijn AXIS:
-alleen bron voor materiaal- en TRC-syntax. **Uitzoeken:** invoer van TRC-gegevens
-(`#ASTER`-sleutelwoord of databestand); fasevelden naar Mecway.
-**Klaar als:** 3D-staaf met opgelegde T(t): fasefracties binnen 1% van de
-TEST_RESU-waarden van `hsnv101a`.
-**Bevindingen:** Invoerroute (docs/Lassen.md §10): `#ASTER-METALLURGIE <Mecway-
+### S5 – Welding: metallurgy
+**Code-Aster:** `CALC_META`, `DEFI_TRC`, `META_ACIER`. `hsnv101a`/`hsnv102a` are AXIS:
+only a source for material and TRC syntax. **Research:** input of TRC data
+(`#ASTER` keyword or data file); phase fields to Mecway.
+**Done when:** 3D bar with imposed T(t): phase fractions within 1% of the
+TEST_RESU values of `hsnv101a`.
+**Findings:** Input route (docs/Lassen.md §10): `#ASTER-METALLURGIE <Mecway-
 materiaal>: staal=16MND5 | trc=<DEFI_TRC uit #ASTER-code>, ...` (`bridge_metallurgy.py`;
-vorm zoals `#ASTER-MATERIAAL`). Standaard-datasets met bron: `16MND5` (testcase
-mtlp103a, V4.61.103: TRC met 29 geschiedenissen, META_ACIER, DURT_META, GRAIN_AUST) en
-`HSNV101A` (testcase hsnv101a, incl. de mechanische gegevens per fase). `META_ACIER` /
-`DURT_META` in de thermische `DEFI_MATERIAU` (een aparte CHAM_MATER gaf per stap
-`RESULT1_39`; alleen bij een eigen `trc=` nodig, want #ASTER-code staat na de
-materialen), `CALC_META` (`ACIER`) na de thermische solve; velden `ferrite`,
-`pearlite`, `bainite`, `martensite`, `austenite`, `hardness` per tijdstap (groep
-`metallurgy`), samenvatting met de WBZ in log/statusvak. Optie `mechanica=ja` in de
-keten S4b: `ELAS_META_FO` + `META_ECRO_LINE`, `META_P_IL`, `AFFE_VARC M_ACIER`
-(`ALPHA_A`, `DEPS`, vloeigrens/helling per fase). Verificatie MT-01..08
-(`tests_lassen_meta.py`, groep "Metallurgie"): (a) hsnv101a in 3D: fasen ≤ 1,3·10⁻⁶
-t.o.v. de testcase zelf (hsnv101a heeft geen TEST_RESU op fasen; AXIS-run met
-CREA_TABLE), en met de metallurgische wet de TEST_RESU σ ≤ 5·10⁻⁷, ε ≤ 5·10⁻⁵ (tol.
-1%); (b) Koistinen-Marburger (16MND5, 1000 °C/s; eigen TRC MT-08) ≤ 4·10⁻⁸ en
-austenitiseren bij opwarmen ≤ 2·10⁻⁸ tussen Ac1 en Ac3 (0,22% vlak boven Ac3);
-(c) transformatierek vrije staaf en spanning ingeklemde staaf ≤ 6·10⁻⁶ t.o.v. de
-hand; lasrups MT-06 (WBZ, hardheid) en MT-07 (restspanning met fasen, 14 min)
-kwalitatief: de martensietuitzetting verlaagt σxx in de las van 466/641 naar 176/4
-MPa (boven/midden, hex8). Gemeten gedrag (KNOWN_BUGS 72): austenitisering loopt bij
-snel opwarmen met grote ΔT per stap achter (dataset-τ 0,34 s: lasas 6% austeniet;
-advies en WARNING: `TAUX_1=TAUX_3=0.001`), martensiet stopt bij ~0,7% austeniet,
-16MND5 geeft bij 200 °C/s nog 3% bainiet; bij `META_P_IL` geen
-`equivalentplasticstrain` (V7 is een spanning). Regressie 1037/1040 OK, 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; Lassen.md is hernummerd (§10 Metallurgie, §11 Verificatie, §12 Bronnen). Open: Mecway-GUI-test
-(velden per tijdstap, statusvak). Vragen gebruiker: (1) TAUX van 16MND5 standaard op
-0,001 s zetten voor lassen (nu getrouw aan mtlp103a 0,34 s, met WARNING)? (2)
-mechanische fasegegevens voor 16MND5 (of S355) uit de literatuur als dataset
-opnemen? (3) een TRC-diagram voor constructiestaal (S355) nodig? (4) ontlaten
-(`ACIER_REVENU`) bij meerlaags lassen en transformatieplasticiteit (`META_PT`) als
-vervolgstap (splitsen als S5b)?
+form like `#ASTER-MATERIAAL`). Standard datasets with source: `16MND5` (test case
+mtlp103a, V4.61.103: TRC with 29 histories, META_ACIER, DURT_META, GRAIN_AUST) and
+`HSNV101A` (test case hsnv101a, incl. the mechanical data per phase). `META_ACIER` /
+`DURT_META` in the thermal `DEFI_MATERIAU` (a separate CHAM_MATER gave
+`RESULT1_39` per step; only needed for a custom `trc=`, because #ASTER code comes after the
+materials), `CALC_META` (`ACIER`) after the thermal solve; fields `ferrite`,
+`pearlite`, `bainite`, `martensite`, `austenite`, `hardness` per time step (group
+`metallurgy`), summary with the HAZ in log/status box. Option `mechanica=ja` in the
+chain S4b: `ELAS_META_FO` + `META_ECRO_LINE`, `META_P_IL`, `AFFE_VARC M_ACIER`
+(`ALPHA_A`, `DEPS`, yield strength/slope per phase). Verification MT-01..08
+(`tests_lassen_meta.py`, group "Metallurgie"): (a) hsnv101a in 3D: phases ≤ 1.3·10⁻⁶
+vs. the test case itself (hsnv101a has no TEST_RESU on phases; AXIS run with
+CREA_TABLE), and with the metallurgical law the TEST_RESU σ ≤ 5·10⁻⁷, ε ≤ 5·10⁻⁵ (tol.
+1%); (b) Koistinen-Marburger (16MND5, 1000 °C/s; own TRC MT-08) ≤ 4·10⁻⁸ and
+austenitisation on heating ≤ 2·10⁻⁸ between Ac1 and Ac3 (0.22% just above Ac3);
+(c) transformation strain of a free bar and stress of a restrained bar ≤ 6·10⁻⁶ vs. the
+hand calculation; weld bead MT-06 (HAZ, hardness) and MT-07 (residual stress with phases, 14 min)
+qualitative: the martensite expansion lowers σxx in the weld from 466/641 to 176/4
+MPa (top/middle, hex8). Measured behaviour (KNOWN_BUGS 72): austenitisation lags behind with
+fast heating and large ΔT per step (dataset τ 0.34 s: weld axis 6% austenite;
+advice and WARNING: `TAUX_1=TAUX_3=0.001`), martensite stops at ~0.7% austenite,
+16MND5 still gives 3% bainite at 200 °C/s; with `META_P_IL` no
+`equivalentplasticstrain` (V7 is a stress). Regression 1037/1040 OK, 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT; Lassen.md has been renumbered (§10 Metallurgy, §11 Verification, §12 Sources). Open: Mecway GUI test
+(fields per time step, status box). Questions for the user: (1) set TAUX of 16MND5 by default to
+0.001 s for welding (now faithful to mtlp103a 0.34 s, with WARNING)? (2)
+include mechanical phase data for 16MND5 (or S355) from the literature as a
+dataset? (3) a TRC diagram for structural steel (S355) needed? (4) tempering
+(`ACIER_REVENU`) in multi-pass welding and transformation plasticity (`META_PT`) as a
+follow-up step (split off as S5b)?
 
-### S9 – Loadcase-combinaties (go/no-go)
-Mecway heeft geen load cases meer: ze worden omgezet naar **configuraties** (manual §2.8;
-API `mw.set_active_configuration`). **Eerst go/no-go:** kunnen configuraties met
-factoren goed lastgevallen uitdrukken die de bridge uit de `.liml` leest? Zo niet: stap
-op **vervallen** met de reden, documenteren, niets bouwen.
-**Code-Aster:** `MACRO_ELAS_MULT` (één factorisatie, meerdere `CAS_CHARGE`), combinaties
-en omhullende via `CREA_CHAMP`/`CALC_CHAMP`. 3D-testcase `sdlv128a` (4 `NOM_CAS`); ook
+### S9 – Load case combinations (go/no-go)
+Mecway no longer has load cases: they are converted into **configurations** (manual §2.8;
+API `mw.set_active_configuration`). **First go/no-go:** can configurations with
+factors properly express load cases that the bridge reads from the `.liml`? If not: set the step
+to **dropped** with the reason, document it, build nothing.
+**Code-Aster:** `MACRO_ELAS_MULT` (one factorisation, several `CAS_CHARGE`), combinations
+and envelope via `CREA_CHAMP`/`CALC_CHAMP`. 3D test case `sdlv128a` (4 `NOM_CAS`); also
 `ssll101c`, `ssll106a`.
-**Klaar als:** de combinatie is gelijk aan de lineaire superpositie van losse runs
-(≤ 1e-6 relatief).
-**Bevindingen:** **No-go, vervallen** (7 okt 2026). (1) Een configuratie in de `.liml`
-is alleen `<configuration name=".."/>` bovenaan plus per lastitem/voorwaarde een kind
+**Done when:** the combination equals the linear superposition of separate runs
+(≤ 1e-6 relative).
+**Findings:** **No-go, dropped** (7 Oct 2026). (1) A configuration in the `.liml`
+is only `<configuration name=".."/>` at the top plus, per load item/condition, a child
 `<suppressed configuration=".."/>` (Samples/CylinderLifting, Tutorials/AssemblyWithContact,
-eigen testmodel); er is geen factor, geen per-configuratie-waarde en geen actieve
-configuratie in het bestand (mecway.exe: alleen "Suppress/Unsuppress in all
-configurations", tabbladmenu New/Delete/Rename, "Solve all configurations"; manual
-§2.8: "suppress and unsuppress loads and constraints"; de oude load cases worden bij
-het openen configuraties). Solution-formules (manual §10.11) werken op de actieve
-solution. Een combinatie 1,2 G + 1,5 Q kan de gebruiker dus alleen als eigen
-configuratie met gedupliceerde, met de hand gefactoreerde lastitems invoeren; de
-factoren staan dan nergens, dus de bridge kan geen `MACRO_ELAS_MULT` + combinatie/
-omhullende afleiden. (2) Mecway headless (`mw_solve.py`) rekent alle configuraties,
-elk een `<solution configuration="..">` met een modelkopie waarin onderdrukte items
-`suppressed="true"` zijn. Model balk hex20 met G (gravity), Q (druk) en ULS (eigen
-gravity 1,2 g en druk 1,5 q): Mecway ULS = 1,2 G + 1,5 Q op 3e-15 (verplaatsing,
-relatief t.o.v. max); bridge op een kopie met alleen configuratie ULS = Mecway ULS op
-1,0e-9 (diagnose OK). (3) De bridge rekent één configuratie per run (de enige zonder
-onderdrukte items, anders de eerste) en kan de actieve niet lezen; werkwijze voor
-lastgevallen (kopie per configuratie) in `docs/Handleiding.md` §4 + EN; de onterechte
-WARNING bij één configuratie als KNOWN_BUGS 68 (opgelost 15 okt: instelling
-Configuratie op het startscherm, verificatie LS-20). Niets gebouwd. **Open vragen:** (a)
-Toch een eigen invoer voor factoren (bijv. `#ASTER-COMBINATIE ULS = 1.2*G + 1.5*Q`
-op configuratienamen) met `MACRO_ELAS_MULT` en omhullende, buiten Mecway om? (b) Een
-keuzelijst "Configuratie" op het startscherm (namen uit de `.liml`, daarna
-`mw.set_active_configuration`) of alle configuraties in één run met `MACRO_ELAS_MULT`
-(zelfde randvoorwaarden), zonder factoren?
+own test model); there is no factor, no per-configuration value and no active
+configuration in the file (mecway.exe: only "Suppress/Unsuppress in all
+configurations", tab menu New/Delete/Rename, "Solve all configurations"; manual
+§2.8: "suppress and unsuppress loads and constraints"; the old load cases become
+configurations on opening). Solution formulas (manual §10.11) work on the active
+solution. A combination 1.2 G + 1.5 Q can therefore only be entered by the user as a separate
+configuration with duplicated load items factored by hand; the
+factors are then stored nowhere, so the bridge cannot derive `MACRO_ELAS_MULT` + combination/
+envelope. (2) Mecway headless (`mw_solve.py`) solves all configurations,
+each a `<solution configuration="..">` with a model copy in which suppressed items are
+`suppressed="true"`. Model beam hex20 with G (gravity), Q (pressure) and ULS (its own
+gravity 1.2 g and pressure 1.5 q): Mecway ULS = 1.2 G + 1.5 Q to 3e-15 (displacement,
+relative to max); bridge on a copy with only configuration ULS = Mecway ULS to
+1.0e-9 (diagnosis OK). (3) The bridge solves one configuration per run (the only one without
+suppressed items, otherwise the first) and cannot read the active one; procedure for
+load cases (a copy per configuration) in `docs/Handleiding.md` §4 + EN; the unjustified
+WARNING with one configuration as KNOWN_BUGS 68 (fixed 15 Oct: setting
+Configuration on the start screen, verification LS-20). Nothing built. **Open questions:** (a)
+A dedicated input for factors after all (e.g. `#ASTER-COMBINATIE ULS = 1.2*G + 1.5*Q`
+on configuration names) with `MACRO_ELAS_MULT` and envelope, outside Mecway? (b) A
+drop-down "Configuration" on the start screen (names from the `.liml`, then
+`mw.set_active_configuration`) or all configurations in one run with `MACRO_ELAS_MULT`
+(same boundary conditions), without factors?
 
-### S13 – Orthotrope en anisotrope materialen
-**Doel:** Mecway-materialen *Orthotropic* en *Anisotropic* (stijfheids- of compliantiematrix)
-vertalen in plaats van de run te stoppen, met Mecway's *Element orientation* (per element
-`orientationux`…`vz`, `angle`) als materiaalrichting; ook in schalen.
-**Code-Aster:** `DEFI_MATERIAU` `ELAS_ORTH` (en `ELAS_ISTR`), anisotroop via `ELAS_ORTH` als dat
-volstaat, anders NIET mogelijk melden; richting met `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`/`ANGL_EULER`
-per element(groep), schalen `COQUE` `ANGL_REP`/`VECTEUR`; composiet `DEFI_COMPOSITE`.
-**Uitzoeken:** Mecway's XML van Orthotropic/StiffnessMatrix/ComplianceMatrix (Samples, mecway.exe),
-de definitie van U/V en `angle` (manual §7), hoe Mecway spanningen in lokale assen toont; groeperen
-van elementen met dezelfde oriëntatie; thermische orthotropie (`THER_ORTH`).
-**Klaar als:** een orthotrope balk in twee oriëntaties (analytisch, buiging met E_L en E_T) en een
-geroteerd blok onder trek (Hooke in lokale assen) binnen 1%, en gelijk aan Mecway headless; regressie D.5.
+### S13 – Orthotropic and anisotropic materials
+**Goal:** translate the Mecway materials *Orthotropic* and *Anisotropic* (stiffness or compliance matrix)
+instead of stopping the run, with Mecway's *Element orientation* (per element
+`orientationux`…`vz`, `angle`) as the material direction; also in shells.
+**Code-Aster:** `DEFI_MATERIAU` `ELAS_ORTH` (and `ELAS_ISTR`), anisotropic via `ELAS_ORTH` if that
+suffices, otherwise report it as NOT possible; direction with `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`/`ANGL_EULER`
+per element (group), shells `COQUE` `ANGL_REP`/`VECTEUR`; composite `DEFI_COMPOSITE`.
+**Research:** Mecway's XML of Orthotropic/StiffnessMatrix/ComplianceMatrix (Samples, mecway.exe),
+the definition of U/V and `angle` (manual §7), how Mecway shows stresses in local axes; grouping
+elements with the same orientation; thermal orthotropy (`THER_ORTH`).
+**Done when:** an orthotropic beam in two orientations (analytical, bending with E_L and E_T) and a
+rotated block under tension (Hooke in local axes) within 1%, and equal to Mecway headless; regression D.5.
 
-### S14 – Hyperelastisch materiaal
-**Doel:** Mecway *Neo Hooke* en *Mooney-Rivlin* vertalen (nu: WARNING en de run stopt).
-**Code-Aster:** `ELAS_HYPER` (C01, C10, C20, K) met `RELATION='ELAS_HYPER'`, `DEFORMATION='GDEF_LOG'`
-of `'GREEN_LAGRANGE'` in `STAT_NON_LINE`; testcases `ssnv187a`, `ssnp154`.
-**Uitzoeken:** Mecway's parameters en eenheden (XML), bijna-onsamendrukbaarheid (`INCO_UPG`?),
-welke analyses (alleen niet-lineair).
-**Klaar als:** uniaxiale trek tot 100% rek gelijk aan de analytische Neo-Hooke-/Mooney-Rivlin-curve
-(≤ 1%) en aan Mecway headless; regressie D.5.
+### S14 – Hyperelastic material
+**Goal:** translate Mecway *Neo Hooke* and *Mooney-Rivlin* (now: WARNING and the run stops).
+**Code-Aster:** `ELAS_HYPER` (C01, C10, C20, K) with `RELATION='ELAS_HYPER'`, `DEFORMATION='GDEF_LOG'`
+or `'GREEN_LAGRANGE'` in `STAT_NON_LINE`; test cases `ssnv187a`, `ssnp154`.
+**Research:** Mecway's parameters and units (XML), near-incompressibility (`INCO_UPG`?),
+which analyses (nonlinear only).
+**Done when:** uniaxial tension up to 100% strain equal to the analytical Neo-Hooke/Mooney-Rivlin curve
+(≤ 1%) and to Mecway headless; regression D.5.
 
-### S15 – Pre-tension section (boutvoorspanning)
-**Doel:** Mecway's *Pre-tension section* (`pretensionsection`, Samples/BoltedJoint) vertalen.
-**Code-Aster:** voorspanning via een opgelegde verkorting over een snede (`LIAISON_DDL` tussen de
-twee kanten van de snede, of de bout opknippen met `CREA_MAILLAGE` en `DDL_IMPO`), in twee fasen:
-eerst kracht, dan vastgezet (`STAT_NON_LINE` met twee lasten/`ETAT_INIT`); alternatief thermische
-krimp. Code-Aster-documentatie over boutvoorspanning nagaan (U2-doc).
-**Uitzoeken:** Mecway's XML (snedevlak, kracht of verkorting, fasen), gedrag in lineair statisch.
-**Klaar als:** BoltedJoint: boutkracht na voorspannen = opgegeven kracht (≤ 1%), resultaten gelijk aan
-Mecway headless binnen de bekende contactverschillen (KNOWN_BUGS 43); regressie D.5.
+### S15 – Pre-tension section (bolt prestress)
+**Goal:** translate Mecway's *Pre-tension section* (`pretensionsection`, Samples/BoltedJoint).
+**Code-Aster:** prestress via an imposed shortening across a cut (`LIAISON_DDL` between the
+two sides of the cut, or cutting the bolt with `CREA_MAILLAGE` and `DDL_IMPO`), in two phases:
+first force, then locked (`STAT_NON_LINE` with two loads/`ETAT_INIT`); alternatively thermal
+shrinkage. Check the Code-Aster documentation on bolt prestress (U2 doc).
+**Research:** Mecway's XML (cut plane, force or shortening, phases), behaviour in linear static.
+**Done when:** BoltedJoint: bolt force after prestressing = specified force (≤ 1%), results equal to
+Mecway headless within the known contact differences (KNOWN_BUGS 43); regression D.5.
 
-### S16 – 2D- en axisymmetrische analyses
-**Doel:** Mecway's 2D-analysetypen (S20, D20, SA0, ook A20 en thermisch 2D) vertalen; nu stopt de run.
-**Code-Aster:** modelisaties `C_PLAN`, `D_PLAN`, `AXIS` (thermisch `PLAN`/`AXIS`, akoestiek `2D_FLUIDE`);
-mesh in het XY-vlak, dikte bij vlakspanning; resultaten terug in Mecway's 2D-velden.
-**Uitzoeken:** Mecway's 2D-elementen en dikte-invoer, analysecodes (DA0, V20 komen voor in mecway.exe),
-welke lasten/voorwaarden in 2D bestaan, Mecway's veldnamen voor 2D/axisymmetrisch (hoepelspanning).
-**Klaar als:** plaat met gat in vlakspanning (Kt), dikwandige cilinder axisymmetrisch (Lamé) en een
-2D-dynamisch geval binnen de toleranties van de 3D-tegenhangers en gelijk aan Mecway headless;
-regressie D.5. Mag in deelstappen (S16a statisch, S16b dynamisch/thermisch/akoestiek).
+### S16 – 2D and axisymmetric analyses
+**Goal:** translate Mecway's 2D analysis types (S20, D20, SA0, also A20 and thermal 2D); now the run stops.
+**Code-Aster:** modelisations `C_PLAN`, `D_PLAN`, `AXIS` (thermal `PLAN`/`AXIS`, acoustics `2D_FLUIDE`);
+mesh in the XY plane, thickness for plane stress; results back in Mecway's 2D fields.
+**Research:** Mecway's 2D elements and thickness input, analysis codes (DA0, V20 appear in mecway.exe),
+which loads/conditions exist in 2D, Mecway's field names for 2D/axisymmetric (hoop stress).
+**Done when:** plate with a hole in plane stress (Kt), thick-walled cylinder axisymmetric (Lamé) and a
+2D dynamic case within the tolerances of their 3D counterparts and equal to Mecway headless;
+regression D.5. May be done in sub-steps (S16a static, S16b dynamic/thermal/acoustics).
 
-### S17 – Lasten op balkzijvlakken en hydrostatische druk op schaalranden
-**Doel:** de twee open punten van KNOWN_BUGS 5: druk/traction op het zijvlak van een balk (Mecway
-rekent ze als verdeelde balklast) en hydrostatische druk op schaalranden.
-**Code-Aster:** `FORCE_POUTRE` (ook als functie van X, Y, Z via `AFFE_CHAR_MECA_F`); schaalranden via
-`FORCE_ARETE` of knoopkrachten zoals `bridge_mesh._edge_loads`.
-**Klaar als:** balk met druk op een zijvlak = balk met de equivalente lijnlast (≤ 0,1%) en gelijk aan
-Mecway headless; hydrostatische druk op een schaalrand gelijk aan de handberekening; regressie D.5.
+### S17 – Loads on beam side faces and hydrostatic pressure on shell edges
+**Goal:** the two open items of KNOWN_BUGS 5: pressure/traction on the side face of a beam (Mecway
+computes them as a distributed beam load) and hydrostatic pressure on shell edges.
+**Code-Aster:** `FORCE_POUTRE` (also as a function of X, Y, Z via `AFFE_CHAR_MECA_F`); shell edges via
+`FORCE_ARETE` or nodal forces like `bridge_mesh._edge_loads`.
+**Done when:** beam with pressure on a side face = beam with the equivalent line load (≤ 0.1%) and equal to
+Mecway headless; hydrostatic pressure on a shell edge equal to the hand calculation; regression D.5.
 
-### S18 – Nieuwe Code-Aster-versie (18) testen
-**Doel:** de bridge met Code-Aster 18 laten werken en die versie als getest opnemen; tot dan geeft
-een run met 18 alleen een WARNING (`bridge_version.py`, `TESTED_ASTER_VERSIONS` in `bridge_utils.py`).
-**Voorwaarde:** Code-Aster 18 voor Windows (code-aster-windows.com) is beschikbaar; tot dan status later.
-**Code-Aster:** sleutelwoorden in de templates (`AsterTemplate_*.comm`) en de gegenereerde `.comm`
-tegen de catalogus van 18; de Python-API in de job (`aster_results_export.py`, `aster_spectrum.py`,
+### S18 – Testing the new Code-Aster version (18)
+**Goal:** make the bridge work with Code-Aster 18 and record that version as tested; until then
+a run with 18 only gives a WARNING (`bridge_version.py`, `TESTED_ASTER_VERSIONS` in `bridge_utils.py`).
+**Prerequisite:** Code-Aster 18 for Windows (code-aster-windows.com) is available; until then status later.
+**Code-Aster:** keywords in the templates (`AsterTemplate_*.comm`) and the generated `.comm`
+against the catalogue of 18; the Python API in the job (`aster_results_export.py`, `aster_spectrum.py`,
 `aster_acoustic_export.py`, `aster_acoustic_complex.py`, `aster_cyclic.py`, `aster_fatigue.py`);
-de `.mess`-tekst die `bridge_version.py`, `bridge_convergence.py` en `bridge_run_aster.py` lezen (versieregel,
-convergentietabel, DIAGNOSTIC JOB).
-**Uitzoeken:** de release notes van 18 (vervallen/hernoemde sleutelwoorden), het standaardpad van de
-launcher (`exe_aster`) en of 17.4 en 18 naast elkaar geïnstalleerd kunnen blijven.
-**Klaar als:** volledige regressie (`run_verificatie.py`) met 0 NOK/FOUT en dezelfde BEKEND als de
-basislijn in docs/Verificatie.md §3, de officiële Code-Aster-tests (`run_code_aster_tests.py`) alle OK,
-templates/API aangepast waar nodig (17.4 blijft werken of het besluit om 17.4 te laten vallen staat in
-CHANGELOG.md), `TESTED_ASTER_VERSIONS` bijgewerkt en docs (Handleiding, Na_een_update, Verificatie) NL+EN
-nagelopen; regressie D.5.
+the `.mess` text that `bridge_version.py`, `bridge_convergence.py` and `bridge_run_aster.py` read (version line,
+convergence table, DIAGNOSTIC JOB).
+**Research:** the release notes of 18 (removed/renamed keywords), the default path of the
+launcher (`exe_aster`) and whether 17.4 and 18 can stay installed side by side.
+**Done when:** full regression (`run_verificatie.py`) with 0 NOK/FOUT and the same BEKEND as the
+baseline in docs/Verificatie.md §3, the official Code-Aster tests (`run_code_aster_tests.py`) all OK,
+templates/API adapted where needed (17.4 keeps working or the decision to drop 17.4 is recorded in
+CHANGELOG.md), `TESTED_ASTER_VERSIONS` updated and docs (Handleiding, Na_een_update, Verificatie) NL+EN
+reviewed; regression D.5.
