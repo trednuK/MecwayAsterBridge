@@ -717,6 +717,17 @@ def _mail_coords(mail_path):
     return coords
 
 
+def _worst_node(nodes, coords):
+    """(grootste coordinaatverschil, knoop) tussen nodes en coords
+    ({nid: (x, y, z)})."""
+    worst, worst_nid = 0.0, None
+    for nid, xyz in nodes.items():
+        d = max(abs(a - b) for a, b in zip(xyz, coords[nid]))
+        if d > worst:
+            worst, worst_nid = d, nid
+    return worst, worst_nid
+
+
 def check_results_fit(model_liml, fragment_path, mail_path=None):
     """
     Past resultaatbestand fragment_path bij het mesh van model_liml?
@@ -735,10 +746,8 @@ def check_results_fit(model_liml, fragment_path, mail_path=None):
     if not nids and not eids:
         return False, tr("Geen resultaten gevonden in {0}.",
                          "No results found in {0}.").format(fragment_path)
-    sol = _find_solution_start(model_liml)
-    wheel, err = _wheel_check(_read_range(
-        model_liml, 0, sol if sol >= 0 else os.path.getsize(model_liml)),
-        fragment_path)
+    head = _model_head(model_liml)
+    wheel, err = _wheel_check(head, fragment_path)
     if err:
         return False, err
     if wheel:
@@ -774,11 +783,19 @@ def check_results_fit(model_liml, fragment_path, mail_path=None):
             "The mesh of the run ({0} nodes) differs from the model "
             "({1} nodes).").format(len(coords), len(nodes))
     span = max([abs(c) for xyz in nodes.values() for c in xyz] + [1e-30])
-    worst, worst_nid = 0.0, None
-    for nid, xyz in nodes.items():
-        d = max(abs(a - b) for a, b in zip(xyz, coords[nid]))
-        if d > worst:
-            worst, worst_nid = d, nid
+    worst, worst_nid = _worst_node(nodes, coords)
+    cyc = cyclic_info(head)
+    if worst > 1e-6 * span and cyc is not None and cyc[0] != 2:
+        # Cyclische symmetrie om X of Y: het .mail van de run staat in het
+        # rekenframe (as -> Z, bridge_cyclic._rewrite_mesh); terugdraaien.
+        # Alleen een modale run draait (bridge_cyclic.build_cyclic_modes),
+        # daarom beide frames proberen.
+        import bridge_cyclic
+        back = dict((nid, bridge_cyclic.to_model_frame(xyz, cyc[0]))
+                    for nid, xyz in coords.items())
+        worst_b, nid_b = _worst_node(nodes, back)
+        if worst_b < worst:
+            worst, worst_nid = worst_b, nid_b
     if worst > 1e-6 * span:
         return False, tr(
             "Knoop {0} ligt in het model anders dan in de run (verschil "

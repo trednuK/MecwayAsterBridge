@@ -1611,6 +1611,11 @@ Waarnemingen:
   1,000000, van de Impeller 0,99958 … 0,99994 (de elementen wijken iets af, KNOWN_BUGS
   62); bij een paar of een dubbele frequentie kiezen Mecway en Code-Aster een andere
   staande golf (lage MAC per mode, verwacht). De Mecway-GUI is NIET bekeken.
+- **Resultaten... bij een X- of Y-as** (CY-05, Mecway's IronPython): het `.mail` van
+  de run staat in het rekenframe (as → Z); `check_results_fit` draait de coördinaten
+  terug (`bridge_cyclic.to_model_frame`) en accepteert het resultaat van CY-05 (vóór
+  de correctie: "Knoop 109 ligt in het model anders dan in de run (verschil 0.5)"). Een
+  knoop die in het model 0,01 m verschoven is, wordt nog steeds geweigerd.
 - **Negatieve controle** van de MAC: een wiel zonder fase (sector 0 alleen gedraaid
   naar elke sector) gaf voor ND 2, 3 en 4 van CY-01 1 − MAC = 1,000; de controle
   onderscheidt dus de fase van de sectoren.

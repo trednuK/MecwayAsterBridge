@@ -468,6 +468,20 @@ def _fmt_names(nids, per_line=10):
                      for i in range(0, len(names), per_line))
 
 
+def to_model_frame(xyz, axis):
+    """
+    Coordinaten uit het .mail van een cyclische run terug naar het frame
+    van het model: de inverse van de verwisseling in _rewrite_mesh (daar
+    nieuw[_TUPLE[a]] = oud[a], dus model[a] = mesh[_TUPLE[a]]). axis: index
+    0/1/2 (X/Y/Z, bridge_results_liml.cyclic_info); bij Z ongewijzigd.
+    Voor bridge_results_liml.check_results_fit (knop Resultaten...).
+    """
+    order = _TUPLE.get(_AXIS_NAMES[axis]) if axis in (0, 1, 2) else None
+    if order is None:
+        return tuple(xyz)
+    return tuple(xyz[order[a]] for a in range(3))
+
+
 def _rewrite_mesh(msh_path, groups, axis_name, size):
     """
     Knoopgroepen (in deze volgorde) achteraan het ASTER-mesh, en de

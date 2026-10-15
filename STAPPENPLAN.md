@@ -528,7 +528,7 @@ Lees eerst `docs/Modaal_en_knik.md` en KNOWN_BUGS 46-49. Bestaande route:
   criterium 1e-3; snijvlakken doorlopend ≤ 1,3e-14; op de as (CY-04, ND 1) 6,2e-4,
   Mecway's eigen oplossing 9,4e-4; t.o.v. Mecway's wiel ND 0 MAC 1,000000 (CY-05),
   Impeller 0,9996 … 0,99994. 37 nieuwe controles in `tests_cyclisch.py` (CY 171/171).
-  Regressie (`VERIF_WORK` eigen map): 1055/1058 OK (216 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, geen eerder OK-controle slechter. Gevonden, niet opgelost: KNOWN_BUGS 78 (Resultaten... bij X/Y-as).
+  Regressie (`VERIF_WORK` eigen map): 1055/1058 OK (216 cases), 3 BEKEND (NL-03a, KNOWN_BUGS 43), 0 NOK/FOUT, geen eerder OK-controle slechter. Gevonden: KNOWN_BUGS 78 (Resultaten... bij X/Y-as; opgelost 15 okt, `check_results_fit` draait het frame terug).
   Open: Mecway-GUI-test (wiel tonen, animatie per mode). Vragen gebruiker: (1) de
   schaal van de vormen gelijk aan Mecway maken (massanormering over het hele wiel; nu
   die van REST_SOUS_STRUC)? (2) bij een paar ook het tweede lid als extra mode tonen?

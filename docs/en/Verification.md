@@ -1612,6 +1612,11 @@ Observations:
   differ slightly, KNOWN_BUGS 62); for a pair or a double frequency Mecway and
   Code-Aster choose a different standing wave (low MAC per mode, expected). The Mecway
   GUI has NOT been looked at.
+- **Results... with an X or Y axis** (CY-05, Mecway's IronPython): the run's `.mail`
+  is in the solver frame (axis → Z); `check_results_fit` rotates the coordinates back
+  (`bridge_cyclic.to_model_frame`) and accepts the result of CY-05 (before the fix:
+  "Node 109 is in a different position in the model than in the run (difference
+  0.5)"). A node moved by 0.01 m in the model is still refused.
 - **Negative check** of the MAC: a wheel without phase (sector 0 only rotated to every
   sector) gave 1 − MAC = 1.000 for ND 2, 3 and 4 of CY-01; the check thus
   distinguishes the phase of the sectors.

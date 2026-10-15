@@ -313,14 +313,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    (per deel van het mesh de som); of `FLUX_REP`, `ECHANGE` en `AFFE_CHAR_MECA_F` het
    ook hebben, is NIET nagegaan.
 
-78\. **Cyclische symmetrie om X of Y: Resultaten... laadt het resultaat niet opnieuw**
-   (bevestigd met IronPython op CY-05, `bridge_results_liml.check_results_fit` en
-   `bridge_cyclic._rewrite_mesh`). De bridge schrijft de coordinaten in het `.mail` van
-   de run met de cyclische verwisseling van de assen (as -> Z, S10g); de knop
-   Resultaten... vergelijkt die met de `.liml` en weigert ("Knoop 109 ligt in het model
-   anders dan in de run (verschil 0.5)"). Bij de Z-as en direct na een run (zonder de
-   knop) speelt het niet. Gevonden bij S10i, niet opgelost.
-
 82\. **Niet-lineair: heen-en-weer-plasticiteit met de standaardvervorming convergeert
    niet bij het terugbelasten** (bevestigd met een offline run, `bridge_to_aster.
    _deformation_for`; gevonden bij S8b). Staaf 0,1 × 0,01 × 0,01 m, 2 hex8, bilineair
