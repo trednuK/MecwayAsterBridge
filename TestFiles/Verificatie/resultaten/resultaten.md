@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge d019bca, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**1666 van 1670 controles binnen de tolerantie** (287 testcases); 4 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2117 van 2123 controles binnen de tolerantie** (386 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -535,6 +535,20 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | BU-04-dkt-n32 | Vrij opgelegde plaat, eenzijdige druk, DKT 32x32 | factor 2 | 4.7450e+05 - | 4.7568e+05 | +0.25% | 0.5% | OK |
 | BU-04-dkt-n8 | Vrij opgelegde plaat, eenzijdige druk, DKT 8x8 | factor 1 | 3.0368e+05 - | 3.0829e+05 | +1.52% | 8% | OK |
 | BU-04-dkt-n8 | Vrij opgelegde plaat, eenzijdige druk, DKT 8x8 | factor 2 | 4.7450e+05 - | 4.9362e+05 | +4.03% | 8% | OK |
+| BU-20 | Balkorientatie knik: langs X, Y vast, standaard (zwakke as) | factor 1 | 1.7272 - | 1.7272 | +0.00% | 0.2% | OK |
+| BU-20 | Balkorientatie knik: langs X, Y vast, standaard (zwakke as) | factor 1 t.o.v. Mecway | 1.7272 - | 1.7272 | +0.00% | 0.01% | OK |
+| BU-21 | Balkorientatie knik: langs X, Y vast, vector Z (sterke as) | factor 1 | 27.635 - | 27.635 | +0.00% | 0.2% | OK |
+| BU-21 | Balkorientatie knik: langs X, Y vast, vector Z (sterke as) | factor 1 t.o.v. Mecway | 27.635 - | 27.635 | +0.00% | 0.01% | OK |
+| BU-22 | Balkorientatie knik: langs Z, X vast, standaard (sterke as) | factor 1 | 27.635 - | 27.635 | +0.00% | 0.2% | OK |
+| BU-22 | Balkorientatie knik: langs Z, X vast, standaard (sterke as) | factor 1 t.o.v. Mecway | 27.635 - | 27.635 | +0.00% | 0.01% | OK |
+| BU-23 | Balkorientatie knik: langs Z, X vast, vector X + 30 graden | factor 1 | 8.2041 - | 8.2041 | +0.00% | 0.2% | OK |
+| BU-23 | Balkorientatie knik: langs Z, X vast, vector X + 30 graden | factor 1 t.o.v. Mecway | 8.2041 - | 8.2041 | -0.00% | 0.01% | OK |
+| BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | factor 1 | 1.7272 - | 1.7272 | +0.00% | 0.2% | OK |
+| BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | factor 2 | 15.545 - | 15.545 | +0.00% | 0.2% | OK |
+| BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | factor 3 | 27.635 - | 27.635 | +0.00% | 0.2% | OK |
+| BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | knikvorm 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | knikvorm 3 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | factor 1 t.o.v. Mecway | 1.7272 - | 1.7272 | -0.00% | 0.01% | OK |
 
 ## Cyclische symmetrie
 
@@ -746,6 +760,23 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | DY-03c | Staafgolf, staplast, impliciet (HHT, dt=T/77) | tipsnelheid | 0.24629 m/s | 0.24817 | +0.76% | 1.4% | OK |
 | DY-03c | Staafgolf, staplast, impliciet (HHT, dt=T/77) | max. tipverplaatsing | 9.5238e-05 m | 9.2696e-05 | -2.67% | 4.3% | OK |
 | DY-03c | Staafgolf, staplast, impliciet (HHT, dt=T/77) | verloop t.o.v. 1D-keten | 0 - | 3.9249e-08 | 3.9249e-08 | 1e-05 - | OK |
+| DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | spanning midden | 1.0150e+07 Pa | 1.0158e+07 | +0.08% | 0.32% | OK |
+| DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | reactie na reflectie | 2030.1 N | 2029.2 | -0.04% | 0.26% | OK |
+| DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | tipverplaatsing eind | 1.5000e-04 m | 1.5000e-04 | +0.00% | 0.01% | OK |
+| DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | tipsnelheid | 0.25 m/s | 0.25 | +0.00% | 0.01% | OK |
+| DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | verloop t.o.v. 1D-keten | 0 - | 4.6547e-08 | 4.6547e-08 | 1e-05 - | OK |
+| DY-20b | Staaf, constraint equation ux = C, expliciet | tipverplaatsing eind | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.0001% | OK |
+| DY-20b | Staaf, constraint equation ux = C, expliciet | tipverplaatsing vanaf de eerste uitvoertijd | 0 - | 2.5262e-08 | 2.5262e-08 | 1e-06 - | OK |
+| DY-20c | Plaat, frictionless schaalvlak met normaalverplaatsing, expliciet (LIAISON_OBLIQUE) | normaalverplaatsing eind (|uz| gemiddeld) | 1.5000e-04 m | 1.5000e-04 | +0.00% | 0.0001% | OK |
+| DY-20c | Plaat, frictionless schaalvlak met normaalverplaatsing, expliciet (LIAISON_OBLIQUE) | normaalsnelheid (|vz| gemiddeld, laatste uitvoertijd) | 0.25 m/s | 0.25 | +0.00% | 0.01% | OK |
+| DY-30 | Snedekrachten in DYNA_NON_LINE, quasi-statisch | M_v inklemming | 300 N.m | 300.16 | +0.05% | 2% | OK |
+| DY-70 | Staaf met verhinderde uitzetting, constante temperatuur (KNOWN_BUGS 94) | gemiddelde sigma_xx op x = L/2, t = 0.0002 s | -1.3250e+08 Pa | -1.3227e+08 | +0.18% | 1% | OK |
+| DY-70 | Staaf met verhinderde uitzetting, constante temperatuur (KNOWN_BUGS 94) | gemiddelde sigma_xx op x = L/2, t = 0.002 s | -1.3250e+08 Pa | -1.3237e+08 | +0.10% | 1% | OK |
+| DY-71 | Vrije staaf, temperatuur langzaam oplopend (tijdstabel, quasi-statisch) | u_x(L) op t = 0.005 s | 6.0000e-05 m | 5.9999e-05 | -0.00% | 1% | OK |
+| DY-71 | Vrije staaf, temperatuur langzaam oplopend (tijdstabel, quasi-statisch) | u_x(L) op t = 0.01 s | 1.2000e-04 m | 1.1993e-04 | -0.06% | 1% | OK |
+| DY-72 | Vrije staaf, constante temperatuur vanaf de eerste stap (staplast) | max. u_x(L) | 2.4000e-04 m | 2.3637e-04 | -1.51% | 3% | OK |
+| DY-72 | Vrije staaf, constante temperatuur vanaf de eerste stap (staplast) | gemiddelde u_x(L) over 0..3 T | 1.2000e-04 m | 1.1834e-04 | -1.38% | 3% | OK |
+| DY-73 | Dynamic Response (D30): temperatuur telt niet mee | max. |u_x(L)| | 0 m | 9.3324e-09 | 9.3324e-09 | 1.2e-07 m | OK |
 
 ## Foutschatter
 
@@ -942,6 +973,228 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | LS-07j | Quad8-plaat met rib, gedeelde knopen (referentie LS-07i) | zijdelingse verplaatsing ribtop t.o.v. Mecway | 1.1404e-05 m | 1.1536e-05 | +1.16% | 2% | OK |
 | LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07i | 1.1342e-05 m | 1.1336e-05 | -0.05% | 0.2% | OK |
 | LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07j | 1.1536e-05 m | 1.1336e-05 | -1.74% | 3% | OK |
+| LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | sigma_xx | -2.5200e+08 Pa | -2.5200e+08 | -0.00% | 0.0001% | OK |
+| LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | u_y zijkant | 1.5600e-04 m | 1.5600e-04 | +0.00% | 0.0001% | OK |
+| LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | |reactie x| op x = L | 2.5200e+06 N | 2.5200e+06 | +0.00% | 0.0001% | OK |
+| LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | |reactie x| op x = L t.o.v. Mecway | 2.5200e+06 N | 2.5200e+06 | +0.00% | 0.0001% | OK |
+| LS-08b | Vrije balk, lineaire temperatuur over de dikte (Node temperature, hex20) | u_z op (L, 0, 0) | -6.0000e-04 m | -6.0000e-04 | -0.00% | 0.01% | OK |
+| LS-08b | Vrije balk, lineaire temperatuur over de dikte (Node temperature, hex20) | u_z op (L, 0, h) | -5.9400e-04 m | -5.9400e-04 | -0.00% | 0.01% | OK |
+| LS-08b | Vrije balk, lineaire temperatuur over de dikte (Node temperature, hex20) | max |sigma_xx| | 0 Pa | 0.03991 | 0.03991 | 25200 Pa | OK |
+| LS-08b | Vrije balk, lineaire temperatuur over de dikte (Node temperature, hex20) | u_z op (L, 0, 0) t.o.v. Mecway | -6.0000e-04 m | -6.0000e-04 | -0.00% | 0.01% | OK |
+| LS-08c | Vrije staaf: temperature2 en Node temperature op verschillende knopen, overige op de referentie | gemiddelde u_x op x = L | 4.5000e-05 m | 4.5000e-05 | +0.00% | 1% | OK |
+| LS-08c | Vrije staaf: temperature2 en Node temperature op verschillende knopen, overige op de referentie | gemiddelde u_x op x = L t.o.v. Mecway | 4.5000e-05 m | 4.5000e-05 | +0.00% | 1% | OK |
+| LS-08d | Als LS-08b met hex8 en LINE_QUAD (middenknopen krijgen de geinterpoleerde temperatuur) | u_z op (L, 0, 0) | -6.0000e-04 m | -6.0000e-04 | -0.00% | 0.01% | OK |
+| LS-08d | Als LS-08b met hex8 en LINE_QUAD (middenknopen krijgen de geinterpoleerde temperatuur) | u_z op (L, 0, h) | -5.9400e-04 m | -5.9400e-04 | -0.00% | 0.01% | OK |
+| LS-08d | Als LS-08b met hex8 en LINE_QUAD (middenknopen krijgen de geinterpoleerde temperatuur) | max |sigma_xx| | 0 Pa | 0.039053 | 0.039053 | 25200 Pa | OK |
+| LS-20a | Configuraties G/Q/ULS: G gekozen | u eindvlak | 1.8335e-07 m | 1.8324e-07 | -0.06% | 0.5% | OK |
+| LS-20a | Configuraties G/Q/ULS: G gekozen | reactiekracht X | 770.09 N | 770.08 | -0.00% | 0.0001% | OK |
+| LS-20b | Configuraties G/Q/ULS: Q gekozen | u eindvlak | 4.7619e-06 m | 4.7619e-06 | -0.00% | 0.5% | OK |
+| LS-20b | Configuraties G/Q/ULS: Q gekozen | reactiekracht X | 10000 N | 10000 | -0.00% | 0.0001% | OK |
+| LS-20c | Configuraties G/Q/ULS: ULS gekozen | u eindvlak | 7.3629e-06 m | 7.3627e-06 | -0.00% | 0.5% | OK |
+| LS-20c | Configuraties G/Q/ULS: ULS gekozen | reactiekracht X | 15924 N | 15924 | -0.00% | 0.0001% | OK |
+| LS-20d | Configuraties G/Q/ULS: auto (de eerste) | u eindvlak | 1.8335e-07 m | 1.8324e-07 | -0.06% | 0.5% | OK |
+| LS-20d | Configuraties G/Q/ULS: auto (de eerste) | reactiekracht X | 770.09 N | 770.08 | -0.00% | 0.0001% | OK |
+| LS-20e | Alleen configuratie ULS, items onderdrukt | u eindvlak | 7.3629e-06 m | 7.3627e-06 | -0.00% | 0.5% | OK |
+| LS-20e | Alleen configuratie ULS, items onderdrukt | reactiekracht X | 15924 N | 15924 | -0.00% | 0.0001% | OK |
+| LS-30 | Snedekrachten ingeklemde balk (beam_forces) | N (tensileforce) | 1000 N | 1000 | +0.00% | 0.0001% | OK |
+| LS-30 | Snedekrachten ingeklemde balk (beam_forces) | V_v (sheary) | 200 N | 200 | +0.00% | 0.0001% | OK |
+| LS-30 | Snedekrachten ingeklemde balk (beam_forces) | V_w (shearz) | -300 N | -300 | +0.00% | 0.0001% | OK |
+| LS-30 | Snedekrachten ingeklemde balk (beam_forces) | T (torsion) | 50 N.m | 50 | -0.00% | 0.0001% | OK |
+| LS-30 | Snedekrachten ingeklemde balk (beam_forces) | M_v inklemming (bendingmomv) | 300 N.m | 300 | +0.00% | 0.0001% | OK |
+| LS-30 | Snedekrachten ingeklemde balk (beam_forces) | M_w midden (bendingmomw) | 100 N.m | 100 | +0.00% | 0.0001% | OK |
+| LS-30b | Snedekrachten schuine balk (lokale assen) | N (tensileforce) | 1000 N | 1000 | -0.00% | 0.0001% | OK |
+| LS-30b | Snedekrachten schuine balk (lokale assen) | V_v (sheary) | 200 N | 200 | -0.00% | 0.0001% | OK |
+| LS-30b | Snedekrachten schuine balk (lokale assen) | V_w (shearz) | -300 N | -300 | -0.00% | 0.0001% | OK |
+| LS-30b | Snedekrachten schuine balk (lokale assen) | T (torsion) | 50 N.m | 50 | -0.00% | 0.0001% | OK |
+| LS-30b | Snedekrachten schuine balk (lokale assen) | M_v inklemming (bendingmomv) | 300 N.m | 300 | -0.00% | 0.0001% | OK |
+| LS-30b | Snedekrachten schuine balk (lokale assen) | M_w midden (bendingmomw) | 100 N.m | 100 | -0.00% | 0.0001% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | N_u (forceperlengthu) | 30000 N/m | 30000 | -0.00% | 0.1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | M_u (momentu) | 7.5 N | 7.5 | -0.00% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | stressxxu1 | 1.1667e+07 Pa | 1.1671e+07 | +0.03% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | stresszzu1 | 2.9167e+06 Pa | 2.9175e+06 | +0.03% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | stressxyu1 | 1.1667e+07 Pa | 1.1663e+07 | -0.03% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | stressxyb1 | 1.6667e+06 Pa | 1.6698e+06 | +0.19% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | stressxxm1 | 6.6667e+06 Pa | 6.6619e+06 | -0.07% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | lstrainxxu | 3.4765e-05 - | 3.4757e-05 | -0.02% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | lstrainxyu | 1.4324e-04 - | 1.4349e-04 | +0.17% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | lstrainxxb | 4.9665e-06 - | 4.9281e-06 | -0.77% | 1% | OK |
+| LS-31 | Schaalstrook scheef in de ruimte: tensor, rek, krachten per lengte, factor of safety (quad4, DKT) | factorofsafety | 9.5238  | 9.525 | +0.01% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | N_u (forceperlengthu) | 30000 N/m | 30000 | +0.00% | 0.1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | M_u (momentu) | 7.5 N | 7.5 | -0.00% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | stressxxu1 | 1.1667e+07 Pa | 1.1671e+07 | +0.04% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | stresszzu1 | 2.9167e+06 Pa | 2.9022e+06 | -0.50% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | stressxyu1 | 1.1667e+07 Pa | 1.1669e+07 | +0.02% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | stressxyb1 | 1.6667e+06 Pa | 1.6771e+06 | +0.62% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | stressxxm1 | 6.6667e+06 Pa | 6.6659e+06 | -0.01% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | lstrainxxu | 3.4765e-05 - | 3.4776e-05 | +0.03% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | lstrainxyu | 1.4324e-04 - | 1.4330e-04 | +0.04% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | lstrainxxb | 4.9665e-06 - | 4.9415e-06 | -0.50% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | factorofsafety | 9.5238  | 9.5249 | +0.01% | 1% | OK |
+| LS-31b | Idem quad8 (COQUE_3D), ook de dwarskracht | Q_u (shearuw), gemiddeld over de breedte | -150 N/m | -150 | +0.00% | 1% | OK |
+| LS-31c | Idem quad4 met een eigen U-as (orientationu* = breedterichting) | N_u (forceperlengthv) | 30000 N/m | 30000 | -0.00% | 0.1% | OK |
+| LS-31c | Idem quad4 met een eigen U-as (orientationu* = breedterichting) | M_u (momentv) | 7.5 N | 7.5 | -0.00% | 1% | OK |
+| LS-31c | Idem quad4 met een eigen U-as (orientationu* = breedterichting) | N_v (forceperlengthu) | 0 N/m | 0.12041 | 0.12041 | 30 N/m | OK |
+| LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainxx | 4.7619e-04  | 4.7619e-04 | +0.00% | 0.01% | OK |
+| LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainyy | -1.4286e-04  | -1.4286e-04 | -0.00% | 0.01% | OK |
+| LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainzz | -1.4286e-04  | -1.4286e-04 | -0.00% | 0.01% | OK |
+| LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | factorofsafety | 2.5  | 2.5 | -0.00% | 0.01% | OK |
+| LS-32b | Totale rek en factor of safety, zuivere afschuiving (hex8) | lstrainxy (gamma) | 6.1905e-04  | 6.1905e-04 | -0.00% | 0.01% | OK |
+| LS-32b | Totale rek en factor of safety, zuivere afschuiving (hex8) | lstrainxx | 0  | 7.2593e-20 | 7.2593e-20 | 1e-09  | OK |
+| LS-32b | Totale rek en factor of safety, zuivere afschuiving (hex8) | factorofsafety | 2.8868  | 2.8868 | +0.00% | 0.01% | OK |
+| LS-40a | Druk als formule 3*y^2 (kPa, x/y/z in m) op een blok | reactie Z | 8000 N | 8000 | -0.00% | 0.0001% | OK |
+| LS-40a | Druk als formule 3*y^2 (kPa, x/y/z in m) op een blok | moment om X | 12000 N.m | 12000 | +0.00% | 0.0001% | OK |
+| LS-40a | Druk als formule 3*y^2 (kPa, x/y/z in m) op een blok | moment om Y | -4000 N.m | -4000 | +0.00% | 0.0001% | OK |
+| LS-40b | Idem met positionunit mm (3e-6*y^2) | reactie Z | 8000 N | 8000 | -0.00% | 0.0001% | OK |
+| LS-40b | Idem met positionunit mm (3e-6*y^2) | moment om X | 12000 N.m | 12000 | -0.00% | 0.0001% | OK |
+| LS-40b | Idem met positionunit mm (3e-6*y^2) | moment om Y | -4000 N.m | -4000 | +0.00% | 0.0001% | OK |
+| LS-41 | Twee drukken en een traction als formule in één run | reactie Z | 6000 N | 6000 | -0.00% | 0.0001% | OK |
+| LS-41 | Twee drukken en een traction als formule in één run | moment om X | 8250 N.m | 8250 | -0.00% | 0.0001% | OK |
+| LS-41 | Twee drukken en een traction als formule in één run | reactie X | -4000 N | -4000 | +0.00% | 0.0001% | OK |
+| LS-42a | Opgelegde verplaatsing Z = 0,001 x + 0,002 y mm | DZ in (1, 2, 0,1) | 5.0000e-06 m | 5.0000e-06 | +0.00% | 1e-07% | OK |
+| LS-42a | Opgelegde verplaatsing Z = 0,001 x + 0,002 y mm | DZ in (0,5, 0,75, 0,1) | 2.0000e-06 m | 2.0000e-06 | +0.00% | 1e-07% | OK |
+| LS-42b | Opgelegde verplaatsing schuin (1, 1, 0) = 0,001 (1 + x) mm | verplaatsing langs (1,1,0) in (1, 2, 0,1) | 2.0000e-06 m | 2.0000e-06 | +0.00% | 1e-07% | OK |
+| LS-42b | Opgelegde verplaatsing schuin (1, 1, 0) = 0,001 (1 + x) mm | idem in (0, 0, 0,1) | 1.0000e-06 m | 1.0000e-06 | +0.00% | 1e-07% | OK |
+| LS-42c | Opgelegde rotatie om Y = 0,001 (1 + x) rad aan de tip van een ingeklemde balk | rotatie tip | 0.002 rad | 0.002 | +0.00% | 1e-07% | OK |
+| LS-42c | Opgelegde rotatie om Y = 0,001 (1 + x) rad aan de tip van een ingeklemde balk | doorbuiging tip | 0.001 m | 1.0000e-03 | -0.00% | 0.0001% | OK |
+| LS-43a | Ingeklemde balk, driehoekslast q = 1000 x N/m (line pressure als formule) | reactie Z | 500 N | 500 | +0.00% | 0.0001% | OK |
+| LS-43a | Ingeklemde balk, driehoekslast q = 1000 x N/m (line pressure als formule) | doorbuiging tip | 0.055578 m | 0.055578 | +0.00% | 0.01% | OK |
+| LS-43b | Idem met gravity op de balk | reactie Z | 524.19 N | 524.19 | +0.00% | 0.0001% | OK |
+| LS-43b | Idem met gravity op de balk | doorbuiging tip | 0.057411 m | 0.057411 | +0.00% | 0.01% | OK |
+| LS-44a | Plaat (DKT), druk 3*y^2 Pa als formule | reactie Z | 8 N | 8.0625 | +0.78% | 1% | OK |
+| LS-44a | Plaat (DKT), druk 3*y^2 Pa als formule | doorbuiging rand y = 2 m t.o.v. Mecway | 7.5197e-04 m | 7.6170e-04 | +1.29% | 2% | OK |
+| LS-44b | Idem met COQUE_3D | reactie Z | 8 N | 8 | +0.00% | 0.0001% | OK |
+| LS-44b | Idem met COQUE_3D | doorbuiging rand y = 2 m t.o.v. Mecway | 7.5197e-04 m | 7.5668e-04 | +0.63% | 1% | OK |
+| LS-50a | Ingeklemde balk, line3-elementen, eindlast | doorbuiging tip | 0.011905 m | 0.011905 | +0.00% | 0.1% | OK |
+| LS-50a | Ingeklemde balk, line3-elementen, eindlast | doorbuiging middenknoop x = 0,1 m | 1.7262e-04 m | 1.7262e-04 | +0.00% | 0.1% | OK |
+| LS-50a | Ingeklemde balk, line3-elementen, eindlast | rotatie tip | 0.017857 rad | 0.017857 | +0.00% | 0.1% | OK |
+| LS-50a | Ingeklemde balk, line3-elementen, eindlast | reactiekracht Z | 100 N | 100 | +0.00% | 0.0001% | OK |
+| LS-50a | Ingeklemde balk, line3-elementen, eindlast | doorbuiging tip t.o.v. Mecway 34, line2 | 0.011905 m | 0.011905 | +0.00% | 0.1% | OK |
+| LS-50a | Ingeklemde balk, line3-elementen, eindlast | doorbuiging tip t.o.v. Mecway 34, CCX | 0.011633 m | 0.011905 | +2.34% | 4% | OK |
+| LS-50b | Ingeklemde balk, line3-elementen, line pressure | doorbuiging tip | 0.0044643 m | 0.0044643 | +0.00% | 0.1% | OK |
+| LS-50b | Ingeklemde balk, line3-elementen, line pressure | doorbuiging middenknoop x = 0,1 m | 8.3482e-05 m | 8.3482e-05 | +0.00% | 0.1% | OK |
+| LS-50b | Ingeklemde balk, line3-elementen, line pressure | reactiekracht Z | 100 N | 100 | +0.00% | 0.0001% | OK |
+| LS-50b | Ingeklemde balk, line3-elementen, line pressure | doorbuiging tip t.o.v. Mecway 34, line2 | 0.0044643 m | 0.0044643 | -0.00% | 0.1% | OK |
+| LS-50b | Ingeklemde balk, line3-elementen, line pressure | doorbuiging tip t.o.v. Mecway 34, CCX | 0.0043292 m | 0.0044643 | +3.12% | 4% | OK |
+| LS-50c | Line3-balk met orientatievector, eindlast | doorbuiging tip | 0.095238 m | 0.095238 | -0.00% | 0.1% | OK |
+| LS-50c | Line3-balk met orientatievector, eindlast | doorbuiging tip t.o.v. Mecway 34, line2 | 0.095238 m | 0.095238 | -0.00% | 0.1% | OK |
+| LS-50c | Line3-balk met orientatievector, eindlast | doorbuiging tip t.o.v. Mecway 34, CCX | 0.092149 m | 0.095238 | +3.35% | 4% | OK |
+| LS-51a | Flexible joint: scharnier om W in het midden | doorbuiging midden | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-51a | Flexible joint: scharnier om W in het midden | rotatie links van het scharnier | 0.0037894 rad | 0.0037894 | +0.00% | 0.1% | OK |
+| LS-51a | Flexible joint: scharnier om W in het midden | reactiekracht Y | 100 N | 100 | +0.00% | 0.0001% | OK |
+| LS-51a | Flexible joint: scharnier om W in het midden | doorbuiging midden t.o.v. Mecway 34 | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-51b | Flexible joint om V: geen effect bij buiging om W | doorbuiging midden | 3.1578e-04 m | 3.1578e-04 | -0.00% | 0.1% | OK |
+| LS-51b | Flexible joint om V: geen effect bij buiging om W | doorbuiging midden t.o.v. Mecway 34 | 3.1578e-04 m | 3.1578e-04 | +0.00% | 0.1% | OK |
+| LS-51c | Flexible joint aan beide kanten van de knoop | doorbuiging midden | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-51c | Flexible joint aan beide kanten van de knoop | rotatie middenknoop | 0 rad | 0 | 0 | 1e-12 rad | OK |
+| LS-51c | Flexible joint aan beide kanten van de knoop | doorbuiging midden t.o.v. Mecway 34 | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-51d | Flexible joint als scharnieroplegging | doorbuiging midden | 5.5262e-04 m | 5.5262e-04 | -0.00% | 0.1% | OK |
+| LS-51d | Flexible joint als scharnieroplegging | reactiemoment Z | 18.75 N m | 18.75 | -0.00% | 0.1% | OK |
+| LS-51d | Flexible joint als scharnieroplegging | doorbuiging midden t.o.v. Mecway 34 | 5.5262e-04 m | 5.5262e-04 | +0.00% | 0.1% | OK |
+| LS-51e | Flexible joint op een line3-balk | doorbuiging midden | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-51f | Flexible joint om V op een verticale balk | doorbuiging midden | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-51f | Flexible joint om V op een verticale balk | doorbuiging midden t.o.v. Mecway 34 | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
+| LS-52a | Flexible joint op een balk met element offset (joint vervalt) | doorbuiging midden | 3.1578e-04 m | 3.1628e-04 | +0.16% | 1% | OK |
+| LS-52a | Flexible joint op een balk met element offset (joint vervalt) | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 3.1628e-04 | -74.97% | 0.1% | BEKEND (KNOWN_BUGS 108d) |
+| LS-52a | Flexible joint op een balk met element offset (joint vervalt) | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
+| LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | doorbuiging midden | 0.0012631 m | 0.0012636 | +0.04% | 1% | OK |
+| LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 0.0012636 | -0.00% | 0.1% | OK |
+| LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
+| LS-53a | Snedekrachten per element naast een flexible joint (line2) | elementen met bendingmomw | 10  | 10 | +0.00% | 0  | OK |
+| LS-53a | Snedekrachten per element naast een flexible joint (line2) | M in het scharnier (element 6, knoop 1) | 0 N m | 1.5632e-13 | 1.5632e-13 | 1e-06 N m | OK |
+| LS-53a | Snedekrachten per element naast een flexible joint (line2) | M element 6, knoop 2 (x = 0,6 m) | 5 N m | 5 | +0.00% | 0.1% | OK |
+| LS-53a | Snedekrachten per element naast een flexible joint (line2) | V element 6 | 50 N | 50 | +0.00% | 0.1% | OK |
+| LS-53b | Snedekrachten per element, line3-balk met flexible joint | elementen met bendingmomw | 4  | 4 | +0.00% | 0  | OK |
+| LS-53b | Snedekrachten per element, line3-balk met flexible joint | M in het scharnier (element 3, knoop 1) | 0 N m | 2.8422e-14 | 2.8422e-14 | 1e-06 N m | OK |
+| LS-53b | Snedekrachten per element, line3-balk met flexible joint | M element 3, middenknoop (x = 0,625 m) | 6.25 N m | 6.25 | +0.00% | 0.1% | OK |
+| LS-53b | Snedekrachten per element, line3-balk met flexible joint | M element 3, knoop 3 (x = 0,75 m) | 12.5 N m | 12.5 | +0.00% | 0.1% | OK |
+| LS-53b | Snedekrachten per element, line3-balk met flexible joint | V element 2, middenknoop | 50 N | 50 | +0.00% | 0.1% | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | doorbuiging tip (+W) | 0.0071429 m | 0.0070851 | -0.81% | 2% | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | doorbuiging tip t.o.v. Mecway | 0.0070901 m | 0.0070851 | -0.07% | 0.5% | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | rotatie tip om Y | 0.071269 rad | 0.071231 | -0.05% | 0.5% | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | reactie X inklemming | 100 N | 100 | +0.00% | 0.1% | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | reactiemoment Y inklemming | 0 N m | -7.9705e-08 | -7.9705e-08 | 0.001 N m | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | von Mises onderkant, x = L/2 | 7.7500e+07 Pa | 7.7502e+07 | +0.00% | 2% | OK |
+| LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | von Mises bovenkant, x = L/2 | 7.2500e+07 Pa | 7.2500e+07 | +0.00% | 2% | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | doorbuiging tip (+W) | 0.0071429 m | 0.007097 | -0.64% | 2% | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | doorbuiging tip t.o.v. Mecway | 0.0070956 m | 0.007097 | +0.02% | 0.5% | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | rotatie tip om Y | 0.071263 rad | 0.071409 | +0.20% | 0.5% | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | reactie X inklemming | 100 N | 100 | -0.00% | 0.1% | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | reactiemoment Y inklemming | 0 N m | -1.4659e-09 | -1.4659e-09 | 0.001 N m | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | von Mises onderkant, x = L/2 | 7.7500e+07 Pa | 7.7500e+07 | +0.00% | 2% | OK |
+| LS-60b | Plaatstrook met element offset, trek in de knopen (COQUE_3D, starre armen) | von Mises bovenkant, x = L/2 | 7.2500e+07 Pa | 7.2500e+07 | +0.00% | 2% | OK |
+| LS-61 | Sandwich: twee schaallagen met offset +e en -e (Steiner) | doorbuiging tip | 1.5820e-04 m | 1.5657e-04 | -1.03% | 3% | OK |
+| LS-61 | Sandwich: twee schaallagen met offset +e en -e (Steiner) | doorbuiging tip t.o.v. Mecway | 1.6090e-04 m | 1.5657e-04 | -2.69% | 3% | OK |
+| LS-61 | Sandwich: twee schaallagen met offset +e en -e (Steiner) | reactie Z inklemming | 100 N | 100 | -0.00% | 0.1% | OK |
+| LS-61 | Sandwich: twee schaallagen met offset +e en -e (Steiner) | reactiemoment Y inklemming | 20 N m | 20 | -0.00% | 0.1% | OK |
+| LS-62 | T-balk: plaat als flens, balk als lijf met offset (starre armen) | doorbuiging tip | 1.8108e-04 m | 1.8100e-04 | -0.05% | 3% | OK |
+| LS-62 | T-balk: plaat als flens, balk als lijf met offset (starre armen) | doorbuiging tip t.o.v. Mecway | 1.8490e-04 m | 1.8100e-04 | -2.11% | 3% | OK |
+| LS-62 | T-balk: plaat als flens, balk als lijf met offset (starre armen) | reactie Z inklemming | 100 N | 100 | -0.00% | 0.1% | OK |
+| LS-62 | T-balk: plaat als flens, balk als lijf met offset (starre armen) | reactiemoment Y inklemming | 100 N m | 100 | -0.00% | 0.1% | OK |
+| LS-63 | Samengestelde balk: lijf (balk) + flens (quad8 met offset), torsie (CompositeBeam) | torsiehoek tip | 0.108 rad | 0.10918 | +1.10% | 3% | OK |
+| LS-63 | Samengestelde balk: lijf (balk) + flens (quad8 met offset), torsie (CompositeBeam) | torsiehoek tip t.o.v. Mecway | 0.10913 rad | 0.10918 | +0.05% | 0.5% | OK |
+| LS-63 | Samengestelde balk: lijf (balk) + flens (quad8 met offset), torsie (CompositeBeam) | zijverplaatsing knooplijn tip t.o.v. Mecway | 0.011405 m | 0.011407 | +0.02% | 0.5% | OK |
+| LS-63 | Samengestelde balk: lijf (balk) + flens (quad8 met offset), torsie (CompositeBeam) | reactiemoment om de X-as, inklemming | 6 N m | 6 | -0.00% | 0.1% | OK |
+| LS-64 | Twee schaalelsets, elk voor de helft met element offset (DKT, restgroep per elset) | doorbuiging tip (+W) | 0.0053571 m | 0.0052683 | -1.66% | 2% | OK |
+| LS-64 | Twee schaalelsets, elk voor de helft met element offset (DKT, restgroep per elset) | doorbuiging tip t.o.v. Mecway | 0.0052768 m | 0.0052683 | -0.16% | 0.5% | OK |
+| LS-64 | Twee schaalelsets, elk voor de helft met element offset (DKT, restgroep per elset) | von Mises onderkant, x = L/4 | 7.7500e+07 Pa | 7.7187e+07 | -0.40% | 2% | OK |
+| LS-64 | Twee schaalelsets, elk voor de helft met element offset (DKT, restgroep per elset) | von Mises onderkant, x = 3L/4 | 2.5000e+06 Pa | 2.5003e+06 | +0.01% | 2% | OK |
+| LS-64 | Twee schaalelsets, elk voor de helft met element offset (DKT, restgroep per elset) | von Mises bovenkant, x = 3L/4 | 2.5000e+06 Pa | 2.5003e+06 | +0.01% | 2% | OK |
+| LS-64 | Twee schaalelsets, elk voor de helft met element offset (DKT, restgroep per elset) | reactie X inklemming | 100 N | 100 | +0.00% | 0.1% | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | elementen met spanning onder (stressxxb1) | 80  | 80 | +0.00% | 0  | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | sigma_xx onder, elementen bij x = L/2 | 7.7500e+07 Pa | 7.7500e+07 | -0.00% | 2% | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | sigma_xx boven, elementen bij x = L/2 | -7.2500e+07 Pa | -7.2500e+07 | +0.00% | 2% | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | sigma_xx onder, knopen bij x = L/2 | 7.7500e+07 Pa | 7.7501e+07 | +0.00% | 2% | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | N_u (forceperlengthu), elementen bij x = L/2 | 5000 N/m | 5000 | -0.00% | 2% | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | eps_xx onder (lstrainxxb), elementen bij x = L/2 | 3.6905e-04  | 3.6905e-04 | -0.00% | 2% | OK |
+| LS-65 | Resultaatvelden van verschoven quad8-schalen (COQUE_3D, starre armen) | factor of safety, elementen bij x = L/2 | 3.2258  | 3.2258 | -0.00% | 2% | OK |
+| LS-66 | Verlijmd contact met een verschoven quad8-strook (COQUE_3D, starre armen) | doorbuiging tip | 9.5238e-04 m | 9.4266e-04 | -1.02% | 2% | OK |
+| LS-66 | Verlijmd contact met een verschoven quad8-strook (COQUE_3D, starre armen) | doorbuiging tip t.o.v. Mecway | 9.4148e-04 m | 9.4266e-04 | +0.12% | 0.5% | OK |
+| LS-67 | Randlast op een verschoven schaal (DKT; Mecway: op de verschoven rand) | doorbuiging tip t.o.v. Mecway | 0 m | 0.0070848 | 0.0070848 | 1e-06 m | BEKEND (KNOWN_BUGS 108) |
+| LS-67 | Randlast op een verschoven schaal (DKT; Mecway: op de verschoven rand) | reactie X inklemming | 100 N | 100 | +0.00% | 0.1% | OK |
+| LS-70 | Balkorientatie statisch: langs X, standaard | tip displx | 1.1905e-06 m | 1.1905e-06 | -0.00% | 1.42981e-05 m | OK |
+| LS-70 | Balkorientatie statisch: langs X, standaard | tip disply | 0.0059524 m | 0.0059524 | -0.00% | 1.42981e-05 m | OK |
+| LS-70 | Balkorientatie statisch: langs X, standaard | tip displz | 0.14286 m | 0.14286 | -0.00% | 1.42981e-05 m | OK |
+| LS-70 | Balkorientatie statisch: langs X, standaard | beamsixxmax inklemming | 5.2525e+08 Pa | 5.2525e+08 | -0.00% | 0.1% | OK |
+| LS-70 | Balkorientatie statisch: langs X, standaard | beamsixxmin inklemming | -5.2475e+08 Pa | -5.2475e+08 | +0.00% | 0.1% | OK |
+| LS-71 | Balkorientatie statisch: langs Y, standaard | tip displx | 0.0029762 m | 0.0029762 | -0.00% | 1.42888e-05 m | OK |
+| LS-71 | Balkorientatie statisch: langs Y, standaard | tip disply | 2.3810e-06 m | 2.3810e-06 | -0.00% | 1.42888e-05 m | OK |
+| LS-71 | Balkorientatie statisch: langs Y, standaard | tip displz | 0.14286 m | 0.14286 | -0.00% | 1.42888e-05 m | OK |
+| LS-71 | Balkorientatie statisch: langs Y, standaard | beamsixxmax inklemming | 4.8800e+08 Pa | 4.8800e+08 | -0.00% | 0.1% | OK |
+| LS-71 | Balkorientatie statisch: langs Y, standaard | beamsixxmin inklemming | -4.8700e+08 Pa | -4.8700e+08 | +0.00% | 0.1% | OK |
+| LS-72 | Balkorientatie statisch: langs Z, standaard (V = Y) | tip displx | 0.047619 m | 0.047619 | -0.00% | 4.79896e-06 m | OK |
+| LS-72 | Balkorientatie statisch: langs Z, standaard (V = Y) | tip disply | 0.0059524 m | 0.0059524 | -0.00% | 4.79896e-06 m | OK |
+| LS-72 | Balkorientatie statisch: langs Z, standaard (V = Y) | tip displz | 3.5714e-06 m | 3.5714e-06 | -0.00% | 4.79896e-06 m | OK |
+| LS-72 | Balkorientatie statisch: langs Z, standaard (V = Y) | beamsixxmax inklemming | 2.2575e+08 Pa | 2.2575e+08 | -0.00% | 0.1% | OK |
+| LS-72 | Balkorientatie statisch: langs Z, standaard (V = Y) | beamsixxmin inklemming | -2.2425e+08 Pa | -2.2425e+08 | +0.00% | 0.1% | OK |
+| LS-73 | Balkorientatie statisch: schuin (1,1,1), standaard | tip displx | -0.025295 m | -0.025295 | -0.00% | 5.83591e-06 m | OK |
+| LS-73 | Balkorientatie statisch: schuin (1,1,1), standaard | tip disply | -0.022319 m | -0.022319 | -0.00% | 5.83591e-06 m | OK |
+| LS-73 | Balkorientatie statisch: schuin (1,1,1), standaard | tip displz | 0.047621 m | 0.047621 | +0.00% | 5.83591e-06 m | OK |
+| LS-73 | Balkorientatie statisch: schuin (1,1,1), standaard | beamsixxmax inklemming | 2.1109e+08 Pa | 2.1109e+08 | +0.00% | 0.1% | OK |
+| LS-73 | Balkorientatie statisch: schuin (1,1,1), standaard | beamsixxmin inklemming | -2.0936e+08 Pa | -2.0936e+08 | -0.00% | 0.1% | OK |
+| LS-74 | Balkorientatie statisch: langs X, vector Z | tip displx | 1.1905e-06 m | 1.1905e-06 | -0.00% | 9.56557e-06 m | OK |
+| LS-74 | Balkorientatie statisch: langs X, vector Z | tip disply | 0.095238 m | 0.095238 | -0.00% | 9.56557e-06 m | OK |
+| LS-74 | Balkorientatie statisch: langs X, vector Z | tip displz | 0.0089286 m | 0.0089286 | -0.00% | 9.56557e-06 m | OK |
+| LS-74 | Balkorientatie statisch: langs X, vector Z | beamsixxmax inklemming | 4.1275e+08 Pa | 4.1275e+08 | -0.00% | 0.1% | OK |
+| LS-74 | Balkorientatie statisch: langs X, vector Z | beamsixxmin inklemming | -4.1225e+08 Pa | -4.1225e+08 | +0.00% | 0.1% | OK |
+| LS-75 | Balkorientatie statisch: schuin, vector Z + 30 graden | tip displx | -0.047617 m | -0.047617 | +0.00% | 5.83591e-06 m | OK |
+| LS-75 | Balkorientatie statisch: schuin, vector Z + 30 graden | tip disply | 0.022324 m | 0.022324 | -0.00% | 5.83591e-06 m | OK |
+| LS-75 | Balkorientatie statisch: schuin, vector Z + 30 graden | tip displz | 0.0253 m | 0.0253 | -0.00% | 5.83591e-06 m | OK |
+| LS-75 | Balkorientatie statisch: schuin, vector Z + 30 graden | beamsixxmax inklemming | 2.1109e+08 Pa | 2.1109e+08 | -0.00% | 0.1% | OK |
+| LS-75 | Balkorientatie statisch: schuin, vector Z + 30 graden | beamsixxmin inklemming | -2.0936e+08 Pa | -2.0936e+08 | +0.00% | 0.1% | OK |
+| LS-76 | Balkorientatie statisch: langs Z, vector X + 30 graden | tip displx | -0.024525 m | -0.024525 | -0.00% | 5.89314e-06 m | OK |
+| LS-76 | Balkorientatie statisch: langs Z, vector X + 30 graden | tip disply | 0.053586 m | 0.053586 | +0.00% | 5.89314e-06 m | OK |
+| LS-76 | Balkorientatie statisch: langs Z, vector X + 30 graden | tip displz | 3.5714e-06 m | 3.5714e-06 | +0.00% | 5.89314e-06 m | OK |
+| LS-76 | Balkorientatie statisch: langs Z, vector X + 30 graden | beamsixxmax inklemming | 2.5553e+08 Pa | 2.5553e+08 | +0.00% | 0.1% | OK |
+| LS-76 | Balkorientatie statisch: langs Z, vector X + 30 graden | beamsixxmin inklemming | -2.5403e+08 Pa | -2.5403e+08 | -0.00% | 0.1% | OK |
+| LS-77 | Balkorientatie statisch: I-profiel langs Y, vector X + 90 graden | tip displx | 7.4962e-04 m | 7.4962e-04 | +0.00% | 7.75981e-08 m | OK |
+| LS-77 | Balkorientatie statisch: I-profiel langs Y, vector X + 90 graden | tip disply | 5.8072e-07 m | 5.8072e-07 | -0.00% | 7.75981e-08 m | OK |
+| LS-77 | Balkorientatie statisch: I-profiel langs Y, vector X + 90 graden | tip displz | 2.0053e-04 m | 2.0053e-04 | +0.00% | 7.75981e-08 m | OK |
+| LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip displx t.o.v. Mecway | -0.29294 m | -0.29294 | -0.00% | 0.01% | OK |
+| LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip disply t.o.v. Mecway | -0.013562 m | -0.013562 | +0.00% | 0.01% | OK |
+| LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip displz t.o.v. Mecway | 0.52957 m | 0.52957 | +0.00% | 0.01% | OK |
+| LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip rotx t.o.v. Mecway | 0.23933 rad | 0.23933 | -0.00% | 0.01% | OK |
+| LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip roty t.o.v. Mecway | -0.26368 rad | -0.26368 | -0.00% | 0.01% | OK |
+| LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip rotz t.o.v. Mecway | -0.0031322 rad | -0.0031322 | +0.00% | 0.01% | OK |
 
 ## Modaal met demping
 
@@ -1089,6 +1342,143 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | stressxx mode 1 t.o.v. Mecway | 2.3201e+09 Pa/sqrt(kg) | 2.3203e+09 | +0.01% | 1% | OK |
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | eff. massa RZ mode 1 t.o.v. Mecway | 0.97043  | 0.97043 | -0.00% | 0.5% | OK |
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | eff. massa RY mode 2 t.o.v. Mecway | 0.97051  | 0.97051 | -0.00% | 0.5% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | +0.00% | 0.01% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | +0.00% | 0.01% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f7 torsie | 357.05 Hz | 357.14 | +0.03% | 0.2% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 7 torsie om U | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | f14 langs | 1293 Hz | 1293.4 | +0.03% | 0.1% | OK |
+| MO-20 | Balkorientatie modaal: langs X, standaard | mode 14 langs U | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | +0.00% | 0.01% | OK |
+| MO-21 | Balkorientatie modaal: langs Y, standaard | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | +0.00% | 0.01% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | +0.00% | 0.01% | OK |
+| MO-22 | Balkorientatie modaal: langs Z, standaard (V = Y) | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | +0.00% | 0.01% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | mode 2 langs V | 1 - | 1 | -0.00% | 0.0001 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | mode 5 langs V | 1 - | 1 | -0.00% | 0.0001 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | -0.00% | 0.01% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | -0.00% | 0.01% | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | eff. massa X mode 1 | 0.10218 - | 0.10218 | -0.00% | 0.0002 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | eff. massa Y mode 1 | 0.10218 - | 0.10218 | -0.00% | 0.0002 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | eff. massa Z mode 1 | 0.40872 - | 0.40872 | -0.00% | 0.0002 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | eff. massa X mode 2 | 0.30654 - | 0.30654 | -0.00% | 0.0002 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | eff. massa Y mode 2 | 0.30654 - | 0.30654 | -0.00% | 0.0002 - | OK |
+| MO-23 | Balkorientatie modaal: schuin (1,1,1), standaard | eff. massa Z mode 2 | 0 - | 7.5967e-24 | 7.5967e-24 | 0.0002 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | -0.00% | 0.01% | OK |
+| MO-24 | Balkorientatie modaal: langs X, vector Z | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | +0.00% | 0.01% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | -0.00% | 0.01% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | +0.00% | 0.01% | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | eff. massa X mode 1 | 0.40872 - | 0.40872 | -0.00% | 0.0002 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | eff. massa Y mode 1 | 0.10218 - | 0.10218 | -0.00% | 0.0002 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | eff. massa Z mode 1 | 0.10218 - | 0.10218 | -0.00% | 0.0002 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | eff. massa X mode 2 | 1.7003e-32 - | 9.2643e-23 | +544867129061.25% | 0.0002 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | eff. massa Y mode 2 | 0.30654 - | 0.30654 | -0.00% | 0.0002 - | OK |
+| MO-25 | Balkorientatie modaal: schuin, vector Z + 30 graden | eff. massa Z mode 2 | 0.30654 - | 0.30654 | -0.00% | 0.0002 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | -0.00% | 0.01% | OK |
+| MO-26 | Balkorientatie modaal: langs Z, vector X + 30 graden | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | -0.00% | 0.01% | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | f2 torsie | 108.25 Hz | 108.28 | +0.03% | 0.2% | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | mode 2 torsie om U | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | f1 | 32.888 Hz | 32.888 | +0.00% | 0.2% | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | f3 | 110.13 Hz | 110.13 | +0.00% | 0.2% | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | mode 3 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | f1 t.o.v. Mecway | 32.888 Hz | 32.888 | -0.00% | 0.01% | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | f2 t.o.v. Mecway | 108.28 Hz | 108.28 | -0.00% | 0.01% | OK |
+| MO-27 | Balkorientatie modaal: I-profiel langs Y, vector X + 90 graden | f3 t.o.v. Mecway | 110.13 Hz | 110.13 | -0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f1 t.o.v. Mecway | 1.3987 Hz | 1.3987 | -0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f2 t.o.v. Mecway | 1.6796 Hz | 1.6796 | +0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f3 t.o.v. Mecway | 4.7555 Hz | 4.7555 | +0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f4 t.o.v. Mecway | 6.4248 Hz | 6.4248 | +0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f5 t.o.v. Mecway | 8.7352 Hz | 8.7352 | -0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f6 t.o.v. Mecway | 21.243 Hz | 21.243 | -0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f7 t.o.v. Mecway | 35.752 Hz | 35.752 | +0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | f8 t.o.v. Mecway | 47.861 Hz | 47.861 | -0.00% | 0.01% | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | mode 1 tiprichting als Mecway | 1 - | 1 | -0.00% | 0.0001 - | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | mode 2 tiprichting als Mecway | 1 - | 1 | -0.00% | 0.0001 - | OK |
+| MO-28 | Balkorientatie modaal: raamwerk (3 staven, 3 orientaties) | mode 3 tiprichting als Mecway | 1 - | 1 | -0.00% | 0.0001 - | OK |
+| MO-29 | Korte balk L/h = 2,5: buiging zonder rotatietraagheid (als Mecway) | f1 zwak | 835.52 Hz | 835.52 | +0.00% | 0.01% | OK |
+| MO-29 | Korte balk L/h = 2,5: buiging zonder rotatietraagheid (als Mecway) | f2 sterk | 3342.1 Hz | 3342.1 | +0.00% | 0.01% | OK |
+| MO-30 | Buigmoment per trillingsvorm (beam_forces) | |M(0)|/|w(L)| mode 1 | 14767 N | 14767 | -0.00% | 1% | OK |
 
 ## Modaal (voorspanning)
 
@@ -1259,6 +1649,62 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
+| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
+| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactstate aan de tip | 1  | 1 | +0.00% | 1e-09  | OK |
+| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactstate begin zone | 0  | 0 | 0 | 1e-09  | OK |
+| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactpressure begin zone | 0 Pa | 447.72 | 447.72 | 2000 Pa | OK |
+| NL-31 | Green-Lagrange-rek bij 5% rek (strain) | greenlagrangestrainxx | 0.05125  | 0.05125 | +0.00% | 0.01% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | N (tensileforce) | 1000 N | 1000 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | V_v (sheary) | 200 N | 200 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | V_w (shearz) | -300 N | -300 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | T (torsion) | 50 N.m | 50 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | M_v inklemming (bendingmomv) | 300 N.m | 300 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | M_w midden (bendingmomw) | 100 N.m | 100 | -0.00% | 0.0001% | OK |
+| NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 1 s | 9000 N | 9000 | -0.00% | 0.0001% | OK |
+| NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 2 s | 18000 N | 18000 | -0.00% | 0.0001% | OK |
+| NL-40 | Druk als formule in y en t naast een krachttabel | moment om X bij t = 2 s | 26000 N.m | 26000 | -0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s t.o.v. Mecway (CCX) | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.01% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 2 s | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 2 s t.o.v. Mecway (CCX) | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.01% | OK |
+| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 0.5 s | 6.5978e-05 m | 6.5978e-05 | +0.00% | 0.0001% | OK |
+| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 1 s | 1.1993e-04 m | 1.1993e-04 | +0.00% | 0.0001% | OK |
+| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 2 s | 5.9982e-05 m | 5.9982e-05 | +0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 0.5 s | -1.3860e+08 Pa | -1.3860e+08 | -0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 0.5 s t.o.v. Mecway (CCX) | -1.3831e+08 Pa | -1.3860e+08 | -0.21% | 0.5% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 1 s | -2.5200e+08 Pa | -2.5200e+08 | -0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 1 s t.o.v. Mecway (CCX) | -2.5106e+08 Pa | -2.5200e+08 | -0.38% | 0.5% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 2 s | -1.2600e+08 Pa | -1.2600e+08 | -0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 2 s t.o.v. Mecway (CCX) | -1.2576e+08 Pa | -1.2600e+08 | -0.19% | 0.5% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 2 s | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.0001% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 2 s t.o.v. Mecway (CCX) | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.01% | OK |
+| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 0.25 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 0.25 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 0.5 s | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.0001% | OK |
+| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-74 | Vrije staaf: temperatuur met tijdstabel op x = 0 en Node temperature op x = L (quasi-static) | gemiddelde u_x op x = L, t = 0.5 s | 3.8250e-05 m | 3.8250e-05 | +0.00% | 0.0001% | OK |
+| NL-74 | Vrije staaf: temperatuur met tijdstabel op x = 0 en Node temperature op x = L (quasi-static) | gemiddelde u_x op x = L, t = 2 s | 3.7500e-05 m | 3.7500e-05 | +0.00% | 0.0001% | OK |
+| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | laatste rekentijd | 1 s | 1 | +0.00% | 1e-07% | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 
@@ -1397,6 +1843,13 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | TH-04d | Verlijmd contact, schaalrand op schaalvlak (PLAN) | T naad (kant B) | 350 K | 350.04 | +0.01% | 0.1% | OK |
 | TH-04d | Verlijmd contact, schaalrand op schaalvlak (PLAN) | T (x = L/5) | 320 K | 320 | -0.00% | 0.1% | OK |
 | TH-04d | Verlijmd contact, schaalrand op schaalvlak (PLAN) | flux x (x = 3L/4) | -50000 W/m² | -49979 | +0.04% | 0.5% | OK |
+| TH-40 | Drie warmtebronnen als formule, overlappend | T - T0 (x = 0.3 L) | 29.95 K | 29.95 | +0.00% | 0.001% | OK |
+| TH-40 | Drie warmtebronnen als formule, overlappend | T - T0 (x = 0.5 L) | 39.583 K | 39.583 | +0.00% | 0.001% | OK |
+| TH-40 | Drie warmtebronnen als formule, overlappend | T - T0 (x = 0.7 L) | 35.75 K | 35.75 | +0.00% | 0.001% | OK |
+| TH-41 | Twee warmtebronnen in de tijd (formule + tabel) | T_gem - T0 (t = 1 s) | 0.75 K | 0.75 | +0.00% | 0.01% | OK |
+| TH-41 | Twee warmtebronnen in de tijd (formule + tabel) | T_gem - T0 (t = 2 s) | 2.75 K | 2.75 | +0.00% | 0.01% | OK |
+| TH-42 | Lasbron + Mecway-warmtebron als tijdstabel | energie: rho cp int dT dV - E_las - E_tabel | 0 J | -1.9987e-06 | -1.9987e-06 | 0.18 J | OK |
+| TH-42 | Lasbron + Mecway-warmtebron als tijdstabel | T_gem - T0 (t = 2 s) | 9.6154 K | 9.6154 | +0.00% | 0.1% | OK |
 
 ## Thermische spanning
 
@@ -1654,8 +2107,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-15 (bridge 7ba536f, Code-Aster 17.4
 | VM-07b | Tweeassig, PRIN | schade D | 3.3076e-05  | 3.3076e-05 | +0.00% | 0.1% | OK |
 | VM-08a | sslv135a in 3D: Matake (periodiek) | SIGEQ | 300 MPa | 300 | +0.00% | 1% | OK |
 | VM-08a | sslv135a in 3D: Matake (periodiek) | levensduur | 10946 cycli | 10946 | +0.00% | 1% | OK |
-| VM-08a | sslv135a in 3D: Matake (periodiek) | schade D | 9.1356e-05  | 9.1356e-05 | -0.00% | 1% | OK |
-| VM-08a | sslv135a in 3D: Matake (periodiek) | schade D (hand) | 9.1356e-05  | 9.1356e-05 | -0.00% | 0.0001% | OK |
+| VM-08a | sslv135a in 3D: Matake (periodiek) | schade D | 9.1356e-05  | 9.1356e-05 | +0.00% | 1% | OK |
+| VM-08a | sslv135a in 3D: Matake (periodiek) | schade D (hand) | 9.1356e-05  | 9.1356e-05 | +0.00% | 0.0001% | OK |
 | VM-08b | sslv135a in 3D: Dang Van (periodiek) | SIGEQ | 275 MPa | 275 | +0.00% | 1% | OK |
 | VM-08b | sslv135a in 3D: Dang Van (periodiek) | levensduur | 14903 cycli | 14903 | +0.00% | 1% | OK |
 | VM-08b | sslv135a in 3D: Dang Van (periodiek) | schade D | 6.7100e-05  | 6.7100e-05 | +0.00% | 1% | OK |
