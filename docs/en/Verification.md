@@ -979,7 +979,8 @@ Mecway L30 → bridge `nonlin_static_3d` → `STAT_NON_LINE`. Module
 `deformation` = `GROT_GDEP`, converted by the bridge per element to `GDEF_LOG` (plastic
 solids), `GREEN_LAGRANGE` (elastic solids) and `GROT_GDEP` (`COQUE_3D`);
 `convergence_resi_rela` = 1e-5 (the bridge default; the Code-Aster default 1e-6 stalls
-in NL-01, see there); 10 substeps per interval of the load table.
+in NL-01, see there); the solver steps are Mecway's *Time step size* (0.1 s, as in the
+samples) plus the kinks of the load tables (NL-20).
 
 ### NL-01 Tensile bar, bilinear isotropic hardening, unloading
 
@@ -1015,6 +1016,21 @@ in NL-01, see there); 10 substeps per interval of the load table.
      1e-3 N) or with `DEFORMATION` = `PETIT`.
   3. *Strain measure*. With `PETIT` the bridge gives exactly the small-strain formula
      F = A0·(σy + H·p); the difference from the logarithmic strain is 1.1% at 1% strain.
+
+### NL-20 Mecway's step size with kinks of the load table in between
+
+- **Goal**: nonlinear static computes with Mecway's *Time step size*
+  (`<timesteps stepsize>`) and still follows the load path
+  exactly.
+- **Model**: NL-01 with `<timesteps timeperiod="3 s" stepsize="0.4 s">`; the kinks of the
+  imposed elongation (t = 1 and 2 s) fall between two steps.
+- **Reference**: output times 0.4; 0.8; 1.0; 1.2; 1.6; 2.0; 2.4; 2.8; 3.0 s (Mecway's
+  steps plus the kinks); F, σ_xx and p as NL-01.
+- **Result**: the output times match exactly; F, σ_xx and p at t = 1, 2 and 3 s 0.00%
+  off (the same values as NL-01 with 30 steps).
+- **Interpretation**: the kinks as an extra solver step keep the load linear per step, so
+  radial return stays exact. Mecway's own output times were not checked headless
+  (Mecway solve was not available when this case was added).
 
 ### NL-02 Cantilever, large deflection (elastica)
 
@@ -1347,8 +1363,8 @@ Euler, amplification 5%), stricter where the solution is exact (beams 0.2%, fact
 | NK-01 | 20 `POU_D_E` (always `PETIT`), P_end = 0.9 Pcr, 10 steps | λ(t)·P(t) = Pcr | 10 363 N at t = 0.5 and 1 (< 0.001%); equal to BU-01 |
 | NK-02a | hex20 50 × 2 × 3, default (`GREEN_LAGRANGE`) | buckling point (λ linearly to 0 from the last two steps) × P_end = Pcr | 10 402 N (+0.38%); λ from −22.6 (t = 0.1) to −2.70 (t = 1) |
 | NK-02b | same with `deformation` = `PETIT` | λ(t)·P(t) = Pcr | 10 384 N (+0.20%, equal to BU-03-h20-n2) |
-| NK-03 | NK-02a with imperfection 0.001 L in buckling mode 1 (unit `L`), 20 steps | linear buckling of the imperfection step; total deflection e0/(1 − P/Pcr) (Timoshenko & Gere, 1961, ch. 1); Southwell (1932) | buckling factor × P_end 10 384 N (+0.20%); buckling point 10 400 N (+0.36%); w/e0 at 0.27 / 0.495 / 0.675 Pcr −0.09 / −0.21 / −0.44%; Southwell Pcr 10 384 N (+0.20%) |
-| NK-04 | NK-03 bilinear plastic (fy = 25.9 MPa: Npl = 1.5 Pcr; H = 210 MPa), e0 = 5 mm, P_end = 0.8 Pcr, 40 steps | P_u between first yield (Ayrton & Perry, 1886: P/A + P·e0/((1 − P/Pcr)·W) = fy, 0.419 Pcr) and the plastic hinge on the elastic deflection ((P/Npl)² + M/Mpl = 1, 0.563 Pcr) | stop at the limit point (`MECANONLINE9_7`, expected) at P_u = 0.488 Pcr; λ_end/λ_start = 0.007 (CRIT_STAB goes to 0) |
+| NK-03 | NK-02a with imperfection 0.001 L in buckling mode 1 (unit `L`), 20 steps (stepsize 0.05 s) | linear buckling of the imperfection step; total deflection e0/(1 − P/Pcr) (Timoshenko & Gere, 1961, ch. 1); Southwell (1932) | buckling factor × P_end 10 384 N (+0.20%); buckling point 10 400 N (+0.36%); w/e0 at 0.27 / 0.495 / 0.675 Pcr −0.09 / −0.21 / −0.44%; Southwell Pcr 10 384 N (+0.20%) |
+| NK-04 | NK-03 bilinear plastic (fy = 25.9 MPa: Npl = 1.5 Pcr; H = 210 MPa), e0 = 5 mm, P_end = 0.8 Pcr, 40 steps (stepsize 0.025 s) | P_u between first yield (Ayrton & Perry, 1886: P/A + P·e0/((1 − P/Pcr)·W) = fy, 0.419 Pcr) and the plastic hinge on the elastic deflection ((P/Npl)² + M/Mpl = 1, 0.563 Pcr) | stop at the limit point (`MECANONLINE9_7`, expected) at P_u = 0.488 Pcr; λ_end/λ_start = 0.007 (CRIT_STAB goes to 0) |
 
 Observations:
 - **What CRIT_STAB computes** depends on the kinematics: with small displacements

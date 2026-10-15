@@ -81,7 +81,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 
 | Sleutel (label) | Analyse | Wat het doet | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`). Zonder tijdslast: 0 tot `default_time_end`. | 10 | - |
+| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
 | `substeps_per_output` (Rekenstappen per uitvoerinterval) | impliciet | Rekenstappen per uitvoerinterval van Mecway `<timesteps>`. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen tijdslast (statisch) of geen `<timesteps>` (dynamisch) heeft. | 1.0 | - |
 | `explicit_dt_factor` (Tijdstap / kritieke tijdstap) | expliciet | Tijdstap ≤ factor × de kritieke tijdstap zoals de bridge die schat, per uitvoerinterval gelijk verdeeld (zo is elke uitvoertijd een rekenstap). | 0.5 | - |
@@ -91,8 +91,12 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 `DEFI_LIST_REEL` zou Code-Aster de stap niet verkleinen (EDF R&D, U4.51.03; melding
 `SUBDIVISE_3`). Naar Mecway gaan (route `liml`) alle gearchiveerde rekenstappen tot
 het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`), of (route `tabel`)
-alleen dat laatste tijdstip. Mecway's eigen stapgrootte (`stepsize`) wordt niet
-gelezen (KNOWN_BUGS 44).
+alleen dat laatste tijdstip. De rekenstappen zijn die van Mecway (*Time step size*,
+`<timesteps stepsize>`: dt, 2 dt, ... tot de periode), plus de knikken van de
+lasttabellen die ertussen vallen; zo staan in Mecway dezelfde tijdstippen als bij
+Mecway's eigen solver. Lasttijden na de periode vallen weg. Mecway's *automatic time
+stepping* wordt niet nagebootst (vaste stap; Code-Aster knipt alleen bij divergentie).
+Alleen een model zonder stapgrootte gebruikt `substeps_per_interval`.
 
 **Impliciet dynamisch.** De bridge maakt een `DEFI_LIST_INST` met:
 
@@ -697,8 +701,9 @@ fysische oorzaak, geen numerieke.
    (U2.04.04 §4.1).
 6. **Contactmethode.** Bij lijncontact, contact dat verloren gaat of
    `MECANONLINE9_4` met `LAGS_C`: `contact_algo` = `PENALISATION` (§3.1, NL-03b).
-7. **Kleinere stappen.** Verhoog `substeps_per_interval` (statisch) of
-   `substeps_per_output` (impliciet). Code-Aster knipt een mislukte stap al zelf
+7. **Kleinere stappen.** Verklein Mecway's *Time step size* (statisch; zonder
+   stapgrootte `substeps_per_interval` verhogen) of verhoog `substeps_per_output`
+   (impliciet). Code-Aster knipt een mislukte stap al zelf
    (`DECOUPE`, tot 6 niveaus, §2.1); kleinere beginstappen helpen als hij steeds
    op hetzelfde tijdstip vastloopt. Niet bij stagnatie van het residu (stap 3):
    kleinere stappen maken dat erger (R-SUB40).

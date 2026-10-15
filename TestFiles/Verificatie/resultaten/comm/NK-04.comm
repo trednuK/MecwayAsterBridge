@@ -185,17 +185,15 @@ FN_Kop_FX = DEFI_FONCTION(
 
 # =====================================================
 # 6b. TIJDSDISCRETISATIE  (DEFI_LIST_REEL + DEFI_LIST_INST)
-# Tijdspunten van het eerste tot het laatste tijdspunt van alle
-# tijdsafhankelijke krachten, met substeps_per_interval substeps per
-# segment voor robuuste Newton-Raphson convergentie. Zonder
-# tijdsafhankelijke krachten: 0 tot default_time_end. DEFI_LIST_INST knipt
-# een stap die niet convergeert (ECHEC DECOUPE).
+# Met Mecway's stapgrootte (<timesteps stepsize>): een stap per Mecway-stap
+# van 0 tot de periode, plus de knikken van de lasttabellen. Zonder
+# stapgrootte: de tijdspunten van alle tijdsafhankelijke krachten met
+# substeps_per_interval substeps per segment (zonder tijdsafhankelijke
+# krachten 0 tot default_time_end). DEFI_LIST_INST knipt een stap die niet
+# convergeert (ECHEC DECOUPE).
 # =====================================================
 times = DEFI_LIST_REEL(
-    DEBUT=0.0,
-    INTERVALLE=(
-        _F(JUSQU_A=1.0, NOMBRE=40),
-    ),
+    VALE=(0.0, 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8, 0.825, 0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 1.0),
 )
 listinst = DEFI_LIST_INST(
     DEFI_LIST=_F(LIST_INST=times),

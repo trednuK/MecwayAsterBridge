@@ -416,8 +416,9 @@ Valkuilen:
 ### Voorbeeld 6 – Contactstart en solverinstellingen (`#ASTER-OPTIE`)
 
 Doel: alle contactpunten bij de start actief, vaste-puntiteratie voor het contact, en
-voor dit model meer Newton-iteraties, minder stappen, strengere convergentie en kleine
-verplaatsingen.
+voor dit model meer Newton-iteraties, strengere convergentie en kleine verplaatsingen.
+Minder stappen: *Time step size* 0,25 s in Mecway (de bridge rekent Mecway's stappen;
+`substeps_per_interval` geldt alleen in een model zonder stapgrootte).
 
 OpenRadioss > Custom model definition:
 
@@ -425,7 +426,6 @@ OpenRadioss > Custom model definition:
 #ASTER-ZONE CONTACT_INIT='OUI'
 #ASTER-CONTACT ALGO_RESO_CONT='POINT_FIXE', ITER_CONT_MAXI=50
 #ASTER-OPTIE newton_max_iter = 40
-#ASTER-OPTIE substeps_per_interval = 4
 #ASTER-OPTIE convergence_resi_rela = 1e-8
 #ASTER-OPTIE deformation = PETIT
 ```
@@ -434,10 +434,7 @@ In de `.comm`:
 
 ```
 times = DEFI_LIST_REEL(
-    DEBUT=0.0,
-    INTERVALLE=(
-        _F(JUSQU_A=1.0, NOMBRE=4),
-    ),
+    VALE=(0.0, 0.25, 0.5, 0.75, 1.0),
 )
 ...
 contact = DEFI_CONTACT(
@@ -618,8 +615,10 @@ Static*, de last met een tijdstabel vanaf 0. CCX > Custom model definition:
 ** ASTER-OPTIE crit_stab = ja
 ** ASTER-OPTIE imperfection_amplitude = 0.001
 ** ASTER-OPTIE imperfection_unit = L
-** ASTER-OPTIE substeps_per_interval = 20
 ```
+
+Twintig stappen: *Time step size* 0,05 s bij een periode van 1 s (de bridge rekent
+Mecway's stappen).
 
 `imperfection_unit = L` maakt de amplitude een fractie van de grootste afmeting van het
 model (hier L/1000); met `m` (standaard) is het een lengte in meter. Een andere

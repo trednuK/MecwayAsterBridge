@@ -19,7 +19,7 @@ ignored with only an INFO, as Mecway itself does.
 | Mecway | Status | Bridge (Code-Aster) | Remark |
 |---|---|---|---|
 | S30 Static 3D | Yes | `lin_static_3d` (`MECA_STATIQUE`) | Gap, tension only, compression only and contact need `nonlin_static_3d`: the bridge stops with an ERROR. |
-| L30 Nonlinear Static 3D | Yes | `nonlin_static_3d` (`STAT_NON_LINE`) | Mecway's *Time step* is not used (KB44). Contact: KB43. |
+| L30 Nonlinear Static 3D | Yes | `nonlin_static_3d` (`STAT_NON_LINE`) | Solver steps = Mecway's *Time step size* plus the kinks of the load tables. Contact: KB43. |
 | D30 Dynamic Response 3D | Yes | `dyna_impl_3d` (`DYNA_NON_LINE`) | Same as Mecway (Newmark) with schema NEWMARK and deformation PETIT; otherwise a WARNING. |
 | D30 with *Mode superposition* | Yes | `dyna_modal_3d` (`CALC_MODES` + `DYNA_VIBRA` `GENE`) | No prescribed displacement ≠ 0, initial velocity or dampers (KB54); then choose `dyna_impl_3d`. |
 | D31 Nonlinear Dynamic Response 3D | Yes | `dyna_impl_3d`; explicit: `dyna_expl_3d` (choose it yourself) | |
@@ -170,7 +170,7 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Shift point (buckling) | No | INFO only (KB46). |
 | Mode superposition (D30) | Yes | §1. |
 | Time period | Yes | |
-| Time step size | Partly | Used in D30 and T31; not in L30 (KB44: setting `substeps_per_interval`). |
+| Time step size | Yes | D30, T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). *Automatic time stepping* not reproduced: fixed step, Code-Aster only cuts on divergence. |
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | No | Without a message; the bridge halves the step itself on divergence. |
 | Incompatible hex8 | No | KB1. |

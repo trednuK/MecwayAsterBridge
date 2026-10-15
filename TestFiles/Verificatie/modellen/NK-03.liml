@@ -1,6 +1,6 @@
 <liml version="33">
   <analysis type="L30" />
-  <timesteps timeperiod="1 s" stepsize="0.1 s" />
+  <timesteps timeperiod="1 s" stepsize="0.05 s" />
   <node nid="1" x="0" y="-0.01" z="-0.015" />
   <node nid="2" x="0.02" y="-0.01" z="-0.015" />
   <node nid="3" x="0.02" y="0" z="-0.015" />

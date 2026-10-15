@@ -113,7 +113,7 @@ convergentiescherm, ongeveer 15 kB tekst; Keuze).
 
 | Instelling | Standaard | Wat het doet | Waarom | Aanpassen als | Bewijs |
 |---|---|---|---|---|---|
-| `substeps_per_interval` | 10 | rekenstappen per interval tussen de tijdspunten van de lasttabellen (`DEFI_LIST_REEL` `NOMBRE`) | Keuze: een fijner lastpad voor plasticiteit en contact; Mecway's `stepsize` wordt niet gelezen (KNOWN_BUGS 44) | stap waar de berekening steeds vastloopt; zie de kanttekening bij `convergence_resi_rela` | R-SUB1: NL-02a met 1 substap dezelfde uitkomst (tot 1e-7) in 3 stappen |
+| `substeps_per_interval` | 10 | alleen zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de lasttabellen (`DEFI_LIST_REEL` `NOMBRE`); met een stapgrootte Mecway's stappen plus de knikken van de lasttabellen | Keuze: een fijner lastpad voor plasticiteit en contact; met een stapgrootte Mecway's stappen als uitvoertijden (NL-20) | stap waar de berekening steeds vastloopt; zie de kanttekening bij `convergence_resi_rela` | R-SUB1: NL-02a met 1 substap dezelfde uitkomst (tot 1e-7) in 3 stappen |
 | `newton_max_iter` | 20 | `CONVERGENCE/ITER_GLOB_MAXI` | Gemeten/Keuze: CA-standaard is 10; contact vraagt vaak meer (EDF R&D, U4.51.03) | contact dat langzaam convergeert | R-SUB1: stap 2 van NL-02a had 11 iteraties nodig |
 | `newton_reac_iter` | 1 | `NEWTON/REAC_ITER`: tangentmatrix elke iteratie opnieuw | CA; aanbevolen (EDF R&D, U2.04.01; U2.04.04 §4.5.2) | niet verlagen; het startscherm accepteert minimaal 1 | R-REAC0: NL-02a met 0 stopt in de eerste stap met `DVP_2` (geen resultaten) |
 | `default_time_end` [s] | 1,0 | eindtijd zonder lasttabel | Keuze (pseudotijd) | - | - |
@@ -416,7 +416,7 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Alles in SI | elke Mecway-waarde met eenheid (`"210 GPa"`, `"10000 mm⁴"`) wordt omgerekend (`parse_and_convert`); een onbekende eenheid komt ongewijzigd terug met een WARNING | geverifieerd: alle verificatiemodellen gebruiken eenheden als MPa en mm (Verificatie, alle groepen) |
 | Formules in t | bemonsterd tot een tijdstabel (zoals Mecway voor CCX); formules in x, y, z niet | bron: Mecway-handleiding (Mecway, 2026) hoofdstuk 9; KNOWN_BUGS 45 |
 | Tijdsafhankelijke last in lineair statisch | waarde op de eindtijd | afwijking: Mecway intern negeert t, CCX neemt f(0) (KNOWN_BUGS 45) |
-| Niet-lineair statisch: Mecway's `stepsize` | niet gelezen; `substeps_per_interval` per interval van de lasttabel | afwijking: andere uitvoertijden (KNOWN_BUGS 44) |
+| Niet-lineair statisch: Mecway's `stepsize` | rekenstappen dt, 2 dt, ... tot de periode plus de knikken van de lasttabellen; *automatic time stepping* niet nagebootst | uitvoertijden = Mecway's stappen (NL-20), plus een tijdstip op een knik tussen twee stappen |
 
 ### 4.2 Materiaal
 

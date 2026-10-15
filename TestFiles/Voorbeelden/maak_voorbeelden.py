@@ -83,8 +83,10 @@ def model_a(analysis="S30", rigid=False, custom=None, attrs=None):
 # boven (ondervlak boven); Bodem (onderkant) vast, Top 0,01 mm omlaag (en
 # in x en y vast).
 # ------------------------------------------------------------------
-def model_c(custom=None):
-    m = Model("L30", timesteps=TS)
+def model_c(custom=None, stepsize=None):
+    # stepsize: Mecway's Time step size (voorbeeld 6: 0,25 s = 4 stappen)
+    ts = dict(TS, stepsize=stepsize) if stepsize else TS
+    m = Model("L30", timesteps=ts)
     m.elset("Onder", "Staal")
     lo = hexmesh(m, "Onder", 2, 2, 1, box(0, 0.02, 0, 0.02, 0, 0.01))
     m._index = {}
@@ -188,7 +190,6 @@ EX5 = ["#ASTER-ZONE ALGO_CONT='PENALISATION', COEF_PENA_CONT=1.0E14",
 EX6 = ["#ASTER-ZONE CONTACT_INIT='OUI'",
        "#ASTER-CONTACT ALGO_RESO_CONT='POINT_FIXE', ITER_CONT_MAXI=50",
        "#ASTER-OPTIE newton_max_iter = 40",
-       "#ASTER-OPTIE substeps_per_interval = 4",
        "#ASTER-OPTIE convergence_resi_rela = 1e-8",
        "#ASTER-OPTIE deformation = PETIT"]
 
@@ -253,7 +254,8 @@ RUNS = [
      lambda: model_c(custom={RM: ex7("Bodem")}),
      {"contact_algo": "PENALISATION"}),
     ("C_vb6", "nonlin_static_3d",
-     lambda: model_c(custom={RM: EX6 + ex7("Bodem")}), {}),
+     lambda: model_c(custom={RM: EX6 + ex7("Bodem")}, stepsize="0.25 s"),
+     {}),
 ]
 
 

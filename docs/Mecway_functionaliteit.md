@@ -19,7 +19,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Mecway | Status | Bridge (Code-Aster) | Opmerking |
 |---|---|---|---|
 | S30 Static 3D | Ja | `lin_static_3d` (`MECA_STATIQUE`) | Gap, tension only, compression only en contact vragen `nonlin_static_3d`: de bridge stopt met een ERROR. |
-| L30 Nonlinear Static 3D | Ja | `nonlin_static_3d` (`STAT_NON_LINE`) | Mecway's *Time step* wordt niet gebruikt (KB44). Contact: KB43. |
+| L30 Nonlinear Static 3D | Ja | `nonlin_static_3d` (`STAT_NON_LINE`) | Rekenstappen = Mecway's *Time step size* plus de knikken van de lasttabellen. Contact: KB43. |
 | D30 Dynamic Response 3D | Ja | `dyna_impl_3d` (`DYNA_NON_LINE`) | Gelijk aan Mecway (Newmark) met schema NEWMARK en deformation PETIT; anders een WARNING. |
 | D30 met *Mode superposition* | Ja | `dyna_modal_3d` (`CALC_MODES` + `DYNA_VIBRA` `GENE`) | Geen opgelegde verplaatsing ≠ 0, beginsnelheid of dempers (KB54); kies dan `dyna_impl_3d`. |
 | D31 Nonlinear Dynamic Response 3D | Ja | `dyna_impl_3d`; expliciet: `dyna_expl_3d` (zelf kiezen) | |
@@ -170,7 +170,7 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Shift point (knik) | Nee | Alleen INFO (KB46). |
 | Mode superposition (D30) | Ja | §1. |
 | Time period | Ja | |
-| Time step size | Deels | Gebruikt in D30 en T31; niet in L30 (KB44: instelling `substeps_per_interval`). |
+| Time step size | Ja | D30, T31 en L30 (L30: Mecway's stappen tot de periode plus de knikken van de lasttabellen; zonder stapgrootte `substeps_per_interval`). *Automatic time stepping* niet nagebootst: vaste stap, Code-Aster knipt alleen bij divergentie. |
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
 | Automatic time stepping | Nee | Zonder melding; de bridge halveert de stap zelf bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |

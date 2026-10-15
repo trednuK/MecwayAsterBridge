@@ -167,7 +167,9 @@ CONFIG_BRIDGE = {
                                "reactions", "plastic_strain",
                                "plastic_strain_eq"],
             # Tunables voor STAT_NON_LINE.
-            # substeps_per_interval: aantal substeps per Mecway-tijdsstap.
+            # substeps_per_interval: rekenstappen per interval van de
+            #   lasttabel, alleen zonder Mecway's stapgrootte (<timesteps
+            #   stepsize>; daarmee een stap per Mecway-stap).
             #   Hoger = robuustere convergentie maar langere runtime.
             # newton_max_iter:       maximum Newton-iteraties per substep.
             # convergence_resi_rela: relatieve residu voor convergentie.
@@ -180,7 +182,7 @@ CONFIG_BRIDGE = {
             # RESI_GLOB_RELA (residu / externe krachten, Code-Aster-standaard)
             # of "MAXI" = RESI_GLOB_MAXI (grootste restkracht in N,
             # convergence_resi_maxi). MAXI voor een opgelegde beweging zonder
-            # weerstand (externe krachten ~0, KNOWN_BUGS 44). "RELA_OF_MAXI"
+            # weerstand (externe krachten ~0). "RELA_OF_MAXI"
             # = beide met VERIF='AU_MOINS_UN': een van beide volstaat.
             "convergence_criterion": "RELA",
             "convergence_resi_maxi": 1.0e-3,

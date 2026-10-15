@@ -412,8 +412,9 @@ Pitfalls:
 ### Example 6 – Contact start and solver settings (`#ASTER-OPTIE`)
 
 Goal: all contact points active at the start, fixed-point iteration for the contact, and
-for this model more Newton iterations, fewer steps, stricter convergence and small
-displacements.
+for this model more Newton iterations, stricter convergence and small displacements.
+Fewer steps: *Time step size* 0.25 s in Mecway (the bridge computes Mecway's steps;
+`substeps_per_interval` only applies to a model without a step size).
 
 OpenRadioss > Custom model definition:
 
@@ -421,7 +422,6 @@ OpenRadioss > Custom model definition:
 #ASTER-ZONE CONTACT_INIT='OUI'
 #ASTER-CONTACT ALGO_RESO_CONT='POINT_FIXE', ITER_CONT_MAXI=50
 #ASTER-OPTIE newton_max_iter = 40
-#ASTER-OPTIE substeps_per_interval = 4
 #ASTER-OPTIE convergence_resi_rela = 1e-8
 #ASTER-OPTIE deformation = PETIT
 ```
@@ -430,10 +430,7 @@ In the `.comm`:
 
 ```
 times = DEFI_LIST_REEL(
-    DEBUT=0.0,
-    INTERVALLE=(
-        _F(JUSQU_A=1.0, NOMBRE=4),
-    ),
+    VALE=(0.0, 0.25, 0.5, 0.75, 1.0),
 )
 ...
 contact = DEFI_CONTACT(
@@ -612,8 +609,10 @@ static* (explanation: [`Modal_and_buckling.md`](Modal_and_buckling.md) §5). Mec
 ** ASTER-OPTIE crit_stab = ja
 ** ASTER-OPTIE imperfection_amplitude = 0.001
 ** ASTER-OPTIE imperfection_unit = L
-** ASTER-OPTIE substeps_per_interval = 20
 ```
+
+Twenty steps: *Time step size* 0.05 s with a period of 1 s (the bridge computes
+Mecway's steps).
 
 `imperfection_unit = L` makes the amplitude a fraction of the largest dimension of the
 model (here L/1000); with `m` (default) it is a length in metres. Another buckling

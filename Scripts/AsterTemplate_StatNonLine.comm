@@ -147,11 +147,12 @@ mesh = DEFI_GROUP(
 
 # =====================================================
 # 6b. TIJDSDISCRETISATIE  (DEFI_LIST_REEL + DEFI_LIST_INST)
-# Tijdspunten van het eerste tot het laatste tijdspunt van alle
-# tijdsafhankelijke krachten, met substeps_per_interval substeps per
-# segment voor robuuste Newton-Raphson convergentie. Zonder
-# tijdsafhankelijke krachten: 0 tot default_time_end. DEFI_LIST_INST knipt
-# een stap die niet convergeert (ECHEC DECOUPE).
+# Met Mecway's stapgrootte (<timesteps stepsize>): een stap per Mecway-stap
+# van 0 tot de periode, plus de knikken van de lasttabellen. Zonder
+# stapgrootte: de tijdspunten van alle tijdsafhankelijke krachten met
+# substeps_per_interval substeps per segment (zonder tijdsafhankelijke
+# krachten 0 tot default_time_end). DEFI_LIST_INST knipt een stap die niet
+# convergeert (ECHEC DECOUPE).
 # =====================================================
 {listinst_block}
 

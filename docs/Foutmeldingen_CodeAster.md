@@ -802,7 +802,7 @@ Stappenplan en instellingen:
   `RESI_GLOB_MAXI`, contact):
   1. **Relatief residu blijft hangen, absoluut residu is ~0.** Een buigmodel (profiel, rol en mal met contact):
      `RESI_GLOB_RELA` rond 0,1 bij `RESI_GLOB_MAXI` ~1e-11: een opgelegde beweging
-     zonder weerstand, dus geen referentiekracht (KNOWN_BUGS 44).
+     zonder weerstand, dus geen referentiekracht: kies `convergence_criterion` = MAXI.
   2. **Stagnatie net boven het criterium** (bijv. 1,4–2,8e-6 bij 1e-6), vooral bij
      ontlasten van een plastisch volume met `GDEF_LOG`; de absolute rest blijft dan
      steken (NL-01: ~1e-2 N bij 12 kN).

@@ -270,12 +270,6 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    van een hoekknoop in de eerste stap, ook met master/slave omgedraaid. PENALISATION is
    exact (NL-03b).
 
-44\. **`<timesteps stepsize>` niet gelezen bij niet-lineair statisch** (bevestigd,
-   `bridge_from_liml`). De bridge neemt `substeps_per_interval` per tijdsinterval van de
-   lasttabellen; Mecway's stapgrootte (bijv. 0,05 s bij PipeClip) wordt niet gebruikt,
-   dus andere uitvoertijden. Een opgelegde beweging zonder weerstand: kies
-   `convergence_criterion` = MAXI.
-
 48\. **Modaal: mechanisme in een opgelegd model** (bevestigd met runs,
    `bridge_to_aster._calc_modes_block`). Is K singulier terwijl er wel opleggingen
    zijn (bijv. een balk die alleen scharnierend vastzit), dan stopt Code-Aster met
@@ -524,9 +518,10 @@ Code-Aster-waarde per knoop) en logt per variabele het grootste verschil.
    gemeld (ERROR) en niet meegenomen. Mogelijk: AFFE_CHAR_MECA_F met FORMULE(X,Y,Z)
    (dezelfde vertaling als thermisch).
    Lineair statisch neemt de bridge f(eindtijd); Mecway intern negeert een last in t,
-   CCX neemt f(0). Elk functiepunt wordt in STAT_NON_LINE een interval met
-   substeps_per_interval stappen (`bridge_to_aster._build_listinst_block`): een sinus
-   geeft honderden punten en dus duizenden stappen. Waarden die `bridge_from_liml` met
+   CCX neemt f(0). Elk functiepunt wordt in STAT_NON_LINE een rekenstap (met Mecway's
+   stapgrootte) of een interval met substeps_per_interval stappen (zonder stapgrootte;
+   `bridge_to_aster._build_listinst_block`): een sinus geeft honderden punten en dus
+   honderden tot duizenden stappen. Waarden die `bridge_from_liml` met
    `parse_and_convert(findtext(...))` leest (bijv. `referencetemperature`) zouden een
    constante formule (getal met unit-attribuut) als SI lezen, als Mecway daar ooit een
    formule schrijft (NIET gezien).

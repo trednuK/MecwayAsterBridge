@@ -68,9 +68,14 @@ def build_beam(p_end):
     return build
 
 
-def build_solid(p_end, plastic=None):
+def build_solid(p_end, plastic=None, step=None):
+    """step: Mecway's Time step size in s (standaard die van TS); de
+    bridge rekent Mecway's stappen."""
     def build():
-        m = Model("L30", timesteps=TS)
+        ts = dict(TS)
+        if step:
+            ts["stepsize"] = "%g s" % step
+        m = Model("L30", timesteps=ts)
         m.elset("Kolom", "Staal")
         g = hexmesh(m, "Kolom", 50, 2, 3,
                     box(0, L, -A / 2, A / 2, -B / 2, B / 2), order=2)
@@ -270,14 +275,15 @@ TESTS = [
          settings={"crit_stab": True, "deformation": "PETIT"},
          note="Kleine verplaatsingen: kritische lastfactor per stap."),
     Case("NK-03", GROUP, "Ingeklemde kolom hex20 met imperfectie L/1000 "
-         "(knikvorm 1)", "nonlin_static_3d", build_solid(P_END),
+         "(knikvorm 1)", "nonlin_static_3d", build_solid(P_END, step=0.05),
          _nk03_checks(),
          settings={"crit_stab": True, "imperfection_amplitude": 0.001,
-                   "imperfection_unit": "L", "substeps_per_interval": 20},
-         note="e0 = 0,001 L = 1 mm; P tot 0,9 Pcr in 20 stappen."),
+                   "imperfection_unit": "L"},
+         note="e0 = 0,001 L = 1 mm; P tot 0,9 Pcr in 20 stappen "
+              "(stepsize 0,05 s)."),
     Case("NK-04", GROUP, "Ingeklemde kolom hex20, plastisch, imperfectie "
          "5 mm: draagkracht", "nonlin_static_3d",
-         build_solid(P_END_P, plastic=(FY, H_P)),
+         build_solid(P_END_P, plastic=(FY, H_P), step=0.025),
          [Check("P_u/Pcr (Ayrton-Perry %.3f .. scharnier %.3f)"
                 % (ALPHA_Y, ALPHA_H), _capacity,
                 ref=0.5 * (ALPHA_Y + ALPHA_H),
@@ -288,8 +294,7 @@ TESTS = [
           Check("CRIT_STAB bij P_u / begin", _crit_ratio, ref=0.0,
                 tol_abs=0.05, unit="-",
                 source="grenspunt: kleinste eigenwaarde van K_T naar 0")],
-         settings={"crit_stab": True, "imperfection_amplitude": E0_P,
-                   "substeps_per_interval": 40},
+         settings={"crit_stab": True, "imperfection_amplitude": E0_P},
          note="fy = %.1f MPa (Npl = 1,5 Pcr), H = 210 MPa; P tot 0,8 Pcr: "
               "de run stopt op het grenspunt (BRIDGE_ONVOLLEDIG, "
               "verwacht)." % (FY / 1e6)),

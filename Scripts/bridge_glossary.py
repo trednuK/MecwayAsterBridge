@@ -1003,10 +1003,19 @@ SETTING_HELP = {
                         u"solution (larger = Code-Aster stops), with GCPC "
                         u"the convergence criterion."),
     "substeps_per_interval": (u"Aantal rekenstappen per tijdsinterval van "
-                              u"de belasting; meer = robuuster, langzamer. Standaard "
-                              u"10.",
+                              u"de lasttabel, alleen voor een model zonder "
+                              u"Mecway's Time step size. Met een stapgrootte "
+                              u"rekent de bridge per Mecway-stap (plus de "
+                              u"knikken van de lasttabellen) en knipt "
+                              u"Code-Aster een stap die niet convergeert. "
+                              u"Meer = robuuster, langzamer. Standaard 10.",
                               u"Number of solver steps per time interval of "
-                              u"the load; more = more robust, slower. Default 10."),
+                              u"the load table, only for a model without "
+                              u"Mecway's Time step size. With a step size the "
+                              u"bridge computes per Mecway step (plus the "
+                              u"kinks of the load tables) and Code-Aster cuts "
+                              u"a step that does not converge. More = more "
+                              u"robust, slower. Default 10."),
     "newton_max_iter": (u"Maximum aantal Newton-iteraties per stap "
                         u"(ITER_GLOB_MAXI); daarna wordt de stap opgedeeld. "
                         u"Standaard 20 (Code-Aster 10; contact vraagt vaak "

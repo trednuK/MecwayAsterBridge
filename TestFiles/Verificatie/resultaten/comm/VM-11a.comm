@@ -180,19 +180,15 @@ FN_Trek_DX = DEFI_FONCTION(
 
 # =====================================================
 # 6b. TIJDSDISCRETISATIE  (DEFI_LIST_REEL + DEFI_LIST_INST)
-# Tijdspunten van het eerste tot het laatste tijdspunt van alle
-# tijdsafhankelijke krachten, met substeps_per_interval substeps per
-# segment voor robuuste Newton-Raphson convergentie. Zonder
-# tijdsafhankelijke krachten: 0 tot default_time_end. DEFI_LIST_INST knipt
-# een stap die niet convergeert (ECHEC DECOUPE).
+# Met Mecway's stapgrootte (<timesteps stepsize>): een stap per Mecway-stap
+# van 0 tot de periode, plus de knikken van de lasttabellen. Zonder
+# stapgrootte: de tijdspunten van alle tijdsafhankelijke krachten met
+# substeps_per_interval substeps per segment (zonder tijdsafhankelijke
+# krachten 0 tot default_time_end). DEFI_LIST_INST knipt een stap die niet
+# convergeert (ECHEC DECOUPE).
 # =====================================================
 times = DEFI_LIST_REEL(
-    DEBUT=0.0,
-    INTERVALLE=(
-        _F(JUSQU_A=1.0, NOMBRE=10),
-        _F(JUSQU_A=2.0, NOMBRE=10),
-        _F(JUSQU_A=3.0, NOMBRE=10),
-    ),
+    VALE=(0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0),
 )
 listinst = DEFI_LIST_INST(
     DEFI_LIST=_F(LIST_INST=times),

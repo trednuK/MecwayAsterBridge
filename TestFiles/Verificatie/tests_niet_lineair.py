@@ -23,8 +23,8 @@ from verif_lib import (Case, Check, Model, hexmesh, quadmesh, box,
 
 GROUP = "Niet-lineair statisch"
 # Zoals Mecway's samples (PipeClip): vaste stap 0,1 s. De bridge rekent
-# statisch met substeps_per_interval per interval van de lasttabel
-# (KNOWN_BUGS 44); de stap geldt voor een vergelijking met Mecway/CCX.
+# statisch Mecway's stappen plus de knikken van de lasttabellen
+# (bridge_to_aster._mecway_static_times); zie NL-20.
 TS = {"timeperiod": "1 s", "stepsize": "0.1 s"}
 
 
@@ -141,6 +141,26 @@ def build_nl01():
 
 
 MID1 = (L1 / 2, A1 / 2, A1 / 2)
+
+
+# NL-20: dezelfde staaf met Mecway-stap 0,4 s over 3 s: de knikken van de
+# lasttabel (t = 1 en 2) vallen tussen de stappen en worden extra rekenstappen
+TIMES20 = [0.4, 0.8, 1.0, 1.2, 1.6, 2.0, 2.4, 2.8, 3.0]
+
+
+def build_nl20():
+    m = build_nl01()
+    m.timesteps = {"timeperiod": "3 s", "stepsize": "0.4 s"}
+    return m
+
+
+def _times_dev(r, expected):
+    """Grootste verschil tussen de uitvoertijden (zonder t = 0) en
+    expected; 1e9 bij een ander aantal."""
+    got = [t for t in r.times() if t > 0.0]
+    if len(got) != len(expected):
+        return 1.0e9
+    return max(abs(a - b) for a, b in zip(got, expected))
 
 
 def _nl01_checks(load=True, known=None):
@@ -481,6 +501,16 @@ TESTS = [
               "alleen RELA stagneert bij het ontlasten (GDEF_LOG) op "
               "~2e-6 / ~1e-2 N; met RELA_OF_MAXI (VERIF='AU_MOINS_UN') "
               "rekent hij door."),
+    Case("NL-20", GROUP, "Trekstaaf, Mecway-stap 0,4 s met knikken van de "
+         "lasttabel ertussen", "nonlin_static_3d", build_nl20,
+         [Check("uitvoertijden = Mecway-stappen + knikken",
+                lambda r: _times_dev(r, TIMES20), ref=0.0, tol_abs=1e-9,
+                unit="s", source="Mecway: stap 0,4 s tot 3 s; knikken "
+                "t = 1, 2 als extra rekenstap")] +
+         [c for c in _nl01_checks() if "t=1.5" not in c.name],
+         note="Als NL-01 met <timesteps stepsize=\"0.4 s\">: rekenstappen "
+              "0,4 .. 2,8, 3 plus de knikken 1 en 2; het lastpad blijft "
+              "exact."),
     Case("NL-02a", GROUP, "Ingeklemde balk, grote doorbuiging (hex20)",
          "nonlin_static_3d", build_nl02_volume, _nl02_checks(B2V),
          note="Elastica; volume-elementen, GREEN_LAGRANGE."),

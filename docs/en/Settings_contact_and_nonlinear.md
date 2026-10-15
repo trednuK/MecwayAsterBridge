@@ -82,7 +82,7 @@ when you omit the keyword (catalogue 17.4).
 
 | Key (label) | Analysis | What it does | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substeps per time interval) | static | Solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`). Without a time load: 0 to `default_time_end`. | 10 | - |
+| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
 | `substeps_per_output` (Solver steps per output interval) | implicit | Solver steps per output interval of Mecway `<timesteps>`. Kinks of load functions are added as extra time points. | 1 | - |
 | `default_time_end` (End time without time load) [s] | all | End time when the model has no time load (static) or no `<timesteps>` (dynamic). | 1.0 | - |
 | `explicit_dt_factor` (Time step / critical time step) | explicit | Time step ≤ factor × the critical time step as estimated by the bridge, divided evenly per output interval (so every output time is a solver step). | 0.5 | - |
@@ -91,8 +91,12 @@ when you omit the keyword (catalogue 17.4).
 `DEFI_LIST_INST` with automatic cutting (see below); with only a `DEFI_LIST_REEL`,
 Code-Aster would not reduce the step (EDF R&D, U4.51.03; message `SUBDIVISE_3`). Sent to
 Mecway (route `liml`): all archived solver steps up to the last time reached (the
-bridge sets no `ARCHIVAGE`), or (route `tabel`) only that last time. Mecway's own step
-size (`stepsize`) is not read (KNOWN_BUGS 44).
+bridge sets no `ARCHIVAGE`), or (route `tabel`) only that last time. The solver steps
+are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up to the period),
+plus the kinks of the load tables that fall in between; so Mecway shows the same times
+as with Mecway's own solver. Load times after the period are dropped. Mecway's
+*automatic time stepping* is not reproduced (fixed step; Code-Aster only cuts on
+divergence). Only a model without a step size uses `substeps_per_interval`.
 
 **Implicit dynamic.** The bridge creates a `DEFI_LIST_INST` with:
 
@@ -693,8 +697,8 @@ cause, not a numerical one.
    §4.1).
 6. **Contact method.** With line contact, contact that is lost or `MECANONLINE9_4`
    with `LAGS_C`: `contact_algo` = `PENALISATION` (§3.1, NL-03b).
-7. **Smaller steps.** Increase `substeps_per_interval` (static) or
-   `substeps_per_output` (implicit). Code-Aster already cuts a failed step itself
+7. **Smaller steps.** Reduce Mecway's *Time step size* (static; without a step size
+   increase `substeps_per_interval`) or increase `substeps_per_output` (implicit). Code-Aster already cuts a failed step itself
    (`DECOUPE`, up to 6 levels, §2.1); smaller initial steps help when it keeps getting
    stuck at the same time. Not with a stalling residual (step 3): smaller steps make
    that worse (R-SUB40).

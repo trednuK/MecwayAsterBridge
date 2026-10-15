@@ -793,7 +793,7 @@ Step-by-step plan and settings:
   `RESI_GLOB_MAXI`, contact):
   1. **Relative residual stalls, absolute residual is ~0.** A bending model (profile, roller and die with contact):
      `RESI_GLOB_RELA` around 0.1 with `RESI_GLOB_MAXI` ~1e-11: an imposed motion without
-     resistance, so no reference force (KNOWN_BUGS 44).
+     resistance, so no reference force: choose `convergence_criterion` = MAXI.
   2. **Stagnation just above the criterion** (e.g. 1.4–2.8e-6 at 1e-6), especially when
      unloading a plastic solid with `GDEF_LOG`; the absolute residual then gets stuck
      (NL-01: ~1e-2 N at 12 kN).

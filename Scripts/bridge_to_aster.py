@@ -3937,13 +3937,70 @@ def _build_load_funcs_block(load_funcs):
     return "\n\n".join(blocks) + "\n"
 
 
-def _build_listinst_block(load_funcs, analysis):
-    """
-    Genereer DEFI_LIST_REEL voor tijdsdiscretisatie.
+_LISTINST_ECHEC = (
+    # DEFI_LIST_INST: bij divergentie wordt de stap in 4 gedeeld (tot 6
+    # niveaus). Met alleen een DEFI_LIST_REEL knipt STAT_NON_LINE de stap
+    # niet automatisch (U4.51.03 INCREMENT; melding SUBDIVISE_3).
+    "listinst = DEFI_LIST_INST(\n"
+    "    DEFI_LIST=_F(LIST_INST=times),\n"
+    "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
+    "             SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
+    "             SUBD_NIVEAU=6),\n"
+    ")\n")
 
-    Verzamelt alle unieke tijdspunten uit alle load functies. Voegt
-    substeps_per_interval substeps toe per Mecway-tijdsstap voor
-    convergentie van de Newton-Raphson iteraties.
+
+def _mecway_static_times(load_funcs, model_data):
+    """
+    Rekentijden van niet-lineair statisch met Mecway's stapgrootte
+    (<timesteps timeperiod stepsize>), of None
+    zonder stapgrootte (dan substeps_per_interval, _build_listinst_block).
+
+    Mecway rekent met een vaste stap van 0 tot de periode en schrijft elke
+    stap als uitvoertijd (L30 "Time step size"; bijv. Samples/PipeClip
+    0,05 s). De bridge rekent dezelfde stappen dt, 2 dt, ..., periode, plus
+    de knikken van de lasttabellen die tussen twee stappen vallen (zodat het
+    lastpad exact gevolgd wordt: plasticiteit, ontlasten, vermoeiing).
+    substeps_per_interval geldt hier niet: een fijner lastpad = een kleinere
+    Time step size in Mecway. Lasttijden na de periode vallen weg (Mecway
+    rekent tot de periode). Een periode die geen veelvoud is van de stap
+    eindigt hier met een kortere stap, en automatictimestepping (Mecway past
+    de stap aan) wordt niet nagebootst; beide NIET in Mecway geverifieerd.
+    Elke rekenstap wordt gearchiveerd (statisch, geen ARCHIVAGE).
+    """
+    ts = (model_data or {}).get("timesteps") or {}
+    dt = ts.get("stepsize") or 0.0
+    t_end = ts.get("period") or 0.0
+    if dt <= 0.0 or t_end <= 0.0:
+        return None
+    n = int(math.ceil(t_end / dt - 1.0e-9))
+    grid = [_round_time(k * dt) for k in range(1, n)] + [t_end]
+    later = sorted(set(t for _, h in load_funcs for t, _ in h
+                       if t > t_end * (1.0 + 1.0e-9)))
+    if later:
+        log("INFO: Lasttabel loopt tot t = {0} s; gerekend tot Mecway's "
+            "periode {1} s (zoals Mecway).".format(later[-1], t_end))
+    kinks = [t for _, h in load_funcs for t, _ in h if 0.0 < t < t_end]
+    times = _merge_times([0.0] + grid + kinks, t_end, prefer=grid)
+    extra = len(times) - 1 - len(grid)
+    log("INFO: Tijdstappen uit Mecway: stap {0} s tot {1} s, {2} "
+        "rekenstappen{3}; substeps_per_interval niet gebruikt.".format(
+            dt, t_end, len(times) - 1,
+            " (waarvan {0} op knikken van de lasttabel)".format(extra)
+            if extra > 0 else ""))
+    return times
+
+
+def _build_listinst_block(load_funcs, analysis, model_data=None):
+    """
+    Genereer DEFI_LIST_REEL + DEFI_LIST_INST voor de tijdsdiscretisatie
+    van niet-lineair statisch.
+
+    Met Mecway's <timesteps stepsize> (_mecway_static_times): Mecway's
+    stappen tot de periode plus de knikken van de lasttabellen; elke
+    rekenstap is een uitvoertijd. Zonder stapgrootte:
+    alle unieke tijdspunten van de lastfuncties met substeps_per_interval
+    stappen per interval. In beide gevallen knipt DEFI_LIST_INST een stap
+    die niet convergeert.
 
     Returns
     -------
@@ -3951,6 +4008,15 @@ def _build_listinst_block(load_funcs, analysis):
         block_str : DEFI_LIST_REEL aanroep
         t_end     : float  laatste tijdspunt; nodig voor POST_RELEVE_T INST=...
     """
+    mecway_times = _mecway_static_times(load_funcs, model_data)
+    if mecway_times:
+        block_str = (
+            "times = DEFI_LIST_REEL(\n"
+            "    VALE=({0}),\n"
+            ")\n".format(", ".join("{0!r}".format(t) for t in mecway_times))
+            + _LISTINST_ECHEC)
+        return block_str, mecway_times[-1]
+
     nb_substeps = analysis.get("substeps_per_interval", 10)
     t_default   = analysis.get("default_time_end", 1.0)
 
@@ -3991,9 +4057,6 @@ def _build_listinst_block(load_funcs, analysis):
     else:
         t_end = sorted_times[-1]
 
-    # DEFI_LIST_INST: bij divergentie wordt de stap in 4 gedeeld (tot 6
-    # niveaus). Met alleen een DEFI_LIST_REEL knipt STAT_NON_LINE de stap
-    # niet automatisch (U4.51.03 INCREMENT; melding SUBDIVISE_3).
     block_str = (
         "times = DEFI_LIST_REEL(\n"
         "    DEBUT={debut},\n"
@@ -4001,13 +4064,8 @@ def _build_listinst_block(load_funcs, analysis):
         "{intervalles}\n"
         "    ),\n"
         ")\n"
-        "listinst = DEFI_LIST_INST(\n"
-        "    DEFI_LIST=_F(LIST_INST=times),\n"
-        "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
-        "             SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
-        "             SUBD_NIVEAU=6),\n"
-        ")\n"
-    ).format(debut=debut, intervalles="\n".join(intervalles))
+    ).format(debut=debut, intervalles="\n".join(intervalles)) + \
+        _LISTINST_ECHEC
 
     return block_str, t_end
 
@@ -5310,9 +5368,10 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         AFFE_CHAR_MECA.
 
     Tijdsdiscretisatie:
-      - statisch: DEFI_LIST_REEL met substeps_per_interval stappen per
-        segment tussen de lasttijden, in DEFI_LIST_INST met automatisch
-        knippen (_build_listinst_block);
+      - statisch: Mecway's stappen (<timesteps stepsize>) plus de knikken
+        van de lasttabellen, zonder stapgrootte substeps_per_interval
+        stappen per segment tussen de lasttijden; in DEFI_LIST_INST met
+        automatisch knippen (_build_listinst_block);
       - dynamisch: _build_dyna_listinst_block (uitvoertijden van Mecway's
         <timesteps>).
 
@@ -5388,7 +5447,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         # (_explicit_kinematics); opnieuw verzamelen.
         load_funcs = _collect_load_funcs(model_data)
     else:
-        listinst_block, t_end = _build_listinst_block(load_funcs, analysis)
+        listinst_block, t_end = _build_listinst_block(load_funcs, analysis,
+                                                      model_data)
     load_funcs_block = _build_load_funcs_block(load_funcs)
     log("INFO: {0} tijdspad eindigt op t_end={1}".format(command, t_end))
 

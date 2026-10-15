@@ -113,7 +113,7 @@ convergence window, about 15 kB of text; Choice).
 
 | Setting | Default | What it does | Why | Change when | Evidence |
 |---|---|---|---|---|---|
-| `substeps_per_interval` | 10 | solver steps per interval between the time points of the load tables (`DEFI_LIST_REEL` `NOMBRE`) | Choice: a finer load path for plasticity and contact; Mecway's `stepsize` is not read (KNOWN_BUGS 44) | a step where the analysis keeps getting stuck; see the note on `convergence_resi_rela` | R-SUB1: NL-02a with 1 substep gives the same result (to 1e-7) in 3 steps |
+| `substeps_per_interval` | 10 | only without Mecway's *Time step size*: solver steps per interval between the time points of the load tables (`DEFI_LIST_REEL` `NOMBRE`); with a step size Mecway's steps plus the kinks of the load tables | Choice: a finer load path for plasticity and contact; with a step size Mecway's steps as output times (NL-20) | a step where the analysis keeps getting stuck; see the note on `convergence_resi_rela` | R-SUB1: NL-02a with 1 substep gives the same result (to 1e-7) in 3 steps |
 | `newton_max_iter` | 20 | `CONVERGENCE/ITER_GLOB_MAXI` | Measured/Choice: CA default is 10; contact often needs more (EDF R&D, U4.51.03) | contact that converges slowly | R-SUB1: step 2 of NL-02a needed 11 iterations |
 | `newton_reac_iter` | 1 | `NEWTON/REAC_ITER`: tangent matrix renewed every iteration | CA; recommended (EDF R&D, U2.04.01; U2.04.04 §4.5.2) | do not lower; the start screen accepts at least 1 | R-REAC0: NL-02a with 0 stops in the first step with `DVP_2` (no results) |
 | `default_time_end` [s] | 1.0 | end time without a load table | Choice (pseudo time) | - | - |
@@ -417,7 +417,7 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Everything in SI | every Mecway value with a unit (`"210 GPa"`, `"10000 mm⁴"`) is converted (`parse_and_convert`); an unknown unit is returned unchanged with a WARNING | verified: all verification models use units such as MPa and mm (Verification, all groups) |
 | Formulas in t | sampled to a time table (as Mecway does for CCX); formulas in x, y, z are not | source: Mecway manual (Mecway, 2026) chapter 9; KNOWN_BUGS 45 |
 | Time-dependent load in linear static | value at the end time | deviation: Mecway internal ignores t, CCX takes f(0) (KNOWN_BUGS 45) |
-| Nonlinear static: Mecway's `stepsize` | not read; `substeps_per_interval` per interval of the load table | deviation: other output times (KNOWN_BUGS 44) |
+| Nonlinear static: Mecway's `stepsize` | solver steps dt, 2 dt, ... up to the period plus the kinks of the load tables; *automatic time stepping* not reproduced | output times = Mecway's steps (NL-20), plus a time at a kink between two steps |
 
 ### 4.2 Material
 

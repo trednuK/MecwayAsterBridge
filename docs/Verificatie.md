@@ -981,8 +981,8 @@ Mecway L30 → bridge `nonlin_static_3d` → `STAT_NON_LINE`. Module
 instellingen: `deformation` = `GROT_GDEP`, door de bridge per element omgezet naar
 `GDEF_LOG` (plastische volumes), `GREEN_LAGRANGE` (elastische volumes) en `GROT_GDEP`
 (`COQUE_3D`); `convergence_resi_rela` = 1e-5 (de standaard van de bridge; de
-Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); 10 substappen per interval
-van de lasttabel.
+Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn Mecway's
+*Time step size* (0,1 s, zoals de samples) plus de knikken van de lasttabellen (NL-20).
 
 ### NL-01 Trekstaaf, bilineaire isotrope versteviging, ontlasten
 
@@ -1019,6 +1019,20 @@ van de lasttabel.
      1e-3 N niet) of met `DEFORMATION` = `PETIT`.
   3. *Rekmaat*. Met `PETIT` geeft de bridge exact de kleine-rekformule
      F = A0·(σy + H·p); het verschil met de logaritmische rek is bij 1% rek 1,1%.
+
+### NL-20 Mecway's stapgrootte met knikken van de lasttabel ertussen
+
+- **Doel**: niet-lineair statisch rekent met Mecway's *Time step size*
+  (`<timesteps stepsize>`) en volgt toch het lastpad exact.
+- **Model**: NL-01 met `<timesteps timeperiod="3 s" stepsize="0.4 s">`; de knikken van
+  de opgelegde verlenging (t = 1 en 2 s) vallen tussen twee stappen.
+- **Referentie**: uitvoertijden 0,4; 0,8; 1,0; 1,2; 1,6; 2,0; 2,4; 2,8; 3,0 s (Mecway's
+  stappen plus de knikken); F, σ_xx en p als NL-01.
+- **Resultaat**: de uitvoertijden kloppen exact; F, σ_xx en p op t = 1, 2 en 3 s 0,00%
+  af (dezelfde waarden als NL-01 met 30 stappen).
+- **Interpretatie**: de knikken als extra rekenstap houden de belasting per stap lineair,
+  zodat radial return exact blijft. Mecway's eigen uitvoertijden zijn niet headless
+  nagegaan (Mecway-solve was niet beschikbaar toen deze case werd toegevoegd).
 
 ### NL-02 Ingeklemde balk, grote doorbuiging (elastica)
 
@@ -1347,8 +1361,8 @@ van Euler, versterking 5%), strenger waar de oplossing exact is (balken 0,2%, fa
 | NK-01 | 20 `POU_D_E` (altijd `PETIT`), P_eind = 0,9 Pcr, 10 stappen | λ(t)·P(t) = Pcr | 10 363 N op t = 0,5 en 1 (< 0,001%); gelijk aan BU-01 |
 | NK-02a | hex20 50 × 2 × 3, standaard (`GREEN_LAGRANGE`) | knikpunt (λ lineair naar 0 uit de laatste twee stappen) × P_eind = Pcr | 10 402 N (+0,38%); λ van −22,6 (t = 0,1) naar −2,70 (t = 1) |
 | NK-02b | idem met `deformation` = `PETIT` | λ(t)·P(t) = Pcr | 10 384 N (+0,20%, gelijk aan BU-03-h20-n2) |
-| NK-03 | NK-02a met imperfectie 0,001 L in knikvorm 1 (eenheid `L`), 20 stappen | lineaire knik van de imperfectiestap; totale uitbuiging e0/(1 − P/Pcr) (Timoshenko & Gere, 1961, hfdst. 1); Southwell (1932) | kniklastfactor × P_eind 10 384 N (+0,20%); knikpunt 10 400 N (+0,36%); w/e0 bij 0,27 / 0,495 / 0,675 Pcr −0,09 / −0,21 / −0,44%; Southwell-Pcr 10 384 N (+0,20%) |
-| NK-04 | NK-03 bilineair plastisch (fy = 25,9 MPa: Npl = 1,5 Pcr; H = 210 MPa), e0 = 5 mm, P_eind = 0,8 Pcr, 40 stappen | P_u tussen de eerste vloei (Ayrton & Perry, 1886: P/A + P·e0/((1 − P/Pcr)·W) = fy, 0,419 Pcr) en het plastisch scharnier op de elastische uitbuiging ((P/Npl)² + M/Mpl = 1, 0,563 Pcr) | stop op het grenspunt (`MECANONLINE9_7`, verwacht) bij P_u = 0,488 Pcr; λ_eind/λ_begin = 0,007 (CRIT_STAB gaat naar 0) |
+| NK-03 | NK-02a met imperfectie 0,001 L in knikvorm 1 (eenheid `L`), 20 stappen (stepsize 0,05 s) | lineaire knik van de imperfectiestap; totale uitbuiging e0/(1 − P/Pcr) (Timoshenko & Gere, 1961, hfdst. 1); Southwell (1932) | kniklastfactor × P_eind 10 384 N (+0,20%); knikpunt 10 400 N (+0,36%); w/e0 bij 0,27 / 0,495 / 0,675 Pcr −0,09 / −0,21 / −0,44%; Southwell-Pcr 10 384 N (+0,20%) |
+| NK-04 | NK-03 bilineair plastisch (fy = 25,9 MPa: Npl = 1,5 Pcr; H = 210 MPa), e0 = 5 mm, P_eind = 0,8 Pcr, 40 stappen (stepsize 0,025 s) | P_u tussen de eerste vloei (Ayrton & Perry, 1886: P/A + P·e0/((1 − P/Pcr)·W) = fy, 0,419 Pcr) en het plastisch scharnier op de elastische uitbuiging ((P/Npl)² + M/Mpl = 1, 0,563 Pcr) | stop op het grenspunt (`MECANONLINE9_7`, verwacht) bij P_u = 0,488 Pcr; λ_eind/λ_begin = 0,007 (CRIT_STAB gaat naar 0) |
 
 Waarnemingen:
 - **Wat CRIT_STAB uitrekent** hangt af van de kinematica: met kleine verplaatsingen
