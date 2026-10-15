@@ -11,7 +11,7 @@ and a `.comm`, starts Code-Aster and loads the results.
 WARNING/ERROR lines in the log and the `.mess` and the convergence window are available in Dutch and
 English: setting "Taal / Language" on the General page (`en` = English, the default;
 `nl` = Dutch). This guide quotes the English text, e.g. "Work folder"; with `nl`
-the window shows the Dutch text ("Werkmap"). Some things stay Dutch: INFO/SUCCESS lines in the log, the comments in the
+the window shows the Dutch text ("Werkmap"). Some things are in English only: INFO/SUCCESS lines in the log, the comments in the
 generated `.comm`, and the developer file `KNOWN_BUGS.md`.
 
 Related documents:
@@ -37,7 +37,7 @@ Related documents:
 | Code-Aster messages, cause and solution | [`CodeAster_error_messages.md`](CodeAster_error_messages.md) |
 | Verification against analytical solutions | [`Verification.md`](Verification.md) |
 | After an update of Mecway or Code-Aster: version warning, checking a new version | [`After_an_update.md`](After_an_update.md) |
-| Known deviations and limitations (developer file, Dutch) | [`KNOWN_BUGS.md`](../../KNOWN_BUGS.md) |
+| Known deviations and limitations (developer file, English) | [`KNOWN_BUGS.md`](../../KNOWN_BUGS.md) |
 
 ## 1. Requirements
 
@@ -135,7 +135,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 
 | Setting (label) | Default | Meaning |
 |---|---|---|
-| "Taal / Language" | `en` | `nl` (Dutch) or `en` (English): main window, messages, WARNING/ERROR lines in the log and the convergence window, and the WARNING/ERROR lines (nl: WAARSCHUWING/FOUT) that the bridge scripts in the Code-Aster job write to the `.mess`. Applies to the run straight away; the main window switches language when it comes back. INFO/SUCCESS lines and the comments in the `.comm` stay Dutch |
+| "Taal / Language" | `en` | `nl` (Dutch) or `en` (English): main window, messages, WARNING/ERROR lines in the log and the convergence window, and the WARNING/ERROR lines (nl: WAARSCHUWING/FOUT) that the bridge scripts in the Code-Aster job write to the `.mess`. Applies to the run straight away; the main window switches language when it comes back. INFO/SUCCESS lines and the comments in the `.comm` are always in English |
 | "Code-Aster launcher (run_aster.bat)" | `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat` | path to `run_aster.bat`; environment variables such as `%LOCALAPPDATA%` are allowed. If the file does not exist, the status box says so at start; choose it with "Browse..." |
 | "Work folder" | empty = `WorkDir` next to the `Scripts` folder (the window shows that path) | folder for the mesh, `<model>_<run-id>.*`, log and results (§5); created if it does not exist |
 | "Number of CPU cores (ncpus)" | 1 | `ncpus` (threads) in the `.export`; the bridge runs without MPI (`mpi_nbcpu 1`) |

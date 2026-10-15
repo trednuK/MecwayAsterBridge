@@ -2,6 +2,11 @@
 
 ## Unreleased (develop)
 
+- **Developer text in English**: code comments, docstrings, comments in the `.comm`
+  templates (and the generated `study.comm`), INFO/SUCCESS log lines, `AGENTS.md`,
+  `KNOWN_BUGS.md` and `STAPPENPLAN.md`. The user interface, messages, WARNING/ERROR lines,
+  the convergence window and the user documentation (`docs/` Dutch, `docs/en/` English)
+  stay bilingual.
 - **Quadratic beams (line3)** are now translated (were not modelled): each element is
   split at its midside node into two SEG2 beam cells; results on all three nodes.
   **Flexible joint on beam** is translated: an own node per beam end, coupled with

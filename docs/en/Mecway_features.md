@@ -5,7 +5,7 @@
 Which Mecway input the bridge translates to Code-Aster. Each line has a status:
 **Yes** (translated), **Partly** (translated with a limitation) or **No** (not
 translated). The remark gives the limitation, the number in
-[`KNOWN_BUGS.md`](../../KNOWN_BUGS.md) (KB, in Dutch) and, for Partly and No, what you
+[`KNOWN_BUGS.md`](../../KNOWN_BUGS.md) (KB) and, for Partly and No, what you
 can do instead. An `#ASTER` line is your own Code-Aster input in Mecway's *Custom
 model definition* ([`ASTER_lines_examples.md`](ASTER_lines_examples.md), "example n").
 

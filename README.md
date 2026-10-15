@@ -93,9 +93,10 @@ read on the *Documentation* page of the start screen.
 | Verification | [Verification](docs/en/Verification.md) | [Verificatie](docs/Verificatie.md) |
 | After an update of Mecway or Code-Aster: version warning, checking a new version | [After an update](docs/en/After_an_update.md) | [Na een update](docs/Na_een_update.md) |
 
-The start screen, the messages and the convergence window are available in English and
-Dutch. Some developer-facing text stays Dutch: INFO/SUCCESS lines in the log, comments in
-the code and in the generated `.comm`, and `KNOWN_BUGS.md`.
+The start screen, the messages, the WARNING/ERROR lines in the log, the convergence window and
+the user documentation are available in English and Dutch. Developer-facing text is in English
+only: INFO/SUCCESS lines in the log, comments in the code and in the generated `.comm`,
+`KNOWN_BUGS.md` and `STAPPENPLAN.md`.
 
 ## Verification
 
@@ -112,7 +113,7 @@ run on the installation. Method, tolerances, results and how to rerun them:
 ## Known limitations
 
 Known deviations from Mecway and limitations of the translation are listed, with their
-status, in [`KNOWN_BUGS.md`](KNOWN_BUGS.md) (in Dutch). Among them: only 3D analyses
+status, in [`KNOWN_BUGS.md`](KNOWN_BUGS.md). Among them: only 3D analyses
 (no 2D/axisymmetric), not every Mecway load or constraint is translated (the bridge
 reports what it skipped), Mecway has no scripting API for loads, so everything is read
 from the `.liml` file, and a real run always needs Mecway and Code-Aster on Windows.

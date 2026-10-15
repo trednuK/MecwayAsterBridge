@@ -160,8 +160,7 @@ was checked by hand on these models (analytical values according to Incropera et
 
 Mecway solves without the GUI: `mecway.exe model.liml solve`, with
 `<solutionfile filename="...\x_sol.liml" />` in the `.liml` (the solution only
-contains `temperature`, no heat flux). Measured with Mecway 33 (KNOWN_BUGS 14 in
-`KNOWN_BUGS.md`, Dutch):
+contains `temperature`, no heat flux). Measured with Mecway 33 (KNOWN_BUGS 14):
 
 | Case | Max. difference bridge – Mecway |
 |---|---|

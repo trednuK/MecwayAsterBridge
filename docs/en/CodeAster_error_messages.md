@@ -26,7 +26,7 @@ bridge.
 - **own input**: the cause lies in your own `#ASTER` lines or an edited `.comm`;
 - **cause not determined**: seen, but not investigated.
 
-Bugs in the bridge itself are listed in `KNOWN_BUGS.md` (Dutch); only the reference is
+Bugs in the bridge itself are listed in `KNOWN_BUGS.md`; only the reference is
 given here.
 
 ---

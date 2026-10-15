@@ -30,7 +30,7 @@ Verwante documenten:
 | Meldingen van Code-Aster, oorzaak en oplossing | [`Foutmeldingen_CodeAster.md`](Foutmeldingen_CodeAster.md) |
 | Verificatie tegen analytische oplossingen | [`Verificatie.md`](Verificatie.md) |
 | Na een update van Mecway of Code-Aster: versiewaarschuwing, nieuwe versie controleren | [`Na_een_update.md`](Na_een_update.md) |
-| Bekende afwijkingen en beperkingen (ontwikkelbestand, Nederlands) | [`KNOWN_BUGS.md`](../KNOWN_BUGS.md) |
+| Bekende afwijkingen en beperkingen (ontwikkelbestand, Engels) | [`KNOWN_BUGS.md`](../KNOWN_BUGS.md) |
 
 ## 1. Benodigd
 
@@ -125,7 +125,7 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 
 | Instelling (label) | Standaard | Betekenis |
 |---|---|---|
-| Taal / Language | `en` | `nl` (Nederlands) of `en` (Engels): hoofdvenster, meldingen, WARNING/ERROR-regels in de log en het convergentiescherm, en de WAARSCHUWING/FOUT-regels (en: WARNING/ERROR) die de bridge-scripts in de Code-Aster-job naar de `.mess` schrijven. Geldt direct voor de run; het hoofdvenster wisselt van taal als het terugkomt. INFO/SUCCESS-regels en het commentaar in de `.comm` blijven Nederlands |
+| Taal / Language | `en` | `nl` (Nederlands) of `en` (Engels): hoofdvenster, meldingen, WARNING/ERROR-regels in de log en het convergentiescherm, en de WAARSCHUWING/FOUT-regels (en: WARNING/ERROR) die de bridge-scripts in de Code-Aster-job naar de `.mess` schrijven. Geldt direct voor de run; het hoofdvenster wisselt van taal als het terugkomt. INFO/SUCCESS-regels en het commentaar in de `.comm` zijn altijd Engels |
 | Code-Aster launcher (run_aster.bat) | `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat` | pad naar `run_aster.bat`; omgevingsvariabelen zoals `%LOCALAPPDATA%` mogen. Bestaat het bestand niet, dan zegt het statusvak dat bij de start; kies het met *Bladeren...* |
 | Werkmap | leeg = `WorkDir` naast de map `Scripts` (het venster toont dat pad) | map voor mesh, `<model>_<run-id>.*`, log en resultaten (§5); wordt aangemaakt als hij niet bestaat |
 | Aantal CPU-kernen (ncpus) | 1 | `ncpus` (threads) in de `.export`; de bridge rekent zonder MPI (`mpi_nbcpu 1`) |

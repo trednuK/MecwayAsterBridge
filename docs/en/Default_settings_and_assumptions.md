@@ -35,7 +35,7 @@ Explanations per topic are in the other documents:
 - `R-...`: check run made for this review (October 2026): a verification case with one
   setting changed, computed with the same chain (`TestFiles/Verificatie/_run_one.py`
   with a settings file). The outcome is given in the text; §5 gives the overview.
-- `KNOWN_BUGS n`: item *n* in [`KNOWN_BUGS.md`](../../KNOWN_BUGS.md) (Dutch).
+- `KNOWN_BUGS n`: item *n* in [`KNOWN_BUGS.md`](../../KNOWN_BUGS.md).
 
 Code-Aster documents are cited in the text as (EDF R&D, U4.51.03 §3); full details in
 §6. Other literature as author (year).
