@@ -310,3 +310,65 @@ TESTS += [
          note="Flens quad8 -> COQUE_3D op eigen knopen met starre armen "
               "naar de knopen van het lijf."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-64 Twee schaalelsets, elk voor de helft verschoven (DKT)
+# ------------------------------------------------------------------
+# Strook als LS-60, in de breedte verdeeld over twee elsets (A: y < B/2,
+# B: y > B/2). Alleen de elementen met x < L/2 van beide elsets hebben
+# offset w = e (EXCENTREMENT); de rest van elke elset heeft een eigen
+# COQUE-entry zonder excentrement (bridge_offset.apply_to_mesh, een
+# restgroep per elset). Trek P in de knopen van de vrije rand: moment P e
+# alleen in de verschoven helft, kromming P e/(EI) over x < L/2, daarna
+# recht: tip w = P e (L/2)^2/(2EI) + P e (L/2)/(EI) L/2 = 3 P e L^2/(8EI).
+# Spanning bij x = L/4 als LS-60; bij x = 3L/4 alleen trek P/(BT).
+W64 = 3 * P0 * E0 * L0 ** 2 / (8 * E * I0)
+
+
+def build_ls64():
+    m = Model("S30")
+    m.mat("Plaat2", '<geometric type="Plate" thickness="2 mm" />', STEEL)
+    m.elset("Strook_A", "Plaat2")
+    a = quadmesh(m, "Strook_A", 20, 2, rect(0, L0, 0, B0 / 2))
+    m.elset("Strook_B", "Plaat2")
+    b = quadmesh(m, "Strook_B", 20, 2, rect(0, L0, B0 / 2, B0))
+    m.face_selection("Inklemming", a["edges"]["u0"] + b["edges"]["u0"])
+    m.node_selection("Inklemming_knopen",
+                     sorted(a["nodes"]["u0"] | b["nodes"]["u0"]))
+    m.node_selection("Tip", sorted(a["nodes"]["u1"] | b["nodes"]["u1"]))
+    m.node_selection("Kwart", [m.node(L0 / 4, y, 0.0)
+                               for y in (0.0, B0 / 4, B0 / 2, B0)])
+    m.node_selection("Driekwart", [m.node(3 * L0 / 4, y, 0.0)
+                                   for y in (0.0, B0 / 4, B0 / 2, B0)])
+    m.add('<fixed selection="Inklemming" />')
+    m.add('<force selection="Tip"><x>%g N</x><y>0 N</y><z>0 N</z>'
+          '</force>' % P0)
+    m.element_selection("Verschoven", [
+        e for q in (a, b) for (i, j), e in sorted(q["elems"].items())
+        if i < 10])
+    m.add(_offset_w("Verschoven", E0))
+    return m
+
+
+TESTS += [
+    Case("LS-64", GROUP, "Twee schaalelsets, elk voor de helft met element "
+         "offset (DKT, restgroep per elset)", "lin_static_3d", build_ls64,
+         [Check("doorbuiging tip (+W)", lambda r: _mean(r, "displz", "Tip"),
+                ref=W64, tol=0.02, unit="m",
+                source="3 P e L^2/(8EI) (kromming alleen over L/2)"),
+          Check("von Mises onderkant, x = L/4", lambda r: _mean(
+              r, "vonmisesb", "Kwart"), ref=SB0, tol=0.02, unit="Pa",
+                source="P/(BT) + 6 P e/(B T^2)"),
+          Check("von Mises onderkant, x = 3L/4", lambda r: _mean(
+              r, "vonmisesb", "Driekwart"), ref=P0 / (B0 * T0), tol=0.02,
+                unit="Pa", source="P/(BT) (geen offset)"),
+          Check("von Mises bovenkant, x = 3L/4", lambda r: _mean(
+              r, "vonmisesu1", "Driekwart"), ref=P0 / (B0 * T0), tol=0.02,
+                unit="Pa", source="P/(BT) (geen offset)"),
+          Check("reactie X inklemming", lambda r: -_total(
+              r, "reactionforcex", "Inklemming_knopen"), ref=P0, tol=1e-3,
+                unit="N", source="evenwicht")],
+         note="Elke elset krijgt een eigen restgroep (BROFR) zonder "
+              "EXCENTREMENT naast de BROFE-groep met offset."),
+]

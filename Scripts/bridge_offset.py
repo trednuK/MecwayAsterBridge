@@ -426,10 +426,13 @@ def _report_ignored(model_data, ignored):
 # MESH: TOEPASSEN (na de namen)
 # ==========================================
 def _free_name(prefix, k, taken):
+    """Vrije groepsnaam <prefix><k>; de naam gaat meteen in taken, zodat
+    een volgende aanroep hem niet nog eens geeft."""
     name = "{0}{1}".format(prefix, k)
     while name in taken:
         k += 1000000
         name = "{0}{1}".format(prefix, k)
+    taken.add(name)
     return name
 
 
@@ -476,6 +479,7 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
         info = model_data["offset_shells"].setdefault(
             group, {"rest": group, "parts": []})
         info["parts"].append((name, w))
+    k_rest = 0      # een restgroep per elset (eigen nummer)
     for group, info in model_data["offset_shells"].items():
         offset_members = set()
         for name, _w in info["parts"]:
@@ -484,8 +488,8 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
         if not rest:
             info["rest"] = None
         elif len(rest) < len(group_ma.get(group, [])):
-            name = _free_name(REST_PREFIX, len(model_data["offset_shells"]),
-                              taken)
+            k_rest += 1
+            name = _free_name(REST_PREFIX, k_rest, taken)
             group_ma[name] = rest
             info["rest"] = name
 
