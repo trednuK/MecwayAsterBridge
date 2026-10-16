@@ -1112,7 +1112,7 @@ Observations:
   `ERME` with the reversed sign (block under uniform tension: 15% instead of 0); without
   the correction the loop chose the elements at the loaded end face in the first loop
   ([Error_estimator.md](Error_estimator.md) §2.3).
-- The Mecway GUI itself (the loop with OK clicks) is NOT checked; headless the step of
+- The Mecway GUI itself (the loop with the wait for Code-Aster in each loop) is NOT checked; headless the step of
   the main script was checked on a model with results: `after_run` in Mecway's
   IronPython, `solution.element_node_value("errorestimate", 1, 1)` = the value from the
   result file (11963.69), `refine_x2` and `save_as` with a solution in the model.

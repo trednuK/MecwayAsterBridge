@@ -61,9 +61,12 @@ Version: **V2026.1** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
    - the active analysis follows the Mecway analysis type (`auto`); each analysis has
      its own page with settings. Hover over a setting for an explanation.
 3. Click **Start**. Code-Aster runs in a separate window; the convergence window shows
-   the progress. Click OK in Mecway when Code-Aster has finished (`DIAGNOSTIC JOB`). The
-   model is reopened with the Code-Aster results, and the start screen comes back with
-   the outcome and any messages.
+   the progress. A status window in Mecway shows the elapsed time and the current step,
+   with a *Stop...* button; Mecway is locked until the run has finished. When Code-Aster
+   has finished, the status window closes by itself, the model is reopened with the
+   Code-Aster results, and the start screen comes back with the outcome and any messages.
+   (With *General > Waiting for Code-Aster* = `confirm` you click OK in Mecway yourself
+   when Code-Aster has finished, as in earlier versions.)
 
 Settings are saved in `Scripts/bridge_utils.py` (`CONFIG_BRIDGE`) when you click Start
 or Results...; the defaults and why they were chosen are in

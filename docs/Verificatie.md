@@ -1113,7 +1113,7 @@ Waarnemingen:
   met het omgekeerde teken (blok onder uniforme trek: 15% i.p.v. 0); zonder de
   correctie koos de lus in de eerste lus de elementen aan het belaste eindvlak
   ([Foutschatter.md](Foutschatter.md) §2.3).
-- De Mecway-GUI zelf (de lus met OK-klikken) is NIET nagelopen; headless is de stap van
+- De Mecway-GUI zelf (de lus met het wachten op Code-Aster per lus) is NIET nagelopen; headless is de stap van
   het hoofdscript wel nagelopen op een model met resultaten: `after_run` in Mecway's
   IronPython, `solution.element_node_value("errorestimate", 1, 1)` = de waarde uit het
   resultaatbestand (11963,69), `refine_x2` en `save_as` met een oplossing in het model.

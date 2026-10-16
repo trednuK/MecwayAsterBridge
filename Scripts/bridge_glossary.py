@@ -716,6 +716,18 @@ GLOSSARY = OrderedDict([
                u"gebruikt.",
                u"Number of processor cores (threads) Code-Aster uses.")),
     # --- files and results ---
+    ("auto (wait)", ("file", u"Wachten op Code-Aster: statusvenster met "
+                     u"voortgang en Stoppen; het einde van de run wordt "
+                     u"vanzelf herkend en de resultaten worden ingeladen. "
+                     u"Standaard.",
+                     u"Waiting for Code-Aster: status window with progress "
+                     u"and Stop; the end of the run is recognised "
+                     u"automatically and the results are loaded. "
+                     u"Default.")),
+    ("confirm", ("file", u"Wachten op Code-Aster: je klikt op OK in Mecway "
+                 u"als het Code-Aster-venster 'DIAGNOSTIC JOB' toont.",
+                 u"Waiting for Code-Aster: you click OK in Mecway when the "
+                 u"Code-Aster window shows 'DIAGNOSTIC JOB'.")),
     ("liml", ("file", u"Resultaatroute: Code-Aster schrijft Mecway's eigen "
               u"resultaten; de bridge zet ze in de .liml (alle "
               u"tijdstappen of modes). Standaard.",
@@ -1008,6 +1020,19 @@ SETTING_HELP = {
                             u"A separate window with the progress, "
                             u"convergence and messages of Code-Aster on "
                             u"every run. On by default."),
+    "wait_for_aster": (u"Hoe de bridge wacht tot Code-Aster klaar is. 'auto' "
+                       u"(standaard): een statusvenster met de voortgang en "
+                       u"de knop Stoppen; Mecway is tijdens de run "
+                       u"geblokkeerd en de resultaten worden daarna vanzelf "
+                       u"ingeladen. 'confirm': je klikt zelf op OK als "
+                       u"Code-Aster klaar is (zoals voorheen).",
+                       u"How the bridge waits until Code-Aster has "
+                       u"finished. 'auto' (default): a status window with "
+                       u"the progress and the button Stop; Mecway is locked "
+                       u"during the run and the results are loaded "
+                       u"automatically afterwards. 'confirm': you click OK "
+                       u"yourself when Code-Aster has finished (as "
+                       u"before)."),
     "med_export": (u"Ook een MED-bestand (.rmed) schrijven voor ParaView of "
                    u"Salome. Mecway gebruikt het niet. Standaard uit: het "
                    u"bestand kan honderden MB worden. Met een XFEM-scheur ook "
@@ -1729,6 +1754,7 @@ SETTING_HELP = {
 # name that mean something different per setting.
 _OPTION_TERMS = {
     ("plastic_strain_definition", "auto"): "auto (curve)",
+    ("wait_for_aster", "auto"): "auto (wait)",
     ("configuration", "auto"): "auto (configuration)",
     ("imperfection_unit", "m"): "m (imperfection)",
     ("imperfection_unit", "L"): "L (imperfection)",

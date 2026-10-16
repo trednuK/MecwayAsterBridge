@@ -79,7 +79,8 @@
 #      the analysis follows the Mecway analysis type (for this run only).
 #   3b. Write the mesh in ASTER format (bridge_mesh)
 #   4. Generate <model>_<run_id>.comm and .export
-#   5. Start Code-Aster; wait for confirmation by the user
+#   5. Start Code-Aster; wait until it has finished (status window with
+#      Stop, or confirmation by the user: setting wait_for_aster)
 #   6. Load the results back into Mecway
 #   7. Optional (adapt_refine, linear static): refine the elements with
 #      the largest estimated error in Mecway and start again at 2
@@ -114,6 +115,7 @@ from bridge_from_liml   import extract_aster_data_from_liml
 from bridge_mesh        import write_mesh
 from bridge_to_aster    import generate_AsterSolver_files, results_file
 from bridge_run_aster   import run_AsterSolver, aster_mess_errors
+from bridge_convergence import stopped_text
 from bridge_from_aster  import (AsterToMecway_results, check_solution_mesh,
                                 _compare_with_mecway,
                                 _compare_modes_with_mecway)
@@ -353,16 +355,41 @@ def _run(settings):
         # 'mw' and 'solution' are passed on so that the external modules
         # can handle pop-ups and results outside the scripting context.
         run_start = time.time()
-        if not run_AsterSolver(export_file, work_dir_path(), resu_name, mw):
+        job = run_AsterSolver(export_file, work_dir_path(), resu_name, mw)
+        if not job:
             _notify(tr("Code-Aster kon niet gestart worden. Controleer "
                           "{0}.",
                           "Code-Aster could not be started. Check "
                           "{0}.").format(log_file_name()))
             return False
-        mess_errors = aster_mess_errors(work_dir_path(), run_start)
+        mess_path = os.path.join(work_dir_path(), run_name(".mess"))
+        stopped = job.ended_early()
+        if stopped:
+            # Stop button or Code-Aster window closed (AsterJob): load
+            # what is there, but never continue (adaptive loop). The job
+            # is ended hard, so aster_results_export (end of study.comm)
+            # did not run: normally there are no results.
+            note = stopped_text("user" if job.state == "stopped"
+                                else "window")
+            log(u"WARNING: " + note)
+            _notify(tr(
+                u"{0} De uitvoer tot dat moment staat in {1}. Code-Aster "
+                u"schrijft de resultaten pas aan het einde van de run; een "
+                u"gestopte run heeft daarom meestal geen resultaten.",
+                u"{0} The output up to that moment is in {1}. Code-Aster "
+                u"writes the results only at the end of the run, so a "
+                u"stopped run usually has no results.").format(
+                    note, os.path.basename(mess_path)))
+        elif job.exit_code:
+            _notify(tr(u"run_aster eindigde met exitcode {0} (fout). Zie {1} "
+                       u"en het Code-Aster-venster.",
+                       u"run_aster ended with exit code {0} (error). See {1} "
+                       u"and the Code-Aster window.").format(
+                           job.exit_code, mess_path))
+        mess_errors = ([] if stopped and not os.path.exists(mess_path)
+                       else aster_mess_errors(work_dir_path(), run_start))
         # Version that actually ran (header of the .mess of this run);
         # takes precedence over the estimate from the launcher path.
-        mess_path = os.path.join(work_dir_path(), run_name(".mess"))
         mess_version = (bridge_version.aster_version_from_mess(mess_path)
                         if os.path.exists(mess_path) and
                         os.path.getmtime(mess_path) >= run_start else None)
@@ -424,6 +451,8 @@ def _run(settings):
                 "Geen resultaten geladen. Controleer study.mess en {0}.",
                 "No results loaded. Check study.mess and {0}.")).format(
                     log_file_name()))
+            return False
+        if stopped:
             return False
         skipped = model_data.get("skipped_loads", [])
         if skipped:
@@ -1199,8 +1228,8 @@ def main():
             _ADAPT["history"] = []
             ok = _run(settings)
             # Adaptive refinement: refine and compute again as long as
-            # bridge_adapt says so (each run asks again for OK after
-            # Code-Aster, run_AsterSolver).
+            # bridge_adapt says so (each run waits for Code-Aster in the
+            # same way, run_AsterSolver; a stopped run ends the loop).
             while ok and _adapt_step():
                 ok = _run(dict(settings, changes=[], save_errors=[]))
         except Exception as e:

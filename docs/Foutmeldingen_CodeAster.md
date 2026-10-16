@@ -104,6 +104,12 @@ Alle bestanden van een run heten `<model>_<run-id>.*` (zie
    `.mess`, dan is de `.comm` niet tot het eind uitgevoerd (Python-fout); de bridge
    meldt "Python-fout in `<model>_<run-id>.comm`" met de foutregel uit
    `<model>_<run-id>_console.txt` ([§8](#8-syntax-en-aster-regels)).
+   Eindigt `run_aster` met een exitcode ongelijk aan 0, dan meldt het statusvak
+   "run_aster eindigde met exitcode N (fout)" met het pad van de `.mess`; ook dan blijft het
+   Code-Aster-venster open. Een run die met *Stoppen...* is gestopt (of waarvan het
+   Code-Aster-venster is gesloten) heeft geen `DIAGNOSTIC JOB`: de `.mess` is de uitvoer tot
+   dat moment met als laatste regel `BRIDGE_GESTOPT` ([Handleiding §2](Handleiding.md#2-werkwijze)
+   stap 5).
 5. **Opnieuw draaien zonder Mecway**: `run_aster.bat <model>_<run-id>.export` in de
    werkmap. Zo kun je de `.comm` van die run met de hand aanpassen en een oplossing
    proberen.

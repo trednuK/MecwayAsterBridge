@@ -106,6 +106,11 @@ All files of a run are named `<model>_<run-id>.*` (see
    `.mess`, the `.comm` was not executed to the end (Python error); the bridge reports
    "Python error in `<model>_<run-id>.comm`" with the error line from
    `<model>_<run-id>_console.txt` ([§8](#8-syntax-and-aster-lines)).
+   If `run_aster` ends with an exit code other than 0, the status box reports "run_aster
+   ended with exit code N (error)" with the path of the `.mess`; the Code-Aster window then
+   stays open as well. A run stopped with "Stop..." (or whose Code-Aster window was closed)
+   has no `DIAGNOSTIC JOB`: the `.mess` is the output up to that moment with the last line
+   `BRIDGE_GESTOPT` ([User guide §2](UserGuide.md#2-workflow) step 5).
 5. **Running again without Mecway**: `run_aster.bat <model>_<run-id>.export` in the work
    folder. This lets you edit the `.comm` of that run by hand and try a solution.
 

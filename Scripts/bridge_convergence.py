@@ -77,6 +77,12 @@ _TEND_RE = re.compile(r"^BRIDGE_TEND\s+([-+0-9.eE]+)\s*$")
 # Explicit scheme in the command echo (no Newton iterations).
 _EXPLICIT_RE = re.compile(r"SCHEMA\s*=\s*'(DIFF_CENT|TCHAMWA)'")
 _DIAG_MARK = "--- DIAGNOSTIC JOB :"
+# Line that the bridge appends to the .mess when the run did not end by
+# itself (bridge_run_aster.AsterJob: Stop button or Code-Aster window
+# closed); the .mess is then the copy of the live fort.6. Reason: "user" or
+# "window".
+STOPPED_MARK = u"BRIDGE_GESTOPT"
+_STOPPED_RE = re.compile(r"^BRIDGE_GESTOPT\s*(\w*)")
 _BOX_TOP = u"╔"     # top edge of message box
 _BOX_BOTTOM = u"╚"  # bottom edge of message box
 _BOX_SIDE = u"║"    # side of message box
@@ -591,6 +597,7 @@ class ConvergenceData(object):
         self.t_end = None          # BRIDGE_TEND (failure loop), else None
         self.explicit = False      # explicit scheme seen
         self.fin = False           # "<I> <FIN>" seen (study.comm up to FIN)
+        self.stopped = None        # BRIDGE_GESTOPT reason ("user"/"window")
         self.linear = []           # LinearSolve per MECA_STATIQUE
         self.modes = []            # (nr, {FREQ/CHAR_CRIT/MASS_EFFE_UN_..})
         self.lines = 0
@@ -708,6 +715,15 @@ class ConvergenceParser(object):
         stripped = line.strip()
         if stripped.startswith(u"<I> <FIN>"):
             data.fin = True
+            return
+        m = _STOPPED_RE.match(stripped)
+        if m:
+            # Appended by the bridge after a stop: an open message box of
+            # the truncated output ends here.
+            self._box = None
+            data.stopped = m.group(1) or u"user"
+            self._add_message("fout", STOPPED_MARK, stopped_text(
+                data.stopped))
             return
 
         # --- message box ---
@@ -1219,6 +1235,14 @@ class ConvergenceParser(object):
 # ==========================================
 # HELPER FUNCTIONS
 # ==========================================
+def stopped_text(reason):
+    """Text for a run that did not end by itself (BRIDGE_GESTOPT)."""
+    if reason == "window":
+        return tr(u"Run afgebroken: het Code-Aster-venster is gesloten.",
+                  u"Run aborted: the Code-Aster window was closed.")
+    return tr(u"Run gestopt door de gebruiker.", u"Run stopped by the user.")
+
+
 def read_text(path):
     """Text of a .mess/fort.6 (UTF-8, unreadable characters replaced)."""
     f = io.open(path, "rb")
@@ -1378,6 +1402,31 @@ def python_errors(text, max_errors=5):
 # ==========================================
 def _norm(path):
     return os.path.normcase(os.path.normpath(path.replace("/", os.sep)))
+
+
+def aster_tmp_dirs(root):
+    """Folders in which run_aster creates its run_aster_* folder: "tmpdir"
+    from share/aster/config.json of the installation in root, else %TEMP%
+    (run_aster uses tempfile.mkdtemp(dir=tmpdir); run_aster/run.py)."""
+    import json
+    import tempfile
+    dirs = []
+    cfg = os.path.join(root, "share", "aster", "config.json")
+    try:
+        f = io.open(cfg, encoding="utf-8")
+        try:
+            tmp = json.load(f).get("tmpdir")
+        finally:
+            f.close()
+        if tmp:
+            dirs.append(tmp)
+    except Exception:
+        pass
+    for d in (tempfile.gettempdir(), os.environ.get("TEMP"),
+              os.environ.get("TMP")):
+        if d and d not in dirs:
+            dirs.append(d)
+    return dirs
 
 
 def run_dir_mess(run_dir):

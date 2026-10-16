@@ -68,10 +68,37 @@ Verwante documenten:
    `<model>_<run-id>.comm` en `.export` in de werkmap (§5) en start Code-Aster in een
    **apart venster**. Met route `tabel` controleert hij eerst of de Mecway-solution
    bij het mesh past; zo niet, dan stopt hij met een melding.
-5. Mecway toont "Code_Aster is gestart in een apart venster. Klik op OK zodra de
-   berekening klaar is." (met het convergentiescherm aan staat daartussen "Het
-   convergentiescherm toont de voortgang."). Wacht tot in het Code-Aster-venster `DIAGNOSTIC JOB` staat en
-   klik dan pas op OK. Klik je te vroeg, dan vraagt de bridge het nog een keer.
+5. Het **statusvenster** "Code-Aster-run" verschijnt (instelling *Wachten op Code-Aster* =
+   `auto`, standaard). Het toont de verstreken tijd (met de tijdslimiet van de `.export`),
+   wat Code-Aster op dat moment doet (niet-lineair: bereikt tijdstip, poging, niveau en
+   Newton-iteratie; statisch: de fase van de lineaire oplosser; modaal: de gevonden modes;
+   anders de laatste regel van de uitvoer) en het aantal fouten en alarmen tot nu toe. Het
+   venster is modaal: Mecway is geblokkeerd tot de run klaar is, want daarna opent de bridge
+   het model opnieuw met de resultaten. Het sluit vanzelf zodra Code-Aster klaar is
+   (`run_aster` is teruggekeerd); de bridge herkent dat aan een eindmarkering die het
+   Code-Aster-venster schrijft (`<model>_<run-id>_done.txt`, met de exitcode van
+   `run_aster`; wordt na de run verwijderd), en anders aan `DIAGNOSTIC JOB` aan het einde van
+   de `.mess`.
+   - **Stoppen...** (of het sluitkruis, Esc) vraagt eerst om bevestiging en beëindigt dan
+     alleen de processen van deze run (het Code-Aster-venster en alles wat daaruit gestart
+     is). De uitvoer tot dat moment komt in de `.mess` met de regel `BRIDGE_GESTOPT`; het
+     statusvak en het convergentiescherm melden "Run gestopt door de gebruiker." Code-Aster
+     schrijft de resultaten pas aan het einde van de run, dus een gestopte run heeft meestal
+     geen resultaten. Een adaptieve verfijning (§4) stopt dan ook.
+   - Sluit je het Code-Aster-venster zelf tijdens de run, dan meldt de bridge "Run
+     afgebroken: het Code-Aster-venster is gesloten." en gaat verder zoals na Stoppen.
+   - Eindigt `run_aster` met een exitcode ongelijk aan 0, dan meldt het statusvak die code
+     met het pad van de `.mess`; het Code-Aster-venster blijft dan open (net als bij een
+     fout in de `.mess`).
+   - Duurt de run langer dan de tijdslimiet (met 2 minuten marge), dan waarschuwt het
+     venster; Code-Aster stopt normaal zelf bij de limiet.
+
+   Met *Wachten op Code-Aster* = `confirm` (of als het statusvenster niet getoond kan
+   worden) werkt het zoals voorheen: Mecway toont "Code_Aster is gestart in een apart venster.
+   Klik op OK zodra de berekening klaar is." (met het convergentiescherm aan staat daartussen
+   "Het convergentiescherm toont de voortgang."). Wacht tot in het Code-Aster-venster
+   `DIAGNOSTIC JOB` staat en klik dan pas op OK. Klik je te vroeg, dan vraagt de bridge het
+   nog een keer.
 6. De resultaten komen in Mecway:
    - route `liml` (standaard): de bridge zet de resultaten in de `.liml` (de vorige
      versie blijft als `<model>.liml.bak`) en opent het model opnieuw; de resultaten
@@ -134,6 +161,7 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Eerst Mecway-solve ter controle | uit | lost eerst in Mecway op en stopt bij een fout. Schrijft `<model>_<run-id>_vergelijking.csv` (Mecway- en Code-Aster-waarde per knoop) en logt per variabele het grootste verschil; bij modaal en knik vergelijkt de log de frequentie of factor per mode |
 | Resultaten naar Mecway | `liml` | `liml`: alle tijdstappen of modes, ook element-knoopwaarden; het model wordt heropend. `tabel`: alleen knoopwaarden van het laatste tijdstip, in de bestaande Mecway-solution; vraagt een solution die bij het mesh past; alleen voor Statisch en Niet-lineair statisch (niet voor dynamisch, thermisch, modaal en knik) |
 | Convergentie- en meldingenscherm | aan | opent bij elke run een apart venster: bij een niet-lineaire analyse residuen, voortgang en contact; bij de statische analyse de lineaire oplosser (tijd per fase, foutgrens, conditiegetal; bij GCPC het residu per iteratie); bij modaal en knik de eerste modes; bij elke analyse de meldingen (fouten en alarmen met uitleg) en de diagnose. Achteraf: knop *Convergentiescherm*. Zie [Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm) |
+| Wachten op Code-Aster | `auto` | `auto`: een modaal statusvenster met de voortgang en *Stoppen...*; de bridge herkent zelf het einde van de run en laadt dan de resultaten (§2 stap 5). `confirm`: je klikt op OK in Mecway als het Code-Aster-venster `DIAGNOSTIC JOB` toont (het eerdere gedrag) |
 | MED-bestand voor ParaView | uit | schrijft ook `<model>_<run-id>.rmed` (ParaView/Salome); Mecway gebruikt het niet en het kan honderden MB worden |
 
 Onder de instellingen staan de koppeling van `auto` aan de Mecway-analysetypen, een
@@ -407,6 +435,7 @@ volgende run niets. In meldingen staat de echte naam.
 | `<model>_<run-id>.comm`, `<model>_<run-id>.export` | Code-Aster-invoer; met `run_aster.bat <model>_<run-id>.export` opnieuw te draaien |
 | `<model>_<run-id>.mess` | berichten van Code-Aster (fouten, alarmen, tabellen met `UNITE=6`) |
 | `<model>_<run-id>_console.txt` | volledige console-uitvoer van Code-Aster (ook Python-fouten) |
+| `<model>_<run-id>_done.txt` | eindmarkering met de exitcode van `run_aster` (§2 stap 5); bestaat alleen kort, de bridge verwijdert hem na de run |
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |

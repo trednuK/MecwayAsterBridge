@@ -811,7 +811,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    AD-02 the worst hex20 drops to 0.04 (WARNING) without the error rising.
    Node selections with a condition are not refined along by Mecway: ERROR before
    refining (AD-03). HOMARD (`MACR_ADAP_MAIL`) is not built: the new mesh cannot
-   go back to Mecway. Each loop requires an OK click after Code-Aster. The loop in the
+   go back to Mecway. Each loop waits for Code-Aster (status window or OK click,
+   setting `wait_for_aster`). The loop in the
    Mecway GUI has NOT been checked, only headless (`mecway.exe <model> script`).
 
 66\. **Fatigue: limits (solids and shells, Miner, critical plane only on

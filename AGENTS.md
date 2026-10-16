@@ -83,7 +83,12 @@ contract between the modules. Read optional keys with `.get()`.
   timestamp): get the name from `bridge_utils.run_name(suffix)`, never use a fixed name. Without
   `set_run_log()` (smoke test) it is `study<suffix>`.
 - `solution.set_variable()` expects one value per node of the last Mecway solve.
-- `run_AsterSolver()` does not wait for Code-Aster; the user confirms via `mw.message()`.
+- `run_AsterSolver()` waits until Code-Aster has ended and returns an `AsterJob` (`state`,
+  `exit_code`): with `wait_for_aster` = `"auto"` in the modal status window
+  (`bridge_gui.run_status_dialog`, polls `AsterJob.poll()`), with `"confirm"` (or without
+  Windows Forms) via `mw.message()`. End detection: the end marker of `aster_launch.bat`,
+  else `DIAGNOSTIC JOB` in the `.mess`. `AsterJob.stop()` only kills the process tree of the
+  cmd window it started (`taskkill /T`). Test: `python tests/test_bridge_wait.py`.
 
 ## Checking
 

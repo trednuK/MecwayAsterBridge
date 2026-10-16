@@ -16,8 +16,9 @@
 # from that same installation (tested with Code-Aster 17.4 / Python 3.11.9 /
 # Tk 8.6.12). Why a separate process:
 #   - Mecway's script runs on Mecway's UI thread and, after starting
-#     Code-Aster, waits in mw.message(); a window of its own in that process
-#     would depend on that wait loop and stop or hang along with the script.
+#     Code-Aster, waits in its modal status window (or mw.message()); a window
+#     of its own in that process would depend on that wait loop and stop or
+#     hang along with the script.
 #   - A separate process keeps working when the Mecway script has finished,
 #     and closing this window has no effect on the run or on Mecway.
 #   - The parser (bridge_convergence.py) is shared with the bridge.
@@ -38,11 +39,9 @@
 
 import argparse
 import codecs
-import json
 import math
 import os
 import sys
-import tempfile
 import time
 import traceback
 
@@ -103,24 +102,10 @@ def _hints():
 
 
 def _tmp_dirs():
-    """Folders in which run_aster creates its run_aster_* folder: "tmpdir" from
-    share/aster/config.json of this installation, else %TEMP% (run_aster
-    uses tempfile.mkdtemp(dir=tmpdir); run_aster/run.py)."""
-    dirs = []
+    """Folders in which run_aster creates its run_aster_* folder
+    (bridge_convergence.aster_tmp_dirs for this installation)."""
     root = os.path.dirname(os.path.dirname(os.path.abspath(sys.executable)))
-    cfg = os.path.join(root, "share", "aster", "config.json")
-    try:
-        with open(cfg, encoding="utf-8") as f:
-            tmp = json.load(f).get("tmpdir")
-        if tmp:
-            dirs.append(tmp)
-    except Exception:
-        pass
-    for d in (tempfile.gettempdir(), os.environ.get("TEMP"),
-              os.environ.get("TMP")):
-        if d and d not in dirs:
-            dirs.append(d)
-    return dirs
+    return bc.aster_tmp_dirs(root)
 
 
 # ==========================================
@@ -973,6 +958,8 @@ class Monitor(object):
         parts = []
         if src.kind is None:
             state = tr(u"Wachten op Code-Aster", u"Waiting for Code-Aster")
+        elif data.stopped:
+            state = bc.stopped_text(data.stopped)
         elif data.finished():
             state = tr(u"Klaar ({0})", u"Finished ({0})").format(
                 data.diagnostic)

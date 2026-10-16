@@ -67,6 +67,10 @@ CONFIG_BRIDGE = {
     # separate window) as soon as Code-Aster starts; for a linear analysis
     # the statistics of the linear solver, the messages and the diagnosis.
     "convergence_monitor": True,
+    # Waiting for Code-Aster (bridge_run_aster): "auto" = modal status
+    # window with a Stop button, results loaded automatically when the run
+    # has ended; "confirm" = click OK when Code-Aster has finished.
+    "wait_for_aster":  "auto",
     # Also write a MED file (<model>_<run_id>.rmed) for
     # ParaView/Salome. Mecway does not use it; it can reach hundreds of MB.
     "med_export":      False,

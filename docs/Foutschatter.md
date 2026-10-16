@@ -301,8 +301,10 @@ Code: `Scripts/bridge_adapt.py`, de lus in `MecwayAsterBridgeMain.main()`
    *Adaptieve verfijning (Mecway refine_x2)* aan en kies het doel (§6.2). De
    foutschatter moet aan staan (standaard), *Resultaten naar Mecway* = `liml`
    (standaard).
-4. Klik *Starten*. Per lus start Code-Aster en vraagt de bridge zoals altijd om OK
-   als de berekening klaar is. Daarna laadt de bridge de resultaten, kiest de
+4. Klik *Starten*. Per lus start Code-Aster en wacht de bridge zoals altijd tot de
+   berekening klaar is (statusvenster, of OK met *Wachten op Code-Aster* = `confirm`;
+   [Handleiding §2](Handleiding.md#2-werkwijze) stap 5). *Stoppen...* beëindigt ook de lus.
+   Daarna laadt de bridge de resultaten, kiest de
    elementen, verfijnt, slaat het model op en start de volgende lus.
 5. Na de laatste lus staan de resultaten van het fijnste mesh in Mecway. Het
    statusvak toont per lus het aantal elementen, de globale fout en het aantal
@@ -318,7 +320,7 @@ Voor één model kan het ook met `#ASTER-OPTIE`-regels, bijv.
 
 | Instelling (label) | Sleutel | Standaard | Wanneer aanpassen |
 |---|---|---|---|
-| Adaptieve verfijning (Mecway refine_x2) | `adapt_refine` | uit | aan voor de lus; elke lus is een extra run met een OK-klik |
+| Adaptieve verfijning (Mecway refine_x2) | `adapt_refine` | uit | aan voor de lus; elke lus is een extra run |
 | Doel: globale relatieve fout [%] | `adapt_target_error` | 2 | 2 tot 5 voor verplaatsingen en gladde spanningen; 1 tot 1,5 voor een piekspanning (AD-02: Kt binnen 2% bij 1,1%, nog −5,9% bij 1,8%) |
 | Max. aantal verfijningslussen | `adapt_max_loops` | 5 | hoger als het doel nog niet bereikt is en het model klein blijft |
 | Keuze van de elementen | `adapt_select` | `dorfler` | `fraction` of `factor` als je een vaste hoeveelheid per lus wilt |

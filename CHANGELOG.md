@@ -2,6 +2,15 @@
 
 ## Unreleased (develop)
 
+- **No more "click OK when Code-Aster has finished"**: the bridge now waits by itself. A
+  modal status window shows the elapsed time, the current step (time, attempt, iteration or
+  solver phase) and the messages so far, with a *Stop...* button that ends only this run's
+  Code-Aster processes; when Code-Aster has finished the window closes and the results are
+  loaded. The end is detected from an end marker with the exit code of `run_aster`
+  (`Scripts/aster_launch.bat`), else from `DIAGNOSTIC JOB` in the `.mess`; a non-zero exit
+  code, a closed Code-Aster window and a stop are reported in the status box and the
+  convergence window. New setting *Waiting for Code-Aster* (`wait_for_aster`, General):
+  `auto` (default) or `confirm` (the old OK dialog). Test `tests/test_bridge_wait.py`.
 - **`FACTOR_57` without a mechanism** (slender volume models in bending, MUMPS error estimate
   just above `RESI_RELA` 1e-6): the setting *Solver accuracy (RESI_RELA)* (`lin_solver_resi`,
   default 1e-6 as Code-Aster) is now also on the pages Modal (static step for the prestress,

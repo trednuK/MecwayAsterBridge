@@ -300,8 +300,10 @@ and constraints on faces, materials and components along. Code:
 3. Main window, page **Static**, heading *Adaptive refinement*: switch on *Adaptive
    refinement (Mecway refine_x2)* and choose the target (§6.2). The error estimator
    must be on (default), *Results to Mecway* = `liml` (default).
-4. Click *Start*. In each loop Code-Aster starts and the bridge asks for OK when the
-   calculation has finished, as always. Then the bridge loads the results, chooses the
+4. Click *Start*. In each loop Code-Aster starts and the bridge waits until the
+   calculation has finished, as always (status window, or OK with "Waiting for
+   Code-Aster" = `confirm`; [User guide §2](UserGuide.md#2-workflow) step 5). "Stop..."
+   also ends the loop. Then the bridge loads the results, chooses the
    elements, refines, saves the model and starts the next loop.
 5. After the last loop the results of the finest mesh are in Mecway. The status box
    shows per loop the number of elements, the global error and the number of refined
@@ -318,7 +320,7 @@ For a single model it also works with `#ASTER-OPTIE` lines, e.g.
 
 | Setting (label) | Key | Default | When to change |
 |---|---|---|---|
-| Adaptive refinement (Mecway refine_x2) | `adapt_refine` | off | on for the loop; each loop is an extra run with an OK click |
+| Adaptive refinement (Mecway refine_x2) | `adapt_refine` | off | on for the loop; each loop is an extra run |
 | Target: global relative error [%] | `adapt_target_error` | 2 | 2 to 5 for displacements and smooth stresses; 1 to 1.5 for a peak stress (AD-02: Kt within 2% at 1.1%, still −5.9% at 1.8%) |
 | Max. number of refinement loops | `adapt_max_loops` | 5 | higher if the target is not reached yet and the model stays small |
 | Element selection | `adapt_select` | `dorfler` | `fraction` or `factor` if you want a fixed amount per loop |

@@ -95,6 +95,8 @@ GENERAL_SPECS = [
     ("convergence_monitor", ("Convergentie- en meldingenscherm",
                              "Convergence and messages window"),
      "bool", None),
+    ("wait_for_aster", ("Wachten op Code-Aster", "Waiting for Code-Aster"),
+     "choice", ("auto", "confirm")),
     ("med_export", ("MED-bestand voor ParaView", "MED file for ParaView"),
      "bool", None),
     ("elem_hex8", ("Hex8-volume-elementen", "Hex8 solid elements"),
@@ -471,6 +473,7 @@ _SCHEMES = {"dyna_impl_3d": ("HHT", "NEWMARK"),
 _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "mecway_solve_first": False, "result_route": "liml",
                      "convergence_monitor": True, "med_export": False,
+                     "wait_for_aster": "auto",
                      "elem_hex8": "3D",
                      "elem_shell": "DKT", "elem_beam": "POU_D_E"}
 
@@ -2110,6 +2113,287 @@ def results_dialog(items, work_dir):
                               "Error in the results window: {0}").format(
             result["error"]))
     return result["value"]
+
+
+# ==========================================
+# STATUS WINDOW WHILE CODE-ASTER RUNS (setting wait_for_aster = "auto")
+# ==========================================
+_STATUS_POLL_MS = 500       # interval of job.poll() [ms]
+
+
+def _mecway_window():
+    """Handle (IntPtr) of Mecway's main window, or None (e.g. offline
+    tests: a process without a window)."""
+    try:
+        from System import IntPtr
+        from System.Diagnostics import Process
+        handle = Process.GetCurrentProcess().MainWindowHandle
+        return None if handle == IntPtr.Zero else handle
+    except Exception:
+        return None
+
+
+def _user32():
+    """(user32, kernel32) via ctypes, or None if ctypes is not available
+    (NOT verified that Mecway's IronPython always has it)."""
+    try:
+        import ctypes
+        return ctypes.windll.user32, ctypes.windll.kernel32
+    except Exception:
+        return None
+
+
+def run_status_dialog(job, owner=None):
+    """
+    Modal status window while Code-Aster runs (bridge_run_aster.AsterJob):
+    elapsed time, current state from the live output, a progress bar and the
+    button Stop. A WinForms Timer calls job.poll() every _STATUS_POLL_MS
+    on the UI thread (poll is cheap and never waits); the window closes by
+    itself when the run has ended. Stop (or the close button, Esc) asks for
+    confirmation and then calls job.stop().
+
+    Modal: the user cannot change the Mecway model during the run (it is
+    reopened with the results afterwards). On Mecway's UI thread
+    ShowDialog() disables Mecway's windows itself; in an own STA thread
+    (script not on an STA thread, as in _show_winforms_dialog) Mecway's main
+    window is disabled with EnableWindow and enabled again afterwards. On
+    which thread Mecway runs scripts is NOT verified.
+
+    owner : IntPtr of the owner window, or None = Mecway's main window.
+    Returns when the job has ended. ImportError without Windows Forms,
+    RuntimeError on an error in the window; the caller (bridge_run_aster)
+    then falls back to confirming with OK.
+    """
+    try:
+        import clr
+        clr.AddReference("System.Windows.Forms")
+        clr.AddReference("System.Drawing")
+        from System.Windows.Forms import (
+            Form, Label, Timer, DialogResult, FormBorderStyle,
+            FormStartPosition, MessageBox, MessageBoxButtons, MessageBoxIcon,
+            MessageBoxDefaultButton, ProgressBar, ProgressBarStyle,
+            IWin32Window, MethodInvoker)
+        from System.Drawing import Point, Size, Color
+        from System.Threading import Thread, ThreadStart, ApartmentState
+    except Exception as e:
+        raise ImportError(tr("Windows Forms niet beschikbaar: {0}",
+                             "Windows Forms not available: {0}").format(e))
+
+    class _Owner(IWin32Window):
+        """The owner window (Mecway) for ShowDialog(owner)."""
+        def __init__(self, handle):
+            self._handle = handle
+
+        @property
+        def Handle(self):
+            return self._handle
+
+    result = {"error": None}
+    handle = owner if owner is not None else _mecway_window()
+
+    def build_and_run():
+        form = None
+        timer = None
+        disabled = []
+        try:
+            look = _Look()
+            form = Form()
+            form.Text = tr("MecwayAsterBridge - Code-Aster rekent",
+                           "MecwayAsterBridge - Code-Aster running")
+            form.Font = look.font
+            form.BackColor = look.col("page_bg")
+            form.ClientSize = Size(600, 336)
+            form.StartPosition = FormStartPosition.CenterScreen
+            form.FormBorderStyle = FormBorderStyle.FixedDialog
+            form.MaximizeBox = False
+            form.MinimizeBox = False
+            form.ShowInTaskbar = False
+            look.header(form, tr("Code-Aster-run", "Code-Aster run"),
+                        bridge_utils.run_name(""))
+
+            def label(y, height, bold=False, color=None):
+                lbl = Label()
+                lbl.Location = Point(16, y)
+                lbl.Size = Size(568, height)
+                lbl.AutoEllipsis = True
+                if bold:
+                    lbl.Font = look.section
+                if color is not None:
+                    lbl.ForeColor = color
+                form.Controls.Add(lbl)
+                return lbl
+
+            lbl_head = label(72, 22, bold=True)
+            bar = ProgressBar()
+            bar.Location = Point(16, 98)
+            bar.Size = Size(568, 16)
+            bar.Style = ProgressBarStyle.Marquee
+            bar.MarqueeAnimationSpeed = 40
+            form.Controls.Add(bar)
+            lbl_time = label(122, 20)
+            lbl_detail = label(144, 36)
+            lbl_msgs = label(182, 20)
+            lbl_warn = label(204, 36, color=Color.FromArgb(198, 40, 40))
+            note = label(244, 34, color=look.col("muted"))
+            note.Text = tr(
+                "Mecway is geblokkeerd tot de run klaar is; daarna worden de "
+                "resultaten automatisch ingeladen. Het Code-Aster-venster en "
+                "het convergentiescherm tonen alle uitvoer.",
+                "Mecway is locked until the run has finished; then the "
+                "results are loaded automatically. The Code-Aster window "
+                "and the convergence window show all output.")
+            btn_stop = look.button(tr("Stoppen...", "Stop..."))
+            btn_stop.Location = Point(484, 288)
+            btn_stop.Width = 100
+            form.Controls.Add(btn_stop)
+            form.CancelButton = btn_stop       # Esc = Stop (with question)
+
+            state = {"closing": False, "asking": False}
+
+            def refresh():
+                info = job.status()
+                lbl_head.Text = info["headline"]
+                lbl_time.Text = info["time"]
+                lbl_detail.Text = info["detail"] or u""
+                lbl_msgs.Text = info["messages"] or u""
+                lbl_warn.Text = info["warning"] or u""
+                pct = info["percent"]
+                if pct is not None and 0 <= pct <= 100:
+                    if bar.Style != ProgressBarStyle.Continuous:
+                        bar.Style = ProgressBarStyle.Continuous
+                    bar.Value = int(pct)
+                elif bar.Style != ProgressBarStyle.Marquee:
+                    bar.Style = ProgressBarStyle.Marquee
+
+            def finish():
+                state["closing"] = True
+                timer.Stop()
+                form.DialogResult = DialogResult.OK     # closes ShowDialog
+
+            def on_tick(sender, args):
+                if state["closing"] or state["asking"]:
+                    return
+                try:
+                    done = job.poll()
+                    refresh()
+                except Exception as e:
+                    result["error"] = e
+                    done = True
+                if done:
+                    finish()
+
+            def ask_stop():
+                if state["closing"] or state["asking"]:
+                    return
+                state["asking"] = True
+                try:
+                    answer = MessageBox.Show(
+                        form, tr("Deze Code-Aster-run stoppen?\n\nAlleen de "
+                                 "processen van deze run worden beeindigd. "
+                                 "De uitvoer tot nu toe komt in de .mess; "
+                                 "Code-Aster schrijft de resultaten pas aan "
+                                 "het einde, dus meestal zijn er geen.",
+                                 "Stop this Code-Aster run?\n\nOnly the "
+                                 "processes of this run are ended. The "
+                                 "output so far goes into the .mess; "
+                                 "Code-Aster writes the results only at the "
+                                 "end, so usually there are none."),
+                        "MecwayAsterBridge", MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question,
+                        MessageBoxDefaultButton.Button2)
+                finally:
+                    state["asking"] = False
+                if answer != DialogResult.Yes or state["closing"]:
+                    return
+                lbl_head.Text = tr("Code-Aster wordt gestopt...",
+                                   "Stopping Code-Aster...")
+                btn_stop.Enabled = False
+                form.Refresh()
+                try:
+                    job.stop()
+                except Exception as e:
+                    result["error"] = e
+                refresh()
+                finish()
+
+            def on_stop(sender, args):
+                ask_stop()
+
+            def on_closing(sender, args):
+                # The close button (X) or Alt+F4 during the run: same as Stop.
+                if state["closing"] or job.finished():
+                    return
+                args.Cancel = True
+                form.BeginInvoke(MethodInvoker(ask_stop))
+
+            def on_shown(sender, args):
+                refresh()
+                timer.Start()
+
+            btn_stop.Click += on_stop
+            form.FormClosing += on_closing
+            form.Shown += on_shown
+            timer = Timer()
+            timer.Interval = _STATUS_POLL_MS
+            timer.Tick += on_tick
+            refresh()
+
+            use_owner = handle is not None
+            native = _user32() if handle is not None else None
+            if native is not None:
+                user32, kernel32 = native
+                try:
+                    import ctypes
+                    hwnd = ctypes.c_void_p(handle.ToInt64())
+                    other = (user32.GetWindowThreadProcessId(hwnd, None) !=
+                             kernel32.GetCurrentThreadId())
+                    if other:
+                        # EnableWindow on a window of another thread waits
+                        # for that thread (WM_ENABLE): only if it answers
+                        # within 0.5 s (WM_NULL, SMTO_ABORTIFHUNG).
+                        answer = ctypes.c_size_t(0)
+                        use_owner = bool(user32.SendMessageTimeoutW(
+                            hwnd, 0, 0, 0, 0x0002, 500,
+                            ctypes.byref(answer)))
+                    if use_owner and other and user32.IsWindowEnabled(hwnd):
+                        # ShowDialog only disables the windows of its own
+                        # thread.
+                        user32.EnableWindow(hwnd, False)
+                        disabled.append(hwnd)
+                except Exception:
+                    pass
+            if use_owner:
+                form.ShowDialog(_Owner(handle))
+            else:
+                form.TopMost = True       # not hidden behind Mecway
+                form.ShowDialog()
+        except Exception as e:
+            result["error"] = e
+        finally:
+            if disabled:
+                try:
+                    _user32()[0].EnableWindow(disabled[0], True)
+                except Exception:
+                    pass
+            if timer is not None:
+                timer.Stop()
+                timer.Dispose()
+            if form is not None:
+                form.Dispose()
+
+    if Thread.CurrentThread.GetApartmentState() == ApartmentState.STA:
+        build_and_run()
+    else:
+        thread = Thread(ThreadStart(build_and_run))
+        thread.SetApartmentState(ApartmentState.STA)
+        thread.Start()
+        thread.Join()
+
+    if result["error"] is not None:
+        raise RuntimeError(tr("Fout in het statusvenster: {0}",
+                              "Error in the status window: {0}").format(
+            result["error"]))
+    return job.finished()
 
 
 # ==========================================

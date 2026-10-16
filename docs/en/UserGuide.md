@@ -76,11 +76,36 @@ Related documents:
    `<model>_<run-id>.comm` and `.export` to the work folder (§5) and starts Code-Aster
    in a **separate window**. With route `tabel` it first checks that the Mecway
    solution matches the mesh; if not, it stops with a message.
-5. Mecway shows "Code_Aster has been started in a separate window. Click OK once the
-   calculation has finished." (with the convergence window on, "The convergence window
-   shows the progress." in between; with language `nl` the Dutch text "Code_Aster is
-   gestart in een apart venster. ..."). Wait until the Code-Aster window shows
-   `DIAGNOSTIC JOB` and only then click OK. If you click too early, the bridge asks
+5. The **status window** "Code-Aster run" appears (setting "Waiting for Code-Aster" =
+   `auto`, default). It shows the elapsed time (with the time limit of the `.export`), what
+   Code-Aster is doing at that moment (nonlinear: time reached, attempt, level and Newton
+   iteration; static: the phase of the linear solver; modal: the modes found; otherwise the
+   last line of the output) and the number of errors and alarms so far. The window is
+   modal: Mecway is locked until the run has finished, because the bridge then reopens the
+   model with the results. It closes by itself once Code-Aster has finished (`run_aster`
+   has returned); the bridge recognises that from an end marker that the Code-Aster window
+   writes (`<model>_<run-id>_done.txt`, with the exit code of `run_aster`; removed after the
+   run), and otherwise from `DIAGNOSTIC JOB` at the end of the `.mess`.
+   - "Stop..." (or the close button, Esc) asks for confirmation first and then ends only
+     the processes of this run (the Code-Aster window and everything started from it). The
+     output up to that moment goes into the `.mess` with the line `BRIDGE_GESTOPT`; the
+     status box and the convergence window report "Run stopped by the user." Code-Aster
+     writes the results only at the end of the run, so a stopped run usually has no
+     results. An adaptive refinement (§4) stops as well.
+   - If you close the Code-Aster window yourself during the run, the bridge reports "Run
+     aborted: the Code-Aster window was closed." and continues as after Stop.
+   - If `run_aster` ends with an exit code other than 0, the status box reports that code
+     with the path of the `.mess`; the Code-Aster window then stays open (as with an error
+     in the `.mess`).
+   - If the run takes longer than the time limit (with a 2 minute margin), the window
+     warns; Code-Aster normally stops by itself at the limit.
+
+   With "Waiting for Code-Aster" = `confirm` (or if the status window cannot be shown) it
+   works as before: Mecway shows "Code_Aster has been started in a separate window. Click
+   OK once the calculation has finished." (with the convergence window on, "The
+   convergence window shows the progress." in between; with language `nl` the Dutch text
+   "Code_Aster is gestart in een apart venster. ..."). Wait until the Code-Aster window
+   shows `DIAGNOSTIC JOB` and only then click OK. If you click too early, the bridge asks
    again.
 6. The results arrive in Mecway:
    - route `liml` (default): the bridge writes the results into the `.liml` (the
@@ -144,6 +169,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Mecway solve first as a check" | off | solves in Mecway first and stops on an error. Writes `<model>_<run-id>_vergelijking.csv` (Mecway and Code-Aster value per node) and logs the largest difference per variable; for modal and buckling the log compares the frequency or factor per mode |
 | "Results to Mecway" | `liml` | `liml`: all time steps or modes, element-node values too; the model is reopened. `tabel` (table): nodal values of the last time only, into the existing Mecway solution; requires a solution that matches the mesh; Static and Nonlinear static only (not dynamic, thermal, modal or buckling) |
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
+| "Waiting for Code-Aster" | `auto` | `auto`: a modal status window with the progress and "Stop..."; the bridge recognises the end of the run itself and then loads the results (§2 step 5). `confirm`: you click OK in Mecway when the Code-Aster window shows `DIAGNOSTIC JOB` (the earlier behaviour) |
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
 
 Below the settings the page shows the mapping of `auto` to the Mecway analysis types, a
@@ -413,6 +439,7 @@ overwrites nothing. Messages show the real name.
 | `<model>_<run-id>.comm`, `<model>_<run-id>.export` | Code-Aster input; can be rerun with `run_aster.bat <model>_<run-id>.export` |
 | `<model>_<run-id>.mess` | Code-Aster messages (errors, alarms, tables with `UNITE=6`) |
 | `<model>_<run-id>_console.txt` | full console output of Code-Aster (including Python errors) |
+| `<model>_<run-id>_done.txt` | end marker with the exit code of `run_aster` (§2 step 5); exists only briefly, the bridge removes it after the run |
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |

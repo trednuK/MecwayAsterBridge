@@ -11,11 +11,18 @@
 # different cause (launcher not found, permission problem) than failure
 # in those other modules.
 #
-# Synchronisation: Code-Aster runs in a separate cmd window. This module
-# does NOT wait until the solver has finished; instead mw.message() shows
-# a dialog that the user must confirm manually. That is a
-# deliberate choice because run_aster.bat gives no reliable exit signal
-# and the solver output (.mess) is written asynchronously.
+# Synchronisation: Code-Aster runs in a separate cmd window ('cmd /k', the
+# window stays open so errors can be read). The window runs aster_launch.bat,
+# which calls run_aster.bat and then writes the exit code of run_aster to an
+# end marker file (<model>_<run_id>_done.txt). AsterJob watches the run: the
+# end marker, else "DIAGNOSTIC JOB" at the end of the .mess, else the end of
+# the cmd process (window closed). Setting wait_for_aster:
+#   "auto"    : bridge_gui.run_status_dialog() shows a modal status window
+#               (progress from the live fort.6, Stop button) and closes when
+#               the run has ended; then the results are loaded.
+#   "confirm" : mw.message() asks the user to click OK when Code-Aster has
+#               finished (the earlier behaviour). Also the fallback when the
+#               status window cannot be shown (no Windows Forms).
 #
 # Console output: the output of run_aster (including stderr) goes via "tee"
 # from the Code-Aster installation (tools\tee.exe) to the window AND to
@@ -29,14 +36,19 @@
 #
 # Compatible with IronPython 2.7.9.
 
+import codecs
 import os
 import re
+import shutil
 import subprocess
 import time
 
 from bridge_utils import (log, CONFIG_BRIDGE, tr, run_name, run_names,
                           exe_aster_path)
-from bridge_convergence import python_errors
+from bridge_convergence import (python_errors, ConvergenceParser,
+                                find_live_fort6, aster_tmp_dirs,
+                                lin_phase_title, modes_text, stopped_text,
+                                STOPPED_MARK)
 
 
 # Messages in study.mess appear as "<F> <CODE>" in a box; <A> is an
@@ -480,22 +492,431 @@ def aster_root():
         os.path.abspath(exe_aster_path())))
 
 
-def _launch_command(export_path, console_path):
+# End marker of a run (written by aster_launch.bat): the exit code of
+# run_aster. Name: run_name(DONE_SUFFIX).
+DONE_SUFFIX = "_done.txt"
+_LAUNCH_BAT = "aster_launch.bat"
+# After "DIAGNOSTIC JOB" in the .mess, wait this long [s] for the end marker
+# (run_aster removes its temporary folder after copying the .mess, then
+# returns) before the run counts as ended anyway.
+_MARKER_GRACE = 30.0
+# The status window warns when the elapsed time exceeds the time limit of
+# the .export by this margin [s]. run_aster stops the job itself at the
+# limit; whether the limit is CPU or elapsed time is NOT verified.
+_TIME_LIMIT_MARGIN = 120.0
+_CREATE_NO_WINDOW = 0x08000000
+# Echo of a command in fort.6 (Code-Aster 17.4 prints each command of the
+# .comm before running it, e.g. "res = STAT_NON_LINE(AFFICHAGE=..." at the
+# start of a line; seen in study.mess of the test models).
+_COMMAND_ECHO_RE = re.compile(
+    r"^(?:[A-Za-z_]\w*\s*=\s*)?([A-Z][A-Z0-9_]{2,})\(")
+_CREATE_NEW_CONSOLE = 0x00000010
+
+
+def _launch_bat():
+    """aster_launch.bat next to this module, or None if it is missing."""
+    bat = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       _LAUNCH_BAT)
+    return bat if os.path.isfile(bat) else None
+
+
+def _launch_command(export_path, console_path, marker_path=None):
     """
     cmd line for run_aster in its own window. 'cmd /k' keeps the
     window open so the user can read errors; nested quotes are
     needed because the paths may contain spaces (cmd removes the outer
     pair). With tools\\tee.exe from the installation the output
-    (stdout and stderr, 2>&1) also goes to console_path.
+    (stdout and stderr, 2>&1) also goes to console_path. With marker_path
+    the window runs aster_launch.bat, which writes the exit code of
+    run_aster to marker_path when run_aster returns.
 
-    Returns (command, True if the output is captured).
+    Returns (command, True if the output is captured, True if the end
+    marker is written).
     """
-    run = '"{0}" "{1}"'.format(exe_aster_path(), export_path)
+    bat = _launch_bat() if marker_path else None
+    if bat:
+        run = '"{0}" "{1}" "{2}" "{3}"'.format(bat, exe_aster_path(),
+                                               export_path, marker_path)
+    else:
+        run = '"{0}" "{1}"'.format(exe_aster_path(), export_path)
     tee = os.path.join(aster_root(), "tools", "tee.exe")
     if console_path and os.path.isfile(tee):
         return ('cmd /k "{0} 2>&1 | "{1}" "{2}""'.format(
-            run, tee, console_path), True)
-    return 'cmd /k "{0}"'.format(run), False
+            run, tee, console_path), True, bool(bat))
+    return 'cmd /k "{0}"'.format(run), False, bool(bat)
+
+
+def read_marker(path):
+    """Exit code from the end marker file, or None if it is missing (run
+    not ended yet). An unreadable code gives -1 (ended, unknown code)."""
+    if not path or not os.path.isfile(path):
+        return None
+    try:
+        f = open(path, "r")
+        try:
+            text = f.read().strip()
+        finally:
+            f.close()
+    except (IOError, OSError):
+        return None
+    try:
+        return int(text.split()[0])
+    except (ValueError, IndexError):
+        return -1
+
+
+def export_time_limit(export_path):
+    """'P time_limit' of the .export [s], or None."""
+    try:
+        f = open(export_path, "r")
+        try:
+            for line in f:
+                parts = line.split()
+                if len(parts) >= 3 and parts[:2] == ["P", "time_limit"]:
+                    return float(parts[2])
+        finally:
+            f.close()
+    except (IOError, OSError, ValueError):
+        pass
+    return None
+
+
+def _mess_tail_done(mess_path, since, tail=4096):
+    """True if the .mess is from this run (since: time.time() at the start)
+    and its end contains 'DIAGNOSTIC JOB' (only the last bytes are read)."""
+    try:
+        if os.path.getmtime(mess_path) < since - 1.0:
+            return False
+        f = open(mess_path, "rb")
+        try:
+            f.seek(0, 2)
+            size = f.tell()
+            f.seek(max(0, size - tail))
+            text = f.read().decode("utf-8", "replace")
+        finally:
+            f.close()
+        return _MESS_DONE in text
+    except Exception:
+        return False
+
+
+def kill_process_tree(pid):
+    """
+    End process pid and all its child processes (taskkill /T /F). Only for
+    the cmd process that run_AsterSolver started: its children are the
+    Code-Aster processes of this run (aster_launch.bat, run_aster, the job
+    and tee). Returns True if taskkill reported success.
+    """
+    try:
+        proc = subprocess.Popen(["taskkill", "/T", "/F", "/PID", str(pid)],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                creationflags=_CREATE_NO_WINDOW)
+        proc.communicate()
+        log("INFO: taskkill /T /F /PID {0}: exit code {1}.".format(
+            pid, proc.returncode))
+        return proc.returncode == 0
+    except Exception as e:
+        log(tr("WARNING: Code-Aster-processen niet beeindigd: {0}",
+               "WARNING: Code-Aster processes not ended: {0}").format(e))
+        return False
+
+
+def _duration(seconds):
+    """'m:ss' or 'h:mm:ss'."""
+    seconds = int(max(0, seconds))
+    h, rest = divmod(seconds, 3600)
+    m, s = divmod(rest, 60)
+    if h:
+        return "%d:%02d:%02d" % (h, m, s)
+    return "%d:%02d" % (m, s)
+
+
+# ==========================================
+# WATCHING A RUN (status window, end detection, Stop)
+# ==========================================
+class AsterJob(object):
+    """
+    One running Code-Aster job, started by run_AsterSolver. poll() is
+    cheap (called every 0.5 s by the status window): it reads the new part
+    of the live fort.6 (bridge_convergence.find_live_fort6, the same source
+    as the convergence window) and checks the end of the run.
+
+    state: "running", "finished" (run_aster returned: end marker, or
+    DIAGNOSTIC JOB in the .mess), "stopped" (Stop button), "closed"
+    (the Code-Aster window was closed) or "confirmed" (the user clicked OK,
+    wait_for_aster = "confirm").
+    """
+
+    _SCAN_EVERY = 2.0      # s between searches for the live fort.6
+    _MESS_EVERY = 2.0      # s between checks of the .mess
+    _CHUNK = 512 * 1024    # max. bytes of fort.6 per poll
+
+    def __init__(self, process, work_dir, export_path, start_time,
+                 marker_path=None, clock=None):
+        self.process = process
+        self.pid = process.pid
+        self.work_dir = work_dir
+        self.mess_path = os.path.join(work_dir, run_name(".mess"))
+        self.marker_path = marker_path
+        self.start = start_time
+        self.time_limit = export_time_limit(export_path)
+        self.state = "running"
+        self.exit_code = None
+        self._clock = clock or time.time
+        self._tmp_dirs = None
+        self._fort6 = None
+        self._offset = 0
+        self._decoder = codecs.getincrementaldecoder("utf-8")("replace")
+        self._parser = ConvergenceParser()
+        self._next_scan = 0.0
+        self._next_mess = 0.0
+        self._mess_done_at = None
+        self._last_line = u""
+        self._command = u""
+        self._limit_warned = False
+
+    # ---------- state ----------
+    def finished(self):
+        return self.state != "running"
+
+    def ended_early(self):
+        """True if the run did not end by itself (Stop or window closed)."""
+        return self.state in ("stopped", "closed")
+
+    def elapsed(self):
+        return max(0.0, self._clock() - self.start)
+
+    def poll(self):
+        """Read new output and check the end. Returns True once the run
+        has ended (state no longer "running")."""
+        if self.state != "running":
+            return True
+        now = self._clock()
+        self._read_live(now)
+        code = read_marker(self.marker_path)
+        if code is not None:
+            self._end("finished", code)
+            return True
+        if self.process.poll() is not None:
+            # 'cmd /k' only ends when its window is closed.
+            if _mess_tail_done(self.mess_path, self.start):
+                self._end("finished", None)
+            else:
+                self._salvage("window")
+                self._end("closed", None)
+            return True
+        if now >= self._next_mess:
+            self._next_mess = now + self._MESS_EVERY
+            if _mess_tail_done(self.mess_path, self.start):
+                if self._mess_done_at is None:
+                    self._mess_done_at = now
+                if (self.marker_path is None or
+                        now - self._mess_done_at >= _MARKER_GRACE):
+                    self._end("finished", None)
+                    return True
+        if (self.time_limit and not self._limit_warned and
+                self.elapsed() > self.time_limit + _TIME_LIMIT_MARGIN):
+            self._limit_warned = True
+            log(tr("WARNING: De run duurt langer dan de tijdslimiet ({0} "
+                   "s) van de .export.",
+                   "WARNING: The run takes longer than the time limit ({0} "
+                   "s) of the .export.").format(int(self.time_limit)))
+        return False
+
+    def stop(self, reason="user"):
+        """
+        End this run: only the process tree of the cmd window that
+        run_AsterSolver started (kill_process_tree). The live fort.6 is
+        copied to the .mess (with a line BRIDGE_GESTOPT) and the temporary
+        run_aster folder of this run is removed, as run_aster would have
+        done. A run that has just ended is not stopped.
+        """
+        if self.poll():
+            return
+        log("INFO: Stop requested ({0}); ending the process tree of pid "
+            "{1}.".format(reason, self.pid))
+        kill_process_tree(self.pid)
+        deadline = time.time() + 10.0
+        while self.process.poll() is None and time.time() < deadline:
+            time.sleep(0.2)
+        code = read_marker(self.marker_path)
+        if code is not None:          # ended just before the stop
+            self._end("finished", code)
+            return
+        self._read_live(self._clock(), force=True)
+        self._salvage(reason)
+        self._end("stopped", None)
+
+    def _end(self, state, code):
+        self.state = state
+        self.exit_code = code
+        log("INFO: Code-Aster run ended: {0}, exit code {1}, after "
+            "{2}.".format(state, code, _duration(self.elapsed())))
+
+    # ---------- live output ----------
+    def _read_live(self, now, force=False):
+        try:
+            if self._fort6 is None:
+                if not force and now < self._next_scan:
+                    return
+                self._next_scan = now + self._SCAN_EVERY
+                if self._tmp_dirs is None:
+                    self._tmp_dirs = aster_tmp_dirs(aster_root())
+                fort6, _created = find_live_fort6(self._tmp_dirs,
+                                                  self.mess_path, self.start)
+                if fort6 is None:
+                    return
+                self._fort6 = fort6
+                log("INFO: Live output of the run: {0}".format(fort6))
+            f = open(self._fort6, "rb")
+            try:
+                f.seek(self._offset)
+                raw = f.read(self._CHUNK)
+            finally:
+                f.close()
+        except (IOError, OSError):
+            return       # not there yet, or run_aster removed the folder
+        if not raw:
+            return
+        self._offset += len(raw)
+        text = self._decoder.decode(raw)
+        self._parser.feed(text)
+        for line in reversed(text.splitlines()):
+            m = _COMMAND_ECHO_RE.match(line)
+            if m:
+                self._command = m.group(1)
+                break
+        for line in reversed(text.splitlines()):
+            line = line.strip().strip(_MESS_BOX_SIDE).strip()
+            if line and line[0] not in u"=-*#" + _MESS_BOX_END + u"╔":
+                self._last_line = line[:120]
+                break
+
+    def _salvage(self, reason):
+        """After a stop: the .mess from the live fort.6 plus a line
+        BRIDGE_GESTOPT <reason> (convergence window, aster_mess_errors),
+        and remove the temporary run_aster folder of this run."""
+        if self._fort6 is None:
+            self._read_live(self._clock(), force=True)
+        fort6 = self._fort6
+        try:
+            fresh = (os.path.exists(self.mess_path) and
+                     os.path.getmtime(self.mess_path) >= self.start - 1.0)
+            if fort6 and os.path.isfile(fort6) and not fresh:
+                shutil.copyfile(fort6, self.mess_path)
+                fresh = True
+            if fresh:
+                f = open(self.mess_path, "ab")
+                try:
+                    f.write((u"\n{0} {1}\n".format(STOPPED_MARK, reason))
+                            .encode("utf-8"))
+                finally:
+                    f.close()
+        except (IOError, OSError) as e:
+            log(tr("WARNING: .mess van de gestopte run niet geschreven: {0}",
+                   "WARNING: .mess of the stopped run not written: "
+                   "{0}").format(e))
+        if fort6:
+            # Only the folder of this run: find_live_fort6 matched it on
+            # the .mess path in its copy of the .export.
+            run_dir = os.path.dirname(fort6)
+            for _i in range(10):
+                shutil.rmtree(run_dir, ignore_errors=True)
+                if not os.path.exists(run_dir):
+                    break
+                time.sleep(0.5)
+            if os.path.exists(run_dir):
+                log(tr("WARNING: Tijdelijke map van de run niet verwijderd: "
+                       "{0}",
+                       "WARNING: Temporary folder of the run not removed: "
+                       "{0}").format(run_dir))
+
+    # ---------- texts for the status window ----------
+    def status(self):
+        """
+        Texts for the status window (bridge_gui.run_status_dialog), in the
+        chosen language: dict with "headline", "time", "detail",
+        "messages", "warning" (may be empty) and "percent" (int or None).
+        """
+        data = self._parser.data
+        elapsed = self.elapsed()
+        if self.state == "stopped":
+            head = stopped_text("user")
+        elif self.state == "closed":
+            head = stopped_text("window")
+        elif self.finished():
+            head = tr(u"Code-Aster is klaar; resultaten worden geladen...",
+                      u"Code-Aster has finished; loading the results...")
+        elif self._fort6 is None:
+            head = tr(u"Code-Aster wordt gestart...",
+                      u"Code-Aster is starting...")
+        else:
+            head = tr(u"Code-Aster rekent...", u"Code-Aster is running...")
+        when = tr(u"Verstreken tijd: {0}", u"Elapsed time: {0}").format(
+            _duration(elapsed))
+        if self.time_limit:
+            when += tr(u" (tijdslimiet {0})", u" (time limit {0})").format(
+                _duration(self.time_limit))
+        errors = len([m for m in data.messages if m["kind"] == "fout"])
+        alarms = len([m for m in data.messages if m["kind"] == "alarm"])
+        messages = u""
+        if errors or alarms:
+            messages = tr(u"Meldingen tot nu toe: {0} fout(en), {1} "
+                          u"alarm(en).",
+                          u"Messages so far: {0} error(s), {1} "
+                          u"alarm(s).").format(errors, alarms)
+        warning = u""
+        if (self.time_limit and not self.finished() and
+                elapsed > self.time_limit + _TIME_LIMIT_MARGIN):
+            warning = tr(u"De run duurt langer dan de tijdslimiet. "
+                         u"Code-Aster stopt normaal zelf bij de limiet; "
+                         u"reageert het Code-Aster-venster niet meer, "
+                         u"gebruik dan Stoppen.",
+                         u"The run takes longer than the time limit. "
+                         u"Code-Aster normally stops by itself at the "
+                         u"limit; if the Code-Aster window no longer "
+                         u"responds, use Stop.")
+        overall = data.overall_progress()
+        return {"headline": head, "time": when,
+                "detail": self._detail(data), "messages": messages,
+                "warning": warning,
+                "percent": overall[0] if overall else None}
+
+    def _detail(self, data):
+        """Current state from the output: step/time/iteration (nonlinear),
+        phase of the linear solver, modes, or the last line."""
+        if data.steps:
+            cur = data.steps[-1]
+            parts = [data.command or u""]
+            last = data.last_converged()
+            if last is not None:
+                parts.append(tr(u"bereikt t = {0} s",
+                                u"reached t = {0} s").format(
+                                    "%.6g" % last.instant))
+            parts.append(tr(u"poging {0}: t = {1} s, niveau {2}, iteratie "
+                            u"{3}",
+                            u"attempt {0}: t = {1} s, level {2}, iteration "
+                            u"{3}").format(cur.index + 1,
+                                           "%.6g" % cur.instant, cur.level,
+                                           len(cur.iterations)))
+            return u" | ".join(p for p in parts if p)
+        lin = data.last_linear()
+        if lin is not None:
+            if lin.current is not None and not lin.finished():
+                phase = lin_phase_title(lin.current, lin.method())
+            elif lin.status == "mislukt":
+                phase = tr(u"mislukt", u"failed")
+            elif lin.finished():
+                phase = tr(u"opgelost", u"solved")
+            else:
+                phase = tr(u"bezig", u"running")
+            return u"{0} ({1}): {2}".format(lin.command, lin.method(), phase)
+        if data.modes:
+            return tr(u"Modes: {0}", u"Modes: {0}").format(modes_text(data))
+        if self._command:
+            return tr(u"Commando: {0}", u"Command: {0}").format(self._command)
+        return self._last_line
 
 
 def _console_text(work_dir, since=None):
@@ -638,9 +1059,72 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None):
 # ==========================================
 # START CODE-ASTER
 # ==========================================
-def run_AsterSolver(export_path, work_dir, resu_name, mw):
+def _remove_marker(path):
+    """Remove the end marker (and its temporary file) after the run."""
+    for name in (path, path + ".tmp"):
+        try:
+            if os.path.exists(name):
+                os.remove(name)
+        except OSError:
+            pass
+
+
+def _status_window(job):
+    """The status window of bridge_gui (wait_for_aster = "auto"). Returns
+    False if it cannot be shown (no Windows Forms or an error in the
+    window); the caller then falls back to "confirm"."""
+    try:
+        import bridge_gui
+        bridge_gui.run_status_dialog(job)
+        return True
+    except Exception as e:
+        log(tr("WARNING: Statusvenster niet getoond ({0}); bevestig het "
+               "einde van de run met OK.",
+               "WARNING: Status window not shown ({0}); confirm the end of "
+               "the run with OK.").format(e))
+        return False
+
+
+def _confirm_end(job, work_dir, start_time, monitor, mw):
+    """wait_for_aster = "confirm": the user clicks OK when Code-Aster has
+    finished (mw.message blocks)."""
+    if job.poll():
+        return              # the status window failed after the end
+    mw.message(
+        tr("Code_Aster is gestart in een apart venster.\n",
+           "Code_Aster has been started in a separate window.\n") +
+        (tr("Het convergentiescherm toont de voortgang.\n",
+            "The convergence window shows the progress.\n") if monitor
+         else "") +
+        tr("Klik op OK zodra de berekening klaar is.",
+           "Click OK once the calculation has finished.")
+    )
+    # Clicked OK too early? Then ask once more, because
+    # process.terminate() below closes the window (seen in Mecway).
+    if not job.poll() and not _mess_finished(work_dir, start_time):
+        log(tr("WARNING: study.mess is na de eerste OK nog niet "
+               "afgesloten.",
+               "WARNING: study.mess was not yet closed after the first "
+               "OK."))
+        mw.message(run_names(tr(
+            "Code-Aster is nog niet klaar (study.mess is niet "
+            "afgesloten).\nKlik op OK zodra in het venster "
+            "'DIAGNOSTIC JOB' staat.",
+            "Code-Aster has not finished yet (study.mess is not "
+            "closed).\nClick OK once the window shows "
+            "'DIAGNOSTIC JOB'."
+        )))
+    if not job.poll():
+        job.state = "confirmed"
+        log("INFO: End of the run confirmed by the user (after {0}).".format(
+            _duration(job.elapsed())))
+
+
+def run_AsterSolver(export_path, work_dir, resu_name, mw, wait=None):
     """
-    Start Code-Aster via the run_aster.bat launcher in a separate cmd window.
+    Start Code-Aster via the run_aster.bat launcher in a separate cmd window
+    and wait until the run has ended (setting wait_for_aster, see the
+    header of this module).
 
     Parameters
     ----------
@@ -649,14 +1133,17 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
     work_dir    : str  - Work folder (cwd for the subprocess).
     resu_name   : str  - File name of the .resu file (unique per run
                          through the timestamp; only used for the log).
-    mw          : obj  - Mecway API object for mw.message() (synchronous
-                         dialog while Code-Aster runs).
+    mw          : obj  - Mecway API object for mw.message() ("confirm").
+    wait        : function(AsterJob) -> bool, or None - waits until the job
+                  has ended ("auto"); default the status window
+                  (_status_window). False: not possible, then "confirm".
 
     Returns
     -------
-    bool - True if the subprocess was started successfully, False on error.
-           Note: this return value says NOTHING about whether the solver
-           computed successfully.
+    AsterJob or False - the job (state: finished / stopped / closed /
+           confirmed, exit_code) if Code-Aster was started, False on error.
+           Note: the state says NOTHING about whether the solver computed
+           successfully (aster_mess_errors).
     """
     log("--- Running Code_Aster ---")
     exe = exe_aster_path()
@@ -683,7 +1170,10 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
                 os.remove(console_path)   # not to be confused with an old run
         except OSError:
             pass
-        cmd_command, captured = _launch_command(export_path, console_path)
+        marker_path = os.path.join(work_dir, run_name(DONE_SUFFIX))
+        _remove_marker(marker_path)      # not from an earlier run
+        cmd_command, captured, marked = _launch_command(
+            export_path, console_path, marker_path)
         if not captured:
             log(tr("WARNING: tee.exe niet gevonden in de "
                    "Code-Aster-installatie; de console-uitvoer "
@@ -691,13 +1181,22 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
                    "WARNING: tee.exe not found in the Code-Aster "
                    "installation; the console output (Python errors) is "
                    "not captured."))
+        if not marked:
+            log(tr("WARNING: {0} niet gevonden naast de scripts; het einde "
+                   "van de run wordt alleen aan de .mess herkend.",
+                   "WARNING: {0} not found next to the scripts; the end of "
+                   "the run is only recognised from the .mess.").format(
+                       _LAUNCH_BAT))
+        log("INFO: Command: {0}".format(cmd_command))
 
         start_time = time.time()
         process = subprocess.Popen(
             cmd_command,
             cwd=work_dir,
-            creationflags=0x00000010,  # CREATE_NEW_CONSOLE
+            creationflags=_CREATE_NEW_CONSOLE,
         )
+        job = AsterJob(process, work_dir, export_path, start_time,
+                       marker_path if marked else None)
 
         monitor = False
         # Also for linear analyses: then the statistics of the linear
@@ -707,30 +1206,23 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
                 os.path.join(work_dir, run_name(".mess")), start_time,
                 console_path if captured else None)
 
-        mw.message(
-            tr("Code_Aster is gestart in een apart venster.\n",
-               "Code_Aster has been started in a separate window.\n") +
-            (tr("Het convergentiescherm toont de voortgang.\n",
-                "The convergence window shows the progress.\n") if monitor
-             else "") +
-            tr("Klik op OK zodra de berekening klaar is.",
-               "Click OK once the calculation has finished.")
-        )
-        # Clicked OK too early? Then ask once more, because
-        # process.terminate() below closes the window (seen in Mecway).
-        if not _mess_finished(work_dir, start_time):
-            log(tr("WARNING: study.mess is na de eerste OK nog niet "
-                   "afgesloten.",
-                   "WARNING: study.mess was not yet closed after the first "
-                   "OK."))
-            mw.message(run_names(tr(
-                "Code-Aster is nog niet klaar (study.mess is niet "
-                "afgesloten).\nKlik op OK zodra in het venster "
-                "'DIAGNOSTIC JOB' staat.",
-                "Code-Aster has not finished yet (study.mess is not "
-                "closed).\nClick OK once the window shows "
-                "'DIAGNOSTIC JOB'."
-            )))
+        mode = CONFIG_BRIDGE.get("wait_for_aster", "auto")
+        log("INFO: Waiting for Code-Aster: {0}.".format(mode))
+        if mode != "confirm":
+            if not (wait or _status_window)(job) or not job.finished():
+                mode = "confirm"
+        if mode == "confirm":
+            _confirm_end(job, work_dir, start_time, monitor, mw)
+        if job.exit_code:
+            log(run_names(tr(
+                "WARNING: run_aster eindigde met exitcode {0} (fout); zie "
+                "{1}.",
+                "WARNING: run_aster ended with exit code {0} (error); see "
+                "{1}.")).format(job.exit_code, job.mess_path))
+        _remove_marker(marker_path)
+        if job.ended_early():
+            # Stopped or window closed: the process tree has ended.
+            return job
 
         # On an abort or a Python error (no <FIN>) the window stays
         # open: the traceback is there (and in study_console.txt).
@@ -749,10 +1241,10 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
             aborted = False
         if not aborted and console_errors(work_dir, start_time):
             aborted = True
-        if aborted:
+        if aborted or job.exit_code:
             log(tr("WARNING: Code-Aster afgebroken; het venster blijft open.",
                    "WARNING: Code-Aster aborted; the window stays open."))
-            return True
+            return job
 
         # process.terminate() closes the cmd window. That is fine: errors from
         # study.mess are reported by main() via aster_mess_errors(). The Popen
@@ -763,7 +1255,7 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw):
             process.terminate()
         except Exception:
             pass
-        return True
+        return job
 
     except Exception as e:
         log(tr("ERROR: Kon Code-Aster niet starten: {0}",
@@ -863,7 +1355,11 @@ def aster_mess_errors(work_dir, since=None):
                              u"Code-Aster stopped on an exception (\"Trying "
                              u"to close the database after an uncaught "
                              u"exception\"); see study.mess."))
-        if _MESS_DONE not in text:
+        if STOPPED_MARK in text:
+            # Stopped (AsterJob.stop) or window closed: main() reports
+            # that itself; the .mess is the output up to that moment.
+            pass
+        elif _MESS_DONE not in text:
             errors.append(tr(u"study.mess is niet afgesloten: Code-Aster is "
                              u"niet klaar of afgebroken.",
                              u"study.mess is not closed: Code-Aster has not "
