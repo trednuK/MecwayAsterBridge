@@ -31,6 +31,12 @@ get the right section axes. Both build on the fork by MishalTPC
   fork by MishalTPC (github.com/mishal0488/MecwayAsterBridge). Verification MO-31,
   LS-79–82, BU-25, LS-31d: the same results as with the attributes and equal to Mecway 34;
   all existing beam cases unchanged.
+- **Start screen**: the status box is higher when there is a message, uses a larger
+  font, and can be made larger or smaller by dragging its upper edge. If the folder of the
+  open model no longer exists (moved or deleted), Start and *Results...* say so and ask to
+  save the model with *File > Save As...*; before, the status box only showed a bare
+  Windows error. Start no longer rewrites `bridge_utils.py` when nothing was changed (the
+  order of the result fields was saved again in another order on every Start).
 - Fixes: the results export no longer reports the section-force source of the other beam
   formulation as missing; centrifugal force on trusses in models that use the formula route.
 - STAPPENPLAN: S19 (beam element with warping, `POU_D_TG`, for flexural-torsional buckling)

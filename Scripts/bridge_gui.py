@@ -596,6 +596,23 @@ def exe_missing_text():
               u"User guide §1.\n\n").format(exe or u"-")
 
 
+def _status_height(text):
+    """
+    Height in pixels of the status box of the main window: small for the
+    welcome text (empty text), larger with the outcome of a run or a
+    message, so that it can be read without scrolling. About 19 px per
+    line (Segoe UI 10); a line of more than 120 characters counts as more
+    lines. At most 260, so that the settings above it stay usable; the user
+    can drag it larger (Splitter).
+    """
+    if not text:
+        return 96
+    lines = 0
+    for line in u"{0}".format(text).replace(u"\r\n", u"\n").split(u"\n"):
+        lines += 1 + len(line) // 120
+    return max(150, min(260, 44 + 19 * lines))
+
+
 def _format_value(value, kind):
     """Text display of a value in a text field or mw.input prompt."""
     if kind in ("float_pos", "float_range"):
@@ -717,6 +734,22 @@ def _collect_current():
 # ==========================================
 # APPLYING IN MEMORY
 # ==========================================
+def _keep_order(old, new):
+    """
+    Selection of a checklist ("fields") in the order of the saved list:
+    the selection list always gives the order of RESULT_FIELD_SPECS, so
+    without this every Start rewrote bridge_utils.py with the same fields
+    in another order. Fields that stay keep their place, new ones come
+    after them (in the order of the list). A field given twice (mw.input
+    fallback) is kept once.
+    """
+    result = []
+    for f in (list(old) if isinstance(old, (list, tuple)) else []) + list(new):
+        if f in new and f not in result:
+            result.append(f)
+    return result
+
+
 def _apply_values(new_values):
     """
     Write new values into CONFIG_BRIDGE (memory).
@@ -741,6 +774,8 @@ def _apply_values(new_values):
                 continue
             new = vals[key]
             old = cfg.get(key)
+            if kind == "checklist":
+                new = _keep_order(old, new)
             if new != old:
                 cfg[key] = new
                 changes.append((name, key, kind, old, new))
@@ -955,6 +990,7 @@ class _Look(object):
         name, size = _STYLE["font"]
         self.font = Font(name, size)
         self.bold = Font(name, size, FontStyle.Bold)
+        self.status = Font(name, size + 1.0)
         self.title = Font(name, 13.0, FontStyle.Bold)
         self.section = Font(name, 10.0, FontStyle.Bold)
         self.caption = Font(name, 8.0, FontStyle.Bold)
@@ -1034,7 +1070,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             FormBorderStyle, FormStartPosition, OpenFileDialog,
             FolderBrowserDialog, MessageBox, MessageBoxButtons,
             MessageBoxIcon, ToolTip, ListBox, ScrollBars, Application,
-            Panel, DockStyle, BorderStyle, Padding)
+            Panel, DockStyle, BorderStyle, Padding, Splitter)
         from System.Drawing import Point, Size
         from System.Threading import Thread, ThreadStart, ApartmentState
     except Exception as e:
@@ -1084,22 +1120,33 @@ def _show_winforms_dialog(current, status=u"", model=None):
             # Main part (navigation left, page right), status box and
             # button bar. Docking goes from back to front in the
             # z-order: button bar at the bottom, status box above it, header
-            # at the top, the main part fills the rest.
+            # at the top, the drag edge above the status box, the main part
+            # fills the rest.
             body = Panel()
             body.Dock = DockStyle.Fill
             body.Padding = Padding(12, 10, 12, 4)
             form.Controls.Add(body)
             status_panel = Panel()
             status_panel.Dock = DockStyle.Bottom
-            status_panel.Height = 88
+            status_panel.Height = _status_height(exe_missing_text() + status)
             status_panel.Padding = Padding(12, 2, 12, 4)
             form.Controls.Add(status_panel)
+            # Drag edge between the main part and the status box: the user
+            # can make the status box higher or lower.
+            status_split = Splitter()
+            status_split.Dock = DockStyle.Bottom
+            status_split.Height = 6
+            status_split.MinSize = 60
+            status_split.MinExtra = 220
+            status_split.BackColor = look.col("window_bg")
+            form.Controls.Add(status_split)
             footer = Panel()
             footer.Dock = DockStyle.Bottom
             footer.Height = 56
             footer.BackColor = look.col("page_bg")
             form.Controls.Add(footer)
             body.BringToFront()
+            status_split.SendToBack()
             header.SendToBack()
             status_panel.SendToBack()
             footer.SendToBack()
@@ -1732,6 +1779,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             status_box.BorderStyle = getattr(BorderStyle, "None")
             status_box.BackColor = look.col("status_bg")
             status_box.ScrollBars = ScrollBars.Vertical
+            status_box.Font = look.status
             status_box.Dock = DockStyle.Fill
             status_box.Text = (exe_missing_text() + (status or tr(
                 "Kies de instellingen en klik Starten. Ga met de muis over "

@@ -125,9 +125,12 @@ Related documents:
 ## 3. The main window
 
 The window stays open until you click "Close". After a run it comes back,
-with the outcome and any messages in the **status box** at the bottom. The window is
-non-modal: Mecway stays usable while it is open (NOT verified in Mecway for all
-actions, KNOWN_BUGS 38). The header shows the model and the active analysis.
+with the outcome and any messages in the **status box** at the bottom; the box is made
+higher for a message, and you can drag its upper edge to make it larger or smaller. The
+window is non-modal: Mecway stays usable while it is open (NOT checked in Mecway for all
+actions). Do not start the bridge a
+second time while the window is open: Mecway then opens a second window (KNOWN_BUGS 38).
+The header shows the model and the active analysis.
 
 On the left is a **navigation list** with the pages of the window, in groups:
 "Settings" (General, Elements), "Analyses" (one page per analysis) and
@@ -481,7 +484,7 @@ mesh is checked).
   analysis type not supported):
   see the ERROR lines in `<model>_<run-id>_bridge_log.txt`.
 - **Start seems to do nothing**: the start screen comes back with the reason in the
-  status box at the bottom (scroll it). "The folder of the open model no longer
+  status box at the bottom. "The folder of the open model no longer
   exists": the model was opened from a folder that has since been moved or deleted, so
   Mecway cannot save it; save it with *File > Save As...* in an existing folder and
   click Start again.

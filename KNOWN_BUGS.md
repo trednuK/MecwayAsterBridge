@@ -473,11 +473,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    check" (comparison). Whether Mecway carries that object along is not stated
    in the API documentation; if in doubt, restart the bridge.
 
-38\. **Main window non-modal: NOT verified in Mecway** (question, `bridge_gui`).
-   The window uses `Show()` with its own message loop (`Application.DoEvents`),
-   so Mecway stays usable while it is open. On which thread Mecway runs scripts
-   and whether Mecway allows everything during that loop (e.g. opening another model,
-   starting the script again: the bridge refuses a second window) has not been tested.
+38\. **Main window non-modal: second window not refused** (confirmed for the second
+   window, otherwise question, `bridge_gui.run_settings_dialog`). The window uses `Show()`
+   with its own message loop (`Application.DoEvents`), so Mecway stays usable while it is
+   open. Seen in Mecway 34 (16 October 2026): *Tools > MecwayAsterBridgeMain* while the
+   window is open opens a second window. The guard `_HUB["open"]` is a module variable,
+   and Mecway loads the modules again for every script start (a change in `bridge_gui.py`
+   was active at the next start without restarting Mecway), so it does not see the first
+   window. Two runs on the same model at the same time are then possible. Possible fix: a
+   check that does not depend on the module, e.g. `Application.OpenForms` (form `Name`) or
+   a named mutex. Whether Mecway allows everything else during the loop (e.g. opening
+   another model) has not been tested.
 
 41\. **Explicit: TCHAMWA with a variable step not checked** (question,
    `bridge_to_aster._explicit_accelerations`). In explicit dynamics (only
@@ -946,16 +952,3 @@ Code-Aster value per node) and logs the largest difference per variable.
    writes a formula there (NOT seen). (g) The error estimator (`CALC_ERREUR`, load
    `load_err`) only takes constant loads into account: a face with a formula load is
    a stress-free boundary for the estimator (INFO), so a too-large local error there.
-
-## Start screen and settings
-
-117\. **Start rewrites the order of result fields** (confirmed, `bridge_gui._field_options`
-   / `save_to_bridge_utils`). The selection list of result fields always returns the
-   fields in the order of `RESULT_FIELD_SPECS`. For `dyna_modal_3d`, `harmonic_3d`,
-   `spectrum_3d` and `vibroacoustic_harm_3d` the default in `CONFIG_BRIDGE` has a
-   different order (e.g. `["displacements", "velocities", "stresses", "vonmises"]`), so
-   every Start without any change logs four `SETTING: ...fields` lines and rewrites
-   `bridge_utils.py` (same fields, one line each). Seen in Mecway 34 on 16 October 2026; it
-   slipped into commit 11466e9 once. Effect only on the order of the fields in the
-   generated `.comm` (results identical). Fix: keep the saved order when the set of fields
-   is unchanged, or put the defaults in the order of `RESULT_FIELD_SPECS`.
