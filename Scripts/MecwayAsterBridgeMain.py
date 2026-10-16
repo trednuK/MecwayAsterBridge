@@ -152,6 +152,37 @@ def _face_nodes(eid, faceid):
 # ==========================================
 # MAIN FUNCTION
 # ==========================================
+def _save_model():
+    """
+    mw.save() with a clear message. Mecway saves to the path the model was
+    opened from; if that folder no longer exists (moved, deleted, drive
+    removed), it only raises a bare IOError ("Could not find a part of the
+    path", seen in Mecway 34). Returns None if saved, else the message for
+    the status box (also logged as ERROR).
+    """
+    folder = os.path.dirname(mw.file_name() or "")
+    if folder and not os.path.isdir(folder):
+        log(tr("ERROR: De map van het open model bestaat niet meer: {0}",
+               "ERROR: The folder of the open model no longer exists: "
+               "{0}").format(folder))
+        return tr("De map van het open model bestaat niet meer:\n{0}\n\nSla "
+                  "het model op met File > Save As... in een bestaande map "
+                  "en start opnieuw.",
+                  "The folder of the open model no longer exists:\n{0}\n\n"
+                  "Save the model with File > Save As... in an existing "
+                  "folder and start again.").format(folder)
+    try:
+        mw.save()
+    except Exception as e:
+        log(tr("ERROR: Opslaan van het model mislukt: {0}",
+               "ERROR: Saving the model failed: {0}").format(e))
+        return tr("Opslaan van het model mislukt:\n{0}\n\nSla het model op "
+                  "met File > Save As... en start opnieuw.",
+                  "Saving the model failed:\n{0}\n\nSave the model with "
+                  "File > Save As... and start again.").format(e)
+    return None
+
+
 def _run(settings):
     """
     One bridge run with the settings of the main window: save the model,
@@ -243,7 +274,11 @@ def _run(settings):
             return False
 
         # --- Step 2: Save ---
-        mw.save()
+        save_error = _save_model()
+        if save_error:
+            _notify(save_error + tr(" Code-Aster wordt niet gestart.",
+                                    " Code-Aster is not started."))
+            return False
         active_liml = mw.file_name()  # Path to the active .liml file
         version_notes["mecway"] = bridge_version.check_mecway(active_liml)[1]
 
@@ -1151,7 +1186,9 @@ def _results_action():
                   if (raw or newest) else None)
     if not choice:
         return True, u""
-    mw.save()
+    save_error = _save_model()
+    if save_error:
+        return False, save_error
     liml = mw.file_name()
     if choice["action"] == "strip":
         ok, reason = strip_results(liml)

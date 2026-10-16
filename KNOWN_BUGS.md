@@ -946,3 +946,16 @@ Code-Aster value per node) and logs the largest difference per variable.
    writes a formula there (NOT seen). (g) The error estimator (`CALC_ERREUR`, load
    `load_err`) only takes constant loads into account: a face with a formula load is
    a stress-free boundary for the estimator (INFO), so a too-large local error there.
+
+## Start screen and settings
+
+117\. **Start rewrites the order of result fields** (confirmed, `bridge_gui._field_options`
+   / `save_to_bridge_utils`). The selection list of result fields always returns the
+   fields in the order of `RESULT_FIELD_SPECS`. For `dyna_modal_3d`, `harmonic_3d`,
+   `spectrum_3d` and `vibroacoustic_harm_3d` the default in `CONFIG_BRIDGE` has a
+   different order (e.g. `["displacements", "velocities", "stresses", "vonmises"]`), so
+   every Start without any change logs four `SETTING: ...fields` lines and rewrites
+   `bridge_utils.py` (same fields, one line each). Seen in Mecway 34 on 16 October 2026; it
+   slipped into commit 11466e9 once. Effect only on the order of the fields in the
+   generated `.comm` (results identical). Fix: keep the saved order when the set of fields
+   is unchanged, or put the defaults in the order of `RESULT_FIELD_SPECS`.

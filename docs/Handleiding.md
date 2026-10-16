@@ -478,6 +478,11 @@ bij (alleen het mesh wordt gecontroleerd).
   solver-bestanden mislukt", "Geen materialen gevonden in het model", "De werkmap is
   te lang", analysetype niet ondersteund): zie de ERROR-regels in
   `<model>_<run-id>_bridge_log.txt`.
+- **Start lijkt niets te doen**: het startscherm komt terug met de reden in het
+  statusvak onderaan (scroll erin). "De map van het open model bestaat niet meer": het
+  model is geopend uit een map die sindsdien verplaatst of verwijderd is, zodat Mecway
+  het niet kan opslaan; sla het op met *File > Save As...* in een bestaande map en
+  klik opnieuw op Start.
 - **"Code-Aster meldt fouten in `<model>_<run-id>.mess`"**: de bridge zoekt
   `<EXCEPTION>`, `<F>`, `<S>`, `<E>` en `<...Error>` in de `.mess` en toont de eerste
   vijf meldingen. Bij een bekende code geeft hij uitleg:

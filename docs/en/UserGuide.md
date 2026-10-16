@@ -480,6 +480,11 @@ mesh is checked).
   files failed", "No materials found in the model", "The work folder is too long",
   analysis type not supported):
   see the ERROR lines in `<model>_<run-id>_bridge_log.txt`.
+- **Start seems to do nothing**: the start screen comes back with the reason in the
+  status box at the bottom (scroll it). "The folder of the open model no longer
+  exists": the model was opened from a folder that has since been moved or deleted, so
+  Mecway cannot save it; save it with *File > Save As...* in an existing folder and
+  click Start again.
 - **"Code-Aster reports errors in `<model>_<run-id>.mess`"**: the bridge searches the `.mess` for `<EXCEPTION>`,
   `<F>`, `<S>`, `<E>` and `<...Error>` and shows the first five messages. For a known
   code it gives an explanation:
