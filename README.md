@@ -12,7 +12,7 @@ in Mecway's *Custom model definition*.
 
 [![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/trednuk/mecwayasterbridge?utm_source=readme&utm_medium=badge)
 
-Version: **V2026.1** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
+Version: **V2026.2** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md).
 
 ## Requirements
