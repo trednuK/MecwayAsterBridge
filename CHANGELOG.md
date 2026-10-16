@@ -1,12 +1,35 @@
 # Changelog
 
+## V2026.2.1 – 16 October 2026
+
+Patch release on top of V2026.2: Mecway 34's *Element orientation* cards are read, so beams
+rotated with *Loads & Constraints > Element orientation* get the right section axes.
+Tested in Mecway 34 with a card made in the GUI (tip displacement equal to Mecway's own
+solution); verification 401 test cases, 2212 checks (2205 OK, 7 known limitations,
+0 unexpected).
+
+- **Element orientation in Loads & Constraints** (`<orientation>` card on an element
+  selection, also with formulas of the element centre) is now read instead of skipped, so
+  beams no longer keep the default section orientation: V axis and angle for beams, U
+  axis for gaps and for the shell result field `shell_forces`, exactly like the
+  orientation in *Element properties*. Overlap with the element attributes or a second
+  card (Mecway itself does not solve that) gives a warning; the card wins. In addition
+  **every beam gets Mecway's V axis explicitly** as `ORIENTATION` `VECT_Y`, also without
+  orientation, so the bridge no longer relies on Code-Aster's default. Both found in the
+  fork by MishalTPC (github.com/mishal0488/MecwayAsterBridge). Verification MO-31,
+  LS-79–82, BU-25, LS-31d: the same results as with the attributes and equal to Mecway 34;
+  all existing beam cases unchanged.
+- STAPPENPLAN: S19 (beam element with warping, `POU_D_TG`) and S20 (geometrically nonlinear
+  beams, `POU_D_T_GD`, idea and benchmarks from the fork by MishalTPC) planned.
+- README: acknowledgement of the fork by MishalTPC.
+
 ## V2026.2 – 16 October 2026
 
 More of Mecway is translated (bonded contact for shells and in thermal analyses, element
 offset, flexible joint, quadratic beams, formulas in x, y, z, node temperature and
 temperature in time), more results come back into Mecway, the bridge waits for Code-Aster
 by itself, and the configurations of a model can be chosen. Tested with Mecway 33 and 34 and
-Code-Aster 17.4; verification 401 test cases, 2212 checks (2205 OK, 7 known limitations,
+Code-Aster 17.4; verification 394 test cases, 2152 checks (2145 OK, 7 known limitations,
 0 unexpected).
 
 ### Workflow
@@ -80,17 +103,6 @@ Code-Aster 17.4; verification 401 test cases, 2212 checks (2205 OK, 7 known limi
   step size (was KNOWN_BUGS 44). Verification NL-20.
 - **Explicit dynamics**: a constraint equation with a constant ≠ 0 is now converted to an
   imposed acceleration (with a warning; was KNOWN_BUGS 41). Verification DY-20a–c.
-- **Element orientation in Loads & Constraints** (`<orientation>` card on an element
-  selection, also with formulas of the element centre) is now read instead of skipped, so
-  beams no longer keep the default section orientation: V axis and angle for beams, U
-  axis for gaps and for the shell result field `shell_forces`, exactly like the
-  orientation in *Element properties*. Overlap with the element attributes or a second
-  card (Mecway itself does not solve that) gives a warning; the card wins. In addition
-  **every beam gets Mecway's V axis explicitly** as `ORIENTATION` `VECT_Y`, also without
-  orientation, so the bridge no longer relies on Code-Aster's default. Both found in the
-  fork by MishalTPC (github.com/mishal0488/MecwayAsterBridge). Verification MO-31,
-  LS-79–82, BU-25, LS-31d: the same results as with the attributes and equal to Mecway 34;
-  all existing beam cases unchanged.
 
 ### More results in Mecway
 - New result fields: **contact pressure and contact status**, **beam section forces and

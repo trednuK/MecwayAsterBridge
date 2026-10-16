@@ -21,7 +21,7 @@ from datetime import datetime
 
 # Version of the bridge (start screen, log header, CHANGELOG.md). Kept
 # outside CONFIG_BRIDGE on purpose: the start screen rewrites only that block.
-BRIDGE_VERSION = "V2026.2"
+BRIDGE_VERSION = "V2026.2.1"
 
 # Tested versions (bridge_version.py): a different version only gives a
 # WARNING, the run continues. Mecway: the version attribute of <liml>;
@@ -419,8 +419,7 @@ CONFIG_BRIDGE = {
             # Like Mecway's mode superposition: displacements, rotations
             # and velocities (no accelerations, no reactions); stresses
             # with CALC_CHAMP on the physical response.
-            "fields":         ["displacements", "velocities", "stresses",
-                               "vonmises"],
+            "fields":         ["displacements", "stresses", "vonmises", "velocities"],
             # Number of modes if the Mecway model has no maxmode.
             "modal_modes":    10,
             # Solver steps per period of the highest mode in the basis
@@ -451,8 +450,7 @@ CONFIG_BRIDGE = {
             # Per frequency amplitude, phase, Re/Im (displacements); also
             # velocities/accelerations (amplitude) and stresses/vonmises
             # (solid elements).
-            "fields":         ["displacements", "accelerations", "stresses",
-                               "vonmises"],
+            "fields":         ["displacements", "stresses", "vonmises", "accelerations"],
             # Number of modes if the Mecway model has no maxmode.
             "modal_modes":    10,
             "modal_tolerance": 1.0e-6,
@@ -489,8 +487,7 @@ CONFIG_BRIDGE = {
             "template":       "AsterTemplate_Spectre.comm",
             "solver_command": "COMB_SISM_MODAL",
             # Maxima (unsigned) to Mecway, as one step.
-            "fields":         ["displacements", "accelerations", "stresses",
-                               "vonmises", "reactions"],
+            "fields":         ["displacements", "stresses", "vonmises", "accelerations", "reactions"],
             # Number of modes if the Mecway model has no maxmode.
             "modal_modes":    20,
             "modal_tolerance": 1.0e-6,
@@ -614,8 +611,7 @@ CONFIG_BRIDGE = {
             "type_calcul":    "HARM",
             # Structure per frequency (like harmonic_3d); the pressure in the
             # fluid is always included.
-            "fields":         ["displacements", "accelerations", "stresses",
-                               "vonmises"],
+            "fields":         ["displacements", "stresses", "vonmises", "accelerations"],
             # Frequencies [Hz]: harm_freq_count steps from start to end
             # (spacing "lin" or "log"), or a list in harm_freq_list
             # (text, e.g. "100, 250, 500"; "0" = use the range).
