@@ -421,7 +421,8 @@ CONFIG_BRIDGE = {
             # Like Mecway's mode superposition: displacements, rotations
             # and velocities (no accelerations, no reactions); stresses
             # with CALC_CHAMP on the physical response.
-            "fields":         ["displacements", "stresses", "vonmises", "velocities"],
+            "fields":         ["displacements", "velocities", "stresses",
+                               "vonmises"],
             # Number of modes if the Mecway model has no maxmode.
             "modal_modes":    10,
             # Solver steps per period of the highest mode in the basis
@@ -452,7 +453,8 @@ CONFIG_BRIDGE = {
             # Per frequency amplitude, phase, Re/Im (displacements); also
             # velocities/accelerations (amplitude) and stresses/vonmises
             # (solid elements).
-            "fields":         ["displacements", "stresses", "vonmises", "accelerations"],
+            "fields":         ["displacements", "accelerations", "stresses",
+                               "vonmises"],
             # Number of modes if the Mecway model has no maxmode.
             "modal_modes":    10,
             "modal_tolerance": 1.0e-6,
@@ -489,7 +491,8 @@ CONFIG_BRIDGE = {
             "template":       "AsterTemplate_Spectre.comm",
             "solver_command": "COMB_SISM_MODAL",
             # Maxima (unsigned) to Mecway, as one step.
-            "fields":         ["displacements", "stresses", "vonmises", "accelerations", "reactions"],
+            "fields":         ["displacements", "accelerations", "stresses",
+                               "vonmises", "reactions"],
             # Number of modes if the Mecway model has no maxmode.
             "modal_modes":    20,
             "modal_tolerance": 1.0e-6,
@@ -613,7 +616,8 @@ CONFIG_BRIDGE = {
             "type_calcul":    "HARM",
             # Structure per frequency (like harmonic_3d); the pressure in the
             # fluid is always included.
-            "fields":         ["displacements", "stresses", "vonmises", "accelerations"],
+            "fields":         ["displacements", "accelerations", "stresses",
+                               "vonmises"],
             # Frequencies [Hz]: harm_freq_count steps from start to end
             # (spacing "lin" or "log"), or a list in harm_freq_list
             # (text, e.g. "100, 250, 500"; "0" = use the range).

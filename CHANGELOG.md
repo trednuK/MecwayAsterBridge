@@ -5,8 +5,21 @@
 Beams with large rotations (`POU_D_T_GD`) in nonlinear static, and Mecway 34's *Element
 orientation* cards are read, so beams rotated with *Loads & Constraints > Element orientation*
 get the right section axes. Both build on the fork by MishalTPC
-(github.com/mishal0488/MecwayAsterBridge). VERIFICATION_LINE
+(github.com/mishal0488/MecwayAsterBridge). Tested in Mecway 34; verification 415 test cases,
+2267 checks (2260 OK, 7 known limitations, 0 unexpected).
 
+- **Beams with large rotations** (`elem_beam` = `POU_D_T_GD` on the Elements page; default
+  stays `POU_D_E`): in nonlinear static with large displacements, beams are computed as
+  `POU_D_T_GD` (Timoshenko, `ELAS_POUTRE_GR`, `GROT_GDEP`). Elsewhere, including nonlinear
+  static with `PETIT`/`PETIT_REAC`, they become `POU_D_T` with a warning. Supported: forces
+  and moments (constant or as a time table), line pressure (also formulas in x, y, z, t),
+  gravity, Thermal stress, configurations, line3, orientation cards, centrifugal force as a
+  fixed load (trusses too) and section forces (`beam_forces`, one value per element). No beam
+  stresses. `crit_stab`, `imperfection_amplitude` and element failure give an error
+  beforehand. Offset arms, flexible joints and couplings stay linear relations (warning;
+  couplings not verified). Idea, Code-Aster route and benchmarks from the fork by MishalTPC
+  (github.com/mishal0488/MecwayAsterBridge). Verification NL-80 to NL-89 (14 cases, 55
+  checks, ≤ 0.04 %; within 0.02 % of Mecway 34 with CCX).
 - **Element orientation in Loads & Constraints** (`<orientation>` card on an element
   selection, also with formulas of the element centre) is now read instead of skipped, so
   beams no longer keep the default section orientation: V axis and angle for beams, U
@@ -18,8 +31,10 @@ get the right section axes. Both build on the fork by MishalTPC
   fork by MishalTPC (github.com/mishal0488/MecwayAsterBridge). Verification MO-31,
   LS-79–82, BU-25, LS-31d: the same results as with the attributes and equal to Mecway 34;
   all existing beam cases unchanged.
-- STAPPENPLAN: S19 (beam element with warping, `POU_D_TG`) and S20 (geometrically nonlinear
-  beams, `POU_D_T_GD`, idea and benchmarks from the fork by MishalTPC) planned.
+- Fixes: the results export no longer reports the section-force source of the other beam
+  formulation as missing; centrifugal force on trusses in models that use the formula route.
+- STAPPENPLAN: S19 (beam element with warping, `POU_D_TG`, for flexural-torsional buckling)
+  planned.
 - README: acknowledgement of the fork by MishalTPC.
 
 ## V2026.2 – 16 October 2026

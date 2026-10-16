@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge de08b40, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2205 van 2212 controles binnen de tolerantie** (401 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2260 van 2267 controles binnen de tolerantie** (415 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1794,6 +1794,61 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge de08b40, Code-Aster 17.4
 | NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
 | NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
 | NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | laatste rekentijd | 1 s | 1 | +0.00% | 1e-07% | OK |
+| NL-80 | POU_D_T_GD: ingeklemde balk, kleine eindkracht (Timoshenko) | doorbuiging tip | 9.5246e-04 m | 9.5231e-04 | -0.02% | 0.1% | OK |
+| NL-80b | POU_D_T_GD in lineair statisch: wordt POU_D_T | doorbuiging tip | 9.5246e-04 m | 9.5246e-04 | +0.00% | 0.1% | OK |
+| NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | doorbuiging tip | 0.0016667 m | 0.0016666 | -0.01% | 0.1% | OK |
+| NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | tiprotatie | 0.0028571 rad | 0.0028571 | -0.00% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
+| NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 | 2 - | 1.9996 | -0.02% | 0.1% | OK |
+| NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 t.o.v. Mecway 34 + CCX | 1.9995 - | 1.9996 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 | 0.30174 m | 0.30171 | -0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 | -0.056438 m | -0.056419 | +0.03% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=1 | 0.46135 rad | 0.46136 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 | 0.49349 m | 0.49345 | -0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=2 | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 | 0.6033 m | 0.60327 | -0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 | -0.25443 m | -0.25438 | +0.02% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=3 | 0.986 rad | 0.9861 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | bendingmomw element 1 t=3 (statica vervormd) | 769.78 N.m | 769.78 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | sheary laatste element t=3 (statica vervormd) | 579.73 N | 579.77 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tensileforce laatste element t=3 (statica vervormd) | 875.45 N | 875.42 | -0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | reactiekracht Y | -1050 N | -1050 | +0.00% | 0.0001% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 t.o.v. Mecway 34 + CCX | 0.30168 m | 0.30171 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 t.o.v. Mecway 34 + CCX | -0.056421 m | -0.056419 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 t.o.v. Mecway 34 + CCX | 0.49339 m | 0.49345 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 t.o.v. Mecway 34 + CCX | -0.16061 m | -0.16061 | -0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 t.o.v. Mecway 34 + CCX | 0.60317 m | 0.60327 | +0.02% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 t.o.v. Mecway 34 + CCX | -0.25436 m | -0.25438 | -0.01% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing dwars | -0.63662 m | -0.63666 | -0.01% | 0.1% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (min. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (max. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tensileforce (grootste |N|) | 0 N | 1.2497e-06 | 1.2497e-06 | 0.05 N | OK |
+| NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | tipverlenging | 1.2298e-05 m | 1.2296e-05 | -0.02% | 0.1% | OK |
+| NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | reactiekracht X | -774.76 N | -774.76 | -0.00% | 0.1% | OK |
+| NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | tipverlenging truss | 1.2298e-05 m | 1.2302e-05 | +0.03% | 0.1% | OK |
+| NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | reactiekracht X truss | -774.76 N | -774.76 | +0.00% | 0.1% | OK |
+| NL-87 | POU_D_T_GD: line pressure en zwaartekracht (configuratie GQ) | doorbuiging tip | -0.0031622 m | -0.0031622 | +0.00% | 0.1% | OK |
+| NL-87 | POU_D_T_GD: line pressure en zwaartekracht (configuratie GQ) | reactiekracht Z | 35.402 N | 35.402 | +0.00% | 0.0001% | OK |
+| NL-87b | POU_D_T_GD: zwaartekracht (configuratie G, line pressure onderdrukt) | doorbuiging tip | -0.0013757 m | -0.0013757 | +0.00% | 0.1% | OK |
+| NL-87b | POU_D_T_GD: zwaartekracht (configuratie G, line pressure onderdrukt) | reactiekracht Z | 15.402 N | 15.402 | -0.00% | 0.0001% | OK |
+| NL-88 | POU_D_T_GD: vrije thermische uitzetting | tipverlenging | 0.0012 m | 0.0012 | -0.00% | 0.0001% | OK |
+| NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=1 | -0.001965 m | -0.0019645 | +0.03% | 0.1% | OK |
+| NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=0,5 | -9.8251e-04 m | -9.8223e-04 | +0.03% | 0.1% | OK |
+| NL-89 | POU_D_T_GD: line pressure als formule in x en t | reactiekracht Z t=1 | 15 N | 15 | +0.00% | 0.0001% | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 

@@ -96,9 +96,9 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 ## 3. Summary
 
 Status 16 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `de08b40`
-(all steps, the final check S11 and the extensions of 15 October; Code-Aster 17.4):
-401 test cases, 2212 checks, 2205 OK, 7 BEKEND (known), 0 NOK/FOUT.
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `7e02e1e`
+(all steps, the final check S11 and the extensions of 15 and 16 October; Code-Aster 17.4):
+415 test cases, 2267 checks, 2260 OK, 7 BEKEND (known), 0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -118,7 +118,7 @@ Status 16 October 2026. The whole table comes from one revision: the regression 
 | Modal | 22 | 221 | 221 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 25 | 97 | 94 | 3 |
+| Nonlinear static | 39 | 152 | 149 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
@@ -127,7 +127,7 @@ Status 16 October 2026. The whole table comes from one revision: the regression 
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **401** | **2212** | **2205** | **7** |
+| **Total** | **415** | **2267** | **2260** | **7** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

@@ -139,9 +139,9 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
    `TestFiles/Verificatie`.
 5. Regression: set `VERIF_WORK=<eigen scratchmap>` (the default folder is wiped by other
    sessions) and run `python TestFiles/Verificatie/run_verificatie.py` in full.
-   **Bar**: baseline 2205 of 2212 checks OK (401 test cases), 7 BEKEND (KNOWN_BUGS
+   **Bar**: baseline 2260 of 2267 checks OK (415 test cases), 7 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; 83: 1 in BR-10; 108: 2 in LS-52a/LS-67; 115: 1 in BU-35), 0 NOK/FOUT
-   (full regression on bridge de08b40, 2026-10-16, after the extensions of 15-16 October:
+   (full regression on bridge 7e02e1e, 2026-10-16, after the extensions of 15-16 October incl. POU_D_T_GD:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
    BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; update the summary
    in `docs/Verificatie.md` §3 and the EN version.

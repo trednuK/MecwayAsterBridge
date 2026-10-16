@@ -98,9 +98,9 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 ## 3. Samenvatting
 
 Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `de08b40`
-(alle stappen, de eindcontrole S11 en de uitbreidingen van 15 oktober; Code-Aster 17.4):
-401 testcases, 2212 controles, 2205 OK, 7 BEKEND, 0 NOK/FOUT.
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `7e02e1e`
+(alle stappen, de eindcontrole S11 en de uitbreidingen van 15 en 16 oktober; Code-Aster 17.4):
+415 testcases, 2267 controles, 2260 OK, 7 BEKEND, 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -120,7 +120,7 @@ Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Modaal | 22 | 221 | 221 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 25 | 97 | 94 | 3 |
+| Niet-lineair statisch | 39 | 152 | 149 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
@@ -129,7 +129,7 @@ Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **401** | **2212** | **2205** | **7** |
+| **Totaal** | **415** | **2267** | **2260** | **7** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
