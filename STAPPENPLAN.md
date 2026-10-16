@@ -1256,9 +1256,13 @@ constant) and `EY`/`EZ` (shear centre relative to the centroid), `AY`/`AZ`; chec
 U-docs which RIGI_GEOM terms couple bending and torsion through `EY`/`EZ`; official test cases with `POU_D_TG`.
 **Research:** I_w and the shear-centre position from Mecway's dimensions (I, T, L, C, box, tube; thin-walled
 formulas, Roark/Trahair) and what *UniformGeneralSection* supplies; warping at supports (Mecway has no warping
-DOF): proposal blocked at *Fixed*, free elsewhere, with a setting; results: section forces as now, bimoment only
-in the log/.mess; how line3 split, offset, joint and beam orientation combine with the 7th DOF.
+DOF): user decision 16 Oct 2026: warping blocked (`GRX` = 0) at *Fixed* and at every node where a rotation is
+fixed in at least one direction (e.g. *Node rotation*, *Displacement* with a fixed rotation component, rigid
+couplings that fix rotations), free elsewhere, with a setting to override this; log per node which rule applied;
+results: section forces as now, bimoment only in the log/.mess; how line3 split, offset, joint and beam
+orientation combine with the 7th DOF.
 **Done when:** C-column flexural-torsional buckling within 3% of hex20 (≈ 393, BU-36) and thin-walled theory,
 lateral-torsional buckling of an I-beam against Timoshenko & Gere, a Code-Aster test case with `POU_D_TG` equal
-to VALE_CALC, symmetric sections unchanged with respect to `POU_D_E`; docs NL+EN (Modaal_en_knik §3.5,
+to VALE_CALC, symmetric sections unchanged with respect to `POU_D_E`, the warping rule checked on a cantilever
+(clamped: warping blocked) and a fork-supported beam (only translations and the rotation about the beam axis fixed); docs NL+EN (Modaal_en_knik §3.5,
 Mecway_functionaliteit, Standaardinstellingen), tooltip, KNOWN_BUGS 115 updated; regression D.5.
