@@ -51,6 +51,7 @@ S7, S8, S5, S9).
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
+| S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct; idea and benchmarks from the fork by MishalTPC (estimate 2-3 h) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1266,3 +1267,25 @@ lateral-torsional buckling of an I-beam against Timoshenko & Gere, a Code-Aster 
 to VALE_CALC, symmetric sections unchanged with respect to `POU_D_E`, the warping rule checked on a cantilever
 (clamped: warping blocked) and a fork-supported beam (only translations and the rotation about the beam axis fixed); docs NL+EN (Modaal_en_knik §3.5,
 Mecway_functionaliteit, Standaardinstellingen), tooltip, KNOWN_BUGS 115 updated; regression D.5.
+
+### S20 – Geometrically nonlinear beams (`POU_D_T_GD`) as element choice
+**Goal:** beams with large displacements and rotations in nonlinear static (today beams stay geometrically linear,
+`PETIT`, with a warning; KNOWN_BUGS 11). Add `POU_D_T_GD` as a choice for beams on the Elements page (default stays
+`POU_D_E`).
+**Credit:** idea, Code-Aster route and benchmarks come from the fork by MishalTPC
+(https://github.com/mishal0488/MecwayAsterBridge, branch `dev`, commit dd4c958 "Add elastic geometric-nonlinear beam
+support and benchmarks", MPL-2.0): `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
+section forces from `SIEF_ELNO` (17.4 has no `SIPM_ELNO`, `RIGI_GEOM` or `CHAR_MECA_ROTA_R` for this element),
+AY/AZ estimated for I/T/C/L sections, a clear ERROR for unsupported analyses (linear, modal, buckling, dynamics),
+plastic beam material, non-SEG2 beams and centrifugal load. Their benchmarks GB-01 (small-load Timoshenko cantilever),
+GB-02 (90-degree pure bending) and GB-03 (initially curved column amplification) agreed within 0.02%. Re-implement in
+the current code (the fork is based on V2026.1) and credit the fork in CHANGELOG/README.
+**Research:** combination with what was built after V2026.1: line3 split into SEG2 halves (allowed?), element offset
+(rigid arms are linear `LIAISON_DDL`: KNOWN_BUGS 108a), flexible joint, beam orientation (explicit `VECT_Y`), result
+field `beam_forces` (EFGE_* vs SIEF_ELNO for `POU_D_T_GD`), follower loads and imposed rotations, Mecway's own
+large-deformation beam behaviour (compare with Mecway 34 / CCX where Mecway can solve it), and memory note: earlier a
+rigid 90-degree rotation with `POU_D_T_GD` converged badly in the ProfielBuigen model.
+**Done when:** GB-01..03 rebuilt as verification cases (NL-8x) within 0.1% of the analytical references, the
+existing small-rotation beam cases unchanged, clear messages for unsupported combinations, docs NL+EN (Instellingen
+contact en niet-lineair, Mecway_functionaliteit, Standaardinstellingen), tooltip, KNOWN_BUGS 11 updated;
+regression D.5.
