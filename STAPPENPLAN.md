@@ -50,6 +50,7 @@ S7, S8, S5, S9).
 | S16 | 2D and axisymmetric analyses (S20, D20, SA0, also thermal and acoustics 2D) | open | – | chosen by the user 15 Oct (C9) |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
+| S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1244,3 +1245,20 @@ baseline in docs/Verificatie.md §3, the official Code-Aster tests (`run_code_as
 templates/API adapted where needed (17.4 keeps working or the decision to drop 17.4 is recorded in
 CHANGELOG.md), `TESTED_ASTER_VERSIONS` updated and docs (Handleiding, Na_een_update, Verificatie) NL+EN
 reviewed; regression D.5.
+
+### S19 – Beam element with warping (`POU_D_TG`) as element choice
+**Goal:** open thin-walled sections (C, Z, L, T, also I) can buckle flexural-torsionally; `POU_D_E`/`POU_D_T`
+have no warping and no shear-centre offset, so the bridge is up to 57% unconservative there
+(KNOWN_BUGS 115, BU-35). Add `POU_D_TG` as a third choice for beams on the Elements page (default stays
+`POU_D_E`), and mention it in the KB 115 WARNING.
+**Code-Aster:** `POU_D_TG` (7th DOF `GRX`), `AFFE_CARA_ELEM POUTRE` `SECTION='GENERALE'` with `JG` (warping
+constant) and `EY`/`EZ` (shear centre relative to the centroid), `AY`/`AZ`; check in the 17.4 catalogue and
+U-docs which RIGI_GEOM terms couple bending and torsion through `EY`/`EZ`; official test cases with `POU_D_TG`.
+**Research:** I_w and the shear-centre position from Mecway's dimensions (I, T, L, C, box, tube; thin-walled
+formulas, Roark/Trahair) and what *UniformGeneralSection* supplies; warping at supports (Mecway has no warping
+DOF): proposal blocked at *Fixed*, free elsewhere, with a setting; results: section forces as now, bimoment only
+in the log/.mess; how line3 split, offset, joint and beam orientation combine with the 7th DOF.
+**Done when:** C-column flexural-torsional buckling within 3% of hex20 (≈ 393, BU-36) and thin-walled theory,
+lateral-torsional buckling of an I-beam against Timoshenko & Gere, a Code-Aster test case with `POU_D_TG` equal
+to VALE_CALC, symmetric sections unchanged with respect to `POU_D_E`; docs NL+EN (Modaal_en_knik §3.5,
+Mecway_functionaliteit, Standaardinstellingen), tooltip, KNOWN_BUGS 115 updated; regression D.5.
