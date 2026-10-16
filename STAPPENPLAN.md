@@ -51,7 +51,7 @@ S7, S8, S5, S9).
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
-| S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct; idea and benchmarks from the fork by MishalTPC (estimate 2-3 h) |
+| S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | 68c6f85; idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1290,3 +1290,19 @@ rigid 90-degree rotation with `POU_D_T_GD` converged badly in the ProfielBuigen 
 existing small-rotation beam cases unchanged, clear messages for unsupported combinations, docs NL+EN (Instellingen
 contact en niet-lineair, Mecway_functionaliteit, Standaardinstellingen), tooltip, KNOWN_BUGS 11 updated;
 regression D.5.
+**Findings** (16 Oct 2026, 68c6f85): input route: the existing setting `elem_beam` (Elements page), third value
+`POU_D_T_GD`; Mecway has no switch for it. Route as in the fork: `POU_D_T_GD` + `ELAS_POUTRE_GR` + `GROT_GDEP`,
+AY/AZ as `POU_D_T` (`_profile_shear_coefs`, unchanged). Measured with Code-Aster 17.4 runs: `EFGE_ELNO` is in the
+catalogue but stops with `DVP_1` (`te0185.F90`), so `beam_forces` comes from `SIEF_ELNO`/`SIEF_NOEU` (same component
+names and signs as `EFGE_*` of `POU_D_T`, co-rotating axes, one value per element); `SIPM_ELNO`, `RIGI_MECA` and
+`CHAR_MECA_ROTA_R` give `CALCUL_37`; `CRIT_STAB` gives `ALGELINE4_41` (non-symmetric tangent). Decisions: outside
+`STAT_NON_LINE` with large displacements the beam becomes `POU_D_T` with a WARNING (like DST -> DKT); `crit_stab` and
+`imperfection_amplitude`: ERROR; centrifugal force via the FORMULE route; plastic material elastic (WARNING, as the
+other beams); line3, orientation card, offset and joint work (offset/joint/couplings stay linear relations: WARNING).
+Imposed rotations: `DDL_IMPO` DR* is the total rotation vector (test case zzzz364a); a stocky beam rotated rigidly
+through 90 degrees exactly, a slender one (10 x 20 mm, L = 1 m) stopped at 0.41 rad also with 5x smaller steps (this
+explains the earlier ProfielBuigen observation): WARNING, KNOWN_BUGS 11. Mecway 34 computes nonlinear beams only
+with CCX (its own solver gave no solution headless): NL-82/NL-83 within 0.016 % of Mecway/CCX, CCX did not get the
+end moment of NL-81 past t = 0.55 s. Verification NL-80 .. NL-89 (12 cases, 48 checks) all OK, GB-01..03 equal to
+the fork's numbers; NL, LS-3..LS-7, MO, BU, DY (134 cases) bit-identical. Open: a GUI test in Mecway 34, implicit
+dynamics with `POU_D_T_GD` (sdnl103a exists, not built), finite-rotation offset arms/joints.
