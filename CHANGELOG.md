@@ -36,7 +36,10 @@ get the right section axes. Both build on the fork by MishalTPC
   open model no longer exists (moved or deleted), Start and *Results...* say so and ask to
   save the model with *File > Save As...*; before, the status box only showed a bare
   Windows error. Start no longer rewrites `bridge_utils.py` when nothing was changed (the
-  order of the result fields was saved again in another order on every Start).
+  order of the result fields was saved again in another order on every Start). Starting
+  the bridge again from *Tools* while its window is open or a run is going on now only
+  says that the window is already open; before, Mecway opened a second window, so two
+  runs on the same model were possible (KNOWN_BUGS 38).
 - Fixes: the results export no longer reports the section-force source of the other beam
   formulation as missing; centrifugal force on trusses in models that use the formula route.
 - STAPPENPLAN: S19 (beam element with warping, `POU_D_TG`, for flexural-torsional buckling)
