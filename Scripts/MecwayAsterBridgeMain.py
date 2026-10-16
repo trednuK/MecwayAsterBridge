@@ -16,6 +16,8 @@
 # Module architecture:
 #   bridge_utils         : config, logging, unit conversion     (shared base)
 #   bridge_gui           : run_settings_dialog()                (start screen)
+#                          claim_instance()                     (one bridge
+#                          per Mecway at a time)
 #   bridge_bcs           : BC classes + SUPPORTED_BCS registry
 #   bridge_from_liml     : extract_aster_data_from_liml()       (Mecway -> dict)
 #   bridge_mesh          : write_mesh()                         (.liml -> mesh)
@@ -110,7 +112,9 @@ from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 set_run_log, log_file_name, tr, run_name,
                                 run_names, path_too_long, work_dir_path,
                                 exe_aster_path, BRIDGE_VERSION)
-from bridge_gui         import run_settings_dialog, results_dialog
+from bridge_gui         import (run_settings_dialog, results_dialog,
+                                claim_instance, release_instance,
+                                instance_busy_text)
 from bridge_from_liml   import extract_aster_data_from_liml
 from bridge_mesh        import write_mesh
 from bridge_to_aster    import generate_AsterSolver_files, results_file
@@ -1289,14 +1293,22 @@ def main():
 # ==========================================
 # ENTRY POINT
 # Mecway runs this script directly; main() is called here.
+# One bridge at a time per Mecway (bridge_gui.claim_instance): the main
+# window is non-modal, so Tools > MecwayAsterBridgeMain stays available.
 # ==========================================
-try:
-    main()
-except Exception as e:
+_instance = claim_instance()
+if _instance is None:
+    mw.message(instance_busy_text())
+else:
     try:
-        log("CRITICAL ERROR: {0}".format(str(e)))
-    except Exception:
-        pass
-    mw.message(tr("MecwayAsterBridge gestopt door een fout:\n{0}",
-                  "MecwayAsterBridge stopped by an error:\n{0}").format(
-                      str(e)))
+        main()
+    except Exception as e:
+        try:
+            log("CRITICAL ERROR: {0}".format(str(e)))
+        except Exception:
+            pass
+        mw.message(tr("MecwayAsterBridge gestopt door een fout:\n{0}",
+                      "MecwayAsterBridge stopped by an error:\n{0}").format(
+                          str(e)))
+    finally:
+        release_instance(_instance)

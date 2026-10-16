@@ -2556,9 +2556,56 @@ def _run_input_fallback(mw, current, reason):
 # ==========================================
 # PUBLIC FUNCTION
 # ==========================================
-# Is the main window already open (same Mecway session)? See
-# run_settings_dialog.
-_HUB = {"open": False}
+# One bridge per Mecway process. A module variable cannot guard this:
+# Mecway loads the modules again for every script start (seen in Mecway 34,
+# 16 October 2026), so a second start from Tools does not see the first
+# one. A named semaphore is a kernel object of the process and survives
+# that. Not a Mutex: a Mutex belongs to a thread and may be taken again by
+# the same thread, and a second start from Mecway's menu can run on the
+# same thread as the first (Application.DoEvents in the main window).
+# The process id in the name keeps two Mecway processes apart; Local\ =
+# this Windows session only.
+_INSTANCE_NAME = u"Local\\MecwayAsterBridge_{0}"
+
+
+def claim_instance():
+    """
+    Claim the bridge for this Mecway process (MecwayAsterBridgeMain, for
+    the whole script: main window and runs).
+
+    Returns
+    -------
+    token  to pass to release_instance() (always, also after an error);
+           True if .NET is not available (CPython: nothing to guard).
+    None   if another start of the bridge in this Mecway is still running.
+    """
+    try:
+        from System.Threading import Semaphore
+        from System.Diagnostics import Process
+        name = _INSTANCE_NAME.format(Process.GetCurrentProcess().Id)
+    except Exception:
+        return True
+    semaphore = Semaphore(1, 1, name)
+    if not semaphore.WaitOne(0):
+        semaphore.Dispose()
+        return None
+    return semaphore
+
+
+def release_instance(token):
+    """Release what claim_instance() returned (None/True: nothing to do)."""
+    if token is None or token is True:
+        return
+    try:
+        token.Release()
+    finally:
+        token.Dispose()
+
+
+def instance_busy_text():
+    """Message for a second start while the bridge is still running."""
+    return tr("Het venster van MecwayAsterBridge is al open.",
+              "The MecwayAsterBridge window is already open.")
 
 
 def run_settings_dialog(mw, status=u""):
@@ -2576,28 +2623,20 @@ def run_settings_dialog(mw, status=u""):
     """
     current = _collect_current()
     gui = "winforms"
-    if _HUB["open"]:
-        mw.message(tr("Het venster van MecwayAsterBridge is al open.",
-                      "The MecwayAsterBridge window is already open."))
-        return {"ok": False, "action": "close", "changes": [],
-                "save_errors": [], "gui": gui}
+    # A second start while this window is open: see claim_instance.
     try:
-        _HUB["open"] = True
         try:
-            try:
-                model = bridge_utils.model_stem(mw.file_name())
-            except Exception:
-                model = None
-            # Configurations of the open model for the choice list (from
-            # disk: the last saved version)
-            try:
-                _MODEL_INFO["configurations"] = \
-                    bridge_results_liml.configuration_names(mw.file_name())
-            except Exception:
-                _MODEL_INFO["configurations"] = []
-            answer = _show_winforms_dialog(current, status, model)
-        finally:
-            _HUB["open"] = False
+            model = bridge_utils.model_stem(mw.file_name())
+        except Exception:
+            model = None
+        # Configurations of the open model for the choice list (from
+        # disk: the last saved version)
+        try:
+            _MODEL_INFO["configurations"] = \
+                bridge_results_liml.configuration_names(mw.file_name())
+        except Exception:
+            _MODEL_INFO["configurations"] = []
+        answer = _show_winforms_dialog(current, status, model)
         action, new_values = answer["action"], answer["values"]
     except (ImportError, RuntimeError) as e:
         gui = "mw.input"

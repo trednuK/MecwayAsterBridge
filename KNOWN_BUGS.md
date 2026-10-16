@@ -473,17 +473,12 @@ Code-Aster value per node) and logs the largest difference per variable.
    check" (comparison). Whether Mecway carries that object along is not stated
    in the API documentation; if in doubt, restart the bridge.
 
-38\. **Main window non-modal: second window not refused** (confirmed for the second
-   window, otherwise question, `bridge_gui.run_settings_dialog`). The window uses `Show()`
-   with its own message loop (`Application.DoEvents`), so Mecway stays usable while it is
-   open. Seen in Mecway 34 (16 October 2026): *Tools > MecwayAsterBridgeMain* while the
-   window is open opens a second window. The guard `_HUB["open"]` is a module variable,
-   and Mecway loads the modules again for every script start (a change in `bridge_gui.py`
-   was active at the next start without restarting Mecway), so it does not see the first
-   window. Two runs on the same model at the same time are then possible. Possible fix: a
-   check that does not depend on the module, e.g. `Application.OpenForms` (form `Name`) or
-   a named mutex. Whether Mecway allows everything else during the loop (e.g. opening
-   another model) has not been tested.
+38\. **Main window non-modal: other Mecway actions not checked** (question,
+   `bridge_gui.run_settings_dialog`). The window uses `Show()` with its own message
+   loop (`Application.DoEvents`), so Mecway stays usable while it is open. A second
+   start of the bridge is refused (`bridge_gui.claim_instance`, named semaphore per
+   Mecway process; checked in Mecway 34 on 16 October 2026). Whether Mecway allows
+   everything else during the loop (e.g. opening another model) has not been tested.
 
 41\. **Explicit: TCHAMWA with a variable step not checked** (question,
    `bridge_to_aster._explicit_accelerations`). In explicit dynamics (only

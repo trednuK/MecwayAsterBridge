@@ -120,9 +120,10 @@ Het venster blijft open tot je op **Sluiten** klikt. Na een run komt het terug, 
 de uitkomst en eventuele meldingen in het **statusvak** onderaan; bij een melding wordt
 het vak hoger, en met de bovenrand sleep je het groter of kleiner. Het venster is
 niet-modaal: Mecway blijft bruikbaar terwijl het open is (NIET in Mecway gecontroleerd
-voor alle handelingen). Start de bridge niet een
-tweede keer terwijl het venster open is: Mecway opent dan een tweede venster
-(KNOWN_BUGS 38). De kop toont het model en de actieve analyse.
+voor alle handelingen, KNOWN_BUGS 38). De bridge draait maar één keer tegelijk per
+Mecway: start je hem opnieuw (*Tools*) terwijl het venster open is of een run loopt, dan
+meldt hij dat het venster al open is en opent hij geen tweede venster. De kop toont het
+model en de actieve analyse.
 
 Links staat een **navigatielijst** met de pagina's van het venster, in groepen:
 *Instellingen* (Algemeen, Elementen), *Analyses* (een pagina per analyse) en *Hulp*

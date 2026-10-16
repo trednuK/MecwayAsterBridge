@@ -128,9 +128,10 @@ The window stays open until you click "Close". After a run it comes back,
 with the outcome and any messages in the **status box** at the bottom; the box is made
 higher for a message, and you can drag its upper edge to make it larger or smaller. The
 window is non-modal: Mecway stays usable while it is open (NOT checked in Mecway for all
-actions). Do not start the bridge a
-second time while the window is open: Mecway then opens a second window (KNOWN_BUGS 38).
-The header shows the model and the active analysis.
+actions, KNOWN_BUGS 38). The bridge runs only once at a time per Mecway: if you start it
+again (*Tools*) while the window is open or a run is going on, it reports that the window
+is already open and does not open a second window. The header shows the model and the
+active analysis.
 
 On the left is a **navigation list** with the pages of the window, in groups:
 "Settings" (General, Elements), "Analyses" (one page per analysis) and
