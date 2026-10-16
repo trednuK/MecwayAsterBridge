@@ -1,12 +1,11 @@
 # Changelog
 
-## V2026.2.1 – 16 October 2026
+## V2026.3 – 16 October 2026
 
-Patch release on top of V2026.2: Mecway 34's *Element orientation* cards are read, so beams
-rotated with *Loads & Constraints > Element orientation* get the right section axes.
-Tested in Mecway 34 with a card made in the GUI (tip displacement equal to Mecway's own
-solution); verification 401 test cases, 2212 checks (2205 OK, 7 known limitations,
-0 unexpected).
+Beams with large rotations (`POU_D_T_GD`) in nonlinear static, and Mecway 34's *Element
+orientation* cards are read, so beams rotated with *Loads & Constraints > Element orientation*
+get the right section axes. Both build on the fork by MishalTPC
+(github.com/mishal0488/MecwayAsterBridge). VERIFICATION_LINE
 
 - **Element orientation in Loads & Constraints** (`<orientation>` card on an element
   selection, also with formulas of the element centre) is now read instead of skipped, so
