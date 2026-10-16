@@ -98,9 +98,9 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 ## 3. Samenvatting
 
 Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `24258f9`
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `de08b40`
 (alle stappen, de eindcontrole S11 en de uitbreidingen van 15 oktober; Code-Aster 17.4):
-394 testcases, 2152 controles, 2145 OK, 7 BEKEND, 0 NOK/FOUT.
+401 testcases, 2212 controles, 2205 OK, 7 BEKEND, 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -113,11 +113,11 @@ Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Dynamica | 16 | 47 | 47 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 11 | 40 | 40 | 0 |
-| Knik | 20 | 60 | 59 | 1 |
+| Knik | 21 | 62 | 61 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 102 | 331 | 329 | 2 |
+| Lineair statisch | 107 | 369 | 367 | 2 |
 | Metallurgie | 8 | 56 | 56 | 0 |
-| Modaal | 21 | 201 | 201 | 0 |
+| Modaal | 22 | 221 | 221 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
 | Niet-lineair statisch | 25 | 97 | 94 | 3 |
@@ -129,7 +129,7 @@ Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **394** | **2152** | **2145** | **7** |
+| **Totaal** | **401** | **2212** | **2205** | **7** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

@@ -112,9 +112,9 @@ model = AFFE_MODELE(
 #
 # POUTRE: beam cross-sections (CERCLE, RECTANGLE, ...) per GROUP_MA
 #   Example: _F(GROUP_MA='Beam1', SECTION='CERCLE', CARA=('R',), VALE=(0.005,))
-#   Beam orientation: beams with their own V axis in Mecway get
-#   ORIENTATION CARA='VECT_Y' (model_data["beam_vect_y"]); without their own
-#   orientation the defaults of Mecway and Code-Aster are the same.
+#   Beam orientation: every beam gets Mecway's V axis as
+#   ORIENTATION CARA='VECT_Y' (model_data["beam_vect_y"]): own orientation
+#   (element properties or Element orientation card) or Mecway's default.
 #
 # COQUE: plate/shell thicknesses per GROUP_MA
 #   Example: _F(GROUP_MA='Plate1', EPAIS=0.001)
@@ -133,6 +133,7 @@ cara = AFFE_CARA_ELEM(
            SECTION='RECTANGLE',
            CARA=('HY', 'HZ',),
            VALE=(0.04, 0.01,)),
+    ORIENTATION=_F(GROUP_MA='BOR00001', CARA='VECT_Y', VALE=(-0.7071067811865475, 0.7071067811865475, 0.0)),
 )
 
 

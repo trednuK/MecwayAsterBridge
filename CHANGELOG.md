@@ -6,7 +6,7 @@ More of Mecway is translated (bonded contact for shells and in thermal analyses,
 offset, flexible joint, quadratic beams, formulas in x, y, z, node temperature and
 temperature in time), more results come back into Mecway, the bridge waits for Code-Aster
 by itself, and the configurations of a model can be chosen. Tested with Mecway 33 and 34 and
-Code-Aster 17.4; verification 394 test cases, 2152 checks (2145 OK, 7 known limitations,
+Code-Aster 17.4; verification 401 test cases, 2212 checks (2205 OK, 7 known limitations,
 0 unexpected).
 
 ### Workflow

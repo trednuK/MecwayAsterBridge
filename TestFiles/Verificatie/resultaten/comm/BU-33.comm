@@ -75,6 +75,10 @@ cara = AFFE_CARA_ELEM(
            SECTION='GENERALE',
            CARA=('A', 'IY', 'IZ', 'JX',),
            VALE=(1.8e-05, 5.4e-13, 1.3499999999999999e-09, 2.16e-12,)),
+    ORIENTATION=(
+        _F(GROUP_MA='BOR00001', CARA='VECT_Y', VALE=(0.0, 1.0, 0.0)),
+        _F(GROUP_MA='BOR00002', CARA='VECT_Y', VALE=(1.0, 0.0, -0.0)),
+    ),
 )
 
 

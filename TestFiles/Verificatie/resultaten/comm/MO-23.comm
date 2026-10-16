@@ -75,6 +75,7 @@ cara = AFFE_CARA_ELEM(
            SECTION='RECTANGLE',
            CARA=('HY', 'HZ',),
            VALE=(0.04, 0.01,)),
+    ORIENTATION=_F(GROUP_MA='BOR00001', CARA='VECT_Y', VALE=(-0.7071067811865475, 0.7071067811865475, 0.0)),
 )
 
 

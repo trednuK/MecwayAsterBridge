@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 24258f9, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge de08b40, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2145 van 2152 controles binnen de tolerantie** (394 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2205 van 2212 controles binnen de tolerantie** (401 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -549,6 +549,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 24258f9, Code-Aster 17.4
 | BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | knikvorm 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | knikvorm 3 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | BU-24 | Balkorientatie knik: schuin, vector Z + 30 graden, knikvorm | factor 1 t.o.v. Mecway | 1.7272 - | 1.7272 | -0.00% | 0.01% | OK |
+| BU-25 | Orientatiekaart knik: langs Z, X vast, vector X + 30 graden (als BU-23) | factor 1 | 8.2041 - | 8.2041 | +0.00% | 0.2% | OK |
+| BU-25 | Orientatiekaart knik: langs Z, X vast, vector X + 30 graden (als BU-23) | factor 1 t.o.v. Mecway | 8.2041 - | 8.2041 | -0.00% | 0.01% | OK |
 | BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 1 | 109.72 - | 109.72 | +0.00% | 0.2% | OK |
 | BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 2 | 987.46 - | 987.46 | +0.00% | 0.2% | OK |
 | BU-30 | Torsional buckling, I column, beam (POU_D_E) | factor 3 | 1230.4 - | 1230.4 | +0.00% | 0.2% | OK |
@@ -1063,6 +1065,9 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 24258f9, Code-Aster 17.4
 | LS-31c | Idem quad4 met een eigen U-as (orientationu* = breedterichting) | N_u (forceperlengthv) | 30000 N/m | 30000 | -0.00% | 0.1% | OK |
 | LS-31c | Idem quad4 met een eigen U-as (orientationu* = breedterichting) | M_u (momentv) | 7.5 N | 7.5 | -0.00% | 1% | OK |
 | LS-31c | Idem quad4 met een eigen U-as (orientationu* = breedterichting) | N_v (forceperlengthu) | 0 N/m | 0.12041 | 0.12041 | 30 N/m | OK |
+| LS-31d | Idem met de U-as als Element orientation-kaart | N_u (forceperlengthv) | 30000 N/m | 30000 | -0.00% | 0.1% | OK |
+| LS-31d | Idem met de U-as als Element orientation-kaart | M_u (momentv) | 7.5 N | 7.5 | -0.00% | 1% | OK |
+| LS-31d | Idem met de U-as als Element orientation-kaart | N_v (forceperlengthu) | 0 N/m | 0.12041 | 0.12041 | 30 N/m | OK |
 | LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainxx | 4.7619e-04  | 4.7619e-04 | +0.00% | 0.01% | OK |
 | LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainyy | -1.4286e-04  | -1.4286e-04 | -0.00% | 0.01% | OK |
 | LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainzz | -1.4286e-04  | -1.4286e-04 | -0.00% | 0.01% | OK |
@@ -1224,6 +1229,41 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 24258f9, Code-Aster 17.4
 | LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip rotx t.o.v. Mecway | 0.23933 rad | 0.23933 | -0.00% | 0.01% | OK |
 | LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip roty t.o.v. Mecway | -0.26368 rad | -0.26368 | -0.00% | 0.01% | OK |
 | LS-78 | Balkorientatie statisch: raamwerk (3 staven, 3 orientaties) | tip rotz t.o.v. Mecway | -0.0031322 rad | -0.0031322 | +0.00% | 0.01% | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip displx | -0.047617 m | -0.047617 | +0.00% | 5.83591e-06 m | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip disply | 0.022324 m | 0.022324 | -0.00% | 5.83591e-06 m | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip displz | 0.0253 m | 0.0253 | -0.00% | 5.83591e-06 m | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | beamsixxmax inklemming | 2.1109e+08 Pa | 2.1109e+08 | -0.00% | 0.1% | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | beamsixxmin inklemming | -2.0936e+08 Pa | -2.0936e+08 | +0.00% | 0.1% | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip displx t.o.v. Mecway | -0.047617 m | -0.047617 | +0.00% | 4.76167e-06 m | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip disply t.o.v. Mecway | 0.022324 m | 0.022324 | -0.00% | 4.76167e-06 m | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip displz t.o.v. Mecway | 0.0253 m | 0.0253 | -0.00% | 4.76167e-06 m | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip rotx t.o.v. Mecway | 0.0025775 rad | 0.0025775 | +0.00% | 6.31477e-06 rad | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip roty t.o.v. Mecway | -0.063148 rad | -0.063148 | +0.00% | 6.31477e-06 rad | OK |
+| LS-79 | Orientatiekaart statisch: schuin, vector Z + 30 graden (als LS-75) | tip rotz t.o.v. Mecway | 0.06057 rad | 0.06057 | -0.00% | 6.31477e-06 rad | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip displx als LS-78 (attributen, Mecway) | -0.29294 m | -0.29294 | -0.00% | 0.01% | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip disply als LS-78 (attributen, Mecway) | -0.013562 m | -0.013562 | +0.00% | 0.01% | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip displz als LS-78 (attributen, Mecway) | 0.52957 m | 0.52957 | +0.00% | 0.01% | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip rotx als LS-78 (attributen, Mecway) | 0.23933 rad | 0.23933 | -0.00% | 0.01% | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip roty als LS-78 (attributen, Mecway) | -0.26368 rad | -0.26368 | -0.00% | 0.01% | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip rotz als LS-78 (attributen, Mecway) | -0.0031322 rad | -0.0031322 | +0.00% | 0.01% | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip displx t.o.v. Mecway | -0.29294 m | -0.29294 | -0.00% | 5.29567e-05 m | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip disply t.o.v. Mecway | -0.013562 m | -0.013562 | +0.00% | 5.29567e-05 m | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip displz t.o.v. Mecway | 0.52957 m | 0.52957 | +0.00% | 5.29567e-05 m | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip rotx t.o.v. Mecway | 0.23933 rad | 0.23933 | -0.00% | 2.63685e-05 rad | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip roty t.o.v. Mecway | -0.26368 rad | -0.26368 | -0.00% | 2.63685e-05 rad | OK |
+| LS-80 | Orientatiekaart statisch: raamwerk, een kaart per staaf (als LS-78) | tip rotz t.o.v. Mecway | -0.0031322 rad | -0.0031322 | +0.00% | 2.63685e-05 rad | OK |
+| LS-81 | Orientatiekaart statisch: vector en hoek als formule van de plaats | tip displx t.o.v. Mecway | 1.1905e-06 m | 1.1905e-06 | +0.00% | 6.17364e-06 m | OK |
+| LS-81 | Orientatiekaart statisch: vector en hoek als formule van de plaats | tip disply t.o.v. Mecway | 0.061736 m | 0.061736 | -0.00% | 6.17364e-06 m | OK |
+| LS-81 | Orientatiekaart statisch: vector en hoek als formule van de plaats | tip displz t.o.v. Mecway | 0.0038067 m | 0.0038067 | +0.00% | 6.17364e-06 m | OK |
+| LS-81 | Orientatiekaart statisch: vector en hoek als formule van de plaats | tip rotx t.o.v. Mecway | 0 rad | 0 | 0 | 7.19087e-06 rad | OK |
+| LS-81 | Orientatiekaart statisch: vector en hoek als formule van de plaats | tip roty t.o.v. Mecway | -0.011163 rad | -0.011163 | -0.00% | 7.19087e-06 rad | OK |
+| LS-81 | Orientatiekaart statisch: vector en hoek als formule van de plaats | tip rotz t.o.v. Mecway | 0.071909 rad | 0.071909 | -0.00% | 7.19087e-06 rad | OK |
+| LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip displx t.o.v. Mecway | 1.1905e-06 m | 1.1905e-06 | +0.00% | 8.40774e-06 m | OK |
+| LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip disply t.o.v. Mecway | 0.084077 m | 0.084077 | -0.00% | 8.40774e-06 m | OK |
+| LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip displz t.o.v. Mecway | 0.02567 m | 0.02567 | -0.00% | 8.40774e-06 m | OK |
+| LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip rotx t.o.v. Mecway | 0 rad | 0 | 0 | 1.09375e-05 rad | OK |
+| LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip roty t.o.v. Mecway | -0.063616 rad | -0.063616 | +0.00% | 1.09375e-05 rad | OK |
+| LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip rotz t.o.v. Mecway | 0.10937 rad | 0.10937 | -0.00% | 1.09375e-05 rad | OK |
 
 ## Modaal met demping
 
@@ -1508,6 +1548,26 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 24258f9, Code-Aster 17.4
 | MO-29 | Korte balk L/h = 2,5: buiging zonder rotatietraagheid (als Mecway) | f1 zwak | 835.52 Hz | 835.52 | +0.00% | 0.01% | OK |
 | MO-29 | Korte balk L/h = 2,5: buiging zonder rotatietraagheid (als Mecway) | f2 sterk | 3342.1 Hz | 3342.1 | +0.00% | 0.01% | OK |
 | MO-30 | Buigmoment per trillingsvorm (beam_forces) | |M(0)|/|w(L)| mode 1 | 14767 N | 14767 | -0.00% | 1% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | mode 2 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f3 | 52.361 Hz | 52.361 | +0.00% | 0.2% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | mode 3 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f4 | 146.61 Hz | 146.61 | +0.00% | 0.2% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | mode 4 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f5 | 209.44 Hz | 209.44 | +0.00% | 0.2% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | mode 5 langs V | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f6 | 287.3 Hz | 287.32 | +0.01% | 0.2% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | mode 6 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f1 t.o.v. Mecway | 8.3552 Hz | 8.3552 | -0.00% | 0.01% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | f2 t.o.v. Mecway | 33.421 Hz | 33.421 | +0.00% | 0.01% | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | eff. massa X mode 1 | 0.40872 - | 0.40872 | -0.00% | 0.0002 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | eff. massa Y mode 1 | 0.10218 - | 0.10218 | -0.00% | 0.0002 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | eff. massa Z mode 1 | 0.10218 - | 0.10218 | -0.00% | 0.0002 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | eff. massa X mode 2 | 1.7003e-32 - | 9.2643e-23 | +544867129061.25% | 0.0002 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | eff. massa Y mode 2 | 0.30654 - | 0.30654 | -0.00% | 0.0002 - | OK |
+| MO-31 | Orientatiekaart modaal: schuin, vector Z + 30 graden (als MO-25) | eff. massa Z mode 2 | 0.30654 - | 0.30654 | -0.00% | 0.0002 - | OK |
 
 ## Modaal (voorspanning)
 
