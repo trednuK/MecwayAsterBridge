@@ -1333,8 +1333,8 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 - **Resultaat**: (a) hex20 −0,12 … −0,57% (licht stijf, groeiend met de last);
   (b) `COQUE_3D` +0,01% op alle niveaus.
 - **Interpretatie**: grote verplaatsingen werken voor volumes en `COQUE_3D`, en de
-  kracht houdt zijn richting. Balkelementen en DKT blijven in de bridge geometrisch
-  lineair (KNOWN_BUGS 11) en zijn niet getest.
+  kracht houdt zijn richting. DKT en de balken `POU_D_E`/`POU_D_T` blijven in de bridge
+  geometrisch lineair (KNOWN_BUGS 11); dezelfde elastica met balken `POU_D_T_GD`: NL-83.
 
 ### NL-03 Contact
 
@@ -1434,6 +1434,74 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   rekent dezelfde formule ook (verplaatsing evenredig met t, zelfde verhouding tot de
   bridge als bij een constante druk). In lineair statisch neemt de bridge t = eindtijd
   (WARNING).
+
+### NL-80 .. NL-89 Balken met grote rotaties (`POU_D_T_GD`)
+
+- **Doel**: `elem_beam` = `POU_D_T_GD` (STAPPENPLAN S20; [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)):
+  `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
+  snedekrachten uit `SIEF_ELNO`, met de combinaties die de bridge sinds V2026.1 kent
+  (line3, orientatiekaart, formules, Mecway's tijdstap). NL-80 tot NL-82 zijn de
+  benchmarks GB-01 tot GB-03 van de fork van MishalTPC
+  (`github.com/mishal0488/MecwayAsterBridge`, commit dd4c958), hier als Mecway-model
+  door de hele bridge. Module `tests_balken_grote_rotaties.py`.
+- **Model**: ingeklemde balk L = 1 m langs X, RectBar 10 × 20 mm (10 mm langs V),
+  E = 210 GPa, ν = 0,3, 40 line2 (NL-84: 20 line3); vaste inklemming in x = 0.
+- **Referenties** (k = 5/6, `AY` = 1,2 van `RECTANGLE`):
+
+| Case | Belasting | Referentie |
+|---|---|---|
+| NL-80 | eindkracht 1 N in Y (kleine last) | F L³/(3EI) + F L/(kGA) (GB-01) |
+| NL-80b | hetzelfde model in lineair statisch | idem; de bridge maakt er `POU_D_T` van (WARNING) |
+| NL-81 | eindmoment M = (π/2)·EI/L om Z in 20 stappen (Mecway-stap 0,05 s) | cirkelboog: tip x = L sin θ/θ, y = L (1 − cos θ)/θ, θ = π/2 (GB-02); M constant, N = 0 |
+| NL-82 | kolom met beginkromming e0 (1 − cos(πx/2L)), e0 = 1e-4 L in de mesh, drukkracht 0,5 P_cr | totale uitwijking / e0 = 1/(1 − P/P_cr) = 2 (GB-03) |
+| NL-83 | eindkracht van vaste richting, PL²/EI = 1, 2, 3 op t = 1, 2, 3 s | Reissner-balk (rek en afschuiving), schieten met RK4 in de testmodule; onrekbaar gelijk aan Mattiasson (1981) |
+| NL-84 | NL-81 met 20 line3 (40 SEG2-cellen) | als NL-81 |
+| NL-85 | NL-81 met een *Element orientation*-kaart V = Z en het moment om Y | als NL-81 in het XZ-vlak; zonder de kaart zou I vier keer zo groot zijn |
+| NL-86 | centrifugaalkracht 300 r/min om Z (balk radiaal) | u(L) = ρω²L³/(3E), reactie ρAω²L²/2 |
+| NL-87 | line pressure 20 N/m en zwaartekracht in −Z, configuratie GQ | w L⁴/(8EI) + w L²/(2kGA), w = q + ρAg; reactie w L |
+| NL-87b | hetzelfde model, configuratie G (line pressure onderdrukt) | idem met w = ρAg |
+| NL-88 | Thermal stress, ΔT = 100 K | α ΔT L |
+| NL-89 | line pressure als formule `-30*x*t` N/m in −Z (Mecway-stap 0,5 s) | 11 q0 L⁴/(120EI) + q0 L²/(3kGA) (Roark), evenredig met t; reactie q0 L/2 |
+
+  NL-83 vergelijkt ook de snedekrachten met de statica in de vervormde stand (FEM-
+  coördinaten): `bendingmomw` van element 1 = P (x_tip − x_midden), `sheary` en
+  `tensileforce` van het laatste element = P cos φ en P sin φ (φ = hoek van de koorde
+  van dat element). NL-82 en NL-83 zijn ook headless met Mecway 34 gerekend (CCX 2.23,
+  B31; `TestFiles/Tools/mw_solve.py`, gemiddelde van de doorsnedeknopen op x = L).
+  Tolerantie 0,1 %.
+- **Resultaat**: alle controles OK.
+
+| Case | Grootheid | Afwijking | Fork (GB) | Mecway 34 + CCX |
+|---|---|---|---|---|
+| NL-80 | doorbuiging tip | −0,0157 % | −0,0157 % | – |
+| NL-80b | doorbuiging tip | 0,0000 % | – | – |
+| NL-81 | tip x / y / rotatie / M | +0,0112 / +0,0064 / 0,0000 / 0,0000 % | +0,0113 / +0,0064 % | CCX stopt bij t = 0,55 s |
+| NL-82 | uitwijking / e0 | −0,0213 % | −0,0213 % | +0,0047 % |
+| NL-83 | tip u_y op t = 1, 2, 3 | −0,0123 / −0,0079 / −0,0054 % | – | +0,0087 / +0,0125 / +0,0157 % |
+| NL-83 | tip u_x op t = 1, 2, 3 | +0,0331 / +0,0247 / +0,0194 % (kleiner) | – | +0,0036 / −0,0030 / −0,0085 % |
+| NL-83 | snedekrachten tegen de statica (M, V, N) | 0,0000 / +0,0065 / −0,0029 % | – | – |
+| NL-84, NL-85 | als NL-81 | dezelfde waarden als NL-81 | – | – |
+| NL-86 | tipverlenging / reactie | −0,0156 / 0,0000 % | – | – |
+| NL-87, NL-87b | doorbuiging tip / reactie | +0,0008 / 0,0000 %; +0,0002 / 0,0000 % | – | – |
+| NL-88 | tipverlenging | 0,0000 % | – | – |
+| NL-89 | doorbuiging tip op t = 0,5 en 1 / reactie | +0,0285 / +0,0287 / 0,0000 % (kleiner) | – | – |
+
+- **Interpretatie**:
+  1. De route van de fork geeft door de hele bridge dezelfde getallen als de fork (tot
+     op 1e-7: de fork rekende NL-81 met 40 gelijke substappen, hier Mecway's 20 stappen).
+  2. `POU_D_T_GD` is een lineair element met één integratiepunt: de snedekracht is een
+     waarde per element, in het midden; de knoopwaarde is het gemiddelde van de twee
+     elementen. Tegen de statica in de vervormde stand klopt hij tot 0,01 % (NL-83), in
+     de meedraaiende assen van de doorsnede (aan de tip N = P sin φ).
+  3. Line3 en de orientatiekaart veranderen niets aan de kinematica (NL-84, NL-85 gelijk
+     aan NL-81); de kaart bepaalt welke I telt.
+  4. Mecway 34 rekent niet-lineaire balken alleen met CCX (de eigen solver gaf headless
+     geen oplossing). Met een eindkracht (NL-83) en de kolom (NL-82) ligt de bridge binnen
+     0,02 % van Mecway/CCX; het eindmoment van NL-81 haalde CCX niet verder dan
+     t = 0,55 s (daar wel op de cirkelboog).
+  5. Niet in deze cases (WARNING in de bridge, KNOWN_BUGS 11): grote opgelegde rotaties
+     (een slanke balk convergeerde tot 0,41 rad), element offset, flexible joint en
+     koppelingen bij grote rotaties (lineaire relaties), een moment in 3D.
 
 ## 6. Dynamica (DY)
 
@@ -2930,8 +2998,9 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
 - wrijving (NL-03 is wrijvingsloos), verlijmd contact behalve schaal op schaal (LS-07),
   contact in dynamica (impliciet
   en expliciet);
-- balken en DKT bij grote verplaatsingen (KNOWN_BUGS 11; NL-02 alleen volumes en
-  `COQUE_3D`);
+- DKT bij grote verplaatsingen (KNOWN_BUGS 11; NL-02 alleen volumes en `COQUE_3D`;
+  balken met grote rotaties: `POU_D_T_GD`, NL-80 .. NL-89), en bij `POU_D_T_GD` grote
+  opgelegde rotaties, element offset, flexible joint en koppelingen;
 - gap- en tension-only-elementen, dempers in transiente dynamica (DY, MD; dempers wel
   harmonisch en in complexe modes: HR-01d, MC, VH-04c).
 

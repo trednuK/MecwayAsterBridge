@@ -107,8 +107,8 @@ Bonded contact per combination (slave on master):
 | tri3, quad4 (shell) | Yes | `DKT` (or `DST`/`COQUE_3D` as a choice) | ~0.7% different from Mecway (KB2). |
 | tri6, quad8 (shell) | Yes | `COQUE_3D` | As master of bonded contact: displacements with `LIAISON_DDL`, rotations with `LIAISON_MAIL` (LS-07i..k). |
 | linear and quadratic shells in one component | Partly | – | The quadratic ones are not modelled (ERROR). Split the component. |
-| beam line2 | Yes | `POU_D_E` (or `POU_D_T`) | Orientation from *Element properties* or an *Element orientation* card (see Element orientation below). No plasticity (KB6), no large rotations (KB11). |
-| beam line3 | Yes | `POU_D_E` (or `POU_D_T`) | Each element is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results on all three nodes. Mecway itself solves line3 beams only with CCX. A curved element (midside node off the chord) thus becomes two straight pieces with a kink, Mecway computes the curved shape (WARNING; refine the curve, KB107). Verification LS-50. Truss, spring, gap, damper and tension-only on line3: No (ERROR; line2 only in Mecway). |
+| beam line2 | Yes | `POU_D_E` (or `POU_D_T`, `POU_D_T_GD`) | Orientation from *Element properties* or an *Element orientation* card (see Element orientation below). No plasticity (KB6). Large rotations only with `elem_beam` = `POU_D_T_GD` in nonlinear static ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd); elsewhere `POU_D_T`, WARNING; verification NL-80–89); with `POU_D_E`/`POU_D_T` beams stay geometrically linear (KB11). |
+| beam line3 | Yes | `POU_D_E` (or `POU_D_T`, `POU_D_T_GD`) | Each element is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results on all three nodes. Mecway itself solves line3 beams only with CCX. A curved element (midside node off the chord) thus becomes two straight pieces with a kink, Mecway computes the curved shape (WARNING; refine the curve, KB107). Verification LS-50. Truss, spring, gap, damper and tension-only on line3: No (ERROR; line2 only in Mecway). |
 | truss line2 | Yes | `BARRE` | Small displacements (KB40). Beams and trusses in one component become two groups (`<name>_TRUSS`). |
 | spring, damper, gap (line2) | Yes | `DIS_T` (gap: `DIS_CHOC`) | Along the element's own axis. Gap nonlinear only (KB23); springs/dampers not compared with Mecway (KB47). |
 | tension only (line2, truss) | Partly | `CABLE` | Nonlinear only; compressive stiffness 1e-4 E (KB23). |
@@ -145,8 +145,8 @@ Bonded contact per combination (slave on master):
 | Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). Route `tabel`: KB7. |
 | von Mises (solids; shells top/middle/bottom) | Yes | KB3. |
 | Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`; route `liml` only. `shell_forces` is on for static and nonlinear and makes the results about 2.5 times larger with shells (WARNING; untick it on the page of the analysis). Mecway's *stress in element coordinates* (`stressuu` ..) not. U axis from *Element properties* or an *Element orientation* card ([`UserGuide.md`](UserGuide.md) §4.1). |
-| Beam stress | Partly | Only smallest/largest axial stress for rectangular and circular sections (`beamsixxmin/max`). |
-| Section forces and moments of beams | Yes | Field `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), also per mode. |
+| Beam stress | Partly | Only smallest/largest axial stress for rectangular and circular sections (`beamsixxmin/max`); not with `POU_D_T_GD` (WARNING). |
+| Section forces and moments of beams | Yes | Field `beam_forces` (`tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv/w`), also per mode. With `POU_D_T_GD` from `SIEF_ELNO`, one value per element in the co-rotating axes (NL-81, NL-83). |
 | Reaction forces and moments | Yes | Not with mode superposition, harmonic and vibroacoustics (KB54, KB59). |
 | Velocity, acceleration | Yes | Dynamics; acceleration not with mode superposition (KB54). |
 | Plastic strain, equivalent plastic strain | Partly | Equivalent plastic strain not with kinematic hardening (KB6). |

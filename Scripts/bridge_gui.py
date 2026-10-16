@@ -106,7 +106,7 @@ GENERAL_SPECS = [
      ("DKT", "DST", "COQUE_3D")),
     ("elem_beam", ("Balken (line2/line3)", "Beams (line2/line3)"),
      "choice",
-     ("POU_D_E", "POU_D_T")),
+     ("POU_D_E", "POU_D_T", "POU_D_T_GD")),
 ]
 
 # General keys that are on the page "Elementen".
@@ -136,7 +136,11 @@ _ELEMENT_HELP = (
     u"  \u2022 POU_D_E: Euler-Bernoulli, zoals Mecway.\n"
     u"  \u2022 POU_D_T: Timoshenko (met afschuifvervorming); I/T/C/L-profielen "
     u"met benaderde afschuifco\u00ebffici\u00ebnten,\n"
-    u"     algemene doorsnede AY = AZ = 1.",
+    u"     algemene doorsnede AY = AZ = 1.\n"
+    u"  \u2022 POU_D_T_GD: Timoshenko met grote verplaatsingen en rotaties; "
+    u"alleen Niet-lineair statisch\n"
+    u"     met grote verplaatsingen (anders POU_D_T). Geen balkspanningen; "
+    u"zie Instellingen contact en niet-lineair.",
     u"Hex8 (solid elements)\n"
     u"  \u2022 3D: fully integrated; stiffer than Mecway's hex8 (incompatible "
     u"modes), see KNOWN_BUGS 1.\n"
@@ -160,7 +164,11 @@ _ELEMENT_HELP = (
     u"  \u2022 POU_D_E: Euler-Bernoulli, like Mecway.\n"
     u"  \u2022 POU_D_T: Timoshenko (with shear deformation); I/T/C/L profiles "
     u"with approximated shear coefficients,\n"
-    u"     general section AY = AZ = 1.")
+    u"     general section AY = AZ = 1.\n"
+    u"  \u2022 POU_D_T_GD: Timoshenko with large displacements and "
+    u"rotations; only Nonlinear static\n"
+    u"     with large displacements (otherwise POU_D_T). No beam stresses; "
+    u"see Settings contact and nonlinear.")
 
 # Readable titles of the analyses (pages and messages), in the order
 # of the navigation. Analyses not listed here get their key as

@@ -175,10 +175,19 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 11\. **Large rotations: beams, prescribed rotations and rigid couplings** (confirmed).
    With `deformation` = GROT_GDEP the bridge chooses a large-displacement formulation per
-   element type (`_deformation_for`). Not: beams (POU_D_E stays PETIT; POU_D_T_GD
-   with ELAS_POUTRE_GR already converged poorly for a rigid rotation), DDL_IMPO on
-   DRX/DRY/DRZ and LIAISON_SOLIDE (with TYPE_CHARGE='SUIV' not if a node has rotational
-   degrees of freedom, CHARGES_36). What does work: driving a rigid part with the
+   element type (`_deformation_for`). Beams `POU_D_E`/`POU_D_T` stay PETIT (WARNING;
+   GROT_GDEP on POU_D_E did not converge); with `elem_beam` = `POU_D_T_GD` (STAPPENPLAN
+   S20, nonlinear static only, elsewhere POU_D_T) beams do compute large rotations
+   (ELAS_POUTRE_GR; verification NL-80 .. NL-89). Not, or only partly: DDL_IMPO on
+   DRX/DRY/DRZ (on nodes of POU_D_T_GD beams the total rotation vector, Code-Aster test
+   case zzzz364a: a stocky beam 100 x 100 mm rotated rigidly through 90 degrees exactly,
+   but a slender beam 10 x 20 mm, L = 1 m, stopped converging at 0.41 rad (rigid rotation)
+   and 0.58 rad (end rotation), also with 5x smaller steps, while an end moment reached
+   90 degrees: WARNING in `_warn_large_rotations`), LIAISON_SOLIDE (with
+   TYPE_CHARGE='SUIV' not if a node has rotational degrees of freedom, CHARGES_36), and
+   with POU_D_T_GD the rigid arms of an element offset, flexible joints and couplings
+   (linear relations in the undeformed axes, KNOWN_BUGS 106, 108; WARNING in
+   `_warn_gd_linear_links`; with small loads equal to POU_D_T). What does work: driving a rigid part with the
    exact rigid motion via #ASTER (FORMULE, docs/ASTER_regels_voorbeelden.md
    example 9). A bending model (profile around a die, with a roller) has been computed implicitly up to 90 degrees this way; the
    roller/profile contact still converges with difficulty there (roller coarse as slave: WARNING).
@@ -379,6 +388,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    (b) The coupling of the rotations is fixed in the local axes of the undeformed
    element: with large rotations (`GROT_GDEP`) the axes do not rotate along (not
    reproduced; Mecway does not support the joint in Nonlinear Static, manual v33 sec. 9.12).
+   Only relevant with `elem_beam` = `POU_D_T_GD` (other beams stay PETIT): WARNING
+   (`bridge_to_aster._warn_gd_linear_links`).
 
 107\. **Line3 beams: two straight SEG2 cells** (confirmed, choice;
    `bridge_mesh.write_mesh`). Code-Aster has no quadratic beam element; each
@@ -397,7 +408,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    COQUE_3D) with an element offset lie on their own nodes, with a rigid
    arm per node as `LIAISON_DDL` (linear). (a) With `DEFORMATION` = `GROT_GDEP` the arm stays
    linear (small rotations, like LIAISON_SOLIDE in KNOWN_BUGS 11; WARNING for shell arms,
-   `bridge_to_aster._warn_linear_couplings`); DKT/DST with
+   `bridge_to_aster._warn_linear_couplings`, and for beam arms with `POU_D_T_GD`,
+   `_warn_gd_linear_links`); DKT/DST with
    `EXCENTREMENT` not. (b) Stresses of the offset element are placed on the
    Mecway node in Mecway; if that node already has a value itself (other element), that value stays
    (`aster_results_export._offset_values`). (c) Mecway 34 itself gives a different result with a *Fixed

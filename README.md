@@ -150,7 +150,9 @@ and is not included either.
 - This work was inspired by **Efficient** from Moonish Engineering:
   <https://engineering.moonish.biz/software/efficient.html>.
 - The reading of Mecway 34's *Element orientation* cards and the explicit beam orientation for every beam
-  were found in the fork by **MishalTPC**: <https://github.com/mishal0488/MecwayAsterBridge>.
+  were found in the fork by **MishalTPC**: <https://github.com/mishal0488/MecwayAsterBridge>. The beams
+  with large rotations (`elem_beam` = `POU_D_T_GD`: the Code-Aster route and the benchmarks GB-01 to
+  GB-03) come from the same fork.
 - Want to learn more about Code-Aster and how to use its commands? Use the work of
   **Jean-Pierre Aubry**: <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 

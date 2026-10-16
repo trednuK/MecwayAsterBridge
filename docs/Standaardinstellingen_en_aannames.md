@@ -61,7 +61,7 @@ Pagina's *Algemeen* en *Elementen* van het startscherm. Ze gelden voor alle anal
 | `med_export` | uit | ook een `.rmed` voor ParaView/Salome | Keuze: Mecway gebruikt het niet, het kan honderden MB worden | nabewerking buiten Mecway | - |
 | `elem_hex8` (Hex8-volume-elementen) | `3D` | `MODELISATION='3D'` (volledig geïntegreerd) | CA-standaardelement; `LINE_QUAD` werkt alleen bij een model met uitsluitend volume-elementen en niet expliciet, en geeft ~3x zoveel knopen | buiging met weinig hex8 over de dikte: `LINE_QUAD` (of hex20 in Mecway) | LS-02: hex8 `3D` −35,7 / −13,1 / −4,3 / −1,7 / −0,9 % (n = 1…16), `LINE_QUAD` = hex20; KNOWN_BUGS 1 |
 | `elem_shell` (Lineaire schalen) | `DKT` | tri3/quad4 → `DKT` (Kirchhoff) | Keuze: dunne platen, lineair en niet-lineair bruikbaar (`DST` alleen lineair) | grote rotaties of dikke schalen: `COQUE_3D` | LS-03-dkt (Navier, −0,003 %), NL-02b (`COQUE_3D`), KNOWN_BUGS 2 |
-| `elem_beam` (Balken) | `POU_D_E` | Euler-Bernoulli-balk | Mecway-balk is ook Euler-Bernoulli | korte, dikke balken: `POU_D_T` | LS-01 (0,00 %), MO-01, BU-01, DY-02 |
+| `elem_beam` (Balken) | `POU_D_E` | Euler-Bernoulli-balk | Mecway-balk is ook Euler-Bernoulli | korte, dikke balken: `POU_D_T`; grote rotaties in niet-lineair statisch: `POU_D_T_GD` (elders `POU_D_T`, WARNING; [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)) | LS-01 (0,00 %), MO-01, BU-01, DY-02; `POU_D_T_GD`: NL-80–89 (≤ 0,04 %) |
 
 ---
 
@@ -474,9 +474,9 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Aanname | Wat de bridge doet | Status |
 |---|---|---|
 | Mecway's niet-lineaire analyse is geometrisch niet-lineair | standaard `GROT_GDEP` | bron: Mecway (2026) §6.2.1 (alleen CCX); gemeten: een plastische staaf was met `PETIT` 14 % te stijf, met grote verplaatsingen +1 % t.o.v. Mecway (eerdere run, model niet in de repository) |
-| Vorm per element | volume elastisch `GREEN_LAGRANGE` (of `GDEF_LOG`), volume plastisch `GDEF_LOG` (of `SIMO_MIEHE`, niet met `VMIS_CINE_LINE`), DKT/DST `GREEN_LAGRANGE` (gaf dezelfde uitkomst als `PETIT`; met `VMIS_CINE_LINE` `PETIT`), `COQUE_3D` `GROT_GDEP`, balken `PETIT`, kabels `GROT_GDEP`, discreten `PETIT` | gemeten met runs op een gemengd model (`bridge_to_aster._deformation_for`); NL-02a (volume) en NL-02b (`COQUE_3D`) exact; grote verplaatsingen van DKT en balken: NIET mogelijk (KNOWN_BUGS 11); discreten met grote verplaatsingen: NIET geverifieerd |
+| Vorm per element | volume elastisch `GREEN_LAGRANGE` (of `GDEF_LOG`), volume plastisch `GDEF_LOG` (of `SIMO_MIEHE`, niet met `VMIS_CINE_LINE`), DKT/DST `GREEN_LAGRANGE` (gaf dezelfde uitkomst als `PETIT`; met `VMIS_CINE_LINE` `PETIT`), `COQUE_3D` `GROT_GDEP`, balken `PETIT` (`POU_D_T_GD`: `GROT_GDEP` met `ELAS_POUTRE_GR`), kabels `GROT_GDEP`, discreten `PETIT` | gemeten met runs op een gemengd model (`bridge_to_aster._deformation_for`); NL-02a (volume) en NL-02b (`COQUE_3D`) exact; grote verplaatsingen van DKT en van balken `POU_D_E`/`POU_D_T`: NIET mogelijk (KNOWN_BUGS 11), balken `POU_D_T_GD`: NL-80–89; discreten met grote verplaatsingen: NIET geverifieerd |
 | Dynamica volgt de statische keuze | `GROT_GDEP` ook in `dyna_*` | Keuze, NIET tegen Mecway geverifieerd; DY-03: verschil met lineaire theorie 1,4e-4…6,9e-4 (fysisch) |
-| Opgelegde rotaties en starre koppelingen | blijven kleine rotaties; WARNING boven ~6° | KNOWN_BUGS 11 |
+| Opgelegde rotaties en starre koppelingen | blijven kleine rotaties; WARNING boven ~6° (op knopen van `POU_D_T_GD`: de totale rotatievector, WARNING over de convergentie) | KNOWN_BUGS 11 |
 | Starre arm van een element offset | `LIAISON_DDL` in de onvervormde assen: kleine rotaties, ook met `GROT_GDEP` (WARNING bij verschoven schalen) | KNOWN_BUGS 108 |
 
 ### 4.6 Contact

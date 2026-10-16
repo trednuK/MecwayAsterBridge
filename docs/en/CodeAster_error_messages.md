@@ -338,14 +338,15 @@ that file, not in the model.
   with negative generalised mass (seen with a shell with only one rotation fixed; the
   bridge now filters those modes first, [`Acoustics.md`](Acoustics.md) §6.5).
 - **Seen**: (a) profile test; (b) large-rotation trials.
-- **Solution**: (a) see `MODELISA_78`; (b) only with your own `POU_D_T_GD` code:
-  `ELAS_POUTRE_GR`. The bridge does not create `POU_D_T_GD`.
-- **Status**: fixed in the bridge (a) / own input (b).
+- **Solution**: (a) see `MODELISA_78`; (b) with `elem_beam` = `POU_D_T_GD` the bridge
+  itself writes `ELAS_POUTRE_GR` ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)); only your own code with
+  `POU_D_T_GD` and `ELAS` gives this error.
+- **Status**: fixed in the bridge (a, b).
 
 ### `CALCUL_37` – element cannot compute this option
 
 - **Message** (error): "Le TYPE_ELEMENT X ne sait pas encore calculer l'option: Y".
-- **Cause**, five cases:
+- **Cause**, six cases:
   1. `MECA_HEXS8` (hex8 as `3D_SI`) cannot compute `PAS_COURANT` (stable time step in
      explicit dynamics);
   2. `MECA_POU_D_T_GD` cannot compute `RIGI_MECA` (`PREDICTION='ELASTIQUE'` or
@@ -353,15 +354,20 @@ that file, not in the model.
   3. `MEDKQU4` (DKT) and `MECA_DIS_T_N` (discrete element) cannot compute
      `CHAR_MECA_ROTA_R` (centrifugal load with shells or discrete elements);
   4. format test model F4_model (dynamics): element and option not checked;
-  5. `MECABL2` (cable, tension only) cannot compute `ROTATION`.
+  5. `MECABL2` (cable, tension only) cannot compute `ROTATION`;
+  6. `MECA_POU_D_T_GD` cannot compute `RIGI_MECA` in a linear analysis, `SIPM_ELNO`
+     (beam stress) and `CHAR_MECA_ROTA_R` (centrifugal force) either.
 - **Seen**: 1 explicit dynamics with `3D_SI`; 2 beam trials; 3 and 4 load tests; 5 code
-  review (commit 6ce5cba).
+  review (commit 6ce5cba); 6 trials for STAPPENPLAN S20.
 - **Solution**: 1 the bridge always chooses `3D` with an explicit scheme (WARNING); 2 no
   `PREDICTION`/`MATRICE='ELASTIQUE'` with GD beams; 3 `ROTATION` only on elsets without
   discrete elements, in a model with shells as a `FORMULE` of X, Y, Z per elset and
   `FORCE_NODALE` on nodal masses (`_centrifugal_loads`); 4 not determined; 5 cables get
-  no centrifugal force (ERROR; KNOWN_BUGS 19).
-- **Status**: fixed in the bridge (1, 3; 5 as a message) / own input (2) / cause not
+  no centrifugal force (ERROR; KNOWN_BUGS 19); 6 with `elem_beam` = `POU_D_T_GD` the
+  bridge makes `POU_D_T` in analyses other than nonlinear static, requests no
+  `SIPM_ELNO` and writes the centrifugal force as a `FORMULE` (WARNING);
+  `imperfection_amplitude` gives an ERROR beforehand.
+- **Status**: fixed in the bridge (1, 3, 6; 5 as a message) / own input (2) / cause not
   determined (4).
 
 ### `CALCUL_42` – option not yet programmed (follower pressure on DKT)
@@ -947,8 +953,9 @@ Step-by-step plan and settings:
 ## 6. Large rotations
 
 With *COMPORTEMENT DEFORMATION* for large displacements the bridge chooses the form per
-element type (`COMPOR5_22`, `COMPOR1_44/47/99`); beams, imposed rotations (`DDL_IMPO`
-DR*) and rigid couplings stay small rotations (KNOWN_BUGS 11). The bridge warns for an
+element type (`COMPOR5_22`, `COMPOR1_44/47/99`); beams `POU_D_E`/`POU_D_T`, imposed
+rotations (`DDL_IMPO` DR*) and rigid couplings stay small rotations (KNOWN_BUGS 11);
+beams with large rotations: `elem_beam` = `POU_D_T_GD` ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)). The bridge warns for an
 imposed rotation above ~6° (`_warn_large_rotations`). Rotating a rigid part through a
 large angle works robustly with an imposed displacement as a `FORMULE` (example 9 of
 [`ASTER_lines_examples.md`](ASTER_lines_examples.md), recomputed on 06-10-2026).
@@ -966,7 +973,10 @@ large angle works robustly with an imposed displacement as a `FORMULE` (example 
 
 Also with large rotations: `COMPOR5_22`, `COMPOR1_44`, `COMPOR1_47`, `COMPOR1_99`,
 `DVP_2` (`POU_D_T_GD` with `ELAS`), `CALCUL_37` (`POU_D_T_GD` with
-`PREDICTION='ELASTIQUE'`), `MECANONLINE9_7` case 5.
+`PREDICTION='ELASTIQUE'`), `MECANONLINE9_7` case 5. With `POU_D_T_GD` the bridge
+prevents beforehand: `ALGELINE4_41` (`crit_stab`: the tangent matrix is not symmetric;
+ERROR) and `DVP_1` (`EFGE_ELNO` on this element, `te0185.F90`; the bridge requests
+`SIEF_ELNO`).
 
 ---
 

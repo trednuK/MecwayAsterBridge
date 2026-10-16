@@ -84,9 +84,10 @@ _ASTER_TYPES = {
 # in Code-Aster. Two Euler cells each interpolate cubically, so
 # at least as good as a quadratic beam (Mecway's line3 beam only solves
 # with CCX, B32R; verification LS-50). Solved with POU_D_T: LS-51e
-# +0.09 % (shear), Code-Aster 17.4.
+# +0.09 % (shear), Code-Aster 17.4. POU_D_T_GD (large rotations, SEG2
+# only like POU_D_E) likewise: verification NL-84 (90-degree bend with line3).
 # The mid node becomes an ordinary node with 6 degrees of freedom.
-_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T")
+_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T", "POU_D_T_GD")
 # Group of the POI1 cells (DIS_TR, stiffness 0) on nodes of a flexible
 # joint without another element with rotations (_flexible_joints)
 JOINT_GROUP = "BRJOINT"
@@ -440,7 +441,8 @@ _DIRICHLET_BCS = frozenset(["fixed", "pinnedsupport", "displacement",
 
 
 # Modelisations with rotational degrees of freedom at nodes (_flexible_joints)
-_ROT_MODS = frozenset(["POU_D_E", "POU_D_T", "POU_D_TG", "DKT", "DST",
+_ROT_MODS = frozenset(["POU_D_E", "POU_D_T", "POU_D_TG", "POU_D_T_GD",
+                       "DKT", "DST",
                        "COQUE_3D", "DIS_TR"])
 _ROT_DOFS = ("DRX", "DRY", "DRZ")
 
@@ -1799,7 +1801,8 @@ def _line_pressure(model_data, bc, faces):
     kinds = faces.get("kinds", set()) if faces else set()
     local = bc["params"].get("_local")
     elem_mods = _element_kinds(model_data, sel)
-    if not kinds and elem_mods and elem_mods <= set(["POU_D_E", "POU_D_T", "BARRE"]):
+    if not kinds and elem_mods and elem_mods <= set(
+            ["POU_D_E", "POU_D_T", "POU_D_T_GD", "BARRE"]):
         bc["aster_keyword"] = "FORCE_POUTRE"
         return
     if kinds == set(["shelledge"]) and not local:

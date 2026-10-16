@@ -499,7 +499,9 @@ aanraadt (EDF R&D, U2.08.04 §2.2).
    met `LINE_QUAD`) of schalen met `elem_shell` = `COQUE_3D`. Balken (`POU_D_E`) en
    DKT/DST-schalen rekenen in de bridge geometrisch lineair (KNOWN_BUGS 11): daar
    werkt CRIT_STAB wel (als lastfactor), maar groeit de uitbuiging met een
-   imperfectie niet (WARNING).
+   imperfectie niet (WARNING). Balken `POU_D_T_GD` (grote rotaties) kunnen geen
+   CRIT_STAB en geen imperfectie uit een knikvorm (ERROR); leg de beginkromming dan in
+   de mesh ([Verificatie](Verificatie.md) NL-82).
 4. **Pagina Niet-lineair statisch** (of per model met `#ASTER-OPTIE`,
    [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2):
 

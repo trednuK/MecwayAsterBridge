@@ -43,7 +43,8 @@ Wat de niet-lineaire analyses ondersteunen:
 
 - materiaal: `ELAS`; met plasticiteit `VMIS_ISOT_TRAC` (hardingscurve,
   Ramberg-Osgood, OpenRadioss `PLAS_TAB`), `VMIS_ISOT_LINE` of `VMIS_CINE_LINE`
-  (bilineair); tension only `CABLE`, gap `DIS_CHOC`;
+  (bilineair); tension only `CABLE`, gap `DIS_CHOC`; balken met grote rotaties
+  `ELAS_POUTRE_GR` (`elem_beam` = `POU_D_T_GD`, §2.9);
 - contact: Mecway `contact2` wordt `DEFI_CONTACT` (§3); compression only
   `DEFI_CONTACT FORMULATION='LIAISON_UNIL'`;
 - dynamica: beginsnelheid (Mecway `initialconditions/velocity`) wordt
@@ -236,7 +237,8 @@ details per elset staan als INFO in het log.
 | volume, plastisch | `GDEF_LOG`, of `SIMO_MIEHE` als dat gekozen is (met `VMIS_CINE_LINE` altijd `GDEF_LOG`) | `GREEN_LAGRANGE` met `VMIS_*` geweigerd, `SIMO_MIEHE` met `VMIS_CINE_LINE` ook (`COMPOR1_44`) |
 | DKT/DST | `GREEN_LAGRANGE` (met `VMIS_CINE_LINE` `PETIT`) | `GROT_GDEP` convergeerde niet, `GDEF_LOG` geweigerd (`COMPOR1_99`); `GREEN_LAGRANGE` gaf dezelfde uitkomst als `PETIT`, dus in feite geometrisch lineair. Grote rotaties van schalen: `elem_shell` = `COQUE_3D` |
 | `COQUE_3D` | `GROT_GDEP` | alarm `COMPOR1_47`: rotaties < 2π; NL-02b exact |
-| balk `POU_D_E`/`POU_D_T` | `PETIT` | grote rotaties vragen `POU_D_T_GD` met `ELAS_POUTRE_GR`; `GROT_GDEP` op `POU_D_E` convergeerde niet (KNOWN_BUGS 11) |
+| balk `POU_D_E`/`POU_D_T` | `PETIT` | `GROT_GDEP` op `POU_D_E` convergeerde niet (KNOWN_BUGS 11); voor grote rotaties `elem_beam` = `POU_D_T_GD` |
+| balk `POU_D_T_GD` | `GROT_GDEP` met `ELAS_POUTRE_GR` | grote rotaties van balken (§2.9) |
 | kabel (tension only) | altijd `GROT_GDEP` | `RELATION='CABLE'` vraagt dat |
 | discreet (veer, knoopmassa, elastic support) | `PETIT` (`PETIT_REAC` als gekozen) | grote verplaatsingen voor discreten NIET geverifieerd |
 
@@ -259,7 +261,8 @@ volumes draaien. Plasticiteit op balken wordt elastisch gerekend (WARNING).
 | `GREEN_LAGRANGE` | Green-Lagrange-rek. | Elastische volumes met grote verplaatsingen (NL-02a). |
 
 Opgelegde rotaties (`DDL_IMPO` DRX/DRY/DRZ) en starre koppelingen
-(`LIAISON_SOLIDE`) blijven ook met grote verplaatsingen kleine rotaties; een
+(`LIAISON_SOLIDE`) blijven ook met grote verplaatsingen kleine rotaties (op de knopen
+van `POU_D_T_GD`-balken is een opgelegde rotatie de totale rotatievector, §2.9); een
 opgelegde rotatie boven ~6° geeft een WARNING (`_warn_large_rotations`). Een star
 deel draai je robuust via `#ASTER` (`ASTER_regels_voorbeelden.md` voorbeeld 9).
 
@@ -398,6 +401,61 @@ thermisch (`theta` en de Newton-instellingen van `THER_NON_LINE`) in
 §3.8. Knik zoekt altijd de kleinste kniklastfactoren (`OPTION='PLUS_PETITE'`), zoals
 Mecway; een zoekcentrum (`OPTION='CENTRE'`) negeert `CHAR_CRIT` in Code-Aster 17.4
 (R-BSHIFT) en is daarom geen instelling.
+
+### 2.9 Balken met grote rotaties: `elem_beam` = `POU_D_T_GD`
+
+Standaard rekenen balken in de niet-lineaire analyses geometrisch lineair (`POU_D_E`/
+`POU_D_T` met `PETIT`, §2.3; KNOWN_BUGS 11). Voor grote verplaatsingen en rotaties van
+balken kies je op de pagina **Elementen** `elem_beam` = `POU_D_T_GD`. De bridge zet dan:
+
+```python
+model = AFFE_MODELE(..., AFFE=_F(GROUP_MA=..., MODELISATION='POU_D_T_GD'))
+res = STAT_NON_LINE(...,
+    COMPORTEMENT=_F(GROUP_MA=..., RELATION='ELAS_POUTRE_GR', DEFORMATION='GROT_GDEP'))
+```
+
+Een elastische Timoshenko-balk (met afschuifvervorming; `AY`/`AZ` als bij `POU_D_T`)
+met grote verplaatsingen en rotaties en kleine rekken (EDF R&D, U4.51.11; Code-Aster-
+testcase ssnl103a). Het idee, de Code-Aster-route, de eerste lijst beperkingen en de
+benchmarks NL-80 tot NL-82 komen uit de fork van MishalTPC
+(`github.com/mishal0488/MecwayAsterBridge`, MPL-2.0); de bridge heeft ze opnieuw
+gebouwd voor element offset, flexible joint, line3, balkorientatie en `beam_forces`.
+
+| Combinatie | Wat de bridge doet |
+|---|---|
+| niet-lineair statisch met grote verplaatsingen (`deformation` standaard `GROT_GDEP`) | `POU_D_T_GD`: kracht en moment (constant of als tabel in de tijd), line pressure (constant of als formule in x, y, z, t), zwaartekracht, Thermal stress, Mecway's *Time step size*, configuraties (NL-80 tot NL-89) |
+| line3-balk | twee SEG2-cellen per element, zoals bij `POU_D_E` (NL-84) |
+| balkorientatie (attributen en *Element orientation*) | expliciete `VECT_Y` per cel (NL-85) |
+| centrifugaalkracht | `ROTATION` kan niet op dit element (`CHAR_MECA_ROTA_R`, `CALCUL_37`); de bridge zet `FORCE_POUTRE` als formule van de beginpositie: een vaste last, zonder spin softening (NL-86) |
+| plastisch materiaal | elastisch gerekend (WARNING), zoals bij de andere balken |
+| andere analyses (statisch, modaal, knik, harmonisch, spectrum, dynamica) en niet-lineair met `PETIT`/`PETIT_REAC` | `POU_D_T` met een WARNING: dezelfde balk bij kleine verplaatsingen (NL-80b). Het element kent geen `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamica (testcase sdnl103a) is in de bridge NIET geverifieerd |
+| `crit_stab` | ERROR: de tangentmatrix is niet symmetrisch (`ALGELINE4_41`) |
+| `imperfection_amplitude` > 0 | ERROR: de lineaire knik vooraf vraagt `RIGI_MECA`; leg de beginkromming in de mesh (NL-82) |
+| element offset, flexible joint, koppelingen | rekenen (bij kleine lasten gelijk aan `POU_D_T`), maar blijven lineaire relaties in de onvervormde assen: WARNING (KNOWN_BUGS 11, 106, 108) |
+| opgelegde rotatie (`noderotation`) | de totale rotatievector (exact voor een rotatie om één vaste as), maar slanke balken convergeren slecht: WARNING (KNOWN_BUGS 11) |
+
+**Resultaten.** Verplaatsingen, rotaties en reacties zoals altijd. Snedekrachten
+(`beam_forces`: `tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv`,
+`bendingmomw`) komen uit `SIEF_ELNO`/`SIEF_NOEU` (`EFGE_ELNO` stopt bij dit element met
+`DVP_1`), in de meedraaiende assen van de doorsnede, met dezelfde namen en tekens als bij
+`POU_D_E`. Het is één waarde per element (één integratiepunt, in het midden); de
+knoopwaarde is het gemiddelde van de aangrenzende elementen, dus bij de inklemming een
+half element naast de maximale waarde. Balkspanningen (`beamsixxmin`/`beamsixxmax`) zijn
+er niet: het element kent `SIPM_ELNO` niet (`CALCUL_37`). Een WARNING per run noemt dat.
+
+**Aanwijzingen.**
+
+- `POU_D_T_GD` is een lineair element: neem 20 tot 40 elementen per staaf (met 40
+  elementen 0,01 tot 0,03 % van de analytische oplossing, NL-81 en NL-83).
+- Laat de last oplopen (een tabel in de tijd, Mecway's *Time step size*): NL-81 buigt
+  90 graden in 20 stappen.
+- Bij een kleine last stagneert `RESI_GLOB_RELA` op afronding: kies
+  `convergence_criterion` = `RELA_OF_MAXI` met een absolute grens (§2.2, NL-80).
+- Krachten houden hun richting (vaste last, zoals in Mecway: NL-83 ligt binnen 0,02 %
+  van Mecway 34 met CCX). Een moment om een vaste as (vlakke buiging) is exact (NL-81);
+  een moment in 3D is NIET geverifieerd.
+- Mecway 34 rekent niet-lineaire balken alleen met CCX (de eigen solver gaf geen
+  oplossing); het eindmoment van NL-81 haalde CCX niet verder dan t = 0,55 s.
 
 ---
 

@@ -339,14 +339,15 @@ in dat bestand, niet op het model.
   mode met negatieve gegeneraliseerde massa (gezien bij een schaal met maar één rotatie
   vast; de bridge filtert die modes nu eerst, [`Akoestiek.md`](Akoestiek.md) §6.5).
 - **Gezien**: (a) profieltest; (b) proeven voor grote rotaties.
-- **Oplossing**: (a) zie `MODELISA_78`; (b) alleen bij eigen `POU_D_T_GD`-code:
-  `ELAS_POUTRE_GR`. De bridge maakt geen `POU_D_T_GD`.
-- **Status**: opgelost in de bridge (a) / eigen invoer (b).
+- **Oplossing**: (a) zie `MODELISA_78`; (b) met `elem_beam` = `POU_D_T_GD` zet de bridge
+  zelf `ELAS_POUTRE_GR` ([Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)); alleen eigen code met
+  `POU_D_T_GD` en `ELAS` geeft deze fout.
+- **Status**: opgelost in de bridge (a, b).
 
 ### `CALCUL_37` – element kan deze optie niet
 
 - **Melding** (fout): "Le TYPE_ELEMENT X ne sait pas encore calculer l'option: Y".
-- **Oorzaak**, vijf gevallen:
+- **Oorzaak**, zes gevallen:
   1. `MECA_HEXS8` (hex8 als `3D_SI`) kan `PAS_COURANT` niet (stabiele tijdstap bij
      expliciete dynamica);
   2. `MECA_POU_D_T_GD` kan `RIGI_MECA` niet (`PREDICTION='ELASTIQUE'` of
@@ -354,15 +355,20 @@ in dat bestand, niet op het model.
   3. `MEDKQU4` (DKT) en `MECA_DIS_T_N` (discreet element) kunnen `CHAR_MECA_ROTA_R`
      niet (centrifugaalbelasting met schalen of discrete elementen);
   4. formaten-testmodel F4_model (dynamica): element en optie niet nagelopen;
-  5. `MECABL2` (kabel, tension only) kan `ROTATION` niet.
+  5. `MECABL2` (kabel, tension only) kan `ROTATION` niet;
+  6. `MECA_POU_D_T_GD` kan ook `RIGI_MECA` in een lineaire analyse, `SIPM_ELNO`
+     (balkspanning) en `CHAR_MECA_ROTA_R` (centrifugaalkracht) niet.
 - **Gezien**: 1 expliciete dynamica met `3D_SI`; 2 balkproeven; 3 en 4 tests van de
-  belastingen; 5 code-review (commit 6ce5cba).
+  belastingen; 5 code-review (commit 6ce5cba); 6 proeven voor STAPPENPLAN S20.
 - **Oplossing**: 1 de bridge kiest bij een expliciet schema altijd `3D` (WARNING);
   2 geen `PREDICTION`/`MATRICE='ELASTIQUE'` bij GD-balken; 3 `ROTATION` alleen op
   elsets zonder discrete elementen, in een model met schalen als `FORMULE` van X, Y, Z
   per elset en `FORCE_NODALE` op knoopmassa's (`_centrifugal_loads`); 4 niet
-  vastgesteld; 5 kabels krijgen geen centrifugaalkracht (ERROR; KNOWN_BUGS 19).
-- **Status**: opgelost in de bridge (1, 3; 5 als melding) / eigen invoer (2) / oorzaak
+  vastgesteld; 5 kabels krijgen geen centrifugaalkracht (ERROR; KNOWN_BUGS 19); 6 met
+  `elem_beam` = `POU_D_T_GD` maakt de bridge in andere analyses dan niet-lineair statisch
+  `POU_D_T`, vraagt hij geen `SIPM_ELNO` en zet hij de centrifugaalkracht als `FORMULE`
+  (WARNING); `imperfection_amplitude` geeft vooraf een ERROR.
+- **Status**: opgelost in de bridge (1, 3, 6; 5 als melding) / eigen invoer (2) / oorzaak
   niet vastgesteld (4).
 
 ### `CALCUL_42` – optie nog niet geprogrammeerd (meebewegende druk op DKT)
@@ -958,8 +964,9 @@ Stappenplan en instellingen:
 ## 6. Grote rotaties
 
 Met *COMPORTEMENT DEFORMATION* voor grote verplaatsingen kiest de bridge per
-elementtype de vorm (`COMPOR5_22`, `COMPOR1_44/47/99`); balken, opgelegde rotaties
-(`DDL_IMPO` DR*) en starre koppelingen blijven kleine rotaties (KNOWN_BUGS 11). De bridge
+elementtype de vorm (`COMPOR5_22`, `COMPOR1_44/47/99`); balken `POU_D_E`/`POU_D_T`,
+opgelegde rotaties (`DDL_IMPO` DR*) en starre koppelingen blijven kleine rotaties
+(KNOWN_BUGS 11); balken met grote rotaties: `elem_beam` = `POU_D_T_GD` ([Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)). De bridge
 waarschuwt bij een opgelegde rotatie boven ~6° (`_warn_large_rotations`). Een star deel
 over een grote hoek draaien gaat robuust met een opgelegde verplaatsing als `FORMULE`
 (voorbeeld 9 van [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md),
@@ -978,7 +985,9 @@ opnieuw doorgerekend op 06-10-2026).
 
 Verder bij grote rotaties: `COMPOR5_22`, `COMPOR1_44`, `COMPOR1_47`, `COMPOR1_99`,
 `DVP_2` (`POU_D_T_GD` met `ELAS`), `CALCUL_37` (`POU_D_T_GD` met
-`PREDICTION='ELASTIQUE'`), `MECANONLINE9_7` geval 5.
+`PREDICTION='ELASTIQUE'`), `MECANONLINE9_7` geval 5. Met `POU_D_T_GD` vangt de bridge
+vooraf af: `ALGELINE4_41` (`crit_stab`: de tangentmatrix is niet symmetrisch; ERROR) en
+`DVP_1` (`EFGE_ELNO` op dit element, `te0185.F90`; de bridge vraagt `SIEF_ELNO`).
 
 ---
 

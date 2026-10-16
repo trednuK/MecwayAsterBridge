@@ -1331,8 +1331,8 @@ samples) plus the kinks of the load tables (NL-20).
 - **Result**: (a) hex20 −0.12 … −0.57% (slightly stiff, growing with the load);
   (b) `COQUE_3D` +0.01% at all levels.
 - **Interpretation**: large displacements work for solids and `COQUE_3D`, and the force
-  keeps its direction. Beam elements and DKT stay geometrically linear in the bridge
-  (KNOWN_BUGS 11) and are not tested.
+  keeps its direction. DKT and the beams `POU_D_E`/`POU_D_T` stay geometrically linear in
+  the bridge (KNOWN_BUGS 11); the same elastica with `POU_D_T_GD` beams: NL-83.
 
 ### NL-03 Contact
 
@@ -1431,6 +1431,74 @@ samples) plus the kinks of the load tables (NL-20).
   with CCX computes the same formula too (displacement proportional to t, same ratio to
   the bridge as with a constant pressure). In linear static the bridge takes t = end
   time (WARNING).
+
+### NL-80 .. NL-89 Beams with large rotations (`POU_D_T_GD`)
+
+- **Purpose**: `elem_beam` = `POU_D_T_GD` (STAPPENPLAN S20; [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)):
+  `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
+  section forces from `SIEF_ELNO`, with the combinations the bridge has gained since
+  V2026.1 (line3, orientation card, formulas, Mecway's time step). NL-80 to NL-82 are
+  the benchmarks GB-01 to GB-03 of the fork by MishalTPC
+  (`github.com/mishal0488/MecwayAsterBridge`, commit dd4c958), here as a Mecway model
+  through the whole bridge. Module `tests_balken_grote_rotaties.py`.
+- **Model**: cantilever L = 1 m along X, RectBar 10 × 20 mm (10 mm along V),
+  E = 210 GPa, ν = 0.3, 40 line2 (NL-84: 20 line3); fixed at x = 0.
+- **References** (k = 5/6, `AY` = 1.2 of `RECTANGLE`):
+
+| Case | Load | Reference |
+|---|---|---|
+| NL-80 | tip force 1 N in Y (small load) | F L³/(3EI) + F L/(kGA) (GB-01) |
+| NL-80b | the same model in linear static | the same; the bridge makes it `POU_D_T` (WARNING) |
+| NL-81 | end moment M = (π/2)·EI/L about Z in 20 steps (Mecway step 0.05 s) | circular arc: tip x = L sin θ/θ, y = L (1 − cos θ)/θ, θ = π/2 (GB-02); M constant, N = 0 |
+| NL-82 | column with initial curvature e0 (1 − cos(πx/2L)), e0 = 1e-4 L in the mesh, compressive force 0.5 P_cr | total deflection / e0 = 1/(1 − P/P_cr) = 2 (GB-03) |
+| NL-83 | tip force of fixed direction, PL²/EI = 1, 2, 3 at t = 1, 2, 3 s | Reissner beam (extension and shear), shooting with RK4 in the test module; inextensible equal to Mattiasson (1981) |
+| NL-84 | NL-81 with 20 line3 (40 SEG2 cells) | as NL-81 |
+| NL-85 | NL-81 with an *Element orientation* card V = Z and the moment about Y | as NL-81 in the XZ plane; without the card I would be four times as large |
+| NL-86 | centrifugal force 300 r/min about Z (radial beam) | u(L) = ρω²L³/(3E), reaction ρAω²L²/2 |
+| NL-87 | line pressure 20 N/m and gravity in −Z, configuration GQ | w L⁴/(8EI) + w L²/(2kGA), w = q + ρAg; reaction w L |
+| NL-87b | the same model, configuration G (line pressure suppressed) | the same with w = ρAg |
+| NL-88 | Thermal stress, ΔT = 100 K | α ΔT L |
+| NL-89 | line pressure as a formula `-30*x*t` N/m in −Z (Mecway step 0.5 s) | 11 q0 L⁴/(120EI) + q0 L²/(3kGA) (Roark), proportional to t; reaction q0 L/2 |
+
+  NL-83 also compares the section forces with statics in the deformed state (FEM
+  coordinates): `bendingmomw` of element 1 = P (x_tip − x_middle), `sheary` and
+  `tensileforce` of the last element = P cos φ and P sin φ (φ = angle of the chord of
+  that element). NL-82 and NL-83 were also solved headless with Mecway 34 (CCX 2.23,
+  B31; `TestFiles/Tools/mw_solve.py`, mean of the section nodes at x = L).
+  Tolerance 0.1 %.
+- **Result**: all checks OK.
+
+| Case | Quantity | Deviation | Fork (GB) | Mecway 34 + CCX |
+|---|---|---|---|---|
+| NL-80 | tip deflection | −0.0157 % | −0.0157 % | – |
+| NL-80b | tip deflection | 0.0000 % | – | – |
+| NL-81 | tip x / y / rotation / M | +0.0112 / +0.0064 / 0.0000 / 0.0000 % | +0.0113 / +0.0064 % | CCX stops at t = 0.55 s |
+| NL-82 | deflection / e0 | −0.0213 % | −0.0213 % | +0.0047 % |
+| NL-83 | tip u_y at t = 1, 2, 3 | −0.0123 / −0.0079 / −0.0054 % | – | +0.0087 / +0.0125 / +0.0157 % |
+| NL-83 | tip u_x at t = 1, 2, 3 | +0.0331 / +0.0247 / +0.0194 % (smaller) | – | +0.0036 / −0.0030 / −0.0085 % |
+| NL-83 | section forces against statics (M, V, N) | 0.0000 / +0.0065 / −0.0029 % | – | – |
+| NL-84, NL-85 | as NL-81 | the same values as NL-81 | – | – |
+| NL-86 | tip extension / reaction | −0.0156 / 0.0000 % | – | – |
+| NL-87, NL-87b | tip deflection / reaction | +0.0008 / 0.0000 %; +0.0002 / 0.0000 % | – | – |
+| NL-88 | tip extension | 0.0000 % | – | – |
+| NL-89 | tip deflection at t = 0.5 and 1 / reaction | +0.0285 / +0.0287 / 0.0000 % (smaller) | – | – |
+
+- **Interpretation**:
+  1. Through the whole bridge the route of the fork gives the same numbers as the fork
+     (to 1e-7: the fork computed NL-81 with 40 equal substeps, here Mecway's 20 steps).
+  2. `POU_D_T_GD` is a linear element with one integration point: the section force is
+     one value per element, at the middle; the nodal value is the mean of the two
+     elements. Against statics in the deformed state it is correct to 0.01 % (NL-83), in
+     the co-rotating axes of the cross-section (at the tip N = P sin φ).
+  3. Line3 and the orientation card change nothing in the kinematics (NL-84, NL-85 equal
+     to NL-81); the card decides which I counts.
+  4. Mecway 34 computes nonlinear beams with CCX only (its own solver gave no solution
+     headless). With a tip force (NL-83) and the column (NL-82) the bridge is within
+     0.02 % of Mecway/CCX; CCX did not get the end moment of NL-81 beyond t = 0.55 s
+     (on the circular arc up to there).
+  5. Not in these cases (WARNING in the bridge, KNOWN_BUGS 11): large imposed rotations
+     (a slender beam converged up to 0.41 rad), element offset, flexible joint and
+     couplings at large rotations (linear relations), a moment in 3D.
 
 ## 6. Dynamics (DY)
 
@@ -2934,8 +3002,9 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
 - friction (NL-03 is frictionless), bonded contact except shell on shell (LS-07),
   contact in dynamics (implicit and
   explicit);
-- beams and DKT at large displacements (KNOWN_BUGS 11; NL-02 only solids and
-  `COQUE_3D`);
+- DKT at large displacements (KNOWN_BUGS 11; NL-02 only solids and `COQUE_3D`; beams
+  with large rotations: `POU_D_T_GD`, NL-80 .. NL-89), and with `POU_D_T_GD` large imposed
+  rotations, element offset, flexible joint and couplings;
 - gap and tension-only elements, dampers in transient dynamics (DY, MD; dampers are
   covered in harmonic response and complex modes: HR-01d, MC, VH-04c).
 

@@ -265,8 +265,13 @@ FIELD_TABLE = (
     # checked headless (Mecway 34, clamped beam with force and
     # moment at the tip, also inclined): tensileforce = N, sheary = VY,
     # shearz = VZ, torsion = MT, bendingmomv = MFY, bendingmomw = MFZ.
+    # Large-rotation beams (POU_D_T_GD): the same components in
+    # SIEF_NOEU/SIEF_ELNO (EFGE_ELNO stops with DVP_1 there, Code-Aster
+    # 17.4; bridge_to_aster._optional_field_blocks). Only used where EFGE_* is
+    # missing (one beam formulation per model, elem_beam).
     [("beam_forces", "res", f, c, name, k)
-     for f, k in (("EFGE_NOEU", KNOOP), ("EFGE_ELNO", ELEMKNOOP_LIJN))
+     for f, k in (("EFGE_NOEU", KNOOP), ("EFGE_ELNO", ELEMKNOOP_LIJN),
+                  ("SIEF_NOEU", KNOOP), ("SIEF_ELNO", ELEMKNOOP_LIJN))
      for c, name in (("N", "tensileforce"), ("VY", "sheary"),
                      ("VZ", "shearz"), ("MT", "torsion"),
                      ("MFY", "bendingmomv"), ("MFZ", "bendingmomw"))] +

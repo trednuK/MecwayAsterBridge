@@ -495,6 +495,9 @@ recommends (EDF R&D, U2.08.04 §2.2).
    `LINE_QUAD`) or shells with `elem_shell` = `COQUE_3D`. Beams (`POU_D_E`) and DKT/DST
    shells are geometrically linear in the bridge (KNOWN_BUGS 11): CRIT_STAB works there
    (as a load factor), but the deflection does not grow with an imperfection (WARNING).
+   `POU_D_T_GD` beams (large rotations) cannot do CRIT_STAB nor an imperfection from a
+   buckling mode (ERROR); then put the initial curvature in the mesh
+   ([Verification](Verification.md) NL-82).
 4. **Page Nonlinear static** (or per model with `#ASTER-OPTIE`,
    [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2):
 

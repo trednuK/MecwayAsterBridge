@@ -491,6 +491,17 @@ GLOSSARY = OrderedDict([
     ("POU_D_T", ("element", u"Balk volgens Timoshenko (met "
                  u"afschuifvervorming).",
                  u"Timoshenko beam (with shear deformation).")),
+    ("POU_D_T_GD", ("element", u"Balk volgens Timoshenko met grote "
+                    u"verplaatsingen en rotaties (ELAS_POUTRE_GR, "
+                    u"GROT_GDEP), elastisch. Alleen in niet-lineair "
+                    u"statisch met grote verplaatsingen; elders POU_D_T. "
+                    u"Geen balkspanningen, snedekrachten een waarde per "
+                    u"element.",
+                    u"Timoshenko beam with large displacements and "
+                    u"rotations (ELAS_POUTRE_GR, GROT_GDEP), elastic. Only "
+                    u"in nonlinear static with large displacements; "
+                    u"elsewhere POU_D_T. No beam stresses, section forces "
+                    u"one value per element.")),
     ("BARRE", ("element", u"Staaf (Mecway truss): alleen normaalkracht, "
                u"kleine verplaatsingen.",
                u"Bar (Mecway truss): axial force only, small "
@@ -1055,10 +1066,16 @@ SETTING_HELP = {
                    u"(thin plate, Kirchhoff)."),
     "elem_beam": (u"Welk balkelement voor line2- en line3-balken (line3 "
                   u"wordt in de middenknoop in twee SEG2-cellen gesplitst). "
-                  u"Standaard POU_D_E (Euler-Bernoulli, zoals Mecway).",
+                  u"Standaard POU_D_E (Euler-Bernoulli, zoals Mecway). "
+                  u"POU_D_T_GD: grote rotaties in niet-lineair statisch "
+                  u"(deformation GROT_GDEP); in andere analyses wordt dat "
+                  u"POU_D_T (WARNING).",
                   u"Which beam element for line2 and line3 beams (line3 is "
                   u"split at its midside node into two SEG2 cells). Default "
-                  u"POU_D_E (Euler-Bernoulli, like Mecway)."),
+                  u"POU_D_E (Euler-Bernoulli, like Mecway). POU_D_T_GD: "
+                  u"large rotations in nonlinear static (deformation "
+                  u"GROT_GDEP); in other analyses it becomes POU_D_T "
+                  u"(WARNING)."),
     "fields": (u"Welke resultaten naar Mecway gaan (minder velden = kleiner "
                u"bestand). Modaal: stresses/vonmises (ook strain, "
                u"beam_forces, shell_stresses, shell_forces) geven waarden "

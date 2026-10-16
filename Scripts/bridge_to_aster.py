@@ -1145,7 +1145,13 @@ _SHELL_MODELISATIONS = ("DKT", "DST", "COQUE_3D")
 # Volume and beam modelisations that are equal to '3D' and 'POU_D_E'
 # respectively for post-processing.
 _VOLUME_MODELISATIONS = ("3D", "3D_SI")
-_BEAM_MODELISATIONS = ("POU_D_E", "POU_D_T")
+# Beam with large displacements and rotations (elem_beam = POU_D_T_GD, only
+# in STAT_NON_LINE, bridge_from_liml._gd_beam_choice; STAPPENPLAN S20).
+# Route (MODELISATION POU_D_T_GD, RELATION ELAS_POUTRE_GR, DEFORMATION
+# GROT_GDEP, section forces from SIEF_ELNO) from the fork by MishalTPC,
+# github.com/mishal0488/MecwayAsterBridge (commit dd4c958, MPL-2.0).
+_GD_BEAM = "POU_D_T_GD"
+_BEAM_MODELISATIONS = ("POU_D_E", "POU_D_T", _GD_BEAM)
 
 # Cross-sections for which SIPM_ELNO makes sense: posigr.F90 (v17.4.0)
 # only computes for TSEC=1 (RECTANGLE) and TSEC=2 (CERCLE); for GENERALE
@@ -1187,6 +1193,14 @@ def _result_groups(model_data, verbose=False):
             g3d.append(group)
         elif mod in _SHELL_MODELISATIONS:
             gsh.append(group)
+        elif mod == _GD_BEAM:
+            # MECA_POU_D_T_GD has no SIPM_ELNO: CALC_CHAMP SIPM_ELNO gave
+            # CALCUL_37 "ne sait pas encore calculer l'option: SIPM_ELNO"
+            # (Code-Aster 17.4 run); section forces via beam_forces.
+            if verbose:
+                log("INFO: Beam elset '{0}' (POU_D_T_GD): no SIPM_ELNO "
+                    "stresses (not in the element catalogue); section "
+                    "forces via the result field beam_forces.".format(group))
         elif mod in _BEAM_MODELISATIONS:
             section = beam_secs.get(group, {}).get("aster_section")
             mat = model_data.get("elsets", {}).get(group)
@@ -1219,8 +1233,8 @@ def _active_analysis():
 
 
 def _beam_groups(model_data):
-    """All beam elsets (POU_D_E/POU_D_T), also with a cross-section
-    without SIPM_ELNO; trusses (BARRE) not."""
+    """All beam elsets (POU_D_E/POU_D_T/POU_D_T_GD), also with a
+    cross-section without SIPM_ELNO; trusses (BARRE) not."""
     return [g for g, mod in model_data.get("elset_modelisations", {}).items()
             if mod in _BEAM_MODELISATIONS]
 
@@ -1393,11 +1407,26 @@ def _optional_field_blocks(model_data, fields, strain_kind):
                     "NIVE_COUCHE='{2}'))".format(concept, _fmt_groups(gsh),
                                                  level))
         out.append("")
+    mods = model_data.get("elset_modelisations", {})
+    gd = [g for g in gbeam if mods.get(g) == _GD_BEAM]
+    gbeam = [g for g in gbeam if g not in gd]
     if "beam_forces" in fields and gbeam:
         out += ["# Section forces of beams (result field beam_forces).",
                 "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
                 "CONTRAINTE=('EFGE_ELNO', 'EFGE_NOEU', ))".format(
                     _fmt_groups(gbeam)), ""]
+    if "beam_forces" in fields and gd:
+        # POU_D_T_GD: EFGE_ELNO is in the catalogue but stopped with
+        # <EXCEPTION> DVP_1 (te0185.F90 line 177, Code-Aster 17.4 run);
+        # the section forces N, VY, VZ, MT, MFY, MFZ are the components of
+        # SIEF_ELNO (test case ssnl114b; route from the fork by MishalTPC,
+        # github.com/mishal0488/MecwayAsterBridge). aster_results_export
+        # takes beam_forces from SIEF_* when EFGE_* is missing.
+        out += ["# Section forces of large-rotation beams (POU_D_T_GD, "
+                "result field beam_forces).",
+                "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
+                "CONTRAINTE=('SIEF_ELNO', 'SIEF_NOEU', ))".format(
+                    _fmt_groups(gd)), ""]
     if "shell_forces" in fields and gsh:
         out += ["# Forces and moments per length of shells "
                 "(result field shell_forces).",
@@ -1903,8 +1932,18 @@ def _result_tables(model_data, with_plastic=False, with_velocity=False):
             tables.append(("tab_epsi", "strain", "res", "EPSI_NOEU",
                            "TOUT_CMP='OUI'", None))
     if "beam_forces" in chosen:
-        tables.append(("tab_efge", "beam_forces", "res", "EFGE_NOEU",
-                       "TOUT_CMP='OUI'", _beam_groups(model_data)))
+        # POU_D_T_GD: the section forces are in SIEF_NOEU (same components
+        # N .. MFZ, _optional_field_blocks); one beam formulation per model
+        # (elem_beam), so one table.
+        mods = model_data.get("elset_modelisations", {})
+        beams = _beam_groups(model_data)
+        rest = [g for g in beams if mods.get(g) != _GD_BEAM]
+        if rest:
+            tables.append(("tab_efge", "beam_forces", "res", "EFGE_NOEU",
+                           "TOUT_CMP='OUI'", rest))
+        elif beams:
+            tables.append(("tab_efge", "beam_forces", "res", "SIEF_NOEU",
+                           "TOUT_CMP='OUI'", beams))
     if with_plastic and g3d:
         tables.append(("tab_epsp", "plastic_strain", "res", "EPSP_NOEU",
                        "TOUT_CMP='OUI'", None))
@@ -3794,6 +3833,10 @@ def _centrifugal_loads(model_data, bc):
       - Discrete elements cannot do ROTATION either ("MECA_DIS_T_N ne sait
         pas ..."): nodal masses (bridge_mesh._build_discretes) as
         FORCE_NODALE m w^2 r.
+      - Large-rotation beams (POU_D_T_GD) neither: CALCUL_37 "MECA_POU_D_T_GD
+        ne sait pas encore calculer l'option CHAR_MECA_ROTA_R" (Code-Aster
+        17.4 run); they get the FORMULE route as well (FORCE_POUTRE on the
+        initial position, a fixed load; verification NL-86).
     """
     d = bc["aster_dict"]
     w, axis = d["VITESSE"], d["AXE"]
@@ -3815,7 +3858,8 @@ def _centrifugal_loads(model_data, bc):
                    "get it.").format(g))
     groups = [g for g, mod in mods.items()
               if mod not in ("DIS_T", "DIS_TR", "CABLE")]
-    if not any(mods.get(g) in _SHELL_MODELISATIONS for g in groups):
+    if not any(mods.get(g) in _SHELL_MODELISATIONS or mods.get(g) == _GD_BEAM
+               for g in groups):
         if groups:
             parts = ["GROUP_MA={0}".format(_fmt_groups(groups))]
             parts += ["{0}={1}".format(k, v) for k, v in d.items()]
@@ -3841,9 +3885,11 @@ def _centrifugal_loads(model_data, bc):
                        "centrifugal force on elset '{0}' ({1})").format(
                         g, mod))
                 log(tr("ERROR: Centrifugaalkracht op '{0}' ({1}) in een "
-                       "model met schalen: niet vertaald.",
+                       "model met schalen of POU_D_T_GD-balken: niet "
+                       "vertaald.",
                        "ERROR: Centrifugal force on '{0}' ({1}) in a model "
-                       "with shells: not translated.").format(g, mod))
+                       "with shells or POU_D_T_GD beams: not "
+                       "translated.").format(g, mod))
             continue
         if not q:
             continue
@@ -4812,8 +4858,14 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
       beams POU_D_E/_T     : PETIT with a WARNING (large rotations require
                              POU_D_T_GD with ELAS_POUTRE_GR; GROT_GDEP on
                              POU_D_E did not converge).
+      beams POU_D_T_GD     : GROT_GDEP (ELAS_POUTRE_GR exists only with
+                             GROT_GDEP, U4.51.11; test case ssnl103a);
+                             bridge_from_liml._gd_beam_choice makes the
+                             beam POU_D_T for PETIT/PETIT_REAC.
     PETIT and PETIT_REAC pass through unchanged.
     """
+    if modelisation == _GD_BEAM:
+        return "GROT_GDEP"
     if chosen not in _LARGE_DEFORMATIONS:
         return chosen
     plastic = relation.startswith("VMIS")
@@ -4847,8 +4899,9 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
         return "GROT_GDEP"
     if modelisation.startswith("POU_D"):
         log("INFO: Elset '{0}' ({1}): large displacements not for "
-            "beams in the bridge (requires POU_D_T_GD with ELAS_POUTRE_GR); "
-            "DEFORMATION='PETIT'.".format(elset_name, modelisation))
+            "this beam formulation (elem_beam = POU_D_T_GD for large "
+            "rotations); DEFORMATION='PETIT'.".format(elset_name,
+                                                       modelisation))
         return "PETIT"
     return "PETIT"
 
@@ -4892,17 +4945,19 @@ def _build_comportement_block(model_data, analysis):
     if deformation in _LARGE_DEFORMATIONS:
         small = sorted(e for e, m in model_data.get(
             "elset_modelisations", {}).items()
-            if m in ("DKT", "DST") or str(m).startswith("POU_D"))
+            if m in ("DKT", "DST") or
+            (str(m).startswith("POU_D") and m != _GD_BEAM))
         if small:
             log(tr("WARNING: Grote verplaatsingen (DEFORMATION={0}) niet "
-                   "voor balken en DKT/DST-schalen: {1} blijven geometrisch "
-                   "lineair. Voor grote rotaties van schalen: elem_shell = "
-                   "COQUE_3D (pagina Elementen).",
+                   "voor balken POU_D_E/POU_D_T en DKT/DST-schalen: {1} "
+                   "blijven geometrisch lineair. Voor grote rotaties: "
+                   "elem_beam = POU_D_T_GD (alleen niet-lineair statisch) "
+                   "resp. elem_shell = COQUE_3D (pagina Elementen).",
                    "WARNING: Large displacements (DEFORMATION={0}) not for "
-                   "beams and DKT/DST shells: these elsets stay "
-                   "geometrically linear: {1}. For large rotations of "
-                   "shells: elem_shell = "
-                   "COQUE_3D (Elements page).").format(
+                   "POU_D_E/POU_D_T beams and DKT/DST shells: these elsets "
+                   "stay geometrically linear: {1}. For large rotations: "
+                   "elem_beam = POU_D_T_GD (nonlinear static only) or "
+                   "elem_shell = COQUE_3D (Elements page).").format(
                 deformation, ", ".join(small)))
     spring_mat_names = set(model_data.get("spring_materials", {}).keys())
     entries = []
@@ -4940,6 +4995,10 @@ def _build_comportement_block(model_data, analysis):
                    "plasticity of beam elset '{0}' (computed elastically)")
                 .format(name))
             relation = "ELAS"
+        if mod == _GD_BEAM:
+            # Elastic beam with large rotations (U4.51.11: ELAS_POUTRE_GR
+            # for POU_D_T_GD, only with GROT_GDEP; test case ssnl103a).
+            relation = "ELAS_POUTRE_GR"
         entries.append(
             "        _F(GROUP_MA='{0}', RELATION='{1}', "
             "DEFORMATION='{2}'),".format(
@@ -4996,6 +5055,14 @@ def _warn_large_rotations(model_data, analysis):
     follower load (EXCIT TYPE_CHARGE='SUIV', U4.44.01 par. 5.16) and the
     beam POU_D_T_GD with DEFORMATION='GROT_GDEP'. The bridge adjusts
     nothing; the user chooses (KNOWN_BUGS 11).
+    With POU_D_T_GD beams (elem_beam) DDL_IMPO DRX/DRY/DRZ on their nodes
+    is the total rotation vector (Code-Aster test case zzzz364a, which
+    imposes a finite rotation that way): exact for a rotation about one
+    fixed axis (rigid 90-degree rotation of a stocky beam 100 x 100 mm
+    exact, run 17.4), but a slender beam (10 x 20 mm, L = 1 m) stopped
+    converging at 0.41 rad (rigid rotation) and 0.58 rad (end rotation),
+    also with 5x smaller steps, while an end moment reached 90 degrees
+    (NL-81): a separate WARNING.
     """
     largest = 0.0
     for bc in model_data["bcs"]:
@@ -5006,7 +5073,26 @@ def _warn_large_rotations(model_data, analysis):
                 largest = max([largest] + [abs(x) for _, x in v])
             elif isinstance(v, float):
                 largest = max(largest, abs(v))
-    if largest > _LARGE_ROTATION:
+    if largest > _LARGE_ROTATION and _GD_BEAM in model_data.get(
+            "elset_modelisations", {}).values():
+        log(tr("WARNING: Opgelegde rotatie tot {0} rad ({1} graden) in een "
+               "model met balken POU_D_T_GD: op hun knopen is DDL_IMPO "
+               "DRX/DRY/DRZ de totale rotatievector (exact voor een rotatie "
+               "om een vaste as). Bij slanke balken convergeert dat slecht "
+               "(gemeten: balk 10 x 20 mm, L = 1 m, stopte bij 0,41 rad; "
+               "met een moment als belasting tot 90 graden). Starre "
+               "koppelingen (LIAISON_SOLIDE) blijven kleine rotaties. "
+               "KNOWN_BUGS 11.",
+               "WARNING: Imposed rotation up to {0} rad ({1} degrees) in a "
+               "model with POU_D_T_GD beams: on their nodes DDL_IMPO "
+               "DRX/DRY/DRZ is the total rotation vector (exact for a "
+               "rotation about a fixed axis). With slender beams this "
+               "converges poorly (measured: beam 10 x 20 mm, L = 1 m, "
+               "stopped at 0.41 rad; with a moment as load up to 90 "
+               "degrees). Rigid couplings (LIAISON_SOLIDE) remain small "
+               "rotations. KNOWN_BUGS 11.").format(
+                   "%.3g" % largest, "%.0f" % math.degrees(largest)))
+    elif largest > _LARGE_ROTATION:
         deformation = analysis.get("deformation", "PETIT")
         large = deformation in _LARGE_DEFORMATIONS
         log(tr("WARNING: Opgelegde rotatie tot {0} rad ({1} graden) "
@@ -5042,13 +5128,16 @@ def _warn_linear_couplings(model_data, analysis):
     (bridge_offset, offset_links kind "shell"): the arm is a LIAISON_DDL
     relation written once in the undeformed axes (U4.44.01: linear
     relations between degrees of freedom), so it stays a small rotation
-    (KNOWN_BUGS 108a). Beams stay PETIT anyway (WARNING in
-    _deformation_for), so their arms and flexible joints (KNOWN_BUGS 106b)
-    add nothing to report.
+    (KNOWN_BUGS 108a). Beams POU_D_E/POU_D_T stay PETIT anyway (WARNING
+    in _deformation_for), so their arms and flexible joints (KNOWN_BUGS
+    106b) add nothing to report; with POU_D_T_GD beams (large rotations)
+    the arms of beam offsets, the flexible joints and the couplings are
+    reported as well (_warn_gd_linear_links).
     """
     if "{0}".format(analysis.get("deformation", "PETIT")).upper() \
             not in _LARGE_DEFORMATIONS:
         return
+    _warn_gd_linear_links(model_data)
     arms = [l for l in model_data.get("offset_links") or []
             if l.get("kind") == "shell"]
     if not arms:
@@ -5064,6 +5153,43 @@ def _warn_linear_couplings(model_data, analysis):
            "rotations of more than a few degrees the result deviates there "
            "(KNOWN_BUGS 108).").format(analysis.get("deformation"),
                                        len(arms)))
+
+
+def _warn_gd_linear_links(model_data):
+    """WARNING if POU_D_T_GD beams (large rotations) are combined with
+    connections that the bridge writes as linear relations in the
+    undeformed axes: rigid arms of beam offsets (bridge_offset, LIAISON_DDL;
+    KNOWN_BUGS 108a), flexible joints (bridge_mesh._flexible_joints,
+    LIAISON_DDL on the rotations; KNOWN_BUGS 106b) and couplings
+    (LIAISON_SOLIDE/LIAISON_RBE3; KNOWN_BUGS 11). With small loads offset
+    and joint gave the same as POU_D_T (runs 17.4); with large rotations
+    NOT verified."""
+    if _GD_BEAM not in model_data.get("elset_modelisations", {}).values():
+        return
+    parts = []
+    arms = [l for l in model_data.get("offset_links") or []
+            if l.get("kind") == "beam"]
+    if arms:
+        parts.append(tr("starre armen van element offset ({0} knopen)",
+                        "rigid arms of an element offset ({0} nodes)")
+                     .format(len(arms)))
+    if model_data.get("joint_nodes"):
+        parts.append(tr("flexible joints ({0} balkeinden)",
+                        "flexible joints ({0} beam ends)").format(
+                            len(model_data["joint_nodes"])))
+    if model_data.get("couplings"):
+        parts.append(tr("koppelingen ({0})", "couplings ({0})").format(
+            len(model_data["couplings"])))
+    if not parts:
+        return
+    log(tr("WARNING: Balken POU_D_T_GD (grote rotaties), maar {0} zijn "
+           "lineaire relaties in de onvervormde assen: daar blijven de "
+           "rotaties klein. Bij rotaties van meer dan enkele graden wijkt "
+           "het resultaat daar af (KNOWN_BUGS 11, 106, 108).",
+           "WARNING: POU_D_T_GD beams (large rotations), but {0} are linear "
+           "relations in the undeformed axes: rotations stay small there. "
+           "With rotations of more than a few degrees the result deviates "
+           "there (KNOWN_BUGS 11, 106, 108).").format("; ".join(parts)))
 
 
 # ==========================================
@@ -7448,6 +7574,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
         return None
 
     if mechanical:
+        if not _check_gd_beams(model_data, analysis):
+            return None
         if not _check_materials(model_data, analysis):
             return None
         # One distributed load per beam (BRLP groups before DEFI_GROUP)
@@ -7456,6 +7584,71 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # Gap groups (DEFI_GROUP, DEFI_MATERIAU) before the blocks
     _prepare_gaps(model_data)
     return builder(work_dir, model_data, msh_path, resu_name, analysis)
+
+
+def _check_gd_beams(model_data, analysis):
+    """
+    Large-rotation beams (elem_beam = POU_D_T_GD, only in STAT_NON_LINE with
+    large displacements: bridge_from_liml._gd_beam_choice). Checks the
+    options of nonlinear static that need what MECA_POU_D_T_GD does not
+    have in Code-Aster 17.4 (checked with runs; route and the first list
+    of limits from the fork by MishalTPC,
+    github.com/mishal0488/MecwayAsterBridge):
+      - crit_stab: <EXCEPTION> ALGELINE4_41 "Au moins une des matrices est
+        non symetrique" (the tangent matrix of POU_D_T_GD is not
+        symmetric, TANGENTE (NOSYM)): ERROR;
+      - imperfection_amplitude: the linear buckling beforehand needs
+        RIGI_MECA: CALCUL_37 "MECA_POU_D_T_GD ne sait pas encore calculer
+        l'option: RIGI_MECA": ERROR (model the imperfection in the mesh,
+        verification NL-82);
+      - no SIPM_ELNO (beam stresses), section forces from SIEF_ELNO: one
+        value per element (one integration point): WARNING.
+    Returns False after an ERROR.
+    """
+    mods = model_data.get("elset_modelisations", {})
+    groups = sorted(g for g, m in mods.items() if m == _GD_BEAM)
+    if not groups:
+        return True
+    ok = True
+    if analysis.get("crit_stab"):
+        log(tr("ERROR: crit_stab (CRIT_STAB) werkt niet met balken "
+               "POU_D_T_GD: hun tangentmatrix is niet symmetrisch en "
+               "Code-Aster stopt (ALGELINE4_41). Zet crit_stab uit of kies "
+               "elem_beam = POU_D_E/POU_D_T (pagina Elementen).",
+               "ERROR: crit_stab (CRIT_STAB) does not work with POU_D_T_GD "
+               "beams: their tangent matrix is not symmetric and Code-Aster "
+               "stops (ALGELINE4_41). Switch crit_stab off or choose "
+               "elem_beam = POU_D_E/POU_D_T (Elements page)."))
+        ok = False
+    if float(analysis.get("imperfection_amplitude", 0.0) or 0.0):
+        log(tr("ERROR: imperfection_amplitude werkt niet met balken "
+               "POU_D_T_GD: de lineaire knik vooraf vraagt RIGI_MECA, die "
+               "dit element niet heeft (CALCUL_37). Zet "
+               "imperfection_amplitude op 0 en leg de imperfectie in de "
+               "mesh (licht gebogen knopen), of kies elem_beam = "
+               "POU_D_E/POU_D_T.",
+               "ERROR: imperfection_amplitude does not work with POU_D_T_GD "
+               "beams: the linear buckling beforehand needs RIGI_MECA, "
+               "which this element does not have (CALCUL_37). Set "
+               "imperfection_amplitude to 0 and put the imperfection in the "
+               "mesh (slightly curved nodes), or choose elem_beam = "
+               "POU_D_E/POU_D_T."))
+        ok = False
+    if not ok:
+        return False
+    names = [bridge_failure.mecway_name(model_data, g) for g in groups]
+    log(tr("WARNING: Balken {0} rekenen met grote rotaties (POU_D_T_GD, "
+           "ELAS_POUTRE_GR, GROT_GDEP). Geen balkspanningen "
+           "(beamsixxmin/max) in Mecway; de snedekrachten (beam_forces) "
+           "zijn een waarde per element (in het midden). Een lineair "
+           "element: verfijn de mesh (20 tot 40 elementen per staaf).",
+           "WARNING: Beams {0} are computed with large rotations "
+           "(POU_D_T_GD, ELAS_POUTRE_GR, GROT_GDEP). No beam stresses "
+           "(beamsixxmin/max) in Mecway; the section forces (beam_forces) "
+           "are one value per element (at its middle). A linear element: "
+           "refine the mesh (20 to 40 elements per member).").format(
+               ", ".join(names)))
+    return True
 
 
 def _check_materials(model_data, analysis):

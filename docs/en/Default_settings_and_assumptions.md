@@ -61,7 +61,7 @@ Pages *General* and *Elements* of the start screen. They apply to all analyses.
 | `med_export` | off | also a `.rmed` for ParaView/Salome | Choice: Mecway does not use it, it can reach hundreds of MB | post-processing outside Mecway | - |
 | `elem_hex8` (Hex8 solid elements) | `3D` | `MODELISATION='3D'` (fully integrated) | CA standard element; `LINE_QUAD` only works for a model with solid elements only and not explicit, and gives ~3x as many nodes | bending with few hex8 through the thickness: `LINE_QUAD` (or hex20 in Mecway) | LS-02: hex8 `3D` −35.7 / −13.1 / −4.3 / −1.7 / −0.9 % (n = 1…16), `LINE_QUAD` = hex20; KNOWN_BUGS 1 |
 | `elem_shell` (Linear shells) | `DKT` | tri3/quad4 → `DKT` (Kirchhoff) | Choice: thin plates, usable linear and nonlinear (`DST` linear only) | large rotations or thick shells: `COQUE_3D` | LS-03-dkt (Navier, −0.003 %), NL-02b (`COQUE_3D`), KNOWN_BUGS 2 |
-| `elem_beam` (Beams) | `POU_D_E` | Euler-Bernoulli beam | Mecway's beam is also Euler-Bernoulli | short, thick beams: `POU_D_T` | LS-01 (0.00 %), MO-01, BU-01, DY-02 |
+| `elem_beam` (Beams) | `POU_D_E` | Euler-Bernoulli beam | Mecway's beam is also Euler-Bernoulli | short, thick beams: `POU_D_T`; large rotations in nonlinear static: `POU_D_T_GD` (elsewhere `POU_D_T`, WARNING; [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)) | LS-01 (0.00 %), MO-01, BU-01, DY-02; `POU_D_T_GD`: NL-80–89 (≤ 0.04 %) |
 
 ---
 
@@ -475,9 +475,9 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Assumption | What the bridge does | Status |
 |---|---|---|
 | Mecway's nonlinear analysis is geometrically nonlinear | default `GROT_GDEP` | source: Mecway (2026) §6.2.1 (CCX only); measured: a plastic bar was 14 % too stiff with `PETIT`, +1 % vs Mecway with large displacements (earlier run, model not in the repository) |
-| Form per element | elastic solid `GREEN_LAGRANGE` (or `GDEF_LOG`), plastic solid `GDEF_LOG` (or `SIMO_MIEHE`, not with `VMIS_CINE_LINE`), DKT/DST `GREEN_LAGRANGE` (gave the same result as `PETIT`; with `VMIS_CINE_LINE` `PETIT`), `COQUE_3D` `GROT_GDEP`, beams `PETIT`, cables `GROT_GDEP`, discrete elements `PETIT` | measured with runs on a mixed model (`bridge_to_aster._deformation_for`); NL-02a (solid) and NL-02b (`COQUE_3D`) exact; large displacements of DKT and beams: NOT possible (KNOWN_BUGS 11); discrete elements with large displacements: NOT verified |
+| Form per element | elastic solid `GREEN_LAGRANGE` (or `GDEF_LOG`), plastic solid `GDEF_LOG` (or `SIMO_MIEHE`, not with `VMIS_CINE_LINE`), DKT/DST `GREEN_LAGRANGE` (gave the same result as `PETIT`; with `VMIS_CINE_LINE` `PETIT`), `COQUE_3D` `GROT_GDEP`, beams `PETIT` (`POU_D_T_GD`: `GROT_GDEP` with `ELAS_POUTRE_GR`), cables `GROT_GDEP`, discrete elements `PETIT` | measured with runs on a mixed model (`bridge_to_aster._deformation_for`); NL-02a (solid) and NL-02b (`COQUE_3D`) exact; large displacements of DKT and of `POU_D_E`/`POU_D_T` beams: NOT possible (KNOWN_BUGS 11), `POU_D_T_GD` beams: NL-80–89; discrete elements with large displacements: NOT verified |
 | Dynamics follows the static choice | `GROT_GDEP` also in `dyna_*` | Choice, NOT verified against Mecway; DY-03: difference with linear theory 1.4e-4…6.9e-4 (physical) |
-| Imposed rotations and rigid couplings | stay small rotations; WARNING above ~6° | KNOWN_BUGS 11 |
+| Imposed rotations and rigid couplings | stay small rotations; WARNING above ~6° (on nodes of `POU_D_T_GD`: the total rotation vector, WARNING about convergence) | KNOWN_BUGS 11 |
 | Rigid arm of an element offset | `LIAISON_DDL` in the undeformed axes: small rotations, also with `GROT_GDEP` (WARNING for offset shells) | KNOWN_BUGS 108 |
 
 ### 4.6 Contact

@@ -44,7 +44,8 @@ What the nonlinear analyses support:
 
 - material: `ELAS`; with plasticity `VMIS_ISOT_TRAC` (hardening curve,
   Ramberg-Osgood, OpenRadioss `PLAS_TAB`), `VMIS_ISOT_LINE` or `VMIS_CINE_LINE`
-  (bilinear); tension only `CABLE`, gap `DIS_CHOC`;
+  (bilinear); tension only `CABLE`, gap `DIS_CHOC`; beams with large rotations
+  `ELAS_POUTRE_GR` (`elem_beam` = `POU_D_T_GD`, §2.9);
 - contact: Mecway `contact2` becomes `DEFI_CONTACT` (§3); compression only
   `DEFI_CONTACT FORMULATION='LIAISON_UNIL'`;
 - dynamics: initial velocity (Mecway `initialconditions/velocity`) becomes
@@ -235,7 +236,8 @@ elsets that stay geometrically linear; the details per elset are INFO lines in t
 | solid, plastic | `GDEF_LOG`, or `SIMO_MIEHE` if that was chosen (with `VMIS_CINE_LINE` always `GDEF_LOG`) | `GREEN_LAGRANGE` with `VMIS_*` refused, `SIMO_MIEHE` with `VMIS_CINE_LINE` too (`COMPOR1_44`) |
 | DKT/DST | `GREEN_LAGRANGE` (with `VMIS_CINE_LINE` `PETIT`) | `GROT_GDEP` did not converge, `GDEF_LOG` refused (`COMPOR1_99`); `GREEN_LAGRANGE` gave the same result as `PETIT`, so effectively geometrically linear. Large rotations of shells: `elem_shell` = `COQUE_3D` |
 | `COQUE_3D` | `GROT_GDEP` | alarm `COMPOR1_47`: rotations < 2π; NL-02b exact |
-| beam `POU_D_E`/`POU_D_T` | `PETIT` | large rotations need `POU_D_T_GD` with `ELAS_POUTRE_GR`; `GROT_GDEP` on `POU_D_E` did not converge (KNOWN_BUGS 11) |
+| beam `POU_D_E`/`POU_D_T` | `PETIT` | `GROT_GDEP` on `POU_D_E` did not converge (KNOWN_BUGS 11); for large rotations `elem_beam` = `POU_D_T_GD` |
+| beam `POU_D_T_GD` | `GROT_GDEP` with `ELAS_POUTRE_GR` | large rotations of beams (§2.9) |
 | cable (tension only) | always `GROT_GDEP` | `RELATION='CABLE'` requires it |
 | discrete (spring, nodal mass, elastic support) | `PETIT` (`PETIT_REAC` if chosen) | large displacements for discrete elements NOT verified |
 
@@ -258,7 +260,8 @@ rotate. Plasticity on beams is computed elastically (WARNING).
 | `GREEN_LAGRANGE` | Green-Lagrange strain. | Elastic solids with large displacements (NL-02a). |
 
 Imposed rotations (`DDL_IMPO` DRX/DRY/DRZ) and rigid couplings (`LIAISON_SOLIDE`) stay
-small rotations even with large displacements; an imposed rotation above ~6° gives a
+small rotations even with large displacements (on the nodes of `POU_D_T_GD` beams an
+imposed rotation is the total rotation vector, §2.9); an imposed rotation above ~6° gives a
 WARNING (`_warn_large_rotations`). A rigid part is rotated robustly via `#ASTER`
 (`ASTER_lines_examples.md` example 9).
 
@@ -396,6 +399,61 @@ of thermal (`theta` and the Newton settings of `THER_NON_LINE`) in
 §3.8. Buckling always looks for the smallest buckling factors
 (`OPTION='PLUS_PETITE'`), as Mecway does; a search centre (`OPTION='CENTRE'`) ignores
 `CHAR_CRIT` in Code-Aster 17.4 (R-BSHIFT) and is therefore not a setting.
+
+### 2.9 Beams with large rotations: `elem_beam` = `POU_D_T_GD`
+
+By default beams are geometrically linear in the nonlinear analyses (`POU_D_E`/
+`POU_D_T` with `PETIT`, §2.3; KNOWN_BUGS 11). For large displacements and rotations of
+beams choose `elem_beam` = `POU_D_T_GD` on the **Elements** page. The bridge then writes:
+
+```python
+model = AFFE_MODELE(..., AFFE=_F(GROUP_MA=..., MODELISATION='POU_D_T_GD'))
+res = STAT_NON_LINE(...,
+    COMPORTEMENT=_F(GROUP_MA=..., RELATION='ELAS_POUTRE_GR', DEFORMATION='GROT_GDEP'))
+```
+
+An elastic Timoshenko beam (with shear deformation; `AY`/`AZ` as for `POU_D_T`) with
+large displacements and rotations and small strains (EDF R&D, U4.51.11; Code-Aster test
+case ssnl103a). The idea, the Code-Aster route, the first list of limitations and the
+benchmarks NL-80 to NL-82 come from the fork by MishalTPC
+(`github.com/mishal0488/MecwayAsterBridge`, MPL-2.0); the bridge rebuilt them for
+element offset, flexible joint, line3, beam orientation and `beam_forces`.
+
+| Combination | What the bridge does |
+|---|---|
+| nonlinear static with large displacements (`deformation` default `GROT_GDEP`) | `POU_D_T_GD`: force and moment (constant or as a table in time), line pressure (constant or as a formula in x, y, z, t), gravity, Thermal stress, Mecway's *Time step size*, configurations (NL-80 to NL-89) |
+| line3 beam | two SEG2 cells per element, as for `POU_D_E` (NL-84) |
+| beam orientation (attributes and *Element orientation*) | explicit `VECT_Y` per cell (NL-85) |
+| centrifugal force | `ROTATION` is not possible on this element (`CHAR_MECA_ROTA_R`, `CALCUL_37`); the bridge writes `FORCE_POUTRE` as a formula of the initial position: a fixed load, without spin softening (NL-86) |
+| plastic material | computed elastically (WARNING), as for the other beams |
+| other analyses (static, modal, buckling, harmonic, spectrum, dynamics) and nonlinear with `PETIT`/`PETIT_REAC` | `POU_D_T` with a WARNING: the same beam at small displacements (NL-80b). The element has no `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamics (test case sdnl103a) is NOT verified in the bridge |
+| `crit_stab` | ERROR: the tangent matrix is not symmetric (`ALGELINE4_41`) |
+| `imperfection_amplitude` > 0 | ERROR: the linear buckling beforehand needs `RIGI_MECA`; put the initial curvature in the mesh (NL-82) |
+| element offset, flexible joint, couplings | they compute (equal to `POU_D_T` for small loads), but stay linear relations in the undeformed axes: WARNING (KNOWN_BUGS 11, 106, 108) |
+| imposed rotation (`noderotation`) | the total rotation vector (exact for a rotation about one fixed axis), but slender beams converge poorly: WARNING (KNOWN_BUGS 11) |
+
+**Results.** Displacements, rotations and reactions as always. Section forces
+(`beam_forces`: `tensileforce`, `sheary`, `shearz`, `torsion`, `bendingmomv`,
+`bendingmomw`) come from `SIEF_ELNO`/`SIEF_NOEU` (`EFGE_ELNO` stops with `DVP_1` on this
+element), in the co-rotating axes of the cross-section, with the same names and signs as
+for `POU_D_E`. It is one value per element (one integration point, at the middle); the
+nodal value is the mean of the adjacent elements, so at the clamped end half an element
+away from the maximum. There are no beam stresses (`beamsixxmin`/`beamsixxmax`): the
+element has no `SIPM_ELNO` (`CALCUL_37`). One WARNING per run says so.
+
+**Hints.**
+
+- `POU_D_T_GD` is a linear element: use 20 to 40 elements per member (with 40
+  elements 0.01 to 0.03 % from the analytical solution, NL-81 and NL-83).
+- Let the load increase (a table in time, Mecway's *Time step size*): NL-81 bends
+  90 degrees in 20 steps.
+- With a small load `RESI_GLOB_RELA` stagnates at round-off: choose
+  `convergence_criterion` = `RELA_OF_MAXI` with an absolute limit (§2.2, NL-80).
+- Forces keep their direction (fixed load, as in Mecway: NL-83 is within 0.02 % of
+  Mecway 34 with CCX). A moment about a fixed axis (plane bending) is exact (NL-81); a
+  moment in 3D is NOT verified.
+- Mecway 34 computes nonlinear beams with CCX only (its own solver gave no solution);
+  CCX did not get the end moment of NL-81 beyond t = 0.55 s.
 
 ---
 

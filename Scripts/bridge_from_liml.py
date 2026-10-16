@@ -70,7 +70,7 @@ _DIM_3D_SHAPES = frozenset({
 # DIS_T (spring) and BARRE have translation DOFs only and are
 # NOT listed here.
 _ROT_DOF_MODELISATIONS = frozenset({
-    "POU_D_T", "POU_D_E",
+    "POU_D_T", "POU_D_E", "POU_D_T_GD",
     "COQUE_3D", "DKT", "DST", "Q4G",
     "DIS_TR",
 })
@@ -80,8 +80,16 @@ _ROT_DOF_MODELISATIONS = frozenset({
 _ELEM_CHOICES = {
     "elem_hex8":  ("3D", "3D_SI", "LINE_QUAD"),
     "elem_shell": ("DKT", "DST", "COQUE_3D"),
-    "elem_beam":  ("POU_D_E", "POU_D_T"),
+    "elem_beam":  ("POU_D_E", "POU_D_T", "POU_D_T_GD"),
 }
+
+# Beam with large displacements and rotations (elem_beam choice, STAPPENPLAN
+# S20; route from the fork by MishalTPC,
+# github.com/mishal0488/MecwayAsterBridge): only in nonlinear static, see
+# _gd_beam_choice.
+GD_BEAM = "POU_D_T_GD"
+# Beam modelisations with AY/AZ for SECTION='GENERALE' (shear deformation)
+_SHEAR_BEAMS = ("POU_D_T", GD_BEAM)
 
 
 def _parse_bilinear(plastic_node, mat_name, plastic_type, E=None):
@@ -249,6 +257,43 @@ def _elem_choice(key):
                    key, value, ", ".join(allowed), allowed[0]))
         return allowed[0]
     return value
+
+
+def _gd_beam_choice(beam_mod, run_cfg, shapes, thermal_run):
+    """
+    elem_beam = POU_D_T_GD only where Code-Aster 17.4 and the bridge can
+    compute it: STAT_NON_LINE with large displacements (DEFORMATION
+    GROT_GDEP; ELAS_POUTRE_GR only exists with GROT_GDEP, U4.51.11 par.
+    4.6 and test case ssnl103a). The element has no RIGI_MECA: MECA_STATIQUE
+    with POU_D_T_GD stopped with CALCUL_37 "MECA_POU_D_T_GD ne sait pas
+    encore calculer l'option: RIGI_MECA" (Code-Aster 17.4 run), so the
+    linear solvers cannot use it. Elsewhere (linear static, modal,
+    buckling, harmonic, dynamics, or nonlinear static with PETIT/
+    PETIT_REAC) the beam becomes POU_D_T with a WARNING: the same
+    Timoshenko beam at small displacements (verification NL-80 and NL-80b:
+    the small-load cantilever gives Timoshenko with both). Implicit
+    dynamics with POU_D_T_GD (Code-Aster test case sdnl103a) is NOT
+    verified in the bridge, so it falls back as well.
+    """
+    if beam_mod != GD_BEAM or thermal_run or not shapes & _DIM_1D_SHAPES:
+        return beam_mod
+    solver = run_cfg.get("solver_command")
+    deformation = "{0}".format(run_cfg.get("deformation", "PETIT")).upper()
+    if solver == "STAT_NON_LINE" and deformation in (
+            "GROT_GDEP", "GREEN_LAGRANGE", "GDEF_LOG", "SIMO_MIEHE"):
+        return beam_mod
+    what = (solver if solver != "STAT_NON_LINE"
+            else "STAT_NON_LINE, deformation {0}".format(deformation))
+    log(tr("WARNING: elem_beam = POU_D_T_GD (grote rotaties) werkt alleen in "
+           "niet-lineair statisch met grote verplaatsingen (deformation "
+           "GROT_GDEP); in deze analyse ({0}) worden balken POU_D_T "
+           "(Timoshenko, dezelfde balk bij kleine verplaatsingen).",
+           "WARNING: elem_beam = POU_D_T_GD (large rotations) only works "
+           "in nonlinear static with large displacements (deformation "
+           "GROT_GDEP); in this analysis ({0}) beams become POU_D_T "
+           "(Timoshenko, the same beam at small displacements).").format(
+               what))
+    return "POU_D_T"
 
 
 def _positive_int(text, default=1):
@@ -515,9 +560,10 @@ def _profile_shear_coefs(kind, a, b, c, d):
     return A / a_v, A / a_w
 
 
-def _add_shear_coefs(elset_name, geom):
+def _add_shear_coefs(elset_name, geom, mod="POU_D_T"):
     """
-    Section for POU_D_T: with SECTION='GENERALE' add AY and AZ.
+    Section for POU_D_T and POU_D_T_GD (both Timoshenko, mod is only for the
+    log): with SECTION='GENERALE' add AY and AZ.
 
     Without AY/AZ Code-Aster stopped with MODELISA_78 ("section GENERALE,
     element poutre : il manque la caracteristique ...") and DVP_2 (seen in
@@ -534,18 +580,18 @@ def _add_shear_coefs(elset_name, geom):
     coefs = geom.get("shear_coefs")
     if coefs is None:
         coefs = (1.0, 1.0)
-        log(tr("WARNING: Balk-elset '{0}' ({1}, POU_D_T): "
+        log(tr("WARNING: Balk-elset '{0}' ({1}, {2}): "
                "afschuifcoefficienten onbekend; AY=AZ=1.0 "
                "(afschuifoppervlak = A, geen correctie).",
-               "WARNING: Beam elset '{0}' ({1}, POU_D_T): shear "
+               "WARNING: Beam elset '{0}' ({1}, {2}): shear "
                "coefficients unknown; AY=AZ=1.0 (shear area = A, no "
                "correction).").format(elset_name,
-                                      geom.get("geom_type", "?")))
+                                      geom.get("geom_type", "?"), mod))
     else:
         # %-formatting: "{0:.4g}" follows the locale in IronPython (comma).
-        log("INFO: Beam elset '{0}' ({1}, POU_D_T): AY={2}, AZ={3} "
+        log("INFO: Beam elset '{0}' ({1}, {2}): AY={3}, AZ={4} "
             "(approximation, see _profile_shear_coefs).".format(
-                elset_name, geom.get("geom_type", "?"),
+                elset_name, geom.get("geom_type", "?"), mod,
                 "%.4g" % coefs[0], "%.4g" % coefs[1]))
     new = dict(geom)
     new["cara"] = tuple(geom["cara"]) + ("AY", "AZ")
@@ -1572,6 +1618,8 @@ def extract_aster_data_from_liml(file_path):
                    "(MECA_STATIQUE); for {0} linear shells become "
                    "DKT.").format(solver_cmd))
             shell_mod = "DKT"
+        beam_mod = _gd_beam_choice(beam_mod, run_cfg, all_shapes,
+                                   thermal_run)
         # 3D_SI cannot compute the stable time step: DYNA_NON_LINE with
         # DIFF_CENT gave <EXCEPTION> CALCUL_37 ("Le TYPE_ELEMENT MECA_HEXS8
         # ne sait pas encore calculer l'option: PAS_COURANT"), seen in a
@@ -2632,9 +2680,9 @@ def extract_aster_data_from_liml(file_path):
 
             if dim == "1D":
                 if "aster_section" in geom:
-                    if model_data["elset_modelisations"].get(
-                            elset_name) == "POU_D_T":
-                        geom = _add_shear_coefs(elset_name, geom)
+                    mod = model_data["elset_modelisations"].get(elset_name)
+                    if mod in _SHEAR_BEAMS:
+                        geom = _add_shear_coefs(elset_name, geom, mod)
                     geom = dict(geom, area=_section_area(geom))
                     model_data["beam_sections"][elset_name] = geom
                     log("INFO: Beam section '{0}': {1}".format(
@@ -2667,7 +2715,7 @@ def extract_aster_data_from_liml(file_path):
                     model_data["elset_modelisations"].items()):
                 if ("line3" in elset_shapes_map.get(elset_name, ()) and
                         model_data["elset_dims"].get(elset_name) == "1D" and
-                        mod not in ("POU_D_E", "POU_D_T")):
+                        mod not in ("POU_D_E", "POU_D_T", GD_BEAM)):
                     _not_translated(
                         model_data,
                         tr("elset '{0}': line3-elementen ({1})",

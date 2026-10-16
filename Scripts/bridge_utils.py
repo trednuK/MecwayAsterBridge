@@ -88,8 +88,10 @@ CONFIG_BRIDGE = {
     # not in Code-Aster, then DKT); quadratic shells stay COQUE_3D.
     # "COQUE_3D": linear shells first made quadratic (LINE_QUAD + QUAD8_9).
     "elem_shell":      "DKT",
-    # Beams (line2/line3): "POU_D_E" (Euler, like Mecway) or "POU_D_T"
-    # (Timoshenko; AY/AZ for general sections: bridge_from_liml.py).
+    # Beams (line2/line3): "POU_D_E" (Euler, like Mecway), "POU_D_T"
+    # (Timoshenko; AY/AZ for general sections: bridge_from_liml.py) or
+    # "POU_D_T_GD" (large rotations, only in nonlinear static with large
+    # displacements, elsewhere POU_D_T; bridge_from_liml._gd_beam_choice).
     "elem_beam":       "POU_D_E",
 
     # NOTE: the values in this CONFIG_BRIDGE block are rewritten line by line
