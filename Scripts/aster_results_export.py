@@ -2068,7 +2068,7 @@ def _times(res, indexes):
 def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
-                   shell_vectors=None, strengths=None):
+                   shell_vectors=None, strengths=None, u_axes=None):
     """
     Write all archived time steps of res as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
@@ -2110,6 +2110,10 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     shells (AFFE_CARA_ELEM COQUE VECTEUR); without: X.
     strengths     : {Mecway elset: tensilestrength [Pa]} for the factor
                     of safety (von Mises failure criterion).
+    u_axes        : [((ux, uy, uz), [(first eid, last eid), ...]), ...]:
+                    Mecway's U direction of shells from an Element
+                    orientation card (bridge_orientation; the attributes
+                    orientationux/uy/uz are read from the .liml itself).
 
     Returns
     -------
@@ -2121,7 +2125,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
         return _export(res, out_path, liml_path, fields, extra_results,
                        precision, static, t0, rigi_geo, mass, node_fields,
                        cyclic, opt_in, {"shell_vectors": shell_vectors,
-                                        "strengths": strengths})
+                                        "strengths": strengths},
+                       u_axes)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -2132,9 +2137,13 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
 
 def _export(res, out_path, liml_path, fields, extra_results, precision,
             static, t0, rigi_geo=None, mass=None, node_fields=None,
-            cyclic=None, opt_in=None, derived=None):
+            cyclic=None, opt_in=None, derived=None, u_axes=None):
     """Work of export_results (without the error handling)."""
     model = read_liml_model(liml_path)
+    for vec, ranges in u_axes or ():
+        for first, last in ranges:
+            for eid in range(first, last + 1):
+                model["uaxes"][eid] = tuple(vec)
     n = model["coords"].shape[0]
     mesh = res.getMesh()
     rows = None

@@ -572,6 +572,7 @@ Mecway's solution follows the table.
 | LS-31 | shell strip 100 x 20 x 2 mm skewed in space (quad4, DKT), tension 600 N + transverse 3 N | `forceperlengthu`, `momentu`, `stress<ij>u1/m1/b1` (global), `lstrain<ij>u/b`, `factorofsafety` at x = L/2 | plate theory, σ = N/t ± 6M/t², uniaxial e1 e1^T | ≤ 0.8% (lstrainxxb), the rest ≤ 0.2% |
 | LS-31b | same, quad8 (COQUE_3D) | same + `shearuw` (mean over the width) | -P/b = -150 N/m | ≤ 0.6%; Q exact |
 | LS-31c | same, quad4 with `orientationu*` along the width | `forceperlengthv` = N_u, `momentv`, `forceperlengthu` ≈ 0 | same | exact |
+| LS-31d | same with the U axis from an *Element orientation* card | as LS-31c | same | exact, equal to LS-31c |
 | LS-32 / LS-32b | hex8 bar uniaxial tension 100 MPa; cube pure shear 50 MPa | `lstrainxx/yy/zz`, `lstrainxy` (γ), `factorofsafety` | σ/E, -νσ/E, τ/G; S/σ, S/(√3 τ) | exact |
 | NL-30 / NL-30b | contact patch test hex8 matching (STANDARD, `CONT_NOEU`) and hex20 (PENALISATION, `LAGS_C` only) | `contactpressure` (mean, smallest), `contactstate` | p = F/A = 10 MPa, state 1 | exact |
 | NL-30c | two beams with their tips touching (NL-03b) | `contactstate` tip 1, start of the slave zone 0; `contactpressure` there | open: 0 | state exact; pressure 448 Pa (0.06% of the peak, numerical) |
@@ -1677,7 +1678,7 @@ reads `solution.modes()`, `frequency(m)` / `buckling_factor(m)` and
   modal, static and buckling: without orientation (Mecway default), with an
   *orientation vector* and with vector + *angle* (`orientationvx/vy/vz`, `angle` per
   `<elem>`; bridge: groups `BORnnnnn` with `AFFE_CARA_ELEM ORIENTATION CARA='VECT_Y'`,
-  without orientation Code-Aster's default). Module `tests_balkorientatie.py`,
+  since V2026.2 for every beam, without orientation with Mecway's default V). Module `tests_balkorientatie.py`,
   `python run_verificatie.py MO-2 LS-7 BU-2` (about 2 minutes).
 - **Model**: cantilever L = 1 m, 20 `POU_D_E`, steel, RectBar 40 × 10 mm (I_W = 16
   I_V), along X, Y, Z and skew (1,1,1), and an I section 100/50/10/8 mm along Y
@@ -1741,6 +1742,36 @@ along X and skew, with and without vector + 30°):
   section (also not on a second try); the bridge gave 135.1 there (weak principal
   axis) and 601.0 (G·J·A/I_p about the centroid; the real flexural-torsional factor of an
   angle is lower, KNOWN_BUGS 115).
+
+### Element orientation card (MO-31, LS-79 … LS-82, BU-25, LS-31d)
+
+- **Goal**: Mecway 34 also stores the orientation as an item in Loads & Constraints
+  (*Element orientation* on an element selection): `<orientation selection="…">` with
+  `<ux>`…`<vz>` and `<angleu>` (found in the fork by MishalTPC,
+  github.com/mishal0488/MecwayAsterBridge). Check that the bridge uses that card exactly
+  like the attributes per element. Module `tests_balkorientatie.py` (LS-31d:
+  `tests_resultaatvelden.py`), `python run_verificatie.py MO-31 LS-79 LS-8 BU-25 LS-31d`.
+- **Mecway (measured headless, 16 Oct 2026)**: a card gives the same displacements as
+  the attributes with the same vector and angle; Mecway writes the card back into its
+  own solution file with all seven children (zero vector = not given, an angle without
+  unit in rad) and does not convert it to attributes. A formula
+  (`unit=""`/`positionunit`) applies per element at its centre. Mecway does not solve
+  with an element that has an orientation from a card and the attributes or from two
+  cards, with a U axis on beams and with a V axis or angle on shells; a beam card
+  without a V vector gives a singular solution; a card on a component name has no
+  effect. The bridge gives a WARNING there (with overlap the card wins, of two the last
+  one) or an ERROR.
+- **Model**: as MO-25, LS-75, BU-23, LS-78 (one card per member) and LS-31c, now with a
+  card instead of the attributes; LS-81: beam along X with V = (0, x, 1 − x) and angle
+  30·x degrees as a formula; LS-82: card (vector Z) on elements 1–10 of 20.
+- **Reference**: the analytical references of the twin cases and Mecway 34 headless on
+  the card `.liml` itself.
+- **Result**: all 60 checks OK. With a card the bridge gives exactly the same numbers as
+  with the attributes (MO-31 = MO-25, LS-79 = LS-75, BU-25 = BU-23, LS-80 = LS-78,
+  LS-31d = LS-31c, difference 0). Against Mecway: frequencies ≤ 1e-9, buckling factor
+  5e-12, tip displacements and rotations ≤ 3e-8 (frame), formula and half card ≤ 6e-10.
+  Since this version every beam gets Mecway's V axis explicitly as `VECT_Y` (also without
+  orientation); all existing beam cases gave exactly the same result with it.
 
 ### Buckling of beams: torsion and frames (BU-30 … BU-37)
 

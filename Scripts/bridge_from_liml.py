@@ -32,6 +32,7 @@
 #   thermalstress + temperature2 (+ temperature3 per node,
 #   _parse_node_temperatures), rayleighdamping, constraintequation,
 #   mass2, rotationalinertia; bonded contact2 -> model_data["bonded"].
+# Element orientation cards (<orientation>): bridge_orientation.
 #
 # Supported <nodesurfacecoupling> types:
 #   rbe3      -> LIAISON_RBE3 (weighted average, master follows slaves)
@@ -53,6 +54,7 @@ import bridge_acoustic
 import bridge_vibroacoustic
 import bridge_cyclic
 import bridge_offset
+import bridge_orientation
 
 # ------------------------------------------------------------------
 # CONSTANTS: element shapes per dimension
@@ -2084,6 +2086,19 @@ def extract_aster_data_from_liml(file_path):
                         "MODELISATION='BARRE'".format(part, elset_name))
 
             # --------------------------------------------------
+            # 2b'. ELEMENT ORIENTATION as a Loads & Constraints item
+            # (bridge_orientation; applied in STEP 4 like the per-element
+            # attributes). In every analysis: without beams, shells or
+            # gaps it only gives an INFO line.
+            # --------------------------------------------------
+            elif tag == bridge_orientation.TAG:
+                if item.get("suppressed", "") == "true":
+                    log("INFO: {0} on '{1}' skipped (suppressed).".format(
+                        tag, item.get("selection", "")))
+                    continue
+                bridge_orientation.parse(item, model_data)
+
+            # --------------------------------------------------
             # 2c. NODESURFACECOUPLING  (RBE2 / RBE3)
             #
             # Mecway XML:
@@ -2707,6 +2722,9 @@ def extract_aster_data_from_liml(file_path):
         # ==========================================
         # STEP 4: has_rot_dofs FOR THE MODEL + BC RECALCULATION
         # ==========================================
+        # Element orientation cards (Loads & Constraints) on the
+        # elements of their selection, like the per-element attributes
+        bridge_orientation.apply(model_data)
         model_data["has_rot_dofs"] = any(
             mod in _ROT_DOF_MODELISATIONS
             for mod in model_data["elset_modelisations"].values()

@@ -100,19 +100,40 @@ def _vw(key):
     return u, v, _cross(u, v)
 
 
-def _beam(m, p0, p1, orient):
+def _card(sel, orient, angle=None):
+    """Element orientation as a Loads & Constraints item, as Mecway 34
+    writes it (all seven children, zero U = not given). angle: text of
+    <angleu> (e.g. a formula element), otherwise from orient."""
+    vec, ang = orient
+    if angle is None:
+        angle = "<angleu>%s</angleu>" % (
+            "0 rad" if ang is None else "%g °" % ang)
+    return ('<orientation selection="%s"><ux>0</ux><uy>0</uy><uz>0</uz>'
+            '%s%s</orientation>' % (sel, "".join(
+                c if isinstance(c, str) else "<v%s>%g</v%s>" % (x, c, x)
+                for x, c in zip("xyz", vec)), angle))
+
+
+def _beam(m, p0, p1, orient, card=None):
+    """20 elements from p0 to p1; orient as element attributes, or with
+    card (name of an element selection) as an Element orientation card."""
     nids = [m.node(*[p0[d] + (p1[d] - p0[d]) * i / float(N_EL)
                      for d in range(3)]) for i in range(N_EL + 1)]
-    for i in range(N_EL):
-        m.elem("Balk", "line2", [nids[i], nids[i + 1]], _attrs(orient))
+    eids = [m.elem("Balk", "line2", [nids[i], nids[i + 1]],
+                   "" if card else _attrs(orient)) for i in range(N_EL)]
+    if card and orient:
+        m.element_selection(card, eids)
+        m.add(_card(card, orient))
     return nids
 
 
-def _cantilever(analysis, key, section=RECT, attrs=None, length=L):
+def _cantilever(analysis, key, section=RECT, attrs=None, length=L,
+                card=False):
     u, orient, _v = ORIENT[key]
     m = Model(analysis, attrs=attrs)
     m.elset("Balk", "Mat")
-    nids = _beam(m, (0, 0, 0), tuple(length * c for c in u), orient)
+    nids = _beam(m, (0, 0, 0), tuple(length * c for c in u), orient,
+                 "Orient" if card else None)
     m.mat("Mat", section, STEEL, DENS)
     m.node_selection("Inklemming", [nids[0]])
     m.add('<fixed selection="Inklemming" />')
@@ -128,12 +149,12 @@ FRAME = [((0, 0, 0), (0, 0, 1), None), ((0, 0, 1), (1, 0, 1), ((0, 1, 1), 30)),
 FRAME_TIP = (1, 1, 1.5)
 
 
-def _frame(analysis, attrs=None, section=RECT):
+def _frame(analysis, attrs=None, section=RECT, card=False):
     m = Model(analysis, attrs=attrs)
     m.elset("Balk", "Mat")
     first = None
-    for p0, p1, o in FRAME:
-        nids = _beam(m, p0, p1, o)
+    for k, (p0, p1, o) in enumerate(FRAME):
+        nids = _beam(m, p0, p1, o, "Orient%d" % (k + 1) if card else None)
         first = first or nids[0]
     m.mat("Mat", section, STEEL, DENS)
     m.node_selection("Inklemming", [first])
@@ -192,6 +213,8 @@ MECWAY_F = {
     "MO-25": (8.35516640059515, 33.4206655614027),
     "MO-26": (8.3551664081098, 33.42066557429),
     "MO-27": (32.8875933830736, 108.280997199524, 110.13494274214),
+    # orientatiekaart (16 okt 2026): gelijk aan MO-25
+    "MO-31": (8.35516640059515, 33.4206655614027),
 }
 
 
@@ -231,13 +254,22 @@ def _mode_checks(cid, key, n=6, effmass=False):
     return out
 
 
-def _mo(cid, key, title, n_modes=6, extra=None, effmass=False):
+def _how(key, card):
+    if not ORIENT[key][1]:
+        return "geen orientatie (standaard)"
+    if card:
+        return "Element orientation-kaart (%s)" % _attrs(ORIENT[key][1])
+    return _attrs(ORIENT[key][1])
+
+
+def _mo(cid, key, title, n_modes=6, extra=None, effmass=False, card=False):
     def build():
-        return _cantilever("V30", key, attrs={"maxmode": n_modes})[0]
+        return _cantilever("V30", key, attrs={"maxmode": n_modes},
+                           card=card)[0]
     return Case(cid, "Modaal", title, "modal_3d", build,
                 _mode_checks(cid, key, effmass=effmass) + (extra or []),
                 note="RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E; %s" %
-                (_attrs(ORIENT[key][1]) or "geen orientatie (standaard)"))
+                _how(key, card))
 
 
 TESTS = [
@@ -404,21 +436,57 @@ def _ls_checks(key, iv=I_V, iw=I_W, area=AREA, stress=True):
     return out
 
 
-def _ls_build(key, section=RECT):
+def _ls_build(key, section=RECT, card=False):
     def build():
-        m, _n = _cantilever("S30", key, section=section)
+        m, _n = _cantilever("S30", key, section=section, card=card)
         m.add('<force selection="Tip"><x>%g N</x><y>%g N</y><z>%g N</z>'
               '</force>' % FORCE)
         return m
     return build
 
 
-def _ls(cid, key, title):
+# Mecway 34 headless (mw_solve.py) op modellen/<id>.liml, 16 okt 2026:
+# tipverplaatsing en -rotatie (dx, dy, dz [m], rx, ry, rz [rad]).
+MECWAY_TIP = {
+    # gelijk aan Mecway met de attributen (LS-75 en experiment met 4
+    # elementen; LS-80 = MECWAY_LS78)
+    "LS-79": (-0.04761666667147458, 0.02232380952643751, 0.0253000000021799,
+              0.002577456558507215, -0.06314768569811616,
+              0.06057022913954277),
+    "LS-80": (-0.29293607634255237, -0.0135615668239756, 0.5295669346620123,
+              0.23932999086837636, -0.2636845840425713,
+              -0.0031322266992829966),
+    "LS-81": (1.1904761904761654e-06, 0.06173638728323854,
+              0.0038067386299123875, 0.0, -0.01116270147650637,
+              0.07190865760070607),
+    "LS-82": (1.1904761904761654e-06, 0.084077380946095, 0.025669642857140497,
+              0.0, -0.06361607142856247, 0.10937499999218932),
+}
+
+
+def _mecway_tip(cid, tip):
+    """Tip t.o.v. Mecway: tolerantie 1e-4 x de grootste component van de
+    verplaatsing resp. de rotatie."""
+    ref = MECWAY_TIP.get(cid, ())
+    if not ref:
+        return []
+    tol_d = 1e-4 * max(abs(c) for c in ref[:3])
+    tol_r = 1e-4 * max(abs(c) for c in ref[3:])
+    return [Check("tip %s t.o.v. Mecway" % var,
+                  lambda r, var=var: r.at(var, tip), ref=ref[i],
+                  tol_abs=tol_d if i < 3 else tol_r,
+                  unit="m" if i < 3 else "rad", in_series=False,
+                  source="Mecway 34 headless, zelfde .liml")
+            for i, var in enumerate(("displx", "disply", "displz", "rotx",
+                                     "roty", "rotz"))]
+
+
+def _ls(cid, key, title, card=False):
     return Case(cid, "Lineair statisch", title, "lin_static_3d",
-                _ls_build(key), _ls_checks(key),
+                _ls_build(key, card=card), _ls_checks(key) +
+                _mecway_tip(cid, tuple(L * c for c in ORIENT[key][0])),
                 note="RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, F = (100, "
-                "200, 300) N op de tip; %s" %
-                (_attrs(ORIENT[key][1]) or "geen orientatie (standaard)"))
+                "200, 300) N op de tip; %s" % _how(key, card))
 
 
 TESTS += [
@@ -472,12 +540,13 @@ P_V = math.pi ** 2 * E * I_V / (4 * L ** 2)   # ingeklemd-vrij, zwak
 P_W = math.pi ** 2 * E * I_W / (4 * L ** 2)   # sterk
 
 
-def _bu_build(key, rail=None):
+def _bu_build(key, rail=None, card=False):
     """Kolom langs U, drukkracht P op de tip; rail = (x, y, z)-vlaggen van
     een verplaatsing 0 op alle knopen behalve de inklemming (knik alleen
     in de andere richting)."""
     def build():
-        m, _n = _cantilever("B30", key, attrs={"maxmode": 3, "shift": 1})
+        m, _n = _cantilever("B30", key, attrs={"maxmode": 3, "shift": 1},
+                            card=card)
         u = ORIENT[key][0]
         m.add('<force selection="Tip"><x>%r N</x><y>%r N</y><z>%r N</z>'
               '</force>' % tuple(-P * c for c in u))
@@ -497,10 +566,12 @@ def _ei_eff(key, axis):
 
 MECWAY_BU = {"BU-20": 1.72718086145198, "BU-21": 27.634893780999,
              "BU-22": 27.6348937769274, "BU-23": 8.2041090899062,
-             "BU-24": 1.72718086142993}
+             "BU-24": 1.72718086142993,
+             # orientatiekaart (16 okt 2026): gelijk aan BU-23
+             "BU-25": 8.2041090899062}
 
 
-def _bu(cid, key, rail, axis, title):
+def _bu(cid, key, rail, axis, title, card=False):
     ieff = _ei_eff(key, axis)
     ref = math.pi ** 2 * E * ieff / (4 * L ** 2) / P
     checks = [Check("factor 1", lambda r: r.mode(1), ref=ref, tol=0.002,
@@ -512,9 +583,11 @@ def _bu(cid, key, rail, axis, title):
                             ref=MECWAY_BU[cid], tol=1e-4, unit="-",
                             in_series=False,
                             source="Mecway 34 headless, zelfde .liml"))
-    return Case(cid, "Knik", title, "buckling_3d", _bu_build(key, rail),
-                checks, note="RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = "
-                "1000 N; %s" % (_attrs(ORIENT[key][1]) or "standaard"))
+    return Case(cid, "Knik", title, "buckling_3d",
+                _bu_build(key, rail, card), checks,
+                note="RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = "
+                "1000 N; %s" % (_how(key, card) if card or ORIENT[key][1]
+                                else "standaard"))
 
 
 TESTS += [
@@ -561,3 +634,88 @@ TESTS.append(Case(
     "BU-24", "Knik", "Balkorientatie knik: schuin, vector Z + 30 graden, "
     "knikvorm", "buckling_3d", _bu_build("Sa"), _bu24_checks(),
     note="RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N."))
+
+
+# ==================================================================
+# ELEMENT ORIENTATION ALS KAART (MO-31, LS-79 ... LS-82, BU-25)
+# ==================================================================
+# Mecway 34 slaat de orientatie ook op als Loads & Constraints-item
+# <orientation selection="..."> met <ux>..<vz> en <angleu> (gevonden in de
+# fork van MishalTPC, github.com/mishal0488/MecwayAsterBridge; formaat en
+# betekenis headless gemeten, bridge_orientation.py). Dezelfde balken als
+# hierboven, nu met een kaart op een elementselectie in plaats van de
+# attributen: zelfde analytische referentie, en Mecway 34 headless op de
+# kaart-.liml zelf.
+
+TESTS += [
+    _mo("MO-31", "Sa", "Orientatiekaart modaal: schuin, vector Z + 30 graden "
+        "(als MO-25)", effmass=True, card=True),
+    _ls("LS-79", "Sa", "Orientatiekaart statisch: schuin, vector Z + 30 "
+        "graden (als LS-75)", card=True),
+    _bu("BU-25", "Za", (1, 0, 0), (1, 0, 0),
+        "Orientatiekaart knik: langs Z, X vast, vector X + 30 graden (als "
+        "BU-23)", card=True),
+]
+
+
+def build_ls80():
+    m = _frame("S30", card=True)
+    m.add('<force selection="Tip"><x>%g N</x><y>%g N</y><z>%g N</z>'
+          '</force>' % FORCE)
+    return m
+
+
+TESTS.append(Case(
+    "LS-80", "Lineair statisch", "Orientatiekaart statisch: raamwerk, een "
+    "kaart per staaf (als LS-78)", "lin_static_3d", build_ls80,
+    [Check("tip %s als LS-78 (attributen, Mecway)" % var,
+           lambda r, var=var: r.at(var, FRAME_TIP), ref=MECWAY_LS78[i],
+           tol=1e-4, unit="m" if var.startswith("d") else "rad",
+           in_series=False, source="Mecway 34 headless, LS-78 (attributen)")
+     for i, var in enumerate(("displx", "disply", "displz", "rotx", "roty",
+                              "rotz"))] + _mecway_tip("LS-80", FRAME_TIP),
+    note="Staven als MO-28; ligger en schuine staaf elk met een eigen "
+    "kaart, kolom zonder (standaard)."))
+
+# LS-81: V en hoek als formule van de plaats (Mecway: per element in het
+# middelpunt): V = (0, x, 1 - x), hoek 30 x graden (x in m).
+_FORMULA = 'unit="" timeunit="s" positionunit="m"'
+
+
+def _ls_x_card(card_xml_fn):
+    """Uitkragende balk langs X (F op de tip) met een kaart op een deel
+    van de elementen; card_xml_fn(m) voegt selectie en kaart toe."""
+    def build():
+        m, _n = _cantilever("S30", "X")
+        card_xml_fn(m)
+        m.add('<force selection="Tip"><x>%g N</x><y>%g N</y><z>%g N</z>'
+              '</force>' % FORCE)
+        return m
+    return build
+
+
+def _ls81_card(m):
+    m.element_selection("Orient", range(1, N_EL + 1))
+    m.add(_card("Orient", ((0, '<vy %s>x</vy>' % _FORMULA,
+                            '<vz %s>1-x</vz>' % _FORMULA), None),
+                angle='<angleu unit="°" timeunit="s" positionunit="m">'
+                '30*x</angleu>'))
+
+
+def _ls82_card(m):
+    m.element_selection("Orient", range(1, N_EL // 2 + 1))
+    m.add(_card("Orient", ((0, 0, 1), None)))
+
+
+TESTS += [
+    Case("LS-81", "Lineair statisch", "Orientatiekaart statisch: vector en "
+         "hoek als formule van de plaats", "lin_static_3d",
+         _ls_x_card(_ls81_card), _mecway_tip("LS-81", (L, 0, 0)),
+         note="RectBar 40 x 10 mm langs X, 20 POU_D_E, F = (100, 200, 300) "
+         "N; V = (0, x, 1 - x), angleu = 30 x graden."),
+    Case("LS-82", "Lineair statisch", "Orientatiekaart statisch: kaart op "
+         "de helft van de elementen", "lin_static_3d",
+         _ls_x_card(_ls82_card), _mecway_tip("LS-82", (L, 0, 0)),
+         note="RectBar 40 x 10 mm langs X, 20 POU_D_E; elementen 1-10 "
+         "vector Z (kaart), 11-20 standaard."),
+]

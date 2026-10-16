@@ -934,14 +934,15 @@ def _build_cara_elem_block(model_data):
     Without beams, shells, springs and POI1 groups (see _has_cara) a
     comment line is returned so that the placeholder stays valid.
 
-    ORIENTATION entries: beams with their own V axis (Mecway
-    orientationvx/vy/vz + angle). bridge_mesh.py puts them in subgroups with
-    one V per group (model_data["beam_vect_y"]); CARA='VECT_Y' sets the
-    local y axis of Code-Aster along V. Without their own orientation the
-    defaults of Mecway and Code-Aster are equal (checked with a
-    comparison Mecway <-> Code-Aster for beams along X, along Z and
-    inclined; modal, static and buckling with and without orientation in
-    the verification MO-20 ... MO-29, LS-70 ... LS-78, BU-20 ... BU-24).
+    ORIENTATION entries: every beam cell with Mecway's V axis (element
+    attributes orientationvx/vy/vz + angle, an Element orientation card,
+    or Mecway's default V = Z x U). bridge_mesh.py puts the beam cells in
+    groups with one V per group (model_data["beam_vect_y"]); CARA='VECT_Y'
+    sets the local y axis of Code-Aster along V. Mecway's default and
+    Code-Aster's default are equal for the tested directions (along X,
+    along Z and inclined; verification MO-20 ... MO-29, LS-70 ... LS-78,
+    BU-20 ... BU-24), but VECT_Y is written for every beam anyway, so that
+    the bridge does not depend on it.
     """
     shell_secs  = model_data.get("shell_sections",  {})
     beam_secs   = model_data.get("beam_sections",   {})
@@ -1318,6 +1319,26 @@ def _shell_vectors(model_data):
         if vect is not None:
             out[back.get(group, group)] = tuple(vect)
     return out
+
+
+def _card_u_axes(model_data):
+    """U axes of shells from Element orientation cards
+    (bridge_orientation, model_data["card_u_axes"]) for
+    aster_results_export (u_axes): [((ux, uy, uz), [(first, last), ...])]
+    with the element numbers per direction as ranges; None without."""
+    axes = model_data.get("card_u_axes") or {}
+    if not axes:
+        return None
+    groups = OrderedDict()
+    for eid in sorted(axes):
+        vec = tuple(float(c) for c in axes[eid])
+        ranges = groups.setdefault(vec, [])
+        if ranges and ranges[-1][1] == eid - 1:
+            ranges[-1][1] = eid
+        else:
+            ranges.append([eid, eid])
+    return [(vec, [tuple(r) for r in ranges])
+            for vec, ranges in groups.items()]
 
 
 def _optional_field_blocks(model_data, fields, strain_kind):
@@ -1951,6 +1972,9 @@ def _derived_args(model_data, chosen):
         vectors = _shell_vectors(model_data)
         if vectors:
             out += ", shell_vectors={0!r}".format(vectors)
+    u_axes = _card_u_axes(model_data)
+    if u_axes and "shell_forces" in chosen:
+        out += ", u_axes={0!r}".format(u_axes)
     if "safety_factor" in chosen:
         out += ", strengths={0!r}".format(_failure_strengths(model_data))
     return out
@@ -6872,6 +6896,9 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
         if vectors and any(f in fields for f in ("strain", "shell_stresses",
                                                  "shell_forces")):
             extra += "    shell_vectors={0!r},@N".format(vectors)
+        u_axes = _card_u_axes(model_data)
+        if u_axes and "shell_forces" in fields:
+            extra += "    u_axes={0!r},@N".format(u_axes)
     return (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import sys@N"

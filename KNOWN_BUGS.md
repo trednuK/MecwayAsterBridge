@@ -479,6 +479,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    separate spring gave a singular system) and CCX gave no solution. To be checked
    with a spring created in the Mecway GUI.
 
+116\. **Element orientation card: parts not compared with Mecway** (question,
+   `bridge_orientation`). Measured headless with Mecway 34 on hand-written cards (Mecway
+   writes them back unchanged in its solution file): beams with vector, angle, formulas,
+   a card on part of the elements, overlap and the refusals (MO-31, LS-79–82, BU-25).
+   NOT compared: a card created in the Mecway GUI (the XML form is the same as Mecway
+   writes it), the U axis of a card on shells against Mecway's own `forceperlength*`/
+   `moment*` (Mecway headless only wrote displacements; LS-31d checks it against the
+   attribute variant and theory), a card on gaps, and the "element centre" of a formula
+   for quadratic elements and shells (the bridge takes the mean of all element nodes;
+   for line2 that is Mecway's result, LS-81).
+
 ## Not translated (the bridge reports it at the end of the run)
 
 4\. **Loads and boundary conditions the bridge does not know** (confirmed). Supported

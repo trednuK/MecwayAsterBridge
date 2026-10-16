@@ -1183,7 +1183,8 @@ drop-down "Configuration" on the start screen (names from the `.liml`, then
 ### S13 – Orthotropic and anisotropic materials
 **Goal:** translate the Mecway materials *Orthotropic* and *Anisotropic* (stiffness or compliance matrix)
 instead of stopping the run, with Mecway's *Element orientation* (per element
-`orientationux`…`vz`, `angle`) as the material direction; also in shells.
+`orientationux`…`vz`, `angle`, or the Loads & Constraints card read by `bridge_orientation`)
+as the material direction; also in shells.
 **Code-Aster:** `DEFI_MATERIAU` `ELAS_ORTH` (and `ELAS_ISTR`), anisotropic via `ELAS_ORTH` if that
 suffices, otherwise report it as NOT possible; direction with `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`/`ANGL_EULER`
 per element (group), shells `COQUE` `ANGL_REP`/`VECTEUR`; composite `DEFI_COMPOSITE`.

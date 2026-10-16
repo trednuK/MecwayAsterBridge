@@ -575,6 +575,7 @@ vergelijking met Mecway's oplossing.
 | LS-31 | schaalstrook 100 x 20 x 2 mm scheef in de ruimte (quad4, DKT), trek 600 N + dwarskracht 3 N | `forceperlengthu`, `momentu`, `stress<ij>u1/m1/b1` (globaal), `lstrain<ij>u/b`, `factorofsafety` op x = L/2 | plaattheorie, σ = N/t ± 6M/t², eenassig e1 e1^T | ≤ 0,8% (lstrainxxb), de rest ≤ 0,2% |
 | LS-31b | idem quad8 (COQUE_3D) | idem + `shearuw` (gemiddeld over de breedte) | -P/b = -150 N/m | ≤ 0,6%; Q exact |
 | LS-31c | idem quad4 met `orientationu*` langs de breedte | `forceperlengthv` = N_u, `momentv`, `forceperlengthu` ≈ 0 | idem | exact |
+| LS-31d | idem met de U-as uit een *Element orientation*-kaart | als LS-31c | idem | exact, gelijk aan LS-31c |
 | LS-32 / LS-32b | staaf hex8 eenassige trek 100 MPa; kubus zuivere afschuiving 50 MPa | `lstrainxx/yy/zz`, `lstrainxy` (γ), `factorofsafety` | σ/E, -νσ/E, τ/G; S/σ, S/(√3 τ) | exact |
 | NL-30 / NL-30b | contact-patchtest hex8 passend (STANDARD, `CONT_NOEU`) en hex20 (PENALISATION, alleen `LAGS_C`) | `contactpressure` (gemiddeld, kleinste), `contactstate` | p = F/A = 10 MPa, status 1 | exact |
 | NL-30c | twee balken met de tips op elkaar (NL-03b) | `contactstate` tip 1, begin slave-zone 0; `contactpressure` daar | open: 0 | status exact; druk 448 Pa (0,06% van de piek, numeriek) |
@@ -1681,7 +1682,7 @@ uit de door de bridge gevulde `.liml` met dezelfde waarden.
   modaal, statisch en knik: zonder orientatie (Mecway-standaard), met een
   *orientation vector* en met vector + *angle* (`orientationvx/vy/vz`, `angle` per
   `<elem>`; bridge: groepen `BORnnnnn` met `AFFE_CARA_ELEM ORIENTATION CARA='VECT_Y'`,
-  zonder orientatie de standaard van Code-Aster). Module `tests_balkorientatie.py`,
+  sinds V2026.2 voor elke balk, ook zonder orientatie met Mecway's standaard-V). Module `tests_balkorientatie.py`,
   `python run_verificatie.py MO-2 LS-7 BU-2` (ca. 2 minuten).
 - **Model**: uitkragende balk L = 1 m, 20 `POU_D_E`, staal, RectBar 40 × 10 mm (I_W =
   16 I_V), langs X, Y, Z en schuin (1,1,1), en een I-profiel 100/50/10/8 mm langs Y
@@ -1744,6 +1745,35 @@ schuin, met en zonder vector + 30°):
   L-profiel headless geen oplossing (ook niet bij een tweede poging); de bridge gaf
   daar 135,1 (zwakke hoofdas) en 601,0 (G·J·A/I_p om het zwaartepunt; de echte
   buig-torsieknik van een hoekprofiel ligt lager, KNOWN_BUGS 115).
+
+### Orientatiekaart (MO-31, LS-79 … LS-82, BU-25, LS-31d)
+
+- **Doel**: Mecway 34 slaat de orientatie ook op als item in Loads & Constraints
+  (*Element orientation* op een elementselectie): `<orientation selection="…">` met
+  `<ux>`…`<vz>` en `<angleu>` (gevonden in de fork van MishalTPC,
+  github.com/mishal0488/MecwayAsterBridge). Nagaan dat de bridge die kaart precies zo
+  gebruikt als de attributen per element. Module `tests_balkorientatie.py` (LS-31d:
+  `tests_resultaatvelden.py`), `python run_verificatie.py MO-31 LS-79 LS-8 BU-25 LS-31d`.
+- **Mecway (headless gemeten, 16 okt 2026)**: een kaart geeft dezelfde verplaatsingen
+  als de attributen met dezelfde vector en hoek; Mecway schrijft de kaart in zijn eigen
+  oplossingsbestand terug met alle zeven kinderen (nul-vector = niet opgegeven, een hoek
+  zonder eenheid in rad) en zet hem niet om naar attributen. Een formule
+  (`unit=""`/`positionunit`) geldt per element in het middelpunt. Mecway rekent niet bij
+  een element met een oriëntatie uit kaart én attributen of uit twee kaarten, bij een
+  U-as op balken en bij een V-as of hoek op schalen; een balkkaart zonder V-vector geeft
+  een singuliere oplossing; een kaart op een componentnaam heeft geen effect. De bridge
+  geeft daar een WARNING (bij overlap wint de kaart, van twee de laatste) of ERROR.
+- **Model**: als MO-25, LS-75, BU-23, LS-78 (een kaart per staaf) en LS-31c, nu met een
+  kaart in plaats van de attributen; LS-81: balk langs X met V = (0, x, 1 − x) en hoek
+  30·x graden als formule; LS-82: kaart (vector Z) op elementen 1–10 van 20.
+- **Referentie**: de analytische referenties van de tweeling-cases en Mecway 34
+  headless op de kaart-`.liml` zelf.
+- **Resultaat**: alle 60 controles OK. De bridge geeft met kaart exact dezelfde getallen
+  als met de attributen (MO-31 = MO-25, LS-79 = LS-75, BU-25 = BU-23, LS-80 = LS-78,
+  LS-31d = LS-31c, verschil 0). Tegen Mecway: frequenties ≤ 1e-9, kniklastfactor 5e-12,
+  tipverplaatsingen en -rotaties ≤ 3e-8 (raamwerk), formule en halve kaart ≤ 6e-10.
+  Sinds deze versie krijgt elke balk Mecway's V-as expliciet als `VECT_Y` (ook zonder
+  orientatie); alle bestaande balkcases gaven daarmee exact dezelfde uitkomst.
 
 ### Knik van balken: torsie en raamwerken (BU-30 … BU-37)
 

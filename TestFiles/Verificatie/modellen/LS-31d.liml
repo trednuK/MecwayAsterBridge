@@ -1,0 +1,96 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.00666666666667" y="0.00666666666667" z="0.00333333333333" />
+  <node nid="3" x="-0.00077920521098" y="0.0124202949358" z="0.00671782055045" />
+  <node nid="4" x="-0.00744587187765" y="0.00575362826909" z="0.00338448721711" />
+  <node nid="5" x="-0.00822507708863" y="0.0181739232048" z="0.0101023077676" />
+  <node nid="6" x="-0.0148917437553" y="0.0115072565382" z="0.00676897443422" />
+  <node nid="7" x="0.0133333333333" y="0.0133333333333" z="0.00666666666667" />
+  <node nid="8" x="0.00588746145569" y="0.0190869616024" z="0.0100511538838" />
+  <node nid="9" x="-0.00155841042196" y="0.0248405898715" z="0.0134356411009" />
+  <node nid="10" x="0.02" y="0.02" z="0.01" />
+  <node nid="11" x="0.0125541281224" y="0.0257536282691" z="0.0133844872171" />
+  <node nid="12" x="0.00510825624471" y="0.0315072565382" z="0.0167689744342" />
+  <node nid="13" x="0.0266666666667" y="0.0266666666667" z="0.0133333333333" />
+  <node nid="14" x="0.019220794789" y="0.0324202949358" z="0.0167178205504" />
+  <node nid="15" x="0.0117749229114" y="0.0381739232048" z="0.0201023077676" />
+  <node nid="16" x="0.0333333333333" y="0.0333333333333" z="0.0166666666667" />
+  <node nid="17" x="0.0258874614557" y="0.0390869616024" z="0.0200511538838" />
+  <node nid="18" x="0.018441589578" y="0.0448405898715" z="0.0234356411009" />
+  <node nid="19" x="0.04" y="0.04" z="0.02" />
+  <node nid="20" x="0.0325541281224" y="0.0457536282691" z="0.0233844872171" />
+  <node nid="21" x="0.0251082562447" y="0.0515072565382" z="0.0267689744342" />
+  <node nid="22" x="0.0466666666667" y="0.0466666666667" z="0.0233333333333" />
+  <node nid="23" x="0.039220794789" y="0.0524202949358" z="0.0267178205504" />
+  <node nid="24" x="0.0317749229114" y="0.0581739232048" z="0.0301023077676" />
+  <node nid="25" x="0.0533333333333" y="0.0533333333333" z="0.0266666666667" />
+  <node nid="26" x="0.0458874614557" y="0.0590869616024" z="0.0300511538838" />
+  <node nid="27" x="0.038441589578" y="0.0648405898715" z="0.0334356411009" />
+  <node nid="28" x="0.06" y="0.06" z="0.03" />
+  <node nid="29" x="0.0525541281224" y="0.0657536282691" z="0.0333844872171" />
+  <node nid="30" x="0.0451082562447" y="0.0715072565382" z="0.0367689744342" />
+  <node nid="31" x="0.0666666666667" y="0.0666666666667" z="0.0333333333333" />
+  <node nid="32" x="0.059220794789" y="0.0724202949358" z="0.0367178205504" />
+  <node nid="33" x="0.0517749229114" y="0.0781739232048" z="0.0401023077676" />
+  <elset name="Strook" material="Plaat2">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="2 7 8 3" />
+    <elem eid="4" shape="quad4" nodes="3 8 9 5" />
+    <elem eid="5" shape="quad4" nodes="7 10 11 8" />
+    <elem eid="6" shape="quad4" nodes="8 11 12 9" />
+    <elem eid="7" shape="quad4" nodes="10 13 14 11" />
+    <elem eid="8" shape="quad4" nodes="11 14 15 12" />
+    <elem eid="9" shape="quad4" nodes="13 16 17 14" />
+    <elem eid="10" shape="quad4" nodes="14 17 18 15" />
+    <elem eid="11" shape="quad4" nodes="16 19 20 17" />
+    <elem eid="12" shape="quad4" nodes="17 20 21 18" />
+    <elem eid="13" shape="quad4" nodes="19 22 23 20" />
+    <elem eid="14" shape="quad4" nodes="20 23 24 21" />
+    <elem eid="15" shape="quad4" nodes="22 25 26 23" />
+    <elem eid="16" shape="quad4" nodes="23 26 27 24" />
+    <elem eid="17" shape="quad4" nodes="25 28 29 26" />
+    <elem eid="18" shape="quad4" nodes="26 29 30 27" />
+    <elem eid="19" shape="quad4" nodes="28 31 32 29" />
+    <elem eid="20" shape="quad4" nodes="29 32 33 30" />
+  </elset>
+  <orientation selection="Orient"><ux>-0.7445871877646539</ux><uy>0.5753628269090508</uy><uz>0.3384487217112064</uz><vx>0</vx><vy>0</vy><vz>0</vz><angleu>0 rad</angleu></orientation>
+  <fixed selection="Inklemming" />
+  <force selection="Eind"><x>399.89846538348667 N</x><y>401.42148463118707 N</y><z>197.36009997065258 N</z></force>
+  <mat name="Plaat2">
+    <geometric type="Plate" thickness="0.002 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <failure type="VonMises" tensilestrength="250 MPa" />
+  </mat>
+  <elementselection name="Orient">
+    <element eid="1" />
+    <element eid="2" />
+    <element eid="3" />
+    <element eid="4" />
+    <element eid="5" />
+    <element eid="6" />
+    <element eid="7" />
+    <element eid="8" />
+    <element eid="9" />
+    <element eid="10" />
+    <element eid="11" />
+    <element eid="12" />
+    <element eid="13" />
+    <element eid="14" />
+    <element eid="15" />
+    <element eid="16" />
+    <element eid="17" />
+    <element eid="18" />
+    <element eid="19" />
+    <element eid="20" />
+  </elementselection>
+  <faceselection name="Inklemming">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+  </faceselection>
+  <faceselection name="Eind">
+    <face eid="19" faceid="2" />
+    <face eid="20" faceid="2" />
+  </faceselection>
+</liml>

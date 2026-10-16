@@ -1,0 +1,103 @@
+<liml version="33">
+  <analysis type="V30" maxmode="6" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.0288675134595" y="0.0288675134595" z="0.0288675134595" />
+  <node nid="3" x="0.057735026919" y="0.057735026919" z="0.057735026919" />
+  <node nid="4" x="0.0866025403784" y="0.0866025403784" z="0.0866025403784" />
+  <node nid="5" x="0.115470053838" y="0.115470053838" z="0.115470053838" />
+  <node nid="6" x="0.144337567297" y="0.144337567297" z="0.144337567297" />
+  <node nid="7" x="0.173205080757" y="0.173205080757" z="0.173205080757" />
+  <node nid="8" x="0.202072594216" y="0.202072594216" z="0.202072594216" />
+  <node nid="9" x="0.230940107676" y="0.230940107676" z="0.230940107676" />
+  <node nid="10" x="0.259807621135" y="0.259807621135" z="0.259807621135" />
+  <node nid="11" x="0.288675134595" y="0.288675134595" z="0.288675134595" />
+  <node nid="12" x="0.317542648054" y="0.317542648054" z="0.317542648054" />
+  <node nid="13" x="0.346410161514" y="0.346410161514" z="0.346410161514" />
+  <node nid="14" x="0.375277674973" y="0.375277674973" z="0.375277674973" />
+  <node nid="15" x="0.404145188433" y="0.404145188433" z="0.404145188433" />
+  <node nid="16" x="0.433012701892" y="0.433012701892" z="0.433012701892" />
+  <node nid="17" x="0.461880215352" y="0.461880215352" z="0.461880215352" />
+  <node nid="18" x="0.490747728811" y="0.490747728811" z="0.490747728811" />
+  <node nid="19" x="0.519615242271" y="0.519615242271" z="0.519615242271" />
+  <node nid="20" x="0.54848275573" y="0.54848275573" z="0.54848275573" />
+  <node nid="21" x="0.57735026919" y="0.57735026919" z="0.57735026919" />
+  <elset name="Balk" material="Mat">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+    <elem eid="9" shape="line2" nodes="9 10" />
+    <elem eid="10" shape="line2" nodes="10 11" />
+    <elem eid="11" shape="line2" nodes="11 12" />
+    <elem eid="12" shape="line2" nodes="12 13" />
+    <elem eid="13" shape="line2" nodes="13 14" />
+    <elem eid="14" shape="line2" nodes="14 15" />
+    <elem eid="15" shape="line2" nodes="15 16" />
+    <elem eid="16" shape="line2" nodes="16 17" />
+    <elem eid="17" shape="line2" nodes="17 18" />
+    <elem eid="18" shape="line2" nodes="18 19" />
+    <elem eid="19" shape="line2" nodes="19 20" />
+    <elem eid="20" shape="line2" nodes="20 21" />
+  </elset>
+  <orientation selection="Orient"><ux>0</ux><uy>0</uy><uz>0</uz><vx>0</vx><vy>0</vy><vz>1</vz><angleu>30 °</angleu></orientation>
+  <fixed selection="Inklemming" />
+  <mat name="Mat">
+    <geometric type="RectBar" recta="40 mm" rectb="10 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <elementselection name="Orient">
+    <element eid="1" />
+    <element eid="2" />
+    <element eid="3" />
+    <element eid="4" />
+    <element eid="5" />
+    <element eid="6" />
+    <element eid="7" />
+    <element eid="8" />
+    <element eid="9" />
+    <element eid="10" />
+    <element eid="11" />
+    <element eid="12" />
+    <element eid="13" />
+    <element eid="14" />
+    <element eid="15" />
+    <element eid="16" />
+    <element eid="17" />
+    <element eid="18" />
+    <element eid="19" />
+    <element eid="20" />
+  </elementselection>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="21" />
+  </nodeselection>
+  <nodeselection name="Rail">
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="16" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="19" />
+    <node nid="20" />
+    <node nid="21" />
+  </nodeselection>
+</liml>

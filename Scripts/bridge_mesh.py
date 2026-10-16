@@ -1248,38 +1248,48 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # 4. Beam orientation -> extra groups with their own VECT_Y
     # --------------------------------------------------
     # In the ASTER format an element may be in several groups, so the
-    # elset stays whole; every V direction gets an extra group BORnnnnn
-    # with ORIENTATION VECT_Y (model_data["beam_vect_y"]).
+    # elsets stay whole; every V direction gets an extra group BORnnnnn
+    # with ORIENTATION VECT_Y (model_data["beam_vect_y"]), over all beam
+    # elsets together (one group per direction, in element order). Every
+    # beam cell (MODELISATION POU_*) gets Mecway's V axis explicitly, also
+    # without orientation attributes or card (default rule of
+    # _mecway_v_axis), so that the bridge does not rely on Code-Aster's
+    # default (found in the fork by MishalTPC,
+    # github.com/mishal0488/MecwayAsterBridge). Never for trusses (BARRE),
+    # cables (CABLE) or springs/dampers/gaps (DIS_T), also line elements.
+    # Offset and flexible-joint cells keep their name M<eid>/H<eid>; V
+    # comes from the Mecway nodes (conn), as in Mecway.
     beam_groups = OrderedDict()
     beam_vect_y = OrderedDict()
     orient = model_data.get("beam_orientations", {})
-    if orient:
-        # Sorted: a set gave a different order of the BOR groups in the
-        # .comm per Python process (hash seed).
-        oriented_elsets = sorted(set(es for eid, shape, en, es in elements
-                                     if eid in orient))
-        for elset in oriented_elsets:
-            subgroups = OrderedDict()
-            for eid, shape, enodes, es in elements:
-                if es != elset or shape not in _BEAM_SHAPES:
-                    continue
-                cn = conn[eid][1]
-                if eid in split_line3:
-                    # per half (straight SEG2): V perpendicular to that half
-                    parts = zip(_cell_names(eid, True),
-                                ((cn[0], cn[2]), (cn[2], cn[1])))
-                else:
-                    parts = [("M{0}".format(eid), (cn[0], cn[1]))]
-                for name, (a, b) in parts:
-                    v = _mecway_v_axis(nodes[a], nodes[b], orient.get(eid))
-                    key = tuple(round(c, 9) for c in v)
-                    subgroups.setdefault(key, [v, []])[1].append(name)
-            for v, members in subgroups.values():
-                sub = "BOR{0:05d}".format(len(beam_groups) + 1)
-                beam_groups[sub] = members
-                beam_vect_y[sub] = v
-            log("INFO: Beam orientation '{0}': {1} direction(s) of V."
-                .format(elset, len(subgroups)))
+    by_dir = OrderedDict()           # rounded V -> [V, [cell names]]
+    beam_elsets = set()
+    for eid, shape, enodes, es in elements:
+        if (shape not in _BEAM_SHAPES or eid not in conn or
+                not elset_mods.get(es, "").startswith("POU_")):
+            continue
+        beam_elsets.add(es)
+        cn = conn[eid][1]
+        if eid in split_line3:
+            # per half (straight SEG2): V perpendicular to that half
+            parts = zip(_cell_names(eid, True),
+                        ((cn[0], cn[2]), (cn[2], cn[1])))
+        else:
+            parts = [("M{0}".format(eid), (cn[0], cn[1]))]
+        for name, (a, b) in parts:
+            v = _mecway_v_axis(nodes[a], nodes[b], orient.get(eid))
+            key = tuple(round(c, 9) for c in v)
+            by_dir.setdefault(key, [v, []])[1].append(name)
+    for v, members in by_dir.values():
+        sub = "BOR{0:05d}".format(len(beam_groups) + 1)
+        beam_groups[sub] = members
+        beam_vect_y[sub] = v
+    if by_dir:
+        log("INFO: Beam orientation: VECT_Y for every beam cell, {0} "
+            "direction(s) of V over {1} beam elset(s); {2} element(s) with "
+            "their own orientation.".format(
+                len(by_dir), len(beam_elsets),
+                len([e for e in orient if e in conn])))
 
     # --------------------------------------------------
     # 4b. Discrete elements on nodes (elastic support, nodal masses)

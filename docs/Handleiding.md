@@ -376,7 +376,7 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `strain` | volumes: `lstrainxx` .. `lstrainzx` (lineair), `greenlagrangestrainxx` .. (niet-lineair met grote verplaatsingen, zoals Mecway's L30/D31); schalen: `lstrainxxu`/`m`/`b` .. (boven/midden/onder, globale assen); knoop- en elementknoopwaarden; schuif als hoekverdraaiing γ = 2ε (zoals Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), schalen `EPSI_ELNO` + `EXTR_COQUE` | uit (grotere `.liml`) |
 | `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V langs Mecway's V en W), `torsion`, `bendingmomv`, `bendingmomw`; lokale assen en tekens zoals Mecway; knoop- en elementknoopwaarden | `EFGE_NOEU`, `EFGE_ELNO` | statisch, niet-lineair, dynamisch |
 | `shell_stresses` | `stressxxu1` .. `stresszxu1`, idem `m1` (midden) en `b1` (onder): spanningstensor van schalen in globale assen, zoals Mecway | `SIGM_ELNO` na `EXTR_COQUE`, in de job van het lokale schaalassenstelsel naar globaal gedraaid | uit (18 variabelen) |
-| `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 geeft trek boven), `shearuw`/`shearvw` (dwarskracht per lengte) in Mecway's U,V-assen (U = `orientationu*` of de rand knoop 1→2) | `EFGE_ELNO`, in de job naar Mecway's U,V gedraaid | statisch, niet-lineair |
+| `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 geeft trek boven), `shearuw`/`shearvw` (dwarskracht per lengte) in Mecway's U,V-assen (U = `orientationu*`, een *Element orientation*-kaart of de rand knoop 1→2) | `EFGE_ELNO`, in de job naar Mecway's U,V gedraaid | statisch, niet-lineair |
 | `safety_factor` | `factorofsafety` (Mecway toont het item *failure*): tensile strength / von Mises van materialen met Mecway's von Mises-faalcriterium; schalen de kleinste van boven en onder; onbelast 1e6 | uit `SIEQ_NOEU`/`SIEQ_ELNO` (in de job) | statisch, niet-lineair, dynamisch |
 | `contact` | `contactpressure` (Pa, positief bij druk; negatief wordt 0), `contactstate` (0 open, 1 gesloten, 2 glijdend) op de slave-knopen | `-LAGS_C` (`DEPL`); status uit `CONT_NOEU` (alleen lineaire contactvlakken) of uit de druk (> 1% van de grootste) | niet-lineair, dynamisch |
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (fasefracties), `hardness` (als de dataset hardheid heeft); namen van de bridge | `META_NOEU`, `DURT_NOEU` | thermisch transient: met `#ASTER-METALLURGIE` altijd mee, alleen route `liml` ([`Lassen.md`](Lassen.md) §10) |
@@ -412,9 +412,9 @@ assen en tekens zijn headless nagelopen in Mecway 34; met Mecway's eigen oplossi
 vergeleken in [`Verificatie.md`](Verificatie.md) (LS-30 .. LS-32, NL-30). Grenzen:
 
 - schalen: de assen van Code-Aster (projectie van X of de `VECTEUR` van de groep) en
-  van Mecway (rand 1→2 of *Element properties* → `orientationu*`) worden per element
-  uit de hoekknopen bepaald; een *Element orientation* als last (Loads & Constraints)
-  wordt niet gelezen (dan Mecway's standaard-U). Sterk gekromde kwadratische schalen:
+  van Mecway (rand 1→2, *Element properties* → `orientationu*` of een *Element
+  orientation*-kaart in Loads & Constraints, LS-31d) worden per element uit de
+  hoekknopen bepaald. Sterk gekromde kwadratische schalen:
   NIET geverifieerd;
 - `contactstate` 2 (glijden) komt alleen uit `CONT_NOEU` met wrijving: NIET
   geverifieerd; met hex20/tet10-contactvlakken (integratie niet in de knopen) is er

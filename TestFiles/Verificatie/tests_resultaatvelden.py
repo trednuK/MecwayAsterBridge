@@ -141,7 +141,7 @@ _IJ = {"xx": (0, 0), "yy": (1, 1), "zz": (2, 2), "xy": (0, 1),
        "yz": (1, 2), "zx": (2, 0)}
 
 
-def build_ls31(order, orient=None):
+def build_ls31(order, orient=None, card=False):
     def build():
         def f(u, v):
             return tuple(L31 * u * E1_31[k] + B31 * v * E2_31[k]
@@ -149,7 +149,14 @@ def build_ls31(order, orient=None):
         m = Model("S30")
         m.elset("Strook", "Plaat2")
         mesh = quadmesh(m, "Strook", 10, 2, f, order=order)
-        if orient:
+        if orient and card:
+            # Element orientation als Loads & Constraints-kaart (zoals
+            # Mecway 34 hem schrijft, bridge_orientation.py)
+            m.element_selection("Orient", range(1, m.n_elem + 1))
+            m.add('<orientation selection="Orient"><ux>%r</ux><uy>%r</uy>'
+                  '<uz>%r</uz><vx>0</vx><vy>0</vy><vz>0</vz>'
+                  '<angleu>0 rad</angleu></orientation>' % tuple(orient))
+        elif orient:
             att = ('orientationux="%r" orientationuy="%r" '
                    'orientationuz="%r"' % tuple(orient))
             name, mat, elems = m.elsets[0]
@@ -572,6 +579,12 @@ TESTS = [
          build_ls31(1, orient=E2_31), _ls31_checks(1, swap=True),
          settings={"fields": _fields("shell_forces")},
          note="Mecway's U langs e2: N_u wordt forceperlengthv."),
+    Case("LS-31d", GROUP_LS, "Idem met de U-as als Element orientation-"
+         "kaart", "lin_static_3d", build_ls31(1, orient=E2_31, card=True),
+         _ls31_checks(1, swap=True),
+         settings={"fields": _fields("shell_forces")},
+         note="Als LS-31c, U-as uit een orientatiekaart op een "
+              "elementselectie in plaats van de attributen."),
     Case("LS-32", GROUP_LS, "Totale rek en factor of safety, eenassige "
          "trek (hex8)", "lin_static_3d", build_ls32a, _ls32a_checks(),
          settings={"fields": _fields("strain", "safety_factor")}),

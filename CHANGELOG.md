@@ -80,6 +80,17 @@ Code-Aster 17.4; verification 394 test cases, 2152 checks (2145 OK, 7 known limi
   step size (was KNOWN_BUGS 44). Verification NL-20.
 - **Explicit dynamics**: a constraint equation with a constant ≠ 0 is now converted to an
   imposed acceleration (with a warning; was KNOWN_BUGS 41). Verification DY-20a–c.
+- **Element orientation in Loads & Constraints** (`<orientation>` card on an element
+  selection, also with formulas of the element centre) is now read instead of skipped, so
+  beams no longer keep the default section orientation: V axis and angle for beams, U
+  axis for gaps and for the shell result field `shell_forces`, exactly like the
+  orientation in *Element properties*. Overlap with the element attributes or a second
+  card (Mecway itself does not solve that) gives a warning; the card wins. In addition
+  **every beam gets Mecway's V axis explicitly** as `ORIENTATION` `VECT_Y`, also without
+  orientation, so the bridge no longer relies on Code-Aster's default. Both found in the
+  fork by MishalTPC (github.com/mishal0488/MecwayAsterBridge). Verification MO-31,
+  LS-79–82, BU-25, LS-31d: the same results as with the attributes and equal to Mecway 34;
+  all existing beam cases unchanged.
 
 ### More results in Mecway
 - New result fields: **contact pressure and contact status**, **beam section forces and

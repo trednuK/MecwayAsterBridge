@@ -390,11 +390,14 @@ searches around a small negative frequency (`CENTRE`, line `BRIDGE_FREE_SHIFT` i
 ### 3.4 Beam orientation and sections
 
 The bridge rotates a beam cross-section like Mecway (*orientation vector* and *angle*
-per element, Mecway manual v33 §7.5; without orientation Mecway's default: V = Z × U,
-along Z V = Y). Checked for modal, static and buckling with beams along X, Y, Z and
+per element in *Element properties*, or an *Element orientation* card in Loads &
+Constraints on an element selection, also with formulas; Mecway manual v34 §7.5;
+without orientation Mecway's default: V = Z × U, along Z V = Y). Every beam gets that
+V axis explicitly as `ORIENTATION` `VECT_Y`, also without orientation, so that the
+result does not depend on Code-Aster's default. Checked for modal, static and buckling with beams along X, Y, Z and
 skew, without orientation, with a vector and with vector + angle, all sections of the
 bridge and a frame ([`Verification.md`](Verification.md) §7, *Beam orientation*,
-MO-20 … MO-29): frequencies, mode shapes (direction of the deflection) and effective
+MO-20 … MO-29; with a card MO-31, LS-79 … LS-82, BU-25): frequencies, mode shapes (direction of the deflection) and effective
 mass per direction equal to Mecway and to Euler-Bernoulli. Like Mecway, `POU_D_E` uses
 the polar inertia for torsion, but no rotary inertia of the cross-section in bending and
 no offset shear centre (T, L, C). Buckling with bending moments (frames) and pure
