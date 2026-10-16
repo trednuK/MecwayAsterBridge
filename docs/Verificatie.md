@@ -1437,7 +1437,7 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 
 ### NL-80 .. NL-89 Balken met grote rotaties (`POU_D_T_GD`)
 
-- **Doel**: `elem_beam` = `POU_D_T_GD` (STAPPENPLAN S20; [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)):
+- **Doel**: `elem_beam` = `POU_D_T_GD` ([Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)):
   `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
   snedekrachten uit `SIEF_ELNO`, met de combinaties die de bridge sinds V2026.1 kent
   (line3, orientatiekaart, formules, Mecway's tijdstap). NL-80 tot NL-82 zijn de
@@ -1452,12 +1452,14 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 |---|---|---|
 | NL-80 | eindkracht 1 N in Y (kleine last) | F L³/(3EI) + F L/(kGA) (GB-01) |
 | NL-80b | hetzelfde model in lineair statisch | idem; de bridge maakt er `POU_D_T` van (WARNING) |
+| NL-80c | constante eindkracht 1 N in Y en constant eindmoment 0,5 Nm om Z (geen tijdtabel) | doorbuiging F L³/(3EI) + F L/(kGA) + M L²/(2EI), rotatie F L²/(2EI) + M L/(EI) |
 | NL-81 | eindmoment M = (π/2)·EI/L om Z in 20 stappen (Mecway-stap 0,05 s) | cirkelboog: tip x = L sin θ/θ, y = L (1 − cos θ)/θ, θ = π/2 (GB-02); M constant, N = 0 |
 | NL-82 | kolom met beginkromming e0 (1 − cos(πx/2L)), e0 = 1e-4 L in de mesh, drukkracht 0,5 P_cr | totale uitwijking / e0 = 1/(1 − P/P_cr) = 2 (GB-03) |
 | NL-83 | eindkracht van vaste richting, PL²/EI = 1, 2, 3 op t = 1, 2, 3 s | Reissner-balk (rek en afschuiving), schieten met RK4 in de testmodule; onrekbaar gelijk aan Mattiasson (1981) |
 | NL-84 | NL-81 met 20 line3 (40 SEG2-cellen) | als NL-81 |
 | NL-85 | NL-81 met een *Element orientation*-kaart V = Z en het moment om Y | als NL-81 in het XZ-vlak; zonder de kaart zou I vier keer zo groot zijn |
 | NL-86 | centrifugaalkracht 300 r/min om Z (balk radiaal) | u(L) = ρω²L³/(3E), reactie ρAω²L²/2 |
+| NL-86b | NL-86 plus een radiale truss (40 line2, `BARRE`) op y = 0,5 m, knopen vast in Y en Z | als NL-86 voor de truss |
 | NL-87 | line pressure 20 N/m en zwaartekracht in −Z, configuratie GQ | w L⁴/(8EI) + w L²/(2kGA), w = q + ρAg; reactie w L |
 | NL-87b | hetzelfde model, configuratie G (line pressure onderdrukt) | idem met w = ρAg |
 | NL-88 | Thermal stress, ΔT = 100 K | α ΔT L |
@@ -1468,13 +1470,16 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   `tensileforce` van het laatste element = P cos φ en P sin φ (φ = hoek van de koorde
   van dat element). NL-82 en NL-83 zijn ook headless met Mecway 34 gerekend (CCX 2.23,
   B31; `TestFiles/Tools/mw_solve.py`, gemiddelde van de doorsnedeknopen op x = L).
-  Tolerantie 0,1 %.
+  Tolerantie 0,1 %; strenger: het moment in NL-81, NL-84 en NL-85 0,01 %, de
+  normaalkracht daar absoluut 0,05 N (referentie 0), de reacties in NL-83, NL-87,
+  NL-87b en NL-89 en de verlenging in NL-88 1e-6 relatief.
 - **Resultaat**: alle controles OK.
 
 | Case | Grootheid | Afwijking | Fork (GB) | Mecway 34 + CCX |
 |---|---|---|---|---|
 | NL-80 | doorbuiging tip | −0,0157 % | −0,0157 % | – |
 | NL-80b | doorbuiging tip | 0,0000 % | – | – |
+| NL-80c | doorbuiging tip / tiprotatie | −0,0091 / −0,0001 % | – | – |
 | NL-81 | tip x / y / rotatie / M | +0,0112 / +0,0064 / 0,0000 / 0,0000 % | +0,0113 / +0,0064 % | CCX stopt bij t = 0,55 s |
 | NL-82 | uitwijking / e0 | −0,0213 % | −0,0213 % | +0,0047 % |
 | NL-83 | tip u_y op t = 1, 2, 3 | −0,0123 / −0,0079 / −0,0054 % | – | +0,0087 / +0,0125 / +0,0157 % |
@@ -1482,13 +1487,15 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 | NL-83 | snedekrachten tegen de statica (M, V, N) | 0,0000 / +0,0065 / −0,0029 % | – | – |
 | NL-84, NL-85 | als NL-81 | dezelfde waarden als NL-81 | – | – |
 | NL-86 | tipverlenging / reactie | −0,0156 / 0,0000 % | – | – |
+| NL-86b | tipverlenging / reactie truss | +0,0312 / 0,0000 % | – | – |
 | NL-87, NL-87b | doorbuiging tip / reactie | +0,0008 / 0,0000 %; +0,0002 / 0,0000 % | – | – |
 | NL-88 | tipverlenging | 0,0000 % | – | – |
 | NL-89 | doorbuiging tip op t = 0,5 en 1 / reactie | +0,0285 / +0,0287 / 0,0000 % (kleiner) | – | – |
 
 - **Interpretatie**:
   1. De route van de fork geeft door de hele bridge dezelfde getallen als de fork (tot
-     op 1e-7: de fork rekende NL-81 met 40 gelijke substappen, hier Mecway's 20 stappen).
+     op ~1e-6 relatief: NL-81 tip x +0,0112 tegen +0,0113 %; de fork rekende NL-81 met
+     40 gelijke substappen, hier Mecway's 20 stappen).
   2. `POU_D_T_GD` is een lineair element met één integratiepunt: de snedekracht is een
      waarde per element, in het midden; de knoopwaarde is het gemiddelde van de twee
      elementen. Tegen de statica in de vervormde stand klopt hij tot 0,01 % (NL-83), in
@@ -1501,7 +1508,9 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
      t = 0,55 s (daar wel op de cirkelboog).
   5. Niet in deze cases (WARNING in de bridge, KNOWN_BUGS 11): grote opgelegde rotaties
      (een slanke balk convergeerde tot 0,41 rad), element offset, flexible joint en
-     koppelingen bij grote rotaties (lineaire relaties), een moment in 3D.
+     koppelingen bij grote rotaties (lineaire relaties), een moment in 3D. Bezwijken van
+     elementen in een model met `POU_D_T_GD` geeft vooraf een ERROR (`CALCUL_37` na het
+     eerste bezwijken, [`Bezwijken.md`](Bezwijken.md)).
 
 ## 6. Dynamica (DY)
 

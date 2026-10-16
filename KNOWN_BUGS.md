@@ -177,7 +177,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    With `deformation` = GROT_GDEP the bridge chooses a large-displacement formulation per
    element type (`_deformation_for`). Beams `POU_D_E`/`POU_D_T` stay PETIT (WARNING;
    GROT_GDEP on POU_D_E did not converge); with `elem_beam` = `POU_D_T_GD` (STAPPENPLAN
-   S20, nonlinear static only, elsewhere POU_D_T) beams do compute large rotations
+   S20, only nonlinear static with large displacements, elsewhere POU_D_T) beams do compute large rotations
    (ELAS_POUTRE_GR; verification NL-80 .. NL-89). Not, or only partly: DDL_IMPO on
    DRX/DRY/DRZ (on nodes of POU_D_T_GD beams the total rotation vector, Code-Aster test
    case zzzz364a: a stocky beam 100 x 100 mm rotated rigidly through 90 degrees exactly,
@@ -187,7 +187,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    TYPE_CHARGE='SUIV' not if a node has rotational degrees of freedom, CHARGES_36), and
    with POU_D_T_GD the rigid arms of an element offset, flexible joints and couplings
    (linear relations in the undeformed axes, KNOWN_BUGS 106, 108; WARNING in
-   `_warn_gd_linear_links`; with small loads equal to POU_D_T). What does work: driving a rigid part with the
+   `_warn_gd_linear_links`; with small loads offset and joint equal to POU_D_T, couplings NOT
+   verified). Element failure in a model with POU_D_T_GD stops beforehand with an ERROR
+   (`_check_gd_beams`): after the first failure the loop restarts with
+   PREDICTION='ELASTIQUE' (CALCUL_37, no RIGI_MECA); with TANGENTE or EXTRAPOLE that step
+   did not converge (MECANONLINE9_3, run 17.4). What does work: driving a rigid part with the
    exact rigid motion via #ASTER (FORMULE, docs/ASTER_regels_voorbeelden.md
    example 9). A bending model (profile around a die, with a roller) has been computed implicitly up to 90 degrees this way; the
    roller/profile contact still converges with difficulty there (roller coarse as slave: WARNING).
@@ -234,8 +238,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    (FORCE_INTERNE/FORCE_COQUE/FORCE_POUTRE); nodal masses get FORCE_NODALE m w^2 r
    (`bridge_to_aster._centrifugal_loads`). Cables (tension only) never get
    centrifugal force (CALCUL_37 "MECABL2", no FORCE_POUTRE for cables): ERROR and
-   reported. In a model with shells, other elements with density (not
-   solid, shell or beam) do not get it either (reported).
+   reported. In a model with shells or POU_D_T_GD beams (formula route), trusses
+   (BARRE) get FORCE_POUTRE as well (run with POU_D_T_GD: NL-86b; beside shells NOT
+   verified); other elements with density (not solid, shell, beam or truss) do not get
+   it (reported).
 
 20\. **Multiple distributed loads on a beam** (confirmed,
    `bridge_to_aster._prepare_beam_loads`). Code-Aster sums loads with a distributed

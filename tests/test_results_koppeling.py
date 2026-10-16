@@ -6,7 +6,8 @@
 # Offline test van de koppeling cellen/knopen -> Mecway in
 # Scripts/aster_results_export.py (Python 3 met numpy, zoals in de job):
 # _coincident_extra, _node_alias en _element_points (joint, element offset,
-# gesplitste line3, LINE_QUAD-middenknopen, cellen zonder Mecway-element).
+# gesplitste line3, LINE_QUAD-middenknopen, cellen zonder Mecway-element);
+# _report_missing for beam_forces (EFGE_* or, POU_D_T_GD, SIEF_*).
 #
 #   python tests/test_results_koppeling.py
 
@@ -71,7 +72,39 @@ def test_element_points():
         buf.getvalue()
 
 
+class _R(object):
+    def __init__(self, names):
+        self._names = names
+
+    def getFieldsNames(self):
+        return self._names
+
+
+def _missing(names):
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        are._report_missing({"res": _R(names)}, {"beam_forces"})
+    return buf.getvalue()
+
+
+def test_report_missing_beam_forces():
+    # beam_forces: EFGE_NOEU/EFGE_ELNO (POU_D_E/POU_D_T) or SIEF_NOEU/
+    # SIEF_ELNO (POU_D_T_GD); only a source without its alternative is
+    # missing, never the alternative of the other beam formulation.
+    for names in (["DEPL", "EFGE_NOEU", "EFGE_ELNO"],
+                  ["DEPL", "SIEF_NOEU", "SIEF_ELNO"]):
+        out = _missing(names)
+        assert out == "", out
+    out = _missing(["DEPL", "EFGE_NOEU"])
+    assert "res:EFGE_ELNO" in out, out
+    assert "SIEF" not in out and "EFGE_NOEU" not in out, out
+    out = _missing(["DEPL"])
+    assert "res:EFGE_ELNO" in out and "res:EFGE_NOEU" in out, out
+    assert "SIEF" not in out, out
+
+
 if __name__ == "__main__":
     test_coincident_exclude()
     test_element_points()
+    test_report_missing_beam_forces()
     print("test_results_koppeling: OK")

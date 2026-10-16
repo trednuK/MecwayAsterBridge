@@ -3837,6 +3837,8 @@ def _centrifugal_loads(model_data, bc):
         ne sait pas encore calculer l'option CHAR_MECA_ROTA_R" (Code-Aster
         17.4 run); they get the FORMULE route as well (FORCE_POUTRE on the
         initial position, a fixed load; verification NL-86).
+      - Trusses (BARRE) in the FORMULE route: FORCE_POUTRE rho A w^2 r too
+        (run with POU_D_T_GD, NL-86b; beside shells NOT verified).
     """
     d = bc["aster_dict"]
     w, axis = d["VITESSE"], d["AXE"]
@@ -3873,7 +3875,11 @@ def _centrifugal_loads(model_data, bc):
         if mod in _SHELL_MODELISATIONS:
             kw, q = "FORCE_COQUE", rho * model_data.get(
                 "shell_sections", {}).get(g, {}).get("thickness", 0.0)
-        elif mod in _BEAM_MODELISATIONS:
+        elif mod in _BEAM_MODELISATIONS or mod == "BARRE":
+            # Trusses (BARRE) accept FORCE_POUTRE as well (Code-Aster 17.4
+            # run: radial truss beside a POU_D_T_GD beam, tip +0.03 % and
+            # reaction exact against rho w^2 L^3/(3E) and rho A w^2 L^2/2;
+            # verification NL-86b)
             kw, q = "FORCE_POUTRE", rho * model_data.get(
                 "beam_sections", {}).get(g, {}).get("area", 0.0)
         elif mod in _VOLUME_MODELISATIONS:
@@ -7601,6 +7607,12 @@ def _check_gd_beams(model_data, analysis):
         RIGI_MECA: CALCUL_37 "MECA_POU_D_T_GD ne sait pas encore calculer
         l'option: RIGI_MECA": ERROR (model the imperfection in the mesh,
         verification NL-82);
+      - element failure (bridge_failure): after a failure the loop restarts
+        with PREDICTION='ELASTIQUE' (TANGENTE did not converge there),
+        which needs RIGI_MECA: CALCUL_37 at the first failure (run 17.4,
+        hex8 bar with GDEF_LOG plus a GD cantilever); with 'TANGENTE' and
+        'EXTRAPOLE' the step after the failure did not converge either
+        (MECANONLINE9_3, same model): ERROR;
       - no SIPM_ELNO (beam stresses), section forces from SIEF_ELNO: one
         value per element (one integration point): WARNING.
     Returns False after an ERROR.
@@ -7633,6 +7645,21 @@ def _check_gd_beams(model_data, analysis):
                "imperfection_amplitude to 0 and put the imperfection in the "
                "mesh (slightly curved nodes), or choose elem_beam = "
                "POU_D_E/POU_D_T."))
+        ok = False
+    failing = bridge_failure.failure_candidates(model_data, analysis)
+    if failing:
+        log(tr("ERROR: Bezwijken van elementen ({0}) werkt niet in een "
+               "model met balken POU_D_T_GD: na het eerste bezweken element "
+               "vraagt de volgende stap RIGI_MECA, die dit element niet "
+               "heeft (CALCUL_37). Zet 'Bezwijken van elementen' uit of kies "
+               "elem_beam = POU_D_E/POU_D_T (pagina Elementen).",
+               "ERROR: Element failure ({0}) does not work in a model with "
+               "POU_D_T_GD beams: after the first failed element the next "
+               "step needs RIGI_MECA, which this element does not have "
+               "(CALCUL_37). Switch 'Element failure' off or choose "
+               "elem_beam = POU_D_E/POU_D_T (Elements page).").format(", ".join(
+                   bridge_failure.mecway_name(model_data, g)
+                   for g in failing)))
         ok = False
     if not ok:
         return False

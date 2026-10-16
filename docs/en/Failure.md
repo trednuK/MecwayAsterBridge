@@ -42,6 +42,9 @@ Conditions:
 - the elements are **solid elements** (hex, tet, wedge, pyr; also with the hex8
   choice `LINE_QUAD`) or **shells** (tri3/quad4 as DKT; quadratic or with linear
   shells = `COQUE_3D` as `COQUE_3D`); **no beams**;
+- the model has no beams with large rotations (`elem_beam` = `POU_D_T_GD`): after a
+  failed element the next step needs `RIGI_MECA`, which that element does not have
+  (`CALCUL_37`); the bridge stops beforehand with an ERROR;
 - `DEFORMATION`: solids `PETIT`, `PETIT_REAC` or large displacements (`GDEF_LOG`,
   also `SIMO_MIEHE`); DKT is always geometrically linear (`PETIT`/`GREEN_LAGRANGE`);
   `COQUE_3D` `PETIT` or `GROT_GDEP`.
@@ -155,6 +158,7 @@ end (2 + 2 elements, 44 → 22 → 0 N).
 | WARNING `… kinematic hardening without a slope after yield (tangent modulus 0)` | no hardening: the back stress stays 0, so no strain to see | Give a *tangent modulus* > 0, or choose isotropic hardening |
 | WARNING `… the material is not plastic` | limit on an elastic material | Give the material plasticity, or remove the limit |
 | WARNING about beams (`POU_D_E`) | Code-Aster only has plasticity in multifibre beams | Model the failure region with solid elements or shells |
+| ERROR `Element failure (…) does not work in a model with POU_D_T_GD beams` | after the first failed element the loop restarts with `PREDICTION='ELASTIQUE'`, and `POU_D_T_GD` cannot compute `RIGI_MECA` (`CALCUL_37`); with `TANGENTE` or `EXTRAPOLE` the step after the failure did not converge (run, Code-Aster 17.4) | Switch *Element failure* off, or choose *Beams* = `POU_D_E`/`POU_D_T` |
 | WARNING `… DEFORMATION … not supported` | strain measure that does not fit the element (e.g. `PETIT_REAC` on shells) | Choose `PETIT` or large displacements |
 | WARNING `The bridge supports element failure only in nonlinear analyses` | linear analysis (Static) | Choose Nonlinear static or a dynamic analysis |
 | WARNING about hex8 with '3D' and plasticity | fully integrated hex8 "locks" in plastic flow (volumetric locking): the plastic strain comes too late; in the tensile bar the notch failed at t = 0.6 s instead of 0.2 s with `LINE_QUAD` | Choose *Hex8* = `LINE_QUAD` on the Elements page, or use quadratic elements in Mecway |

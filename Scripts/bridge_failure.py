@@ -174,6 +174,24 @@ def mecway_name(model_data, group):
     return group
 
 
+def failure_candidates(model_data, analysis):
+    """Elsets (solid or shell) with a failure limit while 'Element failure'
+    is on: those for which failure_plan may build the failure loop. No
+    messages (failure_plan gives them); for checks beforehand, e.g.
+    bridge_to_aster._check_gd_beams (after a failure the loop restarts with
+    PREDICTION='ELASTIQUE', which POU_D_T_GD cannot compute)."""
+    if not analysis.get("element_failure", True):
+        return []
+    custom = model_data.get("aster_custom", {}).get("failure", {})
+    default = float(analysis.get("failure_plastic_strain", 0.0) or 0.0)
+    materials = model_data.get("materials", {})
+    mods = model_data.get("elset_modelisations", {})
+    return [elset for elset, mat_name in model_data.get("elsets", {}).items()
+            if mods.get(elset, "") in _SUPPORTED_DEFORMATIONS and
+            _criterion(mat_name, materials.get(mat_name, {}), custom,
+                       default)[0] is not None]
+
+
 def failure_plan(model_data, analysis, relation_for, deformation_for):
     """
     Which elsets can fail? List of dicts

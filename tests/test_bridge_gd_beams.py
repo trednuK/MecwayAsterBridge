@@ -218,6 +218,53 @@ def test_errors():
           "imperfection with GD: ERROR\n" + log)
 
 
+# A plastic hex8 block beside the beam (nodes 6..13): element failure
+HEX = (u'  <node nid="6" x="0" y="1" z="0" />\n'
+       u'  <node nid="7" x="0.1" y="1" z="0" />\n'
+       u'  <node nid="8" x="0.1" y="1.1" z="0" />\n'
+       u'  <node nid="9" x="0" y="1.1" z="0" />\n'
+       u'  <node nid="10" x="0" y="1" z="0.1" />\n'
+       u'  <node nid="11" x="0.1" y="1" z="0.1" />\n'
+       u'  <node nid="12" x="0.1" y="1.1" z="0.1" />\n'
+       u'  <node nid="13" x="0" y="1.1" z="0.1" />\n'
+       u'  <elset name="Blok" material="Kerf">\n'
+       u'    <elem eid="10" shape="hex8" nodes="6 7 8 9 10 11 12 13" />\n'
+       u'  </elset>\n'
+       u'  <mat name="Kerf">\n'
+       u'    <mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+       u'poissonratio="0.3" />\n'
+       u'    <plastic type="BilinearIsotropic" yieldstrength="250 MPa" '
+       u'tangentmodulus="500 MPa" />\n'
+       u'  </mat>\n'
+       u'  <nodeselection name="BlokVast"><node nid="6" /><node nid="9" />'
+       u'<node nid="10" /><node nid="13" /></nodeselection>\n'
+       u'  <fixed selection="BlokVast" />')
+
+
+def test_element_failure():
+    # After the first failure the loop restarts with PREDICTION='ELASTIQUE'
+    # (RIGI_MECA, CALCUL_37 with POU_D_T_GD; TANGENTE/EXTRAPOLE did not
+    # converge, Code-Aster 17.4 runs): ERROR beforehand.
+    fail = {"deformation": "GDEF_LOG", "failure_plastic_strain": 0.05}
+    comm, _md, log = _translate("nonlin_static_3d", _liml(extra=HEX),
+                                settings=fail)
+    check(comm is None and "Element failure (Blok) does not work" in log,
+          "GD + element failure: ERROR\n" + log)
+    comm, _md, log = _translate("nonlin_static_3d", _liml(extra=HEX),
+                                settings=dict(fail, element_failure=False))
+    check(comm is not None and "does not work in a model" not in log,
+          "GD + element failure off: runs\n" + log)
+    comm, _md, log = _translate("nonlin_static_3d", _liml(extra=HEX),
+                                settings={"deformation": "GDEF_LOG"})
+    check(comm is not None and "does not work in a model" not in log,
+          "GD + plastic block without a failure limit: runs\n" + log)
+    comm, _md, log = _translate("nonlin_static_3d", _liml(extra=HEX),
+                                settings=fail,
+                                general={"elem_beam": "POU_D_T"})
+    check(comm is not None and "_bz_pred = 'ELASTIQUE'" in comm,
+          "POU_D_T + element failure: failure loop\n" + log)
+
+
 def test_centrifugal_formula():
     extra = (u'  <centrifugal><x>0 r/min</x><y>0 r/min</y><z>300 r/min</z>'
              u'</centrifugal>')
@@ -228,6 +275,24 @@ def test_centrifugal_formula():
               "(CHAR_MECA_ROTA_R)")
         check("FCEN" in comm and "FORCE_POUTRE" in comm,
               "GD centrifugal: FORCE_POUTRE as FORMULE")
+    # A truss (BARRE) in the FORMULE route gets FORCE_POUTRE as well
+    # (verification NL-86b) instead of an ERROR "not translated".
+    truss = (u'  <node nid="6" x="0" y="0.5" z="0" />\n'
+             u'  <node nid="7" x="1" y="0.5" z="0" />\n'
+             u'  <elset name="Staaf" material="Staal">\n'
+             u'    <elem eid="20" shape="line2" nodes="6 7" '
+             u'truss="true" />\n'
+             u'  </elset>\n')
+    comm, md, log = _translate("nonlin_static_3d",
+                               _liml(extra=extra + u"\n" + truss))
+    check(comm is not None, "GD centrifugal + truss: no .comm\n" + log)
+    if comm:
+        check(md["elset_modelisations"].get("Staaf") == "BARRE",
+              "GD centrifugal + truss: BARRE")
+        check(re.search(r"FORCE_POUTRE=_F\(GROUP_MA='Staaf', FX=FCEN", comm)
+              is not None, "GD centrifugal + truss: FORCE_POUTRE on BARRE")
+        check("not translated" not in log,
+              "GD centrifugal + truss: no ERROR\n" + log)
 
 
 def test_route_tabel():

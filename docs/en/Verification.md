@@ -1434,7 +1434,7 @@ samples) plus the kinks of the load tables (NL-20).
 
 ### NL-80 .. NL-89 Beams with large rotations (`POU_D_T_GD`)
 
-- **Purpose**: `elem_beam` = `POU_D_T_GD` (STAPPENPLAN S20; [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)):
+- **Purpose**: `elem_beam` = `POU_D_T_GD` ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)):
   `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
   section forces from `SIEF_ELNO`, with the combinations the bridge has gained since
   V2026.1 (line3, orientation card, formulas, Mecway's time step). NL-80 to NL-82 are
@@ -1449,12 +1449,14 @@ samples) plus the kinks of the load tables (NL-20).
 |---|---|---|
 | NL-80 | tip force 1 N in Y (small load) | F L³/(3EI) + F L/(kGA) (GB-01) |
 | NL-80b | the same model in linear static | the same; the bridge makes it `POU_D_T` (WARNING) |
+| NL-80c | constant tip force 1 N in Y and constant tip moment 0.5 Nm about Z (no time table) | deflection F L³/(3EI) + F L/(kGA) + M L²/(2EI), rotation F L²/(2EI) + M L/(EI) |
 | NL-81 | end moment M = (π/2)·EI/L about Z in 20 steps (Mecway step 0.05 s) | circular arc: tip x = L sin θ/θ, y = L (1 − cos θ)/θ, θ = π/2 (GB-02); M constant, N = 0 |
 | NL-82 | column with initial curvature e0 (1 − cos(πx/2L)), e0 = 1e-4 L in the mesh, compressive force 0.5 P_cr | total deflection / e0 = 1/(1 − P/P_cr) = 2 (GB-03) |
 | NL-83 | tip force of fixed direction, PL²/EI = 1, 2, 3 at t = 1, 2, 3 s | Reissner beam (extension and shear), shooting with RK4 in the test module; inextensible equal to Mattiasson (1981) |
 | NL-84 | NL-81 with 20 line3 (40 SEG2 cells) | as NL-81 |
 | NL-85 | NL-81 with an *Element orientation* card V = Z and the moment about Y | as NL-81 in the XZ plane; without the card I would be four times as large |
 | NL-86 | centrifugal force 300 r/min about Z (radial beam) | u(L) = ρω²L³/(3E), reaction ρAω²L²/2 |
+| NL-86b | NL-86 plus a radial truss (40 line2, `BARRE`) at y = 0.5 m, nodes held in Y and Z | as NL-86 for the truss |
 | NL-87 | line pressure 20 N/m and gravity in −Z, configuration GQ | w L⁴/(8EI) + w L²/(2kGA), w = q + ρAg; reaction w L |
 | NL-87b | the same model, configuration G (line pressure suppressed) | the same with w = ρAg |
 | NL-88 | Thermal stress, ΔT = 100 K | α ΔT L |
@@ -1465,13 +1467,16 @@ samples) plus the kinks of the load tables (NL-20).
   `tensileforce` of the last element = P cos φ and P sin φ (φ = angle of the chord of
   that element). NL-82 and NL-83 were also solved headless with Mecway 34 (CCX 2.23,
   B31; `TestFiles/Tools/mw_solve.py`, mean of the section nodes at x = L).
-  Tolerance 0.1 %.
+  Tolerance 0.1 %; stricter: the moment in NL-81, NL-84 and NL-85 0.01 %, the normal
+  force there absolute 0.05 N (reference 0), the reactions in NL-83, NL-87, NL-87b and
+  NL-89 and the extension in NL-88 1e-6 relative.
 - **Result**: all checks OK.
 
 | Case | Quantity | Deviation | Fork (GB) | Mecway 34 + CCX |
 |---|---|---|---|---|
 | NL-80 | tip deflection | −0.0157 % | −0.0157 % | – |
 | NL-80b | tip deflection | 0.0000 % | – | – |
+| NL-80c | tip deflection / tip rotation | −0.0091 / −0.0001 % | – | – |
 | NL-81 | tip x / y / rotation / M | +0.0112 / +0.0064 / 0.0000 / 0.0000 % | +0.0113 / +0.0064 % | CCX stops at t = 0.55 s |
 | NL-82 | deflection / e0 | −0.0213 % | −0.0213 % | +0.0047 % |
 | NL-83 | tip u_y at t = 1, 2, 3 | −0.0123 / −0.0079 / −0.0054 % | – | +0.0087 / +0.0125 / +0.0157 % |
@@ -1479,13 +1484,15 @@ samples) plus the kinks of the load tables (NL-20).
 | NL-83 | section forces against statics (M, V, N) | 0.0000 / +0.0065 / −0.0029 % | – | – |
 | NL-84, NL-85 | as NL-81 | the same values as NL-81 | – | – |
 | NL-86 | tip extension / reaction | −0.0156 / 0.0000 % | – | – |
+| NL-86b | tip extension / reaction of the truss | +0.0312 / 0.0000 % | – | – |
 | NL-87, NL-87b | tip deflection / reaction | +0.0008 / 0.0000 %; +0.0002 / 0.0000 % | – | – |
 | NL-88 | tip extension | 0.0000 % | – | – |
 | NL-89 | tip deflection at t = 0.5 and 1 / reaction | +0.0285 / +0.0287 / 0.0000 % (smaller) | – | – |
 
 - **Interpretation**:
   1. Through the whole bridge the route of the fork gives the same numbers as the fork
-     (to 1e-7: the fork computed NL-81 with 40 equal substeps, here Mecway's 20 steps).
+     (to ~1e-6 relative: NL-81 tip x +0.0112 against +0.0113 %; the fork computed NL-81
+     with 40 equal substeps, here Mecway's 20 steps).
   2. `POU_D_T_GD` is a linear element with one integration point: the section force is
      one value per element, at the middle; the nodal value is the mean of the two
      elements. Against statics in the deformed state it is correct to 0.01 % (NL-83), in
@@ -1498,7 +1505,9 @@ samples) plus the kinks of the load tables (NL-20).
      (on the circular arc up to there).
   5. Not in these cases (WARNING in the bridge, KNOWN_BUGS 11): large imposed rotations
      (a slender beam converged up to 0.41 rad), element offset, flexible joint and
-     couplings at large rotations (linear relations), a moment in 3D.
+     couplings at large rotations (linear relations), a moment in 3D. Element failure in
+     a model with `POU_D_T_GD` gives an ERROR beforehand (`CALCUL_37` after the first
+     failure, [`Failure.md`](Failure.md)).
 
 ## 6. Dynamics (DY)
 

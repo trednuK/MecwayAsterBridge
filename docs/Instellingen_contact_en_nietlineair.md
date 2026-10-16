@@ -423,15 +423,16 @@ gebouwd voor element offset, flexible joint, line3, balkorientatie en `beam_forc
 
 | Combinatie | Wat de bridge doet |
 |---|---|
-| niet-lineair statisch met grote verplaatsingen (`deformation` standaard `GROT_GDEP`) | `POU_D_T_GD`: kracht en moment (constant of als tabel in de tijd), line pressure (constant of als formule in x, y, z, t), zwaartekracht, Thermal stress, Mecway's *Time step size*, configuraties (NL-80 tot NL-89) |
+| niet-lineair statisch met grote verplaatsingen (`deformation` standaard `GROT_GDEP`) | `POU_D_T_GD`: kracht en moment (constant, NL-80c, of als tabel in de tijd), line pressure (constant of als formule in x, y, z, t), zwaartekracht, Thermal stress, Mecway's *Time step size*, configuraties (NL-80 tot NL-89) |
 | line3-balk | twee SEG2-cellen per element, zoals bij `POU_D_E` (NL-84) |
 | balkorientatie (attributen en *Element orientation*) | expliciete `VECT_Y` per cel (NL-85) |
-| centrifugaalkracht | `ROTATION` kan niet op dit element (`CHAR_MECA_ROTA_R`, `CALCUL_37`); de bridge zet `FORCE_POUTRE` als formule van de beginpositie: een vaste last, zonder spin softening (NL-86) |
+| centrifugaalkracht | `ROTATION` kan niet op dit element (`CHAR_MECA_ROTA_R`, `CALCUL_37`); de bridge zet `FORCE_POUTRE` als formule van de beginpositie: een vaste last, zonder spin softening (NL-86); trusses (`BARRE`) in zo'n model krijgen ook `FORCE_POUTRE` (NL-86b) |
 | plastisch materiaal | elastisch gerekend (WARNING), zoals bij de andere balken |
+| bezwijken van elementen ([`Bezwijken.md`](Bezwijken.md)) | ERROR: na het eerste bezweken element vraagt de volgende stap `RIGI_MECA` (`CALCUL_37`); zet het bezwijken uit of kies `POU_D_E`/`POU_D_T` |
 | andere analyses (statisch, modaal, knik, harmonisch, spectrum, dynamica) en niet-lineair met `PETIT`/`PETIT_REAC` | `POU_D_T` met een WARNING: dezelfde balk bij kleine verplaatsingen (NL-80b). Het element kent geen `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamica (testcase sdnl103a) is in de bridge NIET geverifieerd |
 | `crit_stab` | ERROR: de tangentmatrix is niet symmetrisch (`ALGELINE4_41`) |
 | `imperfection_amplitude` > 0 | ERROR: de lineaire knik vooraf vraagt `RIGI_MECA`; leg de beginkromming in de mesh (NL-82) |
-| element offset, flexible joint, koppelingen | rekenen (bij kleine lasten gelijk aan `POU_D_T`), maar blijven lineaire relaties in de onvervormde assen: WARNING (KNOWN_BUGS 11, 106, 108) |
+| element offset, flexible joint, koppelingen | rekenen (offset en joint bij kleine lasten gelijk aan `POU_D_T`; koppelingen NIET geverifieerd), maar blijven lineaire relaties in de onvervormde assen: WARNING (KNOWN_BUGS 11, 106, 108) |
 | opgelegde rotatie (`noderotation`) | de totale rotatievector (exact voor een rotatie om één vaste as), maar slanke balken convergeren slecht: WARNING (KNOWN_BUGS 11) |
 
 **Resultaten.** Verplaatsingen, rotaties en reacties zoals altijd. Snedekrachten
@@ -446,7 +447,7 @@ er niet: het element kent `SIPM_ELNO` niet (`CALCUL_37`). Een WARNING per run no
 **Aanwijzingen.**
 
 - `POU_D_T_GD` is een lineair element: neem 20 tot 40 elementen per staaf (met 40
-  elementen 0,01 tot 0,03 % van de analytische oplossing, NL-81 en NL-83).
+  elementen ≤ 0,03 % van de analytische oplossing, NL-81 en NL-83).
 - Laat de last oplopen (een tabel in de tijd, Mecway's *Time step size*): NL-81 buigt
   90 graden in 20 stappen.
 - Bij een kleine last stagneert `RESI_GLOB_RELA` op afronding: kies

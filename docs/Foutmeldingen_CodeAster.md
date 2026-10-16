@@ -351,25 +351,30 @@ in dat bestand, niet op het model.
   1. `MECA_HEXS8` (hex8 als `3D_SI`) kan `PAS_COURANT` niet (stabiele tijdstap bij
      expliciete dynamica);
   2. `MECA_POU_D_T_GD` kan `RIGI_MECA` niet (`PREDICTION='ELASTIQUE'` of
-     `MATRICE='ELASTIQUE'` met een GD-balk);
+     `MATRICE='ELASTIQUE'` met een GD-balk; de bridge zet `PREDICTION='ELASTIQUE'` na
+     een bezweken element, [`Bezwijken.md`](Bezwijken.md));
   3. `MEDKQU4` (DKT) en `MECA_DIS_T_N` (discreet element) kunnen `CHAR_MECA_ROTA_R`
      niet (centrifugaalbelasting met schalen of discrete elementen);
   4. formaten-testmodel F4_model (dynamica): element en optie niet nagelopen;
   5. `MECABL2` (kabel, tension only) kan `ROTATION` niet;
   6. `MECA_POU_D_T_GD` kan ook `RIGI_MECA` in een lineaire analyse, `SIPM_ELNO`
      (balkspanning) en `CHAR_MECA_ROTA_R` (centrifugaalkracht) niet.
-- **Gezien**: 1 expliciete dynamica met `3D_SI`; 2 balkproeven; 3 en 4 tests van de
-  belastingen; 5 code-review (commit 6ce5cba); 6 proeven voor STAPPENPLAN S20.
+- **Gezien**: 1 expliciete dynamica met `3D_SI`; 2 balkproeven en een run met een
+  bezwijkende hex8-staaf naast een GD-balk; 3 en 4 tests van de belastingen; 5
+  code-review (commit 6ce5cba); 6 proeven met `POU_D_T_GD`.
 - **Oplossing**: 1 de bridge kiest bij een expliciet schema altijd `3D` (WARNING);
-  2 geen `PREDICTION`/`MATRICE='ELASTIQUE'` bij GD-balken; 3 `ROTATION` alleen op
-  elsets zonder discrete elementen, in een model met schalen als `FORMULE` van X, Y, Z
-  per elset en `FORCE_NODALE` op knoopmassa's (`_centrifugal_loads`); 4 niet
-  vastgesteld; 5 kabels krijgen geen centrifugaalkracht (ERROR; KNOWN_BUGS 19); 6 met
-  `elem_beam` = `POU_D_T_GD` maakt de bridge in andere analyses dan niet-lineair statisch
-  `POU_D_T`, vraagt hij geen `SIPM_ELNO` en zet hij de centrifugaalkracht als `FORMULE`
-  (WARNING); `imperfection_amplitude` geeft vooraf een ERROR.
-- **Status**: opgelost in de bridge (1, 3, 6; 5 als melding) / eigen invoer (2) / oorzaak
-  niet vastgesteld (4).
+  2 bezwijken van elementen in een model met `POU_D_T_GD`-balken geeft vooraf een ERROR
+  (met `PREDICTION='TANGENTE'` of `'EXTRAPOLE'` convergeerde de stap na het bezwijken
+  niet); in eigen code geen `PREDICTION`/`MATRICE='ELASTIQUE'` bij GD-balken;
+  3 `ROTATION` alleen op elsets zonder discrete elementen, in een model met schalen als
+  `FORMULE` van X, Y, Z per elset en `FORCE_NODALE` op knoopmassa's
+  (`_centrifugal_loads`); 4 niet vastgesteld; 5 kabels krijgen geen centrifugaalkracht
+  (ERROR; KNOWN_BUGS 19); 6 met `elem_beam` = `POU_D_T_GD` maakt de bridge in andere
+  analyses dan niet-lineair statisch met grote verplaatsingen `POU_D_T` (WARNING),
+  vraagt hij geen `SIPM_ELNO` en zet hij de centrifugaalkracht als `FORMULE`;
+  `imperfection_amplitude` geeft vooraf een ERROR.
+- **Status**: opgelost in de bridge (1, 3, 6; 2 en 5 als melding) / eigen invoer (2, eigen
+  code) / oorzaak niet vastgesteld (4).
 
 ### `CALCUL_42` – optie nog niet geprogrammeerd (meebewegende druk op DKT)
 
@@ -986,8 +991,9 @@ opnieuw doorgerekend op 06-10-2026).
 Verder bij grote rotaties: `COMPOR5_22`, `COMPOR1_44`, `COMPOR1_47`, `COMPOR1_99`,
 `DVP_2` (`POU_D_T_GD` met `ELAS`), `CALCUL_37` (`POU_D_T_GD` met
 `PREDICTION='ELASTIQUE'`), `MECANONLINE9_7` geval 5. Met `POU_D_T_GD` vangt de bridge
-vooraf af: `ALGELINE4_41` (`crit_stab`: de tangentmatrix is niet symmetrisch; ERROR) en
-`DVP_1` (`EFGE_ELNO` op dit element, `te0185.F90`; de bridge vraagt `SIEF_ELNO`).
+vooraf af: `ALGELINE4_41` (`crit_stab`: de tangentmatrix is niet symmetrisch; ERROR),
+`CALCUL_37` (bezwijken van elementen; ERROR) en `DVP_1` (`EFGE_ELNO` op dit element,
+`te0185.F90`; de bridge vraagt `SIEF_ELNO`).
 
 ---
 
@@ -1441,7 +1447,7 @@ twee drukken en balken in het model).
 | `CALCULEL_58` | [7](#calculel_58--component-ontbreekt) | opgelost in de bridge |
 | `CALCUL_20` | [2](#calcul_20--materiaal-ontbreekt) | opgelost in de bridge (als melding) |
 | `CALCUL_29` | [11](#indicateur_2-calcul_29--spanningen-niet-op-het-hele-model) | opgelost in de bridge |
-| `CALCUL_37` | [2](#calcul_37--element-kan-deze-optie-niet) | opgelost in de bridge (1, 3; 5 als melding) / eigen invoer (2) / oorzaak niet vastgesteld (4) |
+| `CALCUL_37` | [2](#calcul_37--element-kan-deze-optie-niet) | opgelost in de bridge (1, 3, 6; 2 en 5 als melding) / eigen invoer (2, eigen code) / oorzaak niet vastgesteld (4) |
 | `CALCUL_37` (`INIT_MAIL_VOIS`) | [11](#calcul_37-init_mail_vois--balk-in-het-model-van-de-schatter) | opgelost in de bridge |
 | `CALCUL_42` | [2](#calcul_42--optie-nog-niet-geprogrammeerd-meebewegende-druk-op-dkt) | opgelost in de bridge (als melding) |
 | `CALCUL_5` | [7](#algorith2_12-calcul_5--interne-thermische-nabewerking) | opgelost in de bridge |
@@ -1461,7 +1467,7 @@ twee drukken en balken in het model).
 | `DISCRETISATION_87` | [5](#discretisation_87--tijdlijst-niet-strikt-stijgend) | opgelost in de bridge |
 | `DISCRETS_26` | [2](#discrets_26--discreet-element-zonder-massa) | opgelost in de bridge |
 | `DISCRETS_28` | [2](#discrets_28--discreet-element-zonder-demping) | onschuldig |
-| `DVP_2` | [2](#dvp_2--floating-point-exception) | opgelost in de bridge (a) / eigen invoer (b) |
+| `DVP_2` | [2](#dvp_2--floating-point-exception) | opgelost in de bridge (a, b) |
 | `DYNAMIQUE_4` | [5](#dynamique_4--stabiliteitsgrens-niet-te-berekenen-expliciet) | opgelost in de bridge |
 | `ELEMENTS2_63` | [2](#elements2_63--ther_nl-ontbreekt-in-het-materiaal-thermisch) | opgelost in de bridge |
 | `ELEMENTS4_4` | [7](#elements4_4-elements4_64--sipm_elno-niet-mogelijk) | opgelost in de bridge |

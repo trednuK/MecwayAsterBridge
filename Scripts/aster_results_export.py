@@ -2339,7 +2339,9 @@ def _report_missing(results, groups_wanted, opt_in=frozenset(),
     """Report fields from FIELD_TABLE that are not in the result.
     solids False (no volume elements): the strain of res (EPSI/EPSG,
     volumes only) does not belong there; shells have their strain in eps_sup/
-    eps_moy/eps_inf (_plan_derived)."""
+    eps_moy/eps_inf (_plan_derived). beam_forces: EFGE_NOEU/EFGE_ELNO or,
+    for POU_D_T_GD, SIEF_NOEU/SIEF_ELNO (one beam formulation per model);
+    only an EFGE_* field without its SIEF_* alternative is missing."""
     missing = set()
     names = {}
     for rkey, r in results.items():
@@ -2359,6 +2361,11 @@ def _report_missing(results, groups_wanted, opt_in=frozenset(),
             continue    # small strains or Green-Lagrange, one of the two
         if group == "strain" and rkey == "res" and not solids:
             continue    # shells/beams only: no volume strain
+        if group == "beam_forces" and field.startswith("SIEF_"):
+            continue    # alternative of EFGE_* (POU_D_T_GD), see below
+        if group == "beam_forces" and field.replace(
+                "EFGE_", "SIEF_") in names[rkey]:
+            continue    # POU_D_T_GD: section forces in SIEF_NOEU/SIEF_ELNO
         if field not in names[rkey]:
             missing.add("{0}:{1}".format(rkey, field))
     if missing:

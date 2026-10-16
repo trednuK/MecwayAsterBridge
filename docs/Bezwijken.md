@@ -43,6 +43,9 @@ Voorwaarden:
 - de elementen zijn **volume-elementen** (hex, tet, wedge, pyr; ook met de
   hex8-keuze `LINE_QUAD`) of **schalen** (tri3/quad4 als DKT; kwadratisch of met
   *Lineaire schalen* = `COQUE_3D` als `COQUE_3D`); **geen balken**;
+- het model heeft geen balken met grote rotaties (`elem_beam` = `POU_D_T_GD`): na een
+  bezweken element vraagt de volgende stap `RIGI_MECA`, die dat element niet heeft
+  (`CALCUL_37`); de bridge stopt vooraf met een ERROR;
 - `DEFORMATION`: volumes `PETIT`, `PETIT_REAC` of grote verplaatsingen (`GDEF_LOG`,
   ook `SIMO_MIEHE`); DKT rekent altijd geometrisch lineair (`PETIT`/`GREEN_LAGRANGE`);
   `COQUE_3D` `PETIT` of `GROT_GDEP`.
@@ -158,6 +161,7 @@ bij de inklemming (2 + 2 elementen, 44 → 22 → 0 N).
 | WARNING `… kinematische versteviging zonder helling na vloeien (tangent modulus 0)` | geen versteviging: de terugspanning blijft 0, dus geen rek te zien | Geef een *tangent modulus* > 0, of kies isotrope versteviging |
 | WARNING `… het materiaal is niet plastisch` | grens op een elastisch materiaal | Geef het materiaal plasticiteit, of verwijder de grens |
 | WARNING over balken (`POU_D_E`) | Code-Aster kent plasticiteit alleen in multivezelbalken | Modelleer het bezwijkgebied met volume-elementen of schalen |
+| ERROR `Bezwijken van elementen (…) werkt niet in een model met balken POU_D_T_GD` | na het eerste bezweken element herstart de lus met `PREDICTION='ELASTIQUE'`, en `POU_D_T_GD` kan `RIGI_MECA` niet (`CALCUL_37`); met `TANGENTE` of `EXTRAPOLE` convergeerde de stap na het bezwijken niet (run, Code-Aster 17.4) | Zet *Bezwijken van elementen* uit, of kies *Balken* = `POU_D_E`/`POU_D_T` |
 | WARNING `… DEFORMATION … niet ondersteund` | rekmaat die niet bij het element past (bijv. `PETIT_REAC` op schalen) | Kies `PETIT` of grote verplaatsingen |
 | WARNING `Bezwijken van elementen kan de bridge alleen in niet-lineaire analyses` | lineaire analyse (*Statisch*) | Kies *Niet-lineair statisch* of een dynamische analyse |
 | WARNING over hex8 met '3D' en plasticiteit | volledig geïntegreerde hex8 "sluit" bij plastisch vloeien (volumetrische locking): de plastische rek komt te laat; in de trekstaaf bezweek de kerf bij t = 0,6 s i.p.v. 0,2 s met `LINE_QUAD` | Kies op de pagina Elementen *Hex8* = `LINE_QUAD`, of gebruik kwadratische elementen in Mecway |

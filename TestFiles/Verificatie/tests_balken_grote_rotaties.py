@@ -14,7 +14,8 @@ dd4c958, MPL-2.0), here as Mecway models through the whole bridge:
 
   NL-80   small tip force on a cantilever: Timoshenko F L^3/(3EI) +
           F L/(k G A), k = 5/6 (GB-01); NL-80b the same model in linear
-          static: elem_beam POU_D_T_GD falls back to POU_D_T
+          static: elem_beam POU_D_T_GD falls back to POU_D_T; NL-80c a
+          constant (not time-dependent) tip force and moment
   NL-81   cantilever bent through 90 degrees by an end moment
           M = (pi/2) EI/L: a circular arc, tip x = L sin(t)/t,
           y = L (1 - cos t)/t (GB-02); section forces M constant, N = 0
@@ -27,7 +28,8 @@ dd4c958, MPL-2.0), here as Mecway models through the whole bridge:
           with CCX (B31) on the same model
   NL-84   NL-81 with line3 elements (split into two SEG2 cells)
   NL-85   NL-81 about the weak axis set by an Element orientation card
-  NL-86   centrifugal force on a radial bar (FORMULE route, fixed load)
+  NL-86   centrifugal force on a radial bar (FORMULE route, fixed load);
+          NL-86b plus a radial truss (BARRE, FORCE_POUTRE as well)
   NL-87   line pressure plus gravity (one FORCE_POUTRE + PESANTEUR load),
           configuration GQ; NL-87b configuration G (gravity only)
   NL-88   free thermal expansion (Thermal stress, temperature2)
@@ -86,6 +88,10 @@ def _tip(var, time=None):
     return lambda r: r.at(var, (L, 0, 0), time)
 
 
+def _tip_at(var, y, time=None):
+    return lambda r: r.at(var, (L, y, 0), time)
+
+
 def _ramp(tag, value, unit):
     return '<{0} time="0 s">0 {2}</{0}><{0} time="1 s">{1:.12g} {2}</{0}>'.format(
         tag, value, unit)
@@ -115,6 +121,31 @@ def _nl80_checks():
     return [Check("doorbuiging tip", _tip("disply"), ref=REF80, tol=1e-3,
                   unit="m", source="Timoshenko: F L^3/(3EI) + F L/(kGA), "
                   "k = 5/6 (fork MishalTPC, GB-01)")]
+
+
+# NL-80c: constant tip force F80 (Y) and moment M80C (about Z), no time
+# table: small rotations, superposition of the linear solutions.
+M80C = 0.5
+
+
+def build_nl80c():
+    m, _n, _e = _beam()
+    m.add('<force selection="Tip"><x>0 N</x><y>%g N</y><z>0 N</z></force>'
+          % F80)
+    m.add('<moment selection="Tip"><x>0 N.m</x><y>0 N.m</y><z>%g N.m</z>'
+          '</moment>' % M80C)
+    return m
+
+
+def _nl80c_checks():
+    ei = E * I_W
+    return [Check("doorbuiging tip", _tip("disply"),
+                  ref=REF80 + M80C * L ** 2 / (2.0 * ei), tol=1e-3,
+                  unit="m", source="Timoshenko: F L^3/(3EI) + F L/(kGA) + "
+                  "M L^2/(2EI)"),
+            Check("tiprotatie", _tip("rotz"),
+                  ref=F80 * L ** 2 / (2.0 * ei) + M80C * L / ei, tol=1e-3,
+                  unit="rad", source="F L^2/(2EI) + M L/(EI)")]
 
 
 # ------------------------------------------------------------------
@@ -358,6 +389,27 @@ def build_nl86():
     return m
 
 
+# NL-86b: NL-86 plus a radial truss (40 line2, truss="true": BARRE) at
+# y = 0.5 m; the truss nodes are held in Y and Z (a bar has no bending
+# stiffness), so it only stretches along X.
+Y86B = 0.5
+
+
+def build_nl86b():
+    m = build_nl86()
+    m.elset("Staaf", "Staal")
+    tn = [m.node(L * i / float(N_EL), Y86B, 0) for i in range(N_EL + 1)]
+    for i in range(N_EL):
+        m.elem("Staaf", "line2", tn[i:i + 2], 'truss="true"')
+    m.node_selection("StaafRoot", [tn[0]])
+    m.node_selection("StaafAlle", tn)
+    m.add('<fixed selection="StaafRoot" />')
+    for d in ("<x>0</x><y>1</y><z>0</z>", "<x>0</x><y>0</y><z>1</z>"):
+        m.add('<displacement selection="StaafAlle"><value>0 mm</value>%s'
+              '</displacement>' % d)
+    return m
+
+
 # ------------------------------------------------------------------
 # NL-87 Line pressure plus gravity (bending about V), two configurations
 # ------------------------------------------------------------------
@@ -438,6 +490,11 @@ TESTS = [
          "lin_static_3d", build_nl80("S30"), _nl80_checks(), general=GD,
          note="elem_beam POU_D_T_GD buiten niet-lineair statisch: POU_D_T "
               "met een WARNING."),
+    Case("NL-80c", GROUP, "POU_D_T_GD: constante eindkracht en "
+         "eindmoment (geen tijdtabel)", "nonlin_static_3d", build_nl80c,
+         _nl80c_checks(), settings=SMALL, general=GD,
+         note="Kracht en moment zonder tijdtabel; kleine lasten: "
+              "superpositie van de lineaire oplossingen."),
     Case("NL-81", GROUP, "POU_D_T_GD: zuivere buiging tot 90 graden",
          "nonlin_static_3d", build_nl81(), _nl81_checks(), general=GD,
          note="Benchmark GB-02 van de fork van MishalTPC; eindmoment "
@@ -481,6 +538,18 @@ TESTS = [
          settings=SMALL, general=GD,
          note="ROTATION kan niet op POU_D_T_GD (CHAR_MECA_ROTA_R); "
               "FORCE_POUTRE als FORMULE van de beginpositie."),
+    Case("NL-86b", GROUP, "POU_D_T_GD: centrifugaalkracht op een balk en "
+         "een truss (BARRE)", "nonlin_static_3d", build_nl86b,
+         [Check("tipverlenging truss", _tip_at("displx", Y86B),
+                ref=RHO * W86 ** 2 * L ** 3 / (3.0 * E), tol=1e-3, unit="m",
+                source="u(L) = rho w^2 L^3 / (3E)"),
+          Check("reactiekracht X truss", lambda r: r.total(
+              "reactionforcex", "StaafRoot"),
+                ref=-RHO * AREA * W86 ** 2 * L ** 2 / 2.0, tol=1e-3,
+                unit="N", source="-rho A w^2 L^2 / 2")],
+         settings=SMALL, general=GD,
+         note="Zelfde FORMULE-route; de truss (BARRE) krijgt ook "
+              "FORCE_POUTRE."),
     Case("NL-87", GROUP, "POU_D_T_GD: line pressure en zwaartekracht "
          "(configuratie GQ)", "nonlin_static_3d", build_nl87,
          _nl87_checks(W87), settings=SMALL,
