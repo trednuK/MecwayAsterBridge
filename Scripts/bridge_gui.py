@@ -2561,8 +2561,9 @@ def _run_input_fallback(mw, current, reason):
 # 16 October 2026), so a second start from Tools does not see the first
 # one. A named semaphore is a kernel object of the process and survives
 # that. Not a Mutex: a Mutex belongs to a thread and may be taken again by
-# the same thread, and a second start from Mecway's menu can run on the
-# same thread as the first (Application.DoEvents in the main window).
+# the same thread, and a second start from Mecway's menu runs on the same
+# thread as the first (Mecway's UI thread, via Application.DoEvents in the
+# main window; seen in Mecway 34, 16 October 2026).
 # The process id in the name keeps two Mecway processes apart; Local\ =
 # this Windows session only.
 _INSTANCE_NAME = u"Local\\MecwayAsterBridge_{0}"
