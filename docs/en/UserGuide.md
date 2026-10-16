@@ -82,7 +82,11 @@ Related documents:
    iteration; static: the phase of the linear solver; modal: the modes found; otherwise the
    last line of the output) and the number of errors and alarms so far. The window is
    modal: Mecway is locked until the run has finished, because the bridge then reopens the
-   model with the results. It closes by itself once Code-Aster has finished (`run_aster`
+   model with the results. During the run it always stays on top (also above the
+   Code-Aster window, which opens without the focus and stays readable; on Windows 11
+   Windows Terminal may still take the focus, the status window then stays visible and
+   clickable). Until Code-Aster starts its first command it shows "Code-Aster is
+   starting...". It closes by itself once Code-Aster has finished (`run_aster`
    has returned); the bridge recognises that from an end marker that the Code-Aster window
    writes (`<model>_<run-id>_done.txt`, with the exit code of `run_aster`; removed after the
    run), and otherwise from `DIAGNOSTIC JOB` at the end of the `.mess`.

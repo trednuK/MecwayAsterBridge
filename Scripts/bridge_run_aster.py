@@ -513,6 +513,24 @@ _COMMAND_ECHO_RE = re.compile(
 _CREATE_NEW_CONSOLE = 0x00000010
 
 
+def _no_activate():
+    """
+    STARTUPINFO for the Code-Aster window: shown, but without taking the
+    focus (SW_SHOWNOACTIVATE), so that the status window and Mecway keep
+    it; the console stays visible and readable (also for errors).
+    Windows Terminal as default console host may ignore wShowWindow (NOT
+    verified); the status window is therefore also TopMost during the run
+    (bridge_gui.run_status_dialog). None if not available.
+    """
+    try:
+        info = subprocess.STARTUPINFO()
+        info.dwFlags |= 0x00000001          # STARTF_USESHOWWINDOW
+        info.wShowWindow = 4                # SW_SHOWNOACTIVATE
+        return info
+    except Exception:
+        return None
+
+
 def _launch_bat():
     """aster_launch.bat next to this module, or None if it is missing."""
     bat = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -672,7 +690,6 @@ class AsterJob(object):
         self._next_scan = 0.0
         self._next_mess = 0.0
         self._mess_done_at = None
-        self._last_line = u""
         self._command = u""
         self._limit_warned = False
 
@@ -787,11 +804,6 @@ class AsterJob(object):
             if m:
                 self._command = m.group(1)
                 break
-        for line in reversed(text.splitlines()):
-            line = line.strip().strip(_MESS_BOX_SIDE).strip()
-            if line and line[0] not in u"=-*#" + _MESS_BOX_END + u"╔":
-                self._last_line = line[:120]
-                break
 
     def _salvage(self, reason):
         """After a stop: the .mess from the live fort.6 plus a line
@@ -848,7 +860,9 @@ class AsterJob(object):
         elif self.finished():
             head = tr(u"Code-Aster is klaar; resultaten worden geladen...",
                       u"Code-Aster has finished; loading the results...")
-        elif self._fort6 is None:
+        elif not self._detail(data):
+            # No command or step known yet: start-up output (paths of the
+            # installation, catalogues) is not shown.
             head = tr(u"Code-Aster wordt gestart...",
                       u"Code-Aster is starting...")
         else:
@@ -916,7 +930,7 @@ class AsterJob(object):
             return tr(u"Modes: {0}", u"Modes: {0}").format(modes_text(data))
         if self._command:
             return tr(u"Commando: {0}", u"Command: {0}").format(self._command)
-        return self._last_line
+        return u""
 
 
 def _console_text(work_dir, since=None):
@@ -1194,6 +1208,7 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw, wait=None):
             cmd_command,
             cwd=work_dir,
             creationflags=_CREATE_NEW_CONSOLE,
+            startupinfo=_no_activate(),
         )
         job = AsterJob(process, work_dir, export_path, start_time,
                        marker_path if marked else None)

@@ -10,7 +10,9 @@
   (`Scripts/aster_launch.bat`), else from `DIAGNOSTIC JOB` in the `.mess`; a non-zero exit
   code, a closed Code-Aster window and a stop are reported in the status box and the
   convergence window. New setting *Waiting for Code-Aster* (`wait_for_aster`, General):
-  `auto` (default) or `confirm` (the old OK dialog). Test `tests/test_bridge_wait.py`.
+  `auto` (default) or `confirm` (the old OK dialog). The status window stays on top of the
+  Code-Aster console (which opens without the focus). Test `tests/test_bridge_wait.py`;
+  model for testing Stop: `TestFiles/Tools/StopTest_LongRun.liml` (~95 s).
 - **`FACTOR_57` without a mechanism** (slender volume models in bending, MUMPS error estimate
   just above `RESI_RELA` 1e-6): the setting *Solver accuracy (RESI_RELA)* (`lin_solver_resi`,
   default 1e-6 as Code-Aster) is now also on the pages Modal (static step for the prestress,

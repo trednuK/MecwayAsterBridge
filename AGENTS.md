@@ -106,6 +106,8 @@ Also in `TestFiles/Tools/` (CPython 3):
   `CONFIG_BRIDGE`, tooltips in both languages, links and anchors, `KNOWN_BUGS n` references, verification
   cases, § references and NL/EN parity of the docs (`--parity`: also the numbers per section). Must report
   0 findings.
+- `TestFiles/Tools/StopTest_LongRun.liml`: `BezwijkenTrekstaafDynamisch.liml` with 1000 time
+  steps (~95 s with Code-Aster 17.4), to test the Stop button of the status window in Mecway.
 - `python TestFiles/Tools/check_code_unchanged.py <git-ref> [files...]` checks that a text-only change
   (comments, docstrings, INFO/SUCCESS log texts, comment lines in the `.comm` templates) leaves the code
   unchanged (syntax tree of `.py`, code lines and placeholders of `.comm`).

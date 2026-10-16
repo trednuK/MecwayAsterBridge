@@ -74,7 +74,11 @@ Verwante documenten:
    Newton-iteratie; statisch: de fase van de lineaire oplosser; modaal: de gevonden modes;
    anders de laatste regel van de uitvoer) en het aantal fouten en alarmen tot nu toe. Het
    venster is modaal: Mecway is geblokkeerd tot de run klaar is, want daarna opent de bridge
-   het model opnieuw met de resultaten. Het sluit vanzelf zodra Code-Aster klaar is
+   het model opnieuw met de resultaten. Het staat tijdens de run altijd bovenop (ook boven
+   het Code-Aster-venster, dat zonder focus opent en leesbaar blijft; op Windows 11 kan
+   Windows Terminal de focus toch nemen, het statusvenster blijft dan zichtbaar en
+   klikbaar). Tot Code-Aster aan het eerste commando begint staat er "Code-Aster wordt
+   gestart...". Het sluit vanzelf zodra Code-Aster klaar is
    (`run_aster` is teruggekeerd); de bridge herkent dat aan een eindmarkering die het
    Code-Aster-venster schrijft (`<model>_<run-id>_done.txt`, met de exitcode van
    `run_aster`; wordt na de run verwijderd), en anders aan `DIAGNOSTIC JOB` aan het einde van

@@ -173,18 +173,26 @@ def test_launch_and_finish(fake):
     check(captured == fake.tee, u"tee captured if tee.exe exists")
     job = ra.AsterJob(proc, fake.work, fake.export, start, marker)
     check(job.time_limit == 600.0, u"time limit from the .export")
+    st0 = job.status()
+    check(st0["headline"] == u"Code-Aster is starting..." and
+          not st0["detail"], u"neutral start-up text, no output lines")
+    noisy = []
     seen_live = False
     deadline = time.time() + 30
     while time.time() < deadline and not job.poll():
         st = job.status()
         if u"reached t =" in st["detail"]:
             seen_live = True
+        if u"\\" in st["detail"] or u"/" in st["detail"]:
+            noisy.append(st["detail"])
         time.sleep(0.25)
     check(job.state == "finished", u"end detected: {0}".format(job.state))
     check(job.exit_code == 3, u"exit code from the marker: {0}".format(
         job.exit_code))
     check(seen_live, u"live status from fort.6 (step/time/iteration): "
           u"{0}".format(job.status()["detail"]))
+    check(not noisy, u"no path-like lines in the status: {0}".format(
+        noisy[:1]))
     st = job.status()
     check(u"Messages so far" in st["messages"], u"messages counted: " +
           st["messages"])
