@@ -89,4 +89,32 @@ setting. To go back to the previous version, choose the old path again.
 Add the new version to `TESTED_MECWAY_VERSIONS` or `TESTED_ASTER_VERSIONS` in
 `Scripts/bridge_utils.py` (by hand; these lines are outside `CONFIG_BRIDGE`, the start screen does
 not change them) and update the baseline in [`Verification.md`](Verification.md) §3. From then on
-the bridge gives no warning for that version.
+the bridge gives no warning for that version. For a new Mecway version, also add a column
+to the table in §6 with what was verified in it.
+
+## 6. Mecway versions / compatibility
+
+The bridge does not branch on the Mecway version: it recognises features by what is in the
+`.liml` (a tag or attribute). An item that a Mecway version does not write is simply absent,
+and the bridge then behaves as without that item. Status per area, with the release in which
+it was last verified:
+
+| Area | Mecway 33 | Mecway 34 |
+|---|---|---|
+| Translation up to V2026.2 (reading the `.liml`, mesh, loads, constraints, materials, analyses, results back into the `.liml`) | verified (V2026.2) | verified (V2026.4) |
+| Results in a model with configurations (V2026.2; Mecway 34 could not open the earlier format) | verified (V2026.2) | verified (V2026.4) |
+| Waiting for Code-Aster, convergence window, version check (V2026.2) | verified (V2026.2) | verified (V2026.4) |
+| Beams with large rotations `POU_D_T_GD` (V2026.3) | NOT verified | verified (V2026.3) |
+| *Element orientation* cards in Loads & Constraints (V2026.3) | n/a (Mecway 33 has no such card) | verified (V2026.3) |
+| Explicit `ORIENTATION` `VECT_Y` for every beam (V2026.3) | NOT verified | verified (V2026.3) |
+| Start screen: status box, missing model folder, second window (V2026.3) | NOT verified | verified (V2026.3) |
+| Line3 trusses and cables (V2026.4) | NOT verified (not checked whether Mecway 33 offers them; no effect on a model without them) | verified (V2026.4) |
+| Hyperelastic Neo Hooke / Mooney-Rivlin (V2026.4) | NOT verified (not checked whether Mecway 33 offers them; no effect on a model without them) | verified (V2026.4) |
+| Plastic curve: E is the slope of the first segment (V2026.4) | NOT verified (measured in Mecway 34 with CCX) | verified (V2026.4) |
+| Mode shapes with displacement magnitude (V2026.4) | NOT verified; Mecway 33's own modal solution shows no magnitude, so it is one extra item (harmless) | verified (V2026.4) |
+| Flexible joints: `POU_D_T_GD` and offset beams (V2026.4) | NOT verified | verified (V2026.4) |
+| Convergence window buttons, work folder next to the model, preparation errors in the status box (V2026.4) | NOT verified | verified (V2026.4) |
+
+"Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
+with Mecway's own solver in the other documents name the Mecway version they were measured
+with; that is the version of the reference, not a limitation of the bridge.

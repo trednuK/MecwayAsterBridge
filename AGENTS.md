@@ -90,6 +90,21 @@ contract between the modules. Read optional keys with `.get()`.
   else `DIAGNOSTIC JOB` in the `.mess`. `AsterJob.stop()` only kills the process tree of the
   cmd window it started (`taskkill /T`). Test: `python tests/test_bridge_wait.py`.
 
+## Mecway versions
+
+- Detect features from the `.liml` content (a tag or attribute is present), not from the
+  Mecway version. Mecway-34-only input such as the *Element orientation* card is recognised
+  by its XML tag; a model without it behaves as before.
+- A condition on the version only for a proven semantic difference (the same `.liml` means
+  something else in another version), in one central place in `bridge_version.py`
+  (e.g. a helper `mecway_at_least(...)`, not added until needed), with a verification case
+  that shows the difference.
+- Keep the compatibility table up to date (`docs/en/After_an_update.md` §6,
+  `docs/Na_een_update.md` §6): a new feature gets a row with the Mecway version(s) it was
+  verified in.
+- A new Mecway version goes through the procedure in `docs/en/After_an_update.md` (§2, §5)
+  before it is added to `TESTED_MECWAY_VERSIONS`.
+
 ## Checking
 
 A real run is only possible in Mecway. Tools without the Mecway GUI in `TestFiles/Tools/`: `run_ipy.ps1`

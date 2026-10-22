@@ -18,8 +18,10 @@ Version: **V2026.4** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 ## Requirements
 
 - **Windows** with **Mecway 33 or 34** (the bridge runs in Mecway's built-in IronPython 2.7
-  scripting environment, which Mecway 34 still ships; the bridge was developed and verified
-  with Mecway 33, older versions have not been tested).
+  scripting environment). Developed and verified with Mecway 34; Mecway 33 is supported,
+  last fully verified with V2026.2 (features added since are verified with Mecway 34 only,
+  see [After an update](docs/en/After_an_update.md#6-mecway-versions--compatibility)); older
+  versions have not been tested.
 - **Code-Aster 17.4 for Windows**. Windows builds are available from
   <https://simulease.com/en/download/> (MSI installer "Code_Aster 2025", which installs
   version 17.4; accessed 6 October 2026). The official site

@@ -88,4 +88,32 @@ instelling. Terug naar de vorige versie: het oude pad weer kiezen.
 Voeg de nieuwe versie toe aan `TESTED_MECWAY_VERSIONS` of `TESTED_ASTER_VERSIONS` in
 `Scripts/bridge_utils.py` (met de hand; deze regels staan buiten `CONFIG_BRIDGE`, het startscherm
 verandert ze niet) en werk de basislijn in [`Verificatie.md`](Verificatie.md) §3 bij. Daarna geeft
-de bridge voor die versie geen waarschuwing meer.
+de bridge voor die versie geen waarschuwing meer. Voeg bij een nieuwe Mecway-versie ook een
+kolom toe aan de tabel in §6 met wat daarin is nagelopen.
+
+## 6. Mecway-versies / compatibiliteit
+
+De bridge vertakt niet op de Mecway-versie: hij herkent functies aan wat in de `.liml` staat
+(een tag of attribuut). Een item dat een Mecway-versie niet schrijft ontbreekt gewoon, en de
+bridge gedraagt zich dan als zonder dat item. Stand per onderdeel, met de release waarin het
+het laatst is nagelopen:
+
+| Onderdeel | Mecway 33 | Mecway 34 |
+|---|---|---|
+| Vertaling t/m V2026.2 (`.liml` lezen, mesh, belastingen, randvoorwaarden, materialen, analyses, resultaten terug in de `.liml`) | nagelopen (V2026.2) | nagelopen (V2026.4) |
+| Resultaten in een model met configuraties (V2026.2; Mecway 34 kon het eerdere formaat niet openen) | nagelopen (V2026.2) | nagelopen (V2026.4) |
+| Wachten op Code-Aster, convergentiescherm, versiecontrole (V2026.2) | nagelopen (V2026.2) | nagelopen (V2026.4) |
+| Balken met grote rotaties `POU_D_T_GD` (V2026.3) | NIET nagelopen | nagelopen (V2026.3) |
+| *Element orientation*-kaarten in Loads & Constraints (V2026.3) | n.v.t. (Mecway 33 heeft die kaart niet) | nagelopen (V2026.3) |
+| Expliciete `ORIENTATION` `VECT_Y` voor elke balk (V2026.3) | NIET nagelopen | nagelopen (V2026.3) |
+| Startscherm: statusvak, ontbrekende modelmap, tweede venster (V2026.3) | NIET nagelopen | nagelopen (V2026.3) |
+| Line3-trusses en -kabels (V2026.4) | NIET nagelopen (niet nagegaan of Mecway 33 ze heeft; geen effect op een model zonder) | nagelopen (V2026.4) |
+| Hyperelastisch Neo Hooke / Mooney-Rivlin (V2026.4) | NIET nagelopen (niet nagegaan of Mecway 33 ze heeft; geen effect op een model zonder) | nagelopen (V2026.4) |
+| Plastische curve: E is de helling van het eerste segment (V2026.4) | NIET nagelopen (gemeten in Mecway 34 met CCX) | nagelopen (V2026.4) |
+| Eigenvormen met verplaatsingsgrootte (V2026.4) | NIET nagelopen; Mecway 33's eigen modale oplossing toont geen magnitude, dus één extra item (onschadelijk) | nagelopen (V2026.4) |
+| Flexible joints: `POU_D_T_GD` en balken met offset (V2026.4) | NIET nagelopen | nagelopen (V2026.4) |
+| Knoppen in het convergentiescherm, werkmap naast het model, voorbereidingsfouten in het statusvak (V2026.4) | NIET nagelopen | nagelopen (V2026.4) |
+
+"Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
+met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten
+zijn; dat is de versie van de referentie, geen beperking van de bridge.

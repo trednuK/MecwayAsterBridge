@@ -36,6 +36,8 @@ limitations, 0 unexpected).
   translated in linear static and modal analyses (LS-52a now equals Mecway, 1.2636 mm; new
   LS-52c). Ideas and benchmarks from the fork by MishalTPC
   (github.com/mishal0488/MecwayAsterBridge).
+- Docs: Mecway 33/34 compatibility table and version policy
+  ([After an update](docs/en/After_an_update.md) §6, `AGENTS.md`).
 - **Preparation errors** (reading the model, mesh, solver files) are shown directly in the
   status box instead of only "see the log".
 - Documented limitation: `POU_D_T_GD` under large rotations about a skew axis gives
