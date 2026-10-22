@@ -124,12 +124,13 @@ Bonded contact per combination (slave on master):
 | Mecway | Status | Remark |
 |---|---|---|
 | Isotropic (E, ν, ρ, α) | Yes | Without E the bridge uses 210 GPa, Mecway 0 (KB60). |
-| Plastic, isotropic hardening curve | Yes | `VMIS_ISOT_TRAC`. Not on beams (elastic, WARNING; KB6). |
+| Plastic, isotropic hardening curve | Yes | `VMIS_ISOT_TRAC`. E = slope of the first segment of the curve, as in Mecway (WARNING when *Young's modulus* differs; [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.4). Not on beams (elastic, WARNING; KB6). |
 | Plastic, Bilinear isotropic / kinematic | Yes | `ECRO_LINE`; Mecway's *tangent modulus* is the plastic modulus H, `D_SIGM_EPSI` = E·H/(E+H); perfectly plastic with tangent modulus 0. |
 | Plastic, Kinematic (curve) | Partly | Only a curve with linear hardening (`VMIS_CINE_LINE`); a nonlinear curve is computed as elastic (reported). No equivalentplasticstrain (KB6). |
 | Plastic, Ramberg-Osgood | Yes | Sampled curve (KB6). |
 | Spring, Damper, Gap, Tension only | Yes | Only on line2 (§4). Gap: *force of open gap* not used (KB23). |
-| Orthotropic, Anisotropic (matrix), Composite, Neo Hooke, Mooney-Rivlin, piezo | No | WARNING, then the run stops ("elset without a usable material"). No alternative in the bridge. |
+| Neo Hooke, Mooney-Rivlin (hyperelastic) | Yes | `ELAS_HYPER` (C10, C01, K = 2/D1) with `GREEN_LAGRANGE`, in nonlinear static and dynamics (implicit and explicit), volume elements only (as in Mecway). D1 = 0, shells/beams and linear analyses: ERROR; thermal expansion ignored (WARNING). [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.4, verification NL-50..53. |
+| Orthotropic, Anisotropic (matrix), Composite, piezo | No | WARNING, then the run stops ("elset without a usable material"). No alternative in the bridge. Hyperfoam: ERROR (in Code-Aster only via MFront, not in the Windows version). |
 | Failure criterion (factor of safety) | Partly | Von Mises (*tensile strength*): `factorofsafety` to Mecway (result field `safety_factor`, §6). Tsai-Wu and other criteria: WARNING, no factor of safety. For plastic failure: [`Failure.md`](Failure.md). |
 | Thermal: conductivity, specific heat, also *Temperature dependent* | Yes | [`Thermal.md`](Thermal.md). Formulas in material properties: No (KB16). |
 | Speed of sound (acoustics) | Yes | Media with different density: No (KB55, KB59). |

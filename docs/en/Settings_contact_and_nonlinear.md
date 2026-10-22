@@ -44,7 +44,8 @@ What the nonlinear analyses support:
 
 - material: `ELAS`; with plasticity `VMIS_ISOT_TRAC` (hardening curve,
   Ramberg-Osgood, OpenRadioss `PLAS_TAB`), `VMIS_ISOT_LINE` or `VMIS_CINE_LINE`
-  (bilinear); tension only `CABLE`, gap `DIS_CHOC`; beams with large rotations
+  (bilinear); hyperelastic (Neo Hooke, Mooney-Rivlin) `ELAS_HYPER` (§2.4);
+  tension only `CABLE`, gap `DIS_CHOC`; beams with large rotations
   `ELAS_POUTRE_GR` (`elem_beam` = `POU_D_T_GD`, §2.9);
 - contact: Mecway `contact2` becomes `DEFI_CONTACT` (§3); compression only
   `DEFI_CONTACT FORMULATION='LIAISON_UNIL'`;
@@ -282,9 +283,26 @@ Mecway's hardening curve uses the **total** strain (measured with Mecway/CCX hea
 on the bar of NL-01, R-CURVE): the curve (0, 0), (σy/E, σy), (0.1, …) gave the expected
 stress and plastic strain; a curve starting with (0, σy) gave a non-physical result in
 Mecway. `auto` therefore reads a curve with start point (0, 0), or a curve that starts
-directly at the yield point (σy/E, σy), as total strain. If the first point with
-strain > 0 is not on the elastic line (slope E), a WARNING about the slope follows. If
-the curve starts with (0, σ > 0), `auto` reads it as plastic strain, with a WARNING that
+directly at the yield point (σy/E, σy), as total strain.
+
+**E with a curve in total strain.** Mecway's *Plastic* tab: the first two points define
+the linear elastic region. Mecway then uses the slope of that first segment, not the
+*Young's modulus* of the *Elastic* tab: measured with Mecway/CCX headless (bar in
+tension, *Young's modulus* 200 GPa, curve (0, 0), (0.001, 210 MPa), (0.011, 310 MPa)),
+strain 5·10⁻⁴ gave a stress of 104.97 MPa (nonlinear static) and 105.00 MPa (linear
+static, CCX), so E = 210 GPa. The bridge does the same: for a curve read as total strain
+(isotropic and kinematic, `auto` or `total`), E is the slope from the origin to the first
+point with strain > 0, with a WARNING showing both values when it differs from the tab.
+That E applies to the material in every analysis of the model (also linear, modal and the
+soft elements at failure). A curve without (0, 0) gets the slope origin → first point
+(NOT measured in Mecway). Not for a curve as plastic strain (starting with (0, σ > 0), as
+in WE-12c and Ramberg-Osgood) and not for OpenRadioss `PLAS_TAB`: there E of the
+material stays. Code-Aster stops with `MATERIAL1_5` when the slope up to the first curve
+point differs from E by more than 1%; the bridge checks this beforehand and then stops
+with an ERROR showing both values (e.g. a curve as plastic strain whose first plastic
+strain is not 0). Verification NL-04 (isotropic) and NL-04b (kinematic).
+
+If the curve starts with (0, σ > 0), `auto` reads it as plastic strain, with a WARNING that
 Mecway reads the same curve as total strain (the Mecway solution may then differ);
 choose `plastic` or `total` to avoid the message. Measured on NL-01 with `auto`: curve
 with and without (0, 0) exact up to t = 3 (σ at t = 2: 433.49 MPa, analytical), curve
@@ -292,6 +310,31 @@ with and without (0, 0) exact up to t = 3 (σ at t = 2: 433.49 MPa, analytical),
 stress in the `.comm` (first point of the function). Bilinear plasticity:
 Mecway's *tangent modulus* is the plastic modulus H; the bridge sets
 `D_SIGM_EPSI` = E·H/(E+H) (NL-01).
+
+**Hyperelastic material (Neo Hooke, Mooney-Rivlin).** Mecway 34 has Neo Hooke (C10, D1,
+thermal expansion) and Mooney-Rivlin (C10, C01, D1, thermal expansion), only in
+*Nonlinear static 3D* and *Nonlinear dynamic response 3D*. The bridge turns them into
+`DEFI_MATERIAU ELAS_HYPER` (C10, C01, K, RHO) with `RELATION='ELAS_HYPER'` and always
+`DEFORMATION='GREEN_LAGRANGE'` (the setting `deformation` then does not count for that
+elset), in nonlinear static and in implicit and explicit dynamics. The bulk modulus is
+K = 2/D1 (Mecway/CCX: volumetric term (J − 1)²/D1). Checked with a cube in uniaxial
+tension (λ = 1.5) and compression (λ = 0.7) against 2(λ − λ⁻²)(C10 + C01/λ): NL-50/51
+within 0.11%, equal to Mecway/CCX headless (NL-52 implicit, NL-53 explicit). `SIXX` is the
+Cauchy stress. Explicit: the critical time step uses the small-strain equivalents,
+G = 2(C10 + C01), E = 2G(1 + ν) with ν from K and G. Messages:
+
+| Situation | Message |
+|---|---|
+| D1 = 0 (fully incompressible) | ERROR: Code-Aster needs a finite K; give D1 > 0, e.g. 2/K with K ≈ 1000 × 2(C10 + C01) |
+| thermal expansion filled in, or *Thermal stress* | WARNING: ignored (`ELAS_HYPER` has no `ALPHA`) |
+| Rayleigh damping in dynamics | WARNING: does not apply to this material |
+| shells, beams or 2D | ERROR (volume elements only, as in Mecway) |
+| linear static, modal, buckling, thermal → mechanical | ERROR (Mecway also offers it only in nonlinear analyses) |
+| `imperfection_amplitude` | ERROR (the buckling analysis beforehand needs `ELAS`) |
+| another type, e.g. hyperfoam | ERROR: not translated; hyperfoam is only possible in Code-Aster via MFront, which is not in the Windows version |
+
+Nearly incompressible material on linear hex8/tet4 'locks' (too stiff in bending and
+non-uniform deformation): use quadratic elements or `LINE_QUAD`.
 
 ### 2.5 Time scheme (dynamics): `schema`, `hht_alpha`
 

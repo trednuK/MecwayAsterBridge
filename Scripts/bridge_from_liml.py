@@ -135,6 +135,130 @@ def _parse_bilinear(plastic_node, mat_name, plastic_type, E=None):
     return {"sy": sy, "et": et, "h": h, "kinematic": kinematic}
 
 
+def _parse_hyperelastic(mech_node, dens_node, mech_type, mat_name):
+    """
+    Mecway Neo Hooke / Mooney-Rivlin (manual par. 8.8; Mecway 34 only in
+    Nonlinear static 3D and Nonlinear dynamic response 3D) -> material
+    dict with "hyper": {"C10", "C01", "K"} (SI), or None after an ERROR.
+    XML (attribute names from a save_as round trip in Mecway 34 headless,
+    22 Oct 2026: other names were dropped):
+      <mechanical type="NeoHooke" hyperelasticc10="1 MPa" d1="1E-09 m2/N"
+                  thermalexpansion=".." />
+      <mechanical type="MooneyRivlin" hyperelasticc10=".." hyperelasticc01=".."
+                  d1=".." thermalexpansion=".." />
+    Code-Aster: DEFI_MATERIAU ELAS_HYPER (C10, C01, K, RHO) with
+    RELATION='ELAS_HYPER', DEFORMATION='GREEN_LAGRANGE' (catalogue
+    defi_materiau.py; test case ssnv187a). Volumetric term: Mecway/CCX
+    (Abaqus form) U = (J - 1)^2 / D1, Code-Aster K/2 (J - 1)^2, so
+    K = 2 / D1 (NOT verified in the Fortran; checked with runs: cube in
+    uniaxial tension/compression against 2 (lambda - lambda^-2)
+    (C10 + C01/lambda), verification NL-50).
+    E and NU are the small-strain equivalents (G = 2 (C10 + C01),
+    E = 9 K G / (3 K + G) = 2 G (1 + NU)): only for the explicit time
+    step and other estimates, ELAS is not written (ELAS and ELAS_HYPER
+    exclude each other in DEFI_MATERIAU).
+    """
+    c10 = parse_and_convert(mech_node.get("hyperelasticc10", "0"),
+                            "pressure")
+    c01 = 0.0
+    if mech_type == "MooneyRivlin":
+        c01 = parse_and_convert(mech_node.get("hyperelasticc01", "0"),
+                                "pressure")
+    d1 = parse_and_convert(mech_node.get("d1", "0"), "inverse_pressure")
+    texp = parse_and_convert(mech_node.get("thermalexpansion", "0"),
+                             "inversetemp")
+    g = 2.0 * (c10 + c01)
+    if g <= 0.0:
+        log(tr("ERROR: Materiaal '{0}' ({1}): C10 + C01 = {2} Pa; de "
+               "beginschuifmodulus 2 (C10 + C01) moet positief zijn.",
+               "ERROR: Material '{0}' ({1}): C10 + C01 = {2} Pa; the "
+               "initial shear modulus 2 (C10 + C01) must be positive.")
+            .format(mat_name, mech_type, c10 + c01))
+        return None
+    if d1 <= 0.0:
+        log(tr("ERROR: Materiaal '{0}' ({1}): D1 = {2}. D1 = 0 betekent "
+               "volledig onsamendrukbaar; Code-Aster ELAS_HYPER heeft een "
+               "eindige compressiemodulus K = 2/D1 nodig. Geef in Mecway "
+               "D1 > 0, bijv. D1 = 2/K met K ongeveer 1000 x de "
+               "schuifmodulus 2 (C10 + C01), hier D1 = {3} m2/N "
+               "(nagenoeg onsamendrukbaar).",
+               "ERROR: Material '{0}' ({1}): D1 = {2}. D1 = 0 means fully "
+               "incompressible; Code-Aster ELAS_HYPER needs a finite bulk "
+               "modulus K = 2/D1. Give D1 > 0 in Mecway, e.g. D1 = 2/K "
+               "with K about 1000 x the shear modulus 2 (C10 + C01), here "
+               "D1 = {3} m2/N (nearly incompressible).").format(
+                   mat_name, mech_type, d1, "%.3g" % (2.0 / (1000.0 * g))))
+        return None
+    k = 2.0 / d1
+    e_eq = 9.0 * k * g / (3.0 * k + g)
+    nu_eq = (3.0 * k - 2.0 * g) / (2.0 * (3.0 * k + g))
+    if texp:
+        log(tr("WARNING: Materiaal '{0}' ({1}): de thermische uitzetting "
+               "wordt genegeerd; ELAS_HYPER van Code-Aster heeft geen "
+               "ALPHA.",
+               "WARNING: Material '{0}' ({1}): the thermal expansion is "
+               "ignored; Code-Aster's ELAS_HYPER has no ALPHA.").format(
+                   mat_name, mech_type))
+    rho = 0.0
+    if dens_node is not None:
+        rho = parse_and_convert(dens_node.get("density", "0"), "density")
+    log("INFO: Material '{0}' -> ELAS_HYPER ({1}): C10={2} Pa, C01={3} Pa, "
+        "K=2/D1={4} Pa, rho={5} kg/m3 (small strain: E={6} Pa, "
+        "NU={7}).".format(mat_name, mech_type, c10, c01, k, rho,
+                          "%.6g" % e_eq, "%.6f" % nu_eq))
+    return {"E": e_eq, "NU": nu_eq, "Texp": 0.0, "rho": rho,
+            "hyper": {"type": mech_type, "C10": c10, "C01": c01, "K": k}}
+
+
+def _curve_young(curve, E, mat_name, definition):
+    """
+    E of a material with a hardening curve read as TOTAL strain: the slope
+    of the first segment (origin -> first point with strain > 0), as
+    Mecway does. Mecway's Plastic tab: the first two points define the
+    linear elastic region. Measured headless (Mecway 34 + CCX, bar in
+    uniaxial tension, 22 Oct 2026): youngsmodulus 200 GPa with curve
+    (0, 0), (0.001, 210 MPa), (0.011, 310 MPa) gave at strain 5e-4 a
+    stress of 104.97 MPa in Nonlinear static and 105.00 MPa in Linear
+    static (CCX), so E = 210 GPa (the curve), not 200 GPa (Elastic tab).
+    A curve with a first point at strain > 0 (no (0, 0)) also gets the
+    slope origin -> first point: NOT measured.
+    Code-Aster stops with MATERIAL1_5 when the slope up to the first
+    TRACTION point differs by more than 1% from ELAS E
+    (MacroCommands/defi_materiau_ops.py, check_young_consistency).
+    definition 'auto' as in _to_aster_traction_curve: (0, 0) or a first
+    strain > 0 -> total; (0, sigma > 0) -> plastic (E unchanged).
+    Returns E [Pa] (unchanged for the plastic definition or an unusable
+    curve).
+    """
+    if not curve or definition not in ("auto", "total"):
+        return E
+    first = curve[0]
+    if definition == "auto" and first[0] == 0.0 and first[1] > 0.0:
+        return E
+    pts = [(eps, sig) for eps, sig in curve if eps > 0.0]
+    if not pts or pts[0][1] <= 0.0:
+        return E
+    slope = pts[0][1] / pts[0][0]
+    try:
+        e_tab = float(E)
+    except (TypeError, ValueError):
+        e_tab = 0.0
+    if e_tab > 0.0 and abs(slope - e_tab) <= 1.0e-6 * e_tab:
+        return E
+    log(tr("WARNING: Materiaal '{0}': E = {1} Pa (helling van het eerste "
+           "stuk van de hardingscurve, zoals Mecway) i.p.v. "
+           "youngsmodulus {2} Pa van het tabblad Elastic. Mecway gebruikt "
+           "voor dit materiaal de helling van de curve; Code-Aster eist "
+           "dat E en de curve op 1% overeenkomen (MATERIAL1_5).",
+           "WARNING: Material '{0}': E = {1} Pa (slope of the first segment "
+           "of the hardening curve, as Mecway does) instead of "
+           "youngsmodulus {2} Pa from the Elastic tab. Mecway uses the "
+           "slope of the curve for this material; Code-Aster requires E "
+           "and the curve to agree within 1% (MATERIAL1_5).").format(
+               mat_name, "%.6g" % slope, "%.6g" % e_tab))
+    return slope
+
+
 def _kinematic_curve(curve, E, mat_name, definition):
     """
     Kinematic hardening curve (Mecway "Plastic with kinematic hardening",
@@ -1810,6 +1934,20 @@ def extract_aster_data_from_liml(file_path):
                             # (_kinematic_curve). Perfectly plastic:
                             # Bilinear with tangentmodulus 0 (ECRO_LINE
                             # D_SIGM_EPSI=0.0 is allowed, test case forma20c).
+                            # Curve as total strain: E = slope of the first
+                            # segment, like Mecway (_curve_young); also in
+                            # linear/modal analyses of this model (CCX
+                            # linear static measured the same).
+                            if plastic_type in ("Isotropic", "Kinematic") \
+                                    and curve:
+                                e_new = _curve_young(
+                                    curve, mat_props["E"], mat_name,
+                                    run_cfg.get("plastic_strain_definition",
+                                                "auto"))
+                                if e_new != mat_props["E"]:
+                                    mat_props["E_elastic_tab"] = \
+                                        mat_props["E"]
+                                    mat_props["E"] = e_new
                             if plastic_type == "Kinematic" and curve:
                                 bil = _kinematic_curve(
                                     curve, mat_props["E"], mat_name,
@@ -1873,6 +2011,28 @@ def extract_aster_data_from_liml(file_path):
                                 mat_props["E"],  mat_props["NU"],
                                 mat_props["Texp"], mat_props["rho"],
                                 "plastic_curve" in mat_props))
+
+                    elif mech_type in ("NeoHooke", "MooneyRivlin"):
+                        hyp = _parse_hyperelastic(mech_node, dens_node,
+                                                  mech_type, mat_name)
+                        if hyp is not None:
+                            model_data["materials"][mat_name] = hyp
+
+                    elif "foam" in mech_type.lower():
+                        log(tr("ERROR: Materiaal '{0}': type '{1}' "
+                               "(hyperfoam) wordt niet vertaald. Code-Aster "
+                               "heeft geen hyperfoam-wet in "
+                               "DEFI_MATERIAU; die kan alleen via MFront, en "
+                               "dat zit niet in de Windows-versie van "
+                               "Code-Aster. Kies Neo Hooke of "
+                               "Mooney-Rivlin.",
+                               "ERROR: Material '{0}': type '{1}' "
+                               "(hyperfoam) is not translated. Code-Aster "
+                               "has no hyperfoam law in DEFI_MATERIAU; it "
+                               "is only possible via MFront, which is not "
+                               "in the Windows version of Code-Aster. "
+                               "Choose Neo Hooke or Mooney-Rivlin.").format(
+                                   mat_name, mech_type))
 
                     elif mech_type in ("Gap", "Damper"):
                         # Mecway (manual v33 par. 7.8/7.9) on line2:

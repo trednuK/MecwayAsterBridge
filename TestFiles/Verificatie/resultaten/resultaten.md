@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 2516067, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2260 van 2267 controles binnen de tolerantie** (415 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2278 van 2285 controles binnen de tolerantie** (423 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1738,6 +1738,12 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
+| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
+| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
+| NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
+| NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
+| NL-04b | Als NL-04 met een kinematische (lineaire) curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | +0.00% | 0.2% | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
@@ -1764,6 +1770,18 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4
 | NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 1 s | 9000 N | 9000 | -0.00% | 0.0001% | OK |
 | NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 2 s | 18000 N | 18000 | -0.00% | 0.0001% | OK |
 | NL-40 | Druk als formule in y en t naast een krachttabel | moment om X bij t = 2 s | 26000 N.m | 26000 | -0.00% | 0.0001% | OK |
+| NL-50 | Hyperelastisch: kubus Neo Hooke, trek l = 1,5 | F (nominaal, l=1.5) | 211.11 N | 210.99 | -0.06% | 0.5% | OK |
+| NL-50 | Hyperelastisch: kubus Neo Hooke, trek l = 1,5 | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1632e+06 | -0.11% | 0.5% | OK |
+| NL-50b | Hyperelastisch: kubus Neo Hooke, druk l = 0,7 | F (nominaal, l=0.7) | -268.16 N | -268.09 | +0.03% | 0.5% | OK |
+| NL-50b | Hyperelastisch: kubus Neo Hooke, druk l = 0,7 | sigma_xx Cauchy (l=0.7) | -1.8771e+06 Pa | -1.8772e+06 | -0.00% | 0.5% | OK |
+| NL-51 | Hyperelastisch: kubus Mooney-Rivlin, trek l = 1,5 | F (nominaal, l=1.5) | 197.04 N | 196.94 | -0.05% | 0.5% | OK |
+| NL-51 | Hyperelastisch: kubus Mooney-Rivlin, trek l = 1,5 | sigma_xx Cauchy (l=1.5) | 2.9556e+06 Pa | 2.9526e+06 | -0.10% | 0.5% | OK |
+| NL-51b | Hyperelastisch: kubus Mooney-Rivlin, druk l = 0,7 | F (nominaal, l=0.7) | -291.15 N | -291.06 | +0.03% | 0.5% | OK |
+| NL-51b | Hyperelastisch: kubus Mooney-Rivlin, druk l = 0,7 | sigma_xx Cauchy (l=0.7) | -2.0380e+06 Pa | -2.0381e+06 | -0.00% | 0.5% | OK |
+| NL-52 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (impliciet), quasi-statisch | F (nominaal, l=1.5) | 211.11 N | 210.99 | -0.06% | 0.5% | OK |
+| NL-52 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (impliciet), quasi-statisch | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1632e+06 | -0.11% | 0.5% | OK |
+| NL-53 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (expliciet), 20 ms | F (nominaal, l=1.5) | 211.11 N | 212.7 | +0.75% | 2% | OK |
+| NL-53 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (expliciet), 20 ms | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1887e+06 | +0.70% | 2% | OK |
 | NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.0001% | OK |
 | NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s t.o.v. Mecway (CCX) | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.01% | OK |
 | NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |

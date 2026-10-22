@@ -124,12 +124,13 @@ Verlijmd contact per combinatie (slave op master):
 | Mecway | Status | Opmerking |
 |---|---|---|
 | Isotropic (E, ν, ρ, α) | Ja | Zonder E rekent de bridge met 210 GPa, Mecway met 0 (KB60). |
-| Plastic, isotrope hardingscurve | Ja | `VMIS_ISOT_TRAC`. Niet op balken (elastisch, WARNING; KB6). |
+| Plastic, isotrope hardingscurve | Ja | `VMIS_ISOT_TRAC`. E = helling van het eerste stuk van de curve, zoals Mecway (WARNING als *Young's modulus* anders is; [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) §2.4). Niet op balken (elastisch, WARNING; KB6). |
 | Plastic, Bilinear isotropic / kinematic | Ja | `ECRO_LINE`; Mecway's *tangent modulus* is de plastische modulus H, `D_SIGM_EPSI` = E·H/(E+H); ideaal plastisch met tangent modulus 0. |
 | Plastic, Kinematic (curve) | Deels | Alleen een curve met lineaire versteviging (`VMIS_CINE_LINE`); een niet-lineaire curve wordt elastisch gerekend (gemeld). Geen equivalentplasticstrain (KB6). |
 | Plastic, Ramberg-Osgood | Ja | Bemonsterde curve (KB6). |
 | Spring, Damper, Gap, Tension only | Ja | Alleen op line2 (§4). Gap: *force of open gap* niet gebruikt (KB23). |
-| Orthotropic, Anisotropic (matrix), Composite, Neo Hooke, Mooney-Rivlin, piëzo | Nee | WARNING en daarna stopt de run ("elset zonder bruikbaar materiaal"). Geen alternatief in de bridge. |
+| Neo Hooke, Mooney-Rivlin (hyperelastisch) | Ja | `ELAS_HYPER` (C10, C01, K = 2/D1) met `GREEN_LAGRANGE`, in niet-lineair statisch en dynamisch (impliciet en expliciet), alleen volume-elementen (zoals Mecway). D1 = 0, schalen/balken en lineaire analyses: ERROR; thermische uitzetting genegeerd (WARNING). [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) §2.4, verificatie NL-50..53. |
+| Orthotropic, Anisotropic (matrix), Composite, piëzo | Nee | WARNING en daarna stopt de run ("elset zonder bruikbaar materiaal"). Geen alternatief in de bridge. Hyperfoam: ERROR (in Code-Aster alleen via MFront, niet in de Windows-versie). |
 | Failure criterion (factor of safety) | Deels | Von Mises (*tensile strength*): `factorofsafety` naar Mecway (resultaatveld `safety_factor`, §6). Tsai-Wu en andere criteria: WARNING, geen factor of safety. Voor plastisch bezwijken: [`Bezwijken.md`](Bezwijken.md). |
 | Thermisch: geleiding, soortelijke warmte, ook *Temperature dependent* | Ja | [`Thermisch.md`](Thermisch.md). Formules in materiaaleigenschappen: Nee (KB16). |
 | Speed of sound (akoestiek) | Ja | Media met verschillende dichtheid: Nee (KB55, KB59). |
