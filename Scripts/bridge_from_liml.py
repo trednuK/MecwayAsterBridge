@@ -2445,6 +2445,30 @@ def extract_aster_data_from_liml(file_path):
                         item.findtext("frictioncoefficient") or "0",
                         "dimensionless"),
                 }
+                # A contact whose selections are empty lost its reference in
+                # Mecway: Mecway 34 replaces spaces in selection names by
+                # underscores when it opens an older .liml and then writes
+                # selectionmaster="" (seen 22 Oct 2026 with
+                # Voorbeeld_C.liml from Mecway 33). Without the contact the
+                # parts are not connected and Code-Aster stops without
+                # convergence, so stop here with the reason.
+                if not contact["selfcontact"] and (
+                        not contact["master"] or not contact["slave"]):
+                    log(tr("ERROR: Een contact in Loads & Constraints heeft "
+                           "geen master- of slave-selectie (leeg in de "
+                           ".liml). Mecway verliest die verwijzing bijv. "
+                           "als een selectie hernoemd wordt; Mecway 34 "
+                           "vervangt spaties in selectienamen door _ bij "
+                           "het openen van een ouder model. Kies in het "
+                           "contact de vlakselecties opnieuw en sla op.",
+                           "ERROR: A contact in Loads & Constraints has no "
+                           "master or slave selection (empty in the .liml). "
+                           "Mecway loses that reference e.g. when a "
+                           "selection is renamed; Mecway 34 replaces spaces "
+                           "in selection names by _ when it opens an older "
+                           "model. Select the face selections of the "
+                           "contact again and save."))
+                    return None
                 # Mecway knows unilateralelastic (contact) and bondedelastic/
                 # bondedtie/bondedce (bonded; type names from mecway.exe).
                 # Bonded is not DEFI_CONTACT (that could separate),

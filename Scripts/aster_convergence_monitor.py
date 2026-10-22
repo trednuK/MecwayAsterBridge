@@ -887,9 +887,9 @@ class Monitor(object):
             if btn is not None and str(btn.cget("state")) != state:
                 btn.configure(state=state)
 
-    def _popen(self, args):
+    def _popen(self, args, creationflags=0):
         try:
-            subprocess.Popen(args)
+            subprocess.Popen(args, creationflags=creationflags)
             log(u"INFO: started {0}".format(args))
             return True
         except Exception as e:
@@ -955,7 +955,10 @@ class Monitor(object):
                     u" ({0})".format(exe) if exe else u""),
                 parent=self.root)
             return
-        self._popen([exe, rmed])
+        # Salome-Meca: run_paraview.bat (bridge_utils._salome_launcher)
+        # opens a console only to set the environment; without a window.
+        flags = 0x08000000 if exe.lower().endswith(".bat") else 0
+        self._popen([exe, rmed], flags)
 
     def _names(self, text):
         """study.comm / study_console.txt in a message -> the files

@@ -1074,7 +1074,9 @@ SETTING_HELP = {
         u"Salome-Meca (C:\\Salome_meca\\...\\ParaView\\bin, "
         u"%ProgramFiles%\\SALOME*), die een MED-lezer heeft, daarna "
         u"%ProgramFiles%\\ParaView*. Let op: ParaView 5.10 van paraview.org "
-        u"heeft GEEN MED-lezer en kan een .rmed niet openen. "
+        u"heeft GEEN MED-lezer en kan een .rmed niet openen. De ParaView "
+        u"van Salome-Meca start de bridge via run_paraview.bat (zet de "
+        u"Salome-omgeving; los start hij niet: Qt5Widgets.dll ontbreekt). "
         u"Omgevingsvariabelen mogen in het pad.",
         u"paraview.exe for the ParaView button in the convergence window "
         u"(opens the .rmed of the run; turn on 'MED file for ParaView' for "
@@ -1082,8 +1084,10 @@ SETTING_HELP = {
         u"of Salome-Meca (C:\\Salome_meca\\...\\ParaView\\bin, "
         u"%ProgramFiles%\\SALOME*), which has a MED reader, then "
         u"%ProgramFiles%\\ParaView*. Note: ParaView 5.10 from paraview.org "
-        u"has NO MED reader and cannot open a .rmed. Environment variables "
-        u"are allowed in the path."),
+        u"has NO MED reader and cannot open a .rmed. The bridge starts "
+        u"Salome-Meca's ParaView through run_paraview.bat (sets the Salome "
+        u"environment; on its own it does not start: Qt5Widgets.dll "
+        u"missing). Environment variables are allowed in the path."),
     "elem_hex8": (u"Hoe hex8-volume-elementen in Code-Aster gerekend "
                   u"worden. Standaard 3D (volledig geintegreerd; met weinig "
                   u"hex8 over de dikte te stijf bij buiging, KNOWN_BUGS 1).",
