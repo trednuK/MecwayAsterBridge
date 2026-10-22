@@ -294,8 +294,9 @@ static, CCX), so E = 210 GPa. The bridge does the same: for a curve read as tota
 (isotropic and kinematic, `auto` or `total`), E is the slope from the origin to the first
 point with strain > 0, with a WARNING showing both values when it differs from the tab.
 That E applies to the material in every analysis of the model (also linear, modal and the
-soft elements at failure). A curve without (0, 0) gets the slope origin → first point
-(NOT measured in Mecway). Not for a curve as plastic strain (starting with (0, σ > 0), as
+soft elements at failure). A curve without (0, 0) gets the slope origin → first point,
+as in Mecway (measured: (0.001, 210 MPa), (0.011, 310 MPa) gave 104.98 MPa nonlinear and
+105.00 MPa linear, verification NL-04c). Not for a curve as plastic strain (starting with (0, σ > 0), as
 in WE-12c and Ramberg-Osgood) and not for OpenRadioss `PLAS_TAB`: there E of the
 material stays. Code-Aster stops with `MATERIAL1_5` when the slope up to the first curve
 point differs from E by more than 1%; the bridge checks this beforehand and then stops

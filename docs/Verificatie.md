@@ -562,15 +562,21 @@ opeenvolgende meshes.
   eind van de arm, dan was het omgekeerd). Elke helft is een ingeklemde balk L/2 met
   k = 3EI/(L/2)³ (`POU_D_E`); de torsie verschuift het aangrijpingspunt met e θx:
   F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1,2641 mm, |rotx| op x = 0,8 m =
-  T (L − x)/(GJ) = 7,8758e-5 rad. (52c) is niet met Mecway gerekend. (53) elke helft is een
+  T (L − x)/(GJ) = 7,8758e-5 rad. Mecway 34 (eigen solver, headless) geeft voor (52c)
+  dezelfde doorbuiging 1,2641 mm, maar de torsie in de linkerhelft: rotx in het midden
+  −1,9690e-4 rad (= e F2 (L/2)/(GJ)), 0 op x = 0,8 m. Mecway zet de joint dus aan het eind
+  van de arm (KNOWN_BUGS 117). (53) elke helft is een
   ingeklemde balk L/2 met P/2: M = 0 in het scharnier, (P/2) h verder op het element,
   V = P/2.
 - **Resultaat**: (52a) 1,2636 mm (+0,04 %, gelijk aan Mecway); (52b) 1,2636 mm (+0,04 %,
-  gelijk aan Mecway); (52c) δ +0,00 %, rotx in het midden −4e-33 rad, rotx op 0,8 m
-  +0,00 %; reacties = last. (53a) alle 10 elementen, M in het scharnier 2e-13 N m,
+  gelijk aan Mecway); (52c) δ +0,00 % (ook t.o.v. Mecway), rotx in het midden −4e-33 rad,
+  rotx op 0,8 m +0,00 %; reacties = last; rotx in het midden t.o.v. Mecway BEKEND
+  (KNOWN_BUGS 117). (53a) alle 10 elementen, M in het scharnier 2e-13 N m,
   5,000 N m op x = 0,6 m, V = 50 N; (53b) alle 4 elementen met drie waarden: 0 / 6,25 /
   12,5 N m.
 - **Interpretatie**: een joint op een verschoven element werkt nu als in Mecway (52a).
+  Met een rotatie loodrecht op de arm vrij (52c) zit de joint in de bridge voor de arm, in
+  Mecway erachter: de doorbuiging is hier gelijk, de verdeling van de torsie niet.
   Een verschoven line3-element met een joint wordt nog niet vertaald (WARNING; het element
   zit dan star aan de arm). Een line3-balk krijgt zijn elementwaarden uit beide
   SEG2-helften (eind 1 en midden uit de eerste, eind 2 uit de tweede).
@@ -585,6 +591,23 @@ opeenvolgende meshes.
   (`LIAISON_DDL`); zonder die koppeling is de middenknoop een mechanisme (`ALGELINE3_81`).
 - **Referentie**: u(x) = F x / (E A).
 - **Resultaat**: tip en middenknoop exact (< 1e-6); dwarsverplaatsing middenknoop 0.
+
+### LS-54b, LS-54c Line3-kabel (*Tension only*)
+
+- **Doel**: kwadratisch element met materiaal *Tension only* (`MODELISATION='CABLE'`),
+  ook gesplitst in twee SEG2-cellen met de middenknoop dwars gekoppeld (GitHub issue #6;
+  `tests_balken.py`).
+- **Model**: (54b) als LS-54a met *Tension only* (E = 210 GPa, D = 10 mm); (54c) twee
+  line3-kabels in serie langs X (elk 1 m), beide uiteinden vast, F = 1000 N langs +X op de
+  knoop ertussen: de linkerkabel krijgt trek, de rechter zou druk krijgen. Niet-lineair
+  statisch (`CABLE` alleen met `GROT_GDEP`).
+- **Referentie**: (54b) u(x) = F x / (E A); (54c) alleen de trekkabel draagt: u = F L/(E A),
+  reactie links −F, rechts 0 (Code-Aster houdt een drukstijfheid `EC_SUR_E` = 1e-4 E, dus
+  0,1 N). Mecway 34 gaf headless geen oplossing voor *Tension only*, ook niet op line2
+  (eigen solver *Static 3D* en *Nonlinear static*: lege oplossing; CCX: Mecway stopte), terwijl
+  dezelfde line2-staaf als *Isotropic* truss wel rekende: alleen de handberekening.
+- **Resultaat**: (54b) tip −7,5e-5 relatief (Green-Lagrange-rek van `GROT_GDEP`, O(ε)),
+  reactie exact; (54c) u −1,8e-4, reactie links −999,9 N, rechts −0,09997 N (= 1e-4 F).
 
 ### Extra resultaatvelden (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
@@ -1345,12 +1368,16 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 - **Doel**: E bij een hardingscurve in totale rek (GitHub issue #2).
 - **Model**: staaf als NL-01 (hex20), *Young's modulus* 200 GPa, curve (0, 0),
   (0,001; 210 MPa), (0,011; 310 MPa); verlenging tot rek 5·10⁻⁴ (t = 1) en 5·10⁻³ (t = 2).
-  NL-04b: dezelfde curve als *Kinematic* (lineair, dus `VMIS_CINE_LINE`).
+  NL-04b: dezelfde curve als *Kinematic* (lineair, dus `VMIS_CINE_LINE`). NL-04c: dezelfde
+  curve zonder het punt (0, 0).
 - **Referentie**: Mecway rekent met de helling van het eerste stuk (E = 210 GPa), gemeten
   met Mecway/CCX headless: σ = 104,97 MPa op t = 1 (niet-lineair) en 105,00 MPa (lineair
   statisch, CCX); 248,1 MPa op t = 2. Analytisch (eenassig, log-rek): F en σ met
-  E = 210 GPa en de curve als totale rek.
-- **Resultaat**: NL-04 en NL-04b: F op t = 1 en 2 en σ_xx op t = 1 0,00% af; de bridge
+  E = 210 GPa en de curve als totale rek. NL-04c (zonder (0, 0)), Mecway 34/CCX headless:
+  104,98 MPa op t = 1 (niet-lineair), 105,00 MPa (lineair statisch, CCX) en 248,1 MPa op
+  t = 2, dus ook dan E = helling oorsprong → eerste punt (210 GPa, niet 200 GPa).
+- **Resultaat**: NL-04, NL-04b en NL-04c: F op t = 1 en 2 en σ_xx op t = 1 0,00% af
+  (NL-04c t.o.v. Mecway −0,03%); de bridge
   geeft een WARNING met beide waarden van E. Zonder deze aanpassing stopte Code-Aster met
   `MATERIAL1_5` (helling > 1% anders dan E) en werd de kinematische curve niet vertaald.
 - **Interpretatie**: op t = 2 rekent CCX 0,7% lager dan de analytische log-rekwaarde

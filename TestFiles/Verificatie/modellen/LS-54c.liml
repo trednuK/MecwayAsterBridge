@@ -1,0 +1,39 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="1 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.5" y="0" z="0" />
+  <node nid="3" x="1" y="0" z="0" />
+  <node nid="4" x="1.5" y="0" z="0" />
+  <node nid="5" x="2" y="0" z="0" />
+  <elset name="Kabel" material="Kabel">
+    <elem eid="1" shape="line3" nodes="1 2 3" />
+    <elem eid="2" shape="line3" nodes="3 4 5" />
+  </elset>
+  <fixed selection="Wortel" />
+  <displacement selection="Dwars"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Dwars"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <force selection="Tip"><x>1000 N</x><y>0 N</y><z>0 N</z></force>
+  <mat name="Kabel">
+    <geometric type="CircularBar" roundod="10 mm" />
+    <mechanical type="TensionOnly" youngsmodulus="210000 MPa" />
+  </mat>
+  <nodeselection name="Wortel">
+    <node nid="1" />
+    <node nid="5" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="3" />
+  </nodeselection>
+  <nodeselection name="Dwars">
+    <node nid="1" />
+    <node nid="5" />
+    <node nid="3" />
+  </nodeselection>
+  <nodeselection name="Links">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Rechts">
+    <node nid="5" />
+  </nodeselection>
+</liml>

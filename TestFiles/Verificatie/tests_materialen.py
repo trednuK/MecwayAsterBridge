@@ -10,14 +10,15 @@ Materialen in niet-lineaire analyses (Mecway L30/D31).
          (210 GPa) afwijkt van youngsmodulus op het tabblad Elastic
          (200 GPa): de bridge neemt E = helling van de curve, zoals Mecway
          (GitHub issue #2). b: dezelfde curve als Kinematic (lineair ->
-         VMIS_CINE_LINE).
+         VMIS_CINE_LINE). c: dezelfde curve zonder het punt (0, 0).
   NL-50  hyperelastisch (GitHub issue #5): kubus in eenassige trek
          (lambda = 1,5) en druk (lambda = 0,7), Neo Hooke en Mooney-Rivlin,
          nagenoeg onsamendrukbaar (K = 1000 G); NL-52: Neo Hooke in
          Dynamisch (impliciet), quasi-statisch.
 
 Mecway-metingen (headless, Mecway 34 + CCX, 22 okt 2026), zie de toelichting
-per case: NL-04 sigma 104,97 MPa bij rek 5e-4 (E = 210 GPa), NL-50/51
+per case: NL-04 sigma 104,97 MPa bij rek 5e-4 (E = 210 GPa), NL-04c
+(zonder (0, 0)) 104,98 MPa, Linear static 105,00 MPa (E = 210 GPa), NL-50/51
 binnen 0,11% van de analytische waarde.
 """
 import math
@@ -35,7 +36,7 @@ U4 = [(0.0, 0.0), (1.0, 0.05e-3), (2.0, 0.5e-3)]   # m (rek 5e-4, 5e-3)
 MID4 = (L4 / 2, A4 / 2, A4 / 2)
 
 
-def build_nl04(kind):
+def build_nl04(kind, curve=CURVE4):
     def build():
         m = Model("L30", timesteps={"timeperiod": "2 s",
                                     "stepsize": "0.1 s"})
@@ -45,7 +46,7 @@ def build_nl04(kind):
               '"200000 MPa" poissonratio="0.3" />',
               '<plastic type="%s">%s</plastic>' % (kind, "".join(
                   '<hardeningcurve strain="%g" stress="%g MPa" />'
-                  % (e, s / 1e6) for e, s in CURVE4)))
+                  % (e, s / 1e6) for e, s in curve)))
         for name, side, ax in (("SymX", "u0", "x"), ("SymY", "v0", "y"),
                                ("SymZ", "w0", "z")):
             m.node_selection(name, sorted(g["nodes"][side]))
@@ -68,10 +69,10 @@ def _nl04_state(t):
     isotroop = kinematisch). F = tau A0 / (1 + e), sigma = tau / J."""
     e = dict(U4)[t] / L4
     el = math.log(1.0 + e)
-    if el <= CURVE4[1][0]:
+    if el <= CURVE4[-2][0]:
         tau = E4 * el
     else:
-        (e1, s1), (e2, s2) = CURVE4[1], CURVE4[2]
+        (e1, s1), (e2, s2) = CURVE4[-2], CURVE4[-1]
         tau = s1 + (s2 - s1) / (e2 - e1) * (el - e1)
     j = math.exp(tau * (1 - 2 * 0.3) / E4)
     return {"F": tau * A4 * A4 / (1.0 + e), "sigma": tau / j}
@@ -171,6 +172,19 @@ TESTS = [
          note="youngsmodulus 200 GPa, curve (0,0), (0,001; 210 MPa), "
               "(0,011; 310 MPa): E = 210 GPa zoals Mecway (WARNING). "
               "Mecway/CCX: sigma 104,97 MPa bij t = 1, 248,1 MPa bij t = 2."),
+    Case("NL-04c", GROUP, "Als NL-04 met een curve zonder (0, 0)",
+         "nonlin_static_3d", build_nl04("Isotropic", CURVE4[1:]),
+         _nl04_checks() + [
+             Check("sigma_xx t=1 t.o.v. Mecway 34", lambda r: r.at(
+                 "stressxx", MID4, time=1.0), ref=104.981e6, tol=0.002,
+                   unit="Pa", in_series=False,
+                   source="Mecway 34 + CCX, Nonlinear static, headless")],
+         note="Curve (0,001; 210 MPa), (0,011; 310 MPa) zonder (0, 0): "
+              "E = helling oorsprong -> eerste punt = 210 GPa, zoals "
+              "Mecway. Mecway/CCX: sigma 104,98 MPa bij t = 1, 248,1 MPa "
+              "bij t = 2, gelijk aan NL-04 met (0, 0) (in het plastische "
+              "gebied ligt CCX 0,7% onder de analytische 249,8 MPa); "
+              "Linear static (CCX) 105,00 MPa."),
     Case("NL-04b", GROUP, "Als NL-04 met een kinematische (lineaire) curve",
          "nonlin_static_3d", build_nl04("Kinematic"), _nl04_checks(),
          note="Kinematic, lineaire versteviging -> VMIS_CINE_LINE met "

@@ -221,7 +221,9 @@ def _curve_young(curve, E, mat_name, definition):
     stress of 104.97 MPa in Nonlinear static and 105.00 MPa in Linear
     static (CCX), so E = 210 GPa (the curve), not 200 GPa (Elastic tab).
     A curve with a first point at strain > 0 (no (0, 0)) also gets the
-    slope origin -> first point: NOT measured.
+    slope origin -> first point, as Mecway: measured the same way with
+    curve (0.001, 210 MPa), (0.011, 310 MPa): 104.98 MPa (nonlinear, CCX)
+    and 105.00 MPa (linear, CCX), so 210 GPa (verification NL-04c).
     Code-Aster stops with MATERIAL1_5 when the slope up to the first
     TRACTION point differs by more than 1% from ELAS E
     (MacroCommands/defi_materiau_ops.py, check_young_consistency).
