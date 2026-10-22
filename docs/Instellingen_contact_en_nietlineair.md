@@ -423,7 +423,7 @@ gebouwd voor element offset, flexible joint, line3, balkorientatie en `beam_forc
 
 | Combinatie | Wat de bridge doet |
 |---|---|
-| niet-lineair statisch met grote verplaatsingen (`deformation` standaard `GROT_GDEP`) | `POU_D_T_GD`: kracht en moment (constant, NL-80c, of als tabel in de tijd), line pressure (constant of als formule in x, y, z, t), zwaartekracht, Thermal stress, Mecway's *Time step size*, configuraties (NL-80 tot NL-89) |
+| niet-lineair statisch met grote verplaatsingen (`deformation` standaard `GROT_GDEP`) | `POU_D_T_GD`: kracht en moment (constant, NL-80c, of als tabel in de tijd), line pressure (constant of als formule in x, y, z, t), zwaartekracht, Thermal stress, Mecway's *Time step size*, configuraties (NL-80 tot NL-90) |
 | line3-balk | twee SEG2-cellen per element, zoals bij `POU_D_E` (NL-84) |
 | balkorientatie (attributen en *Element orientation*) | expliciete `VECT_Y` per cel (NL-85) |
 | centrifugaalkracht | `ROTATION` kan niet op dit element (`CHAR_MECA_ROTA_R`, `CALCUL_37`); de bridge zet `FORCE_POUTRE` als formule van de beginpositie: een vaste last, zonder spin softening (NL-86); trusses (`BARRE`) in zo'n model krijgen ook `FORCE_POUTRE` (NL-86b) |
@@ -432,7 +432,9 @@ gebouwd voor element offset, flexible joint, line3, balkorientatie en `beam_forc
 | andere analyses (statisch, modaal, knik, harmonisch, spectrum, dynamica) en niet-lineair met `PETIT`/`PETIT_REAC` | `POU_D_T` met een WARNING: dezelfde balk bij kleine verplaatsingen (NL-80b). Het element kent geen `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamica (testcase sdnl103a) is in de bridge NIET geverifieerd |
 | `crit_stab` | ERROR: de tangentmatrix is niet symmetrisch (`ALGELINE4_41`) |
 | `imperfection_amplitude` > 0 | ERROR: de lineaire knik vooraf vraagt `RIGI_MECA`; leg de beginkromming in de mesh (NL-82) |
-| element offset, flexible joint, koppelingen | rekenen (offset en joint bij kleine lasten gelijk aan `POU_D_T`; koppelingen NIET geverifieerd), maar blijven lineaire relaties in de onvervormde assen: WARNING (KNOWN_BUGS 11, 106, 108) |
+| flexible joint met U, V en W vrij (kogelscharnier) | koppelt alleen de verplaatsingen (DX, DY, DZ): exact bij elke rotatie (NL-90, NL-90b; naar de fork van MishalTPC) |
+| flexible joint met een deel van de rotaties vrij (U, V, W, UV, UW, VW) | ERROR vooraf: de rotaties langs de niet-vrije assen zijn een lineaire relatie in de onvervormde assen, en bij eindige rotaties geeft dat een onjuiste extra rotatie in het scharnier (KNOWN_BUGS 106). Kies `POU_D_E`/`POU_D_T` (kleine rotaties) of maak U, V en W vrij |
+| element offset, koppelingen | rekenen (offset bij kleine lasten gelijk aan `POU_D_T`; koppelingen NIET geverifieerd), maar blijven lineaire relaties in de onvervormde assen: WARNING (KNOWN_BUGS 11, 108) |
 | opgelegde rotatie (`noderotation`) | de totale rotatievector (exact voor een rotatie om één vaste as), maar slanke balken convergeren slecht: WARNING (KNOWN_BUGS 11) |
 
 **Resultaten.** Verplaatsingen, rotaties en reacties zoals altijd. Snedekrachten

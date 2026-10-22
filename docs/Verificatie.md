@@ -100,7 +100,10 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `7e02e1e`
 (alle stappen, de eindcontrole S11 en de uitbreidingen van 15 en 16 oktober; Code-Aster 17.4):
-415 testcases, 2267 controles, 2260 OK, 7 BEKEND, 0 NOK/FOUT.
+415 testcases, 2267 controles, 2260 OK, 7 BEKEND, 0 NOK/FOUT. Bijgewerkt op 22 oktober
+2026 met de flexible joint op een verschoven balk (LS-52a nu OK, nieuw LS-52c) en de joint
+met U, V en W vrij bij `POU_D_T_GD` (NL-90, NL-90b; run van LS-51 .. LS-53, LS-62, LS-63,
+NL-80 .. NL-90): 418 testcases, 2278 controles, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -115,12 +118,12 @@ Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 21 | 62 | 61 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 107 | 369 | 367 | 2 |
+| Lineair statisch | 108 | 373 | 372 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 22 | 221 | 221 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 39 | 152 | 149 | 3 |
+| Niet-lineair statisch | 41 | 159 | 156 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
@@ -129,7 +132,7 @@ Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **415** | **2267** | **2260** | **7** |
+| **Totaal** | **418** | **2278** | **2272** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -541,25 +544,38 @@ opeenvolgende meshes.
 - **Doel**: (52) flexible joint samen met een element offset (`tests_balken.py`). Eerder
   kreeg een joint op een verschoven element een eigen knoop die in geen cel zat, en een
   knoop met alleen een verschoven balk en een balk met een joint had geen
-  vrijheidsgraden (beide `CHARGES2_31`). (53) de snedekrachten per element
-  (`beam_forces` als elementwaarden) naast een joint en op line3-balken; eerder ontbrak
-  het element met de joint en elke line3-balk stil.
-- **Model**: LS-51a (joint om W rechts van het midden) met een offset z = 10 mm
+  vrijheidsgraden (beide `CHARGES2_31`); daarna werd een joint op een verschoven element
+  niet vertaald (star aan de arm, KNOWN_BUGS 108d, opgelost). (53) de snedekrachten per
+  element (`beam_forces` als elementwaarden) naast een joint en op line3-balken; eerder
+  ontbrak het element met de joint en elke line3-balk stil.
+- **Model**: LS-51a (joint om W rechts van het midden) met een offset z = e = 10 mm
   (globaal, loodrecht op het buigvlak) op (52a) de rechterhelft, dus ook op het element
-  met de joint, of (52b) de linkerhelft. (53a) LS-51a, (53b) LS-51e (4 line3), met
-  `beam_forces`.
-- **Referentie**: (52a) de joint vervalt (WARNING), dubbel ingeklemd: δ = PL³/(192EI) =
-  0,31578 mm; (52b) scharnier: δ = PL³/(48EI) = 1,2631 mm; Mecway 34 (eigen solver)
-  geeft in beide 1,2636 mm. (53) elke helft is een ingeklemde balk L/2 met P/2: M = 0 in
-  het scharnier, (P/2) h verder op het element, V = P/2.
-- **Resultaat**: (52a) 0,31628 mm (+0,16 %; t.o.v. Mecway **BEKEND**, KNOWN_BUGS 108);
-  (52b) 1,2636 mm (+0,04 %, gelijk aan Mecway); reacties = last. (53a) alle 10
-  elementen, M in het scharnier 2e-13 N m, 5,000 N m op x = 0,6 m, V = 50 N; (53b)
-  alle 4 elementen met drie waarden: 0 / 6,25 / 12,5 N m.
-- **Interpretatie**: Mecway houdt een joint op een verschoven element wel aan; de bridge
-  verbindt het element dan star met de arm (open, KNOWN_BUGS 108). Een line3-balk
-  krijgt zijn elementwaarden uit beide SEG2-helften (eind 1 en midden uit de eerste,
-  eind 2 uit de tweede).
+  met de joint, of (52b) de linkerhelft; (52c) als 52a met U, V en W vrij
+  (kogelscharnier). (53a) LS-51a, (53b) LS-51e (4 line3), met `beam_forces`.
+- **Vertaling**: de joint zit in de Mecway-knoop, voor de starre arm, zoals in de fork van
+  MishalTPC (`github.com/mishal0488/MecwayAsterBridge`, commit 773d59f, daar vergeleken
+  met Mecway 34): een eigen knoop in de Mecway-knoop met de joint-relaties, en een eigen
+  starre arm naar een eigen offsetknoop waarop het element begint. De arm draait dus met
+  het vrijgelaten element mee.
+- **Referentie**: (52a, 52b) scharnier: δ = PL³/(48EI) = 1,2631 mm; Mecway 34 (eigen
+  solver) geeft in beide 1,2636 mm. (52c) waar de joint zit blijkt uit de torsie: de
+  rechterhelft krijgt de kracht F2 via de arm vanaf de middenknoop, dus het torsiemoment
+  T = e F2; de linkerhelft houdt geen torsie (rotx in het midden 0; zat de joint aan het
+  eind van de arm, dan was het omgekeerd). Elke helft is een ingeklemde balk L/2 met
+  k = 3EI/(L/2)³ (`POU_D_E`); de torsie verschuift het aangrijpingspunt met e θx:
+  F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1,2641 mm, |rotx| op x = 0,8 m =
+  T (L − x)/(GJ) = 7,8758e-5 rad. (52c) is niet met Mecway gerekend. (53) elke helft is een
+  ingeklemde balk L/2 met P/2: M = 0 in het scharnier, (P/2) h verder op het element,
+  V = P/2.
+- **Resultaat**: (52a) 1,2636 mm (+0,04 %, gelijk aan Mecway); (52b) 1,2636 mm (+0,04 %,
+  gelijk aan Mecway); (52c) δ +0,00 %, rotx in het midden −4e-33 rad, rotx op 0,8 m
+  +0,00 %; reacties = last. (53a) alle 10 elementen, M in het scharnier 2e-13 N m,
+  5,000 N m op x = 0,6 m, V = 50 N; (53b) alle 4 elementen met drie waarden: 0 / 6,25 /
+  12,5 N m.
+- **Interpretatie**: een joint op een verschoven element werkt nu als in Mecway (52a).
+  Een verschoven line3-element met een joint wordt nog niet vertaald (WARNING; het element
+  zit dan star aan de arm). Een line3-balk krijgt zijn elementwaarden uit beide
+  SEG2-helften (eind 1 en midden uit de eerste, eind 2 uit de tweede).
 
 ### Extra resultaatvelden (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
@@ -1435,7 +1451,7 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   bridge als bij een constante druk). In lineair statisch neemt de bridge t = eindtijd
   (WARNING).
 
-### NL-80 .. NL-89 Balken met grote rotaties (`POU_D_T_GD`)
+### NL-80 .. NL-90 Balken met grote rotaties (`POU_D_T_GD`)
 
 - **Doel**: `elem_beam` = `POU_D_T_GD` ([Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)):
   `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
@@ -1464,6 +1480,8 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 | NL-87b | hetzelfde model, configuratie G (line pressure onderdrukt) | idem met w = ρAg |
 | NL-88 | Thermal stress, ΔT = 100 K | α ΔT L |
 | NL-89 | line pressure als formule `-30*x*t` N/m in −Z (Mecway-stap 0,5 s) | 11 q0 L⁴/(120EI) + q0 L²/(3kGA) (Roark), evenredig met t; reactie q0 L/2 |
+| NL-90 | twee samenvallende ingeklemde balken die alleen de tip delen; de tweede eindigt daar met een flexible joint met U, V en W vrij (kogelscharnier); eindkracht P = 1400 N in Y | elke balk P/2 (gelijk en vrij draaiende tip): Reissner-balk van NL-83 met PL²/EI = 2 per balk; reactie van balk 2 −P/2 |
+| NL-90b | idem, general section (A = 1e-4 m², I = 1e-8/12 m⁴, J = 1,4e-9 m⁴), eindmoment M = GJ (π/2)/L om X | de joint geeft geen moment door: balk 1 tordeert π/2, reactiemoment −M in wortel 1 en 0 in wortel 2 (star: π/4 en −M/2) |
 
   NL-83 vergelijkt ook de snedekrachten met de statica in de vervormde stand (FEM-
   coördinaten): `bendingmomw` van element 1 = P (x_tip − x_midden), `sheary` en
@@ -1472,7 +1490,9 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   B31; `TestFiles/Tools/mw_solve.py`, gemiddelde van de doorsnedeknopen op x = L).
   Tolerantie 0,1 %; strenger: het moment in NL-81, NL-84 en NL-85 0,01 %, de
   normaalkracht daar absoluut 0,05 N (referentie 0), de reacties in NL-83, NL-87,
-  NL-87b en NL-89 en de verlenging in NL-88 1e-6 relatief.
+  NL-87b en NL-89 en de verlenging in NL-88 1e-6 relatief; in NL-90b de rotatie en
+  reactie 0,01 %, het reactiemoment van wortel 2 absoluut 1e-6 M. NL-90 en NL-90b bouwen
+  `check_nonlinear_releases.py` van de fork van MishalTPC na (branch dev).
 - **Resultaat**: alle controles OK.
 
 | Case | Grootheid | Afwijking | Fork (GB) | Mecway 34 + CCX |
@@ -1491,6 +1511,8 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 | NL-87, NL-87b | doorbuiging tip / reactie | +0,0008 / 0,0000 %; +0,0002 / 0,0000 % | – | – |
 | NL-88 | tipverlenging | 0,0000 % | – | – |
 | NL-89 | doorbuiging tip op t = 0,5 en 1 / reactie | +0,0285 / +0,0287 / 0,0000 % (kleiner) | – | – |
+| NL-90 | tip u_y / u_x / rotatie / reactie balk 2 | −0,01 / +0,02 (kleiner) / +0,01 / 0,00 % | – | – |
+| NL-90b | rotatie om X / reactiemoment wortel 1 / wortel 2 | 0,00 / 0,00 % / 0 N m | – | – |
 
 - **Interpretatie**:
   1. De route van de fork geeft door de hele bridge dezelfde getallen als de fork (tot
@@ -1506,9 +1528,12 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
      geen oplossing). Met een eindkracht (NL-83) en de kolom (NL-82) ligt de bridge binnen
      0,02 % van Mecway/CCX; het eindmoment van NL-81 haalde CCX niet verder dan
      t = 0,55 s (daar wel op de cirkelboog).
-  5. Niet in deze cases (WARNING in de bridge, KNOWN_BUGS 11): grote opgelegde rotaties
-     (een slanke balk convergeerde tot 0,41 rad), element offset, flexible joint en
-     koppelingen bij grote rotaties (lineaire relaties), een moment in 3D. Bezwijken van
+  5. Een flexible joint met U, V en W vrij koppelt alleen DX, DY en DZ en is daardoor
+     exact bij elke rotatie (NL-90, NL-90b). Een joint met een deel van de rotaties vrij
+     stopt bij `POU_D_T_GD` vooraf met een ERROR (KNOWN_BUGS 106).
+  6. Niet in deze cases (WARNING in de bridge, KNOWN_BUGS 11): grote opgelegde rotaties
+     (een slanke balk convergeerde tot 0,41 rad), element offset en koppelingen bij grote
+     rotaties (lineaire relaties), een moment in 3D. Bezwijken van
      elementen in een model met `POU_D_T_GD` geeft vooraf een ERROR (`CALCUL_37` na het
      eerste bezwijken, [`Bezwijken.md`](Bezwijken.md)).
 
@@ -3008,8 +3033,9 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
   contact in dynamica (impliciet
   en expliciet);
 - DKT bij grote verplaatsingen (KNOWN_BUGS 11; NL-02 alleen volumes en `COQUE_3D`;
-  balken met grote rotaties: `POU_D_T_GD`, NL-80 .. NL-89), en bij `POU_D_T_GD` grote
-  opgelegde rotaties, element offset, flexible joint en koppelingen;
+  balken met grote rotaties: `POU_D_T_GD`, NL-80 .. NL-90), en bij `POU_D_T_GD` grote
+  opgelegde rotaties, element offset en koppelingen (een flexible joint alleen met U, V
+  en W vrij, NL-90);
 - gap- en tension-only-elementen, dempers in transiente dynamica (DY, MD; dempers wel
   harmonisch en in complexe modes: HR-01d, MC, VH-04c).
 

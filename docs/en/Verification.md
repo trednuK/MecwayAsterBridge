@@ -98,7 +98,10 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 Status 16 October 2026. The whole table comes from one revision: the regression in
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `7e02e1e`
 (all steps, the final check S11 and the extensions of 15 and 16 October; Code-Aster 17.4):
-415 test cases, 2267 checks, 2260 OK, 7 BEKEND (known), 0 NOK/FOUT.
+415 test cases, 2267 checks, 2260 OK, 7 BEKEND (known), 0 NOK/FOUT. Updated on 22 October
+2026 with the flexible joint on an offset beam (LS-52a now OK, new LS-52c) and the joint with
+U, V and W free with `POU_D_T_GD` (NL-90, NL-90b; run of LS-51 .. LS-53, LS-62, LS-63,
+NL-80 .. NL-90): 418 test cases, 2278 checks, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -113,12 +116,12 @@ Status 16 October 2026. The whole table comes from one revision: the regression 
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 21 | 62 | 61 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 107 | 369 | 367 | 2 |
+| Linear static | 108 | 373 | 372 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 22 | 221 | 221 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 39 | 152 | 149 | 3 |
+| Nonlinear static | 41 | 159 | 156 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
@@ -127,7 +130,7 @@ Status 16 October 2026. The whole table comes from one revision: the regression 
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **415** | **2267** | **2260** | **7** |
+| **Total** | **418** | **2278** | **2272** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -535,28 +538,40 @@ meshes is given below.
 
 ### LS-52, LS-53 Flexible joint with element offset and section forces per element
 
-- **Goal**: (52) flexible joint together with an element offset (`tests_balken.py`).
-  Before, a joint on an offset element got its own node that was in no cell, and a node
+- **Purpose**: (52) flexible joint together with an element offset (`tests_balken.py`).
+  Earlier a joint on an offset element got an own node that was in no cell, and a node
   with only an offset beam and a beam with a joint had no degrees of freedom (both
-  `CHARGES2_31`). (53) the section forces per element (`beam_forces` as element values)
-  next to a joint and on line3 beams; before, the element with the joint and every line3
-  beam were silently missing.
-- **Model**: LS-51a (joint about W right of the middle) with an offset z = 10 mm
-  (global, normal to the bending plane) on (52a) the right half, so also on the element
-  with the joint, or (52b) the left half. (53a) LS-51a, (53b) LS-51e (4 line3), with
-  `beam_forces`.
-- **Reference**: (52a) the joint is dropped (WARNING), clamped at both ends:
-  δ = PL³/(192EI) = 0.31578 mm; (52b) hinge: δ = PL³/(48EI) = 1.2631 mm; Mecway 34 (own
-  solver) gives 1.2636 mm in both. (53) each half is a cantilever L/2 with P/2: M = 0 at
-  the hinge, (P/2) h further along the element, V = P/2.
-- **Result**: (52a) 0.31628 mm (+0.16 %; vs Mecway **KNOWN**, KNOWN_BUGS 108); (52b)
-  1.2636 mm (+0.04 %, equal to Mecway); reactions = load. (53a) all 10 elements, M at
-  the hinge 2e-13 N m, 5.000 N m at x = 0.6 m, V = 50 N; (53b) all 4 elements with
-  three values: 0 / 6.25 / 12.5 N m.
-- **Interpretation**: Mecway does apply a joint on an offset element; the bridge then
-  connects the element rigidly to the arm (open, KNOWN_BUGS 108). A line3 beam gets its
-  element values from both SEG2 halves (end 1 and middle from the first, end 2 from the
-  second).
+  `CHARGES2_31`); after that a joint on an offset element was not translated (rigidly
+  attached to the arm, KNOWN_BUGS 108d, fixed). (53) the section forces per element
+  (`beam_forces` as element values) next to a joint and on line3 beams; earlier the
+  element with the joint and every line3 beam were silently missing.
+- **Model**: LS-51a (joint about W right of the middle) with an offset z = e = 10 mm
+  (global, perpendicular to the bending plane) on (52a) the right half, so also on the
+  element with the joint, or (52b) the left half; (52c) as 52a with U, V and W free
+  (ball joint). (53a) LS-51a, (53b) LS-51e (4 line3), with `beam_forces`.
+- **Translation**: the joint sits at the Mecway node, before the rigid arm, as in the fork
+  by MishalTPC (`github.com/mishal0488/MecwayAsterBridge`, commit 773d59f, compared there
+  with Mecway 34): an own node at the Mecway node with the joint relations, and an own
+  rigid arm to an own offset node on which the element starts. So the arm turns along
+  with the released element.
+- **Reference**: (52a, 52b) hinge: δ = PL³/(48EI) = 1.2631 mm; Mecway 34 (own solver)
+  gives 1.2636 mm in both. (52c) where the joint sits shows in the torsion: the right half
+  gets the force F2 through the arm from the middle node, so the torque T = e F2; the
+  left half carries no torsion (rotx at the middle 0; with the joint at the end of the
+  arm it would be the other way round). Each half is a clamped beam L/2 with
+  k = 3EI/(L/2)³ (`POU_D_E`); the torsion moves the point of application by e θx:
+  F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1.2641 mm, |rotx| at x = 0.8 m =
+  T (L − x)/(GJ) = 7.8758e-5 rad. (52c) was not computed with Mecway. (53) each half is a
+  clamped beam L/2 with P/2: M = 0 in the hinge, (P/2) h further along the element,
+  V = P/2.
+- **Result**: (52a) 1.2636 mm (+0.04 %, equal to Mecway); (52b) 1.2636 mm (+0.04 %, equal
+  to Mecway); (52c) δ +0.00 %, rotx at the middle −4e-33 rad, rotx at 0.8 m +0.00 %;
+  reactions = load. (53a) all 10 elements, M in the hinge 2e-13 N m, 5.000 N m at
+  x = 0.6 m, V = 50 N; (53b) all 4 elements with three values: 0 / 6.25 / 12.5 N m.
+- **Interpretation**: a joint on an offset element now works as in Mecway (52a). An offset
+  line3 element with a joint is not translated yet (WARNING; the element is then rigidly
+  attached to the arm). A line3 beam gets its element values from both SEG2 halves
+  (end 1 and middle from the first, end 2 from the second).
 
 ### Extra result fields (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
@@ -1432,7 +1447,7 @@ samples) plus the kinks of the load tables (NL-20).
   the bridge as with a constant pressure). In linear static the bridge takes t = end
   time (WARNING).
 
-### NL-80 .. NL-89 Beams with large rotations (`POU_D_T_GD`)
+### NL-80 .. NL-90 Beams with large rotations (`POU_D_T_GD`)
 
 - **Purpose**: `elem_beam` = `POU_D_T_GD` ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)):
   `MODELISATION='POU_D_T_GD'`, `RELATION='ELAS_POUTRE_GR'`, `DEFORMATION='GROT_GDEP'`,
@@ -1461,6 +1476,8 @@ samples) plus the kinks of the load tables (NL-20).
 | NL-87b | the same model, configuration G (line pressure suppressed) | the same with w = ρAg |
 | NL-88 | Thermal stress, ΔT = 100 K | α ΔT L |
 | NL-89 | line pressure as a formula `-30*x*t` N/m in −Z (Mecway step 0.5 s) | 11 q0 L⁴/(120EI) + q0 L²/(3kGA) (Roark), proportional to t; reaction q0 L/2 |
+| NL-90 | two coincident clamped beams that only share the tip; the second ends there with a flexible joint with U, V and W free (ball joint); tip force P = 1400 N in Y | each beam P/2 (identical, tip free to rotate): Reissner beam of NL-83 with PL²/EI = 2 per beam; reaction of beam 2 −P/2 |
+| NL-90b | the same, general section (A = 1e-4 m², I = 1e-8/12 m⁴, J = 1.4e-9 m⁴), tip moment M = GJ (π/2)/L about X | the joint passes no moment: beam 1 twists through π/2, reaction moment −M at root 1 and 0 at root 2 (rigid: π/4 and −M/2) |
 
   NL-83 also compares the section forces with statics in the deformed state (FEM
   coordinates): `bendingmomw` of element 1 = P (x_tip − x_middle), `sheary` and
@@ -1469,7 +1486,9 @@ samples) plus the kinks of the load tables (NL-20).
   B31; `TestFiles/Tools/mw_solve.py`, mean of the section nodes at x = L).
   Tolerance 0.1 %; stricter: the moment in NL-81, NL-84 and NL-85 0.01 %, the normal
   force there absolute 0.05 N (reference 0), the reactions in NL-83, NL-87, NL-87b and
-  NL-89 and the extension in NL-88 1e-6 relative.
+  NL-89 and the extension in NL-88 1e-6 relative; in NL-90b the rotation and reaction
+  0.01 %, the reaction moment of root 2 absolute 1e-6 M. NL-90 and NL-90b rebuild
+  `check_nonlinear_releases.py` of the fork by MishalTPC (branch dev).
 - **Result**: all checks OK.
 
 | Case | Quantity | Deviation | Fork (GB) | Mecway 34 + CCX |
@@ -1488,6 +1507,8 @@ samples) plus the kinks of the load tables (NL-20).
 | NL-87, NL-87b | tip deflection / reaction | +0.0008 / 0.0000 %; +0.0002 / 0.0000 % | – | – |
 | NL-88 | tip extension | 0.0000 % | – | – |
 | NL-89 | tip deflection at t = 0.5 and 1 / reaction | +0.0285 / +0.0287 / 0.0000 % (smaller) | – | – |
+| NL-90 | tip u_y / u_x / rotation / reaction beam 2 | −0.01 / +0.02 (smaller) / +0.01 / 0.00 % | – | – |
+| NL-90b | rotation about X / reaction moment root 1 / root 2 | 0.00 / 0.00 % / 0 N m | – | – |
 
 - **Interpretation**:
   1. Through the whole bridge the route of the fork gives the same numbers as the fork
@@ -1503,9 +1524,12 @@ samples) plus the kinks of the load tables (NL-20).
      headless). With a tip force (NL-83) and the column (NL-82) the bridge is within
      0.02 % of Mecway/CCX; CCX did not get the end moment of NL-81 beyond t = 0.55 s
      (on the circular arc up to there).
-  5. Not in these cases (WARNING in the bridge, KNOWN_BUGS 11): large imposed rotations
-     (a slender beam converged up to 0.41 rad), element offset, flexible joint and
-     couplings at large rotations (linear relations), a moment in 3D. Element failure in
+  5. A flexible joint with U, V and W free only ties DX, DY and DZ and is therefore exact
+     at any rotation (NL-90, NL-90b). A joint with only some rotations free stops with an
+     ERROR beforehand with `POU_D_T_GD` (KNOWN_BUGS 106).
+  6. Not in these cases (WARNING in the bridge, KNOWN_BUGS 11): large imposed rotations
+     (a slender beam converged up to 0.41 rad), element offset and couplings at large
+     rotations (linear relations), a moment in 3D. Element failure in
      a model with `POU_D_T_GD` gives an ERROR beforehand (`CALCUL_37` after the first
      failure, [`Failure.md`](Failure.md)).
 
@@ -3012,8 +3036,9 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
   contact in dynamics (implicit and
   explicit);
 - DKT at large displacements (KNOWN_BUGS 11; NL-02 only solids and `COQUE_3D`; beams
-  with large rotations: `POU_D_T_GD`, NL-80 .. NL-89), and with `POU_D_T_GD` large imposed
-  rotations, element offset, flexible joint and couplings;
+  with large rotations: `POU_D_T_GD`, NL-80 .. NL-90), and with `POU_D_T_GD` large imposed
+  rotations, element offset and couplings (a flexible joint only with U, V and W free,
+  NL-90);
 - gap and tension-only elements, dampers in transient dynamics (DY, MD; dampers are
   covered in harmonic response and complex modes: HR-01d, MC, VH-04c).
 
