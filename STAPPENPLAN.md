@@ -52,6 +52,7 @@ S7, S8, S5, S9).
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
+| S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1319,3 +1320,48 @@ converge, runs 17.4): ERROR in `_check_gd_beams`. Trusses (`BARRE`) in the centr
 `FORCE_POUTRE` (was an ERROR "not translated"). `aster_results_export._report_missing` no longer reports the
 `beam_forces` source of the other beam formulation (EFGE_* vs SIEF_*). New cases NL-80c (constant force and
 moment) and NL-86b (truss + GD beam, centrifugal): 14 cases, 55 checks (45 in series, 10 with in_series=False).
+
+### S21 – Selective flexible joint on `POU_D_T_GD` beams (GD stub)
+**Goal:** replace the ERROR of `bridge_to_aster._check_gd_joints` (a flexible joint with only some of U, V, W free
+on a `POU_D_T_GD` beam, KNOWN_BUGS 106b) by a physically sound joint, but only if two benchmarks pass (user's
+decision). Code-Aster 17.4 has no objective partial hinge: `LIAISON_DDL` on DR* is a relation in fixed axes,
+`DIS_TR` does not co-rotate, `LIAISON_SOLIDE` is refused on nodes with DR*, and there is no hinge element.
+**Method (prototype):** per selective joint a short connecting `POU_D_T_GD` element (stub) from the joint node A to a
+new node C = A + L_h e1 on the side of the released element (that element reconnected to C), L_h = 1e-3 L_e, with
+the beam's A, AY, AZ and JX and a near-zero IY and/or IZ in the released local directions,
+EI_h = c EI L_h/L_e with c = 1e-5, `ORIENTATION VECT_Y` = the beam's y axis, in the same `STAT_NON_LINE`
+(`ELAS_POUTRE_GR`, `GROT_GDEP`). Expected bounds: hinge position error L_h/(2 L), residual moment EI_h theta/L_h.
+**Pass criteria (fixed before the runs):** B1 joint and member moments < 1e-6 M_ref (M_ref = EI/L x 1 rad) and
+forces < 1e-6 EI/L^2 under a rigid rotation, also after a closed rotation path; B2 end rotation and shortening
+within 0.5 % of the elastica at the default stub parameters.
+**Results** (22 Oct 2026, hand-written .comm files, Code-Aster 17.4, ncpus 1; frame of two members of 1 m,
+10 elements each, section 10 x 20 mm, joint at the corner; column of 1 m, 40 elements):
+- B1, objectivity: **failed, and not because of the stub.** With all node translations imposed as an exact rigid
+  rotation (FORMULE in INST, rotations free) the plain frame *without* stub is exact for a rotation about a global
+  axis (X, Y or Z: moments < 3e-13 M_ref over 120 degrees), but about a skew axis (1,1,0) it builds up spurious
+  section forces that depend on the step size: at 10 degrees max |M| = 6.0e-2, 2.6e-2, 4.6e-3, 6.4e-4 M_ref with
+  2, 4, 8, 16 steps; over 120 degrees about (1,2,3) it reaches 4 M_ref at 60 degrees and stops converging
+  (MECANONLINE9_7/9_4, also with 0.5-degree steps, `PREDICTION='EXTRAPOLE'` does not help, `ELASTIQUE` gives
+  CALCUL_37). The Newton residual at the start of each equal rotation step grows with the accumulated rotation
+  (1.6e3, 2.6e3, 3.7e3, ... 5.7e4 N), so the element does not respond objectively to a rigidly rotated increment:
+  an incremental (path-dependent) update of the strains, the behaviour Crisfield & Jelenic (1999) describe for
+  interpolated incremental rotations (the Fortran is not in the installation: NOT verified in the source). With the
+  stub (W or VW released) the members show the same 6.4e-4 M_ref, the stub's retained moment 2.6e-6 M_ref and the
+  forces 5e-2 F_ref (8x the frame without stub: the short stiff stub amplifies the spurious shear). The closed path
+  (60 degrees about Y, then 60 about Z, back along the geodesic) did not get past 70 degrees (TimeLimitError after
+  15 min, subdivision level 7), so no residual torsion moment could be measured. Driving only three nodes instead of
+  all gives the same failures plus Newton divergence.
+- B2, hinged elastica (in-plane, rotations about one global axis): **passed.** Load control up to 2 P_cr,
+  imperfection 1e-3 L. Ideal hinge (free DRZ at the end nodes) against the elastica (Timoshenko & Gere): end rotation
+  +0.26/-0.02/-0.05 %, shortening +0.89/+0.18/+0.04 %, midspan deflection +0.04/-0.20/-0.23 % at P/P_cr = 1.2/1.5/2.0
+  (the 0.9 % at 1.2 is the imperfection close to bifurcation). Stub with the defaults: end rotation +0.20/-0.05/-0.07 %,
+  shortening +0.77/+0.14/+0.02 %, mid -0.00/-0.20/-0.22 %; residual stub moment 1.1e-4 of P delta, equal to the bound
+  EI_h alpha/L_h. Stub minus ideal hinge at 2 P_cr (end rotation): -0.015 % (defaults), -0.13 % (c = 1e-4),
+  -0.004 % (c = 1e-6), -0.040 % (L_h = 1e-2 L_e): scales with c and L_h as the bounds predict. Conditioning: with
+  `RESI_GLOB_RELA` = 1e-8 the stub run stalls at a residual of ~1e-6 (round-off), with 1e-5 (bridge default) it
+  converges.
+**Conclusion:** the stub works as a hinge in plane, but the objectivity benchmark fails for every `POU_D_T_GD`
+model with rotations about a skew axis, so a stub cannot be shown to be objective in 3D. ERROR kept (user's rule);
+the spurious forces under skew rigid rotation are recorded as a limitation of `POU_D_T_GD` in KNOWN_BUGS 11. Possible
+follow-up (not planned): an in-plane-only stub (joint axis and all loads in one plane) with its own benchmark, or a
+re-test with Code-Aster 18.
