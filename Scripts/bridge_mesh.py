@@ -512,13 +512,21 @@ def _line3_truss_links(model_data, nodes, conn, elements, split_line3,
     """
     fixed = {}       # nid -> set(DX/DY/DZ) fixed by a kinematic condition
     for bc in model_data.get("bcs", []):
+        # Hard kinematic conditions only (a spring or compression-only
+        # support does not fix the DOF). Symmetry and frictionless only
+        # with explicit global DX/DY/DZ: their per-node directions
+        # (bc["oblique"]) are made later, in _apply_to_model_data, and the
+        # broad _bc_dofs fallback ("all fixed") would drop the midside
+        # condition and leave a mechanism (KNOWN_BUGS 107).
         if bc.get("skip") or bc.get("type") not in (
-                "fixed", "pinnedsupport", "displacement"):
+                "fixed", "pinnedsupport", "displacement", "symmetry",
+                "frictionless"):
             continue
         d = bc.get("aster_dict") or {}
         if "ANGL_NAUT" in d:
             continue
-        if bc["type"] == "pinnedsupport" or "BLOCAGE" in d:
+        if bc["type"] == "pinnedsupport" or (
+                bc["type"] == "fixed" and "BLOCAGE" in d):
             dofs = set(("DX", "DY", "DZ"))
         else:
             dofs = set(k for k in d if k in ("DX", "DY", "DZ"))
@@ -743,7 +751,9 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                 log("INFO: Flexible joint on truss element {0}: a bar "
                     "is already pinned.".format(eid))
                 continue
-            if mod not in _LINE3_SPLIT_MODS:
+            # Beams only: _LINE3_SPLIT_MODS also holds the bars (BARRE,
+            # CABLE), which have no rotations (DRX/DRY/DRZ) to release.
+            if mod in _LINE3_BAR_MODS or mod not in _LINE3_SPLIT_MODS:
                 _not_translated(
                     model_data, {"selection": j["selection"]},
                     "Flexible joint",

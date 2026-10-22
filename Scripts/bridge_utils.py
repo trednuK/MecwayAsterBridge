@@ -726,7 +726,12 @@ MODEL_DIR_SUFFIX = "_aster"
 
 def set_model_path(liml_path):
     """Remember the open model (mw.file_name(); empty or None = not saved
-    yet). work_dir_path() uses it with work_dir_beside_model."""
+    yet). work_dir_path() uses it with work_dir_beside_model. A bare
+    name without a folder (in case Mecway returns e.g. "Untitled" for a
+    model that was never saved; NOT verified) also counts as not saved,
+    so that no <name>_aster appears in Mecway's current folder."""
+    if liml_path and not os.path.dirname(liml_path):
+        liml_path = None
     _MODEL["path"] = liml_path or None
 
 
@@ -1116,7 +1121,7 @@ def log(text):
     it is created; if writing fails, the message is lost instead of
     making the action fail."""
     work_dir = _log_dir()
-    log_path  = os.path.join(work_dir, _RUN_LOG["name"])
+    path = os.path.join(work_dir, _RUN_LOG["name"])
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         if not os.path.isdir(work_dir):
@@ -1124,7 +1129,7 @@ def log(text):
         # io.open with UTF-8: messages from study.mess contain French
         # accents (e.g. "numéro"), which plain open() cannot always
         # handle.
-        with io.open(log_path, "a", encoding="utf-8") as f:
+        with io.open(path, "a", encoding="utf-8") as f:
             f.write(u"[{0}] {1}\n".format(timestamp, run_names(text)))
     except (IOError, OSError):
         pass

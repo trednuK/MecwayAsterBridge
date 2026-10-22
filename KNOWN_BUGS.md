@@ -431,7 +431,12 @@ Code-Aster value per node) and logs the largest difference per variable.
    is not computed by CCX there ("nonpositive jacobian").
    A line3 truss (`BARRE`) is split the same way; its midside node is tied across the
    chord to the mean of the end nodes (`bridge_mesh._line3_truss_links`; verification
-   LS-54, MO-08).
+   LS-54, MO-08). A direction that a fixed support, pinned support or displacement fixes
+   on all three nodes is skipped (else the matrix is singular). A *symmetry* or
+   *frictionless* condition counts only with explicit global DX/DY/DZ: its per-node
+   directions are made later in `write_mesh`, so a plane line3 truss held out of plane
+   only by symmetry or frictionless may still stop with a singular matrix (zero pivot)
+   (suspected, not reproduced). Solution: hold it with a displacement uz = 0 instead.
 
 108\. **Element offset: small rotations, values at the nodes and combinations**
    (confirmed, `bridge_offset.py`). Beams and COQUE_3D shells (tri6/quad8 or the option

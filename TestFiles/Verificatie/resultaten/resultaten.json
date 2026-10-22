@@ -29274,7 +29274,7 @@
   "series": null,
   "h": null,
   "note": "<flexiblejoint><rotw/> -> eigen knoop + LIAISON_DDL (C6).",
-  "seconds": 9.1,
+  "seconds": 4.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29348,7 +29348,7 @@
   "series": null,
   "h": null,
   "note": "Controleert de lokale assen: V = Y bij een balk langs X.",
-  "seconds": 8.0,
+  "seconds": 3.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29394,7 +29394,7 @@
   "series": null,
   "h": null,
   "note": "Knoop zonder ander element met rotaties: POI1 DIS_TR.",
-  "seconds": 4.8,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29454,7 +29454,7 @@
   "series": null,
   "h": null,
   "note": "Joint met U, V en W vrij op het ingeklemde uiteinde.",
-  "seconds": 4.6,
+  "seconds": 4.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29514,7 +29514,7 @@
   "series": null,
   "h": null,
   "note": "C4 + C6: joint op het uiteinde van een gesplitst element. Mecway rekent dit niet (line3 alleen met CCX, joint niet met CCX).",
-  "seconds": 4.9,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29546,7 +29546,7 @@
   "series": null,
   "h": null,
   "note": "Balk langs Z: Mecway V = Y; last in X buigt om V.",
-  "seconds": 5.0,
+  "seconds": 3.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29592,7 +29592,7 @@
   "series": null,
   "h": null,
   "note": "Joint op het eindvlak van een verschoven element: in de Mecway-knoop, met een eigen starre arm (KNOWN_BUGS 108d opgelost).",
-  "seconds": 5.6,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29652,7 +29652,7 @@
   "series": null,
   "h": null,
   "note": "Middenknoop alleen nog in de arm en de joint: POI1 DIS_TR (J<N>).",
-  "seconds": 4.2,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29712,7 +29712,7 @@
   "series": null,
   "h": null,
   "note": "Cel van element 6 op de eigen knoop van de joint.",
-  "seconds": 5.0,
+  "seconds": 3.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29794,7 +29794,7 @@
   "series": null,
   "h": null,
   "note": "Line3 als twee SEG2-cellen: waarden van beide helften op het Mecway-element.",
-  "seconds": 4.8,
+  "seconds": 3.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39797,7 +39797,7 @@
   "series": null,
   "h": null,
   "note": "Line3-truss als twee SEG2-cellen (BARRE), middenknoop dwars gekoppeld (GitHub issue #6). Mecway 34 zelf: 450 en 1030 Hz.",
-  "seconds": 3.7,
+  "seconds": 3.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39843,7 +39843,7 @@
   "series": null,
   "h": null,
   "note": "Kogelscharnier op het verschoven element: de arm draait met het element mee.",
-  "seconds": 5.1,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39917,7 +39917,7 @@
   "series": null,
   "h": null,
   "note": "Naar check_nonlinear_releases.py van de fork van MishalTPC; de joint koppelt alleen DX/DY/DZ (exact).",
-  "seconds": 6.0,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39996,7 +39996,7 @@
   "series": null,
   "h": null,
   "note": "Een starre verbinding zou pi/4 geven; general section met gegeven J.",
-  "seconds": 4.9,
+  "seconds": 4.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
