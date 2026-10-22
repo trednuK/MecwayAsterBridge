@@ -96,10 +96,10 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 ## 3. Summary
 
 Status 22 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `66c24db`
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `9e388a6`
 (V2026.4: all steps up to and including the extensions of 22 October, among them line3
 trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aster 17.4):
-428 test cases, 2301 checks, 2295 OK, 6 BEKEND (known), 0 NOK/FOUT.
+431 test cases, 2318 checks, 2312 OK, 6 BEKEND (known), 0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -114,12 +114,12 @@ trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aste
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 21 | 62 | 61 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 109 | 376 | 375 | 1 |
+| Linear static | 111 | 389 | 388 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 23 | 223 | 223 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 49 | 177 | 174 | 3 |
+| Nonlinear static | 50 | 181 | 178 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
@@ -128,7 +128,7 @@ trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aste
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **428** | **2301** | **2295** | **6** |
+| **Total** | **431** | **2318** | **2312** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

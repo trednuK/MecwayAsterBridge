@@ -5,7 +5,7 @@
 Quadratic trusses, hyperelastic materials, the elastic modulus from the plastic curve as
 in Mecway, buttons in the convergence window, a work folder next to the model and better
 flexible joints, most of them from GitHub issues (trednuK/MecwayAsterBridge). Tested in
-Mecway 34 with Code-Aster 17.4; verification 428 test cases, 2301 checks (2295 OK, 6 known
+Mecway 34 with Code-Aster 17.4; verification 431 test cases, 2318 checks (2312 OK, 6 known
 limitations, 0 unexpected).
 
 - **Line3 trusses** (issue #6): quadratic trusses and cables (line3, `truss="true"`) are

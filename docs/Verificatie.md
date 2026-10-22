@@ -98,10 +98,10 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 ## 3. Samenvatting
 
 Stand 22 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `66c24db`
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `9e388a6`
 (V2026.4: alle stappen tot en met de uitbreidingen van 22 oktober, o.a. line3-staven,
 hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
-428 testcases, 2301 controles, 2295 OK, 6 BEKEND, 0 NOK/FOUT.
+431 testcases, 2318 controles, 2312 OK, 6 BEKEND, 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -116,12 +116,12 @@ hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 21 | 62 | 61 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 109 | 376 | 375 | 1 |
+| Lineair statisch | 111 | 389 | 388 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 23 | 223 | 223 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 49 | 177 | 174 | 3 |
+| Niet-lineair statisch | 50 | 181 | 178 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
@@ -130,7 +130,7 @@ hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **428** | **2301** | **2295** | **6** |
+| **Totaal** | **431** | **2318** | **2312** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

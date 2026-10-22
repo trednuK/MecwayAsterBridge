@@ -1,6 +1,6 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge ff708f4, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 9e388a6, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
 **2312 van 2318 controles binnen de tolerantie** (431 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
@@ -1156,8 +1156,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge ff708f4, Code-Aster 17.4
 | LS-54a | Staaf, een line3-truss-element, trekkracht | verlenging tip | 6.0630e-05 m | 6.0630e-05 | +0.00% | 0.0001% | OK |
 | LS-54a | Staaf, een line3-truss-element, trekkracht | verplaatsing middenknoop | 3.0315e-05 m | 3.0315e-05 | +0.00% | 0.0001% | OK |
 | LS-54a | Staaf, een line3-truss-element, trekkracht | dwarsverplaatsing middenknoop | 0 m | 0 | 0 | 1e-12 m | OK |
-| LS-54b | Kabel (tension only), een line3-element, trekkracht | verlenging tip | 6.0630e-05 m | 6.0625e-05 | -0.01% | 0.01% | OK |
-| LS-54b | Kabel (tension only), een line3-element, trekkracht | verplaatsing middenknoop | 3.0315e-05 m | 3.0312e-05 | -0.01% | 0.01% | OK |
+| LS-54b | Kabel (tension only), een line3-element, trekkracht | verlenging tip | 6.0630e-05 m | 6.0625e-05 | -0.01% | 0.02% | OK |
+| LS-54b | Kabel (tension only), een line3-element, trekkracht | verplaatsing middenknoop | 3.0315e-05 m | 3.0312e-05 | -0.01% | 0.02% | OK |
 | LS-54b | Kabel (tension only), een line3-element, trekkracht | reactiekracht X | -1000 N | -1000 | -0.00% | 0.0001% | OK |
 | LS-54c | Twee line3-kabels in serie, een op druk: draagt niets | verplaatsing knoop ertussen | 6.0630e-05 m | 6.0619e-05 | -0.02% | 0.1% | OK |
 | LS-54c | Twee line3-kabels in serie, een op druk: draagt niets | reactie links (trekkabel) | -1000 N | -999.9 | +0.01% | 0.1% | OK |
