@@ -78,6 +78,19 @@ def test_work_dir(tmp):
     check(not u.path_too_long(), "short folder: path not too long")
     u.set_run_log(None)
 
+    # Outside a run bridge_log.txt stays in the normal work folder: opening
+    # the start screen must not create <model>_aster
+    other = os.path.join(tmp, "Other")
+    liml2 = os.path.join(other, "Unrun.liml")
+    os.makedirs(other)
+    u.set_model_path(liml2)
+    u.log("INFO: outside a run")
+    check(os.path.isfile(os.path.join(fixed, "bridge_log.txt")),
+          "outside a run: bridge_log.txt in the normal work folder")
+    check(not os.path.isdir(u.model_work_dir(liml2)),
+          "outside a run: no <model>_aster created")
+    u.set_model_path(liml)
+
     # path_too_long() is computed with the folder next to the model
     deep = os.path.join(tmp, *(["x" * 40] * 6))
     u.set_model_path(os.path.join(deep, "Model.liml"))

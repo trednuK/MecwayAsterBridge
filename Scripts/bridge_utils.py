@@ -1095,12 +1095,27 @@ def run_names(text):
     return text
 
 
+def _log_dir():
+    """Folder of the current log file. Outside a run (bridge_log.txt) the
+    normal work folder, also with work_dir_beside_model: otherwise just
+    opening the start screen would create <model>_aster next to a model
+    that is never run. During a run the run's work folder."""
+    if _RUN_LOG["id"] is None:
+        return resolve_work_dir(CONFIG_BRIDGE.get("work_dir"))
+    return work_dir_path()
+
+
+def log_path():
+    """Full path of the current log file (see _log_dir)."""
+    return os.path.join(_log_dir(), _RUN_LOG["name"])
+
+
 def log(text):
     """Write a time-stamped log line to the log file of the
     run. If the working directory is missing (e.g. a fresh installation),
     it is created; if writing fails, the message is lost instead of
     making the action fail."""
-    work_dir = work_dir_path()
+    work_dir = _log_dir()
     log_path  = os.path.join(work_dir, _RUN_LOG["name"])
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
@@ -1119,8 +1134,7 @@ def log_size():
     """Current size in bytes of the run's log file (0 if it does not
     exist yet): a mark for log_errors."""
     try:
-        return os.path.getsize(os.path.join(work_dir_path(),
-                                            _RUN_LOG["name"]))
+        return os.path.getsize(log_path())
     except (IOError, OSError):
         return 0
 
@@ -1135,7 +1149,7 @@ def log_errors(since=0, limit=3):
     _notify_mesh_failure). The lines are already in the user's language
     (tr). Returns [] if the log cannot be read.
     """
-    path = os.path.join(work_dir_path(), _RUN_LOG["name"])
+    path = log_path()
     out = []
     try:
         with io.open(path, "rb") as f:
