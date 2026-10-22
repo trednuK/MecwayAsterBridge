@@ -111,7 +111,8 @@ from datetime import datetime
 from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 set_run_log, log_file_name, tr, run_name,
                                 run_names, path_too_long, work_dir_path,
-                                exe_aster_path, BRIDGE_VERSION)
+                                exe_aster_path, set_model_path,
+                                BRIDGE_VERSION)
 from bridge_gui         import (run_settings_dialog, results_dialog,
                                 claim_instance, release_instance,
                                 instance_busy_text)
@@ -200,6 +201,9 @@ def _run(settings):
     # File names: <Mecway file>_<run_id>... (mw.file_name(): the open
     # model; not saved yet: "model").
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Open model first: work_dir_beside_model puts the work folder next to
+    # it (work_dir_path), also for the length check in set_run_log.
+    set_model_path(mw.file_name())
     set_run_log(run_id, mw.file_name())
 
     # Create the work folder if it does not exist yet
@@ -1248,7 +1252,9 @@ def main():
     status = u""
     while True:
         # Outside a run the bridge logs to bridge_log.txt (not to the log
-        # of the previous run).
+        # of the previous run). The open model determines the work folder
+        # with work_dir_beside_model (start screen, Results...).
+        set_model_path(mw.file_name())
         set_run_log(None)
         settings = run_settings_dialog(mw, status)
         action = settings.get("action", "run" if settings["ok"] else "close")

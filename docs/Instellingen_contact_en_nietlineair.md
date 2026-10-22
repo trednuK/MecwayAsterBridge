@@ -849,7 +849,7 @@ analyse (`MECA_STATIQUE`) toont het de lineaire oplosser (zie *Lineaire analyse*
 hieronder); bij `THER_LINEAIRE` de meldingen (fouten en alarmen met uitleg in de
 gekozen taal) en de diagnose. Achteraf: de
 knop *Convergentiescherm* in het hoofdvenster van de bridge toont de laatste run uit
-de werkmap; met "Open .mess ..." kies je een ander bestand. Het scherm blijft open
+de werkmap; met "Open .mess ..." kies je een ander bestand. De knoppen bovenaan horen bij de getoonde run: *.comm* en *.mail* openen het bestand in Kladblok (deze extensies hebben geen bestandskoppeling; grijs als het bestand ontbreekt), *Map* opent de Verkenner op de werkmap met de `.mess` geselecteerd, *ParaView* opent `<model>_<run-id>.rmed` (alleen met *MED-bestand voor ParaView*; anders zegt het scherm dat; welke ParaView: instelling *ParaView*, [Handleiding §3](Handleiding.md#3-het-hoofdvenster)), *Opnieuw lezen* leest de bron opnieuw. Het scherm blijft open
 naast Mecway en het hoofdvenster. Het venster draait in de Python van Code-Aster; sluiten
 heeft geen invloed op de run of op Mecway.
 

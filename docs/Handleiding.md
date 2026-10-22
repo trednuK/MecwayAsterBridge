@@ -139,7 +139,7 @@ knoppen links.
 |---|---|
 | Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1). Daarna komt het venster terug |
-| Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de map uit het veld *Werkmap*; is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
+| Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | Uitleg... | Opent op de pagina Documentatie de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) |
 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten* of *Resultaten...* hebt gewijzigd, worden niet opgeslagen |
 
@@ -163,6 +163,7 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Taal / Language | `en` | `nl` (Nederlands) of `en` (Engels): hoofdvenster, meldingen, WARNING/ERROR-regels in de log en het convergentiescherm, en de WAARSCHUWING/FOUT-regels (en: WARNING/ERROR) die de bridge-scripts in de Code-Aster-job naar de `.mess` schrijven. Geldt direct voor de run; het hoofdvenster wisselt van taal als het terugkomt. INFO/SUCCESS-regels en het commentaar in de `.comm` zijn altijd Engels |
 | Code-Aster launcher (run_aster.bat) | `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat` | pad naar `run_aster.bat`; omgevingsvariabelen zoals `%LOCALAPPDATA%` mogen. Bestaat het bestand niet, dan zegt het statusvak dat bij de start; kies het met *Bladeren...* |
 | Werkmap | leeg = `WorkDir` naast de map `Scripts` (het venster toont dat pad) | map voor mesh, `<model>_<run-id>.*`, log en resultaten (§5); wordt aangemaakt als hij niet bestaat |
+| Werkmap naast het model (<model>_aster) | uit | aan: de bestanden van een run gaan naar de submap `<model>_aster` naast het open `.liml`-bestand (bijv. `C:\Projecten\Ligger.liml` → `C:\Projecten\Ligger_aster`), ook voor *Resultaten...*, het convergentiescherm en adaptieve verfijning; naast het vinkje staat de map die gebruikt wordt. Een model dat nog niet is opgeslagen gebruikt de *Werkmap* |
 | Aantal CPU-kernen (ncpus) | 1 | `ncpus` (threads) in de `.export`; de bridge rekent zonder MPI (`mpi_nbcpu 1`) |
 | Actieve analyse (auto = volgens Mecway) | `auto` | `auto` volgt het Mecway-analysetype: S30 → Statisch, L30 → Niet-lineair statisch, D30 met *Mode superposition* → Respons op modale basis, D30 zonder en D31 → Dynamisch (impliciet), T30/T31 → Thermisch, V30 → Modaal (met een fluïdum-onderdeel: Vibro-akoestiek (modes)), B30 → Knik, A30 → Akoestiek (holtemodes; met een bron, `BRON_`-selectie, Akoestiek (harmonisch)); geldt alleen voor die run. Of kies zelf een analyse (Dynamisch (expliciet) kies je altijd zelf). Een ander Mecway-type (2D, ...) met `auto`: de bridge stopt met een melding |
 | Configuratie (auto = volgens de regel) | `auto` | welke configuratie de bridge rekent en in welke solution de resultaten komen; de lijst toont de configuraties van het open model (laatst opgeslagen versie). `auto`: de enige configuratie, anders de enige zonder onderdrukte items, anders de eerste (WARNING). Een naam die niet in het model staat: WARNING en `auto` (§4) |
@@ -171,6 +172,7 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Convergentie- en meldingenscherm | aan | opent bij elke run een apart venster: bij een niet-lineaire analyse residuen, voortgang en contact; bij de statische analyse de lineaire oplosser (tijd per fase, foutgrens, conditiegetal; bij GCPC het residu per iteratie); bij modaal en knik de eerste modes; bij elke analyse de meldingen (fouten en alarmen met uitleg) en de diagnose. Achteraf: knop *Convergentiescherm*. Zie [Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm) |
 | Wachten op Code-Aster | `auto` | `auto`: een modaal statusvenster met de voortgang en *Stoppen...*; de bridge herkent zelf het einde van de run en laadt dan de resultaten (§2 stap 5). `confirm`: je klikt op OK in Mecway als het Code-Aster-venster `DIAGNOSTIC JOB` toont (het eerdere gedrag) |
 | MED-bestand voor ParaView | uit | schrijft ook `<model>_<run-id>.rmed` (ParaView/Salome); Mecway gebruikt het niet en het kan honderden MB worden |
+| ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knop *ParaView* van het convergentiescherm; leeg = automatisch: eerst de ParaView van Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`), die een MED-lezer heeft, daarna `%ProgramFiles%\ParaView*\bin\paraview.exe`. ParaView 5.10 van paraview.org heeft **geen** MED-lezer en kan een `.rmed` niet openen. Omgevingsvariabelen mogen |
 
 Onder de instellingen staan de koppeling van `auto` aan de Mecway-analysetypen, een
 opmerking over de taal en het pad van `bridge_utils.py`.
@@ -435,7 +437,7 @@ Mecway-bestand (tekens buiten A-Z, a-z, 0-9, `-` en `_` worden `_`, zonder dubbe
 `_`, bijv. `Mijn Model (v2).liml` → `Mijn_Model_v2`; bij een te lang
 pad ingekort, §1), `<run-id>` de datum en tijd van de start, bijv.
 `ProfielBuigen_20261006_101500.mess`. Zo staan ze bij elkaar en overschrijft een
-volgende run niets. In meldingen staat de echte naam.
+volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit het veld *Werkmap*, of met *Werkmap naast het model* de submap `<model>_aster` naast het open model (§3).
 
 | Bestand | Inhoud |
 |---|---|
@@ -448,7 +450,7 @@ volgende run niets. In meldingen staat de echte naam.
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
-| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView* |
+| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |
 | `<model>_<run-id>_monitor_log.txt` | log van het convergentie- en meldingenscherm |
 

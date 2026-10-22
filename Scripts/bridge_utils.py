@@ -12,6 +12,7 @@
 #   - Has no import dependencies on other bridge_* modules,
 #     to avoid circular imports.
 
+import glob
 import io
 import os
 import re
@@ -52,6 +53,10 @@ CONFIG_BRIDGE = {
     # folder WorkDir next to the folder Scripts (work_dir_path()); environment
     # variables and ~ are expanded.
     "work_dir":        "",
+    # True: the run files go to the subfolder <model>_aster next to the open
+    # .liml (model name via model_stem) instead of work_dir; without a saved
+    # model work_dir is used (work_dir_path(), set_model_path()).
+    "work_dir_beside_model": False,
 
     # Number of CPU cores (threads) for Code-Aster (ncpus=1 = no parallelism)
     "ncpus":           1,
@@ -74,6 +79,11 @@ CONFIG_BRIDGE = {
     # Also write a MED file (<model>_<run_id>.rmed) for
     # ParaView/Salome. Mecway does not use it; it can reach hundreds of MB.
     "med_export":      False,
+    # ParaView for the ParaView button of the convergence window (opens the
+    # .rmed of the run). Empty ("") = search automatically: first a ParaView
+    # with a MED reader (Salome-Meca), then a plain ParaView
+    # (paraview_exe_path()). Environment variables are expanded.
+    "paraview_exe":    "",
 
     # --- Element formulation (applies to all analyses) ---
     # Hex8 solid elements: "3D" (fully integrated) or "3D_SI"
@@ -706,14 +716,103 @@ def default_work_dir():
     return os.path.join(os.path.dirname(SCRIPTS_DIR), "WorkDir")
 
 
+# Path of the open Mecway model (.liml), set by the main script from
+# mw.file_name() (set_model_path); None outside Mecway (offline tests).
+_MODEL = {"path": None}
+
+# Suffix of the work folder next to the model (work_dir_beside_model).
+MODEL_DIR_SUFFIX = "_aster"
+
+
+def set_model_path(liml_path):
+    """Remember the open model (mw.file_name(); empty or None = not saved
+    yet). work_dir_path() uses it with work_dir_beside_model."""
+    _MODEL["path"] = liml_path or None
+
+
+def model_path():
+    """The open model from set_model_path(), or None."""
+    return _MODEL["path"]
+
+
+def model_work_dir(liml_path):
+    """Work folder next to the model: <folder of the .liml>/<model>_aster
+    (model name via model_stem). None without a model path."""
+    if not liml_path:
+        return None
+    folder = os.path.dirname(os.path.abspath(liml_path))
+    return os.path.join(folder, model_stem(liml_path) + MODEL_DIR_SUFFIX)
+
+
+def resolve_work_dir(work_dir, beside_model=False, liml_path=None):
+    """
+    Work folder from the settings: with beside_model and a model path the
+    folder next to the model (model_work_dir), else work_dir with expanded
+    environment variables, or default_work_dir() if it is empty. Also used
+    by the start screen with the values of its fields.
+    """
+    if beside_model and liml_path:
+        return model_work_dir(liml_path)
+    return expand_path(work_dir) or default_work_dir()
+
+
 def work_dir_path():
     """
-    Working directory of the bridge: CONFIG_BRIDGE["work_dir"] with expanded
-    environment variables, or default_work_dir() if that setting is empty.
-    Always read the working directory with this, never directly from
-    CONFIG_BRIDGE.
+    Working directory of the bridge: with work_dir_beside_model and a known
+    model (set_model_path) <model>_aster next to the .liml, else
+    CONFIG_BRIDGE["work_dir"] with expanded environment variables, or
+    default_work_dir() if that setting is empty. Always read the working
+    directory with this, never directly from CONFIG_BRIDGE.
     """
-    return expand_path(CONFIG_BRIDGE.get("work_dir")) or default_work_dir()
+    return resolve_work_dir(CONFIG_BRIDGE.get("work_dir"),
+                            CONFIG_BRIDGE.get("work_dir_beside_model"),
+                            _MODEL["path"])
+
+
+def _paraview_candidates():
+    """Possible paraview.exe locations, best first: ParaView from
+    Salome-Meca (has a MED reader), then a plain ParaView installation
+    (ParaView 5.10 from paraview.org has NO MED reader, so it cannot open
+    a .rmed; seen on 2026-10-22)."""
+    program_files = [os.environ.get(v) for v in
+                     ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)")]
+    program_files = [p for i, p in enumerate(program_files)
+                     if p and p not in program_files[:i]]
+    patterns = [os.path.join("C:\\", "Salome_meca", "*", "*", "ParaView",
+                             "bin", "paraview.exe"),
+                os.path.join("C:\\", "Salome_meca", "*", "ParaView", "bin",
+                             "paraview.exe")]
+    for root in program_files:
+        patterns.append(os.path.join(root, "SALOME*", "*", "ParaView",
+                                     "bin", "paraview.exe"))
+        patterns.append(os.path.join(root, "SALOME*", "ParaView", "bin",
+                                     "paraview.exe"))
+    for root in program_files:
+        patterns.append(os.path.join(root, "ParaView*", "bin",
+                                     "paraview.exe"))
+    found = []
+    for pattern in patterns:
+        # newest version first (name sorting: v2025 after v2024)
+        for path in sorted(glob.glob(pattern), reverse=True):
+            if path not in found:
+                found.append(path)
+    return found
+
+
+def paraview_exe_path(setting=None):
+    """
+    paraview.exe for the ParaView button of the convergence window: the
+    setting (None = CONFIG_BRIDGE["paraview_exe"]; the start screen passes
+    its field) with expanded environment variables, or for "" the first one
+    found by _paraview_candidates() (MED reader first). "" if none is found.
+    """
+    if setting is None:
+        setting = CONFIG_BRIDGE.get("paraview_exe")
+    path = expand_path(setting)
+    if path:
+        return path
+    found = _paraview_candidates()
+    return found[0] if found else ""
 
 
 def exe_aster_path():

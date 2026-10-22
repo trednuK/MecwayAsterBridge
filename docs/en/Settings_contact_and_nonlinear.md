@@ -841,7 +841,7 @@ analysis (`MECA_STATIQUE`) it shows the linear solver (see *Linear analysis* bel
 for `THER_LINEAIRE` the messages (errors and alarms with explanation in the chosen
 language) and the diagnosis. Afterwards: the *Convergence window* button in the main
 window of the bridge shows the last run in the working directory; with "Open .mess ..."
-you choose another file. The window stays open next to Mecway and the main window. It
+you choose another file. The buttons at the top belong to the run shown: *.comm* and *.mail* open the file in Notepad (these extensions have no file association; greyed out when the file is missing), *Folder* opens Explorer on the working directory with the `.mess` selected, *ParaView* opens `<model>_<run-id>.rmed` (only with "MED file for ParaView"; otherwise the window says so; which ParaView: setting "ParaView", [User guide §3](UserGuide.md#3-the-main-window)), *Reload* reads the source again. The window stays open next to Mecway and the main window. It
 runs in Code-Aster's Python; closing it has no effect on the run or on Mecway.
 
 | Graph | What you see | What to look for |
