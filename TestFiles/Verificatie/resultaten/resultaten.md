@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 2516067, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2260 van 2267 controles binnen de tolerantie** (415 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2272 van 2278 controles binnen de tolerantie** (418 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1127,12 +1127,16 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4
 | LS-51e | Flexible joint op een line3-balk | doorbuiging midden | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
 | LS-51f | Flexible joint om V op een verticale balk | doorbuiging midden | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
 | LS-51f | Flexible joint om V op een verticale balk | doorbuiging midden t.o.v. Mecway 34 | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
-| LS-52a | Flexible joint op een balk met element offset (joint vervalt) | doorbuiging midden | 3.1578e-04 m | 3.1628e-04 | +0.16% | 1% | OK |
-| LS-52a | Flexible joint op een balk met element offset (joint vervalt) | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 3.1628e-04 | -74.97% | 0.1% | BEKEND (KNOWN_BUGS 108d) |
-| LS-52a | Flexible joint op een balk met element offset (joint vervalt) | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
+| LS-52a | Flexible joint op een balk met element offset | doorbuiging midden | 0.0012631 m | 0.0012636 | +0.04% | 1% | OK |
+| LS-52a | Flexible joint op een balk met element offset | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 0.0012636 | -0.00% | 0.1% | OK |
+| LS-52a | Flexible joint op een balk met element offset | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
 | LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | doorbuiging midden | 0.0012631 m | 0.0012636 | +0.04% | 1% | OK |
 | LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 0.0012636 | -0.00% | 0.1% | OK |
 | LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | doorbuiging midden | 0.0012641 m | 0.0012641 | +0.00% | 0.01% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden (linkerhelft zonder torsie) | 0 rad | -4.0845e-33 | -4.0845e-33 | 1e-09 rad | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | |rotx| bij x = 0,8 (rechterhelft) | 7.8758e-05 rad | 7.8758e-05 | +0.00% | 0.1% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | elementen met bendingmomw | 10  | 10 | +0.00% | 0  | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | M in het scharnier (element 6, knoop 1) | 0 N m | 1.5632e-13 | 1.5632e-13 | 1e-06 N m | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | M element 6, knoop 2 (x = 0,6 m) | 5 N m | 5 | +0.00% | 0.1% | OK |
@@ -1849,6 +1853,13 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4
 | NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=1 | -0.001965 m | -0.0019645 | +0.03% | 0.1% | OK |
 | NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=0,5 | -9.8251e-04 m | -9.8223e-04 | +0.03% | 0.1% | OK |
 | NL-89 | POU_D_T_GD: line pressure als formule in x en t | reactiekracht Z t=1 | 15 N | 15 | +0.00% | 0.0001% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tip u_y | 0.49349 m | 0.49345 | -0.01% | 0.1% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tip u_x | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tiprotatie | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | reactiekracht Y wortel 2 | -700 N | -700 | -0.00% | 0.1% | OK |
+| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | tiprotatie om X | 1.5708 rad | 1.5708 | -0.00% | 0.01% | OK |
+| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 1 | -177.62 N.m | -177.62 | +0.00% | 0.01% | OK |
+| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 2 | 0 N.m | 0 | 0 | 0.000177621 N.m | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 

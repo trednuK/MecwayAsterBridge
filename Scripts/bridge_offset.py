@@ -498,8 +498,8 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
     for eids in plan["exc"].values():
         for eid in eids:
             model_data["offset_elements"][eid] = "exc"
-    # A joint on a shifted element is not translated by
-    # bridge_mesh._flexible_joints (WARNING there, KNOWN_BUGS 108d).
+    # A joint on a shifted element: bridge_mesh._flexible_joints has
+    # already put its own node in plan["cells"] (at the end of the arm).
     cells = dict(("M{0}".format(e), cn) for e, cn in plan["cells"].items())
     if cells:
         for atype, items in by_type.items():

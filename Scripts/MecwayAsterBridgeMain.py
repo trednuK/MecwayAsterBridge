@@ -111,7 +111,8 @@ from datetime import datetime
 from bridge_utils       import (CONFIG_BRIDGE, log, resolve_auto_analysis,
                                 set_run_log, log_file_name, tr, run_name,
                                 run_names, path_too_long, work_dir_path,
-                                exe_aster_path, BRIDGE_VERSION)
+                                exe_aster_path, BRIDGE_VERSION, log_size,
+                                log_errors)
 from bridge_gui         import (run_settings_dialog, results_dialog,
                                 claim_instance, release_instance,
                                 instance_busy_text)
@@ -287,12 +288,12 @@ def _run(settings):
         version_notes["mecway"] = bridge_version.check_mecway(active_liml)[1]
 
         # --- Step 3: Read model_data from the .liml file ---
+        mark = log_size()
         model_data = extract_aster_data_from_liml(active_liml)
         _LAST["model_data"] = model_data      # adaptive refinement
         if model_data is None:
-            _notify(tr("Het model kon niet gelezen worden. Controleer {0}.",
-                       "The model could not be read. Check {0}.").format(
-                           log_file_name()))
+            _notify(_prep_failed(tr("Het model kon niet gelezen worden.",
+                                    "The model could not be read."), mark))
             return False
 
         # --- Step 3a: "auto" -> analysis according to the Mecway type ---
@@ -369,25 +370,24 @@ def _run(settings):
         # No Gmsh export: it truncated group names to 8 characters. See
         # bridge_mesh.py.
         mesh_file = os.path.join(work_dir_path(), run_name(".mail"))
+        mark = log_size()
         if not write_mesh(mesh_file, model_data, face_nodes=_face_nodes):
-            _notify(tr("Schrijven van het mesh mislukt. Controleer "
-                          "{0}.",
-                          "Writing the mesh failed. Check {0}.").format(
-                              log_file_name()))
+            _notify(_prep_failed(tr("Schrijven van het mesh mislukt.",
+                                    "Writing the mesh failed."), mark))
             return False
 
         resu_name = run_name(".resu")
         _LAST["analysis"] = CONFIG_BRIDGE["active_analysis"]
 
         # --- Step 4: Generate .comm and .export ---
+        mark = log_size()
         export_file = generate_AsterSolver_files(
             work_dir_path(), model_data, mesh_file, resu_name
         )
         if export_file is None:
-            _notify(tr("Genereren solver-bestanden mislukt. Controleer "
-                          "{0}.",
-                          "Generating the solver files failed. Check "
-                          "{0}.").format(log_file_name()))
+            _notify(_prep_failed(tr("Genereren solver-bestanden mislukt.",
+                                    "Generating the solver files failed."),
+                                 mark))
             return False
 
         # --- Step 5 & 6: Start solver; load results back ---
@@ -1155,6 +1155,21 @@ def _notify(text):
     _NOTES["list"].append(u"{0}".format(text))
     if _NOTES["popup"]:
         mw.message(text)
+
+
+def _prep_failed(head, mark):
+    """Message when the preparation stops before Code-Aster (model read,
+    mesh, solver files): head, the first ERROR lines that this step wrote
+    to the log after mark (bridge_utils.log_errors) and a reference to the
+    log for the rest."""
+    errors = log_errors(mark)
+    if not errors:
+        return tr(u"{0} Code-Aster is niet gestart. Controleer {1}.",
+                  u"{0} Code-Aster was not started. Check {1}.").format(
+                      head, log_file_name())
+    return tr(u"{0} Code-Aster is niet gestart:\n\n{1}\n\nMeer in {2}.",
+              u"{0} Code-Aster was not started:\n\n{1}\n\nMore in {2}."
+              ).format(head, u"\n".join(errors), log_file_name())
 
 
 def _status_text(ok, what):

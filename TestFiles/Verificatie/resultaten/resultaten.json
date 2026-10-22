@@ -29274,7 +29274,7 @@
   "series": null,
   "h": null,
   "note": "<flexiblejoint><rotw/> -> eigen knoop + LIAISON_DDL (C6).",
-  "seconds": 4.4,
+  "seconds": 6.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29348,7 +29348,7 @@
   "series": null,
   "h": null,
   "note": "Controleert de lokale assen: V = Y bij een balk langs X.",
-  "seconds": 4.1,
+  "seconds": 5.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29394,7 +29394,7 @@
   "series": null,
   "h": null,
   "note": "Knoop zonder ander element met rotaties: POI1 DIS_TR.",
-  "seconds": 4.0,
+  "seconds": 6.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29454,7 +29454,7 @@
   "series": null,
   "h": null,
   "note": "Joint met U, V en W vrij op het ingeklemde uiteinde.",
-  "seconds": 4.0,
+  "seconds": 5.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29514,7 +29514,7 @@
   "series": null,
   "h": null,
   "note": "C4 + C6: joint op het uiteinde van een gesplitst element. Mecway rekent dit niet (line3 alleen met CCX, joint niet met CCX).",
-  "seconds": 4.1,
+  "seconds": 5.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29546,7 +29546,7 @@
   "series": null,
   "h": null,
   "note": "Balk langs Z: Mecway V = Y; last in X buigt om V.",
-  "seconds": 4.1,
+  "seconds": 5.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29587,49 +29587,49 @@
  "LS-52a": {
   "id": "LS-52a",
   "group": "Lineair statisch",
-  "title": "Flexible joint op een balk met element offset (joint vervalt)",
+  "title": "Flexible joint op een balk met element offset",
   "analysis": "lin_static_3d",
   "series": null,
   "h": null,
-  "note": "Joint op het eindvlak van een verschoven element: niet vertaald (WARNING), star aan de arm.",
-  "seconds": 4.0,
+  "note": "Joint op het eindvlak van een verschoven element: in de Mecway-knoop, met een eigen starre arm (KNOWN_BUGS 108d opgelost).",
+  "seconds": 5.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
    {
     "name": "doorbuiging midden",
-    "fem": 0.00031627604764086596,
-    "ref": 0.0003157836172458241,
-    "rel": 0.0015593918371595895,
-    "dev": 4.924303950418663e-07,
+    "fem": 0.0012636268993783746,
+    "ref": 0.0012631344689832964,
+    "rel": 0.00038984795931869476,
+    "dev": 4.924303950782413e-07,
     "ok": true,
     "unit": "m",
     "tol": 0.01,
     "tol_abs": null,
-    "source": "PL^3/192EI (Roark tabel 8.1 geval 1d; joint vervalt, KNOWN_BUGS 108d)",
+    "source": "twee ingeklemde balken L/2 met P/2: PL^3/48EI",
     "in_series": true,
     "known": null
    },
    {
     "name": "doorbuiging midden t.o.v. Mecway 34",
-    "fem": 0.00031627604764086596,
+    "fem": 0.0012636268993783746,
     "ref": 0.001263627,
-    "rel": -0.7497077479027704,
-    "dev": -0.0009473509523591341,
-    "ok": false,
+    "rel": -7.962921447399528e-08,
+    "dev": -1.0062162539813124e-10,
+    "ok": true,
     "unit": "m",
     "tol": 0.001,
     "tol_abs": null,
-    "source": "Mecway 34, eigen solver (houdt de joint aan: scharnier)",
+    "source": "Mecway 34, eigen solver",
     "in_series": false,
-    "known": "KNOWN_BUGS 108d"
+    "known": null
    },
    {
     "name": "reactiekracht Y",
-    "fem": 99.99999999999648,
+    "fem": 99.99999999999523,
     "ref": 100.0,
-    "rel": -3.524291969370097e-14,
-    "dev": -3.524291969370097e-12,
+    "rel": -4.774847184307873e-14,
+    "dev": -4.774847184307873e-12,
     "ok": true,
     "unit": "N",
     "tol": 1e-06,
@@ -29652,7 +29652,7 @@
   "series": null,
   "h": null,
   "note": "Middenknoop alleen nog in de arm en de joint: POI1 DIS_TR (J<N>).",
-  "seconds": 4.1,
+  "seconds": 6.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29712,7 +29712,7 @@
   "series": null,
   "h": null,
   "note": "Cel van element 6 op de eigen knoop van de joint.",
-  "seconds": 4.3,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29794,7 +29794,7 @@
   "series": null,
   "h": null,
   "note": "Line3 als twee SEG2-cellen: waarden van beide helften op het Mecway-element.",
-  "seconds": 4.1,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35307,7 +35307,7 @@
   "series": null,
   "h": null,
   "note": "Balk-offset in globale x/y/z (Mecway: 'Global coordinates (beams)'); zonder offset I = 4,2e-7 + 5,2e-10 m4.",
-  "seconds": 6.0,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35381,7 +35381,7 @@
   "series": null,
   "h": null,
   "note": "Flens quad8 -> COQUE_3D op eigen knopen met starre armen naar de knopen van het lijf.",
-  "seconds": 6.2,
+  "seconds": 5.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -38659,7 +38659,7 @@
   "series": null,
   "h": null,
   "note": "Benchmark GB-01 van de fork van MishalTPC; 40 line2.",
-  "seconds": 4.2,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -38696,7 +38696,7 @@
   "series": null,
   "h": null,
   "note": "elem_beam POU_D_T_GD buiten niet-lineair statisch: POU_D_T met een WARNING.",
-  "seconds": 4.1,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -38730,7 +38730,7 @@
   "series": null,
   "h": null,
   "note": "Benchmark GB-02 van de fork van MishalTPC; eindmoment M = (pi/2) EI/L in 20 stappen (Mecway-stap 0,05 s).",
-  "seconds": 4.5,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -38834,7 +38834,7 @@
   "series": null,
   "h": null,
   "note": "Benchmark GB-03 van de fork van MishalTPC; de beginkromming staat in de mesh.",
-  "seconds": 4.6,
+  "seconds": 5.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -38884,7 +38884,7 @@
   "series": null,
   "h": null,
   "note": "Snedekrachten (beam_forces) tegen de statica in de vervormde stand; Mecway 34 rekent dit model met CCX.",
-  "seconds": 5.2,
+  "seconds": 6.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39170,7 +39170,7 @@
   "series": null,
   "h": null,
   "note": "20 line3, elk gesplitst in twee SEG2-cellen.",
-  "seconds": 4.5,
+  "seconds": 5.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39274,7 +39274,7 @@
   "series": null,
   "h": null,
   "note": "Element orientation V = Z; moment om globaal Y.",
-  "seconds": 4.5,
+  "seconds": 5.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39378,7 +39378,7 @@
   "series": null,
   "h": null,
   "note": "ROTATION kan niet op POU_D_T_GD (CHAR_MECA_ROTA_R); FORCE_POUTRE als FORMULE van de beginpositie.",
-  "seconds": 4.1,
+  "seconds": 5.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39429,7 +39429,7 @@
   "series": null,
   "h": null,
   "note": "FORCE_POUTRE en PESANTEUR in een last (CALCULEL2_92).",
-  "seconds": 4.2,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39481,7 +39481,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde model als NL-87; de instelling configuration kiest.",
-  "seconds": 4.2,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39533,7 +39533,7 @@
   "series": null,
   "h": null,
   "note": "FORCE_POUTRE als FORMULE van X en INST (AFFE_CHAR_MECA_F).",
-  "seconds": 4.4,
+  "seconds": 4.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39598,7 +39598,7 @@
   "series": null,
   "h": null,
   "note": "Thermal stress met temperature2 (AFFE_VARC TEMP).",
-  "seconds": 4.7,
+  "seconds": 4.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39635,7 +39635,7 @@
   "series": null,
   "h": null,
   "note": "Kracht en moment zonder tijdtabel; kleine lasten: superpositie van de lineaire oplossingen.",
-  "seconds": 4.1,
+  "seconds": 6.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39686,7 +39686,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde FORMULE-route; de truss (BARRE) krijgt ook FORCE_POUTRE.",
-  "seconds": 4.2,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39720,6 +39720,224 @@
    }
   ],
   "n_nodes": 82,
+  "n_elem": 80,
+  "settings": {
+   "convergence_criterion": "RELA_OF_MAXI",
+   "convergence_resi_maxi": 1e-06
+  },
+  "general": {
+   "elem_beam": "POU_D_T_GD"
+  }
+ },
+ "LS-52c": {
+  "id": "LS-52c",
+  "group": "Lineair statisch",
+  "title": "Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Kogelscharnier op het verschoven element: de arm draait met het element mee.",
+  "seconds": 5.3,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "doorbuiging midden",
+    "fem": 0.0012641189459770487,
+    "ref": 0.0012641189459770483,
+    "rel": 3.4306966949143077e-16,
+    "dev": 4.336808689942018e-19,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "F1/k, F1 = P (1 + a)/(2 + a), a = e^2 c k",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "rotx midden (linkerhelft zonder torsie)",
+    "fem": -4.0844902208022024e-33,
+    "ref": 0.0,
+    "rel": null,
+    "dev": -4.0844902208022024e-33,
+    "ok": true,
+    "unit": "rad",
+    "tol": null,
+    "tol_abs": 1e-09,
+    "source": "joint in de Mecway-knoop: geen torsie naar links (fork MishalTPC, 773d59f)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "|rotx| bij x = 0,8 (rechterhelft)",
+    "fem": 7.875815950015101e-05,
+    "ref": 7.875815950014757e-05,
+    "rel": 4.370774938735112e-14,
+    "dev": 3.4423418976414766e-18,
+    "ok": true,
+    "unit": "rad",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "T (L - x)/(GJ), T = e F2",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht Y",
+    "fem": 99.99999999999591,
+    "ref": 100.0,
+    "rel": -4.092726157978177e-14,
+    "dev": -4.092726157978177e-12,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 11,
+  "n_elem": 10,
+  "settings": {},
+  "general": {}
+ },
+ "NL-90": {
+  "id": "NL-90",
+  "group": "Niet-lineair statisch",
+  "title": "POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Naar check_nonlinear_releases.py van de fork van MishalTPC; de joint koppelt alleen DX/DY/DZ (exact).",
+  "seconds": 6.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "tip u_y",
+    "fem": 0.4934549946892076,
+    "ref": 0.4934937350648278,
+    "rel": -7.850226429945265e-05,
+    "dev": -3.8740375620183176e-05,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "Reissner-balk met P/2 (NL-83); fork MishalTPC, check_nonlinear_releases.py",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "tip u_x",
+    "fem": -0.16061175438752923,
+    "ref": -0.16065147193181162,
+    "rel": 0.00024722801356746784,
+    "dev": 3.9717544282391604e-05,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "Reissner-balk met P/2 (NL-83)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "tiprotatie",
+    "fem": 0.7817967811210509,
+    "ref": 0.7817391218024814,
+    "rel": 7.375774981882042e-05,
+    "dev": 5.76593185694918e-05,
+    "ok": true,
+    "unit": "rad",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "Reissner-balk met P/2 (NL-83)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiekracht Y wortel 2",
+    "fem": -700.0000000009045,
+    "ref": -700.0000000000001,
+    "rel": -1.291969705822079e-12,
+    "dev": -9.043787940754555e-10,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "symmetrie: elke balk P/2",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 81,
+  "n_elem": 80,
+  "settings": {
+   "convergence_criterion": "RELA_OF_MAXI",
+   "convergence_resi_maxi": 1e-06
+  },
+  "general": {
+   "elem_beam": "POU_D_T_GD"
+  }
+ },
+ "NL-90b": {
+  "id": "NL-90b",
+  "group": "Niet-lineair statisch",
+  "title": "POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Een starre verbinding zou pi/4 geven; general section met gegeven J.",
+  "seconds": 5.5,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "tiprotatie om X",
+    "fem": 1.5707963267904765,
+    "ref": 1.5707963267948966,
+    "rel": -2.813872066187234e-12,
+    "dev": -4.420019905637673e-12,
+    "ok": true,
+    "unit": "rad",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "M L / (G J) = pi/2, alleen balk 1; fork MishalTPC, check_nonlinear_releases.py",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiemoment X wortel 1",
+    "fem": -177.62081541400028,
+    "ref": -177.62081541449984,
+    "rel": 2.8125554175190978e-12,
+    "dev": 4.995683866582112e-10,
+    "ok": true,
+    "unit": "N.m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "evenwicht: de joint geeft geen moment door",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "reactiemoment X wortel 2",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "N.m",
+    "tol": null,
+    "tol_abs": 0.00017762081541449983,
+    "source": "de joint geeft geen moment door (star: -M/2)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 81,
   "n_elem": 80,
   "settings": {
    "convergence_criterion": "RELA_OF_MAXI",

@@ -219,9 +219,43 @@ def test_factor57():
               "lin_solver_resi default in {0}".format(name))
 
 
+def test_log_errors():
+    """bridge_utils.log_errors: the first ERROR lines after a mark, for the
+    message when the preparation stops before Code-Aster
+    (MecwayAsterBridgeMain._prep_failed)."""
+    cfg = bridge_utils.CONFIG_BRIDGE
+    old = cfg.get("work_dir")
+    tmp = tempfile.mkdtemp(prefix="logerr")
+    try:
+        cfg["work_dir"] = tmp
+        path = os.path.join(tmp, bridge_utils.log_file_name())
+        with io.open(path, "w", encoding="utf-8") as f:
+            f.write(u"[2026-10-22 10:00:00] ERROR: oude fout\n")
+        mark = bridge_utils.log_size()
+        check(mark > 0, "log_size after a line")
+        with io.open(path, "a", encoding="utf-8") as f:
+            f.write(u"[2026-10-22 10:00:01] INFO: mesh\n"
+                    u"[2026-10-22 10:00:02] ERROR: eerste fout é\n"
+                    u"[2026-10-22 10:00:03] WARNING: iets\n"
+                    u"[2026-10-22 10:00:04] ERROR: tweede\n"
+                    u"[2026-10-22 10:00:05] ERROR: derde\n"
+                    u"[2026-10-22 10:00:06] ERROR: vierde\n")
+        got = bridge_utils.log_errors(mark)
+        check(got == [u"ERROR: eerste fout é", u"ERROR: tweede",
+                      u"ERROR: derde"], "log_errors: {0!r}".format(got))
+        check(bridge_utils.log_errors(0, limit=1) == [u"ERROR: oude fout"],
+              "log_errors from the start, limit 1")
+        cfg["work_dir"] = os.path.join(tmp, "bestaat_niet")
+        check(bridge_utils.log_errors(0) == [] and
+              bridge_utils.log_size() == 0, "log_errors without a log")
+    finally:
+        cfg["work_dir"] = old
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
-                 test_acoustic_density, test_factor57):
+                 test_acoustic_density, test_factor57, test_log_errors):
         test()
     if FAILS:
         for f in FAILS:
