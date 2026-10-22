@@ -559,14 +559,20 @@ meshes is given below.
   arm it would be the other way round). Each half is a clamped beam L/2 with
   k = 3EI/(L/2)³ (`POU_D_E`); the torsion moves the point of application by e θx:
   F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1.2641 mm, |rotx| at x = 0.8 m =
-  T (L − x)/(GJ) = 7.8758e-5 rad. (52c) was not computed with Mecway. (53) each half is a
+  T (L − x)/(GJ) = 7.8758e-5 rad. Mecway 34 (own solver, headless) gives for (52c) the
+  same deflection 1.2641 mm, but the torsion in the left half: rotx at the middle
+  −1.9690e-4 rad (= e F2 (L/2)/(GJ)), 0 at x = 0.8 m. So Mecway puts the joint at the end
+  of the arm (KNOWN_BUGS 117). (53) each half is a
   clamped beam L/2 with P/2: M = 0 in the hinge, (P/2) h further along the element,
   V = P/2.
 - **Result**: (52a) 1.2636 mm (+0.04 %, equal to Mecway); (52b) 1.2636 mm (+0.04 %, equal
-  to Mecway); (52c) δ +0.00 %, rotx at the middle −4e-33 rad, rotx at 0.8 m +0.00 %;
-  reactions = load. (53a) all 10 elements, M in the hinge 2e-13 N m, 5.000 N m at
+  to Mecway); (52c) δ +0.00 % (also against Mecway), rotx at the middle −4e-33 rad, rotx
+  at 0.8 m +0.00 %; reactions = load; rotx at the middle against Mecway KNOWN
+  (KNOWN_BUGS 117). (53a) all 10 elements, M in the hinge 2e-13 N m, 5.000 N m at
   x = 0.6 m, V = 50 N; (53b) all 4 elements with three values: 0 / 6.25 / 12.5 N m.
-- **Interpretation**: a joint on an offset element now works as in Mecway (52a). An offset
+- **Interpretation**: a joint on an offset element now works as in Mecway (52a).
+  With a rotation perpendicular to the arm free (52c) the bridge has the joint before the
+  arm, Mecway after it: the deflection is equal here, the distribution of the torsion is not. An offset
   line3 element with a joint is not translated yet (WARNING; the element is then rigidly
   attached to the arm). A line3 beam gets its element values from both SEG2 halves
   (end 1 and middle from the first, end 2 from the second).
@@ -582,6 +588,23 @@ meshes is given below.
 - **Reference**: u(x) = F x / (E A).
 - **Result**: tip and midside node exact (< 1e-6); transverse displacement of the midside
   node 0.
+
+### LS-54b, LS-54c Line3 cable (*Tension only*)
+
+- **Goal**: quadratic element with material *Tension only* (`MODELISATION='CABLE'`), also
+  split into two SEG2 cells with the midside node coupled across the chord (GitHub issue #6;
+  `tests_balken.py`).
+- **Model**: (54b) as LS-54a with *Tension only* (E = 210 GPa, D = 10 mm); (54c) two line3
+  cables in series along X (1 m each), both ends fixed, F = 1000 N along +X at the node in
+  between: the left cable is in tension, the right one would be in compression. Nonlinear
+  static (`CABLE` only with `GROT_GDEP`).
+- **Reference**: (54b) u(x) = F x / (E A); (54c) only the tension cable carries: u = F L/(E A),
+  reaction left −F, right 0 (Code-Aster keeps a compressive stiffness `EC_SUR_E` = 1e-4 E, so
+  0.1 N). Mecway 34 gave no solution headless for *Tension only*, not on line2 either (own
+  solver *Static 3D* and *Nonlinear static*: empty solution; CCX: Mecway stopped), while the
+  same line2 bar as an *Isotropic* truss did solve: hand calculation only.
+- **Result**: (54b) tip −7.5e-5 relative (Green-Lagrange strain of `GROT_GDEP`, O(ε)),
+  reaction exact; (54c) u −1.8e-4, reaction left −999.9 N, right −0.09997 N (= 1e-4 F).
 
 ### Extra result fields (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
@@ -1343,12 +1366,16 @@ samples) plus the kinks of the load tables (NL-20).
 - **Goal**: E with a hardening curve in total strain (GitHub issue #2).
 - **Model**: bar as NL-01 (hex20), *Young's modulus* 200 GPa, curve (0, 0),
   (0.001, 210 MPa), (0.011, 310 MPa); elongation up to strain 5·10⁻⁴ (t = 1) and 5·10⁻³
-  (t = 2). NL-04b: the same curve as *Kinematic* (linear, so `VMIS_CINE_LINE`).
+  (t = 2). NL-04b: the same curve as *Kinematic* (linear, so `VMIS_CINE_LINE`). NL-04c:
+  the same curve without the point (0, 0).
 - **Reference**: Mecway uses the slope of the first segment (E = 210 GPa), measured with
   Mecway/CCX headless: σ = 104.97 MPa at t = 1 (nonlinear) and 105.00 MPa (linear static,
   CCX); 248.1 MPa at t = 2. Analytical (uniaxial, log strain): F and σ with E = 210 GPa and
-  the curve as total strain.
-- **Result**: NL-04 and NL-04b: F at t = 1 and 2 and σ_xx at t = 1 0.00% off; the bridge
+  the curve as total strain. NL-04c (without (0, 0)), Mecway 34/CCX headless: 104.98 MPa
+  at t = 1 (nonlinear), 105.00 MPa (linear static, CCX) and 248.1 MPa at t = 2, so there
+  too E = slope origin → first point (210 GPa, not 200 GPa).
+- **Result**: NL-04, NL-04b and NL-04c: F at t = 1 and 2 and σ_xx at t = 1 0.00% off
+  (NL-04c against Mecway −0.03%); the bridge
   gives a WARNING showing both values of E. Without this change Code-Aster stopped with
   `MATERIAL1_5` (slope > 1% different from E) and the kinematic curve was not translated.
 - **Interpretation**: at t = 2 CCX is 0.7% below the analytical log-strain value

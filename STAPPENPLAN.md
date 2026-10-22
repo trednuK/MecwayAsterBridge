@@ -53,6 +53,7 @@ S7, S8, S5, S9).
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
+| S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026 |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1365,3 +1366,18 @@ model with rotations about a skew axis, so a stub cannot be shown to be objectiv
 the spurious forces under skew rigid rotation are recorded as a limitation of `POU_D_T_GD` in KNOWN_BUGS 11. Possible
 follow-up (not planned): an in-plane-only stub (joint axis and all loads in one plane) with its own benchmark, or a
 re-test with Code-Aster 18.
+
+### S22 – Hide failed or eroded elements in post-processing (ParaView Threshold)
+**Goal:** after a run with element failure, show the model without the failed (Code-Aster) or eroded
+(OpenRadioss) elements. Code-Aster keeps failed elements as soft elements (`bridge_failure`,
+`failure_stiffness_factor`), OpenRadioss really deletes them; Mecway 34 cannot hide elements by value.
+**Parts:** (a) an element field "failed" (0/1 per step) written to Mecway, so the user can colour it with
+the contour range; (b) a generated pvpython/ParaView script with a `Threshold` filter on that field, hooked
+to the ParaView button of the convergence window: for Code-Aster the Salome-Meca ParaView with the MED reader
+on the `.rmed`, for OpenRadioss `anim_to_vtk_win64.exe` with the `EROSION_STATUS` cell field; (c) docs NL+EN.
+**Research:** how `bridge_failure` marks a failed element per step (internal variable or own field), the
+field name and its route back (`FIELD_TABLE` in `aster_results_export.py`, `RESULT_FIELD_SPECS`), where the
+Salome-Meca `pvpython` lives and how `aster_convergence_monitor.py` starts ParaView now.
+**Done when:** a failure case (Code-Aster) and an erosion case (OpenRadioss) show the field "failed" in Mecway
+(0/1 equal to the failed elements in the log) and the ParaView button opens the model with the failed
+elements hidden per step; docs NL+EN and a verification case for the field; regression D.5.

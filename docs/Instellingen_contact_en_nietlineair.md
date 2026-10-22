@@ -296,8 +296,9 @@ curve die als totale rek gelezen wordt (isotroop en kinematisch, `auto` of `tota
 E de helling van de oorsprong tot het eerste punt met rek > 0, met een WARNING met
 beide waarden als die van het tabblad afwijkt. Die E geldt voor het materiaal in elke
 analyse van het model (ook lineair, modaal en de zachte elementen bij bezwijken). Een
-curve zonder (0, 0) krijgt de helling oorsprong → eerste punt (NIET gemeten in
-Mecway). Niet voor een curve als plastische rek (begint met (0, σ > 0), zoals WE-12c en
+curve zonder (0, 0) krijgt de helling oorsprong → eerste punt, zoals Mecway (gemeten:
+(0,001; 210 MPa), (0,011; 310 MPa) gaf 104,98 MPa niet-lineair en 105,00 MPa lineair,
+verificatie NL-04c). Niet voor een curve als plastische rek (begint met (0, σ > 0), zoals WE-12c en
 Ramberg-Osgood) en niet voor OpenRadioss `PLAS_TAB`: daar blijft E van het materiaal.
 Code-Aster stopt met `MATERIAL1_5` als de helling tot het eerste curvepunt meer dan 1 %
 van E afwijkt; de bridge controleert dat vooraf en stopt dan met een ERROR met beide

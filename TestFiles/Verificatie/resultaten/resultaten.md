@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge bc8331e, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 2e59790, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2295 van 2301 controles binnen de tolerantie** (428 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2306 van 2313 controles binnen de tolerantie** (431 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1137,6 +1137,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge bc8331e, Code-Aster 17.4
 | LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden (linkerhelft zonder torsie) | 0 rad | -4.0845e-33 | -4.0845e-33 | 1e-09 rad | OK |
 | LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | |rotx| bij x = 0,8 (rechterhelft) | 7.8758e-05 rad | 7.8758e-05 | +0.00% | 0.1% | OK |
 | LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | doorbuiging midden t.o.v. Mecway 34 | 0.0012641 m | 0.0012641 | -0.00% | 0.1% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden t.o.v. Mecway 34 | -1.9690e-04 rad | -4.0845e-33 | +100.00% | 0.1% | BEKEND (KNOWN_BUGS 117) |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | elementen met bendingmomw | 10  | 10 | +0.00% | 0  | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | M in het scharnier (element 6, knoop 1) | 0 N m | 1.5632e-13 | 1.5632e-13 | 1e-06 N m | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | M element 6, knoop 2 (x = 0,6 m) | 5 N m | 5 | +0.00% | 0.1% | OK |
@@ -1149,6 +1151,12 @@ Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge bc8331e, Code-Aster 17.4
 | LS-54a | Staaf, een line3-truss-element, trekkracht | verlenging tip | 6.0630e-05 m | 6.0630e-05 | +0.00% | 0.0001% | OK |
 | LS-54a | Staaf, een line3-truss-element, trekkracht | verplaatsing middenknoop | 3.0315e-05 m | 3.0315e-05 | +0.00% | 0.0001% | OK |
 | LS-54a | Staaf, een line3-truss-element, trekkracht | dwarsverplaatsing middenknoop | 0 m | 0 | 0 | 1e-12 m | OK |
+| LS-54b | Kabel (tension only), een line3-element, trekkracht | verlenging tip | 6.0630e-05 m | 6.0625e-05 | -0.01% | 0.01% | OK |
+| LS-54b | Kabel (tension only), een line3-element, trekkracht | verplaatsing middenknoop | 3.0315e-05 m | 3.0312e-05 | -0.01% | 0.01% | OK |
+| LS-54b | Kabel (tension only), een line3-element, trekkracht | reactiekracht X | -1000 N | -1000 | -0.00% | 0.0001% | OK |
+| LS-54c | Twee line3-kabels in serie, een op druk: draagt niets | verplaatsing knoop ertussen | 6.0630e-05 m | 6.0619e-05 | -0.02% | 0.1% | OK |
+| LS-54c | Twee line3-kabels in serie, een op druk: draagt niets | reactie links (trekkabel) | -1000 N | -999.9 | +0.01% | 0.1% | OK |
+| LS-54c | Twee line3-kabels in serie, een op druk: draagt niets | reactie rechts (drukkabel) | 0 N | -0.099972 | -0.099972 | 1 N | OK |
 | LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | doorbuiging tip (+W) | 0.0071429 m | 0.0070851 | -0.81% | 2% | OK |
 | LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | doorbuiging tip t.o.v. Mecway | 0.0070901 m | 0.0070851 | -0.07% | 0.5% | OK |
 | LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | rotatie tip om Y | 0.071269 rad | 0.071231 | -0.05% | 0.5% | OK |
@@ -1753,6 +1761,10 @@ Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge bc8331e, Code-Aster 17.4
 | NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
 | NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
 | NL-04b | Als NL-04 met een kinematische (lineaire) curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | +0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | sigma_xx t=1 t.o.v. Mecway 34 | 1.0498e+08 Pa | 1.0495e+08 | -0.03% | 0.2% | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |

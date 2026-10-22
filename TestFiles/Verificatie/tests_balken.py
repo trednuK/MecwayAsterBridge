@@ -332,9 +332,15 @@ TESTS += [
 #     torsie van de rechterhelft (c = (L/2)/(GJ)) verschuift het
 #     aangrijpingspunt met e theta_x: F1 = F2 (1 + a), a = e^2 c k.
 # Mecway 34 (eigen solver, headless) geeft voor (a) en (b) dezelfde
-# doorbuiging. (c) is niet met Mecway gerekend (alleen analytisch).
+# doorbuiging. (c) Mecway 34 (eigen solver, headless, 22 okt 2026, model
+# modellen/LS-52c.liml): doorbuiging 1,264119 mm (gelijk aan W52C), maar
+# de torsie zit in de linkerhelft: rotx in het midden -1,96895e-4 rad
+# (= e F2 (L/2)/(GJ)), op x = 0,8 m 0. Mecway zet de joint dus aan het
+# eind van de arm, de bridge in de Mecway-knoop (KNOWN_BUGS 117). De
+# doorbuiging is door de symmetrie (beide helften dezelfde k en c) gelijk.
 E52 = 0.01
 MW52 = 1.263627e-03
+MW52C, MW52C_ROT = 1.264119e-03, -1.968954e-04
 # LS-52c: CircularBar (Code-Aster CERCLE): JX = pi D^4/32; elem_beam
 # POU_D_E (default, Euler-Bernoulli): k = 3EI/(L/2)^3 without shear.
 G52 = E / 2.6
@@ -398,9 +404,16 @@ TESTS += [
                 tol=1e-3, unit="rad", source="T (L - x)/(GJ), T = e F2"),
           Check("reactiekracht Y", lambda r: r.total("reactionforcey",
                                                        "Inklemming"),
-                ref=P51, tol=1e-6, unit="N", source="evenwicht")],
+                ref=P51, tol=1e-6, unit="N", source="evenwicht"),
+          _mw("doorbuiging midden", "disply", MID, MW52C),
+          Check("rotx midden t.o.v. Mecway 34", lambda r: r.at("rotx", MID),
+                ref=MW52C_ROT, tol=1e-3, unit="rad",
+                source="Mecway 34, eigen solver: torsie links (joint aan "
+                "het eind van de arm)", in_series=False,
+                known="KNOWN_BUGS 117")],
          note="Kogelscharnier op het verschoven element: de arm draait "
-              "met het element mee."),
+              "met het element mee. Mecway 34: zelfde doorbuiging, torsie "
+              "in de andere helft (KNOWN_BUGS 117)."),
 ]
 
 
@@ -508,4 +521,84 @@ TESTS += [
                 in_series=False)],
          note="Line3-truss als twee SEG2-cellen (BARRE) met de "
               "middenknoop dwars gekoppeld (GitHub issue #6)."),
+]
+
+
+# ------------------------------------------------------------------
+# LS-54b/c Line3-kabel (Tension only, MODELISATION='CABLE')
+# ------------------------------------------------------------------
+# Als LS-54a, maar met materiaal TensionOnly (Mecway manual v33 par. 7.10):
+# de bridge splitst ook een CABLE-line3 in twee SEG2-cellen met de
+# middenknoop dwars gekoppeld (bridge_mesh._LINE3_SPLIT_MODS). CABLE kan
+# alleen niet-lineair (RELATION='CABLE' met GROT_GDEP, U4.51.11).
+# (b) een element, trekkracht F op de tip: u = F L / (E A).
+# (c) twee elementen in serie, beide uiteinden vast (dwars vast op de
+#     hoekknopen), F langs +X op de knoop ertussen: het linkerelement
+#     krijgt trek, het rechter zou druk krijgen en draagt niets (Code-Aster:
+#     drukstijfheid EC_SUR_E = 1e-4 E, bridge_to_aster._render_materials):
+#     u = F L / (E A) / (1 + 1e-4), reactie links -F, rechts ~ 0.
+# Tolerantie 2e-4: CABLE rekent met GROT_GDEP (Green-Lagrange-rek), dat
+# wijkt O(eps) = 6e-5 af van de lineaire F L / (E A) (run: -7,5e-5).
+# Mecway 34 headless (22 okt 2026) gaf voor TensionOnly geen oplossing,
+# ook niet met line2 (eigen solver Static en Nonlinear static: lege
+# <solution>; CCX: Mecway stopte met 0xC0000409); dezelfde line2-staaf
+# als Isotropic truss wel (6,0630e-5 m). Alleen de handberekening dus.
+TENSION = '<mechanical type="TensionOnly" youngsmodulus="210000 MPa" />'
+
+
+def build_ls54_cable(two):
+    def build():
+        m = Model("L30", timesteps={"timeperiod": "1 s", "stepsize": "1 s"})
+        m.elset("Kabel", "Kabel")
+        _e, nids = line3mesh(m, "Kabel", 1, (0, 0, 0), (L, 0, 0))
+        if two:
+            _e, n2 = line3mesh(m, "Kabel", 1, (L, 0, 0), (2 * L, 0, 0))
+            nids = nids + n2[1:]
+        m.mat("Kabel", '<geometric type="CircularBar" roundod="10 mm" />',
+              TENSION)
+        ends = [nids[0]] + ([nids[4]] if two else [])
+        m.node_selection("Wortel", ends)
+        m.node_selection("Tip", [nids[2]])
+        m.node_selection("Dwars", ends + [nids[2]])
+        if two:
+            m.node_selection("Links", [nids[0]])
+            m.node_selection("Rechts", [nids[4]])
+        m.add('<fixed selection="Wortel" />')
+        for d in ("<x>0</x><y>1</y><z>0</z>", "<x>0</x><y>0</y><z>1</z>"):
+            m.add('<displacement selection="Dwars"><value>0 mm</value>%s'
+                  '</displacement>' % d)
+        m.add('<force selection="Tip"><x>%g N</x><y>0 N</y><z>0 N</z>'
+              '</force>' % F54)
+        return m
+    return build
+
+
+U54 = F54 * L / (E * A54)
+TESTS += [
+    Case("LS-54b", GROUP, "Kabel (tension only), een line3-element, "
+         "trekkracht", "nonlin_static_3d", build_ls54_cable(False),
+         [Check("verlenging tip", lambda r: r.at("displx", (L, 0, 0)),
+                ref=U54, tol=2e-4, unit="m", source="u = F L / (E A)"),
+          Check("verplaatsing middenknoop", lambda r: r.at(
+              "displx", (L / 2, 0, 0)), ref=U54 / 2, tol=2e-4, unit="m",
+                source="u = F x / (E A), x = L/2"),
+          Check("reactiekracht X", lambda r: r.total(
+              "reactionforcex", "Wortel"), ref=-F54, tol=1e-6, unit="N",
+                source="evenwicht")],
+         note="Line3-kabel (CABLE) als twee SEG2-cellen met de middenknoop "
+              "dwars gekoppeld (GitHub issue #6)."),
+    Case("LS-54c", GROUP, "Twee line3-kabels in serie, een op druk: "
+         "draagt niets", "nonlin_static_3d", build_ls54_cable(True),
+         [Check("verplaatsing knoop ertussen", lambda r: r.at(
+             "displx", (L, 0, 0)), ref=U54, tol=1e-3, unit="m",
+                source="alleen de trekkabel: u = F L / (E A)"),
+          Check("reactie links (trekkabel)", lambda r: r.total(
+              "reactionforcex", "Links"), ref=-F54, tol=1e-3, unit="N",
+                source="F gaat helemaal via de trekkabel"),
+          Check("reactie rechts (drukkabel)", lambda r: r.total(
+              "reactionforcex", "Rechts"), ref=0.0, tol_abs=1e-3 * F54,
+                unit="N", source="drukkabel draagt niets (EC_SUR_E 1e-4 "
+                "geeft 0,1 N)")],
+         note="Rechterkabel op druk: Code-Aster houdt 1e-4 E als "
+              "drukstijfheid (EC_SUR_E)."),
 ]
