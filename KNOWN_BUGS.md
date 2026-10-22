@@ -192,7 +192,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    (NL-90). Element failure in a model with POU_D_T_GD stops beforehand with an ERROR
    (`_check_gd_beams`): after the first failure the loop restarts with
    PREDICTION='ELASTIQUE' (CALCUL_37, no RIGI_MECA); with TANGENTE or EXTRAPOLE that step
-   did not converge (MECANONLINE9_3, run 17.4). What does work: driving a rigid part with the
+   did not converge (MECANONLINE9_3, run 17.4). Not objective about a skew axis (runs 17.4,
+   STAPPENPLAN S21): a frame of POU_D_T_GD beams with all translations imposed as an exact rigid
+   rotation is exact about a global axis, but about the axis (1,1,0) it gets spurious section forces
+   that depend on the step size (at 10 degrees max |M| = 6.0e-2 .. 6.4e-4 EI/L with 2 .. 16 steps)
+   and about (1,2,3) it stops converging at about 60 degrees; the Newton residual of equal rotation
+   steps grows with the accumulated rotation (incremental, path-dependent strain update; Fortran
+   NOT verified). Force-driven cases with rotations about one global axis (NL-80 .. NL-90) are not
+   affected; 3D large rotations with coarse steps can carry spurious forces. What does work: driving a rigid part with the
    exact rigid motion via #ASTER (FORMULE, docs/ASTER_regels_voorbeelden.md
    example 9). A bending model (profile around a die, with a roller) has been computed implicitly up to 90 degrees this way; the
    roller/profile contact still converges with difficulty there (roller coarse as slave: WARNING).
@@ -404,7 +411,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    `check_nonlinear_releases.py`); a joint with only some rotations free on a POU_D_T_GD
    beam stops before the run with an ERROR (`bridge_to_aster._check_gd_joints`, choice of
    the user). Solution (open, NOT verified): a hinge in the co-rotating frame, as the fork's
-   commit fa91375 tries for V/W.
+   commit fa91375 tries for V/W. Tried 22 Oct 2026 (STAPPENPLAN S21): a short `POU_D_T_GD`
+   stub per joint with near-zero IY/IZ/JX in the released directions works as a hinge in
+   plane (hinged elastica up to 2 P_cr within 0.23 % of the ideal hinge and the elastica),
+   but the objectivity benchmark (rigid rotation about a skew axis) already fails for
+   `POU_D_T_GD` without stub (KNOWN_BUGS 11), so the ERROR stays.
    Status: (a) confirmed, open; (b) refused with an ERROR.
 
 107\. **Line3 beams and trusses: two straight SEG2 cells** (confirmed, choice;
