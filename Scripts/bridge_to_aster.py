@@ -7680,13 +7680,14 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
                 solver_cmd, list(SOLVER_BUILDERS_ASTER.keys())))
         return None
 
+    # Hyperelastic materials: also for thermal -> mechanical (checked inside)
+    if not _check_hyperelastic(model_data, analysis):
+        return None
     if mechanical:
         if not _check_gd_beams(model_data, analysis):
             return None
         if not _check_materials(model_data, analysis):
             return None
-    if not _check_hyperelastic(model_data, analysis):
-        return None
         # One distributed load per beam (BRLP groups before DEFI_GROUP)
         _prepare_beam_loads(model_data, solver_cmd)
 
