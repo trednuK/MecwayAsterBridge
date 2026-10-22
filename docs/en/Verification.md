@@ -558,6 +558,18 @@ meshes is given below.
   element values from both SEG2 halves (end 1 and middle from the first, end 2 from the
   second).
 
+### LS-54 Bar with one line3 truss element
+
+- **Goal**: quadratic truss (line3, `truss="true"`, GitHub issue #6; `tests_balken.py`).
+  Before, Code-Aster stopped with `MODELE1_6` (`BARRE` on SEG3).
+- **Model**: one line3 element along X, L = 1 m, round bar D = 10 mm; root fixed, tip
+  uy = uz = 0, F = 1000 N along X at the tip. The bridge splits the element into two SEG2
+  cells (`BARRE`) and couples the midside node across the chord to the end nodes
+  (`LIAISON_DDL`); without that coupling the midside node is a mechanism (`ALGELINE3_81`).
+- **Reference**: u(x) = F x / (E A).
+- **Result**: tip and midside node exact (< 1e-6); transverse displacement of the midside
+  node 0.
+
 ### Extra result fields (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
 Fields `beam_forces`, `shell_stresses`, `shell_forces`, `strain`, `safety_factor` and
@@ -1674,6 +1686,7 @@ on x = 0 and DY = 0 at one corner, so the stress is purely uniaxial.
 | MO-05 | mass-spring chain ground–k–m–k–m (*Spring* + `mass2`) | ω² = (k/m)·(3 ∓ √5)/2 | exact (< 1e-6) |
 | MO-06 | free block 1 × 0.1 × 0.05 m from (1, 2, 3) m, hex20 10 × 2 × 2, 12 modes | sum of the rotational effective mass = I about the axis through the origin = m(b² + h²)/12 + m·d² (Steiner); I about the centre of mass m(b² + h²)/12 | RX/RY/RZ 524.151 / 450.754 / 256.564 kg·m² exact (< 1e-6); about the centre of mass exact; sum translation X = 1 |
 | MO-07 | clamped beam as MO-02, hex20 50 × 2 × 3, 6 modes, `fields` with `stresses` and `vonmises` | Euler-Bernoulli: rotation fraction about the clamp mode 1 = 3(∫W₁x dx)²/L⁴ = 0.97069; sum over the modes → I = m(L²/3 + a²/12); σ_xx(L/2, a/2) = E·(a/2)·W₁''(L/2)/√(ρAL) (mass-normalised); Mecway headless | rotation mode 1 / 2 −0.03 / −0.02%; sum 6 modes −0.15%; σ_xx +0.43%; against Mecway σ_xx +0.01%, fractions 0.0000% |
+| MO-08 | NAFEMS Challenge Problem 5: two line3 truss elements (1-6-2 and 3-4-5, node 5 tied to node 2 with constraint equations), steel, D = 10 mm, uz = 0 everywhere, 2 modes (GitHub issue #6) | NAFEMS CP5: 451.1 / 1049.9 Hz; Mecway 34 itself 450 / 1030 Hz | 451.15 / 1049.9 Hz (+0.01 / 0.00%) |
 | BU-01 | clamped column, 20 `POU_D_E`, compression 1000 N | Pcr = (2i−1)²π²EI/(4L²), both planes (Timoshenko & Gere, 1961) | factors 10.363 / 23.317 / 93.268 exact; tip mode 1 = 1/√(EI(π/2L)⁴L/2) (φᵀKφ = 1) exact |
 | BU-02 | pinned column, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0.002% |
 | BU-03 | clamped column hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` on the top | Euler | +0.20% / +0.13% (same model error as MO-02) |
