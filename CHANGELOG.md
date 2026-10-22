@@ -40,6 +40,10 @@ limitations, 0 unexpected).
   ([After an update](docs/en/After_an_update.md) §6, `AGENTS.md`).
 - **Preparation errors** (reading the model, mesh, solver files) are shown directly in the
   status box instead of only "see the log".
+- A contact whose face selections are empty (Mecway 34 replaces spaces in selection names
+  by `_` when it opens an older model and then loses the reference) now stops before
+  Code-Aster with a clear message instead of a non-converging run. The example models
+  `Voorbeeld_A` and `Voorbeeld_C` use selection names without spaces.
 - Documented limitation: `POU_D_T_GD` under large rotations about a skew axis gives
   step-size dependent forces (STAPPENPLAN S21, KNOWN_BUGS 11).
 - STAPPENPLAN: S14 (hyperelastic material) done, hyperfoam waiting for a Windows build with

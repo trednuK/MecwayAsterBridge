@@ -101,8 +101,8 @@ cut and duplicates get `_1`, `_2`. So always write `<<Mecway name>>`, never the 
 itself. Examples from the log:
 
 ```
-INFO: Group name '02 Last-punt' -> 'G02_Last_punt' (Code-Aster: letter first, ...)
-INFO: Group name '01 Contact onder' -> 'G01_Contact_onder' ...
+INFO: Group name '02_Last-punt' -> 'G02_Last_punt' (Code-Aster: letter first, ...)
+INFO: Group name '01_Contact_onder' -> 'G01_Contact_onder' ...
 ```
 
 | Mecway | Code-Aster |
@@ -155,12 +155,12 @@ folder; `python maak_voorbeelden.py --run` computes all variants of examples 1 t
   a separate tube 8/6 mm (*UniformCircularTube*), L = 50 mm, 5 line2 elements (elset
   `Balk`) from the centre of the end face x = 20 in +x, without shared nodes.
   Selections: `Root` (face x = 0, *Fixed*), `Tip` (face x = 20, where the beam starts),
-  `BalkStart` and `BalkEind` (first and last beam node), `02 Last-punt` (the same node
+  `BalkStart` and `BalkEind` (first and last beam node), `02_Last-punt` (the same node
   as `BalkEind`); 50 N in Y and −100 N in Z on `BalkEind`.
 - **(C)** two hex8 blocks 20 × 20 × 10 (each 2 × 2 × 1, elsets `Onder` z = 0 … 10 and
   `Boven` z = 10 … 20) with their own nodes; Mecway contact (*unilateral elastic*,
-  *normal stiffness* 100000 GPa/m, no friction) between `01 Contact onder` (top face of
-  `Onder`, master) and `02 Contact boven` (bottom face of `Boven`); `Bodem` (bottom)
+  *normal stiffness* 100000 GPa/m, no friction) between `01_Contact_onder` (top face of
+  `Onder`, master) and `02_Contact_boven` (bottom face of `Boven`); `Bodem` (bottom)
   fixed, `Top` (top) 0.01 mm down and fixed in x and y. *Nonlinear static*, 1 s, step
   0.1 s.
 - **(S)** hex8 block 20 × 20 × 10 (4 × 4 × 2, elset `Blok`, `Bodem` fixed) with a
@@ -278,13 +278,13 @@ Pitfalls:
 Goal: a point force and a rotation restraint you do not want to put in Mecway, on a
 selection with an "awkward" name. Model A with example 1 in the OpenRadioss field.
 
-Mystran > Custom bulk data (node selection `02 Last-punt` = the beam end node):
+Mystran > Custom bulk data (node selection `02_Last-punt` = the beam end node):
 
 ```
 $ Extra last en blokkering voor Code-Aster (SI-eenheden: N, m)
 $ASTER extra = AFFE_CHAR_MECA(MODELE=model,
-$ASTER     FORCE_NODALE=_F(GROUP_NO='<<02 Last-punt>>', FX=200.0),
-$ASTER     DDL_IMPO=_F(GROUP_NO='<<02 Last-punt>>', DRX=0.0))
+$ASTER     FORCE_NODALE=_F(GROUP_NO='<<02_Last-punt>>', FX=200.0),
+$ASTER     DDL_IMPO=_F(GROUP_NO='<<02_Last-punt>>', DRX=0.0))
 $ASTER-EXCIT extra
 ```
 

@@ -102,8 +102,8 @@ wordt afgekapt en dubbel krijgt `_1`, `_2`. Schrijf daarom altijd `<<Mecway-naam
 nooit de naam zelf. Voorbeelden uit de log:
 
 ```
-INFO: Group name '02 Last-punt' -> 'G02_Last_punt' (Code-Aster: letter first, ...)
-INFO: Group name '01 Contact onder' -> 'G01_Contact_onder' ...
+INFO: Group name '02_Last-punt' -> 'G02_Last_punt' (Code-Aster: letter first, ...)
+INFO: Group name '01_Contact_onder' -> 'G01_Contact_onder' ...
 ```
 
 | Mecway | Code-Aster |
@@ -156,12 +156,12 @@ genoemde veld en kies de analyse). Ze zijn gemaakt met `maak_voorbeelden.py` in 
   een losse buis 8/6 mm (*UniformCircularTube*), L = 50 mm, 5 line2-elementen (elset
   `Balk`) vanuit het midden van het eindvlak x = 20 in +x, zonder gedeelde knopen.
   Selecties: `Root` (vlak x = 0, *Fixed*), `Tip` (vlak x = 20, waar de balk begint),
-  `BalkStart` en `BalkEind` (eerste en laatste balkknoop), `02 Last-punt` (dezelfde knoop
+  `BalkStart` en `BalkEind` (eerste en laatste balkknoop), `02_Last-punt` (dezelfde knoop
   als `BalkEind`); 50 N in Y en −100 N in Z op `BalkEind`.
 - **(C)** twee hex8-blokken 20 × 20 × 10 (elk 2 × 2 × 1, elsets `Onder` z = 0 … 10 en
   `Boven` z = 10 … 20) met eigen knopen; Mecway-contact (*unilateral elastic*, *normal
-  stiffness* 100000 GPa/m, zonder wrijving) tussen `01 Contact onder` (bovenvlak van
-  `Onder`, master) en `02 Contact boven` (ondervlak van `Boven`); `Bodem` (onderkant)
+  stiffness* 100000 GPa/m, zonder wrijving) tussen `01_Contact_onder` (bovenvlak van
+  `Onder`, master) en `02_Contact_boven` (ondervlak van `Boven`); `Bodem` (onderkant)
   vast, `Top` (bovenkant) 0,01 mm omlaag en in x en y vast. *Niet-lineair statisch*,
   1 s, stap 0,1 s.
 - **(S)** hex8-blok 20 × 20 × 10 (4 × 4 × 2, elset `Blok`, `Bodem` vast) met een losse
@@ -281,13 +281,13 @@ Valkuilen:
 Doel: een puntkracht en een rotatieblokkering die je niet in Mecway wilt zetten, op een
 selectie met een "lastige" naam. Model A met voorbeeld 1 in het OpenRadioss-veld.
 
-Mystran > Custom bulk data (node selection `02 Last-punt` = de balkeindknoop):
+Mystran > Custom bulk data (node selection `02_Last-punt` = de balkeindknoop):
 
 ```
 $ Extra last en blokkering voor Code-Aster (SI-eenheden: N, m)
 $ASTER extra = AFFE_CHAR_MECA(MODELE=model,
-$ASTER     FORCE_NODALE=_F(GROUP_NO='<<02 Last-punt>>', FX=200.0),
-$ASTER     DDL_IMPO=_F(GROUP_NO='<<02 Last-punt>>', DRX=0.0))
+$ASTER     FORCE_NODALE=_F(GROUP_NO='<<02_Last-punt>>', FX=200.0),
+$ASTER     DDL_IMPO=_F(GROUP_NO='<<02_Last-punt>>', DRX=0.0))
 $ASTER-EXCIT extra
 ```
 

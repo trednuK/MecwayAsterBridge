@@ -133,7 +133,7 @@
   <nodeselection name="BalkEind">
     <node nid="87" />
   </nodeselection>
-  <nodeselection name="02 Last-punt">
+  <nodeselection name="02_Last-punt">
     <node nid="87" />
   </nodeselection>
 </liml>
