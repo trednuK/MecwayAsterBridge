@@ -517,6 +517,13 @@ element has no `SIPM_ELNO` (`CALCUL_37`). One WARNING per run says so.
   moment in 3D is NOT verified.
 - Mecway 34 computes nonlinear beams with CCX only (its own solver gave no solution);
   CCX did not get the end moment of NL-81 beyond t = 0.55 s.
+- **Large rotations about a skew axis (3D): use small steps and check them.** In a test
+  with an exact rigid rotation (22 October 2026), `POU_D_T_GD` was exact about a global
+  axis, but about a skew axis it got spurious section forces that shrink with the step
+  size (at 10 degrees about (1,1,0): 6 % of EI/L with 2 steps, 0.06 % with 16 steps); about
+  (1,2,3) it stopped converging at about 60 degrees. Plane bending (NL-80 to NL-90) is not
+  affected. With 3D rotations of tens of degrees: halve the *Time step size* once and
+  check that the results do not change (KNOWN_BUGS 11, STAPPENPLAN S21).
 
 ---
 

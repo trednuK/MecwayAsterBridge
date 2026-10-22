@@ -521,6 +521,14 @@ er niet: het element kent `SIPM_ELNO` niet (`CALCUL_37`). Een WARNING per run no
   een moment in 3D is NIET geverifieerd.
 - Mecway 34 rekent niet-lineaire balken alleen met CCX (de eigen solver gaf geen
   oplossing); het eindmoment van NL-81 haalde CCX niet verder dan t = 0,55 s.
+- **Grote rotaties om een scheve as (3D): kleine stappen en controleer ze.** In een test
+  met een exacte starre rotatie (22 oktober 2026) was `POU_D_T_GD` exact om een globale
+  as, maar om een scheve as kreeg het valse snedekrachten die kleiner worden met de
+  stapgrootte (bij 10 graden om (1,1,0): 6 % van EI/L met 2 stappen, 0,06 % met 16
+  stappen); om (1,2,3) convergeerde het vanaf ongeveer 60 graden niet meer. Buiging in
+  een vlak (NL-80 t/m NL-90) heeft er geen last van. Bij 3D-rotaties van tientallen
+  graden: halveer de *Time step size* één keer en controleer dat de resultaten niet
+  veranderen (KNOWN_BUGS 11, STAPPENPLAN S21).
 
 ---
 
