@@ -45,7 +45,9 @@ limitations, 0 unexpected).
   found"), also when `paraview_exe` points to that `paraview.exe`.
 - A contact whose face selections are empty (Mecway 34 replaces spaces in selection names
   by `_` when it opens an older model and then loses the reference) now stops before
-  Code-Aster with a clear message instead of a non-converging run. The example models
+  Code-Aster with a clear message instead of a non-converging run (nonlinear static and
+  dynamics; bonded contact always); in linear and thermal analyses, where Mecway ignores
+  unilateral contact, it is a warning. The example models
   `Voorbeeld_A` and `Voorbeeld_C` use selection names without spaces.
 - Documented limitation: `POU_D_T_GD` under large rotations about a skew axis gives
   step-size dependent forces (STAPPENPLAN S21, KNOWN_BUGS 11).

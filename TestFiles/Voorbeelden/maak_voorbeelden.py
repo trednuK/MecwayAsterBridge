@@ -68,7 +68,7 @@ def model_a(analysis="S30", rigid=False, custom=None, attrs=None):
     m.face_selection("Tip", blk["faces"]["u1"])
     m.node_selection("BalkStart", [nids[0]])
     m.node_selection("BalkEind", [nids[-1]])
-    m.node_selection("02 Last-punt", [nids[-1]])
+    m.node_selection("02_Last-punt", [nids[-1]])
     m.add('<fixed selection="Root" />')
     m.add('<force selection="BalkEind"><x>0 N</x><y>50 N</y><z>-100 N</z>'
           '</force>')
@@ -79,7 +79,7 @@ def model_a(analysis="S30", rigid=False, custom=None, attrs=None):
 # ------------------------------------------------------------------
 # Model C: twee hex8-blokken 20 x 20 x 10 mm (2 x 2 x 1) op elkaar, eigen
 # knopen; Mecway-contact (unilateral elastic, normal stiffness
-# 100000 GPa/m) tussen 01 Contact onder (bovenvlak onder) en 02 Contact
+# 100000 GPa/m) tussen 01_Contact_onder (bovenvlak onder) en 02 Contact
 # boven (ondervlak boven); Bodem (onderkant) vast, Top 0,01 mm omlaag (en
 # in x en y vast).
 # ------------------------------------------------------------------
@@ -93,8 +93,8 @@ def model_c(custom=None, stepsize=None):
     m.elset("Boven", "Staal")
     up = hexmesh(m, "Boven", 2, 2, 1, box(0, 0.02, 0, 0.02, 0.01, 0.02))
     m.mat("Staal", STEEL)
-    m.face_selection("01 Contact onder", lo["faces"]["w1"])
-    m.face_selection("02 Contact boven", up["faces"]["w0"])
+    m.face_selection("01_Contact_onder", lo["faces"]["w1"])
+    m.face_selection("02_Contact_boven", up["faces"]["w0"])
     m.face_selection("Bodem", lo["faces"]["w0"])
     m.face_selection("Top", up["faces"]["w1"])
     m.add('<fixed selection="Bodem" />')
@@ -103,8 +103,8 @@ def model_c(custom=None, stepsize=None):
     for d in ("<x>1</x><y>0</y>", "<x>0</x><y>1</y>"):
         m.add('<displacement selection="Top"><value>0 mm</value>%s<z>0</z>'
               '</displacement>' % d)
-    m.add('<contact2 selectionmaster="01 Contact onder" selectionslave='
-          '"02 Contact boven" type="unilateralelastic"><tolerance>0 m'
+    m.add('<contact2 selectionmaster="01_Contact_onder" selectionslave='
+          '"02_Contact_boven" type="unilateralelastic"><tolerance>0 m'
           '</tolerance><normalstiffness>100000 GPa/m</normalstiffness>'
           '<tangentialstiffness>0 GPa/m</tangentialstiffness>'
           '<frictioncoefficient>0</frictioncoefficient></contact2>')
@@ -175,8 +175,8 @@ EX2 = ["$ASTER nplaat = CREA_CHAMP(TYPE_CHAM='NOEU_GEOM_R', "
        "$ASTER-EXCIT lijm"]
 EX3 = ["$ Extra last en blokkering voor Code-Aster (SI-eenheden: N, m)",
        "$ASTER extra = AFFE_CHAR_MECA(MODELE=model,",
-       "$ASTER     FORCE_NODALE=_F(GROUP_NO='<<02 Last-punt>>', FX=200.0),",
-       "$ASTER     DDL_IMPO=_F(GROUP_NO='<<02 Last-punt>>', DRX=0.0))",
+       "$ASTER     FORCE_NODALE=_F(GROUP_NO='<<02_Last-punt>>', FX=200.0),",
+       "$ASTER     DDL_IMPO=_F(GROUP_NO='<<02_Last-punt>>', DRX=0.0))",
        "$ASTER-EXCIT extra"]
 EX4 = ["#ASTER f_ramp = DEFI_FONCTION(NOM_PARA='INST', VALE=(0.0, 0.0, 1.0, "
        "300.0),",

@@ -7683,6 +7683,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # Hyperelastic materials: also for thermal -> mechanical (checked inside)
     if not _check_hyperelastic(model_data, analysis):
         return None
+    if not _check_lost_contacts(model_data, solver_cmd):
+        return None
     if mechanical:
         if not _check_gd_beams(model_data, analysis):
             return None
@@ -7694,6 +7696,46 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # Gap groups (DEFI_GROUP, DEFI_MATERIAU) before the blocks
     _prepare_gaps(model_data)
     return builder(work_dir, model_data, msh_path, resu_name, analysis)
+
+
+def _check_lost_contacts(model_data, solver_cmd):
+    """
+    Contacts whose face selections are empty in the .liml
+    (model_data["lost_contacts"], bridge_from_liml): Mecway 34 replaces
+    spaces in selection names by underscores when it opens an older model
+    and then loses the reference (selectionmaster="", seen 22 Oct 2026).
+    ERROR (False) where the contact would be translated: bonded contact in
+    every analysis (LIAISON_MAIL, also thermal), unilateral contact in
+    STAT_NON_LINE/DYNA_NON_LINE. Elsewhere Mecway ignores unilateral
+    contact (linear, modal, thermal): WARNING and skipped_loads.
+    """
+    lost = model_data.get("lost_contacts") or []
+    fatal = [c for c in lost if str(c.get("type", "")).startswith("bonded")
+             or solver_cmd in ("STAT_NON_LINE", "DYNA_NON_LINE")]
+    msg_nl = ("Een contact in Loads & Constraints heeft geen master- of "
+              "slave-selectie (leeg in de .liml). Mecway verliest die "
+              "verwijzing bijv. als een selectie hernoemd wordt; Mecway 34 "
+              "vervangt spaties in selectienamen door _ bij het openen van "
+              "een ouder model. Kies in het contact de vlakselecties opnieuw "
+              "en sla op.")
+    msg_en = ("A contact in Loads & Constraints has no master or slave "
+              "selection (empty in the .liml). Mecway loses that reference "
+              "e.g. when a selection is renamed; Mecway 34 replaces spaces "
+              "in selection names by _ when it opens an older model. Select "
+              "the face selections of the contact again and save.")
+    if fatal:
+        log(tr(u"ERROR: " + msg_nl, u"ERROR: " + msg_en))
+        return False
+    for c in lost:
+        model_data.setdefault("skipped_loads", []).append(
+            "contact '{0}' / '{1}'".format(c.get("master", ""),
+                                           c.get("slave", "")))
+    if lost:
+        log(tr(u"WARNING: " + msg_nl + u" In deze analyse telt het contact "
+               u"niet mee (Mecway negeert het ook).",
+               u"WARNING: " + msg_en + u" In this analysis the contact does "
+               u"not count (Mecway ignores it too)."))
+    return True
 
 
 def _check_hyperelastic(model_data, analysis):

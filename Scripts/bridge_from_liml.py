@@ -2453,24 +2453,16 @@ def extract_aster_data_from_liml(file_path):
                 # selectionmaster="" (seen 22 Oct 2026 with
                 # Voorbeeld_C.liml from Mecway 33). Without the contact the
                 # parts are not connected and Code-Aster stops without
-                # convergence, so stop here with the reason.
-                if not contact["selfcontact"] and (
-                        not contact["master"] or not contact["slave"]):
-                    log(tr("ERROR: Een contact in Loads & Constraints heeft "
-                           "geen master- of slave-selectie (leeg in de "
-                           ".liml). Mecway verliest die verwijzing bijv. "
-                           "als een selectie hernoemd wordt; Mecway 34 "
-                           "vervangt spaties in selectienamen door _ bij "
-                           "het openen van een ouder model. Kies in het "
-                           "contact de vlakselecties opnieuw en sla op.",
-                           "ERROR: A contact in Loads & Constraints has no "
-                           "master or slave selection (empty in the .liml). "
-                           "Mecway loses that reference e.g. when a "
-                           "selection is renamed; Mecway 34 replaces spaces "
-                           "in selection names by _ when it opens an older "
-                           "model. Select the face selections of the "
-                           "contact again and save."))
-                    return None
+                # convergence. Kept aside here; bridge_to_aster.
+                # _check_lost_contacts decides per analysis (fatal where the
+                # contact would be translated, else a WARNING: Mecway
+                # ignores unilateral contact in linear and thermal
+                # analyses).
+                if not contact["master"] or (not contact["selfcontact"]
+                                             and not contact["slave"]):
+                    model_data.setdefault("lost_contacts", []).append(
+                        contact)
+                    continue
                 # Mecway knows unilateralelastic (contact) and bondedelastic/
                 # bondedtie/bondedce (bonded; type names from mecway.exe).
                 # Bonded is not DEFI_CONTACT (that could separate),
