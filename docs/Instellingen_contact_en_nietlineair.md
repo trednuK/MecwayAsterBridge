@@ -333,10 +333,28 @@ waarden bij kleine rek, G = 2(C10 + C01), E = 2G(1 + ν) met ν uit K en G. Meld
 | schalen, balken of 2D | ERROR (alleen volume-elementen, zoals Mecway) |
 | lineair statisch, modaal, knik, thermisch → mechanisch | ERROR (Mecway biedt het ook alleen niet-lineair) |
 | `imperfection_amplitude` | ERROR (de knikanalyse vooraf heeft `ELAS` nodig) |
-| ander type, bijv. hyperfoam | ERROR: niet vertaald; hyperfoam kan in Code-Aster alleen via MFront, en dat zit niet in de Windows-versie |
+| ander type, bijv. hyperfoam | ERROR: niet vertaald; hyperfoam kan niet met Code-Aster 17.4 op Windows (zie hieronder) |
 
 Bijna onsamendrukbaar materiaal op lineaire hex8/tet4 'lockt' (te stijf bij buiging en
 ongelijkmatige vervorming): gebruik kwadratische elementen of `LINE_QUAD`.
+
+**Hyperfoam: niet mogelijk met Code-Aster 17.4 op Windows** (gecontroleerd 22 oktober
+2026). Mecway 34 heeft zelf geen hyperfoam-materiaal (alleen Neo Hooke en Mooney-Rivlin;
+de naam bestaat alleen in Mecway's import van CalculiX-`.inp`-bestanden). De wet van
+Code-Aster voor samendrukbaar schuim, `HYPER_HILL` (`ALPHA`, `BETA`, `MU`; dezelfde vorm
+als Abaqus/CalculiX *HYPERFOAM*), is een MFront-wet en vraagt een Code-Aster die met
+MFront-ondersteuning (MGIS) gebouwd is. Geen van beide Windows-versies van Code-Aster 17.4
+heeft die:
+
+| Versie | MFront/MGIS-bibliotheken | Uitkomst validatietest `ssnv520a` (`HYPER_HILL`) |
+|---|---|---|
+| Simulease "Code_Aster v2025" (standaard van de bridge) | niet meegeleverd; log: "Librairie MFront : non disponible" | staat op `exclude-testlist.txt` van die versie |
+| open-simulation-center `code_aster-17.4.0-win64.msi` | meegeleverd (MFront 4.2.3, MGIS 2.2), maar Code-Aster zelf is zonder gebouwd: "Librairie MFront : non disponible" | stopt in `STAT_NON_LINE` met `NameError: The object 'MGISBehaviour' is not available in this installation` (terwijl `run_aster` toch `DIAGNOSTIC JOB : OK` meldt) |
+
+Een Linux- of containerversie van Code-Aster met MFront biedt `HYPER_HILL` waarschijnlijk
+wel; dat past niet bij de bridge, die standalone op Windows draait met alleen Mecway en een
+Code-Aster-installatie. Hyperfoam staat gepland voor zodra er een Windows-versie met
+MFront-ondersteuning is (STAPPENPLAN S14).
 
 ### 2.5 Tijdschema (dynamica): `schema`, `hht_alpha`
 

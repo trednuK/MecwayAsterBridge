@@ -131,7 +131,7 @@ Bonded contact per combination (slave on master):
 | Plastic, Ramberg-Osgood | Yes | Sampled curve (KB6). |
 | Spring, Damper, Gap, Tension only | Yes | Only on line2 (§4). Gap: *force of open gap* not used (KB23). |
 | Neo Hooke, Mooney-Rivlin (hyperelastic) | Yes | `ELAS_HYPER` (C10, C01, K = 2/D1) with `GREEN_LAGRANGE`, in nonlinear static and dynamics (implicit and explicit), volume elements only (as in Mecway). D1 = 0, shells/beams and linear analyses: ERROR; thermal expansion ignored (WARNING). [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.4, verification NL-50..53. |
-| Orthotropic, Anisotropic (matrix), Composite, piezo | No | WARNING, then the run stops ("elset without a usable material"). No alternative in the bridge. Hyperfoam: ERROR (in Code-Aster only via MFront, not in the Windows version). |
+| Orthotropic, Anisotropic (matrix), Composite, piezo | No | WARNING, then the run stops ("elset without a usable material"). No alternative in the bridge. Hyperfoam: ERROR (not possible with Code-Aster 17.4 on Windows: no MFront support; see [Settings contact and nonlinear](Settings_contact_and_nonlinear.md), hyperelastic material). |
 | Failure criterion (factor of safety) | Partly | Von Mises (*tensile strength*): `factorofsafety` to Mecway (result field `safety_factor`, §6). Tsai-Wu and other criteria: WARNING, no factor of safety. For plastic failure: [`Failure.md`](Failure.md). |
 | Thermal: conductivity, specific heat, also *Temperature dependent* | Yes | [`Thermal.md`](Thermal.md). Formulas in material properties: No (KB16). |
 | Speed of sound (acoustics) | Yes | Media with different density: No (KB55, KB59). |

@@ -331,10 +331,27 @@ G = 2(C10 + C01), E = 2G(1 + ν) with ν from K and G. Messages:
 | shells, beams or 2D | ERROR (volume elements only, as in Mecway) |
 | linear static, modal, buckling, thermal → mechanical | ERROR (Mecway also offers it only in nonlinear analyses) |
 | `imperfection_amplitude` | ERROR (the buckling analysis beforehand needs `ELAS`) |
-| another type, e.g. hyperfoam | ERROR: not translated; hyperfoam is only possible in Code-Aster via MFront, which is not in the Windows version |
+| another type, e.g. hyperfoam | ERROR: not translated; hyperfoam is not possible with Code-Aster 17.4 on Windows (see below) |
 
 Nearly incompressible material on linear hex8/tet4 'locks' (too stiff in bending and
 non-uniform deformation): use quadratic elements or `LINE_QUAD`.
+
+**Hyperfoam: not possible with Code-Aster 17.4 on Windows** (checked 22 October 2026).
+Mecway 34 itself has no hyperfoam material (only Neo Hooke and Mooney-Rivlin; the name
+exists only in Mecway's import of CalculiX `.inp` files). Code-Aster's law for
+compressible foam, `HYPER_HILL` (`ALPHA`, `BETA`, `MU`; the same form as Abaqus/CalculiX
+*HYPERFOAM*), is an MFront law and needs a Code-Aster built with MFront support (MGIS).
+Neither Windows build of Code-Aster 17.4 has it:
+
+| Build | MFront/MGIS libraries | Result of validation test `ssnv520a` (`HYPER_HILL`) |
+|---|---|---|
+| Simulease "Code_Aster v2025" (the bridge's default) | not included; log: "Librairie MFront : non disponible" | on the build's `exclude-testlist.txt` |
+| open-simulation-center `code_aster-17.4.0-win64.msi` | included (MFront 4.2.3, MGIS 2.2), but Code-Aster itself is built without them: "Librairie MFront : non disponible" | stops in `STAT_NON_LINE` with `NameError: The object 'MGISBehaviour' is not available in this installation` (while `run_aster` still reports `DIAGNOSTIC JOB : OK`) |
+
+A Linux or container build of Code-Aster with MFront would probably offer `HYPER_HILL`;
+that does not fit the bridge, which runs standalone on Windows with Mecway and a
+Code-Aster installation only. Hyperfoam is planned for when a Windows build with MFront
+support is available (STAPPENPLAN S14).
 
 ### 2.5 Time scheme (dynamics): `schema`, `hht_alpha`
 

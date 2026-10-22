@@ -1202,6 +1202,13 @@ or `'GREEN_LAGRANGE'` in `STAT_NON_LINE`; test cases `ssnv187a`, `ssnp154`.
 which analyses (nonlinear only).
 **Done when:** uniaxial tension up to 100% strain equal to the analytical Neo-Hooke/Mooney-Rivlin curve
 (≤ 1%) and to Mecway headless; regression D.5.
+**Status:** Neo Hooke and Mooney-Rivlin done for V2026.4 (NL-50..53, issue #5).
+**Still open – hyperfoam:** only when a Windows build of Code-Aster with MFront support (MGIS) is
+available. Checked 22 Oct 2026: neither the Simulease build nor the open-simulation-center
+`code_aster-17.4.0-win64.msi` can run `HYPER_HILL` (ssnv520a: `MGISBehaviour` not available; see
+docs/en/Settings_contact_and_nonlinear.md). Mecway has no hyperfoam material, so the input would be an
+`#ASTER` keyword (bridge_custom.py). Then: `HYPER_HILL` (ALPHA, BETA, MU) with GREEN_LAGRANGE, check
+against ssnv520a and a uniaxial foam case.
 
 ### S15 – Pre-tension section (bolt prestress)
 **Goal:** translate Mecway's *Pre-tension section* (`pretensionsection`, Samples/BoltedJoint).
