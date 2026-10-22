@@ -43,7 +43,8 @@ Wat de niet-lineaire analyses ondersteunen:
 
 - materiaal: `ELAS`; met plasticiteit `VMIS_ISOT_TRAC` (hardingscurve,
   Ramberg-Osgood, OpenRadioss `PLAS_TAB`), `VMIS_ISOT_LINE` of `VMIS_CINE_LINE`
-  (bilineair); tension only `CABLE`, gap `DIS_CHOC`; balken met grote rotaties
+  (bilineair); hyperelastisch (Neo Hooke, Mooney-Rivlin) `ELAS_HYPER` (§2.4);
+  tension only `CABLE`, gap `DIS_CHOC`; balken met grote rotaties
   `ELAS_POUTRE_GR` (`elem_beam` = `POU_D_T_GD`, §2.9);
 - contact: Mecway `contact2` wordt `DEFI_CONTACT` (§3); compression only
   `DEFI_CONTACT FORMULATION='LIAISON_UNIL'`;
@@ -283,9 +284,27 @@ Mecway's hardingscurve gebruikt de **totale** rek (gemeten met Mecway/CCX headle
 de staaf van NL-01, R-CURVE): de curve (0, 0), (σy/E, σy), (0,1, …) gaf de verwachte
 spanning en plastische rek; een curve die met (0, σy) begint, gaf in Mecway een
 onfysische uitkomst. `auto` leest daarom een curve met beginpunt (0, 0), of een curve
-die direct op de vloeigrens (σy/E, σy) begint, als totale rek. Ligt het eerste punt
-met rek > 0 niet op de elastische lijn (helling E), dan volgt een WARNING over de
-helling. Begint de curve met (0, σ > 0), dan leest `auto` hem als plastische rek, met
+die direct op de vloeigrens (σy/E, σy) begint, als totale rek.
+
+**E bij een curve in totale rek.** Mecway's tabblad *Plastic*: de eerste twee punten
+bepalen het lineair-elastische gebied. Mecway rekent dan met de helling van dat eerste
+stuk, niet met *Young's modulus* van het tabblad *Elastic*: gemeten met Mecway/CCX
+headless (staaf in trek, *Young's modulus* 200 GPa, curve (0, 0), (0,001; 210 MPa),
+(0,011; 310 MPa)) gaf rek 5·10⁻⁴ een spanning van 104,97 MPa (niet-lineair statisch) en
+105,00 MPa (lineair statisch, CCX), dus E = 210 GPa. De bridge doet hetzelfde: bij een
+curve die als totale rek gelezen wordt (isotroop en kinematisch, `auto` of `total`) is
+E de helling van de oorsprong tot het eerste punt met rek > 0, met een WARNING met
+beide waarden als die van het tabblad afwijkt. Die E geldt voor het materiaal in elke
+analyse van het model (ook lineair, modaal en de zachte elementen bij bezwijken). Een
+curve zonder (0, 0) krijgt de helling oorsprong → eerste punt (NIET gemeten in
+Mecway). Niet voor een curve als plastische rek (begint met (0, σ > 0), zoals WE-12c en
+Ramberg-Osgood) en niet voor OpenRadioss `PLAS_TAB`: daar blijft E van het materiaal.
+Code-Aster stopt met `MATERIAL1_5` als de helling tot het eerste curvepunt meer dan 1 %
+van E afwijkt; de bridge controleert dat vooraf en stopt dan met een ERROR met beide
+waarden (bijv. een curve als plastische rek waarvan de eerste plastische rek niet 0
+is). Verificatie NL-04 (isotroop) en NL-04b (kinematisch).
+
+Begint de curve met (0, σ > 0), dan leest `auto` hem als plastische rek, met
 een WARNING dat Mecway dezelfde curve als totale rek leest (de Mecway-oplossing kan
 dan afwijken); kies `plastic` of `total` om de melding te vermijden. Gemeten op NL-01
 met `auto`: curve met en zonder (0, 0) exact tot t = 3 (σ op t = 2: 433,49 MPa,
@@ -293,6 +312,31 @@ analytisch), curve (0, 355 MPa) als plastische rek ook exact (R-CURVE). Controle
 twijfel de vloeigrens in de `.comm` (eerste punt van de functie). Bilineaire plasticiteit:
 Mecway's *tangent modulus* is de plastische modulus H; de bridge zet
 `D_SIGM_EPSI` = E·H/(E+H) (NL-01).
+
+**Hyperelastisch materiaal (Neo Hooke, Mooney-Rivlin).** Mecway 34 heeft Neo Hooke
+(C10, D1, thermische uitzetting) en Mooney-Rivlin (C10, C01, D1, thermische uitzetting),
+alleen in *Nonlinear static 3D* en *Nonlinear dynamic response 3D*. De bridge maakt er
+`DEFI_MATERIAU ELAS_HYPER` (C10, C01, K, RHO) van met `RELATION='ELAS_HYPER'` en
+altijd `DEFORMATION='GREEN_LAGRANGE'` (de instelling `deformation` telt dan niet voor die
+elset), in niet-lineair statisch en in dynamisch impliciet en expliciet. De
+compressiemodulus is K = 2/D1 (Mecway/CCX: volumeterm (J − 1)²/D1). Gecontroleerd met een
+kubus in eenassige trek (λ = 1,5) en druk (λ = 0,7) tegen 2(λ − λ⁻²)(C10 + C01/λ):
+NL-50/51 binnen 0,11 %, gelijk aan Mecway/CCX headless (NL-52 impliciet, NL-53 expliciet).
+`SIXX` is de Cauchy-spanning. Expliciet: de kritieke tijdstap gebruikt de equivalente
+waarden bij kleine rek, G = 2(C10 + C01), E = 2G(1 + ν) met ν uit K en G. Meldingen:
+
+| Situatie | Melding |
+|---|---|
+| D1 = 0 (volledig onsamendrukbaar) | ERROR: Code-Aster heeft een eindige K nodig; geef D1 > 0, bijv. 2/K met K ≈ 1000 × 2(C10 + C01) |
+| thermische uitzetting ingevuld, of *Thermal stress* | WARNING: genegeerd (`ELAS_HYPER` heeft geen `ALPHA`) |
+| Rayleigh-demping in dynamica | WARNING: geldt niet voor dit materiaal |
+| schalen, balken of 2D | ERROR (alleen volume-elementen, zoals Mecway) |
+| lineair statisch, modaal, knik, thermisch → mechanisch | ERROR (Mecway biedt het ook alleen niet-lineair) |
+| `imperfection_amplitude` | ERROR (de knikanalyse vooraf heeft `ELAS` nodig) |
+| ander type, bijv. hyperfoam | ERROR: niet vertaald; hyperfoam kan in Code-Aster alleen via MFront, en dat zit niet in de Windows-versie |
+
+Bijna onsamendrukbaar materiaal op lineaire hex8/tet4 'lockt' (te stijf bij buiging en
+ongelijkmatige vervorming): gebruik kwadratische elementen of `LINE_QUAD`.
 
 ### 2.5 Tijdschema (dynamica): `schema`, `hht_alpha`
 

@@ -1192,7 +1192,7 @@ def log_errors(since=0, limit=3):
 #   unknown unit       value unchanged + WARNING in the log
 #   'line_load', 'stiffness_per_area', 'mass', 'rotational_inertia',
 #   'angular_velocity', 'inverse_time', 'inverse_length', 'inverse_angle',
-#   'damping'          see _EXTRA_FACTORS
+#   'damping', 'inverse_pressure' (D1, m2/N)  see _EXTRA_FACTORS
 #   'dimensionless'    no conversion
 # ==========================================
 
@@ -1514,7 +1514,7 @@ _SI_UNITS = {
     'mass': ('kg',), 'rotational_inertia': ('kg.m2',),
     'angular_velocity': ('rad/s',), 'inverse_time': ('1/s', 'rad/s'),
     'inverse_length': ('1/m',), 'inverse_angle': ('1/rad',),
-    'damping': ('N.s/m',),
+    'damping': ('N.s/m',), 'inverse_pressure': ('m2/N',),
 }
 
 # Already reported (log file, quantity, unit): one WARNING per run.
@@ -1549,6 +1549,13 @@ _EXTRA_FACTORS = {
     'inverse_angle': {'1/rad': 1.0, '1/deg': 180.0 / math.pi},
     # damping (damper) -> N.s/m
     'damping': {'ns/m': 1.0, 'ns/mm': 1.0e3, 'kns/m': 1.0e3},
+    # compressibility D1 of a hyperelastic material -> m2/N (= 1/Pa).
+    # Mecway writes "m2/N" with a superscript 2 (save_as, Mecway 34: a
+    # bare number is read as m2/N, "1/Pa" gives the dialog 'Incorrect
+    # unit')
+    'inverse_pressure': {'m2/n': 1.0, 'mm2/n': 1.0e-6, '1/pa': 1.0,
+                         '1/kpa': 1.0e-3, '1/mpa': 1.0e-6, '1/gpa': 1.0e-9,
+                         'in2/lbf': 6.4516e-4 / 4.4482216152605},
 }
 
 

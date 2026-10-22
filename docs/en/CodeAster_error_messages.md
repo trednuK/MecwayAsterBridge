@@ -929,6 +929,23 @@ Step-by-step plan and settings:
 - **Solution**: in the bridge: explicit stays `TANGENTE`.
 - **Status**: fixed in the bridge.
 
+### `MATERIAL1_5` – slope of the hardening curve does not match E
+
+- **Message** (error, `<F>`): the slope up to the first point of `TRACTION` differs from
+  `ELAS` E by more than 1% (`DEFI_MATERIAU`, check `check_young_consistency` in
+  `defi_materiau_ops.py`).
+- **Cause in a Mecway model**: *Young's modulus* on the *Elastic* tab does not match the
+  first segment of the hardening curve, or a curve as plastic strain does not start with
+  plastic strain 0.
+- **Seen**: GitHub issue #2 (curve with a different slope than E).
+- **Solution**: in the bridge: for a curve in total strain, E is the slope of the first
+  segment, as in Mecway (WARNING showing both values); what still differs by more than 1%
+  stops before Code-Aster with an ERROR showing both values
+  ([`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.4). In the
+  model: start the curve with (0, 0) and put the yield point on the elastic line, or
+  (plastic strain) start with plastic strain 0 at the yield point.
+- **Status**: fixed in the bridge (curve in total strain) / model (other cases).
+
 ### `MECANONLINE9_3` – integration of the material law failed
 
 - **Message** (error, `<IntegrationError>`): the integration of the material law failed;
@@ -1464,6 +1481,7 @@ and beams in the model).
 | `INDICATEUR_8` | [11](#indicateur_6-indicateur_7-indicateur_8--loads-the-estimator-cannot-handle) | fixed in the bridge |
 | `JEVEUX_10` | [7](#jeveux_10--name-already-exists) | fixed in the bridge |
 | `JEVEUX_26` | [9](#jeveux_26--object-does-not-exist) | follow-on error |
+| `MATERIAL1_5` | [5](#material1_5--slope-of-the-hardening-curve-does-not-match-e) | fixed in the bridge (curve in total strain) / model (other cases) |
 | `MECANONLINE2_97` | [3](#mecanonline2_97--thermal-strain-in-the-initial-state) | fixed in the bridge |
 | `MECANONLINE4_50` | [5](#mecanonline4_50--initial-stress-with-a-multi-step-scheme) | harmless (expected; NOT verified) |
 | `MECANONLINE5_1` | [5](#mecanonline5_1--explicit-only-prediction-tangente) | fixed in the bridge |

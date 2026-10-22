@@ -1340,6 +1340,37 @@ samples) plus the kinks of the load tables (NL-20).
   radial return stays exact. Mecway's own output times were not checked headless
   (Mecway solve was not available when this case was added).
 
+### NL-04 Hardening curve with a different E than the *Elastic* tab
+
+- **Goal**: E with a hardening curve in total strain (GitHub issue #2).
+- **Model**: bar as NL-01 (hex20), *Young's modulus* 200 GPa, curve (0, 0),
+  (0.001, 210 MPa), (0.011, 310 MPa); elongation up to strain 5·10⁻⁴ (t = 1) and 5·10⁻³
+  (t = 2). NL-04b: the same curve as *Kinematic* (linear, so `VMIS_CINE_LINE`).
+- **Reference**: Mecway uses the slope of the first segment (E = 210 GPa), measured with
+  Mecway/CCX headless: σ = 104.97 MPa at t = 1 (nonlinear) and 105.00 MPa (linear static,
+  CCX); 248.1 MPa at t = 2. Analytical (uniaxial, log strain): F and σ with E = 210 GPa and
+  the curve as total strain.
+- **Result**: NL-04 and NL-04b: F at t = 1 and 2 and σ_xx at t = 1 0.00% off; the bridge
+  gives a WARNING showing both values of E. Without this change Code-Aster stopped with
+  `MATERIAL1_5` (slope > 1% different from E) and the kinematic curve was not translated.
+- **Interpretation**: at t = 2 CCX is 0.7% below the analytical log-strain value
+  (249.9 MPa): CCX uses a different large-strain formulation for plasticity.
+
+### NL-50 .. NL-53 Hyperelastic (Neo Hooke, Mooney-Rivlin)
+
+- **Goal**: `ELAS_HYPER` from Mecway's Neo Hooke and Mooney-Rivlin (GitHub issue #5).
+- **Model**: cube 10 mm (one hex8), symmetry planes, prescribed elongation up to λ = 1.5
+  (tension) or 0.7 (compression). Neo Hooke C10 = 1 MPa; Mooney-Rivlin C10 = 0.8 and
+  C01 = 0.2 MPa; D1 = 10⁻⁹ m²/N (K = 2 GPa, about 1000 G). NL-50/50b Neo Hooke
+  tension/compression, NL-51/51b Mooney-Rivlin, NL-52 Neo Hooke in *Dynamic (implicit)*
+  (1 s, ρ = 1000 kg/m³), NL-53 in *Dynamic (explicit)* (20 ms).
+- **Reference**: incompressible, uniaxial: P = 2(λ − λ⁻²)(C10 + C01/λ), Cauchy σ = λP,
+  F = P·A0. Mecway/CCX headless (same model): σ = 3.163 / −1.877 / 2.952 / −2.038 MPa.
+- **Result**: F and σ_xx within 0.11% (static and implicit; σ equal to Mecway/CCX within
+  0.01%), explicit +0.7% (inertia at 20 ms).
+- **Interpretation**: K = 2/D1 agrees with Mecway; the remaining difference is the
+  compressibility (finite K). `SIXX` is the Cauchy stress.
+
 ### NL-02 Cantilever, large deflection (elastica)
 
 - **Purpose**: large displacements and rotations with solids (`GREEN_LAGRANGE`) and

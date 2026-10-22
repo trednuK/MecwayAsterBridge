@@ -941,6 +941,23 @@ Stappenplan en instellingen:
 - **Oplossing**: in de bridge: expliciet blijft `TANGENTE`.
 - **Status**: opgelost in de bridge.
 
+### `MATERIAL1_5` – helling van de hardingscurve past niet bij E
+
+- **Melding** (fout, `<F>`): de helling tot het eerste punt van `TRACTION` wijkt meer dan
+  1 % af van `ELAS` E (`DEFI_MATERIAU`, controle `check_young_consistency` in
+  `defi_materiau_ops.py`).
+- **Oorzaak in een Mecway-model**: *Young's modulus* op het tabblad *Elastic* past niet
+  bij het eerste stuk van de hardingscurve, of een curve als plastische rek begint niet
+  met plastische rek 0.
+- **Gezien**: GitHub issue #2 (curve met een andere helling dan E).
+- **Oplossing**: in de bridge: bij een curve in totale rek is E de helling van het eerste
+  stuk, zoals Mecway (WARNING met beide waarden); wat dan nog meer dan 1 % afwijkt, stopt
+  vóór Code-Aster met een ERROR met beide waarden
+  ([`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md)
+  §2.4). In het model: laat de curve met (0, 0) beginnen en de vloeigrens op de
+  elastische lijn liggen, of (plastische rek) met plastische rek 0 bij de vloeigrens.
+- **Status**: opgelost in de bridge (curve in totale rek) / model (overige).
+
 ### `MECANONLINE9_3` – integratie van de materiaalwet mislukt
 
 - **Melding** (fout, `<IntegrationError>`): de integratie van de materiaalwet is
@@ -1485,6 +1502,7 @@ twee drukken en balken in het model).
 | `INDICATEUR_8` | [11](#indicateur_6-indicateur_7-indicateur_8--lasten-die-de-schatter-niet-kan) | opgelost in de bridge |
 | `JEVEUX_10` | [7](#jeveux_10--naam-bestaat-al) | opgelost in de bridge |
 | `JEVEUX_26` | [9](#jeveux_26--object-bestaat-niet) | vervolgfout |
+| `MATERIAL1_5` | [5](#material1_5--helling-van-de-hardingscurve-past-niet-bij-e) | opgelost in de bridge (curve in totale rek) / model (overige) |
 | `MECANONLINE2_97` | [3](#mecanonline2_97--temperatuurrek-in-de-begintoestand) | opgelost in de bridge |
 | `MECANONLINE4_50` | [5](#mecanonline4_50--beginspanning-bij-een-meerstapsschema) | onschuldig (verwacht; NIET geverifieerd) |
 | `MECANONLINE5_1` | [5](#mecanonline5_1--expliciet-alleen-prediction-tangente) | opgelost in de bridge |

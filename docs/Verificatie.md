@@ -1342,6 +1342,37 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   zodat radial return exact blijft. Mecway's eigen uitvoertijden zijn niet headless
   nagegaan (Mecway-solve was niet beschikbaar toen deze case werd toegevoegd).
 
+### NL-04 Hardingscurve met een andere E dan het tabblad *Elastic*
+
+- **Doel**: E bij een hardingscurve in totale rek (GitHub issue #2).
+- **Model**: staaf als NL-01 (hex20), *Young's modulus* 200 GPa, curve (0, 0),
+  (0,001; 210 MPa), (0,011; 310 MPa); verlenging tot rek 5·10⁻⁴ (t = 1) en 5·10⁻³ (t = 2).
+  NL-04b: dezelfde curve als *Kinematic* (lineair, dus `VMIS_CINE_LINE`).
+- **Referentie**: Mecway rekent met de helling van het eerste stuk (E = 210 GPa), gemeten
+  met Mecway/CCX headless: σ = 104,97 MPa op t = 1 (niet-lineair) en 105,00 MPa (lineair
+  statisch, CCX); 248,1 MPa op t = 2. Analytisch (eenassig, log-rek): F en σ met
+  E = 210 GPa en de curve als totale rek.
+- **Resultaat**: NL-04 en NL-04b: F op t = 1 en 2 en σ_xx op t = 1 0,00% af; de bridge
+  geeft een WARNING met beide waarden van E. Zonder deze aanpassing stopte Code-Aster met
+  `MATERIAL1_5` (helling > 1% anders dan E) en werd de kinematische curve niet vertaald.
+- **Interpretatie**: op t = 2 rekent CCX 0,7% lager dan de analytische log-rekwaarde
+  (249,9 MPa): CCX gebruikt een andere grote-rekformulering voor plasticiteit.
+
+### NL-50 .. NL-53 Hyperelastisch (Neo Hooke, Mooney-Rivlin)
+
+- **Doel**: `ELAS_HYPER` uit Mecway's Neo Hooke en Mooney-Rivlin (GitHub issue #5).
+- **Model**: kubus 10 mm (één hex8), symmetrievlakken, opgelegde verlenging tot λ = 1,5
+  (trek) of 0,7 (druk). Neo Hooke C10 = 1 MPa; Mooney-Rivlin C10 = 0,8 en C01 = 0,2 MPa;
+  D1 = 10⁻⁹ m²/N (K = 2 GPa, ongeveer 1000 G). NL-50/50b Neo Hooke trek/druk, NL-51/51b
+  Mooney-Rivlin, NL-52 Neo Hooke in *Dynamisch (impliciet)* (1 s, ρ = 1000 kg/m³),
+  NL-53 in *Dynamisch (expliciet)* (20 ms).
+- **Referentie**: onsamendrukbaar, eenassig: P = 2(λ − λ⁻²)(C10 + C01/λ), Cauchy σ = λP,
+  F = P·A0. Mecway/CCX headless (zelfde model): σ = 3,163 / −1,877 / 2,952 / −2,038 MPa.
+- **Resultaat**: F en σ_xx binnen 0,11% (statisch en impliciet; σ gelijk aan Mecway/CCX op
+  0,01%), expliciet +0,7% (traagheid bij 20 ms).
+- **Interpretatie**: K = 2/D1 klopt met Mecway; de rest van de afwijking is de
+  samendrukbaarheid (K eindig). `SIXX` is de Cauchy-spanning.
+
 ### NL-02 Ingeklemde balk, grote doorbuiging (elastica)
 
 - **Doel**: grote verplaatsingen en rotaties met volumes (`GREEN_LAGRANGE`) en

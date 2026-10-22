@@ -2221,6 +2221,16 @@ def _build_materials_block(model_data, analysis, plastic_func_map=None):
     concepts = _material_concepts(model_data)
     for mat_name, props in model_data["materials"].items():
         concept = concepts[mat_name]
+        hyp = props.get("hyper")
+        if hyp:
+            # ELAS_HYPER excludes ELAS (catalogue defi_materiau.py, EXCLUS):
+            # no ALPHA, no AMOR_ALPHA/AMOR_BETA (_check_hyperelastic warns)
+            out += _mat_comment(mat_name)
+            out += ("{0} = DEFI_MATERIAU(ELAS_HYPER=_F(C10={1!r}, C01={2!r}, "
+                    "K={3!r}, RHO={4!r}),)\n").format(
+                        concept, hyp["C10"], hyp["C01"], hyp["K"],
+                        props.get("rho", 0.0))
+            continue
         elas = _elas_args(props, thermal, rayleigh)
         extra = []
         if mat_name in plastic_func_map:
@@ -4467,8 +4477,9 @@ def _to_aster_traction_curve(mat_name, curve, e_mod, definition):
                                (the elastic branch follows from ELAS/E).
       definition = 'auto'    : derived from the first point:
                                (0, 0) or eps > 0 -> 'total' (like Mecway;
-                                 the slope check below warns
-                                 if the point is not on the elastic line)
+                                 E is then already the slope of the
+                                 first segment, bridge_from_liml.
+                                 _curve_young)
                                (0, sigma>0)      -> 'plastic' + WARNING
                                  (Mecway itself reads this as total
                                  strain).
@@ -4548,24 +4559,9 @@ def _to_aster_traction_curve(mat_name, curve, e_mod, definition):
         if dropped:
             log("INFO: Material '{0}': starting point (0, 0) removed; "
                 "Code-Aster does not allow abscissa zero.".format(mat_name))
-        if aster_curve:
-            eps1, sig1 = aster_curve[0]
-            slope    = sig1 / eps1
-            rel_diff = abs(slope - e_mod) / e_mod
-            if rel_diff > 0.05:
-                # Pass on as supplied, with a warning (do not
-                # correct silently).
-                log(tr("WARNING: Materiaal '{0}': helling tot het eerste "
-                       "punt = {1} Pa, maar E = {2} Pa (verschil "
-                       "{3}). Het eerste punt hoort de elastische grens "
-                       "op de elastische lijn te zijn.",
-                       "WARNING: Material '{0}': slope up to the first "
-                       "point = {1} Pa, but E = {2} Pa (difference "
-                       "{3}). The first point should be the yield point "
-                       "on the elastic line.").format(
-                        # %-formatting (see _warn_large_rotations)
-                        mat_name, "%.3e" % slope, "%.3e" % e_mod,
-                        "%.0f%%" % (100.0 * rel_diff)))
+        # E itself already is the slope of the first segment
+        # (bridge_from_liml._curve_young, like Mecway); the check below
+        # catches what is left.
 
     else:
         raise ValueError(tr(
@@ -4596,6 +4592,32 @@ def _to_aster_traction_curve(mat_name, curve, e_mod, definition):
                 "point {1} ({2}) and point {3} ({4}).").format(
                     mat_name, i, aster_curve[i - 1][0],
                     i + 1, aster_curve[i][0]))
+    # Code-Aster 17.4 stops with <F> MATERIAL1_5 when the slope up to the
+    # first point differs by more than 1% from ELAS E
+    # (MacroCommands/defi_materiau_ops.py, check_young_consistency): stop
+    # here already with an explanation. Remaining cases: the plastic
+    # definition with a first plastic strain != 0, or a total-strain curve
+    # whose E was not taken from the curve.
+    eps1, sig1 = aster_curve[0]
+    slope = sig1 / eps1
+    if abs(slope - e_mod) > 0.01 * e_mod:
+        raise ValueError(tr(
+            "Materiaal '{0}': de helling tot het eerste punt van de "
+            "curve ({1}, {2}) is {3} Pa, maar E = {4} Pa (verschil {5}). "
+            "Code-Aster stopt bij meer dan 1% verschil (MATERIAL1_5). Laat "
+            "de curve beginnen met (0, 0) en de vloeigrens op de elastische "
+            "lijn, of (bij plastische rek) met plastische rek 0 bij de "
+            "vloeigrens.",
+            "Material '{0}': the slope up to the first point of the curve "
+            "({1}, {2}) is {3} Pa, but E = {4} Pa (difference {5}). "
+            "Code-Aster stops at more than 1% difference (MATERIAL1_5). "
+            "Start the curve with (0, 0) and the yield point on the elastic "
+            "line, or (with plastic strain) with plastic strain 0 at the "
+            "yield point.").format(
+                # %-formatting (see _warn_large_rotations)
+                mat_name, "%.6g" % eps1, "%.6g" % sig1, "%.4e" % slope,
+                "%.4e" % e_mod,
+                "%.1f%%" % (100.0 * abs(slope - e_mod) / e_mod)))
     if len(aster_curve) == 1:
         log(tr("WARNING: Materiaal '{0}': TRACTION-curve heeft maar 1 punt "
                "(alleen de elastische grens).",
@@ -4872,6 +4894,15 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
     """
     if modelisation == _GD_BEAM:
         return "GROT_GDEP"
+    if relation == "ELAS_HYPER":
+        # Hyperelastic (Mecway Neo Hooke / Mooney-Rivlin): ELAS_HYPER only
+        # with GREEN_LAGRANGE (U4.51.11; test case ssnv187a), whatever
+        # 'deformation' says; Mecway's hyperelastic is always large strain.
+        if chosen not in ("GREEN_LAGRANGE", "GROT_GDEP"):
+            log("INFO: Elset '{0}': ELAS_HYPER -> DEFORMATION="
+                "'GREEN_LAGRANGE' (setting deformation = {1} not used)."
+                .format(elset_name, chosen))
+        return "GREEN_LAGRANGE"
     if chosen not in _LARGE_DEFORMATIONS:
         return chosen
     plastic = relation.startswith("VMIS")
@@ -4917,6 +4948,8 @@ def _relation_for(model_data, mat_name):
     hardening curve, VMIS_ISOT_LINE/VMIS_CINE_LINE for bilinear
     plasticity, otherwise ELAS."""
     props = model_data["materials"].get(mat_name, {})
+    if props.get("hyper"):
+        return "ELAS_HYPER"
     if "plastic_curve" in props:
         return "VMIS_ISOT_TRAC"
     if props.get("plastic_bilinear"):
@@ -6078,7 +6111,7 @@ def _warn_plastic_hex8(model_data, plan):
     for elset, mat_name in model_data.get("elsets", {}).items():
         if elset not in hex_elsets or mods.get(elset) != "3D":
             continue
-        if _relation_for(model_data, mat_name) != "ELAS":
+        if _relation_for(model_data, mat_name).startswith("VMIS"):
             names.append(elset)
     if not names:
         return
@@ -7652,12 +7685,93 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
             return None
         if not _check_materials(model_data, analysis):
             return None
+    if not _check_hyperelastic(model_data, analysis):
+        return None
         # One distributed load per beam (BRLP groups before DEFI_GROUP)
         _prepare_beam_loads(model_data, solver_cmd)
 
     # Gap groups (DEFI_GROUP, DEFI_MATERIAU) before the blocks
     _prepare_gaps(model_data)
     return builder(work_dir, model_data, msh_path, resu_name, analysis)
+
+
+def _check_hyperelastic(model_data, analysis):
+    """
+    Hyperelastic materials (Neo Hooke / Mooney-Rivlin -> ELAS_HYPER,
+    bridge_from_liml._parse_hyperelastic). Mecway 34 offers them only in
+    Nonlinear static 3D and Nonlinear dynamic response 3D; Code-Aster
+    ELAS_HYPER only works with STAT_NON_LINE/DYNA_NON_LINE (DEFI_MATERIAU
+    has no ELAS next to it, so MECA_STATIQUE/CALC_MODES have no stiffness)
+    and the bridge only on volume elements (3D; shells and beams: NOT
+    verified per element catalogue, refused).
+    ERROR (False) for a linear, modal or thermal -> mechanical analysis,
+    shells/beams/2D and an imperfection from a buckling analysis (needs
+    RIGI_MECA with ELAS); WARNING for Rayleigh damping and thermal stress
+    (ignored). Explicit: the critical time step uses the small-strain
+    equivalents E, NU (E = 2 G (1 + NU), G = 2 (C10 + C01)).
+    """
+    import bridge_thermomech
+    materials = model_data.get("materials", {})
+    hyper = [e for e, m in model_data.get("elsets", {}).items()
+             if materials.get(m, {}).get("hyper")]
+    if not hyper:
+        return True
+    solver_cmd = analysis.get("solver_command")
+    thermomech = bridge_thermomech.enabled(model_data)
+    if str(solver_cmd or "").startswith("THER") and not thermomech:
+        return True                     # thermal only: own materials
+    names = ", ".join(sorted(bridge_failure.mecway_name(model_data, e)
+                             for e in hyper))
+    ok = True
+    if solver_cmd not in ("STAT_NON_LINE", "DYNA_NON_LINE") or thermomech:
+        log(tr("ERROR: Hyperelastisch materiaal (Neo Hooke / Mooney-Rivlin, "
+               "elset {0}) werkt alleen in Niet-lineair statisch en "
+               "Dynamisch (impliciet/expliciet), zoals in Mecway (Nonlinear "
+               "static 3D, Nonlinear dynamic response 3D). Code-Aster heeft "
+               "voor ELAS_HYPER geen lineaire stijfheid (geen ELAS). Kies "
+               "een niet-lineaire analyse of een isotroop materiaal.",
+               "ERROR: Hyperelastic material (Neo Hooke / Mooney-Rivlin, "
+               "elset {0}) only works in Nonlinear static and Dynamic "
+               "(implicit/explicit), as in Mecway (Nonlinear static 3D, "
+               "Nonlinear dynamic response 3D). Code-Aster has no linear "
+               "stiffness for ELAS_HYPER (no ELAS). Choose a nonlinear "
+               "analysis or an isotropic material.").format(names))
+        ok = False
+    mods = model_data.get("elset_modelisations", {})
+    bad = sorted(bridge_failure.mecway_name(model_data, e) for e in hyper
+                 if not str(mods.get(e, "3D")).startswith("3D"))
+    if bad:
+        log(tr("ERROR: Hyperelastisch materiaal op schalen, balken of 2D "
+               "(elset {0}) wordt niet ondersteund: de bridge vertaalt "
+               "ELAS_HYPER alleen voor volume-elementen (Mecway: alleen 3D).",
+               "ERROR: Hyperelastic material on shells, beams or 2D (elset "
+               "{0}) is not supported: the bridge translates ELAS_HYPER "
+               "only for volume elements (Mecway: 3D only).").format(
+                   ", ".join(bad)))
+        ok = False
+    if float(analysis.get("imperfection_amplitude", 0.0) or 0.0):
+        log(tr("ERROR: imperfection_amplitude (imperfectie uit een "
+               "knikanalyse) werkt niet met hyperelastisch materiaal: de "
+               "lineaire knikanalyse vooraf heeft ELAS nodig. Zet de "
+               "imperfectie in het mesh of zet de instelling op 0.",
+               "ERROR: imperfection_amplitude (imperfection from a buckling "
+               "analysis) does not work with hyperelastic material: the "
+               "linear buckling analysis beforehand needs ELAS. Put the "
+               "imperfection in the mesh or set the option to 0."))
+        ok = False
+    if model_data.get("rayleigh") and solver_cmd == "DYNA_NON_LINE":
+        log(tr("WARNING: Rayleigh-demping geldt niet voor hyperelastisch "
+               "materiaal (elset {0}): ELAS_HYPER heeft geen "
+               "AMOR_ALPHA/AMOR_BETA.",
+               "WARNING: Rayleigh damping does not apply to hyperelastic "
+               "material (elset {0}): ELAS_HYPER has no "
+               "AMOR_ALPHA/AMOR_BETA.").format(names))
+    if _thermal_active(model_data):
+        log(tr("WARNING: Thermische spanning: hyperelastisch materiaal "
+               "(elset {0}) zet niet uit (ELAS_HYPER heeft geen ALPHA).",
+               "WARNING: Thermal stress: hyperelastic material (elset {0}) "
+               "does not expand (ELAS_HYPER has no ALPHA).").format(names))
+    return ok
 
 
 def _check_gd_beams(model_data, analysis):
