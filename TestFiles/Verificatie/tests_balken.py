@@ -425,3 +425,53 @@ TESTS += [
          note="Line3 als twee SEG2-cellen: waarden van beide helften op "
               "het Mecway-element."),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-54 Staaf met een line3-truss-element (truss="true", GitHub issue #6)
+# ------------------------------------------------------------------
+# Een line3-element langs X, L = 1 m, ronde staaf D = 10 mm (A = pi D^2/4).
+# Wortel ingeklemd, tip uy = uz = 0, trekkracht F = 1000 N langs X op de
+# tip. De bridge splitst het element in twee SEG2-cellen (BARRE) en koppelt
+# de middenknoop dwars op de koorde aan de eindknopen (LIAISON_DDL,
+# bridge_mesh._line3_truss_links); zonder die koppeling is de middenknoop
+# een mechanisme (ALGELINE3_81). Referentie u = F x / (E A).
+F54, D54 = 1000.0, 0.010
+A54 = math.pi * D54 ** 2 / 4.0
+
+
+def build_ls54():
+    m = Model("S30")
+    m.elset("Staaf", "Staaf")
+    _eids, nids = line3mesh(m, "Staaf", 1, (0, 0, 0), (L, 0, 0),
+                            'truss="true"')
+    m.mat("Staaf", '<geometric type="CircularBar" roundod="10 mm" />',
+          STEEL)
+    m.node_selection("Wortel", [nids[0]])
+    m.node_selection("Tip", [nids[-1]])
+    m.add('<fixed selection="Wortel" />')
+    for d in ("<x>0</x><y>1</y><z>0</z>", "<x>0</x><y>0</y><z>1</z>"):
+        m.add('<displacement selection="Tip"><value>0 mm</value>%s'
+              '</displacement>' % d)
+    m.add('<force selection="Tip"><x>%g N</x><y>0 N</y><z>0 N</z></force>'
+          % F54)
+    return m
+
+
+TESTS += [
+    Case("LS-54a", GROUP, "Staaf, een line3-truss-element, trekkracht",
+         "lin_static_3d", build_ls54,
+         [Check("verlenging tip", lambda r: r.at("displx", (L, 0, 0)),
+                ref=F54 * L / (E * A54), tol=1e-6, unit="m",
+                source="u = F L / (E A)"),
+          Check("verplaatsing middenknoop", lambda r: r.at(
+              "displx", (L / 2, 0, 0)), ref=F54 * L / (2 * E * A54),
+                tol=1e-6, unit="m", source="u = F x / (E A), x = L/2"),
+          Check("dwarsverplaatsing middenknoop", lambda r: max(
+              abs(r.at("disply", (L / 2, 0, 0))),
+              abs(r.at("displz", (L / 2, 0, 0)))), ref=0.0, tol_abs=1e-12,
+                unit="m", source="midden volgt de eindknopen (0)",
+                in_series=False)],
+         note="Line3-truss als twee SEG2-cellen (BARRE) met de "
+              "middenknoop dwars gekoppeld (GitHub issue #6)."),
+]

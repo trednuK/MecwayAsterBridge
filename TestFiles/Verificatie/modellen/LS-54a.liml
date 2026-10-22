@@ -1,0 +1,23 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.5" y="0" z="0" />
+  <node nid="3" x="1" y="0" z="0" />
+  <elset name="Staaf" material="Staaf">
+    <elem eid="1" shape="line3" nodes="1 2 3" truss="true" />
+  </elset>
+  <fixed selection="Wortel" />
+  <displacement selection="Tip"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Tip"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <force selection="Tip"><x>1000 N</x><y>0 N</y><z>0 N</z></force>
+  <mat name="Staaf">
+    <geometric type="CircularBar" roundod="10 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="Wortel">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="3" />
+  </nodeselection>
+</liml>

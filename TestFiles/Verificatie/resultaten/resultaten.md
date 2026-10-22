@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 2516067, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2260 van 2267 controles binnen de tolerantie** (415 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2265 van 2272 controles binnen de tolerantie** (417 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1142,6 +1142,9 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4
 | LS-53b | Snedekrachten per element, line3-balk met flexible joint | M element 3, middenknoop (x = 0,625 m) | 6.25 N m | 6.25 | +0.00% | 0.1% | OK |
 | LS-53b | Snedekrachten per element, line3-balk met flexible joint | M element 3, knoop 3 (x = 0,75 m) | 12.5 N m | 12.5 | +0.00% | 0.1% | OK |
 | LS-53b | Snedekrachten per element, line3-balk met flexible joint | V element 2, middenknoop | 50 N | 50 | +0.00% | 0.1% | OK |
+| LS-54a | Staaf, een line3-truss-element, trekkracht | verlenging tip | 6.0630e-05 m | 6.0630e-05 | +0.00% | 0.0001% | OK |
+| LS-54a | Staaf, een line3-truss-element, trekkracht | verplaatsing middenknoop | 3.0315e-05 m | 3.0315e-05 | +0.00% | 0.0001% | OK |
+| LS-54a | Staaf, een line3-truss-element, trekkracht | dwarsverplaatsing middenknoop | 0 m | 0 | 0 | 1e-12 m | OK |
 | LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | doorbuiging tip (+W) | 0.0071429 m | 0.0070851 | -0.81% | 2% | OK |
 | LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | doorbuiging tip t.o.v. Mecway | 0.0070901 m | 0.0070851 | -0.07% | 0.5% | OK |
 | LS-60a | Plaatstrook met element offset, trek in de knopen (DKT, EXCENTREMENT) | rotatie tip om Y | 0.071269 rad | 0.071231 | -0.05% | 0.5% | OK |
@@ -1411,6 +1414,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-16 (bridge 7e02e1e, Code-Aster 17.4
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | stressxx mode 1 t.o.v. Mecway | 2.3201e+09 Pa/sqrt(kg) | 2.3203e+09 | +0.01% | 1% | OK |
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | eff. massa RZ mode 1 t.o.v. Mecway | 0.97043  | 0.97043 | -0.00% | 0.5% | OK |
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | eff. massa RY mode 2 t.o.v. Mecway | 0.97051  | 0.97051 | -0.00% | 0.5% | OK |
+| MO-08 | NAFEMS CP5: twee line3-truss-elementen, 2 modes | f1 | 451.1 Hz | 451.15 | +0.01% | 0.2% | OK |
+| MO-08 | NAFEMS CP5: twee line3-truss-elementen, 2 modes | f2 | 1049.9 Hz | 1049.9 | +0.00% | 0.2% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |

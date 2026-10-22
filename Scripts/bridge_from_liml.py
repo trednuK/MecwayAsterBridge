@@ -808,6 +808,16 @@ def _not_translated(model_data, what, why):
            "ERROR: {0}: {1} NOT included.").format(what, why))
 
 
+def _drop_elset(model_data, elset_name, what, why):
+    """Report an elset that cannot be translated (_not_translated). The
+    whole elset is missing then, so extract_aster_data_from_liml stops
+    before Code-Aster (otherwise only MODELE1_6 or an empty model)."""
+    _not_translated(model_data, what, why)
+    dropped = model_data.setdefault("_dropped_elsets", [])
+    if elset_name not in dropped:
+        dropped.append(elset_name)
+
+
 _LIML_CHUNK = 4 * 1024 * 1024
 
 
@@ -2610,10 +2620,13 @@ def extract_aster_data_from_liml(file_path):
                     log("INFO: Spring '{0}': k={1} N/m -> DIS_T".format(
                         elset_name, k))
                 else:
-                    log(tr("WARNING: Veer-materiaal op niet-1D elset '{0}' "
-                           "(dim={1}). Overgeslagen.",
-                           "WARNING: Spring material on non-1D elset '{0}' "
-                           "(dim={1}). Skipped.").format(elset_name, dim))
+                    _drop_elset(
+                        model_data, elset_name,
+                        tr("veer-materiaal op elset '{0}' (dim={1})",
+                           "spring material on elset '{0}' (dim={1})")
+                        .format(elset_name, dim),
+                        tr("een veer alleen op 1D-elementen;",
+                           "a spring only on 1D elements;"))
                 continue
 
             # --- Gap / damper -> DIS_T op SEG2 ---
@@ -2623,9 +2636,10 @@ def extract_aster_data_from_liml(file_path):
                         model_data["line_discretes"][mat_name])
                     model_data["elset_modelisations"][elset_name] = "DIS_T"
                 else:
-                    _not_translated(model_data, "elset '{0}'".format(
-                        elset_name), tr("Gap/Damper alleen op line2;",
-                                        "Gap/Damper only on line2;"))
+                    _drop_elset(model_data, elset_name,
+                                "elset '{0}'".format(elset_name),
+                                tr("Gap/Damper alleen op line2;",
+                                   "Gap/Damper only on line2;"))
                 continue
 
             # --- Tension only -> CABLE ---
@@ -2634,10 +2648,10 @@ def extract_aster_data_from_liml(file_path):
                 geom = model_data["mat_geometrics"].get(mat_name, {})
                 area = _section_area(geom)
                 if dim != "1D" or not area:
-                    _not_translated(model_data, "tension-only elset '{0}'"
-                                    .format(elset_name),
-                                    tr("alleen line2 met een doorsnede;",
-                                       "only line2 with a cross-section;"))
+                    _drop_elset(model_data, elset_name,
+                                "tension-only elset '{0}'".format(elset_name),
+                                tr("alleen line2 met een doorsnede;",
+                                   "only line2 with a cross-section;"))
                     model_data["elset_modelisations"].pop(elset_name, None)
                     continue
                 model_data["cable_sections"][elset_name] = {"area": area}
@@ -2657,12 +2671,12 @@ def extract_aster_data_from_liml(file_path):
                 geom = model_data["mat_geometrics"].get(mat_name, {})
                 area = _section_area(geom)
                 if dim != "1D" or not area:
-                    _not_translated(model_data, "truss elset '{0}'"
-                                    .format(elset_name),
-                                    tr("een truss heeft een materiaal met "
-                                       "een doorsnede nodig;",
-                                       "a truss needs a material with a "
-                                       "cross-section;"))
+                    _drop_elset(model_data, elset_name,
+                                "truss elset '{0}'".format(elset_name),
+                                tr("een truss heeft een materiaal met "
+                                   "een doorsnede nodig;",
+                                   "a truss needs a material with a "
+                                   "cross-section;"))
                     model_data["elset_modelisations"].pop(elset_name, None)
                     continue
                 model_data["beam_sections"][elset_name] = {
@@ -2705,28 +2719,31 @@ def extract_aster_data_from_liml(file_path):
                            "thickness.").format(
                                elset_name, geom.get("geom_type", "?")))
 
-        # line3 only as beam: bridge_mesh splits line3 beams into two
-        # SEG2 cells (POU_D_E/POU_D_T exist only on SEG2). Truss, spring,
-        # gap, damper and tension-only are only on line2 in Mecway
-        # (manual v33 par. 7.6-7.10); two bars or springs in series would
-        # give a mechanism or half the stiffness, so report.
+        # line3 only as beam, truss or cable: bridge_mesh splits them into
+        # two SEG2 cells (POU_D_E/POU_D_T and BARRE exist only on SEG2;
+        # MODELISATION='BARRE' on SEG3 gave MODELE1_6, Code-Aster 17.4,
+        # GitHub issue #6) and couples the midside node of a bar
+        # (bridge_mesh._line3_truss_links). Spring, gap and damper are only
+        # on line2 in Mecway (manual v33 par. 7.6-7.10); two springs in
+        # series would give half the stiffness, so report.
         if not thermal_run:
             for elset_name, mod in sorted(
                     model_data["elset_modelisations"].items()):
                 if ("line3" in elset_shapes_map.get(elset_name, ()) and
                         model_data["elset_dims"].get(elset_name) == "1D" and
-                        mod not in ("POU_D_E", "POU_D_T", GD_BEAM)):
-                    _not_translated(
-                        model_data,
+                        mod not in ("POU_D_E", "POU_D_T", GD_BEAM,
+                                    "BARRE", "CABLE")):
+                    _drop_elset(
+                        model_data, elset_name,
                         tr("elset '{0}': line3-elementen ({1})",
                            "elset '{0}': line3 elements ({1})").format(
                                elset_name, mod),
-                        tr("alleen line3-balken worden vertaald; truss, "
-                           "veer, gap, demper en tension-only alleen op "
-                           "line2 (zoals Mecway);",
-                           "only line3 beams are translated; truss, spring, "
-                           "gap, damper and tension-only only on line2 "
-                           "(as in Mecway);"))
+                        tr("alleen line3-balken en -truss worden vertaald; "
+                           "veer, gap en demper alleen op line2 (zoals "
+                           "Mecway);",
+                           "only line3 beams and trusses are translated; "
+                           "spring, gap and damper only on line2 (as in "
+                           "Mecway);"))
 
         # BARRE is geometrically linear in Code-Aster 17.4: a bar that
         # rotates rigidly by 30 degrees gave with DEFORMATION='GROT_GDEP'
@@ -2806,6 +2823,19 @@ def extract_aster_data_from_liml(file_path):
                "ERROR: Error while parsing XML of '{0}': {1}: {2}. The "
                ".liml cannot be translated.").format(
             file_path, type(e).__name__, str(e)))
+        return None
+
+    dropped = model_data.get("_dropped_elsets")
+    if dropped:
+        log(tr("ERROR: Elset(s) {0} kunnen niet naar Code-Aster vertaald "
+               "worden (zie de ERROR-regels hierboven); zonder deze "
+               "elementen zou de berekening fout of onvolledig zijn. De "
+               "bridge stopt voor Code-Aster. Pas het model aan.",
+               "ERROR: Elset(s) {0} cannot be translated to Code-Aster "
+               "(see the ERROR lines above); without these elements the "
+               "analysis would be wrong or incomplete. The bridge stops "
+               "before Code-Aster. Adapt the model.").format(
+                   ", ".join("'{0}'".format(e) for e in dropped)))
         return None
 
     return model_data

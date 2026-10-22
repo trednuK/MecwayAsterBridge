@@ -39728,5 +39728,111 @@
   "general": {
    "elem_beam": "POU_D_T_GD"
   }
+ },
+ "LS-54a": {
+  "id": "LS-54a",
+  "group": "Lineair statisch",
+  "title": "Staaf, een line3-truss-element, trekkracht",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Line3-truss als twee SEG2-cellen (BARRE) met de middenknoop dwars gekoppeld (GitHub issue #6).",
+  "seconds": 9.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "verlenging tip",
+    "fem": 6.063045451119825e-05,
+    "ref": 6.063045451119822e-05,
+    "rel": 4.470534573863603e-16,
+    "dev": 2.710505431213761e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "u = F L / (E A)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "verplaatsing middenknoop",
+    "fem": 3.0315227255599125e-05,
+    "ref": 3.031522725559911e-05,
+    "rel": 4.470534573863603e-16,
+    "dev": 1.3552527156068805e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "u = F x / (E A), x = L/2",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "dwarsverplaatsing middenknoop",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "m",
+    "tol": null,
+    "tol_abs": 1e-12,
+    "source": "midden volgt de eindknopen (0)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 3,
+  "n_elem": 1,
+  "settings": {},
+  "general": {}
+ },
+ "MO-08": {
+  "id": "MO-08",
+  "group": "Modaal",
+  "title": "NAFEMS CP5: twee line3-truss-elementen, 2 modes",
+  "analysis": "modal_3d",
+  "series": null,
+  "h": null,
+  "note": "Line3-truss als twee SEG2-cellen (BARRE), middenknoop dwars gekoppeld (GitHub issue #6). Mecway 34 zelf: 450 en 1030 Hz.",
+  "seconds": 11.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "f1",
+    "fem": 451.146484407581,
+    "ref": 451.1,
+    "rel": 0.00010304679135663155,
+    "dev": 0.046484407580976495,
+    "ok": true,
+    "unit": "Hz",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "NAFEMS Challenge Problem 5",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "f2",
+    "fem": 1049.92526934548,
+    "ref": 1049.9,
+    "rel": 2.4068335536675414e-05,
+    "dev": 0.02526934547995552,
+    "ok": true,
+    "unit": "Hz",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "NAFEMS Challenge Problem 5",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 2,
+  "settings": {},
+  "general": {}
  }
 }

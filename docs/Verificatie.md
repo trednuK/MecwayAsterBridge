@@ -561,6 +561,17 @@ opeenvolgende meshes.
   krijgt zijn elementwaarden uit beide SEG2-helften (eind 1 en midden uit de eerste,
   eind 2 uit de tweede).
 
+### LS-54 Staaf met een line3-truss-element
+
+- **Doel**: kwadratische truss (line3, `truss="true"`, GitHub issue #6; `tests_balken.py`).
+  Eerder stopte Code-Aster met `MODELE1_6` (`BARRE` op SEG3).
+- **Model**: een line3-element langs X, L = 1 m, ronde staaf D = 10 mm; wortel vast, tip
+  uy = uz = 0, F = 1000 N langs X op de tip. De bridge splitst het element in twee
+  SEG2-cellen (`BARRE`) en koppelt de middenknoop dwars op de koorde aan de eindknopen
+  (`LIAISON_DDL`); zonder die koppeling is de middenknoop een mechanisme (`ALGELINE3_81`).
+- **Referentie**: u(x) = F x / (E A).
+- **Resultaat**: tip en middenknoop exact (< 1e-6); dwarsverplaatsing middenknoop 0.
+
 ### Extra resultaatvelden (LS-30 .. LS-32, NL-30 .. NL-32, MO-30, DY-30)
 
 Velden `beam_forces`, `shell_stresses`, `shell_forces`, `strain`, `safety_factor` en
@@ -1678,6 +1689,7 @@ DX = 0 op x = 0 en DY = 0 in een hoek, zodat de spanning zuiver eenassig is.
 | MO-05 | massa-veerketen grond–k–m–k–m (*Spring* + `mass2`) | ω² = (k/m)·(3 ∓ √5)/2 | exact (< 1e-6) |
 | MO-06 | vrij blok 1 × 0,1 × 0,05 m vanaf (1, 2, 3) m, hex20 10 × 2 × 2, 12 modes | som van de effectieve rotatiemassa = I om de as door de oorsprong = m(b² + h²)/12 + m·d² (Steiner); I om het zwaartepunt m(b² + h²)/12 | RX/RY/RZ 524,151 / 450,754 / 256,564 kg·m² exact (< 1e-6); om het zwaartepunt exact; som translatie X = 1 |
 | MO-07 | ingeklemde balk als MO-02, hex20 50 × 2 × 3, 6 modes, `fields` met `stresses` en `vonmises` | Euler-Bernoulli: rotatiefractie om de inklemming mode 1 = 3(∫W₁x dx)²/L⁴ = 0,97069; som over de modes → I = m(L²/3 + a²/12); σ_xx(L/2, a/2) = E·(a/2)·W₁''(L/2)/√(ρAL) (massagenormeerd); Mecway headless | rotatie mode 1 / 2 −0,03 / −0,02%; som 6 modes −0,15%; σ_xx +0,43%; t.o.v. Mecway σ_xx +0,01%, fracties 0,0000% |
+| MO-08 | NAFEMS Challenge Problem 5: twee line3-truss-elementen (1-6-2 en 3-4-5, knoop 5 met constraint equations aan knoop 2), staal, D = 10 mm, uz = 0 overal, 2 modes (GitHub issue #6) | NAFEMS CP5: 451,1 / 1049,9 Hz; Mecway 34 zelf 450 / 1030 Hz | 451,15 / 1049,9 Hz (+0,01 / 0,00%) |
 | BU-01 | ingeklemde kolom, 20 `POU_D_E`, druk 1000 N | Pcr = (2i−1)²π²EI/(4L²), beide vlakken (Timoshenko & Gere, 1961) | factoren 10,363 / 23,317 / 93,268 exact; tip mode 1 = 1/√(EI(π/2L)⁴L/2) (φᵀKφ = 1) exact |
 | BU-02 | scharnierende kolom, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0,002% |
 | BU-03 | ingeklemde kolom hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` op de kop | Euler | +0,20% / +0,13% (zelfde modelfout als MO-02) |

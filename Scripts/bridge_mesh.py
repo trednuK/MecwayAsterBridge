@@ -87,7 +87,13 @@ _ASTER_TYPES = {
 # +0.09 % (shear), Code-Aster 17.4. POU_D_T_GD (large rotations, SEG2
 # only like POU_D_E) likewise: verification NL-84 (90-degree bend with line3).
 # The mid node becomes an ordinary node with 6 degrees of freedom.
-_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T", "POU_D_T_GD")
+# BARRE and CABLE (line3 truss / tension-only) likewise: BARRE exists only
+# on SEG2 (MODELISATION='BARRE' on SEG3 gave MODELE1_6, Code-Aster 17.4,
+# GitHub issue #6); the midside node then gets Mecway's transverse
+# condition (_line3_truss_links), otherwise it is a mechanism.
+_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T", "POU_D_T_GD", "BARRE", "CABLE")
+# Bars: the midside node has no transverse stiffness of its own
+_LINE3_BAR_MODS = ("BARRE", "CABLE")
 # Group of the POI1 cells (DIS_TR, stiffness 0) on nodes of a flexible
 # joint without another element with rotations (_flexible_joints)
 JOINT_GROUP = "BRJOINT"
@@ -482,6 +488,72 @@ def _line3_bow(nodes, cn):
     t = _vdot(am, chord) / (length * length)
     off = [am[i] - t * chord[i] for i in range(3)]
     return math.sqrt(_vdot(off, off)) / length
+
+
+def _line3_truss_links(model_data, nodes, conn, elements, split_line3,
+                       elset_mods, face_group_nodes):
+    """
+    Midside node of a split line3 truss (BARRE/CABLE, _LINE3_SPLIT_MODS).
+    Two bars in series have no stiffness across the chord at the midside
+    node: without a condition Code-Aster stops with ALGELINE3_81 (zero
+    pivot, run for GitHub issue #6). Mecway's quadratic truss interpolates
+    only the axial displacement quadratically; across the chord the
+    midside node follows the ends linearly (NIET geverifieerd in Mecway's
+    broncode; NAFEMS CP5 with this condition 451.1/1049.9 Hz as the
+    reference, verification MO-08). Per element and per direction p
+    perpendicular to the chord a LIAISON_DDL (U4.44.01, via
+    model_data["constraint_equations"], bridge_to_aster._render_mpcs):
+    p . u_mid - 0.5 p . u_a - 0.5 p . u_b = 0.
+    A global axis perpendicular to the chord that is fixed (DDL_IMPO) on
+    all three nodes (for example uz = 0 for a plane truss) is skipped:
+    that equation would be redundant and the matrix singular. Returns the
+    number of equations.
+    """
+    fixed = {}       # nid -> set(DX/DY/DZ) fixed by a kinematic condition
+    for bc in model_data.get("bcs", []):
+        if bc.get("skip") or bc.get("type") not in (
+                "fixed", "pinnedsupport", "displacement"):
+            continue
+        d = bc.get("aster_dict") or {}
+        if "ANGL_NAUT" in d:
+            continue
+        if bc["type"] == "pinnedsupport" or "BLOCAGE" in d:
+            dofs = set(("DX", "DY", "DZ"))
+        else:
+            dofs = set(k for k in d if k in ("DX", "DY", "DZ"))
+        if not dofs:
+            continue
+        for n in _selection_nodes(model_data, bc.get("selection"), conn,
+                                  face_group_nodes):
+            fixed.setdefault(n, set()).update(dofs)
+    eqs = model_data.setdefault("constraint_equations", [])
+    n_eq = 0
+    for eid, shape, _enodes, es in elements:
+        if (eid not in split_line3 or
+                elset_mods.get(es) not in _LINE3_BAR_MODS):
+            continue
+        a, b, mid = conn[eid][1][:3]
+        chord = _vsub(nodes[b], nodes[a])
+        if _vdot(chord, chord) <= 0.0:
+            continue
+        u = _vunit(chord)
+        common = (fixed.get(a, set()) & fixed.get(b, set()) &
+                  fixed.get(mid, set()))
+        covered = [tuple(1.0 if j == i else 0.0 for j in range(3))
+                   for i in range(3)
+                   if "D" + "XYZ"[i] in common and abs(u[i]) < 1.0e-9]
+        for p in _complement([u] + covered):
+            terms = []
+            for nid, w in ((mid, 1.0), (a, -0.5), (b, -0.5)):
+                for i in range(3):
+                    if abs(p[i]) > 1.0e-12:
+                        terms.append((nid, "D" + "XYZ"[i], w * p[i]))
+            if all(d in fixed.get(nid, ()) for nid, d, _c in terms):
+                continue        # all degrees of freedom already fixed
+            eqs.append({"terms": terms, "constant": 0.0,
+                        "source": "line3truss"})
+            n_eq += 1
+    return n_eq
 
 
 def _complement(axes):
@@ -949,22 +1021,22 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         items.append(("M{0}".format(eid), cn))
         elset_members.setdefault(elset, []).append("M{0}".format(eid))
     if n_split:
-        log("INFO: {0} line3 beam element(s) split into two SEG2 cells "
+        log("INFO: {0} line3 element(s) split into two SEG2 cells "
             "(M<eid> and H<eid>).".format(n_split))
     if curved:
         ids = [e for e, _b in curved]
-        log(tr("WARNING: {0} gekromde line3-balkelement(en) ({1}; "
+        log(tr("WARNING: {0} gekromde line3-element(en) ({1}; "
                "middenknoop tot {2}% van de elementlengte naast de koorde). "
-               "Code-Aster heeft geen gekromde balk: elk element wordt twee "
-               "rechte stukken met een knik in de middenknoop. Mecway (CCX) "
-               "rekent de gekromde vorm; verfijn de kromming voor een "
+               "Code-Aster heeft geen gekromde balk of staaf: elk element "
+               "wordt twee rechte stukken met een knik in de middenknoop. "
+               "Mecway rekent de gekromde vorm; verfijn de kromming voor een "
                "betere benadering (KNOWN_BUGS 107).",
-               "WARNING: {0} curved line3 beam element(s) ({1}; midside "
+               "WARNING: {0} curved line3 element(s) ({1}; midside "
                "node up to {2}% of the element length off the chord). "
-               "Code-Aster has no curved beam: each element becomes two "
-               "straight pieces with a kink at the midside node. Mecway "
-               "(CCX) computes the curved shape; refine the curve for a "
-               "better approximation (KNOWN_BUGS 107).").format(
+               "Code-Aster has no curved beam or bar: each element "
+               "becomes two straight pieces with a kink at the midside "
+               "node. Mecway computes the curved shape; refine the curve "
+               "for a better approximation (KNOWN_BUGS 107).").format(
                    len(ids), ", ".join(str(e) for e in ids[:10]) +
                    (" ..." if len(ids) > 10 else ""),
                    # %-formatting: '{0:.2g}' gave a decimal comma in
@@ -1329,6 +1401,17 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             by_type.setdefault("POI1", []).append((names[-1], [nid]))
         poi1_members[JOINT_GROUP] = names
         poi1_groups[JOINT_GROUP] = "DIS_TR"
+
+    # --------------------------------------------------
+    # 4d. Line3 truss: midside node across the chord (LIAISON_DDL)
+    # --------------------------------------------------
+    n_truss_eq = _line3_truss_links(model_data, nodes, conn, elements,
+                                    split_line3, elset_mods,
+                                    face_group_nodes)
+    if n_truss_eq:
+        log("INFO: Line3 truss: {0} LIAISON_DDL for the midside nodes "
+            "(transverse displacement = mean of the end nodes).".format(
+                n_truss_eq))
 
     # --------------------------------------------------
     # 5. Names

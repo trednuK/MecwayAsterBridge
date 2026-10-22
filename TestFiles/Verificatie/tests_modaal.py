@@ -510,3 +510,52 @@ TESTS.append(Case(
     [_mode_check(k + 1, f, 1e-4, "omega^2 = k/m (3 %s sqrt 5)/2 (Thomson "
                  "par. 5.1)" % ("-+"[k])) for k, f in enumerate(F5)],
     note="Discrete elementen: veer DIS_T en knoopmassa POI1."))
+
+
+# ------------------------------------------------------------------
+# MO-08 NAFEMS Challenge Problem 5: twee kwadratische truss-elementen
+# (line3, truss="true"; GitHub issue #6)
+# ------------------------------------------------------------------
+# Knopen (m): 1 (0,1,0), 2 (1,1,0), 3 (0,0,0), 4 (0.5,0.5,0), 5 (1,1,0)
+# (samenvallend met 2), 6 (0.5,1,0); elementen 1-6-2 en 3-4-5. Staal
+# E = 210 GPa, nu = 0,3, rho = 7800 kg/m3, ronde staaf D = 10 mm. Knopen 1
+# en 3 vast, uz = 0 op alle knopen, knoop 5 aan knoop 2 met constraint
+# equations u5x = u2x en u5y = u2y (een scharnier). De bridge koppelt elke
+# middenknoop dwars op de koorde aan de eindknopen
+# (bridge_mesh._line3_truss_links); de richting z valt weg (uz = 0 overal).
+# Referentie NAFEMS CP5: 451,1 en 1049,9 Hz. Mecway 34 zelf: 450 en
+# 1030 Hz (issue #6).
+RHO8 = '<density type="Simple" density="7800 kg/m³" />'
+F8 = (451.1, 1049.9)
+
+
+def build_mo08():
+    m = Model("V30", attrs={"maxmode": 2})
+    m.elset("Staaf", "Staal")
+    for p in ((0, 1, 0), (1, 1, 0), (0, 0, 0), (0.5, 0.5, 0), (1, 1, 0),
+              (0.5, 1, 0)):
+        # zonder samenvoegen: knoop 5 valt samen met knoop 2
+        m.nodes.append(tuple(float(c) for c in p))
+    m.elem("Staaf", "line3", [1, 6, 2], 'truss="true"')
+    m.elem("Staaf", "line3", [3, 4, 5], 'truss="true"')
+    m.mat("Staal", '<geometric type="CircularBar" roundod="10 mm" />',
+          STEEL, RHO8)
+    m.node_selection("Vast", [1, 3])
+    m.node_selection("Alle", range(1, 7))
+    m.add('<fixed selection="Vast" />')
+    m.add('<displacement selection="Alle"><value>0 mm</value>'
+          '<x>0</x><y>0</y><z>1</z></displacement>')
+    for dof in ("ux", "uy"):
+        m.add('<constraintequation><term coefficient="1 1/m" nid="5" '
+              'dof="%s" /><term coefficient="-1 1/m" nid="2" dof="%s" />'
+              '<constant>0</constant></constraintequation>' % (dof, dof))
+    return m
+
+
+TESTS.append(Case(
+    "MO-08", GROUP, "NAFEMS CP5: twee line3-truss-elementen, 2 modes",
+    "modal_3d", build_mo08,
+    [_mode_check(k + 1, f, 0.002, "NAFEMS Challenge Problem 5")
+     for k, f in enumerate(F8)],
+    note="Line3-truss als twee SEG2-cellen (BARRE), middenknoop dwars "
+         "gekoppeld (GitHub issue #6). Mecway 34 zelf: 450 en 1030 Hz."))

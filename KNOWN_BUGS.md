@@ -397,7 +397,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    Only relevant with `elem_beam` = `POU_D_T_GD` (other beams stay PETIT): WARNING
    (`bridge_to_aster._warn_gd_linear_links`).
 
-107\. **Line3 beams: two straight SEG2 cells** (confirmed, choice;
+107\. **Line3 beams and trusses: two straight SEG2 cells** (confirmed, choice;
    `bridge_mesh.write_mesh`). Code-Aster has no quadratic beam element; each
    line3 element is split at the midside node. A curved line3 element (midside node
    not on the chord) thus becomes a kink of two straight pieces, each half with its own
@@ -408,6 +408,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    Euler theory (B32R expanded as one C3D20R over the cross-section; the same beam with line2
    in Mecway's own solver is exact); a round bar (SECTION=PIPE with inner radius 0)
    is not computed by CCX there ("nonpositive jacobian").
+   A line3 truss (`BARRE`) is split the same way; its midside node is tied across the
+   chord to the mean of the end nodes (`bridge_mesh._line3_truss_links`; verification
+   LS-54, MO-08).
 
 108\. **Element offset: small rotations, values at the nodes and combinations**
    (confirmed, `bridge_offset.py`). Beams and COQUE_3D shells (tri6/quad8 or the option
