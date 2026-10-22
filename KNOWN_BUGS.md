@@ -590,8 +590,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    mass for the rotations is computed by the bridge itself (about the origin, like Mecway; fraction
    of the total inertia incl. constrained nodes, Mecway divides by the free ones); in
    Mecway (*modal effective mass (fraction)*, S12) therefore Code-Aster's fraction is shown,
-   not Mecway's; whether the GUI shows its own variable `cumulativeeffectivemassfraction*`
-   is NOT verified (Mecway does store it); stresses per mode
+   not Mecway's; Mecway 34's GUI shows the bridge's own variable
+   `cumulativeeffectivemassfraction*` as 6 red items per mode with truncated names (seen
+   22 Oct 2026; Mecway stores it); stresses per mode
    only for modal (`fields`), not per buckling shape.
 
 51\. **Error estimator: only linear static and solid elements** (confirmed,

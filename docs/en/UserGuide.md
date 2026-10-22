@@ -373,7 +373,7 @@ are the same as those of Mecway's own solution where Mecway knows them.
 
 | Field | Mecway variables | Code-Aster field | On by default for |
 |---|---|---|---|
-| `displacements` | `displx/y/z`, `displmag` (not for modal, as in Mecway); `rotx/y/z` on nodes of beams and shells | `DEPL` | all mechanical analyses |
+| `displacements` | `displx/y/z`, `displmag` (also per mode); `rotx/y/z` on nodes of beams and shells | `DEPL` | all mechanical analyses |
 | `stresses` | `stressxx` .. `stresszx` (solid elements, nodal values and per element node); `beamsixxmin`/`beamsixxmax` (beams with a rectangular or circular section: smallest/largest axial stress from N and M, without shear and torsion) | `SIGM_NOEU`, `SIGM_ELNO`, `SIPM_ELNO` | static, nonlinear, dynamic, mode superposition, harmonic response, response spectrum, vibroacoustics (harmonic) |
 | `vonmises` | `vonmises` (solid); `vonmisesu1`/`vonmisesm`/`vonmisesb` (shell top/middle/bottom) | `SIEQ_NOEU`, `SIEQ_ELNO` | as `stresses` |
 | `reactions` | `reactionforcex/y/z/mag`, `reactionmomx/y/z/mag` | `REAC_NODA` | static, nonlinear, dynamic, response spectrum |

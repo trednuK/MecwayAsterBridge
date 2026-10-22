@@ -368,7 +368,7 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 
 | Veld | Mecway-variabelen | Code-Aster-veld | Standaard aan bij |
 |---|---|---|---|
-| `displacements` | `displx/y/z`, `displmag` (niet bij modaal, zoals Mecway); `rotx/y/z` op knopen van balken en schalen | `DEPL` | alle mechanische analyses |
+| `displacements` | `displx/y/z`, `displmag` (ook per mode); `rotx/y/z` op knopen van balken en schalen | `DEPL` | alle mechanische analyses |
 | `stresses` | `stressxx` .. `stresszx` (volume-elementen, knoopwaarden en per element-knoop); `beamsixxmin`/`beamsixxmax` (balken met rechthoekige of ronde doorsnede: kleinste/grootste axiale spanning uit N en M, zonder afschuiving en torsie) | `SIGM_NOEU`, `SIGM_ELNO`, `SIPM_ELNO` | statisch, niet-lineair, dynamisch, respons op modale basis, harmonische respons, responsspectrum, vibro-akoestiek (harmonisch) |
 | `vonmises` | `vonmises` (volume); `vonmisesu1`/`vonmisesm`/`vonmisesb` (schaal boven/midden/onder) | `SIEQ_NOEU`, `SIEQ_ELNO` | als `stresses` |
 | `reactions` | `reactionforcex/y/z/mag`, `reactionmomx/y/z/mag` | `REAC_NODA` | statisch, niet-lineair, dynamisch, responsspectrum |

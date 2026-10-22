@@ -128,9 +128,11 @@ Click "Start". What you see:
 
 - Under *Solution* you find *Mode 1 ... Mode n* with the frequency (Hz) or the buckling
   factor. Click a mode and choose a field (*displacement*); *Animate* shows the motion.
-- Fields: displacements `displx/y/z` (and `rotx/y/z` for beams and shells), for
-  buckling also `displmag`, as in Mecway's default solution. Reaction forces do not
-  belong to a mode.
+- Fields: displacements `displmag` and `displx/y/z` (and `rotx/y/z` for beams and
+  shells), for modal, prestressed modal, cyclic symmetry, complex modes and buckling,
+  as in Mecway 34's own solution (*displacement* > *magnitude*, *X*, *Y*, *Z*; seen
+  22 Oct 2026; Mecway 33 showed no *magnitude* for modes). Acoustic pressure modes
+  have no vector and so no `displmag`. Reaction forces do not belong to a mode.
 - **Stresses per mode** (modal only, when "Result fields to Mecway" contains `stresses` or `vonmises`): `stressxx` ... `stresszx` and
   `vonmises` (solid elements, per node and per element node), `vonmisesu1/m/b`
   (shells, top/middle/bottom surface) and `beamsixxmin/max` (beams with a RECTANGLE or
@@ -158,9 +160,9 @@ Click "Start". What you see:
   - in addition the **cumulative fraction** (sum of the fractions of mode 1 up to and
     including this mode, Code-Aster's denominator) as
     `cumulativeeffectivemassfractiontx` ... `rz`: a name of the bridge's own. Mecway
-    keeps it when saving (checked headless); whether Mecway's window shows it as an
-    item is NOT verified. The sum over all modes is in the log and the status box in
-    any case.
+    keeps it when saving (checked headless); Mecway 34 shows it under *Solution* as 6
+    red items per mode with truncated names (seen 22 Oct 2026). The sum over all modes
+    is also in the log and the status box.
 
   A direction without a value (e.g. no rotations because the own check failed, §4) is
   also missing in Mecway. For complex modes (§6) it is the effective mass from the real
