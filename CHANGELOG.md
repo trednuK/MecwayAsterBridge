@@ -40,6 +40,9 @@ limitations, 0 unexpected).
   ([After an update](docs/en/After_an_update.md) §6, `AGENTS.md`).
 - **Preparation errors** (reading the model, mesh, solver files) are shown directly in the
   status box instead of only "see the log".
+- The ParaView button starts Salome-Meca's ParaView through its `run_paraview.bat` (sets
+  the Salome environment; `paraview.exe` on its own stops with "Qt5Widgets.dll not
+  found"), also when `paraview_exe` points to that `paraview.exe`.
 - A contact whose face selections are empty (Mecway 34 replaces spaces in selection names
   by `_` when it opens an older model and then loses the reference) now stops before
   Code-Aster with a clear message instead of a non-converging run. The example models

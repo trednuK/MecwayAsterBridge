@@ -131,6 +131,15 @@ def test_paraview(tmp):
         check(auto != "" and not _norm(auto).endswith(
             _norm(os.path.join("ParaView 5.10.1", "bin", "paraview.exe"))),
             "empty setting: a ParaView with MED reader is chosen first")
+        # Salome-Meca's paraview.exe needs Salome's environment: the bridge
+        # starts it through <root>/run_paraview.bat (Qt5Widgets.dll missing
+        # otherwise, seen 2026-10-22)
+        bat = os.path.join(pf, "SALOME-9.12", "run_paraview.bat")
+        open(bat, "w").close()
+        check(_norm(u.paraview_exe_path(salome)) == _norm(bat),
+              "Salome ParaView is started through run_paraview.bat")
+        check(_norm(u.paraview_exe_path(plain)) == _norm(plain),
+              "plain ParaView stays paraview.exe")
     finally:
         for k, v in saved.items():
             if v is None:

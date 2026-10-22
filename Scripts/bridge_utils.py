@@ -804,6 +804,26 @@ def _paraview_candidates():
     return found
 
 
+def _salome_launcher(path):
+    """
+    Salome-Meca's paraview.exe (<root>/W64/ParaView/bin/paraview.exe)
+    only starts in Salome's environment: started on its own it stops with
+    "Qt5Widgets.dll not found" (Salome-Meca v2025, seen 2026-10-22).
+    <root>/run_paraview.bat sets that environment (env_launch.bat) and
+    starts ParaView with the arguments. Returns that launcher when it is
+    found up to four folders above the paraview.exe, else path itself.
+    """
+    if not path or os.path.basename(path).lower() != "paraview.exe":
+        return path
+    folder = os.path.dirname(os.path.abspath(path))
+    for _level in range(4):
+        folder = os.path.dirname(folder)
+        bat = os.path.join(folder, "run_paraview.bat")
+        if os.path.isfile(bat):
+            return bat
+    return path
+
+
 def paraview_exe_path(setting=None):
     """
     paraview.exe for the ParaView button of the convergence window: the
@@ -815,9 +835,9 @@ def paraview_exe_path(setting=None):
         setting = CONFIG_BRIDGE.get("paraview_exe")
     path = expand_path(setting)
     if path:
-        return path
+        return _salome_launcher(path)
     found = _paraview_candidates()
-    return found[0] if found else ""
+    return _salome_launcher(found[0]) if found else ""
 
 
 def exe_aster_path():
