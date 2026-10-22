@@ -147,7 +147,7 @@ the other buttons on the left.
 |---|---|
 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
 | "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1). Then the window comes back |
-| "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the folder from the "Work folder" field; if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
+| "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
 | "Explanation..." | Opens the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) on the Documentation page |
 | "Close" | Closes the bridge. Settings changed after the last Start or Results... are not saved |
 
@@ -171,6 +171,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Taal / Language" | `en` | `nl` (Dutch) or `en` (English): main window, messages, WARNING/ERROR lines in the log and the convergence window, and the WARNING/ERROR lines (nl: WAARSCHUWING/FOUT) that the bridge scripts in the Code-Aster job write to the `.mess`. Applies to the run straight away; the main window switches language when it comes back. INFO/SUCCESS lines and the comments in the `.comm` are always in English |
 | "Code-Aster launcher (run_aster.bat)" | `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat` | path to `run_aster.bat`; environment variables such as `%LOCALAPPDATA%` are allowed. If the file does not exist, the status box says so at start; choose it with "Browse..." |
 | "Work folder" | empty = `WorkDir` next to the `Scripts` folder (the window shows that path) | folder for the mesh, `<model>_<run-id>.*`, log and results (§5); created if it does not exist |
+| "Work folder next to the model (<model>_aster)" | off | on: the files of a run go to the subfolder `<model>_aster` next to the open `.liml` file (e.g. `C:\Projects\Beam.liml` → `C:\Projects\Beam_aster`), also for "Results...", the convergence window and adaptive refinement; the folder in use is shown next to the checkbox. A model that has not been saved yet uses the "Work folder" |
 | "Number of CPU cores (ncpus)" | 1 | `ncpus` (threads) in the `.export`; the bridge runs without MPI (`mpi_nbcpu 1`) |
 | "Active analysis (auto = follow Mecway)" | `auto` | `auto` follows the Mecway analysis type: S30 → Static, L30 → Nonlinear static, D30 with *Mode superposition* → Mode superposition, D30 without and D31 → Dynamic (implicit), T30/T31 → Thermal, V30 → Modal (with a fluid part: Vibroacoustics (modes)), B30 → Buckling, A30 → Acoustics (cavity modes; with a source, `SOURCE_` selection, Acoustics (harmonic)); applies only to that run. Or choose an analysis yourself (Dynamic (explicit) is always chosen by hand). Another Mecway type (2D, ...) with `auto`: the bridge stops with a message |
 | "Configuration (auto = by rule)" | `auto` | which configuration the bridge solves and which solution receives the results; the list shows the configurations of the open model (last saved version). `auto`: the only configuration, else the only one without suppressed items, else the first (WARNING). A name that is not in the model: WARNING and `auto` (§4) |
@@ -179,6 +180,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
 | "Waiting for Code-Aster" | `auto` | `auto`: a modal status window with the progress and "Stop..."; the bridge recognises the end of the run itself and then loads the results (§2 step 5). `confirm`: you click OK in Mecway when the Code-Aster window shows `DIAGNOSTIC JOB` (the earlier behaviour) |
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
+| "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" button of the convergence window; empty = automatic: first the ParaView of Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`), which has a MED reader, then `%ProgramFiles%\ParaView*\bin\paraview.exe`. ParaView 5.10 from paraview.org has **no** MED reader and cannot open a `.rmed`. Environment variables are allowed |
 
 Below the settings the page shows the mapping of `auto` to the Mecway analysis types, a
 note on the language and the path of `bridge_utils.py`.
@@ -371,7 +373,7 @@ are the same as those of Mecway's own solution where Mecway knows them.
 
 | Field | Mecway variables | Code-Aster field | On by default for |
 |---|---|---|---|
-| `displacements` | `displx/y/z`, `displmag` (not for modal, as in Mecway); `rotx/y/z` on nodes of beams and shells | `DEPL` | all mechanical analyses |
+| `displacements` | `displx/y/z`, `displmag` (also per mode); `rotx/y/z` on nodes of beams and shells | `DEPL` | all mechanical analyses |
 | `stresses` | `stressxx` .. `stresszx` (solid elements, nodal values and per element node); `beamsixxmin`/`beamsixxmax` (beams with a rectangular or circular section: smallest/largest axial stress from N and M, without shear and torsion) | `SIGM_NOEU`, `SIGM_ELNO`, `SIPM_ELNO` | static, nonlinear, dynamic, mode superposition, harmonic response, response spectrum, vibroacoustics (harmonic) |
 | `vonmises` | `vonmises` (solid); `vonmisesu1`/`vonmisesm`/`vonmisesb` (shell top/middle/bottom) | `SIEQ_NOEU`, `SIEQ_ELNO` | as `stresses` |
 | `reactions` | `reactionforcex/y/z/mag`, `reactionmomx/y/z/mag` | `REAC_NODA` | static, nonlinear, dynamic, response spectrum |
@@ -438,7 +440,7 @@ Mecway file (characters other than A-Z, a-z, 0-9, `-` and `_` become `_`, withou
 trailing `_`, e.g. `My Model (v2).liml` → `My_Model_v2`; shortened
 if the path is too long, §1), `<run-id>` the date and time of the start, e.g.
 `ProfielBuigen_20261006_101500.mess`. So they can be found together and a next run
-overwrites nothing. Messages show the real name.
+overwrites nothing. Messages show the real name. The working directory is the folder from the "Work folder" field, or with "Work folder next to the model" the subfolder `<model>_aster` next to the open model (§3).
 
 | File | Contents |
 |---|---|
@@ -451,7 +453,7 @@ overwrites nothing. Messages show the real name.
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
-| `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView" |
+| `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it |
 | `<model>_<run-id>_vergelijking.csv` | comparison with the Mecway solve (only with "Mecway solve first as a check") |
 | `<model>_<run-id>_monitor_log.txt` | log of the convergence and messages window |
 

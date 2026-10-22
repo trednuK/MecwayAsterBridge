@@ -978,7 +978,20 @@ SETTING_HELP = {
                  u"(<model>_<time>.comm, .mess, results, log). Keep the path "
                  u"short: work folder plus file name max. 259 characters. "
                  u"Default (empty) the folder WorkDir next to the Scripts "
-                 u"folder; created if needed."),
+                 u"folder; created if needed. Not used with 'Work folder "
+                 u"next to the model' (for a saved model)."),
+    "work_dir_beside_model": (
+        u"Aan: de bestanden van een run gaan naar de submap <model>_aster "
+        u"naast het open .liml-bestand (bijv. C:\\Projecten\\Ligger.liml -> "
+        u"C:\\Projecten\\Ligger_aster), ook Resultaten... en het "
+        u"convergentiescherm. Een model dat nog niet is opgeslagen gebruikt "
+        u"de Werkmap. Naast het vinkje staat de map die gebruikt wordt. "
+        u"Standaard uit.",
+        u"On: the files of a run go to the subfolder <model>_aster next to "
+        u"the open .liml file (e.g. C:\\Projects\\Beam.liml -> "
+        u"C:\\Projects\\Beam_aster), also Results... and the convergence "
+        u"window. A model that has not been saved yet uses the Work folder. "
+        u"The folder in use is shown next to the checkbox. Off by default."),
     "ncpus": (u"Aantal processorkernen (threads) voor Code-Aster (1 = geen "
               u"parallellisme; geen MPI). Standaard 1; het effect op de "
               u"rekentijd is niet gemeten.",
@@ -1054,6 +1067,23 @@ SETTING_HELP = {
                    u"hundreds of MB. With an XFEM crack also _xfem.rmed: the "
                    u"mesh that follows the crack, in which the opening is "
                    u"visible."),
+    "paraview_exe": (
+        u"paraview.exe voor de knop ParaView in het convergentiescherm (opent "
+        u"de .rmed van de run; zet daarvoor 'MED-bestand voor ParaView' "
+        u"aan). Leeg (standaard) = automatisch zoeken: eerst de ParaView van "
+        u"Salome-Meca (C:\\Salome_meca\\...\\ParaView\\bin, "
+        u"%ProgramFiles%\\SALOME*), die een MED-lezer heeft, daarna "
+        u"%ProgramFiles%\\ParaView*. Let op: ParaView 5.10 van paraview.org "
+        u"heeft GEEN MED-lezer en kan een .rmed niet openen. "
+        u"Omgevingsvariabelen mogen in het pad.",
+        u"paraview.exe for the ParaView button in the convergence window "
+        u"(opens the .rmed of the run; turn on 'MED file for ParaView' for "
+        u"that). Empty (default) = search automatically: first the ParaView "
+        u"of Salome-Meca (C:\\Salome_meca\\...\\ParaView\\bin, "
+        u"%ProgramFiles%\\SALOME*), which has a MED reader, then "
+        u"%ProgramFiles%\\ParaView*. Note: ParaView 5.10 from paraview.org "
+        u"has NO MED reader and cannot open a .rmed. Environment variables "
+        u"are allowed in the path."),
     "elem_hex8": (u"Hoe hex8-volume-elementen in Code-Aster gerekend "
                   u"worden. Standaard 3D (volledig geintegreerd; met weinig "
                   u"hex8 over de dikte te stijf bij buiging, KNOWN_BUGS 1).",

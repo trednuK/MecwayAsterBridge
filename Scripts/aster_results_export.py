@@ -64,8 +64,10 @@
 #     <mode id="1" frequency="7.07368492123229 Hz">   (V30, id from 1)
 #     <mode id="1" bucklingfactor="41124.6991224029">  (B30, without unit)
 # with the same <nodevariable> blocks, precision="double". For V30 Mecway
-# writes only displx/y/z (+ rotx/y/z for beams/shells), without
-# displmag; for B30 with displmag. Mecway's API reads them with
+# 33 wrote only displx/y/z (+ rotx/y/z for beams/shells), without
+# displmag; Mecway 34's own modal solution shows displacement > magnitude
+# (seen 2026-10-22), so the bridge writes displmag for all mechanical
+# modes; for B30 with displmag. Mecway's API reads them with
 # solution.modes(), solution.frequency(m) / buckling_factor(m) and
 # node_value(var, nid, mode=m) (checked with a headless Mecway script).
 # For real and complex MODE_MECA the effective mass per mode is a
@@ -1001,7 +1003,9 @@ def _wanted(group, groups_wanted, opt_in):
 def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
                     opt_in=(), derived=None):
     """List of _Var in Mecway order (magnitude before the components;
-    without magnitude if magnitudes is False, as Mecway's mode shapes).
+    without magnitude if magnitudes is False). Mode shapes get the
+    magnitude too: Mecway 34's own modal solution shows displacement >
+    magnitude, X, Y, Z (seen 2026-10-22; Mecway 33 had no magnitude).
     derived: arguments for _plan_derived (shell vectors, strengths)."""
     node_vars, elem_vars = OrderedDict(), OrderedDict()
     for group, rkey, field, cmp_, name, kind in FIELD_TABLE:
@@ -2205,8 +2209,10 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
         decays = dict((i, c["decay"]) for i, c in cplx.items())
     data.set_index(indexes[-1])
     opt_in = frozenset(opt_in or ())
+    # Magnitudes also for frequency modes (modal, prestressed, cyclic,
+    # complex), as Mecway 34's own modal solution; acoustic pressure modes
+    # have no vector and so no magnitude.
     variables = _plan_variables(data, model, conn, groups,
-                                magnitudes=modes != "frequency",
                                 opt_in=opt_in, derived=derived)
     variables += _constant_vars(node_fields, n)
     if not variables:

@@ -51,7 +51,8 @@ import bridge_glossary
 import bridge_results_liml
 from bridge_utils import (CONFIG_BRIDGE, MECWAY_ANALYSIS_TYPES, tr,
                           work_dir_path, exe_aster_path, expand_path,
-                          default_work_dir, BRIDGE_VERSION)
+                          default_work_dir, resolve_work_dir, model_path,
+                          BRIDGE_VERSION)
 from bridge_from_aster import RESULT_FIELD_SPECS
 
 
@@ -79,6 +80,9 @@ GENERAL_SPECS = [
      ("Batch-bestanden (*.bat)|*.bat|Alle bestanden (*.*)|*.*",
       "Batch files (*.bat)|*.bat|All files (*.*)|*.*")),
     ("work_dir", ("Werkmap", "Work folder"), "folder", None),
+    ("work_dir_beside_model", ("Werkmap naast het model (<model>_aster)",
+                               "Work folder next to the model "
+                               "(<model>_aster)"), "bool", None),
     ("ncpus", ("Aantal CPU-kernen (ncpus)", "Number of CPU cores (ncpus)"),
      "int", 1),
     ("active_analysis", ("Actieve analyse (auto = volgens Mecway)",
@@ -99,6 +103,10 @@ GENERAL_SPECS = [
      "choice", ("auto", "confirm")),
     ("med_export", ("MED-bestand voor ParaView", "MED file for ParaView"),
      "bool", None),
+    ("paraview_exe", ("ParaView (leeg = automatisch zoeken)",
+                      "ParaView (empty = search automatically)"), "file",
+     ("Programma's (*.exe)|*.exe|Alle bestanden (*.*)|*.*",
+      "Programs (*.exe)|*.exe|All files (*.*)|*.*")),
     ("elem_hex8", ("Hex8-volume-elementen", "Hex8 solid elements"),
      "choice", ("3D", "3D_SI", "LINE_QUAD")),
     ("elem_shell", ("Lineaire schalen (tri3/quad4)",
@@ -481,6 +489,7 @@ _SCHEMES = {"dyna_impl_3d": ("HHT", "NEWMARK"),
 _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "mecway_solve_first": False, "result_route": "liml",
                      "convergence_monitor": True, "med_export": False,
+                     "work_dir_beside_model": False, "paraview_exe": "",
                      "wait_for_aster": "auto",
                      "elem_hex8": "3D",
                      "elem_shell": "DKT", "elem_beam": "POU_D_E"}
@@ -642,6 +651,8 @@ def _parse_and_validate(key, kind, extra, raw):
                     os.path.normpath(default_work_dir()))):
             # empty or the default folder: save "" (bridge_utils.work_dir_path)
             return "", None
+        if key == "paraview_exe" and not value:
+            return "", None       # empty = search automatically
         if not value:
             return None, tr("mag niet leeg zijn.", "must not be empty.")
         # environment variables (%LOCALAPPDATA%) stay in the setting
@@ -1436,6 +1447,37 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 stretch.setdefault(parent, []).append(("line", line, None))
                 return y + 34
 
+            def add_work_dir_note(parent, check, x, y):
+                """Label next to the checkbox work_dir_beside_model: the
+                folder the run files go to (follows the checkbox and the
+                field Work folder)."""
+                note = Label()
+                note.ForeColor = look.col("muted")
+                note.AutoEllipsis = True
+                note.Location = Point(x, y)
+                note.Size = Size(496, 20)
+                parent.Controls.Add(note)
+                work_ctrl = [c for a, k, _l, _k, _e, c in controls
+                             if a is None and k == "work_dir"]
+
+                def update(sender=None, args=None):
+                    folder = resolve_work_dir(
+                        work_ctrl[0].Text.strip() if work_ctrl else
+                        CONFIG_BRIDGE.get("work_dir"),
+                        check.Checked, model_path())
+                    if check.Checked and not model_path():
+                        note.Text = tr(u"Model nog niet opgeslagen: {0}",
+                                       u"Model not saved yet: {0}").format(
+                                           folder)
+                    else:
+                        note.Text = tr(u"Runbestanden in: {0}",
+                                       u"Run files in: {0}").format(folder)
+                    tip.SetToolTip(note, note.Text)
+                check.CheckedChanged += update
+                if work_ctrl:
+                    work_ctrl[0].TextChanged += update
+                update()
+
             def make_row(parent, y, analysis, key, label, kind, extra, value):
                 y = add_section(parent, y, key)
                 label = _t(label)
@@ -1486,6 +1528,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     ctrl.Location = Point(x, y + 2)
                     ctrl.Size = Size(24, 22)
                     ctrl.Checked = bool(value)
+                    if key == "work_dir_beside_model":
+                        add_work_dir_note(parent, ctrl, x + 30, y + 3)
                 elif kind == "checklist":
                     ctrl = CheckedListBox()
                     ctrl.CheckOnClick = True
@@ -1892,10 +1936,19 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         return ctrl.Text.strip()
                 return CONFIG_BRIDGE.get(key, "")
 
+            def field_checked(key):
+                for analysis, k, _l, kind, _e, ctrl in controls:
+                    if analysis is None and k == key and kind == "bool":
+                        return bool(ctrl.Checked)
+                return bool(CONFIG_BRIDGE.get(key, False))
+
             on_ok = guarded(lambda: leave("run"))
             on_results = guarded(lambda: leave("results"))
             on_monitor = guarded(lambda: say(open_convergence_monitor(
-                expand_path(field_text("work_dir")), model)))
+                resolve_work_dir(field_text("work_dir"),
+                                 field_checked("work_dir_beside_model"),
+                                 model_path()), model,
+                field_text("paraview_exe"))))
 
             def explain():
                 select_page(page_docs)
@@ -1994,12 +2047,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
     return {"action": result["action"], "values": result["values"]}
 
 
-def open_convergence_monitor(work_dir=None, model=None):
+def open_convergence_monitor(work_dir=None, model=None, paraview=None):
     """
     Start the convergence screen (separate process, stays open) for the
     newest .mess file in work_dir (default the work folder from
-    CONFIG_BRIDGE; the main window passes the value from the text field).
-    Returns a status text.
+    CONFIG_BRIDGE; the main window passes the values from its fields).
+    paraview: the field paraview_exe (None = the setting). Returns a status
+    text.
     """
     import bridge_run_aster
     work_dir = work_dir or work_dir_path()
@@ -2013,7 +2067,8 @@ def open_convergence_monitor(work_dir=None, model=None):
               "Convergence window opened for {0}.").format(
                   os.path.basename(mess))
     console = os.path.splitext(mess)[0] + bridge_run_aster.CONSOLE_SUFFIX
-    if not bridge_run_aster.start_convergence_monitor(mess, 0.0, console):
+    if not bridge_run_aster.start_convergence_monitor(mess, 0.0, console,
+                                                      paraview):
         return tr("Het convergentiescherm kon niet gestart worden; zie {0} "
                   "in de werkmap.",
                   "The convergence window could not be started; see {0} in "

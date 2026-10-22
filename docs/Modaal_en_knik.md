@@ -130,9 +130,12 @@ Klik *Starten*. Wat je ziet:
 - Onder *Solution* staan *Mode 1 ... Mode n* met de frequentie (Hz) of de
   kniklastfactor. Klik een mode en kies een veld (*displacement*); met *Animate* zie je
   de beweging.
-- Velden: verplaatsingen `displx/y/z` (en `rotx/y/z` bij balken en schalen), bij knik
-  ook `displmag`, zoals Mecway's standaardoplossing. Reactiekrachten horen niet bij een
-  mode.
+- Velden: verplaatsingen `displmag` en `displx/y/z` (en `rotx/y/z` bij balken en
+  schalen), bij modaal, voorgespannen modaal, cyclische symmetrie, complexe modes en
+  knik, zoals Mecway 34's eigen oplossing (*displacement* > *magnitude*, *X*, *Y*, *Z*;
+  gezien 22 okt 2026; Mecway 33 toonde bij modes geen *magnitude*). Akoestische
+  drukmodes hebben geen vector en dus geen `displmag`. Reactiekrachten horen niet bij
+  een mode.
 - **Spanningen per mode** (alleen modaal, als *Resultaatvelden naar Mecway* `stresses`
   of `vonmises` bevat): `stressxx` ... `stresszx` en `vonmises` (volume-elementen, per
   knoop en per element-knoop), `vonmisesu1/m/b` (schalen, boven-/midden-/ondervlak) en
@@ -163,8 +166,9 @@ Klik *Starten*. Wat je ziet:
   - daarnaast de **cumulatieve fractie** (som van de fracties van mode 1 tot en met
     deze mode, Code-Aster's noemer) als `cumulativeeffectivemassfractiontx` ...
     `rz`: een eigen naam van de bridge. Mecway bewaart die bij het opslaan (headless
-    nagelopen); of Mecway's venster hem als item toont, is NIET geverifieerd. De som
-    over alle modes staat in elk geval in de log en het statusvak.
+    nagelopen); Mecway 34 toont hem onder *Solution* als 6 rode items per mode met
+    afgekapte namen (gezien 22 okt 2026). De som over alle modes staat ook in de log
+    en het statusvak.
 
   Een richting zonder waarde (bijv. geen rotaties omdat de eigen controle faalde, §4)
   ontbreekt ook in Mecway. Bij complexe modes (§6) is het de effectieve massa uit het

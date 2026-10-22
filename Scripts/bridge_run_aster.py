@@ -44,7 +44,7 @@ import subprocess
 import time
 
 from bridge_utils import (log, CONFIG_BRIDGE, tr, run_name, run_names,
-                          exe_aster_path)
+                          exe_aster_path, paraview_exe_path)
 from bridge_convergence import (python_errors, ConvergenceParser,
                                 find_live_fort6, aster_tmp_dirs,
                                 lin_phase_title, modes_text, stopped_text,
@@ -1016,7 +1016,8 @@ def _monitor_log(mess_path):
     return stem + "_monitor_log.txt"
 
 
-def start_convergence_monitor(mess_path, since=0.0, console_path=None):
+def start_convergence_monitor(mess_path, since=0.0, console_path=None,
+                              paraview=None):
     """
     Start the convergence monitor (aster_convergence_monitor.py) as a separate
     process with Code-Aster's CPython. The process is independent of Mecway:
@@ -1030,6 +1031,10 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None):
     since        : float - time.time() at the start of the run; 0 = afterwards
                            (show the existing .mess file).
     console_path : str   - study_console.txt (Python errors), or None.
+    paraview     : str   - setting paraview_exe (None = CONFIG_BRIDGE; the
+                           start screen passes its field); resolved with
+                           bridge_utils.paraview_exe_path() and passed as
+                           --paraview (button ParaView of the window).
 
     Returns
     -------
@@ -1055,6 +1060,7 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None):
                 "--lang", tr("nl", "en")]
         if console_path:
             args += ["--console", console_path]
+        args += ["--paraview", paraview_exe_path(paraview)]
         # PYTHONHOME/PYTHONPATH of another Python must not confuse
         # Code-Aster's Python.
         env = dict((k, v) for k, v in os.environ.items()

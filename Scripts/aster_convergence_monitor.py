@@ -30,7 +30,12 @@
 #   pythonw aster_convergence_monitor.py --mess <workdir>\study.mess
 #           [--since <time.time() of the start>] [--resi 1e-6]
 #           [--iter-max 20] [--log <log file>] [--exit-after-finish <s>]
-#           [--lang nl|en]
+#           [--lang nl|en] [--paraview <paraview.exe>]
+#
+# Buttons in the top bar for the run shown: .comm and .mail in Notepad (no
+# file association for these extensions), Folder (Explorer on the work
+# folder with the .mess selected), ParaView (<model>_<run_id>.rmed, only
+# with the setting med_export), Reload and Open .mess ... .
 #
 # Data source: see bridge_convergence.find_live_fort6(). During the run the
 # window reads the fort.6 in the temporary run_aster folder (Code-Aster writes
@@ -41,6 +46,7 @@ import argparse
 import codecs
 import math
 import os
+import subprocess
 import sys
 import time
 import traceback
@@ -55,7 +61,7 @@ from bridge_utils import tr      # noqa: E402
 
 try:
     import tkinter as tk
-    from tkinter import filedialog
+    from tkinter import filedialog, messagebox
 except ImportError:      # pragma: no cover - only without tkinter
     tk = None
 
@@ -714,6 +720,18 @@ class Monitor(object):
         tk.Button(top, text=tr(u"Opnieuw lezen", u"Reload"),
                   command=self.reload,
                   font=_FONT).pack(side="right", padx=2)
+        # Files of the run shown (packed right to left: ParaView, Folder,
+        # .mail, .comm); state per file in _update_buttons().
+        self.btn_files = {}
+        for key, text, command in (
+                ("rmed", u"ParaView", self.open_paraview),
+                ("folder", tr(u"Map", u"Folder"), self.open_folder),
+                ("mail", u".mail", lambda: self.open_notepad(".mail")),
+                ("comm", u".comm", lambda: self.open_notepad(".comm"))):
+            btn = tk.Button(top, text=text, command=command, font=_FONT)
+            btn.pack(side="right", padx=2)
+            self.btn_files[key] = btn
+        self._update_buttons()
         self.lbl_source = tk.Label(top, text=u"", anchor="w", font=_FONT,
                                    foreground="#555555", background="#f4f4f4")
         self.lbl_source.pack(side="left", fill="x", expand=True)
@@ -852,9 +870,92 @@ class Monitor(object):
         self._new_parser()
         self.sel = None
         self.var_follow.set(True)
+        self._update_buttons()
         self.root.title(tr(u"Convergentie Code-Aster - {0}",
                            u"Code-Aster convergence - {0}").format(
             os.path.basename(path)))
+
+    # ---------- files of the run ----------
+    def _update_buttons(self):
+        """.comm/.mail disabled if the file of the run shown is missing;
+        ParaView and Folder stay enabled (they explain what is missing)."""
+        mess = self.args.mess
+        for key in ("comm", "mail"):
+            state = ("normal" if os.path.isfile(_run_file(mess, "." + key))
+                     else "disabled")
+            btn = self.btn_files.get(key)
+            if btn is not None and str(btn.cget("state")) != state:
+                btn.configure(state=state)
+
+    def _popen(self, args):
+        try:
+            subprocess.Popen(args)
+            log(u"INFO: started {0}".format(args))
+            return True
+        except Exception as e:
+            log(u"WARNING: {0} not started: {1}".format(args, e))
+            messagebox.showerror(u"Code-Aster", tr(
+                u"Starten mislukt: {0}\n{1}",
+                u"Starting failed: {0}\n{1}").format(
+                    args if isinstance(args, str) else args[0], e),
+                parent=self.root)
+            return False
+
+    def open_notepad(self, suffix):
+        """.comm or .mail of the run in Notepad (no file association)."""
+        path = _run_file(self.args.mess, suffix)
+        if not os.path.isfile(path):
+            messagebox.showinfo(u"Code-Aster", tr(
+                u"Bestand niet gevonden: {0}", u"File not found: {0}").format(
+                    path), parent=self.root)
+            return
+        self._popen(["notepad.exe", path])
+
+    def open_folder(self):
+        """Explorer on the work folder, with the .mess of the run selected
+        (or the folder itself if the .mess is missing)."""
+        mess = os.path.abspath(self.args.mess)
+        folder = os.path.dirname(mess)
+        if os.path.isfile(mess):
+            # one command string: explorer wants /select,"<path>" (a
+            # quoted list argument "/select,<path>" is NOT verified)
+            self._popen(u'explorer.exe /select,"{0}"'.format(mess))
+        elif os.path.isdir(folder):
+            self._popen(["explorer.exe", folder])
+        else:
+            messagebox.showinfo(u"Code-Aster", tr(
+                u"Map niet gevonden: {0}", u"Folder not found: {0}").format(
+                    folder), parent=self.root)
+
+    def open_paraview(self):
+        """<model>_<run_id>.rmed of the run in ParaView (--paraview)."""
+        rmed = _run_file(self.args.mess, ".rmed")
+        if not os.path.isfile(rmed):
+            messagebox.showinfo(u"ParaView", tr(
+                u"Geen MED-bestand voor deze run:\n{0}\n\nZet in het "
+                u"startscherm 'MED-bestand voor ParaView' (med_export) aan "
+                u"en start de run opnieuw.",
+                u"No MED file for this run:\n{0}\n\nTurn on 'MED file for "
+                u"ParaView' (med_export) on the start screen and run "
+                u"again.").format(rmed), parent=self.root)
+            return
+        exe = self.args.paraview
+        if exe is None:
+            exe = bridge_utils.paraview_exe_path()
+        if not exe or not os.path.isfile(exe):
+            messagebox.showinfo(u"ParaView", tr(
+                u"ParaView niet gevonden{0}. Vul in het startscherm "
+                u"'ParaView' (paraview_exe) in; neem een ParaView met "
+                u"MED-lezer (bijv. die van Salome-Meca): ParaView 5.10 van "
+                u"paraview.org kan geen .rmed openen.",
+                u"ParaView not found{0}. Fill in 'ParaView' (paraview_exe) "
+                u"on the start screen; use a ParaView with a MED reader "
+                u"(e.g. the one of Salome-Meca): ParaView 5.10 from "
+                u"paraview.org cannot open a .rmed.").format(
+                    u" ({0})".format(exe) if exe else u""),
+                parent=self.root)
+            return
+        self._popen([exe, rmed])
 
     def _names(self, text):
         """study.comm / study_console.txt in a message -> the files
@@ -894,6 +995,7 @@ class Monitor(object):
                 log(u"INFO: run finished ({0}); summary:\n{1}".format(
                     data.diagnostic, bc.summarize(data)))
             self.redraw()
+            self._update_buttons()
             if (self.args.exit_after_finish is not None and
                     self.finished_at is not None and
                     self.source.kind == "mess" and not self.source.backlog
@@ -1721,6 +1823,9 @@ def main(argv=None):
     ap.add_argument("--lang", choices=("nl", "en"), default=None,
                     help=u"taal van het scherm; standaard die uit "
                          u"bridge_utils.CONFIG_BRIDGE")
+    ap.add_argument("--paraview", default=None,
+                    help=u"paraview.exe voor de knop ParaView; standaard "
+                         u"bridge_utils.paraview_exe_path()")
     args = ap.parse_args(argv)
     if args.lang:
         bridge_utils.CONFIG_BRIDGE["language"] = args.lang
