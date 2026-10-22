@@ -314,33 +314,33 @@ TESTS += [
 # de buiging om Z; alleen een torsiemoment F e (verwaarloosbaar: extra
 # doorbuiging e theta_x ~ 0,2 %).
 # (a) offset op de rechterhelft, dus ook op het element met de joint: de
-#     joint zit in de Mecway-knoop, voor de starre arm (zoals de fork van
-#     MishalTPC, commit 773d59f): eigen knoop in de middenknoop, eigen arm
-#     naar het element (KNOWN_BUGS 108d). Scharnier: w = PL^3/(48EI) zoals
-#     LS-51a; Mecway 34 gaf hetzelfde (MW52).
+#     joint zit aan het eind van de starre arm, tussen het offsetpunt en
+#     het element (Mecway-knoop -> arm -> joint -> element), zoals Mecway
+#     34. Eigen knoop in het offsetpunt (KNOWN_BUGS 108d). Scharnier: w =
+#     PL^3/(48EI) zoals LS-51a; Mecway 34 gaf hetzelfde (MW52).
 # (b) offset op de linkerhelft: de verschoven balk en de balk met de
 #     joint komen samen in de middenknoop N, die dan in geen enkele cel
 #     meer zit (alleen in de arm en de joint): POI1 J<N> (DIS_TR). Het
 #     scharnier werkt: w = PL^3/(48EI) zoals LS-51a.
 # (c) als (a), maar de joint met U, V en W vrij (kogelscharnier). Waar de
-#     joint zit blijkt uit de torsie: de rechterhelft (op z = e) krijgt
-#     de kracht F2 via de arm vanaf de middenknoop, met de arm star aan de
-#     balk: torsiemoment T = e F2 in de rechterhelft, de linkerhelft houdt
-#     geen torsie (rotx in het midden 0). Zat de joint aan het eind van
-#     de arm, dan was het omgekeerd. Verdeling van P: elke helft is een
-#     ingeklemde balk L/2 met stijfheid k = 3EI/(L/2)^3 (POU_D_E); de
-#     torsie van de rechterhelft (c = (L/2)/(GJ)) verschuift het
+#     joint zit blijkt uit de torsie: de rechterhelft (op z = e) geeft de
+#     kracht F2 via het kogelscharnier aan het eind van de arm door; de
+#     arm hangt star aan de middenknoop, dus het torsiemoment T = e F2
+#     gaat naar de linkerhelft (rotx in het midden -e F2 (L/2)/(GJ)) en de
+#     rechterhelft houdt geen torsie (rotx op x = 0,8 m 0). Verdeling van
+#     P: elke helft is een ingeklemde balk L/2 met stijfheid k =
+#     3EI/(L/2)^3 (POU_D_E); de torsie (c = (L/2)/(GJ)) verschuift het
 #     aangrijpingspunt met e theta_x: F1 = F2 (1 + a), a = e^2 c k.
-# Mecway 34 (eigen solver, headless) geeft voor (a) en (b) dezelfde
-# doorbuiging. (c) Mecway 34 (eigen solver, headless, 22 okt 2026, model
-# modellen/LS-52c.liml): doorbuiging 1,264119 mm (gelijk aan W52C), maar
-# de torsie zit in de linkerhelft: rotx in het midden -1,96895e-4 rad
-# (= e F2 (L/2)/(GJ)), op x = 0,8 m 0. Mecway zet de joint dus aan het
-# eind van de arm, de bridge in de Mecway-knoop (KNOWN_BUGS 117). De
-# doorbuiging is door de symmetrie (beide helften dezelfde k en c) gelijk.
+# Mecway 34 (eigen solver, headless, 22 okt 2026, modellen/LS-52*.liml):
+# (a), (b) en (c) gelijk aan de bridge, doorbuiging en rotaties (rotx,
+# rotz in het midden en op x = 0,2 en 0,8 m) op ~1e-12 relatief. (c):
+# doorbuiging 1,264119 mm, rotx in het midden -1,96895e-4 rad, op x = 0,8
+# m 0.
 E52 = 0.01
 MW52 = 1.263627e-03
 MW52C, MW52C_ROT = 1.264119e-03, -1.968954e-04
+# Mecway 34: rotx in het midden en op x = 0,8 m bij (a) en (b)
+MW52_ROT, MW52_ROT08 = -9.848608e-05, -3.939443e-05
 # LS-52c: CircularBar (Code-Aster CERCLE): JX = pi D^4/32; elem_beam
 # POU_D_E (default, Euler-Bernoulli): k = 3EI/(L/2)^3 without shear.
 G52 = E / 2.6
@@ -350,7 +350,16 @@ C52 = (L / 2) / (G52 * J52)
 A52C = E52 ** 2 * C52 * K52
 F2_52C = P51 / (2.0 + A52C)
 W52C = P51 * (1.0 + A52C) / (2.0 + A52C) / K52
-ROT52C = E52 * F2_52C * (L - 0.8) / (G52 * J52)
+ROT52C = -E52 * F2_52C * (L / 2) / (G52 * J52)
+ROT52C_02 = -E52 * F2_52C * 0.2 / (G52 * J52)
+
+
+def _mw_rot(name, point, ref):
+    """rotx (met teken) t.o.v. Mecway 34 (eigen solver)."""
+    return Check("%s t.o.v. Mecway 34" % name,
+                 lambda r: r.at("rotx", point), ref=ref, tol=1e-3,
+                 unit="rad", source="Mecway 34, eigen solver",
+                 in_series=False)
 
 
 def build_ls52(side, free="w"):
@@ -372,18 +381,22 @@ TESTS += [
                 ref=W48, tol=0.01, unit="m",
                 source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
           _mw("doorbuiging midden", "disply", MID, MW52),
+          _mw_rot("rotx midden", MID, MW52_ROT),
+          _mw_rot("rotx bij x = 0,8", (0.8, 0, 0), MW52_ROT08),
           Check("reactiekracht Y", lambda r: r.total("reactionforcey",
                                                        "Inklemming"),
                 ref=P51, tol=1e-6, unit="N", source="evenwicht")],
-         note="Joint op het eindvlak van een verschoven element: in de "
-              "Mecway-knoop, met een eigen starre arm (KNOWN_BUGS 108d "
-              "opgelost)."),
+         note="Joint op het eindvlak van een verschoven element: aan het "
+              "eind van de starre arm, tussen het offsetpunt en het "
+              "element, zoals Mecway 34 (KNOWN_BUGS 108d opgelost)."),
     Case("LS-52b", GROUP, "Flexible joint naast een balk met element "
          "offset (zelfde knoop)", "lin_static_3d", build_ls52("left"),
          [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
                 ref=W48, tol=0.01, unit="m",
                 source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
           _mw("doorbuiging midden", "disply", MID, MW52),
+          _mw_rot("rotx midden", MID, MW52_ROT),
+          _mw_rot("rotx bij x = 0,8", (0.8, 0, 0), MW52_ROT08),
           Check("reactiekracht Y", lambda r: r.total("reactionforcey",
                                                        "Inklemming"),
                 ref=P51, tol=1e-6, unit="N", source="evenwicht")],
@@ -395,25 +408,25 @@ TESTS += [
          [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
                 ref=W52C, tol=1e-4, unit="m",
                 source="F1/k, F1 = P (1 + a)/(2 + a), a = e^2 c k"),
-          Check("rotx midden (linkerhelft zonder torsie)",
-                lambda r: r.at("rotx", MID), ref=0.0, tol_abs=1e-9,
-                unit="rad", source="joint in de Mecway-knoop: geen torsie "
-                "naar links (fork MishalTPC, 773d59f)"),
-          Check("|rotx| bij x = 0,8 (rechterhelft)",
-                lambda r: abs(r.at("rotx", (0.8, 0, 0))), ref=ROT52C,
-                tol=1e-3, unit="rad", source="T (L - x)/(GJ), T = e F2"),
+          Check("rotx midden (torsie linkerhelft)",
+                lambda r: r.at("rotx", MID), ref=ROT52C, tol=1e-3,
+                unit="rad", source="-T (L/2)/(GJ), T = e F2: joint aan "
+                "het eind van de arm"),
+          Check("rotx bij x = 0,2 (linkerhelft)",
+                lambda r: r.at("rotx", (0.2, 0, 0)), ref=ROT52C_02,
+                tol=1e-3, unit="rad", source="-T x/(GJ), T = e F2"),
+          Check("rotx bij x = 0,8 (rechterhelft zonder torsie)",
+                lambda r: r.at("rotx", (0.8, 0, 0)), ref=0.0,
+                tol_abs=1e-9, unit="rad", source="kogelscharnier aan het "
+                "eind van de arm: geen torsie naar rechts"),
           Check("reactiekracht Y", lambda r: r.total("reactionforcey",
                                                        "Inklemming"),
                 ref=P51, tol=1e-6, unit="N", source="evenwicht"),
           _mw("doorbuiging midden", "disply", MID, MW52C),
-          Check("rotx midden t.o.v. Mecway 34", lambda r: r.at("rotx", MID),
-                ref=MW52C_ROT, tol=1e-3, unit="rad",
-                source="Mecway 34, eigen solver: torsie links (joint aan "
-                "het eind van de arm)", in_series=False,
-                known="KNOWN_BUGS 117")],
-         note="Kogelscharnier op het verschoven element: de arm draait "
-              "met het element mee. Mecway 34: zelfde doorbuiging, torsie "
-              "in de andere helft (KNOWN_BUGS 117)."),
+          _mw_rot("rotx midden", MID, MW52C_ROT)],
+         note="Kogelscharnier op het verschoven element, aan het eind van "
+              "de arm: de torsie e F2 gaat via de arm naar de "
+              "linkerhelft, zoals Mecway 34."),
 ]
 
 

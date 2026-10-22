@@ -547,32 +547,33 @@ meshes is given below.
   (global, perpendicular to the bending plane) on (52a) the right half, so also on the
   element with the joint, or (52b) the left half; (52c) as 52a with U, V and W free
   (ball joint). (53a) LS-51a, (53b) LS-51e (4 line3), with `beam_forces`.
-- **Translation**: the joint sits at the Mecway node, before the rigid arm, as in the fork
-  by MishalTPC (`github.com/mishal0488/MecwayAsterBridge`, commit 773d59f, compared there
-  with Mecway 34): an own node at the Mecway node with the joint relations, and an own
-  rigid arm to an own offset node on which the element starts. So the arm turns along
-  with the released element.
+- **Translation**: the joint sits at the end of the rigid arm, between the offset point and
+  the element, as in Mecway 34: Mecway node → rigid arm → joint → element. An own node at
+  the offset point with the joint relations (local axes of the beam) replaces the offset
+  point in the cell of the element; the arm is rigidly attached to the Mecway node. (The
+  fork by MishalTPC, `github.com/mishal0488/MecwayAsterBridge`, commit 773d59f, puts the
+  joint at the Mecway node, before the arm; with a rotation perpendicular to the arm free
+  that gives a different distribution of the torsion than Mecway.)
 - **Reference**: (52a, 52b) hinge: δ = PL³/(48EI) = 1.2631 mm; Mecway 34 (own solver)
-  gives 1.2636 mm in both. (52c) where the joint sits shows in the torsion: the right half
-  gets the force F2 through the arm from the middle node, so the torque T = e F2; the
-  left half carries no torsion (rotx at the middle 0; with the joint at the end of the
-  arm it would be the other way round). Each half is a clamped beam L/2 with
+  gives 1.2636 mm in both, and rotx at the middle −9.8486e-5 rad, at x = 0.8 m
+  −3.9394e-5 rad. (52c) where the joint sits shows in the torsion: the right half passes
+  the force F2 through the ball joint at the end of the arm; the arm is rigidly attached to
+  the middle node, so the torque T = e F2 goes to the left half and the right half carries
+  no torsion (rotx at x = 0.8 m 0). Each half is a clamped beam L/2 with
   k = 3EI/(L/2)³ (`POU_D_E`); the torsion moves the point of application by e θx:
-  F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1.2641 mm, |rotx| at x = 0.8 m =
-  T (L − x)/(GJ) = 7.8758e-5 rad. Mecway 34 (own solver, headless) gives for (52c) the
-  same deflection 1.2641 mm, but the torsion in the left half: rotx at the middle
-  −1.9690e-4 rad (= e F2 (L/2)/(GJ)), 0 at x = 0.8 m. So Mecway puts the joint at the end
-  of the arm (KNOWN_BUGS 117). (53) each half is a
+  F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1.2641 mm, rotx = −T x/(GJ): at the
+  middle −1.9690e-4 rad, at x = 0.2 m −7.8758e-5 rad. Mecway 34 (own solver, headless)
+  gives the same deflection and the same rotations for (52c). (53) each half is a
   clamped beam L/2 with P/2: M = 0 in the hinge, (P/2) h further along the element,
   V = P/2.
-- **Result**: (52a) 1.2636 mm (+0.04 %, equal to Mecway); (52b) 1.2636 mm (+0.04 %, equal
-  to Mecway); (52c) δ +0.00 % (also against Mecway), rotx at the middle −4e-33 rad, rotx
-  at 0.8 m +0.00 %; reactions = load; rotx at the middle against Mecway KNOWN
-  (KNOWN_BUGS 117). (53a) all 10 elements, M in the hinge 2e-13 N m, 5.000 N m at
+- **Result**: (52a) 1.2636 mm (+0.04 %, equal to Mecway), rotx at the middle and at 0.8 m
+  +0.00 % against Mecway; (52b) likewise; (52c) δ +0.00 % (also against Mecway), rotx at
+  the middle and at 0.2 m +0.00 % (also against Mecway), rotx at 0.8 m −7e-33 rad;
+  reactions = load. rotz at the middle and at 0.2 and 0.8 m is also equal to Mecway
+  (~1e-12 relative, not as a check). (53a) all 10 elements, M in the hinge 2e-13 N m, 5.000 N m at
   x = 0.6 m, V = 50 N; (53b) all 4 elements with three values: 0 / 6.25 / 12.5 N m.
-- **Interpretation**: a joint on an offset element now works as in Mecway (52a).
-  With a rotation perpendicular to the arm free (52c) the bridge has the joint before the
-  arm, Mecway after it: the deflection is equal here, the distribution of the torsion is not. An offset
+- **Interpretation**: a joint on an offset element works as in Mecway, also with a
+  rotation perpendicular to the arm free (52c): deflection and rotations equal. An offset
   line3 element with a joint is not translated yet (WARNING; the element is then rigidly
   attached to the arm). A line3 beam gets its element values from both SEG2 halves
   (end 1 and middle from the first, end 2 from the second).

@@ -33,8 +33,8 @@ limitations, 0 unexpected).
 - **Flexible joints**: a joint with U, V and W free is exact with `POU_D_T_GD` at any
   rotation and no longer gives a warning (NL-90, NL-90b). A joint with only some rotations
   free on `POU_D_T_GD` beams gives an error before the run. Joints on offset beams are
-  translated in linear static and modal analyses (LS-52a now equals Mecway, 1.2636 mm; new
-  LS-52c). Ideas and benchmarks from the fork by MishalTPC
+  translated in linear static and modal analyses, with the joint at the end of the rigid
+  arm as in Mecway 34 (LS-52a/b/c equal to Mecway in deflection and rotations). Ideas and benchmarks from the fork by MishalTPC
   (github.com/mishal0488/MecwayAsterBridge).
 - Docs: Mecway 33/34 compatibility table and version policy
   ([After an update](docs/en/After_an_update.md) §6, `AGENTS.md`).

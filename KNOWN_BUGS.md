@@ -136,19 +136,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    20.90 (its rigid knot at the joint is linear); Mecway with solver CCX gives no buckling
    solution for beams headless. Nothing to fix in the bridge.
 
-117\. **Flexible joint with U, V and W free on an offset beam: Mecway puts the joint at the end of
-   the arm** (confirmed, Mecway 34 headless and Code-Aster 17.4, `bridge_mesh._flexible_joints`;
-   verification LS-52c). Beam of LS-51 with a ball joint at the middle node on the element right
-   of it, offset e = 10 mm on the right half: the deflection is equal (1.264119 mm in both, by
-   symmetry), but Mecway's own solver gives the torsion e F2 in the left half (rotx at the middle
-   −1.96895e-4 rad, 0 at x = 0.8 m), the bridge in the right half (rotx at the middle 0,
-   7.8758e-5 rad at x = 0.8 m). Mecway thus releases the element at the offset end of the rigid
-   arm (arm rigid to the Mecway node); the bridge releases at the Mecway node, before the arm (as
-   in the fork by MishalTPC, item 108d). With only the rotation about the arm direction free
-   (LS-52a: hinge about W, offset along Z) both give the same result (equal to Mecway); a joint
-   with a rotation perpendicular to the arm free differs. Open: move the joint to
-   the end of the arm (own node at the offset node, arm from the Mecway node) to match Mecway.
-
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
@@ -466,13 +453,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    0.1046 rad, lateral displacement +1.6 versus −10.9 mm; the bridge gives 0.1092 rad
    and −11.4 mm in both); checked with the example itself and LS-63 (faces, equal to Mecway).
    (d) A beam element with both an offset and a flexible joint: in linear static and modal
-   the joint sits at the Mecway node, before the rigid arm (own node plus own arm, as in the
-   fork by MishalTPC, commit 773d59f; LS-52a equal to Mecway; with U, V and W free Mecway puts the
-   joint at the end of the arm, item 117, LS-52c). In other analyses
+   the joint sits at the end of the rigid arm, between the offset node and the element, as in
+   Mecway 34 (Mecway node -> arm -> joint -> element; LS-52a/b/c equal to Mecway in deflection
+   and rotations). In other analyses
    and on a line3 element the joint is not translated (WARNING in
-   `bridge_mesh._flexible_joints`), the element is rigidly attached to the arm. Nodal values
-   (not the element values) of the offset element at the jointed end are not passed to the
-   Mecway node (own offset node without BROFL group, NOT verified in a run). An offset beam
+   `bridge_mesh._flexible_joints`), the element is rigidly attached to the arm. The joint's own
+   node lies in a BROFL node group with the Mecway node, so its values go to that node like those
+   of the other offset nodes (element values at the jointed end NOT compared with Mecway). An offset beam
    and a beam with a joint at the same node do work (LS-52b, equal to Mecway). (e) Bonded contact on shells with an offset: the
    slave nodes (always the Mecway nodes) are coupled to the nodes of the master
    (EXCENTREMENT, or the own relations for quad8/tri6), but with `LIAISON_MAIL` on a

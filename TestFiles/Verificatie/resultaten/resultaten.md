@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 2e59790, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge ff708f4, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2306 van 2313 controles binnen de tolerantie** (431 testcases); 7 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2312 van 2318 controles binnen de tolerantie** (431 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1129,16 +1129,21 @@ Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 2e59790, Code-Aster 17.4
 | LS-51f | Flexible joint om V op een verticale balk | doorbuiging midden t.o.v. Mecway 34 | 0.0012631 m | 0.0012631 | +0.00% | 0.1% | OK |
 | LS-52a | Flexible joint op een balk met element offset | doorbuiging midden | 0.0012631 m | 0.0012636 | +0.04% | 1% | OK |
 | LS-52a | Flexible joint op een balk met element offset | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 0.0012636 | -0.00% | 0.1% | OK |
+| LS-52a | Flexible joint op een balk met element offset | rotx midden t.o.v. Mecway 34 | -9.8486e-05 rad | -9.8486e-05 | +0.00% | 0.1% | OK |
+| LS-52a | Flexible joint op een balk met element offset | rotx bij x = 0,8 t.o.v. Mecway 34 | -3.9394e-05 rad | -3.9394e-05 | -0.00% | 0.1% | OK |
 | LS-52a | Flexible joint op een balk met element offset | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
 | LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | doorbuiging midden | 0.0012631 m | 0.0012636 | +0.04% | 1% | OK |
 | LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | doorbuiging midden t.o.v. Mecway 34 | 0.0012636 m | 0.0012636 | -0.00% | 0.1% | OK |
+| LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | rotx midden t.o.v. Mecway 34 | -9.8486e-05 rad | -9.8486e-05 | +0.00% | 0.1% | OK |
+| LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | rotx bij x = 0,8 t.o.v. Mecway 34 | -3.9394e-05 rad | -3.9394e-05 | -0.00% | 0.1% | OK |
 | LS-52b | Flexible joint naast een balk met element offset (zelfde knoop) | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
-| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | doorbuiging midden | 0.0012641 m | 0.0012641 | +0.00% | 0.01% | OK |
-| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden (linkerhelft zonder torsie) | 0 rad | -4.0845e-33 | -4.0845e-33 | 1e-09 rad | OK |
-| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | |rotx| bij x = 0,8 (rechterhelft) | 7.8758e-05 rad | 7.8758e-05 | +0.00% | 0.1% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | doorbuiging midden | 0.0012641 m | 0.0012641 | -0.00% | 0.01% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden (torsie linkerhelft) | -1.9690e-04 rad | -1.9690e-04 | +0.00% | 0.1% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx bij x = 0,2 (linkerhelft) | -7.8758e-05 rad | -7.8758e-05 | +0.00% | 0.1% | OK |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx bij x = 0,8 (rechterhelft zonder torsie) | 0 rad | -7.3525e-33 | -7.3525e-33 | 1e-09 rad | OK |
 | LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | reactiekracht Y | 100 N | 100 | -0.00% | 0.0001% | OK |
 | LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | doorbuiging midden t.o.v. Mecway 34 | 0.0012641 m | 0.0012641 | -0.00% | 0.1% | OK |
-| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden t.o.v. Mecway 34 | -1.9690e-04 rad | -4.0845e-33 | +100.00% | 0.1% | BEKEND (KNOWN_BUGS 117) |
+| LS-52c | Flexible joint U, V en W vrij op een balk met element offset: torsie via de arm | rotx midden t.o.v. Mecway 34 | -1.9690e-04 rad | -1.9690e-04 | +0.00% | 0.1% | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | elementen met bendingmomw | 10  | 10 | +0.00% | 0  | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | M in het scharnier (element 6, knoop 1) | 0 N m | 1.5632e-13 | 1.5632e-13 | 1e-06 N m | OK |
 | LS-53a | Snedekrachten per element naast een flexible joint (line2) | M element 6, knoop 2 (x = 0,6 m) | 5 N m | 5 | +0.00% | 0.1% | OK |

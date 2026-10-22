@@ -499,7 +499,8 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
         for eid in eids:
             model_data["offset_elements"][eid] = "exc"
     # A joint on a shifted element: bridge_mesh._flexible_joints has
-    # already put its own node in plan["cells"] (at the end of the arm).
+    # already put its own node in plan["cells"] (at the offset node O, at
+    # the end of the arm).
     cells = dict(("M{0}".format(e), cn) for e, cn in plan["cells"].items())
     if cells:
         for atype, items in by_type.items():
@@ -513,6 +514,14 @@ def apply_to_mesh(plan, model_data, by_type, group_ma, group_no, rn_es):
         model_data["offset_links"].append(
             {"group": name, "orig": orig, "new": new, "arm": d,
              "kind": kind, "own_rot": orig not in no_rot})
+    # Own node of a joint on a shifted element (at O, coupled to O by the
+    # joint): a node group with its Mecway node only, without a link of
+    # its own, so that aster_results_export maps its values to that node
+    # (_offset_pairs); the arm N -> O is the pair above.
+    k0 = len(plan["pairs"])
+    for k, (orig, new, d) in enumerate(plan.get("joint_pairs", [])):
+        name = _free_name(LINK_PREFIX, k0 + k + 1, taken)
+        group_no[name] = ["N{0}".format(orig), "N{0}".format(new)]
     for k, ((elset, w), eids) in enumerate(plan["exc"].items()):
         group = rn_es(elset)
         members = ["M{0}".format(e) for e in eids]

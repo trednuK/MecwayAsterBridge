@@ -550,33 +550,34 @@ opeenvolgende meshes.
   (globaal, loodrecht op het buigvlak) op (52a) de rechterhelft, dus ook op het element
   met de joint, of (52b) de linkerhelft; (52c) als 52a met U, V en W vrij
   (kogelscharnier). (53a) LS-51a, (53b) LS-51e (4 line3), met `beam_forces`.
-- **Vertaling**: de joint zit in de Mecway-knoop, voor de starre arm, zoals in de fork van
-  MishalTPC (`github.com/mishal0488/MecwayAsterBridge`, commit 773d59f, daar vergeleken
-  met Mecway 34): een eigen knoop in de Mecway-knoop met de joint-relaties, en een eigen
-  starre arm naar een eigen offsetknoop waarop het element begint. De arm draait dus met
-  het vrijgelaten element mee.
+- **Vertaling**: de joint zit aan het eind van de starre arm, tussen het offsetpunt en het
+  element, zoals in Mecway 34: Mecway-knoop → starre arm → joint → element. Een eigen knoop
+  in het offsetpunt met de joint-relaties (lokale assen van de balk) vervangt het offsetpunt
+  in de cel van het element; de arm hangt star aan de Mecway-knoop. (De fork van
+  MishalTPC, `github.com/mishal0488/MecwayAsterBridge`, commit 773d59f, zet de joint in de
+  Mecway-knoop, voor de arm; bij een joint met een rotatie loodrecht op de arm vrij geeft
+  dat een andere verdeling van de torsie dan Mecway.)
 - **Referentie**: (52a, 52b) scharnier: δ = PL³/(48EI) = 1,2631 mm; Mecway 34 (eigen
-  solver) geeft in beide 1,2636 mm. (52c) waar de joint zit blijkt uit de torsie: de
-  rechterhelft krijgt de kracht F2 via de arm vanaf de middenknoop, dus het torsiemoment
-  T = e F2; de linkerhelft houdt geen torsie (rotx in het midden 0; zat de joint aan het
-  eind van de arm, dan was het omgekeerd). Elke helft is een ingeklemde balk L/2 met
+  solver) geeft in beide 1,2636 mm, en rotx in het midden −9,8486e-5 rad, op x = 0,8 m
+  −3,9394e-5 rad. (52c) waar de joint zit blijkt uit de torsie: de rechterhelft geeft de
+  kracht F2 via het kogelscharnier aan het eind van de arm door; de arm hangt star aan de
+  middenknoop, dus het torsiemoment T = e F2 gaat naar de linkerhelft en de rechterhelft
+  houdt geen torsie (rotx op x = 0,8 m 0). Elke helft is een ingeklemde balk L/2 met
   k = 3EI/(L/2)³ (`POU_D_E`); de torsie verschuift het aangrijpingspunt met e θx:
-  F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1,2641 mm, |rotx| op x = 0,8 m =
-  T (L − x)/(GJ) = 7,8758e-5 rad. Mecway 34 (eigen solver, headless) geeft voor (52c)
-  dezelfde doorbuiging 1,2641 mm, maar de torsie in de linkerhelft: rotx in het midden
-  −1,9690e-4 rad (= e F2 (L/2)/(GJ)), 0 op x = 0,8 m. Mecway zet de joint dus aan het eind
-  van de arm (KNOWN_BUGS 117). (53) elke helft is een
+  F1 = F2 (1 + a), a = e² k (L/2)/(GJ), δ = F1/k = 1,2641 mm, rotx = −T x/(GJ): in het
+  midden −1,9690e-4 rad, op x = 0,2 m −7,8758e-5 rad. Mecway 34 (eigen solver, headless)
+  geeft voor (52c) dezelfde doorbuiging en dezelfde rotaties. (53) elke helft is een
   ingeklemde balk L/2 met P/2: M = 0 in het scharnier, (P/2) h verder op het element,
   V = P/2.
-- **Resultaat**: (52a) 1,2636 mm (+0,04 %, gelijk aan Mecway); (52b) 1,2636 mm (+0,04 %,
-  gelijk aan Mecway); (52c) δ +0,00 % (ook t.o.v. Mecway), rotx in het midden −4e-33 rad,
-  rotx op 0,8 m +0,00 %; reacties = last; rotx in het midden t.o.v. Mecway BEKEND
-  (KNOWN_BUGS 117). (53a) alle 10 elementen, M in het scharnier 2e-13 N m,
+- **Resultaat**: (52a) 1,2636 mm (+0,04 %, gelijk aan Mecway), rotx in het midden en op
+  0,8 m +0,00 % t.o.v. Mecway; (52b) idem; (52c) δ +0,00 % (ook t.o.v. Mecway), rotx in
+  het midden en op 0,2 m +0,00 % (ook t.o.v. Mecway), rotx op 0,8 m −7e-33 rad; reacties
+  = last. Ook rotz in het midden en op 0,2 en 0,8 m is gelijk aan Mecway (~1e-12
+  relatief, niet als check). (53a) alle 10 elementen, M in het scharnier 2e-13 N m,
   5,000 N m op x = 0,6 m, V = 50 N; (53b) alle 4 elementen met drie waarden: 0 / 6,25 /
   12,5 N m.
-- **Interpretatie**: een joint op een verschoven element werkt nu als in Mecway (52a).
-  Met een rotatie loodrecht op de arm vrij (52c) zit de joint in de bridge voor de arm, in
-  Mecway erachter: de doorbuiging is hier gelijk, de verdeling van de torsie niet.
+- **Interpretatie**: een joint op een verschoven element werkt als in Mecway, ook met een
+  rotatie loodrecht op de arm vrij (52c): doorbuiging en rotaties gelijk.
   Een verschoven line3-element met een joint wordt nog niet vertaald (WARNING; het element
   zit dan star aan de arm). Een line3-balk krijgt zijn elementwaarden uit beide
   SEG2-helften (eind 1 en midden uit de eerste, eind 2 uit de tweede).

@@ -356,13 +356,14 @@ def test_joints():
 
 
 def test_joint_on_offset():
-    # KNOWN_BUGS 108d: the joint at the Mecway node, then an own rigid arm
-    # to an own offset node on which the element starts
+    # KNOWN_BUGS 108d: Mecway node -> rigid arm -> joint -> element (as
+    # Mecway 34, LS-52c): the own node lies at the offset node O and
+    # replaces O in the cell; the joint ties it to O
     comm, md, log = _translate("lin_static_3d", _joint("w", offset=True),
                                general={"elem_beam": "POU_D_T"})
     check(comm is not None, "joint on offset: no .comm\n" + log)
-    check("rigid arm to own offset node" in log,
-          "joint on offset: own arm\n" + log)
+    check("at the end of the rigid arm" in log,
+          "joint on offset: joint at the end of the arm\n" + log)
     check("the joint is not translated" not in log,
           "joint on offset: no longer refused\n" + log)
     if md:
@@ -371,19 +372,24 @@ def test_joint_on_offset():
               "joint on offset: joint_free entry")
         mail = md.get("_mail_text", u"")
         dup = list(md["joint_free"])[0] if info else 0
-        arm_end = dup + 1
-        check(re.search(r"(?m)^ N%d 0\.5 0\.0 0\.0$" % dup, mail)
-              is not None, "joint on offset: own node at the Mecway node")
-        check(re.search(r"(?m)^ N%d 0\.5 0\.01 0\.0$" % arm_end, mail)
-              is not None, "joint on offset: own offset node")
-        check(re.search(r"(?m)^ M3 N%d " % arm_end, mail) is not None,
-              "joint on offset: element 3 starts at the own offset node")
-        check(re.search(r"(?m)^ J%d N%d$" % (dup, dup), mail) is not None,
-              "joint on offset: POI1 on the own node")
-        arm = [e for e in md.get("constraint_equations", [])
+        at_o = re.findall(r"(?m)^ N(\d+) 0\.5 0\.01 0\.0$", mail)
+        check(str(dup) in at_o and len(at_o) == 2,
+              "joint on offset: own node at the offset node")
+        o_node = int([n for n in at_o if n != str(dup)][0]) \
+            if len(at_o) == 2 else 0
+        check(re.search(r"(?m)^ M3 N%d " % dup, mail) is not None,
+              "joint on offset: element 3 starts at the own node")
+        check(re.search(r"(?m)^ J%d N%d$" % (o_node, o_node), mail)
+              is not None and re.search(r"(?m)^ J%d " % dup, mail) is None,
+              "joint on offset: POI1 on O (in no cell), not on the own node")
+        rel = [e for e in md.get("constraint_equations", [])
                if e["source"] == "flexiblejoint" and
-               any(t[0] == arm_end for t in e["terms"])]
-        check(len(arm) == 6, "joint on offset: 6 arm relations")
+               any(t[0] == dup for t in e["terms"])]
+        check(len(rel) == 5 and all(
+            set(t[0] for t in e["terms"]) == set([dup, o_node])
+            for e in rel), "joint on offset: 5 joint relations to O")
+        check(re.search(r"(?m)^ BROFL\d+\n N3 N%d$" % dup, mail)
+              is not None, "joint on offset: BROFL group N3 + own node")
     # Joint with U, V and W free on an offset element at the beam end
     # (only that element at node 3 on the right side): solvable
     comm, md, log = _translate("lin_static_3d", _joint("uvw", offset=True),
@@ -393,7 +399,7 @@ def test_joint_on_offset():
     # element rigid to the arm)
     comm, md, log = _translate("modal_3d", _joint("w", offset=True),
                                general={"elem_beam": "POU_D_T"})
-    check(comm is not None and "rigid arm to own offset node" in log,
+    check(comm is not None and "at the end of the rigid arm" in log,
           "joint on offset, modal: translated\n" + log)
     comm, md, log = _translate("nonlin_static_3d", _joint("w", offset=True),
                                general={"elem_beam": "POU_D_T"})

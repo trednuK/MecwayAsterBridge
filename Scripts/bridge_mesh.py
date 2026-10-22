@@ -689,19 +689,21 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
     a condition on that node already fixes rotations.
 
     Element offset (bridge_offset.prepare, offset_plan["cells"]: elements
-    on their own nodes, rigid arm Mecway node N -> offset node O): a joint
-    on an offset element sits at the Mecway node, before the rigid arm (as
-    in the fork by MishalTPC, commit 773d59f, bridge_offsets/
-    bridge_releases: "the release is applied at the original reference
-    junction"; compared there with Mecway 34). The own node lies at N and
-    is coupled to N as above; a rigid arm of its own (_arm_relations) goes
-    from the own node to a new offset node, on which the cell of the
-    element starts. So the arm turns with the released element. The own
-    node and an O that is then in no cell get a POI1 DIS_TR. Mecway 34
-    keeps the joint on an offset element as well (LS-52a: hinge). Only in
-    linear static and modal (_joint_on_offset_supported) and not for a
-    split line3 element (two cells): otherwise a WARNING and the element
-    stays rigidly attached to the arm (KNOWN_BUGS 108d). An offset element without
+    on their own nodes, rigid arm Mecway node N -> offset node O): the
+    joint sits at the end of the arm, between O and the element, as in
+    Mecway 34 (LS-52c, headless: the torsion of the released half is 0,
+    the deflection is the same either way). Order: N -> rigid arm (the
+    offset link of bridge_offset) -> joint -> element. The own node lies
+    at O, replaces O in the cell of the element and is coupled to O as
+    above (axes of the element, parallel to N-N'). An O that is then in
+    no cell gets a POI1 DIS_TR; the own node goes in a node group BROFL
+    with N (offset_plan["joint_pairs"], bridge_offset.apply_to_mesh), so
+    that aster_results_export maps its values to N. (The fork by
+    MishalTPC, commit 773d59f, put the release at N, before the arm.)
+    Only in linear static and modal (_joint_on_offset_supported) and not
+    for a split line3 element (two cells): otherwise a WARNING and the
+    element stays rigidly attached to the arm (KNOWN_BUGS 108d). An
+    offset element without
     joint is no longer attached to the Mecway node but does carry its
     rotations via the arm; if the node is in no other cell, it gets a POI1
     DIS_TR (without extra relations), otherwise it has no degrees of
@@ -810,7 +812,7 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                                                       []))) + 1
     new_nodes = OrderedDict()
     poi_nodes = []
-    own_poi = []        # own nodes without a cell (offset): POI1
+    own_poi = []        # offset nodes O without a cell (joint): POI1
     eqs = model_data.setdefault("constraint_equations", [])
     for nid, items in by_node.items():
         jointed = set(e for e, _f in items)
@@ -837,29 +839,30 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
             else:
                 a, b = cn[0], cn[1]
                 atype, idx = cell_refs[eid][0]
-            # Node the end hangs on: the Mecway node, or for an offset
-            # element its offset node O (bridge_offset; the cell itself is
-            # set by bridge_offset.apply_to_mesh from offset_plan)
-            arm_end = None
+            # Node the joint ties to: the Mecway node N, or for an offset
+            # element its offset node O at the end of the rigid arm
+            # (bridge_offset; the cell itself is set by
+            # bridge_offset.apply_to_mesh from offset_plan)
+            tie = nid
             if eid in offset_cells:
-                # Offset element: the joint at the Mecway node, then a
-                # rigid arm of its own from the own node to an own offset
-                # node (the cell is set by bridge_offset.apply_to_mesh from
-                # offset_plan). The own node lies in no cell: POI1.
+                # Offset element: Mecway node -> rigid arm (bridge_offset,
+                # N -> O) -> joint -> element, as Mecway 34 (LS-52c: the
+                # torsion of the released half is 0). The own node lies at
+                # O and replaces O in the cell of this element; O itself
+                # may then be in no cell: POI1 for its degrees of freedom.
                 ocn = offset_cells[eid]
                 o_node = ocn[cn.index(nid)]
-                arm_end = next_nid
-                next_nid += 1
-                new_nodes[arm_end] = offset_xyz[o_node]
-                offset_cells[eid] = [arm_end if n == o_node else n
+                tie = o_node
+                new_nodes[dup] = offset_xyz[o_node]
+                offset_cells[eid] = [dup if n == o_node else n
                                      for n in ocn]
-                own_poi.append(dup)
-                # O itself may now be only in the arm of the Mecway node
                 if not any(o_node in c for e, c in offset_cells.items()
                            if e != eid) and o_node not in own_poi:
                     own_poi.append(o_node)
-                arm = _vsub(offset_xyz[o_node], nodes[nid])
-                eqs.extend(_arm_relations(dup, arm_end, arm))
+                # Results: the own node belongs via the arm to N
+                # (node group BROFL, bridge_offset.apply_to_mesh)
+                offset_plan.setdefault("joint_pairs", []).append(
+                    (nid, dup, _vsub(offset_xyz[o_node], nodes[nid])))
             else:
                 name, cell = by_type[atype][idx]
                 by_type[atype][idx] = (name, [dup if n == nid else n
@@ -870,27 +873,28 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
                                               {}).get(eid))
             w = _vcross(u, v)
             for d in ("DX", "DY", "DZ"):
-                eqs.append({"terms": [(dup, d, 1.0), (nid, d, -1.0)],
+                eqs.append({"terms": [(dup, d, 1.0), (tie, d, -1.0)],
                             "constant": 0.0, "source": "flexiblejoint"})
             fixed = [ax for key, ax in (("u", u), ("v", v), ("w", w))
                      if key not in free]
             for ax in fixed:
                 eqs.append({"terms": _rot_terms(dup, ax, 1.0) +
-                            _rot_terms(nid, ax, -1.0),
+                            _rot_terms(tie, ax, -1.0),
                             "constant": 0.0, "source": "flexiblejoint"})
             tied_axes.extend(fixed)
             # Free axes per own node, for bridge_to_aster (POU_D_T_GD)
             model_data.setdefault("joint_free", {})[dup] = {
                 "eid": eid, "node": nid, "free": sorted(free),
-                "offset": arm_end is not None,
+                "offset": tie != nid,
                 "mod": mods.get(elem_info[eid][1])}
             log("INFO: Flexible joint element {0}, node N{1}: own node "
                 "N{2}{6}, free about {3} (U={4}, V={5}).".format(
                     eid, nid, dup, "/".join(sorted(f.upper() for f in free)),
                     tuple(round(c, 6) for c in u),
                     tuple(round(c, 6) for c in v),
-                    "" if arm_end is None else
-                    ", rigid arm to own offset node N{0}".format(arm_end)))
+                    "" if tie == nid else
+                    " at the end of the rigid arm (offset node N{0})".format(
+                        tie)))
         if rot_carrier:
             if not others and nid not in poi_any:
                 # only offset elements (and joints) at this node:
@@ -910,10 +914,9 @@ def _flexible_joints(model_data, nodes, conn, elements, faces_of, by_type,
         for ax in _complement(tied_axes):
             eqs.append({"terms": _rot_terms(nid, ax, 1.0), "constant": 0.0,
                         "source": "flexiblejoint"})
-    # Own node of a joint on an offset element (only in the joint and its
-    # arm), and an offset node O that is now only in the arm of the Mecway
-    # node: degrees of freedom via a POI1 DIS_TR (stiffness 0); their
-    # rotations follow from the relations.
+    # An offset node O that is now only in the arm of the Mecway node and
+    # the joint (offset element with a joint): degrees of freedom via a
+    # POI1 DIS_TR (stiffness 0); its rotations follow from the relations.
     poi_nodes.extend(n for n in own_poi if n not in poi_nodes)
     log("INFO: Flexible joint: {0} beam end(s) with their own node "
         "(LIAISON_DDL), {1} node(s) with a POI1 DIS_TR.".format(
@@ -938,22 +941,6 @@ def _joint_on_offset_supported():
         cmd == "CALC_MODES" and
         "{0}".format(analysis.get("type_resu", "DYNAMIQUE")).upper() ==
         "DYNAMIQUE")
-
-
-def _arm_relations(o, f, d):
-    """constraint_equations of a rigid arm d = x_f - x_o between two nodes
-    with rotations (small rotations, as bridge_offset.link_entries for a
-    beam: u_f = u_o + theta_o x d, theta_f = theta_o)."""
-    dx, dy, dz = d
-    rows = [[(f, "DX", 1.0), (o, "DX", -1.0), (o, "DRY", -dz),
-             (o, "DRZ", dy)],
-            [(f, "DY", 1.0), (o, "DY", -1.0), (o, "DRZ", -dx),
-             (o, "DRX", dz)],
-            [(f, "DZ", 1.0), (o, "DZ", -1.0), (o, "DRX", -dy),
-             (o, "DRY", dx)]]
-    rows += [[(f, r, 1.0), (o, r, -1.0)] for r in _ROT_DOFS]
-    return [{"terms": [t for t in r if abs(t[2]) > 1.0e-12],
-             "constant": 0.0, "source": "flexiblejoint"} for r in rows]
 
 
 def _referenced_names(model_data):
