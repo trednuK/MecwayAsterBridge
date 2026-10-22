@@ -34,6 +34,10 @@ dd4c958, MPL-2.0), here as Mecway models through the whole bridge:
           configuration GQ; NL-87b configuration G (gravity only)
   NL-88   free thermal expansion (Thermal stress, temperature2)
   NL-89   line pressure as a formula in x and t
+  NL-90   flexible joint with U, V and W free between two cantilevers that
+          share the tip (check_nonlinear_releases.py of the fork): large
+          tip force (Reissner beam with P/2), NL-90b torsion through 90
+          degrees (the joint passes no torque)
 
 Explanation, sources and results: docs/Verificatie.md (sec. NL-80 .. NL-89).
 POU_D_T_GD is a linear element (one integration point): 40 elements per
@@ -582,6 +586,100 @@ TESTS = [
                 tol=1e-6, unit="m", source="alpha dT L")],
          settings=SMALL, general=GD,
          note="Thermal stress met temperature2 (AFFE_VARC TEMP)."),
+]
+
+
+# ------------------------------------------------------------------
+# NL-90 Flexible joint with U, V and W free on POU_D_T_GD
+# ------------------------------------------------------------------
+# After check_nonlinear_releases.py of the fork by MishalTPC
+# (github.com/mishal0488/MecwayAsterBridge, branch dev, MPL-2.0): two
+# coincident cantilevers along X, roots fixed, that only meet at the tip.
+# The tip node belongs to cantilever 1; the last element of cantilever 2
+# ends there with a flexible joint <rotu/><rotv/><rotw/> (a ball joint:
+# force, no moment). The bridge ties only DX, DY, DZ of its own node
+# (exact at any rotation), so no linear relation on the rotations.
+# (a) tip force in Y, P = 2 alpha EI / L^2 with alpha = 2: both cantilevers
+#     are identical and have a tip that is free to rotate, so each carries
+#     P/2 = alpha EI / L^2: the Reissner beam of NL-83 (reissner(2.0)).
+# (b) tip torque about X, M = G J (pi/2) / L (general section with a given
+#     J): the joint passes no torque, so cantilever 1 alone twists through
+#     pi/2 and the root of cantilever 2 has no reaction moment (a rigid
+#     connection would give pi/4 and M/2 at each root).
+ALPHA90 = 2.0
+P90 = 2.0 * ALPHA90 * EI / L ** 2
+REF90 = reissner(ALPHA90)
+I90, J90, A90 = 1.0e-8 / 12.0, 1.4e-9, 1.0e-4
+UGS90 = ('<geometric type="UniformGeneralSection" area="%r m²" iyy="%r m⁴" '
+         'izz="%r m⁴" torsionconstant="%r m⁴" />' % (A90, I90, I90, J90))
+M90 = G * J90 * THETA / L
+
+
+def build_nl90(kind):
+    def build():
+        m = Model("L30", timesteps=TS)
+        m.elset("Balk", "Staal")
+        m.mat("Staal", SECTION if kind == "force" else UGS90, STEEL, DENS)
+        eids1, nids1 = linemesh(m, "Balk", N_EL, (0, 0, 0), (L, 0, 0))
+        # Cantilever 2 on its own nodes (Model.node would merge them),
+        # except the tip node of cantilever 1
+        nids2 = []
+        for i in range(N_EL):
+            m.nodes.append((L * i / float(N_EL), 0.0, 0.0))
+            nids2.append(len(m.nodes))
+        nids2.append(nids1[-1])
+        eids2 = [m.elem("Balk", "line2", nids2[i:i + 2])
+                 for i in range(N_EL)]
+        m.node_selection("Inklemming", [nids1[0], nids2[0]])
+        m.node_selection("Wortel1", [nids1[0]])
+        m.node_selection("Wortel2", [nids2[0]])
+        m.node_selection("Tip", [nids1[-1]])
+        m.face_selection("Kogel", [(eids2[-1], 3)])
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<flexiblejoint selection="Kogel"><rotu /><rotv /><rotw />'
+              '</flexiblejoint>')
+        if kind == "force":
+            m.add('<force selection="Tip"><x>0 N</x>%s<z>0 N</z></force>'
+                  % _ramp("y", P90, "N"))
+        else:
+            m.add('<moment selection="Tip">%s<y>0 N.m</y><z>0 N.m</z>'
+                  '</moment>' % _ramp("x", M90, "N.m"))
+        return m
+    return build
+
+
+_SRC90 = "fork MishalTPC, check_nonlinear_releases.py"
+TESTS += [
+    Case("NL-90", GROUP, "POU_D_T_GD: flexible joint met U, V en W vrij "
+         "(kogelscharnier), grote eindkracht", "nonlin_static_3d",
+         build_nl90("force"),
+         [Check("tip u_y", _tip("disply"), ref=REF90[1], tol=1e-3,
+                unit="m", source="Reissner-balk met P/2 (NL-83); " + _SRC90),
+          Check("tip u_x", _tip("displx"), ref=REF90[0], tol=1e-3,
+                unit="m", source="Reissner-balk met P/2 (NL-83)"),
+          Check("tiprotatie", _tip("rotz"), ref=REF90[2], tol=1e-3,
+                unit="rad", source="Reissner-balk met P/2 (NL-83)"),
+          Check("reactiekracht Y wortel 2", lambda r: r.total(
+              "reactionforcey", "Wortel2"), ref=-P90 / 2.0, tol=1e-3,
+                unit="N", source="symmetrie: elke balk P/2")],
+         settings=SMALL, general=GD,
+         note="Naar check_nonlinear_releases.py van de fork van "
+              "MishalTPC; de joint koppelt alleen DX/DY/DZ (exact)."),
+    Case("NL-90b", GROUP, "POU_D_T_GD: flexible joint met U, V en W vrij, "
+         "torsie tot 90 graden", "nonlin_static_3d", build_nl90("torque"),
+         [Check("tiprotatie om X", _tip("rotx"), ref=THETA, tol=1e-4,
+                unit="rad", source="M L / (G J) = pi/2, alleen balk 1; "
+                + _SRC90),
+          Check("reactiemoment X wortel 1", lambda r: r.total(
+              "reactionmomx", "Wortel1"), ref=-M90, tol=1e-4, unit="N.m",
+                source="evenwicht: de joint geeft geen moment door"),
+          Check("reactiemoment X wortel 2", lambda r: r.total(
+              "reactionmomx", "Wortel2"), ref=0.0, tol_abs=1e-6 * M90,
+                unit="N.m", source="de joint geeft geen moment door "
+                "(star: -M/2)")],
+         settings=SMALL, general=GD,
+         note="Een starre verbinding zou pi/4 geven; general section met "
+              "gegeven J."),
 ]
 
 

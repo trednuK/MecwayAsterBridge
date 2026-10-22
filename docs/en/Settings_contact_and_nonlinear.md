@@ -421,7 +421,7 @@ element offset, flexible joint, line3, beam orientation and `beam_forces`.
 
 | Combination | What the bridge does |
 |---|---|
-| nonlinear static with large displacements (`deformation` default `GROT_GDEP`) | `POU_D_T_GD`: force and moment (constant, NL-80c, or as a table in time), line pressure (constant or as a formula in x, y, z, t), gravity, Thermal stress, Mecway's *Time step size*, configurations (NL-80 to NL-89) |
+| nonlinear static with large displacements (`deformation` default `GROT_GDEP`) | `POU_D_T_GD`: force and moment (constant, NL-80c, or as a table in time), line pressure (constant or as a formula in x, y, z, t), gravity, Thermal stress, Mecway's *Time step size*, configurations (NL-80 to NL-90) |
 | line3 beam | two SEG2 cells per element, as for `POU_D_E` (NL-84) |
 | beam orientation (attributes and *Element orientation*) | explicit `VECT_Y` per cell (NL-85) |
 | centrifugal force | `ROTATION` is not possible on this element (`CHAR_MECA_ROTA_R`, `CALCUL_37`); the bridge writes `FORCE_POUTRE` as a formula of the initial position: a fixed load, without spin softening (NL-86); trusses (`BARRE`) in such a model get `FORCE_POUTRE` as well (NL-86b) |
@@ -430,7 +430,9 @@ element offset, flexible joint, line3, beam orientation and `beam_forces`.
 | other analyses (static, modal, buckling, harmonic, spectrum, dynamics) and nonlinear with `PETIT`/`PETIT_REAC` | `POU_D_T` with a WARNING: the same beam at small displacements (NL-80b). The element has no `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamics (test case sdnl103a) is NOT verified in the bridge |
 | `crit_stab` | ERROR: the tangent matrix is not symmetric (`ALGELINE4_41`) |
 | `imperfection_amplitude` > 0 | ERROR: the linear buckling beforehand needs `RIGI_MECA`; put the initial curvature in the mesh (NL-82) |
-| element offset, flexible joint, couplings | they compute (offset and joint equal to `POU_D_T` for small loads; couplings NOT verified), but stay linear relations in the undeformed axes: WARNING (KNOWN_BUGS 11, 106, 108) |
+| flexible joint with U, V and W free (ball joint) | ties only the displacements (DX, DY, DZ): exact at any rotation (NL-90, NL-90b; after the fork by MishalTPC) |
+| flexible joint with only some rotations free (U, V, W, UV, UW, VW) | ERROR beforehand: the rotations along the non-free axes are a linear relation in the undeformed axes, and at finite rotations that gives a wrong extra rotation in the hinge (KNOWN_BUGS 106). Choose `POU_D_E`/`POU_D_T` (small rotations) or release U, V and W |
+| element offset, couplings | they compute (offset equal to `POU_D_T` for small loads; couplings NOT verified), but stay linear relations in the undeformed axes: WARNING (KNOWN_BUGS 11, 108) |
 | imposed rotation (`noderotation`) | the total rotation vector (exact for a rotation about one fixed axis), but slender beams converge poorly: WARNING (KNOWN_BUGS 11) |
 
 **Results.** Displacements, rotations and reactions as always. Section forces

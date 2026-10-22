@@ -313,23 +313,43 @@ TESTS += [
 # De offset staat loodrecht op het buigvlak (XY), dus geen koppeling met
 # de buiging om Z; alleen een torsiemoment F e (verwaarloosbaar: extra
 # doorbuiging e theta_x ~ 0,2 %).
-# (a) offset op de rechterhelft, dus ook op het element met de joint:
-#     de joint vervalt (WARNING; KNOWN_BUGS 108d), het element zit star
-#     aan de arm: dubbel ingeklemd, w = PL^3/(192EI) (Roark tabel 8.1
-#     geval 1d). Mecway houdt de joint wel aan (PL^3/(48EI)): BEKEND.
+# (a) offset op de rechterhelft, dus ook op het element met de joint: de
+#     joint zit in de Mecway-knoop, voor de starre arm (zoals de fork van
+#     MishalTPC, commit 773d59f): eigen knoop in de middenknoop, eigen arm
+#     naar het element (KNOWN_BUGS 108d). Scharnier: w = PL^3/(48EI) zoals
+#     LS-51a; Mecway 34 gaf hetzelfde (MW52).
 # (b) offset op de linkerhelft: de verschoven balk en de balk met de
 #     joint komen samen in de middenknoop N, die dan in geen enkele cel
 #     meer zit (alleen in de arm en de joint): POI1 J<N> (DIS_TR). Het
 #     scharnier werkt: w = PL^3/(48EI) zoals LS-51a.
+# (c) als (a), maar de joint met U, V en W vrij (kogelscharnier). Waar de
+#     joint zit blijkt uit de torsie: de rechterhelft (op z = e) krijgt
+#     de kracht F2 via de arm vanaf de middenknoop, met de arm star aan de
+#     balk: torsiemoment T = e F2 in de rechterhelft, de linkerhelft houdt
+#     geen torsie (rotx in het midden 0). Zat de joint aan het eind van
+#     de arm, dan was het omgekeerd. Verdeling van P: elke helft is een
+#     ingeklemde balk L/2 met stijfheid k = 3EI/(L/2)^3 (POU_D_E); de
+#     torsie van de rechterhelft (c = (L/2)/(GJ)) verschuift het
+#     aangrijpingspunt met e theta_x: F1 = F2 (1 + a), a = e^2 c k.
 # Mecway 34 (eigen solver, headless) geeft voor (a) en (b) dezelfde
-# doorbuiging: ook in (a) werkt het scharnier.
+# doorbuiging. (c) is niet met Mecway gerekend (alleen analytisch).
 E52 = 0.01
 MW52 = 1.263627e-03
+# LS-52c: CircularBar (Code-Aster CERCLE): JX = pi D^4/32; elem_beam
+# POU_D_E (default, Euler-Bernoulli): k = 3EI/(L/2)^3 without shear.
+G52 = E / 2.6
+J52 = math.pi * D ** 4 / 32.0
+K52 = 3.0 * E * I / (L / 2) ** 3
+C52 = (L / 2) / (G52 * J52)
+A52C = E52 ** 2 * C52 * K52
+F2_52C = P51 / (2.0 + A52C)
+W52C = P51 * (1.0 + A52C) / (2.0 + A52C) / K52
+ROT52C = E52 * F2_52C * (L - 0.8) / (G52 * J52)
 
 
-def build_ls52(side):
+def build_ls52(side, free="w"):
     def build():
-        m = build_ls51("w")()
+        m = build_ls51(free)()
         eids = [e for e, _sh, _n, _a in m.elsets[0][2]]
         m.element_selection("Verschoven",
                             eids[5:] if side == "right" else eids[:5])
@@ -340,22 +360,18 @@ def build_ls52(side):
 
 
 TESTS += [
-    Case("LS-52a", GROUP, "Flexible joint op een balk met element offset "
-         "(joint vervalt)", "lin_static_3d", build_ls52("right"),
+    Case("LS-52a", GROUP, "Flexible joint op een balk met element offset",
+         "lin_static_3d", build_ls52("right"),
          [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
-                ref=W48 / 4.0, tol=0.01, unit="m",
-                source="PL^3/192EI (Roark tabel 8.1 geval 1d; joint "
-                       "vervalt, KNOWN_BUGS 108d)"),
-          Check("doorbuiging midden t.o.v. Mecway 34",
-                lambda r: -r.at("disply", MID), ref=MW52, tol=1e-3,
-                unit="m", source="Mecway 34, eigen solver (houdt de joint "
-                "aan: scharnier)", in_series=False,
-                known="KNOWN_BUGS 108d"),
+                ref=W48, tol=0.01, unit="m",
+                source="twee ingeklemde balken L/2 met P/2: PL^3/48EI"),
+          _mw("doorbuiging midden", "disply", MID, MW52),
           Check("reactiekracht Y", lambda r: r.total("reactionforcey",
                                                        "Inklemming"),
                 ref=P51, tol=1e-6, unit="N", source="evenwicht")],
-         note="Joint op het eindvlak van een verschoven element: niet "
-              "vertaald (WARNING), star aan de arm."),
+         note="Joint op het eindvlak van een verschoven element: in de "
+              "Mecway-knoop, met een eigen starre arm (KNOWN_BUGS 108d "
+              "opgelost)."),
     Case("LS-52b", GROUP, "Flexible joint naast een balk met element "
          "offset (zelfde knoop)", "lin_static_3d", build_ls52("left"),
          [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
@@ -367,6 +383,24 @@ TESTS += [
                 ref=P51, tol=1e-6, unit="N", source="evenwicht")],
          note="Middenknoop alleen nog in de arm en de joint: POI1 DIS_TR "
               "(J<N>)."),
+    Case("LS-52c", GROUP, "Flexible joint U, V en W vrij op een balk met "
+         "element offset: torsie via de arm", "lin_static_3d",
+         build_ls52("right", "uvw"),
+         [Check("doorbuiging midden", lambda r: -r.at("disply", MID),
+                ref=W52C, tol=1e-4, unit="m",
+                source="F1/k, F1 = P (1 + a)/(2 + a), a = e^2 c k"),
+          Check("rotx midden (linkerhelft zonder torsie)",
+                lambda r: r.at("rotx", MID), ref=0.0, tol_abs=1e-9,
+                unit="rad", source="joint in de Mecway-knoop: geen torsie "
+                "naar links (fork MishalTPC, 773d59f)"),
+          Check("|rotx| bij x = 0,8 (rechterhelft)",
+                lambda r: abs(r.at("rotx", (0.8, 0, 0))), ref=ROT52C,
+                tol=1e-3, unit="rad", source="T (L - x)/(GJ), T = e F2"),
+          Check("reactiekracht Y", lambda r: r.total("reactionforcey",
+                                                       "Inklemming"),
+                ref=P51, tol=1e-6, unit="N", source="evenwicht")],
+         note="Kogelscharnier op het verschoven element: de arm draait "
+              "met het element mee."),
 ]
 
 

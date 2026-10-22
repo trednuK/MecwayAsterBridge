@@ -319,6 +319,89 @@ def test_warnings_links_and_rotation():
           "GD imposed rotation: WARNING")
 
 
+def _joint(free, offset=False):
+    """Flexible joint on the start of element 3 (node 3), free axes free;
+    offset: element offset y = 10 mm on elements 3 and 4."""
+    extra = (u'  <faceselection name="J"><face eid="3" faceid="2" />'
+             u'</faceselection>\n'
+             u'  <flexiblejoint selection="J">%s</flexiblejoint>'
+             % u"".join(u"<rot%s />" % a for a in free))
+    if offset:
+        extra += (u'\n  <elementselection name="Rechts"><element eid="3" />'
+                  u'<element eid="4" /></elementselection>\n'
+                  u'  <offset selection="Rechts"><x>0 m</x><y>0.01 m</y>'
+                  u'<z>0 m</z></offset>')
+    return _liml(extra=extra)
+
+
+def test_joints():
+    # Selective joint on POU_D_T_GD: ERROR before the run (KNOWN_BUGS 106b)
+    for free in ("w", "uv", "vw"):
+        comm, _md, log = _translate("nonlin_static_3d", _joint(free))
+        check(comm is None and "only some rotations free on POU_D_T_GD"
+              in log, "GD selective joint %s: ERROR\n%s" % (free, log))
+    # All rotations free: only DX/DY/DZ tied, exact; no linear-link WARNING
+    comm, md, log = _translate("nonlin_static_3d", _joint("uvw"))
+    check(comm is not None, "GD joint UVW: no .comm\n" + log)
+    check("only some rotations free" not in log,
+          "GD joint UVW: no ERROR/WARNING for selective joints\n" + log)
+    check("POU_D_T_GD beams (large rotations), but" not in log,
+          "GD joint UVW: no linear-relation WARNING\n" + log)
+    # Small rotations stay as they were
+    comm, _md, log = _translate("nonlin_static_3d", _joint("w"),
+                                general={"elem_beam": "POU_D_T"})
+    check(comm is not None, "POU_D_T selective joint: .comm\n" + log)
+    comm, _md, log = _translate("lin_static_3d", _joint("w"))
+    check(comm is not None, "lin static selective joint: .comm\n" + log)
+
+
+def test_joint_on_offset():
+    # KNOWN_BUGS 108d: the joint at the Mecway node, then an own rigid arm
+    # to an own offset node on which the element starts
+    comm, md, log = _translate("lin_static_3d", _joint("w", offset=True),
+                               general={"elem_beam": "POU_D_T"})
+    check(comm is not None, "joint on offset: no .comm\n" + log)
+    check("rigid arm to own offset node" in log,
+          "joint on offset: own arm\n" + log)
+    check("the joint is not translated" not in log,
+          "joint on offset: no longer refused\n" + log)
+    if md:
+        info = list((md.get("joint_free") or {}).values())
+        check(len(info) == 1 and info[0]["offset"],
+              "joint on offset: joint_free entry")
+        mail = md.get("_mail_text", u"")
+        dup = list(md["joint_free"])[0] if info else 0
+        arm_end = dup + 1
+        check(re.search(r"(?m)^ N%d 0\.5 0\.0 0\.0$" % dup, mail)
+              is not None, "joint on offset: own node at the Mecway node")
+        check(re.search(r"(?m)^ N%d 0\.5 0\.01 0\.0$" % arm_end, mail)
+              is not None, "joint on offset: own offset node")
+        check(re.search(r"(?m)^ M3 N%d " % arm_end, mail) is not None,
+              "joint on offset: element 3 starts at the own offset node")
+        check(re.search(r"(?m)^ J%d N%d$" % (dup, dup), mail) is not None,
+              "joint on offset: POI1 on the own node")
+        arm = [e for e in md.get("constraint_equations", [])
+               if e["source"] == "flexiblejoint" and
+               any(t[0] == arm_end for t in e["terms"])]
+        check(len(arm) == 6, "joint on offset: 6 arm relations")
+    # Joint with U, V and W free on an offset element at the beam end
+    # (only that element at node 3 on the right side): solvable
+    comm, md, log = _translate("lin_static_3d", _joint("uvw", offset=True),
+                               general={"elem_beam": "POU_D_T"})
+    check(comm is not None, "joint UVW on offset: .comm\n" + log)
+    # Modal: translated as well; nonlinear static: as before (WARNING,
+    # element rigid to the arm)
+    comm, md, log = _translate("modal_3d", _joint("w", offset=True),
+                               general={"elem_beam": "POU_D_T"})
+    check(comm is not None and "rigid arm to own offset node" in log,
+          "joint on offset, modal: translated\n" + log)
+    comm, md, log = _translate("nonlin_static_3d", _joint("w", offset=True),
+                               general={"elem_beam": "POU_D_T"})
+    check(comm is not None and "the joint is not translated" in log and
+          not (md or {}).get("joint_free"),
+          "joint on offset, nonlinear: not translated (WARNING)\n" + log)
+
+
 def test_pou_d_e_unchanged():
     comm, md, log = _translate("nonlin_static_3d", _liml(),
                                general={"elem_beam": "POU_D_E"})

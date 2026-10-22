@@ -5165,11 +5165,15 @@ def _warn_gd_linear_links(model_data):
     """WARNING if POU_D_T_GD beams (large rotations) are combined with
     connections that the bridge writes as linear relations in the
     undeformed axes: rigid arms of beam offsets (bridge_offset, LIAISON_DDL;
-    KNOWN_BUGS 108a), flexible joints (bridge_mesh._flexible_joints,
-    LIAISON_DDL on the rotations; KNOWN_BUGS 106b) and couplings
-    (LIAISON_SOLIDE/LIAISON_RBE3; KNOWN_BUGS 11). With small loads offset
-    and joint gave the same as POU_D_T (runs 17.4); with large rotations
-    NOT verified."""
+    KNOWN_BUGS 108a), flexible joints with only some rotations free
+    (bridge_mesh._flexible_joints, LIAISON_DDL on the rotations; on a
+    POU_D_T_GD beam _check_gd_joints stops before this, so only as a
+    safeguard) and couplings (LIAISON_SOLIDE/LIAISON_RBE3; KNOWN_BUGS 11).
+    A joint with U, V and W free only ties DX, DY and DZ of its own node to
+    the Mecway node: linear in the translations, so exact at any rotation
+    (verification NL-90, after the fork by MishalTPC); not reported.
+    With small loads offset and joint gave the same as POU_D_T (runs 17.4);
+    with large rotations NOT verified."""
     if _GD_BEAM not in model_data.get("elset_modelisations", {}).values():
         return
     parts = []
@@ -5179,10 +5183,12 @@ def _warn_gd_linear_links(model_data):
         parts.append(tr("starre armen van element offset ({0} knopen)",
                         "rigid arms of an element offset ({0} nodes)")
                      .format(len(arms)))
-    if model_data.get("joint_nodes"):
-        parts.append(tr("flexible joints ({0} balkeinden)",
-                        "flexible joints ({0} beam ends)").format(
-                            len(model_data["joint_nodes"])))
+    partial = _partial_joints(model_data, gd_only=False)
+    if partial:
+        parts.append(tr("flexible joints met een deel van de rotaties vrij "
+                        "({0} balkeinden)",
+                        "flexible joints with only some rotations free "
+                        "({0} beam ends)").format(len(partial)))
     if model_data.get("couplings"):
         parts.append(tr("koppelingen ({0})", "couplings ({0})").format(
             len(model_data["couplings"])))
@@ -5196,6 +5202,68 @@ def _warn_gd_linear_links(model_data):
            "relations in the undeformed axes: rotations stay small there. "
            "With rotations of more than a few degrees the result deviates "
            "there (KNOWN_BUGS 11, 106, 108).").format("; ".join(parts)))
+
+
+def _partial_joints(model_data, gd_only=True):
+    """Own nodes of flexible joints (bridge_mesh._flexible_joints,
+    model_data["joint_free"]) with not all of U, V and W free; with gd_only
+    only those on a POU_D_T_GD beam. Returns [(own node, info)]."""
+    out = []
+    for dup, info in sorted((model_data.get("joint_free") or {}).items()):
+        if set(info.get("free") or ()) >= set("uvw"):
+            continue
+        if gd_only and info.get("mod") != _GD_BEAM:
+            continue
+        out.append((dup, info))
+    return out
+
+
+def _check_gd_joints(model_data):
+    """
+    ERROR (before the run) for a flexible joint with only some rotations
+    free (U, V, W, UV, UW or VW) on a POU_D_T_GD beam. The bridge ties the
+    rotation of the own node and the Mecway node along every non-free
+    local axis e with LIAISON_DDL (e . theta_own = e . theta_Mecway): a
+    linear relation with a fixed axis e of the undeformed element
+    (U4.44.01). With POU_D_T_GD the rotations are finite rotation vectors
+    (ELAS_POUTRE_GR, GROT_GDEP), and the components of two rotation vectors
+    along a fixed axis are not a hinge about an axis that rotates along: at
+    finite rotation the joint gets a spurious relative rotation. Kinematic
+    counterexample of the fork by MishalTPC
+    (github.com/mishal0488/MecwayAsterBridge, branch dev,
+    check_selective_release_objectivity.py): a rigid rotation of 1.1 rad
+    plus an allowed hinge rotation of 0.6 rad gives 0.33 rad on a retained
+    component (recomputed, for every one of U, V, W, UV, UW, VW). The
+    joint with U, V and W free only ties DX, DY, DZ and is exact (NL-90).
+    The user's choice: stop with a clear message instead of a wrong
+    result.
+    Returns False after the ERROR.
+    """
+    bad = _partial_joints(model_data, gd_only=True)
+    if not bad:
+        return True
+    ends = ", ".join("{0} (N{1}, {2})".format(
+        info["eid"], info["node"],
+        "".join(f.upper() for f in info["free"]) or "-")
+        for _dup, info in bad[:10]) + (" ..." if len(bad) > 10 else "")
+    log(tr("ERROR: Flexible joint met een deel van de rotaties vrij op "
+           "balken POU_D_T_GD (grote rotaties), elementen {0}. De bridge "
+           "koppelt de rotaties langs de niet-vrije assen met een lineaire "
+           "relatie in de onvervormde assen; bij eindige rotaties geeft dat "
+           "een onjuiste extra rotatie in het scharnier. Kies elem_beam = "
+           "POU_D_E/POU_D_T (pagina Elementen; kleine rotaties), of maak "
+           "alle drie de rotaties (U, V en W) van de joint vrij: die joint "
+           "koppelt alleen de verplaatsingen en is exact (KNOWN_BUGS 106).",
+           "ERROR: Flexible joint with only some rotations free on "
+           "POU_D_T_GD beams (large rotations), elements {0}. The bridge "
+           "ties the rotations along the non-free axes with a linear "
+           "relation in the undeformed axes; at finite rotations that gives "
+           "a wrong extra rotation in the hinge. Choose elem_beam = "
+           "POU_D_E/POU_D_T (Elements page; small rotations), or release "
+           "all three rotations (U, V and W) of the joint: that joint only "
+           "ties the displacements and is exact (KNOWN_BUGS 106).").format(
+               ends))
+    return False
 
 
 # ==========================================
@@ -7613,6 +7681,8 @@ def _check_gd_beams(model_data, analysis):
         hex8 bar with GDEF_LOG plus a GD cantilever); with 'TANGENTE' and
         'EXTRAPOLE' the step after the failure did not converge either
         (MECANONLINE9_3, same model): ERROR;
+      - a flexible joint with only some rotations free on a POU_D_T_GD
+        beam: ERROR (_check_gd_joints);
       - no SIPM_ELNO (beam stresses), section forces from SIEF_ELNO: one
         value per element (one integration point): WARNING.
     Returns False after an ERROR.
@@ -7621,7 +7691,7 @@ def _check_gd_beams(model_data, analysis):
     groups = sorted(g for g, m in mods.items() if m == _GD_BEAM)
     if not groups:
         return True
-    ok = True
+    ok = _check_gd_joints(model_data)
     if analysis.get("crit_stab"):
         log(tr("ERROR: crit_stab (CRIT_STAB) werkt niet met balken "
                "POU_D_T_GD: hun tangentmatrix is niet symmetrisch en "

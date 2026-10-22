@@ -185,10 +185,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    and 0.58 rad (end rotation), also with 5x smaller steps, while an end moment reached
    90 degrees: WARNING in `_warn_large_rotations`), LIAISON_SOLIDE (with
    TYPE_CHARGE='SUIV' not if a node has rotational degrees of freedom, CHARGES_36), and
-   with POU_D_T_GD the rigid arms of an element offset, flexible joints and couplings
-   (linear relations in the undeformed axes, KNOWN_BUGS 106, 108; WARNING in
-   `_warn_gd_linear_links`; with small loads offset and joint equal to POU_D_T, couplings NOT
-   verified). Element failure in a model with POU_D_T_GD stops beforehand with an ERROR
+   with POU_D_T_GD the rigid arms of an element offset and couplings (linear relations in
+   the undeformed axes, KNOWN_BUGS 108; WARNING in `_warn_gd_linear_links`; with small loads
+   offset equal to POU_D_T, couplings NOT verified); a flexible joint with only some
+   rotations free stops with an ERROR (KNOWN_BUGS 106b), one with U, V and W free is exact
+   (NL-90). Element failure in a model with POU_D_T_GD stops beforehand with an ERROR
    (`_check_gd_beams`): after the first failure the loop restarts with
    PREDICTION='ELASTIQUE' (CALCUL_37, no RIGI_MECA); with TANGENTE or EXTRAPOLE that step
    did not converge (MECANONLINE9_3, run 17.4). What does work: driving a rigid part with the
@@ -392,10 +393,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    of the element. Solution (NOT
    verified): the own nodes as `SANS_GROUP_NO` for constraints on `GROUP_MA`.
    (b) The coupling of the rotations is fixed in the local axes of the undeformed
-   element: with large rotations (`GROT_GDEP`) the axes do not rotate along (not
-   reproduced; Mecway does not support the joint in Nonlinear Static, manual v33 sec. 9.12).
-   Only relevant with `elem_beam` = `POU_D_T_GD` (other beams stay PETIT): WARNING
-   (`bridge_to_aster._warn_gd_linear_links`).
+   element: with large rotations (`GROT_GDEP`) the axes do not rotate along. A fixed-axis
+   tie of two rotation vectors is not a hinge at finite rotation: a rigid rotation of
+   1.1 rad plus an allowed hinge rotation of 0.6 rad gives 0.33 rad on a retained
+   component, for every one of U, V, W, UV, UW and VW (kinematic counterexample of the fork
+   by MishalTPC, `check_selective_release_objectivity.py`, recomputed). Mecway does not
+   support the joint in Nonlinear Static (manual v33 sec. 9.12). Only relevant with
+   `elem_beam` = `POU_D_T_GD` (other beams stay PETIT). A joint with U, V and W free only
+   ties DX, DY, DZ and is exact (NL-90, NL-90b, after the fork's
+   `check_nonlinear_releases.py`); a joint with only some rotations free on a POU_D_T_GD
+   beam stops before the run with an ERROR (`bridge_to_aster._check_gd_joints`, choice of
+   the user). Solution (open, NOT verified): a hinge in the co-rotating frame, as the fork's
+   commit fa91375 tries for V/W.
+   Status: (a) confirmed, open; (b) refused with an ERROR.
 
 107\. **Line3 beams and trusses: two straight SEG2 cells** (confirmed, choice;
    `bridge_mesh.write_mesh`). Code-Aster has no quadratic beam element; each
@@ -426,12 +436,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    model (LS-63 model with 24 beam and 12 x 2 quad8 elements: twist angle 0.1117 versus
    0.1046 rad, lateral displacement +1.6 versus −10.9 mm; the bridge gives 0.1092 rad
    and −11.4 mm in both); checked with the example itself and LS-63 (faces, equal to Mecway).
-   (d) A beam element with both an offset and a flexible joint: the joint is not
-   translated (WARNING in `bridge_mesh._flexible_joints`), the element is rigidly attached to the arm.
-   Mecway 34 does keep the joint (LS-52a: Mecway 1.264e-3 m = hinge, bridge
-   3.16e-4 m = rigid). Translating it is possible with an own node next to the offset node
-   (open). An offset beam and a beam with a joint at the same node do work
-   (LS-52b, equal to Mecway). (e) Bonded contact on shells with an offset: the
+   (d) A beam element with both an offset and a flexible joint: in linear static and modal
+   the joint sits at the Mecway node, before the rigid arm (own node plus own arm, as in the
+   fork by MishalTPC, commit 773d59f; LS-52a equal to Mecway, LS-52c). In other analyses
+   and on a line3 element the joint is not translated (WARNING in
+   `bridge_mesh._flexible_joints`), the element is rigidly attached to the arm. Nodal values
+   (not the element values) of the offset element at the jointed end are not passed to the
+   Mecway node (own offset node without BROFL group, NOT verified in a run). An offset beam
+   and a beam with a joint at the same node do work (LS-52b, equal to Mecway). (e) Bonded contact on shells with an offset: the
    slave nodes (always the Mecway nodes) are coupled to the nodes of the master
    (EXCENTREMENT, or the own relations for quad8/tri6), but with `LIAISON_MAIL` on a
    master on its own nodes (solid on a quad8 shell, `MASSIF_COQUE`) to the
@@ -443,8 +455,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    EXCENTREMENT): an extra moment w x F per length (LS-67, WARNING in
    `bridge_offset._report_edge_loads`). A load on a node selection acts on
    the nodes in both (LS-60).
-   Status: (a) and (b) left as is; (c) and (e) **question** (behaviour of Mecway); (d) and (f)
-   confirmed, open.
+   Status: (a) and (b) left as is; (c) and (e) **question** (behaviour of Mecway); (d) outside
+   linear static/modal and line3, and (f) confirmed, open.
 
 115\. **Buckling of T, C and L beams misses flexural-torsional buckling** (confirmed,
    Code-Aster 17.4, `POU_D_E`/`POU_D_T` with `SECTION='GENERALE'` from

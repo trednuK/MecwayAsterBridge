@@ -1,0 +1,191 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="0.05 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.025" y="0" z="0" />
+  <node nid="3" x="0.05" y="0" z="0" />
+  <node nid="4" x="0.075" y="0" z="0" />
+  <node nid="5" x="0.1" y="0" z="0" />
+  <node nid="6" x="0.125" y="0" z="0" />
+  <node nid="7" x="0.15" y="0" z="0" />
+  <node nid="8" x="0.175" y="0" z="0" />
+  <node nid="9" x="0.2" y="0" z="0" />
+  <node nid="10" x="0.225" y="0" z="0" />
+  <node nid="11" x="0.25" y="0" z="0" />
+  <node nid="12" x="0.275" y="0" z="0" />
+  <node nid="13" x="0.3" y="0" z="0" />
+  <node nid="14" x="0.325" y="0" z="0" />
+  <node nid="15" x="0.35" y="0" z="0" />
+  <node nid="16" x="0.375" y="0" z="0" />
+  <node nid="17" x="0.4" y="0" z="0" />
+  <node nid="18" x="0.425" y="0" z="0" />
+  <node nid="19" x="0.45" y="0" z="0" />
+  <node nid="20" x="0.475" y="0" z="0" />
+  <node nid="21" x="0.5" y="0" z="0" />
+  <node nid="22" x="0.525" y="0" z="0" />
+  <node nid="23" x="0.55" y="0" z="0" />
+  <node nid="24" x="0.575" y="0" z="0" />
+  <node nid="25" x="0.6" y="0" z="0" />
+  <node nid="26" x="0.625" y="0" z="0" />
+  <node nid="27" x="0.65" y="0" z="0" />
+  <node nid="28" x="0.675" y="0" z="0" />
+  <node nid="29" x="0.7" y="0" z="0" />
+  <node nid="30" x="0.725" y="0" z="0" />
+  <node nid="31" x="0.75" y="0" z="0" />
+  <node nid="32" x="0.775" y="0" z="0" />
+  <node nid="33" x="0.8" y="0" z="0" />
+  <node nid="34" x="0.825" y="0" z="0" />
+  <node nid="35" x="0.85" y="0" z="0" />
+  <node nid="36" x="0.875" y="0" z="0" />
+  <node nid="37" x="0.9" y="0" z="0" />
+  <node nid="38" x="0.925" y="0" z="0" />
+  <node nid="39" x="0.95" y="0" z="0" />
+  <node nid="40" x="0.975" y="0" z="0" />
+  <node nid="41" x="1" y="0" z="0" />
+  <node nid="42" x="0" y="0" z="0" />
+  <node nid="43" x="0.025" y="0" z="0" />
+  <node nid="44" x="0.05" y="0" z="0" />
+  <node nid="45" x="0.075" y="0" z="0" />
+  <node nid="46" x="0.1" y="0" z="0" />
+  <node nid="47" x="0.125" y="0" z="0" />
+  <node nid="48" x="0.15" y="0" z="0" />
+  <node nid="49" x="0.175" y="0" z="0" />
+  <node nid="50" x="0.2" y="0" z="0" />
+  <node nid="51" x="0.225" y="0" z="0" />
+  <node nid="52" x="0.25" y="0" z="0" />
+  <node nid="53" x="0.275" y="0" z="0" />
+  <node nid="54" x="0.3" y="0" z="0" />
+  <node nid="55" x="0.325" y="0" z="0" />
+  <node nid="56" x="0.35" y="0" z="0" />
+  <node nid="57" x="0.375" y="0" z="0" />
+  <node nid="58" x="0.4" y="0" z="0" />
+  <node nid="59" x="0.425" y="0" z="0" />
+  <node nid="60" x="0.45" y="0" z="0" />
+  <node nid="61" x="0.475" y="0" z="0" />
+  <node nid="62" x="0.5" y="0" z="0" />
+  <node nid="63" x="0.525" y="0" z="0" />
+  <node nid="64" x="0.55" y="0" z="0" />
+  <node nid="65" x="0.575" y="0" z="0" />
+  <node nid="66" x="0.6" y="0" z="0" />
+  <node nid="67" x="0.625" y="0" z="0" />
+  <node nid="68" x="0.65" y="0" z="0" />
+  <node nid="69" x="0.675" y="0" z="0" />
+  <node nid="70" x="0.7" y="0" z="0" />
+  <node nid="71" x="0.725" y="0" z="0" />
+  <node nid="72" x="0.75" y="0" z="0" />
+  <node nid="73" x="0.775" y="0" z="0" />
+  <node nid="74" x="0.8" y="0" z="0" />
+  <node nid="75" x="0.825" y="0" z="0" />
+  <node nid="76" x="0.85" y="0" z="0" />
+  <node nid="77" x="0.875" y="0" z="0" />
+  <node nid="78" x="0.9" y="0" z="0" />
+  <node nid="79" x="0.925" y="0" z="0" />
+  <node nid="80" x="0.95" y="0" z="0" />
+  <node nid="81" x="0.975" y="0" z="0" />
+  <elset name="Balk" material="Staal">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+    <elem eid="9" shape="line2" nodes="9 10" />
+    <elem eid="10" shape="line2" nodes="10 11" />
+    <elem eid="11" shape="line2" nodes="11 12" />
+    <elem eid="12" shape="line2" nodes="12 13" />
+    <elem eid="13" shape="line2" nodes="13 14" />
+    <elem eid="14" shape="line2" nodes="14 15" />
+    <elem eid="15" shape="line2" nodes="15 16" />
+    <elem eid="16" shape="line2" nodes="16 17" />
+    <elem eid="17" shape="line2" nodes="17 18" />
+    <elem eid="18" shape="line2" nodes="18 19" />
+    <elem eid="19" shape="line2" nodes="19 20" />
+    <elem eid="20" shape="line2" nodes="20 21" />
+    <elem eid="21" shape="line2" nodes="21 22" />
+    <elem eid="22" shape="line2" nodes="22 23" />
+    <elem eid="23" shape="line2" nodes="23 24" />
+    <elem eid="24" shape="line2" nodes="24 25" />
+    <elem eid="25" shape="line2" nodes="25 26" />
+    <elem eid="26" shape="line2" nodes="26 27" />
+    <elem eid="27" shape="line2" nodes="27 28" />
+    <elem eid="28" shape="line2" nodes="28 29" />
+    <elem eid="29" shape="line2" nodes="29 30" />
+    <elem eid="30" shape="line2" nodes="30 31" />
+    <elem eid="31" shape="line2" nodes="31 32" />
+    <elem eid="32" shape="line2" nodes="32 33" />
+    <elem eid="33" shape="line2" nodes="33 34" />
+    <elem eid="34" shape="line2" nodes="34 35" />
+    <elem eid="35" shape="line2" nodes="35 36" />
+    <elem eid="36" shape="line2" nodes="36 37" />
+    <elem eid="37" shape="line2" nodes="37 38" />
+    <elem eid="38" shape="line2" nodes="38 39" />
+    <elem eid="39" shape="line2" nodes="39 40" />
+    <elem eid="40" shape="line2" nodes="40 41" />
+    <elem eid="41" shape="line2" nodes="42 43" />
+    <elem eid="42" shape="line2" nodes="43 44" />
+    <elem eid="43" shape="line2" nodes="44 45" />
+    <elem eid="44" shape="line2" nodes="45 46" />
+    <elem eid="45" shape="line2" nodes="46 47" />
+    <elem eid="46" shape="line2" nodes="47 48" />
+    <elem eid="47" shape="line2" nodes="48 49" />
+    <elem eid="48" shape="line2" nodes="49 50" />
+    <elem eid="49" shape="line2" nodes="50 51" />
+    <elem eid="50" shape="line2" nodes="51 52" />
+    <elem eid="51" shape="line2" nodes="52 53" />
+    <elem eid="52" shape="line2" nodes="53 54" />
+    <elem eid="53" shape="line2" nodes="54 55" />
+    <elem eid="54" shape="line2" nodes="55 56" />
+    <elem eid="55" shape="line2" nodes="56 57" />
+    <elem eid="56" shape="line2" nodes="57 58" />
+    <elem eid="57" shape="line2" nodes="58 59" />
+    <elem eid="58" shape="line2" nodes="59 60" />
+    <elem eid="59" shape="line2" nodes="60 61" />
+    <elem eid="60" shape="line2" nodes="61 62" />
+    <elem eid="61" shape="line2" nodes="62 63" />
+    <elem eid="62" shape="line2" nodes="63 64" />
+    <elem eid="63" shape="line2" nodes="64 65" />
+    <elem eid="64" shape="line2" nodes="65 66" />
+    <elem eid="65" shape="line2" nodes="66 67" />
+    <elem eid="66" shape="line2" nodes="67 68" />
+    <elem eid="67" shape="line2" nodes="68 69" />
+    <elem eid="68" shape="line2" nodes="69 70" />
+    <elem eid="69" shape="line2" nodes="70 71" />
+    <elem eid="70" shape="line2" nodes="71 72" />
+    <elem eid="71" shape="line2" nodes="72 73" />
+    <elem eid="72" shape="line2" nodes="73 74" />
+    <elem eid="73" shape="line2" nodes="74 75" />
+    <elem eid="74" shape="line2" nodes="75 76" />
+    <elem eid="75" shape="line2" nodes="76 77" />
+    <elem eid="76" shape="line2" nodes="77 78" />
+    <elem eid="77" shape="line2" nodes="78 79" />
+    <elem eid="78" shape="line2" nodes="79 80" />
+    <elem eid="79" shape="line2" nodes="80 81" />
+    <elem eid="80" shape="line2" nodes="81 41" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <flexiblejoint selection="Kogel"><rotu /><rotv /><rotw /></flexiblejoint>
+  <force selection="Tip"><x>0 N</x><y time="0 s">0 N</y><y time="1 s">1400 N</y><z>0 N</z></force>
+  <mat name="Staal">
+    <geometric type="RectBar" recta="10 mm" rectb="20 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" thermalexpansion="1.2e-05 1/K" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+    <node nid="42" />
+  </nodeselection>
+  <nodeselection name="Wortel1">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Wortel2">
+    <node nid="42" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="41" />
+  </nodeselection>
+  <faceselection name="Kogel">
+    <face eid="80" faceid="3" />
+  </faceselection>
+</liml>

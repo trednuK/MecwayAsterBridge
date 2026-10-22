@@ -1115,6 +1115,43 @@ def log(text):
         pass
 
 
+def log_size():
+    """Current size in bytes of the run's log file (0 if it does not
+    exist yet): a mark for log_errors."""
+    try:
+        return os.path.getsize(os.path.join(work_dir_path(),
+                                            _RUN_LOG["name"]))
+    except (IOError, OSError):
+        return 0
+
+
+def log_errors(since=0, limit=3):
+    """
+    The first ERROR lines (without time stamp, at most limit) that were
+    written to the run's log file after byte offset since (log_size).
+    For the message when the preparation stops before Code-Aster
+    (MecwayAsterBridgeMain._run): the user sees the reason itself instead
+    of only "see the log" (idea from the fork by MishalTPC,
+    _notify_mesh_failure). The lines are already in the user's language
+    (tr). Returns [] if the log cannot be read.
+    """
+    path = os.path.join(work_dir_path(), _RUN_LOG["name"])
+    out = []
+    try:
+        with io.open(path, "rb") as f:
+            f.seek(max(0, int(since or 0)))
+            data = f.read()
+    except (IOError, OSError, ValueError):
+        return out
+    for line in data.decode("utf-8", "replace").splitlines():
+        text = re.sub(r"^\[[^\]]*\]\s*", "", line).strip()
+        if text.startswith("ERROR:"):
+            out.append(text)
+            if len(out) >= limit:
+                break
+    return out
+
+
 # ==========================================
 # UNIT CONVERSION
 #
