@@ -12,7 +12,7 @@ in Mecway's *Custom model definition*.
 
 [![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/trednuk/mecwayasterbridge?utm_source=readme&utm_medium=badge)
 
-Version: **V2026.3** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
+Version: **V2026.4** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md).
 
 ## Requirements
@@ -104,10 +104,10 @@ only: INFO/SUCCESS lines in the log, comments in the code and in the generated `
 ## Verification
 
 The chain Mecway model → bridge → Code-Aster 17.4 → results is checked with
-**415 test cases and 2267 checks** against analytical solutions and recognised
+**428 test cases and 2301 checks** against analytical solutions and recognised
 benchmarks (linear and nonlinear static, dynamics, modal, buckling, thermal, welding,
 acoustics, fracture, fatigue and more), including mesh-convergence series. At the last
-regression 2260 checks were within tolerance and 7 outside it because of a documented
+regression 2295 checks were within tolerance and 6 outside it because of a documented
 limitation; none unexpected. In addition, 19 official Code-Aster validation tests were
 run on the installation. Method, tolerances, results and how to rerun them:
 [`docs/en/Verification.md`](docs/en/Verification.md) (scripts in
@@ -152,7 +152,9 @@ and is not included either.
 - The reading of Mecway 34's *Element orientation* cards and the explicit beam orientation for every beam
   were found in the fork by **MishalTPC**: <https://github.com/mishal0488/MecwayAsterBridge>. The beams
   with large rotations (`elem_beam` = `POU_D_T_GD`: the Code-Aster route and the benchmarks GB-01 to
-  GB-03) come from the same fork.
+  GB-03) come from the same fork, as do ideas for the flexible joint: the benchmark for the joint with
+  all rotations free under large rotations, the joint on offset beams and showing preparation errors
+  directly in the status box.
 - Want to learn more about Code-Aster and how to use its commands? Use the work of
   **Jean-Pierre Aubry**: <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 

@@ -1,5 +1,48 @@
 # Changelog
 
+## V2026.4 – 22 October 2026
+
+Quadratic trusses, hyperelastic materials, the elastic modulus from the plastic curve as
+in Mecway, buttons in the convergence window, a work folder next to the model and better
+flexible joints, most of them from GitHub issues (trednuK/MecwayAsterBridge). Tested in
+Mecway 34 with Code-Aster 17.4; verification 428 test cases, 2301 checks (2295 OK, 6 known
+limitations, 0 unexpected).
+
+- **Line3 trusses** (issue #6): quadratic trusses and cables (line3, `truss="true"`) are
+  now translated instead of stopping Code-Aster with `MODELE1_6`. Each element becomes two
+  `BARRE`/`CABLE` cells; the midside node is tied to the end nodes. Verification MO-08
+  (NAFEMS Challenge Problem 5: 451.1 / 1049.9 Hz, equal to the reference) and LS-54a (exact).
+  An element set that cannot be translated as a whole now stops the bridge before
+  Code-Aster with an error, instead of failing in Code-Aster.
+- **Plastic curve** (issue #2): with a hardening curve in total strain, E is the slope of
+  the first segment, as Mecway does, with a warning that gives both values. If the first
+  slope still differs from E by more than 1 %, the bridge stops with an error before
+  Code-Aster (before: a warning at 5 % and `MATERIAL1_5` in Code-Aster). Verification NL-04,
+  NL-04b.
+- **Hyperelastic materials** (issue #5): Mecway's *Neo Hooke* and *Mooney-Rivlin* become
+  `ELAS_HYPER` (C10, C01, K = 2/D1) with `GREEN_LAGRANGE` in nonlinear static and dynamic
+  analyses. Verification NL-50 to NL-53 (tension and compression, within 0.11 %, equal to
+  Mecway with CCX). Hyperfoam is not possible: Code-Aster 17.4 on Windows has no MFront.
+- **Convergence window** (issue #3): buttons *.comm*, *.mail*, *Folder* and *ParaView* for
+  the run shown. New setting `paraview_exe` (empty = search automatically, Salome-Meca's
+  ParaView with a MED reader first).
+- **Work folder next to the model** (issue #4): new setting `work_dir_beside_model`; the
+  files of a run go to `<model>_aster` next to the open `.liml`. The start screen shows the
+  folder in use.
+- **Mode shapes** now also get the displacement magnitude, as in Mecway 34.
+- **Flexible joints**: a joint with U, V and W free is exact with `POU_D_T_GD` at any
+  rotation and no longer gives a warning (NL-90, NL-90b). A joint with only some rotations
+  free on `POU_D_T_GD` beams gives an error before the run. Joints on offset beams are
+  translated in linear static and modal analyses (LS-52a now equals Mecway, 1.2636 mm; new
+  LS-52c). Ideas and benchmarks from the fork by MishalTPC
+  (github.com/mishal0488/MecwayAsterBridge).
+- **Preparation errors** (reading the model, mesh, solver files) are shown directly in the
+  status box instead of only "see the log".
+- Documented limitation: `POU_D_T_GD` under large rotations about a skew axis gives
+  step-size dependent forces (STAPPENPLAN S21, KNOWN_BUGS 11).
+- STAPPENPLAN: S14 (hyperelastic material) done, hyperfoam waiting for a Windows build with
+  MFront; S21 (selective joint on `POU_D_T_GD` via a stub element) tried and documented.
+
 ## V2026.3 – 16 October 2026
 
 Beams with large rotations (`POU_D_T_GD`) in nonlinear static, and Mecway 34's *Element

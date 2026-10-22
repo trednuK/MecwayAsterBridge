@@ -97,13 +97,11 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 16 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `7e02e1e`
-(alle stappen, de eindcontrole S11 en de uitbreidingen van 15 en 16 oktober; Code-Aster 17.4):
-415 testcases, 2267 controles, 2260 OK, 7 BEKEND, 0 NOK/FOUT. Bijgewerkt op 22 oktober
-2026 met de flexible joint op een verschoven balk (LS-52a nu OK, nieuw LS-52c) en de joint
-met U, V en W vrij bij `POU_D_T_GD` (NL-90, NL-90b; run van LS-51 .. LS-53, LS-62, LS-63,
-NL-80 .. NL-90): 418 testcases, 2278 controles, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
+Stand 22 oktober 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `66c24db`
+(V2026.4: alle stappen tot en met de uitbreidingen van 22 oktober, o.a. line3-staven,
+hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
+428 testcases, 2301 controles, 2295 OK, 6 BEKEND, 0 NOK/FOUT.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -118,12 +116,12 @@ NL-80 .. NL-90): 418 testcases, 2278 controles, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 21 | 62 | 61 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 108 | 373 | 372 | 1 |
+| Lineair statisch | 109 | 376 | 375 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
-| Modaal | 22 | 221 | 221 | 0 |
+| Modaal | 23 | 223 | 223 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 41 | 159 | 156 | 3 |
+| Niet-lineair statisch | 49 | 177 | 174 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
@@ -132,7 +130,7 @@ NL-80 .. NL-90): 418 testcases, 2278 controles, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **418** | **2278** | **2272** | **6** |
+| **Totaal** | **428** | **2301** | **2295** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

@@ -95,13 +95,11 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 16 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `7e02e1e`
-(all steps, the final check S11 and the extensions of 15 and 16 October; Code-Aster 17.4):
-415 test cases, 2267 checks, 2260 OK, 7 BEKEND (known), 0 NOK/FOUT. Updated on 22 October
-2026 with the flexible joint on an offset beam (LS-52a now OK, new LS-52c) and the joint with
-U, V and W free with `POU_D_T_GD` (NL-90, NL-90b; run of LS-51 .. LS-53, LS-62, LS-63,
-NL-80 .. NL-90): 418 test cases, 2278 checks, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
+Status 22 October 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `66c24db`
+(V2026.4: all steps up to and including the extensions of 22 October, among them line3
+trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aster 17.4):
+428 test cases, 2301 checks, 2295 OK, 6 BEKEND (known), 0 NOK/FOUT.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -116,12 +114,12 @@ NL-80 .. NL-90): 418 test cases, 2278 checks, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 21 | 62 | 61 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 108 | 373 | 372 | 1 |
+| Linear static | 109 | 376 | 375 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
-| Modal | 22 | 221 | 221 | 0 |
+| Modal | 23 | 223 | 223 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 41 | 159 | 156 | 3 |
+| Nonlinear static | 49 | 177 | 174 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
@@ -130,7 +128,7 @@ NL-80 .. NL-90): 418 test cases, 2278 checks, 2272 OK, 6 BEKEND, 0 NOK/FOUT.
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **418** | **2278** | **2272** | **6** |
+| **Total** | **428** | **2301** | **2295** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

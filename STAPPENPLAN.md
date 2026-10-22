@@ -45,7 +45,7 @@ S7, S8, S5, S9).
 | S9 | Load case combinations via Mecway configurations (go/no-go) | dropped | – | no-go: a Mecway configuration only switches loads on/off, no factor; combinations cannot be set in Mecway; procedure per configuration in Handleiding §4 |
 | S11 | Wrap-up: crit-review of verification, check docs against the bridge, integral check, push to `main` | done | all other steps done and on `develop` | 7 Oct: crit-review on Fable (gate processed: 8742df0), settings/tooltips/assumptions (feabce4), docs checked against the bridge (345c400, 088244e, 3c336e4), KB 74/84/85/86 solved, all 270 cases identical via a .liml saved by Mecway (f1539a2), GUI spot checks VM-02b/CY-01/AH-08/WE-02, final regression see Verificatie.md §3 |
 | S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | open | – | chosen by the user 15 Oct (C1) |
-| S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | open | – | chosen by the user 15 Oct (C7) |
+| S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | open | – | chosen by the user 15 Oct (C8) |
 | S16 | 2D and axisymmetric analyses (S20, D20, SA0, also thermal and acoustics 2D) | open | – | chosen by the user 15 Oct (C9) |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
@@ -140,9 +140,9 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
    `TestFiles/Verificatie`.
 5. Regression: set `VERIF_WORK=<eigen scratchmap>` (the default folder is wiped by other
    sessions) and run `python TestFiles/Verificatie/run_verificatie.py` in full.
-   **Bar**: baseline 2260 of 2267 checks OK (415 test cases), 7 BEKEND (KNOWN_BUGS
-   43: 3 in NL-03a; 83: 1 in BR-10; 108: 2 in LS-52a/LS-67; 115: 1 in BU-35), 0 NOK/FOUT
-   (full regression on bridge 7e02e1e, 2026-10-16, after the extensions of 15-16 October incl. POU_D_T_GD:
+   **Bar**: baseline 2295 of 2301 checks OK (428 test cases), 6 BEKEND (KNOWN_BUGS
+   43: 3 in NL-03a; 83: 1 in BR-10; 108: 1 in LS-67; 115: 1 in BU-35), 0 NOK/FOUT
+   (full regression on bridge 66c24db, 2026-10-22, V2026.4:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
    BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; update the summary
    in `docs/Verificatie.md` §3 and the EN version.
