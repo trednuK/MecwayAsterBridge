@@ -7242,16 +7242,20 @@ def _check_buckling_trusses(model_data):
     log(tr("ERROR: Lineaire knik kan niet met trusses of kabels ({0}): "
            "Code-Aster heeft voor deze elementen (BARRE/CABLE) geen "
            "geometrische stijfheid (RIGI_GEOM; Code-Aster stopt anders met "
-           "CALCUL_37). Modelleer de staven als balken (line2/line3 "
-           "balkelementen met de echte doorsnede): dat geeft zowel knik "
-           "van een staaf als van de hele constructie. Zie "
+           "CALCUL_37). Modelleer de staven als balken: per staaf meerdere "
+           "balkelementen met de echte doorsnede en aan beide uiteinden een "
+           "flexible joint met U, V en W vrij (scharnier, zoals Aubry voor "
+           "BARRE bij knik voorschrijft): dat geeft zowel knik van een staaf "
+           "als van de hele constructie. Zie "
            "docs/Modaal_en_knik.md.",
            "ERROR: Linear buckling is not possible with trusses or cables "
            "({0}): Code-Aster has no geometric stiffness for these "
            "elements (BARRE/CABLE; RIGI_GEOM, otherwise Code-Aster stops "
-           "with CALCUL_37). Model the members as beams (line2/line3 beam "
-           "elements with the real cross-section): that gives both member "
-           "buckling and global buckling. See "
+           "with CALCUL_37). Model the members as beams: per member several "
+           "beam elements with the real cross-section and a flexible joint "
+           "with U, V and W free at both ends (a hinge, as Aubry prescribes "
+           "for BARRE in buckling): that gives both member buckling and "
+           "global buckling. See "
            "docs/en/Modal_and_buckling.md.").format(", ".join(found)))
     return False
 

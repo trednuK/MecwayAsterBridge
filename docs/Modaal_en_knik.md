@@ -395,9 +395,13 @@ bridge zoekt dan rond een kleine negatieve frequentie (`CENTRE`, regel
 - Spanningen per knikvorm (alleen per trillingsvorm, §1.4).
 - Knik met trusses of kabels (line2 en line3; ook een knikvorm als imperfectie, §5):
   Code-Aster heeft voor `BARRE`/`CABLE` geen geometrische stijfheid (`RIGI_GEOM`;
-  anders `CALCUL_37`), de bridge stopt vooraf met een ERROR. Modelleer de staven als
-  balken (line2/line3 balkelementen met de echte doorsnede): dat geeft knik van een
-  staaf én van de hele constructie. Niet-lineair statisch met grote verplaatsingen is
+  anders `CALCUL_37`), de bridge stopt vooraf met een ERROR. Modelleer de staven dan als
+  balken, zoals Aubry (2019, §16.4.1) voor `BARRE` bij knik voorschrijft: elke staaf als
+  meerdere balkelementen (zodat de knikvorm van de staaf zelf kan ontstaan) met de
+  echte doorsnede, en aan beide uiteinden een scharnier; in Mecway een *flexible
+  joint* met U, V en W vrij (de bridge vertaalt dat exact, LS-51). Dat geeft knik van
+  een staaf én van de hele constructie. Aubry (2019, §16.5) wijst daarnaast op
+  niet-lineaire knik van ruimtevakwerken met balken (Code-Aster-testcase ssnl135). Niet-lineair statisch met grote verplaatsingen is
   voor trusses geen uitweg: `BARRE` blijft ook met `GROT_GDEP` geometrisch lineair
   (KNOWN_BUGS 40). Trillingsvormen (modaal) met trusses kunnen wel. Daar houdt de
   middenknoopvoorwaarde van line3-trusses (dwars op de koorde het gemiddelde van de
@@ -962,6 +966,9 @@ sdlv301a (waaier); catalogus `mode_iter_cycl.py` (code_aster 17.4).
 
 ## 8. Bronnen
 
+- Aubry, J.-P. (2019). *Beginning with code_aster*, versie van 29 januari 2019, §10.1
+  (staven vervangen door kabels), §16.4.1 (een model met `BARRE`-elementen moet voor knik
+  aangepast worden: balken met scharnieren) en §16.5. <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 - Blevins, R.D. (1979). *Formulas for Natural Frequency and Mode Shape*. New York: Van
   Nostrand Reinhold, tabel 8-1 (balken) en tabel 9-2 (ringen). Niet lokaal ingezien;
   de formules zijn nagerekend in de verificatie ([`Verificatie.md`](Verificatie.md),

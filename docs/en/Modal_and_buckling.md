@@ -391,8 +391,12 @@ searches around a small negative frequency (`CENTRE`, line `BRIDGE_FREE_SHIFT` i
 - Buckling with trusses or cables (line2 and line3; also a buckling mode as
   imperfection, §5): Code-Aster has no geometric stiffness for `BARRE`/`CABLE`
   (`RIGI_GEOM`; otherwise `CALCUL_37`), so the bridge stops beforehand with an ERROR.
-  Model the members as beams (line2/line3 beam elements with the real cross-section):
-  that gives member buckling and global buckling. Nonlinear static with large
+  Model the members as beams instead, as Aubry (2019, §16.4.1) prescribes for `BARRE`
+  in buckling: each member as several beam elements (so the member's own buckling
+  shape can form) with the real cross-section, and a hinge at both ends; in Mecway a
+  *flexible joint* with U, V and W free (the bridge translates it exactly, LS-51). That
+  gives member buckling and global buckling. Aubry (2019, §16.5) also points to
+  nonlinear buckling of space frames with beams (Code-Aster test case ssnl135). Nonlinear static with large
   displacements is no way out for trusses: `BARRE` stays geometrically linear with
   `GROT_GDEP` too (KNOWN_BUGS 40). Vibration modes (modal) with trusses do work. There
   the midside condition of line3 trusses (across the chord the mean of the end nodes,
@@ -950,6 +954,9 @@ sdlv301a (impeller); catalogue `mode_iter_cycl.py` (code_aster 17.4).
 
 ## 8. References
 
+- Aubry, J.-P. (2019). *Beginning with code_aster*, version of 29 January 2019, §10.1
+  (rods replaced by cables), §16.4.1 (a model with `BARRE` elements must be modified for
+  buckling: beams with hinges) and §16.5. <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 - Blevins, R.D. (1979). *Formulas for Natural Frequency and Mode Shape*. New York: Van
   Nostrand Reinhold, table 8-1 (beams) and table 9-2 (rings). Not consulted locally;
   the formulas have been recomputed in the verification
