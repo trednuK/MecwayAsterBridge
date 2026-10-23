@@ -319,10 +319,28 @@ eindtoestand, maar wel voor veel frequenties tegelijk.
 | Frequentielijst [Hz] (0 = bereik hierboven) | 0 | vaste frequenties, bijv. toerentallen `25, 50, 100`; dan precies deze frequenties, zonder verfijning |
 | Basis (GENE modaal / PHYS direct) | GENE | `PHYS` als controle van de modale basis, met dempers, of als de last frequenties boven de modes heeft; per frequentie een oplossing van het hele model (duurder) |
 | Extra frequenties per resonantie (0 = geen) | 5 | meer (7–11) voor een gladde piek; 0 = alleen het bereik |
+| Verliesfactor eta (hysteretische demping, 0 = geen) | 0 | > 0 voor structurele demping van alle materialen (§7.4 punt 4), bijv. 0,02 voor een staalconstructie, 0,1–0,5 voor rubber; per materiaal met `#ASTER-HYST` |
 | Tijdslimiet / Geheugenlimiet run_aster, MUMPS NPREC | 1800 s, 2048 MB, 8 | grote modellen of veel frequenties (PHYS) |
 
 Per model met `#ASTER-OPTIE`, bijv. `** ASTER-OPTIE harm_freq_list = 25, 50` of
 `** ASTER-OPTIE harm_basis = PHYS`.
+
+**Hysteretische (structurele) demping.** Mecway kent geen verliesfactor (alleen
+*Rayleigh damping* en het materiaal *Damper*). Geef hem op met de instelling
+*Verliesfactor eta* (`loss_factor`, alle materialen) of per materiaal in de *custom
+model definition* (zoals `#ASTER-FASE`):
+
+```
+** ASTER-HYST Rubber = 0.3
+** ASTER-HYST * = 0.02
+```
+
+`materiaal = eta` met de Mecway-naam van het materiaal (ook een *Spring*-materiaal),
+`*` = alle materialen; de regel gaat boven de instelling, de laatste regel per
+materiaal telt. De stijfheid wordt K(1 + iη); bij een resonantie werkt η als een
+viskeuze ξ = η/2 (Aubry, 2023, §3.3.4). Anders dan viskeuze demping hangt de
+hysteretische demping niet van de frequentie af: de fase onder de resonantie is −atan η,
+niet 0.
 
 ### 7.3 Resultaten in Mecway
 
@@ -380,6 +398,14 @@ de Code-Aster-testcases sdld313d en sdld21b):
    een WARNING (ook vóór de run als `modal_damping` ≥ 1); de stationaire respons
    bestaat ook dan, alleen zonder resonantiepiek (HR-01a met ζ = 1,5 doorgerekend:
    |U| binnen 4,4e-8 van de exacte oplossing).
+   **Verliesfactor** η (`loss_factor`, `#ASTER-HYST`): `AMOR_HYST` in `ELAS` van
+   `DEFI_MATERIAU` en, bij veren, in `AFFE_CARA_ELEM` `DISCRET`; `ASSEMBLAGE` maakt
+   daarmee de complexe stijfheid `RIGI_MECA_HYST` = K(1 + iη) (U2.06.03, Aubry,
+   2023, §6). Basis `PHYS`: `DYNA_VIBRA` met die matrix als `MATR_RIGI`. Basis `GENE`:
+   de projectie op de modes met `PROJ_MATR_BASE` (`PROJ_BASE` neemt alleen reële
+   matrices) in volle opslag, dus een complexe gegeneraliseerde stijfheid, exact ook
+   als η per materiaal verschilt (dan koppelen de modes); de modes zelf komen uit de
+   reële K. Voor de verfijning rond de pieken telt ξ_i + η/2 (grootste η).
 5. **Frequenties:** het bereik (lin/log) of de lijst; bij het bereik per mode in het
    bereik met 0 < ξ < 0,5 nog *n* frequenties over de halfwaardebreedte 2ξf rond de
    piek f·√(1−2ξ²) (`DEFI_LIST_FREQ` `RAFFINEMENT` `CRITERE='LARGEUR_3DB'`,
@@ -428,6 +454,9 @@ de Code-Aster-testcases sdld313d en sdld21b):
   β is ξ ∝ f. Extra modale demping geeft alle modes dezelfde ξ.
 - **Handcontrole** (1 vrijheidsgraad k, m): \|U\| = u_st/√((1−r²)² + (2ξr)²), fase
   −atan2(2ξr, 1−r²), r = f/f_n, u_st = F/k (Clough & Penzien, 1993, hoofdstuk 3).
+  Met verliesfactor η: \|U\| = u_st/√((1−r²)² + η²), de piek precies bij f_n en
+  gelijk aan u_st/η, fase daar −90° (Aubry, 2023, §3.3.4). Bij een balk of volume:
+  (statische bijdrage van de mode)/η.
 
 ### 7.6 Wat niet kan
 
@@ -436,8 +465,12 @@ de Code-Aster-testcases sdld313d en sdld21b):
   coördinaten een traagheidslast: een *Gravity* met de versnellingsamplitude in de
   tegengestelde richting geeft de beweging **ten opzichte van de steunpunten**
   (theorie, Clough & Penzien, 1993; NIET apart geverifieerd).
-- Hysteretische demping (verliesfactor η, `AMOR_HYST`) en frequentieafhankelijke
-  demping: niet vertaald.
+- Frequentieafhankelijke demping (ook een η die met de frequentie verandert).
+  Verliesfactor bij andere discrete elementen dan Mecway-veren (*Elastic support*,
+  dempers, puntmassa's): niet vertaald (η = 0 daar).
+- Spanningen bij een verliesfactor: `CALC_CHAMP` rekent ze uit de verplaatsing met de
+  reële E (NIET geverifieerd in de broncode of het η-deel meetelt); met de factor
+  (1 + iη) zou de amplitude √(1 + η²) groter zijn (0,5% bij η = 0,1).
 - Dempers op modale basis (ERROR; basis `PHYS` wel), `modal_damping` direct (ERROR).
 - Voorspanning door de belastingen (Mecway's *Frequency* met belastingen rekent
   voorgespannen modes; hier zijn de belastingen de harmonische last).
@@ -468,7 +501,10 @@ de Code-Aster-testcases sdld313d en sdld21b):
 | ERROR: Harmonisch: #ASTER-FASE: '...' is geen selectie met een belasting | naam onbekend of zonder belasting | de naam van de selectie van de belasting, precies als in Mecway |
 | ERROR: Harmonisch: een last op ... heeft verschillende fasen | één last op meerdere selecties (bijv. samengevoegde balklasten) | elke selectie een eigen belasting |
 | ERROR: Thermische rek ... wordt in de harmonische analyse niet vertaald | *Thermal stress* aan | uitzetten |
-| WARNING: Harmonisch: het model heeft geen demping ... | geen Rayleigh, `modal_damping` of dempers | demping opgeven of frequenties tussen de eigenfrequenties |
+| ERROR: Verliesfactor (loss_factor) ... is ongeldig | negatief of geen getal | een getal ≥ 0 |
+| ERROR: '#ASTER-HYST ...': verwacht 'materiaal = eta' ... / materiaal '...' bestaat niet | schrijffout of onbekende naam | bijv. `** ASTER-HYST Staal = 0.02`, de naam zoals in Mecway (hoofdletters maken niet uit) of `*` |
+| WARNING: Verliesfactor bij het hyperelastische materiaal ... wordt genegeerd | `ELAS_HYPER` kent geen `AMOR_HYST` | geen actie (de harmonische analyse is lineair) |
+| WARNING: Harmonisch: het model heeft geen demping ... | geen Rayleigh, `modal_damping`, `loss_factor` of dempers | demping opgeven of frequenties tussen de eigenfrequenties |
 | WARNING: Harmonisch: dempingsverhouding >= 1 (...), overkritisch ... De berekening gaat door. | een mode met ξ ≥ 1: `modal_damping` ≥ 1, of Rayleigh α (lage modes) of β (hoge modes) te groot | controleer α/β en *Extra modale demping* (vaak een eenheidsfout); ξ per mode in de `.mess` (`BRIDGE_DEMPING`). Bedoeld overkritisch: geen actie nodig |
 | WARNING: Harmonisch: de hoogste frequentie (...) ligt boven de hoogste mode ... | te weinig modes voor het bereik | meer modes (*Number of modes*), basis `PHYS`, of een lagere eindfrequentie |
 | WARNING: Modale basis: effectieve massa (som over ... modes) onder 90% in de belaste richting(en): ... | basis `GENE` met te weinig modes in de richting van de last (§3) | meer modes (*Number of modes*, of `modal_modes`), of basis `PHYS` (`harm_basis`) |
@@ -486,13 +522,22 @@ met verrijking en PHYS binnen 6,6e-4 van de exacte receptantie over 1–200 Hz
 verrijking het statische deel van de weggelaten modes 6,22e-4 = 1 − Σ12/λ_i⁴ (−0,06%);
 hex20-console GENE = PHYS: verplaatsing 4e-6, von Mises 4e-5, σ_xx-amplitude 2,3e-3;
 fase met `#ASTER-FASE`, amplitude uit een tabel, twee lasten in tegenfase en de
-meetpunt-CSV exact.
+meetpunt-CSV exact. Verliesfactor (HR-06): massa op een veer met η = 0,04 (GENE met
+`loss_factor`, PHYS met `#ASTER-HYST`): amplitude en fase binnen 4,3e-8 en 7e-6°, de
+piek u_st/η = 0,25 m (PHYS bij f_n exact, fase −90,00°); balk met η = 0,02 (GENE en
+PHYS) binnen 2,1e-4 van de Euler-Bernoulli-receptantie met E(1 + iη) over 1–200 Hz,
+de piek bij f₁ gelijk aan (12/λ₁⁴)·u_st/η (−0,003%).
 
 ## 8. Bronnen
 
 - Aubry, J.-P. (2023). *Beginning DYNAmics with code_aster*, §3.3 en §11.3: de
   cumulatieve effectieve massa van de modale basis (minstens 90% in de belaste
-  richting) als controle van een respons op modale basis.
+  richting) als controle van een respons op modale basis; §3.3.4, §6 en bijlage §2.3:
+  hysteretische demping (`AMOR_HYST`, `RIGI_MECA_HYST`, η/2 als equivalente ξ).
+- Code-Aster, U2.06.03 (demping in dynamische berekeningen) en U4.53.11
+  (`DYNA_VIBRA` harmonisch); catalogi `defi_materiau.py`, `affe_cara_elem.py`
+  (`AMOR_HYST`), `proj_base.py`/`proj_matr_base.py` en `MacroCommands/assemblage_ops.py`
+  (`RIGI_MECA_HYST` uit `RIGI_MECA`), versie 17.4.
 - Bishop, R.E.D. & Johnson, D.C. (1960). *The Mechanics of Vibration*. Cambridge:
   Cambridge University Press (receptanties van balken). Niet lokaal ingezien; de
   receptantie van de console is afgeleid en nagerekend (statische limiet L³/3EI, polen

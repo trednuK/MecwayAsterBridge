@@ -241,6 +241,121 @@ def _dampers(model_data):
                   if s.get("kind") == "damper")
 
 
+_HYST_RE = re.compile(r"^(.+?)\s*=\s*([^=]+)$")
+
+
+def _loss_factors(model_data, analysis):
+    """
+    Hysteretic (structural) damping: loss factor eta per Mecway material
+    ({material: eta}, only eta > 0), from the setting loss_factor (all
+    materials) and the lines '#ASTER-HYST material = eta' ('*' = all; the
+    line wins over the setting). Mecway has no structural damping or loss
+    factor (manual v34: only Rayleigh damping par. 9.26 and the Damper
+    material), hence the setting and the #ASTER line.
+    Code-Aster: AMOR_HYST in DEFI_MATERIAU ELAS (U4.43.01) and in
+    AFFE_CARA_ELEM DISCRET (catalogue affe_cara_elem.py v17.4), matrix
+    RIGI_MECA_HYST = K (1 + i eta) (ASSEMBLAGE, MacroCommands/
+    assemblage_ops.py: computed from RIGI_MECA; Aubry, Beginning DYNAmics
+    with code_aster, 2023, par. 3.3.4 and 6).
+    Returns None (ERROR logged) for an invalid value or unknown material.
+    """
+    names = list(model_data.get("materials", {})) + [
+        n for n in model_data.get("spring_materials", {})
+        if n not in model_data.get("materials", {})]
+    ok = True
+    try:
+        glob = float(analysis.get("loss_factor", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        glob = -1.0
+    if glob < 0.0:
+        log(tr("ERROR: Verliesfactor (loss_factor) {0} is ongeldig: geef een "
+               "getal >= 0 (bijv. 0.02 voor staal, 0.1 .. 0.5 voor rubber).",
+               "ERROR: Loss factor (loss_factor) {0} is invalid: give a "
+               "number >= 0 (e.g. 0.02 for steel, 0.1 .. 0.5 for "
+               "rubber).").format(analysis.get("loss_factor")))
+        return None
+    etas = OrderedDict((n, glob) for n in names)
+    lower = dict((n.lower(), n) for n in names)
+    for body in model_data.get("aster_custom", {}).get("hyst", []):
+        m = _HYST_RE.match(body)
+        value = None
+        if m:
+            try:
+                value = float(m.group(2).strip())
+            except ValueError:
+                value = None
+        if m is None or value is None or value < 0.0:
+            log(tr("ERROR: '#ASTER-HYST {0}': verwacht 'materiaal = eta' met "
+                   "eta >= 0 ('*' = alle materialen).",
+                   "ERROR: '#ASTER-HYST {0}': expected 'material = eta' "
+                   "with eta >= 0 ('*' = all materials).").format(body))
+            ok = False
+            continue
+        name = m.group(1).strip().strip("'\"")
+        if name == "*":
+            for n in names:
+                etas[n] = value
+        elif name.lower() in lower:
+            etas[lower[name.lower()]] = value
+        else:
+            log(tr("ERROR: '#ASTER-HYST {0}': materiaal '{1}' bestaat niet. "
+                   "Bekend: {2}",
+                   "ERROR: '#ASTER-HYST {0}': material '{1}' does not "
+                   "exist. Known: {2}").format(body, name, ", ".join(names)))
+            ok = False
+    if not ok:
+        return None
+    out = OrderedDict()
+    for n, eta in etas.items():
+        if eta <= 0.0:
+            continue
+        if model_data.get("materials", {}).get(n, {}).get("hyper"):
+            log(tr("WARNING: Verliesfactor bij het hyperelastische materiaal "
+                   "'{0}' wordt genegeerd (ELAS_HYPER kent geen AMOR_HYST).",
+                   "WARNING: Loss factor of the hyperelastic material "
+                   "'{0}' is ignored (ELAS_HYPER has no AMOR_HYST).")
+                .format(n))
+            continue
+        out[n] = eta
+    if out:
+        log("INFO: Harmonic: hysteretic damping (AMOR_HYST, RIGI_MECA_HYST "
+            "= K (1 + i eta)): {0}.".format(", ".join(
+                "{0} eta {1}".format(n, "%g" % e) for n, e in out.items())))
+    return out
+
+
+def _add_amor_hyst(materials_block, cara_elem_block, model_data, etas):
+    """AMOR_HYST in ELAS=_F(...) of each material with eta and in the
+    K_T_D_L entry of the springs of that material (_build_materials_block
+    and _build_cara_elem_block of bridge_to_aster write those texts)."""
+    concepts = b2a._material_concepts(model_data)
+    for name, eta in etas.items():
+        concept = concepts.get(name)
+        if not concept:
+            continue
+        head = "{0} = DEFI_MATERIAU(".format(concept)
+        start = materials_block.find(head)
+        if start < 0:
+            continue
+        pos = materials_block.find("ELAS=_F(", start)
+        nxt = materials_block.find(" = DEFI_MATERIAU(", start + len(head))
+        if pos < 0 or (0 <= nxt < pos):
+            continue
+        pos += len("ELAS=_F(")
+        materials_block = (materials_block[:pos] +
+                           "AMOR_HYST={0}, ".format("%.10g" % eta) +
+                           materials_block[pos:])
+    for elset, mat in model_data.get("elsets", {}).items():
+        eta = etas.get(mat)
+        if not eta or elset not in model_data.get("spring_sections", {}):
+            continue
+        old = ("        _F(GROUP_MA='{0}',\n"
+               "           CARA='K_T_D_L', REPERE='LOCAL',\n").format(elset)
+        cara_elem_block = cara_elem_block.replace(
+            old, old + "           AMOR_HYST={0},\n".format("%.10g" % eta))
+    return materials_block, cara_elem_block
+
+
 def _check_model(model_data, analysis, basis):
     """What the harmonic analysis cannot do: ERROR with the solution.
     Returns True if the model can be computed."""
@@ -360,11 +475,15 @@ def _excit_entries(excitations, phases, basis):
 
 
 def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
-                cara_ref):
+                cara_ref, eta=0.0):
     """Damping, frequency list, DYNA_VIBRA HARM (and REST_GENE_PHYS) ->
     res. Python in the .comm: the frequencies are only known after
     CALC_MODES."""
     npts = max(0, int(analysis.get("harm_refine_points", 5) or 0))
+    # Hysteretic damping: at a resonance equivalent to a viscous xi =
+    # eta / 2 (Aubry, Beginning DYNAmics with code_aster, 2023, par.
+    # 3.3.4); only used for the width of the refinement around the peaks.
+    eta_text = " + {0}".format("%.10g" % (eta / 2.0)) if eta else ""
     lines = [
         "# Modal damping: Mecway's Rayleigh damping C = alpha M + beta K is",
         "# per mode xi_i = alpha / (2 w_i) + beta w_i / 2 (Mecway manual par.",
@@ -423,10 +542,10 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
                 "float(max(1, bridge_n - 1)) for _k in range(bridge_n)]")
         if npts:
             lines += [
-                "bridge_refine = [(_f, _x) for _f, _x in zip(bridge_freqs, "
-                "bridge_xi)",
-                "                 if bridge_f0 <= _f <= bridge_f1 and 0.0 < _x "
-                "< {0!r}]".format(_REFINE_MAX_ZETA),
+                "bridge_refine = [(_f, _x{0}) for _f, _x in zip("
+                "bridge_freqs, bridge_xi)".format(eta_text),
+                "                 if bridge_f0 <= _f <= bridge_f1 and 0.0 < _x{0}"
+                " < {1!r}]".format(eta_text, _REFINE_MAX_ZETA),
             ]
         else:
             lines.append("bridge_refine = []")
@@ -503,7 +622,7 @@ def _harm_block(analysis, plan, basis, excit, alpha, beta, zeta, damped_c,
             "    CHAM_MATER=fieldmat,",
         ] + (["    CARA_ELEM=cara,"] if cara_ref else []) + [
             "    MATR_MASS=masse,",
-            "    MATR_RIGI=rigidite,",
+            "    MATR_RIGI={0},".format("rigi_hyst" if eta else "rigidite"),
         ] + (["    MATR_AMOR=amor,"] if damped_c else []) + [
             "    LIST_FREQ=bridge_lf,",
             "    NOM_CHAM=('DEPL',),",
@@ -629,13 +748,19 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
 
     alpha, beta, zeta = bdm._damping_text(model_data, analysis)
     dampers = _dampers(model_data) if basis == "PHYS" else []
-    if not (alpha or beta or zeta or dampers):
+    etas = _loss_factors(model_data, analysis)
+    if etas is None:
+        return None
+    eta_max = max(etas.values()) if etas else 0.0
+    if not (alpha or beta or zeta or dampers or etas):
         log(tr("WARNING: Harmonisch: het model heeft geen demping (Rayleigh, "
-               "modal_damping of dempers): bij een eigenfrequentie is de "
+               "modal_damping, loss_factor of dempers): bij een "
+               "eigenfrequentie is de "
                "respons oneindig. Geef demping op, of kies frequenties "
                "tussen de eigenfrequenties.",
                "WARNING: Harmonic: the model has no damping (Rayleigh, "
-               "modal_damping or dampers): at a natural frequency the "
+               "modal_damping, loss_factor or dampers): at a natural "
+               "frequency the "
                "response is infinite. Specify damping, or choose "
                "frequencies between the natural frequencies."))
     if alpha < 0.0 or beta < 0.0 or zeta < 0.0:
@@ -657,6 +782,9 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     cara_ref = "    CARA_ELEM=cara,\n" if cara else ""
     materials_block = b2a._build_materials_block(model_data, analysis)
     fieldmat_block = b2a._build_fieldmat_block(model_data)
+    if etas:
+        materials_block, cara_elem_block = _add_amor_hyst(
+            materials_block, cara_elem_block, model_data, etas)
     load_funcs_block = _freq_funcs_block(load_funcs)
     loads_block, _excit = b2a._render_charges(charges, model_data)
     loads_block = ("bridge_f0 = DEFI_CONSTANTE(VALE=0.0)\n"
@@ -675,13 +803,18 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
         "    NUME_DDL=CO('numedd'),\n"
         "    MATR_ASSE=(\n"
         "        _F(MATRICE=CO('rigidite'), OPTION='RIGI_MECA'),\n"
+        "{hyst}"
         "        _F(MATRICE=CO('masse'), OPTION='MASS_MECA'),\n"
         "{amor}"
         "    ),\n"
         ")\n").format(
             cara=cara_ref, charge=", ".join(charge_names),
             amor="        _F(MATRICE=CO('amor_dis'), OPTION='AMOR_MECA'),\n"
-            if dampers else "")
+            if dampers else "",
+            # RIGI_MECA_HYST after RIGI_MECA: assemblage_ops.py computes it
+            # from the elementary RIGI_MECA (else MATRICE0_10)
+            hyst="        _F(MATRICE=CO('rigi_hyst'), "
+            "OPTION='RIGI_MECA_HYST'),\n" if etas else "")
 
     scripts = os.path.dirname(os.path.abspath(__file__))
     calc_modes_block = b2a._calc_modes_block(
@@ -763,7 +896,27 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "DYNA_LINE ENRI_STAT).".format(len(excitations)))
     elif basis == "GENE":
         proj.append("bridge_basis = modes")
-    if basis == "GENE":
+    if basis == "GENE" and etas:
+        # PROJ_BASE only takes real matrices (catalogue proj_base.py v17.4:
+        # MATR_ASSE matr_asse_depl_r, SUPERVIS_4 with RIGI_MECA_HYST);
+        # PROJ_MATR_BASE also takes matr_asse_depl_c. Full storage: with a
+        # loss factor that differs per material the projected K (1 + i eta)
+        # is not diagonal.
+        proj += [
+            "# Hysteretic damping: complex generalised stiffness (projection",
+            "# of RIGI_MECA_HYST = K (1 + i eta))",
+            "bridge_nugh = NUME_DDL_GENE(BASE=bridge_basis, "
+            "STOCKAGE='PLEIN')",
+            "mgen = PROJ_MATR_BASE(BASE=bridge_basis, "
+            "NUME_DDL_GENE=bridge_nugh, MATR_ASSE=masse)",
+            "kgen = PROJ_MATR_BASE(BASE=bridge_basis, "
+            "NUME_DDL_GENE=bridge_nugh, MATR_ASSE=rigi_hyst)",
+        ] + ["fgen_{0} = PROJ_VECT_BASE(BASE=bridge_basis, "
+             "NUME_DDL_GENE=bridge_nugh, VECT_ASSE=vec_{0}, "
+             "TYPE_VECT='FORC')".format(k + 1)
+             for k in range(len(excitations))] + [""]
+        damped_c = False
+    elif basis == "GENE":
         proj += [
             "PROJ_BASE(",
             "    BASE=bridge_basis,",
@@ -790,7 +943,7 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     harm_block = _harm_block(analysis, plan, basis,
                              _excit_entries(excitations, phases, basis),
                              alpha, beta, zeta if basis == "GENE" else 0.0,
-                             damped_c, cara)
+                             damped_c, cara, eta_max)
 
     if stresses:
         calc_champ_block = (
@@ -849,13 +1002,15 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
                       plan["count"], plan["spacing"],
                       int(analysis.get("harm_refine_points", 5) or 0))
     log("INFO: Harmonic ({0}): {1}; {2} modes, {3} load vector(s), "
-        "Rayleigh alpha {4} 1/s, beta {5} s, extra modal damping {6}{7}; "
+        "Rayleigh alpha {4} 1/s, beta {5} s, extra modal damping {6}{7}"
+        "{9}; "
         "{8} probe(s).".format(
             "modal basis" if basis == "GENE" else "direct", what,
             b2a._mode_count(model_data, analysis), len(excitations),
             alpha, beta, zeta if basis == "GENE" else 0.0,
             ", dampers " + ", ".join(dampers) if dampers else "",
-            len(probes)))
+            len(probes),
+            ", loss factor up to %g" % eta_max if etas else ""))
     comm_path = os.path.join(work_dir, run_name(".comm"))
     try:
         template = b2a._read_template(analysis["template"])

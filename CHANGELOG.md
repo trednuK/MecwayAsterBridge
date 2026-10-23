@@ -9,6 +9,14 @@
   factor applies to the variable loads only. When the constant load alone is at or above
   critical (`INFO_MODE` Sturm count), the job stops with an ERROR. Without the line nothing
   changes. Verification BU-40.
+- **Hysteretic (structural) damping in the harmonic response** (Aubry, *Beginning DYNAmics
+  with code_aster*, 2023, §3.3.4 and §6): a loss factor η makes the stiffness K(1 + iη)
+  (`AMOR_HYST` in `DEFI_MATERIAU` and for springs in `AFFE_CARA_ELEM`, `RIGI_MECA_HYST`),
+  on the modal basis (complex generalised stiffness, `PROJ_MATR_BASE`) and direct
+  (`PHYS`). Mecway has no loss factor: new setting *Loss factor eta* (`loss_factor`, all
+  materials) and the line `#ASTER-HYST material = eta` per material. Verification HR-06a..d
+  (mass on a spring: peak u_st/η exact; cantilever within 2.1e-4 of the exact
+  receptance). Models without a loss factor are unchanged.
 - **Mass and reaction check for static runs** (Aubry, *Beginning with code_aster*, 2019,
   §4.13–4.14): after a linear or nonlinear static run the log and the status box show the
   total mass and centre of gravity (`POST_ELEM MASS_INER`) and the sum of the reactions

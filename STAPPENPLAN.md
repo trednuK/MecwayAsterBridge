@@ -57,7 +57,7 @@ S7, S8, S5, S9).
 | S23 | Linear buckling with a constant (dead) plus a variable (live) load | done | – | branch w-q, 23 Oct 2026: `#ASTER-CONSTANT` (BU-40) |
 | S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | open | – | planned 23 Oct 2026 (Aubry 2019 §14.1) |
 | S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |
-| S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | open | S10h | planned 23 Oct 2026 (Aubry, DYNAmics §3.3.4, §6) |
+| S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | done | S10h | branch w-s (23 Oct 2026): setting `loss_factor` + `#ASTER-HYST`; GENE and PHYS; HR-06a..d OK, HR-01..05 unchanged (see §S26) |
 | S27 | Optional line search (`RECH_LINEAIRE`) in nonlinear static | open | – | planned 23 Oct 2026 (Aubry 2019 §10.2) |
 | S28 | Optional contact normal smoothing (`LISSAGE='OUI'`) | open | – | planned 23 Oct 2026 |
 | S29 | Penetration check for penalty contact (`EVENEMENT='INTERPENETRATION'`) | open | – | planned 23 Oct 2026 |
@@ -1438,6 +1438,15 @@ manual and a saved `.liml`), otherwise a `#ASTER` keyword; whether `harmonic_3d`
 `DYNA_VIBRA HARM`) can take a complex stiffness or needs a direct (`PHYS`) solve.
 **Done when:** a single-DOF-like case (cantilever) gives the resonance amplitude 1/eta times the static one
 within 2 %; docs NL+EN; a verification case.
+**Result** (23 Oct 2026, Code-Aster 17.4, ncpus 1): Mecway has no loss factor (manual v34: only Rayleigh
+damping and the Damper material), so the input is the setting `loss_factor` (all materials) and
+`#ASTER-HYST material = eta` (per material, also springs via `AFFE_CARA_ELEM DISCRET AMOR_HYST`). PHYS:
+`MATR_RIGI=rigi_hyst`. GENE: `PROJ_BASE` refuses a complex matrix (SUPERVIS_4), so `NUME_DDL_GENE` +
+`PROJ_MATR_BASE`/`PROJ_VECT_BASE` in full storage (complex generalised stiffness, exact also for an eta
+per material). HR-06a/b (spring-mass, eta 0.04): |U| within 4.3e-8, peak u_st/eta = 0.25 m (PHYS at f_n
+exact, -90.00 deg); HR-06c/d (cantilever, eta 0.02): 2.1e-4 against Euler-Bernoulli with E(1 + i eta),
+peak 0.99997 x (12/lambda_1^4) u_st/eta. Open: eta on other discrete elements; stresses use the real E
+(NOT verified whether CALC_CHAMP includes the eta part).
 
 ### S27 – Optional line search (`RECH_LINEAIRE`)
 **Goal:** a setting for `RECH_LINEAIRE` in `STAT_NON_LINE` (method and `ITER_LINE_MAXI`), optionally automatic

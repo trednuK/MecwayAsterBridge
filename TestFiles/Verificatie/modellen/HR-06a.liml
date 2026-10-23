@@ -1,0 +1,28 @@
+<liml version="33">
+  <analysis type="V30" maxmode="1" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="1" y="0" z="0" />
+  <elset name="Veer" material="Veer">
+    <elem eid="1" shape="line2" nodes="1 2" />
+  </elset>
+  <fixed selection="Grond" />
+  <displacement selection="Massa"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Massa"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <mass2 selection="Massa"><value>2.0 kg</value></mass2>
+  <force selection="Last"><x>10.0 N</x><y>0 N</y><z>0 N</z></force>
+  <mat name="Veer">
+    <mechanical type="Spring" springconstant="1000.0 N/m" />
+  </mat>
+  <nodeselection name="Grond">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Massa">
+    <node nid="2" />
+  </nodeselection>
+  <nodeselection name="Last">
+    <node nid="2" />
+  </nodeselection>
+  <nodeselection name="MEETPUNT_Massa">
+    <node nid="2" />
+  </nodeselection>
+</liml>

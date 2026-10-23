@@ -63,14 +63,14 @@ check("XFEM gelezen", len(out["xfem"]) == 1)
 summary = [l for l in LOG if l.startswith("INFO: #ASTER lines:")]
 check("een INFO-samenvatting", len(summary) == 1)
 check("samenvatting telt XFEM", bool(summary) and
-      summary[0].endswith(", 1 METALLURGIE, 1 XFEM, 0 CONSTANT."))
+      summary[0].endswith(", 1 METALLURGIE, 1 XFEM, 0 CONSTANT, 0 HYST."))
 check("geen ERROR", not [l for l in LOG if l.startswith("ERROR")])
 
 # Alleen XFEM: de samenvatting noemt de regel ook dan
 del LOG[:]
 bridge_custom.parse([u"** ASTER-XFEM vorm=CIRKEL, r=1"])
 check("alleen XFEM in de samenvatting",
-      [l for l in LOG if l.endswith(", 1 XFEM, 0 CONSTANT.")] != [])
+      [l for l in LOG if l.endswith(", 1 XFEM, 0 CONSTANT, 0 HYST.")] != [])
 
 # CONSTANT (lineaire knik met dode last, bridge_to_aster._dead_live_split)
 del LOG[:]
@@ -78,6 +78,13 @@ out = bridge_custom.parse([u"** ASTER-CONSTANT KopD, gravity\n"
                            u"#ASTER-CONSTANT Rand"])
 check("CONSTANT gelezen", out["constant"] == ["KopD", "gravity", "Rand"])
 check("CONSTANT zonder ERROR", not [l for l in LOG if l.startswith("ERROR")])
+
+# HYST (verliesfactor, bridge_harmonic._loss_factors): regel bewaard en geteld
+del LOG[:]
+out = bridge_custom.parse([u"** ASTER-HYST Staal = 0.02\n# ASTER-HYST * = 0.1"])
+check("HYST gelezen", out["hyst"] == [u"Staal = 0.02", u"* = 0.1"])
+check("HYST in de samenvatting",
+      [l for l in LOG if l.endswith(", 0 XFEM, 0 CONSTANT, 2 HYST.")] != [])
 
 # Foute regels: ERROR en overgeslagen
 del LOG[:]
