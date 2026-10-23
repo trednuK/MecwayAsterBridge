@@ -118,7 +118,7 @@ from bridge_utils import log, tr, log_file_name
 # INST 0..0.5 present and the post-processing ran. DVP_2 (floating point
 # exception in FULL_MECA) is an <F> message from the element computation as
 # well (same route as FONCT0_9; DVP_2 itself NIET geverifieerd in a run,
-# KNOWN_BUGS 117).
+# KNOWN_BUGS 118).
 # MECANONLINE*: always continue (as before). Other AsterErrors: only if 'res'
 # has an archived step beyond the initial state; otherwise (error before the
 # first step, or no 'res') the error is raised again. BRIDGE_FOUT_ID gives

@@ -541,7 +541,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    for quadratic elements and shells (the bridge takes the mean of all element nodes;
    for line2 that is Mecway's result, LS-81).
 
-117\. **Results after `DVP_2` not seen in a real DVP_2 run** (question,
+118\. **Results after `DVP_2` not seen in a real DVP_2 run** (question,
    `bridge_failure.PARTIAL_EXCEPT`, GitHub issue #5). The job now keeps the archived
    steps after any Code-Aster error in the step loop. Checked with Code-Aster 17.4 on an
    `<F>` error from the element computation (`FONCT0_9`, step 12 of 20: `res` held
