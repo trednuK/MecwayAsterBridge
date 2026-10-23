@@ -255,6 +255,7 @@ try:
         ),
         COMPORTEMENT=_F(GROUP_MA='Kabel', RELATION='CABLE', DEFORMATION='GROT_GDEP'),
         INCREMENT=_F(LIST_INST=listinst),
+        RECH_LINEAIRE=_F(METHODE='CORDE', ITER_LINE_MAXI=3),
         SOLVEUR=_F(METHODE='MUMPS', NPREC=8),
         NEWTON=_F(REAC_ITER=1),
         CONVERGENCE=_F(RESI_GLOB_RELA=1e-05, ITER_GLOB_MAXI=20),
@@ -291,8 +292,12 @@ res = CALC_CHAMP(
 import sys
 sys.path.insert(0, '<REPO>\\Scripts')
 import aster_results_export
-aster_results_export.print_static_check(res, model, fieldmat,
-                                        globals().get('cara'))
+try:
+    aster_results_export.print_static_check(res, model, fieldmat,
+                                            globals().get('cara'))
+except Exception as _sc_err:
+    print('BRIDGE_STATCHECK_SKIPPED',
+          getattr(_sc_err, 'id_message', '') or _sc_err)
 
 
 

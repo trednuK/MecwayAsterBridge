@@ -95,13 +95,13 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 22 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `9e388a6`
-(V2026.4: all steps up to and including the extensions of 22 October, among them line3
-trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aster 17.4):
-431 test cases, 2318 checks, 2312 OK, 6 BEKEND (known), 0 NOK/FOUT. After that (23
-October) LS-20a..e got two checks more (mass and reaction sum of the check line), with
-the groups LS, NL-0, NL-2, MO-0, MP, MD and HR run again: 2328 checks, 2322 OK.
+Status 23 October 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `f14f6c7`
+(after V2026.4: among others the mass and reaction check, cable pretension, buckling
+with constant loads, hysteretic damping, adaptive time steps, line search, smoothed
+contact normals and the section properties; Code-Aster 17.4): 439 test cases, 2362
+checks, 2356 OK, 6 BEKEND (known), 0 NOK/FOUT. After the last review fixes NL-8, NL-9,
+LS-20 and NL-03 were run again: unchanged.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -113,15 +113,15 @@ the groups LS, NL-0, NL-2, MO-0, MP, MD and HR run again: 2328 checks, 2322 OK.
 | Fracture mechanics | 14 | 63 | 62 | 1 |
 | Dynamics | 16 | 47 | 47 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
-| Harmonic response | 11 | 40 | 40 | 0 |
-| Buckling | 21 | 62 | 61 | 1 |
+| Harmonic response | 15 | 53 | 53 | 0 |
+| Buckling | 22 | 65 | 64 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
 | Linear static | 111 | 399 | 398 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 23 | 223 | 223 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 50 | 181 | 178 | 3 |
+| Nonlinear static | 53 | 199 | 196 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
@@ -130,7 +130,7 @@ the groups LS, NL-0, NL-2, MO-0, MP, MD and HR run again: 2328 checks, 2322 OK.
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **431** | **2328** | **2322** | **6** |
+| **Total** | **439** | **2362** | **2356** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge f14f6c7, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2325 van 2331 controles binnen de tolerantie** (432 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2356 van 2362 controles binnen de tolerantie** (439 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -893,6 +893,19 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4
 | HR-04 | Fase 90 graden (#ASTER-FASE), amplitude uit een tabel, meetpunt | meetpunt-CSV: fase x bij 3 Hz | 73.759 graden | 73.759 | -0.00% | 0.1 graden | OK |
 | HR-05 | Twee lasten in tegenfase (#ASTER-FASE Last2 = 180) | |U| (max. rel. afwijking) | 0 - | 2.8069e-08 | 2.8069e-08 | 0.01 - | OK |
 | HR-05 | Twee lasten in tegenfase (#ASTER-FASE Last2 = 180) | fase (max. afwijking) | 0 graden | 1.9420e-06 | 1.9420e-06 | 1 graden | OK |
+| HR-06a | 1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE) | |U| over alle frequenties (max. rel. afwijking) | 0 - | 4.2863e-08 | 4.2863e-08 | 0.01 - | OK |
+| HR-06a | 1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE) | fase over alle frequenties (max. afwijking) | 0 graden | 6.7977e-06 | 6.7977e-06 | 1 graden | OK |
+| HR-06a | 1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE) | piekamplitude | 0.25 m | 0.24995 | -0.02% | 2% | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | |U| over alle frequenties (max. rel. afwijking) | 0 - | 3.8447e-08 | 3.8447e-08 | 0.01 - | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | fase over alle frequenties (max. afwijking) | 0 graden | 6.7977e-06 | 6.7977e-06 | 1 graden | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | piekamplitude | 0.25 m | 0.25 | +0.00% | 2% | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | |U(f_n)| = u_st / eta | 0.25 m | 0.25 | +0.00% | 0.1% | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | fase bij f_n | -90 graden | -90 | +0.00% | 0.1 graden | OK |
+| HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|) | 0 - | 2.0951e-04 | 2.0951e-04 | 0.01 - | OK |
+| HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | fase t.o.v. Euler-Bernoulli (max. afwijking) | 0 graden | 0.012004 | 0.012004 | 1 graden | OK |
+| HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | tip bij f_1: |U| eta / (12 / lambda_1^4 u_st) | 1 - | 0.99997 | -0.00% | 2% | OK |
+| HR-06d | Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct) | tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|) | 0 - | 2.0952e-04 | 2.0952e-04 | 0.01 - | OK |
+| HR-06d | Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct) | fase t.o.v. Euler-Bernoulli (max. afwijking) | 0 graden | 0.012004 | 0.012004 | 1 graden | OK |
 
 ## Lineair statisch
 
@@ -1773,6 +1786,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie | 0.001 m | 0.001 | +0.00% | 0.5% | OK |
+| NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie-waarschuwing | 1  | 1 | +0.00% | 0  | OK |
 | NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
 | NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
 | NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
@@ -1790,6 +1805,22 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
 | NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | uitvoertijden = time points | 0 s | 0 | 0 | 1e-09 s | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | rekenstappen (vast: 30) | 6  | 6 | +0.00% | 0  | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=1 (elastisch) | 20969 N | 20969 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=1.5 (plastisch) | 38908 N | 38908 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
 | NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
 | NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
 | NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
@@ -1915,6 +1946,14 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4
 | NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 2 | 0 N.m | 0 | 0 | 0.000177621 N.m | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
+
+*NL-50: diagnose OK; ELEMENTS_50*
+
+*NL-50b: diagnose OK; ELEMENTS_50*
+
+*NL-51: diagnose OK; ELEMENTS_50*
+
+*NL-51b: diagnose OK; ELEMENTS_50*
 
 ## Responsspectrum
 

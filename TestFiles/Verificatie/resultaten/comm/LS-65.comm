@@ -1758,8 +1758,12 @@ res_efs = CALC_CHAMP(RESULTAT=res, GROUP_MA=('Plaat',), CONTRAINTE=('EFGE_ELNO',
 import sys
 sys.path.insert(0, '<REPO>\\Scripts')
 import aster_results_export
-aster_results_export.print_static_check(res, model, fieldmat,
-                                        globals().get('cara'))
+try:
+    aster_results_export.print_static_check(res, model, fieldmat,
+                                            globals().get('cara'))
+except Exception as _sc_err:
+    print('BRIDGE_STATCHECK_SKIPPED',
+          getattr(_sc_err, 'id_message', '') or _sc_err)
 
 
 

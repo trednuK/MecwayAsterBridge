@@ -316,6 +316,18 @@ res_err = CALC_ERREUR(
     EXCIT=_F(CHARGE=load_err),
 )
 
+# Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,
+# centre of gravity and sum of REAC_NODA in the .mess
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+try:
+    aster_results_export.print_static_check(res, model, fieldmat,
+                                            globals().get('cara'))
+except Exception as _sc_err:
+    print('BRIDGE_STATCHECK_SKIPPED',
+          getattr(_sc_err, 'id_message', '') or _sc_err)
+
 # --- #ASTER-POST code from the user (Mecway custom input) ---
 WH_ = DEFI_FONCTION(NOM_PARA='SIGM', INTERPOL='LOG', VALE=(100000000.0, 10000000.0, 150000000.0, 2000000.0, 250000000.0, 200000.0, 400000000.0, 10000.0))
 SG_ = DEFI_FONCTION(NOM_PARA='INST', VALE=(0.0, -110000000.0, 1.0, 55000000.0, 2.0, -165000000.0, 3.0, 275000000.0, 4.0, -55000000.0, 5.0, 165000000.0, 6.0, -220000000.0, 7.0, 220000000.0, 8.0, -110000000.0))

@@ -640,9 +640,9 @@ aster_results_export.export_results(
 IMPR_RESU(
     FORMAT='MED',
     UNITE=80,
-    RESU=_F(
-        RESULTAT=res,
-        NOM_CHAM=('DEPL', 'REAC_NODA', 'SIGM_NOEU', 'SIEQ_NOEU',),
+    RESU=(
+        _F(RESULTAT=res,
+           NOM_CHAM=('DEPL', 'REAC_NODA', 'SIGM_NOEU', 'SIEQ_NOEU',)),
     ),
 )
 

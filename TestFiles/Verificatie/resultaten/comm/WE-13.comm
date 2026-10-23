@@ -1688,9 +1688,16 @@ try:
             _gm_alive += _gm_born[_gm_k]
             _gm_new += [_g for _g, _m in _gm_born[_gm_k]]
 except Exception as err:
-    if not str(getattr(err, 'id_message', '')).startswith('MECANONLINE'):
+    _pe_id = str(getattr(err, 'id_message', '') or '')
+    try:
+        _pe_inst = list(res.getAccessParameters()['INST'])
+    except Exception:
+        _pe_inst = []
+    if not _pe_id or not _pe_inst or not (
+            _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
         raise
-    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])
+    print('BRIDGE_FOUT_ID', _pe_id)
+    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
 print('BRIDGE_GEBOORTE_MECA %d' % len(_gm_alive))
 t_res = res.getAccessParameters()['INST'][-1]
 

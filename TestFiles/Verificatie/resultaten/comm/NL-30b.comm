@@ -247,6 +247,8 @@ load_2 = AFFE_CHAR_MECA_F(
 #   CONVERGENCE   - RESI_GLOB_RELA and ITER_GLOB_MAXI from CONFIG_BRIDGE
 #                   ("convergence_resi_rela", "newton_max_iter").
 # =====================================================
+# Penetration check (bridge_run_aster.penetration_report)
+print('BRIDGE_PENE_MAXI %r %r' % (0.0003333333333315, 0.006666666666629999))
 contact = DEFI_CONTACT(
     MODELE=model,
     FORMULATION='CONTINUE',
@@ -274,9 +276,16 @@ try:
         CONVERGENCE=_F(RESI_GLOB_RELA=1e-05, ITER_GLOB_MAXI=20),
     )
 except Exception as err:
-    if not str(getattr(err, 'id_message', '')).startswith('MECANONLINE'):
+    _pe_id = str(getattr(err, 'id_message', '') or '')
+    try:
+        _pe_inst = list(res.getAccessParameters()['INST'])
+    except Exception:
+        _pe_inst = []
+    if not _pe_id or not _pe_inst or not (
+            _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
         raise
-    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])
+    print('BRIDGE_FOUT_ID', _pe_id)
+    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
 t_res = res.getAccessParameters()['INST'][-1]
 
 
@@ -314,6 +323,18 @@ res = CALC_CHAMP(
     CONTRAINTE=('SIGM_NOEU', ),
     CRITERES=('SIEQ_NOEU', ),
 )
+
+# Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,
+# centre of gravity and sum of REAC_NODA in the .mess
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+try:
+    aster_results_export.print_static_check(res, model, fieldmat,
+                                            globals().get('cara'))
+except Exception as _sc_err:
+    print('BRIDGE_STATCHECK_SKIPPED',
+          getattr(_sc_err, 'id_message', '') or _sc_err)
 
 
 

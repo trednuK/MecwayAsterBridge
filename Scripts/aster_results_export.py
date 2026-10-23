@@ -2009,7 +2009,7 @@ def _xyz_sum(field):
     return total, absolute
 
 
-def print_static_check(res, model, fieldmat, cara=None):
+def print_static_check(res, model, fieldmat, cara=None, mass=True):
     """
     Mass and reaction check of a static run (J.-P. Aubry, Beginning with
     code_aster, 2019, par. 4.13-4.14), in the .mess for the bridge
@@ -2021,9 +2021,12 @@ def print_static_check(res, model, fieldmat, cara=None):
     archived step (CALC_CHAMP FORCE='REAC_NODA' of
     bridge_to_aster._build_calc_champ_block). Only information: no
     comparison with the loads. Errors are printed, never raised (the
-    results are already computed).
+    results are already computed). mass=False skips the mass part (models
+    with POU_D_T_GD beams, bridge_to_aster._static_check_block).
     """
     try:
+        if not mass:
+            raise RuntimeError("skipped: POU_D_T_GD has no MASS_INER")
         from code_aster.Commands import POST_ELEM
         kws = dict(MODELE=model, CHAM_MATER=fieldmat,
                    MASS_INER=dict(TOUT="OUI"))

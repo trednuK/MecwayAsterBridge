@@ -582,6 +582,18 @@ res_err = CALC_ERREUR(
     EXCIT=_F(CHARGE=load_err),
 )
 
+# Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,
+# centre of gravity and sum of REAC_NODA in the .mess
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+try:
+    aster_results_export.print_static_check(res, model, fieldmat,
+                                            globals().get('cara'))
+except Exception as _sc_err:
+    print('BRIDGE_STATCHECK_SKIPPED',
+          getattr(_sc_err, 'id_message', '') or _sc_err)
+
 
 
 # =====================================================

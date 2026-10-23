@@ -2033,7 +2033,7 @@ def _derived_args(model_data, chosen):
     return out
 
 
-def _static_check_block():
+def _static_check_block(model_data):
     """
     Mass and reaction check of a static run (MECA_STATIQUE, STAT_NON_LINE;
     J.-P. Aubry, Beginning with code_aster, 2019, par. 4.13-4.14): total
@@ -2044,9 +2044,16 @@ def _static_check_block():
     Only information for a hand check: no comparison with the loads.
     Never stops the run: an element that cannot compute the option (e.g.
     POU_D_T_GD, POST_ELEM MASS_INER gives CALCUL_37, Code-Aster 17.4) only
-    skips the check (BRIDGE_STATCHECK_SKIPPED in the .mess).
+    skips the check (BRIDGE_STATCHECK_SKIPPED in the .mess). With POU_D_T_GD
+    beams the mass part is not even tried: Code-Aster writes the CALCUL_37
+    exception into the .mess before Python catches it, and the bridge would
+    then report the run as failed (KNOWN_BUGS 119); the reactions remain.
     """
     scripts = os.path.dirname(os.path.abspath(__file__))
+    mass = _GD_BEAM not in (model_data.get("elset_modelisations") or {}).values()
+    if not mass:
+        log("INFO: Mass check without the mass (POU_D_T_GD cannot compute "
+            "POST_ELEM MASS_INER); the sum of the reactions remains.")
     return (
         "# Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,\n"
         "# centre of gravity and sum of REAC_NODA in the .mess\n"
@@ -2055,11 +2062,12 @@ def _static_check_block():
         "import aster_results_export\n"
         "try:\n"
         "    aster_results_export.print_static_check(res, model, fieldmat,\n"
-        "                                            globals().get('cara'))\n"
+        "                                            globals().get('cara'),\n"
+        "                                            mass={1})\n"
         "except Exception as _sc_err:\n"
         "    print('BRIDGE_STATCHECK_SKIPPED',\n"
         "          getattr(_sc_err, 'id_message', '') or _sc_err)\n"
-        "\n").format(_py_str(scripts))
+        "\n").format(_py_str(scripts), mass)
 
 
 def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
@@ -4331,7 +4339,7 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
     else:
         calc_champ_block = (_build_calc_champ_block(
             model_data, fields=analysis.get("fields", [])) + err_block +
-                            _static_check_block() +
+                            _static_check_block(model_data) +
                             _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block  = _build_postreleve_block(model_data)
     impr_table_block  = _build_impr_table_block(model_data)
@@ -5626,7 +5634,7 @@ def _penetration_limit_line(model_data, analysis, pairs, algo):
     if algo != "PENALISATION":
         return ""
     try:
-        frac = float(analysis.get("contact_pene_maxi", 0.05) or 0.0)
+        frac = float(analysis.get("contact_pene_maxi", 0.0) or 0.0)
     except (TypeError, ValueError):
         frac = 0.0
     if frac <= 0.0:
@@ -6829,7 +6837,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         model_data, with_plastic=with_plastic,
         fields=analysis.get("fields", []),
         strain_kind=_strain_kind(analysis)) +
-        ("" if dynamic else _static_check_block()) +
+        ("" if dynamic else _static_check_block(model_data)) +
         _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block = _build_postreleve_block(
         model_data, result_selector=result_selector,

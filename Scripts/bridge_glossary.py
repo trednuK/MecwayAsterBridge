@@ -1296,16 +1296,18 @@ SETTING_HELP = {
         u"heen en weer springen; het resultaat verandert niet, een "
         u"iteratie kost wat meer. auto (standaard) = alleen bij kabels "
         u"zonder contact; on = altijd; off = nooit. Niet met contact "
-        u"(Code-Aster staat het niet toe), niet expliciet en niet bij "
-        u"balken met grote rotaties (POU_D_T_GD: convergeerde slecht).",
+        u"(Code-Aster staat het niet toe) en niet expliciet. Afgeraden bij "
+        u"balken met grote rotaties (POU_D_T_GD convergeerde slecht; met on "
+        u"wordt het toch geschreven, met een WARNING).",
         u"Line search (RECH_LINEAIRE, method CORDE, max. 3 iterations): "
         u"Newton scales each correction so that the residual decreases. "
         u"Helps with cables (tension only) and strongly nonlinear "
         u"behaviour that jumps back and forth; the result does not change, "
         u"an iteration costs a little more. auto (default) = only with "
         u"cables without contact; on = always; off = never. Not with "
-        u"contact (Code-Aster does not allow it), not explicit and not with "
-        u"large-rotation beams (POU_D_T_GD: converged poorly)."),
+        u"contact (Code-Aster does not allow it) and not explicit. Not "
+        u"recommended with large-rotation beams (POU_D_T_GD converged poorly; "
+        u"with on it is written anyway, with a WARNING)."),
     "contact_smoothing": (
         u"Normalen gladstrijken (DEFI_CONTACT LISSAGE='OUI'): de normaal "
         u"wordt in elke knoop gemiddeld over de aangrenzende vlakken. "

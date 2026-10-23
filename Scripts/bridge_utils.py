@@ -360,9 +360,6 @@ CONFIG_BRIDGE = {
             "explicit_dt_factor":    0.5,
             # See nonlin_static_3d.
             "contact_algo":          "STANDARD",
-            # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
-            # curved contact surfaces; not across sharp edges.
-            "contact_smoothing":     False,
             "default_time_end":      1.0,
             "plastic_strain_definition": "auto",
             # See nonlin_static_3d.

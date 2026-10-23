@@ -468,9 +468,16 @@ try:
         CONVERGENCE=_F(RESI_GLOB_RELA=1e-05, ITER_GLOB_MAXI=20),
     )
 except Exception as err:
-    if not str(getattr(err, 'id_message', '')).startswith('MECANONLINE'):
+    _pe_id = str(getattr(err, 'id_message', '') or '')
+    try:
+        _pe_inst = list(res.getAccessParameters()['INST'])
+    except Exception:
+        _pe_inst = []
+    if not _pe_id or not _pe_inst or not (
+            _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
         raise
-    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])
+    print('BRIDGE_FOUT_ID', _pe_id)
+    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
 t_res = res.getAccessParameters()['INST'][-1]
 
 

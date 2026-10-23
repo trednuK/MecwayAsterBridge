@@ -493,13 +493,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    L elsets (`bridge_to_aster._buckling_beam_notes`). A fix would be `POU_D_TG` with the
    shear centre (`EY`, `EZ`), `JG` (C_w) and the warping DOF `GRX` at supports; not done.
 
-119\. **Mass check fails with `POU_D_T_GD` beams** (confirmed with runs, Code-Aster 17.4,
-   `aster_results_export` mass check, `POST_ELEM MASS_INER`). `MECA_POU_D_T_GD` cannot
-   compute `MASS_INER` (`<EXCEPTION> CALCUL_37`); the job catches it
-   (`BRIDGE_STATCHECK_FOUT`), so the results are fine, but no mass is reported and the
-   verification runner lists `CALCUL_37` for NL-80c, NL-81 and the other `elem_beam` =
-   `POU_D_T_GD` cases. A fix: `MASS_INER` per group without the GD beams (their mass from
-   rho·A·L), or leave them out with a note.
+119\. **Mass check without the mass for `POU_D_T_GD` beams** (confirmed, Code-Aster 17.4,
+   `bridge_to_aster._static_check_block`). `MECA_POU_D_T_GD` cannot compute `POST_ELEM
+   MASS_INER` (`CALCUL_37`), and Code-Aster writes that exception into the .mess before
+   Python catches it, so the bridge would report the run as failed. For models with
+   POU_D_T_GD beams the mass part is therefore skipped (INFO); the sum of the reactions
+   is still reported. Possible improvement: mass per group without the GD beams (their
+   mass from rho·A·L).
 
 ## Open questions (Mecway behaviour not checked)
 
