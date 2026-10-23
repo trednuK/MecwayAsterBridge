@@ -2042,6 +2042,9 @@ def _static_check_block():
     / BRIDGE_STATREAC lines in the .mess (aster_results_export.
     print_static_check). Both result routes; after CALC_CHAMP (REAC_NODA).
     Only information for a hand check: no comparison with the loads.
+    Never stops the run: an element that cannot compute the option (e.g.
+    POU_D_T_GD, POST_ELEM MASS_INER gives CALCUL_37, Code-Aster 17.4) only
+    skips the check (BRIDGE_STATCHECK_SKIPPED in the .mess).
     """
     scripts = os.path.dirname(os.path.abspath(__file__))
     return (
@@ -2050,8 +2053,12 @@ def _static_check_block():
         "import sys\n"
         "sys.path.insert(0, {0})\n"
         "import aster_results_export\n"
-        "aster_results_export.print_static_check(res, model, fieldmat,\n"
-        "                                        globals().get('cara'))\n"
+        "try:\n"
+        "    aster_results_export.print_static_check(res, model, fieldmat,\n"
+        "                                            globals().get('cara'))\n"
+        "except Exception as _sc_err:\n"
+        "    print('BRIDGE_STATCHECK_SKIPPED',\n"
+        "          getattr(_sc_err, 'id_message', '') or _sc_err)\n"
         "\n").format(_py_str(scripts))
 
 
