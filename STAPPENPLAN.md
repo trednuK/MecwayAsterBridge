@@ -54,6 +54,16 @@ S7, S8, S5, S9).
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
 | S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026 |
+| S23 | Linear buckling with a constant (dead) plus a variable (live) load | open | – | planned 23 Oct 2026 (Aubry 2019 §16.1–16.2) |
+| S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | open | – | planned 23 Oct 2026 (Aubry 2019 §14.1) |
+| S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |
+| S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | open | S10h | planned 23 Oct 2026 (Aubry, DYNAmics §3.3.4, §6) |
+| S27 | Optional line search (`RECH_LINEAIRE`) in nonlinear static | open | – | planned 23 Oct 2026 (Aubry 2019 §10.2) |
+| S28 | Optional contact normal smoothing (`LISSAGE='OUI'`) | open | – | planned 23 Oct 2026 |
+| S29 | Penetration check for penalty contact (`EVENEMENT='INTERPENETRATION'`) | open | – | planned 23 Oct 2026 |
+| S30 | Redo the Code-Aster forum research | later | forum online again (offline until about 30 Oct 2026) | planned 23 Oct 2026 |
+| S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
+| S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1381,3 +1391,112 @@ Salome-Meca `pvpython` lives and how `aster_convergence_monitor.py` starts ParaV
 **Done when:** a failure case (Code-Aster) and an erosion case (OpenRadioss) show the field "failed" in Mecway
 (0/1 equal to the failed elements in the log) and the ParaView button opens the model with the failed
 elements hidden per step; docs NL+EN and a verification case for the field; regression D.5.
+
+### S23 – Linear buckling with a constant (dead) plus a variable (live) load
+**Goal:** buckling factor of the live load only, with the dead load present: stiffness K + Kg(dead) and
+`MATR_RIGI_GEOM` = Kg(live) in `CALC_MODES TYPE_RESU='MODE_FLAMB'`, so the critical load is
+dead + lambda x live.
+**Source:** J.-P. Aubry, *Beginning with code_aster* (2019), §16.1–16.2.
+**Research:** input route for marking a load as constant (Mecway-native, e.g. a load table or a separate
+load group, otherwise a `#ASTER` keyword, see the memory rule on input); how the bridge builds the buckling
+matrices now (`bridge_to_aster`, buckling builder); a check that the dead load alone is below critical
+(a negative or smallest factor of K + Kg(dead) alone), which must stop with an ERROR NL+EN instead of a
+meaningless factor.
+**Done when:** a column with an axial dead load of 0.5 P_cr plus a live load gives lambda = 0.5 P_cr/P_live
+within 1 %; a dead load above P_cr stops with the ERROR; docs NL+EN (Modaal_en_knik/Modal_and_buckling) and a
+verification case.
+
+### S24 – Adaptive time stepping from Mecway's automatic time stepping
+**Goal:** `DEFI_LIST_INST(METHODE='AUTO', PAS_MINI=..., PAS_MAXI=...)` when the `.liml` has Mecway's
+`automatictimestepping`, while Mecway's output times stay in the results through `ARCHIVAGE`.
+**Source:** J.-P. Aubry, *Beginning with code_aster* (2019), §14.1; U4.34.03 (DEFI_LIST_INST); catalogue `defi_list_inst.py` (17.4).
+**Research:** the `.liml` attributes of automatic time stepping (minimum/maximum step, initial step) and their
+meaning in Mecway's manual; how `METHODE='AUTO'` combines with the existing `ECHEC` subdivision and
+`ADAPTATION`; `ARCHIVAGE LIST_INST`/`PRECISION` for the output times; whether `aster_results_export` copes with
+archived times that differ from the computed ones.
+**Done when:** a nonlinear case with automatic time stepping solves with fewer steps than the fixed list and
+gives the same results at the output times (within the case tolerance); the NL families stay within tolerance;
+docs NL+EN.
+
+### S25 – Optional exact section properties with `MACR_CARA_POUTRE`
+**Goal:** a setting (default off: Mecway's values, including J, stay the default) that computes A, IY, IZ, JX,
+JG, AY/AZ and the shear centre of I/T/C/L and general sections with `MACR_CARA_POUTRE` on a 2D mesh of the
+section, and uses them in `AFFE_CARA_ELEM`.
+**Source:** J.-P. Aubry, *Beginning with code_aster* (2019), §17.1–17.2; U4.42.02 (MACR_CARA_POUTRE).
+**Research:** making the 2D section mesh without Gmsh (the bridge writes meshes itself, `bridge_mesh`); which
+outputs `MACR_CARA_POUTRE` gives in 17.4 (table names); a second Code-Aster job before the analysis or one job
+with the table read in the `.comm`; the shear centre offset versus Mecway's beam axis.
+**Done when:** for an I- and a C-section the computed properties match handbook values (A, I within 0.5 %, J
+within 5 %); with the setting off the `.comm` is unchanged; docs NL+EN.
+
+### S26 – Hysteretic damping in harmonic analysis
+**Goal:** structural (hysteretic) damping eta via `AMOR_HYST` in `DEFI_MATERIAU` and `RIGI_MECA_HYST`
+(complex stiffness) in the harmonic analysis.
+**Source:** Aubry, *Beginning with code_aster DYNAmics*, §3.3.4 and §6.
+**Research:** the input route: does Mecway have a structural damping factor in harmonic analysis (check the
+manual and a saved `.liml`), otherwise a `#ASTER` keyword; whether `harmonic_3d` (on a modal basis,
+`DYNA_VIBRA HARM`) can take a complex stiffness or needs a direct (`PHYS`) solve.
+**Done when:** a single-DOF-like case (cantilever) gives the resonance amplitude 1/eta times the static one
+within 2 %; docs NL+EN; a verification case.
+
+### S27 – Optional line search (`RECH_LINEAIRE`)
+**Goal:** a setting for `RECH_LINEAIRE` in `STAT_NON_LINE` (method and `ITER_LINE_MAXI`), optionally automatic
+for models with `CABLE` or `GROT_GDEP`.
+**Source:** J.-P. Aubry, *Beginning with code_aster* (2019), §10.2; U2.04.01 (nonlinear computations advice); U4.51.03.
+**Research:** which methods 17.4 offers (`CORDE`, `MIXTE`, `PILOTAGE`) and which suit cables; whether line
+search changes the converged result (it should not) and how much it costs per iteration.
+**Done when:** a cable case (e.g. SaggingCable with *Tension only*) converges with fewer cuts or iterations; the
+NL families stay within tolerance; docs NL+EN.
+
+### S28 – Optional contact normal smoothing (`LISSAGE='OUI'`)
+**Goal:** a setting for `LISSAGE='OUI'` in `DEFI_CONTACT` (normals smoothed over the master surface), for
+contact on faceted curved surfaces.
+**Source:** U4.44.11 (DEFI_CONTACT); catalogue `defi_contact.py` (17.4).
+**Research:** which formulations accept `LISSAGE` (continue, penalty); effect on convergence and on the contact
+pressure of a curved contact case (e.g. Samples/PipeClip).
+**Done when:** a curved contact case gives a smoother contact pressure with the same total force (within 1 %);
+the contact families stay within tolerance with the setting off and on; docs NL+EN.
+
+### S29 – Penetration check for penalty contact
+**Goal:** with `contact_algo` = PENALISATION, report too much penetration with
+`ECHEC=_F(EVENEMENT='INTERPENETRATION', PENE_MAXI=..., ACTION='ARRET')` or a WARNING NL+EN after the run, not
+an automatic change of the penalty coefficient (`ACTION='ADAPT_COEF_PENA'`), in line with the rule "clear
+messages over automatic fixes".
+**Source:** U4.34.03 (DEFI_LIST_INST ECHEC); catalogue `defi_list_inst.py` (17.4: `INTERPENETRATION` with
+`ARRET` or `ADAPT_COEF_PENA`).
+**Research:** a sensible default for `PENE_MAXI` (relative to the element size or the contact face), and how
+the bridge reports the stop (error code and explanation in `docs/Foutmeldingen_CodeAster.md`).
+**Done when:** a penalty case with a too soft `normalstiffness` stops (or warns) with a clear message that names
+the setting to change; the contact families with a normal stiffness stay unchanged; docs NL+EN.
+
+### S30 – Redo the Code-Aster forum research
+**Goal:** repeat the forum searches of earlier steps (e.g. KNOWN_BUGS items marked "NOT verified" and open
+questions) once the code_aster forum is online again: it was offline until about 30 Oct 2026 because of a PHP
+vulnerability.
+**Research:** the list of open questions that waited for the forum (search KNOWN_BUGS and the docs for
+"forum"); per item the thread or the answer.
+**Done when:** each item has a forum source or is marked "no answer on the forum" with the date.
+
+### S31 – LAC (mortar) contact as an option
+**Goal:** long-term: `DEFI_CONTACT FORMULATION='CONTINUE', ALGO_CONT='LAC'` (mortar) as a choice besides
+STANDARD and PENALISATION, for non-matching meshes and pressure-accurate contact.
+**Source:** U4.44.11 (DEFI_CONTACT), R5.03.55 (LAC).
+**Research:** the mesh requirements of LAC in 17.4 (`DECOUPE_LAC` of the slave surface, linear/quadratic faces),
+which of Mecway's contact options carry over, and the convergence on the existing contact cases.
+**Done when:** the contact families solve with LAC within tolerance where STANDARD does; limitations documented
+NL+EN.
+
+### S32 – Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`)
+**Goal:** in `_LISTINST_ECHEC` (`bridge_to_aster`) `ECHEC=_F(EVENEMENT='ERREUR', ACTION='ITER_SUPPL',
+PCENT_ITER_PLUS=50, SUBD_METHODE='MANUEL', SUBD_PAS=4, SUBD_NIVEAU=6)` instead of `ACTION='DECOUPE'`, so that Newton
+may continue while the residual still decreases before a step is cut.
+**Source:** catalogue `defi_list_inst.py` (17.4): the `ITER_SUPPL` block contains `SUBD_METHODE` and the
+`MANUEL`/`AUTO` subdivision keywords; the `.mess` of a run states "quand ce maximum sera atteint, on pourra
+découper le pas de temps"; messages `ITERSUPP_6`/`MECANONLINE10_33`. So the step cutting stays as a fallback:
+seen in NL-83 (one extra-iteration attempt succeeded, the next failed with `ITERSUPP_6` and the step was cut).
+**Result** (23 Oct 2026, all 60 `nonlin_static_3d` cases, Code-Aster 17.4, ncpus 1): 58 cases unchanged
+(within 1e-4); NL-03a (known failure, KNOWN_BUGS 43) stopped earlier, now without any results; ITER_SUPPL was tried 9 times (NK-04 7, NL-83 2) and avoided a cut only twice (NK-04 kept its
+7 cuts and ran 72 s instead of 52 s). **NL-90 failed:** in the step to t = 0.1 the Newton iterations are identical in both runs (residual 2.8e1 .. 1.4e5, not converging) until the tangent matrix becomes singular at iteration 14. With `DECOUPE` that is caught as an `ERREUR` event ("La matrice du système est singulière", `MECANONLINE10_33`), the step is cut and the case solves (tip within 0.01 %); with `ITER_SUPPL` the same singular matrix is raised as `<EXCEPTION> FACTOR_11` and the run stops at t = 0.05 (tip u_y 0.033 instead of 0.493 m). So the fallback works for non-convergence but not for a singular matrix (NOT verified in the source; seen in the .mess). **Dropped**; `ACTION='DECOUPE'` kept.
+**Possible follow-up (not planned):** only with a convergence criterion that stops the extra iterations when the
+residual rises (`EVENEMENT='DIVE_RESI'` before `ERREUR`), with its own regression run.
+

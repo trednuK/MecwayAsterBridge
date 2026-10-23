@@ -240,7 +240,7 @@ details per elset staan als INFO in het log.
 | `COQUE_3D` | `GROT_GDEP` | alarm `COMPOR1_47`: rotaties < 2π; NL-02b exact |
 | balk `POU_D_E`/`POU_D_T` | `PETIT` | `GROT_GDEP` op `POU_D_E` convergeerde niet (KNOWN_BUGS 11); voor grote rotaties `elem_beam` = `POU_D_T_GD` |
 | balk `POU_D_T_GD` | `GROT_GDEP` met `ELAS_POUTRE_GR` | grote rotaties van balken (§2.9) |
-| kabel (tension only) | altijd `GROT_GDEP` | `RELATION='CABLE'` vraagt dat |
+| kabel (tension only) | altijd `GROT_GDEP` | `RELATION='CABLE'` vraagt dat; kleine voorspanning `N_INIT` = `cable_n_init_factor` × E × A (standaard 1e-6, pagina **Elementen**), anders is een rechte kabel singulier |
 | discreet (veer, knoopmassa, elastic support) | `PETIT` (`PETIT_REAC` als gekozen) | grote verplaatsingen voor discreten NIET geverifieerd |
 
 `PETIT` en `PETIT_REAC` gaan ongewijzigd naar alle elsets (behalve kabels).

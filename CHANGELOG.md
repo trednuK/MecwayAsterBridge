@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Small cable pretension**: tension-only elements (`CABLE`) now get `N_INIT` =
+  `cable_n_init_factor` x E x A (new setting on the page Elements, default 1e-6; INFO in
+  the log). A straight cable without pretension was singular; now it solves (Samples/
+  SaggingCable with *Tension only*: 3.06798 m, Mecway 3.0680 m). LS-54b/c unchanged.
+- **MED export with shell and beam fields** (`med_export`): `IMPR_RESU` now passes
+  `CARA_ELEM` and writes `SIGM_ELNO` (shell layers), the von Mises stress of the shell
+  surfaces (`res_sup`/`res_moy`/`res_inf`), `SIPM_ELNO` and, with `beam_forces`, the
+  section forces of beams.
 - **Results after other errors in the step loop** (issue #5): when Code-Aster stops
   `STAT_NON_LINE`/`DYNA_NON_LINE` with another error than `MECANONLINE*` after some steps
   have converged (e.g. `DVP_2`, a floating point exception in a too distorted element),

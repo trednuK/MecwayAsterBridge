@@ -1092,11 +1092,25 @@ def _build_cara_elem_block(model_data):
             lines.append("    ),")
 
     # --- CABLE (tension only, U4.42.01 AFFE_CARA_ELEM CABLE: AIRE and
-    # N_INIT required; N_INIT = 0: no pretension) ---
-    cable_entries = [
-        "        _F(GROUP_MA='{0}', AIRE={1!r}, N_INIT=0.0),".format(
-            elset, sec["area"])
-        for elset, sec in model_data.get("cable_sections", {}).items()]
+    # N_INIT required). N_INIT is the initial tension force in N
+    # (catalogue affe_cara_elem.py: "pre-tension initiale", only used
+    # nonlinear). A small N_INIT = factor x E x A (setting
+    # cable_n_init_factor, strain 1e-6) gives a straight cable transverse
+    # stiffness; with 0 it is singular (KNOWN_BUGS 23/40). Aubry (2019,
+    # par. 10.1) uses 10 N for that reason only. ---
+    cable_entries = []
+    factor = float(CONFIG_BRIDGE.get("cable_n_init_factor", 0.0) or 0.0)
+    for elset, sec in model_data.get("cable_sections", {}).items():
+        try:
+            n_init = factor * float(sec.get("E") or 0.0) * sec["area"]
+        except (TypeError, ValueError):
+            n_init = 0.0
+        if n_init > 0.0:
+            log("INFO: Kabel '{0}': voorspanning N_INIT = {1:.4g} N "
+                "({2:g} x E x A).".format(elset, n_init, factor))
+        cable_entries.append(
+            "        _F(GROUP_MA='{0}', AIRE={1!r}, N_INIT={2!r}),".format(
+                elset, sec["area"], n_init))
     if cable_entries:
         lines.append("    CABLE=(")
         lines.extend(cable_entries)
@@ -2085,27 +2099,44 @@ def _build_impr_table_block(model_data, with_plastic=False,
     return "\n".join(lines) + "\n"
 
 
-def _build_impr_resu_block(model_data, with_plastic=False):
+def _build_impr_resu_block(model_data, with_plastic=False, fields=None):
     """
     IMPR_RESU to MED (study.rmed, ParaView/Salome), only with the
     setting "med_export": Mecway gets the results via the .liml (or
     the tables), otherwise a MED file of hundreds of MB is superfluous.
     A GMSH export no longer exists (nobody read it; 5.6 GB for
     ProfielBuigen).
+    fields: the chosen result groups (as for _build_calc_champ_block);
+    None (XFEM) = no shell/beam fields, since CALC_CHAMP did not run on
+    res then.
+    CARA_ELEM=cara (catalogue impr_resu.py v17.4, RESU CARA_ELEM): needed
+    for fields with sub-points (shell layers) in MED; without it
+    Code-Aster writes them without the sub-point description (VISU_SP).
+    The von Mises stress of the shell surfaces (res_sup/res_moy/res_inf,
+    POST_CHAMP EXTR_COQUE) goes in as its own result (NOM_RESU_MED, max.
+    8 characters).
     """
     if not CONFIG_BRIDGE.get("med_export", False):
         return "#-- no MED export (setting med_export off) --\n"
-    return "\n".join([
+    cara = " CARA_ELEM=cara," if _has_cara(model_data) else ""
+    lines = [
         "IMPR_RESU(",
         "    FORMAT='MED',",
         "    UNITE=80,",
-        "    RESU=_F(",
-        "        RESULTAT=res,",
-        "        NOM_CHAM={0},".format(
-            _build_impr_resu_cham(model_data, with_plastic)),
-        "    ),",
-        ")",
-        ""])
+        "    RESU=(",
+        "        _F(RESULTAT=res,{0}".format(cara),
+        "           NOM_CHAM={0}),".format(
+            _build_impr_resu_cham(model_data, with_plastic, fields))]
+    _g3d, gsh, _gbm = _result_groups(model_data)
+    if gsh and fields is not None:
+        for concept in ("res_sup", "res_moy", "res_inf"):
+            lines += [
+                "        _F(RESULTAT={0},{1} NOM_CHAM=('SIEQ_NOEU',),".format(
+                    concept, cara),
+                "           NOM_RESU_MED='{0}', GROUP_MA={1}),".format(
+                    concept, _fmt_groups(gsh))]
+    lines += ["    ),", ")", ""]
+    return "\n".join(lines)
 
 
 def _export_result_lines(work_dir, resu_name):
@@ -2123,12 +2154,16 @@ def _export_result_lines(work_dir, resu_name):
     return "".join("\n" + line for line in lines)
 
 
-def _build_impr_resu_cham(model_data, with_plastic=False):
+def _build_impr_resu_cham(model_data, with_plastic=False, fields=None):
     """
     NOM_CHAM tuple for IMPR_RESU MED: only fields that are actually
-    computed in 'res'.
+    computed in 'res' (_build_calc_champ_block, _optional_field_blocks):
+    SIGM_ELNO (shells per layer, sub-points; 3D with route liml), beams
+    SIPM_ELNO and with beam_forces EFGE_ELNO/EFGE_NOEU (SIEF_ELNO/
+    SIEF_NOEU on POU_D_T_GD).
+    fields None (XFEM): only DEPL, REAC_NODA and the 3D fields.
     """
-    g3d, _gsh, _gbm = _result_groups(model_data)
+    g3d, gsh, gbm = _result_groups(model_data)
     champs = ["DEPL", "REAC_NODA"]
     if g3d:
         champs += ["SIGM_NOEU", "SIEQ_NOEU"]
@@ -2139,6 +2174,19 @@ def _build_impr_resu_cham(model_data, with_plastic=False):
             if not any((p.get("plastic_bilinear") or {}).get("kinematic")
                        for p in model_data["materials"].values()):
                 champs.append("VARI_NOEU")
+    if fields is not None:
+        if gsh or (g3d and CONFIG_BRIDGE.get("result_route",
+                                             "liml") == "liml"):
+            champs.append("SIGM_ELNO")
+        if gbm:
+            champs.append("SIPM_ELNO")
+        beams = _beam_groups(model_data)
+        if "beam_forces" in fields and beams:
+            mods = model_data.get("elset_modelisations", {})
+            if any(mods.get(g) != _GD_BEAM for g in beams):
+                champs += ["EFGE_ELNO", "EFGE_NOEU"]
+            if any(mods.get(g) == _GD_BEAM for g in beams):
+                champs += ["SIEF_ELNO", "SIEF_NOEU"]
     return "({0},)".format(", ".join("'{0}'".format(c) for c in champs))
 
 
@@ -4292,7 +4340,9 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
             calc_champ_block = calc_champ_block,
             postreleve_block = postreleve_block,
             impr_table_block = impr_table_block,
-            impr_resu_block  = (_build_impr_resu_block(model_data) +
+            impr_resu_block  = (_build_impr_resu_block(
+                model_data, fields=(None if xfem
+                                    else analysis.get("fields", []))) +
                                 fracture_block + xfem_block),
         ))
         log("SUCCESS: .comm written to '{0}'.".format(comm_path))
@@ -6728,7 +6778,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
             postreleve_block     = postreleve_block,
             impr_table_block     = impr_table_block,
             impr_resu_block      = _build_impr_resu_block(
-                model_data, with_plastic=with_plastic),
+                model_data, with_plastic=with_plastic,
+                fields=analysis.get("fields", [])),
         ))
         log("SUCCESS: .comm written to '{0}'.".format(comm_path))
 

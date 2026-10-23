@@ -115,10 +115,14 @@ GENERAL_SPECS = [
     ("elem_beam", ("Balken (line2/line3)", "Beams (line2/line3)"),
      "choice",
      ("POU_D_E", "POU_D_T", "POU_D_T_GD")),
+    ("cable_n_init_factor", ("Voorspanning kabels N_INIT / (E A)",
+                             "Cable pretension N_INIT / (E A)"),
+     "float_range", (0.0, 1.0e-2)),
 ]
 
 # General keys that are on the page "Elementen".
-ELEMENT_KEYS = ("elem_hex8", "elem_shell", "elem_beam")
+ELEMENT_KEYS = ("elem_hex8", "elem_shell", "elem_beam",
+                "cable_n_init_factor")
 
 _ELEMENT_HELP = (
     u"Hex8 (volume-elementen)\n"
