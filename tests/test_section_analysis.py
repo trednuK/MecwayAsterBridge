@@ -25,6 +25,30 @@ import time
 
 _HERE = os.path.dirname(os.path.abspath(globals().get("__file__", sys.argv[0])))
 sys.path.insert(0, os.path.join(_HERE, "..", "Scripts"))
+try:
+    import numpy  # noqa: F401
+    import scipy  # noqa: F401
+except ImportError:
+    # Plain CPython without numpy/scipy (e.g. the other tests' Python): run
+    # again with Code-Aster's Python (exe_aster), as MecwaySectionProps
+    # does; skip when that is not installed either.
+    import subprocess
+    import bridge_utils
+    root = os.path.dirname(os.path.dirname(os.path.abspath(
+        bridge_utils.exe_aster_path() or ".")))
+    pythons = [os.path.join(root, d, "python.exe") for d in
+               (sorted(os.listdir(root)) if os.path.isdir(root) else [])
+               if d.lower().startswith("python")]
+    pythons = [p for p in pythons if os.path.isfile(p)]
+    if pythons and not os.environ.get("SECTION_TEST_RELAUNCHED"):
+        print("numpy/scipy missing here: running with " + pythons[0])
+        sys.stdout.flush()
+        env = dict(os.environ, SECTION_TEST_RELAUNCHED="1")
+        sys.exit(subprocess.call([pythons[0], os.path.abspath(__file__)],
+                                 env=env))
+    print("SKIP: test_section_analysis needs numpy and scipy (the Python of "
+          "the Code-Aster installation, see exe_aster).")
+    sys.exit(0)
 import numpy as np  # noqa: E402
 import section_analysis as sa  # noqa: E402
 import section_mesh as sm  # noqa: E402
