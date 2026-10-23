@@ -432,6 +432,22 @@ _SPECTRUM_HINTS = {
                 u"Lower spectrum_damping or Mecway's Rayleigh damping (beta "
                 u"damps the highest modes), or the number of modes."),
 }
+# Linear buckling with #ASTER-CONSTANT (bridge_to_aster._DEAD_CHECK_BLOCK):
+# the constant (dead) loads alone are already at or above critical.
+_MESS_BUCKLING_RE = re.compile(r"BRIDGE_BUCKLING_FOUT\s+(\w+)\s*(.*)")
+_BUCKLING_HINTS = {
+    "DEAD": (u"Knik: de constante lasten (#ASTER-CONSTANT) alleen liggen al "
+             u"op of boven de kniklast ({0} knikfactor(en) van de constante "
+             u"last in [0, 1]); K + Kg(constant) is niet positief definiet "
+             u"en een factor voor de variabele last heeft geen betekenis. "
+             u"Verlaag de constante last of verstijf de constructie.",
+             u"Buckling: the constant loads (#ASTER-CONSTANT) alone are "
+             u"already at or above the critical load ({0} buckling "
+             u"factor(s) of the constant load in [0, 1]); K + Kg(constant) "
+             u"is not positive definite and a factor for the variable load "
+             u"is meaningless. Lower the constant load or stiffen the "
+             u"structure."),
+}
 # Console output of run_aster (stdout + stderr), written by tee.
 # Console output of the run: <model>_<run_id>_console.txt (run_name).
 CONSOLE_SUFFIX = "_console.txt"
@@ -1378,6 +1394,9 @@ def aster_mess_errors(work_dir, since=None):
         if not modal:
             modal = _MESS_SPECTRUM_RE.search(text)
             hints = _SPECTRUM_HINTS
+        if not modal:
+            modal = _MESS_BUCKLING_RE.search(text)
+            hints = _BUCKLING_HINTS
         if modal:
             pair = hints.get(modal.group(1))
             if pair:

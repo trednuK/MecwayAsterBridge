@@ -70,7 +70,8 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
      a reference load (e.g. 1 kN or the design load); with a unit load the factor is
      the buckling load directly. A constant load (such as self-weight) is multiplied as
      well; to keep it fixed, adjust the variable load until the factor becomes 1
-     (Mecway Ltd., 2026, §6.6).
+     (Mecway Ltd., 2026, §6.6), or mark it as constant with an `#ASTER-CONSTANT`
+     line (§2.2.1): the factor then applies to the variable loads only.
    - A load with a time table gets the last value of the table (WARNING).
 
 ### 1.2 In the main window of the bridge
@@ -309,6 +310,41 @@ Code-Aster 17.4 (the `.mess` reports "La valeur de décalage en charge critique 
 not offered ([`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.md)
 §3.8).
 
+#### 2.2.1 Constant (dead) plus variable (live) load: `#ASTER-CONSTANT`
+
+Mecway has no load cases for a buckling analysis, and a load has no name of its own in
+the `.liml` (only its type and selection). So the bridge reads the constant loads from a
+line in Mecway's *Custom model definition* (CCX field: `**ASTER-CONSTANT`; the other
+fields as in [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1):
+
+```
+** ASTER-CONSTANT SelfWeightTop, gravity
+```
+
+- A name is a **selection name** (all loads on that selection are constant) or a **load
+  type without a selection**, such as `gravity` or `centrifugal`. Several names: separated
+  by commas, or several lines. Give a constant load its own selection; a selection may
+  contain the same nodes or faces as the selection of the variable load.
+- All other loads are variable. The bridge then computes two `MECA_STATIQUE` (variable
+  loads → `SIEF_ELGA` `sig`, constant loads → `sig_d`), assembles `RIGI_GEOM` for both,
+  takes `MATR_RIGI` = K + Kg(constant) (`COMB_MATR_ASSE`) and `MATR_RIGI_GEOM` =
+  Kg(variable) (Aubry, 2019, §16.1–16.2). The buckling load is **constant + factor ×
+  variable**.
+- Before the eigenvalue solve, `INFO_MODE` counts the buckling factors of the constant
+  loads alone in [0, 1] (Sturm). If there is one, the constant load alone is already at or
+  above critical (K + Kg(constant) not positive definite): the job stops with an ERROR
+  (§4) instead of a meaningless factor.
+- Measured (BU-40, [`Verification.md`](Verification.md)): clamped column, constant
+  0.5 P_cr,1, variable 1000 N: factors 5.1815 / 18.135 / 88.087 = (P_cr,k − P_d)/P
+  within 0.002 %. With the constant load 1.5 P_cr,1 the job stops with the ERROR.
+- Not possible (ERROR): thermal strain together with `#ASTER-CONSTANT`; distributed beam
+  loads that the bridge has to add up per beam (overlapping line pressures, gravity with a
+  time-dependent line pressure); all loads constant. `#ASTER-EXCIT` loads count in both
+  static analyses (WARNING): put only connections in them, no forces. Without an
+  `#ASTER-CONSTANT` line nothing changes. In other analyses the line is ignored
+  (WARNING).
+- The stiffness normalisation of the modes (RIGI_GENE) then uses K + Kg(constant).
+
 ### 2.3 Normalisation
 
 | Normalisation | Meaning | Use |
@@ -469,6 +505,8 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
 | WARNING: Centrifugal force in a model with shells / of point masses | spin softening is missing there (§2.5) | frequencies are slightly higher than in Mecway; compare with Mecway if needed |
 | WARNING: No supports (free-free) | loose model | normal for a free body; count 6 rigid modes |
 | ERROR: Buckling without a load / Buckling without supports | buckling needs a load and supports | apply the reference load and supports |
+| ERROR: #ASTER-CONSTANT: no load on ... / all loads are constant / thermal strain / distributed beam loads were added up | the line names no loaded selection, leaves no variable load, or the model cannot be split (§2.2.1) | name the selection of the constant load; keep at least one variable load |
+| Buckling: the constant loads (#ASTER-CONSTANT) alone are already at or above the critical load | K + Kg(constant) is not positive definite (§2.2.1) | lower the constant load or stiffen the structure |
 | `<EXCEPTION> <ALGELINE3_81>` (le shift ... coïncide avec une valeur propre) | singular stiffness: mechanism, loose part, hinge | support the model better, or choose a negative search frequency (e.g. -10 x the expected first elastic frequency); the rigid modes then appear with ~0 Hz. That only helps if the loose part has mass (density or point mass). A connection from `#ASTER` code only counts via `#ASTER-EXCIT` |
 | alarm `ALGELINE3_82` (la borne minimale ... est une valeur propre) | the lower bound of the Sturm band (nearly) coincides with an eigenvalue, usually a rigid mode at ~0 Hz (seen with a free-free model and a negative search frequency) | usually harmless: check the number of modes, or shift the search frequency slightly |
 | `ALGELINE5_49` / `ALGELINE3_78` (too few modes) | search frequency far from the modes; or many spurious modes at ~0 Hz (e.g. a membrane with an artificially small E and prestress, like Mecway's VibratingMembrane: rotation modes of `COQUE_3D` without stiffness) | search frequency closer to the expected frequencies, 0, or fewer modes; for the membrane a search frequency around the expected frequency (KNOWN_BUGS 49) |
@@ -955,7 +993,7 @@ sdlv301a (impeller); catalogue `mode_iter_cycl.py` (code_aster 17.4).
 ## 8. References
 
 - Aubry, J.-P. (2019). *Beginning with code_aster*, version of 29 January 2019, §10.1
-  (rods replaced by cables), §16.4.1 (a model with `BARRE` elements must be modified for
+  (rods replaced by cables), §16.1–16.2 (constant plus variable load), §16.4.1 (a model with `BARRE` elements must be modified for
   buckling: beams with hinges) and §16.5. <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 - Blevins, R.D. (1979). *Formulas for Natural Frequency and Mode Shape*. New York: Van
   Nostrand Reinhold, table 8-1 (beams) and table 9-2 (rings). Not consulted locally;

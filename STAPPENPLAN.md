@@ -54,7 +54,7 @@ S7, S8, S5, S9).
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
 | S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026 |
-| S23 | Linear buckling with a constant (dead) plus a variable (live) load | open | – | planned 23 Oct 2026 (Aubry 2019 §16.1–16.2) |
+| S23 | Linear buckling with a constant (dead) plus a variable (live) load | done | – | branch w-q, 23 Oct 2026: `#ASTER-CONSTANT` (BU-40) |
 | S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | open | – | planned 23 Oct 2026 (Aubry 2019 §14.1) |
 | S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |
 | S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | open | S10h | planned 23 Oct 2026 (Aubry, DYNAmics §3.3.4, §6) |

@@ -114,7 +114,7 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-FASE", "-PHASE", "-MATERIAAL", "-MATERIAL",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
-          "-XFEM")
+          "-XFEM", "-CONSTANT")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -128,7 +128,7 @@ def empty():
             "sources": [], "welding": [],
             "phases": [], "materials": [],
             "fatigue": [], "metallurgy": [],
-            "xfem": []}
+            "xfem": [], "constant": []}
 
 
 def parse(texts):
@@ -199,6 +199,12 @@ def parse(texts):
                 # worked out in bridge_xfem.parse_specs
                 if body.strip():
                     out["xfem"].append(body.strip())
+            elif kind == "-CONSTANT":
+                # Constant (dead) loads in linear buckling, by selection
+                # name or load type; worked out in
+                # bridge_to_aster._dead_live_split
+                out["constant"] += [n.strip() for n in body.split(",")
+                                    if n.strip()]
             elif kind in ("-MATERIAAL", "-MATERIAL"):
                 # worked out in bridge_thermomech.parse_materials
                 if body.strip():
@@ -221,14 +227,14 @@ def parse(texts):
         log("INFO: #ASTER lines: {0} code, {1} EXCIT, {2} CONTACT, {3} ZONE, "
             "{4} OPTIE, {5} POST, {6} BEZWIJKEN, {7} SPECTRE, {8} BRON, "
             "{9} LASBRON, {10} FASE, {11} MATERIAAL, {12} VERMOEIING, "
-            "{13} METALLURGIE, {14} XFEM.".format(
+            "{13} METALLURGIE, {14} XFEM, {15} CONSTANT.".format(
                 len(out["code"]), len(out["excit"]), len(out["contact"]),
                 len(out["zone"]), len(out["options"]), len(out["post"]),
                 len(out["failure"]), len(out["spectrum"]),
                 len(out["sources"]), len(out["welding"]),
                 len(out["phases"]), len(out["materials"]),
                 len(out["fatigue"]), len(out["metallurgy"]),
-                len(out["xfem"])))
+                len(out["xfem"]), len(out["constant"])))
     return out
 
 

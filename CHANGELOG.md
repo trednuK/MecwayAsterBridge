@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Linear buckling with a constant plus a variable load** (Aubry, *Beginning with code_aster*,
+  2019, §16.1–16.2): a line `#ASTER-CONSTANT name, ...` in the Custom model definition
+  (selection names, or a load type such as `gravity`) keeps those loads constant: the bridge
+  uses K + Kg(constant) as `MATR_RIGI` and Kg(variable) as `MATR_RIGI_GEOM`, so the buckling
+  factor applies to the variable loads only. When the constant load alone is at or above
+  critical (`INFO_MODE` Sturm count), the job stops with an ERROR. Without the line nothing
+  changes. Verification BU-40.
 - **Mass and reaction check for static runs** (Aubry, *Beginning with code_aster*, 2019,
   §4.13–4.14): after a linear or nonlinear static run the log and the status box show the
   total mass and centre of gravity (`POST_ELEM MASS_INER`) and the sum of the reactions

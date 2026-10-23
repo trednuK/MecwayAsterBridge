@@ -72,7 +72,9 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
      de constructie knikt. Breng daarom een referentielast aan (bijv. 1 kN of de
      ontwerplast); bij een eenheidslast is de factor direct de kniklast. Een constante
      last (zoals het eigen gewicht) wordt ook vermenigvuldigd; om die vast te houden
-     pas je de variabele last aan tot de factor 1 is (Mecway Ltd., 2026, §6.6).
+     pas je de variabele last aan tot de factor 1 is (Mecway Ltd., 2026, §6.6), of
+     markeer je hem als constant met een regel `#ASTER-CONSTANT` (§2.2.1): de factor
+     geldt dan alleen voor de variabele lasten.
    - Een belasting met een tijdstabel krijgt de laatste waarde van de tabel (WARNING).
 
 ### 1.2 In het hoofdvenster van de bridge
@@ -314,6 +316,41 @@ Code-Aster 17.4 (de `.mess` meldt "La valeur de décalage en charge critique est
 niet aangeboden ([`Standaardinstellingen_en_aannames.md`](Standaardinstellingen_en_aannames.md)
 §3.8).
 
+#### 2.2.1 Constante (dode) plus variabele last: `#ASTER-CONSTANT`
+
+Mecway kent geen lastgevallen bij een knikanalyse, en een belasting heeft in de `.liml`
+geen eigen naam (alleen type en selectie). De bridge leest de constante lasten daarom
+uit een regel in Mecway's *Custom model definition* (CCX-veld: `**ASTER-CONSTANT`; de
+andere velden zoals in [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1):
+
+```
+** ASTER-CONSTANT EigenGewichtKop, gravity
+```
+
+- Een naam is een **selectienaam** (alle belastingen op die selectie zijn constant) of
+  een **lasttype zonder selectie**, zoals `gravity` of `centrifugal`. Meer namen: met
+  komma's, of meer regels. Geef een constante last een eigen selectie; die mag dezelfde
+  knopen of vlakken bevatten als de selectie van de variabele last.
+- Alle andere belastingen zijn variabel. De bridge rekent dan twee `MECA_STATIQUE`
+  (variabele lasten → `SIEF_ELGA` `sig`, constante lasten → `sig_d`), assembleert voor
+  beide `RIGI_GEOM`, neemt `MATR_RIGI` = K + Kg(constant) (`COMB_MATR_ASSE`) en
+  `MATR_RIGI_GEOM` = Kg(variabel) (Aubry, 2019, §16.1–16.2). De kniklast is **constant +
+  factor × variabel**.
+- Voor de eigenwaardeberekening telt `INFO_MODE` de knikfactoren van de constante
+  lasten alleen in [0, 1] (Sturm). Is er een, dan ligt de constante last alleen al op of
+  boven de kniklast (K + Kg(constant) niet positief definiet): de job stopt met een ERROR
+  (§4) in plaats van een betekenisloze factor.
+- Gemeten (BU-40, [`Verificatie.md`](Verificatie.md)): ingeklemde kolom, constant
+  0,5 P_cr,1, variabel 1000 N: factoren 5,1815 / 18,135 / 88,087 = (P_cr,k − P_d)/P
+  binnen 0,002 %. Met een constante last van 1,5 P_cr,1 stopt de job met de ERROR.
+- Niet mogelijk (ERROR): thermische rek samen met `#ASTER-CONSTANT`; verdeelde
+  balklasten die de bridge per balk moet optellen (overlappende line pressures,
+  zwaartekracht met een tijdsafhankelijke line pressure); alle lasten constant.
+  `#ASTER-EXCIT`-lasten tellen in beide statische berekeningen (WARNING): zet daar alleen
+  verbindingen in, geen krachten. Zonder regel `#ASTER-CONSTANT` verandert er niets. Bij
+  andere analyses wordt de regel genegeerd (WARNING).
+- De stijfheidsnormering van de modes (RIGI_GENE) gebruikt dan K + Kg(constant).
+
 ### 2.3 Normering
 
 | Normering | Betekenis | Gebruik |
@@ -475,6 +512,8 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 | WARNING: Centrifugaalkracht in een model met schalen / van knoopmassa's | spin softening ontbreekt daar (§2.5) | frequenties zijn iets hoger dan in Mecway; vergelijk zo nodig met Mecway |
 | WARNING: Geen opleggingen (vrij-vrij) | los model | normaal voor een vrij lichaam; tel 6 starre modes mee |
 | ERROR: Knik zonder belasting / Knik zonder opleggingen | knik vraagt een last en opleggingen | breng de referentielast en opleggingen aan |
+| ERROR: #ASTER-CONSTANT: geen belasting op ... / alle belastingen zijn constant / thermische rek / verdeelde balklasten zijn per balk samengeteld | de regel noemt geen belaste selectie, laat geen variabele last over, of het model is niet te splitsen (§2.2.1) | noem de selectie van de constante last; houd minstens een variabele last |
+| Knik: de constante lasten (#ASTER-CONSTANT) alleen liggen al op of boven de kniklast | K + Kg(constant) is niet positief definiet (§2.2.1) | verlaag de constante last of verstijf de constructie |
 | `<EXCEPTION> <ALGELINE3_81>` (le shift ... coïncide avec une valeur propre) | singuliere stijfheid: mechanisme, los onderdeel, scharnier | leg het model beter vast, of kies een negatieve zoekfrequentie (bijv. -10 x de verwachte eerste elastische frequentie); de starre modes komen dan met ~0 Hz mee. Dat helpt alleen als het losse deel massa heeft (dichtheid of puntmassa). Een verbinding uit `#ASTER`-code telt alleen mee via `#ASTER-EXCIT` |
 | alarm `ALGELINE3_82` (la borne minimale ... est une valeur propre) | de ondergrens van de Sturm-band valt (bijna) op een eigenwaarde, meestal een starre mode bij ~0 Hz (gezien met een vrij-vrij model en een negatieve zoekfrequentie) | meestal onschuldig: controleer het aantal modes, of verschuif de zoekfrequentie iets |
 | `ALGELINE5_49` / `ALGELINE3_78` (te weinig modes) | zoekfrequentie ver van de modes; of veel valse modes bij ~0 Hz (bijv. een membraan met een kunstmatig kleine E en voorspanning, zoals Mecway's VibratingMembrane: rotatiemodes van `COQUE_3D` zonder stijfheid) | zoekfrequentie dichter bij de verwachte frequenties, 0, of minder modes; bij het membraan een zoekfrequentie rond de verwachte frequentie (KNOWN_BUGS 49) |
@@ -967,7 +1006,7 @@ sdlv301a (waaier); catalogus `mode_iter_cycl.py` (code_aster 17.4).
 ## 8. Bronnen
 
 - Aubry, J.-P. (2019). *Beginning with code_aster*, versie van 29 januari 2019, §10.1
-  (staven vervangen door kabels), §16.4.1 (een model met `BARRE`-elementen moet voor knik
+  (staven vervangen door kabels), §16.1–16.2 (constante plus variabele last), §16.4.1 (een model met `BARRE`-elementen moet voor knik
   aangepast worden: balken met scharnieren) en §16.5. <https://jean-pierre-aubry.ouvaton.org/downloadcabooks.html>.
 - Blevins, R.D. (1979). *Formulas for Natural Frequency and Mode Shape*. New York: Van
   Nostrand Reinhold, tabel 8-1 (balken) en tabel 9-2 (ringen). Niet lokaal ingezien;

@@ -4517,7 +4517,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; drukkracht 1000 N.",
-  "seconds": 4.2,
+  "seconds": 9.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4591,7 +4591,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; drukkracht 1000 N.",
-  "seconds": 4.5,
+  "seconds": 9.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4651,7 +4651,7 @@
   "series": "BU-03 hex20",
   "h": 0.01,
   "note": "Volume-elementen; drukkracht als traction op de kop.",
-  "seconds": 5.6,
+  "seconds": 10.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4697,7 +4697,7 @@
   "series": "BU-03 hex20",
   "h": 0.005,
   "note": "Volume-elementen; drukkracht als traction op de kop.",
-  "seconds": 16.3,
+  "seconds": 53.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4743,7 +4743,7 @@
   "series": "BU-04 DKT",
   "h": 0.05,
   "note": "quad4 DKT; lijnlast 1 N/m op de rand x = a.",
-  "seconds": 5.2,
+  "seconds": 10.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4789,7 +4789,7 @@
   "series": "BU-04 DKT",
   "h": 0.025,
   "note": "quad4 DKT; lijnlast 1 N/m op de rand x = a.",
-  "seconds": 5.1,
+  "seconds": 12.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4835,7 +4835,7 @@
   "series": "BU-04 DKT",
   "h": 0.0125,
   "note": "quad4 DKT; lijnlast 1 N/m op de rand x = a.",
-  "seconds": 5.6,
+  "seconds": 15.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32948,7 +32948,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; standaard",
-  "seconds": 4.6,
+  "seconds": 8.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -32994,7 +32994,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; orientationvx=\"0\" orientationvy=\"0\" orientationvz=\"1\"",
-  "seconds": 4.9,
+  "seconds": 8.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33040,7 +33040,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; standaard",
-  "seconds": 4.8,
+  "seconds": 9.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33086,7 +33086,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; orientationvx=\"1\" orientationvy=\"0\" orientationvz=\"0\" angle=\"30 \u00b0\"",
-  "seconds": 4.8,
+  "seconds": 9.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33132,7 +33132,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N.",
-  "seconds": 4.8,
+  "seconds": 8.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37329,7 +37329,7 @@
   "series": null,
   "h": null,
   "note": "I 100/50/10/8 mm, L = 1 m, 20 POU_D_E, P = 1000 N. The torsional factor is a multiple eigenvalue (one per element; Sturm alarm ALGELINE5_23). Mecway 34 beam: 109.72 / 987.46 / 1230.44 / 2743.03 = 25 x factor 1, no torsional buckling (KNOWN_BUGS 112).",
-  "seconds": 4.5,
+  "seconds": 8.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -37431,7 +37431,7 @@
   "series": null,
   "h": null,
   "note": "3000 hex20. Below G J A/I_p despite the restrained warping at the foot: the exact J of the section is 1.7% smaller than Mecway's formula (finite differences: 46.3e3 mm^4) and the web distorts. With warping (POU_D_TG, C_w = 4.22e-10 m^6): 2552.5.",
-  "seconds": 21.3,
+  "seconds": 67.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37491,7 +37491,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, 20 POU_D_E per member, 100 N. Mecway 34 beam: 17.27 / 19.71 / 127.30 / 155.45 (only positive factors; the out-of-plane mode 19.71 is 56% too low, KNOWN_BUGS 113).",
-  "seconds": 4.4,
+  "seconds": 9.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37565,7 +37565,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm as hex20, 100 x 4 x 2 per member (1616 elements), 100 N. lin_solver_resi 1e-3: with the default 1e-6 the static step stops with FACTOR_57 (MUMPS error estimate 5.0e-5, no mechanism). Same factors as with RESI_RELA off (-1).",
-  "seconds": 11.8,
+  "seconds": 35.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37627,7 +37627,7 @@
   "series": null,
   "h": null,
   "note": "Legs 240 mm, A = 18 mm^2, I = 0.54 / 1350 mm^4, J = 2.16 mm^4, E = 71240 MPa, 10 POU_D_E per leg, F_X = -1 N at the free end. Mecway 34 beam: 0.4226 / 2.905 (shift 0.3; with shift 1 the 0.4226 is skipped), with F_X = +1: 0.5525 / 3.303; KNOWN_BUGS 113.",
-  "seconds": 4.4,
+  "seconds": 9.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37701,7 +37701,7 @@
   "series": null,
   "h": null,
   "note": "Strip 30 x 0.6 mm, quad4 DKT 5 mm. Higher than the line model (+3% and +9%): the 30 x 30 mm corner is stiff and shortens the legs.",
-  "seconds": 4.9,
+  "seconds": 10.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37761,7 +37761,7 @@
   "series": null,
   "h": null,
   "note": "C 100 x 50 x 6 mm, L = 1 m, 20 POU_D_E, P = 1000 N. The beam misses the flexural-torsional mode (616 instead of 393, +57%): POU_D_E has no shear centre. The bridge warns for T, C and L in buckling.",
-  "seconds": 4.3,
+  "seconds": 9.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -37821,7 +37821,7 @@
   "series": null,
   "h": null,
   "note": "3600 hex20. Theory (thin-walled, with warping) 386.1.",
-  "seconds": 24.4,
+  "seconds": 113.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -38351,7 +38351,7 @@
   "series": null,
   "h": null,
   "note": "RectBar 40 x 10 mm, L = 1 m, 20 POU_D_E, P = 1000 N; Element orientation-kaart (orientationvx=\"1\" orientationvy=\"0\" orientationvz=\"0\" angle=\"30 \u00b0\")",
-  "seconds": 4.5,
+  "seconds": 8.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -40878,6 +40878,66 @@
   ],
   "n_nodes": 32,
   "n_elem": 2,
+  "settings": {},
+  "general": {}
+ },
+ "BU-40": {
+  "id": "BU-40",
+  "group": "Knik",
+  "title": "Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "POU_D_E; constante 0,5 Pcr,1 op KopD, variabele 1000 N op Kop.",
+  "seconds": 9.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor 1",
+    "fem": 5.18154285805212,
+    "ref": 5.181542310571913,
+    "rel": 1.056597001688369e-07,
+    "dev": 5.474802069471707e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "(Pcr,k - P_d)/P, P_d = 0,5 Pcr,1, knik Y1 (Timoshenko & Gere 2.1; Aubry 2019 par. 16.2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 2",
+    "fem": 18.1353993185913,
+    "ref": 18.135398087001693,
+    "rel": 6.791081184314114e-08,
+    "dev": 1.2315896071868337e-06,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "(Pcr,k - P_d)/P, P_d = 0,5 Pcr,1, knik Z1 (Timoshenko & Gere 2.1; Aubry 2019 par. 16.2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor 3",
+    "fem": 88.0866173722928,
+    "ref": 88.08621927972254,
+    "rel": 4.51935130739058e-06,
+    "dev": 0.0003980925702649074,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "(Pcr,k - P_d)/P, P_d = 0,5 Pcr,1, knik Y2 (Timoshenko & Gere 2.1; Aubry 2019 par. 16.2)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
   "settings": {},
   "general": {}
  }
