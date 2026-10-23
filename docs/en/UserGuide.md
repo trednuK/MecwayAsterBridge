@@ -435,6 +435,26 @@ in [`Verification.md`](Verification.md) (LS-30 .. LS-32, NL-30). Limits:
   solution), so it was only checked against the definition (manual v34 sec. 8.7); only
   the von Mises criterion (Tsai-Wu etc.: WARNING).
 
+**Check of mass and reactions** (linear and nonlinear static). After the run the log
+(INFO) and the status box show a line such as
+
+```
+Check: mass 78.5 kg, centre of gravity (0.5, 0.05, 0.05) m; sum of reactions FX -770.085, FY 0, FZ 0 N (compare with the drawing and the loads yourself).
+```
+
+The mass and the centre of gravity come from `POST_ELEM MASS_INER` over the whole model
+(with the cross-sections and shell thicknesses of `CARA_ELEM`); the reactions are the
+sum of `REAC_NODA` over all nodes in the last stored step (nonlinear: the last
+converged time). The sum of the reactions equals **minus** the resultant of the
+applied loads (in the example self-weight +X, reaction −X). Aubry (2019, §4.13–4.14)
+calls the mass check the first test of a model: an error in density, thickness or
+units shows up here at once. The bridge does not compare with the loads itself
+(pressures on curved faces and formulas make that unreliable); it is a number for your
+own check. Forces between parts (contact, couplings) cancel in the sum; with an
+elastic support the spring force counts as a reaction (sec. 4.1, `reactions`). Not
+for dynamic, modal and thermal analyses. In the `.mess`: lines `BRIDGE_STATCHECK` and
+`BRIDGE_STATREAC`.
+
 ## 5. Files in the working directory
 
 All files of a run are called `<model>_<run-id>...`: `<model>` is the name of the
@@ -542,6 +562,9 @@ is in [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.m
 
 ## 8. References
 
+- Aubry, J.-P. (2019). *Beginning with code_aster*, version of 29 January 2019,
+  sec. 4.13–4.14: the mass (`POST_ELEM MASS_INER`) and the sum of the reactions
+  (`REAC_NODA`, `POST_RELEVE_T RESULTANTE`) as the first check of a model (sec. 4.1).
 - EDF R&D (2019). *Code_Aster, documentation U4.51.01: Opérateur MECA_STATIQUE*.
   Version "default", 10-12-2019 (local copy; the bridge uses Code-Aster 17.4).
 - EDF R&D (2020). *Code_Aster, documentation U4.51.03: Opérateur STAT_NON_LINE*.

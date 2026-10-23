@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 9e388a6, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 8298c14, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2312 van 2318 controles binnen de tolerantie** (431 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2322 van 2328 controles binnen de tolerantie** (431 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1019,14 +1019,24 @@ Gemaakt door `run_verificatie.py` op 2026-10-22 (bridge 9e388a6, Code-Aster 17.4
 | LS-08d | Als LS-08b met hex8 en LINE_QUAD (middenknopen krijgen de geinterpoleerde temperatuur) | max |sigma_xx| | 0 Pa | 0.039053 | 0.039053 | 25200 Pa | OK |
 | LS-20a | Configuraties G/Q/ULS: G gekozen | u eindvlak | 1.8335e-07 m | 1.8324e-07 | -0.06% | 0.5% | OK |
 | LS-20a | Configuraties G/Q/ULS: G gekozen | reactiekracht X | 770.09 N | 770.08 | -0.00% | 0.0001% | OK |
+| LS-20a | Configuraties G/Q/ULS: G gekozen | massa (controle) | 78.5 kg | 78.5 | +0.00% | 0.0001% | OK |
+| LS-20a | Configuraties G/Q/ULS: G gekozen | som reacties X (controle) | 770.09 N | 770.09 | +0.00% | 0.0001% | OK |
 | LS-20b | Configuraties G/Q/ULS: Q gekozen | u eindvlak | 4.7619e-06 m | 4.7619e-06 | -0.00% | 0.5% | OK |
 | LS-20b | Configuraties G/Q/ULS: Q gekozen | reactiekracht X | 10000 N | 10000 | -0.00% | 0.0001% | OK |
+| LS-20b | Configuraties G/Q/ULS: Q gekozen | massa (controle) | 78.5 kg | 78.5 | +0.00% | 0.0001% | OK |
+| LS-20b | Configuraties G/Q/ULS: Q gekozen | som reacties X (controle) | 10000 N | 10000 | +0.00% | 0.0001% | OK |
 | LS-20c | Configuraties G/Q/ULS: ULS gekozen | u eindvlak | 7.3629e-06 m | 7.3627e-06 | -0.00% | 0.5% | OK |
 | LS-20c | Configuraties G/Q/ULS: ULS gekozen | reactiekracht X | 15924 N | 15924 | -0.00% | 0.0001% | OK |
+| LS-20c | Configuraties G/Q/ULS: ULS gekozen | massa (controle) | 78.5 kg | 78.5 | +0.00% | 0.0001% | OK |
+| LS-20c | Configuraties G/Q/ULS: ULS gekozen | som reacties X (controle) | 15924 N | 15924 | +0.00% | 0.0001% | OK |
 | LS-20d | Configuraties G/Q/ULS: auto (de eerste) | u eindvlak | 1.8335e-07 m | 1.8324e-07 | -0.06% | 0.5% | OK |
 | LS-20d | Configuraties G/Q/ULS: auto (de eerste) | reactiekracht X | 770.09 N | 770.08 | -0.00% | 0.0001% | OK |
+| LS-20d | Configuraties G/Q/ULS: auto (de eerste) | massa (controle) | 78.5 kg | 78.5 | +0.00% | 0.0001% | OK |
+| LS-20d | Configuraties G/Q/ULS: auto (de eerste) | som reacties X (controle) | 770.09 N | 770.09 | +0.00% | 0.0001% | OK |
 | LS-20e | Alleen configuratie ULS, items onderdrukt | u eindvlak | 7.3629e-06 m | 7.3627e-06 | -0.00% | 0.5% | OK |
 | LS-20e | Alleen configuratie ULS, items onderdrukt | reactiekracht X | 15924 N | 15924 | -0.00% | 0.0001% | OK |
+| LS-20e | Alleen configuratie ULS, items onderdrukt | massa (controle) | 78.5 kg | 78.5 | +0.00% | 0.0001% | OK |
+| LS-20e | Alleen configuratie ULS, items onderdrukt | som reacties X (controle) | 15924 N | 15924 | +0.00% | 0.0001% | OK |
 | LS-30 | Snedekrachten ingeklemde balk (beam_forces) | N (tensileforce) | 1000 N | 1000 | +0.00% | 0.0001% | OK |
 | LS-30 | Snedekrachten ingeklemde balk (beam_forces) | V_v (sheary) | 200 N | 200 | +0.00% | 0.0001% | OK |
 | LS-30 | Snedekrachten ingeklemde balk (beam_forces) | V_w (shearz) | -300 N | -300 | +0.00% | 0.0001% | OK |

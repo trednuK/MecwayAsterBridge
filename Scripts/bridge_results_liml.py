@@ -1109,6 +1109,27 @@ def read_mode_summary(mess_path):
     return out
 
 
+def read_tagged(mess_path, tag):
+    """{key: float or text} of the last line '<tag> A=1 B=x,y' in the
+    .mess, or {} without it. For BRIDGE_STATCHECK / BRIDGE_STATREAC
+    (aster_results_export.print_static_check) and BRIDGE_EXCIT
+    (print_excitation). The tag must be followed by a space (so
+    BRIDGE_STATCHECK does not match BRIDGE_STATCHECK_FOUT)."""
+    out = {}
+    if not mess_path or not os.path.exists(mess_path):
+        return out
+    head = tag + " "
+    f = io.open(mess_path, "r", encoding="utf-8", errors="replace")
+    try:
+        for line in f:
+            line = line.strip()
+            if line.startswith(head):
+                out = _key_values(line[len(head):])
+    finally:
+        f.close()
+    return out
+
+
 _MESS_CYCL = re.compile(r"^BRIDGE_CYCL\s+(.*)$")
 
 

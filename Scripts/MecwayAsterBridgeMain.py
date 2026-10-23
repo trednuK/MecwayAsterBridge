@@ -128,7 +128,7 @@ from bridge_results_liml import (splice_results, read_step,
                                  pick_configuration, strip_results,
                                  list_results, run_files, check_results_fit,
                                  read_modes, read_mode_summary,
-                                 read_cyclic_summary,
+                                 read_cyclic_summary, read_tagged,
                                  read_error_summary, read_crit_stab,
                                  crit_stab_estimate, read_imperfection)
 from bridge_failure     import report_failures
@@ -451,6 +451,8 @@ def _run(settings):
             _notify(failure_note)
         # Global error estimate (CALC_ERREUR, setting error_estimator)
         _report_error_estimate()
+        # Static: mass, centre of gravity and sum of the reactions
+        _report_static_check()
         # Fracture mechanics: K and G along the crack front (bridge_fracture)
         for line in bridge_fracture.report(
                 work_dir_path(),
@@ -639,6 +641,7 @@ def _load_liml_results(active_liml, model_data, run_start):
                   if bridge_vibroacoustic_harm.is_vibro_harm(active)
                   else bridge_harmonic.report_harmonic)
         _notify(u"\n".join(report(work_dir_path(), modes)))
+        _warn_modal_mass(harmonic=True)
     elif modes:
         _report_modes(modes, extra=bridge_vibroacoustic.report_lines(
             work_dir_path()) if vibro else None, in_mecway=True)
@@ -655,6 +658,7 @@ def _load_liml_results(active_liml, model_data, run_start):
                    u"INFO: Modal basis of the response ({0} modes):").format(
                        len(basis)))
             _report_modes(basis)
+            _warn_modal_mass()
         if spectrum:
             # Response spectrum (bridge_spectrum): effective mass per
             # direction, missing mass and the total reaction.
@@ -911,6 +915,111 @@ def _report_modes(modes, extra=None, in_mecway=False):
                u"WARNING: Mode 1 has ~0 Hz: a rigid body motion or "
                u"mechanism (too few supports)."))
     _notify(u"\n".join(lines + list(extra or [])))
+
+
+def _report_static_check():
+    """
+    Mass, centre of gravity and sum of the reactions of a static run
+    (MECA_STATIQUE, STAT_NON_LINE) in the log and the status box, from the
+    BRIDGE_STATCHECK / BRIDGE_STATREAC lines in the .mess
+    (aster_results_export.print_static_check). For the user's own hand
+    check (J.-P. Aubry, Beginning with code_aster, 2019, par. 4.13-4.14):
+    the mass against the drawing, the reactions against the applied
+    loads. Deliberately no pass/fail comparison (pressures, formulas).
+    Nothing without those lines (other analyses).
+    """
+    mess = os.path.join(work_dir_path(), run_name(".mess"))
+    mass = read_tagged(mess, "BRIDGE_STATCHECK")
+    reac = read_tagged(mess, "BRIDGE_STATREAC")
+    if not mass and not reac:
+        return
+    # %-formatting: in IronPython "{0:.6g}".format() follows the Windows
+    # locale (see _report_modes).
+    parts = []
+    if "M" in mass:
+        cog = u"{0}".format(mass.get("ZWP", "?"))
+        try:
+            c = [float(v) for v in cog.split(",")]
+            big = max([abs(v) for v in c] + [1.0e-30])
+            cog = u", ".join("%.4g" % (v if abs(v) > 1.0e-9 * big else 0.0)
+                             for v in c)
+        except ValueError:
+            pass
+        parts.append(tr(u"massa {0} kg, zwaartepunt ({1}) m",
+                        u"mass {0} kg, centre of gravity ({1}) m").format(
+                            "%.6g" % mass["M"], cog))
+    if "FX" in reac:
+        f = [reac.get(k, 0.0) for k in ("FX", "FY", "FZ")]
+        big = max([abs(v) for v in f] + [1.0e-30])
+        f = [v if abs(v) > 1.0e-9 * big else 0.0 for v in f]
+        parts.append(tr(u"som reactiekrachten FX {0}, FY {1}, FZ {2} N",
+                        u"sum of reactions FX {0}, FY {1}, FZ {2} N").format(
+                            *["%.6g" % v for v in f]))
+    line = tr(u"Controle: {0} (vergelijk zelf met tekening en belastingen).",
+              u"Check: {0} (compare with the drawing and the loads "
+              u"yourself).").format(u"; ".join(parts))
+    log(u"INFO: " + line)
+    _notify(line)
+
+
+_MODAL_MASS_MIN = 0.90   # cumulative effective mass (Aubry 2023, par. 3.3)
+
+
+def _warn_modal_mass(harmonic=False):
+    """
+    WARNING when the cumulative effective mass fraction of the modal basis
+    stays below 90% in an excited direction (response on a modal basis:
+    bridge_dyna_modal, bridge_harmonic GENE; J.-P. Aubry, Beginning
+    DYNAmics with code_aster, 2023, par. 3.3 and 11.3). Excited directions
+    from the load resultant (BRIDGE_EXCIT, aster_results_export.
+    print_excitation; gravity/acceleration is a load vector too): the
+    directions with a resultant of at least 1% of the largest. Is the
+    resultant (almost) zero (self-equilibrated load, e.g. a pressure on a
+    closed surface), then every direction in which the load has
+    components. Fractions: BRIDGE_MODE MASS_EFFE_UN_D* of the real modes
+    (without the pseudo-modes of the static correction).
+    """
+    mess = os.path.join(work_dir_path(), run_name(".mess"))
+    excit = read_tagged(mess, "BRIDGE_EXCIT")
+    if not excit:
+        return
+    summary = read_mode_summary(mess)
+    keys = ("MASS_EFFE_UN_DX", "MASS_EFFE_UN_DY", "MASS_EFFE_UN_DZ")
+    rows = [v for k, v in summary.items() if k != "massa"]
+    if not rows or any(key not in v for v in rows for key in keys):
+        return
+    totals = [sum(v[key] for v in rows) for key in keys]
+    f = [abs(excit.get(k, 0.0)) for k in ("FX", "FY", "FZ")]
+    a = [abs(excit.get(k, 0.0)) for k in ("AX", "AY", "AZ")]
+    if max(a) <= 0.0:
+        return
+    if max(f) > 0.01 * max(a):
+        dirs = [d for d in range(3) if f[d] >= 0.01 * max(f)]
+    else:
+        dirs = [d for d in range(3) if a[d] >= 0.01 * max(a)]
+    low = [d for d in dirs if totals[d] < _MODAL_MASS_MIN]
+    if not low:
+        return
+    which = u", ".join(u"{0} {1}%".format("XYZ"[d], "%.1f" % (
+        100.0 * totals[d])) for d in low)
+    other = (tr(u"harm_basis PHYS (fysische coordinaten)",
+                u"harm_basis PHYS (physical coordinates)") if harmonic else
+             tr(u"directe tijdsintegratie in Mecway (zonder Mode "
+                u"superposition, fysische coordinaten)",
+                u"direct time integration in Mecway (without Mode "
+                u"superposition, physical coordinates)"))
+    line = tr(u"WARNING: Modale basis: effectieve massa (som over {0} modes) "
+              u"onder {1}% in de belaste richting(en): {2}. De respons mist "
+              u"de bijdrage van hogere modes. Reken met meer modes (Number "
+              u"of modes in Mecway, of modal_modes) of met {3}.",
+              u"WARNING: Modal basis: effective mass (sum over {0} modes) "
+              u"below {1}% in the loaded direction(s): {2}. The response "
+              u"misses the contribution of higher modes. Compute with more "
+              u"modes (Number of modes in Mecway, or modal_modes) or with "
+              u"{3}.").format(len(rows), "%.0f" % (100.0 * _MODAL_MASS_MIN),
+                              which, other)
+    log(line)
+    _notify(line)
 
 
 def _report_error_estimate():

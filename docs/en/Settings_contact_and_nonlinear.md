@@ -376,6 +376,14 @@ R-ALPHA). With HHT a step load gets a slightly too small impulse in the first st
 order, which mainly damps high frequencies and which U2.06.13 recommends (`'NON'` =
 modified average acceleration, first order).
 
+**Rayleigh damping in nonlinear dynamics.** The damping matrix C = α M + β K uses
+Code-Aster's default `AMOR_RAYL_RIGI='ELASTIQUE'` in `DYNA_NON_LINE` (catalogue
+`code_aster/Cata/Commands/dyna_non_line.py` of 17.4: `defaut="ELASTIQUE"`, choice
+`"TANGENTE"`): K is the **elastic** stiffness, not the tangent one. With plasticity or
+large displacements the β part therefore stays as large as in the elastic model (the
+tangent stiffness would reduce it). The bridge does not set the keyword and does not
+change the default (there is no setting or `#ASTER` line for `'TANGENTE'`).
+
 ### 2.6 Linear solver: `solver_nprec`, `lin_solver`, `lin_solver_resi`
 
 `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`. NPREC is the number of digits that may be

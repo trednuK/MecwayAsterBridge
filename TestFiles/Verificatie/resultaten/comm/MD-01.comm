@@ -156,6 +156,7 @@ aster_results_export.print_modes(modes, mass=masse)
 # =====================================================
 vel_1 = CALC_VECT_ELEM(OPTION='CHAR_MECA', CHARGE=load_2, CHAM_MATER=fieldmat, CARA_ELEM=cara)
 vec_1 = ASSE_VECTEUR(VECT_ELEM=vel_1, NUME_DDL=numedd)
+aster_results_export.print_excitation([vec_1])
 PROJ_BASE(
     BASE=modes,
     STOCKAGE='DIAG',

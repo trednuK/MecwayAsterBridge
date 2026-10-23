@@ -704,6 +704,12 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "vec_{0} = ASSE_VECTEUR(VECT_ELEM=vel_{0}, NUME_DDL=numedd)"
             .format(k + 1),
         ]
+    if excitations and basis == "GENE":
+        # Load resultant for the warning on missing modal mass
+        # (MecwayAsterBridgeMain._warn_modal_mass)
+        proj.append("aster_results_export.print_excitation([{0}])".format(
+            ", ".join("vec_{0}".format(k + 1)
+                      for k in range(len(excitations)))))
     static_corr = basis == "GENE" and bool(analysis.get("static_correction",
                                                           True))
     if static_corr:

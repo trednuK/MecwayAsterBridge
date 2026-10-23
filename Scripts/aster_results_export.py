@@ -1991,6 +1991,87 @@ def print_modes(res, mass=None):
             e))
 
 
+def _xyz_sum(field):
+    """(sum, sum of |.|) per component DX, DY, DZ of a node field (missing
+    components 0), numpy arrays of 3. Same route as
+    aster_spectrum._node_values (toSimpleFieldOnNodes)."""
+    sf = field.toSimpleFieldOnNodes()
+    vals, mask = sf.getValues()
+    names = list(sf.getComponents())
+    total = np.zeros(3)
+    absolute = np.zeros(3)
+    for k, c in enumerate(("DX", "DY", "DZ")):
+        if c in names:
+            col = np.where(mask[:, names.index(c)],
+                           vals[:, names.index(c)], 0.0)
+            total[k] = col.sum()
+            absolute[k] = np.abs(col).sum()
+    return total, absolute
+
+
+def print_static_check(res, model, fieldmat, cara=None):
+    """
+    Mass and reaction check of a static run (J.-P. Aubry, Beginning with
+    code_aster, 2019, par. 4.13-4.14), in the .mess for the bridge
+    (bridge_results_liml.read_tagged, MecwayAsterBridgeMain):
+      BRIDGE_STATCHECK M=<kg> ZWP=x,y,z
+      BRIDGE_STATREAC FX=.. FY=.. FZ=.. NUME_ORDRE=<last step>
+    Mass: POST_ELEM MASS_INER (TOUT='OUI'; table MASSE, CDG_X/Y/Z, U4.81.22).
+    Reactions: sum of REAC_NODA DX/DY/DZ over all nodes in the last
+    archived step (CALC_CHAMP FORCE='REAC_NODA' of
+    bridge_to_aster._build_calc_champ_block). Only information: no
+    comparison with the loads. Errors are printed, never raised (the
+    results are already computed).
+    """
+    try:
+        from code_aster.Commands import POST_ELEM
+        kws = dict(MODELE=model, CHAM_MATER=fieldmat,
+                   MASS_INER=dict(TOUT="OUI"))
+        # plain dict as factor keyword (_F is a dict in 17.4)
+        if cara is not None:
+            kws["CARA_ELEM"] = cara
+        vals = POST_ELEM(**kws).EXTR_TABLE().values()
+        print("BRIDGE_STATCHECK M={0} ZWP={1},{2},{3}".format(*[
+            _num(vals[k][0]) for k in ("MASSE", "CDG_X", "CDG_Y",
+                                       "CDG_Z")]))
+    except Exception as e:
+        print("BRIDGE_STATCHECK_FOUT massa " + str(e).replace(
+            "\n", " ")[:300])
+    try:
+        last = sorted(res.getIndexes())[-1]
+        total, _abs = _xyz_sum(res.getField("REAC_NODA", last))
+        print("BRIDGE_STATREAC FX={0} FY={1} FZ={2} NUME_ORDRE={3}".format(
+            _num(total[0]), _num(total[1]), _num(total[2]), last))
+    except Exception as e:
+        print("BRIDGE_STATCHECK_FOUT reactie " + str(e).replace(
+            "\n", " ")[:300])
+
+
+def print_excitation(vectors):
+    """
+    Load resultant of the excitation vectors of a response on a modal
+    basis (bridge_dyna_modal, bridge_harmonic GENE), for the warning on
+    missing modal mass (MecwayAsterBridgeMain._warn_modal_mass; J.-P.
+    Aubry, Beginning DYNAmics with code_aster, 2023, par. 3.3/11.3):
+      BRIDGE_EXCIT FX=.. FY=.. FZ=.. AX=.. AY=.. AZ=..
+    F*: sum over the vectors of |sum of the nodal components| per
+    direction; A*: sum of |nodal component| (has the load a component in
+    that direction at all, e.g. a pressure on a closed surface).
+    vectors: assembled load vectors (ASSE_VECTEUR). Errors only printed.
+    """
+    try:
+        res_f = np.zeros(3)
+        res_a = np.zeros(3)
+        for vec in vectors:
+            total, absolute = _xyz_sum(vec)
+            res_f += np.abs(total)
+            res_a += absolute
+        print("BRIDGE_EXCIT FX={0} FY={1} FZ={2} AX={3} AY={4} AZ={5}"
+              .format(*[_num(v) for v in list(res_f) + list(res_a)]))
+    except Exception as e:
+        print("BRIDGE_EXCIT_FOUT " + str(e).replace("\n", " ")[:300])
+
+
 def _rotation_fractions(res, mass, indexes, fractions):
     """
     ({index: [fraction rotation X, Y, Z]}, {index: [m_eff x 6]}) from

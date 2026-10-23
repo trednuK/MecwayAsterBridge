@@ -432,6 +432,26 @@ vergeleken in [`Verificatie.md`](Verificatie.md) (LS-30 .. LS-32, NL-30). Grenze
   oplossing), dus alleen tegen de definitie (manual v34 par. 8.7) gecontroleerd;
   alleen het von Mises-criterium (Tsai-Wu e.a.: WARNING).
 
+**Controle van massa en reacties** (lineair en niet-lineair statisch). Na de run staat
+in de log (INFO) en het statusvak een regel als
+
+```
+Controle: massa 78.5 kg, zwaartepunt (0.5, 0.05, 0.05) m; som reactiekrachten FX -770.085, FY 0, FZ 0 N (vergelijk zelf met tekening en belastingen).
+```
+
+De massa en het zwaartepunt komen uit `POST_ELEM MASS_INER` over het hele model (met
+de doorsneden en schaaldiktes van `CARA_ELEM`), de reacties zijn de som van
+`REAC_NODA` over alle knopen in de laatste opgeslagen stap (niet-lineair: de laatste
+geconvergeerde tijd). De som van de reacties is gelijk aan **min** de resultante van
+de aangebrachte belastingen (in het voorbeeld eigen gewicht +X, reactie −X). Aubry
+(2019, §4.13–4.14) noemt de massacontrole de eerste toets van een model: een fout in
+dichtheid, dikte of eenheden valt hier direct op. De bridge vergelijkt niet zelf met
+de belastingen (drukken op gekromde vlakken en formules maken dat onbetrouwbaar); het
+is een getal voor je eigen controle. Krachten tussen onderdelen (contact, koppelingen)
+vallen in de som tegen elkaar weg; met een elastische oplegging telt de veerkracht als
+reactie (§4.1, `reactions`). Niet bij dynamische, modale en thermische analyses. In
+de `.mess`: regels `BRIDGE_STATCHECK` en `BRIDGE_STATREAC`.
+
 ## 5. Bestanden in de werkmap
 
 Alle bestanden van een run heten `<model>_<run-id>...`: `<model>` is de naam van het
@@ -540,6 +560,9 @@ van de standaardwaarden, staat in
 
 ## 8. Bronnen
 
+- Aubry, J.-P. (2019). *Beginning with code_aster*, versie van 29 januari 2019,
+  §4.13–4.14: de massa (`POST_ELEM MASS_INER`) en de som van de reacties
+  (`REAC_NODA`, `POST_RELEVE_T RESULTANTE`) als eerste controle van een model (§4.1).
 - EDF R&D (2019). *Code_Aster, documentation U4.51.01: Opérateur MECA_STATIQUE*. Versie
   "default", 10-12-2019 (lokale kopie; de bridge gebruikt Code-Aster 17.4).
 - EDF R&D (2020). *Code_Aster, documentation U4.51.03: Opérateur STAT_NON_LINE*.

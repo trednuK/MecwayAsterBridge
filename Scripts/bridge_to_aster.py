@@ -2019,6 +2019,28 @@ def _derived_args(model_data, chosen):
     return out
 
 
+def _static_check_block():
+    """
+    Mass and reaction check of a static run (MECA_STATIQUE, STAT_NON_LINE;
+    J.-P. Aubry, Beginning with code_aster, 2019, par. 4.13-4.14): total
+    mass and centre of gravity (POST_ELEM MASS_INER) and the sum of
+    REAC_NODA over all nodes in the last archived step, as BRIDGE_STATCHECK
+    / BRIDGE_STATREAC lines in the .mess (aster_results_export.
+    print_static_check). Both result routes; after CALC_CHAMP (REAC_NODA).
+    Only information for a hand check: no comparison with the loads.
+    """
+    scripts = os.path.dirname(os.path.abspath(__file__))
+    return (
+        "# Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,\n"
+        "# centre of gravity and sum of REAC_NODA in the .mess\n"
+        "import sys\n"
+        "sys.path.insert(0, {0})\n"
+        "import aster_results_export\n"
+        "aster_results_export.print_static_check(res, model, fieldmat,\n"
+        "                                        globals().get('cara'))\n"
+        "\n").format(_py_str(scripts))
+
+
 def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
                    precision, static=None, fields=None, extra=""):
     """
@@ -4254,6 +4276,7 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
     else:
         calc_champ_block = (_build_calc_champ_block(
             model_data, fields=analysis.get("fields", [])) + err_block +
+                            _static_check_block() +
                             _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block  = _build_postreleve_block(model_data)
     impr_table_block  = _build_impr_table_block(model_data)
@@ -6549,6 +6572,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         model_data, with_plastic=with_plastic,
         fields=analysis.get("fields", []),
         strain_kind=_strain_kind(analysis)) +
+        ("" if dynamic else _static_check_block()) +
         _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block = _build_postreleve_block(
         model_data, result_selector=result_selector,

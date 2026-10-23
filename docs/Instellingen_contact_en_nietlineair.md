@@ -379,6 +379,15 @@ R-ALPHA). Een staplast krijgt bij HHT in de eerste stap een iets te kleine impul
 HHT-schema, tweede orde, dat vooral hoge frequenties dempt en dat U2.06.13
 aanbeveelt (`'NON'` = gemodificeerde gemiddelde versnelling, eerste orde).
 
+**Rayleigh-demping in niet-lineaire dynamica.** De dempingsmatrix C = α M + β K
+gebruikt in `DYNA_NON_LINE` de Code-Aster-standaard `AMOR_RAYL_RIGI='ELASTIQUE'`
+(catalogus `code_aster/Cata/Commands/dyna_non_line.py` van 17.4: `defaut="ELASTIQUE"`,
+keuze `"TANGENTE"`): K is de **elastische** stijfheid, niet de tangentiële. Bij
+plasticiteit of grote verplaatsingen blijft het β-deel dus even groot als in het
+elastische model (de tangentiële stijfheid zou het verkleinen). De bridge zet het
+sleutelwoord niet en verandert de standaard niet (er is geen instelling of
+`#ASTER`-regel voor `'TANGENTE'`).
+
 ### 2.6 Lineaire solver: `solver_nprec`, `lin_solver`, `lin_solver_resi`
 
 `SOLVEUR=_F(METHODE='MUMPS', NPREC=...)`. NPREC is het aantal decimalen dat bij

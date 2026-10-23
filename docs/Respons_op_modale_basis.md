@@ -171,8 +171,15 @@ Met de standaard `HHT` (numerieke demping) en `GROT_GDEP` meldt de bridge een WA
   modes in dat vlak 99,86%, en Mecway geeft precies hetzelfde (MD-06a; Mecway past
   geen statische correctie toe). Spanningen convergeren trager dan verplaatsingen.
 - **Genoeg modes?** Kijk naar de som van de effectieve massa in de richting van de
-  last (log, §1.3). Een vaak gebruikte vuistregel is ~90% (NIET geverifieerd in de
-  bronnen; zie ook [Modaal_en_knik.md](Modaal_en_knik.md) §1.5). Zekerder: reken een
+  last (log, §1.3). Vuistregel: minstens 90% (Aubry, 2023, §3.3 en §11.3; zie ook
+  [Modaal_en_knik.md](Modaal_en_knik.md) §1.5). Blijft de som in een belaste
+  richting daaronder, dan geeft de bridge een WARNING (§5, ook harmonisch §7.7). De
+  belaste richtingen volgen uit de resultante van de lastvectoren (ook gravity als
+  basisversnelling): elke richting met minstens 1% van de grootste component. Is de
+  resultante nagenoeg 0 (een druk op een gesloten vlak), dan elke richting waarin de
+  last componenten heeft. De som telt alleen de echte modes, niet de pseudo-modes van
+  de *Statische correctie* (die vangt het quasi-statische deel van de ontbrekende
+  modes wel op; hun dynamica niet). Zekerder: reken een
   tweede keer met meer modes, of met *Statische correctie*; verandert de respons
   nauwelijks, dan zijn de modes genoeg. Een last op één plek (puntlast, schok) vraagt
   meer modes dan een verdeelde last.
@@ -228,6 +235,7 @@ Met de standaard `HHT` (numerieke demping) en `GROT_GDEP` meldt de bridge een WA
 | WARNING: Het Mecway-model rekent Dynamic Response zonder Mode superposition ... | `dyna_modal_3d` zelf gekozen voor een D30 zonder mode superposition | gewenst? Anders `auto` of `dyna_impl_3d` |
 | WARNING: Mecway Dynamic Response (D30) rekent lineair met Newmark ... | D30 zonder mode superposition, `dyna_impl_3d` met HHT of grote verplaatsingen | schema `NEWMARK` en deformation `PETIT` voor hetzelfde schema als Mecway (§2.6) |
 | WARNING: Geen belastingen: de respons is overal 0 | geen last | breng de belasting aan |
+| WARNING: Modale basis: effectieve massa (som over ... modes) onder 90% in de belaste richting(en): ... | te weinig modes in de richting van de last (§3) | meer modes (*Number of modes* in Mecway, of `modal_modes`), of directe tijdsintegratie (Mecway: Mode superposition uit, `dyna_impl_3d`) |
 | WARNING: Modaal: elset(s) ... hebben geen dichtheid | geen massa | geef het materiaal een dichtheid |
 | Code-Aster meldt: Respons op modale basis: dempingsverhouding >= 1 (mode=..) | overkritische demping in een mode (vaak een hoge mode met β, of een lage met α) | verlaag α/β of *Extra modale demping*, of minder modes; ξ per mode in de `.mess` (`BRIDGE_DEMPING`) |
 | Code-Aster meldt: Respons op modale basis: een mode met frequentie <= 0 | mechanisme of los onderdeel | leg het model volledig vast |
@@ -463,6 +471,7 @@ de Code-Aster-testcases sdld313d en sdld21b):
 | WARNING: Harmonisch: het model heeft geen demping ... | geen Rayleigh, `modal_damping` of dempers | demping opgeven of frequenties tussen de eigenfrequenties |
 | WARNING: Harmonisch: dempingsverhouding >= 1 (...), overkritisch ... De berekening gaat door. | een mode met ξ ≥ 1: `modal_damping` ≥ 1, of Rayleigh α (lage modes) of β (hoge modes) te groot | controleer α/β en *Extra modale demping* (vaak een eenheidsfout); ξ per mode in de `.mess` (`BRIDGE_DEMPING`). Bedoeld overkritisch: geen actie nodig |
 | WARNING: Harmonisch: de hoogste frequentie (...) ligt boven de hoogste mode ... | te weinig modes voor het bereik | meer modes (*Number of modes*), basis `PHYS`, of een lagere eindfrequentie |
+| WARNING: Modale basis: effectieve massa (som over ... modes) onder 90% in de belaste richting(en): ... | basis `GENE` met te weinig modes in de richting van de last (§3) | meer modes (*Number of modes*, of `modal_modes`), of basis `PHYS` (`harm_basis`) |
 | WARNING: Harmonisch: meetpunt '...' is een vlakselectie ... | `MEETPUNT_` op een vlak of element | maak een *Node selection* |
 | Code-Aster meldt: Respons op modale basis: een mode met frequentie <= 0 | mechanisme of los deel | leg het model volledig vast |
 
@@ -481,6 +490,9 @@ meetpunt-CSV exact.
 
 ## 8. Bronnen
 
+- Aubry, J.-P. (2023). *Beginning DYNAmics with code_aster*, §3.3 en §11.3: de
+  cumulatieve effectieve massa van de modale basis (minstens 90% in de belaste
+  richting) als controle van een respons op modale basis.
 - Bishop, R.E.D. & Johnson, D.C. (1960). *The Mechanics of Vibration*. Cambridge:
   Cambridge University Press (receptanties van balken). Niet lokaal ingezien; de
   receptantie van de console is afgeleid en nagerekend (statische limiet L³/3EI, polen
