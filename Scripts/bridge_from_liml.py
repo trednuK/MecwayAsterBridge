@@ -715,13 +715,138 @@ def _add_shear_coefs(elset_name, geom, mod="POU_D_T"):
                                       geom.get("geom_type", "?"), mod))
     else:
         # %-formatting: "{0:.4g}" follows the locale in IronPython (comma).
+        source = ("from #ASTER-SECTIE (MecwaySectionProps)"
+                  if geom.get("section_extras") else
+                  "approximation, see _profile_shear_coefs")
         log("INFO: Beam elset '{0}' ({1}, {2}): AY={3}, AZ={4} "
-            "(approximation, see _profile_shear_coefs).".format(
+            "({5}).".format(
                 elset_name, geom.get("geom_type", "?"), mod,
-                "%.4g" % coefs[0], "%.4g" % coefs[1]))
+                "%.4g" % coefs[0], "%.4g" % coefs[1], source))
     new = dict(geom)
     new["cara"] = tuple(geom["cara"]) + ("AY", "AZ")
     new["vale"] = tuple(geom["vale"]) + tuple(coefs)
+    return new
+
+
+# ==========================================
+# EXTRA SECTION DATA: #ASTER-SECTIE (MecwaySectionProps)
+# ==========================================
+# MecwaySectionProps (Scripts/MecwaySectionProps.py) creates a Mecway general
+# section (area, iyy, izz, torsionconstant) and writes the characteristics
+# Mecway has no field for in one line per material in the custom model
+# definition:
+#   ** ASTER-SECTIE <material>: A=.., IY=.., IZ=.., JX=.., AY=.., AZ=..,
+#      EY=.., EZ=.., RY=.., RZ=.., RT=.., JG=.., IYR2=.., IZR2=..   (SI)
+# Local y = principal axis 1 (Mecway V), z = principal axis 2 (Mecway W).
+# A, IY, IZ, JX repeat the Mecway section: they show whether the line still
+# belongs to the material (the user may have changed it in Mecway).
+_SECTION_CHECK_KEYS = ("A", "IY", "IZ", "JX")
+_SECTION_EXTRA_KEYS = ("AY", "AZ", "EY", "EZ", "RY", "RZ", "RT", "JG",
+                       "IYR2", "IZR2")
+# Passed to AFFE_CARA_ELEM for every beam: EY/EZ, the eccentricity of the
+# shear (torsion) centre in the principal axes (R3.08.01 par. 5.1, "exact"
+# beams POU_D_E/POU_D_T; U4.42.01 par. 9.4.3, default 0) as MACR_CARA_POUTRE
+# gives it: the vector shear centre -> centroid (section_fem; checked against
+# MACR_CARA_POUTRE of Code-Aster 17.4 on a channel and an unequal angle,
+# tests/section_aster_check.py; accepted by POU_D_E, POU_D_T, POU_D_T_GD),
+# and RY/RZ/RT, used only for the stresses (U4.42.01 par. 9.3). AY/AZ go
+# through shear_coefs to the Timoshenko beams only (_add_shear_coefs). JG,
+# IYR2 and IZR2 are only used by POU_D_TG/POU_D_TGM (U4.42.01 par. 9.4.3),
+# which the bridge does not offer: kept in "section_extras" only.
+_SECTION_PASSED_KEYS = ("EY", "EZ", "RY", "RZ", "RT")
+# Relative difference above which A/IY/IZ/JX of the line no longer match
+# the material (Mecway stores 15 significant digits).
+_SECTION_MATCH_TOL = 1e-6
+
+
+def _section_extras(bodies):
+    """
+    {Mecway material: {KEY: value}} from the #ASTER-SECTIE lines
+    ('<material>: A=1.5e-3, IY=..., AY=1.2, ...', SI values). A line with an
+    error is skipped with an ERROR in the log.
+    """
+    out = {}
+    known = _SECTION_CHECK_KEYS + _SECTION_EXTRA_KEYS
+    for body in bodies:
+        # rpartition: the values contain no ':', a material name might
+        name, sep, rest = body.rpartition(":")
+        values = {}
+        error = None
+        if not sep or not name.strip():
+            error = tr("verwacht '<materiaal>: A=..., IY=..., ...'",
+                       "expected '<material>: A=..., IY=..., ...'")
+        else:
+            for part in [p.strip() for p in rest.split(",") if p.strip()]:
+                key, eq, raw = part.partition("=")
+                key = key.strip().upper()
+                try:
+                    value = float(raw.strip())
+                except ValueError:
+                    value = None
+                if not eq or key not in known or value is None:
+                    error = tr("onbekend of ongeldig '{0}' (bekend: {1})",
+                               "unknown or invalid '{0}' (known: {1})"
+                               ).format(part, ", ".join(known))
+                    break
+                values[key] = value
+            missing = [k for k in _SECTION_CHECK_KEYS if k not in values]
+            if error is None and missing:
+                error = tr("ontbreekt: {0}", "missing: {0}").format(
+                    ", ".join(missing))
+        if error is not None:
+            log(tr("ERROR: #ASTER-SECTIE '{0}' wordt overgeslagen: {1}.",
+                   "ERROR: #ASTER-SECTIE '{0}' is skipped: {1}.").format(
+                       body, error))
+            continue
+        out[name.strip()] = values
+    return out
+
+
+def _apply_section_extras(mat_name, geom, extra):
+    """
+    The section dict of a general section with the #ASTER-SECTIE data:
+    EY, EZ, RY, RZ, RT added to cara/vale, AY/AZ as shear_coefs (Timoshenko
+    beams only), everything in "section_extras". Returns geom unchanged
+    (WARNING) when the line does not belong to this section any more.
+    """
+    if geom.get("geom_type") != "UniformGeneralSection":
+        log(tr("WARNING: #ASTER-SECTIE '{0}': het materiaal heeft geen "
+               "General section ({1}); de regel wordt genegeerd.",
+               "WARNING: #ASTER-SECTIE '{0}': the material has no general "
+               "section ({1}); the line is ignored.").format(
+                   mat_name, geom.get("geom_type", "?")))
+        return geom
+    cara = dict(zip(geom["cara"], geom["vale"]))
+    for key in _SECTION_CHECK_KEYS:
+        ref = cara.get(key, 0.0)
+        if abs(extra[key] - ref) > _SECTION_MATCH_TOL * max(abs(ref),
+                                                             1e-30):
+            log(tr("WARNING: #ASTER-SECTIE '{0}': {1} = {2} in de regel, "
+                   "maar {3} in het materiaal; de doorsnede is na "
+                   "MecwaySectionProps gewijzigd. De extra eigenschappen "
+                   "(AY, AZ, EY, EZ, RY, RZ, RT) worden genegeerd; maak de "
+                   "General section opnieuw met MecwaySectionProps.",
+                   "WARNING: #ASTER-SECTIE '{0}': {1} = {2} in the line, "
+                   "but {3} in the material; the section was changed after "
+                   "MecwaySectionProps. The extra properties (AY, AZ, EY, "
+                   "EZ, RY, RZ, RT) are ignored; create the general section "
+                   "again with MecwaySectionProps.").format(
+                       mat_name, key, "%.6g" % extra[key], "%.6g" % ref))
+            return geom
+    new = dict(geom)
+    keys = [k for k in _SECTION_PASSED_KEYS if k in extra]
+    new["cara"] = tuple(geom["cara"]) + tuple(keys)
+    new["vale"] = tuple(geom["vale"]) + tuple(extra[k] for k in keys)
+    if extra.get("AY", 0.0) > 0.0 and extra.get("AZ", 0.0) > 0.0:
+        new["shear_coefs"] = (extra["AY"], extra["AZ"])
+    new["section_extras"] = dict(extra)
+    log("INFO: Material '{0}': #ASTER-SECTIE adds {1} to the general "
+        "section{2}.".format(
+            mat_name, ", ".join("{0}={1}".format(k, "%.6g" % extra[k])
+                                for k in keys),
+            "" if "shear_coefs" not in new else
+            " (AY={0}, AZ={1} for Timoshenko beams)".format(
+                "%.4g" % extra["AY"], "%.4g" % extra["AZ"])))
     return new
 
 
@@ -1821,6 +1946,14 @@ def extract_aster_data_from_liml(file_path):
                        run_cfg.get("schema"), run_cfg.get("deformation")))
         model_data["aster_custom"] = bridge_custom.parse(
             [root.findtext(tag) for tag in bridge_custom.CUSTOM_TAGS])
+        section_extras = _section_extras(
+            model_data["aster_custom"].get("sections", []))
+        mat_names = set(m.get("name") for m in root.findall("mat"))
+        for name in sorted(set(section_extras) - mat_names):
+            log(tr("WARNING: #ASTER-SECTIE '{0}': geen materiaal met deze "
+                   "naam (hernoemd?); de regel wordt genegeerd.",
+                   "WARNING: #ASTER-SECTIE '{0}': no material with this "
+                   "name (renamed?); the line is ignored.").format(name))
         radioss_text = root.findtext("radiossmodeldefinition") or ""
         radioss_functions = bridge_radioss.parse_functions(radioss_text)
         radioss_units = bridge_radioss.begin_units(radioss_text)
@@ -2136,6 +2269,10 @@ def extract_aster_data_from_liml(file_path):
 
                 if geom_node is not None:
                     geom_props = _parse_geometric_props(geom_node)
+                    if geom_props is not None and \
+                            mat_name in section_extras:
+                        geom_props = _apply_section_extras(
+                            mat_name, geom_props, section_extras[mat_name])
                     if geom_props is not None:
                         model_data["mat_geometrics"][mat_name] = geom_props
                         log("INFO: Geometry type '{0}' stored for "

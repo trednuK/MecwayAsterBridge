@@ -52,6 +52,7 @@ TEXT = u"\n".join([
     u"#ASTER-WOHLER Staal: Sf = 900 MPa, b = -0.1",
     u"#ASTER-METALLURGIE Staal: staal=16MND5",
     u"#ASTER-XFEM vorm=CIRKEL, centrum=(0, 0, 0), r=20 mm, normaal=(0, 0, 1)",
+    u"** ASTER-SECTIE Profiel: A=1e-3, IY=1e-6, IZ=2e-7, JX=1e-8, AY=1.2",
     u"$ Mystran-commentaar wordt overgeslagen",
 ])
 out = bridge_custom.parse([TEXT])
@@ -60,17 +61,19 @@ check("EXCIT met kleine letters", out["excit"] == ["verb"])
 check("OPTIE", out["options"] == {"newton_max_iter": "40"})
 check("SPECTRE X en Y", sorted(out["spectrum"]) == ["X", "Y"])
 check("XFEM gelezen", len(out["xfem"]) == 1)
+check("SECTIE gelezen", out["sections"] == [
+    u"Profiel: A=1e-3, IY=1e-6, IZ=2e-7, JX=1e-8, AY=1.2"])
 summary = [l for l in LOG if l.startswith("INFO: #ASTER lines:")]
 check("een INFO-samenvatting", len(summary) == 1)
-check("samenvatting telt XFEM", bool(summary) and
-      summary[0].endswith(", 1 METALLURGIE, 1 XFEM."))
+check("samenvatting telt XFEM en SECTIE", bool(summary) and
+      summary[0].endswith(", 1 METALLURGIE, 1 XFEM, 1 SECTIE."))
 check("geen ERROR", not [l for l in LOG if l.startswith("ERROR")])
 
 # Alleen XFEM: de samenvatting noemt de regel ook dan
 del LOG[:]
 bridge_custom.parse([u"** ASTER-XFEM vorm=CIRKEL, r=1"])
 check("alleen XFEM in de samenvatting",
-      [l for l in LOG if l.endswith(", 1 XFEM.")] != [])
+      [l for l in LOG if l.endswith(", 1 XFEM, 0 SECTIE.")] != [])
 
 # Foute regels: ERROR en overgeslagen
 del LOG[:]

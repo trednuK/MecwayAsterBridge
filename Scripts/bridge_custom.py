@@ -78,6 +78,12 @@
 #   #ASTER-XFEM K=V, ...     XFEM crack without meshing it (linear
 #                            static: K and G along the front). See
 #                            bridge_xfem.py.
+#   #ASTER-SECTIE material: K=V, ...
+#                            extra Code-Aster characteristics of a Mecway
+#                            general beam section (AY, AZ, EY, EZ, RY, RZ,
+#                            RT, JG, IYR2, IZR2; SI), written by
+#                            MecwaySectionProps; also #ASTER-SECTION. See
+#                            bridge_from_liml._section_extras.
 #   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
 #                            that selection (bridge_mesh renames names)
 #
@@ -114,7 +120,7 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-FASE", "-PHASE", "-MATERIAAL", "-MATERIAL",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
-          "-XFEM")
+          "-XFEM", "-SECTIE", "-SECTION")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -128,7 +134,7 @@ def empty():
             "sources": [], "welding": [],
             "phases": [], "materials": [],
             "fatigue": [], "metallurgy": [],
-            "xfem": []}
+            "xfem": [], "sections": []}
 
 
 def parse(texts):
@@ -203,6 +209,10 @@ def parse(texts):
                 # worked out in bridge_thermomech.parse_materials
                 if body.strip():
                     out["materials"].append(body.strip())
+            elif kind in ("-SECTIE", "-SECTION"):
+                # worked out in bridge_from_liml._section_extras
+                if body.strip():
+                    out["sections"].append(body.strip())
             elif kind in ("-METALLURGIE", "-METALLURGY"):
                 # worked out in bridge_metallurgy.parse_specs
                 if body.strip():
@@ -221,14 +231,14 @@ def parse(texts):
         log("INFO: #ASTER lines: {0} code, {1} EXCIT, {2} CONTACT, {3} ZONE, "
             "{4} OPTIE, {5} POST, {6} BEZWIJKEN, {7} SPECTRE, {8} BRON, "
             "{9} LASBRON, {10} FASE, {11} MATERIAAL, {12} VERMOEIING, "
-            "{13} METALLURGIE, {14} XFEM.".format(
+            "{13} METALLURGIE, {14} XFEM, {15} SECTIE.".format(
                 len(out["code"]), len(out["excit"]), len(out["contact"]),
                 len(out["zone"]), len(out["options"]), len(out["post"]),
                 len(out["failure"]), len(out["spectrum"]),
                 len(out["sources"]), len(out["welding"]),
                 len(out["phases"]), len(out["materials"]),
                 len(out["fatigue"]), len(out["metallurgy"]),
-                len(out["xfem"])))
+                len(out["xfem"]), len(out["sections"])))
     return out
 
 

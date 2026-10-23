@@ -109,6 +109,7 @@ het laatst is nagelopen:
 | Startscherm: statusvak, ontbrekende modelmap, tweede venster (V2026.3) | NIET nagelopen | nagelopen (V2026.3) |
 | Line3-trusses en -kabels (V2026.4) | NIET nagelopen (niet nagegaan of Mecway 33 ze heeft; geen effect op een model zonder) | nagelopen (V2026.4) |
 | Hyperelastisch Neo Hooke / Mooney-Rivlin (V2026.4) | NIET nagelopen (niet nagegaan of Mecway 33 ze heeft; geen effect op een model zonder) | nagelopen (V2026.4) |
+| MecwaySectionProps en `#ASTER-SECTIE` (materiaal-API `new_material`, `set_material_type`, `set_material_property`) | NIET nagelopen (niet nagegaan of Mecway 33 deze API heeft) | nagelopen (headless, 23 okt 2026) |
 | Plastische curve: E is de helling van het eerste segment (V2026.4) | NIET nagelopen (gemeten in Mecway 34 met CCX) | nagelopen (V2026.4) |
 | Eigenvormen met verplaatsingsgrootte (V2026.4) | NIET nagelopen; Mecway 33's eigen modale oplossing toont geen magnitude, dus één extra item (onschadelijk) | nagelopen (V2026.4) |
 | Flexible joints: `POU_D_T_GD` en balken met offset (V2026.4) | NIET nagelopen | nagelopen (V2026.4) |
