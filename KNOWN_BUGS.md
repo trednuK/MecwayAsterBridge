@@ -566,6 +566,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    structure is still complete after a floating point exception (signal, not `utmess`)
    is therefore NOT verified.
 
+120\. **Hysteretic damping: not on all discrete elements, stresses not checked** (question,
+   `bridge_harmonic`, S26). The loss factor eta (`loss_factor`, `#ASTER-HYST`) is applied
+   to materials and springs, not to elastic supports, dampers or point masses. Whether
+   `CALC_CHAMP` includes eta in the stresses of a harmonic result is NOT verified; if not,
+   the stress amplitude is low by a factor sqrt(1 + eta^2) (0.5 % at eta = 0.1).
+   Displacements are verified (HR-06a..d).
+
 ## Not translated (the bridge reports it at the end of the run)
 
 4\. **Loads and boundary conditions the bridge does not know** (confirmed). Supported
