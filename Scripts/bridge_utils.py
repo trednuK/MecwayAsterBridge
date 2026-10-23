@@ -221,11 +221,17 @@ CONFIG_BRIDGE = {
             # = both with VERIF='AU_MOINS_UN': either one suffices.
             "convergence_criterion": "RELA",
             "convergence_resi_maxi": 1.0e-3,
+            # Line search RECH_LINEAIRE (U4.51.03; S27): "auto" = only
+            # with cables (CABLE) and without contact, "on", "off".
+            "line_search":           "auto",
             # Contact (DEFI_CONTACT CONTINUE, per zone): "STANDARD" =
             # Lagrange, no penetration; "PENALISATION" = spring with Mecway's
             # normalstiffness (COEF_PENA_CONT, Pa/m) and with friction
             # tangentialstiffness (COEF_PENA_FROT), like Mecway/CCX.
             "contact_algo":          "STANDARD",
+            # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
+            # curved contact surfaces; not across sharp edges.
+            "contact_smoothing":     False,
             "default_time_end":      1.0,
             # Strain definition of Mecway's <hardeningcurve strain="...">.
             # Code-Aster TRACTION expects TOTAL strain and no point with
@@ -302,7 +308,13 @@ CONFIG_BRIDGE = {
             # See nonlin_static_3d.
             "convergence_criterion": "RELA",
             "convergence_resi_maxi": 1.0e-3,
+            # Line search RECH_LINEAIRE (U4.51.03; S27): "auto" = only
+            # with cables (CABLE) and without contact, "on", "off".
+            "line_search":           "auto",
             "contact_algo":          "STANDARD",
+            # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
+            # curved contact surfaces; not across sharp edges.
+            "contact_smoothing":     False,
             "newton_reac_iter":      1,
             # ENERGIE=_F() (U4.53.01 sec. 3.22): energy balance per step in
             # study.mess (convergence window). Not with contact CONTINUE
@@ -335,6 +347,9 @@ CONFIG_BRIDGE = {
             "explicit_dt_factor":    0.5,
             # See nonlin_static_3d.
             "contact_algo":          "STANDARD",
+            # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
+            # curved contact surfaces; not across sharp edges.
+            "contact_smoothing":     False,
             "default_time_end":      1.0,
             "plastic_strain_definition": "auto",
             # See nonlin_static_3d.

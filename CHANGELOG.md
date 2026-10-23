@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Optional line search** (`line_search`, nonlinear static and implicit dynamics; Aubry,
+  *Beginning with code_aster*, 2019, §10.2): `RECH_LINEAIRE` (`CORDE`, `ITER_LINE_MAXI=3`) in
+  `STAT_NON_LINE`/`DYNA_NON_LINE`. `auto` (default) only with cables (`CABLE`) without contact,
+  `on` always (not with contact `CONTINUE`, which Code-Aster refuses: WARNING), `off` never.
+  With `POU_D_T_GD` beams `on` converged poorly or not at all (WARNING). Cable cases LS-54b/c unchanged; SaggingCable with *Tension only* 7 instead of 9 Newton
+  iterations with the same result.
+- **Optional contact normal smoothing** (`contact_smoothing`, default off): `DEFI_CONTACT`
+  `LISSAGE='OUI'` for curved contact surfaces meshed with few facets (cylinder, sphere); not
+  for surfaces with sharp edges. Off: input unchanged.
 - **Mass and reaction check for static runs** (Aubry, *Beginning with code_aster*, 2019,
   §4.13–4.14): after a linear or nonlinear static run the log and the status box show the
   total mass and centre of gravity (`POST_ELEM MASS_INER`) and the sum of the reactions

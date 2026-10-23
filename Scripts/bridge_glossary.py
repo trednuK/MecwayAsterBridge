@@ -685,6 +685,18 @@ GLOSSARY = OrderedDict([
                       u"Contact (ALGO_CONT) as a spring with a stiffness per "
                       u"area (Mecway's normal stiffness): small penetration, "
                       u"like Mecway.")),
+    ("auto (line search)", ("solver", u"Lijnzoeken (RECH_LINEAIRE) alleen "
+                            u"bij kabels (CABLE) zonder contact. Standaard.",
+                            u"Line search (RECH_LINEAIRE) only with cables "
+                            u"(CABLE) without contact. Default.")),
+    ("on (line search)", ("solver", u"Lijnzoeken (RECH_LINEAIRE, CORDE, 3 "
+                          u"iteraties) in elke stap; niet met contact of "
+                          u"expliciet.",
+                          u"Line search (RECH_LINEAIRE, CORDE, 3 iterations) "
+                          u"in every step; not with contact or explicit.")),
+    ("off (line search)", ("solver", u"Geen lijnzoeken (zoals Code-Aster "
+                           u"standaard).",
+                           u"No line search (Code-Aster default).")),
     ("ITER_GLOB_MAXI", ("solver", u"Maximum aantal Newton-iteraties per "
                         u"stap; daarna wordt de stap opgedeeld.",
                         u"Maximum number of Newton iterations per step; then "
@@ -1277,6 +1289,36 @@ SETTING_HELP = {
         u"normal stiffness from Mecway (and the tangential stiffness with "
         u"friction), as Mecway itself computes: small penetration, often "
         u"more robust for line contact or a part that can lose contact."),
+    "line_search": (
+        u"Lijnzoeken (RECH_LINEAIRE, methode CORDE, max. 3 iteraties): "
+        u"Newton schaalt elke correctie zodat het residu daalt. Helpt "
+        u"bij kabels (tension only) en sterk niet-lineair gedrag die "
+        u"heen en weer springen; het resultaat verandert niet, een "
+        u"iteratie kost wat meer. auto (standaard) = alleen bij kabels "
+        u"zonder contact; on = altijd; off = nooit. Niet met contact "
+        u"(Code-Aster staat het niet toe), niet expliciet en niet bij "
+        u"balken met grote rotaties (POU_D_T_GD: convergeerde slecht).",
+        u"Line search (RECH_LINEAIRE, method CORDE, max. 3 iterations): "
+        u"Newton scales each correction so that the residual decreases. "
+        u"Helps with cables (tension only) and strongly nonlinear "
+        u"behaviour that jumps back and forth; the result does not change, "
+        u"an iteration costs a little more. auto (default) = only with "
+        u"cables without contact; on = always; off = never. Not with "
+        u"contact (Code-Aster does not allow it), not explicit and not with "
+        u"large-rotation beams (POU_D_T_GD: converged poorly)."),
+    "contact_smoothing": (
+        u"Normalen gladstrijken (DEFI_CONTACT LISSAGE='OUI'): de normaal "
+        u"wordt in elke knoop gemiddeld over de aangrenzende vlakken. "
+        u"Gebruik het bij gebogen contactvlakken (cilinder, bol) met "
+        u"weinig facetten: gelijkmatiger contactdruk en betere "
+        u"convergentie. Niet bij scherpe randen of hoeken in het "
+        u"contactvlak: daar wordt de normaal verkeerd. Standaard uit.",
+        u"Smooth normals (DEFI_CONTACT LISSAGE='OUI'): the normal is "
+        u"averaged at each node over the adjacent faces. Use it for "
+        u"curved contact surfaces (cylinder, sphere) meshed with few "
+        u"facets: a more even contact pressure and better convergence. "
+        u"Not with sharp edges or corners in the contact surface: there "
+        u"the normal becomes wrong. Default off."),
     "default_time_end": (u"Eindtijd als het model geen tijdsbelasting of "
                          u"tijdstappen heeft. Standaard 1 s (pseudotijd).",
                          u"End time when the model has no time load or time "
@@ -1818,6 +1860,9 @@ _OPTION_TERMS = {
     ("plastic_strain_definition", "auto"): "auto (curve)",
     ("wait_for_aster", "auto"): "auto (wait)",
     ("configuration", "auto"): "auto (configuration)",
+    ("line_search", "auto"): "auto (line search)",
+    ("line_search", "on"): "on (line search)",
+    ("line_search", "off"): "off (line search)",
     ("imperfection_unit", "m"): "m (imperfection)",
     ("imperfection_unit", "L"): "L (imperfection)",
 }

@@ -5375,6 +5375,58 @@ def _check_gd_joints(model_data):
 # ==========================================
 # HELPER FUNCTIONS FOR CONTACT AND DYNAMICS
 # ==========================================
+def _line_search_args(model_data, analysis, contact_block, explicit):
+    """
+    RECH_LINEAIRE for STAT_NON_LINE/DYNA_NON_LINE (setting "line_search",
+    S27). Catalogue c_rech_lineaire.py (17.4): METHODE CORDE (default),
+    MIXTE or PILOTAGE, ITER_LINE_MAXI default 3; U2.04.01 and Aubry
+    (2019) sec. 10.2 advise it with cables. Returns the line (4 spaces
+    indent, like 'extra') or "".
+      - "auto" (default): only with CABLE elements and without contact;
+      - "on": always, except explicit (no Newton) and contact CONTINUE:
+        Code-Aster stops then (message MECANONLINE3_91 "Contact methode
+        continue et recherche lineaire sont incompatibles", 17.4);
+      - "off": never.
+    The chain thermal -> mechanical (bridge_thermomech) has its own
+    RECH_LINEAIRE (ITER_LINE_MAXI=5 with plasticity) and does not use this.
+    """
+    mode = "{0}".format(analysis.get("line_search", "auto")).lower()
+    if mode not in ("auto", "on", "off"):
+        log(tr("WARNING: line_search '{0}' onbekend; auto gebruikt.",
+               "WARNING: line_search '{0}' unknown; auto used.").format(mode))
+        mode = "auto"
+    if mode == "off" or explicit:
+        return ""
+    if mode == "auto":
+        cables = sorted(g for g, m in model_data.get(
+            "elset_modelisations", {}).items() if m == "CABLE")
+        if not cables or contact_block:
+            return ""
+        log("INFO: RECH_LINEAIRE (CORDE, ITER_LINE_MAXI=3) voor de kabels "
+            "{0} (line_search auto).".format(", ".join(cables)))
+    elif "FORMULATION='CONTINUE'" in contact_block:
+        log(tr("WARNING: Lijnzoeken (RECH_LINEAIRE) weggelaten: Code-Aster "
+               "kent het niet met contact CONTINUE (MECANONLINE3_91).",
+               "WARNING: Line search (RECH_LINEAIRE) omitted: Code-Aster "
+               "does not allow it with contact CONTINUE (MECANONLINE3_91)."))
+        return ""
+    elif any(m == _GD_BEAM for m in model_data.get(
+            "elset_modelisations", {}).values()):
+        # Measured (S27, 17.4): with POU_D_T_GD NL-81/83/84/85/90 stopped
+        # without convergence (MECANONLINE9_7), NL-80/89 cut the step
+        # into 1000-2000 steps (75x/26x the run time) and ended 0.6-0.7%
+        # off, NL-82 7.6% off. Hence not in "auto".
+        log(tr("WARNING: Lijnzoeken (line_search on) met balken met grote "
+               "rotaties (POU_D_T_GD): in de verificatie convergeerde Newton "
+               "daarmee slecht of niet. Zet line_search op auto of off als "
+               "de run vastloopt.",
+               "WARNING: Line search (line_search on) with large-rotation "
+               "beams (POU_D_T_GD): in the verification Newton converged "
+               "poorly or not at all with it. Set line_search to auto or off "
+               "if the run gets stuck."))
+    return "    RECH_LINEAIRE=_F(METHODE='CORDE', ITER_LINE_MAXI=3),\n"
+
+
 def _convergence_args(analysis):
     """
     Arguments of CONVERGENCE (STAT_NON_LINE/DYNA_NON_LINE, catalogue
@@ -5526,6 +5578,15 @@ def _build_contact_block(model_data, analysis=None):
         if c.get("sans_groups") and "SANS_GROUP_NO" not in zone_extra:
             z += ", SANS_GROUP_NO={0}".format(_fmt_groups(c["sans_groups"]))
         zones.append(z + zone_extra + ")")
+    # Normal smoothing (S28): LISSAGE is a global keyword of DEFI_CONTACT
+    # (bloc b_contact_mail, FORMULATION CONTINUE/DISCRETE, default 'NON';
+    # catalogue defi_contact.py 17.4): normals averaged at the nodes of
+    # the contact surfaces. A user #ASTER-CONTACT LISSAGE takes precedence.
+    if analysis.get("contact_smoothing", False) and \
+            "LISSAGE" not in glob_extra:
+        glob_extra = "    LISSAGE='OUI',\n" + glob_extra
+        log("INFO: DEFI_CONTACT LISSAGE='OUI' (normalen gemiddeld in de "
+            "knopen; contact_smoothing).")
     block = (
         "contact = DEFI_CONTACT(\n"
         "    MODELE=model,\n"
@@ -6680,6 +6741,11 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
                    "MECANONLINE5_15 seen with CONTINUE)."))
         else:
             extra += "    ENERGIE=_F(),\n"
+    # Line search (S27); in 'extra', so also in the failure loop
+    extra += _line_search_args(
+        model_data, analysis, contact_block,
+        dynamic and analysis.get("schema", "HHT") in ("DIFF_CENT",
+                                                      "TCHAMWA"))
     # Stability criterion per step (nonlinear buckling; only static)
     crit_stab = (not dynamic) and bool(analysis.get("crit_stab", False))
     if crit_stab:

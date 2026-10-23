@@ -62,8 +62,8 @@ Wat de niet-lineaire analyses ondersteunen:
 |---|---|---|
 | Code-Aster-run | `time_limit`, `memory_limit` | alle |
 | Oplosser | `solver_nprec`; `lin_solver`, `lin_solver_resi` | alle; `lin_solver` alleen statisch, `lin_solver_resi` statisch en de statische stap van modaal, knik en de imperfectie |
-| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi` | niet-lineair statisch, dynamisch impliciet; `default_time_end` ook expliciet |
-| Contact | `contact_algo` | niet-lineair statisch, dynamisch |
+| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search` | niet-lineair statisch, dynamisch impliciet; `default_time_end` ook expliciet |
+| Contact | `contact_algo`, `contact_smoothing` | niet-lineair statisch, dynamisch |
 | Materiaal en kinematica | `plastic_strain_definition`, `deformation` | niet-lineair statisch, dynamisch |
 | Tijdschema | `schema`, `hht_alpha`, `substeps_per_output` (impliciet), `explicit_dt_factor` (expliciet) | dynamisch |
 | Bezwijken | `element_failure`, `failure_plastic_strain`, `failure_stiffness_factor` | niet-lineair statisch, dynamisch ([Bezwijken.md](Bezwijken.md)) |
@@ -175,6 +175,7 @@ reactie blijft (R-SUB40; §2.2; met de standaard 1e-5 rekent hij door).
 | `convergence_criterion` (Convergentiecriterium) | `RESI_GLOB_RELA`, `RESI_GLOB_MAXI`, of beide met `VERIF='AU_MOINS_UN'` | `RELA` | `RELA` | Zie hieronder. |
 | `convergence_resi_rela` (Convergentie RESI_GLOB_RELA) | `CONVERGENCE/RESI_GLOB_RELA` | 1e-5 (thermisch 1e-6) | 1e-6 | Relatief t.o.v. de opgelegde last plus reacties (U4.51.03). De bridge wijkt af van de CA-standaard 1e-6 omdat het residu daar bij plastische volumes (`GDEF_LOG`) op stagneert (zie hieronder). 1e-6 kan, eventueel met `RELA_OF_MAXI`. Verder niet losser maken: dat verbergt problemen. |
 | `convergence_resi_maxi` (Convergentie RESI_GLOB_MAXI) [N] | `CONVERGENCE/RESI_GLOB_MAXI` | 1e-3 | - | Alleen met `MAXI` en `RELA_OF_MAXI`. `MAXI`: klein kiezen ten opzichte van de verwachte krachten. `RELA_OF_MAXI`: boven de absolute rest waarop het residu stagneert (kolom `RESI_GLOB_MAXI` in de `.mess`). |
+| `line_search` (Lijnzoeken RECH_LINEAIRE) | `RECH_LINEAIRE` (`METHODE='CORDE'`, `ITER_LINE_MAXI=3`) | `auto` | uit | Newton schaalt elke correctie zodat het residu daalt (U2.04.01; catalogus `c_rech_lineaire.py` 17.4). `auto` = alleen bij kabels (`CABLE`, *Tension only*) en zonder contact, zoals Aubry (2019, §10.2) aanraadt. `on`: proberen als Newton heen en weer springt of stappen worden opgedeeld; het geconvergeerde resultaat verandert niet, een iteratie kost iets meer. Niet met contact `CONTINUE` (Code-Aster stopt met `MECANONLINE3_91`; de bridge laat het dan weg met een WARNING) en niet expliciet. Niet bij balken met grote rotaties (`POU_D_T_GD`): met `on` stopten NL-81/83/84/85/90 zonder convergentie (`MECANONLINE9_7`) deelden NL-80/89 de stappen op in 1000-2000 substappen met 0,6-0,7% afwijking en week NL-82 7,6% af; de bridge waarschuwt dan. SaggingCable met *Tension only*: 7 in plaats van 9 Newton-iteraties, zelfde resultaat; NL-01/02/04 (volumes, `COQUE_3D`) en NL-86/87/88/90b met `on` binnen 4e-6 (S27). De keten thermisch-mechanisch (`bridge_thermomech`, `ITER_LINE_MAXI=5` bij plasticiteit) houdt zijn eigen lijnzoeken. |
 
 **`RELA` of `MAXI`.** `RELA` = `RESI_GLOB_RELA`: grootste restkracht gedeeld door de
 opgelegde last plus reacties. `MAXI` = `RESI_GLOB_MAXI`: grootste restkracht in N
@@ -653,6 +654,7 @@ Contactvlakken moeten een **naar buiten** gerichte normaal hebben (U2.04.04,
 - Voor schaalvlakken zet de bridge geen `ORIE_NORM_COQUE`.
 - Code-Aster controleert de oriëntatie standaard en stopt bij een fout
   (`VERI_NORM='OUI'`, catalogus).
+- **Normalen gladstrijken (`contact_smoothing`, label "Normalen gladstrijken (LISSAGE, gebogen vlakken)"; standaard uit).** Schrijft `LISSAGE='OUI'` in `DEFI_CONTACT` (globaal sleutelwoord bij `CONTINUE`, catalogus `defi_contact.py` 17.4): de normaal in elke knoop is het gemiddelde van de aangrenzende vlakken. Gebruik het bij gebogen contactvlakken (cilinder, bol, buis) met weinig facetten: de facetnormalen springen van vlak tot vlak, wat een ongelijkmatige contactdruk geeft en de convergentie kan hinderen. Niet gebruiken als het contactvlak scherpe randen of hoeken heeft (een blokrand, een trap): daar wijst de gemiddelde normaal de verkeerde kant op. Een eigen `#ASTER-CONTACT LISSAGE=...` gaat voor. Bij vlakke contactvlakken (NL-03a..f) en bij het fijn gemeshte Samples/PipeClip verandert de optie niets meetbaars (S28); het telt bij grove facetten.
 
 ### 3.4 Beginspleet en beginpenetratie
 

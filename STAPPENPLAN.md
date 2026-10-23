@@ -58,8 +58,8 @@ S7, S8, S5, S9).
 | S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | open | – | planned 23 Oct 2026 (Aubry 2019 §14.1) |
 | S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |
 | S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | open | S10h | planned 23 Oct 2026 (Aubry, DYNAmics §3.3.4, §6) |
-| S27 | Optional line search (`RECH_LINEAIRE`) in nonlinear static | open | – | planned 23 Oct 2026 (Aubry 2019 §10.2) |
-| S28 | Optional contact normal smoothing (`LISSAGE='OUI'`) | open | – | planned 23 Oct 2026 |
+| S27 | Optional line search (`RECH_LINEAIRE`) in nonlinear static | done | – | branch w-p2; `line_search` auto (cables only)/on/off; SaggingCable *Tension only* 9 -> 7 iterations; `on` breaks `POU_D_T_GD` (see §S27) |
+| S28 | Optional contact normal smoothing (`LISSAGE='OUI'`) | done | – | branch w-p2; `contact_smoothing` (default off); NL-03a..f and PipeClip unchanged with it on (see §S28) |
 | S29 | Penetration check for penalty contact (`EVENEMENT='INTERPENETRATION'`) | open | – | planned 23 Oct 2026 |
 | S30 | Redo the Code-Aster forum research | later | forum online again (offline until about 30 Oct 2026) | planned 23 Oct 2026 |
 | S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
@@ -1447,6 +1447,15 @@ for models with `CABLE` or `GROT_GDEP`.
 search changes the converged result (it should not) and how much it costs per iteration.
 **Done when:** a cable case (e.g. SaggingCable with *Tension only*) converges with fewer cuts or iterations; the
 NL families stay within tolerance; docs NL+EN.
+**Result** (23 Oct 2026, Code-Aster 17.4, ncpus 1): setting `line_search` (nonlinear static, implicit
+dynamics): `auto` (default) = `RECH_LINEAIRE=_F(METHODE='CORDE', ITER_LINE_MAXI=3)` only with `CABLE` and without
+contact, `on`, `off`; never explicit; with contact `CONTINUE` omitted with a WARNING (`MECANONLINE3_91`:
+incompatible). `MIXTE`/`PILOTAGE` not offered (`PILOTAGE` needs a PILOTAGE keyword). LS-54b/c with `auto`: identical
+(1.6e-14). SaggingCable with *Tension only*: 9 -> 7 Newton iterations, results within 8e-7. With `on`: NL-01, 01b,
+02a, 02b, 04, 04b/c, 80c, 86, 86b, 87, 87b, 88, 90b within 6e-6; NL-03a..f unchanged (omitted); but `POU_D_T_GD`
+NL-81/83/84/85/90 stop without convergence (`MECANONLINE9_7`), NL-82 7.6% off, NL-80/89 1000-2000 substeps and
+0.6-0.7% off. Hence `auto` = cables only and a WARNING for `on` with `POU_D_T_GD`. The thermal-mechanical chain
+keeps its own `RECH_LINEAIRE` (ITER_LINE_MAXI=5 with plasticity).
 
 ### S28 – Optional contact normal smoothing (`LISSAGE='OUI'`)
 **Goal:** a setting for `LISSAGE='OUI'` in `DEFI_CONTACT` (normals smoothed over the master surface), for
@@ -1456,6 +1465,11 @@ contact on faceted curved surfaces.
 pressure of a curved contact case (e.g. Samples/PipeClip).
 **Done when:** a curved contact case gives a smoother contact pressure with the same total force (within 1 %);
 the contact families stay within tolerance with the setting off and on; docs NL+EN.
+**Result** (23 Oct 2026): setting `contact_smoothing` (bool, default off) writes global `LISSAGE='OUI'` in the
+CONTINUE `DEFI_CONTACT` (bloc `b_contact_mail`, catalogue `defi_contact.py` 17.4; a user `#ASTER-CONTACT LISSAGE`
+takes precedence). Off: NL-03a..f `.comm` identical to the baseline. On: NL-03a..f within 6e-8; Samples/PipeClip
+(tet10, PENALISATION, MAXI) runs, total contact pressure equal (max 2913.7 vs 2913.8), so the fine mesh shows no
+effect; a coarse faceted case was not built.
 
 ### S29 – Penetration check for penalty contact
 **Goal:** with `contact_algo` = PENALISATION, report too much penetration with

@@ -63,8 +63,8 @@ What the nonlinear analyses support:
 |---|---|---|
 | Code-Aster run | `time_limit`, `memory_limit` | all |
 | Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
-| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi` | nonlinear static, dynamic implicit; `default_time_end` also explicit |
-| Contact | `contact_algo` | nonlinear static, dynamic |
+| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search` | nonlinear static, dynamic implicit; `default_time_end` also explicit |
+| Contact | `contact_algo`, `contact_smoothing` | nonlinear static, dynamic |
 | Material and kinematics | `plastic_strain_definition`, `deformation` | nonlinear static, dynamic |
 | Time scheme | `schema`, `hht_alpha`, `substeps_per_output` (implicit), `explicit_dt_factor` (explicit) | dynamic |
 | Failure | `element_failure`, `failure_plastic_strain`, `failure_stiffness_factor` | nonlinear static, dynamic ([Failure.md](Failure.md)) |
@@ -175,6 +175,7 @@ with the default 1e-5 it runs through).
 | `convergence_criterion` (Convergence criterion) | `RESI_GLOB_RELA`, `RESI_GLOB_MAXI`, or both with `VERIF='AU_MOINS_UN'` | `RELA` | `RELA` | See below. |
 | `convergence_resi_rela` (Convergence RESI_GLOB_RELA) | `CONVERGENCE/RESI_GLOB_RELA` | 1e-5 (thermal 1e-6) | 1e-6 | Relative to the imposed load plus reactions (U4.51.03). The bridge deviates from the CA default 1e-6 because the residual stalls on it with plastic solids (`GDEF_LOG`) (see below). 1e-6 is possible, if needed with `RELA_OF_MAXI`. Do not loosen it further: that hides problems. |
 | `convergence_resi_maxi` (Convergence RESI_GLOB_MAXI) [N] | `CONVERGENCE/RESI_GLOB_MAXI` | 1e-3 | - | Only with `MAXI` and `RELA_OF_MAXI`. `MAXI`: choose it small compared with the expected forces. `RELA_OF_MAXI`: above the absolute residual at which the residual stalls (column `RESI_GLOB_MAXI` in the `.mess`). |
+| `line_search` (Line search RECH_LINEAIRE) | `RECH_LINEAIRE` (`METHODE='CORDE'`, `ITER_LINE_MAXI=3`) | `auto` | off | Newton scales each correction so that the residual decreases (U2.04.01; catalogue `c_rech_lineaire.py` 17.4). `auto` = only with cables (`CABLE`, *Tension only*) and without contact, as Aubry (2019, §10.2) advises. `on`: try it when Newton jumps back and forth or steps are cut; the converged result does not change, an iteration costs a little more. Not with contact `CONTINUE` (Code-Aster stops with `MECANONLINE3_91`; the bridge then omits it with a WARNING) and not explicit. Not with large-rotation beams (`POU_D_T_GD`): with `on` NL-81/83/84/85/90 stopped without convergence (`MECANONLINE9_7`) NL-80/89 cut the steps into 1000-2000 substeps and ended 0.6-0.7% off, and NL-82 ended 7.6% off; the bridge warns then. SaggingCable with *Tension only*: 7 instead of 9 Newton iterations, same result; NL-01/02/04 (solids, `COQUE_3D`) and NL-86/87/88/90b with `on` within 4e-6 (S27). The thermal-mechanical chain (`bridge_thermomech`, `ITER_LINE_MAXI=5` with plasticity) keeps its own line search. |
 
 **`RELA` or `MAXI`.** `RELA` = `RESI_GLOB_RELA`: largest residual force divided by the
 imposed load plus reactions. `MAXI` = `RESI_GLOB_MAXI`: largest residual force in N
@@ -645,6 +646,7 @@ U4.44.11).
 - For shell faces the bridge does not set `ORIE_NORM_COQUE`.
 - Code-Aster checks the orientation by default and stops on an error
   (`VERI_NORM='OUI'`, catalogue).
+- **Smoothed normals (`contact_smoothing`, label "Smooth normals (LISSAGE, curved faces)"; default off).** Writes `LISSAGE='OUI'` in `DEFI_CONTACT` (global keyword for `CONTINUE`, catalogue `defi_contact.py` 17.4): the normal at each node is the average of the adjacent faces. Use it for curved contact surfaces (cylinder, sphere, pipe) meshed with few facets: the facet normals jump from face to face, which gives an uneven contact pressure and can hamper convergence. Do not use it when the contact surface has sharp edges or corners (a block edge, a step): there the averaged normal points in the wrong direction. A user `#ASTER-CONTACT LISSAGE=...` takes precedence. With flat contact faces (NL-03a..f) and with the finely meshed Samples/PipeClip the option changes nothing measurable (S28); it matters for coarse facets.
 
 ### 3.4 Initial gap and initial penetration
 
