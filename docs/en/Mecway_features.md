@@ -172,9 +172,9 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Shift point (buckling) | No | INFO only (KB46). |
 | Mode superposition (D30) | Yes | §1. |
 | Time period | Yes | |
-| Time step size | Yes | D30, T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). *Automatic time stepping* not reproduced: fixed step, Code-Aster only cuts on divergence. |
+| Time step size | Yes | D30, T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). With *Automatic time stepping* see the row below. |
 | Output times, *Generate solution every n time steps* | Yes | |
-| Automatic time stepping | No | Without a message; the bridge halves the step itself on divergence. |
+| Automatic time stepping | Yes | L30 (nonlinear static): `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, `ARCHIVAGE` at those times; setting `auto_time_stepping`. Dynamic not: fixed steps, cutting on divergence. |
 | Incompatible hex8 | No | KB1. |
 | Configurations | Yes | One per run, chosen on the start screen (*Configuration*); results in the solution of that configuration ([`UserGuide.md`](UserGuide.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Partly | Only `#ASTER` lines; ordinary CCX cards are ignored without a message. |

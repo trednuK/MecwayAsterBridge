@@ -549,6 +549,22 @@ TESTS = [
          _nl03_patch_checks(True), settings={"contact_algo": "PENALISATION"},
          note="Als NL-03d met #ASTER-ZONE INTEGRATION='NCOTES' (nu gelijk "
               "aan de standaard van de bridge)."),
+    Case("NL-03p", GROUP, "Contact-patchtest (PENALISATION), te slappe "
+         "normal stiffness: penetratiecontrole", "nonlin_static_3d",
+         lambda: build_nl03_patch(kn=1.0e10),
+         [Check("penetratie", lambda r: (
+             _at_body(r, "displz", (A4, A4, 0.0), False) -
+             _at_body(r, "displz", (A4, A4, 0.0), True)),
+             ref=P4 / 1.0e10, tol=0.005, unit="m",
+             source="contactdruk = kn x penetratie (1 mm = 15% van de "
+                    "rand 6,67 mm van het slave-vlak)"),
+          Check("penetratie-waarschuwing", lambda r: _pene_warnings(r), ref=1,
+                tol_abs=0, in_series=False,
+                source="contact_pene_maxi 0,05: grens 0,33 mm")],
+         settings={"contact_algo": "PENALISATION"},
+         note="kn = 1e10 Pa/m: de bridge waarschuwt na de run "
+              "(bridge_run_aster.penetration_report); NL-03d/f (1 um) "
+              "niet."),
 ]
 
 
@@ -726,4 +742,73 @@ TESTS += [
          settings=PETIT7,
          note="Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de "
               "waarde op het laatste tabelpunt (50 K)."),
+]
+
+
+# ------------------------------------------------------------------
+# NL-21 Mecway's Automatic time stepping (DEFI_LIST_INST METHODE='AUTO',
+# bridge_to_aster._auto_listinst_block): de trekstaaf van NL-01
+# ------------------------------------------------------------------
+# a) interne solver: stepsize 0,4 s en automatictimestepping="true"
+#    (Mecway 34 houdt het attribuut bij opslaan): vaste punten en
+#    uitvoertijden als NL-20;
+# b) CCX-opmaak: time points elke 0,5 s, automatictimestepping="true":
+#    uitvoertijden = de time points, de knikken t = 1, 2 als rekenpunt;
+#    minder rekenstappen dan de vaste lijst (substeps_per_interval 10 per
+#    lastinterval = 30).
+TIMES21B = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+
+
+def build_nl21a():
+    m = build_nl01()
+    m.timesteps = {"timeperiod": "3 s", "stepsize": "0.4 s",
+                   "automatictimestepping": "true"}
+    return m
+
+
+def build_nl21b():
+    m = build_nl01()
+    m.solver = "ccx"
+    m.timesteps = {"timeperiod": "3 s", "automatictimestepping": "true",
+                   "outputtimes": "regular", "timepointsstart": "0 s",
+                   "timepointsincrement": "0.5 s"}
+    return m
+
+
+def _calc_steps(r):
+    """Aantal geconvergeerde rekenstappen in de .mess."""
+    import bridge_convergence
+    data = bridge_convergence.parse_file(r.mess)
+    return len([s for s in data.steps if s.status == "geconvergeerd"])
+
+
+def _pene_warnings(r):
+    """Aantal penetratie-waarschuwingen na de run (bridge_run_aster)."""
+    import bridge_run_aster
+    return len(bridge_run_aster.penetration_report(r.mess))
+
+
+TESTS += [
+    Case("NL-21a", GROUP, "Trekstaaf, Automatic time stepping (Mecway-stap "
+         "0,4 s)", "nonlin_static_3d", build_nl21a,
+         [Check("uitvoertijden = Mecway-stappen + knikken",
+                lambda r: _times_dev(r, TIMES20), ref=0.0, tol_abs=1e-9,
+                unit="s", source="als NL-20; METHODE='AUTO' met de "
+                "stappen als vaste punten")] +
+         [c for c in _nl01_checks() if "t=1.5" not in c.name],
+         note="Als NL-20 met automatictimestepping=\"true\": DEFI_LIST_INST "
+              "METHODE='AUTO', PAS_MAXI 0,4 s; ARCHIVAGE op Mecway's "
+              "stappen."),
+    Case("NL-21b", GROUP, "Trekstaaf, Automatic time stepping (CCX, time "
+         "points 0,5 s)", "nonlin_static_3d", build_nl21b,
+         [Check("uitvoertijden = time points",
+                lambda r: _times_dev(r, TIMES21B), ref=0.0, tol_abs=1e-9,
+                unit="s", source="Mecway/CCX: uitvoer op de time points "
+                "(start + k x increment tot de periode)"),
+          Check("rekenstappen (vast: 30)", _calc_steps, ref=6, tol_abs=0,
+                in_series=False, source="vaste punten = time points + "
+                "knikken; zonder vlag 10 stappen per lastinterval")] +
+         _nl01_checks(),
+         note="CCX-opmaak met automatictimestepping=\"true\": METHODE='AUTO' "
+              "tussen de time points, ARCHIVAGE alleen op de time points."),
 ]

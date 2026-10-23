@@ -172,9 +172,9 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Shift point (knik) | Nee | Alleen INFO (KB46). |
 | Mode superposition (D30) | Ja | §1. |
 | Time period | Ja | |
-| Time step size | Ja | D30, T31 en L30 (L30: Mecway's stappen tot de periode plus de knikken van de lasttabellen; zonder stapgrootte `substeps_per_interval`). *Automatic time stepping* niet nagebootst: vaste stap, Code-Aster knipt alleen bij divergentie. |
+| Time step size | Ja | D30, T31 en L30 (L30: Mecway's stappen tot de periode plus de knikken van de lasttabellen; zonder stapgrootte `substeps_per_interval`). Met *Automatic time stepping* zie de regel hieronder. |
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
-| Automatic time stepping | Nee | Zonder melding; de bridge halveert de stap zelf bij divergentie. |
+| Automatic time stepping | Ja | L30 (niet-lineair statisch): `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, `ARCHIVAGE` op die tijden; instelling `auto_time_stepping`. Dynamisch niet: vaste stappen, knippen bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |
 | Configuraties | Ja | Eén per run, te kiezen op het startscherm (*Configuratie*); resultaten in de solution van die configuratie ([`Handleiding.md`](Handleiding.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Deels | Alleen `#ASTER`-regels; gewone CCX-kaarten zonder melding genegeerd. |

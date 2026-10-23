@@ -49,8 +49,11 @@ except ImportError:      # pragma: no cover - bridge_utils next to this file
 # ==========================================
 # LINE RECOGNITION
 # ==========================================
+# Without "- Niveau de découpe" with DEFI_LIST_INST METHODE='AUTO' (seen
+# with 17.4, Mecway's Automatic time stepping); level 1 then.
 _INSTANT_RE = re.compile(
-    r"Instant de calcul:\s*([-+0-9.eEdD]+)\s*-\s*Niveau de d.coupe:\s*(\d+)")
+    r"Instant de calcul:\s*([-+0-9.eEdD]+)"
+    r"(?:\s*-\s*Niveau de d.coupe:\s*(\d+))?")
 _PROGRESS_RE = re.compile(
     r"^\[\s*(\d+)%\]\s*Instant calcul.\s*:\s*([-+0-9.eE]+)")
 _CPU_RE = re.compile(r"Temps CPU consomm. dans ce pas de temps\s*:\s*([0-9.]+)")
@@ -798,7 +801,7 @@ class ConvergenceParser(object):
         m = _INSTANT_RE.search(line)
         if m:
             step = Step(len(data.steps), _to_float(m.group(1)),
-                        int(m.group(2)),
+                        int(m.group(2) or 1),
                         self._clock() if self._clock else None)
             if self._contact_init is not None:
                 step.contact_initial = self._contact_init

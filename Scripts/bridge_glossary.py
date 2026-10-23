@@ -1277,6 +1277,23 @@ SETTING_HELP = {
         u"normal stiffness from Mecway (and the tangential stiffness with "
         u"friction), as Mecway itself computes: small penetration, often "
         u"more robust for line contact or a part that can lose contact."),
+    "auto_time_stepping": (
+        u"Alleen als Automatic time stepping in Mecway aan staat: aan "
+        u"(standaard) = Code-Aster past de stap zelf aan tussen Mecway's "
+        u"uitvoertijden (DEFI_LIST_INST METHODE='AUTO'); de resultaten "
+        u"komen alleen op die uitvoertijden. Uit = vaste stappen zoals "
+        u"zonder die optie.",
+        u"Only when Automatic time stepping is on in Mecway: on (default) "
+        u"= Code-Aster adapts the step itself between Mecway's output "
+        u"times (DEFI_LIST_INST METHODE='AUTO'); results only at those "
+        u"output times. Off = fixed steps as without that option."),
+    "contact_pene_maxi": (
+        u"Alleen bij PENALISATION: waarschuwing na de run als de grootste "
+        u"penetratie groter is dan deze fractie van de kortste rand van "
+        u"het slave-vlak. Standaard 0,05 (5%); 0 = uit.",
+        u"Only with PENALISATION: warning after the run if the largest "
+        u"penetration exceeds this fraction of the shortest edge of the "
+        u"slave face. Default 0.05 (5%); 0 = off."),
     "default_time_end": (u"Eindtijd als het model geen tijdsbelasting of "
                          u"tijdstappen heeft. Standaard 1 s (pseudotijd).",
                          u"End time when the model has no time load or time "

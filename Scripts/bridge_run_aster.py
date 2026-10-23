@@ -1306,6 +1306,68 @@ def run_AsterSolver(export_path, work_dir, resu_name, mw, wait=None):
 
 
 # ==========================================
+# PENETRATION OF PENALTY CONTACT
+# ==========================================
+# Line printed by the .comm with PENALISATION contact
+# (bridge_to_aster._penetration_limit_line): limit and shortest slave edge.
+_MESS_PENE_RE = re.compile(r"BRIDGE_PENE_MAXI\s+(\S+)\s+(\S+)")
+
+
+def penetration_report(mess_path):
+    """
+    Largest penetration of penalty contact against the limit
+    (setting contact_pene_maxi). The penetration is the CONTACT
+    PENETRATION column of the convergence table in study.mess, at the
+    last Newton iteration of each converged step (ConvergenceParser,
+    key cont_pen). Returns a list of messages (empty: no check, or
+    within the limit); a WARNING in the log.
+    """
+    try:
+        text = _read_mess(mess_path)
+    except Exception:
+        return []
+    m = _MESS_PENE_RE.search(text)
+    if not m:
+        return []
+    try:
+        limit, edge = float(m.group(1)), float(m.group(2))
+    except ValueError:
+        return []
+    parser = ConvergenceParser()
+    parser.feed(text)
+    parser.close()
+    worst = None
+    for step in parser.data.steps:
+        if step.status != "geconvergeerd" or not step.iterations:
+            continue
+        pen = step.iterations[-1].get("cont_pen")
+        if pen is not None and (worst is None or pen > worst[0]):
+            worst = (pen, step.instant)
+    if worst is None:
+        return []
+    log("INFO: Largest contact penetration {0} m at t = {1} s (limit {2} "
+        "m).".format("%.4g" % worst[0], worst[1], "%.4g" % limit))
+    if worst[0] <= limit:
+        return []
+    msg = tr(u"Penalty-contact: grootste penetratie {0} m (t = {1} s) is "
+             u"{2:.0%} van de kortste rand van het slave-vlak ({3} m), meer "
+             u"dan de grens contact_pene_maxi ({4:.0%}). De delen dringen "
+             u"merkbaar in elkaar: verhoog de normal stiffness van het "
+             u"contact in Mecway, of kies contact_algo STANDARD (geen "
+             u"penetratie). contact_pene_maxi = 0 zet deze controle uit.",
+             u"Penalty contact: largest penetration {0} m (t = {1} s) is "
+             u"{2:.0%} of the shortest edge of the slave face ({3} m), more "
+             u"than the limit contact_pene_maxi ({4:.0%}). The parts "
+             u"noticeably penetrate each other: raise the contact's normal "
+             u"stiffness in Mecway, or choose contact_algo STANDARD (no "
+             u"penetration). contact_pene_maxi = 0 turns this check "
+             u"off.").format("%.4g" % worst[0], worst[1], worst[0] / edge,
+                             "%.4g" % edge, limit / edge)
+    log(u"WARNING: " + msg)
+    return [msg]
+
+
+# ==========================================
 # ERRORS IN study.mess
 # ==========================================
 def aster_mess_errors(work_dir, since=None):
