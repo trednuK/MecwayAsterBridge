@@ -239,7 +239,7 @@ elsets that stay geometrically linear; the details per elset are INFO lines in t
 | `COQUE_3D` | `GROT_GDEP` | alarm `COMPOR1_47`: rotations < 2π; NL-02b exact |
 | beam `POU_D_E`/`POU_D_T` | `PETIT` | `GROT_GDEP` on `POU_D_E` did not converge (KNOWN_BUGS 11); for large rotations `elem_beam` = `POU_D_T_GD` |
 | beam `POU_D_T_GD` | `GROT_GDEP` with `ELAS_POUTRE_GR` | large rotations of beams (§2.9) |
-| cable (tension only) | always `GROT_GDEP` | `RELATION='CABLE'` requires it |
+| cable (tension only) | always `GROT_GDEP` | `RELATION='CABLE'` requires it; small pretension `N_INIT` = `cable_n_init_factor` × E × A (default 1e-6, page **Elements**), otherwise a straight cable is singular |
 | discrete (spring, nodal mass, elastic support) | `PETIT` (`PETIT_REAC` if chosen) | large displacements for discrete elements NOT verified |
 
 `PETIT` and `PETIT_REAC` go unchanged to all elsets (except cables).

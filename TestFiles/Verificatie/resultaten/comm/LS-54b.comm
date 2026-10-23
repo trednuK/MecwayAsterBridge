@@ -117,7 +117,7 @@ model = AFFE_MODELE(
 cara = AFFE_CARA_ELEM(
     MODELE=model,
     CABLE=(
-        _F(GROUP_MA='Kabel', AIRE=7.853981633974483e-05, N_INIT=0.0),
+        _F(GROUP_MA='Kabel', AIRE=7.853981633974483e-05, N_INIT=16.493361431346415),
     ),
 )
 

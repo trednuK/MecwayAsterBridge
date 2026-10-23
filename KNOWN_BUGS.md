@@ -297,8 +297,12 @@ Code-Aster value per node) and logs the largest difference per variable.
 23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap
    (U against node 1 -> 2), skewed U or coincident nodes (reported, element
    without stiffness); the 'force of open gap' of CCX is not used. Tension
-   only (CABLE, GROT_GDEP): compressive stiffness 1e-4 E (Code-Aster EC_SUR_E), a cable
-   without prestress has no transverse stiffness. Both only nonlinear.
+   only (CABLE, GROT_GDEP): compressive stiffness 1e-4 E (Code-Aster EC_SUR_E). A
+   straight cable without prestress has no transverse stiffness; the bridge therefore
+   writes a small `N_INIT` = `cable_n_init_factor` x E x A (default 1e-6, INFO in the
+   log), with which a straight cable under transverse load solves (Samples/SaggingCable
+   with *Tension only*: 3.06798 m, Mecway truss 3.0680 m; with 0 singular, MECANONLINE9_4)
+   and LS-54b/c do not change (< 1e-12 relative). Both only nonlinear.
 
 34\. **PLAS_TAB: untranslated fields** (confirmed, `bridge_radioss.parse_plas_tab`).
    Kinematic/mixed hardening (C_hard > 0; 0 is isotropic, Altair /MAT/LAW36),
@@ -315,7 +319,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    gravity) is therefore a mechanism: the run stops (singular, BRIDGE_ONVOLLEDIG). CABLE with EC_SUR_E=1.0 is a geometrically
    nonlinear bar (measured: rigid rotation N=0), but without prestress a
    straight cable stays singular; with N_INIT=2000 N SaggingCable gave 3.06797 m (Mecway
-   3.0680 m). Not built in.
+   3.0680 m). Not built in for trusses (EC_SUR_E=1.0 changes the material); for the
+   same model with *Tension only* the bridge's default pretension (KNOWN_BUGS 23) gives
+   3.06798 m.
 
 43\. **Contact: hard and soft formulation differ from Mecway** (confirmed).
    `contact_algo` = STANDARD (Lagrange, default) allows no penetration; Mecway

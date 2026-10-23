@@ -2832,7 +2832,8 @@ def extract_aster_data_from_liml(file_path):
                                    "only line2 with a cross-section;"))
                     model_data["elset_modelisations"].pop(elset_name, None)
                     continue
-                model_data["cable_sections"][elset_name] = {"area": area}
+                model_data["cable_sections"][elset_name] = {
+                    "area": area, "E": props.get("E")}
                 model_data["elset_modelisations"][elset_name] = "CABLE"
                 log("INFO: Tension-only elset '{0}' -> CABLE, A={1} m2."
                     .format(elset_name, area))

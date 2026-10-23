@@ -103,6 +103,12 @@ CONFIG_BRIDGE = {
     # "POU_D_T_GD" (large rotations, only in nonlinear static with large
     # displacements, elsewhere POU_D_T; bridge_from_liml._gd_beam_choice).
     "elem_beam":       "POU_D_E",
+    # Tension only (CABLE): small pretension N_INIT = factor x E x A [N]
+    # per cable group (AFFE_CARA_ELEM CABLE). Without it a straight cable
+    # has no transverse stiffness (singular, KNOWN_BUGS 23/40); Aubry
+    # (2019, par. 10.1) uses 10 N only to make the solve possible.
+    # 0 = no pretension (behaviour up to V2026.4).
+    "cable_n_init_factor": 1.0e-6,
 
     # NOTE: the values in this CONFIG_BRIDGE block are rewritten line by line
     # by the start screen (bridge_gui.py). Keep the pattern

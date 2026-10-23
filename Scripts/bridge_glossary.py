@@ -1094,6 +1094,17 @@ SETTING_HELP = {
                   u"How hex8 solid elements are computed in Code-Aster. "
                   u"Default 3D (fully integrated; too stiff in bending with "
                   u"few hex8 through the thickness, KNOWN_BUGS 1)."),
+    "cable_n_init_factor": (
+        u"Kleine voorspanning voor tension-only-elementen (CABLE): "
+        u"N_INIT = factor x E x A (in N) per kabelgroep. Zonder "
+        u"voorspanning heeft een rechte kabel geen dwarsstijfheid en is "
+        u"de matrix singulier. Standaard 1e-6: rek 1e-6, verandert de "
+        u"resultaten niet merkbaar. 0 = geen voorspanning.",
+        u"Small pretension for tension-only elements (CABLE): "
+        u"N_INIT = factor x E x A (in N) per cable group. Without "
+        u"pretension a straight cable has no transverse stiffness and "
+        u"the matrix is singular. Default 1e-6: strain 1e-6, does not "
+        u"change the results noticeably. 0 = no pretension."),
     "elem_shell": (u"Welk schaalelement voor tri3/quad4-schalen. Standaard "
                    u"DKT (dunne plaat, Kirchhoff).",
                    u"Which shell element for tri3/quad4 shells. Default DKT "
