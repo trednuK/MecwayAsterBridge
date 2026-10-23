@@ -336,12 +336,22 @@ that file, not in the model.
   (b) `POU_D_T_GD` with `RELATION='ELAS'`; that beam needs `ELAS_POUTRE_GR` (test case
   ssnl103a, EDF R&D, 2026c); (c) vibroacoustics: `NORM_MODE MASS_GENE` on a spurious mode
   with negative generalised mass (seen with a shell with only one rotation fixed; the
-  bridge now filters those modes first, [`Acoustics.md`](Acoustics.md) §6.5).
-- **Seen**: (a) profile test; (b) large-rotation trials.
+  bridge now filters those modes first, [`Acoustics.md`](Acoustics.md) §6.5);
+  (d) nonlinear (`STAT_NON_LINE`, option `FULL_MECA`, e.g. `MECA_HEXA8`): an element is
+  so distorted (nearly flattened or turned inside out) that the integration of the
+  material law overflows, e.g. hyperelastic (`ELAS_HYPER`) with a large imposed
+  displacement.
+- **Seen**: (a) profile test; (b) large-rotation trials; (d) GitHub issue #5 (Neo Hooke,
+  maille 495).
 - **Solution**: (a) see `MODELISA_78`; (b) with `elem_beam` = `POU_D_T_GD` the bridge
   itself writes `ELAS_POUTRE_GR` ([Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)); only your own code with
-  `POU_D_T_GD` and `ELAS` gives this error.
-- **Status**: fixed in the bridge (a, b).
+  `POU_D_T_GD` and `ELAS` gives this error; (d) the job keeps the steps that converged
+  before the error: it writes `BRIDGE_ONVOLLEDIG <time>`, loads the results up to that
+  time and Mecway shows `DVP_2` with "Last time with results: ... s"
+  ([Settings §4.1](Settings_contact_and_nonlinear.md#41-what-the-bridge-does-then)).
+  Look at the last result where the mesh distorts most, and use smaller steps (*Time
+  step size* in Mecway), quadratic elements or a finer mesh there, or a smaller load.
+- **Status**: fixed in the bridge (a, b); (d) message, results up to the error.
 
 ### `CALCUL_37` – element cannot compute this option
 
@@ -357,7 +367,9 @@ that file, not in the model.
   4. format test model F4_model (dynamics): element and option not checked;
   5. `MECABL2` (cable, tension only) cannot compute `ROTATION`;
   6. `MECA_POU_D_T_GD` cannot compute `RIGI_MECA` in a linear analysis, `SIPM_ELNO`
-     (beam stress) and `CHAR_MECA_ROTA_R` (centrifugal force) either.
+     (beam stress) and `CHAR_MECA_ROTA_R` (centrifugal force) either;
+  7. `MECA_BARRE` (truss, line2 and line3) and the cable cannot compute `RIGI_GEOM`
+     (geometric stiffness for linear buckling; GitHub issue #6).
 - **Seen**: 1 explicit dynamics with `3D_SI`; 2 beam trials and a run with a failing hex8
   bar beside a GD beam; 3 and 4 load tests; 5 code review (commit 6ce5cba); 6 trials with
   `POU_D_T_GD`.
@@ -370,8 +382,10 @@ that file, not in the model.
   determined; 5 cables get no centrifugal force (ERROR; KNOWN_BUGS 19); 6 with
   `elem_beam` = `POU_D_T_GD` the bridge makes `POU_D_T` in analyses other than nonlinear
   static with large displacements (WARNING), requests no `SIPM_ELNO` and writes the
-  centrifugal force as a `FORMULE`; `imperfection_amplitude` gives an ERROR beforehand.
-- **Status**: fixed in the bridge (1, 3, 6; 2 and 5 as a message) / own input (2, own
+  centrifugal force as a `FORMULE`; `imperfection_amplitude` gives an ERROR beforehand;
+  7 buckling (and a buckling mode as imperfection) with trusses or cables gives an ERROR
+  beforehand: model the members as beams ([`Modal_and_buckling.md`](Modal_and_buckling.md)).
+- **Status**: fixed in the bridge (1, 3, 6, 7; 2 and 5 as a message) / own input (2, own
   code) / cause not determined (4).
 
 ### `CALCUL_42` – option not yet programmed (follower pressure on DKT)
@@ -1443,7 +1457,7 @@ and beams in the model).
 | `CALCULEL_58` | [7](#calculel_58--component-missing) | fixed in the bridge |
 | `CALCUL_20` | [2](#calcul_20--material-missing) | fixed in the bridge (as a message) |
 | `CALCUL_29` | [11](#indicateur_2-calcul_29--stresses-not-on-the-whole-model) | fixed in the bridge |
-| `CALCUL_37` | [2](#calcul_37--element-cannot-compute-this-option) | fixed in the bridge (1, 3, 6; 2 and 5 as a message) / own input (2, own code) / cause not determined (4) |
+| `CALCUL_37` | [2](#calcul_37--element-cannot-compute-this-option) | fixed in the bridge (1, 3, 6, 7; 2 and 5 as a message) / own input (2, own code) / cause not determined (4) |
 | `CALCUL_37` (`INIT_MAIL_VOIS`) | [11](#calcul_37-init_mail_vois--beam-in-the-estimators-model) | fixed in the bridge |
 | `CALCUL_42` | [2](#calcul_42--option-not-yet-programmed-follower-pressure-on-dkt) | fixed in the bridge (as a message) |
 | `CALCUL_5` | [7](#algorith2_12-calcul_5--internal-thermal-post-processing) | fixed in the bridge |
@@ -1463,7 +1477,7 @@ and beams in the model).
 | `DISCRETISATION_87` | [5](#discretisation_87--time-list-not-strictly-increasing) | fixed in the bridge |
 | `DISCRETS_26` | [2](#discrets_26--discrete-element-without-mass) | fixed in the bridge |
 | `DISCRETS_28` | [2](#discrets_28--discrete-element-without-damping) | harmless |
-| `DVP_2` | [2](#dvp_2--floating-point-exception) | fixed in the bridge (a, b) |
+| `DVP_2` | [2](#dvp_2--floating-point-exception) | fixed in the bridge (a, b); message with results up to the error (d) |
 | `DYNAMIQUE_4` | [5](#dynamique_4--stability-limit-cannot-be-computed-explicit) | fixed in the bridge |
 | `ELEMENTS2_63` | [2](#elements2_63--ther_nl-missing-in-the-material-thermal) | fixed in the bridge |
 | `ELEMENTS4_4` | [7](#elements4_4-elements4_64--sipm_elno-not-possible) | fixed in the bridge |

@@ -388,6 +388,18 @@ searches around a small negative frequency (`CENTRE`, line `BRIDGE_FREE_SHIFT` i
 - Contact, gaps, tension/compression only: not in a modal or buckling analysis
   (ERROR).
 - Stresses per buckling mode (only per vibration mode, §1.4).
+- Buckling with trusses or cables (line2 and line3; also a buckling mode as
+  imperfection, §5): Code-Aster has no geometric stiffness for `BARRE`/`CABLE`
+  (`RIGI_GEOM`; otherwise `CALCUL_37`), so the bridge stops beforehand with an ERROR.
+  Model the members as beams (line2/line3 beam elements with the real cross-section):
+  that gives member buckling and global buckling. Nonlinear static with large
+  displacements is no way out for trusses: `BARRE` stays geometrically linear with
+  `GROT_GDEP` too (KNOWN_BUGS 40). Vibration modes (modal) with trusses do work. There
+  the midside condition of line3 trusses (across the chord the mean of the end nodes,
+  [`Mecway_features.md`](Mecway_features.md)) suppresses the isolated midside-node
+  modes that CalculiX gives without such a condition: a midside node without bending
+  stiffness can move freely across the chord. That the global mode appears once you
+  constrain the midside node (GitHub issue #6) agrees with this.
 
 ### 3.4 Beam orientation and sections
 

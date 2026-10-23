@@ -821,7 +821,12 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
 - **Dynamic**: all output times up to that time go to Mecway.
 - **Static**: route `liml` all archived steps up to that time, route `tabel` only the
   last time reached (§2.1).
-- An error other than `MECANONLINE*` (e.g. `DVP_2`) stops the run without results.
+- Another Code-Aster error in the step loop (e.g. `DVP_2`, an element that is too
+  distorted) is handled the same way, once a step beyond the start has been archived: on
+  every Code-Aster error the result with the steps so far is available in the `.comm`
+  (seen with 17.4 for `FONCT0_9` in step 12 of 20: results up to t = 0.5). Mecway shows
+  that error code with "Last time with results". An error before the first step, or a
+  Python error, stops the run without results.
 - Other error codes, with causes and solutions:
   [`CodeAster_error_messages.md`](CodeAster_error_messages.md).
 

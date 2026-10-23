@@ -59,6 +59,7 @@ import re
 from collections import OrderedDict
 
 from bridge_utils import log, tr, CONFIG_BRIDGE
+import bridge_failure
 
 # Own template with the thermal and the mechanical solve.
 TEMPLATE = "AsterTemplate_ThermoMeca.comm"
@@ -813,11 +814,7 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
         "        if _gm_k < len(_gm_t):\n"
         "            _gm_alive += _gm_born[_gm_k]\n"
         "            _gm_new += [_g for _g, _m in _gm_born[_gm_k]]\n"
-        "except Exception as err:\n"
-        "    if not str(getattr(err, 'id_message', '')).startswith("
-        "'MECANONLINE'):\n"
-        "        raise\n"
-        "    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])\n"
+        + bridge_failure.PARTIAL_EXCEPT +
         "print('BRIDGE_GEBOORTE_MECA %d' % len(_gm_alive))\n"
         "t_res = res.getAccessParameters()['INST'][-1]\n").format(
             affe=",\n    ".join(entries),
@@ -959,11 +956,7 @@ def build_blocks(tb, model_data, analysis):
         "{rech}"
         "        CONVERGENCE=_F({conv}),\n"
         "    )\n"
-        "except Exception as err:\n"
-        "    if not str(getattr(err, 'id_message', '')).startswith("
-        "'MECANONLINE'):\n"
-        "        raise\n"
-        "    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])\n"
+        + bridge_failure.PARTIAL_EXCEPT +
         "t_res = res.getAccessParameters()['INST'][-1]\n").format(
             excit=bta._indent(excit_clause), comp=bta._indent(comportement),
             solveur=bta._indent(bta._build_solveur_ref(analysis)),

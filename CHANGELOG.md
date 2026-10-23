@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Results after other errors in the step loop** (issue #5): when Code-Aster stops
+  `STAT_NON_LINE`/`DYNA_NON_LINE` with another error than `MECANONLINE*` after some steps
+  have converged (e.g. `DVP_2`, a floating point exception in a too distorted element),
+  the bridge now loads the results up to the last converged time, as for a convergence
+  failure. Mecway shows the error code, an explanation of `DVP_2` (smaller steps,
+  quadratic elements, a smaller load) and the last time with results. An error before
+  the first step still stops without results.
+- **Buckling with trusses** (issue #6): linear buckling (and a buckling mode as
+  imperfection) with trusses or cables now stops before Code-Aster with an ERROR that
+  explains why (`BARRE`/`CABLE` have no geometric stiffness, `CALCUL_37` `RIGI_GEOM`) and
+  advises beam elements. Docs: the midside condition of line3 trusses suppresses the
+  isolated midside-node modes.
+
 ## V2026.4 – 22 October 2026
 
 Quadratic trusses, hyperelastic materials, the elastic modulus from the plastic curve as

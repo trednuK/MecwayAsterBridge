@@ -337,12 +337,23 @@ in dat bestand, niet op het model.
   (b) `POU_D_T_GD` met `RELATION='ELAS'`; die balk vraagt `ELAS_POUTRE_GR` (testcase
   ssnl103a, EDF R&D, 2026c); (c) vibro-akoestiek: `NORM_MODE MASS_GENE` op een valse
   mode met negatieve gegeneraliseerde massa (gezien bij een schaal met maar één rotatie
-  vast; de bridge filtert die modes nu eerst, [`Akoestiek.md`](Akoestiek.md) §6.5).
-- **Gezien**: (a) profieltest; (b) proeven voor grote rotaties.
+  vast; de bridge filtert die modes nu eerst, [`Akoestiek.md`](Akoestiek.md) §6.5);
+  (d) niet-lineair (`STAT_NON_LINE`, optie `FULL_MECA`, bijv. `MECA_HEXA8`): een element
+  is zo sterk vervormd (bijna platgedrukt of binnenstebuiten) dat de integratie van de
+  materiaalwet overloopt, bijv. hyperelastisch (`ELAS_HYPER`) met een grote opgelegde
+  verplaatsing.
+- **Gezien**: (a) profieltest; (b) proeven voor grote rotaties; (d) GitHub-issue #5
+  (Neo Hooke, maille 495).
 - **Oplossing**: (a) zie `MODELISA_78`; (b) met `elem_beam` = `POU_D_T_GD` zet de bridge
   zelf `ELAS_POUTRE_GR` ([Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)); alleen eigen code met
-  `POU_D_T_GD` en `ELAS` geeft deze fout.
-- **Status**: opgelost in de bridge (a, b).
+  `POU_D_T_GD` en `ELAS` geeft deze fout; (d) de job houdt de stappen die vóór de fout
+  geconvergeerd zijn: hij schrijft `BRIDGE_ONVOLLEDIG <tijd>`, laadt de resultaten tot
+  dat tijdstip en Mecway toont `DVP_2` met "Laatste tijdstip met resultaten: ... s"
+  ([Instellingen §4.1](Instellingen_contact_en_nietlineair.md#41-wat-de-bridge-dan-doet)).
+  Kijk naar het laatste resultaat waar het net het sterkst vervormt, en maak de stappen
+  kleiner (*Time step size* in Mecway), gebruik kwadratische elementen of een fijner net
+  op die plek, of verklein de belasting.
+- **Status**: opgelost in de bridge (a, b); (d) melding, resultaten tot de fout.
 
 ### `CALCUL_37` – element kan deze optie niet
 
@@ -358,7 +369,9 @@ in dat bestand, niet op het model.
   4. formaten-testmodel F4_model (dynamica): element en optie niet nagelopen;
   5. `MECABL2` (kabel, tension only) kan `ROTATION` niet;
   6. `MECA_POU_D_T_GD` kan ook `RIGI_MECA` in een lineaire analyse, `SIPM_ELNO`
-     (balkspanning) en `CHAR_MECA_ROTA_R` (centrifugaalkracht) niet.
+     (balkspanning) en `CHAR_MECA_ROTA_R` (centrifugaalkracht) niet;
+  7. `MECA_BARRE` (truss, line2 en line3) en de kabel kunnen `RIGI_GEOM` niet
+     (geometrische stijfheid van lineaire knik; GitHub-issue #6).
 - **Gezien**: 1 expliciete dynamica met `3D_SI`; 2 balkproeven en een run met een
   bezwijkende hex8-staaf naast een GD-balk; 3 en 4 tests van de belastingen; 5
   code-review (commit 6ce5cba); 6 proeven met `POU_D_T_GD`.
@@ -372,8 +385,10 @@ in dat bestand, niet op het model.
   (ERROR; KNOWN_BUGS 19); 6 met `elem_beam` = `POU_D_T_GD` maakt de bridge in andere
   analyses dan niet-lineair statisch met grote verplaatsingen `POU_D_T` (WARNING),
   vraagt hij geen `SIPM_ELNO` en zet hij de centrifugaalkracht als `FORMULE`;
-  `imperfection_amplitude` geeft vooraf een ERROR.
-- **Status**: opgelost in de bridge (1, 3, 6; 2 en 5 als melding) / eigen invoer (2, eigen
+  `imperfection_amplitude` geeft vooraf een ERROR; 7 knik (en een knikvorm als
+  imperfectie) met trusses of kabels geeft vooraf een ERROR: modelleer de staven als
+  balken ([`Modaal_en_knik.md`](Modaal_en_knik.md)).
+- **Status**: opgelost in de bridge (1, 3, 6, 7; 2 en 5 als melding) / eigen invoer (2, eigen
   code) / oorzaak niet vastgesteld (4).
 
 ### `CALCUL_42` – optie nog niet geprogrammeerd (meebewegende druk op DKT)
@@ -1464,7 +1479,7 @@ twee drukken en balken in het model).
 | `CALCULEL_58` | [7](#calculel_58--component-ontbreekt) | opgelost in de bridge |
 | `CALCUL_20` | [2](#calcul_20--materiaal-ontbreekt) | opgelost in de bridge (als melding) |
 | `CALCUL_29` | [11](#indicateur_2-calcul_29--spanningen-niet-op-het-hele-model) | opgelost in de bridge |
-| `CALCUL_37` | [2](#calcul_37--element-kan-deze-optie-niet) | opgelost in de bridge (1, 3, 6; 2 en 5 als melding) / eigen invoer (2, eigen code) / oorzaak niet vastgesteld (4) |
+| `CALCUL_37` | [2](#calcul_37--element-kan-deze-optie-niet) | opgelost in de bridge (1, 3, 6, 7; 2 en 5 als melding) / eigen invoer (2, eigen code) / oorzaak niet vastgesteld (4) |
 | `CALCUL_37` (`INIT_MAIL_VOIS`) | [11](#calcul_37-init_mail_vois--balk-in-het-model-van-de-schatter) | opgelost in de bridge |
 | `CALCUL_42` | [2](#calcul_42--optie-nog-niet-geprogrammeerd-meebewegende-druk-op-dkt) | opgelost in de bridge (als melding) |
 | `CALCUL_5` | [7](#algorith2_12-calcul_5--interne-thermische-nabewerking) | opgelost in de bridge |
@@ -1484,7 +1499,7 @@ twee drukken en balken in het model).
 | `DISCRETISATION_87` | [5](#discretisation_87--tijdlijst-niet-strikt-stijgend) | opgelost in de bridge |
 | `DISCRETS_26` | [2](#discrets_26--discreet-element-zonder-massa) | opgelost in de bridge |
 | `DISCRETS_28` | [2](#discrets_28--discreet-element-zonder-demping) | onschuldig |
-| `DVP_2` | [2](#dvp_2--floating-point-exception) | opgelost in de bridge (a, b) |
+| `DVP_2` | [2](#dvp_2--floating-point-exception) | opgelost in de bridge (a, b); melding met resultaten tot de fout (d) |
 | `DYNAMIQUE_4` | [5](#dynamique_4--stabiliteitsgrens-niet-te-berekenen-expliciet) | opgelost in de bridge |
 | `ELEMENTS2_63` | [2](#elements2_63--ther_nl-ontbreekt-in-het-materiaal-thermisch) | opgelost in de bridge |
 | `ELEMENTS4_4` | [7](#elements4_4-elements4_64--sipm_elno-niet-mogelijk) | opgelost in de bridge |

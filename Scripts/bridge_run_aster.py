@@ -346,7 +346,26 @@ def _resi_advice(box_text, analysis_name=None):
                          title, suggest)
 
 
-_MESS_HINTS = {"FACTOR_10": _SINGULAR_HINT, "FACTOR_11": _SINGULAR_HINT,
+# DVP_2: floating point exception in an element computation (e.g. option
+# FULL_MECA, MECA_HEXA8; GitHub issue #5, ELAS_HYPER with a large imposed
+# displacement): an element is so distorted (Jacobian near or below zero)
+# that the constitutive integration overflows. The job keeps the steps
+# archived before the error (bridge_failure.PARTIAL_EXCEPT).
+_DVP_HINT = (u"Rekenfout (floating point exception) in een element: dat "
+             u"element is waarschijnlijk te sterk vervormd (bijna "
+             u"platgedrukt of binnenstebuiten). De resultaten tot het laatst "
+             u"bereikte tijdstip worden ingeladen. Maak de stappen kleiner "
+             u"(Time step size in Mecway), gebruik kwadratische elementen of "
+             u"een fijner net op die plek, of verklein de belasting. Zie "
+             u"docs/Foutmeldingen_CodeAster.md.",
+             u"Numerical error (floating point exception) in an element: "
+             u"that element is probably too distorted (nearly flattened or "
+             u"turned inside out). The results up to the last time reached "
+             u"are loaded. Use smaller steps (Time step size in Mecway), "
+             u"quadratic elements or a finer mesh there, or a smaller load. "
+             u"See docs/en/CodeAster_error_messages.md.")
+
+_MESS_HINTS = {"FACTOR_10": _SINGULAR_HINT, "DVP_2": _DVP_HINT, "FACTOR_11": _SINGULAR_HINT,
                "ALGORITH16_52": _CYCLIC_HINT, "ALGORITH16_58": _CYCLIC_HINT,
                "ALGORITH14_94": _CYCLIC_HINT,
                "ALGELINE3_81": _MODES_SINGULAR_HINT,
@@ -366,6 +385,8 @@ def mess_hints():
 # Line that the .comm prints after a caught ConvergenceError
 # (bridge_to_aster._build_nonlin_static).
 _MESS_PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
+# Id of the error that stopped the step loop (bridge_failure.PARTIAL_EXCEPT)
+_MESS_STOP_ID_RE = re.compile(r"BRIDGE_FOUT_ID\s+(\S+)")
 # The FIN command writes "<I> <FIN> ARRET NORMAL DANS "FIN" ..." (in every
 # completed study.mess of the test models, also after a caught
 # ConvergenceError). If it is missing, study.comm was not executed to the end
@@ -1341,7 +1362,9 @@ def aster_mess_errors(work_dir, since=None):
                     elif m.group(2) in hints:
                         msg += u" -> " + hints[m.group(2)]
                     partial = _MESS_PARTIAL_RE.search(text)
-                    if partial and m.group(2).startswith("MECANONLINE"):
+                    stop_id = _MESS_STOP_ID_RE.search(text)
+                    if partial and (m.group(2).startswith("MECANONLINE") or (
+                            stop_id and stop_id.group(1) == m.group(2))):
                         msg += tr(u" Laatste tijdstip met resultaten: {0} s.",
                                   u" Last time with results: {0} s.").format(
                             partial.group(1))

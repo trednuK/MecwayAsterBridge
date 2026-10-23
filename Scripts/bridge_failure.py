@@ -109,6 +109,34 @@ from collections import OrderedDict
 
 from bridge_utils import log, tr, log_file_name
 
+# except clause after STAT_NON_LINE/DYNA_NON_LINE (also the loops here and in
+# bridge_thermomech). On every AsterError Code-Aster publishes the current
+# result in the namespace of the .comm (ExecuteCommand.exec_: "except
+# libaster.AsterError: self.publish_result(); raise", 17.4), so 'res' then
+# holds the steps archived before the stop. Seen with 17.4: ConvergenceError
+# MECANONLINE9_7, and <F> FONCT0_9 (function evaluation in step 12 of 20):
+# INST 0..0.5 present and the post-processing ran. DVP_2 (floating point
+# exception in FULL_MECA) is an <F> message from the element computation as
+# well (same route as FONCT0_9; DVP_2 itself NIET geverifieerd in a run,
+# KNOWN_BUGS 117).
+# MECANONLINE*: always continue (as before). Other AsterErrors: only if 'res'
+# has an archived step beyond the initial state; otherwise (error before the
+# first step, or no 'res') the error is raised again. BRIDGE_FOUT_ID gives
+# bridge_run_aster.py the id of the stopping error. No braces: the text is
+# part of str.format templates.
+PARTIAL_EXCEPT = (
+    "except Exception as err:\n"
+    "    _pe_id = str(getattr(err, 'id_message', '') or '')\n"
+    "    try:\n"
+    "        _pe_inst = list(res.getAccessParameters()['INST'])\n"
+    "    except Exception:\n"
+    "        _pe_inst = []\n"
+    "    if not _pe_id or not _pe_inst or not (\n"
+    "            _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):\n"
+    "        raise\n"
+    "    print('BRIDGE_FOUT_ID', _pe_id)\n"
+    "    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])\n")
+
 # Per MODELISATION the DEFORMATION forms for which failure has been
 # checked with a Code-Aster run (force drop after failure). DKT/COQUE_3D
 # with VMIS_ISOT_LINE: 2 internal variables, also with GREEN_LAGRANGE/GROT_GDEP
@@ -497,11 +525,7 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
         "{dyn_fields}"
         "            VARI=_bz_vari0))\n"
         "        _bz_pred = '{after_pred}'\n"
-        "except Exception as err:\n"
-        "    if not str(getattr(err, 'id_message', '')).startswith("
-        "'MECANONLINE'):\n"
-        "        raise\n"
-        "    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])\n"
+        + PARTIAL_EXCEPT +
         "print('BRIDGE_BEZWIJKEN_TOTAAL %d' % sum(len(c) for c in "
         "_bz_failed.values()))\n"
         "t_res = res.getAccessParameters()['INST'][-1]\n"

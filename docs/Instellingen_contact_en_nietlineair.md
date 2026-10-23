@@ -829,7 +829,12 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
 - **Dynamisch**: alle uitvoertijden tot dat tijdstip gaan naar Mecway.
 - **Statisch**: route `liml` alle gearchiveerde stappen tot dat tijdstip, route
   `tabel` alleen het laatst bereikte tijdstip (§2.1).
-- Een andere fout dan `MECANONLINE*` (bijv. `DVP_2`) stopt de run zonder resultaten.
+- Een andere Code-Aster-fout in de stappenlus (bijv. `DVP_2`, een te sterk vervormd
+  element) gaat op dezelfde manier, als er al een stap na het begin gearchiveerd is: bij
+  elke Code-Aster-fout staat het resultaat met de stappen tot dan in de `.comm`
+  (gezien met 17.4 bij `FONCT0_9` in stap 12 van 20: resultaten tot t = 0,5). Mecway
+  toont die foutcode met "Laatste tijdstip met resultaten". Een fout vóór de eerste
+  stap, of een Python-fout, stopt de run zonder resultaten.
 - Andere foutcodes, met oorzaak en oplossingen: [`Foutmeldingen_CodeAster.md`](Foutmeldingen_CodeAster.md).
 
 ### 4.2 Stappenplan

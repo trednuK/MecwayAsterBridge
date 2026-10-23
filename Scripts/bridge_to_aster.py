@@ -6187,6 +6187,8 @@ def _imperfection_plan(model_data, analysis):
                "ERROR: Imperfection: unit '{0}' unknown (imperfection_"
                "unit: m or L).").format(unit))
         return False
+    if not _check_buckling_trusses(model_data):
+        return False
     found = _nonlinear_parts(model_data)
     if found:
         # The buckling mode comes from a linear buckling analysis
@@ -6615,7 +6617,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
             "large displacements"))
     # Without convergence Code-Aster raises a ConvergenceError (id
     # MECANONLINE*), but 'res' then contains all archived steps up to the
-    # last converged time (seen with Code-Aster 17.4). The job therefore
+    # last converged time (seen with Code-Aster 17.4; other errors in the
+    # step loop too: bridge_failure.PARTIAL_EXCEPT). The job therefore
     # continues with the post-processing; BRIDGE_ONVOLLEDIG in study.mess
     # tells bridge_run_aster.py up to which time there are results.
     statnonline_block = contact_block + (
@@ -6633,11 +6636,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         "        NEWTON=_F(REAC_ITER={reac}),\n"
         "        CONVERGENCE=_F({conv}),\n"
         "    )\n"
-        "except Exception as err:\n"
-        "    if not str(getattr(err, 'id_message', '')).startswith("
-        "'MECANONLINE'):\n"
-        "        raise\n"
-        "    print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])\n"
+        + bridge_failure.PARTIAL_EXCEPT +
         "t_res = res.getAccessParameters()['INST'][-1]\n"
     ).format(
         command      = command,
@@ -7225,6 +7224,38 @@ def _buckling_beam_notes(model_data):
                "(KNOWN_BUGS 115).").format(", ".join(ecc)))
 
 
+def _check_buckling_trusses(model_data):
+    """
+    Linear buckling needs the geometric stiffness (option RIGI_GEOM) of
+    every element. Trusses and cables (MODELISATION BARRE / CABLE) do not
+    have it: Code-Aster 17.4 stops with <EXCEPTION> CALCUL_37 "Le
+    TYPE_ELEMENT MECA_BARRE ne sait pas encore calculer l'option:
+    RIGI_GEOM" (GitHub issue #6, line3 trusses; line2 is the same element).
+    Large displacements are no way out either: BARRE stays geometrically
+    linear with GROT_GDEP (KNOWN_BUGS 40, measured). Returns False (with an
+    ERROR) if the model has such elsets.
+    """
+    mods = model_data.get("elset_modelisations", {}) or {}
+    found = sorted(g for g, mod in mods.items() if mod in ("BARRE", "CABLE"))
+    if not found:
+        return True
+    log(tr("ERROR: Lineaire knik kan niet met trusses of kabels ({0}): "
+           "Code-Aster heeft voor deze elementen (BARRE/CABLE) geen "
+           "geometrische stijfheid (RIGI_GEOM; Code-Aster stopt anders met "
+           "CALCUL_37). Modelleer de staven als balken (line2/line3 "
+           "balkelementen met de echte doorsnede): dat geeft zowel knik "
+           "van een staaf als van de hele constructie. Zie "
+           "docs/Modaal_en_knik.md.",
+           "ERROR: Linear buckling is not possible with trusses or cables "
+           "({0}): Code-Aster has no geometric stiffness for these "
+           "elements (BARRE/CABLE; RIGI_GEOM, otherwise Code-Aster stops "
+           "with CALCUL_37). Model the members as beams (line2/line3 beam "
+           "elements with the real cross-section): that gives both member "
+           "buckling and global buckling. See "
+           "docs/en/Modal_and_buckling.md.").format(", ".join(found)))
+    return False
+
+
 def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     """
     Generate study.comm and study.export for CALC_MODES:
@@ -7270,6 +7301,8 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         return None
     if not _check_linear(model_data, tr("een modale of knikanalyse",
                                         "a modal or buckling analysis")):
+        return None
+    if buckling and not _check_buckling_trusses(model_data):
         return None
     bridge_failure.failure_plan(
         model_data, analysis,

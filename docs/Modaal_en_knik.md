@@ -393,6 +393,18 @@ bridge zoekt dan rond een kleine negatieve frequentie (`CENTRE`, regel
   massa; de bridge geeft die van Code-Aster, §1.4).
 - Contact, gaps, tension/compression only: niet in een modale of knikanalyse (ERROR).
 - Spanningen per knikvorm (alleen per trillingsvorm, §1.4).
+- Knik met trusses of kabels (line2 en line3; ook een knikvorm als imperfectie, §5):
+  Code-Aster heeft voor `BARRE`/`CABLE` geen geometrische stijfheid (`RIGI_GEOM`;
+  anders `CALCUL_37`), de bridge stopt vooraf met een ERROR. Modelleer de staven als
+  balken (line2/line3 balkelementen met de echte doorsnede): dat geeft knik van een
+  staaf én van de hele constructie. Niet-lineair statisch met grote verplaatsingen is
+  voor trusses geen uitweg: `BARRE` blijft ook met `GROT_GDEP` geometrisch lineair
+  (KNOWN_BUGS 40). Trillingsvormen (modaal) met trusses kunnen wel. Daar houdt de
+  middenknoopvoorwaarde van line3-trusses (dwars op de koorde het gemiddelde van de
+  eindknopen, [`Mecway_functionaliteit.md`](Mecway_functionaliteit.md)) de losse
+  middenknoop-modes tegen die CalculiX zonder zo'n voorwaarde geeft: een middenknoop
+  zonder buigstijfheid kan dwars vrij bewegen. Dat de globale vorm verschijnt als je de
+  middenknoop vastlegt (GitHub-issue #6) past daarbij.
 
 ### 3.4 Balkorientatie en doorsneden
 

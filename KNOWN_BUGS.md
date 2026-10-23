@@ -541,6 +541,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    for quadratic elements and shells (the bridge takes the mean of all element nodes;
    for line2 that is Mecway's result, LS-81).
 
+117\. **Results after `DVP_2` not seen in a real DVP_2 run** (question,
+   `bridge_failure.PARTIAL_EXCEPT`, GitHub issue #5). The job now keeps the archived
+   steps after any Code-Aster error in the step loop. Checked with Code-Aster 17.4 on an
+   `<F>` error from the element computation (`FONCT0_9`, step 12 of 20: `res` held
+   t = 0..0.5, post-processing and results file complete) and in the source
+   (`ExecuteCommand.exec_` publishes the result on every `AsterError`). A real `DVP_2`
+   could not be provoked offline: a Neo Hooke cube (hex8, 1 or 27 elements) converged in
+   20 steps to λ = 0.02, through inversion (λ = -0.5) and at 300 shear strain. Whether the
+   structure is still complete after a floating point exception (signal, not `utmess`)
+   is therefore NOT verified.
+
 ## Not translated (the bridge reports it at the end of the run)
 
 4\. **Loads and boundary conditions the bridge does not know** (confirmed). Supported
