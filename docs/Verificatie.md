@@ -2160,7 +2160,7 @@ Eigen analyse `harmonic_3d` (Mecway heeft geen harmonische analyse; het model is
 *Frequency*-analyse): `CALC_MODES` → statische verrijking → `PROJ_BASE` →
 `DYNA_VIBRA` `TYPE_CALCUL='HARM'` `BASE_CALCUL='GENE'` → `REST_GENE_PHYS`, of direct
 `BASE_CALCUL='PHYS'` ([Respons_op_modale_basis.md](Respons_op_modale_basis.md) §7).
-Module `tests_harmonisch.py` (groep "Harmonische respons", 11 cases), draaien met
+Module `tests_harmonisch.py` (groep "Harmonische respons", 15 cases), draaien met
 `python run_verificatie.py HR` (ca. 1 minuut). U = displ + i·displi in de knoop;
 "max. afwijking" is het maximum over alle frequenties van de run. Tolerantie
 (klaar-criterium S10h): amplitude 1%, fase 1°, GENE t.o.v. PHYS 1%.
@@ -2190,6 +2190,10 @@ MD-05 (1000 N in Z, β = 1e-4 s, 6 modes), 1–300 Hz (60) + 5 per mode.
 | HR-03b | idem, PHYS | piekfrequentie f₁√(1−2ξ₁²), ξ₁ = βω₁/2 | exact (de verfijning legt een punt op de piek) |
 | HR-04 | 1 vrijheidsgraad, amplitude uit een Mecway-tabel F(f) = 10 + 2f N, `#ASTER-FASE Last = 90`, frequenties met `#ASTER-OPTIE`, `MEETPUNT_Massa` | exact met F(f) en fase +90° | \|U\| 2,5e-8, fase 3,6e-6°; CSV = knoopwaarde |
 | HR-05 | twee krachten op de massa: 10 N fase 0 en 4 N met `#ASTER-FASE Last2 = 180` | exact met 6 N | \|U\| 2,8e-8, fase 1,9e-6° |
+| HR-06a | 1 vrijheidsgraad zonder viskeuze demping, verliesfactor `loss_factor` 0,04 (veer: `AMOR_HYST` in `DISCRET`), GENE, bereik + verfijning | exact: U = u_st/((1 − r²) + iη) (Aubry, 2023, §3.3.4); piek u_st/η | \|U\| 4,3e-8, fase 6,8e-6°; piek 0,24995 m (−0,02%, het punt ligt net naast f_n) |
+| HR-06b | idem met `#ASTER-HYST Veer = 0.04`, PHYS, lijst met f_n | exact | \|U\| 3,8e-8, fase 6,8e-6°; \|U(f_n)\| = 0,25000 m = u_st/η, fase −90,00° |
+| HR-06c | balk van HR-02 zonder Rayleigh, `loss_factor` 0,02, GENE 8 modes met verrijking (`PROJ_MATR_BASE` van `RIGI_MECA_HYST`) | Euler-Bernoulli exact met E(1 + iη); piek (12/λ₁⁴)·u_st/η | 2,1e-4 (fase 0,012°) over 1–200 Hz; piek 0,99997 × (12/λ₁⁴)·u_st/η |
+| HR-06d | idem met `#ASTER-HYST Staal = 0.02`, PHYS | Euler-Bernoulli exact met E(1 + iη) | 2,1e-4 (fase 0,012°) |
 
 Waarnemingen:
 - **Fase-afspraak** (gemeten in een prototype op de hex20-console): `PHAS_DEG` = φ

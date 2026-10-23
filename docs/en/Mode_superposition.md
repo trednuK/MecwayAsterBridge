@@ -321,11 +321,28 @@ steady state, but for many frequencies at once.
 | Spacing (lin / log) | lin | `log` over several decades |
 | Frequency list [Hz] (0 = range above) | 0 | fixed frequencies, e.g. rotational speeds `25, 50, 100`; then exactly these frequencies, without refinement |
 | Basis (GENE modal / PHYS direct) | GENE | `PHYS` to check the modal basis, with dampers, or if the load has frequencies above the modes; one solution of the whole model per frequency (more expensive) |
+| Loss factor eta (hysteretic damping, 0 = none) | 0 | > 0 for structural damping of all materials (§7.4 item 4), e.g. 0.02 for a steel structure, 0.1–0.5 for rubber; per material with `#ASTER-HYST` |
 | Extra frequencies per resonance (0 = none) | 5 | more (7–11) for a smooth peak; 0 = the range only |
 | Time limit / Memory limit run_aster, MUMPS NPREC | 1800 s, 2048 MB, 8 | large models or many frequencies (PHYS) |
 
 Per model with `#ASTER-OPTIE`, e.g. `** ASTER-OPTIE harm_freq_list = 25, 50` or
 `** ASTER-OPTIE harm_basis = PHYS`.
+
+**Hysteretic (structural) damping.** Mecway has no loss factor (only *Rayleigh
+damping* and the *Damper* material). Give it with the setting *Loss factor eta*
+(`loss_factor`, all materials) or per material in the *custom model definition* (like
+`#ASTER-FASE`):
+
+```
+** ASTER-HYST Rubber = 0.3
+** ASTER-HYST * = 0.02
+```
+
+`material = eta` with the Mecway name of the material (also a *Spring* material),
+`*` = all materials; the line wins over the setting, the last line per material
+counts. The stiffness becomes K(1 + iη); at a resonance η acts like a viscous ξ = η/2
+(Aubry, 2023, §3.3.4). Unlike viscous damping, hysteretic damping does not depend on
+the frequency: the phase below the resonance is −atan η, not 0.
 
 ### 7.3 Results in Mecway
 
@@ -381,7 +398,15 @@ from the Code-Aster test cases sdld313d and sdld21b):
    (+ `AMOR_MECA` of the dampers) as `MATR_AMOR`; `modal_damping` does not exist
    there. If a ξ_i ≥ 1, the job prints `BRIDGE_HARM_WAARSCHUWING DEMPING` and the
    bridge gives a WARNING (also before the run if `modal_damping` ≥ 1); the steady-state
-   response exists then as well, only without a resonance peak (HR-01a computed with
+   response exists then as well, only without a resonance peak. **Loss factor** η
+   (`loss_factor`, `#ASTER-HYST`): `AMOR_HYST` in `ELAS` of `DEFI_MATERIAU` and, for
+   springs, in `AFFE_CARA_ELEM` `DISCRET`; with it `ASSEMBLAGE` builds the complex
+   stiffness `RIGI_MECA_HYST` = K(1 + iη) (U2.06.03, Aubry, 2023, §6). Basis `PHYS`:
+   `DYNA_VIBRA` with that matrix as `MATR_RIGI`. Basis `GENE`: the projection onto the
+   modes with `PROJ_MATR_BASE` (`PROJ_BASE` only takes real matrices) in full storage,
+   so a complex generalised stiffness, exact also when η differs per material (the modes
+   then couple); the modes themselves come from the real K. For the refinement around
+   the peaks ξ_i + η/2 counts (largest η). (HR-01a computed with
    ζ = 1.5: |U| within 4.4e-8 of the exact solution).
 5. **Frequencies:** the range (lin/log) or the list; with the range, for every mode in
    the range with 0 < ξ < 0.5, *n* more frequencies over the half-power bandwidth 2ξf
@@ -431,6 +456,9 @@ from the Code-Aster test cases sdld313d and sdld21b):
   ξ ∝ f. Extra modal damping gives all modes the same ξ.
 - **Hand check** (single degree of freedom k, m): \|U\| = u_st/√((1−r²)² + (2ξr)²),
   phase −atan2(2ξr, 1−r²), r = f/f_n, u_st = F/k (Clough & Penzien, 1993, chapter 3).
+  With loss factor η: \|U\| = u_st/√((1−r²)² + η²), the peak exactly at f_n and equal
+  to u_st/η, phase −90° there (Aubry, 2023, §3.3.4). For a beam or solid: (static
+  contribution of the mode)/η.
 
 ### 7.6 Not possible
 
@@ -439,8 +467,12 @@ from the Code-Aster test cases sdld313d and sdld21b):
   relative coordinates: a *Gravity* with the acceleration amplitude in the opposite
   direction gives the motion **relative to the supports** (theory, Clough & Penzien,
   1993; NOT verified separately).
-- Hysteretic damping (loss factor η, `AMOR_HYST`) and frequency-dependent damping: not
-  translated.
+- Frequency-dependent damping (also an η that changes with the frequency). Loss
+  factor on discrete elements other than Mecway springs (*Elastic support*, dampers,
+  point masses): not translated (η = 0 there).
+- Stresses with a loss factor: `CALC_CHAMP` computes them from the displacement with
+  the real E (NOT verified in the source code whether the η part counts); with the
+  factor (1 + iη) the amplitude would be √(1 + η²) larger (0.5% at η = 0.1).
 - Dampers on a modal basis (ERROR; basis `PHYS` works), `modal_damping` direct
   (ERROR).
 - Prestress from the loads (Mecway's *Frequency* with loads computes prestressed
@@ -472,7 +504,10 @@ from the Code-Aster test cases sdld313d and sdld21b):
 | ERROR: Harmonic: #ASTER-FASE: '...' is not a selection with a load | unknown name or no load | the name of the selection of the load, exactly as in Mecway |
 | ERROR: Harmonic: a load on ... has different phases | one load on several selections (e.g. merged beam loads) | give each selection its own load |
 | ERROR: Thermal strain ... is not translated in the harmonic analysis | *Thermal stress* on | switch it off |
-| WARNING: Harmonic: the model has no damping ... | no Rayleigh, `modal_damping` or dampers | specify damping or choose frequencies between the natural frequencies |
+| ERROR: Loss factor (loss_factor) ... is invalid | negative or not a number | a number ≥ 0 |
+| ERROR: '#ASTER-HYST ...': expected 'material = eta' ... / material '...' does not exist | typo or unknown name | e.g. `** ASTER-HYST Steel = 0.02`, the name as in Mecway (case does not matter) or `*` |
+| WARNING: Loss factor of the hyperelastic material ... is ignored | `ELAS_HYPER` has no `AMOR_HYST` | no action (the harmonic analysis is linear) |
+| WARNING: Harmonic: the model has no damping ... | no Rayleigh, `modal_damping`, `loss_factor` or dampers | specify damping or choose frequencies between the natural frequencies |
 | WARNING: Harmonic: damping ratio >= 1 (...), overdamped ... The computation continues. | a mode with ξ ≥ 1: `modal_damping` ≥ 1, or Rayleigh α (low modes) or β (high modes) too large | check α/β and *Extra modal damping* (often a unit error); ξ per mode in the `.mess` (`BRIDGE_DEMPING`). Overdamped on purpose: no action needed |
 | WARNING: Harmonic: the highest frequency (...) is above the highest mode ... | too few modes for the range | more modes (*Number of modes*), basis `PHYS`, or a lower end frequency |
 | WARNING: Modal basis: effective mass (sum over ... modes) below 90% in the loaded direction(s): ... | basis `GENE` with too few modes in the load direction (§3) | more modes (*Number of modes*, or `modal_modes`), or basis `PHYS` (`harm_basis`) |
@@ -490,12 +525,22 @@ resonances and an antiresonance), GENE = PHYS within 1.9e-5; without enrichment 
 static part of the truncated modes 6.22e-4 = 1 − Σ12/λ_i⁴ (−0.06%); hex20 cantilever
 GENE = PHYS: displacement 4e-6, von Mises 4e-5, σ_xx amplitude 2.3e-3; phase with
 `#ASTER-FASE`, amplitude from a table, two loads in antiphase and the probe CSV exact.
+Loss factor (HR-06): mass on a spring with η = 0.04 (GENE with `loss_factor`, PHYS with
+`#ASTER-HYST`): amplitude and phase within 4.3e-8 and 7e-6°, the peak u_st/η = 0.25 m
+(PHYS at f_n exact, phase −90.00°); beam with η = 0.02 (GENE and PHYS) within 2.1e-4
+of the Euler-Bernoulli receptance with E(1 + iη) over 1–200 Hz, the peak at f₁ equal
+to (12/λ₁⁴)·u_st/η (−0.003%).
 
 ## 8. Sources
 
 - Aubry, J.-P. (2023). *Beginning DYNAmics with code_aster*, sec. 3.3 and 11.3: the
   cumulative effective mass of the modal basis (at least 90% in the loaded direction)
-  as a check of a response on a modal basis.
+  as a check of a response on a modal basis; sec. 3.3.4, 6 and appendix sec. 2.3:
+  hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`, η/2 as equivalent ξ).
+- Code-Aster, U2.06.03 (damping in dynamic analyses) and U4.53.11 (`DYNA_VIBRA`
+  harmonic); catalogues `defi_materiau.py`, `affe_cara_elem.py` (`AMOR_HYST`),
+  `proj_base.py`/`proj_matr_base.py` and `MacroCommands/assemblage_ops.py`
+  (`RIGI_MECA_HYST` from `RIGI_MECA`), version 17.4.
 - Bishop, R.E.D. & Johnson, D.C. (1960). *The Mechanics of Vibration*. Cambridge:
   Cambridge University Press (receptances of beams). Not consulted locally; the
   receptance of the cantilever was derived and checked (static limit L³/3EI, poles at

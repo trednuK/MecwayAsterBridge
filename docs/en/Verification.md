@@ -2160,7 +2160,7 @@ Separate analysis `harmonic_3d` (Mecway has no harmonic analysis; the model is a
 *Frequency* analysis): `CALC_MODES` → static enrichment → `PROJ_BASE` → `DYNA_VIBRA`
 `TYPE_CALCUL='HARM'` `BASE_CALCUL='GENE'` → `REST_GENE_PHYS`, or direct
 `BASE_CALCUL='PHYS'` ([Mode_superposition.md](Mode_superposition.md) §7). Module
-`tests_harmonisch.py` (group "Harmonic response", 11 cases), run with
+`tests_harmonisch.py` (group "Harmonic response", 15 cases), run with
 `python run_verificatie.py HR` (about 1 minute). U = displ + i·displi at the node;
 "max. deviation" is the maximum over all frequencies of the run. Tolerance (S10h
 completion criterion): amplitude 1%, phase 1°, GENE vs PHYS 1%.
@@ -2190,6 +2190,10 @@ of MD-05 (1000 N in Z, β = 1e-4 s, 6 modes), 1–300 Hz (60) + 5 per mode.
 | HR-03b | same, PHYS | peak frequency f₁√(1−2ξ₁²), ξ₁ = βω₁/2 | exact (the refinement puts a point on the peak) |
 | HR-04 | single DOF, amplitude from a Mecway table F(f) = 10 + 2f N, `#ASTER-FASE Last = 90`, frequencies with `#ASTER-OPTIE`, `MEETPUNT_Massa` | exact with F(f) and phase +90° | \|U\| 2.5e-8, phase 3.6e-6°; CSV = nodal value |
 | HR-05 | two forces on the mass: 10 N phase 0 and 4 N with `#ASTER-FASE Last2 = 180` | exact with 6 N | \|U\| 2.8e-8, phase 1.9e-6° |
+| HR-06a | single degree of freedom without viscous damping, loss factor `loss_factor` 0.04 (spring: `AMOR_HYST` in `DISCRET`), GENE, range + refinement | exact: U = u_st/((1 − r²) + iη) (Aubry, 2023, §3.3.4); peak u_st/η | \|U\| 4.3e-8, phase 6.8e-6°; peak 0.24995 m (−0.02%, the point lies just beside f_n) |
+| HR-06b | same with `#ASTER-HYST Veer = 0.04`, PHYS, list with f_n | exact | \|U\| 3.8e-8, phase 6.8e-6°; \|U(f_n)\| = 0.25000 m = u_st/η, phase −90.00° |
+| HR-06c | beam of HR-02 without Rayleigh, `loss_factor` 0.02, GENE 8 modes with enrichment (`PROJ_MATR_BASE` of `RIGI_MECA_HYST`) | Euler-Bernoulli exact with E(1 + iη); peak (12/λ₁⁴)·u_st/η | 2.1e-4 (phase 0.012°) over 1–200 Hz; peak 0.99997 × (12/λ₁⁴)·u_st/η |
+| HR-06d | same with `#ASTER-HYST Staal = 0.02`, PHYS | Euler-Bernoulli exact with E(1 + iη) | 2.1e-4 (phase 0.012°) |
 
 Observations:
 - **Phase convention** (measured in a prototype on the hex20 cantilever): `PHAS_DEG`

@@ -491,6 +491,10 @@ CONFIG_BRIDGE = {
             # Extra modal damping ratio for all modes (on top of
             # Mecway's Rayleigh damping, GENE only).
             "modal_damping":  0.0,
+            # Hysteretic (structural) damping: loss factor eta of all
+            # materials (AMOR_HYST, stiffness K (1 + i eta)); per material
+            # with '#ASTER-HYST material = eta'. 0 = none.
+            "loss_factor":    0.0,
             # Static enrichment of the modal basis (GENE; like
             # DYNA_LINE ENRI_STAT='OUI'): the quasi-static contribution of the
             # omitted modes is included.

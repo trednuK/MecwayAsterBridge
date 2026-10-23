@@ -675,10 +675,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    (console, 1 mode, sine at 0.5 f1: 0.13% relative to 12 modes, without
    correction 2.0%).
    Harmonic response (`harmonic_3d`, own analysis: Mecway has no harmonic
-   analysis type; verification HR-01..05): not translated (ERROR) an imposed
+   analysis type; verification HR-01..06): not translated (ERROR) an imposed
    (base) motion <> 0, dampers on modal basis (supported with `harm_basis` PHYS),
    `modal_damping` with PHYS, thermal strain and non-linear parts; not
-   built: hysteretic damping (`AMOR_HYST`, loss factor), stresses in
+   built: a loss factor on discrete elements other than Mecway springs
+   (the loss factor itself is built, HR-06), stresses in
    shells and beams (only displacements/rotations), reactions and element
    nodal stresses. Without damping and with a list, a frequency may fall on
    an (infinite) resonance; the bridge only warns that there is no damping.

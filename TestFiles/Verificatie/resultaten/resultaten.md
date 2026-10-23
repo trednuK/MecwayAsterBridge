@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 8298c14, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2322 van 2328 controles binnen de tolerantie** (431 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2335 van 2341 controles binnen de tolerantie** (435 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -890,6 +890,19 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 8298c14, Code-Aster 17.4
 | HR-04 | Fase 90 graden (#ASTER-FASE), amplitude uit een tabel, meetpunt | meetpunt-CSV: fase x bij 3 Hz | 73.759 graden | 73.759 | -0.00% | 0.1 graden | OK |
 | HR-05 | Twee lasten in tegenfase (#ASTER-FASE Last2 = 180) | |U| (max. rel. afwijking) | 0 - | 2.8069e-08 | 2.8069e-08 | 0.01 - | OK |
 | HR-05 | Twee lasten in tegenfase (#ASTER-FASE Last2 = 180) | fase (max. afwijking) | 0 graden | 1.9420e-06 | 1.9420e-06 | 1 graden | OK |
+| HR-06a | 1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE) | |U| over alle frequenties (max. rel. afwijking) | 0 - | 4.2863e-08 | 4.2863e-08 | 0.01 - | OK |
+| HR-06a | 1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE) | fase over alle frequenties (max. afwijking) | 0 graden | 6.7977e-06 | 6.7977e-06 | 1 graden | OK |
+| HR-06a | 1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE) | piekamplitude | 0.25 m | 0.24995 | -0.02% | 2% | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | |U| over alle frequenties (max. rel. afwijking) | 0 - | 3.8447e-08 | 3.8447e-08 | 0.01 - | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | fase over alle frequenties (max. afwijking) | 0 graden | 6.7977e-06 | 6.7977e-06 | 1 graden | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | piekamplitude | 0.25 m | 0.25 | +0.00% | 2% | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | |U(f_n)| = u_st / eta | 0.25 m | 0.25 | +0.00% | 0.1% | OK |
+| HR-06b | 1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n) | fase bij f_n | -90 graden | -90 | +0.00% | 0.1 graden | OK |
+| HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|) | 0 - | 2.0951e-04 | 2.0951e-04 | 0.01 - | OK |
+| HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | fase t.o.v. Euler-Bernoulli (max. afwijking) | 0 graden | 0.012004 | 0.012004 | 1 graden | OK |
+| HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | tip bij f_1: |U| eta / (12 / lambda_1^4 u_st) | 1 - | 0.99997 | -0.00% | 2% | OK |
+| HR-06d | Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct) | tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|) | 0 - | 2.0952e-04 | 2.0952e-04 | 0.01 - | OK |
+| HR-06d | Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct) | fase t.o.v. Euler-Bernoulli (max. afwijking) | 0 graden | 0.012004 | 0.012004 | 1 graden | OK |
 
 ## Lineair statisch
 

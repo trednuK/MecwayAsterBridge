@@ -1767,6 +1767,23 @@ SETTING_HELP = {
                    u"solution per frequency, Rayleigh and dampers, no "
                    u"modal_damping): for checking or a model with "
                    u"dampers."),
+    "loss_factor": (u"Harmonische respons: verliesfactor eta van alle "
+                    u"materialen (hysteretische of structurele demping, "
+                    u"AMOR_HYST): de stijfheid wordt K (1 + i eta). Bij een "
+                    u"resonantie is eta gelijk aan 2 x de dempingsfactor "
+                    u"xi. Richtwaarden: staal 0,001 .. 0,01, beton 0,02 .. "
+                    u"0,05, rubber 0,1 .. 0,5. Per materiaal: "
+                    u"'#ASTER-HYST materiaal = eta' in de custom model "
+                    u"definition. Mecway kent geen verliesfactor. 0 = "
+                    u"geen.",
+                    u"Harmonic response: loss factor eta of all materials "
+                    u"(hysteretic or structural damping, AMOR_HYST): the "
+                    u"stiffness becomes K (1 + i eta). At a resonance eta "
+                    u"equals 2 x the damping ratio xi. Typical values: "
+                    u"steel 0.001 .. 0.01, concrete 0.02 .. 0.05, rubber "
+                    u"0.1 .. 0.5. Per material: '#ASTER-HYST material = "
+                    u"eta' in the custom model definition. Mecway has no "
+                    u"loss factor. 0 = none."),
     "harm_refine_points": (u"Harmonische respons: extra frequenties per mode "
                            u"in het bereik, over de halfwaardebreedte 2 xi f "
                            u"rond de piek (DEFI_LIST_FREQ LARGEUR_3DB), "

@@ -13936,7 +13936,7 @@
   "series": null,
   "h": null,
   "note": "Veer 1000 N/m, mass2 2 kg (f_n = 3,559 Hz), F0 = 10 N; 0,5 .. 7 Hz (27) + 5 rond de resonantie.",
-  "seconds": 7.3,
+  "seconds": 8.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14062,7 +14062,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a met Rayleigh alpha = 2,236 1/s.",
-  "seconds": 7.3,
+  "seconds": 9.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14173,7 +14173,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01b, direct (harm_basis PHYS).",
-  "seconds": 6.5,
+  "seconds": 8.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14285,7 +14285,7 @@
   "series": null,
   "h": null,
   "note": "Damper 17.89 N.s/m (line2), frequentielijst met f_n.",
-  "seconds": 6.0,
+  "seconds": 9.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14351,7 +14351,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a; last met tabel F(f) en #ASTER-FASE Last = 90; frequenties met #ASTER-OPTIE.",
-  "seconds": 6.3,
+  "seconds": 8.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14430,7 +14430,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a met een tweede kracht 4 N op dezelfde knoop, fase 180 graden.",
-  "seconds": 6.2,
+  "seconds": 9.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14481,7 +14481,7 @@
   "series": null,
   "h": null,
   "note": "20 x line2 POU_D_E, RectBar 20 x 30 mm, 100 N in Y op de tip, alpha = 4.2 1/s (zeta 0,02 in mode 1, 16.71 Hz); 1 .. 200 Hz (100) + 5 per mode; modes in Y: 16,7 / 104,7 / 293 / 575 Hz.",
-  "seconds": 6.2,
+  "seconds": 9.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14548,7 +14548,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a, harm_basis PHYS (C = alpha M).",
-  "seconds": 6.2,
+  "seconds": 9.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14602,7 +14602,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a, static_correction uit: alleen de 8 modes.",
-  "seconds": 6.6,
+  "seconds": 9.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14670,7 +14670,7 @@
   "series": null,
   "h": null,
   "note": "10 x 2 x 1 hex20, 1000 N in Z op het eindvlak, beta = 1e-4 s; 1 .. 300 Hz (60) + 5 per mode; modes in Z: 42,3 / 262,9 Hz.",
-  "seconds": 6.6,
+  "seconds": 10.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14739,7 +14739,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-03a, harm_basis PHYS (C = beta K).",
-  "seconds": 8.9,
+  "seconds": 19.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19137,7 +19137,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 0,5 Pa = ONDE_FLUI PRES 1 (zoals ahlv101a).",
-  "seconds": 4.9,
+  "seconds": 11.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19284,7 +19284,7 @@
   "series": null,
   "h": null,
   "note": "source_velocity 0,014 m/s de fluid in; ahlv100b VNOR naar buiten (teken omgekeerd).",
-  "seconds": 4.9,
+  "seconds": 8.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19417,7 +19417,7 @@
   "series": null,
   "h": null,
   "note": "De frequentie komt uit #ASTER-OPTIE (instelling 100 Hz).",
-  "seconds": 4.8,
+  "seconds": 9.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19507,7 +19507,7 @@
   "series": null,
   "h": null,
   "note": "Een druk-eenheid in #ASTER-BRON maakt een invallende golf.",
-  "seconds": 4.8,
+  "seconds": 9.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19583,7 +19583,7 @@
   "series": null,
   "h": null,
   "note": "m = 0.05 kg, k = 3000 N/m (f0 = 38.98 Hz), rho c A = 4.08 N.s/m (zeta = 0.167), F0 = 1 N.",
-  "seconds": 4.8,
+  "seconds": 8.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19972,7 +19972,7 @@
   "series": null,
   "h": null,
   "note": "Z_in = rho c (1 + R e^(-2ikL)) / (1 - R e^(-2ikL)), R = 1/3.",
-  "seconds": 4.9,
+  "seconds": 9.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20328,7 +20328,7 @@
   "series": null,
   "h": null,
   "note": "alpha = 200 1/s: alpha m = 10 N.s/m naast rho c A = 4,08 N.s/m; de demping werkt alleen op de constructie.",
-  "seconds": 5.0,
+  "seconds": 8.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20684,7 +20684,7 @@
   "series": null,
   "h": null,
   "note": "Tabel: kolom 'time' = frequentie [Hz] (DEFI_FONCTION NOM_PARA='FREQ' als FONC_MULT), zoals harmonic_3d (HR-04).",
-  "seconds": 4.9,
+  "seconds": 8.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20760,7 +20760,7 @@
   "series": null,
   "h": null,
   "note": "beta = 2e-3 s: beta k = 6 N.s/m.",
-  "seconds": 4.9,
+  "seconds": 8.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21116,7 +21116,7 @@
   "series": null,
   "h": null,
   "note": "AMOR_MECA van de demper (DIS_T); alarm MODELISA8_13: veer en demper op dezelfde twee knopen (onschuldig).",
-  "seconds": 5.0,
+  "seconds": 7.3,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -21472,7 +21472,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 1 Pa (standaard); geen andere demping dan de inlaat (ONDE_FLUI is ook absorberend).",
-  "seconds": 4.8,
+  "seconds": 7.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21618,7 +21618,7 @@
   "series": null,
   "h": null,
   "note": "OPEN_ = DDL_IMPO PRES = PHI = 0, zoals in de modes (S3b).",
-  "seconds": 4.7,
+  "seconds": 8.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21722,7 +21722,7 @@
   "series": null,
   "h": null,
   "note": "Schaal op een vlak van het fluidum: automatisch koppelvlak; spanningen alleen op volumes (hier geen).",
-  "seconds": 4.8,
+  "seconds": 8.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -40879,6 +40879,291 @@
   "n_nodes": 32,
   "n_elem": 2,
   "settings": {},
+  "general": {}
+ },
+ "HR-06b": {
+  "id": "HR-06b",
+  "group": "Harmonische respons",
+  "title": "1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 (PHYS, lijst met f_n)",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "Verliesfactor per materiaal (#ASTER-HYST), direct; frequentielijst met f_n.",
+  "seconds": 6.4,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "|U| over alle frequenties (max. rel. afwijking)",
+    "fem": 3.844700503669379e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 3.844700503669379e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.01,
+    "source": "|U| = u_st / sqrt((1 - r^2)^2 + eta^2), eta = 0,04 (#ASTER-HYST)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "fase over alle frequenties (max. afwijking)",
+    "fem": 6.797728445917528e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 6.797728445917528e-06,
+    "ok": true,
+    "unit": "graden",
+    "tol": null,
+    "tol_abs": 1.0,
+    "source": "arg U = -atan2(eta, 1 - r^2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "piekamplitude",
+    "fem": 0.25,
+    "ref": 0.25,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "u_st / eta (piek bij f_n)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "|U(f_n)| = u_st / eta",
+    "fem": 0.25,
+    "ref": 0.25,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "r = 1: U = u_st / (i eta)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "fase bij f_n",
+    "fem": -90.0,
+    "ref": -90.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "graden",
+    "tol": null,
+    "tol_abs": 0.1,
+    "source": "arg 1/(i eta)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 2,
+  "n_elem": 1,
+  "settings": {
+   "harm_basis": "PHYS",
+   "fields": [
+    "displacements"
+   ],
+   "harm_freq_list": "0.5, 1, 2, 3, 3.4, 3.5588127170858854, 3.7, 4, 5, 7"
+  },
+  "general": {}
+ },
+ "HR-06a": {
+  "id": "HR-06a",
+  "group": "Harmonische respons",
+  "title": "1 vrijheidsgraad, verliesfactor eta = 0,04 (loss_factor, GENE)",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "Als HR-01a zonder viskeuze demping, met loss_factor 0,04 (K (1 + i eta), RIGI_MECA_HYST); verfijning met xi = eta / 2.",
+  "seconds": 8.3,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "|U| over alle frequenties (max. rel. afwijking)",
+    "fem": 4.28626857672082e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 4.28626857672082e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.01,
+    "source": "|U| = u_st / sqrt((1 - r^2)^2 + eta^2), eta = 0,04 (veer, AFFE_CARA_ELEM AMOR_HYST)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "fase over alle frequenties (max. afwijking)",
+    "fem": 6.797728445917528e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 6.797728445917528e-06,
+    "ok": true,
+    "unit": "graden",
+    "tol": null,
+    "tol_abs": 1.0,
+    "source": "arg U = -atan2(eta, 1 - r^2)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "piekamplitude",
+    "fem": 0.24995002150535583,
+    "ref": 0.25,
+    "rel": -0.00019991397857666016,
+    "dev": -4.997849464416504e-05,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "u_st / eta (piek bij f_n)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 2,
+  "n_elem": 1,
+  "settings": {
+   "harm_freq_start": 0.5,
+   "harm_freq_end": 7.0,
+   "harm_freq_count": 27,
+   "harm_refine_points": 5,
+   "loss_factor": 0.04,
+   "fields": [
+    "displacements"
+   ]
+  },
+  "general": {}
+ },
+ "HR-06c": {
+  "id": "HR-06c",
+  "group": "Harmonische respons",
+  "title": "Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "Als HR-02a zonder Rayleigh, loss_factor 0,02 (PROJ_BASE van RIGI_MECA_HYST, STOCKAGE PLEIN).",
+  "seconds": 9.3,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|)",
+    "fem": 0.0002095080148273605,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0002095080148273605,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.01,
+    "source": "exacte Euler-Bernoulli-receptantie met E (1 + i eta), eta = 0,02 (kop; Bishop & Johnson 1960)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "fase t.o.v. Euler-Bernoulli (max. afwijking)",
+    "fem": 0.01200367329056462,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.01200367329056462,
+    "ok": true,
+    "unit": "graden",
+    "tol": null,
+    "tol_abs": 1.0,
+    "source": "exacte Euler-Bernoulli-receptantie met E (1 + i eta), eta = 0,02 (kop; Bishop & Johnson 1960)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "tip bij f_1: |U| eta / (12 / lambda_1^4 u_st)",
+    "fem": 0.9999691190180854,
+    "ref": 1.0,
+    "rel": -3.088098191461608e-05,
+    "dev": -3.088098191461608e-05,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "mode 1 neemt 12 / lambda_1^4 = 0,971 van u_st; in resonantie die / eta (Blevins tabel 8-1)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
+  "settings": {
+   "harm_freq_start": 1.0,
+   "harm_freq_end": 200.0,
+   "harm_freq_count": 100,
+   "fields": [
+    "displacements"
+   ],
+   "loss_factor": 0.02
+  },
+  "general": {}
+ },
+ "HR-06d": {
+  "id": "HR-06d",
+  "group": "Harmonische respons",
+  "title": "Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct)",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "Als HR-06c, verliesfactor per materiaal, harm_basis PHYS.",
+  "seconds": 9.9,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|)",
+    "fem": 0.0002095198840764938,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0002095198840764938,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.01,
+    "source": "exacte Euler-Bernoulli-receptantie met E (1 + i eta), eta = 0,02 (kop; Bishop & Johnson 1960)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "fase t.o.v. Euler-Bernoulli (max. afwijking)",
+    "fem": 0.012004353335413498,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.012004353335413498,
+    "ok": true,
+    "unit": "graden",
+    "tol": null,
+    "tol_abs": 1.0,
+    "source": "exacte Euler-Bernoulli-receptantie met E (1 + i eta), eta = 0,02 (kop; Bishop & Johnson 1960)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
+  "settings": {
+   "harm_freq_start": 1.0,
+   "harm_freq_end": 200.0,
+   "harm_freq_count": 100,
+   "fields": [
+    "displacements"
+   ],
+   "harm_basis": "PHYS"
+  },
   "general": {}
  }
 }

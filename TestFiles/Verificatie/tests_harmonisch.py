@@ -326,18 +326,21 @@ STEEL = ('<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
 DENS = u'<density type="Simple" density="7850 kg/m³" />'
 
 
-def beam_tip(f, alpha=ALPHA_B):
+def beam_tip(f, alpha=ALPHA_B, eta=0.0):
     """Exacte tipverplaatsing (complex) van de Euler-Bernoulli-console met
-    C = alpha M onder F_B e^(i w t) aan de tip (zie de kop)."""
+    C = alpha M en verliesfactor eta (E (1 + i eta)) onder F_B e^(i w t)
+    aan de tip (zie de kop)."""
     w = 2 * math.pi * f
-    b = (RHOA * complex(w * w, -alpha * w) / EI) ** 0.25
+    b = (RHOA * complex(w * w, -alpha * w) / (EI * complex(1.0, eta))) \
+        ** 0.25
     x = b * L
     num = cmath.sin(x) * cmath.cosh(x) - cmath.cos(x) * cmath.sinh(x)
-    den = EI * b ** 3 * (1.0 + cmath.cos(x) * cmath.cosh(x))
+    den = EI * complex(1.0, eta) * b ** 3 * (1.0 + cmath.cos(x) *
+        cmath.cosh(x))
     return F_B * num / den
 
 
-def build_beam(maxmode=8):
+def build_beam(maxmode=8, alpha=ALPHA_B, extra=()):
     def build():
         m = Model("V30", attrs={"maxmode": maxmode})
         m.elset("Balk", "Staal")
@@ -350,8 +353,11 @@ def build_beam(maxmode=8):
         m.add('<fixed selection="Inklemming" />')
         m.add('<force selection="Tip"><x>0 N</x><y>%r N</y><z>0 N</z>'
               '</force>' % F_B)
-        m.add('<rayleighdamping selection=""><alpha>%r rad/s</alpha>'
-              '<beta>0 s</beta></rayleighdamping>' % ALPHA_B)
+        if alpha:
+            m.add('<rayleighdamping selection=""><alpha>%r rad/s</alpha>'
+                  '<beta>0 s</beta></rayleighdamping>' % alpha)
+        for x in extra:
+            m.add(x)
         return m
     return build
 
@@ -678,4 +684,108 @@ TESTS += [
                 % XI1_HEX)],
          settings=dict(HEX_RANGE, harm_basis="PHYS"), timeout=600,
          note="Als HR-03a, harm_basis PHYS (C = beta K)."),
+]
+
+
+# ------------------------------------------------------------------
+# HR-06 Hysteretische (structurele) demping, verliesfactor eta (S26):
+# stijfheid K (1 + i eta) via AMOR_HYST (DEFI_MATERIAU ELAS en
+# AFFE_CARA_ELEM DISCRET) en RIGI_MECA_HYST.
+#   1 vrijheidsgraad: U = u_st / ((1 - r^2) + i eta) (Aubry, Beginning
+#   DYNAmics with code_aster, 2023, par. 3.3.4; Clough & Penzien 1993 par.
+#   3-7), piek precies bij f_n: |U| = u_st / eta, fase -90 graden.
+#   Console: de Euler-Bernoulli-receptantie met E (1 + i eta).
+# ------------------------------------------------------------------
+ETA = 0.04
+ETA_B = 0.02
+
+
+def sdof_hyst(f, eta=ETA, ust=U_ST):
+    r = f / FN1
+    return ust / complex(1.0 - r * r, eta)
+
+
+def _hyst_checks(src, at_fn=False):
+    out = [
+        Check("|U| over alle frequenties (max. rel. afwijking)",
+              lambda r: _max_amp_dev(r, sdof_hyst), ref=0.0, tol_abs=0.01,
+              unit="-", source="|U| = u_st / sqrt((1 - r^2)^2 + eta^2), %s"
+              % src),
+        Check("fase over alle frequenties (max. afwijking)",
+              lambda r: _max_phase_dev(r, sdof_hyst), ref=0.0, tol_abs=1.0,
+              unit="graden", source="arg U = -atan2(eta, 1 - r^2)"),
+        Check("piekamplitude", lambda r: _peak(r)[0], ref=U_ST / ETA,
+              tol=0.02, unit="m", source="u_st / eta (piek bij f_n)"),
+    ]
+    if at_fn:
+        out.append(Check(
+            "|U(f_n)| = u_st / eta", lambda r: d_at(r, FN1, "displampx"),
+            ref=U_ST / ETA, tol=0.001, unit="m",
+            source="r = 1: U = u_st / (i eta)"))
+        out.append(Check(
+            "fase bij f_n", lambda r: d_at(r, FN1, "displphasex"),
+            ref=-90.0, tol_abs=0.1, unit="graden", source="arg 1/(i eta)"))
+    return out
+
+
+def d_at(r, f0, var, point=MASS_X):
+    nid = _node(r, point)
+    f, d = min(_steps(r), key=lambda s: abs(s[0] - f0))
+    return d[var][nid]
+
+
+_HYST_LIST = "0.5, 1, 2, 3, 3.4, %r, 3.7, 4, 5, 7" % FN1
+TESTS += [
+    Case("HR-06a", GROUP, "1 vrijheidsgraad, verliesfactor eta = 0,04 "
+         "(loss_factor, GENE)", "harmonic_3d", build_sdof(),
+         _hyst_checks("eta = 0,04 (veer, AFFE_CARA_ELEM AMOR_HYST)"),
+         settings=dict(SDOF_RANGE, loss_factor=ETA,
+                       fields=["displacements"]),
+         timeout=300, note="Als HR-01a zonder viskeuze demping, met "
+         "loss_factor 0,04 (K (1 + i eta), RIGI_MECA_HYST); verfijning "
+         "met xi = eta / 2."),
+    Case("HR-06b", GROUP, "1 vrijheidsgraad, #ASTER-HYST Veer = 0,04 "
+         "(PHYS, lijst met f_n)", "harmonic_3d", build_sdof(extra=(
+             "<ccxmodeldefinition>** ASTER-HYST Veer = %r"
+             "</ccxmodeldefinition>" % ETA,)),
+         _hyst_checks("eta = 0,04 (#ASTER-HYST)", at_fn=True),
+         settings={"harm_basis": "PHYS", "fields": ["displacements"],
+                   "harm_freq_list": _HYST_LIST},
+         timeout=300, note="Verliesfactor per materiaal (#ASTER-HYST), "
+         "direct; frequentielijst met f_n."),
+]
+_EB_HYST = ("exacte Euler-Bernoulli-receptantie met E (1 + i eta), eta = "
+            "0,02 (kop; Bishop & Johnson 1960)")
+TESTS += [
+    Case("HR-06c", GROUP, "Console (balk), verliesfactor eta = 0,02, GENE "
+         "8 modes + statische verrijking", "harmonic_3d",
+         build_beam(alpha=0.0),
+         [Check("tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| "
+                "/ |U_ex|)", lambda r: _beam_dev(
+                    r, lambda f: beam_tip(f, 0.0, ETA_B)), ref=0.0,
+                tol_abs=0.01, unit="-", source=_EB_HYST),
+          Check("fase t.o.v. Euler-Bernoulli (max. afwijking)",
+                lambda r: _beam_phase(r, lambda f: beam_tip(f, 0.0, ETA_B)),
+                ref=0.0, tol_abs=1.0, unit="graden", source=_EB_HYST),
+          Check("tip bij f_1: |U| eta / (12 / lambda_1^4 u_st)", lambda r:
+                max(abs(tip_u(r, s)) for s in _steps(r)) * ETA_B /
+                (12.0 / LAMBDA[0] ** 4 * U_ST_B), ref=1.0, tol=0.02,
+                unit="-", source="mode 1 neemt 12 / lambda_1^4 = 0,971 van "
+                "u_st; in resonantie die / eta (Blevins tabel 8-1)")],
+         settings=dict(BEAM_RANGE, loss_factor=ETA_B), timeout=300,
+         note="Als HR-02a zonder Rayleigh, loss_factor 0,02 (PROJ_BASE "
+              "van RIGI_MECA_HYST, STOCKAGE PLEIN)."),
+    Case("HR-06d", GROUP, "Console (balk), #ASTER-HYST Staal = 0,02, PHYS "
+         "(direct)", "harmonic_3d", build_beam(alpha=0.0, extra=(
+             "<ccxmodeldefinition>** ASTER-HYST Staal = %r"
+             "</ccxmodeldefinition>" % ETA_B,)),
+         [Check("tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| "
+                "/ |U_ex|)", lambda r: _beam_dev(
+                    r, lambda f: beam_tip(f, 0.0, ETA_B)), ref=0.0,
+                tol_abs=0.01, unit="-", source=_EB_HYST),
+          Check("fase t.o.v. Euler-Bernoulli (max. afwijking)",
+                lambda r: _beam_phase(r, lambda f: beam_tip(f, 0.0, ETA_B)),
+                ref=0.0, tol_abs=1.0, unit="graden", source=_EB_HYST)],
+         settings=dict(BEAM_RANGE, harm_basis="PHYS"), timeout=300,
+         note="Als HR-06c, verliesfactor per materiaal, harm_basis PHYS."),
 ]

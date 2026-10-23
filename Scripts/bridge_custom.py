@@ -61,6 +61,11 @@
 #                            load on this selection gets this phase
 #                            (EXCIT PHAS_DEG); also #ASTER-PHASE. See
 #                            bridge_harmonic.py.
+#   #ASTER-HYST material = eta
+#                            harmonic response (harmonic_3d): loss factor
+#                            eta of this Mecway material ('*' = all;
+#                            AMOR_HYST, complex stiffness K (1 + i eta)).
+#                            See bridge_harmonic.py.
 #   #ASTER-MATERIAAL name: K=V, ...
 #                            temperature-dependent E, nu, alpha, SY, ET
 #                            of a Mecway material (chain thermal ->
@@ -111,7 +116,7 @@ _PLACEHOLDER_RE = re.compile(r"<<([^<>]+)>>")
 _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-BEZWIJKEN", "-FAILURE", "-SPECTRE", "-SPECTRUM",
           "-BRON", "-SOURCE", "-LASBRON", "-WELD",
-          "-FASE", "-PHASE", "-MATERIAAL", "-MATERIAL",
+          "-FASE", "-PHASE", "-HYST", "-MATERIAAL", "-MATERIAL",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
           "-XFEM")
@@ -126,7 +131,7 @@ def empty():
     return {"code": [], "excit": [], "contact": [], "zone": [],
             "options": {}, "post": [], "failure": {}, "spectrum": {},
             "sources": [], "welding": [],
-            "phases": [], "materials": [],
+            "phases": [], "hyst": [], "materials": [],
             "fatigue": [], "metallurgy": [],
             "xfem": []}
 
@@ -195,6 +200,10 @@ def parse(texts):
                 # worked out in bridge_harmonic._phase_bodies
                 if body.strip():
                     out["phases"].append(body.strip())
+            elif kind == "-HYST":
+                # worked out in bridge_harmonic._loss_factors
+                if body.strip():
+                    out["hyst"].append(body.strip())
             elif kind == "-XFEM":
                 # worked out in bridge_xfem.parse_specs
                 if body.strip():
@@ -221,14 +230,14 @@ def parse(texts):
         log("INFO: #ASTER lines: {0} code, {1} EXCIT, {2} CONTACT, {3} ZONE, "
             "{4} OPTIE, {5} POST, {6} BEZWIJKEN, {7} SPECTRE, {8} BRON, "
             "{9} LASBRON, {10} FASE, {11} MATERIAAL, {12} VERMOEIING, "
-            "{13} METALLURGIE, {14} XFEM.".format(
+            "{13} METALLURGIE, {14} XFEM, {15} HYST.".format(
                 len(out["code"]), len(out["excit"]), len(out["contact"]),
                 len(out["zone"]), len(out["options"]), len(out["post"]),
                 len(out["failure"]), len(out["spectrum"]),
                 len(out["sources"]), len(out["welding"]),
                 len(out["phases"]), len(out["materials"]),
                 len(out["fatigue"]), len(out["metallurgy"]),
-                len(out["xfem"])))
+                len(out["xfem"]), len(out["hyst"])))
     return out
 
 
