@@ -207,32 +207,28 @@ values = dict(smw.general_section_values(res))
 check("iyy = I11, izz = I22", values["iyy"] == 1.35e-09 and
       values["izz"] == 5.4e-13)
 
-XML = (u'<liml version="34">\r\n  <mat name="Plat 3x6" />\r\n'
-       u'  <ccxmodeldefinition>** own line\n'
-       u'** ASTER-SECTIE Plat 3x6: A=1, IY=1, IZ=1, JX=1'
-       u'</ccxmodeldefinition>\r\n</liml>\r\n')
-new = smw.insert_aster_line(XML, u"Plat 3x6", line)
-check("replaces the old line of the material, keeps the own line",
-      new.count(u"ASTER-SECTIE") == 1 and u"** own line" in new and
-      line in new)
-new2 = smw.insert_aster_line(new, u"Other", line.replace(u"Plat 3x6",
-                                                          u"Other"))
-check("a second material adds a line", new2.count(u"ASTER-SECTIE") == 2)
-bare = u'<liml version="34">\r\n  <mat name="A&amp;B" />\r\n</liml>\r\n'
-new3 = smw.insert_aster_line(bare, u"A&B", line.replace(u"Plat 3x6",
-                                                         u"A&B"))
-check("no tag: new tag before </liml>, name escaped",
-      u"<ccxmodeldefinition>** ASTER-SECTIE A&amp;B: A=" in new3 and
-      new3.rstrip().endswith(u"</liml>"))
-new4 = smw.insert_aster_line(u"<liml><ccxmodeldefinition /></liml>", u"M",
-                             u"** ASTER-SECTIE M: A=1")
-check("empty tag is filled",
-      u"<ccxmodeldefinition>** ASTER-SECTIE M: A=1</ccxmodeldefinition>"
-      in new4)
+snippet = smw.aster_line_liml(line.replace(u"Plat 3x6", u"A&B"))
+check("import .liml: one custom model definition, name escaped",
+      snippet.count(u"<ccxmodeldefinition>") == 1 and
+      u"** ASTER-SECTIE A&amp;B: A=" in snippet)
 
-# --- read back by the bridge (bridge_custom + _section_extras) -------------
+# The bridge reads every <ccxmodeldefinition> (Mecway keeps an imported one
+# next to an existing one); the later line of a material wins.
+import xml.etree.ElementTree as ET  # noqa: E402
+TWO = (u'<liml version="34"><ccxmodeldefinition>** own line\n'
+       u'** ASTER-SECTIE M: A=1, IY=1, IZ=1, JX=1, AY=1.1</ccxmodeldefinition>'
+       u'<ccxmodeldefinition>** ASTER-SECTIE M: A=1, IY=1, IZ=1, JX=1, '
+       u'AY=1.3</ccxmodeldefinition></liml>')
+root = ET.fromstring(TWO.encode("utf-8"))
 import bridge_custom  # noqa: E402
 bridge_custom.log = LOG.append
+texts = [el.text for tag in bridge_custom.CUSTOM_TAGS
+         for el in root.findall(tag)]
+extras = bridge_from_liml._section_extras(bridge_custom.parse(texts)["sections"])
+check("two custom model definitions: both read, the later line wins",
+      len(texts) == 2 and extras["M"]["AY"] == 1.3)
+
+# --- read back by the bridge (bridge_custom + _section_extras) -------------
 custom = bridge_custom.parse([u"** own line\n" + line])
 extras = bridge_from_liml._section_extras(custom["sections"])
 check("bridge reads the line back", extras.get(u"Plat 3x6", {}).get("AY")

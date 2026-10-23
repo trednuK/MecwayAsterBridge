@@ -11,8 +11,8 @@
 #   run_analysis(job)             section_analysis.py in the Python of the
 #                                 Code-Aster installation (numpy/scipy)
 #   create_general_section(...)   Mecway material with a general section
-#   store_aster_line(...)         #ASTER-SECTIE line in the custom model
-#                                 definition (save, edit the .liml, reopen)
+#   store_aster_line(...)         #ASTER-SECTIE line as an extra custom
+#                                 model definition (import of a small .liml)
 #
 # Coordinates: Mecway's API and the .liml use metres; everything here is SI.
 # The 2D frame of the section is as AreaPropsForAlibre: the face seen from
@@ -40,7 +40,8 @@ GENERAL_SECTION = "UniformGeneralSection"
 PLANE_TOL = 1e-5
 # Tag of the custom model definition the #ASTER-SECTIE lines go into (CCX >
 # Custom model definition; CCX reads '**' lines as comments). The bridge
-# reads every custom text field (bridge_custom.CUSTOM_TAGS).
+# reads every custom text field (bridge_custom.CUSTOM_TAGS), every
+# occurrence.
 CUSTOM_TAG = "ccxmodeldefinition"
 LINE_PREFIX = u"** ASTER-SECTIE "
 # Order of the keys in the #ASTER-SECTIE line (bridge_from_liml checks
@@ -766,69 +767,35 @@ def _xml_escape(text):
             .replace(">", "&gt;"))
 
 
-def insert_aster_line(xml, material, line):
-    """
-    The .liml text with `line` in the custom model definition; an earlier
-    #ASTER-SECTIE line of the same material is replaced. Pure text edit
-    (Mecway's formatting of the rest of the file stays as it is).
-    """
-    esc = _xml_escape(line)
-    own = re.compile(r"^\s*(?:\*\*|#|\$)\s*ASTER-SECTI(?:E|ON)\s+" +
-                     re.escape(_xml_escape(material)) + r"\s*:",
-                     re.IGNORECASE)
-    m = re.search(r"<{0}>(.*?)</{0}>".format(CUSTOM_TAG), xml, re.DOTALL)
-    if m:
-        lines = [ln for ln in re.split(r"\r?\n", m.group(1))
-                 if not own.match(ln)]
-        while lines and not lines[-1].strip():
-            lines.pop()
-        body = u"\n".join(lines + [esc])
-        return xml[:m.start(1)] + body + xml[m.end(1):]
-    m = re.search(r"<{0}\s*/>".format(CUSTOM_TAG), xml)
-    block = u"<{0}>{1}</{0}>".format(CUSTOM_TAG, esc)
-    if m:
-        return xml[:m.start()] + block + xml[m.end():]
-    end = xml.rfind(u"</liml>")
-    if end < 0:
-        raise ValueError(u"</liml> not found")
-    newline = u"\r\n" if u"\r\n" in xml else u"\n"
-    return xml[:end] + u"  " + block + newline + xml[end:]
+def aster_line_liml(line, version="34"):
+    """A .liml with only a custom model definition holding `line`."""
+    return u'<liml version="{0}">\n  <{1}>{2}</{1}>\n</liml>\n'.format(
+        version, CUSTOM_TAG, _xml_escape(line))
 
 
 def store_aster_line(mw, material, res):
     """
-    Save the model, put the #ASTER-SECTIE line of `material` in the custom
-    model definition of the .liml and reopen it in Mecway (there is no API
-    for that text field). Returns the line.
+    Put the #ASTER-SECTIE line of `material` in the model: a .liml with only
+    a custom model definition is imported into the open model. Mecway then
+    keeps it as an extra custom model definition (CCX branch of the tree);
+    the bridge reads every one in file order, so a newer line of the same
+    material wins (bridge_from_liml._section_extras). Tested headless in
+    Mecway 34 (23 Oct 2026): no save or reopen needed, also for a model
+    without a file. Saving the model and reopening it (the first version)
+    closed this window in Mecway's GUI. Returns the line.
     """
-    liml = mw.file_name()
-    if not liml or not os.path.dirname(liml):
-        raise RuntimeError(tr("Sla het model eerst op (File > Save As...); "
-                              "de extra eigenschappen komen in de .liml.",
-                              "Save the model first (File > Save As...); "
-                              "the extra properties go into the .liml."))
-    mw.save()
     line = aster_line(material, res)
-    with io.open(liml, encoding="utf-8", newline="") as f:
-        xml = f.read()
-    new = insert_aster_line(xml, material, line)
-    tmp = liml + ".sectionprops.tmp"
-    with io.open(tmp, "w", encoding="utf-8", newline="") as f:
-        f.write(new)
-    # Replace the file; on Windows os.rename does not overwrite.
-    bak = liml + ".sectionprops.bak"
-    if os.path.isfile(bak):
-        os.remove(bak)
-    os.rename(liml, bak)
+    path = os.path.join(work_folder(), "section_aster_line.liml")
+    version = u"34"
     try:
-        os.rename(tmp, liml)
+        version = u"{0}".format(mw.version()).split(".")[0] or version
     except Exception:
-        os.rename(bak, liml)
-        raise
-    os.remove(bak)
-    mw.open(liml)
-    log("INFO: MecwaySectionProps: '{0}' in <{1}> of {2}; model reopened."
-        .format(line, CUSTOM_TAG, liml))
+        pass
+    with io.open(path, "w", encoding="utf-8") as f:
+        f.write(aster_line_liml(line, version))
+    mw.import_file(path, "m")
+    log("INFO: MecwaySectionProps: '{0}' imported as a custom model "
+        "definition.".format(line))
     return line
 
 

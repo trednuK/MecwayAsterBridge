@@ -106,9 +106,11 @@ Onderaan het venster:
   dichtheid over van het huidige materiaal van die component, zodat alleen de doorsnede
   verandert.
 - **Extra Code-Aster-eigenschappen opslaan**: zet de `#ASTER-SECTIE`-regel in het model
-  (§5). Daarvoor slaat de tool het model op, past de `.liml` aan en opent hem opnieuw in
-  Mecway (er is geen Mecway-API voor dat tekstveld); de undo-geschiedenis van Mecway
-  vervalt. Het venster vraagt eerst bevestiging. Het model moet een bestandsnaam hebben.
+  (§5), als een extra *custom model definition* onder *CCX* in de boom (de tool importeert
+  daarvoor een klein `.liml`-bestand; er is geen Mecway-API voor dat tekstveld). Het model
+  wordt niet opgeslagen of heropend; sla het zelf op, of laat de bridge dat doen bij de
+  volgende run. Klik eenmaal in de boom als het nieuwe materiaal (onder *Unused
+  Materials*) of de *custom model definition* nog niet zichtbaar is.
 
 Het materiaal krijgt een *General section* met:
 
@@ -153,8 +155,9 @@ Alle waarden in SI (m, m², m⁴, m⁶), lokaal y = V (hoofdas 1), z = W (hoofda
 | `JG` | welvingsconstante | bewaard; alleen `POU_D_TG`/`POU_D_TGM` gebruiken hem, die de bridge niet aanbiedt |
 | `IYR2`, `IZR2` | ∫ z(y² + z²) dA en ∫ y(y² + z²) dA om het zwaartepunt (gelijk aan `MACR_CARA_POUTRE`) | bewaard; alleen voor de geometrische stijfheid van `POU_D_TG`/`POU_D_TGM` (EDF R&D, 2020) |
 
-- Eén regel per materiaal; *General section maken* vervangt een eerdere regel van
-  hetzelfde materiaal.
+- Elke keer *General section maken* voegt een *custom model definition* toe met één
+  regel. De bridge leest ze allemaal, in volgorde; heeft een materiaal meer regels, dan
+  telt de laatste. Oude regels mag je verwijderen (rechtsklik op het item in de boom).
 - Hernoem je het materiaal in Mecway, pas dan de naam in de regel aan (anders: WARNING
   "geen materiaal met deze naam").
 - De log van een bridge-run toont wat er is overgenomen:

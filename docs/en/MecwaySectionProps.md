@@ -102,9 +102,11 @@ At the bottom of the window:
 - **Copy E, ν, ρ**: copies the isotropic elastic data (E, ν, α) and the density from the
   component's current material, so that only the section changes.
 - **Store extra Code-Aster properties**: puts the `#ASTER-SECTIE` line in the model
-  (§5). For that the tool saves the model, edits the `.liml` and reopens it in Mecway
-  (there is no Mecway API for that text field); Mecway's undo history is lost. The window
-  asks for confirmation first. The model must have a file name.
+  (§5), as an extra *custom model definition* under *CCX* in the tree (the tool imports a
+  small `.liml` file for it; there is no Mecway API for that text field). The model is not
+  saved or reopened; save it yourself, or let the bridge do it at the next run. Click once
+  in the tree if the new material (under *Unused Materials*) or the *custom model
+  definition* is not shown yet.
 
 The material gets a *General section* with:
 
@@ -150,8 +152,9 @@ axis 2):
 | `JG` | warping constant | stored; only `POU_D_TG`/`POU_D_TGM` use it, which the bridge does not offer |
 | `IYR2`, `IZR2` | ∫ z(y² + z²) dA and ∫ y(y² + z²) dA about the centroid (equal to `MACR_CARA_POUTRE`) | stored; only for the geometric stiffness of `POU_D_TG`/`POU_D_TGM` (EDF R&D, 2020) |
 
-- One line per material; *Create general section* replaces an earlier line of the same
-  material.
+- Each *Create general section* adds a *custom model definition* with one line. The
+  bridge reads all of them, in order; when a material has several lines, the last one
+  counts. You may delete old ones (right-click the item in the tree).
 - If you rename the material in Mecway, change the name in the line too (otherwise:
   WARNING "no material with this name").
 - The log of a bridge run shows what was taken over:

@@ -108,10 +108,18 @@ def geometric_properties(nodes, elements, boundary=None, loops=None):
     delta = math.sqrt(((ixx_c - iyy_c) / 2.0) ** 2 + ixy_c ** 2)
     i11 = (ixx_c + iyy_c) / 2.0 + delta
     i22 = (ixx_c + iyy_c) / 2.0 - delta
-    if abs(ixx_c - i11) < 1e-12 * i11:
+    if abs(ixx_c - i11) < 1e-9 * i11:
         phi = 0.0
     else:
         phi = math.degrees(math.atan2(ixx_c - i11, ixy_c))
+    # An axis has two directions: take the one with phi in (-90, 90], so
+    # axis 1 (Mecway's V) points to the +x side (round-off of Ixy on a mesh
+    # boundary gave phi = -180 for a symmetric half tube). Everything below
+    # (principal moduli, plastic moduli, the aster block) uses this phi.
+    if phi > 90.0:
+        phi -= 180.0
+    elif phi <= -90.0:
+        phi += 180.0
 
     xs = nodes[:, 0] - cx
     ys = nodes[:, 1] - cy

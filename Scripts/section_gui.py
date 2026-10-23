@@ -21,7 +21,8 @@
 # section_analysis.py in Code-Aster's Python and shows the table and the
 # plot. "Create general section" makes a Mecway material from the result
 # and, if ticked, stores the extra Code-Aster data as an #ASTER-SECTIE line
-# (section_mecway.store_aster_line: save, edit the .liml, reopen).
+# (section_mecway.store_aster_line: imported as an extra custom model
+# definition; the model is not saved or reopened).
 #
 # Texts: every user text in Dutch and English; the NL/EN switch in the
 # header redraws the window. Compatible with IronPython 2.7.9.
@@ -64,10 +65,10 @@ T = {
     "gs_none": (u"(geen component)", u"(no component)"),
     "gs_copy": (u"E, ν, ρ overnemen van het huidige materiaal",
                 u"Copy E, ν, ρ from the current material"),
-    "gs_store": (u"Extra Code-Aster-eigenschappen opslaan (model wordt "
-                 u"opgeslagen en heropend)",
-                 u"Store extra Code-Aster properties (the model is saved "
-                 u"and reopened)"),
+    "gs_store": (u"Extra Code-Aster-eigenschappen opslaan (#ASTER-SECTIE in "
+                 u"een custom model definition)",
+                 u"Store extra Code-Aster properties (#ASTER-SECTIE in a "
+                 u"custom model definition)"),
     "gs_make": (u"General section maken", u"Create general section"),
     "gs_need": (u"Bereken eerst een doorsnede.",
                 u"Calculate a section first."),
@@ -75,14 +76,6 @@ T = {
                 u"kan niet worden gemaakt.",
                 u"No torsion constant (separate parts?): a general section "
                 u"cannot be created."),
-    "gs_confirm": (u"Het model wordt opgeslagen, de extra Code-Aster-"
-                   u"eigenschappen worden in de custom model definition "
-                   u"gezet en het model wordt opnieuw geopend (de undo-"
-                   u"geschiedenis van Mecway vervalt).\n\nDoorgaan?",
-                   u"The model is saved, the extra Code-Aster properties "
-                   u"are put in the custom model definition and the model "
-                   u"is reopened (Mecway's undo history is lost).\n\n"
-                   u"Continue?"),
     "gs_done": (u"Materiaal '{0}' gemaakt{1}.", u"Material '{0}' created{1}."),
     "gs_assigned": (u" en toegewezen aan '{0}'", u" and assigned to '{0}'"),
     "gs_stored": (u"; extra eigenschappen opgeslagen in het model",
@@ -302,8 +295,8 @@ def table_sections(res, plane, lang, unit, heal=None):
         (tx("s_inertia", lang), [
             (u"Ixx", val("ixx_c", 4), U(4)),
             (u"Iyy", val("iyy_c", 4), U(4)),
-            # Ixy below 1e-9 of the largest moment is round-off of the mesh
-            (u"Ixy", 0.0 if abs(res["ixy_c"]) < 1e-9 * max(
+            # Ixy below 1e-7 of the largest moment is round-off of the mesh
+            (u"Ixy", 0.0 if abs(res["ixy_c"]) < 1e-7 * max(
                 abs(res["ixx_c"]), abs(res["iyy_c"])) else val("ixy_c", 4),
              U(4)),
             (tx("i11", lang), val("i11_c", 4), U(4)),
@@ -613,7 +606,7 @@ class _Window(object):
         self.mode = "mesh"
         self.res = None
         self.plane = None
-        self.source = u""
+        self.source = ("faces", 0)
         self.heal = None            # repairs of the boundary (notes)
         self.status = u""
         self.status_error = False
@@ -689,6 +682,16 @@ class _Window(object):
         parent.Controls.Add(b)
         return b
 
+    def _native(self, ctrl):
+        """Radio buttons and check boxes as native Windows controls
+        (FlatStyle.System): Windows raises their click itself, so they need
+        no click_safe subclass. A Python subclass of RadioButton stopped
+        with "absolute path information is required" in Mecway 34 (Windows
+        Forms asks the version info of the control's assembly, a dynamic
+        IronPython assembly without a file; GUI test 23 Oct 2026)."""
+        ctrl.FlatStyle = self.F.FlatStyle.System
+        return ctrl
+
     def _guard(self, fn):
         def handler(sender, args):
             try:
@@ -731,19 +734,24 @@ class _Window(object):
         langs = F.FlowLayoutPanel()
         langs.Dock = F.DockStyle.Right
         langs.Width = 130
-        langs.Padding = F.Padding(0, 22, 0, 0)
+        langs.Padding = F.Padding(0, 19, 0, 0)
         langs.BackColor = col["header"]
+        # Two small buttons (a native radio button ignores the white text
+        # colour on the dark header); the active language is highlighted.
         for code in LANGS:
-            rb = click_safe("RadioButton")()
-            rb.Text = code.upper()
-            rb.Font = D.Font("Segoe UI", 9.0, D.FontStyle.Bold)
-            rb.ForeColor = D.Color.White
-            rb.BackColor = col["header"]
-            rb.AutoSize = True
-            rb.Checked = (code == self.lang)
-            rb.Tag = code
-            rb.CheckedChanged += self._on_lang
-            langs.Controls.Add(rb)
+            b = click_safe("Button")()
+            b.Text = code.upper()
+            b.Size = D.Size(48, 26)
+            b.FlatStyle = F.FlatStyle.Flat
+            b.Font = D.Font("Segoe UI", 9.0, D.FontStyle.Bold)
+            b.ForeColor = D.Color.White
+            b.BackColor = (col["accent"] if code == self.lang
+                           else col["header"])
+            b.FlatAppearance.BorderColor = col["header_sub"]
+            b.Cursor = F.Cursors.Hand
+            b.Tag = code
+            b.Click += self._on_lang
+            langs.Controls.Add(b)
         header.Controls.Add(langs)
 
         bar = F.Panel()
@@ -754,7 +762,7 @@ class _Window(object):
         x = PAD + 62
         for code, key, w in (("mesh", "mode_mesh", 190),
                              ("cad", "mode_cad", 230)):
-            rb = click_safe("RadioButton")()
+            rb = self._native(F.RadioButton())
             rb.Text = self.t(key)
             rb.AutoSize = True
             rb.Location = D.Point(x, 13)
@@ -830,7 +838,8 @@ class _Window(object):
     def _subtitle(self):
         if self.res is None:
             return self.t("sub_none")
-        return u"{0}  ·  {1}".format(self.source,
+        key, arg = self.source
+        return u"{0}  ·  {1}".format(self.t(key).format(arg),
                                          self.t("units").format(self.unit))
 
     def _build_gs(self, gs):
@@ -865,7 +874,7 @@ class _Window(object):
             self.component = names[i - 1] if i > 0 else None
         cb.SelectedIndexChanged += on_comp
         gs.Controls.Add(cb)
-        chk = click_safe("CheckBox")()
+        chk = self._native(F.CheckBox())
         chk.Text = self.t("gs_copy")
         chk.AutoSize = True
         chk.Checked = self.copy_mat
@@ -875,7 +884,7 @@ class _Window(object):
             self.copy_mat = s.Checked
         chk.CheckedChanged += on_copy_mat
         gs.Controls.Add(chk)
-        chk = click_safe("CheckBox")()
+        chk = self._native(F.CheckBox())
         chk.Text = self.t("gs_store")
         chk.AutoSize = True
         chk.Checked = self.store
@@ -1002,7 +1011,7 @@ class _Window(object):
         self.form.Activate()
 
     def _on_lang(self, sender, e):
-        if not sender.Checked or sender.Tag == self.lang:
+        if sender.Tag == self.lang:
             return
         self.lang = sender.Tag
         self.form.BeginInvoke(self.F.MethodInvoker(self.render))
@@ -1041,6 +1050,17 @@ class _Window(object):
         self.timer.Start()
 
     def _on_tick(self, sender, e):
+        try:
+            self._tick()
+        except Exception as ex:
+            self.timer.Stop()
+            self.busy = None
+            log("ERROR: MecwaySectionProps: {0}".format(
+                traceback.format_exc()))
+            self._set_status(u"{0}".format(ex), True)
+            self._update_buttons()
+
+    def _tick(self):
         if self.busy is None:
             self.timer.Stop()
             return
@@ -1067,12 +1087,12 @@ class _Window(object):
         # (copied into the result by section_analysis)
         self.heal = job.get("heal") or {"gaps_closed":
                                         res.get("gaps_closed") or []}
+        # (text key, argument): formatted in the language of each render
         if "step" in job:
-            self.source = self.t("cad_faces").format(
-                u", ".join(u"#{0}".format(i) for i in res.get("face_ids",
-                                                             [])))
+            self.source = ("cad_faces", u", ".join(
+                u"#{0}".format(i) for i in res.get("face_ids", [])))
         else:
-            self.source = self.t("faces").format(len(faces))
+            self.source = ("faces", len(faces))
         self._set_status(u"")
         log("INFO: MecwaySectionProps: A = {0} m2, I11 = {1} m4, I22 = {2} "
             "m4, J = {3} m4 ({4} s).".format(
@@ -1098,12 +1118,6 @@ class _Window(object):
         if not self.res.get("warping_computed"):
             self._set_status(self.t("gs_no_j"), True)
             return
-        if self.store:
-            answer = F.MessageBox.Show(self.form, self.t("gs_confirm"),
-                                       PANEL_TITLE, F.MessageBoxButtons.YesNo,
-                                       F.MessageBoxIcon.Question)
-            if answer != F.DialogResult.Yes:
-                return
         res, comp, store = self.res, self.component, self.store
         name = (self.name or u"Section").strip() or u"Section"
         copy_from = None

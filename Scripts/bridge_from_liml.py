@@ -1944,8 +1944,13 @@ def extract_aster_data_from_liml(file_path):
                    "(page Dynamic (implicit)), or Mode superposition in "
                    "Mecway (dyna_modal_3d).").format(
                        run_cfg.get("schema"), run_cfg.get("deformation")))
+        # Every occurrence of a field, in file order: Mecway keeps a second
+        # <ccxmodeldefinition> when one is imported into a model that has
+        # one already (MecwaySectionProps adds its lines that way; Mecway 34,
+        # headless, 23 Oct 2026).
         model_data["aster_custom"] = bridge_custom.parse(
-            [root.findtext(tag) for tag in bridge_custom.CUSTOM_TAGS])
+            [el.text for tag in bridge_custom.CUSTOM_TAGS
+             for el in root.findall(tag)])
         section_extras = _section_extras(
             model_data["aster_custom"].get("sections", []))
         mat_names = set(m.get("name") for m in root.findall("mat"))
