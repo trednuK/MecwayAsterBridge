@@ -4835,8 +4835,9 @@ def _mecway_static_times(load_funcs, model_data):
     substeps_per_interval does not apply here: a finer load path = a
     smaller Time step size in Mecway. Load times after the period drop out
     (Mecway computes up to the period). A period that is not a multiple of
-    the step ends here with a shorter step, and automatictimestepping
-    (Mecway adapts the step) is not imitated; both NOT verified in Mecway.
+    the step ends here with a shorter step (NOT verified in Mecway);
+    automatictimestepping: _auto_listinst_block (these times as fixed
+    points of METHODE='AUTO').
     Every calculation step is archived (static, no ARCHIVAGE).
     """
     ts = (model_data or {}).get("timesteps") or {}
@@ -4862,6 +4863,84 @@ def _mecway_static_times(load_funcs, model_data):
     return times
 
 
+def _auto_listinst_block(load_funcs, analysis, model_data):
+    """
+    Mecway's Automatic time stepping (<timesteps automatictimestepping=
+    "true">, both with the internal solver's stepsize and with CCX's time
+    points; Mecway 34 keeps the attribute when it saves) as
+    DEFI_LIST_INST METHODE='AUTO' (U4.34.03; J.-P. Aubry, "Beginning with
+    code_aster", 2019, par. 14.1; catalogue defi_list_inst.py 17.4:
+    DEFI_LIST LIST_INST + PAS_MINI/PAS_MAXI, ADAPTATION default SEUIL =
+    the step grows after 2 easy steps, ECHEC as with MANUEL).
+
+    The times of the list are points the calculation must pass (seen with
+    17.4: list 0, 0.1, 2, 3 gave steps 0.1, 0.2, 0.4, 0.6, 1.0, 1.4, 2.0,
+    2.4, 3.0), ARCHIVAGE LIST_INST is not (archive times 0.5, 1.5, 2.5 were
+    skipped). So the list holds Mecway's output times plus the kinks of
+    the load tables, and ARCHIVAGE (outlist) keeps only the output times:
+      - stepsize (internal solver): the steps dt, 2 dt, .., period plus
+        the kinks, as without the flag (_mecway_static_times), all output;
+      - time points (CCX): start + k inc up to the period (_output_times)
+        as output times; kinks only as calculation points.
+    PAS_MAXI = Mecway's step or time-point interval, PAS_MINI = 1e-6 of it
+    (below the smallest DECOUPE step, 4^-6). Only static; the failure loop
+    archives every step (build_nonlin_static). Returns (block, t_end) or
+    None (no flag, setting auto_time_stepping off, no time steps).
+    """
+    ts = (model_data or {}).get("timesteps") or {}
+    if not ts.get("automatic"):
+        return None
+    if not analysis.get("auto_time_stepping", True):
+        log(tr("WARNING: Mecway's Automatic time stepping genegeerd "
+               "(instelling auto_time_stepping uit): vaste stappen, Code-"
+               "Aster deelt alleen bij divergentie.",
+               "WARNING: Mecway's Automatic time stepping ignored "
+               "(setting auto_time_stepping off): fixed steps, Code-Aster "
+               "only subdivides on divergence."))
+        return None
+    t_end = ts.get("period") or 0.0
+    if t_end <= 0.0:
+        return None
+    if ts.get("stepsize"):
+        inc = ts["stepsize"]
+        times = _mecway_static_times(load_funcs, model_data)
+        out = times[1:]
+    else:
+        inc = ts.get("increment") or t_end
+        out = _output_times(model_data, analysis)
+        kinks = [t for _, h in load_funcs for t, _ in h if 0.0 < t < t_end]
+        times = _merge_times([0.0] + out + kinks, t_end, prefer=out)
+        kept = set(times)
+        out = [t for t in out if t in kept]
+    pas_maxi = _round_time(inc)
+    pas_mini = max(1.0e-12, _round_time(1.0e-6 * inc))
+    log("INFO: Automatic time stepping (Mecway): DEFI_LIST_INST "
+        "METHODE='AUTO', PAS_MAXI={0} s, PAS_MINI={1} s, {2} fixed "
+        "points, {3} output times up to {4} s.".format(
+            pas_maxi, pas_mini, len(times) - 1, len(out), t_end))
+    model_data["_auto_time_steps"] = True
+    block = (
+        "times = DEFI_LIST_REEL(\n"
+        "    VALE=({0}),\n"
+        ")\n"
+        "outlist = DEFI_LIST_REEL(\n"
+        "    VALE=({1}),\n"
+        ")\n"
+        "# Mecway's Automatic time stepping: the times above are fixed\n"
+        "# points, in between Code-Aster adapts the step (ADAPTATION SEUIL);\n"
+        "# on divergence the step is divided by 4 (up to 6 levels).\n"
+        "listinst = DEFI_LIST_INST(\n"
+        "    METHODE='AUTO',\n"
+        "    DEFI_LIST=_F(LIST_INST=times, PAS_MINI={2!r}, PAS_MAXI={3!r}),\n"
+        "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
+        "             SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
+        "             SUBD_NIVEAU=6),\n"
+        ")\n").format(", ".join("{0!r}".format(t) for t in times),
+                      ", ".join("{0!r}".format(t) for t in out),
+                      pas_mini, pas_maxi)
+    return block, times[-1]
+
+
 def _build_listinst_block(load_funcs, analysis, model_data=None):
     """
     Generate DEFI_LIST_REEL + DEFI_LIST_INST for the time discretisation
@@ -4880,6 +4959,9 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
         block_str : DEFI_LIST_REEL call
         t_end     : float  last time point; needed for POST_RELEVE_T INST=...
     """
+    auto = _auto_listinst_block(load_funcs, analysis, model_data)
+    if auto:
+        return auto
     mecway_times = _mecway_static_times(load_funcs, model_data)
     if mecway_times:
         block_str = (
@@ -5505,6 +5587,63 @@ def _penalty_args(c, algo, friction):
     return out
 
 
+def _slave_edge_min(model_data, groups):
+    """Shortest corner-to-corner edge of the faces of the groups (m), or
+    None (no faces or nodes)."""
+    nodes = model_data.get("mesh_nodes") or {}
+    faces = model_data.get("group_face_list", {})
+    best = None
+    for g in groups:
+        for f in faces.get(g, []):
+            nc = 3 if f.get("stype", "").startswith("TRIA") else 4
+            ids = f.get("nodes", [])[:nc]
+            if len(ids) < nc or any(n not in nodes for n in ids):
+                continue
+            for k in range(nc):
+                a, b = nodes[ids[k]], nodes[ids[(k + 1) % nc]]
+                d = math.sqrt(sum((a[i] - b[i]) ** 2 for i in range(3)))
+                if d > 0.0 and (best is None or d < best):
+                    best = d
+    return best
+
+
+def _penetration_limit_line(model_data, analysis, pairs, algo):
+    """
+    Penetration check of penalty contact: a line BRIDGE_PENE_MAXI
+    <limit> <edge> in study.mess, which bridge_run_aster.
+    penetration_report compares after the run with the largest CONTACT
+    PENETRATION of the convergence table (column of STAT_NON_LINE/
+    DYNA_NON_LINE with CONTINUE; equal to p/kn in the contact patch test,
+    seen with 17.4). Limit = contact_pene_maxi x the shortest edge of the
+    slave faces with a normal stiffness. Not via DEFI_LIST_INST ECHEC
+    EVENEMENT='INTERPENETRATION' (ACTION 'ARRET' or 'ADAPT_COEF_PENA',
+    catalogue defi_list_inst.py 17.4): with FORMULATION='CONTINUE' that
+    stopped in the first step with <EXCEPTION> JEVEUX_26 (object
+    &&OP0070.RESOC.COCO missing, a structure of the discrete formulation;
+    NOT verified in the source) and left no results (17.4, test run).
+    Returns "" if not applicable.
+    """
+    if algo != "PENALISATION":
+        return ""
+    try:
+        frac = float(analysis.get("contact_pene_maxi", 0.05) or 0.0)
+    except (TypeError, ValueError):
+        frac = 0.0
+    if frac <= 0.0:
+        return ""
+    slaves = [c["slave"] for c in pairs if (c.get("kn", 0.0) or 0.0) > 0.0]
+    edge = _slave_edge_min(model_data, slaves) if slaves else None
+    if not edge:
+        return ""
+    limit = frac * edge
+    log("INFO: Penetration check: limit {0} m = {1} x shortest slave edge "
+        "{2} m (contact_pene_maxi).".format("%.4g" % limit, frac,
+                                             "%.4g" % edge))
+    return ("# Penetration check (bridge_run_aster.penetration_report)\n"
+            "print('BRIDGE_PENE_MAXI %r %r' % ({0!r}, {1!r}))\n".format(
+                limit, edge))
+
+
 def _build_contact_block(model_data, analysis=None):
     """
     DEFI_CONTACT for the contact2 pairs (bridge_mesh.py has aligned the
@@ -5594,7 +5733,7 @@ def _build_contact_block(model_data, analysis=None):
         glob_extra = "    LISSAGE='OUI',\n" + glob_extra
         log("INFO: DEFI_CONTACT LISSAGE='OUI' (normalen gemiddeld in de "
             "knopen; contact_smoothing).")
-    block = (
+    block = _penetration_limit_line(model_data, analysis, pairs, algo) + (
         "contact = DEFI_CONTACT(\n"
         "    MODELE=model,\n"
         "    FORMULATION='CONTINUE',\n"
@@ -6734,6 +6873,12 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         extra = (schema_clause + etat_ref +
                  "    ARCHIVAGE=_F(LIST_INST=outlist),\n")
         listinst_block = listinst_block + "\n" + etat_block
+    # Automatic time stepping (_auto_listinst_block): only Mecway's output
+    # times in the result, not the adapted steps in between.
+    auto_archive = ("    ARCHIVAGE=_F(LIST_INST=outlist),\n"
+                    if not dynamic and model_data.get("_auto_time_steps")
+                    else "")
+    extra += auto_archive
     # ENERGIE=_F() (U4.53.01 par. 3.22; catalogue dyna_non_line.py):
     # energy balance per step in study.mess, shown in the
     # convergence window. With contact CONTINUE Code-Aster stops with
@@ -6824,6 +6969,13 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         else:
             segments = "[0.0] + list(outlist.getValues())"
         loop_extra = extra
+        if auto_archive:
+            # The loop reads the last step after each segment (getLastIndex);
+            # archive every step so that this is the segment end.
+            loop_extra = extra.replace(auto_archive, "")
+            log("INFO: Automatic time stepping with element failure: "
+                "every calculation step is archived (also the adapted "
+                "steps between Mecway's output times).")
         first = "{}"
         if dynamic and etat_ref:
             # The initial velocity only in the first call; after that

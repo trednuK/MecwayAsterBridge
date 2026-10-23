@@ -1369,6 +1369,20 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   zodat radial return exact blijft. Mecway's eigen uitvoertijden zijn niet headless
   nagegaan (Mecway-solve was niet beschikbaar toen deze case werd toegevoegd).
 
+### NL-21 Mecway's *Automatic time stepping*
+
+- **Doel**: met *Automatic time stepping* rekent de bridge met `DEFI_LIST_INST
+  METHODE='AUTO'` en levert Mecway's uitvoertijden.
+- **Model**: NL-01 met `automatictimestepping="true"`: (a) interne solver, stepsize
+  0,4 s over 3 s (als NL-20); (b) CCX-opmaak, *time points* elke 0,5 s.
+- **Referentie**: (a) de tijden van NL-20; (b) uitvoertijden 0,5 .. 3,0 s, 6
+  rekenstappen (de vaste lijst zonder de optie: 30); F, σ_xx en p als NL-01.
+- **Resultaat**: tijden exact, F, σ_xx en p 0,00 % af; (b) 6 rekenstappen.
+- **Interpretatie**: de tijden in de lijst zijn verplichte rekenpunten (17.4: ook met
+  `METHODE='AUTO'`), `ARCHIVAGE` niet; daarom staan de uitvoertijden en de knikken in
+  de lijst. Met de optie op NL-90 en NK-04 (tijdelijk, niet in de suite): NL-90 gelijk
+  binnen 0,01 %, NK-04 P_u/Pcr 0,480 tegen 0,488 (binnen de tolerantie).
+
 ### NL-04 Hardingscurve met een andere E dan het tabblad *Elastic*
 
 - **Doel**: E bij een hardingscurve in totale rek (GitHub issue #2).
@@ -1477,6 +1491,11 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   kwadratisch slave-vlak. Met passende meshes is ook `AUTO` exact. `NCOTES` is niet
   apart getest op tet10 of gekromde vlakken (wel rekenen de Mecway-voorbeelden
   PipeClip en AssemblyWithContact ermee door, zie `bridge_to_aster.py`).
+
+- **NL-03p** (penetratiecontrole): de patchtest van NL-03d met kn = 1e10 Pa/m:
+  penetratie p/kn = 1 mm (exact), 15 % van de rand van het slave-vlak (6,67 mm); de
+  bridge geeft na de run een WARNING (`contact_pene_maxi` 0,05). NL-03b/d/f (1 µm)
+  geven er geen.
 
 ### NL-70 .. NL-75 Temperatuur in de tijd (thermische rek)
 

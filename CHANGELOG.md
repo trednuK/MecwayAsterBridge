@@ -26,6 +26,21 @@
 - **Optional contact normal smoothing** (`contact_smoothing`, default off): `DEFI_CONTACT`
   `LISSAGE='OUI'` for curved contact surfaces meshed with few facets (cylinder, sphere); not
   for surfaces with sharp edges. Off: input unchanged.
+- **Mecway's Automatic time stepping** (nonlinear static; U4.34.03; Aubry, *Beginning
+  with code_aster*, 2019, §14.1): with `automatictimestepping="true"` in the `.liml`
+  (internal solver or CCX time points) the bridge now uses `DEFI_LIST_INST
+  METHODE='AUTO'` between Mecway's output times and the load-table kinks, with the
+  existing step cutting as fallback, and archives only Mecway's output times. New
+  setting `auto_time_stepping` (default on; off = fixed steps as before). Models without
+  the flag are unchanged. The convergence window now also reads the step lines of
+  `METHODE='AUTO'` (no "Niveau de découpe"). Verification NL-21a/b.
+- **Penetration check for penalty contact**: with `contact_algo` = `PENALISATION` the
+  bridge gives a WARNING after the run when the largest penetration (column `CONTACT
+  PENETRATION` in study.mess) exceeds `contact_pene_maxi` (new setting, default 0.05) x
+  the shortest edge of the slave faces, with the advice to raise the normal stiffness or
+  use `STANDARD`. Results unchanged; 0 = off. (`DEFI_LIST_INST` `EVENEMENT=
+  'INTERPENETRATION'` stops Code-Aster 17.4 with `JEVEUX_26` in the continuous
+  formulation, so it is not used.) Verification NL-03p.
 - **Mass and reaction check for static runs** (Aubry, *Beginning with code_aster*, 2019,
   §4.13–4.14): after a linear or nonlinear static run the log and the status box show the
   total mass and centre of gravity (`POST_ELEM MASS_INER`) and the sum of the reactions

@@ -258,6 +258,12 @@ ANALYSIS_SPECS = [
     ("contact_smoothing", ("Normalen gladstrijken (LISSAGE, gebogen vlakken)",
                            "Smooth normals (LISSAGE, curved faces)"), "bool",
      None),
+    ("auto_time_stepping", ("Mecway's Automatic time stepping volgen",
+                            "Follow Mecway's Automatic time stepping"),
+     "bool", None),
+    ("contact_pene_maxi", ("Penetratiegrens penalty (x kortste rand, 0 = uit)",
+                           "Penalty penetration limit (x shortest edge, "
+                           "0 = off)"), "float_range", (0.0, 1.0)),
     ("plastic_strain_definition", ("Rekdefinitie hardingscurve",
                                    "Strain definition hardening curve"),
      "choice", ("auto", "plastic", "total")),

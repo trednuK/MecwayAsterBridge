@@ -62,8 +62,8 @@ Wat de niet-lineaire analyses ondersteunen:
 |---|---|---|
 | Code-Aster-run | `time_limit`, `memory_limit` | alle |
 | Oplosser | `solver_nprec`; `lin_solver`, `lin_solver_resi` | alle; `lin_solver` alleen statisch, `lin_solver_resi` statisch en de statische stap van modaal, knik en de imperfectie |
-| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search` | niet-lineair statisch, dynamisch impliciet; `default_time_end` ook expliciet |
-| Contact | `contact_algo`, `contact_smoothing` | niet-lineair statisch, dynamisch |
+| Stappen en convergentie | `substeps_per_interval` (statisch), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (statisch) | niet-lineair statisch, dynamisch impliciet; `default_time_end` ook expliciet |
+| Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | niet-lineair statisch, dynamisch impliciet (`contact_algo` ook expliciet) |
 | Materiaal en kinematica | `plastic_strain_definition`, `deformation` | niet-lineair statisch, dynamisch |
 | Tijdschema | `schema`, `hht_alpha`, `substeps_per_output` (impliciet), `explicit_dt_factor` (expliciet) | dynamisch |
 | Bezwijken | `element_failure`, `failure_plastic_strain`, `failure_stiffness_factor` | niet-lineair statisch, dynamisch ([Bezwijken.md](Bezwijken.md)) |
@@ -84,6 +84,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 | Sleutel (label) | Analyse | Wat het doet | Bridge | CA |
 |---|---|---|---|---|
 | `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
+| `auto_time_stepping` (Mecway's Automatic time stepping volgen) | statisch | Alleen met Mecway's *Automatic time stepping*: aan = `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, resultaten op die tijden (§2.1); uit = vaste stappen. | aan | - |
 | `substeps_per_output` (Rekenstappen per uitvoerinterval) | impliciet | Rekenstappen per uitvoerinterval van Mecway `<timesteps>`. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen tijdslast (statisch) of geen `<timesteps>` (dynamisch) heeft. | 1.0 | - |
 | `explicit_dt_factor` (Tijdstap / kritieke tijdstap) | expliciet | Tijdstap ≤ factor × de kritieke tijdstap zoals de bridge die schat, per uitvoerinterval gelijk verdeeld (zo is elke uitvoertijd een rekenstap). | 0.5 | - |
@@ -96,8 +97,22 @@ het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`), of (route `tabel`
 alleen dat laatste tijdstip. De rekenstappen zijn die van Mecway (*Time step size*,
 `<timesteps stepsize>`: dt, 2 dt, ... tot de periode), plus de knikken van de
 lasttabellen die ertussen vallen; zo staan in Mecway dezelfde tijdstippen als bij
-Mecway's eigen solver. Lasttijden na de periode vallen weg. Mecway's *automatic time
-stepping* wordt niet nagebootst (vaste stap; Code-Aster knipt alleen bij divergentie).
+Mecway's eigen solver. Lasttijden na de periode vallen weg. Staat Mecway's *Automatic time stepping* aan (`automatictimestepping="true"`, met de
+interne solver naast *Time step size*, met CCX naast de *time points*), dan maakt de
+bridge `DEFI_LIST_INST(METHODE='AUTO', DEFI_LIST=_F(LIST_INST=times, PAS_MINI=...,
+PAS_MAXI=...))` (EDF R&D, U4.34.03; Aubry, 2019, §14.1) met hetzelfde `ECHEC` als
+fallback. De tijden in de lijst zijn verplichte rekenpunten: Mecway's stappen of
+*time points* plus de knikken van de lasttabellen; daartussen past Code-Aster de stap
+aan (`ADAPTATION` standaard: groter na twee makkelijke stappen, `PAS_MAXI` = Mecway's
+stap of *time-point*-interval, `PAS_MINI` = 1e-6 daarvan). `ARCHIVAGE` houdt alleen
+Mecway's uitvoertijden (bij CCX de *time points*, zonder de knikken), zodat Mecway de
+tijden krijgt die het verwacht. Geverifieerd: NL-21a (zelfde tijden en waarden als
+NL-20) en NL-21b (*time points* 0,5 s: 6 in plaats van 30 rekenstappen, waarden
+binnen 0,2 %). `auto_time_stepping` uit = vaste stappen zoals zonder de optie (met
+een WARNING). Zonder de optie in Mecway verandert er niets. Met bezwijken van
+elementen archiveert de bridge elke rekenstap. Bij een draagkrachtberekening tot
+bezwijken kan de laatst geconvergeerde last iets verschuiven (NK-04 met de optie:
+P_u/Pcr 0,480 in plaats van 0,488).
 Alleen een model zonder stapgrootte gebruikt `substeps_per_interval`.
 
 **Impliciet dynamisch.** De bridge maakt een `DEFI_LIST_INST` met:
@@ -574,6 +589,20 @@ contact = DEFI_CONTACT(
     clipverplaatsing binnen 2..8 % (met `STANDARD` ging het contact verloren);
     Tutorials/AssemblyWithContact (Fixed_support) 21,74 tegen 21,97 µm (met
     `STANDARD`: `MECANONLINE9_4`).
+
+- **Penetratiecontrole (`contact_pene_maxi`, alleen `PENALISATION`).** Een te lage
+  *normal stiffness* laat de delen merkbaar in elkaar zakken zonder foutmelding. Na de
+  run neemt de bridge de grootste penetratie uit de kolom `CONTACT PENETRATION` van de
+  convergentietabel in study.mess (laatste Newton-iteratie van elke geconvergeerde
+  stap) en geeft een WARNING (NL+EN, ook in het venster na de run) als die groter is
+  dan `contact_pene_maxi` × de kortste rand van de slave-vlakken (standaard 0,05; 0 =
+  uit). De resultaten veranderen niet: verhoog zelf de *normal stiffness* of kies
+  `STANDARD`. Niet via `DEFI_LIST_INST ECHEC=_F(EVENEMENT='INTERPENETRATION',
+  PENE_MAXI=..., ACTION='ARRET')` (catalogus `defi_list_inst.py` 17.4; de andere actie
+  `ADAPT_COEF_PENA` past de stijfheid zelf aan): met `FORMULATION='CONTINUE'` stopte
+  Code-Aster 17.4 in de eerste stap met `<EXCEPTION> JEVEUX_26` (object
+  `&&OP0070.RESOC.COCO` ontbreekt) en zonder resultaten. Geverifieerd: NL-03p (kn =
+  1e10 Pa/m, penetratie 1 mm = 15 % van de rand: WARNING); NL-03b/d/f (1 µm) geen.
 
   Verschil met Mecway bij `STANDARD`: Mecway "unilateral elastic" is een
   penalty-methode met een stijfheid per oppervlak (Mecway, 2026, §9.9):

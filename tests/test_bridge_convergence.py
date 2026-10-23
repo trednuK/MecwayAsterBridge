@@ -546,6 +546,19 @@ def test_modes():
     check(u"mode 1: FREQ=" in bc.summarize(d), bc.summarize(d))
 
 
+def test_auto_steps():
+    """METHODE='AUTO' (Automatic time stepping): no "Niveau de
+    decoupe" after the time; level 1."""
+    p = bc.ConvergenceParser()
+    p.feed(u"Instant de calcul:  5.000000000000e-01\n"
+           u"Instant de calcul:  1.000000000000e+00 - Niveau de "
+           u"découpe: 2\n")
+    p.close()
+    steps = p.data.steps
+    check([(s.instant, s.level) for s in steps] == [(0.5, 1), (1.0, 2)],
+          [(s.instant, s.level) for s in steps])
+
+
 def test_live_dir(tmp):
     """find_live_fort6 herkent de run aan 'F mess' in de .export-kopie."""
     run = os.path.join(tmp, "run_aster_test1")
@@ -578,6 +591,7 @@ def main(argv):
     test_linear_gcpc()
     test_linear_fail()
     test_modes()
+    test_auto_steps()
     tmp = tempfile.mkdtemp(prefix="convtest_")
     try:
         test_live_dir(tmp)

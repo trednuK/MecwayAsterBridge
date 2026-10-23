@@ -1366,6 +1366,20 @@ samples) plus the kinks of the load tables (NL-20).
   radial return stays exact. Mecway's own output times were not checked headless
   (Mecway solve was not available when this case was added).
 
+### NL-21 Mecway's *Automatic time stepping*
+
+- **Goal**: with *Automatic time stepping* the bridge computes with `DEFI_LIST_INST
+  METHODE='AUTO'` and delivers Mecway's output times.
+- **Model**: NL-01 with `automatictimestepping="true"`: (a) internal solver, step size
+  0.4 s over 3 s (as NL-20); (b) CCX format, *time points* every 0.5 s.
+- **Reference**: (a) the times of NL-20; (b) output times 0.5 .. 3.0 s, 6 solver steps
+  (the fixed list without the option: 30); F, σ_xx and p as NL-01.
+- **Result**: times exact, F, σ_xx and p 0.00 % off; (b) 6 solver steps.
+- **Interpretation**: the times in the list are mandatory solver points (17.4: also
+  with `METHODE='AUTO'`), `ARCHIVAGE` is not; that is why the output times and the kinks
+  are in the list. With the option on NL-90 and NK-04 (temporarily, not in the suite):
+  NL-90 equal within 0.01 %, NK-04 P_u/Pcr 0.480 vs 0.488 (within the tolerance).
+
 ### NL-04 Hardening curve with a different E than the *Elastic* tab
 
 - **Goal**: E with a hardening curve in total strain (GitHub issue #2).
@@ -1474,6 +1488,11 @@ samples) plus the kinks of the load tables (NL-20).
   `NCOTES` for a quadratic slave face. With matching meshes `AUTO` is exact as well.
   `NCOTES` has not been tested separately on tet10 or curved faces (the Mecway samples
   PipeClip and AssemblyWithContact do run with it, see `bridge_to_aster.py`).
+
+- **NL-03p** (penetration check): the patch test of NL-03d with kn = 1e10 Pa/m:
+  penetration p/kn = 1 mm (exact), 15 % of the edge of the slave face (6.67 mm); the
+  bridge gives a WARNING after the run (`contact_pene_maxi` 0.05). NL-03b/d/f (1 µm)
+  give none.
 
 ### NL-70 .. NL-75 Temperature in time (thermal strain)
 

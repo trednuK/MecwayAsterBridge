@@ -119,7 +119,8 @@ from bridge_gui         import (run_settings_dialog, results_dialog,
 from bridge_from_liml   import extract_aster_data_from_liml
 from bridge_mesh        import write_mesh
 from bridge_to_aster    import generate_AsterSolver_files, results_file
-from bridge_run_aster   import run_AsterSolver, aster_mess_errors
+from bridge_run_aster   import (run_AsterSolver, aster_mess_errors,
+                                penetration_report)
 from bridge_convergence import stopped_text
 from bridge_from_aster  import (AsterToMecway_results, check_solution_mesh,
                                 _compare_with_mecway,
@@ -449,6 +450,10 @@ def _run(settings):
                                            resu_name, mw, solution)
         if failure_note:
             _notify(failure_note)
+        # Penalty contact: penetration against contact_pene_maxi
+        for line in penetration_report(
+                os.path.join(work_dir_path(), run_name(".mess"))):
+            _notify(line)
         # Global error estimate (CALC_ERREUR, setting error_estimator)
         _report_error_estimate()
         # Static: mass, centre of gravity and sum of the reactions

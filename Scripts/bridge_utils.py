@@ -224,6 +224,12 @@ CONFIG_BRIDGE = {
             # Line search RECH_LINEAIRE (U4.51.03; S27): "auto" = only
             # with cables (CABLE) and without contact, "on", "off".
             "line_search":           "auto",
+            # Mecway's Automatic time stepping (<timesteps
+            # automatictimestepping="true">): True = DEFI_LIST_INST
+            # METHODE='AUTO' between Mecway's output times
+            # (bridge_to_aster._auto_listinst_block); False = fixed steps as
+            # without the flag. Without the flag in the .liml no effect.
+            "auto_time_stepping":    True,
             # Contact (DEFI_CONTACT CONTINUE, per zone): "STANDARD" =
             # Lagrange, no penetration; "PENALISATION" = spring with Mecway's
             # normalstiffness (COEF_PENA_CONT, Pa/m) and with friction
@@ -232,6 +238,11 @@ CONFIG_BRIDGE = {
             # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
             # curved contact surfaces; not across sharp edges.
             "contact_smoothing":     False,
+            # Penetration check with PENALISATION (bridge_run_aster.
+            # penetration_report): WARNING after the run if the largest
+            # penetration (CONTACT PENETRATION in study.mess) exceeds this
+            # fraction of the shortest edge of the slave faces; 0 = off.
+            "contact_pene_maxi":     0.05,
             "default_time_end":      1.0,
             # Strain definition of Mecway's <hardeningcurve strain="...">.
             # Code-Aster TRACTION expects TOTAL strain and no point with
@@ -315,6 +326,8 @@ CONFIG_BRIDGE = {
             # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
             # curved contact surfaces; not across sharp edges.
             "contact_smoothing":     False,
+            # See nonlin_static_3d.
+            "contact_pene_maxi":     0.05,
             "newton_reac_iter":      1,
             # ENERGIE=_F() (U4.53.01 sec. 3.22): energy balance per step in
             # study.mess (convergence window). Not with contact CONTINUE

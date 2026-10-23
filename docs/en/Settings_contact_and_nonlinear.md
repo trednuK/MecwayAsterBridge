@@ -63,8 +63,8 @@ What the nonlinear analyses support:
 |---|---|---|
 | Code-Aster run | `time_limit`, `memory_limit` | all |
 | Solver | `solver_nprec`; `lin_solver`, `lin_solver_resi` | all; `lin_solver` static only, `lin_solver_resi` static and the static step of modal, buckling and the imperfection |
-| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search` | nonlinear static, dynamic implicit; `default_time_end` also explicit |
-| Contact | `contact_algo`, `contact_smoothing` | nonlinear static, dynamic |
+| Steps and convergence | `substeps_per_interval` (static), `newton_max_iter`, `newton_reac_iter`, `default_time_end`, `convergence_criterion`, `convergence_resi_rela`, `convergence_resi_maxi`, `line_search`, `auto_time_stepping` (static) | nonlinear static, dynamic implicit; `default_time_end` also explicit |
+| Contact | `contact_algo`, `contact_smoothing`, `contact_pene_maxi` | nonlinear static, dynamic implicit (`contact_algo` also explicit) |
 | Material and kinematics | `plastic_strain_definition`, `deformation` | nonlinear static, dynamic |
 | Time scheme | `schema`, `hht_alpha`, `substeps_per_output` (implicit), `explicit_dt_factor` (explicit) | dynamic |
 | Failure | `element_failure`, `failure_plastic_strain`, `failure_stiffness_factor` | nonlinear static, dynamic ([Failure.md](Failure.md)) |
@@ -85,6 +85,7 @@ when you omit the keyword (catalogue 17.4).
 | Key (label) | Analysis | What it does | Bridge | CA |
 |---|---|---|---|---|
 | `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load 0 to `default_time_end`. With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
+| `auto_time_stepping` (Follow Mecway's Automatic time stepping) | static | Only with Mecway's *Automatic time stepping*: on = `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, results at those times (§2.1); off = fixed steps. | on | - |
 | `substeps_per_output` (Solver steps per output interval) | implicit | Solver steps per output interval of Mecway `<timesteps>`. Kinks of load functions are added as extra time points. | 1 | - |
 | `default_time_end` (End time without time load) [s] | all | End time when the model has no time load (static) or no `<timesteps>` (dynamic). | 1.0 | - |
 | `explicit_dt_factor` (Time step / critical time step) | explicit | Time step ≤ factor × the critical time step as estimated by the bridge, divided evenly per output interval (so every output time is a solver step). | 0.5 | - |
@@ -96,9 +97,22 @@ Mecway (route `liml`): all archived solver steps up to the last time reached (th
 bridge sets no `ARCHIVAGE`), or (route `tabel`) only that last time. The solver steps
 are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up to the period),
 plus the kinks of the load tables that fall in between; so Mecway shows the same times
-as with Mecway's own solver. Load times after the period are dropped. Mecway's
-*automatic time stepping* is not reproduced (fixed step; Code-Aster only cuts on
-divergence). Only a model without a step size uses `substeps_per_interval`.
+as with Mecway's own solver. Load times after the period are dropped. If Mecway's
+*Automatic time stepping* is on (`automatictimestepping="true"`, with the internal
+solver next to *Time step size*, with CCX next to the *time points*), the bridge
+creates `DEFI_LIST_INST(METHODE='AUTO', DEFI_LIST=_F(LIST_INST=times, PAS_MINI=...,
+PAS_MAXI=...))` (EDF R&D, U4.34.03; Aubry, 2019, §14.1) with the same `ECHEC` as a
+fallback. The times in the list are mandatory solver points: Mecway's steps or *time
+points* plus the kinks of the load tables; in between Code-Aster adapts the step
+(`ADAPTATION` default: larger after two easy steps, `PAS_MAXI` = Mecway's step or
+time-point interval, `PAS_MINI` = 1e-6 of it). `ARCHIVAGE` keeps only Mecway's output
+times (with CCX the *time points*, without the kinks), so Mecway gets the times it
+expects. Verified: NL-21a (same times and values as NL-20) and NL-21b (*time points*
+0.5 s: 6 instead of 30 solver steps, values within 0.2 %). `auto_time_stepping` off =
+fixed steps as without the option (with a WARNING). Without the option in Mecway
+nothing changes. With element failure the bridge archives every solver step. In a
+load-capacity run up to collapse the last converged load may shift slightly (NK-04
+with the option: P_u/Pcr 0.480 instead of 0.488). Only a model without a step size uses `substeps_per_interval`.
 
 **Implicit dynamic.** The bridge creates a `DEFI_LIST_INST` with:
 
@@ -568,6 +582,21 @@ contact = DEFI_CONTACT(
     Samples/PipeClip with `PENALISATION` + `MAXI` follows the clip displacement within
     2..8 % (with `STANDARD` the contact was lost); Tutorials/AssemblyWithContact
     (Fixed_support) 21.74 vs 21.97 µm (with `STANDARD`: `MECANONLINE9_4`).
+
+- **Penetration check (`contact_pene_maxi`, only `PENALISATION`).** A normal
+  stiffness that is too low lets the parts sink noticeably into each other without an
+  error. After the run the bridge takes the largest penetration from the column
+  `CONTACT PENETRATION` of the convergence table in study.mess (last Newton iteration
+  of each converged step) and gives a WARNING (NL+EN, also in the window after the
+  run) if it exceeds `contact_pene_maxi` × the shortest edge of the slave faces
+  (default 0.05; 0 = off). The results do not change: raise the *normal stiffness*
+  yourself or choose `STANDARD`. Not via `DEFI_LIST_INST
+  ECHEC=_F(EVENEMENT='INTERPENETRATION', PENE_MAXI=..., ACTION='ARRET')` (catalogue
+  `defi_list_inst.py` 17.4; the other action `ADAPT_COEF_PENA` changes the stiffness
+  itself): with `FORMULATION='CONTINUE'` Code-Aster 17.4 stopped in the first step with
+  `<EXCEPTION> JEVEUX_26` (object `&&OP0070.RESOC.COCO` missing) and without results.
+  Verified: NL-03p (kn = 1e10 Pa/m, penetration 1 mm = 15 % of the edge: WARNING);
+  NL-03b/d/f (1 µm) none.
 
   Difference from Mecway with `STANDARD`: Mecway "unilateral elastic" is a penalty
   method with a stiffness per area (Mecway, 2026, §9.9): Mecway allows some

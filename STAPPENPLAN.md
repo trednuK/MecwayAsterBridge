@@ -55,12 +55,12 @@ S7, S8, S5, S9).
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
 | S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026 |
 | S23 | Linear buckling with a constant (dead) plus a variable (live) load | done | – | branch w-q, 23 Oct 2026: `#ASTER-CONSTANT` (BU-40) |
-| S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | open | – | planned 23 Oct 2026 (Aubry 2019 §14.1) |
+| S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | done | – | branch w-p1; static only, setting `auto_time_stepping`; NL-21a/b; NL/NK families unchanged |
 | S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |
 | S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | done | S10h | branch w-s (23 Oct 2026): setting `loss_factor` + `#ASTER-HYST`; GENE and PHYS; HR-06a..d OK, HR-01..05 unchanged (see §S26) |
 | S27 | Optional line search (`RECH_LINEAIRE`) in nonlinear static | done | – | branch w-p2; `line_search` auto (cables only)/on/off; SaggingCable *Tension only* 9 -> 7 iterations; `on` breaks `POU_D_T_GD` (see §S27) |
 | S28 | Optional contact normal smoothing (`LISSAGE='OUI'`) | done | – | branch w-p2; `contact_smoothing` (default off); NL-03a..f and PipeClip unchanged with it on (see §S28) |
-| S29 | Penetration check for penalty contact (`EVENEMENT='INTERPENETRATION'`) | open | – | planned 23 Oct 2026 |
+| S29 | Penetration check for penalty contact (`EVENEMENT='INTERPENETRATION'`) | done (other route) | – | branch w-p1; WARNING after the run from study.mess, setting `contact_pene_maxi`; `INTERPENETRATION` crashes 17.4 (JEVEUX_26); NL-03p |
 | S30 | Redo the Code-Aster forum research | later | forum online again (offline until about 30 Oct 2026) | planned 23 Oct 2026 |
 | S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
@@ -1417,6 +1417,18 @@ archived times that differ from the computed ones.
 **Done when:** a nonlinear case with automatic time stepping solves with fewer steps than the fixed list and
 gives the same results at the output times (within the case tolerance); the NL families stay within tolerance;
 docs NL+EN.
+**Result** (23 Oct 2026, Code-Aster 17.4, ncpus 1): Mecway 34 keeps `automatictimestepping="true"` on save in
+both formats (internal solver with `stepsize`, CCX with time points; no min/max step attributes exist, strings
+of Mecway.exe). Seen with 17.4: with `METHODE='AUTO'` the times of `DEFI_LIST` are mandatory solver points,
+`ARCHIVAGE LIST_INST` times are not (list 0, 0.1, 2, 3 gave 0.1, 0.2, 0.4, 0.6, 1.0, 1.4, 2.0, 2.4, 3.0; archive
+times 0.5/1.5/2.5 skipped). So `_auto_listinst_block` puts Mecway's output times plus the load kinks in the list,
+`PAS_MAXI` = Mecway's step/time-point interval, `PAS_MINI` = 1e-6 of it, the existing `ECHEC DECOUPE` kept,
+and `ARCHIVAGE` on the output times (the failure loop archives every step). Dynamics: not changed. The
+convergence parser now also reads step lines without "Niveau de découpe" (AUTO). NL-21a (stepsize 0.4 s): times
+and values as NL-20; NL-21b (CCX time points 0.5 s): 6 instead of 30 steps, values within 0.2 % (exact). Temporary
+flagged copies: NL-90 equal within 0.01 % (40 steps instead of 23: after a cut the step regrows gradually),
+NK-04 P_u/Pcr 0.480 instead of 0.488 (within tolerance). All 58 NL/NK cases without the flag: identical to the
+baseline (only NL-03a known, KNOWN_BUGS 43).
 
 ### S25 – Optional exact section properties with `MACR_CARA_POUTRE`
 **Goal:** a setting (default off: Mecway's values, including J, stay the default) that computes A, IY, IZ, JX,
@@ -1491,6 +1503,14 @@ messages over automatic fixes".
 the bridge reports the stop (error code and explanation in `docs/Foutmeldingen_CodeAster.md`).
 **Done when:** a penalty case with a too soft `normalstiffness` stops (or warns) with a clear message that names
 the setting to change; the contact families with a normal stiffness stay unchanged; docs NL+EN.
+**Result** (23 Oct 2026, Code-Aster 17.4): `ECHEC=_F(EVENEMENT='INTERPENETRATION', PENE_MAXI=1e-4,
+ACTION='ARRET')` with `FORMULATION='CONTINUE'`, `ALGO_CONT='PENALISATION'` stopped in the first step with
+`<EXCEPTION> JEVEUX_26` (`&&OP0070.RESOC.COCO` missing, a discrete-formulation object) and no results: not
+usable. Built instead: the .comm prints `BRIDGE_PENE_MAXI <limit> <edge>`; after the run
+`bridge_run_aster.penetration_report` takes the largest `CONTACT PENETRATION` (convergence table, last
+iteration of each converged step; equals p/kn exactly in the patch test) and gives a bilingual WARNING (log and
+message) above `contact_pene_maxi` (default 0.05) x the shortest slave edge. Results unchanged. NL-03p (kn 1e10,
+1 mm = 15 %): WARNING; NL-03b/d/f and NL-30b/c: none, values identical.
 
 ### S30 – Redo the Code-Aster forum research
 **Goal:** repeat the forum searches of earlier steps (e.g. KNOWN_BUGS items marked "NOT verified" and open
