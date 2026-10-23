@@ -110,6 +110,7 @@ it was last verified:
 | Start screen: status box, missing model folder, second window (V2026.3) | NOT verified | verified (V2026.3) |
 | Line3 trusses and cables (V2026.4) | NOT verified (not checked whether Mecway 33 offers them; no effect on a model without them) | verified (V2026.4) |
 | Hyperelastic Neo Hooke / Mooney-Rivlin (V2026.4) | NOT verified (not checked whether Mecway 33 offers them; no effect on a model without them) | verified (V2026.4) |
+| MecwaySectionProps and `#ASTER-SECTIE` (material API `new_material`, `set_material_type`, `set_material_property`) | NOT verified (not checked whether Mecway 33 has this API) | verified (headless, 23 Oct 2026) |
 | Plastic curve: E is the slope of the first segment (V2026.4) | NOT verified (measured in Mecway 34 with CCX) | verified (V2026.4) |
 | Mode shapes with displacement magnitude (V2026.4) | NOT verified; Mecway 33's own modal solution shows no magnitude, so it is one extra item (harmless) | verified (V2026.4) |
 | Flexible joints: `POU_D_T_GD` and offset beams (V2026.4) | NOT verified | verified (V2026.4) |

@@ -63,6 +63,22 @@
   `CARA_ELEM` and writes `SIGM_ELNO` (shell layers), the von Mises stress of the shell
   surfaces (`res_sup`/`res_moy`/`res_inf`), `SIPM_ELNO` and, with `beam_forces`, the
   section forces of beams.
+- **MecwaySectionProps** (new script `Scripts/MecwaySectionProps.py`, Tools > Scripts):
+  section properties of a flat face selected in Mecway, the Mecway version of
+  AreaPropsForAlibre. Input: the selected mesh faces, or the exact boundary of the CAD
+  (STEP) face they lie on. Output: area, centroid, second moments (also principal),
+  elastic and plastic section moduli, torsion constant, warping constant, shear centre and
+  shear areas, with a drawing; computed in Code-Aster's own Python (numpy/scipy), no extra
+  installation. A button creates a Mecway material with a *General section* from it, and
+  the characteristics Mecway has no field for go into an `#ASTER-SECTIE` line in an
+  extra custom model definition (imported, no save or reopen). Small gaps in the
+  boundary are closed automatically and reported. Docs: `docs/MecwaySectionProps.md`.
+- **`#ASTER-SECTIE`** (also `#ASTER-SECTION`): extra characteristics of a general beam
+  section. The bridge passes `EY`, `EZ` (shear centre: bending-torsion coupling), `RY`,
+  `RZ`, `RT` to `AFFE_CARA_ELEM` for every beam and `AY`, `AZ` to Timoshenko beams instead
+  of the estimate; a line that no longer matches the material (A, IY, IZ, JX) is ignored
+  with a WARNING. The bridge now reads every custom text field of a kind (Mecway keeps
+  an imported custom model definition next to an existing one), not only the first.
 - **Results after other errors in the step loop** (issue #5): when Code-Aster stops
   `STAT_NON_LINE`/`DYNA_NON_LINE` with another error than `MECANONLINE*` after some steps
   have converged (e.g. `DVP_2`, a floating point exception in a too distorted element),
