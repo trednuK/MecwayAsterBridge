@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Mass and reaction check for static runs** (Aubry, *Beginning with code_aster*, 2019,
+  §4.13–4.14): after a linear or nonlinear static run the log and the status box show the
+  total mass and centre of gravity (`POST_ELEM MASS_INER`) and the sum of the reactions
+  `REAC_NODA` per direction FX/FY/FZ (last stored step), for your own hand check. No
+  automatic comparison with the loads. Both result routes. Verification LS-20a..e checks
+  both numbers.
+- **Warning for missing modal mass** (Aubry, *Beginning DYNAmics with code_aster*, 2023,
+  §3.3/§11.3): a response on a modal basis (transient, harmonic `GENE`) gives a WARNING
+  when the cumulative effective mass of the modes stays below 90% in a loaded direction
+  (from the load resultant), with the advice to use more modes or physical coordinates.
+  Results unchanged.
+- **Docs:** nonlinear dynamics uses Code-Aster's default `AMOR_RAYL_RIGI='ELASTIQUE'`
+  (Rayleigh damping with the elastic stiffness, catalogue `dyna_non_line.py`); documented,
+  not changed.
 - **Results after other errors in the step loop** (issue #5): when Code-Aster stops
   `STAT_NON_LINE`/`DYNA_NON_LINE` with another error than `MECANONLINE*` after some steps
   have converged (e.g. `DVP_2`, a floating point exception in a too distorted element),

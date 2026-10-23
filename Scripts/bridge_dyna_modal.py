@@ -436,6 +436,12 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
             "vec_{0} = ASSE_VECTEUR(VECT_ELEM=vel_{0}, NUME_DDL=numedd)"
             .format(k + 1),
         ]
+    if excitations:
+        # Load resultant for the warning on missing modal mass
+        # (MecwayAsterBridgeMain._warn_modal_mass)
+        proj.append("aster_results_export.print_excitation([{0}])".format(
+            ", ".join("vec_{0}".format(k + 1)
+                      for k in range(len(excitations)))))
     proj += [
         "PROJ_BASE(",
         "    BASE=modes,",

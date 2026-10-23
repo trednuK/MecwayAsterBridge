@@ -174,8 +174,15 @@ the default `HHT` (numerical damping) and `GROT_GDEP` the bridge logs a WARNING.
   Mecway applies no static correction). Stresses converge more slowly than
   displacements.
 - **Enough modes?** Look at the sum of the effective mass in the load direction (log,
-  §1.3). A common rule of thumb is ~90% (NOT verified in the sources; see also
-  [Modal_and_buckling.md](Modal_and_buckling.md) §1.5). Safer: compute again with
+  §1.3). Rule of thumb: at least 90% (Aubry, 2023, sec. 3.3 and 11.3; see also
+  [Modal_and_buckling.md](Modal_and_buckling.md) §1.5). If the sum stays below that
+  in a loaded direction, the bridge gives a WARNING (§5, also harmonic §7.7). The
+  loaded directions follow from the resultant of the load vectors (gravity as a base
+  acceleration too): every direction with at least 1% of the largest component. If the
+  resultant is nearly 0 (a pressure on a closed surface), every direction in which the
+  load has components. The sum counts only the real modes, not the pseudo-modes of the
+  *Static correction* (which does cover the quasi-static part of the missing modes,
+  not their dynamics). Safer: compute again with
   more modes, or with *Static correction*; if the response hardly changes, the modes
   are enough. A load at one spot (point load, shock) needs more modes than a
   distributed load.
@@ -232,6 +239,7 @@ the default `HHT` (numerical damping) and `GROT_GDEP` the bridge logs a WARNING.
 | WARNING: The Mecway model computes Dynamic Response without Mode superposition ... | `dyna_modal_3d` chosen by hand for a D30 without mode superposition | intended? Otherwise `auto` or `dyna_impl_3d` |
 | WARNING: Mecway Dynamic Response (D30) computes linearly with Newmark ... | D30 without mode superposition, `dyna_impl_3d` with HHT or large displacements | schema `NEWMARK` and deformation `PETIT` for the same scheme as Mecway (§2.6) |
 | WARNING: No loads: the response is zero everywhere | no load | apply the load |
+| WARNING: Modal basis: effective mass (sum over ... modes) below 90% in the loaded direction(s): ... | too few modes in the load direction (§3) | more modes (*Number of modes* in Mecway, or `modal_modes`), or direct time integration (Mecway: Mode superposition off, `dyna_impl_3d`) |
 | WARNING: Modal: elset(s) ... have no density | no mass | give the material a density |
 | Code-Aster reports: Mode superposition: damping ratio >= 1 (mode=..) | overdamped mode (often a high mode with β, or a low one with α) | lower α/β or *Extra modal damping*, or fewer modes; ξ per mode in the `.mess` (`BRIDGE_DEMPING`) |
 | Code-Aster reports: Mode superposition: a mode with frequency <= 0 | mechanism or loose part | constrain the model fully |
@@ -467,6 +475,7 @@ from the Code-Aster test cases sdld313d and sdld21b):
 | WARNING: Harmonic: the model has no damping ... | no Rayleigh, `modal_damping` or dampers | specify damping or choose frequencies between the natural frequencies |
 | WARNING: Harmonic: damping ratio >= 1 (...), overdamped ... The computation continues. | a mode with ξ ≥ 1: `modal_damping` ≥ 1, or Rayleigh α (low modes) or β (high modes) too large | check α/β and *Extra modal damping* (often a unit error); ξ per mode in the `.mess` (`BRIDGE_DEMPING`). Overdamped on purpose: no action needed |
 | WARNING: Harmonic: the highest frequency (...) is above the highest mode ... | too few modes for the range | more modes (*Number of modes*), basis `PHYS`, or a lower end frequency |
+| WARNING: Modal basis: effective mass (sum over ... modes) below 90% in the loaded direction(s): ... | basis `GENE` with too few modes in the load direction (§3) | more modes (*Number of modes*, or `modal_modes`), or basis `PHYS` (`harm_basis`) |
 | WARNING: Harmonic: probe '...' is a face selection ... | `PROBE_` on a face or element | make a *Node selection* |
 | Code-Aster reports: Mode superposition: a mode with frequency <= 0 | mechanism or loose part | constrain the model fully |
 
@@ -484,6 +493,9 @@ GENE = PHYS: displacement 4e-6, von Mises 4e-5, σ_xx amplitude 2.3e-3; phase wi
 
 ## 8. Sources
 
+- Aubry, J.-P. (2023). *Beginning DYNAmics with code_aster*, sec. 3.3 and 11.3: the
+  cumulative effective mass of the modal basis (at least 90% in the loaded direction)
+  as a check of a response on a modal basis.
 - Bishop, R.E.D. & Johnson, D.C. (1960). *The Mechanics of Vibration*. Cambridge:
   Cambridge University Press (receptances of beams). Not consulted locally; the
   receptance of the cantilever was derived and checked (static limit L³/3EI, poles at

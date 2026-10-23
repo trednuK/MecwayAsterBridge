@@ -101,7 +101,10 @@ Stand 22 oktober 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `9e388a6`
 (V2026.4: alle stappen tot en met de uitbreidingen van 22 oktober, o.a. line3-staven,
 hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
-431 testcases, 2318 controles, 2312 OK, 6 BEKEND, 0 NOK/FOUT.
+431 testcases, 2318 controles, 2312 OK, 6 BEKEND, 0 NOK/FOUT. Daarna (23 oktober)
+kregen LS-20a..e twee controles erbij (massa en reactiesom van de controleregel), met
+de groepen LS, NL-0, NL-2, MO-0, MP, MD en HR opnieuw gerekend: 2328 controles, 2322
+OK.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -116,7 +119,7 @@ hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
 | Harmonische respons | 11 | 40 | 40 | 0 |
 | Knik | 21 | 62 | 61 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 111 | 389 | 388 | 1 |
+| Lineair statisch | 111 | 399 | 398 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 23 | 223 | 223 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
@@ -130,7 +133,7 @@ hyperelastisch materiaal, plastische curve en flexible joints; Code-Aster 17.4):
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **431** | **2318** | **2312** | **6** |
+| **Totaal** | **431** | **2328** | **2322** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -474,7 +477,9 @@ opeenvolgende meshes.
   Mecway: een configuratie heeft geen factor); elk lastitem is in de andere twee
   onderdrukt (`<suppressed configuration=".."/>`).
 - **Referentie**: eindverplaatsing u = ρgL²/(2E) + qL/E (eenassig) en reactiekracht
-  ρgAL + qA (evenwicht), met de factoren van de gekozen configuratie.
+  ρgAL + qA (evenwicht), met de factoren van de gekozen configuratie. Ook de
+  controleregel van de bridge ([Handleiding](Handleiding.md) §4.1): massa ρAL =
+  78,5 kg en som van `REAC_NODA` in X = −(ρgAL + qA).
 - **Resultaat**: LS-20a/b/c (G, Q, ULS gekozen): reactiekracht exact, u ≤ 0,06% af
   (bij G hindert u = 0 op x = 0 de dwarscontractie iets). ULS = 1,2 G + 1,5 Q op
   4,6e-16 relatief (alle knopen, nagerekend uit de drie runs). LS-20d (`auto`, elke

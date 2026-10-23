@@ -469,6 +469,24 @@ def error_summary(r):
     return found[-1]
 
 
+def static_check(r, key):
+    """
+    Waarde uit de controleregels van een statische run (massa M,
+    reactiesom FX/FY/FZ): BRIDGE_STATCHECK / BRIDGE_STATREAC in de .mess
+    (aster_results_export.print_static_check). ValueError als de regel of
+    de sleutel ontbreekt.
+    """
+    import sys
+    if SCRIPTS not in sys.path:
+        sys.path.insert(0, SCRIPTS)
+    import bridge_results_liml
+    for tag in ("BRIDGE_STATCHECK", "BRIDGE_STATREAC"):
+        found = bridge_results_liml.read_tagged(getattr(r, "mess", None), tag)
+        if isinstance(found.get(key), float):
+            return found[key]
+    raise ValueError("geen {0} in de controleregels van de .mess".format(key))
+
+
 # ==========================================
 # TESTDEFINITIE
 # ==========================================

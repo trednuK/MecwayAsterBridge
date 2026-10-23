@@ -22,7 +22,7 @@ de fout past bij convergentie naar de referentie.
 """
 import math
 from verif_lib import Case, Check, Model, linemesh, hexmesh, quadmesh, box, \
-    rect
+    rect, static_check
 
 GROUP = "Lineair statisch"
 E, NU = 210e9, 0.3
@@ -129,7 +129,16 @@ def _ls20_checks(fg, fq):
             Check("reactiekracht X", lambda r: -r.total("reactionforcex",
                                                         "SymX"),
                   ref=f, tol=1e-6, unit="N",
-                  source="evenwicht: rho g A L + q A")]
+                  source="evenwicht: rho g A L + q A"),
+            # Controleregels van de bridge (Aubry 2019, par. 4.13-4.14):
+            # totale massa en som van REAC_NODA over alle knopen
+            Check("massa (controle)", lambda r: static_check(r, "M"),
+                  ref=RHO20 * A20 * A20 * L20, tol=1e-6, unit="kg",
+                  source="rho A L (POST_ELEM MASS_INER)"),
+            Check("som reacties X (controle)",
+                  lambda r: -static_check(r, "FX"),
+                  ref=f, tol=1e-6, unit="N",
+                  source="evenwicht: som REAC_NODA = -(rho g A L + q A)")]
 
 
 TESTS = [

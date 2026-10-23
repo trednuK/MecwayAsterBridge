@@ -268,6 +268,14 @@ res = CALC_CHAMP(
 # Section forces of beams (result field beam_forces).
 res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA=('Balk',), CONTRAINTE=('EFGE_ELNO', 'EFGE_NOEU', ))
 
+# Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,
+# centre of gravity and sum of REAC_NODA in the .mess
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+aster_results_export.print_static_check(res, model, fieldmat,
+                                        globals().get('cara'))
+
 
 
 # =====================================================

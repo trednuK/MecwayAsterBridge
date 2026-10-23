@@ -99,7 +99,9 @@ Status 22 October 2026. The whole table comes from one revision: the regression 
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `9e388a6`
 (V2026.4: all steps up to and including the extensions of 22 October, among them line3
 trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aster 17.4):
-431 test cases, 2318 checks, 2312 OK, 6 BEKEND (known), 0 NOK/FOUT.
+431 test cases, 2318 checks, 2312 OK, 6 BEKEND (known), 0 NOK/FOUT. After that (23
+October) LS-20a..e got two checks more (mass and reaction sum of the check line), with
+the groups LS, NL-0, NL-2, MO-0, MP, MD and HR run again: 2328 checks, 2322 OK.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -114,7 +116,7 @@ trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aste
 | Harmonic response | 11 | 40 | 40 | 0 |
 | Buckling | 21 | 62 | 61 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 111 | 389 | 388 | 1 |
+| Linear static | 111 | 399 | 398 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 23 | 223 | 223 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
@@ -128,7 +130,7 @@ trusses, hyperelastic material, the plastic curve and flexible joints; Code-Aste
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **431** | **2318** | **2312** | **6** |
+| **Total** | **431** | **2328** | **2322** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -472,7 +474,9 @@ meshes is given below.
   configuration has no factor); each load item is suppressed in the other two
   (`<suppressed configuration=".."/>`).
 - **Reference**: end displacement u = ρgL²/(2E) + qL/E (uniaxial) and reaction force
-  ρgAL + qA (equilibrium), with the factors of the chosen configuration.
+  ρgAL + qA (equilibrium), with the factors of the chosen configuration. Also the
+  bridge's check line ([UserGuide](UserGuide.md) sec. 4.1): mass ρAL = 78.5 kg and sum
+  of `REAC_NODA` in X = −(ρgAL + qA).
 - **Result**: LS-20a/b/c (G, Q, ULS chosen): reaction force exact, u ≤ 0.06% off (with
   G, u = 0 at x = 0 slightly restrains the lateral contraction). ULS = 1.2 G + 1.5 Q to
   4.6e-16 relative (all nodes, recomputed from the three runs). LS-20d (`auto`, every
