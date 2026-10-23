@@ -6935,6 +6935,146 @@ def _modal_charges(model_data, buckling, prestress=False):
     return charges, names_bc, names_load
 
 
+def _dead_live_split(model_data):
+    """
+    Linear buckling with constant (dead) loads (#ASTER-CONSTANT, STAPPENPLAN
+    S23; J.-P. Aubry, Beginning with code_aster (2019), par. 16.1-16.2):
+    K + Kg(dead) as MATR_RIGI and Kg(live) as MATR_RIGI_GEOM, so that the
+    buckling factor applies to the variable (live) loads only.
+    A name in #ASTER-CONSTANT is a Mecway selection name (all loads on that
+    selection) or a load type without selection (e.g. 'gravity').
+    Returns None without #ASTER-CONSTANT (route unchanged), False on an
+    error (ERROR logged), otherwise (md_dead, md_live): shallow copies of
+    model_data with the constraints plus the dead resp. the live loads.
+    """
+    names = model_data.get("aster_custom", {}).get("constant", [])
+    if not names:
+        return None
+    renames = model_data.get("group_renames", {})
+
+    def is_load(bc):
+        return bc.get("aster_keyword") in _LOAD_KEYWORDS
+
+    def matches(name, bc):
+        sel = bc.get("selection") or ""
+        return (name.lower() == "{0}".format(bc.get("type", "")).lower()
+                or name == sel or renames.get(name, name) == sel)
+
+    bcs = model_data["bcs"]
+    if any("_beam_merged" in bc for bc in bcs) or \
+            model_data.get("_extra_loads"):
+        log(tr("ERROR: #ASTER-CONSTANT: verdeelde balklasten zijn per balk "
+               "samengeteld (overlappende line pressures of zwaartekracht "
+               "met een tijdsafhankelijke line pressure); constante en "
+               "variabele lasten zijn dan niet te scheiden. Geef elke "
+               "balkselectie een eigen line pressure.",
+               "ERROR: #ASTER-CONSTANT: distributed beam loads were added "
+               "up per beam (overlapping line pressures, or gravity with "
+               "a time-dependent line pressure); constant and variable "
+               "loads cannot be separated then. Give each beam selection "
+               "its own line pressure."))
+        return False
+    if _thermal_active(model_data):
+        log(tr("ERROR: #ASTER-CONSTANT met thermische rek: de thermische "
+               "rek is niet als constante of variabele last in te delen. "
+               "Laat #ASTER-CONSTANT weg of zet de thermische spanning "
+               "uit.",
+               "ERROR: #ASTER-CONSTANT with thermal strain: the thermal "
+               "strain cannot be classed as a constant or variable load. "
+               "Remove #ASTER-CONSTANT or switch off thermal stress."))
+        return False
+    unknown = [n for n in names
+               if not any(is_load(bc) and matches(n, bc) for bc in bcs)]
+    if unknown:
+        log(tr("ERROR: #ASTER-CONSTANT: geen belasting op {0}. Noem de "
+               "naam van de selectie waarop de constante last staat (of "
+               "het lasttype zonder selectie, bijv. 'gravity').",
+               "ERROR: #ASTER-CONSTANT: no load on {0}. Give the name of "
+               "the selection that carries the constant load (or the load "
+               "type without a selection, e.g. 'gravity').").format(
+                   ", ".join("'{0}'".format(n) for n in unknown)))
+        return False
+    dead = [bc for bc in bcs if is_load(bc) and bc.get("aster_dict")
+            and any(matches(n, bc) for n in names)]
+    live = [bc for bc in bcs if is_load(bc) and bc.get("aster_dict")
+            and bc not in dead]
+    if not live:
+        log(tr("ERROR: #ASTER-CONSTANT: alle belastingen zijn constant; de "
+               "kniklastfactor hoort bij de variabele last. Laat minstens "
+               "een belasting buiten #ASTER-CONSTANT.",
+               "ERROR: #ASTER-CONSTANT: all loads are constant; the "
+               "buckling factor belongs to the variable load. Leave at "
+               "least one load out of #ASTER-CONSTANT."))
+        return False
+    if model_data.get("aster_custom", {}).get("excit"):
+        log(tr("WARNING: #ASTER-CONSTANT met #ASTER-EXCIT: de "
+               "EXCIT-lasten tellen in beide statische berekeningen "
+               "(constant en variabel); zet daar alleen verbindingen in, "
+               "geen krachten.",
+               "WARNING: #ASTER-CONSTANT with #ASTER-EXCIT: the EXCIT "
+               "loads count in both static analyses (constant and "
+               "variable); put only connections in them, no forces."))
+    md_dead, md_live = dict(model_data), dict(model_data)
+    md_dead["bcs"] = [bc for bc in bcs if not is_load(bc) or bc in dead]
+    md_live["bcs"] = [bc for bc in bcs if not is_load(bc) or bc in live]
+    # The user's #ASTER code only once (in the live loads block)
+    custom = dict(model_data.get("aster_custom", {}))
+    custom["code"] = []
+    md_dead["aster_custom"] = custom
+    log("INFO: Buckling with constant loads (#ASTER-CONSTANT): dead {0}; "
+        "live {1}. MATR_RIGI = K + Kg(dead), MATR_RIGI_GEOM = Kg(live); the "
+        "factor applies to the live loads only.".format(
+            ", ".join("{0} '{1}'".format(bc["type"], bc["selection"])
+                      for bc in dead),
+            ", ".join("{0} '{1}'".format(bc["type"], bc["selection"])
+                      for bc in live)))
+    return md_dead, md_live
+
+
+def _dead_static_block(md_dead, cara_ref, analysis):
+    """
+    Loads (dload_1, ...) and MECA_STATIQUE stat_d with the stress field
+    sig_d of the constant (dead) loads (_dead_live_split). The FORMULE/
+    DEFI_CONSTANTE names of its prelude may repeat those of the live loads:
+    the live loads are already built (Python names in the .comm).
+    """
+    charges = _build_charges(md_dead)
+    block, clause = _render_charges(charges, md_dead)
+    block = re.sub(r"\bload_(\d+)\b", r"dload_\1", block)
+    clause = re.sub(r"\bload_(\d+)\b", r"dload_\1", clause)
+    return (
+        "# Stress state under the constant (dead) loads (#ASTER-CONSTANT)\n"
+        "{block}\n"
+        "stat_d = MECA_STATIQUE(\n"
+        "    MODELE=model,\n"
+        "    CHAM_MATER=fieldmat,\n"
+        "{cara}{excit}\n"
+        "    {solveur}\n"
+        ")\n"
+        "sig_d = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
+        "                   RESULTAT=stat_d, NUME_ORDRE=1, "
+        "NOM_CHAM='SIEF_ELGA')\n").format(
+            block=block, cara=cara_ref, excit=clause,
+            solveur=_static_step_solveur(analysis))
+
+
+# Stop the job when the dead loads alone are at or above critical: Sturm
+# count (INFO_MODE, catalogue info_mode.py v17.4, U4.52.01) of the buckling
+# factors of K + lambda Kg(dead) in [0, 1]; bridge_run_aster explains
+# BRIDGE_BUCKLING_FOUT.
+_DEAD_CHECK_BLOCK = (
+    "# Dead loads below critical? Count the buckling factors of the dead\n"
+    "# loads alone in [0, 1] (Sturm, INFO_MODE).\n"
+    "tab_dead = INFO_MODE(TYPE_MODE='MODE_FLAMB', MATR_RIGI=rigi_ela,\n"
+    "                     MATR_RIGI_GEOM=rigi_gd, CHAR_CRIT=(0.0, 1.0),\n"
+    "                     SOLVEUR=_F(METHODE='MUMPS'))\n"
+    "_nd = int(tab_dead.EXTR_TABLE().values()['NB_MODE'][0])\n"
+    "print('BRIDGE_DEAD_COUNT', _nd)\n"
+    "if _nd > 0:\n"
+    "    print('BRIDGE_BUCKLING_FOUT DEAD %d' % _nd)\n"
+    "    raise ValueError('knik: constante last alleen al boven kritiek')\n")
+
+
 _IMPOSED_DOFS = ("DX", "DY", "DZ", "DRX", "DRY", "DRZ", "DNOR")
 
 
@@ -7437,7 +7577,18 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     # VibratingMembrane, par. 11.20: stress via thermal strain).
     prestress_on = (not buckling) and bool(
         analysis.get("modal_prestress", True))
-    charges, names_bc, names_load = _modal_charges(model_data, buckling,
+    # Buckling with constant (dead) loads: the live loads take the place of
+    # all loads below; the dead loads get their own MECA_STATIQUE.
+    split = _dead_live_split(model_data) if buckling else None
+    if split is False:
+        return None
+    if split is None and model_data.get("aster_custom", {}).get("constant"):
+        log(tr("WARNING: #ASTER-CONSTANT telt alleen bij lineaire knik; "
+               "genegeerd.",
+               "WARNING: #ASTER-CONSTANT only applies to linear buckling; "
+               "ignored."))
+    md_main = split[1] if split else model_data
+    charges, names_bc, names_load = _modal_charges(md_main, buckling,
                                                    prestress_on)
     prestress = None
     if prestress_on and (names_load or _thermal_active(model_data)):
@@ -7445,7 +7596,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                                     names_load)
         if prestress is None:
             return None
-    loads_block, excit_clause = _render_charges(charges, model_data)
+    loads_block, excit_clause = _render_charges(charges, md_main)
     extra = model_data.get("aster_custom", {}).get("excit", [])
     if extra:
         # Also in ASSEMBLAGE CHARGE: this way connections from #ASTER code
@@ -7498,6 +7649,16 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                 solveur=_static_step_solveur(analysis))
         second = ("        _F(MATRICE=CO('rigi_geo'), OPTION='RIGI_GEOM', "
                   "SIEF_ELGA=sig),\n")
+        if split:
+            static_block = static_block.replace(
+                "under the applied loads (the\n# buckling load factor is a "
+                "multiple of these loads)",
+                "under the variable (live) loads (the\n# buckling load "
+                "factor is a multiple of these loads only)")
+            static_block += _dead_static_block(split[0], cara_elem_ref,
+                                               analysis)
+            second += ("        _F(MATRICE=CO('rigi_gd'), "
+                       "OPTION='RIGI_GEOM', SIEF_ELGA=sig_d),\n")
     else:
         static_block = ("#-- not applicable (modal without "
                         "prestress) --\n")
@@ -7531,7 +7692,16 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         "{second}"
         "    ),\n"
         ")\n").format(cara=cara_elem_ref, charge=charge_ref, second=second,
-                      rigi="rigi_ela" if prestress else "rigidite")
+                      rigi="rigi_ela" if (prestress or split)
+                      else "rigidite")
+    if split:
+        # K + Kg(dead) (Aubry 2019 par. 16.2): COEF_R 1 as with prestress
+        assemblage_block += (
+            "# Stiffness with the constant (dead) loads: K + Kg(dead)\n"
+            "rigidite = COMB_MATR_ASSE(COMB_R=(\n"
+            "    _F(MATR_ASSE=rigi_ela, COEF_R=1.0),\n"
+            "    _F(MATR_ASSE=rigi_gd, COEF_R=1.0),\n"
+            "))\n" + _DEAD_CHECK_BLOCK)
     if prestress:
         terms = ["rigi_ela", "rigi_geo"] + (["rigi_rot"] if rotation else [])
         assemblage_block += (

@@ -221,3 +221,37 @@ def _bu04_cases():
 
 
 TESTS += _bu04_cases()
+
+
+# ------------------------------------------------------------------
+# BU-40 Constante (dode) plus variabele last (#ASTER-CONSTANT, STAPPENPLAN
+# S23; Aubry, Beginning with code_aster, 2019, par. 16.1-16.2): kolom van
+# BU-01 met een constante drukkracht P_d = 0,5 Pcr,1 op de kop (eigen
+# selectie KopD met dezelfde knoop) en de variabele 1000 N. Voor een
+# axiaal belaste kolom is Kg evenredig met de normaalkracht, dus
+# lambda_k = (Pcr,k - P_d) / P (Timoshenko & Gere 2.1). De foutmelding bij
+# P_d > Pcr,1 staat in doc Verificatie (handmatig gecontroleerd).
+# ------------------------------------------------------------------
+PD40 = 0.5 * CF[0][0] * P1
+
+
+def build_bu40(pd):
+    def build():
+        m = build_bu(False)()
+        m.node_selection("KopD", m.nodesel["Kop"])
+        m.add('<force selection="KopD"><x>-%r N</x><y>0 N</y><z>0 N</z>'
+              '</force>' % pd)
+        m.add("<ccxmodeldefinition>** ASTER-CONSTANT KopD"
+              "</ccxmodeldefinition>")
+        return m
+    return build
+
+
+TESTS.append(Case(
+    "BU-40", GROUP, "Ingeklemde kolom, constante last 0,5 Pcr plus variabele "
+    "last (#ASTER-CONSTANT)", "buckling_3d", build_bu40(PD40),
+    [_factor(k + 1, (f * P1 - PD40) / P1, 0.002,
+             "(Pcr,k - P_d)/P, P_d = 0,5 Pcr,1, knik %s (Timoshenko & Gere "
+             "2.1; Aubry 2019 par. 16.2)" % plane)
+     for k, (f, plane) in enumerate(CF)],
+    note="POU_D_E; constante 0,5 Pcr,1 op KopD, variabele 1000 N op Kop."))

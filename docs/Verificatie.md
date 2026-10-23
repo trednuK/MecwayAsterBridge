@@ -1781,6 +1781,7 @@ DX = 0 op x = 0 en DY = 0 in een hoek, zodat de spanning zuiver eenassig is.
 | BU-02 | scharnierende kolom, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0,002% |
 | BU-03 | ingeklemde kolom hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` op de kop | Euler | +0,20% / +0,13% (zelfde modelfout als MO-02) |
 | BU-04 | vrij opgelegde vierkante plaat 0,4 m, t = 4 mm, lijnlast 1 N/m in X, DKT 8² / 16² / 32² | σ_cr·t = kπ²D/b², k = 4 (m = 1) en 6,25 (m = 2) (Timoshenko & Gere, 1961) | orde 2,00; fijnste mesh +0,09% / +0,25% |
+| BU-40 | kolom van BU-01 met een constante drukkracht P_d = 0,5 P_cr,1 (eigen selectie, `#ASTER-CONSTANT`) plus een variabele 1000 N ([Modaal_en_knik.md](Modaal_en_knik.md) §2.2.1) | λ_k = (P_cr,k − P_d)/P (Timoshenko & Gere, 1961; Aubry, 2019, §16.2) | factoren 5,1815 / 18,135 / 88,087 (< 0,002%); met de hand nagelopen: bij P_d = 1,5 P_cr,1 stopt de job met de ERROR (INFO_MODE: 1 factor in [0, 1]) |
 
 **Effectieve massa en spanningen per mode** ([Modaal_en_knik.md](Modaal_en_knik.md)
 §1.4, §1.5, §2.1): de rotaties (om de globale assen door de oorsprong, zoals Mecway)

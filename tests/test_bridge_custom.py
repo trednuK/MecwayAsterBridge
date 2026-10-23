@@ -63,14 +63,21 @@ check("XFEM gelezen", len(out["xfem"]) == 1)
 summary = [l for l in LOG if l.startswith("INFO: #ASTER lines:")]
 check("een INFO-samenvatting", len(summary) == 1)
 check("samenvatting telt XFEM", bool(summary) and
-      summary[0].endswith(", 1 METALLURGIE, 1 XFEM."))
+      summary[0].endswith(", 1 METALLURGIE, 1 XFEM, 0 CONSTANT."))
 check("geen ERROR", not [l for l in LOG if l.startswith("ERROR")])
 
 # Alleen XFEM: de samenvatting noemt de regel ook dan
 del LOG[:]
 bridge_custom.parse([u"** ASTER-XFEM vorm=CIRKEL, r=1"])
 check("alleen XFEM in de samenvatting",
-      [l for l in LOG if l.endswith(", 1 XFEM.")] != [])
+      [l for l in LOG if l.endswith(", 1 XFEM, 0 CONSTANT.")] != [])
+
+# CONSTANT (lineaire knik met dode last, bridge_to_aster._dead_live_split)
+del LOG[:]
+out = bridge_custom.parse([u"** ASTER-CONSTANT KopD, gravity\n"
+                           u"#ASTER-CONSTANT Rand"])
+check("CONSTANT gelezen", out["constant"] == ["KopD", "gravity", "Rand"])
+check("CONSTANT zonder ERROR", not [l for l in LOG if l.startswith("ERROR")])
 
 # Foute regels: ERROR en overgeslagen
 del LOG[:]

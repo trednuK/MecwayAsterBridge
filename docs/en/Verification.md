@@ -1776,6 +1776,7 @@ on x = 0 and DY = 0 at one corner, so the stress is purely uniaxial.
 | BU-02 | pinned column, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0.002% |
 | BU-03 | clamped column hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` on the top | Euler | +0.20% / +0.13% (same model error as MO-02) |
 | BU-04 | simply supported square plate 0.4 m, t = 4 mm, line load 1 N/m in X, DKT 8² / 16² / 32² | σ_cr·t = kπ²D/b², k = 4 (m = 1) and 6.25 (m = 2) (Timoshenko & Gere, 1961) | order 2.00; finest mesh +0.09% / +0.25% |
+| BU-40 | column of BU-01 with a constant compression P_d = 0.5 P_cr,1 (own selection, `#ASTER-CONSTANT`) plus a variable 1000 N ([Modal_and_buckling.md](Modal_and_buckling.md) §2.2.1) | λ_k = (P_cr,k − P_d)/P (Timoshenko & Gere, 1961; Aubry, 2019, §16.2) | factors 5.1815 / 18.135 / 88.087 (< 0.002%); checked by hand: with P_d = 1.5 P_cr,1 the job stops with the ERROR (INFO_MODE: 1 factor in [0, 1]) |
 
 **Effective mass and stresses per mode** ([Modal_and_buckling.md](Modal_and_buckling.md)
 §1.4, §1.5, §2.1): the bridge computes the rotations (about the global axes through

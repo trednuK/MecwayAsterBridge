@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 8298c14, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 07f10b0, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2322 van 2328 controles binnen de tolerantie** (431 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2325 van 2331 controles binnen de tolerantie** (432 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -580,6 +580,9 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge 8298c14, Code-Aster 17.4
 | BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 1 (in plane) | 17.272 - | 17.315 | +0.25% | 0.5% | OK |
 | BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 2 (out of plane) vs Mecway | 44.861 - | 45.03 | +0.38% | 1% | OK |
 | BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 3 (out of plane) vs Mecway | 124.12 - | 124.64 | +0.42% | 1% | OK |
+| BU-40 | Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT) | factor 1 | 5.1815 - | 5.1815 | +0.00% | 0.2% | OK |
+| BU-40 | Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT) | factor 2 | 18.135 - | 18.135 | +0.00% | 0.2% | OK |
+| BU-40 | Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT) | factor 3 | 88.086 - | 88.087 | +0.00% | 0.2% | OK |
 
 ## Cyclische symmetrie
 
