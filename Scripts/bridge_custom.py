@@ -87,7 +87,8 @@
 #                            extra Code-Aster characteristics of a Mecway
 #                            general beam section (AY, AZ, EY, EZ, RY, RZ,
 #                            RT, JG, IYR2, IZR2; SI), written by
-#                            MecwaySectionProps; also #ASTER-SECTION. See
+#                            MecwaySectionProps (own repository); also
+#                            #ASTER-SECTION. See
 #                            bridge_from_liml._section_extras.
 #   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
 #                            that selection (bridge_mesh renames names)

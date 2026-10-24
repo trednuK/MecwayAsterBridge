@@ -731,7 +731,8 @@ def _add_shear_coefs(elset_name, geom, mod="POU_D_T"):
 # ==========================================
 # EXTRA SECTION DATA: #ASTER-SECTIE (MecwaySectionProps)
 # ==========================================
-# MecwaySectionProps (Scripts/MecwaySectionProps.py) creates a Mecway general
+# MecwaySectionProps (own repository, github.com/trednuK/MecwaySectionProps;
+# until 24 Oct 2026 in this one) creates a Mecway general
 # section (area, iyy, izz, torsionconstant) and writes the characteristics
 # Mecway has no field for in one line per material in the custom model
 # definition:
@@ -746,9 +747,10 @@ _SECTION_EXTRA_KEYS = ("AY", "AZ", "EY", "EZ", "RY", "RZ", "RT", "JG",
 # Passed to AFFE_CARA_ELEM for every beam: EY/EZ, the eccentricity of the
 # shear (torsion) centre in the principal axes (R3.08.01 par. 5.1, "exact"
 # beams POU_D_E/POU_D_T; U4.42.01 par. 9.4.3, default 0) as MACR_CARA_POUTRE
-# gives it: the vector shear centre -> centroid (section_fem; checked against
-# MACR_CARA_POUTRE of Code-Aster 17.4 on a channel and an unequal angle,
-# tests/section_aster_check.py; accepted by POU_D_E, POU_D_T, POU_D_T_GD),
+# gives it: the vector shear centre -> centroid (MecwaySectionProps
+# section_fem.py, checked against MACR_CARA_POUTRE of Code-Aster 17.4 on a
+# channel and an unequal angle, its tests/section_aster_check.py; accepted
+# by POU_D_E, POU_D_T, POU_D_T_GD: runs of 23 Oct 2026),
 # and RY/RZ/RT, used only for the stresses (U4.42.01 par. 9.3). AY/AZ go
 # through shear_coefs to the Timoshenko beams only (_add_shear_coefs). JG,
 # IYR2 and IZR2 are only used by POU_D_TG/POU_D_TGM (U4.42.01 par. 9.4.3),
