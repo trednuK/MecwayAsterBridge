@@ -239,6 +239,8 @@ def _read_template(path):
 # this environment variable (aster_results_export.tr; same name as
 # aster_results_export.LANGUAGE_ENV).
 JOB_LANGUAGE_ENV = "BRIDGE_LANGUAGE"
+# Setting vtu_export for aster_results_export (same name as its VTU_ENV).
+JOB_VTU_ENV = "BRIDGE_VTU"
 _DEBUT_RE = re.compile(r"^DEBUT\s*\(", re.M)
 
 
@@ -247,9 +249,12 @@ def _language_lines():
     scripts (os.environ in the Code-Aster process)."""
     lang = "nl" if CONFIG_BRIDGE.get("language", "en") == "nl" else "en"
     return (u"# Language of the messages of the job scripts (aster_*.py)\n"
+            u"# and the setting vtu_export (aster_vtu)\n"
             u"import os as _bridge_os\n"
-            u"_bridge_os.environ['{0}'] = '{1}'\n".format(
-                JOB_LANGUAGE_ENV, lang))
+            u"_bridge_os.environ['{0}'] = '{1}'\n"
+            u"_bridge_os.environ['{2}'] = '{3}'\n".format(
+                JOB_LANGUAGE_ENV, lang, JOB_VTU_ENV,
+                "1" if CONFIG_BRIDGE.get("vtu_export", False) else "0"))
 
 
 def _with_language(text):
@@ -2110,6 +2115,7 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
         "                        'res_flux', 'res_err', 'eps_sup', 'eps_moy',@N"
         "                        'eps_inf', 'res_efs')@N"
         "                       if k in globals()),@N"
+        "    failures=globals().get('_bz_events'),@N"
         "    precision='{precision}'{static}{fields}{extra})@N"
     ).replace("@N", chr(10)).format(
         scripts=_py_str(scripts), fragment=_py_str(fragment),

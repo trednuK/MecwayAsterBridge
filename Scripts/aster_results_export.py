@@ -125,6 +125,9 @@ import numpy as np
 # export, aster_spectrum and aster_fatigue.
 # ==========================================
 LANGUAGE_ENV = "BRIDGE_LANGUAGE"
+# Setting vtu_export: "1" = also write <model>_<run_id>.pvd + .vtu per step
+# (aster_vtu), set in study.comm like LANGUAGE_ENV.
+VTU_ENV = "BRIDGE_VTU"
 
 
 def tr(nl, en):
@@ -2161,7 +2164,8 @@ def _times(res, indexes):
 def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
-                   shell_vectors=None, strengths=None, u_axes=None):
+                   shell_vectors=None, strengths=None, u_axes=None,
+                   failures=None):
     """
     Write all archived time steps of res as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
@@ -2207,6 +2211,11 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     Mecway's U direction of shells from an Element
                     orientation card (bridge_orientation; the attributes
                     orientationux/uy/uz are read from the .liml itself).
+    failures      : element failure (bridge_failure): the job's
+                    _bz_events, [(time, [0-based Code-Aster cells])], or
+                    None without the failure loop. Gives the element
+                    variable "failed" (0 intact, 1 failed from that time
+                    on; S22a) and in the VTU BEZWEKEN + T_BEZWIJK.
 
     Returns
     -------
@@ -2219,7 +2228,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                        precision, static, t0, rigi_geo, mass, node_fields,
                        cyclic, opt_in, {"shell_vectors": shell_vectors,
                                         "strengths": strengths},
-                       u_axes)
+                       u_axes, failures)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -2230,7 +2239,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
 
 def _export(res, out_path, liml_path, fields, extra_results, precision,
             static, t0, rigi_geo=None, mass=None, node_fields=None,
-            cyclic=None, opt_in=None, derived=None, u_axes=None):
+            cyclic=None, opt_in=None, derived=None, u_axes=None,
+            failures=None):
     """Work of export_results (without the error handling)."""
     model = read_liml_model(liml_path)
     for vec, ranges in u_axes or ():
@@ -2299,6 +2309,12 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
     variables = _plan_variables(data, model, conn, groups,
                                 opt_in=opt_in, derived=derived)
     variables += _constant_vars(node_fields, n)
+    failed_at = None
+    if failures is not None and rows is None:
+        failed_at = _failure_times(failures, model)
+        if failed_at is not None:
+            variables.append(_failed_var(failed_at, model,
+                                         _times(res, indexes)))
     if not variables:
         print(tr("aster_results_export: FOUT: geen enkel veld gevonden.",
                  "aster_results_export: ERROR: no field found at all."))
@@ -2310,15 +2326,28 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
     for var in variables:
         _assign_groups(var, model, elset_nodes, free_nodes)
 
+    vtu = _vtu_series(out_path, model, variables, precision, rows)
+    if vtu is not None and failed_at is not None:
+        vtu.add_cells("T_BEZWIJK", lambda k: failed_at)
     tmp = out_path + ".tmp"
     with open(tmp, "wb") as f:
         _write_fragment(f, variables, data, indexes,
                         None if (static or modes) else _times(res, indexes),
                         precision, model,
                         (modes, mode_values, decays) if modes else None,
-                        _MODE_GLOBALS.get(id(res)) if modes else None)
+                        _MODE_GLOBALS.get(id(res)) if modes else None,
+                        vtu)
         size = f.tell()
     os.replace(tmp, out_path)
+    if vtu is not None and not vtu.failed:
+        try:
+            print("aster_results_export: {0} geschreven ({1} stap(pen))."
+                  .format(vtu.close(), len(vtu.steps)))
+        except Exception as e:
+            print(tr("aster_results_export: WAARSCHUWING: VTU-export "
+                     "mislukt: {0}",
+                     "aster_results_export: WARNING: VTU export "
+                     "failed: {0}").format(e))
     stats = {"stappen": len(indexes),
              "variabelen": [v.name for v in variables],
              "bytes": size, "seconden": time.time() - t0,
@@ -2329,6 +2358,92 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
               ", ".join(stats["variabelen"]), size / 1.0e6,
               stats["seconden"]))
     return stats
+
+
+def _mail_cell_names(path="fort.20"):
+    """Cell names in Code-Aster's numbering (0-based = order in the file)
+    from the ASTER mesh of the job: the .export copies the .mail to fort.20
+    in the job folder (LIRE_MAILLAGE UNITE=20). Same order as bridge_mesh's
+    model_data["cell_names"] (Code-Aster 17.4 has no getCellName). A cell
+    line starts with its name (M<eid>, H<eid>); wrapped connectivity lines
+    start with a node name (N<nr>)."""
+    names = []
+    skip = ("TITRE", "COOR_2D", "COOR_3D", "GROUP_MA", "GROUP_NO")
+    block = None
+    with open(path, "r") as f:
+        for line in f:
+            parts = line.split()
+            if not parts:
+                continue
+            if block is None:
+                block = parts[0]
+                continue
+            if parts[0] == "FINSF":
+                block = None
+            elif block not in skip and parts[0][:1] in ("M", "H"):
+                names.append(parts[0])
+    return names
+
+
+def _failure_times(failures, model):
+    """{Mecway element number: first failure time} from the job's
+    _bz_events; None (with a WARNING) if the cells cannot be mapped."""
+    try:
+        names = _mail_cell_names()
+    except (IOError, OSError) as e:
+        print(tr("aster_results_export: WAARSCHUWING: veld 'failed' "
+                 "overgeslagen: {0}",
+                 "aster_results_export: WARNING: field 'failed' "
+                 "skipped: {0}").format(e))
+        return None
+    out = {}
+    for t, cells in failures:
+        for c in cells:
+            name = names[int(c)] if 0 <= int(c) < len(names) else ""
+            if name[1:].isdigit() and int(name[1:]) in model["elements"]:
+                eid = int(name[1:])
+                out[eid] = min(float(t), out.get(eid, float(t)))
+    return out
+
+
+def _failed_var(failed_at, model, times):
+    """Element variable "failed": per step 1 on every node of an element
+    that failed at or before the step time, else 0 (all elements)."""
+    eids = np.array(sorted(model["elements"]), dtype="<i4")
+    counts = np.array([len(model["elements"][int(e)][1]) for e in eids])
+    t_fail = np.array([failed_at.get(int(e), np.inf) for e in eids])
+
+    def getter(fields):
+        t = float(times.get(fields.index, fields.index))
+        # small tolerance: the event time is the same float as INST
+        return np.repeat((t_fail <= t + 1e-12 * max(1.0, abs(t)))
+                         .astype(float), counts)
+    return _Var("failed", True, eids, getter)
+
+
+def _vtu_series(out_path, model, variables, precision, rows):
+    """aster_vtu.VtuSeries for the setting vtu_export (environment
+    variable VTU_ENV = "1", set in study.comm by bridge_to_aster), or None.
+    Not for the whole wheel of cyclic symmetry (rows: the mesh is not the
+    .liml). An error here only costs the VTU files, not the .liml route."""
+    if os.environ.get(VTU_ENV, "") != "1" or rows is not None:
+        return None
+    try:
+        import aster_vtu
+        vtu = aster_vtu.VtuSeries(aster_vtu.base_path(out_path), model,
+                                  variables, precision)
+        if vtu.skipped:
+            print(tr("aster_results_export: WAARSCHUWING: VTU zonder "
+                     "elementen van vorm {0}.",
+                     "aster_results_export: WARNING: VTU without elements "
+                     "of shape {0}.").format(", ".join(sorted(vtu.skipped))))
+        return vtu
+    except Exception as e:
+        print(tr("aster_results_export: WAARSCHUWING: VTU-export "
+                 "mislukt: {0}",
+                 "aster_results_export: WARNING: VTU export failed: {0}")
+              .format(e))
+        return None
 
 
 def _constant_vars(node_fields, n):
@@ -2362,7 +2477,7 @@ def _group_nodes(model, n):
 
 
 def _write_fragment(f, variables, data, indexes, times, precision, model,
-                    modes=None, mode_globals=None):
+                    modes=None, mode_globals=None, vtu=None):
     """
     Write <results> to the open file f. times = {index: time} gives
     one <timestep> per index; times = None is static (one index, the
@@ -2373,6 +2488,9 @@ def _write_fragment(f, variables, data, indexes, times, precision, model,
     <mode id="2" frequency="170.000069959994 Hz" decayrate="70.347 1/s">).
     mode_globals: {index: [(name, value)]} (_store_mode_globals) as
     <globalvariable> directly after <mode>, as Mecway.
+    vtu: aster_vtu.VtuSeries or None (setting vtu_export); gets the same
+    values per step. Its time is the step time, the mode number for modes
+    and 0 for a static result.
     """
     dtype = "<f4" if precision == "single" else "<f8"
     values_tag = "valuessingle" if precision == "single" else "valuesdouble"
@@ -2401,8 +2519,10 @@ def _write_fragment(f, variables, data, indexes, times, precision, model,
         elif times is not None:
             f.write('      <timestep id="{0}" time="{1} s">\r\n'.format(
                 k, _num(times.get(idx, idx))).encode("ascii"))
+        step_values = []
         for var in variables:
             vals = var.getter(data)
+            step_values.append(vals)
             if vals is None:
                 print(tr("aster_results_export: WAARSCHUWING: '{0}' "
                          "ontbreekt in index {1}; nullen geschreven.",
@@ -2410,6 +2530,18 @@ def _write_fragment(f, variables, data, indexes, times, precision, model,
                          "index {1}; zeros written.").format(var.name, idx))
                 vals = np.zeros(_value_count(var, model))
             f.write(_var_block(var, vals, indent, dtype, values_tag))
+        if vtu is not None:
+            try:
+                vtu.step(k, (k + 1) if modes is not None else
+                         (times.get(idx, idx) if times is not None else 0.0),
+                         step_values)
+            except Exception as e:
+                print(tr("aster_results_export: WAARSCHUWING: VTU-export "
+                         "mislukt: {0}",
+                         "aster_results_export: WARNING: VTU export "
+                         "failed: {0}").format(e))
+                vtu.failed = True
+                vtu = None
         if modes is not None:
             f.write(b"      </mode>\r\n")
         elif times is not None:

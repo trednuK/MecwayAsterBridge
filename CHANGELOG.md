@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **VTU/PVD export** (setting `vtu_export`, off by default): next to the `.liml` results the job
+  writes `<model>_<run_id>.pvd` with one `.vtu` per time step, with the same fields as Mecway gets
+  (nodal fields as point data plus the vector `DEPL`, element fields as the cell average). Any
+  ParaView reads it, also without a MED reader.
+- **Failed elements as a field**: with element failure the results get the element field `failed`
+  (0 intact, 1 failed from the failure time on), so Mecway can colour it; in the VTU it is called
+  `BEZWEKEN`, with the failure time in `T_BEZWIJK`.
+- **ParaView button opens MWHub Post** (AdvancedToolsHub) when the hub is found (setting
+  `advancedtoolshub_dir`, default `%ADVANCEDTOOLSHUB_DIR%` or the folder next to the repository):
+  the bridge writes `<model>_<run_id>_job.json` (`mwhubpost-job/1`) and calls the hub's launcher.
+  Without the hub the button opens the `.rmed` as before.
 - **ParaView button prefers ParaView 6.x**: with an empty `paraview_exe` the convergence window
   now starts the official ParaView 6.x (newest first), which reads a `.rmed` itself; Salome-Meca's
   ParaView (through `run_paraview.bat`) is the fallback, an older ParaView (5.10 cannot open a

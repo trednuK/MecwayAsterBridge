@@ -1079,6 +1079,33 @@ SETTING_HELP = {
                    u"hundreds of MB. With an XFEM crack also _xfem.rmed: the "
                    u"mesh that follows the crack, in which the opening is "
                    u"visible."),
+    "vtu_export": (u"Ook <model>_<run_id>.pvd met een .vtu per tijdstap "
+                   u"schrijven (VTK-formaat, leest elke ParaView, ook zonder "
+                   u"MED-lezer). Dezelfde velden als Mecway krijgt: "
+                   u"knoopvelden als puntdata (plus de vector DEPL voor de "
+                   u"vervorming), velden per element als celgemiddelde. "
+                   u"Alleen met de resultaatroute 'liml'. Standaard uit.",
+                   u"Also write <model>_<run_id>.pvd with one .vtu per time "
+                   u"step (VTK format, read by any ParaView, also without a "
+                   u"MED reader). The same fields as Mecway gets: nodal "
+                   u"fields as point data (plus the vector DEPL for the "
+                   u"deformation), fields per element as the cell average. "
+                   u"Only with the result route 'liml'. Off by default."),
+    "advancedtoolshub_dir": (
+        u"Map van AdvancedToolsHub (MWHub Post). Gevonden = de knop ParaView "
+        u"in het convergentiescherm opent de run in MWHub Post (ParaView met "
+        u"de Mecway-weergave, eenheden en de filter voor bezweken elementen): "
+        u"het MED-bestand, anders de VTU/PVD-bestanden. Leeg (standaard) = "
+        u"de omgevingsvariabele ADVANCEDTOOLSHUB_DIR, anders de map "
+        u"AdvancedToolsHub naast deze repository. Niet gevonden = de knop "
+        u"opent het .rmed-bestand rechtstreeks in ParaView.",
+        u"Folder of AdvancedToolsHub (MWHub Post). Found = the ParaView "
+        u"button in the convergence window opens the run in MWHub Post "
+        u"(ParaView with the Mecway look, units and the filter for failed "
+        u"elements): the MED file, else the VTU/PVD files. Empty (default) = "
+        u"the environment variable ADVANCEDTOOLSHUB_DIR, else the folder "
+        u"AdvancedToolsHub next to this repository. Not found = the button "
+        u"opens the .rmed file directly in ParaView."),
     "paraview_exe": (
         u"paraview.exe voor de knop ParaView in het convergentiescherm (opent "
         u"de .rmed van de run; zet daarvoor 'MED-bestand voor ParaView' "

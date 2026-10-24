@@ -53,7 +53,7 @@ S7, S8, S5, S9).
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
-| S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026 |
+| S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026; branch b-mwpost (24 Oct): (a) field `failed` written (VTU `BEZWEKEN`), Mecway display not yet checked; (b) moves to AdvancedToolsHub (MWHub Post erosion filter, ParaView button → hub); (c) settings docs only |
 | S23 | Linear buckling with a constant (dead) plus a variable (live) load | done | – | branch w-q, 23 Oct 2026: `#ASTER-CONSTANT` (BU-40) |
 | S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | done | – | branch w-p1; static only, setting `auto_time_stepping`; NL-21a/b; NL/NK families unchanged |
 | S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |

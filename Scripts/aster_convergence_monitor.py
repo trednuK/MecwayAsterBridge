@@ -928,7 +928,21 @@ class Monitor(object):
                     folder), parent=self.root)
 
     def open_paraview(self):
-        """<model>_<run_id>.rmed of the run in ParaView (--paraview)."""
+        """The run in MWHub Post (AdvancedToolsHub, bridge_mwpost: .rmed
+        and/or .pvd), or without the hub <model>_<run_id>.rmed directly in
+        ParaView (--paraview)."""
+        try:
+            import bridge_mwpost
+            hub = bridge_mwpost.open_run(_run_file(self.args.mess, ""),
+                                         self.args.paraview)
+        except Exception as e:
+            hub = (False, [u"MWHub Post: {0}".format(e)])
+        if hub is not None:
+            if not hub[0] or hub[1]:
+                show = messagebox.showinfo if hub[0] else messagebox.showerror
+                show(u"MWHub Post", u"\n".join(hub[1]) or u"?",
+                     parent=self.root)
+            return
         rmed = _run_file(self.args.mess, ".rmed")
         if not os.path.isfile(rmed):
             messagebox.showinfo(u"ParaView", tr(

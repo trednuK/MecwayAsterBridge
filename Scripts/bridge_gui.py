@@ -103,6 +103,11 @@ GENERAL_SPECS = [
      "choice", ("auto", "confirm")),
     ("med_export", ("MED-bestand voor ParaView", "MED file for ParaView"),
      "bool", None),
+    ("vtu_export", ("VTU/PVD-bestanden voor ParaView",
+                    "VTU/PVD files for ParaView"), "bool", None),
+    ("advancedtoolshub_dir", ("AdvancedToolsHub-map (leeg = automatisch)",
+                              "AdvancedToolsHub folder (empty = automatic)"),
+     "folder", None),
     ("paraview_exe", ("ParaView (leeg = automatisch zoeken)",
                       "ParaView (empty = search automatically)"), "file",
      ("Programma's (*.exe)|*.exe|Alle bestanden (*.*)|*.*",
@@ -510,6 +515,7 @@ _SCHEMES = {"dyna_impl_3d": ("HHT", "NEWMARK"),
 _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "mecway_solve_first": False, "result_route": "liml",
                      "convergence_monitor": True, "med_export": False,
+                     "vtu_export": False, "advancedtoolshub_dir": "",
                      "work_dir_beside_model": False, "paraview_exe": "",
                      "wait_for_aster": "auto",
                      "elem_hex8": "3D",
@@ -672,7 +678,7 @@ def _parse_and_validate(key, kind, extra, raw):
                     os.path.normpath(default_work_dir()))):
             # empty or the default folder: save "" (bridge_utils.work_dir_path)
             return "", None
-        if key == "paraview_exe" and not value:
+        if key in ("paraview_exe", "advancedtoolshub_dir") and not value:
             return "", None       # empty = search automatically
         if not value:
             return None, tr("mag niet leeg zijn.", "must not be empty.")

@@ -16,10 +16,11 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
 - Standard library only, plus `clr`/WinForms in `bridge_gui.py`. No pip packages.
 - Exceptions (Code-Aster's Python 3): `aster_results_export.py` and
   `aster_spectrum.py`, `aster_acoustic_export.py`, `aster_acoustic_complex.py` (also scipy from the
-  Code-Aster installation), `aster_cyclic.py`, `aster_fatigue.py` (inside the job) and
+  Code-Aster installation), `aster_cyclic.py`, `aster_fatigue.py`, `aster_vtu.py` (inside the job) and
   the convergence window `aster_convergence_monitor.py` (separate process, tkinter). The
   parser `bridge_convergence.py` is shared and must work in both 2.7 and 3
-  (test: `python tests/test_bridge_convergence.py`).
+  (test: `python tests/test_bridge_convergence.py`); so is `bridge_mwpost.py` (job for MWHub Post,
+  also imported by the convergence window).
 - `mw` and `solution` exist only in the main script; pass them as parameters to the `bridge_*` modules.
 - Mecway API: only what is in Mecway's scripting documentation (Mecway manual;
   locally possibly `API_reference Mecway.txt`, copyright Mecway Ltd, not in the repo). There is no API to
