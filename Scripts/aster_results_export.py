@@ -2370,9 +2370,10 @@ def _mail_cell_names(path="fort.20"):
     """Cell names in Code-Aster's numbering (0-based = order in the file)
     from the ASTER mesh of the job: the .export copies the .mail to fort.20
     in the job folder (LIRE_MAILLAGE UNITE=20). Same order as bridge_mesh's
-    model_data["cell_names"] (Code-Aster 17.4 has no getCellName). A cell
-    line starts with its name (M<eid>, H<eid>); wrapped connectivity lines
-    start with a node name (N<nr>)."""
+    model_data["cell_names"] (Code-Aster 17.4 has no getCellName). Every
+    cell counts (also the skin, POI1 and joint cells K/P/S/J of bridge_mesh);
+    a cell line starts with its name, a wrapped connectivity line with a
+    node name (N<nr>)."""
     names = []
     skip = ("TITRE", "COOR_2D", "COOR_3D", "GROUP_MA", "GROUP_NO")
     block = None
@@ -2386,7 +2387,7 @@ def _mail_cell_names(path="fort.20"):
                 continue
             if parts[0] == "FINSF":
                 block = None
-            elif block not in skip and parts[0][:1] in ("M", "H"):
+            elif block not in skip and parts[0][:1] != "N":
                 names.append(parts[0])
     return names
 
@@ -2406,7 +2407,9 @@ def _failure_times(failures, model):
     for t, cells in failures:
         for c in cells:
             name = names[int(c)] if 0 <= int(c) < len(names) else ""
-            if name[1:].isdigit() and int(name[1:]) in model["elements"]:
+            # M<eid>, or H<eid> (second half of a split line3)
+            if (name[:1] in ("M", "H") and name[1:].isdigit() and
+                    int(name[1:]) in model["elements"]):
                 eid = int(name[1:])
                 out[eid] = min(float(t), out.get(eid, float(t)))
     return out

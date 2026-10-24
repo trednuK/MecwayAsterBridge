@@ -1654,6 +1654,11 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # Split line3 beams (cells M<eid> and H<eid>, cell_names_of);
     # extra nodes of flexible joints: model_data["joint_nodes"]
     model_data["line3_split"] = split_line3
+    # beam sidecar (bridge_beams): elset with its Code-Aster name, like
+    # the keys of beam_sections (_ELSET_KEYS)
+    model_data["beam_axes"] = OrderedDict(
+        (eid, (rn_es(v[0]),) + tuple(v[1:]))
+        for eid, v in model_data.get("beam_axes", {}).items())
     model_data["_elem_elset"] = dict((eid, rn_es(es))
                                      for eid, shape, en, es in elements)
     model_data["group_face_list"] = OrderedDict(
