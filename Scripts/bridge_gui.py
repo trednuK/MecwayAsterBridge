@@ -2124,7 +2124,9 @@ def results_dialog(items, work_dir):
     Selection screen for the button Resultaten... (MecwayAsterBridgeMain.
     _results_action). items: list_results(work_dir).
     Returns {"action": "load", "path": result file},
-    {"action": "strip"} or None (Annuleren). Without Windows Forms:
+    {"action": "mwpost", "path": result file} (button In MWHub Post, only
+    when AdvancedToolsHub is found), {"action": "strip"} or None
+    (Annuleren). Without Windows Forms:
     ImportError (the script then falls back to mw.input()).
     """
     try:
@@ -2210,6 +2212,11 @@ def results_dialog(items, work_dir):
             def on_strip(sender, args):
                 finish({"action": "strip"})
 
+            def on_mwpost(sender, args):
+                if lst.SelectedIndex >= 0:
+                    finish({"action": "mwpost",
+                            "path": items[lst.SelectedIndex]["path"]})
+
             buttons = [
                 (tr("Inladen", "Load"), on_load, 110, True),
                 (tr("Ander bestand...", "Other file..."), on_browse, 130,
@@ -2217,6 +2224,8 @@ def results_dialog(items, work_dir):
                 (tr("Uit model verwijderen", "Remove from model"),
                  on_strip, 170, False),
             ]
+            if bridge_utils.advancedtoolshub_dir_path():
+                buttons.append((u"In MWHub Post", on_mwpost, 120, False))
             x = 16
             for text, handler, width, primary in buttons:
                 btn = look.button(text, primary)

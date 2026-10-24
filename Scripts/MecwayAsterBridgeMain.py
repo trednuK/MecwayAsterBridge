@@ -1298,6 +1298,37 @@ def _status_text(ok, what):
     return u"\n\n".join([head] + _NOTES["list"])
 
 
+def _open_in_mwpost(results_path):
+    """
+    Results... button "In MWHub Post": the run of results_path
+    (<model>_<run_id>_results.xml) in MWHub Post (AdvancedToolsHub,
+    bridge_mwpost: job next to the .rmed/.pvd + the hub's launcher).
+    Returns (ok, text for the status box).
+    """
+    import bridge_mwpost
+    import bridge_version
+    suffix = "_results.xml"
+    base = (results_path[:-len(suffix)] if results_path.endswith(suffix)
+            else os.path.splitext(results_path)[0])
+    got = bridge_mwpost.open_run(
+        base, mecway_version=bridge_version.mecway_version_from_liml(
+            mw.file_name()))
+    if got is None:
+        return False, tr(
+            "AdvancedToolsHub niet gevonden (instelling "
+            "'advancedtoolshub_dir', %ADVANCEDTOOLSHUB_DIR% of de map "
+            "naast deze repository).",
+            "AdvancedToolsHub not found (setting 'advancedtoolshub_dir', "
+            "%ADVANCEDTOOLSHUB_DIR% or the folder next to this "
+            "repository).")
+    ok, lines = got
+    if lines:
+        return ok, u"\n".join(lines)
+    return ok, tr("Run geopend in MWHub Post: {0}",
+                  "Run opened in MWHub Post: {0}").format(
+                      os.path.basename(base))
+
+
 def _results_action():
     """
     Results... button: load an earlier run or remove the results from the
@@ -1322,6 +1353,8 @@ def _results_action():
                   if (raw or newest) else None)
     if not choice:
         return True, u""
+    if choice["action"] == "mwpost":
+        return _open_in_mwpost(choice["path"])
     save_error = _save_model()
     if save_error:
         return False, save_error

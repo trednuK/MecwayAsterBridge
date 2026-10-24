@@ -148,7 +148,7 @@ the other buttons on the left.
 | Button | What it does |
 |---|---|
 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
-| "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1). Then the window comes back |
+| "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1); with AdvancedToolsHub also "In MWHub Post" (the chosen run in ParaView, with `.rmed` or `.pvd`). Then the window comes back |
 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
 | "Explanation..." | Opens the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) on the Documentation page |
 | "Close" | Closes the bridge. Settings changed after the last Start or Results... are not saved |

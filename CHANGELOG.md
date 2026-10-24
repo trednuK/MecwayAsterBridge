@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Results... → In MWHub Post**: with AdvancedToolsHub found, the results window of the start screen
+  has a button that opens the chosen run in MWHub Post (same job as the ParaView button).
 - **Beam sidecar for MWHub Post**: with `vtu_export` or `med_export` a model with beams also gets
   `<model>_<run_id>_beams.json` (`mwhubpost-beams/1`): per beam elset the profile (Mecway's dimensions,
   the section as polygons in the local axes, A, Iy, Iz, J, shear areas) and per beam element its local

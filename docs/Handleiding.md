@@ -140,7 +140,7 @@ knoppen links.
 | Knop | Wat het doet |
 |---|---|
 | Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
-| Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1). Daarna komt het venster terug |
+| Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1); met AdvancedToolsHub ook *In MWHub Post* (de gekozen run in ParaView, met `.rmed` of `.pvd`). Daarna komt het venster terug |
 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | Uitleg... | Opent op de pagina Documentatie de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) |
 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten* of *Resultaten...* hebt gewijzigd, worden niet opgeslagen |
