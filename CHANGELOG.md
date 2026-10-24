@@ -5,7 +5,8 @@
 - **VTU/PVD export** (setting `vtu_export`, off by default): next to the `.liml` results the job
   writes `<model>_<run_id>.pvd` with one `.vtu` per time step, with the same fields as Mecway gets
   (nodal fields as point data plus the vector `DEPL`, element fields as the cell average). Any
-  ParaView reads it, also without a MED reader.
+  ParaView reads it, also without a MED reader. With it comes `<model>_<run_id>_knopen.csv`: every
+  nodal field over time for each named node selection (at most 100 nodes).
 - **Failed elements as a field**: with element failure the results get the element field `failed`
   (0 intact, 1 failed from the failure time on), so Mecway can colour it; in the VTU it is called
   `BEZWEKEN`, with the failure time in `T_BEZWIJK`.

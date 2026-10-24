@@ -366,11 +366,14 @@ def read_liml_model(liml_path):
       "uaxes"    : dict {eid: (ux, uy, uz)}: Mecway's U direction per
                    element (attributes orientationux/uy/uz, Element
                    properties), only where given
+      "nodesel"  : OrderedDict {node selection name: [nid, ...]}
+                   (<nodeselection>, for the node series of aster_vtu)
     """
     nodes = {}
     elsets = OrderedDict()
     elements = {}
     uaxes = {}
+    nodesel = OrderedDict()
     depth = 0
     with open(liml_path, "rb") as f:
         for event, el in ET.iterparse(f, events=("start", "end")):
@@ -398,6 +401,9 @@ def read_liml_model(liml_path):
                     if any(e.get(k) is not None for k in keys):
                         uaxes[eid] = tuple(float(e.get(k, "0"))
                                            for k in keys)
+            elif el.tag == "nodeselection":
+                nodesel[el.get("name", "")] = [
+                    int(x.get("nid")) for x in el.findall("node")]
             el.clear()
     n = max(nodes) if nodes else 0
     if sorted(nodes) != list(range(1, n + 1)):
@@ -407,7 +413,7 @@ def read_liml_model(liml_path):
                             "1..N.").format(liml_path))
     coords = np.array([nodes[i] for i in range(1, n + 1)], dtype=float)
     return {"coords": coords, "elsets": elsets, "elements": elements,
-            "uaxes": uaxes}
+            "uaxes": uaxes, "nodesel": nodesel}
 
 
 def _check_node_order(mesh, coords):

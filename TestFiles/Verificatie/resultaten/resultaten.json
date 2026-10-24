@@ -18207,7 +18207,7 @@
   "series": "AD-01 hex20",
   "h": 0.02,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 12 elementen geven.",
-  "seconds": 7.0,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18239,7 +18239,7 @@
   "series": "AD-01 hex20",
   "h": 0.01,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 96 elementen geven.",
-  "seconds": 7.7,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18271,7 +18271,7 @@
   "series": "AD-01 hex20",
   "h": 0.005,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 768 elementen geven.",
-  "seconds": 6.9,
+  "seconds": 5.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18303,7 +18303,7 @@
   "series": "AD-01 hex20",
   "h": 0.0025,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 6144 elementen geven.",
-  "seconds": 11.6,
+  "seconds": 9.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18335,7 +18335,7 @@
   "series": "AD-01 hex20",
   "h": 0.00125,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 49152 elementen geven.",
-  "seconds": 28.0,
+  "seconds": 24.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [

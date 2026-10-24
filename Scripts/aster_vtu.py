@@ -13,6 +13,11 @@
 # Files (next to the results fragment <model>_<run_id>_results.xml):
 #   <model>_<run_id>.pvd       collection, one <DataSet> per time step
 #   <model>_<run_id>_<k>.vtu   step k (0-based), UnstructuredGrid
+#   <model>_<run_id>_knopen.csv node series (NodeSeries): per named node
+#                              selection of the .liml (<nodeselection>, at
+#                              most MAX_SERIES_NODES nodes) every node
+#                              variable over all steps; sidecar
+#                              node_series of mwhubpost-job/1
 #
 # Contents of a .vtu:
 #   - points and cells from the .liml (Mecway node and element numbers in
@@ -68,6 +73,10 @@ _VTK_CELLS = {
 # mwhubpost-job/1 example A: erosion field BEZWEKEN, intact = 0).
 _RENAME = {"failed": "BEZWEKEN"}
 
+# Larger node selections are left out of the node series (a column per
+# node and variable; a face of a fine mesh would give thousands).
+MAX_SERIES_NODES = 100
+
 # Mecway node variables that together form a VTK vector.
 _VECTORS = (("DEPL", ("displx", "disply", "displz")),)
 
@@ -112,6 +121,11 @@ class VtuSeries(object):
         self.extra_cells = []
         self.steps = []
         self.failed = False
+        sels = [(name, nids) for name, nids in
+                (model.get("nodesel") or {}).items()
+                if 0 < len(nids) <= MAX_SERIES_NODES]
+        self.series = NodeSeries(base + "_knopen.csv", sels, self.n) \
+            if sels else None
 
     def _layout(self, var, model):
         """Where the values of var go: ("p", rows) for a node variable,
@@ -144,7 +158,7 @@ class VtuSeries(object):
                 ok = (lay[1] >= 0) & (lay[1] < self.n)
                 out[lay[1][ok]] = vals[ok]
                 point.append((var.name, out))
-                by_name[var.name] = out
+                by_name.setdefault(var.name, out)
             else:
                 out = np.full(len(self.eids), np.nan)
                 if len(lay[1]):
@@ -166,6 +180,8 @@ class VtuSeries(object):
                 if i is not None:
                     out[i] = value
             cell.append((name, out))
+        if self.series is not None:
+            self.series.add(time_value, by_name)
         path = "{0}_{1}.vtu".format(self.base, k)
         _write_vtu(path, self, point, cell)
         self.steps.append((float(time_value), os.path.basename(path)))
@@ -185,7 +201,45 @@ class VtuSeries(object):
         with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             f.write("\n".join(lines))
         os.replace(tmp, path)
+        if self.series is not None:
+            self.series.close()
         return path
+
+
+class NodeSeries(object):
+    """CSV with a column time and one column <selection>.N<nid>.<variable>
+    per node of the selections and node variable (names of the first
+    step); a missing value is empty. Separator ",", decimal point."""
+
+    def __init__(self, path, selections, n):
+        self.path = path
+        self.cols = [(sel, nid) for sel, nids in selections
+                     for nid in nids if 1 <= nid <= n]
+        self.names = None
+        self.rows = []
+
+    def add(self, time_value, by_name):
+        if self.names is None:
+            self.names = list(by_name)
+        row = [repr(float(time_value))]
+        for sel, nid in self.cols:
+            for name in self.names:
+                vals = by_name.get(name)
+                v = None if vals is None else float(vals[nid - 1])
+                row.append("" if v is None or v != v else repr(v))
+        self.rows.append(row)
+
+    def close(self):
+        head = ["time"] + ["{0}.N{1}.{2}".format(sel.replace(",", "_"),
+                                                  nid, name)
+                           for sel, nid in self.cols
+                           for name in (self.names or [])]
+        tmp = self.path + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            f.write(",".join(head) + "\n")
+            for row in self.rows:
+                f.write(",".join(row) + "\n")
+        os.replace(tmp, self.path)
 
 
 def _vtk_type(a):

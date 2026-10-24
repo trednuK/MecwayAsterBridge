@@ -1084,13 +1084,19 @@ SETTING_HELP = {
                    u"MED-lezer). Dezelfde velden als Mecway krijgt: "
                    u"knoopvelden als puntdata (plus de vector DEPL voor de "
                    u"vervorming), velden per element als celgemiddelde. "
-                   u"Alleen met de resultaatroute 'liml'. Standaard uit.",
+                   u"Plus <model>_<run_id>_knopen.csv: per benoemde "
+                   u"knoopselectie (max. 100 knopen) alle knoopvelden over "
+                   u"de tijd. Alleen met de resultaatroute 'liml'. "
+                   u"Standaard uit.",
                    u"Also write <model>_<run_id>.pvd with one .vtu per time "
                    u"step (VTK format, read by any ParaView, also without a "
                    u"MED reader). The same fields as Mecway gets: nodal "
                    u"fields as point data (plus the vector DEPL for the "
                    u"deformation), fields per element as the cell average. "
-                   u"Only with the result route 'liml'. Off by default."),
+                   u"Plus <model>_<run_id>_knopen.csv: per named node "
+                   u"selection (at most 100 nodes) every nodal field over "
+                   u"time. Only with the result route 'liml'. Off by "
+                   u"default."),
     "advancedtoolshub_dir": (
         u"Map van AdvancedToolsHub (MWHub Post). Gevonden = de knop ParaView "
         u"in het convergentiescherm opent de run in MWHub Post (ParaView met "
