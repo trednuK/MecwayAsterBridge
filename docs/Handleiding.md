@@ -476,6 +476,7 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem (met AdvancedToolsHub in MWHub Post) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `BEZWEKEN` (0 intact, 1 bezweken) en `T_BEZWIJK` |
+| `<model>_<run-id>_beams.json` | balkdoorsneden en lokale assen voor MWHub Post (`mwhubpost-beams/1`, beschrijving bovenin `Scripts/bridge_beams.py`), met *VTU/PVD-* of *MED-bestand voor ParaView* en balken in het model; de snedekrachten per element-uiteinde staan als `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` in de VTU |
 | `<model>_<run-id>_knopen.csv` | knoopvelden over de tijd per benoemde knoopselectie (met de VTU-export) |
 | `<model>_<run-id>_job.json` | opdracht voor MWHub Post (`mwhubpost-job/1`), geschreven door de knop *ParaView* als AdvancedToolsHub gevonden is |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |

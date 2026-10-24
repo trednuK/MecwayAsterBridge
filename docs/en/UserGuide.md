@@ -479,6 +479,7 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
 | `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it (with AdvancedToolsHub in MWHub Post) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; with failure also the cell fields `BEZWEKEN` (0 intact, 1 failed) and `T_BEZWIJK` |
+| `<model>_<run-id>_beams.json` | beam sections and local axes for MWHub Post (`mwhubpost-beams/1`, described at the top of `Scripts/bridge_beams.py`), with "VTU/PVD files" or "MED file for ParaView" and beams in the model; the section forces per element end are in the VTU as `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_knopen.csv` | nodal fields over time per named node selection (with the VTU export) |
 | `<model>_<run-id>_job.json` | job for MWHub Post (`mwhubpost-job/1`), written by the "ParaView" button when AdvancedToolsHub is found |
 | `<model>_<run-id>_vergelijking.csv` | comparison with the Mecway solve (only with "Mecway solve first as a check") |

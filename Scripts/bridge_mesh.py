@@ -1427,6 +1427,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # comes from the Mecway nodes (conn), as in Mecway.
     beam_groups = OrderedDict()
     beam_vect_y = OrderedDict()
+    beam_axes = OrderedDict()        # eid -> (elset, node 1, node 2, V)
     orient = model_data.get("beam_orientations", {})
     by_dir = OrderedDict()           # rounded V -> [V, [cell names]]
     beam_elsets = set()
@@ -1446,6 +1447,11 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             v = _mecway_v_axis(nodes[a], nodes[b], orient.get(eid))
             key = tuple(round(c, 9) for c in v)
             by_dir.setdefault(key, [v, []])[1].append(name)
+        # beam sidecar (bridge_beams): end nodes and V of the whole element
+        # (a split line3 as the straight line between its end nodes)
+        beam_axes[eid] = (es, cn[0], cn[1],
+                          _mecway_v_axis(nodes[cn[0]], nodes[cn[1]],
+                                         orient.get(eid)))
     for v, members in by_dir.values():
         sub = "BOR{0:05d}".format(len(beam_groups) + 1)
         beam_groups[sub] = members
@@ -1628,6 +1634,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     nonempty = set(group_ma.keys())
     model_data["group_ma_unions"] = OrderedDict()
     model_data["beam_vect_y"] = beam_vect_y
+    model_data["beam_axes"] = beam_axes
+    model_data["beam_node_xyz"] = dict(
+        (n, nodes[n]) for v in beam_axes.values() for n in v[1:3])
     model_data["node_groups_in_mesh"] = True
     # For #ASTER lines (<<Mecway name>> -> Code-Aster name) and for the
     # elsets of mesh_elements (bridge_to_aster, bridge_thermal): for a

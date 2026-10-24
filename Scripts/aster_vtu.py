@@ -29,6 +29,10 @@
 #     per element) as CellData: the average over the nodes of the element
 #     (choice B1: one value per cell is enough for colouring and the
 #     erosion filter; the exact corner values stay in the .liml and MED);
+#   - beam section forces (Mecway's tensileforce, sheary, ... per element
+#     node) also per element end: EFGE_<N|VY|VZ|MT|MFY|MFZ>_1 at the first
+#     and _2 at the last node of the element (Mecway order: line3 = c0 m
+#     c1), for the beam sidecar of bridge_beams (mwhubpost-beams/1);
 #   - the element variable "failed" as BEZWEKEN (_RENAME) and extra cell
 #     arrays from aster_results_export (T_BEZWIJK), see add_cells.
 #   Nodes or elements a variable has no value for get NaN.
@@ -72,6 +76,11 @@ _VTK_CELLS = {
 # Mecway variable -> array name in the VTU (MWHub Post contract,
 # mwhubpost-job/1 example A: erosion field BEZWEKEN, intact = 0).
 _RENAME = {"failed": "BEZWEKEN"}
+
+# Mecway beam section forces -> Code-Aster component (aster_results_export
+# FIELD_TABLE, beam_forces: local axes x along the beam, y = V, z = W).
+_EFGE = {"tensileforce": "N", "sheary": "VY", "shearz": "VZ",
+         "torsion": "MT", "bendingmomv": "MFY", "bendingmomw": "MFZ"}
 
 # Larger node selections are left out of the node series (a column per
 # node and variable; a face of a fine mesh would give thousands).
@@ -166,6 +175,15 @@ class VtuSeries(object):
                     ok = lay[1] >= 0
                     out[lay[1][ok]] = mean[ok]
                 cell.append((_RENAME.get(var.name, var.name), out))
+                if var.name in _EFGE and len(lay[1]):
+                    ok = lay[1] >= 0
+                    for end, pos in (("1", lay[2]),
+                                     ("2", lay[2] + lay[3].astype(
+                                         np.int64) - 1)):
+                        out = np.full(len(self.eids), np.nan)
+                        out[lay[1][ok]] = vals[pos[ok]]
+                        cell.append(("EFGE_{0}_{1}".format(
+                            _EFGE[var.name], end), out))
         for name, parts in _VECTORS:
             if all(p in by_name for p in parts):
                 point.insert(0, (name, np.column_stack(

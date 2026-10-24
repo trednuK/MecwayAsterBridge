@@ -8131,6 +8131,10 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
 
     solver_cmd = analysis.get("solver_command")
     builder    = SOLVER_BUILDERS_ASTER.get(solver_cmd)
+    # Beam sidecar for MWHub Post (post-processing outside Mecway only)
+    if CONFIG_BRIDGE.get("vtu_export") or CONFIG_BRIDGE.get("med_export"):
+        import bridge_beams
+        bridge_beams.write_sidecar(work_dir, model_data)
     # Thermal and acoustic: no mechanical preparation (LINE_QUAD,
     # material check E/rho, beam loads); own materials in
     # bridge_thermal / bridge_acoustic.

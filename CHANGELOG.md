@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Beam sidecar for MWHub Post**: with `vtu_export` or `med_export` a model with beams also gets
+  `<model>_<run_id>_beams.json` (`mwhubpost-beams/1`): per beam elset the profile (Mecway's dimensions,
+  the section as polygons in the local axes, A, Iy, Iz, J, shear areas) and per beam element its local
+  axes. The VTU gets the section forces per element end as `EFGE_<N|VY|VZ|MT|MFY|MFZ>_1/_2` (with the
+  result field *beam forces*). The format is described at the top of `Scripts/bridge_beams.py`.
 - **VTU/PVD export** (setting `vtu_export`, off by default): next to the `.liml` results the job
   writes `<model>_<run_id>.pvd` with one `.vtu` per time step, with the same fields as Mecway gets
   (nodal fields as point data plus the vector `DEPL`, element fields as the cell average). Any
