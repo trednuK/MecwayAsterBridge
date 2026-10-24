@@ -182,6 +182,8 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
 | "Waiting for Code-Aster" | `auto` | `auto`: a modal status window with the progress and "Stop..."; the bridge recognises the end of the run itself and then loads the results (§2 step 5). `confirm`: you click OK in Mecway when the Code-Aster window shows `DIAGNOSTIC JOB` (the earlier behaviour) |
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
+| "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets, and `<model>_<run-id>_knopen.csv` (for each named node selection of at most 100 nodes the nodal fields over time) |
+| "AdvancedToolsHub folder (empty = automatic)" | empty | folder of AdvancedToolsHub; found = the "ParaView" button opens the run in MWHub Post (Mecway look, units, hiding failed elements); empty = `%ADVANCEDTOOLSHUB_DIR%`, else the folder `AdvancedToolsHub` next to this repository; not found = the `.rmed` directly in ParaView |
 | "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" button of the convergence window; empty = automatic: first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), which reads a `.rmed` itself; then as fallback the ParaView of Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, started through `run_paraview.bat`); last an older ParaView. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
 
 Below the settings the page shows the mapping of `auto` to the Mecway analysis types, a
@@ -475,7 +477,10 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
-| `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it |
+| `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it (with AdvancedToolsHub in MWHub Post) |
+| `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; with failure also the cell fields `BEZWEKEN` (0 intact, 1 failed) and `T_BEZWIJK` |
+| `<model>_<run-id>_knopen.csv` | nodal fields over time per named node selection (with the VTU export) |
+| `<model>_<run-id>_job.json` | job for MWHub Post (`mwhubpost-job/1`), written by the "ParaView" button when AdvancedToolsHub is found |
 | `<model>_<run-id>_vergelijking.csv` | comparison with the Mecway solve (only with "Mecway solve first as a check") |
 | `<model>_<run-id>_monitor_log.txt` | log of the convergence and messages window |
 

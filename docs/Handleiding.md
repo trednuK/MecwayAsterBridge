@@ -174,6 +174,8 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Convergentie- en meldingenscherm | aan | opent bij elke run een apart venster: bij een niet-lineaire analyse residuen, voortgang en contact; bij de statische analyse de lineaire oplosser (tijd per fase, foutgrens, conditiegetal; bij GCPC het residu per iteratie); bij modaal en knik de eerste modes; bij elke analyse de meldingen (fouten en alarmen met uitleg) en de diagnose. Achteraf: knop *Convergentiescherm*. Zie [Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm) |
 | Wachten op Code-Aster | `auto` | `auto`: een modaal statusvenster met de voortgang en *Stoppen...*; de bridge herkent zelf het einde van de run en laadt dan de resultaten (§2 stap 5). `confirm`: je klikt op OK in Mecway als het Code-Aster-venster `DIAGNOSTIC JOB` toont (het eerdere gedrag) |
 | MED-bestand voor ParaView | uit | schrijft ook `<model>_<run-id>.rmed` (ParaView/Salome); Mecway gebruikt het niet en het kan honderden MB worden |
+| VTU/PVD-bestanden voor ParaView | uit | schrijft ook `<model>_<run-id>.pvd` met een `.vtu` per tijdstap (elke ParaView leest het, ook zonder MED-lezer), met dezelfde velden als Mecway krijgt, en `<model>_<run-id>_knopen.csv` (per benoemde knoopselectie van max. 100 knopen de knoopvelden over de tijd) |
+| AdvancedToolsHub-map (leeg = automatisch) | leeg | map van AdvancedToolsHub; gevonden = de knop *ParaView* opent de run in MWHub Post (Mecway-weergave, eenheden, bezweken elementen verbergen); leeg = `%ADVANCEDTOOLSHUB_DIR%`, anders de map `AdvancedToolsHub` naast deze repository; niet gevonden = de `.rmed` rechtstreeks in ParaView |
 | ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knop *ParaView* van het convergentiescherm; leeg = automatisch: eerst de officiele ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, nieuwste eerst), die zelf een `.rmed` leest; dan als terugval de ParaView van Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, gestart via `run_paraview.bat`); als laatste een oudere ParaView. ParaView 5.10 van paraview.org kan een `.rmed` **niet** openen. Omgevingsvariabelen mogen |
 
 Onder de instellingen staan de koppeling van `auto` aan de Mecway-analysetypen, een
@@ -472,7 +474,10 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
-| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem |
+| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem (met AdvancedToolsHub in MWHub Post) |
+| `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `BEZWEKEN` (0 intact, 1 bezweken) en `T_BEZWIJK` |
+| `<model>_<run-id>_knopen.csv` | knoopvelden over de tijd per benoemde knoopselectie (met de VTU-export) |
+| `<model>_<run-id>_job.json` | opdracht voor MWHub Post (`mwhubpost-job/1`), geschreven door de knop *ParaView* als AdvancedToolsHub gevonden is |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |
 | `<model>_<run-id>_monitor_log.txt` | log van het convergentie- en meldingenscherm |
 
