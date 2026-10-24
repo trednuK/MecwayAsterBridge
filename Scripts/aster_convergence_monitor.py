@@ -945,13 +945,13 @@ class Monitor(object):
         if not exe or not os.path.isfile(exe):
             messagebox.showinfo(u"ParaView", tr(
                 u"ParaView niet gevonden{0}. Vul in het startscherm "
-                u"'ParaView' (paraview_exe) in; neem een ParaView met "
-                u"MED-lezer (bijv. die van Salome-Meca): ParaView 5.10 van "
-                u"paraview.org kan geen .rmed openen.",
+                u"'ParaView' (paraview_exe) in; neem ParaView 6.x van "
+                u"paraview.org (leest een .rmed) of die van Salome-Meca: "
+                u"ParaView 5.10 kan geen .rmed openen.",
                 u"ParaView not found{0}. Fill in 'ParaView' (paraview_exe) "
-                u"on the start screen; use a ParaView with a MED reader "
-                u"(e.g. the one of Salome-Meca): ParaView 5.10 from "
-                u"paraview.org cannot open a .rmed.").format(
+                u"on the start screen; use ParaView 6.x from paraview.org "
+                u"(reads a .rmed) or the one of Salome-Meca: ParaView 5.10 "
+                u"cannot open a .rmed.").format(
                     u" ({0})".format(exe) if exe else u""),
                 parent=self.root)
             return

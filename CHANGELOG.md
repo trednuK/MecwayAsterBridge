@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **ParaView button prefers ParaView 6.x**: with an empty `paraview_exe` the convergence window
+  now starts the official ParaView 6.x (newest first), which reads a `.rmed` itself; Salome-Meca's
+  ParaView (through `run_paraview.bat`) is the fallback, an older ParaView (5.10 cannot open a
+  `.rmed`) the last resort. The `paraview_exe` setting still overrides the search.
 - **Linear buckling with a constant plus a variable load** (Aubry, *Beginning with code_aster*,
   2019, §16.1–16.2): a line `#ASTER-CONSTANT name, ...` in the Custom model definition
   (selection names, or a load type such as `gravity`) keeps those loads constant: the bridge

@@ -80,8 +80,8 @@ CONFIG_BRIDGE = {
     # ParaView/Salome. Mecway does not use it; it can reach hundreds of MB.
     "med_export":      False,
     # ParaView for the ParaView button of the convergence window (opens the
-    # .rmed of the run). Empty ("") = search automatically: first a ParaView
-    # with a MED reader (Salome-Meca), then a plain ParaView
+    # .rmed of the run). Empty ("") = search automatically: first ParaView
+    # 6.x (reads .rmed), then Salome-Meca's ParaView, then an older ParaView
     # (paraview_exe_path()). Environment variables are expanded.
     "paraview_exe":    "",
 
@@ -809,15 +809,39 @@ def work_dir_path():
                             _MODEL["path"])
 
 
+def _paraview_version(path):
+    """Version tuple of an official ParaView from its folder name
+    (".../ParaView 6.2.0-Windows-Python3.12-msvc2017-AMD64/bin/paraview.exe"
+    -> (6, 2, 0)); (0,) if the name has no version."""
+    folder = os.path.basename(os.path.dirname(os.path.dirname(
+        os.path.abspath(path))))
+    m = re.match(r"(?i)paraview[ _-]*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?",
+                 folder)
+    if not m:
+        return (0,)
+    return tuple(int(g) for g in m.groups() if g is not None)
+
+
 def _paraview_candidates():
-    """Possible paraview.exe locations, best first: ParaView from
-    Salome-Meca (has a MED reader), then a plain ParaView installation
-    (ParaView 5.10 from paraview.org has NO MED reader, so it cannot open
-    a .rmed; seen on 2026-10-22)."""
+    """Possible paraview.exe locations, best first: an official ParaView
+    6.x or newer (paraview.org; reads a .rmed itself), newest first; then
+    the ParaView of Salome-Meca (has a MED reader, started through
+    run_paraview.bat, _salome_launcher); then an older official ParaView
+    (ParaView 5.10 has NO MED reader and cannot open a .rmed, seen on
+    2026-10-22), as a last resort."""
     program_files = [os.environ.get(v) for v in
                      ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)")]
     program_files = [p for i, p in enumerate(program_files)
                      if p and p not in program_files[:i]]
+    official = []
+    for root in program_files:
+        for path in glob.glob(os.path.join(root, "ParaView*", "bin",
+                                           "paraview.exe")):
+            if path not in official:
+                official.append(path)
+    official.sort(key=_paraview_version, reverse=True)
+    modern = [p for p in official if _paraview_version(p)[0] >= 6]
+    older = [p for p in official if p not in modern]
     patterns = [os.path.join("C:\\", "Salome_meca", "*", "*", "ParaView",
                              "bin", "paraview.exe"),
                 os.path.join("C:\\", "Salome_meca", "*", "ParaView", "bin",
@@ -827,15 +851,16 @@ def _paraview_candidates():
                                      "bin", "paraview.exe"))
         patterns.append(os.path.join(root, "SALOME*", "ParaView", "bin",
                                      "paraview.exe"))
-    for root in program_files:
-        patterns.append(os.path.join(root, "ParaView*", "bin",
-                                     "paraview.exe"))
-    found = []
+    salome = []
     for pattern in patterns:
         # newest version first (name sorting: v2025 after v2024)
         for path in sorted(glob.glob(pattern), reverse=True):
-            if path not in found:
-                found.append(path)
+            if path not in salome:
+                salome.append(path)
+    found = []
+    for path in modern + salome + older:
+        if path not in found:
+            found.append(path)
     return found
 
 
@@ -864,7 +889,7 @@ def paraview_exe_path(setting=None):
     paraview.exe for the ParaView button of the convergence window: the
     setting (None = CONFIG_BRIDGE["paraview_exe"]; the start screen passes
     its field) with expanded environment variables, or for "" the first one
-    found by _paraview_candidates() (MED reader first). "" if none is found.
+    found by _paraview_candidates() (ParaView 6.x first). "" if none is found.
     """
     if setting is None:
         setting = CONFIG_BRIDGE.get("paraview_exe")
