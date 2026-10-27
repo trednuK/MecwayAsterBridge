@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Rubber on hex8 (GitHub issue #5)**: with hyperelastic material on hex8 and *Hex8* = `3D`
+  the bridge now warns about volumetric locking (measured ~3x too stiff on a bonded rubber
+  block; `LINE_QUAD` was within ~6%) instead of giving the bending warning. *Hex8* = `3D_SI`
+  cannot be used with hyperelastic material (Code-Aster `ELEMENTSSI_1`): that elset gets `3D`
+  with a WARNING. Mecway's CCX *custom element type* (e.g. C3D8R) is no longer reported as an
+  unsupported load (ERROR): it is a CalculiX setting, and the WARNING now says what
+  Code-Aster uses instead.
 - **Results... → In MWHub Post**: with AdvancedToolsHub found, the results window of the start screen
   has a button that opens the chosen run in MWHub Post (same job as the ParaView button).
 - **Beam sidecar for MWHub Post**: with `vtu_export` or `med_export` a model with beams also gets

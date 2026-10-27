@@ -351,9 +351,30 @@ waarden bij kleine rek, G = 2(C10 + C01), E = 2G(1 + ν) met ν uit K en G. Meld
 | lineair statisch, modaal, knik, thermisch → mechanisch | ERROR (Mecway biedt het ook alleen niet-lineair) |
 | `imperfection_amplitude` | ERROR (de knikanalyse vooraf heeft `ELAS` nodig) |
 | ander type, bijv. hyperfoam | ERROR: niet vertaald; hyperfoam kan niet met Code-Aster 17.4 op Windows (zie hieronder) |
+| hex8 met *Hex8* = `3D` | WARNING: volumetrische locking, met K/G van het materiaal (zie hieronder) |
+| hex8 met *Hex8* = `3D_SI` | WARNING: die elset krijgt `3D` (Code-Aster kent geen `GREEN_LAGRANGE` op lineaire elementen met onderintegratie, `ELEMENTSSI_1`) |
+| CCX > *custom element type* (bijv. C3D8R) | WARNING: alleen CalculiX, niet vertaald (zie hieronder) |
 
-Bijna onsamendrukbaar materiaal op lineaire hex8/tet4 'lockt' (te stijf bij buiging en
-ongelijkmatige vervorming): gebruik kwadratische elementen of `LINE_QUAD`.
+**Kies *Hex8* = `LINE_QUAD` voor rubber op hex8.** Bijna onsamendrukbaar materiaal op een
+volledig geïntegreerde lineaire hex8 of tet4 'lockt' volumetrisch: het element kan niet
+vervormen bij gelijk volume en is veel te stijf, ook zonder buiging. Gemeten aan een
+verlijmde rubbercilinder (GitHub-issue #5: kwartmodel R 16 × H 18 mm, 684 hex8, Neo Hooke
+C10 = 0,348 MPa, D1 = 0,005 mm²/N, dus K/G = 575, 3 mm ingedrukt):
+
+| Element | Kracht bij 3 mm | t.o.v. referentie |
+|---|---|---|
+| Code-Aster `3D` (= CCX C3D8) | 368,5 N | ×3,0 |
+| CCX C3D8R (onderintegratie) | 181,8 N | +46 % |
+| Code-Aster `LINE_QUAD` (= CCX C3D20) | 132,3 N | +6 % |
+| referentie: CCX C3D20R en C3D8I op het 2× verfijnde mesh | ~124 N | (binnen 1 %) |
+
+Met hetzelfde element geven Code-Aster en CCX dezelfde kracht (binnen 0,1 N); een
+verschil met een CCX-model komt dus meestal van het elementtype. Mecway's *custom element
+type* in de CCX-instellingen (bijv. Hex8 → C3D8R) is een CalculiX-instelling: de bridge
+vertaalt die niet (WARNING) en Code-Aster neemt de formulering van de pagina Elementen;
+C3D8R en C3D8I hebben geen gelijke in Code-Aster. `3D_SI` werkt niet met `ELAS_HYPER`.
+Met `LINE_QUAD` haalde hetzelfde model ook de volle 10 mm, waar `3D` na 6 mm veel
+stapverkleiningen nodig had.
 
 **Hyperfoam: niet mogelijk met Code-Aster 17.4 op Windows** (gecontroleerd 22 oktober
 2026). Mecway 34 heeft zelf geen hyperfoam-materiaal (alleen Neo Hooke en Mooney-Rivlin;

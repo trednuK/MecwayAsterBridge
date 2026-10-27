@@ -2897,6 +2897,38 @@ def extract_aster_data_from_liml(file_path):
                 bridge_cyclic.parse(item, model_data, run_cfg)
 
             # --------------------------------------------------
+            # 2d-ter. CCX CUSTOM ELEMENT TYPE
+            # Mecway's CCX > custom element type, e.g.
+            #   <elementtype selection="" shape="hex8" type="C3D8R" />
+            # (selection "" = all elements of that shape; GitHub issue #5).
+            # A CalculiX setting, not a load: Code-Aster takes the element
+            # formulation from the Elements page. Measured on a bonded rubber
+            # block (issue #5, Code-Aster 17.4 vs CCX 2.23): '3D' gives the
+            # same force as C3D8 and 'LINE_QUAD' the same as C3D20, within
+            # 0.1 N; C3D8R and C3D8I have no equal in Code-Aster.
+            # --------------------------------------------------
+            elif tag == "elementtype":
+                if item.get("suppressed", "") == "true":
+                    continue
+                shape = item.get("shape", "")
+                where = (u"'{0}'".format(item.get("selection"))
+                         if item.get("selection") else
+                         tr("alle elementen", "all elements"))
+                log(tr(u"WARNING: Aangepast CCX-elementtype {0} voor {1} "
+                       u"({2}) geldt alleen voor CalculiX en wordt niet "
+                       u"vertaald. Code-Aster rekent met de pagina Elementen "
+                       u"(hex8: {3}). Vergelijkbaar met CCX: hex8 '3D' = "
+                       u"C3D8, 'LINE_QUAD' = C3D20; C3D8R en C3D8I hebben "
+                       u"geen gelijke in Code-Aster.",
+                       u"WARNING: Custom CCX element type {0} for {1} ({2}) "
+                       u"only applies to CalculiX and is not translated. "
+                       u"Code-Aster uses the Elements page (hex8: {3}). "
+                       u"Comparable with CCX: hex8 '3D' = C3D8, 'LINE_QUAD' "
+                       u"= C3D20; C3D8R and C3D8I have no equal in "
+                       u"Code-Aster.").format(
+                           item.get("type", "?"), shape, where, hex8_mod))
+
+            # --------------------------------------------------
             # 2e. UNKNOWN LOADS / BOUNDARY CONDITIONS
             # Mecway knows many more types (manual v33 chapter 9: moment,
             # traction, frictionless, symmetry, contact, ...). Anything with a

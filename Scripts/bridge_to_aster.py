@@ -301,6 +301,50 @@ _LINEAR_SOLIDS = frozenset(["hex8", "tet4", "wedge6", "pyr5"])
 _QUADRATIC_SOLIDS = frozenset(["hex20", "tet10", "wedge15", "pyr13"])
 
 
+def _hyper_hex8(model_data):
+    """
+    Hex8 elsets with a hyperelastic material (ELAS_HYPER, GitHub issue #5).
+    Sets model_data["hyper_hex8"] (Code-Aster names) for the locking
+    warning in _resolve_line_quad.
+
+    - 3D_SI is not possible: ELAS_HYPER needs DEFORMATION='GREEN_LAGRANGE'
+      (_deformation_for) and Code-Aster 17.4 stops on MECA_HEXS8 with
+      <EXCEPTION> ELEMENTSSI_3 (law in the reference configuration) and,
+      with a zero ETAT_INIT as that message suggests, ELEMENTSSI_1
+      ("GREEN_LAGRANGE n'est pas possible avec des elements lineaires
+      sous-integres"); both seen in runs of the issue #5 model. Such an
+      elset gets '3D' with a WARNING, like 3D_SI on an elset that is not
+      only hex8 (bridge_from_liml).
+    """
+    model_data["hyper_hex8"] = []
+    materials = model_data.get("materials", {})
+    hyper = set(e for e, m in model_data.get("elsets", {}).items()
+                if materials.get(m, {}).get("hyper"))
+    if not hyper:
+        return
+    renames = model_data.get("group_renames", {})
+    hex8 = set(renames.get(e[3], e[3])
+               for e in model_data.get("mesh_elements", []) if e[1] == "hex8")
+    mods = model_data.get("elset_modelisations", {})
+    si = sorted(e for e in hyper if mods.get(e) == "3D_SI")
+    for e in si:
+        mods[e] = "3D"
+    if si:
+        log(tr("WARNING: Hex8 '3D_SI' (onderintegratie) kan niet met "
+               "hyperelastisch materiaal (elset {0}): Code-Aster kent "
+               "GREEN_LAGRANGE niet op lineaire elementen met onderintegratie "
+               "(ELEMENTSSI_1). MODELISATION='3D' gebruikt; kies 'LINE_QUAD' "
+               "op de pagina Elementen.",
+               "WARNING: Hex8 '3D_SI' (under-integration) does not work "
+               "with hyperelastic material (elset {0}): Code-Aster has no "
+               "GREEN_LAGRANGE on under-integrated linear elements "
+               "(ELEMENTSSI_1). MODELISATION='3D' used; choose 'LINE_QUAD' "
+               "on the Elements tab.").format(", ".join(
+                   bridge_failure.mecway_name(model_data, e) for e in si)))
+    model_data["hyper_hex8"] = sorted(e for e in hyper & hex8
+                                      if mods.get(e, "3D") == "3D")
+
+
 def _resolve_line_quad(model_data):
     """
     Decide once (before the builder) which linear cells Code-Aster makes
@@ -330,6 +374,9 @@ def _resolve_line_quad(model_data):
     upgrades = model_data.get("shell_upgrades", {})
     shell_lq = [g for g, opts in upgrades.items() if "LINE_QUAD" in opts]
     choice = model_data.get("hex8_choice", "3D")
+    hex8_groups = set(renames.get(e[3], e[3]) for e in elements
+                      if e[1] == "hex8")
+    hyper_hex8 = model_data.get("hyper_hex8", [])   # _hyper_hex8
 
     # Bonded contact (LIAISON_MAIL) with the master on COQUE_3D: Code-Aster
     # interpolates with the QUAD9/TRIA7 shape functions and then also
@@ -391,7 +438,8 @@ def _resolve_line_quad(model_data):
                 .format("; ".join(problems)))
         else:
             tout = True
-    elif "hex8" in shapes and choice == "3D":
+    elif hex8_groups - set(hyper_hex8) and choice == "3D":
+        # Hyperelastic hex8 elsets get their own warning below
         log(tr("WARNING: Hex8 rekent in Code-Aster stijver dan in Mecway "
                "(geen incompatibele modes): bij buiging met weinig "
                "elementen over de dikte zijn verplaatsingen tot ~35% te "
@@ -402,6 +450,36 @@ def _resolve_line_quad(model_data):
                "through the thickness, displacements are up to ~35% too "
                "small (KNOWN_BUGS 1). Choose 'LINE_QUAD' on the Elements "
                "tab or use quadratic elements in Mecway."))
+    if hyper_hex8 and not tout:
+        # Volumetric locking: fully integrated HEXA8 with a nearly
+        # incompressible ELAS_HYPER. GitHub issue #5 (bonded rubber cylinder
+        # R 16 x H 18 mm, Neo Hooke K/G = 575, 684 hex8, Code-Aster 17.4):
+        # force at 3 mm 368.5 N with '3D' (= CCX C3D8), 132.3 N with
+        # LINE_QUAD (= CCX C3D20), reference ~124 N (CCX C3D20R and C3D8I
+        # on the mesh refined 2x, within 1%).
+        materials = model_data.get("materials", {})
+        ratio = 0.0
+        for e in hyper_hex8:
+            hyp = materials.get(model_data["elsets"].get(e), {}).get(
+                "hyper", {})
+            g = 2.0 * (hyp.get("C10", 0.0) + hyp.get("C01", 0.0))
+            if g > 0.0:
+                ratio = max(ratio, hyp.get("K", 0.0) / g)
+        log(tr(u"WARNING: Hyperelastisch materiaal op hex8 (elset {0}) met "
+               u"MODELISATION='3D': de volledig geïntegreerde hex8 'lockt' "
+               "bij (bijna) onsamendrukbaar materiaal (K/G = {1:.0f}) en "
+               "rekent veel te stijf; in een verlijmd rubberblok was de "
+               "kracht ~3x te groot (KNOWN_BUGS 1). Kies op de pagina "
+               "Elementen 'LINE_QUAD' (daar ~6%) of gebruik kwadratische "
+               "elementen in Mecway.",
+               "WARNING: Hyperelastic material on hex8 (elset {0}) with "
+               "MODELISATION='3D': the fully integrated hex8 locks with "
+               "(nearly) incompressible material (K/G = {1:.0f}) and is far "
+               "too stiff; in a bonded rubber block the force was ~3x too "
+               "high (KNOWN_BUGS 1). Choose 'LINE_QUAD' on the Elements tab "
+               "(~6% there) or use quadratic elements in Mecway.").format(
+                   ", ".join(bridge_failure.mecway_name(model_data, e)
+                             for e in hyper_hex8), ratio))
 
     if shell_lq and not tout:
         lq = set(shell_lq)
@@ -8173,6 +8251,7 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # Fatigue only static and DYNA_NON_LINE (bridge_fatigue)
     bridge_fatigue.unsupported_warning(model_data, solver_cmd)
     if mechanical:
+        _hyper_hex8(model_data)
         _resolve_line_quad(model_data)
         analysis = bonded_nprec(model_data, analysis,
                                 lin=solver_cmd == "MECA_STATIQUE")

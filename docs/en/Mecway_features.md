@@ -102,7 +102,7 @@ Bonded contact per combination (slave on master):
 
 | Mecway | Status | Code-Aster | Remark |
 |---|---|---|---|
-| hex8 | Partly | `3D` | Stiffer than Mecway (no incompatible modes, KB1). Better: *Elements* > hex8 `LINE_QUAD`. |
+| hex8 | Partly | `3D` | Stiffer than Mecway (no incompatible modes, KB1); with rubber (hyperelastic) ~3x too stiff. Better: *Elements* > hex8 `LINE_QUAD`. |
 | tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Yes | `3D` | Pyramids not in acoustics (KB55). Strongly curved hex20/wedge15: natural frequencies up to 0.8% higher than Mecway (KB62). |
 | tri3, quad4 (shell) | Yes | `DKT` (or `DST`/`COQUE_3D` as a choice) | ~0.7% different from Mecway (KB2). |
 | tri6, quad8 (shell) | Yes | `COQUE_3D` | As master of bonded contact: displacements with `LIAISON_DDL`, rotations with `LIAISON_MAIL` (LS-07i..k). |
@@ -176,5 +176,6 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | Yes | L30 (nonlinear static): `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, `ARCHIVAGE` at those times; setting `auto_time_stepping`. Dynamic not: fixed steps, cutting on divergence. |
 | Incompatible hex8 | No | KB1. |
+| CCX > custom element type (e.g. Hex8 → C3D8R) | No | CalculiX only: WARNING, Code-Aster uses the *Elements* page (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I have no equal). [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md), hyperelastic material. |
 | Configurations | Yes | One per run, chosen on the start screen (*Configuration*); results in the solution of that configuration ([`UserGuide.md`](UserGuide.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Partly | Only `#ASTER` lines; ordinary CCX cards are ignored without a message. |

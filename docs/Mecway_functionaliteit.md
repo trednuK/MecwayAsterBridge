@@ -102,7 +102,7 @@ Verlijmd contact per combinatie (slave op master):
 
 | Mecway | Status | Code-Aster | Opmerking |
 |---|---|---|---|
-| hex8 | Deels | `3D` | Stijver dan Mecway (geen incompatibele modes, KB1). Beter: *Elementen* > hex8 `LINE_QUAD`. |
+| hex8 | Deels | `3D` | Stijver dan Mecway (geen incompatibele modes, KB1); met rubber (hyperelastisch) ~3x te stijf. Beter: *Elementen* > hex8 `LINE_QUAD`. |
 | tet4, tet10, pyr5, pyr13, wedge6, wedge15, hex20 | Ja | `3D` | Piramides niet in de akoestiek (KB55). Sterk gekromde hex20/wedge15: eigenfrequenties tot 0,8% hoger dan Mecway (KB62). |
 | tri3, quad4 (schaal) | Ja | `DKT` (of `DST`/`COQUE_3D` als keuze) | ~0,7% anders dan Mecway (KB2). |
 | tri6, quad8 (schaal) | Ja | `COQUE_3D` | Als master van verlijmd contact: translaties met `LIAISON_DDL`, rotaties met `LIAISON_MAIL` (LS-07i..k). |
@@ -176,5 +176,6 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
 | Automatic time stepping | Ja | L30 (niet-lineair statisch): `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, `ARCHIVAGE` op die tijden; instelling `auto_time_stepping`. Dynamisch niet: vaste stappen, knippen bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |
+| CCX > custom element type (bijv. Hex8 → C3D8R) | Nee | Alleen CalculiX: WARNING, Code-Aster gebruikt de pagina *Elementen* (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I hebben geen gelijke). [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md), hyperelastisch materiaal. |
 | Configuraties | Ja | Eén per run, te kiezen op het startscherm (*Configuratie*); resultaten in de solution van die configuratie ([`Handleiding.md`](Handleiding.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Deels | Alleen `#ASTER`-regels; gewone CCX-kaarten zonder melding genegeerd. |

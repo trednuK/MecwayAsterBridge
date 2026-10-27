@@ -348,9 +348,30 @@ G = 2(C10 + C01), E = 2G(1 + ν) with ν from K and G. Messages:
 | linear static, modal, buckling, thermal → mechanical | ERROR (Mecway also offers it only in nonlinear analyses) |
 | `imperfection_amplitude` | ERROR (the buckling analysis beforehand needs `ELAS`) |
 | another type, e.g. hyperfoam | ERROR: not translated; hyperfoam is not possible with Code-Aster 17.4 on Windows (see below) |
+| hex8 with *Hex8* = `3D` | WARNING: volumetric locking, with K/G of the material (see below) |
+| hex8 with *Hex8* = `3D_SI` | WARNING: that elset gets `3D` (Code-Aster has no `GREEN_LAGRANGE` on under-integrated linear elements, `ELEMENTSSI_1`) |
+| CCX > *custom element type* (e.g. C3D8R) | WARNING: CalculiX only, not translated (see below) |
 
-Nearly incompressible material on linear hex8/tet4 'locks' (too stiff in bending and
-non-uniform deformation): use quadratic elements or `LINE_QUAD`.
+**Choose *Hex8* = `LINE_QUAD` for rubber on hex8.** Nearly incompressible material on a
+fully integrated linear hex8 or tet4 'locks' volumetrically: the element cannot deform at
+constant volume and is far too stiff, also without bending. Measured on a bonded rubber
+cylinder (GitHub issue #5: quarter model R 16 × H 18 mm, 684 hex8, Neo Hooke
+C10 = 0.348 MPa, D1 = 0.005 mm²/N, so K/G = 575, compressed 3 mm):
+
+| Element | Force at 3 mm | vs. reference |
+|---|---|---|
+| Code-Aster `3D` (= CCX C3D8) | 368.5 N | ×3.0 |
+| CCX C3D8R (reduced integration) | 181.8 N | +46% |
+| Code-Aster `LINE_QUAD` (= CCX C3D20) | 132.3 N | +6% |
+| reference: CCX C3D20R and C3D8I on the mesh refined 2× | ~124 N | (within 1%) |
+
+With the same element Code-Aster and CCX give the same force (within 0.1 N), so a
+difference with a CCX model usually comes from the element type. Mecway's *custom element
+type* in the CCX settings (e.g. Hex8 → C3D8R) is a CalculiX setting: the bridge does not
+translate it (WARNING) and Code-Aster takes the formulation from the Elements page;
+C3D8R and C3D8I have no equal in Code-Aster. `3D_SI` does not work with `ELAS_HYPER`.
+With `LINE_QUAD` the same model also reached the full 10 mm, where `3D` needed many step
+cutbacks after 6 mm.
 
 **Hyperfoam: not possible with Code-Aster 17.4 on Windows** (checked 22 October 2026).
 Mecway 34 itself has no hyperfoam material (only Neo Hooke and Mooney-Rivlin; the name

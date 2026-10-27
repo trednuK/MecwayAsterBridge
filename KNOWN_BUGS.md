@@ -34,6 +34,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    With LINE_QUAD, nodal forces stay on the corner nodes: on hex20 these are
    point loads with local deformation (seen in a small hex20 test model: +21% at the
    loaded nodes, with pressure on the same face +0.04%); use a surface load.
+   Hyperelastic material (GitHub issue #5): fully integrated hex8 locks
+   volumetrically. Bonded rubber cylinder (684 hex8, Neo Hooke, K/G = 575), force
+   at 3 mm: `3D` 368.5 N (= CCX C3D8), `LINE_QUAD` 132.3 N (= CCX C3D20),
+   reference ~124 N (CCX C3D20R/C3D8I, mesh refined 2x); CCX C3D8R 181.8 N.
+   `bridge_to_aster._resolve_line_quad` gives its own WARNING for hyperelastic
+   hex8 with `3D`; `3D_SI` is not possible with `ELAS_HYPER` (`ELEMENTSSI_1`), so
+   such an elset gets `3D` (`_hyper_hex8`).
 
 2\. **Shell elements ~0.7% different from Mecway** (confirmed). Flat quad4 plate
    100x20 mm, 1 mm, fixed on one edge: displacements DKT (Code-Aster) and
