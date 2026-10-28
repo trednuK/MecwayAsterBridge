@@ -2,20 +2,21 @@
 
 *English version: [2D_and_axisymmetric.md](en/2D_and_axisymmetric.md)*
 
-De bridge vertaalt de twee statische 2D-analysetypen van Mecway naar Code-Aster
-`MECA_STATIQUE` met vlakke elementen (U3.13.01 "Modélisations AXIS, D_PLAN, C_PLAN"):
+De bridge vertaalt de statische en dynamische 2D-analysetypen van Mecway naar
+Code-Aster `MECA_STATIQUE` of `DYNA_NON_LINE` met vlakke elementen (U3.13.01
+"Modélisations AXIS, D_PLAN, C_PLAN"):
 
 | Mecway-analyse | Mecway-materiaal | Code-Aster | Resultaat in Mecway |
 |---|---|---|---|
 | Static 2D (S20) | *Shell/membrane* met een dikte | `C_PLAN` (vlakke spanning) | verplaatsing X, Y; spanning (σ_zz = 0); von Mises; reacties voor de dikte t |
 | Static 2D (S20) | *Shell/membrane* met een dikte en *plane strain* | `D_PLAN` (vlakke rek) | als hierboven, σ_zz = ν(σ_xx + σ_yy) |
 | Static Axisymmetric (SA0) | geen geometrie (isotroop materiaal) | `AXIS` | verplaatsing X (radiaal), Y (axiaal); spanning met `stresszz` = tangentiële spanning (hoop stress); reacties voor 360 graden |
+| Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | als S20 / SA0 | als S20 / SA0, in de tijd (§2.4) | als S20 / SA0 per uitvoertijd, plus snelheid en versnelling |
 
-De bridge-analyse is `lin_static_3d` ("Statisch"): met *Actieve analyse* = `auto` kiest
-de bridge die voor S20 en SA0. Algemene werking van de bridge:
-[`Handleiding.md`](Handleiding.md). De andere 2D-typen van Mecway (Dynamic Response 2D
-(D20), Dynamic Response Axisymmetric (DA0), Acoustic Resonance 2D (A20)) worden niet
-vertaald (§4). Mecway heeft geen thermisch 2D-type: een thermisch model in een vlak
+De bridge-analyse is `lin_static_3d` ("Statisch") voor S20 en SA0 en `dyna_impl_3d`
+("Dynamisch (impliciet)") voor D20 en DA0: met *Actieve analyse (auto = volgens Mecway)*
+= `auto` kiest de bridge die. Algemene werking van de bridge:
+[`Handleiding.md`](Handleiding.md). Acoustic Resonance 2D (A20) wordt niet vertaald (§4). Mecway heeft geen thermisch 2D-type: een thermisch model in een vlak
 maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 ![Axisymmetrisch: symmetrieas, straal en tangentiële richting](img/2d_axisymmetric_axes.svg)
@@ -39,7 +40,10 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 ### 1.1 In Mecway: het model
 
-1. **Analysetype.** *Static 2D* of *Static Axisymmetric* in de analyse-instellingen.
+1. **Analysetype.** *Static 2D*, *Static Axisymmetric*, *Dynamic Response 2D* of
+   *Dynamic Response Axisymmetric* in de analyse-instellingen (dynamisch: *Time period*,
+   *Time step size* en *Generate solution every n time steps*; geen *Mode
+   superposition*).
 2. **Mesh.** Vlakke elementen tri3, tri6, quad4 of quad8 in het XY-vlak, alle knopen met
    Z = 0 (Mecway negeert Z; de bridge stopt als Z ≠ 0, §3). Axisymmetrisch: Y is de
    symmetrieas, X de straal, alle knopen met X ≥ 0 (Mecway Ltd., 2026, §6.1.3, §7.2).
@@ -51,7 +55,7 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
      vlakke rek), anders stopt de bridge.
    - SA0: geen geometrie. Een dikte telt niet (de bridge negeert hem met een WARNING;
      Mecway's eigen solve geeft dan geen oplossing).
-   - Dichtheid voor zwaartekracht en centrifugaalkracht.
+   - Dichtheid voor zwaartekracht, centrifugaalkracht en dynamica.
 4. **Opleggingen.** *Fixed support*, *Pinned support* en *Displacement* langs X of Y op
    knopen of op randen (vlakselectie van randen, faceid 1..4), *Symmetry* met normaal X
    of Y op randen. Axisymmetrisch: Mecway vraagt een oplegging in X op knopen op de as
@@ -63,7 +67,8 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
      randoppervlak);
    - *Gravity* in het XY-vlak (SA0: alleen langs Y);
    - *Centrifugal force* om Z (S20) of om Y (SA0).
-   Andere items stoppen of worden overgeslagen met een ERROR (§3, §4).
+   Waarden mogen een tijdtabel zijn (dynamica). Dynamica: *Rayleigh damping* op het hele
+   model. Andere items stoppen of worden overgeslagen met een ERROR (§3, §4).
 
 ### 1.2 In het hoofdvenster van de bridge
 
@@ -71,7 +76,10 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 *Actieve analyse (auto = volgens Mecway)* `auto` (of `lin_static_3d`) en *Resultaten naar Mecway* `liml` (pagina
 Algemeen; de route `tabel` schaalt de reacties niet, de bridge stopt). De instellingen
-van de pagina Statisch gelden zoals in 3D. De resultaatvelden `strain` en `shell_*`
+van de pagina Statisch of Dynamisch (impliciet) gelden zoals in 3D; voor D20/DA0 gelijk
+aan Mecway: *Tijdschema (SCHEMA_TEMPS)* `NEWMARK`, `deformation` `PETIT` en
+*Rekenstappen per uitvoerinterval* = Mecway's *every n time steps* (§2.4). De
+resultaatvelden `strain` en `shell_*`
 geven niets in 2D; `principal_stresses` geeft `principal1..3` en `tresca` zoals Mecway
 (eigenwaarden van de 3D-tensor met σ_zz, per elementknoop, knoop = gemiddelde). De
 foutschatter wordt in 2D niet gebruikt (INFO).
@@ -129,9 +137,21 @@ De massa in de log (`BRIDGE_STATCHECK`) is die van de hele dikte of van 360 grad
 `DDL_IMPO`; `symmetry` met normaal X of Y: `DDL_IMPO` DX = 0 of DY = 0. Componenten die
 het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg.
 
+### 2.4 Dynamica (D20, DA0)
+
+D20 en DA0 gaan via `dyna_impl_3d` (`DYNA_NON_LINE`), precies als Mecway's 3D Dynamic
+Response (D30) zonder *Mode superposition*: uitvoertijden elke n-de Mecway-stap,
+belastingen als tijdtabel, Rayleigh-demping (`AMOR_RAYL`). De massa per eenheid van
+dikte of per radiaal past bij de krachten van §2.2, dus geen extra factor. Mecway rekent
+lineair met Newmark (gemiddelde versnelling): met *Tijdschema (SCHEMA_TEMPS)* `NEWMARK`,
+`deformation` `PETIT` en een rekenstap per Mecway-stap (*Rekenstappen per
+uitvoerinterval* = n van *every n time steps*) is de bridge gelijk aan Mecway's eigen
+D20/DA0-oplossing (≤ 4e-8, PL-10 … PL-12). Met de standaard (HHT, een stap per
+uitvoerinterval) geeft de bridge een WARNING en rekent hij met grotere stappen (KB124).
+
 ## 3. Niet mogelijk
 
-KNOWN_BUGS 123; geplande stappen in `STAPPENPLAN.md` (S16b … S16e).
+KNOWN_BUGS 123; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
 
 - Balken, truss, veren of volume-elementen in een 2D-analyse (Mecway's S20 kent balken
   en truss): ERROR, de bridge stopt.
@@ -141,22 +161,23 @@ KNOWN_BUGS 123; geplande stappen in `STAPPENPLAN.md` (S16b … S16e).
   puntmassa's, temperaturen (thermal stress): ERROR (stop of overgeslagen).
 - Displacement in een schuine richting, symmetrie met een schuine normaal: overgeslagen
   (ERROR).
-- Niet-lineair statisch, modaal, knik, dynamica met een 2D-model: ERROR (alleen
-  `lin_static_3d`). Mecway zelf heeft geen niet-lineair, frequentie- of knik-2D-type
-  (Mecway 34 zet V20 om naar V30 en B20 naar S30).
+- S20/SA0 met een andere analyse dan `lin_static_3d`, D20/DA0 met een andere dan
+  `dyna_impl_3d`, expliciete schema's, *Mode superposition* en een beginsnelheid in 2D:
+  ERROR. Mecway zelf heeft geen niet-lineair, frequentie- of knik-2D-type (Mecway 34
+  zet V20 om naar V30 en B20 naar S30).
 - De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).
 
 ## 4. Andere 2D-analysetypen (niet vertaald)
 
 | Mecway | Status | Alternatief |
 |---|---|---|
-| Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | Nee (ERROR) | model in 3D (een plak met symmetrie) |
 | Acoustic Resonance 2D (A20) | Nee (ERROR) | [`Akoestiek.md`](Akoestiek.md): 3D (A30) |
 
 ## 5. Interpretatie
 
 - Verplaatsingen en reactiekrachten zijn gelijk aan Mecway's eigen S20/SA0-oplossing
-  (≤ 1e-11 relatief, verificatie PL-01, PL-02, PL-04 … PL-06).
+  (≤ 1e-11 relatief, verificatie PL-01, PL-02, PL-04 … PL-06), de tijdsverlopen van
+  D20/DA0 binnen 4e-8 (PL-10 … PL-12, met de instellingen van §2.4).
 - Knoopspanningen verschillen van Mecway waar de spanning sterk varieert over een
   element (bijv. 1 tot 3% bij het gat van PL-01 met n = 16, 2% aan de binnenwand van
   een grove ring): een andere extrapolatie vanuit de integratiepunten, zoals bij
@@ -177,5 +198,7 @@ KNOWN_BUGS 123; geplande stappen in `STAPPENPLAN.md` (S16b … S16e).
 | ERROR: Elset '…' bevat line2 …; in een 2D-analyse … | balken, truss, veren of volume-elementen in het model | haal ze weg of reken in 3D |
 | ERROR: … in een 2D-analyse (…) wordt (nog) niet vertaald | contact, koppeling, constraint equation, puntmassa of temperatuur | haal het weg of reken in 3D |
 | ERROR: … op '…' in een 2D-analyse: … NIET meegenomen. | belasting of voorwaarde zonder 2D-route (§3) | vervang hem door een ondersteunde belasting (§1.1) |
-| ERROR: Mecway-analysetype D20 … wordt (nog) niet vertaald | dynamisch of akoestisch 2D | reken in 3D |
+| ERROR: Mecway-analysetype A20 … wordt (nog) niet vertaald | akoestisch 2D | reken in 3D (A30) |
+| ERROR: Mecway-analysetype D20 (2D) wordt alleen vertaald naar dyna_impl_3d, niet naar … | een andere analyse gekozen op het startscherm | kies `auto` of de genoemde analyse |
+| ERROR: D20 (2D) wordt vertaald met het impliciete schema … | expliciet schema of *Mode superposition* | kies `NEWMARK` of `HHT`; zet *Mode superposition* in Mecway uit |
 | ERROR: Een 2D-analyse (…) werkt alleen met de resultaatroute 'liml' | route `tabel` gekozen | kies `liml` op de pagina Algemeen |

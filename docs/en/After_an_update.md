@@ -118,7 +118,7 @@ it was last verified:
 | Result formulas computed by the bridge, heat flux per element node (V2026.5) | NOT verified | verified (V2026.5) |
 | Principal stresses/strains and acceleration under Mecway's names (V2026.5) | NOT verified | verified (V2026.5) |
 | Rubber on hex8: locking warning, no `3D_SI` with `ELAS_HYPER`, *Element type* card (V2026.5) | NOT verified | verified (V2026.5) |
-| Static 2D (S20) and Static Axisymmetric (SA0): `C_PLAN`/`D_PLAN`/`AXIS`, results under Mecway's names (S16a, unreleased) | NOT verified | verified headless (28 October 2026: Mecway's own solution, `mw.face_nodes`, the fields recognised after opening); a run in the Mecway GUI still to do |
+| Static 2D (S20), Static Axisymmetric (SA0), Dynamic Response 2D/Axisymmetric (D20, DA0): `C_PLAN`/`D_PLAN`/`AXIS`, results under Mecway's names (S16a, S16b, unreleased) | NOT verified | verified headless (28 October 2026: Mecway's own solution, `mw.face_nodes`, the fields recognised after opening); a run in the Mecway GUI still to do |
 | Selection names with spaces (models from Mecway 33) | allowed | Mecway 34 replaces the spaces by `_` when it opens such a model and then loses the reference in a contact (`selectionmaster=""`, seen 22 October 2026); the bridge stops before Code-Aster with an ERROR that says so where the contact counts (nonlinear static and dynamics; bonded contact in every analysis), elsewhere it gives a WARNING (Mecway ignores unilateral contact there too). Select the contact faces again. The example models use names without spaces. |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons

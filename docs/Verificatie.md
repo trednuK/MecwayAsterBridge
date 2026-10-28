@@ -738,13 +738,14 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-06)
+### 2D en axisymmetrisch (PL-01 … PL-12)
 
-Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`) en *Static Axisymmetric* (SA0, `AXIS`)
-(STAPPENPLAN S16a, `bridge_plane`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md)).
+Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
+hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
+Mecway-stap) (STAPPENPLAN S16a, S16b, `bridge_plane`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md)).
 De 3D-tegenhangers AD-01 (Kt) en LS-04 (Lamé) geven de referenties en de toleranties;
-"= Mecway" is Mecway 34's eigen S20/SA0-oplossing van hetzelfde model (headless, tolerantie
-1e-6).
+"= Mecway" is Mecway 34's eigen S20/SA0/D20/DA0-oplossing van hetzelfde model (headless,
+tolerantie 1e-6).
 
 - **PL-01** (plaat met gat, vlakke spanning, t = 1 mm, quad8, de geometrie van AD-01,
   symmetrie x = 0 en y = 0, traction 100 MPa): Kt_n tegen Peterson (2,519) −27,7 /
@@ -769,6 +770,16 @@ De 3D-tegenhangers AD-01 (Kt) en LS-04 (Lamé) geven de referenties en de tolera
 - **PL-06** (ring r = 0,1 … 0,2 m, h = 20 mm, axisymmetrisch): knoopkracht, kracht op een
   rand, radiale traction, zwaartekracht langs Y en centrifugaalkracht om Y: Σ R_y =
   −3144,23 N exact, massa ρπ(b² − a²)h exact; u_r en u_y = Mecway.
+
+- **PL-10** (Dynamic Response 2D, strook 1 m × 50 mm, vlakke spanning, ν = 0, quad8
+  40 × 1, staptraction 10 MPa, Newmark-stap T/200): periode van de tip 4L/c = 7,709e-4 s
+  −0,06%, tijdgemiddelde = statisch PL/E +0,002%; tijdsverloop = Mecway (3,2e-8).
+- **PL-11** (Dynamic Response Axisymmetric, de ring van PL-04-n4 met dichtheid,
+  stapdruk, Rayleigh α = 8e4 rad/s): u_r na 0,3 ms −0,05% tegen Lamé (nog aan het
+  uitdempen; tolerantie 0,2%); tijdsverloop = Mecway (3,1e-8).
+- **PL-12** (Dynamic Response 2D, console 100 × 10 mm, knoopkracht als tijdtabel
+  0 → −100 N in 1 ms, elke 5e stap geschreven, *Rekenstappen per uitvoerinterval* = 5):
+  tijdsverloop = Mecway (1,6e-8).
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

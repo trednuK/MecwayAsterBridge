@@ -60,6 +60,16 @@ GLOSSARY = OrderedDict([
              u"Mecway: Static Axisymmetric, Y = axis, X = radius (AXIS); "
              u"stresszz is the hoop stress, reactions for 360 degrees. "
              u"With 'auto' -> lin_static_3d.")),
+    ("D20", ("mecway", u"Mecway: Dynamic Response 2D (vlakke spanning of "
+             u"vlakke rek, zoals S20). Bij 'auto' -> dyna_impl_3d; gelijk "
+             u"aan Mecway met schema NEWMARK en deformation PETIT.",
+             u"Mecway: Dynamic Response 2D (plane stress or plane strain, "
+             u"as S20). With 'auto' -> dyna_impl_3d; equal to Mecway with "
+             u"schema NEWMARK and deformation PETIT.")),
+    ("DA0", ("mecway", u"Mecway: Dynamic Response Axisymmetric (zoals SA0). "
+             u"Bij 'auto' -> dyna_impl_3d.",
+             u"Mecway: Dynamic Response Axisymmetric (as SA0). With 'auto' "
+             u"-> dyna_impl_3d.")),
     ("L30", ("mecway", u"Mecway: niet-lineair statisch 3D (plasticiteit, "
              u"contact, grote verplaatsingen). Bij 'auto' -> "
              u"nonlin_static_3d.",
@@ -112,11 +122,12 @@ GLOSSARY = OrderedDict([
              u"translated.")),
     # --- analyses of the bridge ---
     ("auto", ("analysis", u"De analyse volgt het analysetype van het "
-              u"Mecway-model (S30, S20, SA0, L30, D30, D31, T30, T31, V30, B30, "
-              u"A30). Andere "
+              u"Mecway-model (S30, S20, SA0, L30, D30, D20, DA0, D31, T30, T31, "
+              u"V30, B30, A30). Andere "
               u"typen stoppen de bridge met een melding.",
               u"The analysis follows the analysis type of the Mecway model "
-              u"(S30, S20, SA0, L30, D30, D31, T30, T31, V30, B30, A30). Other "
+              u"(S30, S20, SA0, L30, D30, D20, DA0, D31, T30, T31, V30, B30, "
+              u"A30). Other "
               u"types stop the "
               u"bridge with a message.")),
     ("lin_static_3d", ("analysis", u"Statisch, lineair (MECA_STATIQUE). "

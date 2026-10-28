@@ -5970,8 +5970,8 @@ def _output_times(model_data, analysis):
     ts = model_data.get("timesteps") or {}
     t_end = ts.get("period") or analysis.get("default_time_end", 1.0)
     inc = ts.get("increment")
-    if not inc and model_data.get("analysis_type") == "D30" and \
-            ts.get("stepsize"):
+    if not inc and bridge_plane.equivalent_3d(
+            model_data.get("analysis_type")) == "D30" and ts.get("stepsize"):
         # Dynamic Response (D30): Mecway writes every n-th calculation step
         # (stepsize x keepeverynthtimestep, bridge_from_liml).
         inc = ts["stepsize"] * ts.get("keep_every", 1)

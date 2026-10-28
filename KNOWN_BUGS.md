@@ -157,6 +157,17 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 ## Translation that works differently from Mecway
 
+124\. **Dynamic Response (D30, D20, DA0) with *Generate solution every n time steps* > 1: the
+   bridge steps per output interval, n times Mecway's step** (confirmed with runs, Code-Aster
+   17.4 and Mecway 34 headless; `bridge_to_aster._build_dyna_listinst_block`, setting
+   `substeps_per_output` = 1). Cantilever in D20 (quad8, step 2e-5 s, every 5th step written):
+   with `substeps_per_output` = 1 the tip displacement differs up to 22% from Mecway's own
+   solution (period error of the 5 times larger Newmark step), with `substeps_per_output` = 5
+   it is equal (3.8e-8). The bridge does not derive the solver step from Mecway's *Time step
+   size*; set "Solver steps per output interval" to n yourself
+   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md) §2.4). Not fixed
+   here: it changes the existing D30 route (MD-07 uses n = 1).
+
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
    overlapping conditions itself (manual v33 sec. 9.6), Code-Aster does not. Fixed:
    fixed next to skewed conditions, displacement, node rotation or velocity
@@ -1049,14 +1060,16 @@ Code-Aster value per node) and logs the largest difference per variable.
    `W/mm2`: Mecway SI, the bridge 1e-6). Mecway writes only units from its own list, so this
    only matters for hand-edited files.
 
-123\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a). Translated:
-   Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in linear static
-   (`lin_static_3d`), plane elements only, one thickness and one type per model; fixed, pinned,
+123\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b).
+   Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
+   linear static (`lin_static_3d`), Dynamic Response 2D/Axisymmetric (D20, DA0) in
+   `dyna_impl_3d` (implicit, Rayleigh damping, time tables; no explicit scheme, mode
+   superposition or initial velocity), plane elements only, one thickness and one type per
+   model; fixed, pinned,
    displacement along X/Y, symmetry with normal X/Y, force (nodes, edges), pressure and
    traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)
-   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: Dynamic
-   Response 2D/Axisymmetric (D20, DA0) and Acoustic Resonance 2D (A20) (ERROR, steps S16b,
-   S16d), beams/trusses/springs in S20, several thicknesses, other loads and constraints
+   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: Acoustic
+   Resonance 2D (A20) (ERROR, step S16d), beams/trusses/springs in S20, several thicknesses, other loads and constraints
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
    constraint equations, couplings, contact, point masses, temperatures), the error estimator
    (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,

@@ -48,7 +48,7 @@ S7, S8, S5, S9).
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | open | – | chosen by the user 15 Oct (C8) |
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
-| S16b | 2D dynamic response (Mecway D20, DA0) | open | S16a | split off from S16 (28 Oct 2026); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
+| S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); KNOWN_BUGS 124 (step size with *every n time steps*); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
 | S16d | Acoustic Resonance 2D (Mecway A20, `2D_FLUIDE`) | open | S16a | split off from S16 (28 Oct 2026) |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 123 |
@@ -1247,7 +1247,7 @@ which loads/conditions exist in 2D, Mecway's field names for 2D/axisymmetric (ho
 **Done when:** plate with a hole in plane stress (Kt), thick-walled cylinder axisymmetric (Lamé) and a
 2D dynamic case within the tolerances of their 3D counterparts and equal to Mecway headless;
 regression D.5. May be done in sub-steps (S16a static, S16b dynamic/thermal/acoustics).
-**Status:** S16a done (28 Oct 2026); split off: S16b (D20/DA0), S16c (dropped, no thermal 2D in
+**Status:** S16a and S16b done (28 Oct 2026); split off: S16c (dropped, no thermal 2D in
 Mecway), S16d (A20), S16e (2D extensions).
 **Findings S16a (Mecway 34, headless: `mw_solve.py`, a safe runner on own PIDs, `mw.save_as`;
 no GUI):**
@@ -1294,6 +1294,19 @@ no GUI):**
 - Open: GUI run in Mecway 34 (open a PL model, run with `auto`, look at the contour of
   `stresszz`); whether Mecway's *in-plane principal stress* option (`principal1plane` in
   mecway.exe) needs other fields.
+
+**Findings S16b (D20/DA0):**
+- Mecway's D20/DA0 solution has the same names plus `velx/vely/velmag` (no reaction forces
+  in Mecway's own dynamic solution). The bridge routes D20/DA0 through `dyna_impl_3d`
+  (`bridge_plane.EQUIVALENT_3D`: the D30 output times and Newmark warning); the mass per
+  unit thickness / per radian matches the forces, no extra factor. Explicit, mode
+  superposition and an initial velocity: ERROR (not verified).
+- Equal to Mecway's own solution (≤ 4e-8) with NEWMARK, PETIT and `substeps_per_output` =
+  *every n time steps*: cantilever step load and time table (D20), ring with Rayleigh damping
+  (DA0). With `substeps_per_output` = 1 and n = 5 the bridge steps 5 times coarser than Mecway
+  (22% difference on the cantilever): pre-existing for D30 too, KNOWN_BUGS 124 (not changed,
+  it would alter MD-07's route); a candidate for a follow-up (derive the step from
+  `<timesteps stepsize>`).
 
 ### S17 – Loads on beam side faces and hydrostatic pressure on shell edges
 **Goal:** the two open items of KNOWN_BUGS 5: pressure/traction on the side face of a beam (Mecway

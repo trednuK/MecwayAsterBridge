@@ -4,9 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_plane.py
-# Responsibility: Mecway's 2D analysis types (STAPPENPLAN S16a): Static 2D
-# (S20, plane stress or plane strain) and Static Axisymmetric (SA0) ->
-# Code-Aster MODELISATION 'C_PLAN', 'D_PLAN' and 'AXIS' in MECA_STATIQUE.
+# Responsibility: Mecway's 2D analysis types (STAPPENPLAN S16a, S16b):
+# Static 2D (S20, plane stress or plane strain), Static Axisymmetric (SA0),
+# Dynamic Response 2D (D20) and Dynamic Response Axisymmetric (DA0) ->
+# Code-Aster MODELISATION 'C_PLAN', 'D_PLAN' and 'AXIS' in MECA_STATIQUE
+# (lin_static_3d) or DYNA_NON_LINE (dyna_impl_3d; with schema NEWMARK,
+# deformation PETIT and one step per Mecway step equal to Mecway's linear
+# Newmark: verification PL-10 .. PL-12, <= 4e-8).
 # bridge_from_liml calls apply() (modelisations, checks), bridge_mesh calls
 # convert_bc() per load and finish_bcs() after all loads, bridge_to_aster
 # uses export_arg() / static_check_arg() for the results.
@@ -16,8 +20,9 @@
 # Mecway (measured headless with Mecway 34, mw_solve.py, 28 Oct 2026; manual
 # v34 par. 6.1.1, 6.1.3, 7.1, 7.2):
 #   - S20 = Static 2D, SA0 = Static Axisymmetric (the names in mecway.exe:
-#     "Static 2D", "Static Axisymmetric"; D20 = Dynamic Response 2D, DA0 =
-#     Dynamic Response Axisymmetric, A20 = Acoustic Resonance 2D: not
+#     "Static 2D", "Static Axisymmetric"), D20 = Dynamic Response 2D, DA0 =
+#     Dynamic Response Axisymmetric (Samples/PandSWaves.liml is D20; DA0
+#     solved headless with time steps), A20 = Acoustic Resonance 2D (not
 #     translated, NOT_TRANSLATED_2D). Plane elements tri3/tri6/quad4/
 #     quad8 in the XY plane (Z ignored by Mecway), faceid 1..4 = the edges
 #     (corner k to corner k+1), as for shells.
@@ -63,19 +68,24 @@ from collections import OrderedDict
 
 from bridge_utils import CONFIG_BRIDGE, log, tr
 
-# Mecway analysis type -> kind of 2D analysis
-PLANE_TYPES = {"S20": "plane", "SA0": "axis"}
+# Mecway analysis type -> kind of 2D analysis. D20/DA0 (Dynamic Response 2D /
+# Axisymmetric, S16b): linear Newmark like D30, bridge analysis dyna_impl_3d.
+PLANE_TYPES = {"S20": "plane", "SA0": "axis", "D20": "plane", "DA0": "axis"}
+# 2D types that behave as Mecway's 3D type in the rest of the bridge (output
+# times of D30, the Newmark warning)
+EQUIVALENT_3D = {"S20": "S30", "SA0": "S30", "D20": "D30", "DA0": "D30"}
 PLANE_MODELISATIONS = ("C_PLAN", "D_PLAN", "AXIS")
-# Mecway 34's other 2D analysis types (names in mecway.exe; D20 in
-# Samples/PandSWaves.liml; DA0 solved headless with time steps). V20 is
-# not one: Mecway 34 converts it to V30 (the solution file says V30),
-# unknown codes such as T20/B20/L20 become S30.
-NOT_TRANSLATED_2D = {"D20": "Dynamic Response 2D",
-                     "DA0": "Dynamic Response Axisymmetric",
-                     "A20": "Acoustic Resonance 2D"}
+# Mecway 34's other 2D analysis type. V20 is not one: Mecway 34 converts
+# it to V30 (the solution file says V30), unknown codes such as T20/B20/L20
+# become S30.
+NOT_TRANSLATED_2D = {"A20": "Acoustic Resonance 2D"}
 PLANE_SHAPES = frozenset(["tri3", "tri6", "quad4", "quad8"])
-# Solver commands with a verified 2D route (S16a: linear static only)
-_VERIFIED_SOLVERS = ("MECA_STATIQUE",)
+# Solver command with a verified 2D route per Mecway type (S16a linear
+# static, S16b implicit dynamics)
+_VERIFIED_SOLVERS = {"S20": "MECA_STATIQUE", "SA0": "MECA_STATIQUE",
+                     "D20": "DYNA_NON_LINE", "DA0": "DYNA_NON_LINE"}
+_BRIDGE_ANALYSIS = {"MECA_STATIQUE": "lin_static_3d",
+                    "DYNA_NON_LINE": "dyna_impl_3d"}
 # Loads and constraints with a verified 2D route
 _HANDLED = ("fixed", "pinnedsupport", "displacement", "force",
             "surfacepressure", "traction", "symmetry", "gravity",
@@ -88,7 +98,8 @@ _NOT_VERIFIED = (("contacts", "Contact"), ("bonded", "Bonded contact"),
                  ("flexible_joints", "Flexible joint"),
                  ("thermal_stress", "Thermal stress"),
                  ("temperatures", "Temperature"),
-                 ("node_temperatures", "Node temperature"))
+                 ("node_temperatures", "Node temperature"),
+                 ("initial_velocities", "Initial velocity"))
 _DROP_DDL = ("DZ", "DRX", "DRY", "DRZ")
 _DROP_FORCE = ("FZ", "MX", "MY", "MZ")
 _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
@@ -98,6 +109,12 @@ _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
 def is_plane_type(mecway_type):
     """True for a Mecway 2D analysis type the bridge translates."""
     return mecway_type in PLANE_TYPES
+
+
+def equivalent_3d(mecway_type):
+    """Mecway's 3D analysis type with the same meaning outside the element
+    formulation (S20/SA0 -> S30, D20/DA0 -> D30); other types unchanged."""
+    return EQUIVALENT_3D.get(mecway_type, mecway_type)
 
 
 def info(model_data):
@@ -131,14 +148,24 @@ def apply(model_data, run_cfg, elset_shapes):
     if atype not in PLANE_TYPES:
         return True
     solver = run_cfg.get("solver_command")
-    if solver not in _VERIFIED_SOLVERS:
+    need = _VERIFIED_SOLVERS[atype]
+    if solver != need:
         return _fatal(
-            "Mecway-analysetype {0} (2D) wordt alleen vertaald naar "
-            "lineair statisch (lin_static_3d), niet naar {1}. Kies op het "
-            "startscherm 'auto' of lin_static_3d.",
-            "Mecway analysis type {0} (2D) is only translated to linear "
-            "static (lin_static_3d), not to {1}. Choose 'auto' or "
-            "lin_static_3d on the start screen.", atype, solver or "?")
+            "Mecway-analysetype {0} (2D) wordt alleen vertaald naar {1}, "
+            "niet naar {2}. Kies op het startscherm 'auto' of {1}.",
+            "Mecway analysis type {0} (2D) is only translated to {1}, not "
+            "to {2}. Choose 'auto' or {1} on the start screen.", atype,
+            _BRIDGE_ANALYSIS[need], solver or "?")
+    if solver == "DYNA_NON_LINE" and (
+            run_cfg.get("schema") in ("DIFF_CENT", "TCHAMWA") or
+            model_data.get("mode_superposition")):
+        return _fatal(
+            "{0} (2D) wordt vertaald met het impliciete schema (NEWMARK of "
+            "HHT, dyna_impl_3d); expliciet en Mode superposition zijn in 2D "
+            "niet geverifieerd.",
+            "{0} (2D) is translated with the implicit scheme (NEWMARK or "
+            "HHT, dyna_impl_3d); explicit and Mode superposition are not "
+            "verified in 2D.", atype)
     if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
         return _fatal(
             "Een 2D-analyse ({0}) werkt alleen met de resultaatroute 'liml' "

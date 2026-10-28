@@ -3993,7 +3993,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                    "ERROR: {0} refers to selection '{1}', which is empty or "
                    "does not exist. NOT included.").format(bc["type"], sel))
             continue
-        # 2D analysis (S20/SA0): edge loads and constraints (bridge_plane)
+        # 2D analysis (S20, SA0, D20, DA0): edge loads and constraints
         if bridge_plane.convert_bc(model_data, bc, group_faces.get(sel),
                                    skin_groups):
             continue

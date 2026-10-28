@@ -29,7 +29,8 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | A30 Acoustic Resonance 3D | Ja | `acoustic_modes_3d`; met een bron `acoustic_harm_3d` | KB55, KB57; [`Akoestiek.md`](Akoestiek.md). |
 | S20 Static 2D (vlakke spanning, vlakke rek) | Deels | `lin_static_3d` (`MECA_STATIQUE`, `C_PLAN`/`D_PLAN`) | Alleen vlakke elementen, een dikte en type per model; belastingen en voorwaarden: [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.1, §3 (KB123). Verificatie PL-01 … PL-03, PL-05. |
 | SA0 Static Axisymmetric | Deels | `lin_static_3d` (`MECA_STATIQUE`, `AXIS`) | Als S20; Y = as, `stresszz` = tangentiële spanning, reacties voor 360 graden (KB123). Verificatie PL-04, PL-06. |
-| D20, DA0 Dynamic Response 2D / Axisymmetric, A20 Acoustic Resonance 2D | Nee | – | ERROR (KB123). Alternatief: modelleer in 3D, bijv. een plak met symmetry. |
+| D20, DA0 Dynamic Response 2D / Axisymmetric | Deels | `dyna_impl_3d` (`DYNA_NON_LINE`, `C_PLAN`/`D_PLAN`/`AXIS`) | Als S20/SA0; gelijk aan Mecway met NEWMARK, PETIT en een stap per Mecway-stap (KB124); geen expliciet, mode superposition of beginsnelheid (KB123). Verificatie PL-10 … PL-12. |
+| A20 Acoustic Resonance 2D | Nee | – | ERROR (KB123). Alternatief: modelleer in 3D (A30). |
 | E30 DC Current Flow | Nee | – | De run stopt. |
 | Elektrostatica en piëzo-elektriciteit (in S30) | Nee | – | Elektrische lasten worden overgeslagen; een piëzo- of matrixmateriaal stopt de run (§5). |
 | geen Mecway-type | – | `harmonic_3d`, `spectrum_3d` (zelf kiezen) | Extra analyses van de bridge: [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md), [`Spectrumanalyse.md`](Spectrumanalyse.md). |

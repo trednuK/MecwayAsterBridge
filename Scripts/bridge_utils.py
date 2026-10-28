@@ -703,7 +703,8 @@ CONFIG_BRIDGE = {
 # basis, without it (Mecway: Newmark on the full model) implicit dynamics.
 # S20 (Static 2D, plane stress/strain) and SA0 (Static Axisymmetric):
 # linear static with MODELISATION C_PLAN/D_PLAN/AXIS (bridge_plane.py,
-# STAPPENPLAN S16a). Other types (D20, DA0, V20, A20, ...) have no
+# STAPPENPLAN S16a); D20/DA0 (Dynamic Response 2D / Axisymmetric) as D30
+# without mode superposition (S16b). Other types (A20, E30, ...) have no
 # analysis in the bridge.
 # Key for D30 with Mode superposition (no Mecway type of its own; also the
 # text on the start screen).
@@ -714,6 +715,9 @@ MECWAY_ANALYSIS_TYPES = {
     "SA0": "lin_static_3d",
     "L30": "nonlin_static_3d",
     "D30": "dyna_impl_3d",
+    # Dynamic Response 2D / Axisymmetric (bridge_plane, S16b)
+    "D20": "dyna_impl_3d",
+    "DA0": "dyna_impl_3d",
     D30_MODE_SUPERPOSITION: "dyna_modal_3d",
     "D31": "dyna_impl_3d",
     "T30": "ther_3d",

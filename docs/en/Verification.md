@@ -734,12 +734,14 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-06)
+### 2D and axisymmetric (PL-01 … PL-12)
 
-Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`) and *Static Axisymmetric* (SA0, `AXIS`)
-(STAPPENPLAN S16a, `bridge_plane`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md)).
+Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
+their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
+Mecway step) (STAPPENPLAN S16a, S16b, `bridge_plane`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md)).
 The 3D counterparts AD-01 (Kt) and LS-04 (Lamé) give the references and the tolerances;
-"= Mecway" is Mecway 34's own S20/SA0 solution of the same model (headless, tolerance 1e-6).
+"= Mecway" is Mecway 34's own S20/SA0/D20/DA0 solution of the same model (headless,
+tolerance 1e-6).
 
 - **PL-01** (plate with a hole, plane stress, t = 1 mm, quad8, the geometry of AD-01,
   symmetry x = 0 and y = 0, traction 100 MPa): Kt_n against Peterson (2.519) −27.7 /
@@ -762,6 +764,16 @@ The 3D counterparts AD-01 (Kt) and LS-04 (Lamé) give the references and the tol
 - **PL-06** (ring r = 0.1 … 0.2 m, h = 20 mm, axisymmetric): nodal force, force on an edge,
   radial traction, gravity along Y and centrifugal force about Y: Σ R_y = −3144.23 N exact,
   mass ρπ(b² − a²)h exact; u_r and u_y = Mecway.
+
+- **PL-10** (Dynamic Response 2D, strip 1 m × 50 mm, plane stress, ν = 0, quad8 40 × 1,
+  step traction 10 MPa, Newmark step T/200): period of the tip 4L/c = 7.709e-4 s −0.06%,
+  time mean = static PL/E +0.002%; history = Mecway (3.2e-8).
+- **PL-11** (Dynamic Response Axisymmetric, the ring of PL-04-n4 with density, step
+  pressure, Rayleigh α = 8e4 rad/s): u_r after 0.3 ms −0.05% against Lamé (still
+  settling; tolerance 0.2%); history = Mecway (3.1e-8).
+- **PL-12** (Dynamic Response 2D, cantilever 100 × 10 mm, nodal force as a time table
+  0 → −100 N in 1 ms, every 5th step written, "Solver steps per output interval" = 5):
+  history = Mecway (1.6e-8).
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

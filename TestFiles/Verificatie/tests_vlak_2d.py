@@ -192,14 +192,14 @@ def build_ring_plane(nr, nt):
     return build
 
 
-def build_ring_axis(nr):
+def build_ring_axis(nr, extra=()):
     """Ring r = RA..RB, y = 0..T3 (SA0, AXIS), Y fixed on both ends (plane
-    strain), pressure on the inner wall."""
+    strain), pressure on the inner wall. extra: more material lines."""
     def build():
         m = Model("SA0")
         m.elset("Cilinder", "Staal")
         q = quadmesh(m, "Cilinder", nr, 1, rect(RA, RB, 0.0, T3), order=2)
-        m.mat("Staal", STEEL)
+        m.mat("Staal", STEEL, *extra)
         e = q["edges"]
         m.face_selection("Binnenwand", e["u0"])
         m.face_selection("Onder", e["v0"])
@@ -436,3 +436,167 @@ TESTS.append(Case(
     "kracht op rand, traction, zwaartekracht, centrifugaal", "lin_static_3d",
     build_pl06, _pl06,
     note="Ring r = 0,1..0,2 m, hoogte 20 mm, quad8 4x2; Y vast onder."))
+
+
+# ==================================================================
+# S16b: Dynamic Response 2D (D20) and Axisymmetric (DA0) -> dyna_impl_3d
+# with schema NEWMARK and deformation PETIT (Mecway's linear Newmark, as
+# D30 in MD-07); one calculation step per Mecway step.
+# ==================================================================
+DYN = {"schema": "NEWMARK", "deformation": "PETIT", "substeps_per_output": 1}
+# Mecway 34's own D20/DA0 solution (headless) at a few output times:
+# {case: (variable, point, [(t, value)])}
+MW_DYN = {
+    "PL-10": ("displx", (1.0, 0.0, 0.0), [
+        (0.000319923, 7.90231184855e-05), (0.000643701, 3.13634042654e-05),
+        (0.000963624, 4.74623117396e-05), (0.001283547, 6.39566817617e-05),
+        (0.001607325, 1.69444673304e-05), (0.001927248, 9.26726594906e-05)]),
+    "PL-11": ("displx", (0.1, 0.0, 0.0), [
+        (5e-05, 5.60926320036e-05), (0.0001, 8.06380925274e-05),
+        (0.00015, 8.82500459927e-05), (0.0002, 9.01397571642e-05),
+        (0.00025, 9.06283357198e-05), (0.0003, 9.07481008291e-05)]),
+    "PL-12": ("disply", (0.1, 0.005, 0.0), [
+        (0.0007, -0.000151446644005), (0.0013, -0.000209043106673),
+        (0.002, -0.000191118075325), (0.0027, -0.000173853406235),
+        (0.0033, -0.000208873305134), (0.004, -0.000160622543659)]),
+}
+
+
+def _mw_hist_dev(cid):
+    """Largest |bridge - Mecway| over the stored times, relative to the
+    largest |Mecway| value."""
+    var, pt, ref = MW_DYN[cid]
+
+    def value(r):
+        h = dict((round(t, 9), v) for t, v in r.history(var, pt))
+        scale = max(abs(v) for _t, v in ref)
+        return max(abs(h[round(t, 9)] - v) for t, v in ref) / scale
+    return value
+
+
+def _period_mean(var, pt, level):
+    """(period, time mean over whole periods) of a history around level."""
+    import tests_dynamisch as td
+
+    def get(r):
+        h = r.history(var, pt)
+        cr = td.crossings(h, level)
+        per = td.period(h, level)
+        t0, t1 = cr[0], cr[0] + per * int((cr[-1] - cr[0]) / per)
+        pts = [(t, v) for t, v in h if t0 <= t <= t1]
+        mean = sum(0.5 * (a[1] + b[1]) * (b[0] - a[0])
+                   for a, b in zip(pts, pts[1:])) / (pts[-1][0] - pts[0][0])
+        return per, mean
+    return get
+
+
+# PL-10 Longitudinal wave in a strip (plane stress, nu = 0): a fixed-free
+# bar under a step traction; period 4L/c, mean = static elongation
+L10, H10, T10, P10 = 1.0, 0.05, 0.01, 10.0e6
+C10 = math.sqrt(E / RHO)
+PER10 = 4.0 * L10 / C10
+U10 = P10 * L10 / E
+DT10 = PER10 / 200.0
+STEEL0 = ('<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+          'poissonratio="0" />')
+
+
+def build_pl10():
+    m = Model("D20", timesteps={"timeperiod": "%r s" % (2.5 * PER10),
+                                "stepsize": "%r s" % DT10})
+    m.elset("Strook", "Staal")
+    q = quadmesh(m, "Strook", 40, 1, rect(0.0, L10, 0.0, H10), order=2)
+    m.mat("Staal", '<geometric type="Plate" thickness="%g mm" />' % (
+        T10 * 1000), STEEL0, DENS)
+    e = q["edges"]
+    m.face_selection("Links", e["u0"])
+    m.face_selection("Rechts", e["u1"])
+    m.face_selection("Onder", e["v0"])
+    m.add('<displacement selection="Links"><value>0 m</value><x>1</x>'
+          '<y>0</y><z>0</z></displacement>')
+    m.add('<displacement selection="Onder"><value>0 m</value><x>0</x>'
+          '<y>1</y><z>0</z></displacement>')
+    m.add('<traction selection="Rechts"><x>%g Pa</x><y>0 Pa</y><z>0 Pa</z>'
+          '</traction>' % P10)
+    for fv in ("displacement", "velocity", "stress"):
+        m.add('<fieldvariable name="%s" />' % fv)
+    return m
+
+
+_P10 = (L10, 0.0, 0.0)
+_pm10 = _period_mean("displx", _P10, U10)
+_pl10 = [Check("periode tip", lambda r: _pm10(r)[0], ref=PER10, tol=0.01,
+               unit="s", source="4 L / c, c = sqrt(E / rho) (staafgolf, "
+               "nu = 0)"),
+         Check("gemiddelde u_x tip", lambda r: _pm10(r)[1], ref=U10,
+               tol=0.01, unit="m", source="statische rek P L / E")]
+TESTS.append(Case(
+    "PL-10", GROUP, "Staafgolf in een strook, vlakke spanning (D20), "
+    "staplast", "dyna_impl_3d", build_pl10, _pl10, settings=DYN,
+    timeout=900, note="Strook 1 m x 50 mm, dikte 10 mm, nu = 0, quad8 40x1, "
+    "traction 10 MPa vanaf t = 0, Newmark stap T/200."))
+
+
+# PL-11 Thick-walled ring (DA0) under a step pressure with Rayleigh
+# damping: the response settles to the static Lame solution of PL-04
+A11 = 8.0e4        # rad/s, mass proportional damping (alpha)
+DT11 = 1.0e-6
+
+
+def build_pl11():
+    m = build_ring_axis(4, (DENS,))()
+    m.analysis = "DA0"
+    m.timesteps = {"timeperiod": "0.0003 s", "stepsize": "%r s" % DT11,
+                   "keepeverynthtimestep": "10"}
+    m.add('<rayleighdamping selection=""><alpha>%r rad/s</alpha>'
+          '<beta>0 s</beta></rayleighdamping>' % A11)
+    m.add('<fieldvariable name="velocity" />')
+    return m
+
+
+_pl11 = [Check("u_r binnenwand na uitdempen", lambda r: r.at(
+    "displx", (RA, 0.0, 0.0)), ref=UR3, tol=0.002, unit="m",
+    source="Lame, vlakke rek (statische eindwaarde; PL-04-n4 statisch "
+    "-0,006%)")]
+TESTS.append(Case(
+    "PL-11", GROUP, "Dikwandige ring axisymmetrisch (DA0), stapdruk met "
+    "Rayleigh-demping", "dyna_impl_3d", build_pl11, _pl11,
+    settings=dict(DYN, substeps_per_output=10), timeout=900,
+    note="Model PL-04-n4 met dichtheid, alpha = 8e4 rad/s, Newmark stap "
+    "1e-6 s, uitvoer elke 10e stap."))
+
+
+# PL-12 Cantilever (D20, plane stress) with a force as a time table
+def build_pl12():
+    m = Model("D20", timesteps={"timeperiod": "0.004 s",
+                                "stepsize": "0.00002 s",
+                                "keepeverynthtimestep": "5"})
+    m.elset("Balk", "Staal")
+    q = quadmesh(m, "Balk", 20, 2, rect(0.0, 0.1, 0.0, 0.01), order=2)
+    m.mat("Staal", '<geometric type="Plate" thickness="10 mm" />', STEEL,
+          DENS)
+    m.face_selection("Links", q["edges"]["u0"])
+    m.node_selection("Rechts", sorted(q["nodes"]["u1"]))
+    m.add('<fixed selection="Links" />')
+    m.add('<force selection="Rechts"><x>0 N</x>'
+          '<y time="0 s">0 N</y><y time="0.001 s">-100 N</y>'
+          '<y time="0.004 s">-100 N</y><z>0 N</z></force>')
+    for fv in ("displacement", "velocity", "stress"):
+        m.add('<fieldvariable name="%s" />' % fv)
+    return m
+
+
+TESTS.append(Case(
+    "PL-12", GROUP, "Console vlakke spanning (D20), kracht als tijdtabel",
+    "dyna_impl_3d", build_pl12, [], settings=dict(DYN,
+                                                  substeps_per_output=5),
+    timeout=900, note="Console 100 x 10 mm, dikte 10 mm, quad8 20x2; "
+    "-100 N op het eindvlak, oplopend tot 1 ms."))
+
+for _c in TESTS:
+    if _c.id in MW_DYN:
+        _c.checks.append(Check(
+            "verloop = Mecway", _mw_hist_dev(_c.id), ref=0.0, tol_abs=1e-6,
+            unit="-", in_series=False,
+            source="max |bridge - Mecway| / max |Mecway| op de opgeslagen "
+                   "tijden; Mecway 34 headless, eigen D20/DA0-oplossing"))

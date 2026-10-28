@@ -6,8 +6,9 @@
 # Offline test of the 2D analyses (bridge_plane, STAPPENPLAN S16a; Python
 # 2.7 and 3, without Mecway and Code-Aster):
 #   - S20 -> C_PLAN (thickness) / D_PLAN (planestrain="1"), SA0 -> AXIS;
-#   - ERROR (model_data None) for: S20 without thickness, two thicknesses,
-#     Z != 0, SA0 with X < 0, a solid element in 2D, D20, route 'tabel';
+#   - D20 -> C_PLAN with dyna_impl_3d (S16b);
+#   - ERROR (model_data None) for: S20 without thickness, Z != 0, SA0 with
+#     X < 0, a beam in 2D, A20, D20 with a static analysis, route 'tabel';
 #   - finish_bcs: DZ dropped, FORCE_NODALE / thickness or / 2 pi, gravity
 #     out of the plane skipped;
 #   - _edge_measure: revolved area 2 pi int(r dl) and length x t.
@@ -124,7 +125,8 @@ def test_errors():
             (_liml("SA0", "", x0=-0.5), "SA0 with X < 0"),
             (_liml("S20", PS, extra_elem='    <elem eid="3" shape="line2" '
                    'nodes="1 7" />'), "beam in 2D"),
-            (_liml("D20", PS), "D20 not translated")):
+            (_liml("A20", PS), "A20 not translated"),
+            (_liml("D20", PS), "D20 only with dyna_impl_3d")):
         md = _extract(text)
         check(md is None and _errors(), "{0}: ERROR and stop ({1})".format(
             what, LOG[-3:]))
@@ -132,6 +134,9 @@ def test_errors():
     check(md is None, "route tabel: ERROR")
     md = _extract(_liml("S20", PS), analysis="nonlin_static_3d")
     check(md is None, "S20 with nonlin_static_3d: ERROR")
+    md = _extract(_liml("D20", PS), analysis="dyna_impl_3d")
+    check(md is not None and md["elset_modelisations"].get("P") == "C_PLAN",
+          "D20 with dyna_impl_3d -> C_PLAN: {0}".format(_errors()))
 
 
 def test_finish_bcs():
