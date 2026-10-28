@@ -10,7 +10,9 @@
   with a master face opposite them (in-face tolerance 2.5% of a typical element size) and
   within the *Tolerance* of it (0 = that same default). The other nodes stay free, with a
   WARNING listing them. BoltedJoint (bonded) is now equal to Mecway; new verification
-  LS-07l/m. Bonded contact with shells is unchanged (KNOWN_BUGS 128).
+  LS-07l/m. With shells the same rule holds without a distance limit (Mecway ignores the
+  tolerance there); the untied nodes equal CCX's, the displacements still differ from Mecway
+  (KNOWN_BUGS 128).
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
   `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
   `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh

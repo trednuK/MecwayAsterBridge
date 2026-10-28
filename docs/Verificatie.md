@@ -404,7 +404,8 @@ opeenvolgende meshes.
   Ook nagelopen op Samples/BoltedJoint met de drie contacten verlijmd (lineair statisch):
   de bridge laat dezelfde 58 knopen vrij die CCX in `WarnNodeMissTiedContact.nam` noemt;
   verplaatsing 1,8973 mm, gelijk aan Mecway (grootste knoopverschil 0,004%; eerst
-  0,096 mm). Verlijmd contact met schalen koppelt nog alle slave-knopen (KNOWN_BUGS 128).
+  0,096 mm). Met schalen laat de bridge dezelfde knopen vrij als CCX, maar de verplaatsingen
+  wijken af van Mecway (KNOWN_BUGS 128).
 
 ### LS-08 Node temperature (thermische spanning per knoop)
 

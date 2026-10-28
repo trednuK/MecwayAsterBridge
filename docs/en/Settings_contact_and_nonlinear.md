@@ -795,9 +795,9 @@ nodes). Clamped at x = 0, 1 N in −Z on the free edge.
    = the edge of part B that lies on A (`Lijm_B`; shell edges are selected as faces of
    the elements). Use the finer side as slave.
 3. Add a contact with master `Lijm_A`, slave `Lijm_B` and type bonded (*bonded*, in the
-   `.liml` `type="bondedtie"`). Tolerance 0 (automatic) is fine: with shells the bridge
-   ties all slave nodes (no `DISTANCE_MAX`); solid on solid only the nodes with a master
-   face opposite them, as Mecway/CCX ([Mecway_features.md](Mecway_features.md)). *Bonded elastic* is bonded rigidly (the
+   `.liml` `type="bondedtie"`). Tolerance 0 (automatic) is fine: the bridge ties the slave
+   nodes with a master face opposite them, as Mecway/CCX; with shells Mecway ignores the
+   tolerance ([Mecway_features.md](Mecway_features.md)). *Bonded elastic* is bonded rigidly (the
    stiffness is not translated, reported).
 4. Analysis linear static (`lin_static_3d`): bonded contact is not `DEFI_CONTACT` and
    also works in a linear analysis.

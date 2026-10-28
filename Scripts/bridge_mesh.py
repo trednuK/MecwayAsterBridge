@@ -2753,8 +2753,18 @@ def _symmetry(model_data, bc, faces_list):
 # by Mecway itself as *EQUATION (no *TIE); its own selection rule is not
 # known, but BoltedJoint with bondedce leaves the overhang free as well
 # (0.16% from the tie variant), so the same rule is used for all bonded
-# types. Solid on solid only (_ccx_tie_setup): CCX expands shells into
-# solids, so their tie surface lies at +-t/2 (NOT measured in Mecway).
+# types. With shells (see _MECWAY_SHELL_TIE_FACTOR) the untied nodes also
+# equal CCX's list (shell face on a block, stacked quad4/quad8 plates,
+# LS-07c), but the displacements differ from Mecway (KNOWN_BUGS 128).
+# With a shell on either side Mecway 34 writes POSITION TOLERANCE = 10 x the
+# diagonal of the bounding box of the model, whatever the tolerance in the
+# contact (0 or 1.5 mm; shell plate on a hex20 block, mw_in.inp: 1.846618531262
+# for a 0.18 x 0.04 x 0.012 m model with the plate midsurface on the block,
+# 1.847187050626 with it 1 mm higher, 28 Oct 2026). CCX expands shells into
+# solids and ties the expanded face (+-t/2), so the normal distance is in
+# effect unlimited; the in-face rule (tolloc) still holds: the 24 nodes of
+# the plate beyond the block were not tied (WarnNodeMissTiedContact.nam).
+_MECWAY_SHELL_TIE_FACTOR = 10.0
 _CCX_FACE_CORNERS = {
     8: {1: (3, 2, 1, 0), 2: (4, 5, 6, 7), 3: (0, 1, 5, 4), 4: (1, 2, 6, 5),
         5: (2, 3, 7, 6), 6: (3, 0, 4, 7)},
@@ -2778,7 +2788,7 @@ def _ccx_face_local(face, conn):
     stype, fn = face["stype"], face["nodes"]
     nc = 3 if stype.startswith("TRIA") else 4
     corners, mids = list(fn[:nc]), list(fn[nc:])
-    ent = conn.get(face.get("eid"))
+    ent = conn.get(face.get("eid")) if face.get("kind") == "solid" else None
     if ent is not None:
         table = _CCX_FACE_CORNERS.get(_N_CORNERS.get(ent[0]), {})
         idx = table.get(face.get("fid"))
@@ -2924,9 +2934,12 @@ def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance):
 
 
 def _ccx_tie_setup(model_data, contacts, group_faces, rn):
-    """{contact index: master triangles} for the solid-to-solid bonded
-    contacts (those get CCX's node selection in _bonded) and tolloc over
-    them in model_data["_ccx_tolloc"]."""
+    """{contact index: master triangles} for the bonded contacts whose
+    master is made of solid faces or shell faces and whose slave of solid
+    faces, shell faces or shell edges (those get CCX's node selection in
+    _bonded), tolloc over them in model_data["_ccx_tolloc"] and Mecway's
+    position tolerance for ties with shells in
+    model_data["_ccx_shell_tol"] (see _MECWAY_SHELL_TIE_FACTOR)."""
     faces = model_data.get("group_face_list", {})
     nodes = model_data["mesh_nodes"]
     conn = model_data.get("_conn", {})
@@ -2935,13 +2948,19 @@ def _ccx_tie_setup(model_data, contacts, group_faces, rn):
         master, slave = rn(c["master"]), rn(c["slave"])
         if master == slave:
             continue
-        if (group_faces.get(master, {}).get("kinds") != set(["solid"]) or
-                group_faces.get(slave, {}).get("kinds") != set(["solid"])):
+        mk = group_faces.get(master, {}).get("kinds")
+        sk = group_faces.get(slave, {}).get("kinds")
+        if mk not in (set(["solid"]), set(["shellface"])) or not sk or                 not (sk == set(["solid"]) or
+                     sk <= set(["shellface", "shelledge"])):
             continue
         tris = _ccx_triangles(faces.get(master, []), nodes, conn)
         out[k] = tris
         every += tris
     model_data["_ccx_tolloc"] = ccx_tie_tolloc(every)
+    pts = list(nodes.values())
+    diag = math.sqrt(sum((max(q[c] for q in pts) - min(q[c] for q in pts))
+                         ** 2 for c in range(3))) if pts else 0.0
+    model_data["_ccx_shell_tol"] = _MECWAY_SHELL_TIE_FACTOR * diag
     return out
 
 
@@ -2966,10 +2985,10 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
     component on a volume: COQUE_MASSIF, a rigid connection
     (_shell_edge_joint); otherwise MASSIF, then the edge acts as a hinge
     (WARNING).
-    Solid on solid (ccx_tris from _ccx_tie_setup): only the slave nodes CCX
-    ties (ccx_tied_nodes) go into GROUP_NO_ESCL, the others stay free as in
-    Mecway (KNOWN_BUGS 128); with shells all slave nodes, an explicit
-    tolerance as DISTANCE_MAX.
+    With ccx_tris (_ccx_tie_setup: solid or shell faces as master) only the
+    slave nodes CCX ties (ccx_tied_nodes) go into GROUP_NO_ESCL (or the
+    bridge's own relations), the others stay free as in Mecway
+    (KNOWN_BUGS 128); no DISTANCE_MAX then.
     Returns a dict for bridge_to_aster, or None.
     """
     master, slave = rn(c["master"]), rn(c["slave"])
@@ -3049,27 +3068,43 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
     slave_set = set(n for f in faces.get(slave, []) for n in f["nodes"])
     distance = c.get("tolerance", 0.0)
     untied = None
-    if ccx_tris is not None and raccord == "MASSIF":
-        # Solid on solid: the slave nodes CCX ties (KNOWN_BUGS 128,
-        # ccx_tied_nodes); the others stay free, as in Mecway. The selection
-        # replaces DISTANCE_MAX: Code-Aster measures the distance to the
-        # nearest master cell (CALCULEL5 message 51 of 17.4: "la distance à
-        # la maille la plus proche"), CCX in-face with tolloc and normal to
-        # the face with the tolerance.
+    if ccx_tris is not None:
+        # The slave nodes CCX ties (KNOWN_BUGS 128, ccx_tied_nodes); the
+        # others stay free, as in Mecway. The selection replaces
+        # DISTANCE_MAX: Code-Aster measures the distance to the nearest
+        # master cell (CALCULEL5 message 51 of 17.4: "la distance à la
+        # maille la plus proche"), CCX in-face with tolloc and normal to the
+        # face with the tolerance. With a shell on either side Mecway
+        # replaces the tolerance by 10 x the model diagonal
+        # (_MECWAY_SHELL_TIE_FACTOR): only the in-face rule counts.
         tolloc = model_data.get("_ccx_tolloc", 0.0)
+        shell = (m_type, s_type) != ("MASSIF", "MASSIF")
+        normal_tol = (model_data.get("_ccx_shell_tol", 0.0) if shell
+                      else distance)
         tied, untied = ccx_tied_nodes(ccx_tris, slave_set,
                                       model_data["mesh_nodes"], tolloc,
-                                      distance)
+                                      normal_tol)
         # %-formatting: '{0:.3g}' gives a decimal comma in IronPython
         # (bridge_to_aster._warn_large_rotations)
-        tol_text = ("%.3g m" % distance if distance >= 1.0e-10
-                    else tr("Mecway-tolerantie 0 = CCX-standaard {0} m",
-                            "Mecway tolerance 0 = CCX default {0} m")
-                    .format("%.3g" % tolloc))
+        if shell:
+            tol_text = tr("met schalen telt Mecway alleen of er een "
+                          "mastervlak tegenover ligt, niet de afstand",
+                          "with shells Mecway only checks that a master "
+                          "face lies opposite, not the distance")
+            if distance > 0.0:
+                log("INFO: {0}: tolerance {1} m not used: with shells "
+                    "Mecway 34 writes 10 x the model diagonal as CCX "
+                    "position tolerance.".format(label, "%.3g" % distance))
+        elif distance >= 1.0e-10:
+            tol_text = "%.3g m" % distance
+        else:
+            tol_text = tr("Mecway-tolerantie 0 = CCX-standaard {0} m",
+                          "Mecway tolerance 0 = CCX default {0} m").format(
+                              "%.3g" % tolloc)
         log("INFO: {0}: CCX tie rule (in-face tolerance {1} m, normal "
             "tolerance {2} m): {3} of {4} slave nodes tied.".format(
                 label, "%.3g" % tolloc,
-                "%.3g" % (distance if distance >= 1.0e-10 else tolloc),
+                "%.3g" % (normal_tol if normal_tol >= 1.0e-10 else tolloc),
                 len(tied), len(slave_set)))
         if untied:
             ids = ", ".join(str(n) for n in untied[:20]) + (
@@ -3095,8 +3130,7 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
         distance = 0.0
     elif distance <= 0.0:
         log("INFO: {0}: automatic tolerance of Mecway; Code-Aster "
-            "couples all slave nodes (no DISTANCE_MAX; CCX's rule only for "
-            "solid on solid, KNOWN_BUGS 128).".format(label))
+            "couples all slave nodes (no DISTANCE_MAX).".format(label))
     relations, ddl, rot_ddl = None, None, None
     if raccord == "COQUE" and mech:
         # Shell on shell. LIAISON_MAIL cannot handle a quadratic master

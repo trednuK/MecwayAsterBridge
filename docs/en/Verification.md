@@ -403,8 +403,8 @@ meshes is given below.
   too. Also checked on Samples/BoltedJoint with its three contacts made bonded (linear
   static): the bridge leaves the same 58 nodes free as CCX lists in
   `WarnNodeMissTiedContact.nam`; displacement 1.8973 mm, equal to Mecway (largest node
-  difference 0.004%; before 0.096 mm). Bonded contact with shells still ties all slave
-  nodes (KNOWN_BUGS 128).
+  difference 0.004%; before 0.096 mm). With shells the bridge leaves the same nodes free
+  as CCX, but the displacements differ from Mecway (KNOWN_BUGS 128).
 
 ### LS-08 Node temperature (thermal stress per node)
 
