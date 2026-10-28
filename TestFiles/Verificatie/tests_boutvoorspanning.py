@@ -14,7 +14,7 @@ diagram) and Mecway 34 headless with CCX (TestFiles/Tools/mw_solve.py, the
 same .liml with solver="ccx" and the stress field; numbers below).
 Explanation: docs/Verificatie.md (PT-01 .. PT-05).
 """
-from verif_lib import Case, Check, Model, hexmesh, box
+from verif_lib import Case, Check, Model, hexmesh, box, static_check
 
 GROUP = "Boutvoorspanning"
 E = 200e9
@@ -108,7 +108,22 @@ def _bar_checks(n, mw):
         Check("stressyy = Mecway", lambda r: r.at("stressyy",
                                                   (0.005, 0.02, 0.005)),
               ref=mw["syy"], tol=1e-3, unit="Pa",
-              source="Mecway 34 headless (CCX)", in_series=False)]
+              source="Mecway 34 headless (CCX)", in_series=False),
+        # self-equilibrated: the reference node (its DX "reaction" is the
+        # pretension force) must not count (GUI finding 28 Oct 2026: the
+        # status box showed FX -10000 N)
+        Check("som reacties X (BRIDGE_STATREAC)",
+              lambda r: static_check(r, "FX"), ref=0.0, tol_abs=1e-3 * n,
+              unit="N", source="voorspanning is inwendig: som 0",
+              in_series=False),
+        Check("som reacties Y (BRIDGE_STATREAC)",
+              lambda r: static_check(r, "FY"), ref=0.0, tol_abs=1e-3 * n,
+              unit="N", source="idem", in_series=False),
+        Check("som reactionforcex Mecway-knopen",
+              lambda r: sum(r.step()["reactionforcex"].values()), ref=0.0,
+              tol_abs=1e-3 * n, unit="N",
+              source="idem (geen reactie van het referentieknooppunt op "
+                     "een Mecway-knoop)", in_series=False)]
 
 
 # ------------------------------------------------------------------
