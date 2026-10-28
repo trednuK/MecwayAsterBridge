@@ -82,11 +82,14 @@ CONFIG_BRIDGE = {
     # Also <model>_<run_id>.pvd + one .vtu per step (aster_vtu), with the
     # same fields as Mecway gets; for ParaView/MWHub Post (route "liml").
     "vtu_export":      False,
-    # Mecway's "Saved monitor" in the .liml (bridge_monitor.py, route
-    # "liml"): "summary" = errors, alarms, steps, timings and the path of
-    # the full .mess; "full" = the whole .mess (start and end above 4
-    # million characters); "off" = nothing.
-    "save_monitor":    "summary",
+    # Summary of every run in <model>_<run_id>_aster_summary.txt
+    # (bridge_monitor.py): "summary" = errors, alarms, steps, timings and
+    # the path of the full .mess; "full" = the whole .mess (start and end
+    # above 4 million characters); "off" = no file.
+    "aster_summary":   "summary",
+    # Also put that text into the .liml as Mecway's "Saved monitor" item
+    # (route "liml"; a run without results only if the model has no results).
+    "save_monitor_liml": False,
     # ParaView for the ParaView button of the convergence window (opens the
     # .rmed of the run). Empty ("") = search automatically: first ParaView
     # 6.x (reads .rmed), then Salome-Meca's ParaView, then an older ParaView

@@ -815,18 +815,24 @@ GLOSSARY = OrderedDict([
                  u"als het Code-Aster-venster 'DIAGNOSTIC JOB' toont.",
                  u"Waiting for Code-Aster: you click OK in Mecway when the "
                  u"Code-Aster window shows 'DIAGNOSTIC JOB'.")),
-    ("summary (monitor)", ("file", u"Saved monitor: samenvatting van de "
-                           u".mess (fouten en alarmen, stappen, tijden, pad "
-                           u"van de volledige .mess). Standaard.",
-                           u"Saved monitor: summary of the .mess (errors "
-                           u"and alarms, steps, timings, path of the full "
-                           u".mess). Default.")),
-    ("full (monitor)", ("file", u"Saved monitor: de hele .mess (boven 4 "
-                        u"miljoen tekens het begin en het einde).",
-                        u"Saved monitor: the whole .mess (above 4 million "
-                        u"characters the start and the end).")),
-    ("off (monitor)", ("file", u"Geen Saved monitor in de .liml.",
-                       u"No Saved monitor in the .liml.")),
+    ("summary (aster)", ("file", u"Samenvatting van de .mess (fouten en "
+                         u"alarmen, stappen, tijden, pad van de volledige "
+                         u".mess). Standaard.",
+                         u"Summary of the .mess (errors and alarms, steps, "
+                         u"timings, path of the full .mess). Default.")),
+    ("full (aster)", ("file", u"De hele .mess (boven 4 miljoen tekens het "
+                      u"begin en het einde).",
+                      u"The whole .mess (above 4 million characters the "
+                      u"start and the end).")),
+    ("off (aster)", ("file", u"Geen samenvattingsbestand (de knoppen maken "
+                     u"het op verzoek).",
+                     u"No summary file (the buttons make it on request).")),
+    ("_aster_summary.txt", ("file", u"Samenvatting van een Code-Aster-run "
+                            u"(<model>_<run_id>_aster_summary.txt in de "
+                            u"werkmap): fouten, alarmen, stappen, tijden.",
+                            u"Summary of a Code-Aster run "
+                            u"(<model>_<run_id>_aster_summary.txt in the work "
+                            u"folder): errors, alarms, steps, timings.")),
     ("liml", ("file", u"Resultaatroute: Code-Aster schrijft Mecway's eigen "
               u"resultaten; de bridge zet ze in de .liml (alle "
               u"tijdstappen of modes). Standaard.",
@@ -1154,22 +1160,31 @@ SETTING_HELP = {
                      u"How the results get into Mecway; 'tabel' only for "
                      u"static and nonlinear static. Default liml (all time "
                      u"steps or modes, small file)."),
-    "save_monitor": (u"Na de run zet de bridge de uitvoer van Code-Aster "
-                     u"als item Saved monitor (onder Solution) in de .liml, "
-                     u"zodat je die in Mecway terugleest na het sluiten van "
-                     u"de Code-Aster-vensters. Een run zonder resultaten "
-                     u"krijgt een solution met alleen de monitor, maar "
-                     u"alleen als het model nog geen resultaten heeft "
-                     u"(bestaande resultaten blijven staan). Alleen met de "
-                     u"resultaatroute 'liml'. Standaard summary.",
-                     u"After the run the bridge puts the output of "
-                     u"Code-Aster into the .liml as the item Saved monitor "
-                     u"(under Solution), so that you can read it back in "
-                     u"Mecway after closing the Code-Aster windows. A run "
-                     u"without results gets a solution with only the "
-                     u"monitor, but only if the model has no results yet "
-                     u"(existing results stay). Only with the result route "
-                     u"'liml'. Default summary."),
+    "aster_summary": (u"Na elke run (ook een mislukte of gestopte) schrijft "
+                      u"de bridge een samenvatting van de Code-Aster-uitvoer "
+                      u"naar <model>_<run_id>_aster_summary.txt in de "
+                      u"werkmap, zodat je die terugleest na het sluiten van "
+                      u"de Code-Aster-vensters. Openen: knop "
+                      u"'Samenvatting' in het resultatenscherm en het "
+                      u"convergentiescherm. Standaard summary.",
+                      u"After every run (also a failed or stopped one) the "
+                      u"bridge writes a summary of the Code-Aster output to "
+                      u"<model>_<run_id>_aster_summary.txt in the work "
+                      u"folder, so that you can read it after closing the "
+                      u"Code-Aster windows. Open it with the button "
+                      u"'Summary' in the Results window and the convergence "
+                      u"window. Default summary."),
+    "save_monitor_liml": (u"Zet de samenvatting ook in de .liml als Mecway's "
+                          u"item Saved monitor (onder Solution). Alleen met "
+                          u"de resultaatroute 'liml'; een run zonder "
+                          u"resultaten krijgt alleen een solution met de "
+                          u"monitor als het model nog geen resultaten heeft. "
+                          u"Standaard uit.",
+                          u"Also put the summary into the .liml as Mecway's "
+                          u"item Saved monitor (under Solution). Only with "
+                          u"the result route 'liml'; a run without results "
+                          u"only gets a solution with the monitor if the "
+                          u"model has no results yet. Off by default."),
     "convergence_monitor": (u"Bij elke run een apart venster met de "
                             u"voortgang, convergentie en meldingen van "
                             u"Code-Aster. Standaard aan.",
@@ -2073,9 +2088,9 @@ _OPTION_TERMS = {
     ("line_search", "auto"): "auto (line search)",
     ("line_search", "on"): "on (line search)",
     ("line_search", "off"): "off (line search)",
-    ("save_monitor", "summary"): "summary (monitor)",
-    ("save_monitor", "full"): "full (monitor)",
-    ("save_monitor", "off"): "off (monitor)",
+    ("aster_summary", "summary"): "summary (aster)",
+    ("aster_summary", "full"): "full (aster)",
+    ("aster_summary", "off"): "off (aster)",
     ("beam_warping", "auto"): "auto (warping)",
     ("beam_warping", "free"): "free (warping)",
     ("beam_warping", "blocked"): "blocked (warping)",

@@ -5,7 +5,8 @@
 # omgeving: CAP_SMALL=1 (venster op MinimumSize), CAP_BIG=1, CAP_SCROLL=1,
 #           CAP_KEYS=1 (toetsenbordtest), CAP_ACTIVE=1 (actieve analyse wisselen)
 #           CAP_DOCS=1 (neutral work folder for screenshots in docs/img),
-#           CAP_SET="key=value;..." (settings in memory for a screenshot)
+#           CAP_SET="key=value;..." (settings in memory for a screenshot),
+#           CAP_RESULTS=1 (only the Results window, example runs)
 import sys, os
 repo, out = sys.argv[1], sys.argv[2]
 lang = sys.argv[3] if len(sys.argv) > 3 else "nl"
@@ -191,6 +192,49 @@ def worker():
         except Exception:
             pass
 
+
+def results_worker():
+    """CAP_RESULTS=1: the Results window (results_dialog) with three example
+    runs, hidden and offscreen like the main window, to results_<lang>.png."""
+    try:
+        f = None
+        while f is None:
+            if Application.OpenForms.Count > 0:
+                f = Application.OpenForms[0]
+            else:
+                Thread.Sleep(2)
+
+        def hide():
+            f.Opacity = 0.0
+            f.Location = Point(-5000, -5000)
+        f.Invoke(MethodInvoker(hide))
+        Thread.Sleep(800)
+
+        def fn():
+            bmp = Bitmap(f.Width, f.Height)
+            f.DrawToBitmap(bmp, Rectangle(0, 0, f.Width, f.Height))
+            bmp.Save(os.path.join(out, "results_%s.png" % tag),
+                     ImageFormat.Png)
+            f.Close()
+        f.Invoke(MethodInvoker(fn))
+    except Exception as e:
+        print("worker-fout: %r" % e)
+
+
+if _env("CAP_RESULTS"):
+    wd = bridge_utils.CONFIG_BRIDGE["work_dir"] or r"C:\FEA\WorkDir"
+    demo = []
+    for rid, size in (("20261028_101500", 4.2e6), ("20261027_163000", 3.9e6),
+                      ("20261027_091000", 0.4e6)):
+        stem = os.path.join(wd, "Bracket_" + rid)
+        demo.append({"path": stem + "_results.xml", "size": size,
+                     "run_id": rid, "comm": stem + ".comm", "mail": None,
+                     "model": r"C:\FEA\Bracket.liml"})
+    t = Thread(ThreadStart(results_worker))
+    t.IsBackground = True
+    t.Start()
+    print("klaar", bridge_gui.results_dialog(demo, wd))
+    sys.exit(0)
 
 t = Thread(ThreadStart(worker))
 t.IsBackground = True

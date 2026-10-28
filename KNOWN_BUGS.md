@@ -1086,12 +1086,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    `W/mm2`: Mecway SI, the bridge 1e-6). Mecway writes only units from its own list, so this
    only matters for hand-edited files.
 
-122\. **Route `tabel`: no Saved monitor** (confirmed, `MecwayAsterBridgeMain._run`, GitHub
-   issue #7). With `result_route` "tabel" the bridge fills Mecway's existing solution through
-   `solution.set_variable()` and does not rewrite the `.liml`; the API cannot add the *Saved
-   monitor* item, so the Code-Aster output is not stored in the model (an INFO line in the log
-   says so). The `.mess` stays in the work folder. The default route "liml" writes the monitor
-   (`bridge_monitor.py`, `bridge_results_liml.splice_results`).
 124\. **Pre-tension section: limits** (confirmed with runs, `bridge_pretension.py`; S15,
    S15b, docs/Boutvoorspanning.md par. 7). (a) The prism variant in linear and nonlinear
    static and implicit dynamics (`MECA_STATIQUE`, `STAT_NON_LINE`, `DYNA_NON_LINE` with

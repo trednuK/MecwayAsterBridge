@@ -12,6 +12,8 @@
 #     Python error from the console output, failed nonlinear step, no
 #     DIAGNOSTIC JOB, the end of the .mess);
 #   - "full" (truncation with a note) and "off";
+#   - the summary file <model>_<run_id>_aster_summary.txt (write_summary,
+#     ensure_summary for the buttons: made when missing, kept when fresh);
 #   - the XML text: escaped, ASCII with character references, without
 #     control characters, CRLF; it reads back to the same text;
 #   - splice_results (IronPython 2.7.9 only: it works on byte strings):
@@ -123,6 +125,14 @@ CONSOLE = (u"Traceback (most recent call last):\n"
            u"NameError: name 'FOO' is not defined\n")
 
 
+def _text(path):
+    f = io.open(path, encoding="utf-8")
+    try:
+        return f.read()
+    finally:
+        f.close()
+
+
 def write(path, lines, nl=u"\r\n"):
     f = io.open(path, "w", encoding="utf-8", newline="")
     try:
@@ -214,6 +224,34 @@ try:
               len(t2) < 400)
     finally:
         bm.SUMMARY_MAX_CHARS = old
+
+    # 3b. Summary file <model>_<run_id>_aster_summary.txt
+    check("summary_path next to the .mess",
+          bm.summary_path(good) == good[:-len(".mess")] +
+          u"_aster_summary.txt")
+    text, path = bm.write_summary(good, "summary", None, head)
+    check("write_summary writes the file", path == bm.summary_path(good)
+          and os.path.isfile(path))
+    f = io.open(path, "rb")
+    raw = f.read()
+    f.close()
+    check("summary file: UTF-8, CRLF, same text",
+          raw.decode("utf-8") == text.replace(u"\n", u"\r\n") and
+          b"\r\r\n" not in raw)
+    check("write_summary off: nothing", bm.write_summary(good, "off") ==
+          (None, None))
+    os.remove(path)
+    sp = bm.ensure_summary(bad, "off")
+    check("ensure_summary makes a missing summary (also with off)",
+          sp == bm.summary_path(bad) and u"<F> <DVP_1>" in
+          _text(sp))
+    check("ensure_summary reads the console file of the run",
+          u"NameError" in _text(sp))
+    stamp = os.path.getmtime(sp)
+    check("ensure_summary keeps a fresh summary",
+          bm.ensure_summary(bad) == sp and os.path.getmtime(sp) == stamp)
+    check("ensure_summary without .mess and summary: None",
+          bm.ensure_summary(os.path.join(work, "x.mess")) is None)
 
     # 4. XML text
     raw = u"a < b & c > d\r\n\u00e9t\u00e9 \u2551\x1b[0m\tend\nx"

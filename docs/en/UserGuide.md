@@ -184,7 +184,8 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
 | "Waiting for Code-Aster" | `auto` | `auto`: a modal status window with the progress and "Stop..."; the bridge recognises the end of the run itself and then loads the results (§2 step 5). `confirm`: you click OK in Mecway when the Code-Aster window shows `DIAGNOSTIC JOB` (the earlier behaviour) |
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
-| "Code-Aster output as Saved monitor in the .liml" | `summary` | after the run the output of Code-Aster is stored in the `.liml` as Mecway's *Saved monitor* item under *Solution*, so you can read it in Mecway after the Code-Aster windows have been closed (§5.2). `summary`: errors and alarms, steps, timings and the path of the full `.mess`; `full`: the whole `.mess` (start and end above 4 million characters); `off`: nothing. Route `liml` only |
+| "Summary of the Code-Aster run (_aster_summary.txt)" | `summary` | after every run (also a failed or stopped one) a summary of the Code-Aster output in `<model>_<run-id>_aster_summary.txt` in the work folder; button "Summary" in the Results window and the convergence window (§5.2). `summary`: errors and alarms, steps, timings and the path of the full `.mess`; `full`: a copy of the whole `.mess` (start and end above 4 million characters); `off`: no file |
+| "Summary also as Saved monitor in the .liml" | off | on: the same text also in the `.liml` as Mecway's *Saved monitor* item under *Solution*; route `liml` only; a failed run only if the model has no results yet (§5.2) |
 | "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets, and `<model>_<run-id>_knopen.csv` (for each named node selection of at most 100 nodes the nodal fields over time) |
 | "AdvancedToolsHub folder (empty = automatic)" | empty | folder of AdvancedToolsHub; found = the "ParaView" button opens the run in MWHub Post (Mecway look, units, hiding failed elements); empty = `%ADVANCEDTOOLSHUB_DIR%`, else the folder `AdvancedToolsHub` next to this repository; not found = the `.rmed` directly in ParaView |
 | "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" button of the convergence window; empty = automatic: first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), which reads a `.rmed` itself; then as fallback the ParaView of Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, started through `run_paraview.bat`); last an older ParaView. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
@@ -534,6 +535,7 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>.comm`, `<model>_<run-id>.export` | Code-Aster input; can be rerun with `run_aster.bat <model>_<run-id>.export` |
 | `<model>_<run-id>.mess` | Code-Aster messages (errors, alarms, tables with `UNITE=6`) |
 | `<model>_<run-id>_console.txt` | full console output of Code-Aster (including Python errors) |
+| `<model>_<run-id>_aster_summary.txt` | summary of the run: errors and alarms, steps, timings (§5.2) |
 | `<model>_<run-id>_done.txt` | end marker with the exit code of `run_aster` (§2 step 5); exists only briefly, the bridge removes it after the run |
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed |
@@ -567,16 +569,24 @@ Mecway only shows results that are in the `.liml`, which therefore becomes large
 
 Both save the model first and then reopen it. The results are those of the run: if
 you change loads or materials afterwards, they no longer belong to them (only the
-mesh is checked). "Load" also puts the Saved monitor of that run into the model (§5.2), if
-its `.mess` is still in the work folder.
+mesh is checked). "Summary" opens the summary of the chosen Code-Aster run (§5.2); the
+window stays open.
 
-### 5.2 Code-Aster output in Mecway (Saved monitor)
+### 5.2 Summary of the Code-Aster run
 
-With route `liml` the bridge stores the output of the Code-Aster run in the `.liml` as
-Mecway's own *Saved monitor* item (outline tree, under *Solution*; Mecway manual §10.3), the
-same item Mecway uses for the progress messages of its own solver. It stays in the model when
-you close the Code-Aster windows, save the model or send it to someone else. Setting "Code-Aster
-output as Saved monitor in the .liml" (`save_monitor`, page General):
+After every run (route `liml` and `tabel`, also a run that failed or was stopped) the bridge
+writes a readable summary of the Code-Aster output to `<model>_<run-id>_aster_summary.txt` in
+the work folder of the run, so that you can read it after the Code-Aster windows have been
+closed. Open it with the button "Summary" in the Results window (§5.1, the run chosen in the
+list) or in the convergence window (the run shown); it opens in the default text editor. If the
+file is missing (an older run, or the setting is `off`), the button makes it from the `.mess`.
+After a run with errors the status box also gives the path.
+
+![Results window with the button Summary](../img/results_summary_en.png)
+
+1. "Summary": opens `<model>_<run-id>_aster_summary.txt` of the run chosen in the list.
+
+Setting "Summary of the Code-Aster run (_aster_summary.txt)" (`aster_summary`, page General):
 
 - `summary` (default): the model, the run, the path and size of the full
   `<model>_<run-id>.mess`, the Code-Aster version and the `DIAGNOSTIC JOB` line; every error
@@ -586,23 +596,26 @@ output as Saved monitor in the .liml" (`save_monitor`, page General):
   iterations and converged/failed (the first and last 25, plus every failed one), otherwise the
   progress lines; the bridge's own lines (mass check, modes, result file); the time per
   command and the memory; the end of the `.mess`. At most 400 000 characters.
-- `full`: the whole `.mess`; above 4 million characters the first million and the last three
-  million, with a note in between (the `.mess` of a long nonlinear run can be tens of MB, and
-  the `.liml` should open quickly).
-- `off`: no Saved monitor.
+- `full`: a copy of the whole `.mess`; above 4 million characters the first million and the
+  last three million, with a note in between.
+- `off`: no file after the run (the buttons still make it on request).
 
-The messages are Code-Aster's own (French). A run without results (error, stopped) gets the
-Saved monitor only if the model has no results yet: the bridge then writes a solution with only
-the monitor (Mecway shows a solution without result fields) and reopens the model. If the model
-already has results (of an earlier run or of Mecway's own solve), the bridge leaves the model
-untouched, so those results are not replaced by an empty solution; the log names the `.mess`
-of the failed run, and the messages are in the status box and the convergence window as before.
-A solution with only the monitor of an earlier failed run does not count as results.
-With route `tabel` there is no Saved monitor (KNOWN_BUGS 122) (that route fills Mecway's existing solution
-through the API, which cannot add the item); the `.mess` stays in the work folder.
-If you solve the model with Mecway's own solver afterwards, Mecway replaces the text with its
-own progress messages. "Remove from model" (§5.1) also removes the text; the item itself stays
-(empty).
+The messages are Code-Aster's own (French).
+
+**In the model as Saved monitor (optional).** With "Summary also as Saved monitor in the
+.liml" (`save_monitor_liml`, off by default) and route `liml` the bridge also puts the same text
+into the `.liml` as Mecway's own *Saved monitor* item (outline tree, under *Solution*; Mecway
+manual §10.3), the item Mecway uses for the progress messages of its own solver. It then stays
+in the model when you save it or send it to someone else; "Load" (§5.1) also adds the monitor
+of that run if its `.mess` is still in the work folder. A run without results gets a solution
+with only the monitor only if the model has no results yet; if the model already has results
+(of an earlier run or of Mecway's own solve), the model is left untouched. A solution with only
+the monitor of an earlier failed run does not count as results. With route `tabel` there is no
+Saved monitor (that route fills Mecway's existing solution through the API, which cannot add
+the item); the summary file is written as usual. If you solve the model with Mecway's own
+solver afterwards, Mecway replaces the text with its own progress messages; "Remove from model"
+(§5.1) removes it too. With the setting off (default) the bridge never writes a Saved monitor
+and a failed run never changes the model.
 
 ## 6. Reading errors
 
@@ -635,8 +648,9 @@ own progress messages. "Remove from model" (§5.1) also removes the text; the it
   cells, normal in vibroacoustics); with complex modes `ALGELINE5_79` (fewer modes
   than requested) and `FACTOR_11` (free-free model). All codes seen so far, with cause and
   solutions: [`CodeAster_error_messages.md`](CodeAster_error_messages.md).
-- **After closing the windows**: the messages of the last run are in the model as the
-  *Saved monitor* item under *Solution* (§5.2), with the path of the full `.mess`.
+- **After closing the windows**: the messages of a run are summarised in
+  `<model>_<run-id>_aster_summary.txt` (button "Summary" in the Results window and the
+  convergence window, §5.2), with the path of the full `.mess`.
 - **"Code-Aster wrote no `<model>_<run-id>.mess` for this run"** or **only "DIAGNOSTIC JOB : <F>_ABNORMAL_ABORT"** without a message: the
   cause is in the Code-Aster window (which then stays open).
 - **"Python error in `<model>_<run-id>.comm`"**: the `.comm` was not (fully) executed, usually because of a

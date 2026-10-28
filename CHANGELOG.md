@@ -13,17 +13,17 @@
   `lprincipalstrain1..3`), as Mecway 34 itself does; the formula symbols `GLe1`..`GLe3` work,
   and `e`, `g`, `e1`..`e3` in a formula read the Green-Lagrange values there (Mecway rewrites
   them to `GLe`, ...). Verification FX-05.
-- **Code-Aster output as Mecway's *Saved monitor* (GitHub issue #7)**: after a run with route
-  `liml` the bridge stores the output of Code-Aster in the `.liml` as Mecway's own *Saved
-  monitor* item under *Solution* (the item Mecway uses for its own solver messages), so it can
-  be read in Mecway after the Code-Aster windows have been closed. New setting
-  `save_monitor` (page General): `summary` (default: errors and alarms with their count,
-  nonlinear steps, bridge lines, timings, the end of the `.mess` and the path of the full
-  `.mess`), `full` (the whole `.mess`, start and end above 4 million characters) or `off`. A
-  run without results gets a solution with only the monitor when the model has no results yet;
-  existing results are never replaced (the model is then left unchanged); loading a run
-  with "Results..." adds the monitor of that run. Not with route `tabel`. Format measured headless in
-  Mecway 34 (user guide §5.2).
+- **Summary of every Code-Aster run (GitHub issue #7)**: after every run (route `liml` and
+  `tabel`, also a failed or stopped run) the bridge writes `<model>_<run-id>_aster_summary.txt`
+  in the work folder: errors and alarms with their count, nonlinear steps, bridge lines,
+  timings, the end of the `.mess` and the path of the full `.mess`, so it can be read after the
+  Code-Aster windows have been closed. New button "Summary" in the Results window and in the
+  convergence window (makes the file from the `.mess` when it is missing). Setting
+  `aster_summary`: `summary` (default), `full` (a copy of the whole `.mess`, start and end above
+  4 million characters) or `off`. Optionally (`save_monitor_liml`, off by default, route
+  `liml`) the same text goes into the `.liml` as Mecway's own *Saved monitor* item under
+  *Solution*; a run without results then only gets a solution with the monitor when the model
+  has no results yet. Format measured headless in Mecway 34 (user guide §5.2).
 - **Frictionless or symmetry next to a displacement 0 on the same nodes (GitHub issue #9)**:
   e.g. a round plate with *Frictionless support* on its rim edges and *Displacement* X, Y, Z = 0
   on the rim nodes stopped in Code-Aster with `ALGELINE3_81` (in a static analysis a singular
