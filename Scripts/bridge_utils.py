@@ -746,8 +746,9 @@ CONFIG_BRIDGE = {
 # S20 (Static 2D, plane stress/strain) and SA0 (Static Axisymmetric):
 # linear static with MODELISATION C_PLAN/D_PLAN/AXIS (bridge_plane.py,
 # STAPPENPLAN S16a); D20/DA0 (Dynamic Response 2D / Axisymmetric) as D30
-# without mode superposition (S16b). Other types (A20, E30, ...) have no
-# analysis in the bridge.
+# without mode superposition (S16b); A20 (Acoustic Resonance 2D) as the
+# cavity modes with PHENOMENE='ACOUSTIQUE', MODELISATION='PLAN' (S16d).
+# Other types (E30, ...) have no analysis in the bridge.
 # Key for D30 with Mode superposition (no Mecway type of its own; also the
 # text on the start screen).
 D30_MODE_SUPERPOSITION = "D30 + mode superposition"
@@ -766,9 +767,10 @@ MECWAY_ANALYSIS_TYPES = {
     "T31": "ther_3d",
     "V30": "modal_3d",
     "B30": "buckling_3d",
-    # Acoustic Resonance 3D (mecway.exe: "A30" / "Acoustic Resonance 3D";
-    # A20 = 2D is not translated)
+    # Acoustic Resonance 3D / 2D (mecway.exe: "A30" / "Acoustic Resonance
+    # 3D", "A20" / "Acoustic Resonance 2D"; A20: bridge_plane, S16d)
     "A30": "acoustic_modes_3d",
+    "A20": "acoustic_modes_3d",
 }
 
 

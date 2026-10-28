@@ -10,7 +10,9 @@
 # Code-Aster MODELISATION 'C_PLAN', 'D_PLAN' and 'AXIS' in MECA_STATIQUE
 # (lin_static_3d) or DYNA_NON_LINE (dyna_impl_3d; with schema NEWMARK,
 # deformation PETIT and one step per Mecway step equal to Mecway's linear
-# Newmark: verification PL-10 .. PL-12, <= 4e-8).
+# Newmark: verification PL-10 .. PL-12, <= 4e-8). Acoustic Resonance 2D
+# (A20, S16d): checks and MODELISATION 'PLAN' of PHENOMENE='ACOUSTIQUE'
+# (_apply_acoustic); the model is written by bridge_acoustic.
 # bridge_from_liml calls apply() (modelisations, checks), bridge_mesh calls
 # convert_bc() per load and finish_bcs() after all loads, bridge_to_aster
 # uses export_arg() / static_check_arg() for the results.
@@ -22,8 +24,8 @@
 #   - S20 = Static 2D, SA0 = Static Axisymmetric (the names in mecway.exe:
 #     "Static 2D", "Static Axisymmetric"), D20 = Dynamic Response 2D, DA0 =
 #     Dynamic Response Axisymmetric (Samples/PandSWaves.liml is D20; DA0
-#     solved headless with time steps), A20 = Acoustic Resonance 2D (not
-#     translated, NOT_TRANSLATED_2D). Plane elements tri3/tri6/quad4/
+#     solved headless with time steps), A20 = Acoustic Resonance 2D (S16d,
+#     _apply_acoustic and bridge_acoustic). Plane elements tri3/tri6/quad4/
 #     quad8 in the XY plane (Z ignored by Mecway), faceid 1..4 = the edges
 #     (corner k to corner k+1), as for shells.
 #   - S20: the material needs Mecway's "Shell/membrane" geometry
@@ -75,10 +77,13 @@ PLANE_TYPES = {"S20": "plane", "SA0": "axis", "D20": "plane", "DA0": "axis"}
 # times of D30, the Newmark warning)
 EQUIVALENT_3D = {"S20": "S30", "SA0": "S30", "D20": "D30", "DA0": "D30"}
 PLANE_MODELISATIONS = ("C_PLAN", "D_PLAN", "AXIS")
-# Mecway 34's other 2D analysis type. V20 is not one: Mecway 34 converts
-# it to V30 (the solution file says V30), unknown codes such as T20/B20/L20
-# become S30.
-NOT_TRANSLATED_2D = {"A20": "Acoustic Resonance 2D"}
+# Mecway 34's acoustic 2D type (S16d): cavity modes with PHENOMENE=
+# 'ACOUSTIQUE', MODELISATION 'PLAN' (bridge_acoustic). V20 is not a 2D
+# type: Mecway 34 converts it to V30 (the solution file says V30), unknown
+# codes such as T20/B20/L20 become S30. Mecway has no axisymmetric acoustic
+# type (the analysis codes in mecway.exe 34: S20, SA0, S30, V30, D20, DA0,
+# D30, T30, T31, E30, A20, A30, B30).
+ACOUSTIC_2D = {"A20": "Acoustic Resonance 2D"}
 PLANE_SHAPES = frozenset(["tri3", "tri6", "quad4", "quad8"])
 # Solver command with a verified 2D route per Mecway type (S16a linear
 # static, S16b implicit dynamics)
@@ -135,16 +140,10 @@ def apply(model_data, run_cfg, elset_shapes):
     bridge stops before Code-Aster).
     """
     atype = model_data.get("analysis_type", "")
-    if atype in NOT_TRANSLATED_2D:
-        # Otherwise a manually chosen 3D analysis would compute the plane
-        # elements as shells
-        return _fatal(
-            "Mecway-analysetype {0} ({1}) wordt (nog) niet vertaald; de "
-            "bridge vertaalt van de 2D-typen alleen Static 2D (S20) en "
-            "Static Axisymmetric (SA0).",
-            "Mecway analysis type {0} ({1}) is not translated (yet); of "
-            "the 2D types the bridge only translates Static 2D (S20) and "
-            "Static Axisymmetric (SA0).", atype, NOT_TRANSLATED_2D[atype])
+    if atype in ACOUSTIC_2D:
+        # Also for a manually chosen other analysis (otherwise the plane
+        # elements would be computed as shells)
+        return _apply_acoustic(model_data, run_cfg, elset_shapes, atype)
     if atype not in PLANE_TYPES:
         return True
     solver = run_cfg.get("solver_command")
@@ -249,8 +248,79 @@ def apply(model_data, run_cfg, elset_shapes):
                                             ", ".join(e))
                       for (m, t), e in kinds.items()))
     (mod, t), _elsets = list(kinds.items())[0]
-    # Nodes: XY plane (Mecway ignores Z, Code-Aster needs Z = 0 for a 2D
-    # mesh) and X >= 0 for SA0 (Mecway manual v34 par. 6.1.3).
+    if not _check_nodes(model_data, atype, axis):
+        return False
+    factor = 2.0 * math.pi if axis else t
+    model_data["plane"] = {"type": atype, "modelisation": mod,
+                           "thickness": t, "factor": factor}
+    log("INFO: 2D analysis {0}: MODELISATION='{1}'; concentrated forces / "
+        "{2:.6g} and reactions x {2:.6g} ({3}).".format(
+            atype, mod, factor,
+            "per radian in Code-Aster, 360 degrees in Mecway" if axis else
+            "per unit thickness in Code-Aster, thickness t in Mecway"))
+    return True
+
+
+def _apply_acoustic(model_data, run_cfg, elset_shapes, atype):
+    """
+    Acoustic Resonance 2D (Mecway A20, S16d): checks and the modelisation
+    'PLAN' of PHENOMENE='ACOUSTIQUE' (catalogue affe_modele.py v17.4, block
+    b_acoustique: 3D, PLAN, 3D_ABSO, PLAN_ABSO; syntax as test case
+    ahlv100f, QUAD8 + SEG3). bridge_acoustic writes the model; this sets
+    model_data["acoustic_2d"] = True. Mecway (measured headless with Mecway
+    34, 28 Oct 2026): a Shell/membrane thickness does not change the
+    frequencies or the mode shapes (the model is per unit thickness: the
+    constant mode is c / sqrt(area)), and Z of the nodes is ignored. No
+    model_data["plane"]: there are no forces or reactions to scale.
+    """
+    import bridge_acoustic
+    if not bridge_acoustic.is_acoustic(run_cfg) or \
+            run_cfg.get("solver_command") != "CALC_MODES":
+        return _fatal(
+            "Mecway-analysetype {0} ({1}) wordt alleen vertaald naar de "
+            "holtemodes 'acoustic_modes_3d' (een harmonisch drukveld in 2D "
+            "is niet geverifieerd). Kies op het startscherm 'auto' of "
+            "acoustic_modes_3d.",
+            "Mecway analysis type {0} ({1}) is only translated to the "
+            "cavity modes 'acoustic_modes_3d' (a harmonic pressure field in "
+            "2D is not verified). Choose 'auto' or acoustic_modes_3d on the "
+            "start screen.", atype, ACOUSTIC_2D[atype])
+    mods = model_data["elset_modelisations"]
+    found = False
+    for elset in list(mods):
+        shapes = set(elset_shapes.get(elset, ()))
+        if not shapes:
+            continue
+        if not shapes <= PLANE_SHAPES:
+            return _fatal(
+                "Elset '{0}' bevat {1}; in Acoustic Resonance 2D ({2}) "
+                "vertaalt de bridge alleen vlakke elementen (tri3, tri6, "
+                "quad4, quad8) van het lucht- of vloeistofvlak.",
+                "Elset '{0}' contains {1}; in Acoustic Resonance 2D ({2}) "
+                "the bridge only translates plane elements (tri3, tri6, "
+                "quad4, quad8) of the air or fluid area.",
+                elset, ", ".join(sorted(shapes - PLANE_SHAPES)), atype)
+        mods[elset] = "PLAN"
+        model_data["elset_dims"][elset] = "2D"
+        for key in ("shell_sections", "shell_upgrades"):
+            model_data.get(key, {}).pop(elset, None)
+        found = True
+        log("INFO: Elset '{0}' -> PHENOMENE='ACOUSTIQUE', MODELISATION="
+            "'PLAN' (Mecway {1}; a thickness does not count, as in "
+            "Mecway).".format(elset, atype))
+    if not found:
+        return _fatal("Geen vlakke elementen in de 2D-analyse {0}.",
+                      "No plane elements in the 2D analysis {0}.", atype)
+    if not _check_nodes(model_data, atype, False):
+        return False
+    model_data["acoustic_2d"] = True
+    return True
+
+
+def _check_nodes(model_data, atype, axis):
+    """Nodes of the plane elements in the XY plane (Mecway ignores Z,
+    Code-Aster needs Z = 0 for a 2D mesh) and X >= 0 for an axisymmetric
+    model (Mecway manual v34 par. 6.1.3). False after an ERROR."""
     used = set()
     for _eid, shape, nids, _es in model_data.get("mesh_elements", []):
         if shape in PLANE_SHAPES:
@@ -275,14 +345,6 @@ def apply(model_data, run_cfg, elset_shapes):
                 "straal, Y = as); hier X tot {0} m.",
                 "Axisymmetric (SA0): all nodes must have X >= 0 (X = radius, "
                 "Y = axis); here X down to {0} m.", "%.4g" % xmin)
-    factor = 2.0 * math.pi if axis else t
-    model_data["plane"] = {"type": atype, "modelisation": mod,
-                           "thickness": t, "factor": factor}
-    log("INFO: 2D analysis {0}: MODELISATION='{1}'; concentrated forces / "
-        "{2:.6g} and reactions x {2:.6g} ({3}).".format(
-            atype, mod, factor,
-            "per radian in Code-Aster, 360 degrees in Mecway" if axis else
-            "per unit thickness in Code-Aster, thickness t in Mecway"))
     return True
 
 

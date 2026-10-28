@@ -28,7 +28,7 @@
 #
 # Mecway XML (Mecway 33, determined with headless 'mecway <model> solve',
 # TestFiles/Tools/mw_solve.py; tag names also in mecway.exe):
-#   <analysis type="A30" maxmode="5" />            (A20 = 2D, not translated)
+#   <analysis type="A30" maxmode="5" />            (A20 = 2D: see below)
 #   <mat><mechanical type="Isotropic" speedofsound="340 m/s" />
 #        <density type="Simple" density="1.2 kg/m³" /></mat>
 #     (density optional: Mecway solves without it; only an impedance
@@ -73,6 +73,20 @@
 #     export scales the shapes itself by 1/sqrt(MASS_GENE), so p^T M p = 1
 #     like Mecway.
 #
+# Acoustic Resonance 2D (Mecway A20, STAPPENPLAN S16d; measured headless
+# with Mecway 34, 28 Oct 2026, mw_solve.py): the same .liml tags as A30 on
+# plane elements tri3/tri6/quad4/quad8 in the XY plane; fluid pressure and
+# impedance on edges (faceid 1..4) or nodes. A Shell/membrane thickness
+# changes nothing (frequencies and shapes identical with and without
+# 10 mm); the normalisation is per unit thickness (constant mode p =
+# c / sqrt(area)). Mecway has no axisymmetric acoustic type. Translated
+# with MODELISATION 'PLAN' (impedance edges 'PLAN_ABSO'; test case
+# ahlv100f) and otherwise the A30 route: MASS_ACOU of PLAN is per unit
+# thickness, so the MASS_GENE normalisation gives Mecway's amplitudes
+# (verification AK-10 .. AK-13). bridge_plane._apply_acoustic checks the
+# mesh and sets model_data["acoustic_2d"]. The harmonic pressure field
+# (acoustic_harm_3d) is not translated in 2D.
+#
 # Compatible with IronPython 2.7.9 (standard library only).
 
 import math
@@ -100,6 +114,21 @@ _NOT_IN_ACOUSTICS = frozenset(["contact2", "nodesurfacecoupling",
 # ACOU_HEXA8/20/27, ACOU_PENTA6/15, ACOU_TETRA4/10; no pyramid).
 _ACOUSTIC_SHAPES = frozenset(["hex8", "hex20", "wedge6", "wedge15",
                               "tet4", "tet10"])
+# Acoustic Resonance 2D (A20, S16d; bridge_plane._apply_acoustic sets
+# model_data["acoustic_2d"]): plane elements with MODELISATION 'PLAN'
+# (elem.1 of 17.4: ACOU_PLAN on TRIA3/6, QUAD4/8 - NOT verified in the
+# catalogue, seen in the Code-Aster run of verification AK-10 .. AK-13) and
+# edges 'PLAN_ABSO' for an impedance (test case ahlv100f, SEG3).
+_ACOUSTIC_SHAPES_2D = frozenset(["tri3", "tri6", "quad4", "quad8"])
+
+
+def _modelisations(model_data):
+    """(area/volume, impedance boundary) modelisations of
+    PHENOMENE='ACOUSTIQUE' (catalogue affe_modele.py v17.4: 3D, PLAN,
+    3D_ABSO, PLAN_ABSO)."""
+    if model_data.get("acoustic_2d"):
+        return "PLAN", "PLAN_ABSO"
+    return "3D", "3D_ABSO"
 _LINEAR_SHAPES = frozenset(["hex8", "wedge6", "tet4"])
 
 # Harmonic analysis (S3a): analysis name and the prefixes of special
@@ -386,7 +415,10 @@ def has_source(model_data):
 
 def resolve_auto(resolved, model_data):
     """Analysis for 'auto': A30 with a source -> acoustic_harm_3d (if it
-    exists), else unchanged."""
+    exists), else unchanged. A20 (2D) always keeps the cavity modes: the
+    harmonic pressure field is not verified in 2D (bridge_plane)."""
+    if model_data.get("analysis_type") == "A20":
+        return resolved
     if (resolved == "acoustic_modes_3d" and has_source(model_data) and
             HARM_ANALYSIS in CONFIG_BRIDGE.get("analyses", {})):
         log("INFO: Acoustics: the model has a source (BRON_ selection, "
@@ -415,8 +447,10 @@ def _elsets(model_data):
         name = elem_elset.get(eid, elset)
         shapes_of.setdefault(name, set()).add(shape)
     out, bad = [], []
+    plane = bool(model_data.get("acoustic_2d"))
+    allowed = _ACOUSTIC_SHAPES_2D if plane else _ACOUSTIC_SHAPES
     for elset, shapes in shapes_of.items():
-        wrong = sorted(shapes - _ACOUSTIC_SHAPES)
+        wrong = sorted(shapes - allowed)
         if wrong:
             bad.append("'{0}' ({1})".format(elset, ", ".join(wrong)))
             continue
@@ -426,6 +460,14 @@ def _elsets(model_data):
                           "'{0}' (no material)").format(elset))
             continue
         out.append((elset, mat))
+    if bad and plane:
+        log(tr("ERROR: Akoestiek 2D (A20): alleen vlakke elementen (tri3, "
+               "tri6, quad4, quad8) met een materiaal: {0}. Mesh in Mecway "
+               "alleen het lucht- of vloeistofvlak.",
+               "ERROR: Acoustics 2D (A20): only plane elements (tri3, tri6, "
+               "quad4, quad8) with a material: {0}. In Mecway, mesh only the "
+               "air or fluid area.").format(", ".join(bad)))
+        return None
     if bad:
         log(tr("ERROR: Akoestiek: alleen volume-elementen (hex, wedge, tet; "
                "geen piramides, schalen of balken) met een materiaal: {0}. "
@@ -620,11 +662,13 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         log("INFO: Acoustics: source and absorbing selections ({0}) only count "
             "in the harmonic analysis '{1}'; for the cavity modes they are "
             "hard walls.".format(", ".join(named), HARM_ANALYSIS))
-    if model_data.get("analysis_type") == "A20":
-        log(tr("ERROR: Acoustic Resonance 2D (A20) wordt niet vertaald; de "
-               "bridge rekent alleen 3D (A30).",
-               "ERROR: Acoustic Resonance 2D (A20) is not translated; the "
-               "bridge only computes 3D (A30)."))
+    if model_data.get("analysis_type") == "A20" and \
+            not model_data.get("acoustic_2d"):
+        # bridge_plane._apply_acoustic did not run (should not happen)
+        log(tr("ERROR: Acoustic Resonance 2D (A20): de vlakke modelisatie "
+               "ontbreekt (bridge_plane).",
+               "ERROR: Acoustic Resonance 2D (A20): the plane modelisation "
+               "is missing (bridge_plane)."))
         return None
     elsets = _elsets(model_data)
     if elsets is None:
@@ -632,6 +676,7 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     mats = _materials(elsets, ac)
     if mats is None:
         return None
+    mod_area, _mod_abso = _modelisations(model_data)
     if ac["impedances"]:
         # Impedance: complex modes (S2b), own route (see
         # _complex_modes_comm and aster_acoustic_complex.py).
@@ -641,8 +686,8 @@ def build_acoustic_modes(work_dir, model_data, msh_path, resu_name, analysis):
     # --- model, materials ---
     model_block = ("model = AFFE_MODELE(\n    MAILLAGE=mesh,\n    AFFE=_F(\n"
                    "        GROUP_MA={0},\n        PHENOMENE='ACOUSTIQUE',\n"
-                   "        MODELISATION='3D',\n    ),\n)\n").format(
-                       _fmt_groups([es for es, _m in elsets]))
+                   "        MODELISATION='{1}',\n    ),\n)\n").format(
+                       _fmt_groups([es for es, _m in elsets]), mod_area)
     names = OrderedDict()
     mat_lines = []
     for k, (mat, (c, rho)) in enumerate(mats.items()):
@@ -911,12 +956,14 @@ def _complex_modes_comm(work_dir, model_data, msh_path, resu_name, analysis,
     for g, _coef, _label, _sel, _mat in imps:
         if g not in faces:
             faces.append(g)
+    mod_area, mod_abso = _modelisations(model_data)
     model_block = ("model = AFFE_MODELE(\n    MAILLAGE=mesh,\n    AFFE=(\n"
                    "        _F(GROUP_MA={0}, PHENOMENE='ACOUSTIQUE', "
-                   "MODELISATION='3D'),\n"
+                   "MODELISATION='{2}'),\n"
                    "        _F(GROUP_MA={1}, PHENOMENE='ACOUSTIQUE', "
-                   "MODELISATION='3D_ABSO'),\n    ),\n)\n").format(
-                       _fmt_groups(vol), _fmt_groups(faces))
+                   "MODELISATION='{3}'),\n    ),\n)\n").format(
+                       _fmt_groups(vol), _fmt_groups(faces), mod_area,
+                       mod_abso)
     names = OrderedDict()
     mat_lines = []
     for k, (mat, (c, rho)) in enumerate(mats.items()):
@@ -1500,10 +1547,13 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
             "; ".join(ac["bad"])))
         return None
     if model_data.get("analysis_type") == "A20":
-        log(tr("ERROR: Acoustic Resonance 2D (A20) wordt niet vertaald; de "
-               "bridge rekent alleen 3D (A30).",
-               "ERROR: Acoustic Resonance 2D (A20) is not translated; the "
-               "bridge only computes 3D (A30)."))
+        # (bridge_plane._apply_acoustic already stops; defensive)
+        log(tr("ERROR: Het harmonische drukveld wordt voor Acoustic "
+               "Resonance 2D (A20) niet vertaald; alleen de holtemodes "
+               "(acoustic_modes_3d) of een 3D-model (A30).",
+               "ERROR: The harmonic pressure field is not translated for "
+               "Acoustic Resonance 2D (A20); only the cavity modes "
+               "(acoustic_modes_3d) or a 3D model (A30)."))
         return None
     elsets = _elsets(model_data)
     if elsets is None:

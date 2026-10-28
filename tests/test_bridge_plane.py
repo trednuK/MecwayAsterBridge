@@ -8,7 +8,11 @@
 #   - S20 -> C_PLAN (thickness) / D_PLAN (planestrain="1"), SA0 -> AXIS;
 #   - D20 -> C_PLAN with dyna_impl_3d (S16b);
 #   - ERROR (model_data None) for: S20 without thickness, Z != 0, SA0 with
-#     X < 0, a beam in 2D, A20, D20 with a static analysis, route 'tabel';
+#     X < 0, a beam in 2D, A20 with a static analysis, D20 with a static
+#     analysis, route 'tabel';
+#   - A20 (S16d) -> PHENOMENE ACOUSTIQUE, MODELISATION PLAN (+ PLAN_ABSO for
+#     an impedance) in the .comm; ERROR for Z != 0, a beam, the harmonic
+#     analysis;
 #   - finish_bcs: DZ dropped, FORCE_NODALE / thickness or / 2 pi, gravity
 #     out of the plane skipped;
 #   - _edge_measure: revolved area 2 pi int(r dl) and length x t.
@@ -125,7 +129,7 @@ def test_errors():
             (_liml("SA0", "", x0=-0.5), "SA0 with X < 0"),
             (_liml("S20", PS, extra_elem='    <elem eid="3" shape="line2" '
                    'nodes="1 7" />'), "beam in 2D"),
-            (_liml("A20", PS), "A20 not translated"),
+            (_liml("A20", PS), "A20 with a static analysis"),
             (_liml("D20", PS), "D20 only with dyna_impl_3d")):
         md = _extract(text)
         check(md is None and _errors(), "{0}: ERROR and stop ({1})".format(
@@ -178,11 +182,100 @@ def test_edge_measure():
     check(abs(a - 0.01) < 1e-15, "length x t {0}".format(a))
 
 
+AIR = ('<mechanical type="Isotropic" speedofsound="340 m/s" />'
+       '<density type="Simple" density="1.2 kg/m&#179;" />')
+
+
+def _acoustic_liml(z=0.0, extra_elem="", impedance=False):
+    """Two quad4 of air (A20), p = 0 on the left edge, optionally an
+    impedance on the right edge (face 2 of element 2)."""
+    text = _liml("A20", AIR, z=z, extra_elem=extra_elem)
+    text = text.replace('<analysis type="A20" />',
+                        '<analysis type="A20" maxmode="3" />')
+    text = text.replace('  <fixed selection="Links" />',
+                        '  <fluidpressure selection="Links"><value>0 Pa'
+                        '</value></fluidpressure>' + (
+                            '\n  <impedance selection="Rechts">'
+                            '<specificimpedancer>2000</specificimpedancer>'
+                            '<specificimpedancei>0</specificimpedancei>'
+                            '</impedance>' if impedance else ""))
+    text = text.replace('</faceselection>', '</faceselection>\n'
+                        '  <faceselection name="Rechts"><face eid="2" '
+                        'faceid="2" /></faceselection>', 1)
+    return text.replace(STEEL, "")
+
+
+def test_acoustic():
+    """A20 (S16d): PHENOMENE ACOUSTIQUE, MODELISATION PLAN; ERROR for Z != 0,
+    a beam, the harmonic analysis or a static analysis; the .comm with PLAN
+    and PLAN_ABSO."""
+    import bridge_acoustic
+    check(bridge_utils.resolve_auto_analysis("A20") == "acoustic_modes_3d",
+          "auto: A20 -> acoustic_modes_3d")
+    md = _extract(_acoustic_liml(), analysis="acoustic_modes_3d")
+    check(md is not None and md.get("acoustic_2d") and
+          md["elset_modelisations"].get("P") == "PLAN" and "plane" not in md,
+          "A20 -> PLAN, acoustic_2d, no plane factor: {0}".format(_errors()))
+    check(md and bridge_acoustic._modelisations(md) == ("PLAN", "PLAN_ABSO"),
+          "acoustic modelisations of A20")
+    check(bridge_acoustic._modelisations({}) == ("3D", "3D_ABSO"),
+          "acoustic modelisations of A30 unchanged")
+    check(bridge_acoustic.resolve_auto("acoustic_modes_3d", {
+        "analysis_type": "A20",
+        "acoustic_data": {"aster_sources": [("S", 1.0, 0.0)]}}) ==
+        "acoustic_modes_3d", "A20 with a source stays acoustic_modes_3d")
+    for text, analysis, what in (
+            (_acoustic_liml(z=0.5), "acoustic_modes_3d", "A20 with Z != 0"),
+            (_acoustic_liml(extra_elem='    <elem eid="3" shape="line2" '
+                            'nodes="1 7" />'), "acoustic_modes_3d",
+             "A20 with a beam"),
+            (_acoustic_liml(), "acoustic_harm_3d", "A20 harmonic"),
+            (_acoustic_liml(), "lin_static_3d", "A20 static")):
+        md = _extract(text, analysis=analysis)
+        check(md is None and _errors(), "{0}: ERROR and stop ({1})".format(
+            what, LOG[-3:]))
+    # .comm: AFFE_MODELE with PLAN (and PLAN_ABSO for the impedance edge)
+    import bridge_mesh
+    import bridge_to_aster
+    for mod in (bridge_mesh, bridge_to_aster, bridge_acoustic):
+        mod.log = _log
+    for impedance in (False, True):
+        tmp = tempfile.mkdtemp(prefix="mab_s16d_unit")
+        work = bridge_utils.CONFIG_BRIDGE["work_dir"]
+        try:
+            bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp
+            path = os.path.join(tmp, "m.liml")
+            with open(path, "w") as f:
+                f.write(_acoustic_liml(impedance=impedance))
+            bridge_utils.CONFIG_BRIDGE["active_analysis"] = \
+                "acoustic_modes_3d"
+            del LOG[:]
+            md = bfl.extract_aster_data_from_liml(path)
+            mail = os.path.join(tmp, "m.mail")
+            ok = md is not None and bridge_mesh.write_mesh(mail, md)
+            ok = ok and bridge_to_aster.generate_AsterSolver_files(
+                tmp, md, mail, "test.resu")
+            comm = ""
+            if ok:
+                with open(os.path.join(tmp, "study.comm")) as f:
+                    comm = f.read()
+            check("MODELISATION='PLAN'" in comm and
+                  "PHENOMENE='ACOUSTIQUE'" in comm,
+                  "A20 .comm with PLAN (impedance {0}): {1}".format(
+                      impedance, _errors()))
+            check(("MODELISATION='PLAN_ABSO'" in comm) == impedance,
+                  "PLAN_ABSO only with an impedance ({0})".format(impedance))
+        finally:
+            bridge_utils.CONFIG_BRIDGE["work_dir"] = work
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     test_modelisations()
     test_errors()
     test_finish_bcs()
     test_edge_measure()
+    test_acoustic()
     for f in FAILS:
         print("FAIL:", f)
     print("{0} failure(s)".format(len(FAILS)))

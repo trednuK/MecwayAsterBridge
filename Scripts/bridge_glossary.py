@@ -113,21 +113,28 @@ GLOSSARY = OrderedDict([
     ("A30", ("mecway", u"Mecway: Acoustic Resonance 3D, holtemodes van een "
              u"lucht- of vloeistofvolume (drukveld per mode). Bij 'auto' -> "
              u"acoustic_modes_3d, met een bron (BRON_-selectie of "
-             u"#ASTER-BRON) acoustic_harm_3d. A20 (2D) wordt niet "
-             u"vertaald.",
+             u"#ASTER-BRON) acoustic_harm_3d.",
              u"Mecway: Acoustic Resonance 3D, cavity modes of an air or "
              u"fluid volume (pressure field per mode). With 'auto' -> "
              u"acoustic_modes_3d, with a source (SOURCE_ selection or "
-             u"#ASTER-BRON) acoustic_harm_3d. A20 (2D) is not "
-             u"translated.")),
+             u"#ASTER-BRON) acoustic_harm_3d.")),
+    ("A20", ("mecway", u"Mecway: Acoustic Resonance 2D, holtemodes van een "
+             u"lucht- of vloeistofvlak in het XY-vlak (PHENOMENE ACOUSTIQUE, "
+             u"MODELISATION PLAN; een dikte telt niet, zoals in Mecway). "
+             u"Bij 'auto' -> acoustic_modes_3d; geen harmonisch drukveld.",
+             u"Mecway: Acoustic Resonance 2D, cavity modes of an air or "
+             u"fluid area in the XY plane (PHENOMENE ACOUSTIQUE, "
+             u"MODELISATION PLAN; a thickness does not count, as in "
+             u"Mecway). With 'auto' -> acoustic_modes_3d; no harmonic "
+             u"pressure field.")),
     # --- analyses of the bridge ---
     ("auto", ("analysis", u"De analyse volgt het analysetype van het "
               u"Mecway-model (S30, S20, SA0, L30, D30, D20, DA0, D31, T30, T31, "
-              u"V30, B30, A30). Andere "
+              u"V30, B30, A30, A20). Andere "
               u"typen stoppen de bridge met een melding.",
               u"The analysis follows the analysis type of the Mecway model "
               u"(S30, S20, SA0, L30, D30, D20, DA0, D31, T30, T31, V30, B30, "
-              u"A30). Other "
+              u"A30, A20). Other "
               u"types stop the "
               u"bridge with a message.")),
     ("lin_static_3d", ("analysis", u"Statisch, lineair (MECA_STATIQUE). "
@@ -222,14 +229,17 @@ GLOSSARY = OrderedDict([
                            u"frequenties en drukveld per mode; harde "
                            u"wanden, fluid pressure = 0 is een drukknoop; "
                            u"met impedance complexe modes (frequentie, "
-                           u"decay rate, pressure + pressurei, zoals Mecway) "
-                           u"(docs/Akoestiek.md).",
+                           u"decay rate, pressure + pressurei, zoals Mecway); "
+                           u"ook Mecway's Acoustic Resonance 2D (A20, "
+                           u"MODELISATION PLAN) (docs/Akoestiek.md).",
                            u"Acoustic cavity modes (PHENOMENE ACOUSTIQUE, "
                            u"CALC_MODES): frequencies and pressure field "
                            u"per mode; hard walls, fluid pressure = 0 is a "
                            u"pressure node; with impedance complex modes "
                            u"(frequency, decay rate, pressure + pressurei, "
-                           u"like Mecway) (docs/en/Acoustics.md).")),
+                           u"like Mecway); also Mecway's Acoustic Resonance "
+                           u"2D (A20, MODELISATION PLAN) "
+                           u"(docs/en/Acoustics.md).")),
     ("acoustic_harm_3d", ("analysis", u"Akoestiek harmonisch (PHENOMENE "
                           u"ACOUSTIQUE, DYNA_VIBRA HARM): drukveld per "
                           u"frequentie bij een bron (vlakselectie BRON_..., "

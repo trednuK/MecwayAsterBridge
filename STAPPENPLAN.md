@@ -51,7 +51,7 @@ S7, S8, S5, S9).
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
 | S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); step size with *every n time steps* fixed later (former KNOWN_BUGS 127, MD-08); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
-| S16d | Acoustic Resonance 2D (Mecway A20, `2D_FLUIDE`) | open | S16a | split off from S16 (28 Oct 2026) |
+| S16d | Acoustic Resonance 2D (Mecway A20; `ACOUSTIQUE` `PLAN`, not `2D_FLUIDE`) | done | S16a | branch worktree-agent-ad04139279cf151f2 (28 Oct 2026): `bridge_plane._apply_acoustic` + the A30 route; AK-10 .. AK-15 OK (quads = Mecway headless ≤ 1e-6, rectangle ≤ 0.05% of f_mn); triangles slightly higher (KNOWN_BUGS 130); identical via a .liml saved by Mecway (126 checks); no axisymmetric acoustic type in Mecway; not yet tested in the Mecway GUI |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 126 |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
@@ -123,7 +123,7 @@ Code-Aster: the catalogue (`…\17.4\lib\aster\code_aster\Cata\Commands\*.py`), 
 (v17.4 site; locally only v14/v15 as background) and the test cases in
 `%LOCALAPPDATA%\code_aster\v2025\17.4\share\aster\tests` (run:
 `run_aster.bat --ctest <naam>.export`). **Test cases are a syntax source; the
-bridge verification is 3D**, except the 2D static analyses S20/SA0 (S16a, family PL).
+bridge verification is 3D**, except the 2D analyses (S16a/b, family PL; A20, S16d: AK-10 .. AK-15).
 Back up behaviour in comments with a source, otherwise "NOT verified" (AGENTS.md).
 
 ### C. Build
@@ -1309,8 +1309,8 @@ which loads/conditions exist in 2D, Mecway's field names for 2D/axisymmetric (ho
 **Done when:** plate with a hole in plane stress (Kt), thick-walled cylinder axisymmetric (Lamé) and a
 2D dynamic case within the tolerances of their 3D counterparts and equal to Mecway headless;
 regression D.5. May be done in sub-steps (S16a static, S16b dynamic/thermal/acoustics).
-**Status:** S16a and S16b done (28 Oct 2026); split off: S16c (dropped, no thermal 2D in
-Mecway), S16d (A20), S16e (2D extensions).
+**Status:** S16a, S16b and S16d done (28 Oct 2026); split off: S16c (dropped, no thermal 2D in
+Mecway), S16e (2D extensions).
 **Findings S16a (Mecway 34, headless: `mw_solve.py`, a safe runner on own PIDs, `mw.save_as`;
 no GUI):**
 - Analysis codes: S20 = *Static 2D*, SA0 = *Static Axisymmetric*, D20 = *Dynamic Response 2D*
@@ -1368,6 +1368,44 @@ no GUI):**
   (DA0). With `substeps_per_output` = 1 and n = 5 the bridge steps 5 times coarser than Mecway
   (22% difference on the cantilever): pre-existing for D30 too (former KNOWN_BUGS 127);
   fixed 28 Oct 2026: the solver step is now derived from `<timesteps stepsize>` (MD-08).
+
+**Findings S16d (A20, Acoustic Resonance 2D; Mecway 34.0.9772 headless, `mw_solve.py`, no GUI):**
+- Mecway: `<analysis type="A20" maxmode="n" />`, the same tags as A30 (`speedofsound`,
+  `density`, `<fluidpressure>` = 0 on edges (face selection, faceid 1..4) or nodes,
+  `<impedance>` on edges) on tri3/tri6/quad4/quad8. A `<geometric type="Plate" thickness>`
+  changes nothing (10 mm or none: identical frequencies and shapes); Z of the nodes is ignored
+  (Z = 0.05 identical). Normalisation p^T M p = 1 per unit thickness (constant mode c/sqrt(A),
+  406.378 Pa for 1.0 x 0.7 m). Result names as A30: `pressure` (+ `pressurei` and the decay
+  rate with an impedance). No axisymmetric acoustic type: the analysis codes in mecway.exe are
+  S20, SA0, S30, V30, D20, DA0, D30, T30, T31, E30, A20, A30, B30.
+- Code-Aster: for `PHENOMENE='ACOUSTIQUE'` the 2D modelisation is `PLAN` (impedance edges
+  `PLAN_ABSO`; catalogue affe_modele.py v17.4, test case ahlv100f). `2D_FLUIDE` (in the plan
+  text) is the `MECANIQUE` fluid element of fluid-structure coupling (U_P_PHI), not the
+  counterpart of the A30 route (`ACOUSTIQUE` `3D`); not used. `MASS_ACOU` of `PLAN` is per
+  unit thickness, so the MASS_GENE normalisation gives Mecway's amplitudes without a factor.
+- Built: `bridge_plane._apply_acoustic` (A20 only with `acoustic_modes_3d`, plane elements,
+  Z = 0; `elset_modelisations` = PLAN, `model_data["acoustic_2d"]`, no `plane` factor),
+  `bridge_acoustic._modelisations` (PLAN/PLAN_ABSO in the real and complex routes),
+  `resolve_auto` keeps the modes for A20; `MECWAY_ANALYSIS_TYPES["A20"]`; glossary entry A20.
+- Verification (`tests_akoestiek_2d.py`): AK-10 rectangle 1.0 x 0.7 quad8 (analytical
+  ≤ +0.05%, Mecway ≤ 1e-6, |p| constant mode = c/sqrt(A)), AK-11 p = 0 on an edge + thickness
+  10 mm, AK-13 quad4 in two elsets with a node selection, AK-14 impedance Z = 2000 (complex
+  modes; f and decay rate = Mecway ≤ 1e-6, tube roots within 0.04%) all equal to Mecway.
+  Triangles: Code-Aster's plane acoustic elements have no MASS integration family in elem.1
+  (the mass uses the RIGI rule: tri3 1 point, tri6 3 points; reproduced exactly with an own
+  one-point tri3 calculation), so AK-12 tri6 ≤ 0.003% and AK-15 tri3 +0.07 .. +0.64% above
+  Mecway (KNOWN_BUGS 130). Mecway's organ pipe tutorial as A20 (497 elements, 20 modes): mode 4
+  64.594 Hz (Mecway 64.592, manual 64.59). Mecway opens the bridge's A20 results and reads
+  `pressure`/`pressurei` per mode with `solution.node_value` (headless script).
+- `run_verificatie.py --mecway-opslaan AK-1`: all 126 checks identical with the models as
+  Mecway 34 saves them, the same `.comm`.
+- Full regression on 4e52f98 (Code-Aster 17.4): 2642 of 2648 checks OK (486 test cases), the
+  6 BEKEND of the baseline (KNOWN_BUGS 43 x3, 83, 108, 115), 0 NOK/FOUT; no status change
+  against the committed `resultaten.json`; AK/AH unchanged bit for bit, AI ≤ 2e-6 (one decay
+  rate of AI-06, the same `.comm` apart from comments: noise of the iterative solve in
+  `aster_acoustic_complex`). `resultaten.*` not committed (integration branch).
+- Open: a run from the Mecway GUI; the harmonic pressure field in 2D (`acoustic_harm_3d`
+  with PLAN/PLAN_ABSO, not built: ERROR).
 
 ### S17 – Loads on beam side faces and hydrostatic pressure on shell edges
 **Goal:** the two open items of KNOWN_BUGS 5: pressure/traction on the side face of a beam (Mecway

@@ -12,11 +12,12 @@ Code-Aster `MECA_STATIQUE` of `DYNA_NON_LINE` met vlakke elementen (U3.13.01
 | Static 2D (S20) | *Shell/membrane* met een dikte en *plane strain* | `D_PLAN` (vlakke rek) | als hierboven, σ_zz = ν(σ_xx + σ_yy) |
 | Static Axisymmetric (SA0) | geen geometrie (isotroop materiaal) | `AXIS` | verplaatsing X (radiaal), Y (axiaal); spanning met `stresszz` = tangentiële spanning (hoop stress); reacties voor 360 graden |
 | Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | als S20 / SA0 | als S20 / SA0, in de tijd (§2.4) | als S20 / SA0 per uitvoertijd, plus snelheid en versnelling |
+| Acoustic Resonance 2D (A20) | *Speed of sound* (een dikte telt niet) | `PHENOMENE='ACOUSTIQUE'`, `PLAN` (§4) | per mode de frequentie en het drukveld `pressure`, als A30 |
 
 De bridge-analyse is `lin_static_3d` ("Statisch") voor S20 en SA0 en `dyna_impl_3d`
 ("Dynamisch (impliciet)") voor D20 en DA0: met *Actieve analyse (auto = volgens Mecway)*
 = `auto` kiest de bridge die. Algemene werking van de bridge:
-[`Handleiding.md`](Handleiding.md). Acoustic Resonance 2D (A20) wordt niet vertaald (§4). Mecway heeft geen thermisch 2D-type: een thermisch model in een vlak
+[`Handleiding.md`](Handleiding.md). Acoustic Resonance 2D (A20) gaat naar de akoestische holtemodes `acoustic_modes_3d` (§4). Mecway heeft geen thermisch 2D-type: een thermisch model in een vlak
 maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 ![Axisymmetrisch: symmetrieas, straal en tangentiële richting](img/2d_axisymmetric_axes.svg)
@@ -157,7 +158,7 @@ een WARNING (numerieke demping).
 
 ## 3. Niet mogelijk
 
-KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
+KNOWN_BUGS 126; geplande stap in `STAPPENPLAN.md`: S16e. A20 (akoestiek): §4.
 
 - Balken, truss, veren of volume-elementen in een 2D-analyse (Mecway's S20 kent balken
   en truss): ERROR, de bridge stopt.
@@ -173,11 +174,12 @@ KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
   zet V20 om naar V30 en B20 naar S30).
 - De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).
 
-## 4. Andere 2D-analysetypen (niet vertaald)
+## 4. Akoestiek in 2D
 
-| Mecway | Status | Alternatief |
+| Mecway | Status | Toelichting |
 |---|---|---|
-| Acoustic Resonance 2D (A20) | Nee (ERROR) | [`Akoestiek.md`](Akoestiek.md): 3D (A30) |
+| Acoustic Resonance 2D (A20) | Ja: holtemodes (`acoustic_modes_3d`, `MODELISATION='PLAN'`), ook met impedantie | [`Akoestiek.md`](Akoestiek.md) §3.5; gelijk aan Mecway's eigen A20-oplossing (quads ≤ 1e-6, driehoeken iets hoger, KNOWN_BUGS 130); geen harmonisch drukveld in 2D |
+| akoestiek axisymmetrisch | Mecway heeft dit type niet (de analysecodes in Mecway 34: S20, SA0, D20, DA0, A20 en de 3D-typen) | 3D (A30) of een doorsnede in 2D (A20) |
 
 ## 5. Interpretatie
 
@@ -204,7 +206,7 @@ KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
 | ERROR: Elset '…' bevat line2 …; in een 2D-analyse … | balken, truss, veren of volume-elementen in het model | haal ze weg of reken in 3D |
 | ERROR: … in een 2D-analyse (…) wordt (nog) niet vertaald | contact, koppeling, constraint equation, puntmassa of temperatuur | haal het weg of reken in 3D |
 | ERROR: … op '…' in een 2D-analyse: … NIET meegenomen. | belasting of voorwaarde zonder 2D-route (§3) | vervang hem door een ondersteunde belasting (§1.1) |
-| ERROR: Mecway-analysetype A20 … wordt (nog) niet vertaald | akoestisch 2D | reken in 3D (A30) |
+| ERROR: Mecway-analysetype A20 (Acoustic Resonance 2D) wordt alleen vertaald naar de holtemodes … | een andere analyse gekozen | kies `auto` of `acoustic_modes_3d` ([`Akoestiek.md`](Akoestiek.md) §3.5) |
 | ERROR: Mecway-analysetype D20 (2D) wordt alleen vertaald naar dyna_impl_3d, niet naar … | een andere analyse gekozen op het startscherm | kies `auto` of de genoemde analyse |
 | ERROR: D20 (2D) wordt vertaald met het impliciete schema … | expliciet schema of *Mode superposition* | kies `NEWMARK` of `HHT`; zet *Mode superposition* in Mecway uit |
 | ERROR: Een 2D-analyse (…) werkt alleen met de resultaatroute 'liml' | route `tabel` gekozen | kies `liml` op de pagina Algemeen |

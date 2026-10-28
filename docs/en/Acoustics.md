@@ -2,8 +2,8 @@
 
 *Nederlandse versie: [Akoestiek.md](../Akoestiek.md)*
 
-The bridge computes Mecway's *Acoustic Resonance 3D* (analysis type A30) with
-Code-Aster: the eigenmodes (resonances) of an air or fluid volume, such as the standing
+The bridge computes Mecway's *Acoustic Resonance 3D* (analysis type A30) and
+*Acoustic Resonance 2D* (A20, §3.5) with Code-Aster: the eigenmodes (resonances) of an air or fluid volume, such as the standing
 waves in a pipe, a room or a car cabin, and (§5) the pressure field per frequency from
 a source, with absorbing boundaries and microphones (harmonic response; Mecway itself
 does not have that analysis). §6 (vibroacoustics) couples the fluid to a structure:
@@ -17,6 +17,7 @@ pressure/SPL in the fluid).
 |---|---|---|---|
 | Acoustic Resonance 3D (A30) | `acoustic_modes_3d` (Acoustics (cavity modes)) | `PHENOMENE='ACOUSTIQUE'`, matrices `RIGI_ACOU` and `MASS_ACOU` (`ASSEMBLAGE`), `CALC_MODES` | per mode the frequency (Hz) and the pressure field `pressure` |
 | Acoustic Resonance 3D (A30) with *Impedance* (§3.3) | `acoustic_modes_3d` (Acoustics (cavity modes)) | the same matrices + `AMOR_ACOU` per impedance boundary; the bridge solves the quadratic eigenvalue problem in the job with scipy (`aster_acoustic_complex.py`) | per mode the frequency, the *decay rate* and the complex pressure field `pressure` + `pressurei`, like Mecway |
+| Acoustic Resonance 2D (A20, §3.5), also with *Impedance* | `acoustic_modes_3d` (Acoustics (cavity modes)) | as A30 with `MODELISATION='PLAN'` (impedance edges `PLAN_ABSO`) | as A30 |
 | Acoustic Resonance 3D (A30) with a source (`SOURCE_` selection, §5) | `acoustic_harm_3d` (Acoustics (harmonic)) | `PHENOMENE='ACOUSTIQUE'`, `RIGI_ACOU`, `MASS_ACOU`, `AMOR_ACOU`, `DYNA_VIBRA` `HARM` | per frequency the complex pressure (`pressure`, `pressurei`), amplitude, phase and sound pressure level; microphone response in the log and a CSV |
 | Frequency 3D (V30) with a fluid part (§6) | `vibroacoustic_modes_3d` (Vibroacoustics (modes)) | `PHENOMENE='MECANIQUE'`: `3D_FLUIDE` + `FLUI_STRU` + the structure, `FORMULATION='U_P_PHI'`, `CALC_MODES` `BANDE` | per mode the frequency, the displacement of the structure (`displ`) and the pressure in the fluid (`pressure`) |
 | the same model with a source (§7) | `vibroacoustic_harm_3d` (Vibroacoustics (harmonic)); choose it yourself | as above + `3D_FLUI_ABSO`, `DYNA_VIBRA` `HARM` `PHYS` with `MATR_IMPE_PHI` | per frequency the complex displacement of the structure and the complex pressure, amplitude, phase and SPL in the fluid; microphones and probes in the log and CSV files |
@@ -32,12 +33,13 @@ structures: [`Modal_and_buckling.md`](Modal_and_buckling.md).
 ### 1.1 In Mecway: the model
 
 1. **Mesh only the fluid.** Mesh the air or fluid volume, not the walls around it.
-   Solid elements: hex8, hex20, wedge6, wedge15, tet4, tet10. Pyramids, shells and
+   Solid elements: hex8, hex20, wedge6, wedge15, tet4, tet10 (A20: plane elements
+   tri3, tri6, quad4, quad8 in the XY plane, §3.5). Pyramids, shells and
    beams are not possible (Code-Aster has no acoustic element for them; ERROR, §4). An
    opening into a large space (like the organ pipe of Mecway's tutorial 17.13) is
    meshed together with a part of that space.
 2. **Analysis type.** Choose *Acoustic Resonance 3D* and set *Number of modes*.
-   *Acoustic Resonance 2D* (A20) is not translated by the bridge (3D only).
+   For a cross-section: *Acoustic Resonance 2D* (A20, §3.5).
 3. **Material.** *Isotropic* with *Speed of sound* (e.g. 340 m/s for air at 15 °C,
    ~1480 m/s for water). A density is not needed: the modes do not depend on it.
    Mecway computes acoustics with one material; the bridge can also handle several
@@ -60,8 +62,8 @@ structures: [`Modal_and_buckling.md`](Modal_and_buckling.md).
 
 ### 1.2 In the bridge's main window
 
-1. **Active analysis:** `auto` chooses `acoustic_modes_3d` for A30; or choose it
-   yourself.
+1. **Active analysis:** `auto` chooses `acoustic_modes_3d` for A30 and A20; or choose
+   it yourself.
 2. **Results to Mecway** must be `liml` (General page).
 3. Page **Acoustics (cavity modes)** (change only when needed):
 
@@ -129,7 +131,8 @@ nearest frequency, because Mecway drops 0 Hz modes at random).
 `bridge_acoustic.py` writes the `.comm` (template `AsterTemplate_Akoestiek.comm`);
 syntax as in the Code-Aster test cases ahlv100a and adlv101f:
 
-1. `AFFE_MODELE` with `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='3D'` on the solids.
+1. `AFFE_MODELE` with `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='3D'` on the solids
+   (A20: `'PLAN'` on the plane elements, §3.5).
 2. `DEFI_MATERIAU(FLUIDE=_F(RHO=ρ, CELE_R=c))` per material (without density ρ = 1
    kg/m³: `RHO` is mandatory in Code-Aster but plays no role in the modes, §3.2).
 3. Pressure nodes: `AFFE_CHAR_ACOU(PRES_IMPO=_F(GROUP_NO=... or GROUP_MA=..., PRES=0j))`.
@@ -276,11 +279,44 @@ Computing time (measured): a room of 13,000 nodes (hex20) with 20 modes 14 s.
 
 - A **frequency-dependent** impedance (Mecway cannot either, §9.35) and a complex
   impedance in the **harmonic** analysis (§5.6).
-- Acoustic Resonance 2D (A20), Mecway's *acoustic displacement* as a result field,
-  media with different density (§3.2), contact and couplings in acoustics, pyramid
-  elements.
+- Mecway's *acoustic displacement* as a result field, media with different density
+  (§3.2), contact and couplings in acoustics, pyramid elements.
+- In 2D (A20): the harmonic pressure field (§5), nodes with Z ≠ 0, beams or solids in
+  the model (§3.5). Axisymmetric acoustics: Mecway has no such analysis type.
 - Coupling with a structure: the coupled modes are in §6 (vibroacoustics). The
   pressure field at an excitation frequency (harmonic) is in §5.
+
+### 3.5 Acoustic Resonance 2D (A20)
+
+Mecway's *Acoustic Resonance 2D* computes the modes of a cross-section (e.g. the organ
+pipe of Mecway's tutorial 17.13). The bridge translates it like A30, with plane
+elements:
+
+1. **Mesh** the air or fluid area with tri3, tri6, quad4 or quad8 in the XY plane, all
+   nodes with Z = 0 (Code-Aster needs Z = 0 for a 2D mesh; Mecway ignores Z, the bridge
+   stops). Beams, shells in another plane or solids in the model: ERROR.
+2. **Material:** *Isotropic* with *Speed of sound* (and a density for an impedance), as
+   for A30. A *Shell/membrane* thickness is not needed and does not count: measured in
+   Mecway 34, 10 mm or no thickness gives the same frequencies and the same pressure
+   field. The model is per unit thickness: the constant mode has p = c/√A (A = area).
+3. **Boundaries** on edges (face selection of the edges) or nodes: an edge without a
+   condition is a hard wall, *Fluid pressure* = 0 a pressure node, *Impedance* gives
+   complex modes (§3.3), all as in 3D.
+4. **Bridge:** `auto` (or `acoustic_modes_3d`), results route `liml`. Code-Aster:
+   `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` (impedance edges `PLAN_ABSO`, Code-Aster
+   test case ahlv100f); the rest is the A30 route. The 2D analysis has no harmonic
+   pressure field (`acoustic_harm_3d`: ERROR, and `auto` keeps the cavity modes with a
+   `SOURCE_` selection).
+
+Results: equal to Mecway's own A20 solution (headless, verification AK-10 … AK-15):
+quad4 and quad8 to 1e-6 relative (frequencies, decay rates and the normalised
+pressure), rectangle 1.0 × 0.7 m with the analytical f_mn = c/2·√((m/a)² + (n/b)²)
+within 0.05% (quad8 10 × 7). **Triangles** differ slightly: Code-Aster integrates the
+mass of its plane acoustic elements with fewer points than Mecway (tri3 one point,
+tri6 three), so the bridge is higher: tri6 ≤ 0.003% in frequency (0.02% in the
+pressure), tri3 0.07% (mode 2) to 0.6% (mode 8) on a mesh of 20 × 14 × 2 (KNOWN_BUGS
+128). Mesh with quads (or tri6) where possible. Mecway's organ pipe (497 elements, of which 48
+tri3, 20 modes): the fundamental of the pipe, mode 4, 64.594 Hz (Mecway 64.592 Hz).
 
 ## 4. Messages and solutions
 
@@ -302,7 +338,9 @@ Computing time (measured): a room of 13,000 nodes (hex20) with 20 modes 14 s.
 | WARNING: Acoustics: no MED export for complex modes | `med_export` on | normal: the modes are in Mecway |
 | WARNING: Acoustics: #ASTER-EXCIT ... is not used for complex modes | own loads in a model with impedance | normal; pressure nodes via *fluid pressure* = 0 |
 | `aster_acoustic_complex: ERROR: ...` in the `.mess`, no results | e.g. ARPACK does not converge, or Q(σ) is singular | another search frequency or fewer modes; if it persists: report it (KNOWN_BUGS) |
-| ERROR: Acoustic Resonance 2D (A20) is not translated | 2D model | make a 3D model (A30) |
+| ERROR: Mecway analysis type A20 (Acoustic Resonance 2D) is only translated to the cavity modes 'acoustic_modes_3d' | another analysis chosen (e.g. the harmonic) | choose `auto` or `acoustic_modes_3d`; harmonic: a 3D model (A30) |
+| ERROR: Elset '…' contains …; in Acoustic Resonance 2D (A20) the bridge only translates plane elements | beams, solids or springs in the A20 model | mesh only the air area with plane elements |
+| ERROR: A 2D analysis (A20) needs all nodes in the XY plane (Z = 0) | mesh not in the XY plane | move the mesh to Z = 0 |
 | ERROR: 'contact2' / 'nodesurfacecoupling' / 'constraintequation' on ... is not translated in an acoustic analysis | coupling in acoustics | use one continuous mesh |
 | INFO: Load '...' on '...' does not count in an acoustic analysis | mechanical or thermal load in the model | normal |
 | INFO: Mode 1 is at ~0 Hz: constant pressure | hard walls without a pressure node | normal (§3.1) |
