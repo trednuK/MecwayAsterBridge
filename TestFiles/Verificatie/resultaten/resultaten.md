@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge e8fce4b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 5bec716, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2435 van 2441 controles binnen de tolerantie** (458 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2441 van 2447 controles binnen de tolerantie** (461 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2043,6 +2043,12 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge e8fce4b, Code-Aster 17.4
 | PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | massa (BRIDGE_STATCHECK) | 14.703 kg | 14.703 | -0.00% | 0.0001% | OK |
 | PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | u_r(b, h) = Mecway | 2.4211e-06 m | 2.4211e-06 | +0.00% | 0.0001% | OK |
 | PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | u_y(a, h) = Mecway | -1.4964e-07 m | -1.4964e-07 | +0.00% | 0.0001% | OK |
+| PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | periode tip | 7.7090e-04 s | 7.7042e-04 | -0.06% | 1% | OK |
+| PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | gemiddelde u_x tip | 4.7619e-05 m | 4.7620e-05 | +0.00% | 1% | OK |
+| PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | verloop = Mecway | 0 - | 3.2101e-08 | 3.2101e-08 | 1e-06 - | OK |
+| PL-11 | Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping | u_r binnenwand na uitdempen | 9.0794e-05 m | 9.0748e-05 | -0.05% | 0.2% | OK |
+| PL-11 | Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping | verloop = Mecway | 0 - | 3.0769e-08 | 3.0769e-08 | 1e-06 - | OK |
+| PL-12 | Console vlakke spanning (D20), kracht als tijdtabel | verloop = Mecway | 0 - | 1.6215e-08 | 1.6215e-08 | 1e-06 - | OK |
 
 ## Responsspectrum
 

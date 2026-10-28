@@ -7,7 +7,7 @@
   "series": null,
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 3.1,
+  "seconds": 3.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -70,7 +70,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.1,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 2.8,
+  "seconds": 3.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -132,7 +132,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 3.2,
+  "seconds": 4.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -194,7 +194,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.025,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 3.7,
+  "seconds": 4.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -256,7 +256,7 @@
   "series": null,
   "h": null,
   "note": "20 balkelementen, vrije trilling rond de statische stand.",
-  "seconds": 5.2,
+  "seconds": 6.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -316,7 +316,7 @@
   "series": null,
   "h": null,
   "note": "100 x 1 x 1 hex8, DIFF_CENT, dt = 0,5 h/c; PETIT.",
-  "seconds": 10.8,
+  "seconds": 12.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -420,7 +420,7 @@
   "series": null,
   "h": null,
   "note": "Opgelegde snelheid als versnelling (FORMULATION='ACCELERATION'); PETIT.",
-  "seconds": 11.2,
+  "seconds": 11.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -510,7 +510,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde staaf als DY-03a; PETIT.",
-  "seconds": 11.5,
+  "seconds": 13.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7630,7 +7630,7 @@
   "series": null,
   "h": null,
   "note": "10 x line2 (POU_D_E), tipmassa 10 kg (mass2), balk 1 kg/m3; 3 modes; Mecway stepsize 0,01 s, 1 s.",
-  "seconds": 3.1,
+  "seconds": 3.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7704,7 +7704,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-01, Rayleigh alpha = 2 zeta w = 3,550 1/s.",
-  "seconds": 3.0,
+  "seconds": 3.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7764,7 +7764,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-02 met F = 100 sin(0,8 w t) N als tabel.",
-  "seconds": 4.0,
+  "seconds": 4.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7824,7 +7824,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-01 met modal_damping = 0,05.",
-  "seconds": 3.0,
+  "seconds": 3.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -7872,7 +7872,7 @@
   "series": null,
   "h": null,
   "note": "10 x 2 x 1 hex20, ingeklemd, 1000 N in Z op het eindvlak; beta = 1e-4 s; stepsize 0,5 ms, 0,1 s.",
-  "seconds": 4.1,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7932,7 +7932,7 @@
   "series": null,
   "h": null,
   "note": "20 x line2, staal 7850 kg/m3, alpha = 20 1/s, 2 s.",
-  "seconds": 3.1,
+  "seconds": 4.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7992,7 +7992,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-06a met static_correction.",
-  "seconds": 3.2,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -8026,7 +8026,7 @@
   "series": null,
   "h": null,
   "note": "Model MD-01 zonder modesuperposition, stepsize 0,02 s.",
-  "seconds": 2.9,
+  "seconds": 4.1,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -28978,7 +28978,7 @@
   "series": null,
   "h": null,
   "note": "Als DY-03b, de beweging als frictionless met normaalverplaatsing -v t op het eindvlak (FACE_IMPO DNOR, omgezet naar een versnelling).",
-  "seconds": 11.3,
+  "seconds": 12.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29068,7 +29068,7 @@
   "series": null,
   "h": null,
   "note": "LIAISON_DDL met COEF_IMPO als functie (AFFE_CHAR_MECA_F): C in de eerste rekenstap, daarna constant.",
-  "seconds": 10.9,
+  "seconds": 11.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -29116,7 +29116,7 @@
   "series": null,
   "h": null,
   "note": "Vlak schaalvlak: LIAISON_OBLIQUE DX = -v t, omgezet naar een versnelling; de plaat beweegt star.",
-  "seconds": 4.2,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33234,7 +33234,7 @@
   "series": null,
   "h": null,
   "note": "Voorheen gelijk aan het model zonder temperatuur (alarm MECANONLINE2_97).",
-  "seconds": 2.6,
+  "seconds": 3.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33280,7 +33280,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 2.7,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33326,7 +33326,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 4.0,
+  "seconds": 4.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33375,7 +33375,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 3.9,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37141,7 +37141,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 2.9,
+  "seconds": 4.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41896,7 +41896,7 @@
   "series": "PL-01 quad8",
   "h": 0.003926990816987242,
   "note": "Kwartmodel, symmetry x = 0 en y = 0, traction 100 MPa; Mecway S20 met dikte 1 mm.",
-  "seconds": 3.2,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41942,7 +41942,7 @@
   "series": "PL-01 quad8",
   "h": 0.001963495408493621,
   "note": "Kwartmodel, symmetry x = 0 en y = 0, traction 100 MPa; Mecway S20 met dikte 1 mm.",
-  "seconds": 3.5,
+  "seconds": 3.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41988,7 +41988,7 @@
   "series": "PL-01 quad8",
   "h": 0.0009817477042468104,
   "note": "Kwartmodel, symmetry x = 0 en y = 0, traction 100 MPa; Mecway S20 met dikte 1 mm.",
-  "seconds": 3.8,
+  "seconds": 3.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42034,7 +42034,7 @@
   "series": "PL-01 quad8",
   "h": 0.0004908738521234052,
   "note": "Kwartmodel, symmetry x = 0 en y = 0, traction 100 MPa; Mecway S20 met dikte 1 mm.",
-  "seconds": 4.8,
+  "seconds": 3.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42080,7 +42080,7 @@
   "series": "PL-01 quad8",
   "h": 0.0002454369260617026,
   "note": "Kwartmodel, symmetry x = 0 en y = 0, traction 100 MPa; Mecway S20 met dikte 1 mm.",
-  "seconds": 6.9,
+  "seconds": 6.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42154,7 +42154,7 @@
   "series": "PL-03 quad8",
   "h": 0.1,
   "note": "2D-tegenhanger van LS-04: kwart ring, symmetry x = 0 en y = 0, Mecway S20 plane strain (dikte 10 mm).",
-  "seconds": 3.8,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42214,7 +42214,7 @@
   "series": "PL-04 quad8",
   "h": 0.1,
   "note": "Ring r = 0,1..0,2 m, lengte 10 mm, Y vast op beide einden (vlakke rek), Mecway SA0.",
-  "seconds": 3.7,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42302,7 +42302,7 @@
   "series": "PL-03 quad8",
   "h": 0.05,
   "note": "2D-tegenhanger van LS-04: kwart ring, symmetry x = 0 en y = 0, Mecway S20 plane strain (dikte 10 mm).",
-  "seconds": 3.8,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42362,7 +42362,7 @@
   "series": "PL-04 quad8",
   "h": 0.05,
   "note": "Ring r = 0,1..0,2 m, lengte 10 mm, Y vast op beide einden (vlakke rek), Mecway SA0.",
-  "seconds": 3.9,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42450,7 +42450,7 @@
   "series": "PL-03 quad8",
   "h": 0.025,
   "note": "2D-tegenhanger van LS-04: kwart ring, symmetry x = 0 en y = 0, Mecway S20 plane strain (dikte 10 mm).",
-  "seconds": 3.9,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42510,7 +42510,7 @@
   "series": "PL-04 quad8",
   "h": 0.025,
   "note": "Ring r = 0,1..0,2 m, lengte 10 mm, Y vast op beide einden (vlakke rek), Mecway SA0.",
-  "seconds": 4.0,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42598,7 +42598,7 @@
   "series": "PL-03 quad8",
   "h": 0.0125,
   "note": "2D-tegenhanger van LS-04: kwart ring, symmetry x = 0 en y = 0, Mecway S20 plane strain (dikte 10 mm).",
-  "seconds": 4.4,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42658,7 +42658,7 @@
   "series": "PL-04 quad8",
   "h": 0.0125,
   "note": "Ring r = 0,1..0,2 m, lengte 10 mm, Y vast op beide einden (vlakke rek), Mecway SA0.",
-  "seconds": 3.7,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42760,7 +42760,7 @@
   "series": null,
   "h": null,
   "note": "Als PL-01-n16 met planestrain=\"1\" in het materiaal.",
-  "seconds": 7.2,
+  "seconds": 6.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42848,7 +42848,7 @@
   "series": null,
   "h": null,
   "note": "Strook 100 x 20 mm, dikte 10 mm, quad8 8x2; alle lasten in +x.",
-  "seconds": 3.8,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42944,7 +42944,7 @@
   "series": null,
   "h": null,
   "note": "Ring r = 0,1..0,2 m, hoogte 20 mm, quad8 4x2; Y vast onder.",
-  "seconds": 3.7,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -43008,6 +43008,156 @@
   "n_nodes": 37,
   "n_elem": 8,
   "settings": {},
+  "general": {}
+ },
+ "PL-10": {
+  "id": "PL-10",
+  "group": "2D en axisymmetrisch",
+  "title": "Staafgolf in een strook, vlakke spanning (D20), staplast",
+  "analysis": "dyna_impl_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook 1 m x 50 mm, dikte 10 mm, nu = 0, quad8 40x1, traction 10 MPa vanaf t = 0, Newmark stap T/200.",
+  "seconds": 14.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "periode tip",
+    "fem": 0.0007704234822241703,
+    "ref": 0.0007708992893275452,
+    "rel": -0.0006172104579185104,
+    "dev": -4.758071033749084e-07,
+    "ok": true,
+    "unit": "s",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "4 L / c, c = sqrt(E / rho) (staafgolf, nu = 0)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "gemiddelde u_x tip",
+    "fem": 4.7619803516374896e-05,
+    "ref": 4.761904761904762e-05,
+    "rel": 1.5873843872782974e-05,
+    "dev": 7.558973272753797e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "statische rek P L / E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "verloop = Mecway",
+    "fem": 3.210136982894173e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 3.210136982894173e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "max |bridge - Mecway| / max |Mecway| op de opgeslagen tijden; Mecway 34 headless, eigen D20/DA0-oplossing",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 203,
+  "n_elem": 40,
+  "settings": {
+   "schema": "NEWMARK",
+   "deformation": "PETIT",
+   "substeps_per_output": 1
+  },
+  "general": {}
+ },
+ "PL-11": {
+  "id": "PL-11",
+  "group": "2D en axisymmetrisch",
+  "title": "Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping",
+  "analysis": "dyna_impl_3d",
+  "series": null,
+  "h": null,
+  "note": "Model PL-04-n4 met dichtheid, alpha = 8e4 rad/s, Newmark stap 1e-6 s, uitvoer elke 10e stap.",
+  "seconds": 4.9,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_r binnenwand na uitdempen",
+    "fem": 9.074810077436268e-05,
+    "ref": 9.07936507936508e-05,
+    "rel": -0.0005016872753761567,
+    "dev": -4.55500192881209e-08,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "Lame, vlakke rek (statische eindwaarde; PL-04-n4 statisch -0,006%)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "verloop = Mecway",
+    "fem": 3.076905414475754e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 3.076905414475754e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "max |bridge - Mecway| / max |Mecway| op de opgeslagen tijden; Mecway 34 headless, eigen D20/DA0-oplossing",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 23,
+  "n_elem": 4,
+  "settings": {
+   "schema": "NEWMARK",
+   "deformation": "PETIT",
+   "substeps_per_output": 10
+  },
+  "general": {}
+ },
+ "PL-12": {
+  "id": "PL-12",
+  "group": "2D en axisymmetrisch",
+  "title": "Console vlakke spanning (D20), kracht als tijdtabel",
+  "analysis": "dyna_impl_3d",
+  "series": null,
+  "h": null,
+  "note": "Console 100 x 10 mm, dikte 10 mm, quad8 20x2; -100 N op het eindvlak, oplopend tot 1 ms.",
+  "seconds": 5.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "verloop = Mecway",
+    "fem": 1.621454542011745e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.621454542011745e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "max |bridge - Mecway| / max |Mecway| op de opgeslagen tijden; Mecway 34 headless, eigen D20/DA0-oplossing",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 165,
+  "n_elem": 40,
+  "settings": {
+   "schema": "NEWMARK",
+   "deformation": "PETIT",
+   "substeps_per_output": 5
+  },
   "general": {}
  }
 }
