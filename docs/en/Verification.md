@@ -1276,6 +1276,46 @@ Observations:
   IronPython, `solution.element_node_value("errorestimate", 1, 1)` = the value from the
   result file (11963.69), `refine_x2` and `save_as` with a solution in the model.
 
+#### Adaptive refinement with HOMARD inside the job (AD-10 … AD-12)
+
+Step S35b ([Error_estimator.md](Error_estimator.md) §7): the same quarter plate with a
+hole (d/W = 0.2, slab 10 mm, 12 hex20, 1 layer), thermal and with plasticity, with
+`adapt_homard`; Code-Aster refines the mesh itself in one run and the result comes back
+onto the 12 coarse elements. The quantity is the one at the node (0, R) at the edge of the
+hole.
+
+- **Reference**: uniformly refined through the bridge (step S35a,
+  `TestFiles/Tools/homard_s35/run_s35.py references`): 32 × 32 hex20 per block (12 288
+  elements in the plane). Thermal (T = 0 / 100 °C on x = 0 / x = L, k = 50 W/m/K, hole
+  insulated): q_x = −67 465.3 W/m² (n = 16: −67 326.6, so converged within 0.2%).
+  Plasticity (bilinear, yield 250 MPa, plastic modulus 2000 MPa, traction ramp to
+  150 MPa, `GDEF_LOG`): σ_xx = 291.007 MPa, p = 0.00150735 (n = 16: 291.665 MPa,
+  0.00151098). Uniform in 3D (every layer refined too, as HOMARD does): thermal n = 4
+  (768 elements) −2.66%, n = 8 (6144) −0.87%; plasticity n = 8 (6144) +2.4% / +0.8%.
+
+| ID | Model | Result |
+|---|---|---|
+| AD-10 | thermal, target 0.15% (ZZ), max. 10 loops, hole recognised automatically as a cylinder | q_x −66 878 W/m² (−0.87%, tolerance 1.5%) with 2621 elements after 8 loops: 0.43 x uniform n = 8 at the same accuracy; stopped on the target |
+| AD-10b | as AD-10, with face selection `Gat` and `#ASTER-RAND Gat = CILINDER 0, 0, 0, 0, 0, 1, 10 mm` | q_x equal to AD-10 (< 1e-4); the log reports `#ASTER-RAND` |
+| AD-11 | plasticity, target 0.4%, max. 10 loops, symmetry as `FACE_IMPO DNOR` | σ_xx 293.69 MPa (+0.92%, tolerance 3%), p 0.0015262 (+1.25%), 4364 elements after 9 loops (0.71 x uniform n = 8, which gives +2.4%); after 8 loops (1932 elements) already +2.3%; all 5 time steps in Mecway |
+| AD-12 | thermal with the cold side as a node selection (more than one node) | with `adapt_homard` the bridge gives an ERROR that names the selection and does not compute |
+
+Per loop (AD-10 / AD-11, global ZZ error): 1.92 / 3.75% (12 elements), 1.71 / 3.59 (71 /
+66), 0.83 / 2.12 (84 / 84), 1.24 / 4.19 (366 / 352), 0.62 / 1.90 (370 / 356), 0.36 / 1.31
+(667 / 474), 0.30 / 0.96 (1188 / 758), 0.23 / 1.33 (1782 / 1880), 0.147 / 0.47 (2621 / 1932),
+– / 0.375 (– / 4364).
+
+Observations:
+- The global error sometimes rises for one loop (HOMARD's transition elements); the loop
+  does not stop on that (only after two rising loops).
+- The target for the peak is much smaller than the default 1%: at 1% AD-10 stops after 2
+  loops (−6%).
+- Without boundary following q_x rose in S35a to −81 404 (+21%) after 9 loops: the kinks
+  of the coarse polygon act as re-entrant corners.
+- The node values on the coarse mesh equal the refined result at the same nodes (AD-10:
+  −66 878.0 against −66 878.5 in the prototype); the element-node values miss the jump
+  between coarse elements ([Error_estimator.md](Error_estimator.md) §7.5).
+
 ### Fatigue (VM)
 
 Wöhler curve per material (`#ASTER-WOHLER`), rainflow and Miner on blocks or a signal

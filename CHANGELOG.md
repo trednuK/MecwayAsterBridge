@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
+  `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
+  `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh
+  itself in one run (solve, ZZ error indicator, HOMARD `MACR_ADAP_MAIL`, solve again) and the
+  result comes back onto the original Mecway mesh with `PROJ_CHAMP`; the Mecway model stays
+  unchanged. Curved boundaries (cylinders, spheres) are recognised automatically for boundary
+  following; `#ASTER-RAND` per face selection overrides. First version: solids with loads and
+  constraints on face selections (clear ERROR otherwise). Plate with a hole: the peak heat
+  flux and the plastic peak stress within 1% with 2.3 to 3.2 x fewer elements than uniform
+  refinement (verification AD-10 .. AD-12; docs Error estimator §7).
+
 - **Principal stresses, Tresca and principal strains of shells** (fields `principal_stresses`
   and `principal_strains`): on the top, middle and bottom surface under Mecway's names
   `principal1u1` .. `principal3b1`, `trescau1/m1/b1` and `lprincipalstrain1u1` ..

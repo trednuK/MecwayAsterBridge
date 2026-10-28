@@ -250,7 +250,7 @@ Andere gevallen met thermische spanning: NIET geverifieerd.
   (`QIRE_ELEM`, vraagt een tweede, duaal probleem) worden niet aangeboden (de
   Code-Aster-testcases met ZZ zijn grotendeels 2D; sslv111f gebruikt `ERZ1_ELEM` in
   3D).
-- **Adaptieve verfijning**: met Mecway's eigen verfijning, zie §6 (HOMARD niet gebouwd, §6.6).
+- **Adaptieve verfijning**: met Mecway's eigen verfijning, zie §6; thermisch en niet-lineair met HOMARD, zie §7.
 
 ## 4. Meldingen en oplossingen
 
@@ -405,28 +405,8 @@ refinement*) op de plek waar `errorestimate` groot is.
 - Alleen **volume-elementen** worden gekozen; schalen en balken verfijnt de lus niet.
 - **Knoopselecties** met een last of voorwaarde op een te verfijnen ribbe: ERROR (zet
   de voorwaarde op vlakken).
-- **HOMARD** (`MACR_ADAP_MAIL`, verfijnen binnen Code-Aster) is nog niet gebouwd. HOMARD
-  werkt op deze installatie in 3D (testcase sslv110f: HEXA8 1680 → 1698 + 56 TETRA4,
-  conform, alle TEST_RESU OK). Stap S35a (oktober 2026) heeft de route onderzocht waarbij
-  de lus in één Code-Aster-job draait en het resultaat met `PROJ_CHAMP` terug op het
-  Mecway-mesh komt (thermisch en niet-lineair statisch, prototype in
-  `TestFiles/Tools/homard_s35`): dat werkt (plaat met gat, warmtestroom en spanning met
-  2,3 tot 3,2 x minder elementen dan uniform verfijnen), maar HOMARD vult knoopgroepen niet
-  aan, nummert de knopen opnieuw, maakt overgangselementen waarop de schatters van
-  Code-Aster stoppen, en een gekromde rand moet als analytische vorm worden opgegeven.
-  Het inbouwen staat gepland als stap S35b (`STAPPENPLAN.md`). De Mecway-route houdt het
-  model in Mecway en verfijnt alles mee; daarom is die voor lineair statisch gekozen
-  (voorkeur van de gebruiker).
-
-  ![HOMARD-lus binnen de job (prototype S35a)](img/homard_loop.svg)
-
-  1. Grof Mecway-mesh (in het prototype de plaat met gat).
-  2. Oplossen in Code-Aster (`THER_LINEAIRE` of `STAT_NON_LINE`, hele lastgeschiedenis).
-  3. Foutindicator per element; de elementen boven de rode lijn (Dörfler-keuze) worden gekozen.
-  4. HOMARD verfijnt de gekozen elementen (`MACR_ADAP_MAIL`), met overgangselementen.
-  5. Verfijnd mesh; terug naar 2 tot het doel of het maximum aantal lussen bereikt is.
-  6. Na de laatste lus: het resultaat met `PROJ_CHAMP` op het oorspronkelijke Mecway-mesh,
-     zodat het naar Mecway kan.
+- **Thermisch en niet-lineair statisch**: daarvoor is er de verfijning met HOMARD
+  binnen de Code-Aster-job, zie §7 (het Mecway-model blijft daar ongewijzigd).
 - Afgrenzen (*unrefine*) doet de lus niet.
 
 Deze grenzen staan ook in `KNOWN_BUGS.md` (punt 65).
@@ -454,8 +434,201 @@ Deze grenzen staan ook in `KNOWN_BUGS.md` (punt 65).
 Kt +0,82% met 15 810 elementen, uniform Refine x2 tot 2% 49 152; AD-03: de lus stopt bij
 een knoopselectie-voorwaarde.
 
-## 7. Bronnen
+## 7. Adaptieve verfijning met HOMARD (thermisch, niet-lineair statisch)
 
+Met de instelling **Adaptieve verfijning (HOMARD, binnen de job)** verfijnt Code-Aster het
+mesh zelf, in één run: oplossen, foutindicator, de elementen met de grootste fout
+verfijnen met HOMARD (`MACR_ADAP_MAIL`), opnieuw oplossen, tot het doel of een grens. Het
+resultaat komt daarna terug op het **oorspronkelijke Mecway-mesh**; het Mecway-model zelf
+verandert niet. Dit werkt bij **thermisch** (Mecway T30/T31, `ther_3d`) en **niet-lineair
+statisch** (L30, `nonlin_static_3d`), waar de foutschatter van §1 niet bestaat. Lineair
+statisch houdt de Mecway-route van §6. Code: `Scripts/bridge_homard.py` (bridge) en
+`Scripts/aster_adapt.py` (in de job); onderzoek: stap S35a in `STAPPENPLAN.md`.
+
+### 7.1 Werkwijze in Mecway stap voor stap
+
+1. Bouw het model met **volume-elementen** (bij voorkeur hex20; tet10, wedge en pyramide
+   kan ook). Een grof mesh is goed: de lus verfijnt zelf.
+2. Zet **lasten en voorwaarden op vlakselecties** (temperatuur, warmtestroom, convectie,
+   symmetrie, frictionless, inklemming, druk, traction). Een knoopselectie met één knoop
+   mag; een knoopselectie met meer knopen niet (§7.7).
+3. Hoofdvenster, pagina **Thermisch** of **Niet-lineair**, kop *Adaptieve verfijning*:
+   zet *Adaptieve verfijning (HOMARD, binnen de job)* aan en kies het doel (§7.2).
+4. Klik *Start*. De bridge herkent de gekromde randen (§7.4) en schrijft de lus in
+   `study.comm`; Code-Aster rekent alle lussen in één run (geen OK per lus).
+5. Na de run staan de resultaten op het Mecway-mesh. Het statusvenster toont per lus het
+   aantal elementen en de globale fout, en waarom de lus stopte. Met `med_export` of
+   `vtu_export` staat het verfijnde resultaat zelf in `<model>_<run_id>_verfijnd.rmed`
+   (ParaView, MWHub Post).
+
+![Adaptieve verfijning op de pagina Thermisch](img/thermal_adapt_homard_nl.png)
+
+1. *Adaptieve verfijning (HOMARD, binnen de job)* (`adapt_homard`): de lus aan.
+2. *Doel: globale fout ZZ [%]* (`adapt_homard_target`).
+3. *Max. aantal verfijningslussen* (`adapt_homard_max_loops`).
+4. *Max. aantal elementen na verfijnen* (`adapt_homard_max_elements`).
+
+Op de pagina *Niet-lineair statisch* staan dezelfde vier instellingen.
+
+Voor één model kan het ook met `#ASTER-OPTIE`, bijv. `#ASTER-OPTIE adapt_homard = ja` en
+`#ASTER-OPTIE adapt_homard_target = 0.3`.
+
+### 7.2 Instellingen
+
+| Instelling (label) | Sleutel | Standaard | Wanneer aanpassen |
+|---|---|---|---|
+| Adaptieve verfijning (HOMARD, binnen de job) | `adapt_homard` | uit | aan voor de lus; elke lus is een volledige oplossing |
+| Doel: globale fout ZZ [%] | `adapt_homard_target` | 1 | 1 voor het globale veld; voor een piekwaarde veel lager: plaat met gat binnen 1% bij 0,15% (thermisch, AD-10) en 0,4% (plasticiteit, AD-11) |
+| Max. aantal verfijningslussen | `adapt_homard_max_loops` | 5 | hoger als het doel nog niet gehaald is (AD-10/11: 8 à 9 lussen vanaf 12 elementen) |
+| Max. aantal elementen na verfijnen | `adapt_homard_max_elements` | 200000 | naar het geheugen; ook `memory_limit` |
+
+**Vast** (geen instelling): Dörfler-keuze 0,5 per lus (de elementen met de grootste fout
+die samen de helft van Σ η² dragen, zoals §6.2); de lus stopt bij het doel, het maximum
+aantal lussen of elementen, of als de fout **twee lussen achter elkaar** boven de beste
+waarde ligt. Eén stijgende lus stopt de lus niet: HOMARD's overgangselementen laten de
+globale fout soms even stijgen (AD-10: 1,92 → 1,71 → 0,83 → 1,24 → 0,62 %).
+
+**Waarom deze standaard:** 1% is een ruim doel voor het globale veld; een lager doel kost
+snel veel elementen. Zie §7.6 voor een piekwaarde.
+
+### 7.3 Hoe de bridge het vertaalt
+
+![HOMARD-lus binnen de job](img/homard_loop.svg)
+
+1. Grof Mecway-mesh, zoals de bridge het schrijft.
+2. Oplossen in Code-Aster (`THER_LINEAIRE`/`THER_NON_LINE`, of `STAT_NON_LINE` met de hele
+   lastgeschiedenis) op het huidige mesh.
+3. Foutindicator per element (ZZ: het verschil tussen de spanning of warmtestroom per
+   element en het gemiddelde in de knopen); de elementen boven de rode lijn (Dörfler 0,5)
+   worden gekozen.
+4. HOMARD verfijnt de gekozen elementen (`MACR_ADAP_MAIL`), met overgangselementen
+   (pyramides, tetraëders) zodat het mesh conform blijft, en legt nieuwe knopen op de
+   gekromde randen (§7.4).
+5. Het verfijnde mesh; terug naar 2 tot het doel of een grens bereikt is.
+6. Na de laatste lus: het resultaat met `PROJ_CHAMP` op het oorspronkelijke Mecway-mesh,
+   zodat het naar Mecway kan (§7.5).
+
+Details:
+- **Indicator:** de bridge rekent een eigen ZZ-indicator (Zienkiewicz-Zhu): per element
+  η² = V · gemiddelde over de knopen van |σ_element − σ_knoop|², globaal
+  100 √(Σ η² / (Σ η² + Σ ‖σ‖²)) %, een L2-norm van de spanning (thermisch: de
+  warmtestroom), niet de energienorm van §1.5. De indicatoren van Code-Aster zelf stoppen
+  op HOMARD's overgangselementen (S35a, gemeten: `ERTH_ELEM` kan niet op `PYRAM13` en niet
+  na een stationaire `THER_NON_LINE`; `ERZ1_ELEM` faalt op een HOMARD-`TETRA10`, `ERZ2_ELEM`
+  met randelementen).
+- **Niet-lineair:** elke lus rekent de **hele lastgeschiedenis** opnieuw op het nieuwe
+  mesh. Velden tussen stappen overzetten (`MAJ_CHAM`) faalde voor de plastische
+  toestand op HOMARD's meshes (S35a); opnieuw rekenen is betrouwbaar, kost wel per lus een
+  volledige analyse. De indicator gebruikt het laatste tijdstip.
+- **Groepen:** HOMARD verfijnt elementgroepen (componenten, vlakselecties) mee, maar
+  knoopgroepen houden alleen hun oude knopen en de knopen worden hernummerd. Daarom zet
+  de bridge in deze modus **symmetrie op volumevlakken** om naar `FACE_IMPO DNOR = 0` op
+  het vlak (net als frictionless) in plaats van `LIAISON_OBLIQUE` per knoopgroep.
+- **Pyramides in het Mecway-mesh:** HOMARD weigert ze zonder `ELEMENTS_ACCEPTES=
+  'IGNORE_PYRA'`; de bridge zet dat zelf, de pyramides blijven dan onverfijnd.
+
+### 7.4 Gekromde randen
+
+![Randvolgen bij HOMARD](img/homard_boundary.svg)
+
+1. As (midden) van de cilinder.
+2. Zonder randvolgen: de nieuwe knoop ligt op de rechte rand van het grove element.
+3. De randvlakken van het grove mesh (een veelhoek op de cilinder).
+4. Met randvolgen: de nieuwe knopen liggen op de cilinder.
+5. Het echte gekromde vlak.
+
+Zonder randvolgen houdt een gat de veelhoek van het grove mesh en werken de knikken als
+inspringende hoeken: de warmtestroom aan het gat liep in S35a op tot +21% en bleef stijgen.
+De bridge zoekt daarom zelf de gekromde randen:
+- alle **vrije vlakken** van de volume-elementen worden in stukken verdeeld (buurvlakken
+  met minder dan 50° tussen de normalen horen bij elkaar);
+- elk stuk wordt gepast als **cilinder** of **bol**: alle knopen moeten binnen 0,001 x de
+  straal van het vlak liggen (knopen van een Mecway-mesh liggen op het CAD-vlak);
+- een herkend vlak wordt een groep randelementen `BRRAND<n>` met
+  `FRONTIERE_ANALYTIQUE` (cilinder: midden, as, straal; bol: midden, straal). De log
+  meldt elk herkend vlak (INFO) en elk gekromd stuk dat niet herkend is (WARNING; daar
+  liggen nieuwe knopen op de rechte elementranden).
+
+Kegels en vrije vormen worden niet herkend. Geef een cilinder of bol zelf op, of zet het
+randvolgen uit, met **`#ASTER-RAND`** per vlakselectie (Engels `#ASTER-BOUNDARY`):
+
+```
+#ASTER-RAND Gat = CILINDER 0, 0, 0, 0, 0, 1, 10 mm
+#ASTER-RAND Kop = BOL 0, 0, 0.2, 25 mm
+#ASTER-RAND Rand = GEEN
+```
+
+CILINDER: een punt op de as (x, y, z), de asrichting (ax, ay, az, zonder eenheid) en de
+straal; BOL: middelpunt en straal; lengtes in m of met eenheid; GEEN: dit vlak niet volgen.
+De vlakken van die selectie doen dan niet mee met het automatisch herkennen. Voorbeeld en
+uitleg ook in [ASTER_regels_voorbeelden.md](ASTER_regels_voorbeelden.md).
+
+### 7.5 Resultaten in Mecway
+
+- **Knoopwaarden** (temperatuur, verplaatsing, spanning, plastische rek, warmtestroom in de
+  knopen) zijn in de oorspronkelijke knopen gelijk aan het verfijnde resultaat (de knopen
+  van het grove mesh blijven bestaan; S35a: verschil < 1e-16 relatief).
+- **Elementknoopwaarden** (per element in een knoop): in een knoop die bij twee grove
+  elementen hoort, krijgen beide de waarde van één verfijnd buurelement; de sprong tussen
+  de grove elementen gaat verloren (S35a: beide 214,27 MPa, verfijnd 214,27 en 236,12). Kijk
+  voor een piek naar de knoopwaarde of naar het verfijnde resultaat in ParaView.
+- **Reactiekrachten** gaan niet naar Mecway (WARNING): knoopkrachten van het verfijnde mesh
+  laten zich niet interpoleren naar de grove knopen.
+- Alle tijdstappen van een niet-lineaire of transiënte analyse worden overgezet.
+- Het verfijnde resultaat zelf: `<model>_<run_id>_verfijnd.rmed` met `med_export` of
+  `vtu_export`.
+
+### 7.6 Interpretatie
+
+- Het doel geldt voor de **globale** ZZ-fout. Een piekwaarde aan een gat heeft een veel
+  kleiner doel nodig: plaat met gat (AD-10) warmtestroom binnen 1% bij 0,15%; met
+  plasticiteit (AD-11) spanning binnen 1% bij 0,4%.
+- **Minder elementen dan uniform:** AD-10 −0,87% met 2621 elementen, uniform verfijnd
+  dezelfde nauwkeurigheid met 6144 (factor 2,3); AD-11 +0,9% met 4364, uniform +2,4% met
+  6144 (bij 1932 elementen al gelijk aan uniform: factor 3,2).
+- De piek verbetert soms pas laat: bij plasticiteit bleef de spanning aan het gat drie
+  lussen gelijk tot de elementen aan het gat zelf verfijnd werden.
+- Bij een **singulariteit** (scherpe inspringende hoek, puntlast) blijft de lus daar
+  verfijnen zonder dat de waarde convergeert (zoals §1.5).
+
+### 7.7 Wat niet kan
+
+Deze eerste versie geeft een ERROR (en rekent niet) bij:
+- **schalen, balken, veren, puntmassa's** (alleen volume-elementen);
+- **knoopselecties met meer dan één knoop** in een last of voorwaarde (HOMARD vult ze niet
+  aan; zet de last op een vlakselectie);
+- **contact**, verlijmd contact, koppelingen, vergelijkingen tussen knopen,
+  **Compression only**, voorspansecties, flexibele verbindingen;
+- **bezwijken van elementen**, `LINE_QUAD` (`elem_hex8`), resultaatroute `tabel`, 2D.
+
+Verder: de lus vergroft niet, en de elementknoopwaarden en reacties zie §7.5. Deze grenzen
+staan ook in `KNOWN_BUGS.md` (punt 65).
+
+### 7.8 Meldingen en oplossingen
+
+| Melding | Oorzaak | Oplossing |
+|---|---|---|
+| Adaptieve verfijning gestopt: doel bereikt | globale ZZ-fout <= doel | klaar |
+| Adaptieve verfijning gestopt: maximum aantal lussen bereikt | doel nog niet gehaald | meer lussen of een hoger doel |
+| Adaptieve verfijning gestopt: het maximum aantal elementen zou overschreden worden | grens `adapt_homard_max_elements` | hogere grens (en `memory_limit`) of hoger doel |
+| Adaptieve verfijning gestopt: de fout stijgt twee lussen achter elkaar | singulariteit of slechte overgangen | kijk naar het verfijnde resultaat; rond de hoek af |
+| Adaptieve verfijning gestopt: HOMARD maakte geen nieuw mesh | HOMARD faalde (zie de .mess) | het resultaat van de laatste lus staat in Mecway; meld het geval |
+| ERROR: Adaptieve verfijning (adapt_homard): ... | iets uit §7.7 in het model | pas het model aan of zet `adapt_homard` uit |
+| WARNING: ... gekromd randvlak ... niet herkend | geen cilinder of bol (kegel, vrije vorm, of een afgerond stuk dat aan een vlak vastzit) | `#ASTER-RAND` als het toch een cilinder of bol is; anders accepteren |
+| WARNING: ... de reactiekrachten gaan niet naar Mecway | knoopkrachten zijn niet te projecteren | reacties uit een run zonder verfijning |
+| ERROR: '#ASTER-RAND ...': verwacht ... | verkeerde regel | zie §7.4 |
+
+### 7.9 Verificatie
+
+[`Verificatie.md`](Verificatie.md) hoofdstuk Adaptieve verfijning (AD): AD-10 thermisch
+(warmtestroom aan het gat −0,87% tegen uniform n32, 2621 elementen, factor 2,3 minder dan
+uniform), AD-10b dezelfde rand met `#ASTER-RAND`, AD-11 plasticiteit (spanning +0,9%, rek
++1,5%, 4364 elementen), AD-12 een temperatuur op een knoopselectie geeft een ERROR.
+
+## 8. Bronnen
+
+- EDF R&D. *code_aster 17.4*: catalogus `Cata/Commands/macr_adap_mail.py` (`ELEMENTS_ACCEPTES`, `FRONTIERE_ANALYTIQUE`, `MAJ_CHAM`), `proj_champ.py`, testcases forma07b (indicatorveld + `CRIT_RAFF_ABS`), forma20c, forma21a, ssnp158a. De U-documenten U7.03.01 en U4.72.05 zijn niet lokaal ingezien.
+- Zienkiewicz, O.C. & Zhu, J.Z. (1987). A simple error estimator and adaptive procedure for practical engineering analysis. *International Journal for Numerical Methods in Engineering*, 24(2), 337–357. Niet lokaal ingezien.
 - EDF R&D. *code_aster 17.4*: catalogus `lib/aster/code_aster/Cata/Commands/calc_erreur.py`
   (opties, `EXCIT`, geen `GROUP_MA`), `Cata/Commons/c_nom_cham_into.py` (velden
   `ERME_ELEM`/`ELNO`/`NOEU`), `Messages/indicateur.py` (meldingen). De U- en R-documenten

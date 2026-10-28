@@ -321,6 +321,18 @@ CONFIG_BRIDGE = {
             # buckling before STAT_NON_LINE; see lin_static_3d). STAT_NON_LINE
             # itself does not check it (Code-Aster default -1).
             "lin_solver_resi":       1.0e-6,
+            # Adaptive refinement with HOMARD inside the job
+            # (bridge_homard.py, aster_adapt.py; docs/Foutschatter.md par. 7):
+            # solve -> ZZ indicator -> refine the Doerfler selection (0.5)
+            # -> solve ... until the global relative error (ZZ, L2 norm of
+            # the stress or heat flux) [%] is below adapt_homard_target, or
+            # the loops or elements limit is reached; the result is
+            # projected onto the Mecway mesh. Solids, loads and constraints
+            # on face selections only.
+            "adapt_homard":       False,
+            "adapt_homard_target": 1.0,
+            "adapt_homard_max_loops": 5,
+            "adapt_homard_max_elements": 200000,
         },
         "dyna_impl_3d": {
             # Nonlinear dynamics, implicit (Mecway D31). Same
@@ -423,6 +435,18 @@ CONFIG_BRIDGE = {
             "time_limit":            1800,
             "memory_limit":          4096,
             "solver_nprec":          8,
+            # Adaptive refinement with HOMARD inside the job
+            # (bridge_homard.py, aster_adapt.py; docs/Foutschatter.md par. 7):
+            # solve -> ZZ indicator -> refine the Doerfler selection (0.5)
+            # -> solve ... until the global relative error (ZZ, L2 norm of
+            # the stress or heat flux) [%] is below adapt_homard_target, or
+            # the loops or elements limit is reached; the result is
+            # projected onto the Mecway mesh. Solids, loads and constraints
+            # on face selections only.
+            "adapt_homard":       False,
+            "adapt_homard_target": 1.0,
+            "adapt_homard_max_loops": 5,
+            "adapt_homard_max_elements": 200000,
         },
         "modal_3d": {
             # Modal analysis (Mecway V30): natural frequencies and

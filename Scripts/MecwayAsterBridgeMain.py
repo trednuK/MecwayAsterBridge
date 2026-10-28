@@ -140,6 +140,7 @@ import bridge_version
 import bridge_acoustic
 import bridge_fracture
 import bridge_xfem
+import bridge_homard
 import bridge_fatigue
 import bridge_vibroacoustic
 from bridge_welding     import report_lines as report_welding
@@ -474,6 +475,10 @@ def _run(settings):
             _notify(line)
         # Global error estimate (CALC_ERREUR, setting error_estimator)
         _report_error_estimate()
+        # Adaptive refinement with HOMARD: elements and error per loop
+        for line in bridge_homard.report(
+                os.path.join(work_dir_path(), run_name(".mess"))):
+            _notify(line)
         # Static: mass, centre of gravity and sum of the reactions
         _report_static_check()
         # Fracture mechanics: K and G along the crack front (bridge_fracture)

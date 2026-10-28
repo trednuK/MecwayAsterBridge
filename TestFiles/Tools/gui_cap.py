@@ -7,6 +7,8 @@
 #           CAP_DOCS=1 (neutral work folder for screenshots in docs/img),
 #           CAP_SET="key=value;..." (settings in memory for a screenshot),
 #           CAP_RESULTS=1 (only the Results window, example runs)
+#           CAP_SCROLL_PAGE=<n> (with CAP_SCROLL: the page that is scrolled
+#           to the bottom, default 0)
 import sys, os
 repo, out = sys.argv[1], sys.argv[2]
 lang = sys.argv[3] if len(sys.argv) > 3 else "nl"
@@ -120,14 +122,14 @@ def worker():
             if len(vis[0]) != 1:
                 print("FOUT: zichtbare pagina's", vis[0])
             snap("%02d_%s" % (i, tag))
-            if i == 0 and _env("CAP_SCROLL"):
+            if _env("CAP_SCROLL") and i == int(_env("CAP_SCROLL_PAGE") or 0):
                 def scr():
                     for c in host.Controls:
                         if c.Visible:
                             c.AutoScrollPosition = Point(0, 2000)
                 f.Invoke(MethodInvoker(scr))
                 Thread.Sleep(400)
-                snap("00_%s_scroll" % tag)
+                snap("%02d_%s_scroll" % (i, tag))
         if _env("CAP_KEYS"):
             res = []
 

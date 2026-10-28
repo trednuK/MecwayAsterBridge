@@ -49,6 +49,9 @@ mesh = DEFI_GROUP(
 
 {defigroup_block}
 
+# ---- BRIDGE_ADAPT_BEGIN: with adaptive refinement (adapt_homard) the part up to
+# end marker below runs in a loop over the refined meshes (bridge_homard.py) ----
+
 # =====================================================
 # 2. MODEL (PHENOMENE='THERMIQUE')
 # =====================================================
@@ -91,6 +94,8 @@ mesh = DEFI_GROUP(
 # 8. HEAT FLUX
 # =====================================================
 {calc_champ_block}
+
+# ---- BRIDGE_ADAPT_END ----
 
 # =====================================================
 # 9. RESULTS TO MECWAY

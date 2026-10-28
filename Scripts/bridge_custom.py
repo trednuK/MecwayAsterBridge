@@ -90,6 +90,12 @@
 #                            MecwaySectionProps (own repository); also
 #                            #ASTER-SECTION. See
 #                            bridge_from_liml._section_extras.
+#   #ASTER-RAND selection = CILINDER x, y, z, ax, ay, az, r
+#                            adaptive refinement with HOMARD
+#                            (adapt_homard): the boundary shape of a face
+#                            selection for FRONTIERE_ANALYTIQUE (also BOL x,
+#                            y, z, r and GEEN; English #ASTER-BOUNDARY,
+#                            CYLINDER/SPHERE/NONE). See bridge_homard.py.
 #   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
 #                            that selection (bridge_mesh renames names)
 #
@@ -126,7 +132,8 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-FASE", "-PHASE", "-HYST", "-MATERIAAL", "-MATERIAL",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
-          "-XFEM", "-CONSTANT", "-SECTIE", "-SECTION")
+          "-XFEM", "-CONSTANT", "-SECTIE", "-SECTION",
+          "-RAND", "-BOUNDARY")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -140,7 +147,7 @@ def empty():
             "sources": [], "welding": [],
             "phases": [], "hyst": [], "materials": [],
             "fatigue": [], "metallurgy": [],
-            "xfem": [], "constant": [], "sections": []}
+            "xfem": [], "constant": [], "sections": [], "boundaries": []}
 
 
 def parse(texts):
@@ -229,6 +236,10 @@ def parse(texts):
                 # worked out in bridge_from_liml._section_extras
                 if body.strip():
                     out["sections"].append(body.strip())
+            elif kind in ("-RAND", "-BOUNDARY"):
+                # worked out in bridge_homard.parse_boundaries
+                if body.strip():
+                    out["boundaries"].append(body.strip())
             elif kind in ("-METALLURGIE", "-METALLURGY"):
                 # worked out in bridge_metallurgy.parse_specs
                 if body.strip():

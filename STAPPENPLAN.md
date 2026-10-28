@@ -73,7 +73,7 @@ S7, S8, S5, S9).
 | S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless + GUI); regression 2376/2382 |
 | S34b | Principal values of shells (top/middle/bottom) and Green-Lagrange principal strains (`GLe1`) under Mecway's names | done | S34 | branch of S34b (28 Oct 2026): `_shell_principal_vars`, `greenlagrangeprincipalstrain1..3`, `GLe1..3`, e/g/e1 alias for Green-Lagrange; FX-04, FX-05 OK; rule equal to Mecway's own solve within 3e-13; Mecway recognises the fields (headless); GUI not checked |
 | S35a | HOMARD adaptive refinement inside the job: research and prototype (thermal, nonlinear static with plasticity) | done | S7 | 28 Oct 2026: route works (own ZZ indicator, CART_NEUT_R + `MACR_ADAP_MAIL`, restart per loop, `FRONTIERE_ANALYTIQUE`, `PROJ_CHAMP` back + `export_results` unchanged); 2.3 x (thermal) and 3.2 x (plasticity) fewer cells than uniform at equal accuracy; prototype `TestFiles/Tools/homard_s35` (see §S35) |
-| S35b | HOMARD adaptive refinement inside the job: build into the bridge (settings Thermal/Nonlinear, mesh-independent load block, node groups, boundary following input, verification AD-1x) | open | S35a | not built; design and questions for the user in §S35 |
+| S35b | HOMARD adaptive refinement inside the job: build into the bridge (settings Thermal/Nonlinear, curved boundaries automatic + `#ASTER-RAND`, verification AD-10 .. AD-12) | done | S35a | branch s35b (28/29 Oct 2026): `bridge_homard.py` + `aster_adapt.py`, settings `adapt_homard*`; AD-10/10b/11/12 OK (thermal −0.87%, plasticity +0.9% against uniform n32; 0.43 / 0.71 x the cells of uniform n8); first version solids + face selections only; not tested in the Mecway GUI (see §S35) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1962,3 +1962,55 @@ version restricted to solids with loads/constraints on face selections (ERROR ot
 after projection Mecway's element-node values lose the jump between coarse elements (node
 values exact): acceptable, or write only node values? (4) stop criterion: the ZZ error is an L2
 stress/flux norm, not the energy norm of S7; default target 1%?
+**Answers of the user (28 Oct 2026, 21:10):** (1) recognise curved boundaries automatically
+(cylinder, sphere; cone if cheap) with INFO/WARNING per surface, `#ASTER` keyword as override;
+(2) first version: solids, loads and constraints on face selections, bilingual ERROR for the
+rest; (3) node and element-node values after `PROJ_CHAMP`, ELNO limitation documented; (4)
+target default 1% as a setting, plus max. loops and max. elements, no stop on a single
+rising loop.
+**Findings S35b (built, branch s35b on nacht-int2):**
+- *Route:* `bridge_homard.wrap` puts the region between the markers `BRIDGE_ADAPT_BEGIN/END`
+  of `AsterTemplate_Thermique.comm` / `AsterTemplate_StatNonLine.comm` (model .. CALC_CHAMP)
+  indented into a Python loop in `study.comm`; after the loop `PROJ_CHAMP` (MODELE_1/2) of
+  `res` (and `res_flux`) onto the original mesh, so `aster_results_export` and the MED/VTU
+  blocks run unchanged on the projected result. Per loop: `aster_adapt.Loop.after_solve`
+  (ZZ indicator from a separate `CALC_CHAMP` SIGM/FLUX ELNO+NOEU on the solid groups, Dörfler
+  0.5, stop rules), `Mesh.setGroupOfCells('BRADAP<k>')`, `CART_NEUT_R` 0/1, `MACR_ADAP_MAIL
+  RAFFINEMENT CRIT_RAFF_ABS=0.5`, existence check of the new mesh (HOMARD fails silently),
+  `MODI_MAILLAGE ORIE_PEAU` of the skin groups on the new mesh. Nothing changes with the
+  setting off (only two comment lines in the templates).
+- *Symmetry* on solid faces becomes `FACE_IMPO DNOR = 0` on the face group in this mode
+  (`bridge_mesh._apply_to_model_data`), like frictionless; LIAISON_OBLIQUE on node lists would
+  miss the new nodes.
+- *Curved boundaries:* `bridge_mesh._adapt_boundaries` + `bridge_homard.recognise`: free faces
+  of the solids in patches (crease 50°), fit as sphere (only if the normals are not all
+  perpendicular to one axis) or cylinder (axis = eigenvector of Σ n nᵀ with the smallest
+  eigenvalue, Kasa circle in the plane), tolerance 1e-3 x radius; a recognised patch becomes a
+  group `BRRAND<n>` of boundary elements with `FRONTIERE_ANALYTIQUE`. Cones are not
+  recognised (WARNING, `#ASTER-RAND` as fallback): not cheap enough for this run. AD-10: the
+  hole recognised with deviation 5e-13 x R. Pitfall found by the unit test: two circles of a
+  one-layer cylinder also lie on a sphere, so the sphere is not tried when the normals have an
+  exact zero eigenvalue.
+- *`#ASTER-RAND` / `#ASTER-BOUNDARY`* `selection = CILINDER x, y, z, ax, ay, az, r` | `BOL x, y, z,
+  r` | `GEEN` (English CYLINDER/SPHERE/NONE), lengths with unit; its faces leave the automatic
+  recognition (AD-10b equal to AD-10 within 1e-4).
+- *Scope:* `bridge_homard.check_scope` (before the builder, and on the loop text for
+  GROUP_NO with more than one node): ERROR for non-solid elements, couplings, contact,
+  bonded contact, constraint equations, point masses, pre-tension, flexible joints, springs,
+  compression only, element failure, LINE_QUAD, route 'tabel', 2D (AD-12). Reactions are not
+  projected (WARNING); pyramids in the input get `ELEMENTS_ACCEPTES='IGNORE_PYRA'`.
+- *Verification:* AD-10 thermal qx −66 878 (−0.87%, tol. 1.5%) with 2621 cells after 8 loops;
+  AD-11 plasticity sxx 293.69 MPa (+0.92%, tol. 3%), p +1.25%, 4364 cells after 9 loops, 5 time
+  steps; AD-10b, AD-12 OK. Identical to the S35a prototype. Unit test
+  `tests/test_bridge_homard.py` (CPython + IronPython 2.7.9); the generation pipeline with
+  adapt_homard also run in Mecway's IronPython (AD-10b, AD-11). TH/NL families with the
+  setting off (79 cases, 298 checks): all values identical to the baseline (relative
+  difference < 1e-9), no status change (only NL-03a known, KNOWN_BUGS 43); the generated
+  `.comm` differs only by the two marker comment lines. Refined result to
+  `_verfijnd.rmed` checked with `med_export`/`vtu_export` (no MED alarm). Full regression:
+  coordinator.
+- *Open:* Mecway GUI check (status box lines, results of AD-10/AD-11 in Mecway, the refined
+  `_verfijnd.rmed` in ParaView/MWHub Post); cones and free-form boundaries
+  (`MAILLAGE_FRONTIERE` not tried); shells/beams/contact in the loop (needs node groups rebuilt
+  per mesh); the default target 1% is much too coarse for a peak (AD-10 stops after 2 loops at
+  −6%): document only, as the user chose 1%.

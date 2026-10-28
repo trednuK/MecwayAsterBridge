@@ -249,7 +249,7 @@ verified.
 - **Zienkiewicz-Zhu** (`ERZ1_ELEM`/`ERZ2_ELEM`) and the goal-oriented estimator
   (`QIRE_ELEM`, needs a second, dual problem) are not offered (the Code-Aster test
   cases with ZZ are mostly 2D; sslv111f uses `ERZ1_ELEM` in 3D).
-- **Adaptive refinement**: with Mecway's own refinement, see §6 (HOMARD not built, §6.6).
+- **Adaptive refinement**: with Mecway's own refinement, see §6; thermal and nonlinear with HOMARD, see §7.
 
 ## 4. Messages and solutions
 
@@ -404,28 +404,8 @@ refinement*) where `errorestimate` is large.
 - Only **solid elements** are chosen; the loop does not refine shells and beams.
 - **Node selections** with a load or constraint on an edge to be refined: ERROR (apply
   the constraint to faces).
-- **HOMARD** (`MACR_ADAP_MAIL`, refining inside Code-Aster) is not built yet. HOMARD
-  works in 3D on this installation (test case sslv110f: HEXA8 1680 → 1698 + 56 TETRA4,
-  conforming, all TEST_RESU OK). Step S35a (October 2026) researched the route in which
-  the loop runs in one Code-Aster job and the result comes back onto the Mecway mesh
-  with `PROJ_CHAMP` (thermal and nonlinear static, prototype in
-  `TestFiles/Tools/homard_s35`): it works (plate with a hole, heat flux and stress with
-  2.3 to 3.2 x fewer elements than uniform refinement), but HOMARD does not extend node
-  groups, renumbers the nodes, makes transition elements on which Code-Aster's
-  estimators stop, and a curved boundary must be given as an analytical shape. Building
-  it in is planned as step S35b (`STAPPENPLAN.md`). The Mecway route keeps the model in
-  Mecway and refines everything along; that is why it was chosen for linear static (the
-  user's preference).
-
-  ![HOMARD loop inside the job (prototype S35a)](../img/homard_loop.svg)
-
-  1. Coarse Mecway mesh (in the prototype the plate with a hole).
-  2. Solve in Code-Aster (`THER_LINEAIRE` or `STAT_NON_LINE`, the whole load history).
-  3. Error indicator per element; the elements above the red line (Dörfler selection) are chosen.
-  4. HOMARD refines the chosen elements (`MACR_ADAP_MAIL`), with transition elements.
-  5. Refined mesh; back to 2 until the target or the maximum number of loops is reached.
-  6. After the last loop: the result onto the original Mecway mesh with `PROJ_CHAMP`, so
-     that it can go to Mecway.
+- **Thermal and nonlinear static**: for those there is the refinement with HOMARD
+  inside the Code-Aster job, see §7 (the Mecway model stays unchanged there).
 - The loop does not coarsen (*unrefine*).
 
 These limits are also in `KNOWN_BUGS.md` (item 65).
@@ -453,8 +433,204 @@ These limits are also in `KNOWN_BUGS.md` (item 65).
 Mecway) Kt +0.82% with 15 810 elements, uniform Refine x2 to 2% 49 152; AD-03: the loop
 stops at a node-selection constraint.
 
-## 7. Sources
+## 7. Adaptive refinement with HOMARD (thermal, nonlinear static)
 
+With the setting **Adaptive refinement (HOMARD, inside the job)** Code-Aster refines the
+mesh itself, in one run: solve, error indicator, refine the elements with the largest
+error with HOMARD (`MACR_ADAP_MAIL`), solve again, until the target or a limit. The result
+then comes back onto the **original Mecway mesh**; the Mecway model itself does not
+change. This works for **thermal** (Mecway T30/T31, `ther_3d`) and **nonlinear static**
+(L30, `nonlin_static_3d`), where the error estimator of §1 does not exist. Linear static
+keeps the Mecway route of §6. Code: `Scripts/bridge_homard.py` (bridge) and
+`Scripts/aster_adapt.py` (in the job); research: step S35a in `STAPPENPLAN.md`.
+
+### 7.1 Step-by-step workflow in Mecway
+
+1. Build the model with **solid elements** (preferably hex20; tet10, wedge and pyramid
+   also work). A coarse mesh is fine: the loop refines by itself.
+2. Put **loads and constraints on face selections** (temperature, heat flux, convection,
+   symmetry, frictionless, fixed, pressure, traction). A node selection with one node is
+   allowed; a node selection with more nodes is not (§7.7).
+3. Main window, page **Thermal** or **Nonlinear**, heading *Adaptive refinement*: switch
+   on *Adaptive refinement (HOMARD, inside the job)* and choose the target (§7.2).
+4. Click *Start*. The bridge recognises the curved boundaries (§7.4) and writes the loop
+   into `study.comm`; Code-Aster computes all loops in one run (no OK per loop).
+5. After the run the results are on the Mecway mesh. The status box shows per loop the
+   number of elements and the global error, and why the loop stopped. With `med_export` or
+   `vtu_export` the refined result itself is in `<model>_<run_id>_verfijnd.rmed`
+   (ParaView, MWHub Post).
+
+![Adaptive refinement on the page Thermal](../img/thermal_adapt_homard_en.png)
+
+1. *Adaptive refinement (HOMARD, inside the job)* (`adapt_homard`): the loop on.
+2. *Target: global error ZZ [%]* (`adapt_homard_target`).
+3. *Max. number of refinement loops* (`adapt_homard_max_loops`).
+4. *Max. number of elements after refining* (`adapt_homard_max_elements`).
+
+The page *Nonlinear static* has the same four settings.
+
+For a single model it also works with `#ASTER-OPTIE`, e.g. `#ASTER-OPTIE adapt_homard = yes`
+and `#ASTER-OPTIE adapt_homard_target = 0.3`.
+
+### 7.2 Settings
+
+| Setting (label) | Key | Default | When to change |
+|---|---|---|---|
+| Adaptive refinement (HOMARD, inside the job) | `adapt_homard` | off | on for the loop; each loop is a full solve |
+| Target: global error ZZ [%] | `adapt_homard_target` | 1 | 1 for the global field; much lower for a peak value: plate with a hole within 1% at 0.15% (thermal, AD-10) and 0.4% (plasticity, AD-11) |
+| Max. number of refinement loops | `adapt_homard_max_loops` | 5 | higher if the target is not reached yet (AD-10/11: 8 to 9 loops from 12 elements) |
+| Max. number of elements after refining | `adapt_homard_max_elements` | 200000 | according to the memory; also `memory_limit` |
+
+**Fixed** (no setting): Dörfler selection 0.5 per loop (the elements with the largest
+error that together carry half of Σ η², as §6.2); the loop stops at the target, the
+maximum number of loops or elements, or when the error lies above the best value **two
+loops in a row**. One rising loop does not stop the loop: HOMARD's transition elements
+make the global error rise now and then (AD-10: 1.92 → 1.71 → 0.83 → 1.24 → 0.62 %).
+
+**Why this default:** 1% is an ample target for the global field; a lower target quickly
+costs many elements. See §7.6 for a peak value.
+
+### 7.3 How the bridge translates it
+
+![HOMARD loop inside the job](../img/homard_loop.svg)
+
+1. Coarse Mecway mesh, as the bridge writes it.
+2. Solve in Code-Aster (`THER_LINEAIRE`/`THER_NON_LINE`, or `STAT_NON_LINE` with the whole
+   load history) on the current mesh.
+3. Error indicator per element (ZZ: the difference between the stress or heat flux per
+   element and the mean at the nodes); the elements above the red line (Dörfler 0.5) are
+   chosen.
+4. HOMARD refines the chosen elements (`MACR_ADAP_MAIL`), with transition elements
+   (pyramids, tetrahedra) so that the mesh stays conforming, and puts new nodes on the
+   curved boundaries (§7.4).
+5. The refined mesh; back to 2 until the target or a limit is reached.
+6. After the last loop: the result onto the original Mecway mesh with `PROJ_CHAMP`, so that
+   it can go to Mecway (§7.5).
+
+Details:
+- **Indicator:** the bridge computes its own ZZ indicator (Zienkiewicz-Zhu): per element
+  η² = V · mean over the nodes of |σ_element − σ_node|², globally
+  100 √(Σ η² / (Σ η² + Σ ‖σ‖²)) %, an L2 norm of the stress (thermal: the heat flux),
+  not the energy norm of §1.5. Code-Aster's own indicators stop on HOMARD's transition
+  elements (S35a, measured: `ERTH_ELEM` cannot on `PYRAM13` and not after a stationary
+  `THER_NON_LINE`; `ERZ1_ELEM` fails on a HOMARD `TETRA10`, `ERZ2_ELEM` with boundary
+  elements).
+- **Nonlinear:** each loop computes the **whole load history** again on the new mesh.
+  Carrying fields over between steps (`MAJ_CHAM`) failed for the plastic state on HOMARD's
+  meshes (S35a); computing again is reliable, but costs a full analysis per loop. The
+  indicator uses the last time step.
+- **Groups:** HOMARD refines element groups (components, face selections) along, but node
+  groups keep only their old nodes and the nodes are renumbered. Therefore in this mode
+  the bridge turns **symmetry on solid faces** into `FACE_IMPO DNOR = 0` on the face (like
+  frictionless) instead of `LIAISON_OBLIQUE` per node group.
+- **Pyramids in the Mecway mesh:** HOMARD refuses them without `ELEMENTS_ACCEPTES=
+  'IGNORE_PYRA'`; the bridge sets that itself, the pyramids then stay unrefined.
+
+### 7.4 Curved boundaries
+
+![Boundary following with HOMARD](../img/homard_boundary.svg)
+
+1. Axis (centre) of the cylinder.
+2. Without boundary following: the new node lies on the straight edge of the coarse
+   element.
+3. The boundary faces of the coarse mesh (a polygon on the cylinder).
+4. With boundary following: the new nodes lie on the cylinder.
+5. The real curved surface.
+
+Without boundary following a hole keeps the polygon of the coarse mesh and the kinks act
+as re-entrant corners: the heat flux at the hole rose to +21% in S35a and kept rising. The
+bridge therefore looks for the curved boundaries itself:
+- all **free faces** of the solid elements are divided into pieces (neighbouring faces with
+  less than 50° between the normals belong together);
+- each piece is fitted as a **cylinder** or **sphere**: all nodes must lie within 0.001 x
+  the radius of the surface (nodes of a Mecway mesh lie on the CAD surface);
+- a recognised surface becomes a group of boundary elements `BRRAND<n>` with
+  `FRONTIERE_ANALYTIQUE` (cylinder: centre, axis, radius; sphere: centre, radius). The log
+  reports each recognised surface (INFO) and each curved piece that is not recognised
+  (WARNING; there new nodes lie on the straight element edges).
+
+Cones and free-form surfaces are not recognised. Give a cylinder or sphere yourself, or
+switch the boundary following off, with **`#ASTER-RAND`** per face selection (English
+`#ASTER-BOUNDARY`):
+
+```
+#ASTER-BOUNDARY Hole = CYLINDER 0, 0, 0, 0, 0, 1, 10 mm
+#ASTER-BOUNDARY Head = SPHERE 0, 0, 0.2, 25 mm
+#ASTER-BOUNDARY Edge = NONE
+```
+
+CYLINDER: a point on the axis (x, y, z), the axis direction (ax, ay, az, without unit) and
+the radius; SPHERE: centre and radius; lengths in m or with a unit; NONE: do not follow
+this surface. The faces of that selection then do not take part in the automatic
+recognition. Example and explanation also in
+[ASTER_lines_examples.md](ASTER_lines_examples.md).
+
+### 7.5 Results in Mecway
+
+- **Node values** (temperature, displacement, stress, plastic strain, heat flux at the
+  nodes) at the original nodes are equal to the refined result (the nodes of the coarse
+  mesh remain; S35a: difference < 1e-16 relative).
+- **Element-node values** (per element at a node): at a node that belongs to two coarse
+  elements, both get the value of one refined neighbouring element; the jump between the
+  coarse elements is lost (S35a: both 214.27 MPa, refined 214.27 and 236.12). For a peak
+  look at the node value or at the refined result in ParaView.
+- **Reaction forces** do not go to Mecway (WARNING): nodal forces of the refined mesh
+  cannot be interpolated to the coarse nodes.
+- All time steps of a nonlinear or transient analysis are carried over.
+- The refined result itself: `<model>_<run_id>_verfijnd.rmed` with `med_export` or
+  `vtu_export`.
+
+### 7.6 Interpretation
+
+- The target applies to the **global** ZZ error. A peak value at a hole needs a much
+  smaller target: plate with a hole (AD-10) heat flux within 1% at 0.15%; with plasticity
+  (AD-11) stress within 1% at 0.4%.
+- **Fewer elements than uniform:** AD-10 −0.87% with 2621 elements, uniformly refined the
+  same accuracy with 6144 (factor 2.3); AD-11 +0.9% with 4364, uniform +2.4% with 6144
+  (at 1932 elements already equal to uniform: factor 3.2).
+- The peak sometimes improves only late: with plasticity the stress at the hole stayed the
+  same for three loops until the elements at the hole itself were refined.
+- At a **singularity** (sharp re-entrant corner, point load) the loop keeps refining there
+  without the value converging (as §1.5).
+
+### 7.7 What is not possible
+
+This first version gives an ERROR (and does not compute) for:
+- **shells, beams, springs, point masses** (solid elements only);
+- **node selections with more than one node** in a load or constraint (HOMARD does not
+  extend them; put the load on a face selection);
+- **contact**, bonded contact, couplings, constraint equations, **Compression only**,
+  pre-tension sections, flexible joints;
+- **element failure**, `LINE_QUAD` (`elem_hex8`), result route `tabel`, 2D.
+
+Further: the loop does not coarsen, and for the element-node values and reactions see
+§7.5. These limits are also in `KNOWN_BUGS.md` (item 65).
+
+### 7.8 Messages and solutions
+
+| Message | Cause | Solution |
+|---|---|---|
+| Adaptive refinement stopped: target reached | global ZZ error <= target | done |
+| Adaptive refinement stopped: maximum number of loops reached | target not reached yet | more loops or a higher target |
+| Adaptive refinement stopped: the maximum number of elements would be exceeded | limit `adapt_homard_max_elements` | higher limit (and `memory_limit`) or higher target |
+| Adaptive refinement stopped: the error rose in two loops in a row | singularity or poor transitions | look at the refined result; round the corner |
+| Adaptive refinement stopped: HOMARD made no new mesh | HOMARD failed (see the .mess) | the result of the last loop is in Mecway; report the case |
+| ERROR: Adaptive refinement (adapt_homard): ... | something from §7.7 in the model | change the model or switch `adapt_homard` off |
+| WARNING: ... curved boundary ... not recognised | not a cylinder or sphere (cone, free form, or a rounded piece attached to a flat face) | `#ASTER-RAND` if it is a cylinder or sphere after all; otherwise accept |
+| WARNING: ... the reaction forces do not go to Mecway | nodal forces cannot be projected | reactions from a run without refinement |
+| ERROR: '#ASTER-RAND ...': expected ... | wrong line | see §7.4 |
+
+### 7.9 Verification
+
+[`Verification.md`](Verification.md) chapter Adaptive refinement (AD): AD-10 thermal (heat
+flux at the hole −0.87% against uniform n32, 2621 elements, factor 2.3 fewer than
+uniform), AD-10b the same boundary with `#ASTER-RAND`, AD-11 plasticity (stress +0.9%,
+strain +1.5%, 4364 elements), AD-12 a temperature on a node selection gives an ERROR.
+
+## 8. Sources
+
+- EDF R&D. *code_aster 17.4*: catalogue `Cata/Commands/macr_adap_mail.py` (`ELEMENTS_ACCEPTES`, `FRONTIERE_ANALYTIQUE`, `MAJ_CHAM`), `proj_champ.py`, test cases forma07b (indicator field + `CRIT_RAFF_ABS`), forma20c, forma21a, ssnp158a. The U documents U7.03.01 and U4.72.05 were not consulted locally.
+- Zienkiewicz, O.C. & Zhu, J.Z. (1987). A simple error estimator and adaptive procedure for practical engineering analysis. *International Journal for Numerical Methods in Engineering*, 24(2), 337–357. Not consulted locally.
 - EDF R&D. *code_aster 17.4*: catalogue `lib/aster/code_aster/Cata/Commands/calc_erreur.py`
   (options, `EXCIT`, no `GROUP_MA`), `Cata/Commons/c_nom_cham_into.py` (fields
   `ERME_ELEM`/`ELNO`/`NOEU`), `Messages/indicateur.py` (messages). The U and R documents
