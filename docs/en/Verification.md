@@ -139,7 +139,7 @@ formulas `s1`, `tr`, `e1`).
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added after this run (not yet in a full regression, not in the table): Orthotropic material
-OR-01..17, 16 cases, 154 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
+OR-01..22, 19 cases, 174 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
 BU-20 .. BU-25 and TH-03 re-run with it: 136 cases, FEM values unchanged); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
 checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
@@ -840,6 +840,9 @@ because the internal solver gives no solution there) is the second reference.
 | OR-14 | cantilever of OR-06 in Dynamic response (D31, HHT, Δt = T/50), density 1500 kg/m³, tip traction 100 N as a step | period 1/f1 = 6.7988 ms (OR-08); Mecway (CCX) 6.7731 ms | 6.7763 ms (−0.33%: scheme); Mecway +0.05% |
 | OR-15 | cube of OR-01 in hex8 (2 × 2 × 2) with `elem_hex8` = `LINE_QUAD` (the `MASSIF` groups survive `CREA_MAILLAGE`) | as OR-01; Mecway (hex8) the same strains | within 1e-8 |
 | OR-17 | cantilever of OR-05 with an *Element orientation* card U = (cos 20x, sin 20x, 0) (formula of the element centre, x in m), V = Z: 20 `MASSIF` groups | Mecway 19.454 mm | 19.454 mm (equal, 2e-8) |
+| OR-20 | shell (DKT) 10 × 10 mm, t = 1 mm (quad4 4 × 4), membrane stress 10 MPa along X, U = (cos 30°, sin 30°, 0) per element: one `DEFI_COMPOSITE` layer with `ORIENTATION` 30° | plane-stress Hooke turned: ε = (3.4411e-4, −1.7411e-4), γ = −3.3961e-4; σxx = 10 MPa, σyy = σxy = 0 (global) | within 2e-8; Mecway the same |
+| OR-21 | idem without orientation, node order with the edge 1–2 along +Y (Mecway's default U, measured) | ε = (5e-4, −3e-5), γ = 0 | exact; Mecway the same |
+| OR-22 | strip 100 × 10 mm, t = 2 mm (quad4 20 × 2), clamped edge, 10 N out of plane at the tip, U at 30° | Mecway (MITC4) 16.039 mm, σxx top at x = 25 mm 112.42 MPa | 15.961 mm (−0.48%), 112.94 MPa (+0.46%): DKT against MITC4 (KB2) |
 
 Mecway's semantics, measured with headless solves of single hex8 cubes under an imposed
 homogeneous strain (all nodes prescribed, so the stress is C·ε exactly): the orthotropic

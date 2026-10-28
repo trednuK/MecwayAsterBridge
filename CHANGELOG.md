@@ -9,10 +9,12 @@
   formula, or the global axes by default) as `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`. A matrix is
   translated when it is orthotropic in the element axes; a truly anisotropic matrix (coupling
   terms) gives an ERROR, because Code-Aster has no general anisotropic elasticity for solids.
-  Shells and the other analyses: clear ERROR (steps S13b, S13c). Cube in uniaxial tension and free
+  *Orthotropic* on linear shells (DKT/DST) in Linear static: a one-layer `DEFI_COMPOSITE` with
+  Mecway's U (default the edge from node 1 to 2). Quadratic shells, *Composite* laminates and
+  the other analyses: clear ERROR (steps S13c, S13e). Cube in uniaxial tension and free
   thermal expansion with turned axes equal to Hooke's law and to Mecway's own solve; orthotropic
   cantilever in two orientations, also its frequencies, buckling load, large deflection and
-  step response (verification OR-01 .. OR-17; docs Orthotropic material). With the field *stresses*, linear static also
+  step response, shells (verification OR-01 .. OR-22; docs Orthotropic material). With the field *stresses*, linear static also
   writes Mecway's *stress in element coordinates* (`lamuu` .. `lamwu`) of the solids, with
   Mecway's averaging rule (S13d, OR-11).
 

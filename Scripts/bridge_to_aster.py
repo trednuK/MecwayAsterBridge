@@ -2502,6 +2502,8 @@ def _build_materials_block(model_data, analysis, plastic_func_map=None):
         else:
             out += "{0} = DEFI_MATERIAU(ELAS=_F({1}),)\n".format(
                 concept, elas)
+    # Orthotropic shells: one DEFI_COMPOSITE layer per group (S13b)
+    out += bridge_orthotropic.composite_block(model_data, concepts)
     for group, gap in model_data.get("gap_groups", {}).items():
         # DIS_CHOC on SEG2: contact as soon as the node distance along the
         # element axis <= DIST_1 + DIST_2 (checked with a run, Code-Aster
@@ -2635,6 +2637,8 @@ def _build_fieldmat_block(model_data, timeline=None):
     for group in model_data.get("gap_groups", {}):
         entries.append("        _F(GROUP_MA='{0}', MATER=MAT_{0}),\n".format(
             group))
+    # Orthotropic shells: the composite per group (S13b), after the elsets
+    entries += bridge_orthotropic.fieldmat_entries(model_data)
 
     temp_block, varc = _build_temperature_field(model_data, timeline)
     if not entries:

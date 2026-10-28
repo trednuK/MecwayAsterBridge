@@ -9,8 +9,10 @@ kwadratisch) in **Lineair statisch** (S30, `lin_static_3d`), **Modaal** (V30, `m
 **Knik** (B30, `buckling_3d`), **Niet-lineair statisch** (L30, `nonlin_static_3d`) en
 impliciete **Dynamica** (D31, `dyna_impl_3d`) naar de orthotrope
 elasticiteit `ELAS_ORTH` van Code-Aster, met Mecway's *Element orientation* als richting
-van de materiaalassen. Schalen, andere analyses en een volledig anisotrope matrix kunnen
-nog niet (§6).
+van de materiaalassen. *Orthotropic* op **lineaire schalen** (tri3, quad4: DKT/DST) vertaalt
+de bridge in Lineair statisch als een `DEFI_COMPOSITE` met één laag (§1.1). Kwadratische
+schalen, *Composite*-laminaten, andere analyses en een volledig anisotrope matrix kunnen nog
+niet (§6).
 
 ## 1. Gebruik
 
@@ -42,6 +44,20 @@ nog niet (§6).
 5. W = U × V (rechtsdraaiend).
 6. *Angle*: V en W draaien over deze hoek om U.
 
+### 1.1 Schalen
+
+Bij een schaal is W de normaal en ligt U in het elementvlak: standaard langs de rand van
+knoop 1 naar knoop 2 (gemeten met Mecway 34; de handleiding noemt knoop 3 voor kwadratische
+elementen), anders de projectie op het vlak van de U-vector van *Element properties* of een
+*Element orientation*-kaart. De schaal draagt vlakke spanning met E1, E2, ν12, G12. De bridge
+schrijft één `DEFI_COMPOSITE`-laag (dikte van de schaal, het `ELAS_ORTH`-materiaal,
+`ORIENTATION` = de hoek van Code-Aster's lokale x-as naar Mecway's U) per groep `BRSHO<n>`
+van elementen met dezelfde hoek. Een mesh met wisselende randrichting (standaard-U) geeft
+dus meerdere groepen. Spanningen komen terug in globale assen op het boven-, midden- en
+ondervlak (veld *shell_stresses*), zoals bij isotrope schalen. DKT heeft geen
+dwarskrachtvervorming (G23, G31 worden niet gebruikt), Mecway's schaal wel: bij buiging is het
+verschil dat van isotrope schalen (OR-22: 0,5%).
+
 ## 2. Poisson-getallen en matrices
 
 Mecway gebruikt het **grote** Poisson-getal: ν12 = −ε2/ε1 bij een spanning in richting 1,
@@ -67,6 +83,7 @@ stijfheid in een drukeenheid.
 | *Orthotropic* E, ν, G, α in U, V, W | `DEFI_MATERIAU` `ELAS_ORTH` `E_L`, `E_T`, `E_N`, `NU_LT`, `NU_LN`, `NU_TN`, `G_LT`, `G_LN`, `G_TN`, `RHO`, bij thermische spanning `ALPHA_L/T/N` (L, T, N = U, V, W) |
 | *Stiffness matrix* / *Compliance matrix* (orthotroop) | dezelfde `ELAS_ORTH` (constanten uit de inverse van het normaalblok en de schuifdiagonaal); geen thermische uitzetting (die hebben deze typen in Mecway ook niet) |
 | elementassen U, V, W (attributen, kaart, standaard) | `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP` = (α, β, γ) nautische hoeken, per groep `BRORI<n>` van elementen met dezelfde assen |
+| *Orthotropic* op een lineaire schaal | `DEFI_COMPOSITE` `COUCHE` (`EPAIS`, `MATER`, `ORIENTATION`) per groep `BRSHO<n>`, toegewezen in `AFFE_MATERIAU` na de elset |
 
 Elementen met dezelfde assen delen een groep: een oriëntatie die voor een hele component
 gelijk is, geeft één `MASSIF`-regel; een formule per element geeft zoveel groepen als er
@@ -89,7 +106,10 @@ de spanning langs de vezel (U) direct.
 |---|---|---|
 | ERROR: Materiaal '...' (StiffnessMatrix): de matrix koppelt normaal- en schuifrekken ... (termen c14 ... niet nul) | een volledig anisotrope matrix | Code-Aster kan dit niet voor volume-elementen; is het materiaal orthotroop in andere assen, voer het dan in die assen in en draai de elementoriëntatie |
 | ERROR: Materiaal '...' (Orthotropic): de constanten geven geen positief definiete stijfheid | een modulus ≤ 0, of te grote Poisson-getallen (bijv. het kleine getal als groot ingevoerd) | controleer ν12² < E1/E2 enz.; Mecway rekent dit ook niet |
-| ERROR: Orthotroop/anisotroop materiaal op schalen, membranen of balken | het materiaal op 2D- of 1D-elementen | gebruik daar een isotroop materiaal (schalen: STAPPENPLAN S13b) |
+| ERROR: Orthotroop/anisotroop materiaal op kwadratische schalen (COQUE_3D), membranen, 2D of balken | het materiaal op deze elementen | gebruik daar een isotroop materiaal, of lineaire schalen (STAPPENPLAN S13e) |
+| ERROR: Orthotrope schalen (elset ...) worden nu alleen in Lineair statisch vertaald | een schaal met orthotroop materiaal in een andere analyse | Static 3D (andere: STAPPENPLAN S13e) |
+| ERROR: Orthotrope schalen met een element offset | een *Element offset* op zo'n schaal | geen offset (STAPPENPLAN S13e) |
+| ERROR: Orthotrope schaalelementen ...: geen U-as in het elementvlak | de U-vector staat loodrecht op de schaal | geef een U-as die in het vlak ligt |
 | ERROR: Orthotroop/anisotroop materiaal (elset ...) wordt nu alleen vertaald in Lineair en Niet-lineair statisch, Modaal, Knik en impliciete Dynamica | een andere analyse (expliciete dynamica, modale superpositie, harmonisch, spectrum, thermisch → mechanisch, akoestiek) | gebruik een van de ondersteunde analyses (andere: STAPPENPLAN S13c) |
 | ERROR: Element orientation van ... volume-element(en) met orthotroop materiaal: alleen een U- of alleen een V-vector, of U evenwijdig aan V | de oriëntatie van een volume-element geeft maar één van beide vectoren, of V langs U (Mecway rekent dit ook niet) | geef U en een V-vector die niet evenwijdig is aan U |
 
@@ -99,7 +119,9 @@ Zie ook KNOWN_BUGS 130.
 
 - Een matrix met koppeltermen (echt anisotroop, 21 constanten): niet in Code-Aster voor
   volume-elementen.
-- Orthotroop materiaal en *Composite* op schalen en membranen (STAPPENPLAN S13b).
+- Orthotroop materiaal op kwadratische schalen (COQUE_3D), membranen en met een element
+  offset, schalen in andere analyses dan Lineair statisch, en *Composite*-laminaten
+  (STAPPENPLAN S13e).
 - Expliciete dynamica, modale superpositie, harmonisch, responsspectrum, de keten thermisch →
   mechanisch en akoestiek (STAPPENPLAN S13c), en orthotrope warmtegeleiding in thermische
   analyses. Modaal met voorspanning, complexe modes en
@@ -120,7 +142,9 @@ twee verschillende elementassen (R σ Rᵀ, en op het grensvlak het gemiddelde v
 elementknoopwaarden, zoals Mecway). OR-12 .. OR-14: niet-lineair statisch (kubus, ingeklemde
 balk met grote doorbuiging) en impliciete dynamica (staplast, periode), gelijk aan Mecway's
 eigen CCX-oplossing. OR-15: hex8 met `LINE_QUAD`; OR-17: een oriëntatiekaart met een formule
-van x (één `MASSIF`-groep per elementkolom), gelijk aan Mecway.
+van x (één `MASSIF`-groep per elementkolom), gelijk aan Mecway. OR-20 .. OR-22: schalen
+(membraantrek met U op 30° en met de standaard-U langs de rand 1–2, exact en gelijk aan
+Mecway; een strook op buiging, 0,5% van Mecway's MITC4).
 
 ## 8. Bronnen
 
@@ -131,6 +155,7 @@ van x (één `MASSIF`-groep per elementkolom), gelijk aan Mecway.
   gemeten met headless oplossingen van Mecway 34 (kubussen onder een opgelegde homogene
   rek, 28 okt 2026).
 - Code-Aster 17.4: catalogus `defi_materiau.py` (`ELAS_ORTH`, `ELAS_ISTR`; geen algemene
-  3D-anisotropie), U4.43.01 (`ELAS_ORTH`); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`),
+  3D-anisotropie), U4.43.01 (`ELAS_ORTH`; schalen via `DEFI_COMPOSITE`, §3.5.2),
+  `defi_composite.py` (U4.42.03); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`),
   U4.42.01; nautische hoeken zoals in `code_aster/MacroCommands/observation_ops.py`
   (`anglnaut`).

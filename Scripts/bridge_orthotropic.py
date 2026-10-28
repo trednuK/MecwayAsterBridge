@@ -365,6 +365,122 @@ def _elem_axes(model_data, eid):
     return (u, v, angle)
 
 
+_SHELLS = frozenset(["tri3", "quad4"])
+# Shell modelisations with DEFI_COMPOSITE in the bridge (linear shells)
+_SHELL_MODS = ("DKT", "DST")
+
+
+def _shell_angle(model_data, eid, shape, nodes, vect):
+    """Angle [deg] about the shell normal from Code-Aster's local x (the
+    projection of the group's reference vector vect, None = global X, on
+    the element plane; U4.42.01 COQUE VECTEUR) to Mecway's material U (the
+    projection of the element's U axis, default the edge from node 1 to 2,
+    manual v34 par. 7.4.2, measured S13b); the normal from the node order
+    as in bridge_to_aster._shell_ref_vector. None for a degenerate
+    element."""
+    xyz = model_data["mesh_nodes"]
+    p = [xyz[n] for n in nodes[:4]]
+    if shape.startswith("quad"):
+        a = [p[2][i] - p[0][i] for i in range(3)]
+        b = [p[3][i] - p[1][i] for i in range(3)]
+    else:
+        a = [p[1][i] - p[0][i] for i in range(3)]
+        b = [p[2][i] - p[0][i] for i in range(3)]
+    n = _unit(_cross(a, b))
+    if n is None:
+        return None
+
+    def inplane(v):
+        d = _dot(v, n)
+        return _unit(tuple(c - d * m for c, m in zip(v, n)))
+    x = inplane(vect or (1.0, 0.0, 0.0))
+    u = model_data.get("elem_u_axes", {}).get(eid)
+    u = inplane(u) if u and any(u) else None
+    if u is None:
+        u = inplane(tuple(p[1][i] - p[0][i] for i in range(3)))
+    if x is None or u is None:
+        return None
+    y = _cross(n, x)
+    return math.degrees(math.atan2(_dot(u, y), _dot(u, x)))
+
+
+def _prepare_shells(model_data):
+    """Orthotropic shells (S13b): one group BRSHO<n> per (material,
+    thickness, angle of U in Code-Aster's local axes) for DEFI_COMPOSITE
+    with one layer (ORIENTATION = that angle) ->
+    model_data["ortho_shell_groups"] = [(group, mat_name, thickness, deg)].
+    False after an ERROR."""
+    import bridge_to_aster
+    mats = model_data.get("materials", {})
+    elsets = model_data.get("elsets", {})
+    elem_elset = model_data.get("_elem_elset", {})
+    secs = model_data.get("shell_sections", {})
+    vectors = {}
+    groups = OrderedDict()
+    bad = []
+    for eid, shape, nodes, elset in model_data.get("mesh_elements", []):
+        es = elem_elset.get(eid, elset)
+        mat = elsets.get(es)
+        if shape not in _SHELLS or not is_ortho(mats.get(mat)) or \
+                es not in secs:
+            continue
+        if es not in vectors:
+            vectors[es] = bridge_to_aster._shell_ref_vector(model_data, es,
+                                                            quiet=True)
+        deg = _shell_angle(model_data, eid, shape, nodes, vectors[es])
+        if deg is None:
+            bad.append(eid)
+            continue
+        # ORIENTATION must lie in [-90, 90] (catalogue defi_composite.py);
+        # an orthotropic layer is the same with U turned by 180 degrees
+        deg = (deg + 90.0) % 180.0 - 90.0
+        key = (mat, float(secs[es]["thickness"]), round(deg, 6) + 0.0)
+        groups.setdefault(key, []).append(eid)
+    if bad:
+        log(tr(u"ERROR: Orthotrope schaalelementen {0}: geen U-as in het "
+               u"elementvlak (U loodrecht op de schaal of een ontaard "
+               u"element). Geef een U-as die in het vlak ligt.",
+               u"ERROR: Orthotropic shell elements {0}: no U axis in the "
+               u"element plane (U normal to the shell or a degenerate "
+               u"element). Give a U axis that lies in the plane.").format(
+                   ", ".join(str(e) for e in bad[:10])))
+        return False
+    extra = model_data.setdefault("extra_ma_groups", OrderedDict())
+    out = []
+    for i, ((mat, thick, deg), eids) in enumerate(groups.items()):
+        name = "BRSHO{0}".format(i + 1)
+        extra[name] = eids
+        out.append((name, mat, thick, deg))
+    model_data["ortho_shell_groups"] = out
+    if out:
+        log("INFO: Orthotropic shells: {0} group(s) with one DEFI_COMPOSITE "
+            "layer each (ORIENTATION = angle of Mecway's U from the local x "
+            "axis): {1}{2}.".format(len(out), ", ".join(
+                "{0} {1:.6g} deg ({2} el.)".format(g, d, len(extra[g]))
+                for g, _m, _t, d in out[:5]), " ..." if len(out) > 5 else ""))
+    return True
+
+
+def composite_block(model_data, concepts):
+    """DEFI_COMPOSITE per orthotropic shell group (U4.42.03; catalogue
+    defi_composite.py v17.4: COUCHE EPAIS, MATER, ORIENTATION in degrees
+    from the local x axis of AFFE_CARA_ELEM COQUE about the normal)."""
+    out = ""
+    for group, mat, thick, deg in model_data.get("ortho_shell_groups", []):
+        out += ("COMP_{0} = DEFI_COMPOSITE(COUCHE=_F(EPAIS={1}, MATER={2}, "
+                "ORIENTATION={3}),)\n").format(group, _fmt(thick),
+                                               concepts[mat], _fmt(deg))
+    return out
+
+
+def fieldmat_entries(model_data):
+    """AFFE_MATERIAU entries for the orthotropic shell groups (after the
+    elset entries, so that they win)."""
+    return ["        _F(GROUP_MA='{0}', MATER=COMP_{0}),\n".format(group)
+            for group, _m, _t, _d in model_data.get("ortho_shell_groups",
+                                                    [])]
+
+
 def prepare(model_data):
     """Group the solid elements with an ELAS_ORTH material by material
     frame: model_data["massif_orientations"] = [(group, (a, b, g))] and the
@@ -408,6 +524,8 @@ def prepare(model_data):
         extra[name] = eids
         out.append((name, key))
     model_data["massif_orientations"] = out
+    if not _prepare_shells(model_data):
+        return None
     # axes per group for the field "stress in element coordinates"
     # (export_arg)
     model_data["massif_frames"] = [(frames[key], groups[key])
@@ -507,18 +625,39 @@ def check(model_data, analysis):
                       for e in ortho_sets)
     ok = True
     mods = model_data.get("elset_modelisations", {})
+    shells = [e for e in ortho_sets if mods.get(e) in _SHELL_MODS]
     not_solid = sorted(bridge_failure.mecway_name(model_data, e)
                        for e in ortho_sets
-                       if not str(mods.get(e, "3D")).startswith("3D"))
+                       if not str(mods.get(e, "3D")).startswith("3D") and
+                       e not in shells)
     if not_solid:
-        log(tr(u"ERROR: Orthotroop/anisotroop materiaal op schalen, "
-               u"membranen of balken (elset {0}) wordt nog niet vertaald "
-               u"(alleen volume-elementen, STAPPENPLAN S13b). Gebruik op "
-               u"deze elementen een isotroop materiaal.",
-               u"ERROR: Orthotropic/anisotropic material on shells, "
-               u"membranes or beams (elset {0}) is not translated yet "
-               u"(solid elements only, STAPPENPLAN S13b). Use an isotropic "
-               u"material on these elements.").format(", ".join(not_solid)))
+        log(tr(u"ERROR: Orthotroop/anisotroop materiaal op kwadratische "
+               u"schalen (COQUE_3D), membranen, 2D of balken (elset {0}) "
+               u"wordt nog niet vertaald (volume-elementen en lineaire "
+               u"schalen DKT/DST, STAPPENPLAN S13b). Gebruik op deze "
+               u"elementen een isotroop materiaal.",
+               u"ERROR: Orthotropic/anisotropic material on quadratic shells "
+               u"(COQUE_3D), membranes, 2D or beams (elset {0}) is not "
+               u"translated yet (solid elements and linear shells DKT/DST, "
+               u"STAPPENPLAN S13b). Use an isotropic material on these "
+               u"elements.").format(", ".join(not_solid)))
+        ok = False
+    if shells and solver_cmd != "MECA_STATIQUE":
+        log(tr(u"ERROR: Orthotrope schalen (elset {0}) worden nu alleen in "
+               u"Lineair statisch vertaald (STAPPENPLAN S13b).",
+               u"ERROR: Orthotropic shells (elset {0}) are currently "
+               u"translated in Linear static only (STAPPENPLAN S13b)."
+               ).format(", ".join(bridge_failure.mecway_name(model_data, e)
+                                  for e in shells)))
+        ok = False
+    offsets = [e for e in shells
+               if model_data.get("offset_shells", {}).get(e)]
+    if offsets:
+        log(tr(u"ERROR: Orthotrope schalen met een element offset (elset "
+               u"{0}) worden niet vertaald (STAPPENPLAN S13b).",
+               u"ERROR: Orthotropic shells with an element offset (elset "
+               u"{0}) are not translated (STAPPENPLAN S13b).").format(
+                   ", ".join(offsets)))
         ok = False
     if not _supported(analysis):
         log(tr(u"ERROR: Orthotroop/anisotroop materiaal (elset {0}) wordt "

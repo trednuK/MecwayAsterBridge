@@ -193,6 +193,41 @@ def test_angles():
     check(bo.frame(None, None, 0.5) == bo.frame(None, None), "angle alone")
 
 
+def test_shells():
+    """Orthotropic quad4 shells: angle of Mecway's U (default edge 1 -> 2,
+    or the projected U axis) from Code-Aster's local x (global X here),
+    folded into [-90, 90] for DEFI_COMPOSITE ORIENTATION, one group per
+    angle; composite and AFFE_MATERIAU texts."""
+    md = {"skipped_loads": []}
+    props = bo.parse(_xml(ORTHO), None, "Orthotropic", "O", md)
+    nodes = {1: (0, 0, 0), 2: (1, 0, 0), 3: (1, 1, 0), 4: (0, 1, 0)}
+    md.update({
+        "materials": {"O": props}, "elsets": {"Plaat": "O"},
+        "mesh_nodes": nodes,
+        "mesh_elements": [(1, "quad4", [1, 2, 3, 4], "Plaat"),
+                          (2, "quad4", [2, 3, 4, 1], "Plaat"),
+                          (3, "quad4", [3, 4, 1, 2], "Plaat"),
+                          (4, "quad4", [1, 2, 3, 4], "Plaat")],
+        "elem_u_axes": {4: (1.0, 1.0, 5.0)},
+        "shell_sections": {"Plaat": {"thickness": 0.001}},
+        "elset_modelisations": {"Plaat": "DKT"}})
+    check(bo.prepare(md) is not None, "prepare shells: {0}".format(LOG))
+    groups = dict((g, (d, md["extra_ma_groups"][g]))
+                  for g, _m, _t, d in md["ortho_shell_groups"])
+    # element 1: U = X (0); 2: edge along +Y (90 -> -90); 3: edge along -X
+    # (180 -> 0, the same group as 1); 4: U (1, 1, 5) projected: 45
+    want = {(0.0, (1, 3)), (-90.0, (2,)), (45.0, (4,))}
+    got = set((d, tuple(e)) for d, e in groups.values())
+    check(got == want, "shell groups: {0}".format(got))
+    concepts = {"O": "MAT_1"}
+    txt = bo.composite_block(md, concepts)
+    check("COMP_BRSHO1 = DEFI_COMPOSITE(COUCHE=_F(EPAIS=0.001, MATER=MAT_1, "
+          "ORIENTATION=0.0),)" in txt, txt)
+    check(bo.fieldmat_entries(md)[0].strip() ==
+          "_F(GROUP_MA='BRSHO1', MATER=COMP_BRSHO1),",
+          "fieldmat: {0}".format(bo.fieldmat_entries(md)))
+
+
 def test_prepare_and_check():
     md = {"skipped_loads": []}
     props = bo.parse(_xml(ORTHO), None, "Orthotropic", "O", md)
@@ -244,8 +279,14 @@ def test_prepare_and_check():
     check(txt.endswith("AMOR_ALPHA=1e-05, AMOR_BETA=2.0)"), txt)
     md["elset_modelisations"]["Blok"] = "DKT"
     del LOG[:]
+    check(bo.check(md, {"solver_command": "MECA_STATIQUE"}),
+          "DKT in linear static: {0}".format(LOG))
+    check(not bo.check(md, {"solver_command": "CALC_MODES"}) and
+          any("S13b" in l for l in LOG), "DKT in modal refused")
+    md["elset_modelisations"]["Blok"] = "COQUE_3D"
+    del LOG[:]
     check(not bo.check(md, {"solver_command": "MECA_STATIQUE"}) and
-          any("S13b" in l for l in LOG), "shell refused: {0}".format(LOG))
+          any("S13b" in l for l in LOG), "COQUE_3D refused: {0}".format(LOG))
     check(bo.check(md, {"solver_command": "THER_LINEAIRE"}), "thermal ok")
     md["elset_modelisations"]["Blok"] = "3D"
     check(bo.check(md, {"solver_command": "CALC_MODES",
@@ -258,9 +299,10 @@ if __name__ == "__main__":
     test_orthotropic()
     test_matrices()
     test_angles()
+    test_shells()
     test_prepare_and_check()
     if FAILS:
         print("{0} FAIL(S)".format(len(FAILS)))
         sys.exit(1)
     print("OK: orthotropic and matrix materials, frame and ANGL_REP, "
-          "orientation groups, scope")
+          "orientation groups, shells, scope")

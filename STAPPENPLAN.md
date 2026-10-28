@@ -46,7 +46,8 @@ S7, S8, S5, S9).
 | S11 | Wrap-up: crit-review of verification, check docs against the bridge, integral check, push to `main` | done | all other steps done and on `develop` | 7 Oct: crit-review on Fable (gate processed: 8742df0), settings/tooltips/assumptions (feabce4), docs checked against the bridge (345c400, 088244e, 3c336e4), KB 74/84/85/86 solved, all 270 cases identical via a .liml saved by Mecway (f1539a2), GUI spot checks VM-02b/CY-01/AH-08/WE-02, final regression see Verificatie.md §3 |
 | S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | split | – | chosen by the user 15 Oct (C1); split into S13a .. S13d (28 Oct 2026, see §S13) |
 | S13a | Orthotropic / stiffness matrix / compliance matrix on solids in linear and nonlinear static, modal, buckling and implicit dynamics, material axes from the element orientation (`ELAS_ORTH` + `MASSIF` `ANGL_REP`) | done | – | branch worktree-agent-a36c7764124e6a606 on nacht-int3 (28 Oct 2026): `bridge_orthotropic.py`; OR-01 .. OR-10 OK (strains equal to Hooke rotated and to Mecway headless within 1e-7, cantilever −0.17/−0.12% vs Timoshenko, modes and buckling = Mecway within 1e-9, L30/D31 OR-12..14 = Mecway CCX within 5e-4, hex8 LINE_QUAD OR-15, formula card OR-17); LS, MO-20..31, BU-20..25, TH-03 unchanged; not yet tested in the Mecway GUI (see §S13) |
-| S13b | Orthotropic material and *Composite* on shells (`DEFI_COMPOSITE`, `COQUE` `VECTEUR` per group of equal U, Mecway's default U = edge 1-2) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
+| S13b | Orthotropic material on linear shells (DKT/DST) in linear static (`DEFI_COMPOSITE` with one layer, `ORIENTATION` = angle of Mecway's U, default U = edge 1-2) | done | S13a | same branch as S13a (28 Oct 2026): `bridge_orthotropic._prepare_shells`, `composite_block`; OR-20/21 membrane exact and = Mecway headless, OR-22 bending −0.48% / +0.46% against Mecway (DKT vs MITC4); isotropic shells unchanged; not yet tested in the Mecway GUI |
+| S13e | Orthotropic shells continued: quadratic shells (COQUE_3D), shells in other analyses, element offset, membranes, and Mecway's *Composite* laminates (several `DEFI_COMPOSITE` layers, per-ply results) | open | S13b | split off from S13b (29 Oct 2026); see §S13 |
 | S13c | Orthotropic solids in the other mechanical analyses (explicit dynamics: critical time step from the orthotropic wave speed; mode superposition, harmonic incl. `AMOR_HYST`, spectrum, thermal → mechanical chain) and orthotropic thermal conductivity (`THER_ORTH`, Mecway `ORTHOTROPICLOCAL`) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
 | S13d | Result field *stress in element coordinates* (`lamuu` .. `lamwu`) for solids | done | S13a | same branch as S13a (28 Oct 2026): `aster_results_export._element_coord_vars` with the field *stresses* in linear static of models with orthotropic solids; Mecway's rule measured (R σ Rᵀ, element-node mean at nodes of two frames); OR-01..04 (lam = R σ Rᵀ exact), OR-11 (rule within 1e-9 Pa); Mecway 34 reads the bridge's `lamuu` (headless `solution.node_value`); GUI not checked |
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
@@ -1269,8 +1270,21 @@ rotated block under tension (Hooke in local axes) within 1%, and equal to Mecway
   OR-11 (two frames): the rule within 1e-9 Pa; against Mecway's own values the difference is
   that of the global nodal stresses of the two solvers on this coarse mesh (up to 2 MPa of
   80 MPa at the interface node, KB3). Mecway 34 reads the bridge's `lamuu` (headless).
-- *Open*: GUI check in Mecway (open a result, item *stress in element coordinates*); shells
-  (S13b); other analyses and orthotropic conductivity (S13c).
+- *S13b* (same branch): Mecway's shell: W = normal, U = edge from node 1 to 2 by default
+  (measured on quad4 squares under imposed membrane strain; the manual says node 3 for
+  quadratic elements, not measured), otherwise the projected U axis; plane stress with E_U,
+  E_V, ν_UV, G_UV; stresses in global axes. Code-Aster: orthotropic shells only via
+  `DEFI_COMPOSITE` (U4.43.01 §3.5.2); one layer per group `BRSHO<n>` of equal angle from the
+  local x (projection of the group's `VECTEUR`, as `_shell_ref_vector`) to U, folded into
+  [−90°, 90°] (catalogue range; an orthotropic layer is symmetric under U → −U). `SIGM_ELNO`
+  of the composite stays in the shell's user axes, so the existing transformation to global
+  works (OR-20: σyy = σxy = 0 with U at 30°). Seen on the way: Mecway 34's *Fixed* on a node
+  selection of shell nodes left the rotations free (singular result, OR-22 first try); on the
+  edge (face selection) it clamps. NOT checked how the bridge translates the node-selection
+  variant (it may clamp the rotations where Mecway does not).
+- *Open*: GUI check in Mecway (open a result, item *stress in element coordinates*);
+  quadratic and composite shells (S13e); explicit dynamics, modal-basis analyses and
+  orthotropic conductivity (S13c).
 
 ### S14 – Hyperelastic material
 **Goal:** translate Mecway *Neo Hooke* and *Mooney-Rivlin* (now: WARNING and the run stops).

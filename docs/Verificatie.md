@@ -141,7 +141,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Orthotroop materiaal OR-01..17, 16 cases, 154 controles OK (28 oktober 2026, stap S13a; de
+Orthotroop materiaal OR-01..22, 19 cases, 174 controles OK (28 oktober 2026, stap S13a; de
 families LS, MO-20 .. MO-31, BU-20 .. BU-25 en TH-03 daarmee opnieuw gedraaid: 136 cases, FEM-waarden
 ongewijzigd); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
 5 cases, 17 controles OK (28 oktober 2026, stap S15b).
@@ -848,6 +848,9 @@ met CCX, omdat de eigen solver daar geen oplossing geeft) is de tweede referenti
 | OR-14 | ingeklemde balk van OR-06 in Dynamic response (D31, HHT, Δt = T/50), dichtheid 1500 kg/m³, tiptractie 100 N als stap | periode 1/f1 = 6,7988 ms (OR-08); Mecway (CCX) 6,7731 ms | 6,7763 ms (−0,33%: schema); Mecway +0,05% |
 | OR-15 | kubus van OR-01 in hex8 (2 × 2 × 2) met `elem_hex8` = `LINE_QUAD` (de `MASSIF`-groepen overleven `CREA_MAILLAGE`) | als OR-01; Mecway (hex8) dezelfde rekken | binnen 1e-8 |
 | OR-17 | ingeklemde balk van OR-05 met een *Element orientation*-kaart U = (cos 20x, sin 20x, 0) (formule van het elementmidden, x in m), V = Z: 20 `MASSIF`-groepen | Mecway 19,454 mm | 19,454 mm (gelijk, 2e-8) |
+| OR-20 | schaal (DKT) 10 × 10 mm, t = 1 mm (quad4 4 × 4), membraanspanning 10 MPa langs X, U = (cos 30°, sin 30°, 0) per element: één `DEFI_COMPOSITE`-laag met `ORIENTATION` 30° | vlakke-spanning-Hooke gedraaid: ε = (3,4411e-4, −1,7411e-4), γ = −3,3961e-4; σxx = 10 MPa, σyy = σxy = 0 (globaal) | binnen 2e-8; Mecway hetzelfde |
+| OR-21 | idem zonder oriëntatie, knoopvolgorde met de rand 1–2 langs +Y (Mecway's standaard-U, gemeten) | ε = (5e-4, −3e-5), γ = 0 | exact; Mecway hetzelfde |
+| OR-22 | strook 100 × 10 mm, t = 2 mm (quad4 20 × 2), ingeklemde rand, 10 N uit het vlak op de tip, U op 30° | Mecway (MITC4) 16,039 mm, σxx boven bij x = 25 mm 112,42 MPa | 15,961 mm (−0,48%), 112,94 MPa (+0,46%): DKT tegen MITC4 (KB2) |
 
 Mecway's betekenis, gemeten met headless oplossingen van losse hex8-kubussen onder een
 opgelegde homogene rek (alle knopen voorgeschreven, dus de spanning is precies C·ε): de

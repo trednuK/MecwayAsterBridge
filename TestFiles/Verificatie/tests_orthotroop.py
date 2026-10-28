@@ -256,6 +256,10 @@ MW = {
     "OR-14": 0.0067731202,
     # OR-15 (hex8): Mecway's strains equal to OR-01; OR-17: tip [m]
     "OR-17": 0.019454408,
+    # shells (S13b): membrane strains; strip: tip [m], stressxxu1 [Pa]
+    "OR-20": [0.00034410714, -0.00017410714, -0.00033960568],
+    "OR-21": [0.0005, -3e-05, 0.0],
+    "OR-22": {"tip": 0.016039072, "sxx": 112423660.0},
 }
 
 
@@ -752,6 +756,161 @@ def _or17_checks(mw):
     return out
 
 
+# ------------------------------------------------------------------
+# OR-20 .. OR-22: orthotropic shells (S13b, DKT + DEFI_COMPOSITE).
+# OR-20/21: plate 10 x 10 mm, t = 1 mm (quad4 4 x 4) in the XY plane,
+# uniaxial membrane stress 10 MPa along X (nodal forces on the edges x = 0
+# and x = L, exact for linear quads), z and rotations held on all nodes,
+# 3-2-1 in the plane: plane-stress Hooke (E_U, E_V, nu_UV, G_UV) turned by
+# the angle of U. OR-20: U = (cos 30, sin 30, 0) per element; OR-21: no
+# orientation, node order with the edge 1 -> 2 along +Y (Mecway's default
+# U = that edge, measured). OR-22: cantilever strip 100 x 10 mm (quad4
+# 20 x 2), t = 2 mm, U at 30 degrees, tip force 10 N out of plane: Mecway
+# 34 headless (MITC4 against DKT: KNOWN_BUGS 2 order of differences).
+# ------------------------------------------------------------------
+from verif_lib import quadmesh, rect  # noqa: E402
+
+LP, TP = 0.01, 0.001
+SHELL_FIELDS = ["displacements", "stresses", "vonmises", "reactions",
+                "shell_stresses"]
+NP = 4
+PLATE = '<geometric type="Plate" thickness="1 mm" />'
+
+
+def plane_strain_global(theta, sigma):
+    """(eps_xx, eps_yy, gamma_xy) of a uniaxial membrane stress sigma
+    along X, plane stress, material U at theta (rad) from X."""
+    s11, s22 = 1.0 / EU, 1.0 / EV
+    s12, s66 = -NUV / EU, 1.0 / GUV
+    c, s = math.cos(theta), math.sin(theta)
+    # local stresses of sigma_xx (rotation by theta)
+    sl = (c * c * sigma, s * s * sigma, -c * s * sigma)
+    el = (s11 * sl[0] + s12 * sl[1], s12 * sl[0] + s22 * sl[1],
+          s66 * sl[2])
+    # back to global (tensor shear el[2]/2)
+    exx = c * c * el[0] + s * s * el[1] - 2 * c * s * el[2] / 2.0
+    eyy = s * s * el[0] + c * c * el[1] + 2 * c * s * el[2] / 2.0
+    exy = c * s * (el[0] - el[1]) + (c * c - s * s) * el[2] / 2.0
+    return exx, eyy, 2.0 * exy
+
+
+def _plate(attrs=None, rotate=False):
+    m = Model("S30")
+    m.elset("Plaat", "Ortho")
+    h = quadmesh(m, "Plaat", NP, NP, rect(0, LP, 0, LP))
+    es = m._elset["Plaat"][2]
+    for k in range(len(es)):
+        eid, shape, nids, a = es[k]
+        if rotate:
+            nids = nids[1:] + nids[:1]      # node 1 = corner (1, 0)
+        es[k] = (eid, shape, nids, attrs or a)
+    m.mat("Ortho", ORTHO, PLATE)
+    allnodes = list(range(1, len(m.nodes) + 1))
+    m.node_selection("Alle", allnodes)
+    m.add('<displacement selection="Alle"><value>0 m</value><x>0</x>'
+          '<y>0</y><z>1</z></displacement>')
+    for c in "xyz":
+        m.add('<noderotation selection="Alle"><value>0 rad</value>'
+              '<x>%d</x><y>%d</y><z>%d</z></noderotation>'
+              % (c == "x", c == "y", c == "z"))
+    pts = {"A": (0, 0, 0), "B": (LP, 0, 0), "C": (0, LP, 0)}
+    for name, p in pts.items():
+        m.node_selection(name, [m.node(*p)])
+    for name, dofs in (("A", "xy"), ("B", "y")):
+        for c in dofs:
+            m.add('<displacement selection="%s"><value>0 m</value>'
+                  '<x>%d</x><y>%d</y><z>0</z></displacement>'
+                  % (name, c == "x", c == "y"))
+    f = SIG * LP * TP
+    for sel, x, sign in (("XMin", 0.0, -1.0), ("XMax", LP, 1.0)):
+        for nid, p in enumerate(m.nodes, 1):
+            if abs(p[0] - x) > 1e-12:
+                continue
+            w = 0.5 if p[1] < 1e-12 or p[1] > LP - 1e-12 else 1.0
+            name = "%s%d" % (sel, nid)
+            m.node_selection(name, [nid])
+            m.add('<force selection="%s"><x>%r N</x><y>0 N</y><z>0 N</z>'
+                  '</force>' % (name, sign * f * w / NP))
+    return m
+
+
+def _pstrain(r, k):
+    point, var = [((LP, 0, 0), "displx"), ((0, LP, 0), "disply"),
+                  ((0, LP, 0), "displx")][k]
+    return r.at(var, point) / LP
+
+
+def _plate_checks(theta, mw):
+    eps = plane_strain_global(theta, SIG)
+    big = max(abs(e) for e in eps)
+    names = ("eps_xx", "eps_yy", "gamma_xy")
+    out = [Check(names[k], lambda r, k=k: _pstrain(r, k), ref=eps[k],
+                 tol_abs=1e-6 * big, unit="-",
+                 source="plane-stress Hooke (E_U, E_V, nu_UV, G_UV) turned "
+                        "to X, Y") for k in range(3)]
+    out.append(Check("stressxxm1", lambda r: r.at("stressxxm1",
+                                                  (LP / 2, LP / 2, 0)),
+                     ref=SIG, tol=1e-6, unit="Pa", source="F / (L t)"))
+    for c in ("yy", "xy"):
+        out.append(Check("stress%sm1 (0)" % c,
+                         lambda r, c=c: r.at("stress%sm1" % c,
+                                             (LP / 2, LP / 2, 0)),
+                         ref=0.0, tol_abs=1e-6 * SIG, unit="Pa",
+                         source="uniaxial: global stress, not in the "
+                                "material axes"))
+    for k, val in enumerate(mw or []):
+        out.append(Check(names[k] + " = Mecway", lambda r, k=k: _pstrain(r, k),
+                         ref=val, tol_abs=1e-6 * big, unit="-",
+                         source="Mecway 34 headless (internal solver)",
+                         in_series=False))
+    return out
+
+
+def build_or20():
+    return _plate('orientationux="0.866025403784439" orientationuy="0.5" '
+                  'orientationuz="0"')
+
+
+def build_or21():
+    return _plate(rotate=True)
+
+
+LS22, BS22, TS22, F22 = 0.1, 0.01, 0.002, 10.0
+
+
+def build_or22():
+    m = Model("S30")
+    m.elset("Strook", "Ortho")
+    h = quadmesh(m, "Strook", 20, 2, rect(0, LS22, 0, BS22))
+    es = m._elset["Strook"][2]
+    for k in range(len(es)):
+        es[k] = es[k][:3] + ('orientationux="0.866025403784439" '
+                             'orientationuy="0.5" orientationuz="0"',)
+    m.mat("Ortho", ORTHO, '<geometric type="Plate" thickness="2 mm" />')
+    # fixed on the edge (a face selection): on a node selection Mecway 34
+    # left the shell rotations free (singular, seen headless)
+    m.face_selection("Inklemming", h["edges"]["u0"])
+    m.node_selection("TipKnopen", sorted(h["nodes"]["u1"]))
+    m.add('<fixed selection="Inklemming" />')
+    m.add('<force selection="TipKnopen"><x>0 N</x><y>0 N</y><z>-%r N</z>'
+          '</force>' % F22)
+    m.add('<fieldvariable name="stress" displayunit="Pa" expanded="true" />')
+    return m
+
+
+def _or22_checks(mw):
+    out = []
+    if mw:
+        out.append(Check("doorbuiging tip = Mecway", _tip, ref=mw["tip"],
+                         tol=0.02, unit="m", source="Mecway 34 headless "
+                         "(MITC4 against DKT)", in_series=False))
+        out.append(Check("stressxxu1 x = 25 mm = Mecway",
+                         lambda r: r.at("stressxxu1", (0.025, 0.005, 0)),
+                         ref=mw["sxx"], tol=0.02, unit="Pa",
+                         source="Mecway 34 headless", in_series=False))
+    return out
+
+
 TESTS += [
     Case("OR-07", GROUP, "Orthotrope ingeklemde balk, eigenfrequenties, E_U "
          "langs de balk", "modal_3d", build_or07,
@@ -784,6 +943,20 @@ TESTS += [
          _cube_checks(frame(U1, V1), 0, MW.get("OR-01")),
          general={"elem_hex8": "LINE_QUAD"},
          note="As OR-01 in hex8; Code-Aster makes the cells quadratic."),
+    Case("OR-20", GROUP, "Orthotrope schaal (DKT), membraantrek X, U op "
+         "30 graden", "lin_static_3d", build_or20,
+         _plate_checks(math.radians(30.0), MW.get("OR-20")),
+         settings={"fields": SHELL_FIELDS},
+         note="DEFI_COMPOSITE with one layer, ORIENTATION 30 degrees."),
+    Case("OR-21", GROUP, "Orthotrope schaal (DKT), standaard-U = rand "
+         "knoop 1-2 langs Y", "lin_static_3d", build_or21,
+         _plate_checks(math.radians(90.0), MW.get("OR-21")),
+         settings={"fields": SHELL_FIELDS},
+         note="No orientation; Mecway's default U = edge from node 1 to 2."),
+    Case("OR-22", GROUP, "Orthotrope schaalstrook, buiging, U op 30 graden",
+         "lin_static_3d", build_or22, _or22_checks(MW.get("OR-22")),
+         settings={"fields": SHELL_FIELDS},
+         note="Tip force out of plane; DKT against Mecway's MITC4."),
     Case("OR-17", GROUP, "Orthotrope ingeklemde balk, U als formule van x "
          "(kaart)", "lin_static_3d", build_or17,
          _or17_checks(MW.get("OR-17")),

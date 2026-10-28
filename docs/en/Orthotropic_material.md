@@ -9,8 +9,9 @@ quadratic) in **Linear static** (S30, `lin_static_3d`), **Modal** (V30, `modal_3
 **Buckling** (B30, `buckling_3d`), **Nonlinear static** (L30, `nonlin_static_3d`) and implicit
 **Dynamics** (D31, `dyna_impl_3d`) to Code-Aster's orthotropic
 elasticity `ELAS_ORTH`, with Mecway's *Element orientation* as the direction of the
-material axes. Shells, other analyses and a fully anisotropic matrix are not possible yet
-(§6).
+material axes. *Orthotropic* on **linear shells** (tri3, quad4: DKT/DST) is translated in
+Linear static as a one-layer `DEFI_COMPOSITE` (§1.1). Quadratic shells, *Composite*
+laminates, other analyses and a fully anisotropic matrix are not possible yet (§6).
 
 ## 1. Usage
 
@@ -41,6 +42,20 @@ material axes. Shells, other analyses and a fully anisotropic matrix are not pos
 5. W = U × V (right-handed).
 6. *Angle*: V and W turn about U by this angle.
 
+### 1.1 Shells
+
+On a shell W is the normal and U lies in the element plane: by default along the edge from
+node 1 to node 2 (measured with Mecway 34; the manual mentions node 3 for quadratic
+elements), otherwise the projection of the U vector of *Element properties* or an *Element
+orientation* card on the plane. The shell carries plane stress with E1, E2, ν12, G12. The
+bridge writes one `DEFI_COMPOSITE` layer (thickness of the shell, the `ELAS_ORTH` material,
+`ORIENTATION` = the angle from Code-Aster's local x axis to Mecway's U) per group `BRSHO<n>`
+of elements with the same angle. A mesh with a varying edge direction (default U) therefore
+gives several groups. Stresses come back in global axes on the top, middle and bottom
+surface (field *shell_stresses*), as for isotropic shells. DKT has no transverse shear
+flexibility (G23, G31 are not used), Mecway's shell has: in bending the difference is that of
+isotropic shells (OR-22: 0.5%).
+
 ## 2. Poisson's ratios and matrices
 
 Mecway uses the **major** Poisson's ratio: ν12 = −ε2/ε1 under a stress in direction 1,
@@ -65,6 +80,7 @@ matrix with coupling terms gives an ERROR (§5). Shear terms are engineering she
 | *Orthotropic* E, ν, G, α in U, V, W | `DEFI_MATERIAU` `ELAS_ORTH` `E_L`, `E_T`, `E_N`, `NU_LT`, `NU_LN`, `NU_TN`, `G_LT`, `G_LN`, `G_TN`, `RHO`, with thermal stress `ALPHA_L/T/N` (L, T, N = U, V, W) |
 | *Stiffness matrix* / *Compliance matrix* (orthotropic) | the same `ELAS_ORTH` (constants from the inverse of the normal block and the shear diagonal); no thermal expansion (Mecway has none for these types either) |
 | element axes U, V, W (attributes, card, default) | `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP` = (α, β, γ) nautical angles, per group `BRORI<n>` of elements with the same axes |
+| *Orthotropic* on a linear shell | `DEFI_COMPOSITE` `COUCHE` (`EPAIS`, `MATER`, `ORIENTATION`) per group `BRSHO<n>`, assigned in `AFFE_MATERIAU` after the elset |
 
 Elements with the same axes share one group: an orientation that is the same for a whole
 component gives one `MASSIF` line, a formula per element gives as many groups as there
@@ -87,7 +103,10 @@ along the fibre (U) directly.
 |---|---|---|
 | ERROR: Material '...' (StiffnessMatrix): the matrix couples normal and shear strains ... (terms c14 ... not zero) | a fully anisotropic matrix | Code-Aster cannot do this for solids; if the material is orthotropic in other axes, enter it in those axes and turn the element orientation |
 | ERROR: Material '...' (Orthotropic): the constants do not give a positive definite stiffness | a modulus ≤ 0, or Poisson's ratios too large (e.g. the minor ratio entered as major) | check ν12² < E1/E2 etc.; Mecway does not solve this either |
-| ERROR: Orthotropic/anisotropic material on shells, membranes or beams | the material on 2D or 1D elements | use an isotropic material there (shells: STAPPENPLAN S13b) |
+| ERROR: Orthotropic/anisotropic material on quadratic shells (COQUE_3D), membranes, 2D or beams | the material on these elements | use an isotropic material there, or linear shells (STAPPENPLAN S13e) |
+| ERROR: Orthotropic shells (elset ...) are currently translated in Linear static only | a shell with orthotropic material in another analysis | Static 3D (others: STAPPENPLAN S13e) |
+| ERROR: Orthotropic shells with an element offset | an *Element offset* on such a shell | no offset (STAPPENPLAN S13e) |
+| ERROR: Orthotropic shell elements ...: no U axis in the element plane | the U vector is normal to the shell | give a U axis that lies in the plane |
 | ERROR: Orthotropic/anisotropic material (elset ...) is currently translated in Linear and Nonlinear static, Modal, Buckling and implicit Dynamics only | another analysis (explicit dynamics, mode superposition, harmonic, spectrum, thermal → mechanical, acoustics) | use one of the supported analyses (others: STAPPENPLAN S13c) |
 | ERROR: Element orientation of ... solid element(s) with orthotropic material: only a U or only a V vector, or U parallel to V | the orientation of a solid gives only one of the two vectors, or V along U (Mecway does not solve this either) | give U and a V vector that is not parallel to U |
 
@@ -97,7 +116,8 @@ See also KNOWN_BUGS 130.
 
 - A matrix with coupling terms (truly anisotropic, 21 constants): not in Code-Aster for
   solids.
-- Orthotropic material and *Composite* on shells and membranes (STAPPENPLAN S13b).
+- Orthotropic material on quadratic shells (COQUE_3D), membranes and with an element offset,
+  shells in other analyses than Linear static, and *Composite* laminates (STAPPENPLAN S13e).
 - Explicit dynamics, mode superposition, harmonic, response spectrum, the thermal →
   mechanical chain and acoustics (STAPPENPLAN S13c), and orthotropic thermal conductivity in
   thermal analyses. Modal with prestress, complex modes and cyclic
@@ -117,7 +137,9 @@ OR-11: *stress in element coordinates* on a bar with two different element axes 
 and the mean of the element-node values at the interface, as Mecway). OR-12 .. OR-14:
 Nonlinear static (cube, large-deflection cantilever) and implicit dynamics (step load, period),
 equal to Mecway's own CCX solve. OR-15: hex8 with `LINE_QUAD`; OR-17: an orientation card
-with a formula of x (one `MASSIF` group per element column), equal to Mecway.
+with a formula of x (one `MASSIF` group per element column), equal to Mecway. OR-20 .. OR-22:
+shells (membrane tension with U at 30° and with the default U along the edge 1–2, exact and
+equal to Mecway; a strip in bending, 0.5% from Mecway's MITC4).
 
 ## 8. Sources
 
@@ -127,5 +149,6 @@ with a formula of x (one `MASSIF` group per element column), equal to Mecway.
   `thermalexpansionu/v/w`, `c11` … `c66`, `s11` … `s66`); semantics measured with headless
   Mecway 34 solves (cubes under an imposed homogeneous strain, 28 Oct 2026).
 - Code-Aster 17.4: catalogue `defi_materiau.py` (`ELAS_ORTH`, `ELAS_ISTR`; no general 3D
-  anisotropy), U4.43.01 (`ELAS_ORTH`); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`), U4.42.01;
+  anisotropy), U4.43.01 (`ELAS_ORTH`; shells via `DEFI_COMPOSITE`, §3.5.2), `defi_composite.py`
+  (U4.42.03); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`), U4.42.01;
   nautical angles as in `code_aster/MacroCommands/observation_ops.py` (`anglnaut`).
