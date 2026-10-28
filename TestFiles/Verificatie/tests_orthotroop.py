@@ -168,6 +168,8 @@ def _cube(mat_lines, stress_dir, attrs=None, card=None, heat=None):
                   '<x>%d</x><y>%d</y><z>%d</z></displacement>' % (
                       name, c == "x", c == "y", c == "z"))
     m.add('<fieldvariable name="stress" displayunit="Pa" expanded="true" />')
+    m.add('<fieldvariable name="stress in element coordinates" '
+          'displayunit="Pa" expanded="true" />')
     return m
 
 
@@ -201,6 +203,13 @@ def _cube_checks(rows, stress_dir, mw):
         "stressxy (0)", lambda r: r.at("stressxy", (L / 2, L / 2, L / 2)),
         ref=0.0, tol_abs=1e-6 * SIG, unit="Pa",
         source="uniaxial stress state"))
+    # stress in element coordinates (S13d): lam_ab = R_a,d R_b,d sigma
+    for (a, b), c in zip(_PAIRS, ("uu", "vv", "ww", "uv", "vw", "wu")):
+        out.append(Check(
+            "lam" + c, lambda r, c=c: r.at("lam" + c, (L / 2, L / 2, L / 2)),
+            ref=rows[a][stress_dir] * rows[b][stress_dir] * SIG,
+            tol_abs=1e-6 * SIG, unit="Pa",
+            source="R sigma R^T (Mecway's stress in element coordinates)"))
     for k, val in enumerate(mw or []):
         out.append(Check(
             _NAMES[k] + " = Mecway", lambda r, k=k: _strain(r, k), ref=val,
@@ -495,6 +504,109 @@ def _buckling_checks(mw):
     return out
 
 
+# ------------------------------------------------------------------
+# OR-11: Mecway's "stress in element coordinates" (lamuu .. lamwu, S13d):
+# bar 40 x 10 x 10 mm (hex20 4 x 1 x 1), clamped at x = 0, force (500,
+# 100, -200) N on the end face; the two elements at x > 20 mm have turned
+# axes. lam = R sigma R^T at a node of one frame (exact, from the bridge's
+# own global stress); at the interface x = 20 mm the mean of the
+# element-node values (Mecway's rule, measured); both equal to Mecway 34
+# headless (tolerance: the nodal stress extrapolation of the two solvers).
+# ------------------------------------------------------------------
+U11 = (0.866025403784, 0.5, 0.0)
+V11 = (-0.5, 0.866025403784, 0.2)
+_LAM = ("uu", "vv", "ww", "uv", "vw", "wu")
+
+
+def build_or11():
+    m = Model("S30")
+    m.elset("Blok", "Ortho")
+    h = hexmesh(m, "Blok", 4, 1, 1, box(0, 0.04, 0, 0.01, 0, 0.01), order=2)
+    turned = (h["elems"][(2, 0, 0)], h["elems"][(3, 0, 0)])
+    es = m._elset["Blok"][2]
+    for k in range(len(es)):
+        if es[k][0] in turned:
+            es[k] = es[k][:3] + (
+                'orientationux="%r" orientationuy="%r" orientationuz="%r" '
+                'orientationvx="%r" orientationvy="%r" orientationvz="%r"'
+                % (U11 + V11),)
+    m.mat("Ortho", ORTHO)
+    m.face_selection("X0", h["faces"]["u0"])
+    m.face_selection("X1", h["faces"]["u1"])
+    m.add('<fixed selection="X0" />')
+    m.add('<force selection="X1"><x>500 N</x><y>100 N</y><z>-200 N</z>'
+          '</force>')
+    m.add('<fieldvariable name="stress" displayunit="Pa" expanded="true" />')
+    m.add('<fieldvariable name="stress in element coordinates" '
+          'displayunit="Pa" expanded="true" />')
+    return m
+
+
+def _rotated(r, point, rows):
+    """R sigma R^T at the node nearest to point from the global stress."""
+    nid = r.nearest(point)
+    st = r.step()
+    s = [[0.0] * 3 for _i in range(3)]
+    for (i, j), c in zip(_PAIRS, ("xx", "yy", "zz", "xy", "yz", "zx")):
+        s[i][j] = s[j][i] = st["stress" + c][nid]
+    return [sum(rows[a][p] * s[p][q] * rows[b][q] for p in range(3)
+                for q in range(3)) for a, b in _PAIRS]
+
+
+def _elem_mean(r, point, rows_of):
+    """Mean over the elements at the node nearest to point of R_e sigma_e
+    R_e^T with sigma_e the element-node stress (elementnodevariables
+    stress..) and R_e = rows_of(eid) (Mecway's rule at a node of
+    elements with different axes)."""
+    nid = r.nearest(point)
+    comps = ("xx", "yy", "zz", "xy", "yz", "zx")
+    ev = dict((c, r.elem("stress" + c)) for c in comps)
+    acc, n = [0.0] * 6, 0
+    for _name, _mat, elems in r.model.elsets:
+        for eid, _shape, nids, _attrs in elems:
+            if nid not in nids:
+                continue
+            k = nids.index(nid)
+            s = [[0.0] * 3 for _i in range(3)]
+            for (i, j), c in zip(_PAIRS, comps):
+                s[i][j] = s[j][i] = ev[c][eid][k]
+            rows = rows_of(eid)
+            for m_, (a, b) in enumerate(_PAIRS):
+                acc[m_] += sum(rows[a][p] * s[p][q] * rows[b][q]
+                               for p in range(3) for q in range(3))
+            n += 1
+    return [x / n for x in acc]
+
+
+P11_IN = (0.03, 0.0, 0.0)       # node of the turned elements only
+P11_IF = (0.02, 0.0, 0.0)       # interface node
+def _or11_checks():
+    rows = frame(U11, V11)
+    out = []
+    for k, c in enumerate(_LAM):
+        out.append(Check(
+            "lam%s - R sigma R^T (x = 30 mm)" % c,
+            lambda r, k=k, c=c: (r.at("lam" + c, P11_IN) -
+                                 _rotated(r, P11_IN, rows)[k]),
+            ref=0.0, tol_abs=1.0, unit="Pa", source="the bridge's global "
+            "stress turned to U, V, W (one frame at this node)",
+            in_series=False))
+
+    def rows_of(eid):
+        # elements 3 and 4 (x > 20 mm) have the turned axes
+        return rows if eid >= 3 else [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
+                                       [0.0, 0.0, 1.0]]
+    for k, c in enumerate(_LAM):
+        out.append(Check(
+            "lam%s - mean R_e sigma_e R_e^T (x = 20 mm)" % c,
+            lambda r, k=k, c=c: (r.at("lam" + c, P11_IF) -
+                                 _elem_mean(r, P11_IF, rows_of)[k]),
+            ref=0.0, tol_abs=1.0, unit="Pa", source="Mecway's rule at a "
+            "node of two frames: mean of the element-node values",
+            in_series=False))
+    return out
+
+
 TESTS += [
     Case("OR-07", GROUP, "Orthotrope ingeklemde balk, eigenfrequenties, E_U "
          "langs de balk", "modal_3d", build_or07,
@@ -507,4 +619,8 @@ TESTS += [
     Case("OR-10", GROUP, "Orthotrope kolom, knik, E_V langs de kolom",
          "buckling_3d", build_or10, _buckling_checks(MW.get("OR-10")),
          note="1000 N compression on the end face; U = Y, V = -X."),
+    Case("OR-11", GROUP, "Stress in element coordinates (lamuu ..), twee "
+         "assenstelsels", "lin_static_3d", build_or11, _or11_checks(),
+         note="Field stresses; lam* = R sigma R^T, at the interface the "
+              "mean of the element-node values."),
 ]

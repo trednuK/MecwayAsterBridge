@@ -20,6 +20,8 @@
 #   check(model_data, analysis)  scope: ERROR and False outside it
 #   elas_text(props, thermal)    "ELAS_ORTH=_F(...)" for DEFI_MATERIAU
 #   massif_entries(model_data)   MASSIF entries of AFFE_CARA_ELEM
+#   export_arg(model_data, fields)  axes for Mecway's "stress in element
+#                       coordinates" (aster_results_export, S13d)
 #
 # MECWAY (manual v34 par. 8.5 and 7.4.2, attribute names in mecway.exe,
 # semantics measured with headless Mecway 34 solves of cubes under an
@@ -368,6 +370,7 @@ def prepare(model_data):
     elsets = model_data.get("elsets", {})
     elem_elset = model_data.get("_elem_elset", {})
     groups = OrderedDict()
+    frames = {}
     bad = []
     for eid, shape, _nodes, elset in model_data.get("mesh_elements", []):
         es = elem_elset.get(eid, elset)
@@ -380,6 +383,7 @@ def prepare(model_data):
             continue
         key = tuple(round(a, 6) + 0.0 for a in angl_rep(axes))
         groups.setdefault(key, []).append(eid)
+        frames.setdefault(key, axes)
     if bad:
         log(tr(u"ERROR: Element orientation van {0} volume-element(en) met "
                u"orthotroop materiaal ({1}): alleen een U- of alleen een "
@@ -399,6 +403,10 @@ def prepare(model_data):
         extra[name] = eids
         out.append((name, key))
     model_data["massif_orientations"] = out
+    # axes per group for the field "stress in element coordinates"
+    # (export_arg)
+    model_data["massif_frames"] = [(frames[key], groups[key])
+                                   for _name, key in out]
     if out:
         log("INFO: Orthotropic material axes: {0} group(s) of solid "
             "elements with the same orientation (AFFE_CARA_ELEM MASSIF "
@@ -413,6 +421,30 @@ def prepare(model_data):
                    u"formula per element): AFFE_CARA_ELEM becomes large and "
                    u"slow.").format(len(out)))
     return out
+
+
+def export_arg(model_data, fields):
+    """", solid_frames=[...]" for aster_results_export.export_results:
+    the axes (rows U, V, W, 9 numbers) of the orthotropic solids with their
+    element numbers as ranges, so that the job writes Mecway's "stress in
+    element coordinates" (lamuu .. lamwu, S13d) with the field
+    "stresses"; "" without orthotropic solids or without that field."""
+    frames = model_data.get("massif_frames") or []
+    if not frames or "stresses" not in (fields or []):
+        return ""
+    out = []
+    for axes, eids in frames:
+        ranges = []
+        for eid in sorted(eids):
+            if ranges and ranges[-1][1] == eid - 1:
+                ranges[-1][1] = eid
+            else:
+                ranges.append([eid, eid])
+        rows = tuple(float(_fmt(c)) for vec in axes for c in vec)
+        out.append((rows, [tuple(r) for r in ranges]))
+    log("INFO: Field 'stress in element coordinates' (lamuu .. lamwu) of "
+        "the orthotropic solids is written with the stresses.")
+    return ", solid_frames={0!r}".format(out)
 
 
 def massif_entries(model_data):

@@ -48,7 +48,7 @@ S7, S8, S5, S9).
 | S13a | Orthotropic / stiffness matrix / compliance matrix on solids in linear static, modal and buckling, material axes from the element orientation (`ELAS_ORTH` + `MASSIF` `ANGL_REP`) | done | – | branch worktree-agent-a36c7764124e6a606 on nacht-int3 (28 Oct 2026): `bridge_orthotropic.py`; OR-01 .. OR-10 OK (strains equal to Hooke rotated and to Mecway headless within 1e-7, cantilever −0.17/−0.12% vs Timoshenko, modes and buckling = Mecway within 1e-9); LS, MO-20..31, BU-20..25, TH-03 unchanged; not yet tested in the Mecway GUI (see §S13) |
 | S13b | Orthotropic material and *Composite* on shells (`DEFI_COMPOSITE`, `COQUE` `VECTEUR` per group of equal U, Mecway's default U = edge 1-2) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
 | S13c | Orthotropic solids in the other mechanical analyses (nonlinear static, dynamics, mode superposition, harmonic, spectrum, thermal → mechanical chain) and orthotropic thermal conductivity (`THER_ORTH`, Mecway `ORTHOTROPICLOCAL`) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
-| S13d | Result field *stress in element coordinates* (`stressuu` .. `stresswu`) for solids | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
+| S13d | Result field *stress in element coordinates* (`lamuu` .. `lamwu`) for solids | done | S13a | same branch as S13a (28 Oct 2026): `aster_results_export._element_coord_vars` with the field *stresses* in linear static of models with orthotropic solids; Mecway's rule measured (R σ Rᵀ, element-node mean at nodes of two frames); OR-01..04 (lam = R σ Rᵀ exact), OR-11 (rule within 1e-9 Pa); Mecway 34 reads the bridge's `lamuu` (headless `solution.node_value`); GUI not checked |
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | done | – | branch worktree-agent-a58def16c170e1c4c (28 Oct 2026): `bridge_pretension` (cut + LIAISON_DDL to a reference node), force and length adjustment in linear/nonlinear static; PT-01 .. PT-05 OK (exact / joint diagram 0.1%, Mecway CCX headless within 0.01%); not yet tested in the Mecway GUI (see §S15) |
 | S15b | Pre-tension section in dynamic response (D30/D31) and the spring element variant (internal solver) | done | S15 | branch worktree-agent-a08bcf96702c925db on nacht-int2 (28 Oct 2026): prism variant in `dyna_impl_3d` (step from t = 0 like Mecway), spring variant in linear static as two nodal forces; PT-06 .. PT-10 OK (Mecway headless CCX within 0.06%, internal solver exact); spring variant in Frequency/Buckling ERROR (geometric stiffness, see §S15b); not yet tested in the Mecway GUI |
@@ -1253,8 +1253,17 @@ rotated block under tension (Hooke in local axes) within 1%, and equal to Mecway
   (frequencies, −1.1% / −0.26% against Euler-Bernoulli = the shear effect) and OR-10 (buckling
   factor −0.28%) equal to Mecway within 1e-9. Regression: LS (all), MO-20 .. MO-31,
   BU-20 .. BU-25, TH-03: 136 cases, FEM values bit-identical to the baseline.
-- *Open*: GUI check in Mecway (open a result, *stress in element coordinates*); shells (S13b);
-  other analyses and orthotropic conductivity (S13c); `lam*` field (S13d).
+- *S13d* (same branch): Mecway's *stress in element coordinates* = node variables `lamuu`,
+  `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu` = R σ Rᵀ; at a node of elements with different
+  axes Mecway takes the mean of the element-node values (measured: at the interface of two
+  frames Mecway's value differs from the rotated nodal mean, at single-frame nodes it equals
+  it within 1e-15). The bridge does the same from `SIGM_ELNO` (`_element_coord_vars`), for all
+  solids of a model with orthotropic material, with the field *stresses* (no new setting).
+  OR-11 (two frames): the rule within 1e-9 Pa; against Mecway's own values the difference is
+  that of the global nodal stresses of the two solvers on this coarse mesh (up to 2 MPa of
+  80 MPa at the interface node, KB3). Mecway 34 reads the bridge's `lamuu` (headless).
+- *Open*: GUI check in Mecway (open a result, item *stress in element coordinates*); shells
+  (S13b); other analyses and orthotropic conductivity (S13c).
 
 ### S14 – Hyperelastic material
 **Goal:** translate Mecway *Neo Hooke* and *Mooney-Rivlin* (now: WARNING and the run stops).

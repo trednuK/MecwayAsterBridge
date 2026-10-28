@@ -101,6 +101,7 @@
   <displacement selection="B"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
   <displacement selection="C"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
   <fieldvariable name="stress" displayunit="Pa" expanded="true" />
+  <fieldvariable name="stress in element coordinates" displayunit="Pa" expanded="true" />
   <mat name="Ortho">
     <mechanical type="ComplianceMatrix" s11="1e-11 m²/N" s12="-2.9999999999999997e-12 m²/N" s13="-5.0000000000000005e-12 m²/N" s14="0.0 m²/N" s15="0.0 m²/N" s16="0.0 m²/N" s22="5e-11 m²/N" s23="-1.0000000000000001e-11 m²/N" s24="0.0 m²/N" s25="0.0 m²/N" s26="0.0 m²/N" s33="1e-10 m²/N" s34="0.0 m²/N" s35="0.0 m²/N" s36="0.0 m²/N" s44="2.5e-10 m²/N" s45="0.0 m²/N" s46="0.0 m²/N" s55="2e-10 m²/N" s56="0.0 m²/N" s66="1.4285714285714285e-10 m²/N" />
   </mat>

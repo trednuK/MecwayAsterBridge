@@ -70,8 +70,12 @@ attributes uses the card (Mecway does not solve such a model).
 ## 4. Results in Mecway
 
 Stresses and strains come back in the **global** axes X, Y, Z (`stressxx` …), as Mecway
-shows them. Mecway's field *stress in element coordinates* (`stressuu` …) is not written by
-the bridge.
+shows them. In Linear static the bridge also writes Mecway's field *stress in element
+coordinates* (`lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu`) for all solid elements
+of a model with orthotropic material, with the field *stresses*: the stress tensor turned
+to the element axes U, V, W (R σ Rᵀ per element node; at a node shared by elements with
+different axes the mean of the element-node values, as Mecway). With it you see the stress
+along the fibre (U) directly.
 
 ## 5. Messages and solutions
 
@@ -93,7 +97,7 @@ See also KNOWN_BUGS 130.
 - Other analyses than Linear static, Modal and Buckling (STAPPENPLAN S13c), and orthotropic
   thermal conductivity in thermal analyses. Modal with prestress, complex modes and cyclic
   symmetry use the same material but are not verified separately.
-- The result field *stress in element coordinates*.
+- *Stress in element coordinates* in Modal and Buckling (per mode).
 
 ## 7. Test models
 
@@ -104,6 +108,8 @@ and to Mecway 34's own solve; the same cube heated freely (thermal strain α1, �
 turned to X, Y, Z, no stress); a cantilever with E1 and with E2 along the beam (Timoshenko).
 OR-07, OR-08, OR-10: the cantilever in Frequency (first bending frequencies) and as a column
 in Buckling, equal to Euler-Bernoulli within the shear effect and to Mecway's own solve.
+OR-11: *stress in element coordinates* on a bar with two different element axes (R σ Rᵀ,
+and the mean of the element-node values at the interface, as Mecway).
 
 ## 8. Sources
 

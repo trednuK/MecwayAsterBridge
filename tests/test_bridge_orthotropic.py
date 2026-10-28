@@ -211,6 +211,12 @@ def test_prepare_and_check():
           md["extra_ma_groups"]["BRORI2"] == [2, 3] and
           close(groups["BRORI2"], (45.0, 0.0, 0.0)),
           "groups: {0} {1}".format(out, md.get("extra_ma_groups")))
+    # axes for the field "stress in element coordinates" (S13d)
+    arg = bo.export_arg(md, ["displacements", "stresses"])
+    check(arg.startswith(", solid_frames=[((1.0, 0.0, 0.0, 0.0, 1.0, 0.0, "
+                         "0.0, 0.0, 1.0), [(1, 1)]), ((") and
+          "[(2, 3)]" in arg, "export_arg: {0}".format(arg))
+    check(bo.export_arg(md, ["displacements"]) == "", "without stresses")
     ent = bo.massif_entries(md)
     check(ent[1].strip() == "_F(GROUP_MA='BRORI2', ANGL_REP=(45.0, 0.0, "
           "0.0)),", "entry: {0}".format(ent))

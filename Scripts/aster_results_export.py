@@ -1615,6 +1615,75 @@ def _principal_vars(fields, model, conn, group):
     return out
 
 
+# Mecway's "stress in element coordinates" of solids (S13d; measured headless
+# with Mecway 34, internal solver, 28 Oct 2026): node variables lamuu, lamvv,
+# lamww, lamuv, lamvw, lamwu = R sigma R^T with R the rows U, V, W of the
+# element axes (global X, Y, Z without an orientation); at a node shared by
+# elements with different axes Mecway takes the mean of the element-node
+# values (at nodes of one frame: equal to R sigma_node R^T within 1e-15).
+_LAM_NAMES = ("lamuu", "lamvv", "lamww", "lamuv", "lamvw", "lamwu")
+_LAM_PAIRS = ((0, 0), (1, 1), (2, 2), (0, 1), (1, 2), (2, 0))
+_SOLID_SHAPES = frozenset(["hex8", "hex20", "tet4", "tet10", "pyr5", "pyr13",
+                           "wedge6", "wedge15"])
+
+
+def _element_coord_vars(fields, model, conn, solid_frames):
+    """lam* of the solid elements from SIGM_ELNO and the element axes
+    solid_frames = [(9 numbers: rows U, V, W), [(first eid, last eid)]]
+    (bridge_orthotropic.export_arg); solids not listed: global axes.
+    Node value = mean of the element-node values of the solids at the node,
+    as Mecway. [] without SIGM_ELNO."""
+    frames = {}
+    for rows, ranges in solid_frames or ():
+        r = np.asarray(rows, dtype=float).reshape(3, 3)
+        for first, last in ranges:
+            for eid in range(int(first), int(last) + 1):
+                frames[eid] = r
+    cmps = ("SIXX", "SIYY", "SIZZ", "SIXY", "SIYZ", "SIXZ")
+    comp = [_plan_elem(fields, "res", "SIGM_ELNO", c, "_lam", conn, model,
+                       _SOLID_SHAPES) for c in cmps]
+    if (any(v is None for v in comp) or
+            not all(np.array_equal(comp[0].ids, v.ids) for v in comp)):
+        return []
+    sel = comp[0].ids
+    sizes = [len(model["elements"][int(e)][1]) for e in sel]
+    rot = np.concatenate([np.repeat(frames.get(int(e), np.eye(3))[None],
+                                    n, axis=0) for e, n in zip(sel, sizes)])
+    flat = np.concatenate([np.asarray(model["elements"][int(e)][1],
+                                      dtype=int) for e in sel])
+    uniq, inv = np.unique(flat, return_inverse=True)
+    counts = np.bincount(inv).astype(float)
+    cache = {}
+
+    def local(fields):
+        if cache.get("index", object()) != fields.index:
+            vals = [v.getter(fields) for v in comp]
+            out = None
+            if all(x is not None for x in vals):
+                xx, yy, zz, xy, yz, xz = vals
+                t = np.stack([np.stack([xx, xy, xz], -1),
+                              np.stack([xy, yy, yz], -1),
+                              np.stack([xz, yz, zz], -1)], -2)
+                out = np.einsum("pik,pkl,pjl->pij", rot, t, rot)
+            cache["index"] = fields.index
+            cache["t"] = out
+        return cache["t"]
+
+    out = []
+    for name, (i, j) in zip(_LAM_NAMES, _LAM_PAIRS):
+        def elem_get(fields, i=i, j=j):
+            t = local(fields)
+            return None if t is None else t[:, i, j]
+
+        def node_get(fields, i=i, j=j):
+            t = local(fields)
+            return (None if t is None else
+                    np.bincount(inv, weights=t[:, i, j]) / counts)
+        out.append(_Var(name, False, uniq.astype("<i4"), node_get))
+        out.append(_Var(name, True, sel, elem_get))
+    return out
+
+
 def _principal_columns(m):
     """(points, 4) principal values p1 >= p2 >= p3 and p1 - p3 of a
     (points, 6) tensor xx, yy, zz, xy, yz, zx (tensor shear), or None."""
@@ -1733,7 +1802,7 @@ def _contact_state_var(fields):
 
 
 def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
-                  strengths=None):
+                  strengths=None, solid_frames=None):
     """_Var's of the derived fields (see the header of this block) for the
     chosen groups (wanted). shell_vectors: {Mecway elset: VECTEUR} of
     AFFE_CARA_ELEM COQUE (without: global X); strengths: {Mecway elset:
@@ -1747,6 +1816,8 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
     for group in ("principal_stresses", "principal_strains"):
         if group in wanted:
             out += _principal_vars(fields, model, conn, group)
+    if solid_frames:
+        out += _element_coord_vars(fields, model, conn, solid_frames)
     shell_groups = [g for g in ("shell_stresses", "strain", "shell_forces",
                                 "principal_stresses", "principal_strains")
                     if g in wanted]
@@ -2632,7 +2703,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
                    shell_vectors=None, strengths=None, u_axes=None,
-                   failures=None, formulas=None, plane=None):
+                   failures=None, formulas=None, plane=None,
+                   solid_frames=None):
     """
     Write all archived time steps of res as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
@@ -2691,6 +2763,11 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     thickness or 2 pi}; plane elements as continuum
                     elements and the reactions times the factor (_PLANE).
                     None = 3D.
+    solid_frames  : axes of orthotropic solids [(9 numbers: rows U, V, W),
+                    [(first eid, last eid), ...]] (bridge_orthotropic
+                    .export_arg): Mecway's "stress in element coordinates"
+                    lamuu .. lamwu of all solids from SIGM_ELNO
+                    (_element_coord_vars, S13d); None = not written.
 
     Returns
     -------
@@ -2704,7 +2781,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
         return _export(res, out_path, liml_path, fields, extra_results,
                        precision, static, t0, rigi_geo, mass, node_fields,
                        cyclic, opt_in, {"shell_vectors": shell_vectors,
-                                        "strengths": strengths},
+                                        "strengths": strengths,
+                                        "solid_frames": solid_frames},
                        u_axes, failures, formulas)
     except Exception as e:
         import traceback

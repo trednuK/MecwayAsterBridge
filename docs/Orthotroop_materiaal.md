@@ -71,8 +71,12 @@ attributen gebruikt de kaart (Mecway rekent zo'n model niet).
 ## 4. Resultaten in Mecway
 
 Spanningen en rekken komen terug in de **globale** assen X, Y, Z (`stressxx` …), zoals
-Mecway ze toont. Mecway's veld *stress in element coordinates* (`stressuu` …) schrijft de
-bridge niet.
+Mecway ze toont. In Lineair statisch schrijft de bridge bij het veld *stresses* ook Mecway's
+veld *stress in element coordinates* (`lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu`)
+voor alle volume-elementen van een model met orthotroop materiaal: de spanningstensor
+gedraaid naar de elementassen U, V, W (R σ Rᵀ per elementknoop; in een knoop van elementen
+met verschillende assen het gemiddelde van de elementknoopwaarden, zoals Mecway). Zo zie je
+de spanning langs de vezel (U) direct.
 
 ## 5. Meldingen en oplossingen
 
@@ -94,7 +98,7 @@ Zie ook KNOWN_BUGS 130.
 - Andere analyses dan Lineair statisch, Modaal en Knik (STAPPENPLAN S13c), en orthotrope
   warmtegeleiding in thermische analyses. Modaal met voorspanning, complexe modes en
   cyclische symmetrie gebruiken hetzelfde materiaal, maar zijn niet apart geverifieerd.
-- Het resultaatveld *stress in element coordinates*.
+- *Stress in element coordinates* in Modaal en Knik (per mode).
 
 ## 7. Testmodellen
 
@@ -105,7 +109,9 @@ naar X, Y, Z en aan Mecway 34's eigen oplossing; dezelfde kubus vrij verwarmd (t
 α1, α2, α3 in U, V, W gedraaid naar X, Y, Z, geen spanning); een ingeklemde balk met E1 en met
 E2 langs de balk (Timoshenko). OR-07, OR-08, OR-10: de ingeklemde balk in Frequency (eerste
 buigfrequenties) en als kolom in Buckling, gelijk aan Euler-Bernoulli binnen het schuifeffect
-en aan Mecway's eigen oplossing.
+en aan Mecway's eigen oplossing. OR-11: *stress in element coordinates* op een staaf met
+twee verschillende elementassen (R σ Rᵀ, en op het grensvlak het gemiddelde van de
+elementknoopwaarden, zoals Mecway).
 
 ## 8. Bronnen
 

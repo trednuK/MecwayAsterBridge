@@ -12,7 +12,9 @@
   Shells and other analyses: clear ERROR (steps S13b, S13c). Cube in uniaxial tension and free
   thermal expansion with turned axes equal to Hooke's law and to Mecway's own solve; orthotropic
   cantilever in two orientations, also its frequencies and buckling load (verification
-  OR-01 .. OR-10; docs Orthotropic material).
+  OR-01 .. OR-10; docs Orthotropic material). With the field *stresses*, linear static also
+  writes Mecway's *stress in element coordinates* (`lamuu` .. `lamwu`) of the solids, with
+  Mecway's averaging rule (S13d, OR-11).
 
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
   `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),

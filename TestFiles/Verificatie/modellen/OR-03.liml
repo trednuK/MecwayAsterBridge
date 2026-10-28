@@ -100,6 +100,7 @@
   <displacement selection="B"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
   <displacement selection="C"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
   <fieldvariable name="stress" displayunit="Pa" expanded="true" />
+  <fieldvariable name="stress in element coordinates" displayunit="Pa" expanded="true" />
   <mat name="Ortho">
     <mechanical type="StiffnessMatrix" c11="105.26315789473685 GPa" c12="7.518796992481203 GPa" c13="6.015037593984963 GPa" c14="0.0 GPa" c15="0.0 GPa" c16="0.0 GPa" c22="20.945220193340493 GPa" c23="2.4704618689581097 GPa" c24="0.0 GPa" c25="0.0 GPa" c26="0.0 GPa" c33="10.547798066595059 GPa" c34="0.0 GPa" c35="0.0 GPa" c36="0.0 GPa" c44="3.9999999999999996 GPa" c45="0.0 GPa" c46="0.0 GPa" c55="5.0 GPa" c56="0.0 GPa" c66="7.0 GPa" />
   </mat>

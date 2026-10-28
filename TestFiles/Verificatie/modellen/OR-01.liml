@@ -100,6 +100,7 @@
   <displacement selection="B"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
   <displacement selection="C"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
   <fieldvariable name="stress" displayunit="Pa" expanded="true" />
+  <fieldvariable name="stress in element coordinates" displayunit="Pa" expanded="true" />
   <mat name="Ortho">
     <mechanical type="Orthotropic" youngsmodulusu="100 GPa" youngsmodulusv="20 GPa" youngsmodulusw="10 GPa" poissonratiouv="0.3" poissonratiovw="0.2" poissonratiowu="0.05" shearmodulusuv="7 GPa" shearmodulusvw="4 GPa" shearmoduluswu="5 GPa" />
   </mat>

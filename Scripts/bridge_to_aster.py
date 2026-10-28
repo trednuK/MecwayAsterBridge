@@ -2251,6 +2251,9 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
     fragment = results_file(work_dir)
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
         bridge_plane.export_arg(model_data) + extra
+    # Orthotropic solids: Mecway's "stress in element coordinates" (S13d)
+    extra += bridge_orthotropic.export_arg(
+        model_data, analysis.get("fields", []) if fields is None else fields)
     block = (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import sys@N"

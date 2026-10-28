@@ -381,7 +381,7 @@ aster_results_export.export_results(
                         'eps_inf', 'res_efs')
                        if k in globals()),
     failures=globals().get('_bz_events'),
-    precision='double')
+    precision='double', solid_frames=[((0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, -0.0, 1.0), [(1, 80)])])
 
 
 # =====================================================
