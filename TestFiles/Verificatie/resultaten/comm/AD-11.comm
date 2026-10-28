@@ -377,10 +377,10 @@ for _adapt_k in range(10 + 1):
     mesh = globals()[_adapt_name]
 _adapt_run.summary()
 _adapt_fine = dict((k, globals()[k]) for k in ('res',) if k in globals())
-for _adapt_key, _adapt_res in _adapt_fine.items():
-    globals()[_adapt_key] = PROJ_CHAMP(
-        RESULTAT=_adapt_res, MODELE_1=model, MODELE_2=_adapt_model0,
-        NOM_CHAM=_adapt_mod.projected_fields(_adapt_res))
+if 'res' in _adapt_fine:
+    res = PROJ_CHAMP(RESULTAT=_adapt_fine['res'], MODELE_1=model,
+        MODELE_2=_adapt_model0,
+        NOM_CHAM=_adapt_mod.projected_fields(_adapt_fine['res']))
 model = _adapt_model0
 mesh = _adapt_mesh0
 # ===== end of the adaptive refinement =====
