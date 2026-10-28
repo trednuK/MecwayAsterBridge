@@ -22,7 +22,7 @@ from datetime import datetime
 
 # Version of the bridge (start screen, log header, CHANGELOG.md). Kept
 # outside CONFIG_BRIDGE on purpose: the start screen rewrites only that block.
-BRIDGE_VERSION = "V2026.4"
+BRIDGE_VERSION = "V2026.5"
 
 # Tested versions (bridge_version.py): a different version only gives a
 # WARNING, the run continues. Mecway: the version attribute of <liml>;

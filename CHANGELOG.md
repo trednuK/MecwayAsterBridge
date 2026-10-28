@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## V2026.5 – 28 October 2026
+
+Result formulas computed by the bridge (issue #8), principal stresses and strains, acceleration
+and heat flux as Mecway stores them, rubber on hex8 (issue #5), VTU export and MWHub Post, and
+several options from Aubry's books (buckling with a constant load, hysteretic damping, line
+search, automatic time stepping, mass and reaction check). Tested in Mecway 34 with Code-Aster
+17.4; verification 442 test cases, 2382 checks (2376 OK, 6 known limitations, 0 unexpected).
 
 - **Principal stresses, Tresca and principal strains** (new result fields `principal_stresses`
   and `principal_strains`, off by default): `principal1..3`, `tresca` and `lprincipalstrain1..3`

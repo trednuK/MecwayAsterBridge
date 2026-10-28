@@ -114,6 +114,9 @@ het laatst is nagelopen:
 | Eigenvormen met verplaatsingsgrootte (V2026.4) | NIET nagelopen; Mecway 33's eigen modale oplossing toont geen magnitude, dus één extra item (onschadelijk) | nagelopen (V2026.4) |
 | Flexible joints: `POU_D_T_GD` en balken met offset (V2026.4) | NIET nagelopen | nagelopen (V2026.4) |
 | Knoppen in het convergentiescherm, werkmap naast het model, voorbereidingsfouten in het statusvak (V2026.4) | NIET nagelopen | nagelopen (V2026.4) |
+| Resultaatformules berekend door de bridge, warmteflux per elementknoop (V2026.5) | NIET nagelopen | nagelopen (V2026.5) |
+| Hoofdspanningen/-rekken en versnelling onder Mecway's namen (V2026.5) | NIET nagelopen | nagelopen (V2026.5) |
+| Rubber op hex8: locking-melding, geen `3D_SI` met `ELAS_HYPER`, kaart *Element type* (V2026.5) | NIET nagelopen | nagelopen (V2026.5) |
 | Selectienamen met spaties (modellen uit Mecway 33) | toegestaan | Mecway 34 vervangt de spaties door `_` bij het openen van zo'n model en verliest dan de verwijzing in een contact (`selectionmaster=""`, gezien 22 oktober 2026); de bridge stopt vóór Code-Aster met een ERROR die dat zegt waar het contact meetelt (niet-lineair statisch en dynamica; bonded contact in elke analyse), elders geeft hij een WARNING (Mecway negeert unilateraal contact daar ook). Kies de contactvlakken opnieuw. De voorbeeldmodellen gebruiken namen zonder spaties. |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
