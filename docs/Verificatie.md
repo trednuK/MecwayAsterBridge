@@ -141,7 +141,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Orthotroop materiaal OR-01..11, 11 cases, 118 controles OK (28 oktober 2026, stap S13a; de
+Orthotroop materiaal OR-01..14, 14 cases, 133 controles OK (28 oktober 2026, stap S13a; de
 families LS, MO-20 .. MO-31, BU-20 .. BU-25 en TH-03 daarmee opnieuw gedraaid: 136 cases, FEM-waarden
 ongewijzigd); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
 5 cases, 17 controles OK (28 oktober 2026, stap S15b).
@@ -827,8 +827,8 @@ twee vlakken) en zijn statisch bepaald gehouden (3-2-1 op hoekknopen), zodat de 
 homogeen is en de hoekverplaatsingen alle zes globale rekken geven; referentie: de wet van
 Hooke in U, V, W met de compliantie gedraaid naar X, Y, Z (tensorrotatie). De kubuscases met
 een last controleren ook *stress in element coordinates*: `lam_ab` = R_ad R_bd σ (exact). Mecway 34
-headless met de eigen solver (`mw_solve.py`, dezelfde `.liml`, 28 oktober 2026) is de tweede
-referentie.
+headless met de eigen solver (`mw_solve.py`, dezelfde `.liml`, 28 oktober 2026; voor L30/D31
+met CCX, omdat de eigen solver daar geen oplossing geeft) is de tweede referentie.
 
 | Case | Model | Referentie | Resultaat |
 |---|---|---|---|
@@ -843,6 +843,9 @@ referentie.
 | OR-08 | idem met de assen van OR-06 | f1 = 147,47 Hz; Mecway 147,085 / 147,286 Hz | 147,085 Hz (−0,26%), 147,286 Hz; Mecway gelijk (≤ 1e-9) |
 | OR-10 | ingeklemde balk van OR-06 als kolom in Buckling (`buckling_3d`), 1000 N druk | π²E2I/(4L²)/P = 1,0281; Mecway 1,02522 / 1,02671 | 1,02522 (−0,28%), 1,02671; Mecway gelijk (≤ 1e-9) |
 | OR-11 | *stress in element coordinates* (S13d): staaf 40 × 10 × 10 mm (hex20 4 × 1 × 1), ingeklemd, kracht (500, 100, −200) N; de elementen bij x > 20 mm gedraaid (U = (0,866; 0,5; 0), V = (−0,5; 0,866; 0,2)) | `lam*` = R σ Rᵀ van de eigen knoopspanning van de bridge bij x = 30 mm; bij x = 20 mm (twee assenstelsels) het gemiddelde van R_e σ_e R_eᵀ over de elementknoopspanningen (Mecway's regel) | beide binnen 1e-9 Pa; Mecway's eigen waarden verschillen met het verschil van de knoopspanningen van de twee solvers op deze grove mesh (tot 0,45 MPa bij x = 30 mm, 2 MPa op het grensvlak; σmax 80 MPa) |
+| OR-12 | kubus van OR-02 in Niet-lineair statisch (L30, grote verplaatsingen = `GREEN_LAGRANGE`), rek ongeveer 1e-3 | Hooke gedraaid (als OR-02); Mecway (CCX) ε = (7,7410e-4, −1,7253e-4, −1,1237e-4), γ = (−3,1129e-4, 2,0635e-4, 2,3347e-4) | binnen 1,6e-3 van Hooke voor kleine rek (het effect van grote verplaatsingen); Mecway binnen 2e-6 |
+| OR-13 | ingeklemde balk van OR-06 in L30 met 300 N (tip ongeveer 23% van L) | Mecway (CCX) 45,560 mm (lineair 48,12 mm) | 45,560 mm (gelijk, 1e-7) |
+| OR-14 | ingeklemde balk van OR-06 in Dynamic response (D31, HHT, Δt = T/50), dichtheid 1500 kg/m³, tiptractie 100 N als stap | periode 1/f1 = 6,7988 ms (OR-08); Mecway (CCX) 6,7731 ms | 6,7763 ms (−0,33%: schema); Mecway +0,05% |
 
 Mecway's betekenis, gemeten met headless oplossingen van losse hex8-kubussen onder een
 opgelegde homogene rek (alle knopen voorgeschreven, dus de spanning is precies C·ε): de

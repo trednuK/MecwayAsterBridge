@@ -284,15 +284,20 @@ def parse(mech_node, dens_node, mech_type, mat_name, model_data):
     return props
 
 
-def elas_text(props, thermal):
+def elas_text(props, thermal, rayleigh=None):
     """Keyword ELAS_ORTH=_F(...) for DEFI_MATERIAU (U4.43.01; catalogue
     defi_materiau.py v17.4). ALPHA_* only with thermal stress (like ELAS in
-    bridge_to_aster._elas_args)."""
+    bridge_to_aster._elas_args); AMOR_ALPHA/AMOR_BETA for Rayleigh damping in
+    DYNA_NON_LINE (ELAS_ORTH has them too; AMOR_ALPHA = Mecway's beta,
+    AMOR_BETA = Mecway's alpha, as in _elas_args)."""
     args = ["{0}={1}".format(k, _fmt(v)) for k, v in props["ortho"].items()]
     args.append("RHO={0}".format(_fmt(props.get("rho", 0.0))))
     if thermal:
         args += ["{0}={1}".format(k, _fmt(a)) for k, a in
                  zip(("ALPHA_L", "ALPHA_T", "ALPHA_N"), props["alpha"])]
+    if rayleigh:
+        args += ["AMOR_ALPHA={0}".format(_fmt(rayleigh["beta"])),
+                 "AMOR_BETA={0}".format(_fmt(rayleigh["alpha"]))]
     return "ELAS_ORTH=_F({0})".format(", ".join(args))
 
 
@@ -460,15 +465,21 @@ def massif_entries(model_data):
 # ------------------------------------------------------------------
 # Analyses in which ELAS_ORTH with MASSIF is verified: linear static
 # (OR-01 .. OR-06, OR-09), modal and linear buckling (CALC_MODES with
-# TYPE_RESU DYNAMIQUE / MODE_FLAMB of the structure: OR-07, OR-08, OR-10).
+# TYPE_RESU DYNAMIQUE / MODE_FLAMB of the structure: OR-07, OR-08, OR-10),
+# nonlinear static (RELATION ELAS, GREEN_LAGRANGE with large
+# displacements: OR-12, OR-13) and implicit dynamics (OR-14).
 
 
 def _supported(analysis):
     """True for linear static, modal and buckling of the structure (not the
     acoustic or vibro-acoustic CALC_MODES variants)."""
     cmd = analysis.get("solver_command")
-    if cmd == "MECA_STATIQUE":
+    if cmd in ("MECA_STATIQUE", "STAT_NON_LINE"):
         return True
+    if cmd == "DYNA_NON_LINE":
+        # implicit only: the explicit critical time step estimates the
+        # wave speed from one E and NU (_critical_time_step)
+        return analysis.get("schema") not in ("DIFF_CENT", "TCHAMWA")
     return (cmd == "CALC_MODES" and not analysis.get("phenomene") and
             not analysis.get("vibroacoustic") and
             analysis.get("type_resu", "DYNAMIQUE") in ("DYNAMIQUE",
@@ -511,12 +522,16 @@ def check(model_data, analysis):
         ok = False
     if not _supported(analysis):
         log(tr(u"ERROR: Orthotroop/anisotroop materiaal (elset {0}) wordt "
-               u"nu alleen in Lineair statisch, Modaal en Knik vertaald "
-               u"(Mecway Static 3D, Frequency, Buckling); andere analyses "
-               u"volgen (STAPPENPLAN S13c).",
+               u"nu alleen vertaald in Lineair en Niet-lineair statisch, "
+               u"Modaal, Knik en impliciete Dynamica; andere analyses "
+               u"(expliciet, modale basis, harmonisch, spectrum, keten "
+               u"thermisch -> mechanisch, akoestiek) volgen (STAPPENPLAN "
+               u"S13c).",
                u"ERROR: Orthotropic/anisotropic material (elset {0}) is "
-               u"currently translated in Linear static, Modal and Buckling "
-               u"only (Mecway Static 3D, Frequency, Buckling); other "
-               u"analyses follow (STAPPENPLAN S13c).").format(names))
+               u"currently translated in Linear and Nonlinear static, Modal, "
+               u"Buckling and implicit Dynamics only; other analyses "
+               u"(explicit, mode superposition, harmonic, spectrum, thermal "
+               u"-> mechanical chain, acoustics) follow (STAPPENPLAN "
+               u"S13c).").format(names))
         ok = False
     return ok

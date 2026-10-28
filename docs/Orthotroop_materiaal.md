@@ -5,8 +5,9 @@
 De Mecway-materialen *Orthotropic*, *Stiffness matrix* en *Compliance matrix* (handleiding
 v34 §8.5) hebben andere eigenschappen in de richtingen U, V en W van de elementassen. De
 bridge vertaalt ze op **volume-elementen** (hex, wedge, tet, piramide, lineair of
-kwadratisch) in **Lineair statisch** (S30, `lin_static_3d`), **Modaal** (V30, `modal_3d`)
-en **Knik** (B30, `buckling_3d`) naar de orthotrope
+kwadratisch) in **Lineair statisch** (S30, `lin_static_3d`), **Modaal** (V30, `modal_3d`),
+**Knik** (B30, `buckling_3d`), **Niet-lineair statisch** (L30, `nonlin_static_3d`) en
+impliciete **Dynamica** (D31, `dyna_impl_3d`) naar de orthotrope
 elasticiteit `ELAS_ORTH` van Code-Aster, met Mecway's *Element orientation* als richting
 van de materiaalassen. Schalen, andere analyses en een volledig anisotrope matrix kunnen
 nog niet (§6).
@@ -25,8 +26,12 @@ nog niet (§6).
    V: met maar één van beide, of met V evenwijdig aan U, rekent Mecway het model niet en
    geeft de bridge een ERROR; een hoek zonder vectoren heeft geen effect. De oriëntatie mag
    een formule van het elementmidden (x, y, z) zijn.
-3. Kies *Static 3D*, *Frequency* of *Buckling* en start de bridge zoals gewoonlijk. Mecway
-   zelf staat de matrixtypen alleen in Static 3D toe (handleiding §8.5).
+3. Kies *Static 3D*, *Frequency*, *Buckling*, *Nonlinear static 3D* of *Dynamic response 3D*
+   (impliciet) en start de bridge zoals gewoonlijk. Mecway zelf staat de matrixtypen alleen in
+   Static 3D toe (handleiding §8.5) en rekent de niet-lineaire en dynamische typen met CCX. Bij
+   grote verplaatsingen gebruiken de volume-elementen `GREEN_LAGRANGE` (Saint Venant-Kirchhoff,
+   orthotroop); Rayleigh-demping gaat als `AMOR_ALPHA`/`AMOR_BETA` in `ELAS_ORTH` (niet apart
+   geverifieerd).
 
 ![Materiaalassen U, V, W uit de elementoriëntatie](img/orthotropic_axes.svg)
 
@@ -85,7 +90,7 @@ de spanning langs de vezel (U) direct.
 | ERROR: Materiaal '...' (StiffnessMatrix): de matrix koppelt normaal- en schuifrekken ... (termen c14 ... niet nul) | een volledig anisotrope matrix | Code-Aster kan dit niet voor volume-elementen; is het materiaal orthotroop in andere assen, voer het dan in die assen in en draai de elementoriëntatie |
 | ERROR: Materiaal '...' (Orthotropic): de constanten geven geen positief definiete stijfheid | een modulus ≤ 0, of te grote Poisson-getallen (bijv. het kleine getal als groot ingevoerd) | controleer ν12² < E1/E2 enz.; Mecway rekent dit ook niet |
 | ERROR: Orthotroop/anisotroop materiaal op schalen, membranen of balken | het materiaal op 2D- of 1D-elementen | gebruik daar een isotroop materiaal (schalen: STAPPENPLAN S13b) |
-| ERROR: Orthotroop/anisotroop materiaal (elset ...) wordt nu alleen in Lineair statisch, Modaal en Knik vertaald | een andere analyse (niet-lineair, dynamica, modale superpositie, harmonisch, spectrum, thermisch → mechanisch, akoestiek, ...) | gebruik Static 3D, Frequency of Buckling (andere analyses: STAPPENPLAN S13c) |
+| ERROR: Orthotroop/anisotroop materiaal (elset ...) wordt nu alleen vertaald in Lineair en Niet-lineair statisch, Modaal, Knik en impliciete Dynamica | een andere analyse (expliciete dynamica, modale superpositie, harmonisch, spectrum, thermisch → mechanisch, akoestiek) | gebruik een van de ondersteunde analyses (andere: STAPPENPLAN S13c) |
 | ERROR: Element orientation van ... volume-element(en) met orthotroop materiaal: alleen een U- of alleen een V-vector, of U evenwijdig aan V | de oriëntatie van een volume-element geeft maar één van beide vectoren, of V langs U (Mecway rekent dit ook niet) | geef U en een V-vector die niet evenwijdig is aan U |
 
 ## 6. Wat niet kan
@@ -95,8 +100,9 @@ Zie ook KNOWN_BUGS 130.
 - Een matrix met koppeltermen (echt anisotroop, 21 constanten): niet in Code-Aster voor
   volume-elementen.
 - Orthotroop materiaal en *Composite* op schalen en membranen (STAPPENPLAN S13b).
-- Andere analyses dan Lineair statisch, Modaal en Knik (STAPPENPLAN S13c), en orthotrope
-  warmtegeleiding in thermische analyses. Modaal met voorspanning, complexe modes en
+- Expliciete dynamica, modale superpositie, harmonisch, responsspectrum, de keten thermisch →
+  mechanisch en akoestiek (STAPPENPLAN S13c), en orthotrope warmtegeleiding in thermische
+  analyses. Modaal met voorspanning, complexe modes en
   cyclische symmetrie gebruiken hetzelfde materiaal, maar zijn niet apart geverifieerd.
 - *Stress in element coordinates* in Modaal en Knik (per mode).
 
@@ -111,7 +117,9 @@ E2 langs de balk (Timoshenko). OR-07, OR-08, OR-10: de ingeklemde balk in Freque
 buigfrequenties) en als kolom in Buckling, gelijk aan Euler-Bernoulli binnen het schuifeffect
 en aan Mecway's eigen oplossing. OR-11: *stress in element coordinates* op een staaf met
 twee verschillende elementassen (R σ Rᵀ, en op het grensvlak het gemiddelde van de
-elementknoopwaarden, zoals Mecway).
+elementknoopwaarden, zoals Mecway). OR-12 .. OR-14: niet-lineair statisch (kubus, ingeklemde
+balk met grote doorbuiging) en impliciete dynamica (staplast, periode), gelijk aan Mecway's
+eigen CCX-oplossing.
 
 ## 8. Bronnen
 

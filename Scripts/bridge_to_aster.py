@@ -2475,11 +2475,12 @@ def _build_materials_block(model_data, analysis, plastic_func_map=None):
             continue
         if bridge_orthotropic.is_ortho(props):
             # Orthotropic / matrix material (bridge_orthotropic): ELAS_ORTH
-            # instead of ELAS; check() keeps it to linear static, so no
-            # TRACTION, ECRO_LINE, CABLE or Rayleigh damping here.
+            # instead of ELAS (Mecway's orthotropic types have no
+            # plasticity, so no TRACTION, ECRO_LINE or CABLE).
             out += _mat_comment(mat_name)
             out += "{0} = DEFI_MATERIAU({1},)\n".format(
-                concept, bridge_orthotropic.elas_text(props, thermal))
+                concept, bridge_orthotropic.elas_text(props, thermal,
+                                                      rayleigh))
             continue
         elas = _elas_args(props, thermal, rayleigh)
         extra = []

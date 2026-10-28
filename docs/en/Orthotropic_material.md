@@ -5,8 +5,9 @@
 Mecway's materials *Orthotropic*, *Stiffness matrix* and *Compliance matrix* (manual v34
 §8.5) have different properties in the directions U, V and W of the element axes. The
 bridge translates them on **solid elements** (hex, wedge, tet, pyramid, linear or
-quadratic) in **Linear static** (S30, `lin_static_3d`), **Modal** (V30, `modal_3d`) and
-**Buckling** (B30, `buckling_3d`) to Code-Aster's orthotropic
+quadratic) in **Linear static** (S30, `lin_static_3d`), **Modal** (V30, `modal_3d`),
+**Buckling** (B30, `buckling_3d`), **Nonlinear static** (L30, `nonlin_static_3d`) and implicit
+**Dynamics** (D31, `dyna_impl_3d`) to Code-Aster's orthotropic
 elasticity `ELAS_ORTH`, with Mecway's *Element orientation* as the direction of the
 material axes. Shells, other analyses and a fully anisotropic matrix are not possible yet
 (§6).
@@ -25,8 +26,11 @@ material axes. Shells, other analyses and a fully anisotropic matrix are not pos
    **both** U and V: with only one of them, or with V parallel to U, Mecway does not solve
    the model and the bridge gives an ERROR; an angle without vectors has no effect. The
    orientation may be a formula of the element centre (x, y, z).
-3. Choose *Static 3D*, *Frequency* or *Buckling* and start the bridge as usual. Mecway itself
-   only allows the matrix types in Static 3D (manual §8.5).
+3. Choose *Static 3D*, *Frequency*, *Buckling*, *Nonlinear static 3D* or *Dynamic response 3D*
+   (implicit) and start the bridge as usual. Mecway itself only allows the matrix types in
+   Static 3D (manual §8.5), and solves the nonlinear and dynamic types with CCX. With large
+   displacements the solids use `GREEN_LAGRANGE` (Saint Venant-Kirchhoff, orthotropic); Rayleigh
+   damping goes into `ELAS_ORTH` as `AMOR_ALPHA`/`AMOR_BETA` (not verified separately).
 
 ![Material axes U, V, W from the element orientation](../img/orthotropic_axes.svg)
 
@@ -84,7 +88,7 @@ along the fibre (U) directly.
 | ERROR: Material '...' (StiffnessMatrix): the matrix couples normal and shear strains ... (terms c14 ... not zero) | a fully anisotropic matrix | Code-Aster cannot do this for solids; if the material is orthotropic in other axes, enter it in those axes and turn the element orientation |
 | ERROR: Material '...' (Orthotropic): the constants do not give a positive definite stiffness | a modulus ≤ 0, or Poisson's ratios too large (e.g. the minor ratio entered as major) | check ν12² < E1/E2 etc.; Mecway does not solve this either |
 | ERROR: Orthotropic/anisotropic material on shells, membranes or beams | the material on 2D or 1D elements | use an isotropic material there (shells: STAPPENPLAN S13b) |
-| ERROR: Orthotropic/anisotropic material (elset ...) is currently translated in Linear static, Modal and Buckling only | another analysis (nonlinear, dynamics, mode superposition, harmonic, spectrum, thermal → mechanical, acoustics, ...) | use Static 3D, Frequency or Buckling (other analyses: STAPPENPLAN S13c) |
+| ERROR: Orthotropic/anisotropic material (elset ...) is currently translated in Linear and Nonlinear static, Modal, Buckling and implicit Dynamics only | another analysis (explicit dynamics, mode superposition, harmonic, spectrum, thermal → mechanical, acoustics) | use one of the supported analyses (others: STAPPENPLAN S13c) |
 | ERROR: Element orientation of ... solid element(s) with orthotropic material: only a U or only a V vector, or U parallel to V | the orientation of a solid gives only one of the two vectors, or V along U (Mecway does not solve this either) | give U and a V vector that is not parallel to U |
 
 ## 6. What is not possible
@@ -94,8 +98,9 @@ See also KNOWN_BUGS 130.
 - A matrix with coupling terms (truly anisotropic, 21 constants): not in Code-Aster for
   solids.
 - Orthotropic material and *Composite* on shells and membranes (STAPPENPLAN S13b).
-- Other analyses than Linear static, Modal and Buckling (STAPPENPLAN S13c), and orthotropic
-  thermal conductivity in thermal analyses. Modal with prestress, complex modes and cyclic
+- Explicit dynamics, mode superposition, harmonic, response spectrum, the thermal →
+  mechanical chain and acoustics (STAPPENPLAN S13c), and orthotropic thermal conductivity in
+  thermal analyses. Modal with prestress, complex modes and cyclic
   symmetry use the same material but are not verified separately.
 - *Stress in element coordinates* in Modal and Buckling (per mode).
 
@@ -109,7 +114,9 @@ turned to X, Y, Z, no stress); a cantilever with E1 and with E2 along the beam (
 OR-07, OR-08, OR-10: the cantilever in Frequency (first bending frequencies) and as a column
 in Buckling, equal to Euler-Bernoulli within the shear effect and to Mecway's own solve.
 OR-11: *stress in element coordinates* on a bar with two different element axes (R σ Rᵀ,
-and the mean of the element-node values at the interface, as Mecway).
+and the mean of the element-node values at the interface, as Mecway). OR-12 .. OR-14:
+Nonlinear static (cube, large-deflection cantilever) and implicit dynamics (step load, period),
+equal to Mecway's own CCX solve.
 
 ## 8. Sources
 

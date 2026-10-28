@@ -139,7 +139,7 @@ formulas `s1`, `tr`, `e1`).
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added after this run (not yet in a full regression, not in the table): Orthotropic material
-OR-01..11, 11 cases, 118 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
+OR-01..14, 14 cases, 133 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
 BU-20 .. BU-25 and TH-03 re-run with it: 136 cases, FEM values unchanged); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
 checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
@@ -819,7 +819,8 @@ are held statically determinate (3-2-1 on corner nodes), so the stress is homoge
 the corner displacements give all six global strains; reference: Hooke's law in U, V, W
 with the compliance rotated to X, Y, Z (tensor rotation). The cube cases with a load also check
 *stress in element coordinates*: `lam_ab` = R_ad R_bd σ (exact). Mecway 34 headless with its
-internal solver (`mw_solve.py`, the same `.liml`, 28 October 2026) is the second reference.
+internal solver (`mw_solve.py`, the same `.liml`, 28 October 2026; for L30/D31 with CCX,
+because the internal solver gives no solution there) is the second reference.
 
 | Case | Model | Reference | Result |
 |---|---|---|---|
@@ -834,6 +835,9 @@ internal solver (`mw_solve.py`, the same `.liml`, 28 October 2026) is the second
 | OR-08 | idem with the axes of OR-06 | f1 = 147.47 Hz; Mecway 147.085 / 147.286 Hz | 147.085 Hz (−0.26%), 147.286 Hz; Mecway equal (≤ 1e-9) |
 | OR-10 | cantilever of OR-06 as a column in Buckling (`buckling_3d`), 1000 N compression | π²E2I/(4L²)/P = 1.0281; Mecway 1.02522 / 1.02671 | 1.02522 (−0.28%), 1.02671; Mecway equal (≤ 1e-9) |
 | OR-11 | *stress in element coordinates* (S13d): bar 40 × 10 × 10 mm (hex20 4 × 1 × 1), clamped, force (500, 100, −200) N; the elements at x > 20 mm turned (U = (0.866, 0.5, 0), V = (−0.5, 0.866, 0.2)) | `lam*` = R σ Rᵀ of the bridge's own nodal stress at x = 30 mm; at x = 20 mm (two frames) the mean of R_e σ_e R_eᵀ over the element-node stresses (Mecway's rule) | both within 1e-9 Pa; Mecway's own values differ by the difference of the nodal stresses of the two solvers on this coarse mesh (up to 0.45 MPa at x = 30 mm, 2 MPa at the interface; σmax 80 MPa) |
+| OR-12 | cube of OR-02 in Nonlinear static (L30, large displacements = `GREEN_LAGRANGE`), strain about 1e-3 | Hooke rotated (as OR-02); Mecway (CCX) ε = (7.7410e-4, −1.7253e-4, −1.1237e-4), γ = (−3.1129e-4, 2.0635e-4, 2.3347e-4) | within 1.6e-3 of small-strain Hooke (the large-displacement effect); Mecway within 2e-6 |
+| OR-13 | cantilever of OR-06 in L30 with 300 N (tip about 23% of L) | Mecway (CCX) 45.560 mm (linear 48.12 mm) | 45.560 mm (equal, 1e-7) |
+| OR-14 | cantilever of OR-06 in Dynamic response (D31, HHT, Δt = T/50), density 1500 kg/m³, tip traction 100 N as a step | period 1/f1 = 6.7988 ms (OR-08); Mecway (CCX) 6.7731 ms | 6.7763 ms (−0.33%: scheme); Mecway +0.05% |
 
 Mecway's semantics, measured with headless solves of single hex8 cubes under an imposed
 homogeneous strain (all nodes prescribed, so the stress is C·ε exactly): the orthotropic

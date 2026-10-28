@@ -231,8 +231,17 @@ def test_prepare_and_check():
         l.startswith("ERROR: Element orientation of 1 solid") for l in LOG),
         "U only: {0}".format(LOG))
     del LOG[:]
-    check(not bo.check(md, {"solver_command": "STAT_NON_LINE"}) and
-          any("S13c" in l for l in LOG), "nonlinear refused: {0}".format(LOG))
+    check(bo.check(md, {"solver_command": "STAT_NON_LINE"}) and
+          bo.check(md, {"solver_command": "DYNA_NON_LINE", "schema": "HHT"}),
+          "nonlinear and implicit dynamics allowed: {0}".format(LOG))
+    check(not bo.check(md, {"solver_command": "DYNA_NON_LINE",
+                            "schema": "DIFF_CENT"}) and
+          any("S13c" in l for l in LOG), "explicit refused: {0}".format(LOG))
+    check(not bo.check(md, {"solver_command": "DYNA_VIBRA"}),
+          "mode superposition refused")
+    # Rayleigh damping: AMOR_ALPHA = Mecway's beta, AMOR_BETA = alpha
+    txt = bo.elas_text(props, False, {"alpha": 2.0, "beta": 1e-5})
+    check(txt.endswith("AMOR_ALPHA=1e-05, AMOR_BETA=2.0)"), txt)
     md["elset_modelisations"]["Blok"] = "DKT"
     del LOG[:]
     check(not bo.check(md, {"solver_command": "MECA_STATIQUE"}) and

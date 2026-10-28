@@ -1182,14 +1182,15 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 130\. **Orthotropic and anisotropic material: limits** (confirmed, `bridge_orthotropic.py`,
    STAPPENPLAN S13a). Translated: *Orthotropic*, *Stiffness matrix* and *Compliance matrix*
-   on solid elements in Linear static, Modal and Buckling (`ELAS_ORTH` + `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`,
-   [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..11). Not:
+   on solid elements in Linear and Nonlinear static, Modal, Buckling and implicit Dynamics (`ELAS_ORTH` + `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`,
+   [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..14). Not:
    a matrix with coupling terms (normal-shear or shear-shear, truly anisotropic): ERROR,
    because `DEFI_MATERIAU` has no general anisotropic elasticity for solids (catalogue
    v17.4: only `ELAS_ORTH`/`ELAS_ISTR`; permanent unless via MFront, which the Windows
    build lacks); orthotropic material and *Composite* on shells/membranes (ERROR, step
-   S13b); other analyses than linear static, modal and buckling (ERROR, step S13c; modal
-   with prestress, complex modes and cyclic symmetry allowed but not verified separately), orthotropic thermal
+   S13b); explicit dynamics, mode superposition, harmonic, spectrum, the thermal -> mechanical chain
+   and acoustics (ERROR, step S13c; modal with prestress, complex modes, cyclic symmetry and
+   Rayleigh damping allowed but not verified separately), orthotropic thermal
    conductivity; *stress in element coordinates* (`lamuu` ..) is written in linear static only
    (not per mode in modal/buckling) and not for shells.
 

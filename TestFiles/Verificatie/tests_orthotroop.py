@@ -247,6 +247,13 @@ MW = {
     "OR-07": [326.210878556784, 327.280261795346],
     "OR-08": [147.085465297327, 147.286417988539],
     "OR-10": [1.02521700031098, 1.02671098794744],
+    # Mecway 34 headless with CCX (L30/D31; its internal solver gives no
+    # solution for these types): strains at t = 1 s, tip deflection [m] at
+    # 300 N (linear: 3 x OR-06 = 0.0481 m), period of the tip [s]
+    "OR-12": [0.000774101, -0.00017253, -0.000112368, -0.000311287,
+              0.000206349, 0.000233465],
+    "OR-13": 0.045560233,
+    "OR-14": 0.0067731202,
 }
 
 
@@ -607,6 +614,110 @@ def _or11_checks():
     return out
 
 
+# ------------------------------------------------------------------
+# OR-12 .. OR-14: nonlinear static and implicit dynamics (S13c part).
+# OR-12: the cube of OR-02 in Nonlinear static (L30, large displacements
+# = GREEN_LAGRANGE): strains 1e-3, so equal to Hooke within 1e-3 of the
+# largest strain. OR-13: the cantilever of OR-06 in L30 with 300 N (tip
+# about 24% of L, geometrically nonlinear): Mecway 34 headless. OR-14: the
+# cantilever of OR-06 in Dynamic response (D31, HHT), tip traction 100 N
+# as a step: period of the tip motion = 1 / f1 of Mecway's modal solve
+# (OR-08), oscillating about the static deflection of OR-06.
+# ------------------------------------------------------------------
+def build_or12():
+    m = build_or02()
+    m.analysis = "L30"
+    m.solver = "ccx"
+    m.timesteps = {"timeperiod": "1 s", "stepsize": "0.5 s"}
+    # Mecway's CCX solve stores only the listed fields
+    m.add('<fieldvariable name="displacement" displayunit="m" />')
+    return m
+
+
+ATTRS_V = ('orientationux="0" orientationuy="1" orientationuz="0" '
+           'orientationvx="-1" orientationvy="0" orientationvz="0"')
+P13 = 300.0
+
+
+def build_or13():
+    m = _cantilever(ATTRS_V)
+    m.analysis = "L30"
+    m.solver = "ccx"
+    m.timesteps = {"timeperiod": "1 s", "stepsize": "0.25 s"}
+    m.items = [i for i in m.items if "traction" not in i]
+    m.add('<traction selection="Eindvlak"><x>0 Pa</x><y>0 Pa</y>'
+          '<z>-%r Pa</z></traction>' % (P13 / AB))
+    return m
+
+
+T14 = 1.0 / 147.085465297327        # OR-08, Mecway: f1
+DT14 = T14 / 50.0
+
+
+def build_or14():
+    m = _cantilever(ATTRS_V)
+    m.analysis = "D31"
+    m.solver = "ccx"
+    m.timesteps = {"timeperiod": "%r s" % (3.2 * T14),
+                   "automatictimestepping": "false",
+                   "outputtimes": "regular", "timepointsstart": "0 s",
+                   "timepointsincrement": "%r s" % DT14,
+                   "stepsize": "%r s" % DT14}
+    m.mats = []
+    m.mat("Ortho", ORTHO, DENS)
+    return m
+
+
+def _tip_history(r):
+    nids = r.model.nodesel["TipKnopen"]
+    return [(t, -sum(d["displz"][n] for n in nids) / float(len(nids)))
+            for t, d in r.steps if "displz" in d]
+
+
+def _period(hist, level):
+    from tests_dynamisch import period
+    return period(hist, level)
+
+
+def _or12_checks(mw):
+    rows = frame(U2, V2, ANG2)
+    eps = global_strain(rows, 0, SIG)
+    big = max(abs(e) for e in eps)
+    out = [Check(_NAMES[k] + " (L30)", lambda r, k=k: _strain(r, k),
+                 ref=eps[k], tol_abs=3e-3 * big, unit="-",
+                 source="Hooke in U,V,W rotated (strain 1e-3: large-"
+                        "displacement effect < 3e-3)") for k in range(6)]
+    for k, val in enumerate(mw or []):
+        out.append(Check(
+            _NAMES[k] + " = Mecway (L30)", lambda r, k=k: _strain(r, k),
+            ref=val, tol_abs=1e-3 * big, unit="-",
+            source="Mecway 34 headless (CCX)", in_series=False))
+    return out
+
+
+def _or13_checks(mw):
+    out = []
+    if mw is not None:
+        out.append(Check("doorbuiging tip = Mecway (L30)", _tip, ref=mw,
+                         tol=5e-3, unit="m", source="Mecway 34 headless",
+                         in_series=False))
+    return out
+
+
+def _or14_checks(mw):
+    out = [Check("periode tip", lambda r: _period(_tip_history(r),
+                                                 0.016041192),
+                 ref=T14, tol=0.01, unit="s",
+                 source="1 / f1 (OR-08, Mecway modal), about the static "
+                        "deflection of OR-06")]
+    if mw is not None:
+        out.append(Check("periode tip = Mecway (D31)",
+                         lambda r: _period(_tip_history(r), 0.016041192),
+                         ref=mw, tol=5e-3, unit="s",
+                         source="Mecway 34 headless", in_series=False))
+    return out
+
+
 TESTS += [
     Case("OR-07", GROUP, "Orthotrope ingeklemde balk, eigenfrequenties, E_U "
          "langs de balk", "modal_3d", build_or07,
@@ -623,4 +734,15 @@ TESTS += [
          "assenstelsels", "lin_static_3d", build_or11, _or11_checks(),
          note="Field stresses; lam* = R sigma R^T, at the interface the "
               "mean of the element-node values."),
+    Case("OR-12", GROUP, "Orthotroop blok, trek X, niet-lineair statisch, "
+         "kaart met hoek", "nonlin_static_3d", build_or12,
+         _or12_checks(MW.get("OR-12")),
+         note="L30, large displacements (GREEN_LAGRANGE)."),
+    Case("OR-13", GROUP, "Orthotrope ingeklemde balk, grote doorbuiging "
+         "(L30)", "nonlin_static_3d", build_or13,
+         _or13_checks(MW.get("OR-13")),
+         note="300 N, E_V along the beam; tip about 23% of L."),
+    Case("OR-14", GROUP, "Orthotrope ingeklemde balk, staplast, dynamisch "
+         "(D31)", "dyna_impl_3d", build_or14, _or14_checks(MW.get("OR-14")),
+         note="HHT, dt = T/50; period about the static deflection."),
 ]
