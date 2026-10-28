@@ -182,6 +182,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Convergence and messages window" | on | opens a separate window on every run: for a nonlinear analysis the residuals, progress and contact; for the static analysis the linear solver (time per phase, error bound, condition number; with GCPC the residual per iteration); for modal and buckling the first modes; for every analysis the messages (errors and alarms with explanation) and the diagnosis. Afterwards: the "Convergence window" button. See [Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen) |
 | "Waiting for Code-Aster" | `auto` | `auto`: a modal status window with the progress and "Stop..."; the bridge recognises the end of the run itself and then loads the results (§2 step 5). `confirm`: you click OK in Mecway when the Code-Aster window shows `DIAGNOSTIC JOB` (the earlier behaviour) |
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
+| "Code-Aster output as Saved monitor in the .liml" | `summary` | after the run the output of Code-Aster is stored in the `.liml` as Mecway's *Saved monitor* item under *Solution*, so you can read it in Mecway after the Code-Aster windows have been closed (§5.2). `summary`: errors and alarms, steps, timings and the path of the full `.mess`; `full`: the whole `.mess` (start and end above 4 million characters); `off`: nothing. Route `liml` only |
 | "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets, and `<model>_<run-id>_knopen.csv` (for each named node selection of at most 100 nodes the nodal fields over time) |
 | "AdvancedToolsHub folder (empty = automatic)" | empty | folder of AdvancedToolsHub; found = the "ParaView" button opens the run in MWHub Post (Mecway look, units, hiding failed elements); empty = `%ADVANCEDTOOLSHUB_DIR%`, else the folder `AdvancedToolsHub` next to this repository; not found = the `.rmed` directly in ParaView |
 | "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" button of the convergence window; empty = automatic: first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), which reads a `.rmed` itself; then as fallback the ParaView of Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, started through `run_paraview.bat`); last an older ParaView. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
@@ -563,7 +564,42 @@ Mecway only shows results that are in the `.liml`, which therefore becomes large
 
 Both save the model first and then reopen it. The results are those of the run: if
 you change loads or materials afterwards, they no longer belong to them (only the
-mesh is checked).
+mesh is checked). "Load" also puts the Saved monitor of that run into the model (§5.2), if
+its `.mess` is still in the work folder.
+
+### 5.2 Code-Aster output in Mecway (Saved monitor)
+
+With route `liml` the bridge stores the output of the Code-Aster run in the `.liml` as
+Mecway's own *Saved monitor* item (outline tree, under *Solution*; Mecway manual §10.3), the
+same item Mecway uses for the progress messages of its own solver. It stays in the model when
+you close the Code-Aster windows, save the model or send it to someone else. Setting "Code-Aster
+output as Saved monitor in the .liml" (`save_monitor`, page General):
+
+- `summary` (default): the model, the run, the path and size of the full
+  `<model>_<run-id>.mess`, the Code-Aster version and the `DIAGNOSTIC JOB` line; every error
+  and alarm message box (`<EXCEPTION>`, `<F>`, `<S>`, `<E>`, `<A>`) once, with the number of
+  times it occurred; the list of alarms Code-Aster gives at the end; Python errors from
+  `<model>_<run-id>_console.txt`; for a nonlinear analysis each time step with level, Newton
+  iterations and converged/failed (the first and last 25, plus every failed one), otherwise the
+  progress lines; the bridge's own lines (mass check, modes, result file); the time per
+  command and the memory; the end of the `.mess`. At most 400 000 characters.
+- `full`: the whole `.mess`; above 4 million characters the first million and the last three
+  million, with a note in between (the `.mess` of a long nonlinear run can be tens of MB, and
+  the `.liml` should open quickly).
+- `off`: no Saved monitor.
+
+The messages are Code-Aster's own (French). A run without results (error, stopped) gets the
+Saved monitor only if the model has no results yet: the bridge then writes a solution with only
+the monitor (Mecway shows a solution without result fields) and reopens the model. If the model
+already has results (of an earlier run or of Mecway's own solve), the bridge leaves the model
+untouched, so those results are not replaced by an empty solution; the log names the `.mess`
+of the failed run, and the messages are in the status box and the convergence window as before.
+A solution with only the monitor of an earlier failed run does not count as results.
+With route `tabel` there is no Saved monitor (KNOWN_BUGS 122) (that route fills Mecway's existing solution
+through the API, which cannot add the item); the `.mess` stays in the work folder.
+If you solve the model with Mecway's own solver afterwards, Mecway replaces the text with its
+own progress messages. "Remove from model" (§5.1) also removes the text; the item itself stays
+(empty).
 
 ## 6. Reading errors
 
@@ -596,6 +632,8 @@ mesh is checked).
   cells, normal in vibroacoustics); with complex modes `ALGELINE5_79` (fewer modes
   than requested) and `FACTOR_11` (free-free model). All codes seen so far, with cause and
   solutions: [`CodeAster_error_messages.md`](CodeAster_error_messages.md).
+- **After closing the windows**: the messages of the last run are in the model as the
+  *Saved monitor* item under *Solution* (§5.2), with the path of the full `.mess`.
 - **"Code-Aster wrote no `<model>_<run-id>.mess` for this run"** or **only "DIAGNOSTIC JOB : <F>_ABNORMAL_ABORT"** without a message: the
   cause is in the Code-Aster window (which then stays open).
 - **"Python error in `<model>_<run-id>.comm`"**: the `.comm` was not (fully) executed, usually because of a

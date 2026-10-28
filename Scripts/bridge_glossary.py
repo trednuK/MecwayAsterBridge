@@ -751,6 +751,18 @@ GLOSSARY = OrderedDict([
                  u"als het Code-Aster-venster 'DIAGNOSTIC JOB' toont.",
                  u"Waiting for Code-Aster: you click OK in Mecway when the "
                  u"Code-Aster window shows 'DIAGNOSTIC JOB'.")),
+    ("summary (monitor)", ("file", u"Saved monitor: samenvatting van de "
+                           u".mess (fouten en alarmen, stappen, tijden, pad "
+                           u"van de volledige .mess). Standaard.",
+                           u"Saved monitor: summary of the .mess (errors "
+                           u"and alarms, steps, timings, path of the full "
+                           u".mess). Default.")),
+    ("full (monitor)", ("file", u"Saved monitor: de hele .mess (boven 4 "
+                        u"miljoen tekens het begin en het einde).",
+                        u"Saved monitor: the whole .mess (above 4 million "
+                        u"characters the start and the end).")),
+    ("off (monitor)", ("file", u"Geen Saved monitor in de .liml.",
+                       u"No Saved monitor in the .liml.")),
     ("liml", ("file", u"Resultaatroute: Code-Aster schrijft Mecway's eigen "
               u"resultaten; de bridge zet ze in de .liml (alle "
               u"tijdstappen of modes). Standaard.",
@@ -1078,6 +1090,22 @@ SETTING_HELP = {
                      u"How the results get into Mecway; 'tabel' only for "
                      u"static and nonlinear static. Default liml (all time "
                      u"steps or modes, small file)."),
+    "save_monitor": (u"Na de run zet de bridge de uitvoer van Code-Aster "
+                     u"als item Saved monitor (onder Solution) in de .liml, "
+                     u"zodat je die in Mecway terugleest na het sluiten van "
+                     u"de Code-Aster-vensters. Een run zonder resultaten "
+                     u"krijgt een solution met alleen de monitor, maar "
+                     u"alleen als het model nog geen resultaten heeft "
+                     u"(bestaande resultaten blijven staan). Alleen met de "
+                     u"resultaatroute 'liml'. Standaard summary.",
+                     u"After the run the bridge puts the output of "
+                     u"Code-Aster into the .liml as the item Saved monitor "
+                     u"(under Solution), so that you can read it back in "
+                     u"Mecway after closing the Code-Aster windows. A run "
+                     u"without results gets a solution with only the "
+                     u"monitor, but only if the model has no results yet "
+                     u"(existing results stay). Only with the result route "
+                     u"'liml'. Default summary."),
     "convergence_monitor": (u"Bij elke run een apart venster met de "
                             u"voortgang, convergentie en meldingen van "
                             u"Code-Aster. Standaard aan.",
@@ -1962,6 +1990,9 @@ _OPTION_TERMS = {
     ("line_search", "auto"): "auto (line search)",
     ("line_search", "on"): "on (line search)",
     ("line_search", "off"): "off (line search)",
+    ("save_monitor", "summary"): "summary (monitor)",
+    ("save_monitor", "full"): "full (monitor)",
+    ("save_monitor", "off"): "off (monitor)",
     ("imperfection_unit", "m"): "m (imperfection)",
     ("imperfection_unit", "L"): "L (imperfection)",
 }

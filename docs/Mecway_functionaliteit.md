@@ -159,6 +159,7 @@ Verlijmd contact per combinatie (slave op master):
 | Temperatuur, warmteflux | Ja | Thermisch. |
 | Eigenfrequenties, kniklastfactoren, effectieve massa | Ja | Fractie van de effectieve massa anders dan Mecway (KB49). |
 | Akoestische druk | Ja | [`Akoestiek.md`](Akoestiek.md). |
+| *Saved monitor* (Solution) | Ja | De uitvoer van de Code-Aster-run in plaats van de solvermeldingen van Mecway (instelling `save_monitor`, route `liml`; [`Handleiding.md`](Handleiding.md) §5.2). |
 
 Extra velden van de bridge (foutschatter, vermoeiing, metallurgie) en welk Code-Aster-veld
 bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.

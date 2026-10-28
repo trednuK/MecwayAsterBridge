@@ -131,8 +131,11 @@ from bridge_results_liml import (splice_results, read_step,
                                  read_modes, read_mode_summary,
                                  read_cyclic_summary, read_tagged,
                                  read_error_summary, read_crit_stab,
-                                 crit_stab_estimate, read_imperfection)
+                                 crit_stab_estimate, read_imperfection,
+                                 has_results)
 from bridge_failure     import report_failures
+from bridge_monitor     import monitor_text
+from bridge_run_aster   import CONSOLE_SUFFIX
 import bridge_version
 import bridge_acoustic
 import bridge_fracture
@@ -444,8 +447,14 @@ def _run(settings):
             os.path.join(work_dir_path(), run_name(".mess")),
             model_data)
         if route == "liml":
-            loaded = _load_liml_results(active_liml, model_data, run_start)
+            loaded = _load_liml_results(active_liml, model_data, run_start,
+                                        _run_monitor(active_liml, run_id,
+                                                     run_start))
         else:
+            if CONFIG_BRIDGE.get("save_monitor", "summary") != "off":
+                log("INFO: Saved monitor not written: only with the result "
+                    "route 'liml' (the route 'tabel' fills the existing "
+                    "Mecway solution through the API).")
             loaded = AsterToMecway_results(work_dir_path(),
                                            resu_name, mw, solution)
         if failure_note:
@@ -557,12 +566,43 @@ def _remove_stale_outputs():
                        "WARNING: Could not delete {0}: {1}").format(path, e))
 
 
-def _load_liml_results(active_liml, model_data, run_start):
+def _monitor_header(liml, run_id, analysis):
+    """First lines of the Saved monitor text (bridge_monitor)."""
+    return [u"MecwayAsterBridge {0} - Code-Aster".format(BRIDGE_VERSION),
+            tr(u"Model: {0}", u"Model: {0}").format(liml),
+            tr(u"Run: {0}, analyse {1}", u"Run: {0}, analysis {1}").format(
+                run_id, analysis)]
+
+
+def _run_monitor(active_liml, run_id, run_start):
+    """Text for Mecway's Saved monitor of this run (setting save_monitor,
+    bridge_monitor.py), or None (off, or no .mess of this run)."""
+    mode = CONFIG_BRIDGE.get("save_monitor", "summary")
+    mess = os.path.join(work_dir_path(), run_name(".mess"))
+    if mode == "off" or not os.path.exists(mess) or \
+            os.path.getmtime(mess) < run_start:
+        return None
+    try:
+        return monitor_text(
+            mess, mode, os.path.join(work_dir_path(),
+                                     run_name(CONSOLE_SUFFIX)),
+            _monitor_header(active_liml, run_id,
+                            CONFIG_BRIDGE["active_analysis"]))
+    except Exception as e:
+        log(tr(u"WARNING: Saved monitor niet gemaakt: {0}",
+               u"WARNING: Saved monitor not made: {0}").format(e))
+        return None
+
+
+def _load_liml_results(active_liml, model_data, run_start, monitor=None):
     """
     result_route "liml": Code-Aster wrote Mecway's own <results>
     (aster_results_export.py). Optionally compare with the Mecway solve,
     paste the fragment into the .liml (previous version: .bak) and open it
-    again. Returns True if the results are in Mecway.
+    again. monitor: text for Mecway's Saved monitor (_run_monitor) or None;
+    without results it is written as a solution with only the monitor if
+    the model has no results yet (_monitor_only). Returns True if the
+    results are in Mecway.
     """
     fragment = results_file(work_dir_path())
     if (not os.path.exists(fragment) or
@@ -571,6 +611,8 @@ def _load_liml_results(active_liml, model_data, run_start):
                "study.mess.",
                "ERROR: No result fragment from this run ({0}); see "
                "study.mess.").format(fragment))
+        if monitor is not None:
+            _monitor_only(active_liml, monitor)
         return False
     modes = read_modes(fragment)
     active = CONFIG_BRIDGE["analyses"].get(CONFIG_BRIDGE["active_analysis"],
@@ -626,7 +668,15 @@ def _load_liml_results(active_liml, model_data, run_start):
     if warning:
         log("WARNING: " + warning)
     ok, reason = splice_results(active_liml, fragment, active_liml,
-                                configuration)
+                                configuration, monitor=monitor)
+    if not ok and monitor is not None:
+        log(tr(u"WARNING: Resultaten met Saved monitor niet in de .liml "
+               u"gezet ({0}); opnieuw zonder monitor.",
+               u"WARNING: Results with Saved monitor not written into the "
+               u".liml ({0}); trying again without the monitor.").format(
+                   reason))
+        ok, reason = splice_results(active_liml, fragment, active_liml,
+                                    configuration)
     if not ok:
         log(tr("ERROR: Resultaten niet in de .liml gezet: {0}",
                "ERROR: Results not written into the .liml: {0}").format(
@@ -685,6 +735,39 @@ def _load_liml_results(active_liml, model_data, run_start):
                    "WARNING: Configuration '{0}' not made active: "
                    "{1}").format(configuration, e))
     return True
+
+
+def _monitor_only(active_liml, monitor):
+    """A run without results (error, stopped): if the model has no
+    results yet, put a solution with only the Saved monitor into the .liml
+    (previous version: .bak) and reopen it, so that the output of the run
+    stays readable in Mecway. A model that already has results is left
+    untouched (its results are not replaced by an empty solution); the log
+    then names the .mess."""
+    configuration, _warning = pick_configuration(active_liml)
+    if has_results(active_liml, configuration):
+        log("INFO: Run without results: the model already has results, so "
+            "it is left unchanged and gets no Saved monitor; the output of "
+            "the run is in {0}.".format(
+                os.path.join(work_dir_path(), run_name(".mess"))))
+        return
+    ok, reason = splice_results(active_liml, None, active_liml,
+                                configuration, monitor=monitor)
+    if not ok:
+        log(tr(u"WARNING: Saved monitor niet in de .liml gezet: {0}",
+               u"WARNING: Saved monitor not written into the .liml: "
+               u"{0}").format(reason))
+        return
+    log("INFO: Run without results: a solution with only the Saved monitor "
+        "written to '{0}' (previous version: .bak).".format(active_liml))
+    mw.open(active_liml)
+    if configuration:
+        try:
+            mw.set_active_configuration(configuration)
+        except Exception as e:
+            log(tr("WARNING: Configuratie '{0}' niet actief gemaakt: {1}",
+                   "WARNING: Configuration '{0}' not made active: "
+                   "{1}").format(configuration, e))
 
 
 _MODES_SHOWN = 20     # this many modes in the status box; all in the log
@@ -1385,7 +1468,22 @@ def _results_action():
                          "These results do not fit the open model:\n{0}\n"
                          "Not loaded.").format(note)
     configuration, warning = pick_configuration(liml)
-    ok, reason = splice_results(liml, path, liml, configuration)
+    # Saved monitor from the .mess of that run (if it is still there)
+    monitor = None
+    mode = CONFIG_BRIDGE.get("save_monitor", "summary")
+    stem = info["comm"][:-len(".comm")]
+    if mode != "off" and os.path.exists(stem + ".mess"):
+        try:
+            monitor = monitor_text(
+                stem + ".mess", mode, stem + CONSOLE_SUFFIX,
+                _monitor_header(info["model"] or liml, info["run_id"], "-"))
+        except Exception as e:
+            log(tr(u"WARNING: Saved monitor niet gemaakt: {0}",
+                   u"WARNING: Saved monitor not made: {0}").format(e))
+    ok, reason = splice_results(liml, path, liml, configuration,
+                                monitor=monitor)
+    if not ok and monitor is not None:
+        ok, reason = splice_results(liml, path, liml, configuration)
     if not ok:
         return False, tr("Resultaten niet ingeladen: {0}",
                          "Results not loaded: {0}").format(reason)
