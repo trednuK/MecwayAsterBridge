@@ -460,7 +460,14 @@ keeps the Mecway route of §6. Code: `Scripts/bridge_homard.py` (bridge) and
    `vtu_export` the refined result itself is in `<model>_<run_id>_verfijnd.rmed`
    (ParaView, MWHub Post).
 
-<!-- FIGURE: page Thermisch / Thermal, heading Adaptieve verfijning / Adaptive refinement, markers: 1 = adapt_homard, 2 = adapt_homard_target, 3 = adapt_homard_max_loops, 4 = adapt_homard_max_elements -->
+![Adaptive refinement on the page Thermal](../img/thermal_adapt_homard_en.png)
+
+1. *Adaptive refinement (HOMARD, inside the job)* (`adapt_homard`): the loop on.
+2. *Target: global error ZZ [%]* (`adapt_homard_target`).
+3. *Max. number of refinement loops* (`adapt_homard_max_loops`).
+4. *Max. number of elements after refining* (`adapt_homard_max_elements`).
+
+The page *Nonlinear static* has the same four settings.
 
 For a single model it also works with `#ASTER-OPTIE`, e.g. `#ASTER-OPTIE adapt_homard = yes`
 and `#ASTER-OPTIE adapt_homard_target = 0.3`.

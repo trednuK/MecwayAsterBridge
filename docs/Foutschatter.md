@@ -461,7 +461,14 @@ statisch houdt de Mecway-route van §6. Code: `Scripts/bridge_homard.py` (bridge
    `vtu_export` staat het verfijnde resultaat zelf in `<model>_<run_id>_verfijnd.rmed`
    (ParaView, MWHub Post).
 
-<!-- FIGURE: page Thermisch / Thermal, heading Adaptieve verfijning / Adaptive refinement, markers: 1 = adapt_homard, 2 = adapt_homard_target, 3 = adapt_homard_max_loops, 4 = adapt_homard_max_elements -->
+![Adaptieve verfijning op de pagina Thermisch](img/thermal_adapt_homard_nl.png)
+
+1. *Adaptieve verfijning (HOMARD, binnen de job)* (`adapt_homard`): de lus aan.
+2. *Doel: globale fout ZZ [%]* (`adapt_homard_target`).
+3. *Max. aantal verfijningslussen* (`adapt_homard_max_loops`).
+4. *Max. aantal elementen na verfijnen* (`adapt_homard_max_elements`).
+
+Op de pagina *Niet-lineair statisch* staan dezelfde vier instellingen.
 
 Voor één model kan het ook met `#ASTER-OPTIE`, bijv. `#ASTER-OPTIE adapt_homard = ja` en
 `#ASTER-OPTIE adapt_homard_target = 0.3`.
