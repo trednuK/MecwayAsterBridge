@@ -1132,3 +1132,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,
    frequency, buckling or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).
+
+## Start screen and windows
+
+128\. **Header and footer buttons do not scale with the Windows display scale** (confirmed,
+   Mecway 34 GUI at 125 %, 28 Oct 2026; `bridge_gui.Look.header`, `add_button` in
+   `run_settings_dialog`). The header bar has a fixed height (58 px) and the subtitle a fixed
+   position (y = 34), so with a larger title font the top of the subtitle line ("Mecway to
+   Code-Aster • model: ... • analysis: ...") is hidden under the title. The footer buttons have
+   fixed widths, so "Convergence window" is cut to "Convergence windo". Fix: place the subtitle
+   below the measured title height and size the bar and the buttons from the text
+   (`TextRenderer.MeasureText`). Cosmetic; NOT fixed.
