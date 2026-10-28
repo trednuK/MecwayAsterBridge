@@ -1135,7 +1135,7 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 ## Start screen and windows
 
-128\. **Header and footer buttons do not scale with the Windows display scale** (confirmed,
+129\. **Header and footer buttons do not scale with the Windows display scale** (confirmed,
    Mecway 34 GUI at 125 %, 28 Oct 2026; `bridge_gui.Look.header`, `add_button` in
    `run_settings_dialog`). The header bar has a fixed height (58 px) and the subtitle a fixed
    position (y = 34), so with a larger title font the top of the subtitle line ("Mecway to
