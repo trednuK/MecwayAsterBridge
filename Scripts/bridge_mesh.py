@@ -3405,6 +3405,94 @@ def _drop_covered_ddl(model_data, nodes_of, group_faces):
         bc["aster_target"] = "GROUP_NO"
 
 
+def _trim_covered_relations(model_data, nodes_of):
+    """
+    The opposite of _drop_covered_ddl: a skew relation (symmetry or
+    frictionless with value 0, per node group LIAISON_OBLIQUE) whose
+    direction at a node already lies in the span of the imposed
+    displacements/rotations 0 along global axes (DDL_IMPO) at that node,
+    e.g. frictionless on the rim edges of a round plate (radial normal)
+    with displacement X = Y = 0 on the same nodes (GitHub issue #9).
+    Mecway reduces such a set itself (manual v33 par. 9.6: "reduce them to
+    a minimum equivalent set of orthogonal constraints in a rotated
+    coordinate system"); in Code-Aster the dualised conditions are
+    linearly dependent and the matrix is singular (seen with Code-Aster
+    17.4: CALC_MODES <EXCEPTION> ALGELINE3_81 at shift -0.01 Hz). The
+    DDL_IMPO stays (it fixes more); the covered components of the relation
+    are removed at those nodes (new node groups for the rest), so the
+    union of the conditions per node stays the same. Relations with a
+    non-zero value are left alone (reported by
+    _report_constraint_overlaps).
+    """
+    rows = {}                   # node -> {"D": [vec], "DR": [vec]}
+    for bc in model_data.get("bcs", []):
+        if (bc.get("skip") or _ddl_kind(bc) != "const"
+                or bc["type"] not in ("displacement", "noderotation")):
+            continue
+        values = _ddl_values([bc])
+        if not values or any(v != 0.0 for v in values.values()):
+            continue
+        unit = _unit_rows(sorted(values))
+        for n in nodes_of(bc["selection"]):
+            per = rows.setdefault(n, {"D": [], "DR": []})
+            for kind, vec in unit:
+                per[kind].append(vec)
+    if not rows:
+        return
+    extra = model_data.setdefault("extra_node_groups", OrderedDict())
+
+    def covered(n, kind_vec):
+        base = rows.get(n, {}).get(kind_vec[0]) or []
+        return bool(base) and _rank3(base + [kind_vec[1]]) == _rank3(base)
+
+    for bc in model_data.get("bcs", []):
+        if (bc.get("skip") or bc.get("oblique") is None
+                or bc["type"] not in ("symmetry", "frictionless")):
+            continue
+        new, n_trim = [], set()
+        for item in bc["oblique"]:
+            group, angl, ddls = item[0], item[1], tuple(item[2])
+            values = item[3] if len(item) > 3 and item[3] else {}
+            if any(values.get(d, 0.0) != 0.0 for d in ddls):
+                new.append(item)
+                continue
+            unit = dict(zip(ddls, _unit_rows(ddls, angl)))
+            regroup = OrderedDict()           # kept ddls -> [node]
+            for n in extra.get(group, ()):
+                keep = tuple(d for d in ddls if not covered(n, unit[d]))
+                regroup.setdefault(keep, []).append(n)
+            if list(regroup) == [ddls]:
+                new.append(item)
+                continue
+            # The original group keeps the unchanged nodes (else the first
+            # remaining subset); if every node is fully covered it stays
+            # unused (never emptied: an empty NOEUD list is not allowed in
+            # DEFI_GROUP).
+            reuse = group
+            order = sorted(regroup.items(), key=lambda kv: kv[0] != ddls)
+            for keep, ns in order:
+                if keep != ddls:
+                    n_trim.update(ns)
+                if not keep:
+                    continue
+                if reuse:
+                    extra[reuse] = sorted(ns)
+                    name, reuse = reuse, None
+                else:
+                    name = _extra_node_group(model_data, "BRTR", ns)
+                new.append((name, angl, keep) + tuple(item[3:]))
+        if not n_trim:
+            continue
+        bc["oblique"] = new
+        if not new:
+            bc["skip"] = True
+        log("INFO: {0} '{1}': in {2} node(s) the relation is already "
+            "covered by an imposed displacement/rotation 0 (DDL_IMPO) and "
+            "is reduced there (double condition, singular matrix; Mecway "
+            "reduces it the same way, manual par. 9.6).".format(
+                bc["type"], bc["selection"], len(n_trim)))
+
+
 def _unit_rows(ddls, angl=None):
     """[(kind, vector)] for degrees of freedom ddls ('DX', 'DRY', ...) in the
     local system of ANGL_NAUT angl (None: global); kind 'D' or 'DR'."""
@@ -3526,6 +3614,7 @@ def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
         return set()
 
     _drop_covered_ddl(model_data, nodes_of, group_faces)
+    _trim_covered_relations(model_data, nodes_of)
 
     # Per (kind, selection) the fixed degrees of freedom (global); a
     # selection with several items of the same kind (e.g. displacement x and

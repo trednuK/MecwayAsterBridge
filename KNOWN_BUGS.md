@@ -150,7 +150,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    fixed next to skewed conditions, displacement, node rotation or velocity
    (SANS_GROUP_*, `bridge_to_aster._build_charges`); contact slaves
    (`_exclude_fixed_slaves`); a DDL_IMPO 0 that already falls under a symmetry/frictionless 0
-   in the same global direction (`bridge_mesh._drop_covered_ddl`). Two DDL_IMPO
+   in the same global direction (`bridge_mesh._drop_covered_ddl`), and conversely the part of
+   a symmetry/frictionless 0 that DDL_IMPO 0 on the same node already spans, also skew
+   (`bridge_mesh._trim_covered_relations`; GitHub issue #9, MO-09). Two DDL_IMPO
    in the same load: Code-Aster takes the last one (only reported for different
    values). Reported with selections and DOFs, not fixed (`_report_constraint_overlaps`,
    rank test per node): constant next to time-dependent on the same DOF (ASSEMBLA_26),

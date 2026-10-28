@@ -47,7 +47,10 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
    zijn: Mecway rekent dat niet (Mecway Ltd., 2026, §6.3) en de bridge stopt met een
    ERROR (§4).
    - Modaal zonder enige oplegging (vrij-vrij): de bridge rekent het toch (§3.2);
-     de eerste modes zijn dan starre bewegingen met ~0 Hz.
+     de eerste modes zijn dan starre bewegingen met ~0 Hz. Dat geldt ook voor een
+     model met alleen verbindingen tussen de delen (verlijmd contact, starre of
+     verdelende koppelingen) en geen oplegging, bijv. om de contacten van een
+     samenstel met de starre modes te controleren (MO-10).
    - Een mechanisme in een verder opgelegd model (bijv. een balk die alleen
      scharnierend vastzit, een los onderdeel): Code-Aster stopt met `ALGELINE3_81`;
      oplossing in §4 (KNOWN_BUGS 48).
@@ -417,6 +420,11 @@ Zonder opleggingen is K singulier en faalt de standaard-shift 0 van Code-Aster. 
 bridge zoekt dan rond een kleine negatieve frequentie (`CENTRE`, regel
 `BRIDGE_FREE_SHIFT` in de `.mess`); de 6 starre modes komen met |f| van orde 1e-4 Hz
 (verificatie MO-04: |f| < 6e-4 Hz; soms negatief, numeriek nul), daarna de elastische.
+De bridge doet dit ook als de enige kinematische voorwaarden verbindingen zijn
+(`LIAISON_MAIL` van verlijmd contact, `LIAISON_SOLIDE`/`LIAISON_RBE3` van koppelingen):
+die verbinden delen maar leggen niets vast in de ruimte (MO-10; eerder:
+`ALGELINE3_81`). Een mechanisme in een model dat ergens wel is opgelegd wordt niet
+herkend: kies daar zelf een negatieve *Zoekfrequentie* (§4).
 
 ### 3.3 Wat niet kan
 

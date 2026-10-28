@@ -45,7 +45,10 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
    With prestress (loads, item 6) that value must be 0: Mecway does not solve this
    (Mecway Ltd., 2026, §6.3) and the bridge stops with an ERROR (§4).
    - Modal without any support (free-free): the bridge still solves it (§3.2); the
-     first modes are then rigid body motions with ~0 Hz.
+     first modes are then rigid body motions with ~0 Hz. The same holds for a model
+     with only connections between its parts (bonded contact, rigid or distributing
+     couplings) and no support, e.g. to check the contacts of an assembly with its
+     rigid modes (MO-10).
    - A mechanism in an otherwise supported model (e.g. a beam held only by a hinge, a
      loose part): Code-Aster stops with `ALGELINE3_81`; solution in §4 (KNOWN_BUGS 48).
    - Buckling without supports is not possible (the static analysis is singular):
@@ -410,6 +413,11 @@ Without supports K is singular and Code-Aster's default shift 0 fails. The bridg
 searches around a small negative frequency (`CENTRE`, line `BRIDGE_FREE_SHIFT` in the
 `.mess`); the 6 rigid modes come with |f| of the order of 1e-4 Hz (verification MO-04:
 |f| < 6e-4 Hz; sometimes negative, numerically zero), followed by the elastic ones.
+The bridge also does this when the only kinematic conditions are connections
+(`LIAISON_MAIL` of bonded contact, `LIAISON_SOLIDE`/`LIAISON_RBE3` of couplings): they
+tie parts together but fix nothing in space (MO-10; before: `ALGELINE3_81`). A
+mechanism in a model that is supported somewhere is not detected: there choose a
+negative *Search frequency* yourself (§4).
 
 ### 3.3 Not possible
 

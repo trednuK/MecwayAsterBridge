@@ -7248,6 +7248,28 @@ def _is_load_charge(charge):
     return any(kw in _LOAD_KEYWORDS for kw in charge[1])
 
 
+# Kinematic conditions that only tie parts or nodes together and never fix
+# the model in space: bonded contact (LIAISON_MAIL, bridge_mesh._bonded)
+# and rigid/distributing couplings (LIAISON_SOLIDE, LIAISON_RBE3). A
+# LIAISON_DDL (constraint equation, bonded shell edges) can also fix a
+# node and is not in this list.
+_CONNECTION_KEYWORDS = frozenset(("LIAISON_MAIL", "LIAISON_SOLIDE",
+                                  "LIAISON_RBE3"))
+
+
+def _only_connections(charges):
+    """True if the support loads (charges that are not a load) consist
+    only of connections (_CONNECTION_KEYWORDS) and there is at least one:
+    the model then still has its rigid body modes (K singular), like a
+    free-free model. Seen with Code-Aster 17.4: two hex20 blocks with
+    bonded contact and no support stopped with <EXCEPTION> ALGELINE3_81
+    (PLUS_PETITE, shift -0.01 Hz) and run with the free-free shift
+    (_FREE_SHIFT_BLOCK); GitHub issue #9, rigid body modes to check the
+    contacts of an assembly."""
+    kws = set(kw for c in charges if not _is_load_charge(c) for kw in c[1])
+    return bool(kws) and kws <= _CONNECTION_KEYWORDS
+
+
 def _modal_charges(model_data, buckling, prestress=False):
     """
     Loads for CALC_MODES (_build_charges): (charges, names of the
@@ -7965,7 +7987,11 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         log("INFO: #ASTER-EXCIT loads {0}: in the matrices (ASSEMBLAGE "
             "CHARGE){1}.".format(", ".join(extra), " and in MECA_STATIQUE"
                                  if (buckling or prestress) else ""))
-    if not names_bc:
+    # Modal without supports, or with only connections between parts
+    # (bonded contact, couplings): rigid body modes, free-free route.
+    free = not names_bc or (not buckling and not extra
+                            and _only_connections(charges))
+    if free:
         if buckling:
             log(tr("ERROR: Knik zonder opleggingen: de statische "
                    "berekening is singulier. Leg het model in Mecway vast.",
@@ -8069,7 +8095,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                 for m in terms))
     assemblage_block += bridge_modal_damping.damping_block(damping)
     calc_modes_block = _calc_modes_block(model_data, analysis, buckling,
-                                         cara_elem_ref, free=not names_bc,
+                                         cara_elem_ref, free=free,
                                          damped=bool(damping))
     stress_block = ""
     if len(fields) > 1:

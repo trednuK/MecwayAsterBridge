@@ -24,6 +24,18 @@
   existing results are never replaced (the model is then left unchanged); loading a run
   with "Results..." adds the monitor of that run. Not with route `tabel`. Format measured headless in
   Mecway 34 (user guide §5.2).
+- **Frictionless or symmetry next to a displacement 0 on the same nodes (GitHub issue #9)**:
+  e.g. a round plate with *Frictionless support* on its rim edges and *Displacement* X, Y, Z = 0
+  on the rim nodes stopped in Code-Aster with `ALGELINE3_81` (in a static analysis a singular
+  matrix): the radial relation and DX = DY = 0 are linearly dependent. Mecway reduces such a
+  set itself; the bridge now drops the part of the relation that the imposed displacement or
+  rotation already fixes (INFO line in the log). Clamped circular plate (Dlubal 0109): all six
+  frequencies within 0.25% of the analytical values and within 0.18% of Mecway (verification
+  MO-09, LS-83). The explanation of `ALGELINE3_81` now also mentions duplicate constraints.
+- **Modal analysis of an unsupported assembly** (remark in issue #9): a model whose only
+  kinematic conditions are connections (bonded contact, rigid or distributing couplings) now
+  takes the free-free route, so the rigid body modes come out with ~0 Hz instead of
+  `ALGELINE3_81` (verification MO-10).
 
 ## V2026.5 – 28 October 2026
 

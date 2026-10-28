@@ -1276,8 +1276,14 @@ Memory or time limit messages did not occur during testing. The limits are in th
   part). Also: a connection made with `#ASTER` code (`LIAISON_ELEM`, `LIAISON_MAIL`, ...)
   whose load is not in `#ASTER-EXCIT`. With `#ASTER-EXCIT` the bridge also puts the load
   in `CHARGE` of `ASSEMBLAGE`, so the connection counts in the matrices of *Modal* and
-  *Buckling* (see [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2).
-- **Seen**: beam supported by hinges only (KNOWN_BUGS 48); example 1 of
+  *Buckling* (see [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2). Also: a
+  duplicate constraint, two supports on the same nodes in linearly dependent directions
+  (the dualised conditions make the matrix singular, whatever the shift); the bridge
+  reports such an overlap beforehand with `WARNING: Constraints ... share ... node(s)`.
+- **Seen**: beam supported by hinges only (KNOWN_BUGS 48); GitHub issue #9 (round plate
+  with frictionless on the rim edges and displacement X, Y, Z = 0 on the same nodes; the
+  bridge now reduces that overlap itself, MO-09); an assembly with bonded contact and
+  no support (now the free-free route, MO-10); example 1 of
   `ASTER_lines_examples.md` in *Modal* and *Buckling* when `#ASTER-EXCIT` did not yet go
   into the matrices (06-10-2026: the beam was loose). With the load in the matrices,
   example 1 runs through (*Modal* f1 = f2 = 841.8 Hz with the test model of that time;
