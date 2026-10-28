@@ -155,23 +155,22 @@ Code-Aster value per node) and logs the largest difference per variable.
    (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
    to fix in the bridge; do not compare such models with Mecway.
 
-128\. **Bonded contact with tolerance 0 ties slave nodes outside the master surface**
-   (confirmed with runs, `bridge_mesh._bonded`, Code-Aster 17.4 / Mecway 34 headless, 28 Oct
-   2026). With Mecway's tolerance 0 the bridge writes `LIAISON_MAIL` without `DISTANCE_MAX`
-   (INFO "couples all slave nodes"), so a slave node that has no master face opposite it is
-   still tied to the nearest master cell, however far. CCX (Mecway) ties only slave nodes
-   within its default position tolerance, 2.5% of a typical element size (`gentiedmpc.f`
-   of the ccx 2.23 source shipped with Mecway: `tolloc`; tolerance 0 = default), and skips
-   the rest ("no opposite master face found"). Samples/BoltedJoint with the two contacts
-   changed to bonded (lap joint, plate B overhangs plate A by 37.5 mm, linear static, 10 kN):
-   the overhanging slave nodes were tied to the edge of plate A, the bridge 20x too stiff
-   (displacement 0.094 mm, Mecway 1.89 mm, hand estimate ~1.9 mm); with `DISTANCE_MAX=1e-4`
-   written by hand all displacements equal Mecway (0.0% difference, von Mises within 15%).
-   Not fixed (found outside step S15): proposal: with tolerance 0 a default `DISTANCE_MAX` of
-   about 2.5% of the element size for solid-to-solid (`MASSIF`), after checking the bonded
-   verification cases (shell-solid `COQUE_MASSIF` has the mid-surface offset and needs its
-   own rule). Workaround: give the bonded contact a small tolerance in Mecway (e.g. 0.01 mm),
-   or select only the overlapping faces.
+128\. **Bonded contact with shells: all slave nodes are tied** (question, `bridge_mesh._bonded`,
+   Code-Aster 17.4 / Mecway 34 headless, 28 Oct 2026). Solid on solid now follows CCX's
+   `*TIE` rule (`ccx_tied_nodes`: a master face opposite the node within the in-face
+   tolerance tolloc, 2.5% of a third of the mean master-triangle height, and the normal
+   distance within the position tolerance, 0 = tolloc; `gentiedmpc.f` of the ccx 2.23 source
+   shipped with Mecway; Samples/BoltedJoint with bonded contacts: the same 58 untied nodes as
+   CCX's `WarnNodeMissTiedContact.nam`, displacements equal; LS-07l/m). With a shell on either
+   side (`COQUE`, `MASSIF_COQUE`, shell face or edge on a solid) the bridge still ties every
+   slave node to the nearest master cell (`LIAISON_MAIL` without `DISTANCE_MAX`, or the
+   bridge's own relations), with an explicit tolerance as `DISTANCE_MAX` (distance to the
+   nearest master cell, CALCULEL5 message 51 of 17.4, not CCX's in-face test). Not changed
+   because CCX expands shells into solid elements, so the tie surface of a shell lies at
+   ±t/2 and a shell edge ties to the expanded edge face; what Mecway then leaves free (and
+   how half the thickness counts in the normal distance) is NOT measured. A shell slave that
+   overhangs the master is therefore too stiff, like solids before. Workaround: select only
+   the overlapping faces as slave.
 
 ## Translation that works differently from Mecway
 
@@ -392,7 +391,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    `CONTACT_INIT='NON'`, a 100x smaller friction penalty, a ramped pretension or NPREC −1
    (not solved). Without friction and with the two weak supports the model runs (pretension
    phase of the same order as Mecway with the same supports: bolt displacements ~20%,
-   stresses ~35%, coarse 76-element hex20 mesh). The bonded variant: KNOWN_BUGS 128.
+   stresses ~35%, coarse 76-element hex20 mesh). The bonded variant (all contacts bonded) is
+   equal to Mecway since the CCX tie rule for solid on solid (0.0% in displacement).
 
 48\. **Modal: mechanism in a supported model** (confirmed with runs,
    `bridge_to_aster._calc_modes_block`). If K is singular while there are

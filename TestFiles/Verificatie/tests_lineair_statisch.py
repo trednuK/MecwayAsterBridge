@@ -1004,6 +1004,78 @@ TESTS += [
 
 
 # ------------------------------------------------------------------
+# LS-07l/m Overlapnaad van twee hex20-platen met verlijmd contact (volume op
+# volume); plaat B steekt voorbij plaat A uit (KNOWN_BUGS 128)
+# ------------------------------------------------------------------
+# Plaat A x = 0 .. 0,10 m (10 x 2 x 1 hex20), plaat B x = 0,06 .. 0,18 m
+# (8 x 2 x 1, eigen knopen, knopen vallen niet samen met die van A),
+# breedte 0,04 m, dikte 0,01 m. Master = bovenvlak van A, slave = het hele
+# ondervlak van B: de knopen van B voorbij x = 0,10 hebben geen mastervlak
+# tegenover zich. Mecway (CCX *TIE, tolerantie 0 = 2,5 % van een typische
+# elementgrootte, gentiedmpc.f) laat ze vrij; LIAISON_MAIL zonder
+# DISTANCE_MAX koppelde ze aan de rand van A (4x te stijf). A ingeklemd op
+# x = 0, kracht P (-Z) op het eindvlak van B. (l): B ligt op A, tolerantie
+# 0; (m): spleet 0,2 mm, tolerantie 0,5 mm (CCX koppelt over de spleet en
+# schuift de knopen van B op A, ADJUST; LIAISON_MAIL koppelt met de spleet
+# als star stukje). Referentie: Mecway 34 met CCX (headless).
+P7L = 100.0
+# Mecway 34 headless with CCX (28 Oct 2026); LS-07l with bondedce and
+# Mecway's own solver gives the same 2.30773e-4 m, the old LIAISON_MAIL
+# without a node selection 9.07997e-6 m (25x too stiff).
+MW_LS07L, MW_LS07M = 2.30773e-4, 2.30166e-4
+
+
+def build_ls07_lap(gap, tol):
+    def build():
+        m = Model("S30", solver="ccx")
+        _steel(m)
+        m.elset("Plaat_A", "Staal")
+        a = hexmesh(m, "Plaat_A", 10, 2, 1, box(0, 0.10, 0, 0.04, 0, 0.01),
+                    order=2)
+        m._index = {}                        # B: eigen knopen
+        m.elset("Plaat_B", "Staal")
+        b = hexmesh(m, "Plaat_B", 8, 2, 1,
+                    box(0.06, 0.18, 0, 0.04, 0.01 + gap, 0.02 + gap),
+                    order=2)
+        m.face_selection("Lijm_A", a["faces"]["w1"])
+        m.face_selection("Lijm_B", b["faces"]["w0"])
+        m.face_selection("Inklemming", a["faces"]["u0"])
+        m.face_selection("Eind_B", b["faces"]["u1"])
+        m.node_selection("Tip", sorted(b["nodes"]["u1"]))
+        m.add(BOND.format("Lijm_A", "Lijm_B").replace(
+            "<tolerance>0 m</tolerance>",
+            "<tolerance>%g mm</tolerance>" % (tol * 1e3)))
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Eind_B"><x>0 N</x><y>0 N</y><z>-%g N</z>'
+              '</force>' % P7L)
+        return m
+    return build
+
+
+TESTS += [
+    Case("LS-07l", GROUP, "Overlapnaad van twee hex20-platen, verlijmd; "
+         "plaat B steekt uit voorbij plaat A (tolerantie 0)",
+         "lin_static_3d", build_ls07_lap(0.0, 0.0),
+         [Check("doorbuiging tip t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Tip"), ref=MW_LS07L,
+                tol=0.005, unit="m", source="Mecway 34 (CCX), headless",
+                in_series=False)],
+         note="Alleen de slave-knopen tegenover het bovenvlak van A worden "
+              "gekoppeld (regel van CCX *TIE, bridge_mesh.ccx_tied_nodes); "
+              "de andere blijven vrij (WARNING), zoals in Mecway."),
+    Case("LS-07m", GROUP, "Als LS-07l met 0,2 mm spleet en tolerantie "
+         "0,5 mm", "lin_static_3d", build_ls07_lap(0.0002, 0.0005),
+         [Check("doorbuiging tip t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Tip"), ref=MW_LS07M,
+                tol=0.01, unit="m", source="Mecway 34 (CCX), headless",
+                in_series=False)],
+         note="Spleet binnen de tolerantie: gekoppeld (CCX schuift de "
+              "knopen op het mastervlak, LIAISON_MAIL koppelt over de "
+              "spleet)."),
+]
+
+
+# ------------------------------------------------------------------
 # LS-08 Node temperature (Mecway temperature3) voor thermische spanning
 # ------------------------------------------------------------------
 # Mecway Node temperature (manual v34 par. 9.24): een temperatuur per

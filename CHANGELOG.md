@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Bonded contact between solids ties only the slave nodes Mecway ties** (KNOWN_BUGS 128):
+  a slave node without a master face opposite it (for example where one plate overhangs the
+  other) was tied to the nearest edge of the master, however far away, which made the joint
+  much too stiff (Samples/BoltedJoint with bonded contacts: 0.096 mm against Mecway's
+  1.90 mm). The bridge now applies CCX's `*TIE` rule, which Mecway uses: tied are the nodes
+  with a master face opposite them (in-face tolerance 2.5% of a typical element size) and
+  within the *Tolerance* of it (0 = that same default). The other nodes stay free, with a
+  WARNING listing them. BoltedJoint (bonded) is now equal to Mecway; new verification
+  LS-07l/m. Bonded contact with shells is unchanged (KNOWN_BUGS 128).
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
   `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
   `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh

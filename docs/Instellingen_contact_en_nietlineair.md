@@ -805,7 +805,9 @@ knopen). Ingeklemd op x = 0, 1 N in −Z op de vrije rand.
    elementen). Neem de fijnste kant als slave.
 3. Voeg een contact toe met master `Lijm_A`, slave `Lijm_B` en als type verlijmd
    (*bonded*, in de `.liml` `type="bondedtie"`). Tolerantie 0 (automatisch) is goed:
-   de bridge koppelt dan alle slave-knopen (geen `DISTANCE_MAX`). *Bonded elastic*
+   met schalen koppelt de bridge alle slave-knopen (geen `DISTANCE_MAX`); volume op
+   volume alleen de knopen met een mastervlak tegenover zich, zoals Mecway/CCX
+   ([Mecway_functionaliteit.md](Mecway_functionaliteit.md)). *Bonded elastic*
    wordt star verlijmd (de stijfheid wordt niet vertaald, gemeld).
 4. Analyse lineair statisch (`lin_static_3d`): verlijmd contact is geen `DEFI_CONTACT`
    en werkt ook lineair.

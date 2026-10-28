@@ -83,7 +83,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Contact, Unilateral (vlakken van volumes en schaalvlakken) | Ja | Alleen niet-lineair, zoals in Mecway. Formulering en wrijving: KB43; paren met gedeelde slave-knopen worden één zone (gemeld, KB10). |
 | Contact, Unilateral, *Self contact* | Nee | Gemeld. Maak twee aparte vlakselecties. |
 | Contact, Unilateral, op schaalranden of balken | Nee | Gemeld. |
-| Contact, Bonded *Tie* / *Constraint equations* | Ja | `LIAISON_MAIL` (star), zie de tabel hieronder. Werkt ook in lineaire analyses. Automatische tolerantie: alle slave-knopen worden gekoppeld (KB21). |
+| Contact, Bonded *Tie* / *Constraint equations* | Ja | `LIAISON_MAIL` (star), zie de tabel hieronder. Werkt ook in lineaire analyses. Volume op volume: alleen de slave-knopen die Mecway (CCX `*TIE`) koppelt, dus met een mastervlak tegenover zich (tolerantie in het vlak 2,5% van een typische elementgrootte) en binnen de *Tolerance* ervan (0 = diezelfde CCX-standaard); de andere blijven vrij, zoals in Mecway (WARNING met de knopen). Gemeten gelijk aan Mecway 34 (Samples/BoltedJoint met verlijmde contacten: dezelfde 58 vrije knopen als CCX, verplaatsingen gelijk; LS-07l/m). Andere combinaties (met schalen): alle slave-knopen worden gekoppeld, met een *Tolerance* > 0 als `DISTANCE_MAX` (KB21). |
 | Contact, Bonded *Elastic* | Deels | Star verlijmd; de stijfheid wordt niet vertaald (gemeld, KB21). |
 | Bonded contact in T30/T31 | Ja | *Tie* / *Constraint equations*: `AFFE_CHAR_THER` `LIAISON_MAIL` (ook niet-conform en schaal op schaal). *Elastic*: thermische weerstand (*Thermal conductance per unit area*) als `ECHANGE_PAROI` bij volumevlakken die knoop op knoop tegenover elkaar liggen, anders ideaal verlijmd (gemeld). Niet in een model met volumes én schalen (ERROR; gedeelde knopen). [Thermisch.md](Thermisch.md) §3, verificatie TH-04. |
 | Bonded contact in de akoestiek | Nee | Gemeld (KB55). |
@@ -92,7 +92,7 @@ Verlijmd contact per combinatie (slave op master):
 
 | Slave → master | Status | Code-Aster | Opmerking |
 |---|---|---|---|
-| volume → volume | Ja | `MASSIF` | |
+| volume → volume | Ja | `MASSIF` | Alleen de slave-knopen die CCX koppelt (rij hierboven); een slave-vlak dat voorbij de master uitsteekt, is daar vrij, zoals in Mecway (LS-07l). |
 | schaal → schaal | Ja | `COQUE` (of `LIAISON_DDL`) | Ook een schaalrand op een schaalvlak (naad in het vlak, T-stuk): stijf, de rotaties gaan mee (geen scharnier; Mecway's eigen solver doet dat niet). Lineaire schalen als master blijven DKT, ook bij de keuze COQUE_3D. Een kwadratische master (tri6/quad8) en een scheve of gekromde master: de bridge schrijft de koppeling (deels) zelf als `LIAISON_DDL`; scheef of gekromd zet `solver_nprec` voor die run op −1 (WARNING). Geverifieerd in LS-07a..k, voorbeeld `Voorbeeld_T.liml` ([contact §3.10](Instellingen_contact_en_nietlineair.md#310-voorbeeld-platen-verlijmen-bonded-contact-tussen-schalen)). |
 | schaalvlak → volume | Ja | `MASSIF` | Alleen de verplaatsingen; gemeten gelijk aan gedeelde knopen (KB21). |
 | schaalrand → volume | Deels | `COQUE_MASSIF` of `MASSIF` | Stijf als alle randen bij één component met een dikte horen; anders werkt de rand als scharnier (WARNING, KB21). Maak één verlijmd contact per component (voorbeeld 2). |

@@ -83,7 +83,7 @@ ignored with only an INFO, as Mecway itself does.
 | Contact, Unilateral (faces of solids and shell faces) | Yes | Nonlinear only, as in Mecway. Formulation and friction: KB43; pairs with shared slave nodes become one zone (reported, KB10). |
 | Contact, Unilateral, *Self contact* | No | Reported. Make two separate face selections. |
 | Contact, Unilateral, on shell edges or beams | No | Reported. |
-| Contact, Bonded *Tie* / *Constraint equations* | Yes | `LIAISON_MAIL` (rigid), see the table below. Also works in linear analyses. Automatic tolerance: all slave nodes are tied (KB21). |
+| Contact, Bonded *Tie* / *Constraint equations* | Yes | `LIAISON_MAIL` (rigid), see the table below. Also works in linear analyses. Solid on solid: only the slave nodes that Mecway (CCX `*TIE`) ties, i.e. with a master face opposite them (in-face tolerance 2.5% of a typical element size) and within the *Tolerance* of it (0 = that same CCX default); the others stay free, as in Mecway (WARNING with the nodes). Measured equal to Mecway 34 (Samples/BoltedJoint with bonded contacts: the same 58 untied nodes as CCX, displacements equal; LS-07l/m). Other combinations (with shells): all slave nodes are tied, with a *Tolerance* > 0 as `DISTANCE_MAX` (KB21). |
 | Contact, Bonded *Elastic* | Partly | Rigidly bonded; the stiffness is not translated (reported, KB21). |
 | Bonded contact in T30/T31 | Yes | *Tie* / *Constraint equations*: `AFFE_CHAR_THER` `LIAISON_MAIL` (also non-conforming and shell on shell). *Elastic*: thermal resistance (*Thermal conductance per unit area*) as `ECHANGE_PAROI` for solid faces that are node-to-node opposite each other, otherwise ideally bonded (reported). Not in a model with solids and shells together (ERROR; shared nodes). [Thermal.md](Thermal.md) sec. 3, verification TH-04. |
 | Bonded contact in acoustics | No | Reported (KB55). |
@@ -92,7 +92,7 @@ Bonded contact per combination (slave on master):
 
 | Slave → master | Status | Code-Aster | Remark |
 |---|---|---|---|
-| solid → solid | Yes | `MASSIF` | |
+| solid → solid | Yes | `MASSIF` | Only the slave nodes CCX ties (row above); a slave face that overhangs the master is free there, as in Mecway (LS-07l). |
 | shell → shell | Yes | `COQUE` (or `LIAISON_DDL`) | Also a shell edge on a shell face (in-plane seam, T-joint): rigid, the rotations are tied (no hinge; Mecway's own solver does not do this). Linear shells as master stay DKT, also with the choice COQUE_3D. A quadratic master (tri6/quad8) and a skewed or curved master: the bridge writes the tie (partly) itself as `LIAISON_DDL`; skewed or curved sets `solver_nprec` to −1 for that run (WARNING). Verified in LS-07a..k, example `Voorbeeld_T.liml` ([contact §3.10](Settings_contact_and_nonlinear.md#310-example-bonding-plates-bonded-contact-between-shells)). |
 | shell face → solid | Yes | `MASSIF` | Displacements only; measured equal to shared nodes (KB21). |
 | shell edge → solid | Partly | `COQUE_MASSIF` or `MASSIF` | Rigid if all edges belong to one component with a thickness; otherwise the edge acts as a hinge (WARNING, KB21). Make one bonded contact per component (example 2). |
