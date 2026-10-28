@@ -699,12 +699,21 @@ def _loop_code(plan, body):
                "    _adapt_sel = _adapt_run.after_solve(_adapt_k, _adapt_f, "
                "'SIGM_ELNO', 'SIGM_NOEU', mesh)\n").format(solids)
         projected = ("res",)
+    # A plain assignment per result, so that Code-Aster names the result
+    # after the variable (alarm MED3_2 with globals()[...] = ...)
+    proj_code = "".join(
+        ("if '{0}' in _adapt_fine:\n"
+         "    {0} = PROJ_CHAMP(RESULTAT=_adapt_fine['{0}'], MODELE_1=model,\n"
+         "        MODELE_2=_adapt_model0,\n"
+         "        NOM_CHAM=_adapt_mod.projected_fields(_adapt_fine['{0}']))\n"
+         ).format(k) for k in projected)
     med = ""
     if plan.get("refined_med"):
         med = (
             "DEFI_FICHIER(ACTION='ASSOCIER', UNITE=79, TYPE='BINARY', "
             "FICHIER={0})\n"
-            "IMPR_RESU(FORMAT='MED', UNITE=79, RESU=_F(RESULTAT=_adapt_fine['res']))\n"
+            "IMPR_RESU(FORMAT='MED', UNITE=79, RESU=_F(RESULTAT="
+            "_adapt_fine['res'], NOM_RESU_MED='verfijnd'))\n"
             "DEFI_FICHIER(ACTION='LIBERER', UNITE=79)\n").format(
                 plan["refined_med"])
     return (
@@ -758,10 +767,7 @@ def _loop_code(plan, body):
         "_adapt_run.summary()\n"
         "_adapt_fine = dict((k, globals()[k]) for k in {proj!r} "
         "if k in globals())\n"
-        "for _adapt_key, _adapt_res in _adapt_fine.items():\n"
-        "    globals()[_adapt_key] = PROJ_CHAMP(\n"
-        "        RESULTAT=_adapt_res, MODELE_1=model, MODELE_2=_adapt_model0,\n"
-        "        NOM_CHAM=_adapt_mod.projected_fields(_adapt_res))\n"
+        "{proj_code}"
         "model = _adapt_model0\n"
         "mesh = _adapt_mesh0\n"
         "{med}"
@@ -769,7 +775,7 @@ def _loop_code(plan, body):
             target=plan["target"], loops=plan["max_loops"],
             maxel=plan["max_elements"], frac=DORFLER, solids=solids,
             skin=skin, body=body, ind=ind, sel=SELECT_PREFIX,
-            extra=extra_kw, proj=projected, med=med,
+            extra=extra_kw, proj=projected, med=med, proj_code=proj_code,
             scripts=_py_str(plan["scripts"]))
 
 
