@@ -516,7 +516,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
 
-123. **Nodal reactions of `POU_D_TG` beams are off** (confirmed, Code-Aster 17.4,
+123\. **Nodal reactions of `POU_D_TG` beams are off** (confirmed, Code-Aster 17.4,
    `CALC_CHAMP FORCE='REAC_NODA'` on `MECA_POU_D_TG`; WARNING in
    `bridge_warping.note_reactions`). Cantilever L = 1 m, 10 elements, `CERCLE` R = 10 mm,
    100 N at the tip: `POU_D_TG` gives 103.01 N at the clamp, −3.01 N at the loaded tip and
