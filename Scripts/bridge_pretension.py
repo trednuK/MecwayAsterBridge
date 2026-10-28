@@ -449,6 +449,8 @@ def apply(model_data, nodes, conn, by_type, cell_refs, skin_by_key,
         new_nodes[ref] = tuple(sum(p[k] for p in pts) / len(pts)
                                for k in range(3))
         refs.append(ref)
+        # force: the tie gives no stiffness along the axis (bridge_floating)
+        force = bc["params"].get("mode", "force") == "force"
         for n, d in dup.items():
             for k, comp in enumerate(("DX", "DY", "DZ")):
                 # u_above - u_below + delta * n = 0 (the original node n is
@@ -457,7 +459,8 @@ def apply(model_data, nodes, conn, by_type, cell_refs, skin_by_key,
                 if abs(axis[k]) > 1.0e-14:
                     terms.append((ref, "DX", axis[k]))
                 eqs.append({"terms": terms, "constant": 0.0,
-                            "source": "pretension"})
+                            "source": "pretension",
+                            "pretension_force": force})
         for comp in ("DY", "DZ"):
             eqs.append({"terms": [(ref, comp, 1.0)], "constant": 0.0,
                         "source": "pretension"})

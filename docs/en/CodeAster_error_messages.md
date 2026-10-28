@@ -725,10 +725,14 @@ from contact (`SANS_GROUP_NO`).
      solids: pivot on `LAGS_C` of a corner node;
   3. an `#ASTER` load without `#ASTER-EXCIT` (see `FACTOR_42`);
   4. tension only (cable) without compressive stiffness;
-  5. format test models F2/F4: cause not determined.
+  5. format test models F2/F4: cause not determined;
+  6. a part held in place only by contact (no support, bonded contact, coupling or
+     spring of its own; also the side of a bolt behind a pre-tension section with a
+     force): pivot on a physical DOF (DX/DY/DZ) of that part in the first step.
 - **Seen**: 1 a bending model (contact); 2 verification NL-03a (two beams, tips touching)
   and Samples/AssemblyWithContact (KNOWN_BUGS 43); 3 recomputed on 06-10-2026; 4 test
-  B17; 5 F2_model/F4_model.
+  B17; 5 F2_model/F4_model; 6 Samples/BoltedJoint (pivot on DZ of a plate-B node, 28-10-2026;
+  the bridge warns beforehand: WARNING "is held in place only by contact").
 - **Solution**: 1 in the bridge: slave nodes in a fixed support are excluded per zone
   with `SANS_GROUP_NO` (`_exclude_fixed_slaves`, commit 7daa249; INFO in the log), as
   the catalogue advises at `FACTOR_10/11`; another condition on slave nodes: remove the
@@ -737,7 +741,9 @@ from contact (`SANS_GROUP_NO`).
   automatic one). 2 *Contact method* = PENALISATION with Mecway's *normal stiffness*
   (NL-03b: tip −0.01%, contact force −0.07%). 3 add `#ASTER-EXCIT`. 4 in the bridge:
   `EC_SUR_E` = 1e-4 (default of the catalogue `defi_materiau.py`). 5 not determined.
-- **Status**: fixed in the bridge (1 for fixed, 4) / model (1 other, 2) / own input (3) /
+  6 in Mecway: a weak *Elastic support* on a large face of that part, a real support, or
+  bonded contact ([Settings §3.11](Settings_contact_and_nonlinear.md#311-parts-held-only-by-contact)).
+- **Status**: fixed in the bridge (1 for fixed, 4) / model (1 other, 2, 6) / own input (3) /
   cause not determined (5).
 
 ### `CHARGES7_1` – bonding: relation is a tautology

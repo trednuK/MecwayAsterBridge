@@ -874,6 +874,62 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
   Schaal op schaal met een offset op eigen knopen (quad8/tri6): `solver_nprec` −1,
   anders onterecht `FACTOR_11` (LS-66: 0,94266 mm, Mecway doorlopend 0,94148 mm).
 
+### 3.11 Delen die alleen door contact vastzitten
+
+**Symptoom**: *Niet-lineair statisch* stopt in de eerste stap met `MECANONLINE9_4`
+("matrice non inversible") en een pivot nul op DX, DY of DZ van een knoop, terwijl Mecway
+het model zelf wel rekent. Vóór de run schrijft de bridge al:
+`WARNING: Een deel van ... element(en) (...) wordt alleen door contact op zijn plaats gehouden (...)`.
+
+**Oorzaak**: dat deel heeft geen eigen oplegging, verlijmd contact, koppeling of veer;
+alleen contact houdt het op zijn plaats. Code-Aster's `STAT_NON_LINE` begint met de
+stijfheid van de onvervormde toestand, waarin contact (en de Coulomb-wrijving) bij
+contactdruk nul geen stijfheid langs het contactvlak geeft: het deel kan vrij schuiven of
+draaien en de matrix is singulier. Mecway's penalty-contact (CCX) houdt het deel vanaf het
+begin vast. Hetzelfde geldt voor de kant van een bout achter een *Pre-tension section* met
+een kracht: die kracht is een last, de snede geeft geen stijfheid langs de bout
+([Boutvoorspanning.md](Boutvoorspanning.md)). De bridge vindt zulke delen (verbonden via
+elementen, verlijmd contact, koppelingen en constraint equations; opleggingen en elastic
+supports tellen als vastgehouden) en noemt ze met hun elementen en contactselecties; ze
+voegt zelf geen opleggingen toe.
+
+**Oplossingen in Mecway** (één per deel):
+
+1. Een zwakke **Elastic support** op een groot vlak van het deel (bijv. de bovenkant van
+   een plaat): stijfheid × oppervlak orde 1e-5 .. 1e-4 van de eigen stijfheid E·A/L van het
+   deel, zodat ze geen merkbare last draagt. Neem een groot vlak (of vlakken ver uit elkaar),
+   zodat ook de rotaties vastliggen: op Samples/BoltedJoint gaf 1e9 Pa/m op het kleine
+   eindvlak van plaat B (k·A = 2,5e5 N/m) nog een pivot nul (de rotatie om het eindvlak
+   wordt aan het verre eind maar met ~70 N/m gehouden), 1e8 Pa/m op de hele bovenkant
+   (4,4e5 N/m) niet meer.
+2. Een **oplegging** waar het deel in werkelijkheid vastzit (Fixed, Frictionless,
+   Displacement, symmetrie).
+3. **Verlijmd contact** in plaats van contact als het deel niet mag schuiven of loskomen.
+4. Bij een pre-tension section ook: *Length adjustment* in plaats van *Force* (de lengte
+   ligt dan vast, de boutkant wordt langs zijn as gehouden).
+
+Mecway's eigen tutorial AssemblyWithContact (handleiding v34 §17.7) beschrijft hetzelfde
+probleem: de configuratie *Naive* faalt ook in Mecway omdat de delen alleen door wrijvingsloos
+contact worden gehouden, en de remedies van de tutorial zijn een fixed support (om de oorzaak
+te controleren), wrijving, een zwakke elastic support en een zachter (kwadratisch) oplopende
+last. De bridge meldt de configuratie *Naive* ook (één deel van 10 elementen); de andere
+modellen met contact in de verificatie (NL-03, NL-30, PipeClip, Voorbeeld_C) worden niet
+gemeld.
+
+**Samples/BoltedJoint** (28 oktober 2026): er worden twee delen gemeld, plaat B (gehouden
+door wrijvingscontact met plaat A en door het moercontact) en het bovenste deel van de bout
+(moercontact en de voorspankracht). Met een zwakke elastic support op beide (1e8 Pa/m op de
+bovenkant van plaat B, 1e9 Pa/m op het moervlak) zijn de pivots nul op DX/DY/DZ weg. Het
+wrijvingscontact (coëfficiënt 0,5) zelf convergeert in Code-Aster dan nog niet: met
+*Contactmethode* = PENALISATION een pivot nul op de wrijvingsvrijheidsgraden (`LAGS_F`) van
+knopen van plaat B zonder contactdruk, met `CONTACT_INIT='NON'`, `ALGO_FROT` standaard of
+gepenaliseerd, `ALGO_RESO_FROT='POINT_FIXE'`, `INTEGRATION='GAUSS'`, een kleinere
+wrijvingspenalty, een oplopende voorspanning of `solver_nprec` −1 geen convergentie in de
+eerste stap (KNOWN_BUGS 43). Zonder wrijving (coëfficiënt 0) en met de twee zwakke steunen
+rekent het model; de voorspanfase (t = 0,1, geen externe kracht) is dan van dezelfde orde als
+Mecway met dezelfde steunen (verplaatsingen van de bout binnen ~20%, spanningen binnen ~35%
+op dit grove mesh van 76 hex20-elementen).
+
 ---
 
 ## 4. "Mijn berekening convergeert niet"
