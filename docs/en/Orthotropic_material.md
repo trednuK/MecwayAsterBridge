@@ -112,7 +112,7 @@ along the fibre (U) directly.
 
 ## 6. What is not possible
 
-See also KNOWN_BUGS 130.
+See also KNOWN_BUGS 131.
 
 - A matrix with coupling terms (truly anisotropic, 21 constants): not in Code-Aster for
   solids.

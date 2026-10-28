@@ -139,8 +139,9 @@ formulas `s1`, `tr`, `e1`).
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added after this run (not yet in a full regression, not in the table): Orthotropic material
-OR-01..22, 19 cases, 174 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
-BU-20 .. BU-25 and TH-03 re-run with it: 136 cases, FEM values unchanged); Bolt pretension
+OR-01..22, 19 cases, 174 checks OK (28/29 October 2026, steps S13a .. S13d; re-run with it: all
+linear static cases, MO-20 .. MO-31, BU-20 .. BU-25, the result formulas and part of the thermal
+and modal families, about 200 cases, FEM values bit-identical); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
 checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
 

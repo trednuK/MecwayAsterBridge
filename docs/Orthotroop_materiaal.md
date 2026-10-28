@@ -115,7 +115,7 @@ de spanning langs de vezel (U) direct.
 
 ## 6. Wat niet kan
 
-Zie ook KNOWN_BUGS 130.
+Zie ook KNOWN_BUGS 131.
 
 - Een matrix met koppeltermen (echt anisotroop, 21 constanten): niet in Code-Aster voor
   volume-elementen.

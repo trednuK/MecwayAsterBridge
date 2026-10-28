@@ -1180,7 +1180,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).
 
-130\. **Orthotropic and anisotropic material: limits** (confirmed, `bridge_orthotropic.py`,
+131\. **Orthotropic and anisotropic material: limits** (confirmed, `bridge_orthotropic.py`,
    STAPPENPLAN S13a). Translated: *Orthotropic*, *Stiffness matrix* and *Compliance matrix*
    on solid elements in Linear and Nonlinear static, Modal, Buckling and implicit Dynamics (`ELAS_ORTH` + `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`,
    [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..22; linear shells DKT/DST in linear static as a one-layer

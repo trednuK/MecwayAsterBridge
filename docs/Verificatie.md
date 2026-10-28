@@ -141,9 +141,10 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Orthotroop materiaal OR-01..22, 19 cases, 174 controles OK (28 oktober 2026, stap S13a; de
-families LS, MO-20 .. MO-31, BU-20 .. BU-25 en TH-03 daarmee opnieuw gedraaid: 136 cases, FEM-waarden
-ongewijzigd); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
+Orthotroop materiaal OR-01..22, 19 cases, 174 controles OK (28/29 oktober 2026, stappen S13a ..
+S13d; daarmee opnieuw gedraaid: alle lineair-statische cases, MO-20 .. MO-31, BU-20 .. BU-25, de
+resultaatformules en een deel van de thermische en modale families, ongeveer 200 cases,
+FEM-waarden bit-gelijk); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
 5 cases, 17 controles OK (28 oktober 2026, stap S15b).
 Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
 
