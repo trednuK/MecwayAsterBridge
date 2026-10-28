@@ -50,6 +50,9 @@
 #       with a note in between (a .mess of a long nonlinear run can be tens
 #       of MB; the .liml should stay quick to open).
 #   "off": nothing is stored.
+# A run without results gets a solution with only the monitor only when the
+# model has no results yet (bridge_results_liml.has_results,
+# MecwayAsterBridgeMain._monitor_only): existing results are never replaced.
 #
 # Pure Python, standard library only; runs in Python 2.7 (IronPython
 # 2.7.9, Mecway) and Python 3 (tests).

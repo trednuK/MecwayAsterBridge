@@ -585,10 +585,14 @@ als je de Code-Aster-vensters sluit, het model opslaat of aan iemand anders geef
 - `off`: geen Saved monitor.
 
 De meldingen zijn die van Code-Aster zelf (Frans). Een run zonder resultaten (fout, gestopt)
-krijgt de Saved monitor toch: de bridge schrijft dan een solution met alleen de monitor (Mecway
-toont een solution zonder resultaatvelden) en opent het model opnieuw; de vorige resultaten
-worden vervangen, zoals bij elke run, en blijven in `<model>.liml.bak` en in hun
-`_results.xml` (*Resultaten...*, §5.1). Met route `tabel` is er geen Saved monitor (die route
+krijgt de Saved monitor alleen als het model nog geen resultaten heeft: de bridge schrijft dan
+een solution met alleen de monitor (Mecway toont een solution zonder resultaatvelden) en opent
+het model opnieuw. Heeft het model al resultaten (van een eerdere run of van Mecway's eigen
+solve), dan laat de bridge het model ongemoeid, zodat die resultaten niet door een lege solution
+worden vervangen; de log noemt de `.mess` van de mislukte run, en de meldingen staan zoals
+voorheen in het statusvak en het convergentiescherm. Een solution met alleen de monitor van een
+eerdere mislukte run telt niet als resultaten. Met route `tabel` is er geen Saved monitor
+(KNOWN_BUGS 122) (die route
 vult Mecway's bestaande solution via de API, die het item niet kan toevoegen); de `.mess` blijft
 in de werkmap staan. Reken je het model daarna met Mecway's eigen solver, dan vervangt Mecway de
 tekst door zijn eigen voortgangsmeldingen. *Uit model verwijderen* (§5.1) haalt de tekst ook

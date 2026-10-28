@@ -17,7 +17,9 @@
 #   - splice_results (IronPython 2.7.9 only: it works on byte strings):
 #     <savedmonitor> first in <results>, one top-level <savedmonitor />,
 #     none in the model copies, a solution with only the monitor, and a
-#     second splice does not add a second tree item. Under CPython this
+#     second splice does not add a second tree item; has_results (a failed
+#     run writes the monitor-only solution only when it is False: stub and
+#     monitor-only solutions do not count, a solution with results does). Under CPython this
 #     part runs through TestFiles/Tools/run_ipy.ps1 if Mecway is installed.
 #
 #   python tests/test_bridge_monitor.py
@@ -230,8 +232,14 @@ try:
     def splice_check():
         liml = os.path.join(work, "model.liml")
         shutil.copy(MODEL, liml)
+        check("has_results: stub solutions do not count",
+              not brl.has_results(liml, "ULS") and
+              not brl.has_results(liml, None))
         ok, reason = brl.splice_results(liml, FRAGMENT, liml, "ULS",
                                         monitor=t)
+        check("has_results: ULS after the splice, G not",
+              brl.has_results(liml, "ULS") and
+              not brl.has_results(liml, "G"))
         check("splice with monitor ok ({0})".format(reason), ok)
         root = ET.parse(liml).getroot()
         tops = [c for c in root if c.tag == "savedmonitor"]
@@ -268,6 +276,30 @@ try:
         check("monitor-only: <results> with only <savedmonitor>",
               [c.tag for c in res] == ["savedmonitor"] and
               res[0].find("output").text == u"failed run")
+        check("has_results: a monitor-only solution does not count",
+              not brl.has_results(liml, "ULS"))
+        # Model without configurations: no solution, results, monitor only
+        plain = os.path.join(work, "plain.liml")
+        f = io.open(plain, "w", encoding="utf-8", newline="")
+        f.write(u'<liml version="34">\r\n  <analysis type="S30" />\r\n'
+                u'</liml>\r\n')
+        f.close()
+        check("has_results: model without a solution",
+              not brl.has_results(plain))
+        brl.splice_results(plain, None, plain, None, monitor=u"x")
+        check("has_results: plain monitor-only solution does not count",
+              not brl.has_results(plain))
+        f = io.open(plain, "w", encoding="utf-8", newline="")
+        f.write(u'<liml version="34">\r\n  <analysis type="S30" />\r\n'
+                u'  <solution>\r\n    <analysis type="S30" />\r\n'
+                u'    <results precision="double">\r\n'
+                u'      <savedmonitor>\r\n        <output>x</output>\r\n'
+                u'      </savedmonitor>\r\n'
+                u'      <nodeids name="displx">AQAAAA==\r\n</nodeids>\r\n'
+                u'    </results>\r\n  </solution>\r\n</liml>\r\n')
+        f.close()
+        check("has_results: plain solution with results and a monitor",
+              brl.has_results(plain))
         ok, _r = brl.splice_results(liml, None, liml, "ULS")
         check("no fragment and no monitor refused", not ok)
         # Without monitor the result is as before (no tree item added)

@@ -544,6 +544,45 @@ def _solutions(path, first):
     return out
 
 
+def has_results(model_liml, configuration=None):
+    """
+    True if model_liml has a solution with <results> for configuration
+    (the solution splice_results would replace: the one with that
+    configuration, else one without attribute; configuration None: the
+    solution without attribute, else any). Mecway's stub solutions of a
+    model with configurations have no <results> and do not count, nor does
+    a <results> with only a Saved monitor (an earlier run without results,
+    MecwayAsterBridgeMain._monitor_only). Streaming, as _solutions.
+    """
+    if not os.path.exists(model_liml):
+        return False
+    sol = _find_solution_start(model_liml)
+    if sol < 0:
+        return False
+    sols = _solutions(model_liml, sol)
+    same = [s for s in sols if s[2] == configuration]
+    if not same:
+        same = [s for s in sols if s[2] is None] if configuration else sols
+    for begin, end, _conf in same:
+        pos = _find_from(model_liml, "<results", begin, ">/ \t\r\n")
+        if not 0 <= pos < end:
+            continue
+        head = _read_range(model_liml, pos, min(end, pos + 512))
+        after = head.find(">") + 1
+        if after <= 0 or head[after - 2] == "/":      # <results ... />
+            continue
+        rest = head[after:].lstrip()
+        if rest.startswith("<savedmonitor"):
+            mon = _find_from(model_liml, "</savedmonitor>", pos + after)
+            if not 0 <= mon < end:
+                return True
+            rest = _read_range(model_liml, mon + len("</savedmonitor>"),
+                               min(end, mon + 512)).lstrip()
+        if not rest.startswith("</results>"):
+            return True
+    return False
+
+
 def _model_head(model_liml):
     """The model before the first <solution> (small; an old solution can
     be hundreds of MB)."""

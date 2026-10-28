@@ -584,11 +584,14 @@ output as Saved monitor in the .liml" (`save_monitor`, page General):
   the `.liml` should open quickly).
 - `off`: no Saved monitor.
 
-The messages are Code-Aster's own (French). A run without results (error, stopped) still gets
-the Saved monitor: the bridge then writes a solution with only the monitor (Mecway shows a
-solution without result fields) and reopens the model; the previous results are replaced, as
-on every run, and stay in `<model>.liml.bak` and in their `_results.xml` ("Results...", §5.1).
-With route `tabel` there is no Saved monitor (that route fills Mecway's existing solution
+The messages are Code-Aster's own (French). A run without results (error, stopped) gets the
+Saved monitor only if the model has no results yet: the bridge then writes a solution with only
+the monitor (Mecway shows a solution without result fields) and reopens the model. If the model
+already has results (of an earlier run or of Mecway's own solve), the bridge leaves the model
+untouched, so those results are not replaced by an empty solution; the log names the `.mess`
+of the failed run, and the messages are in the status box and the convergence window as before.
+A solution with only the monitor of an earlier failed run does not count as results.
+With route `tabel` there is no Saved monitor (KNOWN_BUGS 122) (that route fills Mecway's existing solution
 through the API, which cannot add the item); the `.mess` stays in the work folder.
 If you solve the model with Mecway's own solver afterwards, Mecway replaces the text with its
 own progress messages. "Remove from model" (§5.1) also removes the text; the item itself stays

@@ -9,7 +9,8 @@
   `save_monitor` (page General): `summary` (default: errors and alarms with their count,
   nonlinear steps, bridge lines, timings, the end of the `.mess` and the path of the full
   `.mess`), `full` (the whole `.mess`, start and end above 4 million characters) or `off`. A
-  run without results still gets the monitor (a solution with only the monitor); loading a run
+  run without results gets a solution with only the monitor when the model has no results yet;
+  existing results are never replaced (the model is then left unchanged); loading a run
   with "Results..." adds the monitor of that run. Not with route `tabel`. Format measured headless in
   Mecway 34 (user guide §5.2).
 

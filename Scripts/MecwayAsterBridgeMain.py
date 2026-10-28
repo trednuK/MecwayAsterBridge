@@ -131,7 +131,8 @@ from bridge_results_liml import (splice_results, read_step,
                                  read_modes, read_mode_summary,
                                  read_cyclic_summary, read_tagged,
                                  read_error_summary, read_crit_stab,
-                                 crit_stab_estimate, read_imperfection)
+                                 crit_stab_estimate, read_imperfection,
+                                 has_results)
 from bridge_failure     import report_failures
 from bridge_monitor     import monitor_text
 from bridge_run_aster   import CONSOLE_SUFFIX
@@ -599,8 +600,9 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None):
     (aster_results_export.py). Optionally compare with the Mecway solve,
     paste the fragment into the .liml (previous version: .bak) and open it
     again. monitor: text for Mecway's Saved monitor (_run_monitor) or None;
-    without results it is still written, as a solution with only the
-    monitor (_monitor_only). Returns True if the results are in Mecway.
+    without results it is written as a solution with only the monitor if
+    the model has no results yet (_monitor_only). Returns True if the
+    results are in Mecway.
     """
     fragment = results_file(work_dir_path())
     if (not os.path.exists(fragment) or
@@ -736,12 +738,19 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None):
 
 
 def _monitor_only(active_liml, monitor):
-    """A run without results (error, stopped): put a solution with only
-    the Saved monitor into the .liml (previous version: .bak) and reopen
-    it, so that the output of the run stays readable in Mecway. The previous
-    results of the model are replaced; they stay in the .bak and in their
-    result file (Results... button)."""
+    """A run without results (error, stopped): if the model has no
+    results yet, put a solution with only the Saved monitor into the .liml
+    (previous version: .bak) and reopen it, so that the output of the run
+    stays readable in Mecway. A model that already has results is left
+    untouched (its results are not replaced by an empty solution); the log
+    then names the .mess."""
     configuration, _warning = pick_configuration(active_liml)
+    if has_results(active_liml, configuration):
+        log("INFO: Run without results: the model already has results, so "
+            "it is left unchanged and gets no Saved monitor; the output of "
+            "the run is in {0}.".format(
+                os.path.join(work_dir_path(), run_name(".mess"))))
+        return
     ok, reason = splice_results(active_liml, None, active_liml,
                                 configuration, monitor=monitor)
     if not ok:
