@@ -1,0 +1,52 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.1" y="0" z="0" />
+  <node nid="3" x="0.2" y="0" z="0" />
+  <node nid="4" x="0.3" y="0" z="0" />
+  <node nid="5" x="0.4" y="0" z="0" />
+  <node nid="6" x="0.5" y="0" z="0" />
+  <node nid="7" x="0.6" y="0" z="0" />
+  <node nid="8" x="0.7" y="0" z="0" />
+  <node nid="9" x="0.8" y="0" z="0" />
+  <node nid="10" x="0.9" y="0" z="0" />
+  <node nid="11" x="1" y="0" z="0" />
+  <elset name="Balk" material="Staaf">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+    <elem eid="9" shape="line2" nodes="9 10" />
+    <elem eid="10" shape="line2" nodes="10 11" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <traction selection="Zijvlak"><x>0 Pa</x><y>0 Pa</y><z>1 kPa</z></traction>
+  <gravity><x>0 m/s²</x><y>0 m/s²</y><z>-9.81 m/s²</z></gravity>
+  <mat name="Staaf">
+    <geometric type="RectBar" recta="20 mm" rectb="10 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="11" />
+  </nodeselection>
+  <faceselection name="Zijvlak">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+    <face eid="5" faceid="1" />
+    <face eid="6" faceid="1" />
+    <face eid="7" faceid="1" />
+    <face eid="8" faceid="1" />
+    <face eid="9" faceid="1" />
+    <face eid="10" faceid="1" />
+  </faceselection>
+</liml>

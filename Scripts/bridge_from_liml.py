@@ -1005,7 +1005,47 @@ def _parse_geometric_props(geom_node):
                    geom_type))
         return None
 
+    perimeter = _section_perimeter(geom_type, geom_node)
+    if perimeter is not None:
+        result["perimeter"] = perimeter
     return result
+
+
+def _section_perimeter(geom_type, geom_node):
+    """
+    Perimeter of a beam cross-section (m), or None (shells, unknown type).
+    Mecway applies a traction on the side face of a beam (faceid 1) as
+    traction x perimeter per length: measured headless in Mecway 34
+    (internal solver, S17, 28 Oct 2026): RectBar 20x10 mm 0.06 m,
+    CircularBar 20 mm pi d, UniformCircularTube 20/10 mm pi (od + id) (outer
+    plus inner wall), RectTube 20x10x2 mm 0.104 m (outer plus inner), I/T/L/C
+    the full outline (I 100/50/5/4 mm 0.392 m, T 0.310, L 0.260, C 0.392);
+    UniformGeneralSection: its 'perimeter' attribute.
+    """
+    def dim(key):
+        return parse_and_convert(geom_node.get(key, "0"), 'length')
+    if geom_type == "CircularBar":
+        return math.pi * dim("roundod")
+    if geom_type == "UniformCircularTube":
+        return math.pi * (dim("roundod") + dim("roundid"))
+    if geom_type == "RectBar":
+        return 2.0 * (dim("recta") + dim("rectb"))
+    if geom_type == "RectTube":
+        a, b, t = dim("recta"), dim("rectb"), dim("rectthickness")
+        return 2.0 * (a + b) + 2.0 * max(0.0, a + b - 4.0 * t)
+    if geom_type == "UniformGeneralSection":
+        return dim("perimeter")
+    if geom_type in ("I", "T", "L", "C"):
+        p = geom_type.lower()
+        a, b, c, d = [dim(p + k) for k in ("a", "b", "c", "d")]
+        if geom_type == "I":    # a height, b flange width, d web thickness
+            return 2.0 * a + 4.0 * b - 2.0 * d
+        if geom_type == "T":    # a flange width, c flange thick., d web height
+            return 2.0 * (a + c + d)
+        if geom_type == "L":    # a, b legs
+            return 2.0 * (a + b)
+        return 2.0 * b + 4.0 * a - 2.0 * d   # C: a flange width, b height
+    return None
 
 
 def _split_trusses(model_data, elset_shapes_map, truss_eids, line_eids):
@@ -3116,7 +3156,8 @@ def extract_aster_data_from_liml(file_path):
                     model_data["elset_modelisations"].pop(elset_name, None)
                     continue
                 model_data["cable_sections"][elset_name] = {
-                    "area": area, "E": props.get("E")}
+                    "area": area, "E": props.get("E"),
+                    "perimeter": geom.get("perimeter")}
                 model_data["elset_modelisations"][elset_name] = "CABLE"
                 log("INFO: Tension-only elset '{0}' -> CABLE, A={1} m2."
                     .format(elset_name, area))
@@ -3144,7 +3185,8 @@ def extract_aster_data_from_liml(file_path):
                 model_data["beam_sections"][elset_name] = {
                     "geom_type": geom.get("geom_type"),
                     "aster_section": "GENERALE", "cara": ("A",),
-                    "vale": (area,), "area": area, "truss": True}
+                    "vale": (area,), "area": area, "truss": True,
+                    "perimeter": geom.get("perimeter")}
                 log("INFO: Truss elset '{0}' -> BARRE, A={1} m2.".format(
                     elset_name, area))
                 continue

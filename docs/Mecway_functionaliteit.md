@@ -40,10 +40,10 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Mecway | Status | Opmerking |
 |---|---|---|
 | Force (knopen, vlakken, elementen) | Ja | Op knopen gelijk verdeeld, op vlakken als kracht per oppervlak. |
-| Pressure | Ja | Meebewegend in niet-lineaire analyses (een formule in x, y, z blijft vast). Op schaalranden en balkuiteinden als knoopkrachten (KB5). |
+| Pressure | Ja | Meebewegend in niet-lineaire analyses (een formule in x, y, z blijft vast). Op schaalranden (lengte × dikte) en balkuiteinden (oppervlak) als knoopkrachten; op het zijvlak van een balk geen last (zie onder). |
 | Traction | Ja | Op een schaalvlak met het moment van de halve dikte, zoals Mecway. |
 | Line pressure | Ja | Globaal of lokaal (U, V, W). Combinaties op één balk worden opgeteld; lokaal en globaal op dezelfde balk: Nee (ERROR, KB20). |
-| Hydrostatic pressure | Deels | Niet op schaalranden (KB5). |
+| Hydrostatic pressure | Ja | Ook op schaalranden (lengte × dikte, consistente knoopkrachten, LS-93); Mecway's eigen solver negeert hem daar (WARNING), vergelijk met een Pressure-formule ρ g (h − z). [`Handleiding.md`](Handleiding.md) §4. |
 | Moment | Ja | Op één knoop met rotaties of als krachten over vlakken. |
 | Gravity | Ja | Met een tijdstabel alleen bij een vaste richting. |
 | Centrifugal force | Deels | Alleen een constante hoeksnelheid, één per model (geen gyroscopisch effect); spin softening alleen op volumes (KB19). |
@@ -55,7 +55,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Initial displacement | Nee | Gemeld. |
 | Waarde als tabel of formule in t | Ja | 10001 monsters zoals Mecway voor CCX. Lineair statisch, modaal en knik: de waarde op de eindtijd. Veel punten = veel stappen (KB104). |
 | Formule in x, y, z (mechanisch) | Ja | Druk, traction, kracht, line pressure, opgelegde verplaatsing/rotatie: `FORMULE` van X, Y, Z (ook met t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Kracht, line pressure en verplaatsing/rotatie met x, y, z legt Mecway 34 zelf niet op (WARNING). Niet: gravity, moment, centrifugaal, richting als formule, druk op schaalranden; niet in expliciet, harmonisch, spectrum (KB104). DKT/DST-schalen nemen de formule in de knopen (+0,8% op een grof mesh, LS-44a). Druk als formule blijft bij grote verplaatsingen een vaste last. De foutschatter rekent een vlak met een formulelast als onbelast (te grote fout daar). |
-| Last op het zijvlak van een balk | Nee | KB5. Zet de last op een elementselectie van de balk. |
+| Last op het zijvlak van een balk | Ja | Traction: een verdeelde last traction × omtrek van de doorsnede (`FORCE_POUTRE`, globale richting, ook met een formule in x, y, z), zoals Mecway (LS-92). Pressure: resultante nul, geen last (WARNING), zoals Mecway's eigen solver. [`Handleiding.md`](Handleiding.md) §4. |
 | Pre-tension section | Deels | Prisma van volume-elementen (Mecway's CCX-variant), kracht of lengteverandering, in statisch, niet-lineair statisch en impliciete dynamische respons (D30/D31, `dyna_impl_3d`, staplast vanaf t = 0 zoals Mecway): snede met `LIAISON_DDL` naar een referentieknooppunt (PT-01..08, [`Boutvoorspanning.md`](Boutvoorspanning.md)); de variant met één veerelement (interne solver) in lineair statisch als twee knoopkrachten (PT-09, PT-10). Niet: expliciete dynamica, de veervariant in Frequency/Buckling (geometrische stijfheid van de veer, KB124). |
 | Electric potential, Charge, Current, Robin | Nee | Geen elektrische analyses (§1). |
 | Thermische lasten (temperature, heat flow, heat flux, heat generation, convection, radiation) | Ja | In T30/T31; formules in x, y, z, t ook. Details: [`Thermisch.md`](Thermisch.md). |

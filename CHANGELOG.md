@@ -13,6 +13,17 @@
   LS-07l/m. With shells the same rule holds without a distance limit (Mecway ignores the
   tolerance there); the untied nodes equal CCX's, the displacements still differ from Mecway
   (KNOWN_BUGS 128).
+- **Loads on the side face of a beam** (was not translated, KNOWN_BUGS 5): a *Traction* on
+  the side face of beams or trusses becomes a distributed load traction × perimeter of the
+  section (`FORCE_POUTRE`, global direction, also with a formula in x, y, z), as Mecway 34
+  computes it (measured headless for all section types). A *Pressure* on the side face has
+  zero resultant: Mecway's own solver applies nothing, the bridge neither (WARNING).
+  Verification LS-92a .. LS-92h.
+- **Hydrostatic pressure on shell edges** (was not translated, KNOWN_BUGS 5): consistent
+  nodal forces of ρ g (h − z) × thickness on the edge, also when the free surface lies inside
+  an element. Mecway's own solver applies no hydrostatic pressure on shell edges (manual
+  §9.17); the bridge says so with a WARNING; compared with Mecway through the same load as a
+  Pressure formula on the edge (equal within 0.01%). Verification LS-93a .. LS-93c.
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
   `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
   `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh

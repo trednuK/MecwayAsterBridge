@@ -688,16 +688,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    OpenRadioss laws and VOID materials end up in `model_data["skipped_loads"]`.
    Via `#ASTER` lines the user can add Code-Aster commands themselves.
 
-5\. **Loads on beam side faces and frictionless with displacement on curved
-   shells** (confirmed). Pressure and traction on shell edges (length × thickness, in the
-   shell plane) and beam ends (cross-section A) become nodal forces; frictionless on
+5\. **Frictionless with displacement on curved shells** (confirmed). Frictionless on
    curved shell faces and shell edges becomes LIAISON_OBLIQUE per nodal normal
-   (`bridge_mesh._edge_loads`, `_frictionless_per_node`). Headless against Mecway:
-   pressure on a shell edge exactly equal, traction across the edge 0.5% (DKT, item 2);
-   frictionless per nodal normal not computed against Mecway. Not yet: loads on the side face of a beam (use
-   an element selection), frictionless with normal displacement ≠ 0 on curved
-   shells/shell edges, hydrostatic pressure on shell edges. With LINE_QUAD,
-   new midside nodes get no frictionless.
+   (`bridge_mesh._frictionless_per_node`); not computed against Mecway. Not yet:
+   frictionless with normal displacement ≠ 0 on curved shells/shell edges. With
+   LINE_QUAD, new midside nodes get no frictionless. (The load part of this item was
+   solved in S17: pressure/traction on shell edges and beam ends as nodal forces, traction
+   on beam side faces as `FORCE_POUTRE` = traction × perimeter, pressure there no load,
+   hydrostatic pressure on shell edges; LS-92, LS-93.)
 
 6\. **Kinematic hardening: no equivalentplasticstrain; non-linear
    kinematic curve** (confirmed). Translated: isotropic hardening curve

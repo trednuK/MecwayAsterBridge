@@ -374,6 +374,37 @@ moment, centrifugal force, velocity, frictionless, a direction as a formula or
 pressure on shell edges and beam ends, the bridge reports them (ERROR) and leaves
 them out (KNOWN_BUGS 104).
 
+**Loads on the side face of a beam.** Mecway gives a beam (line2/line3) three faces: the
+side face (faceid 1, the whole element) and the two ends (faceid 2 and 3). A *Traction* on
+the side face acts in Mecway as a distributed load *traction × perimeter of the section*
+per length, in the global direction you enter and whatever the beam orientation; the
+bridge writes it as `FORCE_POUTRE` (also with a formula in x, y, z, which Mecway takes at
+one point per element and Code-Aster at the integration points). The perimeter is the full
+outline of the section: rectangle 2(a + b), circle π·d, tube and box section outer plus
+inner wall, I/T/L/C profiles all edges, *UniformGeneralSection* its *perimeter* field
+(measured in Mecway 34). A *Pressure* on the side face has zero resultant (the normal
+turns all the way around the section): Mecway's own solver applies nothing, the bridge
+neither (WARNING); for a transverse load use a traction or a line pressure. Verification
+LS-92a .. LS-92h.
+
+![Beam side face and the line load from a traction](../img/beam_side_face.svg)
+
+1. Side face of the beam element (faceid 1): the whole element.
+2. End at the first node (faceid 2).
+3. End at the second node (faceid 3).
+4. Traction T in a global direction on the side face.
+5. Perimeter of the section: all outer and inner edges (here a rectangle a × b: 2(a + b)).
+6. The resulting line load q = T × perimeter on the beam axis (`FORCE_POUTRE`).
+
+**Hydrostatic pressure on shell edges.** The bridge applies it like a pressure on a
+shell edge: p(x) = ρ g · (x − x₀) on the edge face *edge length × thickness*, in the
+shell plane, as consistent nodal forces (also when the free surface lies inside an
+element). Mecway's own solver applies **nothing** here (manual §9.17: only faces that are
+locally two-dimensional; measured with the internal solver and CCX); the bridge reports
+that with a WARNING. To compare with Mecway, enter the same load in Mecway as a
+*Pressure* with the formula ρ g (h − z) on that edge (Mecway applies a pressure formula
+on shell edges); the bridge equals that within 0.01% (LS-93a .. LS-93c).
+
 ### 4.1 Result fields
 
 With "Result fields to Mecway" you choose per analysis

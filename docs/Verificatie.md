@@ -144,6 +144,8 @@ Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
 Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
 5 cases, 17 controles OK (28 oktober 2026, stap S15b).
 Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
+Balkzijvlakken en hydrostatische druk
+op schaalranden LS-92a..h, LS-93a..c, 11 cases, 27 controles OK (28 oktober 2026, stap S17).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen
@@ -734,6 +736,44 @@ Route `tabel` (LS-30, LS-32, NL-31 met een nep-solution in CPython): `beam_force
   `ELEMENTS4_92`). Drie lasten `AFFE_CHAR_MECA_F` met elk een `FORMULE` in één
   `EXCIT` rekenen elk met hun eigen functie (anders dan thermisch `SOURCE`, [Thermisch.md](Thermisch.md) §3); twee functies in één
   `DDL_IMPO`-last (testrun met twee selecties) ook.
+
+### LS-92, LS-93 Lasten op zijvlakken van balken, hydrostatische druk op schaalranden
+
+- **Doel**: traction en druk op het zijvlak van een balk (faceid 1) en hydrostatische druk
+  op schaalranden (KNOWN_BUGS 5, stap S17). Module `tests_balk_zijvlak.py`.
+- **Model**: ingeklemde balk L = 1 m, 10 line2 (LS-92e: 4 line3), RectBar 20 × 10 mm
+  (LS-92b: I 100/50/5/4 mm; LS-92f: tweede helft CircularBar Ø 20 mm), selectie = de
+  zijvlakken van alle elementen. LS-93: verticale plaat 1 × 1 m in het XZ-vlak, t = 10 mm,
+  quad4 4 × 10 (LS-93c quad8), rand x = 0 ingeklemd (displacement + node rotation, zie
+  onder), geen dichtheid.
+- **Belasting**: traction 1 kPa: (92a) Z; (92b) Y; (92c) Z = `x` kPa; (92e) Z op line3;
+  (92f) Z over twee doorsneden; (92g) Z in niet-lineair statisch; (92h) Z met gravity
+  (ρ = 7850 kg/m³); (92d) druk 1 MPa op de zijvlakken plus 10 N aan de tip. LS-93:
+  hydrostatische druk (water, gravity −Z) op de rand x = 1, vrij oppervlak op z = 1 m (93a,
+  93c) en z = 0,55 m (93b, binnen een element).
+- **Referentie**: q = T × omtrek (0,06 m; I 0,392 m; cirkel π·0,02 m) met Euler: tip
+  qL⁴/(8EI), formule 11q₀L⁴/(120EI), (92h) (q − ρAg)L⁴/(8EI), (92d) PL³/(3EI); reactie
+  q·L. LS-93: resultante ρ g t H²/2 (49,05 N; 14,838 N). Mecway 34 headless
+  (`mw_solve.py`, eigen solver) op dezelfde `.liml` voor 92a–d, f, h; voor LS-93 op
+  hetzelfde model met in plaats daarvan een *Pressure* `max(0, 9.81*(h-z))` kPa op de rand,
+  omdat Mecway geen hydrostatische druk op schaalranden zet.
+- **Resultaat**: alle 27 controles OK. 92a, b, d, e, f, g, h exact tegen Euler en Mecway
+  (≤ 1e-6); 92c +0,00% tegen de exacte last, +0,06% tegen Mecway. LS-93 resultanten exact
+  (93b ≤ 1e-5), randverplaatsing tegen Mecway's formule 0,00% (93a), +0,01% (93b), −0,01%
+  (93c).
+- **Interpretatie**: Mecway zet een traction op het zijvlak op als T × omtrek, ook met een
+  formule, die het op de balkas in één punt per element neemt (manual §9.14); dat is de
+  0,06% van 92c (Code-Aster integreert de `FORMULE` in de Gausspunten). De omtrek per
+  doorsnedetype is headless gemeten: RectBar 2(a + b), CircularBar π d, buis π (D + d) en
+  RectTube 2(a + b) + 2(a + b − 4t) (buiten- plus binnenwand), I 0,392, T 0,310, L 0,260,
+  C 0,392 m (de volledige omtrek). Druk op het zijvlak: Mecway's eigen solver zet niets op
+  (ook niet met een formule in x of y); met CCX zet Mecway de balk uit tot volume-elementen
+  en knijpt de druk alleen de doorsnede samen (6e-7 m). Mecway 34 zet geen hydrostatische
+  druk op schaalranden (eigen solver en CCX: reactie 0; manual §9.17: vlakken die lokaal 2D
+  zijn); de bridge wel (WARNING). Mecway 34 headless met *Fixed* op een knoopselectie van
+  schalen gaf een mechanisme; daarom displacement + node rotation in LS-93 (zoals in
+  LS-44). Niet vergeleken: traction op balkzijvlakken met Mecway's CCX (CCX zet de balk uit
+  en gaf een heel andere doorbuiging, niet uitgezocht).
 
 ### LS-70 … LS-78 Balkorientatie (statisch)
 
