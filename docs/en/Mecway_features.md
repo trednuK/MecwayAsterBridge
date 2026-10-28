@@ -30,7 +30,7 @@ ignored with only an INFO, as Mecway itself does.
 | S20 Static 2D (plane stress, plane strain) | Partly | `lin_static_3d` (`MECA_STATIQUE`, `C_PLAN`/`D_PLAN`) | Plane elements only, one thickness and type per model; loads and constraints: [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.1, §3 (KB126). Verification PL-01 … PL-03, PL-05. |
 | SA0 Static Axisymmetric | Partly | `lin_static_3d` (`MECA_STATIQUE`, `AXIS`) | As S20; Y = axis, `stresszz` = hoop stress, reactions for 360 degrees (KB126). Verification PL-04, PL-06. |
 | D20, DA0 Dynamic Response 2D / Axisymmetric | Partly | `dyna_impl_3d` (`DYNA_NON_LINE`, `C_PLAN`/`D_PLAN`/`AXIS`) | As S20/SA0; equal to Mecway with NEWMARK, PETIT and one step per Mecway step (KB127); no explicit, mode superposition or initial velocity (KB126). Verification PL-10 … PL-12. |
-| A20 Acoustic Resonance 2D | No | – | ERROR (KB126). Alternative: model in 3D (A30). |
+| A20 Acoustic Resonance 2D | Yes | `acoustic_modes_3d` (`PHENOMENE='ACOUSTIQUE'`, `PLAN`) | Cavity modes, also with impedance; a thickness does not count (as in Mecway); triangles slightly higher than Mecway (KB128); no harmonic pressure field in 2D (KB126). [`Acoustics.md`](Acoustics.md) §3.5. Verification AK-10 … AK-15. |
 | E30 DC Current Flow | No | – | The run stops. |
 | Electrostatics and piezoelectricity (in S30) | No | – | Electric loads are skipped; a piezo or matrix material stops the run (§5). |
 | no Mecway type | – | `harmonic_3d`, `spectrum_3d` (choose it yourself) | Extra analyses of the bridge: [`Mode_superposition.md`](Mode_superposition.md), [`Response_spectrum.md`](Response_spectrum.md). |

@@ -142,6 +142,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
 Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15).
+Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen
@@ -2601,6 +2602,38 @@ Waarnemingen:
   akoestische matrices van Code-Aster bevatten ρ niet. De bridge stopt daarom bij
   verschillende dichtheden met een ERROR ([Akoestiek.md](Akoestiek.md) §3.2).
 - **Impedantie** (S2b): complexe modes, zie hieronder (AI).
+
+### Akoestiek 2D: holtemodes (AK-10 … AK-15)
+
+Mecway A20 (*Acoustic Resonance 2D*) → `acoustic_modes_3d` met `MODELISATION='PLAN'`
+(impedantieranden `PLAN_ABSO`; [Akoestiek.md](Akoestiek.md) §3.5, STAPPENPLAN S16d).
+Module `tests_akoestiek_2d.py` (groep "Akoestiek", 6 cases), draaien met
+`python run_verificatie.py AK-1`. Rechthoek a × b = 1,0 × 0,7 m, lucht c = 340 m/s. De
+Mecway-waarden zijn headless berekend (`mw_solve.py`, Mecway 34.0.9772, interne solver) op
+dezelfde `.liml`: alle frequenties en de grootste ∣p∣ van elke mode. Tolerantie:
+analytisch 0,5% (kwadratisch) of 1–3% (lineair), t.o.v. Mecway 1e-6 voor quads, 2e-4/5e-4
+(tri6) en 1% (tri3, KNOWN_BUGS 128).
+
+| ID | Model | Referentie | Analytisch (grootste afwijking) | Mecway |
+|---|---|---|---|---|
+| AK-10 | quad8 10 × 7, harde wanden | f_mn = c/2·√((m/a)² + (n/b)²), 8 modes; ∣p∣ mode 1 = c/√(ab) | +0,052% (510 Hz); ∣p∣ 406,378 exact | < 2e-13 |
+| AK-11 | als AK-10, *fluid pressure* 0 op de rand x = a (vlakselectie), dikte 10 mm | f_mn = c/2·√(((2m − 1)/(2a))² + (n/b)²), 8 modes | +0,042% (493 Hz) | < 2e-13 |
+| AK-12 | tri6 20 × 14 × 2, harde wanden | als AK-10 | +0,005% | +0,003% (f), +0,019% (∣p∣) |
+| AK-13 | quad4 40 × 28 in twee elsets, *fluid pressure* 0 op de knopen van x = a | als AK-11, 6 modes | +0,16% (425 Hz) | < 3e-13 |
+| AK-14 | quad8 10 × 7, *impedance* Z = 2000 Pa·s/m op de rand x = a (complexe modes) | modes zonder y-variatie = buis met impedantie: f_n = n·c/(2a), σ = (c/a)·artanh(ρc/Z) | f +0,011%, σ +0,04% (n = 2) | < 1e-6 (f en σ) |
+| AK-15 | tri3 20 × 14 × 2, harde wanden | als AK-10 | +1,4% (510 Hz) | +0,07% (mode 2) … +0,64% (mode 8) |
+
+Waarnemingen:
+- **Quads gelijk aan Mecway** op afronding na, ook de normering (per eenheidsdikte: de
+  constante mode is c/√A, met of zonder *Shell/membrane*-dikte).
+- **Driehoeken:** de vlakke akoestische elementen van Code-Aster integreren de massa met
+  de stijfheidsregel (geen `MASS`-familie in `elem.1`): tri3 één punt, tri6 drie punten.
+  Een eigen berekening met de eenpuntsmassa van tri3 geeft precies de frequenties van de
+  bridge (171,0587 Hz voor tri3 10 × 7 × 2; Mecway 170,5842 Hz = de consistente massa).
+  KNOWN_BUGS 128.
+- Mecway's orgelpijp-tutorial (17.13) als A20 (quad4 + 48 tri3, 20 modes): mode 4
+  64,594 Hz (Mecway 64,592 Hz, de handleiding 64,59 Hz); geen testcase (Mecway's model
+  staat niet in de repository).
 
 ### Akoestiek: impedantie, complexe modes (AI)
 

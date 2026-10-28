@@ -12,11 +12,12 @@ D_PLAN, C_PLAN"):
 | Static 2D (S20) | *Shell/membrane* with a thickness and *plane strain* | `D_PLAN` (plane strain) | as above, σ_zz = ν(σ_xx + σ_yy) |
 | Static Axisymmetric (SA0) | no geometry (isotropic material) | `AXIS` | displacement X (radial), Y (axial); stress with `stresszz` = hoop stress; reactions for 360 degrees |
 | Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | as S20 / SA0 | as S20 / SA0, in time (§2.4) | as S20 / SA0 per output time, plus velocity and acceleration |
+| Acoustic Resonance 2D (A20) | *Speed of sound* (a thickness does not count) | `PHENOMENE='ACOUSTIQUE'`, `PLAN` (§4) | per mode the frequency and the pressure field `pressure`, as A30 |
 
 The bridge analysis is `lin_static_3d` ("Static") for S20 and SA0 and `dyna_impl_3d`
 ("Dynamic (implicit)") for D20 and DA0: with "Active analysis (auto = follow Mecway)" =
 `auto` the bridge chooses it. General operation of the bridge:
-[`UserGuide.md`](UserGuide.md). Acoustic Resonance 2D (A20) is not translated (§4). Mecway has no thermal 2D type: a thermal model in a plane is made of
+[`UserGuide.md`](UserGuide.md). Acoustic Resonance 2D (A20) goes to the acoustic cavity modes `acoustic_modes_3d` (§4). Mecway has no thermal 2D type: a thermal model in a plane is made of
 shells ([`Thermal.md`](Thermal.md)).
 
 ![Axisymmetric: axis of symmetry, radius and hoop direction](../img/2d_axisymmetric_axes.svg)
@@ -154,7 +155,7 @@ the bridge gives a WARNING and computes with larger steps (KB127).
 
 ## 3. Not possible
 
-KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md` (S16d, S16e).
+KNOWN_BUGS 126; planned step in `STAPPENPLAN.md`: S16e. A20 (acoustics): §4.
 
 - Beams, trusses, springs or solids in a 2D analysis (Mecway's S20 allows beams and
   trusses): ERROR, the bridge stops.
@@ -170,11 +171,12 @@ KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md` (S16d, S16e).
   converts V20 to V30 and B20 to S30).
 - The error estimator (INFO) and the result route `tabel` (ERROR).
 
-## 4. Other 2D analysis types (not translated)
+## 4. Acoustics in 2D
 
-| Mecway | Status | Alternative |
+| Mecway | Status | Explanation |
 |---|---|---|
-| Acoustic Resonance 2D (A20) | No (ERROR) | [`Acoustics.md`](Acoustics.md): 3D (A30) |
+| Acoustic Resonance 2D (A20) | Yes: cavity modes (`acoustic_modes_3d`, `MODELISATION='PLAN'`), also with impedance | [`Acoustics.md`](Acoustics.md) §3.5; equal to Mecway's own A20 solution (quads ≤ 1e-6, triangles slightly higher, KNOWN_BUGS 128); no harmonic pressure field in 2D |
+| acoustics axisymmetric | Mecway has no such type (the analysis codes in Mecway 34: S20, SA0, D20, DA0, A20 and the 3D types) | 3D (A30) or a cross-section in 2D (A20) |
 
 ## 5. Interpretation
 
@@ -200,7 +202,7 @@ KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md` (S16d, S16e).
 | ERROR: Elset '…' contains line2 …; in a 2D analysis … | beams, trusses, springs or solids in the model | remove them or compute in 3D |
 | ERROR: … in a 2D analysis (…) is not translated (yet) | contact, coupling, constraint equation, point mass or temperature | remove it or compute in 3D |
 | ERROR: … on '…' in a 2D analysis: … NOT included. | load or constraint without a 2D route (§3) | replace it by a supported load (§1.1) |
-| ERROR: Mecway analysis type A20 … is not translated (yet) | acoustic 2D | compute in 3D (A30) |
+| ERROR: Mecway analysis type A20 (Acoustic Resonance 2D) is only translated to the cavity modes … | another analysis chosen | choose `auto` or `acoustic_modes_3d` ([`Acoustics.md`](Acoustics.md) §3.5) |
 | ERROR: Mecway analysis type D20 (2D) is only translated to dyna_impl_3d, not to … | another analysis chosen on the start screen | choose `auto` or the analysis named |
 | ERROR: D20 (2D) is translated with the implicit scheme … | explicit scheme or *Mode superposition* | choose `NEWMARK` or `HHT`; switch off *Mode superposition* in Mecway |
 | ERROR: A 2D analysis (…) only works with the result route 'liml' | route `tabel` chosen | choose `liml` on the General page |

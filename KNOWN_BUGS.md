@@ -155,6 +155,21 @@ Code-Aster value per node) and logs the largest difference per variable.
    (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
    to fix in the bridge; do not compare such models with Mecway.
 
+128\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
+   (confirmed, Code-Aster 17.4 and Mecway 34 headless; `bridge_acoustic.py`, MODELISATION
+   'PLAN', verification AK-12, AK-15). Code-Aster's plane acoustic elements (`ACPLTR3`,
+   `ACPLTR6`, `ACPLQU4`, `ACPLQU8` in `elem.1` of 17.4) have no `MASS` integration family,
+   only `RIGI` (the 3D `ACOU_*` elements have one): the mass `MASS_ACOU` is integrated with
+   the stiffness rule. Exact for quad4 (2 × 2) and quad8 (3 × 3): equal to Mecway (≤ 1e-6,
+   AK-10, AK-11, AK-13, AK-14). tri3 with one point: the bridge's frequencies equal an own
+   calculation with the one-point mass (rectangle 1.0 × 0.7 m, tri3 10 × 7 × 2: 171.0587 Hz
+   both; Mecway 170.5842 Hz = the consistent mass), AK-15 (20 × 14 × 2) +0.07% (mode 2) to
+   +0.64% (mode 8) against Mecway, with the same convergence order. tri6 (three points):
+   ≤ 0.003% in frequency, ≤ 0.02% in the pressure (AK-12). Mecway's organ pipe tutorial
+   (48 tri3 of 497 elements): mode 4 +0.003%, mode 20 +0.06%. Not fixable in the bridge
+   (no integration choice in `AFFE_MODELE`); mesh with quads or tri6 where possible
+   ([`docs/en/Acoustics.md`](docs/en/Acoustics.md) §3.5).
+
 ## Translation that works differently from Mecway
 
 127\. **Dynamic Response (D30, D20, DA0) with *Generate solution every n time steps* > 1: the
@@ -779,7 +794,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    of `pressure`/`pressurei`; the decay rate has no API). The
    display of the complex modes in the Mecway GUI (decay rate under *Solution*,
    animation of `pressure` + `pressurei`) has NOT been checked (question). Also not:
-   Acoustic Resonance 2D (A20, ERROR), Mecway's *acoustic displacement* as a field, contact,
+   the harmonic pressure field in 2D (A20, ERROR; the cavity modes of A20 are translated,
+   KNOWN_BUGS 126, 128), Mecway's *acoustic displacement* as a field, contact,
    couplings and constraint equations in acoustics (ERROR, skipped_loads), pyramids.
    Code-Aster's `RIGI_ACOU`/`MASS_ACOU` do not contain the density (measured): at an
    interface dp/dn is continuous, correct only for equal density; media with
@@ -1115,18 +1131,21 @@ Code-Aster value per node) and logs the largest difference per variable.
    (f) Which side keeps the Mecway nodes (results at the section) follows the axis sign
    (largest component positive, side above keeps them); Mecway's rule is NOT verified beyond
    BoltedJoint.
-126\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b).
-   Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
+126\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b,
+   S16d). Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
    linear static (`lin_static_3d`), Dynamic Response 2D/Axisymmetric (D20, DA0) in
    `dyna_impl_3d` (implicit, Rayleigh damping, time tables; no explicit scheme, mode
-   superposition or initial velocity), plane elements only, one thickness and one type per
+   superposition or initial velocity), Acoustic Resonance 2D (A20, S16d) as the cavity
+   modes (`acoustic_modes_3d`, `PHENOMENE='ACOUSTIQUE'`, `PLAN`, impedance edges
+   `PLAN_ABSO`; triangles KNOWN_BUGS 128), plane elements only, one thickness and one type per
    model; fixed, pinned,
    displacement along X/Y, symmetry with normal X/Y, force (nodes, edges), pressure and
    traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)
-   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: Acoustic
-   Resonance 2D (A20) (ERROR, step S16d), beams/trusses/springs in S20, several thicknesses, other loads and constraints
+   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
+   pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
+   with a source selection), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
    constraint equations, couplings, contact, point masses, temperatures), the error estimator
    (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,
-   frequency, buckling or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
+   frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).

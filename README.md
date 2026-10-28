@@ -118,8 +118,8 @@ run on the installation. Method, tolerances, results and how to rerun them:
 ## Known limitations
 
 Known deviations from Mecway and limitations of the translation are listed, with their
-status, in [`KNOWN_BUGS.md`](KNOWN_BUGS.md). Among them: only 3D analyses
-(no 2D/axisymmetric), not every Mecway load or constraint is translated (the bridge
+status, in [`KNOWN_BUGS.md`](KNOWN_BUGS.md). Among them: 2D and axisymmetric analyses
+only in part (KNOWN_BUGS 126), not every Mecway load or constraint is translated (the bridge
 reports what it skipped), Mecway has no scripting API for loads, so everything is read
 from the `.liml` file, and a real run always needs Mecway and Code-Aster on Windows.
 

@@ -139,7 +139,8 @@ formulas `s1`, `tr`, `e1`).
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added after this run (not yet in a full regression, not in the table): Bolt pretension
-PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15).
+PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15). Acoustics 2D AK-10..15, 6 cases,
+126 checks OK (28 October 2026, step S16d).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
@@ -2596,6 +2597,37 @@ Observations:
   acoustic matrices do not contain ρ. The bridge therefore stops with an ERROR for
   different densities ([Acoustics.md](Acoustics.md) §3.2).
 - **Impedance** (S2b): complex modes, see below (AI).
+
+### Acoustics 2D: cavity modes (AK-10 … AK-15)
+
+Mecway A20 (*Acoustic Resonance 2D*) → `acoustic_modes_3d` with `MODELISATION='PLAN'`
+(impedance edges `PLAN_ABSO`; [Acoustics.md](Acoustics.md) §3.5, STAPPENPLAN S16d).
+Module `tests_akoestiek_2d.py` (group "Acoustics", 6 cases), run with
+`python run_verificatie.py AK-1`. Rectangle a × b = 1.0 × 0.7 m, air c = 340 m/s. The
+Mecway values were computed headless (`mw_solve.py`, Mecway 34.0.9772, internal solver) on
+the same `.liml`: all frequencies and the largest ∣p∣ of every mode. Tolerance: analytical
+0.5% (quadratic) or 1–3% (linear), against Mecway 1e-6 for quads, 2e-4/5e-4 (tri6) and 1%
+(tri3, KNOWN_BUGS 128).
+
+| ID | Model | Reference | Analytical (largest deviation) | Mecway |
+|---|---|---|---|---|
+| AK-10 | quad8 10 × 7, hard walls | f_mn = c/2·√((m/a)² + (n/b)²), 8 modes; ∣p∣ mode 1 = c/√(ab) | +0.052% (510 Hz); ∣p∣ 406.378 exact | < 2e-13 |
+| AK-11 | as AK-10, *fluid pressure* 0 on the edge x = a (face selection), thickness 10 mm | f_mn = c/2·√(((2m − 1)/(2a))² + (n/b)²), 8 modes | +0.042% (493 Hz) | < 2e-13 |
+| AK-12 | tri6 20 × 14 × 2, hard walls | as AK-10 | +0.005% | +0.003% (f), +0.019% (∣p∣) |
+| AK-13 | quad4 40 × 28 in two elsets, *fluid pressure* 0 on the nodes of x = a | as AK-11, 6 modes | +0.16% (425 Hz) | < 3e-13 |
+| AK-14 | quad8 10 × 7, *impedance* Z = 2000 Pa·s/m on the edge x = a (complex modes) | modes without y variation = pipe with impedance: f_n = n·c/(2a), σ = (c/a)·artanh(ρc/Z) | f +0.011%, σ +0.04% (n = 2) | < 1e-6 (f and σ) |
+| AK-15 | tri3 20 × 14 × 2, hard walls | as AK-10 | +1.4% (510 Hz) | +0.07% (mode 2) … +0.64% (mode 8) |
+
+Observations:
+- **Quads equal to Mecway** up to rounding, including the normalisation (per unit
+  thickness: the constant mode is c/√A, with or without a *Shell/membrane* thickness).
+- **Triangles:** Code-Aster's plane acoustic elements integrate the mass with the
+  stiffness rule (no `MASS` family in `elem.1`): tri3 one point, tri6 three points. An own
+  calculation with the one-point tri3 mass gives exactly the bridge's frequencies (171.0587
+  Hz for tri3 10 × 7 × 2; Mecway 170.5842 Hz = the consistent mass). KNOWN_BUGS 128.
+- Mecway's organ pipe tutorial (17.13) as A20 (quad4 + 48 tri3, 20 modes): mode 4
+  64.594 Hz (Mecway 64.592 Hz, the manual 64.59 Hz); not a test case (Mecway's model is not
+  in the repository).
 
 ### Acoustics: impedance, complex modes (AI)
 

@@ -1945,7 +1945,7 @@ def extract_aster_data_from_liml(file_path):
                 "thermal -> mechanical chain (residual stress and distortion, "
                 "bridge_thermomech.py); mechanical boundary conditions and "
                 "loads are included.")
-        # Acoustics (A30): materials and conditions are read by
+        # Acoustics (A30, A20): materials and conditions are read by
         # bridge_acoustic.parse_acoustic() (STEP 2c).
         acoustic_run = bridge_acoustic.is_acoustic(run_cfg)
         # Vibro-acoustics (structure + fluid): fluid parts and pressure

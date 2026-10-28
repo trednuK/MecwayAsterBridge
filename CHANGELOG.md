@@ -72,14 +72,24 @@
   radian). Results come back under Mecway's own names (`stresszz` = hoop stress in SA0), and
   Mecway recognises them. Displacements and reactions equal to Mecway's own solution
   (≤ 1e-11); Kt of a plate with a hole and Lamé within the tolerances of the 3D cases
-  (verification PL-01 … PL-06). Acoustic 2D (A20), beams in 2D and several thicknesses give
-  an ERROR (KNOWN_BUGS 126). New document *2D: plane stress, plane strain, axisymmetric*.
+  (verification PL-01 … PL-06). Beams in 2D and several thicknesses give an ERROR
+  (KNOWN_BUGS 126). New document *2D: plane stress, plane strain, axisymmetric*.
 - **2D and axisymmetric dynamic response (STAPPENPLAN S16b)**: Mecway's *Dynamic Response
   2D* (D20) and *Dynamic Response Axisymmetric* (DA0) go through `dyna_impl_3d` with the same
   2D translation; with schema NEWMARK, deformation PETIT and one solver step per Mecway step
   equal to Mecway's own solution (≤ 4e-8, verification PL-10 … PL-12: bar wave, damped ring,
   time-table force). Note for D30 too: with *Generate solution every n time steps* > 1, set
   "Solver steps per output interval" to n (KNOWN_BUGS 127).
+- **Acoustic Resonance 2D (STAPPENPLAN S16d)**: Mecway's *Acoustic Resonance 2D* (A20) is now
+  translated as the acoustic cavity modes (`acoustic_modes_3d`, chosen by `auto`) with
+  `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` on tri3/tri6/quad4/quad8 in the XY plane:
+  hard walls, *Fluid pressure* = 0 on edges or nodes, *Impedance* on edges (complex modes,
+  `PLAN_ABSO`). A thickness does not count, as in Mecway (measured: the model is per unit
+  thickness). Frequencies, decay rates and the normalised pressure field equal to Mecway's own
+  A20 solution for quads (≤ 1e-6), rectangle within 0.05% of f_mn = c/2·√((m/a)² + (n/b)²)
+  (verification AK-10 … AK-15); with triangles the bridge is slightly higher (Code-Aster
+  integrates their mass with fewer points, KNOWN_BUGS 128). No harmonic pressure field in 2D.
+  Mecway has no axisymmetric acoustic type.
 
 ## V2026.5 – 28 October 2026
 

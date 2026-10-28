@@ -2,8 +2,8 @@
 
 *English version: [Acoustics.md](en/Acoustics.md)*
 
-De bridge rekent Mecway's *Acoustic Resonance 3D* (analysetype A30) met Code-Aster:
-de eigenmodes (resonanties) van een lucht- of vloeistofvolume, zoals de staande golven
+De bridge rekent Mecway's *Acoustic Resonance 3D* (analysetype A30) en *Acoustic
+Resonance 2D* (A20, §3.5) met Code-Aster: de eigenmodes (resonanties) van een lucht- of vloeistofvolume, zoals de staande golven
 in een buis, een ruimte of een autocabine, en (§5) het drukveld per frequentie bij een
 bron, met absorberende randen en microfoons (harmonische respons; Mecway zelf heeft
 die analyse niet). §6 (vibro-akoestiek) koppelt het fluïdum aan een constructie: de
@@ -17,6 +17,7 @@ een zuiger op een luchtkolom met een absorberend einde, een luidspreker in een k
 |---|---|---|---|
 | Acoustic Resonance 3D (A30) | `acoustic_modes_3d` (Akoestiek (holtemodes)) | `PHENOMENE='ACOUSTIQUE'`, matrices `RIGI_ACOU` en `MASS_ACOU` (`ASSEMBLAGE`), `CALC_MODES` | per mode de frequentie (Hz) en het drukveld `pressure` |
 | Acoustic Resonance 3D (A30) met *Impedance* (§3.3) | `acoustic_modes_3d` (Akoestiek (holtemodes)) | dezelfde matrices + `AMOR_ACOU` per impedantierand; het kwadratische eigenwaardeprobleem lost de bridge in de job op met scipy (`aster_acoustic_complex.py`) | per mode de frequentie, de *decay rate* en het complexe drukveld `pressure` + `pressurei`, zoals Mecway |
+| Acoustic Resonance 2D (A20, §3.5), ook met *Impedance* | `acoustic_modes_3d` (Akoestiek (holtemodes)) | als A30 met `MODELISATION='PLAN'` (impedantieranden `PLAN_ABSO`) | als A30 |
 | Acoustic Resonance 3D (A30) met een bron (`BRON_`-selectie, §5) | `acoustic_harm_3d` (Akoestiek (harmonisch)) | `PHENOMENE='ACOUSTIQUE'`, `RIGI_ACOU`, `MASS_ACOU`, `AMOR_ACOU`, `DYNA_VIBRA` `HARM` | per frequentie de complexe druk (`pressure`, `pressurei`), amplitude, fase en geluidsdrukniveau; microfoonrespons in de log en een CSV |
 | Frequency 3D (V30) met een fluïdum-onderdeel (§6) | `vibroacoustic_modes_3d` (Vibro-akoestiek (modes)) | `PHENOMENE='MECANIQUE'`: `3D_FLUIDE` + `FLUI_STRU` + de constructie, `FORMULATION='U_P_PHI'`, `CALC_MODES` `BANDE` | per mode de frequentie, de verplaatsing van de constructie (`displ`) en de druk in het fluïdum (`pressure`) |
 | hetzelfde model met een bron (§7) | `vibroacoustic_harm_3d` (Vibro-akoestiek (harmonisch)); zelf kiezen | als hierboven + `3D_FLUI_ABSO`, `DYNA_VIBRA` `HARM` `PHYS` met `MATR_IMPE_PHI` | per frequentie de complexe verplaatsing van de constructie en de complexe druk, amplitude, fase en SPL in het fluïdum; microfoons en meetpunten in de log en CSV's |
@@ -32,12 +33,12 @@ constructies: [`Modaal_en_knik.md`](Modaal_en_knik.md).
 ### 1.1 In Mecway: het model
 
 1. **Mesh alleen het fluïdum.** Het lucht- of vloeistofvolume wordt gemesht, niet de
-   wanden eromheen. Volume-elementen: hex8, hex20, wedge6, wedge15, tet4, tet10.
-   Piramides, schalen en balken kunnen niet (Code-Aster heeft er geen akoestisch
+   wanden eromheen. Volume-elementen: hex8, hex20, wedge6, wedge15, tet4, tet10 (A20:
+   vlakke elementen tri3, tri6, quad4, quad8 in het XY-vlak, §3.5). Piramides, schalen en balken kunnen niet (Code-Aster heeft er geen akoestisch
    element voor; ERROR, §4). Een opening naar een grote ruimte (zoals de orgelpijp van
    Mecway's tutorial 17.13) mesh je mee als een stuk van die ruimte.
 2. **Analysetype.** Kies *Acoustic Resonance 3D* en zet *Number of modes*.
-   *Acoustic Resonance 2D* (A20) vertaalt de bridge niet (alleen 3D).
+   Voor een doorsnede: *Acoustic Resonance 2D* (A20, §3.5).
 3. **Materiaal.** *Isotropic* met *Speed of sound* (bijv. 340 m/s voor lucht van
    15 °C, ~1480 m/s voor water). Een dichtheid is niet nodig: de modes hangen er niet
    van af. Mecway rekent akoestiek met één materiaal; de bridge kan ook meer media
@@ -61,7 +62,8 @@ constructies: [`Modaal_en_knik.md`](Modaal_en_knik.md).
 
 ### 1.2 In het hoofdvenster van de bridge
 
-1. **Actieve analyse:** `auto` kiest bij A30 `acoustic_modes_3d`; of kies hem zelf.
+1. **Actieve analyse:** `auto` kiest bij A30 en A20 `acoustic_modes_3d`; of kies hem
+   zelf.
 2. **Resultaten naar Mecway** moet `liml` zijn (pagina Algemeen).
 3. Pagina **Akoestiek (holtemodes)** (alleen aanpassen als dat nodig is):
 
@@ -129,7 +131,8 @@ Mecway 0-Hz-modes willekeurig weglaat).
 `bridge_acoustic.py` maakt de `.comm` (template `AsterTemplate_Akoestiek.comm`);
 syntax volgens de Code-Aster-testcases ahlv100a en adlv101f:
 
-1. `AFFE_MODELE` met `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='3D'` op de volumes.
+1. `AFFE_MODELE` met `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='3D'` op de volumes
+   (A20: `'PLAN'` op de vlakke elementen, §3.5).
 2. `DEFI_MATERIAU(FLUIDE=_F(RHO=ρ, CELE_R=c))` per materiaal (zonder dichtheid ρ = 1
    kg/m³: `RHO` is verplicht in Code-Aster, maar speelt in de modes geen rol, §3.2).
 3. Drukknopen: `AFFE_CHAR_ACOU(PRES_IMPO=_F(GROUP_NO=... of GROUP_MA=..., PRES=0j))`.
@@ -276,11 +279,45 @@ Rekentijd (gemeten): een ruimte van 13 000 knopen (hex20) met 20 modes 14 s.
 
 - Een **frequentieafhankelijke** impedantie (ook Mecway niet, §9.35) en een complexe
   impedantie in de **harmonische** analyse (§5.6).
-- Acoustic Resonance 2D (A20), Mecway's *acoustic displacement* als resultaatveld,
-  media met verschillende dichtheid (§3.2), contact en koppelingen in de akoestiek,
-  piramide-elementen.
+- Mecway's *acoustic displacement* als resultaatveld, media met verschillende
+  dichtheid (§3.2), contact en koppelingen in de akoestiek, piramide-elementen.
+- In 2D (A20): het harmonische drukveld (§5), knopen met Z ≠ 0, balken of volumes in
+  het model (§3.5). Axisymmetrische akoestiek: Mecway heeft dat analysetype niet.
 - Koppeling met een constructie: de gekoppelde modes staan in §6 (vibro-akoestiek).
   Het drukveld bij een excitatiefrequentie (harmonisch) staat in §5.
+
+### 3.5 Acoustic Resonance 2D (A20)
+
+Mecway's *Acoustic Resonance 2D* rekent de modes van een doorsnede (bijv. de orgelpijp
+van Mecway's tutorial 17.13). De bridge vertaalt dat als A30, met vlakke elementen:
+
+1. **Mesh** het lucht- of vloeistofvlak met tri3, tri6, quad4 of quad8 in het XY-vlak,
+   alle knopen met Z = 0 (Code-Aster heeft voor een 2D-mesh Z = 0 nodig; Mecway negeert
+   Z, de bridge stopt). Balken, schalen in een ander vlak of volumes in het model: ERROR.
+2. **Materiaal:** *Isotropic* met *Speed of sound* (en een dichtheid voor een
+   impedantie), als bij A30. Een *Shell/membrane*-dikte is niet nodig en telt niet:
+   gemeten in Mecway 34 geeft 10 mm of geen dikte dezelfde frequenties en hetzelfde
+   drukveld. Het model is per eenheidsdikte: de constante mode heeft p = c/√A (A =
+   oppervlakte).
+3. **Randen** op randen (vlakselectie van de randen) of knopen: een rand zonder
+   voorwaarde is een harde wand, *Fluid pressure* = 0 een drukknoop, *Impedance* geeft
+   complexe modes (§3.3), alles als in 3D.
+4. **Bridge:** `auto` (of `acoustic_modes_3d`), resultaatroute `liml`. Code-Aster:
+   `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` (impedantieranden `PLAN_ABSO`,
+   Code-Aster-testcase ahlv100f); de rest is de A30-route. De 2D-analyse heeft geen
+   harmonisch drukveld (`acoustic_harm_3d`: ERROR, en `auto` houdt bij een
+   `BRON_`-selectie de holtemodes).
+
+Resultaten: gelijk aan Mecway's eigen A20-oplossing (headless, verificatie AK-10 …
+AK-15): quad4 en quad8 tot op 1e-6 relatief (frequenties, decay rates en de
+genormeerde druk), rechthoek 1,0 × 0,7 m met de analytische f_mn = c/2·√((m/a)² +
+(n/b)²) binnen 0,05% (quad8 10 × 7). **Driehoeken** wijken iets af: Code-Aster
+integreert de massa van zijn vlakke akoestische elementen met minder punten dan Mecway
+(tri3 één punt, tri6 drie), dus de bridge ligt hoger: tri6 ≤ 0,003% in frequentie
+(0,02% in de druk), tri3 0,07% (mode 2) tot 0,6% (mode 8) op een mesh van 20 × 14 × 2
+(KNOWN_BUGS 128). Mesh waar het kan met quads (of tri6). Mecway's orgelpijp (497
+elementen, waarvan 48 tri3, 20 modes): de grondtoon van de pijp, mode 4, 64,594 Hz
+(Mecway 64,592 Hz).
 
 ## 4. Meldingen en oplossingen
 
@@ -302,7 +339,9 @@ Rekentijd (gemeten): een ruimte van 13 000 knopen (hex20) met 20 modes 14 s.
 | WARNING: Akoestiek: geen MED-export bij complexe modes | `med_export` aan | normaal: de modes staan in Mecway |
 | WARNING: Akoestiek: #ASTER-EXCIT ... wordt bij complexe modes niet gebruikt | eigen lasten bij een model met impedantie | normaal; drukknopen via *fluid pressure* = 0 |
 | `aster_acoustic_complex: FOUT: ...` in de `.mess`, geen resultaten | bijv. ARPACK convergeert niet, of Q(σ) is singulier | andere zoekfrequentie of minder modes; blijft het: melden (KNOWN_BUGS) |
-| ERROR: Acoustic Resonance 2D (A20) wordt niet vertaald | 2D-model | maak een 3D-model (A30) |
+| ERROR: Mecway-analysetype A20 (Acoustic Resonance 2D) wordt alleen vertaald naar de holtemodes 'acoustic_modes_3d' | een andere analyse gekozen (bijv. de harmonische) | kies `auto` of `acoustic_modes_3d`; harmonisch: een 3D-model (A30) |
+| ERROR: Elset '…' bevat …; in Acoustic Resonance 2D (A20) vertaalt de bridge alleen vlakke elementen | balken, volumes of veren in het A20-model | mesh alleen het luchtvlak met vlakke elementen |
+| ERROR: Een 2D-analyse (A20) heeft alle knopen in het XY-vlak nodig (Z = 0) | mesh niet in het XY-vlak | verplaats het mesh naar Z = 0 |
 | ERROR: 'contact2' / 'nodesurfacecoupling' / 'constraintequation' op ... wordt in een akoestische analyse niet vertaald | koppeling in de akoestiek | gebruik één doorlopend mesh |
 | INFO: Load '...' on '...' does not count in an acoustic analysis | mechanische of thermische belasting in het model | normaal |
 | INFO: Mode 1 is at ~0 Hz: constant pressure | harde wanden zonder drukknoop | normaal (§3.1) |

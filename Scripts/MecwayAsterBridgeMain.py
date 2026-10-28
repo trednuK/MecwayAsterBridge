@@ -38,7 +38,7 @@
 #   bridge_dyna_modal    : build_dyna_modal()                   (D30 with mode
 #                          superposition -> DYNA_VIBRA GENE)
 #   bridge_acoustic      : parse_acoustic() / build_acoustic_modes()
-#                          (A30 cavity modes -> ACOUSTIQUE + CALC_MODES) /
+#                          (A30/A20 cavity modes -> ACOUSTIQUE + CALC_MODES) /
 #                          build_acoustic_harm() (A30 with a source ->
 #                          DYNA_VIBRA HARM, pressure field per frequency)
 #   bridge_vibroacoustic : parse_vibro() / build_vibroacoustic_modes()
