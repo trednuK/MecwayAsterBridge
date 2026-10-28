@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2393 van 2399 controles binnen de tolerantie** (451 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2516 van 2522 controles binnen de tolerantie** (480 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -885,6 +885,24 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4
 | FX-03 | Formules in de tijd op TH-02a: t in min | t in min (t = 10 s) | 0.16667 min | 0.16667 | +0.00% | 0.0001% | OK |
 | FX-03 | Formules in de tijd op TH-02a: t in min | t in min (t = 40 s) | 0.66667 min | 0.66667 | +0.00% | 0.0001% | OK |
 | FX-03 | Formules in de tijd op TH-02a: t in min | (T-300)/t op x = 0 (t = 40 s) | 2.5 K/s | 2.5 | +0.00% | 0.0001% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | principal1u1 | 5.2500e+07 Pa | 5.2503e+07 | +0.01% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | principal1m1 | 1.5000e+07 Pa | 1.5007e+07 | +0.05% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | principal3b1 | -2.2500e+07 Pa | -2.2509e+07 | -0.04% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | trescau1 | 5.2500e+07 Pa | 5.2503e+07 | +0.01% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | trescab1 | 2.2500e+07 Pa | 2.2509e+07 | +0.04% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | principal2u1 | 0 Pa | 21867 | 21867 | 525000 Pa | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | lprincipalstrain1u1 | 2.5000e-04 - | 2.4999e-04 | -0.00% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | lprincipalstrain3u1 | -7.5000e-05 - | -7.4900e-05 | +0.13% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | lprincipalstrain1b1 | 3.2143e-05 - | 3.2072e-05 | -0.22% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | lprincipalstrain3b1 | -1.0714e-04 - | -1.0718e-04 | -0.04% | 1% | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | regel Mecway u: eigenwaarden per elementknoop | 0 rel. | 2.8164e-16 | 2.8164e-16 | 1e-09 rel. | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | regel Mecway m: eigenwaarden per elementknoop | 0 rel. | 2.2794e-17 | 2.2794e-17 | 1e-09 rel. | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | regel Mecway b: eigenwaarden per elementknoop | 0 rel. | 1.9763e-16 | 1.9763e-16 | 1e-09 rel. | OK |
+| FX-04 | Hoofdspanningen en -rekken van schalen boven/midden/onder (S34b): strook LS-31, buiging + trek | regel Mecway u: knoop = gemiddelde | 0 rel. | 7.0411e-17 | 7.0411e-17 | 1e-09 rel. | OK |
+| FX-05 | Green-Lagrange-hoofdrek en formules GLe1, e1, e.xx bij 5% rek (L30, S34b) | greenlagrangeprincipalstrain1 | 0.05125 - | 0.05125 | +0.00% | 0.01% | OK |
+| FX-05 | Green-Lagrange-hoofdrek en formules GLe1, e1, e.xx bij 5% rek (L30, S34b) | formule GLe1 | 0.05125 - | 0.05125 | +0.00% | 0.01% | OK |
+| FX-05 | Green-Lagrange-hoofdrek en formules GLe1, e1, e.xx bij 5% rek (L30, S34b) | formule e1 (Mecway: GLe1) | 0.05125 - | 0.05125 | +0.00% | 0.01% | OK |
+| FX-05 | Green-Lagrange-hoofdrek en formules GLe1, e1, e.xx bij 5% rek (L30, S34b) | formule e.xx (Mecway: GLe.xx) | 0.05125 - | 0.05125 | +0.00% | 0.01% | OK |
 
 ## Harmonische respons
 
@@ -1347,6 +1365,9 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4
 | LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip rotx t.o.v. Mecway | 0 rad | 0 | 0 | 1.09375e-05 rad | OK |
 | LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip roty t.o.v. Mecway | -0.063616 rad | -0.063616 | +0.00% | 1.09375e-05 rad | OK |
 | LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip rotz t.o.v. Mecway | 0.10937 rad | 0.10937 | -0.00% | 1.09375e-05 rad | OK |
+| LS-83 | Ronde plaat onder druk, oplegging als MO-09 | w midden | 5.0781e-04 m | 5.0774e-04 | -0.01% | 1% | OK |
+| LS-83 | Ronde plaat onder druk, oplegging als MO-09 | reactie Z | 7.854 N | 7.854 | -0.00% | 0.5% | OK |
+| LS-83 | Ronde plaat onder druk, oplegging als MO-09 | w midden t.o.v. Mecway | 5.0784e-04 m | 5.0774e-04 | -0.02% | 0.5% | OK |
 | LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist at the tip | 0.022261 rad | 0.02224 | -0.09% | 0.5% | OK |
 | LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist vs free warping (ratio) | 0.84745 - | 0.84667 | -0.09% | 0.5% | OK |
 | LS-90b | Torsion, I cantilever, warping free (POU_D_TG, beam_warping free) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.01% | OK |
@@ -1501,6 +1522,21 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4
 | MO-07 | Ingeklemde balk hex20: rotatiemassa en spanningen per mode | eff. massa RY mode 2 t.o.v. Mecway | 0.97051  | 0.97051 | -0.00% | 0.5% | OK |
 | MO-08 | NAFEMS CP5: twee line3-truss-elementen, 2 modes | f1 | 451.1 Hz | 451.15 | +0.01% | 0.2% | OK |
 | MO-08 | NAFEMS CP5: twee line3-truss-elementen, 2 modes | f2 | 1049.9 Hz | 1049.9 | +0.00% | 0.2% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f1 (mode 1) | 10.179 Hz | 10.18 | +0.01% | 0.5% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f1 t.o.v. Mecway | 10.179 Hz | 10.18 | +0.01% | 0.3% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f2 (mode 2) | 21.184 Hz | 21.195 | +0.05% | 0.5% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f2 t.o.v. Mecway | 21.185 Hz | 21.195 | +0.05% | 0.3% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f3 (mode 4) | 34.752 Hz | 34.791 | +0.11% | 0.5% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f3 t.o.v. Mecway | 34.76 Hz | 34.791 | +0.09% | 0.3% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f4 (mode 6) | 39.629 Hz | 39.643 | +0.04% | 0.5% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f4 t.o.v. Mecway | 39.639 Hz | 39.643 | +0.01% | 0.3% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f5 (mode 7) | 50.847 Hz | 50.969 | +0.24% | 0.5% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f5 t.o.v. Mecway | 50.879 Hz | 50.969 | +0.18% | 0.3% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f6 (mode 9) | 60.611 Hz | 60.676 | +0.11% | 0.5% | OK |
+| MO-09 | Ronde plaat ingeklemd via frictionless + displacement op de rand (issue #9) | f6 t.o.v. Mecway | 60.65 Hz | 60.676 | +0.04% | 0.3% | OK |
+| MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f1 (star) | 0 Hz | -6.4486e-04 | -6.4486e-04 | 0.5 Hz | OK |
+| MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f6 (star) | 0 Hz | 9.5714e-04 | 9.5714e-04 | 0.5 Hz | OK |
+| MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f7 | 415.35 Hz | 409.78 | -1.34% | 3% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |
@@ -1996,6 +2032,103 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4
 *NL-51: diagnose OK; ELEMENTS_50*
 
 *NL-51b: diagnose OK; ELEMENTS_50*
+
+## 2D en axisymmetrisch
+
+| ID | Test | Grootheid | Referentie | FEM | Afwijking | Tolerantie | Status |
+|---|---|---|---|---|---|---|---|
+| PL-01-n1 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 1 | Kt_n | 2.519  | 1.8217 | -27.68% | 30% | OK |
+| PL-01-n1 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 1 | som R_x symmetrie x=0 | -5000 N | -5000 | -0.00% | 0.0001% | OK |
+| PL-01-n16 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 16 | Kt_n | 2.519  | 2.4991 | -0.79% | 2% | OK |
+| PL-01-n16 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 16 | som R_x symmetrie x=0 | -5000 N | -5000 | +0.00% | 0.0001% | OK |
+| PL-01-n16 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 16 | u_y(0, r) = Mecway | -5.3937e-06 m | -5.3937e-06 | -0.00% | 0.0001% | OK |
+| PL-01-n16 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 16 | u_x(L/2, 0) = Mecway | 7.3774e-05 m | 7.3774e-05 | +0.00% | 0.0001% | OK |
+| PL-01-n2 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 2 | Kt_n | 2.519  | 2.1436 | -14.90% | 16% | OK |
+| PL-01-n2 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 2 | som R_x symmetrie x=0 | -5000 N | -5000 | -0.00% | 0.0001% | OK |
+| PL-01-n4 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 4 | Kt_n | 2.519  | 2.3486 | -6.77% | 8% | OK |
+| PL-01-n4 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 4 | som R_x symmetrie x=0 | -5000 N | -5000 | -0.00% | 0.0001% | OK |
+| PL-01-n8 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 8 | Kt_n | 2.519  | 2.4531 | -2.62% | 3% | OK |
+| PL-01-n8 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 8 | som R_x symmetrie x=0 | -5000 N | -5000 | -0.00% | 0.0001% | OK |
+| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | Kt_n | 2.519  | 2.5 | -0.75% | 2% | OK |
+| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | sigma_zz / nu (sxx + syy) bij het gat | 1  | 1 | -0.00% | 0.0001% | OK |
+| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | som R_x symmetrie x=0 | -5000 N | -5000 | +0.00% | 0.0001% | OK |
+| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | u_y(0, r) = Mecway | -4.9083e-06 m | -4.9083e-06 | -0.00% | 0.0001% | OK |
+| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | u_x(L/2, 0) = Mecway | 6.7135e-05 m | 6.7135e-05 | -0.00% | 0.0001% | OK |
+| PL-03-n1 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 1x2 | u_r binnenwand | 9.0794e-05 m | 9.0257e-05 | -0.59% | 50% | OK |
+| PL-03-n1 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 1x2 | sigma_theta binnenwand | 1.6667e+08 Pa | 1.6684e+08 | +0.10% | 4% | OK |
+| PL-03-n1 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 1x2 | sigma_zz binnenwand | 2.0000e+07 Pa | 2.3501e+07 | +17.50% | 50% | OK |
+| PL-03-n2 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 2x4 | u_r binnenwand | 9.0794e-05 m | 9.0740e-05 | -0.06% | 6.4% | OK |
+| PL-03-n2 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 2x4 | sigma_theta binnenwand | 1.6667e+08 Pa | 1.6564e+08 | -0.62% | 2% | OK |
+| PL-03-n2 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 2x4 | sigma_zz binnenwand | 2.0000e+07 Pa | 2.1203e+07 | +6.01% | 16% | OK |
+| PL-03-n4 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 4x8 | u_r binnenwand | 9.0794e-05 m | 9.0790e-05 | -0.00% | 0.8% | OK |
+| PL-03-n4 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 4x8 | sigma_theta binnenwand | 1.6667e+08 Pa | 1.6590e+08 | -0.46% | 1% | OK |
+| PL-03-n4 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 4x8 | sigma_zz binnenwand | 2.0000e+07 Pa | 2.0331e+07 | +1.66% | 4% | OK |
+| PL-03-n8 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 8x16 | u_r binnenwand | 9.0794e-05 m | 9.0793e-05 | -0.00% | 0.1% | OK |
+| PL-03-n8 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 8x16 | sigma_theta binnenwand | 1.6667e+08 Pa | 1.6636e+08 | -0.18% | 0.5% | OK |
+| PL-03-n8 | Dikwandige cilinder, vlakke rek (D_PLAN), quad8 8x16 | sigma_zz binnenwand | 2.0000e+07 Pa | 2.0083e+07 | +0.42% | 1% | OK |
+| PL-04-n1 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 1x1 | u_r binnenwand | 9.0794e-05 m | 9.0069e-05 | -0.80% | 50% | OK |
+| PL-04-n1 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 1x1 | sigma_theta binnenwand (stresszz) | 1.6667e+08 Pa | 1.5107e+08 | -9.36% | 13.5765% | OK |
+| PL-04-n1 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 1x1 | sigma_r binnenwand (stressxx) | -1.0000e+08 Pa | -7.2271e+07 | +27.73% | 50% | OK |
+| PL-04-n1 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 1x1 | sigma_z binnenwand (stressyy) | 2.0000e+07 Pa | 2.3639e+07 | +18.19% | 50% | OK |
+| PL-04-n1 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 1x1 | som R_y boven (360 graden) | 1.8850e+06 N | 1.8850e+06 | -0.00% | 0.0001% | OK |
+| PL-04-n2 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 2x1 | u_r binnenwand | 9.0794e-05 m | 9.0718e-05 | -0.08% | 6.4% | OK |
+| PL-04-n2 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 2x1 | sigma_theta binnenwand (stresszz) | 1.6667e+08 Pa | 1.6026e+08 | -3.84% | 4.8% | OK |
+| PL-04-n2 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 2x1 | sigma_r binnenwand (stressxx) | -1.0000e+08 Pa | -8.9469e+07 | +10.53% | 19.2% | OK |
+| PL-04-n2 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 2x1 | sigma_z binnenwand (stressyy) | 2.0000e+07 Pa | 2.1237e+07 | +6.19% | 16% | OK |
+| PL-04-n2 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 2x1 | som R_y boven (360 graden) | 1.8850e+06 N | 1.8850e+06 | -0.00% | 0.0001% | OK |
+| PL-04-n4 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 4x1 | u_r binnenwand | 9.0794e-05 m | 9.0788e-05 | -0.01% | 0.8% | OK |
+| PL-04-n4 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 4x1 | sigma_theta binnenwand (stresszz) | 1.6667e+08 Pa | 1.6442e+08 | -1.35% | 1.69706% | OK |
+| PL-04-n4 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 4x1 | sigma_r binnenwand (stressxx) | -1.0000e+08 Pa | -9.6630e+07 | +3.37% | 4.8% | OK |
+| PL-04-n4 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 4x1 | sigma_z binnenwand (stressyy) | 2.0000e+07 Pa | 2.0337e+07 | +1.69% | 4% | OK |
+| PL-04-n4 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 4x1 | som R_y boven (360 graden) | 1.8850e+06 N | 1.8850e+06 | +0.00% | 0.0001% | OK |
+| PL-04-n8 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 8x1 | u_r binnenwand | 9.0794e-05 m | 9.0793e-05 | -0.00% | 0.1% | OK |
+| PL-04-n8 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 8x1 | sigma_theta binnenwand (stresszz) | 1.6667e+08 Pa | 1.6598e+08 | -0.41% | 0.6% | OK |
+| PL-04-n8 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 8x1 | sigma_r binnenwand (stressxx) | -1.0000e+08 Pa | -9.9034e+07 | +0.97% | 1.2% | OK |
+| PL-04-n8 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 8x1 | sigma_z binnenwand (stressyy) | 2.0000e+07 Pa | 2.0084e+07 | +0.42% | 1% | OK |
+| PL-04-n8 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 8x1 | som R_y boven (360 graden) | 1.8850e+06 N | 1.8850e+06 | +0.00% | 0.0001% | OK |
+| PL-04-n8 | Dikwandige cilinder, axisymmetrisch (AXIS), quad8 8x1 | u_r binnenwand = Mecway | 9.0793e-05 m | 9.0793e-05 | -0.00% | 0.0001% | OK |
+| PL-05 | Belastingtypen vlakke spanning (C_PLAN): knoopkracht, kracht op rand, traction, zwaartekracht | som R_x links | -501.53 N | -501.53 | +0.00% | 0.0001% | OK |
+| PL-05 | Belastingtypen vlakke spanning (C_PLAN): knoopkracht, kracht op rand, traction, zwaartekracht | principal1 (L/2, H/2) | 2.5038e+06 Pa | 2.5040e+06 | +0.01% | 0.5% | OK |
+| PL-05 | Belastingtypen vlakke spanning (C_PLAN): knoopkracht, kracht op rand, traction, zwaartekracht | massa (BRIDGE_STATCHECK) | 0.156 kg | 0.156 | +0.00% | 0.0001% | OK |
+| PL-05 | Belastingtypen vlakke spanning (C_PLAN): knoopkracht, kracht op rand, traction, zwaartekracht | tresca - (principal1 - principal3) | 0 Pa | -4.6566e-10 | -4.6566e-10 | 0.001 Pa | OK |
+| PL-05 | Belastingtypen vlakke spanning (C_PLAN): knoopkracht, kracht op rand, traction, zwaartekracht | u_x(L, H/2) = Mecway | 1.1882e-06 m | 1.1882e-06 | +0.00% | 0.0001% | OK |
+| PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | som R_y onder (360 graden) | -3144.2 N | -3144.2 | +0.00% | 0.0001% | OK |
+| PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | massa (BRIDGE_STATCHECK) | 14.703 kg | 14.703 | -0.00% | 0.0001% | OK |
+| PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | u_r(b, h) = Mecway | 2.4211e-06 m | 2.4211e-06 | +0.00% | 0.0001% | OK |
+| PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | u_y(a, h) = Mecway | -1.4964e-07 m | -1.4964e-07 | +0.00% | 0.0001% | OK |
+| PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | periode tip | 7.7090e-04 s | 7.7042e-04 | -0.06% | 1% | OK |
+| PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | gemiddelde u_x tip | 4.7619e-05 m | 4.7620e-05 | +0.00% | 1% | OK |
+| PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | verloop = Mecway | 0 - | 3.2101e-08 | 3.2101e-08 | 1e-06 - | OK |
+| PL-11 | Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping | u_r binnenwand na uitdempen | 9.0794e-05 m | 9.0748e-05 | -0.05% | 0.2% | OK |
+| PL-11 | Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping | verloop = Mecway | 0 - | 3.0769e-08 | 3.0769e-08 | 1e-06 - | OK |
+| PL-12 | Console vlakke spanning (D20), kracht als tijdtabel | verloop = Mecway | 0 - | 1.6215e-08 | 1.6215e-08 | 1e-06 - | OK |
+
+## Boutvoorspanning
+
+| ID | Test | Grootheid | Referentie | FEM | Afwijking | Tolerantie | Status |
+|---|---|---|---|---|---|---|---|
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | stressyy | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | reactie onder | 10000 N | 10000 | -0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | disply y = 20 mm | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | disply y = 80 mm | -1.0000e-05 m | -1.0000e-05 | +0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | stressyy = Mecway | 9.9996e+07 Pa | 1.0000e+08 | +0.00% | 0.1% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | stressyy | 2.0000e+07 Pa | 2.0000e+07 | -0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | reactie onder | 2000 N | 2000 | -0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | disply y = 20 mm | 2.0000e-06 m | 2.0000e-06 | -0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | disply y = 80 mm | -2.0000e-06 m | -2.0000e-06 | +0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | stressyy = Mecway | 1.9999e+07 Pa | 2.0000e+07 | +0.00% | 0.1% | OK |
+| PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | boutkracht | 1533.3 N | 1531.8 | -0.10% | 0.2% | OK |
+| PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | klemkracht huls | 933.33 N | 933.13 | -0.02% | 0.2% | OK |
+| PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | boutkracht = Mecway | 1531.7 N | 1531.8 | +0.01% | 0.1% | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | boutkracht t = 0,5 | 1000 N | 1000 | -0.00% | 0.2% | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | boutkracht t = 1 | 1000 N | 1000 | -0.00% | 0.2% | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | klemkracht huls t = 1 | -200 N | -199.54 | +0.23% | 2 N | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | boutkracht t = 1 = Mecway | 999.93 N | 1000 | +0.01% | 0.1% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | stressyy | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | reactie onder | 10000 N | 10000 | -0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | disply y = 20 mm | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | disply y = 80 mm | -1.0000e-05 m | -1.0000e-05 | +0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | stressyy = Mecway | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.1% | OK |
 
 ## Responsspectrum
 
@@ -2891,6 +3024,95 @@ Richardson (laatste drie meshes): orde p = 1.91, limiet 273.19 (+0.004% t.o.v. d
 | MO-03-dkt-k16 | 0.0125 | 1617 | 306.96 | 0.117% | 1.98 |
 
 Richardson (laatste drie meshes): orde p = 1.92, limiet 307.34 (+0.007% t.o.v. de referentie).
+
+**PL-01 quad8 – Kt_n**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-01-n1 | 0.003927 | 53 | 1.8217 | 27.684% |  |
+| PL-01-n2 | 0.0019635 | 177 | 2.1436 | 14.902% | 0.89 |
+| PL-01-n4 | 9.8175e-04 | 641 | 2.3486 | 6.765% | 1.14 |
+| PL-01-n8 | 4.9087e-04 | 2433 | 2.4531 | 2.616% | 1.37 |
+| PL-01-n16 | 2.4544e-04 | 9473 | 2.4991 | 0.793% | 1.72 |
+
+Richardson (laatste drie meshes): orde p = 1.19, limiet 2.5351 (+0.636% t.o.v. de referentie).
+
+**PL-03 quad8 – u_r binnenwand**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-03-n1 | 0.1 | 13 | 9.0257e-05 | 0.591% |  |
+| PL-03-n2 | 0.05 | 37 | 9.0740e-05 | 0.059% | 3.33 |
+| PL-03-n4 | 0.025 | 121 | 9.0790e-05 | 0.004% | 3.79 |
+| PL-03-n8 | 0.0125 | 433 | 9.0793e-05 | 0.000% | 3.99 |
+
+Richardson (laatste drie meshes): orde p = 3.78, limiet 9.0794e-05 (+0.000% t.o.v. de referentie).
+
+**PL-03 quad8 – sigma_theta binnenwand**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-03-n1 | 0.1 | 13 | 1.6684e+08 | 0.103% |  |
+| PL-03-n2 | 0.05 | 37 | 1.6564e+08 | 0.616% | -2.58 |
+| PL-03-n4 | 0.025 | 121 | 1.6590e+08 | 0.460% | 0.42 |
+| PL-03-n8 | 0.0125 | 433 | 1.6636e+08 | 0.183% | 1.33 |
+
+Richardson (laatste drie meshes): orde p = -0.83, limiet 1.6530e+08 (-0.818% t.o.v. de referentie).
+
+**PL-03 quad8 – sigma_zz binnenwand**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-03-n1 | 0.1 | 13 | 2.3501e+07 | 17.505% |  |
+| PL-03-n2 | 0.05 | 37 | 2.1203e+07 | 6.013% | 1.54 |
+| PL-03-n4 | 0.025 | 121 | 2.0331e+07 | 1.656% | 1.86 |
+| PL-03-n8 | 0.0125 | 433 | 2.0083e+07 | 0.415% | 2.00 |
+
+Richardson (laatste drie meshes): orde p = 1.81, limiet 1.9984e+07 (-0.078% t.o.v. de referentie).
+
+**PL-04 quad8 – u_r binnenwand**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-04-n1 | 0.1 | 8 | 9.0069e-05 | 0.798% |  |
+| PL-04-n2 | 0.05 | 13 | 9.0718e-05 | 0.083% | 3.27 |
+| PL-04-n4 | 0.025 | 23 | 9.0788e-05 | 0.006% | 3.72 |
+| PL-04-n8 | 0.0125 | 43 | 9.0793e-05 | 0.000% | 3.92 |
+
+Richardson (laatste drie meshes): orde p = 3.71, limiet 9.0794e-05 (+0.000% t.o.v. de referentie).
+
+**PL-04 quad8 – sigma_theta binnenwand (stresszz)**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-04-n1 | 0.1 | 8 | 1.5107e+08 | 9.360% |  |
+| PL-04-n2 | 0.05 | 13 | 1.6026e+08 | 3.844% | 1.28 |
+| PL-04-n4 | 0.025 | 23 | 1.6442e+08 | 1.348% | 1.51 |
+| PL-04-n8 | 0.0125 | 43 | 1.6598e+08 | 0.412% | 1.71 |
+
+Richardson (laatste drie meshes): orde p = 1.41, limiet 1.6692e+08 (+0.150% t.o.v. de referentie).
+
+**PL-04 quad8 – sigma_r binnenwand (stressxx)**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-04-n1 | 0.1 | 8 | -7.2271e+07 | 27.729% |  |
+| PL-04-n2 | 0.05 | 13 | -8.9469e+07 | 10.531% | 1.40 |
+| PL-04-n4 | 0.025 | 23 | -9.6630e+07 | 3.370% | 1.64 |
+| PL-04-n8 | 0.0125 | 43 | -9.9034e+07 | 0.966% | 1.80 |
+
+Richardson (laatste drie meshes): orde p = 1.57, limiet -1.0025e+08 (-0.249% t.o.v. de referentie).
+
+**PL-04 quad8 – sigma_z binnenwand (stressyy)**
+
+| ID | h | knopen | FEM | fout | orde p |
+|---|---|---|---|---|---|
+| PL-04-n1 | 0.1 | 8 | 2.3639e+07 | 18.193% |  |
+| PL-04-n2 | 0.05 | 13 | 2.1237e+07 | 6.187% | 1.56 |
+| PL-04-n4 | 0.025 | 23 | 2.0337e+07 | 1.685% | 1.88 |
+| PL-04-n8 | 0.0125 | 43 | 2.0084e+07 | 0.420% | 2.01 |
+
+Richardson (laatste drie meshes): orde p = 1.83, limiet 1.9985e+07 (-0.075% t.o.v. de referentie).
 
 **TH-02 tijdstap (theta 0,5) – T-Ti x=4 mm t=10 s**
 
