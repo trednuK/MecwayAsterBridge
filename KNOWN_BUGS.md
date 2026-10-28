@@ -1180,6 +1180,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).
 
+130\. **Orthotropic and anisotropic material: limits** (confirmed, `bridge_orthotropic.py`,
+   STAPPENPLAN S13a). Translated: *Orthotropic*, *Stiffness matrix* and *Compliance matrix*
+   on solid elements in Linear static (`ELAS_ORTH` + `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`,
+   [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..06). Not:
+   a matrix with coupling terms (normal-shear or shear-shear, truly anisotropic): ERROR,
+   because `DEFI_MATERIAU` has no general anisotropic elasticity for solids (catalogue
+   v17.4: only `ELAS_ORTH`/`ELAS_ISTR`; permanent unless via MFront, which the Windows
+   build lacks); orthotropic material and *Composite* on shells/membranes (ERROR, step
+   S13b); other analyses than linear static (ERROR, step S13c), orthotropic thermal
+   conductivity; the result field *stress in element coordinates* (`stressuu` ..) (step
+   S13d).
+
 ## Start screen and windows
 
 129\. **Header and footer buttons do not scale with the Windows display scale** (confirmed,

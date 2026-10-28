@@ -27,6 +27,7 @@ Verwante documenten:
 | Adaptieve verfijning: de mesh in Mecway verfijnen waar de fout groot is (lineair statisch) | [`Foutschatter.md`](Foutschatter.md) §6 |
 | Bezwijken van elementen | [`Bezwijken.md`](Bezwijken.md) |
 | Boutvoorspanning (*Pre-tension section*) | [`Boutvoorspanning.md`](Boutvoorspanning.md) |
+| Orthotroop en anisotroop materiaal | [`Orthotroop_materiaal.md`](Orthotroop_materiaal.md) |
 | Vermoeiing: schade en levensduur per knoop (Wöhler-curve, rainflow, Miner, kritiekvlakcriteria, Manson-Coffin; `#ASTER-WOHLER`) | [`Vermoeiing.md`](Vermoeiing.md) |
 | Eigen Code-Aster-invoer (`#ASTER`-regels) | [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) |
 | Meldingen van Code-Aster, oorzaak en oplossing | [`Foutmeldingen_CodeAster.md`](Foutmeldingen_CodeAster.md) |

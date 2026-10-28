@@ -1,0 +1,108 @@
+# Orthotropic and anisotropic material
+
+*Nederlandse versie: [Orthotroop_materiaal.md](../Orthotroop_materiaal.md)*
+
+Mecway's materials *Orthotropic*, *Stiffness matrix* and *Compliance matrix* (manual v34
+§8.5) have different properties in the directions U, V and W of the element axes. The
+bridge translates them on **solid elements** (hex, wedge, tet, pyramid, linear or
+quadratic) in **Linear static** (S30, `lin_static_3d`) to Code-Aster's orthotropic
+elasticity `ELAS_ORTH`, with Mecway's *Element orientation* as the direction of the
+material axes. Shells, other analyses and a fully anisotropic matrix are not possible yet
+(§6).
+
+## 1. Usage
+
+1. Material > *Mechanical* > *Orthotropic*: Young's moduli in 1 (U), 2 (V) and 3 (W),
+   Poisson's ratios 12, 23, 31, shear moduli 12 (UV), 23 (VW), 31 (WU) and, for thermal
+   stress, three expansion coefficients. Or *Stiffness matrix* / *Compliance matrix*
+   (6 × 6, the order 1..6 = UU, VV, WW, UV, VW, WU).
+2. The material axes are the element axes U, V, W. For solids they are the global X, Y,
+   Z by default. To turn them: *Element properties* (per element) or *Loads and
+   constraints* > *Element orientation* on an element selection: the direction of
+   **U** and a vector for **V**, optionally an extra rotation about U (*angle*). The
+   orientation may be a formula of the element centre (x, y, z).
+3. Choose *Static 3D* and start the bridge as usual.
+
+![Material axes U, V, W from the element orientation](../img/orthotropic_axes.svg)
+
+1. Default (no orientation): U, V, W = global X, Y, Z.
+2. U: the given vector (normalised).
+3. The given V vector does not have to be perpendicular to U.
+4. V: the projection of the given vector on the plane perpendicular to U.
+5. W = U × V (right-handed).
+6. *Angle*: V and W turn about U by this angle.
+
+## 2. Poisson's ratios and matrices
+
+Mecway uses the **major** Poisson's ratio: ν12 = −ε2/ε1 under a stress in direction 1,
+ν23 = −ε3/ε2 under a stress in 2, and ν31 = −ε1/ε3 under a stress in 3 (manual §8.5).
+Code-Aster's `NU_LT`, `NU_LN`, `NU_TN` are major ratios in the order L→T, L→N, T→N, so the
+bridge writes `NU_LT` = ν12, `NU_TN` = ν23 and `NU_LN` = ν31 · E1 / E3 (the same compliance
+term). With E1 = 100 GPa, E3 = 10 GPa and ν31 = 0.05: `NU_LN` = 0.5. That is not an error:
+check with ν31/E3 = `NU_LN`/E1.
+
+A *Stiffness matrix* or *Compliance matrix* is translated when it is **orthotropic in the
+element axes**: all terms that couple a normal strain with a shear strain, or two shear
+strains, are zero (c14 … c16, c24 … c26, c34 … c36, c45, c46, c56). The bridge then derives
+the nine engineering constants from it. Code-Aster has no general anisotropic elasticity
+for solid elements (`DEFI_MATERIAU` only has `ELAS_ORTH` and `ELAS_ISTR` there), so a
+matrix with coupling terms gives an ERROR (§5). Shear terms are engineering shear strains
+(γ = 2ε), as in Mecway. Compliance in m²/N (or mm²/N), stiffness in a pressure unit.
+
+## 3. How the bridge translates
+
+| Mecway | Code-Aster |
+|---|---|
+| *Orthotropic* E, ν, G, α in U, V, W | `DEFI_MATERIAU` `ELAS_ORTH` `E_L`, `E_T`, `E_N`, `NU_LT`, `NU_LN`, `NU_TN`, `G_LT`, `G_LN`, `G_TN`, `RHO`, with thermal stress `ALPHA_L/T/N` (L, T, N = U, V, W) |
+| *Stiffness matrix* / *Compliance matrix* (orthotropic) | the same `ELAS_ORTH` (constants from the inverse of the normal block and the shear diagonal); no thermal expansion (Mecway has none for these types either) |
+| element axes U, V, W (attributes, card, default) | `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP` = (α, β, γ) nautical angles, per group `BRORI<n>` of elements with the same axes |
+
+Elements with the same axes share one group: an orientation that is the same for a whole
+component gives one `MASSIF` line, a formula per element gives as many groups as there
+are different orientations (WARNING above 1000). An element with both a card and
+attributes uses the card (Mecway does not solve such a model).
+
+## 4. Results in Mecway
+
+Stresses and strains come back in the **global** axes X, Y, Z (`stressxx` …), as Mecway
+shows them. Mecway's field *stress in element coordinates* (`stressuu` …) is not written by
+the bridge.
+
+## 5. Messages and solutions
+
+| Message | Cause | Solution |
+|---|---|---|
+| ERROR: Material '...' (StiffnessMatrix): the matrix couples normal and shear strains ... (terms c14 ... not zero) | a fully anisotropic matrix | Code-Aster cannot do this for solids; if the material is orthotropic in other axes, enter it in those axes and turn the element orientation |
+| ERROR: Material '...' (Orthotropic): the constants do not give a positive definite stiffness | a modulus ≤ 0, or Poisson's ratios too large (e.g. the minor ratio entered as major) | check ν12² < E1/E2 etc.; Mecway does not solve this either |
+| ERROR: Orthotropic/anisotropic material on shells, membranes or beams | the material on 2D or 1D elements | use an isotropic material there (shells: STAPPENPLAN S13b) |
+| ERROR: Orthotropic/anisotropic material (elset ...) is currently translated in Linear static only | another analysis (modal, buckling, nonlinear, dynamics, ...) | use Static 3D (other analyses: STAPPENPLAN S13c) |
+| WARNING: Element orientation of ... solid element(s): U and V are parallel | the V vector lies along U | give a V vector that is not parallel to U |
+
+## 6. What is not possible
+
+See also KNOWN_BUGS 130.
+
+- A matrix with coupling terms (truly anisotropic, 21 constants): not in Code-Aster for
+  solids.
+- Orthotropic material and *Composite* on shells and membranes (STAPPENPLAN S13b).
+- Other analyses than Linear static (STAPPENPLAN S13c), and orthotropic thermal
+  conductivity in thermal analyses.
+- The result field *stress in element coordinates*.
+
+## 7. Test models
+
+OR-01 .. OR-06 in [`Verification.md`](Verification.md): a cube in uniaxial tension with
+turned material axes (element attributes, a card with an angle, the stiffness and the
+compliance matrix): all six global strains equal to Hooke's law in U, V, W turned to X, Y, Z
+and to Mecway 34's own solve; a cantilever with E1 and with E2 along the beam (Timoshenko).
+
+## 8. Sources
+
+- Mecway manual v34 §7.4.2 (element axes, projection of the vector), §8.5 (orthotropic and
+  anisotropic materials, major Poisson's ratio, material axes = element axes, for solids
+  global by default); attribute names from `mecway.exe` (`youngsmodulusu` … `shearmoduluswu`,
+  `thermalexpansionu/v/w`, `c11` … `c66`, `s11` … `s66`); semantics measured with headless
+  Mecway 34 solves (cubes under an imposed homogeneous strain, 28 Oct 2026).
+- Code-Aster 17.4: catalogue `defi_materiau.py` (`ELAS_ORTH`, `ELAS_ISTR`; no general 3D
+  anisotropy), U4.43.01 (`ELAS_ORTH`); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`), U4.42.01;
+  nautical angles as in `code_aster/MacroCommands/observation_ops.py` (`anglnaut`).
