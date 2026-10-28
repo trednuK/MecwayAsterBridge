@@ -6,7 +6,8 @@
 # bridge_orthotropic.py
 #
 # Responsibility: Mecway's Orthotropic, Stiffness matrix and Compliance
-# matrix materials on solid elements -> DEFI_MATERIAU ELAS_ORTH, with the
+# matrix materials on solid elements (linear static, modal, buckling) ->
+# DEFI_MATERIAU ELAS_ORTH, with the
 # material axes U, V, W of Mecway's element orientation as AFFE_CARA_ELEM
 # MASSIF ANGL_REP per group of elements with the same orientation
 # (STAPPENPLAN S13a).
@@ -425,14 +426,28 @@ def massif_entries(model_data):
 # ------------------------------------------------------------------
 # Scope
 # ------------------------------------------------------------------
-# Analyses (solver_command) in which ELAS_ORTH with MASSIF is verified.
-_SUPPORTED = ("MECA_STATIQUE",)
+# Analyses in which ELAS_ORTH with MASSIF is verified: linear static
+# (OR-01 .. OR-06, OR-09), modal and linear buckling (CALC_MODES with
+# TYPE_RESU DYNAMIQUE / MODE_FLAMB of the structure: OR-07, OR-08, OR-10).
+
+
+def _supported(analysis):
+    """True for linear static, modal and buckling of the structure (not the
+    acoustic or vibro-acoustic CALC_MODES variants)."""
+    cmd = analysis.get("solver_command")
+    if cmd == "MECA_STATIQUE":
+        return True
+    return (cmd == "CALC_MODES" and not analysis.get("phenomene") and
+            not analysis.get("vibroacoustic") and
+            analysis.get("type_resu", "DYNAMIQUE") in ("DYNAMIQUE",
+                                                       "MODE_FLAMB"))
 
 
 def check(model_data, analysis):
     """ERROR (False) for an orthotropic/anisotropic material outside the
-    verified scope: other element types than solids, other analyses than
-    linear static (STAPPENPLAN S13b..). True without such materials."""
+    verified scope: other element types than solids (STAPPENPLAN S13b),
+    other analyses than linear static, modal and buckling (S13c). True
+    without such materials."""
     mats = model_data.get("materials", {})
     elsets = model_data.get("elsets", {})
     ortho_sets = sorted(e for e, m in elsets.items()
@@ -462,13 +477,14 @@ def check(model_data, analysis):
                u"(solid elements only, STAPPENPLAN S13b). Use an isotropic "
                u"material on these elements.").format(", ".join(not_solid)))
         ok = False
-    if solver_cmd not in _SUPPORTED:
+    if not _supported(analysis):
         log(tr(u"ERROR: Orthotroop/anisotroop materiaal (elset {0}) wordt "
-               u"nu alleen in Lineair statisch vertaald (Mecway Static 3D); "
-               u"andere analyses volgen (STAPPENPLAN S13c).",
+               u"nu alleen in Lineair statisch, Modaal en Knik vertaald "
+               u"(Mecway Static 3D, Frequency, Buckling); andere analyses "
+               u"volgen (STAPPENPLAN S13c).",
                u"ERROR: Orthotropic/anisotropic material (elset {0}) is "
-               u"currently translated in Linear static only (Mecway "
-               u"Static 3D); other analyses follow (STAPPENPLAN "
-               u"S13c).").format(names))
+               u"currently translated in Linear static, Modal and Buckling "
+               u"only (Mecway Static 3D, Frequency, Buckling); other "
+               u"analyses follow (STAPPENPLAN S13c).").format(names))
         ok = False
     return ok

@@ -234,6 +234,10 @@ MW = {
               0.00051961524],
     "OR-05": 0.0032424784,
     "OR-06": 0.016041192,
+    # frequencies [Hz] / buckling factors of modes 1 and 2
+    "OR-07": [326.210878556784, 327.280261795346],
+    "OR-08": [147.085465297327, 147.286417988539],
+    "OR-10": [1.02521700031098, 1.02671098794744],
 }
 
 
@@ -457,3 +461,50 @@ def _modal_checks(e, mw):
                          unit="Hz", source="Mecway 34 headless (internal "
                          "solver)", in_series=False))
     return out
+
+
+# ------------------------------------------------------------------
+# OR-10: the cantilever of OR-06 (E_V = 20 GPa along the beam) as a column
+# in Buckling (B30), 1000 N compression on the end face: Euler
+# Pcr = pi^2 E I / (4 L^2) = 1028 N; shear lowers it slightly (tolerance
+# 2%); the second reference is Mecway 34 headless.
+# ------------------------------------------------------------------
+PC = 1000.0
+
+
+def build_or10():
+    m = _cantilever('orientationux="0" orientationuy="1" orientationuz="0" '
+                    'orientationvx="-1" orientationvy="0" orientationvz="0"')
+    m.analysis = "B30"
+    m.attrs = {"maxmode": 2, "shift": 1}
+    m.items = [i for i in m.items if "traction" not in i]
+    m.add('<force selection="Eindvlak"><x>-%r N</x><y>0 N</y><z>0 N</z>'
+          '</force>' % PC)
+    return m
+
+
+def _buckling_checks(mw):
+    pcr = math.pi ** 2 * EV * IB / (4 * LB ** 2)
+    out = [Check("knikfactor 1 (Euler)", lambda r: r.mode(1), ref=pcr / PC,
+                 tol=0.02, unit="-", source="pi^2 E_V I / (4 L^2) / P")]
+    for k, val in enumerate(mw or []):
+        out.append(Check("knikfactor %d = Mecway" % (k + 1),
+                         lambda r, k=k: r.mode(k + 1), ref=val, tol=2e-3,
+                         unit="-", source="Mecway 34 headless (internal "
+                         "solver)", in_series=False))
+    return out
+
+
+TESTS += [
+    Case("OR-07", GROUP, "Orthotrope ingeklemde balk, eigenfrequenties, E_U "
+         "langs de balk", "modal_3d", build_or07,
+         _modal_checks(EU, MW.get("OR-07")),
+         note="Density 1500 kg/m3; modes 1, 2 = bending in Z and Y."),
+    Case("OR-08", GROUP, "Orthotrope ingeklemde balk, eigenfrequenties, E_V "
+         "langs de balk", "modal_3d", build_or08,
+         _modal_checks(EV, MW.get("OR-08")),
+         note="U = Y, V = -X per element."),
+    Case("OR-10", GROUP, "Orthotrope kolom, knik, E_V langs de kolom",
+         "buckling_3d", build_or10, _buckling_checks(MW.get("OR-10")),
+         note="1000 N compression on the end face; U = Y, V = -X."),
+]

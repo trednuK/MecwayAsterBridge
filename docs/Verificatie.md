@@ -141,7 +141,9 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
+Orthotroop materiaal OR-01..10, 10 cases, 82 controles OK (28 oktober 2026, stap S13a; de
+families LS, MO-20 .. MO-31, BU-20 .. BU-25 en TH-03 daarmee opnieuw gedraaid: 136 cases, FEM-waarden
+ongewijzigd); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
 5 cases, 17 controles OK (28 oktober 2026, stap S15b).
 Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
 
@@ -829,15 +831,27 @@ referentie.
 
 | Case | Model | Referentie | Resultaat |
 |---|---|---|---|
-| OR-01 | kubus, *Orthotropic*, trek langs X, elementattributen U = (1, 1, 0), V = (−1, 1, 1) | zes rekken RES_OR01_REF | RES_OR01 |
-| OR-02 | idem, *Element orientation*-kaart U = (0, 0,6, 0,8), V = (1, 0, 0), hoek 30° | idem | RES_OR02 |
-| OR-03 | idem, *Stiffness matrix* (c11 … c66 van hetzelfde materiaal), trek langs Y, attributen van OR-01 | idem | RES_OR03 |
-| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), trek langs Z, kaart van OR-02 | idem | RES_OR04 |
-| OR-09 | kubus van OR-02 100 K verwarmd zonder last, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, geen spanning | RES_OR09 |
-| OR-05 | ingeklemde balk 200 × 10 × 10 mm (hex20 20 × 2 × 2), tiptractie 100 N in −Z, standaardassen: E1 = 100 GPa langs de balk, G31 schuift | Timoshenko PL³/3EI + PL/kGA = RES_OR05_REF | RES_OR05 |
-| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa langs de balk, G23 schuift | RES_OR06_REF | RES_OR06 |
+| OR-01 | kubus, *Orthotropic*, trek langs X, elementattributen U = (1, 1, 0), V = (−1, 1, 1) | zes rekken ε = (6,2254e-4, −1,8698e-4, −1,6056e-4), γ = (−3,7222e-4, −2,5873e-5, 2,1635e-4) (xx, yy, zz; xy, yz, zx) | alle zes binnen 5e-8, σxx = 10 MPa, σxy ≈ 0; Mecway hetzelfde (≤ 6e-8) |
+| OR-02 | idem, *Element orientation*-kaart U = (0, 0,6, 0,8), V = (1, 0, 0), hoek 30° | idem | ε = (7,75e-4, −1,726e-4, −1,124e-4), γ = (−3,1177e-4, 2,064e-4, 2,3383e-4): binnen 2e-8; Mecway hetzelfde |
+| OR-03 | idem, *Stiffness matrix* (c11 … c66 van hetzelfde materiaal), trek langs Y, attributen van OR-01 | idem | de rekken van OR-01 met x en y verwisseld: binnen 5e-8; Mecway hetzelfde |
+| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), trek langs Z, kaart van OR-02 | idem | ε = (−1,124e-4, −1,9295e-4, 5,8095e-4), γ = (6,7659e-5, −5,3030e-4, 9,7717e-5): binnen 3e-8; Mecway hetzelfde |
+| OR-09 | kubus van OR-02 100 K verwarmd zonder last, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, geen spanning | ε = (2,25e-3, 2,12e-3, 1,63e-3), γ = (−6,9282e-4, −1,68e-3, 5,1962e-4) binnen 1e-8, von Mises 7 Pa (≈ 0); Mecway hetzelfde |
+| OR-05 | ingeklemde balk 200 × 10 × 10 mm (hex20 20 × 2 × 2), tiptractie 100 N in −Z, standaardassen: E1 = 100 GPa langs de balk, G31 schuift | Timoshenko PL³/3EI + PL/kGA = 3,2480 mm (schuifterm 1,1%) | 3,2425 mm (−0,17%, inklemming); Mecway 3,2425 mm (gelijk, 1e-8) |
+| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa langs de balk, G23 schuift | 16,060 mm | 16,041 mm (−0,12%); Mecway 16,041 mm (gelijk, 1e-8) |
+| OR-07 | ingeklemde balk van OR-05 in Frequency (`modal_3d`), dichtheid 1500 kg/m³ | Euler-Bernoulli f1 = 329,74 Hz; Mecway 326,211 / 327,280 Hz (buiging in Z / Y) | 326,211 Hz (−1,1%: schuif, E/G = 20), 327,280 Hz; Mecway gelijk (≤ 1e-10) |
+| OR-08 | idem met de assen van OR-06 | f1 = 147,47 Hz; Mecway 147,085 / 147,286 Hz | 147,085 Hz (−0,26%), 147,286 Hz; Mecway gelijk (≤ 1e-9) |
+| OR-10 | ingeklemde balk van OR-06 als kolom in Buckling (`buckling_3d`), 1000 N druk | π²E2I/(4L²)/P = 1,0281; Mecway 1,02522 / 1,02671 | 1,02522 (−0,28%), 1,02671; Mecway gelijk (≤ 1e-9) |
 
-RES_OR_NOTE
+Mecway's betekenis, gemeten met headless oplossingen van losse hex8-kubussen onder een
+opgelegde homogene rek (alle knopen voorgeschreven, dus de spanning is precies C·ε): de
+orthotrope constanten met grote Poisson-getallen; U en V van de attributen en van de kaart
+met V geprojecteerd loodrecht op U en over de hoek om U gedraaid (binnen 1e-15 van de
+gedraaide Hooke-matrix); de matrixrijen 1..6 = UU, VV, WW, VW, WU, UV met technische
+schuifrek (c14 koppelt ε_UU aan γ_VW, c16 aan γ_UV), voor de stijfheids- en de
+compliantiematrix; alleen een U- of alleen een V-vector, of U evenwijdig aan V: Mecway geeft
+geen oplossing; alleen een hoek: globale assen. Met het veld *stress in element
+coordinates* slaat Mecway `lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu` = R σ Rᵀ op
+(schrijft de bridge niet, S13d).
 
 ### Conclusie lineair statisch
 

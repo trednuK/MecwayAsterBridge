@@ -5,7 +5,8 @@
 Mecway's materials *Orthotropic*, *Stiffness matrix* and *Compliance matrix* (manual v34
 §8.5) have different properties in the directions U, V and W of the element axes. The
 bridge translates them on **solid elements** (hex, wedge, tet, pyramid, linear or
-quadratic) in **Linear static** (S30, `lin_static_3d`) to Code-Aster's orthotropic
+quadratic) in **Linear static** (S30, `lin_static_3d`), **Modal** (V30, `modal_3d`) and
+**Buckling** (B30, `buckling_3d`) to Code-Aster's orthotropic
 elasticity `ELAS_ORTH`, with Mecway's *Element orientation* as the direction of the
 material axes. Shells, other analyses and a fully anisotropic matrix are not possible yet
 (§6).
@@ -15,13 +16,17 @@ material axes. Shells, other analyses and a fully anisotropic matrix are not pos
 1. Material > *Mechanical* > *Orthotropic*: Young's moduli in 1 (U), 2 (V) and 3 (W),
    Poisson's ratios 12, 23, 31, shear moduli 12 (UV), 23 (VW), 31 (WU) and, for thermal
    stress, three expansion coefficients. Or *Stiffness matrix* / *Compliance matrix*
-   (6 × 6, the order 1..6 = UU, VV, WW, UV, VW, WU).
+   (6 × 6, the order 1..6 = UU, VV, WW, VW, WU, UV, measured; note that the *Orthotropic*
+   tab lists the shear moduli as 12 (UV), 23 (VW), 31 (WU)).
 2. The material axes are the element axes U, V, W. For solids they are the global X, Y,
    Z by default. To turn them: *Element properties* (per element) or *Loads and
    constraints* > *Element orientation* on an element selection: the direction of
-   **U** and a vector for **V**, optionally an extra rotation about U (*angle*). The
+   **U** and a vector for **V**, optionally an extra rotation about U (*angle*). Give
+   **both** U and V: with only one of them, or with V parallel to U, Mecway does not solve
+   the model and the bridge gives an ERROR; an angle without vectors has no effect. The
    orientation may be a formula of the element centre (x, y, z).
-3. Choose *Static 3D* and start the bridge as usual.
+3. Choose *Static 3D*, *Frequency* or *Buckling* and start the bridge as usual. Mecway itself
+   only allows the matrix types in Static 3D (manual §8.5).
 
 ![Material axes U, V, W from the element orientation](../img/orthotropic_axes.svg)
 
@@ -75,8 +80,8 @@ the bridge.
 | ERROR: Material '...' (StiffnessMatrix): the matrix couples normal and shear strains ... (terms c14 ... not zero) | a fully anisotropic matrix | Code-Aster cannot do this for solids; if the material is orthotropic in other axes, enter it in those axes and turn the element orientation |
 | ERROR: Material '...' (Orthotropic): the constants do not give a positive definite stiffness | a modulus ≤ 0, or Poisson's ratios too large (e.g. the minor ratio entered as major) | check ν12² < E1/E2 etc.; Mecway does not solve this either |
 | ERROR: Orthotropic/anisotropic material on shells, membranes or beams | the material on 2D or 1D elements | use an isotropic material there (shells: STAPPENPLAN S13b) |
-| ERROR: Orthotropic/anisotropic material (elset ...) is currently translated in Linear static only | another analysis (modal, buckling, nonlinear, dynamics, ...) | use Static 3D (other analyses: STAPPENPLAN S13c) |
-| WARNING: Element orientation of ... solid element(s): U and V are parallel | the V vector lies along U | give a V vector that is not parallel to U |
+| ERROR: Orthotropic/anisotropic material (elset ...) is currently translated in Linear static, Modal and Buckling only | another analysis (nonlinear, dynamics, mode superposition, harmonic, spectrum, thermal → mechanical, acoustics, ...) | use Static 3D, Frequency or Buckling (other analyses: STAPPENPLAN S13c) |
+| ERROR: Element orientation of ... solid element(s) with orthotropic material: only a U or only a V vector, or U parallel to V | the orientation of a solid gives only one of the two vectors, or V along U (Mecway does not solve this either) | give U and a V vector that is not parallel to U |
 
 ## 6. What is not possible
 
@@ -85,8 +90,9 @@ See also KNOWN_BUGS 130.
 - A matrix with coupling terms (truly anisotropic, 21 constants): not in Code-Aster for
   solids.
 - Orthotropic material and *Composite* on shells and membranes (STAPPENPLAN S13b).
-- Other analyses than Linear static (STAPPENPLAN S13c), and orthotropic thermal
-  conductivity in thermal analyses.
+- Other analyses than Linear static, Modal and Buckling (STAPPENPLAN S13c), and orthotropic
+  thermal conductivity in thermal analyses. Modal with prestress, complex modes and cyclic
+  symmetry use the same material but are not verified separately.
 - The result field *stress in element coordinates*.
 
 ## 7. Test models
@@ -96,6 +102,8 @@ turned material axes (element attributes, a card with an angle, the stiffness an
 compliance matrix): all six global strains equal to Hooke's law in U, V, W turned to X, Y, Z
 and to Mecway 34's own solve; the same cube heated freely (thermal strain α1, α2, α3 in U, V, W
 turned to X, Y, Z, no stress); a cantilever with E1 and with E2 along the beam (Timoshenko).
+OR-07, OR-08, OR-10: the cantilever in Frequency (first bending frequencies) and as a column
+in Buckling, equal to Euler-Bernoulli within the shear effect and to Mecway's own solve.
 
 ## 8. Sources
 

@@ -5,7 +5,8 @@
 De Mecway-materialen *Orthotropic*, *Stiffness matrix* en *Compliance matrix* (handleiding
 v34 §8.5) hebben andere eigenschappen in de richtingen U, V en W van de elementassen. De
 bridge vertaalt ze op **volume-elementen** (hex, wedge, tet, piramide, lineair of
-kwadratisch) in **Lineair statisch** (S30, `lin_static_3d`) naar de orthotrope
+kwadratisch) in **Lineair statisch** (S30, `lin_static_3d`), **Modaal** (V30, `modal_3d`)
+en **Knik** (B30, `buckling_3d`) naar de orthotrope
 elasticiteit `ELAS_ORTH` van Code-Aster, met Mecway's *Element orientation* als richting
 van de materiaalassen. Schalen, andere analyses en een volledig anisotrope matrix kunnen
 nog niet (§6).
@@ -15,13 +16,17 @@ nog niet (§6).
 1. Materiaal > *Mechanical* > *Orthotropic*: elasticiteitsmoduli in 1 (U), 2 (V) en 3 (W),
    Poisson-getallen 12, 23, 31, glijdingsmoduli 12 (UV), 23 (VW), 31 (WU) en, voor
    thermische spanning, drie uitzettingscoëfficiënten. Of *Stiffness matrix* /
-   *Compliance matrix* (6 × 6, de volgorde 1..6 = UU, VV, WW, UV, VW, WU).
+   *Compliance matrix* (6 × 6, de volgorde 1..6 = UU, VV, WW, VW, WU, UV, gemeten; let op:
+   het tabblad *Orthotropic* noemt de glijdingsmoduli 12 (UV), 23 (VW), 31 (WU)).
 2. De materiaalassen zijn de elementassen U, V, W. Bij volume-elementen zijn dat standaard
    de globale X, Y, Z. Draaien: *Element properties* (per element) of *Loads and
    constraints* > *Element orientation* op een elementselectie: de richting van **U** en
-   een vector voor **V**, eventueel een extra draaiing om U (*angle*). De oriëntatie mag
+   een vector voor **V**, eventueel een extra draaiing om U (*angle*). Geef **zowel** U als
+   V: met maar één van beide, of met V evenwijdig aan U, rekent Mecway het model niet en
+   geeft de bridge een ERROR; een hoek zonder vectoren heeft geen effect. De oriëntatie mag
    een formule van het elementmidden (x, y, z) zijn.
-3. Kies *Static 3D* en start de bridge zoals gewoonlijk.
+3. Kies *Static 3D*, *Frequency* of *Buckling* en start de bridge zoals gewoonlijk. Mecway
+   zelf staat de matrixtypen alleen in Static 3D toe (handleiding §8.5).
 
 ![Materiaalassen U, V, W uit de elementoriëntatie](img/orthotropic_axes.svg)
 
@@ -76,8 +81,8 @@ bridge niet.
 | ERROR: Materiaal '...' (StiffnessMatrix): de matrix koppelt normaal- en schuifrekken ... (termen c14 ... niet nul) | een volledig anisotrope matrix | Code-Aster kan dit niet voor volume-elementen; is het materiaal orthotroop in andere assen, voer het dan in die assen in en draai de elementoriëntatie |
 | ERROR: Materiaal '...' (Orthotropic): de constanten geven geen positief definiete stijfheid | een modulus ≤ 0, of te grote Poisson-getallen (bijv. het kleine getal als groot ingevoerd) | controleer ν12² < E1/E2 enz.; Mecway rekent dit ook niet |
 | ERROR: Orthotroop/anisotroop materiaal op schalen, membranen of balken | het materiaal op 2D- of 1D-elementen | gebruik daar een isotroop materiaal (schalen: STAPPENPLAN S13b) |
-| ERROR: Orthotroop/anisotroop materiaal (elset ...) wordt nu alleen in Lineair statisch vertaald | een andere analyse (modaal, knik, niet-lineair, dynamica, ...) | gebruik Static 3D (andere analyses: STAPPENPLAN S13c) |
-| WARNING: Element orientation van ... volume-element(en): U en V zijn evenwijdig | de V-vector ligt langs U | geef een V-vector die niet evenwijdig is aan U |
+| ERROR: Orthotroop/anisotroop materiaal (elset ...) wordt nu alleen in Lineair statisch, Modaal en Knik vertaald | een andere analyse (niet-lineair, dynamica, modale superpositie, harmonisch, spectrum, thermisch → mechanisch, akoestiek, ...) | gebruik Static 3D, Frequency of Buckling (andere analyses: STAPPENPLAN S13c) |
+| ERROR: Element orientation van ... volume-element(en) met orthotroop materiaal: alleen een U- of alleen een V-vector, of U evenwijdig aan V | de oriëntatie van een volume-element geeft maar één van beide vectoren, of V langs U (Mecway rekent dit ook niet) | geef U en een V-vector die niet evenwijdig is aan U |
 
 ## 6. Wat niet kan
 
@@ -86,8 +91,9 @@ Zie ook KNOWN_BUGS 130.
 - Een matrix met koppeltermen (echt anisotroop, 21 constanten): niet in Code-Aster voor
   volume-elementen.
 - Orthotroop materiaal en *Composite* op schalen en membranen (STAPPENPLAN S13b).
-- Andere analyses dan Lineair statisch (STAPPENPLAN S13c), en orthotrope
-  warmtegeleiding in thermische analyses.
+- Andere analyses dan Lineair statisch, Modaal en Knik (STAPPENPLAN S13c), en orthotrope
+  warmtegeleiding in thermische analyses. Modaal met voorspanning, complexe modes en
+  cyclische symmetrie gebruiken hetzelfde materiaal, maar zijn niet apart geverifieerd.
 - Het resultaatveld *stress in element coordinates*.
 
 ## 7. Testmodellen
@@ -97,7 +103,9 @@ gedraaide materiaalassen (elementattributen, een kaart met een hoek, de stijfhei
 compliantiematrix): alle zes globale rekken gelijk aan de wet van Hooke in U, V, W gedraaid
 naar X, Y, Z en aan Mecway 34's eigen oplossing; dezelfde kubus vrij verwarmd (thermische rek
 α1, α2, α3 in U, V, W gedraaid naar X, Y, Z, geen spanning); een ingeklemde balk met E1 en met
-E2 langs de balk (Timoshenko).
+E2 langs de balk (Timoshenko). OR-07, OR-08, OR-10: de ingeklemde balk in Frequency (eerste
+buigfrequenties) en als kolom in Buckling, gelijk aan Euler-Bernoulli binnen het schuifeffect
+en aan Mecway's eigen oplossing.
 
 ## 8. Bronnen
 

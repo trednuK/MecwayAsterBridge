@@ -45,9 +45,9 @@ S7, S8, S5, S9).
 | S9 | Load case combinations via Mecway configurations (go/no-go) | dropped | – | no-go: a Mecway configuration only switches loads on/off, no factor; combinations cannot be set in Mecway; procedure per configuration in Handleiding §4 |
 | S11 | Wrap-up: crit-review of verification, check docs against the bridge, integral check, push to `main` | done | all other steps done and on `develop` | 7 Oct: crit-review on Fable (gate processed: 8742df0), settings/tooltips/assumptions (feabce4), docs checked against the bridge (345c400, 088244e, 3c336e4), KB 74/84/85/86 solved, all 270 cases identical via a .liml saved by Mecway (f1539a2), GUI spot checks VM-02b/CY-01/AH-08/WE-02, final regression see Verificatie.md §3 |
 | S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | split | – | chosen by the user 15 Oct (C1); split into S13a .. S13d (28 Oct 2026, see §S13) |
-| S13a | Orthotropic / stiffness matrix / compliance matrix on solids in linear static, material axes from the element orientation (`ELAS_ORTH` + `MASSIF` `ANGL_REP`) | done | – | RESULT_S13A |
+| S13a | Orthotropic / stiffness matrix / compliance matrix on solids in linear static, modal and buckling, material axes from the element orientation (`ELAS_ORTH` + `MASSIF` `ANGL_REP`) | done | – | branch worktree-agent-a36c7764124e6a606 on nacht-int3 (28 Oct 2026): `bridge_orthotropic.py`; OR-01 .. OR-10 OK (strains equal to Hooke rotated and to Mecway headless within 1e-7, cantilever −0.17/−0.12% vs Timoshenko, modes and buckling = Mecway within 1e-9); LS, MO-20..31, BU-20..25, TH-03 unchanged; not yet tested in the Mecway GUI (see §S13) |
 | S13b | Orthotropic material and *Composite* on shells (`DEFI_COMPOSITE`, `COQUE` `VECTEUR` per group of equal U, Mecway's default U = edge 1-2) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
-| S13c | Orthotropic solids in the other mechanical analyses (modal, buckling, nonlinear static, dynamics) and orthotropic thermal conductivity (`THER_ORTH`) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
+| S13c | Orthotropic solids in the other mechanical analyses (nonlinear static, dynamics, mode superposition, harmonic, spectrum, thermal → mechanical chain) and orthotropic thermal conductivity (`THER_ORTH`, Mecway `ORTHOTROPICLOCAL`) | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
 | S13d | Result field *stress in element coordinates* (`stressuu` .. `stresswu`) for solids | open | S13a | split off from S13 (28 Oct 2026); see §S13 |
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | done | – | branch worktree-agent-a58def16c170e1c4c (28 Oct 2026): `bridge_pretension` (cut + LIAISON_DDL to a reference node), force and length adjustment in linear/nonlinear static; PT-01 .. PT-05 OK (exact / joint diagram 0.1%, Mecway CCX headless within 0.01%); not yet tested in the Mecway GUI (see §S15) |
@@ -1219,6 +1219,42 @@ the definition of U/V and `angle` (manual §7), how Mecway shows stresses in loc
 elements with the same orientation; thermal orthotropy (`THER_ORTH`).
 **Done when:** an orthotropic beam in two orientations (analytical, bending with E_L and E_T) and a
 rotated block under tension (Hooke in local axes) within 1%, and equal to Mecway headless; regression D.5.
+**Findings (28 Oct 2026, S13a):**
+- *Mecway's XML* (attribute names from `mecway.exe`, semantics measured with headless Mecway 34
+  solves of single hex8 cubes under an imposed homogeneous strain, all nodes prescribed, so the
+  nodal stress is C·ε exactly): `<mechanical type="Orthotropic" youngsmodulusu/v/w
+  poissonratiouv/vw/wu shearmodulusuv/vw/wu thermalexpansionu/v/w>`, major Poisson ratios
+  (ν31 = −ε_U/ε_W under stress in W, so `NU_LN` = ν31·E_U/E_W); `type="StiffnessMatrix"` with
+  `c11` .. `c66` and `type="ComplianceMatrix"` with `s11` .. `s66` (upper triangle, compliance in
+  m²/N), rows 1..6 = **UU, VV, WW, VW, WU, UV** with engineering shear (c14 couples ε_UU with γ_VW,
+  c16 with γ_UV; not the UV, VW, WU of the Orthotropic tab labels). Material axes = element axes:
+  global by default; attributes `orientationux..vz`, `orientationvx..vz`, `angle` and the
+  *Element orientation* card give V projected perpendicular to U and turned about U by the angle
+  (within 1e-15 of the rotated Hooke matrix). Only a U or only a V vector, or U parallel to V:
+  Mecway gives no solution; an angle alone: global axes. Stresses are reported in global axes; the
+  field *stress in element coordinates* stores `lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`,
+  `lamwu` = R σ Rᵀ (S13d). Mecway's thermal expansion of matrix types: none (message in
+  `mecwayf.dll`).
+- *Code-Aster*: `ELAS_ORTH` (no general 3D anisotropy in `DEFI_MATERIAU`, only `ELAS_ORTH`,
+  `ELAS_ISTR`; `ELAS_COQUE` is for shells), so a matrix is translated only if all coupling terms
+  are zero, else ERROR. `MASSIF` `ANGL_REP` nautical angles (U4.42.01 §13.3/13.6, the example
+  (0, 0, −90) → (L, T, N) = (X, −Z, Y) fixes the signs; same formulas as `anglnaut` in
+  `observation_ops.py`), one group `BRORI<n>` per distinct frame. Orthotropic shells need
+  `DEFI_COMPOSITE` (U4.43.01 §3.5.2; the DKT test cases ssls111/117 have `ELAS_ORTH` commented
+  out): S13b.
+- *Built* (`bridge_orthotropic.py`): parse, `ELAS_ORTH` (+ `ALPHA_L/T/N` with thermal stress),
+  frame → `ANGL_REP`, grouping, scope check (solids; linear static, modal, buckling of the
+  structure; elsewhere ERROR). Cards on solids now fill `solid_orientations`
+  (`bridge_orientation`).
+- *Verification*: OR-01 .. OR-04, OR-09 (cube, tension and free thermal expansion with turned
+  axes, attributes and card with angle, stiffness and compliance matrix): all six global strains
+  within 5e-8 of Hooke's law rotated and of Mecway's own solve; OR-05/06 cantilever with E_U and
+  E_V along the beam −0.17% / −0.12% against Timoshenko, equal to Mecway (1e-8); OR-07/08
+  (frequencies, −1.1% / −0.26% against Euler-Bernoulli = the shear effect) and OR-10 (buckling
+  factor −0.28%) equal to Mecway within 1e-9. Regression: LS (all), MO-20 .. MO-31,
+  BU-20 .. BU-25, TH-03: 136 cases, FEM values bit-identical to the baseline.
+- *Open*: GUI check in Mecway (open a result, *stress in element coordinates*); shells (S13b);
+  other analyses and orthotropic conductivity (S13c); `lam*` field (S13d).
 
 ### S14 – Hyperelastic material
 **Goal:** translate Mecway *Neo Hooke* and *Mooney-Rivlin* (now: WARNING and the run stops).

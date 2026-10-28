@@ -138,7 +138,9 @@ formulas `s1`, `tr`, `e1`).
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
-Added after this run (not yet in a full regression, not in the table): Bolt pretension
+Added after this run (not yet in a full regression, not in the table): Orthotropic material
+OR-01..10, 10 cases, 82 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
+BU-20 .. BU-25 and TH-03 re-run with it: 136 cases, FEM values unchanged); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
 checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
 
@@ -820,15 +822,26 @@ internal solver (`mw_solve.py`, the same `.liml`, 28 October 2026) is the second
 
 | Case | Model | Reference | Result |
 |---|---|---|---|
-| OR-01 | cube, *Orthotropic*, tension along X, element attributes U = (1, 1, 0), V = (−1, 1, 1) | six strains RES_OR01_REF | RES_OR01 |
-| OR-02 | idem, *Element orientation* card U = (0, 0.6, 0.8), V = (1, 0, 0), angle 30° | idem | RES_OR02 |
-| OR-03 | idem, *Stiffness matrix* (c11 … c66 of the same material), tension along Y, attributes of OR-01 | idem | RES_OR03 |
-| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), tension along Z, card of OR-02 | idem | RES_OR04 |
-| OR-09 | cube of OR-02 heated by 100 K without load, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, no stress | RES_OR09 |
-| OR-05 | cantilever 200 × 10 × 10 mm (hex20 20 × 2 × 2), tip traction 100 N in −Z, default axes: E1 = 100 GPa along the beam, G31 shears | Timoshenko PL³/3EI + PL/kGA = RES_OR05_REF | RES_OR05 |
-| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa along the beam, G23 shears | RES_OR06_REF | RES_OR06 |
+| OR-01 | cube, *Orthotropic*, tension along X, element attributes U = (1, 1, 0), V = (−1, 1, 1) | six strains ε = (6.2254e-4, −1.8698e-4, −1.6056e-4), γ = (−3.7222e-4, −2.5873e-5, 2.1635e-4) (xx, yy, zz; xy, yz, zx) | all six within 5e-8, σxx = 10 MPa, σxy ≈ 0; Mecway the same (≤ 6e-8) |
+| OR-02 | idem, *Element orientation* card U = (0, 0.6, 0.8), V = (1, 0, 0), angle 30° | idem | ε = (7.75e-4, −1.726e-4, −1.124e-4), γ = (−3.1177e-4, 2.064e-4, 2.3383e-4): within 2e-8; Mecway the same |
+| OR-03 | idem, *Stiffness matrix* (c11 … c66 of the same material), tension along Y, attributes of OR-01 | idem | the strains of OR-01 with x and y exchanged: within 5e-8; Mecway the same |
+| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), tension along Z, card of OR-02 | idem | ε = (−1.124e-4, −1.9295e-4, 5.8095e-4), γ = (6.7659e-5, −5.3030e-4, 9.7717e-5): within 3e-8; Mecway the same |
+| OR-09 | cube of OR-02 heated by 100 K without load, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, no stress | ε = (2.25e-3, 2.12e-3, 1.63e-3), γ = (−6.9282e-4, −1.68e-3, 5.1962e-4) within 1e-8, von Mises 7 Pa (≈ 0); Mecway the same |
+| OR-05 | cantilever 200 × 10 × 10 mm (hex20 20 × 2 × 2), tip traction 100 N in −Z, default axes: E1 = 100 GPa along the beam, G31 shears | Timoshenko PL³/3EI + PL/kGA = 3.2480 mm (shear term 1.1%) | 3.2425 mm (−0.17%, clamp); Mecway 3.2425 mm (equal, 1e-8) |
+| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa along the beam, G23 shears | 16.060 mm | 16.041 mm (−0.12%); Mecway 16.041 mm (equal, 1e-8) |
+| OR-07 | cantilever of OR-05 in Frequency (`modal_3d`), density 1500 kg/m³ | Euler-Bernoulli f1 = 329.74 Hz; Mecway 326.211 / 327.280 Hz (bending in Z / Y) | 326.211 Hz (−1.1%: shear, E/G = 20), 327.280 Hz; Mecway equal (≤ 1e-10) |
+| OR-08 | idem with the axes of OR-06 | f1 = 147.47 Hz; Mecway 147.085 / 147.286 Hz | 147.085 Hz (−0.26%), 147.286 Hz; Mecway equal (≤ 1e-9) |
+| OR-10 | cantilever of OR-06 as a column in Buckling (`buckling_3d`), 1000 N compression | π²E2I/(4L²)/P = 1.0281; Mecway 1.02522 / 1.02671 | 1.02522 (−0.28%), 1.02671; Mecway equal (≤ 1e-9) |
 
-RES_OR_NOTE
+Mecway's semantics, measured with headless solves of single hex8 cubes under an imposed
+homogeneous strain (all nodes prescribed, so the stress is C·ε exactly): the orthotropic
+constants with major Poisson's ratios; U and V of the attributes and of the card with V
+projected perpendicular to U and turned about U by the angle (within 1e-15 of the rotated
+Hooke matrix); the matrix rows 1..6 = UU, VV, WW, VW, WU, UV with engineering shear (c14
+couples ε_UU with γ_VW, c16 with γ_UV), for the stiffness and the compliance matrix; only a U
+or only a V vector, or U parallel to V: Mecway gives no solution; an angle alone: global
+axes. With the field *stress in element coordinates* Mecway stores `lamuu`, `lamvv`, `lamww`,
+`lamuv`, `lamvw`, `lamwu` = R σ Rᵀ (not written by the bridge, S13d).
 
 ### Conclusion linear static
 

@@ -232,6 +232,11 @@ def test_prepare_and_check():
     check(not bo.check(md, {"solver_command": "MECA_STATIQUE"}) and
           any("S13b" in l for l in LOG), "shell refused: {0}".format(LOG))
     check(bo.check(md, {"solver_command": "THER_LINEAIRE"}), "thermal ok")
+    md["elset_modelisations"]["Blok"] = "3D"
+    check(bo.check(md, {"solver_command": "CALC_MODES",
+                        "type_resu": "MODE_FLAMB"}), "buckling ok")
+    check(not bo.check(md, {"solver_command": "CALC_MODES",
+                            "phenomene": "ACOUSTIQUE"}), "acoustic refused")
 
 
 if __name__ == "__main__":
