@@ -46,7 +46,8 @@ S7, S8, S5, S9).
 | S11 | Wrap-up: crit-review of verification, check docs against the bridge, integral check, push to `main` | done | all other steps done and on `develop` | 7 Oct: crit-review on Fable (gate processed: 8742df0), settings/tooltips/assumptions (feabce4), docs checked against the bridge (345c400, 088244e, 3c336e4), KB 74/84/85/86 solved, all 270 cases identical via a .liml saved by Mecway (f1539a2), GUI spot checks VM-02b/CY-01/AH-08/WE-02, final regression see Verificatie.md §3 |
 | S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | open | – | chosen by the user 15 Oct (C1) |
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
-| S15 | Pre-tension section (bolt prestress) | open | – | chosen by the user 15 Oct (C8) |
+| S15 | Pre-tension section (bolt prestress) | done | – | branch worktree-agent-a58def16c170e1c4c (28 Oct 2026): `bridge_pretension` (cut + LIAISON_DDL to a reference node), force and length adjustment in linear/nonlinear static; PT-01 .. PT-05 OK (exact / joint diagram 0.1%, Mecway CCX headless within 0.01%); not yet tested in the Mecway GUI (see §S15) |
+| S15b | Pre-tension section in dynamic response (D30/D31) and the spring element variant (internal solver) | open | S15 | split off from S15 (KNOWN_BUGS 124 a/b) |
 | S16 | 2D and axisymmetric analyses (S20, D20, SA0, also thermal and acoustics 2D) | open | – | chosen by the user 15 Oct (C9) |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
@@ -1236,6 +1237,33 @@ shrinkage. Check the Code-Aster documentation on bolt prestress (U2 doc).
 **Research:** Mecway's XML (cut plane, force or shortening, phases), behaviour in linear static.
 **Done when:** BoltedJoint: bolt force after prestressing = specified force (≤ 1%), results equal to
 Mecway headless within the known contact differences (KNOWN_BUGS 43); regression D.5.
+**Findings (28 Oct 2026):**
+- *Mecway's semantics* (manual v34 §9.11 and the CCX decks read during headless Mecway 34 solves of
+  BoltedJoint and test models): the selected faces define the prism (axis = median of the pairwise
+  cross products of the normals, extent of the faces); Mecway cuts in the middle (BoltedJoint: the
+  element boundary between the two selected elements), inserts a 0.25 mm element layer and writes
+  `*PRE-TENSION SECTION` with a reference node; force = `*CLOAD` on DOF 1 of that node in the
+  (single) step, so the force stays applied (no locking); length adjustment = `*BOUNDARY`. Mode
+  attribute: `adjustment="true"` (found by trial, confirmed by a model re-saved by Mecway);
+  `force="true"`, `force="false"` and no attribute all give the force. With *Quasi-static* time
+  steps a constant pretension acts in full from the first step (`AMPLITUDE=STEP`).
+- *Route*: CCX's own formulation (`pretensionsections.f` of the ccx 2.23 source shipped with
+  Mecway: per node pair two tangential MPCs and one normal MPC with the reference DOF), in Code-Aster
+  as LIAISON_DDL per pair u_above − u_below + δ n = 0 with δ = DX of a POI1 `DIS_T` reference node;
+  FORCE_NODALE FX = F or DDL_IMPO DX = δ. One step, no `ETAT_INIT` phases (Mecway has none).
+  Thermal shrinkage was not chosen: it is not force-controlled and depends on the element layer.
+  ssnv106a tightens a bolt the same way (relative displacement between doubled nodes).
+- *Verification*: PT-01/02/05 exact (bar, hex20 and tet4 with a zig-zag section), PT-03 joint
+  diagram −0.10% (plate flexibility), PT-04 force constant under an external load 1000.00 N;
+  Mecway CCX headless −0.004 .. +0.007%. Bolt force after prestressing = F by construction (PT-01
+  reaction exact).
+- *BoltedJoint itself*: does not solve with Code-Aster (plate B only held by friction contact,
+  `MECANONLINE9_4` in step 1, also without the section and with penalty, `SEUIL_INIT` or
+  DISCRETE); recorded in KNOWN_BUGS 43. A bonded-contact variant runs, but Mecway's displacements
+  are ~10x larger even without the section (CCX `*TIE` with `POSITION TOLERANCE=0`, question).
+  So the BoltedJoint criterion is replaced by PT-03/04 (same physics, contact-free).
+- *Open*: dynamics and the spring element variant (S15b); a GUI check in Mecway (load PT-01 results,
+  Pre-tension section dialog with Length adjustment saves `adjustment="true"`).
 
 ### S16 – 2D and axisymmetric analyses
 **Goal:** translate Mecway's 2D analysis types (S20, D20, SA0, also A20 and thermal 2D); now the run stops.

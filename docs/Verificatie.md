@@ -140,6 +140,9 @@ anders; nieuw zijn 8 controles in FX-02 (hoofdwaarden en de formules `s1`, `tr`,
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
 
+Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
+Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15).
+
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen
   hex20-volumes stopt (NL-03a, 3 controles). Gebruik PENALISATION (NL-03b: exact).
@@ -1679,6 +1682,29 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
      rotaties (lineaire relaties), een moment in 3D. Bezwijken van
      elementen in een model met `POU_D_T_GD` geeft vooraf een ERROR (`CALCUL_37` na het
      eerste bezwijken, [`Bezwijken.md`](Bezwijken.md)).
+
+### Boutvoorspanning (PT)
+
+Mecway's *Pre-tension section* ([Boutvoorspanning.md](Boutvoorspanning.md)): snede door
+het prisma, `LIAISON_DDL` naar een referentieknooppunt (DX = verkorting), kracht als
+`FORCE_NODALE`, lengteverandering als `DDL_IMPO`. Module `tests_boutvoorspanning.py`
+(groep "Boutvoorspanning", 5 cases), draaien met `python run_verificatie.py PT`. Mecway 34
+headless met CCX (`mw_solve.py`, dezelfde `.liml` met het spanningsveld, 28 oktober 2026)
+als tweede referentie.
+
+| Case | Model | Referentie | Resultaat |
+|---|---|---|---|
+| PT-01 | staaf 10 × 100 × 10 mm (hex20 2 × 10 × 2), frictionless aan de uiteinden en op x = 0, z = 0; kracht 10 kN, doorsnede op y = 50 mm | N/A = 100 MPa, reactie 10 kN, u_y(20 mm) = N·y/(EA) = 1e-5 m, u_y(80 mm) = −1e-5 m; Mecway 99,996 MPa | exact (≤ 1e-10); Mecway −0,004% (zijn dunne elementlaag), verplaatsingen gelijk |
+| PT-02 | idem, lengteverandering 0,01 mm | N = EAδ/L = 2000 N (20 MPa), u_y = ±2e-6 m; Mecway 19,9992 MPa | exact; Mecway −0,004% |
+| PT-05 | idem in tet4 (6 per cel), vlakken van laag 4..6: doorsnede op y = 55 mm binnen een laag (zigzag over vlakken, ribben en hoekknopen) | als PT-01; Mecway 100,000 MPa | exact |
+| PT-03 | boutkolom (10 × 10 mm) tussen twee platen (E × 1000, ν = 0) met twee hulskolommen (samen 2 × het oppervlak), lengte 100 mm; lengteverandering 0,01 mm plus 600 N omhoog | verbindingsdiagram: Fb = kb·kc/(kb+kc)·δ + P·kb/(kb+kc) = 1533,33 N, huls 933,33 N; Mecway 1531,71 N | 1531,80 N (−0,10%, plaatflexibiliteit), huls 933,13 N; Mecway +0,006% |
+| PT-04 | idem, kracht 1000 N en externe kracht 1200·t N, Niet-lineair statisch (quasi-statisch, 4 stappen) | kracht: Fb = 1000 N op elk tijdstip (Mecway/CCX: de `*CLOAD` blijft), huls F − P = −200 N bij t = 1; Mecway 999,929 N | 1000,00 N bij t = 0,5 en 1, huls −199,54 N; Mecway +0,007% |
+
+Modusattribuut: Mecway 34 schrijft `force="true"` voor de kracht en `adjustment="true"`
+voor de lengteverandering (modellen opnieuw opgeslagen door Mecway; met `force="false"`
+of zonder attribuut legt Mecway de kracht op). BoltedJoint (Samples) zelf rekent niet met
+Code-Aster, ook niet zonder de doorsnede: plaat B wordt alleen door wrijvingscontact
+gehouden (`MECANONLINE9_4` in stap 1, KNOWN_BUGS 43).
 
 ## 6. Dynamica (DY)
 

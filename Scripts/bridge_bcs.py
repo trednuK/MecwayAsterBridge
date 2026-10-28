@@ -1452,6 +1452,55 @@ class CentrifugalBC(BaseBC):
 
 
 # ==========================================
+# PRE-TENSION SECTION  (tag: "pretensionsection")
+# Mecway (manual v34 par. 9.11): axial tension (force) or a change of the
+# free length (adjustment, positive = shortening) of a prism of volume
+# elements, defined by at least two exterior faces at different angles.
+# XML (Samples/BoltedJoint.liml; mode attribute found with Mecway 34
+# headless solves, 28 Oct 2026, the CCX deck read during the solve):
+#   <pretensionsection selection="faces" force="true">
+#     <force>10 kN</force><adjustment>0 m</adjustment>
+#   </pretensionsection>
+# adjustment="true" selects the length adjustment (CCX: *BOUNDARY on the
+# pre-tension node); without it Mecway applies the force (CCX: *CLOAD on
+# the pre-tension node), whatever the value of force="..." (force="false"
+# and no attribute both gave the force). Both values may be constant,
+# a time history or a formula in t.
+# Code-Aster: the mesh is cut through the prism and the two sides are
+# coupled by LIAISON_DDL with a reference node whose DX is the
+# shortening (bridge_pretension.py); the load itself is FORCE_NODALE FX
+# (force) or DDL_IMPO DX (adjustment) on that node.
+# ==========================================
+class PretensionSectionBC(BaseBC):
+    aster_keyword = "FORCE_NODALE"
+    valid_targets = ["GROUP_MA"]
+
+    skipped_params = {"mode": "force", "value": 0.0}
+
+    @_skip_on_formula_error
+    def parse_xml(self, item, root):
+        if item.get("adjustment", "").lower() == "true":
+            return {"mode": "adjustment",
+                    "value": _parse_value_strict(item, "adjustment", "length",
+                                                 0.0, root)}
+        return {"mode": "force",
+                "value": _parse_value_strict(item, "force", "force", 0.0,
+                                             root)}
+
+    def to_aster_dict(self, params):
+        """FX on the reference node (force, tension positive) or DX
+        (shortening); bridge_pretension points the BC at that node."""
+        if params.get("mode") == "adjustment":
+            return {"DX": params.get("value", 0.0)}
+        return {"FX": params.get("value", 0.0)}
+
+    def keyword(self, params):
+        if params.get("mode") == "adjustment":
+            return "DDL_IMPO"
+        return "FORCE_NODALE"
+
+
+# ==========================================
 # BC REGISTRY
 # ==========================================
 SUPPORTED_BCS = {
@@ -1472,4 +1521,5 @@ SUPPORTED_BCS = {
     "compressiononly": CompressionOnlyBC(),
     "symmetry":        SymmetryBC(),
     "centrifugal":     CentrifugalBC(),
+    "pretensionsection": PretensionSectionBC(),
 }

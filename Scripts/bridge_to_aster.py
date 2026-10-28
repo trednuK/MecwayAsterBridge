@@ -428,6 +428,15 @@ def _resolve_line_quad(model_data):
         if not shapes & _LINEAR_SOLIDS:
             problems.append(tr("geen lineaire volume-elementen",
                                "no linear solid elements"))
+        if model_data.get("pretension_sections"):
+            # The cut (bridge_pretension) ties only the Mecway nodes;
+            # mid-side nodes added by CREA_MAILLAGE on the two sides of
+            # the cut would stay apart.
+            problems.append(tr("pre-tension section (de nieuwe "
+                               "middenknopen in de doorsnede zouden los "
+                               "blijven)",
+                               "pre-tension section (the new mid-side "
+                               "nodes in the section would stay apart)"))
         if problems:
             log(tr("WARNING: Keuze LINE_QUAD (kwadratische volume-elementen) "
                    "niet toegepast: {0}. De elementen blijven lineair; maak "
