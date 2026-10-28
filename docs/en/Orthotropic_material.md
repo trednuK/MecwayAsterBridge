@@ -116,7 +116,8 @@ in Buckling, equal to Euler-Bernoulli within the shear effect and to Mecway's ow
 OR-11: *stress in element coordinates* on a bar with two different element axes (R σ Rᵀ,
 and the mean of the element-node values at the interface, as Mecway). OR-12 .. OR-14:
 Nonlinear static (cube, large-deflection cantilever) and implicit dynamics (step load, period),
-equal to Mecway's own CCX solve.
+equal to Mecway's own CCX solve. OR-15: hex8 with `LINE_QUAD`; OR-17: an orientation card
+with a formula of x (one `MASSIF` group per element column), equal to Mecway.
 
 ## 8. Sources
 

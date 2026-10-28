@@ -139,7 +139,7 @@ formulas `s1`, `tr`, `e1`).
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added after this run (not yet in a full regression, not in the table): Orthotropic material
-OR-01..14, 14 cases, 133 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
+OR-01..17, 16 cases, 154 checks OK (28 October 2026, step S13a; the families LS, MO-20 .. MO-31,
 BU-20 .. BU-25 and TH-03 re-run with it: 136 cases, FEM values unchanged); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
 checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
@@ -838,6 +838,8 @@ because the internal solver gives no solution there) is the second reference.
 | OR-12 | cube of OR-02 in Nonlinear static (L30, large displacements = `GREEN_LAGRANGE`), strain about 1e-3 | Hooke rotated (as OR-02); Mecway (CCX) ε = (7.7410e-4, −1.7253e-4, −1.1237e-4), γ = (−3.1129e-4, 2.0635e-4, 2.3347e-4) | within 1.6e-3 of small-strain Hooke (the large-displacement effect); Mecway within 2e-6 |
 | OR-13 | cantilever of OR-06 in L30 with 300 N (tip about 23% of L) | Mecway (CCX) 45.560 mm (linear 48.12 mm) | 45.560 mm (equal, 1e-7) |
 | OR-14 | cantilever of OR-06 in Dynamic response (D31, HHT, Δt = T/50), density 1500 kg/m³, tip traction 100 N as a step | period 1/f1 = 6.7988 ms (OR-08); Mecway (CCX) 6.7731 ms | 6.7763 ms (−0.33%: scheme); Mecway +0.05% |
+| OR-15 | cube of OR-01 in hex8 (2 × 2 × 2) with `elem_hex8` = `LINE_QUAD` (the `MASSIF` groups survive `CREA_MAILLAGE`) | as OR-01; Mecway (hex8) the same strains | within 1e-8 |
+| OR-17 | cantilever of OR-05 with an *Element orientation* card U = (cos 20x, sin 20x, 0) (formula of the element centre, x in m), V = Z: 20 `MASSIF` groups | Mecway 19.454 mm | 19.454 mm (equal, 2e-8) |
 
 Mecway's semantics, measured with headless solves of single hex8 cubes under an imposed
 homogeneous strain (all nodes prescribed, so the stress is C·ε exactly): the orthotropic

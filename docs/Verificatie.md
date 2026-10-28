@@ -141,7 +141,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Orthotroop materiaal OR-01..14, 14 cases, 133 controles OK (28 oktober 2026, stap S13a; de
+Orthotroop materiaal OR-01..17, 16 cases, 154 controles OK (28 oktober 2026, stap S13a; de
 families LS, MO-20 .. MO-31, BU-20 .. BU-25 en TH-03 daarmee opnieuw gedraaid: 136 cases, FEM-waarden
 ongewijzigd); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
 5 cases, 17 controles OK (28 oktober 2026, stap S15b).
@@ -846,6 +846,8 @@ met CCX, omdat de eigen solver daar geen oplossing geeft) is de tweede referenti
 | OR-12 | kubus van OR-02 in Niet-lineair statisch (L30, grote verplaatsingen = `GREEN_LAGRANGE`), rek ongeveer 1e-3 | Hooke gedraaid (als OR-02); Mecway (CCX) ε = (7,7410e-4, −1,7253e-4, −1,1237e-4), γ = (−3,1129e-4, 2,0635e-4, 2,3347e-4) | binnen 1,6e-3 van Hooke voor kleine rek (het effect van grote verplaatsingen); Mecway binnen 2e-6 |
 | OR-13 | ingeklemde balk van OR-06 in L30 met 300 N (tip ongeveer 23% van L) | Mecway (CCX) 45,560 mm (lineair 48,12 mm) | 45,560 mm (gelijk, 1e-7) |
 | OR-14 | ingeklemde balk van OR-06 in Dynamic response (D31, HHT, Δt = T/50), dichtheid 1500 kg/m³, tiptractie 100 N als stap | periode 1/f1 = 6,7988 ms (OR-08); Mecway (CCX) 6,7731 ms | 6,7763 ms (−0,33%: schema); Mecway +0,05% |
+| OR-15 | kubus van OR-01 in hex8 (2 × 2 × 2) met `elem_hex8` = `LINE_QUAD` (de `MASSIF`-groepen overleven `CREA_MAILLAGE`) | als OR-01; Mecway (hex8) dezelfde rekken | binnen 1e-8 |
+| OR-17 | ingeklemde balk van OR-05 met een *Element orientation*-kaart U = (cos 20x, sin 20x, 0) (formule van het elementmidden, x in m), V = Z: 20 `MASSIF`-groepen | Mecway 19,454 mm | 19,454 mm (gelijk, 2e-8) |
 
 Mecway's betekenis, gemeten met headless oplossingen van losse hex8-kubussen onder een
 opgelegde homogene rek (alle knopen voorgeschreven, dus de spanning is precies C·ε): de

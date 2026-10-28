@@ -128,10 +128,10 @@ _FACES = {0: ("u0", "u1"), 1: ("v0", "v1"), 2: ("w0", "w1")}
 _PTS = {"A": (0, 0, 0), "B": (L, 0, 0), "C": (0, L, 0), "D": (0, 0, L)}
 
 
-def _cube(mat_lines, stress_dir, attrs=None, card=None, heat=None):
+def _cube(mat_lines, stress_dir, attrs=None, card=None, heat=None, order=2):
     m = Model("S30")
     m.elset("Blok", "Ortho")
-    h = hexmesh(m, "Blok", 2, 2, 2, box(0, L, 0, L, 0, L), order=2)
+    h = hexmesh(m, "Blok", 2, 2, 2, box(0, L, 0, L, 0, L), order=order)
     if attrs:
         es = m._elset["Blok"][2]
         for k in range(len(es)):
@@ -254,6 +254,8 @@ MW = {
               0.000206349, 0.000233465],
     "OR-13": 0.045560233,
     "OR-14": 0.0067731202,
+    # OR-15 (hex8): Mecway's strains equal to OR-01; OR-17: tip [m]
+    "OR-17": 0.019454408,
 }
 
 
@@ -718,6 +720,38 @@ def _or14_checks(mw):
     return out
 
 
+# ------------------------------------------------------------------
+# OR-15: the cube of OR-01 in hex8 (2 x 2 x 2) with elem_hex8 =
+# LINE_QUAD (Code-Aster makes the cells quadratic; the MASSIF groups must
+# survive CREA_MAILLAGE): a homogeneous stress is exact.
+# OR-17: cantilever of OR-05 with an Element orientation card whose U is
+# a formula of the element centre (U = (cos 20x, sin 20x, 0) with x in m,
+# V = Z): one MASSIF group per element column; Mecway 34 headless.
+# ------------------------------------------------------------------
+def build_or15():
+    return _cube([ORTHO], 0, attrs=ATTRS1, order=1)
+
+
+def build_or17():
+    m = _cantilever(None)
+    m.element_selection("Alles", list(range(1, m.n_elem + 1)))
+    m.add('<orientation selection="Alles">'
+          '<ux unit="" timeunit="s" positionunit="m">cos(20*x)</ux>'
+          '<uy unit="" timeunit="s" positionunit="m">sin(20*x)</uy>'
+          '<uz>0</uz><vx>0</vx><vy>0</vy><vz>1</vz><angleu>0 rad</angleu>'
+          '</orientation>')
+    return m
+
+
+def _or17_checks(mw):
+    out = []
+    if mw is not None:
+        out.append(Check("doorbuiging tip = Mecway", _tip, ref=mw,
+                         tol=2e-3, unit="m", source="Mecway 34 headless "
+                         "(internal solver)", in_series=False))
+    return out
+
+
 TESTS += [
     Case("OR-07", GROUP, "Orthotrope ingeklemde balk, eigenfrequenties, E_U "
          "langs de balk", "modal_3d", build_or07,
@@ -745,4 +779,14 @@ TESTS += [
     Case("OR-14", GROUP, "Orthotrope ingeklemde balk, staplast, dynamisch "
          "(D31)", "dyna_impl_3d", build_or14, _or14_checks(MW.get("OR-14")),
          note="HHT, dt = T/50; period about the static deflection."),
+    Case("OR-15", GROUP, "Orthotroop blok in hex8 met LINE_QUAD, assen per "
+         "element", "lin_static_3d", build_or15,
+         _cube_checks(frame(U1, V1), 0, MW.get("OR-01")),
+         general={"elem_hex8": "LINE_QUAD"},
+         note="As OR-01 in hex8; Code-Aster makes the cells quadratic."),
+    Case("OR-17", GROUP, "Orthotrope ingeklemde balk, U als formule van x "
+         "(kaart)", "lin_static_3d", build_or17,
+         _or17_checks(MW.get("OR-17")),
+         note="U = (cos 20x, sin 20x, 0), V = Z: one frame per element "
+              "column."),
 ]

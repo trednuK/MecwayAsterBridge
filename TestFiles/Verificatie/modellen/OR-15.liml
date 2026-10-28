@@ -1,0 +1,77 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.005" y="0" z="0" />
+  <node nid="3" x="0.005" y="0.005" z="0" />
+  <node nid="4" x="0" y="0.005" z="0" />
+  <node nid="5" x="0" y="0" z="0.005" />
+  <node nid="6" x="0.005" y="0" z="0.005" />
+  <node nid="7" x="0.005" y="0.005" z="0.005" />
+  <node nid="8" x="0" y="0.005" z="0.005" />
+  <node nid="9" x="0" y="0" z="0.01" />
+  <node nid="10" x="0.005" y="0" z="0.01" />
+  <node nid="11" x="0.005" y="0.005" z="0.01" />
+  <node nid="12" x="0" y="0.005" z="0.01" />
+  <node nid="13" x="0.005" y="0.01" z="0" />
+  <node nid="14" x="0" y="0.01" z="0" />
+  <node nid="15" x="0.005" y="0.01" z="0.005" />
+  <node nid="16" x="0" y="0.01" z="0.005" />
+  <node nid="17" x="0.005" y="0.01" z="0.01" />
+  <node nid="18" x="0" y="0.01" z="0.01" />
+  <node nid="19" x="0.01" y="0" z="0" />
+  <node nid="20" x="0.01" y="0.005" z="0" />
+  <node nid="21" x="0.01" y="0" z="0.005" />
+  <node nid="22" x="0.01" y="0.005" z="0.005" />
+  <node nid="23" x="0.01" y="0" z="0.01" />
+  <node nid="24" x="0.01" y="0.005" z="0.01" />
+  <node nid="25" x="0.01" y="0.01" z="0" />
+  <node nid="26" x="0.01" y="0.01" z="0.005" />
+  <node nid="27" x="0.01" y="0.01" z="0.01" />
+  <elset name="Blok" material="Ortho">
+    <elem eid="1" shape="hex8" nodes="1 2 3 4 5 6 7 8" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="2" shape="hex8" nodes="5 6 7 8 9 10 11 12" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="3" shape="hex8" nodes="4 3 13 14 8 7 15 16" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="4" shape="hex8" nodes="8 7 15 16 12 11 17 18" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="5" shape="hex8" nodes="2 19 20 3 6 21 22 7" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="6" shape="hex8" nodes="6 21 22 7 10 23 24 11" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="7" shape="hex8" nodes="3 20 25 13 7 22 26 15" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+    <elem eid="8" shape="hex8" nodes="7 22 26 15 11 24 27 17" orientationux="1" orientationuy="1" orientationuz="0" orientationvx="-1" orientationvy="1" orientationvz="1" />
+  </elset>
+  <force selection="Max"><x>1000.0 N</x><y>0.0 N</y><z>0.0 N</z></force>
+  <force selection="Min"><x>-1000.0 N</x><y>0.0 N</y><z>0.0 N</z></force>
+  <displacement selection="A"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="A"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="A"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="B"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="B"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="C"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <fieldvariable name="stress" displayunit="Pa" expanded="true" />
+  <fieldvariable name="stress in element coordinates" displayunit="Pa" expanded="true" />
+  <mat name="Ortho">
+    <mechanical type="Orthotropic" youngsmodulusu="100 GPa" youngsmodulusv="20 GPa" youngsmodulusw="10 GPa" poissonratiouv="0.3" poissonratiovw="0.2" poissonratiowu="0.05" shearmodulusuv="7 GPa" shearmodulusvw="4 GPa" shearmoduluswu="5 GPa" />
+  </mat>
+  <faceselection name="Min">
+    <face eid="1" faceid="6" />
+    <face eid="2" faceid="6" />
+    <face eid="3" faceid="6" />
+    <face eid="4" faceid="6" />
+  </faceselection>
+  <faceselection name="Max">
+    <face eid="5" faceid="4" />
+    <face eid="6" faceid="4" />
+    <face eid="7" faceid="4" />
+    <face eid="8" faceid="4" />
+  </faceselection>
+  <nodeselection name="A">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="B">
+    <node nid="19" />
+  </nodeselection>
+  <nodeselection name="C">
+    <node nid="14" />
+  </nodeselection>
+  <nodeselection name="D">
+    <node nid="9" />
+  </nodeselection>
+</liml>

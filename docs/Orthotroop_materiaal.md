@@ -119,7 +119,8 @@ en aan Mecway's eigen oplossing. OR-11: *stress in element coordinates* op een s
 twee verschillende elementassen (R σ Rᵀ, en op het grensvlak het gemiddelde van de
 elementknoopwaarden, zoals Mecway). OR-12 .. OR-14: niet-lineair statisch (kubus, ingeklemde
 balk met grote doorbuiging) en impliciete dynamica (staplast, periode), gelijk aan Mecway's
-eigen CCX-oplossing.
+eigen CCX-oplossing. OR-15: hex8 met `LINE_QUAD`; OR-17: een oriëntatiekaart met een formule
+van x (één `MASSIF`-groep per elementkolom), gelijk aan Mecway.
 
 ## 8. Bronnen
 
