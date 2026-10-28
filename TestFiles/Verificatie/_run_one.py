@@ -59,9 +59,13 @@ if exp:
     t0 = time.time()
     with open(os.path.join(work, u.run_name("_console.txt")), "w") as f:
         try:
+            # CREATE_NO_WINDOW: without it Windows opens a console window
+            # for run_aster.bat per case (the output goes to the file anyway)
             subprocess.call([u.exe_aster_path(), exp], stdout=f,
                             stderr=subprocess.STDOUT,
-                            timeout=float(cfg.get("timeout", 1800)))
+                            timeout=float(cfg.get("timeout", 1800)),
+                            creationflags=getattr(subprocess,
+                                                  "CREATE_NO_WINDOW", 0))
         except subprocess.TimeoutExpired:
             out["errors"].append("TIMEOUT")
     out["seconds"] = time.time() - t0
