@@ -376,6 +376,36 @@ meshes is given below.
   centre node counts. With the rotations without the centre node, (i) was 8.7 % too
   flexible.
 
+### LS-07l/m Bonded contact between solids, slave overhanging the master
+
+- **Purpose**: which slave nodes bonded contact ties when the slave face extends beyond
+  the master (KNOWN_BUGS 128). Mecway writes bonded contact for CCX as `*TIE` with the
+  *Tolerance* as `POSITION TOLERANCE` (0 = CCX's default); CCX ties a slave node only if a
+  master face lies opposite it (in-face tolerance 2.5% of a third of the mean
+  master-triangle height) and its distance to that face is within the tolerance
+  (`gentiedmpc.f`, ccx 2.23 source shipped with Mecway). The bridge applies the same rule
+  for solid on solid (`bridge_mesh.ccx_tied_nodes`).
+- **Model**: lap joint of two hex20 plates 40 × 10 mm: A x = 0..100 mm (10 × 2 × 1), B
+  x = 60..180 mm (8 × 2 × 1, own nodes that do not coincide with those of A); master = top
+  face of A, slave = the whole bottom face of B, so the nodes of B beyond x = 100 mm have
+  no master face opposite them. (l) B lies on A, tolerance 0; (m) gap 0.2 mm, tolerance
+  0.5 mm.
+- **Boundary conditions and load**: `fixed` on x = 0 of A, P = 100 N in −Z on the end face
+  of B.
+- **Reference**: Mecway 34 with CCX, headless (mean tip deflection 0.230773 mm (l),
+  0.230166 mm (m)).
+- **Result**: (l) 0.230773 mm, equal to Mecway (0.00%); 24 of the 69 slave nodes tied,
+  45 free (WARNING). Before the fix `LIAISON_MAIL` tied all slave nodes to the edge of A:
+  0.00908 mm, 25x too stiff. Mecway's own solver with *Constraint equations* gives the same
+  0.230773 mm. (m) 0.230773 mm, +0.26% from Mecway (CCX moves the slave nodes onto the
+  master, `ADJUST`; `LIAISON_MAIL` ties across the gap).
+- **Interpretation**: the slave nodes that CCX leaves free are now free in Code-Aster
+  too. Also checked on Samples/BoltedJoint with its three contacts made bonded (linear
+  static): the bridge leaves the same 58 nodes free as CCX lists in
+  `WarnNodeMissTiedContact.nam`; displacement 1.8973 mm, equal to Mecway (largest node
+  difference 0.004%; before 0.096 mm). With shells the bridge leaves the same nodes free
+  as CCX, but the displacements differ from Mecway (KNOWN_BUGS 128).
+
 ### LS-08 Node temperature (thermal stress per node)
 
 - **Purpose**: Mecway's *Node temperature* (`temperature3`, a temperature per node, also

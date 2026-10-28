@@ -377,6 +377,37 @@ opeenvolgende meshes.
   QUAD9-middenknoop, `CHARGES2_31`); de rotaties blijven bij `LIAISON_MAIL`, zodat de
   middenknoop meetelt. Met de rotaties zonder middenknoop was (i) 8,7 % te slap.
 
+### LS-07l/m Verlijmd contact tussen volumes, slave steekt voorbij de master uit
+
+- **Doel**: welke slave-knopen verlijmd contact koppelt als het slave-vlak voorbij de
+  master doorloopt (KNOWN_BUGS 128). Mecway schrijft verlijmd contact voor CCX als `*TIE`
+  met de *Tolerance* als `POSITION TOLERANCE` (0 = de standaard van CCX); CCX koppelt een
+  slave-knoop alleen als er een mastervlak tegenover ligt (tolerantie in het vlak 2,5% van
+  een derde van de gemiddelde hoogte van de masterdriehoeken) en de afstand tot dat vlak
+  binnen de tolerantie valt (`gentiedmpc.f`, broncode van ccx 2.23 bij Mecway). De bridge
+  past dezelfde regel toe voor volume op volume (`bridge_mesh.ccx_tied_nodes`).
+- **Model**: overlapnaad van twee hex20-platen 40 × 10 mm: A x = 0..100 mm (10 × 2 × 1), B
+  x = 60..180 mm (8 × 2 × 1, eigen knopen die niet samenvallen met die van A); master =
+  bovenvlak van A, slave = het hele ondervlak van B, dus de knopen van B voorbij
+  x = 100 mm hebben geen mastervlak tegenover zich. (l) B ligt op A, tolerantie 0; (m)
+  spleet 0,2 mm, tolerantie 0,5 mm.
+- **Randvoorwaarden en belasting**: `fixed` op x = 0 van A, P = 100 N in −Z op het eindvlak
+  van B.
+- **Referentie**: Mecway 34 met CCX, headless (gemiddelde doorbuiging van de tip
+  0,230773 mm (l), 0,230166 mm (m)).
+- **Resultaat**: (l) 0,230773 mm, gelijk aan Mecway (0,00%); 24 van de 69 slave-knopen
+  gekoppeld, 45 vrij (WARNING). Voor de reparatie koppelde `LIAISON_MAIL` alle
+  slave-knopen aan de rand van A: 0,00908 mm, 25x te stijf. Mecway's eigen solver met
+  *Constraint equations* geeft dezelfde 0,230773 mm. (m) 0,230773 mm, +0,26% t.o.v. Mecway
+  (CCX schuift de slave-knopen op de master, `ADJUST`; `LIAISON_MAIL` koppelt over de
+  spleet).
+- **Interpretatie**: de slave-knopen die CCX vrij laat, zijn nu ook in Code-Aster vrij.
+  Ook nagelopen op Samples/BoltedJoint met de drie contacten verlijmd (lineair statisch):
+  de bridge laat dezelfde 58 knopen vrij die CCX in `WarnNodeMissTiedContact.nam` noemt;
+  verplaatsing 1,8973 mm, gelijk aan Mecway (grootste knoopverschil 0,004%; eerst
+  0,096 mm). Met schalen laat de bridge dezelfde knopen vrij als CCX, maar de verplaatsingen
+  wijken af van Mecway (KNOWN_BUGS 128).
+
 ### LS-08 Node temperature (thermische spanning per knoop)
 
 - **Doel**: Mecway's *Node temperature* (`temperature3`, een temperatuur per knoop, ook
