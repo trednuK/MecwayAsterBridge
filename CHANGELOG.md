@@ -62,6 +62,18 @@
   zig-zag section) and the joint diagram within 0.1%, equal to Mecway 34's own CCX solve within
   0.01%. Not: dynamic response and Mecway's spring element variant (ERROR, KNOWN_BUGS 124).
   New document docs/Boutvoorspanning.md / docs/en/Bolt_pretension.md.
+- **Pre-tension section in dynamics and on a spring (step S15b)**: the prism variant now also
+  works in Dynamic response (D30/D31, implicit `dyna_impl_3d`). As in Mecway (CCX deck of a
+  headless solve: one dynamic step, `AMPLITUDE=STEP`) a constant force or length adjustment
+  acts as a step from t = 0, without a static preload step; a table or formula in t follows
+  its time course. Mecway's spring element variant (internal solver: the face of one spring
+  with a length adjustment) is translated in linear static as two nodal forces k × adjustment
+  that pull the spring's nodes together; like Mecway, the bridge uses the length adjustment
+  for a spring also when *Force* is chosen. Verification PT-06 .. PT-10: period and peak of
+  the dynamic joint within 0.06% of Mecway 34 with CCX (hand calculation within 0.6%), the
+  springs exact and equal to Mecway's internal solver. Not: explicit dynamics, and the spring
+  variant in Frequency/Buckling, where Mecway also gives the tensioned spring a geometric
+  stiffness (ERROR, KNOWN_BUGS 124).
 - **2D and axisymmetric static analyses (STAPPENPLAN S16a)**: Mecway's *Static 2D* (S20) and
   *Static Axisymmetric* (SA0) are now translated to Code-Aster `MECA_STATIQUE` with
   `C_PLAN` (plane stress, the material's *Shell/membrane* thickness), `D_PLAN` (with *plane

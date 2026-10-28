@@ -7,9 +7,10 @@
 # bridge_pretension; CPython 3, without Mecway and Code-Aster): the XML as
 # Mecway 34 writes it (force="true" / adjustment="true"), the prism axis,
 # the cut through the bar of TestFiles/Verificatie PT-01 (node copies,
-# LIAISON_DDL, reference node, BC on that node) and the rejections
-# (dynamic analysis, spring element, all faces parallel). The results of a
-# run: TestFiles/Verificatie (PT-01 ... PT-05).
+# LIAISON_DDL, reference node, BC on that node), implicit dynamics, the
+# spring element variant (two nodal forces) and the rejections (explicit
+# dynamics, spring variant outside linear static, two springs, all faces
+# parallel). The results of a run: TestFiles/Verificatie (PT-01 ... PT-10).
 #
 #   python tests/test_bridge_pretension.py
 
@@ -134,12 +135,58 @@ try:
               "POI1 cell and groups in the mesh")
         check(md["poi1_groups"].get("BRPRET") == "DIS_T", "DIS_T group")
 
-    # dynamic analysis: rejected
+    # implicit dynamics (S15b): translated like in static
     del LOG[:]
-    md, ok = run(T.build_pt01(), "dyna_impl_3d")
+    md, ok = run(T.build_pt06(), "dyna_impl_3d")
+    sec = md.get("pretension_sections") or []
+    check(ok and len(sec) == 1 and [b["aster_dict"] for b in md["bcs"]
+                                    if b["type"] == "pretensionsection"]
+          == [{"FX": 1000.0}], "implicit dynamics translated: {0}".format(
+              sec))
+    # explicit dynamics: rejected
+    del LOG[:]
+    md, ok = run(T.build_pt06(), "dyna_expl_3d")
     check(not md.get("pretension_sections") and any(
-        "only in linear and nonlinear static" in l for l in LOG),
-        "dynamic analysis rejected")
+        "implicit dynamics" in l and "ERROR" in l for l in LOG),
+        "explicit dynamics rejected")
+
+    # spring element variant (S15b): two nodal forces k d along the axis;
+    # force="true" still uses the adjustment (like Mecway)
+    del LOG[:]
+    md, ok = run(T.build_pt10())
+    sp = [b for b in md["bcs"] if b["type"] == "pretensionsection"]
+    e = T.E10
+    want = [dict((c, s * 1000.0 * 2e-3 * e[i]) for i, c in
+                 enumerate(("FX", "FY", "FZ"))) for s in (1.0, -1.0)]
+    check(ok and len(sp) == 2 and not md.get("pretension_sections") and
+          all(b["aster_keyword"] == "FORCE_NODALE" and
+              b["aster_target"] == "GROUP_NO" for b in sp) and
+          all(abs(sp[i]["aster_dict"][c] - want[i][c]) < 1e-12
+              for i in range(2) for c in want[i]) and
+          [b["selection"] for b in sp] == ["BRPS1A", "BRPS1B"],
+          "spring variant PT-10: {0}".format(sp))
+    mail = open(os.path.join(work, "model.mail")).read()
+    check("BRPS1A" in mail and "BRPS1B" in mail, "spring node groups")
+    md, ok = run(T.build_pt09())
+    sp = [b for b in md["bcs"] if b["type"] == "pretensionsection"]
+    check(len(sp) == 2 and abs(sp[0]["aster_dict"]["FX"] - 1.0) < 1e-12,
+          "spring variant with force=\"true\": adjustment used: {0}".format(
+              sp))
+    # spring variant outside linear static: rejected (geometric stiffness)
+    del LOG[:]
+    md, ok = run(T.build_pt09(), "buckling_3d")
+    check(not [b for b in md["bcs"] if b["type"] == "pretensionsection" and
+               not b.get("skip")] and any(
+        "only in linear static" in l for l in LOG),
+        "spring variant in buckling rejected")
+    # two springs in one selection: rejected
+    m = T.build_pt09()
+    m.selections = [s_ for s_ in m.selections if 'name="VeerVlak"' not in s_]
+    m.face_selection("VeerVlak", [(1, 1), (2, 1)])
+    del LOG[:]
+    md, ok = run(m)
+    check(any("exactly one spring" in l for l in LOG),
+          "two springs rejected")
     # all selected faces parallel: no axis
     m = T.build_pt01()
     m.selections = [s_ for s_ in m.selections if 'name="Bout"' not in s_]

@@ -141,7 +141,8 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15).
+Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
+5 cases, 17 controles OK (28 oktober 2026, stap S15b).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen
@@ -1740,10 +1741,11 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 
 Mecway's *Pre-tension section* ([Boutvoorspanning.md](Boutvoorspanning.md)): snede door
 het prisma, `LIAISON_DDL` naar een referentieknooppunt (DX = verkorting), kracht als
-`FORCE_NODALE`, lengteverandering als `DDL_IMPO`. Module `tests_boutvoorspanning.py`
-(groep "Boutvoorspanning", 5 cases), draaien met `python run_verificatie.py PT`. Mecway 34
-headless met CCX (`mw_solve.py`, dezelfde `.liml` met het spanningsveld, 28 oktober 2026)
-als tweede referentie.
+`FORCE_NODALE`, lengteverandering als `DDL_IMPO`; de variant met een veerelement als twee
+knoopkrachten. Module `tests_boutvoorspanning.py` (groep "Boutvoorspanning", 10 cases),
+draaien met `python run_verificatie.py PT`. Mecway 34 headless met CCX (`mw_solve.py`,
+dezelfde `.liml` met het spanningsveld, 28 oktober 2026), voor PT-09/10 met zijn interne
+solver, als tweede referentie.
 
 | Case | Model | Referentie | Resultaat |
 |---|---|---|---|
@@ -1752,12 +1754,24 @@ als tweede referentie.
 | PT-05 | idem in tet4 (6 per cel), vlakken van laag 4..6: doorsnede op y = 55 mm binnen een laag (zigzag over vlakken, ribben en hoekknopen) | als PT-01; Mecway 100,000 MPa | exact |
 | PT-03 | boutkolom (10 × 10 mm) tussen twee platen (E × 1000, ν = 0) met twee hulskolommen (samen 2 × het oppervlak), lengte 100 mm; lengteverandering 0,01 mm plus 600 N omhoog | verbindingsdiagram: Fb = kb·kc/(kb+kc)·δ + P·kb/(kb+kc) = 1533,33 N, huls 933,33 N; Mecway 1531,71 N | 1531,80 N (−0,10%, plaatflexibiliteit), huls 933,13 N; Mecway +0,006% |
 | PT-04 | idem, kracht 1000 N en externe kracht 1200·t N, Niet-lineair statisch (quasi-statisch, 4 stappen) | kracht: Fb = 1000 N op elk tijdstip (Mecway/CCX: de `*CLOAD` blijft), huls F − P = −200 N bij t = 1; Mecway 999,929 N | 1000,00 N bij t = 0,5 en 1, huls −199,54 N; Mecway +0,007% |
+| PT-06 | verbinding van PT-03 in Dynamische respons (D31, `dyna_impl_3d`, HHT α = −0,1, Δt = 0,02 ms, 3 ms), dichtheid bovenplaat 2e6 kg/m³ (m = 10 kg), kolommen 7,85 kg/m³; kracht 1000 N constant | massa-veersysteem: T = 2π√(m/kc) = 0,99346 ms, bovenplaat van 0 tot 2F/kc = 5e-6 m (staplast vanaf t = 0, geen voorspanstap); boutkracht blijft F; Mecway (CCX) 0,995693 ms, 5,0147e-6 m | T 0,99579 ms (+0,23%), piek 5,0117e-6 m (+0,23%), boutkracht 1000 N; Mecway +0,01% / −0,06% |
+| PT-07 | idem, lengteverandering 0,01 mm constant | T = 2π√(m/(kb+kc)) = 0,81116 ms, piek 2·kb·δ/(kb+kc) = 6,6667e-6 m; Mecway 0,813096 ms, 6,66678e-6 m | 0,81328 ms (+0,26%), 6,6643e-6 m (−0,04%); Mecway +0,02% / −0,04% |
+| PT-08 | idem in D30, kracht als formule 1000·t/0,003 N | u(3 ms) = −F/kc·(1 − sin(ωt)/(ωt)) = −2,4837e-6 m; Mecway −2,49738e-6 m | −2,4978e-6 m (+0,57%: gevoelig voor de periode en de schemademping van de kleine trilling); Mecway +0,02% |
+| PT-09 | variant met een veerelement: veren k1 = 1000 en k2 = 3000 N/m in serie langs X tussen vastgehouden knopen, doorsnede op veer 1 met `force="true"`, kracht 0 N, lengteverandering 1 mm (interne solver) | middelste knoop −k1·δ/(k1+k2) = −0,25 mm, reactie −0,75 N; Mecway hetzelfde (het gebruikt de lengteverandering, wat de modus ook is) | exact |
+| PT-10 | idem langs (1, 2, 2), k2 = 4000 N/m, lengteverandering 2 mm, middelste knoop dwars vastgehouden met schuine verplaatsingsvoorwaarden | −0,4 mm langs de as, reactie x −0,53333 N; Mecway hetzelfde | exact |
 
 Modusattribuut: Mecway 34 schrijft `force="true"` voor de kracht en `adjustment="true"`
 voor de lengteverandering (modellen opnieuw opgeslagen door Mecway; met `force="false"`
 of zonder attribuut legt Mecway de kracht op). BoltedJoint (Samples) zelf rekent niet met
 Code-Aster, ook niet zonder de doorsnede: plaat B wordt alleen door wrijvingscontact
-gehouden (`MECANONLINE9_4` in stap 1, KNOWN_BUGS 43).
+gehouden (`MECANONLINE9_4` in stap 1, KNOWN_BUGS 43). Dynamica: de CCX-invoer van Mecway's
+D30/D31-solve heeft één `*DYNAMIC`-stap met `AMPLITUDE=STEP` en de `*CLOAD`/`*BOUNDARY` op
+het pre-tension-knooppunt (een formule in t als `*AMPLITUDE`), dus constante waarden werken
+als staplast vanaf t = 0, zoals een gewone last in de bridge. Veervariant: het faceid van
+het lijnelement maakt in Mecway niet uit; in Buckling geeft Mecway de voorgespannen veer
+geometrische stijfheid (ingeklemde balk met een voorgespannen veer van voet naar top:
+6,991 in Mecway, 1,748 met de knoopkrachten in Code-Aster), daarom vertaalt de bridge de
+veervariant alleen in lineair statisch (KNOWN_BUGS 124).
 
 ## 6. Dynamica (DY)
 

@@ -139,7 +139,8 @@ formulas `s1`, `tr`, `e1`).
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added after this run (not yet in a full regression, not in the table): Bolt pretension
-PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15).
+PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
+checks OK (28 October 2026, step S15b).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
@@ -1733,10 +1734,11 @@ samples) plus the kinks of the load tables (NL-20).
 
 Mecway's *Pre-tension section* ([Bolt_pretension.md](Bolt_pretension.md)): cut through
 the prism, `LIAISON_DDL` to a reference node (DX = shortening), force as `FORCE_NODALE`,
-length adjustment as `DDL_IMPO`. Module `tests_boutvoorspanning.py` (group
-"Boutvoorspanning", 5 cases), run with `python run_verificatie.py PT`. Mecway 34 headless
-with CCX (`mw_solve.py`, the same `.liml` with the stress field, 28 October 2026) as the
-second reference.
+length adjustment as `DDL_IMPO`; the spring element variant as two nodal forces.
+Module `tests_boutvoorspanning.py` (group "Boutvoorspanning", 10 cases), run with
+`python run_verificatie.py PT`. Mecway 34 headless with CCX (`mw_solve.py`, the same
+`.liml` with the stress field, 28 October 2026), for PT-09/10 with its internal solver,
+as the second reference.
 
 | Case | Model | Reference | Result |
 |---|---|---|---|
@@ -1745,12 +1747,24 @@ second reference.
 | PT-05 | idem in tet4 (6 per cell), faces of layers 4..6: section at y = 55 mm inside a layer (zig-zag over faces, edges and corner nodes) | as PT-01; Mecway 100.000 MPa | exact |
 | PT-03 | bolt column (10 × 10 mm) between two plates (E × 1000, ν = 0) with two sleeve columns (together 2 × the area), length 100 mm; length adjustment 0.01 mm plus 600 N upward | joint diagram: Fb = kb·kc/(kb+kc)·δ + P·kb/(kb+kc) = 1533.33 N, sleeve 933.33 N; Mecway 1531.71 N | 1531.80 N (−0.10%, plate flexibility), sleeve 933.13 N; Mecway +0.006% |
 | PT-04 | idem, force 1000 N and external force 1200·t N, Nonlinear static (quasi-static, 4 steps) | force mode: Fb = 1000 N at every time (Mecway/CCX: the `*CLOAD` stays), sleeve F − P = −200 N at t = 1; Mecway 999.929 N | 1000.00 N at t = 0.5 and 1, sleeve −199.54 N; Mecway +0.007% |
+| PT-06 | joint of PT-03 in Dynamic response (D31, `dyna_impl_3d`, HHT α = −0.1, Δt = 0.02 ms, 3 ms), top plate density 2e6 kg/m³ (m = 10 kg), columns 7.85 kg/m³; force 1000 N constant | mass-spring: T = 2π√(m/kc) = 0.99346 ms, top plate from 0 to 2F/kc = 5e-6 m (step from t = 0, no preload step); bolt force stays F; Mecway (CCX) 0.995693 ms, 5.0147e-6 m | T 0.99579 ms (+0.23%), peak 5.0117e-6 m (+0.23%), bolt force 1000 N; Mecway +0.01% / −0.06% |
+| PT-07 | idem, length adjustment 0.01 mm constant | T = 2π√(m/(kb+kc)) = 0.81116 ms, peak 2·kb·δ/(kb+kc) = 6.6667e-6 m; Mecway 0.813096 ms, 6.66678e-6 m | 0.81328 ms (+0.26%), 6.6643e-6 m (−0.04%); Mecway +0.02% / −0.04% |
+| PT-08 | idem in D30, force as formula 1000·t/0.003 N | u(3 ms) = −F/kc·(1 − sin(ωt)/(ωt)) = −2.4837e-6 m; Mecway −2.49738e-6 m | −2.4978e-6 m (+0.57%: sensitive to the period and the scheme damping of the small vibration); Mecway +0.02% |
+| PT-09 | spring element variant: springs k1 = 1000 and k2 = 3000 N/m in series along X between held nodes, section on spring 1 with `force="true"`, force 0 N, length adjustment 1 mm (internal solver) | middle node −k1·δ/(k1+k2) = −0.25 mm, reaction −0.75 N; Mecway the same (it uses the adjustment whatever the mode) | exact |
+| PT-10 | idem along (1, 2, 2), k2 = 4000 N/m, length adjustment 2 mm, middle node held across with oblique displacement constraints | −0.4 mm along the axis, reaction x −0.53333 N; Mecway the same | exact |
 
 Mode attribute: Mecway 34 writes `force="true"` for the force and `adjustment="true"` for
 the length adjustment (models re-saved by Mecway; with `force="false"` or without an
 attribute Mecway applies the force). BoltedJoint (Samples) itself does not solve with
 Code-Aster, also without the section: plate B is only held by friction contact
-(`MECANONLINE9_4` in step 1, KNOWN_BUGS 43).
+(`MECANONLINE9_4` in step 1, KNOWN_BUGS 43). Dynamics: the CCX deck of Mecway's D30/D31
+solve has one `*DYNAMIC` step with `AMPLITUDE=STEP` and the `*CLOAD`/`*BOUNDARY` on the
+pre-tension node (a formula in t as an `*AMPLITUDE`), so constant values act as a step
+from t = 0, as for an ordinary load in the bridge. Spring variant: the faceid of the line
+element does not matter in Mecway; in Buckling Mecway gives the tensioned spring a
+geometric stiffness (cantilever beam with a pretensioned spring from base to tip: 6.991
+in Mecway, 1.748 with the nodal forces in Code-Aster), so the bridge translates the
+spring variant only in linear static (KNOWN_BUGS 124).
 
 ## 6. Dynamics (DY)
 

@@ -589,7 +589,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    Headless, Mecway could not solve a hand-written spring (line2 + Spring material):
    the internal solver ignored it (deflection equal to that without the spring; a
    separate spring gave a singular system) and CCX gave no solution. To be checked
-   with a spring created in the Mecway GUI.
+   with a spring created in the Mecway GUI. Update 28 Oct 2026 (S15b): two hand-written
+   springs in series solve in Mecway 34's internal solver and equal the bridge exactly,
+   along X and inclined (PT-09/10, static), when the end nodes are held with
+   *Displacement* in X, Y and Z; with `<fixed>` on the node selection Mecway did not hold
+   those spring-only nodes (singular, displacements ~1e10 m), which may be the singular
+   system above. Springs in Buckling: Mecway gives a tensioned spring a geometric
+   stiffness, DIS_T does not (measured with a pretensioned spring, KNOWN_BUGS 124);
+   suspected for any spring with an axial force in Buckling and modal with prestress.
 
 116\. **Element orientation card: parts not compared with Mecway** (question,
    `bridge_orientation`). Measured headless with Mecway 34 on hand-written cards (Mecway
@@ -1086,11 +1093,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    says so). The `.mess` stays in the work folder. The default route "liml" writes the monitor
    (`bridge_monitor.py`, `bridge_results_liml.splice_results`).
 124\. **Pre-tension section: limits** (confirmed with runs, `bridge_pretension.py`; S15,
-   docs/Boutvoorspanning.md par. 7). (a) Only in linear and nonlinear static
-   (`MECA_STATIQUE`, `STAT_NON_LINE`); Mecway also allows Dynamic response (D30/D31) with
-   CCX, the bridge then gives an ERROR and leaves the section out. (b) Mecway's spring
-   element variant (internal solver, a length adjustment on one spring) is not translated
-   (ERROR). (c) Loads, supports and contact on faces that touch the section: the boundary
+   S15b, docs/Boutvoorspanning.md par. 7). (a) The prism variant in linear and nonlinear
+   static and implicit dynamics (`MECA_STATIQUE`, `STAT_NON_LINE`, `DYNA_NON_LINE` with
+   HHT/NEWMARK; PT-06 .. PT-08 equal to Mecway's CCX within 0.06%); not in explicit
+   dynamics (`DIFF_CENT`: the reference node has no mass; Lagrange relations there NOT
+   verified) or on a modal basis (ERROR). (b) Mecway's spring element variant only in
+   linear static (two nodal forces k d, PT-09/10 exact against Mecway's internal solver).
+   Mecway also allows it in Frequency and Buckling, but gives the tensioned spring a
+   geometric stiffness there (cantilever with a pretensioned spring from base to tip:
+   buckling factor 6.991 in Mecway, 1.748 with the nodal forces in Code-Aster, measured 28
+   Oct 2026); DIS_T has none, so the bridge gives an ERROR. A fix would need the spring's
+   geometric stiffness N/L across its axis (e.g. an extra element), NOT built. (c) Loads, supports and contact on faces that touch the section: the boundary
    cells of the elements below the section get the copies of the section nodes, except
    cells that only carry supports (those stay on the Mecway node: a support on both the node
    and its copy repeats the tie, `FACTOR_11`, seen in PT-01); node-based quantities that

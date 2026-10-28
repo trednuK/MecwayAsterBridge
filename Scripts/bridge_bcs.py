@@ -1483,13 +1483,30 @@ class PretensionSectionBC(BaseBC):
             return {"mode": "adjustment",
                     "value": _parse_value_strict(item, "adjustment", "length",
                                                  0.0, root)}
-        return {"mode": "force",
-                "value": _parse_value_strict(item, "force", "force", 0.0,
-                                             root)}
+        params = {"mode": "force",
+                  "value": _parse_value_strict(item, "force", "force", 0.0,
+                                               root)}
+        # The spring element variant (internal solver) always uses the
+        # length adjustment, whatever the mode (Mecway 34 headless, 28 Oct
+        # 2026: force="true" with force 0 N and adjustment 1 mm shortened
+        # the spring by 1 mm; force 5 N with adjustment 0 m did nothing).
+        # Kept for bridge_pretension; an untranslatable formula only
+        # matters when the section turns out to be on a spring.
+        try:
+            params["spring_adjustment"] = _parse_value_strict(
+                item, "adjustment", "length", 0.0, root)
+        except FormulaError as e:
+            params["spring_adjustment"] = 0.0
+            params["_spring_adjustment_error"] = e.text()
+        return params
 
     def to_aster_dict(self, params):
         """FX on the reference node (force, tension positive) or DX
-        (shortening); bridge_pretension points the BC at that node."""
+        (shortening); bridge_pretension points the BC at that node. The
+        spring variant: FX, FY, FZ on one end node of the spring
+        (bridge_pretension sets params["forces"])."""
+        if params.get("mode") == "spring":
+            return dict(params.get("forces", {}))
         if params.get("mode") == "adjustment":
             return {"DX": params.get("value", 0.0)}
         return {"FX": params.get("value", 0.0)}
