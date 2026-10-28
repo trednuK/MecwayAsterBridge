@@ -488,8 +488,8 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 - **T-, C- en L-profielen**: het dwarskrachtcentrum ligt niet in het zwaartepunt, dus
   buiging en torsie koppelen (buig-torsieknik). `POU_D_E` mist die koppeling en geeft
   dan te hoge factoren: C-kolom 100 × 50 × 6 mm 616 tegen 393 (hex20). De bridge geeft
-  bij knik met deze profielen een WARNING; controleer zulke constructies met schaal- of
-  volume-elementen (KNOWN_BUGS 115).
+  bij knik met deze profielen een WARNING. Kies dan `elem_beam` = `POU_D_TG` (§3.5.1;
+  dezelfde kolom 385,0) of controleer met schaal- of volume-elementen (KNOWN_BUGS 115).
 - **Negatieve factoren**: de bridge geeft ook de factoren voor de omgekeerde last (bij
   het L-raamwerk −53,0). Mecway geeft alleen positieve factoren en slaat met zijn
   standaard-*shift* 1 soms een factor onder 1 over (ssll105: 0,4226 pas met shift 0,3).
@@ -499,6 +499,66 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
   noemt dan de waarde voor *Nauwkeurigheid oplosser (RESI_RELA)* (`lin_solver_resi`) op
   de pagina *Knik* of *Modaal*; daarmee gelijk aan Mecway (BU-37). Zie
   [Foutmeldingen](Foutmeldingen_CodeAster.md), `FACTOR_57`.
+
+#### 3.5.1 Balk met welving: `elem_beam` = `POU_D_TG`
+
+Voor buig-torsieknik en kip van open profielen (T, C, L, ook I) kies je op de pagina
+**Elementen** `elem_beam` = `POU_D_TG`. Code-Aster's `POU_D_TG` is een Timoshenko-balk met
+een zevende vrijheidsgraad `GRX` (de welving), het dwarskrachtcentrum buiten het
+zwaartepunt (`EY`, `EZ`) en de welvingsconstante `JG`; zijn `RIGI_GEOM` koppelt
+normaalkracht en buigende momenten aan de torsie om het dwarskrachtcentrum (Code-Aster
+U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
+
+<!-- FIGURE: page Elementen, settings "Balken (line2/line3)" = POU_D_TG and "Welving POU_D_TG-balken bij opleggingen", markers: 1 = keuzelijst Balken met POU_D_TG, 2 = keuzelijst Welving (auto/free/blocked) -->
+
+![C-profiel met zwaartepunt, dwarskrachtcentrum en lokale assen](img/warping_section.svg)
+
+1. Zwaartepunt G: hier ligt de balklijn (de Mecway-knopen).
+2. Dwarskrachtcentrum S: om dit punt draait de doorsnede bij torsie.
+3. `EZ` (en `EY`): de vector van S naar G in de lokale assen, zoals `AFFE_CARA_ELEM` hem vraagt.
+4. Lokale as y = Mecway's V-as (verticaal in Mecway's tekening van het profiel).
+5. Lokale as z = Mecway's W-as (horizontaal; of die in Mecway's tekening naar rechts wijst is niet nagegaan).
+6. Torsie θx om S; de welving `GRX` is de verandering van θx langs de balk.
+
+![Inklemming en vorkopleggingen](img/warping_supports.svg)
+
+1. *Fixed support* (inklemming): met `beam_warping` = `auto` ligt de welving vast (`GRX` = 0).
+2. Vorkoplegging (*Pinned support* of verplaatsingen plus *Node rotation* om de balkas x): de welving blijft vrij.
+3. Alle andere knopen: welving vrij.
+
+- **Doorsnede**: de bridge geeft `AY`/`AZ` (zoals `POU_D_T`) en `EY`, `EZ`, `JG`, `IYR2`,
+  `IZR2`. Bij een *General section* met een `#ASTER-SECTIE`-regel van MecwaySectionProps
+  komen ze uit die regel (exact); bij I-, T-, C- en L-profielen berekent de bridge ze met
+  dunwandige formules (hartlijnen, sectoriële coördinaat, plus de welving door de
+  plaatdikte; Timoshenko & Gere 1961 §5.1–5.4, Trahair 1993): voor het hoekprofiel van
+  ssll103a gelijk aan de testwaarden binnen 0,12%. Een *General section* zonder regel
+  krijgt `JG` = 0 en `EY` = `EZ` = 0 met een WARNING: dan torsie om het zwaartepunt zonder
+  welvingsstijfheid. Rechthoek en cirkel blijven `RECTANGLE`/`CERCLE` (dubbelsymmetrisch,
+  welving verwaarloosbaar).
+- **Welving bij opleggingen** (instelling `beam_warping`, pagina **Elementen**; Mecway
+  kent geen welving): `auto` (standaard) zet `GRX` = 0 waar een buigrotatie van de balk
+  vastligt (*Fixed support*, inklemming, *Node rotation* dwars op de balk, starre
+  koppeling `rigidbody`), en laat de welving vrij bij een vorkoplegging (alleen
+  verplaatsingen en de rotatie om de balkas vast, zoals *Pinned support* plus *Node
+  rotation* om de balkas) en overal elders. `free`: overal vrij; `blocked`: vast in elke
+  opgelegde knoop (bijv. kopplaten bij een scharnier). De log noemt per knoop welke
+  regel gold. Let op: *Fixed support* alleen (Code-Aster `BLOCAGE`) houdt de welving niet
+  vast; daarvoor dient deze regel.
+- **Gemeten** ([`Verificatie.md`](Verificatie.md) §7, BU-38 … BU-42, LS-90, LS-91):
+  C-kolom van BU-35 385,0 (theorie 386,1, hex20 393,0); kip van een I-ligger op
+  vorkopleggingen −0,10% van Timoshenko & Gere §6.2; ssll103a gelijk aan `VALE_CALC`;
+  T-kolom −0,6% van de theorie; torsie van een ingeklemde I-ligger met verhinderde
+  welving −0,09%.
+- **Grenzen**: welving is per knoop doorgaand, ook waar staven onder een hoek samenkomen
+  (zoals Code-Aster); bij een *flexible joint* en een element-offset ligt de balk op een
+  eigen knoop zonder oplegging, dus is de welving daar vrij. Reactiekrachten per knoop
+  van `POU_D_TG` hebben in Code-Aster 17.4 een fout die met de afschuifvervorming groeit
+  (WARNING, KNOWN_BUGS 122); verplaatsingen, snedekrachten en knikfactoren kloppen. De
+  bimoment (`BX` in `EFGE_ELNO`) gaat niet naar Mecway. In expliciete dynamica worden de
+  balken `POU_D_T` (WARNING): de massamatrix van `POU_D_TG` heeft geen massa voor `GRX`, en
+  het expliciete schema stopte daarop met `FACTOR_11`. Of Mecway's W-as in de tekening
+  naar rechts wijst is niet nagegaan: dat verandert alleen het teken van `EZ` en `IZR2`
+  van C- en L-profielen, niet een kniklast onder normaalkracht.
 
 ## 4. Meldingen en oplossingen
 
@@ -522,7 +582,11 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 | alarm `ALGELINE2_74` | een van de `VERI_MODE`-controles is niet gehaald | zie de alarmen ervoor en de tabel in de `.mess` |
 | `<EXCEPTION> <FACTOR_57>` in de statische stap; de bridge meldt de geschatte fout | fout < 1e-3: slecht geconditioneerd (slank volumemodel op buiging), geen mechanisme; groter: een mechanisme | kleine fout: *Nauwkeurigheid oplosser (RESI_RELA)* op de waarde uit de melding; anders opleggingen controleren ([Foutmeldingen](Foutmeldingen_CodeAster.md), `FACTOR_57`) |
 | WARNING: Negatieve kniklastfactor(en) | knik bij de omgekeerde last (bijv. trek in plaats van druk) | controleer de richting van de last; alleen positieve factoren horen bij de aangebrachte richting |
-| WARNING: Knik met T-, C- of L-profielen | buig-torsieknik ontbreekt in de balkelementen (dwarskrachtcentrum, welving) | controleer met schaal- of volume-elementen (§3.5, KNOWN_BUGS 115) |
+| WARNING: Knik met T-, C- of L-profielen | buig-torsieknik ontbreekt in de balkelementen (dwarskrachtcentrum, welving) | kies `elem_beam` = `POU_D_TG` (§3.5.1) of controleer met schaal- of volume-elementen (KNOWN_BUGS 115) |
+| WARNING: Balk-elset ... (POU_D_TG): geen welvingsconstante en geen dwarskrachtcentrum bekend | *General section* zonder `#ASTER-SECTIE`-regel | maak de doorsnede met MecwaySectionProps (regel met `JG`, `EY`, `EZ`), of kies een I-, T-, C- of L-profiel (§3.5.1) |
+| WARNING: Balk-elset ... (POU_D_TG): #ASTER-SECTIE heeft geen JG | oude regel zonder welvingsconstante | maak de regel opnieuw met MecwaySectionProps |
+| WARNING: elem_beam = POU_D_TG (welving) werkt niet in expliciete dynamica | geen massa voor de welving `GRX` (§3.5.1) | normaal; de balken rekenen daar als `POU_D_T` |
+| WARNING: Balken POU_D_TG: Code-Aster 17.4 geeft ... reactiekrachten per knoop met een fout | eigenschap van `POU_D_TG` in Code-Aster 17.4 (KNOWN_BUGS 122) | lees reacties met die marge, of reken de reacties met `POU_D_T`; snedekrachten en verplaatsingen kloppen |
 | INFO: Buckling of beams ... appears as several equal factors | torsieknik zonder welving: één factor per element (§3.5) | normaal; het Sturm-alarm `ALGELINE5_23` hoort erbij |
 | WARNING: Mode 1 heeft ~0 Hz | starre beweging of mechanisme | opleggingen controleren |
 | Geen RX/RY/RZ achter de modes; in de `.mess`: `aster_results_export: WAARSCHUWING: effectieve massa rotaties niet ...` | de eigen berekening lukte niet of kwam voor de translaties niet uit op Code-Aster's waarden (bijv. een onbekend soort vrijheidsgraad) | de frequenties, vormen en translaties zijn goed; meld het model als fout (KNOWN_BUGS). Een rotatie-effectieve massa kun je dan in Mecway zelf opvragen (*modal effective mass*, interne solver) |

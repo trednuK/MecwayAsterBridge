@@ -502,6 +502,42 @@ GLOSSARY = OrderedDict([
                     u"in nonlinear static with large displacements; "
                     u"elsewhere POU_D_T. No beam stresses, section forces "
                     u"one value per element.")),
+    ("POU_D_TG", ("element", u"Balk volgens Timoshenko met welving (7e "
+                  u"vrijheidsgraad GRX) en het dwarskrachtcentrum buiten het "
+                  u"zwaartepunt (EY, EZ, JG): buig-torsieknik en kipknik van "
+                  u"open profielen (T, C, L, I). JG/EY/EZ uit #ASTER-SECTIE "
+                  u"of berekend voor I-, T-, C- en L-profielen; algemene "
+                  u"doorsnede zonder #ASTER-SECTIE: JG = 0 (WARNING). In "
+                  u"expliciete dynamica POU_D_T (WARNING).",
+                  u"Timoshenko beam with warping (7th degree of freedom "
+                  u"GRX) and the shear centre outside the centroid (EY, EZ, "
+                  u"JG): flexural-torsional and lateral-torsional buckling "
+                  u"of open profiles (T, C, L, I). JG/EY/EZ from "
+                  u"#ASTER-SECTIE or computed for I, T, C and L profiles; "
+                  u"general section without #ASTER-SECTIE: JG = 0 "
+                  u"(WARNING). In explicit dynamics POU_D_T (WARNING).")),
+    ("auto (warping)", ("element", u"Welving vast (GRX = 0) waar een "
+                        u"buigrotatie van de balk vastligt: Fixed support, "
+                        u"inklemming, Node rotation dwars op de balk, starre "
+                        u"koppeling. Vrij bij een vorkoplegging (alleen "
+                        u"verplaatsingen en de rotatie om de balkas vast) en "
+                        u"elders. Standaard.",
+                        u"Warping fixed (GRX = 0) where a bending rotation "
+                        u"of the beam is fixed: Fixed support, clamp, Node "
+                        u"rotation across the beam, rigid coupling. Free at "
+                        u"a fork support (only translations and the rotation "
+                        u"about the beam axis fixed) and elsewhere. "
+                        u"Default.")),
+    ("free (warping)", ("element", u"Welving overal vrij, ook bij een "
+                        u"inklemming (geeft lagere knikfactoren).",
+                        u"Warping free everywhere, also at a clamp (gives "
+                        u"lower buckling factors).")),
+    ("blocked (warping)", ("element", u"Welving vast in elke opgelegde "
+                           u"knoop van een POU_D_TG-balk, ook bij een "
+                           u"scharnier of vorkoplegging (bijv. kopplaten).",
+                           u"Warping fixed at every supported node of a "
+                           u"POU_D_TG beam, also at a pinned or fork "
+                           u"support (e.g. end plates).")),
     ("BARRE", ("element", u"Staaf (Mecway truss): alleen normaalkracht, "
                u"kleine verplaatsingen.",
                u"Bar (Mecway truss): axial force only, small "
@@ -1182,13 +1218,28 @@ SETTING_HELP = {
                   u"Standaard POU_D_E (Euler-Bernoulli, zoals Mecway). "
                   u"POU_D_T_GD: grote rotaties in niet-lineair statisch "
                   u"(deformation GROT_GDEP); in andere analyses wordt dat "
-                  u"POU_D_T (WARNING).",
+                  u"POU_D_T (WARNING). POU_D_TG: Timoshenko met welving en "
+                  u"dwarskrachtcentrum, voor buig-torsieknik en kipknik van "
+                  u"open profielen (KNOWN_BUGS 115).",
                   u"Which beam element for line2 and line3 beams (line3 is "
                   u"split at its midside node into two SEG2 cells). Default "
                   u"POU_D_E (Euler-Bernoulli, like Mecway). POU_D_T_GD: "
                   u"large rotations in nonlinear static (deformation "
                   u"GROT_GDEP); in other analyses it becomes POU_D_T "
-                  u"(WARNING)."),
+                  u"(WARNING). POU_D_TG: Timoshenko with warping and shear "
+                  u"centre, for flexural-torsional and lateral-torsional "
+                  u"buckling of open profiles (KNOWN_BUGS 115)."),
+    "beam_warping": (u"Waar de welving (GRX) van POU_D_TG-balken vastligt; "
+                     u"Mecway kent geen welving. Met auto rekent een "
+                     u"inklemming met verhinderde welving en een "
+                     u"vorkoplegging met vrije welving (zoals de "
+                     u"handboekgevallen). De log noemt per knoop welke regel "
+                     u"gold.",
+                     u"Where the warping (GRX) of POU_D_TG beams is fixed; "
+                     u"Mecway has no warping. With auto a clamp has "
+                     u"restrained warping and a fork support free warping "
+                     u"(as the handbook cases). The log names the rule per "
+                     u"node."),
     "fields": (u"Welke resultaten naar Mecway gaan (minder velden = kleiner "
                u"bestand). Modaal: stresses/vonmises (ook strain, "
                u"beam_forces, shell_stresses, shell_forces) geven waarden "
@@ -1955,6 +2006,9 @@ _OPTION_TERMS = {
     ("line_search", "auto"): "auto (line search)",
     ("line_search", "on"): "on (line search)",
     ("line_search", "off"): "off (line search)",
+    ("beam_warping", "auto"): "auto (warping)",
+    ("beam_warping", "free"): "free (warping)",
+    ("beam_warping", "blocked"): "blocked (warping)",
     ("imperfection_unit", "m"): "m (imperfection)",
     ("imperfection_unit", "L"): "L (imperfection)",
 }

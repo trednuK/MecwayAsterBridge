@@ -38,6 +38,7 @@ from collections import OrderedDict
 from bridge_utils import (log, tr, error_estimator_requested,
                           get_active_analysis)
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, is_position
+import bridge_warping
 
 
 # Maximum group name length in Code-Aster (ASTER format, checked).
@@ -92,7 +93,8 @@ _ASTER_TYPES = {
 # on SEG2 (MODELISATION='BARRE' on SEG3 gave MODELE1_6, Code-Aster 17.4,
 # GitHub issue #6); the midside node then gets Mecway's transverse
 # condition (_line3_truss_links), otherwise it is a mechanism.
-_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T", "POU_D_T_GD", "BARRE", "CABLE")
+_LINE3_SPLIT_MODS = ("POU_D_E", "POU_D_T", "POU_D_T_GD", "POU_D_TG", "BARRE",
+                     "CABLE")
 # Bars: the midside node has no transverse stiffness of its own
 _LINE3_BAR_MODS = ("BARRE", "CABLE")
 # Group of the POI1 cells (DIS_TR, stiffness 0) on nodes of a flexible
@@ -1525,7 +1527,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # 5. Names
     # --------------------------------------------------
     reserved = (["all_elems", "all_nodes", POI1_GROUP_T, POI1_GROUP_R,
-                 ERR_FREE_GROUP, JOINT_GROUP] +
+                 ERR_FREE_GROUP, JOINT_GROUP, bridge_warping.WARP_GROUP] +
                 list(beam_groups.keys()) + list(discretes.keys()) +
                 list(vibro_members.keys()) + list(crack_members.keys()))
     renames = _aster_names(
@@ -1579,6 +1581,31 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             group_no[rn(name)] = ["N{0}".format(n) for n in sorted(nset)]
     bridge_offset.apply_to_mesh(offset_plan, model_data, by_type, group_ma,
                                 group_no, rn_es)
+    # Beams with warping (POU_D_TG): nodes with GRX = 0 (bridge_warping)
+    model_data["warping_group"] = None
+    warp_elsets = [es for es, mod in elset_mods.items()
+                   if mod == bridge_warping.WARP_BEAM]
+    if warp_elsets:
+        try:
+            bridge_warping.note_reactions(get_active_analysis())
+        except KeyError:
+            pass
+        names = set(c for es in warp_elsets
+                    for c in elset_members.get(es, []))
+        warp_cells = [cn for name, cn in by_type.get("SEG2", [])
+                      if name in names]
+        xyz = dict(nodes)
+        xyz.update((offset_plan or {}).get("new_nodes", []))
+        xyz.update(joint_nodes)
+        warp_nids, _why = bridge_warping.warping_nodes(
+            model_data, warp_cells, xyz,
+            lambda sel: _selection_nodes(model_data, sel, conn,
+                                         face_group_nodes),
+            _bc_dofs)
+        if warp_nids:
+            group_no[bridge_warping.WARP_GROUP] = [
+                "N{0}".format(n) for n in warp_nids]
+            model_data["warping_group"] = bridge_warping.WARP_GROUP
     # Do not write empty groups (empty Mecway selection): a condition or
     # load on it is skipped and reported in _apply_to_model_data.
     for groups in (group_ma, group_no):
@@ -2001,7 +2028,7 @@ def _line_pressure(model_data, bc, faces):
     local = bc["params"].get("_local")
     elem_mods = _element_kinds(model_data, sel)
     if not kinds and elem_mods and elem_mods <= set(
-            ["POU_D_E", "POU_D_T", "POU_D_T_GD", "BARRE"]):
+            ["POU_D_E", "POU_D_T", "POU_D_T_GD", "POU_D_TG", "BARRE"]):
         bc["aster_keyword"] = "FORCE_POUTRE"
         return
     if kinds == set(["shelledge"]) and not local:

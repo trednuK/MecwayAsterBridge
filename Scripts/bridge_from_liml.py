@@ -55,6 +55,7 @@ import bridge_vibroacoustic
 import bridge_cyclic
 import bridge_offset
 import bridge_orientation
+import bridge_warping
 
 # ------------------------------------------------------------------
 # CONSTANTS: element shapes per dimension
@@ -70,7 +71,7 @@ _DIM_3D_SHAPES = frozenset({
 # DIS_T (spring) and BARRE have translation DOFs only and are
 # NOT listed here.
 _ROT_DOF_MODELISATIONS = frozenset({
-    "POU_D_T", "POU_D_E", "POU_D_T_GD",
+    "POU_D_T", "POU_D_E", "POU_D_T_GD", "POU_D_TG",
     "COQUE_3D", "DKT", "DST", "Q4G",
     "DIS_TR",
 })
@@ -80,7 +81,7 @@ _ROT_DOF_MODELISATIONS = frozenset({
 _ELEM_CHOICES = {
     "elem_hex8":  ("3D", "3D_SI", "LINE_QUAD"),
     "elem_shell": ("DKT", "DST", "COQUE_3D"),
-    "elem_beam":  ("POU_D_E", "POU_D_T", "POU_D_T_GD"),
+    "elem_beam":  ("POU_D_E", "POU_D_T", "POU_D_T_GD", "POU_D_TG"),
 }
 
 # Beam with large displacements and rotations (elem_beam choice, STAPPENPLAN
@@ -88,8 +89,12 @@ _ELEM_CHOICES = {
 # github.com/mishal0488/MecwayAsterBridge): only in nonlinear static, see
 # _gd_beam_choice.
 GD_BEAM = "POU_D_T_GD"
-# Beam modelisations with AY/AZ for SECTION='GENERALE' (shear deformation)
-_SHEAR_BEAMS = ("POU_D_T", GD_BEAM)
+# Beam with warping (elem_beam choice, STAPPENPLAN S19, KNOWN_BUGS 115):
+# EY/EZ/JG/IYR2/IZR2 in the section (bridge_warping.add_warping).
+WARP_BEAM = bridge_warping.WARP_BEAM
+# Beam modelisations with AY/AZ for SECTION='GENERALE' (shear deformation;
+# POU_D_TG is a Timoshenko beam too, U4.42.01 par. 9.4.3)
+_SHEAR_BEAMS = ("POU_D_T", GD_BEAM, WARP_BEAM)
 
 
 def _parse_bilinear(plastic_node, mat_name, plastic_type, E=None):
@@ -420,6 +425,31 @@ def _gd_beam_choice(beam_mod, run_cfg, shapes, thermal_run):
            "(Timoshenko, the same beam at small displacements).").format(
                what))
     return "POU_D_T"
+
+
+def _warp_beam_choice(beam_mod, run_cfg, shapes, thermal_run):
+    """
+    elem_beam = POU_D_TG everywhere except explicit dynamics: there the
+    mass matrix is factorised, and POU_D_TG has no mass for the warping DOF
+    GRX (Code-Aster 17.4 run, DY-02 with DIFF_CENT: alarm MECANONLINE_78
+    "la matrice de masse est quasi singuliere", then FACTOR_11 at a GRX
+    DOF). The beam then becomes POU_D_T (the same Timoshenko beam without
+    warping) with a WARNING.
+    """
+    if beam_mod != WARP_BEAM or thermal_run or not shapes & _DIM_1D_SHAPES:
+        return beam_mod
+    if run_cfg.get("solver_command") == "DYNA_NON_LINE" and \
+            run_cfg.get("schema", "HHT") in _EXPLICIT_SCHEMAS:
+        log(tr("WARNING: elem_beam = POU_D_TG (welving) werkt niet in "
+               "expliciete dynamica (de massamatrix heeft geen massa voor "
+               "de welving GRX, FACTOR_11); balken worden POU_D_T "
+               "(Timoshenko zonder welving).",
+               "WARNING: elem_beam = POU_D_TG (warping) does not work in "
+               "explicit dynamics (the mass matrix has no mass for the "
+               "warping GRX, FACTOR_11); beams become POU_D_T (Timoshenko "
+               "without warping)."))
+        return "POU_D_T"
+    return beam_mod
 
 
 def _positive_int(text, default=1):
@@ -753,8 +783,9 @@ _SECTION_EXTRA_KEYS = ("AY", "AZ", "EY", "EZ", "RY", "RZ", "RT", "JG",
 # by POU_D_E, POU_D_T, POU_D_T_GD: runs of 23 Oct 2026),
 # and RY/RZ/RT, used only for the stresses (U4.42.01 par. 9.3). AY/AZ go
 # through shear_coefs to the Timoshenko beams only (_add_shear_coefs). JG,
-# IYR2 and IZR2 are only used by POU_D_TG/POU_D_TGM (U4.42.01 par. 9.4.3),
-# which the bridge does not offer: kept in "section_extras" only.
+# IYR2 and IZR2 are only used by POU_D_TG/POU_D_TGM (U4.42.01 par. 9.4.3):
+# kept in "section_extras", passed for elem_beam = POU_D_TG only
+# (bridge_warping.add_warping).
 _SECTION_PASSED_KEYS = ("EY", "EZ", "RY", "RZ", "RT")
 # Relative difference above which A/IY/IZ/JX of the line no longer match
 # the material (Mecway stores 15 significant digits).
@@ -1932,6 +1963,8 @@ def extract_aster_data_from_liml(file_path):
             shell_mod = "DKT"
         beam_mod = _gd_beam_choice(beam_mod, run_cfg, all_shapes,
                                    thermal_run)
+        beam_mod = _warp_beam_choice(beam_mod, run_cfg, all_shapes,
+                                     thermal_run)
         # 3D_SI cannot compute the stable time step: DYNA_NON_LINE with
         # DIFF_CENT gave <EXCEPTION> CALCUL_37 ("Le TYPE_ELEMENT MECA_HEXS8
         # ne sait pas encore calculer l'option: PAS_COURANT"), seen in a
@@ -3120,6 +3153,8 @@ def extract_aster_data_from_liml(file_path):
                     mod = model_data["elset_modelisations"].get(elset_name)
                     if mod in _SHEAR_BEAMS:
                         geom = _add_shear_coefs(elset_name, geom, mod)
+                    if mod == WARP_BEAM:
+                        geom = bridge_warping.add_warping(elset_name, geom)
                     geom = dict(geom, area=_section_area(geom))
                     model_data["beam_sections"][elset_name] = geom
                     log("INFO: Beam section '{0}': {1}".format(
@@ -3155,7 +3190,7 @@ def extract_aster_data_from_liml(file_path):
                 if ("line3" in elset_shapes_map.get(elset_name, ()) and
                         model_data["elset_dims"].get(elset_name) == "1D" and
                         mod not in ("POU_D_E", "POU_D_T", GD_BEAM,
-                                    "BARRE", "CABLE")):
+                                    WARP_BEAM, "BARRE", "CABLE")):
                     _drop_elset(
                         model_data, elset_name,
                         tr("elset '{0}': line3-elementen ({1})",

@@ -50,7 +50,7 @@ S7, S8, S5, S9).
 | S16 | 2D and axisymmetric analyses (S20, D20, SA0, also thermal and acoustics 2D) | open | – | chosen by the user 15 Oct (C9) |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
-| S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
+| S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | done | after the release of 16 Oct 2026 | branch worktree-agent-af7ab132aad22bc7d (28 Oct 2026): `elem_beam` = `POU_D_TG`, setting `beam_warping`, `bridge_warping.py`; BU-38 .. BU-42, LS-90, LS-91 OK (C column 384.98, theory 386.1, hex20 393.0; ssll103a = `VALE_CALC`); not yet tested in the Mecway GUI |
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
 | S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026; branch b-mwpost (24 Oct): (a) field `failed` written (VTU `BEZWEKEN`), Mecway display not yet checked; (b) moves to AdvancedToolsHub (MWHub Post erosion filter, ParaView button → hub); (c) settings docs only |
@@ -1289,6 +1289,45 @@ lateral-torsional buckling of an I-beam against Timoshenko & Gere, a Code-Aster 
 to VALE_CALC, symmetric sections unchanged with respect to `POU_D_E`, the warping rule checked on a cantilever
 (clamped: warping blocked) and a fork-supported beam (only translations and the rotation about the beam axis fixed); docs NL+EN (Modaal_en_knik §3.5,
 Mecway_functionaliteit, Standaardinstellingen), tooltip, KNOWN_BUGS 115 updated; regression D.5.
+**Findings** (28 Oct 2026, branch worktree-agent-af7ab132aad22bc7d): input route: the existing setting
+`elem_beam` (Elements page), fourth value `POU_D_TG`, plus a new setting `beam_warping` (`auto`/`free`/`blocked`)
+on the same page; Mecway has no warping or switch for it. New module `Scripts/bridge_warping.py`:
+(1) `section_props`: `EY`, `EZ`, `JG`, `IYR2`, `IZR2` of Mecway's I, T, C and L profiles with thin-walled theory
+(centre-line tree, sectorial coordinate from the centroid, shear centre as the pole with zero sectorial products,
+primary C_w plus the thickness warping t^3/12 int (r.e)^2 ds of each plate; Wagner integrals exact over the
+rectangles); checked against closed forms (I: t_f b^3 h^2/24; C: Timoshenko & Gere 5.3) and the angle of
+Code-Aster test case ssll103a (EY 40.96 vs 41.012 mm, JG and IYR2 within 0.12%). A general section takes JG,
+EY/EZ, IYR2/IZR2 from `#ASTER-SECTIE` (MecwaySectionProps; JG/IYR2/IZR2 are now passed for `POU_D_TG` only),
+without such a line JG = 0 and EY = EZ = 0 with a bilingual WARNING. RECTANGLE/CERCLE stay as they are (Code-Aster
+17.4 accepts them on `POU_D_TG`, LS-01/LS-30 runs). (2) `warping_nodes`: node group `BRGRX` with `DDL_IMPO GRX=0`
+(`bridge_mesh.write_mesh` after offsets and joints, `bridge_to_aster._build_charges`). Measured: `BLOCAGE=
+('DEPLACEMENT', 'ROTATION')` of a Fixed support does NOT fix GRX (C column 343.8 without, 385.0 with GRX = 0).
+Sign convention EY/EZ = vector shear centre -> centroid (U4.42.01 par. 9.4.3 "composante de CG"; consistent with
+ssll103a where positive EY goes with positive IYR2, and with MecwaySectionProps); for an axial load the sign does
+not matter (checked: +-EZ give the same factors).
+Deviation from the recorded user decision ("warping blocked where a rotation is fixed in at least one direction"):
+`auto` blocks the warping only where a rotation ACROSS the beam (a bending rotation) is fixed, so that a fork
+support (translations plus the rotation about the beam axis) keeps the warping free, as in the handbook cases
+(Timoshenko & Gere 6.2) and as the done criterion of this step asks ("fork-supported beam: only translations and
+the rotation about the beam axis fixed"); with the literal rule the fork would be clamped for warping and BU-39 /
+LS-91 would come out too stiff. `blocked` gives the literal behaviour (every supported node), `free` none.
+Rigid couplings (`rigidbody`) on a beam node block the warping; RBE3 does not. Flexible joints and offset beams
+lie on own nodes without a support: the warping is free there (documented). Results: displacements/rotations as
+before (GRX itself is not sent to Mecway), section forces from EFGE (BX bimoment not sent).
+Verification (tests_balk_welving.py): BU-38 C column 384.98 (-0.29% from thin-walled theory, -2.0% from hex20
+BU-36, criterion 3%), BU-39 I beam on forks M_cr -0.10% (Timoshenko & Gere 6.2), BU-41 ssll103a equal to
+VALE_CALC (modes 1, 8, 19), BU-41b the same angle as Mecway L profile -2.2% (Mecway's J 1.9% below the test's,
+AY/AZ 2.4 instead of 1; tolerance 3%), BU-42 T column -0.59%, LS-90 torsion with restrained warping -0.09%,
+LS-90b free warping exact, LS-90c `POU_D_E` unchanged, LS-91 fork + midspan torque -0.22%. 20 existing beam
+cases run with `POU_D_TG` (static, modal, buckling, nonlinear PETIT, harmonic, implicit dynamics, line3, joints,
+offsets, shells): all diagnostics OK. Found: nodal reactions of `POU_D_TG` are off in Code-Aster 17.4 (support
+103.0 N instead of 100 N in LS-01, sum right; vanishes with AY -> 0, not with POU_D_T): WARNING and KNOWN_BUGS
+122. Explicit dynamics: `POU_D_TG` has no mass for GRX (MECANONLINE_78, then FACTOR_11 in DY-02 with DIFF_CENT),
+so the beams become `POU_D_T` there with a WARNING (`bridge_from_liml._warp_beam_choice`; run OK after it).
+Open: a GUI test in Mecway 34 (the Elements page renders the new choice and setting, offscreen gui_cap); whether Mecway's W axis points to the right in its section drawing (sign of EZ/IZR2 of C and L only);
+lateral-torsional buckling of mono-symmetric sections (T, C under bending) only checked through the shared
+IYR2/EY convention of ssll103a, not against a shell model.
+
 
 ### S20 – Geometrically nonlinear beams (`POU_D_T_GD`) as element choice
 **Goal:** beams with large displacements and rotations in nonlinear static (today beams stay geometrically linear,
