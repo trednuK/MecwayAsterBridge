@@ -7866,14 +7866,16 @@ def _buckling_beam_notes(model_data):
             if not s.get("truss")]
     if not secs:
         return
-    log("INFO: Buckling of beams (RIGI_GEOM of POU_D_E/POU_D_T, R3.08.01 "
-        "par. 6): torsional buckling without warping, P = G J A/I_p, "
-        "independent of the length, appears as several equal factors "
-        "(Sturm alarm ALGELINE5_23); bending moments in frames count, "
-        "also at joints. Mecway's own beam computes neither (KNOWN_BUGS "
-        "112, 113).")
     mods = model_data.get("elset_modelisations", {})
     warp = sorted(g for g, _kind in secs if mods.get(g) == _WARP_BEAM)
+    if len(warp) < len(secs):
+        # only for beams without warping (POU_D_E/POU_D_T)
+        log("INFO: Buckling of beams (RIGI_GEOM of POU_D_E/POU_D_T, "
+            "R3.08.01 par. 6): torsional buckling without warping, P = G J "
+            "A/I_p, independent of the length, appears as several equal "
+            "factors (Sturm alarm ALGELINE5_23); bending moments in frames "
+            "count, also at joints. Mecway's own beam computes neither "
+            "(KNOWN_BUGS 112, 113).")
     if warp:
         # POU_D_TG: shear centre (EY/EZ), warping (JG, GRX) and the Wagner
         # terms in RIGI_GEOM (test case ssll103a); BU-38/BU-39.

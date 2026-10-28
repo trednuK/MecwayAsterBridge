@@ -1081,7 +1081,6 @@ class _Look(object):
         btn.Text = text
         btn.FlatStyle = self._FlatStyle.Flat
         btn.Cursor = self._Cursors.Hand
-        btn.Height = 32
         if primary:
             btn.BackColor = self.col("accent")
             btn.ForeColor = self.white
@@ -1092,7 +1091,34 @@ class _Look(object):
             btn.BackColor = self.col("button_bg")
             btn.FlatAppearance.BorderColor = self.col("line")
             btn.FlatAppearance.MouseOverBackColor = self.col("status_bg")
+            btn.Font = self.font
+        # 32 px at 100 %; taller when the fonts are larger (display scale)
+        btn.Height = max(32, self.line_height(btn.Font) + 14)
         return btn
+
+    def fit_width(self, btn, min_width):
+        """Width of a button from its text (padding for the flat border),
+        at least min_width: with a larger display scale the fonts grow
+        but fixed pixel widths do not."""
+        btn.Width = max(min_width,
+                        self.text_size(btn.Text, btn.Font).Width + 28)
+        return btn.Width
+
+    def text_size(self, text, font, width=0):
+        """Size in pixels of text in font (TextRenderer, as Label and
+        Button draw it); width > 0: wrapped at that width."""
+        from System.Windows.Forms import TextRenderer, TextFormatFlags
+        from System.Drawing import Size
+        if width > 0:
+            return TextRenderer.MeasureText(
+                text, font, Size(width, 0),
+                TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl)
+        return TextRenderer.MeasureText(text, font)
+
+    def line_height(self, font=None):
+        """Height in pixels of one line of text in font (default:
+        the normal font)."""
+        return self.text_size(u"Ag", font or self.font).Height
 
     def header(self, form, title, subtitle):
         """Dark header bar at the top of the window (Dock Top)."""
@@ -1100,7 +1126,6 @@ class _Look(object):
         from System.Drawing import Point, Size
         bar = Panel()
         bar.Dock = DockStyle.Top
-        bar.Height = 58
         bar.BackColor = self.col("header_bg")
         t = Label()
         t.Text = title
@@ -1111,10 +1136,16 @@ class _Look(object):
         bar.Controls.Add(t)
         s = Label()
         s.Text = subtitle
+        s.Font = self.font
         s.ForeColor = self.col("header_sub")
         s.AutoSize = True
-        s.Location = Point(18, 34)
+        # Subtitle below the measured title and the bar sized from the
+        # content (58 px at 100 %): with a larger display scale the fonts
+        # grow but fixed positions do not.
+        s_top = max(34, t.Top + self.text_size(title, self.title).Height + 1)
+        s.Location = Point(18, s_top)
         bar.Controls.Add(s)
+        bar.Height = max(58, s_top + self.line_height(self.font) + 9)
         form.Controls.Add(bar)
         return bar
 
@@ -1625,8 +1656,14 @@ def _show_winforms_dialog(current, status=u"", model=None):
             def add_text(parent, y, text, height=None):
                 """Note in a muted colour over the full width;
                 height None: follows from the number of lines."""
+                # The text is measured at its initial width (700 px, less
+                # a margin; the page stretches it): wrapped lines and a
+                # larger font (display scale) get room too.
+                fit = look.text_size(text, look.font, 690).Height
                 if height is None:
-                    height = 16 * (text.count("\n") + 1) + 8
+                    height = max(16 * (text.count("\n") + 1), fit) + 8
+                else:
+                    height = max(height, look.line_height() + 4)
                 lbl = Label()
                 lbl.Text = text
                 lbl.ForeColor = look.col("muted")
@@ -1777,7 +1814,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             notice.ForeColor = look.col("muted")
             notice.Dock = DockStyle.Bottom
             # two lines of space: in a narrow window the text wraps
-            notice.Height = 38
+            notice.Height = max(38, 2 * look.line_height() + 8)
             notice.Padding = Padding(4, 6, 4, 0)
             page_docs.Controls.Add(notice)
             # docking from back to front: notice at the bottom, list
@@ -1872,7 +1909,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             status_title.Font = look.bold
             status_title.ForeColor = look.col("muted")
             status_title.Dock = DockStyle.Top
-            status_title.Height = 20
+            status_title.Height = max(20, look.line_height(look.bold) + 4)
             status_card = Panel()
             status_card.Dock = DockStyle.Fill
             status_card.BackColor = look.col("status_bg")
@@ -1914,8 +1951,10 @@ def _show_winforms_dialog(current, status=u"", model=None):
             def add_button(text, width, handler, help_text, right=False,
                            primary=False):
                 btn = look.button(text, primary)
-                btn.Width = width
+                look.fit_width(btn, width)
                 btn.Top = 13
+                # 56 px at 100 %, taller with a larger font (display scale)
+                footer.Height = max(footer.Height, btn.Height + 24)
                 if handler is not None:
                     btn.Click += handler
                 tip.SetToolTip(btn, help_text)
@@ -2054,6 +2093,15 @@ def _show_winforms_dialog(current, status=u"", model=None):
             # No AcceptButton: Enter in a field or the document list
             # would otherwise start a run immediately.
             form.CancelButton = cancel_btn
+            # The buttons are sized from their text: the minimum width of
+            # the window keeps both groups next to each other (1000 px
+            # unless the texts need more, e.g. with a larger display scale).
+            need = 16 + 24 + 16 + sum(
+                b.Width + 8 for b in left_buttons + right_buttons) - 16
+            form.MinimumSize = Size(
+                max(form.MinimumSize.Width,
+                    need + form.Width - form.ClientSize.Width),
+                form.MinimumSize.Height)
 
             doc_list.SelectedIndex = 0
             for page in stretch:
@@ -2194,7 +2242,7 @@ def results_dialog(items, work_dir):
             form.MaximizeBox = False
             form.MinimizeBox = False
             form.TopMost = True
-            look.header(form, tr("Resultaten", "Results"), work_dir)
+            header = look.header(form, tr("Resultaten", "Results"), work_dir)
             tip = ToolTip()
 
             info = Label()
@@ -2212,13 +2260,9 @@ def results_dialog(items, work_dir):
                 "the result files are kept. 'Summary' opens the summary of "
                 "the Code-Aster run.")
             info.ForeColor = look.col("muted")
-            info.Location = Point(16, 70)
-            info.Size = Size(828, 52)
             form.Controls.Add(info)
 
             lst = ListBox()
-            lst.Location = Point(16, 126)
-            lst.Size = Size(828, 270)
             lst.IntegralHeight = False
             lst.BorderStyle = BorderStyle.FixedSingle
             for item in items:
@@ -2279,23 +2323,40 @@ def results_dialog(items, work_dir):
             if bridge_utils.advancedtoolshub_dir_path():
                 buttons.append((u"In MWHub Post", on_mwpost, 120, False,
                                 None))
+            # Layout from the content (at 100 %: 860 x 470): the header,
+            # the explanation and the buttons are measured, so that a larger
+            # font (Windows display scale) does not clip them.
+            row = []
             x = 16
             for text, handler, width, primary, help_text in buttons:
                 btn = look.button(text, primary)
-                btn.Location = Point(x, 416)
-                btn.Width = width
+                look.fit_width(btn, width)
+                btn.Left = x
                 btn.Click += handler
                 if help_text:
                     tip.SetToolTip(btn, help_text)
                 form.Controls.Add(btn)
-                x += width + 8
+                row.append(btn)
+                x += btn.Width + 8
             lst.DoubleClick += on_load
             cancel_btn = look.button(tr("Annuleren", "Cancel"))
-            cancel_btn.Location = Point(744, 416)
-            cancel_btn.Width = 100
+            look.fit_width(cancel_btn, 100)
             cancel_btn.DialogResult = DialogResult.Cancel
             form.Controls.Add(cancel_btn)
             form.CancelButton = cancel_btn
+            width = max(828, x + 16 + cancel_btn.Width - 16)
+            y = header.Height + 12
+            info.Location = Point(16, y)
+            info.Size = Size(width, max(52, look.text_size(
+                info.Text, look.font, width - 8).Height + 4))
+            y = info.Bottom + 4
+            lst.Location = Point(16, y)
+            lst.Size = Size(width, 270)
+            y = lst.Bottom + 20
+            for btn in row:
+                btn.Top = y
+            cancel_btn.Location = Point(16 + width - cancel_btn.Width, y)
+            form.ClientSize = Size(width + 32, y + cancel_btn.Height + 22)
 
             if form.ShowDialog() != DialogResult.OK:
                 result["value"] = None
@@ -2448,44 +2509,58 @@ def run_status_dialog(job, owner=None):
             # with it (seen in Mecway 34). The console stays readable next
             # to it and reachable in the taskbar.
             form.TopMost = True
-            look.header(form, tr("Code-Aster-run", "Code-Aster run"),
-                        bridge_utils.run_name(""))
+            header = look.header(form, tr("Code-Aster-run", "Code-Aster run"),
+                                 bridge_utils.run_name(""))
+            # Layout from the line height of the fonts (at 100 %: 600 x 336
+            # with lines of 15 px), so that a larger font (Windows display
+            # scale) does not clip the two-line texts.
+            line = look.line_height()
+            pos = {"y": header.Height + 14}
 
-            def label(y, height, bold=False, color=None):
+            def label(lines, gap, bold=False, color=None):
                 lbl = Label()
-                lbl.Location = Point(16, y)
-                lbl.Size = Size(568, height)
-                lbl.AutoEllipsis = True
+                lbl.Location = Point(16, pos["y"])
                 if bold:
                     lbl.Font = look.section
+                    height = look.line_height(look.section) + 4
+                else:
+                    height = lines * line + 6
+                lbl.Size = Size(568, height)
+                lbl.AutoEllipsis = True
                 if color is not None:
                     lbl.ForeColor = color
                 form.Controls.Add(lbl)
+                pos["y"] += height + gap
                 return lbl
 
-            lbl_head = label(72, 22, bold=True)
+            lbl_head = label(1, 4, bold=True)
             bar = ProgressBar()
-            bar.Location = Point(16, 98)
+            bar.Location = Point(16, pos["y"])
             bar.Size = Size(568, 16)
             bar.Style = ProgressBarStyle.Marquee
             bar.MarqueeAnimationSpeed = 40
             form.Controls.Add(bar)
-            lbl_time = label(122, 20)
-            lbl_detail = label(144, 36)
-            lbl_msgs = label(182, 20)
-            lbl_warn = label(204, 36, color=Color.FromArgb(198, 40, 40))
-            note = label(244, 34, color=look.col("muted"))
-            note.Text = tr(
+            pos["y"] += 24
+            lbl_time = label(1, 1)
+            lbl_detail = label(2, 2)
+            lbl_msgs = label(1, 1)
+            lbl_warn = label(2, 4, color=Color.FromArgb(198, 40, 40))
+            note_text = tr(
                 "Mecway is geblokkeerd tot de run klaar is; daarna worden de "
                 "resultaten automatisch ingeladen. Het Code-Aster-venster en "
                 "het convergentiescherm tonen alle uitvoer.",
                 "Mecway is locked until the run has finished; then the "
                 "results are loaded automatically. The Code-Aster window "
                 "and the convergence window show all output.")
+            note_lines = max(2, -(-look.text_size(note_text, look.font,
+                                                  556).Height // line))
+            note = label(note_lines, 10, color=look.col("muted"))
+            note.Text = note_text
             btn_stop = look.button(tr("Stoppen...", "Stop..."))
-            btn_stop.Location = Point(484, 288)
-            btn_stop.Width = 100
+            look.fit_width(btn_stop, 100)
+            btn_stop.Location = Point(584 - btn_stop.Width, pos["y"])
             form.Controls.Add(btn_stop)
+            form.ClientSize = Size(600, btn_stop.Bottom + 16)
             form.CancelButton = btn_stop       # Esc = Stop (with question)
 
             state = {"closing": False, "asking": False, "ticks": 0}

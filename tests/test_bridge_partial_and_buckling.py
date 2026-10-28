@@ -7,7 +7,10 @@
 #   #5: resultaten na een andere fout dan MECANONLINE in de stappenlus
 #       (bridge_failure.PARTIAL_EXCEPT, de melding in bridge_run_aster);
 #   #6: lineaire knik met trusses: ERROR voor Code-Aster
-#       (bridge_to_aster._check_buckling_trusses).
+#       (bridge_to_aster._check_buckling_trusses);
+#   the INFO notes on buckling of beams (bridge_to_aster.
+#       _buckling_beam_notes): the POU_D_E/POU_D_T note only for beams
+#       without warping.
 #
 #   python tests/test_bridge_partial_and_buckling.py
 
@@ -129,6 +132,32 @@ def test_buckling_truss(tmp):
     check(bool(ok), "modal with the same trusses: files generated")
 
 
+def test_buckling_beam_notes():
+    import bridge_to_aster as b2a
+    lines = []
+    saved = b2a.log
+    b2a.log = lines.append
+    try:
+        for mods, old, warp in (({}, True, False),
+                                ({"B1": "POU_D_TG"}, False, True),
+                                ({"B1": "POU_D_TG", "B2": "POU_D_E"},
+                                 True, True)):
+            del lines[:]
+            secs = {"B1": {"geom_type": "I"}}
+            if "B2" in mods:
+                secs["B2"] = {"geom_type": "I"}
+            b2a._buckling_beam_notes({"beam_sections": secs,
+                                      "elset_modelisations": mods})
+            text = "\n".join(lines)
+            check(("RIGI_GEOM of POU_D_E/POU_D_T" in text) == old and
+                  ("with warping (POU_D_TG)" in text) == warp,
+                  "buckling notes for beams {0}: POU_D_E/T note {1}, "
+                  "POU_D_TG note {2}".format(sorted(mods.items()), old,
+                                             warp))
+    finally:
+        b2a.log = saved
+
+
 def main():
     saved = dict(u.CONFIG_BRIDGE)
     tmp = tempfile.mkdtemp(prefix="bridge_partial_buckling_")
@@ -136,6 +165,7 @@ def main():
         test_partial_except()
         test_mess_message(tmp)
         test_buckling_truss(tmp)
+        test_buckling_beam_notes()
     finally:
         u.CONFIG_BRIDGE.clear()
         u.CONFIG_BRIDGE.update(saved)
