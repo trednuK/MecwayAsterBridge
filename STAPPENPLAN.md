@@ -65,6 +65,7 @@ S7, S8, S5, S9).
 | S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
 | S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | done | – | branch stap-S33 (28 Oct 2026): `bridge_formula` + `_formula_vars`; FX-01 .. FX-03 OK, equal to Mecway's own solve within 1e-13; checked in the Mecway GUI (formulas valid, contour) |
+| S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1584,7 +1585,36 @@ after the other variables; WARNING in `bridge_from_liml` only for formulas it ca
   MPa, mm, kN, strain), FX-03 (TH-02a: t in min): 12 checks OK. Mecway's own solve on FX-01: equal
   within 4e-14 relative. GUI: the four formulas of FX-01 on the bridge result are valid (black)
   and show the contour (F3: +-0.02675, Mecway 0.0267528).
-- Found on the way: Mecway 34 names acceleration `accx/y/z`, the bridge `accelx/y/z`
-  (KNOWN_BUGS 122, not changed).
+- Found on the way: Mecway 34 names acceleration `accx/y/z`, the bridge wrote `accelx/y/z`
+  (fixed in S34).
 - Open question for the user: should the bridge also write principal stresses/strains, so that
   `s1`..`s3`, `e1`..`e3` and `tr` work in formulas? (Mecway shows them as a field too.)
+
+### S34 – Principal values as result fields; acceleration under Mecway's names
+**Goal (user, 28 Oct 2026):** principal stresses/strains so that `s1`, `e1`, `tr` work in
+formulas (if Mecway supports them), and check whether the acceleration names (`accelx` vs
+Mecway's `accx`) are a problem; if so, fix it.
+**Status:** done (28 Oct 2026, branch stap-S34).
+**Findings (measured headless with Mecway 34, mw_solve.py and a safe runner; no GUI):**
+- Mecway's fields: *principal stress* -> `principal1..3`, *Tresca stress* -> `tresca`,
+  *principal strain* -> `lprincipalstrain1..3` (also in a nonlinear L30 with CCX, where they are
+  the eigenvalues of the Green-Lagrange tensor), node and element-node variables. Per element
+  node: eigenvalues of the tensor, descending; tresca = p1 - p3; strains with gamma/2. Node value
+  = mean of the element-node values (within 1e-9), not the eigenvalues of the mean tensor.
+- Built: `aster_results_export._principal_vars` (from SIGM_ELNO / EPSI_ELNO / EPSG_ELNO, the
+  same rule), groups `principal_stresses` and `principal_strains` (opt-in, solids), the strain
+  ELNO field for principal strains without the field `strain`, glossary tooltips, formula
+  symbols `s1`..`s3`, `tr`, `e1`..`e3`. Shells (Mecway: `principal1u/m/b`) not built.
+- Acceleration: Mecway 34's own D30 solution writes `accx/y/z/accmag`. With the bridge's former
+  names Mecway did not recognise the field: after save_as of a bridge result without
+  fieldvariables Mecway added no "acceleration" item, `solution.node_value("accx")` gave None;
+  with `accx` it added "acceleration" and read the values. Effects of the old names: no vector/
+  magnitude item in Mecway, a formula with `a.x` created in Mecway had no data, no comparison
+  with Mecway (*Mecway solve first*). Renamed to `accx/y/z/accmag` (harmonic `accmag`,
+  `accampx/y/z`, like `velmag`/`velampx`) in the liml route, route 'tabel' and the formula symbol.
+  Not found anywhere else (AdvancedToolsHub reads no acceleration names).
+- Verification: FX-02 +8 checks (principal values, Tresca, principal strains, formulas `s1`, `tr`,
+  `e1`): OK; spectrum (SP) and harmonic (HR) with the new names: OK. Cantilever LS-02: bridge
+  principal values follow Mecway's rule within 1e-16 relative.
+- Open: principal values of shells (top/middle/bottom, Mecway `principal1u/m/b`), and `GLe1`.
+

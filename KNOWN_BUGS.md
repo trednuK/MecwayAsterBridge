@@ -508,13 +508,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
 
-122\. **Acceleration under its own names** (confirmed, Mecway 34, found in S33). The bridge
-   writes acceleration as `accelx/y/z`, `accelmag` (`aster_results_export.FIELD_TABLE`, comment
-   "Mecway has no acceleration field"); Mecway 34 does have one and stores it as `accx/y/z`,
-   `accmag` (a dynamic solution saved by Mecway 34, `<fieldvariable name="acceleration">`). In
-   Mecway the bridge's acceleration therefore appears as unknown variables next to Mecway's
-   own names. Not changed in S33; the formula symbol `a.x` reads `accelx`.
-
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Not verified in a .liml** (question). Constraint equation: `constant`
@@ -1031,8 +1024,9 @@ Code-Aster value per node) and logs the largest difference per variable.
 121\. **Result formulas: not every Mecway symbol** (confirmed, Mecway 34, GitHub issue #8;
    S33). The bridge evaluates Mecway's result formulas (*Solution > Formula*) in the job
    (`bridge_formula`, `aster_results_export._formula_vars`), but only with symbols of fields it
-   writes. Not: principal values `s1`..`s3`, `e1`..`e3`, `GLe1`.., `tr` (Mecway reads its own
-   principal fields, which the bridge does not write), stresses in element coordinates
+   writes. Not: Green-Lagrange principal values `GLe1`.. (`e1` works: in a nonlinear analysis
+   it is the Green-Lagrange principal strain; `s1`..`s3`, `tr`, `e1`..`e3` need the fields
+   `principal_stresses` / `principal_strains`, S34), stresses in element coordinates
    (`s.uu`..), shell forces `ML`/`FL`, Zienkiewicz-Zhu stresses, `FE`, `Ue`/`UE`, electric
    symbols and material properties (`youngsmodulus`, ...). Such a formula keeps no values and is
    invalid (red) after loading; `bridge_from_liml._plan_result_formula` gives a WARNING and lists

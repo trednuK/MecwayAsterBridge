@@ -789,7 +789,7 @@ geen eigenmodes, maar de respons bij die frequentie). Velden per frequentie
 | `displx/y/z`, `displix/y/z` | constructie (ook de knopen op het koppelvlak) | reëel en imaginair deel van de verplaatsing U [m] |
 | `displampx/y/z`, `displmag`, `displphasex/y/z` | constructie | amplitude per richting, totale amplitude, fase [graden] |
 | `rot*`, `rotamp*` | schalen en balken | rotatie (Re) en amplitude [rad] |
-| `accelamp*`, `accelmag` (en `velamp*`, `velmag` met *velocities*) | constructie | ω²·\|U\| (ω·\|U\|) |
+| `accamp*`, `accmag` (en `velamp*`, `velmag` met *velocities*) | constructie | ω²·\|U\| (ω·\|U\|) |
 | `stress..`, `stressamp..`, `vonmises` | volume-elementen van de constructie | spanning (Re), amplitude per component, grootste von Mises over een periode |
 | `pressure`, `pressurei` | fluïdum (ook de knopen op het koppelvlak) | reëel en imaginair deel van de druk P [Pa] |
 | `pressuremag`, `pressurephase`, `spl` | fluïdum | \|P\|, fase [graden], geluidsdrukniveau 20·log10(\|P\|/(√2·20 µPa)) [dB] |

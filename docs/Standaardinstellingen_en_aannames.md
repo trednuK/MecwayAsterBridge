@@ -89,8 +89,8 @@ daarnaast `plastic_strain`, `plastic_strain_eq` en `contact`; dynamisch
 `temperature`, `heat_flux`; modaal en knik alleen `displacements` (de vormen, zoals
 Mecway). De extra velden (`beam_forces`, `shell_forces`, `safety_factor`, `contact`)
 doen alleen iets als het model balken, schalen, een von Mises-faalcriterium of
-contact heeft; ze kosten dan weinig rekentijd. `strain` en `shell_stresses` staan
-standaard uit: ze maken de `.liml` duidelijk groter (6 resp. 18 variabelen per knoop
+contact heeft; ze kosten dan weinig rekentijd. `strain`, `shell_stresses`,
+`principal_stresses` en `principal_strains` staan standaard uit: ze maken de `.liml` duidelijk groter (6 resp. 18 variabelen per knoop
 en per element-knoop); `shell_forces` (8 variabelen) maakt de resultaten bij schalen
 ca. 2,5 keer zo groot (3500 quad4-schalen: `.liml` 1,6 → 3,5 MB, Code-Aster-job
 +0,3 s; WARNING in de log) en staat bij dynamica uit (per tijdstap). Zie

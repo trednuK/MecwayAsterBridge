@@ -75,11 +75,15 @@ def build_fx02():
     m.add(_formula("FRx", "formula(3)", "FR.x", [("+1+1-2", "kN")]))
     m.add(_formula("exx", "formula(4)", "e.xx*1e6", [("", "")]))
     m.add(_formula("xpos", "formula(5)", "x", [("+1", "mm")]))
+    m.add(_formula("s1", "formula(6)", "s1", [("-1+1-2", "MPa")]))
+    m.add(_formula("tr", "formula(7)", "tr", [("-1+1-2", "MPa")]))
+    m.add(_formula("e1", "formula(8)", "e1*1e6", [("", "")]))
     return m
 
 
 _FX02_FIELDS = ["displacements", "stresses", "vonmises", "reactions",
-                "strain"]
+                "strain", "principal_stresses", "principal_strains"]
+NUX = 0.3
 
 # FX-03: half-oneindig lichaam (TH-02a), t in minuten per tijdstap.
 def build_fx03():
@@ -133,10 +137,40 @@ TESTS = [
           Check("x in mm (x = L)",
                 lambda r: r.at("formula(5)", (LX, 0, 0)),
                 ref=LX * 1e3, tol=1e-9, unit="mm",
-                source="knooppositie")],
+                source="knooppositie"),
+          Check("principal1 (x = L/2)",
+                lambda r: r.at("principal1", (LX / 2, BX / 2, BX / 2)),
+                ref=PX, tol=1e-6, unit="Pa",
+                source="eenassig: sigma1 = P (S34)"),
+          Check("principal3 (x = L/2)",
+                lambda r: r.at("principal3", (LX / 2, BX / 2, BX / 2)),
+                ref=0.0, tol_abs=1e-3, unit="Pa",
+                source="eenassig: sigma3 = 0"),
+          Check("tresca (x = L/2)",
+                lambda r: r.at("tresca", (LX / 2, BX / 2, BX / 2)),
+                ref=PX, tol=1e-6, unit="Pa",
+                source="sigma1 - sigma3 = P"),
+          Check("lprincipalstrain1 (x = L/2)",
+                lambda r: r.at("lprincipalstrain1", (LX / 2, BX / 2, BX / 2)),
+                ref=PX / EX, tol=1e-6, unit="-", source="eps1 = P / E"),
+          Check("lprincipalstrain3 (x = L/2)",
+                lambda r: r.at("lprincipalstrain3", (LX / 2, BX / 2, BX / 2)),
+                ref=-NUX * PX / EX, tol=1e-6, unit="-",
+                source="eps3 = -nu P / E"),
+          Check("formule s1 in MPa", lambda r: r.at("formula(6)",
+                                                    (LX / 2, BX / 2, BX / 2)),
+                ref=PX / 1e6, tol=1e-6, unit="MPa", source="sigma1 = P"),
+          Check("formule tr in MPa", lambda r: r.at("formula(7)",
+                                                    (LX / 2, BX / 2, BX / 2)),
+                ref=PX / 1e6, tol=1e-6, unit="MPa", source="Tresca = P"),
+          Check("formule e1 * 1e6", lambda r: r.at("formula(8)",
+                                                   (LX / 2, BX / 2, BX / 2)),
+                ref=PX / EX * 1e6, tol=1e-6, unit="microstrain",
+                source="eps1 = P / E")],
          settings={"fields": _FX02_FIELDS},
-         note="Instelling fields met 'strain' (e.xx); zonder geeft de "
-              "bridge een WARNING en laat de formule weg."),
+         note="Instelling fields met 'strain' (e.xx) en de hoofdwaarden "
+              "(s1, tr, e1); zonder geeft de bridge een WARNING en laat "
+              "de formule weg."),
     Case("FX-03", GROUP, "Formules in de tijd op TH-02a: t in min",
          "ther_3d", build_fx03,
          [Check("t in min (t = 10 s)",

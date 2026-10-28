@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Principal stresses, Tresca and principal strains** (new result fields `principal_stresses`
+  and `principal_strains`, off by default): `principal1..3`, `tresca` and `lprincipalstrain1..3`
+  of solid elements, computed as Mecway does (eigenvalues per element node, node value = mean of
+  the element-node values; measured in Mecway 34). Mecway shows them as its own fields
+  *principal stress*, *Tresca stress* and *principal strain*, and the formula symbols `s1`..`s3`,
+  `tr`, `e1`..`e3` now work. Verification FX-02.
+- **Acceleration under Mecway's names**: acceleration is now written as `accx/accy/accz/accmag`
+  (harmonic: `accmag`, `accampx/y/z`), as Mecway 34 itself does. With the former names
+  (`accelx`, ...) Mecway did not recognise the field "acceleration" (no vector and magnitude
+  item, a formula with `a.x` made in Mecway had no data). Results loaded earlier keep the old
+  names; own scripts that read `accelx` need the new names.
 - **Result formulas computed by the bridge (GitHub issue #8)**: a formula from Mecway's
   *Solution > Formula* (e.g. `qf.z/3600/(12^2)`, `sqrt(u.x^2+u.y^2)`) is now computed from the
   Code-Aster results, per node and time step and in the units of the formula, and returned

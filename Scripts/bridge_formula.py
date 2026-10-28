@@ -30,8 +30,11 @@
 #     lstrainxx, g.xy = lstrainxy (engineering shear strain), u.x*s.xx =
 #     displx*stressxx per node);
 #   - a formula with t is not computed in a static/steady solution;
-#   - s1..s3, e1..e3 and tr read Mecway's principal fields, which the
-#     bridge does not write: not supported here.
+#   - s1..s3, tr and e1..e3 read Mecway's principal fields principal1..3,
+#     tresca and lprincipalstrain1..3; the bridge writes them with the
+#     result fields principal_stresses / principal_strains (S34). GLe1..3:
+#     not supported (Mecway's own L30 solution with CCX had no separate
+#     Green-Lagrange principal field; e1 is the principal strain there).
 # Language as for formulas in loads (bridge_bcs, measured in Mecway 33):
 # + - * / ^ ( ), pi, e, sin, cos, tan, asin, acos, atan, atan2(y,x), log
 # (natural), abs, sqrt, heaviside(x) (0.5 at 0), unittriangle(w,x),
@@ -69,12 +72,17 @@ SYMBOLS = {
     "P": ("pressure", PRESSURE),
     "cstr.P": ("contactpressure", PRESSURE),
     "fos": ("factorofsafety", NONE),
+    # Principal values (S34; field principal_stresses / principal_strains)
+    "s1": ("principal1", PRESSURE), "s2": ("principal2", PRESSURE),
+    "s3": ("principal3", PRESSURE), "tr": ("tresca", PRESSURE),
+    "e1": ("lprincipalstrain1", NONE), "e2": ("lprincipalstrain2", NONE),
+    "e3": ("lprincipalstrain3", NONE),
 }
 for _c in "xyz":
     SYMBOLS["u." + _c] = ("displ" + _c, LENGTH)
     SYMBOLS["r." + _c] = ("rot" + _c, NONE)
     SYMBOLS["v." + _c] = ("vel" + _c, VELOCITY)
-    SYMBOLS["a." + _c] = ("accel" + _c, ACCELERATION)
+    SYMBOLS["a." + _c] = ("acc" + _c, ACCELERATION)
     SYMBOLS["av." + _c] = ("angularvel" + _c, ANGULAR_VELOCITY)
     SYMBOLS["FR." + _c] = ("reactionforce" + _c, FORCE)
     SYMBOLS["MR." + _c] = ("reactionmom" + _c, MOMENT)
@@ -97,8 +105,8 @@ for _sym, _var, _dim in (("FI.u", "tensileforce", FORCE),
 # Symbols Mecway knows (formula window, Mecway 34) that the bridge cannot
 # evaluate: a clear message instead of "unknown name".
 UNSUPPORTED = frozenset(
-    ["b", "cdis.c", "cdis.1", "cdis.2", "r.u", "s1", "s2", "s3", "tr",
-     "e1", "e2", "e3", "GLe1", "GLe2", "GLe3", "Ue", "UE", "V", "I", "qd",
+    ["b", "cdis.c", "cdis.1", "cdis.2", "r.u", "GLe1", "GLe2", "GLe3",
+     "Ue", "UE", "V", "I", "qd",
      "dPd.x", "dPd.y", "cstr.1", "cstr.2", "iyy", "izz", "area", "density",
      "perimeter", "poissonratio", "specificheat", "torsionconstant",
      "youngsmodulus"] +
@@ -508,7 +516,7 @@ def uses_time(p):
 # values if its groups are exported.
 _GROUPS = (("displ", "displacements"), ("rot", "displacements"),
            ("vel", "velocities"), ("angularvel", "velocities"),
-           ("accel", "accelerations"), ("reactionforce", "reactions"),
+           ("acc", "accelerations"), ("reactionforce", "reactions"),
            ("reactionmom", "reactions"), ("stress", "stresses"),
            ("vonmises", "vonmises"), ("lstrain", "strain"),
            ("greenlagrangestrain", "strain"),
@@ -516,6 +524,9 @@ _GROUPS = (("displ", "displacements"), ("rot", "displacements"),
            ("temperature", "temperature"), ("heatflux", "heat_flux"),
            ("contactpressure", "contact"),
            ("factorofsafety", "safety_factor"),
+           ("principal", "principal_stresses"),
+           ("tresca", "principal_stresses"),
+           ("lprincipalstrain", "principal_strains"),
            ("tensileforce", "beam_forces"), ("shear", "beam_forces"),
            ("torsion", "beam_forces"), ("bendingmom", "beam_forces"))
 

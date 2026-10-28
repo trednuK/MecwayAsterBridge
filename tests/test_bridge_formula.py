@@ -61,7 +61,9 @@ def test_parser():
     check(bf.symbols(bf.parse("T + t*qf.z/3600/(12^2) + e.xx + pi"))
           == set(["T", "t", "qf.z", "e.xx"]),
           "symbols case sensitive (T, t), dotted names, constant pi")
-    for text, part in (("s1 + 1", "not supported"), ("foo", "unknown name"),
+    for text, part in (("GLe1 + 1", "not supported"),
+                       ("youngsmodulus", "not supported"),
+                       ("foo", "unknown name"),
                        ("2*(x", "missing"), ("sinh(x)", "unknown function"),
                        ("", "empty")):
         try:
@@ -115,6 +117,14 @@ def test_plan():
     check(bf.groups(bf.plan("F", "formula", "e.xx + FR.z + T + x", []))
           == ["reactions", "strain", "temperature"],
           "result field groups of a formula")
+    p2 = bf.plan("F", "formula", "s1 - s3 + tr + e1 + a.x", [])
+    check(p2["symbols"]["s1"][0] == "principal1" and
+          p2["symbols"]["tr"][0] == "tresca" and
+          p2["symbols"]["e1"][0] == "lprincipalstrain1" and
+          p2["symbols"]["a.x"][0] == "accx" and
+          bf.groups(p2) == ["accelerations", "principal_strains",
+                            "principal_stresses"],
+          "s1, tr, e1 (principal fields, S34) and a.x (accx)")
     lit = ast.literal_eval(repr(p))
     check(lit == p, "plan is a plain literal (written into study.comm)")
 
@@ -196,12 +206,13 @@ def _xml(name, fs, text, units):
 def test_bridge(tmp):
     md, log, comm = _run(tmp, _xml("Fq", "formula", "qf.z/3600/(12^2)",
                                    [("+0+1-3", u"Btu/h/ft²")]) +
-                         _xml("Fs", "formula(2)", "s1", []) +
+                         _xml("Fs", "formula(2)", "youngsmodulus", []) +
                          _xml("Fe", "formula(3)", "e.xx", [("", "")]))
     plans = md.get("result_formulas", [])
     check([p["fieldscalar"] for p in plans] == ["formula", "formula(3)"],
           "bridge_from_liml plans the computable formulas")
-    check("WARNING: Formula 'Fs' (s1) cannot be computed by the bridge"
+    check("WARNING: Formula 'Fs' (youngsmodulus) cannot be computed by "
+          "the bridge"
           in log and any("formula 'Fs'" in x for x in md["skipped_loads"]),
           "unsupported symbol: WARNING and skipped_loads")
     check("WARNING: Formula 'Fe' (e.xx) needs the result field strain"

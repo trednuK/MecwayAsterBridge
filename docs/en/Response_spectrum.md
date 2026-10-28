@@ -112,7 +112,7 @@ Under *Solution* there is **one step** (no time steps, no modes) with the maxima
 | Mecway variable | Meaning |
 |---|---|
 | `displx/y/z`, `displmag` | largest displacement relative to the ground (rotations `rotx/y/z` for beams and shells) |
-| `accelx/y/z`, `accelmag` | largest **absolute** acceleration (ground + structure), own names of the bridge (Mecway has no acceleration field) |
+| `accx/y/z`, `accmag` | largest **absolute** acceleration (ground + structure), own names of the bridge (Mecway has no acceleration field) |
 | `stressxx` ... `stresszx` | largest stress component (solid elements; per node and per element node) |
 | `vonmises` | von Mises per node, computed per mode and combined (§3) |
 | `reactionforcex/y/z`, `reactionforcemag` | largest reaction per node |
@@ -177,7 +177,7 @@ nappe or formula). Verification SP-01 (test case sdld25a).
 - **Maxima without sign.** Every value is the largest expected (absolute) maximum at
   that place, and every component separately. The maxima do not occur at the same
   time: a displacement field of maxima is not an equilibrium state, `displmag` and
-  `accelmag` are an upper bound (√ of the sum of the squares of the maxima), and stress
+  `accmag` are an upper bound (√ of the sum of the squares of the maxima), and stress
   components must not be combined into a principal stress.
 - **Do not add up the total reaction.** The sum of the reactions per node is larger
   than the real total reaction: so do not sum `reactionforce*` in Mecway. The log gives

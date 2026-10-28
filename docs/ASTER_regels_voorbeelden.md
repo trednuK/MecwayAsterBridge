@@ -662,7 +662,7 @@ in `AMOR` en `FREQ` zijn; een `DEFI_FONCTION` alleen in `FREQ` geeft een fout va
 
 Uitkomst (verificatie SP-01, de nabouw van sdld25a met Mecway-veren en -massa's): de
 log meldt `INFO: #ASTER lines: 6 code, ..., 1 SPECTRE, ...` en de twee opties; de
-absolute versnellingen `accelx` zijn gelijk aan de TEST_RESU-waarden van sdld25a
+absolute versnellingen `accx` zijn gelijk aan de TEST_RESU-waarden van sdld25a
 (bijv. P1 10,4498 m/s²).
 
 ### Voorbeeld 12 – Akoestiek harmonisch: bron met fase en eigen frequenties (`#ASTER-BRON`)

@@ -721,8 +721,15 @@ Referenties: de analytische oplossing, omgerekend naar de eenheden van de formul
   Mecway zijn de formules op het resultaat van de bridge geldig en tonen ze dezelfde contour.
 - **FX-02** (staaf op trek, P = 1 MPa, hex20): `s.xx` in MPa (1), `u.x` in mm aan het eind
   (PL/E = 0,0047619), de som van `FR.x` in kN over het ingeklemde vlak (−PA = −10),
-  `e.xx·1e6` (P/E = 4,7619, met `strain` in *fields*) en `x` in mm (1000). Resultaat:
-  binnen 1e-9.
+  `e.xx·1e6` (P/E = 4,7619, met `strain` in *fields*) en `x` in mm (1000); met de velden
+  `principal_stresses` / `principal_strains` (S34) ook `principal1` = P, `principal3` = 0,
+  `tresca` = P, `lprincipalstrain1` = P/E, `lprincipalstrain3` = −νP/E en de formules `s1`,
+  `tr` (MPa) en `e1·1e6`. Resultaat: binnen 1e-9. Op een console (LS-02, niet uniform) zijn
+  de hoofdwaarden van de bridge per elementknoop gelijk aan de eigenwaarden van zijn eigen
+  tensor per elementknoop en de knoopwaarden aan het gemiddelde van de elementknoopwaarden
+  (binnen 1e-16 relatief), de regel gemeten in Mecway 34; Mecway herkent de velden
+  (*principal stress*, *Tresca stress*, *principal strain*) als het het resultaat opent en
+  opslaat.
 - **FX-03** (TH-02a, transient): `t` in min op 10 s en 40 s (0,16667, 0,66667) en
   `(T−300)/max(t,1)` aan het oppervlak (2,5 K/s op 40 s). Resultaat: binnen 1e-7.
 

@@ -377,7 +377,7 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `vonmises` | `vonmises` (volume); `vonmisesu1`/`vonmisesm`/`vonmisesb` (schaal boven/midden/onder) | `SIEQ_NOEU`, `SIEQ_ELNO` | als `stresses` |
 | `reactions` | `reactionforcex/y/z/mag`, `reactionmomx/y/z/mag` | `REAC_NODA` | statisch, niet-lineair, dynamisch, responsspectrum |
 | `velocities` | `velx/y/z`, `velmag`; `angularvelx/y/z`, `angularvelmag` op knopen van balken en schalen | `VITE` | dynamisch, respons op modale basis |
-| `accelerations` | `accelx/y/z`, `accelmag` (harmonisch: `accelampx/y/z`, ω²\|U\|) | `ACCE` (responsspectrum: `ACCE_ABSOLU`) | harmonische respons, responsspectrum, vibro-akoestiek (harmonisch) |
+| `accelerations` | `accx/y/z`, `accmag` (harmonisch: `accampx/y/z`, ω²\|U\|) | `ACCE` (responsspectrum: `ACCE_ABSOLU`) | harmonische respons, responsspectrum, vibro-akoestiek (harmonisch) |
 | `plastic_strain` | `plasticstrainxx` .. `plasticstrainzx` (namen van de bridge) | `EPSP_NOEU` | niet-lineair statisch |
 | `plastic_strain_eq` | `equivalentplasticstrain` | `VARI_NOEU` V1 | niet-lineair, dynamisch |
 | `temperature` | `temperature` (K) | `TEMP` | thermisch |
@@ -389,6 +389,8 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `shell_stresses` | `stressxxu1` .. `stresszxu1`, idem `m1` (midden) en `b1` (onder): spanningstensor van schalen in globale assen, zoals Mecway | `SIGM_ELNO` na `EXTR_COQUE`, in de job van het lokale schaalassenstelsel naar globaal gedraaid | uit (18 variabelen) |
 | `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 geeft trek boven), `shearuw`/`shearvw` (dwarskracht per lengte) in Mecway's U,V-assen (U = `orientationu*`, een *Element orientation*-kaart of de rand knoop 1→2) | `EFGE_ELNO`, in de job naar Mecway's U,V gedraaid | statisch, niet-lineair |
 | `safety_factor` | `factorofsafety` (Mecway toont het item *failure*): tensile strength / von Mises van materialen met Mecway's von Mises-faalcriterium; schalen de kleinste van boven en onder; onbelast 1e6 | uit `SIEQ_NOEU`/`SIEQ_ELNO` (in de job) | statisch, niet-lineair, dynamisch |
+| `principal_stresses` | `principal1` >= `principal2` >= `principal3` en `tresca` (= principal1 − principal3), volume-elementen, per elementknoop en als knoopgemiddelde, zoals Mecway ze berekent (Mecway's velden *principal stress* en *Tresca stress*) | uit `SIGM_ELNO` (in de job) | uit |
+| `principal_strains` | `lprincipalstrain1..3` (ook bij Green-Lagrange, zoals Mecway), volume-elementen, per elementknoop en knoopgemiddelde | uit `EPSI_ELNO`/`EPSG_ELNO` (in de job) | uit |
 | `contact` | `contactpressure` (Pa, positief bij druk; negatief wordt 0), `contactstate` (0 open, 1 gesloten, 2 glijdend) op de slave-knopen | `-LAGS_C` (`DEPL`); status uit `CONT_NOEU` (alleen lineaire contactvlakken) of uit de druk (> 1% van de grootste) | niet-lineair, dynamisch |
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (fasefracties), `hardness` (als de dataset hardheid heeft); namen van de bridge | `META_NOEU`, `DURT_NOEU` | thermisch transient: met `#ASTER-METALLURGIE` altijd mee, alleen route `liml` ([`Lassen.md`](Lassen.md) §10) |
 | druk (akoestiek, niet in deze keuzelijst) | `pressure` per mode (Mecway's naam); harmonisch per frequentie ook `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibro-akoestiek: `DEPL` component `PRES`) | akoestiek, altijd ([`Akoestiek.md`](Akoestiek.md)) |
@@ -489,9 +491,10 @@ Hoe de bridge rekent (zoals gemeten in Mecway 34):
 | `T`, `qf.x`, `qf.y`, `qf.z` | `temperature`, `heat_flux` |
 | `FI.u`, `FI.v`, `FI.w`, `MI.u`, `MI.v`, `MI.w` | `beam_forces` |
 | `cstr.P`, `fos`, `P` | `contact`, `safety_factor`, akoestische druk |
+| `s1`, `s2`, `s3`, `tr`; `e1`, `e2`, `e3` | `principal_stresses`; `principal_strains` (standaard uit) |
 
-Niet mogelijk: hoofdwaarden (`s1`..`s3`, `e1`..`e3`, `GLe1`.., `tr`), spanningen in
-elementcoordinaten (`s.uu`..), schaalkrachten (`ML`, `FL`), Zienkiewicz-Zhu-spanningen,
+Niet mogelijk: Green-Lagrange-hoofdwaarden `GLe1`.. (gebruik `e1`, dat is bij een
+niet-lineaire analyse de Green-Lagrange-hoofdrek), spanningen in elementcoordinaten (`s.uu`..), schaalkrachten (`ML`, `FL`), Zienkiewicz-Zhu-spanningen,
 uitwendige kracht `FE`, rekenergie, elektrische velden en materiaaleigenschappen
 (`youngsmodulus` enz.). Zo'n formule blijft in Mecway ongeldig; maak hem na het laden
 opnieuw (Mecway rekent hem dan uit). Verificatie FX-01 .. FX-03

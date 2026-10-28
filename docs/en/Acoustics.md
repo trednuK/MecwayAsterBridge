@@ -786,7 +786,7 @@ frequency; not eigenmodes, but the response at that frequency). Fields per frequ
 | `displx/y/z`, `displix/y/z` | structure (also the nodes on the coupling face) | real and imaginary part of the displacement U [m] |
 | `displampx/y/z`, `displmag`, `displphasex/y/z` | structure | amplitude per direction, total amplitude, phase [degrees] |
 | `rot*`, `rotamp*` | shells and beams | rotation (Re) and amplitude [rad] |
-| `accelamp*`, `accelmag` (and `velamp*`, `velmag` with *velocities*) | structure | ω²·\|U\| (ω·\|U\|) |
+| `accamp*`, `accmag` (and `velamp*`, `velmag` with *velocities*) | structure | ω²·\|U\| (ω·\|U\|) |
 | `stress..`, `stressamp..`, `vonmises` | solid elements of the structure | stress (Re), amplitude per component, largest von Mises over a period |
 | `pressure`, `pressurei` | fluid (also the nodes on the coupling face) | real and imaginary part of the pressure P [Pa] |
 | `pressuremag`, `pressurephase`, `spl` | fluid | \|P\|, phase [degrees], sound pressure level 20·log10(\|P\|/(√2·20 µPa)) [dB] |

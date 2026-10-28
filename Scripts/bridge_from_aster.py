@@ -83,12 +83,12 @@ RESULT_FIELD_SPECS = OrderedDict([
         ('DZ', 'velz'),
     ])),
     # accelerations: ACCE (dynamics; response spectrum: maximum absolute
-    # acceleration, bridge_spectrum.py). Only route 'liml'
-    # (aster_results_export); Mecway has no name of its own.
+    # acceleration, bridge_spectrum.py). Mecway's names accx/y/z (Mecway
+    # 34's own D30 solution).
     ('accelerations', OrderedDict([
-        ('DX', 'accelx'),
-        ('DY', 'accely'),
-        ('DZ', 'accelz'),
+        ('DX', 'accx'),
+        ('DY', 'accy'),
+        ('DZ', 'accz'),
     ])),
     # REAC_NODA: DRX/DRY/DRZ are reaction moments (only on nodes with
     # rotational degrees of freedom). Mecway names as in Mecway's own
@@ -197,6 +197,11 @@ RESULT_FIELD_SPECS = OrderedDict([
     ('shell_stresses', OrderedDict()),
     ('shell_forces', OrderedDict()),
     ('safety_factor', OrderedDict()),
+    # Principal stresses and Tresca / principal strains of volume elements
+    # (S34): computed in the job from SIGM_ELNO / EPSI_ELNO (EPSG_ELNO),
+    # route 'liml' only (aster_results_export._principal_vars).
+    ('principal_stresses', OrderedDict()),
+    ('principal_strains', OrderedDict()),
     ('contact', OrderedDict([
         ('LAGS_C', 'contactpressure'),
     ])),

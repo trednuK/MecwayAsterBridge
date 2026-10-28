@@ -163,11 +163,11 @@ def _sdof_checks(zeta, src, n_freq=None, peak=True):
                   unit="Hz", source="f_n sqrt(1 - 2 zeta^2)"),
             Check("versnellingsamplitude in de piek",
                   lambda r: max((d["displampx"][_node(r, MASS_X)], d[
-                      "accelampx"][_node(r, MASS_X)] / (2 * math.pi * f) ** 2
+                      "accampx"][_node(r, MASS_X)] / (2 * math.pi * f) ** 2
                       / d["displampx"][_node(r, MASS_X)])
                       for f, d in _steps(r))[1],
                   ref=1.0, tol=1e-5, unit="-",
-                  source="|a| = w^2 |u| (accelampx / (w^2 displampx))"),
+                  source="|a| = w^2 |u| (accampx / (w^2 displampx))"),
         ]
     if n_freq:
         out.append(Check("aantal frequenties", lambda r: len(r.steps),

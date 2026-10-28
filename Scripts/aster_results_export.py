@@ -183,10 +183,12 @@ FIELD_TABLE = (
     # angularvelmag).
     [("velocities", "res", "VITE", c, "angularvel" + s, KNOOP)
      for c, s in _RXYZ] +
-    # Acceleration (ACCE): Mecway has no acceleration field (no name in
-    # mecway.exe); own names accelx/y/z of the bridge. Response spectrum
-    # (bridge_spectrum.py): the maximum absolute acceleration.
-    [("accelerations", "res", "ACCE", c, "accel" + s, KNOOP)
+    # Acceleration (ACCE): Mecway's names accx/y/z/accmag (Mecway 34's own
+    # D30 solution with the field "acceleration", seen headless; with the
+    # former names accelx.. Mecway did not recognise the field, S34).
+    # Response spectrum (bridge_spectrum.py): the maximum absolute
+    # acceleration.
+    [("accelerations", "res", "ACCE", c, "acc" + s, KNOOP)
      for c, s in _XYZ] +
     [("stresses", "res", "SIGM_NOEU", c, "stress" + s, KNOOP)
      for c, s in _STRESS_CMPS] +
@@ -304,7 +306,8 @@ FIELD_TABLE = (
 # there is. bridge_to_aster._results_route passes the chosen groups
 # (opt_in).
 OPT_IN_GROUPS = frozenset(["strain", "beam_forces", "shell_stresses",
-                           "shell_forces", "safety_factor", "contact"])
+                           "shell_forces", "safety_factor", "contact",
+                           "principal_stresses", "principal_strains"])
 
 # Fixed factor per Mecway variable (value = Code-Aster x factor), not
 # needed after VALUE_OFFSETS (no overlap): contact pressure positive in
@@ -338,7 +341,7 @@ VALUE_OFFSETS = {"temperature": 273.15}
 MAGNITUDES = OrderedDict([
     ("displmag", ("displx", "disply", "displz")),
     ("velmag", ("velx", "vely", "velz")),
-    ("accelmag", ("accelx", "accely", "accelz")),
+    ("accmag", ("accx", "accy", "accz")),
     ("angularvelmag", ("angularvelx", "angularvely", "angularvelz")),
     ("reactionforcemag",
      ("reactionforcex", "reactionforcey", "reactionforcez")),
@@ -1442,6 +1445,92 @@ def _fos_vars(fields, model, conn, strengths):
     return out
 
 
+_PRINCIPAL_SPECS = {
+    # group: ([(result, field, tensor components xx yy zz xy yz xz)],
+    #         Mecway names of the principal values, tresca)
+    "principal_stresses": (
+        [("res", "SIGM_ELNO", ("SIXX", "SIYY", "SIZZ", "SIXY", "SIYZ",
+                               "SIXZ"))],
+        ("principal1", "principal2", "principal3"), True),
+    "principal_strains": (
+        [("res", "EPSG_ELNO", ("EPXX", "EPYY", "EPZZ", "EPXY", "EPYZ",
+                               "EPXZ")),
+         ("res", "EPSI_ELNO", ("EPXX", "EPYY", "EPZZ", "EPXY", "EPYZ",
+                               "EPXZ"))],
+        ("lprincipalstrain1", "lprincipalstrain2", "lprincipalstrain3"),
+        False),
+}
+
+
+def _principal_vars(fields, model, conn, group):
+    """
+    Principal stresses / strains of volume elements as Mecway computes
+    them (S34; measured headless with Mecway 34, internal solver): per
+    element node the eigenvalues of the tensor, descending (principal1 =
+    largest), tresca = principal1 - principal3 (Mecway's field "Tresca
+    stress"); per node the mean of the element-node values of the elements
+    at that node (Mecway: within 1e-9 of that mean). Strains: the tensor
+    components of EPSI/EPSG_ELNO (Code-Aster: tensor, not engineering
+    shear), Mecway's names lprincipalstrain1..3 also for Green-Lagrange
+    (seen in Mecway's L30 solution with CCX). Stresses from SIGM_ELNO.
+    """
+    sources, names, with_tresca = _PRINCIPAL_SPECS[group]
+    comp = None
+    for rkey, field, cmps in sources:
+        if rkey not in fields.results:
+            continue
+        cand = [_plan_elem(fields, rkey, field, c, "_principal", conn, model)
+                for c in cmps]
+        if (all(v is not None for v in cand) and
+                all(np.array_equal(cand[0].ids, v.ids) for v in cand)):
+            comp = cand
+            break
+    if comp is None:
+        return []
+    eids = comp[0].ids
+    flat = np.concatenate([np.asarray(model["elements"][int(e)][1],
+                                      dtype=int) for e in eids])
+    uniq, inv = np.unique(flat, return_inverse=True)
+    counts = np.bincount(inv).astype(float)
+    cache = {}
+
+    def eig(fields):
+        if cache.get("index", object()) != fields.index:
+            vals = [v.getter(fields) for v in comp]
+            e = None
+            if all(x is not None for x in vals):
+                xx, yy, zz, xy, yz, xz = vals
+                t = np.stack([np.stack([xx, xy, xz], -1),
+                              np.stack([xy, yy, yz], -1),
+                              np.stack([xz, yz, zz], -1)], -2)
+                e = np.linalg.eigvalsh(t)[:, ::-1]
+            cache["index"] = fields.index
+            cache["e"] = e
+        return cache["e"]
+
+    def pick(i):
+        if i == 3:                      # tresca
+            return lambda e: e[:, 0] - e[:, 2]
+        return lambda e: e[:, i]
+
+    out = []
+    cols = list(enumerate(names)) + ([(3, "tresca")] if with_tresca else [])
+    for i, name in cols:
+        f = pick(i)
+
+        def elem_get(fields, f=f):
+            e = eig(fields)
+            return None if e is None else f(e)
+
+        def node_get(fields, f=f):
+            e = eig(fields)
+            return (None if e is None else
+                    np.bincount(inv, weights=f(e)) / counts)
+        out.append(_Var(name, False, uniq.astype("<i4"), node_get))
+        out.append(_Var(name, True, eids, elem_get))
+    return out
+
+
 def _fos(strength, sigma):
     """S / sigma, with FOS_MAX where sigma is (nearly) 0."""
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -1503,7 +1592,10 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
         out += _contact_state_var(fields)
     if "safety_factor" in wanted:
         out += _fos_vars(fields, model, conn, strengths or {})
-    shell_groups = [g for g in ("shell_stresses", "strain", "shell_forces")
+    for group in ("principal_stresses", "principal_strains"):
+        if group in wanted:
+            out += _principal_vars(fields, model, conn, group)
+    shell_groups =[g for g in ("shell_stresses", "strain", "shell_forces")
                     if g in wanted]
     if not shell_groups:
         return out

@@ -111,7 +111,7 @@ Onder *Solution* staat **één stap** (geen tijdstappen, geen modes) met de maxi
 | Mecway-variabele | Betekenis |
 |---|---|
 | `displx/y/z`, `displmag` | grootste verplaatsing t.o.v. de grond (rotaties `rotx/y/z` bij balken en schalen) |
-| `accelx/y/z`, `accelmag` | grootste **absolute** versnelling (grond + constructie), eigen namen van de bridge (Mecway kent geen versnellingsveld) |
+| `accx/y/z`, `accmag` | grootste **absolute** versnelling (grond + constructie), eigen namen van de bridge (Mecway kent geen versnellingsveld) |
 | `stressxx` ... `stresszx` | grootste spanningscomponent (volume-elementen; per knoop en per element-knoop) |
 | `vonmises` | von Mises per knoop, per mode berekend en gecombineerd (§3) |
 | `reactionforcex/y/z`, `reactionforcemag` | grootste reactie per knoop |
@@ -178,7 +178,7 @@ sdld25a).
 - **Maxima zonder teken.** Elke waarde is het grootste verwachte (absolute) maximum
   op die plek, en elke component apart. De maxima vallen niet op hetzelfde moment:
   een verplaatsingsveld uit maxima is geen evenwichtstoestand, `displmag` en
-  `accelmag` zijn een bovengrens (√ van de som van de kwadraten van de maxima), en
+  `accmag` zijn een bovengrens (√ van de som van de kwadraten van de maxima), en
   spanningscomponenten mag je niet tot een hoofdspanning combineren.
 - **Totale reactie niet optellen.** De som van de reacties per knoop is groter dan
   de werkelijke totale reactie: tel in Mecway dus niet `reactionforce*` op. De log

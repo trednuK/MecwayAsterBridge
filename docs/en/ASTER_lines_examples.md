@@ -656,7 +656,7 @@ no gravity. The spectrum must be a `DEFI_NAPPE` (parameter `AMOR`) or a `FORMULE
 
 Outcome (verification SP-01, the rebuild of sdld25a with Mecway springs and masses):
 the log reports `INFO: #ASTER lines: 6 code, ..., 1 SPECTRE, ...` and the two options;
-the absolute accelerations `accelx` equal the TEST_RESU values of sdld25a (e.g. P1
+the absolute accelerations `accx` equal the TEST_RESU values of sdld25a (e.g. P1
 10.4498 m/s²).
 
 ### Example 12 – Harmonic acoustics: source with phase and own frequencies (`#ASTER-BRON`)

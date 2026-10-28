@@ -357,7 +357,7 @@ harmonische akoestiek). Velden per frequentie (knoopwaarden):
 | `displphasex/y/z` | fase arg U ten opzichte van de last met fase 0, −180…180; negatief = naijlen | graden |
 | `rotx/y/z`, `rotampx/y/z` | balk- en schaalknopen: Re en amplitude van de rotatie | rad |
 | `velmag`, `velampx/y/z` | ω\|U\| (veld `velocities`) | m/s |
-| `accelmag`, `accelampx/y/z` | ω²\|U\| (veld `accelerations`) | m/s² |
+| `accmag`, `accampx/y/z` | ω²\|U\| (veld `accelerations`) | m/s² |
 | `stressxx` … `stresszx` | Re van de spanning (fase 0), volume-elementen | Pa |
 | `stressampxx` … | amplitude per component | Pa |
 | `vonmises` | grootste von Mises-spanning **over een periode** (§7.4) | Pa |

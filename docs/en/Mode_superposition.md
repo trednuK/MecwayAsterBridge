@@ -359,7 +359,7 @@ harmonic acoustics). Fields per frequency (nodal values):
 | `displphasex/y/z` | phase arg U relative to the load with phase 0, −180…180; negative = lagging | degrees |
 | `rotx/y/z`, `rotampx/y/z` | beam and shell nodes: Re and amplitude of the rotation | rad |
 | `velmag`, `velampx/y/z` | ω\|U\| (field `velocities`) | m/s |
-| `accelmag`, `accelampx/y/z` | ω²\|U\| (field `accelerations`) | m/s² |
+| `accmag`, `accampx/y/z` | ω²\|U\| (field `accelerations`) | m/s² |
 | `stressxx` … `stresszx` | Re of the stress (phase 0), solid elements | Pa |
 | `stressampxx` … | amplitude per component | Pa |
 | `vonmises` | largest von Mises stress **over a period** (§7.4) | Pa |

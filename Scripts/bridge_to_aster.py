@@ -1407,6 +1407,8 @@ def _optional_fields(model_data, fields, quiet=False):
         "shell_forces": bool(gsh),
         "safety_factor": bool(_failure_strengths(model_data)),
         "contact": bool(model_data.get("contacts")),
+        "principal_stresses": bool(g3d),
+        "principal_strains": bool(g3d),
     }
     out = [f for f in fields if applies.get(f)]
     idle = [f for f in fields if f in applies and not applies[f]]
@@ -1504,6 +1506,15 @@ def _optional_field_blocks(model_data, fields, strain_kind):
                     "NIVE_COUCHE='{2}'))".format(concept, _fmt_groups(gsh),
                                                  level))
         out.append("")
+    elif "principal_strains" in fields and g3d:
+        # Principal strains (S34) need the strain tensor per element node
+        # of the volumes (aster_results_export._principal_vars); without
+        # the field strain only that ELNO field.
+        out += ["# Strain per element node for the principal strains.",
+                "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
+                "DEFORMATION=('{1}_ELNO', ))".format(
+                    _fmt_groups(g3d),
+                    "EPSG" if strain_kind == "EPSG" else "EPSI"), ""]
     mods = model_data.get("elset_modelisations", {})
     gd = [g for g in gbeam if mods.get(g) == _GD_BEAM]
     gbeam = [g for g in gbeam if g not in gd]

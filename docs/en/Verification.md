@@ -718,7 +718,14 @@ References: the analytical solution, converted to the units of the formula.
   bridge result are valid and show the same contour.
 - **FX-02** (bar in tension, P = 1 MPa, hex20): `s.xx` in MPa (1), `u.x` in mm at the end
   (PL/E = 0.0047619), the sum of `FR.x` in kN over the fixed face (−PA = −10), `e.xx·1e6`
-  (P/E = 4.7619, with `strain` in *fields*) and `x` in mm (1000). Result: within 1e-9.
+  (P/E = 4.7619, with `strain` in *fields*) and `x` in mm (1000); with the fields
+  `principal_stresses` / `principal_strains` (S34) also `principal1` = P, `principal3` = 0,
+  `tresca` = P, `lprincipalstrain1` = P/E, `lprincipalstrain3` = −νP/E and the formulas `s1`,
+  `tr` (MPa) and `e1·1e6`. Result: within 1e-9. On a cantilever (LS-02, not uniform) the
+  bridge's principal values per element node equal the eigenvalues of its own element-node
+  tensor and the node values the mean of the element-node values (within 1e-16 relative), the
+  rule measured in Mecway 34; Mecway recognises the fields (*principal stress*, *Tresca
+  stress*, *principal strain*) when it opens and saves the result.
 - **FX-03** (TH-02a, transient): `t` in min at 10 s and 40 s (0.16667, 0.66667) and
   `(T−300)/max(t,1)` at the surface (2.5 K/s at 40 s). Result: within 1e-7.
 

@@ -30,7 +30,8 @@
 #                       with phase 0; negative = lagging
 #   rotx/y/z, rotampx/y/z      beam/shell nodes: Re and amplitude [rad]
 #   velmag, velampx/y/z        w |U|        (velocities)
-#   accelmag, accelampx/y/z    w^2 |U|      (accelerations)
+#   accmag, accampx/y/z        w^2 |U|      (accelerations; Mecway's prefix
+#                              acc as for velmag/velamp, S34)
 #   stressxx..zx               Re(S) (phase 0)                [Pa]
 #   stressampxx..zx            |S_ij|                         [Pa]
 #   vonmises                   largest von Mises stress over a period
@@ -227,8 +228,8 @@ def _plan(data, fields, pressure=False):
             out += [_var("velamp" + s, rows, _cmp_fn("DEPL", c, "vel"))
                     for c, s in zip(_DISP, _XYZ)]
         if "accelerations" in fields:
-            out.append(_var("accelmag", rows, _mag_fn("DEPL", _DISP, 2)))
-            out += [_var("accelamp" + s, rows, _cmp_fn("DEPL", c, "acc"))
+            out.append(_var("accmag", rows, _mag_fn("DEPL", _DISP, 2)))
+            out += [_var("accamp" + s, rows, _cmp_fn("DEPL", c, "acc"))
                     for c, s in zip(_DISP, _XYZ)]
     rrows = _rows(data, "DEPL", _ROT)
     if rrows is not None:

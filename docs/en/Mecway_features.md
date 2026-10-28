@@ -155,6 +155,7 @@ Bonded contact per combination (slave on master):
 | Total strain | Yes | Field `strain` (off by default): `lstrain*`, nonlinear `greenlagrangestrain*`; shells top/middle/bottom. No logarithmic strain and no principal strains. |
 | Contact pressure, contact state | Partly | Field `contact`: `contactpressure`, `contactstate` (0/1/2). No contact shear stress and displacement; sliding (2) NOT verified. |
 | Factor of safety | Yes | Field `safety_factor` (von Mises, §5). |
+| Principal stress, Tresca stress, principal strain | Yes | Fields `principal_stresses` and `principal_strains` (off by default): `principal1..3`, `tresca`, `lprincipalstrain1..3` of solids, computed as Mecway does (eigenvalues per element node, node = average). Shells: No. Verification FX-02. |
 | Temperature, heat flux | Yes | Thermal. |
 | Natural frequencies, buckling factors, effective mass | Yes | Effective mass fraction differs from Mecway (KB49). |
 | Acoustic pressure | Yes | [`Acoustics.md`](Acoustics.md). |
@@ -176,7 +177,7 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | Yes | L30 (nonlinear static): `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, `ARCHIVAGE` at those times; setting `auto_time_stepping`. Dynamic not: fixed steps, cutting on divergence. |
 | Incompatible hex8 | No | KB1. |
-| Solution > Formula (result formulas, e.g. `qf.z/3600/(12^2)`) | Partly | Computed by the bridge from the results, in the units of the formula, per node and time step, as Mecway does in its own solve (FX-01 .. FX-03). Not: principal values (`s1`, `e1`, `tr`), element coordinates, shell forces, material symbols (WARNING; create the formula again after loading, KB121). [`UserGuide.md`](UserGuide.md) §4.2. |
+| Solution > Formula (result formulas, e.g. `qf.z/3600/(12^2)`) | Partly | Computed by the bridge from the results, in the units of the formula, per node and time step, as Mecway does in its own solve (FX-01 .. FX-03); `s1`, `tr`, `e1` with the fields `principal_stresses` / `principal_strains`. Not: `GLe1`, element coordinates, shell forces, material symbols (WARNING; create the formula again after loading, KB121). [`UserGuide.md`](UserGuide.md) §4.2. |
 | CCX > custom element type (e.g. Hex8 → C3D8R) | No | CalculiX only: WARNING, Code-Aster uses the *Elements* page (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I have no equal). [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md), hyperelastic material. |
 | Configurations | Yes | One per run, chosen on the start screen (*Configuration*); results in the solution of that configuration ([`UserGuide.md`](UserGuide.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Partly | Only `#ASTER` lines; ordinary CCX cards are ignored without a message. |

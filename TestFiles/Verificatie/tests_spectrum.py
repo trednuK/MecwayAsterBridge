@@ -163,7 +163,7 @@ def _sp01_checks():
                  ref=f, tol=1e-4, unit="Hz", source="sdld25a VALE_CALC")
            for k, f in enumerate(SDLD25A_FREQ)]
     out += [Check("ACCE_ABSOLU DX %s" % name, lambda r, x=x: r.at(
-        "accelx", (x, 0, 0)), ref=calc, tol=0.01, unit="m/s2",
+        "accx", (x, 0, 0)), ref=calc, tol=0.01, unit="m/s2",
         source="sdld25a VALE_CALC (VALE_REFE fiche %g, POUX %g)" % (fiche,
                                                                     poux))
         for name, x, calc, fiche, poux in SDLD25A_ACCE]
@@ -263,7 +263,7 @@ def _sp2_checks(rule):
         Check("totale reactie (log)", lambda r: _summary(r)["reactie"]["FX"],
               ref=_sp2_base(rule), tol=0.005, unit="N",
               source=src + "; BRIDGE_SPECTRUM_REACTIE"),
-        Check("abs. versnelling m2", lambda r: r.at("accelx", (2, 0, 0)),
+        Check("abs. versnelling m2", lambda r: r.at("accx", (2, 0, 0)),
               ref=_sp2_acc(1, rule), tol=0.005, unit="m/s2",
               source=src + "; Gamma_i S_i phi_i"),
     ]
@@ -297,7 +297,7 @@ TESTS += [
                  tol=0.005, unit="N",
                  source="sqrt((M_eff,1 S_1)^2 + ((M - M_eff,1) S_1)^2)"),
              Check("abs. versnelling m2", lambda r: r.at(
-                 "accelx", (2, 0, 0)),
+                 "accx", (2, 0, 0)),
                  ref=math.hypot(GAM2[0] * SA2[0] * MODES2[0][1][1],
                                 (1 - GAM2[0] * MODES2[0][1][1]) * SA2[0]),
                  tol=0.005, unit="m/s2",
@@ -477,7 +477,7 @@ TESTS += [Case(
         Check("totale reactie Y", lambda r: _summary(r)["reactie"]["FY"],
               ref=GAM7 ** 2 * S7, tol=0.01, unit="N",
               source="M_eff,1 S = 0,6131 m S (Euler-Bernoulli)"),
-        Check("abs. versnelling tip", lambda r: r.at("accely", (L7, 0, 0)),
+        Check("abs. versnelling tip", lambda r: r.at("accy", (L7, 0, 0)),
               ref=S7 * math.hypot(GAM7 * PHI_TIP7, 1 - GAM7 * PHI_TIP7),
               tol=0.005, unit="m/s2",
               source="Gamma_1 phi_1(L) S en de rest (1 - Gamma_1 phi_1) S"),

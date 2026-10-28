@@ -155,6 +155,7 @@ Verlijmd contact per combinatie (slave op master):
 | Totale rek | Ja | Veld `strain` (standaard uit): `lstrain*`, niet-lineair `greenlagrangestrain*`; schalen boven/midden/onder. Geen logaritmische rek en geen hoofdrekken. |
 | Contactdruk, contactstatus | Deels | Veld `contact`: `contactpressure`, `contactstate` (0/1/2). Geen contactschuifspanning en -verplaatsing; glijden (2) NIET geverifieerd. |
 | Factor of safety | Ja | Veld `safety_factor` (von Mises, §5). |
+| Principal stress, Tresca stress, principal strain | Ja | Velden `principal_stresses` en `principal_strains` (standaard uit): `principal1..3`, `tresca`, `lprincipalstrain1..3` van volume-elementen, berekend zoals Mecway (eigenwaarden per elementknoop, knoop = gemiddelde). Schalen: Nee. Verificatie FX-02. |
 | Temperatuur, warmteflux | Ja | Thermisch. |
 | Eigenfrequenties, kniklastfactoren, effectieve massa | Ja | Fractie van de effectieve massa anders dan Mecway (KB49). |
 | Akoestische druk | Ja | [`Akoestiek.md`](Akoestiek.md). |
@@ -176,7 +177,7 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
 | Automatic time stepping | Ja | L30 (niet-lineair statisch): `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, `ARCHIVAGE` op die tijden; instelling `auto_time_stepping`. Dynamisch niet: vaste stappen, knippen bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |
-| Solution > Formula (resultaatformules, bijv. `qf.z/3600/(12^2)`) | Deels | De bridge rekent ze uit de resultaten uit, in de eenheden van de formule, per knoop en tijdstap, zoals Mecway bij zijn eigen solve (FX-01 .. FX-03). Niet: hoofdwaarden (`s1`, `e1`, `tr`), elementcoordinaten, schaalkrachten, materiaalsymbolen (WARNING; formule na het laden opnieuw maken, KB121). [`Handleiding.md`](Handleiding.md) §4.2. |
+| Solution > Formula (resultaatformules, bijv. `qf.z/3600/(12^2)`) | Deels | De bridge rekent ze uit de resultaten uit, in de eenheden van de formule, per knoop en tijdstap, zoals Mecway bij zijn eigen solve (FX-01 .. FX-03); `s1`, `tr`, `e1` met de velden `principal_stresses` / `principal_strains`. Niet: `GLe1`, elementcoordinaten, schaalkrachten, materiaalsymbolen (WARNING; formule na het laden opnieuw maken, KB121). [`Handleiding.md`](Handleiding.md) §4.2. |
 | CCX > custom element type (bijv. Hex8 → C3D8R) | Nee | Alleen CalculiX: WARNING, Code-Aster gebruikt de pagina *Elementen* (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I hebben geen gelijke). [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md), hyperelastisch materiaal. |
 | Configuraties | Ja | Eén per run, te kiezen op het startscherm (*Configuratie*); resultaten in de solution van die configuratie ([`Handleiding.md`](Handleiding.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Deels | Alleen `#ASTER`-regels; gewone CCX-kaarten zonder melding genegeerd. |
