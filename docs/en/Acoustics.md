@@ -315,7 +315,7 @@ within 0.05% (quad8 10 × 7). **Triangles** differ slightly: Code-Aster integrat
 mass of its plane acoustic elements with fewer points than Mecway (tri3 one point,
 tri6 three), so the bridge is higher: tri6 ≤ 0.003% in frequency (0.02% in the
 pressure), tri3 0.07% (mode 2) to 0.6% (mode 8) on a mesh of 20 × 14 × 2 (KNOWN_BUGS
-128). Mesh with quads (or tri6) where possible. Mecway's organ pipe (497 elements, of which 48
+130). Mesh with quads (or tri6) where possible. Mecway's organ pipe (497 elements, of which 48
 tri3, 20 modes): the fundamental of the pipe, mode 4, 64.594 Hz (Mecway 64.592 Hz).
 
 ## 4. Messages and solutions
