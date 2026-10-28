@@ -329,6 +329,56 @@ def build_mo04():
     return m
 
 
+# ------------------------------------------------------------------
+# MO-10 Vrije staaf uit twee hex20-blokken met verlijmd contact, zonder
+# opleggingen (GitHub issue #9: starre modes om contacten te controleren).
+# Alleen een verbinding (LIAISON_MAIL) telt niet als oplegging: de bridge
+# kiest de vrij-vrij-route (bridge_to_aster._only_connections); voorheen
+# <EXCEPTION> ALGELINE3_81. Staaf 0,8 x 0,05 x 0,05 m, twee blokken van
+# 0,4 m met eigen knopen op x = 0,4. Referentie mode 7: Euler-Bernoulli
+# vrij-vrij, (beta L)^2 = 22,373 (Blevins tabel 8-1); L/h = 16, dus
+# afschuiving en rotatietraagheid (Timoshenko) verlagen ~1,5%: tolerantie 3%.
+# Mode 7 en 8 zijn de buiging in Y en Z (vierkante doorsnede, dubbel).
+# ------------------------------------------------------------------
+L10, H10 = 0.8, 0.05
+F10 = 22.373 / (2 * math.pi * L10 ** 2) * math.sqrt(
+    E * H10 ** 4 / 12.0 / (RHO * H10 ** 2))
+BOND10 = ('<contact2 selectionmaster="A_x1" selectionslave="B_x0" '
+          'type="bondedtie"><tolerance>0 m</tolerance><normalstiffness>0 '
+          'Pa/m</normalstiffness><tangentialstiffness>0 Pa/m'
+          '</tangentialstiffness><frictioncoefficient>0</frictioncoefficient>'
+          '</contact2>')
+
+
+def build_mo10():
+    m = Model("V30", attrs={"maxmode": 8})
+    m.elset("A", "Staal")
+    m.elset("B", "Staal")
+    a = hexmesh(m, "A", 8, 2, 2, box(0, L10 / 2, 0, H10, 0, H10), order=2)
+    index = m._index
+    m._index = {}               # blok B met eigen knopen op x = L/2
+    b = hexmesh(m, "B", 8, 2, 2, box(L10 / 2, L10, 0, H10, 0, H10), order=2)
+    m._index = index
+    m.mat("Staal", STEEL, DENS)
+    m.face_selection("A_x1", a["faces"]["u1"])
+    m.face_selection("B_x0", b["faces"]["u0"])
+    m.add(BOND10)
+    return m
+
+
+TESTS.append(Case(
+    "MO-10", GROUP, "Vrije staaf uit twee verlijmde hex20-blokken "
+    "(alleen verbindingen, geen opleggingen)", "modal_3d", build_mo10,
+    [Check("f1 (star)", lambda r: r.mode(1), ref=0.0, tol_abs=0.5,
+           unit="Hz", source="starre-lichaamsbeweging"),
+     Check("f6 (star)", lambda r: r.mode(6), ref=0.0, tol_abs=0.5,
+           unit="Hz", source="starre-lichaamsbeweging"),
+     _mode_check(7, F10, 0.03, "Euler-Bernoulli vrij-vrij (beta L)^2 = "
+                 "22,373 (Blevins tabel 8-1); Timoshenko ~-1,5%", "f7")],
+    note="Verlijmd contact (LIAISON_MAIL) zonder oplegging: "
+         "vrij-vrij-route (issue #9)."))
+
+
 TESTS.append(Case(
     "MO-04", GROUP, "Vrije vierkante plaat (vrij-vrij), DKT 24x24",
     "modal_3d", build_mo04,

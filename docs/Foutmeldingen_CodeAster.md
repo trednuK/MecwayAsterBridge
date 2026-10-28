@@ -1296,8 +1296,14 @@ in de `.export` (*Tijdslimiet run_aster [s]*, *Geheugenlimiet run_aster [MB]*).
   (`LIAISON_ELEM`, `LIAISON_MAIL`, ...) waarvan de last niet in `#ASTER-EXCIT` staat.
   Met `#ASTER-EXCIT` zet de bridge de last ook in `CHARGE` van `ASSEMBLAGE`, zodat de
   verbinding in de matrices van *Modaal* en *Knik* meetelt (zie
-  [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2).
-- **Gezien**: balk die alleen scharnierend vastzit (KNOWN_BUGS 48); voorbeeld 1 van
+  [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2). Ook: een dubbele
+  voorwaarde, twee opleggingen op dezelfde knopen in lineair afhankelijke richtingen (de
+  gedualiseerde voorwaarden maken de matrix singulier, welke shift ook); de bridge meldt
+  zo'n overlap vooraf met `WARNING: Voorwaarden ... delen ... knoop/knopen`.
+- **Gezien**: balk die alleen scharnierend vastzit (KNOWN_BUGS 48); GitHub issue #9
+  (ronde plaat met frictionless op de randen en displacement X, Y, Z = 0 op dezelfde
+  knopen; die overlap reduceert de bridge nu zelf, MO-09); een samenstel met verlijmd
+  contact en zonder oplegging (nu de vrij-vrij-route, MO-10); voorbeeld 1 van
   `ASTER_regels_voorbeelden.md` in *Modaal* en *Knik* toen `#ASTER-EXCIT` nog niet in
   de matrices kwam (06-10-2026: de balk hing los). Met de last in de matrices rekent
   voorbeeld 1 door (*Modaal* f1 = f2 = 841,8 Hz met het toenmalige testmodel; met model

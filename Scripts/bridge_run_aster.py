@@ -220,14 +220,19 @@ _MODES_SINGULAR_HINT = (
     u"Modaal een negatieve zoekfrequentie (bijv. -10 x de verwachte eerste "
     u"frequentie); de starre modes komen dan met ~0 Hz mee. Dat helpt alleen "
     u"als het losse deel massa heeft (dichtheid of puntmassa). Een "
-    u"verbinding uit #ASTER-code telt alleen mee via #ASTER-EXCIT.",
+    u"verbinding uit #ASTER-code telt alleen mee via #ASTER-EXCIT. Een "
+    u"dubbele voorwaarde (twee opleggingen op dezelfde knopen in "
+    u"afhankelijke richtingen, WARNING 'delen ... knoop/knopen' in de log) "
+    u"geeft dezelfde melding: pas dan de selecties aan.",
     u"The stiffness matrix is singular: the model has a mechanism or rigid "
     u"body motion (too few supports, a loose part, a hinge). Support the "
     u"model better, or choose a negative search frequency on the Modal page "
     u"(e.g. -10 x the expected first frequency); the rigid modes then "
     u"appear with ~0 Hz. That only helps if the loose part has mass "
     u"(density or point mass). A connection from #ASTER code only counts "
-    u"via #ASTER-EXCIT.")
+    u"via #ASTER-EXCIT. A duplicate constraint (two supports on the same "
+    u"nodes in dependent directions, WARNING 'share ... node(s)' in the "
+    u"log) gives the same message: then adjust the selections.")
 _MODES_FEW_HINT = (
     u"Code-Aster vond (te) weinig modes rond de zoekfrequentie. Kies een "
     u"zoekfrequentie dichter bij de verwachte frequenties (0 = de "

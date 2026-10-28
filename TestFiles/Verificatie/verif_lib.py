@@ -269,6 +269,37 @@ def rect(x0, x1, y0, y1, z=0.0):
     return f
 
 
+def diskmesh(m, elset, radius, n, nr, order=2, s=0.4):
+    """
+    Round plate in the plane z = 0 (O-grid, centre at the origin): a central
+    square of half width s * radius (n x n quads) and four outer patches
+    (n along the circumference, nr radially) up to the circle. Midside
+    nodes on the parametric midpoints, so the rim nodes lie on the circle.
+    All element normals +Z. Returns dict: "elems" [eid], "rim_edges"
+    [(eid, faceid)], "rim_nodes" set(nid), "faces" [(eid, 5)].
+    """
+    h = s * radius
+    patches = [quadmesh(m, elset, n, n, rect(-h, h, -h, h), order)]
+    for k in range(4):
+        c, sn = math.cos(k * math.pi / 2), math.sin(k * math.pi / 2)
+
+        def mapping(u, v, c=c, sn=sn):
+            # East patch rotated by k x 90 deg: u radial (outward), v along
+            # the circumference (counter-clockwise), u x v = +Z.
+            a = math.radians(-45.0 + 90.0 * v)
+            xi, yi = h, -h + 2 * h * v
+            xo, yo = radius * math.cos(a), radius * math.sin(a)
+            x, y = xi + u * (xo - xi), yi + u * (yo - yi)
+            return (c * x - sn * y, sn * x + c * y, 0.0)
+        patches.append(quadmesh(m, elset, nr, n, mapping, order))
+    elems = [e for p in patches for e in p["elems"].values()]
+    return {"elems": elems,
+            "rim_edges": [f for p in patches[1:] for f in p["edges"]["u1"]],
+            "rim_nodes": set(nid for p in patches[1:]
+                             for nid in p["nodes"]["u1"]),
+            "faces": [(e, QUAD_FACE_TOP) for e in elems]}
+
+
 def linemesh(m, elset, n, p0, p1):
     """n line2-elementen van p0 naar p1. Returns (eids, nids)."""
     nids = [m.node(*[p0[d] + (p1[d] - p0[d]) * i / float(n) for d in range(3)])
