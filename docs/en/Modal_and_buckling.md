@@ -510,7 +510,11 @@ outside the centroid (`EY`, `EZ`) and the warping constant `JG`; its `RIGI_GEOM`
 the axial force and the bending moments with the twist about the shear centre (Code-Aster
 U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
 
-<!-- FIGURE: page Elements, settings "Beams (line2/line3)" = POU_D_TG and "Warping of POU_D_TG beams at supports", markers: 1 = Beams list with POU_D_TG, 2 = Warping list (auto/free/blocked) -->
+![Elements page with the beam choice and the warping](../img/elements_beam_warping_en.png)
+
+1. *Beams (line2/line3)* (`elem_beam`): choose `POU_D_TG`.
+2. *Warping of POU_D_TG beams at supports* (`beam_warping`): `auto` (default), `free` or
+   `blocked`; see below.
 
 ![C profile with centroid, shear centre and local axes](../img/warping_section.svg)
 

@@ -517,7 +517,11 @@ zwaartepunt (`EY`, `EZ`) en de welvingsconstante `JG`; zijn `RIGI_GEOM` koppelt
 normaalkracht en buigende momenten aan de torsie om het dwarskrachtcentrum (Code-Aster
 U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
 
-<!-- FIGURE: page Elementen, settings "Balken (line2/line3)" = POU_D_TG and "Welving POU_D_TG-balken bij opleggingen", markers: 1 = keuzelijst Balken met POU_D_TG, 2 = keuzelijst Welving (auto/free/blocked) -->
+![Pagina Elementen met de balkkeuze en de welving](img/elements_beam_warping_nl.png)
+
+1. *Balken (line2/line3)* (`elem_beam`): kies `POU_D_TG`.
+2. *Welving POU_D_TG-balken bij opleggingen* (`beam_warping`): `auto` (standaard), `free`
+   of `blocked`; zie hieronder.
 
 ![C-profiel met zwaartepunt, dwarskrachtcentrum en lokale assen](img/warping_section.svg)
 

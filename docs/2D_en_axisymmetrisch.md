@@ -72,7 +72,11 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 ### 1.2 In het hoofdvenster van de bridge
 
-<!-- FIGURE: pagina Algemeen, instellingen *Actieve analyse (auto = volgens Mecway)* en *Resultaten naar Mecway*, markers: 1 = *Actieve analyse (auto = volgens Mecway)* op auto (of lin_static_3d), 2 = *Resultaten naar Mecway* op liml -->
+![Pagina Algemeen met de actieve analyse en de resultaatroute](img/general_analysis_results_nl.png)
+
+1. *Actieve analyse (auto = volgens Mecway)*: `auto` (of `lin_static_3d`; voor D20/DA0
+   `dyna_impl_3d`).
+2. *Resultaten naar Mecway*: `liml`.
 
 *Actieve analyse (auto = volgens Mecway)* `auto` (of `lin_static_3d`) en *Resultaten naar Mecway* `liml` (pagina
 Algemeen; de route `tabel` schaalt de reacties niet, de bridge stopt). De instellingen

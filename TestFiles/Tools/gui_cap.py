@@ -4,7 +4,8 @@
 # (IronPython): gui_cap.py <repo> <uitmap> [nl|en] [status]
 # omgeving: CAP_SMALL=1 (venster op MinimumSize), CAP_BIG=1, CAP_SCROLL=1,
 #           CAP_KEYS=1 (toetsenbordtest), CAP_ACTIVE=1 (actieve analyse wisselen)
-#           CAP_DOCS=1 (neutral work folder for screenshots in docs/img)
+#           CAP_DOCS=1 (neutral work folder for screenshots in docs/img),
+#           CAP_SET="key=value;..." (settings in memory for a screenshot)
 import sys, os
 repo, out = sys.argv[1], sys.argv[2]
 lang = sys.argv[3] if len(sys.argv) > 3 else "nl"
@@ -32,6 +33,22 @@ if _env("CAP_DOCS"):
     # or own folders in the image (the repo is public)
     bridge_utils.CONFIG_BRIDGE["work_dir"] = r"C:\FEA\WorkDir"
     bridge_utils.CONFIG_BRIDGE["ncpus"] = 1
+# CAP_SET="key=value;key=value": settings in memory only, for a screenshot
+# that shows a non-default choice (top level of CONFIG_BRIDGE, else every
+# analysis that has the key)
+for _pair in [p for p in _env("CAP_SET").split(";") if "=" in p]:
+    _key, _val = [v.strip() for v in _pair.split("=", 1)]
+    for _conv in (int, float):
+        try:
+            _val = _conv(_val)
+            break
+        except ValueError:
+            pass
+    if _key in bridge_utils.CONFIG_BRIDGE:
+        bridge_utils.CONFIG_BRIDGE[_key] = _val
+    for _ana in bridge_utils.CONFIG_BRIDGE.get("analyses", {}).values():
+        if _key in _ana:
+            _ana[_key] = _val
 import bridge_gui
 if not os.path.isdir(out):
     os.makedirs(out)

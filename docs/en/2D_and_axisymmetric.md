@@ -72,7 +72,11 @@ shells ([`Thermal.md`](Thermal.md)).
 
 ### 1.2 In the main window of the bridge
 
-<!-- FIGURE: page General, settings "Active analysis (auto = follow Mecway)" and "Results to Mecway", markers: 1 = "Active analysis (auto = follow Mecway)" on auto (or lin_static_3d), 2 = "Results to Mecway" on liml -->
+![General page with the active analysis and the result route](../img/general_analysis_results_en.png)
+
+1. *Active analysis (auto = follow Mecway)*: `auto` (or `lin_static_3d`; for D20/DA0
+   `dyna_impl_3d`).
+2. *Results to Mecway*: `liml`.
 
 "Active analysis (auto = follow Mecway)" `auto` (or `lin_static_3d`) and "Results to Mecway" `liml` (General page;
 the route `tabel` does not scale the reactions, the bridge stops). The settings of the
