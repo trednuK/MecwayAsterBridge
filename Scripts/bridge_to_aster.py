@@ -48,6 +48,7 @@ import bridge_modal_damping
 from bridge_bcs import is_position, ASTER_FORMULA_PRELUDE
 import bridge_offset
 import bridge_warping
+import bridge_plane
 from collections import OrderedDict
 from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
@@ -921,10 +922,11 @@ def _build_model_block(model_data):
             "        _F(GROUP_MA='{0}', PHENOMENE='MECANIQUE',"
             " MODELISATION='{1}'),".format(elset_name, modelisation)
         )
+    skin_mod = bridge_plane.skin_modelisation(model_data)
     for group in skin_groups:
         lines.append(
             "        _F(GROUP_MA='{0}', PHENOMENE='MECANIQUE',"
-            " MODELISATION='3D'),".format(group)
+            " MODELISATION='{1}'),".format(group, skin_mod)
         )
     for group, modelisation in poi1_groups.items():
         lines.append(
@@ -1251,7 +1253,9 @@ _SHELL_MODELISATIONS = ("DKT", "DST", "COQUE_3D")
 
 # Volume and beam modelisations that are equal to '3D' and 'POU_D_E'
 # respectively for post-processing.
-_VOLUME_MODELISATIONS = ("3D", "3D_SI")
+# Plane 2D modelisations (bridge_plane, S16a) are post-processed the same
+# way (SIGM_ELNO/NOEU, SIEQ, REAC_NODA; U3.13.01).
+_VOLUME_MODELISATIONS = ("3D", "3D_SI") + bridge_plane.PLANE_MODELISATIONS
 # Beam with large displacements and rotations (elem_beam = POU_D_T_GD, only
 # in STAT_NON_LINE, bridge_from_liml._gd_beam_choice; STAPPENPLAN S20).
 # Route (MODELISATION POU_D_T_GD, RELATION ELAS_POUTRE_GR, DEFORMATION
@@ -2198,11 +2202,12 @@ def _static_check_block(model_data):
         "try:\n"
         "    aster_results_export.print_static_check(res, model, fieldmat,\n"
         "                                            globals().get('cara'),\n"
-        "                                            mass={1})\n"
+        "                                            mass={1}{2})\n"
         "except Exception as _sc_err:\n"
         "    print('BRIDGE_STATCHECK_SKIPPED',\n"
         "          getattr(_sc_err, 'id_message', '') or _sc_err)\n"
-        "\n").format(_py_str(scripts), mass)
+        "\n").format(_py_str(scripts), mass,
+                     bridge_plane.static_check_arg(model_data))
 
 
 def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
@@ -2233,7 +2238,7 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
-        extra
+        bridge_plane.export_arg(model_data) + extra
     block = (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import sys@N"
@@ -3156,7 +3161,11 @@ def _render_node_loads(node_loads, factors):
 # them up.
 _LOAD_KEYWORDS = frozenset(("FORCE_NODALE", "FORCE_FACE", "FORCE_ARETE",
                             "FORCE_COQUE", "FORCE_POUTRE", "PRES_REP",
-                            "PESANTEUR", "ROTATION"))
+                            "PESANTEUR", "ROTATION",
+                            # 2D edges (bridge_plane; PL-05: a traction and
+                            # a force on one edge in one AFFE_CHAR_MECA
+                            # kept only the last, Code-Aster 17.4)
+                            "FORCE_CONTOUR"))
 
 
 def _build_charges(model_data, func_names=None):
@@ -4453,6 +4462,11 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
         # error estimator is on by default, hence no WARNING
         log("INFO: Error estimator (error_estimator) does not work together "
             "with #ASTER-XFEM; no error estimate.")
+        err_groups = []
+    if err_groups and bridge_plane.info(model_data):
+        # CALC_ERREUR on C_PLAN/D_PLAN/AXIS: NOT verified (S16a)
+        log("INFO: Error estimator (error_estimator) is not used in a 2D "
+            "analysis (not verified); no error estimate.")
         err_groups = []
     err_block = (_error_estimator_block(model_data, charges, err_groups)
                  if err_groups else "")
@@ -5994,8 +6008,8 @@ def _output_times(model_data, analysis):
     ts = model_data.get("timesteps") or {}
     t_end = ts.get("period") or analysis.get("default_time_end", 1.0)
     inc = ts.get("increment")
-    if not inc and model_data.get("analysis_type") == "D30" and \
-            ts.get("stepsize"):
+    if not inc and bridge_plane.equivalent_3d(
+            model_data.get("analysis_type")) == "D30" and ts.get("stepsize"):
         # Dynamic Response (D30): Mecway writes every n-th calculation step
         # (stepsize x keepeverynthtimestep, bridge_from_liml).
         inc = ts["stepsize"] * ts.get("keep_every", 1)

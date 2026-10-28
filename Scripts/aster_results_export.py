@@ -358,6 +358,31 @@ SOLID_SHAPES = frozenset(["hex8", "hex20", "tet4", "tet10", "pyr5", "pyr13",
 SHELL_SHAPES = frozenset(["tri3", "quad4", "tri6", "quad8"])
 LINE_SHAPES = frozenset(["line2", "line3"])
 
+# 2D analysis (bridge_plane, STAPPENPLAN S16a): {"modelisation": C_PLAN/
+# D_PLAN/AXIS, "factor": t or 2 pi}, set by export_results(plane=...).
+# Plane elements (tri/quad) are then continuum elements (element-node
+# stresses like volumes); Code-Aster's REAC_NODA is per unit thickness
+# (C_PLAN/D_PLAN) or per radian (AXIS, U4.44.01 par. 3.5) and is
+# multiplied by the factor, so that Mecway gets the reaction of the whole
+# thickness or of 360 degrees (as Mecway's own S20/SA0 solution).
+_PLANE = {}
+# Mecway variables that scale with the factor in a 2D analysis
+_PLANE_SCALED = frozenset(["reactionforcex", "reactionforcey",
+                           "reactionforcez"])
+# Tensor components a 2D cell does not have (SIGM_ELNO of C_PLAN/D_PLAN/
+# AXIS: SIXX, SIYY, SIZZ, SIXY; seen in a Code-Aster 17.4 run); Mecway
+# writes them as 0 in S20/SA0.
+_PLANE_ZERO = frozenset(["SIXZ", "SIYZ", "EPXZ", "EPYZ"])
+# Magnitude components a 2D model does not have (Mecway's S20/SA0 solution:
+# displmag from displx, disply; reactionforcemag from x, y)
+_PLANE_OPTIONAL = frozenset(["displz", "reactionforcez", "velz", "accz"])
+
+
+def _continuum_shapes():
+    """Element shapes with element-node stresses as continuum (volume)
+    elements: solids, and in a 2D analysis also the plane elements."""
+    return SOLID_SHAPES | SHELL_SHAPES if _PLANE else SOLID_SHAPES
+
 _NL = b"\r\n"            # Mecway writes CRLF
 _B64_LINE = 64           # base64 line length in Mecway's .liml
 
@@ -919,6 +944,8 @@ def _plan_node(fields, rkey, field, cmp_, name):
         getter = _offset(getter, VALUE_OFFSETS[name])
     if name in VALUE_SCALES:
         getter = _scaled(getter, VALUE_SCALES[name])
+    if _PLANE and name in _PLANE_SCALED:
+        getter = _scaled(getter, _PLANE["factor"])
     if name in VALUE_MIN:
         getter = _at_least(getter, VALUE_MIN[name])
     return _Var(name, False, (rows + 1).astype("<i4"), getter)
@@ -986,7 +1013,9 @@ def _plan_elno_node(fields, rkey, field, cmp_, name, kind, conn):
 
 
 def _plan_elem(fields, rkey, field, cmp_, name, conn, model,
-               shapes=SOLID_SHAPES):
+               shapes=None):
+    if shapes is None:
+        shapes = _continuum_shapes()
     found = _cells_field(fields, rkey, field, cmp_, conn)
     if found is None:
         return None
@@ -1064,15 +1093,19 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
             target = elem_vars if var.element else node_vars
             if var.name not in target:
                 target[var.name] = var
+    if _PLANE:
+        _plane_zero_stresses(node_vars)
+        _plane_zero_stresses(elem_vars)
+    optional = OPTIONAL_PARTS | (_PLANE_OPTIONAL if _PLANE else frozenset())
     out = []
     for name, var in node_vars.items():
         for mag, parts in (MAGNITUDES.items() if magnitudes else ()):
-            need = [p for p in parts if p not in OPTIONAL_PARTS]
+            need = [p for p in parts if p not in optional]
             if parts[0] == name and all(p in node_vars for p in need):
                 out.append(_magnitude_var(
                     mag, [node_vars[p] for p in need],
                     [node_vars[p] for p in parts
-                     if p in OPTIONAL_PARTS and p in node_vars]))
+                     if p in optional and p in node_vars]))
         out.append(var)
     for name, var in elem_vars.items():
         # Element-node magnitude (heatfluxmag: Mecway stores heat flux both
@@ -1085,6 +1118,23 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
                     out.append(mvar)
         out.append(var)
     return out
+
+
+def _plane_zero_stresses(variables):
+    """2D (_PLANE): stressyz and stresszx as 0 after stressxy, as Mecway's
+    own S20/SA0 solution writes them (the 2D cells have no SIYZ/SIXZ)."""
+    if "stressxy" not in variables:
+        return
+    items = list(variables.items())
+    variables.clear()
+    for name, var in items:
+        variables[name] = var
+        if name == "stressxy":
+            for extra in ("stressyz", "stresszx"):
+                if extra not in dict(items):
+                    zero = _zero_var(var)
+                    zero.name = extra
+                    variables[extra] = zero
 
 
 def _elem_magnitude_var(name, parts):
@@ -1382,7 +1432,7 @@ def _fos_vars(fields, model, conn, strengths):
     if found is not None:
         d, icmp, (start, nbpt, nbsp) = found
         solids = dict((e, v) for e, v in model["elements"].items()
-                      if v[0] in SOLID_SHAPES and
+                      if v[0] in _continuum_shapes() and
                       strengths.get(elset_of.get(e), 0.0) > 0.0)
         cells = _element_points(fields, conn, solids, nbpt, nbsp,
                                 "res:SIEQ_ELNO", model["elements"])
@@ -1486,6 +1536,10 @@ def _principal_vars(fields, model, conn, group):
             continue
         cand = [_plan_elem(fields, rkey, field, c, "_principal", conn, model)
                 for c in cmps]
+        if _PLANE and cand[0] is not None:
+            # 2D: the out-of-plane shear components are 0 (_PLANE_ZERO)
+            cand = [_zero_var(cand[0]) if v is None and c in _PLANE_ZERO
+                    else v for v, c in zip(cand, cmps)]
         if (all(v is not None for v in cand) and
                 all(np.array_equal(cand[0].ids, v.ids) for v in cand)):
             comp = cand
@@ -1596,6 +1650,12 @@ def _shell_principal_vars(fields, model, conn, wanted, xyz, vectors,
                                   enumerate(names)],
                            compute, (rkey, field, "principal"))
     return out
+def _zero_var(like):
+    """_Var with the ids of like and the value 0 (2D, _PLANE_ZERO)."""
+    def getter(fields):
+        vals = like.getter(fields)
+        return None if vals is None else np.zeros_like(vals)
+    return _Var(like.name, like.element, like.ids, getter)
 
 
 def _fos(strength, sigma):
@@ -2215,7 +2275,8 @@ def _xyz_sum(field):
     return total, absolute
 
 
-def print_static_check(res, model, fieldmat, cara=None, mass=True):
+def print_static_check(res, model, fieldmat, cara=None, mass=True,
+                       scale=None, mass_scale=None):
     """
     Mass and reaction check of a static run (J.-P. Aubry, Beginning with
     code_aster, 2019, par. 4.13-4.14), in the .mess for the bridge
@@ -2228,7 +2289,13 @@ def print_static_check(res, model, fieldmat, cara=None, mass=True):
     bridge_to_aster._build_calc_champ_block). Only information: no
     comparison with the loads. Errors are printed, never raised (the
     results are already computed). mass=False skips the mass part (models
-    with POU_D_T_GD beams, bridge_to_aster._static_check_block).
+    with POU_D_T_GD beams, bridge_to_aster._static_check_block). scale: 2D
+    analysis (bridge_plane.static_check_arg): the reactions times the
+    thickness (C_PLAN/D_PLAN, per unit thickness in Code-Aster) or 2 pi
+    (AXIS, per radian), as Mecway reports them; mass_scale: the same for
+    the mass (C_PLAN/D_PLAN: t; AXIS: 1, MASS_INER is already the mass of
+    360 degrees, measured in a Code-Aster 17.4 run: ring 92.38 kg / 2 pi
+    = rho pi (b^2 - a^2) h = 14.70 kg).
     """
     try:
         if not mass:
@@ -2240,6 +2307,8 @@ def print_static_check(res, model, fieldmat, cara=None, mass=True):
         if cara is not None:
             kws["CARA_ELEM"] = cara
         vals = POST_ELEM(**kws).EXTR_TABLE().values()
+        if mass_scale:
+            vals["MASSE"] = [vals["MASSE"][0] * mass_scale]
         print("BRIDGE_STATCHECK M={0} ZWP={1},{2},{3}".format(*[
             _num(vals[k][0]) for k in ("MASSE", "CDG_X", "CDG_Y",
                                        "CDG_Z")]))
@@ -2249,6 +2318,8 @@ def print_static_check(res, model, fieldmat, cara=None, mass=True):
     try:
         last = sorted(res.getIndexes())[-1]
         total, _abs = _xyz_sum(res.getField("REAC_NODA", last))
+        if scale:
+            total = total * scale
         print("BRIDGE_STATREAC FX={0} FY={1} FZ={2} NUME_ORDRE={3}".format(
             _num(total[0]), _num(total[1]), _num(total[2]), last))
     except Exception as e:
@@ -2525,7 +2596,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
                    shell_vectors=None, strengths=None, u_axes=None,
-                   failures=None, formulas=None):
+                   failures=None, formulas=None, plane=None):
     """
     Write all archived time steps of res as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
@@ -2579,6 +2650,11 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
     formulas      : Mecway's result formulas, plans of bridge_formula.plan
                     (bridge_from_liml); each becomes a node variable under
                     its fieldscalar (_formula_vars, S33). None = none.
+    plane         : 2D analysis (bridge_plane.export_arg):
+                    {"modelisation": "C_PLAN"/"D_PLAN"/"AXIS", "factor":
+                    thickness or 2 pi}; plane elements as continuum
+                    elements and the reactions times the factor (_PLANE).
+                    None = 3D.
 
     Returns
     -------
@@ -2586,6 +2662,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
     an error (message in the .mess; the .resu route then remains usable).
     """
     t0 = time.time()
+    _PLANE.clear()
+    _PLANE.update(plane or {})
     try:
         return _export(res, out_path, liml_path, fields, extra_results,
                        precision, static, t0, rigi_geo, mass, node_fields,
@@ -2598,6 +2676,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
         print(tr("aster_results_export: FOUT: {0}",
                  "aster_results_export: ERROR: {0}").format(e))
         return None
+    finally:
+        _PLANE.clear()
 
 
 def _export(res, out_path, liml_path, fields, extra_results, precision,
@@ -2687,7 +2767,7 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
                  "aster_results_export: ERROR: no field found at all."))
         return None
     _report_missing(results, groups, opt_in,
-                    any(v[0] in SOLID_SHAPES
+                    any(v[0] in _continuum_shapes()
                         for v in model["elements"].values()))
     elset_nodes, free_nodes = _group_nodes(model, n)
     for var in variables:

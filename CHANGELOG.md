@@ -62,6 +62,24 @@
   zig-zag section) and the joint diagram within 0.1%, equal to Mecway 34's own CCX solve within
   0.01%. Not: dynamic response and Mecway's spring element variant (ERROR, KNOWN_BUGS 124).
   New document docs/Boutvoorspanning.md / docs/en/Bolt_pretension.md.
+- **2D and axisymmetric static analyses (STAPPENPLAN S16a)**: Mecway's *Static 2D* (S20) and
+  *Static Axisymmetric* (SA0) are now translated to Code-Aster `MECA_STATIQUE` with
+  `C_PLAN` (plane stress, the material's *Shell/membrane* thickness), `D_PLAN` (with *plane
+  strain*) or `AXIS` (Y = axis); `auto` chooses `lin_static_3d`. Loads: force on nodes and
+  edges, pressure and traction on edges, gravity, centrifugal force; constraints: fixed,
+  pinned, displacement along X/Y, symmetry with normal X/Y. Forces and reactions are for the
+  whole thickness or 360 degrees, as in Mecway (Code-Aster computes per unit thickness and per
+  radian). Results come back under Mecway's own names (`stresszz` = hoop stress in SA0), and
+  Mecway recognises them. Displacements and reactions equal to Mecway's own solution
+  (≤ 1e-11); Kt of a plate with a hole and Lamé within the tolerances of the 3D cases
+  (verification PL-01 … PL-06). Acoustic 2D (A20), beams in 2D and several thicknesses give
+  an ERROR (KNOWN_BUGS 126). New document *2D: plane stress, plane strain, axisymmetric*.
+- **2D and axisymmetric dynamic response (STAPPENPLAN S16b)**: Mecway's *Dynamic Response
+  2D* (D20) and *Dynamic Response Axisymmetric* (DA0) go through `dyna_impl_3d` with the same
+  2D translation; with schema NEWMARK, deformation PETIT and one solver step per Mecway step
+  equal to Mecway's own solution (≤ 4e-8, verification PL-10 … PL-12: bar wave, damped ring,
+  time-table force). Note for D30 too: with *Generate solution every n time steps* > 1, set
+  "Solver steps per output interval" to n (KNOWN_BUGS 127).
 
 ## V2026.5 – 28 October 2026
 

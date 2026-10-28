@@ -27,7 +27,10 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | B30 Buckling | Ja | `buckling_3d` (`CALC_MODES` `MODE_FLAMB`) | Mecway's *Shift point* wordt niet gebruikt; ook negatieve kniklastfactoren (KB46). Zie [`Modaal_en_knik.md`](Modaal_en_knik.md). |
 | T30 / T31 Thermal | Ja | `ther_3d` (`THER_LINEAIRE` / `THER_NON_LINE`) | Zie [`Thermisch.md`](Thermisch.md). Transient schema KB14. |
 | A30 Acoustic Resonance 3D | Ja | `acoustic_modes_3d`; met een bron `acoustic_harm_3d` | KB55, KB57; [`Akoestiek.md`](Akoestiek.md). |
-| 2D en axisymmetrisch (o.a. S20, SA0, D20, A20) | Nee | – | De run stopt ("analysetype wordt niet ondersteund"). Alternatief: modelleer in 3D, bijv. een plak met symmetry. |
+| S20 Static 2D (vlakke spanning, vlakke rek) | Deels | `lin_static_3d` (`MECA_STATIQUE`, `C_PLAN`/`D_PLAN`) | Alleen vlakke elementen, een dikte en type per model; belastingen en voorwaarden: [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.1, §3 (KB126). Verificatie PL-01 … PL-03, PL-05. |
+| SA0 Static Axisymmetric | Deels | `lin_static_3d` (`MECA_STATIQUE`, `AXIS`) | Als S20; Y = as, `stresszz` = tangentiële spanning, reacties voor 360 graden (KB126). Verificatie PL-04, PL-06. |
+| D20, DA0 Dynamic Response 2D / Axisymmetric | Deels | `dyna_impl_3d` (`DYNA_NON_LINE`, `C_PLAN`/`D_PLAN`/`AXIS`) | Als S20/SA0; gelijk aan Mecway met NEWMARK, PETIT en een stap per Mecway-stap (KB127); geen expliciet, mode superposition of beginsnelheid (KB126). Verificatie PL-10 … PL-12. |
+| A20 Acoustic Resonance 2D | Nee | – | ERROR (KB126). Alternatief: modelleer in 3D (A30). |
 | E30 DC Current Flow | Nee | – | De run stopt. |
 | Elektrostatica en piëzo-elektriciteit (in S30) | Nee | – | Elektrische lasten worden overgeslagen; een piëzo- of matrixmateriaal stopt de run (§5). |
 | geen Mecway-type | – | `harmonic_3d`, `spectrum_3d` (zelf kiezen) | Extra analyses van de bridge: [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md), [`Spectrumanalyse.md`](Spectrumanalyse.md). |
@@ -114,7 +117,7 @@ Verlijmd contact per combinatie (slave op master):
 | spring, damper, gap (line2) | Ja | `DIS_T` (gap: `DIS_CHOC`) | Langs de eigen as. Gap alleen niet-lineair (KB23); veren/dempers niet tegen Mecway vergeleken (KB47). |
 | tension only (line2, line3) | Deels | `CABLE` | Alleen niet-lineair; drukstijfheid 1e-4 E (KB23). Line3 gesplitst in twee SEG2-cellen zoals truss line3 (LS-54b, LS-54c; Mecway 34 gaf headless geen oplossing voor tension only). |
 | elementen van verschillende dimensie in één component | Deels | – | Alleen de hoogste dimensie wordt gemodelleerd (ERROR). Splits de component. |
-| plane, axisymmetric (2D) | Nee | – | Alleen in 2D-analyses (§1). |
+| plane, axisymmetric (2D): tri3, tri6, quad4, quad8 | Ja | `C_PLAN`, `D_PLAN`, `AXIS` | Alleen in S20 en SA0 (§1); verplaatsingen gelijk aan Mecway, ook quad4 (geen incompatibele modes in Mecway's 2D). [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md). |
 | schalen in een thermische analyse | Deels | `PLAN` met een diktefactor | Alleen schalen in evenwijdige vlakken (KB15); andere: Nee (KB16). |
 | fin, fluid network element, resistor | Nee | – | Thermisch 1D en DC-stroom: KB16. |
 | Element offset (schaal, balk) | Ja | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D en balken: element op eigen knopen + starre arm (`LIAISON_DDL`) | Schaal: *Element coordinates*, alleen W telt (zoals Mecway; u/v hebben ook daar geen effect). Balk: *Global coordinates* x/y/z (u/v/w op een balk: geen effect in Mecway, WARNING). Verplaatsing, rotatie en reactie op de Mecway-knopen; spanningen van het verschoven element op die knopen getoond, ook als elementwaarden (LS-65). In alle mechanische analyses (Mecway: alleen statisch), niet in de keten thermisch → mechanisch (WARNING, KB64). Starre arm: kleine rotaties, ook met `GROT_GDEP` (WARNING bij verschoven schalen, KB108). Een knoop met een eigen waarde (ander element) houdt die; de spanning van het verschoven element telt daar niet mee (KB108). Een last op een vlakselectie op randen van verschoven schalen zet de bridge op de knopen, Mecway op de verschoven rand (WARNING, KB108). Een flexible joint op een verschoven balkelement: in lineair statisch en modaal aan het eind van de arm, tussen het offsetpunt en het element, zoals Mecway (LS-52); elders niet vertaald (WARNING, KB108); verlijmd contact op verschoven schalen: WARNING (KB108). Verificatie LS-60–67, LS-52. |
@@ -137,7 +140,7 @@ Verlijmd contact per combinatie (slave op master):
 | Speed of sound (akoestiek) | Ja | Media met verschillende dichtheid: Nee (KB55, KB59). |
 | OpenRadioss law `PLAS_TAB` | Deels | Niet vertaalde velden: KB34. Law `VOID`: elementen weggelaten (gemeld); andere laws: Nee. |
 | Doorsnede rond en rechthoekig (massief en hol), General section, I, T, L, C | Ja | Mecway's *Stress recovery point* wordt niet gebruikt. Andere geometrietypen: Nee (WARNING). |
-| Plaatdikte (Plate) | Ja | |
+| Plaatdikte (Plate) | Ja | Schalen; in S20 de dikte van de vlakke elementen, met *plane strain* `D_PLAN`. |
 
 ## 6. Resultaten terug in Mecway
 

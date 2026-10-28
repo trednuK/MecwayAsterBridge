@@ -1,0 +1,41 @@
+<liml version="33">
+  <analysis type="S20" />
+  <node nid="1" x="0.1" y="0" z="0" />
+  <node nid="2" x="0.15" y="0" z="0" />
+  <node nid="3" x="0.2" y="0" z="0" />
+  <node nid="4" x="0.184775906502" y="0.076536686473" z="0" />
+  <node nid="5" x="0.141421356237" y="0.141421356237" z="0" />
+  <node nid="6" x="0.106066017178" y="0.106066017178" z="0" />
+  <node nid="7" x="0.0707106781187" y="0.0707106781187" z="0" />
+  <node nid="8" x="0.0923879532511" y="0.0382683432365" z="0" />
+  <node nid="9" x="0.076536686473" y="0.184775906502" z="0" />
+  <node nid="10" x="1.22464679915e-17" y="0.2" z="0" />
+  <node nid="11" x="9.18485099361e-18" y="0.15" z="0" />
+  <node nid="12" x="6.12323399574e-18" y="0.1" z="0" />
+  <node nid="13" x="0.0382683432365" y="0.0923879532511" z="0" />
+  <elset name="Cilinder" material="Staal">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="7 6 5 9 10 11 12 13" />
+  </elset>
+  <surfacepressure selection="Binnenwand"><normal>1e+08 Pa</normal></surfacepressure>
+  <symmetry selection="SymY0"><x>0</x><y>1</y><z>0</z></symmetry>
+  <symmetry selection="SymX0"><x>1</x><y>0</y><z>0</z></symmetry>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <mat name="Staal">
+    <geometric type="Plate" thickness="10 mm" planestrain="1" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Binnenwand">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+  </faceselection>
+  <faceselection name="SymY0">
+    <face eid="1" faceid="1" />
+  </faceselection>
+  <faceselection name="SymX0">
+    <face eid="2" faceid="3" />
+  </faceselection>
+</liml>

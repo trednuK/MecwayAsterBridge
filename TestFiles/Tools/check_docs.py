@@ -454,7 +454,7 @@ def check_known_bugs():
 
 
 CASE_RE = re.compile(r"\b((?:AD|AH|AI|AK|BR|BU|CY|DY|FS|HR|LS|MC|MD|MO|MP|"
-                     r"MT|NK|NL|SP|TH|VA|VH|VM|WE|FO|RV|OF)-\d+[a-z]?)\b")
+                     r"MT|NK|NL|SP|TH|VA|VH|VM|WE|FO|RV|OF|PL)-\d+[a-z]?)\b")
 
 
 def check_cases():

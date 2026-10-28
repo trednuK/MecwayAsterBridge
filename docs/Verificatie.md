@@ -758,6 +758,57 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
+### 2D en axisymmetrisch (PL-01 … PL-12)
+
+Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
+hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
+Mecway-stap) (STAPPENPLAN S16a, S16b, `bridge_plane`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md)).
+De 3D-tegenhangers AD-01 (Kt) en LS-04 (Lamé) geven de referenties en de toleranties;
+"= Mecway" is Mecway 34's eigen S20/SA0/D20/DA0-oplossing van hetzelfde model (headless,
+tolerantie 1e-6).
+
+- **PL-01** (plaat met gat, vlakke spanning, t = 1 mm, quad8, de geometrie van AD-01,
+  symmetrie x = 0 en y = 0, traction 100 MPa): Kt_n tegen Peterson (2,519) −27,7 /
+  −14,9 / −6,8 / −2,6 / −0,79% voor n = 1, 2, 4, 8, 16 (AD-01 hex20: −27,2 / −14,3 / −6,3 /
+  −2,5 / −0,75%), toleranties als AD-01 (2% voor n = 16). Σ R_x op x = 0 = −σ·W/2·t = −5000 N
+  exact (de diktefactor). n = 16: u_y(0, r) en u_x(L/2, 0) = Mecway (≤ 1e-11).
+- **PL-02** (dezelfde plaat in vlakke rek, n = 16): Kt −0,75%; σ_zz = ν(σ_xx + σ_yy) bij het
+  gat binnen 1e-6; Σ R_x exact; verplaatsingen = Mecway.
+- **PL-03** (dikwandige cilinder, vlakke rek, kwart ring quad8 n × 2n, a = 0,1 m,
+  b = 0,2 m, 100 MPa): n = 8: u_r −0,0003%, σ_θ −0,18%, σ_z +0,42%: hetzelfde als LS-04
+  (hex20); toleranties als LS-04. Mecway: zie KB125 (druk op gekromde randen).
+- **PL-04** (dezelfde cilinder axisymmetrisch: ring van 10 mm met Y vast op beide einden,
+  quad8 n × 1): n = 8: u_r −0,0004%, tangentiële spanning (`stresszz`) −0,41%, σ_r
+  (`stressxx`) +0,97% (−p aan de belaste wand, geëxtrapoleerd vanuit de integratiepunten; het
+  convergeert als h^1,8: 27,7 / 10,5 / 3,4 / 0,97%), σ_z (`stressyy`) +0,42%; toleranties σ_θ
+  0,6% (p = 1,5), σ_r 1,2% (p = 2). Σ R_y over de bovenkant = σ_z·π(b² − a²) exact (360
+  graden). u_r = Mecway.
+- **PL-05** (strook 100 × 20 mm, vlakke spanning, t = 10 mm): knoopkracht, kracht op een
+  rand, traction en zwaartekracht samen: Σ R_x = −501,53 N exact, massa ρLHt exact,
+  `principal1` +0,009% tegen F/(Ht) + ρgL/2, `tresca` = `principal1` − `principal3`;
+  u_x = Mecway.
+- **PL-06** (ring r = 0,1 … 0,2 m, h = 20 mm, axisymmetrisch): knoopkracht, kracht op een
+  rand, radiale traction, zwaartekracht langs Y en centrifugaalkracht om Y: Σ R_y =
+  −3144,23 N exact, massa ρπ(b² − a²)h exact; u_r en u_y = Mecway.
+
+- **PL-10** (Dynamic Response 2D, strook 1 m × 50 mm, vlakke spanning, ν = 0, quad8
+  40 × 1, staptraction 10 MPa, Newmark-stap T/200): periode van de tip 4L/c = 7,709e-4 s
+  −0,06%, tijdgemiddelde = statisch PL/E +0,002%; tijdsverloop = Mecway (3,2e-8).
+- **PL-11** (Dynamic Response Axisymmetric, de ring van PL-04-n4 met dichtheid,
+  stapdruk, Rayleigh α = 8e4 rad/s): u_r na 0,3 ms −0,05% tegen Lamé (nog aan het
+  uitdempen; tolerantie 0,2%); tijdsverloop = Mecway (3,1e-8).
+- **PL-12** (Dynamic Response 2D, console 100 × 10 mm, knoopkracht als tijdtabel
+  0 → −100 N in 1 ms, elke 5e stap geschreven, *Rekenstappen per uitvoerinterval* = 5):
+  tijdsverloop = Mecway (1,6e-8).
+
+Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
+vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en
+reacties als Mecway (≤ 1e-11); knoopspanningen zijn gelijk waar ze uniform of lineair zijn in
+het element, elders verschillen ze door de extrapolatie (KB3). Na het openen van een resultaat
+van de bridge toont Mecway de items *displacement*, *stress*, *von Mises stress*, *reaction
+force*, *principal stress* en *Tresca stress* en leest het de waarden met
+`solution.node_value`.
+
 ### Conclusie lineair statisch
 
 Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is

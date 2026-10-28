@@ -1,0 +1,68 @@
+<liml version="33">
+  <analysis type="SA0" />
+  <node nid="1" x="0.1" y="0" z="0" />
+  <node nid="2" x="0.1125" y="0" z="0" />
+  <node nid="3" x="0.125" y="0" z="0" />
+  <node nid="4" x="0.125" y="0.005" z="0" />
+  <node nid="5" x="0.125" y="0.01" z="0" />
+  <node nid="6" x="0.1125" y="0.01" z="0" />
+  <node nid="7" x="0.1" y="0.01" z="0" />
+  <node nid="8" x="0.1" y="0.005" z="0" />
+  <node nid="9" x="0.1375" y="0" z="0" />
+  <node nid="10" x="0.15" y="0" z="0" />
+  <node nid="11" x="0.15" y="0.005" z="0" />
+  <node nid="12" x="0.15" y="0.01" z="0" />
+  <node nid="13" x="0.1375" y="0.01" z="0" />
+  <node nid="14" x="0.1625" y="0" z="0" />
+  <node nid="15" x="0.175" y="0" z="0" />
+  <node nid="16" x="0.175" y="0.005" z="0" />
+  <node nid="17" x="0.175" y="0.01" z="0" />
+  <node nid="18" x="0.1625" y="0.01" z="0" />
+  <node nid="19" x="0.1875" y="0" z="0" />
+  <node nid="20" x="0.2" y="0" z="0" />
+  <node nid="21" x="0.2" y="0.005" z="0" />
+  <node nid="22" x="0.2" y="0.01" z="0" />
+  <node nid="23" x="0.1875" y="0.01" z="0" />
+  <elset name="Cilinder" material="Staal">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="3 9 10 11 12 13 5 4" />
+    <elem eid="3" shape="quad8" nodes="10 14 15 16 17 18 12 11" />
+    <elem eid="4" shape="quad8" nodes="15 19 20 21 22 23 17 16" />
+  </elset>
+  <surfacepressure selection="Binnenwand"><normal>1e+08 Pa</normal></surfacepressure>
+  <displacement selection="Onder"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Boven"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Binnenwand">
+    <face eid="1" faceid="4" />
+  </faceselection>
+  <faceselection name="Onder">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+  </faceselection>
+  <faceselection name="Boven">
+    <face eid="1" faceid="3" />
+    <face eid="2" faceid="3" />
+    <face eid="3" faceid="3" />
+    <face eid="4" faceid="3" />
+  </faceselection>
+  <nodeselection name="Bovenn">
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="22" />
+    <node nid="23" />
+  </nodeselection>
+</liml>

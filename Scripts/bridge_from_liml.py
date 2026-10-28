@@ -56,6 +56,7 @@ import bridge_cyclic
 import bridge_offset
 import bridge_orientation
 import bridge_warping
+import bridge_plane
 
 # ------------------------------------------------------------------
 # CONSTANTS: element shapes per dimension
@@ -990,6 +991,10 @@ def _parse_geometric_props(geom_node):
     elif geom_type == "Plate":
         thickness = parse_and_convert(geom_node.get("thickness", "0"), 'length')
         result["thickness"] = thickness
+        # Plane strain in a Static 2D analysis (S20): planestrain="1"
+        # (Mecway 34, seen after importing a CPE4 element; bridge_plane)
+        result["planestrain"] = geom_node.get("planestrain", "") in (
+            "1", "true")
         log("INFO: Plate                 -> COQUE EPAIS={0} m".format(thickness))
 
     else:
@@ -2011,7 +2016,8 @@ def extract_aster_data_from_liml(file_path):
                 "keep_every": _positive_int(ts.get("keepeverynthtimestep")),
             }
             log("INFO: Time steps: {0}".format(model_data["timesteps"]))
-        if (model_data["analysis_type"] == "D30" and solver_cmd ==
+        if (bridge_plane.equivalent_3d(model_data["analysis_type"]) ==
+                "D30" and solver_cmd ==
                 "DYNA_NON_LINE" and (run_cfg.get("schema") != "NEWMARK" or
                                      run_cfg.get("deformation") != "PETIT")):
             # Mecway D30 without Mode superposition: linear, Newmark with the
@@ -3241,6 +3247,10 @@ def extract_aster_data_from_liml(file_path):
                        "wordt weggelaten uit het model.",
                        "ERROR: Elset '{0}' has VOID material '{1}' and is "
                        "left out of the model.").format(elset_name, mat_name))
+
+        # 2D analysis (S20, SA0, D20, DA0): plane modelisations (bridge_plane)
+        if not bridge_plane.apply(model_data, run_cfg, elset_shapes_map):
+            return None
 
         # ==========================================
         # STEP 4: has_rot_dofs FOR THE MODEL + BC RECALCULATION

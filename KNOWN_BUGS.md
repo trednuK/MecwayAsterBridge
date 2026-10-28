@@ -143,7 +143,30 @@ Code-Aster value per node) and logs the largest difference per variable.
    20.90 (its rigid knot at the joint is linear); Mecway with solver CCX gives no buckling
    solution for beams headless. Nothing to fix in the bridge.
 
+125\. **2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is
+   right** (confirmed, Mecway 34 headless and Code-Aster 17.4; `bridge_plane.py`, verification
+   PL-03). Quarter ring a = 0.1 m, b = 0.2 m in Static 2D, plane strain, t = 10 mm, quad8 4 × 8
+   with the midside nodes on the arcs, pressure 100 MPa on the inner arc. The resultant of a
+   uniform pressure between (a, 0) and (0, a) is p·a·t = 100000 N per direction, whatever the
+   shape of the edge: the bridge (`PRES_REP` on `SEG3`) gives exactly that, Mecway's reactions
+   add up to 100161 N (+0.16%); u_r at the inner wall bridge −0.005%, Mecway −0.18% against
+   Lamé. With straight edges (axisymmetric ring PL-04, plate PL-01 with traction on a straight
+   edge) the bridge equals Mecway (≤ 1e-11). Mecway's example PressureVesselAxiSymmetric
+   (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
+   to fix in the bridge; do not compare such models with Mecway.
+
 ## Translation that works differently from Mecway
+
+127\. **Dynamic Response (D30, D20, DA0) with *Generate solution every n time steps* > 1: the
+   bridge steps per output interval, n times Mecway's step** (confirmed with runs, Code-Aster
+   17.4 and Mecway 34 headless; `bridge_to_aster._build_dyna_listinst_block`, setting
+   `substeps_per_output` = 1). Cantilever in D20 (quad8, step 2e-5 s, every 5th step written):
+   with `substeps_per_output` = 1 the tip displacement differs up to 22% from Mecway's own
+   solution (period error of the 5 times larger Newmark step), with `substeps_per_output` = 5
+   it is equal (3.8e-8). The bridge does not derive the solver step from Mecway's *Time step
+   size*; set "Solver steps per output interval" to n yourself
+   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md) §2.4). Not fixed
+   here: it changes the existing D30 route (MD-07 uses n = 1).
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
    overlapping conditions itself (manual v33 sec. 9.6), Code-Aster does not. Fixed:
@@ -1092,3 +1115,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    (f) Which side keeps the Mecway nodes (results at the section) follows the axis sign
    (largest component positive, side above keeps them); Mecway's rule is NOT verified beyond
    BoltedJoint.
+126\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b).
+   Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
+   linear static (`lin_static_3d`), Dynamic Response 2D/Axisymmetric (D20, DA0) in
+   `dyna_impl_3d` (implicit, Rayleigh damping, time tables; no explicit scheme, mode
+   superposition or initial velocity), plane elements only, one thickness and one type per
+   model; fixed, pinned,
+   displacement along X/Y, symmetry with normal X/Y, force (nodes, edges), pressure and
+   traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)
+   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: Acoustic
+   Resonance 2D (A20) (ERROR, step S16d), beams/trusses/springs in S20, several thicknesses, other loads and constraints
+   (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
+   constraint equations, couplings, contact, point masses, temperatures), the error estimator
+   (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,
+   frequency, buckling or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
+   S30; thermal 2D is made of shells, `bridge_thermal`).
