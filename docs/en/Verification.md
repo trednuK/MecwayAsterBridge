@@ -96,14 +96,15 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 ## 3. Summary
 
 Status 28 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `5ef612d`
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `8b13519`
 (after V2026.4: among others the mass and reaction check, cable pretension, buckling
 with constant loads, hysteretic damping, adaptive time steps, line search, smoothed
 contact normals, the section properties, VTU export, the *failed* field, the hex8
-warnings for rubber, the heat flux per element node and the result formulas (S33);
-Code-Aster 17.4): 442 test cases, 2374 checks, 2368 OK, 6 BEKEND (known), 0 NOK/FOUT.
-Compared with the run on `58ea2a2` no status change and no FEM value more than 0.1%
-different; new are FX-01 .. FX-03 (12 checks).
+warnings for rubber, the heat flux per element node, the result formulas (S33) and the
+principal stresses and strains (S34); Code-Aster 17.4): 442 test cases, 2382 checks, 2376
+OK, 6 BEKEND (known), 0 NOK/FOUT. Compared with the run on `5ef612d` no status change and
+no FEM value more than 0.1% different; new are 8 checks in FX-02 (principal values and the
+formulas `s1`, `tr`, `e1`).
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -127,13 +128,13 @@ different; new are FX-01 .. FX-03 (12 checks).
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
-| Result formulas | 3 | 12 | 12 | 0 |
+| Result formulas | 3 | 20 | 20 | 0 |
 | Thermal | 24 | 92 | 92 | 0 |
 | Thermal stress | 2 | 7 | 7 | 0 |
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **442** | **2374** | **2368** | **6** |
+| **Total** | **442** | **2382** | **2376** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

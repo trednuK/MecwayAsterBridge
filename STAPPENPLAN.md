@@ -65,7 +65,7 @@ S7, S8, S5, S9).
 | S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
 | S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | done | – | branch stap-S33 (28 Oct 2026): `bridge_formula` + `_formula_vars`; FX-01 .. FX-03 OK, equal to Mecway's own solve within 1e-13; checked in the Mecway GUI (formulas valid, contour) |
-| S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless) |
+| S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless + GUI); regression 2376/2382 |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -155,7 +155,7 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
    sessions) and run `python TestFiles/Verificatie/run_verificatie.py` in full.
    **Bar**: baseline 2356 of 2362 checks OK (439 test cases), 6 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; 83: 1 in BR-10; 108: 1 in LS-67; 115: 1 in BU-35), 0 NOK/FOUT
-   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since S33 (5ef612d, 28 Oct): 2368 of 2374, 442 test cases:
+   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since S34 (8b13519, 28 Oct): 2376 of 2382, 442 test cases:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
    BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; update the summary
    in `docs/Verificatie.md` §3 and the EN version.
@@ -1616,5 +1616,9 @@ Mecway's `accx`) are a problem; if so, fix it.
 - Verification: FX-02 +8 checks (principal values, Tresca, principal strains, formulas `s1`, `tr`,
   `e1`): OK; spectrum (SP) and harmonic (HR) with the new names: OK. Cantilever LS-02: bridge
   principal values follow Mecway's rule within 1e-16 relative.
+- Full regression on 8b13519: 2376 of 2382 OK (442 test cases), 6 BEKEND, 0 NOK/FOUT, no
+  status change. GUI (Mecway 34, computer use, 28 Oct): a bridge result shows *principal
+  stress*, *principal strain* and *maximum shear stress x 2* in the tree, and *acceleration* as a
+  vector item next to *velocity*.
 - Open: principal values of shells (top/middle/bottom, Mecway `principal1u/m/b`), and `GLe1`.
 

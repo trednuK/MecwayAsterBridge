@@ -98,14 +98,14 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 ## 3. Samenvatting
 
 Stand 28 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `5ef612d`
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `8b13519`
 (na V2026.4: o.a. de massa- en reactiecontrole, kabelvoorspanning, knik met vaste last,
 hysteretische demping, adaptieve tijdstappen, line search, gladde contactnormalen, de
 doorsnede-eigenschappen, VTU-export, het veld *failed*, de hex8-meldingen bij rubber, de
-warmteflux per elementknoop en de resultaatformules (S33); Code-Aster 17.4): 442
-testcases, 2374 controles, 2368 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte van de run op
-`58ea2a2` geen statuswijziging en geen FEM-waarde > 0,1 % anders; nieuw zijn FX-01 .. FX-03
-(12 controles).
+warmteflux per elementknoop, de resultaatformules (S33) en de hoofdspanningen en -rekken
+(S34); Code-Aster 17.4): 442 testcases, 2382 controles, 2376 OK, 6 BEKEND, 0 NOK/FOUT.
+Ten opzichte van de run op `5ef612d` geen statuswijziging en geen FEM-waarde > 0,1 %
+anders; nieuw zijn 8 controles in FX-02 (hoofdwaarden en de formules `s1`, `tr`, `e1`).
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -129,13 +129,13 @@ testcases, 2374 controles, 2368 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte van de ru
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
-| Resultaatformules | 3 | 12 | 12 | 0 |
+| Resultaatformules | 3 | 20 | 20 | 0 |
 | Thermisch | 24 | 92 | 92 | 0 |
 | Thermische spanning | 2 | 7 | 7 | 0 |
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **442** | **2374** | **2368** | **6** |
+| **Totaal** | **442** | **2382** | **2376** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

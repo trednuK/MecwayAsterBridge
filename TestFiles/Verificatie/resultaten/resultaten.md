@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 5ef612d, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 8b13519, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2368 van 2374 controles binnen de tolerantie** (442 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2376 van 2382 controles binnen de tolerantie** (442 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -862,6 +862,14 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 5ef612d, Code-Aster 17.4
 | FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | som FR.x in kN (SymX) | -10 kN | -10 | +0.00% | 0.0001% | OK |
 | FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | e.xx * 1e6 (x = L/2) | 4.7619 microstrain | 4.7619 | -0.00% | 0.0001% | OK |
 | FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | x in mm (x = L) | 1000 mm | 1000 | +0.00% | 1e-07% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | principal1 (x = L/2) | 1.0000e+06 Pa | 1.0000e+06 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | principal3 (x = L/2) | 0 Pa | 1.2308e-09 | 1.2308e-09 | 0.001 Pa | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | tresca (x = L/2) | 1.0000e+06 Pa | 1.0000e+06 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | lprincipalstrain1 (x = L/2) | 4.7619e-06 - | 4.7619e-06 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | lprincipalstrain3 (x = L/2) | -1.4286e-06 - | -1.4286e-06 | +0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | formule s1 in MPa | 1 MPa | 1 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | formule tr in MPa | 1 MPa | 1 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | formule e1 * 1e6 | 4.7619 microstrain | 4.7619 | -0.00% | 0.0001% | OK |
 | FX-03 | Formules in de tijd op TH-02a: t in min | t in min (t = 10 s) | 0.16667 min | 0.16667 | +0.00% | 0.0001% | OK |
 | FX-03 | Formules in de tijd op TH-02a: t in min | t in min (t = 40 s) | 0.66667 min | 0.66667 | +0.00% | 0.0001% | OK |
 | FX-03 | Formules in de tijd op TH-02a: t in min | (T-300)/t op x = 0 (t = 40 s) | 2.5 K/s | 2.5 | +0.00% | 0.0001% | OK |
