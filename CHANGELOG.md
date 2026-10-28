@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Code-Aster output as Mecway's *Saved monitor* (GitHub issue #7)**: after a run with route
+  `liml` the bridge stores the output of Code-Aster in the `.liml` as Mecway's own *Saved
+  monitor* item under *Solution* (the item Mecway uses for its own solver messages), so it can
+  be read in Mecway after the Code-Aster windows have been closed. New setting
+  `save_monitor` (page General): `summary` (default: errors and alarms with their count,
+  nonlinear steps, bridge lines, timings, the end of the `.mess` and the path of the full
+  `.mess`), `full` (the whole `.mess`, start and end above 4 million characters) or `off`. A
+  run without results still gets the monitor (a solution with only the monitor); loading a run
+  with "Results..." adds the monitor of that run. Not with route `tabel`. Format measured headless in
+  Mecway 34 (user guide §5.2).
+
 ## V2026.5 – 28 October 2026
 
 Result formulas computed by the bridge (issue #8), principal stresses and strains, acceleration

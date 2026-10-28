@@ -55,6 +55,7 @@ import os
 import re
 
 from bridge_utils import tr, choose_configuration, configuration_warning
+import bridge_monitor
 
 
 _CHUNK = 4 * 1024 * 1024
@@ -163,14 +164,17 @@ def _copy_from(src, dst_file, start):
 # ==========================================
 # MODEL COPY FOR <solution>
 # ==========================================
-_FIELDVAR_OPEN = re.compile(r"^\s*<fieldvariable[\s>/]")
+# Top-level elements Mecway leaves out of the model copy: <fieldvariable>
+# (display settings) and <savedmonitor /> (the Saved monitor item; its text
+# is in <results>, bridge_monitor.py; measured with Mecway 34).
+_FIELDVAR_OPEN = re.compile(r"^\s*<(fieldvariable|savedmonitor)[\s>/]")
 
 
 def _model_copy(head, nl):
     """
     Lines of the model copy in <solution>: the top-level elements of head
     (the text between <liml ...> and <solution>/</liml>) two spaces deeper,
-    without <fieldvariable>.
+    without <fieldvariable> and <savedmonitor>.
 
     Indent only lines that start with a tag while the previous line ends
     with '>'; continuation lines of multi-line text (comment,
@@ -184,16 +188,20 @@ def _model_copy(head, nl):
         lines.pop()
     out = []
     prev_tag_end = True
-    skipping = False
+    skipping = None          # closing tag of the element being left out
     for line in lines:
         starts_tag = prev_tag_end and line.lstrip().startswith("<")
-        if starts_tag and not skipping and _FIELDVAR_OPEN.match(line):
-            skipping = not line.rstrip().endswith("/>")
+        m = _FIELDVAR_OPEN.match(line) if starts_tag and not skipping \
+            else None
+        if m:
+            close = "</{0}>".format(m.group(1))
+            skipping = (None if line.rstrip().endswith("/>") or
+                        close in line else close)
             prev_tag_end = line.rstrip().endswith(">")
             continue
         if skipping:
-            if "</fieldvariable>" in line:
-                skipping = False
+            if skipping in line:
+                skipping = None
             prev_tag_end = line.rstrip().endswith(">")
             continue
         out.append(("  " + line) if starts_tag else line)
@@ -575,7 +583,26 @@ def pick_configuration(model_liml):
                                                 missing)
 
 
-def splice_results(model_liml, fragment_path, out_path, configuration=None):
+_RESULTS_OPEN = re.compile(r"<results[\s>]")
+_LIML_OPEN = re.compile(r"<liml[\s>]")
+_MONITOR_TAG = re.compile(r"<savedmonitor[\s>/]")
+
+
+def _results_tag_end(fragment_path):
+    """Byte position just after the start tag <results ...> of the
+    fragment (at its beginning, aster_results_export._write_fragment), or
+    -1 if it is not in the first 4 kB."""
+    text = _read_range(fragment_path, 0, min(4096,
+                                             os.path.getsize(fragment_path)))
+    m = _RESULTS_OPEN.search(text)
+    if not m:
+        return -1
+    end = text.find(">", m.start())
+    return end + 1 if end >= 0 else -1
+
+
+def splice_results(model_liml, fragment_path, out_path, configuration=None,
+                   monitor=None):
     """
     Write out_path = model_liml with a new <solution> (model copy +
     fragment). Everything outside that <solution> stays byte-identical,
@@ -589,6 +616,13 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
     export with cyclic=...), the model copy gets the nodes and
     elements of all sectors, like Mecway (_wheel_copy).
 
+    monitor: text for Mecway's Saved monitor (bridge_monitor.monitor_text)
+    or None. It goes as <savedmonitor><output> first into <results>, and
+    the model gets a top-level <savedmonitor /> (the tree item) if it has
+    none; the format is described in bridge_monitor.py. With monitor and
+    fragment_path None the solution has only the monitor (a run without
+    results; Mecway opens it as a solution without values).
+
     Returns
     -------
     (bool, str) - (True, "") or (False, reason).
@@ -596,11 +630,22 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
     if not os.path.exists(model_liml):
         return False, tr("Model niet gevonden: {0}",
                          "Model not found: {0}").format(model_liml)
-    if not os.path.exists(fragment_path) or \
-            os.path.getsize(fragment_path) == 0:
+    if fragment_path is None and monitor is None:
+        return False, tr("Geen fragment en geen monitortekst.",
+                         "No fragment and no monitor text.")
+    if fragment_path is not None and (
+            not os.path.exists(fragment_path) or
+            os.path.getsize(fragment_path) == 0):
         return False, tr("Fragment ontbreekt of is leeg: {0}",
                          "Fragment is missing or empty: {0}").format(
             fragment_path)
+    results_end = 0
+    if fragment_path is not None and monitor is not None:
+        results_end = _results_tag_end(fragment_path)
+        if results_end < 0:
+            return False, tr("Geen <results> aan het begin van {0}",
+                             "No <results> at the start of {0}").format(
+                fragment_path)
 
     sol = _find_solution_start(model_liml)
     open_tag = ("<solution>" if configuration is None else
@@ -639,20 +684,43 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None):
     if lead is None:
         lead = nl
     copy_lines = _solution_copy(head, nl, configuration)
-    wheel, err = _wheel_check(head, fragment_path)
+    wheel, err = (_wheel_check(head, fragment_path)
+                  if fragment_path is not None else (None, None))
     if err:
         return False, err
     if wheel:
         # Cyclic symmetry: the whole wheel, like Mecway's own solution
         copy_lines = _wheel_copy(copy_lines, wheel[1], wheel[0])[0]
+    # Saved monitor: the tree item at the top of the model (Mecway moves it
+    # on save; the order of top-level items is free), unless it is there.
+    marker = -1
+    if monitor is not None and not _MONITOR_TAG.search(head):
+        m = _LIML_OPEN.search(head)
+        if m:
+            marker = head.find(">", m.start()) + 1
 
     tmp = out_path + ".tmp"
     f = open(tmp, "wb")
     try:
-        _copy_range(model_liml, f, 0, begin)
+        if marker > 0:
+            _copy_range(model_liml, f, 0, marker)
+            f.write(nl + "  <savedmonitor />")
+            _copy_range(model_liml, f, marker, begin)
+        else:
+            _copy_range(model_liml, f, 0, begin)
         f.write(lead + indent + open_tag + nl)
         f.write(nl.join(copy_lines) + nl)
-        _copy_from(fragment_path, f, 0)
+        if monitor is None:
+            _copy_from(fragment_path, f, 0)
+        else:
+            block = bridge_monitor.savedmonitor_block(monitor)
+            if fragment_path is None:
+                f.write('    <results precision="double">' + block +
+                        "\r\n    </results>\r\n")
+            else:
+                _copy_range(fragment_path, f, 0, results_end)
+                f.write(block)
+                _copy_from(fragment_path, f, results_end)
         f.write("  </solution>")
         if sol < 0:
             f.write(nl)

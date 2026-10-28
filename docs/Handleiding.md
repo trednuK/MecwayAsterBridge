@@ -174,6 +174,7 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Convergentie- en meldingenscherm | aan | opent bij elke run een apart venster: bij een niet-lineaire analyse residuen, voortgang en contact; bij de statische analyse de lineaire oplosser (tijd per fase, foutgrens, conditiegetal; bij GCPC het residu per iteratie); bij modaal en knik de eerste modes; bij elke analyse de meldingen (fouten en alarmen met uitleg) en de diagnose. Achteraf: knop *Convergentiescherm*. Zie [Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm) |
 | Wachten op Code-Aster | `auto` | `auto`: een modaal statusvenster met de voortgang en *Stoppen...*; de bridge herkent zelf het einde van de run en laadt dan de resultaten (§2 stap 5). `confirm`: je klikt op OK in Mecway als het Code-Aster-venster `DIAGNOSTIC JOB` toont (het eerdere gedrag) |
 | MED-bestand voor ParaView | uit | schrijft ook `<model>_<run-id>.rmed` (ParaView/Salome); Mecway gebruikt het niet en het kan honderden MB worden |
+| Code-Aster-uitvoer als Saved monitor in de .liml | `summary` | na de run zet de bridge de uitvoer van Code-Aster in de `.liml` als Mecway's item *Saved monitor* onder *Solution*, zodat je die in Mecway terugleest als de Code-Aster-vensters dicht zijn (§5.2). `summary`: fouten en alarmen, stappen, tijden en het pad van de volledige `.mess`; `full`: de hele `.mess` (boven 4 miljoen tekens het begin en het einde); `off`: niets. Alleen route `liml` |
 | VTU/PVD-bestanden voor ParaView | uit | schrijft ook `<model>_<run-id>.pvd` met een `.vtu` per tijdstap (elke ParaView leest het, ook zonder MED-lezer), met dezelfde velden als Mecway krijgt, en `<model>_<run-id>_knopen.csv` (per benoemde knoopselectie van max. 100 knopen de knoopvelden over de tijd) |
 | AdvancedToolsHub-map (leeg = automatisch) | leeg | map van AdvancedToolsHub; gevonden = de knop *ParaView* opent de run in MWHub Post (Mecway-weergave, eenheden, bezweken elementen verbergen); leeg = `%ADVANCEDTOOLSHUB_DIR%`, anders de map `AdvancedToolsHub` naast deze repository; niet gevonden = de `.rmed` rechtstreeks in ParaView |
 | ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knop *ParaView* van het convergentiescherm; leeg = automatisch: eerst de officiele ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, nieuwste eerst), die zelf een `.rmed` leest; dan als terugval de ParaView van Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, gestart via `run_paraview.bat`); als laatste een oudere ParaView. ParaView 5.10 van paraview.org kan een `.rmed` **niet** openen. Omgevingsvariabelen mogen |
@@ -558,7 +559,40 @@ in het hoofdvenster kies je:
 
 Beide slaan het model eerst op en openen het daarna opnieuw. De resultaten zijn die
 van de run: wijzig je daarna belastingen of materialen, dan horen ze daar niet meer
-bij (alleen het mesh wordt gecontroleerd).
+bij (alleen het mesh wordt gecontroleerd). *Inladen* zet ook de Saved monitor van die run
+in het model (§5.2), als de `.mess` ervan nog in de werkmap staat.
+
+### 5.2 Code-Aster-uitvoer in Mecway (Saved monitor)
+
+Met route `liml` zet de bridge de uitvoer van de Code-Aster-run in de `.liml` als Mecway's
+eigen item *Saved monitor* (boom, onder *Solution*; Mecway-handleiding §10.3), hetzelfde item
+dat Mecway gebruikt voor de voortgangsmeldingen van zijn eigen solver. Het blijft in het model
+als je de Code-Aster-vensters sluit, het model opslaat of aan iemand anders geeft. Instelling
+*Code-Aster-uitvoer als Saved monitor in de .liml* (`save_monitor`, pagina Algemeen):
+
+- `summary` (standaard): het model, de run, het pad en de grootte van de volledige
+  `<model>_<run-id>.mess`, de Code-Aster-versie en de regel `DIAGNOSTIC JOB`; elk meldingskader
+  met een fout of alarm (`<EXCEPTION>`, `<F>`, `<S>`, `<E>`, `<A>`) één keer, met het aantal
+  keren dat het voorkwam; de lijst met alarmen die Code-Aster aan het einde geeft;
+  Python-fouten uit `<model>_<run-id>_console.txt`; bij een niet-lineaire analyse elke
+  tijdstap met niveau, Newton-iteraties en geconvergeerd/mislukt (de eerste en laatste 25, plus
+  elke mislukte), anders de voortgangsregels; de eigen regels van de bridge (massacontrole,
+  modes, resultaatbestand); de tijd per commando en het geheugen; het einde van de `.mess`.
+  Hoogstens 400 000 tekens.
+- `full`: de hele `.mess`; boven 4 miljoen tekens het eerste miljoen en de laatste drie
+  miljoen, met een opmerking ertussen (de `.mess` van een lange niet-lineaire run kan tientallen
+  MB zijn, en de `.liml` moet snel open gaan).
+- `off`: geen Saved monitor.
+
+De meldingen zijn die van Code-Aster zelf (Frans). Een run zonder resultaten (fout, gestopt)
+krijgt de Saved monitor toch: de bridge schrijft dan een solution met alleen de monitor (Mecway
+toont een solution zonder resultaatvelden) en opent het model opnieuw; de vorige resultaten
+worden vervangen, zoals bij elke run, en blijven in `<model>.liml.bak` en in hun
+`_results.xml` (*Resultaten...*, §5.1). Met route `tabel` is er geen Saved monitor (die route
+vult Mecway's bestaande solution via de API, die het item niet kan toevoegen); de `.mess` blijft
+in de werkmap staan. Reken je het model daarna met Mecway's eigen solver, dan vervangt Mecway de
+tekst door zijn eigen voortgangsmeldingen. *Uit model verwijderen* (§5.1) haalt de tekst ook
+weg; het item zelf blijft (leeg).
 
 ## 6. Fouten lezen
 
@@ -591,6 +625,8 @@ bij (alleen het mesh wordt gecontroleerd).
   (dubbele cellen, normaal bij vibro-akoestiek); bij complexe modes `ALGELINE5_79`
   (minder modes dan gevraagd) en `FACTOR_11` (vrij-vrij model). Alle eerder geziene codes, met oorzaak
   en oplossingen: [`Foutmeldingen_CodeAster.md`](Foutmeldingen_CodeAster.md).
+- **Na het sluiten van de vensters**: de meldingen van de laatste run staan in het model
+  als item *Saved monitor* onder *Solution* (§5.2), met het pad van de volledige `.mess`.
 - **"Code-Aster schreef geen .mess voor deze run"** of **alleen "DIAGNOSTIC JOB :
   <F>_ABNORMAL_ABORT"** zonder melding: de oorzaak staat in het Code-Aster-venster
   (dat blijft dan open).
