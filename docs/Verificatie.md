@@ -98,14 +98,14 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 ## 3. Samenvatting
 
 Stand 28 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `58ea2a2`
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `5ef612d`
 (na V2026.4: o.a. de massa- en reactiecontrole, kabelvoorspanning, knik met vaste last,
 hysteretische demping, adaptieve tijdstappen, line search, gladde contactnormalen, de
-doorsnede-eigenschappen, VTU-export, het veld *failed* en de hex8-meldingen bij rubber;
-Code-Aster 17.4): 439 testcases, 2362 controles, 2356 OK, 6 BEKEND, 0 NOK/FOUT, gelijk aan
-de run op `f14f6c7` van 23 oktober (geen statuswijziging, geen FEM-waarde > 0,1 % anders).
-Na de warmteflux per elementknoop en de formulemelding (issue #8) zijn de thermische (TH),
-las- (WE) en hyperelastische gevallen (NL-50 .. NL-53) en AI-02 opnieuw gerekend: ongewijzigd.
+doorsnede-eigenschappen, VTU-export, het veld *failed*, de hex8-meldingen bij rubber, de
+warmteflux per elementknoop en de resultaatformules (S33); Code-Aster 17.4): 442
+testcases, 2374 controles, 2368 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte van de run op
+`58ea2a2` geen statuswijziging en geen FEM-waarde > 0,1 % anders; nieuw zijn FX-01 .. FX-03
+(12 controles).
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -129,12 +129,13 @@ las- (WE) en hyperelastische gevallen (NL-50 .. NL-53) en AI-02 opnieuw gerekend
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 8 | 21 | 21 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
+| Resultaatformules | 3 | 12 | 12 | 0 |
 | Thermisch | 24 | 92 | 92 | 0 |
 | Thermische spanning | 2 | 7 | 7 | 0 |
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **439** | **2362** | **2356** | **6** |
+| **Totaal** | **442** | **2374** | **2368** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

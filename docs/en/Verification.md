@@ -96,15 +96,14 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 ## 3. Summary
 
 Status 28 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `58ea2a2`
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `5ef612d`
 (after V2026.4: among others the mass and reaction check, cable pretension, buckling
 with constant loads, hysteretic damping, adaptive time steps, line search, smoothed
-contact normals, the section properties, VTU export, the *failed* field and the hex8
-warnings for rubber; Code-Aster 17.4): 439 test cases, 2362 checks, 2356 OK, 6 BEKEND
-(known), 0 NOK/FOUT, equal to the run on `f14f6c7` of 23 October (no status change, no FEM
-value more than 0.1% different). After the heat flux per element node and the formula
-warning (issue #8) the thermal (TH), welding (WE) and hyperelastic cases (NL-50 .. NL-53) and AI-02
-were run again: unchanged.
+contact normals, the section properties, VTU export, the *failed* field, the hex8
+warnings for rubber, the heat flux per element node and the result formulas (S33);
+Code-Aster 17.4): 442 test cases, 2374 checks, 2368 OK, 6 BEKEND (known), 0 NOK/FOUT.
+Compared with the run on `58ea2a2` no status change and no FEM value more than 0.1%
+different; new are FX-01 .. FX-03 (12 checks).
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -128,12 +127,13 @@ were run again: unchanged.
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 8 | 21 | 21 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
+| Result formulas | 3 | 12 | 12 | 0 |
 | Thermal | 24 | 92 | 92 | 0 |
 | Thermal stress | 2 | 7 | 7 | 0 |
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **439** | **2362** | **2356** | **6** |
+| **Total** | **442** | **2374** | **2368** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

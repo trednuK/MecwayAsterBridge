@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge d7c67c6, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 5ef612d, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2356 van 2362 controles binnen de tolerantie** (439 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2368 van 2374 controles binnen de tolerantie** (442 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -178,14 +178,14 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge d7c67c6, Code-Aster 17.4
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.348 1/s t.o.v. Mecway | 182.35 1/s | 182.35 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 255 Hz t.o.v. Mecway | 255 Hz | 255 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.351 1/s t.o.v. Mecway | 182.35 1/s | 182.35 | +0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 425.006 Hz t.o.v. Mecway | 425.01 Hz | 425.01 | -0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 425.006 Hz t.o.v. Mecway | 425.01 Hz | 425.01 | +0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.367 1/s t.o.v. Mecway | 182.37 1/s | 182.37 | +0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 595.036 Hz t.o.v. Mecway | 595.04 Hz | 595.04 | +0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.419 1/s t.o.v. Mecway | 182.42 1/s | 182.42 | +0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 765.126 Hz t.o.v. Mecway | 765.13 Hz | 765.13 | +0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 595.036 Hz t.o.v. Mecway | 595.04 Hz | 595.04 | -0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.419 1/s t.o.v. Mecway | 182.42 1/s | 182.42 | -0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 765.126 Hz t.o.v. Mecway | 765.13 Hz | 765.13 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.54 1/s t.o.v. Mecway | 182.54 1/s | 182.54 | +0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (85 Hz) | 0.5624 - | 0.5624 | -0.00% | 0.01% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (85 Hz) | 0 graden | 7.8233e-11 | 7.8233e-11 | 0.01 graden | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (85 Hz) | 0 graden | 7.7830e-11 | 7.7830e-11 | 0.01 graden | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=1) | 170 Hz | 170 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=1) | 1.3872e-04 1/s | 1.3872e-04 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=2) | 340 Hz | 340 | +0.00% | 1% | OK |
@@ -848,6 +848,23 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge d7c67c6, Code-Aster 17.4
 | FS-03 | Foutschatter: Code-Aster-testcase sslv153a | DZ knoop MESURE | -0.018668  | -0.018668 | -0.00% | 0.0001% | OK |
 | FS-03 | Foutschatter: Code-Aster-testcase sslv153a | ERREST ERME_NOEU knoop MESURE | 9339.4  | 9339.4 | -0.00% | 0.0001% | OK |
 | FS-03 | Foutschatter: Code-Aster-testcase sslv153a | globale relatieve fout | 51.518 % | 51.518 | +0.00% | 0.01% | OK |
+
+## Resultaatformules
+
+| ID | Test | Grootheid | Referentie | FEM | Afwijking | Tolerantie | Status |
+|---|---|---|---|---|---|---|---|
+| FX-01 | Formules op TH-01a: T in degF, flux in Btu/h/ft2 (ook issue #8), flux x positie | T in degF (x = L/2) | 125.33 degF | 125.33 | -0.00% | 0.0001% | OK |
+| FX-01 | Formules op TH-01a: T in degF, flux in Btu/h/ft2 (ook issue #8), flux x positie | qf.x in Btu/h/ft2 (x = L/4) | -7925 Btu/h/ft2 | -7925 | +0.00% | 0.001% | OK |
+| FX-01 | Formules op TH-01a: T in degF, flux in Btu/h/ft2 (ook issue #8), flux x positie | qf.x/3600/(12^2) (x = L/4) | -0.015287 Btu/s/in2 | -0.015287 | +0.00% | 0.001% | OK |
+| FX-01 | Formules op TH-01a: T in degF, flux in Btu/h/ft2 (ook issue #8), flux x positie | sqrt(qf.x^2+qf.y^2)*x (x = L/4) | 6.2500e+05 W/m2 mm | 6.2500e+05 | -0.00% | 0.001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | s.xx in MPa (x = L/2) | 1 MPa | 1 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | u.x in mm (x = L) | 0.0047619 mm | 0.0047619 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | som FR.x in kN (SymX) | -10 kN | -10 | +0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | e.xx * 1e6 (x = L/2) | 4.7619 microstrain | 4.7619 | -0.00% | 0.0001% | OK |
+| FX-02 | Formules op een staaf op trek: MPa, mm, kN, rek | x in mm (x = L) | 1000 mm | 1000 | +0.00% | 1e-07% | OK |
+| FX-03 | Formules in de tijd op TH-02a: t in min | t in min (t = 10 s) | 0.16667 min | 0.16667 | +0.00% | 0.0001% | OK |
+| FX-03 | Formules in de tijd op TH-02a: t in min | t in min (t = 40 s) | 0.66667 min | 0.66667 | +0.00% | 0.0001% | OK |
+| FX-03 | Formules in de tijd op TH-02a: t in min | (T-300)/t op x = 0 (t = 40 s) | 2.5 K/s | 2.5 | +0.00% | 0.0001% | OK |
 
 ## Harmonische respons
 
