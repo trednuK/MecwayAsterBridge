@@ -9,6 +9,10 @@
 #           CAP_RESULTS=1 (only the Results window, example runs)
 #           CAP_SCROLL_PAGE=<n> (with CAP_SCROLL: the page that is scrolled
 #           to the bottom, default 0)
+#           CAP_SCALE=<f> (e.g. 1.25: all fonts of the windows f times
+#           larger, like Windows display scale 125 % in Mecway, where the
+#           fonts grow but fixed pixel sizes do not)
+#           CAP_STATUS=1 (only the status window of a run, dummy job)
 import sys, os
 repo, out = sys.argv[1], sys.argv[2]
 lang = sys.argv[3] if len(sys.argv) > 3 else "nl"
@@ -53,9 +57,22 @@ for _pair in [p for p in _env("CAP_SET").split(";") if "=" in p]:
         if _key in _ana:
             _ana[_key] = _val
 import bridge_gui
+if _env("CAP_SCALE"):
+    _scale = float(_env("CAP_SCALE"))
+    _look_init = bridge_gui._Look.__init__
+
+    def _scaled_init(self):
+        from System.Drawing import Font
+        _look_init(self)
+        for _name, _font in list(vars(self).items()):
+            if isinstance(_font, Font):
+                setattr(self, _name, Font(_font.FontFamily,
+                                          _font.Size * _scale, _font.Style))
+    bridge_gui._Look.__init__ = _scaled_init
 if not os.path.isdir(out):
     os.makedirs(out)
-tag = lang + ("_small" if _env("CAP_SMALL") else "")
+tag = lang + ("_small" if _env("CAP_SMALL") else "") + (
+    "_x" + _env("CAP_SCALE") if _env("CAP_SCALE") else "")
 
 
 def find_name(ctrl, name):
@@ -222,6 +239,68 @@ def results_worker():
     except Exception as e:
         print("worker-fout: %r" % e)
 
+
+class _DemoJob(object):
+    """CAP_STATUS=1: stands in for bridge_run_aster.AsterJob."""
+    done = False
+
+    def status(self):
+        return {"headline": u"Code-Aster: STAT_NON_LINE, step 12 / 40",
+                "time": u"Elapsed 00:01:23",
+                "detail": u"Increment 12, time 0.3 s, Newton iteration 4, "
+                          u"residual RESI_GLOB_RELA 3.2e-05 (criterion "
+                          u"1.0e-06); last converged step 11 at 0.275 s",
+                "messages": u"Alarms: 2   Errors: 0",
+                "warning": u"Alarm <MECANONLINE5_21>: the time step was cut "
+                           u"(subdivision 2 of 4) because Newton did not "
+                           u"converge within ITER_GLOB_MAXI",
+                "percent": 30}
+
+    def poll(self):
+        return self.done
+
+    def finished(self):
+        return self.done
+
+    def stop(self):
+        self.done = True
+
+
+def status_worker(job):
+    try:
+        f = None
+        while f is None:
+            if Application.OpenForms.Count > 0:
+                f = Application.OpenForms[0]
+            else:
+                Thread.Sleep(2)
+
+        def hide():
+            f.Opacity = 0.0
+            f.Location = Point(-5000, -5000)
+        f.Invoke(MethodInvoker(hide))
+        Thread.Sleep(1200)
+
+        def fn():
+            bmp = Bitmap(f.Width, f.Height)
+            f.DrawToBitmap(bmp, Rectangle(0, 0, f.Width, f.Height))
+            bmp.Save(os.path.join(out, "status_%s.png" % tag),
+                     ImageFormat.Png)
+            job.done = True
+        f.Invoke(MethodInvoker(fn))
+    except Exception as e:
+        print("worker-fout: %r" % e)
+        job.done = True
+
+
+if _env("CAP_STATUS"):
+    bridge_gui._mecway_window = lambda: None
+    job = _DemoJob()
+    t = Thread(ThreadStart(lambda: status_worker(job)))
+    t.IsBackground = True
+    t.Start()
+    print("klaar", bridge_gui.run_status_dialog(job))
+    sys.exit(0)
 
 if _env("CAP_RESULTS"):
     wd = bridge_utils.CONFIG_BRIDGE["work_dir"] or r"C:\FEA\WorkDir"

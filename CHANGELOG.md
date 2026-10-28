@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Windows readable at a larger Windows display scale (e.g. 125 %)** (KNOWN_BUGS 129): the
+  header of the main window, the Results window and the status window is sized from the
+  title, so the subtitle (model, analysis, work folder) is no longer half hidden under it;
+  buttons are as wide as their text ("Convergence window" was cut to "Convergence windo");
+  the explanation in the Results window, the notes on the settings pages, the trademark
+  notice and the texts of the status window get the height their text needs. At 100 % the
+  windows look as before.
+- **Buckling with POU_D_TG beams**: the INFO line about torsional buckling without warping
+  (`POU_D_E`/`POU_D_T`) is only logged when the model has beams without warping; with
+  `elem_beam` = `POU_D_TG` only the line about warping beams remains.
+
 - **Bonded contact between solids ties only the slave nodes Mecway ties** (KNOWN_BUGS 128):
   a slave node without a master face opposite it (for example where one plate overhangs the
   other) was tied to the nearest edge of the master, however far away, which made the joint
