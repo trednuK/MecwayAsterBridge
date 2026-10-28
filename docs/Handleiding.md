@@ -369,6 +369,37 @@ dynamica, modaal en knik; elders, en bij gravity, moment, centrifugaalkracht,
 snelheid, frictionless, een richting als formule of druk op schaalranden en
 balkuiteinden, meldt de bridge ze (ERROR) en neemt ze niet mee (KNOWN_BUGS 104).
 
+**Lasten op het zijvlak van een balk.** Mecway geeft een balk (line2/line3) drie vlakken:
+het zijvlak (faceid 1, het hele element) en de twee uiteinden (faceid 2 en 3). Een
+*Traction* op het zijvlak werkt in Mecway als een verdeelde last *traction × omtrek van de
+doorsnede* per lengte, in de globale richting die je invoert en ongeacht de
+balkoriëntatie; de bridge schrijft die als `FORCE_POUTRE` (ook met een formule in x, y, z,
+die Mecway in één punt per element neemt en Code-Aster in de integratiepunten). De omtrek
+is de volledige omtrek van de doorsnede: rechthoek 2(a + b), cirkel π·d, buis en
+kokerprofiel buiten- plus binnenwand, I/T/L/C-profielen alle randen,
+*UniformGeneralSection* het veld *perimeter* (gemeten in Mecway 34). Een *Pressure* op het
+zijvlak heeft resultante nul (de normaal draait helemaal rond de doorsnede): Mecway's eigen
+solver zet niets op, de bridge ook niet (WARNING); gebruik voor een dwarslast een traction
+of een line pressure. Verificatie LS-92a .. LS-92h.
+
+![Zijvlak van een balk en de lijnlast uit een traction](img/beam_side_face.svg)
+
+1. Zijvlak van het balkelement (faceid 1): het hele element.
+2. Uiteinde bij de eerste knoop (faceid 2).
+3. Uiteinde bij de tweede knoop (faceid 3).
+4. Traction T in een globale richting op het zijvlak.
+5. Omtrek van de doorsnede: alle buiten- en binnenranden (hier een rechthoek a × b: 2(a + b)).
+6. De resulterende lijnlast q = T × omtrek op de balkas (`FORCE_POUTRE`).
+
+**Hydrostatische druk op schaalranden.** De bridge brengt die aan als een druk op een
+schaalrand: p(x) = ρ g · (x − x₀) op het randvlak *randlengte × dikte*, in het vlak van de
+schaal, als consistente knoopkrachten (ook als het vrije oppervlak in een element ligt).
+Mecway's eigen solver zet hier **niets** op (manual §9.17: alleen vlakken die lokaal
+tweedimensionaal zijn; gemeten met de interne solver en CCX); de bridge meldt dat met een
+WARNING. Om met Mecway te vergelijken: voer dezelfde last in Mecway in als *Pressure* met
+de formule ρ g (h − z) op die rand (een drukformule op schaalranden legt Mecway wel op); de
+bridge is daaraan gelijk binnen 0,01% (LS-93a .. LS-93c).
+
 ### 4.1 Resultaatvelden
 
 Met *Resultaatvelden naar Mecway* kies je per analyse welke velden de bridge

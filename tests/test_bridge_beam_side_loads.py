@@ -8,8 +8,10 @@
 # (bridge_from_liml._section_perimeter, values measured in Mecway 34),
 # traction on beam side faces -> FORCE_POUTRE = traction x perimeter on a
 # BRSF group (constant, formula, two sections, line3, together with a beam
-# end), pressure on beam side faces -> no load with a WARNING. The results
-# of a run: TestFiles/Verificatie LS-92a .. LS-92h.
+# end), pressure on beam side faces -> no load with a WARNING, hydrostatic
+# pressure on shell edges -> consistent nodal forces (resultant rho g t H^2/2,
+# also with the free surface inside an element, quad8) with a WARNING. The
+# results of a run: TestFiles/Verificatie LS-92a .. LS-92h, LS-93a .. LS-93c.
 #
 #   python tests/test_bridge_beam_side_loads.py
 
@@ -205,6 +207,28 @@ check(any("WARNING: Pressure on the side face" in l for l in LOG),
 check(not md.get("skipped_loads"), "pressure: not a skipped load")
 check("FORCE_POUTRE" not in comm and "PRES_REP=" not in comm,
       "pressure: no load in study.comm")
+
+# --- hydrostatic pressure on shell edges ---
+import tests_balk_zijvlak as Z  # noqa: E402
+for zf, order, ref in ((1.0, 1, 49.05), (0.55, 1, 14.837625),
+                       (1.0, 2, 49.05)):
+    md, comm = translate(Z._wall(zfree=zf, order=order)(),
+                         "hydro {0} {1}".format(zf, order))
+    hb = [b for b in md["bcs"] if b["type"] == "hydrostaticpressure"]
+    forces = hb and hb[0].get("node_loads", {}).get("HYD")
+    tot = [sum(f[1][k] for f in forces) for k in range(3)] if forces else [0] * 3
+    check(close(-tot[0], ref, 1e-5) and abs(tot[1]) < 1e-9 and
+          abs(tot[2]) < 1e-9,
+          "hydro zfree={0} order={1}: resultant {2}".format(zf, order, tot))
+    # moment about z = 0: rho g t H^3/6
+    if forces and zf == 1.0:
+        nodes = md["mesh_nodes"]
+        mom = sum(-f[1][0] * nodes[f[0]][2] for f in forces)
+        check(close(mom, 1000 * 9.81 * 0.01 / 6.0, 1e-9),
+              "hydro moment {0}".format(mom))
+    check(any("WARNING: Hydrostatic pressure on shell edges" in l
+              for l in LOG), "hydro: WARNING")
+    check("FORCE_NODALE" in comm, "hydro: FORCE_NODALE in study.comm")
 
 if FAILS:
     print("FAILED ({0}):".format(len(FAILS)))

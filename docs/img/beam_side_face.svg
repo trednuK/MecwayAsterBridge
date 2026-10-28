@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 360" width="700" height="360">
+  <rect x="0" y="0" width="700" height="360" fill="#ffffff"/>
+  <!-- left: line2 beam element as Mecway draws it, nodes 1 and 2 -->
+  <line x1="60" y1="250" x2="330" y2="250" stroke="#333" stroke-width="5"/>
+  <circle cx="60" cy="250" r="7" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="330" cy="250" r="7" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <!-- side face (faceid 1): the whole element, shown as a tube around the axis -->
+  <path d="M60 232 H330 A10 18 0 0 1 330 268 H60" fill="#d9d9d9" fill-opacity="0.6" stroke="#333" stroke-width="1.5"/>
+  <ellipse cx="60" cy="250" rx="10" ry="18" fill="#bdbdbd" stroke="#333" stroke-width="1.5"/>
+  <!-- ends (faceid 2 at node 1, faceid 3 at node 2) -->
+  <ellipse cx="330" cy="250" rx="10" ry="18" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- traction T in a global direction on the side face (here -Z) -->
+  <g stroke="#333" stroke-width="1.5" fill="#333">
+    <line x1="90" y1="150" x2="90" y2="222"/><path d="M90 230 L84 216 L96 216 Z"/>
+    <line x1="150" y1="150" x2="150" y2="222"/><path d="M150 230 L144 216 L156 216 Z"/>
+    <line x1="210" y1="150" x2="210" y2="222"/><path d="M210 230 L204 216 L216 216 Z"/>
+    <line x1="270" y1="150" x2="270" y2="222"/><path d="M270 230 L264 216 L276 216 Z"/>
+  </g>
+  <text x="300" y="170" font-family="sans-serif" font-size="20" font-style="italic" fill="#333">T</text>
+  <!-- global axes -->
+  <line x1="40" y1="330" x2="90" y2="330" stroke="#333" stroke-width="1.5"/>
+  <path d="M98 330 L84 324 L84 336 Z" fill="#333"/>
+  <text x="100" y="336" font-family="sans-serif" font-size="16" font-style="italic" fill="#333">X</text>
+  <line x1="40" y1="330" x2="40" y2="290" stroke="#333" stroke-width="1.5"/>
+  <path d="M40 282 L34 296 L46 296 Z" fill="#333"/>
+  <text x="48" y="290" font-family="sans-serif" font-size="16" font-style="italic" fill="#333">Z</text>
+  <!-- right: cross-section; the perimeter (dashed, all edges) times T gives q -->
+  <rect x="450" y="70" width="160" height="80" fill="#d9d9d9" stroke="#333" stroke-width="2"/>
+  <rect x="442" y="62" width="176" height="96" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="520" y="54" font-family="sans-serif" font-size="18" font-style="italic" fill="#333">a</text>
+  <text x="626" y="116" font-family="sans-serif" font-size="18" font-style="italic" fill="#333">b</text>
+  <!-- resulting line load q = T x perimeter on the beam axis -->
+  <line x1="400" y1="250" x2="660" y2="250" stroke="#333" stroke-width="5"/>
+  <g stroke="#333" stroke-width="1.5" fill="#333">
+    <line x1="420" y1="196" x2="420" y2="236"/><path d="M420 244 L414 230 L426 230 Z"/>
+    <line x1="480" y1="196" x2="480" y2="236"/><path d="M480 244 L474 230 L486 230 Z"/>
+    <line x1="540" y1="196" x2="540" y2="236"/><path d="M540 244 L534 230 L546 230 Z"/>
+    <line x1="600" y1="196" x2="600" y2="236"/><path d="M600 244 L594 230 L606 230 Z"/>
+    <line x1="410" y1="196" x2="650" y2="196"/>
+  </g>
+  <text x="656" y="206" font-family="sans-serif" font-size="20" font-style="italic" fill="#333">q</text>
+  <!-- markers -->
+  <g font-family="sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    <circle cx="190" cy="290" r="11" fill="#c0392b"/><text x="190" y="295">1</text>
+    <circle cx="36" cy="218" r="11" fill="#c0392b"/><text x="36" y="223">2</text>
+    <circle cx="356" cy="222" r="11" fill="#c0392b"/><text x="356" y="227">3</text>
+    <circle cx="120" cy="140" r="11" fill="#c0392b"/><text x="120" y="145">4</text>
+    <circle cx="430" cy="62" r="11" fill="#c0392b"/><text x="430" y="67">5</text>
+    <circle cx="530" cy="280" r="11" fill="#c0392b"/><text x="530" y="285">6</text>
+  </g>
+</svg>

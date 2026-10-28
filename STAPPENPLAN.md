@@ -53,7 +53,7 @@ S7, S8, S5, S9).
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
 | S16d | Acoustic Resonance 2D (Mecway A20, `2D_FLUIDE`) | open | S16a | split off from S16 (28 Oct 2026) |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 126 |
-| S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
+| S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | done | – | branch worktree-agent-afd8b7790c08d6a3d on nacht-int3 (28 Oct 2026): traction on beam side faces = `FORCE_POUTRE` traction x perimeter (`_beam_side_loads`), pressure there no load, hydrostatic pressure on shell edges as nodal forces; LS-92a..h, LS-93a..c OK (equal to Mecway headless, formula +0.06%); not yet tested in the Mecway GUI (see §S17) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | done | after the release of 16 Oct 2026 | branch worktree-agent-af7ab132aad22bc7d (28 Oct 2026): `elem_beam` = `POU_D_TG`, setting `beam_warping`, `bridge_warping.py`; BU-38 .. BU-42, LS-90, LS-91 OK (C column 384.98, theory 386.1, hex20 393.0; ssll103a = `VALE_CALC`); not yet tested in the Mecway GUI |
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
@@ -1376,6 +1376,27 @@ computes them as a distributed beam load) and hydrostatic pressure on shell edge
 `FORCE_ARETE` or nodal forces like `bridge_mesh._edge_loads`.
 **Done when:** beam with pressure on a side face = beam with the equivalent line load (≤ 0.1%) and equal to
 Mecway headless; hydrostatic pressure on a shell edge equal to the hand calculation; regression D.5.
+**Findings (28 Oct 2026, Mecway 34 headless, internal solver):**
+- A line2/line3 beam has three faces (`mw.face_nodes`): 1 = side face (all nodes), 2/3 = ends.
+- Traction on the side face = distributed load traction x perimeter per length, global direction,
+  independent of the orientation: RectBar 20x10 mm reaction 0.06 m x T x L; CircularBar pi d; tube
+  pi (D + d) and RectTube 2(a + b) + 2(a + b - 4t) (outer plus inner wall); I/T/L/C the full outline;
+  UniformGeneralSection its `perimeter`. A formula is taken at the beam axis, one point per element
+  (z = 1 + 100 y gave the same as 1; z = x gave a tip 0.06% below the exact load). The premise "Mecway
+  computes pressure as a distributed beam load" did not hold: pressure on the side face has zero
+  resultant and the internal solver applies nothing (also with a formula); CCX expands the beam and
+  only squeezes the section. Mecway's CCX gave a very different deflection for traction on the side
+  face (1.47 against 21.4 m for the same load; not investigated, internal solver is the reference).
+- Hydrostatic pressure on shell edges: Mecway applies nothing (internal solver and CCX; manual v34
+  §9.17 "locally 2-dimensional" faces only), but it does apply a Pressure with the formula
+  rho g (h - z) on the same edge (resultant 49.05 N = hand). The bridge applies the hydrostatic
+  pressure (consistent nodal forces, edge length x thickness, 8 sub-segments where the free surface
+  crosses an edge) with a WARNING; equal to Mecway's formula within 0.01%. `FORCE_ARETE` was not
+  used: a function of X, Y, Z would need the pressure direction per edge (normal in the shell plane).
+- Mecway 34 headless with *Fixed* on a node selection of shells computes a mechanism (known from
+  LS-44); LS-93 uses displacement + node rotation.
+- Not done: pressure as a formula on shell edges and beam ends (KNOWN_BUGS 104), traction on an
+  element selection of beams, a GUI check.
 
 ### S18 – Testing the new Code-Aster version (18)
 **Goal:** make the bridge work with Code-Aster 18 and record that version as tested; until then

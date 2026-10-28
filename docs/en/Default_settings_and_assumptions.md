@@ -476,6 +476,9 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Overlapping constraints | partly resolved (`SANS_GROUP_*`; a skew relation or DDL_IMPO 0 that the other already covers is reduced), otherwise reported | deviation: Mecway reduces them itself (KNOWN_BUGS 8) |
 | Constraint on an element selection or component with a flexible joint | acts on the cells (`GROUP_MA`), so on the joint's own node; a double constraint can give `FACTOR_11` (WARNING) | deviation: Mecway applies it to the nodes of the element; put it on nodes or faces (KNOWN_BUGS 106) |
 | Springs and dampers along their own axis | `DISCRET` with `REPERE='LOCAL'` | source: Mecway (2026) §7.7 ("stiffness only in the direction of its length"); verified: LS-06 exact; a comparison with a Mecway solution is missing (KNOWN_BUGS 47) |
+| Traction on the side face of a beam = traction × perimeter per length | `FORCE_POUTRE` FX/FY/FZ (global) on a cell group per perimeter (`BRSF<n>`); a formula at the integration points | source: Mecway 34 measured headless (S17: reaction = T × perimeter × L for all section types); verified: LS-92a .. LS-92h (equal to Mecway, formula +0.06% because Mecway takes one point per element) |
+| Pressure on the side face of a beam | no load (WARNING): the resultant is zero | source: Mecway 34 measured headless (internal solver: reaction and displacement 0); verified: LS-92d |
+| Hydrostatic pressure on shell edges | consistent nodal forces of p(x) × thickness in the shell plane (WARNING) | deviation: Mecway 34 applies nothing there (manual §9.17, measured); equal to Mecway's Pressure formula ρ g (h − z) on the edge: LS-93a .. LS-93c (≤ 0.01%) |
 | Compression only | `LIAISON_UNIL` (hard) | KNOWN_BUGS 22 |
 | Rayleigh damping | only on the whole model (`AMOR_ALPHA`/`AMOR_BETA` per material) | KNOWN_BUGS 27 |
 

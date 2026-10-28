@@ -40,10 +40,10 @@ ignored with only an INFO, as Mecway itself does.
 | Mecway | Status | Remark |
 |---|---|---|
 | Force (nodes, faces, elements) | Yes | On nodes divided equally, on faces as force per area. |
-| Pressure | Yes | Follower load in nonlinear analyses (a formula in x, y, z stays fixed). On shell edges and beam ends as nodal forces (KB5). |
+| Pressure | Yes | Follower load in nonlinear analyses (a formula in x, y, z stays fixed). On shell edges (length × thickness) and beam ends (area) as nodal forces; on the side face of a beam no load (see below). |
 | Traction | Yes | On a shell face with the moment of half the thickness, as in Mecway. |
 | Line pressure | Yes | Global or local (U, V, W). Combinations on one beam are summed; local and global on the same beam: No (ERROR, KB20). |
-| Hydrostatic pressure | Partly | Not on shell edges (KB5). |
+| Hydrostatic pressure | Yes | Also on shell edges (length × thickness, consistent nodal forces, LS-93); Mecway's own solver ignores it there (WARNING), compare with a Pressure formula ρ g (h − z). [`UserGuide.md`](UserGuide.md) §4. |
 | Moment | Yes | On one node with rotations, or as forces over faces. |
 | Gravity | Yes | With a time table only for a fixed direction. |
 | Centrifugal force | Partly | Only a constant angular velocity, one per model (no gyroscopic effect); spin softening only on solids (KB19). |
@@ -55,7 +55,7 @@ ignored with only an INFO, as Mecway itself does.
 | Initial displacement | No | Reported. |
 | Value as a table or a formula in t | Yes | 10001 samples as Mecway does for CCX. Linear static, modal and buckling: the value at the end time. Many points = many steps (KB104). |
 | Formula in x, y, z (mechanical) | Yes | Pressure, traction, force, line pressure, prescribed displacement/rotation: `FORMULE` of X, Y, Z (also with t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Mecway 34 itself does not apply force, line pressure and displacement/rotation with x, y, z (WARNING). Not: gravity, moment, centrifugal, direction as a formula, pressure on shell edges; not in explicit, harmonic, spectrum (KB104). DKT/DST shells take the formula at the nodes (+0.8% on a coarse mesh, LS-44a). Pressure as a formula stays a fixed load at large displacements. The error estimator treats a face with a formula load as unloaded (too large an error there). |
-| Load on the side face of a beam | No | KB5. Put the load on an element selection of the beam. |
+| Load on the side face of a beam | Yes | Traction: a distributed load traction × perimeter of the section (`FORCE_POUTRE`, global direction, also with a formula in x, y, z), as Mecway (LS-92). Pressure: zero resultant, no load (WARNING), as Mecway's own solver. [`UserGuide.md`](UserGuide.md) §4. |
 | Pre-tension section | Partly | Prism of solid elements (Mecway's CCX variant), force or length adjustment, in static, nonlinear static and implicit dynamic response (D30/D31, `dyna_impl_3d`, a step from t = 0 as in Mecway): cut with `LIAISON_DDL` to a reference node (PT-01..08, [`Bolt_pretension.md`](Bolt_pretension.md)); the variant with one spring element (internal solver) in linear static as two nodal forces (PT-09, PT-10). Not: explicit dynamics, the spring variant in Frequency/Buckling (geometric stiffness of the spring, KB124). |
 | Electric potential, Charge, Current, Robin | No | No electric analyses (§1). |
 | Thermal loads (temperature, heat flow, heat flux, heat generation, convection, radiation) | Yes | In T30/T31; formulas in x, y, z, t too. Details: [`Thermal.md`](Thermal.md). |

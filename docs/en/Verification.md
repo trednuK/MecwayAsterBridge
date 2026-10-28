@@ -140,7 +140,8 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added after this run (not yet in a full regression, not in the table): Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
-checks OK (28 October 2026, step S15b).
+checks OK (28 October 2026, step S15b). Beam side faces and hydrostatic pressure on shell
+edges LS-92a..h, LS-93a..c, 11 cases, 27 checks OK (28 October 2026, step S17).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
@@ -700,6 +701,44 @@ Route `tabel` (LS-30, LS-32, NL-31 with a fake solution in CPython): `beam_force
   COQUE_3D with `ELEMENTS4_92`). Three `AFFE_CHAR_MECA_F` loads, each with its own
   `FORMULE`, in one `EXCIT` each use their own function (unlike thermal `SOURCE`, [Thermal.md](Thermal.md) §3); two
   functions in one `DDL_IMPO` load (test run with two selections) as well.
+
+### LS-92, LS-93 Loads on beam side faces, hydrostatic pressure on shell edges
+
+- **Purpose**: traction and pressure on the side face of a beam (faceid 1) and hydrostatic
+  pressure on shell edges (KNOWN_BUGS 5, step S17). Module `tests_balk_zijvlak.py`.
+- **Model**: cantilever L = 1 m, 10 line2 (LS-92e: 4 line3), RectBar 20 × 10 mm (LS-92b:
+  I 100/50/5/4 mm; LS-92f: second half CircularBar Ø 20 mm), selection = the side faces of all
+  elements. LS-93: vertical plate 1 × 1 m in the XZ plane, t = 10 mm, quad4 4 × 10 (LS-93c
+  quad8), edge x = 0 clamped (displacement + node rotation, see below), no density.
+- **Load**: traction 1 kPa: (92a) Z; (92b) Y; (92c) Z = `x` kPa; (92e) Z on line3; (92f) Z
+  over two sections; (92g) Z in nonlinear static; (92h) Z with gravity (ρ = 7850 kg/m³);
+  (92d) pressure 1 MPa on the side faces plus 10 N at the tip. LS-93: hydrostatic pressure
+  (water, gravity −Z) on the edge x = 1, free surface at z = 1 m (93a, 93c) and z = 0.55 m
+  (93b, inside an element).
+- **Reference**: q = T × perimeter (0.06 m; I 0.392 m; circle π·0.02 m) with Euler: tip
+  qL⁴/(8EI), formula 11q₀L⁴/(120EI), (92h) (q − ρAg)L⁴/(8EI), (92d) PL³/(3EI); reaction
+  q·L. LS-93: resultant ρ g t H²/2 (49.05 N; 14.838 N). Mecway 34 headless
+  (`mw_solve.py`, internal solver) on the same `.liml` for 92a–d, f, h; for LS-93 on the
+  same model with a *Pressure* `max(0, 9.81*(h-z))` kPa on the edge instead, because
+  Mecway applies no hydrostatic pressure on shell edges.
+- **Result**: all 27 checks OK. 92a, b, d, e, f, g, h exact against Euler and Mecway
+  (≤ 1e-6); 92c +0.00% against the exact load, +0.06% against Mecway. LS-93 resultants
+  exact (93b ≤ 1e-5), edge displacement against Mecway's formula 0.00% (93a), +0.01% (93b),
+  −0.01% (93c).
+- **Interpretation**: Mecway applies a traction on the side face as T × perimeter, also
+  with a formula, which it takes at the beam axis at one point per element (manual §9.14);
+  that is the 0.06% of 92c (Code-Aster integrates the `FORMULE` at the Gauss points).
+  The perimeter per section type was measured headless: RectBar 2(a + b), CircularBar π d,
+  tube π (D + d) and RectTube 2(a + b) + 2(a + b − 4t) (outer plus inner wall), I 0.392,
+  T 0.310, L 0.260, C 0.392 m (the full outline). Pressure on the side face: Mecway's
+  internal solver applies nothing (also with a formula in x or y); with CCX Mecway
+  expands the beam to solids and the pressure only squeezes the section (6e-7 m). Mecway
+  34 applies no hydrostatic pressure on shell edges (internal solver and CCX: reaction 0;
+  manual §9.17: faces that are locally 2D); the bridge does (WARNING). Mecway 34 headless
+  with *Fixed* on a node selection of shells gave a mechanism; hence displacement + node
+  rotation in LS-93 (as in LS-44). Not compared: traction on beam side faces with
+  Mecway's CCX (CCX expands the beam and gave a very different deflection, not
+  investigated).
 
 ### LS-70 … LS-78 Beam orientation (static)
 

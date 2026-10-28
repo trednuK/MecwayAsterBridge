@@ -474,6 +474,9 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Overlappende randvoorwaarden | deels opgelost (`SANS_GROUP_*`; een scheve relatie of DDL_IMPO 0 die de ander al dekt wordt gereduceerd), anders gemeld | afwijking: Mecway reduceert zelf (KNOWN_BUGS 8) |
 | Voorwaarde op een elementselectie of component met een flexible joint | werkt op de cellen (`GROUP_MA`), dus op de eigen knoop van de joint; een dubbele voorwaarde kan `FACTOR_11` geven (WARNING) | afwijking: Mecway legt hem op de knopen van het element; zet hem op knopen of vlakken (KNOWN_BUGS 106) |
 | Veren en dempers langs hun eigen as | `DISCRET` met `REPERE='LOCAL'` | bron: Mecway (2026) §7.7 ("stiffness only in the direction of its length"); geverifieerd: LS-06 exact; vergelijking met een Mecway-oplossing ontbreekt (KNOWN_BUGS 47) |
+| Traction op het zijvlak van een balk = traction × omtrek per lengte | `FORCE_POUTRE` FX/FY/FZ (globaal) op een celgroep per omtrek (`BRSF<n>`); een formule in de integratiepunten | bron: Mecway 34 headless gemeten (S17: reactie = T × omtrek × L voor alle doorsnedetypes); geverifieerd: LS-92a .. LS-92h (gelijk aan Mecway, formule +0,06% omdat Mecway één punt per element neemt) |
+| Druk op het zijvlak van een balk | geen last (WARNING): de resultante is nul | bron: Mecway 34 headless gemeten (interne solver: reactie en verplaatsing 0); geverifieerd: LS-92d |
+| Hydrostatische druk op schaalranden | consistente knoopkrachten van p(x) × dikte in het vlak van de schaal (WARNING) | afwijking: Mecway 34 zet daar niets op (manual §9.17, gemeten); gelijk aan Mecway's Pressure-formule ρ g (h − z) op de rand: LS-93a .. LS-93c (≤ 0,01%) |
 | Compression only | `LIAISON_UNIL` (hard) | KNOWN_BUGS 22 |
 | Rayleigh-demping | alleen op het hele model (`AMOR_ALPHA`/`AMOR_BETA` per materiaal) | KNOWN_BUGS 27 |
 
