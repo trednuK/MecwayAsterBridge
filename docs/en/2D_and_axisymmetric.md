@@ -18,6 +18,23 @@ bridge chooses it for S20 and SA0. General operation of the bridge:
 translated (§4). Mecway has no thermal 2D type: a thermal model in a plane is made of
 shells ([`Thermal.md`](Thermal.md)).
 
+![Axisymmetric: axis of symmetry, radius and hoop direction](../img/2d_axisymmetric_axes.svg)
+
+1. Mecway's Y axis: the axis of symmetry (SA0, Code-Aster `AXIS`).
+2. Mecway's X axis: the radius r; all nodes at X ≥ 0.
+3. The plane elements in the XY plane: a cross-section of the body.
+4. Radius r of a point: Code-Aster integrates per radian (r dθ), the bridge multiplies forces and reactions by 2π.
+5. Hoop direction θ: `stresszz` is the hoop stress σ_θ.
+6. The ring that the elements represent (360 degrees): Mecway's forces and reactions are for this whole ring.
+
+![Plane stress and plane strain: plane and thickness](../img/2d_plane_thickness.svg)
+
+1. The plane elements in the XY plane (Z = 0).
+2. Thickness t: the *Shell/membrane* thickness of the material (S20); Mecway's forces and reactions are for the whole t, Code-Aster computes per unit thickness.
+3. An edge of the plane elements (faceid 1..4): pressure, traction and an edge force act on such an edge (edge cells `SEG2`/`SEG3`).
+4. A load on the edge, in the XY plane.
+5. σ_zz, normal to the plane: 0 in plane stress (`C_PLAN`), ν(σ_xx + σ_yy) in plane strain (`D_PLAN`).
+
 ## 1. Step-by-step workflow
 
 ### 1.1 In Mecway: the model
@@ -50,7 +67,9 @@ shells ([`Thermal.md`](Thermal.md)).
 
 ### 1.2 In the main window of the bridge
 
-*Active analysis* `auto` (or `lin_static_3d`) and *Result route* `liml` (General page;
+<!-- FIGURE: page General, settings "Active analysis (auto = follow Mecway)" and "Results to Mecway", markers: 1 = "Active analysis (auto = follow Mecway)" on auto (or lin_static_3d), 2 = "Results to Mecway" on liml -->
+
+"Active analysis (auto = follow Mecway)" `auto` (or `lin_static_3d`) and "Results to Mecway" `liml` (General page;
 the route `tabel` does not scale the reactions, the bridge stops). The settings of the
 Static page apply as in 3D. The result fields `strain` and `shell_*` give nothing in 2D;
 `principal_stresses` gives `principal1..3` and `tresca` as Mecway does (eigenvalues of

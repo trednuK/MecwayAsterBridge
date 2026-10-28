@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420">
+  <rect width="720" height="420" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <!-- global axes (Z towards the viewer) -->
+  <line x1="80" y1="360" x2="200" y2="360" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="205" y="366" font-family="sans-serif" font-size="18" fill="#333">X</text>
+  <line x1="80" y1="360" x2="80" y2="250" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="70" y="242" font-family="sans-serif" font-size="18" fill="#333">Y</text>
+  <line x1="80" y1="360" x2="40" y2="395" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="22" y="405" font-family="sans-serif" font-size="18" fill="#333">Z</text>
+  <!-- the body: meshed face in the XY plane (front), thickness t along -Z behind it -->
+  <polygon points="300,100 600,100 630,70 330,70" fill="#eeeeee" stroke="#333" stroke-width="1.5"/>
+  <polygon points="600,100 630,70 630,250 600,280" fill="#e3e3e3" stroke="#333" stroke-width="1.5"/>
+  <polygon points="300,100 600,100 600,280 300,280" fill="#d6e4f0" stroke="#333" stroke-width="2"/>
+  <line x1="400" y1="100" x2="400" y2="280" stroke="#333" stroke-width="1"/>
+  <line x1="500" y1="100" x2="500" y2="280" stroke="#333" stroke-width="1"/>
+  <line x1="300" y1="190" x2="600" y2="190" stroke="#333" stroke-width="1"/>
+  <!-- thickness dimension -->
+  <line x1="612" y1="294" x2="642" y2="264" stroke="#333" stroke-width="1.5" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="640" y="300" font-family="serif" font-style="italic" font-size="22" fill="#333">t</text>
+  <!-- loaded edge (edge of the plane elements) and an in-plane edge load -->
+  <line x1="600" y1="100" x2="600" y2="280" stroke="#c0392b" stroke-width="3"/>
+  <line x1="640" y1="130" x2="690" y2="130" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <line x1="640" y1="190" x2="690" y2="190" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <line x1="640" y1="250" x2="690" y2="250" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <!-- sigma_zz: normal to the plane -->
+  <circle cx="450" cy="235" r="3" fill="#333"/>
+  <line x1="450" y1="235" x2="412" y2="268" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <!-- markers -->
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="350" cy="140" r="11" fill="#c0392b"/><text x="350" y="145">1</text>
+    <circle cx="668" cy="292" r="11" fill="#c0392b"/><text x="668" y="297">2</text>
+    <circle cx="582" cy="160" r="11" fill="#c0392b"/><text x="582" y="165">3</text>
+    <circle cx="704" cy="190" r="11" fill="#c0392b"/><text x="704" y="195">4</text>
+    <circle cx="395" cy="250" r="11" fill="#c0392b"/><text x="395" y="255">5</text>
+  </g>
+</svg>

@@ -18,6 +18,23 @@ de bridge die voor S20 en SA0. Algemene werking van de bridge:
 vertaald (§4). Mecway heeft geen thermisch 2D-type: een thermisch model in een vlak
 maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
+![Axisymmetrisch: symmetrieas, straal en tangentiële richting](img/2d_axisymmetric_axes.svg)
+
+1. Mecway's Y-as: de symmetrieas (SA0, Code-Aster `AXIS`).
+2. Mecway's X-as: de straal r; alle knopen bij X ≥ 0.
+3. De vlakke elementen in het XY-vlak: een doorsnede van het lichaam.
+4. Straal r van een punt: Code-Aster integreert per radiaal (r dθ), de bridge vermenigvuldigt krachten en reacties met 2π.
+5. Tangentiële richting θ: `stresszz` is de tangentiële spanning σ_θ (hoop stress).
+6. De ring die de elementen voorstellen (360 graden): Mecway's krachten en reacties gelden voor deze hele ring.
+
+![Vlakke spanning en vlakke rek: vlak en dikte](img/2d_plane_thickness.svg)
+
+1. De vlakke elementen in het XY-vlak (Z = 0).
+2. Dikte t: de *Shell/membrane*-dikte van het materiaal (S20); Mecway's krachten en reacties gelden voor de hele t, Code-Aster rekent per eenheid van dikte.
+3. Een rand van de vlakke elementen (faceid 1..4): druk, traction en een randkracht werken op zo'n rand (randcellen `SEG2`/`SEG3`).
+4. Een belasting op de rand, in het XY-vlak.
+5. σ_zz, loodrecht op het vlak: 0 bij vlakke spanning (`C_PLAN`), ν(σ_xx + σ_yy) bij vlakke rek (`D_PLAN`).
+
 ## 1. Werkwijze stap voor stap
 
 ### 1.1 In Mecway: het model
@@ -50,7 +67,9 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 ### 1.2 In het hoofdvenster van de bridge
 
-*Actieve analyse* `auto` (of `lin_static_3d`) en *Resultaatroute* `liml` (pagina
+<!-- FIGURE: pagina Algemeen, instellingen *Actieve analyse (auto = volgens Mecway)* en *Resultaten naar Mecway*, markers: 1 = *Actieve analyse (auto = volgens Mecway)* op auto (of lin_static_3d), 2 = *Resultaten naar Mecway* op liml -->
+
+*Actieve analyse (auto = volgens Mecway)* `auto` (of `lin_static_3d`) en *Resultaten naar Mecway* `liml` (pagina
 Algemeen; de route `tabel` schaalt de reacties niet, de bridge stopt). De instellingen
 van de pagina Statisch gelden zoals in 3D. De resultaatvelden `strain` en `shell_*`
 geven niets in 2D; `principal_stresses` geeft `principal1..3` en `tresca` zoals Mecway
