@@ -2607,7 +2607,7 @@ Module `tests_akoestiek_2d.py` (group "Acoustics", 6 cases), run with
 Mecway values were computed headless (`mw_solve.py`, Mecway 34.0.9772, internal solver) on
 the same `.liml`: all frequencies and the largest ∣p∣ of every mode. Tolerance: analytical
 0.5% (quadratic) or 1–3% (linear), against Mecway 1e-6 for quads, 2e-4/5e-4 (tri6) and 1%
-(tri3, KNOWN_BUGS 128).
+(tri3, KNOWN_BUGS 130).
 
 | ID | Model | Reference | Analytical (largest deviation) | Mecway |
 |---|---|---|---|---|
@@ -2624,7 +2624,7 @@ Observations:
 - **Triangles:** Code-Aster's plane acoustic elements integrate the mass with the
   stiffness rule (no `MASS` family in `elem.1`): tri3 one point, tri6 three points. An own
   calculation with the one-point tri3 mass gives exactly the bridge's frequencies (171.0587
-  Hz for tri3 10 × 7 × 2; Mecway 170.5842 Hz = the consistent mass). KNOWN_BUGS 128.
+  Hz for tri3 10 × 7 × 2; Mecway 170.5842 Hz = the consistent mass). KNOWN_BUGS 130.
 - Mecway's organ pipe tutorial (17.13) as A20 (quad4 + 48 tri3, 20 modes): mode 4
   64.594 Hz (Mecway 64.592 Hz, the manual 64.59 Hz); not a test case (Mecway's model is not
   in the repository).

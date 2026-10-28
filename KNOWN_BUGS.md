@@ -155,7 +155,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
    to fix in the bridge; do not compare such models with Mecway.
 
-128\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
+130\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
    (confirmed, Code-Aster 17.4 and Mecway 34 headless; `bridge_acoustic.py`, MODELISATION
    'PLAN', verification AK-12, AK-15). Code-Aster's plane acoustic elements (`ACPLTR3`,
    `ACPLTR6`, `ACPLQU4`, `ACPLQU8` in `elem.1` of 17.4) have no `MASS` integration family,
@@ -1137,7 +1137,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    `dyna_impl_3d` (implicit, Rayleigh damping, time tables; no explicit scheme, mode
    superposition or initial velocity), Acoustic Resonance 2D (A20, S16d) as the cavity
    modes (`acoustic_modes_3d`, `PHENOMENE='ACOUSTIQUE'`, `PLAN`, impedance edges
-   `PLAN_ABSO`; triangles KNOWN_BUGS 128), plane elements only, one thickness and one type per
+   `PLAN_ABSO`; triangles KNOWN_BUGS 130), plane elements only, one thickness and one type per
    model; fixed, pinned,
    displacement along X/Y, symmetry with normal X/Y, force (nodes, edges), pressure and
    traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)

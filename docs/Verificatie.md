@@ -2612,7 +2612,7 @@ Module `tests_akoestiek_2d.py` (groep "Akoestiek", 6 cases), draaien met
 Mecway-waarden zijn headless berekend (`mw_solve.py`, Mecway 34.0.9772, interne solver) op
 dezelfde `.liml`: alle frequenties en de grootste ∣p∣ van elke mode. Tolerantie:
 analytisch 0,5% (kwadratisch) of 1–3% (lineair), t.o.v. Mecway 1e-6 voor quads, 2e-4/5e-4
-(tri6) en 1% (tri3, KNOWN_BUGS 128).
+(tri6) en 1% (tri3, KNOWN_BUGS 130).
 
 | ID | Model | Referentie | Analytisch (grootste afwijking) | Mecway |
 |---|---|---|---|---|
@@ -2630,7 +2630,7 @@ Waarnemingen:
   de stijfheidsregel (geen `MASS`-familie in `elem.1`): tri3 één punt, tri6 drie punten.
   Een eigen berekening met de eenpuntsmassa van tri3 geeft precies de frequenties van de
   bridge (171,0587 Hz voor tri3 10 × 7 × 2; Mecway 170,5842 Hz = de consistente massa).
-  KNOWN_BUGS 128.
+  KNOWN_BUGS 130.
 - Mecway's orgelpijp-tutorial (17.13) als A20 (quad4 + 48 tri3, 20 modes): mode 4
   64,594 Hz (Mecway 64,592 Hz, de handleiding 64,59 Hz); geen testcase (Mecway's model
   staat niet in de repository).

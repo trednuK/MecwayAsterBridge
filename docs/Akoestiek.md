@@ -315,7 +315,7 @@ genormeerde druk), rechthoek 1,0 × 0,7 m met de analytische f_mn = c/2·√((m/
 integreert de massa van zijn vlakke akoestische elementen met minder punten dan Mecway
 (tri3 één punt, tri6 drie), dus de bridge ligt hoger: tri6 ≤ 0,003% in frequentie
 (0,02% in de druk), tri3 0,07% (mode 2) tot 0,6% (mode 8) op een mesh van 20 × 14 × 2
-(KNOWN_BUGS 128). Mesh waar het kan met quads (of tri6). Mecway's orgelpijp (497
+(KNOWN_BUGS 130). Mesh waar het kan met quads (of tri6). Mecway's orgelpijp (497
 elementen, waarvan 48 tri3, 20 modes): de grondtoon van de pijp, mode 4, 64,594 Hz
 (Mecway 64,592 Hz).
 

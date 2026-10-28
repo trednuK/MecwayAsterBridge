@@ -88,7 +88,7 @@
   thickness). Frequencies, decay rates and the normalised pressure field equal to Mecway's own
   A20 solution for quads (≤ 1e-6), rectangle within 0.05% of f_mn = c/2·√((m/a)² + (n/b)²)
   (verification AK-10 … AK-15); with triangles the bridge is slightly higher (Code-Aster
-  integrates their mass with fewer points, KNOWN_BUGS 128). No harmonic pressure field in 2D.
+  integrates their mass with fewer points, KNOWN_BUGS 130). No harmonic pressure field in 2D.
   Mecway has no axisymmetric acoustic type.
 
 ## V2026.5 – 28 October 2026

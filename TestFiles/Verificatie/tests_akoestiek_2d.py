@@ -22,7 +22,7 @@ AK-15  hard walls, tri3 (20 x 14 split in two).
 
 quad4/quad8 are identical to Mecway (<= 1e-6); triangles are not:
 Code-Aster's plane acoustic elements integrate the mass with the RIGI
-family (tri3 1 point, tri6 3 points), Mecway exactly (KNOWN_BUGS 128).
+family (tri3 1 point, tri6 3 points), Mecway exactly (KNOWN_BUGS 130).
 
 References:
   - rectangle with hard walls (separation of variables, cos modes):
@@ -301,7 +301,7 @@ TESTS = [
          _analytic(8, False, 0.03) +
          _mecway("AK-15", first=2, tol=0.01, ptol=0.01),
          note="tri3: Code-Aster integreert de massa met 1 punt, Mecway "
-              "exact (consistent): de bridge ligt hoger (KNOWN_BUGS 128)."),
+              "exact (consistent): de bridge ligt hoger (KNOWN_BUGS 130)."),
     Case("AK-14", GROUP, "2D (A20): impedantie Z = 2000 Pa.s/m op x = a "
          "(complexe modes)", "acoustic_modes_3d", build_ak14,
          _impedance_checks(),

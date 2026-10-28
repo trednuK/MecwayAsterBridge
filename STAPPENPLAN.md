@@ -51,7 +51,7 @@ S7, S8, S5, S9).
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
 | S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); KNOWN_BUGS 127 (step size with *every n time steps*); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
-| S16d | Acoustic Resonance 2D (Mecway A20; `ACOUSTIQUE` `PLAN`, not `2D_FLUIDE`) | done | S16a | branch worktree-agent-ad04139279cf151f2 (28 Oct 2026): `bridge_plane._apply_acoustic` + the A30 route; AK-10 .. AK-15 OK (quads = Mecway headless ≤ 1e-6, rectangle ≤ 0.05% of f_mn); triangles slightly higher (KNOWN_BUGS 128); identical via a .liml saved by Mecway (126 checks); no axisymmetric acoustic type in Mecway; not yet tested in the Mecway GUI |
+| S16d | Acoustic Resonance 2D (Mecway A20; `ACOUSTIQUE` `PLAN`, not `2D_FLUIDE`) | done | S16a | branch worktree-agent-ad04139279cf151f2 (28 Oct 2026): `bridge_plane._apply_acoustic` + the A30 route; AK-10 .. AK-15 OK (quads = Mecway headless ≤ 1e-6, rectangle ≤ 0.05% of f_mn); triangles slightly higher (KNOWN_BUGS 130); identical via a .liml saved by Mecway (126 checks); no axisymmetric acoustic type in Mecway; not yet tested in the Mecway GUI |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 126 |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
@@ -1364,7 +1364,7 @@ no GUI):**
   Triangles: Code-Aster's plane acoustic elements have no MASS integration family in elem.1
   (the mass uses the RIGI rule: tri3 1 point, tri6 3 points; reproduced exactly with an own
   one-point tri3 calculation), so AK-12 tri6 ≤ 0.003% and AK-15 tri3 +0.07 .. +0.64% above
-  Mecway (KNOWN_BUGS 128). Mecway's organ pipe tutorial as A20 (497 elements, 20 modes): mode 4
+  Mecway (KNOWN_BUGS 130). Mecway's organ pipe tutorial as A20 (497 elements, 20 modes): mode 4
   64.594 Hz (Mecway 64.592, manual 64.59). Mecway opens the bridge's A20 results and reads
   `pressure`/`pressurei` per mode with `solution.node_value` (headless script).
 - `run_verificatie.py --mecway-opslaan AK-1`: all 126 checks identical with the models as
