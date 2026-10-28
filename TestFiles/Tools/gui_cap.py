@@ -4,6 +4,7 @@
 # (IronPython): gui_cap.py <repo> <uitmap> [nl|en] [status]
 # omgeving: CAP_SMALL=1 (venster op MinimumSize), CAP_BIG=1, CAP_SCROLL=1,
 #           CAP_KEYS=1 (toetsenbordtest), CAP_ACTIVE=1 (actieve analyse wisselen)
+#           CAP_DOCS=1 (neutral work folder for screenshots in docs/img)
 import sys, os
 repo, out = sys.argv[1], sys.argv[2]
 lang = sys.argv[3] if len(sys.argv) > 3 else "nl"
@@ -26,6 +27,11 @@ from System.Threading import Thread, ThreadStart
 Application.EnableVisualStyles()
 import bridge_utils
 bridge_utils.CONFIG_BRIDGE["language"] = lang
+if _env("CAP_DOCS"):
+    # screenshots for docs/img: neutral paths and defaults, no user name
+    # or own folders in the image (the repo is public)
+    bridge_utils.CONFIG_BRIDGE["work_dir"] = r"C:\FEA\WorkDir"
+    bridge_utils.CONFIG_BRIDGE["ncpus"] = 1
 import bridge_gui
 if not os.path.isdir(out):
     os.makedirs(out)

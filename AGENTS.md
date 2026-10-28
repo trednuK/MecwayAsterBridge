@@ -122,6 +122,8 @@ Also in `TestFiles/Tools/` (CPython 3):
   `CONFIG_BRIDGE`, tooltips in both languages, links and anchors, `KNOWN_BUGS n` references, verification
   cases, § references and NL/EN parity of the docs (`--parity`: also the numbers per section). Must report
   0 findings.
+- `TestFiles/Tools/annotate.py` (IronPython via `run_ipy.ps1`): numbered markers (and a box or crop) on a
+  screenshot for `docs/img`.
 - `TestFiles/Tools/StopTest_LongRun.liml`: `BezwijkenTrekstaafDynamisch.liml` with 1000 time
   steps (~95 s with Code-Aster 17.4), to test the Stop button of the status window in Mecway.
 - `python TestFiles/Tools/check_code_unchanged.py <git-ref> [files...]` checks that a text-only change
@@ -164,5 +166,13 @@ Then look at `T/study.comm` and `T/bridge_log.txt`. Do not call the save functio
   then English); same prefix and placeholders in both.
 - User documentation is bilingual too: Dutch in `docs/`, English in `docs/en/`, with the same structure
   (`check_docs.py` checks the parity); update both.
+- Figures where they make the text unambiguous (which setting, axis, face, DOF or order is meant):
+  files in `docs/img/`, referenced as `![alt](img/x.svg)` (NL) and `![alt](../img/x.svg)` (EN); directly
+  below the image a numbered list that explains every marker, with the same numbers in NL and EN.
+  Schematics: hand-written SVG without words (geometry, symbols, red numbered markers `#c0392b`), one
+  file for both languages. Screenshots of the bridge window: `gui_cap.py` with `CAP_DOCS=1` (neutral
+  paths), markers with `TestFiles/Tools/annotate.py`, `_nl`/`_en` suffix; Mecway screenshots (English
+  UI) only from your own Mecway window. Never a user name or own path in an image. `check_docs.py`
+  checks the files, NL/EN use and unused images.
 - Fatal error in a module: `log("ERROR: ...")` and return `None`/`False`; `main()` then stops with `mw.message()`.
 - Support Code-Aster behaviour in a comment with a source (U doc, catalogue, `.F90`), otherwise "NOT verified".

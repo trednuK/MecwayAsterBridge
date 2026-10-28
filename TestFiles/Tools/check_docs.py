@@ -24,6 +24,8 @@ findings):
 - verification cases (LS-07a, TH-04c, ...) exist in TestFiles/Verificatie;
 - "voorbeeld n" / "example n" exists in ASTER_regels_voorbeelden.md (+ EN);
 - "§n.m" refers to an existing numbered heading;
+- images: in docs/img, alt text, the same images in NL and EN, every file
+  in docs/img used, no user folder in an SVG;
 - NL/EN parity per pair from bridge_docs.DOCS: headings, tables and rows,
   KNOWN_BUGS numbers, cases, links, `code` words per document.
 The bridge itself is not called; the start screen is not opened.
@@ -356,6 +358,60 @@ def check_links():
                                "anchor does not exist: " + target)
 
 
+IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)\)")
+IMG_DIR = os.path.join(DOCS, "img")
+# personal data in an image (the repo is public): a user folder in a path
+PRIVATE_RE = re.compile(r"[A-Za-z]:[\\/]+Users[\\/]+(?!Public\b)\w", re.I)
+
+
+def _image_key(path):
+    """Image name without a language suffix (_nl / _en), for NL/EN parity."""
+    stem, ext = os.path.splitext(os.path.basename(path))
+    return re.sub(r"_(nl|en)$", "", stem) + ext
+
+
+def check_images():
+    """Images: the file exists and lies in docs/img, has alt text, NL and EN
+    use the same images (a screenshot may differ by _nl/_en), every file in
+    docs/img is used, and an SVG contains no user folder."""
+    import bridge_docs
+    used = set()
+    per_doc = {}
+    for path in md_files():
+        text = strip_code_blocks(read(path))
+        base = os.path.dirname(path)
+        keys = []
+        for i, line in enumerate(text.split("\n"), 1):
+            for m in IMG_RE.finditer(line):
+                if re.match(r"^[a-z]+:", m.group(2)):
+                    continue  # web image (badge in the README)
+                where = "{0}:{1}".format(rel(path), i)
+                target = os.path.normpath(os.path.join(base, m.group(2)))
+                if not m.group(1).strip():
+                    report(where, "image without alt text: " + m.group(2))
+                if not os.path.exists(target):
+                    report(where, "image missing: " + m.group(2))
+                    continue
+                if os.path.dirname(target) != IMG_DIR:
+                    report(where, "image not in docs/img: " + m.group(2))
+                used.add(os.path.normcase(target))
+                keys.append(_image_key(target))
+        per_doc[os.path.normcase(path)] = keys
+    for nl_name, en_name, _a, _b in bridge_docs.DOCS:
+        nl = per_doc.get(os.path.normcase(os.path.join(DOCS, nl_name)), [])
+        en = per_doc.get(os.path.normcase(os.path.join(DOCS, en_name)), [])
+        if nl != en:
+            report(u"{0} <> {1}".format(nl_name, en_name),
+                   u"images differ: NL {0}, EN {1}".format(nl, en))
+    if os.path.isdir(IMG_DIR):
+        for name in sorted(os.listdir(IMG_DIR)):
+            full = os.path.join(IMG_DIR, name)
+            if os.path.normcase(full) not in used:
+                report("docs/img/" + name, "image not used in any document")
+            if name.lower().endswith(".svg") and PRIVATE_RE.search(read(full)):
+                report("docs/img/" + name, "user folder in the image")
+
+
 def known_bug_numbers():
     text = read(os.path.join(ROOT, "KNOWN_BUGS.md"))
     return set(int(n) for n in re.findall(r"^(\d+)\\\.", text, re.M))
@@ -642,6 +698,7 @@ def main():
     values = check_settings()
     check_setting_names_in_docs(values)
     check_links()
+    check_images()
     check_known_bugs()
     check_cases()
     check_examples()

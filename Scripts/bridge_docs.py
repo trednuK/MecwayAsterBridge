@@ -15,6 +15,7 @@
 # No pip packages (AGENTS.md). Compatible with IronPython 2.7.9 and
 # Python 3.
 
+import base64
 import io
 import os
 import re
@@ -99,7 +100,9 @@ _CSS = (u"body{font-family:Segoe UI,Arial,sans-serif;font-size:10pt;"
         u"pre{background:#f3f5f8;border-left:3px solid #1f6fb2;padding:8px;"
         u"font-family:Consolas,monospace;white-space:pre-wrap}"
         u"dt{font-weight:bold;margin-top:8px;color:#24364b}"
-        u"dd{margin-left:18px}")
+        u"dd{margin-left:18px}"
+        u"img{max-width:100%;height:auto;border:1px solid #dadfe6;"
+        u"margin:6px 0}")
 
 
 def docs_dir():
@@ -127,20 +130,31 @@ def _esc(text):
 
 
 _CODE_RE = re.compile(u"`([^`]+)`")
+_IMG_RE = re.compile(u"!\\[([^\\]]*)\\]\\(([^)\\s]+)\\)")
 _LINK_RE = re.compile(u"\\[([^\\]]+)\\]\\(([^)\\s]+)\\)")
 _BOLD_RE = re.compile(u"\\*\\*(.+?)\\*\\*")
 _ITAL_RE = re.compile(u"(?<![\\w*])\\*([^*\\s][^*]*?)\\*(?![\\w*])")
 
 
-def _inline(text):
-    """Inline markup: code, links, bold, italic. Code first as a
+def _inline(text, image=None):
+    """Inline markup: images, code, links, bold, italic. Code first as a
     placeholder, so that * in code does not count as italic and bold or a
-    link around code also works (**`x`-regel**, [`a.md`](a.md))."""
+    link around code also works (**`x`-regel**, [`a.md`](a.md)). image(alt,
+    src) gives the HTML of an image (_image_html); without it the alt text
+    is shown."""
     codes = []
 
     def keep(m):
         codes.append(u"<code>{0}</code>".format(_esc(m.group(1))))
         return u"\u0001{0}\u0001".format(len(codes) - 1)
+
+    def keep_img(m):
+        if image is None:
+            codes.append(_esc(m.group(1)))
+        else:
+            codes.append(image(m.group(1), m.group(2)))
+        return u"\u0001{0}\u0001".format(len(codes) - 1)
+    text = _IMG_RE.sub(keep_img, text)
     text = _esc(_CODE_RE.sub(keep, text))
     text = _LINK_RE.sub(lambda m: u'<a href="{0}">{1}</a>'.format(
         m.group(2), m.group(1)), text)
@@ -162,8 +176,43 @@ def _cells(line):
     return [c.strip() for c in line.split(u"|")]
 
 
-def markdown_to_html(text, title=u""):
-    """HTML page from Markdown text (see the header of this file)."""
+_IMG_TYPES = {u".png": u"image/png", u".svg": u"image/svg+xml",
+              u".jpg": u"image/jpeg", u".gif": u"image/gif"}
+
+
+def _image_html(base_dir):
+    """image(alt, src) for _inline: the file relative to base_dir as a data
+    URI (the page is loaded as about:blank, so a relative src would not
+    resolve); a missing file shows the alt text in brackets."""
+    def image(alt, src):
+        path = os.path.normpath(os.path.join(base_dir,
+                                             src.replace(u"/", os.sep)))
+        kind = _IMG_TYPES.get(os.path.splitext(path)[1].lower())
+        try:
+            f = io.open(path, "rb")
+            try:
+                data = f.read()
+            finally:
+                f.close()
+        except (IOError, OSError):
+            data = None
+        if kind is None or data is None:
+            return u"[{0}]".format(_esc(alt))
+        return u'<img alt="{0}" src="data:{1};base64,{2}">'.format(
+            _esc(alt).replace(u'"', u"&quot;"), kind,
+            base64.b64encode(data).decode("ascii"))
+    return image
+
+
+def markdown_to_html(text, title=u"", base_dir=None):
+    """HTML page from Markdown text (see the header of this file). base_dir:
+    folder of the document, for images (![alt](img/x.svg)). HTML comments
+    (<!-- ... -->) are left out."""
+    image = _image_html(base_dir) if base_dir else None
+
+    def _inl(t):
+        return _inline(t, image)
+    text = re.sub(u"<!--.*?-->", u"", text, flags=re.DOTALL)
     lines = text.replace(u"\r\n", u"\n").split(u"\n")
     out = []
     para = []
@@ -174,13 +223,13 @@ def markdown_to_html(text, title=u""):
     def flush_para():
         flush_item()
         if para:
-            out.append(u"<p>{0}</p>".format(_inline(u" ".join(para))))
+            out.append(u"<p>{0}</p>".format(_inl(u" ".join(para))))
             del para[:]
 
     def flush_item():
         # Through _inline in one go: bold or code across a line break.
         if item:
-            out.append(_inline(u" ".join(item)))
+            out.append(_inl(u" ".join(item)))
             del item[:]
 
     def close_lists(indent=-1):
@@ -215,7 +264,7 @@ def markdown_to_html(text, title=u""):
             close_lists()
             n = len(m.group(1))
             out.append(u'<h{0} id="{2}">{1}</h{0}>'.format(
-                n, _inline(m.group(2)), slug(m.group(2))))
+                n, _inl(m.group(2)), slug(m.group(2))))
             i += 1
             continue
         if re.match(u"^-{3,}$", stripped):
@@ -230,11 +279,11 @@ def markdown_to_html(text, title=u""):
             flush_para()
             close_lists()
             out.append(u"<table><tr>{0}</tr>".format(u"".join(
-                u"<th>{0}</th>".format(_inline(c)) for c in _cells(line))))
+                u"<th>{0}</th>".format(_inl(c)) for c in _cells(line))))
             i += 2
             while i < len(lines) and lines[i].strip().startswith(u"|"):
                 out.append(u"<tr>{0}</tr>".format(u"".join(
-                    u"<td>{0}</td>".format(_inline(c))
+                    u"<td>{0}</td>".format(_inl(c))
                     for c in _cells(lines[i]))))
                 i += 1
             out.append(u"</table>")
@@ -264,7 +313,7 @@ def markdown_to_html(text, title=u""):
             flush_para()
             close_lists()
             out.append(u"<blockquote>{0}</blockquote>".format(
-                _inline(stripped.lstrip(u"> "))))
+                _inl(stripped.lstrip(u"> "))))
             i += 1
             continue
         close_lists()
@@ -318,7 +367,7 @@ def doc_html(rel_path, tr):
         return _page(rel_path, u"<p>{0}</p>".format(_esc(tr(
             u"Document niet gevonden: {0} ({1})",
             u"Document not found: {0} ({1})").format(path, e))))
-    return markdown_to_html(text, rel_path)
+    return markdown_to_html(text, rel_path, os.path.dirname(path))
 
 
 def slug(heading):
