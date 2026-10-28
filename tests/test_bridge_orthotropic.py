@@ -40,6 +40,14 @@ bo.log = _log
 FAILS = []
 
 
+def _xml(text):
+    """Element from XML text; UTF-8 bytes, which IronPython's ElementTree
+    needs for non-ASCII characters (CPython accepts them too)."""
+    if not isinstance(text, bytes):
+        text = text.encode("utf-8")
+    return ET.fromstring(text)
+
+
 def check(cond, msg):
     if not cond:
         FAILS.append(msg)
@@ -67,7 +75,8 @@ def _compliance(o):
     s[0][1] = s[1][0] = -o["NU_LT"] / o["E_L"]
     s[0][2] = s[2][0] = -o["NU_LN"] / o["E_L"]
     s[1][2] = s[2][1] = -o["NU_TN"] / o["E_T"]
-    s[3][3], s[4][4], s[5][5] = 1 / o["G_LT"], 1 / o["G_TN"], 1 / o["G_LN"]
+    # Mecway's order of rows 4..6: VW, WU, UV (measured, S13 findings)
+    s[3][3], s[4][4], s[5][5] = 1 / o["G_TN"], 1 / o["G_LN"], 1 / o["G_LT"]
     return s
 
 
@@ -97,7 +106,7 @@ def _matrix_xml(kind, mat, unit):
 
 def test_orthotropic():
     md = {"skipped_loads": []}
-    p = bo.parse(ET.fromstring(ORTHO), ET.fromstring(
+    p = bo.parse(_xml(ORTHO), _xml(
         u'<density type="Simple" density="1500 kg/m³" />'),
         "Orthotropic", "O", md)
     o = p["ortho"]
@@ -116,7 +125,7 @@ def test_orthotropic():
           "thermal stress")
     # not positive definite (nu_uv too large) -> ERROR, None
     del LOG[:]
-    bad = ET.fromstring(ORTHO.replace('poissonratiouv="0.3"',
+    bad = _xml(ORTHO.replace('poissonratiouv="0.3"',
                                       'poissonratiouv="3"'))
     check(bo.parse(bad, None, "Orthotropic", "Bad", md) is None and
           any(l.startswith("ERROR: Material 'Bad'") for l in LOG),
@@ -125,7 +134,7 @@ def test_orthotropic():
 
 def test_matrices():
     md = {"skipped_loads": []}
-    ref = bo.parse(ET.fromstring(ORTHO), None, "Orthotropic", "O",
+    ref = bo.parse(_xml(ORTHO), None, "Orthotropic", "O",
                    md)["ortho"]
     s = _compliance(ref)
     c = _inv6(s)
@@ -133,7 +142,7 @@ def test_matrices():
             ("StiffnessMatrix", c, "GPa", 1e-9),
             ("ComplianceMatrix", s, u"m²/N", 1.0)):
         m = [[x * scale for x in row] for row in mat]
-        p = bo.parse(ET.fromstring(_matrix_xml(kind, m, unit)), None, kind,
+        p = bo.parse(_xml(_matrix_xml(kind, m, unit)), None, kind,
                      kind, md)
         check(p is not None and all(close(p["ortho"][k], ref[k], 1e-7)
                                     for k in ref),
@@ -143,7 +152,7 @@ def test_matrices():
     del LOG[:]
     c2 = [[x * 1e-9 for x in row] for row in c]
     c2[0][3] = c2[3][0] = 1.0
-    check(bo.parse(ET.fromstring(_matrix_xml("StiffnessMatrix", c2, "GPa")),
+    check(bo.parse(_xml(_matrix_xml("StiffnessMatrix", c2, "GPa")),
                    None, "StiffnessMatrix", "Aniso", md) is None and
           any("c14" in l and l.startswith("ERROR") for l in LOG),
           "coupled matrix: {0}".format(LOG))
@@ -178,11 +187,15 @@ def test_angles():
     check(bo.frame((1, 0, 0), (2, 0, 0)) is None, "parallel U and V")
     check(bo.frame(None, None) == ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
                                    (0.0, 0.0, 1.0)), "default frame")
+    # Mecway does not solve only U or only V; an angle alone does nothing
+    check(bo.frame((0, 1, 0), None) is None and
+          bo.frame(None, (0, 0, 1)) is None, "only one vector")
+    check(bo.frame(None, None, 0.5) == bo.frame(None, None), "angle alone")
 
 
 def test_prepare_and_check():
     md = {"skipped_loads": []}
-    props = bo.parse(ET.fromstring(ORTHO), None, "Orthotropic", "O", md)
+    props = bo.parse(_xml(ORTHO), None, "Orthotropic", "O", md)
     md.update({
         "materials": {"O": props, "Iso": {"E": 1.0, "NU": 0.0}},
         "elsets": {"Blok": "O", "Staal": "Iso"},
@@ -202,6 +215,15 @@ def test_prepare_and_check():
     check(ent[1].strip() == "_F(GROUP_MA='BRORI2', ANGL_REP=(45.0, 0.0, "
           "0.0)),", "entry: {0}".format(ent))
     check(bo.check(md, {"solver_command": "MECA_STATIQUE"}), "linear ok")
+    # only a U vector on an orthotropic solid -> ERROR, None
+    md2 = dict(md)
+    md2["elem_v_axes"] = {}
+    md2["solid_orientations"] = {}
+    del md2["extra_ma_groups"]
+    del LOG[:]
+    check(bo.prepare(md2) is None and any(
+        l.startswith("ERROR: Element orientation of 1 solid") for l in LOG),
+        "U only: {0}".format(LOG))
     del LOG[:]
     check(not bo.check(md, {"solver_command": "STAT_NON_LINE"}) and
           any("S13c" in l for l in LOG), "nonlinear refused: {0}".format(LOG))

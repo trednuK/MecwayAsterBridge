@@ -813,6 +813,32 @@ van de bridge toont Mecway de items *displacement*, *stress*, *von Mises stress*
 force*, *principal stress* en *Tresca stress* en leest het de waarden met
 `solution.node_value`.
 
+### Orthotroop materiaal (OR)
+
+Mecway's *Orthotropic*, *Stiffness matrix* en *Compliance matrix* op volume-elementen
+([Orthotroop_materiaal.md](Orthotroop_materiaal.md), stap S13a): `ELAS_ORTH` met de
+elementassen als `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`. Module `tests_orthotroop.py` (groep
+"Orthotroop"), draaien met `python run_verificatie.py OR`. Materiaal E = 100/20/10 GPa,
+ν12/ν23/ν31 = 0,3/0,2/0,05, G12/G23/G31 = 7/4/5 GPa. De kubuscases (10 mm, hex20
+2 × 2 × 2) dragen een enkelassige spanning van 10 MPa (gelijke en tegengestelde krachten op
+twee vlakken) en zijn statisch bepaald gehouden (3-2-1 op hoekknopen), zodat de spanning
+homogeen is en de hoekverplaatsingen alle zes globale rekken geven; referentie: de wet van
+Hooke in U, V, W met de compliantie gedraaid naar X, Y, Z (tensorrotatie). Mecway 34
+headless met de eigen solver (`mw_solve.py`, dezelfde `.liml`, 28 oktober 2026) is de tweede
+referentie.
+
+| Case | Model | Referentie | Resultaat |
+|---|---|---|---|
+| OR-01 | kubus, *Orthotropic*, trek langs X, elementattributen U = (1, 1, 0), V = (−1, 1, 1) | zes rekken RES_OR01_REF | RES_OR01 |
+| OR-02 | idem, *Element orientation*-kaart U = (0, 0,6, 0,8), V = (1, 0, 0), hoek 30° | idem | RES_OR02 |
+| OR-03 | idem, *Stiffness matrix* (c11 … c66 van hetzelfde materiaal), trek langs Y, attributen van OR-01 | idem | RES_OR03 |
+| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), trek langs Z, kaart van OR-02 | idem | RES_OR04 |
+| OR-09 | kubus van OR-02 100 K verwarmd zonder last, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, geen spanning | RES_OR09 |
+| OR-05 | ingeklemde balk 200 × 10 × 10 mm (hex20 20 × 2 × 2), tiptractie 100 N in −Z, standaardassen: E1 = 100 GPa langs de balk, G31 schuift | Timoshenko PL³/3EI + PL/kGA = RES_OR05_REF | RES_OR05 |
+| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa langs de balk, G23 schuift | RES_OR06_REF | RES_OR06 |
+
+RES_OR_NOTE
+
 ### Conclusie lineair statisch
 
 Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is

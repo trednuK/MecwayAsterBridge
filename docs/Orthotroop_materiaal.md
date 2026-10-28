@@ -92,11 +92,12 @@ Zie ook KNOWN_BUGS 130.
 
 ## 7. Testmodellen
 
-OR-01 .. OR-06 in [`Verificatie.md`](Verificatie.md): een kubus onder enkelassige trek met
+OR-01 .. OR-06 en OR-09 in [`Verificatie.md`](Verificatie.md): een kubus onder enkelassige trek met
 gedraaide materiaalassen (elementattributen, een kaart met een hoek, de stijfheids- en de
 compliantiematrix): alle zes globale rekken gelijk aan de wet van Hooke in U, V, W gedraaid
-naar X, Y, Z en aan Mecway 34's eigen oplossing; een ingeklemde balk met E1 en met E2 langs
-de balk (Timoshenko).
+naar X, Y, Z en aan Mecway 34's eigen oplossing; dezelfde kubus vrij verwarmd (thermische rek
+α1, α2, α3 in U, V, W gedraaid naar X, Y, Z, geen spanning); een ingeklemde balk met E1 en met
+E2 langs de balk (Timoshenko).
 
 ## 8. Bronnen
 

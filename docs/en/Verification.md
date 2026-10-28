@@ -805,6 +805,31 @@ elsewhere they differ by the extrapolation (KB3). After opening a bridge result 
 the items *displacement*, *stress*, *von Mises stress*, *reaction force*, *principal stress* and
 *Tresca stress* and reads the values with `solution.node_value`.
 
+### Orthotropic material (OR)
+
+Mecway's *Orthotropic*, *Stiffness matrix* and *Compliance matrix* on solids
+([Orthotropic_material.md](Orthotropic_material.md), step S13a): `ELAS_ORTH` with the element
+axes as `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`. Module `tests_orthotroop.py` (group
+"Orthotroop"), run with `python run_verificatie.py OR`. Material E = 100/20/10 GPa,
+ν12/ν23/ν31 = 0.3/0.2/0.05, G12/G23/G31 = 7/4/5 GPa. The cube cases (10 mm, hex20
+2 × 2 × 2) carry a uniaxial stress of 10 MPa (equal and opposite forces on two faces) and
+are held statically determinate (3-2-1 on corner nodes), so the stress is homogeneous and
+the corner displacements give all six global strains; reference: Hooke's law in U, V, W
+with the compliance rotated to X, Y, Z (tensor rotation). Mecway 34 headless with its
+internal solver (`mw_solve.py`, the same `.liml`, 28 October 2026) is the second reference.
+
+| Case | Model | Reference | Result |
+|---|---|---|---|
+| OR-01 | cube, *Orthotropic*, tension along X, element attributes U = (1, 1, 0), V = (−1, 1, 1) | six strains RES_OR01_REF | RES_OR01 |
+| OR-02 | idem, *Element orientation* card U = (0, 0.6, 0.8), V = (1, 0, 0), angle 30° | idem | RES_OR02 |
+| OR-03 | idem, *Stiffness matrix* (c11 … c66 of the same material), tension along Y, attributes of OR-01 | idem | RES_OR03 |
+| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), tension along Z, card of OR-02 | idem | RES_OR04 |
+| OR-09 | cube of OR-02 heated by 100 K without load, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, no stress | RES_OR09 |
+| OR-05 | cantilever 200 × 10 × 10 mm (hex20 20 × 2 × 2), tip traction 100 N in −Z, default axes: E1 = 100 GPa along the beam, G31 shears | Timoshenko PL³/3EI + PL/kGA = RES_OR05_REF | RES_OR05 |
+| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa along the beam, G23 shears | RES_OR06_REF | RES_OR06 |
+
+RES_OR_NOTE
+
 ### Conclusion linear static
 
 All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,

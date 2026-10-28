@@ -1183,7 +1183,7 @@ Code-Aster value per node) and logs the largest difference per variable.
 130\. **Orthotropic and anisotropic material: limits** (confirmed, `bridge_orthotropic.py`,
    STAPPENPLAN S13a). Translated: *Orthotropic*, *Stiffness matrix* and *Compliance matrix*
    on solid elements in Linear static (`ELAS_ORTH` + `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`,
-   [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..06). Not:
+   [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..06, OR-09). Not:
    a matrix with coupling terms (normal-shear or shear-shear, truly anisotropic): ERROR,
    because `DEFI_MATERIAU` has no general anisotropic elasticity for solids (catalogue
    v17.4: only `ELAS_ORTH`/`ELAS_ISTR`; permanent unless via MFront, which the Windows

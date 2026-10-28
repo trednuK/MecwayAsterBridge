@@ -128,7 +128,7 @@ _FACES = {0: ("u0", "u1"), 1: ("v0", "v1"), 2: ("w0", "w1")}
 _PTS = {"A": (0, 0, 0), "B": (L, 0, 0), "C": (0, L, 0), "D": (0, 0, L)}
 
 
-def _cube(mat_lines, stress_dir, attrs=None, card=None):
+def _cube(mat_lines, stress_dir, attrs=None, card=None, heat=None):
     m = Model("S30")
     m.elset("Blok", "Ortho")
     h = hexmesh(m, "Blok", 2, 2, 2, box(0, L, 0, L, 0, L), order=2)
@@ -149,8 +149,17 @@ def _cube(mat_lines, stress_dir, attrs=None, card=None):
         return "".join("<{0}>{1!r} N</{0}>".format(
             c, sign * F if k == stress_dir else 0.0)
             for k, c in enumerate(comp))
-    m.add('<force selection="Max">%s</force>' % force(1.0))
-    m.add('<force selection="Min">%s</force>' % force(-1.0))
+    if heat is None:
+        m.add('<force selection="Max">%s</force>' % force(1.0))
+        m.add('<force selection="Min">%s</force>' % force(-1.0))
+    else:
+        # uniform temperature rise heat [K] above the reference on all nodes
+        m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+        m.add('<thermalstress><referencetemperature>%r K'
+              '</referencetemperature></thermalstress>' % TREF)
+        m.add('<temperature2 selection="Alle"><value>%r K</value>'
+              '<starttime>0 s</starttime><endtime>0 s</endtime>'
+              '</temperature2>' % (TREF + heat))
     for name, p in _PTS.items():
         m.node_selection(name, [m.node(*p)])
     for name, dofs in (("A", "xyz"), ("B", "yz"), ("C", "z")):
@@ -210,20 +219,41 @@ CARD2 = ('<orientation selection="SEL"><ux>0</ux><uy>0.6</uy><uz>0.8</uz>'
          '</orientation>')
 
 # Mecway 34 headless (mw_solve.py, internal solver, 28 Oct 2026) on
-# modellen/OR-*.liml: strains from the same corner displacements.
-MW = {}
+# modellen/OR-*.liml: strains from the same corner displacements (equal to
+# the analytical values within 1e-8), tip deflection of the cantilevers.
+MW = {
+    "OR-01": [0.00062253968, -0.00018698413, -0.00016055556, -0.00037222222,
+              -2.5873016e-05, 0.00021634921],
+    "OR-02": [0.000775, -0.0001726, -0.0001124, -0.00031176915, 0.0002064,
+              0.00023382686],
+    "OR-03": [-0.00018698413, 0.00062253968, -0.00016055556, -0.00037222222,
+              -0.00021634921, 2.5873016e-05],
+    "OR-04": [-0.0001124, -0.00019294971, 0.00058094971, 6.7658853e-05,
+              -0.000530304, 9.7717358e-05],
+    "OR-09": [0.00225, 0.00212, 0.00163, -0.00069282032, -0.00168,
+              0.00051961524],
+    "OR-05": 0.0032424784,
+    "OR-06": 0.016041192,
+}
+
+
+# Mecway's matrix rows 1..6 = UU, VV, WW, VW, WU, UV (measured with
+# headless Mecway 34 solves, STAPPENPLAN S13 findings): row k of Mecway's
+# matrix is row _MW[k] of _compliance() (order UU VV WW UV VW WU).
+_MW = (0, 1, 2, 4, 5, 3)
 
 
 def _matrix_mat(kind):
     """Orthotropic stiffness (GPa) or compliance (m2/N) matrix in Mecway's
-    order (UU VV WW UV VW WU) for the same material."""
+    order for the same material."""
     s = _compliance()
     if kind == "StiffnessMatrix":
         mat, pre, unit, scale = _inv(s), "c", "GPa", 1e-9
     else:
         mat, pre, unit, scale = s, "s", u"m²/N", 1.0
     return '<mechanical type="%s" %s />' % (kind, " ".join(
-        '%s%d%d="%r %s"' % (pre, i + 1, j + 1, mat[i][j] * scale, unit)
+        '%s%d%d="%r %s"' % (pre, i + 1, j + 1,
+                            mat[_MW[i]][_MW[j]] * scale, unit)
         for i in range(6) for j in range(i, 6)))
 
 
@@ -241,6 +271,45 @@ def build_or03():
 
 def build_or04():
     return _cube([_matrix_mat("ComplianceMatrix")], 2, card=CARD2)
+
+
+# OR-09: the cube heated by DT = 100 K without load, alpha = 1e-5, 2e-5,
+# 3e-5 1/K in U, V, W, axes of the card of OR-02: free thermal strain
+# eps_g = R^T diag(alpha DT) R, no stress.
+TREF, DT = 293.15, 100.0
+ALPHA = (1e-5, 2e-5, 3e-5)
+ORTHO_T = ORTHO.replace(' />', ' thermalexpansionu="1E-05 1/K" '
+                        'thermalexpansionv="2E-05 1/K" '
+                        'thermalexpansionw="3E-05 1/K" />')
+
+
+def thermal_strain(rows):
+    eg = [[sum(rows[i][p] * ALPHA[i] * DT * rows[i][q] for i in range(3))
+           for q in range(3)] for p in range(3)]
+    return [eg[0][0], eg[1][1], eg[2][2], 2 * eg[0][1], 2 * eg[1][2],
+            2 * eg[2][0]]
+
+
+def build_or09():
+    return _cube([ORTHO_T], 0, card=CARD2, heat=DT)
+
+
+def _thermal_checks(rows, mw):
+    eps = thermal_strain(rows)
+    big = max(abs(e) for e in eps)
+    out = [Check(_NAMES[k], lambda r, k=k: _strain(r, k), ref=eps[k],
+                 tol_abs=1e-6 * big, unit="-",
+                 source="alpha_i DT in U,V,W rotated to X,Y,Z")
+           for k in range(6)]
+    out.append(Check("von Mises (0)", lambda r: r.extreme("vonmises"),
+                     ref=0.0, tol_abs=1e-3 * 100e9 * big, unit="Pa",
+                     source="free expansion: no stress"))
+    for k, val in enumerate(mw or []):
+        out.append(Check(
+            _NAMES[k] + " = Mecway", lambda r, k=k: _strain(r, k), ref=val,
+            tol_abs=1e-6 * big, unit="-",
+            source="Mecway 34 headless (internal solver)", in_series=False))
+    return out
 
 
 TESTS = [
@@ -262,6 +331,11 @@ TESTS = [
          "hoek", "lin_static_3d", build_or04,
          _cube_checks(frame(U2, V2, ANG2), 2, MW.get("OR-04")),
          note="ComplianceMatrix s11..s66 of the same material."),
+    Case("OR-09", GROUP, "Orthotroop blok, vrije thermische uitzetting, "
+         "kaart met hoek", "lin_static_3d", build_or09,
+         _thermal_checks(frame(U2, V2, ANG2), MW.get("OR-09")),
+         note="Thermal stress, uniform +100 K; alpha 1e-5/2e-5/3e-5 in "
+              "U/V/W."),
 ]
 
 
@@ -336,3 +410,50 @@ TESTS += [
          _beam_checks(EV, GVW, MW.get("OR-06")),
          note="U = Y, V = -X per element: E_V = 20 GPa bends."),
 ]
+
+
+# ------------------------------------------------------------------
+# OR-07, OR-08: the cantilever of OR-05/OR-06 in Frequency (V30), density
+# 1500 kg/m3: first two bending frequencies (in Z and in Y).
+# Euler-Bernoulli: f1 = 1.8751^2 / (2 pi) sqrt(E I / (rho A L^4)); the
+# shear flexibility (E/G up to 20) lowers it by about 1% (tolerance 3%);
+# the second reference is Mecway 34 headless.
+# ------------------------------------------------------------------
+RHO = 1500.0
+DENS = u'<density type="Simple" density="1500 kg/m³" />'
+
+
+def _modal(attrs):
+    m = _cantilever(attrs)
+    m.analysis = "V30"
+    m.attrs = {"maxmode": 4}
+    m.items = [i for i in m.items if "traction" not in i]
+    m.mats = []
+    m.mat("Ortho", ORTHO, DENS)
+    return m
+
+
+def _euler_f1(e):
+    return 1.87510407 ** 2 / (2 * math.pi) * math.sqrt(
+        e * IB / (RHO * AB * LB ** 4))
+
+
+def build_or07():
+    return _modal(None)
+
+
+def build_or08():
+    return _modal('orientationux="0" orientationuy="1" orientationuz="0" '
+                  'orientationvx="-1" orientationvy="0" orientationvz="0"')
+
+
+def _modal_checks(e, mw):
+    out = [Check("f1 (Euler-Bernoulli)", lambda r: r.mode(1),
+                 ref=_euler_f1(e), tol=0.03, unit="Hz",
+                 source="1.8751^2/(2 pi) sqrt(EI/(rho A L^4))")]
+    for k, val in enumerate(mw or []):
+        out.append(Check("f%d = Mecway" % (k + 1),
+                         lambda r, k=k: r.mode(k + 1), ref=val, tol=2e-3,
+                         unit="Hz", source="Mecway 34 headless (internal "
+                         "solver)", in_series=False))
+    return out

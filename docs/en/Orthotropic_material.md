@@ -91,10 +91,11 @@ See also KNOWN_BUGS 130.
 
 ## 7. Test models
 
-OR-01 .. OR-06 in [`Verification.md`](Verification.md): a cube in uniaxial tension with
+OR-01 .. OR-06 and OR-09 in [`Verification.md`](Verification.md): a cube in uniaxial tension with
 turned material axes (element attributes, a card with an angle, the stiffness and the
 compliance matrix): all six global strains equal to Hooke's law in U, V, W turned to X, Y, Z
-and to Mecway 34's own solve; a cantilever with E1 and with E2 along the beam (Timoshenko).
+and to Mecway 34's own solve; the same cube heated freely (thermal strain α1, α2, α3 in U, V, W
+turned to X, Y, Z, no stress); a cantilever with E1 and with E2 along the beam (Timoshenko).
 
 ## 8. Sources
 

@@ -8478,7 +8478,8 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     if mechanical:
         # Material axes of orthotropic solids: groups BRORI<n> (DEFI_GROUP)
         # and AFFE_CARA_ELEM MASSIF
-        bridge_orthotropic.prepare(model_data)
+        if bridge_orthotropic.prepare(model_data) is None:
+            return None
     # Adaptive refinement with HOMARD (setting adapt_homard): check the
     # scope before the builder, then the loop into the .comm
     import bridge_homard

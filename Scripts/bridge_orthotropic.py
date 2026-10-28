@@ -29,18 +29,26 @@
 #   <mechanical type="ComplianceMatrix" s11 s12 .. s66 />
 #   - Poisson ratios are major: nu_uv = -eps_v / eps_u under stress in U
 #     (manual par. 8.5), nu_vw likewise, nu_wu = -eps_u / eps_w;
-#   - matrix order 1..6 = see _VOIGT below (measured);
+#   - matrix rows/columns 1..6 = UU, VV, WW, VW, WU, UV with engineering
+#     shear strains (measured: c14 couples eps_UU with gamma_VW, c16 with
+#     gamma_UV; the stiffness and the compliance matrix alike), although the
+#     Orthotropic tab lists the shear moduli as 12 (UV), 23 (VW), 31 (WU);
+#   - an element with only a U or only a V vector, or with U parallel to V,
+#     is not solved by Mecway (no solution); an angle without vectors has
+#     no effect (global axes);
 #   - material axes = the element axes U, V, W; for solids by default the
 #     global X, Y, Z (manual par. 8.5).
 #
 # CODE-ASTER (catalogue defi_materiau.py and affe_cara_elem.py, v17.4):
 #   ELAS_ORTH E_L, E_T, E_N, NU_LT, NU_LN, NU_TN, G_LT, G_LN, G_TN, RHO,
 #   ALPHA_L/T/N; L, T, N = the local axes x, y, z of MASSIF ANGL_REP
-#   (alpha, beta, gamma) in degrees, nautical angles: local x =
-#   (cos a cos b, sin a cos b, -sin b) (code_aster/MacroCommands/
+#   (alpha, beta, gamma) in degrees, nautical angles (U4.42.01 par. 13.3;
+#   without MASSIF (L, T, N) = (X, Y, Z), par. 13.6, whose example
+#   ANGL_REP = (0, 0, -90) -> (L, T, N) = (X, -Z, Y) fixes the signs): local
+#   x = (cos a cos b, sin a cos b, -sin b) (code_aster/MacroCommands/
 #   observation_ops.py, anglnaut and the matrix in its comment). NU_LT is
-#   the major ratio like Mecway's (U4.43.01 ELAS_ORTH: "NU_LT ... coefficient
-#   de Poisson dans le plan LT", eps_T = -NU_LT sig_L / E_L; checked by the
+#   the major ratio like Mecway's (U4.43.01 par. 3.5.2: under tension along
+#   L, eps_T = -NU_LT sig_L / E_L; NU_LN, NU_TN likewise; checked by the
 #   verification OR-01). There is no general anisotropic elasticity for
 #   volume elements in DEFI_MATERIAU (only ELAS_ORTH / ELAS_ISTR; ELAS_COQUE
 #   is for shells): a stiffness or compliance matrix is translated only if
@@ -59,8 +67,8 @@ SOLIDS = frozenset(["hex8", "hex20", "tet4", "tet10", "pyr5", "pyr13",
                     "wedge6", "wedge15"])
 
 # Index pairs of Mecway's matrix rows/columns 1..6 (measured, see header):
-# 1 = UU, 2 = VV, 3 = WW, 4 = UV, 5 = VW, 6 = WU, engineering shear strain.
-_VOIGT = ((0, 0), (1, 1), (2, 2), (0, 1), (1, 2), (2, 0))
+# 1 = UU, 2 = VV, 3 = WW, 4 = VW, 5 = WU, 6 = UV, engineering shear strain.
+_VOIGT = ((0, 0), (1, 1), (2, 2), (1, 2), (2, 0), (0, 1))
 # Relative size of a coupling term (normal-shear or shear-shear) that still
 # counts as zero when a matrix is checked for orthotropy.
 _ORTHO_TOL = 1.0e-9
@@ -105,6 +113,19 @@ def _dot(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 
+def _fmt(v):
+    """Shortest of %.15g / %.17g that reads back as the same double, so the
+    .comm is the same from CPython and IronPython (whose repr(0.3) is
+    0.29999999999999999)."""
+    v = float(v)
+    text = "%.15g" % v
+    if float(text) != v:
+        text = "%.17g" % v
+    if "e" not in text and "." not in text and "n" not in text:
+        text += ".0"
+    return text
+
+
 # ------------------------------------------------------------------
 # Material
 # ------------------------------------------------------------------
@@ -146,7 +167,8 @@ def _engineering(c, mat_name, kind):
                             u"niet positief definiet",
                             u"the stiffness matrix cannot be inverted or is "
                             u"not positive definite")
-        g = (c[3][3], c[4][4], c[5][5])
+        # (G_LT, G_TN, G_LN) = (UV, VW, WU) = Mecway's 66, 44, 55
+        g = (c[5][5], c[3][3], c[4][4])
     else:
         s = normal
         if min(c[3][3], c[4][4], c[5][5]) <= 0.0:
@@ -154,7 +176,7 @@ def _engineering(c, mat_name, kind):
                             u"definiet",
                             u"the compliance matrix is not positive "
                             u"definite")
-        g = (1.0 / c[3][3], 1.0 / c[4][4], 1.0 / c[5][5])
+        g = (1.0 / c[5][5], 1.0 / c[3][3], 1.0 / c[4][4])
     if min(s[0][0], s[1][1], s[2][2]) <= 0.0:
         return None, tr(u"de matrix is niet positief definiet",
                         u"the matrix is not positive definite")
@@ -263,11 +285,10 @@ def elas_text(props, thermal):
     """Keyword ELAS_ORTH=_F(...) for DEFI_MATERIAU (U4.43.01; catalogue
     defi_materiau.py v17.4). ALPHA_* only with thermal stress (like ELAS in
     bridge_to_aster._elas_args)."""
-    args = ["{0}={1!r}".format(k, float(v))
-            for k, v in props["ortho"].items()]
-    args.append("RHO={0!r}".format(float(props.get("rho", 0.0))))
+    args = ["{0}={1}".format(k, _fmt(v)) for k, v in props["ortho"].items()]
+    args.append("RHO={0}".format(_fmt(props.get("rho", 0.0))))
     if thermal:
-        args += ["{0}={1!r}".format(k, float(a)) for k, a in
+        args += ["{0}={1}".format(k, _fmt(a)) for k, a in
                  zip(("ALPHA_L", "ALPHA_T", "ALPHA_N"), props["alpha"])]
     return "ELAS_ORTH=_F({0})".format(", ".join(args))
 
@@ -281,47 +302,28 @@ def is_ortho(props):
 # ------------------------------------------------------------------
 def frame(u, v, angle=0.0):
     """Material axes (U, V, W) as unit vectors from Mecway's U and V
-    vectors (zero vector or None = not given) and the angle (rad).
-    Rules (measured, STAPPENPLAN S13 findings): see _DEFAULTS. Returns
-    None if U and V are parallel."""
+    vectors (zero vector or None = not given) and the angle (rad): V is
+    projected perpendicular to U and turned about U by the angle (manual
+    v34 par. 7.4.2 and 8.5; measured, see the header). Neither vector: the
+    global axes (an angle alone has no effect, as in Mecway). Returns None
+    if only one vector is given or U is parallel to V (Mecway does not
+    solve such a model)."""
     u = _unit(u) if u else None
     v = _unit(v) if v else None
     if u is None and v is None:
-        u, v = (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)
-    elif u is None:
-        u = _default_u(v)
-    elif v is None:
-        v = _default_v(u)
+        return (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)
     if u is None or v is None:
         return None
     vp = tuple(b - _dot(v, u) * a for a, b in zip(u, v))
-    vp = _unit(vp) if _norm(vp) > 1.0e-9 else None
-    if vp is None:
+    if _norm(vp) <= 1.0e-9:
         return None
+    vp = _unit(vp)
     w = _cross(u, vp)
     if angle:
         c, s = math.cos(angle), math.sin(angle)
         vp, w = (tuple(c * a + s * b for a, b in zip(vp, w)),
                  tuple(-s * a + c * b for a, b in zip(vp, w)))
     return u, vp, w
-
-
-def _default_v(u):
-    """V when only U is given (RESEARCH: replaced by the measured rule)."""
-    for cand in ((0.0, 1.0, 0.0), (0.0, 0.0, 1.0)):
-        vp = tuple(b - _dot(cand, u) * a for a, b in zip(u, cand))
-        if _norm(vp) > 1.0e-6:
-            return vp
-    return None
-
-
-def _default_u(v):
-    """U when only V is given (RESEARCH: replaced by the measured rule)."""
-    for cand in ((1.0, 0.0, 0.0), (0.0, 0.0, 1.0)):
-        up = tuple(b - _dot(cand, v) * a for a, b in zip(v, cand))
-        if _norm(up) > 1.0e-6:
-            return up
-    return None
 
 
 def angl_rep(axes):
@@ -358,7 +360,8 @@ def _elem_axes(model_data, eid):
 def prepare(model_data):
     """Group the solid elements with an ELAS_ORTH material by material
     frame: model_data["massif_orientations"] = [(group, (a, b, g))] and the
-    groups in model_data["extra_ma_groups"] (DEFI_GROUP). Elements of
+    groups in model_data["extra_ma_groups"] (DEFI_GROUP); returns that
+    list, or None after an ERROR (unusable orientation). Elements of
     other dimensions with such a material are reported by check()."""
     mats = model_data.get("materials", {})
     elsets = model_data.get("elsets", {})
@@ -373,17 +376,21 @@ def prepare(model_data):
         axes = frame(u, v, angle)
         if axes is None:
             bad.append(eid)
-            axes = frame(None, None)
+            continue
         key = tuple(round(a, 6) + 0.0 for a in angl_rep(axes))
         groups.setdefault(key, []).append(eid)
     if bad:
-        log(tr(u"WARNING: Element orientation van {0} volume-element(en) "
-               u"({1}): U en V zijn evenwijdig; de globale assen X, Y, Z "
-               u"gebruikt.",
-               u"WARNING: Element orientation of {0} solid element(s) "
-               u"({1}): U and V are parallel; the global axes X, Y, Z are "
-               u"used.").format(len(bad), ", ".join(
-                   str(e) for e in bad[:10])))
+        log(tr(u"ERROR: Element orientation van {0} volume-element(en) met "
+               u"orthotroop materiaal ({1}): alleen een U- of alleen een "
+               u"V-vector, of U evenwijdig aan V. Mecway rekent zo'n model "
+               u"niet; geef U en een V-vector die niet evenwijdig is aan U.",
+               u"ERROR: Element orientation of {0} solid element(s) with "
+               u"orthotropic material ({1}): only a U or only a V vector, "
+               u"or U parallel to V. Mecway does not solve such a model; "
+               u"give U and a V vector that is not parallel to U.").format(
+                   len(bad), ", ".join(str(e) for e in bad[:10]) +
+                   (" ..." if len(bad) > 10 else "")))
+        return None
     extra = model_data.setdefault("extra_ma_groups", OrderedDict())
     out = []
     for i, (key, eids) in enumerate(groups.items()):
@@ -410,8 +417,8 @@ def prepare(model_data):
 def massif_entries(model_data):
     """MASSIF entries for AFFE_CARA_ELEM (catalogue affe_cara_elem.py
     v17.4: GROUP_MA + ANGL_REP, 3 angles in 3D, degrees)."""
-    return ["        _F(GROUP_MA='{0}', ANGL_REP=({1!r}, {2!r}, {3!r})),"
-            .format(name, a, b, g)
+    return ["        _F(GROUP_MA='{0}', ANGL_REP=({1}, {2}, {3})),"
+            .format(name, _fmt(a), _fmt(b), _fmt(g))
             for name, (a, b, g) in model_data.get("massif_orientations", [])]
 
 
@@ -433,8 +440,10 @@ def check(model_data, analysis):
     if not ortho_sets:
         return True
     solver_cmd = analysis.get("solver_command")
-    if str(solver_cmd or "").startswith("THER"):
-        return True     # thermal: own materials (bridge_thermal)
+    import bridge_thermomech
+    if str(solver_cmd or "").startswith("THER") and \
+            not bridge_thermomech.enabled(model_data):
+        return True     # thermal only: own materials (bridge_thermal)
     import bridge_failure
     names = ", ".join(bridge_failure.mecway_name(model_data, e)
                       for e in ortho_sets)

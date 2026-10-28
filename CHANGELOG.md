@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Orthotropic and anisotropic material on solids** (STAPPENPLAN S13a): Mecway's
+  *Orthotropic*, *Stiffness matrix* and *Compliance matrix* materials are translated in
+  Linear static to Code-Aster `ELAS_ORTH` (also thermal expansion in U, V, W), with Mecway's
+  element axes U, V, W (*Element properties*, an *Element orientation* card with angle or
+  formula, or the global axes by default) as `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`. A matrix is
+  translated when it is orthotropic in the element axes; a truly anisotropic matrix (coupling
+  terms) gives an ERROR, because Code-Aster has no general anisotropic elasticity for solids.
+  Shells and other analyses: clear ERROR (steps S13b, S13c). Cube in uniaxial tension and free
+  thermal expansion with turned axes equal to Hooke's law and to Mecway's own solve; orthotropic
+  cantilever in two orientations (verification OR-01 .. OR-06, OR-09; docs Orthotropic
+  material).
+
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
   `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
   `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh
