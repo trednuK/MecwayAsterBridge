@@ -2193,6 +2193,145 @@ def _stiffness_scales(res, rigi_geo, values):
     return out
 
 
+def _formula_vars(formulas, variables, model, times, fields):
+    """Node variables for Mecway's result formulas (S33): plans of
+    bridge_formula.plan (bridge_from_liml). Each symbol is converted from SI
+    to the unit of the formula, (SI - b) / a, and the formula is evaluated
+    per node, on the nodes where all its variables have a value, and stored
+    under its fieldscalar, as Mecway does in its own solve (measured with
+    Mecway 34, see bridge_formula). times: {index: time}, or None for a
+    static result or modes: a formula with t is then left out (Mecway does
+    not compute it there either). fields: _Fields on the last step."""
+    import bridge_formula
+    nodes = dict((v.name, v) for v in variables if not v.element)
+    taken = set(v.name for v in variables)
+    coords = model["coords"]
+    out = []
+    for p in formulas:
+        name = p["fieldscalar"]
+        label = u"{0} ({1})".format(p.get("name", name), p.get("text", ""))
+        try:
+            tree = bridge_formula.parse(p["text"])
+        except bridge_formula.FormulaError as e:
+            print(tr(u"aster_results_export: WAARSCHUWING: formule {0} "
+                     u"overgeslagen: {1}",
+                     u"aster_results_export: WARNING: formula {0} "
+                     u"skipped: {1}").format(label, e))
+            continue
+        deps, missing = {}, []
+        for sym, (source, a, b) in sorted(p["symbols"].items()):
+            if isinstance(source, list) and source[0] == "time":
+                if times is None:
+                    missing.append("t")
+                deps[sym] = ("time", None, a, b)
+            elif isinstance(source, list) and source[0] == "coord":
+                deps[sym] = ("coord", int(source[1]), a, b)
+            elif source in nodes:
+                deps[sym] = ("var", nodes[source], a, b)
+            else:
+                missing.append(source)
+        if missing:
+            print(tr(u"aster_results_export: WAARSCHUWING: formule {0} "
+                     u"overgeslagen: {1} niet in de resultaten.",
+                     u"aster_results_export: WARNING: formula {0} "
+                     u"skipped: {1} not in the results.").format(
+                         label, ", ".join(missing)))
+            continue
+        if name in taken:
+            print(tr(u"aster_results_export: WAARSCHUWING: formule {0} "
+                     u"overgeslagen: de naam '{1}' bestaat al.",
+                     u"aster_results_export: WARNING: formula {0} "
+                     u"skipped: the name '{1}' already exists.").format(
+                         label, name))
+            continue
+        ids = np.arange(1, coords.shape[0] + 1, dtype="<i4")
+        for kind, var, a, b in deps.values():
+            if kind == "var":
+                ids = np.intersect1d(ids, var.ids)
+        if not len(ids):
+            continue
+        pos = dict((sym, np.searchsorted(d[1].ids, ids))
+                   for sym, d in deps.items() if d[0] == "var")
+        getter = _formula_getter(tree, deps, pos, ids, coords, times,
+                                 bridge_formula)
+        # Mecway leaves out the nodes where the formula is not finite
+        # (measured, Mecway 34: sqrt(u.x^2+u.y^2+u.z^2)/x and 1/x without
+        # the nodes at x = 0); here decided in the last step (fields is
+        # on it while planning), a non-finite value in another step
+        # becomes 0 (the writer must not get nan/inf: FPE in the job)
+        first = getter(fields)
+        if first is None:
+            continue
+        keep = np.isfinite(first)
+        if not keep.any():
+            print(tr(u"aster_results_export: WAARSCHUWING: formule {0} "
+                     u"heeft geen eindige waarde.",
+                     u"aster_results_export: WARNING: formula {0} has no "
+                     u"finite value.").format(label))
+            continue
+        out.append(_Var(name, False, ids[keep].astype("<i4"),
+                        _finite_subset(getter, keep)))
+        ids = ids[keep]
+        taken.add(name)
+        print("aster_results_export: formula {0} -> '{1}' on {2} nodes."
+              .format(label, name, len(ids)))
+    return out
+
+
+def _formula_getter(tree, deps, pos, ids, coords, times, bridge_formula):
+    def getter(fields):
+        env = {}
+        for sym, (kind, var, a, b) in deps.items():
+            if kind == "var":
+                vals = var.getter(fields)
+                if vals is None:
+                    return None
+                si = vals[pos[sym]]
+            elif kind == "coord":
+                si = coords[ids - 1, var]
+            else:
+                si = float(times.get(fields.index, 0.0))
+            env[sym] = (si - b) / a
+        # Code-Aster traps floating point exceptions in the job: x/0 in
+        # numpy then stops it with <EXCEPTION> DVP_2 (seen in a run, a
+        # formula sqrt(...)/x on a node at x = 0), np.errstate does not
+        # help. Off around the evaluation as Code-Aster's own
+        # Utilities.disable_fpe (libaster.matfpe(-1) / (1), 17.4); inf/nan
+        # then as numpy gives them.
+        lib = _libaster()
+        if lib is not None:
+            lib.matfpe(-1)
+        try:
+            with np.errstate(all="ignore"):
+                vals = bridge_formula.evaluate(tree, env, np)
+        finally:
+            if lib is not None:
+                lib.matfpe(1)
+        return np.broadcast_to(np.asarray(vals, dtype=float),
+                               ids.shape).astype(float)
+    return getter
+
+
+def _finite_subset(getter, keep):
+    """getter restricted to the nodes keep; non-finite values become 0."""
+    def subset(fields):
+        vals = getter(fields)
+        if vals is None:
+            return None
+        vals = vals[keep]
+        return np.where(np.isfinite(vals), vals, 0.0)
+    return subset
+
+
+def _libaster():
+    """Code-Aster's libaster in the job (matfpe), None outside it."""
+    try:
+        import libaster
+        return libaster
+    except ImportError:
+        return None
+
+
 def _times(res, indexes):
     """{index: time} from the access parameter INST (else the index)."""
     try:
@@ -2206,7 +2345,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
                    shell_vectors=None, strengths=None, u_axes=None,
-                   failures=None):
+                   failures=None, formulas=None):
     """
     Write all archived time steps of res as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
@@ -2257,6 +2396,9 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     None without the failure loop. Gives the element
                     variable "failed" (0 intact, 1 failed from that time
                     on; S22a) and in the VTU BEZWEKEN + T_BEZWIJK.
+    formulas      : Mecway's result formulas, plans of bridge_formula.plan
+                    (bridge_from_liml); each becomes a node variable under
+                    its fieldscalar (_formula_vars, S33). None = none.
 
     Returns
     -------
@@ -2269,7 +2411,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                        precision, static, t0, rigi_geo, mass, node_fields,
                        cyclic, opt_in, {"shell_vectors": shell_vectors,
                                         "strengths": strengths},
-                       u_axes, failures)
+                       u_axes, failures, formulas)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -2281,7 +2423,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
 def _export(res, out_path, liml_path, fields, extra_results, precision,
             static, t0, rigi_geo=None, mass=None, node_fields=None,
             cyclic=None, opt_in=None, derived=None, u_axes=None,
-            failures=None):
+            failures=None, formulas=None):
     """Work of export_results (without the error handling)."""
     model = read_liml_model(liml_path)
     for vec, ranges in u_axes or ():
@@ -2356,6 +2498,10 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
         if failed_at is not None:
             variables.append(_failed_var(failed_at, model,
                                          _times(res, indexes)))
+    if formulas:
+        variables += _formula_vars(
+            formulas, variables, model,
+            None if (static or modes) else _times(res, indexes), data)
     if not variables:
         print(tr("aster_results_export: FOUT: geen enkel veld gevonden.",
                  "aster_results_export: ERROR: no field found at all."))

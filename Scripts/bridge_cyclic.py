@@ -926,11 +926,12 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
         "aster_results_export.export_results(@N"
         "    res, {fragment}, {liml},@N"
         "    fields=['displacements'], precision='double',@N"
-        "    cyclic={cyclic})@N"
+        "    cyclic={cyclic}{formulas})@N"
     ).replace("@N", chr(10)).format(
         fragment=b2a._py_str(b2a.results_file(work_dir)),
         liml=b2a._py_str(liml),
-        cyclic="{{'axis': {0}, 'segments': {1}}}".format(axis, n_seg))
+        cyclic="{{'axis': {0}, 'segments': {1}}}".format(axis, n_seg),
+        formulas=b2a.formulas_arg(model_data))
     if CONFIG_BRIDGE.get("med_export", False):
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")

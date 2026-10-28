@@ -703,6 +703,29 @@ Cantilever and frame with and without a Mecway orientation (*orientation vector*
 displacements and σ_xx max/min at the clamp ≤ 1e-7 against Euler-Bernoulli, the frame
 equal to Mecway (≤ 3e-8).
 
+### Result formulas (FX-01 .. FX-03)
+
+Mecway's result formulas (*Solution > Formula*, STAPPENPLAN S33, GitHub issue #8): the
+bridge evaluates them in the job (`bridge_formula`, `aster_results_export._formula_vars`).
+References: the analytical solution, converted to the units of the formula.
+
+- **FX-01** (TH-01a, wall with heat generation): `T` in °F at x = L/2 (ref
+  (T0 + qL²/8k)·1.8 − 459.67 = 125.33 °F), `qf.x` in Btu/h/ft² at x = L/4 (−7925.0), the
+  formula of issue #8 `qf.x/3600/(12^2)` (−0.015287 Btu/s/in²) and
+  `sqrt(qf.x^2+qf.y^2)*x` (W/m², x in mm; 6.25e5). Result: all within 1e-6 (the TH-01a
+  values are exact). **Mecway 34 itself** (headless, same model): the four formulas equal to
+  the bridge within 4e-14 relative, also on the nodes; in the Mecway GUI the formulas on the
+  bridge result are valid and show the same contour.
+- **FX-02** (bar in tension, P = 1 MPa, hex20): `s.xx` in MPa (1), `u.x` in mm at the end
+  (PL/E = 0.0047619), the sum of `FR.x` in kN over the fixed face (−PA = −10), `e.xx·1e6`
+  (P/E = 4.7619, with `strain` in *fields*) and `x` in mm (1000). Result: within 1e-9.
+- **FX-03** (TH-02a, transient): `t` in min at 10 s and 40 s (0.16667, 0.66667) and
+  `(T−300)/max(t,1)` at the surface (2.5 K/s at 40 s). Result: within 1e-7.
+
+Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` leaves out
+the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
+analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
+
 ### Conclusion linear static
 
 All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,

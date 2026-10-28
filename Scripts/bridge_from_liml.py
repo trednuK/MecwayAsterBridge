@@ -1650,6 +1650,45 @@ def _check_bc_params(tag, item, params, sel, model_data):
 # ==========================================
 # MAIN FUNCTION
 # ==========================================
+def _plan_result_formula(item, model_data):
+    """A Mecway result formula (<formula>, Solution > Formula) for the
+    job: plan of bridge_formula.plan in model_data["result_formulas"]
+    (bridge_to_aster.formulas_arg), or a WARNING plus skipped_loads if the
+    bridge cannot evaluate it (KNOWN_BUGS 121, S33)."""
+    import bridge_formula
+    name = item.get("name", "")
+    expr = (item.find("formula").text or "").strip()
+    units = [(u.get("exponents", ""), u.text or "")
+             for u in item.findall("unit")]
+    try:
+        p = bridge_formula.plan(name, item.get("fieldscalar") or "formula",
+                                expr, units)
+    except bridge_formula.FormulaError as e:
+        model_data["skipped_loads"].append(tr(
+            u"formule '{0}' ({1}): {2}; door Mecway opnieuw maken na het "
+            u"laden",
+            u"formula '{0}' ({1}): {2}; create it again in Mecway after "
+            u"loading").format(name, expr, e))
+        log(tr(u"WARNING: Formule '{0}' ({1}) kan de bridge niet uitrekenen "
+               u"({2}); na het laden is hij ongeldig (rood). Verwijder de "
+               u"formule en maak hem opnieuw via Solution > Formula: Mecway "
+               u"rekent hem dan uit de resultaten van de bridge.",
+               u"WARNING: Formula '{0}' ({1}) cannot be computed by the "
+               u"bridge ({2}); after loading it is invalid (red). Delete the "
+               u"formula and create it again via Solution > Formula: Mecway "
+               u"then computes it from the bridge results.").format(
+                   name, expr, e))
+        return
+    for note in p["notes"]:
+        log(tr(u"WARNING: Formule '{0}' ({1}): {2}.",
+               u"WARNING: Formula '{0}' ({1}): {2}.").format(name, expr,
+                                                            note))
+    model_data.setdefault("result_formulas", []).append(p)
+    log("INFO: Formula '{0}' ({1}) -> computed by the bridge as '{2}' "
+        "(symbols {3}).".format(name, expr, p["fieldscalar"],
+                                ", ".join(sorted(p["symbols"])) or "-"))
+
+
 def extract_aster_data_from_liml(file_path):
     """
     Parses the .liml file and returns model_data.
@@ -2929,39 +2968,23 @@ def extract_aster_data_from_liml(file_path):
                            item.get("type", "?"), shape, where, hex8_mod))
 
             # --------------------------------------------------
-            # 2d-quater. RESULT FORMULAS (Solution > Formula)
+            # 2d-quater. RESULT FORMULAS (Solution > Formula, S33)
             #   <formula name="Fq" displayunit="" fieldscalar="formula">
             #     <unit exponents="+0+1-3">W/m²</unit>
             #     <formula>qf.x</formula></formula>
             # Mecway evaluates a formula during its own solve and stores
             # the values as nodevariable <fieldscalar> ("formula",
-            # "formula(2)", ...; seen headless in Mecway 34). The bridge does
-            # not evaluate formulas, so after a bridge run such a formula
-            # has no values and Mecway shows it as invalid (red). A formula
-            # created after loading the results is computed by Mecway from
-            # them (checked in the Mecway 34 GUI, qf.x on a thermal bridge
-            # result; GitHub issue #8).
+            # "formula(2)", ...; seen headless in Mecway 34). The bridge
+            # does the same in the job (aster_results_export._formula_vars)
+            # with the plan of bridge_formula.plan; a formula it cannot
+            # evaluate (a symbol of a field the bridge does not write, a
+            # syntax error) keeps no values and is invalid (red) in Mecway:
+            # WARNING with the workaround (create it again after loading,
+            # Mecway then computes it from the results; checked in the
+            # Mecway 34 GUI, GitHub issue #8).
             # --------------------------------------------------
             elif tag == "formula" and item.find("formula") is not None:
-                expr = (item.find("formula").text or "").strip()
-                model_data["skipped_loads"].append(tr(
-                    u"formule '{0}' ({1}): door Mecway opnieuw maken na het "
-                    u"laden",
-                    u"formula '{0}' ({1}): create it again in Mecway after "
-                    u"loading").format(item.get("name", ""), expr))
-                log(tr(u"WARNING: Formule '{0}' ({1}) rekent Mecway bij zijn "
-                       u"eigen solve uit; de bridge doet dat niet, dus na "
-                       u"het laden van de resultaten is de formule ongeldig "
-                       u"(rood). Verwijder de formule en maak hem opnieuw "
-                       u"via Solution > Formula: Mecway rekent hem dan uit "
-                       u"de resultaten van de bridge.",
-                       u"WARNING: Formula '{0}' ({1}) is computed by Mecway "
-                       u"during its own solve; the bridge does not do that, "
-                       u"so after loading the results the formula is "
-                       u"invalid (red). Delete the formula and create it "
-                       u"again via Solution > Formula: Mecway then computes "
-                       u"it from the bridge results.").format(
-                           item.get("name", ""), expr))
+                _plan_result_formula(item, model_data)
 
             # --------------------------------------------------
             # 2e. UNKNOWN LOADS / BOUNDARY CONDITIONS

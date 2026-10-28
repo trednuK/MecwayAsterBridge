@@ -9,10 +9,8 @@
 #     heatfluxx/y/z, _elem_magnitude_var adds heatfluxmag per element node;
 #   - bridge_thermal: with a rotated mesh (flat shells outside Z = constant)
 #     and volume elements, FLUX_ELNO of the volumes is rotated back too
-#     (_elno_rotation); without volumes or without rotation nothing extra;
-#   - a result formula (<formula>, Solution > Formula) in the model gives a
-#     WARNING and an entry in skipped_loads (bridge_from_liml step
-#     2d-quater, KNOWN_BUGS 121, GitHub issue #8).
+#     (_elno_rotation); without volumes or without rotation nothing extra.
+# Result formulas themselves (Solution > Formula): tests/test_bridge_formula.py.
 # Model: TestFiles/Verificatie/modellen/TH-01a.liml (hex8 wall), plus a
 # quad4 plate in the plane y = 0.05 for the rotated case.
 #
@@ -129,28 +127,6 @@ def test_rotation(tmp):
           "wall + plate in y = 0.05: FLUX_ELNO rotated back on the solids")
 
 
-def test_formula_warning(tmp):
-    work = tempfile.mkdtemp(dir=tmp)
-    with io.open(_MODEL, encoding="utf-8") as f:
-        s = f.read()
-    s = s.replace("</liml>", '  <formula name="Fq" displayunit="" '
-                  'fieldscalar="formula">\n    <unit exponents="+0+1-3">'
-                  'W/m²</unit>\n    <formula>qf.z/3600/(12^2)</formula>'
-                  '\n  </formula>\n</liml>')
-    liml = os.path.join(work, "model.liml")
-    with io.open(liml, "w", encoding="utf-8") as f:
-        f.write(s)
-    u.CONFIG_BRIDGE["work_dir"] = work
-    u.CONFIG_BRIDGE["active_analysis"] = "ther_3d"
-    md = extract_aster_data_from_liml(liml)
-    log = io.open(os.path.join(work, "bridge_log.txt"),
-                  encoding="utf-8").read()
-    check("WARNING: Formula 'Fq' (qf.z/3600/(12^2)) is computed by Mecway"
-          in log and any("formula 'Fq'" in x
-                         for x in md.get("skipped_loads", [])),
-          "formula in the model: WARNING and in skipped_loads")
-
-
 def main():
     saved = dict(u.CONFIG_BRIDGE)
     tmp = tempfile.mkdtemp(prefix="bridge_heatflux_elno_")
@@ -158,7 +134,6 @@ def main():
         test_field_table()
         test_elem_magnitude()
         test_rotation(tmp)
-        test_formula_warning(tmp)
     finally:
         u.CONFIG_BRIDGE.clear()
         u.CONFIG_BRIDGE.update(saved)

@@ -705,6 +705,31 @@ Uitkragende balk en raamwerk met en zonder Mecway-orientatie (*orientation vecto
 en σ_xx max/min in de inklemming ≤ 1e-7 t.o.v. Euler-Bernoulli, het raamwerk gelijk aan
 Mecway (≤ 3e-8).
 
+### Resultaatformules (FX-01 .. FX-03)
+
+De resultaatformules van Mecway (*Solution > Formula*, STAPPENPLAN S33, GitHub-issue #8):
+de bridge rekent ze uit in de job (`bridge_formula`, `aster_results_export._formula_vars`).
+Referenties: de analytische oplossing, omgerekend naar de eenheden van de formule.
+
+- **FX-01** (TH-01a, wand met warmteproductie): `T` in °F op x = L/2 (ref
+  (T0 + qL²/8k)·1,8 − 459,67 = 125,33 °F), `qf.x` in Btu/h/ft² op x = L/4 (−7925,0), de
+  formule van issue #8 `qf.x/3600/(12^2)` (−0,015287 Btu/s/in²) en
+  `sqrt(qf.x^2+qf.y^2)*x` (W/m², x in mm; 6,25e5). Resultaat: alle binnen 1e-6 (de
+  waarden van TH-01a zijn exact). **Mecway 34 zelf** (headless, zelfde model): de vier
+  formules gelijk aan de bridge binnen 4e-14 relatief, ook op de knopen; in de GUI van
+  Mecway zijn de formules op het resultaat van de bridge geldig en tonen ze dezelfde contour.
+- **FX-02** (staaf op trek, P = 1 MPa, hex20): `s.xx` in MPa (1), `u.x` in mm aan het eind
+  (PL/E = 0,0047619), de som van `FR.x` in kN over het ingeklemde vlak (−PA = −10),
+  `e.xx·1e6` (P/E = 4,7619, met `strain` in *fields*) en `x` in mm (1000). Resultaat:
+  binnen 1e-9.
+- **FX-03** (TH-02a, transient): `t` in min op 10 s en 40 s (0,16667, 0,66667) en
+  `(T−300)/max(t,1)` aan het oppervlak (2,5 K/s op 40 s). Resultaat: binnen 1e-7.
+
+Gemeten tijdens de bouw (niet in de regressie): `sqrt(u.x^2+u.y^2+u.z^2)/x` laat de 9
+knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in een
+statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
+waarschuwing.
+
 ### Conclusie lineair statisch
 
 Alle 49 cases (122 controles) liggen binnen de tolerantie. Waar de theorie exact is

@@ -629,10 +629,12 @@ def _export_block(work_dir, model_data):
             "import aster_results_export\n"
             "aster_results_export.export_results(\n"
             "    res, {1}, {2},\n"
-            "    fields=['displacements', 'pressure'], precision='double')\n"
+            "    fields=['displacements', 'pressure'], precision='double'"
+            "{3})\n"
             ).format(bta._py_str(scripts),
                      bta._py_str(bta.results_file(work_dir)),
-                     bta._py_str(model_data.get("liml_path", "")))
+                     bta._py_str(model_data.get("liml_path", "")),
+                     bta.formulas_arg(model_data))
 
 
 def build_vibroacoustic_modes(work_dir, model_data, msh_path, resu_name,

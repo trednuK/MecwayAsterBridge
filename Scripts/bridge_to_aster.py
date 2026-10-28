@@ -2116,6 +2116,16 @@ def _derived_args(model_data, chosen):
     return out
 
 
+def formulas_arg(model_data):
+    """", formulas=[...]" for aster_results_export.export_results: the
+    Mecway result formulas planned by bridge_from_liml
+    (bridge_formula.plan, only plain types); "" without (S33)."""
+    plans = model_data.get("result_formulas") or []
+    if not plans:
+        return ""
+    return ", formulas={0!r}".format(plans)
+
+
 def _static_check_block(model_data):
     """
     Mass and reaction check of a static run (MECA_STATIQUE, STAT_NON_LINE;
@@ -2180,7 +2190,8 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
         return postreleve_block, impr_table_block
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
-    extra = _derived_args(model_data, chosen) + extra
+    extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
+        extra
     block = (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import sys@N"
@@ -7672,14 +7683,15 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
         "aster_results_export.export_results(@N"
         "    res, {fragment}, {liml},@N"
         "{extra}"
-        "    fields={fields!r}, precision='double'{norm}{cmass})@N"
+        "    fields={fields!r}, precision='double'{norm}{cmass}{formulas})@N"
     ).replace("@N", chr(10)).format(
         scripts=_py_str(scripts), fragment=_py_str(results_file(work_dir)),
         liml=_py_str(model_data.get("liml_path", "")),
         mass=", mass=masse" if mass else "", extra=extra.replace(
             "@N", chr(10)), fields=[str(f) for f in fields],
         norm=", rigi_geo=rigi_geo" if stiffness_norm else "",
-        cmass=", mass=masse" if complex_modes else "")
+        cmass=", mass=masse" if complex_modes else "",
+        formulas=formulas_arg(model_data))
 
 
 # Fields that can go to Mecway per mode in a modal analysis (setting
@@ -8287,6 +8299,7 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # Hyperelastic materials: also for thermal -> mechanical (checked inside)
     if not _check_hyperelastic(model_data, analysis):
         return None
+    _check_formula_fields(model_data, analysis)
     if not _check_lost_contacts(model_data, solver_cmd):
         return None
     if mechanical:
@@ -8340,6 +8353,30 @@ def _check_lost_contacts(model_data, solver_cmd):
                u"WARNING: " + msg_en + u" In this analysis the contact does "
                u"not count (Mecway ignores it too)."))
     return True
+
+
+def _check_formula_fields(model_data, analysis):
+    """WARNING for a Mecway result formula (S33) that needs a result field
+    group that is not chosen in this analysis (setting "fields"): the job
+    then leaves the formula out (aster_results_export._formula_vars) and
+    it stays invalid in Mecway. No automatic change of the setting."""
+    import bridge_formula
+    import bridge_from_aster
+    chosen = set(analysis.get("fields") or [])
+    known = set(bridge_from_aster.RESULT_FIELD_SPECS)
+    for p in model_data.get("result_formulas") or []:
+        lacking = [g for g in bridge_formula.groups(p)
+                   if g in known and g not in chosen]
+        if lacking:
+            log(tr(u"WARNING: Formule '{0}' ({1}) heeft het resultaatveld "
+                   u"{2} nodig, dat in deze analyse niet gekozen is "
+                   u"(instelling 'fields'); zonder blijft de formule "
+                   u"ongeldig in Mecway.",
+                   u"WARNING: Formula '{0}' ({1}) needs the result field "
+                   u"{2}, which is not chosen in this analysis (setting "
+                   u"'fields'); without it the formula stays invalid in "
+                   u"Mecway.").format(p.get("name", ""), p.get("text", ""),
+                                      ", ".join(lacking)))
 
 
 def _check_hyperelastic(model_data, analysis):

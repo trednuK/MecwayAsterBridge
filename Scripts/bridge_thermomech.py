@@ -1032,11 +1032,13 @@ def export_block(work_dir, model_data, fields):
         "    res, {fragment}, {liml},\n"
         "    extra_results=dict((k, globals()[k]) for k in\n"
         "                       ('res_ther', 'res_flux') if k in globals()),\n"
-        "    precision='single', static=False, fields={fields!r})\n").format(
+        "    precision='single', static=False, fields={fields!r}"
+        "{formulas})\n").format(
             scripts=bta._py_str(scripts),
             fragment=bta._py_str(bta.results_file(work_dir)),
             liml=bta._py_str(model_data.get("liml_path", "")),
-            fields=[str(f) for f in fields])
+            fields=[str(f) for f in fields],
+            formulas=bta.formulas_arg(model_data))
 
 
 def med_block():

@@ -64,7 +64,7 @@ S7, S8, S5, S9).
 | S30 | Redo the Code-Aster forum research | later | forum online again (offline until about 30 Oct 2026) | planned 23 Oct 2026 |
 | S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
-| S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | open | – | planned 27 Oct 2026 (GitHub issue #8); until then a WARNING with the workaround |
+| S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | done | – | branch stap-S33 (28 Oct 2026): `bridge_formula` + `_formula_vars`; FX-01 .. FX-03 OK, equal to Mecway's own solve within 1e-13; checked in the Mecway GUI (formulas valid, contour) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1557,4 +1557,34 @@ bridge does not write: WARNING, formula left out.
 **Build:** evaluator in `aster_results_export` (numpy, no `eval` of user text: own small parser),
 after the other variables; WARNING in `bridge_from_liml` only for formulas it cannot evaluate.
 **Verify:** formulas on TH-01a, a static and a nonlinear case against Mecway's own solve.
-
+**Status:** done (28 Oct 2026, branch stap-S33).
+**Findings:**
+- Input route: Mecway itself, nothing new for the user. `<formula name fieldscalar>` with
+  `<unit exponents="...">unit</unit>` lines and `<formula>text</formula>`; Mecway stores the
+  values as nodevariable `<fieldscalar>`. Measured with Mecway 34 (headless `mw_solve.py`, and in
+  the GUI with an own Mecway window and screenshots):
+  - exponents are powers of (length, mass, time, current, temperature), trailing zeros left out
+    (`+1` m, `-1+1-2` Pa, `+0+1-3` W/m2, `+0+0+1` s, `+0+0+0+0+1` K, `""` dimensionless);
+  - each symbol is converted from SI to the unit of its dimension, then the formula is evaluated
+    and stored without converting back (x in mm 50 for 0.05 m; T in degF 100.018 for 310.938 K,
+    affine; qf.x in Btu/h/ft2 -11887.4 for -37500 W/m2); an unknown unit counts as SI;
+  - the symbols read Mecway's node values; e.xx = lstrainxx, g.xy = lstrainxy (engineering);
+    FR.x only on the reaction nodes; non-finite results (1/x at x = 0) are left out;
+  - `t` is not computed in a steady/static solution; `s1`, `e1`, `tr` need Mecway's principal
+    fields (not written by the bridge);
+  - a formula needs a unit line for each dimension it uses, or Mecway's solve stops without a
+    solution; an unknown symbol is skipped silently by Mecway.
+- Build: `Scripts/bridge_formula.py` (parser of Mecway's language as in `bridge_bcs`, symbol
+  table, unit parser, plan; Python 2.7 and 3), `bridge_from_liml._plan_result_formula`,
+  `bridge_to_aster.formulas_arg` + `_check_formula_fields` (WARNING for a missing result field,
+  no automatic change of the setting), `aster_results_export._formula_vars` (Code-Aster traps
+  floating point exceptions: `libaster.matfpe(-1/1)` around the evaluation, otherwise x/0 stops
+  the job with DVP_2).
+- Verification: FX-01 (TH-01a, degF, Btu/h/ft2, the formula of issue #8), FX-02 (bar in tension:
+  MPa, mm, kN, strain), FX-03 (TH-02a: t in min): 12 checks OK. Mecway's own solve on FX-01: equal
+  within 4e-14 relative. GUI: the four formulas of FX-01 on the bridge result are valid (black)
+  and show the contour (F3: +-0.02675, Mecway 0.0267528).
+- Found on the way: Mecway 34 names acceleration `accx/y/z`, the bridge `accelx/y/z`
+  (KNOWN_BUGS 122, not changed).
+- Open question for the user: should the bridge also write principal stresses/strains, so that
+  `s1`..`s3`, `e1`..`e3` and `tr` work in formulas? (Mecway shows them as a field too.)

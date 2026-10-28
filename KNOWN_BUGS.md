@@ -508,6 +508,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
 
+122\. **Acceleration under its own names** (confirmed, Mecway 34, found in S33). The bridge
+   writes acceleration as `accelx/y/z`, `accelmag` (`aster_results_export.FIELD_TABLE`, comment
+   "Mecway has no acceleration field"); Mecway 34 does have one and stores it as `accx/y/z`,
+   `accmag` (a dynamic solution saved by Mecway 34, `<fieldvariable name="acceleration">`). In
+   Mecway the bridge's acceleration therefore appears as unknown variables next to Mecway's
+   own names. Not changed in S33; the formula symbol `a.x` reads `accelx`.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Not verified in a .liml** (question). Constraint equation: `constant`
@@ -1021,13 +1028,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    `load_err`) only takes constant loads into account: a face with a formula load is
    a stress-free boundary for the estimator (INFO), so a too-large local error there.
 
-121\. **Result formulas (*Solution > Formula*) are not computed** (confirmed, Mecway 34,
-   GitHub issue #8). Mecway evaluates a formula during its own solve and stores the values as
-   nodevariable `formula`, `formula(2)`, ... (the `fieldscalar` of the `<formula>`). The bridge
-   does not evaluate formulas, so a formula that is in the model before the run is invalid (red)
-   after the results are loaded, and such a formula can make Mecway report "De gegeven sleutel
-   is niet aanwezig in het woordenboek" when another formula is created. `bridge_from_liml`
-   (step 2d-quater) gives a WARNING and lists it in `skipped_loads`. Workaround (checked in the
-   GUI with `qf.x` on a thermal result): delete the formula and create it again after loading;
-   Mecway then computes it from the bridge results (node values are enough). Evaluating the
-   formulas in the bridge: STAPPENPLAN S33.
+121\. **Result formulas: not every Mecway symbol** (confirmed, Mecway 34, GitHub issue #8;
+   S33). The bridge evaluates Mecway's result formulas (*Solution > Formula*) in the job
+   (`bridge_formula`, `aster_results_export._formula_vars`), but only with symbols of fields it
+   writes. Not: principal values `s1`..`s3`, `e1`..`e3`, `GLe1`.., `tr` (Mecway reads its own
+   principal fields, which the bridge does not write), stresses in element coordinates
+   (`s.uu`..), shell forces `ML`/`FL`, Zienkiewicz-Zhu stresses, `FE`, `Ue`/`UE`, electric
+   symbols and material properties (`youngsmodulus`, ...). Such a formula keeps no values and is
+   invalid (red) after loading; `bridge_from_liml._plan_result_formula` gives a WARNING and lists
+   it in `skipped_loads`, with the workaround: delete the formula and create it again after
+   loading, Mecway then computes it from the bridge results (checked in the GUI). Also: units
+   are taken from the bridge's own unit table (`bridge_formula._ATOMS`, composite units with `/`
+   and `.`); a unit Mecway does not know counts as SI in Mecway, the bridge may know it (e.g.
+   `W/mm2`: Mecway SI, the bridge 1e-6). Mecway writes only units from its own list, so this
+   only matters for hand-edited files.

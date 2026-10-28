@@ -381,7 +381,7 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | `plastic_strain` | `plasticstrainxx` .. `plasticstrainzx` (namen van de bridge) | `EPSP_NOEU` | niet-lineair statisch |
 | `plastic_strain_eq` | `equivalentplasticstrain` | `VARI_NOEU` V1 | niet-lineair, dynamisch |
 | `temperature` | `temperature` (K) | `TEMP` | thermisch |
-| `heat_flux` | `heatfluxx/y/z/mag` | `FLUX_NOEU` | thermisch |
+| `heat_flux` | `heatfluxx/y/z/mag` (knoopwaarden en per elementknoop) | `FLUX_NOEU`, `FLUX_ELNO` | thermisch |
 | foutschatter (instelling *Foutschatter*, niet in deze keuzelijst) | `errorestimate`, `errorestimaterel` (volume-elementen, knoopwaarden en per element; namen van de bridge) | `ERME_NOEU`, `ERME_ELNO` | statisch ([`Foutschatter.md`](Foutschatter.md)) |
 | vermoeiing (`#ASTER-WOHLER`, niet in deze keuzelijst) | `damage` (schade D), `life` (herhalingen tot D = 1); schalen ook `damage_top`/`damage_bottom`, met een criterium `fatigue_eq`/`fatigue_ratio`; knoopwaarden, namen van de bridge | uit `SIGM_NOEU`/`EPSI_NOEU`/`SIEQ_NOEU` (rainflow, Miner; `aster_fatigue.py`) of `CALC_FATIGUE FATIGUE_MULTI` | statisch, niet-lineair, dynamisch ([`Vermoeiing.md`](Vermoeiing.md)) |
 | `strain` | volumes: `lstrainxx` .. `lstrainzx` (lineair), `greenlagrangestrainxx` .. (niet-lineair met grote verplaatsingen, zoals Mecway's L30/D31); schalen: `lstrainxxu`/`m`/`b` .. (boven/midden/onder, globale assen); knoop- en elementknoopwaarden; schuif als hoekverdraaiing γ = 2ε (zoals Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), schalen `EPSI_ELNO` + `EXTR_COQUE` | uit (grotere `.liml`) |
@@ -453,6 +453,57 @@ is een getal voor je eigen controle. Krachten tussen onderdelen (contact, koppel
 vallen in de som tegen elkaar weg; met een elastische oplegging telt de veerkracht als
 reactie (§4.1, `reactions`). Niet bij dynamische, modale en thermische analyses. In
 de `.mess`: regels `BRIDGE_STATCHECK` en `BRIDGE_STATREAC`.
+
+### 4.2 Resultaatformules (Solution > Formula)
+
+Een formule die je in Mecway onder *Solution > Formula* toevoegt (bijvoorbeeld
+`qf.z/3600/(12^2)` of `sqrt(u.x^2+u.y^2)`), rekent de bridge uit de resultaten van
+Code-Aster uit en geeft hem onder de naam van de formule terug, zoals Mecway dat bij zijn
+eigen solve doet. Na het laden is hij geldig (niet rood) en toont hij een contour zoals elk
+ander veld. De formule moet **voor** de run in het model staan; een formule die je daarna
+toevoegt, rekent Mecway zelf uit de geladen resultaten.
+
+Hoe de bridge rekent (zoals gemeten in Mecway 34):
+
+- elk symbool wordt eerst omgerekend naar de eenheid uit het formulevenster (*Units*, de
+  `<unit>`-regels in de `.liml`), bijv. `x` in mm, `T` in °F (met verschuiving), `qf.x`
+  in Btu/h/ft²; daarna wordt de formule uitgerekend en het getal zo bewaard;
+- per knoop, met de knoopwaarden (dezelfde waarden die Mecway voor het veld toont), op de
+  knopen waar alle symbolen een waarde hebben (`FR.x`: de reactieknopen); een knoop waar de
+  uitkomst niet eindig is (bijv. `1/x` op x = 0), valt weg, zoals in Mecway;
+- in elke tijdstap (`t` is de tijd van de stap); een formule met `t` wordt in een statische
+  of stationaire oplossing en bij modes niet uitgerekend (Mecway doet dat ook niet);
+- de taal is die van Mecway: `+ - * / ^ ( )`, `pi`, `e`, `sin`, `cos`, `tan`, `asin`,
+  `acos`, `atan`, `atan2(y,x)`, `log` (natuurlijk), `abs`, `sqrt`, `heaviside(x)`,
+  `unittriangle(w,x)`, `max(x,y)`, `min(x,y)`; symbolen zijn hoofdlettergevoelig (`T` =
+  temperatuur, `t` = tijd).
+
+| Symbolen | Veld (instelling *Resultaatvelden naar Mecway*) |
+|---|---|
+| `x`, `y`, `z`, `t` | knooppositie (onvervormd), tijd |
+| `u.x`, `r.x`, `v.x`, `av.x`, `a.x` (en y, z) | `displacements`, `velocities`, `accelerations` |
+| `FR.x`, `MR.x` | `reactions` |
+| `s.xx` .. `s.zx`, `vm` | `stresses`, `vonmises` |
+| `e.xx`, `g.xy` .. (lineair), `GLe.xx`, `GLg.xy` .. (Green-Lagrange) | `strain` (standaard uit) |
+| `peeq` | `plastic_strain_eq` |
+| `T`, `qf.x`, `qf.y`, `qf.z` | `temperature`, `heat_flux` |
+| `FI.u`, `FI.v`, `FI.w`, `MI.u`, `MI.v`, `MI.w` | `beam_forces` |
+| `cstr.P`, `fos`, `P` | `contact`, `safety_factor`, akoestische druk |
+
+Niet mogelijk: hoofdwaarden (`s1`..`s3`, `e1`..`e3`, `GLe1`.., `tr`), spanningen in
+elementcoordinaten (`s.uu`..), schaalkrachten (`ML`, `FL`), Zienkiewicz-Zhu-spanningen,
+uitwendige kracht `FE`, rekenergie, elektrische velden en materiaaleigenschappen
+(`youngsmodulus` enz.). Zo'n formule blijft in Mecway ongeldig; maak hem na het laden
+opnieuw (Mecway rekent hem dan uit). Verificatie FX-01 .. FX-03
+([`Verificatie.md`](Verificatie.md)).
+
+| Melding | Oorzaak | Oplossing |
+|---|---|---|
+| INFO: Formula 'F' (...) -> computed by the bridge as 'formula(2)' | normaal | – |
+| WARNING: Formule 'F' (...) kan de bridge niet uitrekenen (symbol 's1' is not supported ...) | symbool van een veld dat de bridge niet schrijft, of een syntaxfout | na het laden: formule verwijderen en opnieuw maken (*Solution > Formula*) |
+| WARNING: Formule 'F' (...) heeft het resultaatveld strain nodig, dat ... niet gekozen is | het veld van een symbool staat niet in *Resultaatvelden naar Mecway* | het veld aanvinken op de pagina van de analyse |
+| WARNING: Formule 'F' (...): unit '...' of '...' not known: SI used | eenheid die de bridge niet kent (Mecway rekent dan ook in SI) | een andere eenheid kiezen in het formulevenster |
+| `.mess`: aster_results_export: WAARSCHUWING: formule ... overgeslagen: ... niet in de resultaten | het veld ontbreekt in deze analyse (bijv. spanningen bij modaal zonder *stresses*) | als hierboven |
 
 ## 5. Bestanden in de werkmap
 

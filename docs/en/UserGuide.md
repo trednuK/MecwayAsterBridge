@@ -386,7 +386,7 @@ are the same as those of Mecway's own solution where Mecway knows them.
 | `plastic_strain` | `plasticstrainxx` .. `plasticstrainzx` (bridge names) | `EPSP_NOEU` | nonlinear static |
 | `plastic_strain_eq` | `equivalentplasticstrain` | `VARI_NOEU` V1 | nonlinear, dynamic |
 | `temperature` | `temperature` (K) | `TEMP` | thermal |
-| `heat_flux` | `heatfluxx/y/z/mag` | `FLUX_NOEU` | thermal |
+| `heat_flux` | `heatfluxx/y/z/mag` (nodal values and per element node) | `FLUX_NOEU`, `FLUX_ELNO` | thermal |
 | error estimator (setting *Error estimator*, not in this list) | `errorestimate`, `errorestimaterel` (solid elements, nodal values and per element; bridge names) | `ERME_NOEU`, `ERME_ELNO` | static ([`Error_estimator.md`](Error_estimator.md)) |
 | fatigue (`#ASTER-WOHLER`, not in this list) | `damage` (damage D), `life` (repetitions until D = 1); shells also `damage_top`/`damage_bottom`, with a criterion `fatigue_eq`/`fatigue_ratio`; nodal values, bridge names | from `SIGM_NOEU`/`EPSI_NOEU`/`SIEQ_NOEU` (rainflow, Miner; `aster_fatigue.py`) or `CALC_FATIGUE FATIGUE_MULTI` | static, nonlinear, dynamic ([`Fatigue.md`](Fatigue.md)) |
 | `strain` | solids: `lstrainxx` .. `lstrainzx` (linear), `greenlagrangestrainxx` .. (nonlinear with large displacements, like Mecway's L30/D31); shells: `lstrainxxu`/`m`/`b` .. (top/middle/bottom, global axes); node and element-node values; shear as engineering strain γ = 2ε (like Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), shells `EPSI_ELNO` + `EXTR_COQUE` | off (larger `.liml`) |
@@ -456,6 +456,56 @@ own check. Forces between parts (contact, couplings) cancel in the sum; with an
 elastic support the spring force counts as a reaction (sec. 4.1, `reactions`). Not
 for dynamic, modal and thermal analyses. In the `.mess`: lines `BRIDGE_STATCHECK` and
 `BRIDGE_STATREAC`.
+
+### 4.2 Result formulas (Solution > Formula)
+
+A formula that you add in Mecway under *Solution > Formula* (for example
+`qf.z/3600/(12^2)` or `sqrt(u.x^2+u.y^2)`) is computed by the bridge from the
+Code-Aster results and returned under the formula's own name, as Mecway does in its own
+solve. After loading it is valid (not red) and shows a contour like any other field.
+The formula must be in the model **before** the run; a formula you add afterwards is
+computed by Mecway itself from the loaded results.
+
+How the bridge computes it (as measured in Mecway 34):
+
+- every symbol is first converted to the unit of the formula window (*Units*, the
+  `<unit>` lines in the `.liml`), e.g. `x` in mm, `T` in °F (with offset), `qf.x` in
+  Btu/h/ft²; then the formula is evaluated and the number stored as it is;
+- per node, with the node values (the same values Mecway shows for the field), on the
+  nodes where all symbols have a value (`FR.x`: the reaction nodes); a node where the
+  result is not finite (e.g. `1/x` at x = 0) is left out, as in Mecway;
+- in every time step (`t` is the time of the step); a formula with `t` is not computed
+  in a static or steady solution and not for modes (Mecway does not either);
+- the language is Mecway's: `+ - * / ^ ( )`, `pi`, `e`, `sin`, `cos`, `tan`, `asin`,
+  `acos`, `atan`, `atan2(y,x)`, `log` (natural), `abs`, `sqrt`, `heaviside(x)`,
+  `unittriangle(w,x)`, `max(x,y)`, `min(x,y)`; symbols are case sensitive (`T` =
+  temperature, `t` = time).
+
+| Symbols | Field (setting *Result fields to Mecway*) |
+|---|---|
+| `x`, `y`, `z`, `t` | node position (undeformed), time |
+| `u.x`, `r.x`, `v.x`, `av.x`, `a.x` (and y, z) | `displacements`, `velocities`, `accelerations` |
+| `FR.x`, `MR.x` | `reactions` |
+| `s.xx` .. `s.zx`, `vm` | `stresses`, `vonmises` |
+| `e.xx`, `g.xy` .. (linear), `GLe.xx`, `GLg.xy` .. (Green-Lagrange) | `strain` (off by default) |
+| `peeq` | `plastic_strain_eq` |
+| `T`, `qf.x`, `qf.y`, `qf.z` | `temperature`, `heat_flux` |
+| `FI.u`, `FI.v`, `FI.w`, `MI.u`, `MI.v`, `MI.w` | `beam_forces` |
+| `cstr.P`, `fos`, `P` | `contact`, `safety_factor`, acoustic pressure |
+
+Not possible: principal values (`s1`..`s3`, `e1`..`e3`, `GLe1`.., `tr`), stresses in
+element coordinates (`s.uu`..), shell forces (`ML`, `FL`), Zienkiewicz-Zhu stresses,
+external force `FE`, strain energy, electric fields and material properties (`youngsmodulus`
+etc.). Such a formula stays invalid in Mecway; create it again after loading (Mecway then
+computes it). Verification FX-01 .. FX-03 ([`Verification.md`](Verification.md)).
+
+| Message | Cause | Solution |
+|---|---|---|
+| INFO: Formula 'F' (...) -> computed by the bridge as 'formula(2)' | normal | – |
+| WARNING: Formula 'F' (...) cannot be computed by the bridge (symbol 's1' is not supported ...) | symbol of a field the bridge does not write, or a syntax error | after loading: delete the formula and create it again (*Solution > Formula*) |
+| WARNING: Formula 'F' (...) needs the result field strain, which is not chosen | the field of a symbol is not in *Result fields to Mecway* | tick the field on the page of the analysis |
+| WARNING: Formula 'F' (...): unit '...' of '...' not known: SI used | unit that the bridge does not know (Mecway then also computes in SI) | choose another unit in the formula window |
+| `.mess`: aster_results_export: WARNING: formula ... skipped: ... not in the results | the field is missing in this analysis (e.g. stresses in modal without *stresses*) | as above |
 
 ## 5. Files in the working directory
 

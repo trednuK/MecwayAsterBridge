@@ -502,11 +502,13 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
         "    extra_results=dict((k, globals()[k]) for k in@N"
         "                       ('res_sup', 'res_moy', 'res_inf')@N"
         "                       if k in globals()),@N"
-        "    precision='single', static=False, fields={fields!r})@N"
+        "    precision='single', static=False, fields={fields!r}"
+        "{formulas})@N"
     ).replace("@N", chr(10)).format(
         fragment=b2a._py_str(b2a.results_file(work_dir)),
         liml=b2a._py_str(model_data.get("liml_path", "")),
-        fields=[str(f) for f in fields])
+        fields=[str(f) for f in fields],
+        formulas=b2a.formulas_arg(model_data))
     if CONFIG_BRIDGE.get("med_export", False):
         impr_resu_block = ("IMPR_RESU(FORMAT='MED', UNITE=80, "
                            "RESU=_F(RESULTAT=res, NOM_CHAM=('DEPL',)))\n")

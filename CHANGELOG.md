@@ -2,11 +2,14 @@
 
 ## Unreleased
 
-- **Formulas after a bridge run (GitHub issue #8)**: Mecway computes a formula (*Solution >
-  Formula*) during its own solve; the bridge does not, so a formula that is already in the model
-  is invalid (red) after the run. The bridge now says so (WARNING and in the list of what was not
-  translated): delete the formula and create it again after loading the results, and Mecway
-  computes it from the bridge results.
+- **Result formulas computed by the bridge (GitHub issue #8)**: a formula from Mecway's
+  *Solution > Formula* (e.g. `qf.z/3600/(12^2)`, `sqrt(u.x^2+u.y^2)`) is now computed from the
+  Code-Aster results, per node and time step and in the units of the formula, and returned
+  under its own name, as Mecway does in its own solve: after loading it is valid and shows a
+  contour. Equal to Mecway's own solve within 1e-13 (verification FX-01 .. FX-03). Symbols of
+  fields the bridge does not write (principal values `s1`, `e1`, `tr`, element coordinates,
+  shell forces, material properties) give a WARNING with the workaround; a field a formula
+  needs that is not chosen gives a WARNING too (user guide §4.2).
 - **Heat flux per element node**: thermal results now also contain the heat flux of volume
   elements per element node (`FLUX_ELNO`, `heatfluxx/y/z/mag`), as Mecway itself stores it, so
   the contour per element is the same. Equal to Mecway's own solution within 1e-9 (also with a

@@ -27,11 +27,10 @@ template `Scripts/AsterTemplate_Thermique.comm`). Code-Aster 17.4.
 - **Resultaten:** alleen via `result_route = "liml"`: `temperature` (knopen) en
   de warmteflux `heatfluxx/y/z` + `heatfluxmag` (`FLUX_NOEU` = −λ grad T; knopen), en voor
   volume-elementen ook per elementknoop (`FLUX_ELNO`), zoals Mecway die opslaat.
-- **Formules** (*Solution > Formula*, bijv. `qf.z/3600/(12^2)`): Mecway rekent ze uit bij
-  zijn eigen solve, de bridge niet. Een formule die al in het model staat, is na een run
-  van de bridge daarom ongeldig (rood) (WARNING). Verwijder hem en maak hem opnieuw na het
-  laden van de resultaten: Mecway rekent hem dan uit de resultaten van de bridge
-  (gecontroleerd met `qf.x`, GitHub-issue #8).
+- **Formules** (*Solution > Formula*, bijv. `qf.z/3600/(12^2)`): de bridge rekent ze
+  uit de resultaten uit in de eenheden van de formule, zoals Mecway bij zijn eigen
+  solve (GitHub-issue #8; [`Handleiding.md`](Handleiding.md) §4.2, verificatie FX-01,
+  FX-03).
 
 ## 2. Instellingen (startscherm, pagina "Thermisch")
 
