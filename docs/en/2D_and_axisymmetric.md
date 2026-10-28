@@ -81,8 +81,8 @@ shells ([`Thermal.md`](Thermal.md)).
 "Active analysis (auto = follow Mecway)" `auto` (or `lin_static_3d`) and "Results to Mecway" `liml` (General page;
 the route `tabel` does not scale the reactions, the bridge stops). The settings of the
 Static or Dynamic (implicit) page apply as in 3D; for D20/DA0 equal to Mecway: "Time
-scheme (SCHEMA_TEMPS)" `NEWMARK`, `deformation` `PETIT` and "Solver steps per output
-interval" = Mecway's *every n time steps* (§2.4). The result fields `strain` and `shell_*`
+scheme (SCHEMA_TEMPS)" `NEWMARK`, `deformation` `PETIT` and "Solver steps per Mecway
+time step" = 1 (default; §2.4). The result fields `strain` and `shell_*`
 give nothing in 2D;
 `principal_stresses` gives `principal1..3` and `tresca` as Mecway does (eigenvalues of
 the 3D tensor with σ_zz, per element node, node = average). The error estimator is not
@@ -147,10 +147,12 @@ Response (D30) without *Mode superposition*: output times every n-th Mecway step
 as a time table, Rayleigh damping (`AMOR_RAYL`). The mass per unit thickness or per
 radian matches the forces of §2.2, so no extra factor. Mecway computes linearly with
 Newmark (average acceleration): with "Time scheme (SCHEMA_TEMPS)" `NEWMARK`,
-`deformation` `PETIT` and one solver step per Mecway step ("Solver steps per output
-interval" = n of *every n time steps*) the bridge is equal to Mecway's own D20/DA0
-solution (≤ 4e-8, PL-10 … PL-12). With the default (HHT, one step per output interval)
-the bridge gives a WARNING and computes with larger steps (KB127).
+`deformation` `PETIT` and one solver step per Mecway step ("Solver steps per Mecway
+time step" = 1, the default) the bridge is equal to Mecway's own D20/DA0
+solution (≤ 4e-8, PL-10 … PL-12). The solver step is Mecway's *Time step size*, also
+with *Generate solution every n time steps* > 1: the bridge then computes n steps per
+output interval and writes only the output times. With the default HHT the bridge gives
+a WARNING (numerical damping).
 
 ## 3. Not possible
 

@@ -138,7 +138,8 @@ mass on a beam under a step load gave the same response with time step 0.02 s
 (ω·Δt = 0.71) and 0.001 s, within 1e-4 of u_st(1 − cos ωt). The bridge uses `NEWMARK`
 (average acceleration, β = 1/4, γ = 1/2) with a small constant step: n steps per
 period of the highest mode in the basis (setting, default 50), rounded to a whole
-number per output interval. Newmark's period error is (ω·Δt)²/12 (Hughes, 2000,
+number per output interval, and never larger than Mecway's *Time step size* (with
+*Generate solution every n time steps* at least n steps per output interval). Newmark's period error is (ω·Δt)²/12 (Hughes, 2000,
 §9.3): 0.13% for the highest mode, less for the lower ones. Only the output times are
 archived. With 50 steps per period a model with a high first axial mode needs many
 steps (e.g. 28,300 for MD-01: axial mode 565 Hz × 1 s × 50), but a step on a modal
@@ -159,7 +160,9 @@ static one (< 1e-6), without correction 0.97069 of it.
 ### 2.6 D30 without Mode superposition
 
 Mecway then computes Newmark (average acceleration) on the whole model. `auto` picks
-`dyna_impl_3d` (`DYNA_NON_LINE`); the output times come from Mecway's time step. With
+`dyna_impl_3d` (`DYNA_NON_LINE`); the output times come from Mecway's time step and the
+solver step is Mecway's *Time step size*, also with *Generate solution every n time
+steps* > 1 (n steps per output interval, results only at the output times; MD-08). With
 *Time scheme* `NEWMARK` and *COMPORTEMENT DEFORMATION* `PETIT` (page Dynamic
 (implicit)) it is the same scheme: verification MD-07 equal to Mecway to 3e-8. With
 the default `HHT` (numerical damping) and `GROT_GDEP` the bridge logs a WARNING.

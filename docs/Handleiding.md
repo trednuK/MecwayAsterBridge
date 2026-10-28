@@ -234,7 +234,7 @@ pagina toont alleen de instellingen die bij die analyse horen:
 | COMPORTEMENT DEFORMATION | niet-lineair statisch, dynamisch | `GROT_GDEP` |
 | Tijdschema (SCHEMA_TEMPS) | dynamisch | `HHT` (impliciet; keuze `HHT`/`NEWMARK`), `DIFF_CENT` (expliciet; keuze `DIFF_CENT`/`TCHAMWA`) |
 | HHT ALPHA (-0.3 .. 0) | dynamisch impliciet | -0.1 |
-| Rekenstappen per uitvoerinterval | dynamisch impliciet | 1 |
+| Rekenstappen per Mecway-tijdstap | dynamisch impliciet | 1 |
 | Energiebalans (ENERGIE; niet met contact) | dynamisch impliciet | uit |
 | Tijdstap / kritieke tijdstap | dynamisch expliciet | 0.5 |
 | Tijdschema THETA (0 .. 1) | thermisch | 0.57 |

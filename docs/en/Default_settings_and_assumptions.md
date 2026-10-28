@@ -181,7 +181,7 @@ The same settings as §3.3 for Newton, convergence, contact, material and failur
 |---|---|---|---|---|---|
 | `schema` | `HHT` | `SCHEMA_TEMPS` `HHT` (`MODI_EQUI='OUI'`, CA) or `NEWMARK` (β = 1/4, γ = 1/2) | Choice: HHT damps high frequencies (EDF R&D, U2.06.13) | no numerical damping wanted: `NEWMARK` | DY-01a (HHT), DY-01b/c/d (NEWMARK, order 1.98/1.99) |
 | `hht_alpha` | -0.1 | `ALPHA` of HHT | CA (`dyna_non_line.py`); U2.06.13: start at -0.1, -0.3 is an upper limit | high-frequency noise: more negative, down to -0.3 | DY-01a, DY-02, DY-03c; R-ALPHA: DY-01 with -0.3 follows the scheme to 4.7e-8 (period +1.21 %, peak −0.87 %, as predicted) |
-| `substeps_per_output` | 1 | solver steps per output interval of Mecway's `<timesteps>` | Choice: solver step = output interval | output intervals that are large compared with the first period | DY-01, DY-02, DY-03c |
+| `substeps_per_output` | 1 | solver steps per Mecway time step: D30/D20/DA0 per *Time step size* (also with *every n time steps*), D31 per output interval | Choice: solver step = Mecway's time step (Mecway's own Newmark scheme does this, MD-08) | time steps that are large compared with the first period | DY-01, DY-02, DY-03c, MD-07, MD-08, PL-10 … PL-12 |
 | `energy_balance` | off | `ENERGIE=_F()`: energy balance per step in the `.mess` | Choice: for checking only; not with contact (`MECANONLINE5_15`, the bridge then omits it) | checking the energy | R-ENERGY: DY-01a with energy balance, same result, 101 balance lines |
 | `time_limit` | 7200 | see §3.1 | | | |
 

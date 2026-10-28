@@ -180,7 +180,7 @@ bezwijken (zonder `substeps_per_interval`), plus:
 |---|---|---|---|---|---|
 | `schema` | `HHT` | `SCHEMA_TEMPS` `HHT` (`MODI_EQUI='OUI'`, CA) of `NEWMARK` (β = 1/4, γ = 1/2) | Keuze: HHT dempt hoge frequenties (EDF R&D, U2.06.13) | geen numerieke demping gewenst: `NEWMARK` | DY-01a (HHT), DY-01b/c/d (NEWMARK, orde 1,98/1,99) |
 | `hht_alpha` | -0,1 | `ALPHA` van HHT | CA (`dyna_non_line.py`); U2.06.13: begin bij -0,1, -0,3 is een bovengrens | hoogfrequente ruis: negatiever, tot -0,3 | DY-01a, DY-02, DY-03c; R-ALPHA: DY-01 met -0,3 volgt het schema op 4,7e-8 (periode +1,21 %, piek −0,87 %, zoals voorspeld) |
-| `substeps_per_output` | 1 | rekenstappen per uitvoerinterval van Mecway's `<timesteps>` | Keuze: rekenstap = uitvoerinterval | grote uitvoerintervallen ten opzichte van de eerste periode | DY-01, DY-02, DY-03c |
+| `substeps_per_output` | 1 | rekenstappen per Mecway-tijdstap: D30/D20/DA0 per *Time step size* (ook bij *every n time steps*), D31 per uitvoerinterval | Keuze: rekenstap = Mecway's tijdstap (Mecway's eigen Newmark-schema rekent zo, MD-08) | grote tijdstappen ten opzichte van de eerste periode | DY-01, DY-02, DY-03c, MD-07, MD-08, PL-10 … PL-12 |
 | `energy_balance` | uit | `ENERGIE=_F()`: energiebalans per stap in de `.mess` | Keuze: alleen ter controle; niet met contact (`MECANONLINE5_15`, de bridge laat het dan weg) | controle van de energie | R-ENERGY: DY-01a met energiebalans, zelfde uitkomst, 101 balansregels |
 | `time_limit` | 7200 | zie §3.1 | | | |
 

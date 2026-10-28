@@ -98,7 +98,7 @@ An element that has failed stays failed.
 
 In **dynamic** analyses the bridge checks at the **output times** (Mecway's time
 steps) instead of after every solver step; every output time is also a solver step.
-In between, Code-Aster simply continues (implicit: "Solver steps per output interval"; explicit: steps of at most
+In between, Code-Aster simply continues (implicit: "Solver steps per Mecway time step"; explicit: steps of at most
 "Time step / critical time step" × the estimated
 critical time step). After a failure event the velocity and acceleration are also
 carried over to the next step. With implicit, that step starts with an elastic

@@ -608,7 +608,9 @@ if max(bridge_xi) >= 1.0:
     raise ValueError('mode superposition: dempingsverhouding >= 1')
 
 # Time step: 50 steps per period of the highest mode (NEWMARK,
-# period error (w dt)^2 / 12), a whole number per output interval.
+# period error (w dt)^2 / 12), a whole number per output interval,
+# at least 1: never larger than Mecway's step (also with
+# 'Generate solution every n time steps').
 bridge_inc, bridge_nout = 0.005, 400
 bridge_nsub = max(1, int(_math.ceil(bridge_inc * max(bridge_freqs) * 50)))
 bridge_pas = bridge_inc / bridge_nsub

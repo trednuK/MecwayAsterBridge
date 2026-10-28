@@ -6425,12 +6425,28 @@ def _explicit_kinematics(model_data, intervals, schema):
                "initial velocity). Give those nodes no initial velocity."))
 
 
+def _mecway_dyna_step(model_data):
+    """Mecway's calculation step of a Dynamic Response (D30, D20, DA0:
+    <timesteps stepsize> [keepeverynthtimestep]) in s, or None (other
+    analyses, or output times given as timepointsincrement)."""
+    ts = model_data.get("timesteps") or {}
+    if ts.get("increment") or not ts.get("stepsize"):
+        return None
+    if bridge_plane.equivalent_3d(model_data.get("analysis_type")) != "D30":
+        return None
+    return ts["stepsize"]
+
+
 def _build_dyna_listinst_block(model_data, load_funcs, analysis):
     """
     Time discretisation for DYNA_NON_LINE.
 
-    Implicit: substeps_per_output steps per output interval, with
-    automatic halving on divergence (DEFI_LIST_INST ECHEC, U4.34.03).
+    Implicit: with Mecway's step size (Dynamic Response, _mecway_dyna_step)
+    substeps_per_output solver steps per Mecway step, so also n x
+    substeps_per_output per output interval with "Generate solution every
+    n time steps"; without it substeps_per_output steps per output
+    interval. Results are archived only at the output times (outlist).
+    Automatic halving on divergence (DEFI_LIST_INST ECHEC, U4.34.03).
     Explicit (DIFF_CENT): per output interval an equal step of at
     most explicit_dt_factor * estimated critical time step
     (_critical_time_step). This way every output time is a calculation
@@ -6485,15 +6501,35 @@ def _build_dyna_listinst_block(model_data, load_funcs, analysis):
                 for t, n in intervals)))
         _explicit_kinematics(model_data, intervals, analysis.get("schema"))
     else:
-        n = analysis.get("substeps_per_output", 1)
+        n = max(1, int(analysis.get("substeps_per_output", 1) or 1))
         times = _merge_times([0.0] + out + [t for _, h in load_funcs
                                             for t, _ in h if 0.0 < t < t_end],
                              t_end, prefer=out)
+        step = _mecway_dyna_step(model_data)
+        intervals = []
+        prev = 0.0
+        for t in times[1:]:
+            k = 1
+            if step:
+                # Mecway's step size, also with "Generate solution every
+                # n time steps" > 1 (before: one step per output interval,
+                # up to 22% off): an interval of n Mecway steps gets n
+                # solver steps. -1e-6: an interval
+                # that after _round_time is just above a whole number of
+                # steps must not get an extra step.
+                k = max(1, int(math.ceil((t - prev) / step - 1.0e-6)))
+            intervals.append((t, k * n))
+            prev = t
+        if step:
+            log("INFO: Implicit dynamics: solver step = Mecway's step size "
+                "{0} s / substeps_per_output {1}; {2} steps, results at {3} "
+                "output times.".format(step, n, sum(c for _t, c in intervals),
+                                       len(out)))
         lines.append(
             "times = DEFI_LIST_REEL(\n    DEBUT=0.0,\n    INTERVALLE=(\n"
             "{0}    ),\n)\n".format("".join(
-                "        _F(JUSQU_A={0!r}, NOMBRE={1}),\n".format(t, n)
-                for t in times[1:])))
+                "        _F(JUSQU_A={0!r}, NOMBRE={1}),\n".format(t, c)
+                for t, c in intervals)))
         lines.append(
             "listinst = DEFI_LIST_INST(\n"
             "    DEFI_LIST=_F(LIST_INST=times),\n"

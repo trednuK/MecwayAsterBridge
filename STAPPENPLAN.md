@@ -49,7 +49,7 @@ S7, S8, S5, S9).
 | S15 | Pre-tension section (bolt prestress) | done | – | branch worktree-agent-a58def16c170e1c4c (28 Oct 2026): `bridge_pretension` (cut + LIAISON_DDL to a reference node), force and length adjustment in linear/nonlinear static; PT-01 .. PT-05 OK (exact / joint diagram 0.1%, Mecway CCX headless within 0.01%); not yet tested in the Mecway GUI (see §S15) |
 | S15b | Pre-tension section in dynamic response (D30/D31) and the spring element variant (internal solver) | open | S15 | split off from S15 (KNOWN_BUGS 124 a/b) |
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
-| S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); KNOWN_BUGS 127 (step size with *every n time steps*); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
+| S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); step size with *every n time steps* fixed later (former KNOWN_BUGS 127, MD-08); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
 | S16d | Acoustic Resonance 2D (Mecway A20, `2D_FLUIDE`) | open | S16a | split off from S16 (28 Oct 2026) |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 126 |
@@ -1335,9 +1335,8 @@ no GUI):**
 - Equal to Mecway's own solution (≤ 4e-8) with NEWMARK, PETIT and `substeps_per_output` =
   *every n time steps*: cantilever step load and time table (D20), ring with Rayleigh damping
   (DA0). With `substeps_per_output` = 1 and n = 5 the bridge steps 5 times coarser than Mecway
-  (22% difference on the cantilever): pre-existing for D30 too, KNOWN_BUGS 127 (not changed,
-  it would alter MD-07's route); a candidate for a follow-up (derive the step from
-  `<timesteps stepsize>`).
+  (22% difference on the cantilever): pre-existing for D30 too (former KNOWN_BUGS 127);
+  fixed 28 Oct 2026: the solver step is now derived from `<timesteps stepsize>` (MD-08).
 
 ### S17 – Loads on beam side faces and hydrostatic pressure on shell edges
 **Goal:** the two open items of KNOWN_BUGS 5: pressure/traction on the side face of a beam (Mecway

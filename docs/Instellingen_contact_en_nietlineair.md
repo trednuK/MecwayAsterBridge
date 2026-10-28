@@ -85,7 +85,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 |---|---|---|---|---|
 | `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast 0 tot `default_time_end`. Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
 | `auto_time_stepping` (Mecway's Automatic time stepping volgen) | statisch | Alleen met Mecway's *Automatic time stepping*: aan = `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, resultaten op die tijden (§2.1); uit = vaste stappen. | aan | - |
-| `substeps_per_output` (Rekenstappen per uitvoerinterval) | impliciet | Rekenstappen per uitvoerinterval van Mecway `<timesteps>`. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
+| `substeps_per_output` (Rekenstappen per Mecway-tijdstap) | impliciet | Rekenstappen per tijdstap van Mecway: bij Dynamic Response (D30, D20, DA0) per *Time step size*, ook met *Generate solution every n time steps* > 1 (dan n × deze waarde per uitvoerinterval; resultaten alleen op de uitvoertijden); anders (D31, `timepointsincrement`) per uitvoerinterval. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen tijdslast (statisch) of geen `<timesteps>` (dynamisch) heeft. | 1.0 | - |
 | `explicit_dt_factor` (Tijdstap / kritieke tijdstap) | expliciet | Tijdstap ≤ factor × de kritieke tijdstap zoals de bridge die schat, per uitvoerinterval gelijk verdeeld (zo is elke uitvoertijd een rekenstap). | 0.5 | - |
 
@@ -935,7 +935,7 @@ fysische oorzaak, geen numerieke.
    `MECANONLINE9_4` met `LAGS_C`: `contact_algo` = `PENALISATION` (§3.1, NL-03b).
 7. **Kleinere stappen.** Verklein Mecway's *Time step size* (statisch; zonder
    stapgrootte `substeps_per_interval` verhogen) of verhoog `substeps_per_output`
-   (impliciet). Code-Aster knipt een mislukte stap al zelf
+   (impliciet; of verklein Mecway's *Time step size*). Code-Aster knipt een mislukte stap al zelf
    (`DECOUPE`, tot 6 niveaus, §2.1); kleinere beginstappen helpen als hij steeds
    op hetzelfde tijdstip vastloopt. Niet bij stagnatie van het residu (stap 3):
    kleinere stappen maken dat erger (R-SUB40).
