@@ -66,6 +66,7 @@ S7, S8, S5, S9).
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
 | S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | done | – | branch stap-S33 (28 Oct 2026): `bridge_formula` + `_formula_vars`; FX-01 .. FX-03 OK, equal to Mecway's own solve within 1e-13; checked in the Mecway GUI (formulas valid, contour) |
 | S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless + GUI); regression 2376/2382 |
+| S35 | HOMARD adaptive refinement inside the job (`MACR_ADAP_MAIL`) for thermal and nonlinear static; results projected back onto the Mecway mesh (`PROJ_CHAMP`), refined result in VTU/MED | open | S7 | chosen by the user 28 Oct 2026 (route a: no new `.liml`); not built |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1622,3 +1623,45 @@ Mecway's `accx`) are a problem; if so, fix it.
   vector item next to *velocity*.
 - Open: principal values of shells (top/middle/bottom, Mecway `principal1u/m/b`), and `GLe1`.
 
+
+### S35 – HOMARD adaptive refinement inside the job (route a)
+**Goal (user, 28 Oct 2026):** adaptive refinement for analyses the Mecway route of S7 cannot handle
+(thermal, nonlinear static), with HOMARD inside the Code-Aster job. The loop runs in one job (no OK
+click per loop, the Mecway model stays unchanged). Mecway gets the results projected onto its
+original mesh; the full refined result goes to ParaView/MWHub Post. Linear static keeps the S7 route
+(`refine_x2`); writing a new `.liml` with the refined mesh (route b) is not part of this step.
+**Known:** HOMARD 11.10 is in the Code-Aster installation (`tools/ASTER_HOMARD`); `MACR_ADAP_MAIL`
+works there in 3D (S7: sslv110f, HEXA8 1680 -> 1698 + 56 TETRA4, conforming, TEST_RESU OK). No
+Salome needed (the SalomePlatform `homard` module is only a Salome GUI around the same program;
+`mmgplugin` needs Salome too, so not used).
+**Source:** U7.03.01 (`MACR_ADAP_MAIL`), U4.72.05 (`PROJ_CHAMP`), U4.81.06 (`CALC_ERREUR`, if that is
+the right number: check), validation cases with HOMARD in the Code-Aster test base.
+**Research first:**
+- Indicator per analysis: thermal `ERTH_ELEM` (does it exist for `THER_LINEAIRE` and
+  `THER_NON_LINE` in 17.4?); nonlinear static: `ERME` is only linear, so a field indicator
+  (jump/value of `SIEQ`, `EPSP`/`VARI`, or `ERZ1`/`ERZ2`: which are allowed with plasticity?).
+  Choose and document the default; options as settings or `#ASTER-OPTIE`.
+- `MACR_ADAP_MAIL` with the bridge's meshes: hex20/tet10/wedge/pyramid (quadratic supported?),
+  mixed solids with shells/beams (refine only the solid group, `GROUP_MA`), curved boundaries
+  (`FRONTIERE_ANALYTIQUE` cylinder/sphere: worth it, or leave as is).
+- Groups after refinement: do the bridge's `GROUP_MA`/`GROUP_NO` (loads, constraints, contact) stay
+  complete on the new mesh, also node groups (the S7 limitation AD-03)?
+- Nonlinear: refine between load steps with `MAJ_CHAM` (fields carried over) or restart the whole
+  analysis on the new mesh per loop; which is reliable with plasticity and contact?
+- Back to Mecway: `PROJ_CHAMP` of the final result onto the original mesh (nodes and element
+  nodes), so `export_results` can keep checking the nodes against the `.liml`; what happens to
+  `*_ELNO` fields and to `ERME`/indicator fields; time steps of a nonlinear run.
+**Build (after the research):** setting(s) on the pages Thermal and Nonlinear (e.g.
+`adapt_homard`, target, max. loops, max. elements; NL/EN tooltips), loop in the `.comm` templates
+(Python loop around solve -> indicator -> `MACR_ADAP_MAIL`), `PROJ_CHAMP` back to the original mesh
+before the export, refined mesh and result to VTU/MED (`vtu_export`/`med_export`), log per loop
+(elements, global indicator). Clear ERROR/WARNING instead of silent fallback (memory:
+messages above auto-fix).
+**Verify:** thermal case with a known peak (e.g. heat flux around a hole or a re-entrant corner,
+analytical or uniformly refined reference) and a nonlinear static case (plasticity at a notch,
+against a uniformly refined reference): the result converges with fewer elements than uniform
+refinement; projected values in Mecway equal the refined result at the original nodes; existing
+TH/NL families unchanged with the setting off. GUI: the projected result in Mecway, the refined
+result in MWHub Post.
+**Done when:** both cases within tolerance, docs NL/EN (Foutschatter/Error_estimator §6, settings,
+KNOWN_BUGS 65 updated), regression 0 NOK/FOUT.
