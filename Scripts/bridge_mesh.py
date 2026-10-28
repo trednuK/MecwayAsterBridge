@@ -2284,9 +2284,10 @@ def _edge_loads(model_data, bc, what):
     no moment), that of a beam end the cross-section A. Translated as:
     shell edge f_i = -p int(N_i t n dl) (n in the shell plane, away from the
     element) or T int(N_i t dl); beam end -p A u (u = the axis pointing
-    outwards) or T A. That Mecway computes the edge face this way is NOT
-    verified against a Mecway solution (no example with pressure on
-    a shell edge or beam end). Code-Aster has no pressure on a
+    outwards) or T A. Shell edge checked headless against Mecway 34
+    (pressure 1000 Pa on a 1 m edge, t = 10 mm: reaction 10 N in both, S17);
+    beam ends NOT verified against a Mecway solution. Side faces of beams
+    (faceid 1) go to _beam_side_loads. Code-Aster has no pressure on a
     shell edge (PRES_REP: "domaine de milieu continu 2D ou 3D, ou ...
     coques", catalogue affe_char_meca.py v17.4); FORCE_ARETE would need a group
     per direction. Statically equivalent to the consistent
