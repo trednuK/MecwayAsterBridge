@@ -756,7 +756,7 @@ tolerantie 1e-6).
   gat binnen 1e-6; Σ R_x exact; verplaatsingen = Mecway.
 - **PL-03** (dikwandige cilinder, vlakke rek, kwart ring quad8 n × 2n, a = 0,1 m,
   b = 0,2 m, 100 MPa): n = 8: u_r −0,0003%, σ_θ −0,18%, σ_z +0,42%: hetzelfde als LS-04
-  (hex20); toleranties als LS-04. Mecway: zie KB122 (druk op gekromde randen).
+  (hex20); toleranties als LS-04. Mecway: zie KB125 (druk op gekromde randen).
 - **PL-04** (dezelfde cilinder axisymmetrisch: ring van 10 mm met Y vast op beide einden,
   quad8 n × 1): n = 8: u_r −0,0004%, tangentiële spanning (`stresszz`) −0,41%, σ_r
   (`stressxx`) +0,97% (−p aan de belaste wand, geëxtrapoleerd vanuit de integratiepunten; het

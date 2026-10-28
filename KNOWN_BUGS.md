@@ -143,7 +143,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    20.90 (its rigid knot at the joint is linear); Mecway with solver CCX gives no buckling
    solution for beams headless. Nothing to fix in the bridge.
 
-122\. **2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is
+125\. **2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is
    right** (confirmed, Mecway 34 headless and Code-Aster 17.4; `bridge_plane.py`, verification
    PL-03). Quarter ring a = 0.1 m, b = 0.2 m in Static 2D, plane strain, t = 10 mm, quad8 4 × 8
    with the midside nodes on the arcs, pressure 100 MPa on the inner arc. The resultant of a
@@ -157,7 +157,7 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 ## Translation that works differently from Mecway
 
-124\. **Dynamic Response (D30, D20, DA0) with *Generate solution every n time steps* > 1: the
+127\. **Dynamic Response (D30, D20, DA0) with *Generate solution every n time steps* > 1: the
    bridge steps per output interval, n times Mecway's step** (confirmed with runs, Code-Aster
    17.4 and Mecway 34 headless; `bridge_to_aster._build_dyna_listinst_block`, setting
    `substeps_per_output` = 1). Cantilever in D20 (quad8, step 2e-5 s, every 5th step written):
@@ -1060,7 +1060,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    `W/mm2`: Mecway SI, the bridge 1e-6). Mecway writes only units from its own list, so this
    only matters for hand-edited files.
 
-123\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b).
+126\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b).
    Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
    linear static (`lin_static_3d`), Dynamic Response 2D/Axisymmetric (D20, DA0) in
    `dyna_impl_3d` (implicit, Rayleigh damping, time tables; no explicit scheme, mode

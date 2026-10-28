@@ -752,7 +752,7 @@ tolerance 1e-6).
   hole within 1e-6; Σ R_x exact; displacements = Mecway.
 - **PL-03** (thick-walled cylinder, plane strain, quarter ring quad8 n × 2n, a = 0.1 m,
   b = 0.2 m, 100 MPa): n = 8: u_r −0.0003%, σ_θ −0.18%, σ_z +0.42%: the same as LS-04
-  (hex20); tolerances as LS-04. Mecway: see KB122 (pressure on curved edges).
+  (hex20); tolerances as LS-04. Mecway: see KB125 (pressure on curved edges).
 - **PL-04** (the same cylinder axisymmetric: ring of 10 mm with Y fixed on both ends,
   quad8 n × 1): n = 8: u_r −0.0004%, hoop stress (`stresszz`) −0.41%, σ_r (`stressxx`)
   +0.97% (−p at the loaded wall, extrapolated from the integration points; it converges as

@@ -13,13 +13,13 @@
   Mecway recognises them. Displacements and reactions equal to Mecway's own solution
   (≤ 1e-11); Kt of a plate with a hole and Lamé within the tolerances of the 3D cases
   (verification PL-01 … PL-06). Acoustic 2D (A20), beams in 2D and several thicknesses give
-  an ERROR (KNOWN_BUGS 123). New document *2D: plane stress, plane strain, axisymmetric*.
+  an ERROR (KNOWN_BUGS 126). New document *2D: plane stress, plane strain, axisymmetric*.
 - **2D and axisymmetric dynamic response (STAPPENPLAN S16b)**: Mecway's *Dynamic Response
   2D* (D20) and *Dynamic Response Axisymmetric* (DA0) go through `dyna_impl_3d` with the same
   2D translation; with schema NEWMARK, deformation PETIT and one solver step per Mecway step
   equal to Mecway's own solution (≤ 4e-8, verification PL-10 … PL-12: bar wave, damped ring,
   time-table force). Note for D30 too: with *Generate solution every n time steps* > 1, set
-  "Solver steps per output interval" to n (KNOWN_BUGS 124).
+  "Solver steps per output interval" to n (KNOWN_BUGS 127).
 
 ## V2026.5 – 28 October 2026
 

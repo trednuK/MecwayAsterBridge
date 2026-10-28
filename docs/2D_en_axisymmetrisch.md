@@ -147,11 +147,11 @@ lineair met Newmark (gemiddelde versnelling): met *Tijdschema (SCHEMA_TEMPS)* `N
 `deformation` `PETIT` en een rekenstap per Mecway-stap (*Rekenstappen per
 uitvoerinterval* = n van *every n time steps*) is de bridge gelijk aan Mecway's eigen
 D20/DA0-oplossing (≤ 4e-8, PL-10 … PL-12). Met de standaard (HHT, een stap per
-uitvoerinterval) geeft de bridge een WARNING en rekent hij met grotere stappen (KB124).
+uitvoerinterval) geeft de bridge een WARNING en rekent hij met grotere stappen (KB127).
 
 ## 3. Niet mogelijk
 
-KNOWN_BUGS 123; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
+KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
 
 - Balken, truss, veren of volume-elementen in een 2D-analyse (Mecway's S20 kent balken
   en truss): ERROR, de bridge stopt.
@@ -185,7 +185,7 @@ KNOWN_BUGS 123; geplande stappen in `STAPPENPLAN.md` (S16d, S16e).
   gelijk.
 - Druk op gekromde kwadratische randen: Mecway's resultante is iets te groot (kwart ring
   a = 0,1 m, t = 10 mm, 100 MPa: Mecway 100161 N in plaats van p·a·t = 100000 N, u_r aan
-  de binnenwand 0,17% kleiner dan de bridge); de bridge is exact (KB122).
+  de binnenwand 0,17% kleiner dan de bridge); de bridge is exact (KB125).
 
 ## 6. Meldingen en oplossingen
 

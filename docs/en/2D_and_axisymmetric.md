@@ -146,11 +146,11 @@ Newmark (average acceleration): with "Time scheme (SCHEMA_TEMPS)" `NEWMARK`,
 `deformation` `PETIT` and one solver step per Mecway step ("Solver steps per output
 interval" = n of *every n time steps*) the bridge is equal to Mecway's own D20/DA0
 solution (≤ 4e-8, PL-10 … PL-12). With the default (HHT, one step per output interval)
-the bridge gives a WARNING and computes with larger steps (KB124).
+the bridge gives a WARNING and computes with larger steps (KB127).
 
 ## 3. Not possible
 
-KNOWN_BUGS 123; planned steps in `STAPPENPLAN.md` (S16d, S16e).
+KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md` (S16d, S16e).
 
 - Beams, trusses, springs or solids in a 2D analysis (Mecway's S20 allows beams and
   trusses): ERROR, the bridge stops.
@@ -183,7 +183,7 @@ KNOWN_BUGS 123; planned steps in `STAPPENPLAN.md` (S16d, S16e).
   the stress is uniform or linear in the element they are equal.
 - Pressure on curved quadratic edges: Mecway's resultant is slightly too large (quarter
   ring a = 0.1 m, t = 10 mm, 100 MPa: Mecway 100161 N instead of p·a·t = 100000 N, u_r at
-  the inner wall 0.17% smaller than the bridge); the bridge is exact (KB122).
+  the inner wall 0.17% smaller than the bridge); the bridge is exact (KB125).
 
 ## 6. Messages and solutions
 
