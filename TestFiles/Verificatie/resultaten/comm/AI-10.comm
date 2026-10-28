@@ -21,8 +21,10 @@
 # A brace that is not a placeholder: double it ({ or }).
 
 # Language of the messages of the job scripts (aster_*.py)
+# and the setting vtu_export (aster_vtu)
 import os as _bridge_os
 _bridge_os.environ['BRIDGE_LANGUAGE'] = 'nl'
+_bridge_os.environ['BRIDGE_VTU'] = '0'
 DEBUT(LANG='EN')
 
 # =====================================================
@@ -117,7 +119,7 @@ sys.path.insert(0, '<REPO>\\Scripts')
 import aster_acoustic_complex
 aster_acoustic_complex.solve_modes(
     rigi_c, mass_c, [
-        (amz1, complex(0.0012, 0.0), 'Vloer: Z = 1000'),
+        (amz1, complex(0.0012, -0.0), 'Vloer: Z = 1000'),
         (amz2, complex(0.0016, 0.0008), 'Plafond: Z = 600-300i'),
     ],
     numedd, mesh, '<WORKDIR>\\AI-10\\AI-10_verif_results.xml', '<WORKDIR>\\AI-10\\AI-10.liml',

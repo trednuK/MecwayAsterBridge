@@ -56,8 +56,10 @@
 #   does not raise a KeyError on it.
 
 # Language of the messages of the job scripts (aster_*.py)
+# and the setting vtu_export (aster_vtu)
 import os as _bridge_os
 _bridge_os.environ['BRIDGE_LANGUAGE'] = 'nl'
+_bridge_os.environ['BRIDGE_VTU'] = '0'
 DEBUT(LANG='EN')
 
 # =====================================================
@@ -329,7 +331,8 @@ sys.path.insert(0, '<REPO>\\Scripts')
 import aster_results_export
 try:
     aster_results_export.print_static_check(res, model, fieldmat,
-                                            globals().get('cara'))
+                                            globals().get('cara'),
+                                            mass=True)
 except Exception as _sc_err:
     print('BRIDGE_STATCHECK_SKIPPED',
           getattr(_sc_err, 'id_message', '') or _sc_err)
@@ -361,6 +364,7 @@ aster_results_export.export_results(
                         'res_flux', 'res_err', 'eps_sup', 'eps_moy',
                         'eps_inf', 'res_efs')
                        if k in globals()),
+    failures=globals().get('_bz_events'),
     precision='double', opt_in=['contact'])
 
 

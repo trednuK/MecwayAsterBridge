@@ -95,13 +95,16 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 23 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `f14f6c7`
+Status 28 October 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `58ea2a2`
 (after V2026.4: among others the mass and reaction check, cable pretension, buckling
 with constant loads, hysteretic damping, adaptive time steps, line search, smoothed
-contact normals and the section properties; Code-Aster 17.4): 439 test cases, 2362
-checks, 2356 OK, 6 BEKEND (known), 0 NOK/FOUT. After the last review fixes NL-8, NL-9,
-LS-20 and NL-03 were run again: unchanged.
+contact normals, the section properties, VTU export, the *failed* field and the hex8
+warnings for rubber; Code-Aster 17.4): 439 test cases, 2362 checks, 2356 OK, 6 BEKEND
+(known), 0 NOK/FOUT, equal to the run on `f14f6c7` of 23 October (no status change, no FEM
+value more than 0.1% different). After the heat flux per element node and the formula
+warning (issue #8) the thermal (TH), welding (WE) and hyperelastic cases (NL-50 .. NL-53) and AI-02
+were run again: unchanged.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|

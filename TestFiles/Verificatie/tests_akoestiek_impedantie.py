@@ -179,8 +179,11 @@ def _phase_deg(z):
 def tube_roots(z, count, pnode=False, c=C_AIR, L=LT):
     """Analytische eigenwaarden s (f >= 0) van de buis, oplopend in f (zie
     de kop); [] bij Z = rho c (geen wortel)."""
-    zeta = RHOC / complex(z)
-    arg = 1.0 / zeta if pnode else zeta
+    # complex / complex: Python 3.14 divides float / complex without
+    # converting the float, which gives -0j for a real z, puts atanh on the
+    # other side of its branch cut (imag -pi/2 instead of +pi/2) and shifts n
+    zeta = complex(RHOC) / complex(z)
+    arg = complex(1.0) / zeta if pnode else zeta
     if abs(arg - 1.0) < 1e-12:
         return []
     a = cmath.atanh(arg)

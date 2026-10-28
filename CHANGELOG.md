@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Formulas after a bridge run (GitHub issue #8)**: Mecway computes a formula (*Solution >
+  Formula*) during its own solve; the bridge does not, so a formula that is already in the model
+  is invalid (red) after the run. The bridge now says so (WARNING and in the list of what was not
+  translated): delete the formula and create it again after loading the results, and Mecway
+  computes it from the bridge results.
+- **Heat flux per element node**: thermal results now also contain the heat flux of volume
+  elements per element node (`FLUX_ELNO`, `heatfluxx/y/z/mag`), as Mecway itself stores it, so
+  the contour per element is the same. Equal to Mecway's own solution within 1e-9 (also with a
+  rotated mesh for shells outside Z = constant).
 - **Rubber on hex8 (GitHub issue #5)**: with hyperelastic material on hex8 and *Hex8* = `3D`
   the bridge now warns about volumetric locking (measured ~3x too stiff on a bonded rubber
   block; `LINE_QUAD` was within ~6%) instead of giving the bending warning. *Hex8* = `3D_SI`

@@ -25,7 +25,13 @@ template `Scripts/AsterTemplate_Thermique.comm`). Code-Aster 17.4.
   initial temperature start, as in Mecway, at 0 K (manual v33 §6.7.2). The bridge
   warns if there is no initial temperature.
 - **Results:** only via `result_route = "liml"`: `temperature` (nodes) and the
-  heat flux `heatfluxx/y/z` + `heatfluxmag` (`FLUX_NOEU` = −λ grad T; nodes).
+  heat flux `heatfluxx/y/z` + `heatfluxmag` (`FLUX_NOEU` = −λ grad T; nodes), and for
+  volume elements also per element node (`FLUX_ELNO`), as Mecway stores it.
+- **Formulas** (*Solution > Formula*, e.g. `qf.z/3600/(12^2)`): Mecway computes them during
+  its own solve, the bridge does not. A formula that is already in the model is therefore
+  invalid (red) after a bridge run (WARNING). Delete it and create it again after loading the
+  results: Mecway then computes it from the bridge results (checked with `qf.x`, GitHub
+  issue #8).
 
 ## 2. Settings (start screen, page "Thermal")
 

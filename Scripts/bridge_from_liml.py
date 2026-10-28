@@ -2929,6 +2929,41 @@ def extract_aster_data_from_liml(file_path):
                            item.get("type", "?"), shape, where, hex8_mod))
 
             # --------------------------------------------------
+            # 2d-quater. RESULT FORMULAS (Solution > Formula)
+            #   <formula name="Fq" displayunit="" fieldscalar="formula">
+            #     <unit exponents="+0+1-3">W/m²</unit>
+            #     <formula>qf.x</formula></formula>
+            # Mecway evaluates a formula during its own solve and stores
+            # the values as nodevariable <fieldscalar> ("formula",
+            # "formula(2)", ...; seen headless in Mecway 34). The bridge does
+            # not evaluate formulas, so after a bridge run such a formula
+            # has no values and Mecway shows it as invalid (red). A formula
+            # created after loading the results is computed by Mecway from
+            # them (checked in the Mecway 34 GUI, qf.x on a thermal bridge
+            # result; GitHub issue #8).
+            # --------------------------------------------------
+            elif tag == "formula" and item.find("formula") is not None:
+                expr = (item.find("formula").text or "").strip()
+                model_data["skipped_loads"].append(tr(
+                    u"formule '{0}' ({1}): door Mecway opnieuw maken na het "
+                    u"laden",
+                    u"formula '{0}' ({1}): create it again in Mecway after "
+                    u"loading").format(item.get("name", ""), expr))
+                log(tr(u"WARNING: Formule '{0}' ({1}) rekent Mecway bij zijn "
+                       u"eigen solve uit; de bridge doet dat niet, dus na "
+                       u"het laden van de resultaten is de formule ongeldig "
+                       u"(rood). Verwijder de formule en maak hem opnieuw "
+                       u"via Solution > Formula: Mecway rekent hem dan uit "
+                       u"de resultaten van de bridge.",
+                       u"WARNING: Formula '{0}' ({1}) is computed by Mecway "
+                       u"during its own solve; the bridge does not do that, "
+                       u"so after loading the results the formula is "
+                       u"invalid (red). Delete the formula and create it "
+                       u"again via Solution > Formula: Mecway then computes "
+                       u"it from the bridge results.").format(
+                           item.get("name", ""), expr))
+
+            # --------------------------------------------------
             # 2e. UNKNOWN LOADS / BOUNDARY CONDITIONS
             # Mecway knows many more types (manual v33 chapter 9: moment,
             # traction, frictionless, symmetry, contact, ...). Anything with a

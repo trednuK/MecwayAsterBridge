@@ -176,6 +176,7 @@ bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.
 | Uitvoertijden, *Generate solution every n time steps* | Ja | |
 | Automatic time stepping | Ja | L30 (niet-lineair statisch): `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, `ARCHIVAGE` op die tijden; instelling `auto_time_stepping`. Dynamisch niet: vaste stappen, knippen bij divergentie. |
 | Incompatible hex8 | Nee | KB1. |
+| Solution > Formula (resultaatformules, bijv. `qf.z/3600/(12^2)`) | Nee | Mecway rekent ze uit bij zijn eigen solve; na een run van de bridge is een formule die al in het model stond ongeldig (WARNING). Maak hem opnieuw na het laden van de resultaten: Mecway rekent hem dan uit de resultaten van de bridge (KB121). |
 | CCX > custom element type (bijv. Hex8 → C3D8R) | Nee | Alleen CalculiX: WARNING, Code-Aster gebruikt de pagina *Elementen* (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I hebben geen gelijke). [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md), hyperelastisch materiaal. |
 | Configuraties | Ja | Eén per run, te kiezen op het startscherm (*Configuratie*); resultaten in de solution van die configuratie ([`Handleiding.md`](Handleiding.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Deels | Alleen `#ASTER`-regels; gewone CCX-kaarten zonder melding genegeerd. |

@@ -2267,6 +2267,7 @@ class _Thermal(object):
                 "        _F(TOUT='OUI', CHAM_GD=fl_zero),\n"
                 "        {0},\n    ))\n"
                 "    res_flux.setField(fl_g, 'FLUX_NOEU', nume_r)\n"
+                "{5}"
                 "# Mesh back to its original position (aster_results_export "
                 "compares the node coordinates with the .liml)\n"
                 "mesh = MODI_MAILLAGE(\n    reuse=mesh,\n    MAILLAGE=mesh,\n"
@@ -2274,7 +2275,36 @@ class _Thermal(object):
                 "ANGLE={4}),\n)\n").format(
                     ",\n        ".join(terms), _r(self.rotation[1][0]),
                     _r(self.rotation[1][1]), _r(self.rotation[1][2]),
-                    _r(-self.rotation[2]))
+                    _r(-self.rotation[2]), self._elno_rotation(terms))
+
+    def _elno_rotation(self, terms):
+        """FLUX_ELNO of the volume elements back to the global axes too
+        (aster_results_export writes it as element-node heat flux of volume
+        elements, GitHub issue #8). Same terms as FLUX_NOEU, only on the
+        solid groups (PLAN cells have no FLUZ). CREA_CHAMP ELNO_FLUX_R
+        EXTR/ASSE + Result.setField checked with Code-Aster 17.4 (TH-01a,
+        FLUX -> FLUY, FLUY -> -FLUX per element node)."""
+        solids = [g for g, i in self.elsets.items() if i["cls"] == "solid"]
+        if not solids:
+            return ""
+        grp = _fmt_groups(solids)
+        return ("fe_zero = CREA_CHAMP(TYPE_CHAM='ELNO_FLUX_R', "
+                "OPERATION='AFFE', MODELE=model, PROL_ZERO='OUI', "
+                "AFFE=_F(GROUP_MA={0}, NOM_CMP=('FLUX', 'FLUY', 'FLUZ'), "
+                "VALE=(0.0, 0.0, 0.0)))\n"
+                "for nume_r in res_flux.getAccessParameters()['NUME_ORDRE']:\n"
+                "    fe_r = CREA_CHAMP(TYPE_CHAM='ELNO_FLUX_R', "
+                "OPERATION='EXTR', RESULTAT=res_flux, NOM_CHAM='FLUX_ELNO', "
+                "NUME_ORDRE=nume_r)\n"
+                "    fe_g = CREA_CHAMP(TYPE_CHAM='ELNO_FLUX_R', "
+                "OPERATION='ASSE', MODELE=model, PROL_ZERO='OUI', ASSE=(\n"
+                "        _F(GROUP_MA={0}, CHAM_GD=fe_zero),\n"
+                "        {1},\n    ))\n"
+                "    res_flux.setField(fe_g, 'FLUX_ELNO', nume_r)\n").format(
+                    grp, ",\n        ".join(
+                        t.replace("TOUT='OUI', CHAM_GD=fl_r",
+                                  "GROUP_MA={0}, CHAM_GD=fe_r".format(grp))
+                        for t in terms))
 
 
 def _read_mesh_segments(path):

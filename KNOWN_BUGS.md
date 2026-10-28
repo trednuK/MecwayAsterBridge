@@ -1020,3 +1020,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    writes a formula there (NOT seen). (g) The error estimator (`CALC_ERREUR`, load
    `load_err`) only takes constant loads into account: a face with a formula load is
    a stress-free boundary for the estimator (INFO), so a too-large local error there.
+
+121\. **Result formulas (*Solution > Formula*) are not computed** (confirmed, Mecway 34,
+   GitHub issue #8). Mecway evaluates a formula during its own solve and stores the values as
+   nodevariable `formula`, `formula(2)`, ... (the `fieldscalar` of the `<formula>`). The bridge
+   does not evaluate formulas, so a formula that is in the model before the run is invalid (red)
+   after the results are loaded, and such a formula can make Mecway report "De gegeven sleutel
+   is niet aanwezig in het woordenboek" when another formula is created. `bridge_from_liml`
+   (step 2d-quater) gives a WARNING and lists it in `skipped_loads`. Workaround (checked in the
+   GUI with `qf.x` on a thermal result): delete the formula and create it again after loading;
+   Mecway then computes it from the bridge results (node values are enough). Evaluating the
+   formulas in the bridge: STAPPENPLAN S33.

@@ -64,6 +64,7 @@ S7, S8, S5, S9).
 | S30 | Redo the Code-Aster forum research | later | forum online again (offline until about 30 Oct 2026) | planned 23 Oct 2026 |
 | S31 | LAC (mortar) contact as an option | later | – | long-term option, planned 23 Oct 2026 |
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
+| S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | open | – | planned 27 Oct 2026 (GitHub issue #8); until then a WARNING with the workaround |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1542,4 +1543,18 @@ seen in NL-83 (one extra-iteration attempt succeeded, the next failed with `ITER
 7 cuts and ran 72 s instead of 52 s). **NL-90 failed:** in the step to t = 0.1 the Newton iterations are identical in both runs (residual 2.8e1 .. 1.4e5, not converging) until the tangent matrix becomes singular at iteration 14. With `DECOUPE` that is caught as an `ERREUR` event ("La matrice du système est singulière", `MECANONLINE10_33`), the step is cut and the case solves (tip within 0.01 %); with `ITER_SUPPL` the same singular matrix is raised as `<EXCEPTION> FACTOR_11` and the run stops at t = 0.05 (tip u_y 0.033 instead of 0.493 m). So the fallback works for non-convergence but not for a singular matrix (NOT verified in the source; seen in the .mess). **Dropped**; `ACTION='DECOUPE'` kept.
 **Possible follow-up (not planned):** only with a convergence criterion that stops the extra iterations when the
 residual rises (`EVENEMENT='DIVE_RESI'` before `ERREUR`), with its own regression run.
+
+### S33 – Evaluate Mecway result formulas in the bridge
+**Goal:** a `<formula>` in the model (*Solution > Formula*) gets its values from the bridge, as
+Mecway does during its own solve: nodevariable named after the `fieldscalar` (`formula`,
+`formula(2)`, ...) in every time step (KNOWN_BUGS 121, GitHub issue #8).
+**Research first:** Mecway's formula syntax (operators, functions, `^`), the full list of symbols
+and which result variable each one reads (the list in Mecway's formula window: `u.x`, `s.xx`,
+`qf.x`, `FR.x`, `x`, `t`, ...), node or element-node values, and the units: are the symbols SI and
+what do the `<unit exponents=...>` lines change (measure with Mecway's own solve: a formula's
+stored values against the variables it uses, as for `qf.x` on TH-01a). Symbols of fields the
+bridge does not write: WARNING, formula left out.
+**Build:** evaluator in `aster_results_export` (numpy, no `eval` of user text: own small parser),
+after the other variables; WARNING in `bridge_from_liml` only for formulas it cannot evaluate.
+**Verify:** formulas on TH-01a, a static and a nonlinear case against Mecway's own solve.
 

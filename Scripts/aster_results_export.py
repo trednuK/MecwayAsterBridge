@@ -218,6 +218,16 @@ FIELD_TABLE = (
      ("temperature", "res_ther", "TEMP", "TEMP", "temperature", KNOOP)] +
     [("heat_flux", "res_flux", "FLUX_NOEU", c, "heatflux" + s, KNOOP)
      for c, s in (("FLUX", "x"), ("FLUY", "y"), ("FLUZ", "z"))] +
+    # Heat flux also per element node (FLUX_ELNO, volume elements), as
+    # Mecway stores it (heatfluxx/y/z/mag as nodevariable AND
+    # elementnodevariable, seen headless in Mecway 34, T30), so the heat
+    # flux contour per element is the same as Mecway's. Not the cause of
+    # GitHub issue #8 (formula with qf.z invalid): Mecway computes a formula
+    # created after loading also from the node values alone (checked in
+    # the GUI); a formula defined before the run is reported by
+    # bridge_from_liml (step 2d-quater).
+    [("heat_flux", "res_flux", "FLUX_ELNO", c, "heatflux" + s, ELEMKNOOP)
+     for c, s in (("FLUX", "x"), ("FLUY", "y"), ("FLUZ", "z"))] +
     # Metallurgy (bridge_metallurgy.py, CALC_META): META_NOEU V1..V5 =
     # phase fractions ferrite, pearlite, bainite, martensite, austenite
     # (Behaviours/acier.py; seen in a run), DURT_NOEU HV = hardness.
@@ -1061,7 +1071,32 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
                     [node_vars[p] for p in parts
                      if p in OPTIONAL_PARTS and p in node_vars]))
         out.append(var)
-    return out + list(elem_vars.values())
+    for name, var in elem_vars.items():
+        # Element-node magnitude (heatfluxmag: Mecway stores heat flux both
+        # as node and as element-node variable, seen headless in Mecway 34,
+        # T30 with the internal solver)
+        for mag, parts in (MAGNITUDES.items() if magnitudes else ()):
+            if parts[0] == name and all(p in elem_vars for p in parts):
+                mvar = _elem_magnitude_var(mag, [elem_vars[p] for p in parts])
+                if mvar is not None:
+                    out.append(mvar)
+        out.append(var)
+    return out
+
+
+def _elem_magnitude_var(name, parts):
+    """sqrt(x^2+y^2+z^2) per element node; only if all components cover the
+    same elements (same field, so the same gather order)."""
+    ids = parts[0].ids
+    if any(not np.array_equal(ids, p.ids) for p in parts[1:]):
+        return None
+
+    def getter(fields):
+        vals = [p.getter(fields) for p in parts]
+        if any(v is None for v in vals):
+            return None
+        return np.sqrt(sum(v ** 2 for v in vals))
+    return _Var(name, True, ids, getter)
 
 
 def _magnitude_var(name, parts, optional=()):

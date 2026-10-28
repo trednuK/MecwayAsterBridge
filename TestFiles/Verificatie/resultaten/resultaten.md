@@ -1,6 +1,6 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge f14f6c7, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge d7c67c6, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
 **2356 van 2362 controles binnen de tolerantie** (439 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
@@ -178,14 +178,14 @@ Gemaakt door `run_verificatie.py` op 2026-10-23 (bridge f14f6c7, Code-Aster 17.4
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.348 1/s t.o.v. Mecway | 182.35 1/s | 182.35 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 255 Hz t.o.v. Mecway | 255 Hz | 255 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.351 1/s t.o.v. Mecway | 182.35 1/s | 182.35 | +0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 425.006 Hz t.o.v. Mecway | 425.01 Hz | 425.01 | +0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 425.006 Hz t.o.v. Mecway | 425.01 Hz | 425.01 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.367 1/s t.o.v. Mecway | 182.37 1/s | 182.37 | +0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 595.036 Hz t.o.v. Mecway | 595.04 Hz | 595.04 | -0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.419 1/s t.o.v. Mecway | 182.42 1/s | 182.42 | -0.00% | 1% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 765.126 Hz t.o.v. Mecway | 765.13 Hz | 765.13 | -0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 595.036 Hz t.o.v. Mecway | 595.04 Hz | 595.04 | +0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.419 1/s t.o.v. Mecway | 182.42 1/s | 182.42 | +0.00% | 1% | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f 765.126 Hz t.o.v. Mecway | 765.13 Hz | 765.13 | +0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay 182.54 1/s t.o.v. Mecway | 182.54 1/s | 182.54 | +0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (85 Hz) | 0.5624 - | 0.5624 | -0.00% | 0.01% | OK |
-| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (85 Hz) | 0 graden | 7.7830e-11 | 7.7830e-11 | 0.01 graden | OK |
+| AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (85 Hz) | 0 graden | 7.8233e-11 | 7.8233e-11 | 0.01 graden | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=1) | 170 Hz | 170 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=1) | 1.3872e-04 1/s | 1.3872e-04 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=2) | 340 Hz | 340 | +0.00% | 1% | OK |

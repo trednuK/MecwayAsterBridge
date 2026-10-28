@@ -176,6 +176,7 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | Yes | L30 (nonlinear static): `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, `ARCHIVAGE` at those times; setting `auto_time_stepping`. Dynamic not: fixed steps, cutting on divergence. |
 | Incompatible hex8 | No | KB1. |
+| Solution > Formula (result formulas, e.g. `qf.z/3600/(12^2)`) | No | Mecway computes them during its own solve; after a bridge run a formula that was already in the model is invalid (WARNING). Create it again after loading the results: Mecway then computes it from the bridge results (KB121). |
 | CCX > custom element type (e.g. Hex8 → C3D8R) | No | CalculiX only: WARNING, Code-Aster uses the *Elements* page (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I have no equal). [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md), hyperelastic material. |
 | Configurations | Yes | One per run, chosen on the start screen (*Configuration*); results in the solution of that configuration ([`UserGuide.md`](UserGuide.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Partly | Only `#ASTER` lines; ordinary CCX cards are ignored without a message. |

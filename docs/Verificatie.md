@@ -97,13 +97,15 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 23 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `f14f6c7`
+Stand 28 oktober 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `58ea2a2`
 (na V2026.4: o.a. de massa- en reactiecontrole, kabelvoorspanning, knik met vaste last,
-hysteretische demping, adaptieve tijdstappen, line search, gladde contactnormalen en de
-doorsnede-eigenschappen; Code-Aster 17.4): 439 testcases, 2362 controles, 2356 OK,
-6 BEKEND, 0 NOK/FOUT. Na de laatste reviewfixes zijn NL-8, NL-9, LS-20 en NL-03 opnieuw
-gerekend: ongewijzigd.
+hysteretische demping, adaptieve tijdstappen, line search, gladde contactnormalen, de
+doorsnede-eigenschappen, VTU-export, het veld *failed* en de hex8-meldingen bij rubber;
+Code-Aster 17.4): 439 testcases, 2362 controles, 2356 OK, 6 BEKEND, 0 NOK/FOUT, gelijk aan
+de run op `f14f6c7` van 23 oktober (geen statuswijziging, geen FEM-waarde > 0,1 % anders).
+Na de warmteflux per elementknoop en de formulemelding (issue #8) zijn de thermische (TH),
+las- (WE) en hyperelastische gevallen (NL-50 .. NL-53) en AI-02 opnieuw gerekend: ongewijzigd.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
