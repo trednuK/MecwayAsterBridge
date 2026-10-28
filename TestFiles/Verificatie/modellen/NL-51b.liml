@@ -15,7 +15,7 @@
   <displacement selection="SymX"><value>0 mm</value><x>1</x><y>0</y><z>0</z></displacement>
   <displacement selection="SymY"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
   <displacement selection="SymZ"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
-  <displacement selection="Trek"><value time="0 s">0 mm</value><value time="1.0 s">-3 mm</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Trek"><value time="0 s">0 mm</value><value time="1 s">-3 mm</value><x>1</x><y>0</y><z>0</z></displacement>
   <mat name="Rubber">
     <mechanical type="MooneyRivlin" hyperelasticc10="0.8 MPa" hyperelasticc01="0.2 MPa" d1="1e-09 m²/N" />
   </mat>
