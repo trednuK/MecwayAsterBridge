@@ -37,7 +37,7 @@ from collections import OrderedDict
 
 from bridge_utils import (log, tr, error_estimator_requested,
                           get_active_analysis)
-from bridge_bcs import SUPPORTED_BCS, _angl_naut, is_position
+from bridge_bcs import SUPPORTED_BCS, _angl_naut, _scale, is_position
 import bridge_warping
 import bridge_plane
 import bridge_homard
@@ -2294,6 +2294,19 @@ def _edge_loads(model_data, bc, what):
     Mecway nodes.
     """
     sel = bc["selection"]
+    nodes = model_data["mesh_nodes"]
+    conn = model_data["_conn"]
+    faces_list = model_data.get("group_face_list", {}).get(sel, [])
+    edges = [f for f in faces_list if f["kind"] == "shelledge"]
+    # Side faces of beams (faceid 1, the whole element): _beam_side_loads
+    sides = [f for f in faces_list if f["kind"] == "beam" and
+             f["fid"] == 1 and len(set(f["nodes"])) > 1]
+    ends = [f for f in faces_list if f["kind"] == "beam" and f not in sides]
+    if sides:
+        _beam_side_loads(model_data, bc, sides, what)
+        if not edges and not ends:
+            bc["skip"] = True
+            return
     if any(is_position(v) for v in bc["aster_dict"].values()):
         # The nodal forces are fixed vectors times the value
         # (_render_node_loads); a formula in x, y, z would have to be
@@ -2304,11 +2317,6 @@ def _edge_loads(model_data, bc, what):
             "formula in x, y, z on shell edges or beam ends "
             "(KNOWN_BUGS 104)"))
         return
-    nodes = model_data["mesh_nodes"]
-    conn = model_data["_conn"]
-    faces_list = model_data.get("group_face_list", {}).get(sel, [])
-    edges = [f for f in faces_list if f["kind"] == "shelledge"]
-    ends = [f for f in faces_list if f["kind"] == "beam"]
     frames, why = _edge_frames(model_data, edges)
     elem_elset = model_data.get("_elem_elset", {})
     per_node = OrderedDict()     # nid -> [weight, vector]  (pressure: -vector)
@@ -2366,6 +2374,105 @@ def _edge_loads(model_data, bc, what):
             "%.6g" % sum(a[0] for a in per_node.values())))
 
 
+_SIDE_LOAD_MODS = frozenset(["POU_D_E", "POU_D_T", "POU_D_T_GD", "POU_D_TG",
+                             "BARRE"])
+
+
+def _beam_side_loads(model_data, bc, sides, what):
+    """
+    Pressure or traction on the side face of beams and trusses (faceid 1,
+    the whole line2/line3 element; Mecway 34 gives a beam three faces:
+    1 = side, 2/3 = ends, mw.face_nodes headless, S17).
+
+    Mecway (measured headless, Mecway 34 internal solver, S17, 28 Oct 2026,
+    cantilever 1 m, 10 line2):
+      - traction T (global X/Y/Z) acts as a distributed load T x perimeter
+        per length (RectBar 20x10 mm, T = 1 MPa: reaction 60000 N = T x
+        0.06 m x 1 m; other sections: bridge_from_liml._section_perimeter),
+        independent of the beam orientation. A formula in x, y, z is taken
+        at the beam axis, at one point per element (manual v34 par. 9.14:
+        1 sampling point for line faces): z = 1 + 100 y MPa gave the same
+        60000 N as 1 MPa; z = x MPa gave 30000 N and a tip deflection 0.06%
+        below the exact linearly varying load. Translated as FORCE_POUTRE
+        FX/FY/FZ = T x perimeter (global, U4.44.01) on a cell group per
+        perimeter (BRSF<n>, extra_ma_groups): a synthetic line pressure, so
+        that _prepare_beam_loads/_sum_line_pressures (bridge_to_aster) add
+        it to other distributed beam loads (CALCULEL2_92). A formula
+        becomes a FORMULE evaluated at the integration points (closer to
+        the exact load than Mecway's one point per element).
+      - pressure has zero resultant: the normal turns around the
+        perimeter. Mecway's internal solver applied nothing (reaction and
+        displacements exactly 0, also with a formula in x or y). With CCX
+        Mecway expands the beam to solid elements and the pressure squeezes
+        the section (tip displacement 6e-7 m, no net force); a beam element
+        in Code-Aster has no such deformation. Translated as no load, with
+        a WARNING.
+    Adds the synthetic BCs to model_data["bcs"] (with "_beam_side", so the
+    BC loop in _apply_to_model_data does not convert them again).
+    """
+    sel = bc["selection"]
+    if bc["type"] == "surfacepressure":
+        log(tr("WARNING: {0} op het zijvlak van {1} balkelement(en) in "
+               "'{2}': de resultante is nul (de normaal draait rond de "
+               "omtrek); Mecway's eigen solver zet hier ook geen last op. "
+               "Geen last aangebracht. Gebruik traction of line pressure "
+               "voor een dwarslast.",
+               "WARNING: {0} on the side face of {1} beam element(s) in "
+               "'{2}': the resultant is zero (the normal turns around the "
+               "perimeter); Mecway's own solver applies no load here "
+               "either. No load applied. Use traction or line pressure for "
+               "a transverse load.").format(what, len(sides), sel))
+        return
+    elem_elset = model_data.get("_elem_elset", {})
+    mods = model_data.get("elset_modelisations", {})
+    by_perimeter = OrderedDict()
+    bad = []
+    for f in sides:
+        es = elem_elset.get(f["eid"])
+        sec = (model_data.get("beam_sections", {}).get(es) or
+               model_data.get("cable_sections", {}).get(es) or {})
+        perim = sec.get("perimeter")
+        if mods.get(es) not in _SIDE_LOAD_MODS or perim is None:
+            bad.append(f["eid"])
+            continue
+        by_perimeter.setdefault(round(perim, 12), []).append(f["eid"])
+    if bad:
+        _not_translated(model_data, bc, what, tr(
+            "zijvlak van balken zonder bekende omtrek of geen balk/truss "
+            "(element {0})",
+            "side face of beams without a known perimeter or not a "
+            "beam/truss (element {0})").format(
+                ", ".join(str(e) for e in bad[:10])))
+        return
+    groups = model_data.setdefault("extra_ma_groups", OrderedDict())
+    taken = set(model_data.get("mesh_group_names", set())) | set(groups)
+    n = 0
+    for perim, eids in by_perimeter.items():
+        n += 1
+        while "BRSF{0}".format(n) in taken:
+            n += 1
+        name = "BRSF{0}".format(n)
+        taken.add(name)
+        groups[name] = sorted(set(eids))
+        model_data["bcs"].append({
+            "type": "linepressure", "selection": name,
+            "aster_keyword": "FORCE_POUTRE", "aster_target": "GROUP_MA",
+            "params": {"_local": False}, "_beam_side": sel,
+            "aster_dict": OrderedDict(
+                (k, _scale(v, perim)) for k, v in bc["aster_dict"].items()
+                if k in ("FX", "FY", "FZ"))})
+        if perim == 0.0:
+            log(tr("WARNING: {0} op het zijvlak van '{1}': omtrek 0 "
+                   "(UniformGeneralSection zonder perimeter); geen last, "
+                   "zoals in Mecway.",
+                   "WARNING: {0} on the side face of '{1}': perimeter 0 "
+                   "(UniformGeneralSection without perimeter); no load, "
+                   "as in Mecway.").format(what, sel))
+        log("INFO: {0} on the side face of {1} beam element(s) in '{2}': "
+            "distributed load = traction x perimeter {3} m -> FORCE_POUTRE "
+            "on {4}.".format(what, len(eids), sel, "%.6g" % perim, name))
+
+
 def _gravity_sum(grav, sel):
     """
     Vector sum (gx, gy, gz) of the gravity items. A time history (list
@@ -2419,6 +2526,25 @@ def _hydrostatic(model_data, bc, faces, skin_groups):
     g = _gravity_sum(grav, bc["selection"])
     kinds = faces.get("kinds", set()) if faces else set()
     sign = 1.0
+    if kinds == set(["shelledge"]):
+        hydro = {"rho": bc["params"]["rho"], "point": bc["params"]["point"],
+                 "g": g}
+        forces, why = _hydrostatic_edge_forces(
+            model_data, model_data.get("group_face_list", {}).get(
+                bc["selection"], []), hydro)
+        if why:
+            _not_translated(model_data, bc, tr("Hydrostatische druk",
+                                               "Hydrostatic pressure"), why)
+            return
+        bc["aster_keyword"] = "FORCE_NODALE"
+        bc["node_loads"] = OrderedDict([("HYD", forces)])
+        bc["aster_dict"] = {"HYD": 1.0}
+        tot = [sum(f[1][k] for f in forces) for k in range(3)]
+        log("INFO: Hydrostatic pressure on shell edges '{0}': nodal forces "
+            "over {1} nodes (edge length x thickness), resultant ({2}) N."
+            .format(bc["selection"], len(forces),
+                    ", ".join("%.6g" % c for c in tot)))
+        return
     if kinds == set(["solid"]):
         if bc["selection"] not in skin_groups:
             skin_groups.append(bc["selection"])
@@ -2453,6 +2579,64 @@ def _hydrostatic(model_data, bc, faces, skin_groups):
     log("INFO: Hydrostatic pressure on '{0}': nodal forces over {1} nodes, "
         "resultant ({2}) N.".format(bc["selection"], len(forces),
                                      ", ".join("%.6g" % c for c in tot)))
+
+
+def _hydrostatic_edge_forces(model_data, faces_list, hydro):
+    """
+    Consistent nodal forces f_i = -int(N_i p t n dl) of the hydrostatic
+    pressure p(x) on shell edges (t the thickness, n the outward normal in
+    the shell plane, away from the element; the same edge face as a
+    constant pressure on a shell edge, _edge_loads). 3-point Gauss per
+    edge, 8 sub-segments for an edge that crosses the free surface (the
+    kink in p = max(0, ...)). Returns ([(nid, (fx, fy, fz))], None) or
+    (None, reason) if a thickness is missing.
+    """
+    nodes = model_data["mesh_nodes"]
+    conn = model_data["_conn"]
+    sections = model_data.get("shell_sections", {})
+    elem_elset = model_data.get("_elem_elset", {})
+    rho, g, x0 = hydro["rho"], hydro["g"], hydro["point"]
+
+    def pres(x):
+        return max(0.0, rho * sum(g[c] * (x[c] - x0[c]) for c in range(3)))
+
+    acc = OrderedDict()
+    for f in faces_list:
+        t = (sections.get(elem_elset.get(f["eid"])) or {}).get("thickness")
+        if not t:
+            return None, tr("schaal zonder dikte (element {0})",
+                            "shell without thickness (element {0})").format(
+                f["eid"])
+        atype, cn = conn[f["eid"]]
+        ns = _shell_normal(nodes, cn, atype)
+        c = [sum(nodes[n][k] for n in cn) / len(cn) for k in range(3)]
+        en = f["nodes"]
+        pts = [nodes[n] for n in en]
+        ps = [pres(p) for p in pts]
+        if max(ps) <= 0.0:
+            continue
+        k = 1 if min(ps) > 0.0 else 8
+        for s in range(k):
+            for xg, gw in _SEG_GAUSS:
+                xi = -1.0 + (2.0 * s + 1.0 + xg) / k
+                shp, dshp = _seg_shape(len(en), xi)
+                x = [sum(shp[i] * pts[i][j] for i in range(len(en)))
+                     for j in range(3)]
+                p = pres(x)
+                if p <= 0.0:
+                    continue
+                dx = [sum(dshp[i] * pts[i][j] for i in range(len(en)))
+                      for j in range(3)]
+                jac = math.sqrt(_vdot(dx, dx))
+                n = _vunit(_vcross(_vunit(dx), ns))
+                if _vdot(n, _vsub(x, c)) < 0.0:
+                    n = (-n[0], -n[1], -n[2])
+                for i, nid in enumerate(en):
+                    a = acc.setdefault(nid, [0.0, 0.0, 0.0])
+                    w = gw / k * jac * shp[i] * p * t
+                    for j in range(3):
+                        a[j] -= w * n[j]
+    return [(nid, tuple(v)) for nid, v in acc.items()], None
 
 
 def _sub_rule(stype, k):
@@ -4229,7 +4413,9 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
     known = model_data.get("mesh_group_names", nonempty_names)
     adapt = bridge_homard.settings(model_data) is not None
     for bc in model_data["bcs"]:
-        if not bc["selection"]:
+        if not bc["selection"] or bc.get("_beam_side"):
+            # _beam_side: synthetic line pressure on a BRSF group of a
+            # traction on beam side faces (_beam_side_loads), final already
             continue
         bc["selection"] = rn(bc["selection"])
         sel = bc["selection"]
