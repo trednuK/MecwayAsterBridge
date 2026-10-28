@@ -2544,6 +2544,23 @@ def _hydrostatic(model_data, bc, faces, skin_groups):
             "over {1} nodes (edge length x thickness), resultant ({2}) N."
             .format(bc["selection"], len(forces),
                     ", ".join("%.6g" % c for c in tot)))
+        # Mecway 34 itself applies nothing here (manual v34 par. 9.17:
+        # "only ... element faces that are locally 2-dimensional"; measured
+        # headless, internal solver and CCX: reaction 0, S17). The same load
+        # as a Pressure with the formula rho g (h - z) on the edge is
+        # applied by Mecway and equals this resultant (LS-93).
+        log(tr("WARNING: Hydrostatische druk op schaalranden '{0}': de "
+               "bridge brengt de druk aan (rand lengte x dikte, resultante "
+               "{1} N); Mecway's eigen solver doet dat niet (alleen "
+               "vlakken). Vergelijk met Mecway via een Pressure met de "
+               "formule rho g (h - z) op dezelfde rand.",
+               "WARNING: Hydrostatic pressure on shell edges '{0}': the "
+               "bridge applies the pressure (edge length x thickness, "
+               "resultant {1} N); Mecway's own solver does not (faces "
+               "only). To compare with Mecway use a Pressure with the "
+               "formula rho g (h - z) on the same edge.").format(
+                   bc["selection"], "%.6g" % math.sqrt(
+                       sum(c * c for c in tot))))
         return
     if kinds == set(["solid"]):
         if bc["selection"] not in skin_groups:
