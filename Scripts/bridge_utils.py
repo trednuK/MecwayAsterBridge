@@ -701,12 +701,17 @@ CONFIG_BRIDGE = {
 # D30 (linear Dynamic Response 3D, examples DynamicResponse and
 # DampedVibratingStrip): with Mode superposition the response on a modal
 # basis, without it (Mecway: Newmark on the full model) implicit dynamics.
-# Other types (2D, ...) have no analysis in the bridge.
+# S20 (Static 2D, plane stress/strain) and SA0 (Static Axisymmetric):
+# linear static with MODELISATION C_PLAN/D_PLAN/AXIS (bridge_plane.py,
+# STAPPENPLAN S16a). Other types (D20, DA0, V20, A20, ...) have no
+# analysis in the bridge.
 # Key for D30 with Mode superposition (no Mecway type of its own; also the
 # text on the start screen).
 D30_MODE_SUPERPOSITION = "D30 + mode superposition"
 MECWAY_ANALYSIS_TYPES = {
     "S30": "lin_static_3d",
+    "S20": "lin_static_3d",
+    "SA0": "lin_static_3d",
     "L30": "nonlin_static_3d",
     "D30": "dyna_impl_3d",
     D30_MODE_SUPERPOSITION: "dyna_modal_3d",

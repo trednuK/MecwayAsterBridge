@@ -321,7 +321,8 @@ def _run(settings):
                 _notify(tr(
                     "Actieve analyse 'auto': het Mecway-analysetype '{0}' "
                     "heeft geen Code-Aster-analyse in de bridge "
-                    "(ondersteund: statisch 3D, niet-lineair statisch 3D, "
+                    "(ondersteund: statisch 3D, statisch 2D en "
+                    "axisymmetrisch, niet-lineair statisch 3D, "
                     "dynamisch 3D (lineair en niet-lineair, ook mode "
                     "superposition), thermisch stationair en "
                     "transient, frequentie (modaal), knik en akoestiek).\n\nKies in "
@@ -329,7 +330,8 @@ def _run(settings):
                     "niet gestart.",
                     "Active analysis 'auto': the Mecway analysis type "
                     "'{0}' has no Code-Aster analysis in the bridge "
-                    "(supported: static 3D, nonlinear static 3D, "
+                    "(supported: static 3D, static 2D and axisymmetric, "
+                    "nonlinear static 3D, "
                     "dynamic 3D (linear and nonlinear, also mode "
                     "superposition), thermal steady-state and "
                     "transient, frequency (modal), buckling and acoustics).\n\n"

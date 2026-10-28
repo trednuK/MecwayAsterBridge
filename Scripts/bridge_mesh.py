@@ -38,6 +38,7 @@ from collections import OrderedDict
 from bridge_utils import (log, tr, error_estimator_requested,
                           get_active_analysis)
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, is_position
+import bridge_plane
 
 
 # Maximum group name length in Code-Aster (ASTER format, checked).
@@ -3992,6 +3993,10 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                    "ERROR: {0} refers to selection '{1}', which is empty or "
                    "does not exist. NOT included.").format(bc["type"], sel))
             continue
+        # 2D analysis (S20/SA0): edge loads and constraints (bridge_plane)
+        if bridge_plane.convert_bc(model_data, bc, group_faces.get(sel),
+                                   skin_groups):
+            continue
         if bc["aster_target"] == "GROUP_MA" and sel in node_face_groups:
             # Faces of beams: only nodes.
             bc["aster_target"] = "GROUP_NO"
@@ -4219,6 +4224,9 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         solid = "solid" in group_faces.get(g, {}).get("kinds", ())
         if solid and g not in skin_groups:
             skin_groups.append(g)
+    # 2D: drop DZ/rotations, concentrated forces per unit thickness or
+    # radian (bridge_plane)
+    bridge_plane.finish_bcs(model_data)
     model_data["skin_groups"] = skin_groups
     model_data["initial_velocities"] = [
         (rn(sel), target, v)
