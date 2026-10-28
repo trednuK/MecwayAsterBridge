@@ -40,6 +40,7 @@ from bridge_utils import (log, tr, error_estimator_requested,
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, is_position
 import bridge_warping
 import bridge_plane
+import bridge_homard
 
 
 # Maximum group name length in Code-Aster (ASTER format, checked).
@@ -325,11 +326,13 @@ def _aster_names(names, reserved=()):
 # (_build_discretes), BOR (beam orientation), BRPOI1T/R; bridge_to_aster
 # BRGAP (gaps), BRCT (mid nodes) and tab_<concept>_n<i>
 # (result tables); bridge_thermal TH/THS/THN; bridge_xfem BRXF<n>S/F
-# (crack from an XFEM_ face selection). A user name of
+# (crack from an XFEM_ face selection); bridge_homard BRRAND<n> (curved
+# boundary) and BRADAP<k> (refined cells per loop). A user name of
 # that form is renamed, so that it cannot clash with a generated group.
 _GENERATED_NAME_RE = re.compile(
     r"^(?:(?:BRSY|BRCO|BRESCL|BROV|BRFR|BRMAIT|CMAIT|CESCL|BRES|BRMA|BRRI|BOR|"
-    r"BRGAP|BRCT|THS|THN|TH)\d+|BRXF\d+[SF]|BRPOI1[TR]|all_elems|all_nodes|"
+    r"BRGAP|BRCT|BRRAND|BRADAP|THS|THN|TH)\d+|BRXF\d+[SF]|BRPOI1[TR]|"
+    r"all_elems|all_nodes|"
     r"tab_\w+_n\d+)$")
 
 
@@ -1031,6 +1034,85 @@ def _free_faces(model_data, conn):
     return out
 
 
+def _adapt_boundaries(model_data, conn, skin_by_key, skin_count, by_type):
+    """
+    Curved boundaries for adaptive refinement with HOMARD
+    (bridge_homard.recognise): the free faces of the solids (faces of
+    exactly one solid element) in patches, fitted as cylinder or sphere;
+    #ASTER-RAND per face selection overrides. Each surface becomes a group
+    BRRAND<n> of boundary elements (existing ones reused, new ones added to
+    by_type like _free_faces). Returns [(name, shape, params, members)].
+    """
+    shapes = model_data.get("elem_shapes", {})
+    nodes = model_data["mesh_nodes"]
+    counts = OrderedDict()
+    for eid in sorted(conn):
+        if shapes.get(eid) not in _SOLID_SHAPES:
+            continue
+        atype, cn = conn[eid]
+        for prefix, table in _FACE_CORNERS.items():
+            if atype.startswith(prefix):
+                for fid in sorted(table):
+                    corners = [cn[i] for i in table[fid]]
+                    key = frozenset(corners)
+                    if key in counts:
+                        counts[key][0] += 1
+                    else:
+                        counts[key] = [1, eid, corners]
+                break
+    rings = OrderedDict()
+    for key, (n, eid, corners) in counts.items():
+        if n != 1:
+            continue
+        atype, cn = conn[eid]
+        stype, snodes = _skin_element(atype, cn, corners)
+        nc = len(corners)
+        ring = []
+        for i in range(nc):
+            ring.append(snodes[i])
+            if len(snodes) > nc:
+                ring.append(snodes[nc + i])
+        rings[key] = (eid, atype, cn, corners, ring)
+    overrides = []
+    specs = bridge_homard.parse_boundaries(
+        model_data.get("aster_custom", {}).get("boundaries", []))
+    faces_of = model_data.get("face_selection_faces", {})
+    for sel, spec in specs.items():
+        if sel not in faces_of:
+            log(tr("ERROR: #ASTER-RAND: vlakselectie '{0}' bestaat niet; "
+                   "overgeslagen.",
+                   "ERROR: #ASTER-RAND: face selection '{0}' does not "
+                   "exist; skipped.").format(sel))
+            continue
+        keys = []
+        for eid, fid in faces_of[sel]:
+            if eid in conn:
+                f = _face_from_table(conn[eid][0], conn[eid][1], fid)
+                if f and frozenset(f) in rings:
+                    keys.append(frozenset(f))
+        overrides.append((sel, spec, keys))
+    faces = [(k, v[4]) for k, v in rings.items()]
+    out = []
+    for shape, params, keys, _desc in bridge_homard.recognise(
+            faces, nodes, overrides):
+        members = []
+        for key in keys:
+            eid, atype, cn, corners, _ring = rings[key]
+            stype, snodes = _skin_element(atype, cn, corners)
+            skey = frozenset(snodes)
+            if skey not in skin_by_key:
+                skin_count[0] += 1
+                name = "K{0}".format(skin_count[0])
+                skin_by_key[skey] = name
+                by_type.setdefault(stype, []).append((name, snodes))
+            members.append(skin_by_key[skey])
+        if members:
+            out.append(("{0}{1}".format(bridge_homard.BOUNDARY_PREFIX,
+                                        len(out) + 1), shape, params,
+                        list(OrderedDict.fromkeys(members))))
+    return out
+
+
 # ==========================================
 # MAIN FUNCTION
 # ==========================================
@@ -1292,6 +1374,22 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             log("INFO: Error estimator: {0} free faces of volume elements "
                 "as group '{1}' (stress-free boundary, PRES_REP ~0 in "
                 "CALC_ERREUR).".format(len(free_members), ERR_FREE_GROUP))
+
+    # --------------------------------------------------
+    # 2b'. Adaptive refinement with HOMARD (adapt_homard): curved
+    #      boundaries as groups BRRAND<n> of boundary elements
+    #      (bridge_homard.recognise; FRONTIERE_ANALYTIQUE)
+    # --------------------------------------------------
+    rand_members = OrderedDict()
+    adapt_plan = bridge_homard.settings(model_data)
+    if adapt_plan is not None:
+        for name, shape, params, members in _adapt_boundaries(
+                model_data, conn, skin_by_key, skin_count, by_type):
+            rand_members[name] = members
+            model_data.setdefault("adapt_boundaries", []).append(
+                (name, shape, params))
+        model_data["adapt_pyramids"] = any(
+            a.startswith("PYRAM") for a, _cn in conn.values())
 
     # --------------------------------------------------
     # 2c. Vibro-acoustics: fluid-structure coupling faces as
@@ -1587,6 +1685,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         group_ma[name] = d.pop("members")
     if free_members:
         group_ma[ERR_FREE_GROUP] = free_members
+    for name, members in rand_members.items():
+        group_ma[name] = members
     for name, members in vibro_members.items():
         group_ma[name] = members
     for name, members in crack_members.items():
@@ -4113,6 +4213,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
     shapes = model_data.get("elem_shapes", {})
     node_face_groups = model_data.get("face_node_groups", set())
     known = model_data.get("mesh_group_names", nonempty_names)
+    adapt = bridge_homard.settings(model_data) is not None
     for bc in model_data["bcs"]:
         if not bc["selection"]:
             continue
@@ -4155,6 +4256,21 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         if bc["type"] == "moment":
             _moment_to_forces(model_data, bc, group_integrals, group_weights)
             continue
+        if (bc["type"] == "symmetry" and adapt and
+                (group_faces.get(sel) or {}).get("kinds") == set(["solid"])):
+            # Adaptive refinement with HOMARD (bridge_homard): node groups
+            # keep their old nodes only (S35a), so not LIAISON_OBLIQUE per
+            # node group but FACE_IMPO DNOR = 0 on the face group, like
+            # frictionless (Mecway's symmetry of solid faces: displacement
+            # normal to the plane zero, manual v33 par. 9.40). Also right
+            # on the refined faces of a curved face.
+            bc["type"] = "frictionless"
+            bc["params"] = {"value": 0.0}
+            handler = SUPPORTED_BCS["frictionless"]
+            bc["aster_keyword"] = handler.keyword(bc["params"])
+            bc["aster_dict"] = handler.to_aster_dict(bc["params"])
+            log("INFO: Symmetry '{0}' (adaptive refinement): FACE_IMPO DNOR "
+                "= 0 on the face group.".format(sel))
         if bc["type"] == "frictionless":
             if _frictionless(model_data, bc, group_faces.get(sel),
                              face_list.get(sel, [])):

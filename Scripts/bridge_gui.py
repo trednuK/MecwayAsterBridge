@@ -358,6 +358,20 @@ ANALYSIS_SPECS = [
     ("adapt_max_elements", ("Max. aantal elementen na verfijnen",
                             "Max. number of elements after refining"),
      "int", 100),
+    # Adaptive refinement with HOMARD inside the job (thermal, nonlinear;
+    # bridge_homard.py, docs/Foutschatter.md sec. 7)
+    ("adapt_homard", ("Adaptieve verfijning (HOMARD, binnen de job)",
+                      "Adaptive refinement (HOMARD, inside the job)"),
+     "bool", None),
+    ("adapt_homard_target", ("Doel: globale fout ZZ [%]",
+                             "Target: global error ZZ [%]"),
+     "float_range", (0.001, 100.0)),
+    ("adapt_homard_max_loops", ("Max. aantal verfijningslussen",
+                                "Max. number of refinement loops"),
+     "int", 1),
+    ("adapt_homard_max_elements", ("Max. aantal elementen na verfijnen",
+                                   "Max. number of elements after refining"),
+     "int", 100),
     # Nonlinear buckling (bridge_to_aster._crit_stab_args,
     # _imperfection_plan; docs/Modaal_en_knik.md sec. 5). Amplitude 0 =
     # no imperfection; negative reverses the buckling shape.
@@ -488,6 +502,7 @@ SECTION_BEFORE = {
     "fracture_r_inf": ("Breukmechanica (SCHEUR_-selecties)",
                        "Fracture mechanics (CRACK_ selections)"),
     "adapt_refine": ("Adaptieve verfijning", "Adaptive refinement"),
+    "adapt_homard": ("Adaptieve verfijning", "Adaptive refinement"),
     "crit_stab": ("Niet-lineaire knik", "Nonlinear buckling"),
     "modal_modes": ("Modes", "Modes"),
     "steps_per_period": ("Tijdintegratie en demping",

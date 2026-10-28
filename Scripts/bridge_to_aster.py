@@ -8416,7 +8416,18 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
 
     # Gap groups (DEFI_GROUP, DEFI_MATERIAU) before the blocks
     _prepare_gaps(model_data)
-    return builder(work_dir, model_data, msh_path, resu_name, analysis)
+    # Adaptive refinement with HOMARD (setting adapt_homard): check the
+    # scope before the builder, then the loop into the .comm
+    import bridge_homard
+    adapt_plan = bridge_homard.settings(model_data)
+    if adapt_plan is not None and not bridge_homard.check_scope(
+            model_data, analysis):
+        return None
+    result = builder(work_dir, model_data, msh_path, resu_name, analysis)
+    if result and adapt_plan is not None:
+        result = bridge_homard.apply(result, model_data, adapt_plan,
+                                     solver_cmd)
+    return result
 
 
 def _check_lost_contacts(model_data, solver_cmd):
