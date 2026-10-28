@@ -162,7 +162,7 @@ Bonded contact per combination (slave on master):
 | Temperature, heat flux | Yes | Thermal. |
 | Natural frequencies, buckling factors, effective mass | Yes | Effective mass fraction differs from Mecway (KB49). |
 | Acoustic pressure | Yes | [`Acoustics.md`](Acoustics.md). |
-| *Saved monitor* (Solution) | Yes | The output of the Code-Aster run instead of Mecway's solver messages (setting `save_monitor`, route `liml`; [`UserGuide.md`](UserGuide.md) §5.2). |
+| *Saved monitor* (Solution) | Optional | The summary of the Code-Aster run instead of Mecway's solver messages, only with the setting `save_monitor_liml` (off by default; route `liml`). The summary is always in `<model>_<run-id>_aster_summary.txt` ([`UserGuide.md`](UserGuide.md) §5.2). |
 
 Extra fields of the bridge (error estimator, fatigue, metallurgy) and which Code-Aster
 field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
