@@ -153,6 +153,7 @@ along X and inclined; exact, equal to Mecway's internal solver).
 | ERROR: ... no section through the prism found | one element along the axis, or the faces do not span the place of the section | select faces of at least two element layers, on both sides of the desired section |
 | ERROR: ... the section touches elements outside the prism | elements around the section that reach beyond the axial extent (e.g. a nut or plate meshed together with the bolt) | select faces over a piece of the shank that only holds shank elements, or mesh the bolt as its own part (contact or bonded contact to the plates) |
 | ERROR: ... the section passes through nodes of another pre-tension section | two sections at the same place | move one of them |
+| WARNING: A part of ... element(s) ... is held in place only by contact (...) and by the force of a pre-tension section | the side of the bolt behind the section is only held by contact (nut) and the force; Code-Aster stops in step 1 with `MECANONLINE9_4` | a weak *Elastic support* on a face of that side, or *Length adjustment* ([Settings §3.11](Settings_contact_and_nonlinear.md#311-parts-held-only-by-contact)) |
 | WARNING: Choice LINE_QUAD ... not applied: ... pre-tension section | hex8 with `elem_hex8` = LINE_QUAD | the mid-side nodes made by Code-Aster would stay apart at the section; use hex20 in Mecway |
 
 ## 7. What is not possible
@@ -175,8 +176,12 @@ See also KNOWN_BUGS 124.
   below they act on the copy (load, contact) or on the Mecway node (support only);
   the difference is at most δ, as for Mecway's inserted layer.
 - Samples/BoltedJoint itself does not run with Code-Aster: plate B is only held by
-  friction contact and Code-Aster stops in the first step (`MECANONLINE9_4`, pivot on
-  a plate node), also without the pre-tension section (KNOWN_BUGS 43).
+  contact, and with the force the upper part of the bolt is only held by the nut contact
+  and the pretension force. The bridge reports both parts before the run (WARNING "held
+  in place only by contact"); a weak *Elastic support* on each removes the zero pivots,
+  but the friction contact itself still does not converge in Code-Aster; without friction
+  it runs (KNOWN_BUGS 43,
+  [Settings_contact_and_nonlinear.md §3.11](Settings_contact_and_nonlinear.md#311-parts-held-only-by-contact)).
 
 ## 8. Sources
 

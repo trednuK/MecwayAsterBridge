@@ -544,7 +544,7 @@ class _Fields(object):
 # ==========================================
 # REACTIONS OF EXTRA NODES (LINE_QUAD, QUAD9/TRIA7)
 # ==========================================
-def _reaction_lumping(mesh, conn, n, offset_nodes=None):
+def _reaction_lumping(mesh, conn, n, offset_nodes=None, skip=()):
     """
     Distribution of the nodal reactions of mesh nodes unknown to Mecway
     (index >= n: middle nodes of CREA_MAILLAGE LINE_QUAD, centre node of
@@ -561,7 +561,8 @@ def _reaction_lumping(mesh, conn, n, offset_nodes=None):
     displacement would be something else).
     offset_nodes: nodes of offset elements (bridge_offset, >= n);
     they count as corner nodes and then go via _offset_values to their
-    Mecway node.
+    Mecway node. skip: extra nodes whose reaction is dropped on purpose
+    (pre-tension reference nodes, _pretension_refs).
     Returns (src, dst, weight) as numpy arrays, or None without extra
     nodes.
     """
@@ -572,7 +573,7 @@ def _reaction_lumping(mesh, conn, n, offset_nodes=None):
     known = set() if offset_nodes is None else set(int(i)
                                                    for i in offset_nodes)
     src, dst, wgt = [], [], []
-    done = set(known)
+    done = set(known) | set(int(i) for i in skip)
     for cn in conn:
         if len(cn) in (7, 9) and cn[-1] >= n and cn[-1] not in done:
             corners = list(cn[:4] if len(cn) == 9 else cn[:3])
@@ -583,7 +584,7 @@ def _reaction_lumping(mesh, conn, n, offset_nodes=None):
                 wgt.append(1.0 / len(corners))
     # Extra node at the location of a Mecway node (flexible joint,
     # bridge_mesh._flexible_joints): the whole reaction goes to that node
-    for m, c in sorted(_coincident_extra(xyz, n).items()):
+    for m, c in sorted(_coincident_extra(xyz, n, done).items()):
         if m not in done:
             done.add(m)
             src.append(m)
@@ -697,6 +698,30 @@ OFFSET_GROUP_PREFIX = "BROFL"
 # Fields that already have the right value on the Mecway node itself (the
 # node moves along with the rigid arm).
 _KINEMATIC_FIELDS = ("DEPL", "VITE", "ACCE")
+
+
+# Node group of the reference node of a pre-tension section
+# (bridge_pretension: BRPT<k>, one node after the Mecway nodes). Its DX is
+# the shortening, not a displacement in X, and its "reaction" is the
+# pretension force: it is left out of the reactions and of every value
+# mapped to Mecway nodes (PT-01: sum of reactions 0 instead of -F).
+PRETENSION_GROUP_PREFIX = "BRPT"
+
+
+def _pretension_refs(mesh, n):
+    """0-based indices of the pre-tension reference nodes (groups
+    BRPT<k> with exactly one node >= n), empty set without them."""
+    try:
+        names = [g for g in mesh.getGroupsOfNodes()
+                 if str(g).strip().startswith(PRETENSION_GROUP_PREFIX)]
+    except Exception:
+        return set()
+    out = set()
+    for g in names:
+        ids = [int(i) for i in mesh.getNodes(str(g).strip())]
+        if len(ids) == 1 and ids[0] >= n:
+            out.add(ids[0])
+    return out
 
 
 def _offset_pairs(mesh, n):
@@ -2257,18 +2282,23 @@ def print_modes(res, mass=None):
             e))
 
 
-def _xyz_sum(field):
+def _xyz_sum(field, skip=()):
     """(sum, sum of |.|) per component DX, DY, DZ of a node field (missing
     components 0), numpy arrays of 3. Same route as
-    aster_spectrum._node_values (toSimpleFieldOnNodes)."""
+    aster_spectrum._node_values (toSimpleFieldOnNodes). skip: 0-based node
+    rows left out (pre-tension reference nodes, _pretension_refs)."""
     sf = field.toSimpleFieldOnNodes()
     vals, mask = sf.getValues()
     names = list(sf.getComponents())
     total = np.zeros(3)
     absolute = np.zeros(3)
+    keep = np.ones(mask.shape[0], dtype=bool)
+    for i in skip:
+        if 0 <= i < keep.size:
+            keep[i] = False
     for k, c in enumerate(("DX", "DY", "DZ")):
         if c in names:
-            col = np.where(mask[:, names.index(c)],
+            col = np.where(mask[:, names.index(c)] & keep,
                            vals[:, names.index(c)], 0.0)
             total[k] = col.sum()
             absolute[k] = np.abs(col).sum()
@@ -2317,7 +2347,13 @@ def print_static_check(res, model, fieldmat, cara=None, mass=True,
             "\n", " ")[:300])
     try:
         last = sorted(res.getIndexes())[-1]
-        total, _abs = _xyz_sum(res.getField("REAC_NODA", last))
+        # pre-tension reference nodes: their DX "reaction" is the
+        # pretension force, not a support reaction (n = 0: any group)
+        try:
+            refs = _pretension_refs(model.getMesh(), 0)
+        except Exception:
+            refs = set()
+        total, _abs = _xyz_sum(res.getField("REAC_NODA", last), refs)
         if scale:
             total = total * scale
         print("BRIDGE_STATREAC FX={0} FY={1} FZ={2} NUME_ORDRE={3}".format(
@@ -2723,15 +2759,17 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
     conn = mesh.getConnectivity()
     lump = None
     pairs = _offset_pairs(mesh, n) if rows is None else None
+    refs = _pretension_refs(mesh, n) if rows is None else set()
     if rows is None and (groups is None or "reactions" in groups):
         lump = _reaction_lumping(mesh, conn, n,
-                                 None if pairs is None else pairs[1])
+                                 None if pairs is None else pairs[1], refs)
     data = _Fields(results, n, lump, rows, pairs)
     if rows is None:
         data.alias = _node_alias(
             xyz.size // 3, n,
             _coincident_extra(xyz.reshape(-1, 3), n,
-                              () if pairs is None else pairs[1]),
+                              (set() if pairs is None else
+                               set(int(i) for i in pairs[1])) | refs),
             pairs)
     mode_values = _mode_values(res, modes) if modes else None
     if modes == "buckling" and rigi_geo is not None:

@@ -157,6 +157,7 @@ veren in serie, langs X en schuin; exact, gelijk aan Mecway's interne solver).
 | ERROR: ... geen doorsnede door het prisma gevonden | één element langs de as, of de vlakken overspannen de plek van de doorsnede niet | selecteer vlakken van minstens twee elementlagen, aan beide kanten van de gewenste doorsnede |
 | ERROR: ... de doorsnede raakt elementen buiten het prisma | elementen rond de doorsnede die buiten de axiale lengte reiken (bijv. een moer of plaat die samen met de bout gemesht is) | selecteer vlakken over een stuk schacht met alleen schachtelementen, of mesh de bout als eigen onderdeel (contact of bonded contact met de platen) |
 | ERROR: ... de doorsnede gaat door knopen van een andere pre-tension section | twee doorsneden op dezelfde plek | verplaats er een |
+| WARNING: Een deel van ... element(en) ... wordt alleen door contact op zijn plaats gehouden (...) en door de kracht van een pre-tension section | de kant van de bout achter de doorsnede wordt alleen door contact (moer) en de kracht gehouden; Code-Aster stopt in stap 1 met `MECANONLINE9_4` | een zwakke *Elastic support* op een vlak van die kant, of *Length adjustment* ([Instellingen §3.11](Instellingen_contact_en_nietlineair.md#311-delen-die-alleen-door-contact-vastzitten)) |
 | WARNING: Keuze LINE_QUAD ... niet toegepast: ... pre-tension section | hex8 met `elem_hex8` = LINE_QUAD | de middenknopen die Code-Aster maakt zouden in de doorsnede los blijven; gebruik hex20 in Mecway |
 
 ## 7. Wat niet kan
@@ -178,9 +179,13 @@ Zie ook KNOWN_BUGS 124.
 - Lasten, opleggingen en contact op vlakken die de doorsnede raken: aan de kant onder
   werken ze op de kopie (last, contact) of op de Mecway-knoop (alleen opleggingen); het
   verschil is hoogstens δ, zoals bij Mecway's ingevoegde laag.
-- Samples/BoltedJoint zelf rekent niet met Code-Aster: plaat B wordt alleen door
-  wrijvingscontact gehouden en Code-Aster stopt in de eerste stap (`MECANONLINE9_4`,
-  pivot op een plaatknoop), ook zonder pre-tension section (KNOWN_BUGS 43).
+- Samples/BoltedJoint zelf rekent niet met Code-Aster: plaat B wordt alleen door contact
+  gehouden, en met de kracht het bovenste deel van de bout alleen door het moercontact en
+  de voorspankracht. De bridge meldt beide delen vóór de run (WARNING "wordt alleen door
+  contact op zijn plaats gehouden"); een zwakke *Elastic support* op elk haalt de pivots
+  nul weg, maar het wrijvingscontact zelf convergeert in Code-Aster dan nog niet; zonder
+  wrijving rekent het wel (KNOWN_BUGS 43,
+  [Instellingen_contact_en_nietlineair.md §3.11](Instellingen_contact_en_nietlineair.md#311-delen-die-alleen-door-contact-vastzitten)).
 
 ## 8. Bronnen
 

@@ -732,10 +732,16 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
      kwadratische volumes: pivot op `LAGS_C` van een hoekknoop;
   3. een `#ASTER`-last zonder `#ASTER-EXCIT` (zie `FACTOR_42`);
   4. tension only (kabel) zonder drukstijfheid;
-  5. formaten-testmodellen F2/F4: oorzaak niet vastgesteld.
+  5. formaten-testmodellen F2/F4: oorzaak niet vastgesteld;
+  6. een deel dat alleen door contact op zijn plaats blijft (geen eigen oplegging,
+     verlijmd contact, koppeling of veer; ook de kant van een bout achter een
+     pre-tension section met een kracht): pivot op een fysieke vrijheidsgraad
+     (DX/DY/DZ) van dat deel in de eerste stap.
 - **Gezien**: 1 een buigmodel (contact); 2 verificatie NL-03a (twee balken, tips op
   elkaar) en Samples/AssemblyWithContact (KNOWN_BUGS 43); 3 opnieuw doorgerekend op
-  06-10-2026; 4 test B17; 5 F2_model/F4_model.
+  06-10-2026; 4 test B17; 5 F2_model/F4_model; 6 Samples/BoltedJoint (pivot op DZ van een
+  knoop van plaat B, 28-10-2026; de bridge waarschuwt vooraf: WARNING "wordt alleen door
+  contact op zijn plaats gehouden").
 - **Oplossing**: 1 in de bridge: slave-knopen in een fixed support worden per zone
   uitgesloten met `SANS_GROUP_NO` (`_exclude_fixed_slaves`, commit 7daa249; INFO in de
   log), zoals de catalogus bij `FACTOR_10/11` aanraadt; een andere voorwaarde op
@@ -744,8 +750,10 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
   automatische). 2 *Contactmethode* = PENALISATION met Mecway's *normal stiffness*
   (NL-03b: tip −0,01%, contactkracht −0,07%). 3 `#ASTER-EXCIT` toevoegen. 4 in de
   bridge: `EC_SUR_E` = 1e-4 (standaard van de catalogus `defi_materiau.py`). 5 niet
-  vastgesteld.
-- **Status**: opgelost in de bridge (1 bij fixed, 4) / model (1 overig, 2) / eigen
+  vastgesteld. 6 in Mecway: een zwakke *Elastic support* op een groot vlak van dat deel,
+  een echte oplegging, of verlijmd contact
+  ([Instellingen §3.11](Instellingen_contact_en_nietlineair.md#311-delen-die-alleen-door-contact-vastzitten)).
+- **Status**: opgelost in de bridge (1 bij fixed, 4) / model (1 overig, 2, 6) / eigen
   invoer (3) / oorzaak niet vastgesteld (5).
 
 ### `CHARGES7_1` – verlijmen: relatie is een tautologie

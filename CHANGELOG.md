@@ -85,6 +85,18 @@
   springs exact and equal to Mecway's internal solver. Not: explicit dynamics, and the spring
   variant in Frequency/Buckling, where Mecway also gives the tensioned spring a geometric
   stiffness (ERROR, KNOWN_BUGS 124).
+- **Pre-tension section: reactions**: the reference node of the section was counted in the
+  sum of reactions (status box: FX −10000 N for a self-equilibrated bolt) and, lying on a
+  Mecway node, shown as a reaction there; it is now left out (PT-01/02/05 check the sums: 0).
+- **Parts held only by contact** (KNOWN_BUGS 43): in nonlinear static the bridge now reports,
+  before the run, every part that has no support, bonded contact, coupling or spring of its
+  own and is held only by contact (also the side of a bolt behind a pre-tension section with a
+  force), with its elements, contact selections and the remedies (weak Elastic support, a
+  support, bonded contact, length adjustment). Code-Aster otherwise stops in the first step
+  with `MECANONLINE9_4` (zero pivot); Mecway's penalty contact carries such parts. Found on
+  Samples/BoltedJoint, where the friction contact itself still does not converge in
+  Code-Aster even with the weak supports (without friction it runs). Docs: contact settings
+  §3.11, error messages `MECANONLINE9_4`.
 - **2D and axisymmetric static analyses (STAPPENPLAN S16a)**: Mecway's *Static 2D* (S20) and
   *Static Axisymmetric* (SA0) are now translated to Code-Aster `MECA_STATIQUE` with
   `C_PLAN` (plane stress, the material's *Shell/membrane* thickness), `D_PLAN` (with *plane

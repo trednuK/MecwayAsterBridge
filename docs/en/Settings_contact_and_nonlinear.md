@@ -865,6 +865,59 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
   shell with an offset on own nodes (quad8/tri6): `solver_nprec` −1, otherwise a false
   `FACTOR_11` (LS-66: 0.94266 mm, Mecway continuous 0.94148 mm).
 
+### 3.11 Parts held only by contact
+
+**Symptom**: *Nonlinear static* stops in the first step with `MECANONLINE9_4` ("matrice
+non inversible") and a zero pivot on DX, DY or DZ of a node, while Mecway itself computes
+the model. Before the run the bridge already writes:
+`WARNING: A part of ... element(s) (...) is held in place only by contact (...)`.
+
+**Cause**: that part has no support, bonded contact, coupling or spring of its own; only
+contact keeps it in place. Code-Aster's `STAT_NON_LINE` starts from the stiffness of the
+undeformed state, where contact (and its Coulomb friction) gives no stiffness along the
+contact surface at zero contact pressure: the part can slide or turn freely and the
+matrix is singular. Mecway's penalty contact (CCX) carries the part from the start. The
+same holds for the side of a bolt behind a *Pre-tension section* with a force: that force
+is a load, the cut gives no stiffness along the bolt ([Bolt_pretension.md](Bolt_pretension.md)).
+The bridge finds such parts (connected over elements, bonded contact, couplings and
+constraint equations; supports and elastic supports count as held) and names them with
+their elements and contact selections; it does not add supports itself.
+
+**Solutions in Mecway** (one per part):
+
+1. A weak **Elastic support** on a large face of the part (e.g. the top face of a plate):
+   stiffness × area of the order 1e-5 .. 1e-4 of the part's own stiffness E·A/L, so that
+   it does not carry any noticeable load. Use a large face (or faces far apart), so that
+   the rotations are held too: on Samples/BoltedJoint 1e9 Pa/m on the small end face of
+   plate B (k·A = 2.5e5 N/m) still left a zero pivot (the rotation about the end face is
+   held only by ~70 N/m at the far end), 1e8 Pa/m on the whole top face (4.4e5 N/m) did not.
+2. A **support** where the part is really held in reality (Fixed, Frictionless,
+   Displacement, symmetry).
+3. **Bonded contact** instead of contact if the part may not slide or separate.
+4. With a pre-tension section: also *Length adjustment* instead of *Force* (the length is
+   then fixed, the bolt side is held along its axis).
+
+Mecway's own tutorial AssemblyWithContact (manual v34 §17.7) describes the same problem:
+its *Naive* configuration fails in Mecway too because the parts are held only by
+frictionless contact, and the tutorial's remedies are a fixed support (to check the cause),
+friction, a weak elastic support and a gentler (quadratic) load ramp. The bridge reports
+the *Naive* configuration as well (one part of 10 elements); the other models with
+contact in the verification (NL-03, NL-30, PipeClip, Voorbeeld_C) are not reported.
+
+**Samples/BoltedJoint** (28 October 2026): two parts are reported, plate B (held by friction
+contact against plate A and by the nut contact) and the upper part of the bolt (nut contact
+and the pre-tension force). With a weak elastic support on both (1e8 Pa/m on the top face of
+plate B, 1e9 Pa/m on the nut face) the zero pivots on DX/DY/DZ are gone. The friction contact
+(coefficient 0.5) itself then still does not converge in Code-Aster: with
+*Contact method* = PENALISATION a zero pivot on the friction degrees of freedom (`LAGS_F`) of
+plate-B nodes with zero contact pressure, with `CONTACT_INIT='NON'`, `ALGO_FROT` standard or
+penalised, `ALGO_RESO_FROT='POINT_FIXE'`, `INTEGRATION='GAUSS'`, a smaller friction penalty,
+a ramped pretension or `solver_nprec` −1 no convergence in the first step (KNOWN_BUGS 43).
+Without friction (coefficient 0) and with the two weak supports the model runs; the
+pretension phase (t = 0.1, no external force) is then of the same order as Mecway with the
+same supports (bolt displacements within ~20%, stresses within ~35% on this coarse mesh of
+76 hex20 elements).
+
 ---
 
 ## 4. "My analysis does not converge"

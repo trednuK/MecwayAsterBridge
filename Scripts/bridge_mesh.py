@@ -1640,6 +1640,20 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         poi1_groups[bridge_pretension.PRET_GROUP] = "DIS_T"
 
     # --------------------------------------------------
+    # 4f. Parts held only by contact (bridge_floating): WARNING with the
+    #     remedies before the run
+    # --------------------------------------------------
+    import bridge_floating
+    cells = {}
+    for eid, refs in cell_refs.items():
+        ns = []
+        for atype, idx in refs:
+            ns.extend(by_type[atype][idx][1])
+        cells[eid] = ns
+    bridge_floating.check(model_data, nodes, conn, cells, elements,
+                          group_face_list)
+
+    # --------------------------------------------------
     # 5. Names
     # --------------------------------------------------
     reserved = (["all_elems", "all_nodes", POI1_GROUP_T, POI1_GROUP_R,

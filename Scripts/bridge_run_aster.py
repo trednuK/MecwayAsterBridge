@@ -201,13 +201,23 @@ _NEWTON_HINT = (u"Newton convergeert niet; de resultaten tot het laatst "
 # headless); with PENALISATION it computes. NPREC -1 also computes
 # but is inaccurate (docs review: -1,6% / +2,8% on a stiffness contrast),
 # so no advice.
+# A part held only by contact (bridge_floating, Samples/BoltedJoint): zero
+# pivot on a physical DOF of that part in the first step.
 _NEWTON_SINGULAR_HINT = (
     _SINGULAR_HINT[0] + u" Met contact en 'LAGS_C' in de melding: een "
     u"contactvrijheidsgraad zonder steun (bijv. lijncontact); kies "
-    u"Contactmethode = PENALISATION (Mecway's stijfheid).",
+    u"Contactmethode = PENALISATION (Mecway's stijfheid). Staat er in de "
+    u"log een WARNING 'wordt alleen door contact op zijn plaats "
+    u"gehouden', dan is dat deel de oorzaak: geef het een zwakke Elastic "
+    u"support of een oplegging (de WARNING noemt de elementen). Met "
+    u"'LAGS_F' in de melding: de Coulomb-wrijving (KNOWN_BUGS 43).",
     _SINGULAR_HINT[1] + u" With contact and 'LAGS_C' in the message: a "
     u"contact degree of freedom without support (e.g. line contact); "
-    u"choose Contact method = PENALISATION (Mecway's stiffness).")
+    u"choose Contact method = PENALISATION (Mecway's stiffness). If the "
+    u"log has a WARNING 'is held in place only by contact', that part is "
+    u"the cause: give it a weak Elastic support or a support (the WARNING "
+    u"names the elements). With 'LAGS_F' in the message: the Coulomb "
+    u"friction (KNOWN_BUGS 43).")
 # CALC_MODES (bridge_to_aster._calc_modes_block): the stiffness is singular
 # at the search frequency (ALGELINE3_81, seen with a beam that was only
 # supported by hinges), or Sorensen found too few modes
