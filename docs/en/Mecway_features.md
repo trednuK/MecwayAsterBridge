@@ -29,7 +29,7 @@ ignored with only an INFO, as Mecway itself does.
 | A30 Acoustic Resonance 3D | Yes | `acoustic_modes_3d`; with a source `acoustic_harm_3d` | KB55, KB57; [`Acoustics.md`](Acoustics.md). |
 | S20 Static 2D (plane stress, plane strain) | Partly | `lin_static_3d` (`MECA_STATIQUE`, `C_PLAN`/`D_PLAN`) | Plane elements only, one thickness and type per model; loads and constraints: [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.1, §3 (KB126). Verification PL-01 … PL-03, PL-05. |
 | SA0 Static Axisymmetric | Partly | `lin_static_3d` (`MECA_STATIQUE`, `AXIS`) | As S20; Y = axis, `stresszz` = hoop stress, reactions for 360 degrees (KB126). Verification PL-04, PL-06. |
-| D20, DA0 Dynamic Response 2D / Axisymmetric | Partly | `dyna_impl_3d` (`DYNA_NON_LINE`, `C_PLAN`/`D_PLAN`/`AXIS`) | As S20/SA0; equal to Mecway with NEWMARK, PETIT and one step per Mecway step (KB127); no explicit, mode superposition or initial velocity (KB126). Verification PL-10 … PL-12. |
+| D20, DA0 Dynamic Response 2D / Axisymmetric | Partly | `dyna_impl_3d` (`DYNA_NON_LINE`, `C_PLAN`/`D_PLAN`/`AXIS`) | As S20/SA0; equal to Mecway with NEWMARK, PETIT and one solver step per Mecway step (also with *every n time steps*); no explicit, mode superposition or initial velocity (KB126). Verification PL-10 … PL-12. |
 | A20 Acoustic Resonance 2D | No | – | ERROR (KB126). Alternative: model in 3D (A30). |
 | E30 DC Current Flow | No | – | The run stops. |
 | Electrostatics and piezoelectricity (in S30) | No | – | Electric loads are skipped; a piezo or matrix material stops the run (§5). |
@@ -177,7 +177,7 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Shift point (buckling) | No | INFO only (KB46). |
 | Mode superposition (D30) | Yes | §1. |
 | Time period | Yes | |
-| Time step size | Yes | D30, T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). With *Automatic time stepping* see the row below. |
+| Time step size | Yes | D30, D20, DA0 (solver step = Mecway's step, also with *every n time steps*; with mode superposition at most Mecway's step), T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). With *Automatic time stepping* see the row below. |
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | Yes | L30 (nonlinear static): `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, `ARCHIVAGE` at those times; setting `auto_time_stepping`. Dynamic not: fixed steps, cutting on divergence. |
 | Incompatible hex8 | No | KB1. |

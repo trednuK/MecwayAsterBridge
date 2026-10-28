@@ -299,8 +299,8 @@ ANALYSIS_SPECS = [
     # values (docs review); HHT is unconditionally stable for
     # -1/3 <= alpha <= 0.
     ("hht_alpha", "HHT ALPHA (-0.3 .. 0)", "float_range", (-0.3, 0.0)),
-    ("substeps_per_output", ("Rekenstappen per uitvoerinterval",
-                             "Solver steps per output interval"), "int", 1),
+    ("substeps_per_output", ("Rekenstappen per Mecway-tijdstap",
+                             "Solver steps per Mecway time step"), "int", 1),
     ("explicit_dt_factor", ("Tijdstap / kritieke tijdstap",
                             "Time step / critical time step"), "float_pos",
      None),

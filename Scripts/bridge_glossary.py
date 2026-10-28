@@ -1546,12 +1546,16 @@ SETTING_HELP = {
                   u"Numerical damping of HHT: 0 = none, -0.3 = maximum "
                   u"(longer period, lower peak). Default -0.1 (Code-Aster "
                   u"default)."),
-    "substeps_per_output": (u"Rekenstappen per uitvoertijdstap van Mecway; meer = "
-                            u"kleinere rekenstap. Standaard 1 (rekenstap = "
-                            u"uitvoerinterval).",
-                            u"Solver steps per Mecway output time step; more "
-                            u"= smaller solver step. Default 1 (solver step "
-                            u"= output interval)."),
+    "substeps_per_output": (u"Rekenstappen per tijdstap van Mecway (Dynamic "
+                            u"Response: Time step size, ook bij 'Generate "
+                            u"solution every n time steps'; anders per "
+                            u"uitvoerinterval); meer = kleinere rekenstap. "
+                            u"Standaard 1 (rekenstap = Mecway's tijdstap).",
+                            u"Solver steps per Mecway time step (Dynamic "
+                            u"Response: Time step size, also with 'Generate "
+                            u"solution every n time steps'; otherwise per "
+                            u"output interval); more = smaller solver step. "
+                            u"Default 1 (solver step = Mecway's time step)."),
     "energy_balance": (u"Energiebalans per stap uitrekenen en tonen; niet "
                        u"met contact. Standaard uit (alleen ter controle).",
                        u"Compute and show the energy balance per step; not "

@@ -82,7 +82,7 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 Algemeen; de route `tabel` schaalt de reacties niet, de bridge stopt). De instellingen
 van de pagina Statisch of Dynamisch (impliciet) gelden zoals in 3D; voor D20/DA0 gelijk
 aan Mecway: *Tijdschema (SCHEMA_TEMPS)* `NEWMARK`, `deformation` `PETIT` en
-*Rekenstappen per uitvoerinterval* = Mecway's *every n time steps* (§2.4). De
+*Rekenstappen per Mecway-tijdstap* = 1 (standaard; §2.4). De
 resultaatvelden `strain` en `shell_*`
 geven niets in 2D; `principal_stresses` geeft `principal1..3` en `tresca` zoals Mecway
 (eigenwaarden van de 3D-tensor met σ_zz, per elementknoop, knoop = gemiddelde). De
@@ -149,9 +149,11 @@ belastingen als tijdtabel, Rayleigh-demping (`AMOR_RAYL`). De massa per eenheid 
 dikte of per radiaal past bij de krachten van §2.2, dus geen extra factor. Mecway rekent
 lineair met Newmark (gemiddelde versnelling): met *Tijdschema (SCHEMA_TEMPS)* `NEWMARK`,
 `deformation` `PETIT` en een rekenstap per Mecway-stap (*Rekenstappen per
-uitvoerinterval* = n van *every n time steps*) is de bridge gelijk aan Mecway's eigen
-D20/DA0-oplossing (≤ 4e-8, PL-10 … PL-12). Met de standaard (HHT, een stap per
-uitvoerinterval) geeft de bridge een WARNING en rekent hij met grotere stappen (KB127).
+Mecway-tijdstap* = 1, de standaard) is de bridge gelijk aan Mecway's eigen
+D20/DA0-oplossing (≤ 4e-8, PL-10 … PL-12). De rekenstap is Mecway's *Time step size*,
+ook met *Generate solution every n time steps* > 1: de bridge rekent dan n stappen per
+uitvoerinterval en schrijft alleen de uitvoertijden. Met de standaard HHT geeft de bridge
+een WARNING (numerieke demping).
 
 ## 3. Niet mogelijk
 

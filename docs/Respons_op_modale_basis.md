@@ -136,7 +136,8 @@ massa op een balk onder een staplast, met tijdstap 0,02 s (ω·Δt = 0,71) en 0,
 dezelfde respons, binnen 1e-4 van u_st(1 − cos ωt). De bridge gebruikt `NEWMARK`
 (gemiddelde versnelling, β = 1/4, γ = 1/2) met een kleine vaste stap: n stappen per
 periode van de hoogste mode in de basis (instelling, standaard 50), afgerond op een
-geheel aantal per uitvoerinterval. De periodefout van Newmark is (ω·Δt)²/12 (Hughes,
+geheel aantal per uitvoerinterval, en nooit groter dan Mecway's *Time step size* (met
+*Generate solution every n time steps* minstens n stappen per uitvoerinterval). De periodefout van Newmark is (ω·Δt)²/12 (Hughes,
 2000, §9.3): 0,13% voor de hoogste mode, minder voor de lagere. Gearchiveerd wordt
 alleen op de uitvoertijden. Met 50 stappen per periode kost een model met een hoge
 eerste-axiale mode veel stappen (bijv. 28 300 voor MD-01: axiale mode 565 Hz × 1 s × 50), maar
@@ -157,7 +158,9 @@ correctie 0,97069 daarvan.
 ### 2.6 D30 zonder Mode superposition
 
 Mecway rekent dan Newmark (gemiddelde versnelling) op het hele model. `auto` kiest
-`dyna_impl_3d` (`DYNA_NON_LINE`); de uitvoertijden komen uit Mecway's tijdstap. Met
+`dyna_impl_3d` (`DYNA_NON_LINE`); de uitvoertijden komen uit Mecway's tijdstap en de
+rekenstap is Mecway's *Time step size*, ook met *Generate solution every n time steps* >
+1 (n stappen per uitvoerinterval, resultaten alleen op de uitvoertijden; MD-08). Met
 *Tijdschema* `NEWMARK` en *COMPORTEMENT DEFORMATION* `PETIT` (pagina Dynamisch
 (impliciet)) is dat hetzelfde schema: verificatie MD-07 gelijk aan Mecway tot 3e-8.
 Met de standaard `HHT` (numerieke demping) en `GROT_GDEP` meldt de bridge een WARNING.

@@ -331,8 +331,11 @@ CONFIG_BRIDGE = {
             # hht_alpha, -0.3..0) or "NEWMARK" (average acceleration).
             "schema":                "HHT",
             "hht_alpha":             -0.1,
-            # Solver steps per output interval of Mecway's <timesteps>;
-            # on divergence Code-Aster splits the step in 4 (up to 6 levels).
+            # Solver steps per Mecway time step: Dynamic Response (D30,
+            # D20, DA0) per <timesteps stepsize>, also with keepeverynth-
+            # timestep > 1 (results only at the output times); otherwise per
+            # output interval. On divergence Code-Aster splits the step in 4
+            # (up to 6 levels).
             "substeps_per_output":   1,
             "newton_max_iter":       20,
             "convergence_resi_rela": 1.0e-5,

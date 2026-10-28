@@ -798,8 +798,10 @@ tolerantie 1e-6).
   stapdruk, Rayleigh α = 8e4 rad/s): u_r na 0,3 ms −0,05% tegen Lamé (nog aan het
   uitdempen; tolerantie 0,2%); tijdsverloop = Mecway (3,1e-8).
 - **PL-12** (Dynamic Response 2D, console 100 × 10 mm, knoopkracht als tijdtabel
-  0 → −100 N in 1 ms, elke 5e stap geschreven, *Rekenstappen per uitvoerinterval* = 5):
-  tijdsverloop = Mecway (1,6e-8).
+  0 → −100 N in 1 ms, elke 5e stap geschreven, *Rekenstappen per Mecway-tijdstap* = 1):
+  tijdsverloop = Mecway (1,6e-8). PL-11 en PL-12 hebben *Generate solution every n time steps* >
+  1 (n = 10 en 5); de bridge rekent met Mecway's stap. Vóór die correctie rekende hij een
+  stap per uitvoerinterval: tijdsverloop 2,7% (PL-11) en 4,6% (PL-12) naast Mecway.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en
@@ -2336,7 +2338,7 @@ Waarnemingen:
 Mecway D30 met *Mode superposition* → `dyna_modal_3d`: `CALC_MODES` → `PROJ_BASE` →
 `DYNA_VIBRA` `BASE_CALCUL='GENE'` (NEWMARK, 50 stappen per periode van de hoogste
 mode) → `REST_GENE_PHYS` ([Respons_op_modale_basis.md](Respons_op_modale_basis.md)).
-Module `tests_dynamisch_modaal.py` (groep "Respons op modale basis", 8 cases), draaien
+Module `tests_dynamisch_modaal.py` (groep "Respons op modale basis", 10 cases), draaien
 met `python run_verificatie.py MD` (ca. 1 minuut). De Mecway-waarden zijn headless
 berekend (`TestFiles/Tools/mw_solve.py`, Mecway 33, interne solver, Mode
 superposition) op dezelfde `.liml` uit `modellen/` en staan als tijdreeks (elke n-de
@@ -2344,7 +2346,7 @@ uitvoertijd) in de testmodule. "Verloop" is max |u − u_ref| over alle (of de
 opgeslagen) uitvoertijden, gedeeld door de grootste |u_ref|. Tolerantie: analytisch
 1% (piek, verloop), periode 0,5%, t.o.v. Mecway 2%.
 
-Model MD-01 … MD-04 en MD-07: ingeklemde balk 1 m, 10 `POU_D_E`, 20 × 30 mm, 1 kg/m³
+Model MD-01 … MD-04, MD-07 en MD-08: ingeklemde balk 1 m, 10 `POU_D_E`, 20 × 30 mm, 1 kg/m³
 (eigen massa 6e-4 kg), 10 kg op de tip: k = 3EI/L³ = 12 600 N/m, f = 5,649 Hz;
 staplast 100 N (u_st = 7,937 mm) in Y op de tip, 3 modes. Referentie:
 1-vrijheidsgraadsysteem, exacte oplossing (Duhamel in gesloten vorm; Clough &
@@ -2357,11 +2359,16 @@ Penzien, 1993, hoofdstuk 3 en 4).
 | MD-03 | F = 100·sin(0,8ωt) N als tabel (400 punten over 2 s), ζ = 0,05, tijdstap 5 ms | exacte respons uit rust (inschakelverschijnsel + stationair, DAF stationair 2,71) | verloop 1,7e-3 (de tabel wijkt ~0,2% af van de sinus), piek −0,17% | verloop 6,9e-6 |
 | MD-04 | als MD-01 met de instelling `modal_damping` = 0,05 (geen Mecway-invoer) | als MD-02 | piek −0,00%, verloop 2,8e-5 | – |
 | MD-05 | console 1 × 0,1 × 0,05 m, hex20 10 × 2 × 1, 6 modes, 1000 N in Z op het eindvlak, Rayleigh β = 1e-4 s, 0,1 s, tijdstap 0,5 ms | Mecway | – | verloop tip `displz` 3,8e-5, `velz` 1,4e-4, `stressxx` (halverwege, bovenvlak) 4,0e-4 |
-| MD-06a | Euler-console, 20 `POU_D_E`, staal, puntlast 100 N op de tip, α = 20 1/s, 1 mode, 2 s, *keepeverynthtimestep* 10 | eindverplaatsing = 12/λ₁⁴ · PL³/3EI = 0,97069 · u_st (bijdrage van mode 1; Blevins, 1979, tabel 8-1); 201 uitvoertijden | −0,00%; 201 | verloop 3,4e-3 |
+| MD-06a | Euler-console, 20 `POU_D_E`, staal, puntlast 100 N op de tip, α = 20 1/s, 1 mode, 2 s, *keepeverynthtimestep* 10 | eindverplaatsing = 12/λ₁⁴ · PL³/3EI = 0,97069 · u_st (bijdrage van mode 1; Blevins, 1979, tabel 8-1); 201 uitvoertijden | −0,00%; 201 | verloop 2,7e-3 |
 | MD-06b | als MD-06a met `static_correction` | eindverplaatsing = PL³/3EI | +0,00% | – (Mecway heeft geen statische correctie) |
 | MD-07 | model MD-01 zonder Mode superposition, tijdstap 0,02 s, `dyna_impl_3d` met NEWMARK en `PETIT` | dezelfde Newmark-recursie (`sdof_response`, ω·Δt = 0,71: periodefout +4%) | verloop 1,0e-4 | verloop 3,1e-8 |
+| MD-08a, MD-08b | als MD-07 met *Generate solution every n time steps*, n = 2 en 5 (Mecway 34 headless) | dezelfde Newmark-recursie met stap 0,02 s, elke n-de stap | verloop 1,0e-4 en 7,4e-5 | verloop 3,1e-8 |
 
 Waarnemingen:
+- **Mecway rekent met *Time step size*, ook bij *every n time steps*** (MD-08): de
+  oplossing met n = 2 en 5 is op dezelfde tijden gelijk aan die met n = 1 (< 1e-14). De
+  bridge rekent ook zo; vóór die correctie rekende hij een stap per uitvoerinterval
+  (verloop 1,0 en 0,86 naast Mecway).
 - **Mecway integreert de modale vergelijkingen exact:** met tijdstap 0,02 s en
   0,001 s dezelfde respons, binnen 1e-4 van u_st(1 − cos ωt) (bij de directe Newmark
   van Mecway is de afwijking dan 58%). De bridge rekent NEWMARK met een kleine stap en

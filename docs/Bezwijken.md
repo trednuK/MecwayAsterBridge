@@ -100,7 +100,7 @@ Een element dat bezweken is, blijft bezweken.
 **Dynamisch** controleert de bridge op de **uitvoertijden** (de tijdstappen van
 Mecway) in plaats van na elke rekenstap; elke uitvoertijd is ook een rekenstap.
 Daartussen rekent Code-Aster gewoon door (impliciet: *Rekenstappen per
-uitvoerinterval*; expliciet: stappen van ten hoogste *Tijdstap / kritieke tijdstap* ×
+Mecway-tijdstap*; expliciet: stappen van ten hoogste *Tijdstap / kritieke tijdstap* ×
 de geschatte kritieke tijdstap). Na een
 bezwijkmoment gaan ook snelheid en versnelling mee naar de volgende stap. Impliciet
 start die stap net als statisch met een elastische voorspelling; expliciet start hij

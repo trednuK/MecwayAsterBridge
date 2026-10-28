@@ -792,8 +792,10 @@ tolerance 1e-6).
   pressure, Rayleigh α = 8e4 rad/s): u_r after 0.3 ms −0.05% against Lamé (still
   settling; tolerance 0.2%); history = Mecway (3.1e-8).
 - **PL-12** (Dynamic Response 2D, cantilever 100 × 10 mm, nodal force as a time table
-  0 → −100 N in 1 ms, every 5th step written, "Solver steps per output interval" = 5):
-  history = Mecway (1.6e-8).
+  0 → −100 N in 1 ms, every 5th step written, "Solver steps per Mecway time step" = 1):
+  history = Mecway (1.6e-8). PL-11 and PL-12 have *Generate solution every n time steps* >
+  1 (n = 10 and 5); the bridge computes with Mecway's step. Before that fix it computed one
+  step per output interval: history 2.7% (PL-11) and 4.6% (PL-12) off Mecway.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as
@@ -2333,7 +2335,7 @@ Observations:
 Mecway D30 with *Mode superposition* → `dyna_modal_3d`: `CALC_MODES` → `PROJ_BASE` →
 `DYNA_VIBRA` `BASE_CALCUL='GENE'` (NEWMARK, 50 steps per period of the highest mode) →
 `REST_GENE_PHYS` ([Mode_superposition.md](Mode_superposition.md)). Module
-`tests_dynamisch_modaal.py` (group "Mode superposition", 8 cases), run with
+`tests_dynamisch_modaal.py` (group "Mode superposition", 10 cases), run with
 `python run_verificatie.py MD` (about 1 minute). The Mecway values were computed
 headless (`TestFiles/Tools/mw_solve.py`, Mecway 33, internal solver, Mode
 superposition) on the same `.liml` from `modellen/` and are stored as a time series
@@ -2341,7 +2343,7 @@ superposition) on the same `.liml` from `modellen/` and are stored as a time ser
 (or the stored) output times, divided by the largest |u_ref|. Tolerance: analytical
 1% (peak, history), period 0.5%, against Mecway 2%.
 
-Model MD-01 … MD-04 and MD-07: cantilever 1 m, 10 `POU_D_E`, 20 × 30 mm, 1 kg/m³ (own
+Model MD-01 … MD-04, MD-07 and MD-08: cantilever 1 m, 10 `POU_D_E`, 20 × 30 mm, 1 kg/m³ (own
 mass 6e-4 kg), 10 kg at the tip: k = 3EI/L³ = 12,600 N/m, f = 5.649 Hz; step load
 100 N (u_st = 7.937 mm) in Y at the tip, 3 modes. Reference: single degree of
 freedom, exact solution (Duhamel in closed form; Clough & Penzien, 1993, chapters 3
@@ -2354,11 +2356,16 @@ and 4).
 | MD-03 | F = 100·sin(0.8ωt) N as a table (400 points over 2 s), ζ = 0.05, time step 5 ms | exact response from rest (transient + steady state, steady DAF 2.71) | history 1.7e-3 (the table deviates ~0.2% from the sine), peak −0.17% | history 6.9e-6 |
 | MD-04 | as MD-01 with the setting `modal_damping` = 0.05 (no Mecway input) | as MD-02 | peak −0.00%, history 2.8e-5 | – |
 | MD-05 | cantilever 1 × 0.1 × 0.05 m, hex20 10 × 2 × 1, 6 modes, 1000 N in Z on the end face, Rayleigh β = 1e-4 s, 0.1 s, time step 0.5 ms | Mecway | – | history tip `displz` 3.8e-5, `velz` 1.4e-4, `stressxx` (mid-span, top face) 4.0e-4 |
-| MD-06a | Euler cantilever, 20 `POU_D_E`, steel, point load 100 N at the tip, α = 20 1/s, 1 mode, 2 s, *keepeverynthtimestep* 10 | final displacement = 12/λ₁⁴ · PL³/3EI = 0.97069 · u_st (contribution of mode 1; Blevins, 1979, table 8-1); 201 output times | −0.00%; 201 | history 3.4e-3 |
+| MD-06a | Euler cantilever, 20 `POU_D_E`, steel, point load 100 N at the tip, α = 20 1/s, 1 mode, 2 s, *keepeverynthtimestep* 10 | final displacement = 12/λ₁⁴ · PL³/3EI = 0.97069 · u_st (contribution of mode 1; Blevins, 1979, table 8-1); 201 output times | −0.00%; 201 | history 2.7e-3 |
 | MD-06b | as MD-06a with `static_correction` | final displacement = PL³/3EI | +0.00% | – (Mecway has no static correction) |
 | MD-07 | model MD-01 without Mode superposition, time step 0.02 s, `dyna_impl_3d` with NEWMARK and `PETIT` | the same Newmark recursion (`sdof_response`, ω·Δt = 0.71: period error +4%) | history 1.0e-4 | history 3.1e-8 |
+| MD-08a, MD-08b | as MD-07 with *Generate solution every n time steps*, n = 2 and 5 (Mecway 34 headless) | the same Newmark recursion with step 0.02 s, every n-th step | history 1.0e-4 and 7.4e-5 | history 3.1e-8 |
 
 Observations:
+- **Mecway computes with *Time step size*, also with *every n time steps*** (MD-08): the
+  solution with n = 2 and 5 equals the one with n = 1 at the same times (< 1e-14). The
+  bridge does the same; before that fix it computed one step per output interval
+  (history 1.0 and 0.86 off Mecway).
 - **Mecway integrates the modal equations exactly:** time steps 0.02 s and 0.001 s give
   the same response, within 1e-4 of u_st(1 − cos ωt) (Mecway's direct Newmark is then
   58% off). The bridge uses NEWMARK with a small step and comes within 1.4e-5 of Mecway

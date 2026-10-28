@@ -78,8 +78,16 @@
   2D* (D20) and *Dynamic Response Axisymmetric* (DA0) go through `dyna_impl_3d` with the same
   2D translation; with schema NEWMARK, deformation PETIT and one solver step per Mecway step
   equal to Mecway's own solution (≤ 4e-8, verification PL-10 … PL-12: bar wave, damped ring,
-  time-table force). Note for D30 too: with *Generate solution every n time steps* > 1, set
-  "Solver steps per output interval" to n (KNOWN_BUGS 127).
+  time-table force).
+- **Dynamic Response with *Generate solution every n time steps* > 1 (D30, D20, DA0)**: the
+  implicit solver step is now Mecway's *Time step size* (before: one step per output
+  interval, n times Mecway's step; up to 100% off Mecway on a cantilever with n = 2, 86% with
+  n = 5). Results are still written only at Mecway's output times. The setting
+  `substeps_per_output` is now "Solver steps per Mecway time step" and multiplies on top of
+  Mecway's step (default 1 = Mecway's step); models without *every n* (and D31) compute exactly
+  as before. Mode superposition: the internal step is never larger than Mecway's step either.
+  Verification MD-08a/b (Mecway 34 headless, n = 2 and 5: equal to Mecway within 3e-8);
+  PL-11, PL-12 now without the workaround (KNOWN_BUGS 127 removed).
 
 ## V2026.5 – 28 October 2026
 

@@ -890,7 +890,7 @@ Stappenplan en instellingen:
      [Instellingen §2.2](Instellingen_contact_en_nietlineair.md#22-newton-en-convergentie));
   3. een bezwijkgrens ([`Bezwijken.md`](Bezwijken.md)); anders zijn de resultaten tot
      het bezwijken geladen;
-  4. *Substappen per tijdsinterval* / *Rekenstappen per uitvoerinterval* en
+  4. *Substappen per tijdsinterval* / *Rekenstappen per Mecway-tijdstap* en
      *Max. Newton-iteraties* verhogen, en de niet-lineariteiten één voor één aanzetten
      ([Instellingen §4.2](Instellingen_contact_en_nietlineair.md#42-stappenplan)); bij
      contact *Contactmethode* = PENALISATION;

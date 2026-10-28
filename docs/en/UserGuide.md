@@ -242,7 +242,7 @@ analysis:
 | "COMPORTEMENT DEFORMATION" | nonlinear static, dynamic | `GROT_GDEP` |
 | "Time scheme (SCHEMA_TEMPS)" | dynamic | `HHT` (implicit; choice `HHT`/`NEWMARK`), `DIFF_CENT` (explicit; choice `DIFF_CENT`/`TCHAMWA`) |
 | "HHT ALPHA (-0.3 .. 0)" | dynamic implicit | -0.1 |
-| "Solver steps per output interval" | dynamic implicit | 1 |
+| "Solver steps per Mecway time step" | dynamic implicit | 1 |
 | "Energy balance (ENERGIE; not with contact)" | dynamic implicit | off |
 | "Time step / critical time step" | dynamic explicit | 0.5 |
 | "Time scheme THETA (0 .. 1)" | thermal | 0.57 |

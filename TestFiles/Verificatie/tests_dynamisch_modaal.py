@@ -73,14 +73,15 @@ def _ts(t_end, dt, keep=None):
     return ts
 
 
-def build_tipmass(t_end, dt, force, alpha=None, maxmode=3, direct=False):
+def build_tipmass(t_end, dt, force, alpha=None, maxmode=3, direct=False,
+                  keep=None):
     """Ingeklemde balk (10 x line2, RectBar 20 x 30 mm, 1 kg/m3) met 10 kg op
     de tip; last in Y op de tip."""
     def build():
         attrs = {"maxmode": maxmode}
         if not direct:
             attrs["modesuperposition"] = "true"
-        m = Model("D30", timesteps=_ts(t_end, dt), attrs=attrs)
+        m = Model("D30", timesteps=_ts(t_end, dt, keep), attrs=attrs)
         m.elset("Balk", "Staal")
         _e, nids = linemesh(m, "Balk", 10, (0, 0, 0), (L, 0, 0))
         m.mat("Staal", RECT, STEEL,
@@ -284,6 +285,31 @@ MECWAY = {
             (0.76, 0.00235043295), (0.8, 0.0123094986), (0.84, 0.0153153193),
             (0.88, 0.00658850963), (0.92, 5.07576875e-06),
             (0.96, 0.0060329633), (1.0, 0.0150875694),
+        ],
+    },
+    # Mecway 34 headless (mw_solve.py), 28 Oct 2026: every output time;
+    # equal to MD-07 at the same times (difference < 1e-14), so Mecway
+    # steps with stepsize whatever keepeverynthtimestep is.
+    'MD-08a': {
+        'disply': [
+            (0.0, 0.0), (0.04, 0.00630969604), (0.08, 0.0152060936),
+            (0.12, 0.0125435344), (0.16, 0.00255560318), (0.2, 0.00112354403),
+            (0.24, 0.0105243932), (0.28, 0.0158103925), (0.32, 0.00857657359),
+            (0.36, 0.000325022533), (0.4, 0.00417606363),
+            (0.44, 0.0140063744), (0.48, 0.014185334), (0.52, 0.00442838897),
+            (0.56, 0.000249505319), (0.6, 0.00829328946),
+            (0.64, 0.0157697755), (0.68, 0.0107910261), (0.72, 0.00127346894),
+            (0.76, 0.00235043295), (0.8, 0.0123094986), (0.84, 0.0153153193),
+            (0.88, 0.00658850963), (0.92, 5.07576875e-06),
+            (0.96, 0.0060329633), (1.0, 0.0150875694),
+        ],
+    },
+    'MD-08b': {
+        'disply': [
+            (0.0, 0.0), (0.1, 0.0155869753), (0.2, 0.00112354403),
+            (0.3, 0.0134208748), (0.4, 0.00417606363), (0.5, 0.0097019685),
+            (0.6, 0.00829328946), (0.7, 0.00548320193), (0.8, 0.0123094986),
+            (0.9, 0.00195904748), (1.0, 0.0150875694),
         ],
     },
 }
@@ -526,3 +552,39 @@ TESTS.append(Case(
      ],
     settings={"schema": "NEWMARK", "deformation": "PETIT"}, timeout=600,
     note="Model MD-01 zonder modesuperposition, stepsize 0,02 s."))
+
+# ------------------------------------------------------------------
+# MD-08 As MD-07 with "Generate solution every n time steps" (Mecway
+# keepeverynthtimestep = 2 and 5): the bridge computes with Mecway's step
+# 0,02 s and writes only every n-th step (before the fix,
+# the step was n x 0,02 s). Reference: the Newmark recursion of MD-07 at
+# every n-th step, and Mecway's own solution.
+# ------------------------------------------------------------------
+def _dev8(keep):
+    ref = REF7[::keep]
+
+    def dev(r):
+        h = r.history("disply", TIP)
+        if len(h) != len(ref):
+            raise ValueError("%d uitvoertijden, verwacht %d" % (len(h),
+                                                                 len(ref)))
+        return max(abs(u - ref[i]) for i, (_t, u) in enumerate(h)) / \
+            max(abs(v) for v in REF7)
+    return dev
+
+
+for _sfx, _keep in (("a", 2), ("b", 5)):
+    TESTS.append(Case(
+        "MD-08" + _sfx, GROUP, "D30 direct, uitvoer elke %de stap "
+        "(keepeverynthtimestep)" % _keep, "dyna_impl_3d",
+        build_tipmass(1.0, DT7, STEP, direct=True, keep=_keep),
+        [Check("verloop t.o.v. Newmark-schema", _dev8(_keep), ref=0.0,
+               tol_abs=0.002, unit="-",
+               source="max |u - u_Newmark| / max u_Newmark op elke %de "
+               "stap; sdof_response (tests_dynamisch), stap 0,02 s zoals "
+               "Mecway's stepsize" % _keep),
+         _mecway_check("MD-08" + _sfx, "disply", TIP),
+         ],
+        settings={"schema": "NEWMARK", "deformation": "PETIT"}, timeout=600,
+        note="Model MD-07 met keepeverynthtimestep = %d; substeps_per_output "
+             "= 1." % _keep))

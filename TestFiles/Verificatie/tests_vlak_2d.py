@@ -441,7 +441,9 @@ TESTS.append(Case(
 # ==================================================================
 # S16b: Dynamic Response 2D (D20) and Axisymmetric (DA0) -> dyna_impl_3d
 # with schema NEWMARK and deformation PETIT (Mecway's linear Newmark, as
-# D30 in MD-07); one calculation step per Mecway step.
+# D30 in MD-07); one calculation step per Mecway step, also with
+# keepeverynthtimestep > 1 (PL-11, PL-12; before the fix,
+# substeps_per_output had to equal n).
 # ==================================================================
 DYN = {"schema": "NEWMARK", "deformation": "PETIT", "substeps_per_output": 1}
 # Mecway 34's own D20/DA0 solution (headless) at a few output times:
@@ -561,7 +563,7 @@ _pl11 = [Check("u_r binnenwand na uitdempen", lambda r: r.at(
 TESTS.append(Case(
     "PL-11", GROUP, "Dikwandige ring axisymmetrisch (DA0), stapdruk met "
     "Rayleigh-demping", "dyna_impl_3d", build_pl11, _pl11,
-    settings=dict(DYN, substeps_per_output=10), timeout=900,
+    settings=DYN, timeout=900,
     note="Model PL-04-n4 met dichtheid, alpha = 8e4 rad/s, Newmark stap "
     "1e-6 s, uitvoer elke 10e stap."))
 
@@ -588,8 +590,7 @@ def build_pl12():
 
 TESTS.append(Case(
     "PL-12", GROUP, "Console vlakke spanning (D20), kracht als tijdtabel",
-    "dyna_impl_3d", build_pl12, [], settings=dict(DYN,
-                                                  substeps_per_output=5),
+    "dyna_impl_3d", build_pl12, [], settings=DYN,
     timeout=900, note="Console 100 x 10 mm, dikte 10 mm, quad8 20x2; "
     "-100 N op het eindvlak, oplopend tot 1 ms."))
 

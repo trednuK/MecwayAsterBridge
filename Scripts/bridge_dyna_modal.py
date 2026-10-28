@@ -201,12 +201,13 @@ def _damping_text(model_data, analysis):
 
 
 def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
-                static_corr, fields):
+                static_corr, fields, min_sub=1):
     """
     Damping, time step, DYNA_VIBRA and REST_GENE_PHYS (Python in the .comm:
     the frequencies are only known after CALC_MODES).
     """
     nsteps = max(4, int(analysis.get("steps_per_period", 50)))
+    min_sub = max(1, int(min_sub))
     lines = [
         "# Modal damping: Mecway's Rayleigh damping C = alpha M + beta K is",
         "# per mode xi_i = (alpha / w_i + beta w_i) / 2 (Mecway manual sec.",
@@ -238,10 +239,13 @@ def _dyna_block(analysis, excitations, inc, n_out, alpha, beta, zeta,
         "",
         "# Time step: {0} steps per period of the highest mode (NEWMARK,".format(
             nsteps),
-        "# period error (w dt)^2 / 12), a whole number per output interval.",
+        "# period error (w dt)^2 / 12), a whole number per output interval,",
+        "# at least {0}: never larger than Mecway's step (also with".format(
+            min_sub),
+        "# 'Generate solution every n time steps').",
         "bridge_inc, bridge_nout = {0!r}, {1}".format(inc, n_out),
-        "bridge_nsub = max(1, int(_math.ceil(bridge_inc * max(bridge_freqs) * {0})))"
-        .format(nsteps),
+        "bridge_nsub = max({1}, int(_math.ceil(bridge_inc * max(bridge_freqs) "
+        "* {0})))".format(nsteps, min_sub),
         "bridge_pas = bridge_inc / bridge_nsub",
         "print('BRIDGE_DYNA_MODAL rekenstap %g s (%d per uitvoerinterval), "
         "%d stappen' % (bridge_pas, bridge_nsub, bridge_nsub * bridge_nout))",
@@ -483,8 +487,12 @@ def build_dyna_modal(work_dir, model_data, msh_path, resu_name, analysis):
     if not excitations:
         # Without loading a zero vector, so that DYNA_VIBRA has an EXCIT.
         excitations = []
+    # Mecway's step size bounds the solver step: with "Generate solution
+    # every n time steps" the output interval is n steps.
+    step = b2a._mecway_dyna_step(model_data)
+    min_sub = max(1, int(math.ceil(inc / step - 1.0e-6))) if step else 1
     dyna_block = _dyna_block(analysis, excitations, inc, n_out, alpha, beta,
-                             zeta, static_corr, fields)
+                             zeta, static_corr, fields, min_sub)
     if not excitations:
         dyna_block = dyna_block.replace("    EXCIT=(\n    ),\n", "")
 

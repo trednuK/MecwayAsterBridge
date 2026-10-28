@@ -157,17 +157,6 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 ## Translation that works differently from Mecway
 
-127\. **Dynamic Response (D30, D20, DA0) with *Generate solution every n time steps* > 1: the
-   bridge steps per output interval, n times Mecway's step** (confirmed with runs, Code-Aster
-   17.4 and Mecway 34 headless; `bridge_to_aster._build_dyna_listinst_block`, setting
-   `substeps_per_output` = 1). Cantilever in D20 (quad8, step 2e-5 s, every 5th step written):
-   with `substeps_per_output` = 1 the tip displacement differs up to 22% from Mecway's own
-   solution (period error of the 5 times larger Newmark step), with `substeps_per_output` = 5
-   it is equal (3.8e-8). The bridge does not derive the solver step from Mecway's *Time step
-   size*; set "Solver steps per output interval" to n yourself
-   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md) §2.4). Not fixed
-   here: it changes the existing D30 route (MD-07 uses n = 1).
-
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
    overlapping conditions itself (manual v33 sec. 9.6), Code-Aster does not. Fixed:
    fixed next to skewed conditions, displacement, node rotation or velocity

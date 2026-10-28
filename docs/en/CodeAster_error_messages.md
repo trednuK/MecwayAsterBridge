@@ -878,7 +878,7 @@ Step-by-step plan and settings:
      [Settings §2.2](Settings_contact_and_nonlinear.md#22-newton-and-convergence));
   3. a failure limit ([`Failure.md`](Failure.md)); otherwise the results up to the
      collapse are loaded;
-  4. increase *Substeps per time interval* / *Solver steps per output interval* and
+  4. increase *Substeps per time interval* / *Solver steps per Mecway time step* and
      *Max. Newton iterations*, and switch on the nonlinearities one at a time
      ([Settings §4.2](Settings_contact_and_nonlinear.md#42-step-by-step-plan)); with
      contact *Contact method* = PENALISATION;
