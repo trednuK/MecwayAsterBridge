@@ -1,0 +1,39 @@
+<liml version="33">
+  <analysis type="B30" maxmode="20" shift="1" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0" y="0" z="0.15" />
+  <node nid="3" x="0" y="0" z="0.3" />
+  <node nid="4" x="0" y="0" z="0.45" />
+  <node nid="5" x="0" y="0" z="0.6" />
+  <node nid="6" x="0" y="0" z="0.75" />
+  <node nid="7" x="0" y="0" z="0.9" />
+  <node nid="8" x="0" y="0" z="1.05" />
+  <node nid="9" x="0" y="0" z="1.2" />
+  <elset name="Balk" material="Hoek">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+  </elset>
+  <pinnedsupport selection="A1" />
+  <noderotation selection="A1"><value>0 rad</value><x>0</x><y>0</y><z>1</z></noderotation>
+  <displacement selection="A2"><value>0 mm</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="A2"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <noderotation selection="A2"><value>0 rad</value><x>0</x><y>0</y><z>1</z></noderotation>
+  <force selection="A2"><x>0 N</x><y>0 N</y><z>-1 N</z></force>
+  <ccxmodeldefinition>#ASTER-SECTIE Hoek: A=1.856e-3, IY=4.167339e-6, IZ=1.045547e-6, JX=3.9595e-8, AY=1, AZ=1, EY=0.041012, EZ=0, JG=4.4398819e-11, IYR2=8.4948392e-8, IZR2=0</ccxmodeldefinition>
+  <mat name="Hoek">
+    <geometric type="UniformGeneralSection" area="1856 mm²" iyy="4167339 mm⁴" izz="1045547 mm⁴" torsionconstant="39595 mm⁴" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="A1">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="A2">
+    <node nid="9" />
+  </nodeselection>
+</liml>

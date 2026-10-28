@@ -489,8 +489,8 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
 - **T, C and L profiles**: the shear centre is not in the centroid, so bending and
   torsion couple (flexural-torsional buckling). `POU_D_E` misses that coupling and then
   gives too high factors: C column 100 × 50 × 6 mm 616 against 393 (hex20). The bridge
-  gives a WARNING for buckling with these profiles; check such structures with shell or
-  volume elements (KNOWN_BUGS 115).
+  gives a WARNING for buckling with these profiles. Then choose `elem_beam` = `POU_D_TG`
+  (§3.5.1; the same column 385.0) or check with shell or volume elements (KNOWN_BUGS 115).
 - **Negative factors**: the bridge also gives the factors for the reversed load (for the
   L frame −53.0). Mecway gives only positive factors and with its default *shift* 1
   sometimes skips a factor below 1 (ssll105: 0.4226 only with shift 0.3).
@@ -500,6 +500,65 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
   value for *Solver accuracy (RESI_RELA)* (`lin_solver_resi`) on the page *Buckling* or
   *Modal*; with it the result equals Mecway (BU-37). See
   [Error messages](CodeAster_error_messages.md), `FACTOR_57`.
+
+#### 3.5.1 Beam with warping: `elem_beam` = `POU_D_TG`
+
+For flexural-torsional and lateral-torsional buckling of open profiles (T, C, L, also I)
+choose `elem_beam` = `POU_D_TG` on the **Elements** page. Code-Aster's `POU_D_TG` is a
+Timoshenko beam with a seventh degree of freedom `GRX` (the warping), the shear centre
+outside the centroid (`EY`, `EZ`) and the warping constant `JG`; its `RIGI_GEOM` couples
+the axial force and the bending moments with the twist about the shear centre (Code-Aster
+U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
+
+<!-- FIGURE: page Elements, settings "Beams (line2/line3)" = POU_D_TG and "Warping of POU_D_TG beams at supports", markers: 1 = Beams list with POU_D_TG, 2 = Warping list (auto/free/blocked) -->
+
+![C profile with centroid, shear centre and local axes](../img/warping_section.svg)
+
+1. Centroid G: the beam line (the Mecway nodes) lies here.
+2. Shear centre S: the section rotates about this point in torsion.
+3. `EZ` (and `EY`): the vector from S to G in the local axes, as `AFFE_CARA_ELEM` asks for it.
+4. Local axis y = Mecway's V axis (vertical in Mecway's drawing of the profile).
+5. Local axis z = Mecway's W axis (horizontal; whether it points to the right in Mecway's drawing is not checked).
+6. Twist θx about S; the warping `GRX` is the change of θx along the beam.
+
+![Clamp and fork supports](../img/warping_supports.svg)
+
+1. *Fixed support* (clamp): with `beam_warping` = `auto` the warping is fixed (`GRX` = 0).
+2. Fork support (*Pinned support*, or translations plus *Node rotation* about the beam axis x): the warping stays free.
+3. All other nodes: warping free.
+
+- **Section**: the bridge gives `AY`/`AZ` (as `POU_D_T`) and `EY`, `EZ`, `JG`, `IYR2`,
+  `IZR2`. For a *General section* with an `#ASTER-SECTIE` line from MecwaySectionProps
+  they come from that line (exact); for I, T, C and L profiles the bridge computes them
+  with thin-walled formulas (centre lines, sectorial coordinate, plus the warping through
+  the plate thickness; Timoshenko & Gere 1961 §5.1–5.4, Trahair 1993): for the angle of
+  ssll103a equal to the test's values within 0.12%. A *General section* without a line
+  gets `JG` = 0 and `EY` = `EZ` = 0 with a WARNING: then torsion about the centroid
+  without warping stiffness. Rectangle and circle stay `RECTANGLE`/`CERCLE` (doubly
+  symmetric, warping negligible).
+- **Warping at supports** (setting `beam_warping`, **Elements** page; Mecway has no
+  warping): `auto` (default) sets `GRX` = 0 where a bending rotation of the beam is fixed
+  (*Fixed support*, clamp, *Node rotation* across the beam, rigid coupling `rigidbody`),
+  and leaves the warping free at a fork support (only translations and the rotation about
+  the beam axis fixed, such as *Pinned support* plus *Node rotation* about the beam axis)
+  and everywhere else. `free`: free everywhere; `blocked`: fixed at every supported node
+  (e.g. end plates at a pinned support). The log names the rule per node. Note: a *Fixed
+  support* alone (Code-Aster `BLOCAGE`) does not fix the warping; this rule does.
+- **Measured** ([`Verification.md`](Verification.md) §7, BU-38 … BU-42, LS-90, LS-91):
+  C column of BU-35 385.0 (theory 386.1, hex20 393.0); lateral-torsional buckling of an I
+  beam on fork supports −0.10% from Timoshenko & Gere §6.2; ssll103a equal to
+  `VALE_CALC`; T column −0.6% from the theory; torsion of a clamped I beam with
+  restrained warping −0.09%.
+- **Limits**: the warping is continuous at a node, also where members meet at an angle
+  (as in Code-Aster); with a *flexible joint* and an element offset the beam lies on its
+  own node without a support, so the warping is free there. Nodal reaction forces of
+  `POU_D_TG` have an error in Code-Aster 17.4 that grows with the shear deformation
+  (WARNING, KNOWN_BUGS 123); displacements, section forces and buckling factors are
+  right. The bimoment (`BX` in `EFGE_ELNO`) does not go to Mecway. In explicit dynamics
+  the beams become `POU_D_T` (WARNING): the mass matrix of `POU_D_TG` has no mass for
+  `GRX`, and the explicit scheme stopped on it with `FACTOR_11`. Whether Mecway's W
+  axis points to the right in the drawing is not checked: it only changes the sign of
+  `EZ` and `IZR2` of C and L profiles, not a buckling load under axial force.
 
 ## 4. Messages and solutions
 
@@ -523,7 +582,11 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
 | alarm `ALGELINE2_74` | one of the `VERI_MODE` checks failed | see the alarms before it and the table in the `.mess` |
 | `<EXCEPTION> <FACTOR_57>` in the static step; the bridge reports the estimated error | error < 1e-3: poorly conditioned (slender volume model in bending), no mechanism; larger: a mechanism | small error: *Solver accuracy (RESI_RELA)* to the value from the message; otherwise check the supports ([Error messages](CodeAster_error_messages.md), `FACTOR_57`) |
 | WARNING: Negative buckling factor(s) | buckling under the reversed load (e.g. tension instead of compression) | check the load direction; only positive factors belong to the applied direction |
-| WARNING: Buckling with T, C or L profiles | flexural-torsional buckling is missing in the beam elements (shear centre, warping) | check with shell or volume elements (§3.5, KNOWN_BUGS 115) |
+| WARNING: Buckling with T, C or L profiles | flexural-torsional buckling is missing in the beam elements (shear centre, warping) | choose `elem_beam` = `POU_D_TG` (§3.5.1) or check with shell or volume elements (KNOWN_BUGS 115) |
+| WARNING: Beam elset ... (POU_D_TG): no warping constant and no shear centre known | *General section* without an `#ASTER-SECTIE` line | create the section with MecwaySectionProps (line with `JG`, `EY`, `EZ`), or choose an I, T, C or L profile (§3.5.1) |
+| WARNING: Beam elset ... (POU_D_TG): #ASTER-SECTIE has no JG | old line without a warping constant | create the line again with MecwaySectionProps |
+| WARNING: elem_beam = POU_D_TG (warping) does not work in explicit dynamics | no mass for the warping `GRX` (§3.5.1) | normal; the beams compute as `POU_D_T` there |
+| WARNING: POU_D_TG beams: Code-Aster 17.4 gives nodal reaction forces ... with an error | property of `POU_D_TG` in Code-Aster 17.4 (KNOWN_BUGS 123) | read reactions with that margin, or compute the reactions with `POU_D_T`; section forces and displacements are right |
 | INFO: Buckling of beams ... appears as several equal factors | torsional buckling without warping: one factor per element (§3.5) | normal; the Sturm alarm `ALGELINE5_23` belongs to it |
 | WARNING: Mode 1 has ~0 Hz | rigid motion or mechanism | check the supports |
 | No RX/RY/RZ after the modes; in the `.mess`: `aster_results_export: WARNING: effective mass of the rotations not ...` | the own computation failed or did not match Code-Aster's values for the translations (e.g. an unknown kind of degree of freedom) | frequencies, shapes and translations are fine; report the model as a bug (KNOWN_BUGS). You can then request a rotational effective mass in Mecway itself (*modal effective mass*, internal solver) |

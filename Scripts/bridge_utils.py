@@ -114,8 +114,15 @@ CONFIG_BRIDGE = {
     # Beams (line2/line3): "POU_D_E" (Euler, like Mecway), "POU_D_T"
     # (Timoshenko; AY/AZ for general sections: bridge_from_liml.py) or
     # "POU_D_T_GD" (large rotations, only in nonlinear static with large
-    # displacements, elsewhere POU_D_T; bridge_from_liml._gd_beam_choice).
+    # displacements, elsewhere POU_D_T; bridge_from_liml._gd_beam_choice)
+    # or "POU_D_TG" (Timoshenko with warping and shear centre: flexural-
+    # torsional buckling of open sections; bridge_warping.py).
     "elem_beam":       "POU_D_E",
+    # Warping (GRX) of POU_D_TG beams at supports: "auto" (restrained where
+    # a bending rotation is fixed: Fixed support, clamp; free at a fork
+    # support), "free" or "blocked" (at every supported node);
+    # bridge_warping.warping_nodes.
+    "beam_warping":    "auto",
     # Tension only (CABLE): small pretension N_INIT = factor x E x A [N]
     # per cable group (AFFE_CARA_ELEM CABLE). Without it a straight cable
     # has no transverse stiffness (singular, KNOWN_BUGS 23/40); Aubry

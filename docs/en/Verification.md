@@ -2107,7 +2107,7 @@ along X and skew, with and without vector + 30°):
   centre-line dimensions b = 47, h = 94, t = 6 mm, e = 3b²t/(6bt + ht),
   C_w = tb³h²/12·(3b + 2h)/(6b + h)): P_T = 490.5, P_x = 864.2, coupled 386.1; volume model
   (hex20) 393.03. The beam gives 616.43: too high. The bridge now warns for buckling with T, C
-  and L profiles.
+  and L profiles; with `elem_beam` = `POU_D_TG` 384.98 (BU-38, below).
 - **Volume model of the L frame (BU-37)**: with the default `RESI_RELA` 1e-6 the static
   step stops with `FACTOR_57` (MUMPS error 5.0e-5) without a mechanism. The bridge then
   reports the value for `lin_solver_resi` (here 1e-3); with it the run completes and the
@@ -2119,6 +2119,49 @@ along X and skew, with and without vector + 30°):
   (Euler 17.272). A real mechanism (foot held in X only) stops with `FACTOR_11`, with
   `solver_nprec` -1 with `FACTOR_57` and an error of 13 (loose part: 64): then the
   bridge gives the message about a singular matrix.
+
+### Beams with warping (BU-38 … BU-42, LS-90, LS-91)
+
+- **Purpose**: `elem_beam` = `POU_D_TG` ([Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)):
+  shear centre (`EY`, `EZ`), warping constant (`JG`) and Wagner terms (`IYR2`, `IZR2`) from
+  `bridge_warping.section_props` or an `#ASTER-SECTIE` line, and the rule for the warping
+  `GRX` at supports (`beam_warping`). Module `tests_balk_welving.py`,
+  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91` (about 1 minute).
+- **Theory**: flexural-torsional buckling i0²(P − P_b)(P − P_T) − P²·e² = 0 (Timoshenko &
+  Gere, 1961, §5.3); lateral-torsional buckling of an I beam on fork supports under
+  uniform moment M_cr = π/L·√(E·I_z·G·J·(1 + π²E·C_w/(G·J·L²))) (ibid. §6.2); torsion with
+  restrained warping φ = T/(G·J)·(L − tanh(kL)/k), k = √(G·J/(E·C_w)) (ibid. §5.4; Trahair,
+  1993). C_w of the I profile t_f·b³·h²/24 (centre lines).
+
+| ID | Model | Reference | Result |
+|---|---|---|---|
+| BU-38 | C column of BU-35 (C 100 × 50 × 6 mm, 20 `POU_D_TG`, foot *Fixed*: warping fixed) | thin-walled theory 386.09; hex20 BU-36 393.03 | factor 2 384.98: −0.29% from the theory, −2.0% from hex20; factor 1 +0.11% |
+| BU-39 | I 100/50/10/8 mm, L = 1.5 m, 30 `POU_D_TG`, fork supports (warping free), uniform moment 1000 N·m | M_cr = 28 607 N·m (Timoshenko & Gere §6.2) | 28 579 (−0.10%); the warping adds 5% |
+| BU-41 | Code-Aster test case ssll103a: angle 120 × 120 × 8 mm, L = 1200 mm, 8 `POU_D_TG`, *General section* with `#ASTER-SECTIE` (values of the test) | `VALE_CALC` modes 1, 8, 19; `VALE_REFE` 692 532 | equal to `VALE_CALC` (< 1e-9); −0.20% from `VALE_REFE` |
+| BU-41b | the same with Mecway's L profile 120 × 120 × 8 mm (section by the bridge) | `VALE_REFE` 692 532 | 677 178 (−2.2%; Mecway's J 1.9% below the test's, AY = AZ = 2.4 instead of 1) |
+| BU-42 | T column 100 × 10 × 10 × 90 mm, L = 1 m, 20 `POU_D_TG`, foot *Fixed* | thin-walled theory (C_w = 0) 413.62 | 411.18 (−0.59%) |
+| LS-90 | I cantilever 100/50/10/8 mm, L = 1 m, 20 `POU_D_TG`, T = 100 N·m at the tip, clamp (warping fixed) | φ = T/(G·J)·(L − tanh(kL)/k) = 0.022261 rad | 0.022240 (−0.09%) |
+| LS-90b | the same with `beam_warping` = `free` | T·L/(G·J) | exact |
+| LS-90c | the same with the default `POU_D_E` | T·L/(G·J) | exact (unchanged) |
+| LS-91 | the same beam on fork supports, T at midspan | φ = T/(2G·J)·(L/2 − tanh(kL/2)/k) = 0.0045691 rad | 0.0045591 (−0.22%) |
+
+- **Section**: for ssll103a's angle the bridge computes `EZ` = 40.96 mm (test `EY`
+  41.012), `JG` = 4.43988e-11 m⁶ (test 4.4398819e-11) and `IZR2` = 8.4848e-8 m⁵ (test
+  `IYR2` 8.4948e-8): the test's y and z axes are z and y for Mecway's L profile (Mecway's
+  V is the weak axis). C profile: `EZ` = 29.33 mm (centre-line formula e + x_c = 29.375),
+  primary C_w 4.0135e-10 m⁶ = the closed form, plus 1.1% warping through the plate
+  thickness.
+- **Rule at supports**: a *Fixed support* (`BLOCAGE`) alone does not fix `GRX` (C column
+  343.8 without and 385.0 with `GRX` = 0, run 28 Oct 2026); the bridge therefore adds its
+  own `DDL_IMPO GRX` on the node group `BRGRX`. LS-90/LS-90b show the difference clamp/free
+  (−15%), LS-91 and BU-39 that the warping stays free at a fork support.
+- **Existing cases with `POU_D_TG`** (only run, not in the series): static, modal,
+  buckling, nonlinear static (`PETIT`), harmonic and dynamic compute, also with line3,
+  *flexible joint*, offset and shells (LS-01, LS-30, LS-50a, LS-51a/b, LS-52a/b, LS-62,
+  LS-77, MO-01, MO-08, MO-27, DY-02, DY-30, MD-01, HR-02a, NK-01, NL-32, BU-01, BU-30).
+  Section forces (LS-30, NL-32) exact; BU-30 gives 2553.9 with warping (see above). Nodal
+  reaction forces deviate (LS-01: 103.0 N at the clamp, −3.0 N at the loaded tip, sum
+  100 N; KNOWN_BUGS 123).
 
 ### Modal with prestress (MP)
 

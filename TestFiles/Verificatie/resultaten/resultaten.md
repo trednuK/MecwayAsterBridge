@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 8b13519, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2376 van 2382 controles binnen de tolerantie** (442 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2393 van 2399 controles binnen de tolerantie** (451 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -580,9 +580,21 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 8b13519, Code-Aster 17.4
 | BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 1 (in plane) | 17.272 - | 17.315 | +0.25% | 0.5% | OK |
 | BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 2 (out of plane) vs Mecway | 44.861 - | 45.03 | +0.38% | 1% | OK |
 | BU-37 | Frame in L, bending moments, volume (hex20) | positive factor 3 (out of plane) vs Mecway | 124.12 - | 124.64 | +0.42% | 1% | OK |
+| BU-38 | Flexural-torsional buckling, C column, beam with warping (POU_D_TG) | factor 1 (uncoupled) | 135.41 - | 135.57 | +0.11% | 1% | OK |
+| BU-38 | Flexural-torsional buckling, C column, beam with warping (POU_D_TG) | factor 2 vs flexural-torsional theory | 386.09 - | 384.98 | -0.29% | 1% | OK |
+| BU-38 | Flexural-torsional buckling, C column, beam with warping (POU_D_TG) | factor 2 vs hex20 (BU-36) | 393.03 - | 384.98 | -2.05% | 3% | OK |
+| BU-39 | Lateral-torsional buckling, I beam on fork supports, uniform moment (POU_D_TG) | smallest |factor| vs M_cr | 28.607 - | 28.579 | -0.10% | 1% | OK |
+| BU-39 | Lateral-torsional buckling, I beam on fork supports, uniform moment (POU_D_TG) | smallest |factor| / M_cr without warping | 1.0498 - | 1.0488 | -0.10% | 1% | OK |
 | BU-40 | Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT) | factor 1 | 5.1815 - | 5.1815 | +0.00% | 0.2% | OK |
 | BU-40 | Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT) | factor 2 | 18.135 - | 18.135 | +0.00% | 0.2% | OK |
 | BU-40 | Ingeklemde kolom, constante last 0,5 Pcr plus variabele last (#ASTER-CONSTANT) | factor 3 | 88.086 - | 88.087 | +0.00% | 0.2% | OK |
+| BU-41 | Code-Aster test case ssll103a: angle, flexural-torsional buckling (POU_D_TG, #ASTER-SECTIE) | mode 1 vs ssll103a | 6.9115e+05 - | 6.9115e+05 | -0.00% | 0.001% | OK |
+| BU-41 | Code-Aster test case ssll103a: angle, flexural-torsional buckling (POU_D_TG, #ASTER-SECTIE) | mode 8 vs ssll103a | 1.4900e+06 - | 1.4900e+06 | -0.00% | 0.001% | OK |
+| BU-41 | Code-Aster test case ssll103a: angle, flexural-torsional buckling (POU_D_TG, #ASTER-SECTIE) | mode 19 vs ssll103a | 9.6943e+06 - | 9.6943e+06 | +0.00% | 0.001% | OK |
+| BU-41 | Code-Aster test case ssll103a: angle, flexural-torsional buckling (POU_D_TG, #ASTER-SECTIE) | mode 1 vs reference | 6.9253e+05 - | 6.9115e+05 | -0.20% | 0.3% | OK |
+| BU-41b | ssll103a with Mecway's L profile (POU_D_TG, section computed by the bridge) | mode 1 vs reference | 6.9253e+05 - | 6.7718e+05 | -2.22% | 3% | OK |
+| BU-41b | ssll103a with Mecway's L profile (POU_D_TG, section computed by the bridge) | mode 1 vs ssll103a (VALE_CALC) | 6.9115e+05 - | 6.7718e+05 | -2.02% | 3% | OK |
+| BU-42 | Flexural-torsional buckling, T column (POU_D_TG) | factor 1 vs flexural-torsional theory | 413.62 - | 411.18 | -0.59% | 2% | OK |
 
 ## Cyclische symmetrie
 
@@ -1335,6 +1347,11 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 8b13519, Code-Aster 17.4
 | LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip rotx t.o.v. Mecway | 0 rad | 0 | 0 | 1.09375e-05 rad | OK |
 | LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip roty t.o.v. Mecway | -0.063616 rad | -0.063616 | +0.00% | 1.09375e-05 rad | OK |
 | LS-82 | Orientatiekaart statisch: kaart op de helft van de elementen | tip rotz t.o.v. Mecway | 0.10937 rad | 0.10937 | -0.00% | 1.09375e-05 rad | OK |
+| LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist at the tip | 0.022261 rad | 0.02224 | -0.09% | 0.5% | OK |
+| LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist vs free warping (ratio) | 0.84745 - | 0.84667 | -0.09% | 0.5% | OK |
+| LS-90b | Torsion, I cantilever, warping free (POU_D_TG, beam_warping free) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.01% | OK |
+| LS-90c | Torsion, I cantilever, default POU_D_E (no warping) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.0001% | OK |
+| LS-91 | Torsion at midspan, I beam on fork supports (POU_D_TG) | twist at midspan | 0.0045691 rad | 0.0045591 | -0.22% | 0.5% | OK |
 
 ## Modaal met demping
 

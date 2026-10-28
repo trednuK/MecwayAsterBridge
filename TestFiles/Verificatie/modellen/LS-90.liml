@@ -1,0 +1,59 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.05" y="0" z="0" />
+  <node nid="3" x="0.1" y="0" z="0" />
+  <node nid="4" x="0.15" y="0" z="0" />
+  <node nid="5" x="0.2" y="0" z="0" />
+  <node nid="6" x="0.25" y="0" z="0" />
+  <node nid="7" x="0.3" y="0" z="0" />
+  <node nid="8" x="0.35" y="0" z="0" />
+  <node nid="9" x="0.4" y="0" z="0" />
+  <node nid="10" x="0.45" y="0" z="0" />
+  <node nid="11" x="0.5" y="0" z="0" />
+  <node nid="12" x="0.55" y="0" z="0" />
+  <node nid="13" x="0.6" y="0" z="0" />
+  <node nid="14" x="0.65" y="0" z="0" />
+  <node nid="15" x="0.7" y="0" z="0" />
+  <node nid="16" x="0.75" y="0" z="0" />
+  <node nid="17" x="0.8" y="0" z="0" />
+  <node nid="18" x="0.85" y="0" z="0" />
+  <node nid="19" x="0.9" y="0" z="0" />
+  <node nid="20" x="0.95" y="0" z="0" />
+  <node nid="21" x="1" y="0" z="0" />
+  <elset name="Balk" material="Mat">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+    <elem eid="9" shape="line2" nodes="9 10" />
+    <elem eid="10" shape="line2" nodes="10 11" />
+    <elem eid="11" shape="line2" nodes="11 12" />
+    <elem eid="12" shape="line2" nodes="12 13" />
+    <elem eid="13" shape="line2" nodes="13 14" />
+    <elem eid="14" shape="line2" nodes="14 15" />
+    <elem eid="15" shape="line2" nodes="15 16" />
+    <elem eid="16" shape="line2" nodes="16 17" />
+    <elem eid="17" shape="line2" nodes="17 18" />
+    <elem eid="18" shape="line2" nodes="18 19" />
+    <elem eid="19" shape="line2" nodes="19 20" />
+    <elem eid="20" shape="line2" nodes="20 21" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <moment selection="Tip"><x>100 N.m</x><y>0 N.m</y><z>0 N.m</z></moment>
+  <mat name="Mat">
+    <geometric type="I" ia="100 mm" ib="50 mm" ic="10 mm" id="8 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="21" />
+  </nodeselection>
+</liml>

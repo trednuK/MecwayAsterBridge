@@ -122,14 +122,17 @@ GENERAL_SPECS = [
      ("DKT", "DST", "COQUE_3D")),
     ("elem_beam", ("Balken (line2/line3)", "Beams (line2/line3)"),
      "choice",
-     ("POU_D_E", "POU_D_T", "POU_D_T_GD")),
+     ("POU_D_E", "POU_D_T", "POU_D_T_GD", "POU_D_TG")),
+    ("beam_warping", ("Welving POU_D_TG-balken bij opleggingen",
+                      "Warping of POU_D_TG beams at supports"), "choice",
+     ("auto", "free", "blocked")),
     ("cable_n_init_factor", ("Voorspanning kabels N_INIT / (E A)",
                              "Cable pretension N_INIT / (E A)"),
      "float_range", (0.0, 1.0e-2)),
 ]
 
 # General keys that are on the page "Elementen".
-ELEMENT_KEYS = ("elem_hex8", "elem_shell", "elem_beam",
+ELEMENT_KEYS = ("elem_hex8", "elem_shell", "elem_beam", "beam_warping",
                 "cable_n_init_factor")
 
 _ELEMENT_HELP = (
@@ -160,7 +163,11 @@ _ELEMENT_HELP = (
     u"  \u2022 POU_D_T_GD: Timoshenko met grote verplaatsingen en rotaties; "
     u"alleen Niet-lineair statisch\n"
     u"     met grote verplaatsingen (anders POU_D_T). Geen balkspanningen; "
-    u"zie Instellingen contact en niet-lineair.",
+    u"zie Instellingen contact en niet-lineair.\n"
+    u"  • POU_D_TG: Timoshenko met welving en dwarskrachtcentrum; "
+    u"buig-torsieknik en kipknik van open profielen\n"
+    u"     (T, C, L, I). Welving bij opleggingen: instelling eronder; zie "
+    u"Modaal en knik.",
     u"Hex8 (solid elements)\n"
     u"  \u2022 3D: fully integrated; stiffer than Mecway's hex8 (incompatible "
     u"modes), see KNOWN_BUGS 1.\n"
@@ -188,7 +195,11 @@ _ELEMENT_HELP = (
     u"  \u2022 POU_D_T_GD: Timoshenko with large displacements and "
     u"rotations; only Nonlinear static\n"
     u"     with large displacements (otherwise POU_D_T). No beam stresses; "
-    u"see Settings contact and nonlinear.")
+    u"see Settings contact and nonlinear.\n"
+    u"  • POU_D_TG: Timoshenko with warping and shear centre; "
+    u"flexural-torsional and lateral-torsional buckling\n"
+    u"     of open profiles (T, C, L, I). Warping at supports: setting "
+    u"below; see Modal and buckling.")
 
 # Readable titles of the analyses (pages and messages), in the order
 # of the navigation. Analyses not listed here get their key as
@@ -523,7 +534,8 @@ _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "work_dir_beside_model": False, "paraview_exe": "",
                      "wait_for_aster": "auto",
                      "elem_hex8": "3D",
-                     "elem_shell": "DKT", "elem_beam": "POU_D_E"}
+                     "elem_shell": "DKT", "elem_beam": "POU_D_E",
+                     "beam_warping": "auto"}
 
 
 # ==========================================

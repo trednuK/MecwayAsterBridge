@@ -2109,7 +2109,8 @@ schuin, met en zonder vector + 30°):
   sterke as met torsie om het dwarskrachtcentrum. Theorie (dunwandig, hartlijnmaten
   b = 47, h = 94, t = 6 mm, e = 3b²t/(6bt + ht), C_w = tb³h²/12·(3b + 2h)/(6b + h)):
   P_T = 490,5, P_x = 864,2, gekoppeld 386,1; volumemodel (hex20) 393,03. De balk geeft 616,43: te
-  hoog. De bridge waarschuwt nu bij knik met T-, C- en L-profielen.
+  hoog. De bridge waarschuwt nu bij knik met T-, C- en L-profielen; met `elem_beam` =
+  `POU_D_TG` 384,98 (BU-38, hieronder).
 - **Volumemodel van het L-raamwerk (BU-37)**: met de standaard `RESI_RELA` 1e-6 stopt
   de statische stap met `FACTOR_57` (fout van MUMPS 5,0e-5) zonder mechanisme. De
   bridge meldt dan de waarde voor `lin_solver_resi` (hier 1e-3); daarmee rekent het door
@@ -2121,6 +2122,48 @@ schuin, met en zonder vector + 30°):
   met 1e-5) 17,317 (Euler 17,272). Een echt mechanisme (voet alleen in X vast) stopt met
   `FACTOR_11`, met `solver_nprec` -1 met `FACTOR_57` en een fout van 13 (los deel: 64):
   dan geeft de bridge de melding over een singuliere matrix.
+
+### Balken met welving (BU-38 … BU-42, LS-90, LS-91)
+
+- **Doel**: `elem_beam` = `POU_D_TG` ([Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)):
+  dwarskrachtcentrum (`EY`, `EZ`), welvingsconstante (`JG`) en Wagner-termen (`IYR2`,
+  `IZR2`) uit `bridge_warping.section_props` of een `#ASTER-SECTIE`-regel, en de regel voor
+  de welving `GRX` bij opleggingen (`beam_warping`). Module `tests_balk_welving.py`,
+  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91` (ongeveer 1 minuut).
+- **Theorie**: buig-torsieknik i0²(P − P_b)(P − P_T) − P²·e² = 0 (Timoshenko & Gere, 1961,
+  §5.3); kip van een I-ligger op vorkopleggingen onder constant moment
+  M_cr = π/L·√(E·I_z·G·J·(1 + π²E·C_w/(G·J·L²))) (idem §6.2); torsie met verhinderde welving
+  φ = T/(G·J)·(L − tanh(kL)/k), k = √(G·J/(E·C_w)) (idem §5.4; Trahair, 1993). C_w van het
+  I-profiel t_f·b³·h²/24 (hartlijnen).
+
+| ID | Model | Referentie | Resultaat |
+|---|---|---|---|
+| BU-38 | C-kolom van BU-35 (C 100 × 50 × 6 mm, 20 `POU_D_TG`, voet *Fixed*: welving vast) | dunwandige theorie 386,09; hex20 BU-36 393,03 | factor 2 384,98: −0,29% van de theorie, −2,0% van hex20; factor 1 +0,11% |
+| BU-39 | I 100/50/10/8 mm, L = 1,5 m, 30 `POU_D_TG`, vorkopleggingen (welving vrij), constant moment 1000 N·m | M_cr = 28 607 N·m (Timoshenko & Gere §6.2) | 28 579 (−0,10%); de welving telt +5% mee |
+| BU-41 | Code-Aster-testcase ssll103a: hoekprofiel 120 × 120 × 8 mm, L = 1200 mm, 8 `POU_D_TG`, *General section* met `#ASTER-SECTIE` (waarden van de test) | `VALE_CALC` modes 1, 8, 19; `VALE_REFE` 692 532 | gelijk aan `VALE_CALC` (< 1e-9); −0,20% van `VALE_REFE` |
+| BU-41b | hetzelfde met Mecway's L-profiel 120 × 120 × 8 mm (doorsnede door de bridge) | `VALE_REFE` 692 532 | 677 178 (−2,2%; J van Mecway 1,9% kleiner dan in de test, AY = AZ = 2,4 in plaats van 1) |
+| BU-42 | T-kolom 100 × 10 × 10 × 90 mm, L = 1 m, 20 `POU_D_TG`, voet *Fixed* | dunwandige theorie (C_w = 0) 413,62 | 411,18 (−0,59%) |
+| LS-90 | uitkragende I-ligger 100/50/10/8 mm, L = 1 m, 20 `POU_D_TG`, T = 100 N·m aan de top, inklemming (welving vast) | φ = T/(G·J)·(L − tanh(kL)/k) = 0,022261 rad | 0,022240 (−0,09%) |
+| LS-90b | idem met `beam_warping` = `free` | T·L/(G·J) | exact |
+| LS-90c | idem met de standaard `POU_D_E` | T·L/(G·J) | exact (ongewijzigd) |
+| LS-91 | dezelfde ligger op vorkopleggingen, T in het midden | φ = T/(2G·J)·(L/2 − tanh(kL/2)/k) = 0,0045691 rad | 0,0045591 (−0,22%) |
+
+- **Doorsnede**: de bridge berekent voor ssll103a's hoekprofiel `EZ` = 40,96 mm (test
+  `EY` 41,012), `JG` = 4,43988e-11 m⁶ (test 4,4398819e-11) en `IZR2` = 8,4848e-8 m⁵ (test
+  `IYR2` 8,4948e-8): de y- en z-as van de test zijn bij Mecway's L-profiel z en y (Mecway's
+  V is de zwakke as). C-profiel: `EZ` = 29,33 mm (hartlijnformule e + x_c = 29,375), C_w
+  primair 4,0135e-10 m⁶ = de gesloten formule, plus 1,1% welving door de plaatdikte.
+- **Regel bij opleggingen**: *Fixed support* (`BLOCAGE`) alleen houdt `GRX` niet vast
+  (C-kolom 343,8 zonder en 385,0 met `GRX` = 0, run 28 okt 2026); de bridge zet daarom
+  een eigen `DDL_IMPO GRX` op de knoopgroep `BRGRX`. LS-90/LS-90b tonen het verschil
+  inklemming/vrij (−15%), LS-91 en BU-39 dat de welving bij een vorkoplegging vrij blijft.
+- **Bestaande gevallen met `POU_D_TG`** (alleen draaien, niet in de reeks): statisch,
+  modaal, knik, niet-lineair statisch (`PETIT`), harmonisch en dynamisch rekenen, ook met
+  line3, *flexible joint*, offset en schalen (LS-01, LS-30, LS-50a, LS-51a/b, LS-52a/b,
+  LS-62, LS-77, MO-01, MO-08, MO-27, DY-02, DY-30, MD-01, HR-02a, NK-01, NL-32, BU-01,
+  BU-30). Snedekrachten (LS-30, NL-32) exact; BU-30 geeft met welving 2553,9 (zie
+  hierboven). Reactiekrachten per knoop wijken af (LS-01: 103,0 N bij de inklemming,
+  −3,0 N in de belaste top, som 100 N; KNOWN_BUGS 123).
 
 ### Modaal met voorspanning (MP)
 

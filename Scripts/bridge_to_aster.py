@@ -47,6 +47,7 @@ import bridge_mesh
 import bridge_modal_damping
 from bridge_bcs import is_position, ASTER_FORMULA_PRELUDE
 import bridge_offset
+import bridge_warping
 from collections import OrderedDict
 from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
@@ -1248,7 +1249,10 @@ _VOLUME_MODELISATIONS = ("3D", "3D_SI")
 # GROT_GDEP, section forces from SIEF_ELNO) from the fork by MishalTPC,
 # github.com/mishal0488/MecwayAsterBridge (commit dd4c958, MPL-2.0).
 _GD_BEAM = "POU_D_T_GD"
-_BEAM_MODELISATIONS = ("POU_D_E", "POU_D_T", _GD_BEAM)
+# Beam with warping (elem_beam = POU_D_TG, 7th DOF GRX; bridge_warping,
+# STAPPENPLAN S19)
+_WARP_BEAM = bridge_warping.WARP_BEAM
+_BEAM_MODELISATIONS = ("POU_D_E", "POU_D_T", _GD_BEAM, _WARP_BEAM)
 
 # Cross-sections for which SIPM_ELNO makes sense: posigr.F90 (v17.4.0)
 # only computes for TSEC=1 (RECTANGLE) and TSEC=2 (CERCLE); for GENERALE
@@ -3391,6 +3395,13 @@ def _build_charges(model_data, func_names=None):
     links = bridge_offset.link_entries(model_data)
     if links:
         constraints.setdefault("LIAISON_DDL", []).extend(links)
+    # Beams with warping (POU_D_TG): GRX = 0 at the nodes of the rule of
+    # bridge_warping.warping_nodes (BLOCAGE of a Fixed support does not fix
+    # GRX: run 17.4, see there). DDL_IMPO GRX (catalogue affe_char_meca.py
+    # v17.4).
+    if model_data.get("warping_group"):
+        constraints.setdefault("DDL_IMPO", []).append(
+            "_F(GROUP_NO='{0}', GRX=0.0)".format(model_data["warping_group"]))
     model_data["_charge_prelude"] = "".join(
         prelude + model_data.pop("_extra_prelude", []))
 
@@ -7788,7 +7799,8 @@ def _buckling_beam_notes(model_data):
         Code-Aster test case ssll105 (BU-32 ... BU-34); Mecway's beam
         lacks the terms at the nodes and gives lower out-of-plane factors;
       - T, C and L: no flexural-torsional coupling, so too high factors
-        (C 100 x 50 x 6 mm column: beam 616 and 864, hex20 393; BU-35/36).
+        (C 100 x 50 x 6 mm column: beam 616 and 864, hex20 393; BU-35/36),
+        unless elem_beam = POU_D_TG (shear centre and warping, BU-38/39).
     """
     secs = [(g, s.get("geom_type")) for g, s in
             model_data.get("beam_sections", {}).items()
@@ -7801,22 +7813,36 @@ def _buckling_beam_notes(model_data):
         "(Sturm alarm ALGELINE5_23); bending moments in frames count, "
         "also at joints. Mecway's own beam computes neither (KNOWN_BUGS "
         "112, 113).")
-    ecc = sorted(g for g, kind in secs if kind in _ECCENTRIC_PROFILES)
+    mods = model_data.get("elset_modelisations", {})
+    warp = sorted(g for g, _kind in secs if mods.get(g) == _WARP_BEAM)
+    if warp:
+        # POU_D_TG: shear centre (EY/EZ), warping (JG, GRX) and the Wagner
+        # terms in RIGI_GEOM (test case ssll103a); BU-38/BU-39.
+        log("INFO: Beams {0} with warping (POU_D_TG): flexural-torsional "
+            "and lateral-torsional buckling about the shear centre are "
+            "included (warping at supports: beam_warping, "
+            "bridge_warping).".format(", ".join(warp)))
+    ecc = sorted(g for g, kind in secs if kind in _ECCENTRIC_PROFILES and
+                 mods.get(g) != _WARP_BEAM)
     if ecc:
         log(tr("WARNING: Knik met T-, C- of L-profielen ({0}): het "
                "dwarskrachtcentrum ligt niet in het zwaartepunt, maar de "
                "balkelementen rekenen torsie om het zwaartepunt en zonder "
                "welving. Buig-torsieknik ontbreekt dan en de "
                "kniklastfactoren kunnen te hoog zijn (C-profiel: balk 616, "
-               "volumemodel 393). Controleer met schaal- of "
-               "volume-elementen (KNOWN_BUGS 115).",
+               "volumemodel 393). Kies elem_beam = POU_D_TG (pagina "
+               "Elementen; balk met welving en dwarskrachtcentrum) of "
+               "controleer met schaal- of volume-elementen (KNOWN_BUGS "
+               "115).",
                "WARNING: Buckling with T, C or L profiles ({0}): the shear "
                "centre is not in the centroid, but the beam elements take "
                "torsion about the centroid and without warping. "
                "Flexural-torsional buckling is then missing and the "
                "buckling factors can be too high (C profile: beam 616, "
-               "volume model 393). Check with shell or volume elements "
-               "(KNOWN_BUGS 115).").format(", ".join(ecc)))
+               "volume model 393). Choose elem_beam = POU_D_TG (Elements "
+               "page; beam with warping and shear centre) or check with "
+               "shell or volume elements (KNOWN_BUGS 115).").format(
+                   ", ".join(ecc)))
 
 
 def _check_buckling_trusses(model_data):

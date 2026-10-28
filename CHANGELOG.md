@@ -36,6 +36,22 @@
   kinematic conditions are connections (bonded contact, rigid or distributing couplings) now
   takes the free-free route, so the rigid body modes come out with ~0 Hz instead of
   `ALGELINE3_81` (verification MO-10).
+- **Beams with warping: `elem_beam` = `POU_D_TG`** (STAPPENPLAN S19, KNOWN_BUGS 115): a fourth
+  beam choice on the Elements page (default stays `POU_D_E`). Code-Aster's Timoshenko beam with
+  the warping degree of freedom `GRX`, the shear centre (`EY`, `EZ`), the warping constant `JG`
+  and the Wagner terms (`IYR2`, `IZR2`) in `RIGI_GEOM`, so flexural-torsional and
+  lateral-torsional buckling of open profiles (T, C, L, I) appear. The values come from an
+  `#ASTER-SECTIE` line of MecwaySectionProps, or are computed for Mecway's I, T, C and L
+  profiles with thin-walled formulas (`bridge_warping.py`; the angle of Code-Aster test case
+  ssll103a within 0.12%); a general section without such a line gets `JG` = 0 with a WARNING.
+  New setting `beam_warping` (`auto`/`free`/`blocked`): with `auto` the warping is fixed where
+  a bending rotation is fixed (Fixed support, clamp, rigid coupling) and free at a fork support
+  and elsewhere; Code-Aster's `BLOCAGE` alone does not fix `GRX`. Verification BU-38 .. BU-42,
+  LS-90, LS-91: C column 384.98 (theory 386.1, hex20 393.0; `POU_D_E` 616), I beam
+  lateral-torsional buckling −0.10% from Timoshenko & Gere, ssll103a equal to `VALE_CALC`,
+  torsion with restrained warping −0.09%. Nodal reactions of `POU_D_TG` are off in Code-Aster
+  17.4 (WARNING, KNOWN_BUGS 123). In explicit dynamics the beams become `POU_D_T` (WARNING; no
+  mass for the warping degree of freedom). Not yet tested in the Mecway GUI.
 
 ## V2026.5 – 28 October 2026
 

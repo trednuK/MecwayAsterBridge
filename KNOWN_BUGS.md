@@ -499,8 +499,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    thin-walled theory with shear centre and warping (Timoshenko & Gere 1961 sec. 5.3)
    386.1. The coupled mode is 57% too high, so the beam is unsafe here. Mecway's own beam
    with a C profile gives no solution headless. The bridge warns in buckling for T, C and
-   L elsets (`bridge_to_aster._buckling_beam_notes`). A fix would be `POU_D_TG` with the
-   shear centre (`EY`, `EZ`), `JG` (C_w) and the warping DOF `GRX` at supports; not done.
+   L elsets with `POU_D_E`/`POU_D_T` (`bridge_to_aster._buckling_beam_notes`) and names
+   the option: `elem_beam` = `POU_D_TG` (STAPPENPLAN S19, `bridge_warping.py`) has the
+   shear centre (`EY`, `EZ`), `JG` (C_w), the Wagner terms and the warping DOF `GRX` at
+   supports (setting `beam_warping`): the same column 384.98 (BU-38, −0.29% from the
+   theory, −2.0% from hex20), ssll103a equal to `VALE_CALC` (BU-41). Status: open for the
+   default `POU_D_E` (kept like Mecway's Euler beam); solved with the option. A *General
+   section* without an `#ASTER-SECTIE` line has no shear centre or C_w even with
+   `POU_D_TG` (WARNING).
 
 119\. **Mass check without the mass for `POU_D_T_GD` beams** (confirmed, Code-Aster 17.4,
    `bridge_to_aster._static_check_block`). `MECA_POU_D_T_GD` cannot compute `POST_ELEM
@@ -509,6 +515,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    POU_D_T_GD beams the mass part is therefore skipped (INFO); the sum of the reactions
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
+
+123. **Nodal reactions of `POU_D_TG` beams are off** (confirmed, Code-Aster 17.4,
+   `CALC_CHAMP FORCE='REAC_NODA'` on `MECA_POU_D_TG`; WARNING in
+   `bridge_warping.note_reactions`). Cantilever L = 1 m, 10 elements, `CERCLE` R = 10 mm,
+   100 N at the tip: `POU_D_TG` gives 103.01 N at the clamp, −3.01 N at the loaded tip and
+   −0.301 N·m reaction moment at every free node (sum of all reactions 100 N, so
+   `BRIDGE_STATREAC` is right); `POU_D_T` on the same model gives 100.000 exactly, and
+   `POU_D_TG` with `AY` = `AZ` = 1e-6 too (runs 28 Oct 2026). The error grows with the
+   shear flexibility of the element (RectBar 10 × 20 mm, LS-50a: 104.9 N; LS-62 with short
+   offset beams: 140 N). Displacements, section forces (`EFGE_ELNO`, LS-30/NL-32 exact)
+   and buckling factors are right. Cause inside Code-Aster (`FORC_NODA` of
+   `MECA_POU_D_TG`) NOT verified. Workaround: reactions with `elem_beam` = `POU_D_T`.
 
 ## Open questions (Mecway behaviour not checked)
 
