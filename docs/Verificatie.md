@@ -1278,6 +1278,45 @@ Waarnemingen:
   IronPython, `solution.element_node_value("errorestimate", 1, 1)` = de waarde uit het
   resultaatbestand (11963,69), `refine_x2` en `save_as` met een oplossing in het model.
 
+#### Adaptieve verfijning met HOMARD in de job (AD-10 … AD-12)
+
+Stap S35b ([Foutschatter.md](Foutschatter.md) §7): dezelfde kwart plaat met gat (d/W = 0,2,
+plak 10 mm, 12 hex20, 1 laag), thermisch en met plasticiteit, met `adapt_homard`; Code-Aster
+verfijnt het mesh zelf in één run en het resultaat komt terug op de 12 grove elementen. De
+grootheid is die in de knoop (0, R) aan de rand van het gat.
+
+- **Referentie**: uniform verfijnd door de bridge (stap S35a,
+  `TestFiles/Tools/homard_s35/run_s35.py references`): 32 × 32 hex20 per blok (12 288
+  elementen in het vlak). Thermisch (T = 0 / 100 °C op x = 0 / x = L, k = 50 W/m/K, gat
+  geïsoleerd): q_x = −67 465,3 W/m² (n = 16: −67 326,6, dus binnen 0,2% geconvergeerd).
+  Plasticiteit (bilineair, vloeigrens 250 MPa, plastische modulus 2000 MPa, traction
+  oplopend tot 150 MPa, `GDEF_LOG`): σ_xx = 291,007 MPa, p = 0,00150735 (n = 16: 291,665 MPa,
+  0,00151098). Uniform in 3D (elke laag ook verfijnd, zoals HOMARD doet): thermisch n = 4
+  (768 elementen) −2,66%, n = 8 (6144) −0,87%; plasticiteit n = 8 (6144) +2,4% / +0,8%.
+
+| ID | Model | Resultaat |
+|---|---|---|
+| AD-10 | thermisch, doel 0,15% (ZZ), max. 10 lussen, gat automatisch als cilinder herkend | q_x −66 878 W/m² (−0,87%, tolerantie 1,5%) met 2621 elementen na 8 lussen: 0,43 x uniform n = 8 bij dezelfde nauwkeurigheid; gestopt op het doel |
+| AD-10b | als AD-10, met vlakselectie `Gat` en `#ASTER-RAND Gat = CILINDER 0, 0, 0, 0, 0, 1, 10 mm` | q_x gelijk aan AD-10 (< 1e-4); de log meldt `#ASTER-RAND` |
+| AD-11 | plasticiteit, doel 0,4%, max. 10 lussen, symmetrie als `FACE_IMPO DNOR` | σ_xx 293,69 MPa (+0,92%, tolerantie 3%), p 0,0015262 (+1,25%), 4364 elementen na 9 lussen (0,71 x uniform n = 8, dat +2,4% geeft); na 8 lussen (1932 elementen) al +2,3%; alle 5 tijdstappen in Mecway |
+| AD-12 | thermisch met de koude kant als knoopselectie (meer dan één knoop) | met `adapt_homard` geeft de bridge een ERROR die de selectie noemt en rekent niet |
+
+Per lus (AD-10 / AD-11, globale ZZ-fout): 1,92 / 3,75% (12 elementen), 1,71 / 3,59 (71 / 66),
+0,83 / 2,12 (84 / 84), 1,24 / 4,19 (366 / 352), 0,62 / 1,90 (370 / 356), 0,36 / 1,31 (667 /
+474), 0,30 / 0,96 (1188 / 758), 0,23 / 1,33 (1782 / 1880), 0,147 / 0,47 (2621 / 1932), – / 0,375
+(– / 4364).
+
+Waarnemingen:
+- De globale fout stijgt soms één lus (overgangselementen van HOMARD); de lus stopt
+  daarop niet (pas na twee stijgende lussen).
+- Het doel voor de piek is veel kleiner dan de standaard 1%: bij 1% stopt AD-10 al na 2
+  lussen (−6%).
+- Zonder randvolgen liep q_x in S35a op tot −81 404 (+21%) na 9 lussen: de knikken van
+  de grove veelhoek werken als inspringende hoeken.
+- De knoopwaarden op het grove mesh zijn gelijk aan het verfijnde resultaat in dezelfde
+  knopen (AD-10: −66 878,0 tegen −66 878,5 in het prototype); de elementknoopwaarden
+  missen de sprong tussen grove elementen ([Foutschatter.md](Foutschatter.md) §7.5).
+
 ### Vermoeiing (VM)
 
 Wöhler-curve per materiaal (`#ASTER-WOHLER`), rainflow en Miner op blokken of een

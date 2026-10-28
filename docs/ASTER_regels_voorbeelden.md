@@ -64,6 +64,7 @@ daarom begint de regel met het commentaarteken van die solver:
 | `#ASTER-XFEM K=V, ...` | Geen Code-Aster-code: een scheur die niet in het mesh zit (XFEM-levelset: `vorm=` CIRKEL, ELLIPSE, RECHTHOEK of HALFVLAK met zijn maten), bij lineair statisch; de bridge schrijft `DEFI_FISS_XFEM`, `MODI_MODELE_XFEM`, `CALC_G_XFEM` en `POST_K1_K2_K3` en zet de velden terug op het mesh van Mecway. Een regel met `vorm=` start een nieuwe scheur. Voorbeeld 29, [`Breukmechanica.md`](Breukmechanica.md) §7. |
 | `#ASTER-CONSTANT naam, naam2` | Geen Code-Aster-code: lineaire knik met constante (dode) lasten. Een naam is een Mecway-selectie (alle belastingen erop) of een lasttype zonder selectie (`gravity`); die lasten blijven constant en de kniklastfactor geldt alleen voor de andere lasten (K + Kg(constant) als `MATR_RIGI`). [`Modaal_en_knik.md`](Modaal_en_knik.md) §2.2.1. |
 | `#ASTER-SECTIE materiaal: K=V, ...` | Geen Code-Aster-code: extra kenmerken van een Mecway-*General section* waar Mecway geen veld voor heeft (`AY`, `AZ`, `EY`, `EZ`, `RY`, `RZ`, `RT`, `JG`, `IYR2`, `IZR2`; SI), naast een kopie van `A`, `IY`, `IZ`, `JX` als controle. De bridge zet `EY`, `EZ`, `RY`, `RZ`, `RT` in `AFFE_CARA_ELEM` (elke balk) en `AY`, `AZ` bij Timoshenko-balken; `JG`, `IYR2`, `IZR2` alleen bij `elem_beam` = `POU_D_TG` (balk met welving, [Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)). Wordt geschreven door [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps) (eigen repository; ook `#ASTER-SECTION`), §5 van de documentatie daar. Heeft het model meer van deze regels voor een materiaal, dan telt de laatste. |
+| `#ASTER-RAND selectie = CILINDER x, y, z, ax, ay, az, r` | Geen Code-Aster-code: bij adaptieve verfijning met HOMARD (`adapt_homard`, thermisch en niet-lineair) de vorm van een gekromde vlakselectie voor het randvolgen (`FRONTIERE_ANALYTIQUE`); ook `BOL x, y, z, r` en `GEEN` (niet volgen), Engels `#ASTER-BOUNDARY` met `CYLINDER`/`SPHERE`/`NONE`. Zonder regel herkent de bridge cilinders en bollen zelf. Voorbeeld 37, [`Foutschatter.md`](Foutschatter.md) §7.4. |
 | `<<Mecway-selectie>>` | In `#ASTER`, `-POST`, `-ZONE` en `-CONTACT`: wordt de Code-Aster-groepsnaam van die selectie (§3). |
 
 - De soort (`-EXCIT`, `-POST`, ...) mag in hoofd- of kleine letters. Een onbekende soort
@@ -1220,6 +1221,28 @@ cyclustabel heeft één cyclus met rekamplitude 0,006000; N = 1347 uit
 0,006 = 900/210000 · (2N)^−0,09 + 0,3 · (2N)^−0,55 en D = 7,426·10⁻⁴ per herhaling,
 binnen 2·10⁻⁹ van de handberekening. Schalen werken zonder extra regel: een
 `#ASTER-WOHLER` voor het plaatmateriaal geeft `damage_top` en `damage_bottom` (VM-10).
+
+### Voorbeeld 37 – Adaptieve verfijning met HOMARD: de vorm van een gat (`#ASTER-RAND`)
+
+Doel: bij adaptieve verfijning met HOMARD (thermisch of niet-lineair statisch, instelling
+`adapt_homard`) de nieuwe knopen op een gat laten liggen dat de bridge niet zelf herkent,
+of het randvolgen voor een vlak uitzetten (uitleg: [`Foutschatter.md`](Foutschatter.md)
+§7.4). Mecway: *Thermal* (T30) of *Static* met plasticiteit (L30), volume-elementen, een
+vlakselectie `Gat` op het gat (as langs z door de oorsprong, straal 10 mm). CCX > Custom
+model definition:
+
+```
+** ASTER-OPTIE adapt_homard = ja
+** ASTER-OPTIE adapt_homard_target = 0.15
+** ASTER-RAND Gat = CILINDER 0, 0, 0, 0, 0, 1, 10 mm
+```
+
+Uitkomst (verificatie AD-10b): de log meldt `face selection 'Gat' follows CYLINDRE 0, 0, 0,
+0, 0, 1, 0.01 (#ASTER-RAND)`, `study.comm` krijgt `FRONTIERE_ANALYTIQUE=(_F(NOM='R1',
+TYPE='CYLINDRE', GROUP_MA='BRRAND1', ...))` en de warmtestroom aan het gat is gelijk aan
+die met het automatisch herkende gat (AD-10, −0,87% tegen de referentie). `GEEN` in plaats
+van de vorm: dit vlak wordt niet gevolgd (nieuwe knopen op de rechte elementranden). Een
+verkeerde regel (bijv. te weinig getallen) geeft een ERROR en wordt overgeslagen.
 
 ## 6. Overzicht van de controle
 

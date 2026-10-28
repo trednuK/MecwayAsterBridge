@@ -565,3 +565,224 @@ TESTS.append(Case(
     note="Balk hex20 4x1x1, fixed op de knopen van x = 0 (knoopselectie), "
          "traction op het eindvlak; de grootste fout zit bij de "
          "inklemming."))
+
+
+# ------------------------------------------------------------------
+# AD-10 .. AD-12 Adaptive refinement with HOMARD inside the job (step S35b;
+# Scripts/bridge_homard.py, aster_adapt.py; docs/Foutschatter.md par. 7)
+# ------------------------------------------------------------------
+# The same quarter plate with a hole (d/W = 0.2, slab 10 mm, hex20 coarse
+# mesh of 12 elements, one layer), thermal and with plasticity. References:
+# uniformly refined meshes through the bridge (S35a,
+# TestFiles/Tools/homard_s35/run_s35.py references), the quantity in the
+# node (0, R) at the hole edge:
+#   thermal (T = 0 / 100 degrees C on x = 0 / x = L, k = 50 W/m/K, hole
+#   insulated): qx = -67 465.3 W/m^2 with 32 x 32 hex20 per block (12 288
+#   elements in the plane; n16: -67 326.6, so converged within 0.2%);
+#   uniform in 3D (every layer refined too, as HOMARD does): n4 768
+#   elements -2.66%, n8 6144 elements -0.87%.
+#   plasticity (bilinear, yield 250 MPa, plastic modulus 2000 MPa, traction
+#   ramp to 150 MPa, GDEF_LOG): sxx = 291.007 MPa, p = 0.00150735 with
+#   n32 (n16: 291.665 MPa, 0.00151098); uniform 3D n8 6144 elements
+#   +2.4% / +0.8%.
+QX_REF = -67465.3
+SXX_REF = 291.007e6
+P_REF = 0.00150735
+UNIFORM_N8 = 6144
+SIG_NL = 150.0e6
+HOMARD_TH = {"adapt_homard": True, "adapt_homard_target": 0.15,
+             "adapt_homard_max_loops": 10}
+HOMARD_NL = {"adapt_homard": True, "adapt_homard_target": 0.4,
+             "adapt_homard_max_loops": 10}
+
+
+def _plate_blocks(m, n=1):
+    block_a, block_b = _blocks(TZ_STRAIN)
+    a = hexmesh(m, "Plaat", 2 * n, 2 * n, 1, block_a, order=2)
+    b = hexmesh(m, "Plaat", 2 * n, 2 * n, 1, block_b, order=2)
+    c = hexmesh(m, "Plaat", 2 * n, 2 * n, 1, box(WH, LH, 0, WH, 0,
+                                                  TZ_STRAIN), order=2)
+    return a, b, c
+
+
+def build_th_plate(override=False, node_temp=False):
+    """Thermal plate; override: face selection 'Gat' with #ASTER-RAND
+    CILINDER; node_temp: the cold side as a node selection (AD-12)."""
+    def build():
+        m = Model("T30")
+        m.elset("Plaat", "Staal")
+        a, b, c = _plate_blocks(m)
+        m.mat("Staal", '<thermal type="Isotropic" '
+              'thermalconductivity="50 W/m/K" />')
+        if node_temp:
+            m.node_selection("Koud", sorted(b["nodes"]["v1"]))
+        else:
+            m.face_selection("Koud", b["faces"]["v1"])
+        m.face_selection("Warm", c["faces"]["u1"])
+        for sel, t in (("Koud", 273.15), ("Warm", 373.15)):
+            m.add('<temperature2 selection="%s"><value>%.12g K</value>'
+                  '<starttime>0 s</starttime><endtime>0 s</endtime>'
+                  '</temperature2>' % (sel, t))
+        if override:
+            m.face_selection("Gat", a["faces"]["u0"] + b["faces"]["u0"])
+            m.add('<ccxmodeldefinition>** ASTER-RAND Gat = CILINDER 0, 0, '
+                  '0, 0, 0, 1, 10 mm</ccxmodeldefinition>')
+        return m
+    return build
+
+
+def build_nl_plate():
+    m = Model("L30", timesteps={"timeperiod": "1 s", "stepsize": "0.25 s"})
+    m.elset("Plaat", "Staal")
+    a, b, c = _plate_blocks(m)
+    m.mat("Staal", STEEL, '<plastic type="BilinearIsotropic" '
+          'yieldstrength="250 MPa" tangentmodulus="2000 MPa" />')
+    m.face_selection("SymX", b["faces"]["v1"])
+    m.face_selection("SymY", a["faces"]["v0"] + c["faces"]["v0"])
+    m.face_selection("SymZ", [f for blk in (a, b, c) for w in ("w0", "w1")
+                              for f in blk["faces"][w]])
+    m.face_selection("Trek", c["faces"]["u1"])
+    for s, (x, y, z) in (("SymX", (1, 0, 0)), ("SymY", (0, 1, 0)),
+                         ("SymZ", (0, 0, 1))):
+        m.add('<symmetry selection="%s"><x>%d</x><y>%d</y><z>%d</z>'
+              '</symmetry>' % (s, x, y, z))
+    m.add('<traction selection="Trek"><x time="0 s">0 Pa</x><x time="1 s">'
+          '%g Pa</x><y>0 Pa</y><z>0 Pa</z></traction>' % SIG_NL)
+    return m
+
+
+def _adapt_lines(r):
+    """[(loop, cells, error)] and the stop reason from the .mess."""
+    rows, stop = [], None
+    for line in io.open(r.mess, encoding="utf-8", errors="replace"):
+        if line.startswith("BRIDGE_ADAPT loop="):
+            w = dict(x.split("=") for x in line.split()[1:])
+            rows.append((int(w["loop"]), int(w["cells"]), float(w["error"])))
+        elif line.startswith("BRIDGE_ADAPT stop="):
+            stop = line.split("=", 1)[1].strip()
+    return rows, stop
+
+
+def _log_has(r, text):
+    logs = glob.glob(os.path.join(os.path.dirname(r.mess),
+                                  "*_bridge_log.txt"))
+    return 1.0 if logs and text in io.open(
+        logs[0], encoding="utf-8", errors="replace").read() else 0.0
+
+
+def _last_t(r):
+    t = r.times()
+    return t[-1] if t else None
+
+
+def _homard_checks(ref, var, unit, tol, source):
+    return [
+        Check(var + " at the hole edge (0, R)",
+              lambda r: r.at(var, (0.0, R, 0.0), time=_last_t(r)), ref=ref,
+              tol=tol, unit=unit, source=source),
+        Check("cells after the loop / uniform n8 (same accuracy)",
+              lambda r: _adapt_lines(r)[0][-1][1] / float(UNIFORM_N8),
+              ref=0.0, tol_abs=0.999, unit="",
+              source="fewer cells than uniform refinement (n8, 6144 "
+                     "hex20) at the same accuracy (< 1)", in_series=False),
+        Check("loop stopped on the target (1 = yes)",
+              lambda r: 1.0 if _adapt_lines(r)[1] == "target" else 0.0,
+              ref=1.0, tol_abs=0.0, unit="", source="BRIDGE_ADAPT stop=",
+              in_series=False),
+        Check("hole recognised as a cylinder (1 = yes)",
+              lambda r: _log_has(r, "boundary recognised as CYLINDRE"),
+              ref=1.0, tol_abs=0.0, unit="",
+              source="bridge_homard.recognise, bridge log",
+              in_series=False)]
+
+
+TESTS.append(Case(
+    "AD-10", GROUP,
+    "Plaat met gat thermisch: adaptieve verfijning met HOMARD in de job",
+    "ther_3d", build_th_plate(), _homard_checks(
+        QX_REF, "heatfluxx", "W/m2", 0.015,
+        "uniform n32 through the bridge (12 288 hex20 in the plane; n16 "
+        "-0.2%), S35a"), settings=HOMARD_TH,
+    note="adapt_homard, target 0.15% (ZZ), max. 10 loops; automatic "
+         "boundary following of the hole (cylinder); result projected "
+         "onto the 12 coarse elements."))
+
+TESTS.append(Case(
+    "AD-10b", GROUP,
+    "Plaat met gat thermisch: rand gegeven met #ASTER-RAND",
+    "ther_3d", build_th_plate(override=True), [
+        Check("heatfluxx at the hole edge (0, R) equal to AD-10",
+              lambda r: r.at("heatfluxx", (0.0, R, 0.0)), ref=-66877.98,
+              tol=1.0e-4, unit="W/m2",
+              source="AD-10 (automatic recognition, the same cylinder)",
+              in_series=False),
+        Check("#ASTER-RAND used (1 = yes)",
+              lambda r: _log_has(r, "follows CYLINDRE"), ref=1.0,
+              tol_abs=0.0, unit="", source="bridge log", in_series=False)],
+    settings=HOMARD_TH,
+    note="As AD-10 with face selection 'Gat' and '#ASTER-RAND Gat = "
+         "CILINDER 0, 0, 0, 0, 0, 1, 10 mm'."))
+
+TESTS.append(Case(
+    "AD-11", GROUP,
+    "Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job",
+    "nonlin_static_3d", build_nl_plate, _homard_checks(
+        SXX_REF, "stressxx", "Pa", 0.03,
+        "uniform n32 through the bridge (12 288 hex20 in the plane; n16 "
+        "+0.2%), S35a") + [
+        Check("equivalent plastic strain at (0, R)",
+              lambda r: r.at("equivalentplasticstrain", (0.0, R, 0.0),
+                             time=_last_t(r)), ref=P_REF, tol=0.03, unit="",
+              source="uniform n32 through the bridge, S35a"),
+        Check("all 5 time steps in Mecway",
+              lambda r: float(len(r.times())), ref=5.0, tol_abs=0.0,
+              unit="", source="PROJ_CHAMP of all instants",
+              in_series=False)],
+    settings=HOMARD_NL,
+    note="adapt_homard, target 0.4% (ZZ), max. 10 loops; each loop the "
+         "whole load history (0 .. 1 s in 4 steps) on the new mesh; "
+         "symmetry as FACE_IMPO DNOR."))
+
+
+def _ad12_error(r):
+    """1 if the bridge refuses the model with adapt_homard (node
+    selection 'Koud' with a temperature) with an ERROR that names it."""
+    import bridge_utils as u
+    from bridge_from_liml import extract_aster_data_from_liml
+    from bridge_mesh import write_mesh
+    from bridge_to_aster import generate_AsterSolver_files
+    work = os.path.join(os.path.dirname(r.mess), "ad12_offline")
+    if not os.path.isdir(work):
+        os.makedirs(work)
+    liml = os.path.join(work, "AD-12.liml")
+    shutil.copy(os.path.join(V.MODELS, "AD-12.liml"), liml)
+    u.CONFIG_BRIDGE["work_dir"] = work
+    u.CONFIG_BRIDGE["language"] = "en"
+    u.CONFIG_BRIDGE["active_analysis"] = "ther_3d"
+    saved = dict(u.CONFIG_BRIDGE["analyses"]["ther_3d"])
+    u.CONFIG_BRIDGE["analyses"]["ther_3d"].update(HOMARD_TH)
+    u.set_run_log("ad12", liml)
+    try:
+        md = extract_aster_data_from_liml(liml)
+        mail = os.path.join(work, "ad12.mail")
+        exp = write_mesh(mail, md) and generate_AsterSolver_files(
+            work, md, mail, "ad12.resu")
+    finally:
+        u.CONFIG_BRIDGE["analyses"]["ther_3d"] = saved
+    logs = glob.glob(os.path.join(work, "*bridge_log.txt"))
+    text = io.open(logs[0], encoding="utf-8").read() if logs else ""
+    return 1.0 if (not exp and "adapt_homard" in text and "Koud" in text) \
+        else 0.0
+
+
+TESTS.append(Case(
+    "AD-12", GROUP,
+    "Adaptieve verfijning HOMARD: temperatuur op een knoopselectie -> ERROR",
+    "ther_3d", build_th_plate(node_temp=True), [
+        Check("bridge refuses with an ERROR that names 'Koud' (1 = yes)",
+              _ad12_error, ref=1.0, tol_abs=0.0, unit="",
+              source="HOMARD keeps node groups with their old nodes only "
+                     "(S35a); bridge_homard.check_scope",
+              in_series=False)],
+    note="The run itself without adapt_homard; the check generates the "
+         "same model with adapt_homard offline."))

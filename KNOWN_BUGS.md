@@ -958,16 +958,22 @@ Code-Aster value per node) and logs the largest difference per variable.
    them, WE-08).
 
 65\. **Adaptive refinement: limits** (confirmed, `bridge_adapt.py`,
-   docs/Foutschatter.md §6). Only linear static and only solid elements (the
-   error estimator, item 51). Mecway's `refine_x2` creates poor transition elements
+   `bridge_homard.py`, docs/Foutschatter.md §6 and §7). Mecway route (§6): only
+   linear static and only solid elements (the error estimator, item 51). Mecway's `refine_x2` creates poor transition elements
    after a few loops: with thin elements (thickness 1/40 of the width) in loop 2, with
    tet10 already in loop 1; the global estimate then rises and the loop stops (WARNING). Also in
    AD-02 the worst hex20 drops to 0.04 (WARNING) without the error rising.
    Node selections with a condition are not refined along by Mecway: ERROR before
-   refining (AD-03). HOMARD (`MACR_ADAP_MAIL`, needed for thermal and nonlinear
-   static) is not built yet: researched in STAPPENPLAN S35a (loop in one job, result
-   projected back onto the Mecway mesh; prototype `TestFiles/Tools/homard_s35`), build =
-   S35b. Each loop waits for Code-Aster (status window or OK click,
+   refining (AD-03). HOMARD route for thermal and nonlinear static (§7, S35b): solids
+   only, loads and constraints on face selections; ERROR for shells, beams, node
+   selections with more than one node (HOMARD keeps node groups with their old nodes
+   only), contact, couplings, compression only, element failure, LINE_QUAD, route
+   'tabel' (AD-12). After the projection onto the Mecway mesh the element-node values
+   lose the jump between coarse elements (one refined neighbour gives the value at a
+   shared node) and the reactions are not passed on (WARNING). Only cylinders and
+   spheres are recognised for boundary following (no cones; #ASTER-RAND as fallback).
+   Each nonlinear loop recomputes the whole load history. The HOMARD loop was checked
+   with real Code-Aster runs, not in the Mecway GUI. Mecway route: each loop waits for Code-Aster (status window or OK click,
    setting `wait_for_aster`). The loop in the
    Mecway GUI has NOT been checked, only headless (`mecway.exe <model> script`).
 

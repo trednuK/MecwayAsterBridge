@@ -64,6 +64,7 @@ the line starts with that solver's comment character:
 | `#ASTER-XFEM K=V, ...` | Not Code-Aster code: a crack that is not in the mesh (XFEM level set: `shape=` CIRCLE, ELLIPSE, RECTANGLE or HALF_PLANE with its dimensions), for linear static; the bridge writes `DEFI_FISS_XFEM`, `MODI_MODELE_XFEM`, `CALC_G_XFEM` and `POST_K1_K2_K3` and puts the fields back on Mecway's mesh. A line with `shape=` starts a new crack. Example 29, [`Fracture_mechanics.md`](Fracture_mechanics.md) §7. |
 | `#ASTER-CONSTANT name, name2` | Not Code-Aster code: linear buckling with constant (dead) loads. A name is a Mecway selection (all loads on it) or a load type without selection (`gravity`); those loads stay constant and the buckling factor applies to the other loads only (K + Kg(constant) as `MATR_RIGI`). [`Modal_and_buckling.md`](Modal_and_buckling.md) §2.2.1. |
 | `#ASTER-SECTION material: K=V, ...` | Not Code-Aster code: extra characteristics of a Mecway *General section* that Mecway has no field for (`AY`, `AZ`, `EY`, `EZ`, `RY`, `RZ`, `RT`, `JG`, `IYR2`, `IZR2`; SI), next to a copy of `A`, `IY`, `IZ`, `JX` as a check. The bridge puts `EY`, `EZ`, `RY`, `RZ`, `RT` in `AFFE_CARA_ELEM` (every beam) and `AY`, `AZ` for Timoshenko beams; `JG`, `IYR2`, `IZR2` only with `elem_beam` = `POU_D_TG` (beam with warping, [Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)). Written by [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps) (own repository; also `#ASTER-SECTIE`), §5 of its documentation. If the model has several of these lines for a material, the last one counts. |
+| `#ASTER-RAND selection = CILINDER x, y, z, ax, ay, az, r` | No Code-Aster code: with adaptive refinement with HOMARD (`adapt_homard`, thermal and nonlinear) the shape of a curved face selection for boundary following (`FRONTIERE_ANALYTIQUE`); also `BOL x, y, z, r` and `GEEN` (do not follow), English `#ASTER-BOUNDARY` with `CYLINDER`/`SPHERE`/`NONE`. Without a line the bridge recognises cylinders and spheres itself. Example 37, [`Error_estimator.md`](Error_estimator.md) §7.4. |
 | `<<Mecway selection>>` | In `#ASTER`, `-POST`, `-ZONE` and `-CONTACT`: becomes the Code-Aster group name of that selection (§3). |
 
 - The kind (`-EXCIT`, `-POST`, ...) may be upper or lower case. An unknown kind (e.g.
@@ -1218,6 +1219,28 @@ table has one cycle with strain amplitude 0.006000; N = 1347 from
 0.006 = 900/210000 · (2N)^−0.09 + 0.3 · (2N)^−0.55 and D = 7.426·10⁻⁴ per repetition,
 within 2·10⁻⁹ of the hand calculation. Shells work without an extra line: an
 `#ASTER-WOHLER` for the plate material gives `damage_top` and `damage_bottom` (VM-10).
+
+### Example 37 – Adaptive refinement with HOMARD: the shape of a hole (`#ASTER-RAND`)
+
+Goal: with adaptive refinement with HOMARD (thermal or nonlinear static, setting
+`adapt_homard`) put the new nodes on a hole that the bridge does not recognise itself, or
+switch the boundary following off for a surface (explanation:
+[`Error_estimator.md`](Error_estimator.md) §7.4). Mecway: *Thermal* (T30) or *Static* with
+plasticity (L30), solid elements, a face selection `Gat` on the hole (axis along z through
+the origin, radius 10 mm). CCX > Custom model definition:
+
+```
+** ASTER-OPTIE adapt_homard = yes
+** ASTER-OPTIE adapt_homard_target = 0.15
+** ASTER-BOUNDARY Gat = CYLINDER 0, 0, 0, 0, 0, 1, 10 mm
+```
+
+Result (verification AD-10b): the log reports `face selection 'Gat' follows CYLINDRE 0, 0,
+0, 0, 0, 1, 0.01 (#ASTER-RAND)`, `study.comm` gets `FRONTIERE_ANALYTIQUE=(_F(NOM='R1',
+TYPE='CYLINDRE', GROUP_MA='BRRAND1', ...))` and the heat flux at the hole equals the one
+with the automatically recognised hole (AD-10, −0.87% against the reference). `NONE`
+instead of the shape: this surface is not followed (new nodes on the straight element
+edges). A wrong line (e.g. too few numbers) gives an ERROR and is skipped.
 
 ## 6. Overview of the checks
 
