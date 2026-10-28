@@ -343,6 +343,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    ~0) and the run stops at t = 0.028 with MECANONLINE9_4; with AUTO a pivot on LAGS_C
    of a corner node in the first step, also with master/slave swapped. PENALISATION is
    exact (NL-03b).
+   Samples/BoltedJoint (S15, 28 Oct 2026): plate B is held only by friction contact and the
+   bolt nut by frictionless contact; Code-Aster stops in the first step with MECANONLINE9_4
+   (zero pivot on DZ of a plate-B node) with STANDARD and with PENALISATION, also with
+   `SEUIL_INIT`, with `FORMULATION='DISCRETE'` and without the pre-tension section; Mecway/CCX
+   solves it (penalty contact is active at zero gap). The same model with bonded contact
+   instead of contact runs, but Mecway's displacements are then ~10x larger than the
+   bridge's even without the pre-tension section (external force only); Mecway writes
+   `*TIE ... POSITION TOLERANCE=0` there, possibly few tied nodes (question, NOT verified).
 
 48\. **Modal: mechanism in a supported model** (confirmed with runs,
    `bridge_to_aster._calc_modes_block`). If K is singular while there are
@@ -1036,3 +1044,23 @@ Code-Aster value per node) and logs the largest difference per variable.
    and `.`); a unit Mecway does not know counts as SI in Mecway, the bridge may know it (e.g.
    `W/mm2`: Mecway SI, the bridge 1e-6). Mecway writes only units from its own list, so this
    only matters for hand-edited files.
+
+122\. **Pre-tension section: limits** (confirmed with runs, `bridge_pretension.py`; S15,
+   docs/Boutvoorspanning.md par. 7). (a) Only in linear and nonlinear static
+   (`MECA_STATIQUE`, `STAT_NON_LINE`); Mecway also allows Dynamic response (D30/D31) with
+   CCX, the bridge then gives an ERROR and leaves the section out. (b) Mecway's spring
+   element variant (internal solver, a length adjustment on one spring) is not translated
+   (ERROR). (c) Loads, supports and contact on faces that touch the section: the boundary
+   cells of the elements below the section get the copies of the section nodes, except
+   cells that only carry supports (those stay on the Mecway node: a support on both the node
+   and its copy repeats the tie, `FACTOR_11`, seen in PT-01); node-based quantities that
+   `bridge_mesh` derives from the face lists (pinned support weights, per-node normals of
+   frictionless/compression only) use the Mecway node. The difference is at most the
+   shortening, comparable to Mecway's inserted layer that carries no loads. (d) `LINE_QUAD`
+   (quadratic Code-Aster cells from hex8) is not applied with a section (WARNING): the new
+   mid-side nodes on both sides of the section would stay apart. (e) The section lies at the
+   middle of the axial extent by element centroids; where Mecway puts it in an irregular
+   mesh is NOT verified (BoltedJoint: the element boundary in the middle, as the bridge).
+   (f) Which side keeps the Mecway nodes (results at the section) follows the axis sign
+   (largest component positive, side above keeps them); Mecway's rule is NOT verified beyond
+   BoltedJoint.

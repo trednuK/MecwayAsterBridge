@@ -118,6 +118,7 @@ it was last verified:
 | Result formulas computed by the bridge, heat flux per element node (V2026.5) | NOT verified | verified (V2026.5) |
 | Principal stresses/strains and acceleration under Mecway's names (V2026.5) | NOT verified | verified (V2026.5) |
 | Rubber on hex8: locking warning, no `3D_SI` with `ELAS_HYPER`, *Element type* card (V2026.5) | NOT verified | verified (V2026.5) |
+| *Pre-tension section* (`force="true"` / `adjustment="true"`, unreleased) | NOT verified (Samples/BoltedJoint has the same tag; not checked whether Mecway 33 writes the `adjustment` attribute) | verified headless (28 Oct 2026: PT-01..05 against Mecway's own CCX solve, model saved by Mecway); not yet in the Mecway GUI |
 | Selection names with spaces (models from Mecway 33) | allowed | Mecway 34 replaces the spaces by `_` when it opens such a model and then loses the reference in a contact (`selectionmaster=""`, seen 22 October 2026); the bridge stops before Code-Aster with an ERROR that says so where the contact counts (nonlinear static and dynamics; bonded contact in every analysis), elsewhere it gives a WARNING (Mecway ignores unilateral contact there too). Select the contact faces again. The example models use names without spaces. |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons

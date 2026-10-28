@@ -1522,10 +1522,28 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 n_truss_eq))
 
     # --------------------------------------------------
+    # 4e. Pre-tension section: cut through the prism, copies of the cut
+    #     nodes + reference node (bridge_pretension)
+    # --------------------------------------------------
+    import bridge_pretension
+    pret_nodes, pret_refs, pret_groups = bridge_pretension.apply(
+        model_data, nodes, conn, by_type, cell_refs, skin_by_key, faces_of,
+        max([max(nodes)] + list(model_data.get("offset_new_nids", [])) +
+            list(joint_nodes.keys())) + 1)
+    if pret_refs:
+        names = []
+        for nid in pret_refs:
+            names.append("PT{0}".format(nid))
+            by_type.setdefault("POI1", []).append((names[-1], [nid]))
+        poi1_members[bridge_pretension.PRET_GROUP] = names
+        poi1_groups[bridge_pretension.PRET_GROUP] = "DIS_T"
+
+    # --------------------------------------------------
     # 5. Names
     # --------------------------------------------------
     reserved = (["all_elems", "all_nodes", POI1_GROUP_T, POI1_GROUP_R,
-                 ERR_FREE_GROUP, JOINT_GROUP] +
+                 ERR_FREE_GROUP, JOINT_GROUP, bridge_pretension.PRET_GROUP] +
+                list(pret_groups.keys()) +
                 list(beam_groups.keys()) + list(discretes.keys()) +
                 list(vibro_members.keys()) + list(crack_members.keys()))
     renames = _aster_names(
@@ -1577,6 +1595,7 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     for name, nset in face_group_nodes.items():
         if rn(name) not in group_ma:
             group_no[rn(name)] = ["N{0}".format(n) for n in sorted(nset)]
+    group_no.update(pret_groups)
     bridge_offset.apply_to_mesh(offset_plan, model_data, by_type, group_ma,
                                 group_no, rn_es)
     # Do not write empty groups (empty Mecway selection): a condition or
@@ -1599,8 +1618,10 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         # flexible joints after the Mecway nodes, numbered ascending (the
         # results are read back by node index: row i < N stays
         # Mecway node i+1)
+        # and then the copies and reference nodes of pre-tension sections
         for nid, xyz in ((offset_plan or {}).get("new_nodes", []) +
-                         list(joint_nodes.items())):
+                         list(joint_nodes.items()) +
+                         list(pret_nodes.items())):
             out.append(" N{0} {1}".format(nid, " ".join(
                 _real(c) for c in xyz)))
         out.append("FINSF")

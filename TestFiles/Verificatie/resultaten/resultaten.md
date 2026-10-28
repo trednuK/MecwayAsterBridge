@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 8b13519, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 9663a7b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2376 van 2382 controles binnen de tolerantie** (442 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2398 van 2404 controles binnen de tolerantie** (447 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1979,6 +1979,33 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge 8b13519, Code-Aster 17.4
 *NL-51: diagnose OK; ELEMENTS_50*
 
 *NL-51b: diagnose OK; ELEMENTS_50*
+
+## Boutvoorspanning
+
+| ID | Test | Grootheid | Referentie | FEM | Afwijking | Tolerantie | Status |
+|---|---|---|---|---|---|---|---|
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | stressyy | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | reactie onder | 10000 N | 10000 | -0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | disply y = 20 mm | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | disply y = 80 mm | -1.0000e-05 m | -1.0000e-05 | +0.00% | 0.01% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | stressyy = Mecway | 9.9996e+07 Pa | 1.0000e+08 | +0.00% | 0.1% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | stressyy | 2.0000e+07 Pa | 2.0000e+07 | -0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | reactie onder | 2000 N | 2000 | -0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | disply y = 20 mm | 2.0000e-06 m | 2.0000e-06 | -0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | disply y = 80 mm | -2.0000e-06 m | -2.0000e-06 | +0.00% | 0.01% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | stressyy = Mecway | 1.9999e+07 Pa | 2.0000e+07 | +0.00% | 0.1% | OK |
+| PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | boutkracht | 1533.3 N | 1531.8 | -0.10% | 0.2% | OK |
+| PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | klemkracht huls | 933.33 N | 933.13 | -0.02% | 0.2% | OK |
+| PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | boutkracht = Mecway | 1531.7 N | 1531.8 | +0.01% | 0.1% | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | boutkracht t = 0,5 | 1000 N | 1000 | -0.00% | 0.2% | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | boutkracht t = 1 | 1000 N | 1000 | -0.00% | 0.2% | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | klemkracht huls t = 1 | -200 N | -199.54 | +0.23% | 2 N | OK |
+| PT-04 | Idem met kracht 1000 N en externe kracht 1200 t N (niet-lineair statisch) | boutkracht t = 1 = Mecway | 999.93 N | 1000 | +0.01% | 0.1% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | stressyy | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | reactie onder | 10000 N | 10000 | -0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | disply y = 20 mm | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | disply y = 80 mm | -1.0000e-05 m | -1.0000e-05 | +0.00% | 0.01% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | stressyy = Mecway | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.1% | OK |
 
 ## Responsspectrum
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Pre-tension section (bolt pretension, step S15)**: Mecway's *Pre-tension section* on a
+  prism of solid elements is now translated in linear and nonlinear static analyses, with a
+  force or a length adjustment (constant, table or formula in t). The bridge finds the prism
+  and the section as Mecway does, cuts the mesh there and couples the two sides with
+  `LIAISON_DDL` to a reference node whose DX is the shortening (the CCX formulation); the force
+  stays applied during the whole analysis, the length adjustment locks the length, both as in
+  Mecway. Verification PT-01 .. PT-05: exact against the hand calculation (bar, tet mesh with a
+  zig-zag section) and the joint diagram within 0.1%, equal to Mecway 34's own CCX solve within
+  0.01%. Not: dynamic response and Mecway's spring element variant (ERROR, KNOWN_BUGS 122).
+  New document docs/Boutvoorspanning.md / docs/en/Bolt_pretension.md.
+
 ## V2026.5 – 28 October 2026
 
 Result formulas computed by the bridge (issue #8), principal stresses and strains, acceleration

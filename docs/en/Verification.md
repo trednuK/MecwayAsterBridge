@@ -138,6 +138,9 @@ formulas `s1`, `tr`, `e1`).
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
+Added after this run (not yet in a full regression, not in the table): Bolt pretension
+PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15).
+
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
   hex20 solids stops (NL-03a, 3 checks). Use PENALISATION (NL-03b: exact).
@@ -1658,6 +1661,29 @@ samples) plus the kinks of the load tables (NL-20).
      rotations (linear relations), a moment in 3D. Element failure in
      a model with `POU_D_T_GD` gives an ERROR beforehand (`CALCUL_37` after the first
      failure, [`Failure.md`](Failure.md)).
+
+### Bolt pretension (PT)
+
+Mecway's *Pre-tension section* ([Bolt_pretension.md](Bolt_pretension.md)): cut through
+the prism, `LIAISON_DDL` to a reference node (DX = shortening), force as `FORCE_NODALE`,
+length adjustment as `DDL_IMPO`. Module `tests_boutvoorspanning.py` (group
+"Boutvoorspanning", 5 cases), run with `python run_verificatie.py PT`. Mecway 34 headless
+with CCX (`mw_solve.py`, the same `.liml` with the stress field, 28 October 2026) as the
+second reference.
+
+| Case | Model | Reference | Result |
+|---|---|---|---|
+| PT-01 | bar 10 × 100 × 10 mm (hex20 2 × 10 × 2), frictionless at the ends and on x = 0, z = 0; force 10 kN, section at y = 50 mm | N/A = 100 MPa, reaction 10 kN, u_y(20 mm) = N·y/(EA) = 1e-5 m, u_y(80 mm) = −1e-5 m; Mecway 99.996 MPa | exact (≤ 1e-10); Mecway −0.004% (its thin element layer), displacements equal |
+| PT-02 | idem, length adjustment 0.01 mm | N = EAδ/L = 2000 N (20 MPa), u_y = ±2e-6 m; Mecway 19.9992 MPa | exact; Mecway −0.004% |
+| PT-05 | idem in tet4 (6 per cell), faces of layers 4..6: section at y = 55 mm inside a layer (zig-zag over faces, edges and corner nodes) | as PT-01; Mecway 100.000 MPa | exact |
+| PT-03 | bolt column (10 × 10 mm) between two plates (E × 1000, ν = 0) with two sleeve columns (together 2 × the area), length 100 mm; length adjustment 0.01 mm plus 600 N upward | joint diagram: Fb = kb·kc/(kb+kc)·δ + P·kb/(kb+kc) = 1533.33 N, sleeve 933.33 N; Mecway 1531.71 N | 1531.80 N (−0.10%, plate flexibility), sleeve 933.13 N; Mecway +0.006% |
+| PT-04 | idem, force 1000 N and external force 1200·t N, Nonlinear static (quasi-static, 4 steps) | force mode: Fb = 1000 N at every time (Mecway/CCX: the `*CLOAD` stays), sleeve F − P = −200 N at t = 1; Mecway 999.929 N | 1000.00 N at t = 0.5 and 1, sleeve −199.54 N; Mecway +0.007% |
+
+Mode attribute: Mecway 34 writes `force="true"` for the force and `adjustment="true"` for
+the length adjustment (models re-saved by Mecway; with `force="false"` or without an
+attribute Mecway applies the force). BoltedJoint (Samples) itself does not solve with
+Code-Aster, also without the section: plate B is only held by friction contact
+(`MECANONLINE9_4` in step 1, KNOWN_BUGS 43).
 
 ## 6. Dynamics (DY)
 
