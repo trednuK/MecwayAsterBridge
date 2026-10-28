@@ -56,7 +56,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Waarde als tabel of formule in t | Ja | 10001 monsters zoals Mecway voor CCX. Lineair statisch, modaal en knik: de waarde op de eindtijd. Veel punten = veel stappen (KB104). |
 | Formule in x, y, z (mechanisch) | Ja | Druk, traction, kracht, line pressure, opgelegde verplaatsing/rotatie: `FORMULE` van X, Y, Z (ook met t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Kracht, line pressure en verplaatsing/rotatie met x, y, z legt Mecway 34 zelf niet op (WARNING). Niet: gravity, moment, centrifugaal, richting als formule, druk op schaalranden; niet in expliciet, harmonisch, spectrum (KB104). DKT/DST-schalen nemen de formule in de knopen (+0,8% op een grof mesh, LS-44a). Druk als formule blijft bij grote verplaatsingen een vaste last. De foutschatter rekent een vlak met een formulelast als onbelast (te grote fout daar). |
 | Last op het zijvlak van een balk | Nee | KB5. Zet de last op een elementselectie van de balk. |
-| Pre-tension section | Deels | Prisma van volume-elementen (Mecway's CCX-variant), kracht of lengteverandering, in statisch en niet-lineair statisch: snede met `LIAISON_DDL` naar een referentieknooppunt (PT-01..05, [`Boutvoorspanning.md`](Boutvoorspanning.md)). Niet: dynamische respons, de variant met een veerelement (KB122). |
+| Pre-tension section | Deels | Prisma van volume-elementen (Mecway's CCX-variant), kracht of lengteverandering, in statisch en niet-lineair statisch: snede met `LIAISON_DDL` naar een referentieknooppunt (PT-01..05, [`Boutvoorspanning.md`](Boutvoorspanning.md)). Niet: dynamische respons, de variant met een veerelement (KB124). |
 | Electric potential, Charge, Current, Robin | Nee | Geen elektrische analyses (§1). |
 | Thermische lasten (temperature, heat flow, heat flux, heat generation, convection, radiation) | Ja | In T30/T31; formules in x, y, z, t ook. Details: [`Thermisch.md`](Thermisch.md). |
 | Forced convection, Mass flow rate, cavity-straling | Nee | KB16. |
@@ -162,7 +162,7 @@ Verlijmd contact per combinatie (slave op master):
 | Temperatuur, warmteflux | Ja | Thermisch. |
 | Eigenfrequenties, kniklastfactoren, effectieve massa | Ja | Fractie van de effectieve massa anders dan Mecway (KB49). |
 | Akoestische druk | Ja | [`Akoestiek.md`](Akoestiek.md). |
-| *Saved monitor* (Solution) | Ja | De uitvoer van de Code-Aster-run in plaats van de solvermeldingen van Mecway (instelling `save_monitor`, route `liml`; [`Handleiding.md`](Handleiding.md) §5.2). |
+| *Saved monitor* (Solution) | Optie | De samenvatting van de Code-Aster-run in plaats van de solvermeldingen van Mecway, alleen met de instelling `save_monitor_liml` (standaard uit; route `liml`). De samenvatting staat altijd in `<model>_<run-id>_aster_summary.txt` ([`Handleiding.md`](Handleiding.md) §5.2). |
 
 Extra velden van de bridge (foutschatter, vermoeiing, metallurgie) en welk Code-Aster-veld
 bij welke Mecway-naam hoort: [`Handleiding.md`](Handleiding.md) §4.1.

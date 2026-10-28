@@ -32,10 +32,13 @@
 #           [--iter-max 20] [--log <log file>] [--exit-after-finish <s>]
 #           [--lang nl|en] [--paraview <paraview.exe>]
 #
-# Buttons in the top bar for the run shown: .comm and .mail in Notepad (no
-# file association for these extensions), Folder (Explorer on the work
-# folder with the .mess selected), ParaView (<model>_<run_id>.rmed, only
-# with the setting med_export), Reload and Open .mess ... .
+# Buttons in the top bar for the run shown: Summary
+# (<model>_<run_id>_aster_summary.txt in the default text editor, made from
+# the .mess by bridge_monitor.ensure_summary if it is missing), .comm and
+# .mail in Notepad (no file association for these extensions), Folder
+# (Explorer on the work folder with the .mess selected), ParaView
+# (<model>_<run_id>.rmed, only with the setting med_export), Reload and
+# Open .mess ... .
 #
 # Data source: see bridge_convergence.find_live_fort6(). During the run the
 # window reads the fort.6 in the temporary run_aster folder (Code-Aster writes
@@ -721,16 +724,25 @@ class Monitor(object):
                   command=self.reload,
                   font=_FONT).pack(side="right", padx=2)
         # Files of the run shown (packed right to left: ParaView, Folder,
-        # .mail, .comm); state per file in _update_buttons().
+        # .mail, .comm, Summary); state per file in _update_buttons().
         self.btn_files = {}
         for key, text, command in (
                 ("rmed", u"ParaView", self.open_paraview),
                 ("folder", tr(u"Map", u"Folder"), self.open_folder),
                 ("mail", u".mail", lambda: self.open_notepad(".mail")),
-                ("comm", u".comm", lambda: self.open_notepad(".comm"))):
+                ("comm", u".comm", lambda: self.open_notepad(".comm")),
+                ("summary", tr(u"Samenvatting", u"Summary"),
+                 self.open_summary)):
             btn = tk.Button(top, text=text, command=command, font=_FONT)
             btn.pack(side="right", padx=2)
             self.btn_files[key] = btn
+        _Tip(self.btn_files["summary"], tr(
+            u"Samenvatting van de run (<model>_<run_id>_aster_summary.txt: "
+            u"fouten, alarmen, stappen, tijden) in de teksteditor; "
+            u"ontbreekt die, dan wordt hij uit de .mess gemaakt.",
+            u"Summary of the run (<model>_<run_id>_aster_summary.txt: "
+            u"errors, alarms, steps, timings) in the text editor; if it is "
+            u"missing, it is made from the .mess."))
         self._update_buttons()
         self.lbl_source = tk.Label(top, text=u"", anchor="w", font=_FONT,
                                    foreground="#555555", background="#f4f4f4")
@@ -880,9 +892,13 @@ class Monitor(object):
         """.comm/.mail disabled if the file of the run shown is missing;
         ParaView and Folder stay enabled (they explain what is missing)."""
         mess = self.args.mess
-        for key in ("comm", "mail"):
-            state = ("normal" if os.path.isfile(_run_file(mess, "." + key))
-                     else "disabled")
+        for key in ("comm", "mail", "summary"):
+            if key == "summary":
+                ok = os.path.isfile(mess) or os.path.isfile(
+                    _run_file(mess, "_aster_summary.txt"))
+            else:
+                ok = os.path.isfile(_run_file(mess, "." + key))
+            state = "normal" if ok else "disabled"
             btn = self.btn_files.get(key)
             if btn is not None and str(btn.cget("state")) != state:
                 btn.configure(state=state)
@@ -910,6 +926,30 @@ class Monitor(object):
                     path), parent=self.root)
             return
         self._popen(["notepad.exe", path])
+
+    def open_summary(self):
+        """<model>_<run_id>_aster_summary.txt of the run in the default text
+        editor (os.startfile); made from the .mess if it is missing or
+        older (bridge_monitor.ensure_summary)."""
+        try:
+            import bridge_monitor
+            path = bridge_monitor.ensure_summary(
+                self.args.mess,
+                bridge_utils.CONFIG_BRIDGE.get("aster_summary", "summary"))
+        except Exception as e:
+            log(u"WARNING: summary not made: {0}".format(e))
+            path = None
+        if not path:
+            messagebox.showinfo(u"Code-Aster", tr(
+                u"Geen .mess en geen samenvatting van deze run: {0}",
+                u"No .mess and no summary of this run: {0}").format(
+                    self.args.mess), parent=self.root)
+            return
+        try:
+            os.startfile(path)
+            log(u"INFO: opened {0}".format(path))
+        except Exception:
+            self._popen(["notepad.exe", path])
 
     def open_folder(self):
         """Explorer on the work folder, with the .mess of the run selected
@@ -1803,6 +1843,32 @@ class Monitor(object):
                 u"study_console.txt.\n")), "hint")
         self.txt.see("end")
         self.txt.configure(state="disabled")
+
+
+class _Tip(object):
+    """Tooltip for a tkinter widget (shown while the mouse is on it)."""
+
+    def __init__(self, widget, text):
+        self.widget, self.text, self.win = widget, text, None
+        widget.bind("<Enter>", self.show)
+        widget.bind("<Leave>", self.hide)
+
+    def show(self, _event=None):
+        if self.win is not None:
+            return
+        x = self.widget.winfo_rootx()
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 4
+        self.win = tk.Toplevel(self.widget)
+        self.win.wm_overrideredirect(True)
+        self.win.wm_geometry("+{0}+{1}".format(x, y))
+        tk.Label(self.win, text=self.text, justify="left", wraplength=360,
+                 background="#ffffe0", relief="solid", borderwidth=1,
+                 font=_FONT).pack()
+
+    def hide(self, _event=None):
+        if self.win is not None:
+            self.win.destroy()
+            self.win = None
 
 
 def _run_file(mess_path, suffix):

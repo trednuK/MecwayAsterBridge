@@ -5,11 +5,16 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # bridge_monitor.py
 #
-# Responsibility: the text of the Code-Aster run that the bridge stores in
-# the .liml as Mecway's "Saved monitor" item (GitHub issue #7, setting
-# save_monitor), so that the output of the run can be read in Mecway after
-# the Code-Aster windows have been closed. Builds the text from the .mess
-# (and the console output); bridge_results_liml.splice_results writes it.
+# Responsibility: a readable summary of a Code-Aster run (GitHub issue #7),
+# built from the .mess (and the console output), so that the output of the
+# run can be read after the Code-Aster windows have been closed:
+#   - always (setting aster_summary, every run, both result routes, also
+#     failed or stopped runs) as the file <model>_<run_id>_aster_summary.txt
+#     in the work folder (write_summary; opened with the buttons in the
+#     Results window and the convergence window, ensure_summary);
+#   - optionally (setting save_monitor_liml, off by default, route liml) in
+#     the .liml as Mecway's "Saved monitor" item;
+#     bridge_results_liml.splice_results writes it.
 #
 # HOW MECWAY STORES A SAVED MONITOR (Mecway 34.0.9772, measured headless
 # 2026-10-28: a model with a top-level <savedmonitor /> solved with
@@ -37,7 +42,7 @@
 # well. The tree item itself could not be checked headless (the tree of
 # the hidden main window is empty): NOT verified in the GUI.
 #
-# CONTENT (CONFIG_BRIDGE["save_monitor"]):
+# CONTENT (CONFIG_BRIDGE["aster_summary"]):
 #   "summary" (default): header (model, run, path and size of the full
 #       .mess, Code-Aster version, DIAGNOSTIC JOB), every error/alarm
 #       message box (<EXCEPTION>, <F>, <S>, <E>, <A>, Python errors) once
@@ -49,10 +54,12 @@
 #   "full": the whole .mess; above FULL_MAX_CHARS the start and the end
 #       with a note in between (a .mess of a long nonlinear run can be tens
 #       of MB; the .liml should stay quick to open).
-#   "off": nothing is stored.
-# A run without results gets a solution with only the monitor only when the
-# model has no results yet (bridge_results_liml.has_results,
-# MecwayAsterBridgeMain._monitor_only): existing results are never replaced.
+#   "off": no summary file and no Saved monitor (the buttons still make
+#       the summary of a run on request).
+# With save_monitor_liml a run without results gets a solution with only the
+# monitor only when the model has no results yet (bridge_results_liml.
+# has_results, MecwayAsterBridgeMain._monitor_only): existing results are
+# never replaced. Without it the .liml is never touched for the monitor.
 #
 # Pure Python, standard library only; runs in Python 2.7 (IronPython
 # 2.7.9, Mecway) and Python 3 (tests).
@@ -73,6 +80,7 @@ except NameError:        # Python 3
     unicode = str
 
 MONITOR_MODES = ("summary", "full", "off")
+SUMMARY_SUFFIX = "_aster_summary.txt"    # <model>_<run_id>_aster_summary.txt
 SUMMARY_MAX_CHARS = 400000
 FULL_MAX_CHARS = 4000000
 _MAX_CODES = 100          # distinct message codes shown in full
@@ -377,3 +385,62 @@ def savedmonitor_block(text, nl="\r\n", indent="      "):
     return (nl + indent + "<savedmonitor>" + nl + indent + "  <output>" +
             str(xml_escape(text)) + "</output>" + nl + indent +
             "</savedmonitor>")
+
+
+def summary_path(mess_path):
+    """<model>_<run_id>_aster_summary.txt next to <model>_<run_id>.mess."""
+    return os.path.splitext(mess_path)[0] + SUMMARY_SUFFIX
+
+
+def write_text(path, text):
+    """Write text as UTF-8 with CRLF line ends (Notepad), via a .tmp file.
+    Returns True or False (IOError/OSError)."""
+    tmp = path + ".tmp"
+    try:
+        f = io.open(tmp, "w", encoding="utf-8", newline="")
+        try:
+            f.write(text.replace(u"\r\n", u"\n").replace(u"\n", u"\r\n"))
+        finally:
+            f.close()
+        if os.path.exists(path):
+            os.remove(path)
+        os.rename(tmp, path)
+        return True
+    except (IOError, OSError):
+        return False
+
+
+def write_summary(mess_path, mode="summary", console_path=None, header=None,
+                  out_path=None):
+    """
+    Write the summary (monitor_text) of a run to out_path (default
+    summary_path(mess_path)). Returns (text, path): text None if there is
+    nothing to write (mode "off", no .mess), path None if writing failed.
+    """
+    text = monitor_text(mess_path, mode, console_path, header)
+    if text is None:
+        return None, None
+    path = out_path or summary_path(mess_path)
+    return text, (path if write_text(path, text) else None)
+
+
+def ensure_summary(mess_path, mode="summary"):
+    """
+    Path of the summary file of the run of mess_path; made from the .mess
+    if it is missing or older than the .mess (an older run, a summary that
+    was off, a run still going on). Mode "off" counts as "summary" here: the
+    user asked for it. None if there is no .mess and no summary.
+    """
+    path = summary_path(mess_path)
+    fresh = os.path.isfile(path) and (
+        not os.path.isfile(mess_path) or
+        os.path.getmtime(path) >= os.path.getmtime(mess_path))
+    if fresh:
+        return path
+    if mode not in ("summary", "full"):
+        mode = "summary"
+    console = os.path.splitext(mess_path)[0] + "_console.txt"
+    _text, written = write_summary(mess_path, mode, console)
+    if written:
+        return written
+    return path if os.path.isfile(path) else None

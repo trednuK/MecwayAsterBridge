@@ -134,7 +134,7 @@ from bridge_results_liml import (splice_results, read_step,
                                  crit_stab_estimate, read_imperfection,
                                  has_results)
 from bridge_failure     import report_failures
-from bridge_monitor     import monitor_text
+from bridge_monitor     import monitor_text, write_summary, SUMMARY_SUFFIX
 from bridge_run_aster   import CONSOLE_SUFFIX
 import bridge_version
 import bridge_acoustic
@@ -448,17 +448,24 @@ def _run(settings):
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
             model_data)
+        # Summary file of the run (setting aster_summary, every route,
+        # also a failed or stopped run) and optionally the same text as
+        # Mecway's Saved monitor in the .liml (save_monitor_liml).
+        monitor, summary_file = _run_summary(active_liml, run_id, run_start)
         if route == "liml":
             loaded = _load_liml_results(active_liml, model_data, run_start,
-                                        _run_monitor(active_liml, run_id,
-                                                     run_start))
+                                        monitor)
         else:
-            if CONFIG_BRIDGE.get("save_monitor", "summary") != "off":
+            if CONFIG_BRIDGE.get("save_monitor_liml", False):
                 log("INFO: Saved monitor not written: only with the result "
                     "route 'liml' (the route 'tabel' fills the existing "
                     "Mecway solution through the API).")
             loaded = AsterToMecway_results(work_dir_path(),
                                            resu_name, mw, solution)
+        summary_note = (u"\n\n" + tr(u"Samenvatting van de run: {0}",
+                                      u"Summary of the run: {0}").format(
+                                          summary_file)
+                        if summary_file else u"")
         if failure_note:
             _notify(failure_note)
         # Penalty contact: penetration against contact_pene_maxi
@@ -504,13 +511,14 @@ def _run(settings):
                               "\n\n".join(mess_errors[:5]),
                               tr("deels geladen; controleer ze",
                                  "partly loaded; check them") if loaded
-                              else tr("niet geladen", "not loaded")))
+                              else tr("niet geladen", "not loaded")) +
+                    summary_note)
             return False
         if not loaded:
             _notify(run_names(tr(
                 "Geen resultaten geladen. Controleer study.mess en {0}.",
                 "No results loaded. Check study.mess and {0}.")).format(
-                    log_file_name()))
+                    log_file_name()) + summary_note)
             return False
         if stopped:
             return False
@@ -576,24 +584,42 @@ def _monitor_header(liml, run_id, analysis):
                 run_id, analysis)]
 
 
-def _run_monitor(active_liml, run_id, run_start):
-    """Text for Mecway's Saved monitor of this run (setting save_monitor,
-    bridge_monitor.py), or None (off, or no .mess of this run)."""
-    mode = CONFIG_BRIDGE.get("save_monitor", "summary")
+def _run_summary(active_liml, run_id, run_start):
+    """
+    Summary of this run (bridge_monitor.py): written to
+    <model>_<run_id>_aster_summary.txt (setting aster_summary, not "off");
+    returns (text for Mecway's Saved monitor or None, path of the summary
+    file or None). The text only with save_monitor_liml (route liml), with
+    aster_summary "off" then in mode "summary". Nothing without a .mess of
+    this run.
+    """
+    mode = CONFIG_BRIDGE.get("aster_summary", "summary")
+    in_liml = (CONFIG_BRIDGE.get("save_monitor_liml", False) and
+               CONFIG_BRIDGE.get("result_route", "liml") == "liml")
     mess = os.path.join(work_dir_path(), run_name(".mess"))
-    if mode == "off" or not os.path.exists(mess) or \
-            os.path.getmtime(mess) < run_start:
-        return None
+    if not os.path.exists(mess) or os.path.getmtime(mess) < run_start:
+        return None, None
+    header = _monitor_header(active_liml, run_id,
+                             CONFIG_BRIDGE["active_analysis"])
+    console = os.path.join(work_dir_path(), run_name(CONSOLE_SUFFIX))
+    text, path = None, None
     try:
-        return monitor_text(
-            mess, mode, os.path.join(work_dir_path(),
-                                     run_name(CONSOLE_SUFFIX)),
-            _monitor_header(active_liml, run_id,
-                            CONFIG_BRIDGE["active_analysis"]))
+        if mode in ("summary", "full"):
+            text, path = write_summary(
+                mess, mode, console, header,
+                os.path.join(work_dir_path(), run_name(SUMMARY_SUFFIX)))
+            if text is not None and path is None:
+                log(tr(u"WARNING: Samenvatting niet geschreven: {0}",
+                       u"WARNING: Summary not written: {0}").format(
+                           run_name(SUMMARY_SUFFIX)))
+            elif path:
+                log("INFO: Summary of the run: {0}".format(path))
+        if in_liml and text is None:
+            text = monitor_text(mess, "summary", console, header)
     except Exception as e:
-        log(tr(u"WARNING: Saved monitor niet gemaakt: {0}",
-               u"WARNING: Saved monitor not made: {0}").format(e))
-        return None
+        log(tr(u"WARNING: Samenvatting niet gemaakt: {0}",
+               u"WARNING: Summary not made: {0}").format(e))
+    return (text if in_liml else None), path
 
 
 def _load_liml_results(active_liml, model_data, run_start, monitor=None):
@@ -601,7 +627,7 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None):
     result_route "liml": Code-Aster wrote Mecway's own <results>
     (aster_results_export.py). Optionally compare with the Mecway solve,
     paste the fragment into the .liml (previous version: .bak) and open it
-    again. monitor: text for Mecway's Saved monitor (_run_monitor) or None;
+    again. monitor: text for Mecway's Saved monitor (_run_summary) or None;
     without results it is written as a solution with only the monitor if
     the model has no results yet (_monitor_only). Returns True if the
     results are in Mecway.
@@ -1470,11 +1496,15 @@ def _results_action():
                          "These results do not fit the open model:\n{0}\n"
                          "Not loaded.").format(note)
     configuration, warning = pick_configuration(liml)
-    # Saved monitor from the .mess of that run (if it is still there)
+    # Saved monitor from the .mess of that run (setting save_monitor_liml,
+    # if the .mess is still there)
     monitor = None
-    mode = CONFIG_BRIDGE.get("save_monitor", "summary")
+    mode = CONFIG_BRIDGE.get("aster_summary", "summary")
+    if mode not in ("summary", "full"):
+        mode = "summary"
     stem = info["comm"][:-len(".comm")]
-    if mode != "off" and os.path.exists(stem + ".mess"):
+    if CONFIG_BRIDGE.get("save_monitor_liml", False) and \
+            os.path.exists(stem + ".mess"):
         try:
             monitor = monitor_text(
                 stem + ".mess", mode, stem + CONSOLE_SUFFIX,

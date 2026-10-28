@@ -105,9 +105,12 @@ GENERAL_SPECS = [
      "bool", None),
     ("vtu_export", ("VTU/PVD-bestanden voor ParaView",
                     "VTU/PVD files for ParaView"), "bool", None),
-    ("save_monitor", ("Code-Aster-uitvoer als Saved monitor in de .liml",
-                      "Code-Aster output as Saved monitor in the .liml"),
+    ("aster_summary", ("Samenvatting Code-Aster-run (_aster_summary.txt)",
+                       "Summary of the Code-Aster run (_aster_summary.txt)"),
      "choice", ("summary", "full", "off")),
+    ("save_monitor_liml", ("Samenvatting ook als Saved monitor in de .liml",
+                           "Summary also as Saved monitor in the .liml"),
+     "bool", None),
     ("advancedtoolshub_dir", ("AdvancedToolsHub-map (leeg = automatisch)",
                               "AdvancedToolsHub folder (empty = automatic)"),
      "folder", None),
@@ -530,7 +533,8 @@ _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "mecway_solve_first": False, "result_route": "liml",
                      "convergence_monitor": True, "med_export": False,
                      "vtu_export": False, "advancedtoolshub_dir": "",
-                     "save_monitor": "summary",
+                     "aster_summary": "summary",
+                     "save_monitor_liml": False,
                      "work_dir_beside_model": False, "paraview_exe": "",
                      "wait_for_aster": "auto",
                      "elem_hex8": "3D",
@@ -2142,7 +2146,8 @@ def results_dialog(items, work_dir):
     Returns {"action": "load", "path": result file},
     {"action": "mwpost", "path": result file} (button In MWHub Post, only
     when AdvancedToolsHub is found), {"action": "strip"} or None
-    (Annuleren). Without Windows Forms:
+    (Annuleren). The button Summary opens the summary of the chosen run
+    (_open_summary) and keeps the window open. Without Windows Forms:
     ImportError (the script then falls back to mw.input()).
     """
     try:
@@ -2151,7 +2156,7 @@ def results_dialog(items, work_dir):
         clr.AddReference("System.Drawing")
         from System.Windows.Forms import (
             Form, Label, Button, ListBox, DialogResult, FormBorderStyle,
-            FormStartPosition, OpenFileDialog, BorderStyle)
+            FormStartPosition, OpenFileDialog, BorderStyle, ToolTip)
         from System.Drawing import Point, Size
         from System.Threading import Thread, ThreadStart, ApartmentState
     except Exception as e:
@@ -2168,13 +2173,14 @@ def results_dialog(items, work_dir):
                            "MecwayAsterBridge - results")
             form.Font = look.font
             form.BackColor = look.col("page_bg")
-            form.ClientSize = Size(760, 470)
+            form.ClientSize = Size(860, 470)
             form.StartPosition = FormStartPosition.CenterScreen
             form.FormBorderStyle = FormBorderStyle.FixedDialog
             form.MaximizeBox = False
             form.MinimizeBox = False
             form.TopMost = True
             look.header(form, tr("Resultaten", "Results"), work_dir)
+            tip = ToolTip()
 
             info = Label()
             info.Text = tr(
@@ -2182,20 +2188,22 @@ def results_dialog(items, work_dir):
                 "'Inladen' zet de gekozen resultaten in het open model (na "
                 "een controle of het mesh gelijk is). 'Uit model "
                 "verwijderen' haalt alle resultaten uit de .liml, zodat die "
-                "klein blijft; de resultaatbestanden blijven staan.",
+                "klein blijft; de resultaatbestanden blijven staan. "
+                "'Samenvatting' opent de samenvatting van de Code-Aster-run.",
                 "Results of earlier Code-Aster runs (newest first). 'Load' "
                 "puts the chosen results into the open model (after "
                 "checking that the mesh is the same). 'Remove from model' "
                 "takes all results out of the .liml so that it stays small; "
-                "the result files are kept.")
+                "the result files are kept. 'Summary' opens the summary of "
+                "the Code-Aster run.")
             info.ForeColor = look.col("muted")
             info.Location = Point(16, 70)
-            info.Size = Size(728, 52)
+            info.Size = Size(828, 52)
             form.Controls.Add(info)
 
             lst = ListBox()
             lst.Location = Point(16, 126)
-            lst.Size = Size(728, 270)
+            lst.Size = Size(828, 270)
             lst.IntegralHeight = False
             lst.BorderStyle = BorderStyle.FixedSingle
             for item in items:
@@ -2233,26 +2241,42 @@ def results_dialog(items, work_dir):
                     finish({"action": "mwpost",
                             "path": items[lst.SelectedIndex]["path"]})
 
+            def on_summary(sender, args):
+                if lst.SelectedIndex >= 0:
+                    _open_summary(items[lst.SelectedIndex], form)
+
             buttons = [
-                (tr("Inladen", "Load"), on_load, 110, True),
+                (tr("Inladen", "Load"), on_load, 110, True, None),
                 (tr("Ander bestand...", "Other file..."), on_browse, 130,
-                 False),
+                 False, None),
                 (tr("Uit model verwijderen", "Remove from model"),
-                 on_strip, 170, False),
+                 on_strip, 170, False, None),
+                (tr("Samenvatting", "Summary"), on_summary, 110, False,
+                 tr("Opent de samenvatting van de Code-Aster-run "
+                    "(<model>_<run_id>_aster_summary.txt: fouten, alarmen, "
+                    "stappen, tijden) in de teksteditor; ontbreekt die, dan "
+                    "maakt de bridge hem uit de .mess.",
+                    "Opens the summary of the Code-Aster run "
+                    "(<model>_<run_id>_aster_summary.txt: errors, alarms, "
+                    "steps, timings) in the text editor; if it is missing, "
+                    "the bridge makes it from the .mess.")),
             ]
             if bridge_utils.advancedtoolshub_dir_path():
-                buttons.append((u"In MWHub Post", on_mwpost, 120, False))
+                buttons.append((u"In MWHub Post", on_mwpost, 120, False,
+                                None))
             x = 16
-            for text, handler, width, primary in buttons:
+            for text, handler, width, primary, help_text in buttons:
                 btn = look.button(text, primary)
                 btn.Location = Point(x, 416)
                 btn.Width = width
                 btn.Click += handler
+                if help_text:
+                    tip.SetToolTip(btn, help_text)
                 form.Controls.Add(btn)
                 x += width + 8
             lst.DoubleClick += on_load
             cancel_btn = look.button(tr("Annuleren", "Cancel"))
-            cancel_btn.Location = Point(644, 416)
+            cancel_btn.Location = Point(744, 416)
             cancel_btn.Width = 100
             cancel_btn.DialogResult = DialogResult.Cancel
             form.Controls.Add(cancel_btn)
@@ -2276,6 +2300,36 @@ def results_dialog(items, work_dir):
                               "Error in the results window: {0}").format(
             result["error"]))
     return result["value"]
+
+
+def _open_summary(item, owner=None):
+    """Open <model>_<run_id>_aster_summary.txt of a run of list_results()
+    in the default text editor; bridge_monitor.ensure_summary makes it
+    from the .mess if it is missing. A message box if there is no .mess."""
+    from System.Windows.Forms import MessageBox
+    import bridge_monitor
+
+    def show(text):
+        if owner is None:
+            MessageBox.Show(text, "MecwayAsterBridge")
+        else:
+            MessageBox.Show(owner, text, "MecwayAsterBridge")
+    stem = item["comm"][:-len(".comm")]
+    path = bridge_monitor.ensure_summary(
+        stem + ".mess", bridge_utils.CONFIG_BRIDGE.get("aster_summary",
+                                                       "summary"))
+    if not path:
+        show(tr(
+            "Geen .mess en geen samenvatting van deze run gevonden: {0}",
+            "No .mess and no summary of this run found: {0}").format(
+                stem + ".mess"))
+        return
+    try:
+        from System.Diagnostics import Process
+        Process.Start(path)
+    except Exception as e:
+        show(tr("Openen mislukt: {0}\n{1}",
+                "Opening failed: {0}\n{1}").format(path, e))
 
 
 # ==========================================

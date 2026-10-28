@@ -56,7 +56,7 @@ ignored with only an INFO, as Mecway itself does.
 | Value as a table or a formula in t | Yes | 10001 samples as Mecway does for CCX. Linear static, modal and buckling: the value at the end time. Many points = many steps (KB104). |
 | Formula in x, y, z (mechanical) | Yes | Pressure, traction, force, line pressure, prescribed displacement/rotation: `FORMULE` of X, Y, Z (also with t) in `AFFE_CHAR_MECA_F` (LS-40..44, NL-40). Mecway 34 itself does not apply force, line pressure and displacement/rotation with x, y, z (WARNING). Not: gravity, moment, centrifugal, direction as a formula, pressure on shell edges; not in explicit, harmonic, spectrum (KB104). DKT/DST shells take the formula at the nodes (+0.8% on a coarse mesh, LS-44a). Pressure as a formula stays a fixed load at large displacements. The error estimator treats a face with a formula load as unloaded (too large an error there). |
 | Load on the side face of a beam | No | KB5. Put the load on an element selection of the beam. |
-| Pre-tension section | Partly | Prism of solid elements (Mecway's CCX variant), force or length adjustment, in static and nonlinear static: cut with `LIAISON_DDL` to a reference node (PT-01..05, [`Bolt_pretension.md`](Bolt_pretension.md)). Not: dynamic response, the spring element variant (KB122). |
+| Pre-tension section | Partly | Prism of solid elements (Mecway's CCX variant), force or length adjustment, in static and nonlinear static: cut with `LIAISON_DDL` to a reference node (PT-01..05, [`Bolt_pretension.md`](Bolt_pretension.md)). Not: dynamic response, the spring element variant (KB124). |
 | Electric potential, Charge, Current, Robin | No | No electric analyses (§1). |
 | Thermal loads (temperature, heat flow, heat flux, heat generation, convection, radiation) | Yes | In T30/T31; formulas in x, y, z, t too. Details: [`Thermal.md`](Thermal.md). |
 | Forced convection, Mass flow rate, cavity radiation | No | KB16. |
@@ -162,7 +162,7 @@ Bonded contact per combination (slave on master):
 | Temperature, heat flux | Yes | Thermal. |
 | Natural frequencies, buckling factors, effective mass | Yes | Effective mass fraction differs from Mecway (KB49). |
 | Acoustic pressure | Yes | [`Acoustics.md`](Acoustics.md). |
-| *Saved monitor* (Solution) | Yes | The output of the Code-Aster run instead of Mecway's solver messages (setting `save_monitor`, route `liml`; [`UserGuide.md`](UserGuide.md) §5.2). |
+| *Saved monitor* (Solution) | Optional | The summary of the Code-Aster run instead of Mecway's solver messages, only with the setting `save_monitor_liml` (off by default; route `liml`). The summary is always in `<model>_<run-id>_aster_summary.txt` ([`UserGuide.md`](UserGuide.md) §5.2). |
 
 Extra fields of the bridge (error estimator, fatigue, metallurgy) and which Code-Aster
 field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
