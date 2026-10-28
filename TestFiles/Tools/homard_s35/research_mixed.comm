@@ -1,0 +1,59 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# S35 research checks (run_s35.py research): MACR_ADAP_MAIL on mixed.mail
+# (hex8 + penta6 + pyram5 solids, a shell quad4 on top, a face cell, beams
+# seg2 along and outside the solid), linear and quadratic (LINE_QUAD),
+# pyramids in the input mesh (ELEMENTS_ACCEPTES), refining only block A,
+# group survival (cell and node groups).
+import traceback
+DEBUT(LANG='EN', ERREUR=_F(ERREUR_F='EXCEPTION'))
+m0 = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+
+
+def summary(m, tag):
+    conn = m.getConnectivity()
+    out = []
+    for g in sorted(m.getGroupsOfCells()):
+        cnt = {}
+        for c in m.getCells(g):
+            cnt[len(conn[c])] = cnt.get(len(conn[c]), 0) + 1
+        out.append('%s:%s' % (g, ','.join('%dn*%d' % kv for kv in sorted(cnt.items()))))
+    out += ['%s:%d(no)' % (g, len(m.getNodes(g))) for g in sorted(m.getGroupsOfNodes())]
+    print('S35 MESH', tag, 'cells=%d nodes=%d |' % (m.getNumberOfCells(), m.getNumberOfNodes()), ' '.join(out))
+
+
+def adapt(tag, **kw):
+    name = 'm_' + tag
+    try:
+        MACR_ADAP_MAIL(MAILLAGE_NP1=CO(name), **kw)
+    except Exception:
+        print('S35 FAILED', tag, traceback.format_exc().replace(chr(10), ' | ')[-200:])
+        return None
+    if name not in globals():
+        print('S35 NO MESH', tag, '(HOMARD failed without an exception)')
+        return None
+    summary(globals()[name], tag)
+    return globals()[name]
+
+
+def one_on(m, group):
+    return CREA_CHAMP(TYPE_CHAM='CART_NEUT_R', OPERATION='AFFE', MAILLAGE=m,
+                      AFFE=(_F(TOUT='OUI', NOM_CMP='X1', VALE=0.0), _F(GROUP_MA=group, NOM_CMP='X1', VALE=1.0)))
+
+
+summary(m0, 'linear')
+adapt('uniform_default', MAILLAGE_N=m0, ADAPTATION='RAFFINEMENT_UNIFORME')
+adapt('uniform_ignore_pyra', MAILLAGE_N=m0, ADAPTATION='RAFFINEMENT_UNIFORME', ELEMENTS_ACCEPTES='IGNORE_PYRA')
+adapt('blockA_default', MAILLAGE_N=m0, ADAPTATION='RAFFINEMENT', CHAM_GD=one_on(m0, 'BLOKA'), CRIT_RAFF_ABS=0.5)
+adapt('blockA_ignore_pyra', MAILLAGE_N=m0, ADAPTATION='RAFFINEMENT', CHAM_GD=one_on(m0, 'BLOKA'),
+      CRIT_RAFF_ABS=0.5, ELEMENTS_ACCEPTES='IGNORE_PYRA')
+q0 = CREA_MAILLAGE(MAILLAGE=m0, LINE_QUAD=_F(TOUT='OUI'))
+summary(q0, 'quadratic')
+adapt('quad_blockA_ignore_pyra', MAILLAGE_N=q0, ADAPTATION='RAFFINEMENT', CHAM_GD=one_on(q0, 'BLOKA'),
+      CRIT_RAFF_ABS=0.5, ELEMENTS_ACCEPTES='IGNORE_PYRA')
+m2 = CREA_MAILLAGE(MAILLAGE=m0, RESTREINT=_F(GROUP_MA=('BLOKA', 'SHELL', 'FACEX0', 'BEAM'), GROUP_NO=('NTIP',)))
+summary(m2, 'no_pyramids')
+adapt('no_pyramids_uniform', MAILLAGE_N=m2, ADAPTATION='RAFFINEMENT_UNIFORME')
+FIN()

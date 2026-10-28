@@ -1,0 +1,98 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# S35 research checks on the bridge mesh of the nonlinear plate (run_s35.py
+# research): native error indicators with plasticity before/after one HOMARD
+# refinement, node groups after HOMARD, node numbering, MAJ_CHAM (NOEU and
+# ELGA), PROJ_CHAMP back to the original mesh (node and ELNO fields).
+# Every check prints one line 'S35 ...'; an exception is caught and printed.
+import traceback
+import numpy as np
+DEBUT(LANG='EN', ERREUR=_F(ERREUR_F='EXCEPTION'))
+mesh0 = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+mesh0 = DEFI_GROUP(reuse=mesh0, MAILLAGE=mesh0, CREA_GROUP_NO=_F(NOM='SymZno', GROUP_MA='SymZ'))
+
+
+def tb(tag, err=None):
+    print('S35 FAILED', tag, getattr(err, 'id_message', '') or '',
+          traceback.format_exc().replace(chr(10), ' | ')[-200:])
+
+
+def groups(m, tag):
+    out = ['%s:%d' % (g, len(m.getCells(g))) for g in sorted(m.getGroupsOfCells())]
+    out += ['%s:%d(no)' % (g, len(m.getNodes(g))) for g in sorted(m.getGroupsOfNodes())]
+    print('S35 GROUPS', tag, 'cells=%d nodes=%d' % (m.getNumberOfCells(), m.getNumberOfNodes()), ' '.join(out))
+
+
+mat = DEFI_MATERIAU(ELAS=_F(E=2.1e11, NU=0.3), ECRO_LINE=_F(D_SIGM_EPSI=1981132075.47, SY=2.5e8))
+fn = DEFI_FONCTION(NOM_PARA='INST', VALE=(0.0, 0.0, 1.0, 2.5e8))
+li = DEFI_LIST_INST(DEFI_LIST=_F(LIST_INST=DEFI_LIST_REEL(VALE=(0., .5, 1.))))
+
+
+def solve(mesh, tag):
+    model = AFFE_MODELE(MAILLAGE=mesh, AFFE=(_F(GROUP_MA='Plaat', PHENOMENE='MECANIQUE', MODELISATION='3D'),
+                                             _F(GROUP_MA='Trek', PHENOMENE='MECANIQUE', MODELISATION='3D')))
+    fm = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, AFFE=_F(GROUP_MA='Plaat', MATER=mat))
+    l1 = AFFE_CHAR_MECA(MODELE=model, FACE_IMPO=(_F(GROUP_MA='SymX', DNOR=0.), _F(GROUP_MA='SymY', DNOR=0.),
+                                                 _F(GROUP_MA='SymZ', DNOR=0.)))
+    l2 = AFFE_CHAR_MECA_F(MODELE=model, FORCE_FACE=_F(GROUP_MA='Trek', FX=fn))
+    res = STAT_NON_LINE(MODELE=model, CHAM_MATER=fm, EXCIT=(_F(CHARGE=l1), _F(CHARGE=l2)),
+                        COMPORTEMENT=_F(GROUP_MA='Plaat', RELATION='VMIS_ISOT_LINE'),
+                        INCREMENT=_F(LIST_INST=li), SOLVEUR=_F(METHODE='MUMPS'))
+    res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA='Plaat', CONTRAINTE=('SIGM_ELNO', 'SIGM_NOEU'),
+                     CRITERES=('SIEQ_ELNO', 'SIEQ_NOEU'), VARI_INTERNE=('VARI_ELNO', 'VARI_NOEU'),
+                     DEFORMATION=('EPSP_ELNO', 'EPSP_NOEU'))
+    for opt in ('ERZ1_ELEM', 'ERZ2_ELEM', 'ERME_ELEM'):
+        try:
+            if opt == 'ERME_ELEM':
+                # the loads must be given (EXCIT); then reuse is not allowed (CALCULEL_39)
+                rr = CALC_ERREUR(RESULTAT=res, INST=1.0, OPTION=(opt,), EXCIT=(_F(CHARGE=l1), _F(CHARGE=l2)))
+            else:
+                res = CALC_ERREUR(reuse=res, RESULTAT=res, INST=1.0, OPTION=(opt,))
+                rr = res
+            v, _m = rr.getField(opt, rr.getIndexes()[-1]).toSimpleFieldOnCells().getValues()
+            print('S35 INDICATOR', tag, opt, 'ok, %d cells' % v.shape[0])
+        except Exception as e:
+            tb('INDICATOR %s %s' % (tag, opt), e)
+    return model, res
+
+
+groups(mesh0, 'original')
+model0, res0 = solve(mesh0, 'original')
+xyz0 = np.asarray(mesh0.getCoordinates().getValues()).reshape(-1, 3)
+conn0 = mesh0.getConnectivity()
+plaat = mesh0.getCells('Plaat')
+cent = np.array([xyz0[np.array(conn0[c])].mean(axis=0) for c in plaat])
+sel = [int(plaat[i]) for i in np.argsort(np.hypot(cent[:, 0], cent[:, 1] - 0.01))[:3]]
+mesh0.setGroupOfCells('ADAPSEL', sel)
+ind = CREA_CHAMP(TYPE_CHAM='CART_NEUT_R', OPERATION='AFFE', MAILLAGE=mesh0,
+                 AFFE=(_F(TOUT='OUI', NOM_CMP='X1', VALE=0.0), _F(GROUP_MA='ADAPSEL', NOM_CMP='X1', VALE=1.0)))
+MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT', CHAM_GD=ind, CRIT_RAFF_ABS=0.5, MAILLAGE_N=mesh0, MAILLAGE_NP1=CO('mesh1'))
+groups(mesh1, 'refined')
+xyz1 = np.asarray(mesh1.getCoordinates().getValues()).reshape(-1, 3)
+print('S35 NUMBERING old nodes keep their numbers: %s' % bool(np.abs(xyz1[:len(xyz0)] - xyz0).max() < 1e-12))
+model1, res1 = solve(mesh1, 'refined')
+for tag, typ, nom in (('NOEU_DEPL', 'NOEU_DEPL_R', 'DEPL'), ('ELGA_VARI', 'ELGA_VARI_R', 'VARI_ELGA'),
+                      ('ELGA_SIEF', 'ELGA_SIEF_R', 'SIEF_ELGA')):
+    name = 'm_' + tag
+    try:
+        MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT_UNIFORME', MAILLAGE_N=mesh1, MAILLAGE_NP1=CO(name),
+                       MAJ_CHAM=_F(CHAM_MAJ=CO('c_' + tag), TYPE_CHAM=typ, RESULTAT=res1, NOM_CHAM=nom, INST=1.0))
+        print('S35 MAJ_CHAM', tag, 'ok' if name in globals() else 'NO MESH')
+    except Exception as e:
+        tb('MAJ_CHAM ' + tag, e)
+try:
+    from scipy.spatial import cKDTree
+    dist, idx = cKDTree(xyz1).query(xyz0)
+    rp = PROJ_CHAMP(RESULTAT=res1, MODELE_1=model1, MODELE_2=model0,
+                    NOM_CHAM=('DEPL', 'SIGM_NOEU', 'VARI_NOEU', 'SIGM_ELNO', 'VARI_ELNO'))
+    print('S35 PROJ instants', list(rp.getAccessParameters()['INST']), 'fields', rp.getFieldsNames())
+    for nc in ('DEPL', 'SIGM_NOEU', 'VARI_NOEU'):
+        a1 = res1.getField(nc, 2).toSimpleFieldOnNodes().getValues()[0]
+        ap = rp.getField(nc, 2).toSimpleFieldOnNodes().getValues()[0]
+        print('S35 PROJ %s: max |projected - refined| at the original nodes %.3g (max |value| %.3g)'
+              % (nc, np.abs(ap - a1[idx]).max(), np.abs(a1).max()))
+except Exception:
+    tb('PROJ')
+FIN()

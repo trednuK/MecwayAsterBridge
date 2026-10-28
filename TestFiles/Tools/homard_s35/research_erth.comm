@@ -1,0 +1,36 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# S35 research checks (run_s35.py research) on the bridge mesh of the
+# thermal plate: ERTH_ELEM after THER_LINEAIRE (hex20, and after one HOMARD
+# refinement with PYRAM13/TETRA10 transitions) and after THER_NON_LINE.
+import traceback
+DEBUT(LANG='EN', ERREUR=_F(ERREUR_F='EXCEPTION'))
+mesh0 = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+lam = DEFI_FONCTION(NOM_PARA='TEMP', VALE=(0., 50., 100., 40.), PROL_DROITE='LINEAIRE', PROL_GAUCHE='LINEAIRE')
+mnl = DEFI_MATERIAU(THER_NL=_F(LAMBDA=lam, RHO_CP=DEFI_CONSTANTE(VALE=1.0)))
+mli = DEFI_MATERIAU(THER=_F(LAMBDA=50.0, RHO_CP=0.0))
+times = DEFI_LIST_REEL(VALE=(0.0,))
+
+
+def run(mesh, tag, nonlin):
+    model = AFFE_MODELE(MAILLAGE=mesh, AFFE=_F(GROUP_MA=('Plaat',), PHENOMENE='THERMIQUE', MODELISATION='3D'))
+    fm = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, AFFE=_F(GROUP_MA='Plaat', MATER=mnl if nonlin else mli))
+    load = AFFE_CHAR_THER(MODELE=model, TEMP_IMPO=(_F(GROUP_MA='Koud', TEMP=0.0), _F(GROUP_MA='Warm', TEMP=100.0)))
+    cmd = THER_NON_LINE if nonlin else THER_LINEAIRE
+    res = cmd(MODELE=model, CHAM_MATER=fm, EXCIT=_F(CHARGE=load), TYPE_CALCUL='STAT', INCREMENT=_F(LIST_INST=times))
+    try:
+        res = CALC_ERREUR(reuse=res, RESULTAT=res, OPTION=('ERTH_ELEM',))
+        print('S35 ERTH', tag, 'ok')
+    except Exception as e:
+        print('S35 ERTH', tag, 'FAILED', getattr(e, 'id_message', '') or '', str(e).replace(chr(10), ' ')[:300])
+    return res
+
+
+res0 = run(mesh0, 'THER_LINEAIRE hex20', False)
+run(mesh0, 'THER_NON_LINE hex20', True)
+MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT', RESULTAT_N=res0, NOM_CHAM='ERTH_ELEM', NOM_CMP='ERTABS',
+               CRIT_RAFF_PE=0.3, MAILLAGE_N=mesh0, MAILLAGE_NP1=CO('mesh1'))
+run(mesh1, 'THER_LINEAIRE after HOMARD (hex20+pyram13+tetra10)', False)
+FIN()
