@@ -56,7 +56,7 @@ S7, S8, S5, S9).
 | S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026; branch b-mwpost (24 Oct): (a) field `failed` written (VTU `BEZWEKEN`), Mecway display not yet checked; (b) moves to AdvancedToolsHub (MWHub Post erosion filter, ParaView button → hub); (c) settings docs only |
 | S23 | Linear buckling with a constant (dead) plus a variable (live) load | done | – | branch w-q, 23 Oct 2026: `#ASTER-CONSTANT` (BU-40) |
 | S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | done | – | branch w-p1; static only, setting `auto_time_stepping`; NL-21a/b; NL/NK families unchanged |
-| S25 | Optional exact section properties with `MACR_CARA_POUTRE` | open | – | planned 23 Oct 2026 (Aubry 2019 §17.1–17.2) |
+| S25 | Optional exact section properties with `MACR_CARA_POUTRE` | dropped | – | covered by MecwaySectionProps (own repository): exact A, I, J, `JG`, `EY`/`EZ`, `AY`/`AZ` via `#ASTER-SECTIE`, already read by the bridge (user, 28 Oct 2026) |
 | S26 | Hysteretic damping (`AMOR_HYST`, `RIGI_MECA_HYST`) in harmonic analysis | done | S10h | branch w-s (23 Oct 2026): setting `loss_factor` + `#ASTER-HYST`; GENE and PHYS; HR-06a..d OK, HR-01..05 unchanged (see §S26) |
 | S27 | Optional line search (`RECH_LINEAIRE`) in nonlinear static | done | – | branch w-p2; `line_search` auto (cables only)/on/off; SaggingCable *Tension only* 9 -> 7 iterations; `on` breaks `POU_D_T_GD` (see §S27) |
 | S28 | Optional contact normal smoothing (`LISSAGE='OUI'`) | done | – | branch w-p2; `contact_smoothing` (default off); NL-03a..f and PipeClip unchanged with it on (see §S28) |
@@ -1436,6 +1436,9 @@ NK-04 P_u/Pcr 0.480 instead of 0.488 (within tolerance). All 58 NL/NK cases with
 baseline (only NL-03a known, KNOWN_BUGS 43).
 
 ### S25 – Optional exact section properties with `MACR_CARA_POUTRE`
+**Status:** dropped (28 Oct 2026): the user's tool MecwaySectionProps computes the exact section
+properties and writes them as `#ASTER-SECTIE` lines, which the bridge reads (docs/ASTER_regels_voorbeelden.md);
+a second route inside the bridge is not needed.
 **Goal:** a setting (default off: Mecway's values, including J, stay the default) that computes A, IY, IZ, JX,
 JG, AY/AZ and the shear centre of I/T/C/L and general sections with `MACR_CARA_POUTRE` on a 2D mesh of the
 section, and uses them in `AFFE_CARA_ELEM`.
