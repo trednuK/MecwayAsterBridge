@@ -16,6 +16,7 @@ docs/Verificatie.md).
 from verif_lib import Case, Check, Model, hexmesh, box
 import tests_thermisch as th
 from tests_lineair_statisch import _steel
+import tests_resultaatvelden as rv
 
 GROUP = "Resultaatformules"
 BTU_H_FT2 = 1055.05585262 / 3600.0 / 0.3048 ** 2   # W/m2 per Btu/h/ft2
@@ -92,6 +93,127 @@ def build_fx03():
     m.add(_formula("dT_t", "formula(2)", "(T-300)/max(t,1)",
                    [("+0+0+0+0+1", "K"), ("+0+0+1", "s")]))
     return m
+
+
+# FX-04: hoofdwaarden van schalen (S34b), schaalstrook LS-31 (quad4, scheef
+# in de ruimte) met P = 10 N: op x = L/2 boven sigma_uu = N/t + 6M/t^2 =
+# 52,5 MPa, onder -22,5 MPa, midden 15 MPa, sigma_vv ~ 0 (eenassig). Mecway
+# (headless, Mecway 34): principal<k>u1/m1/b1, tresca<s>1 en
+# lprincipalstrain<k><s>1 = eigenwaarden van de globale 3 x 3-tensor per
+# elementknoop (de normaalspanning 0 hoort erbij), knoop = gemiddelde.
+# Eenassig: boven p1 = sigma, p2 = p3 ~ 0; onder p3 = sigma; rek boven
+# eps1 = sigma/E, eps3 = -nu sigma/E (eps_ww = 0, vlakspanning).
+P34B = 10.0
+
+
+def build_fx04():
+    m = rv.build_ls31(1)()
+    m.items = [i for i in m.items if not i.lstrip().startswith("<force")]
+    fv = [rv.F31 * rv.E1_31[k] - P34B * rv.N_31[k] for k in range(3)]
+    m.add('<force selection="Eind"><x>%r N</x><y>%r N</y><z>%r N</z>'
+          '</force>' % tuple(fv))
+    return m
+
+
+_S04 = rv.F31 / (rv.B31 * rv.T31)
+_B04 = 6 * P34B * (rv.L31 - rv.X31) / rv.B31 / rv.T31 ** 2
+SIG04 = {"u": _S04 + _B04, "m": _S04, "b": _S04 - _B04}
+_SRC04 = ("plaattheorie op x = L/2 (LS-31 met P = 10 N): sigma_uu = N/t "
+          "+- 6M/t^2, eenassig")
+_FX04_FIELDS = ["displacements", "stresses", "vonmises", "reactions",
+                "shell_stresses", "principal_stresses", "principal_strains"]
+
+
+def _c04(r, var):
+    return rv._mean(r, var, rv._center31(r))
+
+
+def _rule04(r, lvl, node=False):
+    """Grootste relatieve afwijking van principal<k><lvl>1 van Mecway's
+    regel, toegepast op de schaalspanningen van de bridge zelf
+    (stress<ij><lvl>1): per elementknoop de eigenwaarden van de globale
+    tensor (aflopend); node=True: knoopwaarde = gemiddelde van de
+    elementknoopwaarden."""
+    import numpy as np
+    comps = ("xx", "yy", "zz", "xy", "yz", "zx")
+    ed = dict((c, r.elem("stress%s%s1" % (c, lvl))) for c in comps)
+    pd = [r.elem("principal%d%s1" % (k, lvl)) for k in (1, 2, 3)]
+    eids = sorted(pd[0])
+    t = [np.concatenate([ed[c][e] for e in eids]) for c in comps]
+    xx, yy, zz, xy, yz, zx = t
+    ev = np.linalg.eigvalsh(np.stack(
+        [np.stack([xx, xy, zx], -1), np.stack([xy, yy, yz], -1),
+         np.stack([zx, yz, zz], -1)], -2))[:, ::-1]
+    p = np.column_stack([np.concatenate([d[e] for e in eids]) for d in pd])
+    scale = np.abs(p).max()
+    if not node:
+        return float(np.abs(ev - p).max() / scale)
+    acc = {}
+    nodes = dict((e[0], e[2]) for e in r.model.elsets[0][2])
+    for e in eids:
+        for n, v in zip(nodes[e], pd[0][e]):
+            acc.setdefault(n, []).append(v)
+    nd = r.step()["principal1%s1" % lvl]
+    return max(abs(nd[n] - sum(v) / len(v)) for n, v in acc.items()) / scale
+
+
+def _fx04_checks():
+    out = []
+    for name, lvl, ref in (("principal1u1", "u", SIG04["u"]),
+                           ("principal1m1", "m", SIG04["m"]),
+                           ("principal3b1", "b", SIG04["b"]),
+                           ("trescau1", "u", SIG04["u"]),
+                           ("trescab1", "b", -SIG04["b"])):
+        out.append(Check(name, (lambda v: lambda r: _c04(r, v))(name),
+                         ref=ref, tol=0.01, unit="Pa", source=_SRC04))
+    out.append(Check("principal2u1", lambda r: _c04(r, "principal2u1"),
+                     ref=0.0, tol_abs=0.01 * SIG04["u"], unit="Pa",
+                     source="eenassig: sigma2 = 0"))
+    for name, ref in (("lprincipalstrain1u1", SIG04["u"] / EX),
+                      ("lprincipalstrain3u1", -NUX * SIG04["u"] / EX),
+                      ("lprincipalstrain1b1", -NUX * SIG04["b"] / EX),
+                      ("lprincipalstrain3b1", SIG04["b"] / EX)):
+        out.append(Check(name, (lambda v: lambda r: _c04(r, v))(name),
+                         ref=ref, tol=0.01, unit="-",
+                         source="eps_uu = sigma/E, eps_vv = -nu sigma/E, "
+                                "eps_ww = 0"))
+    for lvl in "umb":
+        out.append(Check(
+            "regel Mecway %s: eigenwaarden per elementknoop" % lvl,
+            (lambda l: lambda r: _rule04(r, l))(lvl), ref=0.0,
+            tol_abs=1e-9, unit="rel.", in_series=False,
+            source="Mecway 34 headless: principal = eigenwaarden van "
+                   "stress<ij>" + lvl + "1 (binnen 3e-13)"))
+    out.append(Check("regel Mecway u: knoop = gemiddelde", lambda r:
+                     _rule04(r, "u", node=True), ref=0.0, tol_abs=1e-9,
+                     unit="rel.", in_series=False,
+                     source="Mecway 34 headless: knoopwaarde = gemiddelde "
+                            "van de elementknoopwaarden"))
+    return out
+
+
+# FX-05: Green-Lagrange-hoofdrek en GLe1 (S34b) op de staaf van NL-31
+# (hex20, 5% opgelegde rek, L30): E1 = (lambda^2 - 1)/2, E2 = E3 =
+# ((lambda_t)^2 - 1)/2. Mecway 34 (CCX, headless) schrijft
+# greenlagrangeprincipalstrain1..3 en herschrijft de formule e1 naar GLe1.
+def build_fx05():
+    m = rv.build_nl31()
+    m.add(_formula("gl1", "formula", "GLe1", [("", "")]))
+    m.add(_formula("e1", "formula(2)", "e1", [("", "")]))
+    m.add(_formula("exx", "formula(3)", "e.xx", [("", "")]))
+    return m
+
+
+_GL05 = (rv.LAM31 ** 2 - 1) / 2
+
+
+def _mid05():
+    T = rv._nl()
+    return (T.L1 / 2, T.A1 / 2, T.A1 / 2)
+
+
+_FX05_FIELDS = ["displacements", "stresses", "vonmises", "reactions",
+                "strain", "principal_strains"]
 
 
 TESTS = [
@@ -186,4 +308,35 @@ TESTS = [
                 ref=(th.TS - 300.0) / 40.0, tol=1e-6, unit="K/s",
                 source="T = Ts op het oppervlak")],
          settings={"theta": 0.57}),
+    Case("FX-04", GROUP, "Hoofdspanningen en -rekken van schalen boven/"
+         "midden/onder (S34b): strook LS-31, buiging + trek",
+         "lin_static_3d", build_fx04, _fx04_checks(),
+         settings={"fields": _FX04_FIELDS},
+         note="Zonder het veld strain: de bridge vraagt EPSI_ELNO van de "
+              "schalen zelf aan voor de hoofdrekken. Mecway 34 headless op "
+              "hetzelfde model (MITC4): op x = L/2 de dominante "
+              "hoofdwaarden binnen 0,05% van de bridge (DKT); tresca en de "
+              "waarden ~0 tot 1% van het maximum (dwarsschuif boven/onder "
+              "bij MITC4, niet bij DKT)."),
+    Case("FX-05", GROUP, "Green-Lagrange-hoofdrek en formules GLe1, e1, "
+         "e.xx bij 5% rek (L30, S34b)",
+         "nonlin_static_3d", build_fx05,
+         [Check("greenlagrangeprincipalstrain1",
+                lambda r: r.at("greenlagrangeprincipalstrain1", _mid05()),
+                ref=_GL05, tol=1e-4, unit="-",
+                source="E1 = (lambda^2 - 1)/2 (homogene rek)"),
+          Check("formule GLe1", lambda r: r.at("formula", _mid05()),
+                ref=_GL05, tol=1e-4, unit="-",
+                source="E1 = (lambda^2 - 1)/2"),
+          Check("formule e1 (Mecway: GLe1)",
+                lambda r: r.at("formula(2)", _mid05()), ref=_GL05,
+                tol=1e-4, unit="-",
+                source="Mecway herschrijft e1 naar GLe1 (S34b)"),
+          Check("formule e.xx (Mecway: GLe.xx)",
+                lambda r: r.at("formula(3)", _mid05()), ref=_GL05,
+                tol=1e-4, unit="-",
+                source="Mecway herschrijft e.xx naar GLe.xx (S34b)")],
+         settings={"fields": _FX05_FIELDS},
+         note="Mecway 34 (CCX) op hetzelfde model: GLe1 = e1 = "
+              "greenlagrangeprincipalstrain1 = 0,051248."),
 ]

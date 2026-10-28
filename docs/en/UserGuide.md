@@ -394,8 +394,8 @@ are the same as those of Mecway's own solution where Mecway knows them.
 | `shell_stresses` | `stressxxu1` .. `stresszxu1`, likewise `m1` (middle) and `b1` (bottom): shell stress tensor in global axes, as in Mecway | `SIGM_ELNO` after `EXTR_COQUE`, rotated in the job from the local shell axes to global | off (18 variables) |
 | `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 gives tension on top), `shearuw`/`shearvw` (shear force per length) in Mecway's U,V axes (U = `orientationu*`, an *Element orientation* card or the edge node 1→2) | `EFGE_ELNO`, rotated in the job to Mecway's U,V | static, nonlinear |
 | `safety_factor` | `factorofsafety` (Mecway shows the item *failure*): tensile strength / von Mises for materials with Mecway's von Mises failure criterion; shells the smallest of top and bottom; unloaded 1e6 | from `SIEQ_NOEU`/`SIEQ_ELNO` (in the job) | static, nonlinear, dynamic |
-| `principal_stresses` | `principal1` >= `principal2` >= `principal3` and `tresca` (= principal1 − principal3), solids, per element node and as the node average, as Mecway computes them (Mecway's fields *principal stress* and *Tresca stress*) | from `SIGM_ELNO` (in the job) | off |
-| `principal_strains` | `lprincipalstrain1..3` (also with Green-Lagrange, like Mecway), solids, per element node and node average | from `EPSI_ELNO`/`EPSG_ELNO` (in the job) | off |
+| `principal_stresses` | `principal1` >= `principal2` >= `principal3` and `tresca` (= principal1 − principal3), solids, per element node and as the node average, as Mecway computes them (Mecway's fields *principal stress* and *Tresca stress*); shells: `principal1u1` .. `principal3u1`, `trescau1`, likewise `m1` (middle) and `b1` (bottom), from the global stress tensor of that surface (the normal stress 0 counts, so one value is about 0) | from `SIGM_ELNO` (shells after `EXTR_COQUE`; in the job) | off |
+| `principal_strains` | solids: `lprincipalstrain1..3`, with Green-Lagrange (nonlinear with large displacements) `greenlagrangeprincipalstrain1..3`, like Mecway; shells: `lprincipalstrain1u1` .. `lprincipalstrain3b1` (top/middle/bottom); per element node and node average | from `EPSI_ELNO`/`EPSG_ELNO`, shells `EPSI_ELNO` + `EXTR_COQUE` (also without `strain`; in the job) | off |
 | `contact` | `contactpressure` (Pa, positive in compression; negative becomes 0), `contactstate` (0 open, 1 closed, 2 sliding) on the slave nodes | `-LAGS_C` (`DEPL`); state from `CONT_NOEU` (linear contact faces only) or from the pressure (> 1% of the largest) | nonlinear, dynamic |
 | `metallurgy` | `ferrite`, `pearlite`, `bainite`, `martensite`, `austenite` (phase fractions), `hardness` (if the dataset has hardness); names of the bridge | `META_NOEU`, `DURT_NOEU` | thermal transient: always included with `#ASTER-METALLURGIE`, route `liml` only ([`Welding.md`](Welding.md) §10) |
 | pressure (acoustics, not in this list) | `pressure` per mode (Mecway's name); harmonic per frequency also `pressurei`, `pressuremag`, `pressurephase`, `spl` | `PRES` (vibroacoustics: `DEPL` component `PRES`) | acoustics, always ([`Acoustics.md`](Acoustics.md)) |
@@ -494,13 +494,17 @@ How the bridge computes it (as measured in Mecway 34):
 | `T`, `qf.x`, `qf.y`, `qf.z` | `temperature`, `heat_flux` |
 | `FI.u`, `FI.v`, `FI.w`, `MI.u`, `MI.v`, `MI.w` | `beam_forces` |
 | `cstr.P`, `fos`, `P` | `contact`, `safety_factor`, acoustic pressure |
-| `s1`, `s2`, `s3`, `tr`; `e1`, `e2`, `e3` | `principal_stresses`; `principal_strains` (off by default) |
+| `s1`, `s2`, `s3`, `tr`; `e1`, `e2`, `e3`; `GLe1`, `GLe2`, `GLe3` (Green-Lagrange) | `principal_stresses`; `principal_strains` (off by default) |
 
-Not possible: Green-Lagrange principal values `GLe1`.. (use `e1`, which is the
-Green-Lagrange principal strain in a nonlinear analysis), stresses in element coordinates (`s.uu`..), shell forces (`ML`, `FL`), Zienkiewicz-Zhu stresses,
+With Green-Lagrange strain in the solution (nonlinear with large displacements) Mecway
+rewrites `e`, `g`, `e1`..`e3` in a formula to `GLe`, `GLg`, `GLe1`..`GLe3`; the bridge
+then reads the Green-Lagrange values for them too. Shells: the stress and strain symbols
+(`s.xx`, `s1`, `tr`, `e1`, ...) read solid fields; Mecway has no symbols for the shell
+surfaces and does not compute such a formula on shells either.
+Not possible: stresses in element coordinates (`s.uu`..), shell forces (`ML`, `FL`), Zienkiewicz-Zhu stresses,
 external force `FE`, strain energy, electric fields and material properties (`youngsmodulus`
 etc.). Such a formula stays invalid in Mecway; create it again after loading (Mecway then
-computes it). Verification FX-01 .. FX-03 ([`Verification.md`](Verification.md)).
+computes it). Verification FX-01 .. FX-05 ([`Verification.md`](Verification.md)).
 
 | Message | Cause | Solution |
 |---|---|---|

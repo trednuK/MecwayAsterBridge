@@ -704,7 +704,7 @@ Cantilever and frame with and without a Mecway orientation (*orientation vector*
 displacements and σ_xx max/min at the clamp ≤ 1e-7 against Euler-Bernoulli, the frame
 equal to Mecway (≤ 3e-8).
 
-### Result formulas (FX-01 .. FX-03)
+### Result formulas (FX-01 .. FX-05)
 
 Mecway's result formulas (*Solution > Formula*, STAPPENPLAN S33, GitHub issue #8): the
 bridge evaluates them in the job (`bridge_formula`, `aster_results_export._formula_vars`).
@@ -729,6 +729,23 @@ References: the analytical solution, converted to the units of the formula.
   stress*, *principal strain*) when it opens and saves the result.
 - **FX-03** (TH-02a, transient): `t` in min at 10 s and 40 s (0.16667, 0.66667) and
   `(T−300)/max(t,1)` at the surface (2.5 K/s at 40 s). Result: within 1e-7.
+- **FX-04** (principal values of shells, S34b; shell strip of LS-31, quad4, skew in space,
+  tension 600 N and transverse force 10 N): at x = L/2 top σ = N/t + 6M/t² = 52.5 MPa,
+  middle 15 MPa, bottom −22.5 MPa (uniaxial): `principal1u1`, `principal1m1`,
+  `principal3b1`, `trescau1`, `trescab1` within 0.05%, `principal2u1` ≈ 0 (0.04% of σ),
+  `lprincipalstrain1u1` = σ/E, `lprincipalstrain3u1` = −νσ/E (bottom the other way round)
+  within 0.22%; without the field `strain` (the bridge requests `EPSI_ELNO` of the shells
+  itself). Mecway's rule (eigenvalues of the global tensor `stress<ij>u1` per element node,
+  node = mean) on the bridge's own stresses: within 3e-16 relative. **Mecway 34 itself**
+  (headless, internal, same model): the same rule within 3e-13; at x = L/2 the dominant
+  principal values within 0.05% of the bridge, `tresca` and the values ≈ 0 up to 1% of the
+  maximum apart, because Mecway's shell (MITC4) has transverse shear stress at the top and
+  bottom and DKT does not; Mecway recognises the bridge's fields (*principal stress*,
+  *Tresca stress*, *principal strain*, `solution.node_value("principal1u1")`).
+- **FX-05** (Green-Lagrange, S34b; bar of NL-31, hex20, 5% imposed strain, L30):
+  `greenlagrangeprincipalstrain1` and the formulas `GLe1`, `e1` and `e.xx` = (λ² − 1)/2 =
+  0.05125. Result: within 1e-6. Mecway 34 (CCX, headless) on the same model: 0.051248, and
+  it rewrites `e1` to `GLe1`.
 
 Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` leaves out
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static

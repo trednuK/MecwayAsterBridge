@@ -890,26 +890,33 @@ GLOSSARY = OrderedDict([
                        u"Mecway's von Mises failure criterion (tensile "
                        u"strength / von Mises; shells the smallest of top and "
                        u"bottom; factorofsafety).")),
-    ("principal_stresses", ("file", u"Resultaatveld: hoofdspanningen van "
-                            u"volume-elementen (principal1 >= principal2 >= "
-                            u"principal3) en Tresca (principal1 - "
-                            u"principal3), zoals Mecway: per elementknoop "
-                            u"en als knoopgemiddelde. Nodig voor de "
-                            u"formulesymbolen s1, s2, s3, tr. Standaard uit.",
-                            u"Result field: principal stresses of solid "
-                            u"elements (principal1 >= principal2 >= "
-                            u"principal3) and Tresca (principal1 - "
-                            u"principal3), as Mecway: per element node and "
-                            u"as the node average. Needed for the formula "
-                            u"symbols s1, s2, s3, tr. Off by default.")),
-    ("principal_strains", ("file", u"Resultaatveld: hoofdrekken van "
-                           u"volume-elementen (lprincipalstrain1..3, ook "
-                           u"bij Green-Lagrange), zoals Mecway. Nodig voor "
-                           u"de formulesymbolen e1, e2, e3. Standaard uit.",
-                           u"Result field: principal strains of solid "
-                           u"elements (lprincipalstrain1..3, also with "
-                           u"Green-Lagrange), as Mecway. Needed for the "
-                           u"formula symbols e1, e2, e3. Off by default.")),
+    ("principal_stresses", ("file", u"Resultaatveld: hoofdspanningen "
+                            u"(principal1 >= principal2 >= principal3) en "
+                            u"Tresca (principal1 - principal3), zoals "
+                            u"Mecway: per elementknoop en als "
+                            u"knoopgemiddelde; schalen boven/midden/onder "
+                            u"(principal1u1, trescau1, ... m1, b1). Nodig "
+                            u"voor de formulesymbolen s1, s2, s3, tr. "
+                            u"Standaard uit.",
+                            u"Result field: principal stresses (principal1 "
+                            u">= principal2 >= principal3) and Tresca "
+                            u"(principal1 - principal3), as Mecway: per "
+                            u"element node and as the node average; shells "
+                            u"top/middle/bottom (principal1u1, trescau1, "
+                            u"... m1, b1). Needed for the formula symbols "
+                            u"s1, s2, s3, tr. Off by default.")),
+    ("principal_strains", ("file", u"Resultaatveld: hoofdrekken zoals "
+                           u"Mecway (lprincipalstrain1..3; bij "
+                           u"Green-Lagrange greenlagrangeprincipalstrain1..3; "
+                           u"schalen lprincipalstrain1u1 .. b1). Nodig voor "
+                           u"de formulesymbolen e1, e2, e3, GLe1, GLe2, "
+                           u"GLe3. Standaard uit.",
+                           u"Result field: principal strains as Mecway "
+                           u"(lprincipalstrain1..3; with Green-Lagrange "
+                           u"greenlagrangeprincipalstrain1..3; shells "
+                           u"lprincipalstrain1u1 .. b1). Needed for the "
+                           u"formula symbols e1, e2, e3, GLe1, GLe2, GLe3. "
+                           u"Off by default.")),
     ("contact", ("file", u"Resultaatveld: contactdruk (contactpressure, "
                  u"-LAGS_C) en contactstatus (contactstate: 0 open, 1 "
                  u"gesloten, 2 glijdend) op de slave-knopen; niet-lineair "

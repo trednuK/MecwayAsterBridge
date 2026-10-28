@@ -1407,8 +1407,8 @@ def _optional_fields(model_data, fields, quiet=False):
         "shell_forces": bool(gsh),
         "safety_factor": bool(_failure_strengths(model_data)),
         "contact": bool(model_data.get("contacts")),
-        "principal_stresses": bool(g3d),
-        "principal_strains": bool(g3d),
+        "principal_stresses": bool(g3d or gsh),
+        "principal_strains": bool(g3d or gsh),
     }
     out = [f for f in fields if applies.get(f)]
     idle = [f for f in fields if f in applies and not applies[f]]
@@ -1506,15 +1506,33 @@ def _optional_field_blocks(model_data, fields, strain_kind):
                     "NIVE_COUCHE='{2}'))".format(concept, _fmt_groups(gsh),
                                                  level))
         out.append("")
-    elif "principal_strains" in fields and g3d:
-        # Principal strains (S34) need the strain tensor per element node
-        # of the volumes (aster_results_export._principal_vars); without
-        # the field strain only that ELNO field.
-        out += ["# Strain per element node for the principal strains.",
-                "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
-                "DEFORMATION=('{1}_ELNO', ))".format(
-                    _fmt_groups(g3d),
-                    "EPSG" if strain_kind == "EPSG" else "EPSI"), ""]
+    elif "principal_strains" in fields and (g3d or gsh):
+        # Principal strains (S34, shells S34b) need the strain tensor per
+        # element node (aster_results_export._principal_vars /
+        # _shell_principal_vars); without the field strain only the ELNO
+        # field, shells per surface as for strain. EPSI_ELNO ONCE over
+        # volume + shells (CALCULEL2_15, see above).
+        out.append("# Strain per element node for the principal strains.")
+        if strain_kind == "EPSG" and g3d:
+            out.append("res = CALC_CHAMP(reuse=res, RESULTAT=res, "
+                       "GROUP_MA={0}, DEFORMATION=('EPSG_ELNO', ))".format(
+                           _fmt_groups(g3d)))
+            eps_groups = list(gsh)
+        else:
+            eps_groups = list(g3d) + list(gsh)
+        if eps_groups:
+            out.append("res = CALC_CHAMP(reuse=res, RESULTAT=res, "
+                       "GROUP_MA={0}, DEFORMATION=('EPSI_ELNO', ))".format(
+                           _fmt_groups(eps_groups)))
+        for concept, level in (("eps_sup", "SUP"), ("eps_moy", "MOY"),
+                               ("eps_inf", "INF")):
+            if gsh:
+                out.append(
+                    "{0} = POST_CHAMP(RESULTAT=res, GROUP_MA={1}, "
+                    "EXTR_COQUE=_F(NOM_CHAM=('EPSI_ELNO', ), NUME_COUCHE=1, "
+                    "NIVE_COUCHE='{2}'))".format(concept, _fmt_groups(gsh),
+                                                 level))
+        out.append("")
     mods = model_data.get("elset_modelisations", {})
     gd = [g for g in gbeam if mods.get(g) == _GD_BEAM]
     gbeam = [g for g in gbeam if g not in gd]

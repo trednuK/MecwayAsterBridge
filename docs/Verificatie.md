@@ -706,7 +706,7 @@ Uitkragende balk en raamwerk met en zonder Mecway-orientatie (*orientation vecto
 en σ_xx max/min in de inklemming ≤ 1e-7 t.o.v. Euler-Bernoulli, het raamwerk gelijk aan
 Mecway (≤ 3e-8).
 
-### Resultaatformules (FX-01 .. FX-03)
+### Resultaatformules (FX-01 .. FX-05)
 
 De resultaatformules van Mecway (*Solution > Formula*, STAPPENPLAN S33, GitHub-issue #8):
 de bridge rekent ze uit in de job (`bridge_formula`, `aster_results_export._formula_vars`).
@@ -732,6 +732,23 @@ Referenties: de analytische oplossing, omgerekend naar de eenheden van de formul
   opslaat.
 - **FX-03** (TH-02a, transient): `t` in min op 10 s en 40 s (0,16667, 0,66667) en
   `(T−300)/max(t,1)` aan het oppervlak (2,5 K/s op 40 s). Resultaat: binnen 1e-7.
+- **FX-04** (hoofdwaarden van schalen, S34b; schaalstrook van LS-31, quad4, scheef in de
+  ruimte, trek 600 N en dwarskracht 10 N): op x = L/2 boven σ = N/t + 6M/t² = 52,5 MPa,
+  midden 15 MPa, onder −22,5 MPa (eenassig): `principal1u1`, `principal1m1`,
+  `principal3b1`, `trescau1`, `trescab1` binnen 0,05%, `principal2u1` ≈ 0 (0,04% van σ),
+  `lprincipalstrain1u1` = σ/E, `lprincipalstrain3u1` = −νσ/E (onder omgekeerd) binnen 0,22%;
+  zonder het veld `strain` (de bridge vraagt `EPSI_ELNO` van de schalen zelf aan). De regel
+  van Mecway (eigenwaarden van de globale tensor `stress<ij>u1` per elementknoop, knoop =
+  gemiddelde) op de eigen spanningen van de bridge: binnen 3e-16 relatief. **Mecway 34
+  zelf** (headless, intern, zelfde model): dezelfde regel binnen 3e-13; op x = L/2 de
+  dominante hoofdwaarden binnen 0,05% van de bridge, `tresca` en de waarden ≈ 0 tot 1% van
+  het maximum verschillend, omdat Mecway's schaal (MITC4) boven en onder dwarsschuifspanning
+  heeft en DKT niet; Mecway herkent de velden van de bridge (*principal stress*, *Tresca
+  stress*, *principal strain*, `solution.node_value("principal1u1")`).
+- **FX-05** (Green-Lagrange, S34b; staaf van NL-31, hex20, 5% opgelegde rek, L30):
+  `greenlagrangeprincipalstrain1` en de formules `GLe1`, `e1` en `e.xx` = (λ² − 1)/2 =
+  0,05125. Resultaat: binnen 1e-6. Mecway 34 (CCX, headless) op hetzelfde model: 0,051248,
+  en het herschrijft `e1` naar `GLe1`.
 
 Gemeten tijdens de bouw (niet in de regressie): `sqrt(u.x^2+u.y^2+u.z^2)/x` laat de 9
 knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in een

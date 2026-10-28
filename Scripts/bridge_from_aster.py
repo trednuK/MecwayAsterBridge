@@ -198,8 +198,9 @@ RESULT_FIELD_SPECS = OrderedDict([
     ('shell_forces', OrderedDict()),
     ('safety_factor', OrderedDict()),
     # Principal stresses and Tresca / principal strains of volume elements
-    # (S34): computed in the job from SIGM_ELNO / EPSI_ELNO (EPSG_ELNO),
-    # route 'liml' only (aster_results_export._principal_vars).
+    # (S34) and of shells per surface (S34b): computed in the job from
+    # SIGM_ELNO / EPSI_ELNO (EPSG_ELNO), route 'liml' only
+    # (aster_results_export._principal_vars, _shell_principal_vars).
     ('principal_stresses', OrderedDict()),
     ('principal_strains', OrderedDict()),
     ('contact', OrderedDict([

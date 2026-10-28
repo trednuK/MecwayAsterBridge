@@ -31,10 +31,17 @@
 #     displx*stressxx per node);
 #   - a formula with t is not computed in a static/steady solution;
 #   - s1..s3, tr and e1..e3 read Mecway's principal fields principal1..3,
-#     tresca and lprincipalstrain1..3; the bridge writes them with the
-#     result fields principal_stresses / principal_strains (S34). GLe1..3:
-#     not supported (Mecway's own L30 solution with CCX had no separate
-#     Green-Lagrange principal field; e1 is the principal strain there).
+#     tresca and lprincipalstrain1..3 (solids); the bridge writes them with
+#     the result fields principal_stresses / principal_strains (S34).
+#     GLe1..GLe3 read greenlagrangeprincipalstrain1..3 (S34b: Mecway 34's
+#     L30 with CCX writes those). With Green-Lagrange strain in the
+#     solution Mecway rewrites e, g, e1..e3 in a formula to GLe, GLg,
+#     GLe1..3 (aster_results_export._gl_alias does the same);
+#   - shells: Mecway 34 has no formula symbols for the top/middle/bottom
+#     fields (principal1u1, stressxxu1, ...; none in mecway.exe) and its
+#     own solve stores no formula with s.xx, s1, tr or e1 on a shell-only
+#     model (seen headless, S34b); the bridge then has no node variable
+#     either and leaves the formula out.
 # Language as for formulas in loads (bridge_bcs, measured in Mecway 33):
 # + - * / ^ ( ), pi, e, sin, cos, tan, asin, acos, atan, atan2(y,x), log
 # (natural), abs, sqrt, heaviside(x) (0.5 at 0), unittriangle(w,x),
@@ -60,9 +67,9 @@ NONE = ()
 
 # Symbol -> (source, dimension). source: ("coord", i) initial node
 # position, ("time",) the time of the step, or the name of the bridge's
-# node variable (aster_results_export.FIELD_TABLE). Symbols of fields the
-# bridge does not write (principal values, shell/element coordinates,
-# electric, ...) are not in this table.
+# node variable (aster_results_export.FIELD_TABLE, derived fields). Symbols
+# of fields the bridge does not write (element coordinates, electric, ...)
+# are not in this table.
 SYMBOLS = {
     "x": (("coord", 0), LENGTH), "y": (("coord", 1), LENGTH),
     "z": (("coord", 2), LENGTH), "t": (("time",), TIME),
@@ -77,6 +84,9 @@ SYMBOLS = {
     "s3": ("principal3", PRESSURE), "tr": ("tresca", PRESSURE),
     "e1": ("lprincipalstrain1", NONE), "e2": ("lprincipalstrain2", NONE),
     "e3": ("lprincipalstrain3", NONE),
+    "GLe1": ("greenlagrangeprincipalstrain1", NONE),
+    "GLe2": ("greenlagrangeprincipalstrain2", NONE),
+    "GLe3": ("greenlagrangeprincipalstrain3", NONE),
 }
 for _c in "xyz":
     SYMBOLS["u." + _c] = ("displ" + _c, LENGTH)
@@ -105,7 +115,7 @@ for _sym, _var, _dim in (("FI.u", "tensileforce", FORCE),
 # Symbols Mecway knows (formula window, Mecway 34) that the bridge cannot
 # evaluate: a clear message instead of "unknown name".
 UNSUPPORTED = frozenset(
-    ["b", "cdis.c", "cdis.1", "cdis.2", "r.u", "GLe1", "GLe2", "GLe3",
+    ["b", "cdis.c", "cdis.1", "cdis.2", "r.u",
      "Ue", "UE", "V", "I", "qd",
      "dPd.x", "dPd.y", "cstr.1", "cstr.2", "iyy", "izz", "area", "density",
      "perimeter", "poissonratio", "specificheat", "torsionconstant",
@@ -527,6 +537,7 @@ _GROUPS = (("displ", "displacements"), ("rot", "displacements"),
            ("principal", "principal_stresses"),
            ("tresca", "principal_stresses"),
            ("lprincipalstrain", "principal_strains"),
+           ("greenlagrangeprincipalstrain", "principal_strains"),
            ("tensileforce", "beam_forces"), ("shear", "beam_forces"),
            ("torsion", "beam_forces"), ("bendingmom", "beam_forces"))
 

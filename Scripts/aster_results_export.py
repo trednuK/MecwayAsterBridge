@@ -1446,18 +1446,20 @@ def _fos_vars(fields, model, conn, strengths):
 
 
 _PRINCIPAL_SPECS = {
-    # group: ([(result, field, tensor components xx yy zz xy yz xz)],
-    #         Mecway names of the principal values, tresca)
+    # group: ([(result, field, tensor components xx yy zz xy yz xz,
+    #           Mecway names of the principal values)], tresca)
     "principal_stresses": (
         [("res", "SIGM_ELNO", ("SIXX", "SIYY", "SIZZ", "SIXY", "SIYZ",
-                               "SIXZ"))],
-        ("principal1", "principal2", "principal3"), True),
+                               "SIXZ"),
+          ("principal1", "principal2", "principal3"))], True),
     "principal_strains": (
         [("res", "EPSG_ELNO", ("EPXX", "EPYY", "EPZZ", "EPXY", "EPYZ",
-                               "EPXZ")),
+                               "EPXZ"),
+          ("greenlagrangeprincipalstrain1", "greenlagrangeprincipalstrain2",
+           "greenlagrangeprincipalstrain3")),
          ("res", "EPSI_ELNO", ("EPXX", "EPYY", "EPZZ", "EPXY", "EPYZ",
-                               "EPXZ"))],
-        ("lprincipalstrain1", "lprincipalstrain2", "lprincipalstrain3"),
+                               "EPXZ"),
+          ("lprincipalstrain1", "lprincipalstrain2", "lprincipalstrain3"))],
         False),
 }
 
@@ -1471,12 +1473,15 @@ def _principal_vars(fields, model, conn, group):
     stress"); per node the mean of the element-node values of the elements
     at that node (Mecway: within 1e-9 of that mean). Strains: the tensor
     components of EPSI/EPSG_ELNO (Code-Aster: tensor, not engineering
-    shear), Mecway's names lprincipalstrain1..3 also for Green-Lagrange
-    (seen in Mecway's L30 solution with CCX). Stresses from SIGM_ELNO.
+    shear). Green-Lagrange (EPSG, large displacements) under Mecway's
+    names greenlagrangeprincipalstrain1..3 (S34b: Mecway 34's L30 with CCX
+    writes those, also when "principal strain" is requested, and renames
+    the field; their values are the eigenvalues of the Green-Lagrange
+    tensor with gamma/2, within 3e-8). Stresses from SIGM_ELNO.
     """
-    sources, names, with_tresca = _PRINCIPAL_SPECS[group]
+    sources, with_tresca = _PRINCIPAL_SPECS[group]
     comp = None
-    for rkey, field, cmps in sources:
+    for rkey, field, cmps, names in sources:
         if rkey not in fields.results:
             continue
         cand = [_plan_elem(fields, rkey, field, c, "_principal", conn, model)
@@ -1528,6 +1533,68 @@ def _principal_vars(fields, model, conn, group):
                     np.bincount(inv, weights=f(e)) / counts)
         out.append(_Var(name, False, uniq.astype("<i4"), node_get))
         out.append(_Var(name, True, eids, elem_get))
+    return out
+
+
+def _principal_columns(m):
+    """(points, 4) principal values p1 >= p2 >= p3 and p1 - p3 of a
+    (points, 6) tensor xx, yy, zz, xy, yz, zx (tensor shear), or None."""
+    if m is None:
+        return None
+    xx, yy, zz, xy, yz, zx = [m[:, k] for k in range(6)]
+    t = np.stack([np.stack([xx, xy, zx], -1), np.stack([xy, yy, yz], -1),
+                  np.stack([zx, yz, zz], -1)], -2)
+    e = np.linalg.eigvalsh(t)[:, ::-1]
+    return np.column_stack([e, e[:, 0] - e[:, 2]])
+
+
+def _shell_principal_vars(fields, model, conn, wanted, xyz, vectors,
+                          elset_of, frames):
+    """
+    Principal stresses, Tresca and principal strains of shells on the top,
+    middle and bottom surface as Mecway computes them (S34b; measured
+    headless with Mecway 34, internal solver, quad4 and quad8 strip skew in
+    space with membrane, bending and in-plane shear): Mecway's names
+    principal1u1 .. principal3b1, trescau1/m1/b1 and lprincipalstrain1u1 ..
+    lprincipalstrain3b1 (layer 1, like stress<ij>u1). Per element node the
+    eigenvalues of the global 3 x 3 tensor of that surface (stress<ij>u1,
+    strain with gamma/2; the zero normal stress and the zero thickness
+    strain are part of it, so one of the three values is about 0),
+    descending; tresca = p1 - p3; per node the mean of the element-node
+    values (Mecway: equal within 3e-13 relative, the eigenvalues of the
+    averaged tensor differ by up to 16 %). The eigenvalues do not depend on
+    the in-plane axes, so the shell reference vector does not matter; SUP
+    = side of +n = Mecway's top, as for the stresses. Sources: SIGM_ELNO
+    of res_sup/res_moy/res_inf (always there for shells) and EPSI_ELNO of
+    eps_sup/eps_moy/eps_inf (bridge_to_aster: also without the field
+    strain when principal_strains is chosen).
+    """
+    specs = []
+    if "principal_stresses" in wanted:
+        specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _SIGM_IJ,
+                   ["principal{0}{1}1".format(k, suf) for k in (1, 2, 3)] +
+                   ["tresca{0}1".format(suf)])
+                  for lvl, suf in _SHELL_LEVELS]
+    if "principal_strains" in wanted:
+        specs += [("eps_" + lvl, "EPSI_ELNO", "EPXX", _EPSI_IJ,
+                   ["lprincipalstrain{0}{1}1".format(k, suf)
+                    for k in (1, 2, 3)])
+                  for lvl, suf in _SHELL_LEVELS]
+    out = []
+    for rkey, field, cmp0, cmap, names in specs:
+        if rkey not in fields.results:
+            continue
+        plan = _shell_points(fields, rkey, field, cmp0, conn, model, xyz,
+                             vectors, elset_of, frames)
+        if plan is None:
+            continue
+
+        def compute(fields, plan=plan, rkey=rkey, field=field, cmap=cmap):
+            return lambda: _principal_columns(
+                _shell_tensor(fields, plan, rkey, field, cmap))
+        out += _point_vars(plan, [(name, k, 1.0) for k, name in
+                                  enumerate(names)],
+                           compute, (rkey, field, "principal"))
     return out
 
 
@@ -1595,7 +1662,8 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
     for group in ("principal_stresses", "principal_strains"):
         if group in wanted:
             out += _principal_vars(fields, model, conn, group)
-    shell_groups =[g for g in ("shell_stresses", "strain", "shell_forces")
+    shell_groups = [g for g in ("shell_stresses", "strain", "shell_forces",
+                                "principal_stresses", "principal_strains")
                     if g in wanted]
     if not shell_groups:
         return out
@@ -1604,6 +1672,8 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
     vectors = shell_vectors or {}
     elset_of = _elset_of(model)
     frames = {}
+    out += _shell_principal_vars(fields, model, conn, wanted, xyz, vectors,
+                                 elset_of, frames)
     specs = []
     if "shell_stresses" in wanted:
         specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _SIGM_IJ, "stress",
@@ -2285,6 +2355,22 @@ def _stiffness_scales(res, rigi_geo, values):
     return out
 
 
+def _gl_alias(source):
+    """Green-Lagrange variable for a small-strain one (lstrain<ij> ->
+    greenlagrangestrain<ij>, lprincipalstrain<k> ->
+    greenlagrangeprincipalstrain<k>), else None. Mecway 34 rewrites e, g,
+    e1..e3 in formulas to GLe, GLg, GLe1..GLe3 when its solution has
+    Green-Lagrange strain (message in mecway.exe; seen headless S34b: an
+    L30 with CCX stored the formula e1 as GLe1, values equal to
+    greenlagrangeprincipalstrain1); here the same when the result only has
+    the Green-Lagrange variable."""
+    for small, large in (("lprincipalstrain", "greenlagrangeprincipalstrain"),
+                         ("lstrain", "greenlagrangestrain")):
+        if source.startswith(small):
+            return large + source[len(small):]
+    return None
+
+
 def _formula_vars(formulas, variables, model, times, fields):
     """Node variables for Mecway's result formulas (S33): plans of
     bridge_formula.plan (bridge_from_liml). Each symbol is converted from SI
@@ -2320,6 +2406,8 @@ def _formula_vars(formulas, variables, model, times, fields):
                 deps[sym] = ("coord", int(source[1]), a, b)
             elif source in nodes:
                 deps[sym] = ("var", nodes[source], a, b)
+            elif _gl_alias(source) in nodes:
+                deps[sym] = ("var", nodes[_gl_alias(source)], a, b)
             else:
                 missing.append(source)
         if missing:
