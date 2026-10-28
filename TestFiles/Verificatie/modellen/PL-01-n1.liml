@@ -1,0 +1,102 @@
+<liml version="33">
+  <analysis type="S20" />
+  <node nid="1" x="0.01" y="0" z="0" />
+  <node nid="2" x="0.02" y="0" z="0" />
+  <node nid="3" x="0.03" y="0" z="0" />
+  <node nid="4" x="0.029903926402" y="0.00722545161008" z="0" />
+  <node nid="5" x="0.0296193976626" y="0.0144134171618" z="0" />
+  <node nid="6" x="0.0194290964938" y="0.00912012574274" z="0" />
+  <node nid="7" x="0.00923879532511" y="0.00382683432365" z="0" />
+  <node nid="8" x="0.00980785280403" y="0.00195090322016" z="0" />
+  <node nid="9" x="0.0291573480615" y="0.0215278511651" z="0" />
+  <node nid="10" x="0.0285355339059" y="0.0285355339059" z="0" />
+  <node nid="11" x="0.0178033008589" y="0.0178033008589" z="0" />
+  <node nid="12" x="0.00707106781187" y="0.00707106781187" z="0" />
+  <node nid="13" x="0.00831469612303" y="0.0055557023302" z="0" />
+  <node nid="14" x="0.04" y="0" z="0" />
+  <node nid="15" x="0.05" y="0" z="0" />
+  <node nid="16" x="0.05" y="0.0125" z="0" />
+  <node nid="17" x="0.05" y="0.025" z="0" />
+  <node nid="18" x="0.0398096988313" y="0.0197067085809" z="0" />
+  <node nid="19" x="0.05" y="0.0375" z="0" />
+  <node nid="20" x="0.05" y="0.05" z="0" />
+  <node nid="21" x="0.039267766953" y="0.039267766953" z="0" />
+  <node nid="22" x="0.0215278511651" y="0.0291573480615" z="0" />
+  <node nid="23" x="0.0144134171618" y="0.0296193976626" z="0" />
+  <node nid="24" x="0.00912012574274" y="0.0194290964938" z="0" />
+  <node nid="25" x="0.00382683432365" y="0.00923879532511" z="0" />
+  <node nid="26" x="0.0055557023302" y="0.00831469612303" z="0" />
+  <node nid="27" x="0.00722545161008" y="0.029903926402" z="0" />
+  <node nid="28" x="3.06161699787e-19" y="0.03" z="0" />
+  <node nid="29" x="4.5924254968e-19" y="0.02" z="0" />
+  <node nid="30" x="6.12323399574e-19" y="0.01" z="0" />
+  <node nid="31" x="0.00195090322016" y="0.00980785280403" z="0" />
+  <node nid="32" x="0.0375" y="0.05" z="0" />
+  <node nid="33" x="0.025" y="0.05" z="0" />
+  <node nid="34" x="0.0197067085809" y="0.0398096988313" z="0" />
+  <node nid="35" x="0.0125" y="0.05" z="0" />
+  <node nid="36" x="0" y="0.05" z="0" />
+  <node nid="37" x="1.53080849893e-19" y="0.04" z="0" />
+  <node nid="38" x="0.075" y="0" z="0" />
+  <node nid="39" x="0.1" y="0" z="0" />
+  <node nid="40" x="0.1" y="0.0125" z="0" />
+  <node nid="41" x="0.1" y="0.025" z="0" />
+  <node nid="42" x="0.075" y="0.025" z="0" />
+  <node nid="43" x="0.1" y="0.0375" z="0" />
+  <node nid="44" x="0.1" y="0.05" z="0" />
+  <node nid="45" x="0.075" y="0.05" z="0" />
+  <node nid="46" x="0.125" y="0" z="0" />
+  <node nid="47" x="0.15" y="0" z="0" />
+  <node nid="48" x="0.15" y="0.0125" z="0" />
+  <node nid="49" x="0.15" y="0.025" z="0" />
+  <node nid="50" x="0.125" y="0.025" z="0" />
+  <node nid="51" x="0.15" y="0.0375" z="0" />
+  <node nid="52" x="0.15" y="0.05" z="0" />
+  <node nid="53" x="0.125" y="0.05" z="0" />
+  <elset name="Plaat" material="Staal">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="7 6 5 9 10 11 12 13" />
+    <elem eid="3" shape="quad8" nodes="3 14 15 16 17 18 5 4" />
+    <elem eid="4" shape="quad8" nodes="5 18 17 19 20 21 10 9" />
+    <elem eid="5" shape="quad8" nodes="12 11 10 22 23 24 25 26" />
+    <elem eid="6" shape="quad8" nodes="25 24 23 27 28 29 30 31" />
+    <elem eid="7" shape="quad8" nodes="10 21 20 32 33 34 23 22" />
+    <elem eid="8" shape="quad8" nodes="23 34 33 35 36 37 28 27" />
+    <elem eid="9" shape="quad8" nodes="15 38 39 40 41 42 17 16" />
+    <elem eid="10" shape="quad8" nodes="17 42 41 43 44 45 20 19" />
+    <elem eid="11" shape="quad8" nodes="39 46 47 48 49 50 41 40" />
+    <elem eid="12" shape="quad8" nodes="41 50 49 51 52 53 44 43" />
+  </elset>
+  <symmetry selection="SymX"><x>1</x><y>0</y><z>0</z></symmetry>
+  <symmetry selection="SymY"><x>0</x><y>1</y><z>0</z></symmetry>
+  <traction selection="Trek"><x>1e+08 Pa</x><y>0 Pa</y><z>0 Pa</z></traction>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <mat name="Staal">
+    <geometric type="Plate" thickness="1 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="SymX">
+    <face eid="6" faceid="3" />
+    <face eid="8" faceid="3" />
+  </faceselection>
+  <faceselection name="SymY">
+    <face eid="1" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="9" faceid="1" />
+    <face eid="11" faceid="1" />
+  </faceselection>
+  <faceselection name="Trek">
+    <face eid="11" faceid="2" />
+    <face eid="12" faceid="2" />
+  </faceselection>
+  <nodeselection name="SymXn">
+    <node nid="28" />
+    <node nid="29" />
+    <node nid="30" />
+    <node nid="36" />
+    <node nid="37" />
+  </nodeselection>
+</liml>

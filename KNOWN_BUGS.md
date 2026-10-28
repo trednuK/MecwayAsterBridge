@@ -143,6 +143,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    20.90 (its rigid knot at the joint is linear); Mecway with solver CCX gives no buckling
    solution for beams headless. Nothing to fix in the bridge.
 
+122\. **2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is
+   right** (confirmed, Mecway 34 headless and Code-Aster 17.4; `bridge_plane.py`, verification
+   PL-03). Quarter ring a = 0.1 m, b = 0.2 m in Static 2D, plane strain, t = 10 mm, quad8 4 × 8
+   with the midside nodes on the arcs, pressure 100 MPa on the inner arc. The resultant of a
+   uniform pressure between (a, 0) and (0, a) is p·a·t = 100000 N per direction, whatever the
+   shape of the edge: the bridge (`PRES_REP` on `SEG3`) gives exactly that, Mecway's reactions
+   add up to 100161 N (+0.16%); u_r at the inner wall bridge −0.005%, Mecway −0.18% against
+   Lamé. With straight edges (axisymmetric ring PL-04, plate PL-01 with traction on a straight
+   edge) the bridge equals Mecway (≤ 1e-11). Mecway's example PressureVesselAxiSymmetric
+   (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
+   to fix in the bridge; do not compare such models with Mecway.
+
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
@@ -1036,3 +1048,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    and `.`); a unit Mecway does not know counts as SI in Mecway, the bridge may know it (e.g.
    `W/mm2`: Mecway SI, the bridge 1e-6). Mecway writes only units from its own list, so this
    only matters for hand-edited files.
+
+123\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a). Translated:
+   Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in linear static
+   (`lin_static_3d`), plane elements only, one thickness and one type per model; fixed, pinned,
+   displacement along X/Y, symmetry with normal X/Y, force (nodes, edges), pressure and
+   traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)
+   ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: Dynamic
+   Response 2D/Axisymmetric (D20, DA0) and Acoustic Resonance 2D (A20) (ERROR, steps S16b,
+   S16d), beams/trusses/springs in S20, several thicknesses, other loads and constraints
+   (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
+   constraint equations, couplings, contact, point masses, temperatures), the error estimator
+   (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,
+   frequency, buckling or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
+   S30; thermal 2D is made of shells, `bridge_thermal`).

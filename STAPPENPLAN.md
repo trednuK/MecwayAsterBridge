@@ -47,7 +47,11 @@ S7, S8, S5, S9).
 | S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | open | – | chosen by the user 15 Oct (C1) |
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | open | – | chosen by the user 15 Oct (C8) |
-| S16 | 2D and axisymmetric analyses (S20, D20, SA0, also thermal and acoustics 2D) | open | – | chosen by the user 15 Oct (C9) |
+| S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
+| S16b | 2D dynamic response (Mecway D20, DA0) | open | S16a | split off from S16 (28 Oct 2026); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
+| S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
+| S16d | Acoustic Resonance 2D (Mecway A20, `2D_FLUIDE`) | open | S16a | split off from S16 (28 Oct 2026) |
+| S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 123 |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | open | – | chosen by the user 15 Oct (C10) |
 | S18 | Test new Code-Aster version (18) | later | Code-Aster 18 for Windows available | version warning and procedure done (`bridge_version.py`, docs/Na_een_update.md) |
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | open | after the release of 16 Oct 2026 | chosen by the user 16 Oct (estimate 3-5 h) |
@@ -115,7 +119,7 @@ Code-Aster: the catalogue (`…\17.4\lib\aster\code_aster\Cata\Commands\*.py`), 
 (v17.4 site; locally only v14/v15 as background) and the test cases in
 `%LOCALAPPDATA%\code_aster\v2025\17.4\share\aster\tests` (run:
 `run_aster.bat --ctest <naam>.export`). **Test cases are a syntax source; the
-bridge verification is always 3D** (the bridge has no 2D/AXIS, `MECWAY_ANALYSIS_TYPES`).
+bridge verification is 3D**, except the 2D static analyses S20/SA0 (S16a, family PL).
 Back up behaviour in comments with a source, otherwise "NOT verified" (AGENTS.md).
 
 ### C. Build
@@ -1243,6 +1247,53 @@ which loads/conditions exist in 2D, Mecway's field names for 2D/axisymmetric (ho
 **Done when:** plate with a hole in plane stress (Kt), thick-walled cylinder axisymmetric (Lamé) and a
 2D dynamic case within the tolerances of their 3D counterparts and equal to Mecway headless;
 regression D.5. May be done in sub-steps (S16a static, S16b dynamic/thermal/acoustics).
+**Status:** S16a done (28 Oct 2026); split off: S16b (D20/DA0), S16c (dropped, no thermal 2D in
+Mecway), S16d (A20), S16e (2D extensions).
+**Findings S16a (Mecway 34, headless: `mw_solve.py`, a safe runner on own PIDs, `mw.save_as`;
+no GUI):**
+- Analysis codes: S20 = *Static 2D*, SA0 = *Static Axisymmetric*, D20 = *Dynamic Response 2D*
+  (Samples/PandSWaves), DA0 = *Dynamic Response Axisymmetric* (solved headless with time
+  steps), A20 = *Acoustic Resonance 2D*. V20 is legacy: Mecway 34 solves it as V30 (the
+  solution file says V30); B20/T20/L20 become S30. No thermal, frequency, buckling or
+  nonlinear 2D type.
+- Elements: tri3/tri6/quad4/quad8 in the XY plane (Z ignored), same `<elem>` as shells;
+  faceid 1..4 = the edges corner k -> k+1 (`mw.face_nodes` in S20/SA0 gives corner, mid,
+  corner; 5/6 = the face). Thickness: the material's `<geometric type="Plate" thickness>`;
+  plane strain adds `planestrain="1"` (seen by importing CPS4/CPE4 from a .inp). S20 without
+  a thickness: no solution in Mecway; SA0 with a thickness: no solution either.
+- Mecway's forces, gravity and reactions are for the whole thickness t (also in plane
+  strain) and for 360 degrees in SA0 (measured with pressure, nodal force, edge force,
+  traction, gravity, centrifugal). Code-Aster: per unit thickness (measured) and per radian
+  (U4.44.01 §3.5): the bridge divides `FORCE_NODALE` by t or 2 pi, converts an edge force to
+  `FORCE_CONTOUR` = F / (L t) or F / (2 pi int r dl), and multiplies `REAC_NODA` back
+  (`aster_results_export`, `plane=`). `MASS_INER` of `AXIS` is already 360 degrees.
+- Result names (Mecway's own S20/SA0 solution): `displx/disply/displmag` (no `displz`),
+  `reactionforcex/y/mag`, `stressxx..stresszx` (yz = zx = 0; `stresszz` = 0, nu (sxx + syy)
+  or the hoop stress), `vonmises`, `principal1..3`, `tresca` (3D eigenvalues); node and element
+  node; no strain field in 2D. The bridge writes the same; after opening a bridge result Mecway
+  adds the items displacement, stress, von Mises stress, reaction force, principal stress, Tresca
+  stress, and `solution.node_value` reads the values.
+- Built: `Scripts/bridge_plane.py` (modelisations and checks, 2D loads and constraints,
+  factors) with hooks in `bridge_from_liml` (before STEP 4, `planestrain`), `bridge_mesh`
+  (`convert_bc`, `finish_bcs`), `bridge_to_aster` (skin modelisation, plane modelisations
+  post-processed as volumes, `FORCE_CONTOUR` its own load, export/static-check arguments, no
+  error estimator) and `aster_results_export` (`plane=`: plane cells as continuum elements,
+  reactions x factor, stressyz/zx = 0, magnitudes without Z, principal values with the
+  out-of-plane shears 0). S20/SA0 -> `lin_static_3d` in `MECWAY_ANALYSIS_TYPES`.
+- Verification (family PL, `tests_vlak_2d.py`): PL-01 Kt in plane stress as AD-01 (n = 16
+  −0.79%, tolerance 2%), PL-02 plane strain, PL-03 Lamé plane strain (n = 8 the same
+  numbers as LS-04 hex20: u_r −0.001%, sigma_theta −0.18%, sigma_z +0.42%), PL-04 Lamé
+  axisymmetric (sigma_r at the loaded wall converges slower: n = 8 −0.97%, tolerance 1.2%),
+  PL-05/PL-06 every load type with the reaction sum and the mass exact; displacements equal to
+  Mecway's own solution (≤ 1e-11) in PL-01, PL-02, PL-04 … PL-06. All four element shapes equal
+  to Mecway (cantilever, ≤ 1e-11; Mecway's quad4 in 2D is a plain bilinear element).
+- Found: Mecway's pressure on curved quadratic edges has a resultant 0.16% too large
+  (KNOWN_BUGS 122, PL-03); nodal stresses differ from Mecway where the stress varies strongly
+  (other extrapolation, KNOWN_BUGS 3). Two `FORCE_CONTOUR` on one edge in one
+  `AFFE_CHAR_MECA` kept only the last (fixed: own load each).
+- Open: GUI run in Mecway 34 (open a PL model, run with `auto`, look at the contour of
+  `stresszz`); whether Mecway's *in-plane principal stress* option (`principal1plane` in
+  mecway.exe) needs other fields.
 
 ### S17 – Loads on beam side faces and hydrostatic pressure on shell edges
 **Goal:** the two open items of KNOWN_BUGS 5: pressure/traction on the side face of a beam (Mecway

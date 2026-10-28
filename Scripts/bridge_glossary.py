@@ -47,6 +47,19 @@ GLOSSARY = OrderedDict([
     ("S30", ("mecway", u"Mecway: statisch 3D (lineair). Bij 'auto' -> "
              u"lin_static_3d.",
              u"Mecway: static 3D (linear). With 'auto' -> lin_static_3d.")),
+    ("S20", ("mecway", u"Mecway: Static 2D, vlakke elementen in het XY-vlak; "
+             u"vlakke spanning (materiaal met een dikte, C_PLAN) of vlakke "
+             u"rek (plane strain, D_PLAN). Bij 'auto' -> lin_static_3d "
+             u"(bridge_plane).",
+             u"Mecway: Static 2D, plane elements in the XY plane; plane "
+             u"stress (material with a thickness, C_PLAN) or plane strain "
+             u"(D_PLAN). With 'auto' -> lin_static_3d (bridge_plane).")),
+    ("SA0", ("mecway", u"Mecway: Static Axisymmetric, Y = as, X = straal "
+             u"(AXIS); stresszz is de tangentiele spanning, reacties voor "
+             u"360 graden. Bij 'auto' -> lin_static_3d.",
+             u"Mecway: Static Axisymmetric, Y = axis, X = radius (AXIS); "
+             u"stresszz is the hoop stress, reactions for 360 degrees. "
+             u"With 'auto' -> lin_static_3d.")),
     ("L30", ("mecway", u"Mecway: niet-lineair statisch 3D (plasticiteit, "
              u"contact, grote verplaatsingen). Bij 'auto' -> "
              u"nonlin_static_3d.",
@@ -99,15 +112,19 @@ GLOSSARY = OrderedDict([
              u"translated.")),
     # --- analyses of the bridge ---
     ("auto", ("analysis", u"De analyse volgt het analysetype van het "
-              u"Mecway-model (S30, L30, D30, D31, T30, T31, V30, B30, A30). Andere "
+              u"Mecway-model (S30, S20, SA0, L30, D30, D31, T30, T31, V30, B30, "
+              u"A30). Andere "
               u"typen stoppen de bridge met een melding.",
               u"The analysis follows the analysis type of the Mecway model "
-              u"(S30, L30, D30, D31, T30, T31, V30, B30, A30). Other types stop the "
+              u"(S30, S20, SA0, L30, D30, D31, T30, T31, V30, B30, A30). Other "
+              u"types stop the "
               u"bridge with a message.")),
     ("lin_static_3d", ("analysis", u"Statisch, lineair (MECA_STATIQUE). "
-                       u"Geen contact, gap, tension/compression only.",
+                       u"Geen contact, gap, tension/compression only. Ook "
+                       u"Mecway's Static 2D en Static Axisymmetric.",
                        u"Static, linear (MECA_STATIQUE). No contact, gap, "
-                       u"tension/compression only.")),
+                       u"tension/compression only. Also Mecway's Static 2D "
+                       u"and Static Axisymmetric.")),
     ("nonlin_static_3d", ("analysis", u"Niet-lineair statisch "
                           u"(STAT_NON_LINE): plasticiteit, contact, grote "
                           u"verplaatsingen, bezwijken; in stappen tot de "

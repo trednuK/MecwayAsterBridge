@@ -1,0 +1,102 @@
+<liml version="33">
+  <analysis type="SA0" />
+  <node nid="1" x="0.1" y="0" z="0" />
+  <node nid="2" x="0.1125" y="0" z="0" />
+  <node nid="3" x="0.125" y="0" z="0" />
+  <node nid="4" x="0.125" y="0.005" z="0" />
+  <node nid="5" x="0.125" y="0.01" z="0" />
+  <node nid="6" x="0.1125" y="0.01" z="0" />
+  <node nid="7" x="0.1" y="0.01" z="0" />
+  <node nid="8" x="0.1" y="0.005" z="0" />
+  <node nid="9" x="0.125" y="0.015" z="0" />
+  <node nid="10" x="0.125" y="0.02" z="0" />
+  <node nid="11" x="0.1125" y="0.02" z="0" />
+  <node nid="12" x="0.1" y="0.02" z="0" />
+  <node nid="13" x="0.1" y="0.015" z="0" />
+  <node nid="14" x="0.1375" y="0" z="0" />
+  <node nid="15" x="0.15" y="0" z="0" />
+  <node nid="16" x="0.15" y="0.005" z="0" />
+  <node nid="17" x="0.15" y="0.01" z="0" />
+  <node nid="18" x="0.1375" y="0.01" z="0" />
+  <node nid="19" x="0.15" y="0.015" z="0" />
+  <node nid="20" x="0.15" y="0.02" z="0" />
+  <node nid="21" x="0.1375" y="0.02" z="0" />
+  <node nid="22" x="0.1625" y="0" z="0" />
+  <node nid="23" x="0.175" y="0" z="0" />
+  <node nid="24" x="0.175" y="0.005" z="0" />
+  <node nid="25" x="0.175" y="0.01" z="0" />
+  <node nid="26" x="0.1625" y="0.01" z="0" />
+  <node nid="27" x="0.175" y="0.015" z="0" />
+  <node nid="28" x="0.175" y="0.02" z="0" />
+  <node nid="29" x="0.1625" y="0.02" z="0" />
+  <node nid="30" x="0.1875" y="0" z="0" />
+  <node nid="31" x="0.2" y="0" z="0" />
+  <node nid="32" x="0.2" y="0.005" z="0" />
+  <node nid="33" x="0.2" y="0.01" z="0" />
+  <node nid="34" x="0.1875" y="0.01" z="0" />
+  <node nid="35" x="0.2" y="0.015" z="0" />
+  <node nid="36" x="0.2" y="0.02" z="0" />
+  <node nid="37" x="0.1875" y="0.02" z="0" />
+  <elset name="Ring" material="Staal">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="7 6 5 9 10 11 12 13" />
+    <elem eid="3" shape="quad8" nodes="3 14 15 16 17 18 5 4" />
+    <elem eid="4" shape="quad8" nodes="5 18 17 19 20 21 10 9" />
+    <elem eid="5" shape="quad8" nodes="15 22 23 24 25 26 17 16" />
+    <elem eid="6" shape="quad8" nodes="17 26 25 27 28 29 20 19" />
+    <elem eid="7" shape="quad8" nodes="23 30 31 32 33 34 25 24" />
+    <elem eid="8" shape="quad8" nodes="25 34 33 35 36 37 28 27" />
+  </elset>
+  <displacement selection="Onder"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <force selection="Bovenn"><x>0 N</x><y>1000 N</y><z>0 N</z></force>
+  <force selection="Boven"><x>0 N</x><y>2000 N</y><z>0 N</z></force>
+  <traction selection="Buiten"><x>1e+06 Pa</x><y>0 Pa</y><z>0 Pa</z></traction>
+  <gravity><x>0 m/s²</x><y>9.81 m/s²</y><z>0 m/s²</z></gravity>
+  <centrifugal><x>0 rad/s</x><y>100 rad/s</y><z>0 rad/s</z></centrifugal>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7800 kg/m&#179;" />
+  </mat>
+  <faceselection name="Onder">
+    <face eid="1" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="5" faceid="1" />
+    <face eid="7" faceid="1" />
+  </faceselection>
+  <faceselection name="Boven">
+    <face eid="2" faceid="3" />
+    <face eid="4" faceid="3" />
+    <face eid="6" faceid="3" />
+    <face eid="8" faceid="3" />
+  </faceselection>
+  <faceselection name="Buiten">
+    <face eid="7" faceid="2" />
+    <face eid="8" faceid="2" />
+  </faceselection>
+  <nodeselection name="Ondern">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="22" />
+    <node nid="23" />
+    <node nid="30" />
+    <node nid="31" />
+  </nodeselection>
+  <nodeselection name="Bovenn">
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="20" />
+    <node nid="21" />
+    <node nid="28" />
+    <node nid="29" />
+    <node nid="36" />
+    <node nid="37" />
+  </nodeselection>
+</liml>

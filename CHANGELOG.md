@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **2D and axisymmetric static analyses (STAPPENPLAN S16a)**: Mecway's *Static 2D* (S20) and
+  *Static Axisymmetric* (SA0) are now translated to Code-Aster `MECA_STATIQUE` with
+  `C_PLAN` (plane stress, the material's *Shell/membrane* thickness), `D_PLAN` (with *plane
+  strain*) or `AXIS` (Y = axis); `auto` chooses `lin_static_3d`. Loads: force on nodes and
+  edges, pressure and traction on edges, gravity, centrifugal force; constraints: fixed,
+  pinned, displacement along X/Y, symmetry with normal X/Y. Forces and reactions are for the
+  whole thickness or 360 degrees, as in Mecway (Code-Aster computes per unit thickness and per
+  radian). Results come back under Mecway's own names (`stresszz` = hoop stress in SA0), and
+  Mecway recognises them. Displacements and reactions equal to Mecway's own solution
+  (≤ 1e-11); Kt of a plate with a hole and Lamé within the tolerances of the 3D cases
+  (verification PL-01 … PL-06). Dynamic and acoustic 2D (D20, DA0, A20), beams in 2D and
+  several thicknesses give an ERROR (KNOWN_BUGS 123). New document *2D: plane stress, plane
+  strain, axisymmetric*.
+
 ## V2026.5 – 28 October 2026
 
 Result formulas computed by the bridge (issue #8), principal stresses and strains, acceleration

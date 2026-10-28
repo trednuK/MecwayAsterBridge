@@ -27,7 +27,9 @@ ignored with only an INFO, as Mecway itself does.
 | B30 Buckling | Yes | `buckling_3d` (`CALC_MODES` `MODE_FLAMB`) | Mecway's *Shift point* is not used; negative buckling factors too (KB46). See [`Modal_and_buckling.md`](Modal_and_buckling.md). |
 | T30 / T31 Thermal | Yes | `ther_3d` (`THER_LINEAIRE` / `THER_NON_LINE`) | See [`Thermal.md`](Thermal.md). Transient scheme KB14. |
 | A30 Acoustic Resonance 3D | Yes | `acoustic_modes_3d`; with a source `acoustic_harm_3d` | KB55, KB57; [`Acoustics.md`](Acoustics.md). |
-| 2D and axisymmetric (e.g. S20, SA0, D20, A20) | No | – | The run stops ("analysis type is not supported"). Alternative: model in 3D, e.g. a slice with symmetry. |
+| S20 Static 2D (plane stress, plane strain) | Partly | `lin_static_3d` (`MECA_STATIQUE`, `C_PLAN`/`D_PLAN`) | Plane elements only, one thickness and type per model; loads and constraints: [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.1, §3 (KB123). Verification PL-01 … PL-03, PL-05. |
+| SA0 Static Axisymmetric | Partly | `lin_static_3d` (`MECA_STATIQUE`, `AXIS`) | As S20; Y = axis, `stresszz` = hoop stress, reactions for 360 degrees (KB123). Verification PL-04, PL-06. |
+| D20, DA0 Dynamic Response 2D / Axisymmetric, A20 Acoustic Resonance 2D | No | – | ERROR (KB123). Alternative: model in 3D, e.g. a slice with symmetry. |
 | E30 DC Current Flow | No | – | The run stops. |
 | Electrostatics and piezoelectricity (in S30) | No | – | Electric loads are skipped; a piezo or matrix material stops the run (§5). |
 | no Mecway type | – | `harmonic_3d`, `spectrum_3d` (choose it yourself) | Extra analyses of the bridge: [`Mode_superposition.md`](Mode_superposition.md), [`Response_spectrum.md`](Response_spectrum.md). |
@@ -114,7 +116,7 @@ Bonded contact per combination (slave on master):
 | spring, damper, gap (line2) | Yes | `DIS_T` (gap: `DIS_CHOC`) | Along the element's own axis. Gap nonlinear only (KB23); springs/dampers not compared with Mecway (KB47). |
 | tension only (line2, line3) | Partly | `CABLE` | Nonlinear only; compressive stiffness 1e-4 E (KB23). Line3 split into two SEG2 cells like truss line3 (LS-54b, LS-54c; Mecway 34 gave no solution headless for tension only). |
 | elements of different dimension in one component | Partly | – | Only the highest dimension is modelled (ERROR). Split the component. |
-| plane, axisymmetric (2D) | No | – | Only in 2D analyses (§1). |
+| plane, axisymmetric (2D): tri3, tri6, quad4, quad8 | Yes | `C_PLAN`, `D_PLAN`, `AXIS` | Only in S20 and SA0 (§1); displacements equal to Mecway, also quad4 (no incompatible modes in Mecway's 2D). [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md). |
 | shells in a thermal analysis | Partly | `PLAN` with a thickness factor | Only shells in parallel planes (KB15); others: No (KB16). |
 | fin, fluid network element, resistor | No | – | Thermal 1D and DC current: KB16. |
 | Element offset (shell, beam) | Yes | DKT/DST: `COQUE` `EXCENTREMENT` (+ `INER_ROTA`); COQUE_3D and beams: element on its own nodes + rigid arm (`LIAISON_DDL`) | Shell: *Element coordinates*, only W counts (as in Mecway; u/v have no effect there either). Beam: *Global coordinates* x/y/z (u/v/w on a beam: no effect in Mecway, WARNING). Displacement, rotation and reaction at the Mecway nodes; stresses of the offset element shown at those nodes, also as element values (LS-65). In all mechanical analyses (Mecway: static only), not in the thermal → mechanical chain (WARNING, KB64). Rigid arm: small rotations, also with `GROT_GDEP` (WARNING for offset shells, KB108). A node with a value of its own (other element) keeps it; the stress of the offset element does not count there (KB108). A load on a face selection on edges of offset shells is applied at the nodes by the bridge, at the offset edge by Mecway (WARNING, KB108). A flexible joint on an offset beam element: in linear static and modal at the end of the arm, between the offset point and the element, as in Mecway (LS-52); elsewhere not translated (WARNING, KB108); bonded contact on offset shells: WARNING (KB108). Verification LS-60–67, LS-52. |
@@ -137,7 +139,7 @@ Bonded contact per combination (slave on master):
 | Speed of sound (acoustics) | Yes | Media with different density: No (KB55, KB59). |
 | OpenRadioss law `PLAS_TAB` | Partly | Fields not translated: KB34. Law `VOID`: elements left out (reported); other laws: No. |
 | Section circular and rectangular (solid and hollow), General section, I, T, L, C | Yes | Mecway's *Stress recovery point* is not used. Other geometry types: No (WARNING). |
-| Plate thickness (Plate) | Yes | |
+| Plate thickness (Plate) | Yes | Shells; in S20 the thickness of the plane elements, with *plane strain* `D_PLAN`. |
 
 ## 6. Results back in Mecway
 

@@ -734,6 +734,42 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
+### 2D and axisymmetric (PL-01 … PL-06)
+
+Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`) and *Static Axisymmetric* (SA0, `AXIS`)
+(STAPPENPLAN S16a, `bridge_plane`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md)).
+The 3D counterparts AD-01 (Kt) and LS-04 (Lamé) give the references and the tolerances;
+"= Mecway" is Mecway 34's own S20/SA0 solution of the same model (headless, tolerance 1e-6).
+
+- **PL-01** (plate with a hole, plane stress, t = 1 mm, quad8, the geometry of AD-01,
+  symmetry x = 0 and y = 0, traction 100 MPa): Kt_n against Peterson (2.519) −27.7 /
+  −14.9 / −6.8 / −2.6 / −0.79% for n = 1, 2, 4, 8, 16 (AD-01 hex20: −27.2 / −14.3 / −6.3 /
+  −2.5 / −0.75%), tolerances as AD-01 (2% for n = 16). Σ R_x on x = 0 = −σ·W/2·t = −5000 N
+  exact (the thickness factor). n = 16: u_y(0, r) and u_x(L/2, 0) = Mecway (≤ 1e-11).
+- **PL-02** (the same plate in plane strain, n = 16): Kt −0.75%; σ_zz = ν(σ_xx + σ_yy) at the
+  hole within 1e-6; Σ R_x exact; displacements = Mecway.
+- **PL-03** (thick-walled cylinder, plane strain, quarter ring quad8 n × 2n, a = 0.1 m,
+  b = 0.2 m, 100 MPa): n = 8: u_r −0.0003%, σ_θ −0.18%, σ_z +0.42%: the same as LS-04
+  (hex20); tolerances as LS-04. Mecway: see KB122 (pressure on curved edges).
+- **PL-04** (the same cylinder axisymmetric: ring of 10 mm with Y fixed on both ends,
+  quad8 n × 1): n = 8: u_r −0.0004%, hoop stress (`stresszz`) −0.41%, σ_r (`stressxx`)
+  +0.97% (−p at the loaded wall, extrapolated from the integration points; it converges as
+  h^1.8: 27.7 / 10.5 / 3.4 / 0.97%), σ_z (`stressyy`) +0.42%; tolerances σ_θ 0.6% (p = 1.5),
+  σ_r 1.2% (p = 2). Σ R_y over the top = σ_z·π(b² − a²) exact (360 degrees). u_r = Mecway.
+- **PL-05** (strip 100 × 20 mm, plane stress, t = 10 mm): nodal force, force on an edge,
+  traction and gravity together: Σ R_x = −501.53 N exact, mass ρLHt exact, `principal1`
+  +0.009% against F/(Ht) + ρgL/2, `tresca` = `principal1` − `principal3`; u_x = Mecway.
+- **PL-06** (ring r = 0.1 … 0.2 m, h = 20 mm, axisymmetric): nodal force, force on an edge,
+  radial traction, gravity along Y and centrifugal force about Y: Σ R_y = −3144.23 N exact,
+  mass ρπ(b² − a²)h exact; u_r and u_y = Mecway.
+
+Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
+plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as
+Mecway (≤ 1e-11); nodal stresses are equal where they are uniform or linear in the element,
+elsewhere they differ by the extrapolation (KB3). After opening a bridge result Mecway shows
+the items *displacement*, *stress*, *von Mises stress*, *reaction force*, *principal stress* and
+*Tresca stress* and reads the values with `solution.node_value`.
+
 ### Conclusion linear static
 
 All 49 cases (122 checks) are within tolerance. Where the theory is exact (Navier, Lamé,
