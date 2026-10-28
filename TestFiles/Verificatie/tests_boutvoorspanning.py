@@ -289,3 +289,250 @@ TESTS += [
          note="Krachtgestuurd: de boutkracht blijft F, ook onder de "
               "externe last (geen vergrendeling, zoals Mecway/CCX)."),
 ]
+
+
+# ------------------------------------------------------------------
+# S15b: the same joint in Dynamic Response (dyna_impl_3d). The top plate is
+# a heavy rigid mass (density 2e6 kg/m3: m = 10 kg), the columns nearly
+# massless (7.85 kg/m3), so the top plate is a single degree of freedom:
+#   force F (step):        m u'' + kc u = -F          -> T = 2 pi sqrt(m/kc),
+#                          u from 0 to -2 F/kc (the bolt force stays F)
+#   adjustment d (step):   m u'' + (kb + kc) u = -kb d -> T = 2 pi
+#                          sqrt(m/(kb+kc)), u from 0 to -2 kb d/(kb+kc)
+#   force F t/tr (ramp):   u = -F/kc (t/tr - sin(w t)/(w tr))
+# Mecway 34 (CCX deck of a headless D30/D31 solve, 28 Oct 2026): one
+# *DYNAMIC step with AMPLITUDE=STEP, *CLOAD / *BOUNDARY on the pre-tension
+# node; no static preload step.
+# ------------------------------------------------------------------
+from tests_dynamisch import period, peak
+import math
+
+MDYN = 0.05 * 0.01 * 0.01 * 2.0e6          # top plate [kg]
+TDF = 2.0 * math.pi * math.sqrt(MDYN / KC)
+TDA = 2.0 * math.pi * math.sqrt(MDYN / (KB + KC))
+TEND, DTD = 3.0e-3, 2.0e-5
+PTOP = (0.025, 0.12, 0.0)
+COLUMN_D = (COLUMN, u'<density type="Simple" density="7.85 kg/m³" />')
+PLATE_D = (PLATE, u'<density type="Simple" density="2000000 kg/m³" />')
+
+
+def _dyn_joint(load, analysis="D31"):
+    m = Model(analysis, solver="ccx", timesteps={
+        "timeperiod": "%r s" % TEND, "automatictimestepping": "false",
+        "outputtimes": "regular", "timepointsstart": "0 s",
+        "timepointsincrement": "%r s" % DTD, "stepsize": "%r s" % DTD})
+    m.elset("Platen", "Plaat")
+    m.elset("Bout", "Kolom")
+    m.elset("Huls", "Kolom")
+    m.mat("Plaat", *PLATE_D)
+    m.mat("Kolom", *COLUMN_D)
+    bot = hexmesh(m, "Platen", 5, 1, 1, box(0, 0.05, 0, 0.01, 0, 0.01),
+                  order=2)
+    hexmesh(m, "Platen", 5, 1, 1, box(0, 0.05, 0.11, 0.12, 0, 0.01), order=2)
+    bolt = hexmesh(m, "Bout", 1, 10, 1, box(0.02, 0.03, 0.01, 0.11, 0,
+                                            0.01), order=2)
+    hexmesh(m, "Huls", 1, 10, 1, box(0, 0.01, 0.01, 0.11, 0, 0.01), order=2)
+    hexmesh(m, "Huls", 1, 10, 1, box(0.04, 0.05, 0.01, 0.11, 0, 0.01),
+            order=2)
+    m.face_selection("Onder", bot["faces"]["v0"])
+    els = bolt["elems"]
+    m.face_selection("BoutVlakken", [(els[(0, j, 0)], 6) for j in (4, 5)] +
+                     [(els[(0, j, 0)], 1) for j in (4, 5)])
+    m.add('<fixed selection="Onder" />')
+    m.add(load)
+    return m
+
+
+def build_pt06():
+    return _dyn_joint(_pret("BoutVlakken", force="1000 N"))
+
+
+def build_pt07():
+    return _dyn_joint(_pret("BoutVlakken", adjustment="0.01 mm"))
+
+
+def build_pt08():
+    return _dyn_joint('<pretensionsection selection="BoutVlakken" '
+                      'force="true"><force unit="N" timeunit="s" '
+                      'positionunit="m">1000*t/0.003</force>'
+                      '<adjustment>0 m</adjustment></pretensionsection>',
+                      analysis="D30")
+
+
+def _utop(r):
+    return [(t, -u) for t, u in r.history("disply", PTOP)]
+
+
+def _per(r, level):
+    return period(_utop(r), level)
+
+
+# Mecway 34 headless (mw_solve.py, CCX, 28 Oct 2026) on modellen/PT-06..08:
+# PT-06 period 0.995693 ms (mean level), peak 5.0147e-6 m, bolt force
+# 999.93 N at t = 2.5 ms; PT-07 period 0.813096 ms, peak 6.66678e-6 m;
+# PT-08 (D30) u(3 ms) = -2.49738e-6 m.
+MWD = {"PT-06": (0.995693e-3, 5.0147e-6), "PT-07": (0.813096e-3, 6.66678e-6),
+       "PT-08": -2.49738e-6}
+U6 = 1000.0 / KC
+U7 = KB * 1e-5 / (KB + KC)
+W8 = 2.0 * math.pi / TDF
+U8 = -U6 * (1.0 - math.sin(W8 * TEND) / (W8 * TEND))
+
+
+def _dyn_checks(key, ustat, tper):
+    return [
+        Check("periode", lambda r: _per(r, ustat), ref=tper, tol=1e-2,
+              unit="s", source="2 pi sqrt(m/k), massa-veersysteem "
+              "(k = kc bij kracht, kb + kc bij lengteverandering)"),
+        Check("max. verplaatsing", lambda r: peak(_utop(r)), ref=2 * ustat,
+              tol=1e-2, unit="m", source="2 x statisch (staplast vanaf "
+              "t = 0, zoals Mecway: AMPLITUDE=STEP)"),
+        Check("periode = Mecway", lambda r: _per(r, ustat),
+              ref=MWD[key][0], tol=5e-3, unit="s",
+              source="Mecway 34 headless (CCX)", in_series=False),
+        Check("max. verplaatsing = Mecway", lambda r: peak(_utop(r)),
+              ref=MWD[key][1], tol=5e-3, unit="m",
+              source="Mecway 34 headless (CCX)", in_series=False)]
+
+
+TESTS += [
+    Case("PT-06", GROUP, "Boutverbinding dynamisch (D31): kracht 1000 N als "
+         "staplast, zware bovenplaat", "dyna_impl_3d", build_pt06,
+         _dyn_checks("PT-06", U6, TDF) + [
+             Check("boutkracht t = 2,5 ms", lambda r: r.at(
+                 "stressyy", PB, 2.5e-3) * AB, ref=1000.0, tol=5e-3,
+                 unit="N", source="de kracht blijft opgelegd (CCX *CLOAD)")],
+         note="Geen statische voorstap: de voorspanning werkt als staplast "
+              "vanaf t = 0 en de bovenplaat trilt om -F/kc."),
+    Case("PT-07", GROUP, "Idem, length adjustment 0,01 mm als staplast",
+         "dyna_impl_3d", build_pt07, _dyn_checks("PT-07", U7, TDA),
+         note="DDL_IMPO DX = 1e-5 m op het referentieknooppunt vanaf "
+              "t = 0; stijfheid kb + kc."),
+    Case("PT-08", GROUP, "Idem in D30, kracht als formule 1000 t / 0,003 N "
+         "(helling)", "dyna_impl_3d", build_pt08, [
+             Check("verplaatsing t = 3 ms", lambda r: r.at(
+                 "disply", PTOP, TEND), ref=U8, tol=1e-2, unit="m",
+                 source="-F/kc (t/tr - sin(w t)/(w tr)), helling op een "
+                        "massa-veersysteem"),
+             Check("verplaatsing t = 3 ms = Mecway", lambda r: r.at(
+                 "disply", PTOP, TEND), ref=MWD["PT-08"], tol=5e-3,
+                 unit="m", source="Mecway 34 headless (CCX)",
+                 in_series=False)],
+         note="De tijdsfunctie van de kracht volgt hetzelfde pad als een "
+              "gewone kracht (Mecway: *CLOAD met AMPLITUDE)."),
+]
+
+
+# ------------------------------------------------------------------
+# S15b: the spring element variant (internal solver, manual par. 9.11):
+# two springs in series between two held nodes, the first one shortened by
+# d (pre-tension section on its face). The middle node moves towards the
+# first spring by k1 d / (k1 + k2); both springs carry k1 k2 d / (k1 + k2)
+# in tension. Mecway's <fixed> on a node selection did not hold these
+# spring-only nodes in Mecway 34 (the model was singular), so the ends are
+# held with displacement constraints in x, y and z; the middle node is held
+# across the springs (oblique displacement constraints for PT-10).
+# Mecway 34 headless (internal solver, 28 Oct 2026): faceid 1, 2 and 3 of
+# the line element give the same result; force="true" with force 0 N and
+# adjustment 1 mm also shortens by 1 mm; force 5 N with adjustment 0 m
+# does nothing.
+# ------------------------------------------------------------------
+def _springs(direction, k1, k2, adjustment, attr='adjustment="true"'):
+    m = Model("S30")
+    m.elset("Veer1", "V1")
+    m.elset("Veer2", "V2")
+    n0 = m.node(0, 0, 0)
+    n1 = m.node(*direction)
+    n2 = m.node(*[2 * c for c in direction])
+    e1 = m.elem("Veer1", "line2", [n0, n1])
+    m.elem("Veer2", "line2", [n1, n2])
+    m.mat("V1", '<mechanical type="Spring" springconstant="%r N/m" />' % k1)
+    m.mat("V2", '<mechanical type="Spring" springconstant="%r N/m" />' % k2)
+    m.node_selection("Grond", [n0, n2])
+    m.node_selection("Eind0", [n0])
+    m.node_selection("Midden", [n1])
+    m.face_selection("VeerVlak", [(e1, 1)])
+    for d in ((1, 0, 0), (0, 1, 0), (0, 0, 1)):
+        m.add('<displacement selection="Grond"><value>0 m</value>'
+              '<x>%d</x><y>%d</y><z>%d</z></displacement>' % d)
+    e = _unitv(direction)
+    p1 = _unitv((-e[1], e[0], 0.0) if abs(e[2]) < 0.9 else (1.0, 0.0, 0.0))
+    p2 = (e[1] * p1[2] - e[2] * p1[1], e[2] * p1[0] - e[0] * p1[2],
+          e[0] * p1[1] - e[1] * p1[0])
+    for p in (p1, p2):
+        m.add('<displacement selection="Midden"><value>0 m</value>'
+              '<x>%r</x><y>%r</y><z>%r</z></displacement>' % tuple(p))
+    m.add('<pretensionsection selection="VeerVlak" %s><force>0 N</force>'
+          '<adjustment>%s</adjustment></pretensionsection>'
+          % (attr, adjustment))
+    return m
+
+
+def _unitv(v):
+    n = math.sqrt(sum(c * c for c in v))
+    return tuple(c / n for c in v)
+
+
+def build_pt09():
+    return _springs((1.0, 0.0, 0.0), 1000.0, 3000.0, "1 mm",
+                    attr='force="true"')
+
+
+DIR10 = (1.0, 2.0, 2.0)
+
+
+def build_pt10():
+    return _springs(DIR10, 1000.0, 4000.0, "2 mm")
+
+
+U9 = -1000.0 * 1e-3 / 4000.0             # middle node along the axis
+N9 = 1000.0 * 3000.0 * 1e-3 / 4000.0     # spring force (tension)
+E10 = _unitv(DIR10)
+U10 = -1000.0 * 2e-3 / 5000.0
+N10 = 1000.0 * 4000.0 * 2e-3 / 5000.0
+P9, P10 = (1.0, 0.0, 0.0), DIR10
+# Mecway 34 headless (internal solver) on modellen/PT-09/10: displx of the
+# middle node -2.5e-4 m, reactions -0.75 / 0.75 N (PT-09); displacement
+# (-1.3333e-4, -2.6667e-4, -2.6667e-4) m = -4e-4 m along the axis,
+# reaction x -0.53333 N (PT-10)
+MW10 = -0.0004
+
+
+def _along(r, point, e):
+    return sum(r.at(v, point) * c for v, c in
+               zip(("displx", "disply", "displz"), e))
+
+
+TESTS += [
+    Case("PT-09", GROUP, "Veervariant: twee veren in serie, length adjustment "
+         "1 mm op veer 1 (force=\"true\", zoals Mecway gebruikt)",
+         "lin_static_3d", build_pt09, [
+             Check("verplaatsing midden", lambda r: r.at("displx", P9),
+                   ref=U9, tol=1e-6, unit="m",
+                   source="-k1 d / (k1 + k2)"),
+             Check("reactie x knoop 0", lambda r: r.total(
+                 "reactionforcex", "Eind0"), ref=-N9, tol=1e-6, unit="N",
+                 source="-k1 k2 d / (k1 + k2) (veer 1 trekt knoop 0 mee)"),
+             Check("verplaatsing midden = Mecway", lambda r: r.at(
+                 "displx", P9), ref=-0.00025, tol=1e-6, unit="m",
+                 source="Mecway 34 headless (interne solver)",
+                 in_series=False)],
+         note="Mecway gebruikt bij een veer altijd de length adjustment, "
+              "ook met force=\"true\"; de bridge zet die om in twee "
+              "knoopkrachten k d naar elkaar toe."),
+    Case("PT-10", GROUP, "Idem, veren schuin langs (1, 2, 2), k2 = 4000 N/m, "
+         "length adjustment 2 mm", "lin_static_3d", build_pt10, [
+             Check("verplaatsing midden langs de as", lambda r: _along(
+                 r, P10, E10), ref=U10, tol=1e-6, unit="m",
+                 source="-k1 d / (k1 + k2)"),
+             Check("reactie x knoop 0", lambda r: r.total(
+                 "reactionforcex", "Eind0"), ref=-N10 * E10[0], tol=1e-6,
+                 unit="N", source="-k1 k2 d / (k1 + k2) e_x"),
+             Check("verplaatsing midden langs de as = Mecway",
+                   lambda r: _along(r, P10, E10), ref=MW10, tol=1e-6,
+                   unit="m", source="Mecway 34 headless (interne solver)",
+                   in_series=False)],
+         note="Richting van de knoopkrachten = as van de veer; het "
+              "middelste knooppunt is dwars vastgehouden met schuine "
+              "verplaatsingsvoorwaarden."),
+]

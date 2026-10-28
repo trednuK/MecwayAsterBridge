@@ -47,7 +47,7 @@ S7, S8, S5, S9).
 | S13 | Orthotropic and anisotropic materials, with *Element orientation* as material direction | open | – | chosen by the user 15 Oct (C1) |
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | done | – | branch worktree-agent-a58def16c170e1c4c (28 Oct 2026): `bridge_pretension` (cut + LIAISON_DDL to a reference node), force and length adjustment in linear/nonlinear static; PT-01 .. PT-05 OK (exact / joint diagram 0.1%, Mecway CCX headless within 0.01%); not yet tested in the Mecway GUI (see §S15) |
-| S15b | Pre-tension section in dynamic response (D30/D31) and the spring element variant (internal solver) | open | S15 | split off from S15 (KNOWN_BUGS 124 a/b) |
+| S15b | Pre-tension section in dynamic response (D30/D31) and the spring element variant (internal solver) | done | S15 | branch worktree-agent-a08bcf96702c925db on nacht-int2 (28 Oct 2026): prism variant in `dyna_impl_3d` (step from t = 0 like Mecway), spring variant in linear static as two nodal forces; PT-06 .. PT-10 OK (Mecway headless CCX within 0.06%, internal solver exact); spring variant in Frequency/Buckling ERROR (geometric stiffness, see §S15b); not yet tested in the Mecway GUI |
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
 | S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); KNOWN_BUGS 127 (step size with *every n time steps*); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
@@ -1268,6 +1268,37 @@ Mecway headless within the known contact differences (KNOWN_BUGS 43); regression
   So the BoltedJoint criterion is replaced by PT-03/04 (same physics, contact-free).
 - *Open*: dynamics and the spring element variant (S15b); a GUI check in Mecway (load PT-01 results,
   Pre-tension section dialog with Length adjustment saves `adjustment="true"`).
+
+### S15b – Pre-tension section in dynamics and on a spring
+**Goal:** the two parts of KNOWN_BUGS 124 a/b: the prism variant in Dynamic response (D30/D31) and
+Mecway's spring element variant (internal solver).
+**Findings (28 Oct 2026):**
+- *Mecway's semantics in dynamics* (CCX decks caught from Mecway's temp folder during headless D30/D31
+  solves of the joint of PT-03 with a heavy top plate): one `*STEP` (`NLGEOM=YES` for D31) with
+  `AMPLITUDE=STEP` and `*DYNAMIC,DIRECT`, the `*CLOAD` (force) or `*BOUNDARY` (adjustment) on the
+  pre-tension node; a formula in t becomes `*CLOAD,AMPLITUDE=...`. So a constant value acts as a step
+  from t = 0, no static preload step; the top plate vibrates about the static state (Mecway: period
+  +0.23% from 2π√(m/k), peak 2× static). D30 and D31 give the same history. Mecway's deck also uses the
+  axis −Y where the bridge uses +Y (same physics). `<timesteps>` needs `stepsize` for CCX (without it
+  the increment was 0 and CCX gave no solution).
+- *Built*: `bridge_pretension` accepts `DYNA_NON_LINE` with an implicit scheme; the load on the
+  reference node takes the same route as an ordinary force or displacement (time functions), so the
+  semantics are Mecway's. Explicit (`DIFF_CENT`) stays an ERROR (massless reference node, NOT
+  verified). PT-06 (force), PT-07 (adjustment), PT-08 (formula ramp, D30): hand calculation within
+  0.26% (PT-08 0.57%, a sensitive sample of a small vibration), Mecway within 0.06%.
+- *Spring variant* (Mecway 34 internal solver, headless): the XML is the same `<pretensionsection>` on a
+  face selection of the line element; faceid 1, 2 and 3 give the same result; Mecway always uses the
+  length adjustment (force="true" with force 0 and adjustment 1 mm shortens by 1 mm; force 5 N with
+  adjustment 0 does nothing). Translated in linear static as two `FORCE_NODALE` k δ along the spring
+  axis (exact, PT-09 along X with `force="true"`, PT-10 inclined). Mecway's `<fixed>` on a node selection
+  of spring-only nodes did not hold them in Mecway (singular); the cases use displacement constraints.
+- *Buckling/Frequency with the spring variant*: Mecway gives the tensioned spring a geometric
+  stiffness (cantilever beam with a pretensioned spring from base to tip: 6.991 = the load directed
+  through the base; the bridge with nodal forces 1.748 = Mecway with an ordinary tip force), DIS_T has
+  none: ERROR, recorded in KNOWN_BUGS 124 (b) and 47.
+- *Open*: GUI check in Mecway (a spring pretension made in the Mecway dialog: which faceid and mode
+  attribute it writes); whether a geometric stiffness for springs is wanted in buckling/modal with
+  prestress (would apply to all tensioned springs, KNOWN_BUGS 47).
 
 ### S16 – 2D and axisymmetric analyses
 **Goal:** translate Mecway's 2D analysis types (S20, D20, SA0, also A20 and thermal 2D); now the run stops.

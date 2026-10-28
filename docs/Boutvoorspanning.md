@@ -6,8 +6,10 @@ Mecway's *Pre-tension section* (handleiding v34 §9.11) spant een bout of een an
 prismatisch deel voor: met een **kracht** (trek positief) of een **lengteverandering**
 (*Length adjustment*: de vrije lengte verandert, positief = verkorting). De bridge
 vertaalt de variant met een prisma van volume-elementen (in Mecway de CCX-variant) in
-**Lineair statisch** (S30, `lin_static_3d`) en **Niet-lineair statisch** (L30,
-`nonlin_static_3d`).
+**Lineair statisch** (S30, `lin_static_3d`), **Niet-lineair statisch** (L30,
+`nonlin_static_3d`) en **Dynamische respons** (D30/D31, impliciet `dyna_impl_3d`), en de
+variant met één **veerelement** (in Mecway de variant voor de interne solver) in
+**Lineair statisch**.
 
 ## 1. Gebruiken
 
@@ -22,8 +24,13 @@ vertaalt de variant met een prisma van volume-elementen (in Mecway de CCX-varian
 3. Kies *Force* (bijv. `10 kN`) of *Length adjustment* (bijv. `0.01 mm`). Beide
    mogen constant zijn, een tabel in de tijd of een formule in t.
 4. Mecway rekent de doorsnede zelf alleen met CCX; voor de bridge maakt de
-   solverkeuze in Mecway niet uit. Kies de analyse Static 3D of Nonlinear static 3D
-   en start de bridge zoals gewoonlijk.
+   solverkeuze in Mecway niet uit. Kies de analyse Static 3D, Nonlinear static 3D of
+   (Nonlinear) Dynamic Response 3D en start de bridge zoals gewoonlijk.
+5. Veerelement in plaats van een prisma (Mecway's variant voor de interne solver):
+   selecteer het vlak van **één** veerelement (lijnelement met een *Spring*-materiaal)
+   en geef een *Length adjustment*. Mecway gebruikt bij een veer altijd de
+   lengteverandering, ook als *Force* gekozen is (de kracht wordt dan genegeerd); de
+   bridge doet hetzelfde. Alleen in Static 3D.
 
 Er zijn geen instellingen. De bridge meldt de doorsnede in de log: as, axiale
 lengte, plek van de doorsnede, doorsnede-oppervlak met de nominale spanning F/A, het
@@ -53,6 +60,24 @@ Tijdsverloop: zoals een gewone kracht of opgelegde verplaatsing. In Niet-lineair
 statisch met Mecway's *Quasi-static* tijdstappen werkt een constante waarde vanaf de
 eerste stap volledig (zoals in Mecway, BoltedJoint); zonder tijdstappen lopen de
 lasten op.
+
+**Dynamische respons** (D30/D31): Mecway (CCX) rekent één dynamische stap met de
+kracht of de lengteverandering op het pre-tension-knooppunt, constante waarden als
+staplast vanaf t = 0 (`AMPLITUDE=STEP`); er is geen statische voorspanstap vooraf. De
+bridge doet hetzelfde in `dyna_impl_3d`. Een constante voorspanning zet dus een
+trilling om de statische toestand in gang; gebruik een tabel of formule in t die
+langzaam oploopt (vergeleken met de laagste eigenperiode) als de bout quasi-statisch
+aangespannen moet worden.
+
+![Verplaatsing tegen de tijd bij een voorspanning in dynamica](img/pretension_dynamic.svg)
+
+1. Constante waarde: werkt als staplast vanaf t = 0 en de constructie trilt (ongedempt
+   tussen 0 en twee keer de statische waarde).
+2. De statische waarde u_s: de verplaatsing die Static 3D geeft met dezelfde
+   voorspanning.
+3. Twee keer de statische waarde: de eerste piek van de stapresponsie.
+4. Waarde als langzaam oplopende tabel of formule: volgt de statische waarde met een
+   kleine trilling.
 
 ## 3. Hoe de bridge vertaalt
 
@@ -88,7 +113,14 @@ lasten op.
 - **Belasting**: kracht → `FORCE_NODALE FX` = F op het referentieknooppunt (de
   arbeidsgeconjugeerde van δ is de normaalkracht, trek positief); lengteverandering →
   `DDL_IMPO DX` = δ. De Mecway-belasting wijst naar de knoopgroep `BRPT<k>` van dat
-  knooppunt.
+  knooppunt. In dynamica volgt dezelfde belasting het tijdsverloop zoals een gewone
+  kracht of opgelegde verplaatsing; het referentieknooppunt heeft geen massa (het
+  draagt alleen de relaties), daarom wordt het expliciete schema niet ondersteund.
+- **Variant met een veerelement**: de veerkracht is k (verlenging + δ), dus een veer
+  die δ verkort is dezelfde veer met twee knoopkrachten k δ die de eindknopen langs de
+  as naar elkaar toe trekken: `FORCE_NODALE` op de knoopgroepen `BRPS<k>A` en
+  `BRPS<k>B`. Exact in lineair statisch (PT-09, PT-10: gelijk aan Mecway's interne
+  solver).
 
 ## 4. Resultaten in Mecway
 
@@ -106,14 +138,21 @@ PT-01 .. PT-05 in [`Verificatie.md`](Verificatie.md): staaf met kracht en met
 lengteverandering (handberekening exact, Mecway 34 −0,004%), bout met huls tussen
 stijve platen (verbindingsdiagram met lengteverandering, en met kracht onder een
 oplopende externe last in Niet-lineair statisch), en een staaf in tet4 met een
-zigzagdoorsnede.
+zigzagdoorsnede. PT-06 .. PT-08: de verbinding met een zware bovenplaat in Dynamische
+respons (kracht en lengteverandering als staplast, kracht als helling in D30; periode
+en piek gelijk aan de handberekening van het massa-veersysteem binnen 0,6% en aan
+Mecway 34 met CCX binnen 0,06%). PT-09, PT-10: de variant met een veerelement (twee
+veren in serie, langs X en schuin; exact, gelijk aan Mecway's interne solver).
 
 ## 6. Meldingen en oplossingen
 
 | Melding | Oorzaak | Oplossing |
 |---|---|---|
-| ERROR: Pre-tension section op '...': alleen in lineair en niet-lineair statisch | een andere analyse (dynamische respons, modaal, knik, ...) | gebruik Statisch of Niet-lineair statisch (KNOWN_BUGS 124) |
-| ERROR: ... alleen vlakken van volume-elementen (CCX-variant); de variant met een veerelement ... | de selectie bevat het eindvlak van een veer (Mecway's variant voor de interne solver) of vlakken van schalen/balken | selecteer vlakken van volume-elementen; vervang de veer door een kort staafje van volume-elementen (KNOWN_BUGS 124) |
+| ERROR: Pre-tension section op '...': alleen in lineair en niet-lineair statisch en impliciete dynamica | expliciete dynamica (`dyna_expl_3d`), dynamica op modale basis, modaal, knik, ... | gebruik Statisch, Niet-lineair statisch of `dyna_impl_3d` (KNOWN_BUGS 124) |
+| ERROR: ... alleen vlakken van volume-elementen (prisma, CCX-variant) of het vlak van een enkel veerelement | de selectie bevat vlakken van schalen/balken, of vlakken van volume-elementen en veren samen | selecteer alleen vlakken van volume-elementen, of het vlak van één veer |
+| ERROR: ... de variant met een veerelement werkt op het vlak van precies een veer | vlakken van meerdere veren in één selectie | maak per veer een eigen pre-tension section |
+| ERROR: ... de variant met een veerelement alleen in lineair statisch | de veervariant in een andere analyse (Frequency, Buckling, niet-lineair, dynamica) | in Frequency en Buckling geeft Mecway de voorgespannen veer ook geometrische stijfheid, DIS_T van Code-Aster niet; vervang de veer door een kort staafje van volume-elementen (prisma-variant) (KNOWN_BUGS 124) |
+| WARNING: Pre-tension section op veer '...': Mecway gebruikt bij een veer alleen de length adjustment | *Force* gekozen op een veer | geef de verkorting als *Length adjustment* (de kracht doet niets, zoals in Mecway) |
 | ERROR: ... geen as: kies minstens twee vlakken onder verschillende hoeken | alle geselecteerde vlakken evenwijdig (bijv. alleen één platte kant van een vierkante staaf) | selecteer ook een vlak onder een andere hoek (bijv. de aangrenzende kant) |
 | ERROR: ... geen doorsnede door het prisma gevonden | één element langs de as, of de vlakken overspannen de plek van de doorsnede niet | selecteer vlakken van minstens twee elementlagen, aan beide kanten van de gewenste doorsnede |
 | ERROR: ... de doorsnede raakt elementen buiten het prisma | elementen rond de doorsnede die buiten de axiale lengte reiken (bijv. een moer of plaat die samen met de bout gemesht is) | selecteer vlakken over een stuk schacht met alleen schachtelementen, of mesh de bout als eigen onderdeel (contact of bonded contact met de platen) |
@@ -124,9 +163,17 @@ zigzagdoorsnede.
 
 Zie ook KNOWN_BUGS 124.
 
-- Dynamische respons (D30/D31) en de andere analyses: Mecway staat dynamica met CCX toe;
-  de bridge stopt de doorsnede daar met een ERROR.
-- De variant met een veerelement (interne solver, één veer met een lengteverandering).
+- Expliciete dynamica (`dyna_expl_3d`), dynamica op modale basis en de andere analyses
+  (modaal, knik, ...): ERROR. Mecway staat de prisma-variant alleen toe in statisch en
+  dynamische respons.
+- De variant met een veerelement buiten Static 3D: Mecway staat ook Frequency en
+  Buckling toe, maar geeft de voorgespannen veer daar geometrische stijfheid (een
+  ingeklemde kolom met een voorgespannen veer van voet naar top: knikfactor 6,99 in
+  Mecway, alsof de last door de voet gericht is; 1,75 met knoopkrachten), die het
+  discrete element van Code-Aster niet heeft.
+- Mecway's eigen berekening van een veermodel: *Fixed* op een knoopselectie hield
+  knopen met alleen veren in Mecway 34 niet vast (singulier model); gebruik daar
+  *Displacement* in X, Y en Z. De bridge zet ze in beide gevallen vast.
 - Een meedraaiende richting: de as blijft vast bij grote rotaties (ook in Mecway).
 - Lasten, opleggingen en contact op vlakken die de doorsnede raken: aan de kant onder
   werken ze op de kopie (last, contact) of op de Mecway-knoop (alleen opleggingen); het
@@ -140,7 +187,11 @@ Zie ook KNOWN_BUGS 124.
 - Mecway-handleiding v34 §9.11 (prisma, as, lengte, dunne laag, beperkingen); XML en
   CCX-invoer van Samples/BoltedJoint.liml en testmodellen, gelezen tijdens headless
   Mecway 34-solves (28 okt 2026): `force="true"` = kracht, `adjustment="true"` =
-  lengteverandering, `*CLOAD` resp. `*BOUNDARY` op het pre-tension-knooppunt.
+  lengteverandering, `*CLOAD` resp. `*BOUNDARY` op het pre-tension-knooppunt; in
+  D30/D31 één `*DYNAMIC`-stap met `AMPLITUDE=STEP` (geen voorspanstap), een formule in t
+  als `*AMPLITUDE`. Variant met een veerelement: Mecway 34 interne solver, headless (het
+  faceid van het lijnelement maakt niet uit; de lengteverandering wordt gebruikt, wat
+  de modus ook is).
 - CalculiX 2.23-bron die met Mecway meekomt, `pretensionsections.f`: per knooppaar twee
   tangentiële MPC's en één normale MPC met de vrijheidsgraad van het
   referentieknooppunt.

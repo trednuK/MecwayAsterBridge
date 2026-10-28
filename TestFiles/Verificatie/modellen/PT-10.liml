@@ -1,0 +1,37 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="1" y="2" z="2" />
+  <node nid="3" x="2" y="4" z="4" />
+  <elset name="Veer1" material="V1">
+    <elem eid="1" shape="line2" nodes="1 2" />
+  </elset>
+  <elset name="Veer2" material="V2">
+    <elem eid="2" shape="line2" nodes="2 3" />
+  </elset>
+  <displacement selection="Grond"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Grond"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Grond"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="Midden"><value>0 m</value><x>-0.8944271909999159</x><y>0.4472135954999579</y><z>0.0</z></displacement>
+  <displacement selection="Midden"><value>0 m</value><x>-0.2981423969999719</x><y>-0.5962847939999438</y><z>0.7453559924999298</z></displacement>
+  <pretensionsection selection="VeerVlak" adjustment="true"><force>0 N</force><adjustment>2 mm</adjustment></pretensionsection>
+  <mat name="V1">
+    <mechanical type="Spring" springconstant="1000.0 N/m" />
+  </mat>
+  <mat name="V2">
+    <mechanical type="Spring" springconstant="4000.0 N/m" />
+  </mat>
+  <nodeselection name="Grond">
+    <node nid="1" />
+    <node nid="3" />
+  </nodeselection>
+  <nodeselection name="Eind0">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Midden">
+    <node nid="2" />
+  </nodeselection>
+  <faceselection name="VeerVlak">
+    <face eid="1" faceid="1" />
+  </faceselection>
+</liml>

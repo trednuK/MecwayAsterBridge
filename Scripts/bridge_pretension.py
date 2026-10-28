@@ -54,6 +54,11 @@
 # above. Verification PT-01 .. PT-05 (hand calculation and Mecway 34 with
 # CCX, headless).
 #
+# S15b: in implicit dynamics (dyna_impl_3d) the same cut and load; Mecway
+# also has no preload step there (see _SOLVERS; PT-06 .. PT-08). The spring
+# element variant (internal solver) becomes two nodal forces on the spring
+# ends in linear static (_spring_variant; PT-09, PT-10).
+#
 # Compatible with IronPython 2.7.9.
 
 import math
@@ -63,9 +68,18 @@ from bridge_utils import log, tr, get_active_analysis
 
 # POI1 cells (DIS_T, stiffness 0) on the reference nodes
 PRET_GROUP = "BRPRET"
-# Analyses in which the section is translated (Mecway also allows dynamic
-# response; NOT translated by the bridge, KNOWN_BUGS 124)
-_SOLVERS = ("MECA_STATIQUE", "STAT_NON_LINE")
+# Analyses in which the section is translated: linear and nonlinear static
+# and implicit dynamics (dyna_impl_3d, S15b). Mecway (CCX deck of a D30/D31
+# solve, 28 Oct 2026) writes one *DYNAMIC step with AMPLITUDE=STEP and the
+# *CLOAD / *BOUNDARY on the pre-tension node: a constant value acts as a
+# step from t = 0 (no static preload step first), a time history follows
+# its amplitude; the bridge's dynamic route treats the force / imposed DX
+# on the reference node exactly like an ordinary force or displacement,
+# so the semantics are the same (PT-06 .. PT-08). The explicit scheme
+# (DIFF_CENT) is not translated: the reference node has no mass, and
+# Lagrange relations in DIFF_CENT are NOT verified (KNOWN_BUGS 124).
+_SOLVERS = ("MECA_STATIQUE", "STAT_NON_LINE", "DYNA_NON_LINE")
+_EXPLICIT = ("DIFF_CENT", "TCHAMWA")
 # Mecway uses at most 1000 faces for the axis (manual v34 par. 9.11)
 _MAX_FACES = 1000
 # Pairs of faces closer to parallel than this (|n1 x n2|) give no axis
@@ -153,10 +167,14 @@ def prism_axis(normals):
 
 
 def analysis_supported():
-    """True in linear and nonlinear static (_SOLVERS)."""
+    """True in linear and nonlinear static and implicit dynamics
+    (_SOLVERS, not an explicit scheme)."""
     try:
-        cmd = get_active_analysis().get("solver_command")
+        an = get_active_analysis()
+        cmd = an.get("solver_command")
     except (KeyError, TypeError, AttributeError):
+        return False
+    if cmd == "DYNA_NON_LINE" and an.get("schema") in _EXPLICIT:
         return False
     return cmd in _SOLVERS
 
@@ -208,6 +226,144 @@ def _support_cells(model_data, conn, skin_by_key, faces_of):
             if name is not None:
                 cells.setdefault(name, set()).add(kind)
     return set(n for n, kinds in cells.items() if kinds == set(["support"]))
+
+
+def _scale(value, factor):
+    """value (float or list (t, v)) times factor."""
+    if isinstance(value, list):
+        return [(t, v * factor) for t, v in value]
+    return value * factor
+
+
+def _spring_variant(model_data, bc, faces, nodes, conn, groups):
+    """
+    Mecway's spring element variant (manual v34 par. 9.11, internal
+    solver): the selection is the face of one spring element (line
+    element with a Spring material, DIS_T). Mecway changes the free length
+    of the spring by the length adjustment d (positive = shortening) and
+    always uses the adjustment, also with force="true" (measured, see
+    bridge_bcs.PretensionSectionBC); which faceid of the line element is
+    selected does not matter (faceid 1, 2 and 3 gave the same result).
+
+    Translation: the spring force is k (elongation + d), so the
+    shortening is the same as the linear spring plus a pair of nodal
+    forces k d that pull the two end nodes towards each other along the
+    spring axis (FORCE_NODALE on node a: +k d e, on node b: -k d e, e =
+    unit vector a -> b). Exact for a linear spring at small displacements
+    in linear static; verified against Mecway's internal solver (PT-09,
+    PT-10). Other analyses: ERROR (see below).
+
+    Returns False if the selection is not on a spring (the prism variant
+    then applies), True when the section was translated or rejected.
+    """
+    springs = model_data.get("spring_sections", {})
+    elset_of = dict((e[0], e[3]) for e in model_data.get("mesh_elements",
+                                                         []))
+    eids = sorted(set(eid for eid, fid in faces))
+    on_spring = [e for e in eids if elset_of.get(e) in springs]
+    if not eids or len(on_spring) != len(eids):
+        return False
+    sel = bc["selection"]
+    if len(eids) != 1:
+        _reject(model_data, bc, tr(
+            "de variant met een veerelement werkt op het vlak van precies "
+            "een veer, hier {0} veren ({1}); maak per veer een eigen "
+            "pre-tension section (manual par. 9.11)",
+            "the spring element variant acts on the face of exactly one "
+            "spring, here {0} springs ({1}); make one pre-tension section "
+            "per spring (manual par. 9.11)").format(
+                len(eids), ", ".join(str(e) for e in eids[:10])))
+        return True
+    try:
+        cmd = get_active_analysis().get("solver_command")
+    except (KeyError, TypeError, AttributeError):
+        cmd = None
+    if cmd != "MECA_STATIQUE":
+        # Mecway allows Static 2D/3D, Frequency and Buckling (manual par.
+        # 9.11). In Buckling Mecway also gives the tensioned spring its
+        # geometric stiffness (cantilever with a pretensioned spring from
+        # the base to the tip, 28 Oct 2026: Mecway 6.991 = the load
+        # directed through the base, pinned-pinned Euler; the bridge with
+        # the nodal forces 1.748 = Mecway with an ordinary tip force);
+        # Code-Aster's DIS_T has none (measured with that model), so only
+        # linear static is translated. Nonlinear and dynamic analyses:
+        # Mecway does not allow the spring variant there.
+        _reject(model_data, bc, tr(
+            "de variant met een veerelement alleen in lineair statisch; "
+            "Mecway rekent in Frequency en Buckling ook de geometrische "
+            "stijfheid van de voorgespannen veer mee, die het discrete "
+            "element van Code-Aster (DIS_T) niet heeft; vervang de veer "
+            "door een korte staaf van volume-elementen (prisma-variant) "
+            "(KNOWN_BUGS 124)",
+            "the spring element variant only in linear static; in "
+            "Frequency and Buckling Mecway also includes the geometric "
+            "stiffness of the tensioned spring, which Code-Aster's "
+            "discrete element (DIS_T) lacks; replace the spring by a "
+            "short bar of solid elements (prism variant) "
+            "(KNOWN_BUGS 124)"))
+        return True
+    eid = eids[0]
+    atype, cn = conn.get(eid, (None, []))
+    if atype != "SEG2" or len(cn) != 2:
+        _reject(model_data, bc, tr(
+            "het veerelement {0} is geen line2-element",
+            "spring element {0} is not a line2 element").format(eid))
+        return True
+    params = bc["params"]
+    if params.get("_spring_adjustment_error"):
+        _reject(model_data, bc, params["_spring_adjustment_error"])
+        return True
+    if params.get("mode") == "adjustment":
+        delta = params.get("value", 0.0)
+    else:
+        delta = params.get("spring_adjustment", 0.0)
+        force = params.get("value", 0.0)
+        if any(abs(v) > 0.0 for v in ([f for _t, f in force]
+                                      if isinstance(force, list)
+                                      else [force])):
+            log(tr("WARNING: Pre-tension section op veer '{0}': Mecway "
+                   "gebruikt bij een veer alleen de length adjustment; de "
+                   "kracht {1} wordt genegeerd (zoals Mecway).",
+                   "WARNING: Pre-tension section on spring '{0}': for a "
+                   "spring Mecway only uses the length adjustment; the "
+                   "force {1} is ignored (like Mecway).").format(sel, force))
+    a, b = cn
+    axis = _unit(_sub(nodes[b], nodes[a]))
+    if axis is None:
+        _reject(model_data, bc, tr(
+            "het veerelement {0} heeft lengte 0 (geen richting)",
+            "spring element {0} has length 0 (no direction)").format(eid))
+        return True
+    k = springs[elset_of[eid]]["spring_constant"]
+    k_info = model_data.setdefault("pretension_springs", [])
+    num = len(k_info) + 1
+    out = []
+    for node, sign, end in ((a, 1.0, "A"), (b, -1.0, "B")):
+        group = "BRPS{0}{1}".format(num, end)
+        groups[group] = ["N{0}".format(node)]
+        forces = OrderedDict(
+            (comp, _scale(delta, sign * k * axis[i]))
+            for i, comp in enumerate(("FX", "FY", "FZ")))
+        new = dict(bc)
+        new["params"] = dict(params, mode="spring", forces=forces)
+        new["selection"] = group
+        new["aster_target"] = "GROUP_NO"
+        new["aster_keyword"] = "FORCE_NODALE"
+        new["aster_dict"] = dict(forces)
+        out.append(new)
+    # the original BC becomes the force on node a, a copy the force on b
+    bc.clear()
+    bc.update(out[0])
+    model_data.setdefault("bcs", []).append(out[1])
+    k_info.append({"selection": sel, "element": eid, "nodes": (a, b),
+                   "axis": axis, "k": k, "adjustment": delta})
+    log("INFO: Pre-tension section '{0}' on spring element {1} (k = {7} "
+        "N/m, nodes N{2} - N{3}, axis ({4})): length adjustment {5} m as "
+        "the nodal forces k * adjustment pulling the two nodes together "
+        "(groups BRPS{6}A/B).".format(
+            sel, eid, a, b, ", ".join("%.6g" % c for c in axis), delta, num,
+            "%.6g" % k))
+    return True
 
 
 def apply(model_data, nodes, conn, by_type, cell_refs, skin_by_key,
@@ -262,12 +418,17 @@ def apply(model_data, nodes, conn, by_type, cell_refs, skin_by_key,
     used = set()
     for bc in bcs:
         sel = bc["selection"]
+        if _spring_variant(model_data, bc, faces_by_sel.get(sel) or [],
+                           nodes, conn, groups):
+            continue
         if not supported:
             _reject(model_data, bc, tr(
-                "alleen in lineair en niet-lineair statisch (Mecway staat "
-                "ook dynamica toe; KNOWN_BUGS 124)",
-                "only in linear and nonlinear static analyses (Mecway also "
-                "allows dynamic response; KNOWN_BUGS 124)"))
+                "alleen in lineair en niet-lineair statisch en impliciete "
+                "dynamica (dyna_impl_3d); niet expliciet, modaal, knik of "
+                "op modale basis (KNOWN_BUGS 124)",
+                "only in linear and nonlinear static analyses and implicit "
+                "dynamics (dyna_impl_3d); not explicit, modal, buckling or "
+                "on a modal basis (KNOWN_BUGS 124)"))
             continue
         faces = faces_by_sel.get(sel) or []
         if not faces:
@@ -277,11 +438,13 @@ def apply(model_data, nodes, conn, by_type, cell_refs, skin_by_key,
         bad = sorted(set(eid for eid, fid in faces if eid not in solid))
         if bad:
             _reject(model_data, bc, tr(
-                "alleen vlakken van volume-elementen (CCX-variant); de "
-                "variant met een veerelement (interne solver) wordt niet "
-                "vertaald (elementen {0})",
-                "only faces of solid elements (CCX variant); the spring "
-                "element variant (internal solver) is not translated "
+                "alleen vlakken van volume-elementen (prisma, CCX-variant) "
+                "of het vlak van een enkel veerelement (interne-solver-"
+                "variant); niet gemengd en niet op schalen of balken "
+                "(elementen {0})",
+                "only faces of solid elements (prism, CCX variant) or the "
+                "face of a single spring element (internal-solver "
+                "variant); not mixed and not on shells or beams "
                 "(elements {0})").format(
                     ", ".join(str(e) for e in bad[:10])))
             continue
