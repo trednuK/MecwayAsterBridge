@@ -117,6 +117,7 @@ it was last verified:
 | Convergence window buttons, work folder next to the model, preparation errors in the status box (V2026.4) | NOT verified | verified (V2026.4) |
 | Result formulas computed by the bridge, heat flux per element node (V2026.5) | NOT verified | verified (V2026.5) |
 | Principal stresses/strains and acceleration under Mecway's names (V2026.5) | NOT verified | verified (V2026.5) |
+| Principal values of shells, Green-Lagrange principal strains and `GLe1` (unreleased) | NOT verified | verified (headless) |
 | Rubber on hex8: locking warning, no `3D_SI` with `ELAS_HYPER`, *Element type* card (V2026.5) | NOT verified | verified (V2026.5) |
 | Selection names with spaces (models from Mecway 33) | allowed | Mecway 34 replaces the spaces by `_` when it opens such a model and then loses the reference in a contact (`selectionmaster=""`, seen 22 October 2026); the bridge stops before Code-Aster with an ERROR that says so where the contact counts (nonlinear static and dynamics; bonded contact in every analysis), elsewhere it gives a WARNING (Mecway ignores unilateral contact there too). Select the contact faces again. The example models use names without spaces. |
 

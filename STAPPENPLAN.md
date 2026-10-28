@@ -66,6 +66,7 @@ S7, S8, S5, S9).
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
 | S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | done | – | branch stap-S33 (28 Oct 2026): `bridge_formula` + `_formula_vars`; FX-01 .. FX-03 OK, equal to Mecway's own solve within 1e-13; checked in the Mecway GUI (formulas valid, contour) |
 | S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless + GUI); regression 2376/2382 |
+| S34b | Principal values of shells (top/middle/bottom) and Green-Lagrange principal strains (`GLe1`) under Mecway's names | done | S34 | branch of S34b (28 Oct 2026): `_shell_principal_vars`, `greenlagrangeprincipalstrain1..3`, `GLe1..3`, e/g/e1 alias for Green-Lagrange; FX-04, FX-05 OK; rule equal to Mecway's own solve within 3e-13; Mecway recognises the fields (headless); GUI not checked |
 | S35 | HOMARD adaptive refinement inside the job (`MACR_ADAP_MAIL`) for thermal and nonlinear static; results projected back onto the Mecway mesh (`PROJ_CHAMP`), refined result in VTU/MED | open | S7 | chosen by the user 28 Oct 2026 (route a: no new `.liml`); not built |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
@@ -1622,7 +1623,54 @@ Mecway's `accx`) are a problem; if so, fix it.
   stress*, *principal strain* and *maximum shear stress x 2* in the tree, and *acceleration* as a
   vector item next to *velocity*.
 - Open: principal values of shells (top/middle/bottom, Mecway `principal1u/m/b`), and `GLe1`.
+  (S34b: the Green-Lagrange name above was wrong for Mecway 34, see §S34b.)
 
+### S34b – Principal values of shells; Green-Lagrange principal strains
+**Goal:** the open items of S34: principal stresses/strains and Tresca of shells as Mecway
+shows them (top/middle/bottom), and `GLe1`..`GLe3` in formulas.
+**Status:** done (28 Oct 2026). GUI check not done (no computer use in this session):
+open a bridge result of FX-04 in Mecway and look at *principal stress* top/bottom.
+**Findings (measured headless with Mecway 34, `mw_solve.py`, safe runner; no GUI):**
+- Field names (from the strings in `mecway.exe` and Mecway's own solve of the LS-31 strip with
+  an extra in-plane force, quad4 and quad8, internal solver): `principal1u1` ..
+  `principal3u1`, `principal1m1` .., `principal1b1` .. (layer 1, like `stressxxu1`),
+  `trescau1/m1/b1`, `lprincipalstrain1u1` .. `lprincipalstrain3b1`; node and element-node
+  variables. Rule (same as solids): per element node the eigenvalues of the global 3 x 3
+  tensor of that surface, descending (the zero normal stress is part of it: one value about
+  0); tresca = p1 - p3; strains from `lstrain<ij><s>` with gamma/2 (within 2e-15); node value
+  = mean of the element-node values (exact), not the eigenvalues of the node tensor (up to
+  16% off).
+- CCX: Mecway's shell result with CCX has the solid names (`principal1`, `stressxx`, ...,
+  expanded shells); the bridge follows the internal solver.
+- Formulas: no formula symbols for the shell surfaces in `mecway.exe` (only `s1`..`s3`, `tr`,
+  `e1`..`e3`, `GLe1`..`GLe3`); on a shell-only model Mecway's solve stores no formula with
+  `s.xx`, `s1`, `tr`, `e1` (it does with `u.x`, `x`). Nothing to build; the bridge also has no
+  node variable for them and leaves such a formula out.
+- Green-Lagrange: Mecway 34's L30 with CCX (NL-31 bar and a hex20 cantilever with shear)
+  writes `greenlagrangestrain*` and `greenlagrangeprincipalstrain1..3`, also when only
+  *principal strain* is requested (it renames the field to *Green-Lagrange principal strain*);
+  values = eigenvalues of the Green-Lagrange node tensor with gamma/2 (within 3e-8, CCX node
+  values). It rewrites `e1` in a formula to `GLe1` (stored formula text changed; a message in
+  `mecway.exe` says the same for `e`, `g`, `e1..e3`). S34's statement that Mecway names them
+  `lprincipalstrain1..3` was wrong for this model.
+- Built: `aster_results_export._shell_principal_vars` (from `res_sup/moy/inf` SIGM_ELNO and
+  `eps_sup/moy/inf` EPSI_ELNO, `_principal_columns`), `bridge_to_aster` requests
+  `EPSI_ELNO` + `EXTR_COQUE` of the shells for `principal_strains` also without `strain`,
+  principal groups apply to shells; EPSG principal strains renamed to
+  `greenlagrangeprincipalstrain1..3`; formula symbols `GLe1..3`; `_gl_alias` in
+  `_formula_vars` (e.xx, e1, ... read the Green-Lagrange variables when only those exist).
+- Verification: FX-04 (shell strip: top/middle/bottom principal values and principal
+  strains against plate theory within 0.22%, Mecway's rule on the bridge's own stresses within
+  3e-16), FX-05 (GL principal strain, `GLe1`, `e1`, `e.xx` = 0.05125 exact). Mecway's own
+  solve of FX-04: dominant principal values within 0.05% at x = L/2; tresca and the values
+  near 0 up to 1% of the maximum apart (Mecway's MITC4 has transverse shear at the
+  surfaces, DKT not). Spliced bridge result opened headless in Mecway:
+  `solution.node_value("principal1u1")` and `element_node_value` read, Mecway adds the
+  fields *principal stress*, *Tresca stress*, *principal strain* on save. FX family,
+  LS-31..LS-31d, LS-32, LS-32b, NL-31: all OK.
+- Open: whether Mecway, when opening a bridge result of a nonlinear model, also rewrites a
+  formula `e1` to `GLe1` (the bridge writes the values under the fieldscalar either way); GUI
+  check of the shell fields.
 
 ### S35 – HOMARD adaptive refinement inside the job (route a)
 **Goal (user, 28 Oct 2026):** adaptive refinement for analyses the Mecway route of S7 cannot handle

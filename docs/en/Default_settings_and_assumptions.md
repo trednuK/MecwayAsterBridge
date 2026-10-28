@@ -91,7 +91,7 @@ and buckling only `displacements` (the shapes, as in Mecway). The extra fields
 the model has beams, shells, a von Mises failure criterion or contact; they then
 cost little computing time. `strain`, `shell_stresses`, `principal_stresses` and
 `principal_strains` are off by default: they
-make the `.liml` clearly larger (6 and 18 variables per node and per element node);
+make the `.liml` clearly larger (6 and 18 variables per node and per element node; principal values of shells 12 and 9);
 `shell_forces` (8 variables) makes the results about 2.5 times larger with shells (3500
 quad4 shells: `.liml` 1.6 → 3.5 MB, Code-Aster job +0.3 s; WARNING in the log) and is
 off for dynamics (per time step). See

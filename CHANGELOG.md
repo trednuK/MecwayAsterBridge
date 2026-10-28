@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Principal stresses, Tresca and principal strains of shells** (fields `principal_stresses`
+  and `principal_strains`): on the top, middle and bottom surface under Mecway's names
+  `principal1u1` .. `principal3b1`, `trescau1/m1/b1` and `lprincipalstrain1u1` ..
+  `lprincipalstrain3b1`, computed as Mecway 34 does (eigenvalues of the global tensor of the
+  surface per element node, node value = mean). Principal strains of shells no longer need the
+  field `strain`. Verification FX-04.
+- **Green-Lagrange principal strains under Mecway's names**: with large displacements the
+  principal strains are now written as `greenlagrangeprincipalstrain1..3` (was
+  `lprincipalstrain1..3`), as Mecway 34 itself does; the formula symbols `GLe1`..`GLe3` work,
+  and `e`, `g`, `e1`..`e3` in a formula read the Green-Lagrange values there (Mecway rewrites
+  them to `GLe`, ...). Verification FX-05.
+
 ## V2026.5 – 28 October 2026
 
 Result formulas computed by the bridge (issue #8), principal stresses and strains, acceleration

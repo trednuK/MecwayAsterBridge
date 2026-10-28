@@ -61,7 +61,7 @@ def test_parser():
     check(bf.symbols(bf.parse("T + t*qf.z/3600/(12^2) + e.xx + pi"))
           == set(["T", "t", "qf.z", "e.xx"]),
           "symbols case sensitive (T, t), dotted names, constant pi")
-    for text, part in (("GLe1 + 1", "not supported"),
+    for text, part in (("ZZs1 + 1", "not supported"),
                        ("youngsmodulus", "not supported"),
                        ("foo", "unknown name"),
                        ("2*(x", "missing"), ("sinh(x)", "unknown function"),
@@ -125,6 +125,10 @@ def test_plan():
           bf.groups(p2) == ["accelerations", "principal_strains",
                             "principal_stresses"],
           "s1, tr, e1 (principal fields, S34) and a.x (accx)")
+    p3 = bf.plan("F", "formula", "GLe1 + GLe3", [])
+    check(p3["symbols"]["GLe1"][0] == "greenlagrangeprincipalstrain1" and
+          bf.groups(p3) == ["principal_strains"],
+          "GLe1..3: Green-Lagrange principal strains (S34b)")
     lit = ast.literal_eval(repr(p))
     check(lit == p, "plan is a plain literal (written into study.comm)")
 
@@ -169,6 +173,35 @@ def test_formula_vars():
     out = are._formula_vars(plans[3:4], [stress], model, {7: 120.0}, _F())
     check(len(out) == 1 and np.allclose(out[0].getter(_F()), [2, 4, 6]),
           "t in min from the step time (120 s)")
+    # Green-Lagrange only (L30): Mecway rewrites e.xx / e1 to GLe.xx / GLe1
+    gl = [_V("greenlagrangestrainxx", [1, 2, 3], [0.1, 0.2, 0.3]),
+          _V("greenlagrangeprincipalstrain1", [1, 2, 3], [0.4, 0.5, 0.6])]
+    plans = [bf.plan("G1", "formula", "e.xx", [("", "")]),
+             bf.plan("G2", "formula(2)", "e1", [("", "")]),
+             bf.plan("G3", "formula(3)", "GLe1", [("", "")])]
+    got = dict((v.name, v.getter(_F())) for v in
+               are._formula_vars(plans, gl, model, None, _F()))
+    check(sorted(got) == ["formula", "formula(2)", "formula(3)"] and
+          np.allclose(got["formula"], [0.1, 0.2, 0.3]) and
+          np.allclose(got["formula(2)"], [0.4, 0.5, 0.6]) and
+          np.allclose(got["formula(3)"], [0.4, 0.5, 0.6]),
+          "e.xx, e1 read the Green-Lagrange variables when only those "
+          "exist (as Mecway rewrites them), GLe1 (S34b)")
+
+
+def test_principal_columns():
+    import aster_results_export as are
+    # rows xx yy zz xy yz zx (tensor shear); plane stress top surface
+    m = np.array([[30.0, -10.0, 0.0, 20.0, 0.0, 0.0],
+                  [0.0, 0.0, 0.0, 0.0, 5.0, 0.0]])
+    p = are._principal_columns(m)
+    c = 10.0 + math.sqrt(20.0 ** 2 + 20.0 ** 2)
+    d = 10.0 - math.sqrt(20.0 ** 2 + 20.0 ** 2)
+    check(np.allclose(p[0], [c, 0.0, d, c - d]) and
+          np.allclose(p[1], [5.0, 0.0, -5.0, 10.0]) and
+          are._principal_columns(None) is None,
+          "_principal_columns: eigenvalues of the 3 x 3 tensor incl. the "
+          "zero normal stress, descending, tresca = p1 - p3 (Mecway, S34b)")
 
 
 def _run(tmp, formula_xml, analysis="ther_3d"):
@@ -222,6 +255,41 @@ def test_bridge(tmp):
           "study.comm passes formulas= to export_results")
 
 
+def test_shell_comm(tmp):
+    """Shells with principal_strains but without strain: study.comm asks
+    EPSI_ELNO and the surfaces eps_sup/moy/inf itself (S34b)."""
+    import copy
+    model = os.path.join(_HERE, "..", "TestFiles", "Verificatie", "modellen",
+                         "FX-04.liml")
+    work = tempfile.mkdtemp(dir=tmp)
+    liml = os.path.join(work, "model.liml")
+    shutil.copy(model, liml)
+    saved = copy.deepcopy(u.CONFIG_BRIDGE["analyses"])
+    try:
+        u.CONFIG_BRIDGE["work_dir"] = work
+        u.CONFIG_BRIDGE["active_analysis"] = "lin_static_3d"
+        u.CONFIG_BRIDGE["analyses"]["lin_static_3d"]["fields"] = [
+            "displacements", "stresses", "principal_stresses",
+            "principal_strains"]
+        from bridge_from_liml import extract_aster_data_from_liml
+        from bridge_mesh import write_mesh
+        from bridge_to_aster import generate_AsterSolver_files
+        md = extract_aster_data_from_liml(liml)
+        mail = os.path.join(work, "m.mail")
+        ok = (md is not None and write_mesh(mail, md) and
+              generate_AsterSolver_files(work, md, mail, "test.resu"))
+        comm = io.open(os.path.join(work, "study.comm"),
+                       encoding="utf-8").read() if ok else ""
+    finally:
+        u.CONFIG_BRIDGE["analyses"] = saved
+    check("DEFORMATION=('EPSI_ELNO', )" in comm and
+          "eps_sup = POST_CHAMP(" in comm and "eps_inf = POST_CHAMP(" in comm
+          and "'principal_strains'" in comm and
+          "'principal_stresses'" in comm,
+          "shells: principal_strains without strain -> EPSI_ELNO, "
+          "eps_sup/eps_inf and opt_in in study.comm")
+
+
 def main():
     saved = dict(u.CONFIG_BRIDGE)
     tmp = tempfile.mkdtemp(prefix="bridge_formula_")
@@ -230,7 +298,9 @@ def main():
         test_units()
         test_plan()
         test_formula_vars()
+        test_principal_columns()
         test_bridge(tmp)
+        test_shell_comm(tmp)
     finally:
         u.CONFIG_BRIDGE.clear()
         u.CONFIG_BRIDGE.update(saved)
