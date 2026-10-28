@@ -1177,3 +1177,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,
    frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).
+
+131\. **Orthotropic and anisotropic material: limits** (confirmed, `bridge_orthotropic.py`,
+   STAPPENPLAN S13a). Translated: *Orthotropic*, *Stiffness matrix* and *Compliance matrix*
+   on solid elements in Linear and Nonlinear static, Modal, Buckling and implicit Dynamics (`ELAS_ORTH` + `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`,
+   [`docs/en/Orthotropic_material.md`](docs/en/Orthotropic_material.md), OR-01..22; linear shells DKT/DST in linear static as a one-layer
+   `DEFI_COMPOSITE`). Not:
+   a matrix with coupling terms (normal-shear or shear-shear, truly anisotropic): ERROR,
+   because `DEFI_MATERIAU` has no general anisotropic elasticity for solids (catalogue
+   v17.4: only `ELAS_ORTH`/`ELAS_ISTR`; permanent unless via MFront, which the Windows
+   build lacks); orthotropic material on quadratic shells (COQUE_3D), membranes and offset shells,
+   shells in other analyses than linear static, and *Composite* laminates (ERROR, step S13e); explicit dynamics, mode superposition, harmonic, spectrum, the thermal -> mechanical chain
+   and acoustics (ERROR, step S13c; modal with prestress, complex modes, cyclic symmetry and
+   Rayleigh damping allowed but not verified separately), orthotropic thermal
+   conductivity; *stress in element coordinates* (`lamuu` ..) is written in linear static only
+   (not per mode in modal/buckling) and not for shells.

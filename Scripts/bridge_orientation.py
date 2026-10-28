@@ -56,8 +56,10 @@
 #   shells            U -> model_data["card_u_axes"] (U,V of the result
 #                     field shell_forces, aster_results_export u_axes);
 #                     no effect on the solution with isotropic material
-#   solids, trusses, cables, springs, dampers: no effect (INFO; orthotropic
-#                     material is STAPPENPLAN S13)
+#   solids            U, V and angle -> model_data["solid_orientations"]
+#                     (material axes of an orthotropic material,
+#                     bridge_orthotropic; no effect when isotropic)
+#   trusses, cables, springs, dampers: no effect (INFO)
 #
 # Compatible with IronPython 2.7.9 (Mecway scripting engine).
 
@@ -73,6 +75,8 @@ _U_KEYS = ("ux", "uy", "uz")
 _V_KEYS = ("vx", "vy", "vz")
 _SHELLS = frozenset(["tri3", "tri6", "quad4", "quad8"])
 _LINES = frozenset(["line2", "line3"])
+_SOLIDS = frozenset(["hex8", "hex20", "tet4", "tet10", "pyr5", "pyr13",
+                     "wedge6", "wedge15"])
 _NUMBER = re.compile(r"^\s*[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?\s*"
                      r"[^\s\d()*+/^-]*\s*$")
 
@@ -213,7 +217,9 @@ def apply(model_data):
     u_axes = model_data.setdefault("elem_u_axes", {})
     card_u = model_data.setdefault("card_u_axes", {})
     # elements with an orientation from their attributes, then per card
-    owner = dict((eid, None) for eid in list(beam_or) + list(u_axes))
+    solid_or = model_data.setdefault("solid_orientations", {})
+    owner = dict((eid, None) for eid in list(beam_or) + list(u_axes) +
+                 list(model_data.get("elem_v_axes", {})))
     for card in cards:
         sel = card["selection"]
         eids = selections.get(sel)
@@ -259,6 +265,12 @@ def apply(model_data):
                         continue
                     new, target = u, u_axes
                     card_u[eid] = u
+                elif shape in _SOLIDS:
+                    # material axes of an orthotropic material
+                    # (bridge_orthotropic); no effect when isotropic
+                    kind = "solid"
+                    new, target = (u if has_u else None,
+                                   v if has_v else None, angle), solid_or
                 else:
                     ignored.setdefault("no_effect", []).append(eid)
                     continue
@@ -281,6 +293,11 @@ def _report(sel, card, counts, overlap, ignored, owner):
         sel, ", ".join("{0}={1}".format(k, vals[k]) for k in sorted(vals)),
         ", ".join("{0} {1}".format(n, k) for k, n in counts.items())
         or "no element"))
+    if "solid" in counts:
+        log("INFO: Element orientation '{0}': on solids it sets the axes "
+            "U, V, W of an orthotropic or anisotropic material "
+            "(bridge_orthotropic); no effect with isotropic "
+            "material.".format(sel))
     if "shell" in counts:
         log("INFO: Element orientation '{0}': the U axis of shells only "
             "sets the U,V axes of the result field shell_forces (no effect "
@@ -314,10 +331,8 @@ def _report(sel, card, counts, overlap, ignored, owner):
     for key, eids in ignored.items():
         if key == "no_effect":
             log("INFO: Element orientation '{0}': no effect on {1} "
-                "element(s) ({2}): solids, trusses, cables, springs and "
-                "dampers have no section orientation and the material is "
-                "isotropic (the bridge does not translate orthotropic "
-                "material yet).".format(
+                "element(s) ({2}): trusses, cables, springs and dampers "
+                "have no section orientation.".format(
                     sel, len(eids), _ids(eids)))
             continue
         nl, en = texts[key]

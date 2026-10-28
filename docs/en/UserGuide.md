@@ -34,6 +34,7 @@ Related documents:
 | Adaptive refinement: refine the mesh in Mecway where the error is large (linear static) | [`Error_estimator.md`](Error_estimator.md) §6 |
 | Element failure | [`Failure.md`](Failure.md) |
 | Bolt pretension (*Pre-tension section*) | [`Bolt_pretension.md`](Bolt_pretension.md) |
+| Orthotropic and anisotropic material | [`Orthotropic_material.md`](Orthotropic_material.md) |
 | Fatigue: damage and life per node (Wöhler curve, rainflow, Miner, critical-plane criteria, Manson-Coffin; `#ASTER-WOHLER`) | [`Fatigue.md`](Fatigue.md) |
 | Your own Code-Aster input (`#ASTER` lines) | [`ASTER_lines_examples.md`](ASTER_lines_examples.md) |
 | Code-Aster messages, cause and solution | [`CodeAster_error_messages.md`](CodeAster_error_messages.md) |

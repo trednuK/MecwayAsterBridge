@@ -1,0 +1,133 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.0025" y="0" z="0" />
+  <node nid="3" x="0.0025" y="0.0025" z="0" />
+  <node nid="4" x="0" y="0.0025" z="0" />
+  <node nid="5" x="0.0025" y="0.005" z="0" />
+  <node nid="6" x="0" y="0.005" z="0" />
+  <node nid="7" x="0.0025" y="0.0075" z="0" />
+  <node nid="8" x="0" y="0.0075" z="0" />
+  <node nid="9" x="0.0025" y="0.01" z="0" />
+  <node nid="10" x="0" y="0.01" z="0" />
+  <node nid="11" x="0.005" y="0" z="0" />
+  <node nid="12" x="0.005" y="0.0025" z="0" />
+  <node nid="13" x="0.005" y="0.005" z="0" />
+  <node nid="14" x="0.005" y="0.0075" z="0" />
+  <node nid="15" x="0.005" y="0.01" z="0" />
+  <node nid="16" x="0.0075" y="0" z="0" />
+  <node nid="17" x="0.0075" y="0.0025" z="0" />
+  <node nid="18" x="0.0075" y="0.005" z="0" />
+  <node nid="19" x="0.0075" y="0.0075" z="0" />
+  <node nid="20" x="0.0075" y="0.01" z="0" />
+  <node nid="21" x="0.01" y="0" z="0" />
+  <node nid="22" x="0.01" y="0.0025" z="0" />
+  <node nid="23" x="0.01" y="0.005" z="0" />
+  <node nid="24" x="0.01" y="0.0075" z="0" />
+  <node nid="25" x="0.01" y="0.01" z="0" />
+  <elset name="Plaat" material="Ortho">
+    <elem eid="1" shape="quad4" nodes="2 3 4 1" />
+    <elem eid="2" shape="quad4" nodes="3 5 6 4" />
+    <elem eid="3" shape="quad4" nodes="5 7 8 6" />
+    <elem eid="4" shape="quad4" nodes="7 9 10 8" />
+    <elem eid="5" shape="quad4" nodes="11 12 3 2" />
+    <elem eid="6" shape="quad4" nodes="12 13 5 3" />
+    <elem eid="7" shape="quad4" nodes="13 14 7 5" />
+    <elem eid="8" shape="quad4" nodes="14 15 9 7" />
+    <elem eid="9" shape="quad4" nodes="16 17 12 11" />
+    <elem eid="10" shape="quad4" nodes="17 18 13 12" />
+    <elem eid="11" shape="quad4" nodes="18 19 14 13" />
+    <elem eid="12" shape="quad4" nodes="19 20 15 14" />
+    <elem eid="13" shape="quad4" nodes="21 22 17 16" />
+    <elem eid="14" shape="quad4" nodes="22 23 18 17" />
+    <elem eid="15" shape="quad4" nodes="23 24 19 18" />
+    <elem eid="16" shape="quad4" nodes="24 25 20 19" />
+  </elset>
+  <displacement selection="Alle"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <noderotation selection="Alle"><value>0 rad</value><x>1</x><y>0</y><z>0</z></noderotation>
+  <noderotation selection="Alle"><value>0 rad</value><x>0</x><y>1</y><z>0</z></noderotation>
+  <noderotation selection="Alle"><value>0 rad</value><x>0</x><y>0</y><z>1</z></noderotation>
+  <displacement selection="A"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="A"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="B"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <force selection="XMin1"><x>-12.5 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMin4"><x>-25.0 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMin6"><x>-25.0 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMin8"><x>-25.0 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMin10"><x>-12.5 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMax21"><x>12.5 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMax22"><x>25.0 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMax23"><x>25.0 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMax24"><x>25.0 N</x><y>0 N</y><z>0 N</z></force>
+  <force selection="XMax25"><x>12.5 N</x><y>0 N</y><z>0 N</z></force>
+  <mat name="Ortho">
+    <mechanical type="Orthotropic" youngsmodulusu="100 GPa" youngsmodulusv="20 GPa" youngsmodulusw="10 GPa" poissonratiouv="0.3" poissonratiovw="0.2" poissonratiowu="0.05" shearmodulusuv="7 GPa" shearmodulusvw="4 GPa" shearmoduluswu="5 GPa" />
+    <geometric type="Plate" thickness="1 mm" />
+  </mat>
+  <nodeselection name="Alle">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="16" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="19" />
+    <node nid="20" />
+    <node nid="21" />
+    <node nid="22" />
+    <node nid="23" />
+    <node nid="24" />
+    <node nid="25" />
+  </nodeselection>
+  <nodeselection name="A">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="B">
+    <node nid="21" />
+  </nodeselection>
+  <nodeselection name="C">
+    <node nid="10" />
+  </nodeselection>
+  <nodeselection name="XMin1">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="XMin4">
+    <node nid="4" />
+  </nodeselection>
+  <nodeselection name="XMin6">
+    <node nid="6" />
+  </nodeselection>
+  <nodeselection name="XMin8">
+    <node nid="8" />
+  </nodeselection>
+  <nodeselection name="XMin10">
+    <node nid="10" />
+  </nodeselection>
+  <nodeselection name="XMax21">
+    <node nid="21" />
+  </nodeselection>
+  <nodeselection name="XMax22">
+    <node nid="22" />
+  </nodeselection>
+  <nodeselection name="XMax23">
+    <node nid="23" />
+  </nodeselection>
+  <nodeselection name="XMax24">
+    <node nid="24" />
+  </nodeselection>
+  <nodeselection name="XMax25">
+    <node nid="25" />
+  </nodeselection>
+</liml>

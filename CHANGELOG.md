@@ -35,6 +35,22 @@
   an element. Mecway's own solver applies no hydrostatic pressure on shell edges (manual
   §9.17); the bridge says so with a WARNING; compared with Mecway through the same load as a
   Pressure formula on the edge (equal within 0.01%). Verification LS-93a .. LS-93c.
+- **Orthotropic and anisotropic material on solids** (STAPPENPLAN S13a): Mecway's
+  *Orthotropic*, *Stiffness matrix* and *Compliance matrix* materials are translated in
+  Linear and Nonlinear static, Modal, Buckling and implicit Dynamics to Code-Aster `ELAS_ORTH` (also thermal expansion in U, V, W), with Mecway's
+  element axes U, V, W (*Element properties*, an *Element orientation* card with angle or
+  formula, or the global axes by default) as `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`. A matrix is
+  translated when it is orthotropic in the element axes; a truly anisotropic matrix (coupling
+  terms) gives an ERROR, because Code-Aster has no general anisotropic elasticity for solids.
+  *Orthotropic* on linear shells (DKT/DST) in Linear static: a one-layer `DEFI_COMPOSITE` with
+  Mecway's U (default the edge from node 1 to 2). Quadratic shells, *Composite* laminates and
+  the other analyses: clear ERROR (steps S13c, S13e). Cube in uniaxial tension and free
+  thermal expansion with turned axes equal to Hooke's law and to Mecway's own solve; orthotropic
+  cantilever in two orientations, also its frequencies, buckling load, large deflection and
+  step response, shells (verification OR-01 .. OR-22; docs Orthotropic material). With the field *stresses*, linear static also
+  writes Mecway's *stress in element coordinates* (`lamuu` .. `lamwu`) of the solids, with
+  Mecway's averaging rule (S13d, OR-11).
+
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
   `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
   `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh

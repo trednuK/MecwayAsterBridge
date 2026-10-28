@@ -55,6 +55,7 @@ import bridge_vibroacoustic
 import bridge_cyclic
 import bridge_offset
 import bridge_orientation
+import bridge_orthotropic
 import bridge_warping
 import bridge_plane
 
@@ -1904,6 +1905,22 @@ def extract_aster_data_from_liml(file_path):
                             tuple(float(e.get(k, "0")) for k in (
                                 "orientationux", "orientationuy",
                                 "orientationuz"))
+                    if eid and s in _DIM_3D_SHAPES:
+                        # Material axes of a solid (orthotropic material,
+                        # bridge_orthotropic): V vector and angle next to
+                        # the U axis above (manual v34 par. 8.5)
+                        if any(e.get(k) is not None for k in (
+                                "orientationvx", "orientationvy",
+                                "orientationvz")):
+                            model_data.setdefault("elem_v_axes", {})[
+                                int(eid)] = tuple(float(e.get(k, "0"))
+                                                  for k in (
+                                    "orientationvx", "orientationvy",
+                                    "orientationvz"))
+                        if e.get("angle") is not None:
+                            model_data.setdefault("elem_angles", {})[
+                                int(eid)] = parse_and_convert(
+                                    e.get("angle"), "angle")
                     if (eid and s in _DIM_1D_SHAPES and
                             e.get("truss") != "true"):
                         # A truss needs no orientation (manual
@@ -2291,6 +2308,15 @@ def extract_aster_data_from_liml(file_path):
                                 mat_props["E"],  mat_props["NU"],
                                 mat_props["Texp"], mat_props["rho"],
                                 "plastic_curve" in mat_props))
+
+                    elif mech_type in bridge_orthotropic.TYPES:
+                        # Orthotropic / Stiffness matrix / Compliance
+                        # matrix -> ELAS_ORTH (STAPPENPLAN S13a)
+                        ortho = bridge_orthotropic.parse(
+                            mech_node, dens_node, mech_type, mat_name,
+                            model_data)
+                        if ortho is not None:
+                            model_data["materials"][mat_name] = ortho
 
                     elif mech_type in ("NeoHooke", "MooneyRivlin"):
                         hyp = _parse_hyperelastic(mech_node, dens_node,

@@ -97,8 +97,12 @@ def test_beam_card():
     check(5 not in md["beam_orientations"] and
           6 not in md["beam_orientations"], "truss/gap got an orientation")
     check(not md["skipped_loads"], "skipped: {0}".format(md["skipped_loads"]))
-    check(any("no effect on 3 element(s) (5, 6, 8)" in l for l in LOG),
+    check(any("no effect on 2 element(s) (5, 6)" in l for l in LOG),
           "INFO no effect: {0}".format(LOG))
+    # solid 8: material axes of an orthotropic material (S13a)
+    o = md["solid_orientations"].get(8)
+    check(o is not None and o[0] is None and close(o[1], (0, 0, 1)) and
+          abs(o[2] - math.radians(30)) < 1e-12, "solid 8: {0}".format(o))
     # an angle without unit is in rad (Mecway writes "30 rad")
     md = _run(_model(), _card("Half", v=(0, 1, 0), angle="30"))
     check(abs(md["beam_orientations"][1]["angle"] - 30.0) < 1e-12,

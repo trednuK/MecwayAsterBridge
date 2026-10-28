@@ -47,6 +47,7 @@ import bridge_mesh
 import bridge_modal_damping
 from bridge_bcs import is_position, ASTER_FORMULA_PRELUDE
 import bridge_offset
+import bridge_orthotropic
 import bridge_warping
 import bridge_plane
 from collections import OrderedDict
@@ -64,10 +65,11 @@ from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
 
 def _has_cara(model_data):
     """True if AFFE_CARA_ELEM is needed (beams, shells, springs, POI1,
-    discrete elements, cables)."""
+    discrete elements, cables, material axes of orthotropic solids)."""
     return any(bool(model_data.get(k)) for k in (
         "beam_sections", "shell_sections", "spring_sections", "poi1_groups",
-        "discretes", "discrete_sections", "cable_sections"))
+        "discretes", "discrete_sections", "cable_sections",
+        "massif_orientations"))
 
 
 def bonded_nprec(model_data, analysis, lin=False):
@@ -1025,6 +1027,8 @@ def _build_cara_elem_block(model_data):
     POUTRE entries: 1D elsets with beam cross-section geometry.
     DISCRET entries: 1D elsets with spring material (DIS_T, K_T_D_L) and
     POI1 groups (K_T_D_N / K_TR_D_N), each with a mass entry (M_*).
+    MASSIF entries: material axes of solids with an orthotropic material
+    (bridge_orthotropic.prepare, ANGL_REP per group BRORI<n>).
 
     Without beams, shells, springs and POI1 groups (see _has_cara) a
     comment line is returned so that the placeholder stays valid.
@@ -1209,6 +1213,14 @@ def _build_cara_elem_block(model_data):
     if cable_entries:
         lines.append("    CABLE=(")
         lines.extend(cable_entries)
+        lines.append("    ),")
+
+    # --- MASSIF (material axes of orthotropic solids, bridge_orthotropic;
+    # catalogue affe_cara_elem.py v17.4: GROUP_MA + ANGL_REP) ---
+    massif = bridge_orthotropic.massif_entries(model_data)
+    if massif:
+        lines.append("    MASSIF=(")
+        lines.extend(massif)
         lines.append("    ),")
 
     lines.append(")")
@@ -2239,6 +2251,9 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
     fragment = results_file(work_dir)
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
         bridge_plane.export_arg(model_data) + extra
+    # Orthotropic solids: Mecway's "stress in element coordinates" (S13d)
+    extra += bridge_orthotropic.export_arg(
+        model_data, analysis.get("fields", []) if fields is None else fields)
     block = (
         "# Results in Mecway's own format (bridge: result_route='liml')@N"
         "import sys@N"
@@ -2458,6 +2473,15 @@ def _build_materials_block(model_data, analysis, plastic_func_map=None):
                         concept, hyp["C10"], hyp["C01"], hyp["K"],
                         props.get("rho", 0.0))
             continue
+        if bridge_orthotropic.is_ortho(props):
+            # Orthotropic / matrix material (bridge_orthotropic): ELAS_ORTH
+            # instead of ELAS (Mecway's orthotropic types have no
+            # plasticity, so no TRACTION, ECRO_LINE or CABLE).
+            out += _mat_comment(mat_name)
+            out += "{0} = DEFI_MATERIAU({1},)\n".format(
+                concept, bridge_orthotropic.elas_text(props, thermal,
+                                                      rayleigh))
+            continue
         elas = _elas_args(props, thermal, rayleigh)
         extra = []
         if mat_name in plastic_func_map:
@@ -2478,6 +2502,8 @@ def _build_materials_block(model_data, analysis, plastic_func_map=None):
         else:
             out += "{0} = DEFI_MATERIAU(ELAS=_F({1}),)\n".format(
                 concept, elas)
+    # Orthotropic shells: one DEFI_COMPOSITE layer per group (S13b)
+    out += bridge_orthotropic.composite_block(model_data, concepts)
     for group, gap in model_data.get("gap_groups", {}).items():
         # DIS_CHOC on SEG2: contact as soon as the node distance along the
         # element axis <= DIST_1 + DIST_2 (checked with a run, Code-Aster
@@ -2611,6 +2637,8 @@ def _build_fieldmat_block(model_data, timeline=None):
     for group in model_data.get("gap_groups", {}):
         entries.append("        _F(GROUP_MA='{0}', MATER=MAT_{0}),\n".format(
             group))
+    # Orthotropic shells: the composite per group (S13b), after the elsets
+    entries += bridge_orthotropic.fieldmat_entries(model_data)
 
     temp_block, varc = _build_temperature_field(model_data, timeline)
     if not entries:
@@ -8441,6 +8469,9 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     # Hyperelastic materials: also for thermal -> mechanical (checked inside)
     if not _check_hyperelastic(model_data, analysis):
         return None
+    # Orthotropic / anisotropic materials: scope (solids, linear static)
+    if not bridge_orthotropic.check(model_data, analysis):
+        return None
     _check_formula_fields(model_data, analysis)
     if not _check_lost_contacts(model_data, solver_cmd):
         return None
@@ -8454,6 +8485,11 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
 
     # Gap groups (DEFI_GROUP, DEFI_MATERIAU) before the blocks
     _prepare_gaps(model_data)
+    if mechanical:
+        # Material axes of orthotropic solids: groups BRORI<n> (DEFI_GROUP)
+        # and AFFE_CARA_ELEM MASSIF
+        if bridge_orthotropic.prepare(model_data) is None:
+            return None
     # Adaptive refinement with HOMARD (setting adapt_homard): check the
     # scope before the builder, then the loop into the .comm
     import bridge_homard

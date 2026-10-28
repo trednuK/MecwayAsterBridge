@@ -138,7 +138,10 @@ formulas `s1`, `tr`, `e1`).
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
-Added after this run (not yet in a full regression, not in the table): Bolt pretension
+Added after this run (not yet in a full regression, not in the table): Orthotropic material
+OR-01..22, 19 cases, 174 checks OK (28/29 October 2026, steps S13a .. S13d; re-run with it: all
+linear static cases, MO-20 .. MO-31, BU-20 .. BU-25, the result formulas and part of the thermal
+and modal families, about 200 cases, FEM values bit-identical); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
 checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
 Beam side faces and hydrostatic pressure on shell
@@ -874,6 +877,53 @@ Mecway (≤ 1e-11); nodal stresses are equal where they are uniform or linear in
 elsewhere they differ by the extrapolation (KB3). After opening a bridge result Mecway shows
 the items *displacement*, *stress*, *von Mises stress*, *reaction force*, *principal stress* and
 *Tresca stress* and reads the values with `solution.node_value`.
+
+### Orthotropic material (OR)
+
+Mecway's *Orthotropic*, *Stiffness matrix* and *Compliance matrix* on solids
+([Orthotropic_material.md](Orthotropic_material.md), step S13a): `ELAS_ORTH` with the element
+axes as `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`. Module `tests_orthotroop.py` (group
+"Orthotroop"), run with `python run_verificatie.py OR`. Material E = 100/20/10 GPa,
+ν12/ν23/ν31 = 0.3/0.2/0.05, G12/G23/G31 = 7/4/5 GPa. The cube cases (10 mm, hex20
+2 × 2 × 2) carry a uniaxial stress of 10 MPa (equal and opposite forces on two faces) and
+are held statically determinate (3-2-1 on corner nodes), so the stress is homogeneous and
+the corner displacements give all six global strains; reference: Hooke's law in U, V, W
+with the compliance rotated to X, Y, Z (tensor rotation). The cube cases with a load also check
+*stress in element coordinates*: `lam_ab` = R_ad R_bd σ (exact). Mecway 34 headless with its
+internal solver (`mw_solve.py`, the same `.liml`, 28 October 2026; for L30/D31 with CCX,
+because the internal solver gives no solution there) is the second reference.
+
+| Case | Model | Reference | Result |
+|---|---|---|---|
+| OR-01 | cube, *Orthotropic*, tension along X, element attributes U = (1, 1, 0), V = (−1, 1, 1) | six strains ε = (6.2254e-4, −1.8698e-4, −1.6056e-4), γ = (−3.7222e-4, −2.5873e-5, 2.1635e-4) (xx, yy, zz; xy, yz, zx) | all six within 5e-8, σxx = 10 MPa, σxy ≈ 0; Mecway the same (≤ 6e-8) |
+| OR-02 | idem, *Element orientation* card U = (0, 0.6, 0.8), V = (1, 0, 0), angle 30° | idem | ε = (7.75e-4, −1.726e-4, −1.124e-4), γ = (−3.1177e-4, 2.064e-4, 2.3383e-4): within 2e-8; Mecway the same |
+| OR-03 | idem, *Stiffness matrix* (c11 … c66 of the same material), tension along Y, attributes of OR-01 | idem | the strains of OR-01 with x and y exchanged: within 5e-8; Mecway the same |
+| OR-04 | idem, *Compliance matrix* (s11 … s66 in m²/N), tension along Z, card of OR-02 | idem | ε = (−1.124e-4, −1.9295e-4, 5.8095e-4), γ = (6.7659e-5, −5.3030e-4, 9.7717e-5): within 3e-8; Mecway the same |
+| OR-09 | cube of OR-02 heated by 100 K without load, α = 1e-5/2e-5/3e-5 1/K in U/V/W | ε = Rᵀ diag(αΔT) R, no stress | ε = (2.25e-3, 2.12e-3, 1.63e-3), γ = (−6.9282e-4, −1.68e-3, 5.1962e-4) within 1e-8, von Mises 7 Pa (≈ 0); Mecway the same |
+| OR-05 | cantilever 200 × 10 × 10 mm (hex20 20 × 2 × 2), tip traction 100 N in −Z, default axes: E1 = 100 GPa along the beam, G31 shears | Timoshenko PL³/3EI + PL/kGA = 3.2480 mm (shear term 1.1%) | 3.2425 mm (−0.17%, clamp); Mecway 3.2425 mm (equal, 1e-8) |
+| OR-06 | idem, U = Y, V = −X per element: E2 = 20 GPa along the beam, G23 shears | 16.060 mm | 16.041 mm (−0.12%); Mecway 16.041 mm (equal, 1e-8) |
+| OR-07 | cantilever of OR-05 in Frequency (`modal_3d`), density 1500 kg/m³ | Euler-Bernoulli f1 = 329.74 Hz; Mecway 326.211 / 327.280 Hz (bending in Z / Y) | 326.211 Hz (−1.1%: shear, E/G = 20), 327.280 Hz; Mecway equal (≤ 1e-10) |
+| OR-08 | idem with the axes of OR-06 | f1 = 147.47 Hz; Mecway 147.085 / 147.286 Hz | 147.085 Hz (−0.26%), 147.286 Hz; Mecway equal (≤ 1e-9) |
+| OR-10 | cantilever of OR-06 as a column in Buckling (`buckling_3d`), 1000 N compression | π²E2I/(4L²)/P = 1.0281; Mecway 1.02522 / 1.02671 | 1.02522 (−0.28%), 1.02671; Mecway equal (≤ 1e-9) |
+| OR-11 | *stress in element coordinates* (S13d): bar 40 × 10 × 10 mm (hex20 4 × 1 × 1), clamped, force (500, 100, −200) N; the elements at x > 20 mm turned (U = (0.866, 0.5, 0), V = (−0.5, 0.866, 0.2)) | `lam*` = R σ Rᵀ of the bridge's own nodal stress at x = 30 mm; at x = 20 mm (two frames) the mean of R_e σ_e R_eᵀ over the element-node stresses (Mecway's rule) | both within 1e-9 Pa; Mecway's own values differ by the difference of the nodal stresses of the two solvers on this coarse mesh (up to 0.45 MPa at x = 30 mm, 2 MPa at the interface; σmax 80 MPa) |
+| OR-12 | cube of OR-02 in Nonlinear static (L30, large displacements = `GREEN_LAGRANGE`), strain about 1e-3 | Hooke rotated (as OR-02); Mecway (CCX) ε = (7.7410e-4, −1.7253e-4, −1.1237e-4), γ = (−3.1129e-4, 2.0635e-4, 2.3347e-4) | within 1.6e-3 of small-strain Hooke (the large-displacement effect); Mecway within 2e-6 |
+| OR-13 | cantilever of OR-06 in L30 with 300 N (tip about 23% of L) | Mecway (CCX) 45.560 mm (linear 48.12 mm) | 45.560 mm (equal, 1e-7) |
+| OR-14 | cantilever of OR-06 in Dynamic response (D31, HHT, Δt = T/50), density 1500 kg/m³, tip traction 100 N as a step | period 1/f1 = 6.7988 ms (OR-08); Mecway (CCX) 6.7731 ms | 6.7763 ms (−0.33%: scheme); Mecway +0.05% |
+| OR-15 | cube of OR-01 in hex8 (2 × 2 × 2) with `elem_hex8` = `LINE_QUAD` (the `MASSIF` groups survive `CREA_MAILLAGE`) | as OR-01; Mecway (hex8) the same strains | within 1e-8 |
+| OR-17 | cantilever of OR-05 with an *Element orientation* card U = (cos 20x, sin 20x, 0) (formula of the element centre, x in m), V = Z: 20 `MASSIF` groups | Mecway 19.454 mm | 19.454 mm (equal, 2e-8) |
+| OR-20 | shell (DKT) 10 × 10 mm, t = 1 mm (quad4 4 × 4), membrane stress 10 MPa along X, U = (cos 30°, sin 30°, 0) per element: one `DEFI_COMPOSITE` layer with `ORIENTATION` 30° | plane-stress Hooke turned: ε = (3.4411e-4, −1.7411e-4), γ = −3.3961e-4; σxx = 10 MPa, σyy = σxy = 0 (global) | within 2e-8; Mecway the same |
+| OR-21 | idem without orientation, node order with the edge 1–2 along +Y (Mecway's default U, measured) | ε = (5e-4, −3e-5), γ = 0 | exact; Mecway the same |
+| OR-22 | strip 100 × 10 mm, t = 2 mm (quad4 20 × 2), clamped edge, 10 N out of plane at the tip, U at 30° | Mecway (MITC4) 16.039 mm, σxx top at x = 25 mm 112.42 MPa | 15.961 mm (−0.48%), 112.94 MPa (+0.46%): DKT against MITC4 (KB2) |
+
+Mecway's semantics, measured with headless solves of single hex8 cubes under an imposed
+homogeneous strain (all nodes prescribed, so the stress is C·ε exactly): the orthotropic
+constants with major Poisson's ratios; U and V of the attributes and of the card with V
+projected perpendicular to U and turned about U by the angle (within 1e-15 of the rotated
+Hooke matrix); the matrix rows 1..6 = UU, VV, WW, VW, WU, UV with engineering shear (c14
+couples ε_UU with γ_VW, c16 with γ_UV), for the stiffness and the compliance matrix; only a U
+or only a V vector, or U parallel to V: Mecway gives no solution; an angle alone: global
+axes. With the field *stress in element coordinates* Mecway stores `lamuu`, `lamvv`, `lamww`,
+`lamuv`, `lamvw`, `lamwu` = R σ Rᵀ (not written by the bridge, S13d).
 
 ### Conclusion linear static
 
