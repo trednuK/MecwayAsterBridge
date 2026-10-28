@@ -404,13 +404,28 @@ refinement*) where `errorestimate` is large.
 - Only **solid elements** are chosen; the loop does not refine shells and beams.
 - **Node selections** with a load or constraint on an edge to be refined: ERROR (apply
   the constraint to faces).
-- **HOMARD** (`MACR_ADAP_MAIL`, refining inside Code-Aster) is not built. HOMARD works
-  in 3D on this installation (test case sslv110f: HEXA8 1680 → 1698 + 56 TETRA4,
-  conforming, all TEST_RESU OK), but the new mesh cannot go back to Mecway through the
-  result route (which checks the nodes against the `.liml`): the bridge would have to
-  write a new `.liml` with the nodes, elements and all selections, loads and
-  constraints through the HOMARD groups. The Mecway route keeps the model in Mecway and
-  refines everything along; that is why it was chosen (the user's preference).
+- **HOMARD** (`MACR_ADAP_MAIL`, refining inside Code-Aster) is not built yet. HOMARD
+  works in 3D on this installation (test case sslv110f: HEXA8 1680 → 1698 + 56 TETRA4,
+  conforming, all TEST_RESU OK). Step S35a (October 2026) researched the route in which
+  the loop runs in one Code-Aster job and the result comes back onto the Mecway mesh
+  with `PROJ_CHAMP` (thermal and nonlinear static, prototype in
+  `TestFiles/Tools/homard_s35`): it works (plate with a hole, heat flux and stress with
+  2.3 to 3.2 x fewer elements than uniform refinement), but HOMARD does not extend node
+  groups, renumbers the nodes, makes transition elements on which Code-Aster's
+  estimators stop, and a curved boundary must be given as an analytical shape. Building
+  it in is planned as step S35b (`STAPPENPLAN.md`). The Mecway route keeps the model in
+  Mecway and refines everything along; that is why it was chosen for linear static (the
+  user's preference).
+
+  ![HOMARD loop inside the job (prototype S35a)](../img/homard_loop.svg)
+
+  1. Coarse Mecway mesh (in the prototype the plate with a hole).
+  2. Solve in Code-Aster (`THER_LINEAIRE` or `STAT_NON_LINE`, the whole load history).
+  3. Error indicator per element; the elements above the red line (Dörfler selection) are chosen.
+  4. HOMARD refines the chosen elements (`MACR_ADAP_MAIL`), with transition elements.
+  5. Refined mesh; back to 2 until the target or the maximum number of loops is reached.
+  6. After the last loop: the result onto the original Mecway mesh with `PROJ_CHAMP`, so
+     that it can go to Mecway.
 - The loop does not coarsen (*unrefine*).
 
 These limits are also in `KNOWN_BUGS.md` (item 65).

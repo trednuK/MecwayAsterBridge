@@ -913,8 +913,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    tet10 already in loop 1; the global estimate then rises and the loop stops (WARNING). Also in
    AD-02 the worst hex20 drops to 0.04 (WARNING) without the error rising.
    Node selections with a condition are not refined along by Mecway: ERROR before
-   refining (AD-03). HOMARD (`MACR_ADAP_MAIL`) is not built: the new mesh cannot
-   go back to Mecway. Each loop waits for Code-Aster (status window or OK click,
+   refining (AD-03). HOMARD (`MACR_ADAP_MAIL`, needed for thermal and nonlinear
+   static) is not built yet: researched in STAPPENPLAN S35a (loop in one job, result
+   projected back onto the Mecway mesh; prototype `TestFiles/Tools/homard_s35`), build =
+   S35b. Each loop waits for Code-Aster (status window or OK click,
    setting `wait_for_aster`). The loop in the
    Mecway GUI has NOT been checked, only headless (`mecway.exe <model> script`).
 

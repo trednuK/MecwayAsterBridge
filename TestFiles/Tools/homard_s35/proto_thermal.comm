@@ -1,0 +1,94 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# S35 prototype (not part of the bridge): steady thermal analysis with an
+# adaptive HOMARD loop in ONE Code-Aster job, then the result projected back
+# onto the original (Mecway) mesh and written with aster_results_export.
+# Model: quarter plate with a hole (run_s35.py), T = 0 on Koud, 100 on Warm.
+# Tokens @@...@@ are filled in by run_s35.py.
+#
+# Per loop: solve -> ZZ indicator on FLUX (aster_adapt_proto) -> Doerfler
+# selection -> group ADAP<k> (Mesh.setGroupOfCells) -> 0/1 indicator field
+# CART_NEUT_R -> MACR_ADAP_MAIL RAFFINEMENT CRIT_RAFF_ABS=0.5 (as
+# forma07b with RAFF_XFEM). RAFFINEMENT_UNIFORME with GROUP_MA=ADAP<k>
+# worked on the first loop but HOMARD produced no mesh from the second loop
+# on (filter group with HOMARD's own transition cells; measured).
+# FRONTIERE_ANALYTIQUE CYLINDRE on the hole faces (group 'Gat'): without it
+# the hole stays the polygon of the coarse mesh and the peak flux diverges.
+import sys
+import json
+import numpy as np
+sys.path.insert(0, r'@@LIB@@')
+import aster_adapt_proto as AD
+OPT = json.loads('@@OPTS@@')
+DEBUT(LANG='EN')
+mesh0 = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+xyz0 = np.asarray(mesh0.getCoordinates().getValues()).reshape(-1, 3)
+mesh = mesh0
+rows = []
+mth = DEFI_MATERIAU(THER=_F(LAMBDA=50.0, RHO_CP=0.0))
+times = DEFI_LIST_REEL(VALE=(0.0,))
+
+
+def solve(mesh):
+    """Everything that depends on the mesh, only through GROUP_MA (HOMARD
+    refines cell groups along; node groups keep only their old nodes)."""
+    model = AFFE_MODELE(MAILLAGE=mesh, AFFE=_F(GROUP_MA=('Plaat',), PHENOMENE='THERMIQUE',
+                                               MODELISATION='3D'))
+    fm = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, AFFE=_F(GROUP_MA='Plaat', MATER=mth))
+    load = AFFE_CHAR_THER(MODELE=model, TEMP_IMPO=(_F(GROUP_MA='Koud', TEMP=0.0),
+                                                   _F(GROUP_MA='Warm', TEMP=100.0)))
+    res = THER_LINEAIRE(MODELE=model, CHAM_MATER=fm, EXCIT=_F(CHARGE=load), TYPE_CALCUL='STAT',
+                        INCREMENT=_F(LIST_INST=times), SOLVEUR=_F(METHODE='MUMPS'))
+    res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA='Plaat', THERMIQUE=('FLUX_ELNO', 'FLUX_NOEU'))
+    return model, res
+
+
+for k in range(OPT['nloop'] + 1):
+    model, res = solve(mesh)
+    cells = np.asarray(mesh.getCells('Plaat'))
+    eta, rel = AD.zz_indicator(res, 1, 'FLUX_ELNO', 'FLUX_NOEU', cells)
+    xyz = np.asarray(mesh.getCoordinates().getValues()).reshape(-1, 3)
+    q = res.getField('FLUX_NOEU', 1).toSimpleFieldOnNodes().getValues()[0]
+    near = np.where((np.abs(xyz[:, 0]) < 1e-9) & (np.abs(xyz[:, 1] - 0.010) < 1e-9))[0]
+    rows.append((k, len(cells), len(xyz), rel, float(np.mean(q[near, 0]))))
+    print('S35 LOOP k=%d solids=%d nodes=%d zz=%.3f%% qx_hole=%.1f' % rows[-1])
+    if rel <= OPT['target'] or k == OPT['nloop']:
+        break
+    sel = AD.dorfler(eta, OPT['theta'])
+    grp = 'ADAP%d' % k
+    mesh.setGroupOfCells(grp, [int(cells[i]) for i in sel])
+    ind = CREA_CHAMP(TYPE_CHAM='CART_NEUT_R', OPERATION='AFFE', MAILLAGE=mesh,
+                     AFFE=(_F(TOUT='OUI', NOM_CMP='X1', VALE=0.0),
+                           _F(GROUP_MA=grp, NOM_CMP='X1', VALE=1.0)))
+    kw = {}
+    if OPT['front']:
+        kw['FRONTIERE_ANALYTIQUE'] = _F(NOM='TROU', TYPE='CYLINDRE', RAYON=0.01, X_CENTRE=0.,
+                                        Y_CENTRE=0., Z_CENTRE=0., X_AXE=0., Y_AXE=0., Z_AXE=1.,
+                                        GROUP_MA='Gat')
+    name = 'mad%d' % (k + 1)
+    MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT', CHAM_GD=ind, CRIT_RAFF_ABS=0.5, MAILLAGE_N=mesh,
+                   MAILLAGE_NP1=CO(name), **kw)
+    # HOMARD can fail without an exception (no mesh): check it
+    if name not in globals():
+        raise RuntimeError('S35: HOMARD produced no mesh in loop %d' % k)
+    mesh = globals()[name]
+
+for r in rows:
+    print('S35 SUMMARY k=%d solids=%d nodes=%d zz=%.3f qx_hole=%.1f' % r)
+model0 = AFFE_MODELE(MAILLAGE=mesh0, AFFE=_F(GROUP_MA=('Plaat',), PHENOMENE='THERMIQUE',
+                                             MODELISATION='3D'))
+resp = PROJ_CHAMP(RESULTAT=res, MODELE_1=model, MODELE_2=model0,
+                  NOM_CHAM=('TEMP', 'FLUX_NOEU', 'FLUX_ELNO'))
+q0 = resp.getField('FLUX_NOEU', 1).toSimpleFieldOnNodes().getValues()[0]
+near0 = np.where((np.abs(xyz0[:, 0]) < 1e-9) & (np.abs(xyz0[:, 1] - 0.010) < 1e-9))[0]
+print('S35 PROJECTED qx_hole on the original mesh %.1f' % np.mean(q0[near0, 0]))
+sys.path.insert(0, r'@@SCRIPTS@@')
+import aster_results_export
+st = aster_results_export.export_results(resp, r'@@OUT@@', r'@@LIML@@', precision='double',
+                                         static=True, extra_results={'res_flux': resp},
+                                         fields=['temperature', 'heat_flux'])
+print('S35 EXPORT', st and st['variabelen'])
+IMPR_RESU(FORMAT='MED', UNITE=80, RESU=_F(RESULTAT=res))
+FIN()

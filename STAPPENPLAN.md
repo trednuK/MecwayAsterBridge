@@ -66,7 +66,8 @@ S7, S8, S5, S9).
 | S32 | Extra Newton iterations before step cutting (`ACTION='ITER_SUPPL'`) | dropped | – | tried 23 Oct 2026: NL-90 fails (FACTOR_11), see §S32 |
 | S33 | Evaluate Mecway result formulas in the bridge (KNOWN_BUGS 121) | done | – | branch stap-S33 (28 Oct 2026): `bridge_formula` + `_formula_vars`; FX-01 .. FX-03 OK, equal to Mecway's own solve within 1e-13; checked in the Mecway GUI (formulas valid, contour) |
 | S34 | Principal stresses, Tresca and principal strains as result fields (formulas `s1`, `tr`, `e1`); acceleration under Mecway's names | done | S33 | branch stap-S34 (28 Oct 2026): `_principal_vars`, groups `principal_stresses` / `principal_strains`; `accx/y/z`; FX-02 extended; Mecway recognises the fields (headless + GUI); regression 2376/2382 |
-| S35 | HOMARD adaptive refinement inside the job (`MACR_ADAP_MAIL`) for thermal and nonlinear static; results projected back onto the Mecway mesh (`PROJ_CHAMP`), refined result in VTU/MED | open | S7 | chosen by the user 28 Oct 2026 (route a: no new `.liml`); not built |
+| S35a | HOMARD adaptive refinement inside the job: research and prototype (thermal, nonlinear static with plasticity) | done | S7 | 28 Oct 2026: route works (own ZZ indicator, CART_NEUT_R + `MACR_ADAP_MAIL`, restart per loop, `FRONTIERE_ANALYTIQUE`, `PROJ_CHAMP` back + `export_results` unchanged); 2.3 x (thermal) and 3.2 x (plasticity) fewer cells than uniform at equal accuracy; prototype `TestFiles/Tools/homard_s35` (see §S35) |
+| S35b | HOMARD adaptive refinement inside the job: build into the bridge (settings Thermal/Nonlinear, mesh-independent load block, node groups, boundary following input, verification AD-1x) | open | S35a | not built; design and questions for the user in §S35 |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -1665,3 +1666,87 @@ TH/NL families unchanged with the setting off. GUI: the projected result in Mecw
 result in MWHub Post.
 **Done when:** both cases within tolerance, docs NL/EN (Foutschatter/Error_estimator §6, settings,
 KNOWN_BUGS 65 updated), regression 0 NOK/FOUT.
+**Status:** split (28 Oct 2026): **S35a** research + prototype done, **S35b** build open.
+**Findings S35a** (Code-Aster 17.4 + HOMARD 11.10, real runs; reproduce with
+`python TestFiles/Tools/homard_s35/run_s35.py research|prototype|references`; models: the
+quarter plate with a hole of `tests_adaptief.py`, hex20, slab with symmetry in z, thermal
+T = 0/100 °C on x = 0/x = L, and bilinear plasticity, yield 250 MPa, traction 150 MPa):
+- *Indicator, thermal:* `ERTH_ELEM` works after `THER_LINEAIRE` on hex20 (also forma21a), but
+  `CALCUL_37` "THER_PYRAM13 ne sait pas encore calculer l'option ERTH_ELEM" on the first refined
+  mesh (HOMARD always makes PYRAM13/TETRA10 transitions in a hex mesh), and `DVP_1`
+  (rsadpa.F90) after a stationary `THER_NON_LINE` already on pure hex20. Not usable.
+- *Indicator, plasticity:* `ERZ1_ELEM` works on the coarse hex20 mesh (as ssnp158a,
+  VMIS_ISOT_TRAC), but `DVP_2` (floating point exception in CALC_ESTI_ERRE) on a HOMARD TETRA10;
+  `ERZ2_ELEM` `CALCUL_38` (CALC_NOEU_BORD) as soon as the model has face cells; `ERME_ELEM`
+  needs SIGM_ELNO on the whole model including face cells (`INDICATEUR_2`) and EXCIT without
+  reuse (`CALCULEL_39`), and is the linear residual (forma20c does use it with VMIS_ISOT_LINE).
+  **Chosen:** own ZZ-type indicator in the job (`aster_adapt_proto.zz_indicator`): |SIGM_ELNO -
+  SIGM_NOEU| (thermal: FLUX), volume-weighted, global relative L2 error; works on every 3D
+  cell type and with plasticity. Selection Dörfler in Python; passed to HOMARD as a 0/1
+  `CART_NEUT_R` field with `ADAPTATION='RAFFINEMENT'`, `CRIT_RAFF_ABS=0.5` (pattern of
+  forma07b). `RAFFINEMENT_UNIFORME` with a `GROUP_MA` filter works once, then HOMARD makes no
+  mesh (filter group with its own transition cells). The `CRIT_RAFF_*`/`USAGE_CHAMP` options on
+  a native field are then not needed.
+- *Meshes:* hex20 → hex20 + PYRAM13 + TETRA10 (conforming), quadratic and linear input, penta
+  neighbours become pyramids/tets (`research_mixed.comm`). Pyramids in the input (Mecway
+  pyr5/pyr13): default `ELEMENTS_ACCEPTES='HOMARD'` gives no mesh; `'IGNORE_PYRA'` works for
+  field-driven refinement (the input pyramids stay as they are), `RAFFINEMENT_UNIFORME` fails
+  with pyramids also with `IGNORE_PYRA`. Shells/beams: refining only the solid block also
+  splits the attached shell quad (1 → 4) and a beam on a refined edge (2 → 3): conforming, a
+  `GROUP_MA` filter does not prevent it (shell/beam results on such meshes NOT verified).
+- *Groups:* all `GROUP_MA` (elsets, face groups) are refined along completely (SymZ 24 → 58).
+  `GROUP_NO` keep only their old nodes (SymZno 106 → 106, NFACEX0 4 → 4) and HOMARD renumbers
+  the nodes (old node i is not node i). So the bridge's node groups (Mecway node selections,
+  BRSY/BRCO normal-zone groups as NOEUD lists, centre and LINE_QUAD node groups) are wrong on
+  a refined mesh: in the loop everything must hang on cell groups (prototype: symmetry as
+  `FACE_IMPO DNOR` on the face groups) or be rebuilt per mesh. A single-node group survives.
+- *Boundary following is essential:* without `FRONTIERE_ANALYTIQUE` the hole stays the coarse
+  polygon and its kinks act as re-entrant corners: qx at the hole -59.1k → -81.4k W/m² after 9
+  loops (reference -67.5k, +21% and rising). With `TYPE='CYLINDRE'` on the face group of the
+  hole it converges (-66.9k). Needs a face group on the curved boundary and its analytic shape
+  (sphere, cylinder, cone, torus); `MAILLAGE_FRONTIERE` (discrete boundary) not tried.
+- *Silent failures:* when HOMARD fails, `MACR_ADAP_MAIL` often raises nothing (the CO result
+  does not exist, or LIRE_MAILLAGE "Mesh ... not found"); the job must check the new mesh after
+  each call. `INFO=2` crashes the macro (LIRE_MAILLAGE `INFO_MED=2` not allowed). A `.comm` with
+  a syntax error gives an empty `.mess` with "DIAGNOSTIC OK".
+- *Nonlinear:* `MAJ_CHAM` works for `NOEU_DEPL_R`, but `ELGA_VARI_R`/`ELGA_SIEF_R` give no mesh
+  on HOMARD's mixed meshes, so carrying the plastic state over between load steps is not
+  reliable. **Chosen:** restart the whole load history on each new mesh (every loop is a full
+  `STAT_NON_LINE`; the indicator at the last instant).
+- *Back to Mecway:* `PROJ_CHAMP` with `MODELE_1`/`MODELE_2` (with only `MAILLAGE_1/2`: node
+  fields; ELNO gives `SUPERVIS_4`), all instants (0 .. 1). Node fields at the original nodes
+  equal the refined result (DEPL 4e-17 of 2.7e-4 m, SIGM_NOEU 0.002 Pa of 6e8, VARI 7e-16).
+  ELNO fields: at a node shared by two coarse elements both get the value of one refined element
+  (214.27 and 214.27 MPa; refined 214.27/236.12, nodal mean 225.2): the element-node jump is
+  lost. `export_results` of the projected result against the original `.liml` works unchanged
+  (5 steps, all variables, also heat flux via `extra_results`). Indicator fields are cell fields
+  of other cells: report them per loop in the log, not to Mecway.
+- *Prototype results* (quantity at the hole edge (0, R)): thermal, reference uniform n32
+  (12 288 hex20 in the plane) qx = -67 465 W/m²; uniform 3D n4 (768 cells) -2.66%, n8 (6144)
+  -0.87%; adaptive with boundary following loop 5 (667) -2.67%, loop 8 (2621) -0.87%: same
+  accuracy with **2.3 x fewer cells**. Plasticity, reference n32 sxx = 291.0 MPa, p = 0.001507;
+  uniform n4 (768) +22.5%, n8 (6144) +2.4% (p +0.8%); adaptive loop 8 (1932) +2.3% (p +0.8%),
+  loop 9 (4364) +0.9% (p +1.5%): **3.2 x fewer cells**. The projected value on the original
+  node equals the refined one (-66 878.5; 293.69 MPa). The global ZZ error does not decrease
+  monotonically (1.92 → 1.71 → 0.83 → 1.24 → 0.62 %): the S7 rule "stop when the error rises"
+  must not be copied; the peak improves late (plasticity loops 4-6 stay at +22% until the
+  hole cells themselves are refined).
+**Design proposal S35b:** (1) an adaptive variant of the thermal and nonlinear templates in
+which the mesh-dependent part is a function `_solve(mesh)` called per loop, with all loads and
+constraints on cell groups (face selections are `GROUP_MA` in the `.mail` already; symmetry and
+frictionless as `FACE_IMPO DNOR`); in the first version an ERROR for what needs node lists or
+node normals (node selections with more than one node, compression only, couplings, contact,
+shells/beams, LINE_QUAD), cf. AD-03; (2) a job module `aster_adapt.py` (from
+`aster_adapt_proto.py`): indicator, Dörfler, HOMARD call with the existence check,
+`IGNORE_PYRA` if the input has pyramids, `FRONTIERE_ANALYTIQUE`, element limit, log per loop
+(cells, global error), `PROJ_CHAMP` back and `export_results`, the refined result to MED/VTU;
+(3) settings `adapt_homard` (+ target, max. loops, max. elements, Dörfler fraction) on the
+pages Thermal and Nonlinear with NL/EN tooltips; (4) verification AD-10 (thermal) and AD-11
+(plasticity) = these prototype cases with the references above, TH/NL families unchanged.
+**Questions for the user:** (1) boundary following needs the shape of each curved boundary:
+an `#ASTER` keyword per face selection (e.g. cylinder: centre, axis, radius) acceptable, or
+refine without it and only WARN (the peak then converges to the wrong value)? (2) first
+version restricted to solids with loads/constraints on face selections (ERROR otherwise)? (3)
+after projection Mecway's element-node values lose the jump between coarse elements (node
+values exact): acceptable, or write only node values? (4) stop criterion: the ZZ error is an L2
+stress/flux norm, not the energy norm of S7; default target 1%?

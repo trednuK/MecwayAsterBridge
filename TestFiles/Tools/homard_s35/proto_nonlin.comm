@@ -1,0 +1,105 @@
+# Copyright (C) 2026 trednuK
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# S35 prototype (not part of the bridge): nonlinear static analysis with
+# plasticity (VMIS_ISOT_LINE, GDEF_LOG) and an adaptive HOMARD loop in ONE
+# Code-Aster job. Each loop RESTARTS the whole load history on the new mesh
+# (MAJ_CHAM of ELGA fields fails on HOMARD's mixed meshes, measured; see
+# run_s35.py research). Indicator: ZZ on SIGM at the last instant. At the
+# end all instants are projected back onto the original mesh (PROJ_CHAMP
+# MODELE_1/MODELE_2, node and ELNO fields) and written with
+# aster_results_export against the original .liml.
+# Symmetry as FACE_IMPO DNOR on the face groups: mesh independent (the
+# bridge's LIAISON_OBLIQUE on node lists would miss the new nodes).
+# Tokens @@...@@ are filled in by run_s35.py.
+import sys
+import json
+import numpy as np
+sys.path.insert(0, r'@@LIB@@')
+import aster_adapt_proto as AD
+OPT = json.loads('@@OPTS@@')
+DEBUT(LANG='EN')
+mesh0 = LIRE_MAILLAGE(UNITE=20, FORMAT='ASTER')
+xyz0 = np.asarray(mesh0.getCoordinates().getValues()).reshape(-1, 3)
+mesh = mesh0
+rows = []
+# Mecway bilinear (E 210 GPa, yield 250 MPa, plastic modulus 2000 MPa) as
+# the bridge translates it: D_SIGM_EPSI = E H / (E + H)
+mat = DEFI_MATERIAU(ELAS=_F(E=2.1e11, NU=0.3), ECRO_LINE=_F(D_SIGM_EPSI=1981132075.471698, SY=2.5e8))
+fn = DEFI_FONCTION(NOM_PARA='INST', VALE=(0.0, 0.0, 1.0, float('@@SIG@@')), PROL_DROITE='CONSTANT')
+li = DEFI_LIST_INST(DEFI_LIST=_F(LIST_INST=DEFI_LIST_REEL(VALE=(0., .25, .5, .75, 1.))),
+                    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE', SUBD_METHODE='MANUEL',
+                             SUBD_PAS=4, SUBD_NIVEAU=6))
+
+
+def solve(mesh):
+    mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh, ORIE_PEAU=_F(GROUP_MA_PEAU=('Trek',)))
+    model = AFFE_MODELE(MAILLAGE=mesh, AFFE=(
+        _F(GROUP_MA='Plaat', PHENOMENE='MECANIQUE', MODELISATION='3D'),
+        _F(GROUP_MA='Trek', PHENOMENE='MECANIQUE', MODELISATION='3D')))
+    fm = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, AFFE=_F(GROUP_MA='Plaat', MATER=mat))
+    l1 = AFFE_CHAR_MECA(MODELE=model, FACE_IMPO=(_F(GROUP_MA='SymX', DNOR=0.),
+                                                 _F(GROUP_MA='SymY', DNOR=0.),
+                                                 _F(GROUP_MA='SymZ', DNOR=0.)))
+    l2 = AFFE_CHAR_MECA_F(MODELE=model, FORCE_FACE=_F(GROUP_MA='Trek', FX=fn))
+    res = STAT_NON_LINE(MODELE=model, CHAM_MATER=fm, EXCIT=(_F(CHARGE=l1), _F(CHARGE=l2)),
+                        COMPORTEMENT=_F(GROUP_MA='Plaat', RELATION='VMIS_ISOT_LINE',
+                                        DEFORMATION='GDEF_LOG'),
+                        INCREMENT=_F(LIST_INST=li), SOLVEUR=_F(METHODE='MUMPS'),
+                        CONVERGENCE=_F(RESI_GLOB_RELA=1e-5, ITER_GLOB_MAXI=20))
+    res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA='Plaat',
+                     CONTRAINTE=('SIGM_ELNO', 'SIGM_NOEU'), CRITERES=('SIEQ_ELNO', 'SIEQ_NOEU'),
+                     VARI_INTERNE=('VARI_ELNO', 'VARI_NOEU'), DEFORMATION=('EPSP_ELNO', 'EPSP_NOEU'))
+    return model, res
+
+
+for k in range(OPT['nloop'] + 1):
+    model, res = solve(mesh)
+    last = res.getIndexes()[-1]
+    cells = np.asarray(mesh.getCells('Plaat'))
+    eta, rel = AD.zz_indicator(res, last, 'SIGM_ELNO', 'SIGM_NOEU', cells)
+    xyz = np.asarray(mesh.getCoordinates().getValues()).reshape(-1, 3)
+    s = res.getField('SIGM_NOEU', last).toSimpleFieldOnNodes().getValues()[0]
+    v = res.getField('VARI_NOEU', last).toSimpleFieldOnNodes().getValues()[0]
+    near = np.where((np.abs(xyz[:, 0]) < 1e-9) & (np.abs(xyz[:, 1] - 0.010) < 1e-9))[0]
+    rows.append((k, len(cells), len(xyz), rel, float(np.mean(s[near, 0])) / 1e6,
+                 float(np.mean(v[near, 0]))))
+    print('S35 LOOP k=%d solids=%d nodes=%d zz=%.3f%% sxx_hole=%.2f MPa p_hole=%.6f' % rows[-1])
+    if rel <= OPT['target'] or k == OPT['nloop']:
+        break
+    sel = AD.dorfler(eta, OPT['theta'])
+    grp = 'ADAP%d' % k
+    mesh.setGroupOfCells(grp, [int(cells[i]) for i in sel])
+    ind = CREA_CHAMP(TYPE_CHAM='CART_NEUT_R', OPERATION='AFFE', MAILLAGE=mesh,
+                     AFFE=(_F(TOUT='OUI', NOM_CMP='X1', VALE=0.0),
+                           _F(GROUP_MA=grp, NOM_CMP='X1', VALE=1.0)))
+    kw = {}
+    if OPT['front']:
+        kw['FRONTIERE_ANALYTIQUE'] = _F(NOM='TROU', TYPE='CYLINDRE', RAYON=0.01, X_CENTRE=0.,
+                                        Y_CENTRE=0., Z_CENTRE=0., X_AXE=0., Y_AXE=0., Z_AXE=1.,
+                                        GROUP_MA='Gat')
+    name = 'mad%d' % (k + 1)
+    MACR_ADAP_MAIL(ADAPTATION='RAFFINEMENT', CHAM_GD=ind, CRIT_RAFF_ABS=0.5, MAILLAGE_N=mesh,
+                   MAILLAGE_NP1=CO(name), **kw)
+    if name not in globals():
+        raise RuntimeError('S35: HOMARD produced no mesh in loop %d' % k)
+    mesh = globals()[name]
+
+for r in rows:
+    print('S35 SUMMARY k=%d solids=%d nodes=%d zz=%.3f sxx_hole=%.2f p_hole=%.6f' % r)
+model0 = AFFE_MODELE(MAILLAGE=mesh0, AFFE=_F(GROUP_MA='Plaat', PHENOMENE='MECANIQUE',
+                                             MODELISATION='3D'))
+resp = PROJ_CHAMP(RESULTAT=res, MODELE_1=model, MODELE_2=model0,
+                  NOM_CHAM=('DEPL', 'SIGM_NOEU', 'SIEQ_NOEU', 'VARI_NOEU', 'EPSP_NOEU',
+                            'SIGM_ELNO', 'SIEQ_ELNO', 'VARI_ELNO', 'EPSP_ELNO'))
+s0 = resp.getField('SIGM_NOEU', resp.getIndexes()[-1]).toSimpleFieldOnNodes().getValues()[0]
+near0 = np.where((np.abs(xyz0[:, 0]) < 1e-9) & (np.abs(xyz0[:, 1] - 0.010) < 1e-9))[0]
+print('S35 PROJECTED sxx_hole on the original mesh %.2f MPa, instants %s'
+      % (np.mean(s0[near0, 0]) / 1e6, list(resp.getAccessParameters()['INST'])))
+sys.path.insert(0, r'@@SCRIPTS@@')
+import aster_results_export
+st = aster_results_export.export_results(resp, r'@@OUT@@', r'@@LIML@@', precision='double')
+print('S35 EXPORT', st and (st['stappen'], st['variabelen']))
+IMPR_RESU(FORMAT='MED', UNITE=80, RESU=_F(RESULTAT=res))
+FIN()

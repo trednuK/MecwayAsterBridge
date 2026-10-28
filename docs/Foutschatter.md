@@ -405,13 +405,28 @@ refinement*) op de plek waar `errorestimate` groot is.
 - Alleen **volume-elementen** worden gekozen; schalen en balken verfijnt de lus niet.
 - **Knoopselecties** met een last of voorwaarde op een te verfijnen ribbe: ERROR (zet
   de voorwaarde op vlakken).
-- **HOMARD** (`MACR_ADAP_MAIL`, verfijnen binnen Code-Aster) is niet gebouwd. HOMARD
+- **HOMARD** (`MACR_ADAP_MAIL`, verfijnen binnen Code-Aster) is nog niet gebouwd. HOMARD
   werkt op deze installatie in 3D (testcase sslv110f: HEXA8 1680 → 1698 + 56 TETRA4,
-  conform, alle TEST_RESU OK), maar het nieuwe mesh kan niet terug naar Mecway via de
-  resultaatroute (die controleert de knopen tegen de `.liml`): de bridge zou een nieuwe
-  `.liml` moeten schrijven met de knopen, elementen en alle selecties, lasten en
-  voorwaarden via de HOMARD-groepen. De Mecway-route houdt het model in Mecway en
-  verfijnt alles mee; daarom is die gekozen (voorkeur van de gebruiker).
+  conform, alle TEST_RESU OK). Stap S35a (oktober 2026) heeft de route onderzocht waarbij
+  de lus in één Code-Aster-job draait en het resultaat met `PROJ_CHAMP` terug op het
+  Mecway-mesh komt (thermisch en niet-lineair statisch, prototype in
+  `TestFiles/Tools/homard_s35`): dat werkt (plaat met gat, warmtestroom en spanning met
+  2,3 tot 3,2 x minder elementen dan uniform verfijnen), maar HOMARD vult knoopgroepen niet
+  aan, nummert de knopen opnieuw, maakt overgangselementen waarop de schatters van
+  Code-Aster stoppen, en een gekromde rand moet als analytische vorm worden opgegeven.
+  Het inbouwen staat gepland als stap S35b (`STAPPENPLAN.md`). De Mecway-route houdt het
+  model in Mecway en verfijnt alles mee; daarom is die voor lineair statisch gekozen
+  (voorkeur van de gebruiker).
+
+  ![HOMARD-lus binnen de job (prototype S35a)](img/homard_loop.svg)
+
+  1. Grof Mecway-mesh (in het prototype de plaat met gat).
+  2. Oplossen in Code-Aster (`THER_LINEAIRE` of `STAT_NON_LINE`, hele lastgeschiedenis).
+  3. Foutindicator per element; de elementen boven de rode lijn (Dörfler-keuze) worden gekozen.
+  4. HOMARD verfijnt de gekozen elementen (`MACR_ADAP_MAIL`), met overgangselementen.
+  5. Verfijnd mesh; terug naar 2 tot het doel of het maximum aantal lussen bereikt is.
+  6. Na de laatste lus: het resultaat met `PROJ_CHAMP` op het oorspronkelijke Mecway-mesh,
+     zodat het naar Mecway kan.
 - Afgrenzen (*unrefine*) doet de lus niet.
 
 Deze grenzen staan ook in `KNOWN_BUGS.md` (punt 65).
