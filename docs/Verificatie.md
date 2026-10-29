@@ -98,18 +98,20 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 ## 3. Samenvatting
 
 Stand 29 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `fc733a9`
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `373d13a`
 (na V2026.5: o.a. hoofdspanningen van schalen en Green-Lagrange (S34b), schuine
 opleggingen naast verplaatsingen en vrij-vrij modaal met alleen verbindingen (issue #9),
 de samenvatting van de Code-Aster-run (issue #7), balken met welving (S19), 2D en
 axisymmetrisch inclusief dynamica en akoestiek (S16a, S16b, S16d), boutvoorspanning (S15,
 S15b), HOMARD-verfijning in de job (S35b), de tijdstap van Mecway bij dynamica
 (KNOWN_BUGS 127, opgelost), bonded contact zoals CCX (KNOWN_BUGS 128), belastingen op balkzijvlakken
-en hydrostatische druk op schaalranden (S17) en orthotroop materiaal (S13); Code-Aster
-17.4): 529 testcases, 2894 controles, 2888 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte van de
-run op `8b13519` geen statuswijziging; één FEM-waarde > 0,1 % anders: MD-06a (verloop
-t.o.v. Mecway 3,4e-3 → 2,7e-3, KNOWN_BUGS 127 opgelost). Nieuw zijn 87
-testcases en 512 controles.
+en hydrostatische druk op schaalranden (S17), orthotroop materiaal (S13), en de controles van
+29 oktober: dwarskrachtcentrum en L-profielen van balken (LS-90d, LS-94/95), voorspanning in
+een onregelmatig tetranet (PT-11 .. PT-13), frictionless schaalrand tegen Mecway (LS-84);
+Code-Aster 17.4): 538 testcases, 2947 controles, 2941 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte
+van de run op `fc733a9` geen statuswijziging en geen FEM-waarde > 0,1 % anders, behalve
+grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner). Nieuw zijn
+9 testcases en 53 controles.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -124,9 +126,9 @@ testcases en 512 controles.
 | Harmonische respons | 15 | 53 | 53 | 0 |
 | Knik | 27 | 77 | 76 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 128 | 434 | 433 | 1 |
+| Lineair statisch | 134 | 447 | 446 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
-| Modaal | 25 | 238 | 238 | 0 |
+| Modaal | 25 | 239 | 239 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
 | Niet-lineair statisch | 54 | 201 | 198 | 3 |
@@ -141,8 +143,8 @@ testcases en 512 controles.
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
 | Orthotroop | 19 | 174 | 174 | 0 |
 | 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
-| Boutvoorspanning | 10 | 48 | 48 | 0 |
-| **Totaal** | **529** | **2894** | **2888** | **6** |
+| Boutvoorspanning | 13 | 87 | 87 | 0 |
+| **Totaal** | **538** | **2947** | **2941** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

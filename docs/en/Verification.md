@@ -96,18 +96,20 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 ## 3. Summary
 
 Status 29 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `fc733a9`
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `373d13a`
 (after V2026.5: among others principal stresses of shells and Green-Lagrange (S34b),
 skew supports next to displacements and free-free modal with only connections (issue #9),
 the summary of the Code-Aster run (issue #7), beams with warping (S19), 2D and
 axisymmetric including dynamics and acoustics (S16a, S16b, S16d), bolt pretension (S15,
 S15b), HOMARD refinement inside the job (S35b), Mecway's time step in dynamics
 (KNOWN_BUGS 127, fixed), bonded contact as in CCX (KNOWN_BUGS 128), loads on beam side faces and
-hydrostatic pressure on shell edges (S17) and orthotropic material (S13); Code-Aster
-17.4): 529 test cases, 2894 checks, 2888 OK, 6 BEKEND (known), 0 NOK/FOUT. Compared with
-the run on `8b13519` no status change; one FEM value more than 0.1% different: MD-06a
-(history against Mecway 3.4e-3 → 2.7e-3, KNOWN_BUGS 127 fixed).
-New are 87 test cases and 512 checks.
+hydrostatic pressure on shell edges (S17), orthotropic material (S13), and the checks of
+29 October: shear centre and L sections of beams (LS-90d, LS-94/95), pre-tension in an
+irregular tet mesh (PT-11 .. PT-13), frictionless shell edge against Mecway (LS-84);
+Code-Aster 17.4): 538 test cases, 2947 checks, 2941 OK, 6 BEKEND (known), 0 NOK/FOUT.
+Compared with the run on `fc733a9` no status change and no FEM value more than 0.1%
+different apart from quantities close to zero (differences against Mecway of order 1e-3 or
+smaller). New are 9 test cases and 53 checks.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -122,9 +124,9 @@ New are 87 test cases and 512 checks.
 | Harmonic response | 15 | 53 | 53 | 0 |
 | Buckling | 27 | 77 | 76 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 128 | 434 | 433 | 1 |
+| Linear static | 134 | 447 | 446 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
-| Modal | 25 | 238 | 238 | 0 |
+| Modal | 25 | 239 | 239 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
 | Nonlinear static | 54 | 201 | 198 | 3 |
@@ -139,8 +141,8 @@ New are 87 test cases and 512 checks.
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
 | Orthotropic material | 19 | 174 | 174 | 0 |
 | 2D and axisymmetric | 19 | 65 | 65 | 0 |
-| Bolt pretension | 10 | 48 | 48 | 0 |
-| **Total** | **529** | **2894** | **2888** | **6** |
+| Bolt pretension | 13 | 87 | 87 | 0 |
+| **Total** | **538** | **2947** | **2941** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
