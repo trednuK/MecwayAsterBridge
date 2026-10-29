@@ -9,6 +9,18 @@
   the explanation in the Results window, the notes on the settings pages, the trademark
   notice and the texts of the status window get the height their text needs. At 100 % the
   windows look as before.
+- **L profiles with the horizontal leg longer (a > b): bending axes as Mecway**: the bridge
+  took the other principal axis as V for such an L, so `IY` and `IZ` were swapped (with every
+  beam element; an L 120 × 80 × 8 cantilever bent about 5.6 times too much in one direction).
+  Mecway wraps the principal angle into (−45°, 45°] (measured headless with Mecway 34 from its
+  stress recovery points and tip rotations). New verification LS-95 (equal to Mecway).
+- **POU_D_TG: shear centre of C and L profiles on the right side**: Mecway's W axis points
+  from the flanges of a C profile to its web (measured headless from Mecway's stress recovery
+  points), so the shear centre lies at +W and `EZ` < 0; the bridge had it at −W, so a
+  transverse load through the centroid twisted the beam the wrong way (buckling under axial
+  force was not affected). The beam sidecar for MWHub Post draws C and L profiles the same
+  way. New verification LS-94/LS-94b (C, twist sign and size −0.4%), LS-95b (L, −0.005%) and
+  LS-90d (bimoment at a clamp through `#ASTER-POST`, +0.5%).
 - **Buckling with POU_D_TG beams**: the INFO line about torsional buckling without warping
   (`POU_D_E`/`POU_D_T`) is only logged when the model has beams without warping; with
   `elem_beam` = `POU_D_TG` only the line about warping beams remains.

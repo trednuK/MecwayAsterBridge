@@ -75,23 +75,36 @@ def test_section_props():
     check(cw < p["JG"] < 1.02 * cw, "I: JG %r vs %r" % (p["JG"], cw))
     check(p["IYR2"] == 0.0 and p["IZR2"] == 0.0, "I: Wagner terms %r" % p)
     # C 100 x 50 x 6: shear centre on the axis of symmetry (z = W), 29.33 mm
-    # from the centroid (centre line e + x_c = 29.375); primary C_w closed
+    # from the centroid (centre line e + x_c = 29.375) on the web side, which
+    # is +W in Mecway (bridge_warping.mecway_frame): EZ = centroid - S < 0;
+    # primary C_w closed
     # form t b^3 h^2/12 (3b + 2h)/(6b + h) with b = 47, h = 94 mm
     p = bridge_warping.section_props("C", 0.05, 0.1, 0.006, 0.006)
     b, h, t = 0.047, 0.094, 0.006
     cw = t * b ** 3 * h ** 2 / 12.0 * (3 * b + 2 * h) / (6 * b + h)
-    check(p["EY"] == 0.0 and close(p["EZ"], 0.029375, 0.005),
+    check(p["EY"] == 0.0 and close(-p["EZ"], 0.029375, 0.005),
           "C: shear centre %r" % p)
     check(cw < p["JG"] < 1.02 * cw, "C: JG %r vs %r" % (p["JG"], cw))
     # L 120 x 120 x 8: Code-Aster test case ssll103a (EY 41.012 mm, JG
     # 44398819 mm^6, IYR2 84948392 mm^5 in its axes, y along the axis of
-    # symmetry); here z is that axis (Mecway's V is the minor axis)
+    # symmetry); here z is that axis (Mecway's V is the minor axis) and the
+    # heel lies at +W, so EZ and IZR2 are both negative (same sign, as EY
+    # and IYR2 in the test)
     p = bridge_warping.section_props("L", 0.12, 0.12, 0.008, 0.0)
-    check(close(p["EZ"], 0.041012, 0.002) and abs(p["EY"]) < 1e-9,
+    check(close(-p["EZ"], 0.041012, 0.002) and abs(p["EY"]) < 1e-9,
           "L: shear centre %r" % p)
     check(close(p["JG"], 4.4398819e-11, 1e-6), "L: JG %r" % p["JG"])
-    check(close(p["IZR2"], 8.4948392e-8, 0.002) and p["IYR2"] == 0.0,
+    check(close(-p["IZR2"], 8.4948392e-8, 0.002) and p["IYR2"] == 0.0,
           "L: Wagner %r" % p)
+    # L with the horizontal leg longer (a > b): Mecway's V is then the
+    # major principal axis (principal angle wrapped into (-45, 45] deg,
+    # measured with Mecway 34 headless: I about V from the tip rotation
+    # 2.6427e-6 m^4 for L 120 x 80 x 8, 4.7124e-7 for L 80 x 120 x 8)
+    import bridge_from_liml
+    iy = bridge_from_liml._profile_props("L", 0.12, 0.08, 0.008, 0.0)[1]
+    check(close(iy, 2.6427489e-6, 1e-6), "L a > b: IY %r" % iy)
+    iy = bridge_from_liml._profile_props("L", 0.08, 0.12, 0.008, 0.0)[1]
+    check(close(iy, 4.7123507e-7, 1e-6), "L a < b: IY %r" % iy)
     # T: shear centre at the flange/web junction, on V above the centroid:
     # EY = (centroid - S) < 0
     p = bridge_warping.section_props("T", 0.1, 0.01, 0.01, 0.09)

@@ -23,8 +23,8 @@
 #     polygons     DISJOINT parts whose union is the section, each a closed
 #                  outline [[y, z], ...] (counter-clockwise, first point not
 #                  repeated) in the local axes, centroid at (0, 0); I/T/C =
-#                  3 or 2 rectangles (flanges, web), L = 2 legs rotated to
-#                  Mecway's principal axes (_principal), circle = 64-gon
+#                  3 or 2 rectangles (flanges, web), L = 2 legs in
+#                  Mecway's principal axes, circle = 64-gon
 #     holes        outlines to subtract (RectTube, tube); [] otherwise
 #     A, Iy, Iz, J the values the bridge passes to Code-Aster (Iy = about
 #                  local y; after #ASTER-SECTIE those values)
@@ -42,10 +42,10 @@
 #              element ends, as cell arrays EFGE_<N|VY|VZ|MT|MFY|MFZ>_1/_2
 #              in the VTU (aster_vtu), per time step.
 #
-# Local section coordinates: y = V (vertical in Mecway's section drawing),
-# z = W (horizontal). Whether +z points to the right in Mecway's drawing is
-# NOT verified: for C and L the polygon may be mirrored about y (symmetric
-# sections are not affected). The self-check (_check) compares A, Iy, Iz of
+# Local section coordinates: y = V, z = W as Mecway uses them
+# (bridge_warping.mecway_frame, measured with Mecway 34: the drawing x runs
+# along -W, so a C profile has its web at +W; L in Mecway's principal
+# axes). The self-check (_check) compares A, Iy, Iz of
 # the polygons with the values of the bridge and logs a WARNING above 1 %.
 #
 # Compatible with IronPython 2.7.9 (stdlib only).
@@ -56,6 +56,7 @@ import math
 from datetime import datetime
 
 from bridge_utils import log, tr, run_name
+import bridge_warping
 
 SCHEMA = "mwhubpost-beams/1"
 
@@ -127,15 +128,25 @@ def _circle(r, n=64):
 
 def section_geometry(profile):
     """(polygons, holes, wall) of a Mecway profile in local (y, z) with
-    the centroid at the origin; L in its principal axes (y = principal V
-    axis of Mecway: the one with Iy = I about V of _profile_props)."""
+    the centroid at the origin; I/T/L/C in Mecway's axes
+    (bridge_warping.mecway_frame; L in its principal axes)."""
     shape = profile.get("shape")
     if shape in ("I", "T", "L", "C"):
-        polys = [_rect(y0, y1, x0, x1)
+        frame = bridge_warping.mecway_frame(shape, profile["a"],
+                                            profile["b"], profile["c"],
+                                            profile["d"])
+        if frame is None:
+            return [], [], None
+        to_local = frame[1]
+        # The map mirrors the drawing (x -> -W): these corners, counter-
+        # clockwise in the drawing, stay counter-clockwise in (y, z)
+        polys = [[list(to_local(x, y)) for x, y in
+                  ((x1, y0), (x1, y1), (x0, y1), (x0, y0))]
                  for x0, x1, y0, y1 in _rects_of(shape, profile)]
         wall = ({"t": profile["c"]} if shape == "L" else
                 {"flange": profile["c"],
                  "web": profile["b"] if shape == "T" else profile["d"]})
+        return polys, [], wall
     elif shape == "RectBar":
         polys = [_rect(0.0, profile["a"], 0.0, profile["b"])]
         return _centred(polys, []) + (None,)
@@ -179,31 +190,11 @@ def _axes(p1, p2, v):
     return x, y, _cross(x, y)
 
 
-def _principal(sec):
-    """L: rotate the (centred) legs to the principal axes that match the
-    values of the bridge (Iy = I about Mecway's principal V,
-    _profile_props): of the candidate angles +-phi and +-phi + 90 degrees
-    (phi from Iyz = 0) the one with Iyz = 0 and Iy closest to sec["Iy"]."""
-    _A, _cy, _cz, iy, iz, iyz = _moments(sec["polygons"])
-    phi = 0.5 * math.atan2(2.0 * iyz, iz - iy)
-    best = None
-    for angle in (phi, -phi, phi + math.pi / 2.0, -phi + math.pi / 2.0):
-        polys = _shift_rotate(sec["polygons"], 0.0, 0.0, angle)
-        m = _moments(polys)
-        score = (abs(m[5]) / max(m[3] + m[4], 1e-30) +
-                 abs(m[3] - (sec["Iy"] or m[3])) / max(m[3] + m[4], 1e-30))
-        if best is None or score < best[0]:
-            best = (score, polys)
-    sec["polygons"] = best[1]
-
-
 def _check(name, sec):
     """WARNING if A, Iy or Iz of the polygons differs > 1 % from the
     values of the bridge (e.g. after #ASTER-SECTIE)."""
     if not sec["polygons"] or not sec.get("A"):
         return
-    if sec["shape"] == "L":
-        _principal(sec)
     A, _cy, _cz, iy, iz, _iyz = _moments(sec["polygons"], sec["holes"])
     ok = all(abs(got - want) <= 0.01 * abs(want) + 1e-20
              for got, want in ((A, sec["A"]), (iy, sec["Iy"]),

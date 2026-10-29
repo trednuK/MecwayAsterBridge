@@ -90,7 +90,7 @@ TESTS = [
                 source="BU-36: hex20, Code-Aster = Mecway 34 = CCX")],
          general=TG,
          note="C 100 x 50 x 6 mm, L = 1 m, 20 POU_D_TG, P = 1000 N; "
-              "EZ = 29.33 mm and C_w = 4.058e-10 m^6 computed by the bridge "
+              "EZ = -29.33 mm and C_w = 4.058e-10 m^6 computed by the bridge "
               "(bridge_warping), warping restrained at the Fixed support "
               "(beam_warping auto). With POU_D_E 616 (BU-35, KNOWN_BUGS "
               "115). With the warping free at the foot (beam_warping free) "
@@ -221,8 +221,9 @@ TESTS.append(Case(
     note="Angle 120 x 120 x 8 mm, L = 1200 mm, 8 POU_D_TG, 1 N. Section "
          "values of the test (JG, EY, IYR2) through an #ASTER-SECTIE line "
          "on a general section. The bridge computes the same angle as an "
-         "L profile with EY = 40.96 mm (test 41.012), JG = 4.43988e-11 m^6 "
-         "and IYR2 = 8.4848e-8 m^5 (bridge_warping)."))
+         "L profile with EZ = -40.96 mm (test EY 41.012), JG = 4.43988e-11 "
+         "m^6 and IZR2 = -8.4848e-8 m^5 (test IYR2 8.4948e-8; bridge_warping, "
+         "heel at +W)."))
 
 
 def build_bu41b():
@@ -245,9 +246,9 @@ TESTS.append(Case(
     note="L 120 x 120 x 8 mm (sharp corner, no root radius). -2.2%: "
          "Mecway's torsion constant (Roark, as Mecway shows it) is 38845 "
          "mm^4, the test's 39595 (-1.9%), and AY = AZ = 2.4 (bridge "
-         "estimate) instead of 1. The bridge's EZ = 40.96 mm, JG = "
-         "4.43988e-11 m^6 and IZR2 = 8.4848e-8 m^5 equal the test's EY, JG "
-         "and IYR2 within 0.12% (the test's axes y/z are the bridge's "
+         "estimate) instead of 1. The bridge's EZ = -40.96 mm, JG = "
+         "4.43988e-11 m^6 and IZR2 = -8.4848e-8 m^5 equal the test's EY, JG "
+         "and IYR2 within 0.12% up to the common sign (the test's axes y/z are the bridge's "
          "z/y: Mecway's V is the minor axis of the angle)."))
 
 
@@ -394,4 +395,294 @@ TESTS += [
          note="I 100/50/10/8 mm, L = 1 m, 20 POU_D_TG, fork supports "
               "(beam_warping auto leaves GRX free there), T = 100 N m at "
               "midspan."),
+]
+
+
+# ------------------------------------------------------------------
+# LS-90d: the bimoment at the clamp of LS-90
+# ------------------------------------------------------------------
+# The bimoment (EFGE_ELNO component BX of POU_D_TG) is not sent to Mecway.
+# The case prints it with #ASTER-POST code into the .mess and reads it
+# there. Cantilever, warping restrained at x = 0 and free at the tip, end
+# torque T: B(x) = T sinh(k (L - x))/(k cosh(kL)), so B(0) = T tanh(kL)/k
+# (Vlasov; Trahair 1993 ch. 3; Timoshenko & Gere 1961 par. 5.4).
+BX_POST = (u"<ccxmodeldefinition>"
+           u"#ASTER-POST _tbx = CREA_TABLE(RESU=_F(RESULTAT=res, "
+           u"NOM_CHAM='EFGE_ELNO', NOM_CMP='BX', TOUT='OUI', "
+           u"TOUT_ORDRE='OUI'))\n"
+           u"#ASTER-POST print('BRIDGE_BX_MAX %.12e' % max(abs(v) for v in "
+           u"_tbx.EXTR_TABLE().values()['BX']))"
+           u"</ccxmodeldefinition>")
+
+
+def _bx_max(r):
+    """Largest |BX| along the beam from the .mess (BX_POST)."""
+    import io
+    import re
+    text = io.open(r.mess, encoding="utf-8", errors="replace").read()
+    return float(re.findall(r"BRIDGE_BX_MAX (\S+)", text)[-1])
+
+
+def build_ls90d():
+    m = build_ls90()
+    m.add(BX_POST)
+    return m
+
+
+TESTS.append(Case(
+    "LS-90d", "Lineair statisch", "Bimoment at the clamp, I cantilever "
+    "under torque (POU_D_TG)", "lin_static_3d", build_ls90d,
+    [Check("|bimoment| at the clamp", _bx_max,
+           ref=T90 * math.tanh(K90 * L90) / K90, tol=0.02, unit="N m^2",
+           source="B(0) = T tanh(kL)/k (Vlasov; Trahair 1993 ch. 3)"),
+     Check("twist at the tip", lambda r: r.at("rotx", TIP),
+           ref=PHI_CLAMP, tol=0.005, unit="rad", in_series=False,
+           source=SRC_CLAMP)],
+    general=TG,
+    note="LS-90 with two #ASTER-POST lines that print max |BX| of "
+         "EFGE_ELNO into the .mess (the bimoment is not sent to Mecway). "
+         "The sign of BX is not compared."))
+
+
+# ------------------------------------------------------------------
+# Mecway's section axes of C and L profiles (measured)
+# ------------------------------------------------------------------
+# Mecway 34 headless (mw_solve.py, own solver, 29 Oct 2026): cantilever
+# along X, 10 line2, V = +Y (explicit orientation; the default is the
+# same), so W = U x V = +Z; end moment 100 N m about global Y (= about V)
+# or Z (= about W). Mecway's stress recovery point stresspt1 of the C
+# 100 x 50 x 6 mm (corner of the web) and stresspt2 of the L 120 x 80 x 8
+# mm (tip of leg a). sigma = M_V w/I_V - M_W v/I_W at a point (v, w):
+# tension at the web of the C under +M_V puts the web at +W.
+MW_C_PT1_MV = 5600470.990694939
+MW_L_PT2_MV = -3092623.1056702053
+MW_L_PT2_MW = -3302304.500811057
+
+
+def _frame_stress(kind, dims, point, m_v, m_w):
+    """sigma at a drawing point with the bridge's map of Mecway's axes
+    (bridge_warping.mecway_frame) and its I about V and W."""
+    import sys
+    if SCRIPTS not in sys.path:
+        sys.path.insert(0, SCRIPTS)
+    import bridge_warping
+    from bridge_from_liml import _profile_props
+    v, w = bridge_warping.mecway_frame(kind, *dims)[1](*point)
+    i_v, i_w = _profile_props(kind, *dims)[1:3]
+    return m_v * w / i_v - m_w * v / i_w
+
+
+def _j_mecway(kind, dims):
+    """Torsion constant as Mecway (bridge_from_liml._profile_props)."""
+    import sys
+    if SCRIPTS not in sys.path:
+        sys.path.insert(0, SCRIPTS)
+    from bridge_from_liml import _profile_props
+    return _profile_props(kind, *dims)[3]
+
+
+# ------------------------------------------------------------------
+# LS-94: C cantilever, transverse tip load through the centroid
+# ------------------------------------------------------------------
+# C 100 x 50 x 6 mm (ca flange width, cb height, cc/cd thicknesses), along
+# X with V = +Y (web along Y, flanges along Z), Fixed at x = 0 (warping
+# restrained, auto), F = 1000 N along +Y at the tip node (the centroid).
+# The shear centre lies on the web side, at +W (Mecway's axes, see above):
+# the load passes the shear centre at a distance e and twists the beam by
+# T = F e about +X (r_G - r_S = -e W, (-e W) x (F V) = +F e U).
+C_DIMS = (0.050, 0.100, 0.006, 0.006)
+F92 = 1000.0
+L92 = 1.0
+
+
+def _channel_cl():
+    """(e, C_w) of the C on its centre line: shear centre e_s = 3 b^2/(6 b
+    + h) from the web centre line, centroid x_c = b^2/(2 b + h) on the
+    other side, e = e_s + x_c; C_w = t b^3 h^2/12 (3b + 2h)/(6b + h)
+    (Timoshenko & Gere 1961 par. 5.3; Trahair 1993 app.)."""
+    b, h, t = 0.047, 0.094, 0.006
+    e = 3 * b * b / (6 * b + h) + b * b / (2 * b + h)
+    cw = t * b ** 3 * h ** 2 / 12.0 * (3 * b + 2 * h) / (6 * b + h)
+    return e, cw
+
+
+E92, CW92 = _channel_cl()
+J92 = _j_mecway("C", C_DIMS)
+K92 = math.sqrt(G * J92 / (E * CW92))
+T92 = F92 * E92
+PHI92 = T92 / (G * J92) * (L92 - math.tanh(K92 * L92) / K92)
+SRC92 = ("T/(GJ) (L - tanh(kL)/k) with T = F e, e = 29.375 mm (thin-walled "
+         "channel, Timoshenko & Gere 5.3/5.4), J as Mecway")
+
+
+def build_ls92(vdir=None):
+    """vdir: explicit V direction of the beam elements (None: default)."""
+    m = Model("S30")
+    m.elset("Balk", "Mat")
+    nids = [m.node(L92 * i / 20.0, 0, 0) for i in range(21)]
+    attrs = ("" if vdir is None else
+             'orientationvx="%g" orientationvy="%g" orientationvz="%g"'
+             % vdir)
+    for i in range(20):
+        m.elem("Balk", "line2", [nids[i], nids[i + 1]], attrs)
+    m.mat("Mat", KB.CPROF, STEEL, DENS)
+    m.node_selection("Inklemming", [nids[0]])
+    m.add('<fixed selection="Inklemming" />')
+    m.node_selection("Tip", [nids[-1]])
+    m.add('<force selection="Tip"><x>0 N</x><y>%g N</y><z>0 N</z>'
+          '</force>' % F92)
+    return m
+
+
+TIP92 = (L92, 0.0, 0.0)
+TESTS += [
+    Case("LS-94", "Lineair statisch", "Shear centre of a C profile: "
+         "cantilever with a transverse tip load through the centroid "
+         "(POU_D_TG)", "lin_static_3d", build_ls92,
+         [Check("twist at the tip (sign: shear centre at +W)",
+                lambda r: r.at("rotx", TIP92), ref=PHI92, tol=0.02,
+                unit="rad", source=SRC92),
+          Check("Mecway stresspt1 (web) vs the bridge's axes",
+                lambda r: MW_C_PT1_MV / _frame_stress(
+                    "C", C_DIMS, (0.0, 0.0), 100.0, 0.0),
+                ref=1.0, tol=1e-6, unit="-", in_series=False,
+                source="Mecway 34 headless, end moment 100 N m about V "
+                       "(29 Oct 2026)")],
+         general=TG,
+         note="C 100 x 50 x 6 mm, L = 1 m, 20 POU_D_TG, V = +Y (default), "
+              "F = 1000 N along +Y at the tip; Fixed: warping restrained. "
+              "The bridge's EZ = -29.33 mm (centroid - shear centre). "
+              "Mecway's own beam does not twist here (no shear centre, "
+              "manual par. 7.5). Before 29 Oct 2026 the bridge put the "
+              "shear centre at -W: the twist had the opposite sign."),
+    Case("LS-94b", "Lineair statisch", "Shear centre of a C profile, beam "
+         "turned over (V = -Y, POU_D_TG)", "lin_static_3d",
+         lambda: build_ls92((0.0, -1.0, 0.0)),
+         [Check("twist at the tip (opposite sign)",
+                lambda r: r.at("rotx", TIP92), ref=-PHI92, tol=0.02,
+                unit="rad", source=SRC92 + "; W = -Z, so the shear centre "
+                "is at -Z")],
+         general=TG,
+         note="LS-94 with an explicit orientation V = (0, -1, 0): the "
+              "section is turned over, the load is now along -V and the "
+              "twist changes sign."),
+]
+
+
+# ------------------------------------------------------------------
+# LS-95: L cantilever with the horizontal leg longer (a > b)
+# ------------------------------------------------------------------
+# L 120 x 80 x 8 mm (la horizontal leg, lb vertical leg, lc thickness),
+# along X (V = +Y, W = +Z: Mecway's principal axes), Fixed at x = 0,
+# F = 1000 N along +Y and 1000 N along +Z at the tip. Mecway uses the principal axes with the angle wrapped into (-45,
+# 45] degrees; for a > b its V is the major axis (bridge before 30 Oct
+# 2026: the minor axis, IY and IZ swapped). LS-95: POU_D_E against
+# Mecway's own solver (same Euler-Bernoulli beam). LS-95b: POU_D_TG, the
+# twist from the shear centre at the heel (crossing of the leg centre
+# lines) and C_w = t^3/36 (a'^3 + b'^3) (thickness warping of the legs,
+# a' = a - t/2, b' = b - t/2; AISC Design Guide 9, Seaburg & Carter 1997).
+L_DIMS = (0.120, 0.080, 0.008, 0.0)
+LPROF = '<geometric type="L" la="120 mm" lb="80 mm" lc="8 mm" ld="0 mm" />'
+F93 = 1000.0
+L93 = 1.0
+# Mecway 34 headless (mw_solve.py on modellen/LS-95.liml, own solver,
+# 29 Oct 2026): tip displacement
+MW93 = {"disply": 0.003368385981291101, "displz": 0.0006006251923444849}
+
+
+def _heel_offset():
+    """Local (v, w) of the heel (centre-line crossing, drawing point (t/2,
+    t/2)) in Mecway's principal axes, written out independently of the
+    bridge: centroid of the two legs, principal angle wrapped into (-45,
+    45] degrees, V = (-sin, cos), W along -(cos, sin) (measured, see
+    MW_L_PT2_*)."""
+    a, b, t = L_DIMS[:3]
+    rects = [(0.0, a, 0.0, t), (0.0, t, t, b)]
+    area = sum((x1 - x0) * (y1 - y0) for x0, x1, y0, y1 in rects)
+    cx = sum((x1 - x0) * (y1 - y0) * (x0 + x1) / 2 for x0, x1, y0, y1
+             in rects) / area
+    cy = sum((x1 - x0) * (y1 - y0) * (y0 + y1) / 2 for x0, x1, y0, y1
+             in rects) / area
+    iw = iv = ivw = 0.0
+    for x0, x1, y0, y1 in rects:
+        w, h = x1 - x0, y1 - y0
+        dx, dy = (x0 + x1) / 2 - cx, (y0 + y1) / 2 - cy
+        iw += w * h ** 3 / 12 + w * h * dy * dy
+        iv += h * w ** 3 / 12 + w * h * dx * dx
+        ivw += w * h * dx * dy
+    th = 0.5 * math.atan2(-2 * ivw, iw - iv)
+    while th > math.pi / 4 + 1e-12:
+        th -= math.pi / 2
+    while th <= -math.pi / 4 + 1e-12:
+        th += math.pi / 2
+    dx, dy = t / 2 - cx, t / 2 - cy
+    return (-math.sin(th) * dx + math.cos(th) * dy,
+            -(math.cos(th) * dx + math.sin(th) * dy))
+
+
+V93S, W93S = _heel_offset()
+# r_G - r_S = (-v_S, -w_S) in (V, W) = (Y, Z); F = (0, F, F):
+# T_x = dy F_z - dz F_y = (-v_S + w_S) F
+T93 = (W93S - V93S) * F93
+CW93 = L_DIMS[2] ** 3 / 36.0 * ((L_DIMS[0] - L_DIMS[2] / 2) ** 3 +
+                                (L_DIMS[1] - L_DIMS[2] / 2) ** 3)
+J93 = _j_mecway("L", L_DIMS)
+K93 = math.sqrt(G * J93 / (E * CW93))
+PHI93 = T93 / (G * J93) * (L93 - math.tanh(K93 * L93) / K93)
+
+
+def build_ls93():
+    m = Model("S30")
+    m.elset("Balk", "Mat")
+    nids = _line(m, (0, 0, 0), (L93, 0, 0), 20)
+    m.mat("Mat", LPROF, STEEL, DENS)
+    m.node_selection("Inklemming", [nids[0]])
+    m.add('<fixed selection="Inklemming" />')
+    m.node_selection("Tip", [nids[-1]])
+    m.add('<force selection="Tip"><x>0 N</x><y>%g N</y><z>%g N</z>'
+          '</force>' % (F93, F93))
+    return m
+
+
+TIP93 = (L93, 0.0, 0.0)
+TESTS += [
+    Case("LS-95", "Lineair statisch", "L profile with the horizontal leg "
+         "longer: principal axes as Mecway (POU_D_E)", "lin_static_3d",
+         build_ls93,
+         [Check("tip DZ vs Mecway", lambda r: r.at("displz", TIP93),
+                ref=MW93["displz"], tol=1e-4, unit="m",
+                source="Mecway 34 headless, same .liml (own solver)"),
+          Check("tip DY vs Mecway", lambda r: r.at("disply", TIP93),
+                ref=MW93["disply"], tol=1e-4, unit="m",
+                source="Mecway 34 headless, same .liml (own solver)"),
+          Check("Mecway stresspt2 (leg a, M about V) vs the bridge's axes",
+                lambda r: MW_L_PT2_MV / _frame_stress(
+                    "L", L_DIMS, (0.120, 0.0), 100.0, 0.0),
+                ref=1.0, tol=1e-6, unit="-", in_series=False,
+                source="Mecway 34 headless, end moment 100 N m about V "
+                       "(29 Oct 2026)"),
+          Check("Mecway stresspt2 (leg a, M about W) vs the bridge's axes",
+                lambda r: MW_L_PT2_MW / _frame_stress(
+                    "L", L_DIMS, (0.120, 0.0), 0.0, 100.0),
+                ref=1.0, tol=1e-6, unit="-", in_series=False,
+                source="Mecway 34 headless, end moment 100 N m about W "
+                       "(29 Oct 2026)")],
+         note="L 120 x 80 x 8 mm, L = 1 m, 20 POU_D_E, F = 1000 N along "
+              "+Y and +Z at the tip (DY with I about W, DZ with I about V). "
+              "Before 29 Oct 2026 the bridge swapped IY and IZ of an L "
+              "with a > b."),
+    Case("LS-95b", "Lineair statisch", "Shear centre of an L profile: "
+         "cantilever with a transverse tip load through the centroid "
+         "(POU_D_TG)", "lin_static_3d", build_ls93,
+         [Check("twist at the tip (shear centre at the heel)",
+                lambda r: r.at("rotx", TIP93), ref=PHI93, tol=0.02,
+                unit="rad",
+                source="T/(GJ) (L - tanh(kL)/k), T = F x (heel offset), "
+                       "C_w = t^3/36 (a'^3 + b'^3) (AISC DG9), J as "
+                       "Mecway")],
+         general=TG,
+         note="As LS-95 with POU_D_TG. The heel lies %.2f mm along V and "
+              "%.2f mm along W from the centroid (Mecway's principal "
+              "axes); the load twists the beam by T = %.2f N m."
+              % (V93S * 1e3, W93S * 1e3, T93)),
 ]
