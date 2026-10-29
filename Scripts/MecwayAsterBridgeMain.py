@@ -365,9 +365,12 @@ def _run(settings):
             return False
 
         # Pre-flight check: materials are needed for a meaningful analysis
-        # (thermal: materials with <thermal>, bridge_thermal.py)
+        # (thermal: materials with <thermal>, bridge_thermal.py; a model of
+        # springs only has spring materials, e.g. a spring pre-tension)
         if not (model_data.get("thermal_materials")
-                if model_data.get("thermal") else model_data["materials"]):
+                if model_data.get("thermal") else
+                (model_data["materials"]
+                 or model_data.get("spring_materials"))):
             _notify(tr(
                 "Geen materialen gevonden in het model.\n"
                 "Code-Aster wordt niet gestart.",

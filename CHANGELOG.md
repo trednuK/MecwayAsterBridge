@@ -140,7 +140,9 @@
   the dynamic joint within 0.06% of Mecway 34 with CCX (hand calculation within 0.6%), the
   springs exact and equal to Mecway's internal solver. Not: explicit dynamics, and the spring
   variant in Frequency/Buckling, where Mecway also gives the tensioned spring a geometric
-  stiffness (ERROR, KNOWN_BUGS 124).
+  stiffness (ERROR, KNOWN_BUGS 124). Mecway's dialog only allows *Length adjustment* for a
+  spring (writes `adjustment="true"`). A model of springs only is no longer stopped with "No
+  materials found" (checked in the Mecway GUI: PT-09 −0.25 mm, equal to Mecway).
 - **Pre-tension section: reactions**: the reference node of the section was counted in the
   sum of reactions (status box: FX −10000 N for a self-equilibrated bolt) and, lying on a
   Mecway node, shown as a reaction there; it is now left out (PT-01/02/05 check the sums: 0).
