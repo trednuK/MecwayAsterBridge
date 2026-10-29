@@ -2099,7 +2099,7 @@ on x = 0 and DY = 0 at one corner, so the stress is purely uniaxial.
 | MO-06 | free block 1 × 0.1 × 0.05 m from (1, 2, 3) m, hex20 10 × 2 × 2, 12 modes | sum of the rotational effective mass = I about the axis through the origin = m(b² + h²)/12 + m·d² (Steiner); I about the centre of mass m(b² + h²)/12 | RX/RY/RZ 524.151 / 450.754 / 256.564 kg·m² exact (< 1e-6); about the centre of mass exact; sum translation X = 1 |
 | MO-07 | clamped beam as MO-02, hex20 50 × 2 × 3, 6 modes, `fields` with `stresses` and `vonmises` | Euler-Bernoulli: rotation fraction about the clamp mode 1 = 3(∫W₁x dx)²/L⁴ = 0.97069; sum over the modes → I = m(L²/3 + a²/12); σ_xx(L/2, a/2) = E·(a/2)·W₁''(L/2)/√(ρAL) (mass-normalised); Mecway headless | rotation mode 1 / 2 −0.03 / −0.02%; sum 6 modes −0.15%; σ_xx +0.43%; against Mecway σ_xx +0.01%, fractions 0.0000% |
 | MO-08 | NAFEMS Challenge Problem 5: two line3 truss elements (1-6-2 and 3-4-5, node 5 tied to node 2 with constraint equations), steel, D = 10 mm, uz = 0 everywhere, 2 modes (GitHub issue #6) | NAFEMS CP5: 451.1 / 1049.9 Hz; Mecway 34 itself 450 / 1030 Hz | 451.15 / 1049.9 Hz (+0.01 / 0.00%) |
-| MO-10 | free bar 0.8 × 0.05 × 0.05 m of two hex20 blocks (8 × 2 × 2 each, own nodes at x = 0.4 m) with bonded contact and no support, 8 modes (GitHub issue #9) | 6 rigid modes; mode 7 Euler-Bernoulli free-free (βL)² = 22.373 (Blevins, 1979, table 8-1), 415.35 Hz; Timoshenko about −1.5% (L/h = 16) | \|f1…f6\| < 1e-3 Hz; f7 409.78 Hz (−1.34%); before: `ALGELINE3_81` |
+| MO-10 | free bar 0.8 × 0.05 × 0.05 m of two hex20 blocks (8 × 2 × 2 each, own nodes at x = 0.4 m) with bonded contact and no support, 8 modes (GitHub issue #9) | 6 rigid modes; mode 7 Euler-Bernoulli free-free (βL)² = 22.373 (Blevins, 1979, table 8-1), 415.35 Hz; Timoshenko about −1.5% (L/h = 16) | \|f1…f6\| < 1e-3 Hz; f7 409.78 Hz (−1.34%); against Mecway 34 with CCX (6 rigid modes, f7 409.777 Hz) 0.00%; before: `ALGELINE3_81` |
 | BU-01 | clamped column, 20 `POU_D_E`, compression 1000 N | Pcr = (2i−1)²π²EI/(4L²), both planes (Timoshenko & Gere, 1961) | factors 10.363 / 23.317 / 93.268 exact; tip mode 1 = 1/√(EI(π/2L)⁴L/2) (φᵀKφ = 1) exact |
 | BU-02 | pinned column, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0.002% |
 | BU-03 | clamped column hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` on the top | Euler | +0.20% / +0.13% (same model error as MO-02) |
@@ -2175,7 +2175,10 @@ reads `solution.modes()`, `frequency(m)` / `buckling_factor(m)` and
   f1 = 16.7 Hz) (`ALGELINE5_49`, `ALGELINE3_78`); hence only without supports.
   "Without supports" includes a model with only connections between parts (bonded
   contact `LIAISON_MAIL`, couplings `LIAISON_SOLIDE`/`LIAISON_RBE3`): it still has its
-  rigid modes (MO-10; before `ALGELINE3_81`, GitHub issue #9).
+  rigid modes (MO-10; before `ALGELINE3_81`, GitHub issue #9). Mecway 34's internal
+  solver does not apply bonded contact in a modal analysis: on MO-10 it gives 12 modes
+  at 0 Hz (two separate blocks) and then 1578.9 Hz; with the CCX solver Mecway gives
+  6 rigid modes and 409.777 Hz, like the bridge (measured headless 29 Oct 2026).
 - Sign: BucklingBeam (compression) gives `CHAR_CRIT` = +41124.7; the same column in
   tension −10.36 / −23.32 / −93.27 (Mecway itself 8.5e13; KNOWN_BUGS 46).
 
@@ -2292,7 +2295,7 @@ along X and skew, with and without vector + 30°):
   Lagrange multipliers is singular. The bridge now drops the part of a skew relation
   (frictionless, symmetry, value 0) that an imposed displacement/rotation 0 already
   covers at a node (`bridge_mesh._trim_covered_relations`, INFO line). Module
-  `tests_scheve_opleggingen.py`, `python run_verificatie.py MO-09 LS-83`.
+  `tests_scheve_opleggingen.py`, `python run_verificatie.py MO-09 LS-83 LS-84`.
 - **Model**: plate a = 0.5 m, t = 1 mm, steel, quad8 O-grid (256 elements, 801 nodes,
   `verif_lib.diskmesh`; COQUE_3D), frictionless on the 32 rim edges and X, Y, Z = 0 on
   the 64 rim nodes (= clamped).
@@ -2301,6 +2304,7 @@ along X and skew, with and without vector + 30°):
 |---|---|---|---|
 | MO-09 | modal, 10 modes | Dlubal 0109 (analytical, clamped Kirchhoff plate) 10.179 / 21.184 / 34.752 / 39.629 / 50.847 / 60.611 Hz (modes 1, 2, 4, 6, 7, 9; the others are the second of a pair); Mecway 34 headless on the same `.liml` | +0.01 / +0.05 / +0.11 / +0.04 / +0.24 / +0.11%; against Mecway +0.01 … +0.18% |
 | LS-83 | pressure 10 Pa | w(0) = pa⁴/(64D) (Timoshenko & Woinowsky-Krieger, 1959, §62); reaction pπa²; Mecway 34 headless | w −0.01%, reaction −3e-6; against Mecway w −0.02% |
+| LS-84 | other model: strip 1 × 0.2 m, t = 10 mm, quad8 10 × 2, frictionless on the edge x = 0 alone (plus Z = 0 on it, Y = 0 at one node); 10 N in Z and 100 N in Y at the far corners | Mecway 34 headless on the same `.liml`: u_y, u_z and rotation about Y at (1, 0.2) | +0.08 / +0.35 / −0.15% |
 
 - With the model of the issue itself (Mecway's import of its `.inp`, 1728 quad8) the
   bridge gives 10.1797 / 21.1851 / 34.7532 / 39.6298 / 50.8491 / 60.6121 Hz (Mecway
@@ -2308,6 +2312,11 @@ along X and skew, with and without vector + 30°):
 - Mecway 34 itself does not solve a *Displacement* whose direction is a formula of x, y,
   z (internal solver and CCX: no solution, measured headless 28 Oct 2026); that route to
   a radial support therefore does not exist (KNOWN_BUGS 104).
+- Frictionless on a shell edge (LS-84): Mecway 34 fixes on the edge nodes the normal
+  displacement, the rotation about the edge and also the drilling rotation about the
+  shell normal (exactly 0), not the rotation about the in-plane edge normal; the bridge
+  fixes the first two only. The drilling rotation changes no displacement (in Mecway
+  the same model with that rotation free gives the same u_y to five digits).
 
 ### Buckling of beams: torsion and frames (BU-30 … BU-37)
 

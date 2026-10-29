@@ -69,7 +69,7 @@ ignored with only an INFO, as Mecway itself does.
 |---|---|---|
 | Fixed support | Yes | Overlap with other constraints: Code-Aster does not clean up duplicate constraints like Mecway; the bridge catches the known cases and reports the rest (WARNING, KB8). |
 | Pinned support | Yes | Nodes and faces of solid elements, as in Mecway. |
-| Frictionless support | Partly | Not on beams; normal displacement ≠ 0 not on curved shells and shell edges (KB5). Next to a displacement/node rotation 0 on the same nodes (e.g. frictionless on the rim edges of a round plate plus X, Y, Z = 0, GitHub issue #9) the bridge drops the part of the relation that is already fixed, as Mecway reduces it (MO-09, LS-83). |
+| Frictionless support | Partly | Not on beams; normal displacement ≠ 0 not on curved shells and shell edges (KB5). Next to a displacement/node rotation 0 on the same nodes (e.g. frictionless on the rim edges of a round plate plus X, Y, Z = 0, GitHub issue #9) the bridge drops the part of the relation that is already fixed, as Mecway reduces it (MO-09, LS-83). On shell edges Mecway also fixes the drilling rotation about the shell normal, the bridge does not; this changes no displacement (LS-84). |
 | Elastic support | Yes | Faces of solids and shell faces. |
 | Compression only support | Partly | Only in nonlinear analyses, not together with contact; on shells the rotations stay free (KB22). |
 | Displacement, Node rotation | Yes | Value as a formula in x, y, z: Yes; direction as a formula: No (KB104). Prescribed rotations with large rotations: KB11. |

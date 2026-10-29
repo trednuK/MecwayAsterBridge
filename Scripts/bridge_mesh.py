@@ -4578,9 +4578,10 @@ def _frictionless_per_node(model_data, bc, faces_list, kind):
       - shell faces: DX = DRY = DRZ = 0 (like the flat shell faces);
       - shell edges: normal in the shell plane (normal to the edge), local
         y = the edge: DX = DRY = 0. Only the rotation about the edge, as Mecway
-        does for symmetry on shell edges (manual par. 9.40); whether Mecway's
-        frictionless on a shell edge also fixes the rotation about the shell
-        normal is NOT verified.
+        does for symmetry on shell edges (manual par. 9.40). Mecway 34's
+        frictionless on a shell edge also fixes the drilling rotation about
+        the shell normal (measured headless, LS-84); left free here, it
+        changes no displacement there.
     Only normal displacement 0 (bc["oblique"] writes 0.0). After LINE_QUAD
     (COQUE_3D) the new mid nodes get no condition (one group per
     normal; bridge_to_aster only completes groups containing both end
