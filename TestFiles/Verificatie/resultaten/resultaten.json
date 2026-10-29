@@ -50803,13 +50803,13 @@
   "analysis": "lin_static_3d",
   "series": null,
   "h": null,
-  "note": "LS-90 with two #ASTER-POST lines that print max |BX| of EFGE_ELNO into the .mess (the bimoment is not sent to Mecway). The sign of BX is not compared.",
-  "seconds": 2.4,
+  "note": "LS-90 with #ASTER-POST lines that print BX of EFGE_ELNO (largest magnitude, with its sign) and GRX into the .mess (the bimoment is not sent to Mecway). T = +100 N m about +X gives BX > 0 at the clamp: Code-Aster's BX = +E I_w phi''.",
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
    {
-    "name": "|bimoment| at the clamp",
+    "name": "bimoment BX at the clamp (signed)",
     "fem": 15.3332788928,
     "ref": 15.255111099744628,
     "rel": 0.0051240395788844685,
@@ -50818,8 +50818,22 @@
     "unit": "N m^2",
     "tol": 0.02,
     "tol_abs": null,
-    "source": "B(0) = T tanh(kL)/k (Vlasov; Trahair 1993 ch. 3)",
+    "source": "BX = +E C_w phi''; E C_w phi''(0) = T tanh(kL)/k (Vlasov; Trahair 1993 ch. 3)",
     "in_series": true,
+    "known": null
+   },
+   {
+    "name": "warping GRX at the tip (signed)",
+    "fem": 0.02619096463277,
+    "ref": 0.026193505525339143,
+    "rel": -9.70046779986884e-05,
+    "dev": -2.540892569142389e-06,
+    "ok": true,
+    "unit": "rad/m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "GRX = phi'(L) = T/(G J) (1 - 1/cosh kL)",
+    "in_series": false,
     "known": null
    },
    {
@@ -51633,5 +51647,335 @@
   "n_elem": 648,
   "settings": {},
   "general": {}
+ },
+ "LS-90e": {
+  "id": "LS-90e",
+  "group": "Lineair statisch",
+  "title": "Bimoment at the clamp, torque reversed (POU_D_TG)",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "LS-90d with T = -100 N m: BX, GRX and the twist change sign.",
+  "seconds": 2.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bimoment BX at the clamp (signed)",
+    "fem": -15.3332788928,
+    "ref": -15.255111099744628,
+    "rel": -0.0051240395788844685,
+    "dev": -0.07816779305537125,
+    "ok": true,
+    "unit": "N m^2",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "BX = +E C_w phi''; E C_w phi''(0) = T tanh(kL)/k (Vlasov; Trahair 1993 ch. 3)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "warping GRX at the tip (signed)",
+    "fem": -0.02619096463277,
+    "ref": -0.026193505525339143,
+    "rel": 9.70046779986884e-05,
+    "dev": 2.540892569142389e-06,
+    "ok": true,
+    "unit": "rad/m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "GRX = phi'(L) = T/(G J) (1 - 1/cosh kL)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "twist at the tip",
+    "fem": -0.022240467503552155,
+    "ref": -0.022261001350295673,
+    "rel": 0.0009224134359636962,
+    "dev": 2.0533846743518713e-05,
+    "ok": true,
+    "unit": "rad",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "T/(GJ) (L - tanh(kL)/k), k = sqrt(GJ/(E C_w)) (Timoshenko & Gere 5.4)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 21,
+  "n_elem": 20,
+  "settings": {},
+  "general": {
+   "elem_beam": "POU_D_TG"
+  }
+ },
+ "BU-43": {
+  "id": "BU-43",
+  "group": "Knik",
+  "title": "Lateral-torsional buckling, T beam, flange in compression (POU_D_TG)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "T 100 x 10 x 10 x 90 mm (flange at +Y), L = 2 m, 40 POU_D_TG, fork supports (warping free), end moments 1000 N m about Z that compress the flange. beta = -64.6 mm (Wagner, shear centre at the flange). The flange in compression buckles at a 1.79 times higher moment than the stem in compression; with POU_D_E both would be 47399 N m (no Wagner term).",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor (flange in compression)",
+    "fem": 63.3130393681204,
+    "ref": 63.57570197796957,
+    "rel": -0.0041314936631009005,
+    "dev": -0.26266260984917267,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor of the reversed load (stem in compression)",
+    "fem": -35.3663834350775,
+    "ref": -35.44818795409475,
+    "rel": 0.002307720753545525,
+    "dev": 0.08180451901724695,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 41,
+  "n_elem": 40,
+  "settings": {},
+  "general": {
+   "elem_beam": "POU_D_TG"
+  }
+ },
+ "BU-43b": {
+  "id": "BU-43b",
+  "group": "Knik",
+  "title": "Lateral-torsional buckling, T beam, stem in compression (POU_D_TG)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "BU-43 with the end moments reversed: the free end of the stem is in compression.",
+  "seconds": 2.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor (stem in compression)",
+    "fem": 35.3663834350775,
+    "ref": 35.44818795409475,
+    "rel": -0.002307720753545525,
+    "dev": -0.08180451901724695,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor of the reversed load (flange in compression)",
+    "fem": -63.3130393681204,
+    "ref": -63.57570197796957,
+    "rel": 0.0041314936631009005,
+    "dev": 0.26266260984917267,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 41,
+  "n_elem": 40,
+  "settings": {},
+  "general": {
+   "elem_beam": "POU_D_TG"
+  }
+ },
+ "BU-44": {
+  "id": "BU-44",
+  "group": "Knik",
+  "title": "Lateral-torsional buckling, C beam bent about the minor axis, flange tips in compression (POU_D_TG)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "C 100 x 50 x 6 mm (web at +Z), L = 4 m, 40 POU_D_TG, fork supports, end moments 1000 N m about Y (Mecway's V, the minor axis) that put the web in tension. beta = -109.3 mm (shear centre beyond the web). A linear buckling check of the shear-centre and Wagner terms along W: in practice a C bent about its minor axis does not buckle laterally (the in-plane bending governs).",
+  "seconds": 2.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor (flange tips in compression)",
+    "fem": 7.64575027733712,
+    "ref": 7.6496950656227565,
+    "rel": -0.0005156791547631904,
+    "dev": -0.003944788285636491,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.03,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor of the reversed load (web in compression)",
+    "fem": -31.1497991627595,
+    "ref": -31.265189092797613,
+    "rel": 0.003690683900731451,
+    "dev": 0.11538993003811271,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 41,
+  "n_elem": 40,
+  "settings": {},
+  "general": {
+   "elem_beam": "POU_D_TG"
+  }
+ },
+ "BU-44b": {
+  "id": "BU-44b",
+  "group": "Knik",
+  "title": "Lateral-torsional buckling, C beam bent about the minor axis, web in compression (POU_D_TG)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "BU-44 with the end moments reversed.",
+  "seconds": 2.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor (web in compression)",
+    "fem": 31.1497991627595,
+    "ref": 31.265189092797613,
+    "rel": -0.003690683900731451,
+    "dev": -0.11538993003811271,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor of the reversed load (flange tips in compression)",
+    "fem": -7.64575027733712,
+    "ref": -7.6496950656227565,
+    "rel": 0.0005156791547631904,
+    "dev": 0.003944788285636491,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.03,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 41,
+  "n_elem": 40,
+  "settings": {},
+  "general": {
+   "elem_beam": "POU_D_TG"
+  }
+ },
+ "BU-43c": {
+  "id": "BU-43c",
+  "group": "Knik",
+  "title": "Lateral-torsional buckling, T beam L = 4 m, against a shell model in Mecway (POU_D_TG)",
+  "analysis": "buckling_3d",
+  "series": null,
+  "h": null,
+  "note": "BU-43 with L = 4 m. Second reference: the same T as a shell model in Mecway 34 (no Wagner or shear-centre input), 27.08 / 20.23, ratio 1.34 (formula 1.34).",
+  "seconds": 2.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "factor (flange in compression)",
+    "fem": 27.4585977503481,
+    "ref": 27.484056733300438,
+    "rel": -0.0009263182360371872,
+    "dev": -0.02545898295233684,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor of the reversed load (stem in compression)",
+    "fem": -20.4380771339061,
+    "ref": -20.45217822733173,
+    "rel": 0.0006894665824291384,
+    "dev": 0.01410109342563004,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.02,
+    "tol_abs": null,
+    "source": "M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))], mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "factor (flange in compression) vs shells",
+    "fem": 27.4585977503481,
+    "ref": 27.080705962484,
+    "rel": 0.013954281265326312,
+    "dev": 0.37789178786410105,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.03,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, T of quad4 shells (build_tee_shell, 400 x 20 elements, own solver)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "factor of the reversed load vs shells",
+    "fem": -20.4380771339061,
+    "ref": -20.2283397825036,
+    "rel": -0.010368490625410098,
+    "dev": -0.20973735140249872,
+    "ok": true,
+    "unit": "-",
+    "tol": 0.03,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, T of quad4 shells (build_tee_shell, 400 x 20 elements, own solver), end moments reversed",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 41,
+  "n_elem": 40,
+  "settings": {},
+  "general": {
+   "elem_beam": "POU_D_TG"
+  }
  }
 }

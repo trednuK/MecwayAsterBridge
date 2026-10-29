@@ -169,7 +169,7 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
    sessions) and run `python TestFiles/Verificatie/run_verificatie.py` in full.
    **Bar**: baseline 2356 of 2362 checks OK (439 test cases), 6 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; 83: 1 in BR-10; 108: 1 in LS-67; 115: 1 in BU-35), 0 NOK/FOUT
-   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 29 Oct (373d13a): 2941 of 2947, 538 test cases:
+   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 29 Oct (373d13a + new S19 cases on 35c7564): 2957 of 2963, 544 test cases:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
    BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; update the summary
    in `docs/Verificatie.md` §3 and the EN version.

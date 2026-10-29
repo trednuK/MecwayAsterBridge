@@ -105,11 +105,13 @@ S15b), HOMARD refinement inside the job (S35b), Mecway's time step in dynamics
 (KNOWN_BUGS 127, fixed), bonded contact as in CCX (KNOWN_BUGS 128), loads on beam side faces and
 hydrostatic pressure on shell edges (S17), orthotropic material (S13), and the checks of
 29 October: shear centre and L sections of beams (LS-90d, LS-94/95), pre-tension in an
-irregular tet mesh (PT-11 .. PT-13), frictionless shell edge against Mecway (LS-84);
-Code-Aster 17.4): 538 test cases, 2947 checks, 2941 OK, 6 BEKEND (known), 0 NOK/FOUT.
+irregular tet mesh (PT-11 .. PT-13), frictionless shell edge against Mecway (LS-84), and afterwards run separately on `35c7564`
+lateral-torsional buckling of mono-symmetric sections and the sign of the bimoment (BU-43 .. BU-44b,
+LS-90d, LS-90e);
+Code-Aster 17.4): 544 test cases, 2963 checks, 2957 OK, 6 BEKEND (known), 0 NOK/FOUT.
 Compared with the run on `fc733a9` no status change and no FEM value more than 0.1%
 different apart from quantities close to zero (differences against Mecway of order 1e-3 or
-smaller). New are 9 test cases and 53 checks.
+smaller). New are 15 test cases and 69 checks.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -122,9 +124,9 @@ smaller). New are 9 test cases and 53 checks.
 | Dynamics | 16 | 47 | 47 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 15 | 53 | 53 | 0 |
-| Buckling | 27 | 77 | 76 | 1 |
+| Buckling | 32 | 89 | 88 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 134 | 447 | 446 | 1 |
+| Linear static | 135 | 451 | 450 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 25 | 239 | 239 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
@@ -142,7 +144,7 @@ smaller). New are 9 test cases and 53 checks.
 | Orthotropic material | 19 | 174 | 174 | 0 |
 | 2D and axisymmetric | 19 | 65 | 65 | 0 |
 | Bolt pretension | 13 | 87 | 87 | 0 |
-| **Total** | **538** | **2947** | **2941** | **6** |
+| **Total** | **544** | **2963** | **2957** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 373d13a, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 35c7564, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2941 van 2947 controles binnen de tolerantie** (538 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2957 van 2963 controles binnen de tolerantie** (544 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -734,6 +734,18 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 373d13a, Code-Aster 17.4
 | BU-41b | ssll103a with Mecway's L profile (POU_D_TG, section computed by the bridge) | mode 1 vs reference | 6.9253e+05 - | 6.7718e+05 | -2.22% | 3% | OK |
 | BU-41b | ssll103a with Mecway's L profile (POU_D_TG, section computed by the bridge) | mode 1 vs ssll103a (VALE_CALC) | 6.9115e+05 - | 6.7718e+05 | -2.02% | 3% | OK |
 | BU-42 | Flexural-torsional buckling, T column (POU_D_TG) | factor 1 vs flexural-torsional theory | 413.62 - | 411.18 | -0.59% | 2% | OK |
+| BU-43 | Lateral-torsional buckling, T beam, flange in compression (POU_D_TG) | factor (flange in compression) | 63.576 - | 63.313 | -0.41% | 2% | OK |
+| BU-43 | Lateral-torsional buckling, T beam, flange in compression (POU_D_TG) | factor of the reversed load (stem in compression) | -35.448 - | -35.366 | +0.23% | 2% | OK |
+| BU-43b | Lateral-torsional buckling, T beam, stem in compression (POU_D_TG) | factor (stem in compression) | 35.448 - | 35.366 | -0.23% | 2% | OK |
+| BU-43b | Lateral-torsional buckling, T beam, stem in compression (POU_D_TG) | factor of the reversed load (flange in compression) | -63.576 - | -63.313 | +0.41% | 2% | OK |
+| BU-43c | Lateral-torsional buckling, T beam L = 4 m, against a shell model in Mecway (POU_D_TG) | factor (flange in compression) | 27.484 - | 27.459 | -0.09% | 2% | OK |
+| BU-43c | Lateral-torsional buckling, T beam L = 4 m, against a shell model in Mecway (POU_D_TG) | factor of the reversed load (stem in compression) | -20.452 - | -20.438 | +0.07% | 2% | OK |
+| BU-43c | Lateral-torsional buckling, T beam L = 4 m, against a shell model in Mecway (POU_D_TG) | factor (flange in compression) vs shells | 27.081 - | 27.459 | +1.40% | 3% | OK |
+| BU-43c | Lateral-torsional buckling, T beam L = 4 m, against a shell model in Mecway (POU_D_TG) | factor of the reversed load vs shells | -20.228 - | -20.438 | -1.04% | 3% | OK |
+| BU-44 | Lateral-torsional buckling, C beam bent about the minor axis, flange tips in compression (POU_D_TG) | factor (flange tips in compression) | 7.6497 - | 7.6458 | -0.05% | 3% | OK |
+| BU-44 | Lateral-torsional buckling, C beam bent about the minor axis, flange tips in compression (POU_D_TG) | factor of the reversed load (web in compression) | -31.265 - | -31.15 | +0.37% | 2% | OK |
+| BU-44b | Lateral-torsional buckling, C beam bent about the minor axis, web in compression (POU_D_TG) | factor (web in compression) | 31.265 - | 31.15 | -0.37% | 2% | OK |
+| BU-44b | Lateral-torsional buckling, C beam bent about the minor axis, web in compression (POU_D_TG) | factor of the reversed load (flange tips in compression) | -7.6497 - | -7.6458 | +0.05% | 3% | OK |
 
 ## Cyclische symmetrie
 
@@ -1516,8 +1528,12 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 373d13a, Code-Aster 17.4
 | LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist vs free warping (ratio) | 0.84745 - | 0.84667 | -0.09% | 0.5% | OK |
 | LS-90b | Torsion, I cantilever, warping free (POU_D_TG, beam_warping free) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.01% | OK |
 | LS-90c | Torsion, I cantilever, default POU_D_E (no warping) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.0001% | OK |
-| LS-90d | Bimoment at the clamp, I cantilever under torque (POU_D_TG) | |bimoment| at the clamp | 15.255 N m^2 | 15.333 | +0.51% | 2% | OK |
+| LS-90d | Bimoment at the clamp, I cantilever under torque (POU_D_TG) | bimoment BX at the clamp (signed) | 15.255 N m^2 | 15.333 | +0.51% | 2% | OK |
+| LS-90d | Bimoment at the clamp, I cantilever under torque (POU_D_TG) | warping GRX at the tip (signed) | 0.026194 rad/m | 0.026191 | -0.01% | 1% | OK |
 | LS-90d | Bimoment at the clamp, I cantilever under torque (POU_D_TG) | twist at the tip | 0.022261 rad | 0.02224 | -0.09% | 0.5% | OK |
+| LS-90e | Bimoment at the clamp, torque reversed (POU_D_TG) | bimoment BX at the clamp (signed) | -15.255 N m^2 | -15.333 | -0.51% | 2% | OK |
+| LS-90e | Bimoment at the clamp, torque reversed (POU_D_TG) | warping GRX at the tip (signed) | -0.026194 rad/m | -0.026191 | +0.01% | 1% | OK |
+| LS-90e | Bimoment at the clamp, torque reversed (POU_D_TG) | twist at the tip | -0.022261 rad | -0.02224 | +0.09% | 0.5% | OK |
 | LS-91 | Torsion at midspan, I beam on fork supports (POU_D_TG) | twist at midspan | 0.0045691 rad | 0.0045591 | -0.22% | 0.5% | OK |
 | LS-92a | Traction on the side face of a beam (RectBar) | tip deflection | 0.021429 m | 0.021429 | +0.00% | 0.1% | OK |
 | LS-92a | Traction on the side face of a beam (RectBar) | tip deflection vs Mecway 34 | 0.021429 m | 0.021429 | +0.00% | 0.1% | OK |

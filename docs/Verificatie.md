@@ -107,11 +107,12 @@ S15b), HOMARD-verfijning in de job (S35b), de tijdstap van Mecway bij dynamica
 (KNOWN_BUGS 127, opgelost), bonded contact zoals CCX (KNOWN_BUGS 128), belastingen op balkzijvlakken
 en hydrostatische druk op schaalranden (S17), orthotroop materiaal (S13), en de controles van
 29 oktober: dwarskrachtcentrum en L-profielen van balken (LS-90d, LS-94/95), voorspanning in
-een onregelmatig tetranet (PT-11 .. PT-13), frictionless schaalrand tegen Mecway (LS-84);
-Code-Aster 17.4): 538 testcases, 2947 controles, 2941 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte
+een onregelmatig tetranet (PT-11 .. PT-13), frictionless schaalrand tegen Mecway (LS-84), en daarna los gedraaid op `35c7564` kipknik van
+monosymmetrische profielen en het teken van het bimoment (BU-43 .. BU-44b, LS-90d, LS-90e);
+Code-Aster 17.4): 544 testcases, 2963 controles, 2957 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte
 van de run op `fc733a9` geen statuswijziging en geen FEM-waarde > 0,1 % anders, behalve
 grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner). Nieuw zijn
-9 testcases en 53 controles.
+15 testcases en 69 controles.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -124,9 +125,9 @@ grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner)
 | Dynamica | 16 | 47 | 47 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 15 | 53 | 53 | 0 |
-| Knik | 27 | 77 | 76 | 1 |
+| Knik | 32 | 89 | 88 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 134 | 447 | 446 | 1 |
+| Lineair statisch | 135 | 451 | 450 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 25 | 239 | 239 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
@@ -144,7 +145,7 @@ grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner)
 | Orthotroop | 19 | 174 | 174 | 0 |
 | 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **538** | **2947** | **2941** | **6** |
+| **Totaal** | **544** | **2963** | **2957** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
