@@ -2110,7 +2110,7 @@ DX = 0 op x = 0 en DY = 0 in een hoek, zodat de spanning zuiver eenassig is.
 | MO-06 | vrij blok 1 × 0,1 × 0,05 m vanaf (1, 2, 3) m, hex20 10 × 2 × 2, 12 modes | som van de effectieve rotatiemassa = I om de as door de oorsprong = m(b² + h²)/12 + m·d² (Steiner); I om het zwaartepunt m(b² + h²)/12 | RX/RY/RZ 524,151 / 450,754 / 256,564 kg·m² exact (< 1e-6); om het zwaartepunt exact; som translatie X = 1 |
 | MO-07 | ingeklemde balk als MO-02, hex20 50 × 2 × 3, 6 modes, `fields` met `stresses` en `vonmises` | Euler-Bernoulli: rotatiefractie om de inklemming mode 1 = 3(∫W₁x dx)²/L⁴ = 0,97069; som over de modes → I = m(L²/3 + a²/12); σ_xx(L/2, a/2) = E·(a/2)·W₁''(L/2)/√(ρAL) (massagenormeerd); Mecway headless | rotatie mode 1 / 2 −0,03 / −0,02%; som 6 modes −0,15%; σ_xx +0,43%; t.o.v. Mecway σ_xx +0,01%, fracties 0,0000% |
 | MO-08 | NAFEMS Challenge Problem 5: twee line3-truss-elementen (1-6-2 en 3-4-5, knoop 5 met constraint equations aan knoop 2), staal, D = 10 mm, uz = 0 overal, 2 modes (GitHub issue #6) | NAFEMS CP5: 451,1 / 1049,9 Hz; Mecway 34 zelf 450 / 1030 Hz | 451,15 / 1049,9 Hz (+0,01 / 0,00%) |
-| MO-10 | vrije staaf 0,8 × 0,05 × 0,05 m uit twee hex20-blokken (elk 8 × 2 × 2, eigen knopen op x = 0,4 m) met verlijmd contact en zonder oplegging, 8 modes (GitHub issue #9) | 6 starre modes; mode 7 Euler-Bernoulli vrij-vrij (βL)² = 22,373 (Blevins, 1979, tabel 8-1), 415,35 Hz; Timoshenko ongeveer −1,5% (L/h = 16) | \|f1…f6\| < 1e-3 Hz; f7 409,78 Hz (−1,34%); eerder: `ALGELINE3_81` |
+| MO-10 | vrije staaf 0,8 × 0,05 × 0,05 m uit twee hex20-blokken (elk 8 × 2 × 2, eigen knopen op x = 0,4 m) met verlijmd contact en zonder oplegging, 8 modes (GitHub issue #9) | 6 starre modes; mode 7 Euler-Bernoulli vrij-vrij (βL)² = 22,373 (Blevins, 1979, tabel 8-1), 415,35 Hz; Timoshenko ongeveer −1,5% (L/h = 16) | \|f1…f6\| < 1e-3 Hz; f7 409,78 Hz (−1,34%); t.o.v. Mecway 34 met CCX (6 starre modes, f7 409,777 Hz) 0,00%; eerder: `ALGELINE3_81` |
 | BU-01 | ingeklemde kolom, 20 `POU_D_E`, druk 1000 N | Pcr = (2i−1)²π²EI/(4L²), beide vlakken (Timoshenko & Gere, 1961) | factoren 10,363 / 23,317 / 93,268 exact; tip mode 1 = 1/√(EI(π/2L)⁴L/2) (φᵀKφ = 1) exact |
 | BU-02 | scharnierende kolom, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0,002% |
 | BU-03 | ingeklemde kolom hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` op de kop | Euler | +0,20% / +0,13% (zelfde modelfout als MO-02) |
@@ -2186,7 +2186,11 @@ uit de door de bridge gevulde `.liml` met dezelfde waarden.
   (`ALGELINE5_49`, `ALGELINE3_78`); daarom alleen zonder opleggingen.
   "Zonder opleggingen" omvat ook een model met alleen verbindingen tussen delen
   (verlijmd contact `LIAISON_MAIL`, koppelingen `LIAISON_SOLIDE`/`LIAISON_RBE3`): dat
-  heeft zijn starre modes nog (MO-10; eerder `ALGELINE3_81`, GitHub issue #9).
+  heeft zijn starre modes nog (MO-10; eerder `ALGELINE3_81`, GitHub issue #9). De
+  eigen solver van Mecway 34 neemt verlijmd contact in een modale analyse niet mee: op
+  MO-10 geeft die 12 modes van 0 Hz (twee losse blokken) en daarna 1578,9 Hz; met de
+  CCX-solver geeft Mecway 6 starre modes en 409,777 Hz, zoals de bridge (headless
+  gemeten 29 okt 2026).
 - Teken: BucklingBeam (druk) geeft `CHAR_CRIT` = +41124,7; dezelfde kolom onder trek
   −10,36 / −23,32 / −93,27 (Mecway zelf 8,5e13; KNOWN_BUGS 46).
 
@@ -2302,7 +2306,7 @@ schuin, met en zonder vector + 30°):
   het deel van een scheve relatie (frictionless, symmetry, waarde 0) weg dat een
   opgelegde verplaatsing/rotatie 0 in een knoop al dekt
   (`bridge_mesh._trim_covered_relations`, INFO-regel). Module
-  `tests_scheve_opleggingen.py`, `python run_verificatie.py MO-09 LS-83`.
+  `tests_scheve_opleggingen.py`, `python run_verificatie.py MO-09 LS-83 LS-84`.
 - **Model**: plaat a = 0,5 m, t = 1 mm, staal, quad8 O-grid (256 elementen, 801 knopen,
   `verif_lib.diskmesh`; COQUE_3D), frictionless op de 32 randranden en X, Y, Z = 0 op de
   64 randknopen (= ingeklemd).
@@ -2311,6 +2315,7 @@ schuin, met en zonder vector + 30°):
 |---|---|---|---|
 | MO-09 | modaal, 10 modes | Dlubal 0109 (analytisch, ingeklemde Kirchhoff-plaat) 10,179 / 21,184 / 34,752 / 39,629 / 50,847 / 60,611 Hz (modes 1, 2, 4, 6, 7, 9; de andere zijn de tweede van een paar); Mecway 34 headless op dezelfde `.liml` | +0,01 / +0,05 / +0,11 / +0,04 / +0,24 / +0,11%; t.o.v. Mecway +0,01 … +0,18% |
 | LS-83 | druk 10 Pa | w(0) = pa⁴/(64D) (Timoshenko & Woinowsky-Krieger, 1959, §62); reactie pπa²; Mecway 34 headless | w −0,01%, reactie −3e-6; t.o.v. Mecway w −0,02% |
+| LS-84 | ander model: strook 1 × 0,2 m, t = 10 mm, quad8 10 × 2, alleen frictionless op de rand x = 0 (plus Z = 0 daarop, Y = 0 in één knoop); 10 N in Z en 100 N in Y op de verre hoeken | Mecway 34 headless op dezelfde `.liml`: u_y, u_z en rotatie om Y in (1, 0,2) | +0,08 / +0,35 / −0,15% |
 
 - Met het model uit de issue zelf (Mecway's import van de `.inp`, 1728 quad8) geeft de
   bridge 10,1797 / 21,1851 / 34,7532 / 39,6298 / 50,8491 / 60,6121 Hz (Mecway
@@ -2318,6 +2323,11 @@ schuin, met en zonder vector + 30°):
 - Mecway 34 rekent zelf geen *Displacement* waarvan de richting een formule van x, y, z
   is (eigen solver en CCX: geen oplossing, headless gemeten 28 okt 2026); die route naar
   een radiale oplegging bestaat dus niet (KNOWN_BUGS 104).
+- Frictionless op een schaalrand (LS-84): Mecway 34 zet in de randknopen de
+  normaalverplaatsing, de rotatie om de rand en ook de draairotatie om de schaalnormaal
+  vast (precies 0), niet de rotatie om de normaal van de rand in het schaalvlak; de
+  bridge zet alleen de eerste twee vast. De draairotatie verandert geen verplaatsing (in
+  Mecway geeft hetzelfde model met die rotatie vrij dezelfde u_y op vijf cijfers).
 
 ### Knik van balken: torsie en raamwerken (BU-30 … BU-37)
 

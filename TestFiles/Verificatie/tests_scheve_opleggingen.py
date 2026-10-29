@@ -20,7 +20,7 @@ rho = 7850 kg/m3), quad8 O-grid (verif_lib.diskmesh), so clamped
 (Kirchhoff): f = lambda^2 / (2 pi a^2) sqrt(D / (rho t)).
 """
 import math
-from verif_lib import Case, Check, Model, diskmesh
+from verif_lib import Case, Check, Model, diskmesh, quadmesh, rect
 
 E, NU, RHO = 210e9, 0.3, 7850.0
 A9, T9 = 0.5, 0.001
@@ -108,6 +108,48 @@ def _ls83_checks():
     return out
 
 
+# LS-84: frictionless on a straight shell edge alone (no displacement on the
+# same rotations). Strip 1 x 0.2 m, t = 10 mm, quad8 10 x 2; edge x = 0:
+# frictionless + Z = 0, node (0, 0, 0) Y = 0; far corners: 10 N in Z at
+# (1, 0.2) (bending + twist), 100 N in Y at (1, 0) (in-plane bending).
+# Mecway 34 (internal solver, headless) fixes on the edge nodes UX, the
+# rotation about the edge (RY) and the drilling rotation about the shell
+# normal (RZ, exactly 0), not the rotation about the in-plane edge normal
+# (RX). The bridge fixes UX and RY only; the free drilling DOF changes no
+# displacement (Mecway with RZ free via an ordinary displacement gives the
+# same UY to 5 digits). Mecway values at (1, 0.2, 0) on modellen/LS-84.liml:
+MW_LS84 = {"displz": 9.4979e-4, "disply": 2.4443e-5, "roty": -1.4291e-03}
+
+
+def build_ls84():
+    m = Model("S30")
+    m.elset("Strook", "Strook1")
+    me = quadmesh(m, "Strook", 10, 2, rect(0, 1.0, 0, 0.2), order=2)
+    m.mat("Strook1", '<geometric type="Plate" thickness="0.01 m" />', STEEL)
+    m.face_selection("Rand", me["edges"]["u0"])
+    m.node_selection("RandKnopen", sorted(me["nodes"]["u0"]))
+    m.node_selection("O", [m.node(0, 0, 0)])
+    m.node_selection("Hoek", [m.node(1.0, 0.2, 0)])
+    m.node_selection("Hoek2", [m.node(1.0, 0.0, 0)])
+    m.add('<frictionless selection="Rand" />')
+    m.add('<displacement selection="RandKnopen"><value>0 m</value><x>0</x>'
+          '<y>0</y><z>1</z></displacement>')
+    m.add('<displacement selection="O"><value>0 m</value><x>0</x><y>1</y>'
+          '<z>0</z></displacement>')
+    m.add('<force selection="Hoek"><x>0 N</x><y>0 N</y><z>10 N</z></force>')
+    m.add('<force selection="Hoek2"><x>0 N</x><y>100 N</y><z>0 N</z>'
+          '</force>')
+    return m
+
+
+def _ls84_checks():
+    return [Check("%s hoek t.o.v. Mecway" % v,
+                  lambda r, v=v: r.at(v, (1.0, 0.2, 0)), ref=ref, tol=0.01,
+                  unit="rad" if v.startswith("rot") else "m",
+                  source="Mecway 34 headless, same .liml")
+            for v, ref in sorted(MW_LS84.items())]
+
+
 TESTS = [
     Case("MO-09", "Modaal", "Ronde plaat ingeklemd via frictionless + "
          "displacement op de rand (issue #9)", "modal_3d", build_mo09,
@@ -117,4 +159,9 @@ TESTS = [
     Case("LS-83", "Lineair statisch", "Ronde plaat onder druk, oplegging "
          "als MO-09", "lin_static_3d", build_ls83, _ls83_checks(),
          note="Zelfde oplegging als MO-09; doorbuiging en reactie."),
+    Case("LS-84", "Lineair statisch", "Schaalstrook met frictionless op een "
+         "rechte rand (rotatievoorwaarden t.o.v. Mecway)", "lin_static_3d",
+         build_ls84, _ls84_checks(),
+         note="Mecway zet op de rand ook de draairotatie (RZ) vast, de "
+              "bridge niet; geen invloed op de verplaatsingen."),
 ]

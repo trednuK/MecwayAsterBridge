@@ -69,7 +69,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 |---|---|---|
 | Fixed support | Ja | Overlap met andere voorwaarden: Code-Aster ruimt dubbele voorwaarden niet op zoals Mecway; de bekende gevallen vangt de bridge af, de rest meldt hij (WARNING, KB8). |
 | Pinned support | Ja | Knopen en vlakken van volume-elementen, zoals Mecway. |
-| Frictionless support | Deels | Niet op balken; normaalverplaatsing ≠ 0 niet op gekromde schalen en schaalranden (KB5). Naast een displacement/node rotation 0 op dezelfde knopen (bijv. frictionless op de randen van een ronde plaat plus X, Y, Z = 0, GitHub issue #9) laat de bridge het deel van de relatie weg dat al vastligt, zoals Mecway het reduceert (MO-09, LS-83). |
+| Frictionless support | Deels | Niet op balken; normaalverplaatsing ≠ 0 niet op gekromde schalen en schaalranden (KB5). Naast een displacement/node rotation 0 op dezelfde knopen (bijv. frictionless op de randen van een ronde plaat plus X, Y, Z = 0, GitHub issue #9) laat de bridge het deel van de relatie weg dat al vastligt, zoals Mecway het reduceert (MO-09, LS-83). Op schaalranden zet Mecway ook de draairotatie om de schaalnormaal vast, de bridge niet; dat verandert geen verplaatsing (LS-84). |
 | Elastic support | Ja | Vlakken van volumes en schaalvlakken. |
 | Compression only support | Deels | Alleen in niet-lineaire analyses, niet samen met contact; op schalen blijven de rotaties vrij (KB22). |
 | Displacement, Node rotation | Ja | Waarde als formule in x, y, z: Ja; richting als formule: Nee (KB104). Opgelegde rotaties bij grote rotaties: KB11. |

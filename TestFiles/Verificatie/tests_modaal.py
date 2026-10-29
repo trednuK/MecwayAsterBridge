@@ -339,10 +339,17 @@ def build_mo04():
 # vrij-vrij, (beta L)^2 = 22,373 (Blevins tabel 8-1); L/h = 16, dus
 # afschuiving en rotatietraagheid (Timoshenko) verlagen ~1,5%: tolerantie 3%.
 # Mode 7 en 8 zijn de buiging in Y en Z (vierkante doorsnede, dubbel).
+# Mecway 34 headless (mw_solve.py) on modellen/MO-10.liml: the internal
+# solver gives 12 modes at 0 Hz, then 1578.87 Hz (4x): it does not apply the
+# bonded contact in a modal analysis, the two blocks vibrate separately
+# (free-free 0.4 m blocks). With solver="ccx" Mecway gives 6 rigid modes and
+# f7 = f8 = 409.7774 Hz (= the bridge). Mecway's internal solver is the odd
+# one out, not the bridge.
 # ------------------------------------------------------------------
 L10, H10 = 0.8, 0.05
 F10 = 22.373 / (2 * math.pi * L10 ** 2) * math.sqrt(
     E * H10 ** 4 / 12.0 / (RHO * H10 ** 2))
+MW_CCX_MO10 = 409.7774          # Mecway 34 + CCX, f7
 BOND10 = ('<contact2 selectionmaster="A_x1" selectionslave="B_x0" '
           'type="bondedtie"><tolerance>0 m</tolerance><normalstiffness>0 '
           'Pa/m</normalstiffness><tangentialstiffness>0 Pa/m'
@@ -374,7 +381,11 @@ TESTS.append(Case(
      Check("f6 (star)", lambda r: r.mode(6), ref=0.0, tol_abs=0.5,
            unit="Hz", source="starre-lichaamsbeweging"),
      _mode_check(7, F10, 0.03, "Euler-Bernoulli vrij-vrij (beta L)^2 = "
-                 "22,373 (Blevins tabel 8-1); Timoshenko ~-1,5%", "f7")],
+                 "22,373 (Blevins tabel 8-1); Timoshenko ~-1,5%", "f7"),
+     Check("f7 t.o.v. Mecway CCX", lambda r: r.mode(7), ref=MW_CCX_MO10,
+           tol=0.003, unit="Hz", in_series=False,
+           source="Mecway 34 headless, solver ccx, same .liml (the "
+           "internal solver ignores the bonded contact in modal)")],
     note="Verlijmd contact (LIAISON_MAIL) zonder oplegging: "
          "vrij-vrij-route (issue #9)."))
 

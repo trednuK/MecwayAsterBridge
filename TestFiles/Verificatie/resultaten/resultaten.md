@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge fc733a9, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 7d814bc, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2888 van 2894 controles binnen de tolerantie** (529 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2892 van 2898 controles binnen de tolerantie** (530 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1509,6 +1509,9 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge fc733a9, Code-Aster 17.4
 | LS-83 | Ronde plaat onder druk, oplegging als MO-09 | w midden | 5.0781e-04 m | 5.0774e-04 | -0.01% | 1% | OK |
 | LS-83 | Ronde plaat onder druk, oplegging als MO-09 | reactie Z | 7.854 N | 7.854 | -0.00% | 0.5% | OK |
 | LS-83 | Ronde plaat onder druk, oplegging als MO-09 | w midden t.o.v. Mecway | 5.0784e-04 m | 5.0774e-04 | -0.02% | 0.5% | OK |
+| LS-84 | Schaalstrook met frictionless op een rechte rand (rotatievoorwaarden t.o.v. Mecway) | disply hoek t.o.v. Mecway | 2.4443e-05 m | 2.4462e-05 | +0.08% | 1% | OK |
+| LS-84 | Schaalstrook met frictionless op een rechte rand (rotatievoorwaarden t.o.v. Mecway) | displz hoek t.o.v. Mecway | 9.4979e-04 m | 9.5312e-04 | +0.35% | 1% | OK |
+| LS-84 | Schaalstrook met frictionless op een rechte rand (rotatievoorwaarden t.o.v. Mecway) | roty hoek t.o.v. Mecway | -0.0014291 rad | -0.0014313 | -0.15% | 1% | OK |
 | LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist at the tip | 0.022261 rad | 0.02224 | -0.09% | 0.5% | OK |
 | LS-90 | Torsion with restrained warping, I cantilever (POU_D_TG) | twist vs free warping (ratio) | 0.84745 - | 0.84667 | -0.09% | 0.5% | OK |
 | LS-90b | Torsion, I cantilever, warping free (POU_D_TG, beam_warping free) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.01% | OK |
@@ -1923,6 +1926,7 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge fc733a9, Code-Aster 17.4
 | MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f1 (star) | 0 Hz | -6.4486e-04 | -6.4486e-04 | 0.5 Hz | OK |
 | MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f6 (star) | 0 Hz | 9.5714e-04 | 9.5714e-04 | 0.5 Hz | OK |
 | MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f7 | 415.35 Hz | 409.78 | -1.34% | 3% | OK |
+| MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f7 t.o.v. Mecway CCX | 409.78 Hz | 409.78 | -0.00% | 0.3% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |

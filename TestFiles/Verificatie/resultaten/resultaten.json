@@ -42882,6 +42882,20 @@
     "source": "Euler-Bernoulli vrij-vrij (beta L)^2 = 22,373 (Blevins tabel 8-1); Timoshenko ~-1,5%",
     "in_series": true,
     "known": null
+   },
+   {
+    "name": "f7 t.o.v. Mecway CCX",
+    "fem": 409.777363995266,
+    "ref": 409.7774,
+    "rel": -8.786412818169504e-08,
+    "dev": -3.600473399956172e-05,
+    "ok": true,
+    "unit": "Hz",
+    "tol": 0.003,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, solver ccx, same .liml (the internal solver ignores the bonded contact in modal)",
+    "in_series": false,
+    "known": null
    }
   ],
   "n_nodes": 522,
@@ -43204,7 +43218,7 @@
   "series": null,
   "h": null,
   "note": "quad8 O-grid; frictionless op de randen en X/Y/Z 0 op dezelfde knopen: de bridge reduceert de dubbele voorwaarde.",
-  "seconds": 4.5,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -43390,7 +43404,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde oplegging als MO-09; doorbuiging en reactie.",
-  "seconds": 2.9,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -50719,6 +50733,66 @@
   ],
   "n_nodes": 621,
   "n_elem": 80,
+  "settings": {},
+  "general": {}
+ },
+ "LS-84": {
+  "id": "LS-84",
+  "group": "Lineair statisch",
+  "title": "Schaalstrook met frictionless op een rechte rand (rotatievoorwaarden t.o.v. Mecway)",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Mecway zet op de rand ook de draairotatie (RZ) vast, de bridge niet; geen invloed op de verplaatsingen.",
+  "seconds": 2.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "disply hoek t.o.v. Mecway",
+    "fem": 2.4462380050270765e-05,
+    "ref": 2.4443e-05,
+    "rel": 0.0007928670895866115,
+    "dev": 1.9380050270765545e-08,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same .liml",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "displz hoek t.o.v. Mecway",
+    "fem": 0.0009531180313641306,
+    "ref": 0.00094979,
+    "rel": 0.0035039654703992564,
+    "dev": 3.32803136413051e-06,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same .liml",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "roty hoek t.o.v. Mecway",
+    "fem": -0.001431282915442338,
+    "ref": -0.0014291,
+    "rel": -0.0015274756436483906,
+    "dev": -2.182915442337915e-06,
+    "ok": true,
+    "unit": "rad",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Mecway 34 headless, same .liml",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 85,
+  "n_elem": 20,
   "settings": {},
   "general": {}
  }
