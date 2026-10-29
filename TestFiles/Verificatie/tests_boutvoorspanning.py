@@ -551,3 +551,258 @@ TESTS += [
               "middelste knooppunt is dwars vastgehouden met schuine "
               "verplaatsingsvoorwaarden."),
 ]
+
+
+# ------------------------------------------------------------------
+# Irregular mesh: the bar of PT-01 (10 x 100 x 10 mm along Y, frictionless
+# at both ends and on x = 0 and z = 0) as a 3 x 12 x 3 hex grid whose nodes
+# are moved randomly (fixed seed): interior nodes in x, y and z, nodes on a
+# side face only within that face, nodes on an edge only along the edge;
+# every distorted cell is split into 6 tetrahedra (Kuhn), tet10 with
+# straight mid-side nodes or tet4. The node layers are wavy, so the middle
+# of the selected faces (layers 3 .. 9 on the faces x = 10 and z = 10 mm)
+# cuts through tetrahedra of different sizes and orientations at random
+# heights: the section zig-zags over faces, edges and corner nodes (PT-05
+# has a zig-zag too, but in a regular grid at one height).
+# A uniaxial stress is exact in tet4 and tet10 on any straight-sided mesh,
+# so a missing or stray node pair shows up as a stress error.
+# ------------------------------------------------------------------
+import glob
+import io
+import os
+import random
+import re
+
+NUJ, NVJ, NWJ = 3, 12, 3
+JIT_XZ, JIT_Y = 0.3, 0.35            # fraction of the cell size
+J_SEL = range(3, 10)                 # cell layers of the selected faces
+_TET10_MID = [(0, 1), (1, 2), (0, 2), (0, 3), (1, 3), (2, 3)]
+
+
+def _jitter_grid(seed=1511):
+    """{(i, j, k): (x, y, z)} of the distorted grid (deterministic)."""
+    rnd = random.Random(seed)
+    h = (0.01 / NUJ, L / NVJ, 0.01 / NWJ)
+    n = (NUJ, NVJ, NWJ)
+    jit = (JIT_XZ, JIT_Y, JIT_XZ)
+    grid = {}
+    for i in range(NUJ + 1):
+        for j in range(NVJ + 1):
+            for k in range(NWJ + 1):
+                idx = (i, j, k)
+                p = []
+                for ax in range(3):
+                    d = rnd.uniform(-1.0, 1.0)      # always drawn: same stream
+                    inner = 0 < idx[ax] < n[ax]
+                    p.append((idx[ax] + (jit[ax] * d if inner else 0.0)) *
+                             h[ax])
+                grid[idx] = tuple(p)
+    return grid
+
+
+def _det(a, b, c, d):
+    v = [[q[r] - a[r] for r in range(3)] for q in (b, c, d)]
+    return (v[0][0] * (v[1][1] * v[2][2] - v[1][2] * v[2][1]) -
+            v[0][1] * (v[1][0] * v[2][2] - v[1][2] * v[2][0]) +
+            v[0][2] * (v[1][0] * v[2][1] - v[1][1] * v[2][0]))
+
+
+def _jitter_bar(load, shape="tet10"):
+    m = Model("S30", solver="ccx")
+    m.elset("Staaf", "Staal")
+    m.mat("Staal", STEEL)
+    grid = _jitter_grid()
+    faces = {"x0": [], "y0": [], "y1": [], "z0": []}
+    bolt = []
+    for i in range(NUJ):
+        for j in range(NVJ):
+            for k in range(NWJ):
+                for perm in _KUHN:
+                    c = [0, 0, 0]
+                    idx = [(i, j, k)]
+                    for ax in perm:
+                        c[ax] += 1
+                        idx.append((i + c[0], j + c[1], k + c[2]))
+                    # orientation from the undistorted cell; the distorted
+                    # tetrahedron must still be positive
+                    if _det(*idx) < 0:
+                        idx[1], idx[2] = idx[2], idx[1]
+                    xyz = [grid[q] for q in idx]
+                    assert _det(*xyz) > 0, "inverted tetrahedron"
+                    if shape == "tet10":
+                        xyz += [tuple(0.5 * (xyz[a][r] + xyz[b][r])
+                                      for r in range(3))
+                                for a, b in _TET10_MID]
+                    eid = m.elem("Staaf", shape, [m.node(*p) for p in xyz])
+                    for fid, cs in _TET_FACES.items():
+                        fi = [idx[q] for q in cs]
+                        for name, ax, val in (("x0", 0, 0), ("y0", 1, 0),
+                                              ("y1", 1, NVJ), ("z0", 2, 0),
+                                              ("x1", 0, NUJ), ("z1", 2, NWJ)):
+                            if all(q[ax] == val for q in fi):
+                                if name in faces:
+                                    faces[name].append((eid, fid))
+                                elif j in J_SEL:
+                                    bolt.append((eid, fid))
+    m.face_selection("Onder", faces["y0"])
+    m.face_selection("Boven", faces["y1"])
+    m.face_selection("X0", faces["x0"])
+    m.face_selection("Z0", faces["z0"])
+    m.face_selection("Bout", bolt)
+    m.node_selection("OnderN", sorted(set(
+        n for es in m.elsets for e in es[2] for n in e[2]
+        if abs(m.nodes[n - 1][1]) < 1e-12)))
+    for sel in ("Onder", "Boven", "X0", "Z0"):
+        m.add('<frictionless selection="%s" />' % sel)
+    m.add(load)
+    return m
+
+
+def build_pt11():
+    return _jitter_bar(_pret("Bout", force="10 kN"))
+
+
+def build_pt12():
+    return _jitter_bar(_pret("Bout", adjustment="0.01 mm"))
+
+
+def build_pt13():
+    return _jitter_bar(_pret("Bout", force="10 kN"), shape="tet4")
+
+
+def _expected_cut(m):
+    """
+    Own recount of the section the bridge must find on model m (Mecway's
+    rule, manual par. 9.11, as bridge_pretension applies it: axis +Y here,
+    section in the middle of the axial extent of the nodes of the selected
+    faces, side of a tetrahedron by the centroid of its corners; the prism
+    is every tetrahedron within the extent, one connected bar here).
+    Returns (below, above, node pairs).
+    """
+    y = dict((i + 1, p[1]) for i, p in enumerate(m.nodes))
+    elems = dict((e[0], e[2]) for es in m.elsets for e in es[2])
+    sel_nodes = set()
+    for txt in m.selections:
+        if 'faceselection name="Bout"' not in txt:
+            continue
+        for eid, fid in re.findall(r'eid="(\d+)" faceid="(\d+)"', txt):
+            nids = elems[int(eid)]
+            fc = set(nids[q] for q in _TET_FACES[int(fid)])
+            sel_nodes |= fc
+            # the mid-side nodes of the face count for the extent too
+            for (a, b), mid in zip(_TET10_MID, nids[4:]):
+                if nids[a] in fc and nids[b] in fc:
+                    sel_nodes.add(mid)
+    s_min = min(y[n] for n in sel_nodes)
+    s_max = max(y[n] for n in sel_nodes)
+    s_cut, tol = 0.5 * (s_min + s_max), 1e-6 * (s_max - s_min)
+    below, above = set(), set()
+    for eid, nids in elems.items():
+        if not all(s_min - tol <= y[n] <= s_max + tol for n in nids):
+            continue
+        yc = sum(y[n] for n in nids[:4]) / 4.0
+        (below if yc < s_cut - tol else above).add(eid)
+    nb = set(n for e in below for n in elems[e])
+    na = set(n for e in above for n in elems[e])
+    return len(below), len(above), len(nb & na)
+
+
+def _log_section(r):
+    """(area, below, above, pairs) from the INFO line of the bridge log."""
+    logs = glob.glob(os.path.join(os.path.dirname(r.mess),
+                                  "*bridge_log.txt"))
+    txt = io.open(logs[0], encoding="utf-8", errors="replace").read()
+    mt = re.search(r"Pre-tension section 'Bout':.*? area (\S+) m2.*?\((\d+) "
+                   r"below, (\d+) above\), (\d+) node pair", txt)
+    return (float(mt.group(1)), int(mt.group(2)), int(mt.group(3)),
+            int(mt.group(4)))
+
+
+def _ynode(r, p):
+    return r.model.nodes[r.nearest(p) - 1][1]
+
+
+def _eps_below(r):
+    """u_y / y of the node nearest (0, 20 mm, 0): the strain of the lower
+    part (the node sits at a random height, so the strain is checked)."""
+    return r.at("disply", P25) / _ynode(r, P25)
+
+
+def _eps_above(r):
+    return -r.at("disply", P75) / (L - _ynode(r, P75))
+
+
+PMID = (0.005, 0.03, 0.005)          # interior node of the lower half
+# Mecway 34 headless (mw_solve.py, CCX, 29 Oct 2026) on modellen/PT-11..13:
+# stressyy uniform in all nodes (min = max): 99.999 MPa, 19.9998 MPa and
+# 100.000 MPa; strain u_y / y below and above the section 5e-4 / 1e-4
+# within 3e-7 relative (Mecway's own section, with its thin layer)
+MWJ = {"PT-11": 9.9999e7, "PT-12": 1.99998e7, "PT-13": 1.0e8}
+
+
+def _jitter_checks(n, build, mw=None):
+    """n = axial force [N]; ends held, so the strain is n / (E A) on both
+    sides and the bar material elongates by n L / (E A) = the shortening."""
+    exp = _expected_cut(build())
+    out = [
+        Check("stressyy binnenknoop", lambda r: r.at("stressyy", PMID),
+              ref=n / A, tol=1e-4, unit="Pa",
+              source="N / A (uniaxiaal, exact in tet4/tet10)"),
+        Check("stressyy max", lambda r: r.extreme("stressyy"), ref=n / A,
+              tol=1e-4, unit="Pa",
+              source="N / A in alle knopen: geen piek bij de doorsnede"),
+        Check("stressyy min", lambda r: r.extreme("stressyy", fn=min),
+              ref=n / A, tol=1e-4, unit="Pa", source="idem"),
+        Check("reactie onder", lambda r: -r.total("reactionforcey", "OnderN"),
+              ref=n, tol=1e-4, unit="N",
+              source="N (de onderkant houdt de staaf omlaag)"),
+        Check("rek onderste deel u_y / y", _eps_below, ref=n / (E * A),
+              tol=1e-4, unit="-", source="N / (E A)"),
+        Check("rek bovenste deel -u_y / (L - y)", _eps_above,
+              ref=n / (E * A), tol=1e-4, unit="-", source="N / (E A)"),
+        Check("verlenging staafmateriaal = verkorting",
+              lambda r: 0.5 * (_eps_below(r) + _eps_above(r)) * L,
+              ref=n * L / (E * A), tol=1e-4, unit="m",
+              source="N L / (E A)"),
+        Check("oppervlak doorsnede (bridge-log)",
+              lambda r: _log_section(r)[0], ref=A, tol=1e-5, unit="m2",
+              source="10 x 10 mm (zigzagvlak geprojecteerd)",
+              in_series=False),
+        Check("elementen onder (bridge-log)", lambda r: _log_section(r)[1],
+              ref=exp[0], tol_abs=0, unit="",
+              source="eigen telling (zwaartepunt onder het midden)",
+              in_series=False),
+        Check("elementen boven (bridge-log)", lambda r: _log_section(r)[2],
+              ref=exp[1], tol_abs=0, unit="", source="eigen telling",
+              in_series=False),
+        Check("knoopparen (bridge-log)", lambda r: _log_section(r)[3],
+              ref=exp[2], tol_abs=0, unit="",
+              source="eigen telling (knopen van onder en boven)",
+              in_series=False),
+        Check("som reacties Y (BRIDGE_STATREAC)",
+              lambda r: static_check(r, "FY"), ref=0.0, tol_abs=1e-3 * n,
+              unit="N", source="voorspanning is inwendig: som 0",
+              in_series=False)]
+    if mw is not None:
+        out.append(Check("stressyy = Mecway", lambda r: r.at("stressyy", PMID),
+                         ref=mw, tol=1e-3, unit="Pa",
+                         source="Mecway 34 headless (CCX)", in_series=False))
+    return out
+
+
+TESTS += [
+    Case("PT-11", GROUP, "Staaf in een onregelmatig tet10-mesh (verschoven "
+         "knopen), kracht 10 kN", "lin_static_3d", build_pt11,
+         _jitter_checks(10e3, build_pt11, MWJ["PT-11"]),
+         note="Doorsnede in het midden van de geselecteerde vlakken door "
+              "tetraeders van wisselende grootte en stand; zijde per "
+              "zwaartepunt."),
+    Case("PT-12", GROUP, "Idem, length adjustment 0,01 mm", "lin_static_3d",
+         build_pt12, _jitter_checks(E * A * 1e-5 / L, build_pt12,
+                                     MWJ["PT-12"]),
+         note="DDL_IMPO DX = 1e-5 m: N = E A delta / L = 2000 N; de "
+              "verlenging van het staafmateriaal is de verkorting."),
+    Case("PT-13", GROUP, "Idem in tet4, kracht 10 kN", "lin_static_3d",
+         build_pt13, _jitter_checks(10e3, build_pt13, MWJ["PT-13"]),
+         note="Zelfde verschoven knopen, lineaire tetraeders."),
+]

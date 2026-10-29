@@ -97,7 +97,8 @@ the lowest natural period) if you want the bolt to be tightened quasi-statically
 - **Section**: every prism element lies below or above the middle of the extent
   (its centroid along the axis). The nodes that both sides share are the section;
   in a structured mesh that is a layer of element faces, in a tet mesh a zig-zag
-  surface over faces, edges and corner nodes (PT-05). Mecway inserts a thin
+  surface over faces, edges and corner nodes (PT-05; in an irregular tet10 and tet4
+  mesh with moved nodes PT-11 .. PT-13). Mecway inserts a thin
   layer of elements there for CCX; the bridge does not need that.
 - **Cut**: the elements below (along the axis) get a copy of the section nodes
   (new nodes after the Mecway nodes). Per node pair three `LIAISON_DDL`:
@@ -134,7 +135,10 @@ PT-01 .. PT-05 in [`Verification.md`](Verification.md): bar with force and with
 length adjustment (hand calculation exact, Mecway 34 −0.004%), bolt with sleeve
 between rigid plates (joint diagram with length adjustment, and with force under an
 increasing external load in Nonlinear static), and a bar in tet4 with a zig-zag
-section. PT-06 .. PT-08: the joint with a heavy top plate in Dynamic response
+section. PT-11 .. PT-13: the same bar in an irregular tet10 and tet4 mesh (randomly
+moved nodes): stress N/A exact in all nodes, in force and length adjustment mode, and
+the section area and node pairs in the log equal to an own count (Mecway 34 with CCX
+−0.001%). PT-06 .. PT-08: the joint with a heavy top plate in Dynamic response
 (force and length adjustment as a step, force as a ramp in D30; period and peak
 equal to the mass-spring hand calculation within 0.6% and to Mecway 34 with CCX
 within 0.06%). PT-09, PT-10: the spring element variant (two springs in series,

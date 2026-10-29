@@ -101,7 +101,8 @@ aangespannen moet worden.
 - **Doorsnede**: elk prisma-element ligt onder of boven het midden van de lengte (zijn
   zwaartepunt langs de as). De knopen die beide kanten delen zijn de doorsnede; in een
   gestructureerd mesh is dat een laag elementvlakken, in een tet-mesh een zigzagvlak
-  over vlakken, ribben en hoekknopen (PT-05). Mecway voegt daar voor CCX een dunne laag
+  over vlakken, ribben en hoekknopen (PT-05; in een onregelmatig tet10- en tet4-mesh
+  met verschoven knopen PT-11 .. PT-13). Mecway voegt daar voor CCX een dunne laag
   elementen in; de bridge heeft die niet nodig.
 - **Snede**: de elementen onder (langs de as) krijgen een kopie van de knopen van de
   doorsnede (nieuwe knopen na de Mecway-knopen). Per knooppaar drie `LIAISON_DDL`:
@@ -138,7 +139,10 @@ PT-01 .. PT-05 in [`Verificatie.md`](Verificatie.md): staaf met kracht en met
 lengteverandering (handberekening exact, Mecway 34 −0,004%), bout met huls tussen
 stijve platen (verbindingsdiagram met lengteverandering, en met kracht onder een
 oplopende externe last in Niet-lineair statisch), en een staaf in tet4 met een
-zigzagdoorsnede. PT-06 .. PT-08: de verbinding met een zware bovenplaat in Dynamische
+zigzagdoorsnede. PT-11 .. PT-13: dezelfde staaf in een onregelmatig tet10- en
+tet4-mesh (willekeurig verschoven knopen): spanning N/A in alle knopen exact, in kracht-
+en lengteveranderingsmodus, en het doorsnede-oppervlak en de knoopparen in de log
+gelijk aan een eigen telling (Mecway 34 met CCX −0,001%). PT-06 .. PT-08: de verbinding met een zware bovenplaat in Dynamische
 respons (kracht en lengteverandering als staplast, kracht als helling in D30; periode
 en piek gelijk aan de handberekening van het massa-veersysteem binnen 0,6% en aan
 Mecway 34 met CCX binnen 0,06%). PT-09, PT-10: de variant met een veerelement (twee

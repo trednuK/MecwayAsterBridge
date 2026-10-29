@@ -1337,6 +1337,11 @@ Mecway headless within the known contact differences (KNOWN_BUGS 43); regression
   DISCRETE); recorded in KNOWN_BUGS 43. A bonded-contact variant runs, but Mecway's displacements
   are ~10x larger even without the section (CCX `*TIE` with `POSITION TOLERANCE=0`, question).
   So the BoltedJoint criterion is replaced by PT-03/04 (same physics, contact-free).
+- *Irregular mesh* (29 Oct 2026): PT-11 .. PT-13, the bar as a jittered tet10/tet4 mesh (section
+  through tetrahedra of varying size at a random height): stress N/A exact in all nodes in force and
+  adjustment mode, node pairs and element counts equal to an own count, Mecway CCX −0.001%. Fixed:
+  the logged section area used abs() of the projected faces and counted folds of the zig-zag surface
+  twice (1.0641e-4 instead of 1e-4 m2); now a signed projection (log only, no effect on results).
 - *Open*: dynamics and the spring element variant (S15b); a GUI check in Mecway (load PT-01 results,
   Pre-tension section dialog with Length adjustment saves `adjustment="true"`).
 

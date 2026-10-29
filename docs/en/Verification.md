@@ -149,7 +149,8 @@ OR-01..22, 19 cases, 174 checks OK (28/29 October 2026, steps S13a .. S13d; re-r
 linear static cases, MO-20 .. MO-31, BU-20 .. BU-25, the result formulas and part of the thermal
 and modal families, about 200 cases, FEM values bit-identical); Bolt pretension
 PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
-checks OK (28 October 2026, step S15b). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
+checks OK (28 October 2026, step S15b); PT-11..13 (irregular tet mesh), 3 cases, 39 checks
+OK (29 October 2026). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
 Beam side faces and hydrostatic pressure on shell
 edges LS-92a..h, LS-93a..c, 11 cases, 27 checks OK (28 October 2026, step S17).
 
@@ -1902,7 +1903,7 @@ samples) plus the kinks of the load tables (NL-20).
 Mecway's *Pre-tension section* ([Bolt_pretension.md](Bolt_pretension.md)): cut through
 the prism, `LIAISON_DDL` to a reference node (DX = shortening), force as `FORCE_NODALE`,
 length adjustment as `DDL_IMPO`; the spring element variant as two nodal forces.
-Module `tests_boutvoorspanning.py` (group "Boutvoorspanning", 10 cases), run with
+Module `tests_boutvoorspanning.py` (group "Boutvoorspanning", 13 cases), run with
 `python run_verificatie.py PT`. Mecway 34 headless with CCX (`mw_solve.py`, the same
 `.liml` with the stress field, 28 October 2026), for PT-09/10 with its internal solver,
 as the second reference.
@@ -1919,6 +1920,9 @@ as the second reference.
 | PT-08 | idem in D30, force as formula 1000·t/0.003 N | u(3 ms) = −F/kc·(1 − sin(ωt)/(ωt)) = −2.4837e-6 m; Mecway −2.49738e-6 m | −2.4978e-6 m (+0.57%: sensitive to the period and the scheme damping of the small vibration); Mecway +0.02% |
 | PT-09 | spring element variant: springs k1 = 1000 and k2 = 3000 N/m in series along X between held nodes, section on spring 1 with `force="true"`, force 0 N, length adjustment 1 mm (internal solver) | middle node −k1·δ/(k1+k2) = −0.25 mm, reaction −0.75 N; Mecway the same (it uses the adjustment whatever the mode) | exact |
 | PT-10 | idem along (1, 2, 2), k2 = 4000 N/m, length adjustment 2 mm, middle node held across with oblique displacement constraints | −0.4 mm along the axis, reaction x −0.53333 N; Mecway the same | exact |
+| PT-11 | bar of PT-01 as an irregular tet10 mesh: 3 × 12 × 3 grid with randomly moved nodes (fixed seed; interior nodes up to 0.3 × the cell size across and 0.35 × in y, boundary nodes only within their face or along their edge), every cell into 6 tetrahedra; faces of layers 3..9 on x = 10 and z = 10 mm: section at y = 54.43 mm through tetrahedra of varying size and orientation; force 10 kN | N/A = 100 MPa in all nodes (min = max), reaction 10 kN, strain u_y/y below and above = N/(EA); bridge log: area 1e-4 m², 185 elements below, 173 above, 68 node pairs (own count in the test); Mecway 99.999 MPa | exact (≤ 1e-9); Mecway −0.001% |
+| PT-12 | idem, length adjustment 0.01 mm | N = EAδ/L = 2000 N (20 MPa) in all nodes; elongation of the bar material = δ = 1e-5 m; Mecway 19.9998 MPa | exact; Mecway −0.001% |
+| PT-13 | idem in tet4 (same nodes) | as PT-11, 21 node pairs; Mecway 100.000 MPa | exact |
 
 Mode attribute: Mecway 34 writes `force="true"` for the force and `adjustment="true"` for
 the length adjustment (models re-saved by Mecway; with `force="false"` or without an
