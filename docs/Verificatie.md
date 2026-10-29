@@ -97,20 +97,24 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 28 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `8b13519`
-(na V2026.4: o.a. de massa- en reactiecontrole, kabelvoorspanning, knik met vaste last,
-hysteretische demping, adaptieve tijdstappen, line search, gladde contactnormalen, de
-doorsnede-eigenschappen, VTU-export, het veld *failed*, de hex8-meldingen bij rubber, de
-warmteflux per elementknoop, de resultaatformules (S33) en de hoofdspanningen en -rekken
-(S34); Code-Aster 17.4): 442 testcases, 2382 controles, 2376 OK, 6 BEKEND, 0 NOK/FOUT.
-Ten opzichte van de run op `5ef612d` geen statuswijziging en geen FEM-waarde > 0,1 %
-anders; nieuw zijn 8 controles in FX-02 (hoofdwaarden en de formules `s1`, `tr`, `e1`).
+Stand 29 oktober 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `fc733a9`
+(na V2026.5: o.a. hoofdspanningen van schalen en Green-Lagrange (S34b), schuine
+opleggingen naast verplaatsingen en vrij-vrij modaal met alleen verbindingen (issue #9),
+de samenvatting van de Code-Aster-run (issue #7), balken met welving (S19), 2D en
+axisymmetrisch inclusief dynamica en akoestiek (S16a, S16b, S16d), boutvoorspanning (S15,
+S15b), HOMARD-verfijning in de job (S35b), de tijdstap van Mecway bij dynamica
+(KNOWN_BUGS 127, opgelost), bonded contact zoals CCX (KNOWN_BUGS 128), belastingen op balkzijvlakken
+en hydrostatische druk op schaalranden (S17) en orthotroop materiaal (S13); Code-Aster
+17.4): 529 testcases, 2894 controles, 2888 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte van de
+run op `8b13519` geen statuswijziging; één FEM-waarde > 0,1 % anders: MD-06a (verloop
+t.o.v. Mecway 3,4e-3 → 2,7e-3, KNOWN_BUGS 127 opgelost). Nieuw zijn 87
+testcases en 512 controles.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
-| Adaptieve verfijning | 8 | 14 | 14 | 0 |
-| Akoestiek | 7 | 78 | 78 | 0 |
+| Adaptieve verfijning | 12 | 27 | 27 | 0 |
+| Akoestiek | 13 | 204 | 204 | 0 |
 | Akoestiek harmonisch | 10 | 103 | 103 | 0 |
 | Akoestiek impedantie | 10 | 227 | 227 | 0 |
 | Cyclische symmetrie | 6 | 171 | 171 | 0 |
@@ -118,24 +122,27 @@ anders; nieuw zijn 8 controles in FX-02 (hoofdwaarden en de formules `s1`, `tr`,
 | Dynamica | 16 | 47 | 47 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 15 | 53 | 53 | 0 |
-| Knik | 22 | 65 | 64 | 1 |
+| Knik | 27 | 77 | 76 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 111 | 399 | 398 | 1 |
+| Lineair statisch | 128 | 434 | 433 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
-| Modaal | 23 | 223 | 223 | 0 |
+| Modaal | 25 | 238 | 238 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 53 | 199 | 196 | 3 |
+| Niet-lineair statisch | 54 | 201 | 198 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
-| Respons op modale basis | 8 | 21 | 21 | 0 |
+| Respons op modale basis | 10 | 25 | 25 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
-| Resultaatformules | 3 | 20 | 20 | 0 |
+| Resultaatformules | 5 | 38 | 38 | 0 |
 | Thermisch | 24 | 92 | 92 | 0 |
 | Thermische spanning | 2 | 7 | 7 | 0 |
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
-| **Totaal** | **442** | **2382** | **2376** | **6** |
+| Orthotroop | 19 | 174 | 174 | 0 |
+| 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
+| Boutvoorspanning | 10 | 48 | 48 | 0 |
+| **Totaal** | **529** | **2894** | **2888** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

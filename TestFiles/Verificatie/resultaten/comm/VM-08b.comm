@@ -98,6 +98,9 @@ mesh = MODI_MAILLAGE(
 )
 
 
+# ---- BRIDGE_ADAPT_BEGIN: with adaptive refinement (adapt_homard) the part up to
+# end marker below runs in a loop over the refined meshes (bridge_homard.py) ----
+
 # =====================================================
 # 3. MODEL DEFINITION
 # For each elset the matching MODELISATION is chosen:
@@ -375,6 +378,8 @@ _bridge_vermoeiing = aster_fatigue.compute_multi(
     [{'material': 'Staal', 'form': 'table', 'S': [138000000.0, 152000000.0, 165000000.0, 180000000.0, 200000000.0, 250000000.0, 295000000.0, 305000000.0, 340000000.0, 430000000.0, 540000000.0, 690000000.0, 930000000.0, 1210000000.0, 1590000000.0, 2210000000.0, 2900000000.0], 'N': [1000000.0, 500000.0, 200000.0, 100000.0, 50000.0, 20000.0, 12000.0, 10000.0, 5000.0, 2000.0, 1000.0, 500.0, 200.0, 100.0, 50.0, 20.0, 10.0], 'interpol': 'LOG', 'prol_gauche': 'LINEAIRE', 'prol_droite': 'LINEAIRE', 'correction': 'GEEN'}],
     {'stress': 'VMIS_SG', 'counting': 'RAINFLOW', 'repeats': 1.0, 'strain': 'PRIN', 'criterion': 'DANG_VAN', 'loading': 'PERIODIQUE', 'projection': 'UN_AXE', 'a': 1.0, 'c': 1.5, 'route': 'history'})
 
+
+# ---- BRIDGE_ADAPT_END ----
 
 # =====================================================
 # 10. RESULT EXTRACTION

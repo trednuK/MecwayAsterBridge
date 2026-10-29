@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge fc733a9, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2516 van 2522 controles binnen de tolerantie** (480 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2888 van 2894 controles binnen de tolerantie** (529 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -22,6 +22,19 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | AD-02 | Plaat met gat: adaptieve verfijningslus (Mecway refine_x2) | sqrt(som eta_e^2) / eta globaal | 1  | 1 | +0.00% | 0.1% | OK |
 | AD-02 | Plaat met gat: adaptieve verfijningslus (Mecway refine_x2) | sigma_xx aan het eindvlak | 1.0000e+08 Pa | 1.0001e+08 | +0.01% | 0.5% | OK |
 | AD-03 | Adaptieve verfijning: inklemming op een knoopselectie -> ERROR | lus stopt voor verfijnen (1 = ja) | 1  | 1 | +0.00% | 0  | OK |
+| AD-10 | Plaat met gat thermisch: adaptieve verfijning met HOMARD in de job | heatfluxx at the hole edge (0, R) | -67465 W/m2 | -66878 | +0.87% | 1.5% | OK |
+| AD-10 | Plaat met gat thermisch: adaptieve verfijning met HOMARD in de job | cells after the loop / uniform n8 (same accuracy) | 0  | 0.4266 | 0.4266 | 0.999  | OK |
+| AD-10 | Plaat met gat thermisch: adaptieve verfijning met HOMARD in de job | loop stopped on the target (1 = yes) | 1  | 1 | +0.00% | 0  | OK |
+| AD-10 | Plaat met gat thermisch: adaptieve verfijning met HOMARD in de job | hole recognised as a cylinder (1 = yes) | 1  | 1 | +0.00% | 0  | OK |
+| AD-10b | Plaat met gat thermisch: rand gegeven met #ASTER-RAND | heatfluxx at the hole edge (0, R) equal to AD-10 | -66878 W/m2 | -66878 | +0.00% | 0.01% | OK |
+| AD-10b | Plaat met gat thermisch: rand gegeven met #ASTER-RAND | #ASTER-RAND used (1 = yes) | 1  | 1 | +0.00% | 0  | OK |
+| AD-11 | Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job | stressxx at the hole edge (0, R) | 2.9101e+08 Pa | 2.9369e+08 | +0.92% | 3% | OK |
+| AD-11 | Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job | cells after the loop / uniform n8 (same accuracy) | 0  | 0.71029 | 0.71029 | 0.999  | OK |
+| AD-11 | Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job | loop stopped on the target (1 = yes) | 1  | 1 | +0.00% | 0  | OK |
+| AD-11 | Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job | hole recognised as a cylinder (1 = yes) | 1  | 1 | +0.00% | 0  | OK |
+| AD-11 | Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job | equivalent plastic strain at (0, R) | 0.0015073  | 0.0015262 | +1.25% | 3% | OK |
+| AD-11 | Plaat met gat plastisch: adaptieve verfijning met HOMARD in de job | all 5 time steps in Mecway | 5  | 5 | +0.00% | 0  | OK |
+| AD-12 | Adaptieve verfijning HOMARD: temperatuur op een knoopselectie -> ERROR | bridge refuses with an ERROR that names 'Koud' (1 = yes) | 1  | 1 | +0.00% | 0  | OK |
 
 ## Akoestiek harmonisch
 
@@ -445,6 +458,132 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | AK-07 | Buis gesloten-gesloten, tet4 (40 hex8-blokken gesplitst) | f5 t.o.v. Mecway | 682.14 Hz | 682.14 | -0.00% | 1% | OK |
 | AK-07 | Buis gesloten-gesloten, tet4 (40 hex8-blokken gesplitst) | max|p| mode 1 t.o.v. Mecway | 3400 Pa | 3400 | +0.00% | 0.1% | OK |
 | AK-07 | Buis gesloten-gesloten, tet4 (40 hex8-blokken gesplitst) | max|p| mode 2 t.o.v. Mecway | 4826.3 Pa | 4826.3 | +0.00% | 0.1% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f1 (constante druk) | 0 Hz | -1.8448e-05 | -1.8448e-05 | 0.01 Hz | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f2 mode 10 | 170 Hz | 170 | +0.00% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f3 mode 01 | 242.86 Hz | 242.86 | +0.00% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f4 mode 11 | 296.44 Hz | 296.45 | +0.00% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f5 mode 20 | 340 Hz | 340.04 | +0.01% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f6 mode 21 | 417.83 Hz | 417.86 | +0.01% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f7 mode 02 | 485.71 Hz | 485.92 | +0.04% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f8 mode 30 | 510 Hz | 510.27 | +0.05% | 0.5% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 1 = c / sqrt(A) | 406.38 Pa | 406.38 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f2 = Mecway | 170 Hz | 170 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f3 = Mecway | 242.86 Hz | 242.86 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f4 = Mecway | 296.45 Hz | 296.45 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f5 = Mecway | 340.04 Hz | 340.04 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f6 = Mecway | 417.86 Hz | 417.86 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f7 = Mecway | 485.92 Hz | 485.92 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | f8 = Mecway | 510.27 Hz | 510.27 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 1 = Mecway | 406.38 Pa | 406.38 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 2 = Mecway | 574.71 Pa | 574.71 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 3 = Mecway | 574.74 Pa | 574.74 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 4 = Mecway | 812.7 Pa | 812.7 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 5 = Mecway | 574.82 Pa | 574.82 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 6 = Mecway | 812.52 Pa | 812.52 | -0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 7 = Mecway | 575.18 Pa | 575.18 | +0.00% | 0.0001% | OK |
+| AK-10 | 2D (A20): rechthoek 1,0 x 0,7 m, harde wanden, quad8 10x7 | max|p| mode 8 = Mecway | 575.27 Pa | 575.27 | +0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f1 mode 10 | 85 Hz | 85 | +0.00% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f2 mode 20 | 255 Hz | 255.01 | +0.00% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f3 mode 11 | 257.3 Hz | 257.31 | +0.00% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f4 mode 21 | 352.14 Hz | 352.15 | +0.00% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f5 mode 30 | 425 Hz | 425.11 | +0.03% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f6 mode 31 | 489.49 Hz | 489.59 | +0.02% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f7 mode 12 | 493.1 Hz | 493.3 | +0.04% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f8 mode 22 | 548.58 Hz | 548.78 | +0.04% | 0.5% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f1 = Mecway | 85 Hz | 85 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f2 = Mecway | 255.01 Hz | 255.01 | +0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f3 = Mecway | 257.31 Hz | 257.31 | +0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f4 = Mecway | 352.15 Hz | 352.15 | +0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f5 = Mecway | 425.11 Hz | 425.11 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f6 = Mecway | 489.59 Hz | 489.59 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f7 = Mecway | 493.3 Hz | 493.3 | +0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | f8 = Mecway | 548.78 Hz | 548.78 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 1 = Mecway | 574.71 Pa | 574.71 | +0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 2 = Mecway | 574.74 Pa | 574.74 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 3 = Mecway | 812.77 Pa | 812.77 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 4 = Mecway | 812.6 Pa | 812.6 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 5 = Mecway | 574.99 Pa | 574.99 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 6 = Mecway | 812.5 Pa | 812.5 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 7 = Mecway | 813.31 Pa | 813.31 | -0.00% | 0.0001% | OK |
+| AK-11 | 2D (A20): rechthoek, p = 0 op x = a (vlakselectie), dikte 10 mm | max|p| mode 8 = Mecway | 813.85 Pa | 813.85 | +0.00% | 0.0001% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f1 (constante druk) | 0 Hz | 1.5042e-05 | 1.5042e-05 | 0.01 Hz | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f2 mode 10 | 170 Hz | 170 | +0.00% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f3 mode 01 | 242.86 Hz | 242.86 | +0.00% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f4 mode 11 | 296.44 Hz | 296.45 | +0.00% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f5 mode 20 | 340 Hz | 340 | +0.00% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f6 mode 21 | 417.83 Hz | 417.84 | +0.00% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f7 mode 02 | 485.71 Hz | 485.73 | +0.00% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f8 mode 30 | 510 Hz | 510.03 | +0.01% | 0.5% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f2 = Mecway | 170 Hz | 170 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f3 = Mecway | 242.86 Hz | 242.86 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f4 = Mecway | 296.45 Hz | 296.45 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f5 = Mecway | 340 Hz | 340 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f6 = Mecway | 417.84 Hz | 417.84 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f7 = Mecway | 485.73 Hz | 485.73 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | f8 = Mecway | 510.01 Hz | 510.03 | +0.00% | 0.02% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 1 = Mecway | 406.38 Pa | 406.38 | -0.00% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 2 = Mecway | 574.71 Pa | 574.71 | +0.00% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 3 = Mecway | 574.71 Pa | 574.72 | +0.00% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 4 = Mecway | 812.79 Pa | 812.81 | +0.00% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 5 = Mecway | 574.73 Pa | 574.76 | +0.00% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 6 = Mecway | 812.89 Pa | 812.96 | +0.01% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 7 = Mecway | 574.83 Pa | 574.92 | +0.02% | 0.05% | OK |
+| AK-12 | 2D (A20): rechthoek, harde wanden, tri6 20x14x2 | max|p| mode 8 = Mecway | 574.85 Pa | 574.96 | +0.02% | 0.05% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f1 mode 10 | 85 Hz | 85.005 | +0.01% | 1% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f2 mode 20 | 255 Hz | 255.15 | +0.06% | 1% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f3 mode 11 | 257.3 Hz | 257.42 | +0.05% | 1% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f4 mode 21 | 352.14 Hz | 352.34 | +0.06% | 1% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f5 mode 30 | 425 Hz | 425.68 | +0.16% | 1% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f6 mode 31 | 489.49 Hz | 490.15 | +0.13% | 1% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f1 = Mecway | 85.005 Hz | 85.005 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f2 = Mecway | 255.15 Hz | 255.15 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f3 = Mecway | 257.42 Hz | 257.42 | +0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f4 = Mecway | 352.34 Hz | 352.34 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f5 = Mecway | 425.68 Hz | 425.68 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | f6 = Mecway | 490.15 Hz | 490.15 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | max|p| mode 1 = Mecway | 574.78 Pa | 574.78 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | max|p| mode 2 = Mecway | 575.37 Pa | 575.37 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | max|p| mode 3 = Mecway | 813.71 Pa | 813.71 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | max|p| mode 4 = Mecway | 814.55 Pa | 814.55 | -0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | max|p| mode 5 = Mecway | 576.55 Pa | 576.55 | +0.00% | 0.0001% | OK |
+| AK-13 | 2D (A20): quad4 in twee elsets, p = 0 op de knopen van x = a | max|p| mode 6 = Mecway | 816.23 Pa | 816.23 | +0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f (n=1, zonder y-variatie) | 170 Hz | 170 | +0.00% | 0.5% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay rate (n=1) | 70.347 1/s | 70.349 | +0.00% | 0.5% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f (n=2, zonder y-variatie) | 340 Hz | 340.04 | +0.01% | 0.5% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay rate (n=2) | 70.347 1/s | 70.376 | +0.04% | 0.5% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 170.001 Hz = Mecway | 170 Hz | 170 | +0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 70.3488 1/s = Mecway | 70.349 1/s | 70.349 | +0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 244.452 Hz = Mecway | 244.45 Hz | 244.45 | -0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 32.5108 1/s = Mecway | 32.511 1/s | 32.511 | -0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 296.96 Hz = Mecway | 296.96 Hz | 296.96 | -0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 71.7264 1/s = Mecway | 71.726 1/s | 71.726 | -0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 340.036 Hz = Mecway | 340.04 Hz | 340.04 | +0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 70.3757 1/s = Mecway | 70.376 1/s | 70.376 | -0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 417.945 Hz = Mecway | 417.94 Hz | 417.94 | -0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 70.8564 1/s = Mecway | 70.856 1/s | 70.856 | -0.00% | 0.0001% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f1 (constante druk) | 0 Hz | -6.8420e-06 | -6.8420e-06 | 0.01 Hz | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f2 mode 10 | 170 Hz | 170.26 | +0.15% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f3 mode 01 | 242.86 Hz | 243.63 | +0.32% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f4 mode 11 | 296.44 Hz | 298.25 | +0.61% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f5 mode 20 | 340 Hz | 342.12 | +0.62% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f6 mode 21 | 417.83 Hz | 422.93 | +1.22% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f7 mode 02 | 485.71 Hz | 491.95 | +1.28% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f8 mode 30 | 510 Hz | 517.23 | +1.42% | 3% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f2 = Mecway | 170.15 Hz | 170.26 | +0.07% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f3 = Mecway | 243.28 Hz | 243.63 | +0.14% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f4 = Mecway | 297.63 Hz | 298.25 | +0.21% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f5 = Mecway | 341.17 Hz | 342.12 | +0.28% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f6 = Mecway | 421.15 Hz | 422.93 | +0.42% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f7 = Mecway | 489.13 Hz | 491.95 | +0.58% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | f8 = Mecway | 513.96 Hz | 517.23 | +0.64% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 1 = Mecway | 406.38 Pa | 406.38 | -0.00% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 2 = Mecway | 576.28 Pa | 576.68 | +0.07% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 3 = Mecway | 577.93 Pa | 578.74 | +0.14% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 4 = Mecway | 819.56 Pa | 821.27 | +0.21% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 5 = Mecway | 581.04 Pa | 582.65 | +0.28% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 6 = Mecway | 826.32 Pa | 829.77 | +0.42% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 7 = Mecway | 587.71 Pa | 591.05 | +0.57% | 1% | OK |
+| AK-15 | 2D (A20): rechthoek, harde wanden, tri3 20x14x2 | max|p| mode 8 = Mecway | 589.05 Pa | 592.76 | +0.63% | 1% | OK |
 
 ## Breukmechanica
 
@@ -1075,6 +1214,8 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | LS-07j | Quad8-plaat met rib, gedeelde knopen (referentie LS-07i) | zijdelingse verplaatsing ribtop t.o.v. Mecway | 1.1404e-05 m | 1.1536e-05 | +1.16% | 2% | OK |
 | LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07i | 1.1342e-05 m | 1.1336e-05 | -0.05% | 0.2% | OK |
 | LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07j | 1.1536e-05 m | 1.1336e-05 | -1.74% | 3% | OK |
+| LS-07l | Overlapnaad van twee hex20-platen, verlijmd; plaat B steekt uit voorbij plaat A (tolerantie 0) | doorbuiging tip t.o.v. Mecway | 2.3077e-04 m | 2.3077e-04 | +0.00% | 0.5% | OK |
+| LS-07m | Als LS-07l met 0,2 mm spleet en tolerantie 0,5 mm | doorbuiging tip t.o.v. Mecway | 2.3017e-04 m | 2.3077e-04 | +0.26% | 1% | OK |
 | LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | sigma_xx | -2.5200e+08 Pa | -2.5200e+08 | -0.00% | 0.0001% | OK |
 | LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | u_y zijkant | 1.5600e-04 m | 1.5600e-04 | +0.00% | 0.0001% | OK |
 | LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | |reactie x| op x = L | 2.5200e+06 N | 2.5200e+06 | +0.00% | 0.0001% | OK |
@@ -1373,6 +1514,247 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | LS-90b | Torsion, I cantilever, warping free (POU_D_TG, beam_warping free) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.01% | OK |
 | LS-90c | Torsion, I cantilever, default POU_D_E (no warping) | twist at the tip | 0.026268 rad | 0.026268 | -0.00% | 0.0001% | OK |
 | LS-91 | Torsion at midspan, I beam on fork supports (POU_D_TG) | twist at midspan | 0.0045691 rad | 0.0045591 | -0.22% | 0.5% | OK |
+| LS-92a | Traction on the side face of a beam (RectBar) | tip deflection | 0.021429 m | 0.021429 | +0.00% | 0.1% | OK |
+| LS-92a | Traction on the side face of a beam (RectBar) | tip deflection vs Mecway 34 | 0.021429 m | 0.021429 | +0.00% | 0.1% | OK |
+| LS-92a | Traction on the side face of a beam (RectBar) | reaction sum Z | -60 N | -60 | -0.00% | 0.0001% | OK |
+| LS-92b | Traction on the side face of an I-profile beam (transverse, Y) | tip deflection vs Mecway 34 | 1.7005e-04 m | 1.7005e-04 | +0.00% | 0.1% | OK |
+| LS-92b | Traction on the side face of an I-profile beam (transverse, Y) | reaction sum Y | -392 N | -392 | -0.00% | 0.0001% | OK |
+| LS-92c | Traction as a formula z = x kPa on a beam side face | tip deflection | 0.015714 m | 0.015714 | +0.00% | 0.1% | OK |
+| LS-92c | Traction as a formula z = x kPa on a beam side face | tip deflection vs Mecway 34 | 0.015705 m | 0.015714 | +0.06% | 0.2% | OK |
+| LS-92c | Traction as a formula z = x kPa on a beam side face | reaction sum Z | -30 N | -30 | -0.00% | 0.0001% | OK |
+| LS-92d | Pressure on the side face of a beam: no load | tip deflection (tip force only) | 0.0095238 m | 0.0095238 | +0.00% | 0.0001% | OK |
+| LS-92d | Pressure on the side face of a beam: no load | tip deflection vs Mecway 34 | 0.0095238 m | 0.0095238 | +0.00% | 0.001% | OK |
+| LS-92d | Pressure on the side face of a beam: no load | reaction sum Z | -10 N | -10 | -0.00% | 0.0001% | OK |
+| LS-92e | Traction on the side face of line3 beams | tip deflection | 0.021429 m | 0.021429 | +0.00% | 0.1% | OK |
+| LS-92e | Traction on the side face of line3 beams | reaction sum Z | -60 N | -60 | +0.00% | 0.0001% | OK |
+| LS-92f | Traction on side faces of two sections (RectBar + CircularBar) | reaction sum Z | -61.416 N | -61.416 | +0.00% | 0.0001% | OK |
+| LS-92f | Traction on side faces of two sections (RectBar + CircularBar) | tip deflection vs Mecway 34 | 0.021188 m | 0.021188 | +0.00% | 0.1% | OK |
+| LS-92h | Traction on a beam side face together with gravity (one distributed load per beam) | tip deflection | 0.015928 m | 0.015928 | +0.00% | 0.1% | OK |
+| LS-92h | Traction on a beam side face together with gravity (one distributed load per beam) | tip deflection vs Mecway 34 | 0.015928 m | 0.015928 | -0.00% | 0.1% | OK |
+| LS-92h | Traction on a beam side face together with gravity (one distributed load per beam) | reaction sum Z | -44.598 N | -44.598 | -0.00% | 0.0001% | OK |
+| LS-93a | Hydrostatic pressure on a shell edge (quad4) | reaction sum X | 49.05 N | 49.05 | -0.00% | 0.0001% | OK |
+| LS-93a | Hydrostatic pressure on a shell edge (quad4) | edge displacement X at z = 0 vs Mecway 34 | -4.5504e-08 m | -4.5504e-08 | -0.00% | 0.1% | OK |
+| LS-93a | Hydrostatic pressure on a shell edge (quad4) | edge displacement X at z = 0.5 vs Mecway 34 | -2.2921e-08 m | -2.2921e-08 | -0.00% | 0.2% | OK |
+| LS-93b | Hydrostatic pressure on a shell edge, free surface inside an element | reaction sum X | 14.838 N | 14.838 | -0.00% | 0.01% | OK |
+| LS-93b | Hydrostatic pressure on a shell edge, free surface inside an element | edge displacement X at z = 0 vs Mecway 34 | -2.1627e-08 m | -2.1625e-08 | +0.01% | 0.5% | OK |
+| LS-93c | Hydrostatic pressure on a shell edge (quad8) | reaction sum X | 49.05 N | 49.05 | +0.00% | 0.0001% | OK |
+| LS-93c | Hydrostatic pressure on a shell edge (quad8) | edge displacement X at z = 0 vs Mecway 34 | -4.6381e-08 m | -4.6387e-08 | -0.01% | 0.1% | OK |
+
+## Niet-lineair statisch
+
+| ID | Test | Grootheid | Referentie | FEM | Afwijking | Tolerantie | Status |
+|---|---|---|---|---|---|---|---|
+| LS-92g | Traction on a beam side face in nonlinear static | tip deflection | 0.021429 m | 0.021429 | +0.00% | 0.1% | OK |
+| LS-92g | Traction on a beam side face in nonlinear static | reaction sum Z | -60 N | -60 | -0.00% | 0.0001% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=1.5 (plastisch) | 38908 N | 38908 | -0.00% | 0.2% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-01b | Trekstaaf, ontlasten (RELA 1e-6 of MAXI 0,05 N) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-01b | Trekstaaf, ontlasten (RELA 1e-6 of MAXI 0,05 N) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | v/L PL2/EI=1 | 0.30172 - | 0.30135 | -0.12% | 1% | OK |
+| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | u/L PL2/EI=1 | 0.056433 - | 0.056305 | -0.23% | 1% | OK |
+| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | v/L PL2/EI=2 | 0.49346 - | 0.49234 | -0.23% | 1% | OK |
+| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | u/L PL2/EI=2 | 0.16064 - | 0.15993 | -0.44% | 1% | OK |
+| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | v/L PL2/EI=3 | 0.60325 - | 0.60155 | -0.28% | 1% | OK |
+| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | u/L PL2/EI=3 | 0.25442 - | 0.25297 | -0.57% | 1% | OK |
+| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | v/L PL2/EI=1 | 0.30172 - | 0.30174 | +0.01% | 1% | OK |
+| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | u/L PL2/EI=1 | 0.056433 - | 0.05644 | +0.01% | 1% | OK |
+| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | v/L PL2/EI=2 | 0.49346 - | 0.49349 | +0.01% | 1% | OK |
+| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | u/L PL2/EI=2 | 0.16064 - | 0.16066 | +0.01% | 1% | OK |
+| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | v/L PL2/EI=3 | 0.60325 - | 0.60329 | +0.01% | 1% | OK |
+| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | u/L PL2/EI=3 | 0.25442 - | 0.25445 | +0.01% | 1% | OK |
+| NL-03a | Contact: twee balken, tips op elkaar (STANDARD) | tip gemiddeld | 7.6305e-05 m | 2.1102e-06 | -97.23% | 0.5% | BEKEND (KNOWN_BUGS 43) |
+| NL-03a | Contact: twee balken, tips op elkaar (STANDARD) | tip boven | 7.6305e-05 m | 4.2203e-06 | -94.47% | 0.5% | BEKEND (KNOWN_BUGS 43) |
+| NL-03a | Contact: twee balken, tips op elkaar (STANDARD) | contactkracht | 5 N | 1.9683e-08 | -100.00% | 0.5% | BEKEND (KNOWN_BUGS 43) |
+| NL-03b | Contact: twee balken, tips op elkaar (PENALISATION, kn = 1e13 Pa/m) | tip gemiddeld | 7.6305e-05 m | 7.6300e-05 | -0.01% | 0.5% | OK |
+| NL-03b | Contact: twee balken, tips op elkaar (PENALISATION, kn = 1e13 Pa/m) | tip boven | 7.6305e-05 m | 7.6361e-05 | +0.07% | 0.5% | OK |
+| NL-03b | Contact: twee balken, tips op elkaar (PENALISATION, kn = 1e13 Pa/m) | contactkracht | 5 N | 4.9964 | -0.07% | 0.5% | OK |
+| NL-03c | Contact-patchtest (STANDARD) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03c | Contact-patchtest (STANDARD) | w boven (A,A) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
+| NL-03c | Contact-patchtest (STANDARD) | w boven (A/3,2A/3) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
+| NL-03d | Contact-patchtest (PENALISATION) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03d | Contact-patchtest (PENALISATION) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03d | Contact-patchtest (PENALISATION) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03d | Contact-patchtest (PENALISATION) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-03e | Contact-patchtest (STANDARD, NCOTES) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03e | Contact-patchtest (STANDARD, NCOTES) | w boven (A,A) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
+| NL-03e | Contact-patchtest (STANDARD, NCOTES) | w boven (A/3,2A/3) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
+| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie | 0.001 m | 0.001 | +0.00% | 0.5% | OK |
+| NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie-waarschuwing | 1  | 1 | +0.00% | 0  | OK |
+| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
+| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
+| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
+| NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
+| NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
+| NL-04b | Als NL-04 met een kinematische (lineaire) curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | +0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
+| NL-04c | Als NL-04 met een curve zonder (0, 0) | sigma_xx t=1 t.o.v. Mecway 34 | 1.0498e+08 Pa | 1.0495e+08 | -0.03% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | uitvoertijden = time points | 0 s | 0 | 0 | 1e-09 s | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | rekenstappen (vast: 30) | 6  | 6 | +0.00% | 0  | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=1 (elastisch) | 20969 N | 20969 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=1.5 (plastisch) | 38908 N | 38908 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
+| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
+| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
+| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
+| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactstate aan de tip | 1  | 1 | +0.00% | 1e-09  | OK |
+| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactstate begin zone | 0  | 0 | 0 | 1e-09  | OK |
+| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactpressure begin zone | 0 Pa | 447.72 | 447.72 | 2000 Pa | OK |
+| NL-31 | Green-Lagrange-rek bij 5% rek (strain) | greenlagrangestrainxx | 0.05125  | 0.05125 | +0.00% | 0.01% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | N (tensileforce) | 1000 N | 1000 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | V_v (sheary) | 200 N | 200 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | V_w (shearz) | -300 N | -300 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | T (torsion) | 50 N.m | 50 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | M_v inklemming (bendingmomv) | 300 N.m | 300 | +0.00% | 0.0001% | OK |
+| NL-32 | Snedekrachten balk in STAT_NON_LINE | M_w midden (bendingmomw) | 100 N.m | 100 | -0.00% | 0.0001% | OK |
+| NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 1 s | 9000 N | 9000 | -0.00% | 0.0001% | OK |
+| NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 2 s | 18000 N | 18000 | -0.00% | 0.0001% | OK |
+| NL-40 | Druk als formule in y en t naast een krachttabel | moment om X bij t = 2 s | 26000 N.m | 26000 | -0.00% | 0.0001% | OK |
+| NL-50 | Hyperelastisch: kubus Neo Hooke, trek l = 1,5 | F (nominaal, l=1.5) | 211.11 N | 210.99 | -0.06% | 0.5% | OK |
+| NL-50 | Hyperelastisch: kubus Neo Hooke, trek l = 1,5 | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1632e+06 | -0.11% | 0.5% | OK |
+| NL-50b | Hyperelastisch: kubus Neo Hooke, druk l = 0,7 | F (nominaal, l=0.7) | -268.16 N | -268.09 | +0.03% | 0.5% | OK |
+| NL-50b | Hyperelastisch: kubus Neo Hooke, druk l = 0,7 | sigma_xx Cauchy (l=0.7) | -1.8771e+06 Pa | -1.8772e+06 | -0.00% | 0.5% | OK |
+| NL-51 | Hyperelastisch: kubus Mooney-Rivlin, trek l = 1,5 | F (nominaal, l=1.5) | 197.04 N | 196.94 | -0.05% | 0.5% | OK |
+| NL-51 | Hyperelastisch: kubus Mooney-Rivlin, trek l = 1,5 | sigma_xx Cauchy (l=1.5) | 2.9556e+06 Pa | 2.9526e+06 | -0.10% | 0.5% | OK |
+| NL-51b | Hyperelastisch: kubus Mooney-Rivlin, druk l = 0,7 | F (nominaal, l=0.7) | -291.15 N | -291.06 | +0.03% | 0.5% | OK |
+| NL-51b | Hyperelastisch: kubus Mooney-Rivlin, druk l = 0,7 | sigma_xx Cauchy (l=0.7) | -2.0380e+06 Pa | -2.0381e+06 | -0.00% | 0.5% | OK |
+| NL-52 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (impliciet), quasi-statisch | F (nominaal, l=1.5) | 211.11 N | 210.99 | -0.06% | 0.5% | OK |
+| NL-52 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (impliciet), quasi-statisch | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1632e+06 | -0.11% | 0.5% | OK |
+| NL-53 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (expliciet), 20 ms | F (nominaal, l=1.5) | 211.11 N | 212.7 | +0.75% | 2% | OK |
+| NL-53 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (expliciet), 20 ms | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1887e+06 | +0.70% | 2% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s t.o.v. Mecway (CCX) | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.01% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 2 s | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.0001% | OK |
+| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 2 s t.o.v. Mecway (CCX) | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.01% | OK |
+| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 0.5 s | 6.5978e-05 m | 6.5978e-05 | +0.00% | 0.0001% | OK |
+| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 1 s | 1.1993e-04 m | 1.1993e-04 | +0.00% | 0.0001% | OK |
+| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 2 s | 5.9982e-05 m | 5.9982e-05 | +0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 0.5 s | -1.3860e+08 Pa | -1.3860e+08 | -0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 0.5 s t.o.v. Mecway (CCX) | -1.3831e+08 Pa | -1.3860e+08 | -0.21% | 0.5% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 1 s | -2.5200e+08 Pa | -2.5200e+08 | -0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 1 s t.o.v. Mecway (CCX) | -2.5106e+08 Pa | -2.5200e+08 | -0.38% | 0.5% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 2 s | -1.2600e+08 Pa | -1.2600e+08 | -0.00% | 0.0001% | OK |
+| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 2 s t.o.v. Mecway (CCX) | -1.2576e+08 Pa | -1.2600e+08 | -0.19% | 0.5% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 2 s | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.0001% | OK |
+| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 2 s t.o.v. Mecway (CCX) | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.01% | OK |
+| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 0.25 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 0.25 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 0.5 s | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.0001% | OK |
+| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-74 | Vrije staaf: temperatuur met tijdstabel op x = 0 en Node temperature op x = L (quasi-static) | gemiddelde u_x op x = L, t = 0.5 s | 3.8250e-05 m | 3.8250e-05 | +0.00% | 0.0001% | OK |
+| NL-74 | Vrije staaf: temperatuur met tijdstabel op x = 0 en Node temperature op x = L (quasi-static) | gemiddelde u_x op x = L, t = 2 s | 3.7500e-05 m | 3.7500e-05 | +0.00% | 0.0001% | OK |
+| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
+| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | laatste rekentijd | 1 s | 1 | +0.00% | 1e-07% | OK |
+| NL-80 | POU_D_T_GD: ingeklemde balk, kleine eindkracht (Timoshenko) | doorbuiging tip | 9.5246e-04 m | 9.5231e-04 | -0.02% | 0.1% | OK |
+| NL-80b | POU_D_T_GD in lineair statisch: wordt POU_D_T | doorbuiging tip | 9.5246e-04 m | 9.5246e-04 | +0.00% | 0.1% | OK |
+| NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | doorbuiging tip | 0.0016667 m | 0.0016666 | -0.01% | 0.1% | OK |
+| NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | tiprotatie | 0.0028571 rad | 0.0028571 | -0.00% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
+| NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 | 2 - | 1.9996 | -0.02% | 0.1% | OK |
+| NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 t.o.v. Mecway 34 + CCX | 1.9995 - | 1.9996 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 | 0.30174 m | 0.30171 | -0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 | -0.056438 m | -0.056419 | +0.03% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=1 | 0.46135 rad | 0.46136 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 | 0.49349 m | 0.49345 | -0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=2 | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 | 0.6033 m | 0.60327 | -0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 | -0.25443 m | -0.25438 | +0.02% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=3 | 0.986 rad | 0.9861 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | bendingmomw element 1 t=3 (statica vervormd) | 769.78 N.m | 769.78 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | sheary laatste element t=3 (statica vervormd) | 579.73 N | 579.77 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tensileforce laatste element t=3 (statica vervormd) | 875.45 N | 875.42 | -0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | reactiekracht Y | -1050 N | -1050 | +0.00% | 0.0001% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 t.o.v. Mecway 34 + CCX | 0.30168 m | 0.30171 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 t.o.v. Mecway 34 + CCX | -0.056421 m | -0.056419 | +0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 t.o.v. Mecway 34 + CCX | 0.49339 m | 0.49345 | +0.01% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 t.o.v. Mecway 34 + CCX | -0.16061 m | -0.16061 | -0.00% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 t.o.v. Mecway 34 + CCX | 0.60317 m | 0.60327 | +0.02% | 0.1% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 t.o.v. Mecway 34 + CCX | -0.25436 m | -0.25438 | -0.01% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing dwars | -0.63662 m | -0.63666 | -0.01% | 0.1% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (min. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (max. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tensileforce (grootste |N|) | 0 N | 1.2497e-06 | 1.2497e-06 | 0.05 N | OK |
+| NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | tipverlenging | 1.2298e-05 m | 1.2296e-05 | -0.02% | 0.1% | OK |
+| NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | reactiekracht X | -774.76 N | -774.76 | -0.00% | 0.1% | OK |
+| NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | tipverlenging truss | 1.2298e-05 m | 1.2302e-05 | +0.03% | 0.1% | OK |
+| NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | reactiekracht X truss | -774.76 N | -774.76 | +0.00% | 0.1% | OK |
+| NL-87 | POU_D_T_GD: line pressure en zwaartekracht (configuratie GQ) | doorbuiging tip | -0.0031622 m | -0.0031622 | +0.00% | 0.1% | OK |
+| NL-87 | POU_D_T_GD: line pressure en zwaartekracht (configuratie GQ) | reactiekracht Z | 35.402 N | 35.402 | +0.00% | 0.0001% | OK |
+| NL-87b | POU_D_T_GD: zwaartekracht (configuratie G, line pressure onderdrukt) | doorbuiging tip | -0.0013757 m | -0.0013757 | +0.00% | 0.1% | OK |
+| NL-87b | POU_D_T_GD: zwaartekracht (configuratie G, line pressure onderdrukt) | reactiekracht Z | 15.402 N | 15.402 | -0.00% | 0.0001% | OK |
+| NL-88 | POU_D_T_GD: vrije thermische uitzetting | tipverlenging | 0.0012 m | 0.0012 | -0.00% | 0.0001% | OK |
+| NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=1 | -0.001965 m | -0.0019645 | +0.03% | 0.1% | OK |
+| NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=0,5 | -9.8251e-04 m | -9.8223e-04 | +0.03% | 0.1% | OK |
+| NL-89 | POU_D_T_GD: line pressure als formule in x en t | reactiekracht Z t=1 | 15 N | 15 | +0.00% | 0.0001% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tip u_y | 0.49349 m | 0.49345 | -0.01% | 0.1% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tip u_x | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tiprotatie | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
+| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | reactiekracht Y wortel 2 | -700 N | -700 | -0.00% | 0.1% | OK |
+| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | tiprotatie om X | 1.5708 rad | 1.5708 | -0.00% | 0.01% | OK |
+| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 1 | -177.62 N.m | -177.62 | +0.00% | 0.01% | OK |
+| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 2 | 0 N.m | 0 | 0 | 0.000177621 N.m | OK |
+
+*NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
+
+*NL-50: diagnose OK; ELEMENTS_50*
+
+*NL-50b: diagnose OK; ELEMENTS_50*
+
+*NL-51: diagnose OK; ELEMENTS_50*
+
+*NL-51b: diagnose OK; ELEMENTS_50*
 
 ## Modaal met demping
 
@@ -1447,10 +1829,14 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | MD-05 | Hex20-console, staplast, 6 modes | verloop t.o.v. Mecway (stressxx) | 0 - | 3.9633e-04 | 3.9633e-04 | 0.02 - | OK |
 | MD-06a | Console, 1 mode, zonder statische correctie | eindverplaatsing | 0.0077039 m | 0.0077039 | +0.00% | 0.2% | OK |
 | MD-06a | Console, 1 mode, zonder statische correctie | aantal uitvoertijden | 201 - | 201 | +0.00% | 0 - | OK |
-| MD-06a | Console, 1 mode, zonder statische correctie | verloop t.o.v. Mecway (disply) | 0 - | 0.0033744 | 0.0033744 | 0.02 - | OK |
+| MD-06a | Console, 1 mode, zonder statische correctie | verloop t.o.v. Mecway (disply) | 0 - | 0.0027346 | 0.0027346 | 0.02 - | OK |
 | MD-06b | Console, 1 mode, met statische correctie | eindverplaatsing | 0.0079365 m | 0.0079365 | +0.00% | 0.1% | OK |
 | MD-07 | D30 direct via dyna_impl_3d (Newmark) | verloop t.o.v. Newmark-schema | 0 - | 1.0389e-04 | 1.0389e-04 | 0.002 - | OK |
 | MD-07 | D30 direct via dyna_impl_3d (Newmark) | verloop t.o.v. Mecway (disply) | 0 - | 3.0673e-08 | 3.0673e-08 | 0.02 - | OK |
+| MD-08a | D30 direct, uitvoer elke 2e stap (keepeverynthtimestep) | verloop t.o.v. Newmark-schema | 0 - | 1.0389e-04 | 1.0389e-04 | 0.002 - | OK |
+| MD-08a | D30 direct, uitvoer elke 2e stap (keepeverynthtimestep) | verloop t.o.v. Mecway (disply) | 0 - | 3.0673e-08 | 3.0673e-08 | 0.02 - | OK |
+| MD-08b | D30 direct, uitvoer elke 5e stap (keepeverynthtimestep) | verloop t.o.v. Newmark-schema | 0 - | 7.4385e-05 | 7.4385e-05 | 0.002 - | OK |
+| MD-08b | D30 direct, uitvoer elke 5e stap (keepeverynthtimestep) | verloop t.o.v. Mecway (disply) | 0 - | 3.1112e-08 | 3.1112e-08 | 0.02 - | OK |
 
 ## Modaal
 
@@ -1819,219 +2205,184 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 
 *NK-04: diagnose OK; MECANONLINE9_7; BRIDGE_ONVOLLEDIG*
 
-## Niet-lineair statisch
+## Orthotroop
 
 | ID | Test | Grootheid | Referentie | FEM | Afwijking | Tolerantie | Status |
 |---|---|---|---|---|---|---|---|
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=1.5 (plastisch) | 38908 N | 38908 | -0.00% | 0.2% | OK |
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-01 | Trekstaaf, bilineaire isotrope versteviging, ontlasten | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-01b | Trekstaaf, ontlasten (RELA 1e-6 of MAXI 0,05 N) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
-| NL-01b | Trekstaaf, ontlasten (RELA 1e-6 of MAXI 0,05 N) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | v/L PL2/EI=1 | 0.30172 - | 0.30135 | -0.12% | 1% | OK |
-| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | u/L PL2/EI=1 | 0.056433 - | 0.056305 | -0.23% | 1% | OK |
-| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | v/L PL2/EI=2 | 0.49346 - | 0.49234 | -0.23% | 1% | OK |
-| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | u/L PL2/EI=2 | 0.16064 - | 0.15993 | -0.44% | 1% | OK |
-| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | v/L PL2/EI=3 | 0.60325 - | 0.60155 | -0.28% | 1% | OK |
-| NL-02a | Ingeklemde balk, grote doorbuiging (hex20) | u/L PL2/EI=3 | 0.25442 - | 0.25297 | -0.57% | 1% | OK |
-| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | v/L PL2/EI=1 | 0.30172 - | 0.30174 | +0.01% | 1% | OK |
-| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | u/L PL2/EI=1 | 0.056433 - | 0.05644 | +0.01% | 1% | OK |
-| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | v/L PL2/EI=2 | 0.49346 - | 0.49349 | +0.01% | 1% | OK |
-| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | u/L PL2/EI=2 | 0.16064 - | 0.16066 | +0.01% | 1% | OK |
-| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | v/L PL2/EI=3 | 0.60325 - | 0.60329 | +0.01% | 1% | OK |
-| NL-02b | Ingeklemde balk, grote doorbuiging (COQUE_3D) | u/L PL2/EI=3 | 0.25442 - | 0.25445 | +0.01% | 1% | OK |
-| NL-03a | Contact: twee balken, tips op elkaar (STANDARD) | tip gemiddeld | 7.6305e-05 m | 2.1102e-06 | -97.23% | 0.5% | BEKEND (KNOWN_BUGS 43) |
-| NL-03a | Contact: twee balken, tips op elkaar (STANDARD) | tip boven | 7.6305e-05 m | 4.2203e-06 | -94.47% | 0.5% | BEKEND (KNOWN_BUGS 43) |
-| NL-03a | Contact: twee balken, tips op elkaar (STANDARD) | contactkracht | 5 N | 1.9683e-08 | -100.00% | 0.5% | BEKEND (KNOWN_BUGS 43) |
-| NL-03b | Contact: twee balken, tips op elkaar (PENALISATION, kn = 1e13 Pa/m) | tip gemiddeld | 7.6305e-05 m | 7.6300e-05 | -0.01% | 0.5% | OK |
-| NL-03b | Contact: twee balken, tips op elkaar (PENALISATION, kn = 1e13 Pa/m) | tip boven | 7.6305e-05 m | 7.6361e-05 | +0.07% | 0.5% | OK |
-| NL-03b | Contact: twee balken, tips op elkaar (PENALISATION, kn = 1e13 Pa/m) | contactkracht | 5 N | 4.9964 | -0.07% | 0.5% | OK |
-| NL-03c | Contact-patchtest (STANDARD) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
-| NL-03c | Contact-patchtest (STANDARD) | w boven (A,A) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
-| NL-03c | Contact-patchtest (STANDARD) | w boven (A/3,2A/3) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
-| NL-03d | Contact-patchtest (PENALISATION) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
-| NL-03d | Contact-patchtest (PENALISATION) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
-| NL-03d | Contact-patchtest (PENALISATION) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
-| NL-03d | Contact-patchtest (PENALISATION) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
-| NL-03e | Contact-patchtest (STANDARD, NCOTES) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
-| NL-03e | Contact-patchtest (STANDARD, NCOTES) | w boven (A,A) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
-| NL-03e | Contact-patchtest (STANDARD, NCOTES) | w boven (A/3,2A/3) | 9.5238e-07 m | 9.5245e-07 | +0.01% | 0.5% | OK |
-| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
-| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
-| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
-| NL-03f | Contact-patchtest (PENALISATION, NCOTES) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
-| NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie | 0.001 m | 0.001 | +0.00% | 0.5% | OK |
-| NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie-waarschuwing | 1  | 1 | +0.00% | 0  | OK |
-| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
-| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
-| NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
-| NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
-| NL-04b | Als NL-04 met een kinematische (lineaire) curve | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
-| NL-04b | Als NL-04 met een kinematische (lineaire) curve | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | +0.00% | 0.2% | OK |
-| NL-04c | Als NL-04 met een curve zonder (0, 0) | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
-| NL-04c | Als NL-04 met een curve zonder (0, 0) | F t=2 (plastisch) | 24863 N | 24863 | -0.00% | 0.2% | OK |
-| NL-04c | Als NL-04 met een curve zonder (0, 0) | sigma_xx t=1 (E = 210 GPa) | 1.0495e+08 Pa | 1.0495e+08 | -0.00% | 0.2% | OK |
-| NL-04c | Als NL-04 met een curve zonder (0, 0) | sigma_xx t=1 t.o.v. Mecway 34 | 1.0498e+08 Pa | 1.0495e+08 | -0.03% | 0.2% | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-20 | Trekstaaf, Mecway-stap 0,4 s met knikken van de lasttabel ertussen | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | uitvoertijden = Mecway-stappen + knikken | 0 s | 0 | 0 | 1e-09 s | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=1 (elastisch) | 20969 N | 20969 | +0.00% | 0.2% | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-21a | Trekstaaf, Automatic time stepping (Mecway-stap 0,4 s) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | uitvoertijden = time points | 0 s | 0 | 0 | 1e-09 s | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | rekenstappen (vast: 30) | 6  | 6 | +0.00% | 0  | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=1 (elastisch) | 20969 N | 20969 | -0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=1.5 (plastisch) | 38908 N | 38908 | -0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=2 (plastisch) | 42955 N | 42955 | -0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | F t=3 (ontlast) | 12071 N | 12071 | -0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | sigma_xx t=2 | 4.3349e+08 Pa | 4.3349e+08 | -0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | p t=2 | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-21b | Trekstaaf, Automatic time stepping (CCX, time points 0,5 s) | p t=3 (ontlast) | 0.0078844 - | 0.0078844 | +0.00% | 0.2% | OK |
-| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
-| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
-| NL-30 | Contactdruk en -status, patchtest hex8 (CONT_NOEU) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
-| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactpressure (gemiddeld) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
-| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactpressure (kleinste) | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.5% | OK |
-| NL-30b | Contactdruk en -status, patchtest hex20 (PENALISATION, LAGS_C) | contactstate (kleinste) | 1  | 1 | +0.00% | 1e-09  | OK |
-| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactstate aan de tip | 1  | 1 | +0.00% | 1e-09  | OK |
-| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactstate begin zone | 0  | 0 | 0 | 1e-09  | OK |
-| NL-30c | Contactstatus open/gesloten, balktips (PENALISATION) | contactpressure begin zone | 0 Pa | 447.72 | 447.72 | 2000 Pa | OK |
-| NL-31 | Green-Lagrange-rek bij 5% rek (strain) | greenlagrangestrainxx | 0.05125  | 0.05125 | +0.00% | 0.01% | OK |
-| NL-32 | Snedekrachten balk in STAT_NON_LINE | N (tensileforce) | 1000 N | 1000 | +0.00% | 0.0001% | OK |
-| NL-32 | Snedekrachten balk in STAT_NON_LINE | V_v (sheary) | 200 N | 200 | +0.00% | 0.0001% | OK |
-| NL-32 | Snedekrachten balk in STAT_NON_LINE | V_w (shearz) | -300 N | -300 | +0.00% | 0.0001% | OK |
-| NL-32 | Snedekrachten balk in STAT_NON_LINE | T (torsion) | 50 N.m | 50 | +0.00% | 0.0001% | OK |
-| NL-32 | Snedekrachten balk in STAT_NON_LINE | M_v inklemming (bendingmomv) | 300 N.m | 300 | +0.00% | 0.0001% | OK |
-| NL-32 | Snedekrachten balk in STAT_NON_LINE | M_w midden (bendingmomw) | 100 N.m | 100 | -0.00% | 0.0001% | OK |
-| NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 1 s | 9000 N | 9000 | -0.00% | 0.0001% | OK |
-| NL-40 | Druk als formule in y en t naast een krachttabel | reactie Z bij t = 2 s | 18000 N | 18000 | -0.00% | 0.0001% | OK |
-| NL-40 | Druk als formule in y en t naast een krachttabel | moment om X bij t = 2 s | 26000 N.m | 26000 | -0.00% | 0.0001% | OK |
-| NL-50 | Hyperelastisch: kubus Neo Hooke, trek l = 1,5 | F (nominaal, l=1.5) | 211.11 N | 210.99 | -0.06% | 0.5% | OK |
-| NL-50 | Hyperelastisch: kubus Neo Hooke, trek l = 1,5 | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1632e+06 | -0.11% | 0.5% | OK |
-| NL-50b | Hyperelastisch: kubus Neo Hooke, druk l = 0,7 | F (nominaal, l=0.7) | -268.16 N | -268.09 | +0.03% | 0.5% | OK |
-| NL-50b | Hyperelastisch: kubus Neo Hooke, druk l = 0,7 | sigma_xx Cauchy (l=0.7) | -1.8771e+06 Pa | -1.8772e+06 | -0.00% | 0.5% | OK |
-| NL-51 | Hyperelastisch: kubus Mooney-Rivlin, trek l = 1,5 | F (nominaal, l=1.5) | 197.04 N | 196.94 | -0.05% | 0.5% | OK |
-| NL-51 | Hyperelastisch: kubus Mooney-Rivlin, trek l = 1,5 | sigma_xx Cauchy (l=1.5) | 2.9556e+06 Pa | 2.9526e+06 | -0.10% | 0.5% | OK |
-| NL-51b | Hyperelastisch: kubus Mooney-Rivlin, druk l = 0,7 | F (nominaal, l=0.7) | -291.15 N | -291.06 | +0.03% | 0.5% | OK |
-| NL-51b | Hyperelastisch: kubus Mooney-Rivlin, druk l = 0,7 | sigma_xx Cauchy (l=0.7) | -2.0380e+06 Pa | -2.0381e+06 | -0.00% | 0.5% | OK |
-| NL-52 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (impliciet), quasi-statisch | F (nominaal, l=1.5) | 211.11 N | 210.99 | -0.06% | 0.5% | OK |
-| NL-52 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (impliciet), quasi-statisch | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1632e+06 | -0.11% | 0.5% | OK |
-| NL-53 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (expliciet), 20 ms | F (nominaal, l=1.5) | 211.11 N | 212.7 | +0.75% | 2% | OK |
-| NL-53 | Hyperelastisch: Neo Hooke trek l = 1,5 in Dynamisch (expliciet), 20 ms | sigma_xx Cauchy (l=1.5) | 3.1667e+06 Pa | 3.1887e+06 | +0.70% | 2% | OK |
-| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.0001% | OK |
-| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 0.5 s t.o.v. Mecway (CCX) | 6.6000e-05 m | 6.6000e-05 | +0.00% | 0.01% | OK |
-| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
-| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
-| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 2 s | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.0001% | OK |
-| NL-70 | Vrije staaf, temperatuur met tijdstabel (quasi-static) | u_x(L) op t = 2 s t.o.v. Mecway (CCX) | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.01% | OK |
-| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 0.5 s | 6.5978e-05 m | 6.5978e-05 | +0.00% | 0.0001% | OK |
-| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 1 s | 1.1993e-04 m | 1.1993e-04 | +0.00% | 0.0001% | OK |
-| NL-70b | Als NL-70 met de standaard GROT_GDEP (Green-Lagrange) | u_x(L) op t = 2 s | 5.9982e-05 m | 5.9982e-05 | +0.00% | 0.0001% | OK |
-| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 0.5 s | -1.3860e+08 Pa | -1.3860e+08 | -0.00% | 0.0001% | OK |
-| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 0.5 s t.o.v. Mecway (CCX) | -1.3831e+08 Pa | -1.3860e+08 | -0.21% | 0.5% | OK |
-| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 1 s | -2.5200e+08 Pa | -2.5200e+08 | -0.00% | 0.0001% | OK |
-| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 1 s t.o.v. Mecway (CCX) | -2.5106e+08 Pa | -2.5200e+08 | -0.38% | 0.5% | OK |
-| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 2 s | -1.2600e+08 Pa | -1.2600e+08 | -0.00% | 0.0001% | OK |
-| NL-71 | Staaf ingeklemd in x, temperatuur met tijdstabel (quasi-static) | sigma_xx op t = 2 s t.o.v. Mecway (CCX) | -1.2576e+08 Pa | -1.2600e+08 | -0.19% | 0.5% | OK |
-| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
-| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
-| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 2 s | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.0001% | OK |
-| NL-72 | Vrije staaf, temperatuur als formule in t (quasi-static) | u_x(L) op t = 2 s t.o.v. Mecway (CCX) | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.01% | OK |
-| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 0.25 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
-| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 0.25 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
-| NL-73a | Vrije staaf, constante temperatuur (quasi-static: vanaf de eerste stap) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
-| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 0.5 s | 6.0000e-05 m | 6.0000e-05 | +0.00% | 0.0001% | OK |
-| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
-| NL-73b | Vrije staaf, constante temperatuur (zonder quasi-static: oplopend) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
-| NL-74 | Vrije staaf: temperatuur met tijdstabel op x = 0 en Node temperature op x = L (quasi-static) | gemiddelde u_x op x = L, t = 0.5 s | 3.8250e-05 m | 3.8250e-05 | +0.00% | 0.0001% | OK |
-| NL-74 | Vrije staaf: temperatuur met tijdstabel op x = 0 en Node temperature op x = L (quasi-static) | gemiddelde u_x op x = L, t = 2 s | 3.7500e-05 m | 3.7500e-05 | +0.00% | 0.0001% | OK |
-| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
-| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | u_x(L) op t = 1 s t.o.v. Mecway (CCX) | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.01% | OK |
-| NL-75 | Vrije staaf, temperatuur met tijdstabel zonder quasi-static (waarde op t = 1 s) | laatste rekentijd | 1 s | 1 | +0.00% | 1e-07% | OK |
-| NL-80 | POU_D_T_GD: ingeklemde balk, kleine eindkracht (Timoshenko) | doorbuiging tip | 9.5246e-04 m | 9.5231e-04 | -0.02% | 0.1% | OK |
-| NL-80b | POU_D_T_GD in lineair statisch: wordt POU_D_T | doorbuiging tip | 9.5246e-04 m | 9.5246e-04 | +0.00% | 0.1% | OK |
-| NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | doorbuiging tip | 0.0016667 m | 0.0016666 | -0.01% | 0.1% | OK |
-| NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | tiprotatie | 0.0028571 rad | 0.0028571 | -0.00% | 0.1% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
-| NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 | 2 - | 1.9996 | -0.02% | 0.1% | OK |
-| NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 t.o.v. Mecway 34 + CCX | 1.9995 - | 1.9996 | +0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 | 0.30174 m | 0.30171 | -0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 | -0.056438 m | -0.056419 | +0.03% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=1 | 0.46135 rad | 0.46136 | +0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 | 0.49349 m | 0.49345 | -0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=2 | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 | 0.6033 m | 0.60327 | -0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 | -0.25443 m | -0.25438 | +0.02% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tiprotatie t=3 | 0.986 rad | 0.9861 | +0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | bendingmomw element 1 t=3 (statica vervormd) | 769.78 N.m | 769.78 | +0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | sheary laatste element t=3 (statica vervormd) | 579.73 N | 579.77 | +0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tensileforce laatste element t=3 (statica vervormd) | 875.45 N | 875.42 | -0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | reactiekracht Y | -1050 N | -1050 | +0.00% | 0.0001% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 t.o.v. Mecway 34 + CCX | 0.30168 m | 0.30171 | +0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 t.o.v. Mecway 34 + CCX | -0.056421 m | -0.056419 | +0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 t.o.v. Mecway 34 + CCX | 0.49339 m | 0.49345 | +0.01% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 t.o.v. Mecway 34 + CCX | -0.16061 m | -0.16061 | -0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 t.o.v. Mecway 34 + CCX | 0.60317 m | 0.60327 | +0.02% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 t.o.v. Mecway 34 + CCX | -0.25436 m | -0.25438 | -0.01% | 0.1% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing dwars | -0.63662 m | -0.63666 | -0.01% | 0.1% | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (min. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (max. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tensileforce (grootste |N|) | 0 N | 1.2497e-06 | 1.2497e-06 | 0.05 N | OK |
-| NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | tipverlenging | 1.2298e-05 m | 1.2296e-05 | -0.02% | 0.1% | OK |
-| NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | reactiekracht X | -774.76 N | -774.76 | -0.00% | 0.1% | OK |
-| NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | tipverlenging truss | 1.2298e-05 m | 1.2302e-05 | +0.03% | 0.1% | OK |
-| NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | reactiekracht X truss | -774.76 N | -774.76 | +0.00% | 0.1% | OK |
-| NL-87 | POU_D_T_GD: line pressure en zwaartekracht (configuratie GQ) | doorbuiging tip | -0.0031622 m | -0.0031622 | +0.00% | 0.1% | OK |
-| NL-87 | POU_D_T_GD: line pressure en zwaartekracht (configuratie GQ) | reactiekracht Z | 35.402 N | 35.402 | +0.00% | 0.0001% | OK |
-| NL-87b | POU_D_T_GD: zwaartekracht (configuratie G, line pressure onderdrukt) | doorbuiging tip | -0.0013757 m | -0.0013757 | +0.00% | 0.1% | OK |
-| NL-87b | POU_D_T_GD: zwaartekracht (configuratie G, line pressure onderdrukt) | reactiekracht Z | 15.402 N | 15.402 | -0.00% | 0.0001% | OK |
-| NL-88 | POU_D_T_GD: vrije thermische uitzetting | tipverlenging | 0.0012 m | 0.0012 | -0.00% | 0.0001% | OK |
-| NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=1 | -0.001965 m | -0.0019645 | +0.03% | 0.1% | OK |
-| NL-89 | POU_D_T_GD: line pressure als formule in x en t | doorbuiging tip t=0,5 | -9.8251e-04 m | -9.8223e-04 | +0.03% | 0.1% | OK |
-| NL-89 | POU_D_T_GD: line pressure als formule in x en t | reactiekracht Z t=1 | 15 N | 15 | +0.00% | 0.0001% | OK |
-| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tip u_y | 0.49349 m | 0.49345 | -0.01% | 0.1% | OK |
-| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tip u_x | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
-| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | tiprotatie | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
-| NL-90 | POU_D_T_GD: flexible joint met U, V en W vrij (kogelscharnier), grote eindkracht | reactiekracht Y wortel 2 | -700 N | -700 | -0.00% | 0.1% | OK |
-| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | tiprotatie om X | 1.5708 rad | 1.5708 | -0.00% | 0.01% | OK |
-| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 1 | -177.62 N.m | -177.62 | +0.00% | 0.01% | OK |
-| NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 2 | 0 N.m | 0 | 0 | 0.000177621 N.m | OK |
-
-*NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
-
-*NL-50: diagnose OK; ELEMENTS_50*
-
-*NL-50b: diagnose OK; ELEMENTS_50*
-
-*NL-51: diagnose OK; ELEMENTS_50*
-
-*NL-51b: diagnose OK; ELEMENTS_50*
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | eps_xx | 6.2254e-04 - | 6.2254e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | eps_yy | -1.8698e-04 - | -1.8698e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | eps_zz | -1.6056e-04 - | -1.6056e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | gamma_xy | -3.7222e-04 - | -3.7222e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | gamma_yz | -2.5873e-05 - | -2.5873e-05 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | gamma_zx | 2.1635e-04 - | 2.1635e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | stressxx | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.0001% | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | stressxy (0) | 0 Pa | 7.3790e-08 | 7.3790e-08 | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | lamuu | 5.0000e+06 Pa | 5.0000e+06 | +0.00% | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | lamvv | 3.3333e+06 Pa | 3.3333e+06 | +0.00% | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | lamww | 1.6667e+06 Pa | 1.6667e+06 | +0.00% | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | lamuv | -4.0825e+06 Pa | -4.0825e+06 | -0.00% | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | lamvw | -2.3570e+06 Pa | -2.3570e+06 | -0.00% | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | lamwu | 2.8868e+06 Pa | 2.8868e+06 | +0.00% | 10 Pa | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | eps_xx = Mecway | 6.2254e-04 - | 6.2254e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | eps_yy = Mecway | -1.8698e-04 - | -1.8698e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | eps_zz = Mecway | -1.6056e-04 - | -1.6056e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | gamma_xy = Mecway | -3.7222e-04 - | -3.7222e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | gamma_yz = Mecway | -2.5873e-05 - | -2.5873e-05 | +0.00% | 6.2254e-10 - | OK |
+| OR-01 | Orthotroop blok, trek X, assen per element (U, V) | gamma_zx = Mecway | 2.1635e-04 - | 2.1635e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | eps_xx | 7.7500e-04 - | 7.7500e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | eps_yy | -1.7260e-04 - | -1.7260e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | eps_zz | -1.1240e-04 - | -1.1240e-04 | -0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | gamma_xy | -3.1177e-04 - | -3.1177e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | gamma_yz | 2.0640e-04 - | 2.0640e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | gamma_zx | 2.3383e-04 - | 2.3383e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | stressxx | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.0001% | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | stressxy (0) | 0 Pa | 9.9511e-09 | 9.9511e-09 | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | lamuu | 0 Pa | 2.3597e-08 | 2.3597e-08 | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | lamvv | 7.5000e+06 Pa | 7.5000e+06 | +0.00% | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | lamww | 2.5000e+06 Pa | 2.5000e+06 | +0.00% | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | lamuv | 0 Pa | 1.5629e-08 | 1.5629e-08 | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | lamvw | -4.3301e+06 Pa | -4.3301e+06 | -0.00% | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | lamwu | 0 Pa | -1.3195e-09 | -1.3195e-09 | 10 Pa | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | eps_xx = Mecway | 7.7500e-04 - | 7.7500e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | eps_yy = Mecway | -1.7260e-04 - | -1.7260e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | eps_zz = Mecway | -1.1240e-04 - | -1.1240e-04 | -0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | gamma_xy = Mecway | -3.1177e-04 - | -3.1177e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | gamma_yz = Mecway | 2.0640e-04 - | 2.0640e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-02 | Orthotroop blok, trek X, Element orientation-kaart met hoek | gamma_zx = Mecway | 2.3383e-04 - | 2.3383e-04 | +0.00% | 7.75e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | eps_xx | -1.8698e-04 - | -1.8698e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | eps_yy | 6.2254e-04 - | 6.2254e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | eps_zz | -1.6056e-04 - | -1.6056e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | gamma_xy | -3.7222e-04 - | -3.7222e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | gamma_yz | -2.1635e-04 - | -2.1635e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | gamma_zx | 2.5873e-05 - | 2.5873e-05 | -0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | stressyy | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.0001% | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | stressxy (0) | 0 Pa | 3.9419e-09 | 3.9419e-09 | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | lamuu | 5.0000e+06 Pa | 5.0000e+06 | +0.00% | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | lamvv | 3.3333e+06 Pa | 3.3333e+06 | +0.00% | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | lamww | 1.6667e+06 Pa | 1.6667e+06 | +0.00% | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | lamuv | 4.0825e+06 Pa | 4.0825e+06 | +0.00% | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | lamvw | -2.3570e+06 Pa | -2.3570e+06 | -0.00% | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | lamwu | -2.8868e+06 Pa | -2.8868e+06 | -0.00% | 10 Pa | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | eps_xx = Mecway | -1.8698e-04 - | -1.8698e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | eps_yy = Mecway | 6.2254e-04 - | 6.2254e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | eps_zz = Mecway | -1.6056e-04 - | -1.6056e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | gamma_xy = Mecway | -3.7222e-04 - | -3.7222e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | gamma_yz = Mecway | -2.1635e-04 - | -2.1635e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-03 | Stijfheidsmatrix (orthotroop), trek Y, assen per element | gamma_zx = Mecway | 2.5873e-05 - | 2.5873e-05 | -0.00% | 6.2254e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | eps_xx | -1.1240e-04 - | -1.1240e-04 | -0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | eps_yy | -1.9295e-04 - | -1.9295e-04 | -0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | eps_zz | 5.8095e-04 - | 5.8095e-04 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | gamma_xy | 6.7659e-05 - | 6.7659e-05 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | gamma_yz | -5.3030e-04 - | -5.3030e-04 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | gamma_zx | 9.7717e-05 - | 9.7717e-05 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | stresszz | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.0001% | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | stressxy (0) | 0 Pa | 3.3881e-08 | 3.3881e-08 | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | lamuu | 6.4000e+06 Pa | 6.4000e+06 | +0.00% | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | lamvv | 9.0000e+05 Pa | 9.0000e+05 | +0.00% | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | lamww | 2.7000e+06 Pa | 2.7000e+06 | +0.00% | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | lamuv | -2.4000e+06 Pa | -2.4000e+06 | -0.00% | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | lamvw | 1.5588e+06 Pa | 1.5588e+06 | +0.00% | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | lamwu | -4.1569e+06 Pa | -4.1569e+06 | -0.00% | 10 Pa | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | eps_xx = Mecway | -1.1240e-04 - | -1.1240e-04 | -0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | eps_yy = Mecway | -1.9295e-04 - | -1.9295e-04 | -0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | eps_zz = Mecway | 5.8095e-04 - | 5.8095e-04 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | gamma_xy = Mecway | 6.7659e-05 - | 6.7659e-05 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | gamma_yz = Mecway | -5.3030e-04 - | -5.3030e-04 | +0.00% | 5.8095e-10 - | OK |
+| OR-04 | Compliantiematrix (orthotroop), trek Z, kaart met hoek | gamma_zx = Mecway | 9.7717e-05 - | 9.7717e-05 | -0.00% | 5.8095e-10 - | OK |
+| OR-05 | Orthotrope ingeklemde balk, E_U langs de balk | doorbuiging tip (gem.) | 0.003248 m | 0.0032425 | -0.17% | 1% | OK |
+| OR-05 | Orthotrope ingeklemde balk, E_U langs de balk | doorbuiging tip = Mecway | 0.0032425 m | 0.0032425 | +0.00% | 0.2% | OK |
+| OR-06 | Orthotrope ingeklemde balk, E_V langs de balk (assen 90 graden gedraaid) | doorbuiging tip (gem.) | 0.01606 m | 0.016041 | -0.12% | 1% | OK |
+| OR-06 | Orthotrope ingeklemde balk, E_V langs de balk (assen 90 graden gedraaid) | doorbuiging tip = Mecway | 0.016041 m | 0.016041 | +0.00% | 0.2% | OK |
+| OR-07 | Orthotrope ingeklemde balk, eigenfrequenties, E_U langs de balk | f1 (Euler-Bernoulli) | 329.74 Hz | 326.21 | -1.07% | 3% | OK |
+| OR-07 | Orthotrope ingeklemde balk, eigenfrequenties, E_U langs de balk | f1 = Mecway | 326.21 Hz | 326.21 | +0.00% | 0.2% | OK |
+| OR-07 | Orthotrope ingeklemde balk, eigenfrequenties, E_U langs de balk | f2 = Mecway | 327.28 Hz | 327.28 | +0.00% | 0.2% | OK |
+| OR-08 | Orthotrope ingeklemde balk, eigenfrequenties, E_V langs de balk | f1 (Euler-Bernoulli) | 147.47 Hz | 147.09 | -0.26% | 3% | OK |
+| OR-08 | Orthotrope ingeklemde balk, eigenfrequenties, E_V langs de balk | f1 = Mecway | 147.09 Hz | 147.09 | -0.00% | 0.2% | OK |
+| OR-08 | Orthotrope ingeklemde balk, eigenfrequenties, E_V langs de balk | f2 = Mecway | 147.29 Hz | 147.29 | -0.00% | 0.2% | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | eps_xx | 0.00225 - | 0.00225 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | eps_yy | 0.00212 - | 0.00212 | -0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | eps_zz | 0.00163 - | 0.00163 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | gamma_xy | -6.9282e-04 - | -6.9282e-04 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | gamma_yz | -0.00168 - | -0.00168 | -0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | gamma_zx | 5.1962e-04 - | 5.1962e-04 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | von Mises (0) | 0 Pa | 7.1069e-06 | 7.1069e-06 | 225000 Pa | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | eps_xx = Mecway | 0.00225 - | 0.00225 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | eps_yy = Mecway | 0.00212 - | 0.00212 | -0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | eps_zz = Mecway | 0.00163 - | 0.00163 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | gamma_xy = Mecway | -6.9282e-04 - | -6.9282e-04 | +0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | gamma_yz = Mecway | -0.00168 - | -0.00168 | -0.00% | 2.25e-09 - | OK |
+| OR-09 | Orthotroop blok, vrije thermische uitzetting, kaart met hoek | gamma_zx = Mecway | 5.1962e-04 - | 5.1962e-04 | +0.00% | 2.25e-09 - | OK |
+| OR-10 | Orthotrope kolom, knik, E_V langs de kolom | knikfactor 1 (Euler) | 1.0281 - | 1.0252 | -0.28% | 2% | OK |
+| OR-10 | Orthotrope kolom, knik, E_V langs de kolom | knikfactor 1 = Mecway | 1.0252 - | 1.0252 | +0.00% | 0.2% | OK |
+| OR-10 | Orthotrope kolom, knik, E_V langs de kolom | knikfactor 2 = Mecway | 1.0267 - | 1.0267 | +0.00% | 0.2% | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamuu - R sigma R^T (x = 30 mm) | 0 Pa | 0 | 0 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamvv - R sigma R^T (x = 30 mm) | 0 Pa | 2.0373e-10 | 2.0373e-10 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamww - R sigma R^T (x = 30 mm) | 0 Pa | -2.9104e-11 | -2.9104e-11 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamuv - R sigma R^T (x = 30 mm) | 0 Pa | 5.8208e-11 | 5.8208e-11 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamvw - R sigma R^T (x = 30 mm) | 0 Pa | -2.3283e-10 | -2.3283e-10 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamwu - R sigma R^T (x = 30 mm) | 0 Pa | -4.6566e-10 | -4.6566e-10 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamuu - mean R_e sigma_e R_e^T (x = 20 mm) | 0 Pa | 1.8626e-09 | 1.8626e-09 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamvv - mean R_e sigma_e R_e^T (x = 20 mm) | 0 Pa | 9.3132e-10 | 9.3132e-10 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamww - mean R_e sigma_e R_e^T (x = 20 mm) | 0 Pa | 0 | 0 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamuv - mean R_e sigma_e R_e^T (x = 20 mm) | 0 Pa | -2.3283e-10 | -2.3283e-10 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamvw - mean R_e sigma_e R_e^T (x = 20 mm) | 0 Pa | 0 | 0 | 1 Pa | OK |
+| OR-11 | Stress in element coordinates (lamuu ..), twee assenstelsels | lamwu - mean R_e sigma_e R_e^T (x = 20 mm) | 0 Pa | 0 | 0 | 1 Pa | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | eps_xx (L30) | 7.7500e-04 - | 7.7410e-04 | -0.12% | 2.325e-06 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | eps_yy (L30) | -1.7260e-04 - | -1.7253e-04 | +0.04% | 2.325e-06 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | eps_zz (L30) | -1.1240e-04 - | -1.1237e-04 | +0.03% | 2.325e-06 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | gamma_xy (L30) | -3.1177e-04 - | -3.1129e-04 | +0.15% | 2.325e-06 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | gamma_yz (L30) | 2.0640e-04 - | 2.0635e-04 | -0.02% | 2.325e-06 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | gamma_zx (L30) | 2.3383e-04 - | 2.3347e-04 | -0.15% | 2.325e-06 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | eps_xx = Mecway (L30) | 7.7410e-04 - | 7.7410e-04 | -0.00% | 7.75e-07 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | eps_yy = Mecway (L30) | -1.7253e-04 - | -1.7253e-04 | +0.00% | 7.75e-07 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | eps_zz = Mecway (L30) | -1.1237e-04 - | -1.1237e-04 | +0.00% | 7.75e-07 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | gamma_xy = Mecway (L30) | -3.1129e-04 - | -3.1129e-04 | -0.00% | 7.75e-07 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | gamma_yz = Mecway (L30) | 2.0635e-04 - | 2.0635e-04 | -0.00% | 7.75e-07 - | OK |
+| OR-12 | Orthotroop blok, trek X, niet-lineair statisch, kaart met hoek | gamma_zx = Mecway (L30) | 2.3347e-04 - | 2.3347e-04 | +0.00% | 7.75e-07 - | OK |
+| OR-13 | Orthotrope ingeklemde balk, grote doorbuiging (L30) | doorbuiging tip = Mecway (L30) | 0.04556 m | 0.04556 | +0.00% | 0.5% | OK |
+| OR-14 | Orthotrope ingeklemde balk, staplast, dynamisch (D31) | periode tip | 0.0067988 s | 0.0067763 | -0.33% | 1% | OK |
+| OR-14 | Orthotrope ingeklemde balk, staplast, dynamisch (D31) | periode tip = Mecway (D31) | 0.0067731 s | 0.0067763 | +0.05% | 0.5% | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | eps_xx | 6.2254e-04 - | 6.2254e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | eps_yy | -1.8698e-04 - | -1.8698e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | eps_zz | -1.6056e-04 - | -1.6056e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | gamma_xy | -3.7222e-04 - | -3.7222e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | gamma_yz | -2.5873e-05 - | -2.5873e-05 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | gamma_zx | 2.1635e-04 - | 2.1635e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | stressxx | 1.0000e+07 Pa | 1.0000e+07 | +0.00% | 0.0001% | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | stressxy (0) | 0 Pa | 8.8633e-08 | 8.8633e-08 | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | lamuu | 5.0000e+06 Pa | 5.0000e+06 | +0.00% | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | lamvv | 3.3333e+06 Pa | 3.3333e+06 | +0.00% | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | lamww | 1.6667e+06 Pa | 1.6667e+06 | +0.00% | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | lamuv | -4.0825e+06 Pa | -4.0825e+06 | -0.00% | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | lamvw | -2.3570e+06 Pa | -2.3570e+06 | -0.00% | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | lamwu | 2.8868e+06 Pa | 2.8868e+06 | +0.00% | 10 Pa | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | eps_xx = Mecway | 6.2254e-04 - | 6.2254e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | eps_yy = Mecway | -1.8698e-04 - | -1.8698e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | eps_zz = Mecway | -1.6056e-04 - | -1.6056e-04 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | gamma_xy = Mecway | -3.7222e-04 - | -3.7222e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | gamma_yz = Mecway | -2.5873e-05 - | -2.5873e-05 | +0.00% | 6.2254e-10 - | OK |
+| OR-15 | Orthotroop blok in hex8 met LINE_QUAD, assen per element | gamma_zx = Mecway | 2.1635e-04 - | 2.1635e-04 | -0.00% | 6.2254e-10 - | OK |
+| OR-17 | Orthotrope ingeklemde balk, U als formule van x (kaart) | doorbuiging tip = Mecway | 0.019454 m | 0.019454 | -0.00% | 0.2% | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | eps_xx | 3.4411e-04 - | 3.4411e-04 | -0.00% | 3.44107e-10 - | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | eps_yy | -1.7411e-04 - | -1.7411e-04 | +0.00% | 3.44107e-10 - | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | gamma_xy | -3.3961e-04 - | -3.3961e-04 | +0.00% | 3.44107e-10 - | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | stressxxm1 | 1.0000e+07 Pa | 1.0000e+07 | -0.00% | 0.0001% | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | stressyym1 (0) | 0 Pa | 7.5659e-09 | 7.5659e-09 | 10 Pa | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | stressxym1 (0) | 0 Pa | -2.3595e-09 | -2.3595e-09 | 10 Pa | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | eps_xx = Mecway | 3.4411e-04 - | 3.4411e-04 | +0.00% | 3.44107e-10 - | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | eps_yy = Mecway | -1.7411e-04 - | -1.7411e-04 | -0.00% | 3.44107e-10 - | OK |
+| OR-20 | Orthotrope schaal (DKT), membraantrek X, U op 30 graden | gamma_xy = Mecway | -3.3961e-04 - | -3.3961e-04 | +0.00% | 3.44107e-10 - | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | eps_xx | 5.0000e-04 - | 5.0000e-04 | -0.00% | 5e-10 - | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | eps_yy | -3.0000e-05 - | -3.0000e-05 | -0.00% | 5e-10 - | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | gamma_xy | 2.2568e-20 - | -2.8498e-18 | -12727.32% | 5e-10 - | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | stressxxm1 | 1.0000e+07 Pa | 1.0000e+07 | -0.00% | 0.0001% | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | stressyym1 (0) | 0 Pa | -3.7557e-09 | -3.7557e-09 | 10 Pa | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | stressxym1 (0) | 0 Pa | -7.8355e-09 | -7.8355e-09 | 10 Pa | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | eps_xx = Mecway | 5.0000e-04 - | 5.0000e-04 | -0.00% | 5e-10 - | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | eps_yy = Mecway | -3.0000e-05 - | -3.0000e-05 | -0.00% | 5e-10 - | OK |
+| OR-21 | Orthotrope schaal (DKT), standaard-U = rand knoop 1-2 langs Y | gamma_xy = Mecway | 0 - | -2.8498e-18 | -2.8498e-18 | 5e-10 - | OK |
+| OR-22 | Orthotrope schaalstrook, buiging, U op 30 graden | doorbuiging tip = Mecway | 0.016039 m | 0.015961 | -0.48% | 2% | OK |
+| OR-22 | Orthotrope schaalstrook, buiging, U op 30 graden | stressxxu1 x = 25 mm = Mecway | 1.1242e+08 Pa | 1.1294e+08 | +0.46% | 2% | OK |
 
 ## 2D en axisymmetrisch
 
@@ -2112,11 +2463,17 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | disply y = 20 mm | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
 | PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | disply y = 80 mm | -1.0000e-05 m | -1.0000e-05 | +0.00% | 0.01% | OK |
 | PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | stressyy = Mecway | 9.9996e+07 Pa | 1.0000e+08 | +0.00% | 0.1% | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | som reacties X (BRIDGE_STATREAC) | 0 N | -2.5849e-26 | -2.5849e-26 | 10 N | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | som reacties Y (BRIDGE_STATREAC) | 0 N | 1.8190e-12 | 1.8190e-12 | 10 N | OK |
+| PT-01 | Staaf met pre-tension section, kracht 10 kN (lineair statisch) | som reactionforcex Mecway-knopen | 0 N | -1.9053e-26 | -1.9053e-26 | 10 N | OK |
 | PT-02 | Idem, length adjustment 0,01 mm | stressyy | 2.0000e+07 Pa | 2.0000e+07 | -0.00% | 0.01% | OK |
 | PT-02 | Idem, length adjustment 0,01 mm | reactie onder | 2000 N | 2000 | -0.00% | 0.01% | OK |
 | PT-02 | Idem, length adjustment 0,01 mm | disply y = 20 mm | 2.0000e-06 m | 2.0000e-06 | -0.00% | 0.01% | OK |
 | PT-02 | Idem, length adjustment 0,01 mm | disply y = 80 mm | -2.0000e-06 m | -2.0000e-06 | +0.00% | 0.01% | OK |
 | PT-02 | Idem, length adjustment 0,01 mm | stressyy = Mecway | 1.9999e+07 Pa | 2.0000e+07 | +0.00% | 0.1% | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | som reacties X (BRIDGE_STATREAC) | 0 N | 4.0390e-28 | 4.0390e-28 | 2 N | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | som reacties Y (BRIDGE_STATREAC) | 0 N | 0 | 0 | 2 N | OK |
+| PT-02 | Idem, length adjustment 0,01 mm | som reactionforcex Mecway-knopen | 0 N | -1.3300e-27 | -1.3300e-27 | 2 N | OK |
 | PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | boutkracht | 1533.3 N | 1531.8 | -0.10% | 0.2% | OK |
 | PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | klemkracht huls | 933.33 N | 933.13 | -0.02% | 0.2% | OK |
 | PT-03 | Boutverbinding (stijve platen): length adjustment 0,01 mm plus externe kracht 600 N | boutkracht = Mecway | 1531.7 N | 1531.8 | +0.01% | 0.1% | OK |
@@ -2129,6 +2486,26 @@ Gemaakt door `run_verificatie.py` op 2026-10-28 (bridge aadacef, Code-Aster 17.4
 | PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | disply y = 20 mm | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
 | PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | disply y = 80 mm | -1.0000e-05 m | -1.0000e-05 | +0.00% | 0.01% | OK |
 | PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | stressyy = Mecway | 1.0000e+08 Pa | 1.0000e+08 | -0.00% | 0.1% | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | som reacties X (BRIDGE_STATREAC) | 0 N | 0 | 0 | 10 N | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | som reacties Y (BRIDGE_STATREAC) | 0 N | -4.5475e-13 | -4.5475e-13 | 10 N | OK |
+| PT-05 | Staaf in tet4, kracht 10 kN, doorsnede zigzag door laag 5 | som reactionforcex Mecway-knopen | 0 N | -2.6506e-28 | -2.6506e-28 | 10 N | OK |
+| PT-06 | Boutverbinding dynamisch (D31): kracht 1000 N als staplast, zware bovenplaat | periode | 9.9346e-04 s | 9.9579e-04 | +0.23% | 1% | OK |
+| PT-06 | Boutverbinding dynamisch (D31): kracht 1000 N als staplast, zware bovenplaat | max. verplaatsing | 5.0000e-06 m | 5.0117e-06 | +0.23% | 1% | OK |
+| PT-06 | Boutverbinding dynamisch (D31): kracht 1000 N als staplast, zware bovenplaat | periode = Mecway | 9.9569e-04 s | 9.9579e-04 | +0.01% | 0.5% | OK |
+| PT-06 | Boutverbinding dynamisch (D31): kracht 1000 N als staplast, zware bovenplaat | max. verplaatsing = Mecway | 5.0147e-06 m | 5.0117e-06 | -0.06% | 0.5% | OK |
+| PT-06 | Boutverbinding dynamisch (D31): kracht 1000 N als staplast, zware bovenplaat | boutkracht t = 2,5 ms | 1000 N | 1000 | -0.00% | 0.5% | OK |
+| PT-07 | Idem, length adjustment 0,01 mm als staplast | periode | 8.1116e-04 s | 8.1328e-04 | +0.26% | 1% | OK |
+| PT-07 | Idem, length adjustment 0,01 mm als staplast | max. verplaatsing | 6.6667e-06 m | 6.6643e-06 | -0.04% | 1% | OK |
+| PT-07 | Idem, length adjustment 0,01 mm als staplast | periode = Mecway | 8.1310e-04 s | 8.1328e-04 | +0.02% | 0.5% | OK |
+| PT-07 | Idem, length adjustment 0,01 mm als staplast | max. verplaatsing = Mecway | 6.6668e-06 m | 6.6643e-06 | -0.04% | 0.5% | OK |
+| PT-08 | Idem in D30, kracht als formule 1000 t / 0,003 N (helling) | verplaatsing t = 3 ms | -2.4837e-06 m | -2.4978e-06 | -0.57% | 1% | OK |
+| PT-08 | Idem in D30, kracht als formule 1000 t / 0,003 N (helling) | verplaatsing t = 3 ms = Mecway | -2.4974e-06 m | -2.4978e-06 | -0.02% | 0.5% | OK |
+| PT-09 | Veervariant: twee veren in serie, length adjustment 1 mm op veer 1 (force="true", zoals Mecway gebruikt) | verplaatsing midden | -2.5000e-04 m | -2.5000e-04 | -0.00% | 0.0001% | OK |
+| PT-09 | Veervariant: twee veren in serie, length adjustment 1 mm op veer 1 (force="true", zoals Mecway gebruikt) | reactie x knoop 0 | -0.75 N | -0.75 | +0.00% | 0.0001% | OK |
+| PT-09 | Veervariant: twee veren in serie, length adjustment 1 mm op veer 1 (force="true", zoals Mecway gebruikt) | verplaatsing midden = Mecway | -2.5000e-04 m | -2.5000e-04 | -0.00% | 0.0001% | OK |
+| PT-10 | Idem, veren schuin langs (1, 2, 2), k2 = 4000 N/m, length adjustment 2 mm | verplaatsing midden langs de as | -4.0000e-04 m | -4.0000e-04 | +0.00% | 0.0001% | OK |
+| PT-10 | Idem, veren schuin langs (1, 2, 2), k2 = 4000 N/m, length adjustment 2 mm | reactie x knoop 0 | -0.53333 N | -0.53333 | +0.00% | 0.0001% | OK |
+| PT-10 | Idem, veren schuin langs (1, 2, 2), k2 = 4000 N/m, length adjustment 2 mm | verplaatsing midden langs de as = Mecway | -4.0000e-04 m | -4.0000e-04 | +0.00% | 0.0001% | OK |
 
 ## Responsspectrum
 

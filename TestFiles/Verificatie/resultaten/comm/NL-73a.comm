@@ -92,6 +92,9 @@ mesh = DEFI_GROUP(
 #-- not used in this analysis --
 
 
+# ---- BRIDGE_ADAPT_BEGIN: with adaptive refinement (adapt_homard) the part up to
+# end marker below runs in a loop over the refined meshes (bridge_homard.py) ----
+
 # =====================================================
 # 3. MODEL DEFINITION
 # For each elset the matching MODELISATION is chosen:
@@ -328,6 +331,8 @@ except Exception as _sc_err:
           getattr(_sc_err, 'id_message', '') or _sc_err)
 
 
+
+# ---- BRIDGE_ADAPT_END ----
 
 # =====================================================
 # 10. RESULT EXTRACTION

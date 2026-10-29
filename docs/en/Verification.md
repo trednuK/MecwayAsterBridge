@@ -95,21 +95,24 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 28 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `8b13519`
-(after V2026.4: among others the mass and reaction check, cable pretension, buckling
-with constant loads, hysteretic damping, adaptive time steps, line search, smoothed
-contact normals, the section properties, VTU export, the *failed* field, the hex8
-warnings for rubber, the heat flux per element node, the result formulas (S33) and the
-principal stresses and strains (S34); Code-Aster 17.4): 442 test cases, 2382 checks, 2376
-OK, 6 BEKEND (known), 0 NOK/FOUT. Compared with the run on `5ef612d` no status change and
-no FEM value more than 0.1% different; new are 8 checks in FX-02 (principal values and the
-formulas `s1`, `tr`, `e1`).
+Status 29 October 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `fc733a9`
+(after V2026.5: among others principal stresses of shells and Green-Lagrange (S34b),
+skew supports next to displacements and free-free modal with only connections (issue #9),
+the summary of the Code-Aster run (issue #7), beams with warping (S19), 2D and
+axisymmetric including dynamics and acoustics (S16a, S16b, S16d), bolt pretension (S15,
+S15b), HOMARD refinement inside the job (S35b), Mecway's time step in dynamics
+(KNOWN_BUGS 127, fixed), bonded contact as in CCX (KNOWN_BUGS 128), loads on beam side faces and
+hydrostatic pressure on shell edges (S17) and orthotropic material (S13); Code-Aster
+17.4): 529 test cases, 2894 checks, 2888 OK, 6 BEKEND (known), 0 NOK/FOUT. Compared with
+the run on `8b13519` no status change; one FEM value more than 0.1% different: MD-06a
+(history against Mecway 3.4e-3 → 2.7e-3, KNOWN_BUGS 127 fixed).
+New are 87 test cases and 512 checks.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
-| Adaptive refinement | 8 | 14 | 14 | 0 |
-| Acoustics | 7 | 78 | 78 | 0 |
+| Adaptive refinement | 12 | 27 | 27 | 0 |
+| Acoustics | 13 | 204 | 204 | 0 |
 | Acoustics harmonic | 10 | 103 | 103 | 0 |
 | Acoustics impedance | 10 | 227 | 227 | 0 |
 | Cyclic symmetry | 6 | 171 | 171 | 0 |
@@ -117,24 +120,27 @@ formulas `s1`, `tr`, `e1`).
 | Dynamics | 16 | 47 | 47 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 15 | 53 | 53 | 0 |
-| Buckling | 22 | 65 | 64 | 1 |
+| Buckling | 27 | 77 | 76 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 111 | 399 | 398 | 1 |
+| Linear static | 128 | 434 | 433 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
-| Modal | 23 | 223 | 223 | 0 |
+| Modal | 25 | 238 | 238 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 53 | 199 | 196 | 3 |
+| Nonlinear static | 54 | 201 | 198 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
-| Mode superposition | 8 | 21 | 21 | 0 |
+| Mode superposition | 10 | 25 | 25 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
-| Result formulas | 3 | 20 | 20 | 0 |
+| Result formulas | 5 | 38 | 38 | 0 |
 | Thermal | 24 | 92 | 92 | 0 |
 | Thermal stress | 2 | 7 | 7 | 0 |
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
-| **Total** | **442** | **2382** | **2376** | **6** |
+| Orthotropic material | 19 | 174 | 174 | 0 |
+| 2D and axisymmetric | 19 | 65 | 65 | 0 |
+| Bolt pretension | 10 | 48 | 48 | 0 |
+| **Total** | **529** | **2894** | **2888** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

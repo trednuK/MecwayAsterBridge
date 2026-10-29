@@ -59,6 +59,9 @@ mesh = MODI_MAILLAGE(
 )
 
 
+# ---- BRIDGE_ADAPT_BEGIN: with adaptive refinement (adapt_homard) the part up to
+# end marker below runs in a loop over the refined meshes (bridge_homard.py) ----
+
 # =====================================================
 # 2. MODEL (PHENOMENE='THERMIQUE')
 # =====================================================
@@ -156,6 +159,8 @@ res_flux = CALC_CHAMP(
     THERMIQUE=('FLUX_ELNO', 'FLUX_NOEU'),
 )
 
+
+# ---- BRIDGE_ADAPT_END ----
 
 # =====================================================
 # 9. RESULTS TO MECWAY
