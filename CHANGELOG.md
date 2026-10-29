@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## V2026.6 – 29 October 2026
+
+Orthotropic material, bolt pretension (*Pre-tension section*), beams with warping
+(`POU_D_TG`), 2D and axisymmetric analyses (static, dynamic, acoustic), adaptive refinement with
+HOMARD, loads on beam side faces and hydrostatic pressure on shell edges, principal values of
+shells and Green-Lagrange principal strains, a summary file of every Code-Aster run (issue #7)
+and the fixes for issue #9 (frictionless next to a fixed displacement, free-free modal
+analysis). Two behaviour changes: Green-Lagrange principal strains and the time step with
+*Generate solution every n time steps*. Tested in Mecway 34 with Code-Aster 17.4; verification
+544 test cases, 2963 checks (2957 OK, 6 known limitations, 0 unexpected).
 
 - **Windows readable at a larger Windows display scale (e.g. 125 %)** (KNOWN_BUGS 129): the
   header of the main window, the Results window and the status window is sized from the
