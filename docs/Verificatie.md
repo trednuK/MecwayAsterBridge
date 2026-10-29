@@ -2400,14 +2400,14 @@ schuin, met en zonder vector + 30°):
   `FACTOR_11`, met `solver_nprec` -1 met `FACTOR_57` en een fout van 13 (los deel: 64):
   dan geeft de bridge de melding over een singuliere matrix.
 
-### Balken met welving (BU-38 … BU-42, LS-90 … LS-95b)
+### Balken met welving (BU-38 … BU-44b, LS-90 … LS-95b)
 
 - **Doel**: `elem_beam` = `POU_D_TG` ([Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)):
   dwarskrachtcentrum (`EY`, `EZ`), welvingsconstante (`JG`) en Wagner-termen (`IYR2`,
   `IZR2`) uit `bridge_warping.section_props` of een `#ASTER-SECTIE`-regel, en de regel voor
   de welving `GRX` bij opleggingen (`beam_warping`). Module `tests_balk_welving.py`,
-  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91 LS-90d LS-94 LS-95`
-  (ongeveer 2 minuten).
+  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 BU-43 BU-44 LS-90 LS-91 LS-94 LS-95`
+  (ongeveer 3 minuten).
 - **Theorie**: buig-torsieknik i0²(P − P_b)(P − P_T) − P²·e² = 0 (Timoshenko & Gere, 1961,
   §5.3); kip van een I-ligger op vorkopleggingen onder constant moment
   M_cr = π/L·√(E·I_z·G·J·(1 + π²E·C_w/(G·J·L²))) (idem §6.2); torsie met verhinderde welving
@@ -2416,7 +2416,13 @@ schuin, met en zonder vector + 30°):
   (hartlijnen), van het C-profiel t·b³·h²/12·(3b + 2h)/(6b + h) (idem §5.3), van het
   L-profiel t³/36·(a′³ + b′³) (welving door de dikte van de benen; AISC Design Guide 9,
   Seaburg & Carter, 1997). Een dwarslast F door het zwaartepunt geeft om het
-  dwarskrachtcentrum het torsiemoment T = F·e.
+  dwarskrachtcentrum het torsiemoment T = F·e. Kip van een enkelsymmetrische ligger op
+  vorkopleggingen onder constant moment:
+  M_cr = P·(β/2 ± √(β²/4 + I_w/I_z + G·J·L²/(π²E·I_z))), P = π²E·I_z/L², met de
+  Wagner-parameter β = (1/I_y)·∫y·(x² + y²)·dA − 2·y₀ (y langs de symmetrieas, y₀ het
+  dwarskrachtcentrum, M > 0 met trek aan de +y-kant; Trahair, 1993, hfst. 6; SSRC Guide,
+  Galambos, 1998, hfst. 5): het grotere moment hoort bij druk aan de kant van het
+  dwarskrachtcentrum.
 
 | ID | Model | Referentie | Resultaat |
 |---|---|---|---|
@@ -2429,11 +2435,17 @@ schuin, met en zonder vector + 30°):
 | LS-90b | idem met `beam_warping` = `free` | T·L/(G·J) | exact |
 | LS-90c | idem met de standaard `POU_D_E` | T·L/(G·J) | exact (ongewijzigd) |
 | LS-91 | dezelfde ligger op vorkopleggingen, T in het midden | φ = T/(2G·J)·(L/2 − tanh(kL/2)/k) = 0,0045691 rad | 0,0045591 (−0,22%) |
-| LS-90d | LS-90, met twee `#ASTER-POST`-regels die max \|`BX`\| van `EFGE_ELNO` in de `.mess` schrijven | bimoment B(0) = T·tanh(kL)/k = 15,255 N·m² | 15,333 (+0,51%; tolerantie 2%) |
+| LS-90d | LS-90, met `#ASTER-POST`-regels die `BX` van `EFGE_ELNO` (grootste waarde, met teken) en `GRX` in de `.mess` schrijven | `BX` = +E·C_w·φ″, bij de inklemming +T·tanh(kL)/k = +15,255 N·m²; `GRX` = φ′(L) = +0,026194 rad/m | +15,333 (+0,51%; tolerantie 2%); +0,026191 (−0,01%) |
+| LS-90e | idem met T = −100 N·m | −15,255 N·m²; −0,026194 rad/m | −15,333 (+0,51%); −0,026191 (−0,01%) |
 | LS-94 | uitkragende C 100 × 50 × 6 mm, L = 1 m, 20 `POU_D_TG`, V = +Y, inklemming, F = 1000 N langs +Y aan de top (door het zwaartepunt) | φ = F·e/(G·J)·(L − tanh(kL)/k) = +0,019988 rad (e = 29,375 mm, dwarskrachtcentrum aan de +W-kant) | +0,019912 (−0,38%; tolerantie 2%) |
 | LS-94b | idem met V = (0, −1, 0) (profiel omgekeerd) | −0,019988 rad | −0,019912 (−0,38%) |
 | LS-95 | uitkragende L 120 × 80 × 8 mm (a > b), L = 1 m, 20 `POU_D_E`, F = 1000 N langs +Y en +Z aan de top | Mecway 34 headless (eigen solver): DY 3,3684 mm, DZ 0,60063 mm | gelijk (< 1e-6) |
 | LS-95b | idem met `POU_D_TG` | φ = T/(G·J)·(L − tanh(kL)/k) = 0,019809 rad (T = 53,81 N·m om de hiel) | 0,019808 (−0,005%; tolerantie 2%) |
+| BU-43 | T 100 × 10 × 10 × 90 mm (flens aan +Y), L = 2 m, 40 `POU_D_TG`, vorkopleggingen, eindmomenten 1000 N·m om Z die de flens drukken | enkelsymmetrische M_cr (β = −64,6 mm): flens gedrukt 63,576, lijf gedrukt −35,448 | 63,313 (−0,41%; tolerantie 2%); −35,366 (−0,23%) |
+| BU-43b | idem met de eindmomenten omgekeerd (lijf gedrukt) | 35,448; −63,576 | 35,366 (−0,23%); −63,313 (−0,41%) |
+| BU-43c | BU-43 met L = 4 m | formule 27,484 / −20,452; T van quad4-schalen in Mecway 34 (400 × 20 elementen, eigen solver) 27,081 / 20,228 | 27,459 (−0,09%) / −20,438 (−0,07%); tegen de schalen +1,4% / +1,0% (tolerantie 3%) |
+| BU-44 | C 100 × 50 × 6 mm (lijf aan +Z), L = 4 m, 40 `POU_D_TG`, vorkopleggingen, eindmomenten 1000 N·m om Y (zwakke as) die het lijf op trek zetten | M_cr (β = −109,3 mm): flensuiteinden gedrukt 7,6497, lijf gedrukt −31,265 | 7,6458 (−0,05%; tolerantie 3%); −31,150 (−0,37%) |
+| BU-44b | idem met de eindmomenten omgekeerd (lijf gedrukt) | 31,265; −7,6497 | 31,150 (−0,37%); −7,6458 (−0,05%) |
 
 - **Doorsnede**: de bridge berekent voor ssll103a's hoekprofiel `EZ` = −40,96 mm (test
   `EY` 41,012), `JG` = 4,43988e-11 m⁶ (test 4,4398819e-11) en `IZR2` = 8,4848e-8 m⁵ (test
@@ -2452,9 +2464,21 @@ schuin, met en zonder vector + 30°):
   Vóór 29 okt 2026 lag het dwarskrachtcentrum aan de verkeerde kant (LS-94, LS-94b en
   LS-95b met omgekeerd teken) en waren `IY` en `IZ` van een L met a > b verwisseld (LS-95
   DY en DZ omgewisseld, ook met `POU_D_E`).
-- **Niet geverifieerd**: kip van een enkelsymmetrisch profiel onder buiging (T, C), waar
-  het teken van `IYR2`/`IZR2` de kritieke last verandert, alleen via dezelfde
-  asconventie; de bimoment alleen in grootte (het teken van `BX` niet).
+- **Enkelsymmetrische profielen** (BU-43 … BU-44b): de T toetst `EY` met `IYR2`, de C
+  `EZ` met `IZR2` (buiging om de zwakke as V; in de praktijk kipt zo'n C niet, maar de
+  lineaire kniklastfactor toetst de termen). Beide momentrichtingen in één model: de
+  positieve factor is het opgelegde moment, de negatieve het omgekeerde; het omgekeerde
+  model geeft hetzelfde paar met omgewisselde tekens. Een tekenfout in het
+  dwarskrachtcentrum of de Wagner-term zou β veranderen (T: −30,2 of +30,2 mm in plaats
+  van −64,6) en de factoren met 14% of meer. Tweede referentie (BU-43c): een schaalmodel
+  van de T in Mecway 34 (zonder Wagner- of dwarskrachtcentrum-invoer) geeft dezelfde
+  verhouding flens/lijf (1,34). Hetzelfde schaalmodel in Code-Aster (DKT) is niet
+  bruikbaar: de geometrische stijfheid heeft alleen de termen loodrecht op elke plaat
+  (KNOWN_BUGS 132).
+- **Teken van de bimoment** (LS-90d, LS-90e): Code-Aster's `BX` = +E·I_w·φ″ met `GRX` =
+  φ′ (`GRX` is ook positief onder een positief torsiemoment in testcase ssll102d), het
+  omgekeerde teken van Vlasovs B = −E·I_w·φ″; de documenten U4.42.01 en R3.08.01
+  definiëren het niet.
 - **Regel bij opleggingen**: *Fixed support* (`BLOCAGE`) alleen houdt `GRX` niet vast
   (C-kolom 343,8 zonder en 385,0 met `GRX` = 0, run 28 okt 2026); de bridge zet daarom
   een eigen `DDL_IMPO GRX` op de knoopgroep `BRGRX`. LS-90/LS-90b tonen het verschil

@@ -2390,14 +2390,14 @@ along X and skew, with and without vector + 30°):
   `solver_nprec` -1 with `FACTOR_57` and an error of 13 (loose part: 64): then the
   bridge gives the message about a singular matrix.
 
-### Beams with warping (BU-38 … BU-42, LS-90 … LS-95b)
+### Beams with warping (BU-38 … BU-44b, LS-90 … LS-95b)
 
 - **Purpose**: `elem_beam` = `POU_D_TG` ([Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)):
   shear centre (`EY`, `EZ`), warping constant (`JG`) and Wagner terms (`IYR2`, `IZR2`) from
   `bridge_warping.section_props` or an `#ASTER-SECTIE` line, and the rule for the warping
   `GRX` at supports (`beam_warping`). Module `tests_balk_welving.py`,
-  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91 LS-90d LS-94 LS-95`
-  (about 2 minutes).
+  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 BU-43 BU-44 LS-90 LS-91 LS-94 LS-95`
+  (about 3 minutes).
 - **Theory**: flexural-torsional buckling i0²(P − P_b)(P − P_T) − P²·e² = 0 (Timoshenko &
   Gere, 1961, §5.3); lateral-torsional buckling of an I beam on fork supports under
   uniform moment M_cr = π/L·√(E·I_z·G·J·(1 + π²E·C_w/(G·J·L²))) (ibid. §6.2); torsion with
@@ -2406,7 +2406,12 @@ along X and skew, with and without vector + 30°):
   t_f·b³·h²/24 (centre lines), of the C profile t·b³·h²/12·(3b + 2h)/(6b + h) (ibid.
   §5.3), of the L profile t³/36·(a′³ + b′³) (warping through the thickness of the legs;
   AISC Design Guide 9, Seaburg & Carter, 1997). A transverse load F through the centroid
-  gives the torque T = F·e about the shear centre.
+  gives the torque T = F·e about the shear centre. Lateral-torsional buckling of a
+  mono-symmetric beam on fork supports under uniform moment:
+  M_cr = P·(β/2 ± √(β²/4 + I_w/I_z + G·J·L²/(π²E·I_z))), P = π²E·I_z/L², with the Wagner
+  parameter β = (1/I_y)·∫y·(x² + y²)·dA − 2·y₀ (y along the axis of symmetry, y₀ the shear
+  centre, M > 0 with tension at +y; Trahair, 1993, ch. 6; SSRC Guide, Galambos, 1998,
+  ch. 5): the larger moment comes with compression on the side of the shear centre.
 
 | ID | Model | Reference | Result |
 |---|---|---|---|
@@ -2419,11 +2424,17 @@ along X and skew, with and without vector + 30°):
 | LS-90b | the same with `beam_warping` = `free` | T·L/(G·J) | exact |
 | LS-90c | the same with the default `POU_D_E` | T·L/(G·J) | exact (unchanged) |
 | LS-91 | the same beam on fork supports, T at midspan | φ = T/(2G·J)·(L/2 − tanh(kL/2)/k) = 0.0045691 rad | 0.0045591 (−0.22%) |
-| LS-90d | LS-90, with two `#ASTER-POST` lines that write max \|`BX`\| of `EFGE_ELNO` into the `.mess` | bimoment B(0) = T·tanh(kL)/k = 15.255 N·m² | 15.333 (+0.51%; tolerance 2%) |
+| LS-90d | LS-90, with `#ASTER-POST` lines that write `BX` of `EFGE_ELNO` (largest magnitude, with its sign) and `GRX` into the `.mess` | `BX` = +E·C_w·φ″, at the clamp +T·tanh(kL)/k = +15.255 N·m²; `GRX` = φ′(L) = +0.026194 rad/m | +15.333 (+0.51%; tolerance 2%); +0.026191 (−0.01%) |
+| LS-90e | the same with T = −100 N·m | −15.255 N·m²; −0.026194 rad/m | −15.333 (+0.51%); −0.026191 (−0.01%) |
 | LS-94 | C cantilever 100 × 50 × 6 mm, L = 1 m, 20 `POU_D_TG`, V = +Y, clamp, F = 1000 N along +Y at the tip (through the centroid) | φ = F·e/(G·J)·(L − tanh(kL)/k) = +0.019988 rad (e = 29.375 mm, shear centre on the +W side) | +0.019912 (−0.38%; tolerance 2%) |
 | LS-94b | the same with V = (0, −1, 0) (section turned over) | −0.019988 rad | −0.019912 (−0.38%) |
 | LS-95 | L cantilever 120 × 80 × 8 mm (a > b), L = 1 m, 20 `POU_D_E`, F = 1000 N along +Y and +Z at the tip | Mecway 34 headless (internal solver): DY 3.3684 mm, DZ 0.60063 mm | equal (< 1e-6) |
 | LS-95b | the same with `POU_D_TG` | φ = T/(G·J)·(L − tanh(kL)/k) = 0.019809 rad (T = 53.81 N·m about the heel) | 0.019808 (−0.005%; tolerance 2%) |
+| BU-43 | T 100 × 10 × 10 × 90 mm (flange at +Y), L = 2 m, 40 `POU_D_TG`, fork supports, end moments 1000 N·m about Z that compress the flange | mono-symmetric M_cr (β = −64.6 mm): flange in compression 63.576, stem in compression −35.448 | 63.313 (−0.41%; tolerance 2%); −35.366 (−0.23%) |
+| BU-43b | the same with the end moments reversed (stem in compression) | 35.448; −63.576 | 35.366 (−0.23%); −63.313 (−0.41%) |
+| BU-43c | BU-43 with L = 4 m | formula 27.484 / −20.452; T of quad4 shells in Mecway 34 (400 × 20 elements, own solver) 27.081 / 20.228 | 27.459 (−0.09%) / −20.438 (−0.07%); against the shells +1.4% / +1.0% (tolerance 3%) |
+| BU-44 | C 100 × 50 × 6 mm (web at +Z), L = 4 m, 40 `POU_D_TG`, fork supports, end moments 1000 N·m about Y (minor axis) that put the web in tension | M_cr (β = −109.3 mm): flange tips in compression 7.6497, web in compression −31.265 | 7.6458 (−0.05%; tolerance 3%); −31.150 (−0.37%) |
+| BU-44b | the same with the end moments reversed (web in compression) | 31.265; −7.6497 | 31.150 (−0.37%); −7.6458 (−0.05%) |
 
 - **Section**: for ssll103a's angle the bridge computes `EZ` = −40.96 mm (test `EY`
   41.012), `JG` = 4.43988e-11 m⁶ (test 4.4398819e-11) and `IZR2` = 8.4848e-8 m⁵ (test
@@ -2442,9 +2453,20 @@ along X and skew, with and without vector + 30°):
   29 Oct 2026 the shear centre was on the wrong side (LS-94, LS-94b and LS-95b with the
   opposite sign) and `IY` and `IZ` of an L with a > b were swapped (LS-95 DY and DZ
   exchanged, also with `POU_D_E`).
-- **Not verified**: lateral-torsional buckling of a mono-symmetric profile under bending
-  (T, C), where the sign of `IYR2`/`IZR2` changes the critical load, only through the
-  same axis convention; the bimoment only in size (not the sign of `BX`).
+- **Mono-symmetric sections** (BU-43 … BU-44b): the T tests `EY` with `IYR2`, the C
+  `EZ` with `IZR2` (bending about the minor axis V; in practice such a C does not buckle
+  laterally, but the linear buckling factor checks the terms). Both moment signs in one
+  model: the positive factor is the applied moment, the negative one the reversed
+  moment; the reversed model gives the same pair with the signs swapped. A sign error in
+  the shear centre or the Wagner term would change β (T: −30.2 or +30.2 mm instead of
+  −64.6) and the factors by 14% or more. Second reference (BU-43c): a shell model of the
+  T in Mecway 34 (no Wagner or shear-centre input) gives the same ratio flange/stem
+  (1.34). The same shell model in Code-Aster (DKT) is not usable: its geometric stiffness
+  has only the out-of-plane terms of each plate (KNOWN_BUGS 132).
+- **Sign of the bimoment** (LS-90d, LS-90e): Code-Aster's `BX` = +E·I_w·φ″ with `GRX` =
+  φ′ (`GRX` is also positive under a positive torque in test case ssll102d), the
+  opposite sign of Vlasov's B = −E·I_w·φ″; the U4.42.01 and R3.08.01 documents do not
+  define it.
 - **Rule at supports**: a *Fixed support* (`BLOCAGE`) alone does not fix `GRX` (C column
   343.8 without and 385.0 with `GRX` = 0, run 28 Oct 2026); the bridge therefore adds its
   own `DDL_IMPO GRX` on the node group `BRGRX`. LS-90/LS-90b show the difference clamp/free
