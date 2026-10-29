@@ -306,7 +306,12 @@ elements:
    `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` (impedance edges `PLAN_ABSO`, Code-Aster
    test case ahlv100f); the rest is the A30 route. The 2D analysis has no harmonic
    pressure field (`acoustic_harm_3d`: ERROR, and `auto` keeps the cavity modes with a
-   `SOURCE_` selection).
+   `SOURCE_` selection), because Mecway has no 2D input for it: its analysis types are
+   only *Acoustic Resonance 2D/3D*, its manual describes only real and complex modes (no
+   frequency, no source; Mecway Ltd., 2026, §6.9, §9.34, §9.35), and an A20 model with a
+   *Fluid pressure* of 1 Pa gives no solution in Mecway 34 (checked headless, 29 Oct
+   2026). For a harmonic pressure field, model the cross-section as a thin 3D slab (A30)
+   and use §5.
 
 Results: equal to Mecway's own A20 solution (headless, verification AK-10 … AK-15):
 quad4 and quad8 to 1e-6 relative (frequencies, decay rates and the normalised
@@ -338,7 +343,7 @@ tri3, 20 modes): the fundamental of the pipe, mode 4, 64.594 Hz (Mecway 64.592 H
 | WARNING: Acoustics: no MED export for complex modes | `med_export` on | normal: the modes are in Mecway |
 | WARNING: Acoustics: #ASTER-EXCIT ... is not used for complex modes | own loads in a model with impedance | normal; pressure nodes via *fluid pressure* = 0 |
 | `aster_acoustic_complex: ERROR: ...` in the `.mess`, no results | e.g. ARPACK does not converge, or Q(σ) is singular | another search frequency or fewer modes; if it persists: report it (KNOWN_BUGS) |
-| ERROR: Mecway analysis type A20 (Acoustic Resonance 2D) is only translated to the cavity modes 'acoustic_modes_3d' | another analysis chosen (e.g. the harmonic) | choose `auto` or `acoustic_modes_3d`; harmonic: a 3D model (A30) |
+| ERROR: Mecway analysis type A20 (Acoustic Resonance 2D) is only translated to the cavity modes 'acoustic_modes_3d' | another analysis chosen (e.g. the harmonic); Mecway has no 2D harmonic acoustic input (§3.5) | choose `auto` or `acoustic_modes_3d`; harmonic: a 3D model (A30) |
 | ERROR: Elset '…' contains …; in Acoustic Resonance 2D (A20) the bridge only translates plane elements | beams, solids or springs in the A20 model | mesh only the air area with plane elements |
 | ERROR: A 2D analysis (A20) needs all nodes in the XY plane (Z = 0) | mesh not in the XY plane | move the mesh to Z = 0 |
 | ERROR: 'contact2' / 'nodesurfacecoupling' / 'constraintequation' on ... is not translated in an acoustic analysis | coupling in acoustics | use one continuous mesh |

@@ -85,7 +85,9 @@
 # thickness, so the MASS_GENE normalisation gives Mecway's amplitudes
 # (verification AK-10 .. AK-13). bridge_plane._apply_acoustic checks the
 # mesh and sets model_data["acoustic_2d"]. The harmonic pressure field
-# (acoustic_harm_3d) is not translated in 2D.
+# (acoustic_harm_3d) is not translated in 2D: Mecway has no 2D input for
+# it (no frequency or source; an A20 model with fluid pressure != 0 gives
+# no solution in Mecway 34, measured headless 29 Oct 2026; KNOWN_BUGS 126).
 #
 # Compatible with IronPython 2.7.9 (standard library only).
 
@@ -415,8 +417,8 @@ def has_source(model_data):
 
 def resolve_auto(resolved, model_data):
     """Analysis for 'auto': A30 with a source -> acoustic_harm_3d (if it
-    exists), else unchanged. A20 (2D) always keeps the cavity modes: the
-    harmonic pressure field is not verified in 2D (bridge_plane)."""
+    exists), else unchanged. A20 (2D) always keeps the cavity modes: Mecway
+    has no 2D harmonic acoustic input (bridge_plane._apply_acoustic)."""
     if model_data.get("analysis_type") == "A20":
         return resolved
     if (resolved == "acoustic_modes_3d" and has_source(model_data) and
@@ -1549,11 +1551,14 @@ def build_acoustic_harm(work_dir, model_data, msh_path, resu_name, analysis):
     if model_data.get("analysis_type") == "A20":
         # (bridge_plane._apply_acoustic already stops; defensive)
         log(tr("ERROR: Het harmonische drukveld wordt voor Acoustic "
-               "Resonance 2D (A20) niet vertaald; alleen de holtemodes "
-               "(acoustic_modes_3d) of een 3D-model (A30).",
+               "Resonance 2D (A20) niet vertaald: Mecway heeft in 2D geen "
+               "harmonische akoestiek (geen frequentie- of broninvoer). "
+               "Kies de holtemodes (acoustic_modes_3d) of een 3D-model "
+               "(A30).",
                "ERROR: The harmonic pressure field is not translated for "
-               "Acoustic Resonance 2D (A20); only the cavity modes "
-               "(acoustic_modes_3d) or a 3D model (A30)."))
+               "Acoustic Resonance 2D (A20): Mecway has no harmonic "
+               "acoustics in 2D (no frequency or source input). Choose the "
+               "cavity modes (acoustic_modes_3d) or a 3D model (A30)."))
         return None
     elsets = _elsets(model_data)
     if elsets is None:

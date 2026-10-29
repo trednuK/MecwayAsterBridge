@@ -272,19 +272,32 @@ def _apply_acoustic(model_data, run_cfg, elset_shapes, atype):
     frequencies or the mode shapes (the model is per unit thickness: the
     constant mode is c / sqrt(area)), and Z of the nodes is ignored. No
     model_data["plane"]: there are no forces or reactions to scale.
+    Harmonic pressure field: not translated, because Mecway has no 2D
+    input for it (KNOWN_BUGS 126; checked 29 Oct 2026): the analysis types
+    in mecway.exe 34 are only "Acoustic Resonance 2D/3D", the manual (v34
+    sec. 6.9, 9.34, 9.35) describes only real and complex modes (no
+    frequency, no source), and an A20 model with fluid pressure 1 Pa solved
+    headless (mw_solve.py) writes no solution at all.
     """
     import bridge_acoustic
     if not bridge_acoustic.is_acoustic(run_cfg) or \
             run_cfg.get("solver_command") != "CALC_MODES":
         return _fatal(
             "Mecway-analysetype {0} ({1}) wordt alleen vertaald naar de "
-            "holtemodes 'acoustic_modes_3d' (een harmonisch drukveld in 2D "
-            "is niet geverifieerd). Kies op het startscherm 'auto' of "
-            "acoustic_modes_3d.",
+            "holtemodes 'acoustic_modes_3d'. Mecway heeft in 2D geen "
+            "harmonische akoestiek (geen frequentie- of broninvoer; een "
+            "fluid pressure die niet 0 is lost Mecway niet op), dus er is "
+            "geen 2D-invoer voor het harmonische drukveld. Kies op het "
+            "startscherm 'auto' of acoustic_modes_3d; voor een harmonisch "
+            "drukveld: een 3D-model (A30) met acoustic_harm_3d.",
             "Mecway analysis type {0} ({1}) is only translated to the "
-            "cavity modes 'acoustic_modes_3d' (a harmonic pressure field in "
-            "2D is not verified). Choose 'auto' or acoustic_modes_3d on the "
-            "start screen.", atype, ACOUSTIC_2D[atype])
+            "cavity modes 'acoustic_modes_3d'. Mecway has no harmonic "
+            "acoustics in 2D (no frequency or source input; Mecway does not "
+            "solve a fluid pressure other than 0), so there is no 2D input "
+            "for the harmonic pressure field. Choose 'auto' or "
+            "acoustic_modes_3d on the start screen; for a harmonic pressure "
+            "field: a 3D model (A30) with acoustic_harm_3d.",
+            atype, ACOUSTIC_2D[atype])
     mods = model_data["elset_modelisations"]
     found = False
     for elset in list(mods):

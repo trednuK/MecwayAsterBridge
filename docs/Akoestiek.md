@@ -306,7 +306,12 @@ van Mecway's tutorial 17.13). De bridge vertaalt dat als A30, met vlakke element
    `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` (impedantieranden `PLAN_ABSO`,
    Code-Aster-testcase ahlv100f); de rest is de A30-route. De 2D-analyse heeft geen
    harmonisch drukveld (`acoustic_harm_3d`: ERROR, en `auto` houdt bij een
-   `BRON_`-selectie de holtemodes).
+   `BRON_`-selectie de holtemodes), omdat Mecway daar in 2D geen invoer voor heeft: de
+   analysetypen zijn alleen *Acoustic Resonance 2D/3D*, de handleiding beschrijft alleen
+   reële en complexe modes (geen frequentie, geen bron; Mecway Ltd., 2026, §6.9, §9.34,
+   §9.35), en een A20-model met een *Fluid pressure* van 1 Pa geeft in Mecway 34 geen
+   oplossing (headless gecontroleerd, 29 okt 2026). Voor een harmonisch drukveld: model
+   de doorsnede als een dunne 3D-plaat (A30) en gebruik §5.
 
 Resultaten: gelijk aan Mecway's eigen A20-oplossing (headless, verificatie AK-10 …
 AK-15): quad4 en quad8 tot op 1e-6 relatief (frequenties, decay rates en de
@@ -339,7 +344,7 @@ elementen, waarvan 48 tri3, 20 modes): de grondtoon van de pijp, mode 4, 64,594 
 | WARNING: Akoestiek: geen MED-export bij complexe modes | `med_export` aan | normaal: de modes staan in Mecway |
 | WARNING: Akoestiek: #ASTER-EXCIT ... wordt bij complexe modes niet gebruikt | eigen lasten bij een model met impedantie | normaal; drukknopen via *fluid pressure* = 0 |
 | `aster_acoustic_complex: FOUT: ...` in de `.mess`, geen resultaten | bijv. ARPACK convergeert niet, of Q(σ) is singulier | andere zoekfrequentie of minder modes; blijft het: melden (KNOWN_BUGS) |
-| ERROR: Mecway-analysetype A20 (Acoustic Resonance 2D) wordt alleen vertaald naar de holtemodes 'acoustic_modes_3d' | een andere analyse gekozen (bijv. de harmonische) | kies `auto` of `acoustic_modes_3d`; harmonisch: een 3D-model (A30) |
+| ERROR: Mecway-analysetype A20 (Acoustic Resonance 2D) wordt alleen vertaald naar de holtemodes 'acoustic_modes_3d' | een andere analyse gekozen (bijv. de harmonische); Mecway heeft in 2D geen harmonische akoestische invoer (§3.5) | kies `auto` of `acoustic_modes_3d`; harmonisch: een 3D-model (A30) |
 | ERROR: Elset '…' bevat …; in Acoustic Resonance 2D (A20) vertaalt de bridge alleen vlakke elementen | balken, volumes of veren in het A20-model | mesh alleen het luchtvlak met vlakke elementen |
 | ERROR: Een 2D-analyse (A20) heeft alle knopen in het XY-vlak nodig (Z = 0) | mesh niet in het XY-vlak | verplaats het mesh naar Z = 0 |
 | ERROR: 'contact2' / 'nodesurfacecoupling' / 'constraintequation' op ... wordt in een akoestische analyse niet vertaald | koppeling in de akoestiek | gebruik één doorlopend mesh |

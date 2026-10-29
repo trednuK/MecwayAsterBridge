@@ -1171,7 +1171,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
-   with a source selection), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
+   with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,
+   checked 29 Oct 2026 in the analysis types of `mecway.exe` 34, the manual §6.9, §9.34,
+   §9.35 and headless: an A20 model with fluid pressure 1 Pa gives no solution), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
    constraint equations, couplings, contact, point masses, temperatures), the error estimator
    (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,

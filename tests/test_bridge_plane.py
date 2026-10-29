@@ -234,6 +234,12 @@ def test_acoustic():
         md = _extract(text, analysis=analysis)
         check(md is None and _errors(), "{0}: ERROR and stop ({1})".format(
             what, LOG[-3:]))
+        if what == "A20 harmonic":
+            # the ERROR says why: Mecway has no 2D harmonic acoustic input
+            text = " ".join(LOG)
+            check("geen harmonische akoestiek" in text or
+                  "no harmonic acoustics in 2D" in text,
+                  "A20 harmonic: ERROR names the missing Mecway input")
     # .comm: AFFE_MODELE with PLAN (and PLAN_ABSO for the impedance edge)
     import bridge_mesh
     import bridge_to_aster

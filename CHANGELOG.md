@@ -12,6 +12,11 @@
 - **Buckling with POU_D_TG beams**: the INFO line about torsional buckling without warping
   (`POU_D_E`/`POU_D_T`) is only logged when the model has beams without warping; with
   `elem_beam` = `POU_D_TG` only the line about warping beams remains.
+- **Acoustic Resonance 2D (A20) with the harmonic analysis: clearer ERROR** (KNOWN_BUGS
+  126): the message now says why the harmonic pressure field is not translated in 2D:
+  Mecway has no 2D harmonic acoustic input (no frequency or source; an A20 model with a
+  fluid pressure other than 0 gives no solution in Mecway 34). For a harmonic pressure
+  field use a 3D model (A30) with `acoustic_harm_3d`. Documented in Acoustics §3.5.
 
 - **Bonded contact between solids ties only the slave nodes Mecway ties** (KNOWN_BUGS 128):
   a slave node without a master face opposite it (for example where one plate overhangs the
