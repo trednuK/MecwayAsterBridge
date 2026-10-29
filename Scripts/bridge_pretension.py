@@ -583,28 +583,41 @@ def apply(model_data, nodes, conn, by_type, cell_refs, skin_by_key,
                     by_type[st][idx] = (name, [dup.get(n, n) for n in old])
                     n_skin += 1
         # --- section area (faces shared by both sides), for the log ---
-        below_faces = set()
-        for eid in below:
-            atype, cn = conn[eid]
-            for fid in range(1, 7):
-                fn = bridge_mesh._face_from_table(atype, cn, fid)
-                if fn and set(fn) <= cut:
-                    below_faces.add(frozenset(fn))
-        area = 0.0
+        above_faces = set()
         for eid in above:
             atype, cn = conn[eid]
             for fid in range(1, 7):
                 fn = bridge_mesh._face_from_table(atype, cn, fid)
-                if not fn or frozenset(fn) not in below_faces:
+                if fn and set(fn) <= cut:
+                    above_faces.add(frozenset(fn))
+        area = 0.0
+        for eid in below:
+            atype, cn = conn[eid]
+            corners = cn[:bridge_mesh._N_CORNERS[atype]]
+            centre = tuple(sum(nodes[n][k] for n in corners) / len(corners)
+                           for k in range(3))
+            for fid in range(1, 7):
+                fn = bridge_mesh._face_from_table(atype, cn, fid)
+                if not fn or frozenset(fn) not in above_faces:
                     continue
                 # quadratic faces with their mid-side nodes (curved),
-                # projected on the section plane (zig-zag cut in tets)
+                # projected on the section plane (zig-zag cut in tets).
+                # Signed projection with the normal pointing from the
+                # element below into the element above: in an irregular
+                # mesh the zig-zag surface can fold back (a shared face
+                # whose element below lies on the upper side of it), and
+                # abs() then counted the fold twice (PT-11 .. PT-13:
+                # 1.0641e-4 instead of 1e-4 m2); the signed sum over a
+                # surface that separates the prism is its cross-section.
                 stype, snodes = bridge_mesh._skin_element(atype, cn, fn)
                 nrm = _unit(_newell([nodes[n] for n in fn]))
-                if nrm is not None:
-                    area += abs(_dot(nrm, axis)) * sum(
-                        bridge_mesh._face_integrals(
-                            stype, [nodes[n] for n in snodes])[0])
+                if nrm is None:
+                    continue
+                if _dot(nrm, _sub(nodes[fn[0]], centre)) < 0.0:
+                    nrm = (-nrm[0], -nrm[1], -nrm[2])
+                area += _dot(nrm, axis) * sum(
+                    bridge_mesh._face_integrals(
+                        stype, [nodes[n] for n in snodes])[0])
         # --- reference node and relations ---
         ref = next_nid
         next_nid += 1

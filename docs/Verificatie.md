@@ -152,7 +152,8 @@ Orthotroop materiaal OR-01..22, 19 cases, 174 controles OK (28/29 oktober 2026, 
 S13d; daarmee opnieuw gedraaid: alle lineair-statische cases, MO-20 .. MO-31, BU-20 .. BU-25, de
 resultaatformules en een deel van de thermische en modale families, ongeveer 200 cases,
 FEM-waarden bit-gelijk); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
-5 cases, 17 controles OK (28 oktober 2026, stap S15b).
+5 cases, 17 controles OK (28 oktober 2026, stap S15b); PT-11..13 (onregelmatig tet-mesh), 3 cases,
+39 controles OK (29 oktober 2026).
 Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
 Balkzijvlakken en hydrostatische druk
 op schaalranden LS-92a..h, LS-93a..c, 11 cases, 27 controles OK (28 oktober 2026, stap S17).
@@ -1912,7 +1913,7 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 Mecway's *Pre-tension section* ([Boutvoorspanning.md](Boutvoorspanning.md)): snede door
 het prisma, `LIAISON_DDL` naar een referentieknooppunt (DX = verkorting), kracht als
 `FORCE_NODALE`, lengteverandering als `DDL_IMPO`; de variant met een veerelement als twee
-knoopkrachten. Module `tests_boutvoorspanning.py` (groep "Boutvoorspanning", 10 cases),
+knoopkrachten. Module `tests_boutvoorspanning.py` (groep "Boutvoorspanning", 13 cases),
 draaien met `python run_verificatie.py PT`. Mecway 34 headless met CCX (`mw_solve.py`,
 dezelfde `.liml` met het spanningsveld, 28 oktober 2026), voor PT-09/10 met zijn interne
 solver, als tweede referentie.
@@ -1929,6 +1930,9 @@ solver, als tweede referentie.
 | PT-08 | idem in D30, kracht als formule 1000·t/0,003 N | u(3 ms) = −F/kc·(1 − sin(ωt)/(ωt)) = −2,4837e-6 m; Mecway −2,49738e-6 m | −2,4978e-6 m (+0,57%: gevoelig voor de periode en de schemademping van de kleine trilling); Mecway +0,02% |
 | PT-09 | variant met een veerelement: veren k1 = 1000 en k2 = 3000 N/m in serie langs X tussen vastgehouden knopen, doorsnede op veer 1 met `force="true"`, kracht 0 N, lengteverandering 1 mm (interne solver) | middelste knoop −k1·δ/(k1+k2) = −0,25 mm, reactie −0,75 N; Mecway hetzelfde (het gebruikt de lengteverandering, wat de modus ook is) | exact |
 | PT-10 | idem langs (1, 2, 2), k2 = 4000 N/m, lengteverandering 2 mm, middelste knoop dwars vastgehouden met schuine verplaatsingsvoorwaarden | −0,4 mm langs de as, reactie x −0,53333 N; Mecway hetzelfde | exact |
+| PT-11 | staaf van PT-01 als onregelmatig tet10-mesh: rooster 3 × 12 × 3 met willekeurig verschoven knopen (vaste seed; binnenknopen tot 0,3 × de celmaat dwars en 0,35 × in y, randknopen alleen in hun vlak of langs hun ribbe), elke cel in 6 tetraeders; vlakken van laag 3..9 op x = 10 en z = 10 mm: doorsnede op y = 54,43 mm door tetraeders van wisselende grootte en stand; kracht 10 kN | N/A = 100 MPa in alle knopen (min = max), reactie 10 kN, rek u_y/y onder en boven = N/(EA); bridge-log: oppervlak 1e-4 m², 185 elementen onder, 173 boven, 68 knoopparen (eigen telling in de test); Mecway 99,999 MPa | exact (≤ 1e-9); Mecway −0,001% |
+| PT-12 | idem, lengteverandering 0,01 mm | N = EAδ/L = 2000 N (20 MPa) in alle knopen; verlenging staafmateriaal = δ = 1e-5 m; Mecway 19,9998 MPa | exact; Mecway −0,001% |
+| PT-13 | idem in tet4 (zelfde knopen) | als PT-11, 21 knoopparen; Mecway 100,000 MPa | exact |
 
 Modusattribuut: Mecway 34 schrijft `force="true"` voor de kracht en `adjustment="true"`
 voor de lengteverandering (modellen opnieuw opgeslagen door Mecway; met `force="false"`
