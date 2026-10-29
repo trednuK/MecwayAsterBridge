@@ -869,6 +869,11 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
 - Mecway's eigen solver koppelt bij een schaalrand als slave geen rotaties: de verlijmde
   strook en het T-stuk worden daar een mechanisme (headless gemeten, Mecway 34). Een
   vergelijking met Mecway kan dus alleen met een doorlopende mesh.
+- Schalen met overhang (een deel van de slave ligt niet tegenover de master): de bridge
+  laat dezelfde knopen vrij als CCX, maar is slapper dan Mecway en dichter bij een
+  balkschatting (overhangende plaat: bridge 0,309 mm, balkschatting ~0,36 mm, Mecway
+  0,084 mm). De bridge volgt hier bewust de theorie; vergelijk zulke modellen niet met
+  Mecway (KNOWN_BUGS 128).
 - Schalen met een *Element offset* in het contact: de slave-knopen (altijd de
   Mecway-knopen) gaan naar de knopen van de master; alleen bij `LIAISON_MAIL` op een
   master op eigen knopen (volume op een quad8-schaal) naar het verschoven vlak. De

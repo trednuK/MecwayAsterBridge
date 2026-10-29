@@ -159,7 +159,7 @@ Bonded contact per combination (slave on master):
 | Total strain | Yes | Field `strain` (off by default): `lstrain*`, nonlinear `greenlagrangestrain*`; shells top/middle/bottom. No logarithmic strain and no principal strains. |
 | Contact pressure, contact state | Partly | Field `contact`: `contactpressure`, `contactstate` (0/1/2). No contact shear stress and displacement; sliding (2) NOT verified. |
 | Factor of safety | Yes | Field `safety_factor` (von Mises, §5). |
-| Principal stress, Tresca stress, principal strain | Yes | Fields `principal_stresses` and `principal_strains` (off by default): `principal1..3`, `tresca`, `lprincipalstrain1..3` (Green-Lagrange: `greenlagrangeprincipalstrain1..3`) of solids and `principal1u1`, `trescau1`, `lprincipalstrain1u1` .. (top/middle/bottom) of shells, computed as Mecway does (eigenvalues per element node, node = average). Verification FX-02, FX-04, FX-05. |
+| Principal stress, Tresca stress, principal strain | Yes | Fields `principal_stresses` and `principal_strains` (off by default): `principal1..3`, `tresca`, `lprincipalstrain1..3` (nonlinear with large displacements, Green-Lagrange strain: `greenlagrangeprincipalstrain1..3`) of solids and `principal1u1`, `trescau1`, `lprincipalstrain1u1` .. (top/middle/bottom) of shells, computed as Mecway does (eigenvalues per element node, node = average). Verification FX-02, FX-04, FX-05. |
 | Temperature, heat flux | Yes | Thermal. |
 | Natural frequencies, buckling factors, effective mass | Yes | Effective mass fraction differs from Mecway (KB49). |
 | Acoustic pressure | Yes | [`Acoustics.md`](Acoustics.md). |

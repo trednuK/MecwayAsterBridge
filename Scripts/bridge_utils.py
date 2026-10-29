@@ -330,7 +330,7 @@ CONFIG_BRIDGE = {
             # projected onto the Mecway mesh. Solids, loads and constraints
             # on face selections only.
             "adapt_homard":       False,
-            "adapt_homard_target": 1.0,
+            "adapt_homard_target": 0.3,
             "adapt_homard_max_loops": 5,
             "adapt_homard_max_elements": 200000,
         },
@@ -444,7 +444,7 @@ CONFIG_BRIDGE = {
             # projected onto the Mecway mesh. Solids, loads and constraints
             # on face selections only.
             "adapt_homard":       False,
-            "adapt_homard_target": 1.0,
+            "adapt_homard_target": 0.3,
             "adapt_homard_max_loops": 5,
             "adapt_homard_max_elements": 200000,
         },

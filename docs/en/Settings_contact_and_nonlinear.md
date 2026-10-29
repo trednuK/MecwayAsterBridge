@@ -859,6 +859,11 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
 - Mecway's own solver ties no rotations for a shell edge as slave: the bonded strip and
   the T-joint become a mechanism there (measured headless, Mecway 34). A comparison with
   Mecway is therefore only possible with a continuous mesh.
+- Shells with overhang (part of the slave does not lie opposite the master): the bridge
+  leaves the same nodes free as CCX, but is more flexible than Mecway and closer to a
+  beam estimate (overhanging plate: bridge 0.309 mm, beam estimate ~0.36 mm, Mecway
+  0.084 mm). The bridge deliberately follows the theory here; do not compare such models
+  with Mecway (KNOWN_BUGS 128).
 - Shells with an *Element offset* in the contact: the slave nodes (always the Mecway
   nodes) are tied to the master nodes; only with `LIAISON_MAIL` on a master on its own
   nodes (solid on a quad8 shell) to the offset surface. The bridge reports which

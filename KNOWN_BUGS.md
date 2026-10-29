@@ -155,7 +155,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
    to fix in the bridge; do not compare such models with Mecway.
 
-128\. **Bonded contact with shells: displacements differ from Mecway** (question,
+128\. **Bonded contact with shells: displacements differ from Mecway** (decided: the bridge
+   follows the theory, user 29 Oct 2026; documented in Settings contact §3.10;
    `bridge_mesh._bonded`, Code-Aster 17.4 / Mecway 34 headless, 28 Oct 2026). The bridge
    ties only the slave nodes CCX's `*TIE` ties (`ccx_tied_nodes`: a master face opposite
    the node within the in-face tolerance tolloc, 2.5% of a third of the mean master-triangle
@@ -172,7 +173,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    a block Mecway 0.198 mm, bridge 0.500 mm (before 0.0044 mm), estimate 0.33–0.46 mm.
    Mecway is stiffer than the beam estimate; suspected cause: CCX expands the shells into
    solids and ties the expanded faces (rigid knots), NOT investigated. The existing shell
-   verification cases (LS-07a..k, LS-66, TH-04d) are unchanged.
+   verification cases (LS-07a..k, LS-66, TH-04d) are unchanged. Not adjusted towards Mecway:
+   the bridge is closer to the beam estimate. Remove this item only if the cause in Mecway
+   is found and confirmed.
 
 130\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
    (confirmed, Code-Aster 17.4 and Mecway 34 headless; `bridge_acoustic.py`, MODELISATION

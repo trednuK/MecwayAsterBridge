@@ -998,13 +998,15 @@ GLOSSARY = OrderedDict([
                             u"... m1, b1). Needed for the formula symbols "
                             u"s1, s2, s3, tr. Off by default.")),
     ("principal_strains", ("file", u"Resultaatveld: hoofdrekken zoals "
-                           u"Mecway (lprincipalstrain1..3; bij "
-                           u"Green-Lagrange greenlagrangeprincipalstrain1..3; "
+                           u"Mecway (lprincipalstrain1..3; niet-lineair met "
+                           u"grote verplaatsingen (Green-Lagrange-rek) "
+                           u"greenlagrangeprincipalstrain1..3; "
                            u"schalen lprincipalstrain1u1 .. b1). Nodig voor "
                            u"de formulesymbolen e1, e2, e3, GLe1, GLe2, "
                            u"GLe3. Standaard uit.",
                            u"Result field: principal strains as Mecway "
-                           u"(lprincipalstrain1..3; with Green-Lagrange "
+                           u"(lprincipalstrain1..3; nonlinear with large "
+                           u"displacements (Green-Lagrange strain) "
                            u"greenlagrangeprincipalstrain1..3; shells "
                            u"lprincipalstrain1u1 .. b1). Needed for the "
                            u"formula symbols e1, e2, e3, GLe1, GLe2, GLe3. "
@@ -1737,13 +1739,15 @@ SETTING_HELP = {
                             u"de energienorm van de foutschatter). Een "
                             u"piekwaarde heeft veel minder nodig: plaat met "
                             u"gat binnen 1% bij 0,15% (thermisch) en 0,4% "
-                            u"(plasticiteit). Standaard 1.",
+                            u"(plasticiteit). Standaard 0,3 (piek thermisch −2,6%, "
+                            u"plasticiteit +0,4%).",
                             u"Target: global relative error of the ZZ "
                             u"indicator (%, L2 norm of the stress or heat "
                             u"flux, not the energy norm of the error "
                             u"estimator). A peak value needs much less: "
                             u"plate with a hole within 1% at 0.15% (thermal) "
-                            u"and 0.4% (plasticity). Default 1."),
+                            u"and 0.4% (plasticity). Default 0.3 (peak thermal "
+                            u"−2.6%, plasticity +0.4%)."),
     "adapt_homard_max_loops": (u"Maximaal aantal verfijningslussen; elke lus "
                                u"is een volledige oplossing (niet-lineair: "
                                u"de hele lastgeschiedenis). Een enkele lus "

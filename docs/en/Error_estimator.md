@@ -477,7 +477,7 @@ and `#ASTER-OPTIE adapt_homard_target = 0.3`.
 | Setting (label) | Key | Default | When to change |
 |---|---|---|---|
 | Adaptive refinement (HOMARD, inside the job) | `adapt_homard` | off | on for the loop; each loop is a full solve |
-| Target: global error ZZ [%] | `adapt_homard_target` | 1 | 1 for the global field; much lower for a peak value: plate with a hole within 1% at 0.15% (thermal, AD-10) and 0.4% (plasticity, AD-11) |
+| Target: global error ZZ [%] | `adapt_homard_target` | 0.3 | 1 is enough for the global field; a peak value needs less: plate with a hole within 1% at 0.15% (thermal, AD-10) and 0.4% (plasticity, AD-11) |
 | Max. number of refinement loops | `adapt_homard_max_loops` | 5 | higher if the target is not reached yet (AD-10/11: 8 to 9 loops from 12 elements) |
 | Max. number of elements after refining | `adapt_homard_max_elements` | 200000 | according to the memory; also `memory_limit` |
 
@@ -487,8 +487,12 @@ maximum number of loops or elements, or when the error lies above the best value
 loops in a row**. One rising loop does not stop the loop: HOMARD's transition elements
 make the global error rise now and then (AD-10: 1.92 → 1.71 → 0.83 → 1.24 → 0.62 %).
 
-**Why this default:** 1% is an ample target for the global field; a lower target quickly
-costs many elements. See §7.6 for a peak value.
+**Why this default:** 0.3% is a compromise between the global field and a peak value
+(measured on the plate with a hole, 29 Oct 2026). At 1% AD-10 stopped after 2 loops with the
+heat flux at the hole −6%; at 0.3% −2.6% with 1783 elements (0.15%: −0.87% with 2621).
+With plasticity (AD-11) 0.3% gave the stress at the hole +0.4% and the plastic strain +2.9%
+(the target was not reached in 10 loops, 7874 elements). A lower target quickly costs many
+elements. See §7.6 for a peak value.
 
 ### 7.3 How the bridge translates it
 

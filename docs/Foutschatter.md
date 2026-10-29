@@ -478,7 +478,7 @@ Voor één model kan het ook met `#ASTER-OPTIE`, bijv. `#ASTER-OPTIE adapt_homar
 | Instelling (label) | Sleutel | Standaard | Wanneer aanpassen |
 |---|---|---|---|
 | Adaptieve verfijning (HOMARD, binnen de job) | `adapt_homard` | uit | aan voor de lus; elke lus is een volledige oplossing |
-| Doel: globale fout ZZ [%] | `adapt_homard_target` | 1 | 1 voor het globale veld; voor een piekwaarde veel lager: plaat met gat binnen 1% bij 0,15% (thermisch, AD-10) en 0,4% (plasticiteit, AD-11) |
+| Doel: globale fout ZZ [%] | `adapt_homard_target` | 0,3 | 1 is genoeg voor het globale veld; een piekwaarde vraagt minder: plaat met gat binnen 1% bij 0,15% (thermisch, AD-10) en 0,4% (plasticiteit, AD-11) |
 | Max. aantal verfijningslussen | `adapt_homard_max_loops` | 5 | hoger als het doel nog niet gehaald is (AD-10/11: 8 à 9 lussen vanaf 12 elementen) |
 | Max. aantal elementen na verfijnen | `adapt_homard_max_elements` | 200000 | naar het geheugen; ook `memory_limit` |
 
@@ -488,8 +488,12 @@ aantal lussen of elementen, of als de fout **twee lussen achter elkaar** boven d
 waarde ligt. Eén stijgende lus stopt de lus niet: HOMARD's overgangselementen laten de
 globale fout soms even stijgen (AD-10: 1,92 → 1,71 → 0,83 → 1,24 → 0,62 %).
 
-**Waarom deze standaard:** 1% is een ruim doel voor het globale veld; een lager doel kost
-snel veel elementen. Zie §7.6 voor een piekwaarde.
+**Waarom deze standaard:** 0,3% is een compromis tussen het globale veld en een piekwaarde
+(gemeten op de plaat met gat, 29 okt 2026). Bij 1% stopte AD-10 na 2 lussen met de
+warmtestroom aan het gat −6%; bij 0,3% −2,6% met 1783 elementen (0,15%: −0,87% met 2621).
+Met plasticiteit (AD-11) gaf 0,3% de spanning aan het gat +0,4% en de plastische rek +2,9%
+(het doel werd in 10 lussen niet gehaald, 7874 elementen). Een lager doel kost snel veel
+elementen. Zie §7.6 voor een piekwaarde.
 
 ### 7.3 Hoe de bridge het vertaalt
 

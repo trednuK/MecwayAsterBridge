@@ -90,7 +90,7 @@ def settings(model_data=None):
         return None
     if analysis.get("solver_command") not in SOLVERS:
         return None
-    return {"target": float(sub.get("adapt_homard_target", 1.0)),
+    return {"target": float(sub.get("adapt_homard_target", 0.3)),
             "max_loops": int(sub.get("adapt_homard_max_loops", 5)),
             "max_elements": int(sub.get("adapt_homard_max_elements",
                                         200000))}

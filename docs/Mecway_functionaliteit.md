@@ -159,7 +159,7 @@ Verlijmd contact per combinatie (slave op master):
 | Totale rek | Ja | Veld `strain` (standaard uit): `lstrain*`, niet-lineair `greenlagrangestrain*`; schalen boven/midden/onder. Geen logaritmische rek en geen hoofdrekken. |
 | Contactdruk, contactstatus | Deels | Veld `contact`: `contactpressure`, `contactstate` (0/1/2). Geen contactschuifspanning en -verplaatsing; glijden (2) NIET geverifieerd. |
 | Factor of safety | Ja | Veld `safety_factor` (von Mises, §5). |
-| Principal stress, Tresca stress, principal strain | Ja | Velden `principal_stresses` en `principal_strains` (standaard uit): `principal1..3`, `tresca`, `lprincipalstrain1..3` (Green-Lagrange: `greenlagrangeprincipalstrain1..3`) van volume-elementen en `principal1u1`, `trescau1`, `lprincipalstrain1u1` .. (boven/midden/onder) van schalen, berekend zoals Mecway (eigenwaarden per elementknoop, knoop = gemiddelde). Verificatie FX-02, FX-04, FX-05. |
+| Principal stress, Tresca stress, principal strain | Ja | Velden `principal_stresses` en `principal_strains` (standaard uit): `principal1..3`, `tresca`, `lprincipalstrain1..3` (niet-lineair met grote verplaatsingen, Green-Lagrange-rek: `greenlagrangeprincipalstrain1..3`) van volume-elementen en `principal1u1`, `trescau1`, `lprincipalstrain1u1` .. (boven/midden/onder) van schalen, berekend zoals Mecway (eigenwaarden per elementknoop, knoop = gemiddelde). Verificatie FX-02, FX-04, FX-05. |
 | Temperatuur, warmteflux | Ja | Thermisch. |
 | Eigenfrequenties, kniklastfactoren, effectieve massa | Ja | Fractie van de effectieve massa anders dan Mecway (KB49). |
 | Akoestische druk | Ja | [`Akoestiek.md`](Akoestiek.md). |

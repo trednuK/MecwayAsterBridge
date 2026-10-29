@@ -418,7 +418,8 @@ opeenvolgende meshes.
   de bridge laat dezelfde 58 knopen vrij die CCX in `WarnNodeMissTiedContact.nam` noemt;
   verplaatsing 1,8973 mm, gelijk aan Mecway (grootste knoopverschil 0,004%; eerst
   0,096 mm). Met schalen laat de bridge dezelfde knopen vrij als CCX, maar de verplaatsingen
-  wijken af van Mecway (KNOWN_BUGS 128).
+  wijken af van Mecway; de bridge ligt dichter bij een balkschatting en volgt hier bewust
+  de theorie (KNOWN_BUGS 128).
 
 ### LS-08 Node temperature (thermische spanning per knoop)
 

@@ -57,7 +57,7 @@
   Mecway's averaging rule (S13d, OR-11).
 
 - **Adaptive refinement with HOMARD for thermal and nonlinear static** (new setting
-  `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 1%),
+  `adapt_homard` on the pages Thermal and Nonlinear, with `adapt_homard_target` (default 0.3%),
   `adapt_homard_max_loops` and `adapt_homard_max_elements`): Code-Aster refines the mesh
   itself in one run (solve, ZZ error indicator, HOMARD `MACR_ADAP_MAIL`, solve again) and the
   result comes back onto the original Mecway mesh with `PROJ_CHAMP`; the Mecway model stays
@@ -73,11 +73,13 @@
   `lprincipalstrain3b1`, computed as Mecway 34 does (eigenvalues of the global tensor of the
   surface per element node, node value = mean). Principal strains of shells no longer need the
   field `strain`. Verification FX-04.
-- **Green-Lagrange principal strains under Mecway's names**: with large displacements the
-  principal strains are now written as `greenlagrangeprincipalstrain1..3` (was
+- **Green-Lagrange principal strains under Mecway's names** (**behaviour change**, nonlinear
+  analyses only): with large displacements (Green-Lagrange strain) the principal strains are
+  now written as `greenlagrangeprincipalstrain1..3` (was
   `lprincipalstrain1..3`), as Mecway 34 itself does; the formula symbols `GLe1`..`GLe3` work,
   and `e`, `g`, `e1`..`e3` in a formula read the Green-Lagrange values there (Mecway rewrites
-  them to `GLe`, ...). Verification FX-05.
+  them to `GLe`, ...). Linear analyses keep `lprincipalstrain1..3`; results loaded earlier
+  keep the old name. Verification FX-05.
 - **Summary of every Code-Aster run (GitHub issue #7)**: after every run (route `liml` and
   `tabel`, also a failed or stopped run) the bridge writes `<model>_<run-id>_aster_summary.txt`
   in the work folder: errors and alarms with their count, nonlinear steps, bridge lines,
@@ -176,9 +178,9 @@
   Mecway's step (default 1 = Mecway's step); models without *every n* (and D31) compute exactly
   as before. Mode superposition: the internal step is never larger than Mecway's step either.
   Verification MD-08a/b (Mecway 34 headless, n = 2 and 5: equal to Mecway within 3e-8);
-  PL-11, PL-12 now without the workaround (KNOWN_BUGS 127 removed).
-  time-table force). Note for D30 too: with *Generate solution every n time steps* > 1, set
-  "Solver steps per output interval" to n (KNOWN_BUGS 127).
+  PL-11, PL-12 now without the workaround (KNOWN_BUGS 127 removed). **Behaviour change:**
+  results of such models change (towards Mecway's) and the run takes up to n times as many
+  solver steps.
 - **Acoustic Resonance 2D (STAPPENPLAN S16d)**: Mecway's *Acoustic Resonance 2D* (A20) is now
   translated as the acoustic cavity modes (`acoustic_modes_3d`, chosen by `auto`) with
   `PHENOMENE='ACOUSTIQUE'`, `MODELISATION='PLAN'` on tri3/tri6/quad4/quad8 in the XY plane:

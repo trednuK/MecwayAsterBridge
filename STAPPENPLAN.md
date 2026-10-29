@@ -53,6 +53,7 @@ S7, S8, S5, S9).
 | S14 | Hyperelastic material (Neo-Hooke, Mooney-Rivlin) | done | – | V2026.4 (NL-50..53, issue #5); hyperfoam waits for a Windows Code-Aster with MFront (see §S14) |
 | S15 | Pre-tension section (bolt prestress) | done | – | branch worktree-agent-a58def16c170e1c4c (28 Oct 2026): `bridge_pretension` (cut + LIAISON_DDL to a reference node), force and length adjustment in linear/nonlinear static; PT-01 .. PT-05 OK (exact / joint diagram 0.1%, Mecway CCX headless within 0.01%); not yet tested in the Mecway GUI (see §S15) |
 | S15b | Pre-tension section in dynamic response (D30/D31) and the spring element variant (internal solver) | done | S15 | branch worktree-agent-a08bcf96702c925db on nacht-int2 (28 Oct 2026): prism variant in `dyna_impl_3d` (step from t = 0 like Mecway), spring variant in linear static as two nodal forces; PT-06 .. PT-10 OK (Mecway headless CCX within 0.06%, internal solver exact); spring variant in Frequency/Buckling ERROR (geometric stiffness, see §S15b); not yet tested in the Mecway GUI |
+| S15c | Geometric stiffness of (pretensioned) springs in Buckling and Frequency with prestress, as Mecway does (now an ERROR for the spring pretension variant) | later | S15b | split off from S15b (29 Oct 2026); KNOWN_BUGS 47, 124 (b); see §S15b |
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
 | S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); step size with *every n time steps* fixed later (former KNOWN_BUGS 127, MD-08); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
 | S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
@@ -1368,7 +1369,8 @@ Mecway's spring element variant (internal solver).
   none: ERROR, recorded in KNOWN_BUGS 124 (b) and 47.
 - *Open*: GUI check in Mecway (a spring pretension made in the Mecway dialog: which faceid and mode
   attribute it writes); whether a geometric stiffness for springs is wanted in buckling/modal with
-  prestress (would apply to all tensioned springs, KNOWN_BUGS 47).
+  prestress (would apply to all tensioned springs, KNOWN_BUGS 47). Decision (user, 29 Oct 2026): keep
+  the ERROR for now; geometric stiffness of springs is step S15c.
 
 ### S16 – 2D and axisymmetric analyses
 **Goal:** translate Mecway's 2D analysis types (S20, D20, SA0, also A20 and thermal 2D); now the run stops.
