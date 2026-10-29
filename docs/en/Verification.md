@@ -2377,18 +2377,23 @@ along X and skew, with and without vector + 30°):
   `solver_nprec` -1 with `FACTOR_57` and an error of 13 (loose part: 64): then the
   bridge gives the message about a singular matrix.
 
-### Beams with warping (BU-38 … BU-42, LS-90, LS-91)
+### Beams with warping (BU-38 … BU-42, LS-90 … LS-95b)
 
 - **Purpose**: `elem_beam` = `POU_D_TG` ([Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)):
   shear centre (`EY`, `EZ`), warping constant (`JG`) and Wagner terms (`IYR2`, `IZR2`) from
   `bridge_warping.section_props` or an `#ASTER-SECTIE` line, and the rule for the warping
   `GRX` at supports (`beam_warping`). Module `tests_balk_welving.py`,
-  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91` (about 1 minute).
+  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91 LS-90d LS-94 LS-95`
+  (about 2 minutes).
 - **Theory**: flexural-torsional buckling i0²(P − P_b)(P − P_T) − P²·e² = 0 (Timoshenko &
   Gere, 1961, §5.3); lateral-torsional buckling of an I beam on fork supports under
   uniform moment M_cr = π/L·√(E·I_z·G·J·(1 + π²E·C_w/(G·J·L²))) (ibid. §6.2); torsion with
   restrained warping φ = T/(G·J)·(L − tanh(kL)/k), k = √(G·J/(E·C_w)) (ibid. §5.4; Trahair,
-  1993). C_w of the I profile t_f·b³·h²/24 (centre lines).
+  1993), with the bimoment B(0) = T·tanh(kL)/k at the clamp. C_w of the I profile
+  t_f·b³·h²/24 (centre lines), of the C profile t·b³·h²/12·(3b + 2h)/(6b + h) (ibid.
+  §5.3), of the L profile t³/36·(a′³ + b′³) (warping through the thickness of the legs;
+  AISC Design Guide 9, Seaburg & Carter, 1997). A transverse load F through the centroid
+  gives the torque T = F·e about the shear centre.
 
 | ID | Model | Reference | Result |
 |---|---|---|---|
@@ -2401,13 +2406,32 @@ along X and skew, with and without vector + 30°):
 | LS-90b | the same with `beam_warping` = `free` | T·L/(G·J) | exact |
 | LS-90c | the same with the default `POU_D_E` | T·L/(G·J) | exact (unchanged) |
 | LS-91 | the same beam on fork supports, T at midspan | φ = T/(2G·J)·(L/2 − tanh(kL/2)/k) = 0.0045691 rad | 0.0045591 (−0.22%) |
+| LS-90d | LS-90, with two `#ASTER-POST` lines that write max \|`BX`\| of `EFGE_ELNO` into the `.mess` | bimoment B(0) = T·tanh(kL)/k = 15.255 N·m² | 15.333 (+0.51%; tolerance 2%) |
+| LS-94 | C cantilever 100 × 50 × 6 mm, L = 1 m, 20 `POU_D_TG`, V = +Y, clamp, F = 1000 N along +Y at the tip (through the centroid) | φ = F·e/(G·J)·(L − tanh(kL)/k) = +0.019988 rad (e = 29.375 mm, shear centre on the +W side) | +0.019912 (−0.38%; tolerance 2%) |
+| LS-94b | the same with V = (0, −1, 0) (section turned over) | −0.019988 rad | −0.019912 (−0.38%) |
+| LS-95 | L cantilever 120 × 80 × 8 mm (a > b), L = 1 m, 20 `POU_D_E`, F = 1000 N along +Y and +Z at the tip | Mecway 34 headless (internal solver): DY 3.3684 mm, DZ 0.60063 mm | equal (< 1e-6) |
+| LS-95b | the same with `POU_D_TG` | φ = T/(G·J)·(L − tanh(kL)/k) = 0.019809 rad (T = 53.81 N·m about the heel) | 0.019808 (−0.005%; tolerance 2%) |
 
-- **Section**: for ssll103a's angle the bridge computes `EZ` = 40.96 mm (test `EY`
+- **Section**: for ssll103a's angle the bridge computes `EZ` = −40.96 mm (test `EY`
   41.012), `JG` = 4.43988e-11 m⁶ (test 4.4398819e-11) and `IZR2` = 8.4848e-8 m⁵ (test
-  `IYR2` 8.4948e-8): the test's y and z axes are z and y for Mecway's L profile (Mecway's
-  V is the weak axis). C profile: `EZ` = 29.33 mm (centre-line formula e + x_c = 29.375),
-  primary C_w 4.0135e-10 m⁶ = the closed form, plus 1.1% warping through the plate
-  thickness.
+  `IYR2` 8.4948e-8; both with the sign reversed: `EZ` = −40.96 mm, `IZR2` < 0, because the
+  heel is on the +W side): the test's y and z axes are z and y for Mecway's L profile
+  (Mecway's V is the weak axis). C profile: `EZ` = −29.33 mm (centre-line formula e + x_c
+  = 29.375), primary C_w 4.0135e-10 m⁶ = the closed form, plus 1.1% warping through the
+  plate thickness.
+- **Mecway's axes** (LS-94, LS-95): Mecway's stress recovery points `stresspt1..4`
+  (corners of the profile) under an end moment of 100 N·m about V and about W (beam along
+  X, V = +Y, so W = +Z; headless Mecway 34, 29 Oct 2026) match this rule within 1e-13:
+  local v = −sin θ·dx + cos θ·dy, w = −(cos θ·dx + sin θ·dy) in the drawing of the profile
+  (`bridge_warping.mecway_frame`; dx, dy from the centroid), θ = 0 for I, T and C and for
+  L the principal angle within (−45°, 45°]. The web of a C profile is therefore on the
+  +W side. LS-94 and LS-95 contain those measured stresses as a check (ratio 1). Before
+  29 Oct 2026 the shear centre was on the wrong side (LS-94, LS-94b and LS-95b with the
+  opposite sign) and `IY` and `IZ` of an L with a > b were swapped (LS-95 DY and DZ
+  exchanged, also with `POU_D_E`).
+- **Not verified**: lateral-torsional buckling of a mono-symmetric profile under bending
+  (T, C), where the sign of `IYR2`/`IZR2` changes the critical load, only through the
+  same axis convention; the bimoment only in size (not the sign of `BX`).
 - **Rule at supports**: a *Fixed support* (`BLOCAGE`) alone does not fix `GRX` (C column
   343.8 without and 385.0 with `GRX` = 0, run 28 Oct 2026); the bridge therefore adds its
   own `DDL_IMPO GRX` on the node group `BRGRX`. LS-90/LS-90b show the difference clamp/free

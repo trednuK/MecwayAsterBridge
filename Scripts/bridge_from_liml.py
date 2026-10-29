@@ -658,11 +658,12 @@ def _profile_props(kind, a, b, c, d):
         return A, i_v, i_w, J
     if kind == "L":
         # a horizontal leg, b vertical leg, c thickness. Mecway uses the
-        # principal axes: V is at theta to leg b, rotated away from leg a
-        # (theta as Mecway shows it).
+        # principal axes: V is at theta to leg b, theta wrapped into
+        # (-45, 45] degrees (bridge_warping.principal_angle, measured with
+        # Mecway 34: with a > b the plain atan2 angle swapped IY and IZ).
         A, i_w, i_v, i_vw = _rects_inertia([
             (0.0, a, 0.0, c), (0.0, c, c, b)])
-        theta = 0.5 * math.atan2(-2.0 * i_vw, i_w - i_v)
+        theta = bridge_warping.principal_angle(i_w, i_v, i_vw)
         s, co = math.sin(theta), math.cos(theta)
         i_pv = i_v * co * co + i_w * s * s + 2.0 * i_vw * s * co
         i_pw = i_v + i_w - i_pv
@@ -705,7 +706,7 @@ def _profile_shear_coefs(kind, a, b, c, d):
         # _profile_props).
         A, i_w, i_v, i_vw = _rects_inertia([
             (0.0, a, 0.0, c), (0.0, c, c, b)])
-        theta = 0.5 * math.atan2(-2.0 * i_vw, i_w - i_v)
+        theta = bridge_warping.principal_angle(i_w, i_v, i_vw)
         cs2, sn2 = math.cos(theta) ** 2, math.sin(theta) ** 2
         leg_a, leg_b = a * c, (b - c) * c
         a_v = k * (leg_b * cs2 + leg_a * sn2)

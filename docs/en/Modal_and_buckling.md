@@ -522,7 +522,7 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
 2. Shear centre S: the section rotates about this point in torsion.
 3. `EZ` (and `EY`): the vector from S to G in the local axes, as `AFFE_CARA_ELEM` asks for it.
 4. Local axis y = Mecway's V axis (vertical in Mecway's drawing of the profile).
-5. Local axis z = Mecway's W axis (horizontal; whether it points to the right in Mecway's drawing is not checked).
+5. Local axis z = Mecway's W axis: the web of a C profile is on the +W side, the flanges point to −W (measured headless with Mecway 34, 29 Oct 2026), so `EZ` < 0.
 6. Twist θx about S; the warping `GRX` is the change of θx along the beam.
 
 ![Clamp and fork supports](../img/warping_supports.svg)
@@ -548,11 +548,13 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
   and everywhere else. `free`: free everywhere; `blocked`: fixed at every supported node
   (e.g. end plates at a pinned support). The log names the rule per node. Note: a *Fixed
   support* alone (Code-Aster `BLOCAGE`) does not fix the warping; this rule does.
-- **Measured** ([`Verification.md`](Verification.md) §7, BU-38 … BU-42, LS-90, LS-91):
+- **Measured** ([`Verification.md`](Verification.md) §7, BU-38 … BU-42, LS-90 … LS-95b):
   C column of BU-35 385.0 (theory 386.1, hex20 393.0); lateral-torsional buckling of an I
   beam on fork supports −0.10% from Timoshenko & Gere §6.2; ssll103a equal to
   `VALE_CALC`; T column −0.6% from the theory; torsion of a clamped I beam with
-  restrained warping −0.09%.
+  restrained warping −0.09%, the bimoment at the clamp +0.5%; the twist of a C and an L
+  cantilever under a transverse load through the centroid (sign and size, so the
+  position of the shear centre) −0.4% and −0.01%.
 - **Limits**: the warping is continuous at a node, also where members meet at an angle
   (as in Code-Aster); with a *flexible joint* and an element offset the beam lies on its
   own node without a support, so the warping is free there. Nodal reaction forces of
@@ -560,9 +562,12 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
   (WARNING, KNOWN_BUGS 123); displacements, section forces and buckling factors are
   right. The bimoment (`BX` in `EFGE_ELNO`) does not go to Mecway. In explicit dynamics
   the beams become `POU_D_T` (WARNING): the mass matrix of `POU_D_TG` has no mass for
-  `GRX`, and the explicit scheme stopped on it with `FACTOR_11`. Whether Mecway's W
-  axis points to the right in the drawing is not checked: it only changes the sign of
-  `EZ` and `IZR2` of C and L profiles, not a buckling load under axial force.
+  `GRX`, and the explicit scheme stopped on it with `FACTOR_11`. The V and W axes of C
+  and L profiles are Mecway's: measured with Mecway's stress recovery points
+  (`stresspt1..4`) under moments about V and W (headless, Mecway 34, 29 Oct 2026). For an
+  L profile with the horizontal leg longer than the vertical one (a > b) V is the major
+  principal axis; until 29 Oct 2026 the bridge swapped `IY` and `IZ` there (also with
+  `POU_D_E`).
 
 ## 4. Messages and solutions
 

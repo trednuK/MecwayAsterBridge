@@ -1580,9 +1580,19 @@ offsets, shells): all diagnostics OK. Found: nodal reactions of `POU_D_TG` are o
 103.0 N instead of 100 N in LS-01, sum right; vanishes with AY -> 0, not with POU_D_T): WARNING and KNOWN_BUGS
 122. Explicit dynamics: `POU_D_TG` has no mass for GRX (MECANONLINE_78, then FACTOR_11 in DY-02 with DIFF_CENT),
 so the beams become `POU_D_T` there with a WARNING (`bridge_from_liml._warp_beam_choice`; run OK after it).
-Open: a GUI test in Mecway 34 (the Elements page renders the new choice and setting, offscreen gui_cap); whether Mecway's W axis points to the right in its section drawing (sign of EZ/IZR2 of C and L only);
+Open: a GUI test in Mecway 34 (the Elements page renders the new choice and setting, offscreen gui_cap);
 lateral-torsional buckling of mono-symmetric sections (T, C under bending) only checked through the shared
 IYR2/EY convention of ssll103a, not against a shell model.
+Follow-up (29 Oct 2026): Mecway's section axes measured headless (Mecway 34, own solver) from its stress
+recovery points `stresspt1..4` under end moments about V and W (C, T and three L profiles, match within
+1e-13): the drawing x of `_rects` runs along -W (C web at +W, so the shear centre at +W and EZ < 0; the bridge
+had the opposite sign) and the L principal angle is wrapped into (-45, 45] degrees (for a > b the bridge had
+swapped IY/IZ, also with POU_D_E). Fixed in `bridge_warping.mecway_frame`/`principal_angle` (used by
+`_profile_props`, `_profile_shear_coefs`, `section_props` and the beam sidecar `bridge_beams`). New cases:
+LS-94/LS-94b C cantilever, transverse tip load through the centroid, twist F e/(GJ)(L - tanh(kL)/k) -0.38%
+(sign confirms Code-Aster's EY/EZ = shear centre -> centroid); LS-95 L 120 x 80 POU_D_E equal to Mecway;
+LS-95b L twist -0.005%; LS-90d bimoment at the clamp (max |BX| of EFGE_ELNO printed to the .mess with
+#ASTER-POST) +0.51% from T tanh(kL)/k. BX sign not compared.
 
 
 ### S20 – Geometrically nonlinear beams (`POU_D_T_GD`) as element choice

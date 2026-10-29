@@ -529,7 +529,7 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
 2. Dwarskrachtcentrum S: om dit punt draait de doorsnede bij torsie.
 3. `EZ` (en `EY`): de vector van S naar G in de lokale assen, zoals `AFFE_CARA_ELEM` hem vraagt.
 4. Lokale as y = Mecway's V-as (verticaal in Mecway's tekening van het profiel).
-5. Lokale as z = Mecway's W-as (horizontaal; of die in Mecway's tekening naar rechts wijst is niet nagegaan).
+5. Lokale as z = Mecway's W-as: het lijf van een C-profiel ligt aan de +W-kant, de flenzen wijzen naar −W (headless gemeten met Mecway 34, 29 okt 2026), dus `EZ` < 0.
 6. Torsie θx om S; de welving `GRX` is de verandering van θx langs de balk.
 
 ![Inklemming en vorkopleggingen](img/warping_supports.svg)
@@ -556,11 +556,13 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
   opgelegde knoop (bijv. kopplaten bij een scharnier). De log noemt per knoop welke
   regel gold. Let op: *Fixed support* alleen (Code-Aster `BLOCAGE`) houdt de welving niet
   vast; daarvoor dient deze regel.
-- **Gemeten** ([`Verificatie.md`](Verificatie.md) §7, BU-38 … BU-42, LS-90, LS-91):
+- **Gemeten** ([`Verificatie.md`](Verificatie.md) §7, BU-38 … BU-42, LS-90 … LS-95b):
   C-kolom van BU-35 385,0 (theorie 386,1, hex20 393,0); kip van een I-ligger op
   vorkopleggingen −0,10% van Timoshenko & Gere §6.2; ssll103a gelijk aan `VALE_CALC`;
   T-kolom −0,6% van de theorie; torsie van een ingeklemde I-ligger met verhinderde
-  welving −0,09%.
+  welving −0,09%, de bimoment bij de inklemming +0,5%; de verdraaiing van een C- en een
+  L-ligger onder een dwarslast door het zwaartepunt (teken en grootte, dus de plaats van
+  het dwarskrachtcentrum) −0,4% en −0,01%.
 - **Grenzen**: welving is per knoop doorgaand, ook waar staven onder een hoek samenkomen
   (zoals Code-Aster); bij een *flexible joint* en een element-offset ligt de balk op een
   eigen knoop zonder oplegging, dus is de welving daar vrij. Reactiekrachten per knoop
@@ -568,9 +570,11 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
   (WARNING, KNOWN_BUGS 123); verplaatsingen, snedekrachten en knikfactoren kloppen. De
   bimoment (`BX` in `EFGE_ELNO`) gaat niet naar Mecway. In expliciete dynamica worden de
   balken `POU_D_T` (WARNING): de massamatrix van `POU_D_TG` heeft geen massa voor `GRX`, en
-  het expliciete schema stopte daarop met `FACTOR_11`. Of Mecway's W-as in de tekening
-  naar rechts wijst is niet nagegaan: dat verandert alleen het teken van `EZ` en `IZR2`
-  van C- en L-profielen, niet een kniklast onder normaalkracht.
+  het expliciete schema stopte daarop met `FACTOR_11`. De assen V en W van C- en
+  L-profielen zijn die van Mecway: gemeten met Mecway's spanningspunten (`stresspt1..4`)
+  onder momenten om V en W (headless, Mecway 34, 29 okt 2026). Bij een L-profiel met het
+  liggende been langer dan het staande (a > b) is V de sterke hoofdas; tot 29 okt 2026
+  verwisselde de bridge daar `IY` en `IZ` (ook met `POU_D_E`).
 
 ## 4. Meldingen en oplossingen
 

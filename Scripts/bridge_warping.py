@@ -113,20 +113,41 @@ def _lin(f0, f1, g0, g1):
     return (2.0 * f0 * g0 + f0 * g1 + f1 * g0 + 2.0 * f1 * g1) / 6.0
 
 
-def section_props(kind, a, b, c, d):
+def principal_angle(i_w, i_v, i_vw):
     """
-    {"EY", "EZ", "JG", "IYR2", "IZR2"} of an I, T, C or L profile (unit of
-    the dimensions, SI if they are in m), or None for another kind or
-    impossible dimensions. Local y = V (vertical in Mecway's drawing), z = W
-    (horizontal, +z = to the right in the drawing: as the beam sidecar
-    bridge_beams; whether Mecway's W points that way is NOT verified, it
-    only changes the sign of EZ and IZR2 of C and L profiles, not a
-    buckling load under axial force); L in the principal axes of
-    _profile_props (V at theta to leg b).
+    Mecway's principal angle of an L profile from the inertias of the
+    drawing (_rects: i_w about the horizontal axis, i_v about the vertical
+    axis, i_vw the product), wrapped into (-45, 45] degrees. Measured with
+    Mecway 34 headless (29 Oct 2026, own solver, stress recovery points
+    stresspt1..4 of L 120 x 80, 80 x 120 and 100 x 100 x 10 mm under end
+    moments about V and W, matched within 1e-13; tip rotations give the
+    same I about V): without the wrap (plain atan2) the angle of an L with
+    the horizontal leg a > b is 90 degrees off, so V and W (and IY/IZ) were
+    swapped for such an L.
     """
-    if kind not in ("I", "T", "C", "L") or min(a, b, c) <= 0.0 or (
-            kind != "L" and d <= 0.0):
-        return None
+    theta = 0.5 * math.atan2(-2.0 * i_vw, i_w - i_v)
+    while theta > math.pi / 4.0 + 1e-12:
+        theta -= math.pi / 2.0
+    while theta <= -math.pi / 4.0 + 1e-12:
+        theta += math.pi / 2.0
+    return theta
+
+
+def mecway_frame(kind, a, b, c, d):
+    """
+    (area, to_local) of an I, T, C or L profile: to_local(x, y) maps a point
+    of the drawing (_rects: x horizontal, y vertical) to Mecway's local
+    section axes (y = V, z = W), centroid at the origin, or None for
+    impossible dimensions. V = (-sin t, cos t) in the drawing, and Mecway's
+    W points along -(cos t, sin t): the drawing x runs along -W (for t = 0:
+    a C profile has its web at +W and its flanges pointing to -W). t = 0
+    for I, T, C; principal_angle() for L. Measured with Mecway 34 headless
+    (29 Oct 2026): the stresses at Mecway's stress recovery points
+    stresspt1..4 (corners of the drawing) and at a user point pointy/pointz
+    under end moments about global Y and Z of a beam along X with V = +Y
+    (so W = U x V = +Z) match this map for C, T and three L profiles within
+    1e-13 (TestFiles/Verificatie LS-94/LS-95 rest on it).
+    """
     rects = _rects(kind, a, b, c, d)
     area = sum((x1 - x0) * (y1 - y0) for x0, x1, y0, y1 in rects)
     if area <= 0.0:
@@ -144,14 +165,31 @@ def section_props(kind, a, b, c, d):
             i_w += w * h ** 3 / 12.0 + w * h * dy * dy
             i_v += h * w ** 3 / 12.0 + w * h * dx * dx
             i_vw += w * h * dx * dy
-        theta = 0.5 * math.atan2(-2.0 * i_vw, i_w - i_v)
+        theta = principal_angle(i_w, i_v, i_vw)
     sn, cs = math.sin(theta), math.cos(theta)
 
-    def loc(x, y):
-        """Drawing point -> local (y, z): V' = (-sin, cos), W' = (cos, sin)
-        (the I about V' is i_pv of _profile_props)."""
+    def to_local(x, y):
         dx, dy = x - cx, y - cy
-        return (-sn * dx + cs * dy, cs * dx + sn * dy)
+        return (-sn * dx + cs * dy, -(cs * dx + sn * dy))
+    return area, to_local
+
+
+def section_props(kind, a, b, c, d):
+    """
+    {"EY", "EZ", "JG", "IYR2", "IZR2"} of an I, T, C or L profile (unit of
+    the dimensions, SI if they are in m), or None for another kind or
+    impossible dimensions. Local y = V, z = W as Mecway uses them
+    (mecway_frame: the C profile has its web at +W, so its shear centre
+    lies at +W and EZ < 0); L in Mecway's principal axes.
+    """
+    if kind not in ("I", "T", "C", "L") or min(a, b, c) <= 0.0 or (
+            kind != "L" and d <= 0.0):
+        return None
+    rects = _rects(kind, a, b, c, d)
+    frame = mecway_frame(kind, a, b, c, d)
+    if frame is None:
+        return None
+    area, loc = frame
 
     # Wagner integrals, exact (cubic) with 2 x 2 Gauss points per rectangle
     iyr2 = izr2 = 0.0

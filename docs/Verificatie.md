@@ -2386,18 +2386,23 @@ schuin, met en zonder vector + 30°):
   `FACTOR_11`, met `solver_nprec` -1 met `FACTOR_57` en een fout van 13 (los deel: 64):
   dan geeft de bridge de melding over een singuliere matrix.
 
-### Balken met welving (BU-38 … BU-42, LS-90, LS-91)
+### Balken met welving (BU-38 … BU-42, LS-90 … LS-95b)
 
 - **Doel**: `elem_beam` = `POU_D_TG` ([Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)):
   dwarskrachtcentrum (`EY`, `EZ`), welvingsconstante (`JG`) en Wagner-termen (`IYR2`,
   `IZR2`) uit `bridge_warping.section_props` of een `#ASTER-SECTIE`-regel, en de regel voor
   de welving `GRX` bij opleggingen (`beam_warping`). Module `tests_balk_welving.py`,
-  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91` (ongeveer 1 minuut).
+  `python run_verificatie.py BU-38 BU-39 BU-41 BU-42 LS-90 LS-91 LS-90d LS-94 LS-95`
+  (ongeveer 2 minuten).
 - **Theorie**: buig-torsieknik i0²(P − P_b)(P − P_T) − P²·e² = 0 (Timoshenko & Gere, 1961,
   §5.3); kip van een I-ligger op vorkopleggingen onder constant moment
   M_cr = π/L·√(E·I_z·G·J·(1 + π²E·C_w/(G·J·L²))) (idem §6.2); torsie met verhinderde welving
-  φ = T/(G·J)·(L − tanh(kL)/k), k = √(G·J/(E·C_w)) (idem §5.4; Trahair, 1993). C_w van het
-  I-profiel t_f·b³·h²/24 (hartlijnen).
+  φ = T/(G·J)·(L − tanh(kL)/k), k = √(G·J/(E·C_w)) (idem §5.4; Trahair, 1993), met de
+  bimoment B(0) = T·tanh(kL)/k bij de inklemming. C_w van het I-profiel t_f·b³·h²/24
+  (hartlijnen), van het C-profiel t·b³·h²/12·(3b + 2h)/(6b + h) (idem §5.3), van het
+  L-profiel t³/36·(a′³ + b′³) (welving door de dikte van de benen; AISC Design Guide 9,
+  Seaburg & Carter, 1997). Een dwarslast F door het zwaartepunt geeft om het
+  dwarskrachtcentrum het torsiemoment T = F·e.
 
 | ID | Model | Referentie | Resultaat |
 |---|---|---|---|
@@ -2410,12 +2415,32 @@ schuin, met en zonder vector + 30°):
 | LS-90b | idem met `beam_warping` = `free` | T·L/(G·J) | exact |
 | LS-90c | idem met de standaard `POU_D_E` | T·L/(G·J) | exact (ongewijzigd) |
 | LS-91 | dezelfde ligger op vorkopleggingen, T in het midden | φ = T/(2G·J)·(L/2 − tanh(kL/2)/k) = 0,0045691 rad | 0,0045591 (−0,22%) |
+| LS-90d | LS-90, met twee `#ASTER-POST`-regels die max \|`BX`\| van `EFGE_ELNO` in de `.mess` schrijven | bimoment B(0) = T·tanh(kL)/k = 15,255 N·m² | 15,333 (+0,51%; tolerantie 2%) |
+| LS-94 | uitkragende C 100 × 50 × 6 mm, L = 1 m, 20 `POU_D_TG`, V = +Y, inklemming, F = 1000 N langs +Y aan de top (door het zwaartepunt) | φ = F·e/(G·J)·(L − tanh(kL)/k) = +0,019988 rad (e = 29,375 mm, dwarskrachtcentrum aan de +W-kant) | +0,019912 (−0,38%; tolerantie 2%) |
+| LS-94b | idem met V = (0, −1, 0) (profiel omgekeerd) | −0,019988 rad | −0,019912 (−0,38%) |
+| LS-95 | uitkragende L 120 × 80 × 8 mm (a > b), L = 1 m, 20 `POU_D_E`, F = 1000 N langs +Y en +Z aan de top | Mecway 34 headless (eigen solver): DY 3,3684 mm, DZ 0,60063 mm | gelijk (< 1e-6) |
+| LS-95b | idem met `POU_D_TG` | φ = T/(G·J)·(L − tanh(kL)/k) = 0,019809 rad (T = 53,81 N·m om de hiel) | 0,019808 (−0,005%; tolerantie 2%) |
 
-- **Doorsnede**: de bridge berekent voor ssll103a's hoekprofiel `EZ` = 40,96 mm (test
+- **Doorsnede**: de bridge berekent voor ssll103a's hoekprofiel `EZ` = −40,96 mm (test
   `EY` 41,012), `JG` = 4,43988e-11 m⁶ (test 4,4398819e-11) en `IZR2` = 8,4848e-8 m⁵ (test
-  `IYR2` 8,4948e-8): de y- en z-as van de test zijn bij Mecway's L-profiel z en y (Mecway's
-  V is de zwakke as). C-profiel: `EZ` = 29,33 mm (hartlijnformule e + x_c = 29,375), C_w
-  primair 4,0135e-10 m⁶ = de gesloten formule, plus 1,1% welving door de plaatdikte.
+  `IYR2` 8,4948e-8; beide met het teken omgedraaid: `EZ` = −40,96 mm, `IZR2` < 0, omdat de
+  hiel aan de +W-kant ligt): de y- en z-as van de test zijn bij Mecway's L-profiel z en y
+  (Mecway's V is de zwakke as). C-profiel: `EZ` = −29,33 mm (hartlijnformule e + x_c =
+  29,375), C_w primair 4,0135e-10 m⁶ = de gesloten formule, plus 1,1% welving door de
+  plaatdikte.
+- **Assen van Mecway** (LS-94, LS-95): Mecway's spanningspunten `stresspt1..4` (hoeken van
+  het profiel) onder een eindmoment van 100 N·m om V en om W (balk langs X, V = +Y, dus
+  W = +Z; headless Mecway 34, 29 okt 2026) passen binnen 1e-13 bij deze regel: lokaal
+  v = −sin θ·dx + cos θ·dy, w = −(cos θ·dx + sin θ·dy) in de tekening van het profiel
+  (`bridge_warping.mecway_frame`; dx, dy vanaf het zwaartepunt), θ = 0 voor I, T en C en
+  voor L de hoofdashoek binnen (−45°, 45°]. Het lijf van een C-profiel ligt dus aan de
+  +W-kant. LS-94 en LS-95 bevatten die gemeten spanningen als controle (verhouding 1).
+  Vóór 29 okt 2026 lag het dwarskrachtcentrum aan de verkeerde kant (LS-94, LS-94b en
+  LS-95b met omgekeerd teken) en waren `IY` en `IZ` van een L met a > b verwisseld (LS-95
+  DY en DZ omgewisseld, ook met `POU_D_E`).
+- **Niet geverifieerd**: kip van een enkelsymmetrisch profiel onder buiging (T, C), waar
+  het teken van `IYR2`/`IZR2` de kritieke last verandert, alleen via dezelfde
+  asconventie; de bimoment alleen in grootte (het teken van `BX` niet).
 - **Regel bij opleggingen**: *Fixed support* (`BLOCAGE`) alleen houdt `GRX` niet vast
   (C-kolom 343,8 zonder en 385,0 met `GRX` = 0, run 28 okt 2026); de bridge zet daarom
   een eigen `DDL_IMPO GRX` op de knoopgroep `BRGRX`. LS-90/LS-90b tonen het verschil
