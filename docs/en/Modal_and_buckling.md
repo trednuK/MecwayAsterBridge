@@ -548,19 +548,24 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
   and everywhere else. `free`: free everywhere; `blocked`: fixed at every supported node
   (e.g. end plates at a pinned support). The log names the rule per node. Note: a *Fixed
   support* alone (Code-Aster `BLOCAGE`) does not fix the warping; this rule does.
-- **Measured** ([`Verification.md`](Verification.md) §7, BU-38 … BU-42, LS-90 … LS-95b):
+- **Measured** ([`Verification.md`](Verification.md) §7, BU-38 … BU-44b, LS-90 … LS-95b):
   C column of BU-35 385.0 (theory 386.1, hex20 393.0); lateral-torsional buckling of an I
   beam on fork supports −0.10% from Timoshenko & Gere §6.2; ssll103a equal to
   `VALE_CALC`; T column −0.6% from the theory; torsion of a clamped I beam with
   restrained warping −0.09%, the bimoment at the clamp +0.5%; the twist of a C and an L
   cantilever under a transverse load through the centroid (sign and size, so the
-  position of the shear centre) −0.4% and −0.01%.
+  position of the shear centre) −0.4% and −0.01%; lateral-torsional buckling of a T beam
+  (flange or stem in compression, critical moments 1.79 times apart) and a C beam bent
+  about its minor axis under both moment signs −0.05% … −0.41% from the mono-symmetric
+  formula (Wagner terms and shear centre), a T against a shell model in Mecway +1.4%.
 - **Limits**: the warping is continuous at a node, also where members meet at an angle
   (as in Code-Aster); with a *flexible joint* and an element offset the beam lies on its
   own node without a support, so the warping is free there. Nodal reaction forces of
   `POU_D_TG` have an error in Code-Aster 17.4 that grows with the shear deformation
   (WARNING, KNOWN_BUGS 123); displacements, section forces and buckling factors are
-  right. The bimoment (`BX` in `EFGE_ELNO`) does not go to Mecway. In explicit dynamics
+  right. The bimoment (`BX` in `EFGE_ELNO`) does not go to Mecway; its sign in Code-Aster
+  is `BX` = +E·I_w·φ″ (positive at a clamp under a positive torque about the beam axis,
+  the opposite of Vlasov's B = −E·I_w·φ″; LS-90d, LS-90e). In explicit dynamics
   the beams become `POU_D_T` (WARNING): the mass matrix of `POU_D_TG` has no mass for
   `GRX`, and the explicit scheme stopped on it with `FACTOR_11`. The V and W axes of C
   and L profiles are Mecway's: measured with Mecway's stress recovery points

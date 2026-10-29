@@ -192,6 +192,23 @@ Code-Aster value per node) and logs the largest difference per variable.
    (no integration choice in `AFFE_MODELE`); mesh with quads or tri6 where possible
    ([`docs/en/Acoustics.md`](docs/en/Acoustics.md) §3.5).
 
+132\. **Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms**
+   (confirmed, Code-Aster 17.4 and Mecway 34 headless; `bridge_to_aster` buckling with
+   linear shells, MODELISATION 'DKT'). The geometric stiffness of DKT/DKQ only contains the
+   out-of-plane displacement gradients of each plate (R3.07.03 §4.6: non-linear membrane
+   strains ½w,x² etc., "degrees of freedom of inflection"). Where the global buckling mode
+   moves a plate in its own plane (a profile built from plates: lateral-torsional or
+   flexural buckling of a T, I or C made of shells), that plate gets no geometric stiffness
+   and the factors are wrong, with spurious in-plane modes. Measured on the T 100 × 10 ×
+   10 × 90 mm, L = 4 m, fork supports, end moments (two quad4 plates, 200 × 20 elements,
+   `tests_balk_welving.build_tee_shell`): Code-Aster 18.76 (flange in compression; its
+   mode is a pure vertical deflection) and −7.77 (stem in compression), Mecway's own
+   solver with the same `.liml` 27.26 and 20.34 (400 × 20 elements: 27.08 and 20.23),
+   the formula 27.72 and 20.65; `POU_D_TG` (BU-43c) 27.46 and −20.44. A plate that buckles out of its plane (BU-34) is right.
+   Not fixed in the bridge; whether `COQUE_3D` (quadratic shells) has the full geometric
+   stiffness is NOT verified. Use beams with `elem_beam` = `POU_D_TG` or solid elements for
+   the global buckling of profiles.
+
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
@@ -569,7 +586,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    the option: `elem_beam` = `POU_D_TG` (STAPPENPLAN S19, `bridge_warping.py`) has the
    shear centre (`EY`, `EZ`), `JG` (C_w), the Wagner terms and the warping DOF `GRX` at
    supports (setting `beam_warping`): the same column 384.98 (BU-38, −0.29% from the
-   theory, −2.0% from hex20), ssll103a equal to `VALE_CALC` (BU-41). Status: open for the
+   theory, −2.0% from hex20), ssll103a equal to `VALE_CALC` (BU-41), lateral-torsional
+   buckling of T and C beams under both moment signs within 0.5% (BU-43 … BU-44b).
+   Status: open for the
    default `POU_D_E` (kept like Mecway's Euler beam); solved with the option. A *General
    section* without an `#ASTER-SECTIE` line has no shear centre or C_w even with
    `POU_D_TG` (WARNING).

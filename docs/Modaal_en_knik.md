@@ -556,19 +556,25 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
   opgelegde knoop (bijv. kopplaten bij een scharnier). De log noemt per knoop welke
   regel gold. Let op: *Fixed support* alleen (Code-Aster `BLOCAGE`) houdt de welving niet
   vast; daarvoor dient deze regel.
-- **Gemeten** ([`Verificatie.md`](Verificatie.md) §7, BU-38 … BU-42, LS-90 … LS-95b):
+- **Gemeten** ([`Verificatie.md`](Verificatie.md) §7, BU-38 … BU-44b, LS-90 … LS-95b):
   C-kolom van BU-35 385,0 (theorie 386,1, hex20 393,0); kip van een I-ligger op
   vorkopleggingen −0,10% van Timoshenko & Gere §6.2; ssll103a gelijk aan `VALE_CALC`;
   T-kolom −0,6% van de theorie; torsie van een ingeklemde I-ligger met verhinderde
   welving −0,09%, de bimoment bij de inklemming +0,5%; de verdraaiing van een C- en een
   L-ligger onder een dwarslast door het zwaartepunt (teken en grootte, dus de plaats van
-  het dwarskrachtcentrum) −0,4% en −0,01%.
+  het dwarskrachtcentrum) −0,4% en −0,01%; kip van een T-ligger (flens of lijf gedrukt,
+  kritieke momenten 1,79 keer verschillend) en een C-ligger met buiging om de zwakke as
+  onder beide momentrichtingen −0,05% … −0,41% van de enkelsymmetrische formule
+  (Wagner-termen en dwarskrachtcentrum), een T tegen een schaalmodel in Mecway +1,4%.
 - **Grenzen**: welving is per knoop doorgaand, ook waar staven onder een hoek samenkomen
   (zoals Code-Aster); bij een *flexible joint* en een element-offset ligt de balk op een
   eigen knoop zonder oplegging, dus is de welving daar vrij. Reactiekrachten per knoop
   van `POU_D_TG` hebben in Code-Aster 17.4 een fout die met de afschuifvervorming groeit
   (WARNING, KNOWN_BUGS 123); verplaatsingen, snedekrachten en knikfactoren kloppen. De
-  bimoment (`BX` in `EFGE_ELNO`) gaat niet naar Mecway. In expliciete dynamica worden de
+  bimoment (`BX` in `EFGE_ELNO`) gaat niet naar Mecway; het teken in Code-Aster is
+  `BX` = +E·I_w·φ″ (positief bij een inklemming onder een positief torsiemoment om de
+  balkas, het omgekeerde van Vlasovs B = −E·I_w·φ″; LS-90d, LS-90e). In expliciete
+  dynamica worden de
   balken `POU_D_T` (WARNING): de massamatrix van `POU_D_TG` heeft geen massa voor `GRX`, en
   het expliciete schema stopte daarop met `FACTOR_11`. De assen V en W van C- en
   L-profielen zijn die van Mecway: gemeten met Mecway's spanningspunten (`stresspt1..4`)

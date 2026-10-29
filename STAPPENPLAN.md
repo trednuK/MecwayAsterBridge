@@ -1587,7 +1587,7 @@ offsets, shells): all diagnostics OK. Found: nodal reactions of `POU_D_TG` are o
 so the beams become `POU_D_T` there with a WARNING (`bridge_from_liml._warp_beam_choice`; run OK after it).
 Open: a GUI test in Mecway 34 (the Elements page renders the new choice and setting, offscreen gui_cap);
 lateral-torsional buckling of mono-symmetric sections (T, C under bending) only checked through the shared
-IYR2/EY convention of ssll103a, not against a shell model.
+IYR2/EY convention of ssll103a, not against a shell model (done in the second follow-up below).
 Follow-up (29 Oct 2026): Mecway's section axes measured headless (Mecway 34, own solver) from its stress
 recovery points `stresspt1..4` under end moments about V and W (C, T and three L profiles, match within
 1e-13): the drawing x of `_rects` runs along -W (C web at +W, so the shear centre at +W and EZ < 0; the bridge
@@ -1598,6 +1598,21 @@ LS-94/LS-94b C cantilever, transverse tip load through the centroid, twist F e/(
 (sign confirms Code-Aster's EY/EZ = shear centre -> centroid); LS-95 L 120 x 80 POU_D_E equal to Mecway;
 LS-95b L twist -0.005%; LS-90d bimoment at the clamp (max |BX| of EFGE_ELNO printed to the .mess with
 #ASTER-POST) +0.51% from T tanh(kL)/k. BX sign not compared.
+Second follow-up (29 Oct 2026): lateral-torsional buckling of mono-symmetric sections and the sign of BX
+verified; the bridge was right, nothing changed in `Scripts/`. BU-43/43b: T 100 x 10 x 10 x 90 mm, L = 2 m,
+fork supports, uniform moment, both signs in one model: flange in compression 63.313 (formula 63.576,
+-0.41%), stem in compression 35.366 (35.448, -0.23%); formula M_cr = P (beta/2 +- sqrt(beta^2/4 + I_w/I_z +
+GJL^2/(pi^2 E I_z))) with beta = int y (x^2 + y^2) dA/I_y - 2 y0 (Trahair 1993 ch. 6, SSRC Guide ch. 5),
+section values written out in the test independently of the bridge. BU-44/44b: C 100 x 50 x 6 mm bent about
+the minor axis V (checks EZ with IZR2), L = 4 m: 7.6458 (7.6497, -0.05%) and 31.150 (31.265, -0.37%). BU-43c:
+the T at L = 4 m against a shell model of quad4 plates in Mecway 34 headless (own solver, 400 x 20 elements):
+27.459 / -20.438 against the shells 27.081 / 20.228 (+1.4% / +1.0%) and the formula 27.484 / -20.452. The
+same shell model in Code-Aster (DKT) gives 18.76 / -7.77 with spurious in-plane modes: the DKT geometric
+stiffness has only the out-of-plane terms of each plate (R3.07.03 par. 4.6), KNOWN_BUGS 132. BX: LS-90d now
+compares the signed value (and GRX at the tip), LS-90e the reversed torque: Code-Aster's BX = +E I_w phi''
+with GRX = phi' (the opposite of Vlasov's B = -E I_w phi''), +-15.333 against +-15.255 (+0.51%); the
+installed U4.42.01/R3.08.01 do not define the sign. All S19 cases (BU-35 .. BU-44b, LS-90 .. LS-95b)
+rerun: unchanged, all OK.
 
 
 ### S20 – Geometrically nonlinear beams (`POU_D_T_GD`) as element choice

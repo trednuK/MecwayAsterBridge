@@ -34,9 +34,17 @@ docs/Verificatie.md (par. Balken met welving).
   midspan by symmetry, free at the support).
 - LS-90c: default POU_D_E unchanged (T L/(G J), no warping); BU-35 stays
   the POU_D_E reference (KNOWN_BUGS 115).
+- LS-90d/LS-90e: the bimoment BX at the clamp of LS-90 with its sign, for
+  both torque signs (Code-Aster: BX = +E I_w phi'').
+- LS-94/94b, LS-95/95b: shear centre of C and L profiles (twist under a
+  transverse load through the centroid) and Mecway's section axes.
+- BU-43/43b, BU-44/44b: lateral-torsional buckling of mono-symmetric
+  sections (T; C bent about its minor axis), both moment signs, against
+  the mono-symmetric formula with the Wagner parameter (Trahair 1993 ch. 6).
+  BU-43c: the T at L = 4 m, also against a shell model in Mecway 34.
 """
 import math
-from verif_lib import Case, Check, Model, SCRIPTS
+from verif_lib import Case, Check, Model, SCRIPTS, quadmesh
 import tests_balkorientatie as BO
 import tests_knik_balk as KB
 
@@ -325,7 +333,7 @@ L90 = 1.0
 K90 = math.sqrt(G * I_J / (E * I_CW))
 
 
-def build_ls90():
+def build_ls90(torque=T90):
     m = Model("S30")
     m.elset("Balk", "Mat")
     nids = _line(m, (0, 0, 0), (L90, 0, 0), 20)
@@ -334,7 +342,7 @@ def build_ls90():
     m.add('<fixed selection="Inklemming" />')
     m.node_selection("Tip", [nids[-1]])
     m.add('<moment selection="Tip"><x>%g N.m</x><y>0 N.m</y><z>0 N.m</z>'
-          '</moment>' % T90)
+          '</moment>' % torque)
     return m
 
 
@@ -399,49 +407,97 @@ TESTS += [
 
 
 # ------------------------------------------------------------------
-# LS-90d: the bimoment at the clamp of LS-90
+# LS-90d/e: the bimoment at the clamp of LS-90, both torque signs
 # ------------------------------------------------------------------
 # The bimoment (EFGE_ELNO component BX of POU_D_TG) is not sent to Mecway.
 # The case prints it with #ASTER-POST code into the .mess and reads it
-# there. Cantilever, warping restrained at x = 0 and free at the tip, end
-# torque T: B(x) = T sinh(k (L - x))/(k cosh(kL)), so B(0) = T tanh(kL)/k
+# there, with its sign, and also the warping DOF GRX. Cantilever, warping
+# restrained at x = 0 and free at the tip, end torque T about +X:
+# G J phi' - E C_w phi''' = T gives phi'(x) = T/(G J) (1 - cosh kx +
+# tanh kL sinh kx) and E C_w phi''(x) = T sinh(k (L - x))/(k cosh kL), so
+# E C_w phi''(0) = T tanh(kL)/k and phi'(L) = T/(G J) (1 - 1/cosh kL)
 # (Vlasov; Trahair 1993 ch. 3; Timoshenko & Gere 1961 par. 5.4).
+# Code-Aster's sign (measured with Code-Aster 17.4, 29 Oct 2026, LS-90d
+# and LS-90e): BX = +E JG d(GRX)/dx with GRX = +d(DRX)/dx (GRX is also
+# positive under a positive torque in test case ssll102d), i.e.
+# BX = +E I_w phi'', the opposite sign of Vlasov's B = -E I_w phi''. The
+# U4.42.01 and R3.08.01 documents do not define the sign of BX.
 BX_POST = (u"<ccxmodeldefinition>"
            u"#ASTER-POST _tbx = CREA_TABLE(RESU=_F(RESULTAT=res, "
            u"NOM_CHAM='EFGE_ELNO', NOM_CMP='BX', TOUT='OUI', "
            u"TOUT_ORDRE='OUI'))\n"
-           u"#ASTER-POST print('BRIDGE_BX_MAX %.12e' % max(abs(v) for v in "
-           u"_tbx.EXTR_TABLE().values()['BX']))"
+           u"#ASTER-POST print('BRIDGE_BX_CLAMP %.12e' % max(_tbx.EXTR_TABLE()"
+           u".values()['BX'], key=abs))\n"
+           u"#ASTER-POST _tgx = CREA_TABLE(RESU=_F(RESULTAT=res, "
+           u"NOM_CHAM='DEPL', NOM_CMP='GRX', TOUT='OUI', "
+           u"TOUT_ORDRE='OUI'))\n"
+           u"#ASTER-POST print('BRIDGE_GRX_TIP %.12e' % max(_tgx.EXTR_TABLE()"
+           u".values()['GRX'], key=abs))"
            u"</ccxmodeldefinition>")
 
 
-def _bx_max(r):
-    """Largest |BX| along the beam from the .mess (BX_POST)."""
+def _mess_value(r, tag):
+    """Last value printed as '<tag> <value>' into the .mess (BX_POST)."""
     import io
     import re
     text = io.open(r.mess, encoding="utf-8", errors="replace").read()
-    return float(re.findall(r"BRIDGE_BX_MAX (\S+)", text)[-1])
+    return float(re.findall(tag + r" (\S+)", text)[-1])
 
 
-def build_ls90d():
-    m = build_ls90()
+def _bx_clamp(r):
+    """BX with the largest magnitude along the beam (at the clamp), with
+    its sign."""
+    return _mess_value(r, "BRIDGE_BX_CLAMP")
+
+
+def _grx_tip(r):
+    """GRX with the largest magnitude (at the free tip), with its sign."""
+    return _mess_value(r, "BRIDGE_GRX_TIP")
+
+
+def build_ls90d(torque=T90):
+    m = build_ls90(torque)
     m.add(BX_POST)
     return m
 
 
-TESTS.append(Case(
-    "LS-90d", "Lineair statisch", "Bimoment at the clamp, I cantilever "
-    "under torque (POU_D_TG)", "lin_static_3d", build_ls90d,
-    [Check("|bimoment| at the clamp", _bx_max,
-           ref=T90 * math.tanh(K90 * L90) / K90, tol=0.02, unit="N m^2",
-           source="B(0) = T tanh(kL)/k (Vlasov; Trahair 1993 ch. 3)"),
-     Check("twist at the tip", lambda r: r.at("rotx", TIP),
-           ref=PHI_CLAMP, tol=0.005, unit="rad", in_series=False,
-           source=SRC_CLAMP)],
-    general=TG,
-    note="LS-90 with two #ASTER-POST lines that print max |BX| of "
-         "EFGE_ELNO into the .mess (the bimoment is not sent to Mecway). "
-         "The sign of BX is not compared."))
+B90 = T90 * math.tanh(K90 * L90) / K90
+GRX90 = T90 / (G * I_J) * (1.0 - 1.0 / math.cosh(K90 * L90))
+SRC_BX = ("BX = +E C_w phi''; E C_w phi''(0) = T tanh(kL)/k (Vlasov; "
+          "Trahair 1993 ch. 3)")
+SRC_GRX = "GRX = phi'(L) = T/(G J) (1 - 1/cosh kL)"
+
+TESTS += [
+    Case("LS-90d", "Lineair statisch", "Bimoment at the clamp, I cantilever "
+         "under torque (POU_D_TG)", "lin_static_3d", build_ls90d,
+         [Check("bimoment BX at the clamp (signed)", _bx_clamp,
+                ref=B90, tol=0.02, unit="N m^2", source=SRC_BX),
+          Check("warping GRX at the tip (signed)", _grx_tip,
+                ref=GRX90, tol=0.01, unit="rad/m", in_series=False,
+                source=SRC_GRX),
+          Check("twist at the tip", lambda r: r.at("rotx", TIP),
+                ref=PHI_CLAMP, tol=0.005, unit="rad", in_series=False,
+                source=SRC_CLAMP)],
+         general=TG,
+         note="LS-90 with #ASTER-POST lines that print BX of EFGE_ELNO "
+              "(largest magnitude, with its sign) and GRX into the .mess "
+              "(the bimoment is not sent to Mecway). T = +100 N m about "
+              "+X gives BX > 0 at the clamp: Code-Aster's BX = +E I_w "
+              "phi''."),
+    Case("LS-90e", "Lineair statisch", "Bimoment at the clamp, torque "
+         "reversed (POU_D_TG)", "lin_static_3d", lambda: build_ls90d(-T90),
+         [Check("bimoment BX at the clamp (signed)", _bx_clamp,
+                ref=-B90, tol=0.02, unit="N m^2", source=SRC_BX),
+          Check("warping GRX at the tip (signed)", _grx_tip,
+                ref=-GRX90, tol=0.01, unit="rad/m", in_series=False,
+                source=SRC_GRX),
+          Check("twist at the tip", lambda r: r.at("rotx", TIP),
+                ref=-PHI_CLAMP, tol=0.005, unit="rad", in_series=False,
+                source=SRC_CLAMP)],
+         general=TG,
+         note="LS-90d with T = -100 N m: BX, GRX and the twist change "
+              "sign."),
+]
 
 
 # ------------------------------------------------------------------
@@ -686,3 +742,348 @@ TESTS += [
               "axes); the load twists the beam by T = %.2f N m."
               % (V93S * 1e3, W93S * 1e3, T93)),
 ]
+
+
+# ------------------------------------------------------------------
+# BU-43/44: lateral-torsional buckling of mono-symmetric sections
+# ------------------------------------------------------------------
+# Simply supported (fork) beam under a uniform moment, sine modes (exact
+# for this case). Coordinates: y along the axis of symmetry of the section
+# (the plane of bending), x across it (the lateral direction), y0 the shear
+# centre, M > 0 when the fibres at +y are in tension (sigma = M y/I_x, I_x
+# = int y^2 dA). Energy (Trahair 1993 ch. 6, mono-symmetric beams; SSRC
+# Guide, Galambos 1998, ch. 5; z_j of NCCI SN030 is |beta|/2):
+#   1/2 int [E I_y u''^2 + E I_w phi''^2 + G J phi'^2 + 2 M u'' phi
+#            + M beta phi'^2] dz,
+#   beta = (1/I_x) int y (x^2 + y^2) dA - 2 y0   (Wagner, "beta_x"),
+# gives M^2 - P beta M - P (G J + pi^2 E I_w/L^2) = 0 with P = pi^2 E I_y
+# / L^2 (I_y = int x^2 dA, lateral bending):
+#   M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + G J L^2/(pi^2 E I_y))].
+# beta < 0 when the shear centre lies at +y (T: flange at +y; C: web at
+# +y); the larger |M_cr| then comes with compression at +y, the side of
+# the shear centre (flange of the T, web of the C). The section values
+# below are written out independently of the bridge: exact rectangles for
+# the centroid, the inertias and the Wagner integral, thin-walled formulas
+# for the shear centre and I_w (as bridge_warping), J as Mecway.
+
+
+def _rect_section(rects):
+    """(area, cx, cy, int dx^2, int dy^2, int dy (dx^2 + dy^2)) of
+    rectangles (x0, x1, y0, y1) of the drawing, about the centroid."""
+    area = sum((x1 - x0) * (y1 - y0) for x0, x1, y0, y1 in rects)
+    cx = sum((x1 - x0) * (y1 - y0) * (x0 + x1) / 2 for x0, x1, y0, y1
+             in rects) / area
+    cy = sum((x1 - x0) * (y1 - y0) * (y0 + y1) / 2 for x0, x1, y0, y1
+             in rects) / area
+    ixx = iyy = wag = 0.0
+    for x0, x1, y0, y1 in rects:
+        a0, a1, b0, b1 = x0 - cx, x1 - cx, y0 - cy, y1 - cy
+        ixx += (a1 ** 3 - a0 ** 3) / 3 * (b1 - b0)
+        iyy += (a1 - a0) * (b1 ** 3 - b0 ** 3) / 3
+        wag += ((a1 ** 3 - a0 ** 3) / 3 * (b1 ** 2 - b0 ** 2) / 2 +
+                (a1 - a0) * (b1 ** 4 - b0 ** 4) / 4)
+    return area, cx, cy, ixx, iyy, wag
+
+
+def _mcr_pair(i_lat, i_w, j, beta, length):
+    """(M_cr > 0, M_cr < 0) of the fork beam under uniform moment."""
+    p = math.pi ** 2 * E * i_lat / length ** 2
+    root = math.sqrt(beta ** 2 / 4 + i_w / i_lat +
+                     G * j * length ** 2 / (math.pi ** 2 * E * i_lat))
+    return p * (beta / 2 + root), p * (beta / 2 - root)
+
+
+# T 100 x 10 x 10 x 90 mm of BU-42 (flange width a, web thickness tw,
+# flange thickness tf, web height d); drawing x horizontal, y vertical,
+# flange on top; Mecway's V = drawing y (mecway_frame): y = V, x = W.
+T_DIMS = (0.100, 0.010, 0.010, 0.090)
+
+
+def _tee_beta():
+    a, tw, tf, d = T_DIMS
+    area, cx, cy, ixx, iyy, wag = _rect_section(
+        [(0.0, a, d, d + tf), ((a - tw) / 2, (a + tw) / 2, 0.0, d)])
+    y0 = d + tf / 2 - cy               # shear centre: flange centre line
+    beta = wag / iyy - 2 * y0
+    # I_w of a tee (thickness warping of the plates; AISC Design Guide 9,
+    # Seaburg & Carter 1997): (tf^3 a^3/4 + tw^3 h'^3)/36, h' = d + tf/2
+    i_w = (tf ** 3 * a ** 3 / 4 + tw ** 3 * (d + tf / 2) ** 3) / 36
+    return ixx, i_w, beta
+
+
+L43 = 2.0
+M43 = 1000.0
+T43_ILAT, T43_IW, T43_BETA = _tee_beta()
+T43_J = _j_mecway("T", T_DIMS)
+# (M > 0: flange in tension, M < 0: flange in compression)
+T43_POS, T43_NEG = _mcr_pair(T43_ILAT, T43_IW, T43_J, T43_BETA, L43)
+SRC43 = ("M_cr = P [beta/2 +- sqrt(beta^2/4 + I_w/I_y + GJL^2/(pi^2 E I_y))]"
+         ", mono-symmetric beam (Trahair 1993 ch. 6; SSRC Guide ch. 5)")
+
+
+def build_bu43(sign=1.0, length=L43):
+    """T beam along X (V = +Y: flange at +Y), 40 POU_D_TG, fork supports,
+    end moments -sign M (A) and +sign M (B) about Z: internal M_z = +sign
+    M, sigma = -M_z y/I, so sign = +1 puts the flange in compression."""
+    m = Model("B30", attrs={"maxmode": 8, "shift": 1})
+    m.elset("Balk", "Mat")
+    nids = _line(m, (0, 0, 0), (length, 0, 0), 40)
+    m.mat("Mat", TPROF, STEEL, DENS)
+    _fork(m, "VorkA", nids[0], True)
+    _fork(m, "VorkB", nids[-1], False)
+    m.node_selection("EindA", [nids[0]])
+    m.node_selection("EindB", [nids[-1]])
+    for name, f in (("EindA", -sign), ("EindB", sign)):
+        m.add('<moment selection="%s"><x>0 N.m</x><y>0 N.m</y>'
+              '<z>%g N.m</z></moment>' % (name, f * M43))
+    return m
+
+
+def _pos_min(r):
+    """Smallest positive buckling factor (the applied load)."""
+    return min(v for v in r.modes.values() if v > 0)
+
+
+def _neg_min(r):
+    """Negative buckling factor of smallest magnitude (load reversed)."""
+    return max(v for v in r.modes.values() if v < 0)
+
+
+# C 100 x 50 x 6 mm (C_DIMS, LS-94) bent about Mecway's V (the minor axis):
+# the plane of bending is the axis of symmetry W, the web lies at +W
+# (mecway_frame), lateral buckling along V (about the major axis W) with
+# twist: y = W, x = V. Shear centre e_s = 3 b^2/(6 b + h) beyond the web
+# centre line (centre-line dimensions; Timoshenko & Gere 1961 par. 5.3).
+def _channel_beta():
+    a, h_out, tf, tw = C_DIMS
+    # drawing: web at x in [0, tw], flanges towards +x; W = -x
+    area, cx, cy, ixx, iyy, wag = _rect_section(
+        [(0.0, a, 0.0, tf), (0.0, a, h_out - tf, h_out),
+         (0.0, tw, tf, h_out - tf)])
+    b, h = a - tw / 2, h_out - tf
+    x_s = tw / 2 - 3 * b * b / (6 * b + h)        # drawing x of the shear centre
+    w0 = -(x_s - cx)                              # W of the shear centre
+    # int w (v^2 + w^2) dA with w = -dx, v = dy: -(int dx (dx^2 + dy^2))
+    wag_w = -(_rect_wag_x([(0.0, a, 0.0, tf), (0.0, a, h_out - tf, h_out),
+                           (0.0, tw, tf, h_out - tf)], cx, cy))
+    beta = wag_w / ixx - 2 * w0
+    return iyy, beta
+
+
+def _rect_wag_x(rects, cx, cy):
+    """int dx (dx^2 + dy^2) dA of rectangles about (cx, cy)."""
+    out = 0.0
+    for x0, x1, y0, y1 in rects:
+        a0, a1, b0, b1 = x0 - cx, x1 - cx, y0 - cy, y1 - cy
+        out += ((a1 ** 4 - a0 ** 4) / 4 * (b1 - b0) +
+                (a1 ** 2 - a0 ** 2) / 2 * (b1 ** 3 - b0 ** 3) / 3)
+    return out
+
+
+L44 = 4.0
+M44 = 1000.0
+C44_ILAT, C44_BETA = _channel_beta()
+C44_IW = CW92                                     # centre-line C_w (LS-94)
+# (M > 0: web in tension, M < 0: web in compression)
+C44_POS, C44_NEG = _mcr_pair(C44_ILAT, C44_IW, J92, C44_BETA, L44)
+
+
+def build_bu44(sign=1.0):
+    """C beam along X (V = +Y, web at +W = +Z), 40 POU_D_TG, fork supports,
+    end moments -sign M (A) and +sign M (B) about Y (= V, the minor axis):
+    internal M_y = +sign M, sigma = +M_y z/I, so sign = +1 puts the web in
+    tension and the flange tips in compression."""
+    m = Model("B30", attrs={"maxmode": 12, "shift": 1})
+    m.elset("Balk", "Mat")
+    nids = _line(m, (0, 0, 0), (L44, 0, 0), 40)
+    m.mat("Mat", KB.CPROF, STEEL, DENS)
+    _fork(m, "VorkA", nids[0], True)
+    _fork(m, "VorkB", nids[-1], False)
+    m.node_selection("EindA", [nids[0]])
+    m.node_selection("EindB", [nids[-1]])
+    for name, f in (("EindA", -sign), ("EindB", sign)):
+        m.add('<moment selection="%s"><x>0 N.m</x><y>%g N.m</y>'
+              '<z>0 N.m</z></moment>' % (name, f * M44))
+    return m
+
+
+TESTS += [
+    Case("BU-43", GROUP, "Lateral-torsional buckling, T beam, flange in "
+         "compression (POU_D_TG)", "buckling_3d", build_bu43,
+         [Check("factor (flange in compression)", _pos_min,
+                ref=-T43_NEG / M43, tol=0.02, unit="-", source=SRC43),
+          Check("factor of the reversed load (stem in compression)",
+                _neg_min, ref=-T43_POS / M43, tol=0.02, unit="-",
+                source=SRC43)],
+         general=TG,
+         note="T 100 x 10 x 10 x 90 mm (flange at +Y), L = 2 m, 40 "
+              "POU_D_TG, fork supports (warping free), end moments 1000 N m "
+              "about Z that compress the flange. beta = %.1f mm (Wagner, "
+              "shear centre at the flange). The flange in compression "
+              "buckles at a %.2f times higher moment than the stem in "
+              "compression; with POU_D_E both would be %.0f N m (no Wagner "
+              "term)." % (T43_BETA * 1e3, T43_NEG / -T43_POS,
+                          _mcr_pair(T43_ILAT, 0.0, T43_J, 0.0, L43)[0])),
+    Case("BU-43b", GROUP, "Lateral-torsional buckling, T beam, stem in "
+         "compression (POU_D_TG)", "buckling_3d", lambda: build_bu43(-1.0),
+         [Check("factor (stem in compression)", _pos_min,
+                ref=T43_POS / M43, tol=0.02, unit="-", source=SRC43),
+          Check("factor of the reversed load (flange in compression)",
+                _neg_min, ref=T43_NEG / M43, tol=0.02, unit="-",
+                source=SRC43)],
+         general=TG,
+         note="BU-43 with the end moments reversed: the free end of the "
+              "stem is in compression."),
+    Case("BU-44", GROUP, "Lateral-torsional buckling, C beam bent about "
+         "the minor axis, flange tips in compression (POU_D_TG)",
+         "buckling_3d", build_bu44,
+         [Check("factor (flange tips in compression)", _pos_min,
+                ref=C44_POS / M44, tol=0.03, unit="-", source=SRC43),
+          Check("factor of the reversed load (web in compression)",
+                _neg_min, ref=C44_NEG / M44, tol=0.02, unit="-",
+                source=SRC43)],
+         general=TG,
+         note="C 100 x 50 x 6 mm (web at +Z), L = 4 m, 40 POU_D_TG, fork "
+              "supports, end moments 1000 N m about Y (Mecway's V, the "
+              "minor axis) that put the web in tension. beta = %.1f mm "
+              "(shear centre beyond the web). A linear buckling check of "
+              "the shear-centre and Wagner terms along W: in practice a C "
+              "bent about its minor axis does not buckle laterally (the "
+              "in-plane bending governs)." % (C44_BETA * 1e3)),
+    Case("BU-44b", GROUP, "Lateral-torsional buckling, C beam bent about "
+         "the minor axis, web in compression (POU_D_TG)", "buckling_3d",
+         lambda: build_bu44(-1.0),
+         [Check("factor (web in compression)", _pos_min,
+                ref=-C44_NEG / M44, tol=0.02, unit="-", source=SRC43),
+          Check("factor of the reversed load (flange tips in compression)",
+                _neg_min, ref=-C44_POS / M44, tol=0.03, unit="-",
+                source=SRC43)],
+         general=TG,
+         note="BU-44 with the end moments reversed."),
+]
+
+
+# ------------------------------------------------------------------
+# BU-43c: the T beam against a shell model in Mecway (second reference)
+# ------------------------------------------------------------------
+# Shell model (build_tee_shell; not a bridge case): the T on its centre
+# lines, quad4 shells, flange plate at the flange centre line, stem plate
+# from the stem tip (y = 0) to that line, L = 4 m (at 2 m the stem in
+# compression would buckle locally at about the same factor: outstand
+# 95 x 10 mm, k = 0.65 for the stress gradient, EN 1993-1-5 table 4.2).
+# End moments as nodal forces of the linear stress M (y - y_c)/I over the
+# end sections (consistent loads of the plate edges); fork supports: Y and
+# Z fixed at every node of both end sections (the section cannot twist or
+# move sideways, warping free), X at one node. The shell model has no
+# Wagner or shear-centre input, so it checks the formula and its sign
+# independently of the beam element.
+# Mecway 34 headless (mw_solve.py, own solver, 29 Oct 2026), smallest
+# factor, flange in compression / stem in compression (end moments
+# reversed), 100 / 200 / 400 elements along the beam (10 across each
+# plate): 27.944 / 27.257 / 27.081 and 20.720 / 20.337 / 20.228
+# (Richardson about 27.02 and 20.18); the formula with the section of the
+# shell model (tee_shell_ref: centre-line plates, J = sum b t^3/3) gives
+# 27.72 and 20.65: the shells are 2.5% lower (probably the distortion of
+# the section, which the beam theory leaves out; NOT verified).
+# Code-Aster's DKT cannot be used for this model: its RIGI_GEOM only has
+# the out-of-plane terms of each plate (R3.07.03 par. 4.6), so the
+# in-plane displacement of the stem gets no geometric stiffness; the same
+# model through the bridge gives 18.76 and -7.77 with spurious in-plane
+# modes (KNOWN_BUGS 132).
+MW_T43C = (27.080705962484, 20.2283397825036)
+L43C = 4.0
+T43C_POS, T43C_NEG = _mcr_pair(T43_ILAT, T43_IW, T43_J, T43_BETA, L43C)
+
+
+def _tee_shell(dims):
+    """(rects, y of the flange centre line) of the shell model."""
+    a, tw, tf, d = dims
+    yf = d + tf / 2
+    return [(-a / 2, a / 2, d, d + tf), (-tw / 2, tw / 2, 0.0, yf)], yf
+
+
+def tee_shell_ref(dims, length):
+    """((M_cr > 0, M_cr < 0), y_c) of the shell model (M > 0: flange in
+    tension)."""
+    a, tw, tf, d = dims
+    rects, yf = _tee_shell(dims)
+    area, cx, cy, ixx, iyy, wag = _rect_section(rects)
+    beta = wag / iyy - 2 * (yf - cy)
+    j = (a * tf ** 3 + yf * tw ** 3) / 3
+    i_w = (tf ** 3 * a ** 3 / 4 + tw ** 3 * yf ** 3) / 36
+    return _mcr_pair(ixx, i_w, j, beta, length), cy
+
+
+def build_tee_shell(dims, length, nx, moment=M43):
+    """T beam of shells along X, flange at +Y; the end moments (-M at x =
+    0, +M at x = L about Z) compress the flange. Reference model for
+    Mecway (Model.write, then TestFiles/Tools/mw_solve.py)."""
+    a, tw, tf, d = dims
+    rects, yf = _tee_shell(dims)
+    yc = tee_shell_ref(dims, length)[1]
+    m = Model("B30", attrs={"maxmode": 8, "shift": 1})
+    m.elset("Flens", "MatF")
+    m.elset("Lijf", "MatL")
+    fl = quadmesh(m, "Flens", nx, 10, lambda u, v: (u * length, yf,
+                                                     -a / 2 + v * a))
+    st = quadmesh(m, "Lijf", nx, 10, lambda u, v: (u * length, v * yf, 0.0))
+    for name, t in (("MatF", tf), ("MatL", tw)):
+        m.mat(name, '<geometric type="Plate" thickness="%g mm" />' % (t * 1e3),
+              STEEL, DENS)
+
+    def coord(n):
+        return m.nodes[n - 1]
+
+    # consistent nodal loads of sigma = y - y_c on the edge segments
+    weights = {}
+    for side in ("u0", "u1"):
+        out = weights.setdefault(side, {})
+        for grid, along, t in ((fl, 2, tf), (st, 1, tw)):
+            nodes = sorted(grid["nodes"][side], key=lambda n: coord(n)[along])
+            for n0, n1 in zip(nodes[:-1], nodes[1:]):
+                p0, p1 = coord(n0), coord(n1)
+                h = math.sqrt(sum((p1[i] - p0[i]) ** 2 for i in range(3)))
+                s0, s1 = p0[1] - yc, p1[1] - yc
+                out[n0] = out.get(n0, 0.0) + t * h * (2 * s0 + s1) / 6
+                out[n1] = out.get(n1, 0.0) + t * h * (s0 + 2 * s1) / 6
+    for side, sign in (("u0", 1.0), ("u1", -1.0)):
+        w = weights[side]
+        scale = sum(f * (coord(n)[1] - yc) for n, f in w.items())
+        name = "Eind%s" % side
+        m.node_selection(name, sorted(w))
+        for comp in ("<x>0</x><y>1</y><z>0</z>", "<x>0</x><y>0</y><z>1</z>"):
+            m.add('<displacement selection="%s"><value>0 mm</value>%s'
+                  '</displacement>' % (name, comp))
+        for k, n in enumerate(sorted(w)):
+            sel = "F%s_%d" % (side, k)
+            m.node_selection(sel, [n])
+            m.add('<force selection="%s"><x>%r N</x><y>0 N</y><z>0 N</z>'
+                  '</force>' % (sel, sign * moment * w[n] / scale))
+    m.node_selection("Axiaal", [m.node(0.0, 0.0, 0.0)])
+    m.add('<displacement selection="Axiaal"><value>0 mm</value><x>1</x>'
+          '<y>0</y><z>0</z></displacement>')
+    return m
+
+
+SRC43C = ("Mecway 34 headless, T of quad4 shells (build_tee_shell, 400 x 20 "
+          "elements, own solver)")
+TESTS.append(Case(
+    "BU-43c", GROUP, "Lateral-torsional buckling, T beam L = 4 m, against "
+    "a shell model in Mecway (POU_D_TG)", "buckling_3d",
+    lambda: build_bu43(1.0, L43C),
+    [Check("factor (flange in compression)", _pos_min,
+           ref=-T43C_NEG / M43, tol=0.02, unit="-", source=SRC43),
+     Check("factor of the reversed load (stem in compression)", _neg_min,
+           ref=-T43C_POS / M43, tol=0.02, unit="-", source=SRC43),
+     Check("factor (flange in compression) vs shells", _pos_min,
+           ref=MW_T43C[0], tol=0.03, unit="-", in_series=False,
+           source=SRC43C),
+     Check("factor of the reversed load vs shells", _neg_min,
+           ref=-MW_T43C[1], tol=0.03, unit="-", in_series=False,
+           source=SRC43C + ", end moments reversed")],
+    general=TG,
+    note="BU-43 with L = 4 m. Second reference: the same T as a shell model "
+         "in Mecway 34 (no Wagner or shear-centre input), %.2f / %.2f, "
+         "ratio %.2f (formula %.2f)." % (
+             MW_T43C[0], MW_T43C[1], MW_T43C[0] / MW_T43C[1],
+             T43C_NEG / -T43C_POS)))
