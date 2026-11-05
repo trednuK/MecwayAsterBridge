@@ -241,11 +241,29 @@ times = DEFI_LIST_REEL(
         _F(JUSQU_A=1.0, NOMBRE=40),
     ),
 )
-listinst = DEFI_LIST_INST(
+listinst_plain = DEFI_LIST_INST(
     DEFI_LIST=_F(LIST_INST=times),
     ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',
              SUBD_METHODE='MANUEL', SUBD_PAS=4,
              SUBD_NIVEAU=6),
+)
+# Step guard (bridge_to_aster._gd_step_guard)
+listinst = DEFI_LIST_INST(
+    DEFI_LIST=_F(LIST_INST=times),
+    ECHEC=(
+        _F(EVENEMENT='ERREUR', ACTION='DECOUPE',
+           SUBD_METHODE='MANUEL', SUBD_PAS=4,
+           SUBD_NIVEAU=6),
+        _F(EVENEMENT='DELTA_GRANDEUR', VALE_REF=0.02, NOM_CHAM='DEPL', NOM_CMP='DX',
+           GROUP_MA=('Balk', ), ACTION='DECOUPE',
+           SUBD_METHODE='MANUEL', SUBD_PAS=4, SUBD_NIVEAU=3),
+        _F(EVENEMENT='DELTA_GRANDEUR', VALE_REF=0.02, NOM_CHAM='DEPL', NOM_CMP='DY',
+           GROUP_MA=('Balk', ), ACTION='DECOUPE',
+           SUBD_METHODE='MANUEL', SUBD_PAS=4, SUBD_NIVEAU=3),
+        _F(EVENEMENT='DELTA_GRANDEUR', VALE_REF=0.02, NOM_CHAM='DEPL', NOM_CMP='DZ',
+           GROUP_MA=('Balk', ), ACTION='DECOUPE',
+           SUBD_METHODE='MANUEL', SUBD_PAS=4, SUBD_NIVEAU=3),
+    ),
 )
 
 
@@ -288,6 +306,7 @@ load_2 = AFFE_CHAR_MECA_F(
 #   CONVERGENCE   - RESI_GLOB_RELA and ITER_GLOB_MAXI from CONFIG_BRIDGE
 #                   ("convergence_resi_rela", "newton_max_iter").
 # =====================================================
+_gs_t = None
 try:
     res = STAT_NON_LINE(
         MODELE=model,
@@ -309,12 +328,51 @@ except Exception as err:
         _pe_inst = list(res.getAccessParameters()['INST'])
     except Exception:
         _pe_inst = []
-    if not _pe_id or not _pe_inst or not (
-            _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
+    if _pe_id.startswith('MECANONLINE') and _pe_inst:
+        _gs_t = _pe_inst[-1]
+        print('BRIDGE_VANGNET', _gs_t)
+    elif not _pe_id or not _pe_inst or len(_pe_inst) < 2:
         raise
-    print('BRIDGE_FOUT_ID', _pe_id)
-    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
+    else:
+        print('BRIDGE_FOUT_ID', _pe_id)
+        print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
+if _gs_t is not None:
+    try:
+        res = STAT_NON_LINE(
+            reuse=res,
+            RESULTAT=res,
+            ETAT_INIT=_F(EVOL_NOLI=res, INST=_gs_t),
+            MODELE=model,
+            CHAM_MATER=fieldmat,
+            CARA_ELEM=cara,
+            EXCIT=(
+                _F(CHARGE=load_1),
+                _F(CHARGE=load_2),
+            ),
+            COMPORTEMENT=_F(GROUP_MA='Balk', RELATION='ELAS_POUTRE_GR', DEFORMATION='GROT_GDEP'),
+            INCREMENT=_F(LIST_INST=listinst_plain, INST_INIT=_gs_t),
+            SOLVEUR=_F(METHODE='MUMPS', NPREC=8),
+            NEWTON=_F(REAC_ITER=1),
+            CONVERGENCE=_F(RESI_GLOB_RELA=1e-05, ITER_GLOB_MAXI=20),
+        )
+    except Exception as err:
+        _pe_id = str(getattr(err, 'id_message', '') or '')
+        try:
+            _pe_inst = list(res.getAccessParameters()['INST'])
+        except Exception:
+            _pe_inst = []
+        if not _pe_id or not _pe_inst or not (
+                _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
+            raise
+        print('BRIDGE_FOUT_ID', _pe_id)
+        print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
 t_res = res.getAccessParameters()['INST'][-1]
+# Jump to another equilibrium branch (POU_D_T_GD beams)
+import sys
+sys.path.insert(0, '<REPO>\\Scripts')
+import aster_results_export
+aster_results_export.print_jump_check(res, model, ['Balk'], [],
+                                      0.01)
 
 
 # =====================================================

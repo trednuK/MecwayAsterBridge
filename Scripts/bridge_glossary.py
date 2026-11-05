@@ -1917,6 +1917,22 @@ SETTING_HELP = {
                   u"buckling), not a load factor. Costs an eigenvalue "
                   u"solution per step. Apply the load with a time table "
                   u"(0 -> P). Off by default."),
+    "gd_step_limit": (u"Alleen met balken POU_D_T_GD. Boven de kniklast kan "
+                      u"de berekening met een te grove stap op de onstabiele "
+                      u"tak belanden: de run eindigt OK, maar de kolom lijkt "
+                      u"recht. Daarom wordt een stap gedeeld als een "
+                      u"verplaatsing van deze balken daarin meer groeit dan "
+                      u"deze fractie van hun grootste afmeting. Lukt dat "
+                      u"niet, dan rekent de run zonder bewaking door en meldt "
+                      u"dat in het statusvak. 0 = uit.",
+                      u"Only with POU_D_T_GD beams. Above the buckling load "
+                      u"a step that is too coarse can land the analysis on "
+                      u"the unstable branch: the run ends OK, but the column "
+                      u"looks straight. A step is therefore cut when a "
+                      u"displacement of these beams grows in it by more than "
+                      u"this fraction of their largest dimension. If that "
+                      u"does not help, the run continues without the guard "
+                      u"and says so in the status box. 0 = off."),
     "imperfection_amplitude": (u"Knikvorm als imperfectie: eerst een "
                                u"lineaire knikberekening onder de lasten op "
                                u"de eindtijd, dan het mesh vervormen met "

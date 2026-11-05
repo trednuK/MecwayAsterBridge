@@ -75,8 +75,11 @@ if exp:
         text = io.open(mess, encoding="utf-8", errors="replace").read()
         m = re.search(r"--- DIAGNOSTIC JOB : (\S+)", text)
         out["diagnostic"] = m.group(1) if m else "?"
+        # The step guard ended and the job went on: an exception above that
+        # line did not stop the run (bridge_run_aster.aster_mess_errors)
         out["errors"] += sorted(set(re.findall(
-            r"<(?:EXCEPTION|F|[A-Za-z]+Error)>\s*<([A-Za-z0-9_]+)>", text)))
+            r"<(?:EXCEPTION|F|[A-Za-z]+Error)>\s*<([A-Za-z0-9_]+)>",
+            text[max(0, text.rfind("BRIDGE_VANGNET")):])))
         if "BRIDGE_ONVOLLEDIG" in text:
             out["errors"].append("BRIDGE_ONVOLLEDIG")
     res = os.path.join(work, u.run_name("_results.xml"))

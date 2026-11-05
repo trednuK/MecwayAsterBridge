@@ -402,6 +402,10 @@ def mess_hints():
 _MESS_PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
 # Id of the error that stopped the step loop (bridge_failure.PARTIAL_EXCEPT)
 _MESS_STOP_ID_RE = re.compile(r"BRIDGE_FOUT_ID\s+(\S+)")
+# The step guard ended and the job went on (bridge_to_aster._guarded_solve):
+# a MECANONLINE exception above this line did not stop the run. An error of
+# the continuation comes after it and counts as usual.
+_MESS_GUARD_END = "BRIDGE_VANGNET"
 # The FIN command writes "<I> <FIN> ARRET NORMAL DANS "FIN" ..." (in every
 # completed study.mess of the test models, also after a caught
 # ConvergenceError). If it is missing, study.comm was not executed to the end
@@ -1442,9 +1446,15 @@ def aster_mess_errors(work_dir, since=None):
     try:
         text = _read_mess(mess_path)
         lines = text.splitlines()
+        guard_end = -1
+        for i, line in enumerate(lines):
+            if line.startswith(_MESS_GUARD_END):
+                guard_end = i
         for i, line in enumerate(lines):
             m = _MESS_ERROR_RE.search(line)
             if m:
+                if i < guard_end and m.group(2).startswith("MECANONLINE"):
+                    continue
                 code = u"<{0}> <{1}>".format(m.group(1), m.group(2))
                 if code not in seen:
                     seen.add(code)

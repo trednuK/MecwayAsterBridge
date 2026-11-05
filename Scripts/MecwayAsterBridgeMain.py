@@ -132,7 +132,7 @@ from bridge_results_liml import (splice_results, read_step,
                                  read_cyclic_summary, read_tagged,
                                  read_error_summary, read_crit_stab,
                                  crit_stab_estimate, read_imperfection,
-                                 has_results)
+                                 read_step_guard, has_results)
 from bridge_failure     import report_failures
 from bridge_monitor     import monitor_text, write_summary, SUMMARY_SUFFIX
 from bridge_run_aster   import CONSOLE_SUFFIX
@@ -1257,9 +1257,56 @@ def _report_stability():
     status box: the imperfection (buckling shape, buckling load factor,
     amplitude) and the stability criterion CRIT_STAB per step, with a
     message when buckling is reached. Meaning of lambda:
-    bridge_to_aster._crit_stab_kind. Nothing if both were off.
+    bridge_to_aster._crit_stab_kind. Nothing if both were off, except the
+    note on geometrically linear beams (issue #10: the WARNING in the log
+    alone was missed): the displacements of such a beam stay proportional
+    to the load, so buckling cannot show in them.
     """
+    beams = (_LAST.get("model_data") or {}).get("_linear_beams")
+    if beams:
+        _notify(tr(u"Balken {0} rekenen geometrisch lineair (kleine "
+                   u"verplaatsingen): de uitbuiging groeit evenredig met de "
+                   u"last, dus knik of doorslag is in de verplaatsingen niet "
+                   u"te zien, ook niet met een imperfectie. Kies elem_beam = "
+                   u"POU_D_T_GD (pagina Elementen) voor het gedrag na knik.",
+                   u"Beams {0} are geometrically linear (small "
+                   u"displacements): the deflection grows in proportion to "
+                   u"the load, so buckling or a snap cannot show in the "
+                   u"displacements, even with an imperfection. Choose "
+                   u"elem_beam = POU_D_T_GD (Elements page) for the behaviour "
+                   u"after buckling.").format(u", ".join(beams)))
     mess = os.path.join(work_dir_path(), run_name(".mess"))
+    guard = read_step_guard(mess)
+    if guard["ended"] is not None:
+        line = tr(u"Stapbewaking balken (gd_step_limit): vanaf t = {0} "
+                  u"gerekend zonder bewaking, omdat de verplaatsing daar niet "
+                  u"kleiner werd door de stap te delen: een last die er "
+                  u"vanaf het begin staat, of een echte doorslag.",
+                  u"Step guard of beams (gd_step_limit): from t = {0} "
+                  u"computed without the guard, because cutting the step did "
+                  u"not make the displacement smaller there: a load present "
+                  u"from the start, or a real snap-through.").format(
+                      "%.6g" % guard["ended"])
+        log(u"INFO: " + line)
+        _notify(line)
+    if guard["jumps"]:
+        t0, t1, u0, u1 = guard["jumps"][0]
+        warn = tr(u"WARNING: Sprong in de balken: tussen t = {0} en t = {1} "
+                  u"valt de grootste verplaatsing van {2} naar {3} m terwijl "
+                  u"de last niet afneemt. Waarschijnlijk is de berekening op "
+                  u"een andere evenwichtstak beland (de onstabiele tak na "
+                  u"knik); de resultaten daarna zijn dan niet betrouwbaar. "
+                  u"Maak Mecway's Time step size kleiner en vergelijk.",
+                  u"WARNING: Jump in the beams: between t = {0} and t = {1} "
+                  u"the largest displacement falls from {2} to {3} m while "
+                  u"the load does not decrease. The analysis has probably "
+                  u"landed on another equilibrium branch (the unstable branch "
+                  u"after buckling); the results after it are then not "
+                  u"reliable. Reduce Mecway's Time step size and "
+                  u"compare.").format("%.6g" % t0, "%.6g" % t1,
+                                      "%.4g" % u0, "%.4g" % u1)
+        log(warn)
+        _notify(warn[len("WARNING: "):])
     imp = read_imperfection(mess)
     if imp:
         k = imp["mode"]
@@ -1314,17 +1361,20 @@ def _report_stability():
         if reached:
             warn = tr(u"WARNING: Knik bereikt: vanaf t = {0} is de kritische "
                       u"lastfactor <= 1 ({1}); de last is daar boven de "
-                      u"kniklast. Zonder imperfectie blijft een perfecte "
-                      u"constructie in de berekening recht: geef een "
-                      u"imperfectie (imperfection_amplitude) voor het gedrag "
-                      u"na knik.",
+                      u"kniklast.",
                       u"WARNING: Buckling reached: from t = {0} the critical "
                       u"load factor is <= 1 ({1}); the load there exceeds the "
-                      u"buckling load. Without an imperfection a perfect "
-                      u"structure stays straight in the analysis: add an "
-                      u"imperfection (imperfection_amplitude) for the "
-                      u"behaviour after buckling.").format(
+                      u"buckling load.").format(
                           "%.6g" % reached[0][0], "%.6g" % reached[0][1])
+            if not imp:
+                warn += tr(u" Zonder imperfectie blijft een perfecte "
+                           u"constructie in de berekening recht: geef een "
+                           u"imperfectie (imperfection_amplitude) voor het "
+                           u"gedrag na knik.",
+                           u" Without an imperfection a perfect structure "
+                           u"stays straight in the analysis: add an "
+                           u"imperfection (imperfection_amplitude) for the "
+                           u"behaviour after buckling.")
             log(warn)
             line += u" " + warn[len("WARNING: "):]
         elif lam_last < 0.0:

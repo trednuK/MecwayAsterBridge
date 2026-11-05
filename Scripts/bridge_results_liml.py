@@ -1390,6 +1390,36 @@ def crit_stab_estimate(rows):
     return None
 
 
+_JUMP = re.compile(r"^BRIDGE_SPRONG\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)")
+_GUARD_END = re.compile(r"^BRIDGE_VANGNET\s+(\S+)")
+
+
+def read_step_guard(mess_path):
+    """
+    Step guard and jump check of POU_D_T_GD beams from the .mess
+    (bridge_to_aster._guarded_solve, aster_results_export.print_jump_check):
+    {"ended": t the guard stopped or None, "jumps": [(t0, t1, u0, u1)]}.
+    """
+    out = {"ended": None, "jumps": []}
+    if not mess_path or not os.path.exists(mess_path):
+        return out
+    f = io.open(mess_path, "r", encoding="utf-8", errors="replace")
+    try:
+        for line in f:
+            line = line.strip()
+            m = _GUARD_END.match(line)
+            if m:
+                out["ended"] = float(m.group(1))
+                continue
+            m = _JUMP.match(line)
+            if m:
+                out["jumps"].append(tuple(float(m.group(i))
+                                          for i in range(1, 5)))
+    finally:
+        f.close()
+    return out
+
+
 def read_imperfection(mess_path):
     """
     Imperfection (buckling shape) from the .mess: {"mode": k,

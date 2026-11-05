@@ -1,0 +1,109 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="0.01 s" />
+  <node nid="1" x="0" y="0" z="-0" />
+  <node nid="2" x="0.0625" y="0" z="-1.9614773932e-05" />
+  <node nid="3" x="0.125" y="0" z="-3.91086162601e-05" />
+  <node nid="4" x="0.1875" y="0" z="-5.8361340964e-05" />
+  <node nid="5" x="0.25" y="0" z="-7.72542485937e-05" />
+  <node nid="6" x="0.3125" y="0" z="-9.56708580913e-05" />
+  <node nid="7" x="0.375" y="0" z="-0.000113497624935" />
+  <node nid="8" x="0.4375" y="0" z="-0.000130624641179" />
+  <node nid="9" x="0.5" y="0" z="-0.000146946313073" />
+  <node nid="10" x="0.5625" y="0" z="-0.000162362012083" />
+  <node nid="11" x="0.625" y="0" z="-0.000176776695297" />
+  <node nid="12" x="0.6875" y="0" z="-0.0001901014914" />
+  <node nid="13" x="0.75" y="0" z="-0.000202254248594" />
+  <node nid="14" x="0.8125" y="0" z="-0.000213160041089" />
+  <node nid="15" x="0.875" y="0" z="-0.000222751631047" />
+  <node nid="16" x="0.9375" y="0" z="-0.000230969883128" />
+  <node nid="17" x="1" y="0" z="-0.000237764129074" />
+  <node nid="18" x="1.0625" y="0" z="-0.000243092480099" />
+  <node nid="19" x="1.125" y="0" z="-0.000246922085149" />
+  <node nid="20" x="1.1875" y="0" z="-0.000249229333433" />
+  <node nid="21" x="1.25" y="0" z="-0.00025" />
+  <node nid="22" x="1.3125" y="0" z="-0.000249229333433" />
+  <node nid="23" x="1.375" y="0" z="-0.000246922085149" />
+  <node nid="24" x="1.4375" y="0" z="-0.000243092480099" />
+  <node nid="25" x="1.5" y="0" z="-0.000237764129074" />
+  <node nid="26" x="1.5625" y="0" z="-0.000230969883128" />
+  <node nid="27" x="1.625" y="0" z="-0.000222751631047" />
+  <node nid="28" x="1.6875" y="0" z="-0.000213160041089" />
+  <node nid="29" x="1.75" y="0" z="-0.000202254248594" />
+  <node nid="30" x="1.8125" y="0" z="-0.0001901014914" />
+  <node nid="31" x="1.875" y="0" z="-0.000176776695297" />
+  <node nid="32" x="1.9375" y="0" z="-0.000162362012083" />
+  <node nid="33" x="2" y="0" z="-0.000146946313073" />
+  <node nid="34" x="2.0625" y="0" z="-0.000130624641179" />
+  <node nid="35" x="2.125" y="0" z="-0.000113497624935" />
+  <node nid="36" x="2.1875" y="0" z="-9.56708580913e-05" />
+  <node nid="37" x="2.25" y="0" z="-7.72542485937e-05" />
+  <node nid="38" x="2.3125" y="0" z="-5.8361340964e-05" />
+  <node nid="39" x="2.375" y="0" z="-3.91086162601e-05" />
+  <node nid="40" x="2.4375" y="0" z="-1.9614773932e-05" />
+  <node nid="41" x="2.5" y="0" z="-3.06161699787e-20" />
+  <node nid="42" x="0" y="1" z="0" />
+  <node nid="43" x="0.1" y="1" z="0" />
+  <node nid="44" x="0.2" y="1" z="0" />
+  <node nid="45" x="0.3" y="1" z="0" />
+  <node nid="46" x="0.4" y="1" z="0" />
+  <node nid="47" x="0.5" y="1" z="0" />
+  <node nid="48" x="0.6" y="1" z="0" />
+  <node nid="49" x="0.7" y="1" z="0" />
+  <node nid="50" x="0.8" y="1" z="0" />
+  <node nid="51" x="0.9" y="1" z="0" />
+  <node nid="52" x="1" y="1" z="0" />
+  <elset name="Beam" material="S">
+    <elem eid="1" shape="line3" nodes="1 2 3" />
+    <elem eid="2" shape="line3" nodes="3 4 5" />
+    <elem eid="3" shape="line3" nodes="5 6 7" />
+    <elem eid="4" shape="line3" nodes="7 8 9" />
+    <elem eid="5" shape="line3" nodes="9 10 11" />
+    <elem eid="6" shape="line3" nodes="11 12 13" />
+    <elem eid="7" shape="line3" nodes="13 14 15" />
+    <elem eid="8" shape="line3" nodes="15 16 17" />
+    <elem eid="9" shape="line3" nodes="17 18 19" />
+    <elem eid="10" shape="line3" nodes="19 20 21" />
+    <elem eid="11" shape="line3" nodes="21 22 23" />
+    <elem eid="12" shape="line3" nodes="23 24 25" />
+    <elem eid="13" shape="line3" nodes="25 26 27" />
+    <elem eid="14" shape="line3" nodes="27 28 29" />
+    <elem eid="15" shape="line3" nodes="29 30 31" />
+    <elem eid="16" shape="line3" nodes="31 32 33" />
+    <elem eid="17" shape="line3" nodes="33 34 35" />
+    <elem eid="18" shape="line3" nodes="35 36 37" />
+    <elem eid="19" shape="line3" nodes="37 38 39" />
+    <elem eid="20" shape="line3" nodes="39 40 41" />
+    <elem eid="21" shape="line3" nodes="42 43 44" />
+    <elem eid="22" shape="line3" nodes="44 45 46" />
+    <elem eid="23" shape="line3" nodes="46 47 48" />
+    <elem eid="24" shape="line3" nodes="48 49 50" />
+    <elem eid="25" shape="line3" nodes="50 51 52" />
+  </elset>
+  <displacement selection="PinA"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="PinA"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="PinA"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="PinB"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="PinB"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <noderotation selection="PinA"><value>0 rad</value><x>1</x><y>0</y><z>0</z></noderotation>
+  <force selection="PinB"><x time="0 s">0 N</x><x time="1 s">-100000.0 N</x><y>0 N</y><z>0 N</z></force>
+  <fixed selection="StubRoot" />
+  <force selection="StubTip"><x>0 N</x><y>0 N</y><z>-10000 N</z></force>
+  <mat name="S">
+    <geometric type="RectTube" recta="48.95912993185 mm" rectb="48.95912993185 mm" rectthickness="3.851935412259 mm" />
+    <mechanical type="Isotropic" youngsmodulus="200000 MPa" poissonratio="0.25" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="PinA">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="PinB">
+    <node nid="41" />
+  </nodeselection>
+  <nodeselection name="StubRoot">
+    <node nid="42" />
+  </nodeselection>
+  <nodeselection name="StubTip">
+    <node nid="52" />
+  </nodeselection>
+</liml>

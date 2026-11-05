@@ -314,6 +314,11 @@ CONFIG_BRIDGE = {
             # or (imperfection_unit "L") as a fraction of the largest
             # dimension of the model.
             "crit_stab":             False,
+            # Step guard of POU_D_T_GD beams (bridge_to_aster._gd_step_guard):
+            # cut a step in which a displacement component of these beams
+            # grows more than this fraction of their largest dimension.
+            # 0 = off.
+            "gd_step_limit":         0.02,
             "imperfection_amplitude": 0.0,
             "imperfection_mode":     1,
             "imperfection_unit":     "m",

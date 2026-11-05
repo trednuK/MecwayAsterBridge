@@ -160,6 +160,9 @@ FEM-waarden bit-gelijk); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (2
 Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
 Balkzijvlakken en hydrostatische druk
 op schaalranden LS-92a..h, LS-93a..c, 11 cases, 27 controles OK (28 oktober 2026, stap S17).
+Niet-lineaire knik NK-05 .. NK-10 (grote-rotatiebalken, issue #10), 7 cases, 23 controles OK
+(5 november 2026); NK-01 .. NK-04 daarmee opnieuw gedraaid: zelfde status, grootste
+verschil 1,4e-6 relatief.
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen
@@ -2542,8 +2545,8 @@ Waarnemingen:
 `nonlin_static_3d` met `crit_stab` (`CRIT_STAB` in `STAT_NON_LINE`) en/of
 `imperfection_*` (lineaire knikvorm als voorvervorming via `MODI_MAILLAGE DEFORME`;
 [Modaal_en_knik.md](Modaal_en_knik.md) §5). Module `tests_niet_lineaire_knik.py` (groep
-"Niet-lineaire knik", 5 cases), draaien met `python run_verificatie.py NK` (ca. 1,5
-minuut). Model: ingeklemde kolom L = 1 m, 0,02 × 0,03 m (zwakke as Y), staal, drukkracht
+"Niet-lineaire knik", 12 cases), draaien met `python run_verificatie.py NK` (ca. 2,5
+minuut). Model NK-01 .. NK-04: ingeklemde kolom L = 1 m, 0,02 × 0,03 m (zwakke as Y), staal, drukkracht
 als tijdstabel P(t) = t·P_eind; Euler Pcr = π²EI/(2L)² = 10 363 N (Timoshenko & Gere,
 1961). De CRIT_STAB-waarden en de imperfectie leest de test uit de `.mess` met dezelfde
 functies als de bridge (`bridge_results_liml.read_crit_stab`, `crit_stab_estimate`,
@@ -2582,6 +2585,46 @@ Waarnemingen:
   gedrag na knik van een plaat).
 - **`#ASTER-OPTIE`**: dezelfde instellingen per model gaven dezelfde getallen als
   NK-03 ([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) voorbeeld 10).
+
+**Grote-rotatiebalken (NK-05 .. NK-10, issue #10).** Alle cases met `elem_beam` =
+`POU_D_T_GD`: de imperfectie via het hulpmodel met `POU_D_T`, de stapbewaking
+`gd_step_limit` en de sprongcontrole; de regels `BRIDGE_VANGNET` en `BRIDGE_SPRONG` leest
+de test met `bridge_results_liml.read_step_guard`. Model NK-05 .. NK-08: scharnierende
+kolom L = 2,5 m langs X, RectTube 48,96 × 48,96 × 3,85 mm, E = 200 GPa, ν = 0,25, 20 line3,
+torsie vast aan één eind; drukkracht 0 → 100 kN op t = 0 → 1, stepsize 0,01 s. Euler
+PE = π²EI/L² = 74 977 N; met de dwarskracht Pcr = PE/(1 + PE/(G·A/2)) = 74 776 N
+(Timoshenko & Gere, 1961, hfdst. 2; A/2: de twee lijven), dus P/Pcr = 1,337 op t = 1.
+Elastica (zelfde bron; onrekbaar, K en E met het rekenkundig-meetkundig gemiddelde,
+Abramowitz & Stegun, 1964, 17.6, in de testmodule): uitbuiging 926,74 mm, eindverkorting
+1218,79 mm. De totale uitbuiging is de verplaatsing midden plus e0. Toleranties: elastica en
+lineaire knik 0,5%, instabiele tak 2%, vergelijking met een run zonder bewaking 1e-6
+relatief.
+
+| ID | Doel en model | Referentie | Resultaat |
+|---|---|---|---|
+| NK-05 | e0 = 0,25 mm (sinus) in de mesh, standaard `gd_step_limit` (0,02) | elastica; geen sprong, bewaking eindigt niet | uitbuiging 926,61 mm (−0,01%), verkorting 1218,05 mm (−0,06%); geen `BRIDGE_SPRONG`, geen `BRIDGE_VANGNET` |
+| NK-05b | idem met `gd_step_limit` = 0: de sprong | instabiele tak aan de overkant: e0/(P/Pcr − 1) + e0 = 0,991 mm t.o.v. de mesh (beginkromming, Timoshenko & Gere, 1961, hfdst. 1) | `BRIDGE_SPRONG` tussen t = 0,75 en 0,76 (138,2 → 16,4 mm); dz op t = 1 0,994 mm (+0,30%) |
+| NK-06 | rechte mesh, `imperfection_amplitude` = 0,25 mm | elastica op √(dy² + dz²) + e0 (dubbele eigenwaarde, richting willekeurig); kniklast Pcr | uitbuiging 926,59 mm (−0,02%), verkorting 1218,24 mm (−0,05%); kniklastfactor × 100 kN = 74 734 N (−0,06%); geen sprong, geen `BRIDGE_VANGNET` |
+| NK-07 | NK-05 plus een losse uitkraging van 1 m in dezelfde elset, constante eindkracht 10 kN: de grens van de bewaking | `BRIDGE_VANGNET` op t = 0 (de eerste stap kan niet kleiner); sprong gemeld; instabiele tak als NK-05b | `BRIDGE_VANGNET` 0; `BRIDGE_SPRONG` tussen t = 0,75 en 0,76; dz op t = 1 0,994 mm (+0,30%), gelijk aan NK-05b |
+| NK-08 | rechte kolom, constante dwarskracht 15 kN op het midden, 10 stappen (stepsize 0,1 s); de eerste stap komt boven de grens van 50 mm | run met `gd_step_limit` = 0 (Code-Aster 17.4, geen analytische referentie): dz −102,471 mm | `BRIDGE_VANGNET` 0; dz gelijk (< 1e-6) |
+| NK-09 | ondiepe scharnierende boog, overspanning 2 m, pijl 40 mm, 40 line2, puntlast 0 → 60 kN, 50 stappen, `gd_step_limit` = 0,005 (10 mm): een echte doorslag | run met `gd_step_limit` = 0 (Code-Aster 17.4, geen analytische referentie): dz −105,195 mm | `BRIDGE_VANGNET` op t = 0,196; de run gaat door tot t = 1; dz gelijk (< 1e-6) |
+| NK-10 | gemengd model door het hulpmodel: kolom 30 × 50 mm `POU_D_T_GD`, losse quad4-strook 500 × 100 × 5 mm op trek (10 kN), 5 kg op het kolommidden, een `#ASTER`-regel; imperfectie 2,5 mm, P = 0,5 Pcr, 10 stappen | Pcr = 35 518 N (A/1,2 als afschuifoppervlakte); versterking 1/(1 − P/Pcr) = 2; verlenging strook F·L/(E·t·b) = 0,05 mm | kniklastfactor × P 35 518 N (< 0,001%); w/e0 1,998 (−0,11%); strook 0,05 mm (< 0,001%); `#ASTER`-regel uitgevoerd |
+
+Waarnemingen:
+- **Waarom de bewaking**: zonder bewaking convergeert Newton op de instabiele tak en
+  eindigt de job met diagnose OK; alleen de sprongcontrole laat het zien (NK-05b).
+- **Fijnheid en grens**: met `gd_step_limit` = 0,05 volgt NK-05 met 20 line3 de elastica
+  (dezelfde getallen), met 10 line3 springt de kolom bij stepsize 0,01 s (`BRIDGE_SPRONG`
+  tussen t = 0,75 en 0,76; gemeten, niet in de suite).
+- **Grens van de bewaking**: één constante last boven de grens beëindigt de bewaking voor
+  het hele model (NK-07); daarna rekent de run als zonder bewaking.
+- **Afschuifoppervlakte van de koker**: de kniklast van Code-Aster is 0,06% lager dan met
+  A/2; teruggerekend is dat ongeveer A/2,42. De formule van Code-Aster voor een holle
+  rechthoek is NIET geverifieerd. Bij de massieve rechthoek van NK-10 klopt A/1,2 tot op
+  afrondingsniveau.
+- **Alarmen**: NK-06 `ALGELINE5_23` (twee kniklasten in het interval, één berekend: de
+  dubbele eigenwaarde, verwacht); NK-10 `MODELISA8_14` (de `POI1` van de puntmassa ligt in
+  een balkelement, verwacht).
 
 ### Respons op modale basis (MD)
 
@@ -3717,6 +3760,9 @@ niet uit de installatie.
 
 ## 11. Bronnen
 
+- Abramowitz, M. & Stegun, I.A. (1964). *Handbook of Mathematical Functions*.
+  Washington: National Bureau of Standards (17.6, rekenkundig-meetkundig gemiddelde; NK).
+  Niet lokaal ingezien; de elastica is nagerekend.
 - Ainsworth, M. & Oden, J.T. (2000). *A Posteriori Error Estimation in Finite Element
   Analysis*. New York: Wiley.
 - ASTM International (2017). *ASTM E1049-85 (Reapproved 2017): Standard Practices for

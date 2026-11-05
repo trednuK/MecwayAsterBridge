@@ -137,6 +137,29 @@ PARTIAL_EXCEPT = (
     "    print('BRIDGE_FOUT_ID', _pe_id)\n"
     "    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])\n")
 
+# except clause of the first STAT_NON_LINE when the step guard is on
+# (bridge_to_aster._gd_step_guard). A DECOUPE that runs out on DELTA_GRANDEUR
+# stops with MECANONLINE9_50 (constant load, 17.4 run), a limit point with
+# MECANONLINE9_7 (shallow arch, 17.4 run). Neither may stop a run that works
+# without the guard: _gs_t makes the job continue from the last archived
+# state on the plain time list. Anything else goes as PARTIAL_EXCEPT. No
+# braces (str.format templates).
+GUARD_EXCEPT = (
+    "except Exception as err:\n"
+    "    _pe_id = str(getattr(err, 'id_message', '') or '')\n"
+    "    try:\n"
+    "        _pe_inst = list(res.getAccessParameters()['INST'])\n"
+    "    except Exception:\n"
+    "        _pe_inst = []\n"
+    "    if _pe_id.startswith('MECANONLINE') and _pe_inst:\n"
+    "        _gs_t = _pe_inst[-1]\n"
+    "        print('BRIDGE_VANGNET', _gs_t)\n"
+    "    elif not _pe_id or not _pe_inst or len(_pe_inst) < 2:\n"
+    "        raise\n"
+    "    else:\n"
+    "        print('BRIDGE_FOUT_ID', _pe_id)\n"
+    "        print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])\n")
+
 # Per MODELISATION the DEFORMATION forms for which failure has been
 # checked with a Code-Aster run (force drop after failure). DKT/COQUE_3D
 # with VMIS_ISOT_LINE: 2 internal variables, also with GREEN_LAGRANGE/GROT_GDEP

@@ -157,6 +157,9 @@ checks OK (28 October 2026, step S15b); PT-11..13 (irregular tet mesh), 3 cases,
 OK (29 October 2026). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
 Beam side faces and hydrostatic pressure on shell
 edges LS-92a..h, LS-93a..c, 11 cases, 27 checks OK (28 October 2026, step S17).
+Nonlinear buckling NK-05 .. NK-10 (large rotation beams, issue #10), 7 cases, 23 checks OK
+(5 November 2026); NK-01 .. NK-04 rerun with them: same status, largest difference 1.4e-6
+relative.
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
@@ -2532,8 +2535,8 @@ Observations:
 `nonlin_static_3d` with `crit_stab` (`CRIT_STAB` in `STAT_NON_LINE`) and/or
 `imperfection_*` (linear buckling mode as pre-deformation via `MODI_MAILLAGE DEFORME`;
 [Modal_and_buckling.md](Modal_and_buckling.md) §5). Module
-`tests_niet_lineaire_knik.py` (group "Nonlinear buckling", 5
-cases), run with `python run_verificatie.py NK` (about 1.5 minutes). Model: cantilever
+`tests_niet_lineaire_knik.py` (group "Nonlinear buckling", 12
+cases), run with `python run_verificatie.py NK` (about 2.5 minutes). Model NK-01 .. NK-04: cantilever
 column L = 1 m, 0.02 × 0.03 m (weak axis Y), steel, compressive force as a time table
 P(t) = t·P_end; Euler Pcr = π²EI/(2L)² = 10 363 N (Timoshenko & Gere, 1961). The test
 reads the CRIT_STAB values and the imperfection from the `.mess` with the same functions
@@ -2573,6 +2576,45 @@ Observations:
   post-buckling of a plate).
 - **`#ASTER-OPTIE`**: the same settings per model gave the same numbers as NK-03
   ([`ASTER_lines_examples.md`](ASTER_lines_examples.md) example 10).
+
+**Large rotation beams (NK-05 .. NK-10, issue #10).** All cases with `elem_beam` =
+`POU_D_T_GD`: the imperfection through the auxiliary model with `POU_D_T`, the step guard
+`gd_step_limit` and the jump check; the test reads the lines `BRIDGE_VANGNET` and
+`BRIDGE_SPRONG` with `bridge_results_liml.read_step_guard`. Model NK-05 .. NK-08: pinned
+column L = 2.5 m along X, RectTube 48.96 × 48.96 × 3.85 mm, E = 200 GPa, ν = 0.25, 20 line3,
+torsion held at one end; compressive force 0 → 100 kN at t = 0 → 1, stepsize 0.01 s. Euler
+PE = π²EI/L² = 74 977 N; with the shear force Pcr = PE/(1 + PE/(G·A/2)) = 74 776 N
+(Timoshenko & Gere, 1961, ch. 2; A/2: the two webs), so P/Pcr = 1.337 at t = 1.
+Elastica (same source; inextensible, K and E with the arithmetic-geometric mean,
+Abramowitz & Stegun, 1964, 17.6, in the test module): deflection 926.74 mm, end shortening
+1218.79 mm. The total deflection is the mid displacement plus e0. Tolerances: elastica and
+linear buckling 0.5%, unstable branch 2%, comparison with a run without the guard 1e-6
+relative.
+
+| ID | Purpose and model | Reference | Result |
+|---|---|---|---|
+| NK-05 | e0 = 0.25 mm (sine) in the mesh, default `gd_step_limit` (0.02) | elastica; no jump, guard does not end | deflection 926.61 mm (−0.01%), shortening 1218.05 mm (−0.06%); no `BRIDGE_SPRONG`, no `BRIDGE_VANGNET` |
+| NK-05b | same with `gd_step_limit` = 0: the jump | unstable branch at the other side: e0/(P/Pcr − 1) + e0 = 0.991 mm relative to the mesh (initial curvature, Timoshenko & Gere, 1961, ch. 1) | `BRIDGE_SPRONG` between t = 0.75 and 0.76 (138.2 → 16.4 mm); dz at t = 1 0.994 mm (+0.30%) |
+| NK-06 | straight mesh, `imperfection_amplitude` = 0.25 mm | elastica on √(dy² + dz²) + e0 (double eigenvalue, direction arbitrary); buckling load Pcr | deflection 926.59 mm (−0.02%), shortening 1218.24 mm (−0.05%); buckling factor × 100 kN = 74 734 N (−0.06%); no jump, no `BRIDGE_VANGNET` |
+| NK-07 | NK-05 plus a loose cantilever of 1 m in the same elset, constant tip force 10 kN: the limit of the guard | `BRIDGE_VANGNET` at t = 0 (the first step cannot shrink); jump reported; unstable branch as NK-05b | `BRIDGE_VANGNET` 0; `BRIDGE_SPRONG` between t = 0.75 and 0.76; dz at t = 1 0.994 mm (+0.30%), equal to NK-05b |
+| NK-08 | straight column, constant transverse force 15 kN at mid, 10 steps (stepsize 0.1 s); the first step exceeds the limit of 50 mm | run with `gd_step_limit` = 0 (Code-Aster 17.4, no analytical reference): dz −102.471 mm | `BRIDGE_VANGNET` 0; dz equal (< 1e-6) |
+| NK-09 | shallow pinned arch, span 2 m, rise 40 mm, 40 line2, point load 0 → 60 kN, 50 steps, `gd_step_limit` = 0.005 (10 mm): a genuine snap-through | run with `gd_step_limit` = 0 (Code-Aster 17.4, no analytical reference): dz −105.195 mm | `BRIDGE_VANGNET` at t = 0.196; the run goes on to t = 1; dz equal (< 1e-6) |
+| NK-10 | mixed model through the auxiliary model: column 30 × 50 mm `POU_D_T_GD`, loose quad4 strip 500 × 100 × 5 mm in tension (10 kN), 5 kg at the column mid, an `#ASTER` line; imperfection 2.5 mm, P = 0.5 Pcr, 10 steps | Pcr = 35 518 N (A/1.2 as shear area); amplification 1/(1 − P/Pcr) = 2; strip elongation F·L/(E·t·b) = 0.05 mm | buckling factor × P 35 518 N (< 0.001%); w/e0 1.998 (−0.11%); strip 0.05 mm (< 0.001%); `#ASTER` line executed |
+
+Observations:
+- **Why the guard**: without the guard Newton converges on the unstable branch and the
+  job ends with diagnosis OK; only the jump check shows it (NK-05b).
+- **Mesh and limit**: with `gd_step_limit` = 0.05 NK-05 with 20 line3 follows the elastica
+  (the same numbers), with 10 line3 the column jumps at stepsize 0.01 s (`BRIDGE_SPRONG`
+  between t = 0.75 and 0.76; measured, not in the suite).
+- **Limit of the guard**: one constant load above the limit ends the guard for the whole
+  model (NK-07); after that the run computes as without the guard.
+- **Shear area of the tube**: Code-Aster's buckling load is 0.06% lower than with A/2;
+  calculated back that is about A/2.42. Code-Aster's formula for a hollow rectangle is NOT
+  verified. For the solid rectangle of NK-10 A/1.2 holds to rounding level.
+- **Alarms**: NK-06 `ALGELINE5_23` (two buckling loads in the interval, one computed: the
+  double eigenvalue, expected); NK-10 `MODELISA8_14` (the `POI1` of the point mass lies in
+  a beam element, expected).
 
 ### Mode superposition (MD)
 
@@ -3706,6 +3748,9 @@ discretisation, not from the installation.
 
 ## 11. References
 
+- Abramowitz, M. & Stegun, I.A. (1964). *Handbook of Mathematical Functions*.
+  Washington: National Bureau of Standards (17.6, arithmetic-geometric mean; NK).
+  Not consulted locally; the elastica has been recalculated.
 - Ainsworth, M. & Oden, J.T. (2000). *A Posteriori Error Estimation in Finite Element
   Analysis*. New York: Wiley.
 - ASTM International (2017). *ASTM E1049-85 (Reapproved 2017): Standard Practices for

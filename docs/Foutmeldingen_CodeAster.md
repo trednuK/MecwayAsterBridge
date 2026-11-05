@@ -385,7 +385,8 @@ in dat bestand, niet op het model.
   (ERROR; KNOWN_BUGS 19); 6 met `elem_beam` = `POU_D_T_GD` maakt de bridge in andere
   analyses dan niet-lineair statisch met grote verplaatsingen `POU_D_T` (WARNING),
   vraagt hij geen `SIPM_ELNO` en zet hij de centrifugaalkracht als `FORMULE`;
-  `imperfection_amplitude` geeft vooraf een ERROR; 7 knik (en een knikvorm als
+  de lineaire knik van `imperfection_amplitude` rekent op een hulpmodel met `POU_D_T`
+  ([`Modaal_en_knik.md`](Modaal_en_knik.md) §5.2); 7 knik (en een knikvorm als
   imperfectie) met trusses of kabels geeft vooraf een ERROR: modelleer de staven als
   balken ([`Modaal_en_knik.md`](Modaal_en_knik.md)).
 - **Status**: opgelost in de bridge (1, 3, 6, 7; 2 en 5 als melding) / eigen invoer (2, eigen
@@ -855,7 +856,8 @@ Stappenplan en instellingen:
   stappen blijven bewaard.
 - **Wat de bridge doet**: de job vangt de fout op, schrijft `BRIDGE_ONVOLLEDIG <tijd>`
   en laadt de resultaten tot het laatst bereikte tijdstip; Mecway toont de uitleg
-  (`_NEWTON_HINT`).
+  (`_NEWTON_HINT`). Met de stapbewaking van balken `POU_D_T_GD` aan gaat de job door:
+  zie [`MECANONLINE9_50`](#mecanonline9_50--stapbewaking-beëindigd).
 - **Oorzaak**; lees de convergentietabel in de `.mess` (kolommen `RESI_GLOB_RELA`,
   `RESI_GLOB_MAXI`, contact):
   1. **Relatief residu blijft hangen, absoluut residu is ~0.** Een buigmodel (profiel, rol en mal met contact):
@@ -908,6 +910,27 @@ Stappenplan en instellingen:
      voorbij het grenspunt kan alleen met een opgelegde verplaatsing in plaats van een
      kracht (de boogslengtemethode `PILOTAGE` zit niet in de bridge).
 - **Status**: model / beperking (per geval).
+
+### `MECANONLINE9_50` – stapbewaking beëindigd
+
+- **Melding** (fout, in de `.mess`): "Arrêt par échec de l'action <...> pour le
+  traitement de l'événement <...>": het knippen van een stap op `DELTA_GRANDEUR` is
+  uitgeput en de verplaatsing bleef boven de grens.
+- **Wat de bridge doet**: de job vangt de fout op, schrijft `BRIDGE_VANGNET <tijd>` en
+  rekent vanaf de laatst gearchiveerde toestand door zonder stapbewaking. Het statusvak
+  noemt die tijd, het convergentiescherm geeft een alarm `BRIDGE_VANGNET`, en de run
+  geldt niet als mislukt: `MECANONLINE`-fouten boven die regel komen niet in de
+  foutmelding, maar blijven in de `.mess` staan. Hetzelfde geldt voor `MECANONLINE9_7`
+  bij een grenspunt terwijl de bewaking aan staat.
+- **Oorzaak**: de stapbewaking `gd_step_limit` van balken `POU_D_T_GD`, op een
+  verplaatsing die niet kleiner wordt door de stap te delen: een last die er vanaf het
+  begin staat, of een echte doorslag.
+- **Gezien**: verificatie NK-07, NK-08 (constante last, einde op t = 0) en NK-09
+  (doorslag van een ondiepe boog; daar `MECANONLINE9_7`).
+- **Oplossing**: geen nodig. Daarna is alleen de sprongcontrole nog actief: let op
+  *Sprong in de balken* in het statusvak
+  ([`Modaal_en_knik.md`](Modaal_en_knik.md) §5.2).
+- **Status**: opgelost in de bridge (de run gaat door).
 
 ### `SUBDIVISE_3` – stap kan niet verkleind worden
 
@@ -1539,6 +1562,7 @@ twee drukken en balken in het model).
 | `MECANONLINE5_80` | [5](#mecanonline5_80--beginsnelheid-op-ander-model) | oorzaak niet vastgesteld |
 | `MECANONLINE9_3` | [5](#mecanonline9_3--integratie-van-de-materiaalwet-mislukt) | opgelost in de bridge (oorzaak 2) / model (oorzaak 1) |
 | `MECANONLINE9_4` | [3](#mecanonline9_4--matrix-niet-inverteerbaar-niet-lineair) | opgelost in de bridge (1 bij fixed, 4) / model (1 overig, 2) / eigen invoer (3) / oorzaak niet vastgesteld (5) |
+| `MECANONLINE9_50` | [5](#mecanonline9_50--stapbewaking-beëindigd) | opgelost in de bridge (de run gaat door) |
 | `MECANONLINE9_7` | [5](#mecanonline9_7--newton-convergeert-niet) | model / beperking (per geval) |
 | `MECANONLINE_3` | [2](#mecanonline_3-met-alarm-calculel_54--element-niet-voor-niet-lineair) | opgelost in de bridge |
 | `MECANONLINE_78` | [3](#mecanonline_78--massamatrix-bijna-singulier) | onschuldig (in de geziene gevallen) / model (geen dichtheid) |

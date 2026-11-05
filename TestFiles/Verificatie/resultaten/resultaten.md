@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 35c7564, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-05 (bridge 4fdf5ce, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2957 van 2963 controles binnen de tolerantie** (544 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**2980 van 2986 controles binnen de tolerantie** (551 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1721,7 +1721,7 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 35c7564, Code-Aster 17.4
 | NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
 | NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
 | NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
-| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
+| NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tensileforce (grootste |N|) | 0 N | -1.5854e-07 | -1.5854e-07 | 0.05 N | OK |
 | NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 | 2 - | 1.9996 | -0.02% | 0.1% | OK |
 | NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 t.o.v. Mecway 34 + CCX | 1.9995 - | 1.9996 | +0.00% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 | 0.30174 m | 0.30171 | -0.01% | 0.1% | OK |
@@ -1736,7 +1736,7 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 35c7564, Code-Aster 17.4
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | bendingmomw element 1 t=3 (statica vervormd) | 769.78 N.m | 769.78 | +0.00% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | sheary laatste element t=3 (statica vervormd) | 579.73 N | 579.77 | +0.01% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tensileforce laatste element t=3 (statica vervormd) | 875.45 N | 875.42 | -0.00% | 0.1% | OK |
-| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | reactiekracht Y | -1050 N | -1050 | +0.00% | 0.0001% | OK |
+| NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | reactiekracht Y | -1050 N | -1050 | -0.00% | 0.0001% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 t.o.v. Mecway 34 + CCX | 0.30168 m | 0.30171 | +0.01% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=1 t.o.v. Mecway 34 + CCX | -0.056421 m | -0.056419 | +0.00% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=2 t.o.v. Mecway 34 + CCX | 0.49339 m | 0.49345 | +0.01% | 0.1% | OK |
@@ -1748,13 +1748,13 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 35c7564, Code-Aster 17.4
 | NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
 | NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
 | NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
-| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tensileforce (grootste |N|) | 0 N | 1.3989e-06 | 1.3989e-06 | 0.05 N | OK |
+| NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tensileforce (grootste |N|) | 0 N | -1.5854e-07 | -1.5854e-07 | 0.05 N | OK |
 | NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
 | NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tip verplaatsing dwars | -0.63662 m | -0.63666 | -0.01% | 0.1% | OK |
 | NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
 | NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (min. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
 | NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | bendingmomw (max. over de elementen) | -549.78 N.m | -549.78 | -0.00% | 0.01% | OK |
-| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tensileforce (grootste |N|) | 0 N | 1.2497e-06 | 1.2497e-06 | 0.05 N | OK |
+| NL-85 | POU_D_T_GD: zuivere buiging tot 90 graden om de zwakke as uit een orientatiekaart | tensileforce (grootste |N|) | 0 N | 2.2382e-07 | 2.2382e-07 | 0.05 N | OK |
 | NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | tipverlenging | 1.2298e-05 m | 1.2296e-05 | -0.02% | 0.1% | OK |
 | NL-86 | POU_D_T_GD: centrifugaalkracht op een radiale staaf | reactiekracht X | -774.76 N | -774.76 | -0.00% | 0.1% | OK |
 | NL-86b | POU_D_T_GD: centrifugaalkracht op een balk en een truss (BARRE) | tipverlenging truss | 1.2298e-05 m | 1.2302e-05 | +0.03% | 0.1% | OK |
@@ -2232,6 +2232,29 @@ Gemaakt door `run_verificatie.py` op 2026-10-29 (bridge 35c7564, Code-Aster 17.4
 | NK-03 | Ingeklemde kolom hex20 met imperfectie L/1000 (knikvorm 1) | Southwell Pcr (P <= 0,7 Pcr) | 10363 N | 10384 | +0.20% | 2% | OK |
 | NK-04 | Ingeklemde kolom hex20, plastisch, imperfectie 5 mm: draagkracht | P_u/Pcr (Ayrton-Perry 0.419 .. scharnier 0.563) | 0.49096 - | 0.4881 | -0.58% | 0.0720993 - | OK |
 | NK-04 | Ingeklemde kolom hex20, plastisch, imperfectie 5 mm: draagkracht | CRIT_STAB bij P_u / begin | 0 - | 0.0066231 | 0.0066231 | 0.05 - | OK |
+| NK-05 | Kolom POU_D_T_GD boven de kniklast, imperfectie in de mesh, stapbewaking | uitbuiging midden t=1 | 0.92674 m | 0.92661 | -0.01% | 0.5% | OK |
+| NK-05 | Kolom POU_D_T_GD boven de kniklast, imperfectie in de mesh, stapbewaking | eindverkorting t=1 | 1.2188 m | 1.218 | -0.06% | 0.5% | OK |
+| NK-05 | Kolom POU_D_T_GD boven de kniklast, imperfectie in de mesh, stapbewaking | aantal BRIDGE_SPRONG | 0 - | 0 | 0 | 0.5 - | OK |
+| NK-05 | Kolom POU_D_T_GD boven de kniklast, imperfectie in de mesh, stapbewaking | BRIDGE_VANGNET (t, -1 = geen) | -1 - | -1 | +0.00% | 1e-09 - | OK |
+| NK-05b | NK-05 zonder stapbewaking: sprong naar de instabiele tak | t sprong | 0.755 s | 0.755 | +0.00% | 0.01 s | OK |
+| NK-05b | NK-05 zonder stapbewaking: sprong naar de instabiele tak | dz midden t=1 | 9.9111e-04 m | 9.9411e-04 | +0.30% | 2% | OK |
+| NK-06 | Kolom POU_D_T_GD, rechte mesh, imperfection_amplitude via het hulpmodel | uitbuiging midden t=1 | 0.92674 m | 0.92659 | -0.02% | 0.5% | OK |
+| NK-06 | Kolom POU_D_T_GD, rechte mesh, imperfection_amplitude via het hulpmodel | eindverkorting t=1 | 1.2188 m | 1.2182 | -0.05% | 0.5% | OK |
+| NK-06 | Kolom POU_D_T_GD, rechte mesh, imperfection_amplitude via het hulpmodel | aantal BRIDGE_SPRONG | 0 - | 0 | 0 | 0.5 - | OK |
+| NK-06 | Kolom POU_D_T_GD, rechte mesh, imperfection_amplitude via het hulpmodel | BRIDGE_VANGNET (t, -1 = geen) | -1 - | -1 | +0.00% | 1e-09 - | OK |
+| NK-06 | Kolom POU_D_T_GD, rechte mesh, imperfection_amplitude via het hulpmodel | lineaire knik imperfectiestap x P_eind | 74776 N | 74734 | -0.06% | 0.5% | OK |
+| NK-07 | Grens van de stapbewaking: constante last die de grens al in de eerste stap overschrijdt | BRIDGE_VANGNET t | 0 s | 0 | 0 | 1e-09 s | OK |
+| NK-07 | Grens van de stapbewaking: constante last die de grens al in de eerste stap overschrijdt | t sprong | 0.755 s | 0.755 | +0.00% | 0.01 s | OK |
+| NK-07 | Grens van de stapbewaking: constante last die de grens al in de eerste stap overschrijdt | dz midden t=1 | 9.9111e-04 m | 9.9411e-04 | +0.30% | 2% | OK |
+| NK-08 | Stapbewaking: constante last, eerste stap boven de grens | BRIDGE_VANGNET t | 0 s | 0 | 0 | 1e-09 s | OK |
+| NK-08 | Stapbewaking: constante last, eerste stap boven de grens | dz midden t=1 | -0.10247 m | -0.10247 | -0.00% | 0.0001% | OK |
+| NK-09 | Stapbewaking: doorslag van een ondiepe boog | BRIDGE_VANGNET t | 0.196 s | 0.19634 | +0.17% | 0.005 s | OK |
+| NK-09 | Stapbewaking: doorslag van een ondiepe boog | t einde | 1 s | 1 | +0.00% | 1e-09 s | OK |
+| NK-09 | Stapbewaking: doorslag van een ondiepe boog | dz midden t=1 | -0.10519 m | -0.10519 | +0.00% | 0.0001% | OK |
+| NK-10 | Gemengd model door het hulpmodel: POU_D_T_GD, schaal, puntmassa, #ASTER-regel | lineaire knik imperfectiestap x P_eind | 35518 N | 35518 | +0.00% | 0.5% | OK |
+| NK-10 | Gemengd model door het hulpmodel: POU_D_T_GD, schaal, puntmassa, #ASTER-regel | w/e0 midden t=1 | 2 - | 1.9977 | -0.11% | 1% | OK |
+| NK-10 | Gemengd model door het hulpmodel: POU_D_T_GD, schaal, puntmassa, #ASTER-regel | rek schaal | 5.0000e-05 m | 5.0000e-05 | -0.00% | 0.5% | OK |
+| NK-10 | Gemengd model door het hulpmodel: POU_D_T_GD, schaal, puntmassa, #ASTER-regel | #ASTER-regel uitgevoerd | 1 - | 1 | +0.00% | 0.5 - | OK |
 
 *NK-04: diagnose OK; MECANONLINE9_7; BRIDGE_ONVOLLEDIG*
 

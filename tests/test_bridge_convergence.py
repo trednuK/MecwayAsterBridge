@@ -431,6 +431,28 @@ def test_failure():
     check(p.data.overall_progress() == (10, 0.1), p.data.overall_progress())
 
 
+def test_step_guard():
+    """BRIDGE_VANGNET: the exception before it did not stop the run."""
+    p = bc.ConvergenceParser()
+    p.feed(u"\u2554\u2550\u2557\n"
+           u"\u2551 <ConvergenceError> <MECANONLINE9_50> \u2551\n"
+           u"\u2551 Arret \u2551\n"
+           u"\u255a\u2550\u255d\n"
+           u"BRIDGE_VANGNET 0.25\n")
+    p.close()
+    codes = [m["code"] for m in p.data.messages]
+    check(u"MECANONLINE9_50" not in codes and u"BRIDGE_VANGNET" in codes,
+          p.data.messages)
+    p = bc.ConvergenceParser()
+    p._add_message("fout", u"", u"\u00c9chec dans la tentative de d\u00e9couper"
+                   u" le pas de temps.")
+    p._add_message("fout", u"", u"Le nombre maximum d'it\u00e9rations")
+    p.feed(u"BRIDGE_VANGNET 0.25\n")
+    p.close()
+    kinds = [(m["kind"], m["code"]) for m in p.data.messages]
+    check(kinds == [("fout", u""), ("alarm", u"BRIDGE_VANGNET")], kinds)
+
+
 class FakeClock(object):
     def __init__(self):
         self.t = 100.0
@@ -587,6 +609,7 @@ def main(argv):
     test_energy()
     test_python_errors()
     test_failure()
+    test_step_guard()
     test_linear_mumps()
     test_linear_gcpc()
     test_linear_fail()

@@ -380,6 +380,10 @@ ANALYSIS_SPECS = [
     # no imperfection; negative reverses the buckling shape.
     ("crit_stab", ("Stabiliteit per stap (CRIT_STAB)",
                    "Stability per step (CRIT_STAB)"), "bool", None),
+    # Step guard of POU_D_T_GD beams (bridge_to_aster._gd_step_guard)
+    ("gd_step_limit", ("Stapbewaking balken POU_D_T_GD (0 = uit)",
+                       "Step guard of POU_D_T_GD beams (0 = off)"),
+     "float_range", (0.0, 1.0)),
     ("imperfection_amplitude", ("Imperfectie: amplitude (0 = geen)",
                                 "Imperfection: amplitude (0 = none)"),
      "float_range", (-1.0e3, 1.0e3)),

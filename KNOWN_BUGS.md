@@ -274,7 +274,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    and about (1,2,3) it stops converging at about 60 degrees; the Newton residual of equal rotation
    steps grows with the accumulated rotation (incremental, path-dependent strain update; Fortran
    NOT verified). Force-driven cases with rotations about one global axis (NL-80 .. NL-90) are not
-   affected; 3D large rotations with coarse steps can carry spurious forces. What does work: driving a rigid part with the
+   affected; 3D large rotations with coarse steps can carry spurious forces. Above the buckling load
+   POU_D_T_GD beams can jump to the unstable branch with a coarse step: KNOWN_BUGS 53 (f). What does work: driving a rigid part with the
    exact rigid motion via #ASTER (FORMULE, docs/ASTER_regels_voorbeelden.md
    example 9). A bending model (profile around a die, with a roller) has been computed implicitly up to 90 degrees this way; the
    roller/profile contact still converges with difficulty there (roller coarse as slave: WARNING).
@@ -449,12 +450,25 @@ Code-Aster value per node) and logs the largest difference per variable.
    +4.7 %, the series is slightly curved). SIMO_MIEHE NOT
    verified. (b) The imperfection is always the linear buckling mode under the loads at
    the end time (follower pressure there as a fixed load); not with contact, compression
-   only, gaps or tension only (ERROR), not in dynamics. (c) Beams and DKT/DST stay
-   geometrically linear: there the imperfection does not amplify (WARNING). (d) The
+   only, gaps or tension only (ERROR), not in dynamics; with POU_D_T_GD beams not together
+   with #ASTER-EXCIT (ERROR, the loads cannot go to the auxiliary POU_D_T model). (c) Beams
+   other than POU_D_T_GD and DKT/DST stay geometrically linear: there the imperfection does
+   not amplify (WARNING, plus a note in the status box); CRIT_STAB with POU_D_T_GD stops with
+   an ERROR (ALGELINE4_41). (d) The
    displacements in Mecway are relative to the imperfect shape; the imperfection itself is
    not sent to Mecway as a field, nor is the buckling mode of CRIT_STAB (`MODE_FLAMB`).
-   (e) No arc-length method (`PILOTAGE`): with a load as a time table the run stops
-   at the limit point (`MECANONLINE9_7`, NK-04).
+   (e) No arc-length method (`PILOTAGE`, not built): with a load as a time table the run
+   stops at the limit point (`MECANONLINE9_7`, NK-04).
+   (f) POU_D_T_GD above the buckling load (GitHub issue #10): with a coarse step Newton
+   converges on the unstable branch, the job ends OK and the column looks straight
+   (NK-05b). The step guard `gd_step_limit` (`_gd_step_guard`, `_guarded_solve`, NK-05) is
+   limited: a load present from the start, also on another POU_D_T_GD beam, or a real
+   snap-through ends it (`BRIDGE_VANGNET`; NK-07, NK-08, NK-09), and then only the jump
+   check remains (`aster_results_export.print_jump_check`), which warns after the run and
+   repairs nothing; it does not look at formulas in time, so unloading through a formula
+   can trigger it. The limit uses the size of all POU_D_T_GD beams together, so a slender
+   member in a large frame is guarded more coarsely. Only `PILOTAGE` would follow the
+   unstable path properly.
 
 82\. **Nonlinear: back-and-forth plasticity with the default deformation does not converge
    on reloading in reverse** (confirmed with an offline run, `bridge_to_aster.

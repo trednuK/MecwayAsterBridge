@@ -69,7 +69,7 @@ What the nonlinear analyses support:
 | Time scheme | `schema`, `hht_alpha`, `substeps_per_output` (implicit), `explicit_dt_factor` (explicit) | dynamic |
 | Failure | `element_failure`, `failure_plastic_strain`, `failure_stiffness_factor` | nonlinear static, dynamic ([Failure.md](Failure.md)) |
 | Checks | `energy_balance`; `error_estimator` | dynamic implicit; static |
-| Nonlinear buckling | `crit_stab`, `imperfection_amplitude`, `imperfection_mode`, `imperfection_unit` | nonlinear static ([Modal_and_buckling.md](Modal_and_buckling.md) §5) |
+| Nonlinear buckling | `crit_stab`, `gd_step_limit`, `imperfection_amplitude`, `imperfection_mode`, `imperfection_unit` | nonlinear static ([Modal_and_buckling.md](Modal_and_buckling.md) §5) |
 
 - **Per model**: `#ASTER-OPTIE key = value` (§3.9).
 
@@ -113,6 +113,11 @@ fixed steps as without the option (with a WARNING). Without the option in Mecway
 nothing changes. With element failure the bridge archives every solver step. In a
 load-capacity run up to collapse the last converged load may shift slightly (NK-04
 with the option: P_u/Pcr 0.480 instead of 0.488). Only a model without a step size uses `substeps_per_interval`.
+
+A cut step is simply archived, so Mecway then gets extra times. With `POU_D_T_GD` beams
+this happens more often, because of the step guard (`gd_step_limit`, §2.9): the column
+of NK-05 shows 137 times in Mecway instead of 101. Not with Mecway's *Automatic time
+stepping*: `ARCHIVAGE` then keeps only the output times.
 
 **Implicit dynamic.** The bridge creates a `DEFI_LIST_INST` with:
 
@@ -493,6 +498,7 @@ imperfection, default amplitude 0 = none; nonlinear static only): `CRIT_STAB` in
 `STAT_NON_LINE` and a linear buckling mode as pre-deformation of the mesh, see
 [Modal_and_buckling.md](Modal_and_buckling.md) §5. With the default `deformation`
 (large displacements) `CRIT_STAB` is not a load factor but an eigenvalue that goes to 0.
+`gd_step_limit` (step guard of `POU_D_T_GD` beams): §2.9.
 
 ### 2.8 Modal, buckling and thermal
 
@@ -533,8 +539,9 @@ element offset, flexible joint, line3, beam orientation and `beam_forces`.
 | plastic material | computed elastically (WARNING), as for the other beams |
 | element failure ([`Failure.md`](Failure.md)) | ERROR: after the first failed element the next step needs `RIGI_MECA` (`CALCUL_37`); switch failure off or choose `POU_D_E`/`POU_D_T` |
 | other analyses (static, modal, buckling, harmonic, spectrum, dynamics) and nonlinear with `PETIT`/`PETIT_REAC` | `POU_D_T` with a WARNING: the same beam at small displacements (NL-80b). The element has no `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamics (test case sdnl103a) is NOT verified in the bridge |
-| `crit_stab` | ERROR: the tangent matrix is not symmetric (`ALGELINE4_41`) |
-| `imperfection_amplitude` > 0 | ERROR: the linear buckling beforehand needs `RIGI_MECA`; put the initial curvature in the mesh (NL-82) |
+| `crit_stab` | ERROR: the tangent matrix is not symmetric (`ALGELINE4_41`). The buckling factor of the imperfection does give the linear buckling load |
+| `imperfection_amplitude` ≠ 0 | works: the linear buckling beforehand runs on an auxiliary model with `POU_D_T`, because this element has no `RIGI_MECA` ([Modal_and_buckling.md](Modal_and_buckling.md) §5.2; NK-06, NK-10). ERROR only together with `#ASTER-EXCIT`: then put the initial curvature in the mesh (NL-82) |
+| `gd_step_limit` (page Nonlinear static, group Nonlinear buckling) | step guard, default 0.02: a step is cut when a displacement component of these beams grows more than this fraction of their largest dimension; 0 = off (below) |
 | flexible joint with U, V and W free (ball joint) | ties only the displacements (DX, DY, DZ): exact at any rotation (NL-90, NL-90b; after the fork by MishalTPC) |
 | flexible joint with only some rotations free (U, V, W, UV, UW, VW) | ERROR beforehand: the rotations along the non-free axes are a linear relation in the undeformed axes, and at finite rotations that gives a wrong extra rotation in the hinge (KNOWN_BUGS 106). Choose `POU_D_E`/`POU_D_T` (small rotations) or release U, V and W |
 | element offset, couplings | they compute (offset equal to `POU_D_T` for small loads; couplings NOT verified), but stay linear relations in the undeformed axes: WARNING (KNOWN_BUGS 11, 108) |
@@ -549,10 +556,31 @@ nodal value is the mean of the adjacent elements, so at the clamped end half an 
 away from the maximum. There are no beam stresses (`beamsixxmin`/`beamsixxmax`): the
 element has no `SIPM_ELNO` (`CALCUL_37`). One WARNING per run says so.
 
+**Step guard and jump check.** Above the buckling load a step that is too coarse can land
+the analysis on the unstable branch: the job ends OK, but the column looks straight
+(NK-05b). The bridge therefore cuts a step in which a displacement component of these
+beams grows more than `gd_step_limit` × their largest dimension (NK-05). If cutting
+cannot help (a load present from the start, or a real snap-through), the run continues
+from the last archived state without the guard and the status box says from which t
+(`BRIDGE_VANGNET` in the `.mess`); the run then does not count as failed (NK-08, NK-09).
+After every static run with these beams, also with the guard off, a jump check looks
+whether the displacement of a node falls below 50 % of the step before while no load
+table falls (WARNING in the log and the status box; NK-05b, NK-07). Details:
+[Modal_and_buckling.md](Modal_and_buckling.md) §5.2. Arc length (`PILOTAGE`) is not built
+in.
+
 **Hints.**
 
-- `POU_D_T_GD` is a linear element: use 20 to 40 elements per member (with 40
-  elements ≤ 0.03 % from the analytical solution, NL-81 and NL-83).
+- `POU_D_T_GD` is a linear element with one integration point: use 20 to 40 elements
+  per member (with 40 elements ≤ 0.03 % from the analytical solution, NL-81 and NL-83).
+  A line3 counts as two cells. Too few elements make a column too stiff: with 4 line3
+  (8 cells) the column of NK-05 snaps about 2 % high (76.5 kN against 74.8 kN).
+- **Buckling of a column: choose `POU_D_T_GD`, an imperfection, `crit_stab` off and
+  20 line3 per member.** Enter `imperfection_amplitude` (e.g. L/1000,
+  [Modal_and_buckling.md](Modal_and_buckling.md) §5.1), let the load rise from 0 with a
+  table and keep `gd_step_limit` on. The displacements in Mecway are then relative to the
+  imperfect shape, and the buckling factor of the linear buckling is in the log and the
+  status box (NK-06). `crit_stab` is not possible with this element.
 - Let the load increase (a table in time, Mecway's *Time step size*): NL-81 bends
   90 degrees in 20 steps.
 - With a small load `RESI_GLOB_RELA` stagnates at round-off: choose
@@ -935,6 +963,10 @@ same supports (bolt displacements within ~20%, stresses within ~35% on this coar
   U4.51.03, "Shutdown management"; text of `MECANONLINE9_7` in 17.4).
 - The bridge catches this error (`try/except` in the `.comm`), writes
   `BRIDGE_ONVOLLEDIG <time>` into the `.mess` and continues with the post-processing.
+- Exception: if `STAT_NON_LINE` stops while the step guard of `POU_D_T_GD` beams is on,
+  the job writes `BRIDGE_VANGNET <time>` and continues without the guard to the end
+  (§2.9). If that continuation stops too, the normal route applies
+  (`BRIDGE_ONVOLLEDIG`).
 - Mecway shows the message with the error code, advice and "Last time with results:
   ... s".
 - **Dynamic**: all output times up to that time go to Mecway.

@@ -214,8 +214,8 @@ def test_errors():
           "crit_stab with GD: ERROR\n" + log)
     comm, _md, log = _translate("nonlin_static_3d", _liml(),
                                 settings={"imperfection_amplitude": 0.001})
-    check(comm is None and "RIGI_MECA" in log,
-          "imperfection with GD: ERROR\n" + log)
+    check(comm is not None and "imp_model = AFFE_MODELE" in comm,
+          "imperfection with GD: auxiliary model\n" + log)
 
 
 # A plastic hex8 block beside the beam (nodes 6..13): element failure
@@ -406,6 +406,152 @@ def test_joint_on_offset():
     check(comm is not None and "the joint is not translated" in log and
           not (md or {}).get("joint_free"),
           "joint on offset, nonlinear: not translated (WARNING)\n" + log)
+
+
+def _between(text, start, end):
+    i = text.find(start)
+    return text[i:text.find(end, i)] if i >= 0 else ""
+
+
+def test_imperfection_auxiliary_model():
+    comm, _md, log = _translate("nonlin_static_3d", _liml(),
+                                settings={"imperfection_amplitude": 0.001})
+    check(comm is not None, "imperfection with GD: no .comm\n" + log)
+    if not comm:
+        return
+    aux = _between(comm, "imp_model = AFFE_MODELE", "imp_stat =")
+    check("MODELISATION='POU_D_T'" in aux and "POU_D_T_GD" not in aux,
+          "auxiliary model: POU_D_T")
+    check("imp_cara = AFFE_CARA_ELEM(\n    MODELE=imp_model," in aux,
+          "auxiliary model: section properties")
+    check("imp_load_1 = AFFE_CHAR_MECA(\n    MODELE=imp_model," in aux and
+          "imp_load_2 =" in aux, "auxiliary model: loads\n" + aux)
+    lin = _between(comm, "imp_stat = MECA_STATIQUE", "imp_modes =")
+    check(lin.count("MODELE=imp_model") == 2, "linear buckling on imp_model")
+    check("CARA_ELEM=imp_cara" in lin and "CARA_ELEM=cara" not in lin,
+          "linear buckling with imp_cara")
+    check(re.search(r"\bload_\d", lin.replace("imp_load_", "")) is None,
+          "linear buckling without the loads of the GD model\n" + lin)
+    check("res = STAT_NON_LINE(\n        MODELE=model," in comm,
+          "STAT_NON_LINE stays on the GD model")
+    check("MODELISATION='POU_D_T_GD'" in comm, "GD model stays")
+    check(comm.index("imp_stat =") < comm.index("mesh = MODI_MAILLAGE") <
+          comm.index("res = STAT_NON_LINE"), "order of the imperfection")
+    comm, _md, log = _translate("nonlin_static_3d", _liml(),
+                                general={"elem_beam": "POU_D_E"},
+                                settings={"imperfection_amplitude": 0.001})
+    check(comm is not None and "imp_model" not in comm and
+          "imp_stat = MECA_STATIQUE(\n    MODELE=model," in comm,
+          "POU_D_E: imperfection on the model itself")
+    check("elem_beam = POU_D_T_GD" in log and "Use solid" not in log,
+          "POU_D_E: the WARNING names POU_D_T_GD\n" + log)
+
+
+def test_imperfection_custom_excit():
+    extra = (u"  <customcode>#ASTER-EXCIT mine</customcode>")
+    aster = {"excit": ["mine"]}
+    _ = extra
+    saved = bridge_to_aster._check_gd_joints
+    bridge_to_aster._check_gd_joints = lambda md: True
+    try:
+        del LOG[:]
+        ok = bridge_to_aster._check_gd_beams(
+            {"elset_modelisations": {"B": "POU_D_T_GD"},
+             "aster_custom": aster},
+            {"imperfection_amplitude": 0.001})
+    finally:
+        bridge_to_aster._check_gd_joints = saved
+    check(ok is False and "#ASTER-EXCIT" in u"\n".join(LOG),
+          "imperfection with GD and #ASTER-EXCIT: ERROR")
+
+
+def test_step_guard():
+    comm, md, log = _translate("nonlin_static_3d", _liml())
+    check(comm is not None, "guard: no .comm\n" + log)
+    if not comm:
+        return
+    check(comm.count("EVENEMENT='DELTA_GRANDEUR'") == 3, "guard: 3 events")
+    size = max(p[0] for p in md["mesh_nodes"].values())
+    limit = bridge_utils.CONFIG_BRIDGE["analyses"]["nonlin_static_3d"][
+        "gd_step_limit"] * size
+    check("VALE_REF=%r" % limit in comm, "guard: limit from the beam size")
+    check("GROUP_MA=('Balk', )" in comm, "guard: only the GD group")
+    check("SUBD_NIVEAU=%d" % bridge_to_aster._GUARD_SUBD_NIVEAU in comm,
+          "guard: own level of cutting")
+    plain = _between(comm, "listinst_plain = DEFI_LIST_INST(", "\n)\n")
+    check(plain and "DELTA_GRANDEUR" not in plain, "guard: plain list")
+    check(comm.index("listinst_plain =") < comm.index("listinst = DEFI"),
+          "guard: both lists before the solve")
+    check("_gs_t = None\ntry:\n" in comm and
+          "print('BRIDGE_VANGNET', _gs_t)" in comm, "guard: first call")
+    second = _between(comm, "if _gs_t is not None:", "t_res =")
+    check("reuse=res," in second and "RESULTAT=res," in second and
+          "ETAT_INIT=_F(EVOL_NOLI=res, INST=_gs_t)" in second and
+          "LIST_INST=listinst_plain, INST_INIT=_gs_t" in second and
+          "BRIDGE_ONVOLLEDIG" in second, "guard: continuation\n" + second)
+    check(comm.count("t_res = res.getAccessParameters") == 1, "guard: t_res")
+    compile(comm.replace("\r\n", "\n"), "study.comm", "exec")
+    jump = _between(comm, "print_jump_check(", "\n")
+    check("['Balk']" in jump and "[]" in jump, "jump check: groups\n" + jump)
+    check("%r" % (bridge_to_aster._JUMP_FLOOR * size) in comm,
+          "jump check: floor from the beam size")
+    # off: exactly the old solve, the jump check stays
+    comm, _md, log = _translate("nonlin_static_3d", _liml(),
+                                settings={"gd_step_limit": 0.0})
+    check(comm is not None and "DELTA_GRANDEUR" not in comm and
+          "listinst_plain" not in comm and "ETAT_INIT" not in comm and
+          "_gs_t" not in comm and "print_jump_check" in comm,
+          "guard off\n" + log)
+    # other beams: nothing of it
+    comm, _md, log = _translate("nonlin_static_3d", _liml(),
+                                general={"elem_beam": "POU_D_E"})
+    check(comm is not None and "DELTA_GRANDEUR" not in comm and
+          "print_jump_check" not in comm, "POU_D_E: no guard")
+
+
+def test_step_guard_renamed_group():
+    """The size comes from the beams, also when bridge_mesh renamed the
+    elset (a space) and another part makes the model much larger."""
+    md = {"mesh_nodes": {1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0),
+                         3: (6.0, 0.0, 0.0)},
+          "mesh_elements": [(1, "line2", [1, 2], "Balk 1"),
+                            (2, "line2", [2, 3], "Blok")],
+          "group_renames": {"Balk 1": "Balk_1"}}
+    check(bridge_to_aster._gd_group_size(md, ["Balk_1"]) == 1.0,
+          "guard: size of a renamed elset")
+
+
+def test_step_guard_auto_time_stepping():
+    extra = (u'  <timesteps timeperiod="1 s" stepsize="0.1 s" '
+             u'automatictimestepping="true" />')
+    comm, _md, log = _translate("nonlin_static_3d", _liml(extra=extra))
+    check(comm is not None, "guard, AUTO: no .comm\n" + log)
+    if comm:
+        check(comm.count("METHODE='AUTO'") == 2 and
+              comm.count("EVENEMENT='DELTA_GRANDEUR'") == 3 and
+              "outlist" in comm, "guard, AUTO: both lists\n" + log)
+        second = _between(comm, "if _gs_t is not None:", "t_res =")
+        check("ARCHIVAGE" in second, "guard, AUTO: continuation archives")
+
+
+def test_falling_intervals():
+    fn = bridge_to_aster._falling_intervals
+    check(fn([("a", [(0.0, 0.0), (1.0, -100.0)])]) == [],
+          "falling: a rising table, negative values")
+    check(fn([("a", [(0.0, 0.0), (1.0, 5.0), (2.0, 1.0)])]) == [(1.0, 2.0)],
+          "falling: unloading")
+
+
+def test_linear_beams_note():
+    _comm, md, _log = _translate("nonlin_static_3d", _liml(),
+                                 general={"elem_beam": "POU_D_E"})
+    check(md.get("_linear_beams") == ["Balk"], "note: POU_D_E")
+    _comm, md, _log = _translate("nonlin_static_3d", _liml())
+    check(not md.get("_linear_beams"), "note: not with POU_D_T_GD")
+    _comm, md, _log = _translate("nonlin_static_3d", _liml(),
+                                 general={"elem_beam": "POU_D_E"},
+                                 settings={"deformation": "PETIT"})
+    check(not md.get("_linear_beams"), "note: not with PETIT")
 
 
 def test_pou_d_e_unchanged():

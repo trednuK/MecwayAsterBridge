@@ -5003,15 +5003,18 @@ def _build_load_funcs_block(load_funcs):
     return "\n\n".join(blocks) + "\n"
 
 
+_ECHEC_ERREUR = (
+    "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
+    "             SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
+    "             SUBD_NIVEAU=6),\n")
+
 _LISTINST_ECHEC = (
     # DEFI_LIST_INST: on divergence the step is divided by 4 (up to 6
     # levels). With only a DEFI_LIST_REEL, STAT_NON_LINE does not cut the
     # step automatically (U4.51.03 INCREMENT; message SUBDIVISE_3).
     "listinst = DEFI_LIST_INST(\n"
     "    DEFI_LIST=_F(LIST_INST=times),\n"
-    "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
-    "             SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
-    "             SUBD_NIVEAU=6),\n"
+    + _ECHEC_ERREUR +
     ")\n")
 
 
@@ -5126,9 +5129,7 @@ def _auto_listinst_block(load_funcs, analysis, model_data):
         "listinst = DEFI_LIST_INST(\n"
         "    METHODE='AUTO',\n"
         "    DEFI_LIST=_F(LIST_INST=times, PAS_MINI={2!r}, PAS_MAXI={3!r}),\n"
-        "    ECHEC=_F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
-        "             SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
-        "             SUBD_NIVEAU=6),\n"
+        + _ECHEC_ERREUR +
         ")\n").format(", ".join("{0!r}".format(t) for t in times),
                       ", ".join("{0!r}".format(t) for t in out),
                       pas_mini, pas_maxi)
@@ -6665,6 +6666,159 @@ def _model_size(model_data):
                for k in range(3))
 
 
+# Levels of cutting on DELTA_GRANDEUR: 4^3 finer than Mecway's step is
+# enough for the jump of the column (NK-05); a load that cannot shrink then
+# costs a few extra solves before the fallback (BRIDGE_VANGNET).
+_GUARD_SUBD_NIVEAU = 3
+# Displacements below this fraction of the beams' size do not count in the
+# jump check (aster_results_export.print_jump_check).
+_JUMP_FLOOR = 0.01
+
+
+def _gd_group_size(model_data, groups):
+    """Largest dimension [m] of the bounding box of the elements in groups
+    (a slender member in a large frame has its own scale); the whole model
+    if they cannot be found in mesh_elements."""
+    nodes = model_data.get("mesh_nodes", {})
+    # mesh_elements has the Mecway name, groups the renamed one (bridge_mesh)
+    renames = model_data.get("group_renames", {})
+    pts = [nodes[n] for _eid, _shape, nids, elset in
+           model_data.get("mesh_elements", [])
+           if renames.get(elset, elset) in groups
+           for n in nids if n in nodes]
+    if not pts:
+        return _model_size(model_data)
+    return max(max(p[k] for p in pts) - min(p[k] for p in pts)
+               for k in range(3))
+
+
+def _gd_step_guard(model_data, analysis):
+    """
+    Step guard for POU_D_T_GD beams in nonlinear static (setting
+    gd_step_limit; issue #10), or None. Above the buckling load of a slightly
+    imperfect column, Newton with a coarse step can converge on the unstable
+    branch at the other side: the job ends OK and the column looks straight
+    (at dt = 0.01 with 10, 20 and 40 line3; the total deflection matches
+    e0 / (P/Pcr - 1) within 0.3 %). PREDICTION='EXTRAPOLE' does not cure it
+    and RECH_LINEAIRE is worse (runs of 5 Nov 2026). DELTA_GRANDEUR
+    (U4.34.03; catalogue defi_list_inst.py 17.4: ACTION ARRET/DECOUPE only)
+    cuts a step in which a displacement component of these beams grows
+    more than the limit.
+    Returns {"groups": [...], "limit": m}.
+    """
+    groups = sorted(g for g, m in model_data.get("elset_modelisations",
+                                                 {}).items()
+                    if m == _GD_BEAM)
+    if not groups:
+        return None
+    try:
+        fraction = float(analysis.get("gd_step_limit", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        fraction = 0.0
+    size = _gd_group_size(model_data, groups)
+    if fraction <= 0.0 or size <= 0.0:
+        return None
+    limit = fraction * size
+    log("INFO: Step guard for POU_D_T_GD beams: a step is cut when a "
+        "displacement component grows more than {0:.6g} m (gd_step_limit "
+        "{1:g} x {2:.6g} m).".format(limit, fraction, size))
+    return {"groups": groups, "limit": limit}
+
+
+def _guarded_listinst(listinst_block, guard):
+    """The time list with the guard as listinst and without it as
+    listinst_plain (for the continuation of the job, _guarded_solve)."""
+    start = listinst_block.index("listinst = DEFI_LIST_INST(")
+    head, plain = listinst_block[:start], listinst_block[start:]
+    events = "".join(
+        "        _F(EVENEMENT='DELTA_GRANDEUR', VALE_REF={0!r}, "
+        "NOM_CHAM='DEPL', NOM_CMP='{1}',\n"
+        "           GROUP_MA=({2}), ACTION='DECOUPE',\n"
+        "           SUBD_METHODE='MANUEL', SUBD_PAS=4, "
+        "SUBD_NIVEAU={3}),\n".format(
+            float(guard["limit"]), cmp_name,
+            "".join("'{0}', ".format(g) for g in guard["groups"]),
+            _GUARD_SUBD_NIVEAU)
+        for cmp_name in ("DX", "DY", "DZ"))
+    guarded = plain.replace(
+        _ECHEC_ERREUR, "    ECHEC=(\n"
+        "        _F(EVENEMENT='ERREUR', ACTION='DECOUPE',\n"
+        "           SUBD_METHODE='MANUEL', SUBD_PAS=4,\n"
+        "           SUBD_NIVEAU=6),\n" + events + "    ),\n")
+    if guarded == plain:
+        raise ValueError("time list without ECHEC clause")
+    return (head + plain.replace("listinst =", "listinst_plain =", 1) +
+            "# Step guard (bridge_to_aster._gd_step_guard)\n" + guarded)
+
+
+def _guarded_solve(first, second):
+    """
+    STAT_NON_LINE with the step guard: when the first call stops
+    (bridge_failure.GUARD_EXCEPT) the second one continues from the last
+    archived state on the plain list, so that the rest of the run is what it
+    was without the guard. Measured: a constant load (restart at t = 0) and
+    the snap-through of a shallow arch end equal to a run without the guard.
+    """
+    return ("_gs_t = None\n"
+            "try:\n" + first + bridge_failure.GUARD_EXCEPT +
+            "if _gs_t is not None:\n"
+            "    try:\n" + _indent(second) +
+            _indent(bridge_failure.PARTIAL_EXCEPT) +
+            "t_res = res.getAccessParameters()['INST'][-1]\n")
+
+
+def _falling_intervals(load_funcs):
+    """[(t0, t1)] where a load table falls in absolute value: a smaller
+    displacement there is unloading, not a jump (_jump_check_block)."""
+    out = []
+    for _name, history in load_funcs:
+        pts = sorted(history)
+        out += [(float(a[0]), float(b[0])) for a, b in zip(pts, pts[1:])
+                if abs(b[1]) < abs(a[1])]
+    return sorted(set(out))
+
+
+def _jump_check_block(model_data, load_funcs):
+    """Check after STAT_NON_LINE on models with POU_D_T_GD beams
+    (aster_results_export.print_jump_check): also when the step guard is
+    off or ended, the only remaining signal of a jump to another branch."""
+    groups = sorted(g for g, m in model_data.get("elset_modelisations",
+                                                 {}).items()
+                    if m == _GD_BEAM)
+    if not groups:
+        return ""
+    scripts = os.path.dirname(os.path.abspath(__file__))
+    return (
+        "# Jump to another equilibrium branch (POU_D_T_GD beams)\n"
+        "import sys\n"
+        "sys.path.insert(0, {0})\n"
+        "import aster_results_export\n"
+        "aster_results_export.print_jump_check(res, model, {1!r}, {2!r},\n"
+        "                                      {3!r})\n"
+    ).format(_py_str(scripts), [str(g) for g in groups],
+             _falling_intervals(load_funcs),
+             _JUMP_FLOOR * _gd_group_size(model_data, groups))
+
+
+def _note_linear_beams(model_data, analysis):
+    """
+    model_data["_linear_beams"]: Mecway names of the beams that stay
+    geometrically linear in a nonlinear static analysis with large
+    displacements, for the note in the status box
+    (MecwayAsterBridgeMain._report_stability; issue #10). Not with a
+    DEFORMATION for small displacements: that is the user's own choice.
+    """
+    model_data.pop("_linear_beams", None)
+    if analysis.get("deformation", "PETIT") not in _LARGE_DEFORMATIONS:
+        return
+    beams = sorted(bridge_failure.mecway_name(model_data, e)
+                   for e, m in model_data.get("elset_modelisations",
+                                              {}).items()
+                   if str(m).startswith("POU_D") and m != _GD_BEAM)
+    if beams:
+        model_data["_linear_beams"] = beams
+
+
 def _imperfection_plan(model_data, analysis):
     """
     Buckling mode as imperfection (settings imperfection_amplitude, _mode,
@@ -6713,8 +6867,8 @@ def _imperfection_plan(model_data, analysis):
                "configuration.").format(", ".join(found)))
         return False
     # The deflection only grows where the elements compute large
-    # displacements (equilibrium on the deformed shape); beams and DKT/DST
-    # stay geometrically linear (_deformation_for).
+    # displacements (equilibrium on the deformed shape); beams other than
+    # POU_D_T_GD and DKT/DST stay geometrically linear (_deformation_for).
     if analysis.get("deformation", "PETIT") not in _LARGE_DEFORMATIONS:
         log(tr("WARNING: Imperfectie met kleine verplaatsingen (DEFORMATION="
                "{0}): het evenwicht staat op de onvervormde vorm, dus de "
@@ -6728,17 +6882,52 @@ def _imperfection_plan(model_data, analysis):
                "(default GROT_GDEP).").format(analysis.get("deformation")))
     small = sorted(e for e, m in model_data.get(
         "elset_modelisations", {}).items()
-        if m in ("DKT", "DST") or str(m).startswith("POU_D"))
+        if m in ("DKT", "DST") or (str(m).startswith("POU_D") and
+                                   m != _GD_BEAM))
     if small:
         log(tr("WARNING: Imperfectie: balken en DKT/DST-schalen ({0}) "
                "rekenen geometrisch lineair; daar versterkt de imperfectie "
-               "niet. Gebruik volume-elementen of elem_shell = COQUE_3D.",
+               "niet. Gebruik voor balken elem_beam = POU_D_T_GD, voor "
+               "schalen elem_shell = COQUE_3D (pagina Elementen), of "
+               "volume-elementen.",
                "WARNING: Imperfection: beams and DKT/DST shells ({0}) are "
                "geometrically linear; there the imperfection is not "
-               "amplified. Use solid elements or elem_shell = "
-               "COQUE_3D.").format(", ".join(
+               "amplified. For beams use elem_beam = POU_D_T_GD, for shells "
+               "elem_shell = COQUE_3D (Elements page), or solid "
+               "elements.").format(", ".join(
                    bridge_failure.mecway_name(model_data, e) for e in small)))
     return {"mode": mode, "amplitude": amp}
+
+
+def _imperfection_aux_model(model_data, charges):
+    """
+    Auxiliary objects for the linear buckling of a model with POU_D_T_GD
+    beams, or "" without those. MECA_POU_D_T_GD has no RIGI_MECA (CALCUL_37,
+    _check_gd_beams), so MECA_STATIQUE and ASSEMBLAGE run on imp_model:
+    the same model with POU_D_T, the same Timoshenko beam at small
+    displacements (fallback of bridge_from_liml._gd_beam_choice, NL-80b).
+    AFFE_CHAR_MECA belongs to one model, so the loads are made a second
+    time, imp_load_<i>, from the same charges (_render_char_meca), without
+    the prelude and the user's #ASTER code of _render_charges.
+    """
+    mods = model_data.get("elset_modelisations", {})
+    if _GD_BEAM not in mods.values():
+        return ""
+    aux = dict(model_data)
+    aux["elset_modelisations"] = type(mods)(
+        (e, "POU_D_T" if m == _GD_BEAM else m) for e, m in mods.items())
+    blocks = ["# Auxiliary model: POU_D_T_GD has no RIGI_MECA\n",
+              _build_model_block(aux).replace("model = AFFE_MODELE(",
+                                              "imp_model = AFFE_MODELE(", 1)]
+    if _has_cara(model_data):
+        blocks.append(_build_cara_elem_block(aux).replace(
+            "cara = AFFE_CARA_ELEM(", "imp_cara = AFFE_CARA_ELEM(", 1).replace(
+            "MODELE=model,", "MODELE=imp_model,", 1))
+    for i, (command, kws, _fonc) in enumerate(charges):
+        blocks.append(_render_char_meca(
+            "imp_load_{0}".format(i + 1), command, kws).replace(
+            "MODELE=model,", "MODELE=imp_model,", 1))
+    return "".join(blocks)
 
 
 def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
@@ -6761,6 +6950,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
          test case hsna105a), so that aster_results_export can check the
          nodes against the .liml (_check_node_order). The displacements
          remain relative to the imperfect shape.
+    With POU_D_T_GD beams step 1 runs on an auxiliary model
+    (_imperfection_aux_model); steps 2 and 3 do not depend on the model.
     A follower load (TYPE_CHARGE='SUIV') is a fixed load in MECA_STATIQUE
     (catalogue meca_statique.py: only 'FIXE_CSTE').
     """
@@ -6774,11 +6965,19 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
                   if names else "")
     excit = excit_clause.replace(", TYPE_CHARGE='SUIV'", "")
     nprec = int(analysis.get("solver_nprec", 8))
+    aux = _imperfection_aux_model(model_data, charges)
+    model_ref = "model"
+    if aux:
+        model_ref = "imp_model"
+        cara_ref = cara_ref.replace("CARA_ELEM=cara", "CARA_ELEM=imp_cara")
+        excit = re.sub(r"\bload_(\d+)\b", r"imp_load_\1", excit)
+        charge_ref = re.sub(r"\bload_(\d+)\b", r"imp_load_\1", charge_ref)
     pre = (
         "# --- Imperfection: buckling shape {k} of the linear buckling under\n"
         "# the loads at t = {t_end!r} (bridge_to_aster._imperfection_blocks) ---\n"
+        "{aux}"
         "imp_stat = MECA_STATIQUE(\n"
-        "    MODELE=model,\n"
+        "    MODELE={model},\n"
         "    CHAM_MATER=fieldmat,\n"
         "{cara}{excit}\n"
         "    INST={t_end!r},\n"
@@ -6788,7 +6987,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "                     RESULTAT=imp_stat, NUME_ORDRE=1, "
         "NOM_CHAM='SIEF_ELGA')\n"
         "ASSEMBLAGE(\n"
-        "    MODELE=model,\n"
+        "    MODELE={model},\n"
         "    CHAM_MATER=fieldmat,\n"
         "{cara}{charge}"
         "    NUME_DDL=CO('imp_nume'),\n"
@@ -6824,8 +7023,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh,\n"
         "                     DEFORME=_F(OPTION='TRAN', DEPL=imp_def))\n"
     ).format(k=k, t_end=float(t_end), cara=cara_ref, excit=excit,
-             nprec=nprec, charge=charge_ref, amp=float(amp),
-             static_solveur=_static_step_solveur(analysis))
+             nprec=nprec, charge=charge_ref, amp=float(amp), aux=aux,
+             model=model_ref, static_solveur=_static_step_solveur(analysis))
     restore = (
         "# --- Imperfection: mesh back to the Mecway geometry for the\n"
         "# export (displacements stay relative to the imperfect shape) ---\n"
@@ -7039,6 +7238,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     comportement_block = _build_comportement_block(model_data, analysis)
     _warn_large_rotations(model_data, analysis)
     _warn_linear_couplings(model_data, analysis)
+    if not dynamic:
+        _note_linear_beams(model_data, analysis)
 
     # --------------------------------------------------
     # BLOCK H: CALC_CHAMP, POST_RELEVE_T, IMPR_TABLE
@@ -7143,24 +7344,23 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # step loop too: bridge_failure.PARTIAL_EXCEPT). The job therefore
     # continues with the post-processing; BRIDGE_ONVOLLEDIG in study.mess
     # tells bridge_run_aster.py up to which time there are results.
-    statnonline_block = contact_block + (
-        "try:\n"
+    solve_call = (
         "    res = {command}(\n"
+        "{restart}"
         "        MODELE=model,\n"
         "        CHAM_MATER=fieldmat,\n"
         "{cara_ref}"
         "{excit_clause}\n"
         "{contact_ref}"
         "{comp}"
-        "        INCREMENT=_F(LIST_INST=listinst),\n"
+        "        INCREMENT=_F({increment}),\n"
         "{extra}"
         "{solveur}"
         "        NEWTON=_F(REAC_ITER={reac}),\n"
         "        CONVERGENCE=_F({conv}),\n"
         "    )\n"
-        + bridge_failure.PARTIAL_EXCEPT +
-        "t_res = res.getAccessParameters()['INST'][-1]\n"
-    ).format(
+    )
+    solve_args = dict(
         command      = command,
         cara_ref     = _indent(cara_elem_ref),
         excit_clause = _indent(excit_clause),
@@ -7171,15 +7371,37 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         reac         = reac_iter,
         solveur      = _indent(_build_solveur_ref(analysis)),
     )
+    plan = bridge_failure.failure_plan(
+        model_data, analysis,
+        lambda mat: _relation_for(model_data, mat), _deformation_for)
+    _warn_plastic_hex8(model_data, plan)
+    first_call = solve_call.format(
+        restart="", increment="LIST_INST=listinst", **solve_args)
+    # The failure loop below has its own solve; POU_D_T_GD beams do not come
+    # with it (_check_gd_beams).
+    guard = (None if dynamic or plan
+             else _gd_step_guard(model_data, analysis))
+    if guard:
+        # Keeps the keywords of the first call, ARCHIVAGE included
+        listinst_block = _guarded_listinst(listinst_block, guard)
+        statnonline_block = contact_block + _guarded_solve(
+            first_call, solve_call.format(
+                restart="        reuse=res,\n"
+                        "        RESULTAT=res,\n"
+                        "        ETAT_INIT=_F(EVOL_NOLI=res, INST=_gs_t),\n",
+                increment="LIST_INST=listinst_plain, INST_INIT=_gs_t",
+                **solve_args))
+    else:
+        statnonline_block = contact_block + (
+            "try:\n" + first_call + bridge_failure.PARTIAL_EXCEPT +
+            "t_res = res.getAccessParameters()['INST'][-1]\n")
+    if not dynamic and not plan:
+        statnonline_block += _jump_check_block(model_data, load_funcs)
 
     # --------------------------------------------------
     # FAILURE OF ELEMENTS (bridge_failure.py): a loop over the
     # time steps instead of a single STAT_NON_LINE.
     # --------------------------------------------------
-    plan = bridge_failure.failure_plan(
-        model_data, analysis,
-        lambda mat: _relation_for(model_data, mat), _deformation_for)
-    _warn_plastic_hex8(model_data, plan)
     if plan:
         factor = _failure_stiffness_factor(analysis)
         rayleigh = model_data.get("rayleigh") if dynamic else None
@@ -8660,8 +8882,9 @@ def _check_gd_beams(model_data, analysis):
         symmetric, TANGENTE (NOSYM)): ERROR;
       - imperfection_amplitude: the linear buckling beforehand needs
         RIGI_MECA: CALCUL_37 "MECA_POU_D_T_GD ne sait pas encore calculer
-        l'option: RIGI_MECA": ERROR (model the imperfection in the mesh,
-        verification NL-82);
+        l'option: RIGI_MECA". It therefore runs on an auxiliary POU_D_T
+        model (_imperfection_aux_model); loads from #ASTER-EXCIT are built
+        on the POU_D_T_GD model and cannot go there: ERROR;
       - element failure (bridge_failure): after a failure the loop restarts
         with PREDICTION='ELASTIQUE' (TANGENTE did not converge there),
         which needs RIGI_MECA: CALCUL_37 at the first failure (run 17.4,
@@ -8689,19 +8912,19 @@ def _check_gd_beams(model_data, analysis):
                "stops (ALGELINE4_41). Switch crit_stab off or choose "
                "elem_beam = POU_D_E/POU_D_T (Elements page)."))
         ok = False
-    if float(analysis.get("imperfection_amplitude", 0.0) or 0.0):
-        log(tr("ERROR: imperfection_amplitude werkt niet met balken "
-               "POU_D_T_GD: de lineaire knik vooraf vraagt RIGI_MECA, die "
-               "dit element niet heeft (CALCUL_37). Zet "
-               "imperfection_amplitude op 0 en leg de imperfectie in de "
-               "mesh (licht gebogen knopen), of kies elem_beam = "
-               "POU_D_E/POU_D_T.",
-               "ERROR: imperfection_amplitude does not work with POU_D_T_GD "
-               "beams: the linear buckling beforehand needs RIGI_MECA, "
-               "which this element does not have (CALCUL_37). Set "
+    if (float(analysis.get("imperfection_amplitude", 0.0) or 0.0) and
+            model_data.get("aster_custom", {}).get("excit")):
+        log(tr("ERROR: imperfection_amplitude met balken POU_D_T_GD werkt "
+               "niet samen met #ASTER-EXCIT: de lineaire knik vooraf rekent "
+               "op een hulpmodel met POU_D_T, en die eigen lasten horen bij "
+               "het POU_D_T_GD-model. Zet imperfection_amplitude op 0 en leg "
+               "de imperfectie in de mesh (licht gebogen knopen).",
+               "ERROR: imperfection_amplitude with POU_D_T_GD beams does not "
+               "work together with #ASTER-EXCIT: the linear buckling "
+               "beforehand runs on an auxiliary POU_D_T model, and those "
+               "loads of your own belong to the POU_D_T_GD model. Set "
                "imperfection_amplitude to 0 and put the imperfection in the "
-               "mesh (slightly curved nodes), or choose elem_beam = "
-               "POU_D_E/POU_D_T."))
+               "mesh (slightly curved nodes)."))
         ok = False
     failing = bridge_failure.failure_candidates(model_data, analysis)
     if failing:

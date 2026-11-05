@@ -71,6 +71,8 @@ _COMMAND_RE = re.compile(r"\b(STAT_NON_LINE|DYNA_NON_LINE|THER_NON_LINE)\s*\(")
 _RESI_CRIT_RE = re.compile(r"\bRESI_GLOB_RELA\s*=\s*([-+0-9.eE]+)")
 _ITER_MAX_RE = re.compile(r"\bITER_GLOB_MAXI\s*=\s*(\d+)")
 _PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
+# The step guard ended; the job goes on (bridge_to_aster._guarded_solve)
+_GUARD_END_RE = re.compile(r"BRIDGE_VANGNET\s+(\S+)")
 # Element failure (bridge_failure.py, print in the .comm)
 _FAILURE_RE = re.compile(r"BRIDGE_BEZWIJKEN t=([-+0-9.eE]+) elset=(\S+) "
                          r"nieuw=(\d+) totaal=(\d+)")
@@ -889,6 +891,22 @@ class ConvergenceParser(object):
                 m = _ITER_MAX_RE.search(line)
                 if m:
                     data.iter_max = int(m.group(1))
+        m = _GUARD_END_RE.search(line)
+        if m:
+            # The exception that came before it, and the event line of the
+            # cut that ran out (<Action> .. <Echec>), did not stop the run
+            for msg in [x for x in data.messages if x["kind"] == "fout" and
+                        (u"{0}".format(x["code"]).startswith("MECANONLINE") or
+                         u"tentative de d" in x["text"])]:
+                data.messages.remove(msg)
+                self._msg_seen.pop((msg["kind"], msg["code"],
+                                    msg["text"][:80]), None)
+            self._add_message("alarm", u"BRIDGE_VANGNET", tr(
+                u"Stapbewaking beeindigd bij t = {0} s; de berekening gaat "
+                u"door zonder bewaking.",
+                u"Step guard ended at t = {0} s; the analysis continues "
+                u"without it.").format(m.group(1)))
+            return
         m = _PARTIAL_RE.search(line)
         if m:
             data.partial_until = _to_float(m.group(1))

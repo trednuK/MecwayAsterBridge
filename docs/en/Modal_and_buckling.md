@@ -633,12 +633,15 @@ recommends (EDF R&D, U2.08.04 §2.2).
 2. **Steps**: *Substeps per time interval* sets how many points you get (default 10; 20
    to 40 gives a more accurate buckling point).
 3. **Elements**: use **solid elements** (preferably quadratic, or hex8 with
-   `LINE_QUAD`) or shells with `elem_shell` = `COQUE_3D`. Beams (`POU_D_E`) and DKT/DST
-   shells are geometrically linear in the bridge (KNOWN_BUGS 11): CRIT_STAB works there
-   (as a load factor), but the deflection does not grow with an imperfection (WARNING).
-   `POU_D_T_GD` beams (large rotations) cannot do CRIT_STAB nor an imperfection from a
-   buckling mode (ERROR); then put the initial curvature in the mesh
-   ([Verification](Verification.md) NL-82).
+   `LINE_QUAD`), shells with `elem_shell` = `COQUE_3D`, or beams with `elem_beam` =
+   `POU_D_T_GD` (20 to 40 elements per member;
+   [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)).
+   Other beams and DKT/DST shells are geometrically linear in the bridge
+   (KNOWN_BUGS 11): CRIT_STAB works there (as a load factor), but the deflection does
+   not grow with an imperfection (WARNING, and a message in the status box).
+   `POU_D_T_GD` beams cannot do CRIT_STAB (ERROR). The imperfection does work with them
+   (§5.2), except together with `#ASTER-EXCIT` (ERROR); then put the initial curvature
+   in the mesh ([Verification](Verification.md) NL-82).
 4. **Page Nonlinear static** (or per model with `#ASTER-OPTIE`,
    [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2):
 
@@ -648,10 +651,12 @@ recommends (EDF R&D, U2.08.04 §2.2).
 | Imperfection: amplitude (0 = none) | `imperfection_amplitude` | 0 | > 0 for an imperfection, e.g. L/1000 to L/300 or the value from the design code. Negative reverses the shape (the sign of a buckling mode is arbitrary) |
 | Imperfection: buckling mode no. | `imperfection_mode` | 1 | another shape (2 = the second smallest buckling factor), e.g. with two shapes with almost the same factor |
 | Imperfection: amplitude in (m / x L) | `imperfection_unit` | `m` | `L`: amplitude as a fraction of the largest dimension of the model (0.001 = L/1000; the log gives L and the amplitude in m) |
+| Step guard of POU_D_T_GD beams (0 = off) | `gd_step_limit` | 0.02 | only with `POU_D_T_GD` beams: a step is cut when a displacement of these beams grows more than this fraction of their largest dimension (§5.2). Lower when the beams together are much larger than the slender member; 0 = off |
 
 5. **Start.** With an imperfection Code-Aster first solves the linear buckling problem
-   under the loads at the end time (like `buckling_3d`), deforms the mesh with the
-   chosen mode and then solves nonlinearly.
+   under the loads at the end time (like `buckling_3d`; with `POU_D_T_GD` beams on an
+   auxiliary model, §5.2), deforms the mesh with the chosen mode and then solves
+   nonlinearly.
 6. **Results**: the displacements per step in Mecway, plus the imperfection and the
    stability in the log and the status box (§5.3).
 
@@ -686,7 +691,8 @@ on the displacements.
 1. `MECA_STATIQUE` with all loads at the end time (`INST`), `SIEF_ELGA`, `ASSEMBLAGE`
    `RIGI_MECA` + `RIGI_GEOM`, `CALC_MODES` `MODE_FLAMB` (as §2.2), with `NORM_MODE`
    `TRAN`: the largest displacement component of the shape is 1. A follower pressure
-   counts as a dead load here.
+   counts as a dead load here. With `POU_D_T_GD` beams this step runs on an auxiliary
+   model (below).
 2. `MODI_MAILLAGE` `DEFORME` `TRAN` with amplitude × buckling mode k (`CREA_CHAMP`
    `COMB`; as test case ssnl502d), then `AFFE_CARA_ELEM` again (beam and shell axes on
    the deformed shape).
@@ -698,6 +704,57 @@ on the displacements.
 The **displacements in Mecway are relative to the imperfect shape**: the total
 deflection is the imperfection (in the buckling mode, at most the amplitude) plus the
 displacement shown. Stresses and reactions belong to the imperfect structure.
+
+**Auxiliary model for `POU_D_T_GD` beams.** This element has no `RIGI_MECA`
+(`CALCUL_37`), so step 1 runs on an auxiliary model: the same model with `POU_D_T`, the
+same Timoshenko beam at small displacements (NL-80b), with its own `AFFE_CARA_ELEM` and
+the same loads created a second time. Steps 2 to 4 and `STAT_NON_LINE` stay on the
+`POU_D_T_GD` model. Verification: a column (NK-06) and a mixed model with a shell, a
+point mass and an `#ASTER` line (NK-10). Loads from `#ASTER-EXCIT` belong to the
+`POU_D_T_GD` model and cannot go to the auxiliary model: that gives an ERROR. Then put
+the initial curvature in the mesh (NL-82).
+
+**Step guard (`gd_step_limit`, `POU_D_T_GD` beams only).** Above the buckling load
+Newton with a coarse step can converge on the unstable branch at the other side: the
+job ends OK and the column looks straight. Measured on a column with L = 2.5 m, with 10,
+20 and 40 line3 and dt = 0.01: between 75 and 76 kN the deflection falls from 138 to
+16 mm (NK-05b). With dt = 0.0025 or with the guard the column follows the elastica:
+926.4 mm against exactly 926.7 mm (NK-05). `PREDICTION='EXTRAPOLE'` does not help and
+`RECH_LINEAIRE` makes it worse. The bridge therefore adds to the `ECHEC` of
+`DEFI_LIST_INST`, next to `ERREUR` (EDF R&D, U4.34.03; catalogue `defi_list_inst.py`):
+
+```python
+_F(EVENEMENT='DELTA_GRANDEUR', VALE_REF=<limit>, NOM_CHAM='DEPL', NOM_CMP='DX',
+   GROUP_MA=(<beams>), ACTION='DECOUPE',
+   SUBD_METHODE='MANUEL', SUBD_PAS=4, SUBD_NIVEAU=3),   # also DY and DZ
+```
+
+A step in which a displacement component of these beams grows more than the limit is
+divided by 4, nested up to 3 times (1/64 of the step). The limit is `gd_step_limit` ×
+the largest dimension of the beams together (the bounding box of all `POU_D_T_GD` beams;
+the log gives the limit in m). The column above gets 50 mm. Cut steps appear as extra
+times in Mecway ([Settings §2.1](Settings_contact_and_nonlinear.md#21-time-steps)). Why
+this default: [Default settings §3.3](Default_settings_and_assumptions.md#33-nonlinear-static-nonlin_static_3d-stat_non_line).
+
+**When cutting does not help.** With a load present from the start, and with a real
+snap-through, dividing the step does not make the displacement smaller. Code-Aster then
+stops with `MECANONLINE9_50` (cutting exhausted) or `MECANONLINE9_7` (limit point). The
+job writes `BRIDGE_VANGNET <time>` into the `.mess` and continues from the last archived
+state on the same time list, without the guard (`ETAT_INIT`); the rest of the run equals
+a run without the guard (NK-08, NK-09). The status box says from which t. The run does
+not count as failed; the exception stays visible in the `.mess`. The guard applies to
+the whole model: if somewhere a constant load on a `POU_D_T_GD` beam exceeds the limit
+in the first step, it ends at t = 0 and a column elsewhere can still jump (NK-07). Then
+only the jump check remains.
+
+**Jump check (`POU_D_T_GD` beams).** After every static run with such beams, also with
+the guard off, the job compares per node of those beams the size of the displacement
+between two successive archived steps (`aster_results_export.print_jump_check`). If it
+falls below 50 % of the step before, the job writes `BRIDGE_SPRONG` into the `.mess` and
+the bridge gives a WARNING in the log and the status box. Nodes that moved less than
+1 % of the size of the beams do not count, nor do intervals in which a load table falls
+(that is unloading). A formula in time is not looked at: unloading with a formula can
+therefore give a message. The check only reports; it does not recompute anything.
 
 ### 5.3 Interpretation
 
@@ -715,7 +772,8 @@ What the log and the status box show (examples from the verification):
 - **Buckling reached** (WARNING): λ ≤ 1 (small displacements) or λ changes sign (large
   displacements). A **perfect** structure stays straight in the analysis, even above
   the buckling load; the message then only says that it is unstable there. For the
-  behaviour after buckling: an imperfection. If λ goes below 0 again after the sign
+  behaviour after buckling: an imperfection (the message advises one only when there
+  is no imperfection yet). If λ goes below 0 again after the sign
   change, the structure is stable again after buckling (e.g. a plate, Mecway's
   BucklingPlateNonlinear: change at t ≈ 0.57, load 7.15 N; theory 7.06 N).
 - **Limit point / load capacity.** With an imperfection (and plasticity) the
@@ -723,6 +781,20 @@ What the log and the status box show (examples from the verification):
   there (`MECANONLINE9_7`; the results up to that moment are loaded), and the criterion
   goes to 0 (WARNING "almost 0"). **The load at the last time is the load capacity**
   (NK-04: 0.49 Pcr with e0 = L/200, against Pcr for the perfect column).
+- **Buckling load with `POU_D_T_GD` beams.** CRIT_STAB is not possible there; the
+  buckling factor in the line `Imperfection: buckling mode 1 (...)` is the linear
+  buckling of the auxiliary model (§5.2, NK-06).
+- **Linear beams** (status box): `Beams ... are geometrically linear (small
+  displacements)`. In a nonlinear static analysis with large displacements the
+  deflection of beams other than `POU_D_T_GD` grows in proportion to the load, so
+  buckling or a snap cannot show in the displacements, even with an imperfection. Not
+  with your own choice of small displacements (`deformation` = `PETIT`).
+- **End of the step guard** (status box): `Step guard of beams (gd_step_limit): from
+  t = ... computed without the guard`. Not an error; from that t watch the jump check.
+- **Jump** (WARNING): `Jump in the beams: between t = ... and t = ... the largest
+  displacement falls from ... to ... m`. The analysis has probably landed on another
+  equilibrium branch (the unstable branch after buckling); the results after it are then
+  not reliable (NK-05b, NK-07).
 - **Check**: the total deflection w = e0 / (1 − P/Pcr) (amplification factor of a bar
   with an initial curvature in the buckling mode; Timoshenko & Gere, 1961, chapter 1),
   and a Southwell plot (additional deflection δ against δ/P is a straight line with
@@ -737,6 +809,12 @@ What the log and the status box show (examples from the verification):
 - One buckling mode as imperfection; no combination of shapes, no measured geometry.
 - The buckling mode of CRIT_STAB itself (`MODE_FLAMB` in the result) does not go to
   Mecway; the imperfection is always the linear buckling mode under the end load.
+- CRIT_STAB not with `POU_D_T_GD` beams (ERROR): their tangent matrix is not symmetric
+  (`ALGELINE4_41`).
+- Imperfection with `POU_D_T_GD` beams not together with `#ASTER-EXCIT` (ERROR).
+- The step guard only works on a load that rises. A load present from the start or a
+  real snap-through ends it (§5.2); then only the jump check remains, which reports but
+  repairs nothing.
 - Arc-length method (`PILOTAGE`), to continue past the limit point: not built in.
 - See KNOWN_BUGS 53.
 
@@ -751,7 +829,13 @@ What the log and the status box show (examples from the verification):
 | ERROR: Imperfection (buckling mode) not possible with contact ... | the buckling mode comes from a linear analysis | amplitude 0, or suppress those parts in a configuration |
 | ERROR: Imperfection: invalid amplitude or mode number / unit unknown | input | number, mode ≥ 1, unit `m` or `L` |
 | WARNING: Imperfection with small displacements (DEFORMATION=...) | `PETIT`: no second-order effect | `deformation` = `GROT_GDEP` (default) |
-| WARNING: Imperfection: beams and DKT/DST shells ... are geometrically linear | the deflection does not grow there | solid elements or `elem_shell` = `COQUE_3D` |
+| WARNING: Imperfection: beams and DKT/DST shells ... are geometrically linear | the deflection does not grow there | beams: `elem_beam` = `POU_D_T_GD`; shells: `elem_shell` = `COQUE_3D`; or solid elements |
+| Beams ... are geometrically linear (status box) | beams other than `POU_D_T_GD` in an analysis with large displacements: buckling cannot show in the displacements | `elem_beam` = `POU_D_T_GD` for the behaviour after buckling |
+| ERROR: crit_stab (CRIT_STAB) does not work with POU_D_T_GD beams | their tangent matrix is not symmetric (`ALGELINE4_41`) | `crit_stab` off, or `elem_beam` = `POU_D_E`/`POU_D_T` |
+| ERROR: imperfection_amplitude with POU_D_T_GD beams does not work together with #ASTER-EXCIT | the linear buckling runs on an auxiliary model, and those loads belong to the `POU_D_T_GD` model | amplitude 0 and the initial curvature in the mesh (NL-82) |
+| Step guard of beams (gd_step_limit): from t = ... computed without the guard (status box) | cutting did not help: a load present from the start, or a real snap-through | not an error, the run is complete. Watch for a *Jump in the beams* message; if possible apply the load with a table rising from 0 |
+| WARNING: Jump in the beams: between t = ... and t = ... | the displacement falls while the load does not decrease: probably the unstable branch after buckling | reduce Mecway's *Time step size* and compare; keep `gd_step_limit` on |
+| `<EXCEPTION>` or `MECANONLINE9_50` in the `.mess`, above `BRIDGE_VANGNET` | the step guard stopped (§5.2) | not an error: the job went on without the guard |
 | WARNING: Imperfection: buckling mode k belongs to the reversed load | negative buckling factor (e.g. tension) | choose a mode with a positive factor, or check the load direction |
 | WARNING: Imperfection: buckling mode k not found | fewer modes found than k | smaller mode number; see the `.mess` |
 | `<EXCEPTION> <FACTOR_57>` in the `MECA_STATIQUE` of the imperfection | as §4 | as §4: *Solver accuracy (RESI_RELA)* on the Nonlinear static page |

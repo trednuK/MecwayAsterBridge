@@ -641,12 +641,15 @@ aanraadt (EDF R&D, U2.08.04 §2.2).
 2. **Stappen**: *Substappen per tijdsinterval* bepaalt hoeveel punten je krijgt
    (standaard 10; 20 tot 40 geeft een nauwkeuriger knikpunt).
 3. **Elementen**: gebruik **volume-elementen** (bij voorkeur kwadratisch, of hex8
-   met `LINE_QUAD`) of schalen met `elem_shell` = `COQUE_3D`. Balken (`POU_D_E`) en
-   DKT/DST-schalen rekenen in de bridge geometrisch lineair (KNOWN_BUGS 11): daar
-   werkt CRIT_STAB wel (als lastfactor), maar groeit de uitbuiging met een
-   imperfectie niet (WARNING). Balken `POU_D_T_GD` (grote rotaties) kunnen geen
-   CRIT_STAB en geen imperfectie uit een knikvorm (ERROR); leg de beginkromming dan in
-   de mesh ([Verificatie](Verificatie.md) NL-82).
+   met `LINE_QUAD`), schalen met `elem_shell` = `COQUE_3D`, of balken met `elem_beam` =
+   `POU_D_T_GD` (20 tot 40 elementen per staaf;
+   [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)).
+   Andere balken en DKT/DST-schalen rekenen in de bridge geometrisch lineair
+   (KNOWN_BUGS 11): daar werkt CRIT_STAB wel (als lastfactor), maar groeit de
+   uitbuiging met een imperfectie niet (WARNING, en een melding in het statusvak).
+   Balken `POU_D_T_GD` kunnen geen CRIT_STAB (ERROR). De imperfectie werkt daar wel
+   (§5.2), behalve samen met `#ASTER-EXCIT` (ERROR); leg de beginkromming dan in de
+   mesh ([Verificatie](Verificatie.md) NL-82).
 4. **Pagina Niet-lineair statisch** (of per model met `#ASTER-OPTIE`,
    [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2):
 
@@ -656,10 +659,12 @@ aanraadt (EDF R&D, U2.08.04 §2.2).
 | Imperfectie: amplitude (0 = geen) | `imperfection_amplitude` | 0 | > 0 voor een imperfectie, bijv. L/1000 tot L/300 of de waarde uit de norm. Negatief keert de vorm om (het teken van een knikvorm is willekeurig) |
 | Imperfectie: knikvorm nr. | `imperfection_mode` | 1 | een andere vorm (2 = de op een na kleinste kniklastfactor), bijv. bij twee vormen met bijna dezelfde factor |
 | Imperfectie: amplitude in (m / x L) | `imperfection_unit` | `m` | `L`: amplitude als fractie van de grootste afmeting van het model (0.001 = L/1000; de log noemt L en de amplitude in m) |
+| Stapbewaking balken POU_D_T_GD (0 = uit) | `gd_step_limit` | 0.02 | alleen met balken `POU_D_T_GD`: een stap wordt geknipt als een verplaatsing van die balken meer groeit dan deze fractie van hun grootste afmeting (§5.2). Lager als de balken samen veel groter zijn dan de slanke staaf; 0 = uit |
 
 5. **Starten.** Bij een imperfectie rekent Code-Aster eerst de lineaire knik onder
-   de lasten op de eindtijd (zoals `buckling_3d`), vervormt het mesh met de gekozen
-   knikvorm en rekent dan niet-lineair.
+   de lasten op de eindtijd (zoals `buckling_3d`; met balken `POU_D_T_GD` op een
+   hulpmodel, §5.2), vervormt het mesh met de gekozen knikvorm en rekent dan
+   niet-lineair.
 6. **Resultaten**: de verplaatsingen per stap in Mecway, plus in de log en het
    statusvak de imperfectie en de stabiliteit (§5.3).
 
@@ -694,7 +699,8 @@ tweede-orde-effect op de verplaatsingen.
 1. `MECA_STATIQUE` met alle lasten op de eindtijd (`INST`), `SIEF_ELGA`,
    `ASSEMBLAGE` `RIGI_MECA` + `RIGI_GEOM`, `CALC_MODES` `MODE_FLAMB` (zoals §2.2), met
    `NORM_MODE` `TRAN`: de grootste verplaatsingscomponent van de vorm is 1. Een
-   meebewegende druk telt hier als vaste last.
+   meebewegende druk telt hier als vaste last. Met balken `POU_D_T_GD` rekent deze
+   stap op een hulpmodel (hieronder).
 2. `MODI_MAILLAGE` `DEFORME` `TRAN` met amplitude × knikvorm k (`CREA_CHAMP`
    `COMB`; zoals testcase ssnl502d), daarna `AFFE_CARA_ELEM` opnieuw (balk- en
    schaalassen op de vervormde vorm).
@@ -706,6 +712,60 @@ tweede-orde-effect op de verplaatsingen.
 De **verplaatsingen in Mecway zijn t.o.v. de imperfecte vorm**: de totale uitbuiging
 is de imperfectie (in de knikvorm, maximaal de amplitude) plus de getoonde
 verplaatsing. Spanningen en reacties horen bij de imperfecte constructie.
+
+**Hulpmodel voor balken `POU_D_T_GD`.** Dit element kent geen `RIGI_MECA`
+(`CALCUL_37`), dus stap 1 rekent op een hulpmodel: hetzelfde model met `POU_D_T`,
+dezelfde Timoshenko-balk bij kleine verplaatsingen (NL-80b), met een eigen
+`AFFE_CARA_ELEM` en dezelfde lasten nog een keer aangemaakt. De stappen 2 tot 4 en
+`STAT_NON_LINE` blijven op het `POU_D_T_GD`-model. Verificatie: een kolom (NK-06) en
+een gemengd model met schaal, puntmassa en `#ASTER`-regel (NK-10). Lasten uit
+`#ASTER-EXCIT` horen bij het `POU_D_T_GD`-model en kunnen niet naar het hulpmodel: dat
+geeft een ERROR. Leg de beginkromming dan in de mesh (NL-82).
+
+**Stapbewaking (`gd_step_limit`, alleen balken `POU_D_T_GD`).** Boven de kniklast kan
+Newton met een grove stap convergeren op de onstabiele tak aan de andere kant: de job
+eindigt OK en de kolom lijkt recht. Gemeten aan een kolom met L = 2,5 m, met 10, 20 en
+40 line3 en dt = 0,01: tussen 75 en 76 kN valt de uitbuiging van 138 naar 16 mm
+(NK-05b). Met dt = 0,0025 of met de bewaking volgt de kolom de elastica: 926,4 mm tegen
+exact 926,7 mm (NK-05). `PREDICTION='EXTRAPOLE'` helpt niet en `RECH_LINEAIRE` maakt
+het erger. De bridge zet daarom in de `ECHEC` van `DEFI_LIST_INST`, naast `ERREUR`
+(EDF R&D, U4.34.03; catalogus `defi_list_inst.py`):
+
+```python
+_F(EVENEMENT='DELTA_GRANDEUR', VALE_REF=<limit>, NOM_CHAM='DEPL', NOM_CMP='DX',
+   GROUP_MA=(<beams>), ACTION='DECOUPE',
+   SUBD_METHODE='MANUEL', SUBD_PAS=4, SUBD_NIVEAU=3),   # also DY and DZ
+```
+
+Een stap waarin een verplaatsingscomponent van deze balken meer groeit dan de grens,
+wordt in 4 gedeeld, tot 3 keer genest (1/64 van de stap). De grens is `gd_step_limit`
+× de grootste afmeting van de balken samen (de omhullende doos van alle
+`POU_D_T_GD`-balken; de log noemt de grens in m). De kolom hierboven krijgt zo 50 mm.
+Geknipte stappen komen als extra tijdstippen in Mecway
+([Instellingen §2.1](Instellingen_contact_en_nietlineair.md#21-tijdstappen)). Waarom
+deze standaard: [Standaardinstellingen §3.3](Standaardinstellingen_en_aannames.md#33-niet-lineair-statisch-nonlin_static_3d-stat_non_line).
+
+**Als knippen niet helpt.** Bij een last die er vanaf het begin staat, en bij een echte
+doorslag, wordt de verplaatsing niet kleiner door de stap te delen. Code-Aster stopt
+dan met `MECANONLINE9_50` (knippen uitgeput) of `MECANONLINE9_7` (grenspunt). De job
+schrijft `BRIDGE_VANGNET <tijd>` in de `.mess` en rekent vanaf de laatst gearchiveerde
+toestand door op dezelfde tijdlijst, zonder bewaking (`ETAT_INIT`); de rest van de run
+is gelijk aan een run zonder bewaking (NK-08, NK-09). Het statusvak noemt vanaf welke t
+dat gebeurt. De run geldt niet als mislukt; de uitzondering blijft zichtbaar in de
+`.mess`. De bewaking geldt voor het hele model: staat er ergens op een `POU_D_T_GD`-balk
+een constante last die de grens in de eerste stap overschrijdt, dan eindigt ze op
+t = 0 en kan een kolom elders alsnog springen (NK-07). Dan blijft alleen de
+sprongcontrole over.
+
+**Sprongcontrole (balken `POU_D_T_GD`).** Na elke statische run met zulke balken, ook
+met de bewaking uit, vergelijkt de job per knoop van die balken de grootte van de
+verplaatsing tussen twee opeenvolgende gearchiveerde stappen
+(`aster_results_export.print_jump_check`). Valt die onder 50 % van de stap ervoor, dan
+schrijft de job `BRIDGE_SPRONG` in de `.mess` en geeft de bridge een WARNING in de log
+en het statusvak. Knopen die minder dan 1 % van de afmeting van de balken bewogen,
+tellen niet mee, en intervallen waarin een lasttabel daalt ook niet (dat is ontlasten).
+Een formule in de tijd wordt niet bekeken: ontlasten met een formule kan dus een melding
+geven. De controle meldt alleen; ze rekent niets opnieuw.
 
 ### 5.3 Interpretatie
 
@@ -723,7 +783,8 @@ Wat de log en het statusvak tonen (voorbeelden uit de verificatie):
 - **Knik bereikt** (WARNING): λ ≤ 1 (kleine verplaatsingen) of λ wisselt van teken
   (grote verplaatsingen). Een **perfecte** constructie blijft in de berekening recht,
   ook boven de kniklast; de melding zegt dan alleen dat ze daar instabiel is. Voor
-  het gedrag na knik: een imperfectie. Gaat λ na de tekenwissel weer onder 0, dan
+  het gedrag na knik: een imperfectie (de melding raadt die alleen aan als er nog geen
+  imperfectie is). Gaat λ na de tekenwissel weer onder 0, dan
   is de constructie na knik weer stabiel (bijv. een plaat, Mecway's
   BucklingPlateNonlinear: wissel bij t ≈ 0,57, last 7,15 N; theorie 7,06 N).
 - **Grenspunt / draagkracht.** Met een imperfectie (en plasticiteit) heeft de
@@ -731,6 +792,20 @@ Wat de log en het statusvak tonen (voorbeelden uit de verificatie):
   daar (`MECANONLINE9_7`, de resultaten tot dat moment worden geladen), en gaat het
   criterium naar 0 (WARNING "bijna 0"). **De last op het laatste tijdstip is de
   draagkracht** (NK-04: 0,49 Pcr bij e0 = L/200, tegen Pcr voor de perfecte kolom).
+- **Kniklast met balken `POU_D_T_GD`.** CRIT_STAB kan daar niet; de kniklastfactor in
+  de regel `Imperfectie: knikvorm 1 (...)` is de lineaire knik van het hulpmodel (§5.2,
+  NK-06).
+- **Lineaire balken** (statusvak): `Balken ... rekenen geometrisch lineair (kleine
+  verplaatsingen)`. In een niet-lineair statische analyse met grote verplaatsingen
+  groeit de uitbuiging van andere balken dan `POU_D_T_GD` evenredig met de last, dus
+  knik of doorslag is in de verplaatsingen niet te zien, ook niet met een imperfectie.
+  Niet bij een eigen keuze voor kleine verplaatsingen (`deformation` = `PETIT`).
+- **Einde van de stapbewaking** (statusvak): `Stapbewaking balken (gd_step_limit): vanaf
+  t = ... gerekend zonder bewaking`. Geen fout; let vanaf die t op de sprongcontrole.
+- **Sprong** (WARNING): `Sprong in de balken: tussen t = ... en t = ... valt de grootste
+  verplaatsing van ... naar ... m`. De berekening staat waarschijnlijk op een andere
+  evenwichtstak (de onstabiele tak na knik); de resultaten daarna zijn dan niet
+  betrouwbaar (NK-05b, NK-07).
 - **Controle**: de totale uitbuiging w = e0 / (1 − P/Pcr) (versterkingsfactor van
   een staaf met een beginkromming in de knikvorm; Timoshenko & Gere, 1961,
   hoofdstuk 1), en een Southwell-grafiek (extra uitbuiging δ tegen δ/P is een rechte
@@ -745,6 +820,12 @@ Wat de log en het statusvak tonen (voorbeelden uit de verificatie):
 - Eén knikvorm als imperfectie; geen combinatie van vormen, geen gemeten geometrie.
 - De knikvorm van CRIT_STAB zelf (`MODE_FLAMB` in het resultaat) gaat niet naar
   Mecway; de imperfectie is altijd de lineaire knikvorm onder de eindlast.
+- CRIT_STAB niet met balken `POU_D_T_GD` (ERROR): hun tangentmatrix is niet
+  symmetrisch (`ALGELINE4_41`).
+- Imperfectie met balken `POU_D_T_GD` niet samen met `#ASTER-EXCIT` (ERROR).
+- De stapbewaking werkt alleen op een last die oploopt. Een last die er vanaf het begin
+  staat of een echte doorslag beëindigt haar (§5.2); dan blijft alleen de
+  sprongcontrole, die meldt maar niets herstelt.
 - Boogslengtemethode (`PILOTAGE`), om voorbij het grenspunt te rekenen: niet
   ingebouwd.
 - Zie KNOWN_BUGS 53.
@@ -760,7 +841,13 @@ Wat de log en het statusvak tonen (voorbeelden uit de verificatie):
 | ERROR: Imperfectie (knikvorm) niet mogelijk met contact ... | de knikvorm komt uit een lineaire berekening | amplitude 0, of die onderdelen onderdrukken in een configuratie |
 | ERROR: Imperfectie: ongeldige amplitude of modenummer / eenheid onbekend | invoer | getal, mode ≥ 1, eenheid `m` of `L` |
 | WARNING: Imperfectie met kleine verplaatsingen (DEFORMATION=...) | `PETIT`: geen tweede-orde-effect | `deformation` = `GROT_GDEP` (standaard) |
-| WARNING: Imperfectie: balken en DKT/DST-schalen ... rekenen geometrisch lineair | daar groeit de uitbuiging niet | volume-elementen of `elem_shell` = `COQUE_3D` |
+| WARNING: Imperfectie: balken en DKT/DST-schalen ... rekenen geometrisch lineair | daar groeit de uitbuiging niet | balken: `elem_beam` = `POU_D_T_GD`; schalen: `elem_shell` = `COQUE_3D`; of volume-elementen |
+| Balken ... rekenen geometrisch lineair (statusvak) | balken anders dan `POU_D_T_GD` in een analyse met grote verplaatsingen: knik is in de verplaatsingen niet te zien | `elem_beam` = `POU_D_T_GD` voor het gedrag na knik |
+| ERROR: crit_stab (CRIT_STAB) werkt niet met balken POU_D_T_GD | hun tangentmatrix is niet symmetrisch (`ALGELINE4_41`) | `crit_stab` uit, of `elem_beam` = `POU_D_E`/`POU_D_T` |
+| ERROR: imperfection_amplitude met balken POU_D_T_GD werkt niet samen met #ASTER-EXCIT | de lineaire knik rekent op een hulpmodel, en die lasten horen bij het `POU_D_T_GD`-model | amplitude 0 en de beginkromming in de mesh (NL-82) |
+| Stapbewaking balken (gd_step_limit): vanaf t = ... gerekend zonder bewaking (statusvak) | knippen hielp niet: een last die er vanaf het begin staat, of een echte doorslag | geen fout, de run is compleet. Let op een melding *Sprong in de balken*; breng de last zo mogelijk op met een tabel die vanaf 0 oploopt |
+| WARNING: Sprong in de balken: tussen t = ... en t = ... | de verplaatsing valt terwijl de last niet afneemt: waarschijnlijk de onstabiele tak na knik | maak Mecway's *Time step size* kleiner en vergelijk; laat `gd_step_limit` aan |
+| `<EXCEPTION>` of `MECANONLINE9_50` in de `.mess`, boven `BRIDGE_VANGNET` | de stapbewaking stopte (§5.2) | geen fout: de job ging door zonder bewaking |
 | WARNING: Imperfectie: knikvorm k hoort bij de omgekeerde last | negatieve kniklastfactor (bijv. trek) | kies een mode met een positieve factor, of controleer de lastrichting |
 | WARNING: Imperfectie: knikvorm k niet gevonden | minder modes gevonden dan k | kleiner modenummer; zie de `.mess` |
 | `<EXCEPTION> <FACTOR_57>` in de `MECA_STATIQUE` van de imperfectie | als §4 | als §4: *Nauwkeurigheid oplosser (RESI_RELA)* op de pagina Niet-lineair statisch |

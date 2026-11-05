@@ -2434,6 +2434,56 @@ def print_static_check(res, model, fieldmat, cara=None, mass=True,
             "\n", " ")[:300])
 
 
+# A node whose displacement falls to below this fraction of the step before,
+# while no load table falls: a jump to another equilibrium branch (issue #10:
+# 138 mm -> 16 mm, column at 75 -> 76 kN). Per node, because the largest
+# displacement of the model can sit in another member. Load-controlled
+# snap-through makes it grow; real unloading is in `falling`.
+_JUMP_FRACTION = 0.5
+
+
+def print_jump_check(res, model, groups, falling, floor):
+    """
+    Jump to another equilibrium branch of POU_D_T_GD beams, per pair of
+    archived steps: BRIDGE_SPRONG t0 t1 u0 u1 in the .mess (u [m]: the node
+    with the largest u0 that falls). groups: GROUP_MA names; falling:
+    [(t0, t1)] where a load table falls in absolute value; floor [m]: nodes
+    that moved less do not count (a node near a zero of the deformed shape
+    can halve without a jump). Read by bridge_results_liml.read_step_guard.
+    Errors are printed, never raised: the results are already computed.
+    """
+    try:
+        mesh = model.getMesh()
+        rows = np.array(sorted(set(int(i) for g in groups
+                                   for i in mesh.getNodesFromCells(str(g)))))
+        times = list(res.getAccessParameters()["INST"])
+        indexes = sorted(res.getIndexes())
+        previous = None
+        for idx, t in zip(indexes, times):
+            sf = res.getField("DEPL", idx).toSimpleFieldOnNodes()
+            vals, mask = sf.getValues()
+            names = list(sf.getComponents())
+            u2 = np.zeros(mask.shape[0])
+            for c in ("DX", "DY", "DZ"):
+                if c in names:
+                    k = names.index(c)
+                    u2 += np.where(mask[:, k], vals[:, k], 0.0) ** 2
+            u = np.sqrt(u2[rows])
+            if previous is not None:
+                fell = (previous[1] >= floor) & (
+                    u < _JUMP_FRACTION * previous[1])
+                unloading = any(a < t and b > previous[0]
+                                for a, b in falling)
+                if fell.any() and not unloading:
+                    k = int(np.argmax(np.where(fell, previous[1], 0.0)))
+                    print("BRIDGE_SPRONG {0} {1} {2} {3}".format(
+                        _num(previous[0]), _num(t), _num(previous[1][k]),
+                        _num(u[k])))
+            previous = (t, u)
+    except Exception as e:
+        print("BRIDGE_SPRONG_FOUT " + str(e).replace("\n", " ")[:300])
+
+
 def print_excitation(vectors):
     """
     Load resultant of the excitation vectors of a response on a modal

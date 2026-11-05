@@ -382,8 +382,9 @@ that file, not in the model.
   determined; 5 cables get no centrifugal force (ERROR; KNOWN_BUGS 19); 6 with
   `elem_beam` = `POU_D_T_GD` the bridge makes `POU_D_T` in analyses other than nonlinear
   static with large displacements (WARNING), requests no `SIPM_ELNO` and writes the
-  centrifugal force as a `FORMULE`; `imperfection_amplitude` gives an ERROR beforehand;
-  7 buckling (and a buckling mode as imperfection) with trusses or cables gives an ERROR
+  centrifugal force as a `FORMULE`; the linear buckling of `imperfection_amplitude` runs
+  on an auxiliary model with `POU_D_T` ([`Modal_and_buckling.md`](Modal_and_buckling.md)
+  §5.2); 7 buckling (and a buckling mode as imperfection) with trusses or cables gives an ERROR
   beforehand: model the members as beams ([`Modal_and_buckling.md`](Modal_and_buckling.md)).
 - **Status**: fixed in the bridge (1, 3, 6, 7; 2 and 5 as a message) / own input (2, own
   code) / cause not determined (4).
@@ -841,7 +842,8 @@ Step-by-step plan and settings:
   after reducing the step (`SUBD_PAS` = 4, `SUBD_NIVEAU` = 6). The saved steps are kept.
 - **What the bridge does**: the job catches the error, writes `BRIDGE_ONVOLLEDIG <time>`
   and loads the results up to the last time reached; Mecway shows the explanation
-  (`_NEWTON_HINT`).
+  (`_NEWTON_HINT`). With the step guard of `POU_D_T_GD` beams on, the job continues:
+  see [`MECANONLINE9_50`](#mecanonline9_50--step-guard-ended).
 - **Cause**; read the convergence table in the `.mess` (columns `RESI_GLOB_RELA`,
   `RESI_GLOB_MAXI`, contact):
   1. **Relative residual stalls, absolute residual is ~0.** A bending model (profile, roller and die with contact):
@@ -894,6 +896,26 @@ Step-by-step plan and settings:
      the limit point is only possible with an imposed displacement instead of a
      force (the arc-length method `PILOTAGE` is not in the bridge).
 - **Status**: model / limitation (per case).
+
+### `MECANONLINE9_50` – step guard ended
+
+- **Message** (error, in the `.mess`): "Arrêt par échec de l'action <...> pour le
+  traitement de l'événement <...>": cutting a step on `DELTA_GRANDEUR` is exhausted and
+  the displacement stayed above the limit.
+- **What the bridge does**: the job catches the error, writes `BRIDGE_VANGNET <time>`
+  and continues from the last archived state without the step guard. The status box
+  gives that time, the convergence window shows an alarm `BRIDGE_VANGNET`, and the run
+  does not count as failed: `MECANONLINE` errors above that line do not go into the error
+  message, but stay in the `.mess`. The same holds for `MECANONLINE9_7` at a limit point
+  while the guard is on.
+- **Cause**: the step guard `gd_step_limit` of `POU_D_T_GD` beams, on a displacement
+  that does not get smaller by dividing the step: a load present from the start, or a
+  real snap-through.
+- **Seen**: verification NK-07, NK-08 (constant load, end at t = 0) and NK-09
+  (snap-through of a shallow arch; `MECANONLINE9_7` there).
+- **Solution**: none needed. After it only the jump check is active: watch for *Jump in
+  the beams* in the status box ([`Modal_and_buckling.md`](Modal_and_buckling.md) §5.2).
+- **Status**: fixed in the bridge (the run continues).
 
 ### `SUBDIVISE_3` – step cannot be reduced
 
@@ -1515,6 +1537,7 @@ and beams in the model).
 | `MECANONLINE5_80` | [5](#mecanonline5_80--initial-velocity-on-another-model) | cause not determined |
 | `MECANONLINE9_3` | [5](#mecanonline9_3--integration-of-the-material-law-failed) | fixed in the bridge (cause 2) / model (cause 1) |
 | `MECANONLINE9_4` | [3](#mecanonline9_4--matrix-not-invertible-nonlinear) | fixed in the bridge (1 for fixed, 4) / model (1 other, 2) / own input (3) / cause not determined (5) |
+| `MECANONLINE9_50` | [5](#mecanonline9_50--step-guard-ended) | fixed in the bridge (the run continues) |
 | `MECANONLINE9_7` | [5](#mecanonline9_7--newton-does-not-converge) | model / limitation (per case) |
 | `MECANONLINE_3` | [2](#mecanonline_3-with-alarm-calculel_54--element-not-for-nonlinear-analysis) | fixed in the bridge |
 | `MECANONLINE_78` | [3](#mecanonline_78--mass-matrix-nearly-singular) | harmless (in the cases seen) / model (no density) |

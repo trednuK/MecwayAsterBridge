@@ -68,7 +68,7 @@ Wat de niet-lineaire analyses ondersteunen:
 | Tijdschema | `schema`, `hht_alpha`, `substeps_per_output` (impliciet), `explicit_dt_factor` (expliciet) | dynamisch |
 | Bezwijken | `element_failure`, `failure_plastic_strain`, `failure_stiffness_factor` | niet-lineair statisch, dynamisch ([Bezwijken.md](Bezwijken.md)) |
 | Controle | `energy_balance`; `error_estimator` | dynamisch impliciet; statisch |
-| Niet-lineaire knik | `crit_stab`, `imperfection_amplitude`, `imperfection_mode`, `imperfection_unit` | niet-lineair statisch ([Modaal_en_knik.md](Modaal_en_knik.md) §5) |
+| Niet-lineaire knik | `crit_stab`, `gd_step_limit`, `imperfection_amplitude`, `imperfection_mode`, `imperfection_unit` | niet-lineair statisch ([Modaal_en_knik.md](Modaal_en_knik.md) §5) |
 
 - **Per model**: `#ASTER-OPTIE sleutel = waarde` (§3.9).
 
@@ -114,6 +114,11 @@ elementen archiveert de bridge elke rekenstap. Bij een draagkrachtberekening tot
 bezwijken kan de laatst geconvergeerde last iets verschuiven (NK-04 met de optie:
 P_u/Pcr 0,480 in plaats van 0,488).
 Alleen een model zonder stapgrootte gebruikt `substeps_per_interval`.
+
+Een geknipte stap wordt gewoon gearchiveerd, dus dan krijgt Mecway extra tijdstippen.
+Met balken `POU_D_T_GD` gebeurt dat vaker, door de stapbewaking (`gd_step_limit`,
+§2.9): de kolom van NK-05 geeft in Mecway 137 tijdstippen in plaats van 101. Met
+Mecway's *Automatic time stepping* niet: `ARCHIVAGE` houdt dan alleen de uitvoertijden.
 
 **Impliciet dynamisch.** De bridge maakt een `DEFI_LIST_INST` met:
 
@@ -499,6 +504,7 @@ imperfectie, standaard amplitude 0 = geen; alleen niet-lineair statisch): `CRIT_
 in `STAT_NON_LINE` en een lineaire knikvorm als voorvervorming van het mesh, zie
 [Modaal_en_knik.md](Modaal_en_knik.md) §5. Met de standaard `deformation` (grote
 verplaatsingen) is `CRIT_STAB` geen lastfactor maar een eigenwaarde die naar 0 gaat.
+`gd_step_limit` (stapbewaking van balken `POU_D_T_GD`): §2.9.
 
 ### 2.8 Modaal, knik en thermisch
 
@@ -539,8 +545,9 @@ gebouwd voor element offset, flexible joint, line3, balkorientatie en `beam_forc
 | plastisch materiaal | elastisch gerekend (WARNING), zoals bij de andere balken |
 | bezwijken van elementen ([`Bezwijken.md`](Bezwijken.md)) | ERROR: na het eerste bezweken element vraagt de volgende stap `RIGI_MECA` (`CALCUL_37`); zet het bezwijken uit of kies `POU_D_E`/`POU_D_T` |
 | andere analyses (statisch, modaal, knik, harmonisch, spectrum, dynamica) en niet-lineair met `PETIT`/`PETIT_REAC` | `POU_D_T` met een WARNING: dezelfde balk bij kleine verplaatsingen (NL-80b). Het element kent geen `RIGI_MECA` (`CALCUL_37` in `MECA_STATIQUE`); dynamica (testcase sdnl103a) is in de bridge NIET geverifieerd |
-| `crit_stab` | ERROR: de tangentmatrix is niet symmetrisch (`ALGELINE4_41`) |
-| `imperfection_amplitude` > 0 | ERROR: de lineaire knik vooraf vraagt `RIGI_MECA`; leg de beginkromming in de mesh (NL-82) |
+| `crit_stab` | ERROR: de tangentmatrix is niet symmetrisch (`ALGELINE4_41`). De kniklastfactor van de imperfectie geeft wel de lineaire kniklast |
+| `imperfection_amplitude` ≠ 0 | werkt: de lineaire knik vooraf rekent op een hulpmodel met `POU_D_T`, omdat dit element geen `RIGI_MECA` kent ([Modaal_en_knik.md](Modaal_en_knik.md) §5.2; NK-06, NK-10). ERROR alleen samen met `#ASTER-EXCIT`: leg de beginkromming dan in de mesh (NL-82) |
+| `gd_step_limit` (pagina Niet-lineair statisch, groep Niet-lineaire knik) | stapbewaking, standaard 0.02: een stap wordt geknipt als een verplaatsingscomponent van deze balken meer groeit dan deze fractie van hun grootste afmeting; 0 = uit (hieronder) |
 | flexible joint met U, V en W vrij (kogelscharnier) | koppelt alleen de verplaatsingen (DX, DY, DZ): exact bij elke rotatie (NL-90, NL-90b; naar de fork van MishalTPC) |
 | flexible joint met een deel van de rotaties vrij (U, V, W, UV, UW, VW) | ERROR vooraf: de rotaties langs de niet-vrije assen zijn een lineaire relatie in de onvervormde assen, en bij eindige rotaties geeft dat een onjuiste extra rotatie in het scharnier (KNOWN_BUGS 106). Kies `POU_D_E`/`POU_D_T` (kleine rotaties) of maak U, V en W vrij |
 | element offset, koppelingen | rekenen (offset bij kleine lasten gelijk aan `POU_D_T`; koppelingen NIET geverifieerd), maar blijven lineaire relaties in de onvervormde assen: WARNING (KNOWN_BUGS 11, 108) |
@@ -555,10 +562,32 @@ knoopwaarde is het gemiddelde van de aangrenzende elementen, dus bij de inklemmi
 half element naast de maximale waarde. Balkspanningen (`beamsixxmin`/`beamsixxmax`) zijn
 er niet: het element kent `SIPM_ELNO` niet (`CALCUL_37`). Een WARNING per run noemt dat.
 
+**Stapbewaking en sprongcontrole.** Boven de kniklast kan de berekening met een te grove
+stap op de onstabiele tak belanden: de job eindigt OK, maar de kolom lijkt recht
+(NK-05b). Daarom knipt de bridge een stap waarin een verplaatsingscomponent van deze
+balken meer groeit dan `gd_step_limit` × hun grootste afmeting (NK-05). Kan knippen niet
+helpen (een last die er vanaf het begin staat, of een echte doorslag), dan rekent de run
+vanaf de laatst gearchiveerde toestand door zonder bewaking en noemt het statusvak vanaf
+welke t (`BRIDGE_VANGNET` in de `.mess`); de run geldt dan niet als mislukt (NK-08,
+NK-09). Na elke statische run met deze balken, ook met de bewaking uit, kijkt een
+sprongcontrole of de verplaatsing van een knoop onder 50 % van de stap ervoor valt
+terwijl geen lasttabel daalt (WARNING in de log en het statusvak; NK-05b, NK-07).
+Details: [Modaal_en_knik.md](Modaal_en_knik.md) §5.2. Boogslengte (`PILOTAGE`) is niet
+ingebouwd.
+
 **Aanwijzingen.**
 
-- `POU_D_T_GD` is een lineair element: neem 20 tot 40 elementen per staaf (met 40
-  elementen ≤ 0,03 % van de analytische oplossing, NL-81 en NL-83).
+- `POU_D_T_GD` is een lineair element met één integratiepunt: neem 20 tot 40 elementen
+  per staaf (met 40 elementen ≤ 0,03 % van de analytische oplossing, NL-81 en NL-83).
+  Een line3 telt als twee cellen. Te weinig elementen maakt een kolom te stijf: met
+  4 line3 (8 cellen) slaat de kolom van NK-05 ongeveer 2 % te hoog om (76,5 kN tegen
+  74,8 kN).
+- **Knik van een kolom: kies `POU_D_T_GD`, een imperfectie, `crit_stab` uit en 20 line3
+  per staaf.** Geef `imperfection_amplitude` op (bijv. L/1000, [Modaal_en_knik.md](Modaal_en_knik.md)
+  §5.1), laat de last met een tabel vanaf 0 oplopen en laat `gd_step_limit` aan. De
+  verplaatsingen in Mecway zijn dan t.o.v. de imperfecte vorm, en de kniklastfactor van
+  de lineaire knik staat in de log en het statusvak (NK-06). `crit_stab` kan niet met
+  dit element.
 - Laat de last oplopen (een tabel in de tijd, Mecway's *Time step size*): NL-81 buigt
   90 graden in 20 stappen.
 - Bij een kleine last stagneert `RESI_GLOB_RELA` op afronding: kies
@@ -948,6 +977,10 @@ op dit grove mesh van 76 hex20-elementen).
   bewaard (EDF R&D, U4.51.03, "Shutdown management"; tekst van `MECANONLINE9_7` in 17.4).
 - De bridge vangt die fout op (`try/except` in de `.comm`), schrijft
   `BRIDGE_ONVOLLEDIG <tijd>` in de `.mess` en gaat door met de nabewerking.
+- Uitzondering: stopt `STAT_NON_LINE` terwijl de stapbewaking van balken `POU_D_T_GD`
+  aan staat, dan schrijft de job `BRIDGE_VANGNET <tijd>` en rekent hij zonder bewaking
+  door tot het eind (§2.9). Stopt ook die voortzetting, dan geldt het normale verhaal
+  (`BRIDGE_ONVOLLEDIG`).
 - In Mecway verschijnt de melding met de foutcode, een advies en "Laatste tijdstip
   met resultaten: ... s".
 - **Dynamisch**: alle uitvoertijden tot dat tijdstip gaan naar Mecway.

@@ -31,6 +31,7 @@ from bridge_from_liml import extract_aster_data_from_liml  # noqa: E402
 from bridge_mesh import write_mesh  # noqa: E402
 from bridge_to_aster import generate_AsterSolver_files  # noqa: E402
 from bridge_run_aster import aster_mess_errors  # noqa: E402
+from bridge_results_liml import read_step_guard  # noqa: E402
 
 u.CONFIG_BRIDGE["language"] = "en"
 _FAILED = []
@@ -111,6 +112,40 @@ def test_mess_message(tmp):
           "DVP_2 message: hint and last time with results")
 
 
+_MESS_GUARD = (u" ║ <ConvergenceError> <MECANONLINE9_50>     ║\n"
+               u" ║ Arrêt par échec de l'action <DECOUPE>   ║\n"
+               u"\n"
+               u"BRIDGE_VANGNET 0.0\n")
+_MESS_END = u"<FIN>\n--- DIAGNOSTIC JOB : OK\n"
+
+
+def test_step_guard_ended(tmp):
+    """A MECANONLINE exception above BRIDGE_VANGNET did not stop the run
+    (bridge_to_aster._guarded_solve); an error after it does count."""
+    work = tempfile.mkdtemp(dir=tmp)
+    u.CONFIG_BRIDGE["work_dir"] = work
+    path = os.path.join(work, u.run_name(".mess"))
+    with io.open(path, "w", encoding="utf-8") as f:
+        f.write(_MESS_GUARD + _MESS_END)
+    check(aster_mess_errors(work) == [], "guard ended: no error")
+    with io.open(path, "w", encoding="utf-8") as f:
+        f.write(_MESS_GUARD + u" ║ <ConvergenceError> <MECANONLINE9_7> ║\n"
+                u"BRIDGE_FOUT_ID MECANONLINE9_7\n"
+                u"BRIDGE_ONVOLLEDIG 0.5\n" + _MESS_END)
+    msgs = aster_mess_errors(work)
+    check(len(msgs) == 1 and "MECANONLINE9_7" in msgs[0] and
+          "Last time with results: 0.5 s." in msgs[0],
+          "guard ended, then a real stop: {0}".format(msgs))
+    guard = read_step_guard(path)
+    check(guard == {"ended": 0.0, "jumps": []}, "read_step_guard: end")
+    with io.open(path, "w", encoding="utf-8") as f:
+        f.write(u"BRIDGE_SPRONG 0.75 0.76 0.138 0.0164\n" + _MESS_END)
+    guard = read_step_guard(path)
+    check(guard == {"ended": None,
+                    "jumps": [(0.75, 0.76, 0.138, 0.0164)]},
+          "read_step_guard: jump")
+
+
 def test_buckling_truss(tmp):
     work = tempfile.mkdtemp(dir=tmp)
     liml = os.path.join(work, "model.liml")
@@ -164,6 +199,7 @@ def main():
     try:
         test_partial_except()
         test_mess_message(tmp)
+        test_step_guard_ended(tmp)
         test_buckling_truss(tmp)
         test_buckling_beam_notes()
     finally:

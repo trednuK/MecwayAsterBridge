@@ -1,5 +1,41 @@
 # Changelog
 
+## V2026.7 – unreleased
+
+Buckling of slender columns with `POU_D_T_GD` beams (issue #10): the imperfection now works
+with these beams, a new step guard keeps the column on the stable branch above the buckling
+load, and a jump check warns when it left that branch. Two behaviour changes for models with
+`POU_D_T_GD` beams in nonlinear static: steps can be cut (more archived steps in Mecway), and
+every static run gets the jump check. Models without these beams compute as before.
+
+- **`imperfection_amplitude` works with `POU_D_T_GD` beams**: the linear buckling beforehand
+  runs on an auxiliary model with `POU_D_T` (`POU_D_T_GD` has no `RIGI_MECA`), the nonlinear
+  run stays on `POU_D_T_GD`. It is an ERROR only together with `#ASTER-EXCIT`; `crit_stab`
+  with `POU_D_T_GD` stays an ERROR. New verification NK-06 and NK-10.
+- **New setting `gd_step_limit`** (page Nonlinear static, group Nonlinear buckling; default
+  0.02, 0 = off; only with `POU_D_T_GD` beams): above the buckling load Newton with a coarse
+  step lands on the unstable branch, the job ends OK and the column looks straight (column
+  L = 2.5 m with 10, 20 and 40 line3 at dt = 0.01). A step is now cut (`DEFI_LIST_INST`
+  `ECHEC` `DELTA_GRANDEUR`, `DECOUPE`) when a displacement component of these beams grows
+  more than this fraction of their largest dimension; the column then gives 926.4 mm against
+  926.7 mm for the exact elastica. **Behaviour change:** extra archived steps appear in Mecway
+  (137 instead of 101 for that column), and the large-bending cases take about 5 s instead of
+  about 3 s. With 0.05 the column with 10 line3 still jumped, hence 0.02. New verification
+  NK-05 and NK-05b.
+- **The run continues when cutting cannot help**: with a load present from the start or a
+  real snap-through the job goes on from the last archived state without the guard
+  (`BRIDGE_VANGNET` in the `.mess`), the status box says from which t, and the run is not
+  reported as failed; the exception (`MECANONLINE9_50`, `MECANONLINE9_7`) stays visible in the
+  `.mess`. New verification NK-07, NK-08 and NK-09. Limitation in KNOWN_BUGS 53 (f); arc length
+  (`PILOTAGE`) is not built.
+- **Jump check after every static run with `POU_D_T_GD` beams**, also with the guard off:
+  when the displacement of a node falls below 50 % of the step before, a WARNING goes to the
+  log and the status box. Nodes that moved less than 1 % of the size of the beams do not
+  count, nor do intervals in which a load table falls; a formula in time is not looked at.
+- **Clearer messages**: the status box now names `POU_D_T_GD` when beams stay geometrically
+  linear in a nonlinear static analysis with large displacements, the imperfection WARNING
+  names `POU_D_T_GD`, and "add an imperfection" appears only without an imperfection.
+
 ## V2026.6 – 29 October 2026
 
 Orthotropic material, bolt pretension (*Pre-tension section*), beams with warping
