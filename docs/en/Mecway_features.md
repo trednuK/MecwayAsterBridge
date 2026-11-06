@@ -140,7 +140,7 @@ Bonded contact per combination (slave on master):
 | Thermal: conductivity, specific heat, also *Temperature dependent* | Yes | [`Thermal.md`](Thermal.md). Formulas in material properties: No (KB16). |
 | Speed of sound (acoustics) | Yes | Media with different density: No (KB55, KB59). |
 | OpenRadioss law `PLAS_TAB` | Partly | Fields not translated: KB34. Law `VOID`: elements left out (reported); other laws: No. |
-| Section circular and rectangular (solid and hollow), General section, I, T, L, C | Yes | Mecway's *Stress recovery point* is not used. Other geometry types: No (WARNING). |
+| Section circular and rectangular (solid and hollow), General section, I, T, L, C | Yes | Mecway's *Stress recovery point* is not used. Other geometry types: No (WARNING). The shape of a *General section* from MecwaySectionProps can be shown on the beams (User guide §4.3). |
 | Plate thickness (Plate) | Yes | Shells; in S20 the thickness of the plane elements, with *plane strain* `D_PLAN`. |
 
 ## 6. Results back in Mecway

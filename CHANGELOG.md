@@ -1,12 +1,17 @@
 # Changelog
 
-## V2026.7 – unreleased
+## V2026.7 – 6 November 2026
 
 Buckling of slender columns with `POU_D_T_GD` beams (issue #10): the imperfection now works
 with these beams, a new step guard keeps the column on the stable branch above the buckling
 load, and a jump check warns when it left that branch. Two behaviour changes for models with
 `POU_D_T_GD` beams in nonlinear static: steps can be cut (more archived steps in Mecway), and
-every static run gets the jump check. Models without these beams compute as before.
+every static run gets the jump check. Models without these beams compute as before. A
+general section from MecwaySectionProps can now be shown with its real shape on the beams,
+before a calculation and in the results. Tested with Code-Aster 17.4 and in the Mecway 35 GUI
+(column of issue #10, T cantilever); Mecway 34 was not available for these two. The limited
+regression ran 76 cases; the stored results stand at 551 cases, 2986 checks (2980 OK, 6 known
+limitations, 0 unexpected).
 
 - **`imperfection_amplitude` works with `POU_D_T_GD` beams**: the linear buckling beforehand
   runs on an auxiliary model with `POU_D_T` (`POU_D_T_GD` has no `RIGI_MECA`), the nonlinear

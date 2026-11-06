@@ -140,7 +140,7 @@ Verlijmd contact per combinatie (slave op master):
 | Thermisch: geleiding, soortelijke warmte, ook *Temperature dependent* | Ja | [`Thermisch.md`](Thermisch.md). Formules in materiaaleigenschappen: Nee (KB16). |
 | Speed of sound (akoestiek) | Ja | Media met verschillende dichtheid: Nee (KB55, KB59). |
 | OpenRadioss law `PLAS_TAB` | Deels | Niet vertaalde velden: KB34. Law `VOID`: elementen weggelaten (gemeld); andere laws: Nee. |
-| Doorsnede rond en rechthoekig (massief en hol), General section, I, T, L, C | Ja | Mecway's *Stress recovery point* wordt niet gebruikt. Andere geometrietypen: Nee (WARNING). |
+| Doorsnede rond en rechthoekig (massief en hol), General section, I, T, L, C | Ja | Mecway's *Stress recovery point* wordt niet gebruikt. Andere geometrietypen: Nee (WARNING). De vorm van een *General section* uit MecwaySectionProps is op de balken te tonen (Handleiding §4.3). |
 | Plaatdikte (Plate) | Ja | Schalen; in S20 de dikte van de vlakke elementen, met *plane strain* `D_PLAN`. |
 
 ## 6. Resultaten terug in Mecway
