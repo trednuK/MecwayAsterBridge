@@ -58,6 +58,8 @@ Related documents:
   `Scripts/MecwayAsterBridgeMain.py`; Code-Aster loads
   `Scripts/aster_results_export.py` from that location during the run. The `.comm`
   templates (`AsterTemplate_*.comm`) are also in `Scripts/`; they need no setting.
+- **Optional: [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps)**, for
+  beams with a General section (§4.3). A separate Mecway script with its own installation.
 - A work folder with a short path: work folder plus file name together may not exceed
   259 characters (Windows). If the path is too long, the bridge shortens the model
   name in the file names (WARNING); if it still does not fit, Code-Aster is not
@@ -87,14 +89,29 @@ Related documents:
    iteration; static: the phase of the linear solver; modal: the modes found; otherwise the
    last line of the output) and the number of errors and alarms so far. The window is
    modal: Mecway is locked until the run has finished, because the bridge then reopens the
-   model with the results. During the run it always stays on top (also above the
-   Code-Aster window, which opens without the focus and stays readable; on Windows 11
-   Windows Terminal may still take the focus, the status window then stays visible and
-   clickable). Until Code-Aster starts its first command it shows "Code-Aster is
+   model with the results. For the first 10 seconds it stays on top, also above the
+   Code-Aster window that opens then. After that it is a normal window: click another
+   screen, such as the convergence information, and that comes to the front. Bring the
+   status window back with its taskbar button. Until Code-Aster starts its first command it shows "Code-Aster is
    starting...". It closes by itself once Code-Aster has finished (`run_aster`
    has returned); the bridge recognises that from an end marker that the Code-Aster window
    writes (`<model>_<run-id>_done.txt`, with the exit code of `run_aster`; removed after the
    run), and otherwise from `DIAGNOSTIC JOB` at the end of the `.mess`.
+
+   ![Status window of a Code-Aster run](../img/status_en.png)
+
+     1. The name of the run, `<model>_<run-id>`, as the files in the work folder (§5).
+     2. What is happening, for example "Code-Aster is starting..." or "Code-Aster is running...".
+     3. The progress of the whole run in percent. As long as the output holds no percentage,
+        the bar moves back and forth.
+     4. The elapsed time, with the time limit of the `.export` in brackets.
+     5. What Code-Aster is doing right now; here, for a nonlinear analysis, the command, the
+        time reached, the attempt, the level and the Newton iteration.
+     6. The number of errors and alarms so far. Without messages this line stays empty.
+     7. The warning that the run takes longer than the time limit. Below the limit this line
+        stays empty.
+     8. "Stop...", see below.
+
    - "Stop..." (or the close button, Esc) asks for confirmation first and then ends only
      the processes of this run (the Code-Aster window and everything started from it). The
      output up to that moment goes into the `.mess` with the line `BRIDGE_GESTOPT`; the
@@ -148,23 +165,30 @@ window can be dragged larger (path fields grow along); in a small window the lis
 the page scroll. "Start" and "Close" are at the bottom right,
 the other buttons on the left.
 
-| Button | What it does |
-|---|---|
-| "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
-| "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1); with AdvancedToolsHub also "In MWHub Post" (the chosen run in ParaView, with `.rmed` or `.pvd`). Then the window comes back |
-| "Show section" / "Hide section" | Saves the model and shows the shape of General sections on the beams as temporary elements, before a calculation; a second click removes them (§4.3) |
-| "Section in results" | Puts that shape with its values in the results in the `.liml` and reopens the model. After a Code-Aster run this happens automatically (§4.3) |
-| "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
-| "Explanation..." | Opens the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) on the Documentation page |
-| "Close" | Closes the bridge. Settings changed after the last Start or Results... are not saved |
+![Main window with numbered parts and buttons](../img/main_window_en.png)
+
+| No. | Part | What it does |
+|---|---|---|
+| 1 | Header | The version of the bridge, the open model and the active analysis |
+| 2 | Navigation list | Chooses the page shown on the right |
+| 3 | Page | The title and the settings of the chosen page; the tables below give each setting |
+| 4 | "Browse..." | Chooses the file or folder of a path field in a Windows dialog |
+| 5 | Status box | The outcome of the last action and the messages |
+| 6 | "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1); with AdvancedToolsHub also "In MWHub Post" (the chosen run in ParaView, with `.rmed` or `.pvd`). Then the window comes back |
+| 7 | "Show section" / "Hide section" | Saves the settings and the model and shows the shape of General sections on the beams as temporary elements, before a calculation; a second click removes them (§4.3) |
+| 8 | "Section in results" | Saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model. After a Code-Aster run this happens automatically (§4.3) |
+| 9 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
+| 10 | "Explanation..." | Opens the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) on the Documentation page |
+| 11 | "Close" | Closes the bridge. Settings changed after the last Start, Results..., Show section or Section in results are not saved |
+| 12 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
 
 - **Tooltips:** hover over a setting for an explanation; for a choice list the
   meaning of each option is shown too.
 - **Documentation page:** the glossary and the documents from `docs/` (in the chosen
   language), with formatting; links to other documents and to headings work, web
   addresses open in the default browser.
-- **Saving:** settings apply to the run and are saved on Start and Results... in
-  `Scripts/bridge_utils.py` (previous version: `bridge_utils.py.bak`). If the window
+- **Saving:** settings apply to the run and are saved on Start, Results..., Show section
+  and Section in results in `Scripts/bridge_utils.py` (previous version: `bridge_utils.py.bak`). If the window
   cannot be shown (Windows Forms not available), the bridge asks for the settings
   with text prompts (`mw.input`) and does a single run.
 
@@ -212,7 +236,7 @@ phase) has no Mecway analysis type: choose "Harmonic response" (`harmonic_3d`) y
 |---|---|---|
 | "Hex8 solid elements" | `3D` | `3D`: fully integrated; stiffer than Mecway's hex8 with incompatible modes (KNOWN_BUGS 1; the bridge gives a WARNING); with hyperelastic material (rubber) ~3x too stiff through volumetric locking: then choose `LINE_QUAD`. `3D_SI`: reduced integration, only for elsets with hex8 elements only, not explicit and not hyperelastic; with one element through the thickness ~0 bending stress. `LINE_QUAD`: Code-Aster makes all linear solid elements quadratic (hex8 → hex20, tet4 → tet10, ~3x as many nodes); only if nothing else stays linear (no beams, springs, DKT shells), the model has no quadratic solid elements and the scheme is not explicit; otherwise it stays `3D` with a WARNING. Results at the corner nodes |
 | "Linear shells (tri3/quad4)" | `DKT` | `DKT` (Kirchhoff, thin), `DST` (with transverse shear deformation; static analysis only, otherwise DKT with a WARNING) or `COQUE_3D`: the shells are first made quadratic (quad9/tria7, with rotation about the normal); if they share nodes with elements that stay linear, or are the master of bonded contact, DKT is used (KNOWN_BUGS 2). Quadratic shells (tri6/quad8) are always `COQUE_3D` |
-| "Beams (line2/line3)" | `POU_D_E` | `POU_D_E` (Euler-Bernoulli, as in Mecway), `POU_D_T` (Timoshenko, with shear deformation) or `POU_D_T_GD` (Timoshenko with large displacements and rotations; nonlinear static with large displacements only, elsewhere `POU_D_T`; no beam stresses, [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)) or `POU_D_TG` (Timoshenko with warping and shear centre: flexural-torsional and lateral-torsional buckling of open profiles, [Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)). A line3 beam is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results come back on all three nodes |
+| "Beams (line2/line3)" | `POU_D_E` | For an open section with its shear centre far from the centroid: `POU_D_TG`; with other beams the bridge then warns. `POU_D_E` (Euler-Bernoulli, as in Mecway), `POU_D_T` (Timoshenko, with shear deformation) or `POU_D_T_GD` (Timoshenko with large displacements and rotations; nonlinear static with large displacements only, elsewhere `POU_D_T`; no beam stresses, [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)) or `POU_D_TG` (Timoshenko with warping and shear centre: flexural-torsional and lateral-torsional buckling of open profiles, [Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)). A line3 beam is split at its midside node into two SEG2 cells (Code-Aster has no quadratic beam); results come back on all three nodes |
 | "Warping of POU_D_TG beams at supports" | `auto` | Only with `POU_D_TG`. `auto`: warping fixed where a bending rotation is fixed (*Fixed support*, clamp), free at a fork support (only translations and the rotation about the beam axis fixed) and elsewhere; `free`: free everywhere; `blocked`: fixed at every supported node ([Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)) |
 
 **One page per analysis**: "Static", "Nonlinear static", "Dynamic (implicit)", "Dynamic (explicit)", "Thermal", "Modal", "Mode superposition", "Harmonic response",
@@ -559,11 +583,38 @@ Mecway has no shape for a *General section* and draws such a beam as a small rec
 bridge shows the real section on those beams, before a calculation and in the results. The
 calculation does not change.
 
-The shape comes from MecwaySectionProps (own repository): tick "Store extra Code-Aster
-properties and the shape" there when you use "Create general section". The outline then goes
+**Making such a beam.** Use [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps),
+a separate script for Mecway. It calculates the properties of a flat face you select and makes
+the General section from them, so that the section need not be known beforehand:
+
+1. Select the flat face of the section in Mecway and calculate it in MecwaySectionProps.
+2. Choose the beam component under "Assign to", keep "Store extra Code-Aster properties and
+   the shape" and "Set the V axis of the beam" ticked, and use "Create general section".
+3. Check the beam line: it belongs on the centroid (the window gives its position). The tool
+   does not move nodes.
+4. For an open section, choose Beams = `POU_D_TG` on the Elements page: only that beam carries
+   the warping and the shear centre together. On a beam with its shear centre far from the
+   centroid, another choice gives a WARNING.
+5. Run as usual. The bridge passes the extra properties (`EY`, `EZ`, `JG`, ...) to Code-Aster
+   and warns when a beam no longer fits its section.
+
+A General section made by hand also works, without these extra properties and without a shape.
+
+The shape comes from "Store extra Code-Aster properties and the shape": the outline then goes
 as comment lines `** SECTIE-VORM` into a custom model definition. A run does not use those
 lines. The bridge compares the area in the lines with the General section of the material: if
 they differ, the section was changed afterwards and the outline is not used.
+
+The buttons for the section are at the bottom of the main window (§3):
+
+![Buttons for the section at the bottom of the main window](../img/section_buttons_en.png)
+
+1. "Show section", after the click "Hide section": the shape on the beams before a
+   calculation. Saves the settings and the model.
+2. "Section in results": the shape with its values in the results. First removes the
+   temporary elements of "Show section" and saves the settings and the model.
+3. Status box: the outcome of both buttons and the messages, see the table at the end of this
+   chapter.
 
 **Before a calculation.** The "Show section" button saves the model and puts the shape on the
 beams with a General section, as temporary elements in component `Doorsnede_tijdelijk`. The

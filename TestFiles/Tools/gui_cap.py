@@ -13,6 +13,8 @@
 #           larger, like Windows display scale 125 % in Mecway, where the
 #           fonts grow but fixed pixel sizes do not)
 #           CAP_STATUS=1 (only the status window of a run, dummy job)
+#           CAP_MODEL=<name> (model name in the header of the main
+#           window)
 import sys, os
 repo, out = sys.argv[1], sys.argv[2]
 lang = sys.argv[3] if len(sys.argv) > 3 else "nl"
@@ -245,15 +247,28 @@ class _DemoJob(object):
     done = False
 
     def status(self):
-        return {"headline": u"Code-Aster: STAT_NON_LINE, step 12 / 40",
-                "time": u"Elapsed 00:01:23",
-                "detail": u"Increment 12, time 0.3 s, Newton iteration 4, "
-                          u"residual RESI_GLOB_RELA 3.2e-05 (criterion "
-                          u"1.0e-06); last converged step 11 at 0.275 s",
-                "messages": u"Alarms: 2   Errors: 0",
-                "warning": u"Alarm <MECANONLINE5_21>: the time step was cut "
-                           u"(subdivision 2 of 4) because Newton did not "
-                           u"converge within ITER_GLOB_MAXI",
+        # The texts of AsterJob.status for a nonlinear step past its time
+        # limit, so that every line of the window is filled.
+        tr = bridge_utils.tr
+        return {"headline": tr(u"Code-Aster rekent...",
+                               u"Code-Aster is running..."),
+                "time": tr(u"Verstreken tijd: 32:41 (tijdslimiet 30:00)",
+                           u"Elapsed time: 32:41 (time limit 30:00)"),
+                "detail": tr(u"STAT_NON_LINE | bereikt t = 0.275 s | poging "
+                             u"13: t = 0.3 s, niveau 0, iteratie 4",
+                             u"STAT_NON_LINE | reached t = 0.275 s | attempt "
+                             u"13: t = 0.3 s, level 0, iteration 4"),
+                "messages": tr(u"Meldingen tot nu toe: 0 fout(en), 2 "
+                               u"alarm(en).",
+                               u"Messages so far: 0 error(s), 2 alarm(s)."),
+                "warning": tr(u"De run duurt langer dan de tijdslimiet. "
+                              u"Code-Aster stopt normaal zelf bij de limiet; "
+                              u"reageert het Code-Aster-venster niet meer, "
+                              u"gebruik dan Stoppen.",
+                              u"The run takes longer than the time limit. "
+                              u"Code-Aster normally stops by itself at the "
+                              u"limit; if the Code-Aster window no longer "
+                              u"responds, use Stop."),
                 "percent": 30}
 
     def poll(self):
@@ -295,6 +310,7 @@ def status_worker(job):
 
 if _env("CAP_STATUS"):
     bridge_gui._mecway_window = lambda: None
+    bridge_utils.run_name = lambda suffix: u"Bracket_20261028_101500" + suffix
     job = _DemoJob()
     t = Thread(ThreadStart(lambda: status_worker(job)))
     t.IsBackground = True
@@ -321,5 +337,6 @@ t = Thread(ThreadStart(worker))
 t.IsBackground = True
 t.Start()
 cur = bridge_gui._collect_current()
-res = bridge_gui._show_winforms_dialog(cur, status)
+res = bridge_gui._show_winforms_dialog(cur, status,
+                                       _env("CAP_MODEL") or None)
 print("klaar", res["action"], sorted((res.get("values") or {}).get("general", {}).keys()))

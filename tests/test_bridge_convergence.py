@@ -601,6 +601,28 @@ def test_live_dir(tmp):
     check(later is None, later)
 
 
+NEWLINE = chr(10)
+
+
+def test_fatal_code():
+    """Code-Aster writes OK and <FIN> after a caught <EXCEPTION> (FACTOR_57):
+    the window must not read that as finished with results."""
+    text = u"""
+ ║ <EXCEPTION> <FACTOR_57>                     ║
+ ║ La solution du systeme lineaire est trop imprecise ║
+ ╚═╝
+<I> <FIN> ARRET NORMAL DANS "FIN" PAR APPEL A "JEFINI".
+--- DIAGNOSTIC JOB : OK
+"""
+    parser = bc.ConvergenceParser()
+    parser.feed(text)
+    assert parser.data.diagnostic == u"OK" and parser.data.fin
+    assert bc.fatal_code(parser.data) == u"FACTOR_57", parser.data.messages
+    clean = bc.ConvergenceParser()
+    clean.feed(u"--- DIAGNOSTIC JOB : OK" + NEWLINE)
+    assert bc.fatal_code(clean.data) is None
+
+
 def main(argv):
     import shutil
     import tempfile
@@ -620,6 +642,7 @@ def main(argv):
         test_live_dir(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    test_fatal_code()
     print("OK: bridge_convergence (contact, pivot, energie, Python-fouten, "
           "bezwijken, lineair MUMPS/GCPC/fout, modes, live map)")
     for path in argv:

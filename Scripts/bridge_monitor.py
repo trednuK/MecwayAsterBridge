@@ -98,6 +98,9 @@ _BOX_BOTTOM = u"╚"
 _BOX_SIDE = u"║"
 _CATAMESS = u"<CATAMESS_89>"
 _DIAG = u"DIAGNOSTIC JOB"
+# Code-Aster 17.4 writes OK after an <EXCEPTION> that the .comm caught (seen:
+# FACTOR_57); an exception the run survived has a BRIDGE_ guard around it.
+_STOPPED_RE = re.compile(u"<EXCEPTION>\\s*<FACTOR_")
 _VERSION_RE = re.compile(u"^\\s*Version (\\d+\\.\\d+\\.\\d+)")
 _PROGRESS_RE = re.compile(u"^\\[\\s*\\d+%\\]")
 _BRIDGE_RE = re.compile(u"^(BRIDGE_[A-Z0-9_]+\\b|aster_[a-z_]+:)")
@@ -274,6 +277,11 @@ def summarize(text, mess_path=u"", console_text=None, header=None):
                   u"normaal beeindigd (gestopt of afgebroken).",
                   u"No DIAGNOSTIC JOB in the .mess: the run did not end "
                   u"normally (stopped or aborted)."))
+    if diag and u"OK" in diag[-1] and _STOPPED_RE.search(u"\n".join(lines)):
+        out.append(tr(u"Let op: de run is gestopt door een fout, ondanks OK "
+                      u"hierboven (zie Fouten en alarmen).",
+                      u"Note: the run was stopped by an error, despite the "
+                      u"OK above (see Errors and alarms)."))
 
     def section(title, body):
         if body:

@@ -998,6 +998,26 @@ check("thin: the top level of a file is not touched",
 
 
 # ==========================================
+# POU_D_E on a section with its shear centre away from the centroid
+open_geom = {"section_extras": {"A": 0.0031, "EY": 0.082, "EZ": 0.0,
+                                "JG": 7e-8}}
+text = bridge_custom.shear_centre_warning(u"Sect", open_geom, "POU_D_E")
+check("shear centre: POU_D_E warned, the name, the distance, the way out",
+      text and text.startswith("WARNING") and u"Sect" in text and
+      u"82 mm" in text and u"POU_D_TG" in text)
+check("shear centre: POU_D_T warned too",
+      bridge_custom.shear_centre_warning(u"Sect", open_geom, "POU_D_T"))
+check("shear centre: POU_D_TG not warned",
+      bridge_custom.shear_centre_warning(u"Sect", open_geom, "POU_D_TG")
+      is None)
+near = {"section_extras": {"A": 0.0031, "EY": 0.005, "EZ": 0.0, "JG": 7e-8}}
+check("shear centre: close to the centroid not warned",
+      bridge_custom.shear_centre_warning(u"Sect", near, "POU_D_E") is None)
+check("shear centre: no extras, no JG not warned",
+      bridge_custom.shear_centre_warning(u"Sect", {}, "POU_D_E") is None and
+      bridge_custom.shear_centre_warning(u"Sect", {
+          "section_extras": {"A": 1e-3, "EY": 0.08}}, "POU_D_E") is None)
+
 # SECTIE-RICHTING: the lines
 # ==========================================
 del LOG[:]

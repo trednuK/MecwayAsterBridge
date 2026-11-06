@@ -374,6 +374,10 @@ if not IRONPYTHON:
     else:
         print("SKIP splice_results (needs Mecway's IronPython)")
 
+check("a caught FACTOR_57 counts as stopped despite OK",
+      bm._STOPPED_RE.search(u"<EXCEPTION> <FACTOR_57>") and
+      not bm._STOPPED_RE.search(u"<A> <FACTOR_57>"))
+
 if check.failed:
     sys.exit(1)
 print("All tests passed.")

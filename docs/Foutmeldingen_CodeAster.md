@@ -686,7 +686,14 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
   van *Modaal* met voorspanning (conditiegetal 1,8e10); dezelfde balk axiaal gedrukt
   (knik) 1,1e-6; het hex20-L-raamwerk van BU-37 (knik) 5,0e-5. Met de verhoogde
   instelling rekenen ze door, met dezelfde resultaten als met `RESI_RELA=-1` en
-  analytisch / Mecway binnen 0,4% ([Verificatie §7](Verificatie.md)).
+  analytisch / Mecway binnen 0,4% ([Verificatie §7](Verificatie.md)). Ook een slank
+  dunwandig hex20-deel (slankheid 32) naast een losse balk: fout 2,5e-6, door dat volumedeel
+  en niet door de balk (alleen het volume 2,3e-6, alleen de balk 9e-12). De geschatte fout is
+  een bovengrens: met `RESI_RELA` van 3e-6 tot 1e-3 en -1 waren de resultaten bit voor bit
+  gelijk, en de directe oplossers `MULT_FRONT` en `LDLT_SP` weken minder dan 7e-9 af. Geen
+  `MUMPS`-optie (`RENUM`, `PRETRAITEMENTS`, `ELIM_LAGR`, verfijning) kwam onder 1e-6.
+  `DIAGNOSTIC JOB` is dan toch `OK` (de `.comm` vangt de uitzondering), maar er is geen
+  resultaat: de bridge meldt de stop.
 - **Oplossing**: de bridge leest de *Erreur calculée* uit `study.mess`. (a) Boven 1e-3:
   de melding over een (bijna) singuliere matrix; in Mecway de plaat extra vastzetten of
   over een vlak verbinden (zie `FACTOR_10`). Tijdelijk `solver_nprec` = 8 geeft een

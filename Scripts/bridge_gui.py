@@ -2117,10 +2117,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
                                     guarded(lambda: form.Close()),
                                     tr("Sluit de bridge. Gewijzigde "
                                        "instellingen worden alleen bij "
-                                       "Starten of Resultaten... opgeslagen.",
+                                       "Starten, Resultaten... of de knoppen "
+                                       "voor de doorsnede opgeslagen.",
                                        "Close the bridge. Changed settings "
-                                       "are only saved on Start or "
-                                       "Results..."), right=True)
+                                       "are only saved on Start, Results... "
+                                       "or the section buttons."), right=True)
             # No AcceptButton: Enter in a field or the document list
             # would otherwise start a run immediately.
             form.CancelButton = cancel_btn

@@ -1119,6 +1119,10 @@ class Monitor(object):
             state = tr(u"Wachten op Code-Aster", u"Waiting for Code-Aster")
         elif data.stopped:
             state = bc.stopped_text(data.stopped)
+        elif data.finished() and bc.fatal_code(data):
+            state = tr(u"Gestopt door {0} (zie meldingen)",
+                       u"Stopped by {0} (see messages)").format(
+                           bc.fatal_code(data))
         elif data.finished():
             state = tr(u"Klaar ({0})", u"Finished ({0})").format(
                 data.diagnostic)

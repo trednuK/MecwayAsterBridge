@@ -51,6 +51,8 @@ Verwante documenten:
   `Scripts/MecwayAsterBridgeMain.py`; Code-Aster laadt tijdens de run
   `Scripts/aster_results_export.py` vanaf die plek. Ook de `.comm`-templates
   (`AsterTemplate_*.comm`) staan in `Scripts/`; ze hoeven niet ingesteld te worden.
+- **Optioneel: [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps)**, voor
+  balken met een General section (§4.3). Een los Mecway-script met een eigen installatie.
 - Een werkmap met een kort pad: werkmap plus bestandsnaam mogen samen niet langer zijn
   dan 259 tekens (Windows). Is het pad te lang, dan kort de bridge de modelnaam in de
   bestandsnamen in (WARNING); past het ook dan niet, dan start Code-Aster niet.
@@ -79,15 +81,30 @@ Verwante documenten:
    Newton-iteratie; statisch: de fase van de lineaire oplosser; modaal: de gevonden modes;
    anders de laatste regel van de uitvoer) en het aantal fouten en alarmen tot nu toe. Het
    venster is modaal: Mecway is geblokkeerd tot de run klaar is, want daarna opent de bridge
-   het model opnieuw met de resultaten. Het staat tijdens de run altijd bovenop (ook boven
-   het Code-Aster-venster, dat zonder focus opent en leesbaar blijft; op Windows 11 kan
-   Windows Terminal de focus toch nemen, het statusvenster blijft dan zichtbaar en
-   klikbaar). Tot Code-Aster aan het eerste commando begint staat er "Code-Aster wordt
+   het model opnieuw met de resultaten. De eerste 10 seconden staat het bovenop, ook boven
+   het Code-Aster-venster dat dan opent. Daarna is het een gewoon venster: klik je op een
+   ander scherm, bijvoorbeeld de convergentie-informatie, dan komt dat naar voren. Je haalt
+   het statusvenster terug met zijn knop op de taakbalk. Tot Code-Aster aan het eerste commando begint staat er "Code-Aster wordt
    gestart...". Het sluit vanzelf zodra Code-Aster klaar is
    (`run_aster` is teruggekeerd); de bridge herkent dat aan een eindmarkering die het
    Code-Aster-venster schrijft (`<model>_<run-id>_done.txt`, met de exitcode van
    `run_aster`; wordt na de run verwijderd), en anders aan `DIAGNOSTIC JOB` aan het einde van
    de `.mess`.
+
+   ![Statusvenster van een Code-Aster-run](img/status_nl.png)
+
+     1. De naam van de run, `<model>_<run-id>`, zoals de bestanden in de werkmap (§5).
+     2. Wat er gebeurt, bijvoorbeeld "Code-Aster wordt gestart..." of "Code-Aster rekent...".
+     3. De voortgang van de hele run in procenten. Staat er nog geen percentage in de uitvoer,
+        dan loopt de balk heen en weer.
+     4. De verstreken tijd, met tussen haakjes de tijdslimiet van de `.export`.
+     5. Wat Code-Aster op dit moment doet; hier bij een niet-lineaire analyse het commando, het
+        bereikte tijdstip, de poging, het niveau en de Newton-iteratie.
+     6. Het aantal fouten en alarmen tot nu toe. Zonder meldingen blijft deze regel leeg.
+     7. De waarschuwing dat de run langer duurt dan de tijdslimiet. Zonder overschrijding
+        blijft deze regel leeg.
+     8. *Stoppen...*, zie hieronder.
+
    - **Stoppen...** (of het sluitkruis, Esc) vraagt eerst om bevestiging en beëindigt dan
      alleen de processen van deze run (het Code-Aster-venster en alles wat daaruit gestart
      is). De uitvoer tot dat moment komt in de `.mess` met de regel `BRIDGE_GESTOPT`; het
@@ -140,23 +157,30 @@ Het venster mag groter gesleept worden (padvelden groeien mee); in een klein ven
 schuiven de lijst en de pagina. *Starten* en *Sluiten* staan rechtsonder, de andere
 knoppen links.
 
-| Knop | Wat het doet |
-|---|---|
-| Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
-| Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1); met AdvancedToolsHub ook *In MWHub Post* (de gekozen run in ParaView, met `.rmed` of `.pvd`). Daarna komt het venster terug |
-| Doorsnede tonen / Doorsnede verbergen | Slaat het model op en toont de vorm van General sections op de balken als tijdelijke elementen, vóór een berekening; een tweede klik haalt ze weg (§4.3) |
-| Doorsnede in resultaten | Zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw. Na een Code-Aster-run gebeurt dat vanzelf (§4.3) |
-| Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
-| Uitleg... | Opent op de pagina Documentatie de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) |
-| Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten* of *Resultaten...* hebt gewijzigd, worden niet opgeslagen |
+![Hoofdvenster met genummerde onderdelen en knoppen](img/main_window_nl.png)
+
+| Nr. | Onderdeel | Wat het doet |
+|---|---|---|
+| 1 | Kop | De versie van de bridge, het open model en de actieve analyse |
+| 2 | Navigatielijst | Kiest de pagina die rechts staat |
+| 3 | Pagina | De titel en de instellingen van de gekozen pagina; de tabellen hieronder geven elke instelling |
+| 4 | Bladeren... | Kiest bij een veld met een pad het bestand of de map in een Windows-venster |
+| 5 | Statusvak | De uitkomst van de laatste actie en de meldingen |
+| 6 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1); met AdvancedToolsHub ook *In MWHub Post* (de gekozen run in ParaView, met `.rmed` of `.pvd`). Daarna komt het venster terug |
+| 7 | Doorsnede tonen / Doorsnede verbergen | Slaat de instellingen en het model op en toont de vorm van General sections op de balken als tijdelijke elementen, vóór een berekening; een tweede klik haalt ze weg (§4.3) |
+| 8 | Doorsnede in resultaten | Slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw. Na een Code-Aster-run gebeurt dat vanzelf (§4.3) |
+| 9 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
+| 10 | Uitleg... | Opent op de pagina Documentatie de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) |
+| 11 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...*, *Doorsnede tonen* of *Doorsnede in resultaten* hebt gewijzigd, worden niet opgeslagen |
+| 12 | Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
 
 - **Tooltips:** ga met de muis over een instelling voor uitleg; bij een keuzelijst
   staat ook de betekenis van elke optie erbij.
 - **Pagina Documentatie:** de woordenlijst en de documenten uit `docs/` (in de
   gekozen taal), met opmaak; links naar andere documenten en naar koppen werken,
   webadressen openen in de standaardbrowser.
-- **Opslaan:** instellingen gelden voor de run en worden bij *Starten* en
-  *Resultaten...* opgeslagen in `Scripts/bridge_utils.py` (vorige versie:
+- **Opslaan:** instellingen gelden voor de run en worden bij *Starten*, *Resultaten...*,
+  *Doorsnede tonen* en *Doorsnede in resultaten* opgeslagen in `Scripts/bridge_utils.py` (vorige versie:
   `bridge_utils.py.bak`). Lukt het venster niet (Windows Forms niet beschikbaar), dan
   vraagt de bridge de instellingen met tekstvragen (`mw.input`) en doet hij één run.
 
@@ -204,7 +228,7 @@ zelf *Harmonische respons* (`harmonic_3d`) voor een *Frequency*- of
 |---|---|---|
 | Hex8-volume-elementen | `3D` | `3D`: volledig geïntegreerd; stijver dan Mecway's hex8 met incompatibele modes (KNOWN_BUGS 1; de bridge geeft een WARNING); met hyperelastisch materiaal (rubber) ~3x te stijf door volumetrische locking: kies dan `LINE_QUAD`. `3D_SI`: onderintegratie, alleen voor elsets met uitsluitend hex8, niet expliciet en niet hyperelastisch; met één element over de dikte ~0 buigspanning. `LINE_QUAD`: Code-Aster maakt alle lineaire volume-elementen kwadratisch (hex8 → hex20, tet4 → tet10, ~3x zoveel knopen); alleen als verder niets lineair blijft (geen balken, veren, DKT-schalen), het model geen kwadratische volume-elementen heeft en niet expliciet; anders blijft het `3D` met een WARNING. Resultaten op de hoekknopen |
 | Lineaire schalen (tri3/quad4) | `DKT` | `DKT` (Kirchhoff, dun), `DST` (met dwarskrachtvervorming; alleen in de statische analyse, anders DKT met een WARNING) of `COQUE_3D`: de schalen worden eerst kwadratisch (quad9/tria7, met rotatie om de normaal); delen ze knopen met elementen die lineair blijven, of zijn ze master van verlijmd contact, dan DKT (KNOWN_BUGS 2). Kwadratische schalen (tri6/quad8) zijn altijd `COQUE_3D` |
-| Balken (line2/line3) | `POU_D_E` | `POU_D_E` (Euler-Bernoulli, zoals Mecway), `POU_D_T` (Timoshenko, met afschuifvervorming) of `POU_D_T_GD` (Timoshenko met grote verplaatsingen en rotaties; alleen niet-lineair statisch met grote verplaatsingen, elders `POU_D_T`; geen balkspanningen, [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)) of `POU_D_TG` (Timoshenko met welving en dwarskrachtcentrum: buig-torsieknik en kip van open profielen, [Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)). Een line3-balk wordt in de middenknoop in twee SEG2-cellen gesplitst (Code-Aster heeft geen kwadratische balk); de resultaten komen op alle drie de knopen terug |
+| Balken (line2/line3) | `POU_D_E` | Voor een open profiel met zijn dwarskrachtcentrum ver van het zwaartepunt: `POU_D_TG`; bij andere balken waarschuwt de bridge dan. `POU_D_E` (Euler-Bernoulli, zoals Mecway), `POU_D_T` (Timoshenko, met afschuifvervorming) of `POU_D_T_GD` (Timoshenko met grote verplaatsingen en rotaties; alleen niet-lineair statisch met grote verplaatsingen, elders `POU_D_T`; geen balkspanningen, [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)) of `POU_D_TG` (Timoshenko met welving en dwarskrachtcentrum: buig-torsieknik en kip van open profielen, [Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)). Een line3-balk wordt in de middenknoop in twee SEG2-cellen gesplitst (Code-Aster heeft geen kwadratische balk); de resultaten komen op alle drie de knopen terug |
 | Welving POU_D_TG-balken bij opleggingen | `auto` | Alleen bij `POU_D_TG`. `auto`: welving vast waar een buigrotatie vastligt (*Fixed support*, inklemming), vrij bij een vorkoplegging (alleen verplaatsingen en de rotatie om de balkas vast) en elders; `free`: overal vrij; `blocked`: vast in elke opgelegde knoop ([Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)) |
 
 **Een pagina per analyse**: Statisch, Niet-lineair statisch, Dynamisch (impliciet),
@@ -557,12 +581,39 @@ Mecway heeft geen vorm voor een *General section* en tekent zo'n balk als een kl
 rechthoekje. De bridge laat de echte doorsnede op die balken zien, vóór een berekening en in
 de resultaten. De berekening verandert daardoor niet.
 
-De vorm komt uit MecwaySectionProps (eigen repository): vink daar
-*Extra Code-Aster-eigenschappen en de vorm opslaan* aan bij *General section maken*. De omtrek
-komt dan als commentaarregels `** SECTIE-VORM` in een custom model definition. Een run gebruikt
+**Zo'n balk maken.** Gebruik [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps),
+een los script voor Mecway. Dat berekent de eigenschappen van een vlak dat je selecteert en
+maakt daaruit de General section, zodat je de doorsnede niet vooraf hoeft te kennen:
+
+1. Selecteer in Mecway het vlakke vlak van de doorsnede en bereken het in MecwaySectionProps.
+2. Kies de balkcomponent bij *Toewijzen aan*, laat *Extra Code-Aster-eigenschappen en de vorm
+   opslaan* en *V-as van de balk zetten* aangevinkt, en kies *General section maken*.
+3. Controleer de balklijn: die hoort op het zwaartepunt (het venster geeft de positie). De tool
+   verschuift geen knopen.
+4. Kies bij een open profiel op de pagina Elementen *Balken* = `POU_D_TG`: alleen die balk
+   neemt welving en dwarskrachtcentrum samen mee. Ligt het dwarskrachtcentrum ver van het
+   zwaartepunt, dan geeft een andere keuze een WARNING.
+5. Reken zoals gewoonlijk. De bridge geeft de extra eigenschappen (`EY`, `EZ`, `JG`, ...) door
+   aan Code-Aster en waarschuwt als een balk niet meer bij zijn doorsnede past.
+
+Een General section die je zelf invult werkt ook, maar zonder deze extra eigenschappen en zonder
+vorm.
+
+De vorm komt uit *Extra Code-Aster-eigenschappen en de vorm opslaan*: de omtrek komt dan als
+commentaarregels `** SECTIE-VORM` in een custom model definition. Een run gebruikt
 die regels niet. De bridge vergelijkt het oppervlak in de regels met de General section van het
 materiaal: verschillen ze, dan is de doorsnede daarna gewijzigd en wordt de omtrek niet
 gebruikt.
+
+De knoppen voor de doorsnede staan onder in het hoofdvenster (§3):
+
+![Knoppen voor de doorsnede onder in het hoofdvenster](img/section_buttons_nl.png)
+
+1. *Doorsnede tonen*, na de klik *Doorsnede verbergen*: de vorm op de balken vóór een
+   berekening. Slaat de instellingen en het model op.
+2. *Doorsnede in resultaten*: de vorm met zijn waarden in de resultaten. Haalt eerst de
+   tijdelijke elementen van *Doorsnede tonen* weg en slaat de instellingen en het model op.
+3. Statusvak: de uitkomst van beide knoppen en de meldingen, zie de tabel onderaan dit hoofdstuk.
 
 **Vóór een berekening.** De knop *Doorsnede tonen* slaat het model op en zet de vorm op de
 balken met een General section, als tijdelijke elementen in component `Doorsnede_tijdelijk`. De

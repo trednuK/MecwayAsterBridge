@@ -1573,6 +1573,17 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             bridge_custom.report_directions(directions, [
                 (materials.get(es), _vsub(nodes[n2], nodes[n1]), v)
                 for es, n1, n2, v in beam_axes.values()])
+    # A general section that twists on a beam without warping: a check only.
+    warned = set()
+    for es, geom in model_data.get("beam_sections", {}).items():
+        material = model_data.get("elsets", {}).get(es)
+        text = bridge_custom.shear_centre_warning(
+            material, geom, model_data.get("elset_modelisations", {}).get(es))
+        if text and material not in warned:
+            warned.add(material)
+            log(text)
+            model_data.setdefault("section_direction_warnings", []).append(
+                text)
 
     # --------------------------------------------------
     # 4b. Discrete elements on nodes (elastic support, nodal masses)

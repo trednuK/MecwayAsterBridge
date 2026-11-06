@@ -177,7 +177,7 @@ _BOX_57 = u"""\
  \u2551   On peut augmenter la                   \u2551
  \u2551 valeur du mot cl\u00e9 SOLVEUR/RESI_RELA.     \u2551
  \u255a\u2550\u2550\u2550\u255d
---- DIAGNOSTIC JOB : <F>_ERROR
+--- DIAGNOSTIC JOB : OK
 """
 
 

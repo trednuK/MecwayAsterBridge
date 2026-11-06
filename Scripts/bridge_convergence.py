@@ -1256,6 +1256,16 @@ class ConvergenceParser(object):
 # ==========================================
 # HELPER FUNCTIONS
 # ==========================================
+def fatal_code(data):
+    """The code of the first error message of the run, or None. Code-Aster
+    17.4 writes DIAGNOSTIC JOB : OK and <FIN> after an <EXCEPTION> that the
+    .comm caught (seen: FACTOR_57), so OK alone does not mean results."""
+    for msg in data.messages:
+        if msg["kind"] == "fout":
+            return msg["code"]
+    return None
+
+
 def stopped_text(reason):
     """Text for a run that did not end by itself (BRIDGE_GESTOPT)."""
     if reason == "window":

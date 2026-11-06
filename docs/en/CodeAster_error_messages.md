@@ -680,6 +680,13 @@ from contact (`SANS_GROUP_NO`).
   (buckling) 1.1e-6; the hex20 L frame of BU-37 (buckling) 5.0e-5. With the raised
   setting they run, with the same results as with `RESI_RELA=-1` and within 0.4% of the
   analytical value / Mecway ([Verification §7](Verification.md)).
+- **Also seen**: a slender thin-walled hex20 part (slenderness 32) next to a separate beam:
+  error 2.5e-6, from that solid part and not from the beam (solid alone 2.3e-6, beam alone
+  9e-12). The estimated error is an upper bound: with `RESI_RELA` from 3e-6 to 1e-3 and -1 the
+  results were identical bit for bit, and the direct solvers `MULT_FRONT` and `LDLT_SP`
+  differed by less than 7e-9. No `MUMPS` option (`RENUM`, `PRETRAITEMENTS`, `ELIM_LAGR`,
+  refinement) got below 1e-6. `DIAGNOSTIC JOB` is `OK` all the same (the `.comm` catches the
+  exception), but there is no result: the bridge reports the stop.
 - **Solution**: the bridge reads the *Erreur calculée* from `study.mess`. (a) Above 1e-3:
   the message about a (nearly) singular matrix; in Mecway fix the plate further or
   connect it over a face (see `FACTOR_10`). Temporarily setting `solver_nprec` = 8 gives

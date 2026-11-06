@@ -314,9 +314,9 @@ def _resi_advice(box_text, analysis_name=None):
         return tr(*_RESI_HINT)
     err, limit = nums[0], nums[1]
     if err >= _RESI_ILL_LIMIT:
-        return tr(u"geschatte fout {0:.3g} (RESI_RELA {1:g}). ",
-                  u"estimated error {0:.3g} (RESI_RELA {1:g}). ").format(
-                      err, limit) + tr(*_SINGULAR_HINT)
+        return tr(u"geschatte fout {0} (RESI_RELA {1}). ",
+                  u"estimated error {0} (RESI_RELA {1}). ").format(
+                      "%.3g" % err, "%g" % limit) + tr(*_SINGULAR_HINT)
     # Suggestion: the power of ten at least 10 x the computed error.
     exp = 0
     while 10.0 ** exp < 10.0 * err * (1.0 - 1e-9):
@@ -326,16 +326,16 @@ def _resi_advice(box_text, analysis_name=None):
     suggest = u"1e{0}".format(exp)
     name = analysis_name or CONFIG_BRIDGE.get("active_analysis", u"")
     cfg = CONFIG_BRIDGE.get("analyses", {}).get(name, {})
-    head = tr(u"MUMPS schat de fout van de oplossing op {0:.3g}, boven "
-              u"RESI_RELA {1:g}. Zo'n kleine fout is geen mechanisme maar "
+    head = tr(u"MUMPS schat de fout van de oplossing op {0}, boven "
+              u"RESI_RELA {1}. Zo'n kleine fout is geen mechanisme maar "
               u"een slecht geconditioneerde stijfheidsmatrix (bijv. een "
               u"slank volumemodel op buiging, of grote "
               u"stijfheidsverschillen). ",
-              u"MUMPS estimates the error of the solution at {0:.3g}, above "
-              u"RESI_RELA {1:g}. Such a small error is not a mechanism but a "
+              u"MUMPS estimates the error of the solution at {0}, above "
+              u"RESI_RELA {1}. Such a small error is not a mechanism but a "
               u"poorly conditioned stiffness matrix (e.g. a slender volume "
               u"model in bending, or large differences in "
-              u"stiffness). ").format(err, limit)
+              u"stiffness). ").format("%.3g" % err, "%g" % limit)
     if "lin_solver_resi" not in cfg:
         return head + tr(u"Deze analyse ({0}) heeft geen instelling voor "
                          u"RESI_RELA; zie docs/Foutmeldingen_CodeAster.md.",

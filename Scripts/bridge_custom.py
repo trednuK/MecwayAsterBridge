@@ -464,6 +464,41 @@ def report_directions(bodies, beams):
     return texts
 
 
+# Shear centre this far from the centroid, relative to the square root of the
+# area, counts as an open section that twists (an angle or a channel is well
+# above it, a section with two axes of symmetry is at 0).
+SHEAR_OFFSET_LIMIT = 0.1
+
+
+def shear_centre_warning(material, geom, modelisation):
+    """
+    The WARNING for a general section with a shear centre away from the
+    centroid on a beam without warping, or None. Measured with Code-Aster
+    17.4 on an open section against a solid model, own weight, built in:
+    POU_D_TG within 1.2% in bending and twist; POU_D_E, which gets EY and EZ
+    but no JG, 5.6 times too much twist. POU_D_T, POU_D_T_GD: the same lack
+    of JG, the twist NOT verified.
+    geom: bridge_from_liml section with "section_extras".
+    """
+    extras = (geom or {}).get("section_extras") or {}
+    if modelisation == "POU_D_TG" or not extras.get("JG"):
+        return None
+    area = extras.get("A") or 0.0
+    offset = math.sqrt((extras.get("EY") or 0.0) ** 2 +
+                       (extras.get("EZ") or 0.0) ** 2)
+    if area <= 0.0 or offset <= SHEAR_OFFSET_LIMIT * math.sqrt(area):
+        return None
+    return tr(u"WARNING: Materiaal '{0}': het dwarskrachtcentrum ligt {1} mm "
+              u"van het zwaartepunt. {2} heeft geen welving en overschat dan "
+              u"de wringing (POU_D_E: 5,6 keer gemeten op een open profiel). "
+              u"Kies bij Elementen 'Balken' = POU_D_TG.",
+              u"WARNING: Material '{0}': the shear centre lies {1} mm from "
+              u"the centroid. {2} has no warping and then overestimates the "
+              u"twist (POU_D_E: 5.6 times, measured on an open section). "
+              u"Choose Beams = POU_D_TG on the Elements page.").format(
+                  material, "%.0f" % (offset * 1e3), modelisation)
+
+
 _SPECTRUM_RE = re.compile(r"^\s*([XYZxyz](?:\s*,\s*[XYZxyz])*)\s*=\s*"
                           r"([A-Za-z_]\w*)\s*(?:,(.*))?$")
 

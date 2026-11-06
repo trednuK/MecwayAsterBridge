@@ -484,7 +484,7 @@ def _run(settings):
         monitor, summary_file = _run_summary(active_liml, run_id, run_start)
         if route == "liml":
             loaded = _load_liml_results(active_liml, model_data, run_start,
-                                        monitor)
+                                        monitor, mess_errors)
         else:
             if CONFIG_BRIDGE.get("save_monitor_liml", False):
                 log("INFO: Saved monitor not written: only with the result "
@@ -656,15 +656,17 @@ def _run_summary(active_liml, run_id, run_start):
     return (text if in_liml else None), path
 
 
-def _load_liml_results(active_liml, model_data, run_start, monitor=None):
+def _load_liml_results(active_liml, model_data, run_start, monitor=None,
+                       mess_errors=None):
     """
     result_route "liml": Code-Aster wrote Mecway's own <results>
     (aster_results_export.py). Optionally compare with the Mecway solve,
     paste the fragment into the .liml (previous version: .bak) and open it
     again. monitor: text for Mecway's Saved monitor (_run_summary) or None;
     without results it is written as a solution with only the monitor if
-    the model has no results yet (_monitor_only). Returns True if the
-    results are in Mecway.
+    the model has no results yet (_monitor_only). mess_errors: the errors
+    of the run; the first is named, as the status box shows the last ERROR.
+    Returns True if the results are in Mecway.
     """
     fragment = results_file(work_dir_path())
     if (not os.path.exists(fragment) or
@@ -673,6 +675,8 @@ def _load_liml_results(active_liml, model_data, run_start, monitor=None):
                "study.mess.",
                "ERROR: No result fragment from this run ({0}); see "
                "study.mess.").format(fragment))
+        if mess_errors:
+            log(u"ERROR: {0}".format(mess_errors[0]))
         if monitor is not None:
             _monitor_only(active_liml, monitor)
         return False

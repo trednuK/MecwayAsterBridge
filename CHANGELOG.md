@@ -10,6 +10,17 @@
   beams, with "Show section" and "Section in results" for the drawn beams. Mesh and results do
   not change; a model without the line gets no check and no message. Checked offline and on a
   Code-Aster run outside Mecway; the window route not yet in Mecway. User guide §4.3.
+- **Beam without warping on an open section**: a WARNING when the shear centre of a general
+  section lies more than 10% of the square root of the area from the centroid and the beam
+  is not `POU_D_TG`. Measured against a solid model: `POU_D_TG` within 1.2%, `POU_D_E` 5.6
+  times too much twist.
+- **`FACTOR_57` is reported clearly**: Code-Aster writes `DIAGNOSTIC JOB : OK` after this stop.
+  The convergence window and the summary now say the run stopped, the status box names the
+  cause and not only the missing results, and the error size no longer reads "0" in Mecway.
+- **Screens in the user guide**: numbered images of the main window, the section buttons and
+  the status window, with every button explained, in Dutch and English.
+- **User guide**: §4.3 now describes how to make a General section beam with
+  MecwaySectionProps, step by step, and §1 names the tool.
 - **Status window of a run**: on top only during the first 10 seconds, while the Code-Aster
   console opens. After that it is a normal window, so a window you click (the convergence
   window) comes in front. It now has a taskbar button, as the way back to Stop.
