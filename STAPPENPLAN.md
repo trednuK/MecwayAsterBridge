@@ -82,6 +82,10 @@ S7, S8, S5, S9).
 | S35b | HOMARD adaptive refinement inside the job: build into the bridge (settings Thermal/Nonlinear, curved boundaries automatic + `#ASTER-RAND`, verification AD-10 .. AD-12) | done | S35a | branch s35b (28/29 Oct 2026): `bridge_homard.py` + `aster_adapt.py`, settings `adapt_homard*`; AD-10/10b/11/12 OK (thermal −0.87%, plasticity +0.9% against uniform n32; 0.43 / 0.71 x the cells of uniform n8); first version solids + face selections only; not tested in the Mecway GUI (see §S35) |
 | S36 | Nonlinear buckling of `POU_D_T_GD` beams: imperfection, step guard `gd_step_limit`, jump check (GitHub issue #10) | done | S20 | 2958c4c; NK-05 .. NK-10 OK, limited regression 76 cases (74c87df); column of the issue 926.2 mm against 926.7 mm for the exact elastica; tested in the Mecway 35 GUI (6 Nov 2026), Mecway 34 was not available; limitation in KNOWN_BUGS 53 (f) |
 | S37 | Shape of a general section on the beams: `** SECTIE-VORM`, "Show section", "Section in results", variable `longitudinalstress` | done | – | eacb215; T cantilever -192.3/+67.3 MPa, equal to the hand calculation (`POU_D_E`); tested in the Mecway 35 GUI (6 Nov 2026), Mecway 34 was not available; User guide §4.3 |
+| S38 | General sections: `** SECTIE-RICHTING` check, WARNING for a beam without warping, `FACTOR_57` reported after `OK`, status window not always on top, numbered screens | done | S37 | V2026.8; 550 `.comm` identical |
+| S39 | Review the layout of all screens: is everything still neat, what can be better? First work of the next improvement | open | – | |
+| S40 | One overview image per page of the main window with the groups numbered, referring to the existing tables (Dutch and English) | open | S39 | |
+| S41 | **Priority.** Stress in general-section beams: detailed stress on arbitrary cross-sections, shown in ParaView; research whether Mecway can show it too. Today only `longitudinalstress` (N, Mv, Mw), no shear, torsion, warping or von Mises | open | S37 | |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |

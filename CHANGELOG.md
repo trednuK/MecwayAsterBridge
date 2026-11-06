@@ -1,6 +1,11 @@
 # Changelog
 
-## V2026.8 – unreleased
+## V2026.8 – 6 November 2026
+
+Beams with a general section are easier to get right: the bridge warns when a beam does not
+fit its section or needs warping, a run that stops with `FACTOR_57` says so, and the status
+window no longer stays in front. The `.comm` of 550 regression cases is unchanged. The new
+checks ran in tests and on Code-Aster runs outside Mecway, not yet in the Mecway window.
 
 - **Check of the direction of a general section**: MecwaySectionProps can store the directions
   a section was made for as a `** SECTIE-RICHTING` line. For every beam of that material a
@@ -8,8 +13,7 @@
   section is turned and the results are wrong), when it runs against the direction (the beam
   sees the section mirrored), or when it is more than 1 degree from parallel. On a run for all
   beams, with "Show section" and "Section in results" for the drawn beams. Mesh and results do
-  not change; a model without the line gets no check and no message. Checked offline and on a
-  Code-Aster run outside Mecway; the window route not yet in Mecway. User guide §4.3.
+  not change; a model without the line gets no check and no message. User guide §4.3.
 - **Beam without warping on an open section**: a WARNING when the shear centre of a general
   section lies more than 10% of the square root of the area from the centroid and the beam
   is not `POU_D_TG`. Measured against a solid model: `POU_D_TG` within 1.2%, `POU_D_E` 5.6
