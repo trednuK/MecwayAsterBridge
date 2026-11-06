@@ -118,6 +118,9 @@ cd Scripts && for f in *.py; do python -c "import ast,io;ast.parse(io.open('$f',
 
 Also in `TestFiles/Tools/` (CPython 3):
 
+- `python TestFiles/Tools/regression_scope.py --also <ids>` lists the verification cases a
+  change touches, by comparing the generated `.comm` of every case with `develop`, without
+  Code-Aster (procedure: `STAPPENPLAN.md` D.5).
 - `python TestFiles/Tools/check_docs.py` checks the documentation: settings and defaults against
   `CONFIG_BRIDGE`, tooltips in both languages, links and anchors, `KNOWN_BUGS n` references, verification
   cases, § references and NL/EN parity of the docs (`--parity`: also the numbers per section). Must report

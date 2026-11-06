@@ -165,14 +165,27 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
    `docs/Verificatie.md` + `docs/en/Verification.md` (layout like the existing ones: model,
    reference with source, result, difference). There are no `doc_*.md` files left in
    `TestFiles/Verificatie`.
-5. Regression: set `VERIF_WORK=<eigen scratchmap>` (the default folder is wiped by other
-   sessions) and run `python TestFiles/Verificatie/run_verificatie.py` in full.
+5. Regression, limited to what the change touches (user's decision, 6 Nov 2026; a full run
+   takes about 83 minutes, of which welding and metallurgy 39). Set
+   `VERIF_WORK=<eigen scratchmap>` (the default folder is wiped by other sessions), then:
+   - `python TestFiles/Tools/regression_scope.py --also <ids of the topic>` generates the
+     `.comm` of every case with this code and with `develop` and compares them, without
+     Code-Aster. An identical `.comm` means Code-Aster computes the same.
+   - Run the ids it prints with `run_verificatie.py`: every case with a different `.comm`,
+     the cases of the topic, and the fastest case of every group. Those last ones are
+     needed because the comparison does not see what happens after the run
+     (`bridge_from_aster`, `bridge_results_liml`, the `aster_*` job scripts). The long
+     welding and metallurgy cases only run if their `.comm` differs.
+   - Run in full only after a new Code-Aster or Mecway version
+     (`docs/en/After_an_update.md`) and when code that runs after the solve changes
+     behaviour for several analysis types. State the scope in the commit message; the
+     summary in `docs/Verificatie.md` §3 stays at the last full run.
    **Bar**: baseline 2356 of 2362 checks OK (439 test cases), 6 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; 83: 1 in BR-10; 108: 1 in LS-67; 115: 1 in BU-35), 0 NOK/FOUT
    (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 29 Oct (373d13a + new S19 cases on 35c7564): 2957 of 2963, 544 test cases:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
-   BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; update the summary
-   in `docs/Verificatie.md` §3 and the EN version.
+   BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; after a full run
+   update the summary in `docs/Verificatie.md` §3 and the EN version.
 6. GUI: offscreen with `TestFiles/Tools/gui_cap.py` (via `run_ipy.ps1`). A test in
    the Mecway GUI itself is only possible **after F.2** (Mecway runs the main checkout), only if the
    screen is free (use the open Mecway instance, do not start a second one). If it fails: a
