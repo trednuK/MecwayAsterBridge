@@ -65,9 +65,47 @@ with a regex. A diff here may therefore be a saved setting; a `.bak` is normal.
 | Result field | group in `RESULT_FIELD_SPECS` (`bridge_from_aster.py`; also the selection list on the start screen) + `FIELD_TABLE` in `aster_results_export.py` (route `liml`, default) + for route `tabel` POST_RELEVE_T with the same INTITULE in `bridge_to_aster._result_tables` |
 | Section/material type | `_parse_geometric_props()` / material block in `bridge_from_liml.py`; OpenRadioss cards (PLAS_TAB, /FUNCT) in `bridge_radioss.py` |
 | Code-Aster feature without Mecway input | user: `#ASTER` lines in Mecway's custom model definition (`bridge_custom.py`; examples in `docs/ASTER_regels_voorbeelden.md`) |
+| Format of the section outline | `bridge_section_view.parse_shapes` and the same change in MecwaySectionProps (see Contract with MecwaySectionProps) |
 
 `model_data` (from `extract_aster_data_from_liml`, completed by `write_mesh`) is the
 contract between the modules. Read optional keys with `.get()`.
+
+## Contract with MecwaySectionProps
+
+MecwaySectionProps (own repository, writer `section_mecway.py`) leaves two kinds of comment
+lines in a custom model definition, and its `AGENTS.md` holds the same contract. **A change of
+either format needs the same change in MecwaySectionProps.**
+
+- `** ASTER-SECTIE <material>: A=.., IY=.., ...`: extra properties of a general section
+  (`bridge_custom.py`, `bridge_from_liml._section_extras`; `docs/ASTER_regels_voorbeelden.md`).
+- The outline of a general section, only when *Store extra Code-Aster properties and the
+  shape* is ticked:
+
+  ```
+  ** SECTIE-VORM <material>: N=<points per loop, spaces>, A=<area>
+  ** SECTIE-VORM <material>: P=v w v w ...
+  ```
+
+  V, W: principal axes about the centroid, Mecway V and W = U x V, SI. Loops are closed
+  implicitly, the interior is even-odd, P lines concatenate in file order, and a new N
+  replaces what was read for that material. The material name is split on the last colon.
+  A is compared with the material's general section (`_SECTION_MATCH_TOL`); on a mismatch
+  the outline is not used. A run ignores these lines. They must not start with
+  `** ASTER-SECTIE `.
+
+`bridge_custom.parse` collects the outline lines (`section_shapes`), `bridge_section_view.py`
+parses them and builds the shells as plain data; it must work in 2.7 and 3 (test: `python
+tests/test_bridge_section_view.py`). The temporary shells of *Show section* must leave the
+model before `_save_model()` in every action that saves for a run or for Results..., through
+`bridge_section_model.remove_shape(mw)`, and a run stops when that returns False: otherwise
+they enter the Code-Aster mesh. Button state comes from the model, not from remembered ids.
+
+`bridge_results_liml.add_section_view` puts the shells in the model copy inside `<solution>`,
+in `<results>` directly; the model part stays byte-identical. Every result variable gets a
+value on the shells: a variable without one shows them black in Mecway. In that copy only, the
+beams get a thin RectBar (`bridge_section_view.thin_size`), so that Mecway's rectangle stays
+out of sight. Read `model_data` before `write_mesh`, which renames elsets. Re-adding is needed
+after every reload of results and after a table-route run.
 
 ## Pitfalls
 

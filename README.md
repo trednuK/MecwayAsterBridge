@@ -93,6 +93,7 @@ read on the *Documentation* page of the start screen.
 | Error estimator and adaptive mesh refinement | [Error estimator](docs/en/Error_estimator.md) | [Foutschatter](docs/Foutschatter.md) |
 | Fracture mechanics: K and G along a meshed crack, XFEM crack without a mesh | [Fracture mechanics](docs/en/Fracture_mechanics.md) | [Breukmechanica](docs/Breukmechanica.md) |
 | Fatigue: damage and life (Wöhler, rainflow, Miner, critical plane, Manson-Coffin) | [Fatigue](docs/en/Fatigue.md) | [Vermoeiing](docs/Vermoeiing.md) |
+| The real shape of a general section on the beams, with the results on it | [User guide §4.3](docs/en/UserGuide.md#43-the-shape-of-a-general-section) | [Handleiding §4.3](docs/Handleiding.md#43-de-vorm-van-een-general-section) |
 | Your own Code-Aster input (`#ASTER` lines) | [ASTER lines with examples](docs/en/ASTER_lines_examples.md) | [ASTER-regels met voorbeelden](docs/ASTER_regels_voorbeelden.md) |
 | Code-Aster messages: cause and solution | [Code-Aster error messages](docs/en/CodeAster_error_messages.md) | [Foutmeldingen Code-Aster](docs/Foutmeldingen_CodeAster.md) |
 | Verification | [Verification](docs/en/Verification.md) | [Verificatie](docs/Verificatie.md) |

@@ -99,6 +99,15 @@
 #   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
 #                            that selection (bridge_mesh renames names)
 #
+# Not an #ASTER line, but read here as well (prefix '**' only):
+#   ** SECTIE-VORM material: N=17 6, A=1.5e-3
+#   ** SECTIE-VORM material: P=v w v w ...
+#                            outline of a general section, written by
+#                            MecwaySectionProps; collected in file order in
+#                            "section_shapes" and worked out in
+#                            bridge_section_view.parse_shapes. A run ignores
+#                            these lines.
+#
 # Example (beam node on a volume face, LIAISON_ELEM OPTION='3D_POU'):
 #   #ASTER verb = AFFE_CHAR_MECA(MODELE=model,
 #   #ASTER     LIAISON_ELEM=_F(OPTION='3D_POU', GROUP_MA_1='<<Vlak>>',
@@ -125,6 +134,9 @@ _LINE_RE = re.compile(r"^\s*(?:#|\*\*|\$)\s*ASTER(-[A-Za-z]+)?(?:\s(.*))?$")
 # instead of silently skipping. Without a space after the prefix, so that
 # ordinary CCX comment lines ('** ...') are not affected.
 _NEAR_RE = re.compile(r"^\s*(?:#|\*\*|\$)ASTER")
+# Outline of a general section (bridge_section_view.py). Must not look like
+# an #ASTER line: _LINE_RE and _NEAR_RE only match right after the prefix.
+_SHAPE_RE = re.compile(r"^\s*\*\*\s*SECTIE-VORM(?:\s+(.*))?$")
 _PLACEHOLDER_RE = re.compile(r"<<([^<>]+)>>")
 _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-BEZWIJKEN", "-FAILURE", "-SPECTRE", "-SPECTRUM",
@@ -147,7 +159,8 @@ def empty():
             "sources": [], "welding": [],
             "phases": [], "hyst": [], "materials": [],
             "fatigue": [], "metallurgy": [],
-            "xfem": [], "constant": [], "sections": [], "boundaries": []}
+            "xfem": [], "constant": [], "sections": [], "boundaries": [],
+            "section_shapes": []}
 
 
 def parse(texts):
@@ -156,11 +169,16 @@ def parse(texts):
 
     texts : list of strings (contents of the CUSTOM_TAGS)
     Returns dict with "code"/"post" (lines), "excit" (names),
-    "contact"/"zone" (pieces 'K=V'), "options" ({key: text}).
+    "contact"/"zone" (pieces 'K=V'), "options" ({key: text}),
+    "section_shapes" (bodies of the ** SECTIE-VORM lines, in order).
     """
     out = empty()
     for text in texts:
         for raw in (text or "").splitlines():
+            shape = _SHAPE_RE.match(raw.rstrip("\r"))
+            if shape:
+                out["section_shapes"].append((shape.group(1) or "").strip())
+                continue
             m = _LINE_RE.match(raw.rstrip("\r"))
             if not m:
                 if _NEAR_RE.match(raw):
@@ -253,7 +271,11 @@ def parse(texts):
                            "value'.").format(body.strip()))
                     continue
                 out["options"][key.strip()] = value.strip()
-    n = sum(len(v) for v in out.values())
+    # The outline lines are no #ASTER lines: they do not count here
+    n = sum(len(v) for k, v in out.items() if k != "section_shapes")
+    if out["section_shapes"]:
+        log("INFO: {0} SECTIE-VORM lines (outline of a general section; a "
+            "run does not use them).".format(len(out["section_shapes"])))
     if n:
         log("INFO: #ASTER lines: {0} code, {1} EXCIT, {2} CONTACT, {3} ZONE, "
             "{4} OPTIE, {5} POST, {6} BEZWIJKEN, {7} SPECTRE, {8} BRON, "

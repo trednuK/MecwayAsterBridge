@@ -49,6 +49,7 @@ import bridge_utils
 import bridge_docs
 import bridge_glossary
 import bridge_results_liml
+import bridge_section_model
 from bridge_utils import (CONFIG_BRIDGE, MECWAY_ANALYSIS_TYPES, tr,
                           work_dir_path, exe_aster_path, expand_path,
                           default_work_dir, resolve_work_dir, model_path,
@@ -1159,12 +1160,14 @@ def _show_winforms_dialog(current, status=u"", model=None):
     Show the main window: navigation on the left with the settings pages
     (with tooltips, bridge_glossary) and the page Documentatie (bridge_docs),
     a status box (status: text about the previous run) and the buttons
-    Starten, Resultaten..., Convergentiescherm, Uitleg... and Sluiten.
+    Starten, Resultaten..., Doorsnede tonen, Doorsnede in resultaten,
+    Convergentiescherm, Uitleg... and Sluiten.
 
-    Returns {"action": "run" | "results" | "close", "values": dict or None}
-    ("values" only for "run": the validated new values). The
+    Returns {"action": "run" | "results" | "section_show" |
+    "section_results" | "close", "values": dict or None} ("values": the
+    validated new values, not for "close"). The
     convergence screen and the documentation work inside the window; for
-    a run or the results the window closes and MecwayAsterBridgeMain
+    the other actions the window closes and MecwayAsterBridgeMain
     opens it again afterwards. Errors when loading Windows Forms are
     passed on as ImportError; errors in the window itself as RuntimeError.
     """
@@ -2049,6 +2052,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
 
             on_ok = guarded(lambda: leave("run"))
             on_results = guarded(lambda: leave("results"))
+            on_section = guarded(lambda: leave("section_show"))
+            on_section_results = guarded(lambda: leave("section_results"))
             on_monitor = guarded(lambda: say(open_convergence_monitor(
                 resolve_work_dir(field_text("work_dir"),
                                  field_checked("work_dir_beside_model"),
@@ -2065,6 +2070,28 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 "uit het model halen (kleine .liml).",
                 "Load the results of an earlier run, or remove the results "
                 "from the model (small .liml)."))
+            add_button(
+                (tr("Doorsnede verbergen", "Hide section")
+                 if _MODEL_INFO.get("section_shown") else
+                 tr("Doorsnede tonen", "Show section")), 150, on_section, tr(
+                    "Toont de echte vorm van General sections op de balken, "
+                    "als tijdelijke elementen, om hem vóór een berekening te "
+                    "zien. Slaat het model eerst op. De vorm komt uit "
+                    "MecwaySectionProps.",
+                    "Shows the real shape of general sections on the beams, "
+                    "as temporary elements, to see it before a calculation. "
+                    "Saves the model first. The shape comes from "
+                    "MecwaySectionProps."))
+            add_button(tr("Doorsnede in resultaten", "Section in results"),
+                       170, on_section_results, tr(
+                "Zet de vorm van General sections met hun waarden in de "
+                "resultaten van dit model. Na een Code-Aster-run gebeurt dat "
+                "vanzelf; dit is voor een solve in Mecway zelf en na het "
+                "inladen van resultaten. Slaat het model op.",
+                "Puts the shape of general sections with their values in "
+                "the results of this model. After a Code-Aster run that "
+                "happens by itself; this is for a solve in Mecway itself and "
+                "after loading results. Saves the model."))
             add_button(tr("Convergentiescherm", "Convergence window"), 160,
                        on_monitor, tr(
                 "Opent het convergentie- en meldingenscherm (apart venster) "
@@ -2872,7 +2899,8 @@ def run_settings_dialog(mw, status=u""):
 
     Returns
     -------
-    dict  {"ok": bool, "action": "run" | "results" | "close",
+    dict  {"ok": bool, "action": "run" | "results" | "section_show" |
+           "section_results" | "close",
            "changes": [...], "save_errors": [...],
            "gui": "winforms" or "mw.input"}
           ok=True only for "run".
@@ -2892,6 +2920,10 @@ def run_settings_dialog(mw, status=u""):
                 bridge_results_liml.configuration_names(mw.file_name())
         except Exception:
             _MODEL_INFO["configurations"] = []
+        try:
+            _MODEL_INFO["section_shown"] = bridge_section_model.shown(mw)
+        except Exception:
+            _MODEL_INFO["section_shown"] = False
         answer = _show_winforms_dialog(current, status, model)
         action, new_values = answer["action"], answer["values"]
     except (ImportError, RuntimeError) as e:
@@ -2899,7 +2931,8 @@ def run_settings_dialog(mw, status=u""):
         new_values = _run_input_fallback(mw, current, e)
         action = "run" if new_values is not None else "close"
 
-    if action not in ("run", "results") or new_values is None:
+    if action not in ("run", "results", "section_show", "section_results") \
+            or new_values is None:
         return {"ok": False, "action": action, "changes": [],
                 "save_errors": [], "gui": gui}
 

@@ -152,6 +152,8 @@ the other buttons on the left.
 |---|---|
 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
 | "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1); with AdvancedToolsHub also "In MWHub Post" (the chosen run in ParaView, with `.rmed` or `.pvd`). Then the window comes back |
+| "Show section" / "Hide section" | Saves the model and shows the shape of General sections on the beams as temporary elements, before a calculation; a second click removes them (§4.3) |
+| "Section in results" | Puts that shape with its values in the results in the `.liml` and reopens the model. After a Code-Aster run this happens automatically (§4.3) |
 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
 | "Explanation..." | Opens the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) on the Documentation page |
 | "Close" | Closes the bridge. Settings changed after the last Start or Results... are not saved |
@@ -551,6 +553,89 @@ computes it). Verification FX-01 .. FX-05 ([`Verification.md`](Verification.md))
 | WARNING: Formula 'F' (...): unit '...' of '...' not known: SI used | unit that the bridge does not know (Mecway then also computes in SI) | choose another unit in the formula window |
 | `.mess`: aster_results_export: WARNING: formula ... skipped: ... not in the results | the field is missing in this analysis (e.g. stresses in modal without *stresses*) | as above |
 
+### 4.3 The shape of a General section
+
+Mecway has no shape for a *General section* and draws such a beam as a small rectangle. The
+bridge shows the real section on those beams, before a calculation and in the results. The
+calculation does not change.
+
+The shape comes from MecwaySectionProps (own repository): tick "Store extra Code-Aster
+properties and the shape" there when you use "Create general section". The outline then goes
+as comment lines `** SECTIE-VORM` into a custom model definition. A run does not use those
+lines. The bridge compares the area in the lines with the General section of the material: if
+they differ, the section was changed afterwards and the outline is not used.
+
+**Before a calculation.** The "Show section" button saves the model and puts the shape on the
+beams with a General section, as temporary elements in component `Doorsnede_tijdelijk`. The
+button is then called "Hide section". The temporary elements go:
+
+- on a second click;
+- when the bridge is closed;
+- at the start of a run or of Results...;
+- after a crash: at the next start of the bridge.
+
+If you save in Mecway itself while the shape is shown, it is in the file as well until then.
+
+**In the results.** The "Section in results" button puts the shape as shells in the
+`<solution>` of the `.liml`, with their values, and reopens the model. The model part stays
+unchanged; the previous version is kept as `.bak` (§5). At the end of a Code-Aster run this
+happens automatically once when the model has an outline; the `.bak` then holds the results
+without the shape. By hand it is needed after a solve
+in Mecway itself and after loading results again. A new solve in Mecway replaces the solution:
+the shells are then gone until you use the button again. With route `tabel` nothing happens
+automatically; shells already in the solution are no problem there.
+
+In the tree under *Solution* the shells have:
+
+| Variable | Contents |
+|---|---|
+| `longitudinalstress` (`langsspanning` with language `nl`) | stress along the beam from normal force and bending, in Pa, plus = tension |
+| `displx/y/z`, `displmag` | displacement of the point on the section: that of the beam plus the rotation times the arm |
+| `rotx/y/z` | rotation of the beam |
+| `stressptu` | when that field is stored: the same stress on the shells |
+| every other result | the value of the beam at that end of the shells; where the beam has none (a reaction force away from a support), the shells have none either |
+
+`longitudinalstress` is σ = N/A + Mv·w/Iyy − Mw·v/Izz, with v and w the place on the section in
+the principal axes. Shear stress from shear force or torsion and the warping bimoment are not
+in it. The bridge uses the beam forces of Mecway or Code-Aster when they are stored, otherwise
+the displacements and rotations of the element ends. The formula is linear elastic: with
+plasticity it does not hold.
+
+With a distributed load on a beam element, Mecway's own element stress has the same term
+q h²/12 in the moment (h = element length), and so has `longitudinalstress`.
+Measured on Mecway 35 at the clamp of a cantilever: 0.833 of theory with one element, 0.958
+with two and 0.997 with eight. So refine the beam if this point matters. With beam forces from
+Code-Aster this was NOT verified.
+
+What you see in the view:
+
+- In the results Mecway's rectangle becomes a thin bar, in the solution only; the model
+  keeps its material. The side is the smallest of 2 mm, 3% of the largest size of the
+  section and a quarter of the wall thickness (2 A / P). Before a calculation it stays as
+  it is.
+- At a kink the rings of two elements do not meet.
+- Only free ends have a cap.
+- A variable without a value on the shells shows them black. Also Mecway's rectangle can be
+  black where the beam itself has no value, as with `longitudinalstress`.
+
+Limits:
+
+- Beams without an outline are not drawn; the log file gives the number.
+- Cyclic models are refused.
+- Modal solutions: the shape moves along, there is no stress variable.
+- A material with plasticity or hyperelasticity has no stress variable.
+- The `.liml` grows: a model with only beams up to about 8 times. A file of 2.6 GB took 174 s
+  in the rewrite.
+- More than 200 000 side faces (one quad per outline segment per beam) are refused.
+
+| Message | Cause | Solution |
+|---|---|---|
+| No beam to draw. | no beam with a usable outline | create the General section with MecwaySectionProps, with the shape ticked |
+| There are no results yet: calculate the model first. | the `.liml` has no solution | calculate first |
+| WARNING: SECTIE-VORM '...': A = ... in the line, but ... in the material | section changed after MecwaySectionProps | create the General section again |
+| WARNING: SECTIE-VORM '...': no material with a general section of this name (renamed?) | material renamed or deleted | change the name in the lines, or create the General section again |
+| ERROR: Section view: ... quads over ... beams, the limit is ... | too many beam elements times outline points | fewer beam elements, or a simpler section |
+
 ## 5. Files in the working directory
 
 All files of a run are called `<model>_<run-id>...`: `<model>` is the name of the
@@ -570,7 +655,7 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>_aster_summary.txt` | summary of the run: errors and alarms, steps, timings (§5.2) |
 | `<model>_<run-id>_done.txt` | end marker with the exit code of `run_aster` (§2 step 5); exists only briefly, the bridge removes it after the run |
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
-| `<model>.liml.bak` | the `.liml` from before results were read in or removed |
+| `<model>.liml.bak` | the `.liml` from before results were read in or removed, or from before the shape went into the results (by hand or at the end of a run) |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
 | `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it (with AdvancedToolsHub in MWHub Post) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; with failure also the cell fields `BEZWEKEN` (0 intact, 1 failed) and `T_BEZWIJK` |

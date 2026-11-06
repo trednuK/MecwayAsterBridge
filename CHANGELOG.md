@@ -36,6 +36,23 @@ every static run gets the jump check. Models without these beams compute as befo
   linear in a nonlinear static analysis with large displacements, the imperfection WARNING
   names `POU_D_T_GD`, and "add an imperfection" appears only without an imperfection.
 
+- **Shape of a general section on the beams**: MecwaySectionProps stores the outline of a
+  section as `** SECTIE-VORM` lines in a custom model definition (with *Store extra Code-Aster
+  properties and the shape*). The new button "Show section" shows it on general-section beams
+  as temporary elements, before a calculation; they go on a second click, on closing the
+  bridge, at the start of a run or Results... and at the next start after a crash. The new
+  button "Section in results" puts the shells in the `<solution>` of the `.liml`, with their
+  values, and reopens it; this happens automatically once at the end of a Code-Aster run when
+  an outline exists. The model part stays unchanged and a `.bak` is kept. New variable
+  `longitudinalstress` (`langsspanning` in Dutch): stress along the beam from normal force and
+  bending, without shear from shear force or torsion and without warping bimoment. Every
+  other result is on the shells as well, so that the shape does not turn black. In the results
+  Mecway's rectangle becomes a thin bar (at most 2 mm, scaled on the section and its wall), in
+  the solution only. The `.liml` grows: up to about 8 times for a model with only beams.
+  Modal solutions show the shape without stress, plastic materials have no stress variable,
+  cyclic models are refused. Verified on Mecway 35 only; Mecway 34 was not available. User
+  guide §4.3.
+
 ## V2026.6 – 29 October 2026
 
 Orthotropic material, bolt pretension (*Pre-tension section*), beams with warping

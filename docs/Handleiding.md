@@ -144,6 +144,8 @@ knoppen links.
 |---|---|
 | Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1); met AdvancedToolsHub ook *In MWHub Post* (de gekozen run in ParaView, met `.rmed` of `.pvd`). Daarna komt het venster terug |
+| Doorsnede tonen / Doorsnede verbergen | Slaat het model op en toont de vorm van General sections op de balken als tijdelijke elementen, vóór een berekening; een tweede klik haalt ze weg (§4.3) |
+| Doorsnede in resultaten | Zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw. Na een Code-Aster-run gebeurt dat vanzelf (§4.3) |
 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | Uitleg... | Opent op de pagina Documentatie de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) |
 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten* of *Resultaten...* hebt gewijzigd, worden niet opgeslagen |
@@ -549,6 +551,91 @@ opnieuw (Mecway rekent hem dan uit). Verificatie FX-01 .. FX-05
 | WARNING: Formule 'F' (...): unit '...' of '...' not known: SI used | eenheid die de bridge niet kent (Mecway rekent dan ook in SI) | een andere eenheid kiezen in het formulevenster |
 | `.mess`: aster_results_export: WAARSCHUWING: formule ... overgeslagen: ... niet in de resultaten | het veld ontbreekt in deze analyse (bijv. spanningen bij modaal zonder *stresses*) | als hierboven |
 
+### 4.3 De vorm van een General section
+
+Mecway heeft geen vorm voor een *General section* en tekent zo'n balk als een klein
+rechthoekje. De bridge laat de echte doorsnede op die balken zien, vóór een berekening en in
+de resultaten. De berekening verandert daardoor niet.
+
+De vorm komt uit MecwaySectionProps (eigen repository): vink daar
+*Extra Code-Aster-eigenschappen en de vorm opslaan* aan bij *General section maken*. De omtrek
+komt dan als commentaarregels `** SECTIE-VORM` in een custom model definition. Een run gebruikt
+die regels niet. De bridge vergelijkt het oppervlak in de regels met de General section van het
+materiaal: verschillen ze, dan is de doorsnede daarna gewijzigd en wordt de omtrek niet
+gebruikt.
+
+**Vóór een berekening.** De knop *Doorsnede tonen* slaat het model op en zet de vorm op de
+balken met een General section, als tijdelijke elementen in component `Doorsnede_tijdelijk`. De
+knop heet daarna *Doorsnede verbergen*. De tijdelijke elementen verdwijnen:
+
+- bij een tweede klik;
+- bij het sluiten van de bridge;
+- aan het begin van een run of van *Resultaten...*;
+- na een crash: bij de volgende start van de bridge.
+
+Sla je in Mecway zelf op terwijl de vorm te zien is, dan staat hij tot dat moment ook in het
+bestand.
+
+**In de resultaten.** De knop *Doorsnede in resultaten* zet de vorm als schalen in de
+`<solution>` van de `.liml`, met hun waarden, en opent het model opnieuw. Het modeldeel blijft
+gelijk; de vorige versie blijft bewaard als `.bak` (§5). Aan het eind van een Code-Aster-run
+gebeurt dit één keer vanzelf als het model een omtrek heeft; de `.bak` bevat dan de resultaten
+zonder de vorm. Met de hand is het nodig na een
+solve in Mecway zelf en na het opnieuw inladen van resultaten. Een nieuwe solve in Mecway
+vervangt de oplossing: de schalen zijn dan weg tot je de knop opnieuw gebruikt. Bij route
+`tabel` gebeurt niets vanzelf; schalen die al in de oplossing staan, zijn daar geen bezwaar.
+
+In de boom onder *Solution* staan op de schalen:
+
+| Variabele | Inhoud |
+|---|---|
+| `langsspanning` (`longitudinalstress` met taal `en`) | spanning langs de balk door normaalkracht en buiging, in Pa, plus = trek |
+| `displx/y/z`, `displmag` | verplaatsing van het punt op de doorsnede: die van de balk plus de rotatie maal de arm |
+| `rotx/y/z` | rotatie van de balk |
+| `stressptu` | als dat veld is opgeslagen: dezelfde spanning op de schalen |
+| elk ander resultaat | de waarde van de balk aan dat einde van de schalen; waar de balk er geen heeft (een reactiekracht buiten een steunpunt), hebben de schalen er ook geen |
+
+`langsspanning` is σ = N/A + Mv·w/Iyy − Mw·v/Izz, met v en w de plaats op de doorsnede in de
+hoofdassen. Schuifspanning door dwarskracht of torsie en het welvingsbimoment zitten er niet
+in. De bridge gebruikt de balkkrachten van Mecway of Code-Aster als die zijn opgeslagen, anders
+de verplaatsingen en rotaties van de elementuiteinden. De formule is lineair-elastisch: bij
+plasticiteit geldt ze niet.
+
+Bij een verdeelde belasting op een balkelement heeft Mecway's eigen elementspanning dezelfde
+term q h²/12 in het moment (h = elementlengte), en `langsspanning` dus ook.
+Gemeten op Mecway 35 aan de inklemming van een uitkragende ligger: 0,833 van de theorie met
+één element, 0,958 met twee en 0,997 met acht. Verfijn de balk dus als dit punt telt. Met
+balkkrachten uit Code-Aster is dit NIET nagegaan.
+
+Wat je in het beeld ziet:
+
+- In de resultaten wordt Mecway's rechthoekje een dun staafje, alleen in de solution; het
+  model houdt zijn materiaal. De zijde is de kleinste van 2 mm, 3% van de grootste maat van
+  de doorsnede en een kwart van de wanddikte (2 A / P). Vóór een berekening blijft het
+  zoals het is.
+- Bij een knik sluiten de ringen van twee elementen niet op elkaar aan.
+- Alleen vrije uiteinden hebben een dop.
+- Een variabele zonder waarde op de schalen maakt ze zwart. Ook Mecway's rechthoekje kan
+  zwart zijn waar de balk zelf geen waarde heeft, zoals bij `langsspanning`.
+
+Beperkingen:
+
+- Balken zonder omtrek worden niet getekend; het logbestand noemt het aantal.
+- Cyclische modellen worden geweigerd.
+- Modale oplossingen: de vorm beweegt mee, er is geen spanningsvariabele.
+- Een materiaal met plasticiteit of hyperelasticiteit heeft geen spanningsvariabele.
+- De `.liml` groeit: een model met alleen balken tot ongeveer 8 keer. Een bestand van 2,6 GB
+  kostte 174 s bij het herschrijven.
+- Meer dan 200 000 zijvlakken (één quad per omtreksegment per balk) worden geweigerd.
+
+| Melding | Oorzaak | Oplossing |
+|---|---|---|
+| Geen balk om te tekenen. | geen balk met een bruikbare omtrek | maak de General section met MecwaySectionProps, met de vorm aangevinkt |
+| Er zijn nog geen resultaten: bereken het model eerst. | de `.liml` heeft geen oplossing | eerst rekenen |
+| WARNING: SECTIE-VORM '...': A = ... in de regel, maar ... in het materiaal | doorsnede gewijzigd na MecwaySectionProps | maak de General section opnieuw |
+| WARNING: SECTIE-VORM '...': geen materiaal met een General section met deze naam (hernoemd?) | materiaal hernoemd of verwijderd | pas de naam in de regels aan, of maak de General section opnieuw |
+| ERROR: Doorsnede: ... quads over ... balken, de grens is ... | te veel balkelementen maal omtrekpunten | minder balkelementen, of een eenvoudiger doorsnede |
+
 ## 5. Bestanden in de werkmap
 
 Alle bestanden van een run heten `<model>_<run-id>...`: `<model>` is de naam van het
@@ -568,7 +655,7 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_aster_summary.txt` | samenvatting van de run: fouten en alarmen, stappen, tijden (§5.2) |
 | `<model>_<run-id>_done.txt` | eindmarkering met de exitcode van `run_aster` (§2 stap 5); bestaat alleen kort, de bridge verwijdert hem na de run |
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
-| `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten |
+| `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem (met AdvancedToolsHub in MWHub Post) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `BEZWEKEN` (0 intact, 1 bezweken) en `T_BEZWIJK` |

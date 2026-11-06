@@ -26,6 +26,10 @@
 # check_solution_mesh() before the Code-Aster run; AsterToMecway_results()
 # also reports rows for nodes outside the solution.
 #
+# A solution can hold more nodes than the model: the shells of the section
+# view (bridge_results_liml.add_section_view), in an elset of their own. Both
+# functions leave those nodes alone (section_view_nodes).
+#
 # Compatible with IronPython 2.7.9.
 
 import os
@@ -305,6 +309,56 @@ def _table_in_comm(work_dir, intitule):
 # ==========================================
 # CHECK: DOES THE MECWAY SOLUTION MATCH THE MODEL?
 # ==========================================
+def section_view_nodes(mw, solution):
+    """
+    Set of the nodes of solution that belong to a section view: not in
+    mw.all_nodes() and in an element of a section view component
+    (bridge_section_view.ELSET, possibly with a suffix). Empty when
+    the API cannot tell, so that such nodes then count as a mismatch.
+    """
+    from bridge_section_view import ELSET
+    try:
+        if len(list(solution.all_nodes())) == len(list(mw.all_nodes())):
+            return set()
+        extra = set(int(n) for n in solution.all_nodes())
+        extra -= set(int(n) for n in mw.all_nodes())
+        if not extra:
+            return extra
+        shells = set()
+        for name in solution.components():
+            if name == ELSET or str(name).startswith(ELSET + "_"):
+                for eid in solution.component_elements(name):
+                    shells.update(int(n) for n in solution.nodes(eid))
+    except Exception:
+        return set()
+    return extra & shells
+
+
+def _keep_shell_values(solution, arrays, shells):
+    """
+    Put the present values of the section view nodes in arrays, as
+    solution.set_variable() would otherwise clear them. shells: nodes of
+    section_view_nodes. An array without any value is not written at all
+    and stays as it is. The values stay those of the earlier solution
+    until the section view is added again. Returns True if a value was kept.
+    """
+    kept = False
+    for name, values in arrays.items():
+        if all(v is None for v in values):
+            continue
+        for nid in shells:
+            if nid - 1 >= len(values) or values[nid - 1] is not None:
+                continue
+            try:
+                old = solution.node_value(name, nid)
+            except Exception:
+                old = None      # also: a variable that does not exist yet
+            if old is not None:
+                values[nid - 1] = old
+                kept = True
+    return kept
+
+
 def check_solution_mesh(mw, solution, max_checked=2000):
     """
     Check whether the nodes of the Mecway solution match those of
@@ -312,7 +366,8 @@ def check_solution_mesh(mw, solution, max_checked=2000):
 
     Why: solution.set_variable() only writes to nodes that exist in the
     solution (list length = number of nodes of the solution). A
-    solution from before a model change has different/fewer nodes.
+    solution from before a model change has different/fewer nodes. The
+    shells of a section view do not count (section_view_nodes).
 
     Parameters
     ----------
@@ -342,6 +397,9 @@ def check_solution_mesh(mw, solution, max_checked=2000):
                          "Cannot read the nodes of the solution: {0}").format(
             str(e))
 
+    if len(sol_nodes) != len(model_nodes):
+        shells = section_view_nodes(mw, solution)
+        sol_nodes = [n for n in sol_nodes if int(n) not in shells]
     if len(sol_nodes) != len(model_nodes) or \
             set(sol_nodes) != set(model_nodes):
         return False, tr(
@@ -745,6 +803,16 @@ def AsterToMecway_results(work_dir, resu_name, mw, solution):
             if intitule in active_specs and counts[intitule] > 0:
                 compare_names += list(all_specs[intitule].values())
         _compare_with_mecway(solution, arrays, compare_names, work_dir)
+
+    # --------------------------------------------------
+    # SECTION VIEW: set_variable() must not clear its nodes
+    # --------------------------------------------------
+    if _keep_shell_values(solution, arrays,
+                          section_view_nodes(mw, solution)):
+        log(tr("WARNING: De doorsnede in de solution houdt de waarden van "
+               "de vorige berekening; voeg hem opnieuw toe.",
+               "WARNING: The section view in the solution keeps the values "
+               "of the previous calculation; add it again."))
 
     # --------------------------------------------------
     # INJECT INTO MECWAY

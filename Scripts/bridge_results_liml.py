@@ -9,9 +9,9 @@
 # inside the Code-Aster job) into the <solution> of the model .liml, so
 # that Mecway reads the results with mw.open(); remove results from the
 # .liml (strip_results), check whether a result file matches the mesh and
-# list them (Results... button); and, as a fallback, read one time step
-# from the fragment for the
-# solution.set_variable() route.
+# list them (Results... button); as a fallback, read one time step from
+# the fragment for the solution.set_variable() route; and add the shells of
+# general-section beams to a solution (add_section_view).
 #
 # ROUTE ("binary"):
 #   Code-Aster-job: CALC_CHAMP -> aster_results_export.export_results()
@@ -50,9 +50,11 @@
 
 import array
 import base64
+import bisect
 import io
 import os
 import re
+from collections import OrderedDict
 
 from bridge_utils import tr, choose_configuration, configuration_warning
 import bridge_monitor
@@ -772,13 +774,34 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None,
 
 
 def _replace_with_bak(tmp, out_path):
-    """out_path -> out_path.bak (an old .bak is dropped), tmp -> out_path."""
-    if os.path.exists(out_path):
-        bak = out_path + ".bak"
-        if os.path.exists(bak):
-            os.remove(bak)
-        os.rename(out_path, bak)
-    os.rename(tmp, out_path)
+    """out_path -> out_path.bak (an old .bak is dropped), tmp -> out_path.
+    When the second step fails, out_path is put back."""
+    if not os.path.exists(out_path):
+        os.rename(tmp, out_path)
+        return
+    bak = out_path + ".bak"
+    if os.path.exists(bak):
+        os.remove(bak)
+    os.rename(out_path, bak)
+    try:
+        os.rename(tmp, out_path)
+    except OSError:
+        os.rename(bak, out_path)
+        raise
+
+
+def restore_bak(path):
+    """path.bak back in place of path. True when that worked."""
+    bak = path + ".bak"
+    if not os.path.exists(bak):
+        return False
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+        os.rename(bak, path)
+    except OSError:
+        return False
+    return True
 
 
 # ==========================================
@@ -828,6 +851,929 @@ def strip_results(model_liml):
         f.close()
     _replace_with_bak(tmp, model_liml)
     return True, ""
+
+
+# ==========================================
+# SECTION VIEW: SHELLS IN THE SOLUTION
+#
+# add_section_view writes the shells of bridge_section_view into the model
+# copy of one <solution>, with values in its <results>; the model part and
+# the other solutions stay byte-identical. An item of Mecway's Solution tree
+# without values on the shells shows them black (seen by the user in Mecway
+# 35), so every variable the beams have gets values on the shells:
+#   displx/y/z, displmag    computed (bridge_section_view.shell_values)
+#   stressptu, node values  the section stress, when it can be computed
+#   other node variables    a shell node copies the beam node at its end;
+#                           rotations are of this kind
+#   element-node variables  a shell element copies its beam element, each
+#                           node the value of its own end (also stressptu)
+#   SECTION_STRESS          new, the section stress, as node values and as
+#                           element-node values
+# A node or element without a value is not in the <nodeids> or
+# <elementnodeids> of that variable, so a shell of a beam without a value
+# stays out of it too.
+#
+# Two passes. _index_results finds the tags without decoding anything; then
+# _write_results rewrites one variable of one step at a time. Time: all
+# base64 of the results is decoded and encoded once. Memory: the ids per
+# distinct <nodeids>, the values of one variable of one step. Shell ids lie
+# above the ids of the solved mesh, so that <nodeids> stay ascending.
+# Measured in IronPython 2.7.9, double precision, 20 variables: linear, about
+# 15 MB of file per second (2.65 GB in 174 s, 98 shell nodes), plus about
+# 1.4 microseconds per shell node, variable and step (12,014 shell nodes, 100
+# steps: 28 s, and the file grows from 45 to 351 MB).
+#
+# Reloads (splice_results) build the model copy from the head of the file,
+# so the shells are gone afterwards: the caller adds them again.
+# ==========================================
+SECTION_STRESS = ("langsspanning", "longitudinalstress")
+_SHELL_DISPL = ("displx", "disply", "displz")
+_SHELL_ROT = ("rotx", "roty", "rotz")
+_SHELL_FORCES = ("tensileforce", "bendingmomv", "bendingmomw")
+_WIDTH = {"f": 4, "d": 8}
+_B64_LINE = 64
+_RESULT_TAG = re.compile(r'<(/?)(results|nodeids|elementnodeids|timestep|'
+                         r'mode|nodevariable|elementnodevariable|'
+                         r'savedmonitor)\b([^<>]*)>')
+_VALUES_OPEN = re.compile(r"<(valuessingle|valuesdouble)>")
+_ELSET_LINE = re.compile(r'^\s*<elset\s+name="([^"]*)"([^>]*?)(/?)>')
+_COMPONENT = re.compile(r'[ \t]*<component name="([^"]*)"[^>]*/>\r?\n')
+_EMPTY_COMPONENT = re.compile(r'[ \t]*<component name=""[^>]*/>\r?\n')
+_MAXMIN = re.compile(r'([ \t]*)<maxandmin>\r?\n')
+_MAXMIN_EMPTY = re.compile(r'([ \t]*)<maxandmin\s*/>')
+
+
+class _Refused(Exception):
+    """An ordinary refusal; text is the bilingual reason."""
+
+    def __init__(self, text):
+        Exception.__init__(self, text)
+        self.text = text
+
+
+def _bytes_of(values):
+    """The contents of an array as a binary string."""
+    if hasattr(values, "tobytes"):
+        return values.tobytes()
+    return values.tostring()
+
+
+def _array_of(typecode, data):
+    values = array.array(typecode)
+    if hasattr(values, "frombytes"):
+        values.frombytes(data)
+    else:
+        values.fromstring(data)
+    return values
+
+
+def _b64_text(data):
+    """base64 of data in lines of 64 characters with CRLF, plus a CRLF at
+    the end (as Mecway, see the header of aster_results_export.py)."""
+    enc = base64.b64encode(data)
+    if not isinstance(enc, str):
+        enc = enc.decode("ascii")
+    return "\r\n".join([enc[i:i + _B64_LINE]
+                        for i in range(0, len(enc), _B64_LINE)]) + "\r\n"
+
+
+def _b64_data(text):
+    return base64.b64decode(text.replace("\r", "").replace("\n", "")
+                            .replace(" ", ""))
+
+
+def _result_tags(path, start, end):
+    """The tags of _RESULT_TAG in the bytes [start, end): tuples (position,
+    closing, name, attributes, position after the tag). In blocks; base64
+    holds no '<'. The file closes when the generator ends, so read to the
+    end."""
+    f = open(path, "rb")
+    try:
+        f.seek(start)
+        offset = start
+        keep = ""
+        left = end - start
+        while left > 0:
+            block = f.read(min(_CHUNK, left))
+            if not block:
+                break
+            left -= len(block)
+            buf = keep + block
+            for m in _RESULT_TAG.finditer(buf):
+                yield (offset + m.start(), m.group(1) == "/", m.group(2),
+                       m.group(3), offset + m.end())
+            cut = buf.rfind("<")
+            if cut < 0 or buf.find(">", cut) >= 0:
+                cut = len(buf)
+            keep = buf[cut:]
+            offset += cut
+    finally:
+        f.close()
+
+
+def _new_step(kind):
+    return {"kind": kind, "vars": OrderedDict(), "elvars": OrderedDict()}
+
+
+def _index_results(path, start, end):
+    """
+    Positions of the blocks of <results>, nothing decoded: {"start", "end"
+    (of </results>), "precision", "ids", "elids": {variable: (begin, end)},
+    "steps": [{"kind": "timestep"/"mode"/None, "vars", "elvars": {variable:
+    (begin, end)}}]}. A static solution is one step of kind None.
+    """
+    index = {"start": start, "end": None, "precision": None,
+             "ids": OrderedDict(), "elids": OrderedDict(), "steps": []}
+    static = _new_step(None)
+    step = static
+    inside = {}             # tag -> (position, variable)
+    monitor = False
+    for pos, closing, tag, attrs, stop in _result_tags(path, start, end):
+        if monitor:
+            monitor = not (closing and tag == "savedmonitor")
+            continue
+        alone = attrs.rstrip().endswith("/")
+        if tag == "savedmonitor":
+            monitor = not closing and not alone
+        elif tag == "results":
+            if closing:
+                index["end"] = pos
+            else:
+                index["precision"] = dict(_ATTR.findall(attrs)).get(
+                    "precision")
+        elif tag in ("timestep", "mode"):
+            if closing:
+                step = static
+            else:
+                step = _new_step(tag)
+                index["steps"].append(step)
+        else:
+            table = {"nodeids": index["ids"], "elementnodeids": index["elids"],
+                     "nodevariable": step["vars"],
+                     "elementnodevariable": step["elvars"]}[tag]
+            if closing:
+                begin, name = inside.pop(tag, (None, None))
+                if name is not None:
+                    table[name] = (begin, stop)
+            elif alone:
+                table[dict(_ATTR.findall(attrs)).get("name")] = (pos, stop)
+            else:
+                inside[tag] = (pos, dict(_ATTR.findall(attrs)).get("name"))
+    if static["vars"] or static["elvars"]:
+        if index["steps"]:
+            raise _Refused(tr(
+                "De resultaten hebben variabelen naast tijdstappen; dat "
+                "formaat is onbekend.",
+                "The results have variables next to time steps; that "
+                "format is unknown."))
+        index["steps"].append(static)
+    return index
+
+
+def _stale_text():
+    return tr("De solution hoort niet bij dit model; het model is na de "
+              "berekening gewijzigd. Reken opnieuw.",
+              "The solution does not belong to this model; the model was "
+              "changed after the calculation. Calculate again.")
+
+
+def _misfit_text():
+    return tr("Het aantal waarden in de resultaten past niet bij hun "
+              "nummers.",
+              "The number of values in the results does not fit their ids.")
+
+
+def _no_result_text():
+    return tr("Deze solution heeft geen resultaten. Reken eerst.",
+              "This solution has no results. Calculate first.")
+
+
+def _no_rotation_text():
+    return tr("Het resultaat mist verplaatsing of rotatie op de balkknopen. "
+              "Vraag beide aan als resultaatveld en reken opnieuw.",
+              "The result lacks displacement or rotation on the beam "
+              "nodes. Request both as result fields and calculate again.")
+
+
+def _split_old_block(lines, base, taken, indent):
+    """(lines without earlier shell elsets, their names, {eid: node count}
+    of their elements, their nodes). Such an elset has the name of
+    bridge_section_view (with a suffix when the model has a component of that
+    name), no material and is not a component of the model."""
+    old, old_nodes, counts, keep = [], set(), {}, []
+    inside = False
+    for line in lines:
+        if inside:
+            m = _ELEM_LINE.match(line)
+            if m:
+                nodes = m.group(4).split()
+                counts[int(m.group(2))] = len(nodes)
+                old_nodes.update([int(n) for n in nodes])
+            elif line.strip().startswith("</elset>"):
+                inside = False
+            continue
+        m = (_ELSET_LINE.match(line)
+             if line.startswith(indent + "<elset ") else None)
+        if m and m.group(1) not in taken and "material=" not in m.group(2) \
+                and (m.group(1) == base or
+                     re.match(re.escape(base) + r"_\d+$", m.group(1))):
+            old.append(m.group(1))
+            inside = not m.group(3)
+            continue
+        keep.append(line)
+    return keep, old, counts, old_nodes
+
+
+def _check_beams(view, nodes, elements):
+    """Refuse when the drawn beams are not those of the solved mesh: the
+    model copy can be older than the model."""
+    if max(nodes or [0]) >= view["nids"][0] or \
+            max(elements or [0]) >= view["elements"][0][0]:
+        raise _Refused(_stale_text() + u" " + tr(
+            "De solution heeft knopen die niet in het model staan, "
+            "bijvoorbeeld door oplossen terwijl de doorsnede getoond werd.",
+            "The solution has nodes that are not in the model, for example "
+            "from solving while the section was shown."))
+    for beam in view["beams"]:
+        ids = elements.get(beam["eid"])
+        if ids is None or len(ids) < max(beam["element_nodes"]):
+            raise _Refused(_stale_text())
+        for end in (0, 1):
+            nid = beam["nodes"][end]
+            xyz = nodes.get(nid)
+            if xyz is None or \
+                    int(ids[beam["element_nodes"][end] - 1]) != nid or \
+                    max([abs(a - b) for a, b in zip(xyz, beam["ends"][end])]
+                        ) > 1.0e-9 * (1.0 + max([abs(c) for c in xyz])):
+                raise _Refused(_stale_text())
+
+
+def _read_copy(lines, view, model_data, section_view):
+    """
+    What add_section_view needs of the model copy (its lines, from
+    <solution> to the indentation of <results>): {"lines": without the
+    block and the nodes of an earlier call, "old": names of such blocks,
+    "counts": {eid: number of nodes}, old elements included, "node_limit",
+    "element_limit": highest id of the solved mesh}.
+    """
+    indent = section_view.COPY_INDENT
+    taken = set(e[3] for e in model_data.get("mesh_elements", []))
+    keep, old, counts, old_nodes = _split_old_block(
+        lines, section_view.ELSET, taken, indent)
+    old_elements = list(counts)
+    nodes, elements, out = {}, {}, []
+    tag = indent + "<node "
+    for line in keep:
+        m = _NODE_LINE.match(line) if line.startswith(tag) else None
+        if m:
+            nid = int(m.group(2))
+            if nid in old_nodes:
+                continue
+            nodes[nid] = (float(m.group(3)), float(m.group(4)),
+                          float(m.group(5)))
+        else:
+            m = _ELEM_LINE.match(line)
+            if m:
+                elements[int(m.group(2))] = m.group(4).split()
+        out.append(line)
+    for eid, ids in elements.items():
+        counts[eid] = len(ids)
+    _check_beams(view, nodes, elements)
+    return {"lines": out, "old": old, "counts": counts,
+            "node_limit": min([view["nids"][0]] + list(old_nodes)) - 1,
+            "element_limit": min([view["elements"][0][0]] + old_elements) - 1}
+
+
+def _ids_of(text):
+    """(array of ids, their binary string) of an ids block."""
+    data = _b64_data(text[text.index(">") + 1:text.rindex("<")])
+    return _array_of("i", data), data
+
+
+def _node_layout(text, sources, limit, had_block):
+    """
+    Where the values of a variable are, from its <nodeids> block. sources:
+    [(shell node, beam node)]. Keys: "where": {beam node: position}, "slots"
+    values per step, "kept" those that stay (not of an earlier call), "raw"
+    the ids that stay, "ids": shell nodes that get a value, "pick": for each
+    the position of its beam node.
+    """
+    ids, raw = _ids_of(text)
+    kept = bisect.bisect_right(ids, limit)
+    if kept != len(ids) and not had_block:
+        raise _Refused(_stale_text())
+    wanted = set([beam for _shell, beam in sources])
+    where = {}
+    for i in range(kept):
+        if ids[i] in wanted:
+            where[int(ids[i])] = i
+    pick = [(shell, where[beam]) for shell, beam in sources if beam in where]
+    return {"where": where, "slots": len(ids), "kept": kept,
+            "raw": raw[:4 * kept], "ids": [p[0] for p in pick],
+            "pick": [p[1] for p in pick]}
+
+
+def _element_layout(text, shells, counts, limit, had_block):
+    """As _node_layout for an <elementnodeids> block, with a value per node
+    of an element. shells: [(shell element, beam, [end per node])]; "where":
+    {beam element: position of its first value}."""
+    ids, raw = _ids_of(text)
+    kept_ids = bisect.bisect_right(ids, limit)
+    if kept_ids != len(ids) and not had_block:
+        raise _Refused(_stale_text())
+    beams = set([s[1]["eid"] for s in shells])
+    where = {}
+    slots = kept = 0
+    for i in range(len(ids)):
+        eid = ids[i]
+        if eid not in counts:
+            raise _Refused(_stale_text())
+        if i == kept_ids:
+            kept = slots
+        elif i < kept_ids and eid in beams:
+            where[int(eid)] = slots
+        slots += counts[eid]
+    if kept_ids == len(ids):
+        kept = slots
+    added, pick = [], []
+    for eid, beam, ends in shells:
+        first = where.get(beam["eid"])
+        if first is not None:
+            added.append(eid)
+            pick.extend([first + beam["element_nodes"][e] - 1 for e in ends])
+    return {"where": where, "slots": slots, "kept": kept,
+            "raw": raw[:4 * kept_ids], "ids": added, "pick": pick}
+
+
+def _layouts(src, index, view, copy):
+    """({variable: layout} of node values, of element values), without the
+    section stress. Variables with the same ids share a layout."""
+    origin = dict(zip(view["nids"], view["origin"]))
+    sources = [(nid, view["beams"][o[0]]["nodes"][o[1]])
+               for nid, o in zip(view["nids"], view["origin"])]
+    owner = {}
+    for number, part in enumerate(view["parts"]):
+        for element in part["elements"]:
+            owner[element[0]] = view["beams"][number]
+    shells = [(e[0], owner[e[0]], [origin[n][1] for n in e[2]])
+              for e in view["elements"]]
+    seen = {}
+
+    def layout_of(span, element):
+        src.seek(span[0])
+        text = src.read(span[1] - span[0])
+        key = (element, text[text.find(">") + 1:])
+        if key not in seen:
+            if element:
+                seen[key] = _element_layout(
+                    text, shells, copy["counts"], copy["element_limit"],
+                    bool(copy["old"]))
+            else:
+                seen[key] = _node_layout(text, sources, copy["node_limit"],
+                                         bool(copy["old"]))
+        return seen[key]
+
+    nodes = dict((name, layout_of(span, False))
+                 for name, span in index["ids"].items()
+                 if name not in SECTION_STRESS)
+    elements = dict((name, layout_of(span, True))
+                    for name, span in index["elids"].items()
+                    if name not in SECTION_STRESS)
+    return nodes, elements
+
+
+def _all_shells(layout, view):
+    """layout of a computed variable: a value on every shell node."""
+    out = dict(layout)
+    out["ids"] = list(view["nids"])
+    out["pick"] = []
+    return out
+
+
+def _read_block(src, span):
+    """The block at span around its values: {"head" up to and with the start
+    tag of the values, "tail" from their end tag on, "code" array type,
+    "raw" the values}."""
+    src.seek(span[0])
+    text = src.read(span[1] - span[0])
+    m = _VALUES_OPEN.search(text)
+    close = text.find("</" + m.group(1) + ">", m.end()) if m else -1
+    if close < 0:
+        raise _Refused(_misfit_text())
+    return {"head": text[:m.end()], "tail": text[close:],
+            "code": "d" if m.group(1) == "valuesdouble" else "f",
+            "raw": _b64_data(text[m.end():close])}
+
+
+def _checked(block, layout):
+    if len(block["raw"]) != _WIDTH[block["code"]] * layout["slots"]:
+        raise _Refused(_misfit_text())
+    return block
+
+
+def _pick_values(block, positions):
+    """The values at positions, as an array of the block's type; the bytes
+    stay as they are in the file."""
+    raw, width = block["raw"], _WIDTH[block["code"]]
+    return _array_of(block["code"], raw[:0].join(
+        [raw[p * width:(p + 1) * width] for p in positions]))
+
+
+def _bounds(values):
+    """(max, min) of the finite numbers in values, or None."""
+    finite = [v for v in values if v - v == 0.0]
+    if not finite:
+        return None
+    return float(max(finite)), float(min(finite))
+
+
+def _component(elset, bounds, indent, nl):
+    return '{0}<component name="{1}" max="{2}" min="{3}" />{4}'.format(
+        indent, elset, _coord(bounds[0]), _coord(bounds[1]), nl)
+
+
+def _with_component(head, elset, bounds, drop):
+    """head of a block without the components of drop, plus one for the
+    shells: after the one for nodes without an element, because the shells
+    are the first elset of the model copy."""
+    head = _COMPONENT.sub(lambda m: "" if m.group(1) in drop else m.group(0),
+                          head)
+    if bounds is None:
+        return head
+    nl = "\r\n" if "\r\n" in head else "\n"
+    m = _MAXMIN.search(head)
+    if m is None:
+        m = _MAXMIN_EMPTY.search(head)
+        if m is None:
+            return head
+        return (head[:m.start()] + m.group(1) + "<maxandmin>" + nl +
+                _component(elset, bounds, m.group(1) + "  ", nl) +
+                m.group(1) + "</maxandmin>" + head[m.end():])
+    at = m.end()
+    first = _EMPTY_COMPONENT.match(head, at)
+    if first:
+        at = first.end()
+    return (head[:at] + _component(elset, bounds, m.group(1) + "  ", nl) +
+            head[at:])
+
+
+def _rewrite_block(block, layout, computed, plan):
+    """The new text of a variable. computed: shell values, or None to copy
+    the beam values at layout["pick"]."""
+    _checked(block, layout)
+    code = block["code"]
+    if computed is None:
+        added = _pick_values(block, layout["pick"])
+    else:
+        added = array.array(code, computed)
+    kept = block["raw"][:_WIDTH[code] * layout["kept"]]
+    return (_with_component(block["head"], plan["elset"], _bounds(added),
+                            plan["drop"]) +
+            _b64_text(kept + _bytes_of(added)) + block["tail"])
+
+
+def _new_variable(kind, name, indent, values, plan):
+    """A whole new <nodevariable>/<elementnodevariable>, starting with a
+    line break and without one at the end."""
+    code = "d" if plan["index"]["precision"] == "double" else "f"
+    tag = "valuesdouble" if code == "d" else "valuessingle"
+    data = array.array(code, values)
+    nl = plan["nl"]
+    bounds = _bounds(data)
+    return (nl + indent + '<{0} name="{1}">'.format(kind, name) + nl +
+            indent + "  <maxandmin>" + nl +
+            (_component(plan["elset"], bounds, indent + "    ", nl)
+             if bounds else "") +
+            indent + "  </maxandmin>" + nl +
+            indent + "  <" + tag + ">" + _b64_text(_bytes_of(data)) +
+            "</" + tag + ">" + nl +
+            indent + "</" + kind + ">")
+
+
+def _indent_before(src, pos):
+    start = max(0, pos - 64)
+    src.seek(start)
+    text = src.read(pos - start)
+    return text[len(text.rstrip(" \t")):]
+
+
+def _whole_lines(src, span):
+    """span with the indentation before it and the line break after it."""
+    begin = span[0] - len(_indent_before(src, span[0]))
+    src.seek(span[1])
+    after = src.read(2)
+    end = span[1]
+    if after.startswith("\r\n"):
+        end += 2
+    elif after.startswith("\n"):
+        end += 1
+    return begin, end
+
+
+def _kept_spans(table, drop):
+    return [span for name, span in table.items() if name not in drop]
+
+
+def _step_values(plan, step, src):
+    """
+    Shell values of one step: {"cache": decoded blocks by span, "values":
+    {variable: [value per shell node]}, "routes": as shell_values}. Refuses
+    when a beam end has no displacement or rotation.
+    """
+    cache = {}
+
+    def block_of(name, table, layouts):
+        span = step[table].get(name)
+        if span is None or name not in layouts:
+            raise _Refused(_no_rotation_text())
+        if span not in cache:
+            cache[span] = _checked(_read_block(src, span), layouts[name])
+        return cache[span]
+
+    def beam_values(name):
+        where = plan["nodes"][name]["where"]
+        order = sorted(where)
+        got = _pick_values(block_of(name, "vars", plan["nodes"]),
+                           [where[n] for n in order])
+        return dict(zip(order, [float(v) for v in got]))
+
+    dx, dy, dz = [beam_values(n) for n in _SHELL_DISPL]
+    rx, ry, rz = [beam_values(n) for n in _SHELL_ROT]
+    ends = plan["beam_nodes"]
+    displ = dict((n, (dx.get(n), dy.get(n), dz.get(n))) for n in ends)
+    rot = dict((n, (rx.get(n), ry.get(n), rz.get(n))) for n in ends)
+    forces = _step_forces(plan, step, block_of) if plan["forces"] else None
+    out = plan["section_view"].shell_values(plan["view"], displ, rot,
+                                            plan["model"], forces)
+    if out is None:
+        raise _Refused(_no_rotation_text())
+    values = dict((n, out[n]) for n in _SHELL_DISPL + ("displmag",))
+    sigma = out.get("sectionsigma")
+    if sigma is not None:
+        values[plan["stress"]] = sigma
+        if plan["has_stress"]:
+            values["stressptu"] = sigma
+    return {"cache": cache, "values": values,
+            "routes": out.get("stress_routes")}
+
+
+def _step_forces(plan, step, block_of):
+    """{beam: ((N, Mv, Mw) at end 0, at end 1)} from the element values of
+    a step, for bridge_section_view.shell_values; None without them."""
+    layouts = plan["elements"]
+    per_var = []
+    beams = plan["view"]["beams"]
+    for name in _SHELL_FORCES:
+        if name not in step["elvars"] or name not in layouts:
+            return None
+        where = layouts[name]["where"]
+        spots = [where[b["eid"]] + k - 1 for b in beams if b["eid"] in where
+                 for k in b["element_nodes"]]
+        got = _pick_values(block_of(name, "elvars", layouts), spots)
+        per_var.append(dict(zip(spots, [float(v) for v in got])))
+    out = {}
+    for beam in beams:
+        eid = beam["eid"]
+        if all([eid in layouts[name]["where"] for name in _SHELL_FORCES]):
+            out[eid] = tuple([
+                tuple([values[layouts[name]["where"][eid] + k - 1]
+                       for name, values in zip(_SHELL_FORCES, per_var)])
+                for k in beam["element_nodes"]])
+    return out
+
+
+def _touches(layout):
+    return bool(layout["ids"]) or layout["kept"] != layout["slots"]
+
+
+def _ids_block(tag, name, ids):
+    return '<{0} name="{1}">{2}</{0}>'.format(
+        tag, name, _b64_text(_bytes_of(array.array("i", ids))))
+
+
+def _edits(src, plan):
+    """
+    The changes of <results>, in file order: (begin, serial, end, action,
+    step or None, argument). Insertions have begin == end and come right
+    after the last block that stays.
+    """
+    index = plan["index"]
+    names = plan["names"]
+    out = []
+
+    def add(span, action, step=None, argument=None):
+        out.append((span[0], len(out), span[1], action, step, argument))
+
+    for table, layouts in ((index["ids"], plan["nodes"]),
+                           (index["elids"], plan["elements"])):
+        for name, span in table.items():
+            if name in names:
+                add(_whole_lines(src, span), "drop")
+            elif name in layouts and _touches(layouts[name]):
+                add(span, "ids", None, layouts[name])
+    if plan["has_stress"]:
+        spans = _kept_spans(index["ids"], names)
+        pad = plan["nl"] + _indent_before(src, spans[0][0])
+        at = spans[-1][1]
+        add((at, at), "text", None, pad + _ids_block(
+            "nodeids", plan["stress"], plan["view"]["nids"]))
+        spans = _kept_spans(index["elids"], names)
+        at = spans[-1][1] if spans else at
+        add((at, at), "text", None, pad + _ids_block(
+            "elementnodeids", plan["stress"], plan["element_ids"]))
+    for step in index["steps"]:
+        for table, layouts, action in (("vars", plan["nodes"], "node"),
+                                       ("elvars", plan["elements"],
+                                        "element")):
+            for name, span in step[table].items():
+                if name in names:
+                    add(_whole_lines(src, span), "drop")
+                elif name in layouts and _touches(layouts[name]):
+                    add(span, action, step, name)
+        if plan["has_stress"]:
+            spans = _kept_spans(step["vars"], names)
+            pad = _indent_before(src, spans[0][0])
+            at = spans[-1][1]
+            add((at, at), "new_node", step, pad)
+            spans = _kept_spans(step["elvars"], names)
+            at = spans[-1][1] if spans else at
+            add((at, at), "new_element", step, pad)
+    return sorted(out, key=lambda e: e[:2])
+
+
+def _pump(src, dst, start, end):
+    """Copy [start, end) of the open src to the open dst."""
+    src.seek(start)
+    left = end - start
+    while left > 0:
+        block = src.read(min(_CHUNK, left))
+        if not block:
+            break
+        dst.write(block)
+        left -= len(block)
+
+
+def _write_ids(src, dst, begin, end, layout):
+    src.seek(begin)
+    head = src.read(min(end - begin, 1024))
+    src.seek(end - 32)
+    tail = src.read(32)
+    dst.write(head[:head.index(">") + 1])
+    dst.write(_b64_text(layout["raw"] +
+                        _bytes_of(array.array("i", layout["ids"]))))
+    dst.write(tail[tail.rindex("<"):])
+
+
+def _write_variable(src, dst, step, data, action, name, plan):
+    table = "vars" if action == "node" else "elvars"
+    layouts = plan["nodes" if action == "node" else "elements"]
+    span = step[table][name]
+    block = data["cache"].pop(span, None) or _read_block(src, span)
+    computed = data["values"].get(name) if action == "node" else None
+    dst.write(_rewrite_block(block, layouts[name], computed, plan))
+
+
+def _write_results(src, dst, plan):
+    """Write <results> up to its end tag, with the shells. Returns the
+    stress routes of the last step."""
+    index = plan["index"]
+    pos = index["start"]
+    current = data = routes = None
+    for begin, _serial, end, action, step, argument in _edits(src, plan):
+        _pump(src, dst, pos, begin)
+        pos = end
+        if step is not None and step is not current:
+            current = step
+            data = plan.pop("first", None) or _step_values(plan, step, src)
+            routes = data["routes"]
+            if plan["has_stress"] and plan["stress"] not in data["values"]:
+                raise _Refused(tr(
+                    "De spanning ontbreekt in een van de stappen.",
+                    "The stress is missing in one of the steps."))
+        if action == "text":
+            dst.write(argument)
+        elif action == "ids":
+            _write_ids(src, dst, begin, end, argument)
+        elif action in ("node", "element"):
+            _write_variable(src, dst, step, data, action, argument, plan)
+        elif action == "new_node":
+            dst.write(_new_variable("nodevariable", plan["stress"], argument,
+                                    data["values"][plan["stress"]], plan))
+        elif action == "new_element":
+            sigma = data["values"][plan["stress"]]
+            dst.write(_new_variable("elementnodevariable", plan["stress"],
+                                    argument, [sigma[i] for i in
+                                               plan["element_slots"]], plan))
+    _pump(src, dst, pos, index["end"])
+    return routes
+
+
+def _nonlinear_material(view, model_data):
+    """True when a drawn beam has a material that is not linear elastic."""
+    materials = model_data.get("materials", {})
+    for beam in view["beams"]:
+        for key in materials.get(beam["material"]) or ():
+            if key == "hyper" or key.startswith("plastic"):
+                return True
+    return False
+
+
+def _without_stress(model_data, view):
+    """model_data for shell_values when its stress is not used: without an
+    E it would warn for every step."""
+    out = dict(model_data)
+    out["materials"] = dict((b["material"], {"E": 1.0})
+                            for b in view["beams"])
+    return out
+
+
+def _view_result(ok, text, steps=0, routes=None, not_on_shells=None):
+    return {"ok": ok, "text": text, "steps": steps,
+            "routes": routes or {"forces": 0, "kinematics": 0},
+            "not_on_shells": not_on_shells or []}
+
+
+def _target_solution(path, first, configuration):
+    """(begin, end) of the solution of configuration, as splice_results."""
+    sols = _solutions(path, first)
+    same = [s for s in sols if s[2] == configuration]
+    if not same and configuration is not None:
+        same = [s for s in sols if s[2] is None]
+    if not same:
+        raise _Refused(tr("Geen solution voor configuratie {0}.",
+                          "No solution for configuration {0}.").format(
+                              configuration))
+    return same[0][0], same[0][1]
+
+
+def _view_plan(src, path, begin, results, end, view, model_data):
+    """Everything that holds for all steps of add_section_view, and the
+    values of the first step (they decide whether there is a stress)."""
+    import bridge_section_view as section_view
+    index = _index_results(path, results, end)
+    if not index["steps"] or index["end"] is None:
+        raise _Refused(_no_result_text())
+    for step in index["steps"]:
+        for name in _SHELL_DISPL + _SHELL_ROT:
+            if name not in step["vars"] or name not in index["ids"]:
+                raise _Refused(_no_rotation_text())
+    src.seek(begin)
+    text = src.read(results - begin)
+    nl = _newline(text)
+    copy = _read_copy(text.split(nl), view, model_data, section_view)
+    nodes, elements = _layouts(src, index, view, copy)
+    for name in _SHELL_DISPL + ("displmag",):
+        if name in nodes:
+            nodes[name] = _all_shells(nodes[name], view)
+    modes = len([s for s in index["steps"] if s["kind"] == "mode"]) > 0
+    nonlinear = _nonlinear_material(view, model_data)
+    first = view["nids"][0]
+    plan = {"index": index, "view": view, "nl": nl,
+            "section_view": section_view,
+            "lines": section_view.thin_beam_lines(
+                section_view.insert_into_copy(copy["lines"], view), view),
+            "old": copy["old"], "elset": view["elset"],
+            "drop": set(copy["old"]) | set([view["elset"]]),
+            "names": set(SECTION_STRESS),
+            "stress": tr(SECTION_STRESS[0], SECTION_STRESS[1]),
+            "nodes": nodes, "elements": elements,
+            "model": (_without_stress(model_data, view)
+                      if modes or nonlinear else model_data),
+            "forces": not modes, "modes": modes, "nonlinear": nonlinear,
+            "has_stress": False,
+            "element_ids": [e[0] for e in view["elements"]],
+            "element_slots": [n - first for e in view["elements"]
+                              for n in e[2]],
+            "beam_nodes": sorted(set([n for b in view["beams"]
+                                      for n in b["nodes"]]))}
+    data = _step_values(plan, index["steps"][0], src)
+    if plan["stress"] in data["values"] and not modes and not nonlinear:
+        plan["has_stress"] = True
+        data["values"]["stressptu"] = data["values"][plan["stress"]]
+        if "stressptu" in nodes:
+            nodes["stressptu"] = _all_shells(nodes["stressptu"], view)
+    else:
+        plan["model"] = _without_stress(model_data, view)
+    plan["first"] = data
+    return plan
+
+
+def _view_text(plan, steps, routes, note, not_on_shells, liml_path):
+    view = plan["view"]
+    parts = [tr("Doorsnede in de solution: {0} knopen, {1} elementen, {2} "
+                "stap(pen).",
+                "Section view in the solution: {0} nodes, {1} elements, {2} "
+                "step(s).").format(len(view["nids"]), len(view["elements"]),
+                                   steps)]
+    if plan["has_stress"]:
+        parts.append(tr("Spanning: {0}, uit de snedekrachten voor {1} balken "
+                        "en uit de kinematica voor {2}.",
+                        "Stress: {0}, from the section forces for {1} beams "
+                        "and from the kinematics for {2}.").format(
+                            plan["stress"], routes["forces"],
+                            routes["kinematics"]))
+    elif plan["modes"]:
+        parts.append(tr("Modes: geen spanning op de vorm.",
+                        "Modes: no stress on the shape."))
+    elif plan["nonlinear"]:
+        parts.append(tr("Niet-lineair materiaal: geen spanning op de vorm.",
+                        "Nonlinear material: no stress on the shape."))
+    else:
+        parts.append(tr("Geen spanning op de vorm: E of doorsnede ontbreekt.",
+                        "No stress on the shape: E or section is missing."))
+    if not_on_shells:
+        parts.append(tr("Zonder waarde op de balken, dus ook niet op de "
+                        "vorm: {0}.",
+                        "No value on the beams, so none on the shape "
+                        "either: {0}.").format(", ".join(not_on_shells)))
+    if plan["old"]:
+        parts.append(tr("{0}.bak is de vorige versie, ook met vormen.",
+                        "{0}.bak is the previous version, also with shells."
+                        ).format(os.path.basename(liml_path)))
+    if note:
+        parts.append(note)
+    return " ".join(parts)
+
+
+def _add_section_view(liml_path, tmp, view, model_data, configuration):
+    if not os.path.exists(liml_path):
+        raise _Refused(tr("Model niet gevonden: {0}",
+                          "Model not found: {0}").format(liml_path))
+    if not view or not view.get("nids") or not view.get("elements"):
+        raise _Refused(tr("Geen balken om te tekenen.",
+                          "No beams to draw."))
+    sol = _find_solution_start(liml_path)
+    if sol < 0:
+        raise _Refused(tr("Het model heeft geen solution. Reken eerst.",
+                          "The model has no solution. Calculate first."))
+    note = ""
+    if configuration is None:
+        configuration, note = pick_configuration(liml_path)
+    if cyclic_info(_read_range(liml_path, 0, sol)) is not None:
+        raise _Refused(tr(
+            "Cyclische symmetrie: de doorsnede kan niet in de solution, de "
+            "knoopnummers kunnen botsen.",
+            "Cyclic symmetry: the section view cannot go into the solution, "
+            "the node numbers can clash."))
+    begin, end = _target_solution(liml_path, sol, configuration)
+    results = _find_from(liml_path, "<results", begin, ">/ \t\r\n")
+    if not begin <= results < end:
+        raise _Refused(_no_result_text())
+    src = open(liml_path, "rb")
+    dst = None
+    try:
+        plan = _view_plan(src, liml_path, begin, results, end, view,
+                          model_data)
+        dst = open(tmp, "wb")
+        _copy_range(liml_path, dst, 0, begin)
+        dst.write(plan["nl"].join(plan["lines"]))
+        routes = _write_results(src, dst, plan)
+        _copy_from(liml_path, dst, plan["index"]["end"])
+    finally:
+        src.close()
+        if dst is not None:
+            dst.close()
+    _replace_with_bak(tmp, liml_path)
+    steps = len(plan["index"]["steps"])
+    names = [name for table in (plan["nodes"], plan["elements"])
+             for name in table if not table[name]["ids"]]
+    routes = (routes if plan["has_stress"] and routes else
+              {"forces": 0, "kinematics": 0})
+    return _view_result(True, _view_text(plan, steps, routes, note, names,
+                                         liml_path), steps, routes, names)
+
+
+def add_section_view(liml_path, view, model_data, configuration=None):
+    """
+    Put the shells of view (bridge_section_view.build_view) with their
+    values in the solution of configuration in liml_path; see the header of
+    this block. Everything outside that solution stays byte-identical, an
+    earlier section view in it is replaced. configuration None:
+    pick_configuration. Written through a .tmp file; the previous version
+    becomes .bak.
+
+    Returns {"ok": bool, "text": bilingual status, "steps": number of steps
+    or modes, "routes": {"forces": beams, "kinematics": beams} of the stress
+    in the last step, "not_on_shells": variables without a value on any
+    drawn beam}. An ordinary refusal is ok False, not an exception.
+    """
+    tmp = liml_path + ".tmp"
+    try:
+        return _add_section_view(liml_path, tmp, view, model_data,
+                                 configuration)
+    except _Refused as e:
+        return _view_result(False, e.text)
+    except Exception as e:      # a display extra must not stop the caller
+        return _view_result(False, tr(
+            "De doorsnede is niet toegevoegd: {0}",
+            "The section view was not added: {0}").format(e))
+    finally:
+        # without the .liml, the .tmp may be the only complete file
+        if os.path.exists(tmp) and os.path.exists(liml_path):
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
 
 
 # ==========================================
@@ -1457,9 +2403,7 @@ def _collect(text, buf):
 
 
 def _decode(chunks, typecode):
-    a = array.array(typecode)
-    a.fromstring(base64.b64decode("".join(chunks)))
-    return a
+    return _array_of(typecode, base64.b64decode("".join(chunks)))
 
 
 def _to_node_lists(ids, values, typecode, n_nodes):

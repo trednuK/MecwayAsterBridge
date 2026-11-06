@@ -51,6 +51,10 @@
 #                          -> CALC_MODES + COMB_SISM_MODAL)
 #   bridge_harmonic      : build_harmonic()                     (harmonic
 #                          response -> DYNA_VIBRA HARM, per frequency)
+#   bridge_section_view  : the outline of a general section (SECTIE-VORM
+#                          lines of MecwaySectionProps) swept along the beams
+#   bridge_section_model : those shells as temporary elements in the model,
+#                          to see them before a calculation
 #   bridge_fracture      : front_cells() / fracture_block() / report()
 #                          (SCHEUR_ selections in linear static ->
 #                          DEFI_FOND_FISS + CALC_G + POST_K1_K2_K3, K and G
@@ -132,7 +136,8 @@ from bridge_results_liml import (splice_results, read_step,
                                  read_cyclic_summary, read_tagged,
                                  read_error_summary, read_crit_stab,
                                  crit_stab_estimate, read_imperfection,
-                                 read_step_guard, has_results)
+                                 read_step_guard, has_results,
+                                 add_section_view, restore_bak)
 from bridge_failure     import report_failures
 from bridge_monitor     import monitor_text, write_summary, SUMMARY_SUFFIX
 from bridge_run_aster   import CONSOLE_SUFFIX
@@ -148,6 +153,8 @@ import bridge_metallurgy
 import bridge_harmonic
 import bridge_vibroacoustic_harm
 import bridge_adapt
+import bridge_section_model
+import bridge_section_view
 
 
 # ==========================================
@@ -157,6 +164,15 @@ def _face_nodes(eid, faceid):
     """Nodes of face faceid of element eid, as Mecway knows them
     (mw.face_nodes; FaceId numbers are those of <face> in the .liml)."""
     return list(mw.face_nodes(FaceId(eid, faceid)))
+
+
+def _SHAPE_LEFT():
+    """Status text: the temporary shape could not be removed."""
+    return tr(u"De tijdelijke doorsnede kon niet worden verwijderd (component "
+              u"{0}). Verwijder die component in Mecway en probeer opnieuw.",
+              u"The temporary section could not be removed (component {0}). "
+              u"Delete that component in Mecway and try again.").format(
+                  bridge_section_model.PREFIX)
 
 
 # ==========================================
@@ -200,6 +216,11 @@ def _run(settings):
     through _notify (status box of the main window). Returns True if the
     results are in Mecway.
     """
+    # Before anything else: the shells would enter the check solve, the
+    # saved model and so the Code-Aster mesh.
+    if not bridge_section_model.remove_shape(mw):
+        _notify(_SHAPE_LEFT())
+        return False
     # Unique run ID (date/time) for all files of this simulation
     # (see the header of this file). First, so that the status box also
     # shows the name of this run on an error below.
@@ -1524,6 +1545,8 @@ def _results_action():
         return True, u""
     if choice["action"] == "mwpost":
         return _open_in_mwpost(choice["path"])
+    if not bridge_section_model.remove_shape(mw):
+        return False, _SHAPE_LEFT()
     save_error = _save_model()
     if save_error:
         return False, save_error
@@ -1591,14 +1614,141 @@ def _results_action():
     return True, u"\n".join(notes)
 
 
+def _section_view():
+    """
+    (view, model_data, None) of the saved model, or (None, None, text for
+    the status box). model_data is read here, before write_mesh renames its
+    elsets (bridge_section_view).
+    """
+    model_data = extract_aster_data_from_liml(mw.file_name())
+    if model_data is None:
+        return None, None, tr(
+            u"Het model kon niet worden gelezen (zie het logbestand).",
+            u"The model could not be read (see the log file).")
+    bodies = model_data["aster_custom"].get("section_shapes", [])
+    shapes = bridge_section_view.current_shapes(
+        bridge_section_view.parse_shapes(bodies), model_data)
+    view = bridge_section_view.build_view(model_data, shapes) if shapes \
+        else None
+    if view is None:
+        return None, None, tr(
+            u"Geen balk om te tekenen. De vorm komt uit MecwaySectionProps "
+            u"(General section maken, met 'Extra Code-Aster-eigenschappen "
+            u"en de vorm opslaan'). Meer in het logbestand.",
+            u"No beam to draw. The shape comes from MecwaySectionProps "
+            u"(Create general section, with 'Store extra Code-Aster "
+            u"properties and the shape'). More in the log file.")
+    return view, model_data, None
+
+
+def _section_show_action():
+    """Button Show/Hide section: the shape as temporary elements in the
+    model, to see it before a calculation. Returns (ok, status text)."""
+    if bridge_section_model.shown(mw):
+        if not bridge_section_model.remove_shape(mw):
+            return False, _SHAPE_LEFT()
+        return True, tr(u"Doorsnede verborgen.", u"Section hidden.")
+    # Orientation and outline are read from the file: it has to be current.
+    save_error = _save_model()
+    if save_error:
+        return False, save_error
+    view, _, text = _section_view()
+    if view is None:
+        return False, text
+    bridge_section_model.show_shape(mw, view, Vector)
+    return True, tr(
+        u"Doorsnede getoond op {0} balken, tijdelijk: hij verdwijnt bij "
+        u"Verbergen, Sluiten, Starten en Resultaten...",
+        u"Section shown on {0} beams, temporarily: it goes with Hide, "
+        u"Close, Start and Results...").format(len(view["parts"]))
+
+
+def _section_into_results():
+    """The shells in the <solution> of the saved model, with their values,
+    and the model opened again (bridge_results_liml.add_section_view).
+    Returns (ok, status text)."""
+    liml = mw.file_name()
+    configuration, warning = pick_configuration(liml)
+    if not has_results(liml, configuration):
+        return False, tr(
+            u"Er zijn nog geen resultaten: bereken het model eerst.",
+            u"There are no results yet: calculate the model first.")
+    view, model_data, text = _section_view()
+    if view is None:
+        return False, text
+    got = add_section_view(liml, view, model_data, configuration)
+    if not got["ok"]:
+        return False, got["text"]
+    try:
+        mw.open(liml)
+    except Exception as e:
+        log(tr(u"ERROR: Mecway opent het model met de doorsnede niet: {0}",
+               u"ERROR: Mecway does not open the model with the section: "
+               u"{0}").format(e))
+        restored = restore_bak(liml)
+        if restored:
+            mw.open(liml)
+        return False, (tr(
+            u"Mecway opent het model met de doorsnede niet; de vorige versie "
+            u"is teruggezet.",
+            u"Mecway does not open the model with the section; the previous "
+            u"version was put back.") if restored else tr(
+            u"Mecway opent het model met de doorsnede niet; de vorige versie "
+            u"staat in {0}.bak.",
+            u"Mecway does not open the model with the section; the previous "
+            u"version is in {0}.bak.").format(os.path.basename(liml)))
+    if configuration:
+        try:
+            mw.set_active_configuration(configuration)
+        except Exception as e:
+            log(tr("WARNING: Configuratie '{0}' niet actief gemaakt: {1}",
+                   "WARNING: Configuration '{0}' not made active: "
+                   "{1}").format(configuration, e))
+    return True, u"\n".join(n for n in (got["text"], warning) if n)
+
+
+def _section_results_action():
+    """Button Section in results: for a solve in Mecway itself and after
+    loading results. Returns (ok, status text)."""
+    if not bridge_section_model.remove_shape(mw):
+        return False, _SHAPE_LEFT()
+    save_error = _save_model()
+    if save_error:
+        return False, save_error
+    return _section_into_results()
+
+
+def _section_after_run():
+    """After a run with the liml route, once also with adaptive refinement:
+    only when the model has an outline. A failure here leaves the results
+    of the run as they are."""
+    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
+        return
+    try:
+        if not bridge_section_view.has_shape_lines(mw.file_name()):
+            return
+        ok, text = _section_into_results()
+    except Exception as e:
+        ok, text = False, u"{0}".format(e)
+    log(tr(u"WARNING: Doorsnede in resultaten: {0}",
+           u"WARNING: Section in results: {0}").format(text) if not ok else
+        u"INFO: Section in results: {0} The .bak now holds these results "
+        u"without the section.".format(text))
+    if text:
+        _notify(text)
+
+
 def main():
     """
     The main window keeps coming back until the user clicks Close:
-    Start does a run, Results... loads or removes results; the
-    convergence screen and the documentation work in the window itself
-    (bridge_gui). Without WinForms (mw.input fallback): one run.
+    Start does a run, Results... loads or removes results, Show section
+    and Section in results act on the section shape; the convergence screen
+    and the documentation work in the window itself (bridge_gui). Without
+    WinForms (mw.input fallback): one run.
     """
     status = u""
+    # Left by a crash, or saved into the model
+    bridge_section_model.remove_shape(mw)
     while True:
         # Outside a run the bridge logs to bridge_log.txt (not to the log
         # of the previous run). The open model determines the work folder
@@ -1616,6 +1766,17 @@ def main():
                 status = text if ok else tr(u"Resultaten: {0}",
                                             u"Results: {0}").format(text)
             continue
+        if action in ("section_show", "section_results"):
+            try:
+                ok, text = (_section_show_action()
+                            if action == "section_show" else
+                            _section_results_action())
+            except Exception as e:
+                ok, text = False, u"{0}".format(e)
+                log("ERROR: Section view: {0}".format(e))
+            status = text if ok else tr(u"Doorsnede: {0}",
+                                        u"Section: {0}").format(text)
+            continue
         if action != "run":
             return
         _NOTES["list"] = []
@@ -1628,6 +1789,8 @@ def main():
             # same way, run_AsterSolver; a stopped run ends the loop).
             while ok and _adapt_step():
                 ok = _run(dict(settings, changes=[], save_errors=[]))
+            if ok:
+                _section_after_run()
         except Exception as e:
             try:
                 log("CRITICAL ERROR: {0}".format(str(e)))
@@ -1666,4 +1829,8 @@ else:
                       "MecwayAsterBridge stopped by an error:\n{0}").format(
                           str(e)))
     finally:
+        try:
+            bridge_section_model.remove_shape(mw)
+        except Exception as e:
+            log("WARNING: Section view not removed: {0}".format(e))
         release_instance(_instance)
