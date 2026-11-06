@@ -41,6 +41,9 @@ RESULTS = os.path.join(VERIF, "resultaten", "resultaten.json")
 # adapt_loop (tests_adaptief): build() runs the refinement loop with Mecway and
 # Code-Aster and saves modellen/AD-02-L<k>.liml with the installed Mecway.
 NOT_COMPARED = ("AD-02",)
+# A check of AD-02 reads the results of AD-01 from the same work folder; run
+# in the order of load_cases, so that AD-01 goes first.
+NEEDED_BY_NOT_COMPARED = ("AD-01",)
 
 # One case in its own process, as _run_one.py up to the Code-Aster run
 _GENERATE = r'''
@@ -177,7 +180,7 @@ def main():
         seconds = dict((k, v.get("seconds") or 0.0) for k, v in rows.items())
     smoke = fastest_per_group(cases, seconds)
     ids = sorted(set(changed) | set(smoke) | set(args.also) |
-                 set(NOT_COMPARED))
+                 set(NOT_COMPARED) | set(NEEDED_BY_NOT_COMPARED))
     print("cases %d, compared %d, identical .comm %d, different %d" % (
         len(cases), len(texts), len(texts) - len(changed), len(changed)))
     print("different: " + (" ".join(changed) or "-"))
