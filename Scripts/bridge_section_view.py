@@ -34,6 +34,9 @@
 # Loops are closed implicitly, the interior is even-odd. P lines concatenate
 # in order. A new N= for a material replaces what was read before, so the
 # newest wins. Material name: split on the last colon.
+#   ** SECTIE-RICHTING <material>: V=vx vy vz, U=ux uy uz
+# Global unit vectors the section was made for, a check only, no part of the
+# shape: bridge_custom.report_directions, here on the drawn beams.
 #
 # GEOMETRY:
 #   One closed ring per element end, own nodes per element, one quad4 per
@@ -92,6 +95,7 @@ import math
 from collections import OrderedDict
 
 from bridge_utils import log, tr
+from bridge_custom import report_directions
 from bridge_from_liml import _SECTION_MATCH_TOL
 from bridge_mesh import _mecway_v_axis
 from bridge_offset import _BEAMS as _OFFSET_BEAMS
@@ -558,7 +562,7 @@ def _free_name(name, taken):
     return out
 
 
-def build_view(model_data, shapes, max_quads=MAX_QUADS):
+def build_view(model_data, shapes, max_quads=MAX_QUADS, warn_directions=True):
     """
     The swept beams, or None when above max_quads (ERROR in the log) or
     when there is nothing to draw (INFO in the log).
@@ -566,7 +570,9 @@ def build_view(model_data, shapes, max_quads=MAX_QUADS):
     shapes: from current_shapes. Plain data, no XML: usable for temporary
     elements through the API as well as for solution_lines. Shell node ids
     are contiguous from max(model node id) + 1, element ids from
-    max(model element id) + 1. Returns dict:
+    max(model element id) + 1. warn_directions False: no check of the
+    SECTIE-RICHTING lines, for the view at the end of a run, whose write_mesh
+    made it already. Returns dict:
       nids     : [nid] shell nodes, ascending
       xyz      : [(x, y, z)] position per shell node
       origin   : [(beam index, end 0/1, v, w)] section point per shell node
@@ -578,8 +584,14 @@ def build_view(model_data, shapes, max_quads=MAX_QUADS):
       beams    : as find_beams
       skipped  : as find_beams
       quads, tris : number of elements
+      direction_warnings : texts of report_directions, on the drawn beams
     """
     beams, skipped = find_beams(model_data, shapes)
+    notes = []
+    if warn_directions:
+        notes = report_directions(
+            model_data.get("aster_custom", {}).get("section_directions"),
+            [(b["material"], b["frame"][0], b["frame"][1]) for b in beams])
     if skipped["no_shape"] or skipped["invalid"]:
         log(tr(u"WARNING: Doorsnede: {0} balken zonder bruikbare vorm en {1} "
                u"ongeldige balken worden niet getekend.",
@@ -606,6 +618,7 @@ def build_view(model_data, shapes, max_quads=MAX_QUADS):
             "elset": _free_name(ELSET, set(
                 e[3] for e in model_data.get("mesh_elements", []))),
             "beams": beams, "skipped": skipped, "quads": 0, "tris": 0,
+            "direction_warnings": notes,
             "thin": dict((m, thin_size(shapes[m]["loops"], shapes[m]["area"]))
                          for m in set(b["material"] for b in beams))}
 

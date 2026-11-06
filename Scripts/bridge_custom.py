@@ -107,6 +107,16 @@
 #                            "section_shapes" and worked out in
 #                            bridge_section_view.parse_shapes. A run ignores
 #                            these lines.
+#   ** SECTIE-RICHTING material: V=vx vy vz, U=ux uy uz
+#                            directions a general section was made for, global
+#                            unit vectors in %.6g, written by
+#                            MecwaySectionProps: V = principal axis 1, the V
+#                            axis a beam must have, U = the beam direction of
+#                            the stored data. Collected in file order in
+#                            "section_directions"; see report_directions. Only
+#                            a check: mesh, .comm and results do not use them.
+#                            The newest good line of a material counts. Must
+#                            not start with '** ASTER-SECTIE '.
 #
 # Example (beam node on a volume face, LIAISON_ELEM OPTION='3D_POU'):
 #   #ASTER verb = AFFE_CHAR_MECA(MODELE=model,
@@ -119,7 +129,9 @@
 #
 # Compatible with IronPython 2.7.9.
 
+import math
 import re
+from collections import OrderedDict
 
 from bridge_utils import log, tr, parse_yes_no
 
@@ -137,6 +149,8 @@ _NEAR_RE = re.compile(r"^\s*(?:#|\*\*|\$)ASTER")
 # Outline of a general section (bridge_section_view.py). Must not look like
 # an #ASTER line: _LINE_RE and _NEAR_RE only match right after the prefix.
 _SHAPE_RE = re.compile(r"^\s*\*\*\s*SECTIE-VORM(?:\s+(.*))?$")
+# Directions of a general section (report_directions); the same remark.
+_DIRECTION_RE = re.compile(r"^\s*\*\*\s*SECTIE-RICHTING(?:\s+(.*))?$")
 _PLACEHOLDER_RE = re.compile(r"<<([^<>]+)>>")
 _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-BEZWIJKEN", "-FAILURE", "-SPECTRE", "-SPECTRUM",
@@ -150,6 +164,10 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
                   "-SIGNAAL": "signal", "-SIGNAL": "signal"}
+# Not #ASTER lines: they do not count in the summary of parse()
+_SECTION_LINE_KEYS = ("section_shapes", "section_directions")
+# Largest angle between a beam and a SECTIE-RICHTING line that passes, degrees
+DIRECTION_TOL = 1.0
 
 
 def empty():
@@ -160,7 +178,7 @@ def empty():
             "phases": [], "hyst": [], "materials": [],
             "fatigue": [], "metallurgy": [],
             "xfem": [], "constant": [], "sections": [], "boundaries": [],
-            "section_shapes": []}
+            "section_shapes": [], "section_directions": []}
 
 
 def parse(texts):
@@ -170,7 +188,8 @@ def parse(texts):
     texts : list of strings (contents of the CUSTOM_TAGS)
     Returns dict with "code"/"post" (lines), "excit" (names),
     "contact"/"zone" (pieces 'K=V'), "options" ({key: text}),
-    "section_shapes" (bodies of the ** SECTIE-VORM lines, in order).
+    "section_shapes" (bodies of the ** SECTIE-VORM lines, in order),
+    "section_directions" (the same of the ** SECTIE-RICHTING lines).
     """
     out = empty()
     for text in texts:
@@ -178,6 +197,11 @@ def parse(texts):
             shape = _SHAPE_RE.match(raw.rstrip("\r"))
             if shape:
                 out["section_shapes"].append((shape.group(1) or "").strip())
+                continue
+            direction = _DIRECTION_RE.match(raw.rstrip("\r"))
+            if direction:
+                out["section_directions"].append(
+                    (direction.group(1) or "").strip())
                 continue
             m = _LINE_RE.match(raw.rstrip("\r"))
             if not m:
@@ -271,8 +295,7 @@ def parse(texts):
                            "value'.").format(body.strip()))
                     continue
                 out["options"][key.strip()] = value.strip()
-    # The outline lines are no #ASTER lines: they do not count here
-    n = sum(len(v) for k, v in out.items() if k != "section_shapes")
+    n = sum(len(v) for k, v in out.items() if k not in _SECTION_LINE_KEYS)
     if out["section_shapes"]:
         log("INFO: {0} SECTIE-VORM lines (outline of a general section; a "
             "run does not use them).".format(len(out["section_shapes"])))
@@ -291,6 +314,154 @@ def parse(texts):
                 len(out["hyst"]),
                 len(out["sections"])))
     return out
+
+
+def _unit_vector(values):
+    """Unit vector of three numbers (text or float), or None: anything else,
+    nan, inf and a length of 0 are no direction."""
+    if len(values) != 3:
+        return None
+    try:
+        v = [float(x) for x in values]
+    except (TypeError, ValueError):
+        return None
+    n = math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+    if math.isnan(n) or math.isinf(n) or n == 0.0:
+        return None
+    return (v[0] / n, v[1] / n, v[2] / n)
+
+
+def _read_direction(rest):
+    """'V=0 1 0, U=1 0 0' -> {"V": unit, "U": unit}, or None when it is
+    anything else."""
+    out = {}
+    for part in rest.split(","):
+        key, eq, raw = part.partition("=")
+        key = key.strip()
+        vector = _unit_vector(raw.split())
+        if not eq or key not in ("V", "U") or key in out or vector is None:
+            return None
+        out[key] = vector
+    return out if len(out) == 2 else None
+
+
+def parse_directions(bodies):
+    """
+    {material: {"V": unit vector, "U": unit vector}} from the bodies of the
+    SECTIE-RICHTING lines, in file order, split on the last colon. A bad line
+    is skipped with a log line, so that an earlier good line of its material
+    stays; of the good lines the newest counts. Never raises.
+    """
+    out = OrderedDict()
+    for body in bodies:
+        name, sep, rest = body.rpartition(":")
+        name = name.strip()
+        found = _read_direction(rest) if sep and name else None
+        if found is None:
+            log(tr(u"WARNING: SECTIE-RICHTING '{0}' wordt overgeslagen: "
+                   u"verwacht '<materiaal>: V=vx vy vz, U=ux uy uz'.",
+                   u"WARNING: SECTIE-RICHTING '{0}' is skipped: expected "
+                   u"'<material>: V=vx vy vz, U=ux uy uz'.").format(body))
+            continue
+        out[name] = found
+    return out
+
+
+def _angle(a, b, either_sign=False):
+    """Angle between unit vectors in degrees; atan2 stays exact near 0 and
+    180. either_sign: between the lines, so at most 90."""
+    cross = (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+             a[0] * b[1] - a[1] * b[0])
+    dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    size = math.sqrt(cross[0] ** 2 + cross[1] ** 2 + cross[2] ** 2)
+    return math.degrees(math.atan2(size, abs(dot) if either_sign else dot))
+
+
+def direction_warnings(beams, directions):
+    """
+    The check of the SECTIE-RICHTING lines: pure, Python 2.7 and 3, no mw and
+    no logging. beams: [(material, U, V)], U and V of any length (a beam
+    without a direction is passed over). directions: from parse_directions.
+    Returns the WARNING texts, per material in the order of directions:
+    turned (V), mirrored (U against U), not parallel (U). Beams of a material
+    without a line do not count. The three are independent: a reversed beam
+    with the default V (Z x U) also has its V reversed, so it gives both
+    turned and mirrored.
+    """
+    found = {}
+    for material, u, v in beams:
+        wanted = directions.get(material)
+        u = _unit_vector(u)
+        v = _unit_vector(v)
+        if wanted is None or u is None or v is None:
+            continue
+        state = found.setdefault(material, {
+            "turned": [], "mirrored": 0, "skew": []})
+        angle = _angle(v, wanted["V"])
+        if angle > DIRECTION_TOL:
+            state["turned"].append(angle)
+        if sum(u[i] * wanted["U"][i] for i in range(3)) < 0.0:
+            state["mirrored"] += 1
+        angle = _angle(u, wanted["U"], True)
+        if angle > DIRECTION_TOL:
+            state["skew"].append(angle)
+    out = []
+    for material in directions:
+        state = found.get(material)
+        if state is None:
+            continue
+        if state["turned"]:
+            out.append(tr(
+                u"WARNING: Materiaal '{0}': bij {1} balk(en) staat de "
+                u"doorsnede gedraaid: hun V-as wijkt tot {2} graden af van de "
+                u"as waarvoor de doorsnede is gemaakt. De resultaten van deze "
+                u"balken kloppen niet. Zet de V-as goed (Element orientation "
+                u"of V vector), of wijs de doorsnede opnieuw toe met "
+                u"MecwaySectionProps.",
+                u"WARNING: Material '{0}': on {1} beam(s) the section is "
+                u"turned: their V axis is up to {2} degrees from the axis the "
+                u"section was made for. The results of these beams are wrong. "
+                u"Correct the V axis (Element orientation or V vector), or "
+                u"reassign the section with MecwaySectionProps.").format(
+                    material, len(state["turned"]),
+                    "%.1f" % max(state["turned"])))
+        if state["mirrored"]:
+            out.append(tr(
+                u"WARNING: Materiaal '{0}': {1} balk(en) lopen tegen de "
+                u"richting in waarvoor de doorsnede is gemaakt: de balk ziet "
+                u"de doorsnede gespiegeld. Keer deze balken om, of wijs de "
+                u"doorsnede opnieuw toe met MecwaySectionProps.",
+                u"WARNING: Material '{0}': {1} beam(s) run against the "
+                u"direction the section was made for: the beam sees the "
+                u"section mirrored. Reverse these beams, or reassign the "
+                u"section with MecwaySectionProps.").format(
+                    material, state["mirrored"]))
+        if state["skew"]:
+            out.append(tr(
+                u"WARNING: Materiaal '{0}': {1} balk(en) lopen niet evenwijdig "
+                u"aan de richting waarvoor de doorsnede is gemaakt, tot {2} "
+                u"graden. Controleer deze balken, of geef ze een eigen "
+                u"materiaal en wijs de doorsnede daarop toe met "
+                u"MecwaySectionProps.",
+                u"WARNING: Material '{0}': {1} beam(s) are not parallel to "
+                u"the direction the section was made for, up to {2} degrees. "
+                u"Check these beams, or give them their own material and "
+                u"assign the section to it with MecwaySectionProps.").format(
+                    material, len(state["skew"]), "%.1f" % max(state["skew"])))
+    return out
+
+
+def report_directions(bodies, beams):
+    """The check on the lines of a model (out["section_directions"]): every
+    text of direction_warnings in the log. Returns those texts. Once per run:
+    bridge_mesh.write_mesh on a run, bridge_section_view.build_view for the
+    section view outside a run."""
+    if not bodies:
+        return []
+    texts = direction_warnings(beams, parse_directions(bodies))
+    for text in texts:
+        log(text)
+    return texts
 
 
 _SPECTRUM_RE = re.compile(r"^\s*([XYZxyz](?:\s*,\s*[XYZxyz])*)\s*=\s*"

@@ -409,6 +409,11 @@ def _run(settings):
             _notify(_prep_failed(tr("Schrijven van het mesh mislukt.",
                                     "Writing the mesh failed."), mark))
             return False
+        # In the status box as well: it says that the results are wrong. Once
+        # in an adaptive loop; the log of every run has its own numbers.
+        if not _ADAPT["history"]:
+            for text in model_data.get("section_direction_warnings", []):
+                _notify(text)
 
         resu_name = run_name(".resu")
         _LAST["analysis"] = CONFIG_BRIDGE["active_analysis"]
@@ -1614,11 +1619,11 @@ def _results_action():
     return True, u"\n".join(notes)
 
 
-def _section_view():
+def _section_view(warn_directions=True):
     """
     (view, model_data, None) of the saved model, or (None, None, text for
     the status box). model_data is read here, before write_mesh renames its
-    elsets (bridge_section_view).
+    elsets (bridge_section_view). warn_directions: as build_view.
     """
     model_data = extract_aster_data_from_liml(mw.file_name())
     if model_data is None:
@@ -1628,7 +1633,8 @@ def _section_view():
     bodies = model_data["aster_custom"].get("section_shapes", [])
     shapes = bridge_section_view.current_shapes(
         bridge_section_view.parse_shapes(bodies), model_data)
-    view = bridge_section_view.build_view(model_data, shapes) if shapes \
+    view = bridge_section_view.build_view(
+        model_data, shapes, warn_directions=warn_directions) if shapes \
         else None
     if view is None:
         return None, None, tr(
@@ -1656,24 +1662,25 @@ def _section_show_action():
     if view is None:
         return False, text
     bridge_section_model.show_shape(mw, view, Vector)
-    return True, tr(
+    return True, u"\n".join([tr(
         u"Doorsnede getoond op {0} balken, tijdelijk: hij verdwijnt bij "
         u"Verbergen, Sluiten, Starten en Resultaten...",
         u"Section shown on {0} beams, temporarily: it goes with Hide, "
-        u"Close, Start and Results...").format(len(view["parts"]))
+        u"Close, Start and Results...").format(len(view["parts"]))] +
+        view["direction_warnings"])
 
 
-def _section_into_results():
+def _section_into_results(warn_directions=True):
     """The shells in the <solution> of the saved model, with their values,
     and the model opened again (bridge_results_liml.add_section_view).
-    Returns (ok, status text)."""
+    warn_directions: as build_view. Returns (ok, status text)."""
     liml = mw.file_name()
     configuration, warning = pick_configuration(liml)
     if not has_results(liml, configuration):
         return False, tr(
             u"Er zijn nog geen resultaten: bereken het model eerst.",
             u"There are no results yet: calculate the model first.")
-    view, model_data, text = _section_view()
+    view, model_data, text = _section_view(warn_directions)
     if view is None:
         return False, text
     got = add_section_view(liml, view, model_data, configuration)
@@ -1704,7 +1711,8 @@ def _section_into_results():
             log(tr("WARNING: Configuratie '{0}' niet actief gemaakt: {1}",
                    "WARNING: Configuration '{0}' not made active: "
                    "{1}").format(configuration, e))
-    return True, u"\n".join(n for n in (got["text"], warning) if n)
+    return True, u"\n".join(n for n in [got["text"], warning] +
+                            view["direction_warnings"] if n)
 
 
 def _section_results_action():
@@ -1721,13 +1729,14 @@ def _section_results_action():
 def _section_after_run():
     """After a run with the liml route, once also with adaptive refinement:
     only when the model has an outline. A failure here leaves the results
-    of the run as they are."""
+    of the run as they are. write_mesh of this run already checked the
+    SECTIE-RICHTING lines, on all beams."""
     if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
         return
     try:
         if not bridge_section_view.has_shape_lines(mw.file_name()):
             return
-        ok, text = _section_into_results()
+        ok, text = _section_into_results(warn_directions=False)
     except Exception as e:
         ok, text = False, u"{0}".format(e)
     log(tr(u"WARNING: Doorsnede in resultaten: {0}",

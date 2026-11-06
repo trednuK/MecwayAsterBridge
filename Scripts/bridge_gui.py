@@ -2443,7 +2443,7 @@ def _open_summary(item, owner=None):
 # STATUS WINDOW WHILE CODE-ASTER RUNS (setting wait_for_aster = "auto")
 # ==========================================
 _STATUS_POLL_MS = 500       # interval of job.poll() [ms]
-_STATUS_REFOCUS_TICKS = 20  # take the focus back during the first 10 s
+_STATUS_REFOCUS_TICKS = 20  # on top with the focus during the first 10 s
 
 
 def _mecway_window():
@@ -2483,7 +2483,11 @@ def run_status_dialog(job, owner=None):
     (script not on an STA thread, as in _show_winforms_dialog) Mecway's main
     window is disabled with EnableWindow and enabled again afterwards. On
     which thread Mecway runs scripts is NOT verified. The window is TopMost
-    so that the Code-Aster console does not cover it.
+    during the first _STATUS_REFOCUS_TICKS only, so that the Code-Aster
+    console that opens then does not cover it; after that it is a normal
+    window, so that a window the user clicks (the convergence window) comes
+    in front. It has a taskbar button, so that the Stop button stays
+    reachable behind other windows.
 
     owner : IntPtr of the owner window, or None = Mecway's main window.
     Returns when the job has ended. ImportError without Windows Forms,
@@ -2533,12 +2537,12 @@ def run_status_dialog(job, owner=None):
             form.FormBorderStyle = FormBorderStyle.FixedDialog
             form.MaximizeBox = False
             form.MinimizeBox = False
-            form.ShowInTaskbar = False
-            # Always on top during the run: the Code-Aster window (a new
-            # console, started without activation, bridge_run_aster.
-            # _no_activate) would otherwise cover it, and the Stop button
-            # with it (seen in Mecway 34). The console stays readable next
-            # to it and reachable in the taskbar.
+            # Behind other windows the taskbar is the way back to Stop.
+            form.ShowInTaskbar = True
+            # On top while the Code-Aster window opens (a new console, started
+            # without activation, bridge_run_aster._no_activate): it would
+            # otherwise cover this window and the Stop button (seen in Mecway
+            # 34). on_tick makes it a normal window after that.
             form.TopMost = True
             header = look.header(form, tr("Code-Aster-run", "Code-Aster run"),
                                  bridge_utils.run_name(""))
@@ -2620,8 +2624,10 @@ def run_status_dialog(job, owner=None):
                 if state["closing"] or state["asking"]:
                     return
                 state["ticks"] += 1
-                if (state["ticks"] <= _STATUS_REFOCUS_TICKS and
-                        not form.ContainsFocus):
+                if state["ticks"] > _STATUS_REFOCUS_TICKS:
+                    if form.TopMost:
+                        form.TopMost = False
+                elif not form.ContainsFocus:
                     # Windows Terminal (default console host on Windows 11)
                     # takes the focus when the Code-Aster console opens,
                     # despite SW_SHOWNOACTIVATE (seen): take it back during

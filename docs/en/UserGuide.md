@@ -618,6 +618,18 @@ What you see in the view:
 - A variable without a value on the shells shows them black. Also Mecway's rectangle can be
   black where the beam itself has no value, as with `longitudinalstress`.
 
+**Direction of the section.** Next to the outline, MecwaySectionProps puts a line
+`** SECTIE-RICHTING <material>: V=vx vy vz, U=ux uy uz` in the model: the global directions the
+section was made for. V is the V axis a beam must have (principal axis 1), U the beam direction
+the stored data are written for. The bridge compares every beam of that material with it
+(`POU_*`, line2 and line3, a line3 along the straight line between its ends), using the V axis
+that also goes into the calculation, so with *Element orientation* and the V vector. This
+happens on a run for all beams, and with "Show section" and "Section in results" for the drawn
+beams. The messages are in the log file and in the status box. It is only a check: mesh and
+results do not change. A model without this line is not checked and gives no message. A
+reversed beam with the default V also has its V reversed, so it gives two messages. If you
+change the section by hand later, the line stays and the message can be wrong.
+
 Limits:
 
 - Beams without an outline are not drawn; the log file gives the number.
@@ -634,6 +646,10 @@ Limits:
 | There are no results yet: calculate the model first. | the `.liml` has no solution | calculate first |
 | WARNING: SECTIE-VORM '...': A = ... in the line, but ... in the material | section changed after MecwaySectionProps | create the General section again |
 | WARNING: SECTIE-VORM '...': no material with a general section of this name (renamed?) | material renamed or deleted | change the name in the lines, or create the General section again |
+| WARNING: Material '...': on ... beam(s) the section is turned | the V axis of these beams is more than 1 degree from the V in `SECTIE-RICHTING`; **the results are wrong** | correct the V axis (*Element orientation* or V vector), or reassign the section with MecwaySectionProps |
+| WARNING: Material '...': ... beam(s) run against the direction ... mirrored | the beam runs against the U in `SECTIE-RICHTING` | reverse these beams, or reassign the section with MecwaySectionProps |
+| WARNING: Material '...': ... beam(s) are not parallel to the direction ... | the beam is more than 1 degree skew to the U in `SECTIE-RICHTING` | check these beams, or give them their own material and assign the section to it with MecwaySectionProps |
+| WARNING: SECTIE-RICHTING '...' is skipped | the line does not have three valid numbers per vector | create the General section again; an earlier good line of that material stays valid |
 | ERROR: Section view: ... quads over ... beams, the limit is ... | too many beam elements times outline points | fewer beam elements, or a simpler section |
 
 ## 5. Files in the working directory

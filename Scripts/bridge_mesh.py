@@ -38,6 +38,7 @@ from collections import OrderedDict
 from bridge_utils import (log, tr, error_estimator_requested,
                           get_active_analysis)
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, _scale, is_position
+import bridge_custom
 import bridge_warping
 import bridge_plane
 import bridge_homard
@@ -1563,6 +1564,15 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             "their own orientation.".format(
                 len(by_dir), len(beam_elsets),
                 len([e for e in orient if e in conn])))
+    # Do the beams stand as MecwaySectionProps made their section for? A
+    # check only. model_data["elsets"] still has the Mecway names here.
+    directions = model_data.get("aster_custom", {}).get("section_directions")
+    if directions:
+        materials = model_data.get("elsets", {})
+        model_data["section_direction_warnings"] = \
+            bridge_custom.report_directions(directions, [
+                (materials.get(es), _vsub(nodes[n2], nodes[n1]), v)
+                for es, n1, n2, v in beam_axes.values()])
 
     # --------------------------------------------------
     # 4b. Discrete elements on nodes (elastic support, nodal masses)

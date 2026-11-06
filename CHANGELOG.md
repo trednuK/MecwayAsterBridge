@@ -1,5 +1,19 @@
 # Changelog
 
+## V2026.8 – unreleased
+
+- **Check of the direction of a general section**: MecwaySectionProps can store the directions
+  a section was made for as a `** SECTIE-RICHTING` line. For every beam of that material a
+  WARNING goes to the log and the status box when its V axis is more than 1 degree off (the
+  section is turned and the results are wrong), when it runs against the direction (the beam
+  sees the section mirrored), or when it is more than 1 degree from parallel. On a run for all
+  beams, with "Show section" and "Section in results" for the drawn beams. Mesh and results do
+  not change; a model without the line gets no check and no message. Checked offline and on a
+  Code-Aster run outside Mecway; the window route not yet in Mecway. User guide §4.3.
+- **Status window of a run**: on top only during the first 10 seconds, while the Code-Aster
+  console opens. After that it is a normal window, so a window you click (the convergence
+  window) comes in front. It now has a taskbar button, as the way back to Stop.
+
 ## V2026.7 – 6 November 2026
 
 Buckling of slender columns with `POU_D_T_GD` beams (issue #10): the imperfection now works

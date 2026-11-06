@@ -618,6 +618,19 @@ Wat je in het beeld ziet:
 - Een variabele zonder waarde op de schalen maakt ze zwart. Ook Mecway's rechthoekje kan
   zwart zijn waar de balk zelf geen waarde heeft, zoals bij `langsspanning`.
 
+**Richting van de doorsnede.** MecwaySectionProps zet naast de omtrek ook een regel
+`** SECTIE-RICHTING <materiaal>: V=vx vy vz, U=ux uy uz` in het model: de globale richtingen
+waarvoor de doorsnede is gemaakt. V is de V-as die een balk moet hebben (hoofdas 1), U de
+balkrichting waarvoor de opgeslagen gegevens gelden. De bridge vergelijkt daarmee elke balk van
+dat materiaal (`POU_*`, line2 en line3, een line3 over de rechte tussen zijn uiteinden), met de
+V-as die ook in de berekening gaat, dus met *Element orientation* en de V-vector erbij. Dat
+gebeurt bij een run op alle balken, en bij *Doorsnede tonen* en *Doorsnede in resultaten* op de
+getekende balken. De meldingen staan in het logbestand en in het statusvak. Het is alleen een
+controle: mesh en resultaten veranderen niet. Een model zonder deze regel wordt niet
+gecontroleerd en geeft geen melding. Een omgekeerde balk met de standaard-V heeft ook een
+omgekeerde V en geeft dus twee meldingen. Wijzig je de doorsnede later met de hand, dan blijft
+de regel staan en kan de melding onterecht zijn.
+
 Beperkingen:
 
 - Balken zonder omtrek worden niet getekend; het logbestand noemt het aantal.
@@ -634,6 +647,10 @@ Beperkingen:
 | Er zijn nog geen resultaten: bereken het model eerst. | de `.liml` heeft geen oplossing | eerst rekenen |
 | WARNING: SECTIE-VORM '...': A = ... in de regel, maar ... in het materiaal | doorsnede gewijzigd na MecwaySectionProps | maak de General section opnieuw |
 | WARNING: SECTIE-VORM '...': geen materiaal met een General section met deze naam (hernoemd?) | materiaal hernoemd of verwijderd | pas de naam in de regels aan, of maak de General section opnieuw |
+| WARNING: Materiaal '...': bij ... balk(en) staat de doorsnede gedraaid | de V-as van deze balken wijkt meer dan 1 graad af van de V in `SECTIE-RICHTING`; **de resultaten kloppen niet** | zet de V-as goed (*Element orientation* of V-vector), of wijs de doorsnede opnieuw toe met MecwaySectionProps |
+| WARNING: Materiaal '...': ... balk(en) lopen tegen de richting in ... gespiegeld | de balk loopt tegen de U in `SECTIE-RICHTING` in | keer deze balken om, of wijs de doorsnede opnieuw toe met MecwaySectionProps |
+| WARNING: Materiaal '...': ... balk(en) lopen niet evenwijdig aan de richting ... | de balk staat meer dan 1 graad scheef op de U in `SECTIE-RICHTING` | controleer deze balken, of geef ze een eigen materiaal en wijs de doorsnede daarop toe met MecwaySectionProps |
+| WARNING: SECTIE-RICHTING '...' wordt overgeslagen | de regel heeft niet drie geldige getallen per vector | maak de General section opnieuw; een eerdere goede regel van dat materiaal blijft gelden |
 | ERROR: Doorsnede: ... quads over ... balken, de grens is ... | te veel balkelementen maal omtrekpunten | minder balkelementen, of een eenvoudiger doorsnede |
 
 ## 5. Bestanden in de werkmap

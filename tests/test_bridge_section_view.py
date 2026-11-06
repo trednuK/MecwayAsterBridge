@@ -6,7 +6,8 @@
 # Offline test (Python 2.7 and 3, also IronPython via TestFiles/Tools/
 # run_ipy.ps1) of the ** SECTIE-VORM lines (bridge_custom) and of
 # bridge_section_view: parser, stale check, frames, sweep as plain data, caps,
-# offset, the text for the model copy in <solution>, and the stress from the
+# offset, the ** SECTIE-RICHTING lines and their check, the text for the
+# model copy in <solution>, and the stress from the
 # section forces and from the kinematics against Mecway's own stressptu on 7
 # beams.
 #
@@ -994,6 +995,312 @@ check("thin: undone with nothing to draw",
 top = [u'  <mat name="A&amp;B">', u'  </mat>'] + copy_lines
 check("thin: the top level of a file is not touched",
       sv.thin_beam_lines(top, one)[:2] == top[:2])
+
+
+# ==========================================
+# SECTIE-RICHTING: the lines
+# ==========================================
+del LOG[:]
+no_dirs = bridge_custom.parse([ASTER_TEXT])
+log_no_dirs = list(LOG)
+del LOG[:]
+DIR_TEXT = u"\n".join([u"** SECTIE-RICHTING Sect: V=0 1 0, U=1 0 0",
+                       u"  **  SECTIE-RICHTING  Other: V=0 0 1, U=1 0 0",
+                       u"# SECTIE-RICHTING X: V=0 1 0, U=1 0 0",
+                       u"$ SECTIE-RICHTING X: V=0 1 0, U=1 0 0",
+                       u"** SECTIE-RICHTINGX Y: V=0 1 0, U=1 0 0"])
+out = bridge_custom.parse([ASTER_TEXT + u"\r\n" + DIR_TEXT])
+check("custom: direction bodies in order, prefix ** only",
+      out["section_directions"] == [u"Sect: V=0 1 0, U=1 0 0",
+                                    u"Other: V=0 0 1, U=1 0 0"])
+check("custom: empty() has the direction key",
+      bridge_custom.empty()["section_directions"] == [])
+check("custom: no ERROR for direction lines",
+      not [m for m in LOG if m.startswith("ERROR")])
+check("custom: #ASTER output and summary unchanged by direction lines",
+      dict(out, section_directions=[]) == no_dirs and
+      [m for m in LOG if m.startswith("INFO: #ASTER lines")] ==
+      [m for m in log_no_dirs if m.startswith("INFO: #ASTER lines")])
+del LOG[:]
+only = bridge_custom.parse([DIR_TEXT])
+check("custom: only direction lines -> no #ASTER summary",
+      not logged("#ASTER lines") and len(only["section_directions"]) == 2)
+
+
+def directions(*bodies):
+    del LOG[:]
+    return bridge_custom.parse_directions(list(bodies))
+
+
+found = directions(u"M: V=0 2 0, U=-3 0 0")
+check("directions: read as unit vectors", LOG == [] and
+      close(found[u"M"]["V"], (0.0, 1.0, 0.0)) and
+      close(found[u"M"]["U"], (-1.0, 0.0, 0.0)))
+found = directions(u"M: V=0 1 0, U=1 0 0", u"N: V=1 0 0, U=0 1 0",
+                   u"M: V=0 0 1, U=1 0 0")
+check("directions: the newest line of a material wins",
+      close(found[u"M"]["V"], (0.0, 0.0, 1.0)) and
+      list(found) == [u"M", u"N"])
+found = directions(u"A: B: V=0 1 0, U=1 0 0", u" C : U=1 0 0 , V=0 1 0 ")
+check("directions: name split on the last colon, stripped, any order",
+      list(found) == [u"A: B", u"C"] and LOG == [])
+check("directions: nothing at all", directions() == {} and LOG == [])
+for label, body in [
+        ("two numbers", u"M: V=0 1, U=1 0 0"),
+        ("four numbers", u"M: V=0 1 0 0, U=1 0 0"),
+        ("text", u"M: V=x 1 0, U=1 0 0"),
+        ("nan", u"M: V=nan 1 0, U=1 0 0"),
+        ("inf", u"M: V=0 1 0, U=inf 0 0"),
+        ("overflow to inf", u"M: V=0 1 1e999, U=1 0 0"),
+        ("length overflows", u"M: V=1e308 1e308 0, U=1 0 0"),
+        ("zero vector", u"M: V=0 0 0, U=1 0 0"),
+        ("U missing", u"M: V=0 1 0"),
+        ("V missing", u"M: U=1 0 0"),
+        ("V twice", u"M: V=0 1 0, V=0 1 0"),
+        ("unknown key", u"M: V=0 1 0, U=1 0 0, Q=1 2 3"),
+        ("no equals sign", u"M: V 0 1 0, U 1 0 0"),
+        ("no colon", u"V=0 1 0, U=1 0 0"),
+        ("no material", u": V=0 1 0, U=1 0 0"),
+        ("empty", u"")]:
+    found = directions(u"M: V=0 0 1, U=0 1 0", body)
+    check("directions: bad line skipped with a log line, the older stays: " +
+          label, len(LOG) == 1 and logged("SECTIE-RICHTING") and
+          logged("is skipped") and list(found) == [u"M"] and
+          close(found[u"M"]["V"], (0.0, 0.0, 1.0)))
+check("directions: only a bad line -> no direction",
+      directions(u"M: V=0 0 0, U=1 0 0") == {} and len(LOG) == 1)
+
+
+# ==========================================
+# SECTIE-RICHTING: the check
+# ==========================================
+def warns(md, *bodies, **kw):
+    """The texts of the view of md with these lines."""
+    md["aster_custom"] = {"section_directions": list(bodies)}
+    view = build(md, RECT, **kw)
+    return view["direction_warnings"]
+
+
+LINE = u"M: V=0 1 0, U=1 0 0"
+ALONG_X = (2.0, 0.0, 0.0)
+check("direction: no line -> no check, no message, not in the log",
+      build(one_beam(ALONG_X), RECT)["direction_warnings"] == [] and
+      not logged("Material") and not logged("SECTIE-RICHTING"))
+check("direction: V and U as the line -> nothing",
+      warns(one_beam(ALONG_X), LINE) == [] and not logged("WARNING"))
+check("direction: line of another material -> nothing",
+      warns(one_beam(ALONG_X), u"Q: V=0 0 1, U=0 0 1") == [] and LOG == [])
+got = warns(one_beam(ALONG_X, {"vec": (0.0, 1.0, 1.0), "angle": 0.0}), LINE)
+check("direction: V 45 degrees off -> one WARNING, in the log",
+      len(got) == 1 and logged(got[0]) and
+      got[0].startswith("WARNING: Material 'M': on 1 beam(s)"))
+check("direction: the text gives the angle, turned, wrong, what to do",
+      "45.0 degrees" in got[0] and "turned" in got[0] and
+      "results of these beams are wrong" in got[0] and
+      "Element orientation" in got[0] and "V vector" in got[0] and
+      "MecwaySectionProps" in got[0])
+got = warns(one_beam(ALONG_X, {"vec": (0.0, 1.0, 0.0),
+                               "angle": math.radians(0.9)}), LINE)
+check("direction: 0.9 degrees passes", got == [])
+got = warns(one_beam(ALONG_X, {"vec": (0.0, 1.0, 0.0),
+                               "angle": math.radians(1.1)}), LINE)
+check("direction: 1.1 degrees warns", len(got) == 1 and "1.1 degrees" in got[0])
+got = warns(one_beam(ALONG_X, {"vec": (0.0, -1.0, 0.0), "angle": 0.0}), LINE)
+check("direction: V reversed is 180 degrees, U stays good",
+      len(got) == 1 and "180.0 degrees" in got[0])
+got = warns(one_beam((-2.0, 0.0, 0.0), {"vec": (0.0, 1.0, 0.0), "angle": 0.0}),
+            LINE)
+check("direction: beam against U, V good -> mirrored only",
+      len(got) == 1 and "sees the section mirrored" in got[0] and
+      "1 beam(s) run against" in got[0])
+got = warns(one_beam((-2.0, 0.0, 0.0)), LINE)
+check("direction: reversed with the default V -> turned and mirrored",
+      len(got) == 2 and "180.0 degrees" in got[0] and "mirrored" in got[1])
+c30, s30 = math.cos(math.radians(30.0)), math.sin(math.radians(30.0))
+line30 = u"M: V=%.6g %.6g 0, U=1 0 0" % (-s30, c30)
+got = warns(one_beam((c30, s30, 0.0)), line30)
+check("direction: skew 30 degrees -> not parallel, largest angle",
+      len(got) == 1 and "not parallel" in got[0] and "30.0 degrees" in got[0])
+got = warns(one_beam((-c30, s30, 0.0), {"vec": (-s30, c30, 0.0), "angle": 0.0}),
+            line30)
+check("direction: 30 degrees off the other way -> mirrored and skew",
+      len(got) >= 2 and "mirrored" in got[-2] and
+      "not parallel" in got[-1] and "30.0 degrees" in got[-1])
+got = warns(one_beam((0.0, 2.0, 0.0), {"vec": (0.0, 0.0, 1.0), "angle": 0.0}),
+            u"M: V=0 0 1, U=1 0 0")
+check("direction: square on U: skew, not mirrored",
+      len(got) == 1 and "90.0 degrees" in got[0])
+md = model({1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0), 3: (2.0, 0.0, 0.0),
+            4: (3.0, 0.0, 0.0), 5: (4.0, 0.0, 0.0)},
+           [(1, "line2", [1, 2], "B"), (2, "line2", [2, 3], "B"),
+            (3, "line2", [3, 4], "B"), (4, "line2", [4, 5], "O")],
+           {2: {"vec": (0.0, 1.0, 0.0), "angle": math.radians(10.0)},
+            3: {"vec": (0.0, 1.0, 0.0), "angle": math.radians(45.0)},
+            4: {"vec": (0.0, 1.0, 0.0), "angle": math.radians(90.0)}},
+           elsets={"B": "M", "O": "Other"},
+           elset_modelisations={"B": "POU_D_E", "O": "POU_D_E"})
+got = warns(md, LINE)
+check("direction: per material the number of beams and the largest angle",
+      len(got) == 1 and "on 2 beam(s)" in got[0] and "45.0 degrees" in got[0])
+got = warns(model({1: (0.0, 0.0, 0.0), 2: (1.0, 0.3, 0.0), 3: (2.0, 0.0, 0.0)},
+                  [(1, "line3", [1, 2, 3], "B")]), LINE)
+check("direction: line3 along its chord, not its midside", got == [])
+got = warns(model({1: (0.0, 0.0, 0.0), 2: (1.0, 0.3, 0.0), 3: (2.0, 0.0, 0.0)},
+                  [(1, "line3", [1, 2, 3], "B")],
+                  {1: {"vec": (0.0, 1.0, 1.0), "angle": 0.0}}), LINE)
+check("direction: line3 with V off warns",
+      len(got) == 1 and "45.0 degrees" in got[0])
+md = model({1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0)},
+           [(1, "line2", [1, 2], "T")], elsets={"T": "M"},
+           elset_modelisations={"T": "BARRE"})
+md["aster_custom"] = {"section_directions": [u"M: V=0 0 1, U=0 0 1"]}
+del LOG[:]
+check("direction: a truss is no beam",
+      sv.build_view(md, RECT) is None and not logged("WARNING: Material"))
+got = warns(one_beam(ALONG_X), u"M: V=0 0 1, U=1 0 0",
+            warn_directions=False)
+check("direction: warn_directions False: no check, nothing in the log",
+      got == [] and not logged("Material"))
+got = bridge_custom.direction_warnings(
+    [(u"M", (0.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+     (u"M", (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))],
+    bridge_custom.parse_directions([LINE]))
+check("direction: pure function, a beam without a direction passed over",
+      got == [])
+del LOG[:]
+got = bridge_custom.direction_warnings(
+    [(u"M", (2.0, 0.0, 0.0), (0.0, 0.0, 3.0))],
+    bridge_custom.parse_directions([LINE]))
+check("direction: pure function: any length, logs nothing",
+      len(got) == 1 and "90.0 degrees" in got[0] and LOG == [])
+got = bridge_custom.direction_warnings(
+    [(u"Sta\xe1l", (1.0, 0.0, 0.0), (0.0, 0.0, 1.0))],
+    bridge_custom.parse_directions([u"Sta\xe1l: V=0 1 0, U=1 0 0"]))
+check("direction: a material name outside ASCII",
+      len(got) == 1 and u"Sta\xe1l" in got[0])
+bridge_utils.CONFIG_BRIDGE["language"] = "nl"
+got = bridge_custom.direction_warnings(
+    [(u"M", (1.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
+     (u"M", (-1.0, 0.0, 0.0), (0.0, 1.0, 0.0))],
+    bridge_custom.parse_directions([LINE]))
+bridge_utils.CONFIG_BRIDGE["language"] = "en"
+check("direction: Dutch texts, same prefix, numbers filled in",
+      len(got) == 3 and all(t.startswith("WARNING: Materiaal 'M'") for t in got)
+      and "90.0 graden" in got[0] and "gespiegeld" in got[1] and
+      "45.0 graden" in got[2] and "{" not in u"".join(got))
+
+# --- through the real reader, on a run and in the view -------------------
+CARD_MODEL = u"""<liml version="35">
+  <analysis type="S30" />
+  <node nid="1" x="0.0" y="0.0" z="0.0" />
+  <node nid="2" x="1.0" y="0.0" z="0.0" />
+  <node nid="3" x="2.0" y="0.0" z="0.0" />
+  <elset name="Beam" colorrgb="DADADA" material="Sect">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+  </elset>
+  <mat name="Sect">
+    <geometric type="UniformGeneralSection" area="0.0008 m\xb2" iyy="2.667e-08 m⁴" izz="1.067e-07 m⁴" torsionconstant="7.3e-08 m⁴" perimeter="0.12 m" pointy="0.02 m" pointz="0.01 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000000000 Pa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="Clamp"><node nid="1" /></nodeselection>
+  <elementselection name="Card"><element eid="2" /></elementselection>
+  <fixed selection="Clamp" />
+  <orientation selection="Card"><ux>0</ux><uy>0</uy><uz>0</uz><vx>0</vx><vy>0</vy><vz>1</vz><angleu>0 \xb0</angleu></orientation>
+  <ccxmodeldefinition>** SECTIE-VORM Sect: N=4, A=0.0008
+** SECTIE-VORM Sect: P=-0.02 -0.01 0.02 -0.01 0.02 0.01 -0.02 0.01%s</ccxmodeldefinition>
+</liml>
+"""
+LINE3_MODEL = (CARD_MODEL.replace(
+    u'<node nid="2" x="1.0" y="0.0" z="0.0" />',
+    u'<node nid="2" x="1.0" y="0.3" z="0.0" />').replace(
+    u'    <elem eid="1" shape="line2" nodes="1 2" />\n'
+    u'    <elem eid="2" shape="line2" nodes="2 3" />\n',
+    u'    <elem eid="1" shape="line3" nodes="1 2 3" />\n').replace(
+    u'  <elementselection name="Card"><element eid="2" /></elementselection>\n',
+    u"").replace(u'  <orientation selection="Card"><ux>0</ux><uy>0</uy><uz>0'
+                 u'</uz><vx>0</vx><vy>0</vy><vz>1</vz><angleu>0 \xb0</angleu>'
+                 u'</orientation>\n', u""))
+
+
+def dir_line(body):
+    return u"\n** SECTIE-RICHTING Sect: " + body
+
+
+def on_run(text, name):
+    """(texts, mesh) of write_mesh for this model."""
+    md = chain_model(text, name + ".liml")
+    path = os.path.join(TMP, name + ".mail")
+    if not bridge_mesh.write_mesh(path, md):
+        return None, None
+    f = io.open(path, encoding="utf-8")
+    try:
+        mesh = f.read()
+    finally:
+        f.close()
+    return md.get("section_direction_warnings"), mesh
+
+
+def in_view(text, name):
+    md = chain_model(text, name + ".liml")
+    shapes = sv.current_shapes(
+        sv.parse_shapes(md["aster_custom"]["section_shapes"]), md)
+    return build(md, shapes)["direction_warnings"]
+
+
+text = CARD_MODEL % dir_line(u"V=0 1 0, U=1 0 0")
+del LOG[:]
+got, mesh = on_run(text, "card")
+check("run: V by an orientation card: that beam warns, the other not",
+      len(got) == 1 and "on 1 beam(s)" in got[0] and
+      "90.0 degrees" in got[0] and
+      len([m for m in LOG if "is turned" in m]) == 1)
+check("view: the same text as on a run", in_view(text, "card_v") == got)
+none, plain_mesh = on_run(CARD_MODEL % u"", "card_none")
+check("run: no line -> no key in model_data", none is None)
+stripped = [ln for ln in mesh.splitlines() if "card" not in ln]
+check("run: the mesh does not change",
+      stripped == [ln for ln in plain_mesh.splitlines()
+                   if "card_none" not in ln])
+del LOG[:]
+got, _ = on_run(CARD_MODEL % (dir_line(u"V=0 1 0, U=1 0 0") +
+                              dir_line(u"V=0 0 1, U=x")), "card_bad")
+check("run: a bad line: one log line, the older line stays",
+      len(got) == 1 and len([m for m in LOG if "is skipped" in m]) == 1)
+del LOG[:]
+got, _ = on_run(CARD_MODEL % dir_line(u"V=0 1 0, U=-1 0 0"), "card_mirror")
+check("run: mirrored, on all beams", len(got) == 2 and
+      "on 1 beam(s)" in got[0] and "2 beam(s) run against" in got[1])
+del LOG[:]
+got, _ = on_run(LINE3_MODEL % dir_line(u"V=0 1 0, U=1 0 0"), "line3")
+check("run: line3 along its chord (split or not), no warning", got == [])
+got, _ = on_run(LINE3_MODEL % dir_line(u"V=0 0 1, U=1 0 0"), "line3_off")
+check("run: line3 with the wrong V warns once per material",
+      len(got) == 1 and "on 1 beam(s)" in got[0])
+check("view: line3, the same text",
+      in_view(LINE3_MODEL % dir_line(u"V=0 0 1, U=1 0 0"), "line3_v") == got)
+# One run: write_mesh checks, the view at its end does not (_section_after_run)
+del LOG[:]
+text = CARD_MODEL % (dir_line(u"V=0 1 0, U=1 0 0") + dir_line(u"bad"))
+on_run(text, "once")
+md = chain_model(text, "once.liml")
+shapes = sv.current_shapes(
+    sv.parse_shapes(md["aster_custom"]["section_shapes"]), md)
+view = sv.build_view(md, shapes, warn_directions=False)
+check("one run: each message once, with the view at its end",
+      view["direction_warnings"] == [] and
+      len([m for m in LOG if "is turned" in m]) == 1 and
+      len([m for m in LOG if "is skipped" in m]) == 1)
+f = io.open(os.path.join(_HERE, "..", "Scripts", "MecwayAsterBridgeMain.py"),
+            encoding="utf-8")
+try:
+    main_text = f.read()
+finally:
+    f.close()
+check("one run: the main script asks that of the view at the end of a run",
+      "_section_into_results(warn_directions=False)" in main_text)
+
+
 shutil.rmtree(TMP, ignore_errors=True)
 
 print("{0} checks".format(check.count))

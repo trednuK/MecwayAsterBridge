@@ -575,8 +575,8 @@ def _no_activate():
     focus (SW_SHOWNOACTIVATE), so that the status window and Mecway keep
     it; the console stays visible and readable (also for errors).
     Windows Terminal as default console host may ignore wShowWindow (NOT
-    verified); the status window is therefore also TopMost during the run
-    (bridge_gui.run_status_dialog). None if not available.
+    verified); the status window is therefore also TopMost during the first
+    seconds of the run (bridge_gui.run_status_dialog). None if not available.
     """
     try:
         info = subprocess.STARTUPINFO()
