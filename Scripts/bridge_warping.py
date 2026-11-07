@@ -374,35 +374,37 @@ def add_warping(elset_name, geom):
 # with BLOCAGE alone, 385.0 with an extra GRX = 0), hence the own group.
 
 
+def has_warping(model_data):
+    """True if the model has POU_D_TG beams."""
+    return WARP_BEAM in (model_data.get("elset_modelisations") or {}).values()
+
+
 def note_reactions(analysis):
     """
-    WARNING for POU_D_TG beams when the analysis sends reactions to Mecway.
-    Measured with Code-Aster 17.4 (28 Oct 2026, cantilever L = 1 m, 10
-    elements, CERCLE R = 10 mm, 100 N at the tip): REAC_NODA of POU_D_TG has
-    spurious nodal values, -3.0 N at the loaded tip and -0.30 N m at every
-    node (support 103.0 N), proportional to the shear flexibility (AY):
-    POU_D_T gives 100.0 exactly, POU_D_TG with AY = AZ = 1e-6 also. The
-    displacements, the section forces (EFGE_ELNO, verification LS-30 with
-    POU_D_TG) and the sum of all reactions (BRIDGE_STATREAC) are right. The
-    cause inside Code-Aster (FORC_NODA of MECA_POU_D_TG) is NOT verified.
+    WARNING for POU_D_TG beams where the analysis sends REAC_NODA of a
+    linear solution to Mecway and the bridge has no other source: the
+    modes of a spectrum analysis. REAC_NODA goes through SIEF_ELGA of
+    te0342.F90, which is wrong outside STAT_NON_LINE (see
+    bridge_to_aster._stress_step): measured on the modes of a C cantilever
+    -87301 at the clamp against +1112 with POU_D_T (7 Nov 2026), while the
+    sum over all nodes of a mode stays right. A linear static run takes its
+    reactions from one step of STAT_NON_LINE instead; nonlinear runs have
+    SIEF_ELGA from te0346 and are right (KNOWN_BUGS 123).
     """
-    fields = (analysis or {}).get("fields") or []
-    if "reactions" not in fields:
+    analysis = analysis or {}
+    if ("reactions" not in (analysis.get("fields") or []) or
+            analysis.get("solver_command") != "COMB_SISM_MODAL"):
         return
-    log(tr("WARNING: Balken POU_D_TG: Code-Aster 17.4 geeft bij dit element "
-           "reactiekrachten per knoop met een fout die met de "
-           "afschuifvervorming groeit (gemeten: 3% bij de inklemming van "
-           "een ronde ligger van 10 elementen, en kleine reactiemomenten in "
-           "vrije knopen). Verplaatsingen, snedekrachten (beam_forces) en de "
-           "som van alle reacties kloppen. Lees reacties van POU_D_TG-"
-           "balken met deze marge (KNOWN_BUGS 123).",
-           "WARNING: POU_D_TG beams: Code-Aster 17.4 gives nodal reaction "
-           "forces for this element with an error that grows with the shear "
-           "deformation (measured: 3% at the clamp of a round beam of 10 "
-           "elements, and small reaction moments at free nodes). "
-           "Displacements, section forces (beam_forces) and the sum of all "
-           "reactions are right. Read reactions of POU_D_TG beams with this "
-           "margin (KNOWN_BUGS 123)."))
+    log(tr("WARNING: Balken POU_D_TG: de reacties per knoop van deze "
+           "spectrumanalyse zijn onbruikbaar, ook in vrije knopen; alleen "
+           "de som over alle knopen klopt. Oorzaak is een fout in "
+           "Code-Aster 17.4. Reken de reacties met elem_beam = POU_D_T "
+           "(KNOWN_BUGS 123).",
+           "WARNING: POU_D_TG beams: the nodal reactions of this spectrum "
+           "analysis are unusable, also at free nodes; only the sum over "
+           "all nodes is right. The cause is a fault in Code-Aster 17.4. "
+           "Compute the reactions with elem_beam = POU_D_T (KNOWN_BUGS "
+           "123)."))
 
 
 def warping_choice():

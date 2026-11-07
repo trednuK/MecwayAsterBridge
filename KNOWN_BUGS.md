@@ -615,17 +615,28 @@ Code-Aster value per node) and logs the largest difference per variable.
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
 
-123\. **Nodal reactions of `POU_D_TG` beams are off** (confirmed, Code-Aster 17.4,
-   `CALC_CHAMP FORCE='REAC_NODA'` on `MECA_POU_D_TG`; WARNING in
-   `bridge_warping.note_reactions`). Cantilever L = 1 m, 10 elements, `CERCLE` R = 10 mm,
-   100 N at the tip: `POU_D_TG` gives 103.01 N at the clamp, −3.01 N at the loaded tip and
-   −0.301 N·m reaction moment at every free node (sum of all reactions 100 N, so
-   `BRIDGE_STATREAC` is right); `POU_D_T` on the same model gives 100.000 exactly, and
-   `POU_D_TG` with `AY` = `AZ` = 1e-6 too (runs 28 Oct 2026). The error grows with the
-   shear flexibility of the element (RectBar 10 × 20 mm, LS-50a: 104.9 N; LS-62 with short
-   offset beams: 140 N). Displacements, section forces (`EFGE_ELNO`, LS-30/NL-32 exact)
-   and buckling factors are right. Cause inside Code-Aster (`FORC_NODA` of
-   `MECA_POU_D_TG`) NOT verified. Workaround: reactions with `elem_beam` = `POU_D_T`.
+123\. **`SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong** (confirmed, Code-Aster
+   17.4.0 and `main`, `te0342.F90`; the same text since at least 2014). Three faults: shear
+   with `alfay*g*a` instead of `g*a/alfay` (lines 148-149), no shift from the centroid to
+   the shear centre as in `te0346.F90` lines 170-173, and no thermal strain. Recomputing
+   `te0342` in Python from `DEPL` gives `SIEF_ELGA` of `MECA_STATIQUE`, and with the first two
+   corrected that of `STAT_NON_LINE`, on 14700 values (35 cases, runs 7 Nov 2026). Without
+   offset: VY = AY²·V exactly, nodal reaction F·[1 + (AY² − 1)·φ/(1 + φ)], φ = 12·E·I·AY/(G·A·l²),
+   so it depends on the mesh. With EY/EZ and twist in the base state also MFY/MFZ. `REAC_NODA`
+   inherits this through `FORC_NODA` (`te0347`), `RIGI_GEOM` the moments through `jspgno`. The
+   sum of the reactions over all nodes stays right, so `BRIDGE_STATREAC` does not show it.
+   Displacements and `EFGE_ELNO` are right. Before the workaround: LS-96 −15670 N against
+   −1000 N and +136260 N at the free tip; BU-45 factor 1.60 against 54.3; MP-20 −21.4 Hz
+   against 42.4 Hz; thermal force in `SIEF_ELGA` 0.
+   Solved in the bridge for static, buckling, modal with prestress, imperfection and dead
+   loads: `bridge_to_aster._stress_step`, one elastic step of `STAT_NON_LINE` (LS-96 ..
+   LS-96g, BU-45 .. BU-46, MP-20). **Open**: the nodal reactions of a spectrum analysis, from
+   the modes (WARNING `bridge_warping.note_reactions`); the sum per mode is right; `POU_D_T`
+   for reactions. The cyclic route uses the same step but has not been run with `POU_D_TG`
+   (no cyclic case with beams). With `#ASTER-XFEM` REAC_NODA stays that of `MECA_STATIQUE`, without a
+   message. With cables or gaps next to `POU_D_TG` the step is not purely elastic (`CABLE`,
+   `DIS_CHOC`), and not converging stops the run; not measured.
+   EDF: not known whether this has been reported (no public issue list).
 
 ## Open questions (Mecway behaviour not checked)
 

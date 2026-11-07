@@ -568,9 +568,12 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
   (Wagner-termen en dwarskrachtcentrum), een T tegen een schaalmodel in Mecway +1,4%.
 - **Grenzen**: welving is per knoop doorgaand, ook waar staven onder een hoek samenkomen
   (zoals Code-Aster); bij een *flexible joint* en een element-offset ligt de balk op een
-  eigen knoop zonder oplegging, dus is de welving daar vrij. Reactiekrachten per knoop
-  van `POU_D_TG` hebben in Code-Aster 17.4 een fout die met de afschuifvervorming groeit
-  (WARNING, KNOWN_BUGS 123); verplaatsingen, snedekrachten en knikfactoren kloppen. De
+  eigen knoop zonder oplegging, dus is de welving daar vrij. `MECA_STATIQUE` geeft bij
+  `POU_D_TG` een foute `SIEF_ELGA` (KNOWN_BUGS 123). Daarom rekent de bridge de
+  spanningstoestand voor knik en voorspanning en de reacties van lineair statisch met één
+  elastische stap `STAT_NON_LINE` (BU-45, MP-20, LS-96). Dat kost één extra factorisatie. De
+  reacties per knoop van een spectrumanalyse blijven onbruikbaar (WARNING): reken die met
+  `POU_D_T`. De
   bimoment (`BX` in `EFGE_ELNO`) gaat niet naar Mecway; het teken in Code-Aster is
   `BX` = +E·I_w·φ″ (positief bij een inklemming onder een positief torsiemoment om de
   balkas, het omgekeerde van Vlasovs B = −E·I_w·φ″; LS-90d, LS-90e). In expliciete
@@ -608,7 +611,7 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
 | WARNING: Balk-elset ... (POU_D_TG): geen welvingsconstante en geen dwarskrachtcentrum bekend | *General section* zonder `#ASTER-SECTIE`-regel | maak de doorsnede met MecwaySectionProps (regel met `JG`, `EY`, `EZ`), of kies een I-, T-, C- of L-profiel (§3.5.1) |
 | WARNING: Balk-elset ... (POU_D_TG): #ASTER-SECTIE heeft geen JG | oude regel zonder welvingsconstante | maak de regel opnieuw met MecwaySectionProps |
 | WARNING: elem_beam = POU_D_TG (welving) werkt niet in expliciete dynamica | geen massa voor de welving `GRX` (§3.5.1) | normaal; de balken rekenen daar als `POU_D_T` |
-| WARNING: Balken POU_D_TG: Code-Aster 17.4 geeft ... reactiekrachten per knoop met een fout | eigenschap van `POU_D_TG` in Code-Aster 17.4 (KNOWN_BUGS 123) | lees reacties met die marge, of reken de reacties met `POU_D_T`; snedekrachten en verplaatsingen kloppen |
+| WARNING: Balken POU_D_TG: de reacties per knoop van deze spectrumanalyse zijn onbruikbaar | fout in `POU_D_TG` van Code-Aster 17.4 (KNOWN_BUGS 123) | gebruik alleen de som over alle knopen, of reken de reacties met `POU_D_T` |
 | INFO: Buckling of beams ... appears as several equal factors | torsieknik zonder welving: één factor per element (§3.5) | normaal; het Sturm-alarm `ALGELINE5_23` hoort erbij |
 | WARNING: Mode 1 heeft ~0 Hz | starre beweging of mechanisme | opleggingen controleren |
 | Geen RX/RY/RZ achter de modes; in de `.mess`: `aster_results_export: WAARSCHUWING: effectieve massa rotaties niet ...` | de eigen berekening lukte niet of kwam voor de translaties niet uit op Code-Aster's waarden (bijv. een onbekend soort vrijheidsgraad) | de frequenties, vormen en translaties zijn goed; meld het model als fout (KNOWN_BUGS). Een rotatie-effectieve massa kun je dan in Mecway zelf opvragen (*modal effective mass*, interne solver) |

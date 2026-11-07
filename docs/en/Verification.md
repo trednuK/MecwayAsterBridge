@@ -2397,7 +2397,7 @@ along X and skew, with and without vector + 30°):
   `solver_nprec` -1 with `FACTOR_57` and an error of 13 (loose part: 64): then the
   bridge gives the message about a singular matrix.
 
-### Beams with warping (BU-38 … BU-44b, LS-90 … LS-95b)
+### Beams with warping (BU-38 … BU-46, LS-90 … LS-96g, MP-20)
 
 - **Purpose**: `elem_beam` = `POU_D_TG` ([Modal and buckling §3.5.1](Modal_and_buckling.md#351-beam-with-warping-elem_beam--pou_d_tg)):
   shear centre (`EY`, `EZ`), warping constant (`JG`) and Wagner terms (`IYR2`, `IZR2`) from
@@ -2437,6 +2437,19 @@ along X and skew, with and without vector + 30°):
 | LS-94b | the same with V = (0, −1, 0) (section turned over) | −0.019988 rad | −0.019912 (−0.38%) |
 | LS-95 | L cantilever 120 × 80 × 8 mm (a > b), L = 1 m, 20 `POU_D_E`, F = 1000 N along +Y and +Z at the tip | Mecway 34 headless (internal solver): DY 3.3684 mm, DZ 0.60063 mm | equal (< 1e-6) |
 | LS-95b | the same with `POU_D_TG` | φ = T/(G·J)·(L − tanh(kL)/k) = 0.019809 rad (T = 53.81 N·m about the heel) | 0.019808 (−0.005%; tolerance 2%) |
+| LS-96 | model of LS-94: reactions | equilibrium: −1000 N, −1000 N·m, free nodes 0 | exact (`REAC_NODA` of `MECA_STATIQUE`: −15670 N, free tip 136260 N) |
+| LS-96b | C on fork supports, F at midspan | 500 N per support | exact (`MECA_STATIQUE`: 49019 N) |
+| LS-96c | I beam, only an imposed displacement | δ = F·L³/(3·E·I) + F·L·AY/(G·A) | 1458.5 N (`MECA_STATIQUE`: 7422 N) |
+| LS-96d | C with a plate at the tip (`DKT`) | equilibrium | exact |
+| LS-96e | the same, plate on elastic support | sum of clamp and springs | exact |
+| LS-96f | I, both ends clamped, ΔT = 100 K | E·A·α·ΔT = 413280 N | exact (`MECA_STATIQUE`: 0) |
+| LS-96g | the same, one end free | reaction 0, expansion α·ΔT·L | exact |
+| BU-45 | C cantilever, transverse tip load, 20 `POU_D_TG` | hex20 BU-45b 54.322 | 54.702 (+0.7%); with the stress from `MECA_STATIQUE` 1.60 |
+| BU-45b | the same, hex20, uniform traction on the free end | Mecway 34 own solver 54.32214 | equal (< 1e-5) |
+| BU-45c | BU-45 with a constant compression of 5 kN (`#ASTER-CONSTANT`) | hex20 BU-45d 53.474 | 53.841 (+0.7%) |
+| BU-46 | LS-96f as buckling: the thermal force as the stress state | P_cr/(E·A·α·ΔT) = 4.1397 (weak axis, clamped, with shear) | 4.1397 |
+| MP-20 | BU-45 as modal with prestress, F = 20 kN | hex20 MP-20b 42.355 / 67.043 / 143.66 Hz | 42.286 / 66.497 / 144.47 Hz; with `MECA_STATIQUE` −21.4 / 109.6 / 232.4 Hz |
+| MP-20b | the same, hex20 | Mecway 34 own solver | equal (< 1e-5) |
 | BU-43 | T 100 × 10 × 10 × 90 mm (flange at +Y), L = 2 m, 40 `POU_D_TG`, fork supports, end moments 1000 N·m about Z that compress the flange | mono-symmetric M_cr (β = −64.6 mm): flange in compression 63.576, stem in compression −35.448 | 63.313 (−0.41%; tolerance 2%); −35.366 (−0.23%) |
 | BU-43b | the same with the end moments reversed (stem in compression) | 35.448; −63.576 | 35.366 (−0.23%); −63.313 (−0.41%) |
 | BU-43c | BU-43 with L = 4 m | formula 27.484 / −20.452; T of quad4 shells in Mecway 34 (400 × 20 elements, own solver) 27.081 / 20.228 | 27.459 (−0.09%) / −20.438 (−0.07%); against the shells +1.4% / +1.0% (tolerance 3%) |
@@ -2482,9 +2495,14 @@ along X and skew, with and without vector + 30°):
   buckling, nonlinear static (`PETIT`), harmonic and dynamic compute, also with line3,
   *flexible joint*, offset and shells (LS-01, LS-30, LS-50a, LS-51a/b, LS-52a/b, LS-62,
   LS-77, MO-01, MO-08, MO-27, DY-02, DY-30, MD-01, HR-02a, NK-01, NL-32, BU-01, BU-30).
-  Section forces (LS-30, NL-32) exact; BU-30 gives 2553.9 with warping (see above). Nodal
-  reaction forces deviate (LS-01: 103.0 N at the clamp, −3.0 N at the loaded tip, sum
-  100 N; KNOWN_BUGS 123).
+  Section forces (LS-30, NL-32) exact; BU-30 gives 2553.9 with warping (see above). The
+  reactions of linear static come from one step of `STAT_NON_LINE` (`REAC_NODA` of
+  `MECA_STATIQUE` is wrong, KNOWN_BUGS 123; LS-96).
+- **Stress state and reactions** (BU-45 … BU-46, LS-96 … LS-96g, MP-20): `SIEF_ELGA` of
+  `MECA_STATIQUE` is wrong with `POU_D_TG` (`te0342`: shear force, no shift to the shear
+  centre, no thermal strain). BU-38, BU-39, BU-41 … BU-44b could not show that: axial load
+  or constant moment, so no twist in the base state with an offset. Module
+  `tests_balk_welving_voorspanning.py`.
 
 ### Modal with prestress (MP)
 

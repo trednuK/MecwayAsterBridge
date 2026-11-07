@@ -303,12 +303,135 @@ def test_explicit_fallback():
     check(comm is None or "GRX" not in comm, "explicit: no GRX")
 
 
-def test_reactions_warning():
+SNL_STEP = "STAT_NON_LINE("
+THERMAL = (u'  <nodeselection name="Alle"><node nid="1" /><node nid="2" />'
+           u'</nodeselection>\n'
+           u'  <thermalstress><referencetemperature>293 K'
+           u'</referencetemperature></thermalstress>\n'
+           u'  <temperature2 selection="Alle"><value>393 K</value>'
+           u'<starttime>0 s</starttime><endtime>0 s</endtime></temperature2>')
+
+
+def test_static_reactions():
+    """POU_D_TG: REAC_NODA of `res` from one elastic STAT_NON_LINE step,
+    everything else of MECA_STATIQUE (KNOWN_BUGS 123)."""
     comm, _md, log, _mail = _translate("lin_static_3d", _liml())
-    fields = bridge_utils.CONFIG_BRIDGE["analyses"]["lin_static_3d"].get(
-        "fields") or []
-    if "reactions" in fields:
-        check("KNOWN_BUGS 123" in log, "TG: reactions WARNING")
+    check("res = MECA_STATIQUE(" in comm, "static: res stays MECA_STATIQUE")
+    check("reac_tg = " + SNL_STEP in comm, "static: reaction step")
+    check("RELATION='ELAS', DEFORMATION='PETIT'" in comm,
+          "static: elastic and small strains")
+    check("VERIF='AU_MOINS_UN'" in comm, "static: both criteria")
+    check("NOM_CHAM='REAC_NODA', CHAM_GD=reac_tgf" in comm,
+          "static: field goes into res")
+    check(not re.search(r"RESULTAT=res,\s*FORCE=\('REAC_NODA'", comm),
+          "static: no REAC_NODA of res")
+    check("WARNING: POU_D_TG beams: the nodal reactions" not in log,
+          "static: no reaction WARNING")
+    # the export and the mass check come after the field is in res
+    check(comm.index("reac_tgf") < comm.index("print_static_check"),
+          "static: field before the mass check")
+    comm, _md, _log, _mail = _translate("lin_static_3d", _liml(),
+                                        {"elem_beam": "POU_D_T"})
+    check(SNL_STEP not in comm, "static POU_D_T: no STAT_NON_LINE")
+    check("FORCE=('REAC_NODA', )" in comm, "static POU_D_T: REAC_NODA")
+
+
+def test_static_no_reaction_field():
+    """Without the field reactions no extra step: the sum of the mass check
+    is right with REAC_NODA of MECA_STATIQUE too."""
+    fields = [f for f in _CONFIG["analyses"]["lin_static_3d"]["fields"]
+              if f != "reactions"]
+    saved = _CONFIG["analyses"]["lin_static_3d"]["fields"]
+    _CONFIG["analyses"]["lin_static_3d"]["fields"] = fields
+    try:
+        comm, _md, _log, _mail = _translate("lin_static_3d", _liml())
+    finally:
+        _CONFIG["analyses"]["lin_static_3d"]["fields"] = saved
+    check(SNL_STEP not in comm, "no reactions field: no STAT_NON_LINE")
+
+
+def test_stress_state():
+    """Buckling and modal with prestress: SIEF_ELGA from STAT_NON_LINE with
+    POU_D_TG, from MECA_STATIQUE otherwise."""
+    for key, analysis in (("buckling_3d", "B30"), ("modal_3d", "V30")):
+        comm, _md, _log, _mail = _translate(key, _liml(analysis))
+        check("stat = " + SNL_STEP in comm, key + ": STAT_NON_LINE")
+        check("MECA_STATIQUE(" not in comm, key + ": no MECA_STATIQUE")
+        check("RESULTAT=stat, NUME_ORDRE=1" in comm, key + ": order 1")
+        comm, _md, _log, _mail = _translate(key, _liml(analysis),
+                                            {"elem_beam": "POU_D_T"})
+        check("stat = MECA_STATIQUE(" in comm, key + ": POU_D_T unchanged")
+        check(SNL_STEP not in comm, key + ": POU_D_T no STAT_NON_LINE")
+
+
+def test_stress_step_helper():
+    """The routes that share _stress_step: imperfection (inst), dead loads,
+    cyclic. Text of both variants."""
+    _translate("lin_static_3d", _liml())
+    md_tg = {"elset_modelisations": {"Balk": "POU_D_TG"}, "elsets": {
+        "Balk": "Staal"}, "materials": {}}
+    md_t = {"elset_modelisations": {"Balk": "POU_D_T"}, "elsets": {
+        "Balk": "Staal"}, "materials": {}}
+    analysis = {"solver_nprec": 8}
+    cara = "    CARA_ELEM=cara,\n"
+    excit = "    EXCIT=(_F(CHARGE=load_1),),"
+    text = bridge_to_aster._stress_step("imp_stat", md_tg, excit, cara,
+                                        analysis, model="imp_model", inst=2.5)
+    check("JUSQU_A=2.5" in text and "DEBUT=0.0" in text,
+          "helper: the step ends at the time of the loads")
+    check("MODELE=imp_model" in text, "helper: model name")
+    text = bridge_to_aster._stress_step("stat", md_tg, excit, cara, analysis)
+    check("DEBUT=-1.0" in text and "JUSQU_A=0.0" in text,
+          "helper: no time: ends at 0 like MECA_STATIQUE")
+    text = bridge_to_aster._stress_step("imp_stat", md_t, excit, cara,
+                                        analysis, inst=2.5)
+    check(text.startswith("imp_stat = MECA_STATIQUE(") and
+          "INST=2.5," in text, "helper: other beams MECA_STATIQUE with INST")
+
+
+def test_thermal_ramp():
+    """A constant temperature gives no strain in STAT_NON_LINE: the step has
+    its own CHAM_MATER with a ramp; MECA_STATIQUE keeps fieldmat."""
+    comm, _md, _log, _mail = _translate("lin_static_3d",
+                                        _liml(extra=THERMAL))
+    check("reac_tg_e = CREA_RESU(" in comm, "thermal: EVOL_THER")
+    check("CHAM_GD=reac_tg_r, INST=-1.0" in comm and
+          "CHAM_GD=temp_fld, INST=0.0" in comm, "thermal: ramp over the step")
+    check(re.search(r"reac_tg = STAT_NON_LINE\(\s*MODELE=model,\s*"
+                    r"CHAM_MATER=reac_tg_m,", comm), "thermal: own CHAM_MATER")
+    check(re.search(r"res = MECA_STATIQUE\(\s*MODELE=model,\s*"
+                    r"CHAM_MATER=fieldmat,", comm), "thermal: res keeps fieldmat")
+    comm, _md, _log, _mail = _translate("lin_static_3d", _liml())
+    check("reac_tg_e" not in comm, "no thermal: no ramp")
+
+
+def test_thermal_needs_fieldmat():
+    """_stress_step before _build_fieldmat_block would lose the thermal
+    strain without a message: that must stop."""
+    md = {"elset_modelisations": {"Balk": "POU_D_TG"}, "elsets": {},
+          "materials": {}, "thermal_stress": {"tref": 293.0}}
+    try:
+        bridge_to_aster._stress_step("stat", md, "    EXCIT=(),", "", {})
+        check(False, "thermal without fieldmat parts: stops")
+    except ValueError:
+        pass
+
+
+def test_spectrum_reactions_warning():
+    """The modes of a spectrum analysis have no other source of reactions."""
+    del LOG[:]
+    bridge_utils.CONFIG_BRIDGE["language"] = "en"
+    bridge_warping.note_reactions({"fields": ["reactions"],
+                                   "solver_command": "COMB_SISM_MODAL"})
+    check(any("KNOWN_BUGS 123" in u"%s" % l for l in LOG),
+          "spectrum: reaction WARNING")
+    del LOG[:]
+    bridge_warping.note_reactions({"fields": ["reactions"],
+                                   "solver_command": "MECA_STATIQUE"})
+    check(not LOG, "static: no reaction WARNING")
+    bridge_warping.note_reactions({"fields": ["displacements"],
+                                   "solver_command": "COMB_SISM_MODAL"})
+    check(not LOG, "spectrum without reactions: no WARNING")
 
 
 if __name__ == "__main__":

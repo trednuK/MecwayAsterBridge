@@ -1590,6 +1590,169 @@ def _optional_field_blocks(model_data, fields, strain_kind):
     return "\n".join(out) + ("\n" if out else "")
 
 
+def _reaction_group_lines(model_data):
+    """
+    The GROUP_MA line of CALC_CHAMP REAC_NODA, or nothing. Elastic support
+    is a spring element in Code-Aster (POI1, BRES*): the node is in
+    equilibrium and REAC_NODA is 0 there, while Mecway shows the spring
+    force as a reaction. So compute REAC_NODA without those springs, so
+    that the force of the structure on the spring is the reaction
+    (GROUP_MA in CALC_CHAMP, catalogue calc_champ.py v17.4).
+    """
+    springs = [g for g in model_data.get("discretes", {})
+               if g.startswith("BRES")]
+    if not springs:
+        return []
+    groups = [g for g in _model_groups(model_data) if g not in springs]
+    return ["    GROUP_MA={0},".format(_fmt_groups(groups))]
+
+
+def _stress_step(name, model_data, excit, cara, analysis, model="model",
+                 inst=None):
+    """
+    The static step that gives the stress state SIEF_ELGA for RIGI_GEOM or
+    the nodal reactions: result concept `name`, order 1. excit: the EXCIT
+    clause, cara: the CARA_ELEM line or "", inst: time of the loads (None:
+    MECA_STATIQUE's default 0).
+
+    MECA_STATIQUE, except with POU_D_TG beams. Its SIEF_ELGA comes from
+    te0342.F90 (Code-Aster 17.4.0 and main), which has two faults: shear
+    with alfay*g*a instead of g*a/alfay, and no shift from the centroid to
+    the shear centre (te0346.F90 lines 170-173 has it). Without EY/EZ the
+    moments stay right and only VY/VZ are off, with AY = 2 by a factor 4.
+    With EY or EZ and twist in the base state MFY/MFZ are off too, and
+    RIGI_GEOM reads those (te0143 -> jspgno -> ptkg20): buckling factor
+    of a C cantilever 1.54 against 52.65 (hex20 51.45). Measured 7 Nov 2026,
+    KNOWN_BUGS 123; te0342 recomputed in Python gives SIEF_ELGA of
+    MECA_STATIQUE (with both faults) and of STAT_NON_LINE (without them)
+    on 14700 values.
+
+    So with POU_D_TG one elastic step of STAT_NON_LINE: SIEF_ELGA then
+    comes from te0346. The displacements are the same (2e-12 mm). The step
+    ends at the time of the loads, so that FONC_MULT has the same value;
+    both criteria with AU_MOINS_UN, because RESI_GLOB_RELA alone sticks
+    without external force (only imposed displacements, MECANONLINE9_7,
+    _convergence_args). Not converging stops the run: reactions and a
+    stress state that are not in equilibrium are worse than no result.
+
+    Thermal strain: te0342 has none at all (restrained bar N = 0 against
+    -E A alpha dT, free bar +E A alpha dT against 0), and STAT_NON_LINE sees
+    no strain from a field that does not change in the step (measured
+    with POU_D_T too: N = 0, also with a free end DX = 0). So a constant
+    temperature field gets a ramp from the reference over this step, in
+    an AFFE_MATERIAU of its own; `fieldmat` stays for MECA_STATIQUE. A
+    field with a time history already is an EVOL_THER (_build_temperature_
+    field).
+    """
+    solveur = _static_step_solveur(analysis)
+    if not bridge_warping.has_warping(model_data):
+        return ("{name} = MECA_STATIQUE(\n"
+                "    MODELE={model},\n"
+                "    CHAM_MATER=fieldmat,\n"
+                "{cara}{excit}\n"
+                "{inst}"
+                "    {solveur}\n"
+                ")\n").format(
+                    name=name, model=model, cara=cara, excit=excit,
+                    solveur=solveur,
+                    inst="" if inst is None
+                    else "    INST={0!r},\n".format(inst))
+    t1 = 0.0 if inst is None else float(inst)
+    t0 = 0.0 if t1 > 0.0 else t1 - 1.0
+    log("INFO: POU_D_TG beams: '{0}' is one elastic step of STAT_NON_LINE, "
+        "not MECA_STATIQUE (SIEF_ELGA of te0342 is wrong, KNOWN_BUGS "
+        "123).".format(name))
+    thermal, fieldmat = _stress_step_ramp(name, model_data, model, t0, t1)
+    return (thermal +
+            ("{name}_t = DEFI_LIST_REEL(DEBUT={t0!r},\n"
+             "    INTERVALLE=_F(JUSQU_A={t1!r}, NOMBRE=1))\n"
+             "{name} = STAT_NON_LINE(\n"
+             "    MODELE={model},\n"
+             "    CHAM_MATER={fieldmat},\n"
+             "{cara}{excit}\n"
+             "{comportement}"
+             "    INCREMENT=_F(LIST_INST={name}_t),\n"
+             "    CONVERGENCE=_F(RESI_GLOB_RELA=1.0e-6, "
+             "RESI_GLOB_MAXI=1.0e-3,\n"
+             "                   VERIF='AU_MOINS_UN', ITER_GLOB_MAXI=10),\n"
+             "    {solveur}\n"
+             ")\n").format(
+                 name=name, model=model, fieldmat=fieldmat, cara=cara,
+                 excit=excit, t0=t0, t1=t1, solveur=solveur,
+                 comportement=_build_comportement_block(
+                     model_data, {"deformation": "PETIT"}, elastic=True)))
+
+
+def _stress_step_ramp(name, model_data, model, t0, t1):
+    """(block, name of the CHAM_MATER) for _stress_step: `fieldmat`, or with
+    a constant temperature field an AFFE_MATERIAU of its own where the
+    field ramps from the reference at t0 to temp_fld at t1. Call after
+    _build_fieldmat_block: without its parts the thermal strain would be
+    lost without a message."""
+    if _thermal_active(model_data) and "_fieldmat_parts" not in model_data:
+        raise ValueError("_stress_step before _build_fieldmat_block")
+    entries, varc = model_data.get("_fieldmat_parts", ([], ""))
+    if "CHAM_GD=temp_fld" not in varc:
+        return "", "fieldmat"
+    tref = model_data["thermal_stress"]["tref"]
+    return ((
+        "{name}_r = CREA_CHAMP(\n"
+        "    TYPE_CHAM='NOEU_TEMP_R',\n"
+        "    OPERATION='AFFE',\n"
+        "    MAILLAGE=mesh,\n"
+        "    AFFE=_F(TOUT='OUI', NOM_CMP='TEMP', VALE={tref!r}),\n"
+        ")\n"
+        "{name}_e = CREA_RESU(\n"
+        "    OPERATION='AFFE',\n"
+        "    TYPE_RESU='EVOL_THER',\n"
+        "    AFFE=(\n"
+        "        _F(NOM_CHAM='TEMP', CHAM_GD={name}_r, INST={t0!r}),\n"
+        "        _F(NOM_CHAM='TEMP', CHAM_GD=temp_fld, INST={t1!r}),\n"
+        "    ),\n"
+        ")\n"
+        "{name}_m = AFFE_MATERIAU(\n"
+        "    MAILLAGE=mesh,\n"
+        "    MODELE={model},\n"
+        "    AFFE=(\n"
+        "{entries}"
+        "    ),\n"
+        "    AFFE_VARC=_F(TOUT='OUI', NOM_VARC='TEMP', EVOL={name}_e, "
+        "VALE_REF={tref!r},\n"
+        "               PROL_GAUCHE='CONSTANT', PROL_DROITE='CONSTANT'),\n"
+        ")\n").format(name=name, tref=tref, t0=t0, t1=t1, model=model,
+                      entries="".join(entries)), name + "_m")
+
+
+def _warping_reaction_block(model_data, excit, cara, analysis):
+    """
+    Nodal reactions of a linear static run with POU_D_TG beams: REAC_NODA of
+    `res` (MECA_STATIQUE) goes through SIEF_ELGA of te0342 and is wrong at
+    every node, while its sum over all nodes stays right (_stress_step,
+    LS-94 model: -15670 N against -1000 N, +136260 N at the free tip). `res`
+    keeps the other fields: EFGE_ELNO of STAT_NON_LINE is constant per
+    element under a distributed load (975 N against 1000 N at a clamp).
+    The field goes into `res` as in bridge_xfem.result_block, so that the
+    export, the table route and print_static_check read the right one.
+    """
+    return (
+        "# POU_D_TG: reactions from one elastic step of STAT_NON_LINE\n"
+        "# (REAC_NODA of MECA_STATIQUE is wrong, KNOWN_BUGS 123)\n" +
+        _stress_step("reac_tg", model_data, excit, cara, analysis) +
+        "\n".join(
+            ["reac_tg = CALC_CHAMP(", "    reuse=reac_tg,",
+             "    RESULTAT=reac_tg,"] + _reaction_group_lines(model_data) +
+            ["    FORCE=('REAC_NODA', ),", ")"]) + "\n"
+        "reac_tgf = CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R', OPERATION='EXTR',\n"
+        "                      RESULTAT=reac_tg, NOM_CHAM='REAC_NODA', "
+        "NUME_ORDRE=1)\n"
+        "res = CREA_RESU(reuse=res, RESULTAT=res, OPERATION='AFFE',\n"
+        "                TYPE_RESU='EVOL_ELAS',\n"
+        "                AFFE=_F(NOM_CHAM='REAC_NODA', CHAM_GD=reac_tgf, "
+        "INST=0.0,\n"
+        "                        MODELE=model, CHAM_MATER=fieldmat,\n"
+        "                        CARA_ELEM=cara))\n\n")
+
+
 def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
                             fields=None, strain_kind="EPSI"):
     """
@@ -1631,17 +1794,8 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
         "    reuse=res,",
         "    RESULTAT=res,",
     ]
-    # Elastic support is a spring element in Code-Aster (POI1, BRES*): the
-    # node is in equilibrium and REAC_NODA is 0 there, while Mecway shows
-    # the spring force as a reaction. So compute REAC_NODA without those
-    # springs, so that the force of the structure on the spring is the
-    # reaction (GROUP_MA in CALC_CHAMP, catalogue calc_champ.py v17.4).
-    springs = [g for g in model_data.get("discretes", {})
-               if g.startswith("BRES")]
-    if springs and reactions:
-        groups = [g for g in _model_groups(model_data) if g not in springs]
-        out.append("    GROUP_MA={0},".format(_fmt_groups(groups)))
     if reactions:
+        out += _reaction_group_lines(model_data)
         out += [
             "    FORCE=('REAC_NODA', ),",
             ")",
@@ -4523,8 +4677,16 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
         calc_champ_block = (bridge_xfem.result_block(model_data) +
                             _custom_code(model_data, 'post'))
     else:
+        # Without the field "reactions" REAC_NODA only feeds the sum of the
+        # mass check, and that sum is right with POU_D_TG too
+        tg_reac = (bridge_warping.has_warping(model_data) and
+                   "reactions" in analysis.get("fields", []))
         calc_champ_block = (_build_calc_champ_block(
-            model_data, fields=analysis.get("fields", [])) + err_block +
+            model_data, reactions=not tg_reac,
+            fields=analysis.get("fields", [])) +
+                            (_warping_reaction_block(
+                                model_data, excit_clause, cara_elem_ref,
+                                analysis) if tg_reac else "") + err_block +
                             _static_check_block(model_data) +
                             _custom_code(model_data, 'post') + fatigue[0])
     postreleve_block  = _build_postreleve_block(model_data)
@@ -5315,9 +5477,11 @@ def _relation_for(model_data, mat_name):
     return "ELAS"
 
 
-def _build_comportement_block(model_data, analysis):
+def _build_comportement_block(model_data, analysis, elastic=False):
     """
     Generate the COMPORTEMENT clause for STAT_NON_LINE and DYNA_NON_LINE.
+    elastic True: relation ELAS for every elset, the material law is left
+    out, as MECA_STATIQUE does (_stress_step).
 
     Per elset the corresponding RELATION is chosen:
       - Spring elsets (DIS_T)       : 'ELAS' (compatible with DIS_T)
@@ -5367,7 +5531,7 @@ def _build_comportement_block(model_data, analysis):
                 "        _F(GROUP_MA='{0}', RELATION='CABLE', "
                 "DEFORMATION='GROT_GDEP'),".format(elset_name))
             continue
-        if mat_name in spring_mat_names:
+        if elastic or mat_name in spring_mat_names:
             relation = "ELAS"
         else:
             relation = _relation_for(model_data, mat_name)
@@ -6937,7 +7101,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
     buckling mode as imperfection (U2.08.04 par. 2.2: slightly pre-deform
     the structure according to the buckling mode):
       1. linear buckling under the loads at t_end, like buckling_3d
-         (_build_modal; test case ssll105a): MECA_STATIQUE (INST=t_end,
+         (_build_modal; test case ssll105a): _stress_step (INST=t_end,
          so that FONC_MULT/AFFE_CHAR_MECA_F have the final value),
          SIEF_ELGA,
          ASSEMBLAGE RIGI_MECA + RIGI_GEOM, CALC_MODES MODE_FLAMB with
@@ -6953,7 +7117,8 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
     With POU_D_T_GD beams step 1 runs on an auxiliary model
     (_imperfection_aux_model); steps 2 and 3 do not depend on the model.
     A follower load (TYPE_CHARGE='SUIV') is a fixed load in MECA_STATIQUE
-    (catalogue meca_statique.py: only 'FIXE_CSTE').
+    (catalogue meca_statique.py: only 'FIXE_CSTE'), also in the
+    STAT_NON_LINE of _stress_step, which gets the same EXCIT.
     """
     k = plan["mode"]
     amp = plan["amplitude"]
@@ -6976,13 +7141,7 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "# --- Imperfection: buckling shape {k} of the linear buckling under\n"
         "# the loads at t = {t_end!r} (bridge_to_aster._imperfection_blocks) ---\n"
         "{aux}"
-        "imp_stat = MECA_STATIQUE(\n"
-        "    MODELE={model},\n"
-        "    CHAM_MATER=fieldmat,\n"
-        "{cara}{excit}\n"
-        "    INST={t_end!r},\n"
-        "    {static_solveur}\n"
-        ")\n"
+        "{imp_step}"
         "imp_sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
         "                     RESULTAT=imp_stat, NUME_ORDRE=1, "
         "NOM_CHAM='SIEF_ELGA')\n"
@@ -7022,9 +7181,11 @@ def _imperfection_blocks(model_data, analysis, plan, charges, excit_clause,
         "                     COMB=_F(CHAM_GD=imp_phi, COEF_R={amp!r}))\n"
         "mesh = MODI_MAILLAGE(reuse=mesh, MAILLAGE=mesh,\n"
         "                     DEFORME=_F(OPTION='TRAN', DEPL=imp_def))\n"
-    ).format(k=k, t_end=float(t_end), cara=cara_ref, excit=excit,
-             nprec=nprec, charge=charge_ref, amp=float(amp), aux=aux,
-             model=model_ref, static_solveur=_static_step_solveur(analysis))
+    ).format(k=k, t_end=float(t_end), cara=cara_ref, nprec=nprec,
+             charge=charge_ref, amp=float(amp), aux=aux, model=model_ref,
+             imp_step=_stress_step("imp_stat", model_data, excit, cara_ref,
+                                   analysis, model=model_ref,
+                                   inst=float(t_end)))
     restore = (
         "# --- Imperfection: mesh back to the Mecway geometry for the\n"
         "# export (displacements stay relative to the imperfect shape) ---\n"
@@ -7732,8 +7893,8 @@ def _dead_live_split(model_data):
 
 def _dead_static_block(md_dead, cara_ref, analysis):
     """
-    Loads (dload_1, ...) and MECA_STATIQUE stat_d with the stress field
-    sig_d of the constant (dead) loads (_dead_live_split). The FORMULE/
+    Loads (dload_1, ...) and the static step stat_d (_stress_step) with the
+    stress field sig_d of the constant (dead) loads (_dead_live_split). The FORMULE/
     DEFI_CONSTANTE names of its prelude may repeat those of the live loads:
     the live loads are already built (Python names in the .comm).
     """
@@ -7744,17 +7905,12 @@ def _dead_static_block(md_dead, cara_ref, analysis):
     return (
         "# Stress state under the constant (dead) loads (#ASTER-CONSTANT)\n"
         "{block}\n"
-        "stat_d = MECA_STATIQUE(\n"
-        "    MODELE=model,\n"
-        "    CHAM_MATER=fieldmat,\n"
-        "{cara}{excit}\n"
-        "    {solveur}\n"
-        ")\n"
+        "{step}"
         "sig_d = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
         "                   RESULTAT=stat_d, NUME_ORDRE=1, "
         "NOM_CHAM='SIEF_ELGA')\n").format(
-            block=block, cara=cara_ref, excit=clause,
-            solveur=_static_step_solveur(analysis))
+            block=block, step=_stress_step("stat_d", md_dead, clause,
+                                           cara_ref, analysis))
 
 
 # Stop the job when the dead loads alone are at or above critical: Sturm
@@ -7857,7 +8013,7 @@ def _prestress_plan(model_data, charges, names_bc, names_load):
                    "WARNING: Centrifugal force: the spin softening of "
                    "point masses (mass) is not included (RIGI_ROTA only on "
                    "elements); their centrifugal force is."))
-    log("INFO: Modal with prestress: MECA_STATIQUE with the loads, "
+    log("INFO: Modal with prestress: a static step with the loads, "
         "then K + Kg (RIGI_GEOM){0} in CALC_MODES.".format(
             " + RIGI_ROTA" if rotation else ""))
     return {"rotation": rotation}
@@ -8295,7 +8451,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
     prestress_on = (not buckling) and bool(
         analysis.get("modal_prestress", True))
     # Buckling with constant (dead) loads: the live loads take the place of
-    # all loads below; the dead loads get their own MECA_STATIQUE.
+    # all loads below; the dead loads get their own static step.
     split = _dead_live_split(model_data) if buckling else None
     if split is False:
         return None
@@ -8322,7 +8478,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         # RIGI_GEOM (U4.61.21: CHARGE supplies the kinematic conditions);
         # computed with example 1 of docs/ASTER_regels_voorbeelden.md.
         log("INFO: #ASTER-EXCIT loads {0}: in the matrices (ASSEMBLAGE "
-            "CHARGE){1}.".format(", ".join(extra), " and in MECA_STATIQUE"
+            "CHARGE){1}.".format(", ".join(extra), " and in the static step"
                                  if (buckling or prestress) else ""))
     # Modal without supports, or with only connections between parts
     # (bonded contact, couplings): rigid body modes, free-free route.
@@ -8357,17 +8513,11 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
              if buckling else
              "# Prestress: stress state under the applied\n"
              "# loads (Mecway manual v33 par. 6.3, stress stiffening).\n") +
-            "stat = MECA_STATIQUE(\n"
-            "    MODELE=model,\n"
-            "    CHAM_MATER=fieldmat,\n"
-            "{cara}{excit}\n"
-            "    {solveur}\n"
-            ")\n"
+            _stress_step("stat", model_data, excit_clause, cara_elem_ref,
+                         analysis) +
             "sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
             "                 RESULTAT=stat, NUME_ORDRE=1, "
-            "NOM_CHAM='SIEF_ELGA')\n").format(
-                cara=cara_elem_ref, excit=excit_clause,
-                solveur=_static_step_solveur(analysis))
+            "NOM_CHAM='SIEF_ELGA')\n")
         second = ("        _F(MATRICE=CO('rigi_geo'), OPTION='RIGI_GEOM', "
                   "SIEF_ELGA=sig),\n")
         if split:

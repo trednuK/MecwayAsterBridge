@@ -2406,7 +2406,7 @@ schuin, met en zonder vector + 30°):
   `FACTOR_11`, met `solver_nprec` -1 met `FACTOR_57` en een fout van 13 (los deel: 64):
   dan geeft de bridge de melding over een singuliere matrix.
 
-### Balken met welving (BU-38 … BU-44b, LS-90 … LS-95b)
+### Balken met welving (BU-38 … BU-46, LS-90 … LS-96g, MP-20)
 
 - **Doel**: `elem_beam` = `POU_D_TG` ([Modaal en knik §3.5.1](Modaal_en_knik.md#351-balk-met-welving-elem_beam--pou_d_tg)):
   dwarskrachtcentrum (`EY`, `EZ`), welvingsconstante (`JG`) en Wagner-termen (`IYR2`,
@@ -2447,6 +2447,19 @@ schuin, met en zonder vector + 30°):
 | LS-94b | idem met V = (0, −1, 0) (profiel omgekeerd) | −0,019988 rad | −0,019912 (−0,38%) |
 | LS-95 | uitkragende L 120 × 80 × 8 mm (a > b), L = 1 m, 20 `POU_D_E`, F = 1000 N langs +Y en +Z aan de top | Mecway 34 headless (eigen solver): DY 3,3684 mm, DZ 0,60063 mm | gelijk (< 1e-6) |
 | LS-95b | idem met `POU_D_TG` | φ = T/(G·J)·(L − tanh(kL)/k) = 0,019809 rad (T = 53,81 N·m om de hiel) | 0,019808 (−0,005%; tolerantie 2%) |
+| LS-96 | model van LS-94: reacties | evenwicht: −1000 N, −1000 N·m, vrije knopen 0 | exact (`REAC_NODA` van `MECA_STATIQUE`: −15 670 N, vrije top 136 260 N) |
+| LS-96b | C op vorkopleggingen, F in het midden | 500 N per oplegging | exact (`MECA_STATIQUE`: 49 019 N) |
+| LS-96c | I-ligger, alleen opgelegde verplaatsing | δ = F·L³/(3·E·I) + F·L·AY/(G·A) | 1458,5 N (`MECA_STATIQUE`: 7422 N) |
+| LS-96d | C met plaat aan de top (`DKT`) | evenwicht | exact |
+| LS-96e | idem, plaat op elastische oplegging | som van inklemming en veren | exact |
+| LS-96f | I, beide einden ingeklemd, ΔT = 100 K | E·A·α·ΔT = 413 280 N | exact (`MECA_STATIQUE`: 0) |
+| LS-96g | idem, één einde vrij | reactie 0, uitzetting α·ΔT·L | exact |
+| BU-45 | C-ligger uitkragend, dwarslast aan de top, 20 `POU_D_TG` | hex20 BU-45b 54,322 | 54,702 (+0,7%); met spanning uit `MECA_STATIQUE` 1,60 |
+| BU-45b | idem, hex20, uniforme traction op de vrije kop | Mecway 34 eigen solver 54,32214 | gelijk (< 1e-5) |
+| BU-45c | BU-45 met constante drukkracht 5 kN (`#ASTER-CONSTANT`) | hex20 BU-45d 53,474 | 53,841 (+0,7%) |
+| BU-46 | LS-96f als knik: thermische kracht als spanningstoestand | P_cr/(E·A·α·ΔT) = 4,1397 (zwakke as, ingeklemd, met afschuiving) | 4,1397 |
+| MP-20 | BU-45 als modaal met voorspanning, F = 20 kN | hex20 MP-20b 42,355 / 67,043 / 143,66 Hz | 42,286 / 66,497 / 144,47 Hz; met `MECA_STATIQUE` −21,4 / 109,6 / 232,4 Hz |
+| MP-20b | idem, hex20 | Mecway 34 eigen solver | gelijk (< 1e-5) |
 | BU-43 | T 100 × 10 × 10 × 90 mm (flens aan +Y), L = 2 m, 40 `POU_D_TG`, vorkopleggingen, eindmomenten 1000 N·m om Z die de flens drukken | enkelsymmetrische M_cr (β = −64,6 mm): flens gedrukt 63,576, lijf gedrukt −35,448 | 63,313 (−0,41%; tolerantie 2%); −35,366 (−0,23%) |
 | BU-43b | idem met de eindmomenten omgekeerd (lijf gedrukt) | 35,448; −63,576 | 35,366 (−0,23%); −63,313 (−0,41%) |
 | BU-43c | BU-43 met L = 4 m | formule 27,484 / −20,452; T van quad4-schalen in Mecway 34 (400 × 20 elementen, eigen solver) 27,081 / 20,228 | 27,459 (−0,09%) / −20,438 (−0,07%); tegen de schalen +1,4% / +1,0% (tolerantie 3%) |
@@ -2494,8 +2507,13 @@ schuin, met en zonder vector + 30°):
   line3, *flexible joint*, offset en schalen (LS-01, LS-30, LS-50a, LS-51a/b, LS-52a/b,
   LS-62, LS-77, MO-01, MO-08, MO-27, DY-02, DY-30, MD-01, HR-02a, NK-01, NL-32, BU-01,
   BU-30). Snedekrachten (LS-30, NL-32) exact; BU-30 geeft met welving 2553,9 (zie
-  hierboven). Reactiekrachten per knoop wijken af (LS-01: 103,0 N bij de inklemming,
-  −3,0 N in de belaste top, som 100 N; KNOWN_BUGS 123).
+  hierboven). De reacties van lineair statisch komen uit één stap `STAT_NON_LINE`
+  (`REAC_NODA` van `MECA_STATIQUE` is fout, KNOWN_BUGS 123; LS-96).
+- **Spanningstoestand en reacties** (BU-45 … BU-46, LS-96 … LS-96g, MP-20): `SIEF_ELGA` van
+  `MECA_STATIQUE` is bij `POU_D_TG` fout (`te0342`: dwarskracht, geen verschuiving naar het
+  dwarskrachtcentrum, geen thermische rek). BU-38, BU-39, BU-41 … BU-44b konden dat niet
+  zien: axiale last of constant moment, dus geen wringing in de grondtoestand bij een
+  offset. Module `tests_balk_welving_voorspanning.py`.
 
 ### Modaal met voorspanning (MP)
 

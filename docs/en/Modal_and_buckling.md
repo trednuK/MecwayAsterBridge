@@ -560,10 +560,12 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
   formula (Wagner terms and shear centre), a T against a shell model in Mecway +1.4%.
 - **Limits**: the warping is continuous at a node, also where members meet at an angle
   (as in Code-Aster); with a *flexible joint* and an element offset the beam lies on its
-  own node without a support, so the warping is free there. Nodal reaction forces of
-  `POU_D_TG` have an error in Code-Aster 17.4 that grows with the shear deformation
-  (WARNING, KNOWN_BUGS 123); displacements, section forces and buckling factors are
-  right. The bimoment (`BX` in `EFGE_ELNO`) does not go to Mecway; its sign in Code-Aster
+  own node without a support, so the warping is free there. `MECA_STATIQUE` gives a wrong
+  `SIEF_ELGA` with `POU_D_TG` (KNOWN_BUGS 123). So the bridge computes the stress state for
+  buckling and prestress, and the reactions of linear static, with one elastic step of
+  `STAT_NON_LINE` (BU-45, MP-20, LS-96). That costs one extra factorisation. The nodal
+  reactions of a spectrum analysis stay unusable (WARNING): compute those with `POU_D_T`.
+  The bimoment (`BX` in `EFGE_ELNO`) does not go to Mecway; its sign in Code-Aster
   is `BX` = +E·I_w·φ″ (positive at a clamp under a positive torque about the beam axis,
   the opposite of Vlasov's B = −E·I_w·φ″; LS-90d, LS-90e). In explicit dynamics
   the beams become `POU_D_T` (WARNING): the mass matrix of `POU_D_TG` has no mass for
@@ -600,7 +602,7 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
 | WARNING: Beam elset ... (POU_D_TG): no warping constant and no shear centre known | *General section* without an `#ASTER-SECTIE` line | create the section with MecwaySectionProps (line with `JG`, `EY`, `EZ`), or choose an I, T, C or L profile (§3.5.1) |
 | WARNING: Beam elset ... (POU_D_TG): #ASTER-SECTIE has no JG | old line without a warping constant | create the line again with MecwaySectionProps |
 | WARNING: elem_beam = POU_D_TG (warping) does not work in explicit dynamics | no mass for the warping `GRX` (§3.5.1) | normal; the beams compute as `POU_D_T` there |
-| WARNING: POU_D_TG beams: Code-Aster 17.4 gives nodal reaction forces ... with an error | property of `POU_D_TG` in Code-Aster 17.4 (KNOWN_BUGS 123) | read reactions with that margin, or compute the reactions with `POU_D_T`; section forces and displacements are right |
+| WARNING: POU_D_TG beams: the nodal reactions of this spectrum analysis are unusable | fault in `POU_D_TG` of Code-Aster 17.4 (KNOWN_BUGS 123) | use only the sum over all nodes, or compute the reactions with `POU_D_T` |
 | INFO: Buckling of beams ... appears as several equal factors | torsional buckling without warping: one factor per element (§3.5) | normal; the Sturm alarm `ALGELINE5_23` belongs to it |
 | WARNING: Mode 1 has ~0 Hz | rigid motion or mechanism | check the supports |
 | No RX/RY/RZ after the modes; in the `.mess`: `aster_results_export: WARNING: effective mass of the rotations not ...` | the own computation failed or did not match Code-Aster's values for the translations (e.g. an unknown kind of degree of freedom) | frequencies, shapes and translations are fine; report the model as a bug (KNOWN_BUGS). You can then request a rotational effective mass in Mecway itself (*modal effective mass*, internal solver) |

@@ -748,6 +748,9 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             "# Free node of a pair whose other node is fixed.",
             "cycl_fix = AFFE_CHAR_MECA(MODELE=model, DDL_IMPO=_F(",
             "    GROUP_NO='{0}', DX=0.0, DY=0.0, DZ=0.0))".format(GROUP_FIX)]
+    # Before _stress_step: it reads _fieldmat_parts (POU_D_TG with thermal
+    # strain)
+    fieldmat_block = b2a._build_fieldmat_block(model_data)
     static_block = "#-- not applicable (no prestress) --\n"
     if prestress:
         rel = _relations(free_pairs, n_seg)
@@ -771,19 +774,14 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             "        _F(CHARGE={0}),\n".format(x) for x in names))
         static_block = (
             "# Prestress: stress state under the applied loads\n"
-            "# (Mecway manual v33 par. 6.3, stress stiffening).\n"
-            "stat = MECA_STATIQUE(\n"
-            "    MODELE=model,\n"
-            "    CHAM_MATER=fieldmat,\n"
-            "{cara}{excit}\n"
-            "    {solveur}\n"
-            ")\n"
+            "# (Mecway manual v33 par. 6.3, stress stiffening).\n" +
+            b2a._stress_step(
+                "stat", model_data, excit,
+                "    CARA_ELEM=cara,\n" if b2a._has_cara(model_data) else "",
+                analysis) +
             "sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',\n"
             "                 RESULTAT=stat, NUME_ORDRE=1, "
-            "NOM_CHAM='SIEF_ELGA')\n").format(
-                cara="    CARA_ELEM=cara,\n" if b2a._has_cara(model_data)
-                else "", excit=excit,
-                solveur=b2a._static_step_solveur(analysis))
+            "NOM_CHAM='SIEF_ELGA')\n")
     cyclic_loads_block = "\n".join(cyc_lines) + "\n"
 
     cara_ref = "    CARA_ELEM=cara,\n" if b2a._has_cara(model_data) else ""
@@ -950,7 +948,7 @@ def build_cyclic_modes(work_dir, model_data, msh_path, resu_name, analysis):
             model_block=b2a._build_model_block(model_data),
             cara_elem_block=b2a._build_cara_elem_block(model_data),
             materials_block=b2a._build_materials_block(model_data, analysis),
-            fieldmat_block=b2a._build_fieldmat_block(model_data),
+            fieldmat_block=fieldmat_block,
             loads_block=loads_block,
             cyclic_loads_block=cyclic_loads_block,
             static_block=static_block,
