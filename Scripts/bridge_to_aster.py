@@ -5530,6 +5530,9 @@ def _build_comportement_block(model_data, analysis, elastic=False):
             entries.append(
                 "        _F(GROUP_MA='{0}', RELATION='CABLE', "
                 "DEFORMATION='GROT_GDEP'),".format(elset_name))
+            if not elastic:
+                model_data.setdefault(
+                    "deformation_by_elset", {})[elset_name] = "GROT_GDEP"
             continue
         if elastic or mat_name in spring_mat_names:
             relation = "ELAS"
@@ -5564,10 +5567,12 @@ def _build_comportement_block(model_data, analysis, elastic=False):
             "        _F(GROUP_MA='{0}', RELATION='{1}', "
             "DEFORMATION='{2}'),".format(elset_name, relation, form)
         )
-        # For bridge_manifest. GREEN_LAGRANGE on DKT/DST computes as PETIT in
+        # For bridge_manifest, of the real run (elastic: a helper step such as
+        # an imperfection). GREEN_LAGRANGE on DKT/DST computes as PETIT in
         # 17.4 (see _deformation_for)
-        model_data.setdefault("deformation_by_elset", {})[elset_name] = (
-            "PETIT" if mod in ("DKT", "DST") else form)
+        if not elastic:
+            model_data.setdefault("deformation_by_elset", {})[elset_name] = (
+                "PETIT" if mod in ("DKT", "DST") else form)
 
     # POI1 discretes (single nodes, elastic support, nodal masses): ELAS
     # (supported for DISCRET, U4.51.11 par. 4.4.1.1); small

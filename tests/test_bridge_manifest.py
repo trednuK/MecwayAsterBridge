@@ -198,6 +198,28 @@ def test_finish_export(tmp):
     bridge_utils.set_run_log(None)
 
 
+def test_deformation_by_component():
+    md = {"deformation_by_elset": {"F": "GROT_GDEP", "F_TRUSS": "PETIT",
+                                   "G": "PETIT", "G_TRUSS": "PETIT"},
+          "group_renames": {"Part one": "P1"}}
+    md["deformation_by_elset"]["P1"] = "GDEF_LOG"
+    check(bm._deformation_by_component(md) ==
+          {"F": "MIXED", "G": "PETIT", "Part one": "GDEF_LOG"},
+          "truss part joins its component; a difference shows as MIXED")
+
+
+def test_orphan_age(tmp):
+    young = os.path.join(tmp, "M_20261106_100000_base")
+    old = os.path.join(tmp, "M_20261105_100000_base")
+    os.mkdir(young)
+    os.mkdir(old)
+    past = bm.time.time() - 2 * bm.ORPHAN_AGE
+    os.utime(old, (past, past))
+    bm.prune_bases(tmp, "M", 3)
+    check(os.path.isdir(young), "a young base without manifest stays")
+    check(not os.path.exists(old), "an old one goes")
+
+
 def test_not_shared():
     md = _model()
     md["offset_links"] = [1]
@@ -216,7 +238,8 @@ def main():
     test_fingerprint()
     test_run_name_split()
     test_bases_to_remove()
-    for fn in (test_prune, test_finish_export):
+    test_deformation_by_component()
+    for fn in (test_prune, test_finish_export, test_orphan_age):
         tmp = tempfile.mkdtemp()
         try:
             fn(tmp)

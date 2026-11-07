@@ -26,6 +26,8 @@
 #                with}: the bridge chooses per element set. With PETIT the
 #                moments of a cut are summed on the undeformed shape, else on
 #                x + u (measured, MecwayFreebody E9). DKT/DST count as PETIT.
+#                "MIXED": parts of the component differ (a truss part of a
+#                component with beams).
 #   concepts     names in the base: result, mesh, model, material, cara
 #   cells        the cell names in the order of the mesh file. In the base a
 #                cell has no name but a position, also after CREA_MAILLAGE:
@@ -47,11 +49,16 @@ import json
 import math
 import os
 import re
+import time
 
 import bridge_version
 from bridge_utils import CONFIG_BRIDGE, exe_aster_path, log, run_name, tr
 
 SCHEMA = 1
+_TRUSS_PART = "_TRUSS"
+# A base without manifest may belong to a run of another Mecway; this old it
+# does not (seconds)
+ORPHAN_AGE = 6 * 3600
 BASE_SUFFIX = "_base"
 MANIFEST_SUFFIX = "_manifest.json"
 # The results MecwayFreebody can use: a static result per step
@@ -96,9 +103,14 @@ def _not_shared(model_data):
 def _deformation_by_component(model_data):
     """model_data["deformation_by_elset"] with the names Mecway shows."""
     import bridge_failure
-    return dict((bridge_failure.mecway_name(model_data, elset), form)
-                for elset, form in
-                model_data.get("deformation_by_elset", {}).items())
+    found = {}
+    for elset, form in model_data.get("deformation_by_elset", {}).items():
+        name = bridge_failure.mecway_name(model_data, elset)
+        # The truss part of a component with beams (_split_trusses)
+        if name.endswith(_TRUSS_PART):
+            name = name[:-len(_TRUSS_PART)]
+        found[name] = form if found.get(name, form) == form else "MIXED"
+    return found
 
 
 def build_manifest(model_data, kept, run_id, aster_version, memory_limit):
@@ -168,8 +180,8 @@ def bases_to_remove(names, model_stem, keep):
 
 
 def orphan_bases(names, model_stem, current):
-    """Base folders of this model without a manifest (a run that broke off),
-    except that of the current run."""
+    """Base folders of this model without a manifest, except that of the
+    current run. prune_bases also looks at their age."""
     pattern = re.compile("^" + re.escape(model_stem) +
                          r"_\d{8}_\d{6}" + re.escape(BASE_SUFFIX) + "$")
     return [n for n in names if pattern.match(n) and n != current and
@@ -192,8 +204,11 @@ def prune_bases(work_dir, model_stem, keep, current=None):
     """Remove the oldest bases of this model and those left without a
     manifest. Never stops a run."""
     names = os.listdir(work_dir)
-    for name in (bases_to_remove(names, model_stem, keep) +
-                 orphan_bases(names, model_stem, current)):
+    now = time.time()
+    orphans = [n for n in orphan_bases(names, model_stem, current)
+               if now - os.path.getmtime(os.path.join(work_dir, n)) >
+               ORPHAN_AGE]
+    for name in bases_to_remove(names, model_stem, keep) + orphans:
         path = os.path.join(work_dir, name)
         try:
             if _has_subfolder(path):
