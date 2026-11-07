@@ -135,6 +135,7 @@ it was last verified:
 | `FACTOR_57` after `DIAGNOSTIC JOB : OK` in the convergence window, summary and status box (V2026.8) | NOT verified | NOT verified: checked on the `.mess` of a real run, not in the Mecway window |
 | WARNING for a beam without warping on an open General section (V2026.8) | NOT verified | NOT verified: offline tests; the difference between `POU_D_E` and `POU_D_TG` was measured with Code-Aster 17.4 outside Mecway |
 | Selection names with spaces (models from Mecway 33) | allowed | Mecway 34 replaces the spaces by `_` when it opens such a model and then loses the reference in a contact (`selectionmaster=""`, seen 22 October 2026); the bridge stops before Code-Aster with an ERROR that says so where the contact counts (nonlinear static and dynamics; bonded contact in every analysis), elsewhere it gives a WARNING (Mecway ignores unilateral contact there too). Select the contact faces again. The example models use names without spaces. |
+| Stress over beam sections, S41 (`beamvonmisesmax`, `sectionshear` ...) | NOT verified | NOT verified; Mecway 35: opened hidden, values read through the API, also per time step, colours NOT verified |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

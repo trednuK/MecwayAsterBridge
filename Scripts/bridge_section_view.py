@@ -25,6 +25,8 @@
 #   insert_into_copy(lines, view)   that text in the lines of the model copy
 #   thin_beam_lines(lines, view)    Mecway's drawing of those beams made small
 #   shell_values(view, d, r, md)    displacement and stress per shell node
+#   match_table / shear_points      the section table of a run per shell node
+#   shell_shear(view, ...)          shear stress and von Mises per shell node
 #
 # CONTRACT (comment lines in any custom text field, in file order):
 #   ** SECTIE-VORM <material>: N=<points of loop 1> <points of loop 2> ...,
@@ -64,15 +66,21 @@
 #   izz v''), also with a load inside the element: Mecway's own element values
 #   carry the same error of about q h^2 / 12, and the section forces do not
 #   correct it. The internal general-section beam has no shear deformation.
-#   Limits: longitudinal stress only; no warping bimoment. Route 2 only: a
-#   flexible joint at a beam end is not known here, shear deformation of a
-#   Code-Aster Timoshenko beam is not in the Hermite field, a line3 is one
-#   Hermite element over its chord, linear elastic only. Route 1 with a
-#   Code-Aster solution: names and signs of the export are Mecway's
-#   (aster_results_export, MFY/MFZ), but this formula was NOT verified on one.
+#   Limits: no warping bimoment. Route 2 only: a flexible joint at a beam end
+#   is not known here, shear deformation of a Code-Aster Timoshenko beam is
+#   not in the Hermite field, a line3 is one Hermite element over its chord,
+#   linear elastic only. Route 1 on a Code-Aster solution: names and signs of
+#   the export are Mecway's (aster_results_export, MFY/MFZ); this formula
+#   against statics in LS-97a, measured.
 #   Element offset (bridge_offset: global x, y, z, line2 only): the element
 #   ends move with the arm, d' = d + theta x offset, so strain and curvature
 #   use d'. As bridge_offset.link_entries; against Mecway NOT verified.
+#
+#   Shear stress and von Mises: numpy has to make the fields, so the job does
+#   (bridge_section_stress, table in <run>_section.json). Shear is linear in Vv,
+#   Vw and T_S = T + EY Vw - EZ Vv, so that this module only sums the table per
+#   step. von Mises = sqrt(sigma^2 + 3 tau^2) with the sigma above. Only with
+#   the section forces of the solution and only with a table of this section.
 #
 # Mecway draws a general section as a small rectangle, which would stand in
 # the shells. The API has no display control, but the model copy is ours: in
@@ -85,8 +93,9 @@
 # Measured on Mecway 35.0.9802: shells in the model copy inside <solution>,
 # with no counterpart in the model part, open without a dialog, stay after a
 # save and a reopen, and were seen in Mecway's window with their colours on a
-# chain of 7 beams with an L section (user check, 5 Nov 2026). Not on a
-# Code-Aster solution, line3 or an element offset.
+# chain of 7 beams with an L section (user check, 5 Nov 2026). On a real
+# Code-Aster solution opened hidden, values read through the API (LS-97a, c);
+# colours there NOT verified. Not on line3 or an element offset.
 #
 # Compatible with IronPython 2.7.9.
 
@@ -581,6 +590,7 @@ def build_view(model_data, shapes, max_quads=MAX_QUADS, warn_directions=True):
                  "nodes": [(nid, (x, y, z))], "elements": as above}
       elset    : name of the component
       thin     : {material: size of the thin bar in the model copy, metres}
+      shapes   : {material: shape} of the drawn beams
       beams    : as find_beams
       skipped  : as find_beams
       quads, tris : number of elements
@@ -620,7 +630,9 @@ def build_view(model_data, shapes, max_quads=MAX_QUADS, warn_directions=True):
             "beams": beams, "skipped": skipped, "quads": 0, "tris": 0,
             "direction_warnings": notes,
             "thin": dict((m, thin_size(shapes[m]["loops"], shapes[m]["area"]))
-                         for m in set(b["material"] for b in beams))}
+                         for m in set(b["material"] for b in beams)),
+            "shapes": dict((m, shapes[m])
+                           for m in set(b["material"] for b in beams))}
 
     def add_node(index, end, v, w):
         nid = next_nid + len(view["nids"])
@@ -730,6 +742,97 @@ def insert_into_copy(copy_lines, view, indent=COPY_INDENT):
 def point_displacement(d, theta, r):
     """d + theta x r, small rotations; r from the node, offset included."""
     return _add(d, _cross(theta, r))
+
+
+def match_table(entry, shape, model_data, material):
+    """
+    True when entry (one section of a <run>_section.json) was made for this
+    section: the outline, nu, A, IY, IZ and, when the model states them, EY and
+    EZ. Numbers, not text: .NET and CPython can differ in the last digit of a
+    parsed number. shape: from current_shapes.
+    """
+    geom = model_data.get("mat_geometrics", {}).get(material) or {}
+    cara = dict(zip(geom.get("cara", ()), geom.get("vale", ())))
+    nu = (model_data.get("materials", {}).get(material) or {}).get("NU")
+
+    def same(a, b):
+        return (a is not None and b is not None and
+                abs(a - b) <= _SECTION_MATCH_TOL * max(abs(a), abs(b), 1e-30))
+
+    if nu is None or abs(entry.get("nu", -9.0) - nu) > 1.0e-9:
+        return False
+    for key in ("A", "IY", "IZ"):
+        if not same(entry.get(key), cara.get(key)):
+            return False
+    for key in ("EY", "EZ"):
+        if key in cara and abs(entry.get(key, 1.0e30) - cara[key]) > \
+                _SECTION_MATCH_TOL * math.sqrt(cara["A"]):
+            return False
+    theirs, ours = entry.get("loops") or [], shape["loops"]
+    size = math.sqrt(shape["area"])
+    if [len(lp) for lp in theirs] != [len(lp) for lp in ours]:
+        return False
+    return all(abs(a - b) <= 1.0e-8 * size
+               for lt, lo in zip(theirs, ours) for pt, po in zip(lt, lo)
+               for a, b in zip(pt, po))
+
+
+def _nearest_row(rows, v, w, tol):
+    best, row = tol, None
+    for item in rows:
+        dist = abs(item[0] - v) + abs(item[1] - w)
+        if dist <= best:
+            best, row = dist, item
+    return row
+
+
+def shear_points(view, tables):
+    """
+    Per shell node its row of the table, or None. tables: {material: entry of
+    <run>_section.json}. A row: v, w, then six unit values (Vv on v, w; Vw; T_S),
+    or twelve inside a corner zone (bridge_section_stress).
+    """
+    seen, out = {}, []
+    for index, _end, v, w in view["origin"]:
+        material = view["beams"][index]["material"]
+        key = (material, v, w)
+        if key not in seen:
+            entry = tables.get(material)
+            seen[key] = None if entry is None else _nearest_row(
+                entry["points"], v, w,
+                1.0e-6 * math.sqrt(entry.get("A", 0.0)))
+        out.append(seen[key])
+    return out
+
+
+def shear_at(row, vv, vw, ts):
+    """|tau| at a shell point; in a corner zone the larger of the two exits."""
+    best = 0.0
+    for k in range(2, len(row) - 5, 6):
+        best = max(best, math.hypot(vv * row[k] + vw * row[k + 2] +
+                                    ts * row[k + 4],
+                                    vv * row[k + 1] + vw * row[k + 3] +
+                                    ts * row[k + 5]))
+    return best
+
+
+def shell_shear(view, points, tables, forces, sigma, wanted):
+    """
+    ([tau], [von Mises]) for the positions wanted in view["nids"]. points: from
+    shear_points. forces: {beam eid: ((Vv, Vw, T) at end 0, at end 1)}, in
+    element axes, the element values of the solution. sigma: per shell node.
+    """
+    tau, vm = [], []
+    for pos in wanted:
+        index, end = view["origin"][pos][:2]
+        beam = view["beams"][index]
+        entry = tables[beam["material"]]
+        vv, vw, torque = forces[beam["eid"]][end]
+        value = shear_at(points[pos], vv, vw,
+                         torque + entry["EY"] * vw - entry["EZ"] * vv)
+        tau.append(value)
+        vm.append(math.sqrt(sigma[pos] ** 2 + 3.0 * value ** 2))
+    return tau, vm
 
 
 def _curvature(s, length, y1, slope1, y2, slope2):

@@ -1,0 +1,35 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.125" y="0" z="0" />
+  <node nid="3" x="0.25" y="0" z="0" />
+  <node nid="4" x="0.375" y="0" z="0" />
+  <node nid="5" x="0.5" y="0" z="0" />
+  <node nid="6" x="0.625" y="0" z="0" />
+  <node nid="7" x="0.75" y="0" z="0" />
+  <node nid="8" x="0.875" y="0" z="0" />
+  <node nid="9" x="1" y="0" z="0" />
+  <elset name="Balk" material="Mat">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <force selection="Tip"><x>0 N</x><y>1000.0 N</y><z>0.0 N</z></force>
+  <mat name="Mat">
+    <geometric type="I" ia="100 mm" ib="50 mm" ic="10 mm" id="8 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="9" />
+  </nodeselection>
+</liml>

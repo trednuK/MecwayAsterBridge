@@ -52,11 +52,13 @@ import array
 import base64
 import bisect
 import io
+import json
 import os
 import re
 from collections import OrderedDict
 
-from bridge_utils import tr, choose_configuration, configuration_warning
+from bridge_utils import (tr, choose_configuration, configuration_warning, log,
+                          model_stem, run_name, work_dir_path)
 import bridge_monitor
 
 
@@ -770,6 +772,7 @@ def splice_results(model_liml, fragment_path, out_path, configuration=None,
         f.close()
 
     _replace_with_bak(tmp, out_path)
+    _log_section_notes(fragment_path)
     return True, ""
 
 
@@ -869,6 +872,14 @@ def strip_results(model_liml):
 #                           node the value of its own end (also stressptu)
 #   SECTION_STRESS          new, the section stress, as node values and as
 #                           element-node values
+#   SECTION_SHEAR, _VON_MISES   the same two ways, from the table of the job
+#                           (<run>_section.json, bridge_section_stress) and the
+#                           section forces; shells of a beam without either
+#                           stay out of their ids. No table (a Mecway solve,
+#                           an older run): these two do not exist, the rest
+#                           does. The maxima of the job, beamvonmisesmax,
+#                           beamsixxabsmax and beamtaumax, are element-node
+#                           variables of the beams like any other.
 # A node or element without a value is not in the <nodeids> or
 # <elementnodeids> of that variable, so a shell of a beam without a value
 # stays out of it too.
@@ -887,9 +898,16 @@ def strip_results(model_liml):
 # so the shells are gone afterwards: the caller adds them again.
 # ==========================================
 SECTION_STRESS = ("langsspanning", "longitudinalstress")
+SECTION_SHEAR = ("doorsnedeschuif", "sectionshear")
+SECTION_VON_MISES = ("doorsnedevonmises", "sectionvonmises")
+_SECTION_NAMES = SECTION_STRESS + SECTION_SHEAR + SECTION_VON_MISES
+# bridge_section_stress.SECTION_SUFFIX, without its numpy
+SECTION_SUFFIX = "_section.json"
+_MAX_SECTION_FILES = 30         # newest first, each a small file
 _SHELL_DISPL = ("displx", "disply", "displz")
 _SHELL_ROT = ("rotx", "roty", "rotz")
 _SHELL_FORCES = ("tensileforce", "bendingmomv", "bendingmomw")
+_SHELL_SHEARS = ("sheary", "shearz", "torsion")
 _WIDTH = {"f": 4, "d": 8}
 _B64_LINE = 64
 _RESULT_TAG = re.compile(r'<(/?)(results|nodeids|elementnodeids|timestep|'
@@ -1235,10 +1253,10 @@ def _layouts(src, index, view, copy):
 
     nodes = dict((name, layout_of(span, False))
                  for name, span in index["ids"].items()
-                 if name not in SECTION_STRESS)
+                 if name not in _SECTION_NAMES)
     elements = dict((name, layout_of(span, True))
                     for name, span in index["elids"].items()
-                    if name not in SECTION_STRESS)
+                    if name not in _SECTION_NAMES)
     return nodes, elements
 
 
@@ -1402,7 +1420,8 @@ def _step_values(plan, step, src):
     ends = plan["beam_nodes"]
     displ = dict((n, (dx.get(n), dy.get(n), dz.get(n))) for n in ends)
     rot = dict((n, (rx.get(n), ry.get(n), rz.get(n))) for n in ends)
-    forces = _step_forces(plan, step, block_of) if plan["forces"] else None
+    forces = _step_forces(plan, step, block_of, _SHELL_FORCES) \
+        if plan["forces"] else None
     out = plan["section_view"].shell_values(plan["view"], displ, rot,
                                             plan["model"], forces)
     if out is None:
@@ -1413,17 +1432,61 @@ def _step_values(plan, step, src):
         values[plan["stress"]] = sigma
         if plan["has_stress"]:
             values["stressptu"] = sigma
+        if plan["tables"]:
+            shear = _step_forces(plan, step, block_of, _SHELL_SHEARS) or {}
+            if "wanted" not in plan:
+                _choose_shear_shells(plan, shear)
+            if plan["wanted"]:
+                _add_shear(plan, values, shear, sigma)
     return {"cache": cache, "values": values,
             "routes": out.get("stress_routes")}
 
 
-def _step_forces(plan, step, block_of):
-    """{beam: ((N, Mv, Mw) at end 0, at end 1)} from the element values of
-    a step, for bridge_section_view.shell_values; None without them."""
+def _choose_shear_shells(plan, shear):
+    """Which shells get shear stress: those with a table row and with the
+    forces of their beam, decided on the first step: the ids of a variable are
+    the same in every step, so that only a step without the variable can
+    differ, and then no shell gets them. A shell element needs all its nodes.
+    Sets plan["wanted"] (positions in the shell nodes), "wanted_ids" and
+    "wanted_elements", "wanted_slots" (position in wanted per node of those
+    elements)."""
+    view = plan["view"]
+    points = plan["section_view"].shear_points(view, plan["tables"])
+    every_step = not [s for s in plan["index"]["steps"]
+                      for name in _SHELL_SHEARS if name not in s["elvars"]]
+    wanted = [i for i, o in enumerate(view["origin"]) if points[i] is not None
+              and view["beams"][o[0]]["eid"] in shear and every_step]
+    plan["shear_points"] = points
+    plan["wanted"] = wanted
+    plan["wanted_ids"] = [view["nids"][i] for i in wanted]
+    slot = dict((view["nids"][i], k) for k, i in enumerate(wanted))
+    chosen = [e for e in view["elements"] if all([n in slot for n in e[2]])]
+    plan["wanted_elements"] = [e[0] for e in chosen]
+    plan["wanted_slots"] = [slot[n] for e in chosen for n in e[2]]
+
+
+def _add_shear(plan, values, shear, sigma):
+    """The two shear variables of a step in values."""
+    missing = [o for o in plan["wanted"] if plan["view"]["beams"][
+        plan["view"]["origin"][o][0]]["eid"] not in shear]
+    if missing:
+        raise _Refused(tr("De snedekrachten ontbreken in een van de stappen.",
+                          "The section forces are missing in one of the "
+                          "steps."))
+    tau, von_mises = plan["section_view"].shell_shear(
+        plan["view"], plan["shear_points"], plan["tables"], shear, sigma,
+        plan["wanted"])
+    values[plan["shear"]] = tau
+    values[plan["von_mises"]] = von_mises
+
+
+def _step_forces(plan, step, block_of, names):
+    """{beam: ((three values of names) at end 0, at end 1)} from the element
+    values of a step, for bridge_section_view; None without them."""
     layouts = plan["elements"]
     per_var = []
     beams = plan["view"]["beams"]
-    for name in _SHELL_FORCES:
+    for name in names:
         if name not in step["elvars"] or name not in layouts:
             return None
         where = layouts[name]["where"]
@@ -1434,10 +1497,10 @@ def _step_forces(plan, step, block_of):
     out = {}
     for beam in beams:
         eid = beam["eid"]
-        if all([eid in layouts[name]["where"] for name in _SHELL_FORCES]):
+        if all([eid in layouts[name]["where"] for name in names]):
             out[eid] = tuple([
                 tuple([values[layouts[name]["where"][eid] + k - 1]
-                       for name, values in zip(_SHELL_FORCES, per_var)])
+                       for name, values in zip(names, per_var)])
                 for k in beam["element_nodes"]])
     return out
 
@@ -1475,12 +1538,13 @@ def _edits(src, plan):
         spans = _kept_spans(index["ids"], names)
         pad = plan["nl"] + _indent_before(src, spans[0][0])
         at = spans[-1][1]
-        add((at, at), "text", None, pad + _ids_block(
-            "nodeids", plan["stress"], plan["view"]["nids"]))
+        for name, nids, _eids, _slots in plan["computed"]:
+            add((at, at), "text", None, pad + _ids_block("nodeids", name, nids))
         spans = _kept_spans(index["elids"], names)
         at = spans[-1][1] if spans else at
-        add((at, at), "text", None, pad + _ids_block(
-            "elementnodeids", plan["stress"], plan["element_ids"]))
+        for name, _nids, eids, _slots in plan["computed"]:
+            add((at, at), "text", None, pad + _ids_block(
+                "elementnodeids", name, eids))
     for step in index["steps"]:
         for table, layouts, action in (("vars", plan["nodes"], "node"),
                                        ("elvars", plan["elements"],
@@ -1494,10 +1558,12 @@ def _edits(src, plan):
             spans = _kept_spans(step["vars"], names)
             pad = _indent_before(src, spans[0][0])
             at = spans[-1][1]
-            add((at, at), "new_node", step, pad)
+            for item in plan["computed"]:
+                add((at, at), "new_node", step, (pad, item))
             spans = _kept_spans(step["elvars"], names)
             at = spans[-1][1] if spans else at
-            add((at, at), "new_element", step, pad)
+            for item in plan["computed"]:
+                add((at, at), "new_element", step, (pad, item))
     return sorted(out, key=lambda e: e[:2])
 
 
@@ -1546,7 +1612,8 @@ def _write_results(src, dst, plan):
             current = step
             data = plan.pop("first", None) or _step_values(plan, step, src)
             routes = data["routes"]
-            if plan["has_stress"] and plan["stress"] not in data["values"]:
+            if plan["has_stress"] and [
+                    c for c in plan["computed"] if c[0] not in data["values"]]:
                 raise _Refused(tr(
                     "De spanning ontbreekt in een van de stappen.",
                     "The stress is missing in one of the steps."))
@@ -1557,13 +1624,14 @@ def _write_results(src, dst, plan):
         elif action in ("node", "element"):
             _write_variable(src, dst, step, data, action, argument, plan)
         elif action == "new_node":
-            dst.write(_new_variable("nodevariable", plan["stress"], argument,
-                                    data["values"][plan["stress"]], plan))
+            pad, item = argument
+            dst.write(_new_variable("nodevariable", item[0], pad,
+                                    data["values"][item[0]], plan))
         elif action == "new_element":
-            sigma = data["values"][plan["stress"]]
-            dst.write(_new_variable("elementnodevariable", plan["stress"],
-                                    argument, [sigma[i] for i in
-                                               plan["element_slots"]], plan))
+            pad, item = argument
+            values = data["values"][item[0]]
+            dst.write(_new_variable("elementnodevariable", item[0], pad,
+                                    [values[i] for i in item[3]], plan))
     _pump(src, dst, pos, index["end"])
     return routes
 
@@ -1634,8 +1702,13 @@ def _view_plan(src, path, begin, results, end, view, model_data):
                 section_view.insert_into_copy(copy["lines"], view), view),
             "old": copy["old"], "elset": view["elset"],
             "drop": set(copy["old"]) | set([view["elset"]]),
-            "names": set(SECTION_STRESS),
+            "names": set(_SECTION_NAMES),
             "stress": tr(SECTION_STRESS[0], SECTION_STRESS[1]),
+            "shear": tr(SECTION_SHEAR[0], SECTION_SHEAR[1]),
+            "von_mises": tr(SECTION_VON_MISES[0], SECTION_VON_MISES[1]),
+            "tables": ({} if modes or nonlinear else
+                       section_tables(path, view, model_data)),
+            "computed": [],
             "nodes": nodes, "elements": elements,
             "model": (_without_stress(model_data, view)
                       if modes or nonlinear else model_data),
@@ -1652,8 +1725,16 @@ def _view_plan(src, path, begin, results, end, view, model_data):
         data["values"]["stressptu"] = data["values"][plan["stress"]]
         if "stressptu" in nodes:
             nodes["stressptu"] = _all_shells(nodes["stressptu"], view)
+        plan["computed"] = [(plan["stress"], view["nids"], plan["element_ids"],
+                             plan["element_slots"])]
+        if plan.get("wanted"):
+            plan["computed"] += [
+                (name, plan["wanted_ids"], plan["wanted_elements"],
+                 plan["wanted_slots"])
+                for name in (plan["shear"], plan["von_mises"])]
     else:
         plan["model"] = _without_stress(model_data, view)
+        plan["wanted"] = []
     plan["first"] = data
     return plan
 
@@ -1681,6 +1762,8 @@ def _view_text(plan, steps, routes, note, not_on_shells, liml_path):
     else:
         parts.append(tr("Geen spanning op de vorm: E of doorsnede ontbreekt.",
                         "No stress on the shape: E or section is missing."))
+    if plan["has_stress"]:
+        parts.append(_shear_text(plan))
     if not_on_shells:
         parts.append(tr("Zonder waarde op de balken, dus ook niet op de "
                         "vorm: {0}.",
@@ -1693,6 +1776,113 @@ def _view_text(plan, steps, routes, note, not_on_shells, liml_path):
     if note:
         parts.append(note)
     return " ".join(parts)
+
+
+def _shear_text(plan):
+    view = plan["view"]
+    if not plan["tables"]:
+        return tr("Geen schuifspanning en von Mises op de vorm: die vragen de "
+                  "tabel van een Code-Aster-run ({0}).",
+                  "No shear stress and von Mises on the shape: those need the "
+                  "table of a Code-Aster run ({0}).").format(SECTION_SUFFIX)
+    if not plan.get("wanted"):
+        return tr("Geen schuifspanning en von Mises op de vorm: de "
+                  "snedekrachten ontbreken (resultaatveld beam_forces).",
+                  "No shear stress and von Mises on the shape: the section "
+                  "forces are missing (result field beam_forces).")
+    left = len(view["nids"]) - len(plan["wanted"])
+    text = tr("Schuifspanning en von Mises: {0}, {1}.",
+              "Shear stress and von Mises: {0}, {1}.").format(
+                  plan["shear"], plan["von_mises"])
+    if left:
+        text += u" " + tr("{0} knopen van de vorm hebben ze niet.",
+                          "{0} nodes of the shape do not have them.").format(
+                              left)
+    return text
+
+
+def _section_files(liml_path):
+    """The _section.json files that may belong to this model: that of the
+    current run first, then the newest first. A run shortens a long model
+    name, hence the current run on its own. The prefix also fits a model
+    called <model>_x: no harm, match_table looks at the section itself, and a
+    table depends on nothing else."""
+    folder = work_dir_path()
+    stem = model_stem(liml_path) + "_"
+    found = []
+    try:
+        for name in os.listdir(folder):
+            if name.startswith(stem) and name.endswith(SECTION_SUFFIX):
+                path = os.path.join(folder, name)
+                found.append((os.path.getmtime(path), path))
+    except OSError:
+        pass
+    found.sort(reverse=True)
+    paths = [p[1] for p in found]
+    current = os.path.join(folder, run_name(SECTION_SUFFIX))
+    if os.path.exists(current):
+        paths.insert(0, current)
+    return paths[:_MAX_SECTION_FILES]
+
+
+def _read_section_file(path):
+    """The contents of a _section.json, or None when it cannot be used."""
+    try:
+        with io.open(path, encoding="utf-8") as f:
+            data = json.loads(f.read())
+    except (IOError, OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("version") != 1:
+        return None
+    return data
+
+
+def _usable_entry(entry, shape, model_data, name, section_view):
+    """True for a section of a _section.json that fits this section and is
+    whole. A damaged entry counts as absent: it must not cost the shells."""
+    try:
+        for key in ("EY", "EZ"):
+            float(entry[key])
+        for row in entry["points"]:
+            if len(row) not in (8, 14):
+                return False
+            [float(x) for x in row]
+        return bool(section_view.match_table(entry, shape, model_data, name))
+    except Exception:       # IronPython: float(None) is a .NET null reference
+        return False
+
+
+def section_tables(liml_path, view, model_data):
+    """
+    {material: entry of a _section.json} for the drawn materials. A table
+    depends on the section only, so that also a reload of an older result
+    finds it; bridge_section_view.match_table decides that it belongs.
+    """
+    import bridge_section_view as section_view
+    wanted = set(b["material"] for b in view["beams"])
+    shapes = view["shapes"]
+    out = {}
+    for path in _section_files(liml_path):
+        data = _read_section_file(path)
+        for entry in (data or {}).get("sections") or []:
+            name = entry.get("material") if isinstance(entry, dict) else None
+            if name in wanted and name not in out and _usable_entry(
+                    entry, shapes[name], model_data, name, section_view):
+                out[name] = entry
+        if len(out) == len(wanted):
+            break
+    return out
+
+
+def _log_section_notes(fragment_path):
+    """The warnings of the stress over the section (bridge_section_stress) in
+    the log of the run: the job can only print them in its .mess."""
+    if not fragment_path or not fragment_path.endswith(RESULTS_SUFFIX):
+        return
+    path = fragment_path[:-len(RESULTS_SUFFIX)] + SECTION_SUFFIX
+    if os.path.exists(path):
+        for text in (_read_section_file(path) or {}).get("warnings", []):
+            log(text)
 
 
 def _add_section_view(liml_path, tmp, view, model_data, configuration):

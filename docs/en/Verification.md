@@ -157,6 +157,7 @@ checks OK (28 October 2026, step S15b); PT-11..13 (irregular tet mesh), 3 cases,
 OK (29 October 2026). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
 Beam side faces and hydrostatic pressure on shell
 edges LS-92a..h, LS-93a..c, 11 cases, 27 checks OK (28 October 2026, step S17).
+Stress over beam sections LS-97a..l, 12 cases, 37 checks OK (7 November 2026, step S41).
 Nonlinear buckling NK-05 .. NK-10 (large rotation beams, issue #10), 7 cases, 23 checks OK
 (5 November 2026); NK-01 .. NK-04 rerun with them: same status, largest difference 1.4e-6
 relative.
@@ -939,6 +940,58 @@ couples ε_UU with γ_VW, c16 with γ_UV), for the stiffness and the compliance 
 or only a V vector, or U parallel to V: Mecway gives no solution; an angle alone: global
 axes. With the field *stress in element coordinates* Mecway stores `lamuu`, `lamvv`, `lamww`,
 `lamuv`, `lamvw`, `lamwu` = R σ Rᵀ (not written by the bridge, S13d).
+
+### LS-97 Stress over beam sections
+
+- **Purpose**: the stress at every point of a beam section (S41,
+  [UserGuide §4.3](UserGuide.md#43-the-shape-of-a-general-section)): von Mises, longitudinal and shear
+  stress per element end and at the points of the outline, from `beam_forces` of a real Code-Aster run.
+- **Model**: cantilever along X, L = 1 m, 8 line2 (LS-97g: 1, LS-97h, k: 4), V = Y, W = Z, E = 210 GPa,
+  ν = 0.3, F = 1000 N at the tip. T: flange 100 × 8 mm, web 92 × 6 mm, outline as `SECTIE-VORM`. U:
+  100 × 50 mm, flanges 8, web 6 mm, `#ASTER-SECTIE` with EY = 31.93 mm. I, C, L: Mecway's profiles without
+  an outline.
+- **Reference**: hand calculation, statics plus beam theory, written down before the run. The sign of
+  σ on the shells follows from the load direction: F along +Z compresses the +Z side of the clamp.
+
+| Test | Load | Quantity | Reference | Result |
+|---|---|---|---|---|
+| LS-97a | T, `POU_D_E`, F along W, along the symmetry axis | \|σ\| clamp | M c / I = 62.458 MPa | 62.458 MPa |
+| | | τ clamp | V Q / (I t) = 2.3605 MPa | 2.3611 MPa (+0.03%) |
+| | | von Mises tip | √3 V Q / (I t) = 4.0885 MPa | 4.0896 MPa (+0.03%) |
+| | | shells: σ web tip | −62.458 MPa | −62.458 MPa |
+| | | shells: τ on the neutral axis | 2.3605 MPa | 2.3610 MPa (+0.02%) |
+| LS-97b | U, `POU_D_TG`, F at G plus T = −EY·F: T_S = 0 | τ clamp | V Q / (I t) = 1.9809 MPa | 1.9859 MPa (+0.25%) |
+| | | shells: both web faces | 1.9809 MPa | 1.9859 and 1.9765 MPa |
+| LS-97c | U, `POU_D_TG`, F at G: T_S = EY·F | τ clamp, flange | T_S t / J = 11.59 MPa | 12.56 MPa (+8.4%, tolerance 10%; shear on top of it) |
+| | | shells: web faces, sum | 2 T_S t / J = 17.381 MPa | 17.368 MPa (−0.07%) |
+| | | shells: web faces, difference | 2 V Q / (I t) = 3.9617 MPa | 3.9624 MPa (+0.02%) |
+| LS-97d | I 100/50/10/8, `POU_D_E`, F along V | \|σ\|, τ clamp | 21.056 MPa, 1.5213 MPa | 21.056 MPa, 1.5218 MPa |
+| LS-97e | C 100 × 50 × 6, `POU_D_E`, F along V | \|σ\| clamp | 29.977 MPa | 29.977 MPa |
+| LS-97f | L 80 × 50 × 8, `POU_D_E`, F along V (principal axis) | \|σ\| clamp | M v / I = 244.02 MPa | 244.02 MPa |
+| LS-97g | T, 1 element, `FORCE_POUTRE` q = 2000 N/m | \|σ\| clamp, tip | q L²/2 · c/I = 62.458 MPa, 0 | 62.458 MPa, 1e-8 Pa |
+| LS-97h | T, 4 `POU_D_TG`, own weight | \|σ\| clamp | (q L²/2 − q h²/12) c/I = 3.2165 MPa | 3.2165 MPa |
+| LS-97i | T, nonlinear static, load ramp, 2 steps | \|σ\| clamp, t = 0.5, 1 | 31.229, 62.458 MPa | 31.229, 62.458 MPa |
+| LS-97j | T, `POU_D_T` | \|σ\|, τ clamp | 62.458 MPa, 2.3605 MPa | 62.458 MPa, 2.3611 MPa |
+| LS-97k | T, 4 line3, also the middle node | \|σ\| nodes of element 1 | 62.458, 54.651, 46.844 MPa | 62.458, 54.651, 46.844 MPa |
+| LS-97l | T, `POU_D_T_GD`, F = 10 N | \|σ\| clamp | M at L/16, 0.58555 MPa | 0.58555 MPa, equal at both ends of the element |
+
+- **Against `SectionField`** with the statics of the same loads (`section_stress.py`, element nodes): T
+  von Mises 62.458 MPa, τ 2.3612 MPa; U τ 1.9859 and 12.556 MPa. Largest difference with the run 1e-5:
+  the run uses nodal values (`tests/test_bridge_section_stress.py`: at most 0.5% on random loads).
+- **A wrong sign of the torque term shows in LS-97b**: T_S would be 2·EY·F, a shear of about 25 MPa.
+- **Against `longitudinalstress`**: the largest σ on the ring of the clamp equals `beamsixxabsmax`
+  (ratio 1.000000, LS-97a).
+- **In Mecway**: real results of LS-97a, c, d, i and k through `splice_results` and `add_section_view` in
+  Mecway's IronPython, opened hidden in Mecway 35: no dialog, and `element_node_value` and
+  `node_value` give the new variables on beams and shells, in both languages.
+- **Cost**: 0.1 s per different section, 0.3 s per step for 5000 beams (10 000 ends).
+- **`POU_D_T_GD`** has constant section forces per element (LS-97l): the values at a clamp are those of
+  mid-element, here 15/16 of the end value.
+- **Status**: 12 cases, 37 checks OK (7 November 2026, Code-Aster 17.4). The shell checks use the functions
+  of the bridge on the run; writing them into the `.liml` is in `tests/test_bridge_section_results.py`.
+- **NOT verified**: an element offset through this route; I, T, L, C on `POU_D_TG`, where the solver has the
+  thin-walled EY, EZ and the stress the shear centre of the mesh; a distributed load on `POU_D_T`,
+  `POU_D_TG` and line3 through this stress; colours in Mecway's window.
 
 ### Conclusion linear static
 

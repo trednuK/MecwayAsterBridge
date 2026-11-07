@@ -243,14 +243,40 @@ res = MECA_STATIQUE(
 #
 # See _build_calc_champ_block() in bridge_to_aster.py.
 # =====================================================
-res = CALC_CHAMP(
-    reuse=res,
-    RESULTAT=res,
-    FORCE=('REAC_NODA', ),
-)
 
 # Section forces of beams (result field beam_forces).
 res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA=('Balk',), CONTRAINTE=('EFGE_ELNO', 'EFGE_NOEU', ))
+
+# POU_D_TG: reactions from one elastic step of STAT_NON_LINE
+# (REAC_NODA of MECA_STATIQUE is wrong, KNOWN_BUGS 123)
+reac_tg_t = DEFI_LIST_REEL(DEBUT=-1.0,
+    INTERVALLE=_F(JUSQU_A=0.0, NOMBRE=1))
+reac_tg = STAT_NON_LINE(
+    MODELE=model,
+    CHAM_MATER=fieldmat,
+    CARA_ELEM=cara,
+    EXCIT=(
+        _F(CHARGE=load_1),
+        _F(CHARGE=load_2),
+    ),
+    COMPORTEMENT=_F(GROUP_MA='Balk', RELATION='ELAS', DEFORMATION='PETIT'),
+    INCREMENT=_F(LIST_INST=reac_tg_t),
+    CONVERGENCE=_F(RESI_GLOB_RELA=1.0e-6, RESI_GLOB_MAXI=1.0e-3,
+                   VERIF='AU_MOINS_UN', ITER_GLOB_MAXI=10),
+    SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),
+)
+reac_tg = CALC_CHAMP(
+    reuse=reac_tg,
+    RESULTAT=reac_tg,
+    FORCE=('REAC_NODA', ),
+)
+reac_tgf = CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R', OPERATION='EXTR',
+                      RESULTAT=reac_tg, NOM_CHAM='REAC_NODA', NUME_ORDRE=1)
+res = CREA_RESU(reuse=res, RESULTAT=res, OPERATION='AFFE',
+                TYPE_RESU='EVOL_ELAS',
+                AFFE=_F(NOM_CHAM='REAC_NODA', CHAM_GD=reac_tgf, INST=0.0,
+                        MODELE=model, CHAM_MATER=fieldmat,
+                        CARA_ELEM=cara))
 
 # Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,
 # centre of gravity and sum of REAC_NODA in the .mess

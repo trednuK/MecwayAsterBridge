@@ -116,7 +116,9 @@ load_2 = AFFE_CHAR_MECA(
 # =====================================================
 # Stress state under the applied loads (the
 # buckling load factor is a multiple of these loads).
-stat = MECA_STATIQUE(
+stat_t = DEFI_LIST_REEL(DEBUT=-1.0,
+    INTERVALLE=_F(JUSQU_A=0.0, NOMBRE=1))
+stat = STAT_NON_LINE(
     MODELE=model,
     CHAM_MATER=fieldmat,
     CARA_ELEM=cara,
@@ -124,6 +126,10 @@ stat = MECA_STATIQUE(
         _F(CHARGE=load_1),
         _F(CHARGE=load_2),
     ),
+    COMPORTEMENT=_F(GROUP_MA='Balk', RELATION='ELAS', DEFORMATION='PETIT'),
+    INCREMENT=_F(LIST_INST=stat_t),
+    CONVERGENCE=_F(RESI_GLOB_RELA=1.0e-6, RESI_GLOB_MAXI=1.0e-3,
+                   VERIF='AU_MOINS_UN', ITER_GLOB_MAXI=10),
     SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),
 )
 sig = CREA_CHAMP(OPERATION='EXTR', TYPE_CHAM='ELGA_SIEF_R',

@@ -453,7 +453,7 @@ are the same as those of Mecway's own solution where Mecway knows them.
 | error estimator (setting *Error estimator*, not in this list) | `errorestimate`, `errorestimaterel` (solid elements, nodal values and per element; bridge names) | `ERME_NOEU`, `ERME_ELNO` | static ([`Error_estimator.md`](Error_estimator.md)) |
 | fatigue (`#ASTER-WOHLER`, not in this list) | `damage` (damage D), `life` (repetitions until D = 1); shells also `damage_top`/`damage_bottom`, with a criterion `fatigue_eq`/`fatigue_ratio`; nodal values, bridge names | from `SIGM_NOEU`/`EPSI_NOEU`/`SIEQ_NOEU` (rainflow, Miner; `aster_fatigue.py`) or `CALC_FATIGUE FATIGUE_MULTI` | static, nonlinear, dynamic ([`Fatigue.md`](Fatigue.md)) |
 | `strain` | solids: `lstrainxx` .. `lstrainzx` (linear), `greenlagrangestrainxx` .. (nonlinear with large displacements, like Mecway's L30/D31); shells: `lstrainxxu`/`m`/`b` .. (top/middle/bottom, global axes); node and element-node values; shear as engineering strain γ = 2ε (like Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), shells `EPSI_ELNO` + `EXTR_COQUE` | off (larger `.liml`) |
-| `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V along Mecway's V and W), `torsion`, `bendingmomv`, `bendingmomw`; local axes and signs as in Mecway; node and element-node values | `EFGE_NOEU`, `EFGE_ELNO` | static, nonlinear, dynamic |
+| `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V along Mecway's V and W), `torsion`, `bendingmomv`, `bendingmomw`; local axes and signs as in Mecway; node and element-node values; also the source of `beamvonmisesmax`, `beamsixxabsmax` and `beamtaumax` (§4.3) | `EFGE_NOEU`, `EFGE_ELNO` | static, nonlinear, dynamic |
 | `shell_stresses` | `stressxxu1` .. `stresszxu1`, likewise `m1` (middle) and `b1` (bottom): shell stress tensor in global axes, as in Mecway | `SIGM_ELNO` after `EXTR_COQUE`, rotated in the job from the local shell axes to global | off (18 variables) |
 | `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 gives tension on top), `shearuw`/`shearvw` (shear force per length) in Mecway's U,V axes (U = `orientationu*`, an *Element orientation* card or the edge node 1→2) | `EFGE_ELNO`, rotated in the job to Mecway's U,V | static, nonlinear |
 | `safety_factor` | `factorofsafety` (Mecway shows the item *failure*): tensile strength / von Mises for materials with Mecway's von Mises failure criterion; shells the smallest of top and bottom; unloaded 1e6 | from `SIEQ_NOEU`/`SIEQ_ELNO` (in the job) | static, nonlinear, dynamic |
@@ -643,6 +643,8 @@ In the tree under *Solution* the shells have:
 | `longitudinalstress` (`langsspanning` with language `nl`) | stress along the beam from normal force and bending, in Pa, plus = tension |
 | `displx/y/z`, `displmag` | displacement of the point on the section: that of the beam plus the rotation times the arm |
 | `rotx/y/z` | rotation of the beam |
+| `sectionvonmises` (`doorsnedevonmises`) | von Mises at that point of the section, in Pa, after a Code-Aster run |
+| `sectionshear` (`doorsnedeschuif`) | shear stress from shear force and torsion at that point, in Pa, after a Code-Aster run |
 | `stressptu` | when that field is stored: the same stress on the shells |
 | every other result | the value of the beam at that end of the shells; where the beam has none (a reaction force away from a support), the shells have none either |
 
@@ -655,8 +657,45 @@ plasticity it does not hold.
 With a distributed load on a beam element, Mecway's own element stress has the same term
 q h²/12 in the moment (h = element length), and so has `longitudinalstress`.
 Measured on Mecway 35 at the clamp of a cantilever: 0.833 of theory with one element, 0.958
-with two and 0.997 with eight. So refine the beam if this point matters. With beam forces from
-Code-Aster this was NOT verified.
+with two and 0.997 with eight. So refine the beam if this point matters. For beam forces from
+Code-Aster see the next paragraph.
+
+**Stress over the section.** In the Code-Aster job the bridge calculates the stress at every
+point of the section from the section forces of `beam_forces` (result field, on by default).
+Besides the shell variables above that gives, on the beams themselves, per element end:
+
+| Variable | Contents |
+|---|---|
+| `beamvonmisesmax` | largest von Mises over the section, √(σ² + 3τ²), in Pa |
+| `beamsixxabsmax` | largest absolute longitudinal stress over the section, in Pa |
+| `beamtaumax` | largest shear stress over the section, from shear force and torsion, in Pa |
+
+- For a General section with an outline, and for Mecway's I, T, L and C, also without
+  "Section in results". On a rectangle, tube and circle `beamsixxmin/max` stay. Route `liml` only.
+- Each maximum is its own: the three can lie at different points of the section.
+- A sharp inner corner has no finite stress, so the three maxima leave out a zone of 1 × the
+  local thickness around such a corner. On the shells a point inside a zone shows the larger of
+  the two values where the outline leaves the zone; its σ stays that of the point.
+- The shells show the points of the outline only. The largest shear stress often lies inside the
+  section, in the middle of a web, or on a side without a point: `beamtaumax` is the number to use.
+- The shear stress uses T_S = MT + EY·VZ − EZ·VY, the torque about the shear centre. EY and EZ
+  come from `#ASTER-SECTIE`, otherwise from the shear centre of the section as the bridge
+  calculates it.
+- A load inside an element counts as Code-Aster reports it. With `FORCE_POUTRE` (line load) the
+  end values are exact: LS-97g on `POU_D_E` ([Verification](Verification.md));
+  MecwayAdvancedBeamAnalysis measured the same section forces on `POU_D_T`, `POU_D_TG` and line3,
+  through this stress NOT verified. Own weight on `POU_D_TG` is not exact: V is the value at
+  mid-element and M lies q h²/12 off at the ends (LS-97h), so refine the beam there.
+- `POU_D_T_GD` has constant section forces per element: an end shows the value of mid-element
+  (LS-97l), so at a clamp half an element too low.
+- Not in it: the stress from restrained warping. Beam theory holds for an open section only a
+  few decay lengths from a clamp or a load introduction (MecwayAdvancedBeamAnalysis measured 4/k
+  on solid models). Linear elastic only: a material with plasticity is skipped.
+- The table for the shells is in `<model>_<run_id>_section.json` in the work folder and is found
+  again after loading results. Without it (a solve in Mecway itself, a run of an older version) the
+  shells have `longitudinalstress` only.
+- What cannot be calculated gives a WARNING in the log file, and the run goes on: see the table
+  at the end of this chapter.
 
 What you see in the view:
 
@@ -702,6 +741,11 @@ Limits:
 | WARNING: Material '...': ... beam(s) are not parallel to the direction ... | the beam is more than 1 degree skew to the U in `SECTIE-RICHTING` | check these beams, or give them their own material and assign the section to it with MecwaySectionProps |
 | WARNING: SECTIE-RICHTING '...' is skipped | the line does not have three valid numbers per vector | create the General section again; an earlier good line of that material stays valid |
 | ERROR: Section view: ... quads over ... beams, the limit is ... | too many beam elements times outline points | fewer beam elements, or a simpler section |
+| WARNING: Material '...': general section without a usable shape | no `SECTIE-VORM`, or one of another section: no stress over the section | create the General section with MecwaySectionProps, with the shape ticked |
+| WARNING: No beam section forces in the result | result field `beam_forces` is off | switch it on |
+| WARNING: Material '...': section of several parts | the section consists of separate pieces: only `beamsixxabsmax` | none; the shear fields need one piece |
+| WARNING: numpy/scipy not available in Code-Aster | an incomplete Code-Aster installation | install Code-Aster again |
+| No shear stress and von Mises on the shape: those need the table of a Code-Aster run | a solve in Mecway itself, or the `_section.json` is gone | calculate with Code-Aster |
 
 ## 5. Files in the working directory
 

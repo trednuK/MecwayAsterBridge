@@ -448,7 +448,7 @@ als die van Mecway's eigen oplossing waar Mecway ze kent.
 | foutschatter (instelling *Foutschatter*, niet in deze keuzelijst) | `errorestimate`, `errorestimaterel` (volume-elementen, knoopwaarden en per element; namen van de bridge) | `ERME_NOEU`, `ERME_ELNO` | statisch ([`Foutschatter.md`](Foutschatter.md)) |
 | vermoeiing (`#ASTER-WOHLER`, niet in deze keuzelijst) | `damage` (schade D), `life` (herhalingen tot D = 1); schalen ook `damage_top`/`damage_bottom`, met een criterium `fatigue_eq`/`fatigue_ratio`; knoopwaarden, namen van de bridge | uit `SIGM_NOEU`/`EPSI_NOEU`/`SIEQ_NOEU` (rainflow, Miner; `aster_fatigue.py`) of `CALC_FATIGUE FATIGUE_MULTI` | statisch, niet-lineair, dynamisch ([`Vermoeiing.md`](Vermoeiing.md)) |
 | `strain` | volumes: `lstrainxx` .. `lstrainzx` (lineair), `greenlagrangestrainxx` .. (niet-lineair met grote verplaatsingen, zoals Mecway's L30/D31); schalen: `lstrainxxu`/`m`/`b` .. (boven/midden/onder, globale assen); knoop- en elementknoopwaarden; schuif als hoekverdraaiing γ = 2ε (zoals Mecway) | `EPSI_NOEU`/`EPSI_ELNO` (`EPSG_*`), schalen `EPSI_ELNO` + `EXTR_COQUE` | uit (grotere `.liml`) |
-| `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V langs Mecway's V en W), `torsion`, `bendingmomv`, `bendingmomw`; lokale assen en tekens zoals Mecway; knoop- en elementknoopwaarden | `EFGE_NOEU`, `EFGE_ELNO` | statisch, niet-lineair, dynamisch |
+| `beam_forces` | `tensileforce` (N), `sheary`, `shearz` (V langs Mecway's V en W), `torsion`, `bendingmomv`, `bendingmomw`; lokale assen en tekens zoals Mecway; knoop- en elementknoopwaarden; ook de bron van `beamvonmisesmax`, `beamsixxabsmax` en `beamtaumax` (§4.3) | `EFGE_NOEU`, `EFGE_ELNO` | statisch, niet-lineair, dynamisch |
 | `shell_stresses` | `stressxxu1` .. `stresszxu1`, idem `m1` (midden) en `b1` (onder): spanningstensor van schalen in globale assen, zoals Mecway | `SIGM_ELNO` na `EXTR_COQUE`, in de job van het lokale schaalassenstelsel naar globaal gedraaid | uit (18 variabelen) |
 | `shell_forces` | `forceperlengthu`/`v`/`uv` (N/m), `momentu`/`v`/`uv` (N·m/m; `momentu` > 0 geeft trek boven), `shearuw`/`shearvw` (dwarskracht per lengte) in Mecway's U,V-assen (U = `orientationu*`, een *Element orientation*-kaart of de rand knoop 1→2) | `EFGE_ELNO`, in de job naar Mecway's U,V gedraaid | statisch, niet-lineair |
 | `safety_factor` | `factorofsafety` (Mecway toont het item *failure*): tensile strength / von Mises van materialen met Mecway's von Mises-faalcriterium; schalen de kleinste van boven en onder; onbelast 1e6 | uit `SIEQ_NOEU`/`SIEQ_ELNO` (in de job) | statisch, niet-lineair, dynamisch |
@@ -643,6 +643,8 @@ In de boom onder *Solution* staan op de schalen:
 | `langsspanning` (`longitudinalstress` met taal `en`) | spanning langs de balk door normaalkracht en buiging, in Pa, plus = trek |
 | `displx/y/z`, `displmag` | verplaatsing van het punt op de doorsnede: die van de balk plus de rotatie maal de arm |
 | `rotx/y/z` | rotatie van de balk |
+| `doorsnedevonmises` (`sectionvonmises` met taal `en`) | von Mises op dat punt van de doorsnede, in Pa, na een Code-Aster-run |
+| `doorsnedeschuif` (`sectionshear` met taal `en`) | schuifspanning door dwarskracht en wringing op dat punt, in Pa, na een Code-Aster-run |
 | `stressptu` | als dat veld is opgeslagen: dezelfde spanning op de schalen |
 | elk ander resultaat | de waarde van de balk aan dat einde van de schalen; waar de balk er geen heeft (een reactiekracht buiten een steunpunt), hebben de schalen er ook geen |
 
@@ -655,8 +657,45 @@ plasticiteit geldt ze niet.
 Bij een verdeelde belasting op een balkelement heeft Mecway's eigen elementspanning dezelfde
 term q h²/12 in het moment (h = elementlengte), en `langsspanning` dus ook.
 Gemeten op Mecway 35 aan de inklemming van een uitkragende ligger: 0,833 van de theorie met
-één element, 0,958 met twee en 0,997 met acht. Verfijn de balk dus als dit punt telt. Met
-balkkrachten uit Code-Aster is dit NIET nagegaan.
+één element, 0,958 met twee en 0,997 met acht. Verfijn de balk dus als dit punt telt. Voor
+balkkrachten uit Code-Aster: zie de volgende alinea.
+
+**Spanning over de doorsnede.** In de Code-Aster-job rekent de bridge de spanning op elk punt van
+de doorsnede uit de snedekrachten van `beam_forces` (resultaatveld, standaard aan). Naast de
+schaalvariabelen hierboven levert dat op de balken zelf, per elementeinde:
+
+| Variabele | Inhoud |
+|---|---|
+| `beamvonmisesmax` | grootste von Mises over de doorsnede, √(σ² + 3τ²), in Pa |
+| `beamsixxabsmax` | grootste absolute langsspanning over de doorsnede, in Pa |
+| `beamtaumax` | grootste schuifspanning over de doorsnede, door dwarskracht en wringing, in Pa |
+
+- Voor een General section met omtrek, en voor Mecway's I, T, L en C, ook zonder *Doorsnede in
+  resultaten*. Op een rechthoek, koker en cirkel blijven `beamsixxmin/max`. Alleen route `liml`.
+- Elk maximum staat op zichzelf: de drie kunnen op verschillende punten van de doorsnede liggen.
+- Een scherpe inwendige hoek heeft geen eindige spanning, dus de drie maxima laten een zone van
+  1 × de plaatselijke dikte rond zo'n hoek buiten beschouwing. Op de schalen toont een punt in een
+  zone de grootste van de twee waarden waar de omtrek de zone verlaat; zijn σ blijft die van het punt.
+- De schalen tonen alleen de punten van de omtrek. De grootste schuifspanning ligt vaak binnen de
+  doorsnede, midden in een lijf, of op een zijde zonder punt: `beamtaumax` is het getal om te gebruiken.
+- De schuifspanning gebruikt T_S = MT + EY·VZ − EZ·VY, het moment om het dwarskrachtcentrum. EY en
+  EZ komen uit `#ASTER-SECTIE`, anders uit het dwarskrachtcentrum van de doorsnede zoals de bridge
+  dat rekent.
+- Een last binnen een element telt zoals Code-Aster die rapporteert. Bij `FORCE_POUTRE` (lijnlast)
+  zijn de eindwaarden exact: LS-97g op `POU_D_E` ([Verificatie](Verificatie.md));
+  MecwayAdvancedBeamAnalysis mat dezelfde snedekrachten op `POU_D_T`, `POU_D_TG` en line3, via deze
+  spanning NIET geverifieerd. Eigen gewicht op `POU_D_TG` is niet exact: V is de waarde midden in het
+  element en M wijkt aan de einden q h²/12 af (LS-97h), dus verfijn de balk daar.
+- `POU_D_T_GD` heeft snedekrachten die per element constant zijn: een einde toont de waarde van
+  midden in het element (LS-97l), aan een klem dus een half element te laag.
+- Niet inbegrepen: de spanning door verhinderde welving. Bij een open profiel geldt de balktheorie pas
+  enkele uitdempingslengtes van een inklemming of krachtinleiding (MecwayAdvancedBeamAnalysis
+  mat 4/k op volumemodellen). Alleen lineair-elastisch: een materiaal met plasticiteit wordt overgeslagen.
+- De tabel voor de schalen staat in `<model>_<run_id>_section.json` in de werkmap en wordt ook na
+  het inladen van resultaten gevonden. Zonder die tabel (oplossen in Mecway zelf, een run van een
+  oudere versie) hebben de schalen alleen `langsspanning`.
+- Wat niet te rekenen is geeft een WARNING in het logbestand, en de run gaat door: zie de tabel
+  aan het eind van dit hoofdstuk.
 
 Wat je in het beeld ziet:
 
@@ -703,6 +742,11 @@ Beperkingen:
 | WARNING: Materiaal '...': ... balk(en) lopen niet evenwijdig aan de richting ... | de balk staat meer dan 1 graad scheef op de U in `SECTIE-RICHTING` | controleer deze balken, of geef ze een eigen materiaal en wijs de doorsnede daarop toe met MecwaySectionProps |
 | WARNING: SECTIE-RICHTING '...' wordt overgeslagen | de regel heeft niet drie geldige getallen per vector | maak de General section opnieuw; een eerdere goede regel van dat materiaal blijft gelden |
 | ERROR: Doorsnede: ... quads over ... balken, de grens is ... | te veel balkelementen maal omtrekpunten | minder balkelementen, of een eenvoudiger doorsnede |
+| WARNING: Materiaal '...': General section zonder bruikbare vorm | geen `SECTIE-VORM`, of een van een andere doorsnede: geen spanning over de doorsnede | maak de General section met MecwaySectionProps, met de vorm aangevinkt |
+| WARNING: Geen snedekrachten van de balken in het resultaat | resultaatveld `beam_forces` staat uit | zet het aan |
+| WARNING: Materiaal '...': doorsnede uit meerdere delen | de doorsnede bestaat uit losse stukken: alleen `beamsixxabsmax` | geen; de schuifvelden vragen één stuk |
+| WARNING: numpy/scipy niet beschikbaar in Code-Aster | een onvolledige Code-Aster-installatie | installeer Code-Aster opnieuw |
+| Geen schuifspanning en von Mises op de vorm: die vragen de tabel van een Code-Aster-run | oplossen in Mecway zelf, of de `_section.json` is weg | reken met Code-Aster |
 
 ## 5. Bestanden in de werkmap
 

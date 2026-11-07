@@ -209,6 +209,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    stiffness is NOT verified. Use beams with `elem_beam` = `POU_D_TG` or solid elements for
    the global buckling of profiles.
 
+133\. **Stress over beam sections: limits** (confirmed, `bridge_section_stress.py`, STAPPENPLAN S41,
+   LS-97). No stress from restrained warping, so an open section is only right a few decay
+   lengths from a clamp or load introduction. Own weight on `POU_D_TG`: V is the mid-element value and
+   M lies q h^2/12 off at the ends, also in `beamsixxabsmax` (LS-97h); `FORCE_POUTRE` on `POU_D_E` is
+   exact (LS-97g). `POU_D_T_GD`: SIEF_ELNO is constant per element, an end shows mid-element
+   (LS-97l). The shells show outline points only and take the value at the edge of a corner zone.
+   The table of the shells comes from the job, so that a solve in Mecway itself gets
+   `longitudinalstress` only. NOT verified: an element offset on this route; I, T, L, C on
+   `POU_D_TG`, where the solver has the thin-walled EY, EZ of `bridge_warping` and the stress the
+   shear centre of the mesh; a statically indeterminate beam without warping, where MT and V
+   already lack the coupling (status: limits, no bug).
+
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces

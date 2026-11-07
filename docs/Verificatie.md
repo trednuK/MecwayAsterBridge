@@ -160,6 +160,7 @@ FEM-waarden bit-gelijk); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (2
 Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
 Balkzijvlakken en hydrostatische druk
 op schaalranden LS-92a..h, LS-93a..c, 11 cases, 27 controles OK (28 oktober 2026, stap S17).
+Spanning over balkdoorsneden LS-97a..l, 12 cases, 37 controles OK (7 november 2026, stap S41).
 Niet-lineaire knik NK-05 .. NK-10 (grote-rotatiebalken, issue #10), 7 cases, 23 controles OK
 (5 november 2026); NK-01 .. NK-04 daarmee opnieuw gedraaid: zelfde status, grootste
 verschil 1,4e-6 relatief.
@@ -949,6 +950,58 @@ compliantiematrix; alleen een U- of alleen een V-vector, of U evenwijdig aan V: 
 geen oplossing; alleen een hoek: globale assen. Met het veld *stress in element
 coordinates* slaat Mecway `lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu` = R σ Rᵀ op
 (schrijft de bridge niet, S13d).
+
+### LS-97 Spanning over balkdoorsneden
+
+- **Doel**: de spanning op elk punt van een balkdoorsnede (S41,
+  [Handleiding §4.3](Handleiding.md#43-de-vorm-van-een-general-section)): von Mises, langs- en schuifspanning
+  per elementeinde en op de punten van de omtrek, uit `beam_forces` van een echte Code-Aster-run.
+- **Model**: uitkragende ligger langs X, L = 1 m, 8 line2 (LS-97g: 1, LS-97h, k: 4), V = Y, W = Z, E = 210 GPa,
+  ν = 0,3, F = 1000 N op de tip. T: flens 100 × 8 mm, lijf 92 × 6 mm, omtrek als `SECTIE-VORM`. U:
+  100 × 50 mm, flenzen 8, lijf 6 mm, `#ASTER-SECTIE` met EY = 31,93 mm. I, C, L: Mecway's profielen zonder
+  omtrek.
+- **Referentie**: handberekening, statica plus balktheorie, vooraf opgeschreven. Het teken van
+  σ op de schalen volgt uit de lastrichting: F langs +Z drukt de +Z-kant van de inklemming samen.
+
+| Test | Last | Grootheid | Referentie | Resultaat |
+|---|---|---|---|---|
+| LS-97a | T, `POU_D_E`, F langs W, langs de symmetrie-as | \|σ\| klem | M c / I = 62,458 MPa | 62,458 MPa |
+| | | τ klem | V Q / (I t) = 2,3605 MPa | 2,3611 MPa (+0,03%) |
+| | | von Mises tip | √3 V Q / (I t) = 4,0885 MPa | 4,0896 MPa (+0,03%) |
+| | | schalen: σ lijftip | −62,458 MPa | −62,458 MPa |
+| | | schalen: τ op de neutrale lijn | 2,3605 MPa | 2,3610 MPa (+0,02%) |
+| LS-97b | U, `POU_D_TG`, F in G plus T = −EY·F: T_S = 0 | τ klem | V Q / (I t) = 1,9809 MPa | 1,9859 MPa (+0,25%) |
+| | | schalen: beide lijfvlakken | 1,9809 MPa | 1,9859 en 1,9765 MPa |
+| LS-97c | U, `POU_D_TG`, F in G: T_S = EY·F | τ klem, flens | T_S t / J = 11,59 MPa | 12,56 MPa (+8,4%, tolerantie 10%; dwarskracht komt erbij) |
+| | | schalen: lijfvlakken, som | 2 T_S t / J = 17,381 MPa | 17,368 MPa (−0,07%) |
+| | | schalen: lijfvlakken, verschil | 2 V Q / (I t) = 3,9617 MPa | 3,9624 MPa (+0,02%) |
+| LS-97d | I 100/50/10/8, `POU_D_E`, F langs V | \|σ\|, τ klem | 21,056 MPa, 1,5213 MPa | 21,056 MPa, 1,5218 MPa |
+| LS-97e | C 100 × 50 × 6, `POU_D_E`, F langs V | \|σ\| klem | 29,977 MPa | 29,977 MPa |
+| LS-97f | L 80 × 50 × 8, `POU_D_E`, F langs V (hoofdas) | \|σ\| klem | M v / I = 244,02 MPa | 244,02 MPa |
+| LS-97g | T, 1 element, `FORCE_POUTRE` q = 2000 N/m | \|σ\| klem, tip | q L²/2 · c/I = 62,458 MPa, 0 | 62,458 MPa, 1e-8 Pa |
+| LS-97h | T, 4 `POU_D_TG`, eigen gewicht | \|σ\| klem | (q L²/2 − q h²/12) c/I = 3,2165 MPa | 3,2165 MPa |
+| LS-97i | T, niet-lineair statisch, lastoploop, 2 stappen | \|σ\| klem, t = 0,5, 1 | 31,229, 62,458 MPa | 31,229, 62,458 MPa |
+| LS-97j | T, `POU_D_T` | \|σ\|, τ klem | 62,458 MPa, 2,3605 MPa | 62,458 MPa, 2,3611 MPa |
+| LS-97k | T, 4 line3, ook de middenknoop | \|σ\| knopen van element 1 | 62,458, 54,651, 46,844 MPa | 62,458, 54,651, 46,844 MPa |
+| LS-97l | T, `POU_D_T_GD`, F = 10 N | \|σ\| klem | M op L/16, 0,58555 MPa | 0,58555 MPa, gelijk aan beide einden van het element |
+
+- **Tegen `SectionField`** met de statica van dezelfde lasten (`section_stress.py`, elementknopen): T
+  von Mises 62,458 MPa, τ 2,3612 MPa; U τ 1,9859 en 12,556 MPa. Grootste verschil met de run 1e-5:
+  de run gebruikt knoopwaarden (`tests/test_bridge_section_stress.py`: hoogstens 0,5% op willekeurige lasten).
+- **Een fout teken van de torsieterm valt op in LS-97b**: T_S zou 2·EY·F zijn, een schuifspanning van ongeveer 25 MPa.
+- **Tegen `langsspanning`**: de grootste σ op de ring van de inklemming is gelijk aan `beamsixxabsmax`
+  (verhouding 1,000000, LS-97a).
+- **In Mecway**: echte resultaten van LS-97a, c, d, i en k via `splice_results` en `add_section_view` in
+  Mecway's IronPython, verborgen geopend in Mecway 35: geen dialoog, en `element_node_value` en
+  `node_value` geven de nieuwe variabelen op balken en schalen, in beide talen.
+- **Kosten**: 0,1 s per verschillende doorsnede, 0,3 s per stap voor 5000 balken (10 000 einden).
+- **`POU_D_T_GD`** heeft snedekrachten die per element constant zijn (LS-97l): de waarden aan een klem zijn die
+  van midden in het element, hier 15/16 van de eindwaarde.
+- **Stand**: 12 cases, 37 controles OK (7 november 2026, Code-Aster 17.4). De schaalcontroles gebruiken de
+  functies van de bridge op de run; het schrijven in de `.liml` zit in `tests/test_bridge_section_results.py`.
+- **NIET geverifieerd**: een elementoffset via deze route; I, T, L, C op `POU_D_TG`, waar de solver de
+  dunwandige EY, EZ heeft en de spanning het dwarskrachtcentrum van het mesh; een verdeelde last op `POU_D_T`,
+  `POU_D_TG` en line3 via deze spanning; kleuren in Mecway's venster.
 
 ### Conclusie lineair statisch
 

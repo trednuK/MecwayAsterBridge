@@ -85,7 +85,7 @@ S7, S8, S5, S9).
 | S38 | General sections: `** SECTIE-RICHTING` check, WARNING for a beam without warping, `FACTOR_57` reported after `OK`, status window not always on top, numbered screens | done | S37 | V2026.8; 550 `.comm` identical |
 | S39 | Review the layout of all screens: is everything still neat, what can be better? First work of the next improvement | open | – | |
 | S40 | One overview image per page of the main window with the groups numbered, referring to the existing tables (Dutch and English) | open | S39 | |
-| S41 | **Priority.** Stress in general-section beams: detailed stress on arbitrary cross-sections, shown in ParaView; research whether Mecway can show it too. Today only `longitudinalstress` (N, Mv, Mw), no shear, torsion, warping or von Mises | open | S37 | |
+| S41 | **Priority.** Stress in general-section beams: von Mises, longitudinal and shear stress over the section as results in Mecway, on the beams and on the shells of *Section in results* (`bridge_section_stress.py`, in the job; LS-97a..l). Not in it: warping stress (F6 of MecwayAdvancedBeamAnalysis), ParaView (the variables reach the VTU like others, NOT verified) | done | S37 | branch `section-results` |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |

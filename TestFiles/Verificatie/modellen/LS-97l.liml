@@ -1,0 +1,39 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="1 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.125" y="0" z="0" />
+  <node nid="3" x="0.25" y="0" z="0" />
+  <node nid="4" x="0.375" y="0" z="0" />
+  <node nid="5" x="0.5" y="0" z="0" />
+  <node nid="6" x="0.625" y="0" z="0" />
+  <node nid="7" x="0.75" y="0" z="0" />
+  <node nid="8" x="0.875" y="0" z="0" />
+  <node nid="9" x="1" y="0" z="0" />
+  <elset name="Balk" material="Mat">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+    <elem eid="5" shape="line2" nodes="5 6" />
+    <elem eid="6" shape="line2" nodes="6 7" />
+    <elem eid="7" shape="line2" nodes="7 8" />
+    <elem eid="8" shape="line2" nodes="8 9" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <force selection="Tip"><x>0 N</x><y>0 N</y><z time="0 s">0 N</z><z time="1 s">10 N</z></force>
+  <ccxmodeldefinition>** SECTIE-VORM Mat: N=10, A=0.001352
+** SECTIE-VORM Mat: P=-0.05 -0.0244142011834 0.05 -0.0244142011834 0.05 -0.0164142011834 0.003 -0.0164142011834 0.003 0 0.003 0.0755857988166 -0.003 0.0755857988166 -0.003 0 -0.003 -0.0164142011834 -0.05 -0.0164142011834
+</ccxmodeldefinition>
+  <mat name="Mat">
+    <geometric type="UniformGeneralSection" area="0.001352 m²" iyy="1.2101787140039448e-06 m⁴" izz="6.683226666666668e-07 m⁴" torsionconstant="2.369066666666667e-08 m⁴" perimeter="0.3 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="9" />
+  </nodeselection>
+</liml>

@@ -949,10 +949,18 @@ GLOSSARY = OrderedDict([
     ("beam_forces", ("file", u"Resultaatveld: snedekrachten van balken in "
                      u"de lokale assen (tensileforce, sheary, shearz, "
                      u"torsion, bendingmomv, bendingmomw; EFGE_ELNO), "
-                     u"Mecway's namen en tekens.",
+                     u"Mecway's namen en tekens. Bron van de spanning over de "
+                     u"doorsnede: beamvonmisesmax, beamsixxabsmax, beamtaumax "
+                     u"(grootste waarde per elementeinde, buiten de "
+                     u"hoekzones) en doorsnedevonmises, doorsnedeschuif op de "
+                     u"schalen.",
                      u"Result field: beam section forces in the local axes "
                      u"(tensileforce, sheary, shearz, torsion, bendingmomv, "
-                     u"bendingmomw; EFGE_ELNO), Mecway's names and signs.")),
+                     u"bendingmomw; EFGE_ELNO), Mecway's names and signs. "
+                     u"Source of the stress over the section: beamvonmisesmax, "
+                     u"beamsixxabsmax, beamtaumax (largest value per element "
+                     u"end, outside the corner zones) and sectionvonmises, "
+                     u"sectionshear on the shells.")),
     ("shell_stresses", ("file", u"Resultaatveld: spanningstensor van "
                         u"schalen in globale assen op boven-, midden- en "
                         u"ondervlak (stressxxu1/m1/b1 ..). Standaard uit "

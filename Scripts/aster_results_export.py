@@ -2918,6 +2918,9 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
     variables = _plan_variables(data, model, conn, groups,
                                 opt_in=opt_in, derived=derived)
     variables += _constant_vars(node_fields, n)
+    if not modes and rows is None:
+        variables += _section_stress_vars(variables, model, liml_path,
+                                          out_path)
     failed_at = None
     if failures is not None and rows is None:
         failed_at = _failure_times(failures, model)
@@ -3077,6 +3080,65 @@ def _constant_vars(node_fields, n):
         ids, vals = ids[keep], vals[keep]
         out.append(_Var(name, False, ids, lambda fields, v=vals: v))
     return out
+
+
+def _without_fpe(work):
+    """work() with Code-Aster's floating point traps off. They are on in the
+    job and act on numpy and scipy too: a division by zero that numpy would
+    ignore stops the job, past every try/except (seen here: section_mesh under
+    np.errstate gave <F>_ABNORMAL_ABORT and no results at all)."""
+    lib = _libaster()
+    if lib is not None:
+        lib.matfpe(-1)
+    try:
+        with np.errstate(all="ignore"):
+            return work()
+    finally:
+        if lib is not None:
+            lib.matfpe(1)
+
+
+def _section_stress_vars(variables, model, liml_path, out_path):
+    """Largest stress over the section per beam end (bridge_section_stress),
+    from the element-node section forces of this result: EFGE_ELNO, or
+    SIEF_ELNO on POU_D_T_GD. Nodal variables carry the same names, hence
+    var.element. Without beams or displacements (thermal) nothing is imported.
+    An error here costs these variables only, not the export."""
+    if not any(v[0] in LINE_SHAPES for v in model["elements"].values()) or \
+            not any(v.name == "displx" for v in variables):
+        return []
+    try:
+        import bridge_section_stress as bss
+        forces = dict((v.name, v) for v in variables
+                      if v.element and v.name in bss.FORCE_NAMES)
+        ids = dict((k, v.ids) for k, v in forces.items())
+        plan, notes = _without_fpe(lambda: bss.plan(
+            liml_path, out_path, model["elements"], ids))
+    except Exception as e:
+        print(tr("aster_results_export: WAARSCHUWING: spanning over de "
+                 "doorsnede overgeslagen: {0}",
+                 "aster_results_export: WARNING: stress over the section "
+                 "skipped: {0}").format(e))
+        return []
+    for text in notes:
+        print("aster_results_export: {0}".format(text))
+    if plan is None:
+        return []
+
+    def compute(fields):
+        arrays = [forces[name].getter(fields) for name in bss.FORCE_NAMES]
+        if any(a is None for a in arrays):
+            return None
+        return _without_fpe(lambda: plan.values(arrays))
+
+    def getter(name):
+        def get(fields):
+            got = _cached(fields, ("section_stress",),
+                          lambda: compute(fields))
+            return None if got is None else got[name]
+        return get
+    return [_Var(name, True, ids, getter(name))
+            for name, ids in plan.variables]
 
 
 def _group_nodes(model, n):

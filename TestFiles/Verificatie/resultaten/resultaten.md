@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-06 (bridge eacb215, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-07 (bridge 13559d1, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**2980 van 2986 controles binnen de tolerantie** (551 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3036 van 3042 controles binnen de tolerantie** (570 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -202,26 +202,26 @@ Gemaakt door `run_verificatie.py` op 2026-11-06 (bridge eacb215, Code-Aster 17.4
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=1) | 170 Hz | 170 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=1) | 1.3872e-04 1/s | 1.3872e-04 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=2) | 340 Hz | 340 | +0.00% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=2) | 1.3872e-04 1/s | 1.3872e-04 | +0.00% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=2) | 1.3872e-04 1/s | 1.3872e-04 | -0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=3) | 510 Hz | 510.02 | +0.00% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=3) | 1.3872e-04 1/s | 1.3872e-04 | +0.00% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=3) | 1.3872e-04 1/s | 1.3871e-04 | -0.01% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f (n=4) | 680 Hz | 680.07 | +0.01% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=4) | 1.3872e-04 1/s | 1.3885e-04 | +0.09% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay rate (n=4) | 1.3872e-04 1/s | 1.3884e-04 | +0.09% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | |P(L)/P(0)| (170 Hz) | 1 - | 1 | -0.00% | 0.1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (170 Hz) | 0 graden | -8.6312e-11 | -8.6312e-11 | 0.05 graden | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (170 Hz) | 0 graden | -1.5930e-11 | -1.5930e-11 | 0.05 graden | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f2 = AK-01 (Mecway, harde wanden) | 170 Hz | 170 | -0.00% | 0.0001% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f 170 Hz t.o.v. Mecway | 170 Hz | 170 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.00013872 1/s t.o.v. Mecway | 1.3872e-04 1/s | 1.3872e-04 | +0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f 340.002 Hz t.o.v. Mecway | 340 Hz | 340 | -0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138724 1/s t.o.v. Mecway | 1.3872e-04 1/s | 1.3872e-04 | -0.00% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f 510.017 Hz t.o.v. Mecway | 510.02 Hz | 510.02 | +0.00% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138739 1/s t.o.v. Mecway | 1.3874e-04 1/s | 1.3872e-04 | -0.01% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138739 1/s t.o.v. Mecway | 1.3874e-04 1/s | 1.3871e-04 | -0.02% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f 680.072 Hz t.o.v. Mecway | 680.07 Hz | 680.07 | +0.00% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138777 1/s t.o.v. Mecway | 1.3878e-04 1/s | 1.3885e-04 | +0.05% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f 850.218 Hz t.o.v. Mecway | 850.22 Hz | 850.22 | -0.00% | 1% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138856 1/s t.o.v. Mecway | 1.3886e-04 1/s | 1.3858e-04 | -0.20% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138777 1/s t.o.v. Mecway | 1.3878e-04 1/s | 1.3884e-04 | +0.04% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | f 850.218 Hz t.o.v. Mecway | 850.22 Hz | 850.22 | +0.00% | 1% | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | decay 0.000138856 1/s t.o.v. Mecway | 1.3886e-04 1/s | 1.3892e-04 | +0.04% | 1% | OK |
 | AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (170 Hz) | 1 - | 1 | -0.00% | 0.01% | OK |
-| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (170 Hz) | 0 graden | -1.1629e-10 | -1.1629e-10 | 0.01 graden | OK |
+| AI-03 | Buis hard / Z = 1e9 Pa.s/m (Z -> oneindig = harde wand), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (170 Hz) | 0 graden | -4.5910e-11 | -4.5910e-11 | 0.01 graden | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | decay rate >= 10 x die bij Z = 2000 (geen resonantie) | 1 - | 1 | +0.00% | 1e-12 - | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | f 130.113 Hz t.o.v. Mecway | 130.11 Hz | 130.11 | +0.00% | 1% | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | decay 2105.1 1/s t.o.v. Mecway | 2105.1 1/s | 2105.1 | +0.00% | 1% | OK |
@@ -767,9 +767,9 @@ Gemaakt door `run_verificatie.py` op 2026-11-06 (bridge eacb215, Code-Aster 17.4
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | ND6 mode 1 = volledig model | 333.09 Hz | 333.09 | +0.00% | 1% | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | ND6 mode 2 = volledig model | 333.09 Hz | 333.09 | +0.00% | 1% | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f1 | 0 Hz | -4.3961e-04 | -4.3961e-04 | 0.05 Hz | OK |
-| CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f2 | 0 Hz | 0.0052524 | 0.0052524 | 0.05 Hz | OK |
+| CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f2 | 0 Hz | 0.0052055 | 0.0052055 | 0.05 Hz | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f3 | 0 Hz | -0.0015069 | -0.0015069 | 0.05 Hz | OK |
-| CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f4 | 0 Hz | 0.0021704 | 0.0021704 | 0.05 Hz | OK |
+| CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f4 | 0 Hz | 0.0021083 | 0.0021083 | 0.05 Hz | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f5 | 25.738 Hz | 25.738 | +0.00% | 1% | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f6 | 52.879 Hz | 52.879 | +0.00% | 1% | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f7 | 72.866 Hz | 72.866 | +0.00% | 1% | OK |
@@ -781,7 +781,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-06 (bridge eacb215, Code-Aster 17.4
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f13 | 333.09 Hz | 333.09 | +0.00% | 1% | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | Mecway f14 | 333.09 Hz | 333.09 | +0.00% | 1% | OK |
 | CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | hele wiel: knopen met verplaatsing | 960  | 960 | +0.00% | 0.5  | OK |
-| CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | hele wiel: sprong op de snijvlakken | 0  | 3.5473e-15 | 3.5473e-15 | 1e-06  | OK |
+| CY-01 | Vrije ring, sector 30 graden (12 segmenten) om Z | hele wiel: sprong op de snijvlakken | 0  | 3.6548e-15 | 3.6548e-15 | 1e-06  | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | n=2 in het vlak (Blevins) | 25.587 Hz | 25.738 | +0.59% | 2% | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | n=3 in het vlak (Blevins) | 72.371 Hz | 72.866 | +0.68% | 2% | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | n=4 in het vlak (Blevins) | 138.76 Hz | 139.89 | +0.81% | 2% | OK |
@@ -1568,6 +1568,62 @@ Gemaakt door `run_verificatie.py` op 2026-11-06 (bridge eacb215, Code-Aster 17.4
 | LS-95 | L profile with the horizontal leg longer: principal axes as Mecway (POU_D_E) | Mecway stresspt2 (leg a, M about V) vs the bridge's axes | 1 - | 1 | +0.00% | 0.0001% | OK |
 | LS-95 | L profile with the horizontal leg longer: principal axes as Mecway (POU_D_E) | Mecway stresspt2 (leg a, M about W) vs the bridge's axes | 1 - | 1 | +0.00% | 0.0001% | OK |
 | LS-95b | Shear centre of an L profile: cantilever with a transverse tip load through the centroid (POU_D_TG) | twist at the tip (shear centre at the heel) | 0.019809 rad | 0.019808 | -0.00% | 2% | OK |
+| LS-96 | Reactions of POU_D_TG: C cantilever | clamp, force along Y | -1000 N | -1000 | -0.00% | 0.0001% | OK |
+| LS-96 | Reactions of POU_D_TG: C cantilever | clamp, moment about Z | -1000 N m | -1000 | -0.00% | 0.0001% | OK |
+| LS-96 | Reactions of POU_D_TG: C cantilever | clamp, moment about X | 0 N m | 1.0240e-10 | 1.0240e-10 | 1e-06 N m | OK |
+| LS-96 | Reactions of POU_D_TG: C cantilever | largest force at a free node | 0 N | 6.5131e-10 | 6.5131e-10 | 1e-06 N | OK |
+| LS-96b | Reactions of POU_D_TG: C on fork supports | support 1, force along Y | -500 N | -500 | +0.00% | 0.0001% | OK |
+| LS-96b | Reactions of POU_D_TG: C on fork supports | support 2, force along Y | -500 N | -500 | -0.00% | 0.0001% | OK |
+| LS-96b | Reactions of POU_D_TG: C on fork supports | largest force at a free node | 0 N | 9.5952e-11 | 9.5952e-11 | 1e-06 N | OK |
+| LS-96c | Reactions of POU_D_TG: only an imposed displacement | force at the tip | 1458.5 N | 1458.5 | -0.00% | 0.01% | OK |
+| LS-96c | Reactions of POU_D_TG: only an imposed displacement | force at the clamp | -1458.5 N | -1458.5 | -0.00% | 0.01% | OK |
+| LS-96d | Reactions of POU_D_TG with a plate (DKT) | clamp, force along Y | -1000 N | -1000 | +0.00% | 0.0001% | OK |
+| LS-96d | Reactions of POU_D_TG with a plate (DKT) | clamp, force along Z | -1000 N | -1000 | -0.00% | 0.0001% | OK |
+| LS-96d | Reactions of POU_D_TG with a plate (DKT) | clamp, moment about Y | 1200 N m | 1200 | +0.00% | 0.0001% | OK |
+| LS-96d | Reactions of POU_D_TG with a plate (DKT) | clamp, moment about Z | -1200 N m | -1200 | +0.00% | 0.0001% | OK |
+| LS-96e | Reactions of POU_D_TG with elastic support (springs) | sum along Z, clamp plus springs | -1000 N | -1000 | -0.00% | 0.0001% | OK |
+| LS-96e | Reactions of POU_D_TG with elastic support (springs) | sum along Y (no spring along Y) | -1000 N | -1000 | +0.00% | 0.0001% | OK |
+| LS-96e | Reactions of POU_D_TG with elastic support (springs) | clamp, force along Y | -1000 N | -1000 | +0.00% | 0.0001% | OK |
+| LS-96f | Reactions of POU_D_TG: restrained thermal expansion | support force along X | -4.1328e+05 N | -4.1328e+05 | -0.00% | 0.1% | OK |
+| LS-96g | Reactions of POU_D_TG: free thermal expansion | clamp, force along X | 0 N | 1.2696e-09 | 1.2696e-09 | 0.001 N | OK |
+| LS-96g | Reactions of POU_D_TG: free thermal expansion | expansion of the free end | 0.0012 m | 0.0012 | -0.00% | 0.0001% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | |sigma| at the clamp | 6.2458e+07 Pa | 6.2458e+07 | -0.00% | 0.0001% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | von Mises at the clamp | 6.2458e+07 Pa | 6.2458e+07 | +0.00% | 0.2% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | tau at the clamp | 2.3605e+06 Pa | 2.3611e+06 | +0.03% | 3% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | von Mises at the tip | 4.0885e+06 Pa | 4.0896e+06 | +0.03% | 3% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | shells: sigma at the web tip, compression | -6.2458e+07 Pa | -6.2458e+07 | -0.00% | 0.0001% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | shells: largest sigma = the beam maximum | 1 - | 1 | +0.00% | 0.0001% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | shells: von Mises at the web tip | 6.2458e+07 Pa | 6.2458e+07 | +0.00% | 0.2% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | shells: tau at the neutral axis, web edge | 2.3605e+06 Pa | 2.3610e+06 | +0.02% | 3% | OK |
+| LS-97a | Stress over a T section, general section with an outline: tip force along the symmetry axis (POU_D_E) | shells: tau at the tip, neutral axis | 2.3605e+06 Pa | 2.3611e+06 | +0.03% | 3% | OK |
+| LS-97b | Stress over a U section: force through the shear centre, T_S = 0 (POU_D_TG) | torque MT = -EY F | -31.932 N m | -31.932 | +0.00% | 0.0001% | OK |
+| LS-97b | Stress over a U section: force through the shear centre, T_S = 0 (POU_D_TG) | |sigma| at the clamp | 2.5083e+07 Pa | 2.5083e+07 | +0.00% | 0.0001% | OK |
+| LS-97b | Stress over a U section: force through the shear centre, T_S = 0 (POU_D_TG) | tau = shear only | 1.9809e+06 Pa | 1.9859e+06 | +0.25% | 6% | OK |
+| LS-97b | Stress over a U section: force through the shear centre, T_S = 0 (POU_D_TG) | shells: tau on the web, neutral axis, outside | 1.9809e+06 Pa | 1.9859e+06 | +0.25% | 6% | OK |
+| LS-97b | Stress over a U section: force through the shear centre, T_S = 0 (POU_D_TG) | shells: tau on the web, neutral axis, inside | 1.9809e+06 Pa | 1.9765e+06 | -0.22% | 6% | OK |
+| LS-97c | Stress over a U section: force through the centroid, T_S = EY F (POU_D_TG) | torque MT = 0 | 0 N m | 5.7980e-12 | 5.7980e-12 | 1e-06 N m | OK |
+| LS-97c | Stress over a U section: force through the centroid, T_S = EY F (POU_D_TG) | tau = torsion in the flange | 1.1587e+07 Pa | 1.2556e+07 | +8.36% | 10% | OK |
+| LS-97c | Stress over a U section: force through the centroid, T_S = EY F (POU_D_TG) | shells: the two web faces together | 1.7381e+07 Pa | 1.7368e+07 | -0.08% | 10% | OK |
+| LS-97c | Stress over a U section: force through the centroid, T_S = EY F (POU_D_TG) | shells: the difference of the two web faces | 3.9617e+06 Pa | 3.9624e+06 | +0.02% | 6% | OK |
+| LS-97d | Stress over Mecway's I profile, no outline (POU_D_E) | |sigma| at the clamp | 2.1056e+07 Pa | 2.1056e+07 | +0.00% | 0.0001% | OK |
+| LS-97d | Stress over Mecway's I profile, no outline (POU_D_E) | tau at the clamp | 1.5213e+06 Pa | 1.5218e+06 | +0.04% | 3% | OK |
+| LS-97e | Stress over Mecway's C profile, no outline (POU_D_E) | |sigma| at the clamp | 2.9977e+07 Pa | 2.9977e+07 | +0.00% | 0.0001% | OK |
+| LS-97f | Stress over Mecway's L profile, no outline (POU_D_E) | |sigma| at the clamp | 2.4402e+08 Pa | 2.4402e+08 | -0.00% | 0.001% | OK |
+| LS-97g | Stress under a line load, one element: end values are exact (POU_D_E) | |sigma| at the clamp | 6.2458e+07 Pa | 6.2458e+07 | +0.00% | 0.0001% | OK |
+| LS-97g | Stress under a line load, one element: end values are exact (POU_D_E) | |sigma| at the tip | 0 Pa | 1.0651e-08 | 1.0651e-08 | 1 Pa | OK |
+| LS-97h | Stress under own weight on POU_D_TG: the element error stays visible | |sigma| at the clamp, q L^2/2 - q h^2/12 | 3.2165e+06 Pa | 3.2165e+06 | +0.00% | 0.001% | OK |
+| LS-97i | Stress over a T section per time step (nonlinear static, load ramp) | |sigma| at the clamp, t = 0.5 | 3.1229e+07 Pa | 3.1229e+07 | -0.00% | 0.001% | OK |
+| LS-97i | Stress over a T section per time step (nonlinear static, load ramp) | |sigma| at the clamp, t = 1 | 6.2458e+07 Pa | 6.2458e+07 | -0.00% | 0.001% | OK |
+| LS-97i | Stress over a T section per time step (nonlinear static, load ramp) | tau at the clamp, t = 0.5 | 1.1802e+06 Pa | 1.1806e+06 | +0.03% | 3% | OK |
+| LS-97j | Stress over a T section on POU_D_T | |sigma| at the clamp | 6.2458e+07 Pa | 6.2458e+07 | +0.00% | 0.0001% | OK |
+| LS-97j | Stress over a T section on POU_D_T | tau at the clamp | 2.3605e+06 Pa | 2.3611e+06 | +0.03% | 3% | OK |
+| LS-97k | Stress over a T section on line3 | |sigma| at the clamp, first node | 6.2458e+07 Pa | 6.2458e+07 | -0.00% | 0.001% | OK |
+| LS-97k | Stress over a T section on line3 | |sigma| at the middle node of element 1 | 5.4651e+07 Pa | 5.4651e+07 | -0.00% | 0.001% | OK |
+| LS-97k | Stress over a T section on line3 | |sigma| at the end node of element 1 | 4.6844e+07 Pa | 4.6844e+07 | -0.00% | 0.001% | OK |
+| LS-97k | Stress over a T section on line3 | shells: sigma at the web tip | -6.2458e+07 Pa | -6.2458e+07 | -0.00% | 0.001% | OK |
+| LS-97l | Stress over a T section on POU_D_T_GD, small load | |sigma| at the clamp, value of mid-element | 5.8555e+05 Pa | 5.8555e+05 | -0.00% | 0.1% | OK |
+| LS-97l | Stress over a T section on POU_D_T_GD, small load | the same value at both ends of the element | 1 - | 1 | +0.00% | 1e-07% | OK |
+| LS-97l | Stress over a T section on POU_D_T_GD, small load | tau at the clamp | 23605 Pa | 23611 | +0.03% | 4% | OK |
 
 ## Niet-lineair statisch
 

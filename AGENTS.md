@@ -17,7 +17,12 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
 - Exceptions (Code-Aster's Python 3): `aster_results_export.py` and
   `aster_spectrum.py`, `aster_acoustic_export.py`, `aster_acoustic_complex.py` (also scipy from the
   Code-Aster installation), `aster_cyclic.py`, `aster_fatigue.py`, `aster_vtu.py` (inside the job) and
-  the convergence window `aster_convergence_monitor.py` (separate process, tkinter). The
+  the convergence window `aster_convergence_monitor.py` (separate process, tkinter);
+  `bridge_section_stress.py` with `section_stress.py`, `section_fem.py`, `section_mesh.py`,
+  `section_profiles.py` (inside the job, numpy and scipy; those four are unchanged copies of
+  MecwayAdvancedBeamAnalysis, never edit them here, `tests/test_bridge_section_stress.py` compares
+  them with their source when present). Code-Aster's floating point traps also hit numpy in the
+  job, past every try/except: run such code under `aster_results_export._without_fpe`. The
   parser `bridge_convergence.py` is shared and must work in both 2.7 and 3
   (test: `python tests/test_bridge_convergence.py`); so is `bridge_mwpost.py` (job for MWHub Post,
   also imported by the convergence window).
@@ -123,6 +128,12 @@ value on the shells: a variable without one shows them black in Mecway. In that 
 beams get a thin RectBar (`bridge_section_view.thin_size`), so that Mecway's rectangle stays
 out of sight. Read `model_data` before `write_mesh`, which renames elsets. Re-adding is needed
 after every reload of results and after a table-route run.
+
+`bridge_section_stress.plan` (in the job, called by `aster_results_export._section_stress_vars`)
+adds `beamvonmisesmax`, `beamsixxabsmax`, `beamtaumax` to the fragment and writes
+`<model>_<run_id>_section.json`: warnings, and per general section the table of unit shear
+stresses that `add_section_view` sums per step (`sectionshear`, `sectionvonmises`). The table
+holds what it was made for; `bridge_section_view.match_table` decides whether it belongs.
 
 ## Pitfalls
 

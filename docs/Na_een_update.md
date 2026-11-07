@@ -134,6 +134,7 @@ het laatst is nagelopen:
 | `FACTOR_57` na `DIAGNOSTIC JOB : OK` in het convergentiescherm, de samenvatting en de statusbox (V2026.8) | NIET nagelopen | NIET nagelopen: gecontroleerd op de `.mess` van een echte run, niet in het Mecway-venster |
 | WARNING voor een balk zonder welving op een open General section (V2026.8) | NIET nagelopen | NIET nagelopen: offline tests; het verschil tussen `POU_D_E` en `POU_D_TG` is gemeten met Code-Aster 17.4 buiten Mecway |
 | Selectienamen met spaties (modellen uit Mecway 33) | toegestaan | Mecway 34 vervangt de spaties door `_` bij het openen van zo'n model en verliest dan de verwijzing in een contact (`selectionmaster=""`, gezien 22 oktober 2026); de bridge stopt vóór Code-Aster met een ERROR die dat zegt waar het contact meetelt (niet-lineair statisch en dynamica; bonded contact in elke analyse), elders geeft hij een WARNING (Mecway negeert unilateraal contact daar ook). Kies de contactvlakken opnieuw. De voorbeeldmodellen gebruiken namen zonder spaties. |
+| Spanning over balkdoorsneden, S41 (`beamvonmisesmax`, `doorsnedeschuif` ...) | NIET geverifieerd | NIET geverifieerd; Mecway 35: verborgen geopend, waarden via de API gelezen, ook per tijdstap, kleuren NIET geverifieerd |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten

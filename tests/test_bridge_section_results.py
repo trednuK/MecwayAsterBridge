@@ -21,6 +21,7 @@ from __future__ import print_function
 import array
 import base64
 import io
+import json
 import math
 import os
 import shutil
@@ -1026,6 +1027,265 @@ sol = solution_of(path)
 check("thin: a second call does not stack",
       out["ok"] and len([m for m in sol.findall("mat")
                          if m.get("name") == thin]) == 1)
+
+# ==========================================
+# SHEAR AND VON MISES FROM THE TABLE OF THE JOB
+# ==========================================
+FORCES = ("tensileforce", "bendingmomv", "bendingmomw", "sheary", "shearz",
+          "torsion")
+ALL_FORCES = dict(ELEMENT_VARS, sheary=[1, 2], shearz=[1, 2], torsion=[1, 2])
+SHEAR, VM = "sectionshear", "sectionvonmises"
+
+
+def table_file(view, name, entry=None, version=1, unit=None):
+    """A _section.json as bridge_section_stress writes it, with one row per
+    point of the view; the unit values follow from the place on the section."""
+    rows = {}
+    for _i, _e, v, w in view["origin"]:
+        rows[(v, w)] = [v, w, 1.0 + v, 2.0 + w, 3.0, 4.0 + v, 5.0 + w, 6.0]
+    data = {"material": "Sect", "loops": [[list(p) for p in
+                                           view["shapes"]["Sect"]["loops"][0]]],
+            "nu": 0.3, "A": 0.0008, "IY": 2.667e-08, "IZ": 1.067e-07,
+            "EY": 0.002, "EZ": -0.001, "points": list(rows.values())}
+    data.update(entry or {})
+    if unit:
+        data["points"] = unit(data["points"])
+    path = os.path.join(TMP, name)
+    f = _builtin_open(path, "w")
+    try:
+        f.write(json.dumps({"version": version, "warnings": ["WARNING: one"],
+                            "sections": [data]}))
+    finally:
+        f.close()
+    return path
+
+
+def expected_shear(view, step):
+    out = {}
+    for nid, (index, end, v, w) in zip(view["nids"], view["origin"]):
+        eid = view["beams"][index]["eid"]
+        vv = value("sheary", eid, step, end)
+        vw = value("shearz", eid, step, end)
+        ts = (value("torsion", eid, step, end) + 0.002 * vw + 0.001 * vv)
+        out[nid] = math.hypot(vv * (1.0 + v) + vw * 3.0 + ts * (5.0 + w),
+                              vv * (2.0 + w) + vw * (4.0 + v) + ts * 6.0)
+    return out
+
+
+def clear_tables():
+    for name in os.listdir(TMP):
+        if name.endswith("_section.json"):
+            os.remove(os.path.join(TMP, name))
+
+
+path = make("tau.liml", results(element_vars=ALL_FORCES))
+view, md = view_of(path)
+table_file(view, "tau_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+data = read(path)
+vars_ = data["steps"][0]["vars"]
+check("table: accepted and named, " + out["text"],
+      out["ok"] and SHEAR in out["text"] and VM in out["text"])
+check("table: both variables on every shell node",
+      list(data["ids"][SHEAR]) == view["nids"] and
+      list(data["ids"][VM]) == view["nids"])
+want = expected_shear(view, 0)
+check("table: tau = |Vv a + Vw b + T_S c| of the end of that node", close(
+    [vars_[SHEAR][1][n] for n in view["nids"]],
+    [want[n] for n in view["nids"]]))
+sigma = vars_[STRESS][1]
+check("table: von Mises from sigma and tau", close(
+    [vars_[VM][1][n] for n in view["nids"]],
+    [math.sqrt(sigma[n] ** 2 + 3.0 * want[n] ** 2) for n in view["nids"]]))
+elems = data["steps"][0]["elvars"][VM][1]
+shell = [e for e in view["elements"]]
+check("table: element values follow the nodes of each shell", all(
+    close(list(elems[e[0]]), [vars_[VM][1][n] for n in e[2]]) for e in shell))
+check("table: maxandmin of the shells", abs(
+    vars_[SHEAR][0][view["elset"]][0] - max(want.values())) <=
+    1e-9 * max(want.values()))
+out = brl.add_section_view(path, view, md)
+data2 = read(path)
+check("table: a second call replaces them", out["ok"] and
+      len([e for e in data2["solution"].find("results").findall("nodeids")
+           if e.get("name") == SHEAR]) == 1 and
+      close([data2["steps"][0]["vars"][SHEAR][1][n] for n in view["nids"]],
+            [want[n] for n in view["nids"]]))
+
+# --- time steps ---------------------------------------------------------
+path = make("tau2.liml", results(steps=[1, 2], element_vars=ALL_FORCES))
+view, md = view_of(path)
+table_file(view, "tau2_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+data = read(path)
+check("table: every step its own forces", out["ok"] and all(
+    close([data["steps"][k]["vars"][SHEAR][1][n] for n in view["nids"]],
+          [expected_shear(view, k + 1)[n] for n in view["nids"]])
+    for k in (0, 1)))
+clear_tables()
+
+# --- which table --------------------------------------------------------
+path = make("pick.liml", results(element_vars=ALL_FORCES))
+view, md = view_of(path)
+out = brl.add_section_view(path, view, md)
+check("no table: the rest stands and the text says why", out["ok"] and
+      SHEAR not in read(path)["ids"] and STRESS in read(path)["ids"] and
+      "_section.json" in out["text"])
+table_file(view, "pick_20260101_120000_section.json", {"IY": 3.0e-08})
+out = brl.add_section_view(path, view, md)
+check("a table of another IY is not used", SHEAR not in read(path)["ids"])
+table_file(view, "pick_20260101_120001_section.json", {"nu": 0.25})
+out = brl.add_section_view(path, view, md)
+check("nor of another nu", SHEAR not in read(path)["ids"])
+table_file(view, "pick_20260101_120002_section.json", {"EZ": 0.004})
+out = brl.add_section_view(path, view, md)
+check("without #ASTER-SECTIE in the model EY and EZ are not compared",
+      SHEAR in read(path)["ids"])
+entry = {"nu": 0.3, "A": 0.0008, "IY": 2.667e-08, "IZ": 1.067e-07, "EY": 0.002,
+         "EZ": -0.001, "loops": view["shapes"]["Sect"]["loops"]}
+stated = dict(md)
+geom = dict(md["mat_geometrics"]["Sect"])
+geom["cara"] = tuple(geom["cara"]) + ("EY", "EZ")
+geom["vale"] = tuple(geom["vale"]) + (0.002, -0.001)
+stated["mat_geometrics"] = {"Sect": geom}
+check("with it they count: the same", sv.match_table(
+    entry, view["shapes"]["Sect"], stated, "Sect"))
+check("with it they count: another EZ", not sv.match_table(
+    dict(entry, EZ=0.004), view["shapes"]["Sect"], stated, "Sect"))
+loop = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
+clear_tables()
+table_file(view, "pick_20260101_120003_section.json", {"loops": [loop]})
+out = brl.add_section_view(path, view, md)
+check("nor of another outline", SHEAR not in read(path)["ids"])
+table_file(view, "pick_20260101_120004_section.json", version=2)
+out = brl.add_section_view(path, view, md)
+check("nor of an unknown version", SHEAR not in read(path)["ids"])
+bad = os.path.join(TMP, "pick_20260101_120005_section.json")
+f = _builtin_open(bad, "w")
+f.write("{not json")
+f.close()
+out = brl.add_section_view(path, view, md)
+check("a broken file is passed over", out["ok"])
+for number, damage in enumerate(({"nu": "0.3"}, {"loops": None}, {"EY": None},
+                                 {"points": None}, {"points": [[0.0, 1.0]]},
+                                 {"points": [["a"] * 8]})):
+    table_file(view, "pick_20260101_12001%d_section.json" % number, damage)
+    out = brl.add_section_view(path, view, md)
+    check("a damaged entry costs the two shear variables only (%d)" % number,
+          out["ok"] and SHEAR not in read(path)["ids"] and
+          STRESS in read(path)["ids"])
+f = _builtin_open(bad, "w")
+f.write(json.dumps({"version": 1, "sections": ["no entry", None]}))
+f.close()
+out = brl.add_section_view(path, view, md)
+check("so does a list of something else", out["ok"])
+table_file(view, "pick_20260101_120006_section.json")
+out = brl.add_section_view(path, view, md)
+check("an older, matching run still counts behind the bad ones",
+      SHEAR in read(path)["ids"])
+clear_tables()
+table_file(view, "other_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+check("a file of another model is not looked at",
+      SHEAR not in read(path)["ids"])
+clear_tables()
+
+# --- only some beams ----------------------------------------------------
+path = make("part.liml", results(element_vars=dict(
+    ELEMENT_VARS, sheary=[1], shearz=[1, 2], torsion=[1, 2])))
+view, md = view_of(path)
+table_file(view, "part_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+data = read(path)
+first = [n for n, o in zip(view["nids"], view["origin"]) if o[0] == 0]
+own = set(e[0] for e in view["parts"][0]["elements"])
+check("forces on one beam: only its shells, and the text says so",
+      out["ok"] and list(data["ids"][SHEAR]) == first and
+      list(data["elids"][SHEAR]) == sorted(own) and "nodes" in out["text"])
+check("the longitudinal stress stays on all shells",
+      list(data["ids"][STRESS]) == view["nids"])
+want = expected_shear(view, 0)
+check("and the values are of the right shells", close(
+    [data["steps"][0]["vars"][SHEAR][1][n] for n in first],
+    [want[n] for n in first]))
+clear_tables()
+
+path = make("later.liml", results(element_vars=ALL_FORCES, steps=[1, 2]))
+text = raw(path)
+at = text.rindex(b('<elementnodevariable name="torsion"'))
+stop = text.index(b("</elementnodevariable>"), at)
+f = _builtin_open(path, "wb")
+f.write(text[:at] + b('<!-- -->') + text[stop + len("</elementnodevariable>"):])
+f.close()
+view, md = view_of(path)
+table_file(view, "later_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+check("a later step without a force: the shells stay, without the two",
+      out["ok"] and SHEAR not in read(path)["ids"] and
+      STRESS in read(path)["ids"])
+clear_tables()
+
+path = make("noforce.liml", results())
+view, md = view_of(path)
+table_file(view, "noforce_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+check("no shear forces: a table alone gives nothing, the text names the "
+      "field", out["ok"] and SHEAR not in read(path)["ids"] and
+      "beam_forces" in out["text"])
+clear_tables()
+
+# --- corner zone --------------------------------------------------------
+
+
+def two_exits(rows):
+    return [r + [10.0 * x for x in r[2:]] for r in rows]
+
+
+path = make("zone.liml", results(element_vars=ALL_FORCES))
+view, md = view_of(path)
+table_file(view, "zone_20260101_120000_section.json", unit=two_exits)
+out = brl.add_section_view(path, view, md)
+data = read(path)
+want = expected_shear(view, 0)
+check("two exits of a corner zone: the larger of the two", out["ok"] and close(
+    [data["steps"][0]["vars"][SHEAR][1][n] for n in view["nids"]],
+    [10.0 * want[n] for n in view["nids"]]))
+clear_tables()
+
+# --- no shear where the stress does not hold ----------------------------
+path = make("modes2.liml", results("double", [1, 2], element_vars=ALL_FORCES,
+                                   kind="mode"))
+view, md = view_of(path)
+table_file(view, "modes2_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+check("modes: no shear", out["ok"] and SHEAR not in read(path)["ids"])
+clear_tables()
+path = make("plast2.liml", results(element_vars=ALL_FORCES), plastic=(
+    u'\n    <plastic type="Isotropic"><hardeningcurve strain="0" '
+    u'stress="235 MPa" /><hardeningcurve strain="0.1" stress="300 MPa" />'
+    u'</plastic>'))
+view, md = view_of(path)
+table_file(view, "plast2_20260101_120000_section.json")
+out = brl.add_section_view(path, view, md)
+check("plastic: no shear", out["ok"] and SHEAR not in read(path)["ids"])
+clear_tables()
+
+# --- the warnings of the job reach the log of the run -------------------
+path = make("notes.liml", results())
+view, md = view_of(path)
+fragment = os.path.join(TMP, "notes_20260101_120000_results.xml")
+f = _builtin_open(fragment, "w")
+f.write(results())
+f.close()
+table_file(view, "notes_20260101_120000_section.json")
+del LOG[:]
+keep_log = brl.log
+brl.log = LOG.append
+ok, _why = brl.splice_results(path, fragment, path)
+brl.log = keep_log
+check("splice_results logs the warnings of the sidecar",
+      ok and "WARNING: one" in LOG)
+clear_tables()
 
 shutil.rmtree(TMP, ignore_errors=True)
 

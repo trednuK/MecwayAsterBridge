@@ -1,0 +1,27 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="1" y="0" z="0" />
+  <elset name="Balk" material="Mat">
+    <elem eid="1" shape="line2" nodes="1 2" />
+  </elset>
+  <fixed selection="Inklemming" />
+  <linepressure selection="Last"><x>0 N/m</x><y>0 N/m</y><z>2000.0 N/m</z></linepressure>
+  <ccxmodeldefinition>** SECTIE-VORM Mat: N=10, A=0.001352
+** SECTIE-VORM Mat: P=-0.05 -0.0244142011834 0.05 -0.0244142011834 0.05 -0.0164142011834 0.003 -0.0164142011834 0.003 0 0.003 0.0755857988166 -0.003 0.0755857988166 -0.003 0 -0.003 -0.0164142011834 -0.05 -0.0164142011834
+</ccxmodeldefinition>
+  <mat name="Mat">
+    <geometric type="UniformGeneralSection" area="0.001352 m²" iyy="1.2101787140039448e-06 m⁴" izz="6.683226666666668e-07 m⁴" torsionconstant="2.369066666666667e-08 m⁴" perimeter="0.3 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <density type="Simple" density="7850 kg/m³" />
+  </mat>
+  <nodeselection name="Inklemming">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="2" />
+  </nodeselection>
+  <elementselection name="Last">
+    <element eid="1" />
+  </elementselection>
+</liml>

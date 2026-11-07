@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Stress over beam sections in Mecway**: after a Code-Aster run the beams with a general section
+  with an outline, and Mecway's I, T, L and C, show per element end the largest von Mises,
+  longitudinal and shear stress over the section outside the corner zones (`beamvonmisesmax`,
+  `beamsixxabsmax`, `beamtaumax`). The shells of *Section in results* show von Mises and shear
+  stress at the outline (`sectionvonmises`, `sectionshear`; `doorsnedevonmises`, `doorsnedeschuif` in
+  Dutch) next to `longitudinalstress`. The calculation runs in the Code-Aster job from `beam_forces`
+  with a copy of the section code of MecwayAdvancedBeamAnalysis; a new file
+  `<model>_<run_id>_section.json` carries the table for the shells. The `.comm` does not change. A
+  run without numpy or scipy, or without an outline, goes on with a WARNING. Verified by hand on T, U,
+  I, C and L cantilevers (LS-97a..l). No warping stress.
+
 ## V2026.8 – 6 November 2026
 
 Beams with a general section are easier to get right: the bridge warns when a beam does not
