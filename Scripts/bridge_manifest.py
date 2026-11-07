@@ -21,8 +21,14 @@
 #   schema, run_id, model (file name), configuration, analysis, solver,
 #   aster_version, memory_limit, base (folder name),
 #   fingerprint  mesh_fingerprint() of the Mecway model
+#   deformation  "PETIT", or the choice for large displacements of the run:
+#                then moments are summed on the deformed shape (x + u), with
+#                PETIT on the undeformed one (measured, MecwayFreebody E9)
 #   concepts     names in the base: result, mesh, model, material, cara
-#   excit        the EXCIT keyword text of the run, "" if there is none
+#   cells        the cell names in the order of the mesh file. In the base a
+#                cell has no name but a position, also after CREA_MAILLAGE:
+#                position i (from 1) is cells[i-1]. Cells of Mecway element
+#                eid: M<eid>, a split line3 also H<eid>.
 #   skin         {"K12": [[eid, faceid], ...]}: which Mecway faces a skin cell
 #                belongs to. The mesh itself has no such link.
 #   not_shared   parts where shared nodes do not describe the whole cut
@@ -41,9 +47,12 @@ import os
 import re
 
 import bridge_version
-from bridge_utils import CONFIG_BRIDGE, exe_aster_path, log, run_name, tr
+from bridge_utils import (CONFIG_BRIDGE, exe_aster_path, get_active_analysis,
+                          log, run_name, tr)
 
 SCHEMA = 1
+# Blocks of the mesh file without cells; all others are element types
+_NOT_CELLS = ("TITRE", "COOR_3D", "COOR_2D", "GROUP_MA", "GROUP_NO", "FIN")
 BASE_SUFFIX = "_base"
 MANIFEST_SUFFIX = "_manifest.json"
 # The results MecwayFreebody can use: a static result per step
@@ -85,8 +94,47 @@ def _not_shared(model_data):
         if model_data.get(key)]
 
 
+def _deformation(solver_cmd):
+    """The choice of the run; MECA_STATIQUE has no large displacements."""
+    if solver_cmd != "STAT_NON_LINE":
+        return "PETIT"
+    return get_active_analysis().get("deformation", "PETIT")
+
+
+def read_cell_names(mail_path):
+    """
+    Cell names in the order of a mesh in ASTER format (bridge_mesh). A cell
+    can span several lines (HEXA20): the block name gives its number of
+    nodes, so a line can also hold the rest of the previous cell.
+    """
+    names = []
+    block = None
+    size = None       # tokens of one cell in this block, None: no cells
+    left = 0          # tokens still to come of the current cell
+    with io.open(mail_path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            tokens = line.split()
+            if not tokens:
+                continue
+            if block is None:
+                block = tokens[0]
+                m = re.search(r"(\d+)$", block)
+                size = (int(m.group(1)) + 1
+                        if m and block not in _NOT_CELLS else None)
+                left = 0
+            elif tokens[0] == "FINSF":
+                block = None
+            elif size is not None:
+                for token in tokens:
+                    if left == 0:
+                        names.append(token)
+                        left = size
+                    left -= 1
+    return names
+
+
 def build_manifest(model_data, solver_cmd, run_id, aster_version,
-                   memory_limit, has_cara):
+                   memory_limit, has_cara, cells):
     """The manifest as a dict; see the header of this file."""
     return {
         "schema": SCHEMA,
@@ -97,6 +145,7 @@ def build_manifest(model_data, solver_cmd, run_id, aster_version,
         "solver": solver_cmd,
         "aster_version": aster_version,
         "memory_limit": memory_limit,
+        "deformation": _deformation(solver_cmd),
         "base": os.path.basename(run_name(BASE_SUFFIX)),
         "fingerprint": mesh_fingerprint(
             model_data.get("mesh_nodes", {}),
@@ -105,7 +154,7 @@ def build_manifest(model_data, solver_cmd, run_id, aster_version,
             "result": "res", "mesh": "mesh", "model": "model",
             "material": "fieldmat",
             "cara": "cara" if has_cara else None},
-        "excit": model_data.get("excit_clause", ""),
+        "cells": cells,
         "skin": dict((k, [list(p) for p in v])
                      for k, v in model_data.get("skin_parents", {}).items()),
         "not_shared": _not_shared(model_data),
@@ -241,7 +290,9 @@ def finish_run(work_dir, model_data, export_path, success, aster_version=None):
         write_manifest(
             os.path.join(work_dir, run_name(MANIFEST_SUFFIX)),
             build_manifest(model_data, kept["solver"], run_id, version,
-                           read_memory_limit(export_path), kept["has_cara"]))
+                           read_memory_limit(export_path), kept["has_cara"],
+                           read_cell_names(os.path.join(
+                               work_dir, run_name(".mail")))))
         if run_id is not None:
             prune_bases(work_dir, stem, CONFIG_BRIDGE.get("keep_base_runs", 3))
         return True

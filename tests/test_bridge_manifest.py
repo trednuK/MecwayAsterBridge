@@ -42,7 +42,6 @@ def _model():
                        3: (0.1, 0.2, 0.0), 4: (0.0, 0.2, 0.3)},
         "mesh_elements": [(7, "tet4", [1, 2, 3, 4], "P")],
         "configuration": None,
-        "excit_clause": "    EXCIT=(_F(CHARGE=load_1),),\n",
         "skin_parents": {"K1": [[7, 1]], "K2": [[7, 2]]},
     }
 
@@ -107,6 +106,41 @@ def test_prune(tmp):
     check("M_20261103_100000_base" in left, "newest stays")
 
 
+MAIL = u"""TITRE
+ Some text
+FINSF
+COOR_3D
+ N1 0.0 0.0 0.0
+ N2 1.0 0.0 0.0
+FINSF
+HEXA8
+ M2 N1 N2 N1 N2 N1 N2 N1 N2
+ M1 N1 N2 N1 N2
+    N1 N2 N1 N2
+FINSF
+QUAD4
+ K1 N1 N2 N1 N2
+FINSF
+GROUP_MA
+ P
+ M1 M2
+FINSF
+GROUP_NO
+ Q
+ N1
+FINSF
+FIN
+"""
+
+
+def test_read_cells(tmp):
+    path = os.path.join(tmp, "m.mail")
+    with io.open(path, "w", encoding="utf-8") as f:
+        f.write(MAIL)
+    check(bm.read_cell_names(path) == ["M2", "M1", "K1"],
+          "cell names only, in file order")
+
+
 def _read(path):
     # Closed at once: IronPython has no reference counting
     with io.open(path, encoding="utf-8") as f:
@@ -122,6 +156,7 @@ def _export(tmp):
 
 def test_finish_export(tmp):
     cfg = bridge_utils.CONFIG_BRIDGE
+    cfg["active_analysis"] = "nonlin_static_3d"
     bridge_utils.set_run_log("20261107_101500", "M.liml")
     bm.run_name = bridge_utils.run_name
     path = _export(tmp)
@@ -147,6 +182,9 @@ def test_finish_export(tmp):
         f.write("{}")
     cfg["keep_base_runs"] = 1
     model = _model()
+    with io.open(os.path.join(tmp, "M_20261107_101500.mail"), "w",
+                 encoding="utf-8") as f:
+        f.write(MAIL)
     check(bm.prepare_base(path, tmp, model, "STAT_NON_LINE", False, True),
           "static: base kept")
     check(os.listdir(tmp).count("M_20261107_101500_manifest.json") == 0,
@@ -175,12 +213,15 @@ def test_finish_export(tmp):
           man["model"] == "M", "run and model")
     check(man["aster_version"] == "17.4", "version that really ran")
     check(man["line_quad"] is False, "no LINE_QUAD")
+    check(man["deformation"] == bridge_utils.get_active_analysis().get(
+        "deformation", "PETIT"), "deformation of the nonlinear analysis")
+    check(bm._deformation("MECA_STATIQUE") == "PETIT", "linear: PETIT")
     check(man["memory_limit"] == 2048, "memory limit from the .export")
     check(man["solver"] == "STAT_NON_LINE", "solver")
     check(man["base"] == "M_20261107_101500_base", "base without a path")
     check(man["concepts"]["result"] == "res" and
           man["concepts"]["cara"] == "cara", "concept names")
-    check(man["excit"].startswith("    EXCIT"), "EXCIT text")
+    check(man["cells"] == ["M2", "M1", "K1"], "cells in file order")
     check(man["skin"] == {"K1": [[7, 1]], "K2": [[7, 2]]}, "skin parents")
     check(man["not_shared"] == [], "nothing special")
     check(tmp not in json.dumps(man), "no paths in the manifest")
@@ -206,7 +247,7 @@ def main():
     test_fingerprint()
     test_run_name_split()
     test_bases_to_remove()
-    for fn in (test_prune, test_finish_export):
+    for fn in (test_prune, test_finish_export, test_read_cells):
         tmp = tempfile.mkdtemp()
         try:
             fn(tmp)
