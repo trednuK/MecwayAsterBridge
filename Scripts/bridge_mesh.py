@@ -1339,6 +1339,12 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 name = "K{0}".format(skin_count[0])
                 skin_by_key[key] = name
                 by_type.setdefault(stype, []).append((name, snodes))
+            # For the manifest of a kept base (bridge_manifest): the mesh has
+            # no link from a skin cell to the element it lies on
+            parents = model_data.setdefault(
+                "skin_parents", {}).setdefault(skin_by_key[key], [])
+            if [eid, fid] not in parents:
+                parents.append([eid, fid])
             note_face(fname, "solid" if shape in _SOLID_SHAPES else "shelledge",
                       [nodes[n] for n in
                        snodes[:3 if stype.startswith("TRIA") else 4]])

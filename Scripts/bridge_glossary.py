@@ -1216,6 +1216,19 @@ SETTING_HELP = {
                        u"automatically afterwards. 'confirm': you click OK "
                        u"yourself when Code-Aster has finished (as "
                        u"before)."),
+    "keep_base": (u"Bewaart bij een lineaire of niet-lineaire statische run de "
+                  u"Code-Aster-base met een manifest. Daarmee rekent "
+                  u"MecwayFreebody na de run de krachten op de sneden van een "
+                  u"selectie uit. Standaard uit: een base is 125-450 MB.",
+                  u"Keeps the Code-Aster base with a manifest in a linear or "
+                  u"nonlinear static run. MecwayFreebody uses it to compute "
+                  u"the forces on the cuts of a selection after the run. Off "
+                  u"by default: a base is 125-450 MB."),
+    "keep_base_runs": (u"Zoveel nieuwste bases per model blijven staan; oudere "
+                       u"worden bij een nieuwe run verwijderd, met hun "
+                       u"manifest.",
+                       u"This many newest bases per model stay; older ones are "
+                       u"removed with their manifest at a new run."),
     "med_export": (u"Ook een MED-bestand (.rmed) schrijven voor ParaView of "
                    u"Salome. Mecway gebruikt het niet. Standaard uit: het "
                    u"bestand kan honderden MB worden. Met een XFEM-scheur ook "

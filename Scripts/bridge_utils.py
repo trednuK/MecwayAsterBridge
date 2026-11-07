@@ -79,6 +79,11 @@ CONFIG_BRIDGE = {
     # Also write a MED file (<model>_<run_id>.rmed) for
     # ParaView/Salome. Mecway does not use it; it can reach hundreds of MB.
     "med_export":      False,
+    # Keep the Code-Aster base of a linear or nonlinear static run, with a
+    # manifest, for a follow-up run (MecwayFreebody, bridge_manifest.py). A
+    # base is 125-450 MB; the newest "keep_base_runs" per model stay.
+    "keep_base":       False,
+    "keep_base_runs":  3,
     # Also <model>_<run_id>.pvd + one .vtu per step (aster_vtu), with the
     # same fields as Mecway gets; for ParaView/MWHub Post (route "liml").
     "vtu_export":      False,

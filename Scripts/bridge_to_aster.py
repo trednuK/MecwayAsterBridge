@@ -4621,6 +4621,7 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # --------------------------------------------------
     charges = _build_charges(model_data)
     loads_block, excit_clause = _render_charges(charges, model_data)
+    model_data["excit_clause"] = excit_clause   # for bridge_manifest
     if not excit_clause:
         # MECA_STATIQUE without EXCIT: <EXCEPTION> SUPERVIS_4 (Code-Aster
         # 17.4, QA run); without a load there is nothing to compute anyway.
@@ -7375,6 +7376,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         model_data, analysis, command)
     charges = _build_charges(model_data, _load_func_names(model_data))
     loads_const_block, excit_clause = _render_charges(charges, model_data)
+    model_data["excit_clause"] = excit_clause   # for bridge_manifest
     # Buckling mode as imperfection (only nonlinear static)
     imperfection = None
     if not dynamic:
@@ -8873,6 +8875,11 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
     if result and adapt_plan is not None:
         result = bridge_homard.apply(result, model_data, adapt_plan,
                                      solver_cmd)
+    if result:
+        import bridge_manifest
+        bridge_manifest.prepare_base(result, work_dir, model_data, solver_cmd,
+                                     adapt_plan is not None,
+                                     _has_cara(model_data))
     return result
 
 

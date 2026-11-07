@@ -141,6 +141,7 @@ from bridge_results_liml import (splice_results, read_step,
 from bridge_failure     import report_failures
 from bridge_monitor     import monitor_text, write_summary, SUMMARY_SUFFIX
 from bridge_run_aster   import CONSOLE_SUFFIX
+import bridge_manifest
 import bridge_version
 import bridge_acoustic
 import bridge_fracture
@@ -435,6 +436,8 @@ def _run(settings):
         run_start = time.time()
         job = run_AsterSolver(export_file, work_dir_path(), resu_name, mw)
         if not job:
+            bridge_manifest.finish_run(work_dir_path(), model_data,
+                                       export_file, False)
             _notify(tr("Code-Aster kon niet gestart worden. Controleer "
                           "{0}.",
                           "Code-Aster could not be started. Check "
@@ -474,6 +477,10 @@ def _run(settings):
         if mess_version is not None:
             version_notes["aster"] = bridge_version.check_aster(
                 mess_version, ".mess")
+        # Kept base (setting keep_base): manifest only after a good run
+        bridge_manifest.finish_run(
+            work_dir_path(), model_data, export_file,
+            not (stopped or job.exit_code or mess_errors), mess_version)
         # Failed elements (bridge_failure.py) in the log and a message
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
