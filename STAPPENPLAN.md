@@ -396,7 +396,7 @@ First read `docs/Modaal_en_knik.md` and KNOWN_BUGS 46-49. Existing route:
   to compute beyond the limit point (new step)?
 - *S10d (done, transient):* Mecway input `<analysis type="D30"
   modesuperposition="true" maxmode="n" />` with `<timesteps timeperiod stepsize
-  [keepeverynthtimestep]>` (DampedVibratingStrip, strings in mecway.exe). Measured
+  [keepeverynthtimestep]>` (DampedVibratingStrip). Measured
   headless: Mecway integrates the modal equations **exactly** (step 0.02 and 0.001 s
   equal, 1e-4 of u_st(1 − cos ωt)), without static correction (1 mode: 0.9707 ×
   static = 12/λ₁⁴) and without prestress from the loads; output at t = 0 and every
@@ -1976,7 +1976,7 @@ shows them (top/middle/bottom), and `GLe1`..`GLe3` in formulas.
 **Status:** done (28 Oct 2026). GUI check not done (no computer use in this session):
 open a bridge result of FX-04 in Mecway and look at *principal stress* top/bottom.
 **Findings (measured headless with Mecway 34, `mw_solve.py`, safe runner; no GUI):**
-- Field names (from the strings in `mecway.exe` and Mecway's own solve of the LS-31 strip with
+- Field names (from Mecway's own solve of the LS-31 strip with
   an extra in-plane force, quad4 and quad8, internal solver): `principal1u1` ..
   `principal3u1`, `principal1m1` .., `principal1b1` .. (layer 1, like `stressxxu1`),
   `trescau1/m1/b1`, `lprincipalstrain1u1` .. `lprincipalstrain3b1`; node and element-node

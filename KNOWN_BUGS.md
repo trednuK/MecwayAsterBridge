@@ -675,7 +675,7 @@ Code-Aster value per node) and logs the largest difference per variable.
 47\. **Springs and dampers: not compared against a Mecway solution** (question). The bridge
    applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`; previously
    they acted in global X, even along Y: verification LS-06, now exact). This follows
-   Mecway's CCX export (`*ELEMENT,TYPE=SPRINGA` = axial spring, string in mecway.exe).
+   Mecway's CCX export (`*ELEMENT,TYPE=SPRINGA` = axial spring).
    Headless, Mecway could not solve a hand-written spring (line2 + Spring material):
    the internal solver ignored it (deflection equal to that without the spring; a
    separate spring gave a singular system) and CCX gave no solution. To be checked
