@@ -2588,10 +2588,9 @@ def _gl_alias(source):
     greenlagrangestrain<ij>, lprincipalstrain<k> ->
     greenlagrangeprincipalstrain<k>), else None. Mecway 34 rewrites e, g,
     e1..e3 in formulas to GLe, GLg, GLe1..GLe3 when its solution has
-    Green-Lagrange strain (message in mecway.exe; seen headless S34b: an
-    L30 with CCX stored the formula e1 as GLe1, values equal to
-    greenlagrangeprincipalstrain1); here the same when the result only has
-    the Green-Lagrange variable."""
+    Green-Lagrange strain (seen headless S34b: an L30 with CCX stored the
+    formula e1 as GLe1, values equal to greenlagrangeprincipalstrain1); here
+    the same when the result only has the Green-Lagrange variable."""
     for small, large in (("lprincipalstrain", "greenlagrangeprincipalstrain"),
                          ("lstrain", "greenlagrangestrain")):
         if source.startswith(small):

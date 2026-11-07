@@ -145,9 +145,9 @@ equal to Mecway; a strip in bending, 0.5% from Mecway's MITC4).
 
 - Mecway manual v34 §7.4.2 (element axes, projection of the vector), §8.5 (orthotropic and
   anisotropic materials, major Poisson's ratio, material axes = element axes, for solids
-  global by default); attribute names from `mecway.exe` (`youngsmodulusu` … `shearmoduluswu`,
-  `thermalexpansionu/v/w`, `c11` … `c66`, `s11` … `s66`); semantics measured with headless
-  Mecway 34 solves (cubes under an imposed homogeneous strain, 28 Oct 2026).
+  global by default); attribute names (`youngsmodulusu` … `shearmoduluswu`,
+  `thermalexpansionu/v/w`, `c11` … `c66`, `s11` … `s66`) confirmed and semantics measured
+  with headless Mecway 34 solves (cubes under an imposed homogeneous strain, 28 Oct 2026).
 - Code-Aster 17.4: catalogue `defi_materiau.py` (`ELAS_ORTH`, `ELAS_ISTR`; no general 3D
   anisotropy), U4.43.01 (`ELAS_ORTH`; shells via `DEFI_COMPOSITE`, §3.5.2), `defi_composite.py`
   (U4.42.03); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`), U4.42.01;

@@ -56,7 +56,7 @@ S7, S8, S5, S9).
 | S15c | Geometric stiffness of (pretensioned) springs in Buckling and Frequency with prestress, as Mecway does (now an ERROR for the spring pretension variant) | later | S15b | split off from S15b (29 Oct 2026); KNOWN_BUGS 47, 124 (b); see §S15b |
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
 | S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); step size with *every n time steps* fixed later (former KNOWN_BUGS 127, MD-08); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
-| S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; "Axisymmetric heat transfer is not supported" in mecway.exe); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
+| S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; axisymmetric heat transfer is not supported either); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
 | S16d | Acoustic Resonance 2D (Mecway A20; `ACOUSTIQUE` `PLAN`, not `2D_FLUIDE`) | done | S16a | branch worktree-agent-ad04139279cf151f2 (28 Oct 2026): `bridge_plane._apply_acoustic` + the A30 route; AK-10 .. AK-15 OK (quads = Mecway headless ≤ 1e-6, rectangle ≤ 0.05% of f_mn); triangles slightly higher (KNOWN_BUGS 130); identical via a .liml saved by Mecway (126 checks); no axisymmetric acoustic type in Mecway; not yet tested in the Mecway GUI |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 126 |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | done | – | branch worktree-agent-afd8b7790c08d6a3d on nacht-int3 (28 Oct 2026): traction on beam side faces = `FORCE_POUTRE` traction x perimeter (`_beam_side_loads`), pressure there no load, hydrostatic pressure on shell edges as nodal forces; LS-92a..h, LS-93a..c OK (equal to Mecway headless, formula +0.06%); not yet tested in the Mecway GUI (see §S17) |
@@ -121,8 +121,7 @@ Order for the input:
 1. **Mecway itself**: make a small test model (in Mecway or with
    `TestFiles/Verificatie/verif_lib.py`) and read the tags in the `.liml`. Sources:
    `C:\Program Files\Mecway\Samples` and `Tutorials`, `manual.pdf` (with `pdftotext`),
-   the tag names in `mecway.exe` (UTF-16), the API in
-   `<hoofdcheckout>\API_reference Mecway.txt`
+   the API in `<hoofdcheckout>\API_reference Mecway.txt`
    (gitignored; not present in a worktree).
 2. **Special group names**: a Mecway selection, elset or part with a fixed
    prefix (e.g. `LUCHT_`, `KOPPEL_`, `LASNAAD_`, `SCHEUR_`) designates elements or
@@ -424,12 +423,11 @@ First read `docs/Modaal_en_knik.md` and KNOWN_BUGS 46-49. Existing route:
   Questions to user: compute D30 without mode superposition automatically with NEWMARK + PETIT
   (now: `dyna_impl_3d` with its own settings + WARNING)? Build an initial velocity
   and prescribed motions on a modal basis (static modes)?
-- *S10e (done):* Mecway has no spectrum analysis (manual chapter 6; no
-  "spectrum"/"seism" in mecway.exe). Input route: Mecway *Frequency* (V30, Number of
-  modes) with a **Gravity with a table per direction** (column *time* = period [s],
-  setting `spectrum_abscissa` also frequency; value = spectral acceleration; without
-  table = flat spectrum; the gravity is not a load), analysis `spectrum_3d` selected manually
-  (`auto` remains `modal_3d`). Own spectrum (`DEFI_NAPPE`/`FORMULE` in AMOR and FREQ,
+- *S10e (done):* Mecway has no spectrum analysis (manual chapter 6). Input route:
+  Mecway *Frequency* (V30, Number of modes) with a **Gravity with a table per direction**
+  (column *time* = period [s], setting `spectrum_abscissa` also frequency; value = spectral
+  acceleration; without table = flat spectrum; the gravity is not a load), analysis
+  `spectrum_3d` selected manually (`auto` remains `modal_3d`). Own spectrum (`DEFI_NAPPE`/`FORMULE` in AMOR and FREQ,
   e.g. multiple damping values) with the new `#ASTER-SPECTRE X, Y = naam [, K=V]`.
   Built: `bridge_spectrum.py`, `AsterTemplate_Spectre.comm`, job module
   `aster_spectrum.py`; chain `CALC_MODES` → `CALC_CHAMP` (REAC_NODA, SIGM) →
@@ -1069,8 +1067,8 @@ load history (time steps of a nonlinear/dynamic run, or two
 load states); damage/life as a field.
 **Done when:** constant amplitude: damage exactly according to Miner (≤ 0.1%); a
 two-level spectrum recalculated by hand (≤ 0.1%).
-**Findings:** Mecway has no fatigue (manual and `mecway.exe`: no
-fatigue/S-N/Wöhler). Input route: `#ASTER` lines (no settings in the
+**Findings:** Mecway has no fatigue (manual: no fatigue/S-N/Wöhler).
+Input route: `#ASTER` lines (no settings in the
 main window, model data like `#ASTER-LASBRON`): `#ASTER-WOHLER materiaal: K=V`
 (table `S = [..] MPa, N = [..]` log-log or `INTERPOL = LIN`, power form `S, N, m`,
 Basquin `Sf, b`; `Se`, `PROL_GAUCHE` EXCLU/CONSTANT/LINEAIRE, `PROL_DROITE`,
@@ -1204,8 +1202,8 @@ and envelope via `CREA_CHAMP`/`CALC_CHAMP`. 3D test case `sdlv128a` (4 `NOM_CAS`
 is only `<configuration name=".."/>` at the top plus, per load item/condition, a child
 `<suppressed configuration=".."/>` (Samples/CylinderLifting, Tutorials/AssemblyWithContact,
 own test model); there is no factor, no per-configuration value and no active
-configuration in the file (mecway.exe: only "Suppress/Unsuppress in all
-configurations", tab menu New/Delete/Rename, "Solve all configurations"; manual
+configuration in the file (Mecway: only suppress/unsuppress in all
+configurations, tab menu New/Delete/Rename and solve all configurations; manual
 §2.8: "suppress and unsuppress loads and constraints"; the old load cases become
 configurations on opening). Solution formulas (manual §10.11) work on the active
 solution. A combination 1.2 G + 1.5 Q can therefore only be entered by the user as a separate
@@ -1235,13 +1233,13 @@ as the material direction; also in shells.
 **Code-Aster:** `DEFI_MATERIAU` `ELAS_ORTH` (and `ELAS_ISTR`), anisotropic via `ELAS_ORTH` if that
 suffices, otherwise report it as NOT possible; direction with `AFFE_CARA_ELEM` `MASSIF` `ANGL_REP`/`ANGL_EULER`
 per element (group), shells `COQUE` `ANGL_REP`/`VECTEUR`; composite `DEFI_COMPOSITE`.
-**Research:** Mecway's XML of Orthotropic/StiffnessMatrix/ComplianceMatrix (Samples, mecway.exe),
+**Research:** Mecway's XML of Orthotropic/StiffnessMatrix/ComplianceMatrix (Samples),
 the definition of U/V and `angle` (manual §7), how Mecway shows stresses in local axes; grouping
 elements with the same orientation; thermal orthotropy (`THER_ORTH`).
 **Done when:** an orthotropic beam in two orientations (analytical, bending with E_L and E_T) and a
 rotated block under tension (Hooke in local axes) within 1%, and equal to Mecway headless; regression D.5.
 **Findings (28 Oct 2026, S13a):**
-- *Mecway's XML* (attribute names from `mecway.exe`, semantics measured with headless Mecway 34
+- *Mecway's XML* (attribute names confirmed and semantics measured with headless Mecway 34
   solves of single hex8 cubes under an imposed homogeneous strain, all nodes prescribed, so the
   nodal stress is C·ε exactly): `<mechanical type="Orthotropic" youngsmodulusu/v/w
   poissonratiouv/vw/wu shearmodulusuv/vw/wu thermalexpansionu/v/w>`, major Poisson ratios
@@ -1254,8 +1252,7 @@ rotated block under tension (Hooke in local axes) within 1%, and equal to Mecway
   (within 1e-15 of the rotated Hooke matrix). Only a U or only a V vector, or U parallel to V:
   Mecway gives no solution; an angle alone: global axes. Stresses are reported in global axes; the
   field *stress in element coordinates* stores `lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`,
-  `lamwu` = R σ Rᵀ (S13d). Mecway's thermal expansion of matrix types: none (message in
-  `mecwayf.dll`).
+  `lamwu` = R σ Rᵀ (S13d). Mecway's thermal expansion of matrix types: none.
 - *Code-Aster*: `ELAS_ORTH` (no general 3D anisotropy in `DEFI_MATERIAU`, only `ELAS_ORTH`,
   `ELAS_ISTR`; `ELAS_COQUE` is for shells), so a matrix is translated only if all coupling terms
   are zero, else ERROR. `MASSIF` `ANGL_REP` nautical angles (U4.42.01 §13.3/13.6, the example
@@ -1400,7 +1397,7 @@ Mecway's spring element variant (internal solver).
 **Goal:** translate Mecway's 2D analysis types (S20, D20, SA0, also A20 and thermal 2D); now the run stops.
 **Code-Aster:** modelisations `C_PLAN`, `D_PLAN`, `AXIS` (thermal `PLAN`/`AXIS`, acoustics `2D_FLUIDE`);
 mesh in the XY plane, thickness for plane stress; results back in Mecway's 2D fields.
-**Research:** Mecway's 2D elements and thickness input, analysis codes (DA0, V20 appear in mecway.exe),
+**Research:** Mecway's 2D elements and thickness input, analysis codes (DA0, V20),
 which loads/conditions exist in 2D, Mecway's field names for 2D/axisymmetric (hoop stress).
 **Done when:** plate with a hole in plane stress (Kt), thick-walled cylinder axisymmetric (Lamé) and a
 2D dynamic case within the tolerances of their 3D counterparts and equal to Mecway headless;
@@ -1450,8 +1447,8 @@ no GUI):**
   (other extrapolation, KNOWN_BUGS 3). Two `FORCE_CONTOUR` on one edge in one
   `AFFE_CHAR_MECA` kept only the last (fixed: own load each).
 - Open: GUI run in Mecway 34 (open a PL model, run with `auto`, look at the contour of
-  `stresszz`); whether Mecway's *in-plane principal stress* option (`principal1plane` in
-  mecway.exe) needs other fields.
+  `stresszz`); whether Mecway's *in-plane principal stress* option (`principal1plane`) needs
+  other fields.
 
 **Findings S16b (D20/DA0):**
 - Mecway's D20/DA0 solution has the same names plus `velx/vely/velmag` (no reaction forces
@@ -1472,7 +1469,7 @@ no GUI):**
   changes nothing (10 mm or none: identical frequencies and shapes); Z of the nodes is ignored
   (Z = 0.05 identical). Normalisation p^T M p = 1 per unit thickness (constant mode c/sqrt(A),
   406.378 Pa for 1.0 x 0.7 m). Result names as A30: `pressure` (+ `pressurei` and the decay
-  rate with an impedance). No axisymmetric acoustic type: the analysis codes in mecway.exe are
+  rate with an impedance). No axisymmetric acoustic type: the analysis codes of Mecway 34 are
   S20, SA0, S30, V30, D20, DA0, D30, T30, T31, E30, A20, A30, B30.
 - Code-Aster: for `PHENOMENE='ACOUSTIQUE'` the 2D modelisation is `PLAN` (impedance edges
   `PLAN_ABSO`; catalogue affe_modele.py v17.4, test case ahlv100f). `2D_FLUIDE` (in the plan
@@ -1764,8 +1761,8 @@ archived times that differ from the computed ones.
 gives the same results at the output times (within the case tolerance); the NL families stay within tolerance;
 docs NL+EN.
 **Result** (23 Oct 2026, Code-Aster 17.4, ncpus 1): Mecway 34 keeps `automatictimestepping="true"` on save in
-both formats (internal solver with `stepsize`, CCX with time points; no min/max step attributes exist, strings
-of Mecway.exe). Seen with 17.4: with `METHODE='AUTO'` the times of `DEFI_LIST` are mandatory solver points,
+both formats (internal solver with `stepsize`, CCX with time points; no min/max step attributes in the saved
+files or Samples). Seen with 17.4: with `METHODE='AUTO'` the times of `DEFI_LIST` are mandatory solver points,
 `ARCHIVAGE LIST_INST` times are not (list 0, 0.1, 2, 3 gave 0.1, 0.2, 0.4, 0.6, 1.0, 1.4, 2.0, 2.4, 3.0; archive
 times 0.5/1.5/2.5 skipped). So `_auto_listinst_block` puts Mecway's output times plus the load kinks in the list,
 `PAS_MAXI` = Mecway's step/time-point interval, `PAS_MINI` = 1e-6 of it, the existing `ECHEC DECOUPE` kept,
@@ -1987,16 +1984,16 @@ open a bridge result of FX-04 in Mecway and look at *principal stress* top/botto
   16% off).
 - CCX: Mecway's shell result with CCX has the solid names (`principal1`, `stressxx`, ...,
   expanded shells); the bridge follows the internal solver.
-- Formulas: no formula symbols for the shell surfaces in `mecway.exe` (only `s1`..`s3`, `tr`,
-  `e1`..`e3`, `GLe1`..`GLe3`); on a shell-only model Mecway's solve stores no formula with
-  `s.xx`, `s1`, `tr`, `e1` (it does with `u.x`, `x`). Nothing to build; the bridge also has no
-  node variable for them and leaves such a formula out.
+- Formulas: no formula symbols for the shell surfaces are known (the stress/strain symbols are
+  `s1`..`s3`, `tr`, `e1`..`e3`, `GLe1`..`GLe3`); on a shell-only model Mecway's solve stores
+  no formula with `s.xx`, `s1`, `tr`, `e1` (it does with `u.x`, `x`). Nothing to build; the
+  bridge also has no node variable for them and leaves such a formula out.
 - Green-Lagrange: Mecway 34's L30 with CCX (NL-31 bar and a hex20 cantilever with shear)
   writes `greenlagrangestrain*` and `greenlagrangeprincipalstrain1..3`, also when only
   *principal strain* is requested (it renames the field to *Green-Lagrange principal strain*);
   values = eigenvalues of the Green-Lagrange node tensor with gamma/2 (within 3e-8, CCX node
-  values). It rewrites `e1` in a formula to `GLe1` (stored formula text changed; a message in
-  `mecway.exe` says the same for `e`, `g`, `e1..e3`). S34's statement that Mecway names them
+  values). It rewrites `e1` in a formula to `GLe1` (stored formula text changed;
+  `e.xx` likewise (FX-05); `g`, `e2`, `e3` NOT verified). S34's statement that Mecway names them
   `lprincipalstrain1..3` was wrong for this model.
 - Built: `aster_results_export._shell_principal_vars` (from `res_sup/moy/inf` SIGM_ELNO and
   `eps_sup/moy/inf` EPSI_ELNO, `_principal_columns`), `bridge_to_aster` requests

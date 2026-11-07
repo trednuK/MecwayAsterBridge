@@ -954,9 +954,9 @@ Without damping in the model the setting gives ordinary real modes (INFO).
 - Hysteretic (structural) damping (`AMOR_HYST`, complex stiffness), modal damping as
   ζ per mode (the *Extra modal damping* of the mode superposition response is not a
   matrix and does not count here), damping in buckling and acoustics.
-- The imaginary part of the shape to Mecway (only the real part). mecway.exe does
-  know an imaginary displacement internally (`DisplacementXImaginary`), but the name
-  in the `.liml` and the display have not been investigated.
+- The imaginary part of the shape to Mecway (only the real part); whether Mecway can
+  show an imaginary displacement, and under which name in the `.liml`, has not been
+  investigated.
 - Overdamped modes (ζ ≥ 1).
 
 ### 6.5 Messages and solutions
@@ -1110,8 +1110,8 @@ sdlv301a (impeller); catalogue `mode_iter_cycl.py` (code_aster 17.4).
   ND with the default basis equalled the full model (≤ 0.0012%). High modes per ND
   (near the highest sector modes in the basis) can be slightly too high: run with
   twice as many as a check.
-- **Effective mass** is not given here (Mecway neither: "Effective mass not available
-  with MPCs or cyclic symmetry", mecway.exe).
+- **Effective mass** is not given here (Mecway neither: no effective mass with MPCs
+  or cyclic symmetry).
 - **Hand calculation**: thin ring in its plane f_n = 1/(2π)·√(EI/(ρAR⁴))·n(n² −
   1)/√(n² + 1) (Blevins, 1979); clamped circular plate f = λ²/(2πa²)·√(D/(ρh)) with
   λ² = 10.216 (ND 0), 21.26 (ND 1), 34.88 (ND 2), 51.03 (ND 3) (Leissa, 1969).

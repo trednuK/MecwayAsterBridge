@@ -38,7 +38,7 @@ from bridge_utils import log, parse_and_convert, tr
 # unit of x, y, z. A formula in t is a time history (manual par. 9:
 # "a Formula with the variable t ... evaluated at each time step").
 #
-# Language (Formula Help window of Mecway 33, texts in mecway.exe):
+# Language (Formula Help window of Mecway 33):
 # + - * / ^ ( ), pi, e, sin, cos, tan, asin, acos, atan, atan2(y,x), log,
 # abs, sqrt, heaviside(x), unittriangle(w,x), max(x,y), min(x,y).
 # Verified with Mecway 33 (headless, force as formula on a bar of

@@ -17,8 +17,8 @@
 # with MODE_CORR, REAC_NODA), catalogue comb_sism_modal.py and the macro
 # code_aster/MacroCommands/comb_sism_modal_ops.py (17.4).
 #
-# Mecway has no spectrum analysis (manual v33 chapter 6; no text
-# "spectrum" in mecway.exe). Input (docs/Spectrumanalyse.md):
+# Mecway has no spectrum analysis (manual v33 chapter 6). Input
+# (docs/Spectrumanalyse.md):
 #   - the Mecway model is a Frequency analysis (V30: Number of modes,
 #     density, supports);
 #   - the spectrum is a Gravity with a table per direction: the

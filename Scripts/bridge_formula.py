@@ -35,10 +35,11 @@
 #     the result fields principal_stresses / principal_strains (S34).
 #     GLe1..GLe3 read greenlagrangeprincipalstrain1..3 (S34b: Mecway 34's
 #     L30 with CCX writes those). With Green-Lagrange strain in the
-#     solution Mecway rewrites e, g, e1..e3 in a formula to GLe, GLg,
-#     GLe1..3 (aster_results_export._gl_alias does the same);
+#     solution Mecway rewrites e1 in a formula to GLe1, e.xx likewise
+#     (FX-05); g, e2, e3 NOT verified (aster_results_export._gl_alias
+#     treats them all the same);
 #   - shells: Mecway 34 has no formula symbols for the top/middle/bottom
-#     fields (principal1u1, stressxxu1, ...; none in mecway.exe) and its
+#     fields (principal1u1, stressxxu1, ...) and its
 #     own solve stores no formula with s.xx, s1, tr or e1 on a shell-only
 #     model (seen headless, S34b); the bridge then has no node variable
 #     either and leaves the formula out.

@@ -607,7 +607,7 @@ Invoer met `#ASTER`-regels, geen instellingen in het hoofdvenster
 
 | Aanname / standaard | Wat de bridge doet | Status |
 |---|---|---|
-| Invoer | Mecway kent geen vermoeiing (manual, `mecway.exe`): `#ASTER-WOHLER` per materiaal, `#ASTER-VERMOEIING`, `#ASTER-BLOK`/`#ASTER-SIGNAAL` | keuze (zoals `#ASTER-LASBRON`: modelgegevens) |
+| Invoer | Mecway kent geen vermoeiing (manual): `#ASTER-WOHLER` per materiaal, `#ASTER-VERMOEIING`, `#ASTER-BLOK`/`#ASTER-SIGNAAL` | keuze (zoals `#ASTER-LASBRON`: modelgegevens) |
 | S = amplitude | de Wöhler-S is σ_a = Δσ/2, zoals `DEFI_MATERIAU FATIGUE WOHLER` | gemeten: szlz100a (cyclus 600/−500 → N(550)), VM-05 |
 | `INTERPOL = LOG` | log-log tussen de tabelpunten (zoals szlz100a/sslv135a) | geverifieerd: VM-01a, VM-02a (≤ 10⁻⁶) |
 | `PROL_GAUCHE = EXCLU` | onder de tabel geen schade | gelijk aan `POST_FATIGUE`/`CALC_FATIGUE` (gemeten D = 0, VM-06) |

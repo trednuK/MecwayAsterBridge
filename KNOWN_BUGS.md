@@ -653,13 +653,11 @@ Code-Aster value per node) and logs the largest difference per variable.
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Not verified in a .liml** (question). Constraint equation: `constant`
-   (element or attribute; the bridge reads both) and the DOF names rx/ry/rz (derived
-   from the string order in mecway.exe); rotational inertia: axis 1/2 = X/Y (only 3 = Z
-   seen); more than one node gives an ERROR (mecway.exe: "can only be applied to a
-   single node"). Rayleigh damping only on the whole model and not on discrete
-   elements (Mecway: α on every node with mass, manual par. 9.26). Confirmed: the
-   Rayleigh XML (DampedVibratingStrip) and the gap attributes
-   `initialclearance`/`openforce` (mecway.exe).
+   (element or attribute; the bridge reads both) and the DOF names rx/ry/rz; rotational
+   inertia: axis 1/2 = X/Y (only 3 = Z seen); more than one node gives an ERROR. Rayleigh
+   damping only on the whole model and not on discrete elements (Mecway: α on every node
+   with mass, manual par. 9.26). Confirmed: the Rayleigh XML (DampedVibratingStrip). Gap
+   attributes `initialclearance`/`openforce`: not seen in a .liml.
 
 37\. **Second run in the same session: `solution` after `mw.open`** (question,
    `MecwayAsterBridgeMain`). The main window stays open, so a second run uses
@@ -1231,8 +1229,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
    with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,
-   checked 29 Oct 2026 in the analysis types of `mecway.exe` 34, the manual §6.9, §9.34,
-   §9.35 and headless: an A20 model with fluid pressure 1 Pa gives no solution), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
+   checked 29 Oct 2026 in the manual §6.9, §9.34, §9.35 and
+   headless: an A20 model with fluid pressure 1 Pa gives no solution), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
    constraint equations, couplings, contact, point masses, temperatures), the error estimator
    (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,

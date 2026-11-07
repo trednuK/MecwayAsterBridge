@@ -1134,9 +1134,8 @@ _CHAIN_DROPPED_TAGS = ("constraintequation", "flexiblejoint",
                        bridge_offset.TAG)
 
 # DOF names of a constraint equation. ux/uy/uz are in the .liml of
-# the test model (Mecway 33). rx/ry/rz: in mecway.exe "rx", "ry",
-# "rz" are separate strings directly before the DOF type names (DISPLX, DISPLY,
-# ...), after "ux" "uy" "uz"; plausible, but NOT seen in a .liml.
+# the test model (Mecway 33). rx/ry/rz are the rotations; NOT seen in a
+# .liml.
 _CE_DOFS = {"ux": ("DX", "inverse_length"), "uy": ("DY", "inverse_length"),
             "uz": ("DZ", "inverse_length"), "rx": ("DRX", "inverse_angle"),
             "ry": ("DRY", "inverse_angle"), "rz": ("DRZ", "inverse_angle")}
@@ -1489,12 +1488,10 @@ def _parse_model_item(item, root, model_data):
         log("INFO: Rayleigh damping {0}.".format(model_data["rayleigh"]))
     elif tag == "constraintequation":
         # Mecway (manual v33 par. 9.42): A dof1 + B dof2 + ... = C.
-        # <term coefficient="1 1/m" nid="49" dof="ux" />. In mecway.exe
-        # "term" and "constant" appear together with the constraint equation
-        # texts ("The constant is ... but it must be zero with this
-        # analysis type and solver"); whether constant is a child element or an
-        # attribute is NOT seen in a .liml: both are read. The
-        # constant must be 0 with CCX and dynamics (manual par. 9.42).
+        # <term coefficient="1 1/m" nid="49" dof="ux" />. Whether constant is
+        # a child element or an attribute is NOT seen in a .liml: both are
+        # read. The constant must be 0 with CCX and dynamics (manual par.
+        # 9.42).
         # Tutorials/ConstraintEquations.liml itself contains no equation
         # (you create it in the tutorial, manual par. 17.14).
         terms = []
@@ -1522,8 +1519,7 @@ def _parse_model_item(item, root, model_data):
         # its local axes U (axis), V and W, also if it is attached to another
         # element or the rotation is imposed; only on end faces
         # of beam elements. No stiffness: only free or fixed. XML
-        # (saved by Mecway 34, text "Free rotation about U/V/W" in
-        # mecway.exe): <flexiblejoint selection="FJ"><rotu /><rotw />
+        # (saved by Mecway 34): <flexiblejoint selection="FJ"><rotu /><rotw />
         # </flexiblejoint>; a child present = free (content ignored,
         # Mecway saves <rotu>false</rotu> as <rotu />). Translation:
         # bridge_mesh._flexible_joints (duplicate node + LIAISON_DDL).
@@ -1550,10 +1546,8 @@ def _parse_model_item(item, root, model_data):
     elif tag in ("mass2", "rotationalinertia"):
         # Mecway (manual v33 par. 9.21/9.22): nodal mass (spread equally over
         # the nodes) or rotational inertia about the X/Y/Z axis (axis="3" = Z
-        # seen in Mecway 33; 1 = X, 2 = Y derived; "axis" appears in
-        # mecway.exe with the rotational inertia texts). In Mecway a
-        # rotational inertia is allowed on one node only ("A rotational
-        # inertia can only be applied to a single node", mecway.exe).
+        # seen in Mecway 33; 1 = X, 2 = Y derived). In Mecway a rotational
+        # inertia is allowed on one node only.
         # Code-Aster: POI1 with DIS_T M_T_D_N or DIS_TR M_TR_D_N
         # (bridge_mesh._build_discretes).
         if tag == "mass2":
@@ -2217,11 +2211,11 @@ def extract_aster_data_from_liml(file_path):
                                     hc.get("stress", "0"), 'pressure')
                                 curve.append((strain, stress))
                             curve.sort(key=lambda sc: sc[0])
-                            # Types (manual v33 par. 8.8; mecway.exe lists
-                            # BilinearIsotropic, BilinearKinematic,
-                            # Kinematic, RambergOsgood next to Isotropic;
-                            # 'Simple' in that list is the type of
-                            # <density>, not plasticity). XML of
+                            # Types (manual v33 par. 8.8 names the models; XML type names
+                            # BilinearIsotropic, BilinearKinematic, Kinematic, RambergOsgood next
+                            # to Isotropic; Kinematic/BilinearKinematic NOT seen in a .liml);
+                            # 'Simple' is the type of <density>, not
+                            # plasticity. XML of
                             # Isotropic, BilinearIsotropic en RambergOsgood
                             # seen in Forum_models/TensileBlockTest.liml:
                             # BilinearIsotropic / BilinearKinematic
@@ -2347,10 +2341,8 @@ def extract_aster_data_from_liml(file_path):
                         #     [initialclearance=".." openforce=".."] />
                         #   <mechanical type="Damper"
                         #     dampingcoefficient="50 N.s/m" />
-                        # initialclearance/openforce: attribute names from
-                        # mecway.exe (in the list of material attributes,
-                        # between springconstant/dampingcoefficient and
-                        # closedstiffness), NOT seen in a .liml.
+                        # initialclearance/openforce: attribute names NOT
+                        # seen in a .liml.
                         if mech_type == "Gap":
                             ld = {"kind": "gap",
                                   "k": parse_and_convert(mech_node.get(
@@ -2763,15 +2755,14 @@ def extract_aster_data_from_liml(file_path):
                         contact)
                     continue
                 # Mecway knows unilateralelastic (contact) and bondedelastic/
-                # bondedtie/bondedce (bonded; type names from mecway.exe).
+                # bondedtie/bondedce (bonded; unilateralelastic and bondedtie
+                # seen in Samples/BoltedJoint.liml).
                 # Bonded is not DEFI_CONTACT (that could separate),
                 # but LIAISON_MAIL (bridge_mesh._bonded).
                 # Stiffness per area (Pa/m): Mecway's penalty contact;
                 # the bridge uses it with contact_algo = PENALISATION
                 # (bridge_to_aster._build_contact_block) and with bonded
-                # 'elastic' (only reported). Mecway requires kn > 0 ("Normal
-                # stiffness per unit area ... must be strictly positive",
-                # mecway.exe).
+                # 'elastic' (only reported). Mecway requires kn > 0.
                 contact["kn"] = parse_and_convert(
                     item.findtext("normalstiffness") or "0",
                     "stiffness_per_area")

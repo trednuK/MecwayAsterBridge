@@ -10,8 +10,8 @@
 # Compatible with IronPython 2.7.9 (Mecway); the calculation itself runs in
 # the Code-Aster job (aster_fatigue.py, Python 3 + numpy).
 #
-# Input (Mecway has no fatigue: manual v33 and mecway.exe know
-# no fatigue/S-N/Wohler), as #ASTER lines (bridge_custom):
+# Input (Mecway has no fatigue: manual v33 knows no fatigue/S-N/Wohler),
+# as #ASTER lines (bridge_custom):
 #   #ASTER-WOHLER material: K=V, ...       Wohler curve of a Mecway
 #                                          material ('*' = the rest)
 #       table   S = [s1, s2, ..] MPa, N = [n1, n2, ..]   (S = amplitude)

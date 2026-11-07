@@ -609,7 +609,7 @@ Input through `#ASTER` lines, no settings in the main window
 
 | Assumption / default | What the bridge does | Status |
 |---|---|---|
-| Input | Mecway has no fatigue (manual, `mecway.exe`): `#ASTER-WOHLER` per material, `#ASTER-FATIGUE`, `#ASTER-BLOCK`/`#ASTER-SIGNAL` | choice (like `#ASTER-LASBRON`: model data) |
+| Input | Mecway has no fatigue (manual): `#ASTER-WOHLER` per material, `#ASTER-FATIGUE`, `#ASTER-BLOCK`/`#ASTER-SIGNAL` | choice (like `#ASTER-LASBRON`: model data) |
 | S = amplitude | the Wöhler S is σ_a = Δσ/2, as in `DEFI_MATERIAU FATIGUE WOHLER` | measured: szlz100a (cycle 600/−500 → N(550)), VM-05 |
 | `INTERPOL = LOG` | log-log between the table points (as szlz100a/sslv135a) | verified: VM-01a, VM-02a (≤ 10⁻⁶) |
 | `PROL_GAUCHE = EXCLU` | no damage below the table | equal to `POST_FATIGUE`/`CALC_FATIGUE` (measured D = 0, VM-06) |

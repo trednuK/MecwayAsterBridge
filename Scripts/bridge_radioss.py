@@ -22,9 +22,8 @@
 # lines starting with '#' are comments, a line starting with '/'
 # starts a new card. The values are in the unit system of the
 # Radioss model. Mecway computes in SI (the templates: RHO 7800, E 206E9,
-# yield stress 228.03E6) and writes a /BEGIN itself on export ('kg' is
-# next to the /BEGIN text in mecway.exe); the bridge converts nothing and
-# reports values that point to another system (_check_units).
+# yield stress 228.03E6) and writes a /BEGIN itself on export; the bridge
+# converts nothing and reports values that point to another system (_check_units).
 #
 # Compatible with IronPython 2.7.9.
 

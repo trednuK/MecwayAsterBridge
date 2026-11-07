@@ -6,9 +6,9 @@ The bridge computes the **fatigue damage** D and the **life** at each node from 
 history, with a Wöhler curve (S-N curve) or a strain-life curve (Manson-Coffin) per
 material and Miner's rule. For a multiaxial stress state a **critical-plane
 criterion** (Dang Van, Matake, Crossland or your own formula) of Code-Aster can give
-the equivalent stress. Mecway itself has no fatigue: the manual and `mecway.exe` have
-no S-N curve, fatigue or Wöhler input (Mecway Ltd., 2026; checked). The input
-therefore goes through `#ASTER` lines in a free text field of Mecway
+the equivalent stress. Mecway itself has no fatigue: the manual has no S-N curve,
+fatigue or Wöhler input (Mecway Ltd., 2026; checked). The input therefore goes through
+`#ASTER` lines in a free text field of Mecway
 ([`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1).
 
 | What | Where you see it |

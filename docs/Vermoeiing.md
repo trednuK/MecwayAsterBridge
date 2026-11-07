@@ -7,9 +7,9 @@ belastingsverloop, met een Wöhler-curve (S-N-curve) of een rek-levensduurcurve
 (Manson-Coffin) per materiaal en de regel van Miner. Voor een multiaxiale
 spanningstoestand kan een **kritiekvlakcriterium** (Dang Van, Matake, Crossland of een
 eigen formule) van Code-Aster de equivalente spanning geven. Mecway kent zelf geen
-vermoeiing: de manual en `mecway.exe` hebben geen S-N-curve, fatigue- of Wöhler-invoer
-(Mecway Ltd., 2026; nagelopen). De invoer gaat daarom met `#ASTER`-regels in een vrij
-tekstveld van Mecway ([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1).
+vermoeiing: de manual heeft geen S-N-curve, fatigue- of Wöhler-invoer (Mecway Ltd.,
+2026; nagelopen). De invoer gaat daarom met `#ASTER`-regels in een vrij tekstveld van
+Mecway ([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1).
 
 | Wat | Waar je het ziet |
 |---|---|

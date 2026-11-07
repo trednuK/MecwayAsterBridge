@@ -969,9 +969,9 @@ Zonder demping in het model geeft de instelling gewone reële modes (INFO).
 - Hysteretische (structurele) demping (`AMOR_HYST`, complexe stijfheid), modale
   demping als ζ per mode (*Extra modale demping* van de respons op modale basis is
   geen matrix en telt hier niet mee), demping in knik en akoestiek.
-- Het imaginaire deel van de vorm naar Mecway (alleen het reële deel). mecway.exe
-  kent intern wel een imaginaire verplaatsing (`DisplacementXImaginary`), maar de
-  naam in de `.liml` en de weergave zijn niet uitgezocht.
+- Het imaginaire deel van de vorm naar Mecway (alleen het reële deel); of Mecway een
+  imaginaire verplaatsing kan tonen, en onder welke naam in de `.liml`, is niet
+  uitgezocht.
 - Overkritisch gedempte modes (ζ ≥ 1).
 
 ### 6.5 Meldingen en oplossingen
@@ -1128,8 +1128,8 @@ sdlv301a (waaier); catalogus `mode_iter_cycl.py` (code_aster 17.4).
   laagste modes per ND met de standaardbasis gelijk aan het volledige model (≤
   0,0012%). Hoge modes per ND (bij de hoogste sectormodes in de basis) kunnen iets
   te hoog zijn: reken ter controle met het dubbele aantal.
-- **Effectieve massa** geeft de bridge hier niet (Mecway ook niet: "Effective mass
-  not available with MPCs or cyclic symmetry", mecway.exe).
+- **Effectieve massa** geeft de bridge hier niet (Mecway ook niet: geen effectieve
+  massa met MPC's of cyclische symmetrie).
 - **Handberekening**: dunne ring in het vlak f_n = 1/(2π)·√(EI/(ρAR⁴))·n(n² −
   1)/√(n² + 1) (Blevins, 1979); ingeklemde cirkelvormige plaat f = λ²/(2πa²)·√(D/(ρh))
   met λ² = 10,216 (ND 0), 21,26 (ND 1), 34,88 (ND 2), 51,03 (ND 3) (Leissa, 1969).

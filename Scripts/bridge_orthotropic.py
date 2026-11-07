@@ -23,7 +23,7 @@
 #   export_arg(model_data, fields)  axes for Mecway's "stress in element
 #                       coordinates" (aster_results_export, S13d)
 #
-# MECWAY (manual v34 par. 8.5 and 7.4.2, attribute names in mecway.exe,
+# MECWAY (manual v34 par. 8.5 and 7.4.2, attribute names confirmed and
 # semantics measured with headless Mecway 34 solves of cubes under an
 # imposed homogeneous strain, 28 Oct 2026, STAPPENPLAN S13 findings):
 #   <mechanical type="Orthotropic" youngsmodulusu/v/w poissonratiouv/vw/wu
@@ -267,9 +267,7 @@ def parse(mech_node, dens_node, mech_type, mat_name, model_data):
         if ortho is None:
             _error(model_data, mat_name, mech_type, why)
             return None
-        # Mecway: no thermal expansion for anisotropic materials (message
-        # in mecwayf.dll: "Thermal expansion is no longer supported for
-        # anisotropic materials")
+        # Mecway: no thermal expansion for anisotropic materials
         alpha = (0.0, 0.0, 0.0)
     rho = parse_and_convert(dens_node.get("density", "0"), "density") \
         if dens_node is not None else 0.0

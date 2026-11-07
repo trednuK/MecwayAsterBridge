@@ -27,7 +27,7 @@
 #                                       a source, microphones in the log.
 #
 # Mecway XML (Mecway 33, determined with headless 'mecway <model> solve',
-# TestFiles/Tools/mw_solve.py; tag names also in mecway.exe):
+# TestFiles/Tools/mw_solve.py):
 #   <analysis type="A30" maxmode="5" />            (A20 = 2D: see below)
 #   <mat><mechanical type="Isotropic" speedofsound="340 m/s" />
 #        <density type="Simple" density="1.2 kg/m³" /></mat>
@@ -106,9 +106,9 @@ from bridge_utils import (log, parse_and_convert, CONFIG_BRIDGE, tr,
 ACOUSTIC_TAGS = frozenset(["fluidpressure", "impedance"])
 
 # Constraints that Mecway also uses in acoustics (manual v33 par. 9.9:
-# bonded contact couples the pressure; test models in mecway.exe: "A30
-# node-surface coupling", "A30 Constraint Equations"), but that the bridge
-# does not translate there: report and skip.
+# bonded contact couples the pressure; node-surface coupling and constraint
+# equations in A30: NOT verified), but that the bridge does not translate there:
+# report and skip.
 _NOT_IN_ACOUSTICS = frozenset(["contact2", "nodesurfacecoupling",
                                "constraintequation"])
 

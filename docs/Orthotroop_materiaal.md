@@ -150,10 +150,10 @@ Mecway; een strook op buiging, 0,5% van Mecway's MITC4).
 
 - Mecway-handleiding v34 §7.4.2 (elementassen, projectie van de vector), §8.5 (orthotrope
   en anisotrope materialen, groot Poisson-getal, materiaalassen = elementassen, bij
-  volume-elementen standaard globaal); attribuutnamen uit `mecway.exe` (`youngsmodulusu` …
-  `shearmoduluswu`, `thermalexpansionu/v/w`, `c11` … `c66`, `s11` … `s66`); betekenis
-  gemeten met headless oplossingen van Mecway 34 (kubussen onder een opgelegde homogene
-  rek, 28 okt 2026).
+  volume-elementen standaard globaal); attribuutnamen (`youngsmodulusu` …
+  `shearmoduluswu`, `thermalexpansionu/v/w`, `c11` … `c66`, `s11` … `s66`) bevestigd en
+  betekenis gemeten met headless oplossingen van Mecway 34 (kubussen onder een opgelegde
+  homogene rek, 28 okt 2026).
 - Code-Aster 17.4: catalogus `defi_materiau.py` (`ELAS_ORTH`, `ELAS_ISTR`; geen algemene
   3D-anisotropie), U4.43.01 (`ELAS_ORTH`; schalen via `DEFI_COMPOSITE`, §3.5.2),
   `defi_composite.py` (U4.42.03); `affe_cara_elem.py` (`MASSIF` `ANGL_REP`),

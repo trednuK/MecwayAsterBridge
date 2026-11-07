@@ -21,9 +21,8 @@
 #
 # Mecway (measured headless with Mecway 34, mw_solve.py, 28 Oct 2026; manual
 # v34 par. 6.1.1, 6.1.3, 7.1, 7.2):
-#   - S20 = Static 2D, SA0 = Static Axisymmetric (the names in mecway.exe:
-#     "Static 2D", "Static Axisymmetric"), D20 = Dynamic Response 2D, DA0 =
-#     Dynamic Response Axisymmetric (Samples/PandSWaves.liml is D20; DA0
+#   - S20 = Static 2D, SA0 = Static Axisymmetric, D20 = Dynamic Response 2D,
+#     DA0 = Dynamic Response Axisymmetric (Samples/PandSWaves.liml is D20; DA0
 #     solved headless with time steps), A20 = Acoustic Resonance 2D (S16d,
 #     _apply_acoustic and bridge_acoustic). Plane elements tri3/tri6/quad4/
 #     quad8 in the XY plane (Z ignored by Mecway), faceid 1..4 = the edges
@@ -81,7 +80,7 @@ PLANE_MODELISATIONS = ("C_PLAN", "D_PLAN", "AXIS")
 # 'ACOUSTIQUE', MODELISATION 'PLAN' (bridge_acoustic). V20 is not a 2D
 # type: Mecway 34 converts it to V30 (the solution file says V30), unknown
 # codes such as T20/B20/L20 become S30. Mecway has no axisymmetric acoustic
-# type (the analysis codes in mecway.exe 34: S20, SA0, S30, V30, D20, DA0,
+# type (the analysis codes of Mecway 34: S20, SA0, S30, V30, D20, DA0,
 # D30, T30, T31, E30, A20, A30, B30).
 ACOUSTIC_2D = {"A20": "Acoustic Resonance 2D"}
 PLANE_SHAPES = frozenset(["tri3", "tri6", "quad4", "quad8"])
@@ -273,8 +272,8 @@ def _apply_acoustic(model_data, run_cfg, elset_shapes, atype):
     constant mode is c / sqrt(area)), and Z of the nodes is ignored. No
     model_data["plane"]: there are no forces or reactions to scale.
     Harmonic pressure field: not translated, because Mecway has no 2D
-    input for it (KNOWN_BUGS 126; checked 29 Oct 2026): the analysis types
-    in mecway.exe 34 are only "Acoustic Resonance 2D/3D", the manual (v34
+    input for it (KNOWN_BUGS 126; checked 29 Oct 2026): the acoustic analysis
+    types of Mecway 34 are only Acoustic Resonance 2D/3D, the manual (v34
     sec. 6.9, 9.34, 9.35) describes only real and complex modes (no
     frequency, no source), and an A20 model with fluid pressure 1 Pa solved
     headless (mw_solve.py) writes no solution at all.

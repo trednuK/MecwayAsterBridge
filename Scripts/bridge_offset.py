@@ -29,8 +29,8 @@
 #   </offset>
 #   <offset selection="..."><x>..</x><y>..</y><z>..</z></offset>
 #                                                beams (global axes)
-#   mecway.exe contains the choices "Element coordinates (shells)" and
-#   "Global coordinates (beams, internal solver)". Measured:
+#   Mecway offers the choices element coordinates (shells) and global
+#   coordinates (beams, internal solver). Measured:
 #   - shell: the midsurface lies at distance w in the +W direction (the
 #     element normal, right-handed over the nodes). A strip with w = +10 mm
 #     and a tensile force in the nodes bends towards +W (tip +7.09 mm,

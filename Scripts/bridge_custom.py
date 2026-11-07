@@ -10,7 +10,7 @@
 # (e.g. LIAISON_ELEM for beam-volume connections) without changing the
 # bridge.
 #
-# Where: Mecway's free text fields (XML tags, found in mecway.exe):
+# Where: Mecway's free text fields (XML tags):
 #   <ccxmodeldefinition>      CCX > Custom model definition
 #   <ccxstep>                 CCX > Custom step contents
 #   <radiossmodeldefinition>  OpenRadioss > Custom model definition
