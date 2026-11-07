@@ -5559,12 +5559,15 @@ def _build_comportement_block(model_data, analysis, elastic=False):
             # Elastic beam with large rotations (U4.51.11: ELAS_POUTRE_GR
             # for POU_D_T_GD, only with GROT_GDEP; test case ssnl103a).
             relation = "ELAS_POUTRE_GR"
+        form = _deformation_for(mod, relation, deformation, elset_name)
         entries.append(
             "        _F(GROUP_MA='{0}', RELATION='{1}', "
-            "DEFORMATION='{2}'),".format(
-                elset_name, relation,
-                _deformation_for(mod, relation, deformation, elset_name))
+            "DEFORMATION='{2}'),".format(elset_name, relation, form)
         )
+        # For bridge_manifest. GREEN_LAGRANGE on DKT/DST computes as PETIT in
+        # 17.4 (see _deformation_for)
+        model_data.setdefault("deformation_by_elset", {})[elset_name] = (
+            "PETIT" if mod in ("DKT", "DST") else form)
 
     # POI1 discretes (single nodes, elastic support, nodal masses): ELAS
     # (supported for DISCRET, U4.51.11 par. 4.4.1.1); small
@@ -8875,7 +8878,7 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
                                      solver_cmd)
     if result:
         import bridge_manifest
-        bridge_manifest.prepare_base(result, work_dir, model_data, solver_cmd,
+        bridge_manifest.prepare_base(result, work_dir, model_data, analysis,
                                      adapt_plan is not None,
                                      _has_cara(model_data))
     return result

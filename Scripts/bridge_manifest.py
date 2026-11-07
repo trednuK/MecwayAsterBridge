@@ -21,9 +21,11 @@
 #   schema, run_id, model (file name), configuration, analysis, solver,
 #   aster_version, memory_limit, base (folder name),
 #   fingerprint  mesh_fingerprint() of the Mecway model
-#   deformation  "PETIT", or the choice for large displacements of the run:
-#                then moments are summed on the deformed shape (x + u), with
-#                PETIT on the undeformed one (measured, MecwayFreebody E9)
+#   deformation  the choice of the run; "PETIT" for MECA_STATIQUE
+#   deformation_by_component  {Mecway component: what it really computed
+#                with}: the bridge chooses per element set. With PETIT the
+#                moments of a cut are summed on the undeformed shape, else on
+#                x + u (measured, MecwayFreebody E9). DKT/DST count as PETIT.
 #   concepts     names in the base: result, mesh, model, material, cara
 #   cells        the cell names in the order of the mesh file. In the base a
 #                cell has no name but a position, also after CREA_MAILLAGE:
@@ -33,8 +35,8 @@
 #                belongs to. The mesh itself has no such link.
 #   not_shared   parts where shared nodes do not describe the whole cut
 #                (bonded contact, couplings, ...); a reader refuses or warns
-#   line_quad    True if the run made the mesh quadratic (CREA_MAILLAGE): the
-#                base has midside nodes that Mecway does not know
+#   extra_nodes  True if the base has nodes Mecway does not know (LINE_QUAD,
+#                QUAD8_9, TRIA6_7 by CREA_MAILLAGE)
 #
 # Compatible with IronPython 2.7.9 and Python 3 (offline test:
 # python tests/test_bridge_manifest.py).
@@ -47,12 +49,9 @@ import os
 import re
 
 import bridge_version
-from bridge_utils import (CONFIG_BRIDGE, exe_aster_path, get_active_analysis,
-                          log, run_name, tr)
+from bridge_utils import CONFIG_BRIDGE, exe_aster_path, log, run_name, tr
 
 SCHEMA = 1
-# Blocks of the mesh file without cells; all others are element types
-_NOT_CELLS = ("TITRE", "COOR_3D", "COOR_2D", "GROUP_MA", "GROUP_NO", "FIN")
 BASE_SUFFIX = "_base"
 MANIFEST_SUFFIX = "_manifest.json"
 # The results MecwayFreebody can use: a static result per step
@@ -94,47 +93,15 @@ def _not_shared(model_data):
         if model_data.get(key)]
 
 
-def _deformation(solver_cmd):
-    """The choice of the run; MECA_STATIQUE has no large displacements."""
-    if solver_cmd != "STAT_NON_LINE":
-        return "PETIT"
-    return get_active_analysis().get("deformation", "PETIT")
+def _deformation_by_component(model_data):
+    """model_data["deformation_by_elset"] with the names Mecway shows."""
+    import bridge_failure
+    return dict((bridge_failure.mecway_name(model_data, elset), form)
+                for elset, form in
+                model_data.get("deformation_by_elset", {}).items())
 
 
-def read_cell_names(mail_path):
-    """
-    Cell names in the order of a mesh in ASTER format (bridge_mesh). A cell
-    can span several lines (HEXA20): the block name gives its number of
-    nodes, so a line can also hold the rest of the previous cell.
-    """
-    names = []
-    block = None
-    size = None       # tokens of one cell in this block, None: no cells
-    left = 0          # tokens still to come of the current cell
-    with io.open(mail_path, encoding="utf-8", errors="replace") as f:
-        for line in f:
-            tokens = line.split()
-            if not tokens:
-                continue
-            if block is None:
-                block = tokens[0]
-                m = re.search(r"(\d+)$", block)
-                size = (int(m.group(1)) + 1
-                        if m and block not in _NOT_CELLS else None)
-                left = 0
-            elif tokens[0] == "FINSF":
-                block = None
-            elif size is not None:
-                for token in tokens:
-                    if left == 0:
-                        names.append(token)
-                        left = size
-                    left -= 1
-    return names
-
-
-def build_manifest(model_data, solver_cmd, run_id, aster_version,
-                   memory_limit, has_cara, cells):
+def build_manifest(model_data, kept, run_id, aster_version, memory_limit):
     """The manifest as a dict; see the header of this file."""
     return {
         "schema": SCHEMA,
@@ -142,10 +109,11 @@ def build_manifest(model_data, solver_cmd, run_id, aster_version,
         "model": split_run_name(run_name(""))[0],
         "configuration": model_data.get("configuration"),
         "analysis": CONFIG_BRIDGE.get("active_analysis"),
-        "solver": solver_cmd,
+        "solver": kept["solver"],
         "aster_version": aster_version,
         "memory_limit": memory_limit,
-        "deformation": _deformation(solver_cmd),
+        "deformation": kept["deformation"],
+        "deformation_by_component": _deformation_by_component(model_data),
         "base": os.path.basename(run_name(BASE_SUFFIX)),
         "fingerprint": mesh_fingerprint(
             model_data.get("mesh_nodes", {}),
@@ -153,19 +121,22 @@ def build_manifest(model_data, solver_cmd, run_id, aster_version,
         "concepts": {
             "result": "res", "mesh": "mesh", "model": "model",
             "material": "fieldmat",
-            "cara": "cara" if has_cara else None},
-        "cells": cells,
+            "cara": "cara" if kept["has_cara"] else None},
+        "cells": list(model_data.get("cell_names", [])),
         "skin": dict((k, [list(p) for p in v])
                      for k, v in model_data.get("skin_parents", {}).items()),
         "not_shared": _not_shared(model_data),
-        "line_quad": bool(model_data.get("line_quad")),
+        "extra_nodes": bool(model_data.get("line_quad") or
+                            model_data.get("shell_upgrades")),
     }
 
 
 def write_manifest(path, manifest):
     """Written through a .tmp file: a follow-up run never reads half a file."""
     tmp = path + ".tmp"
-    text = json.dumps(manifest, ensure_ascii=False, indent=1, sort_keys=True)
+    # Compact: a manifest of 200 000 cells is read in IronPython
+    text = json.dumps(manifest, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":"))
     if isinstance(text, bytes):
         text = text.decode("utf-8")
     with io.open(tmp, "w", encoding="utf-8", newline="\n") as f:
@@ -196,6 +167,15 @@ def bases_to_remove(names, model_stem, keep):
     return found[:-keep] if len(found) > keep else []
 
 
+def orphan_bases(names, model_stem, current):
+    """Base folders of this model without a manifest (a run that broke off),
+    except that of the current run."""
+    pattern = re.compile("^" + re.escape(model_stem) +
+                         r"_\d{8}_\d{6}" + re.escape(BASE_SUFFIX) + "$")
+    return [n for n in names if pattern.match(n) and n != current and
+            n[:-len(BASE_SUFFIX)] + MANIFEST_SUFFIX not in names]
+
+
 def _has_subfolder(path):
     return any(os.path.isdir(os.path.join(path, n)) for n in os.listdir(path))
 
@@ -208,9 +188,12 @@ def _remove_folder(path):
     os.rmdir(path)
 
 
-def prune_bases(work_dir, model_stem, keep):
-    """Remove the oldest bases of this model. Never stops a run."""
-    for name in bases_to_remove(os.listdir(work_dir), model_stem, keep):
+def prune_bases(work_dir, model_stem, keep, current=None):
+    """Remove the oldest bases of this model and those left without a
+    manifest. Never stops a run."""
+    names = os.listdir(work_dir)
+    for name in (bases_to_remove(names, model_stem, keep) +
+                 orphan_bases(names, model_stem, current)):
         path = os.path.join(work_dir, name)
         try:
             if _has_subfolder(path):
@@ -235,7 +218,7 @@ def split_run_name(name):
     return (m.group(1), m.group(2)) if m else (name, None)
 
 
-def prepare_base(export_path, work_dir, model_data, solver_cmd, adaptive,
+def prepare_base(export_path, work_dir, model_data, analysis, adaptive,
                  has_cara):
     """
     After the builder: with the setting "keep_base" add the base to the
@@ -245,6 +228,7 @@ def prepare_base(export_path, work_dir, model_data, solver_cmd, adaptive,
     if not CONFIG_BRIDGE.get("keep_base", False):
         return False
     import bridge_xfem
+    solver_cmd = analysis.get("solver_command")
     if (solver_cmd not in BASE_SOLVERS or adaptive or
             bridge_xfem.selection_names(model_data)):
         log(tr("INFO: Base wordt niet bewaard: alleen voor statische runs "
@@ -259,7 +243,11 @@ def prepare_base(export_path, work_dir, model_data, solver_cmd, adaptive,
         # As the builders write the .export: one encoding in the file
         with open(export_path, "a") as f:
             f.write("\nR base {0} R 0".format(base_dir))
-        model_data["kept_base"] = {"solver": solver_cmd, "has_cara": has_cara}
+        linear = solver_cmd == "MECA_STATIQUE"
+        model_data["kept_base"] = {
+            "solver": solver_cmd, "has_cara": has_cara,
+            "deformation": ("PETIT" if linear
+                            else analysis.get("deformation", "PETIT"))}
         return True
     except Exception as e:
         log(tr("WARNING: Base bewaren voorbereiden mislukt: {0}",
@@ -289,12 +277,11 @@ def finish_run(work_dir, model_data, export_path, success, aster_version=None):
                    bridge_version.aster_version_from_launcher(exe_aster_path()))
         write_manifest(
             os.path.join(work_dir, run_name(MANIFEST_SUFFIX)),
-            build_manifest(model_data, kept["solver"], run_id, version,
-                           read_memory_limit(export_path), kept["has_cara"],
-                           read_cell_names(os.path.join(
-                               work_dir, run_name(".mail")))))
+            build_manifest(model_data, kept, run_id, version,
+                           read_memory_limit(export_path)))
         if run_id is not None:
-            prune_bases(work_dir, stem, CONFIG_BRIDGE.get("keep_base_runs", 3))
+            prune_bases(work_dir, stem, CONFIG_BRIDGE.get("keep_base_runs", 3),
+                        os.path.basename(base_dir))
         return True
     except Exception as e:
         log(tr("WARNING: Manifest schrijven mislukt: {0}",

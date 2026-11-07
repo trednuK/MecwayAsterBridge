@@ -43,6 +43,8 @@ def _model():
         "mesh_elements": [(7, "tet4", [1, 2, 3, 4], "P")],
         "configuration": None,
         "skin_parents": {"K1": [[7, 1]], "K2": [[7, 2]]},
+        "cell_names": ["M2", "M1", "K1"],
+        "deformation_by_elset": {"P": "GDEF_LOG"},
     }
 
 
@@ -81,6 +83,10 @@ def test_bases_to_remove():
           "oldest usable of this model only; a base without manifest "
           "does not count")
     check(bm.bases_to_remove(names, "M", 10) == [], "fewer than keep")
+    check(bm.orphan_bases(names, "M", None) == ["M_20261105_100000_base"],
+          "a base without manifest is an orphan")
+    check(bm.orphan_bases(names, "M", "M_20261105_100000_base") == [],
+          "but not that of the current run")
     check(bm.bases_to_remove(names, "M", 0) == names[:3],
           "at least the newest one stays")
 
@@ -106,41 +112,6 @@ def test_prune(tmp):
     check("M_20261103_100000_base" in left, "newest stays")
 
 
-MAIL = u"""TITRE
- Some text
-FINSF
-COOR_3D
- N1 0.0 0.0 0.0
- N2 1.0 0.0 0.0
-FINSF
-HEXA8
- M2 N1 N2 N1 N2 N1 N2 N1 N2
- M1 N1 N2 N1 N2
-    N1 N2 N1 N2
-FINSF
-QUAD4
- K1 N1 N2 N1 N2
-FINSF
-GROUP_MA
- P
- M1 M2
-FINSF
-GROUP_NO
- Q
- N1
-FINSF
-FIN
-"""
-
-
-def test_read_cells(tmp):
-    path = os.path.join(tmp, "m.mail")
-    with io.open(path, "w", encoding="utf-8") as f:
-        f.write(MAIL)
-    check(bm.read_cell_names(path) == ["M2", "M1", "K1"],
-          "cell names only, in file order")
-
-
 def _read(path):
     # Closed at once: IronPython has no reference counting
     with io.open(path, encoding="utf-8") as f:
@@ -156,22 +127,23 @@ def _export(tmp):
 
 def test_finish_export(tmp):
     cfg = bridge_utils.CONFIG_BRIDGE
-    cfg["active_analysis"] = "nonlin_static_3d"
     bridge_utils.set_run_log("20261107_101500", "M.liml")
     bm.run_name = bridge_utils.run_name
     path = _export(tmp)
     cfg["keep_base"] = False
-    check(not bm.prepare_base(path, tmp, _model(), "MECA_STATIQUE", False,
-                              False), "setting off: nothing")
+    static = {"solver_command": "MECA_STATIQUE"}
+    nonlin = {"solver_command": "STAT_NON_LINE", "deformation": "GROT_GDEP"}
+    check(not bm.prepare_base(path, tmp, _model(), static, False, False),
+          "setting off: nothing")
     check(_read(path).count("R base") == 0,
           "setting off: .export unchanged")
 
     cfg["keep_base"] = True
-    for solver, adaptive in (("CALC_MODES", False),
-                             ("MECA_STATIQUE", True)):
-        check(not bm.prepare_base(path, tmp, _model(), solver, adaptive,
+    for analysis, adaptive in (({"solver_command": "CALC_MODES"}, False),
+                               (static, True)):
+        check(not bm.prepare_base(path, tmp, _model(), analysis, adaptive,
                                   False),
-              "no base for {0}, adaptive {1}".format(solver, adaptive))
+              "no base for {0}, adaptive {1}".format(analysis, adaptive))
     check(_read(path).count("R base") == 0,
           "still no base line")
 
@@ -182,10 +154,7 @@ def test_finish_export(tmp):
         f.write("{}")
     cfg["keep_base_runs"] = 1
     model = _model()
-    with io.open(os.path.join(tmp, "M_20261107_101500.mail"), "w",
-                 encoding="utf-8") as f:
-        f.write(MAIL)
-    check(bm.prepare_base(path, tmp, model, "STAT_NON_LINE", False, True),
+    check(bm.prepare_base(path, tmp, model, nonlin, False, True),
           "static: base kept")
     check(os.listdir(tmp).count("M_20261107_101500_manifest.json") == 0,
           "no manifest before the run")
@@ -212,10 +181,10 @@ def test_finish_export(tmp):
     check(man["schema"] == 1 and man["run_id"] == "20261107_101500" and
           man["model"] == "M", "run and model")
     check(man["aster_version"] == "17.4", "version that really ran")
-    check(man["line_quad"] is False, "no LINE_QUAD")
-    check(man["deformation"] == bridge_utils.get_active_analysis().get(
-        "deformation", "PETIT"), "deformation of the nonlinear analysis")
-    check(bm._deformation("MECA_STATIQUE") == "PETIT", "linear: PETIT")
+    check(man["extra_nodes"] is False, "no extra nodes")
+    check(man["deformation"] == "GROT_GDEP", "choice of the run")
+    check(man["deformation_by_component"] == {"P": "GDEF_LOG"},
+          "what the component computed with")
     check(man["memory_limit"] == 2048, "memory limit from the .export")
     check(man["solver"] == "STAT_NON_LINE", "solver")
     check(man["base"] == "M_20261107_101500_base", "base without a path")
@@ -247,7 +216,7 @@ def main():
     test_fingerprint()
     test_run_name_split()
     test_bases_to_remove()
-    for fn in (test_prune, test_finish_export, test_read_cells):
+    for fn in (test_prune, test_finish_export):
         tmp = tempfile.mkdtemp()
         try:
             fn(tmp)
