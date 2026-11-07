@@ -777,8 +777,8 @@ MECWAY_ANALYSIS_TYPES = {
     "T31": "ther_3d",
     "V30": "modal_3d",
     "B30": "buckling_3d",
-    # Acoustic Resonance 3D / 2D (mecway.exe: "A30" / "Acoustic Resonance
-    # 3D", "A20" / "Acoustic Resonance 2D"; A20: bridge_plane, S16d)
+    # Acoustic Resonance 3D / 2D (A30 solved headless by Mecway 33, AK-01;
+    # A20 by Mecway 34, AK-10: bridge_plane, S16d)
     "A30": "acoustic_modes_3d",
     "A20": "acoustic_modes_3d",
 }
