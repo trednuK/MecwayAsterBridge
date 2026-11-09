@@ -1166,8 +1166,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
     Show the main window: navigation on the left with the settings pages
     (with tooltips, bridge_glossary) and the page Documentatie (bridge_docs),
     a status box (status: text about the previous run) and the buttons
-    Starten, Resultaten..., Doorsnede tonen, Doorsnede in resultaten,
-    Convergentiescherm, Uitleg... and Sluiten.
+    Starten, Resultaten..., Doorsnede (a menu: show, hide, in results),
+    Convergentiescherm and Sluiten.
 
     Returns {"action": "run" | "results" | "section_show" |
     "section_results" | "close", "values": dict or None} ("values": the
@@ -1187,7 +1187,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
             FormBorderStyle, FormStartPosition, OpenFileDialog,
             FolderBrowserDialog, MessageBox, MessageBoxButtons,
             MessageBoxIcon, ToolTip, ListBox, ScrollBars, Application,
-            Panel, DockStyle, BorderStyle, Padding, Splitter)
+            Panel, DockStyle, BorderStyle, Padding, Splitter,
+            ContextMenuStrip, ToolStripMenuItem, ToolStripSeparator)
         from System.Drawing import Point, Size
         from System.Threading import Thread, ThreadStart, ApartmentState
     except Exception as e:
@@ -1359,11 +1360,6 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     if k == nav.SelectedIndex:
                         page_title.Text = title
                     nav.Invalidate()
-
-            def select_page(page):
-                k = page_index(page)
-                if k >= 0:
-                    nav.SelectedIndex = k
 
             def group_start(i):
                 return i == 0 or pages[i]["group"] != pages[i - 1]["group"]
@@ -1939,11 +1935,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
             status_box.Dock = DockStyle.Fill
             status_box.Text = (exe_missing_text() + (status or tr(
                 "Kies de instellingen en klik Starten. Ga met de muis over "
-                "een instelling voor uitleg; codes en namen staan onder "
-                "Uitleg... en op de pagina Documentatie.",
+                "een instelling voor uitleg; codes en namen staan op de "
+                "pagina Documentatie.",
                 "Choose the settings and click Start. Hover over a setting "
-                "for an explanation; codes and names are under "
-                "Explanation... and on the Documentation page."))
+                "for an explanation; codes and names are on the "
+                "Documentation page."))
             ).replace("\r\n", "\n").replace("\n", "\r\n")
             status_card.Controls.Add(status_box)
 
@@ -2066,38 +2062,68 @@ def _show_winforms_dialog(current, status=u"", model=None):
                                  model_path()), model,
                 field_text("paraview_exe"))))
 
-            def explain():
-                select_page(page_docs)
-                doc_list.SelectedIndex = 0
-            on_explain = guarded(explain)
-
             add_button(tr("Resultaten...", "Results..."), 120, on_results, tr(
                 "Resultaten van een eerdere run inladen, of de resultaten "
                 "uit het model halen (kleine .liml).",
                 "Load the results of an earlier run, or remove the results "
                 "from the model (small .liml)."))
-            add_button(
-                (tr("Doorsnede verbergen", "Hide section")
-                 if _MODEL_INFO.get("section_shown") else
-                 tr("Doorsnede tonen", "Show section")), 150, on_section, tr(
-                    "Toont de echte vorm van General sections op de balken, "
-                    "als tijdelijke elementen, om hem vóór een berekening te "
-                    "zien. Slaat het model eerst op. De vorm komt uit "
-                    "MecwaySectionProps.",
-                    "Shows the real shape of general sections on the beams, "
-                    "as temporary elements, to see it before a calculation. "
-                    "Saves the model first. The shape comes from "
-                    "MecwaySectionProps."))
-            add_button(tr("Doorsnede in resultaten", "Section in results"),
-                       170, on_section_results, tr(
-                "Zet de vorm van General sections met hun waarden in de "
-                "resultaten van dit model. Na een Code-Aster-run gebeurt dat "
-                "vanzelf; dit is voor een solve in Mecway zelf en na het "
-                "inladen van resultaten. Slaat het model op.",
-                "Puts the shape of general sections with their values in "
-                "the results of this model. After a Code-Aster run that "
-                "happens by itself; this is for a solve in Mecway itself and "
-                "after loading results. Saves the model."))
+            # One button for the section of General sections, with a menu
+            # (show, hide, in results); the menu opens below the button.
+            section_shown = bool(_MODEL_INFO.get("section_shown"))
+            section_menu = ContextMenuStrip()
+            section_menu.Font = look.font
+            section_menu.ShowImageMargin = False
+            for text, enabled, handler, help_text in (
+                    (tr("Doorsnede tonen", "Show section"),
+                     not section_shown, on_section, tr(
+                        "Toont de echte vorm van General sections op de "
+                        "balken, als tijdelijke elementen, om hem vóór een "
+                        "berekening te zien. Slaat het model eerst op. De "
+                        "vorm komt uit MecwaySectionProps.",
+                        "Shows the real shape of general sections on the "
+                        "beams, as temporary elements, to see it before a "
+                        "calculation. Saves the model first. The shape "
+                        "comes from MecwaySectionProps.")),
+                    (tr("Doorsnede verbergen", "Hide section"),
+                     section_shown, on_section, tr(
+                        "Haalt de tijdelijke elementen van Doorsnede tonen "
+                        "weer uit het model.",
+                        "Removes the temporary elements of Show section "
+                        "from the model again.")),
+                    (None, True, None, None),
+                    (tr("Doorsnede in resultaten", "Section in results"),
+                     True, on_section_results, tr(
+                        "Zet de vorm van General sections met hun waarden "
+                        "in de resultaten van dit model. Na een "
+                        "Code-Aster-run gebeurt dat vanzelf; dit is voor een "
+                        "solve in Mecway zelf en na het inladen van "
+                        "resultaten. Slaat het model op.",
+                        "Puts the shape of general sections with their "
+                        "values in the results of this model. After a "
+                        "Code-Aster run that happens by itself; this is for "
+                        "a solve in Mecway itself and after loading "
+                        "results. Saves the model."))):
+                if text is None:
+                    section_menu.Items.Add(ToolStripSeparator())
+                    continue
+                item = ToolStripMenuItem(text)
+                item.Enabled = enabled
+                item.ToolTipText = help_text
+                item.Click += handler
+                section_menu.Items.Add(item)
+
+            def show_section_menu():
+                section_menu.Show(section_btn, Point(0, section_btn.Height))
+            section_btn = add_button(
+                tr(u"Doorsnede ▾", u"Section ▾"), 120,
+                guarded(show_section_menu), tr(
+                    "Vorm van General sections (uit MecwaySectionProps): "
+                    "tonen of verbergen op de balken, of in de resultaten "
+                    "zetten.",
+                    "Shape of general sections (from MecwaySectionProps): "
+                    "show or hide it on the beams, or put it in the "
+                    "results."))
+            section_btn.ContextMenuStrip = section_menu   # right-click too
             add_button(tr("Convergentiescherm", "Convergence window"), 160,
                        on_monitor, tr(
                 "Opent het convergentie- en meldingenscherm (apart venster) "
@@ -2108,11 +2134,6 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 "window) for the latest run of the open model in the work "
                 "folder (no run of this model: the newest run there); it "
                 "stays open next to Mecway."))
-            add_button(tr("Uitleg...", "Explanation..."), 110, on_explain,
-                       tr("Uitleg van codes en namen (woordenlijst) op de "
-                          "pagina Documentatie.",
-                          "Explanation of codes and names (glossary) on the "
-                          "Documentation page."))
             ok_btn = add_button(tr("Starten", "Start"), 130, on_ok, tr(
                 "Instellingen opslaan, het model opslaan en Code-Aster "
                 "starten. Na de run komt dit venster terug.",
@@ -2123,11 +2144,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
                                     guarded(lambda: form.Close()),
                                     tr("Sluit de bridge. Gewijzigde "
                                        "instellingen worden alleen bij "
-                                       "Starten, Resultaten... of de knoppen "
-                                       "voor de doorsnede opgeslagen.",
+                                       "Starten, Resultaten... of het menu "
+                                       "Doorsnede opgeslagen.",
                                        "Close the bridge. Changed settings "
                                        "are only saved on Start, Results... "
-                                       "or the section buttons."), right=True)
+                                       "or the Section menu."), right=True)
             # No AcceptButton: Enter in a field or the document list
             # would otherwise start a run immediately.
             form.CancelButton = cancel_btn
