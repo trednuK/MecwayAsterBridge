@@ -107,8 +107,8 @@ hydrostatic pressure on shell edges (S17), orthotropic material (S13), and the c
 29 October: shear centre and L sections of beams (LS-90d, LS-94/95), pre-tension in an
 irregular tet mesh (PT-11 .. PT-13), frictionless shell edge against Mecway (LS-84), and afterwards run separately on `35c7564`
 lateral-torsional buckling of mono-symmetric sections and the sign of the bimoment (BU-43 .. BU-44b,
-LS-90d, LS-90e);
-Code-Aster 17.4): 544 test cases, 2963 checks, 2957 OK, 6 BEKEND (known), 0 NOK/FOUT.
+LS-90d, LS-90e), and afterwards NL-81c and NL-83b on `bfa15fa`;
+Code-Aster 17.4): 546 test cases, 2982 checks, 2976 OK, 6 BEKEND (known), 0 NOK/FOUT.
 Compared with the run on `fc733a9` no status change and no FEM value more than 0.1%
 different apart from quantities close to zero (differences against Mecway of order 1e-3 or
 smaller). New are 15 test cases and 69 checks.
@@ -131,7 +131,7 @@ smaller). New are 15 test cases and 69 checks.
 | Modal | 25 | 239 | 239 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 7 | 38 | 38 | 0 |
-| Nonlinear static | 54 | 201 | 198 | 3 |
+| Nonlinear static | 56 | 220 | 217 | 3 |
 | Nonlinear buckling | 5 | 13 | 13 | 0 |
 | Mode superposition | 10 | 25 | 25 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
@@ -144,7 +144,7 @@ smaller). New are 15 test cases and 69 checks.
 | Orthotropic material | 19 | 174 | 174 | 0 |
 | 2D and axisymmetric | 19 | 65 | 65 | 0 |
 | Bolt pretension | 13 | 87 | 87 | 0 |
-| **Total** | **544** | **2963** | **2957** | **6** |
+| **Total** | **546** | **2982** | **2976** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -1891,8 +1891,10 @@ samples) plus the kinks of the load tables (NL-20).
 | NL-80b | the same model in linear static | the same; the bridge makes it `POU_D_T` (WARNING) |
 | NL-80c | constant tip force 1 N in Y and constant tip moment 0.5 Nm about Z (no time table) | deflection F L³/(3EI) + F L/(kGA) + M L²/(2EI), rotation F L²/(2EI) + M L/(EI) |
 | NL-81 | end moment M = (π/2)·EI/L about Z in 20 steps (Mecway step 0.05 s) | circular arc: tip x = L sin θ/θ, y = L (1 − cos θ)/θ, θ = π/2 (GB-02); M constant, N = 0 |
+| NL-81c | end moment M = 2π·EI/L about Z in 8 steps (45 degrees per step) | full circle: the tip comes back to the root; half circle at t = 0.5; M constant, N = 0 |
 | NL-82 | column with initial curvature e0 (1 − cos(πx/2L)), e0 = 1e-4 L in the mesh, compressive force 0.5 P_cr | total deflection / e0 = 1/(1 − P/P_cr) = 2 (GB-03) |
 | NL-83 | tip force of fixed direction, PL²/EI = 1, 2, 3 at t = 1, 2, 3 s | Reissner beam (extension and shear), shooting with RK4 in the test module; inextensible equal to Mattiasson (1981) |
+| NL-83b | NL-83 in 6 steps (Mecway step 0.5 s instead of 0.1 s) | as NL-83 |
 | NL-84 | NL-81 with 20 line3 (40 SEG2 cells) | as NL-81 |
 | NL-85 | NL-81 with an *Element orientation* card V = Z and the moment about Y | as NL-81 in the XZ plane; without the card I would be four times as large |
 | NL-86 | centrifugal force 300 r/min about Z (radial beam) | u(L) = ρω²L³/(3E), reaction ρAω²L²/2 |
@@ -1911,7 +1913,9 @@ samples) plus the kinks of the load tables (NL-20).
   B31; `TestFiles/Tools/mw_solve.py`, mean of the section nodes at x = L).
   Tolerance 0.1 %; stricter: the moment in NL-81, NL-84 and NL-85 0.01 %, the normal
   force there absolute 0.05 N (reference 0), the reactions in NL-83, NL-87, NL-87b and
-  NL-89 and the extension in NL-88 1e-6 relative; in NL-90b the rotation and reaction
+  NL-89 and the extension in NL-88 1e-6 relative; in NL-81c the closed circle absolute
+  1e-5 L and the normal force absolute 0.2 N; NL-81c and NL-83b also check that the run
+  reaches the end; in NL-90b the rotation and reaction
   0.01 %, the reaction moment of root 2 absolute 1e-6 M. NL-90 and NL-90b rebuild
   `check_nonlinear_releases.py` of the fork by MishalTPC (branch dev).
 - **Result**: all checks OK.
@@ -1922,10 +1926,12 @@ samples) plus the kinks of the load tables (NL-20).
 | NL-80b | tip deflection | 0.0000 % | – | – |
 | NL-80c | tip deflection / tip rotation | −0.0091 / −0.0001 % | – | – |
 | NL-81 | tip x / y / rotation / M | +0.0112 / +0.0064 / 0.0000 / 0.0000 % | +0.0113 / +0.0064 % | CCX stops at t = 0.55 s |
+| NL-81c | tip x / y at t = 1 (circle closed) / tip y at t = 0.5 / M | 5.1e-7 m / −7.0e-8 m / +0.0257 % / +0.0001 % | – | – |
 | NL-82 | deflection / e0 | −0.0213 % | −0.0213 % | +0.0047 % |
 | NL-83 | tip u_y at t = 1, 2, 3 | −0.0123 / −0.0079 / −0.0054 % | – | +0.0087 / +0.0125 / +0.0157 % |
 | NL-83 | tip u_x at t = 1, 2, 3 | +0.0331 / +0.0247 / +0.0194 % (smaller) | – | +0.0036 / −0.0030 / −0.0085 % |
 | NL-83 | section forces against statics (M, V, N) | 0.0000 / +0.0065 / −0.0029 % | – | – |
+| NL-83b | tip u_y / u_x / rotation at t = 3 | −0.0054 / +0.0194 / +0.0103 % | – | – |
 | NL-84, NL-85 | as NL-81 | the same values as NL-81 | – | – |
 | NL-86 | tip extension / reaction | −0.0156 / 0.0000 % | – | – |
 | NL-86b | tip extension / reaction of the truss | +0.0312 / 0.0000 % | – | – |
@@ -1952,7 +1958,12 @@ samples) plus the kinks of the load tables (NL-20).
   5. A flexible joint with U, V and W free only ties DX, DY and DZ and is therefore exact
      at any rotation (NL-90, NL-90b). A joint with only some rotations free stops with an
      ERROR beforehand with `POU_D_T_GD` (KNOWN_BUGS 106).
-  6. Not in these cases (WARNING in the bridge, KNOWN_BUGS 11): large imposed rotations
+  6. Coarse steps about one global axis work (NL-81c: 45 degrees per step, NL-83b): the
+     bridge cuts a step that does not converge and the step guard cuts steps that are
+     too large. With `PREDICTION='EXTRAPOLE'` instead of Code-Aster's tangent prediction
+     NL-81, NL-81c, NL-83 and NL-83b stopped early (KNOWN_BUGS 11); the bridge therefore
+     writes no `PREDICTION`.
+  7. Not in these cases (WARNING in the bridge, KNOWN_BUGS 11): large imposed rotations
      (a slender beam converged up to 0.41 rad), element offset and couplings at large
      rotations (linear relations), a moment in 3D. Element failure in
      a model with `POU_D_T_GD` gives an ERROR beforehand (`CALCUL_37` after the first

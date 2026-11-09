@@ -26,6 +26,9 @@ dd4c958, MPL-2.0), here as Mecway models through the whole bridge:
           (Mattiasson 1981; Reissner beam solved by shooting below);
           section forces against statics in the deformed state; Mecway 34
           with CCX (B31) on the same model
+  NL-81c  end moment 2 pi EI/L in 8 steps: a full circle, the tip back at
+          the root (coarse steps)
+  NL-83b  NL-83 in 6 steps instead of 30 (coarse steps)
   NL-84   NL-81 with line3 elements (split into two SEG2 cells)
   NL-85   NL-81 about the weak axis set by an Element orientation card
   NL-86   centrifugal force on a radial bar (FORMULE route, fixed load);
@@ -380,6 +383,92 @@ def _nl83_checks():
 
 
 # ------------------------------------------------------------------
+# NL-81c, NL-83b Coarse steps
+# ------------------------------------------------------------------
+# NL-81c: end moment 2 pi EI/L in 8 steps: the cantilever rolls up into a
+# full circle and the tip comes back to the root. NL-83b: NL-83 in 6 steps
+# instead of 30. Both are rotations about one global axis (Z), force or
+# moment driven; they say nothing about 3D rotations (KNOWN_BUGS 11).
+# The bridge gets through such steps by cutting a step that does not
+# converge (ECHEC DECOUPE) and by the step guard (gd_step_limit); with
+# PREDICTION='EXTRAPOLE' they stop early (KNOWN_BUGS 11).
+TS81C = {"timeperiod": "1 s", "stepsize": "0.125 s"}
+M81C = 2.0 * math.pi * E * I_W / L
+TS83B = {"timeperiod": "3 s", "stepsize": "0.5 s"}
+
+
+def build_nl81c():
+    m, _n, _e = _beam(timesteps=TS81C)
+    m.add('<moment selection="Tip"><x>0 N.m</x><y>0 N.m</y>%s</moment>'
+          % _ramp("z", M81C, "N.m"))
+    return m
+
+
+def build_nl83b():
+    m = build_nl83()
+    m.timesteps = TS83B
+    return m
+
+
+def _t_end(r):
+    return r.times()[-1]
+
+
+def _arc(t):
+    """Tip (u_x, u_y) of the circular arc through the angle t."""
+    return L * (math.sin(t) / t - 1.0), L * (1.0 - math.cos(t)) / t
+
+
+def _nl81c_checks():
+    half = _arc(math.pi)
+    return [
+        Check("t einde", _t_end, ref=1.0, tol_abs=1e-9, unit="s",
+              source="de run haalt het eind (8 stappen)"),
+        Check("tip u_x t=1 (cirkel dicht)", _tip("displx", 1.0), ref=-L,
+              tol_abs=1e-5 * L, unit="m",
+              source="volle cirkel: de tip komt terug in de wortel"),
+        Check("tip u_y t=1 (cirkel dicht)", _tip("disply", 1.0), ref=0.0,
+              tol_abs=1e-5 * L, unit="m",
+              source="volle cirkel: de tip komt terug in de wortel"),
+        Check("tip u_x t=0,5 (halve cirkel)", _tip("displx", 0.5),
+              ref=half[0], tol=1e-3, unit="m",
+              source="cirkelboog: L (sin t / t - 1), t = pi"),
+        Check("tip u_y t=0,5 (halve cirkel)", _tip("disply", 0.5),
+              ref=half[1], tol=1e-3, unit="m",
+              source="cirkelboog: L (1 - cos t) / t, t = pi"),
+        Check("tiprotatie t=0,25", _tip("rotz", 0.25), ref=THETA, tol=1e-3,
+              unit="rad", source="t = M L / (EI) = pi/2"),
+        Check("bendingmomw t=1 (max. over de elementen)",
+              lambda r: max(_elems(r, "bendingmomw"), key=abs),
+              ref=M81C, tol=1e-4, unit="N.m",
+              source="zuivere buiging: M constant over de balk"),
+        Check("bendingmomw t=1 (min. over de elementen)",
+              lambda r: min(_elems(r, "bendingmomw"), key=abs),
+              ref=M81C, tol=1e-4, unit="N.m",
+              source="zuivere buiging: M constant over de balk"),
+        Check("tensileforce t=1 (grootste |N|)",
+              lambda r: max(_elems(r, "tensileforce"), key=abs),
+              ref=0.0, tol_abs=0.2, unit="N",
+              source="zuivere buiging: N = 0 (|N| < 0,2 N bij M = 2200 Nm)"),
+    ]
+
+
+def _nl83b_checks():
+    out = [Check("t einde", _t_end, ref=3.0, tol_abs=1e-9, unit="s",
+                 source="de run haalt het eind (6 stappen)")]
+    for t in sorted(REF83):
+        ux, uy, th = REF83[t]
+        out += [
+            Check("tip u_y t=%g" % t, _tip("disply", t), ref=uy, tol=1e-3,
+                  unit="m", source="Reissner-balk, schieten (RK4)"),
+            Check("tip u_x t=%g" % t, _tip("displx", t), ref=ux, tol=1e-3,
+                  unit="m", source="Reissner-balk, schieten (RK4)"),
+            Check("tiprotatie t=%g" % t, _tip("rotz", t), ref=th, tol=1e-3,
+                  unit="rad", source="Reissner-balk, schieten (RK4)")]
+    return out
+
+
+# ------------------------------------------------------------------
 # NL-86 Centrifugal force on a radial bar (FORMULE route)
 # ------------------------------------------------------------------
 RPM86 = 300.0
@@ -523,6 +612,15 @@ TESTS = [
          _nl83_checks(), general=GD,
          note="Snedekrachten (beam_forces) tegen de statica in de vervormde "
               "stand; Mecway 34 rekent dit model met CCX."),
+    Case("NL-81c", GROUP, "POU_D_T_GD: eindmoment rolt de balk op tot een "
+         "volle cirkel in 8 stappen", "nonlin_static_3d", build_nl81c,
+         _nl81c_checks(), general=GD,
+         note="Grove stappen (45 graden per stap): de bridge deelt een "
+              "stap die niet convergeert (DECOUPE) en de stapbewaking "
+              "deelt te grote stappen."),
+    Case("NL-83b", GROUP, "POU_D_T_GD: elastica (NL-83) in 6 stappen",
+         "nonlin_static_3d", build_nl83b, _nl83b_checks(), general=GD,
+         note="NL-83 met stepsize 0,5 s in plaats van 0,1 s."),
     Case("NL-84", GROUP, "POU_D_T_GD: zuivere buiging tot 90 graden, line3",
          "nonlin_static_3d", build_nl81("line3"), _nl81_checks(),
          general=GD, note="20 line3, elk gesplitst in twee SEG2-cellen."),

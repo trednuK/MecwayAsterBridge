@@ -108,8 +108,9 @@ S15b), HOMARD-verfijning in de job (S35b), de tijdstap van Mecway bij dynamica
 en hydrostatische druk op schaalranden (S17), orthotroop materiaal (S13), en de controles van
 29 oktober: dwarskrachtcentrum en L-profielen van balken (LS-90d, LS-94/95), voorspanning in
 een onregelmatig tetranet (PT-11 .. PT-13), frictionless schaalrand tegen Mecway (LS-84), en daarna los gedraaid op `35c7564` kipknik van
-monosymmetrische profielen en het teken van het bimoment (BU-43 .. BU-44b, LS-90d, LS-90e);
-Code-Aster 17.4): 544 testcases, 2963 controles, 2957 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte
+monosymmetrische profielen en het teken van het bimoment (BU-43 .. BU-44b, LS-90d, LS-90e),
+en daarna NL-81c en NL-83b op `bfa15fa`;
+Code-Aster 17.4): 546 testcases, 2982 controles, 2976 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte
 van de run op `fc733a9` geen statuswijziging en geen FEM-waarde > 0,1 % anders, behalve
 grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner). Nieuw zijn
 15 testcases en 69 controles.
@@ -132,7 +133,7 @@ grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner)
 | Modaal | 25 | 239 | 239 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 7 | 38 | 38 | 0 |
-| Niet-lineair statisch | 54 | 201 | 198 | 3 |
+| Niet-lineair statisch | 56 | 220 | 217 | 3 |
 | Niet-lineaire knik | 5 | 13 | 13 | 0 |
 | Respons op modale basis | 10 | 25 | 25 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
@@ -145,7 +146,7 @@ grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner)
 | Orthotroop | 19 | 174 | 174 | 0 |
 | 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **544** | **2963** | **2957** | **6** |
+| **Totaal** | **546** | **2982** | **2976** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -1900,8 +1901,10 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 | NL-80b | hetzelfde model in lineair statisch | idem; de bridge maakt er `POU_D_T` van (WARNING) |
 | NL-80c | constante eindkracht 1 N in Y en constant eindmoment 0,5 Nm om Z (geen tijdtabel) | doorbuiging F L³/(3EI) + F L/(kGA) + M L²/(2EI), rotatie F L²/(2EI) + M L/(EI) |
 | NL-81 | eindmoment M = (π/2)·EI/L om Z in 20 stappen (Mecway-stap 0,05 s) | cirkelboog: tip x = L sin θ/θ, y = L (1 − cos θ)/θ, θ = π/2 (GB-02); M constant, N = 0 |
+| NL-81c | eindmoment M = 2π·EI/L om Z in 8 stappen (45 graden per stap) | volle cirkel: de tip komt terug in de wortel; halve cirkel op t = 0,5; M constant, N = 0 |
 | NL-82 | kolom met beginkromming e0 (1 − cos(πx/2L)), e0 = 1e-4 L in de mesh, drukkracht 0,5 P_cr | totale uitwijking / e0 = 1/(1 − P/P_cr) = 2 (GB-03) |
 | NL-83 | eindkracht van vaste richting, PL²/EI = 1, 2, 3 op t = 1, 2, 3 s | Reissner-balk (rek en afschuiving), schieten met RK4 in de testmodule; onrekbaar gelijk aan Mattiasson (1981) |
+| NL-83b | NL-83 in 6 stappen (Mecway-stap 0,5 s in plaats van 0,1 s) | als NL-83 |
 | NL-84 | NL-81 met 20 line3 (40 SEG2-cellen) | als NL-81 |
 | NL-85 | NL-81 met een *Element orientation*-kaart V = Z en het moment om Y | als NL-81 in het XZ-vlak; zonder de kaart zou I vier keer zo groot zijn |
 | NL-86 | centrifugaalkracht 300 r/min om Z (balk radiaal) | u(L) = ρω²L³/(3E), reactie ρAω²L²/2 |
@@ -1920,7 +1923,9 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   B31; `TestFiles/Tools/mw_solve.py`, gemiddelde van de doorsnedeknopen op x = L).
   Tolerantie 0,1 %; strenger: het moment in NL-81, NL-84 en NL-85 0,01 %, de
   normaalkracht daar absoluut 0,05 N (referentie 0), de reacties in NL-83, NL-87,
-  NL-87b en NL-89 en de verlenging in NL-88 1e-6 relatief; in NL-90b de rotatie en
+  NL-87b en NL-89 en de verlenging in NL-88 1e-6 relatief; in NL-81c de gesloten cirkel
+  absoluut 1e-5 L en de normaalkracht absoluut 0,2 N; NL-81c en NL-83b controleren ook dat
+  de run het eind haalt; in NL-90b de rotatie en
   reactie 0,01 %, het reactiemoment van wortel 2 absoluut 1e-6 M. NL-90 en NL-90b bouwen
   `check_nonlinear_releases.py` van de fork van MishalTPC na (branch dev).
 - **Resultaat**: alle controles OK.
@@ -1931,10 +1936,12 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 | NL-80b | doorbuiging tip | 0,0000 % | – | – |
 | NL-80c | doorbuiging tip / tiprotatie | −0,0091 / −0,0001 % | – | – |
 | NL-81 | tip x / y / rotatie / M | +0,0112 / +0,0064 / 0,0000 / 0,0000 % | +0,0113 / +0,0064 % | CCX stopt bij t = 0,55 s |
+| NL-81c | tip x / y op t = 1 (cirkel dicht) / tip y op t = 0,5 / M | 5,1e-7 m / −7,0e-8 m / +0,0257 % / +0,0001 % | – | – |
 | NL-82 | uitwijking / e0 | −0,0213 % | −0,0213 % | +0,0047 % |
 | NL-83 | tip u_y op t = 1, 2, 3 | −0,0123 / −0,0079 / −0,0054 % | – | +0,0087 / +0,0125 / +0,0157 % |
 | NL-83 | tip u_x op t = 1, 2, 3 | +0,0331 / +0,0247 / +0,0194 % (kleiner) | – | +0,0036 / −0,0030 / −0,0085 % |
 | NL-83 | snedekrachten tegen de statica (M, V, N) | 0,0000 / +0,0065 / −0,0029 % | – | – |
+| NL-83b | tip u_y / u_x / rotatie op t = 3 | −0,0054 / +0,0194 / +0,0103 % | – | – |
 | NL-84, NL-85 | als NL-81 | dezelfde waarden als NL-81 | – | – |
 | NL-86 | tipverlenging / reactie | −0,0156 / 0,0000 % | – | – |
 | NL-86b | tipverlenging / reactie truss | +0,0312 / 0,0000 % | – | – |
@@ -1961,7 +1968,12 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   5. Een flexible joint met U, V en W vrij koppelt alleen DX, DY en DZ en is daardoor
      exact bij elke rotatie (NL-90, NL-90b). Een joint met een deel van de rotaties vrij
      stopt bij `POU_D_T_GD` vooraf met een ERROR (KNOWN_BUGS 106).
-  6. Niet in deze cases (WARNING in de bridge, KNOWN_BUGS 11): grote opgelegde rotaties
+  6. Grove stappen om één globale as gaan goed (NL-81c: 45 graden per stap, NL-83b):
+     de bridge deelt een stap die niet convergeert en de stapbewaking deelt te grote
+     stappen. Met `PREDICTION='EXTRAPOLE'` in plaats van de tangentvoorspelling van
+     Code-Aster stopten NL-81, NL-81c, NL-83 en NL-83b te vroeg (KNOWN_BUGS 11); de bridge
+     schrijft daarom geen `PREDICTION`.
+  7. Niet in deze cases (WARNING in de bridge, KNOWN_BUGS 11): grote opgelegde rotaties
      (een slanke balk convergeerde tot 0,41 rad), element offset en koppelingen bij grote
      rotaties (lineaire relaties), een moment in 3D. Bezwijken van
      elementen in een model met `POU_D_T_GD` geeft vooraf een ERROR (`CALCUL_37` na het

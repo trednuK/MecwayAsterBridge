@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-07 (bridge 13559d1, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3036 van 3042 controles binnen de tolerantie** (570 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3055 van 3061 controles binnen de tolerantie** (572 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1778,6 +1778,15 @@ Gemaakt door `run_verificatie.py` op 2026-11-07 (bridge 13559d1, Code-Aster 17.4
 | NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (min. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
 | NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | bendingmomw (max. over de elementen) | 549.78 N.m | 549.78 | +0.00% | 0.01% | OK |
 | NL-81 | POU_D_T_GD: zuivere buiging tot 90 graden | tensileforce (grootste |N|) | 0 N | -1.5854e-07 | -1.5854e-07 | 0.05 N | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | t einde | 1 s | 1 | +0.00% | 1e-09 s | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | tip u_x t=1 (cirkel dicht) | -1 m | -1 | +0.00% | 1e-05 m | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | tip u_y t=1 (cirkel dicht) | 0 m | -6.9925e-08 | -6.9925e-08 | 1e-05 m | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | tip u_x t=0,5 (halve cirkel) | -1 m | -1 | +0.00% | 0.1% | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | tip u_y t=0,5 (halve cirkel) | 0.63662 m | 0.63678 | +0.03% | 0.1% | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | tiprotatie t=0,25 | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | bendingmomw t=1 (max. over de elementen) | 2199.1 N.m | 2199.1 | +0.00% | 0.01% | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | bendingmomw t=1 (min. over de elementen) | 2199.1 N.m | 2199.1 | +0.00% | 0.01% | OK |
+| NL-81c | POU_D_T_GD: eindmoment rolt de balk op tot een volle cirkel in 8 stappen | tensileforce t=1 (grootste |N|) | 0 N | 1.9387e-04 | 1.9387e-04 | 0.2 N | OK |
 | NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 | 2 - | 1.9996 | -0.02% | 0.1% | OK |
 | NL-82 | POU_D_T_GD: kolom met beginkromming, tweede-orde-versterking | totale tipuitwijking / e0 t.o.v. Mecway 34 + CCX | 1.9995 - | 1.9996 | +0.00% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=1 | 0.30174 m | 0.30171 | -0.01% | 0.1% | OK |
@@ -1799,6 +1808,16 @@ Gemaakt door `run_verificatie.py` op 2026-11-07 (bridge 13559d1, Code-Aster 17.4
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=2 t.o.v. Mecway 34 + CCX | -0.16061 m | -0.16061 | -0.00% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_y t=3 t.o.v. Mecway 34 + CCX | 0.60317 m | 0.60327 | +0.02% | 0.1% | OK |
 | NL-83 | POU_D_T_GD: elastica, eindkracht van vaste richting (PL^2/EI = 1, 2, 3) | tip u_x t=3 t.o.v. Mecway 34 + CCX | -0.25436 m | -0.25438 | -0.01% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | t einde | 3 s | 3 | +0.00% | 1e-09 s | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tip u_y t=1 | 0.30174 m | 0.30171 | -0.01% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tip u_x t=1 | -0.056438 m | -0.056419 | +0.03% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tiprotatie t=1 | 0.46135 rad | 0.46136 | +0.00% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tip u_y t=2 | 0.49349 m | 0.49346 | -0.01% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tip u_x t=2 | -0.16065 m | -0.16061 | +0.02% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tiprotatie t=2 | 0.78174 rad | 0.7818 | +0.01% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tip u_y t=3 | 0.6033 m | 0.60327 | -0.01% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tip u_x t=3 | -0.25443 m | -0.25438 | +0.02% | 0.1% | OK |
+| NL-83b | POU_D_T_GD: elastica (NL-83) in 6 stappen | tiprotatie t=3 | 0.986 rad | 0.9861 | +0.01% | 0.1% | OK |
 | NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing langs de as | -0.36338 m | -0.36334 | +0.01% | 0.1% | OK |
 | NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tip verplaatsing dwars | 0.63662 m | 0.63666 | +0.01% | 0.1% | OK |
 | NL-84 | POU_D_T_GD: zuivere buiging tot 90 graden, line3 | tiprotatie | 1.5708 rad | 1.5708 | +0.00% | 0.1% | OK |

@@ -12,6 +12,11 @@
   `<model>_<run_id>_section.json` carries the table for the shells. The `.comm` does not change. A
   run without numpy or scipy, or without an outline, goes on with a WARNING. Verified by hand on T, U,
   I, C and L cantilevers (LS-97a..l). No warping stress.
+- **Large-rotation beams, coarse steps**: two new verification cases with `POU_D_T_GD`: a
+  cantilever rolled into a full circle in 8 steps (NL-81c) and the elastica in 6 steps (NL-83b);
+  both pass with the bridge as it is. `PREDICTION='EXTRAPOLE'` was measured as an alternative
+  Newton prediction and made these runs stop early (KNOWN_BUGS 11), so the bridge keeps
+  Code-Aster's tangent prediction. No `.comm` of an existing case changes.
 
 ## V2026.8 – 6 November 2026
 

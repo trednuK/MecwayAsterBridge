@@ -279,7 +279,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    (NL-90). Element failure in a model with POU_D_T_GD stops beforehand with an ERROR
    (`_check_gd_beams`): after the first failure the loop restarts with
    PREDICTION='ELASTIQUE' (CALCUL_37, no RIGI_MECA); with TANGENTE or EXTRAPOLE that step
-   did not converge (MECANONLINE9_3, run 17.4). Not objective about a skew axis (runs 17.4,
+   did not converge (MECANONLINE9_3, run 17.4). The Newton prediction stays Code-Aster's
+   tangent one (no PREDICTION keyword): with PREDICTION='EXTRAPOLE' (runs 17.4, 9 Nov 2026)
+   NL-81, NL-81c, NL-83 and NL-83b stopped early (MECANONLINE9_7), with and without the step
+   guard, and the other POU_D_T_GD cases took more Newton iterations, NL-83 484 -> 14897 and
+   NL-90 434 -> 14431 (only NK-06 fewer, 5159 -> 825); the first residual after the extrapolated
+   prediction was as large as at the start of a step without one (NL-81 step 2: 4.5e3 relative).
+   Coarse steps about a global axis already work through DECOUPE and the step guard (NL-81c:
+   full circle in 8 steps, NL-83b: elastica in 6 steps). Not objective about a skew axis (runs 17.4,
    STAPPENPLAN S21): a frame of POU_D_T_GD beams with all translations imposed as an exact rigid
    rotation is exact about a global axis, but about the axis (1,1,0) it gets spurious section forces
    that depend on the step size (at 10 degrees max |M| = 6.0e-2 .. 6.4e-4 EI/L with 2 .. 16 steps)
