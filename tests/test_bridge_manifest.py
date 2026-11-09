@@ -287,20 +287,39 @@ def test_not_shared():
               {"terms": [(2, "DZ", 1.0)], "source": "future"}],
           "pretension_sections": [1],
           "flexible_joints": [{"selection": "Two"}]}
+    md["constraint_equations"].append(
+        {"terms": [(4, "DZ", 1.0), (5, "DZ", -0.5), (3, "DZ", -0.5)],
+         "source": "line3truss"})         # same nodes: one group
+    md["constraint_equations"].append(
+        {"terms": [(10, "DY", 1.0), (11, "DY", -1.0)],
+         "source": "line3truss"})         # another element
+    del LOG[:]
     got = bm._not_shared(md, nodes, conn, elements, faces)
-    want = {"offset": {"nodes": [7, 8], "origin": "bridge"},
-            "discrete": {"nodes": [1, 2], "origin": "user"},
-            "contact": {"nodes": [3, 4, 5, 10, 11], "origin": "user"},
-            "bonded": {"nodes": [3, 4, 5, 6, 9], "origin": "user"},
-            "coupling": {"nodes": [3, 4, 5, 9], "origin": "user"},
-            "constraint": {"nodes": [1, 12], "origin": "user"},
-            "line3truss": {"nodes": [3, 4, 5], "origin": "bridge"},
-            "flexible_joint": {"nodes": [7, 10, 11], "origin": "bridge"},
-            "pretension": {"nodes": [6], "origin": "bridge"},
-            "future": {"nodes": [2], "origin": "bridge"}}
+    want = {"offset": {"nodes": [7, 8], "origin": "bridge",
+                       "groups": [[7], [8]]},
+            "discrete": {"nodes": [1, 2], "origin": "user",
+                         "groups": [[1, 2]]},
+            "contact": {"nodes": [3, 4, 5, 10, 11], "origin": "user",
+                        "groups": [[3, 4, 5, 10, 11]]},
+            "bonded": {"nodes": [3, 4, 5, 6, 9], "origin": "user",
+                       "groups": [[3, 4, 5, 6, 9]]},
+            "coupling": {"nodes": [3, 4, 5, 9], "origin": "user",
+                         "groups": [[3, 4, 5, 9]]},
+            "constraint": {"nodes": [1, 12], "origin": "user",
+                           "groups": [[1, 12]]},
+            "line3truss": {"nodes": [3, 4, 5, 10, 11], "origin": "bridge",
+                           "groups": [[3, 4, 5], [10, 11]]},
+            # the Mecway node of its relations only, not the selection
+            "flexible_joint": {"nodes": [7], "origin": "bridge",
+                               "groups": [[7]]},
+            "pretension": {"nodes": [6], "origin": "bridge",
+                           "groups": [[6]]},
+            "future": {"nodes": [2], "origin": "bridge", "groups": [[2]]}}
     for kind in sorted(set(want) | set(got)):
         check(got.get(kind) == want.get(kind),
               "not_shared {0}: {1}".format(kind, got.get(kind)))
+    check(not any("without nodes" in l for l in LOG),
+          "no WARNING when every user kind has nodes")
     check(bm._not_shared({}, nodes, conn, elements, faces) == {},
           "nothing: an empty dict")
     only_bridge = {"constraint_equations": [
@@ -308,6 +327,52 @@ def test_not_shared():
     check(sorted(bm._not_shared(only_bridge, nodes, conn, elements, faces))
           == ["line3truss"],
           "bridge relations only: no 'constraint' kind")
+    lost = {"couplings": [{"master_group": "Gone", "slave_group": "Gone"}]}
+    got = bm._not_shared(lost, nodes, conn, elements, faces)
+    check(got == {"coupling": {"nodes": [], "origin": "user", "groups": []}}
+          and any("coupling without nodes" in l for l in LOG),
+          "a coupling on an unknown selection: there, empty, a WARNING")
+
+
+def test_note_mesh_failure():
+    """A problem in note_mesh: a WARNING, manifest_mesh None, so no
+    manifest after the run; never an exception into write_mesh."""
+    cfg = bridge_utils.CONFIG_BRIDGE
+    md = {}
+    cfg["keep_base"] = False
+    bm.note_mesh(md, {}, {}, [], {}, None, {"BOR1": ["M1"]}, {}, set())
+    check("manifest_mesh" not in md, "setting off: note_mesh does nothing")
+    cfg["keep_base"] = True
+    del LOG[:]
+    bm.note_mesh(md, {}, {}, [], {}, None, {"BOR1": ["M1"]}, {}, set())
+    check(md.get("manifest_mesh", 1) is None and
+          any("Data for the manifest not collected" in l for l in LOG),
+          "broken input: None and a WARNING")
+    nodes = {1: (0.0, 0.0, 0.0), 2: (0.0, 0.0, 0.0), 3: (1.0, 0.0, 0.0)}
+    conn = {1: ("SEG2", [1, 2]), 2: ("SEG2", [2, 3])}
+    bm.note_mesh(md, nodes, conn, [], {}, None, {"BOR1": ["M1", "M2"]},
+                 {"BOR1": (0.0, 1.0, 0.0)}, set())
+    check(sorted(md["manifest_mesh"]["beam_axes"]) == ["M2"] and
+          any("M1 has length 0" in l for l in LOG),
+          "a beam cell of length 0: left out with a WARNING, the rest stays")
+    cfg["keep_base"] = False
+
+
+def test_linear_contact():
+    """Unilateral contact is not in a MECA_STATIQUE run: not in not_shared."""
+    md = _model()
+    md["manifest_mesh"]["not_shared"] = {
+        "contact": {"nodes": [1], "origin": "user", "groups": [[1]]},
+        "bonded": {"nodes": [2], "origin": "user", "groups": [[2]]}}
+    for solver, kinds in (("MECA_STATIQUE", ["bonded"]),
+                          ("STAT_NON_LINE", ["bonded", "contact"])):
+        man = bm.build_manifest(md, {"solver": solver, "has_cara": False,
+                                     "deformation": "PETIT"}, None, "17.4",
+                                None)
+        check(sorted(man["not_shared"]) == kinds,
+              "{0}: not_shared {1}".format(solver, sorted(man["not_shared"])))
+    check(sorted(md["manifest_mesh"]["not_shared"]) == ["bonded", "contact"],
+          "the data of note_mesh stay as they are")
 
 
 # ==========================================
@@ -333,7 +398,7 @@ def _unit(v):
     return [c / n for c in v]
 
 
-def _translate(model, keep=True, general=None):
+def _translate(model, keep=True, general=None, analysis="lin_static_3d"):
     """One translation as from Mecway, without Code-Aster: (manifest read
     back from its JSON file, model_data, .comm text, mesh text, log). keep:
     the setting keep_base."""
@@ -345,7 +410,7 @@ def _translate(model, keep=True, general=None):
     cfg.update(copy.deepcopy(_CONFIG))
     cfg.update(general or {})
     cfg["keep_base"] = keep
-    cfg["active_analysis"] = "lin_static_3d"
+    cfg["active_analysis"] = analysis
     tmp = tempfile.mkdtemp(prefix="mab_manifest_")
     try:
         cfg["work_dir"] = tmp
@@ -389,10 +454,39 @@ def _vect_y(comm, mesh):
     return out
 
 
+def _seg2_x(mesh):
+    """{cell: unit vector node 1 -> node 2} of the SEG2 cells of the mesh
+    file, with the coordinates of that file."""
+    xyz = {}
+    coor = re.search(r"COOR_3D\n(.*?)FINSF", mesh, re.S).group(1)
+    for line in coor.splitlines():
+        parts = line.split()
+        if len(parts) == 4:
+            xyz[parts[0]] = [float(c) for c in parts[1:]]
+    out = {}
+    for body in re.findall(r"\nSEG2\n(.*?)FINSF", mesh, re.S):
+        cell = None
+        cells = {}
+        for tok in body.split():
+            if tok.startswith("N") and cell is not None:
+                cells[cell].append(tok)
+            else:
+                cell = tok
+                cells[cell] = []
+        for cell, (a, b) in cells.items():
+            out[cell] = _unit([xyz[b][i] - xyz[a][i] for i in range(3)])
+    return out
+
+
 def _check_axes(man, comm, mesh, label):
     """beam_axes: right handed and orthonormal, y = the VECT_Y of the .comm
     (made perpendicular to x), x along the cell of the mesh file."""
     vy = _vect_y(comm, mesh)
+    seg = _seg2_x(mesh)
+    for cell, axes in man["beam_axes"].items():
+        check(cell in seg and _close(axes[0], seg[cell], 1e-12),
+              "{0}: {1} x from node 1 to node 2 of the mesh cell".format(
+                  label, cell))
     check(set(man["beam_axes"]) == set(vy),
           "{0}: beam_axes for exactly the cells with VECT_Y: {1} / {2}"
           .format(label, sorted(man["beam_axes"]), sorted(vy)))
@@ -465,8 +559,8 @@ def test_frame():
               "frame: axes of {0}: {1}".format(cell,
                                               man["beam_axes"].get(cell)))
     _check_axes(man, comm, mesh, "frame")
-    check(man["not_shared"] == {"flexible_joint": {"nodes": [p[2]],
-                                                   "origin": "bridge"}},
+    check(man["not_shared"] == {"flexible_joint": {
+        "nodes": [p[2]], "origin": "bridge", "groups": [[p[2]]]}},
           "frame: the joint at its Mecway node only: {0}".format(
               man["not_shared"]))
     check(man["excentrement"] == {}, "frame: no excentrement")
@@ -536,12 +630,17 @@ def test_trusses():
     m = Model("S30")
     m.elset("Truss", "Steel")
     m.elset("Mix", "Steel")
+    # a user component with the name the bridge would give the truss part
+    m.elset("Mix_TRUSS", "Steel")
     m.mat("Steel", STEEL, RECT)
     a, b, c = m.node(0, 0, 0), m.node(0.5, 0, 0), m.node(1, 0, 0)
     d, e = m.node(1, 1, 0), m.node(2, 1, 0)
+    f, g = m.node(1, 0.5, 0), m.node(1, 1, 0)
     t3 = m.elem("Truss", "line3", [a, b, c], 'truss="true"')
+    t3b = m.elem("Truss", "line3", [c, f, g], 'truss="true"')
     beam = m.elem("Mix", "line2", [c, d])
     t2 = m.elem("Mix", "line2", [d, e], 'truss="true"')
+    own = m.elem("Mix_TRUSS", "line2", [e, m.node(2, 2, 0)])
     m.node_selection("Fix", [a, e])
     m.node_selection("Load", [c])
     m.add('<fixed selection="Fix" />')
@@ -561,21 +660,139 @@ def test_trusses():
     check(mix.get("model") == "POU_D_E" and
           mix.get("section", {}).get("cara") == ["HY", "HZ"] and
           mix.get("truss_part") == {"model": "BARRE", "has_warping": False,
-                                    "section": bar},
+                                    "section": bar, "elements": [t2]},
           "trusses: the truss part of a mixed component {0}".format(mix))
-    check(sorted(man["components"]) == ["Mix", "Truss"],
+    check(md.get("truss_parts") == {"Mix": ["Mix_TRUSS2"]},
+          "trusses: the bridge names the part Mix_TRUSS2 {0}".format(
+              md.get("truss_parts")))
+    check(man["components"].get("Mix_TRUSS", {}).get("model") == "POU_D_E"
+          and "truss_part" not in man["components"].get("Mix_TRUSS", {}),
+          "trusses: the user's component Mix_TRUSS stays its own")
+    check(sorted(man["components"]) == ["Mix", "Mix_TRUSS", "Truss"],
           "trusses: no component of its own for the truss part")
-    check(sorted(man["beam_axes"]) == ["M%d" % beam],
-          "trusses: beam_axes only for the beam cell {0}".format(
+    check(sorted(man["beam_axes"]) == sorted(["M%d" % beam, "M%d" % own]),
+          "trusses: beam_axes only for the beam cells {0}".format(
               sorted(man["beam_axes"])))
     _check_axes(man, comm, mesh, "trusses")
-    check(man["not_shared"] == {"line3truss": {"nodes": sorted([a, b, c]),
-                                               "origin": "bridge"}},
-          "trusses: midside relations of the bridge {0}".format(
-              man["not_shared"]))
+    check(man["not_shared"] == {"line3truss": {
+        "nodes": sorted([a, b, c, f, g]), "origin": "bridge",
+        "groups": [sorted([a, b, c]), sorted([c, f, g])]}},
+        "trusses: midside relations of the bridge, one group per element "
+        "{0}".format(man["not_shared"]))
     check("CARA='A', VALE={0!r}".format(area) in comm,
           "trusses: the .comm has the same area")
-    del t3, t2
+    del t3, t3b
+
+
+def _poutre(comm):
+    """{group: (SECTION, [CARA], [VALE])} of AFFE_CARA_ELEM POUTRE."""
+    out = {}
+    for group, sec, cara, vale in re.findall(
+            r"_F\(GROUP_MA='(\w+)',\s*SECTION='(\w+)',\s*CARA=\(([^)]*)\),"
+            r"\s*VALE=\(([^)]*)\)\)", comm):
+        out[group] = (sec, [c.strip().strip("'") for c in cara.split(",")
+                            if c.strip()],
+                      [float(v) for v in vale.split(",") if v.strip()])
+    return out
+
+
+def test_sections():
+    """An I profile (GENERALE) with POU_D_T (AY, AZ) and POU_D_TG (warping
+    extras): the section is what AFFE_CARA_ELEM got."""
+    from verif_lib import Model
+    iprof = ('<geometric type="I" ia="100 mm" ib="50 mm" ic="8 mm" '
+             'id="5 mm" />')
+    for beam, warping in (("POU_D_T", False), ("POU_D_TG", True)):
+        m = Model("S30")
+        m.elset("Girder", "Steel")
+        m.mat("Steel", STEEL, iprof)
+        p = [m.node(0.25 * i, 0, 0) for i in range(3)]
+        for a, b in zip(p[:-1], p[1:]):
+            m.elem("Girder", "line2", [a, b])
+        m.node_selection("Base", [p[0]])
+        m.node_selection("Tip", [p[-1]])
+        m.add('<fixed selection="Base" />')
+        m.add('<force selection="Tip"><x>0 N</x><y>0 N</y><z>-10 N</z>'
+              '</force>')
+        man, md, comm, mesh, log = _translate(m, general={"elem_beam": beam})
+        check(man is not None, "sections {0}: manifest\n{1}".format(
+            beam, log[-2000:]))
+        if man is None:
+            continue
+        comp = man["components"].get("Girder", {})
+        sec = comp.get("section", {})
+        got = _poutre(comm).get("Girder")
+        check(comp.get("model") == beam and
+              comp.get("has_warping") is warping,
+              "sections {0}: model and warping {1}".format(beam, comp))
+        check(got is not None and sec.get("shape") == got[0] == "GENERALE"
+              and sec.get("cara") == got[1] and
+              _close(sec.get("vale"), got[2], 0.0) and
+              sec.get("mecway_shape") == "I",
+              "sections {0}: as in the .comm {1} / {2}".format(beam, sec, got))
+        need = ["A", "IY", "IZ", "JX", "AY", "AZ"]
+        if warping:
+            need += ["JG", "EY", "EZ"]
+        check(all(k in sec.get("cara", []) for k in need),
+              "sections {0}: has {1}".format(beam, need))
+        _check_axes(man, comm, mesh, "sections " + beam)
+
+
+def test_cable():
+    """A tension-only member (CABLE, nonlinear static): AIRE, no axes."""
+    from verif_lib import Model
+    m = Model("L30", timesteps={"timeperiod": "1 s", "stepsize": "1 s"})
+    m.elset("Rope", "Cable")
+    m.mat("Cable", '<mechanical type="TensionOnly" youngsmodulus='
+          '"210000 MPa" />', RECT)
+    a, b, c = m.node(0, 0, 0), m.node(1, 0, 0), m.node(2, 0, 0)
+    m.elem("Rope", "line2", [a, b])
+    m.elem("Rope", "line2", [b, c])
+    m.node_selection("Fix", [a])
+    m.node_selection("Tip", [c])
+    m.node_selection("Mid", [b])
+    m.add('<fixed selection="Fix" />')
+    m.add('<displacement selection="Mid"><y>0 m</y><z>0 m</z>'
+          '</displacement>')
+    m.add('<displacement selection="Tip"><y>0 m</y><z>0 m</z>'
+          '</displacement>')
+    m.add('<force selection="Tip"><x time="0 s">0 N</x><x time="1 s">10 N'
+          '</x><y>0 N</y><z>0 N</z></force>')
+    man, md, comm, mesh, log = _translate(m, analysis="nonlin_static_3d")
+    check(man is not None, "cable: manifest\n" + log[-2000:])
+    if man is None:
+        return
+    area = md["cable_sections"]["Rope"]["area"]
+    check(man["components"] == {"Rope": {
+        "model": "CABLE", "has_warping": False,
+        "section": {"cara": ["AIRE"], "vale": [area], "shape": None,
+                    "mecway_shape": "RectBar"}}},
+        "cable: component {0}".format(man["components"]))
+    check("AIRE={0!r}".format(area) in comm, "cable: the .comm has AIRE")
+    check(man["beam_axes"] == {} and man["solver"] == "STAT_NON_LINE",
+          "cable: no beam_axes")
+
+
+def test_pretension():
+    """Pre-tension section (verification PT-01): relations of the bridge,
+    Mecway nodes only."""
+    import tests_boutvoorspanning
+    m = tests_boutvoorspanning.build_pt01()
+    man, md, comm, mesh, log = _translate(m)
+    check(man is not None, "pretension: manifest\n" + log[-2000:])
+    if man is None:
+        return
+    mecway = set(md["mesh_nodes"])
+    want = set(t[0] for ce in md["constraint_equations"]
+               if ce.get("source") == "pretension"
+               for t in ce["terms"]) & mecway
+    got = man["not_shared"].get("pretension", {})
+    check(got.get("origin") == "bridge" and got.get("nodes") ==
+          sorted(want) and want and set(got["nodes"]) <= mecway,
+          "pretension: the Mecway nodes of its relations {0}".format(got))
+    check(all(set(g) <= set(got.get("nodes", [])) and len(g) == 1
+              for g in got.get("groups", [])),
+          "pretension: one Mecway node per relation (its copy is left out)")
 
 
 def test_shells():
@@ -645,8 +862,8 @@ def test_offsets():
               man["excentrement"]))
     check("EXCENTREMENT=0.005, INER_ROTA='OUI'" in comm,
           "offsets: the .comm has the same EXCENTREMENT")
-    check(man["not_shared"] == {"offset": {"nodes": [r0, r1],
-                                           "origin": "bridge"}},
+    check(man["not_shared"] == {"offset": {
+        "nodes": [r0, r1], "origin": "bridge", "groups": [[r0], [r1]]}},
           "offsets: the rigid arms of the beam {0}".format(
               man["not_shared"]))
     check(man["components"]["Plate"] == {"model": "DKT",
@@ -688,11 +905,12 @@ def test_tie_rbe3():
     check(man is not None, "tie: manifest\n" + log[-2000:])
     if man is None:
         return
-    want = {"bonded": {"nodes": sorted(a["nodes"]["v1"] | b["nodes"]["v0"]),
-                       "origin": "user"},
-            "coupling": {"nodes": sorted(b["nodes"]["v1"] | set([master])),
-                         "origin": "user"},
-            "constraint": {"nodes": sorted([n1, n2]), "origin": "user"}}
+    tie = sorted(a["nodes"]["v1"] | b["nodes"]["v0"])
+    rbe3 = sorted(b["nodes"]["v1"] | set([master]))
+    want = {"bonded": {"nodes": tie, "origin": "user", "groups": [tie]},
+            "coupling": {"nodes": rbe3, "origin": "user", "groups": [rbe3]},
+            "constraint": {"nodes": sorted([n1, n2]), "origin": "user",
+                           "groups": [sorted([n1, n2])]}}
     for kind in sorted(set(want) | set(man["not_shared"])):
         check(man["not_shared"].get(kind) == want.get(kind),
               "tie: not_shared {0}: {1}".format(
@@ -716,8 +934,11 @@ def main():
         finally:
             shutil.rmtree(tmp)
     test_not_shared()
+    test_note_mesh_failure()
+    test_linear_contact()
     for fn in (test_frame, test_setting_off_untouched, test_line3_beam,
-               test_trusses, test_shells, test_offsets, test_tie_rbe3):
+               test_trusses, test_sections, test_cable, test_pretension,
+               test_shells, test_offsets, test_tie_rbe3):
         fn()
     print("{0} failure(s)".format(len(_FAILED)))
     return 1 if _FAILED else 0

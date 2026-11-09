@@ -42,6 +42,7 @@ import bridge_custom
 import bridge_warping
 import bridge_plane
 import bridge_homard
+import bridge_manifest
 
 
 # Maximum group name length in Code-Aster (ASTER format, checked).
@@ -1746,7 +1747,6 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # Manifest of a kept base (bridge_manifest; only with the setting
     # keep_base): beam axes, offsets and connected nodes, while the
     # selections still have their Mecway names
-    import bridge_manifest
     bridge_manifest.note_mesh(model_data, nodes, conn, elements,
                               group_face_list, offset_plan, beam_groups,
                               beam_vect_y, split_line3)

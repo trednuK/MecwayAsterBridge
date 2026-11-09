@@ -1927,6 +1927,9 @@ def extract_aster_data_from_liml(file_path):
             elset_shapes_map[ename] = shapes
         truss_elsets, truss_parts = _split_trusses(
             model_data, elset_shapes_map, truss_eids, line_eids)
+        # For the manifest of a kept base (bridge_manifest): which elset is
+        # the truss part of which component
+        model_data["truss_parts"] = truss_parts
 
         # Faceselections: which elements carry the selected faces.
         # Needed to decide whether a face belongs to a volume element
@@ -3175,7 +3178,8 @@ def extract_aster_data_from_liml(file_path):
                     continue
                 model_data["cable_sections"][elset_name] = {
                     "area": area, "E": props.get("E"),
-                    "perimeter": geom.get("perimeter")}
+                    "perimeter": geom.get("perimeter"),
+                    "geom_type": geom.get("geom_type")}
                 model_data["elset_modelisations"][elset_name] = "CABLE"
                 log("INFO: Tension-only elset '{0}' -> CABLE, A={1} m2."
                     .format(elset_name, area))
