@@ -48,14 +48,18 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
      first modes are then rigid body motions with ~0 Hz. The same holds for a model
      with only connections between its parts (bonded contact, rigid or distributing
      couplings) and no support, e.g. to check the contacts of an assembly with its
-     rigid modes (MO-10).
+     rigid modes (MO-10). With loads and prestress (item 6) this is not possible: the
+     static analysis is then singular and the bridge stops beforehand with an ERROR
+     (§4); switch off the prestress for the rigid modes.
    - A mechanism in an otherwise supported model (e.g. a beam held only by a hinge, a
      loose part): Code-Aster stops with `ALGELINE3_81`; solution in §4 (KNOWN_BUGS 48).
-   - Buckling without supports is not possible (the static analysis is singular):
-     ERROR.
+   - Buckling without supports, or with only connections between the parts, is not
+     possible (the static analysis is singular): ERROR.
    - Connections from `#ASTER` code (`LIAISON_ELEM`, `LIAISON_MAIL`, `DDL_IMPO`, ...)
      count if the load is in `#ASTER-EXCIT` (§2.1, §2.2;
-     [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2).
+     [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2). The bridge does not read
+     that code: an `#ASTER-EXCIT` load counts as a support (no free-free route, no
+     ERROR about missing supports).
 6. **Loads.**
    - Modal: with loads the bridge, like Mecway, computes a **prestressed** modal
      analysis (*stress stiffening*, Mecway Ltd., 2026, §6.3): first linear static
@@ -584,10 +588,11 @@ U4.42.01 §9.4.3, test case ssll103a). Mecway has no choice for this element.
 | WARNING: Modal analysis: loads (...) are ignored | prestress off, model with loads | intended? Otherwise switch on "Prestress from loads (stress stiffening)" (Modal page) |
 | ERROR: Modal with prestress: imposed displacement or rotation <> 0 on ... | prestress with an imposed displacement ≠ 0 (Mecway does not solve this either) | set the value to 0, or switch off the prestress (then only the fixed degree of freedom counts) |
 | ERROR: Modal with prestress without supports | the static analysis under the loads is singular | add supports, or switch off the prestress |
+| ERROR: Modal with prestress: the model hangs only on connections between its parts | only bonded contact or couplings, no support: the static analysis under the loads is singular | add supports, or switch off the prestress (then free-free with the rigid modes, §3.2) |
 | WARNING: Negative frequency (frequencies) | compression above the buckling load of that mode | reduce the compressive load; check with a buckling analysis |
 | WARNING: Centrifugal force in a model with shells / of point masses | spin softening is missing there (§2.5) | frequencies are slightly higher than in Mecway; compare with Mecway if needed |
 | WARNING: No supports (free-free) | loose model | normal for a free body; count 6 rigid modes |
-| ERROR: Buckling without a load / Buckling without supports | buckling needs a load and supports | apply the reference load and supports |
+| ERROR: Buckling without a load / Buckling without supports / Buckling: the model hangs only on connections | buckling needs a load and supports; connections between the parts do not hold the model | apply the reference load and supports |
 | ERROR: #ASTER-CONSTANT: no load on ... / all loads are constant / thermal strain / distributed beam loads were added up | the line names no loaded selection, leaves no variable load, or the model cannot be split (§2.2.1) | name the selection of the constant load; keep at least one variable load |
 | Buckling: the constant loads (#ASTER-CONSTANT) alone are already at or above the critical load | K + Kg(constant) is not positive definite (§2.2.1) | lower the constant load or stiffen the structure |
 | `<EXCEPTION> <ALGELINE3_81>` (le shift ... coïncide avec une valeur propre) | singular stiffness: mechanism, loose part, hinge | support the model better, or choose a negative search frequency (e.g. -10 x the expected first elastic frequency); the rigid modes then appear with ~0 Hz. That only helps if the loose part has mass (density or point mass). A connection from `#ASTER` code only counts via `#ASTER-EXCIT` |

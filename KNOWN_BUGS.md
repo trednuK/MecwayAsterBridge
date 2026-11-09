@@ -350,7 +350,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    `bridge_to_aster._prepare_beam_loads`). Code-Aster sums loads with a distributed
    beam load (CALCULEL2_92, also in CALC_CHAMP SIPM_ELNO). The bridge divides the beams
    into disjoint groups (BRLP) with the sum; with a time-dependent line pressure
-   everything in one AFFE_CHAR_MECA_F (gravity on beams as ρAg, elsewhere as force). Not
+   everything in one AFFE_CHAR_MECA_F (gravity on beams as ρAg, elsewhere as force).
+   Trusses (BARRE) in such a model take part in the groups as well (gravity on them
+   also ρAg as FORCE_POUTRE; offline test, the run NOT verified). Not
    yet: local and global line pressure on the same beam, and centrifugal with a
    time-dependent line pressure (ERROR), gravity with a history together with line
    pressures on beams (WARNING). FORCE_INTERNE/FORCE_COQUE in that path have not been

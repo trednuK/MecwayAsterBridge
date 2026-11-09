@@ -2821,7 +2821,9 @@ def _build_fieldmat_block(model_data, timeline=None):
 # in MacroCommands/Contrib/diffusion_H2.py (v17.4); setValues(array) sets
 # all values in the order of getValues() (ditto). With only TEMP on
 # each node that is one value per node; the function checks that.
-# New nodes (index >= number of Mecway nodes): a mid-side node of an
+# temps: {K: (node numbers)}; n_mw: the number of nodes in the mesh file (the Mecway nodes and the bridge's own
+# nodes, _own_nodes), which keep the value given here.
+# New nodes (index >= n_mw, made by CREA_MAILLAGE): a mid-side node of an
 # edge (LINE_QUAD) gets the average of the end nodes, the centre node
 # of QUAD9/TRIA7 (last node of the cell) the value of QUAD8/TRIA6 at
 # the centre (shape functions: corners -1/4 and mid-sides 1/2, resp. -1/9
@@ -2886,24 +2888,13 @@ def _check_temperature_conflicts(model_data, node_temps):
     the bridge uses the Node temperature (_bridge_node_temps after the
     AFFEs).
     """
-    node_groups = model_data.get("node_groups", {})
-    faces = model_data.get("group_face_list", {})
-    elem_sel = model_data.get("element_selections", {})
-    conn = model_data.get("_conn", {})
     clash = set()
     for t in model_data.get("temperatures", []):
-        sel = t.get("selection")
         if isinstance(t["value"], list):
             # time history: not compared
             continue
-        if sel in node_groups:
-            nids = set(int(str(n).lstrip("N")) for n in node_groups[sel])
-        elif sel in faces:
-            nids = set(n for f in faces[sel] for n in f.get("nodes", []))
-        elif sel in elem_sel:
-            nids = set(n for e in elem_sel[sel] if e in conn
-                       for n in conn[e][1])
-        else:
+        nids = _temperature_nodes(model_data, t.get("selection"))
+        if nids is None:
             continue
         for n in nids:
             v = node_temps.get(n)
@@ -2920,6 +2911,83 @@ def _check_temperature_conflicts(model_data, node_temps):
                "(\"Conflicting temperatures on node\"). The bridge uses the "
                "Node temperature.").format(
                    ", ".join(str(n) for n in sorted(clash)[:10])))
+
+
+def _temperature_nodes(model_data, sel):
+    """Mecway nodes of the selection of a Temperature (temperature2) by
+    Mecway's own connectivity: node selection, nodes of a face selection,
+    nodes of the elements of an element selection or elset; None if
+    unknown."""
+    node_groups = model_data.get("node_groups", {})
+    faces = model_data.get("group_face_list", {})
+    if sel in node_groups:
+        return set(int(str(n).lstrip("N")) for n in node_groups[sel])
+    if sel in faces:
+        return set(n for f in faces[sel] for n in f.get("nodes", []))
+    cells = _group_cells(model_data, sel)
+    if cells is None:
+        return None
+    conn = model_data.get("_conn", {})
+    return set(n for e in cells if e in conn for n in conn[e][1])
+
+
+def _own_nodes(model_data):
+    """
+    Nodes the bridge writes into the mesh file after the Mecway nodes
+    (bridge_mesh.write_mesh): nodes of element offsets (bridge_offset),
+    own nodes of flexible joints (bridge_mesh._flexible_joints), then the
+    copies of the cut nodes and the reference node of each pre-tension
+    section (bridge_pretension.apply). Returns (number of such nodes,
+    {own node: the Mecway node it stands for}); a pre-tension reference
+    node (POI1 DIS_T) stands for no Mecway node.
+    """
+    parent = {}
+    for link in model_data.get("offset_links", []):
+        parent[link["new"]] = link["orig"]
+    joints = model_data.get("joint_nodes", {})
+    parent.update(joints)
+    for eq in model_data.get("constraint_equations", []):
+        # u_above - u_below (+ delta n) = 0: the Mecway node above, its
+        # copy below (bridge_pretension.apply)
+        if eq.get("source") == "pretension" and len(eq["terms"]) >= 2:
+            parent[eq["terms"][1][0]] = eq["terms"][0][0]
+    count = (len(model_data.get("offset_new_nids", [])) + len(joints) +
+             sum(p.get("pairs", 0) + 1
+                 for p in model_data.get("pretension_sections", [])))
+    return count, parent
+
+
+def _own_node_temperatures(model_data, temps, node_temps, tref):
+    """
+    Temperature sources for the bridge's own nodes (_own_nodes) and their
+    Mecway nodes: in Mecway an own node is its Mecway node, so both get
+    the temperature of that Mecway node. A Code-Aster AFFE misses the own
+    node (node group of Mecway nodes, Node temperature per Mecway node)
+    and can miss the Mecway node whose cell now uses the own node (element
+    selection at a joint end, an offset element, an element below a
+    pre-tension cut). Source per node: the Node temperature of the Mecway
+    node, else the last Temperature (in AFFE order) whose selection holds
+    it, else the reference. Returns ({node: K} for the Node temperatures
+    and the reference, {index in temps: [node]}).
+    """
+    _count, parent = _own_nodes(model_data)
+    fixed, by_index = {}, {}
+    if not parent or not (temps or node_temps):
+        return fixed, by_index
+    members = [_temperature_nodes(model_data, t["selection"]) or set()
+               for t in temps]
+    for own, mw in sorted(parent.items()):
+        for nid in (own, mw):
+            if mw in node_temps:
+                fixed[nid] = node_temps[mw]
+                continue
+            hit = [i for i, m in enumerate(members) if mw in m]
+            if hit:
+                by_index.setdefault(hit[-1], set()).add(nid)
+            else:
+                fixed[nid] = tref
+    # a Mecway node can be the parent of several own nodes
+    return fixed, dict((i, sorted(n)) for i, n in by_index.items())
 
 
 def _temperature_histories(model_data, t_cut=None):
@@ -2994,7 +3062,9 @@ def _build_temperature_field(model_data, timeline=None):
     Nodes that the bridge adds in the job (LINE_QUAD mid-side nodes,
     centre node of QUAD9/TRIA7 with COQUE_3D) then get the
     interpolated temperature of the Mecway nodes, like the field on
-    the original mesh.
+    the original mesh. Own nodes of the bridge in the mesh file (flexible
+    joints, element offsets, pre-tension copies) and their Mecway nodes
+    get the temperature of that Mecway node (_own_node_temperatures).
 
     timeline: None (MECA_STATIQUE, modal, buckling, ...): a fixed field
     (CHAM_GD). A Temperature with a time history is then dropped (WARNING):
@@ -3051,13 +3121,26 @@ def _build_temperature_field(model_data, timeline=None):
         _check_temperature_conflicts(model_data, node_temps)
     new_nodes = bool(model_data.get("line_quad") or
                      model_data.get("shell_upgrades"))
-    need_nt = bool(node_temps or (new_nodes and temps))
-    n_mw = len(model_data.get("mesh_nodes", {}))
+    # The bridge's own nodes (joints, offsets, pre-tension) get the
+    # temperature of their Mecway node (_own_node_temperatures).
+    own_fixed, own_by_index = _own_node_temperatures(
+        model_data, temps, node_temps, tref)
+    explicit = dict(node_temps)
+    explicit.update(own_fixed)
+    if not hist:
+        for i, nids in own_by_index.items():
+            for nid in nids:
+                explicit[nid] = temps[i]["value"]
+        own_by_index = {}
+    need_nt = bool(node_temps or (new_nodes and temps) or explicit or
+                   own_by_index)
+    # Nodes in the mesh file: the Mecway nodes and the own nodes
+    n_mw = len(model_data.get("mesh_nodes", {})) + _own_nodes(model_data)[0]
     nt_data = ""
     if need_nt:
         by_value = OrderedDict()
-        for nid in sorted(node_temps):
-            by_value.setdefault(node_temps[nid], []).append(
+        for nid in sorted(explicit):
+            by_value.setdefault(explicit[nid], []).append(
                 "{0}".format(nid))
         nt_data = "".join("    {0!r}: {1},\n".format(
             v, _fmt_seq(nids, per_line=12, indent="        "))
@@ -3076,7 +3159,7 @@ def _build_temperature_field(model_data, timeline=None):
     if hist:
         return _build_temperature_history(
             model_data, temps, hist, tref, timeline, need_nt, nt_data,
-            n_mw, ref_block, varc_evo)
+            n_mw, ref_block, varc_evo, own_by_index)
 
     affe = ["_F(TOUT='OUI', NOM_CMP='TEMP', VALE={0!r})".format(tref)]
     for t in temps:
@@ -3138,13 +3221,16 @@ def _temperature_delta(t0, t_end, hist):
 
 
 def _build_temperature_history(model_data, temps, hist, tref, timeline,
-                               need_nt, nt_data, n_mw, ref_block, varc_evo):
+                               need_nt, nt_data, n_mw, ref_block, varc_evo,
+                               own_by_index=None):
     """
     EVOL_THER for Temperatures with a time history (see
     _build_temperature_field): at t0 the reference, then per time
     a nodal field with the value of each Temperature (table: _value_at;
     constant: tref + s (T - tref), s = 1 or the ramp) and the Node
     temperatures (same s). A loop in the .comm creates the fields.
+    own_by_index: {index in temps: [node]}, own nodes of the bridge that
+    take the value of that Temperature (_own_node_temperatures).
     """
     t0, t_end = timeline["t0"], timeline["t_end"]
     ramp = timeline["ramp"] and t_end > t0
@@ -3184,6 +3270,27 @@ def _build_temperature_history(model_data, temps, hist, tref, timeline,
             "    _bridge_node_temps(_fld, mesh, dict(\n"
             "        ({0!r} + (_k - {0!r}) * _s, _n)\n"
             "        for _k, _n in _temp_nt.items()), {1})\n").format(
+                tref, n_mw)
+    if need_nt and own_by_index:
+        # Own nodes whose Mecway node lies in a Temperature selection: the
+        # value of that Temperature at this time (_v[i]); merged per value,
+        # so that equal values do not overwrite each other.
+        block += (
+            "# Own nodes of the bridge with the Temperature of their Mecway\n"
+            "# node: {{index in _v: (node numbers)}}\n"
+            "_temp_sel = {{\n{0}}}\n").format("".join(
+                "    {0}: {1},\n".format(i, _fmt_seq(
+                    ["{0}".format(n) for n in nids], per_line=12,
+                    indent="        "))
+                for i, nids in sorted(own_by_index.items())))
+        nt_call = (
+            "    _temp_now = {{}}\n"
+            "    for _k, _n in _temp_nt.items():\n"
+            "        _temp_now.setdefault({0!r} + (_k - {0!r}) * _s, "
+            "[]).extend(_n)\n"
+            "    for _i, _n in _temp_sel.items():\n"
+            "        _temp_now.setdefault(_v[_i], []).extend(_n)\n"
+            "    _bridge_node_temps(_fld, mesh, _temp_now, {1})\n").format(
                 tref, n_mw)
     block += (
         "# Temperature (Mecway temperature2) in time, KNOWN_BUGS 17: per\n"
@@ -3893,11 +4000,16 @@ def _prepare_beam_loads(model_data, solver_cmd):
     beam_sets = [g for g, m in mods.items() if m in _BEAM_MODELISATIONS]
     if not beam_sets:
         return
+    # Trusses (BARRE) take part as well: every line pressure below loses
+    # its own load, and FORCE_POUTRE on BARRE is accepted (see
+    # _centrifugal_loads, NL-86b); gravity on them then becomes
+    # FORCE_POUTRE rho A g like on the beams (area in beam_sections).
+    line_sets = beam_sets + [g for g, m in mods.items() if m == "BARRE"]
     renames = model_data.get("group_renames", {})
     cell_set = {}
     for e in model_data.get("mesh_elements", []):
         g = renames.get(e[3], e[3])
-        if g in beam_sets:
+        if g in line_sets:
             cell_set[e[0]] = g
     bcs = model_data["bcs"]
     timed_ok = solver_cmd != "MECA_STATIQUE"
@@ -3943,7 +4055,7 @@ def _prepare_beam_loads(model_data, solver_cmd):
     def rho_a(g):
         return (mats.get(elsets.get(g), {}).get("rho", 0.0) *
                 secs.get(g, {}).get("area", 0.0))
-    if timed_gravity and timed_ok and any(rho_a(g) for g in beam_sets):
+    if timed_gravity and timed_ok and any(rho_a(g) for g in line_sets):
         # Gravity with a history is a load of its own (PESANTEUR with
         # FONC_MULT, _build_charges); together with a line pressure
         # CALCULEL2_92 counts two distributed loads. NOT solved (no run).
@@ -3977,10 +4089,10 @@ def _prepare_beam_loads(model_data, solver_cmd):
     # PESANTEUR and beams without density, Code-Aster 17.4, test run).
     mixed = bool(timed_ids) and (
         len(lps) > 1 or bool(gravity) or
-        bool(centri and any(rho_a(g) for g in beam_sets)))
+        bool(centri and any(rho_a(g) for g in line_sets)))
     if not overlap and not mixed:
         return
-    if mixed and centri and any(rho_a(g) for g in beam_sets):
+    if mixed and centri and any(rho_a(g) for g in line_sets):
         log(tr("ERROR: Centrifugaalkracht en een tijdsafhankelijke line "
                "pressure op dezelfde balken: Code-Aster staat per balk een "
                "verdeelde last toe (CALCULEL2_92); niet samengevoegd.",
@@ -4069,8 +4181,8 @@ def _prepare_beam_loads(model_data, solver_cmd):
         extra = []
         shells = model_data.get("shell_sections", {})
         for g, mod in mods.items():
-            if g in beam_sets:
-                continue
+            if g in line_sets:
+                continue        # in the BRLP groups above
             rho = mats.get(elsets.get(g), {}).get("rho", 0.0)
             if not rho:
                 continue
@@ -4180,8 +4292,14 @@ def _render_charges(charges, model_data=None):
         # EXCIT).
         groups = [m for e in kws.get("PRES_REP", [])
                   for m in re.findall(r"GROUP_MA='([^']+)'", e)]
+        # Hydrostatic pressure (FORMULE FHYDn, _hydrostatic_formula) and a
+        # pressure with a formula in x, y, z (FPOSn, _position_formula)
+        # stay fixed, also on a selection that has a uniform pressure too
+        # (_follower_pressure_groups).
         suiv = (follower and list(kws) == ["PRES_REP"] and groups
-                and all(g in follower for g in groups))
+                and all(g in follower for g in groups)
+                and not any(re.search(r"\bPRES=F(?:HYD|POS)\d+\b", e)
+                            for e in kws["PRES_REP"]))
         # Centrifugal force on the deformed radius (spin softening):
         # ROTATION with TYPE_CHARGE='SUIV' (_follower_rotation).
         if (list(kws) == ["ROTATION"] and fonc is None and
@@ -4414,7 +4532,10 @@ def _render_mpcs(model_data):
                     "_F(NOEUD={0}, DDL={1}, COEF_MULT={2}, COEF_IMPO=0.0)"
                     .format(_fmt_seq(["'N{0}'".format(n) for n in nids]),
                             _fmt_seq(["'{0}'".format(d) for d in ddl]),
-                            _fmt_seq(["{0:.15g}".format(c) for c in coef])))
+                            # %-formatting: "{0:.15g}".format() follows
+                            # the locale in Mecway's IronPython ("0,5"
+                            # under nl-NL), as in bridge_mesh._real
+                            _fmt_seq(["%.15g" % c for c in coef])))
             if not b.get("ddl"):
                 continue
             # quadratic master perpendicular to a global axis: the rotations
@@ -7759,6 +7880,27 @@ def _only_connections(charges):
     return bool(kws) and kws <= _CONNECTION_KEYWORDS
 
 
+def _support_state(model_data, charges):
+    """
+    What holds the model in space, for the free-free and prestress
+    decisions of modal and buckling (docs Modal_and_buckling §1.1 item 5):
+      "support"     : a support load that is not only connections, or a
+                      load from #ASTER-EXCIT (the user's own DDL_IMPO,
+                      LIAISON_*, ...: the bridge does not read that code,
+                      so it counts as a support; a wrong guess ends in
+                      Code-Aster's own ALGELINE3_81/FACTOR_11, docs §4);
+      "connections" : only connections between parts (_only_connections);
+      "none"        : no support load at all.
+    """
+    if model_data.get("aster_custom", {}).get("excit"):
+        return "support"
+    if _only_connections(charges):
+        return "connections"
+    if any(not _is_load_charge(c) for c in charges):
+        return "support"
+    return "none"
+
+
 def _modal_charges(model_data, buckling, prestress=False):
     """
     Loads for CALC_MODES (_build_charges): (charges, names of the
@@ -7987,7 +8129,30 @@ def _prestress_plan(model_data, charges, names_bc, names_load):
                "degree of freedom counts and the loads are dropped).")
             .format(", ".join("'{0}'".format(s) for s in nonzero)))
         return None
-    if not names_bc:
+    state = _support_state(model_data, charges)
+    if state == "connections":
+        import bridge_cyclic
+        if bridge_cyclic.is_cyclic(model_data):
+            # The sector is held by the cyclic conditions on its cut
+            # faces (bridge_cyclic); unchanged behaviour there.
+            state = "support"
+    if state == "connections":
+        log(tr("ERROR: Modaal met voorspanning: het model hangt alleen aan "
+               "verbindingen tussen de delen (bonded contact, koppelingen) "
+               "en heeft geen oplegging; de statische berekening onder de "
+               "belastingen is dan singulier. Leg het model in Mecway vast, "
+               "of zet 'Voorspanning door belastingen' uit (pagina Modaal; "
+               "dan rekent de bridge vrij-vrij met de starre modes en "
+               "vervallen de belastingen).",
+               "ERROR: Modal with prestress: the model hangs only on "
+               "connections between its parts (bonded contact, couplings) "
+               "and has no support; the static analysis under the loads is "
+               "then singular. Add supports in Mecway, or switch off "
+               "'Prestress from loads' (Modal page; the bridge then solves "
+               "free-free with the rigid body modes and the loads are "
+               "dropped)."))
+        return None
+    if state == "none":
         log(tr("ERROR: Modaal met voorspanning zonder opleggingen: de "
                "statische berekening onder de belastingen is singulier. "
                "Leg het model in Mecway vast, of zet 'Voorspanning door "
@@ -8490,9 +8655,20 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                                  if (buckling or prestress) else ""))
     # Modal without supports, or with only connections between parts
     # (bonded contact, couplings): rigid body modes, free-free route.
-    free = not names_bc or (not buckling and not extra
-                            and _only_connections(charges))
+    # Supports from #ASTER-EXCIT count (_support_state).
+    state = _support_state(md_main, charges)
+    free = state != "support"
     if free:
+        if buckling and state == "connections":
+            log(tr("ERROR: Knik: het model hangt alleen aan verbindingen "
+                   "tussen de delen (bonded contact, koppelingen) en heeft "
+                   "geen oplegging; de statische berekening is singulier. "
+                   "Leg het model in Mecway vast.",
+                   "ERROR: Buckling: the model hangs only on connections "
+                   "between its parts (bonded contact, couplings) and has "
+                   "no support; the static analysis is singular. Add "
+                   "supports in Mecway."))
+            return None
         if buckling:
             log(tr("ERROR: Knik zonder opleggingen: de statische "
                    "berekening is singulier. Leg het model in Mecway vast.",

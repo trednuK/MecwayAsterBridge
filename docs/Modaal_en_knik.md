@@ -50,14 +50,20 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
      de eerste modes zijn dan starre bewegingen met ~0 Hz. Dat geldt ook voor een
      model met alleen verbindingen tussen de delen (verlijmd contact, starre of
      verdelende koppelingen) en geen oplegging, bijv. om de contacten van een
-     samenstel met de starre modes te controleren (MO-10).
+     samenstel met de starre modes te controleren (MO-10). Met belastingen en
+     voorspanning (punt 6) kan dat niet: de statische berekening is dan singulier en
+     de bridge stopt vooraf met een ERROR (§4); zet de voorspanning uit voor de
+     starre modes.
    - Een mechanisme in een verder opgelegd model (bijv. een balk die alleen
      scharnierend vastzit, een los onderdeel): Code-Aster stopt met `ALGELINE3_81`;
      oplossing in §4 (KNOWN_BUGS 48).
-   - Knik zonder opleggingen kan niet (de statische berekening is singulier): ERROR.
+   - Knik zonder opleggingen, of met alleen verbindingen tussen de delen, kan niet
+     (de statische berekening is singulier): ERROR.
    - Verbindingen uit `#ASTER`-code (`LIAISON_ELEM`, `LIAISON_MAIL`, `DDL_IMPO`, ...)
      tellen mee als de last in `#ASTER-EXCIT` staat (§2.1, §2.2;
-     [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2).
+     [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2). De bridge leest
+     die code niet: een `#ASTER-EXCIT`-last telt als oplegging (geen vrij-vrij-route,
+     geen ERROR over ontbrekende opleggingen).
 6. **Belastingen.**
    - Modaal: met belastingen rekent de bridge, zoals Mecway, een **voorgespannen**
      modale analyse (*stress stiffening*, Mecway Ltd., 2026, §6.3): eerst lineair
@@ -593,10 +599,11 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
 | WARNING: Modale analyse: belastingen (...) worden genegeerd | voorspanning uit, model met lasten | gewenst? Anders *Voorspanning door belastingen* aan (pagina Modaal) |
 | ERROR: Modaal met voorspanning: opgelegde verplaatsing of rotatie <> 0 op ... | voorspanning met een opgelegde verplaatsing ≠ 0 (Mecway rekent dat ook niet) | zet de waarde op 0, of zet de voorspanning uit (dan telt alleen dat de vrijheidsgraad vastligt) |
 | ERROR: Modaal met voorspanning zonder opleggingen | de statische berekening onder de lasten is singulier | leg het model vast, of zet de voorspanning uit |
+| ERROR: Modaal met voorspanning: het model hangt alleen aan verbindingen tussen de delen | alleen verlijmd contact of koppelingen, geen oplegging: de statische berekening onder de lasten is singulier | leg het model vast, of zet de voorspanning uit (dan vrij-vrij met de starre modes, §3.2) |
 | WARNING: Negatieve frequentie(s) | druk boven de kniklast van die mode | verlaag de drukbelasting; controleer met een knikanalyse |
 | WARNING: Centrifugaalkracht in een model met schalen / van knoopmassa's | spin softening ontbreekt daar (§2.5) | frequenties zijn iets hoger dan in Mecway; vergelijk zo nodig met Mecway |
 | WARNING: Geen opleggingen (vrij-vrij) | los model | normaal voor een vrij lichaam; tel 6 starre modes mee |
-| ERROR: Knik zonder belasting / Knik zonder opleggingen | knik vraagt een last en opleggingen | breng de referentielast en opleggingen aan |
+| ERROR: Knik zonder belasting / Knik zonder opleggingen / Knik: het model hangt alleen aan verbindingen | knik vraagt een last en opleggingen; verbindingen tussen de delen houden het model niet vast | breng de referentielast en opleggingen aan |
 | ERROR: #ASTER-CONSTANT: geen belasting op ... / alle belastingen zijn constant / thermische rek / verdeelde balklasten zijn per balk samengeteld | de regel noemt geen belaste selectie, laat geen variabele last over, of het model is niet te splitsen (§2.2.1) | noem de selectie van de constante last; houd minstens een variabele last |
 | Knik: de constante lasten (#ASTER-CONSTANT) alleen liggen al op of boven de kniklast | K + Kg(constant) is niet positief definiet (§2.2.1) | verlaag de constante last of verstijf de constructie |
 | `<EXCEPTION> <ALGELINE3_81>` (le shift ... coïncide avec une valeur propre) | singuliere stijfheid: mechanisme, los onderdeel, scharnier | leg het model beter vast, of kies een negatieve zoekfrequentie (bijv. -10 x de verwachte eerste elastische frequentie); de starre modes komen dan met ~0 Hz mee. Dat helpt alleen als het losse deel massa heeft (dichtheid of puntmassa). Een verbinding uit `#ASTER`-code telt alleen mee via `#ASTER-EXCIT` |
