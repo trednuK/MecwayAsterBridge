@@ -1230,7 +1230,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
     Convergentiescherm and Sluiten.
 
     Returns {"action": "run" | "results" | "section_show" |
-    "section_results" | "close", "values": dict or None} ("values": the
+    "section_hide" | "section_results" | "close", "values": dict or None} ("values": the
     validated new values, not for "close"). The
     convergence screen and the documentation work inside the window; for
     the other actions the window closes and MecwayAsterBridgeMain
@@ -1259,6 +1259,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
     result = {"action": "close", "values": None, "error": None}
 
     def build_and_run():
+        leftovers = []   # components to dispose with the window
         try:
             look = _Look()
             form = Form()
@@ -1999,8 +2000,15 @@ def _show_winforms_dialog(current, status=u"", model=None):
             doc_state = {"current": doc_items[0][1], "browser": None}
             doc_list = ListBox()
             doc_list.Dock = DockStyle.Left
-            # 230 px at 100 %, wider with a larger font (display scale)
-            doc_list.Width = int(230 * look.font.Size / _STYLE["font"][1])
+            # 230 px at 100 %, wider at a larger display scale (pixels per
+            # inch of the window) or a larger font
+            gr = form.CreateGraphics()
+            try:
+                dpi_k = gr.DpiX / 96.0
+            finally:
+                gr.Dispose()
+            doc_list.Width = int(230 * max(
+                1.0, dpi_k, look.font.Size / _STYLE["font"][1]))
             doc_list.BorderStyle = getattr(BorderStyle, "None")
             doc_list.BackColor = look.col("status_bg")
             doc_list.IntegralHeight = False
@@ -2320,6 +2328,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             on_ok = guarded(lambda: leave("run"))
             on_results = guarded(lambda: leave("results"))
             on_section = guarded(lambda: leave("section_show"))
+            on_section_hide = guarded(lambda: leave("section_hide"))
             on_section_results = guarded(lambda: leave("section_results"))
             on_monitor = guarded(lambda: say(open_convergence_monitor(
                 resolve_work_dir(field_text("work_dir"),
@@ -2341,8 +2350,9 @@ def _show_winforms_dialog(current, status=u"", model=None):
             section_menu.Font = look.font
             section_menu.ShowImageMargin = False
             section_menu.ShowItemToolTips = True
-            # not a child of the form: release it with the form
-            form.Disposed += lambda sender, args: section_menu.Dispose()
+            # not a child of the form: released after the message loop
+            # (form.Close() in an item's Click disposes the window at once)
+            leftovers.append(section_menu)
             for name, text, enabled, handler, help_text in (
                     ("section_show", tr("Doorsnede tonen", "Show section"),
                      not section_shown, on_section, tr(
@@ -2356,7 +2366,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         "comes from MecwaySectionProps.")),
                     ("section_hide",
                      tr("Doorsnede verbergen", "Hide section"),
-                     section_shown, on_section, tr(
+                     section_shown, on_section_hide, tr(
                         "Haalt de tijdelijke elementen van Doorsnede tonen "
                         "weer uit het model.",
                         "Removes the temporary elements of Show section "
@@ -2389,9 +2399,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 # upwards: the button is at the bottom of the window
                 section_menu.Show(section_btn, Point(0, 0),
                                   ToolStripDropDownDirection.AboveRight)
-            # &: Alt+D / Alt+S opens the menu (Click, as Enter and Space)
             section_btn = add_button(
-                tr(u"&Doorsnede ▾", u"&Section ▾"), 120,
+                tr(u"Doorsnede ▾", u"Section ▾"), 120,
                 guarded(show_section_menu), tr(
                     "Vorm van General sections (uit MecwaySectionProps): "
                     "tonen of verbergen op de balken, of in de resultaten "
@@ -2482,6 +2491,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 # Release the window and browser element (ActiveX): the
                 # window is rebuilt after every run.
                 form.Dispose()
+                for item in leftovers:
+                    item.Dispose()
         except Exception as e:
             result["error"] = e
 

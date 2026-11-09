@@ -8,11 +8,13 @@
   on the track, PageUp/PageDown) and is as wide as its longest page title needs. At a display
   scale of 125 % the label column, the info line of an analysis page, the document list and the
   status box grow with the text, and a small window no longer gets a horizontal scrollbar on
-  General. The save note shows `Scripts\bridge_utils.py` instead of the full path.
+  General. *Hide section* only removes the shape; *Show section* on a shape that is already
+  shown draws it anew. The save note shows `Scripts\bridge_utils.py` instead of the full path.
 - **Convergence window**: the buttons and the top bar have the look of the main window (dark
   bar, flat white buttons with a hover colour, grey text when disabled; colours shared through
   `bridge_style.py`). At 125 % the legends, axis captions, rows and the cards of a linear
-  analysis no longer run into each other, and the messages keep at least six lines.
+  analysis no longer run into each other. The messages box is six lines high and keeps that
+  height in a low window; the plots shrink instead.
 
 - **Stress over beam sections in Mecway**: after a Code-Aster run the beams with a general section
   with an outline, and Mecway's I, T, L and C, show per element end the largest von Mises,

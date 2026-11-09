@@ -1660,13 +1660,20 @@ def _section_view(warn_directions=True):
     return view, model_data, None
 
 
-def _section_show_action():
-    """Button Show/Hide section: the shape as temporary elements in the
-    model, to see it before a calculation. Returns (ok, status text)."""
+def _section_show_action(show=True):
+    """Show section / Hide section (menu Section): the shape as temporary
+    elements in the model, to see it before a calculation; show=False
+    only removes them. A shape that is already shown is shown anew (it
+    may have been changed in Mecway in the meantime). Returns (ok, status
+    text)."""
     if bridge_section_model.shown(mw):
         if not bridge_section_model.remove_shape(mw):
             return False, _SHAPE_LEFT()
-        return True, tr(u"Doorsnede verborgen.", u"Section hidden.")
+        if not show:
+            return True, tr(u"Doorsnede verborgen.", u"Section hidden.")
+    elif not show:
+        return True, tr(u"Doorsnede was al verborgen.",
+                        u"Section was already hidden.")
     # Orientation and outline are read from the file: it has to be current.
     save_error = _save_model()
     if save_error:
@@ -1788,11 +1795,11 @@ def main():
                 status = text if ok else tr(u"Resultaten: {0}",
                                             u"Results: {0}").format(text)
             continue
-        if action in ("section_show", "section_results"):
+        if action in ("section_show", "section_hide", "section_results"):
             try:
-                ok, text = (_section_show_action()
-                            if action == "section_show" else
-                            _section_results_action())
+                ok, text = (_section_results_action()
+                            if action == "section_results" else
+                            _section_show_action(action == "section_show"))
             except Exception as e:
                 ok, text = False, u"{0}".format(e)
                 log("ERROR: Section view: {0}".format(e))
