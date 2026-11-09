@@ -97,23 +97,19 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 29 oktober 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `373d13a`
-(na V2026.5: o.a. hoofdspanningen van schalen en Green-Lagrange (S34b), schuine
-opleggingen naast verplaatsingen en vrij-vrij modaal met alleen verbindingen (issue #9),
-de samenvatting van de Code-Aster-run (issue #7), balken met welving (S19), 2D en
-axisymmetrisch inclusief dynamica en akoestiek (S16a, S16b, S16d), boutvoorspanning (S15,
-S15b), HOMARD-verfijning in de job (S35b), de tijdstap van Mecway bij dynamica
-(KNOWN_BUGS 127, opgelost), bonded contact zoals CCX (KNOWN_BUGS 128), belastingen op balkzijvlakken
-en hydrostatische druk op schaalranden (S17), orthotroop materiaal (S13), en de controles van
-29 oktober: dwarskrachtcentrum en L-profielen van balken (LS-90d, LS-94/95), voorspanning in
-een onregelmatig tetranet (PT-11 .. PT-13), frictionless schaalrand tegen Mecway (LS-84), en daarna los gedraaid op `35c7564` kipknik van
-monosymmetrische profielen en het teken van het bimoment (BU-43 .. BU-44b, LS-90d, LS-90e),
-en daarna NL-81c en NL-83b op `bfa15fa`;
-Code-Aster 17.4): 546 testcases, 2982 controles, 2976 OK, 6 BEKEND, 0 NOK/FOUT. Ten opzichte
-van de run op `fc733a9` geen statuswijziging en geen FEM-waarde > 0,1 % anders, behalve
-grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner). Nieuw zijn
-15 testcases en 69 controles.
+Stand 10 november 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `821c58a`
+(voor V2026.9; Code-Aster 17.4): 579 testcases, 3072 controles, 3066 OK, 6 BEKEND, 0 NOK/FOUT.
+Nieuw ten opzichte van de vorige tabel (546 testcases, run op `373d13a` met losse aanvullingen)
+zijn 33 testcases en 90 controles: spanningen en reacties van `POU_D_TG` uit één elastische
+stap (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b; KNOWN_BUGS 123), spanning over
+balkdoorsneden (LS-97a .. LS-97l, S41) en niet-lineaire knik met grote-rotatiebalken
+(NK-05 .. NK-10, issue #10). Geen statuswijziging ten opzichte van de vastgelegde resultaten
+(`bfa15fa`) en van een volledige run op `f4a51aa` (zelfde aantallen). FEM-waarden die meer
+dan 0,1 % verschillen zijn grootheden dicht bij nul (fasen van de orde 1e-10, sommen van
+reacties van de orde 1e-12, K_II van de orde 1e-7), plus de verschillen t.o.v. Mecway van
+CY-01/CY-03 (5,3e-3 → 5,2e-3) en het verval van AI-03 (+0,2 %), die van run tot run iets
+wisselen en ruim binnen de tolerantie blijven.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -126,15 +122,15 @@ grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner)
 | Dynamica | 16 | 47 | 47 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 15 | 53 | 53 | 0 |
-| Knik | 32 | 89 | 88 | 1 |
+| Knik | 37 | 94 | 93 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 135 | 451 | 450 | 1 |
+| Lineair statisch | 154 | 507 | 506 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 25 | 239 | 239 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
-| Modaal (voorspanning) | 7 | 38 | 38 | 0 |
+| Modaal (voorspanning) | 9 | 44 | 44 | 0 |
 | Niet-lineair statisch | 56 | 220 | 217 | 3 |
-| Niet-lineaire knik | 5 | 13 | 13 | 0 |
+| Niet-lineaire knik | 12 | 36 | 36 | 0 |
 | Respons op modale basis | 10 | 25 | 25 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
 | Resultaatformules | 5 | 38 | 38 | 0 |
@@ -146,25 +142,10 @@ grootheden dicht bij nul (verschillen t.o.v. Mecway van de orde 1e-3 of kleiner)
 | Orthotroop | 19 | 174 | 174 | 0 |
 | 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **546** | **2982** | **2976** | **6** |
+| **Totaal** | **579** | **3072** | **3066** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
-
-Na deze run toegevoegd (nog niet in een volledige regressie, niet in de tabel):
-Orthotroop materiaal OR-01..22, 19 cases, 174 controles OK (28/29 oktober 2026, stappen S13a ..
-S13d; daarmee opnieuw gedraaid: alle lineair-statische cases, MO-20 .. MO-31, BU-20 .. BU-25, de
-resultaatformules en een deel van de thermische en modale families, ongeveer 200 cases,
-FEM-waarden bit-gelijk); Boutvoorspanning PT-01..05, 5 cases, 22 controles OK (28 oktober 2026, stap S15); PT-06..10,
-5 cases, 17 controles OK (28 oktober 2026, stap S15b); PT-11..13 (onregelmatig tet-mesh), 3 cases,
-39 controles OK (29 oktober 2026).
-Akoestiek 2D AK-10..15, 6 cases, 126 controles OK (28 oktober 2026, stap S16d).
-Balkzijvlakken en hydrostatische druk
-op schaalranden LS-92a..h, LS-93a..c, 11 cases, 27 controles OK (28 oktober 2026, stap S17).
-Spanning over balkdoorsneden LS-97a..l, 12 cases, 37 controles OK (7 november 2026, stap S41).
-Niet-lineaire knik NK-05 .. NK-10 (grote-rotatiebalken, issue #10), 7 cases, 23 controles OK
-(5 november 2026); NK-01 .. NK-04 daarmee opnieuw gedraaid: zelfde status, grootste
-verschil 1,4e-6 relatief.
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange-contact (`contact_algo` = STANDARD) op een lijncontact tussen

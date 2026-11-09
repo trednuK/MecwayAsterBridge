@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-10 (bridge 821c58a, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3055 van 3061 controles binnen de tolerantie** (572 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3066 van 3072 controles binnen de tolerantie** (579 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -161,20 +161,20 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f (n=5) | 850 Hz | 850.22 | +0.03% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay rate (n=5) | 70.347 1/s | 70.415 | +0.10% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | |P(L)/P(0)| (170 Hz) | 1.0215 - | 1.0215 | -0.00% | 0.1% | OK |
-| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (170 Hz) | 0 graden | -2.7691e-07 | -2.7691e-07 | 0.05 graden | OK |
+| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (170 Hz) | 0 graden | -2.7689e-07 | -2.7689e-07 | 0.05 graden | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.3469 1/s t.o.v. Mecway | 70.347 1/s | 70.347 | +0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f 170 Hz t.o.v. Mecway | 170 Hz | 170 | -0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.347 1/s t.o.v. Mecway | 70.347 1/s | 70.347 | -0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f 340.002 Hz t.o.v. Mecway | 340 Hz | 340 | +0.00% | 1% | OK |
-| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.3488 1/s t.o.v. Mecway | 70.349 1/s | 70.349 | -0.00% | 1% | OK |
+| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.3488 1/s t.o.v. Mecway | 70.349 1/s | 70.349 | +0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f 510.017 Hz t.o.v. Mecway | 510.02 Hz | 510.02 | -0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.3562 1/s t.o.v. Mecway | 70.356 1/s | 70.356 | +0.00% | 1% | OK |
-| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f 680.072 Hz t.o.v. Mecway | 680.07 Hz | 680.07 | -0.00% | 1% | OK |
+| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f 680.072 Hz t.o.v. Mecway | 680.07 Hz | 680.07 | +0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.3758 1/s t.o.v. Mecway | 70.376 1/s | 70.376 | +0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | f 850.217 Hz t.o.v. Mecway | 850.22 Hz | 850.22 | +0.00% | 1% | OK |
-| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.4154 1/s t.o.v. Mecway | 70.415 1/s | 70.415 | +0.00% | 1% | OK |
+| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | decay 70.4154 1/s t.o.v. Mecway | 70.415 1/s | 70.415 | -0.00% | 1% | OK |
 | AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (170 Hz) | 1.0215 - | 1.0215 | -0.00% | 0.01% | OK |
-| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (170 Hz) | 0 graden | 1.6719e-12 | 1.6719e-12 | 0.01 graden | OK |
+| AI-01 | Buis hard / Z = 2000 Pa.s/m (reeel, Z > rho c), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (170 Hz) | 0 graden | 2.4165e-11 | 2.4165e-11 | 0.01 graden | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f (n=1) | 85 Hz | 85 | -0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | decay rate (n=1) | 182.35 1/s | 182.35 | +0.00% | 1% | OK |
 | AI-02 | Buis hard / Z = 200 Pa.s/m (reeel, Z < rho c), hex20 20x1x1 | f (n=2) | 255 Hz | 255 | +0.00% | 1% | OK |
@@ -230,11 +230,11 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | f 408.683 Hz t.o.v. Mecway | 408.68 Hz | 408.68 | -0.00% | 1% | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | decay 1870.53 1/s t.o.v. Mecway | 1870.5 1/s | 1870.5 | +0.00% | 1% | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | f 560.037 Hz t.o.v. Mecway | 560.04 Hz | 560.04 | -0.00% | 1% | OK |
-| AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | decay 1725.64 1/s t.o.v. Mecway | 1725.6 1/s | 1725.6 | -0.00% | 1% | OK |
-| AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | f 717.508 Hz t.o.v. Mecway | 717.51 Hz | 717.51 | +0.00% | 1% | OK |
+| AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | decay 1725.64 1/s t.o.v. Mecway | 1725.6 1/s | 1725.6 | +0.00% | 1% | OK |
+| AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | f 717.508 Hz t.o.v. Mecway | 717.51 Hz | 717.51 | -0.00% | 1% | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | decay 1588.07 1/s t.o.v. Mecway | 1588.1 1/s | 1588.1 | -0.00% | 1% | OK |
 | AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (130.113 Hz) | 244.29 - | 244.29 | +0.00% | 0.01% | OK |
-| AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (130.113 Hz) | 0 graden | -8.9439e-07 | -8.9439e-07 | 0.01 graden | OK |
+| AI-04 | Buis hard / Z = rho c = 408 Pa.s/m (geen reflectie), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (130.113 Hz) | 0 graden | -8.4490e-07 | -8.4490e-07 | 0.01 graden | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | f (n=1) | 165.48 Hz | 165.48 | +0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | decay rate (n=1) | 55.601 1/s | 55.602 | +0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | f (n=2) | 335.48 Hz | 335.48 | +0.00% | 1% | OK |
@@ -253,12 +253,12 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | decay 55.6029 1/s t.o.v. Mecway | 55.603 1/s | 55.603 | +0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | f 505.492 Hz t.o.v. Mecway | 505.49 Hz | 505.49 | +0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | decay 55.6087 1/s t.o.v. Mecway | 55.609 1/s | 55.609 | +0.00% | 1% | OK |
-| AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | f 675.545 Hz t.o.v. Mecway | 675.55 Hz | 675.55 | -0.00% | 1% | OK |
+| AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | f 675.545 Hz t.o.v. Mecway | 675.55 Hz | 675.55 | +0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | decay 55.624 1/s t.o.v. Mecway | 55.624 1/s | 55.624 | +0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | f 845.688 Hz t.o.v. Mecway | 845.69 Hz | 845.69 | +0.00% | 1% | OK |
-| AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | decay 55.6553 1/s t.o.v. Mecway | 55.655 1/s | 55.655 | +0.00% | 1% | OK |
+| AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | decay 55.6553 1/s t.o.v. Mecway | 55.655 1/s | 55.655 | -0.00% | 1% | OK |
 | AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (165.475 Hz) | 1.01 - | 1.01 | +0.00% | 0.01% | OK |
-| AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (165.475 Hz) | 0 graden | -1.0186e-10 | -1.0186e-10 | 0.01 graden | OK |
+| AI-05 | Buis hard / Z = 2000 - 1000i Pa.s/m (complex), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (165.475 Hz) | 0 graden | -9.6252e-11 | -9.6252e-11 | 0.01 graden | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f (n=0) | 6.6013 Hz | 6.6013 | +0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay rate (n=0) | 13.674 1/s | 13.674 | -0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f (n=1) | 176.6 Hz | 176.6 | +0.00% | 1% | OK |
@@ -272,7 +272,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f (n=5) | 856.6 Hz | 856.83 | +0.03% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay rate (n=5) | 13.674 1/s | 13.688 | +0.10% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | |P(L)/P(0)| (6.601 Hz) | 0.99338 - | 0.99338 | -0.00% | 0.1% | OK |
-| AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (6.601 Hz) | 0 graden | 1.0670e-12 | 1.0670e-12 | 0.05 graden | OK |
+| AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (6.601 Hz) | 0 graden | 1.0687e-12 | 1.0687e-12 | 0.05 graden | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f 6.60133 Hz t.o.v. Mecway | 6.6013 Hz | 6.6013 | +0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay 13.6743 1/s t.o.v. Mecway | 13.674 1/s | 13.674 | -0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f 176.601 Hz t.o.v. Mecway | 176.6 Hz | 176.6 | -0.00% | 1% | OK |
@@ -281,12 +281,12 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay 13.6747 1/s t.o.v. Mecway | 13.675 1/s | 13.675 | -0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f 516.619 Hz t.o.v. Mecway | 516.62 Hz | 516.62 | +0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay 13.6762 1/s t.o.v. Mecway | 13.676 1/s | 13.676 | +0.00% | 1% | OK |
-| AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f 686.676 Hz t.o.v. Mecway | 686.68 Hz | 686.68 | +0.00% | 1% | OK |
+| AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f 686.676 Hz t.o.v. Mecway | 686.68 Hz | 686.68 | -0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay 13.6801 1/s t.o.v. Mecway | 13.68 1/s | 13.68 | -0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | f 856.826 Hz t.o.v. Mecway | 856.83 Hz | 856.83 | -0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | decay 13.6881 1/s t.o.v. Mecway | 13.688 1/s | 13.688 | +0.00% | 1% | OK |
 | AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (176.601 Hz) | 0.99338 - | 0.99338 | -0.00% | 0.01% | OK |
-| AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (176.601 Hz) | 0 graden | 2.8651e-11 | 2.8651e-11 | 0.01 graden | OK |
+| AI-06 | Buis hard / Z = 1000 + 3000i Pa.s/m (complex), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (176.601 Hz) | 0 graden | 2.6214e-11 | 2.6214e-11 | 0.01 graden | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f (n=0) | 20.962 Hz | 20.962 | +0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay rate (n=0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f (n=1) | 190.96 Hz | 190.96 | +0.00% | 1% | OK |
@@ -300,21 +300,21 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f (n=5) | 870.96 Hz | 871.2 | +0.03% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay rate (n=5) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | |P(L)/P(0)| (20.96 Hz) | 0.9259 - | 0.9259 | +0.00% | 0.1% | OK |
-| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (20.96 Hz) | 0 graden | 9.7911e-13 | 9.7911e-13 | 0.05 graden | OK |
+| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | fase P(L)/P(0) t.o.v. analytisch (20.96 Hz) | 0 graden | 2.2698e-13 | 2.2698e-13 | 0.05 graden | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 20.9624 Hz t.o.v. Mecway | 20.962 Hz | 20.962 | -0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay (f 20.9624 Hz) t.o.v. Mecway (0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 190.962 Hz t.o.v. Mecway | 190.96 Hz | 190.96 | -0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay (f 190.962 Hz) t.o.v. Mecway (0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 360.965 Hz t.o.v. Mecway | 360.97 Hz | 360.97 | -0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay (f 360.965 Hz) t.o.v. Mecway (0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
-| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 530.983 Hz t.o.v. Mecway | 530.98 Hz | 530.98 | -0.00% | 1% | OK |
+| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 530.983 Hz t.o.v. Mecway | 530.98 Hz | 530.98 | +0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay (f 530.983 Hz) t.o.v. Mecway (0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
-| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 701.044 Hz t.o.v. Mecway | 701.04 Hz | 701.04 | -0.00% | 1% | OK |
+| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 701.044 Hz t.o.v. Mecway | 701.04 Hz | 701.04 | +0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay (f 701.044 Hz) t.o.v. Mecway (0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | f 871.202 Hz t.o.v. Mecway | 871.2 Hz | 871.2 | +0.00% | 1% | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | decay (f 871.202 Hz) t.o.v. Mecway (0) | 0 1/s | 0 | 0 | 1e-06 1/s | OK |
 | AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | |P(B)/P(A)| t.o.v. Mecway (190.962 Hz) | 0.9259 - | 0.9259 | +0.00% | 0.01% | OK |
-| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (190.962 Hz) | 0 graden | -3.6412e-10 | -3.6412e-10 | 0.01 graden | OK |
+| AI-07 | Buis hard / Z = 1000i Pa.s/m (zuiver reactief), hex20 20x1x1 | fase P(B)/P(A) t.o.v. Mecway (190.962 Hz) | 0 graden | -3.5714e-10 | -3.5714e-10 | 0.01 graden | OK |
 | AI-08 | Buis drukknoop (x = 0) / Z = 2000 Pa.s/m, hex20 20x1x1 | f (n=1) | 85 Hz | 85 | +0.00% | 1% | OK |
 | AI-08 | Buis drukknoop (x = 0) / Z = 2000 Pa.s/m, hex20 20x1x1 | decay rate (n=1) | 70.347 1/s | 70.347 | +0.00% | 1% | OK |
 | AI-08 | Buis drukknoop (x = 0) / Z = 2000 Pa.s/m, hex20 20x1x1 | f (n=2) | 255 Hz | 255 | +0.00% | 1% | OK |
@@ -360,21 +360,21 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 218.674 Hz t.o.v. Mecway | 218.67 Hz | 218.67 | -0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 442.508 1/s t.o.v. Mecway | 442.51 1/s | 442.51 | -0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 276.489 Hz t.o.v. Mecway | 276.49 Hz | 276.49 | -0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 466.373 1/s t.o.v. Mecway | 466.37 1/s | 466.37 | -0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 323.558 Hz t.o.v. Mecway | 323.56 Hz | 323.56 | +0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 483.686 1/s t.o.v. Mecway | 483.69 1/s | 483.69 | +0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 466.373 1/s t.o.v. Mecway | 466.37 1/s | 466.37 | +0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 323.558 Hz t.o.v. Mecway | 323.56 Hz | 323.56 | -0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 483.686 1/s t.o.v. Mecway | 483.69 1/s | 483.69 | -0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 376.849 Hz t.o.v. Mecway | 376.85 Hz | 376.85 | -0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 828.951 1/s t.o.v. Mecway | 828.95 1/s | 828.95 | -0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 408.14 Hz t.o.v. Mecway | 408.14 Hz | 408.14 | -0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 510.594 1/s t.o.v. Mecway | 510.59 1/s | 510.59 | -0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 510.594 1/s t.o.v. Mecway | 510.59 1/s | 510.59 | +0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 411.819 Hz t.o.v. Mecway | 411.82 Hz | 411.82 | -0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 838.108 1/s t.o.v. Mecway | 838.11 1/s | 838.11 | +0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 445.385 Hz t.o.v. Mecway | 445.38 Hz | 445.38 | -0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 838.108 1/s t.o.v. Mecway | 838.11 1/s | 838.11 | -0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 445.385 Hz t.o.v. Mecway | 445.38 Hz | 445.38 | +0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 846.317 1/s t.o.v. Mecway | 846.32 1/s | 846.32 | -0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 482.972 Hz t.o.v. Mecway | 482.97 Hz | 482.97 | -0.00% | 1% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 528.989 1/s t.o.v. Mecway | 528.99 1/s | 528.99 | -0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | f 482.972 Hz t.o.v. Mecway | 482.97 Hz | 482.97 | +0.00% | 1% | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | decay 528.989 1/s t.o.v. Mecway | 528.99 1/s | 528.99 | +0.00% | 1% | OK |
 | AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | |P(B)/P(A)| t.o.v. Mecway (139.306 Hz) | 1.2102 - | 1.2102 | -0.00% | 0.01% | OK |
-| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | fase P(B)/P(A) t.o.v. Mecway (139.306 Hz) | 0 graden | -7.2519e-11 | -7.2519e-11 | 0.01 graden | OK |
+| AI-10 | Ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4, vloer Z = 1000 en plafond Z = 600 - 300i Pa.s/m | fase P(B)/P(A) t.o.v. Mecway (139.306 Hz) | 0 graden | 7.7733e-11 | 7.7733e-11 | 0.01 graden | OK |
 
 ## Akoestiek
 
@@ -414,7 +414,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AK-03 | Buis open-open (p = 0 op beide eindvlakken), hex8 50x1x1 | f4 t.o.v. Mecway | 681.79 Hz | 681.79 | +0.00% | 1% | OK |
 | AK-03 | Buis open-open (p = 0 op beide eindvlakken), hex8 50x1x1 | max|p| mode 1 t.o.v. Mecway | 4809.9 Pa | 4809.9 | -0.00% | 0.1% | OK |
 | AK-03 | Buis open-open (p = 0 op beide eindvlakken), hex8 50x1x1 | max|p| mode 2 t.o.v. Mecway | 4805.2 Pa | 4805.2 | -0.00% | 0.1% | OK |
-| AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f1 (constante druk) | 0 Hz | 1.2742e-05 | 1.2742e-05 | 0.01 Hz | OK |
+| AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f1 (constante druk) | 0 Hz | 1.2753e-05 | 1.2753e-05 | 0.01 Hz | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f2 mode 100 | 170 Hz | 170 | +0.00% | 0.5% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f3 mode 010 | 242.86 Hz | 242.86 | +0.00% | 0.5% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f4 mode 110 | 296.44 Hz | 296.45 | +0.00% | 0.5% | OK |
@@ -424,11 +424,11 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f8 mode 101 | 457.74 Hz | 457.84 | +0.02% | 0.5% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f2 t.o.v. Mecway | 170 Hz | 170 | +0.00% | 1% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f3 t.o.v. Mecway | 242.86 Hz | 242.86 | -0.00% | 1% | OK |
-| AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f4 t.o.v. Mecway | 296.45 Hz | 296.45 | +0.00% | 1% | OK |
+| AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f4 t.o.v. Mecway | 296.45 Hz | 296.45 | -0.00% | 1% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f5 t.o.v. Mecway | 340.04 Hz | 340.04 | -0.00% | 1% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f6 t.o.v. Mecway | 417.86 Hz | 417.86 | -0.00% | 1% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f7 t.o.v. Mecway | 425.11 Hz | 425.11 | -0.00% | 1% | OK |
-| AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f8 t.o.v. Mecway | 457.84 Hz | 457.84 | +0.00% | 1% | OK |
+| AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | f8 t.o.v. Mecway | 457.84 Hz | 457.84 | -0.00% | 1% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | max|p| mode 1 t.o.v. Mecway | 642.54 Pa | 642.54 | -0.00% | 0.1% | OK |
 | AK-04 | Rechthoekige ruimte 1,0 x 0,7 x 0,4 m, hex20 10x7x4 | max|p| mode 2 t.o.v. Mecway | 908.7 Pa | 908.7 | -0.00% | 0.1% | OK |
 | AK-05 | Buis van twee media (c = 340 / 680 m/s), hex20 20x1x1 | f1 (constante druk) | 0 Hz | 3.9557e-05 | 3.9557e-05 | 0.01 Hz | OK |
@@ -556,7 +556,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 244.452 Hz = Mecway | 244.45 Hz | 244.45 | -0.00% | 0.0001% | OK |
 | AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 32.5108 1/s = Mecway | 32.511 1/s | 32.511 | -0.00% | 0.0001% | OK |
 | AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 296.96 Hz = Mecway | 296.96 Hz | 296.96 | -0.00% | 0.0001% | OK |
-| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 71.7264 1/s = Mecway | 71.726 1/s | 71.726 | +0.00% | 0.0001% | OK |
+| AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 71.7264 1/s = Mecway | 71.726 1/s | 71.726 | -0.00% | 0.0001% | OK |
 | AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 340.036 Hz = Mecway | 340.04 Hz | 340.04 | +0.00% | 0.0001% | OK |
 | AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | decay 70.3757 1/s = Mecway | 70.376 1/s | 70.376 | -0.00% | 0.0001% | OK |
 | AK-14 | 2D (A20): impedantie Z = 2000 Pa.s/m op x = a (complexe modes) | f 417.945 Hz = Mecway | 417.94 Hz | 417.94 | -0.00% | 0.0001% | OK |
@@ -594,7 +594,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | BR-01 | Middenscheur in een plaat, vlakke rek, beide lippen (hex20) | G / (K_I^2/E') CALC_G midden | 1  | 0.99791 | -0.21% | 2% | OK |
 | BR-01 | Middenscheur in een plaat, vlakke rek, beide lippen (hex20) | K_I POST_K1_K2_K3 midden | 4.7014e+07 Pa.m^0.5 | 4.5376e+07 | -3.49% | 5% | OK |
 | BR-01 | Middenscheur in een plaat, vlakke rek, beide lippen (hex20) | spreiding K_I langs het front | 0  | 1.6046e-05 | 1.6046e-05 | 0.01  | OK |
-| BR-01 | Middenscheur in een plaat, vlakke rek, beide lippen (hex20) | K_II midden | 0 Pa.m^0.5 | -1.3155e-07 | -1.3155e-07 | 470143 Pa.m^0.5 | OK |
+| BR-01 | Middenscheur in een plaat, vlakke rek, beide lippen (hex20) | K_II midden | 0 Pa.m^0.5 | -1.5000e-07 | -1.5000e-07 | 470143 Pa.m^0.5 | OK |
 | BR-02 | Middenscheur, vlakke rek, kwartmodel met symmetrie op het ligament (SYME='OUI') | K_I CALC_G midden | 4.7014e+07 Pa.m^0.5 | 4.6967e+07 | -0.10% | 3% | OK |
 | BR-02 | Middenscheur, vlakke rek, kwartmodel met symmetrie op het ligament (SYME='OUI') | G CALC_G midden | 9578.2 J/m2 | 9539 | -0.41% | 3% | OK |
 | BR-02 | Middenscheur, vlakke rek, kwartmodel met symmetrie op het ligament (SYME='OUI') | G / (K_I^2/E') CALC_G midden | 1  | 0.99791 | -0.21% | 2% | OK |
@@ -746,6 +746,11 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | BU-44 | Lateral-torsional buckling, C beam bent about the minor axis, flange tips in compression (POU_D_TG) | factor of the reversed load (web in compression) | -31.265 - | -31.15 | +0.37% | 2% | OK |
 | BU-44b | Lateral-torsional buckling, C beam bent about the minor axis, web in compression (POU_D_TG) | factor (web in compression) | 31.265 - | 31.15 | -0.37% | 2% | OK |
 | BU-44b | Lateral-torsional buckling, C beam bent about the minor axis, web in compression (POU_D_TG) | factor of the reversed load (flange tips in compression) | -7.6497 - | -7.6458 | +0.05% | 3% | OK |
+| BU-45 | Lateral-torsional buckling of a C cantilever under a transverse load (POU_D_TG) | smallest |factor| | 54.322 - | 54.702 | +0.70% | 2% | OK |
+| BU-45b | The same cantilever as hex20 | smallest |factor| | 54.322 - | 54.322 | -0.00% | 0.001% | OK |
+| BU-45c | BU-45 with a dead axial load (#ASTER-CONSTANT) | smallest |factor| | 53.474 - | 53.841 | +0.69% | 2% | OK |
+| BU-45d | BU-45b with a dead axial load | smallest |factor| | 53.474 - | 53.474 | +0.00% | 0.01% | OK |
+| BU-46 | Buckling of a POU_D_TG beam under restrained thermal expansion | factor 1 | 4.1397 - | 4.1397 | +0.00% | 2% | OK |
 
 ## Cyclische symmetrie
 
@@ -788,7 +793,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | n=5 in het vlak (Blevins) | 224.41 Hz | 226.6 | +0.98% | 2% | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | n=6 in het vlak (Blevins) | 329.21 Hz | 333.09 | +1.18% | 2% | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | CY-01 mode 1 (ND 0): 1 - MAC hele wiel | 0  | 0 | 0 | 0.001  | OK |
-| CY-02 | Vrije ring, volledig model (referentie CY-01) | CY-01 mode 2 (ND 0): 1 - MAC hele wiel | 0  | -2.2204e-16 | -2.2204e-16 | 0.001  | OK |
+| CY-02 | Vrije ring, volledig model (referentie CY-01) | CY-01 mode 2 (ND 0): 1 - MAC hele wiel | 0  | 0 | 0 | 0.001  | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | CY-01 mode 3 (ND 1): 1 - MAC hele wiel | 0  | 0 | 0 | 0.001  | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | CY-01 mode 4 (ND 1): 1 - MAC hele wiel | 0  | 0 | 0 | 0.001  | OK |
 | CY-02 | Vrije ring, volledig model (referentie CY-01) | CY-01 mode 5 (ND 2): 1 - MAC hele wiel | 0  | 5.4713e-10 | 5.4713e-10 | 0.001  | OK |
@@ -846,7 +851,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | CY-04 | Ingeklemde cirkelvormige plaat, 6 segmenten, knopen op de as | Mecway f7 | 513.43 Hz | 513.45 | +0.00% | 1% | OK |
 | CY-04 | Ingeklemde cirkelvormige plaat, 6 segmenten, knopen op de as | Mecway f8 | 513.43 Hz | 513.5 | +0.01% | 1% | OK |
 | CY-04 | Ingeklemde cirkelvormige plaat, 6 segmenten, knopen op de as | hele wiel: knopen met verplaatsing | 4530  | 4530 | +0.00% | 0.5  | OK |
-| CY-04 | Ingeklemde cirkelvormige plaat, 6 segmenten, knopen op de as | hele wiel: sprong op de snijvlakken | 0  | 1.4467e-14 | 1.4467e-14 | 1e-06  | OK |
+| CY-04 | Ingeklemde cirkelvormige plaat, 6 segmenten, knopen op de as | hele wiel: sprong op de snijvlakken | 0  | 8.9930e-15 | 8.9930e-15 | 1e-06  | OK |
 | CY-04 | Ingeklemde cirkelvormige plaat, 6 segmenten, knopen op de as | hele wiel: sprong op de as | 0  | 6.2084e-04 | 6.2084e-04 | 0.002  | OK |
 | CY-05 | Draaiende schijf om Y (3000 r/min), naaf ingeklemd, 12 segmenten | ND0 mode 1 = volledig model | 71.915 Hz | 71.915 | +0.00% | 1% | OK |
 | CY-05 | Draaiende schijf om Y (3000 r/min), naaf ingeklemd, 12 segmenten | ND0 mode 2 = volledig model | 365.19 Hz | 365.19 | +0.00% | 1% | OK |
@@ -901,20 +906,20 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f21 | 610.63 Hz | 610.63 | +0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f22 | 761.08 Hz | 761.08 | +0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f23 | 761.08 Hz | 761.08 | +0.00% | 1% | OK |
-| CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f24 | 788.96 Hz | 788.96 | +0.00% | 1% | OK |
+| CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f24 | 788.96 Hz | 788.96 | -0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f25 | 788.96 Hz | 788.96 | +0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f26 | 1021 Hz | 1021 | +0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f27 | 1021 Hz | 1021 | +0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f28 | 1039.4 Hz | 1039.4 | +0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f29 | 1039.4 Hz | 1039.4 | +0.00% | 1% | OK |
-| CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f30 | 1056.7 Hz | 1056.7 | +0.00% | 1% | OK |
+| CY-06 | Draaiende schijf, volledig model (referentie CY-05) | Mecway f30 | 1056.7 Hz | 1056.7 | -0.00% | 1% | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 1 (ND 0): 1 - MAC hele wiel | 0  | 6.4130e-12 | 6.4130e-12 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 2 (ND 0): 1 - MAC hele wiel | 0  | 4.2539e-09 | 4.2539e-09 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 3 (ND 1): 1 - MAC hele wiel | 0  | 8.3787e-12 | 8.3787e-12 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 4 (ND 1): 1 - MAC hele wiel | 0  | 1.9443e-09 | 1.9443e-09 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 5 (ND 2): 1 - MAC hele wiel | 0  | 1.7000e-11 | 1.7000e-11 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 6 (ND 2): 1 - MAC hele wiel | 0  | 3.6342e-09 | 3.6342e-09 | 0.001  | OK |
-| CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 7 (ND 3): 1 - MAC hele wiel | 0  | 8.6349e-11 | 8.6349e-11 | 0.001  | OK |
+| CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 7 (ND 3): 1 - MAC hele wiel | 0  | 8.6350e-11 | 8.6350e-11 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 8 (ND 3): 1 - MAC hele wiel | 0  | 8.7528e-09 | 8.7528e-09 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 9 (ND 4): 1 - MAC hele wiel | 0  | 2.9693e-10 | 2.9693e-10 | 0.001  | OK |
 | CY-06 | Draaiende schijf, volledig model (referentie CY-05) | CY-05 mode 10 (ND 4): 1 - MAC hele wiel | 0  | 2.0667e-08 | 2.0667e-08 | 0.001  | OK |
@@ -2228,6 +2233,12 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | MP-07 | Draaiende ingeklemde balk, hex20 50x2x3, 200 rad/s om Z | f2 t.o.v. Mecway | 42.652 Hz | 42.652 | +0.00% | 1% | OK |
 | MP-07 | Draaiende ingeklemde balk, hex20 50x2x3, 200 rad/s om Z | f3 t.o.v. Mecway | 128.55 Hz | 128.55 | -0.00% | 1% | OK |
 | MP-07 | Draaiende ingeklemde balk, hex20 50x2x3, 200 rad/s om Z | f4 t.o.v. Mecway | 176.32 Hz | 176.32 | +0.00% | 1% | OK |
+| MP-20 | Modal with prestress, C cantilever under a transverse load (POU_D_TG) | mode 1 | 42.355 Hz | 42.286 | -0.16% | 2% | OK |
+| MP-20 | Modal with prestress, C cantilever under a transverse load (POU_D_TG) | mode 2 | 67.043 Hz | 66.497 | -0.81% | 2% | OK |
+| MP-20 | Modal with prestress, C cantilever under a transverse load (POU_D_TG) | mode 3 | 143.66 Hz | 144.47 | +0.56% | 2% | OK |
+| MP-20b | The same cantilever as hex20 | mode 1 | 42.355 Hz | 42.355 | +0.00% | 0.001% | OK |
+| MP-20b | The same cantilever as hex20 | mode 2 | 67.043 Hz | 67.043 | +0.00% | 0.001% | OK |
+| MP-20b | The same cantilever as hex20 | mode 3 | 143.66 Hz | 143.66 | +0.00% | 0.001% | OK |
 
 ## Metallurgie
 
@@ -2529,7 +2540,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | PL-01-n8 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 8 | Kt_n | 2.519  | 2.4531 | -2.62% | 3% | OK |
 | PL-01-n8 | Plaat met gat, vlakke spanning (C_PLAN), quad8 n = 8 | som R_x symmetrie x=0 | -5000 N | -5000 | -0.00% | 0.0001% | OK |
 | PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | Kt_n | 2.519  | 2.5 | -0.75% | 2% | OK |
-| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | sigma_zz / nu (sxx + syy) bij het gat | 1  | 1 | +0.00% | 0.0001% | OK |
+| PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | sigma_zz / nu (sxx + syy) bij het gat | 1  | 1 | -0.00% | 0.0001% | OK |
 | PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | som R_x symmetrie x=0 | -5000 N | -5000 | +0.00% | 0.0001% | OK |
 | PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | u_y(0, r) = Mecway | -4.9083e-06 m | -4.9083e-06 | -0.00% | 0.0001% | OK |
 | PL-02 | Plaat met gat, vlakke rek (D_PLAN), quad8 n = 16 | u_x(L/2, 0) = Mecway | 6.7135e-05 m | 6.7135e-05 | -0.00% | 0.0001% | OK |
@@ -2645,12 +2656,12 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | PT-11 | Staaf in een onregelmatig tet10-mesh (verschoven knopen), kracht 10 kN | elementen onder (bridge-log) | 185  | 185 | +0.00% | 0  | OK |
 | PT-11 | Staaf in een onregelmatig tet10-mesh (verschoven knopen), kracht 10 kN | elementen boven (bridge-log) | 173  | 173 | +0.00% | 0  | OK |
 | PT-11 | Staaf in een onregelmatig tet10-mesh (verschoven knopen), kracht 10 kN | knoopparen (bridge-log) | 68  | 68 | +0.00% | 0  | OK |
-| PT-11 | Staaf in een onregelmatig tet10-mesh (verschoven knopen), kracht 10 kN | som reacties Y (BRIDGE_STATREAC) | 0 N | 0 | 0 | 10 N | OK |
+| PT-11 | Staaf in een onregelmatig tet10-mesh (verschoven knopen), kracht 10 kN | som reacties Y (BRIDGE_STATREAC) | 0 N | -9.0949e-13 | -9.0949e-13 | 10 N | OK |
 | PT-11 | Staaf in een onregelmatig tet10-mesh (verschoven knopen), kracht 10 kN | stressyy = Mecway | 9.9999e+07 Pa | 1.0000e+08 | +0.00% | 0.1% | OK |
-| PT-12 | Idem, length adjustment 0,01 mm | stressyy binnenknoop | 2.0000e+07 Pa | 2.0000e+07 | -0.00% | 0.01% | OK |
+| PT-12 | Idem, length adjustment 0,01 mm | stressyy binnenknoop | 2.0000e+07 Pa | 2.0000e+07 | +0.00% | 0.01% | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | stressyy max | 2.0000e+07 Pa | 2.0000e+07 | +0.00% | 0.01% | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | stressyy min | 2.0000e+07 Pa | 2.0000e+07 | -0.00% | 0.01% | OK |
-| PT-12 | Idem, length adjustment 0,01 mm | reactie onder | 2000 N | 2000 | -0.00% | 0.01% | OK |
+| PT-12 | Idem, length adjustment 0,01 mm | reactie onder | 2000 N | 2000 | +0.00% | 0.01% | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | rek onderste deel u_y / y | 1.0000e-04 - | 1.0000e-04 | -0.00% | 0.01% | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | rek bovenste deel -u_y / (L - y) | 1.0000e-04 - | 1.0000e-04 | -0.00% | 0.01% | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | verlenging staafmateriaal = verkorting | 1.0000e-05 m | 1.0000e-05 | -0.00% | 0.01% | OK |
@@ -2658,7 +2669,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-09 (bridge bfa15fa, Code-Aster 17.4
 | PT-12 | Idem, length adjustment 0,01 mm | elementen onder (bridge-log) | 185  | 185 | +0.00% | 0  | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | elementen boven (bridge-log) | 173  | 173 | +0.00% | 0  | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | knoopparen (bridge-log) | 68  | 68 | +0.00% | 0  | OK |
-| PT-12 | Idem, length adjustment 0,01 mm | som reacties Y (BRIDGE_STATREAC) | 0 N | 2.2737e-13 | 2.2737e-13 | 2 N | OK |
+| PT-12 | Idem, length adjustment 0,01 mm | som reacties Y (BRIDGE_STATREAC) | 0 N | 9.0949e-13 | 9.0949e-13 | 2 N | OK |
 | PT-12 | Idem, length adjustment 0,01 mm | stressyy = Mecway | 2.0000e+07 Pa | 2.0000e+07 | +0.00% | 0.1% | OK |
 | PT-13 | Idem in tet4, kracht 10 kN | stressyy binnenknoop | 1.0000e+08 Pa | 1.0000e+08 | +0.00% | 0.01% | OK |
 | PT-13 | Idem in tet4, kracht 10 kN | stressyy max | 1.0000e+08 Pa | 1.0000e+08 | +0.00% | 0.01% | OK |

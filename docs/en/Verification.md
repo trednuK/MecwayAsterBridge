@@ -95,23 +95,19 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 29 October 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `373d13a`
-(after V2026.5: among others principal stresses of shells and Green-Lagrange (S34b),
-skew supports next to displacements and free-free modal with only connections (issue #9),
-the summary of the Code-Aster run (issue #7), beams with warping (S19), 2D and
-axisymmetric including dynamics and acoustics (S16a, S16b, S16d), bolt pretension (S15,
-S15b), HOMARD refinement inside the job (S35b), Mecway's time step in dynamics
-(KNOWN_BUGS 127, fixed), bonded contact as in CCX (KNOWN_BUGS 128), loads on beam side faces and
-hydrostatic pressure on shell edges (S17), orthotropic material (S13), and the checks of
-29 October: shear centre and L sections of beams (LS-90d, LS-94/95), pre-tension in an
-irregular tet mesh (PT-11 .. PT-13), frictionless shell edge against Mecway (LS-84), and afterwards run separately on `35c7564`
-lateral-torsional buckling of mono-symmetric sections and the sign of the bimoment (BU-43 .. BU-44b,
-LS-90d, LS-90e), and afterwards NL-81c and NL-83b on `bfa15fa`;
-Code-Aster 17.4): 546 test cases, 2982 checks, 2976 OK, 6 BEKEND (known), 0 NOK/FOUT.
-Compared with the run on `fc733a9` no status change and no FEM value more than 0.1%
-different apart from quantities close to zero (differences against Mecway of order 1e-3 or
-smaller). New are 15 test cases and 69 checks.
+Status 10 November 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `821c58a`
+(before V2026.9; Code-Aster 17.4): 579 test cases, 3072 checks, 3066 OK, 6 BEKEND (known),
+0 NOK/FOUT. New compared with the previous table (546 test cases, run on `373d13a` with
+separate additions) are 33 test cases and 90 checks: stresses and reactions of `POU_D_TG`
+from one elastic step (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b; KNOWN_BUGS
+123), stress over beam sections (LS-97a .. LS-97l, S41) and nonlinear buckling with large
+rotation beams (NK-05 .. NK-10, issue #10). No status change compared with the stored
+results (`bfa15fa`) and with a full run on `f4a51aa` (same counts). FEM values that differ by
+more than 0.1% are quantities close to zero (phases of order 1e-10, sums of reactions of
+order 1e-12, K_II of order 1e-7), plus the differences against Mecway of CY-01/CY-03
+(5.3e-3 → 5.2e-3) and the decay of AI-03 (+0.2%), which vary slightly from run to run and
+stay well within the tolerance.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -124,15 +120,15 @@ smaller). New are 15 test cases and 69 checks.
 | Dynamics | 16 | 47 | 47 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 15 | 53 | 53 | 0 |
-| Buckling | 32 | 89 | 88 | 1 |
+| Buckling | 37 | 94 | 93 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 135 | 451 | 450 | 1 |
+| Linear static | 154 | 507 | 506 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 25 | 239 | 239 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
-| Modal (prestress) | 7 | 38 | 38 | 0 |
+| Modal (prestress) | 9 | 44 | 44 | 0 |
 | Nonlinear static | 56 | 220 | 217 | 3 |
-| Nonlinear buckling | 5 | 13 | 13 | 0 |
+| Nonlinear buckling | 12 | 36 | 36 | 0 |
 | Mode superposition | 10 | 25 | 25 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
 | Result formulas | 5 | 38 | 38 | 0 |
@@ -144,23 +140,9 @@ smaller). New are 15 test cases and 69 checks.
 | Orthotropic material | 19 | 174 | 174 | 0 |
 | 2D and axisymmetric | 19 | 65 | 65 | 0 |
 | Bolt pretension | 13 | 87 | 87 | 0 |
-| **Total** | **546** | **2982** | **2976** | **6** |
+| **Total** | **579** | **3072** | **3066** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
-
-Added after this run (not yet in a full regression, not in the table): Orthotropic material
-OR-01..22, 19 cases, 174 checks OK (28/29 October 2026, steps S13a .. S13d; re-run with it: all
-linear static cases, MO-20 .. MO-31, BU-20 .. BU-25, the result formulas and part of the thermal
-and modal families, about 200 cases, FEM values bit-identical); Bolt pretension
-PT-01..05, 5 cases, 22 checks OK (28 October 2026, step S15); PT-06..10, 5 cases, 17
-checks OK (28 October 2026, step S15b); PT-11..13 (irregular tet mesh), 3 cases, 39 checks
-OK (29 October 2026). Acoustics 2D AK-10..15, 6 cases, 126 checks OK (28 October 2026, step S16d).
-Beam side faces and hydrostatic pressure on shell
-edges LS-92a..h, LS-93a..c, 11 cases, 27 checks OK (28 October 2026, step S17).
-Stress over beam sections LS-97a..l, 12 cases, 37 checks OK (7 November 2026, step S41).
-Nonlinear buckling NK-05 .. NK-10 (large rotation beams, issue #10), 7 cases, 23 checks OK
-(5 November 2026); NK-01 .. NK-04 rerun with them: same status, largest difference 1.4e-6
-relative.
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
