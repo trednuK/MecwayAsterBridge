@@ -320,8 +320,8 @@ def measures(s):
 
 def mesh_sensitivity(field, forces, measure="vonmises", about_shear_centre=False):
     """Maximum outside the corners of field and of a mesh four times as fine:
-    (this mesh, finer mesh, relative difference). The window warns when the
-    difference is large."""
+    (this mesh, finer mesh, relative difference). A check for the tests; the window
+    does not call it."""
     def largest(f):
         s_ = f.stress(forces, about_shear_centre)
         return abs(f.extremes(measures(s_)[measure])["outside"]["value"])

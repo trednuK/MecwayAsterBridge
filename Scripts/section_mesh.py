@@ -579,6 +579,10 @@ def mesh_section(loops, max_area=None, n_target=3000, n_across=3.0,
     Returns a dict: nodes (N,2), elements (E,6) tri6 (corners CCW, then the
     midside nodes of edges 1-2, 2-3, 3-1), boundary (B,3) boundary edges as
     (corner, corner, midside), loops (cleaned loops), and counts."""
+    # Mesh about the centre of the loops: Qhull's Delaunay lifts the points to
+    # x^2 + y^2 and failed (QH6229) for a 0.2 m section about 85 m from the
+    # origin. Nodes and loops are shifted back at the end.
+    loops, shift = _centred(loops)
     pts0, segs0, tol = clean_loops(loops)
     osegs = orient_segments(pts0, segs0, tol)
     if len(osegs) < 3:
@@ -819,8 +823,24 @@ def mesh_section(loops, max_area=None, n_target=3000, n_across=3.0,
     if log is not None:
         log("INFO: mesh {0} tri6, {1} nodes, {2} iterations, min angle {3:.1f} deg".format(
             ne, len(nodes6), it, info["min_angle_deg"]))
-    return {"nodes": nodes6, "elements": tri6, "boundary": boundary,
-            "loops": clean, "info": info}
+    return {"nodes": nodes6 + shift, "elements": tri6, "boundary": boundary,
+            "loops": [lp + shift for lp in clean], "info": info}
+
+
+def _centred(loops):
+    """(loops moved to the centre of their bounding box, that centre). The
+    loops are new arrays; the input is not changed. Input that clean_loops
+    refuses (no loop of 3 points, values not finite) is returned unmoved, so
+    it gives the same error."""
+    arrs = [np.asarray(lp, dtype=float).reshape(-1, 2) for lp in loops]
+    use = [a for a in arrs if len(a) >= 3]
+    if not use:
+        return arrs, np.zeros(2)
+    allp = np.vstack(use)
+    if not np.all(np.isfinite(allp)):
+        return arrs, np.zeros(2)
+    c = 0.5 * (allp.min(axis=0) + allp.max(axis=0))
+    return [a - c for a in arrs], c
 
 
 def element_parts(elements):
