@@ -83,9 +83,10 @@ S7, S8, S5, S9).
 | S36 | Nonlinear buckling of `POU_D_T_GD` beams: imperfection, step guard `gd_step_limit`, jump check (GitHub issue #10) | done | S20 | 2958c4c; NK-05 .. NK-10 OK, limited regression 76 cases (74c87df); column of the issue 926.2 mm against 926.7 mm for the exact elastica; tested in the Mecway 35 GUI (6 Nov 2026), Mecway 34 was not available; limitation in KNOWN_BUGS 53 (f) |
 | S37 | Shape of a general section on the beams: `** SECTIE-VORM`, "Show section", "Section in results", variable `longitudinalstress` | done | – | eacb215; T cantilever -192.3/+67.3 MPa, equal to the hand calculation (`POU_D_E`); tested in the Mecway 35 GUI (6 Nov 2026), Mecway 34 was not available; User guide §4.3 |
 | S38 | General sections: `** SECTIE-RICHTING` check, WARNING for a beam without warping, `FACTOR_57` reported after `OK`, status window not always on top, numbered screens | done | S37 | V2026.8; 550 `.comm` identical |
-| S39 | Review the layout of all screens: is everything still neat, what can be better? First work of the next improvement | open | – | |
+| S39 | Review the layout of all screens: is everything still neat, what can be better? First work of the next improvement | open | – | main window and convergence window reworked in V2026.9 (S42); the other screens not yet reviewed |
 | S40 | One overview image per page of the main window with the groups numbered, referring to the existing tables (Dutch and English) | open | S39 | |
 | S41 | **Priority.** Stress in general-section beams: von Mises, longitudinal and shear stress over the section as results in Mecway, on the beams and on the shells of *Section in results* (`bridge_section_stress.py`, in the job; LS-97a..l). Not in it: warping stress (F6 of MecwayAdvancedBeamAnalysis), ParaView (the variables reach the VTU like others, NOT verified) | done | S37 | branch `section-results` |
+| S42 | Main window: menu *Section ▾*, navigation scrollbar, 125 % layout; convergence window in the look of the main window; `POU_D_TG` stresses and reactions from one elastic step (KNOWN_BUGS 123); `keep_base` with manifest; review fixes of the translation | done | – | V2026.9; full regression on 821c58a: 3066 of 3072 (579 cases), 6 BEKEND, 0 NOK/FOUT, no status change against bfa15fa and f4a51aa |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -187,7 +188,7 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
      summary in `docs/Verificatie.md` §3 stays at the last full run.
    **Bar**: baseline 2356 of 2362 checks OK (439 test cases), 6 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; 83: 1 in BR-10; 108: 1 in LS-67; 115: 1 in BU-35), 0 NOK/FOUT
-   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 29 Oct (373d13a + new S19 cases on 35c7564): 2976 of 2982, 546 test cases:
+   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 10 Nov (821c58a, before V2026.9): 3066 of 3072, 579 test cases:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
    BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; after a full run
    update the summary in `docs/Verificatie.md` §3 and the EN version.

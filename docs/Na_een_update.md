@@ -134,7 +134,11 @@ het laatst is nagelopen:
 | `FACTOR_57` na `DIAGNOSTIC JOB : OK` in het convergentiescherm, de samenvatting en de statusbox (V2026.8) | NIET nagelopen | NIET nagelopen: gecontroleerd op de `.mess` van een echte run, niet in het Mecway-venster |
 | WARNING voor een balk zonder welving op een open General section (V2026.8) | NIET nagelopen | NIET nagelopen: offline tests; het verschil tussen `POU_D_E` en `POU_D_TG` is gemeten met Code-Aster 17.4 buiten Mecway |
 | Selectienamen met spaties (modellen uit Mecway 33) | toegestaan | Mecway 34 vervangt de spaties door `_` bij het openen van zo'n model en verliest dan de verwijzing in een contact (`selectionmaster=""`, gezien 22 oktober 2026); de bridge stopt vóór Code-Aster met een ERROR die dat zegt waar het contact meetelt (niet-lineair statisch en dynamica; bonded contact in elke analyse), elders geeft hij een WARNING (Mecway negeert unilateraal contact daar ook). Kies de contactvlakken opnieuw. De voorbeeldmodellen gebruiken namen zonder spaties. |
-| Spanning over balkdoorsneden, S41 (`beamvonmisesmax`, `doorsnedeschuif` ...) | NIET geverifieerd | NIET geverifieerd; Mecway 35: verborgen geopend, waarden via de API gelezen, ook per tijdstap, kleuren NIET geverifieerd |
+| Spanning over balkdoorsneden, S41 (`beamvonmisesmax`, `doorsnedeschuif` ...) (V2026.9) | NIET geverifieerd | NIET geverifieerd; Mecway 35: verborgen geopend, waarden via de API gelezen, ook per tijdstap, kleuren NIET geverifieerd |
+| Hoofdvenster: menu *Doorsnede ▾*, schuifbalk van de navigatie, indeling bij een weergaveschaal van 125 % (V2026.9) | NIET geverifieerd | NIET geverifieerd: buiten beeld met `gui_cap.py` in Mecway's IronPython, niet in het Mecway-venster |
+| Convergentiescherm: uiterlijk van het hoofdvenster, leesbaar bij 125 % (V2026.9) | NIET geverifieerd | NIET geverifieerd: offline test met een verborgen venster, niet op een run vanuit Mecway |
+| Spanningen en reacties van `POU_D_TG` uit één elastische stap `STAT_NON_LINE` (V2026.9, KNOWN_BUGS 123) | NIET geverifieerd | NIET geverifieerd: Code-Aster 17.4-runs buiten Mecway (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b), niet in het Mecway-venster |
+| De Code-Aster-base bewaren met een manifest, `keep_base` (V2026.9) | NIET geverifieerd | NIET geverifieerd: offline tests; met de instelling uit (standaard) blijven mesh en `.comm` gelijk |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten

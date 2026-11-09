@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## V2026.9 – unreleased
+
+Beams with a general section show the stress over their section in Mecway, and `POU_D_TG`
+beams get the right stresses and reactions in buckling, modal with prestress and linear
+static. The main window and the convergence window fit a display scale of 125 %. Behaviour
+changes: the `.comm` of models with `POU_D_TG` beams (an extra elastic `STAT_NON_LINE`
+step), a force on shell faces selected on both sides (now the full Mecway force, was half),
+and a pinned support in 2D. The full regression ran 579 cases: 3066 of 3072 checks OK, 6 known
+limitations, 0 unexpected, no status change against the previous run. The new windows and
+the `POU_D_TG` step have not been tested in the Mecway window yet.
 
 - **Main window**: one button *Section ▾* with a menu (show, hide, in results) replaces the two
   section buttons; *Explanation...* is gone (the glossary is the first item of the page
@@ -15,7 +24,6 @@
   `bridge_style.py`). At 125 % the legends, axis captions, rows and the cards of a linear
   analysis no longer run into each other. The messages box is six lines high and keeps that
   height in a low window; the plots shrink instead.
-
 - **Stress over beam sections in Mecway**: after a Code-Aster run the beams with a general section
   with an outline, and Mecway's I, T, L and C, show per element end the largest von Mises,
   longitudinal and shear stress over the section outside the corner zones (`beamvonmisesmax`,
@@ -31,6 +39,32 @@
   both pass with the bridge as it is. `PREDICTION='EXTRAPOLE'` was measured as an alternative
   Newton prediction and made these runs stop early (KNOWN_BUGS 11), so the bridge keeps
   Code-Aster's tangent prediction. No `.comm` of an existing case changes.
+- **`POU_D_TG` beams: stresses and reactions from one elastic step**: outside `STAT_NON_LINE`
+  Code-Aster 17.4 computes the stresses of `POU_D_TG` wrongly (`te0342.F90`: shear factor, no
+  shift to the shear centre, no thermal strain); the reactions per node and the geometric
+  stiffness inherit it, while the sum of the reactions stays right (KNOWN_BUGS 123). Buckling,
+  modal with prestress, imperfection and dead loads now take the stress state from one
+  elastic `STAT_NON_LINE` step, and linear static takes its reactions from it. A C cantilever
+  buckled at 1.60 times its load instead of 54.3. Only the `.comm` of models with `POU_D_TG`
+  changes. The nodal reactions of a spectrum analysis stay wrong, with a WARNING. New
+  verification LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b. Not tested in the Mecway window.
+- **Keep the Code-Aster base of a static run**: new settings `keep_base` and `keep_base_runs`,
+  off by default. A kept base gets a manifest after a run that ended well, for a follow-up
+  run by MecwayFreebody. With the setting off, mesh and `.comm` stay the same.
+- **Translation fixes**: a force on shell faces selected on both sides (faceid 5 and 6) gives
+  the Mecway force (was half); an elastic support or compression only on such a selection
+  gives an ERROR instead of stopping with a Python error; a pinned support in 2D on nodes or
+  edges becomes `DX = DY = 0` (edges were refused, several nodes stopped Code-Aster);
+  `#ASTER-XFEM groep=` is checked with the Code-Aster name of the selection; thermal face
+  loads on faces of elements that are not modelled; the bonded relations of the bridge are
+  written with a decimal point under a Dutch Windows locale; trusses take part in line loads
+  and gravity; hydrostatic and formula pressures stay fixed next to a follower pressure on
+  the same selection; the own nodes of flexible joints, offsets and pre-tension copies get the
+  temperature of their Mecway node; prestress and buckling with only connections between
+  parts stop with an ERROR before Code-Aster.
+- **Section table of another version**: a `<model>_<run_id>_section.json` of another version
+  gives a WARNING with both versions instead of being passed over, and its warnings are still
+  logged; a file that cannot be read gives a WARNING.
 
 ## V2026.8 – 6 November 2026
 
