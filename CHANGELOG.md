@@ -52,8 +52,8 @@ Mecway window yet.
   with `POU_D_TG`. New
   verification LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b. Not tested in the Mecway window.
 - **Keep the Code-Aster base of a static run**: new settings `keep_base` and `keep_base_runs`,
-  off by default. A kept base gets a manifest after a run that ended well, for a follow-up
-  run by MecwayFreebody. With the setting off, mesh and `.comm` stay the same.
+  off by default. A kept base gets a manifest (schema 2: components, beam axes, offsets,
+  connected nodes) after a run that ended well, for a follow-up run by MecwayFreebody. With the setting off, mesh and `.comm` stay the same.
 - **Translation fixes**: a force on shell faces selected on both sides (faceid 5 and 6) gives
   the Mecway force (was half); an elastic support or compression only on such a selection
   gives an ERROR instead of stopping with a Python error; a pinned support in 2D on nodes or
