@@ -95,7 +95,10 @@ def test_copies():
         with io.open(os.path.join(_HERE, "..", "Scripts", name),
                      encoding="utf-8") as f:
             ours = f.read()
-        check(name + " is an unchanged copy", theirs == ours)
+        check(name + " is an unchanged copy", theirs == ours,
+              "" if theirs == ours else
+              "Scripts/{0}: copy is behind its source in "
+              "MecwayAdvancedBeamAnalysis; copy it over".format(name))
 
 
 # ==========================================

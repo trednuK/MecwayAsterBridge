@@ -44,6 +44,12 @@ CIRCLE_SIDES = 180
 # Largest relative difference of A between a SECTIE-VORM and its material, as
 # MecwayAsterBridge: Mecway stores 15 digits, the line 10
 SHAPE_AREA_TOL = 1.0e-6
+# Largest relative difference of Ivv, Iww between a SECTIE-VORM and its material.
+# The outline is simplified and rounded by MecwaySectionProps: measured up to 1.8 %
+# on tubes, rounded hollow sections, filleted profiles and two cells, so this lets
+# those pass and catches swapped or edited values. A shape with many small ribs, whose
+# outline loses them, is 20 to 30 % off and rightly reported.
+SHAPE_INERTIA_TOL = 0.05
 
 # name: (SI factor, (length, mass, time))
 _LB = 0.45359237
@@ -246,6 +252,48 @@ def _standard_loops(geometric):
     if kind in ("I", "T", "L", "C"):
         return [_profile_loop(kind, geometric)]
     raise SectionError("unknown_section", str(kind))
+
+
+def _inside(point, loop):
+    """Ray test of a point in a polygon."""
+    x, y = point
+    hit = False
+    n = len(loop)
+    for i in range(n):
+        x0, y0 = loop[i]
+        x1, y1 = loop[(i + 1) % n]
+        if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0):
+            hit = not hit
+    return hit
+
+
+def outline_props(loops):
+    """{"A", "ivv", "iww", "ivw"} of closed loops in V, W about their own centroid,
+    even-odd interior: a loop inside an odd number of others is a hole."""
+    total = [0.0] * 6
+    for k, loop in enumerate(loops):
+        # by majority: one point of a hole can lie on the outer edge
+        depth = sum(1 for j, other in enumerate(loops) if j != k and
+                    2 * sum(1 for p in loop if _inside(p, other)) > len(loop))
+        m = _moments(loop)
+        sign = (1.0 if m[0] > 0.0 else -1.0) * (-1.0 if depth % 2 else 1.0)
+        total = [t + sign * v for t, v in zip(total, m)]
+    area = total[0]
+    if abs(area) <= 1.0e-12 * sum(abs(_moments(loop)[0]) for loop in loops):
+        return {"A": 0.0, "ivv": 0.0, "iww": 0.0, "ivw": 0.0}
+    v, w = total[1] / area, total[2] / area
+    return {"A": area, "ivv": total[4] - area * w * w, "iww": total[3] - area * v * v,
+            "ivw": total[5] - area * v * w}
+
+
+def inertia_mismatch(loops, props):
+    """(ivv, iww) of the outline when one of them differs from the solver's by more
+    than SHAPE_INERTIA_TOL of the larger of the two, otherwise None."""
+    outline = outline_props(loops)
+    for key in ("ivv", "iww"):
+        if abs(outline[key] - props[key]) > SHAPE_INERTIA_TOL * max(outline[key], props[key]):
+            return outline["ivv"], outline["iww"]
+    return None
 
 
 def solver_props(geometric):
