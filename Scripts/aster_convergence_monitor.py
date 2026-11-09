@@ -59,6 +59,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import bridge_convergence as bc  # noqa: E402
+import bridge_style              # noqa: E402
 import bridge_utils              # noqa: E402
 from bridge_utils import tr      # noqa: E402
 
@@ -339,8 +340,15 @@ class Plot(object):
         cls.PB = max(34, 6 + line + 2 + line + 2)
         cls.LEG_Y = 4 + line_b + 2 + line // 2
         cls.TITLE_H = max(30, 4 + line_b + 6)
-        global _ROW_DY
+        global _ROW_DY, _K
         _ROW_DY = max(19, line + 3)
+        # tk scaling: pixels per point, 96/72 at 100 %
+        try:
+            # (Tk keeps the value a little off: rounded to 1 %)
+            _K = max(1.0, round(float(root.tk.call("tk", "scaling")) /
+                                (96 / 72.0), 2))
+        except Exception:
+            _K = 1.0
 
     def __init__(self, master, title, on_click=None):
         self.c = tk.Canvas(master, background="white", highlightthickness=1,
@@ -588,6 +596,70 @@ _LEVEL_COLORS = {"ok": _C_GREEN, "info": _C_INFO, "let_op": _C_ORANGE,
 _FONT_SMALL = ("Segoe UI", 8)
 _FONT_VALUE = ("Segoe UI", 9, "bold")
 
+# Look of the Windows Forms windows of the bridge (bridge_style, shared
+# with bridge_gui): window background, dark top bar, flat buttons.
+_BG = bridge_style.hex_colour("window_bg")
+_BAR_BG = bridge_style.hex_colour("header_bg")
+_BAR_FG = bridge_style.hex_colour("header_sub")
+_BTN_FONT = (bridge_style.FONT[0], int(bridge_style.FONT[1]))
+_BTN_FONT_B = (bridge_style.FONT[0], int(bridge_style.FONT[1]), "bold")
+
+# Display scale for pixel distances: 1.0 at 100 %, 1.25 at 125 %
+# (Plot.fit_fonts). Tk scales the fonts by itself, not pixel distances.
+_K = 1.0
+
+
+def _px(n):
+    """Pixel distance n (at 100 %) at the display scale."""
+    return int(round(n * _K))
+
+
+def _button_colours(state, primary=False, hover=False):
+    """(background, foreground) of a flat button, as the buttons of
+    bridge_gui._Look.button: white with a grey border, light grey under the
+    mouse; primary: filled with the accent colour, darker under the mouse.
+    A disabled button does not react to the mouse."""
+    col = bridge_style.hex_colour
+    hover = hover and state != "disabled"
+    if primary:
+        return (col("accent_hover") if hover else col("accent"),
+                col("header_fg"))
+    return (col("status_bg") if hover else col("button_bg"), _C_TEXT)
+
+
+def _flat_button(parent, text, command, primary=False):
+    """tk.Button in the flat style of the bridge windows."""
+    col = bridge_style.hex_colour
+    bg, fg = _button_colours("normal", primary)
+    btn = tk.Button(
+        parent, text=text, command=command, relief="flat", borderwidth=0,
+        background=bg, foreground=fg,
+        activebackground=_button_colours("normal", primary, True)[0],
+        activeforeground=fg,
+        disabledforeground=col("scroll_thumb"),
+        highlightthickness=1,
+        highlightbackground=col("accent") if primary else col("line"),
+        highlightcolor=col("accent"),    # keyboard focus
+        font=_BTN_FONT_B if primary else _BTN_FONT, cursor="hand2",
+        padx=_px(12), pady=_px(4))
+    btn.flat_primary = primary
+    btn.bind("<Enter>", lambda e: _button_hover(btn, True))
+    btn.bind("<Leave>", lambda e: _button_hover(btn, False))
+    return btn
+
+
+def _button_hover(btn, inside):
+    bg, _fg = _button_colours(str(btn.cget("state")), btn.flat_primary,
+                              inside)
+    btn.configure(background=bg)
+
+
+def _set_button_state(btn, state):
+    """Enable ("normal") or disable ("disabled") a flat button; its
+    background goes back to the rest colour (no hover left behind)."""
+    bg, _fg = _button_colours(state, btn.flat_primary)
+    btn.configure(state=state, background=bg)
+
 
 def _int(n):
     """Integer with a space as thousands separator: 268 569."""
@@ -633,7 +705,8 @@ class Card(object):
         w, h = c.winfo_width(), c.winfo_height()
         if w < 50 or h < 50:
             return
-        c.create_text(8, 4, anchor="nw", text=self.title, font=_FONT_B)
+        c.create_text(_px(8), _px(4), anchor="nw", text=self.title,
+                      font=_FONT_B)
         if self.fn is not None:
             try:
                 self.fn(c, w, h, Plot.TITLE_H)
@@ -650,10 +723,12 @@ def _rows(c, x, y, w, rows, label_w=170, dy=None):
     for label, value, color in rows:
         c.create_text(x, y, anchor="nw", text=label, font=_FONT,
                       fill=_C_LABEL)
-        c.create_text(x + label_w, y, anchor="nw", text=value,
-                      font=_FONT_VALUE, fill=color or _C_TEXT,
-                      width=max(60, w - x - label_w - 8))
-        y += dy
+        t = c.create_text(x + label_w, y, anchor="nw", text=value,
+                          font=_FONT_VALUE, fill=color or _C_TEXT,
+                          width=max(_px(60), w - x - label_w - _px(8)))
+        # a value that wraps pushes the next row down
+        bbox = c.bbox(t)
+        y = max(y + dy, bbox[3] + 3 if bbox else y)
     return y
 
 
@@ -674,13 +749,15 @@ def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
     """
     c.create_text(x0, y, anchor="nw", text=title, font=_FONT_VALUE,
                   fill=_C_TEXT)
-    y += 30
-    lab_w = 150
-    ax0, ax1 = x0 + lab_w, x1 - 10
-    if ax1 - ax0 < 80:
+    y += _px(30)
+    lab_w = _px(150)
+    row = max(18, _ROW_DY - 1)
+    # right margin: half a tick label ("1e20") stays inside the card
+    ax0, ax1 = x0 + lab_w, x1 - _px(18)
+    if ax1 - ax0 < _px(80):
         return y
-    top = y - 10
-    bottom = y + 18 * len(items) - 6
+    top = y - _px(10)
+    bottom = y + row * len(items) - _px(6)
     for z0, z1, color in zones:
         c.create_rectangle(_log_x(10.0 ** z0, lo, hi, ax0, ax1), top,
                            _log_x(10.0 ** z1, lo, hi, ax0, ax1), bottom,
@@ -688,7 +765,8 @@ def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
     for e in range(int(lo), int(hi) + 1, step):
         x = _log_x(10.0 ** e, lo, hi, ax0, ax1)
         c.create_line(x, top, x, bottom, fill=_C_GRID)
-        c.create_text(x, bottom + 2, anchor="n", text=u"1e{0}".format(e),
+        c.create_text(x, bottom + _px(2), anchor="n",
+                      text=u"1e{0}".format(e),
                       font=_FONT_SMALL, fill=_C_LABEL)
     for value, color, label in lines:
         if value and value > 0:
@@ -701,15 +779,16 @@ def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
         c.create_text(x0, y, anchor="w", text=label, font=_FONT,
                       fill=_C_LABEL)
         if value is None:
-            c.create_text(ax0 + 4, y, anchor="w", text=u"-", font=_FONT,
-                          fill=_C_MUTED)
+            c.create_text(ax0 + _px(4), y, anchor="w", text=u"-",
+                          font=_FONT, fill=_C_MUTED)
         else:
             x = _log_x(value, lo, hi, ax0, ax1)
+            r = _px(4)
             c.create_line(ax0, y, x, y, fill=_C_GRID, width=1)
-            c.create_oval(x - 4, y - 4, x + 4, y + 4, fill=color,
+            c.create_oval(x - r, y - r, x + r, y + r, fill=color,
                           outline=color)
-            anchor = "e" if x > ax1 - 60 else "w"
-            t = c.create_text(x + (-8 if anchor == "e" else 8), y,
+            anchor = "e" if x > ax1 - _px(60) else "w"
+            t = c.create_text(x + (-_px(8) if anchor == "e" else _px(8)), y,
                               anchor=anchor, text=_sci(value), font=_FONT,
                               fill=_C_TEXT)
             bbox = c.bbox(t)
@@ -717,8 +796,8 @@ def _log_strip(c, x0, x1, y, title, items, lo, hi, zones=(), lines=(),
                 c.tag_lower(c.create_rectangle(
                     bbox[0] - 1, bbox[1], bbox[2] + 1, bbox[3],
                     fill="white", outline=""), t)
-        y += 18
-    return bottom + 22
+        y += row
+    return bottom + _px(22)
 
 
 # ==========================================
@@ -744,16 +823,19 @@ class Monitor(object):
         sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
         root.geometry("{0}x{1}+20+20".format(min(1250, sw - 40),
                                              min(920, sh - 80)))
-        root.configure(background="#f4f4f4")
+        root.configure(background=_BG)
         Plot.fit_fonts(root)
 
-        top = tk.Frame(root, background="#f4f4f4")
-        top.pack(side="top", fill="x", padx=6, pady=(6, 0))
-        tk.Button(top, text=u"Open .mess ...", command=self.open_file,
-                  font=_FONT).pack(side="right", padx=2)
-        tk.Button(top, text=tr(u"Opnieuw lezen", u"Reload"),
-                  command=self.reload,
-                  font=_FONT).pack(side="right", padx=2)
+        # Dark bar at the top with the file shown and the buttons, as the
+        # header of the bridge windows (bridge_style).
+        top = tk.Frame(root, background=_BAR_BG)
+        top.pack(side="top", fill="x", ipady=_px(6))
+        self.top = top
+        self.btn_reload = _flat_button(top, tr(u"Opnieuw lezen", u"Reload"),
+                                       self.reload)
+        _flat_button(top, u"Open .mess ...", self.open_file).pack(
+            side="right", padx=(_px(4), _px(10)))
+        self.btn_reload.pack(side="right", padx=_px(4))
         # Files of the run shown (packed right to left: ParaView, Folder,
         # .mail, .comm, Summary); state per file in _update_buttons().
         self.btn_files = {}
@@ -764,8 +846,8 @@ class Monitor(object):
                 ("comm", u".comm", lambda: self.open_notepad(".comm")),
                 ("summary", tr(u"Samenvatting", u"Summary"),
                  self.open_summary)):
-            btn = tk.Button(top, text=text, command=command, font=_FONT)
-            btn.pack(side="right", padx=2)
+            btn = _flat_button(top, text, command)
+            btn.pack(side="right", padx=_px(4))
             self.btn_files[key] = btn
         _Tip(self.btn_files["summary"], tr(
             u"Samenvatting van de run (<model>_<run_id>_aster_summary.txt: "
@@ -776,21 +858,22 @@ class Monitor(object):
             u"missing, it is made from the .mess."))
         self._update_buttons()
         self.lbl_source = tk.Label(top, text=u"", anchor="w", font=_FONT,
-                                   foreground="#555555", background="#f4f4f4")
-        self.lbl_source.pack(side="left", fill="x", expand=True)
+                                   foreground=_BAR_FG, background=_BAR_BG)
+        self.lbl_source.pack(side="left", fill="x", expand=True,
+                             padx=(_px(10), 0))
         self.lbl_status = tk.Label(root, text=u"",
                                    font=("Segoe UI", 11, "bold"), anchor="w",
-                                   justify="left", background="#f4f4f4")
-        self.lbl_status.pack(side="top", fill="x", padx=6)
+                                   justify="left", background=_BG)
+        self.lbl_status.pack(side="top", fill="x", padx=6, pady=(_px(4), 0))
         self.lbl_status.bind("<Configure>", lambda e: self.lbl_status.configure(
             wraplength=max(200, e.width - 10)))
 
         # Controls, attempt details and messages at the bottom, packed
         # before the plots: when the window is low, the plots shrink and
         # the messages keep their minimum height.
-        bottom = tk.Frame(root, background="#f4f4f4")
+        bottom = tk.Frame(root, background=_BG)
         bottom.pack(side="bottom", fill="x")
-        grid = tk.Frame(root, background="#f4f4f4")
+        grid = tk.Frame(root, background=_BG)
         grid.pack(side="top", fill="both", expand=True, padx=6, pady=4)
         for i in range(2):
             grid.columnconfigure(i, weight=1, uniform="col")
@@ -814,13 +897,13 @@ class Monitor(object):
         self.p_newt.c.grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
         self._build_linear(grid)
 
-        ctl = tk.Frame(bottom, background="#f4f4f4")
+        ctl = tk.Frame(bottom, background=_BG)
         ctl.pack(side="top", fill="x", padx=6)
         self.ctl = ctl
         tk.Label(ctl, text=tr(u"Rekenpogingen in (a) en (d):",
                               u"Solver attempts in (a) and (d):"),
                  font=_FONT,
-                 background="#f4f4f4").pack(side="left")
+                 background=_BG).pack(side="left")
         self.var_n = tk.IntVar(value=3)
         tk.Spinbox(ctl, from_=1, to=50, width=4, textvariable=self.var_n,
                    command=self._changed, font=_FONT).pack(side="left",
@@ -829,28 +912,29 @@ class Monitor(object):
         tk.Checkbutton(ctl, text=tr(u"Volg laatste poging",
                                     u"Follow last attempt"),
                        variable=self.var_follow, command=self._changed,
-                       font=_FONT, background="#f4f4f4").pack(side="left")
+                       font=_FONT, background=_BG,
+                       activebackground=_BG).pack(side="left")
         tk.Label(ctl, text=tr(u"   Poging:", u"   Attempt:"), font=_FONT,
-                 background="#f4f4f4").pack(side="left")
+                 background=_BG).pack(side="left")
         self.scale = tk.Scale(ctl, from_=1, to=1, orient="horizontal",
                               showvalue=True, command=self._scale_moved,
-                              length=420, font=_FONT, background="#f4f4f4",
+                              length=420, font=_FONT, background=_BG,
                               highlightthickness=0)
         self.scale.pack(side="left", fill="x", expand=True)
 
         self.lbl_step = tk.Label(bottom, text=u"", anchor="w",
                                  justify="left",
-                                 font=("Consolas", 9), background="#f4f4f4")
+                                 font=("Consolas", 9), background=_BG)
         self.lbl_step.pack(side="top", fill="x", padx=6, pady=(2, 2))
 
-        frm = tk.Frame(bottom)
+        frm = tk.Frame(bottom, background=_BG)
         frm.pack(side="top", fill="x", padx=6, pady=(0, 6))
         self.frm_msgs = frm
         tk.Label(frm, text=tr(u"(e) Meldingen (laatste onderaan; FOUT = "
                               u"rood, ALARM = oranje, actie = grijs)",
                               u"(e) Messages (latest at the bottom; ERROR "
                               u"= red, ALARM = orange, action = grey)"),
-                 anchor="w",
+                 anchor="w", background=_BG,
                  font=_FONT_B).pack(side="top", fill="x")
         # at least 6 lines (Text height counts lines of its font)
         self.txt = tk.Text(frm, height=6, wrap="word", font=("Segoe UI", 9))
@@ -941,7 +1025,7 @@ class Monitor(object):
             state = "normal" if ok else "disabled"
             btn = self.btn_files.get(key)
             if btn is not None and str(btn.cget("state")) != state:
-                btn.configure(state=state)
+                _set_button_state(btn, state)
 
     def _popen(self, args, creationflags=0):
         try:
@@ -1392,9 +1476,11 @@ class Monitor(object):
                              _int(lin.gcpc_converged),
                              _sci(lin.gcpc_final[2] if lin.gcpc_final
                                   else None)), _C_GREEN))
-        y = _rows(c, 10, y + 4, w, rows, label_w=min(175, int(w * 0.36)))
+        y = _rows(c, _px(10), y + _px(4), w, rows,
+                  label_w=min(_px(175), int(w * 0.36)))
         if not lin.detailed:
-            c.create_text(10, y + 6, anchor="nw", width=w - 20,
+            c.create_text(_px(10), y + _px(6), anchor="nw",
+                          width=w - _px(20),
                           font=_FONT, fill=_C_MUTED, text=tr(
                               u"Geen statistiek van de oplosser in deze "
                               u".mess (INFO=1, oudere run). Een nieuwe run "
@@ -1409,10 +1495,13 @@ class Monitor(object):
         secs = dict((k, lin.phase_seconds(k, now)) for k in keys)
         known = [v for v in secs.values() if v is not None]
         vmax = max(known + [1e-3])
-        label_w = min(250, int(w * 0.42))
-        x0, x1 = 10 + label_w, w - 84
-        y += 12
-        dy = max(22, min(34, int((h - y - 60) / max(1, len(keys)))))
+        label_w = min(_px(250), int(w * 0.42))
+        # room on the right for the time text ("running 12 min 34 s")
+        x0, x1 = _px(10) + label_w, w - _px(84)
+        y += _px(12)
+        dy = max(_ROW_DY + _px(3), min(_px(34), int(
+            (h - y - 3 * _ROW_DY) / max(1, len(keys)))))
+        bh = max(7, _ROW_DY // 2 - 2)    # half height of a bar
         for k in keys:
             ph = lin.phases.get(k)
             running = (k == lin.current and not lin.finished())
@@ -1420,15 +1509,15 @@ class Monitor(object):
                       ph.get("end") is None and ph.get("seconds") is None)
             color = (_C_BLUE if running else _C_RED if failed else
                      _C_GREEN if ph is not None else _C_MUTED)
-            c.create_text(10, y, anchor="w", font=_FONT,
+            c.create_text(_px(10), y, anchor="w", font=_FONT,
                           text=bc.lin_phase_title(k, lin.method()),
                           fill=_C_TEXT if ph is not None else _C_MUTED)
-            c.create_rectangle(x0, y - 7, x1, y + 7, fill="#f2f2f2",
+            c.create_rectangle(x0, y - bh, x1, y + bh, fill="#f2f2f2",
                                outline="")
             v = secs[k]
             if v is not None and x1 > x0:
                 xe = x0 + max(2.0, (x1 - x0) * v / vmax)
-                c.create_rectangle(x0, y - 7, xe, y + 7, fill=color,
+                c.create_rectangle(x0, y - bh, xe, y + bh, fill=color,
                                    outline="")
             if running:
                 txt = tr(u"bezig {0}", u"running {0}").format(_secs(v))
@@ -1437,7 +1526,8 @@ class Monitor(object):
                     else u"-"
             else:
                 txt = _secs(v)
-            c.create_text(x1 + 6, y, anchor="w", text=txt, font=_FONT,
+            c.create_text(x1 + _px(6), y, anchor="w", text=txt,
+                          font=_FONT,
                           fill=color if (running or failed) else _C_TEXT)
             y += dy
         foot = tr(u"Som van de fasen: {0}", u"Sum of the phases: {0}").format(
@@ -1450,12 +1540,14 @@ class Monitor(object):
             foot += tr(u"   |   sinds de start: {0}",
                        u"   |   since the start: {0}").format(
                 _secs(time.time() - lin.started_at))
-        c.create_text(10, y, anchor="nw", text=foot, font=_FONT,
-                      fill=_C_LABEL, width=w - 20)
+        t = c.create_text(_px(10), y, anchor="nw", text=foot, font=_FONT,
+                          fill=_C_LABEL, width=w - _px(20))
         if (lin.method() == "MUMPS" and lin.current == "factor" and
                 not lin.finished() and lin.mumps.get("flops")):
-            c.create_text(10, y + 20, anchor="nw", font=_FONT_SMALL,
-                          fill=_C_MUTED, width=w - 20, text=tr(
+            bbox = c.bbox(t)
+            c.create_text(_px(10), (bbox[3] if bbox else y + _ROW_DY) +
+                          _px(2), anchor="nw", font=_FONT_SMALL,
+                          fill=_C_MUTED, width=w - _px(20), text=tr(
                               u"MUMPS meldt de factorisatie pas als die klaar "
                               u"is; geschat werk {0} flop.",
                               u"MUMPS reports the factorization only when it "
@@ -1473,15 +1565,16 @@ class Monitor(object):
                        u"POSTTRAITEMENTS='SANS' of INFO=1).",
                        u"No error analysis in the output (RESI_RELA < 0, "
                        u"POSTTRAITEMENTS='SANS' or INFO=1)."))
-            c.create_text(10, y + 6, anchor="nw", width=w - 20, text=text,
-                          font=_FONT, fill=_C_MUTED)
+            c.create_text(_px(10), y + _px(6), anchor="nw",
+                          width=w - _px(20), text=text, font=_FONT,
+                          fill=_C_MUTED)
             return
         resi = lin.solver.get("RESI_RELA")
         err = after.get(9)
         err_col = _C_RED if (err is not None and resi and resi > 0 and
                              err > resi) else _C_GREEN
         y = _log_strip(
-            c, 10, w, y + 4,
+            c, _px(10), w, y + _px(4),
             tr(u"Fout en residu (relatief)", u"Error and residual (relative)"),
             [(tr(u"Geschaald residu", u"Scaled residual"), after.get(6),
               _C_INFO),
@@ -1494,7 +1587,7 @@ class Monitor(object):
             if resi and resi > 0 else [])
         cond1 = after.get(10)
         y = _log_strip(
-            c, 10, w, y + 6,
+            c, _px(10), w, y + _px(6),
             tr(u"Conditiegetal", u"Condition number"),
             [(tr(u"Conditie (1)", u"Condition (1)"), cond1,
               _C_ORANGE if (cond1 or 0) > 1e12 else _C_BLUE),
@@ -1510,8 +1603,8 @@ class Monitor(object):
             _sci(lin.refine_before.get("resid")),
             _sci(lin.refine_after.get("resid")),
             steps if steps is not None else u"-")
-        c.create_text(10, y, anchor="nw", width=w - 20, text=foot,
-                      font=_FONT_SMALL, fill=_C_LABEL)
+        c.create_text(_px(10), y, anchor="nw", width=w - _px(20),
+                      text=foot, font=_FONT_SMALL, fill=_C_LABEL)
 
     def _lin_gcpc_plot(self, lin):
         pts = []
@@ -1551,14 +1644,18 @@ class Monitor(object):
                 u"after the solve.")))
         if not items:
             items = [("info", tr(u"Geen gegevens", u"No data"))]
-        y += 8
+        y += _px(8)
+        # dot as high as a text line, centred on the first line
+        d = _px(10)
+        dot_y = max(0, (_ROW_DY - 3 - d) // 2)
         for level, text in items:
             color = _LEVEL_COLORS.get(level, _C_INFO)
-            c.create_oval(12, y + 3, 22, y + 13, fill=color, outline=color)
-            t = c.create_text(32, y, anchor="nw", width=w - 44, text=text,
-                              font=_FONT, fill=_C_TEXT)
+            c.create_oval(_px(12), y + dot_y, _px(12) + d, y + dot_y + d,
+                          fill=color, outline=color)
+            t = c.create_text(_px(32), y, anchor="nw", width=w - _px(44),
+                              text=text, font=_FONT, fill=_C_TEXT)
             bbox = c.bbox(t)
-            y = (bbox[3] if bbox else y + 16) + 8
+            y = (bbox[3] if bbox else y + _ROW_DY) + _px(8)
         if lin.method() == "GCPC":
             notes = [tr(u"Residu ||r|| / ||f||: hoeveel van de belasting "
                         u"nog niet in evenwicht is; GCPC stopt onder "
@@ -1587,18 +1684,21 @@ class Monitor(object):
                         u"stelsel oplost; normaal ~1e-15.",
                         u"Backward error: how well the factorization solves "
                         u"the system; normally ~1e-15.")]
-        y += 6
-        c.create_text(10, y, anchor="nw", font=_FONT_VALUE, fill=_C_LABEL,
-                      text=tr(u"Wat betekenen de getallen?",
-                              u"What do the numbers mean?"))
-        y += 20
+        y += _px(6)
+        t = c.create_text(_px(10), y, anchor="nw", font=_FONT_VALUE,
+                          fill=_C_LABEL,
+                          text=tr(u"Wat betekenen de getallen?",
+                                  u"What do the numbers mean?"))
+        bbox = c.bbox(t)
+        y = (bbox[3] if bbox else y + _ROW_DY) + _px(4)
         for note in notes:
-            t = c.create_text(14, y, anchor="nw", width=w - 30, text=note,
-                              font=_FONT_SMALL, fill=_C_LABEL)
+            t = c.create_text(_px(14), y, anchor="nw", width=w - _px(30),
+                              text=note, font=_FONT_SMALL, fill=_C_LABEL)
             bbox = c.bbox(t)
-            y = (bbox[3] if bbox else y + 14) + 4
-        c.create_text(10, h - 6, anchor="sw", width=w - 20, font=_FONT_SMALL,
-                      fill=_C_MUTED, text=tr(
+            y = (bbox[3] if bbox else y + _ROW_DY) + _px(4)
+        src = c.create_text(_px(10), h - _px(6), anchor="sw",
+                            width=w - _px(20), font=_FONT_SMALL,
+                            fill=_C_MUTED, text=tr(
                           u"Bron: Code-Aster U2.08.03 (lineaire oplossers) "
                           u"en U4.50.01 (SOLVEUR); uitleg in de "
                           u"documentatie (Instellingen contact en "
@@ -1607,6 +1707,12 @@ class Monitor(object):
                           u"U4.50.01 (SOLVEUR); explained in the "
                           u"documentation (Settings contact and "
                           u"nonlinear)."))
+        # In a low card the source goes below the notes instead of over
+        # them (the card then cuts it off at the bottom).
+        bbox = c.bbox(src)
+        if bbox and bbox[1] < y + _px(4):
+            c.coords(src, _px(10), y + _px(4))
+            c.itemconfigure(src, anchor="nw")
 
     def _iter_points(self, window):
         """x position per iteration (continuous) and separator lines."""
@@ -1946,6 +2052,10 @@ def main(argv=None):
     ap.add_argument("--lang", choices=("nl", "en"), default=None,
                     help=u"taal van het scherm; standaard die uit "
                          u"bridge_utils.CONFIG_BRIDGE")
+    # Display scale for screenshots and tests (e.g. 1.0 or 1.25 on a
+    # 125 % screen); normally the scale of the screen itself.
+    ap.add_argument("--scale", type=float, default=None,
+                    help=argparse.SUPPRESS)
     ap.add_argument("--paraview", default=None,
                     help=u"paraview.exe voor de knop ParaView; standaard "
                          u"bridge_utils.paraview_exe_path()")
@@ -1971,6 +2081,9 @@ def main(argv=None):
         pass
     try:
         root = tk.Tk()
+        if args.scale:
+            # before any font or size is used (Plot.fit_fonts)
+            root.tk.call("tk", "scaling", args.scale * 96 / 72.0)
         Monitor(root, args)
         root.mainloop()
     except Exception:

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Main window**: one button *Section ▾* with a menu (show, hide, in results) replaces the two
+  section buttons; *Explanation...* is gone (the glossary is the first item of the page
+  Documentation). The navigation list has a clear scrollbar of its own (mouse wheel, drag, click
+  on the track, PageUp/PageDown) and is as wide as its longest page title needs. At a display
+  scale of 125 % the label column, the info line of an analysis page, the document list and the
+  status box grow with the text, and a small window no longer gets a horizontal scrollbar on
+  General. The save note shows `Scripts\bridge_utils.py` instead of the full path.
+- **Convergence window**: the buttons and the top bar have the look of the main window (dark
+  bar, flat white buttons with a hover colour, grey text when disabled; colours shared through
+  `bridge_style.py`). At 125 % the legends, axis captions, rows and the cards of a linear
+  analysis no longer run into each other, and the messages keep at least six lines.
+
 - **Stress over beam sections in Mecway**: after a Code-Aster run the beams with a general section
   with an outline, and Mecway's I, T, L and C, show per element end the largest von Mises,
   longitudinal and shear stress over the section outside the corner zones (`beamvonmisesmax`,
