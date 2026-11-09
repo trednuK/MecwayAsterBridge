@@ -544,8 +544,11 @@ _STYLE = {
     "label_w": 300,      # width of label column
     "row_h": 32,         # height of a row
     "nav_w": 220,        # width of navigation list on the left
+    "nav_w_max": 300,    # at most this wide for long page titles
     "nav_row_h": 32,     # height of a page in the navigation
     "nav_caption_h": 26,  # extra height for a group heading above it
+    "nav_bar_w": 8,      # width of the scrollbar of the navigation
+    "scroll_thumb": (160, 170, 184),
 }
 
 # Default values for general keys that are still missing in an older
@@ -1293,20 +1296,39 @@ def _show_winforms_dialog(current, status=u"", model=None):
             nav_gap = Panel()
             nav_gap.Dock = DockStyle.Left
             nav_gap.Width = 10
+            # The list is as high as all its pages and sits in a panel
+            # that clips it; a self-drawn scrollbar on its right shows when
+            # the pages do not fit (Windows draws the own scrollbar of the
+            # list as a thin line that is easy to miss).
+            nav_holder = Panel()
+            nav_holder.Dock = DockStyle.Left
+            nav_holder.Width = _STYLE["nav_w"]
+            nav_holder.BackColor = look.col("window_bg")
+            nav_holder.TabIndex = 0
+            nav_bar = Panel()
+            nav_bar.Dock = DockStyle.Right
+            nav_bar.Width = _STYLE["nav_bar_w"]
+            nav_bar.BackColor = look.col("window_bg")
+            nav_bar.Visible = False
+            nav_clip = Panel()
+            nav_clip.Dock = DockStyle.Fill
+            nav_holder.Controls.Add(nav_clip)
+            nav_holder.Controls.Add(nav_bar)
             nav = ListBox()
             nav.Name = "nav"
-            nav.Dock = DockStyle.Left
+            nav.Location = Point(0, 0)
             nav.Width = _STYLE["nav_w"]
             nav.BorderStyle = getattr(BorderStyle, "None")
             nav.BackColor = look.col("window_bg")
             nav.IntegralHeight = False
             nav.DrawMode = DrawMode.OwnerDrawVariable
             nav.TabIndex = 0
+            nav_clip.Controls.Add(nav)
             # Docking from back to front: list on the left, spacing, the
             # page fills the rest.
             body.Controls.Add(page_frame)
             body.Controls.Add(nav_gap)
-            body.Controls.Add(nav)
+            body.Controls.Add(nav_holder)
 
             page_area = Panel()
             page_area.Dock = DockStyle.Fill
@@ -1332,7 +1354,14 @@ def _show_winforms_dialog(current, status=u"", model=None):
             page_area.Controls.Add(page_title)
 
             pages = []   # per page {"page", "title", "group"}, in order
-            nav_state = {"hover": -1}
+            # hover: page under the mouse; off: pixels scrolled; drag:
+            # (mouse y, off) while the thumb is dragged
+            nav_state = {"hover": -1, "off": 0, "drag": None}
+            # Row and heading heights follow the font (display scale), so
+            # that the gap above a group heading stays.
+            nav_row_h = max(_STYLE["nav_row_h"], look.line_height() + 12)
+            nav_cap_h = max(_STYLE["nav_caption_h"],
+                            look.line_height(look.caption) + 12)
 
             def new_page(title, group):
                 """New page with a line in the navigation (under the
@@ -1369,11 +1398,84 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 # group (a bit less at the top).
                 if not group_start(i):
                     return 0
-                return _STYLE["nav_caption_h"] - (6 if i == 0 else 0)
+                return nav_cap_h - (6 if i == 0 else 0)
 
             def on_nav_measure(sender, e):
                 if 0 <= e.Index < len(pages):
-                    e.ItemHeight = _STYLE["nav_row_h"] + caption_h(e.Index)
+                    e.ItemHeight = nav_row_h + caption_h(e.Index)
+
+            def nav_total():
+                return sum(nav_row_h + caption_h(i)
+                           for i in range(len(pages)))
+
+            def nav_thumb():
+                """(top, height) of the thumb in the scrollbar."""
+                view = nav_clip.ClientSize.Height
+                total = max(1, nav_total())
+                track = nav_bar.ClientSize.Height
+                h = max(24, track * view // total)
+                room = max(1, total - view)
+                return (track - h) * nav_state["off"] // room, h
+
+            def nav_scroll(off):
+                room = max(0, nav_total() - nav_clip.ClientSize.Height)
+                nav_state["off"] = max(0, min(room, int(off)))
+                nav.Top = -nav_state["off"]
+                nav_bar.Invalidate()
+
+            def nav_layout(sender=None, args=None):
+                # Full height: the list itself never scrolls.
+                nav.Height = nav_total() + 2
+                nav_bar.Visible = nav_total() > nav_clip.ClientSize.Height
+                nav.Width = nav_clip.ClientSize.Width
+                nav_scroll(nav_state["off"])
+
+            def nav_show(k):
+                """Scroll so that page k (with its heading) is visible."""
+                if not 0 <= k < nav.Items.Count:
+                    return
+                r = nav.GetItemRectangle(k)
+                view = nav_clip.ClientSize.Height
+                if r.Top < nav_state["off"]:
+                    nav_scroll(r.Top)
+                elif r.Bottom > nav_state["off"] + view:
+                    nav_scroll(r.Bottom - view)
+
+            def on_bar_paint(sender, e):
+                w = nav_bar.ClientSize.Width
+                brush = SolidBrush(look.col("line"))
+                e.Graphics.FillRectangle(brush, Rectangle(
+                    2, 0, w - 4, nav_bar.ClientSize.Height))
+                brush.Dispose()
+                top, h = nav_thumb()
+                brush = SolidBrush(look.col("scroll_thumb"))
+                e.Graphics.FillRectangle(brush, Rectangle(1, top, w - 2, h))
+                brush.Dispose()
+
+            def on_bar_down(sender, e):
+                top, h = nav_thumb()
+                if top <= e.Y < top + h:
+                    nav_state["drag"] = (e.Y, nav_state["off"])
+                else:   # click on the track: a page up or down
+                    view = nav_clip.ClientSize.Height
+                    nav_scroll(nav_state["off"] +
+                               (view if e.Y >= top + h else -view))
+
+            def on_bar_move(sender, e):
+                if nav_state["drag"] is None:
+                    return
+                y0, off0 = nav_state["drag"]
+                _top, h = nav_thumb()
+                track = max(1, nav_bar.ClientSize.Height - h)
+                room = nav_total() - nav_clip.ClientSize.Height
+                nav_scroll(off0 + (e.Y - y0) * room // track)
+
+            def on_bar_up(sender, e):
+                nav_state["drag"] = None
+
+            def on_nav_wheel(sender, e):
+                # one notch (Delta 120) = two rows
+                nav_scroll(nav_state["off"] - e.Delta * nav_row_h // 60)
 
             def on_nav_draw(sender, e):
                 i = e.Index
@@ -1437,6 +1539,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 k = nav.SelectedIndex
                 if not 0 <= k < len(pages):
                     return
+                nav_show(k)
                 shown = pages[k]["page"]
                 page_title.Text = pages[k]["title"]
                 shown.Visible = True
@@ -1469,6 +1572,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
             nav.DrawItem += on_nav_draw
             nav.MouseMove += on_nav_move
             nav.MouseLeave += on_nav_leave
+            nav.MouseWheel += on_nav_wheel
+            nav_bar.Paint += on_bar_paint
+            nav_bar.MouseDown += on_bar_down
+            nav_bar.MouseMove += on_bar_move
+            nav_bar.MouseUp += on_bar_up
+            nav_bar.MouseWheel += on_nav_wheel
+            nav_clip.Resize += nav_layout
             form.KeyPreview = True
             form.KeyDown += on_form_key
 
@@ -1947,6 +2057,16 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 status_box.Text = text.replace("\r\n", "\n").replace(
                     "\n", "\r\n")
 
+            if not exe_missing_text() + status:
+                # Welcome text only: the status box as high as that text
+                # needs in the narrowest window (panel padding, title, card
+                # padding, the wrapped text, margin), so that the
+                # navigation shows more pages.
+                text_h = look.text_size(status_box.Text, look.status,
+                                        form.MinimumSize.Width - 70).Height
+                status_panel.Height = (6 + status_title.Height + 12 +
+                                       text_h + 6)
+
             # --- Buttons: helper buttons on the left, on the right Sluiten
             # and the primary button Starten (fit_footer places them) ---
             footer_line = Panel()
@@ -2166,6 +2286,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
             for page in stretch:
                 page.Resize += make_fit(page)
 
+            # As wide as the longest page title needs (bold when chosen;
+            # margins of on_nav_draw and the scrollbar), within limits.
+            nav_holder.Width = max(_STYLE["nav_w"], min(
+                _STYLE["nav_w_max"],
+                max(look.text_size(p["title"], look.bold).Width
+                    for p in pages) + 26 + _STYLE["nav_bar_w"]))
+            nav_layout()
             nav.SelectedIndexChanged += on_nav_selected
             nav.SelectedIndex = 0
 
