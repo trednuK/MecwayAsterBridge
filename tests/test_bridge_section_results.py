@@ -1158,8 +1158,21 @@ table_file(view, "pick_20260101_120003_section.json", {"loops": [loop]})
 out = brl.add_section_view(path, view, md)
 check("nor of another outline", SHEAR not in read(path)["ids"])
 table_file(view, "pick_20260101_120004_section.json", version=2)
-out = brl.add_section_view(path, view, md)
-check("nor of an unknown version", SHEAR not in read(path)["ids"])
+del LOG[:]
+keep_log = brl.log
+brl.log = LOG.append
+try:
+    out = brl.add_section_view(path, view, md)
+    check("nor of an unknown version", SHEAR not in read(path)["ids"])
+    check("an unknown version is logged once, with both versions",
+          len([m for m in LOG if m.startswith("WARNING") and
+               "version 2" in m and "version 1" in m]) == 1)
+    del LOG[:]
+    out = brl.add_section_view(path, view, md)
+    check("... and not again on the next view",
+          not [m for m in LOG if "version 2" in m])
+finally:
+    brl.log = keep_log
 bad = os.path.join(TMP, "pick_20260101_120005_section.json")
 f = _builtin_open(bad, "w")
 f.write("{not json")
@@ -1286,6 +1299,54 @@ brl.log = keep_log
 check("splice_results logs the warnings of the sidecar",
       ok and "WARNING: one" in LOG)
 clear_tables()
+
+
+def splice_log(name, version=None, text=None):
+    """The log of splice_results with a sidecar of this version, or with
+    this text in it."""
+    fragment = os.path.join(TMP, name + "_results.xml")
+    f = _builtin_open(fragment, "w")
+    f.write(results())
+    f.close()
+    if text is None:
+        table_file(view, name + "_section.json", version=version)
+    else:
+        f = _builtin_open(os.path.join(TMP, name + "_section.json"), "w")
+        f.write(text)
+        f.close()
+    del LOG[:]
+    keep = brl.log
+    brl.log = LOG.append
+    try:
+        good, _why = brl.splice_results(path, fragment, path)
+    finally:
+        brl.log = keep
+    clear_tables()
+    return good, list(LOG)
+
+
+ok, got = splice_log("notes_20260101_120001", version=2)
+check("sidecar of an unknown version: one WARNING with the versions, and "
+      "its warnings still reach the log", ok and len(
+          [m for m in got if m.startswith("WARNING") and "version 2" in m and
+           "version 1" in m]) == 1 and "WARNING: one" in got)
+ok, got = splice_log("notes_20260101_120002", text="{not json")
+check("sidecar that cannot be read: one WARNING that its warnings are lost",
+      ok and len([m for m in got if m.startswith("WARNING")]) == 1)
+ok, got = splice_log("notes_20260101_120003", version=1)
+check("sidecar of version 1: only its own warnings",
+      ok and got == ["WARNING: one"])
+ok, got = splice_log("notes_20260101_120004", text=json.dumps(
+    {"version": 3, "warnings": [{"en": "x"}, "WARNING: two", None]}))
+check("another version with other items: only the texts are logged",
+      ok and "WARNING: two" in got and len(got) == 2)
+try:
+    import bridge_section_stress
+except ImportError:         # no numpy: the writer cannot be compared
+    bridge_section_stress = None
+if bridge_section_stress is not None:
+    check("the version read is the version the job writes",
+          brl.SECTION_FORMAT == bridge_section_stress.FORMAT_VERSION)
 
 shutil.rmtree(TMP, ignore_errors=True)
 

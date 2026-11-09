@@ -901,8 +901,14 @@ SECTION_STRESS = ("langsspanning", "longitudinalstress")
 SECTION_SHEAR = ("doorsnedeschuif", "sectionshear")
 SECTION_VON_MISES = ("doorsnedevonmises", "sectionvonmises")
 _SECTION_NAMES = SECTION_STRESS + SECTION_SHEAR + SECTION_VON_MISES
-# bridge_section_stress.SECTION_SUFFIX, without its numpy
+# bridge_section_stress.SECTION_SUFFIX and FORMAT_VERSION, without its numpy
 SECTION_SUFFIX = "_section.json"
+SECTION_FORMAT = 1
+_warned_formats = set()         # _section.json files already logged
+try:
+    _TEXT = basestring          # IronPython 2.7
+except NameError:
+    _TEXT = str
 _MAX_SECTION_FILES = 30         # newest first, each a small file
 _SHELL_DISPL = ("displx", "disply", "displz")
 _SHELL_ROT = ("rotx", "roty", "rotz")
@@ -1825,14 +1831,36 @@ def _section_files(liml_path):
     return paths[:_MAX_SECTION_FILES]
 
 
-def _read_section_file(path):
-    """The contents of a _section.json, or None when it cannot be used."""
+def _load_section_file(path):
+    """The dict of a _section.json, or None when it cannot be read."""
     try:
         with io.open(path, encoding="utf-8") as f:
             data = json.loads(f.read())
     except (IOError, OSError, ValueError):
         return None
-    if not isinstance(data, dict) or data.get("version") != 1:
+    return data if isinstance(data, dict) else None
+
+
+def _known_format(path, data):
+    """True for the version this bridge reads; another one gives a WARNING,
+    once per file (section_tables looks at the same files on every view)."""
+    version = data.get("version")
+    if version == SECTION_FORMAT:
+        return True
+    if path not in _warned_formats:
+        _warned_formats.add(path)
+        log(tr(u"WARNING: {0} heeft formaatversie {1}; deze bridge leest "
+               u"versie {2}. De spanningstabel erin wordt niet gebruikt.",
+               u"WARNING: {0} has format version {1}; this bridge reads "
+               u"version {2}. Its stress table is not used.").format(
+                   os.path.basename(path), version, SECTION_FORMAT))
+    return False
+
+
+def _read_section_file(path):
+    """The contents of a _section.json, or None when it cannot be used."""
+    data = _load_section_file(path)
+    if data is None or not _known_format(path, data):
         return None
     return data
 
@@ -1880,8 +1908,23 @@ def _log_section_notes(fragment_path):
     if not fragment_path or not fragment_path.endswith(RESULTS_SUFFIX):
         return
     path = fragment_path[:-len(RESULTS_SUFFIX)] + SECTION_SUFFIX
-    if os.path.exists(path):
-        for text in (_read_section_file(path) or {}).get("warnings", []):
+    if not os.path.exists(path):
+        return
+    data = _load_section_file(path)
+    if data is None:
+        log(tr(u"WARNING: {0} kan niet worden gelezen: de meldingen van de "
+               u"job over de spanning over de doorsnede gaan verloren.",
+               u"WARNING: {0} cannot be read: the warnings of the job about "
+               u"the stress over the section are lost.").format(
+                   os.path.basename(path)))
+        return
+    # Of another version only the table is not used; its warnings are
+    # still logged, as far as they are texts (as in version 1): log raises
+    # on anything else, and the model is already replaced here.
+    _known_format(path, data)
+    notes = data.get("warnings")
+    for text in notes if isinstance(notes, list) else []:
+        if isinstance(text, _TEXT):
             log(text)
 
 

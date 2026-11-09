@@ -105,8 +105,10 @@ any of these formats needs the same change in MecwaySectionProps.**
   ** SECTIE-RICHTING <material>: V=vx vy vz, U=ux uy uz
   ```
 
-  Global unit vectors, `%.6g`. V: principal axis 1, the V axis a beam must have. U: the beam
-  direction the stored data are written for. Split on the last colon; the newest good line of
+  Global unit vectors, `%.6g`. V: the V axis a beam must have, principal axis 1, or -axis 1
+  when a point-symmetric section keeps Mecway's default V without a card (the outline and
+  `ASTER-SECTIE` are then written for that V too). U: the beam direction the stored data
+  are written for. Split on the last colon; the newest good line of
   a material counts, a line with bad numbers is skipped with a log line. A model without the
   line gets no check and no message. It must not start with `** ASTER-SECTIE `.
   `bridge_custom.direction_warnings` is the pure check (2.7 and 3, no `mw`), on the V of
@@ -135,6 +137,19 @@ adds `beamvonmisesmax`, `beamsixxabsmax`, `beamtaumax` to the fragment and write
 `<model>_<run_id>_section.json`: warnings, and per general section the table of unit shear
 stresses that `add_section_view` sums per step (`sectionshear`, `sectionvonmises`). The table
 holds what it was made for; `bridge_section_view.match_table` decides whether it belongs.
+Its `version` is `bridge_section_stress.FORMAT_VERSION`, and `bridge_results_liml.SECTION_FORMAT`
+must be the same: a file of another version gives a WARNING and its table is not used.
+
+## Contract with MecwayAdvancedBeamAnalysis
+
+The beam analysis recognises a solution of this bridge by the empty `<nodes />` (and
+`<values />`) that `aster_results_export` writes at the end of every `<nodevariable>` of the
+result fragment (`beam_utils._from_bridge`, on the first node variable after `<results>`);
+Mecway 35 does not write them, and drops them when the user saves an opened result (then it
+reads as Mecway's own; Mecway 33 and 34 NOT verified). Keep those tags: without them the beam
+analysis reads Code-Aster results as Mecway's own. `add_section_view` keeps the tail of every
+copied block (`_rewrite_block`) and puts its own variables (without the tags) after them. A
+change of this marker needs the same change there.
 
 ## Pitfalls
 
