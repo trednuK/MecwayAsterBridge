@@ -436,6 +436,40 @@ def convert_bc(model_data, bc, faces, skin_groups):
                                  "1..4), here {0}").format(
                                      ", ".join(sorted(kinds))))
         return True
+    if btype == "pinnedsupport":
+        # docs 2D par. 2.3: DDL_IMPO DX = DY = 0 on the nodes or the edges.
+        # Not the mean-zero LIAISON_DDL of 3D (bridge_mesh._pinned_to_mean):
+        # that route also writes DZ, which a 2D node does not carry
+        # (Code-Aster 17.4: <EXCEPTION> CHARGES2_31), and it refuses edges.
+        if edges:
+            n = len(set(nid for f in model_data.get(
+                "group_face_list", {}).get(sel, []) for nid in f["nodes"]))
+            bc["aster_target"] = "GROUP_MA"
+        elif sel in model_data.get("node_groups", {}):
+            n = len(model_data["node_groups"][sel])
+            bc["aster_target"] = "GROUP_NO"
+        else:
+            # element selection: refused, as in 3D (_pinned_to_mean)
+            _skip(model_data, bc, tr("pinned support alleen op knopen en "
+                                     "randen", "pinned support only on "
+                                     "nodes and edges"))
+            return True
+        bc["aster_keyword"] = "DDL_IMPO"
+        bc["aster_dict"] = OrderedDict([("DX", 0.0), ("DY", 0.0)])
+        bc["_plane"] = True
+        if n > 1:
+            log(tr("WARNING: Pinned support op '{0}' in een 2D-analyse: elk "
+                   "van de {1} knopen wordt vastgehouden (DX = DY = 0). "
+                   "Mecway houdt bij een pinned support de gemiddelde "
+                   "verplaatsing op nul (manual par. 9.3); in 2D NIET "
+                   "geverifieerd tegen Mecway (KNOWN_BUGS 134).",
+                   "WARNING: Pinned support on '{0}' in a 2D analysis: "
+                   "each of the {1} nodes is held (DX = DY = 0). Mecway's "
+                   "pinned support holds the mean displacement at zero "
+                   "(manual par. 9.3); in 2D NOT verified against Mecway "
+                   "(KNOWN_BUGS 134).").format(sel, n))
+        log("INFO: Pinned support '{0}' -> DDL_IMPO DX=DY=0 (2D).".format(sel))
+        return True
     if btype == "surfacepressure":
         if not edges:
             _skip(model_data, bc, tr("druk alleen op randen",

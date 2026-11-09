@@ -140,7 +140,9 @@ De massa in de log (`BRIDGE_STATCHECK`) is die van de hele dikte of van 360 grad
 
 `fixed`, `pinnedsupport`: `DDL_IMPO` DX = DY = 0; `displacement` langs X of Y:
 `DDL_IMPO`; `symmetry` met normaal X of Y: `DDL_IMPO` DX = 0 of DY = 0. Componenten die
-het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg.
+het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg. Een pinned support op meer dan
+een knoop houdt elke knoop vast (WARNING); Mecway's pinned support houdt de gemiddelde
+verplaatsing vast (in 3D, KNOWN_BUGS 134).
 
 ### 2.4 Dynamica (D20, DA0)
 

@@ -1340,8 +1340,10 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 name = "K{0}".format(skin_count[0])
                 skin_by_key[key] = name
                 by_type.setdefault(stype, []).append((name, snodes))
-            # For the manifest of a kept base (bridge_manifest): the mesh has
-            # no link from a skin cell to the element it lies on
+            # For the manifest of a kept base (bridge_manifest) and the
+            # active cells of thermal face loads (bridge_thermal._skin_cell):
+            # the mesh has no link from a skin cell to the element it lies
+            # on. setdefault, never reset: one write_mesh per model_data
             parents = model_data.setdefault(
                 "skin_parents", {}).setdefault(skin_by_key[key], [])
             if [eid, fid] not in parents:
@@ -1893,6 +1895,53 @@ def _per_area(params, area):
     return out
 
 
+def _double_sided(faces_list):
+    """Element ids of shell faces in faces_list with both sides (faceid 5
+    and 6) selected."""
+    sides = OrderedDict()
+    for f in faces_list:
+        if f["kind"] == "shellface":
+            sides.setdefault(f["eid"], set()).add(f["side"])
+    return [e for e, s in sides.items() if len(s) > 1]
+
+
+def _shell_force_area(model_data, sel, faces_list):
+    """
+    Area of the distinct shell elements of a face selection (force on shell
+    faces, FORCE_COQUE). The mesh group holds an element once even when
+    both sides are selected, so dividing by the area of all selected faces
+    would halve the resultant. A group with single- and double-sided
+    elements keeps the resultant, but the force is spread uniformly over
+    the elements, where Mecway (assumed: per selected face) gives a
+    double-sided element twice the share: WARNING, NOT verified.
+    """
+    nodes = model_data["mesh_nodes"]
+    area = 0.0
+    done = set()
+    for f in faces_list:
+        if f["kind"] != "shellface" or f["eid"] in done:
+            continue
+        done.add(f["eid"])
+        area += sum(_face_integrals(f["stype"],
+                                    [nodes[n] for n in f["nodes"]])[0])
+    double = _double_sided(faces_list)
+    if double and len(double) < len(done):
+        log(tr("WARNING: Kracht op schaalvlakken '{0}': {1} van de {2} "
+               "elementen hebben beide kanten (faceid 5 en 6) geselecteerd. "
+               "De totale kracht klopt, maar wordt gelijkmatig over de "
+               "elementen verdeeld; Mecway geeft een element met beide "
+               "kanten waarschijnlijk het dubbele aandeel (NIET "
+               "geverifieerd). Selecteer alle elementen aan een kant of aan "
+               "beide kanten.",
+               "WARNING: Force on shell faces '{0}': {1} of the {2} "
+               "elements have both sides (faceid 5 and 6) selected. The "
+               "total force is right, but it is spread uniformly over the "
+               "elements; Mecway probably gives an element with both sides "
+               "twice the share (NOT verified). Select all elements on one "
+               "side or on both sides.").format(sel, len(double), len(done)))
+    return area
+
+
 # ==========================================
 # FACES PER NODE: WEIGHTS AND NORMALS
 # ==========================================
@@ -1970,6 +2019,32 @@ def _node_weights_normals(faces, nodes, conn):
     return weights, OrderedDict((n, _vunit(v)) for n, v in sums.items())
 
 
+def _checked_weights_normals(faces, nodes, conn):
+    """
+    (weights, normals, None) as _node_weights_normals, or (None, None,
+    reason) when a node has no unique normal: a shell element with both
+    sides selected (its normals cancel, and a node next to it would get a
+    doubled weight and a skewed normal), or normals that cancel exactly
+    (ZeroDivisionError in _vunit). For elastic support and compression
+    only, like _frictionless_per_node.
+    """
+    double = _double_sided(faces)
+    if double:
+        return None, None, tr(
+            "schaalelement {0} heeft beide kanten (faceid 5 en 6) "
+            "geselecteerd, dus geen eenduidige normaal; selecteer een kant",
+            "shell element {0} has both sides (faceid 5 and 6) selected, "
+            "so there is no unique normal; select one side").format(double[0])
+    try:
+        weights, normals = _node_weights_normals(faces, nodes, conn)
+    except ZeroDivisionError:
+        return None, None, tr(
+            "een knoop heeft geen eenduidige normaal (vlakken met "
+            "tegengestelde normalen)",
+            "a node has no unique normal (faces with opposite normals)")
+    return weights, normals, None
+
+
 def _round_key(values, scale):
     """Key to group nodes with (nearly) equal values."""
     return tuple(int(round(v / scale * 1.0e9)) for v in values)
@@ -2039,7 +2114,15 @@ def _build_discretes(model_data, nodes, conn, face_list):
                    "here {1}. NOT included.").format(sel, sorted(kinds)))
             continue
         kn, kt = bc["params"]["kn"], bc["params"]["kt"]
-        weights, normals = _node_weights_normals(faces, nodes, conn)
+        weights, normals, why = _checked_weights_normals(faces, nodes, conn)
+        if why:
+            model_data.setdefault("skipped_loads", []).append(
+                tr("elastic support op '{0}'",
+                   "elastic support on '{0}'").format(sel))
+            log(tr("ERROR: Elastic support op '{0}': {1}. NIET meegenomen.",
+                   "ERROR: Elastic support on '{0}': {1}. NOT included.")
+                .format(sel, why))
+            continue
         items = []
         for n, w in weights.items():
             v = normals[n]
@@ -2823,13 +2906,16 @@ def _compression_only(model_data, bc, faces_list):
                            "only faces of solid elements and shell faces "
                            "(here {0})").format(sorted(kinds) or "?"))
         return
+    _, normals, why = _checked_weights_normals(faces_list, nodes, conn)
+    if why:
+        _not_translated(model_data, bc, "Compression only", why)
+        return
     if "shellface" in kinds:
         log(tr("WARNING: Compression only op schaalvlakken '{0}': alleen "
                "de normaalverplaatsing, de rotaties blijven vrij.",
                "WARNING: Compression only on shell faces '{0}': only "
                "the normal displacement, the rotations remain free.").format(
                 bc["selection"]))
-    _, normals = _node_weights_normals(faces_list, nodes, conn)
     zones = OrderedDict()
     for n, v in normals.items():
         zones.setdefault(_round_key(v, 1.0e-3), [v, []])[1].append(n)
@@ -4888,7 +4974,12 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                     and sel in group_integrals):
                 # Shell faces: force per area on the mid-surface
                 # (FORCE_COQUE FX/FY/FZ, global coordinate system, U4.44.01).
-                area = sum(group_integrals[sel][0].values())
+                # The mesh group holds an element once, also with faceid 5
+                # and 6 selected: divide by the area of the distinct
+                # elements, so that the resultant is the Mecway force
+                # (group_integrals counts both sides).
+                area = _shell_force_area(model_data, sel,
+                                         face_list.get(sel, []))
                 bc["params"] = _per_area(bc["params"], area)
                 bc["aster_keyword"] = "FORCE_COQUE"
                 bc["aster_dict"] = SUPPORTED_BCS["force"].to_aster_dict(
