@@ -1743,6 +1743,13 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     group_no.update(pret_groups)
     bridge_offset.apply_to_mesh(offset_plan, model_data, by_type, group_ma,
                                 group_no, rn_es)
+    # Manifest of a kept base (bridge_manifest; only with the setting
+    # keep_base): beam axes, offsets and connected nodes, while the
+    # selections still have their Mecway names
+    import bridge_manifest
+    bridge_manifest.note_mesh(model_data, nodes, conn, elements,
+                              group_face_list, offset_plan, beam_groups,
+                              beam_vect_y, split_line3)
     # Beams with warping (POU_D_TG): nodes with GRX = 0 (bridge_warping)
     model_data["warping_group"] = None
     warp_elsets = [es for es, mod in elset_mods.items()

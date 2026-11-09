@@ -11,13 +11,17 @@
 # With the setting "keep_base" a linear or nonlinear static run gets:
 #   <model>_<run_id>_base/           the base (R base ... R 0 in the .export)
 #   <model>_<run_id>_manifest.json   what a follow-up run needs to know
+# note_mesh() keeps, while bridge_mesh.write_mesh runs, what only the mesh
+# writer knows (beam axes, offsets, connected nodes; only with the setting).
 # prepare_base() adds the base to the .export before the run. finish_run()
 # writes the manifest after the run, and only for a run that ended well: a
 # manifest means the base is usable. After a failed run the base folder goes.
 # Only then the newest "keep_base_runs" usable bases per model stay; older
 # ones are removed, so a failed run never costs the last good base.
 #
-# Manifest (schema 1, UTF-8 JSON, no paths):
+# Manifest (schema 2, UTF-8 JSON, no paths). Schema 2 keeps every key of
+# schema 1 with its meaning, except not_shared (a list of kinds in schema 1,
+# a dict now); the schema 2 keys are marked (2).
 #   schema, run_id, model (file name), configuration, analysis, solver,
 #   aster_version, memory_limit, base (folder name),
 #   fingerprint  mesh_fingerprint() of the Mecway model
@@ -35,10 +39,47 @@
 #                eid: M<eid>, a split line3 also H<eid>.
 #   skin         {"K12": [[eid, faceid], ...]}: which Mecway faces a skin cell
 #                belongs to. The mesh itself has no such link.
-#   not_shared   parts where shared nodes do not describe the whole cut
-#                (bonded contact, couplings, ...); a reader refuses or warns
+#   not_shared   (2) {kind: {"nodes": [nid], "origin": "user"|"bridge"}}:
+#                parts where shared nodes do not describe the whole cut; a
+#                reader refuses or warns. nodes: the Mecway nodes the kind
+#                acts on, sorted (nodes the bridge adds, such as the own node
+#                of a flexible joint, are left out). Kinds and origin:
+#                  user   (the Mecway item itself connects): contact, bonded,
+#                         coupling (RBE2/RBE3: master and slave nodes),
+#                         constraint (the user's constraint equations),
+#                         discrete (gap and damper elements)
+#                  bridge (relations the bridge makes itself to translate a
+#                         Mecway feature): line3truss (midside node of a
+#                         split line3 truss), flexible_joint, offset (rigid
+#                         arms of an element offset), pretension
+#                A kind is there only if the model has it; none: {}.
 #   extra_nodes  True if the base has nodes Mecway does not know (LINE_QUAD,
 #                QUAD8_9, TRIA6_7 by CREA_MAILLAGE)
+#   components   (2) {Mecway component: {"model": MODELISATION as Code-Aster
+#                got it (DKT, DST, COQUE_3D, POU_D_E, POU_D_T, POU_D_TG,
+#                POU_D_T_GD, BARRE, CABLE, 3D, 3D_SI, DIS_T, ...),
+#                "has_warping": True for POU_D_TG, and for beams and trusses
+#                "section": {"cara": [...], "vale": [...], "shape": SECTION
+#                of AFFE_CARA_ELEM ("GENERALE", "RECTANGLE", "CERCLE"; None
+#                for CABLE, which gets AIRE), "mecway_shape": Mecway's section
+#                type ("RectBar", "I", "UniformGeneralSection", ...)}}}.
+#                A component that mixes beams and trusses has its trusses in
+#                "truss_part" ({"model", "has_warping", "section"}); those
+#                cells have no beam_axes entry. CABLE: only AIRE, N_INIT
+#                is left out.
+#   coef_rigi_drz (2) COEF_RIGI_DRZ of the shells; null: the bridge does not
+#                set it, so Code-Aster's default holds
+#   beam_axes    (2) {cell name: [[x], [y], [z]]}: the local axes of every
+#                beam cell (MODELISATION POU_*) as given to Code-Aster: x
+#                from node 1 to node 2 of the (half) cell, y its VECT_Y
+#                (bridge_mesh._mecway_v_axis) made perpendicular to x as
+#                Code-Aster does, z = x cross y. A split line3 has M<eid> (node
+#                1 to the midside node) and H<eid> (midside node to node 2).
+#                Trusses and cables have none.
+#   excentrement (2) {eid: e}: EXCENTREMENT of DKT/DST elements with an
+#                element offset (bridge_offset; the midsurface at +e along
+#                the cell normal). An offset that the bridge makes with own
+#                nodes and rigid arms is not here but in not_shared "offset".
 #
 # Compatible with IronPython 2.7.9 and Python 3 (offline test:
 # python tests/test_bridge_manifest.py).
@@ -54,8 +95,9 @@ import time
 import bridge_version
 from bridge_utils import CONFIG_BRIDGE, exe_aster_path, log, run_name, tr
 
-SCHEMA = 1
-_TRUSS_PART = "_TRUSS"
+SCHEMA = 2
+# The truss part of a component with beams: bridge_from_liml._split_trusses
+_TRUSS_PART = re.compile(r"^(.+)_TRUSS\d*$")
 # A base without manifest may belong to a run of another Mecway; this old it
 # does not (seconds)
 ORPHAN_AGE = 6 * 3600
@@ -89,32 +131,214 @@ def mesh_fingerprint(nodes, element_ids):
     return h.hexdigest()
 
 
-def _not_shared(model_data):
-    """What makes "shared nodes" an incomplete description of a cut."""
-    return [name for name, key in (
-        ("offset", "offset_links"), ("discrete", "discrete_sections"),
-        ("contact", "contacts"), ("bonded", "bonded"),
-        ("coupling", "couplings"), ("constraint", "constraint_equations"),
-        ("pretension", "pretension_sections"),
-        ("flexible_joint", "flexible_joints"))
-        if model_data.get(key)]
+# not_shared: (kind, model_data key, origin); see the header
+_KINDS = (("offset", "offset_links", "bridge"),
+          ("discrete", "discrete_sections", "user"),
+          ("contact", "contacts", "user"),
+          ("bonded", "bonded", "user"),
+          ("coupling", "couplings", "user"),
+          ("constraint", "constraint_equations", "user"),
+          ("pretension", "pretension_sections", "bridge"),
+          ("flexible_joint", "flexible_joints", "bridge"))
+# Kind of the constraint equations the bridge makes itself, by their
+# "source" (bridge_mesh, bridge_pretension); the user's have no source
+_CE_KINDS = {"line3truss": "line3truss", "flexiblejoint": "flexible_joint",
+             "pretension": "pretension"}
+
+
+def _nid(value):
+    s = str(value)
+    return int(s[1:]) if s.startswith("N") else int(s)
+
+
+def _unit(a):
+    n = math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
+    return [a[0] / n, a[1] / n, a[2] / n]
+
+
+def _beam_axes(nodes, conn, beam_groups, beam_vect_y, split_line3):
+    """{cell name: [x, y, z]} of the beam cells; see the header. beam_groups
+    {group: [cell name]} with the VECT_Y beam_vect_y[group]
+    (bridge_mesh.write_mesh, step 4)."""
+    out = {}
+    for group, members in beam_groups.items():
+        v = beam_vect_y[group]
+        for name in members:
+            eid = int(name[1:])
+            cn = conn[eid][1]
+            if eid in split_line3:
+                a, b = (cn[0], cn[2]) if name[0] == "M" else (cn[2], cn[1])
+            else:
+                a, b = cn[0], cn[1]
+            x = _unit([nodes[b][i] - nodes[a][i] for i in range(3)])
+            # Code-Aster keeps the part of VECT_Y perpendicular to x
+            # (U4.42.01 AFFE_CARA_ELEM ORIENTATION VECT_Y); V of
+            # _mecway_v_axis already is, up to rounding
+            d = v[0] * x[0] + v[1] * x[1] + v[2] * x[2]
+            y = _unit([v[i] - d * x[i] for i in range(3)])
+            z = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2],
+                 x[0] * y[1] - x[1] * y[0]]
+            out[name] = [x, y, z]
+    return out
+
+
+def _excentrement(offset_plan):
+    """{eid as text: e} of the DKT/DST cells with EXCENTREMENT
+    (bridge_offset.prepare: plan["exc"] = {(elset, e): [eid]})."""
+    out = {}
+    for (_elset, e), eids in ((offset_plan or {}).get("exc") or {}).items():
+        for eid in eids:
+            out[str(eid)] = float(e)
+    return out
+
+
+def _not_shared(model_data, nodes, conn, elements, group_face_list):
+    """{kind: {"nodes", "origin"}}; see the header. Before the renames of
+    bridge_mesh.write_mesh (step 5): selections by their Mecway names.
+    group_face_list: {face selection: [{"nodes", ...}]} (write_mesh)."""
+    node_groups = model_data.get("node_groups", {})
+    elem_sel = model_data.get("element_selections", {})
+
+    def sel_nodes(name):
+        if name in group_face_list:
+            return set(n for f in group_face_list[name] for n in f["nodes"])
+        if name in node_groups:
+            return set(_nid(i) for i in node_groups[name])
+        if name in elem_sel:
+            return set(n for e in elem_sel[name] if e in conn
+                       for n in conn[e][1])
+        return set()
+
+    found = {}
+
+    def add(kind, origin, ids):
+        entry = found.setdefault(kind, {"nodes": set(), "origin": origin})
+        entry["nodes"].update(n for n in ids if n in nodes)
+
+    for kind, key, origin in _KINDS:
+        # the user's constraint equations only (below)
+        if kind != "constraint" and model_data.get(key):
+            add(kind, origin, ())
+    for link in model_data.get("offset_links") or []:
+        add("offset", "bridge", [link["orig"]])
+    discrete = model_data.get("discrete_sections") or {}
+    for eid, _shape, enodes, elset in elements:
+        if elset in discrete:
+            add("discrete", "user", enodes)
+    for key, kind in (("contacts", "contact"), ("bonded", "bonded")):
+        for c in model_data.get(key) or []:
+            add(kind, "user", sel_nodes(c.get("master")) |
+                sel_nodes(c.get("slave")))
+    for c in model_data.get("couplings") or []:
+        add("coupling", "user", sel_nodes(c.get("master_group")) |
+            sel_nodes(c.get("slave_group")))
+    for ce in model_data.get("constraint_equations") or []:
+        source = ce.get("source")
+        if source is None:
+            kind, origin = "constraint", "user"
+        else:
+            kind, origin = _CE_KINDS.get(source, source), "bridge"
+        add(kind, origin, [t[0] for t in ce.get("terms", [])])
+    for j in model_data.get("flexible_joints") or []:
+        add("flexible_joint", "bridge", sel_nodes(j.get("selection")))
+    return dict((kind, {"nodes": sorted(e["nodes"]), "origin": e["origin"]})
+                for kind, e in found.items())
+
+
+def note_mesh(model_data, nodes, conn, elements, group_face_list,
+              offset_plan, beam_groups, beam_vect_y, split_line3):
+    """
+    Called by bridge_mesh.write_mesh after the element offset is in the mesh
+    and before the renames: model_data["manifest_mesh"] with beam_axes,
+    excentrement and not_shared (see the header). Nothing without the
+    setting keep_base. A problem here gives a WARNING and no manifest after
+    the run (finish_run), never a stopped mesh.
+    nodes: the Mecway nodes; conn: {eid: (aster type, [nid])}; elements:
+    model_data["mesh_elements"].
+    """
+    if not CONFIG_BRIDGE.get("keep_base", False):
+        return
+    try:
+        model_data["manifest_mesh"] = {
+            "beam_axes": _beam_axes(nodes, conn, beam_groups, beam_vect_y,
+                                    split_line3),
+            "excentrement": _excentrement(offset_plan),
+            "not_shared": _not_shared(model_data, nodes, conn, elements,
+                                      group_face_list)}
+    except Exception as e:
+        model_data["manifest_mesh"] = None
+        log(tr("WARNING: Gegevens voor het manifest niet verzameld: {0}",
+               "WARNING: Data for the manifest not collected: {0}").format(e))
+
+
+def _component_names(model_data, elsets):
+    """{elset: (Mecway name, Mecway component)}: the truss part of a
+    component with beams (_split_trusses, '<name>_TRUSS') belongs to that
+    component, if that is in elsets too."""
+    import bridge_failure
+    names = dict((es, bridge_failure.mecway_name(model_data, es))
+                 for es in elsets)
+    own = set(names.values())
+    out = {}
+    for es, name in names.items():
+        m = _TRUSS_PART.match(name)
+        out[es] = (name, m.group(1) if m and m.group(1) in own else name)
+    return out
 
 
 def _deformation_by_component(model_data):
     """model_data["deformation_by_elset"] with the names Mecway shows."""
-    import bridge_failure
+    by_elset = model_data.get("deformation_by_elset", {})
+    names = _component_names(model_data, list(by_elset))
     found = {}
-    for elset, form in model_data.get("deformation_by_elset", {}).items():
-        name = bridge_failure.mecway_name(model_data, elset)
-        # The truss part of a component with beams (_split_trusses)
-        if name.endswith(_TRUSS_PART):
-            name = name[:-len(_TRUSS_PART)]
+    for elset, form in by_elset.items():
+        name = names[elset][1]
         found[name] = form if found.get(name, form) == form else "MIXED"
     return found
 
 
+def _section(beam, cable):
+    """section of a component as AFFE_CARA_ELEM got it, or None.
+    beam: model_data["beam_sections"][elset] (POUTRE, or BARRE with
+    "truss"); cable: model_data["cable_sections"][elset] (CABLE, AIRE)."""
+    if beam and beam.get("cara") is not None:
+        return {"cara": list(beam["cara"]),
+                "vale": [float(v) for v in beam["vale"]],
+                "shape": beam.get("aster_section"),
+                "mecway_shape": beam.get("geom_type")}
+    if cable:
+        return {"cara": ["AIRE"], "vale": [float(cable["area"])],
+                "shape": None, "mecway_shape": None}
+    return None
+
+
+def _components(model_data):
+    """{Mecway component: {"model", "has_warping", "section"}}; see the
+    header."""
+    mods = model_data.get("elset_modelisations", {})
+    beams = model_data.get("beam_sections", {})
+    cables = model_data.get("cable_sections", {})
+    names = _component_names(model_data, list(mods))
+    out = {}
+    for elset, mod in mods.items():
+        entry = {"model": mod, "has_warping": mod == "POU_D_TG"}
+        section = _section(beams.get(elset), cables.get(elset))
+        if section is not None:
+            entry["section"] = section
+        name, component = names[elset]
+        if name == component:
+            out.setdefault(component, {}).update(entry)
+        else:
+            out.setdefault(component, {})["truss_part"] = entry
+    return out
+
+
 def build_manifest(model_data, kept, run_id, aster_version, memory_limit):
-    """The manifest as a dict; see the header of this file."""
+    """The manifest as a dict; see the header of this file. Without the
+    data of note_mesh there is no manifest (ValueError)."""
+    mesh = model_data.get("manifest_mesh")
+    if not mesh:
+        raise ValueError("no data of the mesh (bridge_manifest.note_mesh)")
     return {
         "schema": SCHEMA,
         "run_id": run_id,
@@ -137,9 +361,15 @@ def build_manifest(model_data, kept, run_id, aster_version, memory_limit):
         "cells": list(model_data.get("cell_names", [])),
         "skin": dict((k, [list(p) for p in v])
                      for k, v in model_data.get("skin_parents", {}).items()),
-        "not_shared": _not_shared(model_data),
+        "not_shared": mesh["not_shared"],
         "extra_nodes": bool(model_data.get("line_quad") or
                             model_data.get("shell_upgrades")),
+        "components": _components(model_data),
+        # The bridge never writes COEF_RIGI_DRZ (AFFE_CARA_ELEM COQUE,
+        # bridge_to_aster._build_cara_elem_block); a key for when it does
+        "coef_rigi_drz": model_data.get("coef_rigi_drz"),
+        "beam_axes": mesh["beam_axes"],
+        "excentrement": mesh["excentrement"],
     }
 
 
