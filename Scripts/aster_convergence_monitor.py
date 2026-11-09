@@ -64,6 +64,7 @@ from bridge_utils import tr      # noqa: E402
 
 try:
     import tkinter as tk
+    import tkinter.font  # noqa: F401  (tk.font: font metrics)
     from tkinter import filedialog, messagebox
 except ImportError:      # pragma: no cover - only without tkinter
     tk = None
@@ -314,7 +315,32 @@ def _fmt(v):
 
 
 class Plot(object):
+    # Margins in pixels at 100 %; fit_fonts() makes them larger when the
+    # fonts are larger (display scale). LEG_Y: centre of the legend line
+    # (None: 12 px above the plot).
     PL, PR, PT, PB = 70, 64, 40, 34
+    LEG_Y = None
+    TITLE_H = 30
+
+    @classmethod
+    def fit_fonts(cls, root):
+        """Margins from the font sizes: Tk scales the fonts with the
+        display scale (tk scaling), but not pixel distances. Without this
+        the legend runs into the title and the x-axis caption into the
+        tick labels at 125 %."""
+        font = tk.font.Font(root=root, font=_FONT)
+        bold = tk.font.Font(root=root, font=_FONT_B)
+        line = font.metrics("linespace")
+        line_b = bold.metrics("linespace")
+        tick = font.measure(u"1e-12")
+        cls.PL = max(70, 6 + line + 6 + tick + 6)
+        cls.PR = max(64, 4 + tick + 6 + line + 6)
+        cls.PT = max(40, 4 + line_b + 2 + line + 4)
+        cls.PB = max(34, 6 + line + 2 + line + 2)
+        cls.LEG_Y = 4 + line_b + 2 + line // 2
+        cls.TITLE_H = max(30, 4 + line_b + 6)
+        global _ROW_DY
+        _ROW_DY = max(19, line + 3)
 
     def __init__(self, master, title, on_click=None):
         self.c = tk.Canvas(master, background="white", highlightthickness=1,
@@ -528,7 +554,7 @@ class Plot(object):
         # Legend
         # Legend: one line between title and plot.
         lx = px0
-        ly = py0 - 12
+        ly = self.LEG_Y if self.LEG_Y is not None else py0 - 12
         for s in series:
             if not s.get("name"):
                 continue
@@ -610,13 +636,17 @@ class Card(object):
         c.create_text(8, 4, anchor="nw", text=self.title, font=_FONT_B)
         if self.fn is not None:
             try:
-                self.fn(c, w, h, 30)
+                self.fn(c, w, h, Plot.TITLE_H)
             except Exception:
                 log("ERROR: " + traceback.format_exc())
 
 
-def _rows(c, x, y, w, rows, label_w=170, dy=19):
+_ROW_DY = 19    # line distance of _rows; Plot.fit_fonts scales it
+
+
+def _rows(c, x, y, w, rows, label_w=170, dy=None):
     """Label/value table; rows = [(label, value, colour or None)]."""
+    dy = dy or _ROW_DY
     for label, value, color in rows:
         c.create_text(x, y, anchor="nw", text=label, font=_FONT,
                       fill=_C_LABEL)
@@ -715,6 +745,7 @@ class Monitor(object):
         root.geometry("{0}x{1}+20+20".format(min(1250, sw - 40),
                                              min(920, sh - 80)))
         root.configure(background="#f4f4f4")
+        Plot.fit_fonts(root)
 
         top = tk.Frame(root, background="#f4f4f4")
         top.pack(side="top", fill="x", padx=6, pady=(6, 0))
@@ -754,6 +785,11 @@ class Monitor(object):
         self.lbl_status.bind("<Configure>", lambda e: self.lbl_status.configure(
             wraplength=max(200, e.width - 10)))
 
+        # Controls, attempt details and messages at the bottom, packed
+        # before the plots: when the window is low, the plots shrink and
+        # the messages keep their minimum height.
+        bottom = tk.Frame(root, background="#f4f4f4")
+        bottom.pack(side="bottom", fill="x")
         grid = tk.Frame(root, background="#f4f4f4")
         grid.pack(side="top", fill="both", expand=True, padx=6, pady=4)
         for i in range(2):
@@ -778,7 +814,7 @@ class Monitor(object):
         self.p_newt.c.grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
         self._build_linear(grid)
 
-        ctl = tk.Frame(root, background="#f4f4f4")
+        ctl = tk.Frame(bottom, background="#f4f4f4")
         ctl.pack(side="top", fill="x", padx=6)
         self.ctl = ctl
         tk.Label(ctl, text=tr(u"Rekenpogingen in (a) en (d):",
@@ -802,11 +838,12 @@ class Monitor(object):
                               highlightthickness=0)
         self.scale.pack(side="left", fill="x", expand=True)
 
-        self.lbl_step = tk.Label(root, text=u"", anchor="w", justify="left",
+        self.lbl_step = tk.Label(bottom, text=u"", anchor="w",
+                                 justify="left",
                                  font=("Consolas", 9), background="#f4f4f4")
         self.lbl_step.pack(side="top", fill="x", padx=6, pady=(2, 2))
 
-        frm = tk.Frame(root)
+        frm = tk.Frame(bottom)
         frm.pack(side="top", fill="x", padx=6, pady=(0, 6))
         self.frm_msgs = frm
         tk.Label(frm, text=tr(u"(e) Meldingen (laatste onderaan; FOUT = "
@@ -815,7 +852,8 @@ class Monitor(object):
                               u"= red, ALARM = orange, action = grey)"),
                  anchor="w",
                  font=_FONT_B).pack(side="top", fill="x")
-        self.txt = tk.Text(frm, height=9, wrap="word", font=("Segoe UI", 9))
+        # at least 6 lines (Text height counts lines of its font)
+        self.txt = tk.Text(frm, height=6, wrap="word", font=("Segoe UI", 9))
         sb = tk.Scrollbar(frm, command=self.txt.yview)
         self.txt.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
@@ -823,8 +861,10 @@ class Monitor(object):
         self.txt.tag_configure("fout", foreground="#c62828")
         self.txt.tag_configure("alarm", foreground="#e65100")
         self.txt.tag_configure("actie", foreground="#777777")
+        indent = tk.font.Font(root=root, font=_FONT).measure(u"-> ")
         self.txt.tag_configure("hint", foreground="#1b5e20",
-                               lmargin1=24, lmargin2=24)
+                               lmargin1=max(24, indent),
+                               lmargin2=max(24, indent))
 
         root.after(50, self.tick)
 
@@ -1601,12 +1641,10 @@ class Monitor(object):
         crit = self._criterion(data)
         self.p_resi.set(
             series=[
-                {"name": tr(u"RESI_GLOB_RELA (links)",
-                            u"RESI_GLOB_RELA (left)"), "points":
+                {"name": u"RESI_GLOB_RELA", "points":
                  series("resi_rela"), "color": "#1565c0",
                  "kind": "linemarkers"},
-                {"name": tr(u"RESI_GLOB_MAXI [N] (rechts)",
-                            u"RESI_GLOB_MAXI [N] (right)"), "points":
+                {"name": u"RESI_GLOB_MAXI [N] (r.)", "points":
                  series("resi_maxi"), "color": "#ef6c00", "kind": "line",
                  "axis": "right", "width": 1},
             ],
@@ -1644,12 +1682,11 @@ class Monitor(object):
                     {"name": tr(u"geconvergeerd", u"converged"),
                      "points": conv,
                      "color": "#2e7d32", "kind": "line", "width": 1},
-                    {"name": tr(u"poging (groen ok, rood mislukt)",
-                                u"attempt (green ok, red failed)"),
+                    {"name": tr(u"poging (rood = mislukt)",
+                                u"attempt (red = failed)"),
                      "points": pts, "colors": cols, "color": "#c62828",
                      "kind": "markers"},
-                    {"name": tr(u"niveau van opdeling (rechts)",
-                                u"subdivision level (right)"),
+                    {"name": tr(u"niveau (r.)", u"level (r.)"),
                      "points": lvl,
                      "color": "#9e9e9e", "kind": "step", "axis": "right",
                      "width": 1},
@@ -1678,8 +1715,8 @@ class Monitor(object):
                    "points": pts,
                    "colors": cols, "color": "#2e7d32", "kind": "bars"}]
         if geom:
-            series.append({"name": tr(u"geom. contactlussen (rechts)",
-                                      u"geom. contact loops (right)"),
+            series.append({"name": tr(u"geom. lussen (r.)",
+                                      u"geom. loops (r.)"),
                            "points": geom, "color": "#000000",
                            "kind": "markers", "axis": "right", "size": 2})
         iter_max = data.iter_max or self.args.iter_max
@@ -1713,14 +1750,13 @@ class Monitor(object):
                                    u"(d) Contact per Newton iteration")
             self.p_cont.set(
                 series=[
-                    {"name": tr(u"statuswisselingen (rechts)",
-                                u"status changes (right)"), "points": vari,
+                    {"name": tr(u"wisselingen (r.)",
+                                u"changes (r.)"), "points": vari,
                      "color": "#b0bec5", "kind": "bars", "axis": "right"},
                     {"name": u"PRESSURE ERROR", "points":
                      series("cont_press"), "color": "#6a1b9a",
                      "kind": "linemarkers"},
-                    {"name": tr(u"CRITERE VALEUR (einde geom. lus)",
-                                u"CRITERE VALEUR (end of geom. loop)"),
+                    {"name": u"CRITERE VALEUR",
                      "points": crit, "color": "#2e7d32", "kind": "markers",
                      "size": 5},
                 ],
