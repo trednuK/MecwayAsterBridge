@@ -3,13 +3,14 @@
 ## V2026.9 – unreleased
 
 Beams with a general section show the stress over their section in Mecway, and `POU_D_TG`
-beams get the right stresses and reactions in buckling, modal with prestress and linear
-static. The main window and the convergence window fit a display scale of 125 %. Behaviour
-changes: the `.comm` of models with `POU_D_TG` beams (an extra elastic `STAT_NON_LINE`
-step), a force on shell faces selected on both sides (now the full Mecway force, was half),
-and a pinned support in 2D. The full regression ran 579 cases: 3066 of 3072 checks OK, 6 known
-limitations, 0 unexpected, no status change against the previous run. The new windows and
-the `POU_D_TG` step have not been tested in the Mecway window yet.
+beams get the right stresses and reactions in buckling and modal with prestress, and the right
+reactions in linear static. The main window and the convergence window fit a display scale of
+125 %. Behaviour changes, among others: the `.comm` of models with `POU_D_TG` beams (an extra
+elastic `STAT_NON_LINE` step), a force on shell faces selected on both sides (now the full
+Mecway force, was half), and a pinned support in 2D. The full regression ran 579 cases: 3066
+of 3072 checks OK, 6 known limitations, 0 unexpected, no status change against the previous
+run. The new windows, the `POU_D_TG` step and the section stresses have not been tested in the
+Mecway window yet.
 
 - **Main window**: one button *Section ▾* with a menu (show, hide, in results) replaces the two
   section buttons; *Explanation...* is gone (the glossary is the first item of the page
@@ -44,9 +45,11 @@ the `POU_D_TG` step have not been tested in the Mecway window yet.
   shift to the shear centre, no thermal strain); the reactions per node and the geometric
   stiffness inherit it, while the sum of the reactions stays right (KNOWN_BUGS 123). Buckling,
   modal with prestress, imperfection and dead loads now take the stress state from one
-  elastic `STAT_NON_LINE` step, and linear static takes its reactions from it. A C cantilever
-  buckled at 1.60 times its load instead of 54.3. Only the `.comm` of models with `POU_D_TG`
-  changes. The nodal reactions of a spectrum analysis stay wrong, with a WARNING. New
+  elastic `STAT_NON_LINE` step, and linear static takes its reactions from it. Before, a C
+  cantilever gave a buckling factor of 1.60 instead of 54.3. Only the `.comm` of models with `POU_D_TG`
+  changes. The nodal reactions of a spectrum analysis stay wrong, with a WARNING; with `#ASTER-XFEM` the
+  reactions stay those of `MECA_STATIQUE`, without a message; the cyclic route has not been run
+  with `POU_D_TG`. New
   verification LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b. Not tested in the Mecway window.
 - **Keep the Code-Aster base of a static run**: new settings `keep_base` and `keep_base_runs`,
   off by default. A kept base gets a manifest after a run that ended well, for a follow-up
@@ -61,7 +64,8 @@ the `POU_D_TG` step have not been tested in the Mecway window yet.
   and gravity; hydrostatic and formula pressures stay fixed next to a follower pressure on
   the same selection; the own nodes of flexible joints, offsets and pre-tension copies get the
   temperature of their Mecway node; prestress and buckling with only connections between
-  parts stop with an ERROR before Code-Aster.
+  parts stop with an ERROR before Code-Aster, and an `#ASTER-EXCIT` load counts as a support in
+  modal and buckling (no false ERROR or free-free).
 - **Section table of another version**: a `<model>_<run_id>_section.json` of another version
   gives a WARNING with both versions instead of being passed over, and its warnings are still
   logged; a file that cannot be read gives a WARNING.
