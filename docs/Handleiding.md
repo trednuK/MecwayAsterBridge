@@ -151,11 +151,11 @@ Links staat een **navigatielijst** met de pagina's van het venster, in groepen:
 *Instellingen* (Algemeen, Elementen), *Analyses* (een pagina per analyse) en *Hulp*
 (Documentatie). De gekozen pagina is gemarkeerd (vet, met een blauwe streep); rechts
 staan haar titel en haar instellingen, in groepen. Klik op een pagina, of gebruik de
-pijltjestoetsen (en Home/End) in de lijst; Ctrl+Tab en Ctrl+PageDown gaan vanuit het
+pijltjestoetsen (en Home/End, PageUp/PageDown) in de lijst; Ctrl+Tab en Ctrl+PageDown gaan vanuit het
 hele venster naar de volgende pagina, Ctrl+Shift+Tab en Ctrl+PageUp naar de vorige.
 Het venster mag groter gesleept worden (padvelden groeien mee); in een klein venster
-schuiven de lijst en de pagina. *Starten* en *Sluiten* staan rechtsonder, de andere
-knoppen links.
+schuiven de lijst en de pagina (de lijst met het muiswiel of de balk rechts ervan).
+*Starten* en *Sluiten* staan rechtsonder, de andere knoppen links.
 
 ![Hoofdvenster met genummerde onderdelen en knoppen](img/main_window_nl.png)
 
@@ -167,20 +167,18 @@ knoppen links.
 | 4 | Bladeren... | Kiest bij een veld met een pad het bestand of de map in een Windows-venster |
 | 5 | Statusvak | De uitkomst van de laatste actie en de meldingen |
 | 6 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1); met AdvancedToolsHub ook *In MWHub Post* (de gekozen run in ParaView, met `.rmed` of `.pvd`). Daarna komt het venster terug |
-| 7 | Doorsnede tonen / Doorsnede verbergen | Slaat de instellingen en het model op en toont de vorm van General sections op de balken als tijdelijke elementen, vóór een berekening; een tweede klik haalt ze weg (§4.3) |
-| 8 | Doorsnede in resultaten | Slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw. Na een Code-Aster-run gebeurt dat vanzelf (§4.3) |
-| 9 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
-| 10 | Uitleg... | Opent op de pagina Documentatie de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) |
-| 11 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...*, *Doorsnede tonen* of *Doorsnede in resultaten* hebt gewijzigd, worden niet opgeslagen |
-| 12 | Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
+| 7 | Doorsnede ▾ | Een menu voor de vorm van General sections (§4.3). *Doorsnede tonen* slaat de instellingen en het model op en toont de vorm op de balken als tijdelijke elementen, vóór een berekening; *Doorsnede verbergen* haalt ze weer weg. *Doorsnede in resultaten* slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw; na een Code-Aster-run gebeurt dat vanzelf |
+| 8 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
+| 9 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...* of actie in het menu *Doorsnede* hebt gewijzigd, worden niet opgeslagen |
+| 10 | Starten | Slaat de instellingen op, slaat het model op en start Code-Aster (§2). Daarna komt het venster terug |
 
 - **Tooltips:** ga met de muis over een instelling voor uitleg; bij een keuzelijst
   staat ook de betekenis van elke optie erbij.
-- **Pagina Documentatie:** de woordenlijst en de documenten uit `docs/` (in de
+- **Pagina Documentatie:** de woordenlijst met codes en namen (D31, `GDEF_LOG`, `MUMPS`, ...) en de documenten uit `docs/` (in de
   gekozen taal), met opmaak; links naar andere documenten en naar koppen werken,
   webadressen openen in de standaardbrowser.
 - **Opslaan:** instellingen gelden voor de run en worden bij *Starten*, *Resultaten...*,
-  *Doorsnede tonen* en *Doorsnede in resultaten* opgeslagen in `Scripts/bridge_utils.py` (vorige versie:
+  de acties in het menu *Doorsnede* opgeslagen in `Scripts/bridge_utils.py` (vorige versie:
   `bridge_utils.py.bak`). Lukt het venster niet (Windows Forms niet beschikbaar), dan
   vraagt de bridge de instellingen met tekstvragen (`mw.input`) en doet hij één run.
 
@@ -605,21 +603,23 @@ die regels niet. De bridge vergelijkt het oppervlak in de regels met de General 
 materiaal: verschillen ze, dan is de doorsnede daarna gewijzigd en wordt de omtrek niet
 gebruikt.
 
-De knoppen voor de doorsnede staan onder in het hoofdvenster (§3):
+De acties voor de doorsnede staan in het menu van de knop *Doorsnede ▾* onder in het hoofdvenster
+(§3):
 
-![Knoppen voor de doorsnede onder in het hoofdvenster](img/section_buttons_nl.png)
+![Menu Doorsnede onder in het hoofdvenster](img/section_buttons_nl.png)
 
-1. *Doorsnede tonen*, na de klik *Doorsnede verbergen*: de vorm op de balken vóór een
-   berekening. Slaat de instellingen en het model op.
-2. *Doorsnede in resultaten*: de vorm met zijn waarden in de resultaten. Haalt eerst de
+1. *Doorsnede ▾*: opent het menu (ook met de rechtermuisknop).
+2. *Doorsnede tonen* en *Doorsnede verbergen*: de vorm op de balken vóór een berekening, en
+   die weer weghalen. Alleen de actie die past is te kiezen. Slaat de instellingen en het model op.
+3. *Doorsnede in resultaten*: de vorm met zijn waarden in de resultaten. Haalt eerst de
    tijdelijke elementen van *Doorsnede tonen* weg en slaat de instellingen en het model op.
-3. Statusvak: de uitkomst van beide knoppen en de meldingen, zie de tabel onderaan dit hoofdstuk.
+4. Statusvak: de uitkomst van deze acties en de meldingen, zie de tabel onderaan dit hoofdstuk.
 
-**Vóór een berekening.** De knop *Doorsnede tonen* slaat het model op en zet de vorm op de
-balken met een General section, als tijdelijke elementen in component `Doorsnede_tijdelijk`. De
-knop heet daarna *Doorsnede verbergen*. De tijdelijke elementen verdwijnen:
+**Vóór een berekening.** *Doorsnede tonen* in het menu *Doorsnede* slaat het model op en zet de vorm op de
+balken met een General section, als tijdelijke elementen in component `Doorsnede_tijdelijk`. Het
+menu biedt daarna *Doorsnede verbergen*. De tijdelijke elementen verdwijnen:
 
-- bij een tweede klik;
+- met *Doorsnede verbergen*;
 - bij het sluiten van de bridge;
 - aan het begin van een run of van *Resultaten...*;
 - na een crash: bij de volgende start van de bridge.
@@ -627,7 +627,7 @@ knop heet daarna *Doorsnede verbergen*. De tijdelijke elementen verdwijnen:
 Sla je in Mecway zelf op terwijl de vorm te zien is, dan staat hij tot dat moment ook in het
 bestand.
 
-**In de resultaten.** De knop *Doorsnede in resultaten* zet de vorm als schalen in de
+**In de resultaten.** *Doorsnede in resultaten* in het menu *Doorsnede* zet de vorm als schalen in de
 `<solution>` van de `.liml`, met hun waarden, en opent het model opnieuw. Het modeldeel blijft
 gelijk; de vorige versie blijft bewaard als `.bak` (§5). Aan het eind van een Code-Aster-run
 gebeurt dit één keer vanzelf als het model een omtrek heeft; de `.bak` bevat dan de resultaten

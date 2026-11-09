@@ -25,7 +25,8 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   job, past every try/except: run such code under `aster_results_export._without_fpe`. The
   parser `bridge_convergence.py` is shared and must work in both 2.7 and 3
   (test: `python tests/test_bridge_convergence.py`); so is `bridge_mwpost.py` (job for MWHub Post,
-  also imported by the convergence window).
+  also imported by the convergence window), and `bridge_style.py` (colours and font of the
+  windows, used by `bridge_gui.py` and the convergence window, so both keep the same look).
 - `mw` and `solution` exist only in the main script; pass them as parameters to the `bridge_*` modules.
 - Mecway API: only what is in Mecway's scripting documentation (Mecway manual;
   locally possibly `API_reference Mecway.txt`, copyright Mecway Ltd, not in the repo). There is no API to

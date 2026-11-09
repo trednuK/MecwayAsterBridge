@@ -6,7 +6,7 @@
 # bridge_glossary.py
 # Explanations for the main window (bridge_gui): a tooltip per setting
 # (SETTING_HELP) and a glossary with the codes and Code-Aster names that
-# appear on screen (GLOSSARY, window "Uitleg..."). Text only, in
+# appear on screen (GLOSSARY, first item of the page Documentation). Text only, in
 # both languages (nl, en); the content follows the docs (Handleiding.md,
 # Instellingen_contact_en_nietlineair.md, Bezwijken.md, Modaal_en_knik.md).
 #

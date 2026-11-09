@@ -5,8 +5,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # Offline test of the start screen logic without Windows Forms
 # (bridge_gui): the order of result fields is kept when the selection does
-# not change (otherwise every Start rewrote bridge_utils.py), and the height
-# of the status box. Only CONFIG_BRIDGE in memory; bridge_utils.py itself is
+# not change (otherwise every Start rewrote bridge_utils.py), the height
+# of the status box and the scroll arithmetic of the navigation list. Only CONFIG_BRIDGE in memory; bridge_utils.py itself is
 # not written.
 #
 #   python tests/test_bridge_gui_settings.py
@@ -81,7 +81,6 @@ def test_apply_values_no_change():
 
 
 def test_status_height():
-    check(g._status_height(u"") == 96, "welcome text: small status box")
     short = u"run: stopped.\n\nThe folder of the open model no longer exists:"
     check(g._status_height(short) == 150, "short message: at least 150")
     long_text = u"\n".join([u"line"] * 40)
@@ -89,12 +88,65 @@ def test_status_height():
     lines = u"\n".join([u"line"] * 6)
     check(g._status_height(u"x" * 600) == g._status_height(lines) > 150,
           "line of 600 characters counts as 6 lines")
+    # 125 %: line height 24 instead of 19, every bound grows along
+    check(g._status_height(short, 24) == int(150 * 24 / 19.0),
+          "125 %: minimum grows with the line height")
+    check(g._status_height(long_text, 24) == int(260 * 24 / 19.0),
+          "125 %: maximum grows with the line height")
+    check(g._status_height(lines, 24) > g._status_height(lines),
+          "125 %: six lines need more room")
+    check(g._status_height(lines, 12) == 150,
+          "a smaller line height keeps the bounds of 100 %")
+
+
+def test_nav_scroll():
+    """Arithmetic of the self-drawn scrollbar of the navigation."""
+    total, view, track = 600, 300, 300
+    check(g._nav_clamp(-5, total, view) == 0 and
+          g._nav_clamp(999, total, view) == 300 and
+          g._nav_clamp(120, total, view) == 120, "offset within 0..room")
+    check(g._nav_clamp(50, 200, 300) == 0, "list fits: no scrolling")
+    check(g._nav_thumb(0, total, view, track) == (0, 150),
+          "thumb: half the track when half is visible")
+    check(g._nav_thumb(300, total, view, track) == (150, 150),
+          "thumb at the bottom at the end")
+    check(g._nav_thumb(0, 10000, view, track)[1] == 24,
+          "thumb at least 24 px")
+    check(g._nav_visible_off(320, 352, 0, view) == 52,
+          "row below the view: scroll just enough")
+    check(g._nav_visible_off(10, 42, 100, view) == 10,
+          "row above the view: scroll up to it")
+    check(g._nav_visible_off(110, 142, 100, view) == 100,
+          "row in view: no scrolling")
+    check(g._nav_wheel_off(0, -120, 32, total, view) == 64,
+          "wheel one notch down: two rows")
+    check(g._nav_wheel_off(64, 120, 32, total, view) == 0,
+          "wheel one notch up: back")
+    check(g._nav_wheel_off(290, -240, 32, total, view) == 300,
+          "wheel stops at the end")
+    check(g._nav_drag_off(0, 75, total, view, track, 150) == 150,
+          "drag: the thumb follows the mouse")
+    check(g._nav_drag_off(100, -1, total, view, track, 150) == 98,
+          "drag 1 px up moves 2 px (no rounding towards -inf)")
+    check(g._nav_drag_off(100, 1, total, view, track, 150) == 102,
+          "drag 1 px down moves 2 px")
+    check(g._nav_track_off(0, 280, 0, 150, total, view) == 300,
+          "click below the thumb: one view down")
+    check(g._nav_track_off(300, 10, 150, 150, total, view) == 0,
+          "click above the thumb: one view up")
+    check(g._nav_track_off(100, 120, 50, 150, total, view) == 100,
+          "click on the thumb itself: no jump")
+    check(g._nav_page_index(0, 17, 11, True) == 10, "PageDown: 10 pages")
+    check(g._nav_page_index(15, 17, 11, True) == 16, "PageDown stops at end")
+    check(g._nav_page_index(3, 17, 11, False) == 0, "PageUp stops at top")
+    check(g._nav_page_index(5, 17, 1, True) == 6, "PageDown at least 1")
 
 
 def main():
     test_keep_order()
     test_apply_values_no_change()
     test_status_height()
+    test_nav_scroll()
     print("{0} failure(s)".format(len(_FAILED)))
     return 1 if _FAILED else 0
 

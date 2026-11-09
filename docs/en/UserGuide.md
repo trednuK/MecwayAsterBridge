@@ -159,11 +159,11 @@ On the left is a **navigation list** with the pages of the window, in groups:
 "Settings" (General, Elements), "Analyses" (one page per analysis) and
 "Help" (Documentation). The chosen page is highlighted (bold, with a blue bar);
 on the right are its title and its settings, in groups. Click a page, or use the arrow
-keys (and Home/End) in the list; Ctrl+Tab and Ctrl+PageDown go to the next page from
+keys (and Home/End, PageUp/PageDown) in the list; Ctrl+Tab and Ctrl+PageDown go to the next page from
 anywhere in the window, Ctrl+Shift+Tab and Ctrl+PageUp to the previous one. The
 window can be dragged larger (path fields grow along); in a small window the list and
-the page scroll. "Start" and "Close" are at the bottom right,
-the other buttons on the left.
+the page scroll (the list with the mouse wheel or the bar on its right). "Start" and "Close"
+are at the bottom right, the other buttons on the left.
 
 ![Main window with numbered parts and buttons](../img/main_window_en.png)
 
@@ -175,20 +175,18 @@ the other buttons on the left.
 | 4 | "Browse..." | Chooses the file or folder of a path field in a Windows dialog |
 | 5 | Status box | The outcome of the last action and the messages |
 | 6 | "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1); with AdvancedToolsHub also "In MWHub Post" (the chosen run in ParaView, with `.rmed` or `.pvd`). Then the window comes back |
-| 7 | "Show section" / "Hide section" | Saves the settings and the model and shows the shape of General sections on the beams as temporary elements, before a calculation; a second click removes them (§4.3) |
-| 8 | "Section in results" | Saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model. After a Code-Aster run this happens automatically (§4.3) |
-| 9 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
-| 10 | "Explanation..." | Opens the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) on the Documentation page |
-| 11 | "Close" | Closes the bridge. Settings changed after the last Start, Results..., Show section or Section in results are not saved |
-| 12 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
+| 7 | "Section ▾" | A menu for the shape of General sections (§4.3). "Show section" saves the settings and the model and shows the shape on the beams as temporary elements, before a calculation; "Hide section" removes them again. "Section in results" saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model; after a Code-Aster run this happens automatically |
+| 8 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
+| 9 | "Close" | Closes the bridge. Settings changed after the last Start, Results... or action in the Section menu are not saved |
+| 10 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
 
 - **Tooltips:** hover over a setting for an explanation; for a choice list the
   meaning of each option is shown too.
-- **Documentation page:** the glossary and the documents from `docs/` (in the chosen
+- **Documentation page:** the glossary of codes and names (D31, `GDEF_LOG`, `MUMPS`, ...) and the documents from `docs/` (in the chosen
   language), with formatting; links to other documents and to headings work, web
   addresses open in the default browser.
-- **Saving:** settings apply to the run and are saved on Start, Results..., Show section
-  and Section in results in `Scripts/bridge_utils.py` (previous version: `bridge_utils.py.bak`). If the window
+- **Saving:** settings apply to the run and are saved on Start, Results... and the actions
+  of the Section menu in `Scripts/bridge_utils.py` (previous version: `bridge_utils.py.bak`). If the window
   cannot be shown (Windows Forms not available), the bridge asks for the settings
   with text prompts (`mw.input`) and does a single run.
 
@@ -605,29 +603,31 @@ as comment lines `** SECTIE-VORM` into a custom model definition. A run does not
 lines. The bridge compares the area in the lines with the General section of the material: if
 they differ, the section was changed afterwards and the outline is not used.
 
-The buttons for the section are at the bottom of the main window (§3):
+The actions for the section are in the menu of the "Section ▾" button at the bottom of the main
+window (§3):
 
-![Buttons for the section at the bottom of the main window](../img/section_buttons_en.png)
+![Section menu at the bottom of the main window](../img/section_buttons_en.png)
 
-1. "Show section", after the click "Hide section": the shape on the beams before a
-   calculation. Saves the settings and the model.
-2. "Section in results": the shape with its values in the results. First removes the
+1. "Section ▾": opens the menu (also with a right-click).
+2. "Show section" and "Hide section": the shape on the beams before a calculation, and
+   removing it again. Only the one that applies can be chosen. Saves the settings and the model.
+3. "Section in results": the shape with its values in the results. First removes the
    temporary elements of "Show section" and saves the settings and the model.
-3. Status box: the outcome of both buttons and the messages, see the table at the end of this
+4. Status box: the outcome of these actions and the messages, see the table at the end of this
    chapter.
 
-**Before a calculation.** The "Show section" button saves the model and puts the shape on the
+**Before a calculation.** "Show section" in the Section menu saves the model and puts the shape on the
 beams with a General section, as temporary elements in component `Doorsnede_tijdelijk`. The
-button is then called "Hide section". The temporary elements go:
+menu then offers "Hide section". The temporary elements go:
 
-- on a second click;
+- with "Hide section";
 - when the bridge is closed;
 - at the start of a run or of Results...;
 - after a crash: at the next start of the bridge.
 
 If you save in Mecway itself while the shape is shown, it is in the file as well until then.
 
-**In the results.** The "Section in results" button puts the shape as shells in the
+**In the results.** "Section in results" in the Section menu puts the shape as shells in the
 `<solution>` of the `.liml`, with their values, and reopens the model. The model part stays
 unchanged; the previous version is kept as `.bak` (§5). At the end of a Code-Aster run this
 happens automatically once when the model has an outline; the `.bak` then holds the results

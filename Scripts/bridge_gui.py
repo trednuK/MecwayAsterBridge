@@ -50,6 +50,7 @@ import bridge_docs
 import bridge_glossary
 import bridge_results_liml
 import bridge_section_model
+import bridge_style
 from bridge_utils import (CONFIG_BRIDGE, MECWAY_ANALYSIS_TYPES, tr,
                           work_dir_path, exe_aster_path, expand_path,
                           default_work_dir, resolve_work_dir, model_path,
@@ -527,20 +528,11 @@ SECTION_BEFORE = {
 }
 
 # Colours (R, G, B) and sizes of the windows: calm grey-white with a
-# blue accent colour, font Segoe UI (Windows default).
-_STYLE = {
-    "font": ("Segoe UI", 9.0),
-    "header_bg": (36, 54, 75),
-    "header_fg": (255, 255, 255),
-    "header_sub": (190, 202, 216),
-    "accent": (31, 111, 178),
-    "accent_hover": (24, 92, 150),
-    "window_bg": (243, 245, 248),
-    "page_bg": (255, 255, 255),
-    "line": (218, 223, 230),
-    "muted": (96, 106, 120),
-    "status_bg": (236, 240, 245),
-    "button_bg": (255, 255, 255),
+# blue accent colour, font Segoe UI (Windows default). The colours and the
+# font come from bridge_style (shared with the convergence window).
+_STYLE = dict(bridge_style.COLOURS)
+_STYLE.update({
+    "font": bridge_style.FONT,
     "label_w_max": 420,  # label column at most this wide (long labels)
     "label_w": 300,      # width of label column
     "row_h": 32,         # height of a row
@@ -549,8 +541,7 @@ _STYLE = {
     "nav_row_h": 32,     # height of a page in the navigation
     "nav_caption_h": 26,  # extra height for a group heading above it
     "nav_bar_w": 8,      # width of the scrollbar of the navigation
-    "scroll_thumb": (160, 170, 184),
-}
+})
 
 # Default values for general keys that are still missing in an older
 # bridge_utils.py (then the value is used, but not saved).
@@ -682,21 +673,79 @@ def exe_missing_text():
               u"User guide §1.\n\n").format(exe or u"-")
 
 
-def _status_height(text):
+def _status_height(text, line_h=19):
     """
-    Height in pixels of the status box of the main window: small for the
-    welcome text (empty text), larger with the outcome of a run or a
-    message, so that it can be read without scrolling. About 19 px per
-    line (Segoe UI 10); a line of more than 120 characters counts as more
-    lines. At most 260, so that the settings above it stay usable; the user
-    can drag it larger (Splitter).
+    Height in pixels of the status box of the main window with the outcome
+    of a run or a message, so that it can be read without scrolling. About
+    line_h px per line (19 for Segoe UI 10 at 100 %; the window passes the
+    measured line height, so the box grows with the display scale); a line
+    of more than 120 characters counts as more lines. At least 150 and at
+    most 260 px at 100 %, scaled the same way, so that the settings above
+    it stay usable; the user can drag it larger (Splitter). The welcome
+    text alone is measured in the window itself (_show_winforms_dialog).
     """
-    if not text:
-        return 96
+    k = max(1.0, line_h / 19.0)
     lines = 0
     for line in u"{0}".format(text).replace(u"\r\n", u"\n").split(u"\n"):
         lines += 1 + len(line) // 120
-    return max(150, min(260, 44 + 19 * lines))
+    return int(max(150 * k, min(260 * k, 44 * k + line_h * lines)))
+
+
+# Scroll arithmetic of the self-drawn scrollbar of the navigation list
+# (pure functions, no Windows Forms: tested offline). off: pixels the list
+# is scrolled up; total: height of all pages; view: visible height; track:
+# height of the scrollbar.
+def _nav_clamp(off, total, view):
+    """off within 0 .. total - view."""
+    return max(0, min(max(0, total - view), int(off)))
+
+
+def _nav_thumb(off, total, view, track, min_h=24):
+    """(top, height) of the thumb: its height is the visible part of the
+    list, at least min_h; its top follows off."""
+    total = max(1, total)
+    h = min(track, max(min_h, track * view // total))
+    room = max(1, total - view)
+    return int(float(track - h) * _nav_clamp(off, total, view) / room), h
+
+
+def _nav_visible_off(top, bottom, off, view):
+    """off that shows the rows top..bottom (list pixels) with the least
+    scrolling."""
+    if top < off:
+        return top
+    if bottom > off + view:
+        return bottom - view
+    return off
+
+
+def _nav_wheel_off(off, delta, row_h, total, view):
+    """off after a mouse wheel turn: one notch (delta 120) = two rows."""
+    return _nav_clamp(off - int(float(delta) * row_h / 60.0), total, view)
+
+
+def _nav_drag_off(off0, dy, total, view, track, thumb_h):
+    """off while the thumb is dragged dy pixels from where it was taken
+    (off0 then): the thumb follows the mouse."""
+    room = max(0, total - view)
+    free = max(1, track - thumb_h)
+    return _nav_clamp(off0 + int(float(dy) * room / free), total, view)
+
+
+def _nav_track_off(off, y, thumb_top, thumb_h, total, view):
+    """off after a click on the track at y: one view up or down."""
+    if y < thumb_top:
+        return _nav_clamp(off - view, total, view)
+    if y >= thumb_top + thumb_h:
+        return _nav_clamp(off + view, total, view)
+    return off
+
+
+def _nav_page_index(k, count, rows_in_view, down):
+    """Selected page after PageDown (down) or PageUp in the navigation:
+    as many pages further as fit in the visible part (at least one)."""
+    step = max(1, rows_in_view - 1)
+    return max(0, min(count - 1, k + (step if down else -step)))
 
 
 def _format_value(value, kind):
@@ -1199,7 +1248,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
             FolderBrowserDialog, MessageBox, MessageBoxButtons,
             MessageBoxIcon, ToolTip, ListBox, ScrollBars, Application,
             Panel, DockStyle, BorderStyle, Padding, Splitter,
-            ContextMenuStrip, ToolStripMenuItem, ToolStripSeparator)
+            ContextMenuStrip, ToolStripMenuItem, ToolStripSeparator,
+            ToolStripDropDownDirection)
         from System.Drawing import Point, Size
         from System.Threading import Thread, ThreadStart, ApartmentState
     except Exception as e:
@@ -1257,7 +1307,12 @@ def _show_winforms_dialog(current, status=u"", model=None):
             form.Controls.Add(body)
             status_panel = Panel()
             status_panel.Dock = DockStyle.Bottom
-            status_panel.Height = _status_height(exe_missing_text() + status)
+            # With a message: as high as it needs (_status_height, scaled
+            # with the line height); the welcome text alone is measured
+            # below, once the status box exists.
+            status_line_h = look.line_height(look.status)
+            status_panel.Height = _status_height(
+                exe_missing_text() + status or u"-", status_line_h)
             status_panel.Padding = Padding(12, 2, 12, 4)
             form.Controls.Add(status_panel)
             # Drag edge between the main part and the status box: the user
@@ -1266,7 +1321,9 @@ def _show_winforms_dialog(current, status=u"", model=None):
             status_split.Dock = DockStyle.Bottom
             status_split.Height = 6
             status_split.MinSize = 60
-            status_split.MinExtra = 220
+            # the page keeps at least 220 px at 100 %, more when the rows
+            # are higher (display scale)
+            status_split.MinExtra = int(220 * max(1.0, status_line_h / 19.0))
             status_split.BackColor = look.col("window_bg")
             form.Controls.Add(status_split)
             footer = Panel()
@@ -1318,7 +1375,9 @@ def _show_winforms_dialog(current, status=u"", model=None):
             nav_bar.Width = _STYLE["nav_bar_w"]
             nav_bar.BackColor = look.col("window_bg")
             nav_bar.Visible = False
+            nav_bar.Name = "nav_bar"
             nav_clip = Panel()
+            nav_clip.Name = "nav_clip"
             nav_clip.Dock = DockStyle.Fill
             nav_holder.Controls.Add(nav_clip)
             nav_holder.Controls.Add(nav_bar)
@@ -1416,25 +1475,23 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 return sum(nav_row_h + caption_h(i)
                            for i in range(len(pages)))
 
+            def nav_view():
+                return nav_clip.ClientSize.Height
+
             def nav_thumb():
                 """(top, height) of the thumb in the scrollbar."""
-                view = nav_clip.ClientSize.Height
-                total = max(1, nav_total())
-                track = nav_bar.ClientSize.Height
-                h = max(24, track * view // total)
-                room = max(1, total - view)
-                return (track - h) * nav_state["off"] // room, h
+                return _nav_thumb(nav_state["off"], nav_total(), nav_view(),
+                                  nav_bar.ClientSize.Height)
 
             def nav_scroll(off):
-                room = max(0, nav_total() - nav_clip.ClientSize.Height)
-                nav_state["off"] = max(0, min(room, int(off)))
+                nav_state["off"] = _nav_clamp(off, nav_total(), nav_view())
                 nav.Top = -nav_state["off"]
                 nav_bar.Invalidate()
 
             def nav_layout(sender=None, args=None):
                 # Full height: the list itself never scrolls.
                 nav.Height = nav_total() + 2
-                nav_bar.Visible = nav_total() > nav_clip.ClientSize.Height
+                nav_bar.Visible = nav_total() > nav_view()
                 nav.Width = nav_clip.ClientSize.Width
                 nav_scroll(nav_state["off"])
 
@@ -1443,11 +1500,8 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 if not 0 <= k < nav.Items.Count:
                     return
                 r = nav.GetItemRectangle(k)
-                view = nav_clip.ClientSize.Height
-                if r.Top < nav_state["off"]:
-                    nav_scroll(r.Top)
-                elif r.Bottom > nav_state["off"] + view:
-                    nav_scroll(r.Bottom - view)
+                nav_scroll(_nav_visible_off(r.Top, r.Bottom,
+                                            nav_state["off"], nav_view()))
 
             def on_bar_paint(sender, e):
                 w = nav_bar.ClientSize.Width
@@ -1456,34 +1510,62 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     2, 0, w - 4, nav_bar.ClientSize.Height))
                 brush.Dispose()
                 top, h = nav_thumb()
-                brush = SolidBrush(look.col("scroll_thumb"))
+                brush = SolidBrush(look.col(
+                    "scroll_thumb_drag" if nav_state["drag"] is not None
+                    else "scroll_thumb"))
                 e.Graphics.FillRectangle(brush, Rectangle(1, top, w - 2, h))
                 brush.Dispose()
 
             def on_bar_down(sender, e):
                 top, h = nav_thumb()
                 if top <= e.Y < top + h:
+                    # Capture: the drag goes on when the mouse leaves the
+                    # narrow bar.
                     nav_state["drag"] = (e.Y, nav_state["off"])
-                else:   # click on the track: a page up or down
-                    view = nav_clip.ClientSize.Height
-                    nav_scroll(nav_state["off"] +
-                               (view if e.Y >= top + h else -view))
+                    nav_bar.Capture = True
+                    nav_bar.Invalidate()
+                else:   # click on the track: one view up or down
+                    nav_scroll(_nav_track_off(nav_state["off"], e.Y, top, h,
+                                              nav_total(), nav_view()))
 
             def on_bar_move(sender, e):
                 if nav_state["drag"] is None:
                     return
                 y0, off0 = nav_state["drag"]
                 _top, h = nav_thumb()
-                track = max(1, nav_bar.ClientSize.Height - h)
-                room = nav_total() - nav_clip.ClientSize.Height
-                nav_scroll(off0 + (e.Y - y0) * room // track)
+                nav_scroll(_nav_drag_off(off0, e.Y - y0, nav_total(),
+                                         nav_view(),
+                                         nav_bar.ClientSize.Height, h))
 
-            def on_bar_up(sender, e):
-                nav_state["drag"] = None
+            def end_drag(sender=None, args=None):
+                if nav_state["drag"] is not None:
+                    nav_state["drag"] = None
+                    nav_bar.Capture = False
+                    nav_bar.Invalidate()
 
             def on_nav_wheel(sender, e):
-                # one notch (Delta 120) = two rows
-                nav_scroll(nav_state["off"] - e.Delta * nav_row_h // 60)
+                # Over the list, its scrollbar or the empty part below:
+                # Windows sends the wheel to the control under the mouse
+                # (setting 'Scroll inactive windows', on by default).
+                nav_scroll(_nav_wheel_off(nav_state["off"], e.Delta,
+                                          nav_row_h, nav_total(), nav_view()))
+                try:
+                    e.Handled = True   # HandledMouseEventArgs
+                except Exception:
+                    pass
+
+            def on_nav_key(sender, e):
+                # The list is as high as all pages, so its own PageDown/
+                # PageUp would jump to the last/first page: move by the
+                # pages that fit in the visible part instead.
+                if e.Control or e.KeyCode not in (Keys.Next, Keys.Prior):
+                    return
+                k = nav.SelectedIndex if nav.SelectedIndex >= 0 else 0
+                nav.SelectedIndex = _nav_page_index(
+                    k, nav.Items.Count, max(1, nav_view() // nav_row_h),
+                    e.KeyCode == Keys.Next)
+                e.Handled = True
+                e.SuppressKeyPress = True
 
             def on_nav_draw(sender, e):
                 i = e.Index
@@ -1581,11 +1663,15 @@ def _show_winforms_dialog(current, status=u"", model=None):
             nav.MouseMove += on_nav_move
             nav.MouseLeave += on_nav_leave
             nav.MouseWheel += on_nav_wheel
+            nav.KeyDown += on_nav_key
+            nav.GotFocus += lambda sender, args: nav_show(nav.SelectedIndex)
             nav_bar.Paint += on_bar_paint
             nav_bar.MouseDown += on_bar_down
             nav_bar.MouseMove += on_bar_move
-            nav_bar.MouseUp += on_bar_up
+            nav_bar.MouseUp += end_drag
+            nav_bar.MouseCaptureChanged += end_drag
             nav_bar.MouseWheel += on_nav_wheel
+            nav_clip.MouseWheel += on_nav_wheel
             nav_clip.Resize += nav_layout
             form.KeyPreview = True
             form.KeyDown += on_form_key
@@ -2096,6 +2182,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
             status_box.ScrollBars = ScrollBars.Vertical
             status_box.Font = look.status
             status_box.Dock = DockStyle.Fill
+            status_box.Name = "status_box"
             status_box.Text = (exe_missing_text() + (status or tr(
                 "Kies de instellingen en klik Starten. Ga met de muis over "
                 "een instelling voor uitleg; codes en namen staan op de "
@@ -2114,11 +2201,16 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 # Welcome text only: the status box as high as that text
                 # needs in the narrowest window (panel padding, title, card
                 # padding, the wrapped text, margin), so that the
-                # navigation shows more pages.
-                text_h = look.text_size(status_box.Text, look.status,
-                                        form.MinimumSize.Width - 70).Height
+                # navigation shows more pages. One line of slack: the
+                # TextBox wraps a little narrower than TextRenderer measures
+                # (inner margins, the space of its scrollbar).
+                from System.Windows.Forms import SystemInformation
+                text_h = look.text_size(
+                    status_box.Text, look.status,
+                    form.MinimumSize.Width - 70 -
+                    SystemInformation.VerticalScrollBarWidth).Height
                 status_panel.Height = (6 + status_title.Height + 12 +
-                                       text_h + 6)
+                                       text_h + status_line_h // 2 + 6)
 
             # --- Buttons: helper buttons on the left, on the right Sluiten
             # and the primary button Starten (fit_footer places them) ---
@@ -2242,12 +2334,17 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 "from the model (small .liml)."))
             # One button for the section of General sections, with a menu
             # (show, hide, in results); the menu opens below the button.
+            # The enabled states are set once: every action of the menu
+            # closes the window, which is rebuilt with the new state.
             section_shown = bool(_MODEL_INFO.get("section_shown"))
             section_menu = ContextMenuStrip()
             section_menu.Font = look.font
             section_menu.ShowImageMargin = False
-            for text, enabled, handler, help_text in (
-                    (tr("Doorsnede tonen", "Show section"),
+            section_menu.ShowItemToolTips = True
+            # not a child of the form: release it with the form
+            form.Disposed += lambda sender, args: section_menu.Dispose()
+            for name, text, enabled, handler, help_text in (
+                    ("section_show", tr("Doorsnede tonen", "Show section"),
                      not section_shown, on_section, tr(
                         "Toont de echte vorm van General sections op de "
                         "balken, als tijdelijke elementen, om hem vóór een "
@@ -2257,14 +2354,16 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         "beams, as temporary elements, to see it before a "
                         "calculation. Saves the model first. The shape "
                         "comes from MecwaySectionProps.")),
-                    (tr("Doorsnede verbergen", "Hide section"),
+                    ("section_hide",
+                     tr("Doorsnede verbergen", "Hide section"),
                      section_shown, on_section, tr(
                         "Haalt de tijdelijke elementen van Doorsnede tonen "
                         "weer uit het model.",
                         "Removes the temporary elements of Show section "
                         "from the model again.")),
-                    (None, True, None, None),
-                    (tr("Doorsnede in resultaten", "Section in results"),
+                    (None, None, True, None, None),
+                    ("section_results",
+                     tr("Doorsnede in resultaten", "Section in results"),
                      True, on_section_results, tr(
                         "Zet de vorm van General sections met hun waarden "
                         "in de resultaten van dit model. Na een "
@@ -2276,19 +2375,23 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         "Code-Aster run that happens by itself; this is for "
                         "a solve in Mecway itself and after loading "
                         "results. Saves the model."))):
-                if text is None:
+                if name is None:
                     section_menu.Items.Add(ToolStripSeparator())
                     continue
                 item = ToolStripMenuItem(text)
+                item.Name = name
                 item.Enabled = enabled
                 item.ToolTipText = help_text
                 item.Click += handler
                 section_menu.Items.Add(item)
 
             def show_section_menu():
-                section_menu.Show(section_btn, Point(0, section_btn.Height))
+                # upwards: the button is at the bottom of the window
+                section_menu.Show(section_btn, Point(0, 0),
+                                  ToolStripDropDownDirection.AboveRight)
+            # &: Alt+D / Alt+S opens the menu (Click, as Enter and Space)
             section_btn = add_button(
-                tr(u"Doorsnede ▾", u"Section ▾"), 120,
+                tr(u"&Doorsnede ▾", u"&Section ▾"), 120,
                 guarded(show_section_menu), tr(
                     "Vorm van General sections (uit MecwaySectionProps): "
                     "tonen of verbergen op de balken, of in de resultaten "
@@ -2297,6 +2400,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     "show or hide it on the beams, or put it in the "
                     "results."))
             section_btn.ContextMenuStrip = section_menu   # right-click too
+            section_btn.Name = "section_btn"
             add_button(tr("Convergentiescherm", "Convergence window"), 160,
                        on_monitor, tr(
                 "Opent het convergentie- en meldingenscherm (apart venster) "

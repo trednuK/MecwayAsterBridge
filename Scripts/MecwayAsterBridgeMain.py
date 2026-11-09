@@ -18,6 +18,8 @@
 #   bridge_gui           : run_settings_dialog()                (start screen)
 #                          claim_instance()                     (one bridge
 #                          per Mecway at a time)
+#   bridge_style         : colours and font of the windows (shared with
+#                          the convergence window; 2.7 and 3)
 #   bridge_bcs           : BC classes + SUPPORTED_BCS registry
 #   bridge_from_liml     : extract_aster_data_from_liml()       (Mecway -> dict)
 #   bridge_mesh          : write_mesh()                         (.liml -> mesh)
@@ -1761,8 +1763,8 @@ def _section_after_run():
 def main():
     """
     The main window keeps coming back until the user clicks Close:
-    Start does a run, Results... loads or removes results, Show section
-    and Section in results act on the section shape; the convergence screen
+    Start does a run, Results... loads or removes results, the Section
+    menu (show, hide, in results) acts on the section shape; the convergence screen
     and the documentation work in the window itself (bridge_gui). Without
     WinForms (mw.input fallback): one run.
     """
