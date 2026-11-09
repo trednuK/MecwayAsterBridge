@@ -634,6 +634,7 @@ class _Thermal(object):
         self.mesh_segs = None     # _edge_names: {name: nodes} of SEG
         self.mesh_groups = None   # _edge_names: {group: [element names]}
         self.cell_index = None    # _list_group: {element name: cell number}
+        self.skin_index = None    # _skin_cell: {(eid, faceid): 'K<n>'}
         self.node_flows = []      # (node group, value per node or table)
         self.birth = None         # filler material (bridge_welding._births)
         # Sources as functions (SOURCE in AFFE_CHAR_THER_F) together in one
@@ -960,7 +961,12 @@ class _Thermal(object):
         split_edge = len(kinds.get("shelledge", ())) > 1
         out = []                  # (kind, group, f, t)
         g = self.rn(sel)
-        if len(kinds) == 1 and not (split_face or split_edge):
+        if kinds and self._foreign_cells(parts):
+            # The mesh group also holds cells of non-modelled elements:
+            # they must stay out of AFFE_MODELE, ORIE_PEAU and the load.
+            out += self._active_lists(sel, label, parts, kinds, sides,
+                                      split_face, split_edge)
+        elif len(kinds) == 1 and not (split_face or split_edge):
             kind = list(kinds)[0]
             f, t = list(kinds[kind])[0]
             out.append((kind, g, f, t))
@@ -1014,6 +1020,76 @@ class _Thermal(object):
             if kind == "shelledge" and grp not in self.edges:
                 self.edges.append(grp)
         return (out, area) if out and area > 0.0 else None
+
+    def _skin_cell(self, key):
+        """Name of the boundary element ('K<n>') bridge_mesh wrote for face
+        key = (eid, faceid), or None. From model_data["skin_parents"]
+        ({K name: [[eid, faceid]]}, filled once per write_mesh)."""
+        if self.skin_index is None:
+            self.skin_index = dict(
+                ((p[0], p[1]), name) for name, ps in self.md.get(
+                    "skin_parents", {}).items() for p in ps)
+        return self.skin_index.get(key)
+
+    def _foreign_cells(self, parts):
+        """True if an inactive face (element not modelled) has a cell in
+        the mesh group of the selection: a boundary element, or the shell
+        element itself (faceid 5/6). Beam faces have no cell."""
+        shapes = self.md.get("elem_shapes", {})
+        for kind, _a, _n, _f, _t, key in parts:
+            if kind != "inactive":
+                continue
+            if self._skin_cell(key) is not None or (
+                    key[1] in (5, 6) and
+                    shapes.get(key[0]) in bridge_mesh._SHELL_SHAPES):
+                return True
+        return False
+
+    def _active_lists(self, sel, label, parts, kinds, sides, split_face,
+                      split_edge):
+        """[(kind, group, f, t)] with MAILLE lists of only the cells of the
+        modelled faces (_face_targets when the mesh group also holds cells
+        of non-modelled elements). Drops 'shelledge' from kinds if its
+        boundary elements are not found (as _face_targets does)."""
+        out = []
+        if "shelledge" in kinds:
+            if split_edge:
+                edges = self._edge_lists(sel, parts, label)
+                if edges is None:
+                    del kinds["shelledge"]
+                else:
+                    out += edges
+            else:
+                f, t = list(kinds["shelledge"])[0]
+                out.append(("shelledge", self._list_group(
+                    self._active_names(parts, "shelledge")), f, t))
+        if "solid" in kinds:
+            out.append(("solid", self._list_group(
+                self._active_names(parts, "solid")), 1.0, 1.0))
+        if "shellface" in kinds:
+            if split_face:
+                out += self._face_lists(parts, sides, kinds["shellface"])
+            else:
+                f, t = list(kinds["shellface"])[0]
+                out.append(("shellface", self._list_group(
+                    self._active_names(parts, "shellface")), f, t))
+        return out
+
+    def _active_names(self, parts, kind):
+        """Cell names (once each) of the faces of one kind: 'M<eid>' for
+        shell faces, the boundary element for the others. ValueError
+        (face_targets reports it) if a cell is not known."""
+        names = []
+        for k, _a, _n, _f, _t, key in parts:
+            if k != kind:
+                continue
+            name = ("M{0}".format(key[0]) if kind == "shellface"
+                    else self._skin_cell(key))
+            if name is None:
+                raise ValueError(key[0])
+            if name not in names:
+                names.append(name)
+        return names
 
     def _face_lists(self, parts, sides, fts):
         """Shell faces per (f, t, number of sides) in their own group

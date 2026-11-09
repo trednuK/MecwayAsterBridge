@@ -900,15 +900,18 @@ def model_block(model_data, analysis, block):
                        c["name"], h, _H_RATIO, size))
         enri = ""
         if c.get("group"):
-            if c["group"] not in elsel:
+            # element_selections has the Code-Aster names already
+            # (bridge_mesh._apply_to_model_data); c["group"] is the Mecway
+            # name of <<selection>>
+            group = renames.get(c["group"], c["group"])
+            if group not in elsel:
                 log(tr("ERROR: #ASTER-XFEM (scheur {0}): groep '{1}' is geen "
                        "elementselectie van het model.",
                        "ERROR: #ASTER-XFEM (crack {0}): group '{1}' is not "
                        "an element selection of the model.").format(
                            c["name"], c["group"]))
                 return None
-            enri = ",\n    GROUP_MA_ENRI='{0}'".format(
-                renames.get(c["group"], c["group"]))
+            enri = ",\n    GROUP_MA_ENRI='{0}'".format(group)
         i = len(names) + 1
         c["concept"] = "fiss_{0}".format(i)
         names.append(c["concept"])

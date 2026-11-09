@@ -15,7 +15,9 @@
 #     analysis;
 #   - finish_bcs: DZ dropped, FORCE_NODALE / thickness or / 2 pi, gravity
 #     out of the plane skipped;
-#   - _edge_measure: revolved area 2 pi int(r dl) and length x t.
+#   - _edge_measure: revolved area 2 pi int(r dl) and length x t;
+#   - pinned support on edges and on several nodes (S20, SA0): DDL_IMPO
+#     DX = DY = 0 (docs 2D par. 2.3), no LIAISON_DDL with DZ.
 #
 #   python tests/test_bridge_plane.py
 
@@ -182,6 +184,63 @@ def test_edge_measure():
     check(abs(a - 0.01) < 1e-15, "length x t {0}".format(a))
 
 
+def _comm(text):
+    """.comm of a 2D model ("" after an ERROR)."""
+    import bridge_mesh
+    import bridge_to_aster
+    for mod in (bridge_mesh, bridge_to_aster):
+        mod.log = _log
+    tmp = tempfile.mkdtemp(prefix="mab_s16_pin")
+    work = bridge_utils.CONFIG_BRIDGE["work_dir"]
+    try:
+        bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp
+        bridge_utils.CONFIG_BRIDGE["active_analysis"] = "lin_static_3d"
+        path = os.path.join(tmp, "m.liml")
+        with open(path, "w") as f:
+            f.write(text)
+        del LOG[:]
+        md = bfl.extract_aster_data_from_liml(path)
+        mail = os.path.join(tmp, "m.mail")
+        ok = md is not None and bridge_mesh.write_mesh(mail, md)
+        ok = ok and bridge_to_aster.generate_AsterSolver_files(
+            tmp, md, mail, "test.resu")
+        if not ok:
+            return ""
+        with open(os.path.join(tmp, "study.comm")) as f:
+            return f.read()
+    finally:
+        bridge_utils.CONFIG_BRIDGE["work_dir"] = work
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_pinned():
+    edge = ('  <faceselection name="Rechts"><face eid="2" faceid="2" />'
+            '</faceselection>')
+    for atype, geo in (("S20", PS), ("SA0", "")):
+        for sel, target, extra in (("Rechts", "GROUP_MA", edge),
+                                   ("Tip", "GROUP_NO", "")):
+            text = _liml(atype, geo, loads='  <pinnedsupport selection='
+                         '"%s" />\n%s' % (sel, extra))
+            comm = _comm(text)
+            want = "_F({0}='{1}', DX=0.0, DY=0.0)".format(target, sel)
+            check(want in comm and "LIAISON_DDL" not in comm and
+                  not _errors(), "{0} pinned on '{1}': {2} ({3})".format(
+                      atype, sel, want, _errors()[:1]))
+            check([m for m in LOG if m.startswith("WARNING") and
+                   "'{0}'".format(sel) in m and "mean" in m],
+                  "{0} pinned on '{1}' (2 nodes): WARNING about Mecway's "
+                  "mean displacement".format(atype, sel))
+    # element selection: refused with an ERROR (as in 3D), no GROUP_NO on an
+    # element group
+    comm = _comm(_liml("S20", PS, loads='  <pinnedsupport selection="E" />\n'
+                       '  <elementselection name="E"><element eid="1" />'
+                       '</elementselection>'))
+    check("GROUP_NO='E'" not in comm and
+          [m for m in _errors() if "'E'" in m],
+          "S20 pinned on an element selection: ERROR, not translated "
+          "({0})".format(_errors()[:1]))
+
+
 AIR = ('<mechanical type="Isotropic" speedofsound="340 m/s" />'
        '<density type="Simple" density="1.2 kg/m&#179;" />')
 
@@ -281,6 +340,7 @@ if __name__ == "__main__":
     test_errors()
     test_finish_bcs()
     test_edge_measure()
+    test_pinned()
     test_acoustic()
     for f in FAILS:
         print("FAIL:", f)
