@@ -541,6 +541,7 @@ _STYLE = {
     "muted": (96, 106, 120),
     "status_bg": (236, 240, 245),
     "button_bg": (255, 255, 255),
+    "label_w_max": 420,  # label column at most this wide (long labels)
     "label_w": 300,      # width of label column
     "row_h": 32,         # height of a row
     "nav_w": 220,        # width of navigation list on the left
@@ -882,6 +883,13 @@ def bridge_utils_path():
     if path.endswith(".pyc") or path.endswith(".pyo"):
         path = path[:-1]
     return path
+
+
+def _short_path(path):
+    """Folder and file name only (Scripts\\bridge_utils.py): the full path
+    holds the user name, and it shows on screenshots."""
+    return os.path.join(os.path.basename(os.path.dirname(path)),
+                        os.path.basename(path))
 
 
 def _render_str(s):
@@ -1595,7 +1603,24 @@ def _show_winforms_dialog(current, status=u"", model=None):
             # (kind, element, button or None); see fit_page.
             stretch = {}
             sections = {}   # page -> shown headings
-            x_ctrl = 16 + _STYLE["label_w"]
+            # Label column per page: at least label_w, wider when a label
+            # of that page needs it (larger display scale: the fonts grow,
+            # fixed widths do not).
+            def column_w(labels):
+                return max([_STYLE["label_w"]] + [min(
+                    _STYLE["label_w_max"],
+                    look.text_size(_t(lb), look.font).Width + 16)
+                    for lb in labels])
+            label_ws = {
+                page_gen: column_w([lb for k, lb, _k, _e in GENERAL_SPECS
+                                    if k not in ELEMENT_KEYS]),
+                page_elem: column_w([lb for k, lb, _k, _e in GENERAL_SPECS
+                                     if k in ELEMENT_KEYS])}
+            for name in _analysis_names():
+                label_ws[analysis_pages[name]] = column_w(
+                    [lb for k, lb, _k, _e in ANALYSIS_SPECS
+                     if k in current["analyses"][name]])
+            label_h = max(20, look.line_height() + 2)
 
             def fit_page(page):
                 w = page.ClientSize.Width
@@ -1603,8 +1628,14 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     if kind == "path":
                         btn.Left = w - 16 - btn.Width
                         ctrl.Width = max(160, btn.Left - 8 - ctrl.Left)
+                    elif kind == "note":
+                        ctrl.Width = max(120, w - 16 - ctrl.Left)
                     else:
                         ctrl.Width = max(200, w - 16 - ctrl.Left)
+                # The scroll area does not shrink by itself after the
+                # fields got narrower: lay out again, so that a small
+                # window has no horizontal scrollbar.
+                page.PerformLayout()
 
             def make_fit(page):
                 def handler(sender, args):
@@ -1667,8 +1698,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 note.ForeColor = look.col("muted")
                 note.AutoEllipsis = True
                 note.Location = Point(x, y)
-                note.Size = Size(496, 20)
+                note.Size = Size(496, max(20, look.line_height() + 2))
                 parent.Controls.Add(note)
+                # follows the page width (fit_page), so that a small
+                # window needs no horizontal scrollbar
+                stretch.setdefault(parent, []).append(("note", note, None))
                 work_ctrl = [c for a, k, _l, _k, _e, c in controls
                              if a is None and k == "work_dir"]
 
@@ -1697,9 +1731,10 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 lbl.Text = label
                 lbl.AutoEllipsis = True
                 lbl.Location = Point(16, y + 3)
-                lbl.Size = Size(_STYLE["label_w"] - 12, 20)
+                label_w = label_ws.get(parent, _STYLE["label_w"])
+                lbl.Size = Size(label_w - 12, label_h)
                 parent.Controls.Add(lbl)
-                x = x_ctrl
+                x = 16 + label_w
                 height = _STYLE["row_h"]
                 if kind in ("text", "int", "float_pos", "float_range",
                             "file", "folder"):
@@ -1833,7 +1868,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         u"  \u2022 Changes are saved on Start and Results... "
                         u"in:\n     {0}\n"
                         u"  \u2022 Previous version: bridge_utils.py.bak").format(
-                            bridge_utils_path()))
+                            _short_path(bridge_utils_path())))
             add_text(page_elem, y_elem + 12, tr(*_ELEMENT_HELP))
 
             # --- One page per analysis ---
@@ -1848,11 +1883,11 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         "template", "")))
                 mtypes = _mecway_types_for(name)
                 if mtypes:
-                    info += tr("   |   gekozen bij 'auto' voor Mecway-"
+                    info += tr("\nGekozen bij 'auto' voor Mecway-"
                                "analysetype {0}",
-                               "   |   chosen with 'auto' for Mecway "
+                               "\nChosen with 'auto' for Mecway "
                                "analysis type {0}").format(", ".join(mtypes))
-                y = add_text(page, 10, info, 20) + 8
+                y = add_text(page, 10, info) + 4
                 for key, label, kind, extra in ANALYSIS_SPECS:
                     if key in current["analyses"][name]:
                         y = make_row(page, y, name, key, label, kind,
@@ -1878,16 +1913,29 @@ def _show_winforms_dialog(current, status=u"", model=None):
             doc_state = {"current": doc_items[0][1], "browser": None}
             doc_list = ListBox()
             doc_list.Dock = DockStyle.Left
-            doc_list.Width = 230
+            # 230 px at 100 %, wider with a larger font (display scale)
+            doc_list.Width = int(230 * look.font.Size / _STYLE["font"][1])
             doc_list.BorderStyle = getattr(BorderStyle, "None")
             doc_list.BackColor = look.col("status_bg")
             doc_list.IntegralHeight = False
-            # Self-drawn: wider lines, selection in the accent colour.
-            doc_list.DrawMode = DrawMode.OwnerDrawFixed
-            doc_list.ItemHeight = 28
+            # Self-drawn: wider lines, selection in the accent colour; a
+            # long title wraps onto a second line instead of being cut.
+            doc_list.DrawMode = DrawMode.OwnerDrawVariable
             for title, _rel in doc_items:
                 doc_list.Items.Add(title)
             page_docs.Controls.Add(doc_list)
+
+            def doc_text_w():
+                from System.Windows.Forms import SystemInformation
+                return (doc_list.Width - 14 -
+                        SystemInformation.VerticalScrollBarWidth)
+
+            def on_measure_doc(sender, e):
+                if 0 <= e.Index < doc_list.Items.Count:
+                    h = look.text_size("{0}".format(doc_list.Items[e.Index]),
+                                       look.font, doc_text_w()).Height
+                    e.ItemHeight = max(28, h + 10)
+            doc_list.MeasureItem += on_measure_doc
 
             def on_draw_doc(sender, e):
                 if e.Index < 0:
@@ -1900,12 +1948,17 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 brush = SolidBrush(back)
                 e.Graphics.FillRectangle(brush, e.Bounds)
                 brush.Dispose()
-                r = Rectangle(e.Bounds.X + 10, e.Bounds.Y,
-                              e.Bounds.Width - 14, e.Bounds.Height)
+                text = "{0}".format(doc_list.Items[e.Index])
+                text_h = look.text_size(text, look.font,
+                                        doc_text_w()).Height
+                r = Rectangle(e.Bounds.X + 10,
+                              e.Bounds.Y + max(0, (e.Bounds.Height -
+                                                   text_h) // 2),
+                              e.Bounds.Width - 14, text_h)
                 TextRenderer.DrawText(
-                    e.Graphics, "{0}".format(doc_list.Items[e.Index]),
-                    look.font, r, fore,
-                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left |
+                    e.Graphics, text, look.font, r, fore,
+                    TextFormatFlags.WordBreak | TextFormatFlags.Left |
+                    TextFormatFlags.TextBoxControl |
                     TextFormatFlags.EndEllipsis)
             doc_list.DrawItem += on_draw_doc
             try:
