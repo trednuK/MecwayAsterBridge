@@ -122,6 +122,9 @@ GENERAL_SPECS = [
                       "ParaView (empty = search automatically)"), "file",
      ("Programma's (*.exe)|*.exe|Alle bestanden (*.*)|*.*",
       "Programs (*.exe)|*.exe|All files (*.*)|*.*")),
+    ("salome_meca_dir", ("Salome-Meca-map (leeg = automatisch zoeken)",
+                         "Salome-Meca folder (empty = search automatically)"),
+     "folder", None),
     ("elem_hex8", ("Hex8-volume-elementen", "Hex8 solid elements"),
      "choice", ("3D", "3D_SI", "LINE_QUAD")),
     ("elem_shell", ("Lineaire schalen (tri3/quad4)",
@@ -554,6 +557,7 @@ _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "aster_summary": "summary",
                      "save_monitor_liml": False,
                      "work_dir_beside_model": False, "paraview_exe": "",
+                     "salome_meca_dir": "",
                      "wait_for_aster": "auto",
                      "elem_hex8": "3D",
                      "elem_shell": "DKT", "elem_beam": "POU_D_E",
@@ -774,7 +778,7 @@ def _parse_and_validate(key, kind, extra, raw):
                     os.path.normpath(default_work_dir()))):
             # empty or the default folder: save "" (bridge_utils.work_dir_path)
             return "", None
-        if key == "paraview_exe" and not value:
+        if key in ("paraview_exe", "salome_meca_dir") and not value:
             return "", None       # empty = search automatically
         if not value:
             return None, tr("mag niet leeg zijn.", "must not be empty.")
@@ -2331,7 +2335,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 resolve_work_dir(field_text("work_dir"),
                                  field_checked("work_dir_beside_model"),
                                  model_path()), model,
-                field_text("paraview_exe"))))
+                field_text("paraview_exe"), field_text("salome_meca_dir"))))
 
             add_button(tr("Resultaten...", "Results..."), 120, on_results, tr(
                 "Resultaten van een eerdere run inladen, of de resultaten "
@@ -2508,13 +2512,14 @@ def _show_winforms_dialog(current, status=u"", model=None):
     return {"action": result["action"], "values": result["values"]}
 
 
-def open_convergence_monitor(work_dir=None, model=None, paraview=None):
+def open_convergence_monitor(work_dir=None, model=None, paraview=None,
+                             salome=None):
     """
     Start the convergence screen (separate process, stays open) for the
     newest .mess file in work_dir (default the work folder from
     CONFIG_BRIDGE; the main window passes the values from its fields).
-    paraview: the field paraview_exe (None = the setting). Returns a status
-    text.
+    paraview, salome: the fields paraview_exe and salome_meca_dir (None =
+    the setting). Returns a status text.
     """
     import bridge_run_aster
     work_dir = work_dir or work_dir_path()
@@ -2529,7 +2534,7 @@ def open_convergence_monitor(work_dir=None, model=None, paraview=None):
                   os.path.basename(mess))
     console = os.path.splitext(mess)[0] + bridge_run_aster.CONSOLE_SUFFIX
     if not bridge_run_aster.start_convergence_monitor(mess, 0.0, console,
-                                                      paraview):
+                                                      paraview, salome):
         return tr("Het convergentiescherm kon niet gestart worden; zie {0} "
                   "in de werkmap.",
                   "The convergence window could not be started; see {0} in "
@@ -2557,11 +2562,11 @@ def results_dialog(items, work_dir):
     """
     Selection screen for the button Resultaten... (MecwayAsterBridgeMain.
     _results_action). items: list_results(work_dir).
-    Returns {"action": "load", "path": result file},
-    {"action": "strip"} or None
-    (Annuleren). The button Summary opens the summary of the chosen run
-    (_open_summary) and keeps the window open. Without Windows Forms:
-    ImportError (the script then falls back to mw.input()).
+    Returns {"action": "load", "path": result file}, {"action": "strip"}
+    or None (Annuleren). The buttons Summary (_open_summary), ParaView and
+    AsterStudy (_open_viewer) act on the chosen run and keep the window
+    open. Without Windows Forms: ImportError (the script then falls back
+    to mw.input()).
     """
     try:
         import clr
@@ -2602,13 +2607,15 @@ def results_dialog(items, work_dir):
                 "een controle of het mesh gelijk is). 'Uit model "
                 "verwijderen' haalt alle resultaten uit de .liml, zodat die "
                 "klein blijft; de resultaatbestanden blijven staan. "
-                "'Samenvatting' opent de samenvatting van de Code-Aster-run.",
+                "'Samenvatting' opent de samenvatting van de Code-Aster-run, "
+                "'ParaView' en 'AsterStudy' openen de resultaatbestanden.",
                 "Results of earlier Code-Aster runs (newest first). 'Load' "
                 "puts the chosen results into the open model (after "
                 "checking that the mesh is the same). 'Remove from model' "
                 "takes all results out of the .liml so that it stays small; "
                 "the result files are kept. 'Summary' opens the summary of "
-                "the Code-Aster run.")
+                "the Code-Aster run, 'ParaView' and 'AsterStudy' open the "
+                "result files.")
             info.ForeColor = look.col("muted")
             form.Controls.Add(info)
 
@@ -2649,6 +2656,15 @@ def results_dialog(items, work_dir):
                 if lst.SelectedIndex >= 0:
                     _open_summary(items[lst.SelectedIndex], form)
 
+            def viewer(name):
+                def handler(sender, args):
+                    if lst.SelectedIndex >= 0 and _open_viewer(
+                            items[lst.SelectedIndex], name, form):
+                        # the started program must be able to come in
+                        # front of this dialog
+                        form.TopMost = False
+                return handler
+
             buttons = [
                 (tr("Inladen", "Load"), on_load, 110, True, None),
                 (tr("Ander bestand...", "Other file..."), on_browse, 130,
@@ -2664,6 +2680,22 @@ def results_dialog(items, work_dir):
                     "(<model>_<run_id>_aster_summary.txt: errors, alarms, "
                     "steps, timings) in the text editor; if it is missing, "
                     "the bridge makes it from the .mess.")),
+                (u"ParaView", viewer("open_paraview"), 100, False,
+                 tr("Opent het resultaat van de gekozen run in ParaView: "
+                    "_verfijnd.rmed of _xfem.rmed als die er is, anders de "
+                    ".pvd (VTU/PVD-bestanden voor ParaView), anders de .rmed "
+                    "(MED-bestand voor ParaView).",
+                    "Opens the result of the chosen run in ParaView: "
+                    "_verfijnd.rmed or _xfem.rmed when present, else the "
+                    ".pvd (VTU/PVD files for ParaView), else the .rmed (MED "
+                    "file for ParaView).")),
+                (u"AsterStudy", viewer("open_asterstudy"), 110, False,
+                 tr("Opent de .rmed van de gekozen run in Salome-Meca, "
+                    "AsterStudy, tabblad Results (alleen met 'MED-bestand "
+                    "voor ParaView'). Salome-Meca starten duurt even.",
+                    "Opens the .rmed of the chosen run in Salome-Meca, "
+                    "AsterStudy, tab Results (only with 'MED file for "
+                    "ParaView'). Starting Salome-Meca takes a while.")),
             ]
             # Layout from the content (at 100 %: 860 x 470): the header,
             # the explanation and the buttons are measured, so that a larger
@@ -2748,6 +2780,30 @@ def _open_summary(item, owner=None):
     except Exception as e:
         show(tr("Openen mislukt: {0}\n{1}",
                 "Opening failed: {0}\n{1}").format(path, e))
+
+
+def _open_viewer(item, name, owner=None):
+    """Buttons ParaView and AsterStudy of the Results dialog: the result
+    files of the run of item (list_results) through bridge_viewers
+    (name "open_paraview" or "open_asterstudy"). A message box on a failure,
+    on a note about other result files and for the slow Salome-Meca start.
+    Returns True if the program was started."""
+    from System.Windows.Forms import MessageBox
+    import bridge_viewers
+    base = bridge_viewers.run_base(item["path"])
+    try:
+        ok, text = getattr(bridge_viewers, name)(base)
+    except Exception as e:
+        ok, text = False, u"{0}".format(e)
+    bridge_utils.log(u"INFO: {0}: {1}".format(
+        name, text.replace(u"\n", u" ")))
+    if not ok or u"\n" in text or name == "open_asterstudy":
+        title = u"ParaView" if name == "open_paraview" else u"AsterStudy"
+        if owner is None:
+            MessageBox.Show(text, title)
+        else:
+            MessageBox.Show(owner, text, title)
+    return ok
 
 
 # ==========================================

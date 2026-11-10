@@ -12,7 +12,6 @@
 #   - Has no import dependencies on other bridge_* modules,
 #     to avoid circular imports.
 
-import glob
 import io
 import os
 import re
@@ -95,11 +94,17 @@ CONFIG_BRIDGE = {
     # Also put that text into the .liml as Mecway's "Saved monitor" item
     # (route "liml"; a run without results only if the model has no results).
     "save_monitor_liml": False,
-    # ParaView for the ParaView button of the convergence window (opens the
-    # .rmed of the run). Empty ("") = search automatically: first ParaView
-    # 6.x (reads .rmed), then Salome-Meca's ParaView, then an older ParaView
-    # (paraview_exe_path()). Environment variables are expanded.
+    # ParaView for the ParaView buttons of the Results dialog and the
+    # convergence window (bridge_viewers). Empty ("") = search
+    # automatically: for a .pvd an official ParaView 6.x, else Salome-Meca's;
+    # for a .rmed Salome-Meca's first (it reads MED). Environment variables
+    # are expanded.
     "paraview_exe":    "",
+    # Salome-Meca folder for the AsterStudy buttons (and Salome's ParaView):
+    # a Salome-Meca root or a folder that holds roots. Empty ("") = search
+    # automatically (C:\SALOME-MECA, C:\Salome_meca, %ProgramFiles%\SALOME*;
+    # bridge_viewers.find_salome). Environment variables are expanded.
+    "salome_meca_dir": "",
 
     # --- Element formulation (applies to all analyses) ---
     # Hex8 solid elements: "3D" (fully integrated) or "3D_SI"
@@ -873,97 +878,6 @@ def work_dir_path():
     return resolve_work_dir(CONFIG_BRIDGE.get("work_dir"),
                             CONFIG_BRIDGE.get("work_dir_beside_model"),
                             _MODEL["path"])
-
-
-def _paraview_version(path):
-    """Version tuple of an official ParaView from its folder name
-    (".../ParaView 6.2.0-Windows-Python3.12-msvc2017-AMD64/bin/paraview.exe"
-    -> (6, 2, 0)); (0,) if the name has no version."""
-    folder = os.path.basename(os.path.dirname(os.path.dirname(
-        os.path.abspath(path))))
-    m = re.match(r"(?i)paraview[ _-]*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?",
-                 folder)
-    if not m:
-        return (0,)
-    return tuple(int(g) for g in m.groups() if g is not None)
-
-
-def _paraview_candidates():
-    """Possible paraview.exe locations, best first: an official ParaView
-    6.x or newer (paraview.org; reads a .rmed itself), newest first; then
-    the ParaView of Salome-Meca (has a MED reader, started through
-    run_paraview.bat, _salome_launcher); then an older official ParaView
-    (ParaView 5.10 has NO MED reader and cannot open a .rmed, seen on
-    2026-10-22), as a last resort."""
-    program_files = [os.environ.get(v) for v in
-                     ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)")]
-    program_files = [p for i, p in enumerate(program_files)
-                     if p and p not in program_files[:i]]
-    official = []
-    for root in program_files:
-        for path in glob.glob(os.path.join(root, "ParaView*", "bin",
-                                           "paraview.exe")):
-            if path not in official:
-                official.append(path)
-    official.sort(key=_paraview_version, reverse=True)
-    modern = [p for p in official if _paraview_version(p)[0] >= 6]
-    older = [p for p in official if p not in modern]
-    patterns = [os.path.join("C:\\", "Salome_meca", "*", "*", "ParaView",
-                             "bin", "paraview.exe"),
-                os.path.join("C:\\", "Salome_meca", "*", "ParaView", "bin",
-                             "paraview.exe")]
-    for root in program_files:
-        patterns.append(os.path.join(root, "SALOME*", "*", "ParaView",
-                                     "bin", "paraview.exe"))
-        patterns.append(os.path.join(root, "SALOME*", "ParaView", "bin",
-                                     "paraview.exe"))
-    salome = []
-    for pattern in patterns:
-        # newest version first (name sorting: v2025 after v2024)
-        for path in sorted(glob.glob(pattern), reverse=True):
-            if path not in salome:
-                salome.append(path)
-    found = []
-    for path in modern + salome + older:
-        if path not in found:
-            found.append(path)
-    return found
-
-
-def _salome_launcher(path):
-    """
-    Salome-Meca's paraview.exe (<root>/W64/ParaView/bin/paraview.exe)
-    only starts in Salome's environment: started on its own it stops with
-    "Qt5Widgets.dll not found" (Salome-Meca v2025, seen 2026-10-22).
-    <root>/run_paraview.bat sets that environment (env_launch.bat) and
-    starts ParaView with the arguments. Returns that launcher when it is
-    found up to four folders above the paraview.exe, else path itself.
-    """
-    if not path or os.path.basename(path).lower() != "paraview.exe":
-        return path
-    folder = os.path.dirname(os.path.abspath(path))
-    for _level in range(4):
-        folder = os.path.dirname(folder)
-        bat = os.path.join(folder, "run_paraview.bat")
-        if os.path.isfile(bat):
-            return bat
-    return path
-
-
-def paraview_exe_path(setting=None):
-    """
-    paraview.exe for the ParaView button of the convergence window: the
-    setting (None = CONFIG_BRIDGE["paraview_exe"]; the start screen passes
-    its field) with expanded environment variables, or for "" the first one
-    found by _paraview_candidates() (ParaView 6.x first). "" if none is found.
-    """
-    if setting is None:
-        setting = CONFIG_BRIDGE.get("paraview_exe")
-    path = expand_path(setting)
-    if path:
-        return _salome_launcher(path)
-    found = _paraview_candidates()
-    return _salome_launcher(found[0]) if found else ""
 
 
 def exe_aster_path():

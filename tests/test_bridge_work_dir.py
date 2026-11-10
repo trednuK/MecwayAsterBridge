@@ -6,9 +6,9 @@
 # Offline test of the work folder logic in bridge_utils (CPython, no
 # Windows Forms): work_dir_beside_model puts the run files in <model>_aster
 # next to the open .liml (set_model_path), falls back to work_dir without a
-# model, path_too_long() follows the folder in use, and the automatic search
-# for ParaView prefers ParaView 6.x, then Salome-Meca's, then 5.x. Only
-# CONFIG_BRIDGE in memory; bridge_utils.py itself is not written.
+# model and path_too_long() follows the folder in use (the ParaView search
+# is tested in test_bridge_viewers.py). Only CONFIG_BRIDGE in memory;
+# bridge_utils.py itself is not written.
 #
 #   python tests/test_bridge_work_dir.py
 
@@ -101,67 +101,11 @@ def test_work_dir(tmp):
     cfg["work_dir_beside_model"] = False
 
 
-def test_paraview(tmp):
-    cfg = u.CONFIG_BRIDGE
-    pf = os.path.join(tmp, "Program Files")
-    plain = os.path.join(pf, "ParaView 5.10.1", "bin", "paraview.exe")
-    salome = os.path.join(pf, "SALOME-9.12", "W64", "ParaView", "bin",
-                          "paraview.exe")
-    # official ParaView 6.x reads a .rmed itself; 6.10 is newer than 6.2
-    pv62 = os.path.join(pf, "ParaView 6.2.0-Windows-Python3.12-msvc2017-"
-                        "AMD64", "bin", "paraview.exe")
-    pv610 = os.path.join(pf, "ParaView 6.10.0", "bin", "paraview.exe")
-    for path in (plain, salome, pv62, pv610):
-        os.makedirs(os.path.dirname(path))
-        open(path, "w").close()
-    saved = dict((k, os.environ.get(k)) for k in
-                 ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"))
-    try:
-        for k in saved:
-            os.environ.pop(k, None)
-        os.environ["ProgramFiles"] = pf
-        found = [p for p in u._paraview_candidates()
-                 if _norm(p).startswith(_norm(tmp))]
-        check([_norm(p) for p in found] ==
-              [_norm(pv610), _norm(pv62), _norm(salome), _norm(plain)],
-              "candidates: ParaView 6.x (newest first), Salome, then 5.10")
-        check(u._paraview_version(pv62) == (6, 2, 0)
-              and u._paraview_version(salome) == (0,),
-              "version from the folder name")
-        cfg["paraview_exe"] = "%ProgramFiles%\\ParaView 5.10.1\\bin\\" \
-                              "paraview.exe"
-        check(_norm(u.paraview_exe_path()) == _norm(plain),
-              "setting with environment variable is expanded")
-        check(_norm(u.paraview_exe_path(plain)) == _norm(plain),
-              "start screen field overrides the setting")
-        cfg["paraview_exe"] = ""
-        auto = u.paraview_exe_path()
-        check(_norm(auto) == _norm(pv610),
-              "empty setting: the newest ParaView 6.x is chosen first")
-        # Salome-Meca's paraview.exe needs Salome's environment: the bridge
-        # starts it through <root>/run_paraview.bat (Qt5Widgets.dll missing
-        # otherwise, seen 2026-10-22)
-        bat = os.path.join(pf, "SALOME-9.12", "run_paraview.bat")
-        open(bat, "w").close()
-        check(_norm(u.paraview_exe_path(salome)) == _norm(bat),
-              "Salome ParaView is started through run_paraview.bat")
-        check(_norm(u.paraview_exe_path(plain)) == _norm(plain),
-              "plain ParaView stays paraview.exe")
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
-        cfg["paraview_exe"] = ""
-
-
 def main():
     tmp = tempfile.mkdtemp(prefix="bridge_work_dir_")
     work_dir = u.CONFIG_BRIDGE.get("work_dir")
     try:
         test_work_dir(tmp)
-        test_paraview(tmp)
     finally:
         u.CONFIG_BRIDGE["work_dir"] = work_dir
         u.set_model_path(None)

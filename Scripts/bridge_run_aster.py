@@ -44,7 +44,7 @@ import subprocess
 import time
 
 from bridge_utils import (log, CONFIG_BRIDGE, tr, run_name, run_names,
-                          exe_aster_path, paraview_exe_path)
+                          exe_aster_path)
 from bridge_convergence import (python_errors, ConvergenceParser,
                                 find_live_fort6, aster_tmp_dirs,
                                 lin_phase_title, modes_text, stopped_text,
@@ -1073,7 +1073,7 @@ def _monitor_log(mess_path):
 
 
 def start_convergence_monitor(mess_path, since=0.0, console_path=None,
-                              paraview=None):
+                              paraview=None, salome=None):
     """
     Start the convergence monitor (aster_convergence_monitor.py) as a separate
     process with Code-Aster's CPython. The process is independent of Mecway:
@@ -1088,9 +1088,11 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None,
                            (show the existing .mess file).
     console_path : str   - study_console.txt (Python errors), or None.
     paraview     : str   - setting paraview_exe (None = CONFIG_BRIDGE; the
-                           start screen passes its field); resolved with
-                           bridge_utils.paraview_exe_path() and passed as
-                           --paraview (button ParaView of the window).
+                           start screen passes its field), passed as it is
+                           as --paraview: the window's ParaView button
+                           resolves it per file (bridge_viewers).
+    salome       : str   - setting salome_meca_dir, the same way as
+                           --salome (buttons AsterStudy and ParaView).
 
     Returns
     -------
@@ -1116,7 +1118,11 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None,
                 "--lang", tr("nl", "en")]
         if console_path:
             args += ["--console", console_path]
-        args += ["--paraview", paraview_exe_path(paraview)]
+        for opt, key, value in (("--paraview", "paraview_exe", paraview),
+                                ("--salome", "salome_meca_dir", salome)):
+            if value is None:
+                value = CONFIG_BRIDGE.get(key, "") or ""
+            args += [opt, value]
         # PYTHONHOME/PYTHONPATH of another Python must not confuse
         # Code-Aster's Python.
         env = dict((k, v) for k, v in os.environ.items()

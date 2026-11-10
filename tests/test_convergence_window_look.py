@@ -126,7 +126,7 @@ def test_file_buttons(root):
         args = argparse.Namespace(
             mess=mess, since=0.0, resi=None, iter_max=None, log=None,
             console=None, exit_after_finish=None, lang="en", paraview=None,
-            scale=None)
+            salome=None, scale=None)
         top = m.tk.Toplevel(root)
         top.withdraw()
         mon = m.Monitor(top, args)
@@ -135,8 +135,9 @@ def test_file_buttons(root):
         check(state["comm"] == "disabled" and state["mail"] == "disabled",
               "no .comm/.mail: their buttons disabled")
         check(state["summary"] == "normal" and state["folder"] == "normal"
-              and state["rmed"] == "normal",
-              "Summary (from the .mess), Folder and ParaView enabled")
+              and state["rmed"] == "normal" and state["asterstudy"] == "normal",
+              "Summary (from the .mess), Folder, ParaView and AsterStudy "
+              "enabled")
         check(str(b["comm"].cget("background")) == col("button_bg"),
               "disabled button in the rest colour")
         check(str(mon.top.cget("background")) == col("header_bg"),

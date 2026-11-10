@@ -30,14 +30,16 @@
 #   pythonw aster_convergence_monitor.py --mess <workdir>\study.mess
 #           [--since <time.time() of the start>] [--resi 1e-6]
 #           [--iter-max 20] [--log <log file>] [--exit-after-finish <s>]
-#           [--lang nl|en] [--paraview <paraview.exe>]
+#           [--lang nl|en] [--paraview <setting paraview_exe>]
+#           [--salome <setting salome_meca_dir>]
 #
 # Buttons in the top bar for the run shown: Summary
 # (<model>_<run_id>_aster_summary.txt in the default text editor, made from
 # the .mess by bridge_monitor.ensure_summary if it is missing), .comm and
 # .mail in Notepad (no file association for these extensions), Folder
-# (Explorer on the work folder with the .mess selected), ParaView
-# (<model>_<run_id>.rmed, only with the setting med_export), Reload and
+# (Explorer on the work folder with the .mess selected), ParaView and
+# AsterStudy (the result files of the run, bridge_viewers: ParaView the .pvd
+# of vtu_export or a .rmed of med_export, AsterStudy a .rmed), Reload and
 # Open .mess ... .
 #
 # Data source: see bridge_convergence.find_live_fort6(). During the run the
@@ -836,11 +838,13 @@ class Monitor(object):
         _flat_button(top, u"Open .mess ...", self.open_file).pack(
             side="right", padx=(_px(4), _px(10)))
         self.btn_reload.pack(side="right", padx=_px(4))
-        # Files of the run shown (packed right to left: ParaView, Folder,
-        # .mail, .comm, Summary); state per file in _update_buttons().
+        # Files of the run shown (packed right to left: ParaView,
+        # AsterStudy, Folder, .mail, .comm, Summary); state per file in
+        # _update_buttons().
         self.btn_files = {}
         for key, text, command in (
                 ("rmed", u"ParaView", self.open_paraview),
+                ("asterstudy", u"AsterStudy", self.open_asterstudy),
                 ("folder", tr(u"Map", u"Folder"), self.open_folder),
                 ("mail", u".mail", lambda: self.open_notepad(".mail")),
                 ("comm", u".comm", lambda: self.open_notepad(".comm")),
@@ -1014,7 +1018,8 @@ class Monitor(object):
     # ---------- files of the run ----------
     def _update_buttons(self):
         """.comm/.mail disabled if the file of the run shown is missing;
-        ParaView and Folder stay enabled (they explain what is missing)."""
+        ParaView, AsterStudy and Folder stay enabled (they explain what is
+        missing)."""
         mess = self.args.mess
         for key in ("comm", "mail", "summary"):
             if key == "summary":
@@ -1092,37 +1097,32 @@ class Monitor(object):
                     folder), parent=self.root)
 
     def open_paraview(self):
-        """<model>_<run_id>.rmed of the run shown in ParaView (--paraview)."""
-        rmed = _run_file(self.args.mess, ".rmed")
-        if not os.path.isfile(rmed):
-            messagebox.showinfo(u"ParaView", tr(
-                u"Geen MED-bestand voor deze run:\n{0}\n\nZet in het "
-                u"startscherm 'MED-bestand voor ParaView' (med_export) aan "
-                u"en start de run opnieuw.",
-                u"No MED file for this run:\n{0}\n\nTurn on 'MED file for "
-                u"ParaView' (med_export) on the start screen and run "
-                u"again.").format(rmed), parent=self.root)
-            return
-        exe = self.args.paraview
-        if exe is None:
-            exe = bridge_utils.paraview_exe_path()
-        if not exe or not os.path.isfile(exe):
-            messagebox.showinfo(u"ParaView", tr(
-                u"ParaView niet gevonden{0}. Vul in het startscherm "
-                u"'ParaView' (paraview_exe) in; neem ParaView 6.x van "
-                u"paraview.org (leest een .rmed) of die van Salome-Meca: "
-                u"ParaView 5.10 kan geen .rmed openen.",
-                u"ParaView not found{0}. Fill in 'ParaView' (paraview_exe) "
-                u"on the start screen; use ParaView 6.x from paraview.org "
-                u"(reads a .rmed) or the one of Salome-Meca: ParaView 5.10 "
-                u"cannot open a .rmed.").format(
-                    u" ({0})".format(exe) if exe else u""),
-                parent=self.root)
-            return
-        # Salome-Meca: run_paraview.bat (bridge_utils._salome_launcher)
-        # opens a console only to set the environment; without a window.
-        flags = 0x08000000 if exe.lower().endswith(".bat") else 0
-        self._popen([exe, rmed], flags)
+        """The result of the run shown in ParaView (bridge_viewers: the .pvd
+        or a .rmed; --paraview / --salome = the settings)."""
+        self._open_viewer(u"ParaView", "open_paraview",
+                          paraview=self.args.paraview,
+                          salome=getattr(self.args, "salome", None))
+
+    def open_asterstudy(self):
+        """The .rmed of the run shown in Salome-Meca, AsterStudy tab Results
+        (bridge_viewers)."""
+        self._open_viewer(u"AsterStudy", "open_asterstudy",
+                          salome=getattr(self.args, "salome", None))
+
+    def _open_viewer(self, title, name, **settings):
+        try:
+            import bridge_viewers
+            base = _run_file(self.args.mess, "")
+            ok, text = getattr(bridge_viewers, name)(base, **settings)
+        except Exception as e:
+            log(u"WARNING: {0} not started: {1}".format(title, e))
+            ok, text = False, u"{0}".format(e)
+        log(u"INFO: {0}: {1}".format(title, text.replace(u"\n", u" ")))
+        # A plain ParaView start needs no box; a failure, the note on other
+        # result files and the slow Salome-Meca start do.
+        if not ok or u"\n" in text or name == "open_asterstudy":
+            (messagebox.showinfo if ok else messagebox.showerror)(
+                title, text, parent=self.root)
 
     def _names(self, text):
         """study.comm / study_console.txt in a message -> the files
@@ -2043,8 +2043,12 @@ def main(argv=None):
     ap.add_argument("--scale", type=float, default=None,
                     help=argparse.SUPPRESS)
     ap.add_argument("--paraview", default=None,
-                    help=u"paraview.exe voor de knop ParaView; standaard "
-                         u"bridge_utils.paraview_exe_path()")
+                    help=u"instelling paraview_exe voor de knop ParaView; "
+                         u"standaard die uit bridge_utils.CONFIG_BRIDGE")
+    ap.add_argument("--salome", default=None,
+                    help=u"instelling salome_meca_dir voor de knoppen "
+                         u"AsterStudy en ParaView; standaard die uit "
+                         u"bridge_utils.CONFIG_BRIDGE")
     args = ap.parse_args(argv)
     if args.lang:
         bridge_utils.CONFIG_BRIDGE["language"] = args.lang
