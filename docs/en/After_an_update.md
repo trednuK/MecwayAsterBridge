@@ -150,6 +150,7 @@ it was last verified:
 | `POU_D_TG` stresses and reactions from one elastic `STAT_NON_LINE` step (V2026.9, KNOWN_BUGS 123) | NOT verified | NOT verified (Mecway 34 was not available). Verified on Mecway 35 (35.0.9802) in the Mecway window (10 Nov 2026) |
 | Keep the Code-Aster base with a manifest, `keep_base` (V2026.9) | NOT verified | NOT verified: offline tests; with the setting off (default) mesh and `.comm` stay the same |
 | Buttons "ParaView" and "AsterStudy" in the Results window and the convergence window, setting `salome_meca_dir` (V2026.10) | NOT verified | NOT verified in the Mecway window; Mecway 35: started from a hidden Mecway (10 Nov 2026: ParaView 6.2.1 with a `.pvd`, AsterStudy *Results* with a `.rmed`); from the convergence window's Python: `.rmed`, `_xfem.rmed`, `_verfijnd.rmed` |
+| Hiding failed elements, `hide_failed`; `failed` 1 from the step after the failure (after V2026.10) | NOT verified | NOT verified in the Mecway window; files checked offline and with `BezwijkenTrekstaaf` (Code-Aster 17.4, splice under IronPython 2.7.9) |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

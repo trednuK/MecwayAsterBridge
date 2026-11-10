@@ -118,6 +118,35 @@ toe).
   volledige doorbraak gaat de reactiekracht naar ongeveer 0.
 - De knoopspanningen (gemiddeld over de elementen rond een knoop) mengen bezweken en
   intacte elementen. Kijk daarom naar elementwaarden of naar de plastische rek.
+- De element-knoopvariabele `failed` is 0 (intact) of 1 (bezweken), op alle knopen
+  van een element gelijk. Hij wordt 1 vanaf de eerste opgeslagen stap **na** het
+  tijdstip van bezwijken: de stap op dat tijdstip zelf toont nog de berekende toestand
+  waardoor het element bezweek (gemeten met `BezwijkenTrekstaaf`: Von Mises 276 MPa bij
+  t = 0,6 s, ongeveer 0 bij t = 0,7 s). Tot en met V2026.10 was hij al 1 op dat
+  tijdstip zelf.
+- **Bezweken elementen verbergen** (instelling *Bezweken elementen verbergen*, pagina
+  Algemeen, standaard uit; [Handleiding §3](Handleiding.md#3-het-hoofdvenster)): na
+  een run en na *Resultaten... > Inladen* verdwijnen bezweken elementen in Mecway's
+  eigen resultaatweergave, elk vanaf de stap waarin `failed` 1 wordt. De bridge geeft
+  elk bezweken element eigen kopieën van zijn knopen in de oplossing en laat die vanaf
+  die stap ineenklappen op het zwaartepunt van het element in de stap ervoor; het
+  modeldeel van de `.liml` blijft gelijk. Het statusvak noemt hoeveel elementen
+  verborgen zijn en hoe lang dat duurde; *Resultaten... > Inladen* met de optie uit
+  toont ze weer.
+  - Precies alleen bij vervormingsschaal 1: bij schaal s tekent Mecway een
+    ineengeklapte knoop op (1 - s) X + s c (X de knoop, c het zwaartepunt), zodat het
+    element terugkomt op |1 - s| keer zijn grootte (volle grootte bij schaal 0).
+  - De verplaatsing van een ineengeklapte knoop is kunstmatig (de weg naar het
+    zwaartepunt) en zijn andere knoopwaarden zijn 0 vanaf het bezwijken. De legenda
+    (maximum en minimum) van een elset met bezweken elementen kan daardoor verschuiven:
+    lees verplaatsingen en spanningen op intacte elementen.
+  - Een element dat bij de laatste opgeslagen stap bezwijkt, blijft zichtbaar
+    (`failed` wordt pas in de stap erna 1); het log en het statusvak noemen hoeveel.
+  - Alleen voor resultaten met tijdstappen; niet met de resultaatroute `tabel`, niet
+    bij statische of modale resultaten (ook niet het hele wiel van cyclische symmetrie).
+    *Doorsnede in resultaten* weigert resultaten met verborgen elementen.
+  - In het Mecway-venster NIET nagelopen (de bestanden zijn offline en met
+    `BezwijkenTrekstaaf` gecontroleerd).
 
 ## 5. Testmodellen
 

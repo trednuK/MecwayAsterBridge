@@ -116,6 +116,33 @@ Code-Aster allows nothing else with an explicit scheme).
   reaction force goes to about 0.
 - Nodal stresses (averaged over the elements around a node) mix failed and intact
   elements. Look at element values or at the plastic strain instead.
+- The element-node variable `failed` is 0 (intact) or 1 (failed), equal on all nodes of
+  an element. It becomes 1 from the first stored step **after** the failure time: the
+  step at that time itself still shows the computed state that made the element fail
+  (measured with `BezwijkenTrekstaaf`: von Mises 276 MPa at t = 0.6 s, about 0 at
+  t = 0.7 s). Up to and including V2026.10 it was already 1 at that time itself.
+- **Hiding failed elements** (setting "Hide failed elements", page General, off by
+  default; [User guide §3](UserGuide.md#3-the-main-window)): after a run and after
+  "Results..." > "Load" failed elements disappear in Mecway's own result view, each
+  from the step where `failed` becomes 1. The bridge gives every failed element its own
+  copies of its nodes in the solution and collapses them from that step on onto the
+  element's centroid of the step before; the model part of the `.liml` stays the same.
+  The status box says how many elements were hidden and how long it took; "Results..."
+  > "Load" with the option off shows them again.
+  - Exact only at deformation scale 1: at scale s Mecway draws a collapsed node at
+    (1 - s) X + s c (X the node, c the centroid), so the element comes back at |1 - s|
+    times its size (full size at scale 0).
+  - The displacement of a collapsed node is artificial (the way to the centroid) and its
+    other nodal values are 0 from the failure on. The legend (maximum and minimum) of an
+    elset with failed elements can shift because of this: read displacements and
+    stresses on intact elements.
+  - An element that fails at the last stored step stays visible (`failed` only becomes
+    1 in the step after); the log and the status box say how many.
+  - Only for results with time steps; not with the result route `tabel`, not for static
+    or modal results (nor the whole wheel of cyclic symmetry). "Section in results"
+    refuses results with hidden elements.
+  - NOT verified in the Mecway window (the files were checked offline and with
+    `BezwijkenTrekstaaf`).
 
 ## 5. Test models
 
