@@ -211,7 +211,7 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "MED file for ParaView" | off | also writes `<model>_<run-id>.rmed` (ParaView/Salome); Mecway does not use it and it can grow to hundreds of MB |
 | "Summary of the Code-Aster run (_aster_summary.txt)" | `summary` | after every run (also a failed or stopped one) a summary of the Code-Aster output in `<model>_<run-id>_aster_summary.txt` in the work folder; button "Summary" in the Results window and the convergence window (§5.2). `summary`: errors and alarms, steps, timings and the path of the full `.mess`; `full`: a copy of the whole `.mess` (start and end above 4 million characters); `off`: no file |
 | "Summary also as Saved monitor in the .liml" | off | on: the same text also in the `.liml` as Mecway's *Saved monitor* item under *Solution*; route `liml` only; a failed run only if the model has no results yet (§5.2) |
-| "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets, and `<model>_<run-id>_knopen.csv` (for each named node selection of at most 100 nodes the nodal fields over time) |
+| "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets |
 | "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" button of the convergence window; empty = automatic: first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), which reads a `.rmed` itself; then as fallback the ParaView of Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, started through `run_paraview.bat`); last an older ParaView. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
 
 Below the settings the page shows the mapping of `auto` to the Mecway analysis types, a
@@ -768,9 +768,7 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed, or from before the shape went into the results (by hand or at the end of a run) |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
 | `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it |
-| `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; with failure also the cell fields `BEZWEKEN` (0 intact, 1 failed) and `T_BEZWIJK` |
-| `<model>_<run-id>_beams.json` | beam sections and local axes for MWHub Post (`mwhubpost-beams/1`, described at the top of `Scripts/bridge_beams.py`), with "VTU/PVD files" or "MED file for ParaView" and beams in the model; the section forces per element end are in the VTU as `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
-| `<model>_<run-id>_knopen.csv` | nodal fields over time per named node selection (with the VTU export) |
+| `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; with failure also the cell fields `failed` (0 intact, 1 failed) and `T_BEZWIJK`; with beam forces also the section forces per element end as the cell fields `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_vergelijking.csv` | comparison with the Mecway solve (only with "Mecway solve first as a check") |
 | `<model>_<run-id>_monitor_log.txt` | log of the convergence and messages window |
 

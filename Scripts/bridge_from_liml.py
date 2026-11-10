@@ -983,7 +983,7 @@ def _parse_geometric_props(geom_node):
         # Only used with POU_D_T (STEP 3, _add_shear_coefs).
         result["shear_coefs"] = _profile_shear_coefs(geom_type, *dims)
         # Mecway's dimensions (meaning per shape: _profile_props), for
-        # the beam sidecar (bridge_beams)
+        # the warping check (bridge_warping)
         result["profile"] = {"shape": geom_type, "a": dims[0], "b": dims[1],
                              "c": dims[2], "d": dims[3]}
 

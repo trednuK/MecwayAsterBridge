@@ -404,14 +404,11 @@ def read_liml_model(liml_path):
       "uaxes"    : dict {eid: (ux, uy, uz)}: Mecway's U direction per
                    element (attributes orientationux/uy/uz, Element
                    properties), only where given
-      "nodesel"  : OrderedDict {node selection name: [nid, ...]}
-                   (<nodeselection>, for the node series of aster_vtu)
     """
     nodes = {}
     elsets = OrderedDict()
     elements = {}
     uaxes = {}
-    nodesel = OrderedDict()
     depth = 0
     with open(liml_path, "rb") as f:
         for event, el in ET.iterparse(f, events=("start", "end")):
@@ -439,9 +436,6 @@ def read_liml_model(liml_path):
                     if any(e.get(k) is not None for k in keys):
                         uaxes[eid] = tuple(float(e.get(k, "0"))
                                            for k in keys)
-            elif el.tag == "nodeselection":
-                nodesel[el.get("name", "")] = [
-                    int(x.get("nid")) for x in el.findall("node")]
             el.clear()
     n = max(nodes) if nodes else 0
     if sorted(nodes) != list(range(1, n + 1)):
@@ -451,7 +445,7 @@ def read_liml_model(liml_path):
                             "1..N.").format(liml_path))
     coords = np.array([nodes[i] for i in range(1, n + 1)], dtype=float)
     return {"coords": coords, "elsets": elsets, "elements": elements,
-            "uaxes": uaxes, "nodesel": nodesel}
+            "uaxes": uaxes}
 
 
 def _check_node_order(mesh, coords):
@@ -2803,7 +2797,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     _bz_events, [(time, [0-based Code-Aster cells])], or
                     None without the failure loop. Gives the element
                     variable "failed" (0 intact, 1 failed from that time
-                    on; S22a) and in the VTU BEZWEKEN + T_BEZWIJK.
+                    on; S22a) and in the VTU failed + T_BEZWIJK.
     formulas      : Mecway's result formulas, plans of bridge_formula.plan
                     (bridge_from_liml); each becomes a node variable under
                     its fieldscalar (_formula_vars, S33). None = none.

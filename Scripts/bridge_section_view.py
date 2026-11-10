@@ -45,7 +45,7 @@
 #   outline segment. Contours therefore stay element-wise, as is right for
 #   beams; rings of adjacent elements do not meet at a kink. A line3 uses its
 #   corners only (Mecway order c0, m, c1) and the frame of the chord, as
-#   bridge_mesh does for the beam sidecar. Caps at free ends only (a node used
+#   bridge_mesh does for the direction check. Caps at free ends only (a node used
 #   by one drawn beam): trapezoids between consecutive W levels of the loop
 #   points, which handles holes without triangulation.
 #

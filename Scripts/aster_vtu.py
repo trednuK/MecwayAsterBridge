@@ -4,20 +4,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 # aster_vtu.py
-# VTU/PVD export of the result (setting vtu_export), for ParaView and
-# MWHub Post (AdvancedToolsHub). Runs in the Code-Aster job (Python 3,
-# numpy), called by aster_results_export._export with the same Mecway
-# variables that go to the .liml, so ParaView and Mecway show the same
-# numbers.
+# VTU/PVD export of the result (setting vtu_export), for ParaView. Runs in
+# the Code-Aster job (Python 3, numpy), called by
+# aster_results_export._export with the same Mecway variables that go to
+# the .liml, so ParaView and Mecway show the same numbers.
 #
 # Files (next to the results fragment <model>_<run_id>_results.xml):
 #   <model>_<run_id>.pvd       collection, one <DataSet> per time step
 #   <model>_<run_id>_<k>.vtu   step k (0-based), UnstructuredGrid
-#   <model>_<run_id>_knopen.csv node series (NodeSeries): per named node
-#                              selection of the .liml (<nodeselection>, at
-#                              most MAX_SERIES_NODES nodes) every node
-#                              variable over all steps; sidecar
-#                              node_series of mwhubpost-job/1
 #
 # Contents of a .vtu:
 #   - points and cells from the .liml (Mecway node and element numbers in
@@ -32,9 +26,10 @@
 #   - beam section forces (Mecway's tensileforce, sheary, ... per element
 #     node) also per element end: EFGE_<N|VY|VZ|MT|MFY|MFZ>_1 at the first
 #     and _2 at the last node of the element (Mecway order: line3 = c0 m
-#     c1), for the beam sidecar of bridge_beams (mwhubpost-beams/1);
-#   - the element variable "failed" as BEZWEKEN (_RENAME) and extra cell
-#     arrays from aster_results_export (T_BEZWIJK), see add_cells.
+#     c1), so that plain ParaView shows the forces at both beam ends;
+#   - the element variable "failed" (0 intact, 1 failed) under Mecway's
+#     name, like every variable, and extra cell arrays from
+#     aster_results_export (T_BEZWIJK), see add_cells.
 #   Nodes or elements a variable has no value for get NaN.
 #
 # Format: VTK XML, appended raw data, header_type UInt64 (VTK file format
@@ -73,18 +68,10 @@ _VTK_CELLS = {
     "hex20": (25, tuple(range(12)) + (16, 17, 18, 19, 12, 13, 14, 15)),
 }
 
-# Mecway variable -> array name in the VTU (MWHub Post contract,
-# mwhubpost-job/1 example A: erosion field BEZWEKEN, intact = 0).
-_RENAME = {"failed": "BEZWEKEN"}
-
 # Mecway beam section forces -> Code-Aster component (aster_results_export
 # FIELD_TABLE, beam_forces: local axes x along the beam, y = V, z = W).
 _EFGE = {"tensileforce": "N", "sheary": "VY", "shearz": "VZ",
          "torsion": "MT", "bendingmomv": "MFY", "bendingmomw": "MFZ"}
-
-# Larger node selections are left out of the node series (a column per
-# node and variable; a face of a fine mesh would give thousands).
-MAX_SERIES_NODES = 100
 
 # Mecway node variables that together form a VTK vector.
 _VECTORS = (("DEPL", ("displx", "disply", "displz")),)
@@ -130,11 +117,6 @@ class VtuSeries(object):
         self.extra_cells = []
         self.steps = []
         self.failed = False
-        sels = [(name, nids) for name, nids in
-                (model.get("nodesel") or {}).items()
-                if 0 < len(nids) <= MAX_SERIES_NODES]
-        self.series = NodeSeries(base + "_knopen.csv", sels, self.n) \
-            if sels else None
 
     def _layout(self, var, model):
         """Where the values of var go: ("p", rows) for a node variable,
@@ -174,7 +156,7 @@ class VtuSeries(object):
                     mean = np.add.reduceat(vals, lay[2]) / lay[3]
                     ok = lay[1] >= 0
                     out[lay[1][ok]] = mean[ok]
-                cell.append((_RENAME.get(var.name, var.name), out))
+                cell.append((var.name, out))
                 if var.name in _EFGE and len(lay[1]):
                     ok = lay[1] >= 0
                     for end, pos in (("1", lay[2]),
@@ -198,8 +180,6 @@ class VtuSeries(object):
                 if i is not None:
                     out[i] = value
             cell.append((name, out))
-        if self.series is not None:
-            self.series.add(time_value, by_name)
         path = "{0}_{1}.vtu".format(self.base, k)
         _write_vtu(path, self, point, cell)
         self.steps.append((float(time_value), os.path.basename(path)))
@@ -219,45 +199,7 @@ class VtuSeries(object):
         with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             f.write("\n".join(lines))
         os.replace(tmp, path)
-        if self.series is not None:
-            self.series.close()
         return path
-
-
-class NodeSeries(object):
-    """CSV with a column time and one column <selection>.N<nid>.<variable>
-    per node of the selections and node variable (names of the first
-    step); a missing value is empty. Separator ",", decimal point."""
-
-    def __init__(self, path, selections, n):
-        self.path = path
-        self.cols = [(sel, nid) for sel, nids in selections
-                     for nid in nids if 1 <= nid <= n]
-        self.names = None
-        self.rows = []
-
-    def add(self, time_value, by_name):
-        if self.names is None:
-            self.names = list(by_name)
-        row = [repr(float(time_value))]
-        for sel, nid in self.cols:
-            for name in self.names:
-                vals = by_name.get(name)
-                v = None if vals is None else float(vals[nid - 1])
-                row.append("" if v is None or v != v else repr(v))
-        self.rows.append(row)
-
-    def close(self):
-        head = ["time"] + ["{0}.N{1}.{2}".format(sel.replace(",", "_"),
-                                                  nid, name)
-                           for sel, nid in self.cols
-                           for name in (self.names or [])]
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-            f.write(",".join(head) + "\n")
-            for row in self.rows:
-                f.write(",".join(row) + "\n")
-        os.replace(tmp, self.path)
 
 
 def _vtk_type(a):

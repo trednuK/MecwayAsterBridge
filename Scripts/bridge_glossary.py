@@ -1252,19 +1252,14 @@ SETTING_HELP = {
                    u"MED-lezer). Dezelfde velden als Mecway krijgt: "
                    u"knoopvelden als puntdata (plus de vector DEPL voor de "
                    u"vervorming), velden per element als celgemiddelde. "
-                   u"Plus <model>_<run_id>_knopen.csv: per benoemde "
-                   u"knoopselectie (max. 100 knopen) alle knoopvelden over "
-                   u"de tijd. Alleen met de resultaatroute 'liml'. "
+                   u"Alleen met de resultaatroute 'liml'. "
                    u"Standaard uit.",
                    u"Also write <model>_<run_id>.pvd with one .vtu per time "
                    u"step (VTK format, read by any ParaView, also without a "
                    u"MED reader). The same fields as Mecway gets: nodal "
                    u"fields as point data (plus the vector DEPL for the "
                    u"deformation), fields per element as the cell average. "
-                   u"Plus <model>_<run_id>_knopen.csv: per named node "
-                   u"selection (at most 100 nodes) every nodal field over "
-                   u"time. Only with the result route 'liml'. Off by "
-                   u"default."),
+                   u"Only with the result route 'liml'. Off by default."),
     "paraview_exe": (
         u"paraview.exe voor de knoppen ParaView in het venster Resultaten en "
         u"in het convergentiescherm. Leeg (standaard) = automatisch zoeken: "

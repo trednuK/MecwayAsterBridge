@@ -1558,8 +1558,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
             v = _mecway_v_axis(nodes[a], nodes[b], orient.get(eid))
             key = tuple(round(c, 9) for c in v)
             by_dir.setdefault(key, [v, []])[1].append(name)
-        # beam sidecar (bridge_beams): end nodes and V of the whole element
-        # (a split line3 as the straight line between its end nodes)
+        # direction check (report_directions below): end nodes and V of the
+        # whole element (a split line3 as the straight line between its end
+        # nodes)
         beam_axes[eid] = (es, cn[0], cn[1],
                           _mecway_v_axis(nodes[cn[0]], nodes[cn[1]],
                                          orient.get(eid)))
@@ -1834,9 +1835,6 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     nonempty = set(group_ma.keys())
     model_data["group_ma_unions"] = OrderedDict()
     model_data["beam_vect_y"] = beam_vect_y
-    model_data["beam_axes"] = beam_axes
-    model_data["beam_node_xyz"] = dict(
-        (n, nodes[n]) for v in beam_axes.values() for n in v[1:3])
     model_data["node_groups_in_mesh"] = True
     # For #ASTER lines (<<Mecway name>> -> Code-Aster name) and for the
     # elsets of mesh_elements (bridge_to_aster, bridge_thermal): for a
@@ -1854,11 +1852,6 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # Split line3 beams (cells M<eid> and H<eid>, cell_names_of);
     # extra nodes of flexible joints: model_data["joint_nodes"]
     model_data["line3_split"] = split_line3
-    # beam sidecar (bridge_beams): elset with its Code-Aster name, like
-    # the keys of beam_sections (_ELSET_KEYS)
-    model_data["beam_axes"] = OrderedDict(
-        (eid, (rn_es(v[0]),) + tuple(v[1:]))
-        for eid, v in model_data.get("beam_axes", {}).items())
     model_data["_elem_elset"] = dict((eid, rn_es(es))
                                      for eid, shape, en, es in elements)
     model_data["group_face_list"] = OrderedDict(
