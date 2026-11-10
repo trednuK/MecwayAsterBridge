@@ -7,10 +7,11 @@
   gone; the *ParaView* button of the convergence window opens the `.rmed` of the run directly
   in ParaView. An older `bridge_utils.py` that still has the setting keeps working (the line is
   ignored).
-- **No beam sidecar and node series any more**: with *VTU/PVD files for ParaView* (or *MED file
-  for ParaView*) a run no longer writes `<model>_<run-id>_beams.json` and
-  `<model>_<run-id>_knopen.csv`; both existed only for MWHub Post. The `.pvd`/`.vtu` files are
-  unchanged and keep the beam forces per element end (`EFGE_*`) for plain ParaView.
+- **No beam sidecar and node series any more**: a run no longer writes
+  `<model>_<run-id>_beams.json` (came with *VTU/PVD files for ParaView* or *MED file for
+  ParaView*) and `<model>_<run-id>_knopen.csv` (came only with *VTU/PVD files for ParaView*);
+  both existed only for MWHub Post. The `.pvd`/`.vtu` files are otherwise unchanged and keep the
+  beam forces per element end (`EFGE_*`) for plain ParaView.
 - **VTU array `failed`**: the cell array of failed elements in the `.vtu` files is now called
   `failed` (Mecway's own variable name) instead of `BEZWEKEN`; a ParaView state that thresholds
   on `BEZWEKEN` needs the new name.
