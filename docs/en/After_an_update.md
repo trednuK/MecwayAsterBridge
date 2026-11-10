@@ -135,10 +135,10 @@ it was last verified:
 | `FACTOR_57` after `DIAGNOSTIC JOB : OK` in the convergence window, summary and status box (V2026.8) | NOT verified | NOT verified: checked on the `.mess` of a real run, not in the Mecway window |
 | WARNING for a beam without warping on an open General section (V2026.8) | NOT verified | NOT verified: offline tests; the difference between `POU_D_E` and `POU_D_TG` was measured with Code-Aster 17.4 outside Mecway |
 | Selection names with spaces (models from Mecway 33) | allowed | Mecway 34 replaces the spaces by `_` when it opens such a model and then loses the reference in a contact (`selectionmaster=""`, seen 22 October 2026); the bridge stops before Code-Aster with an ERROR that says so where the contact counts (nonlinear static and dynamics; bonded contact in every analysis), elsewhere it gives a WARNING (Mecway ignores unilateral contact there too). Select the contact faces again. The example models use names without spaces. |
-| Stress over beam sections, S41 (`beamvonmisesmax`, `sectionshear` ...) (V2026.9) | NOT verified | NOT verified; Mecway 35: opened hidden, values read through the API, also per time step, colours NOT verified |
-| Main window: menu "Section ▾", navigation scrollbar, layout at a display scale of 125 % (V2026.9) | NOT verified | NOT verified: offscreen with `gui_cap.py` in Mecway's IronPython, not in the Mecway window |
-| Convergence window: look of the main window, readable at 125 % (V2026.9) | NOT verified | NOT verified: offline test with a hidden window, not on a run from Mecway |
-| `POU_D_TG` stresses and reactions from one elastic `STAT_NON_LINE` step (V2026.9, KNOWN_BUGS 123) | NOT verified | NOT verified: Code-Aster 17.4 runs outside Mecway (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b), not in the Mecway window |
+| Stress over beam sections, S41 (`beamvonmisesmax`, `sectionshear` ...) (V2026.9) | NOT verified | NOT verified (Mecway 34 was not available). Verified on Mecway 35 (35.0.9802) in the Mecway window (10 Nov 2026) |
+| Main window: menu "Section ▾", navigation scrollbar, layout at a display scale of 125 % (V2026.9) | NOT verified | NOT verified (Mecway 34 was not available). Verified on Mecway 35 (35.0.9802) in the Mecway window (10 Nov 2026) |
+| Convergence window: look of the main window, readable at 125 % (V2026.9) | NOT verified | NOT verified (Mecway 34 was not available). Verified on Mecway 35 (35.0.9802) in the Mecway window (10 Nov 2026) |
+| `POU_D_TG` stresses and reactions from one elastic `STAT_NON_LINE` step (V2026.9, KNOWN_BUGS 123) | NOT verified | NOT verified (Mecway 34 was not available). Verified on Mecway 35 (35.0.9802) in the Mecway window (10 Nov 2026) |
 | Keep the Code-Aster base with a manifest, `keep_base` (V2026.9) | NOT verified | NOT verified: offline tests; with the setting off (default) mesh and `.comm` stay the same |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons

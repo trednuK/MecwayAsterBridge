@@ -1,6 +1,6 @@
 # Changelog
 
-## V2026.9 – unreleased
+## V2026.9 – 10 November 2026
 
 Beams with a general section show the stress over their section in Mecway, and `POU_D_TG`
 beams get the right stresses and reactions in buckling and modal with prestress, and the right
@@ -9,8 +9,7 @@ reactions in linear static. The main window and the convergence window fit a dis
 elastic `STAT_NON_LINE` step), a force on shell faces selected on both sides (now the full
 Mecway force, was half), and a pinned support in 2D. The full regression ran 579 cases: 3066
 of 3072 checks OK, 6 known limitations, 0 unexpected, no status change against the previous
-run. The new windows, the `POU_D_TG` step and the section stresses have not been tested in the
-Mecway window yet.
+run. The verification model AD-02 and its load models AD-02-L1 .. L5 are now saved by Mecway 35.
 
 - **Main window**: one button *Section ▾* with a menu (show, hide, in results) replaces the two
   section buttons; *Explanation...* is gone (the glossary is the first item of the page
@@ -50,7 +49,7 @@ Mecway window yet.
   changes. The nodal reactions of a spectrum analysis stay wrong, with a WARNING; with `#ASTER-XFEM` the
   reactions stay those of `MECA_STATIQUE`, without a message; the cyclic route has not been run
   with `POU_D_TG`. New
-  verification LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b. Not tested in the Mecway window.
+  verification LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b.
 - **Keep the Code-Aster base of a static run**: new settings `keep_base` and `keep_base_runs`,
   off by default. A kept base gets a manifest (schema 2: components, beam axes, offsets,
   connected nodes) after a run that ended well, for a follow-up run by MecwayFreebody. With the setting off, mesh and `.comm` stay the same.
