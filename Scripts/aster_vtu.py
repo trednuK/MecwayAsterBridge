@@ -27,8 +27,9 @@
 #     node) also per element end: EFGE_<N|VY|VZ|MT|MFY|MFZ>_1 at the first
 #     and _2 at the last node of the element (Mecway order: line3 = c0 m
 #     c1), so that plain ParaView shows the forces at both beam ends;
-#   - the element variable "failed" as BEZWEKEN (_RENAME) and extra cell
-#     arrays from aster_results_export (T_BEZWIJK), see add_cells.
+#   - the element variable "failed" (0 intact, 1 failed) under Mecway's
+#     name, like every variable, and extra cell arrays from
+#     aster_results_export (T_BEZWIJK), see add_cells.
 #   Nodes or elements a variable has no value for get NaN.
 #
 # Format: VTK XML, appended raw data, header_type UInt64 (VTK file format
@@ -66,9 +67,6 @@ _VTK_CELLS = {
     "hex8": (12, tuple(range(8))),
     "hex20": (25, tuple(range(12)) + (16, 17, 18, 19, 12, 13, 14, 15)),
 }
-
-# Mecway variable -> array name in the VTU (erosion field, intact = 0).
-_RENAME = {"failed": "BEZWEKEN"}
 
 # Mecway beam section forces -> Code-Aster component (aster_results_export
 # FIELD_TABLE, beam_forces: local axes x along the beam, y = V, z = W).
@@ -158,7 +156,7 @@ class VtuSeries(object):
                     mean = np.add.reduceat(vals, lay[2]) / lay[3]
                     ok = lay[1] >= 0
                     out[lay[1][ok]] = mean[ok]
-                cell.append((_RENAME.get(var.name, var.name), out))
+                cell.append((var.name, out))
                 if var.name in _EFGE and len(lay[1]):
                     ok = lay[1] >= 0
                     for end, pos in (("1", lay[2]),

@@ -2797,7 +2797,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     _bz_events, [(time, [0-based Code-Aster cells])], or
                     None without the failure loop. Gives the element
                     variable "failed" (0 intact, 1 failed from that time
-                    on; S22a) and in the VTU BEZWEKEN + T_BEZWIJK.
+                    on; S22a) and in the VTU failed + T_BEZWIJK.
     formulas      : Mecway's result formulas, plans of bridge_formula.plan
                     (bridge_from_liml); each becomes a node variable under
                     its fieldscalar (_formula_vars, S33). None = none.

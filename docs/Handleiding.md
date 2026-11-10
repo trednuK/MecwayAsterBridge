@@ -769,7 +769,7 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem |
-| `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `BEZWEKEN` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
+| `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |
 | `<model>_<run-id>_monitor_log.txt` | log van het convergentie- en meldingenscherm |
 
