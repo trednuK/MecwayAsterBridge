@@ -821,8 +821,8 @@ komen. Dezelfde knoppen staan in het convergentiescherm, voor de getoonde run
   dat duurt even. Een tweede klik binnen 60 s geeft een melding in plaats van een tweede
   Salome-Meca. Welke Salome-Meca: instelling *Salome-Meca-map* (§3). Nagelopen met
   Salome-Meca 2025 vanuit de Python van Code-Aster (die van het convergentiescherm; 10 nov
-  2026: `.rmed` en `_verfijnd.rmed` in het tabblad *Results*); vanuit een verborgen Mecway 35 start het ook (10 nov
-  2026); het klikken in dit scherm in het Mecway-venster is NIET nagelopen.
+  2026: `.rmed` en `_verfijnd.rmed` in het tabblad *Results*) en vanuit een verborgen
+  Mecway 35; op de knoppen klikken in het geopende Mecway is NIET nagelopen.
 
 Is er geen ParaView die een MED-bestand opent (geen Salome-Meca en geen *ParaView* ingevuld),
 dan opent *ParaView* het eerste bestand dat de gevonden ParaView wel kan openen (de `.pvd`) en

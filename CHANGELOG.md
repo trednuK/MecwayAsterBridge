@@ -23,7 +23,9 @@ checks OK, 1 known limitation, 0 unexpected, no status change.
   `.pvd` in the official ParaView 6.x, and `paraview_exe` still
   overrides the search. *AsterStudy* opens the MED file in Salome-Meca, AsterStudy, tab
   *Results*, through a session script `<file>_salome.py` next to it (a new Salome-Meca session
-  per click; a second click within 60 s only gives a message). New setting `salome_meca_dir`
+  per click; a second click within 60 s only gives a message). What the started program
+  reports goes to `<run>_paraview_launch.log` or `<file>_salome_launch.log` and
+  `<file>_salome_session.log`. New setting `salome_meca_dir`
   (empty = search `C:\SALOME-MECA`, `C:\Salome_meca` and `%ProgramFiles%\SALOME*`). Both buttons
   were started from a hidden Mecway 35 and from the convergence window's Python (ParaView 6.2.1,
   Salome-Meca 2025); clicking them in the Mecway window is NOT verified.
