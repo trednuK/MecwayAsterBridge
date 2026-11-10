@@ -78,8 +78,8 @@ tegen `CONFIG_BRIDGE`, en of de Nederlandse en Engelse pagina's dezelfde opbouw 
 **Een nieuwere bridge**
 
 - Een instelling in een ouder `Scripts/bridge_utils.py` die de nieuwe bridge niet meer kent,
-  negeert hij; welke instellingen erbij kwamen of verdwenen, staat in `CHANGELOG.md`. Vanaf de
-  versie na V2026.9: de instelling voor AdvancedToolsHub is weg, `salome_meca_dir` is nieuw (leeg = automatisch zoeken).
+  negeert hij; welke instellingen erbij kwamen of verdwenen, staat in `CHANGELOG.md`. Vanaf
+  V2026.10: de instelling voor AdvancedToolsHub is weg, `salome_meca_dir` is nieuw (leeg = automatisch zoeken).
 - Het celveld van bezweken elementen in de `.vtu`-bestanden (*VTU/PVD-bestanden voor
   ParaView*) heet nu `failed` in plaats van `BEZWEKEN`: pas een bewaarde ParaView-state die
   op `BEZWEKEN` filtert (*Threshold*) aan.
@@ -148,6 +148,7 @@ het laatst is nagelopen:
 | Convergentiescherm: uiterlijk van het hoofdvenster, leesbaar bij 125 % (V2026.9) | NIET nagelopen | NIET nagelopen (Mecway 34 was niet beschikbaar). Op Mecway 35 (35.0.9802) nagelopen in het Mecway-venster (10 nov 2026) |
 | Spanningen en reacties van `POU_D_TG` uit één elastische stap `STAT_NON_LINE` (V2026.9, KNOWN_BUGS 123) | NIET nagelopen | NIET nagelopen (Mecway 34 was niet beschikbaar). Op Mecway 35 (35.0.9802) nagelopen in het Mecway-venster (10 nov 2026) |
 | De Code-Aster-base bewaren met een manifest, `keep_base` (V2026.9) | NIET nagelopen | NIET nagelopen: offline tests; met de instelling uit (standaard) blijven mesh en `.comm` gelijk |
+| Knoppen *ParaView* en *AsterStudy* in het resultatenscherm en het convergentiescherm, instelling `salome_meca_dir` (V2026.10) | NIET nagelopen | NIET nagelopen in het Mecway-venster; Mecway 35: vanuit een verborgen Mecway gestart (10 nov 2026: ParaView 6.2.1 met een `.pvd`, AsterStudy *Results* met een `.rmed`); vanuit de Python van het convergentiescherm: `.rmed`, `_xfem.rmed`, `_verfijnd.rmed` |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten

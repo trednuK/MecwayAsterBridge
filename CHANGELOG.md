@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## V2026.10 – 10 November 2026
+
+The bridge opens its results outside Mecway itself: buttons *ParaView* and *AsterStudy* in the
+Results dialog and in the convergence window, with one search for Salome-Meca (also
+`C:\SALOME-MECA\<version>`). It no longer depends on AdvancedToolsHub (MWHub Post) and no longer
+writes the files that existed only for it. Behaviour changes: the setting
+`advancedtoolshub_dir` is gone, `salome_meca_dir` is new, and the VTU cell array of failed
+elements is called `failed` instead of `BEZWEKEN`. The generated `.comm` of all 578 comparable
+verification cases is identical to V2026.9; a limited regression of 56 cases gave 286 of 287
+checks OK, 1 known limitation, 0 unexpected, no status change.
 
 - **No coupling with AdvancedToolsHub any more**: the bridge no longer opens runs in MWHub Post.
   The button *In MWHub Post* of the Results dialog and the setting `advancedtoolshub_dir` are
@@ -15,8 +24,9 @@
   overrides the search. *AsterStudy* opens the MED file in Salome-Meca, AsterStudy, tab
   *Results*, through a session script `<file>_salome.py` next to it (a new Salome-Meca session
   per click; a second click within 60 s only gives a message). New setting `salome_meca_dir`
-  (empty = search `C:\SALOME-MECA`, `C:\Salome_meca` and `%ProgramFiles%\SALOME*`). Started
-  from Mecway, the AsterStudy route is NOT verified yet.
+  (empty = search `C:\SALOME-MECA`, `C:\Salome_meca` and `%ProgramFiles%\SALOME*`). Both buttons
+  were started from a hidden Mecway 35 and from the convergence window's Python (ParaView 6.2.1,
+  Salome-Meca 2025); clicking them in the Mecway window is NOT verified.
 - **No beam sidecar and node series any more**: a run no longer writes
   `<model>_<run-id>_beams.json` (came with *VTU/PVD files for ParaView* or *MED file for
   ParaView*) and `<model>_<run-id>_knopen.csv` (came only with *VTU/PVD files for ParaView*);
