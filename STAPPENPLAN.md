@@ -64,7 +64,7 @@ S7, S8, S5, S9).
 | S19 | Beam element with warping (`POU_D_TG`) as element choice: flexural-torsional buckling of open sections (KNOWN_BUGS 115) | done | after the release of 16 Oct 2026 | branch worktree-agent-af7ab132aad22bc7d (28 Oct 2026): `elem_beam` = `POU_D_TG`, setting `beam_warping`, `bridge_warping.py`; BU-38 .. BU-42, LS-90, LS-91 OK (C column 384.98, theory 386.1, hex20 393.0; ssll103a = `VALE_CALC`); tested in the Mecway GUI 28/29 Oct 2026 (BU-38 384.98; after the section-axis fixes LS-94 twist +0.01991 rad and LS-95 DY 3.368 / DZ 0.6006 mm = Mecway) |
 | S20 | Geometrically nonlinear beams (`POU_D_T_GD`, large rotations) as element choice for nonlinear static (KNOWN_BUGS 11) | done | after the release of 16 Oct 2026 | b366f94 (review fixes: s20-fix); idea and benchmarks from the fork by MishalTPC; NL-80 .. NL-89 OK (<= 0.04 %), existing beam cases bit-identical; not yet tested in the Mecway GUI |
 | S21 | Selective flexible joint on `POU_D_T_GD` beams via a short GD stub element (KNOWN_BUGS 106b) | dropped | S20 | prototype 22 Oct 2026: benchmark B1 (objectivity) failed already for the plain GD beam without stub, B2 (hinged elastica) passed; ERROR kept (see §S21) |
-| S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026; branch b-mwpost (24 Oct): (a) field `failed` written (VTU `BEZWEKEN`), Mecway display not yet checked; (b) moves to AdvancedToolsHub (MWHub Post erosion filter, ParaView button → hub); (c) settings docs only |
+| S22 | Hide failed or eroded elements in post-processing (ParaView Threshold) | open | – | requested 22 Oct 2026; branch b-mwpost (24 Oct): (a) field `failed` written (VTU `BEZWEKEN`), Mecway display not yet checked; (b) moved to AdvancedToolsHub, then dropped there (10 Nov 2026): failed elements are hidden in Mecway itself, S43d; (c) settings docs only |
 | S23 | Linear buckling with a constant (dead) plus a variable (live) load | done | – | branch w-q, 23 Oct 2026: `#ASTER-CONSTANT` (BU-40) |
 | S24 | Adaptive time stepping (`DEFI_LIST_INST METHODE='AUTO'`) from Mecway's automatic time stepping | done | – | branch w-p1; static only, setting `auto_time_stepping`; NL-21a/b; NL/NK families unchanged |
 | S25 | Optional exact section properties with `MACR_CARA_POUTRE` | dropped | – | covered by MecwaySectionProps (own repository): exact A, I, J, `JG`, `EY`/`EZ`, `AY`/`AZ` via `#ASTER-SECTIE`, already read by the bridge (user, 28 Oct 2026) |
@@ -87,6 +87,10 @@ S7, S8, S5, S9).
 | S40 | One overview image per page of the main window with the groups numbered, referring to the existing tables (Dutch and English) | open | S39 | |
 | S41 | **Priority.** Stress in general-section beams: von Mises, longitudinal and shear stress over the section as results in Mecway, on the beams and on the shells of *Section in results* (`bridge_section_stress.py`, in the job; LS-97a..l). Not in it: warping stress (F6 of MecwayAdvancedBeamAnalysis), ParaView (the variables reach the VTU like others, NOT verified) | done | S37 | branch `section-results`; V2026.9 |
 | S42 | Main window: menu *Section ▾*, navigation scrollbar, 125 % layout; convergence window in the look of the main window; `POU_D_TG` stresses and reactions from one elastic step (KNOWN_BUGS 123); `keep_base` with manifest; review fixes of the translation | done | – | V2026.9; full regression on 821c58a: 3066 of 3072 (579 cases), 6 BEKEND, 0 NOK/FOUT, no status change against bfa15fa and f4a51aa |
+| S43a | Decouple from AdvancedToolsHub: `bridge_mwpost.py`, setting `advancedtoolshub_dir`, "In MWHub Post" (Results dialog) and the hub call of the convergence window removed | open | – | branch `viewers`; see §S43 |
+| S43b | Own viewers: buttons "ParaView" and "AsterStudy" in the Results dialog and the convergence window (`bridge_viewers.py`, one Salome search, setting `salome_meca_dir`) | open | S43a | see §S43 |
+| S43c | Remove the beam sidecar `_beams.json` and the node series `_knopen.csv`; VTU array `BEZWEKEN` renamed to `failed` | open | S43a | see §S43 |
+| S43d | Hide failed elements in Mecway after load-back: copy of AdvancedToolsHub's `liml_failed.py`, contract for the element variable `failed` | later | S43a; the hub core `common/liml_failed.py` exists | see §S43 |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2192,3 +2196,77 @@ rising loop.
   (`MAILLAGE_FRONTIERE` not tried); shells/beams/contact in the loop (needs node groups rebuilt
   per mesh); the default target 1% is much too coarse for a peak (AD-10 stops after 2 loops at
   −6%): document only, as the user chose 1%.
+
+### S43 – Own viewers instead of AdvancedToolsHub (MWHub Post)
+**Background:** decided by the user on 10 Nov 2026 (combined plan with AdvancedToolsHub, part 3).
+AdvancedToolsHub drops its ParaView post layer; ParaView stays a plain viewer. The bridge (public) no
+longer calls the hub (private): no run-time coupling and no shared code at run time. Decisions: no separate
+interim release (release after S43a-c, S43d when the hub core exists); ParaView AND AsterStudy buttons in
+both windows; `vtu_export` stays, `_beams.json` and `_knopen.csv` go; the VTU array `BEZWEKEN` becomes
+`failed` (Mecway's name). Plan reviewed by Opus (10 Nov 2026); its findings are worked in below.
+**Order:** S43a is merged into `develop` first, then the AdvancedToolsHub session is told (it deletes its
+post layer only after that). S43b and S43c are independent of each other.
+
+**S43a – decouple.** Delete `bridge_mwpost.py`; remove `advancedtoolshub_dir` (`CONFIG_BRIDGE`,
+`GENERAL_SPECS`, `_GENERAL_DEFAULTS`, the empty-allowed case in the field check, glossary, docs rows) and
+`bridge_utils.advancedtoolshub_dir_path()`; remove the button "In MWHub Post", the action `mwpost` and
+`MecwayAsterBridgeMain._open_in_mwpost`; the convergence window keeps its direct `.rmed` route until S43b.
+Docs: settings tables, Results button row, run-file row `_job.json`, Foutschatter/Error_estimator, AGENTS.md.
+An old `bridge_utils.py` with the key still works (only `GENERAL_SPECS` keys are rewritten; test on a copy).
+
+**S43b – own viewers.** New `Scripts/bridge_viewers.py` (2.7 and 3, stdlib, no `mw`):
+- Salome search ported from AdvancedToolsHub `common/salome_meca.py` (same author, MPL-2.0; comments
+  rewritten, no hub references; messages in the bridge's `tr` order nl, en): bases
+  `%SystemDrive%\SALOME-MECA`, `\Salome_meca`, `%ProgramFiles%\SALOME*`; a root for AsterStudy has
+  `run_salome.bat`, `salome` and `W64\ASTERSTUDY`; newest by version then mtime. Setting
+  `salome_meca_dir` ("" = automatic; root or folder of roots; env vars expanded). Bases are injectable so
+  tests never find a real installation.
+- ParaView finder moves from `bridge_utils` to `bridge_viewers`; its Salome part looks for
+  `run_paraview.bat` + `W64\ParaView\bin\paraview.exe` under all Salome roots (own check, not the AsterStudy
+  check): fixes the miss of `C:\SALOME-MECA\<ver>`. `bridge_utils.paraview_exe_path` stays as a lazily
+  importing delegate. An explicit `paraview_exe` always wins; automatic: `.pvd` = any ParaView, `.rmed` = a
+  ParaView with a MED reader (Salome's first until official ParaView 6.2 is shown to read `.rmed` without
+  the MEDReader preset; NOT verified, the user installs 6.2 for that test).
+- File choice per run: `_verfijnd.rmed` (HOMARD) or `_xfem.rmed` (crack mesh) first when present, else
+  `.pvd`, else `.rmed`; a note names the other files. Several files in one ParaView: NOT verified.
+- AsterStudy: needs a `.rmed` (no converter); writes `<file stem>_salome.py` (session script: activate
+  ASTERSTUDY, `showResultsFile`, Results tab; log `<file stem>_salome_session.log`) and starts
+  `W64\Python\python3.exe <root>\salome start <script>` (cwd root, environment without
+  PYTHONPATH/PYTHONHOME, DEBUG=-1, ASTER_NO_EXCEPTHANDLER=1, no window), stdout/stderr to
+  `<file stem>_salome_launch.log`. Verified in the hub only from CPython; from IronPython (Mecway) NOT
+  verified until gate G2. Second click within 60 s of a session log write: message instead of a second
+  Salome.
+- `.bat` launchers: cmd.exe re-parses the arguments; paths with `% & ^ ! "` are refused with a message.
+- Callers: Results dialog buttons "ParaView" and "AsterStudy" (dialog stays open like Summary; message
+  boxes with the form as owner; TopMost off while launching); convergence window "ParaView" and new
+  "AsterStudy"; `bridge_run_aster.start_convergence_monitor` passes the raw settings `--paraview` and
+  `--salome` (resolved in `bridge_viewers`).
+- Tests: `tests/test_bridge_viewers.py` (fake trees, root choice, settings, file choice, session script
+  generated under IronPython and compiled under Python 3 with a non-ASCII/quote/backslash path, command lines
+  with a fake Popen, unsafe paths, messages in both languages); `test_bridge_work_dir.test_paraview`,
+  `test_convergence_window_look`, `test_bridge_gui_settings` (empty `salome_meca_dir` allowed, old key
+  tolerated).
+- Gates: G1 `.rmed` in official ParaView 6.2 (user installs it); G2 from the Results dialog in Mecway
+  (IronPython; ask the user before a Mecway run) and G3 from the convergence window (Code-Aster's Python):
+  static, harmonic (`DEPL_REEL`/`PRES_REEL` under "Other"), `_xfem.rmed`, `_verfijnd.rmed`, a second click
+  while Salome is open.
+- Docs NL+EN: settings tables (`salome_meca_dir`, `paraview_exe`), Results dialog (image
+  `results_summary_*` recaptured), convergence window, run-file table (`_salome.py`, `_salome_session.log`,
+  `_salome_launch.log`, also for `_verfijnd`/`_xfem`), Breukmechanica/Fracture_mechanics §7.9,
+  `ASTER_regels_voorbeelden`, glossary, AGENTS.md (`bridge_viewers.py` in the 2.7-and-3 list).
+
+**S43c – sidecars.** Delete `bridge_beams.py` and its call (`bridge_to_aster`), `beam_node_xyz` and its rename
+in `bridge_mesh`, `nodesel` in `aster_results_export`, `NodeSeries`/`MAX_SERIES_NODES` in `aster_vtu`;
+keep `beam_axes` (direction check) and `profile` (`bridge_warping`), only their "sidecar" comments change;
+`EFGE_*` arrays stay. Separate commit: `BEZWEKEN` -> `failed`. Gate: a VTU job run of a beam model and of a
+failure model in a temp folder (`regression_scope` cannot see `aster_vtu`). Docs and glossary NL+EN.
+
+**S43d – hide failed elements in Mecway.** After AdvancedToolsHub has built `common/liml_failed.py`: a copy
+as the bridge's option after load-back (provider `failed`), warning on a processed file; contract for the
+element variable `failed` in both AGENTS.md files plus a contract test; `Bezwijken.md` / `Failure.md` point
+at it. Planned in detail when the core exists.
+
+**Settings / update:** removed `advancedtoolshub_dir`, added `salome_meca_dir`; a short note in
+`docs/Na_een_update.md` / `docs/en/After_an_update.md`. A `bridge_utils.py` without a new key still gives the
+save message "0x instead of 1x" on Start, as for every earlier new setting (the file ships with code, so a
+normal update replaces it): unchanged.
