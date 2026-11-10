@@ -337,6 +337,7 @@ def run_stage2(tmp):
 
 
 def ipy_main(tmp):
+    bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp   # log there (memory only)
     stage2(tmp)
     return finish()
 

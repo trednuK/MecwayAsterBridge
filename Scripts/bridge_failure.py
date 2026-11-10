@@ -601,6 +601,24 @@ def failure_events(mess_text, cell_names):
     return events
 
 
+def failed_elements(mess_path, model_data):
+    """Set of the Mecway element numbers (text) that failed in the run of
+    mess_path (BRIDGE_BEZWIJKEN lines); empty when the .mess is missing."""
+    try:
+        f = io.open(mess_path, encoding="utf-8", errors="replace")
+        try:
+            text = f.read()
+        finally:
+            f.close()
+    except (IOError, OSError):
+        return set()
+    out = set()
+    for _t, _elset, eids in failure_events(
+            text, model_data.get("cell_names", [])):
+        out.update(eids)
+    return out
+
+
 def report_failures(mess_path, model_data):
     """
     Log the failed elements of a run (WARNING per event) and return
