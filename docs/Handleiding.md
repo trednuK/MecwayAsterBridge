@@ -803,7 +803,7 @@ gekozen Code-Aster-run (§5.2); het scherm blijft open.
 
 **Openen in ParaView of AsterStudy.** De knoppen *ParaView* en *AsterStudy* openen de
 resultaatbestanden van de run die in de lijst gekozen is buiten Mecway. Het scherm blijft open
-en staat daarna niet meer vóór de andere vensters, zodat het gestarte programma ervoor kan
+en staat na een geslaagde start niet meer vóór de andere vensters, zodat het gestarte programma ervoor kan
 komen. Dezelfde knoppen staan in het convergentiescherm, voor de getoonde run
 ([Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm)).
 
@@ -815,16 +815,22 @@ komen. Dezelfde knoppen staan in het convergentiescherm, voor de getoonde run
   meldt, staat in `<model>_<run-id>_paraview_launch.log`.
 - *AsterStudy* opent het MED-bestand (`_verfijnd.rmed`, `_xfem.rmed`, anders de `.rmed`) in
   Salome-Meca, module AsterStudy, tabblad *Results*. Een `.pvd` alleen is niet genoeg: zet
-  *MED-bestand voor ParaView* aan. De bridge schrijft het sessiescript
+  *MED-bestand voor ParaView* aan (een `_verfijnd.rmed` van adaptieve verfijning komt er ook
+  zonder). De bridge schrijft het sessiescript
   `<bestand>_salome.py` naast het MED-bestand en start daarmee een nieuwe Salome-Meca-sessie;
   dat duurt even. Een tweede klik binnen 60 s geeft een melding in plaats van een tweede
-  Salome-Meca. Welke Salome-Meca: instelling *Salome-Meca-map* (§3). Het sessiescript is
-  nagelopen met Salome-Meca 2025, gestart vanuit Python 3; gestart vanuit Mecway (dit scherm)
-  is het NIET nagelopen.
+  Salome-Meca. Welke Salome-Meca: instelling *Salome-Meca-map* (§3). Nagelopen met
+  Salome-Meca 2025 vanuit de Python van Code-Aster (die van het convergentiescherm; 10 nov
+  2026: `.rmed` en `_verfijnd.rmed` in het tabblad *Results*); gestart vanuit Mecway (dit
+  scherm) is het NIET nagelopen.
 
-Ontbreekt het bestand of het programma, dan zegt een melding wat je kunt doen. Start de bridge
-ParaView via een `.bat` (de ParaView van Salome-Meca), dan start hij niet als het pad van het
-bestand of van de installatie een van de tekens `% & ^ ! " < > |` bevat; de melding zegt dat.
+Is er geen ParaView die een MED-bestand opent (geen Salome-Meca en geen *ParaView* ingevuld),
+dan opent *ParaView* het eerste bestand dat de gevonden ParaView wel kan openen (de `.pvd`) en
+noemt de andere. Ontbreekt het bestand of het programma, dan zegt een melding wat je kunt doen.
+Start de bridge een programma via een `.bat` of `.cmd` (de ParaView van Salome-Meca, of een
+eigen *ParaView* die zo eindigt), dan start hij het niet als het pad van het bestand of van de
+installatie een van de tekens `% & ^ ! " < > |` bevat; *AsterStudy* start niet als het pad van
+het sessiescript een komma bevat. De melding zegt dat.
 
 ![Resultatenscherm met de knoppen Samenvatting, ParaView en AsterStudy](img/results_dialog_nl.png)
 

@@ -78,8 +78,8 @@ tegen `CONFIG_BRIDGE`, en of de Nederlandse en Engelse pagina's dezelfde opbouw 
 **Een nieuwere bridge**
 
 - Een instelling in een ouder `Scripts/bridge_utils.py` die de nieuwe bridge niet meer kent,
-  negeert hij; welke instellingen erbij kwamen of verdwenen, staat in `CHANGELOG.md`. Deze
-  versie: de instelling voor AdvancedToolsHub is weg, `salome_meca_dir` is nieuw (leeg = automatisch zoeken).
+  negeert hij; welke instellingen erbij kwamen of verdwenen, staat in `CHANGELOG.md`. Vanaf de
+  versie na V2026.9: de instelling voor AdvancedToolsHub is weg, `salome_meca_dir` is nieuw (leeg = automatisch zoeken).
 - Het celveld van bezweken elementen in de `.vtu`-bestanden (*VTU/PVD-bestanden voor
   ParaView*) heet nu `failed` in plaats van `BEZWEKEN`: pas een bewaarde ParaView-state die
   op `BEZWEKEN` filtert (*Threshold*) aan.

@@ -801,7 +801,7 @@ window stays open.
 
 **Opening in ParaView or AsterStudy.** The "ParaView" and "AsterStudy" buttons open the
 result files of the run chosen in the list outside Mecway. The window stays open and is no
-longer kept in front of the other windows afterwards, so that the started program can come in
+longer kept in front of the other windows after a successful start, so that the started program can come in
 front of it. The same buttons are in the convergence window, for the run shown
 ([Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen)).
 
@@ -813,16 +813,20 @@ front of it. The same buttons are in the convergence window, for the run shown
   `<model>_<run-id>_paraview_launch.log`.
 - "AsterStudy" opens the MED file (`_verfijnd.rmed`, `_xfem.rmed`, else the `.rmed`) in
   Salome-Meca, module AsterStudy, tab *Results*. A `.pvd` alone is not enough: turn on "MED
-  file for ParaView". The bridge writes the session script `<file>_salome.py` next to the MED
+  file for ParaView" (a `_verfijnd.rmed` of adaptive refinement is written without it too). The bridge writes the session script `<file>_salome.py` next to the MED
   file and starts a new Salome-Meca session with it; that takes a while. A second click within
   60 s gives a message instead of a second Salome-Meca. Which Salome-Meca: setting
-  "Salome-Meca folder" (§3). The session script is verified with Salome-Meca 2025, started
-  from Python 3; started from Mecway (this window) it is NOT verified.
+  "Salome-Meca folder" (§3). Verified with Salome-Meca 2025 from Code-Aster's Python (the one
+  of the convergence window; 10 Nov 2026: `.rmed` and `_verfijnd.rmed` in the *Results* tab);
+  started from Mecway (this window) it is NOT verified.
 
-If the file or the program is missing, a message says what you can do. If the bridge starts
-ParaView through a `.bat` (Salome-Meca's ParaView), it does not start it when the path of the
-file or of the installation contains one of the characters `% & ^ ! " < > |`; the message
-says so.
+If there is no ParaView that opens a MED file (no Salome-Meca and no "ParaView" filled in),
+"ParaView" opens the first file the ParaView found can open (the `.pvd`) and names the others.
+If the file or the program is missing, a message says what you can do. If the bridge starts a
+program through a `.bat` or `.cmd` (Salome-Meca's ParaView, or an own "ParaView" that ends
+so), it does not start it when the path of the file or of the installation contains one of the
+characters `% & ^ ! " < > |`; "AsterStudy" does not start when the path of the session script
+contains a comma. The message says so.
 
 ![Results window with the buttons Summary, ParaView and AsterStudy](../img/results_dialog_en.png)
 

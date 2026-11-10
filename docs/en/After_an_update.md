@@ -79,8 +79,8 @@ against `CONFIG_BRIDGE`, and whether the Dutch and English pages have the same s
 **A newer bridge**
 
 - A setting in an older `Scripts/bridge_utils.py` that the new bridge no longer knows is
-  ignored; which settings were added or removed is in `CHANGELOG.md`. This version:
-  the setting for AdvancedToolsHub is gone, `salome_meca_dir` is new (empty = search automatically).
+  ignored; which settings were added or removed is in `CHANGELOG.md`. From the release
+  after V2026.9: the setting for AdvancedToolsHub is gone, `salome_meca_dir` is new (empty = search automatically).
 - The cell array of failed elements in the `.vtu` files ("VTU/PVD files for ParaView") is now
   called `failed` instead of `BEZWEKEN`: adjust a saved ParaView state that filters on
   `BEZWEKEN` (*Threshold*).

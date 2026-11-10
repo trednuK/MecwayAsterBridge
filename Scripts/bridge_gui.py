@@ -2698,11 +2698,13 @@ def results_dialog(items, work_dir):
                     "file for ParaView).")),
                 (u"AsterStudy", viewer("open_asterstudy"), 110, False,
                  tr("Opent de .rmed van de gekozen run in Salome-Meca, "
-                    "AsterStudy, tabblad Results (alleen met 'MED-bestand "
-                    "voor ParaView'). Salome-Meca starten duurt even.",
+                    "AsterStudy, tabblad Results (met 'MED-bestand voor "
+                    "ParaView', of de _verfijnd.rmed van adaptieve "
+                    "verfijning). Salome-Meca starten duurt even.",
                     "Opens the .rmed of the chosen run in Salome-Meca, "
-                    "AsterStudy, tab Results (only with 'MED file for "
-                    "ParaView'). Starting Salome-Meca takes a while.")),
+                    "AsterStudy, tab Results (with 'MED file for "
+                    "ParaView', or the _verfijnd.rmed of adaptive "
+                    "refinement). Starting Salome-Meca takes a while.")),
             ]
             # Layout from the content (at 100 %: 860 x 470): the header,
             # the explanation and the buttons are measured, so that a larger

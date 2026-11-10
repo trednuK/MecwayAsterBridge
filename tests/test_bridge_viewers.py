@@ -198,6 +198,13 @@ def test_open_paraview(t, base):
     ok, text = v.open_paraview(base + "_none", "", "", FakePopen, bases, env)
     check(not ok and "vtu_export" in text and "med_export" in text and
           not FakePopen.calls, "no result file: message, nothing started")
+    ok, text = v.open_paraview(base, "", "", FakePopen, [], env)
+    cmd = FakePopen.calls[-1][0]
+    check(ok and [_norm(c) for c in cmd] == [_norm(t["pv610"]),
+                                             _norm(base + ".pvd")] and
+          "_verfijnd.rmed" in text,
+          "no Salome: the .pvd in the official ParaView, the refined MED "
+          "file named")
     os.remove(base + "_verfijnd.rmed")
     os.remove(base + "_xfem.rmed")
     ok, text = v.open_paraview(base, "", "", FakePopen, bases, env)

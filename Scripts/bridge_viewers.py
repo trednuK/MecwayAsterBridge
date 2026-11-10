@@ -385,15 +385,24 @@ def open_paraview(base, paraview=None, salome=None, popen=None, bases=None,
     """
     Open the result of the run <base> (= <dir>/<model>_<run_id>) in
     ParaView: _verfijnd.rmed or _xfem.rmed when present, else the .pvd,
-    else the .rmed. paraview / salome: the settings paraview_exe and
-    salome_meca_dir (None = CONFIG_BRIDGE). Returns (ok, text); text names
-    the other result files of the run.
+    else the .rmed; without a ParaView for a MED file (no Salome-Meca, no
+    paraview_exe) the first file a found ParaView can open (the .pvd).
+    paraview / salome: the settings paraview_exe and salome_meca_dir (None
+    = CONFIG_BRIDGE). Returns (ok, text); text names the other result files
+    of the run.
     """
-    path, others = choose_file(result_files(base))
-    if path is None:
+    first, rest = choose_file(result_files(base))
+    if first is None:
         return False, _no_file_text(base, False)
-    med = path.lower().endswith(".rmed")
-    exe = paraview_exe(paraview, med, salome, bases, environ)
+    exe, path = "", first
+    for candidate in [first] + rest:
+        found = paraview_exe(paraview, candidate.lower().endswith(".rmed"),
+                             salome, bases, environ)
+        if found and os.path.isfile(found):
+            exe, path = found, candidate
+            break
+        exe = exe or found
+    others = [p for p in [first] + rest if p != path]
     if not exe or not os.path.isfile(exe):
         return False, tr(
             u"ParaView niet gevonden{0}. Vul in het startscherm 'ParaView' "
