@@ -1868,10 +1868,13 @@ def main():
             # same way, run_AsterSolver; a stopped run ends the loop).
             while ok and _adapt_step():
                 ok = _run(dict(settings, changes=[], save_errors=[]))
-            # Section view and hiding whenever the results are in the
-            # .liml, also partly (the section first: it refuses a processed
-            # file).
-            if _HIDE["loaded"]:
+            # Section view, then hiding (the section first: it refuses a
+            # processed file). After a good run as before; after a run whose
+            # results were loaded only partly, only when hide_failed is on
+            # (with the option off a failed run must not turn the .bak of
+            # the previous good results into partial ones, which
+            # add_section_view would do).
+            if ok or (_HIDE["loaded"] and bridge_hide_failed.enabled()):
                 _section_after_run()
                 if not _hide_after_run():
                     ok = False

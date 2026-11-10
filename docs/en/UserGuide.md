@@ -630,8 +630,9 @@ If you save in Mecway itself while the shape is shown, it is in the file as well
 
 **In the results.** "Section in results" in the Section menu puts the shape as shells in the
 `<solution>` of the `.liml`, with their values, and reopens the model. The model part stays
-unchanged; the previous version is kept as `.bak` (§5). At the end of a Code-Aster run this
-happens automatically once when the model has an outline; the `.bak` then holds the results
+unchanged; the previous version is kept as `.bak` (§5). At the end of a successful Code-Aster
+run this happens automatically once when the model has an outline (with "Hide failed elements"
+on also after a run whose results were loaded only partly); the `.bak` then holds the results
 without the shape. By hand it is needed after a solve
 in Mecway itself and after loading results again. A new solve in Mecway replaces the solution:
 the shells are then gone until you use the button again. With route `tabel` nothing happens

@@ -630,8 +630,9 @@ bestand.
 
 **In de resultaten.** *Doorsnede in resultaten* in het menu *Doorsnede* zet de vorm als schalen in de
 `<solution>` van de `.liml`, met hun waarden, en opent het model opnieuw. Het modeldeel blijft
-gelijk; de vorige versie blijft bewaard als `.bak` (§5). Aan het eind van een Code-Aster-run
-gebeurt dit één keer vanzelf als het model een omtrek heeft; de `.bak` bevat dan de resultaten
+gelijk; de vorige versie blijft bewaard als `.bak` (§5). Aan het eind van een geslaagde Code-Aster-run
+gebeurt dit één keer vanzelf als het model een omtrek heeft (met *Bezweken elementen verbergen*
+aan ook na een run waarvan de resultaten maar deels zijn ingeladen); de `.bak` bevat dan de resultaten
 zonder de vorm. Met de hand is het nodig na een
 solve in Mecway zelf en na het opnieuw inladen van resultaten. Een nieuwe solve in Mecway
 vervangt de oplossing: de schalen zijn dan weg tot je de knop opnieuw gebruikt. Bij route

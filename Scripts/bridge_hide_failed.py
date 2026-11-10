@@ -27,6 +27,7 @@
 import os
 import re
 import time
+from xml.sax.saxutils import escape as _xml_escape
 
 from bridge_utils import CONFIG_BRIDGE, log, tr
 import liml_failed
@@ -410,9 +411,12 @@ def is_processed(liml, configuration=None):
     try:
         if liml_failed.processed_marker(liml, configuration):
             return True
+        # the attribute as it stands in the XML (escaped, as Mecway writes
+        # it; liml_failed.processed_marker unescapes it)
         conf = (None if configuration is None else
-                b'configuration="' + u"{0}".format(configuration)
-                .encode("utf-8") + b'"')
+                b'configuration="' + _xml_escape(
+                    u"{0}".format(configuration),
+                    {u'"': u"&quot;"}).encode("utf-8") + b'"')
         model_nid = 0
         model_eid = 0
         target = False
