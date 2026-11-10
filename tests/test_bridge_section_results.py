@@ -42,6 +42,7 @@ import bridge_from_aster  # noqa: E402
 import bridge_from_liml  # noqa: E402
 import bridge_results_liml as brl  # noqa: E402
 import bridge_section_view as sv  # noqa: E402
+import bridge_hide_failed as bhf  # noqa: E402
 
 STRESS = "longitudinalstress"
 LOG = []
@@ -381,6 +382,8 @@ out = brl.add_section_view(path, view, md)
 check("static: accepted, " + out["text"], out["ok"] is True and
       out["steps"] == 1)
 check("static: routes", out["routes"] == {"forces": 2, "kinematics": 0})
+check("static: a section view is not a file with hidden failed elements",
+      not bhf.is_processed(path))
 after = raw(path)
 sol_at = before.index(b("<solution"))
 check("static: model part byte-identical",
@@ -1347,6 +1350,65 @@ except ImportError:         # no numpy: the writer cannot be compared
 if bridge_section_stress is not None:
     check("the version read is the version the job writes",
           brl.SECTION_FORMAT == bridge_section_stress.FORMAT_VERSION)
+
+
+# ==========================================
+# HIDE FAILED ELEMENTS (bridge_hide_failed) AFTER A SECTION VIEW
+# ==========================================
+# The run order: the section view first, then hiding. Beam 2 fails at step
+# 2 (element variable failed, contract failed/1); its shells copy the flag.
+_value = value
+
+
+def value(name, nid, step, k=0):
+    if name == "failed":
+        return 1.0 if nid == 2 and step >= 2 else 0.0
+    return _value(name, nid, step, k)
+
+
+path = make("hide.liml", results(steps=[1, 2, 3], aster=True,
+                                 element_vars=dict(ELEMENT_VARS,
+                                                   failed=[1, 2, 3])))
+view, md = view_of(path)
+out = brl.add_section_view(path, view, md)
+check("hide: section view added to the time steps", out["ok"] is True and
+      out["steps"] == 3)
+check("hide: the section view alone is not processed",
+      not bhf.is_processed(path))
+del LOG[:]
+keep_log = bhf.log
+bhf.log = LOG.append
+try:
+    status, text = bhf.apply(path, expected=set(["2"]))
+finally:
+    bhf.log = keep_log
+check("hide: the core accepts a solution with shells",
+      status == "done" and
+      text.startswith(u"1 failed element(s) hidden") and
+      u"section view of those beams is hidden with them" in text and
+      u"stay visible" not in text)
+check("hide: the log counts the shells separately", [
+    m for m in LOG if u"1 element(s) hidden in" in m and
+    u"{0} section-view shell(s)".format(
+        len(view["parts"][1]["elements"])) in m])
+bhf.finish(path)
+check("hide: processed (marker)", bhf.is_processed(path))
+processed = raw(path)
+stripped = os.path.join(TMP, "hide_stripped.liml")
+f = _builtin_open(stripped, "wb")
+try:
+    f.write(processed.replace(b(' limlfailed="'), b(' x="')))
+finally:
+    f.close()
+check("hide: marker removed in the copy (as a save in Mecway 35 does)",
+      bhf.liml_failed.processed_marker(stripped) is None)
+check("hide: still processed by the node copies of model elements",
+      bhf.is_processed(stripped))
+before = raw(stripped)
+view2, md2 = view_of(stripped)
+out = brl.add_section_view(stripped, view2, md2)
+check("hide: Section in results on it is refused anyway (backstop), the "
+      "file unchanged", out["ok"] is False and raw(stripped) == before)
 
 shutil.rmtree(TMP, ignore_errors=True)
 

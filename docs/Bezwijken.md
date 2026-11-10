@@ -126,7 +126,8 @@ toe).
   tijdstip zelf.
 - **Bezweken elementen verbergen** (instelling *Bezweken elementen verbergen*, pagina
   Algemeen, standaard uit; [Handleiding §3](Handleiding.md#3-het-hoofdvenster)): na
-  een run en na *Resultaten... > Inladen* verdwijnen bezweken elementen in Mecway's
+  een run die resultaten inlaadt (ook deels, bijvoorbeeld met fouten in de `.mess`)
+  en na *Resultaten... > Inladen* verdwijnen bezweken elementen in Mecway's
   eigen resultaatweergave, elk vanaf de stap waarin `failed` 1 wordt. De bridge geeft
   elk bezweken element eigen kopieën van zijn knopen in de oplossing en laat die vanaf
   die stap ineenklappen op het zwaartepunt van het element in de stap ervoor; het
@@ -141,10 +142,24 @@ toe).
     (maximum en minimum) van een elset met bezweken elementen kan daardoor verschuiven:
     lees verplaatsingen en spanningen op intacte elementen.
   - Een element dat bij de laatste opgeslagen stap bezwijkt, blijft zichtbaar
-    (`failed` wordt pas in de stap erna 1); het log en het statusvak noemen hoeveel.
+    (`failed` wordt pas in de stap erna 1). Alleen na een run noemen het log en het
+    statusvak hoeveel bezweken elementen van de run zichtbaar blijven (de bridge kent
+    dan de bezweken elementen uit de `.mess`), ook als er niets te verbergen was; na
+    *Resultaten... > Inladen* niet. Elementen zonder eindige verplaatsing vóór het
+    bezwijken blijven ook zichtbaar; het statusvak noemt ze daarnaast apart.
   - Alleen voor resultaten met tijdstappen; niet met de resultaatroute `tabel`, niet
     bij statische of modale resultaten (ook niet het hele wiel van cyclische symmetrie).
-    *Doorsnede in resultaten* weigert resultaten met verborgen elementen.
+    *Doorsnede in resultaten* weigert resultaten met verborgen elementen. Na een run
+    komt de doorsnede eerst in de resultaten en daarna het verbergen: de doorsnede van
+    een bezweken balk verdwijnt mee, en het getal in het statusvak telt alleen
+    elementen van het model.
+  - Opslaan in Mecway houdt de verborgen elementen, maar verliest het kenmerk dat de
+    bridge op de resultaten zet (gezien in Mecway 35). De bridge herkent zo'n bestand
+    toch (aan de eigen knopen van de verborgen elementen): opnieuw verbergen en
+    *Doorsnede in resultaten* weigeren het. Dat lukt niet als elk bezweken element
+    alleen knopen deelt met andere bezweken elementen (bijvoorbeeld een heel deel
+    dat bezwijkt): die krijgen geen eigen knopen. Verberg zo'n opgeslagen bestand
+    niet opnieuw; *Resultaten... > Inladen* geeft de oorspronkelijke resultaten terug.
   - In het Mecway-venster NIET nagelopen (de bestanden zijn offline en met
     `BezwijkenTrekstaaf` gecontroleerd).
 

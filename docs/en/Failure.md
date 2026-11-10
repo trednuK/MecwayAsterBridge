@@ -122,7 +122,8 @@ Code-Aster allows nothing else with an explicit scheme).
   (measured with `BezwijkenTrekstaaf`: von Mises 276 MPa at t = 0.6 s, about 0 at
   t = 0.7 s). Up to and including V2026.10 it was already 1 at that time itself.
 - **Hiding failed elements** (setting "Hide failed elements", page General, off by
-  default; [User guide §3](UserGuide.md#3-the-main-window)): after a run and after
+  default; [User guide §3](UserGuide.md#3-the-main-window)): after a run that loads
+  results (also partly, for example with errors in the `.mess`) and after
   "Results..." > "Load" failed elements disappear in Mecway's own result view, each
   from the step where `failed` becomes 1. The bridge gives every failed element its own
   copies of its nodes in the solution and collapses them from that step on onto the
@@ -137,10 +138,23 @@ Code-Aster allows nothing else with an explicit scheme).
     elset with failed elements can shift because of this: read displacements and
     stresses on intact elements.
   - An element that fails at the last stored step stays visible (`failed` only becomes
-    1 in the step after); the log and the status box say how many.
+    1 in the step after). Only after a run do the log and the status box say how many
+    failed elements of the run stay visible (the bridge then knows the failed elements
+    from the `.mess`), also when there was nothing to hide; not after "Results..." >
+    "Load". Elements without a finite displacement before failing stay visible too; the
+    status box also names them separately.
   - Only for results with time steps; not with the result route `tabel`, not for static
     or modal results (nor the whole wheel of cyclic symmetry). "Section in results"
-    refuses results with hidden elements.
+    refuses results with hidden elements. After a run the section goes into the
+    results first and the hiding comes after it: the section of a failed beam
+    disappears with it, and the number in the status box counts only elements of the
+    model.
+  - A save in Mecway keeps the hidden elements but loses the marker the bridge puts on
+    the results (seen in Mecway 35). The bridge still recognises such a file (by the
+    own nodes of the hidden elements): hiding again and "Section in results" refuse it.
+    That does not work when every failed element shares nodes only with other failed
+    elements (for example a whole part that fails): those get no own nodes. Do not hide
+    such a saved file again; "Results..." > "Load" gives back the original results.
   - NOT verified in the Mecway window (the files were checked offline and with
     `BezwijkenTrekstaaf`).
 

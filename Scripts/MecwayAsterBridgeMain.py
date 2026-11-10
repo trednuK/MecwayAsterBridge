@@ -160,10 +160,12 @@ import bridge_section_model
 import bridge_section_view
 import bridge_hide_failed
 
-# Setting hide_failed: number of failed elements of the last run
-# (bridge_failure.failed_elements), for the note on elements that failed at
-# the last stored step; None outside a run or with the option off.
-_HIDE = {"expected": None}
+# Setting hide_failed: "expected" the failed elements of the last run
+# (bridge_failure.failed_elements, element numbers as text), for the note
+# on elements that stay visible; None outside a run or with the option off.
+# "loaded": the last run put its results into the .liml (route liml), also
+# when it returned False for .mess errors or a stop.
+_HIDE = {"expected": None, "loaded": False}
 
 
 # ==========================================
@@ -225,6 +227,8 @@ def _run(settings):
     through _notify (status box of the main window). Returns True if the
     results are in Mecway.
     """
+    _HIDE["expected"] = None
+    _HIDE["loaded"] = False
     # Before anything else: the shells would enter the check solve, the
     # saved model and so the Code-Aster mesh.
     if not bridge_section_model.remove_shape(mw):
@@ -493,8 +497,8 @@ def _run(settings):
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
             model_data)
-        _HIDE["expected"] = (len(failed_elements(
-            os.path.join(work_dir_path(), run_name(".mess")), model_data))
+        _HIDE["expected"] = (failed_elements(
+            os.path.join(work_dir_path(), run_name(".mess")), model_data)
             if bridge_hide_failed.enabled() else None)
         # Summary file of the run (setting aster_summary, every route,
         # also a failed or stopped run) and optionally the same text as
@@ -510,6 +514,9 @@ def _run(settings):
                     "Mecway solution through the API).")
             loaded = AsterToMecway_results(work_dir_path(),
                                            resu_name, mw, solution)
+        # also when _run returns False below (.mess errors, stopped); the
+        # route 'tabel' only logs that hiding does not apply to it
+        _HIDE["loaded"] = bool(loaded)
         summary_note = (u"\n\n" + tr(u"Samenvatting van de run: {0}",
                                       u"Summary of the run: {0}").format(
                                           summary_file)
@@ -1596,11 +1603,13 @@ def _results_action():
                          "Results not loaded: {0}").format(reason)
     log("SUCCESS: Results '{0}' written to '{1}'.".format(path, liml))
     # Setting hide_failed: hide before the first open (one open less)
-    opened, hide_note = _hide_failed(liml, configuration)
+    opened, shown, hide_note = _hide_failed(liml, configuration)
     if not opened:
         mw.open(liml)
         if configuration:
             _set_configuration(configuration)
+    if not shown:
+        return False, hide_note
     notes = [tr("Resultaten ingeladen: {0}", "Results loaded: {0}").format(
         os.path.basename(path))] + [n for n in (note, warning, hide_note)
                                     if n]
@@ -1619,71 +1628,38 @@ def _set_configuration(configuration):
 
 def _hide_failed(liml, configuration=None, expected=None):
     """
-    Setting hide_failed: hide the failed elements in the
-    results of liml (bridge_hide_failed) and open the processed file. The
+    Setting hide_failed: hide the failed elements in the results of liml
+    and open the processed file (bridge_hide_failed.hide_and_open, which
+    puts the unprocessed file back when Mecway does not open it). The
     final step after loading results: after a run after the section view
     (_section_into_results refuses a processed file), after Results... >
-    Load right after the splice. When Mecway does not open the processed
-    file, the unprocessed one is put back and opened. Returns (opened,
-    text for the status box): opened True when this function opened liml
-    in Mecway (and made the configuration active) or tried to (then the
-    caller does not open it again).
+    Load right after the splice. Returns (opened, ok, text for the status
+    box): opened True when liml was opened here (or tried, or is missing),
+    so the caller does not open it again; ok False when Mecway does not
+    show the results of liml.
     """
-    if not bridge_hide_failed.enabled():
-        return False, u""
-    try:
-        status, text = bridge_hide_failed.apply(liml, configuration,
-                                                expected)
-    except Exception as e:
-        bridge_hide_failed.restore(liml)
-        log(tr(u"WARNING: Bezweken elementen niet verborgen: {0}",
-               u"WARNING: Failed elements not hidden: {0}").format(e))
-        return False, u""
-    if status != "done":
-        return False, text
-    try:
-        mw.open(liml)
-    except Exception as e:
-        log(tr(u"ERROR: Mecway opent het model met verborgen bezweken "
-               u"elementen niet: {0}",
-               u"ERROR: Mecway does not open the model with hidden failed "
-               u"elements: {0}").format(e))
-        restored = bridge_hide_failed.restore(liml)
-        if restored:
-            mw.open(liml)
-            if configuration:
-                _set_configuration(configuration)
-        return True, (tr(
-            u"Mecway opent het model met verborgen bezweken elementen niet; "
-            u"de resultaten zonder verbergen zijn teruggezet.",
-            u"Mecway does not open the model with hidden failed elements; "
-            u"the results without hiding were put back.") if restored
-            else tr(
-            u"Mecway opent het model met verborgen bezweken elementen niet; "
-            u"de resultaten zonder verbergen staan in {0}.",
-            u"Mecway does not open the model with hidden failed elements; "
-            u"the results without hiding are in {0}.").format(
-                os.path.basename(liml) + bridge_hide_failed.KEEP_SUFFIX))
-    bridge_hide_failed.finish(liml)
-    if configuration:
-        _set_configuration(configuration)
-    return True, text
+    return bridge_hide_failed.hide_and_open(
+        liml, configuration, expected, open_fn=mw.open,
+        activate_fn=_set_configuration)
 
 
 def _hide_after_run():
-    """The final step of a run (also after adaptive refinement): setting
-    hide_failed on the model, after _section_after_run."""
+    """The final step of a run whose results were loaded (also partly,
+    also after adaptive refinement): setting hide_failed on the model,
+    after _section_after_run. False when Mecway does not show the results
+    afterwards."""
     if not bridge_hide_failed.enabled():
-        return
+        return True
     if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
         log("INFO: Hide failed elements: not applied with the result route "
             "'tabel' (it fills Mecway's own solution).")
-        return
+        return True
     liml = mw.file_name()
     configuration, _warning = pick_configuration(liml)
-    _opened, text = _hide_failed(liml, configuration, _HIDE["expected"])
+    _opened, ok, text = _hide_failed(liml, configuration, _HIDE["expected"])
     if text:
         _notify(text)
+    return ok
 
 
 def _section_view(warn_directions=True):
@@ -1844,12 +1820,20 @@ def main():
     status = u""
     # Left by a crash, or saved into the model
     bridge_section_model.remove_shape(mw)
+    first = True
     while True:
         # Outside a run the bridge logs to bridge_log.txt (not to the log
         # of the previous run). The open model determines the work folder
         # with work_dir_beside_model (start screen, Results...).
         set_model_path(mw.file_name())
         set_run_log(None)
+        if first:
+            # Setting hide_failed: an unprocessed copy left by a crash
+            first = False
+            try:
+                status = bridge_hide_failed.leftover_text(mw.file_name())
+            except Exception:
+                status = u""
         settings = run_settings_dialog(mw, status)
         action = settings.get("action", "run" if settings["ok"] else "close")
         if action == "results":
@@ -1884,9 +1868,13 @@ def main():
             # same way, run_AsterSolver; a stopped run ends the loop).
             while ok and _adapt_step():
                 ok = _run(dict(settings, changes=[], save_errors=[]))
-            if ok:
+            # Section view and hiding whenever the results are in the
+            # .liml, also partly (the section first: it refuses a processed
+            # file).
+            if _HIDE["loaded"]:
                 _section_after_run()
-                _hide_after_run()
+                if not _hide_after_run():
+                    ok = False
         except Exception as e:
             try:
                 log("CRITICAL ERROR: {0}".format(str(e)))
