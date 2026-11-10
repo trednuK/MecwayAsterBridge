@@ -459,7 +459,7 @@ statisch houdt de Mecway-route van §6. Code: `Scripts/bridge_homard.py` (bridge
 5. Na de run staan de resultaten op het Mecway-mesh. Het statusvenster toont per lus het
    aantal elementen en de globale fout, en waarom de lus stopte. Met `med_export` of
    `vtu_export` staat het verfijnde resultaat zelf in `<model>_<run_id>_verfijnd.rmed`
-   (ParaView, MWHub Post).
+   (ParaView, Salome).
 
 ![Adaptieve verfijning op de pagina Thermisch](img/thermal_adapt_homard_nl.png)
 

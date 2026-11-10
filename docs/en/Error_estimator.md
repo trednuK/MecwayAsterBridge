@@ -458,7 +458,7 @@ keeps the Mecway route of §6. Code: `Scripts/bridge_homard.py` (bridge) and
 5. After the run the results are on the Mecway mesh. The status box shows per loop the
    number of elements and the global error, and why the loop stopped. With `med_export` or
    `vtu_export` the refined result itself is in `<model>_<run_id>_verfijnd.rmed`
-   (ParaView, MWHub Post).
+   (ParaView, Salome).
 
 ![Adaptive refinement on the page Thermal](../img/thermal_adapt_homard_en.png)
 

@@ -6,16 +6,22 @@
 # Offline test of the start screen logic without Windows Forms
 # (bridge_gui): the order of result fields is kept when the selection does
 # not change (otherwise every Start rewrote bridge_utils.py), the height
-# of the status box and the scroll arithmetic of the navigation list. Only CONFIG_BRIDGE in memory; bridge_utils.py itself is
-# not written.
+# of the status box, the scroll arithmetic of the navigation list, and a
+# setting removed from the bridge (advancedtoolshub_dir, V2026.10) that is
+# still in an older bridge_utils.py stays harmless when saving. Only
+# CONFIG_BRIDGE in memory and a copy of bridge_utils.py in a temporary
+# folder; bridge_utils.py itself is not written.
 #
 #   python tests/test_bridge_gui_settings.py
 
 from __future__ import print_function
 
+import codecs
 import copy
 import os
+import shutil
 import sys
+import tempfile
 
 _HERE = os.path.dirname(os.path.abspath(globals().get("__file__",
                                                      sys.argv[0])))
@@ -142,11 +148,49 @@ def test_nav_scroll():
     check(g._nav_page_index(5, 17, 1, True) == 6, "PageDown at least 1")
 
 
+def test_removed_setting_tolerated():
+    """A key the start screen no longer offers (advancedtoolshub_dir,
+    removed with the AdvancedToolsHub coupling) may stay in an older
+    bridge_utils.py: saving other settings works and leaves that line
+    alone; the start screen never offers it again."""
+    check("advancedtoolshub_dir" not in [s[0] for s in g.GENERAL_SPECS],
+          "removed setting not offered by the start screen")
+    check("advancedtoolshub_dir" not in bridge_utils.CONFIG_BRIDGE,
+          "removed setting not in CONFIG_BRIDGE")
+    tmp = tempfile.mkdtemp(prefix="mab_removed_")
+    try:
+        path = os.path.join(tmp, "bridge_utils.py")
+        shutil.copy(bridge_utils.__file__.replace(".pyc", ".py"), path)
+        f = codecs.open(path, "r", "utf-8")
+        text = f.read()
+        f.close()
+        anchor = '    "paraview_exe":    "",'
+        check(text.count(anchor) == 1, "anchor line found in the copy")
+        text = text.replace(anchor, anchor + '\n    "advancedtoolshub_dir": '
+                            '"%ADVANCEDTOOLSHUB_DIR%",')
+        f = codecs.open(path, "w", "utf-8")
+        f.write(text)
+        f.close()
+        errors = g.save_to_bridge_utils(
+            [(None, "paraview_exe", "file", "", "C:\\PV\\paraview.exe")],
+            path=path)
+        f = codecs.open(path, "r", "utf-8")
+        after = f.read()
+        f.close()
+        check(errors == [], "saving another setting: no error")
+        check('"advancedtoolshub_dir": "%ADVANCEDTOOLSHUB_DIR%",' in after,
+              "old line left alone")
+        check("paraview.exe" in after, "the changed setting is saved")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main():
     test_keep_order()
     test_apply_values_no_change()
     test_status_height()
     test_nav_scroll()
+    test_removed_setting_tolerated()
     print("{0} failure(s)".format(len(_FAILED)))
     return 1 if _FAILED else 0
 

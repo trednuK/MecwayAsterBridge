@@ -308,6 +308,8 @@ def check_setting_names_in_docs(values):
     code = "\n".join(code)
     words = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", code))
     for path in md_files():
+        if path.endswith("CHANGELOG.md"):
+            continue    # history: may name settings removed since
         full = read(path)
         text = strip_code_blocks(full)
         # names the document itself uses in a code block (selections

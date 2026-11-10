@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **No coupling with AdvancedToolsHub any more**: the bridge no longer opens runs in MWHub Post.
+  The button *In MWHub Post* of the Results dialog and the setting `advancedtoolshub_dir` are
+  gone; the *ParaView* button of the convergence window opens the `.rmed` of the run directly
+  in ParaView. An older `bridge_utils.py` that still has the setting keeps working (the line is
+  ignored).
+
 ## V2026.9 – 10 November 2026
 
 Beams with a general section show the stress over their section in Mecway, and `POU_D_TG`

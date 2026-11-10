@@ -85,7 +85,7 @@ CONFIG_BRIDGE = {
     "keep_base":       False,
     "keep_base_runs":  3,
     # Also <model>_<run_id>.pvd + one .vtu per step (aster_vtu), with the
-    # same fields as Mecway gets; for ParaView/MWHub Post (route "liml").
+    # same fields as Mecway gets; for ParaView (route "liml").
     "vtu_export":      False,
     # Summary of every run in <model>_<run_id>_aster_summary.txt
     # (bridge_monitor.py): "summary" = errors, alarms, steps, timings and
@@ -100,11 +100,6 @@ CONFIG_BRIDGE = {
     # 6.x (reads .rmed), then Salome-Meca's ParaView, then an older ParaView
     # (paraview_exe_path()). Environment variables are expanded.
     "paraview_exe":    "",
-    # AdvancedToolsHub folder (MWHub Post: the ParaView button opens the run
-    # there, bridge_mwpost). Empty ("") = %ADVANCEDTOOLSHUB_DIR%, else the
-    # folder AdvancedToolsHub next to this repository; not found = the
-    # ParaView button opens the .rmed directly (advancedtoolshub_dir_path()).
-    "advancedtoolshub_dir": "",
 
     # --- Element formulation (applies to all analyses) ---
     # Hex8 solid elements: "3D" (fully integrated) or "3D_SI"
@@ -953,29 +948,6 @@ def _salome_launcher(path):
         if os.path.isfile(bat):
             return bat
     return path
-
-
-def advancedtoolshub_dir_path(setting=None):
-    """
-    AdvancedToolsHub folder with launcher/mwhubpost_launch.py, or "" if
-    none is found: the setting (None = CONFIG_BRIDGE["advancedtoolshub_dir"])
-    with expanded environment variables; for "" the environment variable
-    ADVANCEDTOOLSHUB_DIR, then the folder AdvancedToolsHub next to the
-    repository of these scripts.
-    """
-    if setting is None:
-        setting = CONFIG_BRIDGE.get("advancedtoolshub_dir")
-    if setting:
-        candidates = [expand_path(setting)]
-    else:
-        candidates = [expand_path(os.environ.get("ADVANCEDTOOLSHUB_DIR", "")),
-                      os.path.join(os.path.dirname(os.path.dirname(
-                          SCRIPTS_DIR)), "AdvancedToolsHub")]
-    for path in candidates:
-        if path and os.path.isfile(os.path.join(path, "launcher",
-                                                "mwhubpost_launch.py")):
-            return path
-    return ""
 
 
 def paraview_exe_path(setting=None):

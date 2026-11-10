@@ -166,7 +166,7 @@ schuiven de lijst en de pagina (de lijst met het muiswiel of de balk rechts erva
 | 3 | Pagina | De titel en de instellingen van de gekozen pagina; de tabellen hieronder geven elke instelling |
 | 4 | Bladeren... | Kiest bij een veld met een pad het bestand of de map in een Windows-venster |
 | 5 | Statusvak | De uitkomst van de laatste actie en de meldingen |
-| 6 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1); met AdvancedToolsHub ook *In MWHub Post* (de gekozen run in ParaView, met `.rmed` of `.pvd`). Daarna komt het venster terug |
+| 6 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1). Daarna komt het venster terug |
 | 7 | Doorsnede ▾ | Een menu voor de vorm van General sections (§4.3). *Doorsnede tonen* slaat de instellingen en het model op en toont de vorm op de balken als tijdelijke elementen, vóór een berekening; *Doorsnede verbergen* haalt ze weer weg. *Doorsnede in resultaten* slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw; na een Code-Aster-run gebeurt dat vanzelf |
 | 8 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | 9 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...* of actie in het menu *Doorsnede* hebt gewijzigd, worden niet opgeslagen |
@@ -204,7 +204,6 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Samenvatting Code-Aster-run (_aster_summary.txt) | `summary` | na elke run (ook een mislukte of gestopte) een samenvatting van de Code-Aster-uitvoer in `<model>_<run-id>_aster_summary.txt` in de werkmap; knop *Samenvatting* in het resultatenscherm en het convergentiescherm (§5.2). `summary`: fouten en alarmen, stappen, tijden en het pad van de volledige `.mess`; `full`: een kopie van de hele `.mess` (boven 4 miljoen tekens het begin en het einde); `off`: geen bestand |
 | Samenvatting ook als Saved monitor in de .liml | uit | aan: dezelfde tekst ook in de `.liml` als Mecway's item *Saved monitor* onder *Solution*; alleen route `liml`; een mislukte run alleen als het model nog geen resultaten heeft (§5.2) |
 | VTU/PVD-bestanden voor ParaView | uit | schrijft ook `<model>_<run-id>.pvd` met een `.vtu` per tijdstap (elke ParaView leest het, ook zonder MED-lezer), met dezelfde velden als Mecway krijgt, en `<model>_<run-id>_knopen.csv` (per benoemde knoopselectie van max. 100 knopen de knoopvelden over de tijd) |
-| AdvancedToolsHub-map (leeg = automatisch) | leeg | map van AdvancedToolsHub; gevonden = de knop *ParaView* opent de run in MWHub Post (Mecway-weergave, eenheden, bezweken elementen verbergen); leeg = `%ADVANCEDTOOLSHUB_DIR%`, anders de map `AdvancedToolsHub` naast deze repository; niet gevonden = de `.rmed` rechtstreeks in ParaView |
 | ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knop *ParaView* van het convergentiescherm; leeg = automatisch: eerst de officiele ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, nieuwste eerst), die zelf een `.rmed` leest; dan als terugval de ParaView van Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, gestart via `run_paraview.bat`); als laatste een oudere ParaView. ParaView 5.10 van paraview.org kan een `.rmed` **niet** openen. Omgevingsvariabelen mogen |
 
 Onder de instellingen staan de koppeling van `auto` aan de Mecway-analysetypen, een
@@ -769,11 +768,10 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
-| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem (met AdvancedToolsHub in MWHub Post) |
+| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `BEZWEKEN` (0 intact, 1 bezweken) en `T_BEZWIJK` |
 | `<model>_<run-id>_beams.json` | balkdoorsneden en lokale assen voor MWHub Post (`mwhubpost-beams/1`, beschrijving bovenin `Scripts/bridge_beams.py`), met *VTU/PVD-* of *MED-bestand voor ParaView* en balken in het model; de snedekrachten per element-uiteinde staan als `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` in de VTU |
 | `<model>_<run-id>_knopen.csv` | knoopvelden over de tijd per benoemde knoopselectie (met de VTU-export) |
-| `<model>_<run-id>_job.json` | opdracht voor MWHub Post (`mwhubpost-job/1`), geschreven door de knop *ParaView* als AdvancedToolsHub gevonden is |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |
 | `<model>_<run-id>_monitor_log.txt` | log van het convergentie- en meldingenscherm |
 

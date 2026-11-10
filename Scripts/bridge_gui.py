@@ -118,9 +118,6 @@ GENERAL_SPECS = [
     ("save_monitor_liml", ("Samenvatting ook als Saved monitor in de .liml",
                            "Summary also as Saved monitor in the .liml"),
      "bool", None),
-    ("advancedtoolshub_dir", ("AdvancedToolsHub-map (leeg = automatisch)",
-                              "AdvancedToolsHub folder (empty = automatic)"),
-     "folder", None),
     ("paraview_exe", ("ParaView (leeg = automatisch zoeken)",
                       "ParaView (empty = search automatically)"), "file",
      ("Programma's (*.exe)|*.exe|Alle bestanden (*.*)|*.*",
@@ -553,7 +550,7 @@ _GENERAL_DEFAULTS = {"language": "en", "configuration": "auto",
                      "mecway_solve_first": False, "result_route": "liml",
                      "convergence_monitor": True, "med_export": False,
                      "keep_base": False, "keep_base_runs": 3,
-                     "vtu_export": False, "advancedtoolshub_dir": "",
+                     "vtu_export": False,
                      "aster_summary": "summary",
                      "save_monitor_liml": False,
                      "work_dir_beside_model": False, "paraview_exe": "",
@@ -777,7 +774,7 @@ def _parse_and_validate(key, kind, extra, raw):
                     os.path.normpath(default_work_dir()))):
             # empty or the default folder: save "" (bridge_utils.work_dir_path)
             return "", None
-        if key in ("paraview_exe", "advancedtoolshub_dir") and not value:
+        if key == "paraview_exe" and not value:
             return "", None       # empty = search automatically
         if not value:
             return None, tr("mag niet leeg zijn.", "must not be empty.")
@@ -2561,8 +2558,7 @@ def results_dialog(items, work_dir):
     Selection screen for the button Resultaten... (MecwayAsterBridgeMain.
     _results_action). items: list_results(work_dir).
     Returns {"action": "load", "path": result file},
-    {"action": "mwpost", "path": result file} (button In MWHub Post, only
-    when AdvancedToolsHub is found), {"action": "strip"} or None
+    {"action": "strip"} or None
     (Annuleren). The button Summary opens the summary of the chosen run
     (_open_summary) and keeps the window open. Without Windows Forms:
     ImportError (the script then falls back to mw.input()).
@@ -2649,11 +2645,6 @@ def results_dialog(items, work_dir):
             def on_strip(sender, args):
                 finish({"action": "strip"})
 
-            def on_mwpost(sender, args):
-                if lst.SelectedIndex >= 0:
-                    finish({"action": "mwpost",
-                            "path": items[lst.SelectedIndex]["path"]})
-
             def on_summary(sender, args):
                 if lst.SelectedIndex >= 0:
                     _open_summary(items[lst.SelectedIndex], form)
@@ -2674,9 +2665,6 @@ def results_dialog(items, work_dir):
                     "steps, timings) in the text editor; if it is missing, "
                     "the bridge makes it from the .mess.")),
             ]
-            if bridge_utils.advancedtoolshub_dir_path():
-                buttons.append((u"In MWHub Post", on_mwpost, 120, False,
-                                None))
             # Layout from the content (at 100 %: 860 x 470): the header,
             # the explanation and the buttons are measured, so that a larger
             # font (Windows display scale) does not clip them.
