@@ -1,0 +1,1404 @@
+<liml version="35">
+  <analysis type="D31" solver="radioss" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.001" y="0" z="0" />
+  <node nid="3" x="0.001" y="0.001" z="0" />
+  <node nid="4" x="0" y="0.001" z="0" />
+  <node nid="5" x="0" y="0" z="0.001" />
+  <node nid="6" x="0.001" y="0" z="0.001" />
+  <node nid="7" x="0.001" y="0.001" z="0.001" />
+  <node nid="8" x="0" y="0.001" z="0.001" />
+  <node nid="9" x="0.0005" y="0" z="0" />
+  <node nid="10" x="0.001" y="0.0005" z="0" />
+  <node nid="11" x="0.0005" y="0.001" z="0" />
+  <node nid="12" x="0" y="0.0005" z="0" />
+  <node nid="13" x="0" y="0" z="0.0005" />
+  <node nid="14" x="0.001" y="0" z="0.0005" />
+  <node nid="15" x="0.001" y="0.001" z="0.0005" />
+  <node nid="16" x="0" y="0.001" z="0.0005" />
+  <node nid="17" x="0.0005" y="0" z="0.001" />
+  <node nid="18" x="0.001" y="0.0005" z="0.001" />
+  <node nid="19" x="0.0005" y="0.001" z="0.001" />
+  <node nid="20" x="0" y="0.0005" z="0.001" />
+  <node nid="21" x="0.002" y="0.0005" z="0.0005" />
+  <node nid="22" x="0.001" y="0.0005" z="0" />
+  <node nid="23" x="0.001" y="0.0005" z="0.0005" />
+  <node nid="24" x="0.001" y="0" z="0.0005" />
+  <node nid="25" x="0.0015" y="0.00025" z="0.00025" />
+  <node nid="26" x="0.0015" y="0.00075" z="0.00025" />
+  <node nid="27" x="0.0015" y="0.00025" z="0.00075" />
+  <node nid="28" x="0" y="0" z="0.002" />
+  <node nid="29" x="0.001" y="0" z="0.002" />
+  <node nid="30" x="0.001" y="0.001" z="0.002" />
+  <node nid="31" x="0" y="0" z="0.003" />
+  <node nid="32" x="0.001" y="0" z="0.003" />
+  <node nid="33" x="0.001" y="0.001" z="0.003" />
+  <node nid="34" x="-0.001" y="0" z="0" />
+  <elset name="Solids" material="Steel" colorrgb="00C800">
+    <elem eid="1" shape="hex20" nodes="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" />
+    <elem eid="2" shape="tet10" nodes="2 3 6 21 22 23 24 25 26 27" />
+    <elem eid="3" shape="wedge6" nodes="5 6 7 28 29 30" />
+    <elem eid="4" shape="hex8" nodes="28 29 30 30 31 32 33 33" />
+  </elset>
+  <elset name="Shell" material="Steel" colorrgb="00C800">
+    <elem eid="5" shape="quad4" nodes="1 2 3 4" />
+  </elset>
+  <elset name="Beam" material="Steel" colorrgb="00C800">
+    <elem eid="6" shape="line2" nodes="1 34" />
+  </elset>
+  <mat name="Steel">
+    <mechanical type="isotropic" youngsmodulus="210000000000 Pa" poissonratio="0.3" />
+  </mat>
+  <fieldvariable name="displacement" displayunit="" expanded="true" />
+  <timesteps timeperiod="0.5 s" automatictimestepping="true" />
+  <solution>
+    <analysis type="D31" solver="radioss" />
+    <node nid="1" x="0" y="0" z="0" />
+    <node nid="2" x="0.001" y="0" z="0" />
+    <node nid="3" x="0.001" y="0.001" z="0" />
+    <node nid="4" x="0" y="0.001" z="0" />
+    <node nid="5" x="0" y="0" z="0.001" />
+    <node nid="6" x="0.001" y="0" z="0.001" />
+    <node nid="7" x="0.001" y="0.001" z="0.001" />
+    <node nid="8" x="0" y="0.001" z="0.001" />
+    <node nid="9" x="0.0005" y="0" z="0" />
+    <node nid="10" x="0.001" y="0.0005" z="0" />
+    <node nid="11" x="0.0005" y="0.001" z="0" />
+    <node nid="12" x="0" y="0.0005" z="0" />
+    <node nid="13" x="0" y="0" z="0.0005" />
+    <node nid="14" x="0.001" y="0" z="0.0005" />
+    <node nid="15" x="0.001" y="0.001" z="0.0005" />
+    <node nid="16" x="0" y="0.001" z="0.0005" />
+    <node nid="17" x="0.0005" y="0" z="0.001" />
+    <node nid="18" x="0.001" y="0.0005" z="0.001" />
+    <node nid="19" x="0.0005" y="0.001" z="0.001" />
+    <node nid="20" x="0" y="0.0005" z="0.001" />
+    <node nid="21" x="0.002" y="0.0005" z="0.0005" />
+    <node nid="22" x="0.001" y="0.0005" z="0" />
+    <node nid="23" x="0.001" y="0.0005" z="0.0005" />
+    <node nid="24" x="0.001" y="0" z="0.0005" />
+    <node nid="25" x="0.0015" y="0.00025" z="0.00025" />
+    <node nid="26" x="0.0015" y="0.00075" z="0.00025" />
+    <node nid="27" x="0.0015" y="0.00025" z="0.00075" />
+    <node nid="28" x="0" y="0" z="0.002" />
+    <node nid="29" x="0.001" y="0" z="0.002" />
+    <node nid="30" x="0.001" y="0.001" z="0.002" />
+    <node nid="31" x="0" y="0" z="0.003" />
+    <node nid="32" x="0.001" y="0" z="0.003" />
+    <node nid="33" x="0.001" y="0.001" z="0.003" />
+    <node nid="34" x="-0.001" y="0" z="0" />
+    <elset name="Solids" material="Steel" colorrgb="00C800">
+      <elem eid="1" shape="hex20" nodes="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" />
+      <elem eid="2" shape="tet10" nodes="2 3 6 21 22 23 24 25 26 27" />
+      <elem eid="3" shape="wedge6" nodes="5 6 7 28 29 30" />
+      <elem eid="4" shape="hex8" nodes="28 29 30 30 31 32 33 33" />
+    </elset>
+    <elset name="Shell" material="Steel" colorrgb="00C800">
+      <elem eid="5" shape="quad4" nodes="1 2 3 4" />
+    </elset>
+    <elset name="Beam" material="Steel" colorrgb="00C800">
+      <elem eid="6" shape="line2" nodes="1 34" />
+    </elset>
+    <timesteps timeperiod="0.5 s" automatictimestepping="true" />
+    <results precision="double">
+      <nodeids name="displmag">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <nodeids name="displx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <nodeids name="disply">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <nodeids name="displz">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <nodeids name="vonmises">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <nodeids name="temperature">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <nodeids name="reactionforcex">IgAAAA==
+      </nodeids>
+      <nodeids name="reactionforcemag">IgAAAA==
+      </nodeids>
+      <nodeids name="velx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAACgAAAAsAAAAMAAAA
+DQAAAA4AAAAPAAAAEAAAABEAAAASAAAAEwAAABQAAAAVAAAAFgAAABcAAAAYAAAA
+GQAAABoAAAAbAAAAHAAAAB0AAAAeAAAAHwAAACAAAAAhAAAAIgAAAA==
+      </nodeids>
+      <elementnodeids name="failed">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="stressxx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="stressyy">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="stresszz">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="stressxy">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="stressyz">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="stresszx">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <elementnodeids name="vonmises">AQAAAAIAAAADAAAABAAAAAUAAAAGAAAA
+      </elementnodeids>
+      <timestep id="0" time="0.1 s">
+        <nodevariable name="displmag">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displx">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="disply">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displz">
+          <maxandmin>
+            <component name="Solids" max="-0" min="-0" />
+            <component name="Shell" max="-0" min="-0" />
+            <component name="Beam" max="-0" min="-0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="temperature">
+          <maxandmin>
+            <component name="Solids" max="301" min="299" />
+            <component name="Shell" max="300.92" min="299.72" />
+            <component name="Beam" max="300.92" min="299.72" />
+          </maxandmin>
+          <valuesdouble>7FG4HoW7ckAUrkfhesRyQHsUrkfhynJAH4XrUbjOckAAAAAAANByQB+F61G4znJA
+exSuR+HKckAUrkfhesRyQOxRuB6Fu3JAAAAAAACwckDsUbgehbtyQBSuR+F6xHJA
+exSuR+HKckAfhetRuM5yQAAAAAAA0HJAH4XrUbjOckB7FK5H4cpyQBSuR+F6xHJA
+7FG4HoW7ckAAAAAAALByQOxRuB6Fu3JAFK5H4XrEckB7FK5H4cpyQB+F61G4znJA
+AAAAAADQckAfhetRuM5yQHsUrkfhynJAFK5H4XrEckDrUbgehbtyQAAAAAAAsHJA
+7FG4HoW7ckAUrkfhesRyQHsUrkfhynJAH4XrUbjOckA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcex">
+          <maxandmin>
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcemag">
+          <maxandmin>
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="velx">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          </valuesdouble>
+        </nodevariable>
+        <elementnodevariable name="failed">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxx">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyy">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszz">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxy">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyz">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszx">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+      </timestep>
+      <timestep id="1" time="0.2 s">
+        <nodevariable name="displmag">
+          <maxandmin>
+            <component name="Solids" max="4.96851947892931E-06" min="2.87200278551397E-07" />
+            <component name="Shell" max="2.75808752807086E-06" min="2.87200278551397E-07" />
+            <component name="Beam" max="2.33948733700356E-06" min="3.51698468151341E-07" />
+          </maxandmin>
+          <valuesdouble>7z2HOCKalz66o3aJ1w7HPqNmXafyIsc+3b7dLhBGkz5oj3Bhz22uPg+zsmJg08U+
+qIENoJxjxz7VNQn6KaOtPm2MZNcjpLg+mRbk+BAbxT4xxFSwp+21PnCUDe/LoaI+
+VcrsEWY0oz4LIhYziGrHPoRzQ8bofMc+wt6uOJojrj6dqOwKDH24PoLz+Ke5ecc+
+NAPnwqv9vD4fm7Itt9SpPnGOJzzo1tQ+rn0MMcj9wz554mHpHk/GPr3xZLfDkcc+
+ryTcVJqy0D6cDZLCvQLQPlIMZA1G1M0+XXOsGpBTuT6v8HUAjwLKPhFy9+omSMs+
+E6hOvyAcwz4xueldNNnLPq7HeTZIFc0+d1bZwwKgwz4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displx">
+          <maxandmin>
+            <component name="Solids" max="4.95355E-06" min="-1.732E-07" />
+            <component name="Shell" max="2.74395E-06" min="5.155E-08" />
+            <component name="Beam" max="5.155E-08" min="-2.3382E-06" />
+          </maxandmin>
+          <valuesdouble>RPeUYfqsaz7y6N69/sjGPqovLHeWBMc+YoDiVrEXgj4Fg4uyCt19vmn7BMVQhMQ+
+/rQUgxVdxj6uAckwObmQPtiGlQiXQLg+N4FUUHIDxT6kMGOjF+mxPppbRb2nBHk+
+b8fIxr0hjz6Xcapxyu7GPloI3evFzMU+8vO6Txs/h77WoS+J5++0Pm50Jpp0lcY+
+KZNTqYQouT74lFPQJ9GGPv6kuHTVxtQ+vonIyXD3wz44BoBNxg/GPkidDz8eAsc+
+soF0sWml0D6fzygwMPHPPmu2QGuPcc0+R3VQnj1EaD5Iz4bjTcPGPl0OibXXBsc+
+S/H/x+a6gj5G3BWj8hvEPhhivC91c8Q+171FCz+dw74=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="disply">
+          <maxandmin>
+            <component name="Solids" max="4.975E-07" min="-1.0069E-06" />
+            <component name="Shell" max="4.216E-07" min="-2.789E-07" />
+            <component name="Beam" max="3.479E-07" min="-7.75999999999997E-08" />
+          </maxandmin>
+          <valuesdouble>OC6XYeBYlz7Jj7loCEucPmC2BCx3t5K++hJgmNAEkb4AvdMRfrGgPj1fzkMh1p8+
+QmPrN2Grlb4wPEKLvXeavnPUyUkMcZE++U033ImKj76+AOBvq02pvji5gFQhXqK+
+dMIBLO98mL7Ij7loCEucvovi2Q7bULC+fU3Z8lTDqr5M95Rh+qx7PvPq6Ozng4O+
+3gcNP+cOnL7AeuoFXcpiPnSM31Yp3Xc+QF/OQyHWfz7Y2uAkC6iAPiKkn8WaHqA+
+je21oPfGkD7WfDV4gciJvqj83T20lng+DteE0UD1hT4ramD8lKlZPv6Ci7IK3a2+
+b2BvD7cElr6SPxydnOWevifKDEKa5LC+rn0Vo6HUdL4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displz">
+          <maxandmin>
+            <component name="Solids" max="-0" min="-2.25E-06" />
+            <component name="Shell" max="-0" min="-0" />
+            <component name="Beam" max="-0" min="-0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIBU5BBxcyqpvlTkEHFzKqm+
+VOQQcXMqqb5U5BBxcyqpvgAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+VOQQcXMqmb5U5BBxcyqZvlTkEHFzKpm+VOQQcXMqmb5U5BBxcyqpvlTkEHFzKqm+
+VOQQcXMqqb5U5BBxcyqpvlTkEHFzKpm+AAAAAAAAAIBU5BBxcyqZvlTkEHFzKpm+
+VOQQcXMqib5U5BBxcyqJvj+rzJTW36K+VOQQcXMqub5U5BBxcyq5vlTkEHFzKrm+
+P6vMlNbfwr4/q8yU1t/Cvj+rzJTW38K+AAAAAAAAAIA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="374975" min="139775" />
+            <component name="Shell" max="272600" min="194375" />
+            <component name="Beam" max="302100" min="194375" />
+          </maxandmin>
+          <valuesdouble>AQAAADi6B0EBAAAAoDULQQAAAAB4ZA5BAAAAAGCjEEEAAAAAPO4RQQAAAADQEhNB
+AQAAABwRFEEAAAAAIOkUQQEAAADcmhVBAAAAAFAmFkEAAAAAfIsWQQEAAABgyhZB
+//////viFkEAAAAAUNUWQf////9boRZBAAAAACBHFkH/////m8YVQf/////PHxVB
+/////7tSFEH/////X18TQf////+7RRJB/////88FEUH+////Nz8PQf3///8/JgxB
+/P///7fACEH7////nw4FQf3////3DwFBAAAAAMCmAUEFAAAAeJoFQQMAAACgQQlB
+BgAAADicDEEDAAAAQKoPQQEAAADcNRFBAwAAAFBwEkE=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="temperature">
+          <maxandmin>
+            <component name="Solids" max="303.5" min="301.5" />
+            <component name="Shell" max="303.42" min="302.22" />
+            <component name="Beam" max="303.42" min="302.22" />
+          </maxandmin>
+          <valuesdouble>7FG4HoXjckAUrkfheuxyQHsUrkfh8nJAH4XrUbj2ckAAAAAAAPhyQB+F61G49nJA
+exSuR+HyckAUrkfheuxyQOxRuB6F43JAAAAAAADYckDsUbgeheNyQBSuR+F67HJA
+exSuR+HyckAfhetRuPZyQAAAAAAA+HJAH4XrUbj2ckB7FK5H4fJyQBSuR+F67HJA
+7FG4HoXjckAAAAAAANhyQOxRuB6F43JAFK5H4XrsckB7FK5H4fJyQB+F61G49nJA
+AAAAAAD4ckAfhetRuPZyQHsUrkfh8nJAFK5H4XrsckDrUbgeheNyQAAAAAAA2HJA
+7FG4HoXjckAUrkfheuxyQHsUrkfh8nJAH4XrUbj2ckA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcex">
+          <maxandmin>
+            <component name="Beam" max="215" min="215" />
+          </maxandmin>
+          <valuesdouble>9v/////fakA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcemag">
+          <maxandmin>
+            <component name="Beam" max="215" min="215" />
+          </maxandmin>
+          <valuesdouble>9v/////fakA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="velx">
+          <maxandmin>
+            <component name="Solids" max="374900" min="125000" />
+            <component name="Shell" max="259400" min="176975" />
+            <component name="Beam" max="290900" min="176975" />
+          </maxandmin>
+          <valuesdouble>AAAAAHiaBUEBAAAAoEEJQQAAAAA4nAxB/////z+qD0EAAAAA3DURQQEAAABQcBJB
+AQAAAHyEE0EAAAAAYHIUQQEAAAD8ORVBAAAAAFDbFUEAAAAAXFYWQQAAAAAgqxZB
+AAAAAJzZFkEAAAAA0OEWQQAAAAC8wxZBAAAAAGB/FkH/////uxQWQf/////PgxVB
+/////5vMFEEAAAAAIO8TQf////9b6xJBAAAAAFDBEUH/////+3AQQf3///+/9A1B
+/P////e6CkH8////nzQHQf3///+3YQNBAAAAAICE/kAFAAAAuGEDQQIAAACgNAdB
+BQAAAPi6CkEDAAAAwPQNQQEAAAD8cBBBAgAAAFDBEUE=
+          </valuesdouble>
+        </nodevariable>
+        <elementnodevariable name="failed">
+          <maxandmin>
+            <component name="Solids" max="0" min="0" />
+            <component name="Shell" max="1" min="1" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxx">
+          <maxandmin>
+            <component name="Solids" max="153750" min="70725" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="141193.75" min="137350" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBE8UABAAAA3HTzQAEAAABghfVAAAAAANx190AAAAAAUEb5QP////+79vpA
+AQAAACCH/EAAAAAAfPf9QAAAAADQR/9AAAAAAA48AEH/////L8QAQQAAAABOPAFB
+AAAAAGikAUEAAAAAfvwBQQAAAACQRAJBAAAAAJ58AkEBAAAAqKQCQQAAAACuvAJB
+AAAAALDEAkEAAAAArrwCQQEAAABghfVAAAAAANx190AAAAAAUEb5QAEAAAC89vpA
+AQAAACCH/EAAAAAAfPf9QAAAAADQR/9AAAAAAA48AEEAAAAAMMQAQQAAAABOPAFB
+AAAAAFBG+UABAAAAvPb6QAEAAAAgh/xAAAAAAHz3/UAAAAAA0Ef/QAAAAAAOPABB
+AQAAACCH/EAAAAAAfPf9QAAAAADQR/9AAAAAAA48AEEAAAAAMMQAQQAAAABOPAFB
+AAAAAGikAUEAAAAAfvwBQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEAEEAAAAATjwBQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyy">
+          <maxandmin>
+            <component name="Solids" max="307500" min="141450" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="282387.5" min="274700" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEAUEBAAAA3HQDQQEAAABghQVBAAAAANx1B0EAAAAAUEYJQf////+79gpB
+AQAAACCHDEEAAAAAfPcNQQAAAADQRw9BAAAAAA48EEH/////L8QQQQAAAABOPBFB
+AAAAAGikEUEAAAAAfvwRQQAAAACQRBJBAAAAAJ58EkEBAAAAqKQSQQAAAACuvBJB
+AAAAALDEEkEAAAAArrwSQQEAAABghQVBAAAAANx1B0EAAAAAUEYJQQEAAAC89gpB
+AQAAACCHDEEAAAAAfPcNQQAAAADQRw9BAAAAAA48EEEAAAAAMMQQQQAAAABOPBFB
+AAAAAFBGCUEBAAAAvPYKQQEAAAAghwxBAAAAAHz3DUEAAAAA0EcPQQAAAAAOPBBB
+AQAAACCHDEEAAAAAfPcNQQAAAADQRw9BAAAAAA48EEEAAAAAMMQQQQAAAABOPBFB
+AAAAAGikEUEAAAAAfvwRQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEEEEAAAAATjwRQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszz">
+          <maxandmin>
+            <component name="Solids" max="461250" min="212175" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="423581.25" min="412050" />
+          </maxandmin>
+          <valuesdouble>/////3fmCUEBAAAASi8NQQEAAAAIJBBBAAAAAGWYEUEAAAAAvPQSQf////8MORRB
+AQAAAFhlFUEAAAAAnXkWQQAAAADcdRdB/////xRaGEH/////RyYZQQAAAAB12hlB
+AAAAAJx2GkEAAAAAvfoaQQAAAADYZhtBAAAAAO26G0EBAAAA/PYbQQAAAAAFGxxB
+AAAAAAgnHEEAAAAABRscQQEAAAAIJBBBAAAAAGWYEUEAAAAAvPQSQQEAAAANORRB
+AQAAAFhlFUEAAAAAnXkWQQAAAADcdRdB/////xRaGEEAAAAASCYZQQAAAAB12hlB
+AAAAALz0EkEBAAAADTkUQQEAAABYZRVBAAAAAJ15FkEAAAAA3HUXQf////8UWhhB
+AQAAAFhlFUEAAAAAnXkWQQAAAADcdRdB/////xRaGEEAAAAASCYZQQAAAAB12hlB
+AAAAAJx2GkEAAAAAvfoaQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmGUEAAAAAddoZQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxy">
+          <maxandmin>
+            <component name="Solids" max="615000" min="282900" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="564775" min="549400" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEEUEBAAAA3HQTQQEAAABghRVBAAAAANx1F0EAAAAAUEYZQf////+79hpB
+AQAAACCHHEEAAAAAfPcdQQAAAADQRx9BAAAAAA48IEH/////L8QgQQAAAABOPCFB
+AAAAAGikIUEAAAAAfvwhQQAAAACQRCJBAAAAAJ58IkEBAAAAqKQiQQAAAACuvCJB
+AAAAALDEIkEAAAAArrwiQQEAAABghRVBAAAAANx1F0EAAAAAUEYZQQEAAAC89hpB
+AQAAACCHHEEAAAAAfPcdQQAAAADQRx9BAAAAAA48IEEAAAAAMMQgQQAAAABOPCFB
+AAAAAFBGGUEBAAAAvPYaQQEAAAAghxxBAAAAAHz3HUEAAAAA0EcfQQAAAAAOPCBB
+AQAAACCHHEEAAAAAfPcdQQAAAADQRx9BAAAAAA48IEEAAAAAMMQgQQAAAABOPCFB
+AAAAAGikIUEAAAAAfvwhQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEIEEAAAAATjwhQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyz">
+          <maxandmin>
+            <component name="Solids" max="768750" min="353625" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="705968.75" min="686750" />
+          </maxandmin>
+          <valuesdouble>/////2OVFUEAAAAAE1IYQQAAAAC45hpB/////1JTHUH/////45cfQf///3812iBB
+AAAAAHTUIUH///9/rboiQf/////hjCNB////fxFLJEH/////O/UkQf///39hiyVB
+/////4ENJkH///9/nXsmQf////+z1SZB////f8UbJ0EAAAAA0k0nQf///3/ZaydB
+/////9t1J0H///9/2WsnQQAAAAC45hpB/////1JTHUH/////45cfQQAAAIA12iBB
+AAAAAHTUIUH///9/rboiQf/////hjCNB////fxFLJEEAAAAAPPUkQf///39hiyVB
+/////+OXH0EAAACANdogQQAAAAB01CFB////f626IkH/////4YwjQf///38RSyRB
+AAAAAHTUIUH///9/rboiQf/////hjCNB////fxFLJEEAAAAAPPUkQf///39hiyVB
+/////4ENJkH///9/nXsmQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADz1JEH///9/YYslQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszx">
+          <maxandmin>
+            <component name="Solids" max="922500" min="424350" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="847162.5" min="824100" />
+          </maxandmin>
+          <valuesdouble>/////3fmGUEBAAAASi8dQQEAAAAIJCBBAAAAAGWYIUEAAAAAvPQiQf////8MOSRB
+AQAAAFhlJUEAAAAAnXkmQQAAAADcdSdB/////xRaKEH/////RyYpQQAAAAB12ilB
+AAAAAJx2KkEAAAAAvfoqQQAAAADYZitBAAAAAO26K0EBAAAA/PYrQQAAAAAFGyxB
+AAAAAAgnLEEAAAAABRssQQEAAAAIJCBBAAAAAGWYIUEAAAAAvPQiQQEAAAANOSRB
+AQAAAFhlJUEAAAAAnXkmQQAAAADcdSdB/////xRaKEEAAAAASCYpQQAAAAB12ilB
+AAAAALz0IkEBAAAADTkkQQEAAABYZSVBAAAAAJ15JkEAAAAA3HUnQf////8UWihB
+AQAAAFhlJUEAAAAAnXkmQQAAAADcdSdB/////xRaKEEAAAAASCYpQQAAAAB12ilB
+AAAAAJx2KkEAAAAAvfoqQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmKUEAAAAAddopQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="1076250" min="495075" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="988356.25" min="961450" />
+          </maxandmin>
+          <valuesdouble>/v///4s3HkEAAACAQAYhQQAAAAC01CJB////fyCHJEH/////hR0mQf7//3/klydB
+AAAAADz2KEH///9/jDgqQf/////VXitB/v//fxhpLEH+////U1ctQf7//3+IKS5B
+/v///7XfLkH///9/3HkvQf7////79y9B////PwotMEEAAAAAE1AwQf///z8YZTBB
+/////xlsMEH///8/GGUwQQAAAAC01CJB////fyCHJEH/////hR0mQQAAAIDklydB
+AAAAADz2KEH///9/jDgqQf/////VXitB/v//fxhpLEH/////U1ctQf7//3+IKS5B
+/////4UdJkEAAACA5JcnQQAAAAA89ihB////f4w4KkH/////1V4rQf7//38YaSxB
+AAAAADz2KEH///9/jDgqQf/////VXitB/v//fxhpLEH/////U1ctQf7//3+IKS5B
+/v///7XfLkH///9/3HkvQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////1NXLUH+//9/iCkuQQ==
+          </valuesdouble>
+        </elementnodevariable>
+      </timestep>
+      <timestep id="2" time="0.3 s">
+        <nodevariable name="displmag">
+          <maxandmin>
+            <component name="Solids" max="9.93703895785863E-06" min="5.74400557102794E-07" />
+            <component name="Shell" max="5.51617505614171E-06" min="5.74400557102794E-07" />
+            <component name="Beam" max="4.67897467400712E-06" min="7.03396936302683E-07" />
+          </maxandmin>
+          <valuesdouble>7z2HOCKapz66o3aJ1w7XPqNmXafyItc+3b7dLhBGoz5oj3Bhz22+Pg+zsmJg09U+
+qIENoJxj1z7VNQn6KaO9Pm2MZNcjpMg+mRbk+BAb1T4xxFSwp+3FPnCUDe/LobI+
+VcrsEWY0sz4LIhYziGrXPoRzQ8bofNc+wt6uOJojvj6dqOwKDH3IPoLz+Ke5edc+
+NAPnwqv9zD4fm7Itt9S5PnGOJzzo1uQ+rn0MMcj90z554mHpHk/WPr3xZLfDkdc+
+ryTcVJqy4D6cDZLCvQLgPlIMZA1G1N0+XXOsGpBTyT6v8HUAjwLaPhFy9+omSNs+
+E6hOvyAc0z4xueldNNnbPq7HeTZIFd0+d1bZwwKg0z4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displx">
+          <maxandmin>
+            <component name="Solids" max="9.9071E-06" min="-3.464E-07" />
+            <component name="Shell" max="5.4879E-06" min="1.031E-07" />
+            <component name="Beam" max="1.031E-07" min="-4.6764E-06" />
+          </maxandmin>
+          <valuesdouble>RPeUYfqsez7y6N69/sjWPqovLHeWBNc+YoDiVrEXkj4Fg4uyCt2Nvmn7BMVQhNQ+
+/rQUgxVd1j6uAckwObmgPtiGlQiXQMg+N4FUUHID1T6kMGOjF+nBPppbRb2nBIk+
+b8fIxr0hnz6Xcapxyu7WPloI3evFzNU+8vO6Txs/l77WoS+J5+/EPm50Jpp0ldY+
+KZNTqYQoyT74lFPQJ9GWPv6kuHTVxuQ+vonIyXD30z44BoBNxg/WPkidDz8eAtc+
+soF0sWml4D6fzygwMPHfPmu2QGuPcd0+R3VQnj1EeD5Iz4bjTcPWPl0OibXXBtc+
+S/H/x+a6kj5G3BWj8hvUPhhivC91c9Q+171FCz+d074=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="disply">
+          <maxandmin>
+            <component name="Solids" max="9.95E-07" min="-2.0138E-06" />
+            <component name="Shell" max="8.432E-07" min="-5.578E-07" />
+            <component name="Beam" max="6.958E-07" min="-1.55199999999999E-07" />
+          </maxandmin>
+          <valuesdouble>OC6XYeBYpz7Jj7loCEusPmC2BCx3t6K++hJgmNAEob4AvdMRfrGwPj1fzkMh1q8+
+QmPrN2Grpb4wPEKLvXeqvnPUyUkMcaE++U033ImKn76+AOBvq025vji5gFQhXrK+
+dMIBLO98qL7Ij7loCEusvovi2Q7bUMC+fU3Z8lTDur5M95Rh+qyLPvPq6Ozng5O+
+3gcNP+cOrL7AeuoFXcpyPnSM31Yp3Yc+QF/OQyHWjz7Y2uAkC6iQPiKkn8WaHrA+
+je21oPfGoD7WfDV4gciZvqj83T20log+DteE0UD1lT4ramD8lKlpPv6Ci7IK3b2+
+b2BvD7cEpr6SPxydnOWuvifKDEKa5MC+rn0Vo6HUhL4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displz">
+          <maxandmin>
+            <component name="Solids" max="-0" min="-4.5E-06" />
+            <component name="Shell" max="-0" min="-0" />
+            <component name="Beam" max="-0" min="-0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIBU5BBxcyq5vlTkEHFzKrm+
+VOQQcXMqub5U5BBxcyq5vgAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+VOQQcXMqqb5U5BBxcyqpvlTkEHFzKqm+VOQQcXMqqb5U5BBxcyq5vlTkEHFzKrm+
+VOQQcXMqub5U5BBxcyq5vlTkEHFzKqm+AAAAAAAAAIBU5BBxcyqpvlTkEHFzKqm+
+VOQQcXMqmb5U5BBxcyqZvj+rzJTW37K+VOQQcXMqyb5U5BBxcyrJvlTkEHFzKsm+
+P6vMlNbf0r4/q8yU1t/Svj+rzJTW39K+AAAAAAAAAIA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="749950" min="279550" />
+            <component name="Shell" max="545200" min="388750" />
+            <component name="Beam" max="604200" min="388750" />
+          </maxandmin>
+          <valuesdouble>AQAAADi6F0EBAAAAoDUbQQAAAAB4ZB5BAAAAAGCjIEEAAAAAPO4hQQAAAADQEiNB
+AQAAABwRJEEAAAAAIOkkQQEAAADcmiVBAAAAAFAmJkEAAAAAfIsmQQEAAABgyiZB
+//////viJkEAAAAAUNUmQf////9boSZBAAAAACBHJkH/////m8YlQf/////PHyVB
+/////7tSJEH/////X18jQf////+7RSJB/////88FIUH+////Nz8fQf3///8/JhxB
+/P///7fAGEH7////nw4VQf3////3DxFBAAAAAMCmEUEFAAAAeJoVQQMAAACgQRlB
+BgAAADicHEEDAAAAQKofQQEAAADcNSFBAwAAAFBwIkE=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="temperature">
+          <maxandmin>
+            <component name="Solids" max="306" min="304" />
+            <component name="Shell" max="305.92" min="304.72" />
+            <component name="Beam" max="305.92" min="304.72" />
+          </maxandmin>
+          <valuesdouble>7FG4HoULc0AUrkfhehRzQHsUrkfhGnNAH4XrUbgec0AAAAAAACBzQB+F61G4HnNA
+exSuR+Eac0AUrkfhehRzQOxRuB6FC3NAAAAAAAAAc0DsUbgehQtzQBSuR+F6FHNA
+exSuR+Eac0AfhetRuB5zQAAAAAAAIHNAH4XrUbgec0B7FK5H4RpzQBSuR+F6FHNA
+7FG4HoULc0AAAAAAAABzQOxRuB6FC3NAFK5H4XoUc0B7FK5H4RpzQB+F61G4HnNA
+AAAAAAAgc0AfhetRuB5zQHsUrkfhGnNAFK5H4XoUc0DrUbgehQtzQAAAAAAAAHNA
+7FG4HoULc0AUrkfhehRzQHsUrkfhGnNAH4XrUbgec0A=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcex">
+          <maxandmin>
+            <component name="Beam" max="429.999999999999" min="429.999999999999" />
+          </maxandmin>
+          <valuesdouble>9v/////fekA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcemag">
+          <maxandmin>
+            <component name="Beam" max="429.999999999999" min="429.999999999999" />
+          </maxandmin>
+          <valuesdouble>9v/////fekA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="velx">
+          <maxandmin>
+            <component name="Solids" max="749800" min="250000" />
+            <component name="Shell" max="518800" min="353950" />
+            <component name="Beam" max="581800" min="353950" />
+          </maxandmin>
+          <valuesdouble>AAAAAHiaFUEBAAAAoEEZQQAAAAA4nBxB/////z+qH0EAAAAA3DUhQQEAAABQcCJB
+AQAAAHyEI0EAAAAAYHIkQQEAAAD8OSVBAAAAAFDbJUEAAAAAXFYmQQAAAAAgqyZB
+AAAAAJzZJkEAAAAA0OEmQQAAAAC8wyZBAAAAAGB/JkH/////uxQmQf/////PgyVB
+/////5vMJEEAAAAAIO8jQf////9b6yJBAAAAAFDBIUH/////+3AgQf3///+/9B1B
+/P////e6GkH8////nzQXQf3///+3YRNBAAAAAICEDkEFAAAAuGETQQIAAACgNBdB
+BQAAAPi6GkEDAAAAwPQdQQEAAAD8cCBBAgAAAFDBIUE=
+          </valuesdouble>
+        </nodevariable>
+        <elementnodevariable name="failed">
+          <maxandmin>
+            <component name="Solids" max="1" min="0" />
+            <component name="Shell" max="1" min="1" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxx">
+          <maxandmin>
+            <component name="Solids" max="307500" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="282387.5" min="274700" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEAUEBAAAA3HQDQQEAAABghQVBAAAAANx1B0EAAAAAUEYJQf////+79gpB
+AQAAACCHDEEAAAAAfPcNQQAAAADQRw9BAAAAAA48EEH/////L8QQQQAAAABOPBFB
+AAAAAGikEUEAAAAAfvwRQQAAAACQRBJBAAAAAJ58EkEBAAAAqKQSQQAAAACuvBJB
+AAAAALDEEkEAAAAArrwSQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAFBGCUEBAAAAvPYKQQEAAAAghwxBAAAAAHz3DUEAAAAA0EcPQQAAAAAOPBBB
+AQAAACCHDEEAAAAAfPcNQQAAAADQRw9BAAAAAA48EEEAAAAAMMQQQQAAAABOPBFB
+AAAAAGikEUEAAAAAfvwRQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEEEEAAAAATjwRQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyy">
+          <maxandmin>
+            <component name="Solids" max="615000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="564775" min="549400" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEEUEBAAAA3HQTQQEAAABghRVBAAAAANx1F0EAAAAAUEYZQf////+79hpB
+AQAAACCHHEEAAAAAfPcdQQAAAADQRx9BAAAAAA48IEH/////L8QgQQAAAABOPCFB
+AAAAAGikIUEAAAAAfvwhQQAAAACQRCJBAAAAAJ58IkEBAAAAqKQiQQAAAACuvCJB
+AAAAALDEIkEAAAAArrwiQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAFBGGUEBAAAAvPYaQQEAAAAghxxBAAAAAHz3HUEAAAAA0EcfQQAAAAAOPCBB
+AQAAACCHHEEAAAAAfPcdQQAAAADQRx9BAAAAAA48IEEAAAAAMMQgQQAAAABOPCFB
+AAAAAGikIUEAAAAAfvwhQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEIEEAAAAATjwhQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszz">
+          <maxandmin>
+            <component name="Solids" max="922500" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="847162.5" min="824100" />
+          </maxandmin>
+          <valuesdouble>/////3fmGUEBAAAASi8dQQEAAAAIJCBBAAAAAGWYIUEAAAAAvPQiQf////8MOSRB
+AQAAAFhlJUEAAAAAnXkmQQAAAADcdSdB/////xRaKEH/////RyYpQQAAAAB12ilB
+AAAAAJx2KkEAAAAAvfoqQQAAAADYZitBAAAAAO26K0EBAAAA/PYrQQAAAAAFGyxB
+AAAAAAgnLEEAAAAABRssQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0IkEBAAAADTkkQQEAAABYZSVBAAAAAJ15JkEAAAAA3HUnQf////8UWihB
+AQAAAFhlJUEAAAAAnXkmQQAAAADcdSdB/////xRaKEEAAAAASCYpQQAAAAB12ilB
+AAAAAJx2KkEAAAAAvfoqQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmKUEAAAAAddopQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxy">
+          <maxandmin>
+            <component name="Solids" max="1230000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1129550" min="1098800" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEIUEBAAAA3HQjQQEAAABghSVBAAAAANx1J0EAAAAAUEYpQf////+79ipB
+AQAAACCHLEEAAAAAfPctQQAAAADQRy9BAAAAAA48MEH/////L8QwQQAAAABOPDFB
+AAAAAGikMUEAAAAAfvwxQQAAAACQRDJBAAAAAJ58MkEBAAAAqKQyQQAAAACuvDJB
+AAAAALDEMkEAAAAArrwyQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAFBGKUEBAAAAvPYqQQEAAAAghyxBAAAAAHz3LUEAAAAA0EcvQQAAAAAOPDBB
+AQAAACCHLEEAAAAAfPctQQAAAADQRy9BAAAAAA48MEEAAAAAMMQwQQAAAABOPDFB
+AAAAAGikMUEAAAAAfvwxQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEMEEAAAAATjwxQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyz">
+          <maxandmin>
+            <component name="Solids" max="1537500" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1411937.5" min="1373500" />
+          </maxandmin>
+          <valuesdouble>/////2OVJUEAAAAAE1IoQQAAAAC45ipB/////1JTLUH/////45cvQf///3812jBB
+AAAAAHTUMUH///9/rboyQf/////hjDNB////fxFLNEH/////O/U0Qf///39hizVB
+/////4ENNkH///9/nXs2Qf////+z1TZB////f8UbN0EAAAAA0k03Qf///3/ZazdB
+/////9t1N0H///9/2Ws3QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////+OXL0EAAACANdowQQAAAAB01DFB////f626MkH/////4YwzQf///38RSzRB
+AAAAAHTUMUH///9/rboyQf/////hjDNB////fxFLNEEAAAAAPPU0Qf///39hizVB
+/////4ENNkH///9/nXs2QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADz1NEH///9/YYs1QQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszx">
+          <maxandmin>
+            <component name="Solids" max="1845000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1694325" min="1648200" />
+          </maxandmin>
+          <valuesdouble>/////3fmKUEBAAAASi8tQQEAAAAIJDBBAAAAAGWYMUEAAAAAvPQyQf////8MOTRB
+AQAAAFhlNUEAAAAAnXk2QQAAAADcdTdB/////xRaOEH/////RyY5QQAAAAB12jlB
+AAAAAJx2OkEAAAAAvfo6QQAAAADYZjtBAAAAAO26O0EBAAAA/PY7QQAAAAAFGzxB
+AAAAAAgnPEEAAAAABRs8QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0MkEBAAAADTk0QQEAAABYZTVBAAAAAJ15NkEAAAAA3HU3Qf////8UWjhB
+AQAAAFhlNUEAAAAAnXk2QQAAAADcdTdB/////xRaOEEAAAAASCY5QQAAAAB12jlB
+AAAAAJx2OkEAAAAAvfo6QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmOUEAAAAAddo5QQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="2152500" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1976712.5" min="1922900" />
+          </maxandmin>
+          <valuesdouble>/v///4s3LkEAAACAQAYxQQAAAAC01DJB////fyCHNEH/////hR02Qf7//3/klzdB
+AAAAADz2OEH///9/jDg6Qf/////VXjtB/v//fxhpPEH+////U1c9Qf7//3+IKT5B
+/v///7XfPkH///9/3Hk/Qf7////79z9B////PwotQEEAAAAAE1BAQf///z8YZUBB
+/////xlsQEH///8/GGVAQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////4UdNkEAAACA5Jc3QQAAAAA89jhB////f4w4OkH/////1V47Qf7//38YaTxB
+AAAAADz2OEH///9/jDg6Qf/////VXjtB/v//fxhpPEH/////U1c9Qf7//3+IKT5B
+/v///7XfPkH///9/3Hk/QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////1NXPUH+//9/iCk+QQ==
+          </valuesdouble>
+        </elementnodevariable>
+      </timestep>
+      <timestep id="3" time="0.4 s">
+        <nodevariable name="displmag">
+          <maxandmin>
+            <component name="Solids" max="1.49055584367879E-05" min="8.61600835654191E-07" />
+            <component name="Shell" max="8.27426258421256E-06" min="8.61600835654191E-07" />
+            <component name="Beam" max="7.01846201101067E-06" min="1.05509540445402E-06" />
+          </maxandmin>
+          <valuesdouble>c25lqpmzsT7L+hinIUvhPvoMhv01WuE+Tp5MRhjprD6PaxSJW9LGPksGBkqIXuA+
+PiEKeLWK4T5h6IZ7XzrGPlFpi+Eae9I+5iFWdZmo3z4lkz/EPXLQPqlelOax8rs+
+gS/jGpnOvD6ImVAm5o/hPqKWspSuneE+EyeDqrOaxj52fjEIyV3SPqG2+j1Lm+E+
+ZkIt0kC+1T5Y9EViiV/DPqlVO1pcQu8+hbySSaz83T7baQkvV7vgPk21i8lSreE+
+BjdKf+cL6T5oFNujHAToPj0JC4o0X+Y+h1YBFKz+0j6DdFhA64HjPoyVOTAdduQ+
+Hfz1HjGq3D7kSm9G5+LkPsJV2yj2z+U+sgHGJQRw3T4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displx">
+          <maxandmin>
+            <component name="Solids" max="1.486065E-05" min="-5.196E-07" />
+            <component name="Shell" max="8.23185E-06" min="1.5465E-07" />
+            <component name="Beam" max="1.5465E-07" min="-7.0146E-06" />
+          </maxandmin>
+          <valuesdouble>c7kvybvBhD61LmcOvxbhPr8jYdlwQ+E+lMBTAoojmz5FougFyGWWvh15hyd5xt4+
+vodPItDF4D6Fgi3J1RWpPiIlcEZxMNI+0sF+eCuF3z71yBR1o93KPrQE9M19w5I+
+lJUWVU5Zpz4x1T/VFzPhPkPG5XCUWeA+9jbMe1Rvob7BcsdN22fPPlLXnHMX8OA+
+Xq7+fmPe0j67rz7c3RyhPnz3FC9AKu8+nc6sLinz3T6qBCC61IvgPva1S6+WQeE+
+i8Iuih746D62mx4k5PTnPtCIcJArFeY+9Ve8Ni4zgj52G6VqehLhPsXKJsghReE+
+8un/K1oYnD5oyqD06ynePiSTmscvrd4+wZzokN5r3b4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="disply">
+          <maxandmin>
+            <component name="Solids" max="1.4925E-06" min="-3.0207E-06" />
+            <component name="Shell" max="1.2648E-06" min="-8.367E-07" />
+            <component name="Beam" max="1.0437E-06" min="-2.32799999999999E-07" />
+          </maxandmin>
+          <valuesdouble>qmIxSaiCsT7XK4tORji1PpIRB8IyE6y+ehyQ5DiHqb6Bm70aPQq5Pm7H2vKY4Lc+
+c4rw6YhAsL4mrXEoztmzvq2+rm6SKao+fHopZeenp76QAOiTQPrCvtYVwf4xjbu+
+11EBYbNdsr7WK4tORji1vtHTRpZIeci+H/oitn8SxL56uS/Ju8GUPnBgXePbRZ2+
+6MVJby0Ltb4guN+Iiy98PlSpJwHf5ZE+bMfa8pjglz5ASFG3EPyYPjR2byjoLbg+
+VOQQcXMqqT6gHSgaYVajvnx9Zi4HcZI+S6EjnfB3oD6gT0i9Lz9zPkCi6AXIZca+
+VIiTS4mDsL6uL9V1NSy3vjsvE2PnVsm+hjygdPI+j74=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displz">
+          <maxandmin>
+            <component name="Solids" max="-0" min="-6.75E-06" />
+            <component name="Shell" max="-0" min="-0" />
+            <component name="Beam" max="-0" min="-0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIBAq8yU1t/CvkCrzJTW38K+
+QKvMlNbfwr5Aq8yU1t/CvgAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+QKvMlNbfsr5Aq8yU1t+yvkCrzJTW37K+QKvMlNbfsr5Aq8yU1t/CvkCrzJTW38K+
+QKvMlNbfwr5Aq8yU1t/CvkCrzJTW37K+AAAAAAAAAIBAq8yU1t+yvkCrzJTW37K+
+QKvMlNbfor5Aq8yU1t+ivt8AM9/BT7y+QKvMlNbf0r5Aq8yU1t/SvkCrzJTW39K+
+3wAz38FP3L7fADPfwU/cvt8AM9/BT9y+AAAAAAAAAIA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="1124925" min="419325" />
+            <component name="Shell" max="817800" min="583125" />
+            <component name="Beam" max="906300" min="583125" />
+          </maxandmin>
+          <valuesdouble>AQAAAKrLIUEAAAAAOGgkQQAAAABayyZBAAAAABD1KEEAAAAAWuUqQQAAAAA4nCxB
+AQAAAKoZLkEAAAAAsF0vQQEAAAAlNDBBAAAAALycMEEAAAAAnegwQQEAAADIFzFB
+/////zwqMUEAAAAA/B8xQQAAAAAF+TBBAAAAAFi1MEH/////9FQwQf////+3ry9B
+/////xl8LkH/////Dw8tQf////+ZaCtB/v///7eIKUH/////aW8nQf7///+vHCVB
+/f///4mQIkH4////75UfQfv////zlxlBAAAAACB6GkEDAAAA2jMgQQIAAAA48SJB
+BAAAACp1JUECAAAAsL8nQQEAAADK0ClBBAAAAHioK0E=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="temperature">
+          <maxandmin>
+            <component name="Solids" max="308.5" min="306.5" />
+            <component name="Shell" max="308.42" min="307.22" />
+            <component name="Beam" max="308.42" min="307.22" />
+          </maxandmin>
+          <valuesdouble>7FG4HoUzc0AUrkfhejxzQHsUrkfhQnNAH4XrUbhGc0AAAAAAAEhzQB+F61G4RnNA
+exSuR+FCc0AUrkfhejxzQOxRuB6FM3NAAAAAAAAoc0DsUbgehTNzQBSuR+F6PHNA
+exSuR+FCc0AfhetRuEZzQAAAAAAASHNAH4XrUbhGc0B7FK5H4UJzQBSuR+F6PHNA
+7FG4HoUzc0AAAAAAAChzQOxRuB6FM3NAFK5H4Xo8c0B7FK5H4UJzQB+F61G4RnNA
+AAAAAABIc0AfhetRuEZzQHsUrkfhQnNAFK5H4Xo8c0DrUbgehTNzQAAAAAAAKHNA
+7FG4HoUzc0AUrkfhejxzQHsUrkfhQnNAH4XrUbhGc0A=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcex">
+          <maxandmin>
+            <component name="Beam" max="644.999999999999" min="644.999999999999" />
+          </maxandmin>
+          <valuesdouble>+f////8nhEA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcemag">
+          <maxandmin>
+            <component name="Beam" max="644.999999999999" min="644.999999999999" />
+          </maxandmin>
+          <valuesdouble>+f////8nhEA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="velx">
+          <maxandmin>
+            <component name="Solids" max="1124700" min="375000" />
+            <component name="Shell" max="778200" min="530925" />
+            <component name="Beam" max="872700" min="530925" />
+          </maxandmin>
+          <valuesdouble>AAAAANozIEEBAAAAOPEiQQAAAAAqdSVB/////6+/J0H/////ydApQQEAAAB4qCtB
+AQAAALpGLUEBAAAAkKsuQQEAAAD61i9BAAAAAHxkMEEAAAAAxcAwQQAAAABYADFB
+AAAAADUjMUEAAAAAXCkxQQAAAADNEjFBAAAAAIjfMEH/////jI8wQf/////bIjBB
+/v///+kyL0EAAAAAsOYtQf////8JYSxBAAAAAPihKkH+////eakoQf7///+PdyZB
+/f///zkMJEH9////d2chQfz///+TEh1BAAAAAGDjFkEHAAAAlBIdQQEAAAB4ZyFB
+BAAAADoMJEECAAAAkHcmQQEAAAB6qShBAwAAAPihKkE=
+          </valuesdouble>
+        </nodevariable>
+        <elementnodevariable name="failed">
+          <maxandmin>
+            <component name="Solids" max="1" min="0" />
+            <component name="Shell" max="1" min="1" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxx">
+          <maxandmin>
+            <component name="Solids" max="461250" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="423581.25" min="412050" />
+          </maxandmin>
+          <valuesdouble>/////3fmCUEBAAAASi8NQQEAAAAIJBBBAAAAAGWYEUEAAAAAvPQSQf////8MORRB
+AQAAAFhlFUEAAAAAnXkWQQAAAADcdRdB/////xRaGEH/////RyYZQQAAAAB12hlB
+AAAAAJx2GkEAAAAAvfoaQQAAAADYZhtBAAAAAO26G0EBAAAA/PYbQQAAAAAFGxxB
+AAAAAAgnHEEAAAAABRscQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0EkEBAAAADTkUQQEAAABYZRVBAAAAAJ15FkEAAAAA3HUXQf////8UWhhB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmGUEAAAAAddoZQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyy">
+          <maxandmin>
+            <component name="Solids" max="922500" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="847162.5" min="824100" />
+          </maxandmin>
+          <valuesdouble>/////3fmGUEBAAAASi8dQQEAAAAIJCBBAAAAAGWYIUEAAAAAvPQiQf////8MOSRB
+AQAAAFhlJUEAAAAAnXkmQQAAAADcdSdB/////xRaKEH/////RyYpQQAAAAB12ilB
+AAAAAJx2KkEAAAAAvfoqQQAAAADYZitBAAAAAO26K0EBAAAA/PYrQQAAAAAFGyxB
+AAAAAAgnLEEAAAAABRssQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0IkEBAAAADTkkQQEAAABYZSVBAAAAAJ15JkEAAAAA3HUnQf////8UWihB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmKUEAAAAAddopQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszz">
+          <maxandmin>
+            <component name="Solids" max="1383750" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1270743.75" min="1236150" />
+          </maxandmin>
+          <valuesdouble>AAAAANpsI0EBAACAd+MlQQEAAAAMNihBAAAAgJdkKkEAAAAAGm8sQf///3+TVS5B
+AAAAAAIMMEEAAADANdswQQAAAABlmDFBAAAAwI9DMkH/////tdwyQQAAAMDXYzNB
+AAAAAPXYM0EAAADADTw0QQAAAAAijTRBAAAAwDHMNEEBAAAAPfk0QQAAAMBDFDVB
+AAAAAEYdNUEAAADAQxQ1QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAABpvLEEBAACAk1UuQQAAAAACDDBBAAAAwDXbMEEAAAAAZZgxQQAAAMCPQzJB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALbcMkEAAADA12MzQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxy">
+          <maxandmin>
+            <component name="Solids" max="1845000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1694325" min="1648200" />
+          </maxandmin>
+          <valuesdouble>/////3fmKUEBAAAASi8tQQEAAAAIJDBBAAAAAGWYMUEAAAAAvPQyQf////8MOTRB
+AQAAAFhlNUEAAAAAnXk2QQAAAADcdTdB/////xRaOEH/////RyY5QQAAAAB12jlB
+AAAAAJx2OkEAAAAAvfo6QQAAAADYZjtBAAAAAO26O0EBAAAA/PY7QQAAAAAFGzxB
+AAAAAAgnPEEAAAAABRs8QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0MkEBAAAADTk0QQEAAABYZTVBAAAAAJ15NkEAAAAA3HU3Qf////8UWjhB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmOUEAAAAAddo5QQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyz">
+          <maxandmin>
+            <component name="Solids" max="2306250" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="2117906.25" min="2060250" />
+          </maxandmin>
+          <valuesdouble>/////wowMEEAAABAjj0yQQAAAAAKLTRB////P37+NUH/////6rE3Qf7//z9QRzlB
+AAAAAK6+OkH///8/BBg8Qf////9SUz1B/v//P5pwPkH+////2W8/Qf///x+JKEBB
+////fyGKQEH///8fttxAQf////9GIEFB////H9RUQUEAAACAXXpBQf///x/jkEFB
+/////2SYQUH///8f45BBQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////+qxN0EAAABAUEc5QQAAAACuvjpB////PwQYPEH/////UlM9Qf7//z+acD5B
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////9lvP0H///8fiShAQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszx">
+          <maxandmin>
+            <component name="Solids" max="2767500" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="2541487.5" min="2472300" />
+          </maxandmin>
+          <valuesdouble>AAAAANpsM0EBAACAd+M1QQEAAAAMNjhBAAAAgJdkOkEAAAAAGm88Qf///3+TVT5B
+AAAAAAIMQEEAAADANdtAQQAAAABlmEFBAAAAwI9DQkH/////tdxCQQAAAMDXY0NB
+AAAAAPXYQ0EAAADADTxEQQAAAAAijURBAAAAwDHMREEBAAAAPflEQQAAAMBDFEVB
+AAAAAEYdRUEAAADAQxRFQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAABpvPEEBAACAk1U+QQAAAAACDEBBAAAAwDXbQEEAAAAAZZhBQQAAAMCPQ0JB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALbcQkEAAADA12NDQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="3228750" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="2965068.75" min="2884350" />
+          </maxandmin>
+          <valuesdouble>AAAAAKmpNkEBAADAYIk5QQEAAAAOPzxBAAAAwLDKPkEAAACAJJZAQQAAAGDrsUFB
+AQAAAK24QkEAAABgaapDQQAAAIAgh0RB////X9JORUH/////fgFGQQAAAGAmn0ZB
+AAAAgMgnR0EAAABgZZtHQQAAAAD9+UdBAAAAYI9DSEEBAACAHHhIQQAAAGCkl0hB
+AAAAACeiSEEAAABgpJdIQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAgCSWQEEBAABg67FBQQEAAACtuEJBAAAAYGmqQ0EAAACAIIdEQf///1/STkVB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAH8BRkEAAABgJp9GQQ==
+          </valuesdouble>
+        </elementnodevariable>
+      </timestep>
+      <timestep id="4" time="0.5 s">
+        <nodevariable name="displmag">
+          <maxandmin>
+            <component name="Solids" max="1.98740779157173E-05" min="1.14880111420559E-06" />
+            <component name="Shell" max="1.10323501122834E-05" min="1.14880111420559E-06" />
+            <component name="Beam" max="9.35794934801423E-06" min="1.40679387260537E-06" />
+          </maxandmin>
+          <valuesdouble>7z2HOCKatz66o3aJ1w7nPqNmXafyIuc+3b7dLhBGsz5oj3Bhz23OPg+zsmJg0+U+
+qIENoJxj5z7VNQn6KaPNPm2MZNcjpNg+mRbk+BAb5T4xxFSwp+3VPnCUDe/LocI+
+VcrsEWY0wz4LIhYziGrnPoRzQ8bofOc+wt6uOJojzj6dqOwKDH3YPoLz+Ke5eec+
+NAPnwqv93D4fm7Itt9TJPnGOJzzo1vQ+rn0MMcj94z554mHpHk/mPr3xZLfDkec+
+ryTcVJqy8D6cDZLCvQLwPlIMZA1G1O0+XXOsGpBT2T6v8HUAjwLqPhFy9+omSOs+
+E6hOvyAc4z4xueldNNnrPq7HeTZIFe0+d1bZwwKg4z4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displx">
+          <maxandmin>
+            <component name="Solids" max="1.98142E-05" min="-6.928E-07" />
+            <component name="Shell" max="1.09758E-05" min="2.062E-07" />
+            <component name="Beam" max="2.062E-07" min="-9.3528E-06" />
+          </maxandmin>
+          <valuesdouble>RPeUYfqsiz7y6N69/sjmPqovLHeWBOc+YoDiVrEXoj4Fg4uyCt2dvmn7BMVQhOQ+
+/rQUgxVd5j6uAckwObmwPtiGlQiXQNg+N4FUUHID5T6kMGOjF+nRPppbRb2nBJk+
+b8fIxr0hrz6Xcapxyu7mPloI3evFzOU+8vO6Txs/p77WoS+J5+/UPm50Jpp0leY+
+KZNTqYQo2T74lFPQJ9GmPv6kuHTVxvQ+vonIyXD34z44BoBNxg/mPkidDz8eAuc+
+soF0sWml8D6fzygwMPHvPmu2QGuPce0+R3VQnj1EiD5Iz4bjTcPmPl0OibXXBuc+
+S/H/x+a6oj5G3BWj8hvkPhhivC91c+Q+171FCz+d474=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="disply">
+          <maxandmin>
+            <component name="Solids" max="1.99E-06" min="-4.0276E-06" />
+            <component name="Shell" max="1.6864E-06" min="-1.1156E-06" />
+            <component name="Beam" max="1.3916E-06" min="-3.10399999999999E-07" />
+          </maxandmin>
+          <valuesdouble>OC6XYeBYtz7Jj7loCEu8PmC2BCx3t7K++hJgmNAEsb4AvdMRfrHAPj1fzkMh1r8+
+QmPrN2Grtb4wPEKLvXe6vnPUyUkMcbE++U033ImKr76+AOBvq03Jvji5gFQhXsK+
+dMIBLO98uL7Ij7loCEu8vovi2Q7bUNC+fU3Z8lTDyr5M95Rh+qybPvPq6Ozng6O+
+3gcNP+cOvL7AeuoFXcqCPnSM31Yp3Zc+QF/OQyHWnz7Y2uAkC6igPiKkn8WaHsA+
+je21oPfGsD7WfDV4gcipvqj83T20lpg+DteE0UD1pT4ramD8lKl5Pv6Ci7IK3c2+
+b2BvD7cEtr6SPxydnOW+vifKDEKa5NC+rn0Vo6HUlL4=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="displz">
+          <maxandmin>
+            <component name="Solids" max="-0" min="-9E-06" />
+            <component name="Shell" max="-0" min="-0" />
+            <component name="Beam" max="-0" min="-0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIBU5BBxcyrJvlTkEHFzKsm+
+VOQQcXMqyb5U5BBxcyrJvgAAAAAAAACAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAACA
+VOQQcXMqub5U5BBxcyq5vlTkEHFzKrm+VOQQcXMqub5U5BBxcyrJvlTkEHFzKsm+
+VOQQcXMqyb5U5BBxcyrJvlTkEHFzKrm+AAAAAAAAAIBU5BBxcyq5vlTkEHFzKrm+
+VOQQcXMqqb5U5BBxcyqpvj+rzJTW38K+VOQQcXMq2b5U5BBxcyrZvlTkEHFzKtm+
+P6vMlNbf4r4/q8yU1t/ivj+rzJTW3+K+AAAAAAAAAIA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="1499900" min="559100" />
+            <component name="Shell" max="1090400" min="777500" />
+            <component name="Beam" max="1208400" min="777500" />
+          </maxandmin>
+          <valuesdouble>AQAAADi6J0EBAAAAoDUrQQAAAAB4ZC5BAAAAAGCjMEEAAAAAPO4xQQAAAADQEjNB
+AQAAABwRNEEAAAAAIOk0QQEAAADcmjVBAAAAAFAmNkEAAAAAfIs2QQEAAABgyjZB
+//////viNkEAAAAAUNU2Qf////9boTZBAAAAACBHNkH/////m8Y1Qf/////PHzVB
+/////7tSNEH/////X18zQf////+7RTJB/////88FMUH+////Nz8vQf3///8/JixB
+/P///7fAKEH7////nw4lQf3////3DyFBAAAAAMCmIUEFAAAAeJolQQMAAACgQSlB
+BgAAADicLEEDAAAAQKovQQEAAADcNTFBAwAAAFBwMkE=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="temperature">
+          <maxandmin>
+            <component name="Solids" max="311" min="309" />
+            <component name="Shell" max="310.92" min="309.72" />
+            <component name="Beam" max="310.92" min="309.72" />
+          </maxandmin>
+          <valuesdouble>7FG4HoVbc0AUrkfhemRzQHsUrkfhanNAH4XrUbhuc0AAAAAAAHBzQB+F61G4bnNA
+exSuR+Fqc0AUrkfhemRzQOxRuB6FW3NAAAAAAABQc0DsUbgehVtzQBSuR+F6ZHNA
+exSuR+Fqc0AfhetRuG5zQAAAAAAAcHNAH4XrUbhuc0B7FK5H4WpzQBSuR+F6ZHNA
+7FG4HoVbc0AAAAAAAFBzQOxRuB6FW3NAFK5H4Xpkc0B7FK5H4WpzQB+F61G4bnNA
+AAAAAABwc0AfhetRuG5zQHsUrkfhanNAFK5H4Xpkc0DrUbgehVtzQAAAAAAAUHNA
+7FG4HoVbc0AUrkfhemRzQHsUrkfhanNAH4XrUbhuc0A=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcex">
+          <maxandmin>
+            <component name="Beam" max="859.999999999999" min="859.999999999999" />
+          </maxandmin>
+          <valuesdouble>9v/////fikA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="reactionforcemag">
+          <maxandmin>
+            <component name="Beam" max="859.999999999999" min="859.999999999999" />
+          </maxandmin>
+          <valuesdouble>9v/////fikA=
+          </valuesdouble>
+        </nodevariable>
+        <nodevariable name="velx">
+          <maxandmin>
+            <component name="Solids" max="1499600" min="500000" />
+            <component name="Shell" max="1037600" min="707900" />
+            <component name="Beam" max="1163600" min="707900" />
+          </maxandmin>
+          <valuesdouble>AAAAAHiaJUEBAAAAoEEpQQAAAAA4nCxB/////z+qL0EAAAAA3DUxQQEAAABQcDJB
+AQAAAHyEM0EAAAAAYHI0QQEAAAD8OTVBAAAAAFDbNUEAAAAAXFY2QQAAAAAgqzZB
+AAAAAJzZNkEAAAAA0OE2QQAAAAC8wzZBAAAAAGB/NkH/////uxQ2Qf/////PgzVB
+/////5vMNEEAAAAAIO8zQf////9b6zJBAAAAAFDBMUH/////+3AwQf3///+/9C1B
+/P////e6KkH8////nzQnQf3///+3YSNBAAAAAICEHkEFAAAAuGEjQQIAAACgNCdB
+BQAAAPi6KkEDAAAAwPQtQQEAAAD8cDBBAgAAAFDBMUE=
+          </valuesdouble>
+        </nodevariable>
+        <elementnodevariable name="failed">
+          <maxandmin>
+            <component name="Solids" max="1" min="0" />
+            <component name="Shell" max="1" min="1" />
+            <component name="Beam" max="0" min="0" />
+          </maxandmin>
+          <valuesdouble>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/AAAAAAAA8D8AAAAAAADwPwAAAAAAAPA/
+AAAAAAAAAAAAAAAAAAAAAA==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxx">
+          <maxandmin>
+            <component name="Solids" max="615000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="564775" min="549400" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEEUEBAAAA3HQTQQEAAABghRVBAAAAANx1F0EAAAAAUEYZQf////+79hpB
+AQAAACCHHEEAAAAAfPcdQQAAAADQRx9BAAAAAA48IEH/////L8QgQQAAAABOPCFB
+AAAAAGikIUEAAAAAfvwhQQAAAACQRCJBAAAAAJ58IkEBAAAAqKQiQQAAAACuvCJB
+AAAAALDEIkEAAAAArrwiQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAFBGGUEBAAAAvPYaQQEAAAAghxxBAAAAAHz3HUEAAAAA0EcfQQAAAAAOPCBB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEIEEAAAAATjwhQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyy">
+          <maxandmin>
+            <component name="Solids" max="1230000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1129550" min="1098800" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEIUEBAAAA3HQjQQEAAABghSVBAAAAANx1J0EAAAAAUEYpQf////+79ipB
+AQAAACCHLEEAAAAAfPctQQAAAADQRy9BAAAAAA48MEH/////L8QwQQAAAABOPDFB
+AAAAAGikMUEAAAAAfvwxQQAAAACQRDJBAAAAAJ58MkEBAAAAqKQyQQAAAACuvDJB
+AAAAALDEMkEAAAAArrwyQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAFBGKUEBAAAAvPYqQQEAAAAghyxBAAAAAHz3LUEAAAAA0EcvQQAAAAAOPDBB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEMEEAAAAATjwxQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszz">
+          <maxandmin>
+            <component name="Solids" max="1845000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="1694325" min="1648200" />
+          </maxandmin>
+          <valuesdouble>/////3fmKUEBAAAASi8tQQEAAAAIJDBBAAAAAGWYMUEAAAAAvPQyQf////8MOTRB
+AQAAAFhlNUEAAAAAnXk2QQAAAADcdTdB/////xRaOEH/////RyY5QQAAAAB12jlB
+AAAAAJx2OkEAAAAAvfo6QQAAAADYZjtBAAAAAO26O0EBAAAA/PY7QQAAAAAFGzxB
+AAAAAAgnPEEAAAAABRs8QQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0MkEBAAAADTk0QQEAAABYZTVBAAAAAJ15NkEAAAAA3HU3Qf////8UWjhB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmOUEAAAAAddo5QQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressxy">
+          <maxandmin>
+            <component name="Solids" max="2460000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="2259100" min="2197600" />
+          </maxandmin>
+          <valuesdouble>AAAAAFBEMUEBAAAA3HQzQQEAAABghTVBAAAAANx1N0EAAAAAUEY5Qf////+79jpB
+AQAAACCHPEEAAAAAfPc9QQAAAADQRz9BAAAAAA48QEH/////L8RAQQAAAABOPEFB
+AAAAAGikQUEAAAAAfvxBQQAAAACQREJBAAAAAJ58QkEBAAAAqKRCQQAAAACuvEJB
+AAAAALDEQkEAAAAArrxCQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAFBGOUEBAAAAvPY6QQEAAAAghzxBAAAAAHz3PUEAAAAA0Ec/QQAAAAAOPEBB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADDEQEEAAAAATjxBQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stressyz">
+          <maxandmin>
+            <component name="Solids" max="3075000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="2823875" min="2747000" />
+          </maxandmin>
+          <valuesdouble>/////2OVNUEAAAAAE1I4QQAAAAC45jpB/////1JTPUH/////45c/Qf///3812kBB
+AAAAAHTUQUH///9/rbpCQf/////hjENB////fxFLREH/////O/VEQf///39hi0VB
+/////4ENRkH///9/nXtGQf////+z1UZB////f8UbR0EAAAAA0k1HQf///3/Za0dB
+/////9t1R0H///9/2WtHQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////+OXP0EAAACANdpAQQAAAAB01EFB////f626QkH/////4YxDQf///38RS0RB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAADz1REH///9/YYtFQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="stresszx">
+          <maxandmin>
+            <component name="Solids" max="3690000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="3388650" min="3296400" />
+          </maxandmin>
+          <valuesdouble>/////3fmOUEBAAAASi89QQEAAAAIJEBBAAAAAGWYQUEAAAAAvPRCQf////8MOURB
+AQAAAFhlRUEAAAAAnXlGQQAAAADcdUdB/////xRaSEH/////RyZJQQAAAAB12klB
+AAAAAJx2SkEAAAAAvfpKQQAAAADYZktBAAAAAO26S0EBAAAA/PZLQQAAAAAFG0xB
+AAAAAAgnTEEAAAAABRtMQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAALz0QkEBAAAADTlEQQEAAABYZUVBAAAAAJ15RkEAAAAA3HVHQf////8UWkhB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAEgmSUEAAAAAddpJQQ==
+          </valuesdouble>
+        </elementnodevariable>
+        <elementnodevariable name="vonmises">
+          <maxandmin>
+            <component name="Solids" max="4305000" min="0" />
+            <component name="Shell" max="0" min="0" />
+            <component name="Beam" max="3953425" min="3845800" />
+          </maxandmin>
+          <valuesdouble>/v///4s3PkEAAACAQAZBQQAAAAC01EJB////fyCHREH/////hR1GQf7//3/kl0dB
+AAAAADz2SEH///9/jDhKQf/////VXktB/v//fxhpTEH+////U1dNQf7//3+IKU5B
+/v///7XfTkH///9/3HlPQf7////7909B////PwotUEEAAAAAE1BQQf///z8YZVBB
+/////xlsUEH///8/GGVQQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////4UdRkEAAACA5JdHQQAAAAA89khB////f4w4SkH/////1V5LQf7//38YaUxB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+/////1NXTUH+//9/iClOQQ==
+          </valuesdouble>
+        </elementnodevariable>
+      </timestep>
+    </results>
+  </solution>
+</liml>

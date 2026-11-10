@@ -28,6 +28,10 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   windows, used by `bridge_gui.py` and the convergence window, so both keep the same look), and
   `bridge_viewers.py` (buttons ParaView and AsterStudy of the Results dialog and the convergence
   window; test: `python tests/test_bridge_viewers.py`, and under IronPython via `run_ipy.ps1`).
+  `liml_failed.py` is an unchanged copy of AdvancedToolsHub's `common/liml_failed.py` (2.7 and 3,
+  stdlib; never edit it here: `tests/test_liml_failed_copy.py` pins its `VERSION` and LF-sha256 and
+  compares it with its source when present); its caller `bridge_hide_failed.py` also runs in both
+  (no `mw`; test: `python tests/test_bridge_hide_failed.py`).
 - `mw` and `solution` exist only in the main script; pass them as parameters to the `bridge_*` modules.
 - Mecway API: only what is in Mecway's scripting documentation (Mecway manual;
   locally possibly `API_reference Mecway.txt`, copyright Mecway Ltd, not in the repo). There is no API to
@@ -151,6 +155,39 @@ reads as Mecway's own; Mecway 33 and 34 NOT verified). Keep those tags: without 
 analysis reads Code-Aster results as Mecway's own. `add_section_view` keeps the tail of every
 copied block (`_rewrite_block`) and puts its own variables (without the tags) after them. A
 change of this marker needs the same change there.
+
+## Contract with AdvancedToolsHub: element variable `failed` (`failed/1`)
+
+The bridge writes the element variable `failed` (`aster_results_export._failed_var`); the core
+`liml_failed.py` (unchanged copy of AdvancedToolsHub's `common/liml_failed.py`, see Runtime) reads
+it to hide failed elements in Mecway's own result view (`bridge_hide_failed.py`, setting
+`hide_failed`). This section is authoritative for the public repo; the hub keeps the same
+contract in its own documents. **A change needs the same change in AdvancedToolsHub** (and a new
+version of the core, pinned in `tests/test_liml_failed_copy.py`).
+
+- Name and place: exactly `failed`, `<elementnodeids name="failed">` and per `<timestep>` an
+  `<elementnodevariable name="failed">` (`valuessingle` or `valuesdouble`); all model elements,
+  ascending.
+- Values: one per node of the element's node list in the `<solution>` mesh, exactly `0.0`
+  (intact) or `1.0` (failed), all nodes of an element equal in a step; monotone per element (once
+  1, then 1 in every later step).
+- Meaning (bridge semantics, measured on `BezwijkenTrekstaaf`, Code-Aster 17.4): 1 from the first
+  stored step AFTER the failure time `t_fail` (`t_fail < t`, relative tolerance 1e-12). The step at
+  `t_fail` itself still holds the computed state that made the element fail; its fields are zero
+  from the next step on. The core hides an element from the step where `failed` becomes 1, so the
+  last state shown is the one at `t_fail`; an element that fails at the last stored step stays
+  visible.
+- Absent: no failure loop, unreadable cell names (`_failure_times` WARNING) and the whole wheel of
+  cyclic symmetry; the core then says `no_flag_source`. Present and all 0: nothing failed.
+- The core refuses (`LimlFailedError.code`): other values than 0/1, mixed or non-monotone flags
+  (`failed_contract`), an element that is not in the solution mesh (`unknown_element`), a wrong
+  value count (`value_count`), a step without the block (`layout`), no time steps
+  (`no_timesteps`, `modal_result`), several solutions without a configuration name
+  (`configurations`) and an already processed file (`already_processed`, marker `limlfailed` on
+  `<results>`, read by `processed_marker`).
+- The empty `<nodes />`/`<values />` (and `<elements />`) tails of every variable block stay in the
+  processed file (contract with MecwayAdvancedBeamAnalysis). Tests: `tests/test_liml_failed_copy.py`
+  (pin and the hub's golden fixture), `tests/test_failed_contract.py` (this writer through `scan`).
 
 ## Pitfalls
 
