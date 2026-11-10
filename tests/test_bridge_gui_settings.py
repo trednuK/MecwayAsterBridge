@@ -7,7 +7,7 @@
 # (bridge_gui): the order of result fields is kept when the selection does
 # not change (otherwise every Start rewrote bridge_utils.py), the height
 # of the status box, the scroll arithmetic of the navigation list, and a
-# setting removed from the bridge (advancedtoolshub_dir, V2026.10) that is
+# setting removed from the bridge (advancedtoolshub_dir) that is
 # still in an older bridge_utils.py stays harmless when saving. Only
 # CONFIG_BRIDGE in memory and a copy of bridge_utils.py in a temporary
 # folder; bridge_utils.py itself is not written.
@@ -16,9 +16,10 @@
 
 from __future__ import print_function
 
-import codecs
 import copy
+import io
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -161,26 +162,29 @@ def test_removed_setting_tolerated():
     try:
         path = os.path.join(tmp, "bridge_utils.py")
         shutil.copy(bridge_utils.__file__.replace(".pyc", ".py"), path)
-        f = codecs.open(path, "r", "utf-8")
+        f = io.open(path, "r", encoding="utf-8")
         text = f.read()
         f.close()
-        anchor = '    "paraview_exe":    "",'
-        check(text.count(anchor) == 1, "anchor line found in the copy")
-        text = text.replace(anchor, anchor + '\n    "advancedtoolshub_dir": '
-                            '"%ADVANCEDTOOLSHUB_DIR%",')
-        f = codecs.open(path, "w", "utf-8")
+        # the key line, whatever value a saved start screen left in it
+        m = re.search(r'^[ \t]*"paraview_exe":.*$', text, re.M)
+        check(m is not None, "paraview_exe line found in the copy")
+        text = (text[:m.end()] + u'\n    "advancedtoolshub_dir": '
+                u'"%ADVANCEDTOOLSHUB_DIR%",' + text[m.end():])
+        f = io.open(path, "w", encoding="utf-8")
         f.write(text)
         f.close()
         errors = g.save_to_bridge_utils(
-            [(None, "paraview_exe", "file", "", "C:\\PV\\paraview.exe")],
+            [(None, "paraview_exe", "file", "", "C:\\PV\\pv_test.exe")],
             path=path)
-        f = codecs.open(path, "r", "utf-8")
+        f = io.open(path, "r", encoding="utf-8")
         after = f.read()
         f.close()
         check(errors == [], "saving another setting: no error")
         check('"advancedtoolshub_dir": "%ADVANCEDTOOLSHUB_DIR%",' in after,
               "old line left alone")
-        check("paraview.exe" in after, "the changed setting is saved")
+        saved = re.search(r'^[ \t]*"paraview_exe":(.*)$', after, re.M)
+        check(saved is not None and "pv_test.exe" in saved.group(1),
+              "the changed setting is saved on its own line")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
