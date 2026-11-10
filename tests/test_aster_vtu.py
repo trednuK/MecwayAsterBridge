@@ -102,7 +102,9 @@ def main():
         variables.append(are._Var(
             "tensileforce", True, np.array([2], dtype="<i4"),
             lambda fields: (fields.index + 1) * np.array([10.0, 20.0])))
-        failed_at = {2: 1.0}     # the beam fails at t = 1 (second step)
+        # the beam fails at t = 0.5, the first stored step: that step still
+        # shows the state before the failure (failed 0), the next one 1
+        failed_at = {2: 0.5}
         variables.append(are._failed_var(failed_at, model, times))
 
         out_path = os.path.join(tmp, "model_20261110_results.xml")

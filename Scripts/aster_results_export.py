@@ -3020,15 +3020,24 @@ def _failure_times(failures, model):
 
 def _failed_var(failed_at, model, times):
     """Element variable "failed": per step 1 on every node of an element
-    that failed at or before the step time, else 0 (all elements)."""
+    that failed BEFORE the step time, else 0 (all elements). Strict: the
+    stored state at the failure time t_fail is the computed state before
+    the element got the weak material and its stress was zeroed (that
+    happens for the next step, bridge_failure); from the next stored step
+    on its fields are zero, so failed = 1 from there (contract failed/1:
+    1 at step j = hidden from step j on, liml_failed.py). Measured on
+    BezwijkenTrekstaaf, Code-Aster 17.4, 10 Nov 2026: von Mises 276 MPa
+    at t_fail = 0.6, ~0 at 0.7. An element that fails at the last stored
+    step therefore stays 0."""
     eids = np.array(sorted(model["elements"]), dtype="<i4")
     counts = np.array([len(model["elements"][int(e)][1]) for e in eids])
     t_fail = np.array([failed_at.get(int(e), np.inf) for e in eids])
 
     def getter(fields):
         t = float(times.get(fields.index, fields.index))
-        # small tolerance: the event time is the same float as INST
-        return np.repeat((t_fail <= t + 1e-12 * max(1.0, abs(t)))
+        # small tolerance: the event time is the same float as INST, and
+        # that step itself still counts as not failed
+        return np.repeat((t_fail < t - 1e-12 * max(1.0, abs(t)))
                          .astype(float), counts)
     return _Var("failed", True, eids, getter)
 
