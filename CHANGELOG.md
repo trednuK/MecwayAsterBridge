@@ -7,6 +7,10 @@
   gone; the *ParaView* button of the convergence window opens the `.rmed` of the run directly
   in ParaView. An older `bridge_utils.py` that still has the setting keeps working (the line is
   ignored).
+- **No beam sidecar and node series any more**: with *VTU/PVD files for ParaView* (or *MED file
+  for ParaView*) a run no longer writes `<model>_<run-id>_beams.json` and
+  `<model>_<run-id>_knopen.csv`; both existed only for MWHub Post. The `.pvd`/`.vtu` files are
+  unchanged and keep the beam forces per element end (`EFGE_*`) for plain ParaView.
 
 ## V2026.9 – 10 November 2026
 
