@@ -591,8 +591,10 @@ ParaView** (`med_export`) schrijft de bridge naast de gewone `<model>_<run-id>.r
 ook **`<model>_<run-id>_xfem.rmed`**: het mesh van `POST_MAIL_XFEM`, waarin de
 elementen langs de scheur zijn opgedeeld en elke lip eigen knopen heeft, met de velden
 `DEPL`, `SIGM_NOEU` en `SIEQ_NOEU` van `POST_CHAM_XFEM` (`IMPR_RESU`, UNITE 81 in de
-`.export`). Open het in ParaView of Salome; met *Warp By Vector* op `DEPL` zie je de
-scheur opengaan. De groepen van het model (elsets, selecties) staan erin; de velden
+`.export`). Open het met de knop *ParaView* of *AsterStudy* in het resultatenscherm of het
+convergentiescherm ([Handleiding §5.1](Handleiding.md#51-resultaten-later-opnieuw-inladen-kleine-liml)):
+beide openen de `_xfem.rmed` vóór de andere resultaatbestanden van de run. Met *Warp By
+Vector* op `DEPL` zie je de scheur opengaan. De groepen van het model (elsets, selecties) staan erin; de velden
 heten `res_xvisDEPL`, `res_xvisSIGM_NOEU` en `res_xvisSIEQ_NOEU`. De gewone `.rmed`
 heeft de velden op het oorspronkelijke mesh (zonder opening).
 

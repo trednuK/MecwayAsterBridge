@@ -4,9 +4,18 @@
 
 - **No coupling with AdvancedToolsHub any more**: the bridge no longer opens runs in MWHub Post.
   The button *In MWHub Post* of the Results dialog and the setting `advancedtoolshub_dir` are
-  gone; the *ParaView* button of the convergence window opens the `.rmed` of the run directly
-  in ParaView. An older `bridge_utils.py` that still has the setting keeps working (the line is
+  gone. An older `bridge_utils.py` that still has the setting keeps working (the line is
   ignored).
+- **Buttons ParaView and AsterStudy** in the Results dialog (for the run chosen in the list; the
+  dialog stays open) and in the convergence window (for the run shown). *ParaView* opens
+  `_verfijnd.rmed` or `_xfem.rmed` when present, else the `.pvd` (`vtu_export`), else the
+  `.rmed` (`med_export`), and names the other result files of the run; for a `.rmed` it prefers
+  Salome-Meca's ParaView, for a `.pvd` the official ParaView 6.x, and `paraview_exe` still
+  overrides the search. *AsterStudy* opens the MED file in Salome-Meca, AsterStudy, tab
+  *Results*, through a session script `<file>_salome.py` next to it (a new Salome-Meca session
+  per click; a second click within 60 s only gives a message). New setting `salome_meca_dir`
+  (empty = search `C:\SALOME-MECA`, `C:\Salome_meca` and `%ProgramFiles%\SALOME*`). Started
+  from Mecway, the AsterStudy route is NOT verified yet.
 - **No beam sidecar and node series any more**: a run no longer writes
   `<model>_<run-id>_beams.json` (came with *VTU/PVD files for ParaView* or *MED file for
   ParaView*) and `<model>_<run-id>_knopen.csv` (came only with *VTU/PVD files for ParaView*);

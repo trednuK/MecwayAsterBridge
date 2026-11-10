@@ -174,7 +174,7 @@ are at the bottom right, the other buttons on the left.
 | 3 | Page | The title and the settings of the chosen page; the tables below give each setting |
 | 4 | "Browse..." | Chooses the file or folder of a path field in a Windows dialog |
 | 5 | Status box | The outcome of the last action and the messages |
-| 6 | "Results..." | Saves the settings; then load an earlier run, or remove the results from the model (small `.liml`; §5.1). Then the window comes back |
+| 6 | "Results..." | Saves the settings; then load an earlier run, remove the results from the model (small `.liml`), or open the result files of a run in ParaView or AsterStudy (§5.1). Then the window comes back |
 | 7 | "Section ▾" | A menu for the shape of General sections (§4.3). "Show section" saves the settings and the model and shows the shape on the beams as temporary elements, before a calculation; "Hide section" removes them again. "Section in results" saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model; after a Code-Aster run this happens automatically |
 | 8 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
 | 9 | "Close" | Closes the bridge. Settings changed after the last Start, Results... or action in the Section menu are not saved |
@@ -212,7 +212,8 @@ value was chosen: [`Default_settings_and_assumptions.md`](Default_settings_and_a
 | "Summary of the Code-Aster run (_aster_summary.txt)" | `summary` | after every run (also a failed or stopped one) a summary of the Code-Aster output in `<model>_<run-id>_aster_summary.txt` in the work folder; button "Summary" in the Results window and the convergence window (§5.2). `summary`: errors and alarms, steps, timings and the path of the full `.mess`; `full`: a copy of the whole `.mess` (start and end above 4 million characters); `off`: no file |
 | "Summary also as Saved monitor in the .liml" | off | on: the same text also in the `.liml` as Mecway's *Saved monitor* item under *Solution*; route `liml` only; a failed run only if the model has no results yet (§5.2) |
 | "VTU/PVD files for ParaView" | off | also writes `<model>_<run-id>.pvd` with one `.vtu` per time step (any ParaView reads it, also without a MED reader), with the same fields as Mecway gets |
-| "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" button of the convergence window; empty = automatic: first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), which reads a `.rmed` itself; then as fallback the ParaView of Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, started through `run_paraview.bat`); last an older ParaView. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
+| "ParaView (empty = search automatically)" | empty | `paraview.exe` for the "ParaView" buttons in the Results window (§5.1) and the convergence window; when filled in, this path is always used. Empty = automatic: for a `.pvd` first the official ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, newest first), then Salome-Meca's, then an older ParaView; for a `.rmed` first Salome-Meca's ParaView (reads MED; see "Salome-Meca folder"), then the official 6.x (a `.rmed` in it is NOT verified). Salome-Meca's ParaView is started through the installation's `run_paraview.bat`. ParaView 5.10 from paraview.org **cannot** open a `.rmed`. Environment variables are allowed |
+| "Salome-Meca folder (empty = search automatically)" | empty | Salome-Meca for the "AsterStudy" buttons (§5.1) and for Salome-Meca's ParaView: an installation folder (with `run_salome.bat`) or a folder that holds installations (the newest counts). Empty = search automatically in `C:\SALOME-MECA`, `C:\Salome_meca` and `%ProgramFiles%\SALOME*`. Environment variables are allowed |
 
 Below the settings the page shows the mapping of `auto` to the Mecway analysis types, a
 note on the language and the path of `bridge_utils.py`.
@@ -767,8 +768,10 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed, or from before the shape went into the results (by hand or at the end of a run) |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
-| `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" button of the convergence window opens it |
-| `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; with failure also the cell fields `failed` (0 intact, 1 failed) and `T_BEZWIJK`; with beam forces also the section forces per element end as the cell fields `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
+| `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" (when there is no `.pvd`) and "AsterStudy" buttons in the Results window and the convergence window open it (§5.1) |
+| `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; the "ParaView" button opens the `.pvd` (§5.1); with failure also the cell fields `failed` (0 intact, 1 failed) and `T_BEZWIJK`; with beam forces also the section forces per element end as the cell fields `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
+| `<model>_<run-id>_paraview_launch.log` | output of the ParaView that the "ParaView" button started (§5.1) |
+| `<model>_<run-id>_salome.py`, `_salome_session.log`, `_salome_launch.log` | from the "AsterStudy" button (§5.1): the session script that makes Salome-Meca open the `.rmed`, the log of that script and the output of Salome-Meca; also as `<model>_<run-id>_verfijnd_salome.py` or `<model>_<run-id>_xfem_salome.py` etc. when the button opened that MED file. Can be deleted |
 | `<model>_<run-id>_vergelijking.csv` | comparison with the Mecway solve (only with "Mecway solve first as a check") |
 | `<model>_<run-id>_monitor_log.txt` | log of the convergence and messages window |
 
@@ -796,19 +799,47 @@ you change loads or materials afterwards, they no longer belong to them (only th
 mesh is checked). "Summary" opens the summary of the chosen Code-Aster run (§5.2); the
 window stays open.
 
+**Opening in ParaView or AsterStudy.** The "ParaView" and "AsterStudy" buttons open the
+result files of the run chosen in the list outside Mecway. The window stays open and is no
+longer kept in front of the other windows afterwards, so that the started program can come in
+front of it. The same buttons are in the convergence window, for the run shown
+([Settings §4.4](Settings_contact_and_nonlinear.md#44-convergence-screen)).
+
+- "ParaView" opens `<model>_<run-id>_verfijnd.rmed` (adaptive refinement) or
+  `<model>_<run-id>_xfem.rmed` (the mesh that follows an XFEM crack) when present, else the
+  `.pvd` ("VTU/PVD files for ParaView"), else the `.rmed` ("MED file for ParaView"). If the run
+  has other result files too, a message names them; open those with *File > Open* in
+  ParaView. Which ParaView: setting "ParaView" (§3). What ParaView itself reports is in
+  `<model>_<run-id>_paraview_launch.log`.
+- "AsterStudy" opens the MED file (`_verfijnd.rmed`, `_xfem.rmed`, else the `.rmed`) in
+  Salome-Meca, module AsterStudy, tab *Results*. A `.pvd` alone is not enough: turn on "MED
+  file for ParaView". The bridge writes the session script `<file>_salome.py` next to the MED
+  file and starts a new Salome-Meca session with it; that takes a while. A second click within
+  60 s gives a message instead of a second Salome-Meca. Which Salome-Meca: setting
+  "Salome-Meca folder" (§3). The session script is verified with Salome-Meca 2025, started
+  from Python 3; started from Mecway (this window) it is NOT verified.
+
+If the file or the program is missing, a message says what you can do. If the bridge starts
+ParaView through a `.bat` (Salome-Meca's ParaView), it does not start it when the path of the
+file or of the installation contains one of the characters `% & ^ ! " < > |`; the message
+says so.
+
+![Results window with the buttons Summary, ParaView and AsterStudy](../img/results_dialog_en.png)
+
+1. "Summary": opens `<model>_<run-id>_aster_summary.txt` of the chosen run (§5.2).
+2. "ParaView": opens the result of the chosen run in ParaView.
+3. "AsterStudy": opens the MED file of the chosen run in Salome-Meca, AsterStudy, tab
+   *Results*.
+
 ### 5.2 Summary of the Code-Aster run
 
 After every run (route `liml` and `tabel`, also a run that failed or was stopped) the bridge
 writes a readable summary of the Code-Aster output to `<model>_<run-id>_aster_summary.txt` in
 the work folder of the run, so that you can read it after the Code-Aster windows have been
-closed. Open it with the button "Summary" in the Results window (§5.1, the run chosen in the
-list) or in the convergence window (the run shown); it opens in the default text editor. If the
-file is missing (an older run, or the setting is `off`), the button makes it from the `.mess`.
-After a run with errors the status box also gives the path.
-
-![Results window with the button Summary](../img/results_summary_en.png)
-
-1. "Summary": opens `<model>_<run-id>_aster_summary.txt` of the run chosen in the list.
+closed. Open it with the button "Summary" in the Results window (§5.1, number 1 in the image;
+the run chosen in the list) or in the convergence window (the run shown); it opens in the
+default text editor. If the file is missing (an older run, or the setting is `off`), the button
+makes it from the `.mess`. After a run with errors the status box also gives the path.
 
 Setting "Summary of the Code-Aster run (_aster_summary.txt)" (`aster_summary`, page General):
 

@@ -75,6 +75,15 @@ tegen `CONFIG_BRIDGE`, en of de Nederlandse en Engelse pagina's dezelfde opbouw 
   `bridge_convergence.py`, `bridge_run_aster.py`): andere opmaak geeft een leeg of onvolledig
   convergentiescherm, of een gemiste fout.
 
+**Een nieuwere bridge**
+
+- Een instelling in een ouder `Scripts/bridge_utils.py` die de nieuwe bridge niet meer kent,
+  negeert hij; welke instellingen erbij kwamen of verdwenen, staat in `CHANGELOG.md`. Deze
+  versie: de instelling voor AdvancedToolsHub is weg, `salome_meca_dir` is nieuw (leeg = automatisch zoeken).
+- Het celveld van bezweken elementen in de `.vtu`-bestanden (*VTU/PVD-bestanden voor
+  ParaView*) heet nu `failed` in plaats van `BEZWEKEN`: pas een bewaarde ParaView-state die
+  op `BEZWEKEN` filtert (*Threshold*) aan.
+
 ## 4. Een andere Code-Aster-versie kiezen
 
 Elke Code-Aster-versie heeft een eigen map met een eigen `run_aster.bat`. Kies op de pagina

@@ -588,8 +588,10 @@ Mecway does not draw the XFEM crack (§7.5). With the setting **MED file for Par
 **`<model>_<run-id>_xfem.rmed`**: the mesh of `POST_MAIL_XFEM`, in which the elements
 along the crack are subdivided and each lip has its own nodes, with the fields `DEPL`,
 `SIGM_NOEU` and `SIEQ_NOEU` of `POST_CHAM_XFEM` (`IMPR_RESU`, UNITE 81 in the
-`.export`). Open it in ParaView or Salome; with *Warp By Vector* on `DEPL` you see the
-crack open. The groups of the model (element sets, selections) are in it; the fields
+`.export`). Open it with the "ParaView" or "AsterStudy" button in the Results window or the
+convergence window ([User guide §5.1](UserGuide.md#51-loading-results-again-later-small-liml)):
+both open the `_xfem.rmed` before the other result files of the run. With *Warp By Vector* on
+`DEPL` you see the crack open. The groups of the model (element sets, selections) are in it; the fields
 are called `res_xvisDEPL`, `res_xvisSIGM_NOEU` and `res_xvisSIEQ_NOEU`. The usual
 `.rmed` has the fields on the original mesh (without opening).
 

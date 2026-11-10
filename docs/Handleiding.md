@@ -166,7 +166,7 @@ schuiven de lijst en de pagina (de lijst met het muiswiel of de balk rechts erva
 | 3 | Pagina | De titel en de instellingen van de gekozen pagina; de tabellen hieronder geven elke instelling |
 | 4 | Bladeren... | Kiest bij een veld met een pad het bestand of de map in een Windows-venster |
 | 5 | Statusvak | De uitkomst van de laatste actie en de meldingen |
-| 6 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, of de resultaten uit het model halen (kleine `.liml`; §5.1). Daarna komt het venster terug |
+| 6 | Resultaten... | Slaat de instellingen op; daarna een eerdere run inladen, de resultaten uit het model halen (kleine `.liml`), of de resultaatbestanden van een run openen in ParaView of AsterStudy (§5.1). Daarna komt het venster terug |
 | 7 | Doorsnede ▾ | Een menu voor de vorm van General sections (§4.3). *Doorsnede tonen* slaat de instellingen en het model op en toont de vorm op de balken als tijdelijke elementen, vóór een berekening; *Doorsnede verbergen* haalt ze weer weg. *Doorsnede in resultaten* slaat de instellingen en het model op, zet die vorm met zijn waarden in de resultaten in de `.liml` en opent het model opnieuw; na een Code-Aster-run gebeurt dat vanzelf |
 | 8 | Convergentiescherm | Opent het convergentie- en meldingenscherm als apart venster (blijft open naast Mecway) voor de nieuwste run van het open model in de werkmap die het venster toont (veld *Werkmap*, of met *Werkmap naast het model* de map naast het model); is er geen run van dit model, dan de nieuwste `.mess` in die map. Zonder run meldt het statusvak dat er niets te tonen is |
 | 9 | Sluiten | Sluit de bridge. Instellingen die je na de laatste *Starten*, *Resultaten...* of actie in het menu *Doorsnede* hebt gewijzigd, worden niet opgeslagen |
@@ -204,7 +204,8 @@ elke waarde zo gekozen is: [`Standaardinstellingen_en_aannames.md`](Standaardins
 | Samenvatting Code-Aster-run (_aster_summary.txt) | `summary` | na elke run (ook een mislukte of gestopte) een samenvatting van de Code-Aster-uitvoer in `<model>_<run-id>_aster_summary.txt` in de werkmap; knop *Samenvatting* in het resultatenscherm en het convergentiescherm (§5.2). `summary`: fouten en alarmen, stappen, tijden en het pad van de volledige `.mess`; `full`: een kopie van de hele `.mess` (boven 4 miljoen tekens het begin en het einde); `off`: geen bestand |
 | Samenvatting ook als Saved monitor in de .liml | uit | aan: dezelfde tekst ook in de `.liml` als Mecway's item *Saved monitor* onder *Solution*; alleen route `liml`; een mislukte run alleen als het model nog geen resultaten heeft (§5.2) |
 | VTU/PVD-bestanden voor ParaView | uit | schrijft ook `<model>_<run-id>.pvd` met een `.vtu` per tijdstap (elke ParaView leest het, ook zonder MED-lezer), met dezelfde velden als Mecway krijgt |
-| ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knop *ParaView* van het convergentiescherm; leeg = automatisch: eerst de officiele ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, nieuwste eerst), die zelf een `.rmed` leest; dan als terugval de ParaView van Salome-Meca (`C:\Salome_meca\*\*\ParaView\bin\paraview.exe`, `%ProgramFiles%\SALOME*`, gestart via `run_paraview.bat`); als laatste een oudere ParaView. ParaView 5.10 van paraview.org kan een `.rmed` **niet** openen. Omgevingsvariabelen mogen |
+| ParaView (leeg = automatisch zoeken) | leeg | `paraview.exe` voor de knoppen *ParaView* in het resultatenscherm (§5.1) en het convergentiescherm; ingevuld geldt dit pad altijd. Leeg = automatisch: voor een `.pvd` eerst de officiele ParaView 6.x (`%ProgramFiles%\ParaView 6*\bin\paraview.exe`, nieuwste eerst), dan die van Salome-Meca, dan een oudere ParaView; voor een `.rmed` eerst de ParaView van Salome-Meca (leest MED; zie *Salome-Meca-map*), dan de officiele 6.x (een `.rmed` daarin is NIET nagelopen). De ParaView van Salome-Meca start via `run_paraview.bat` van de installatie. ParaView 5.10 van paraview.org kan een `.rmed` **niet** openen. Omgevingsvariabelen mogen |
+| Salome-Meca-map (leeg = automatisch zoeken) | leeg | Salome-Meca voor de knoppen *AsterStudy* (§5.1) en voor de ParaView van Salome-Meca: een installatiemap (met `run_salome.bat`) of een map met installaties (de nieuwste telt). Leeg = automatisch zoeken in `C:\SALOME-MECA`, `C:\Salome_meca` en `%ProgramFiles%\SALOME*`. Omgevingsvariabelen mogen |
 
 Onder de instellingen staan de koppeling van `auto` aan de Mecway-analysetypen, een
 opmerking over de taal en het pad van `bridge_utils.py`.
@@ -768,8 +769,10 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
-| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knop *ParaView* van het convergentiescherm opent hem |
-| `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
+| `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knoppen *ParaView* (als er geen `.pvd` is) en *AsterStudy* in het resultatenscherm en het convergentiescherm openen hem (§5.1) |
+| `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; de knop *ParaView* opent de `.pvd` (§5.1); met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
+| `<model>_<run-id>_paraview_launch.log` | uitvoer van de ParaView die de knop *ParaView* startte (§5.1) |
+| `<model>_<run-id>_salome.py`, `_salome_session.log`, `_salome_launch.log` | van de knop *AsterStudy* (§5.1): het sessiescript dat Salome-Meca de `.rmed` laat openen, de log van dat script en de uitvoer van Salome-Meca; ook als `<model>_<run-id>_verfijnd_salome.py` of `<model>_<run-id>_xfem_salome.py` enz. wanneer de knop dat MED-bestand opende. Mogen weg |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |
 | `<model>_<run-id>_monitor_log.txt` | log van het convergentie- en meldingenscherm |
 
@@ -798,19 +801,47 @@ van de run: wijzig je daarna belastingen of materialen, dan horen ze daar niet m
 bij (alleen het mesh wordt gecontroleerd). *Samenvatting* opent de samenvatting van de
 gekozen Code-Aster-run (§5.2); het scherm blijft open.
 
+**Openen in ParaView of AsterStudy.** De knoppen *ParaView* en *AsterStudy* openen de
+resultaatbestanden van de run die in de lijst gekozen is buiten Mecway. Het scherm blijft open
+en staat daarna niet meer vóór de andere vensters, zodat het gestarte programma ervoor kan
+komen. Dezelfde knoppen staan in het convergentiescherm, voor de getoonde run
+([Instellingen §4.4](Instellingen_contact_en_nietlineair.md#44-convergentiescherm)).
+
+- *ParaView* opent `<model>_<run-id>_verfijnd.rmed` (adaptieve verfijning) of
+  `<model>_<run-id>_xfem.rmed` (het mesh dat een XFEM-scheur volgt) als die er is, anders de
+  `.pvd` (*VTU/PVD-bestanden voor ParaView*), anders de `.rmed` (*MED-bestand voor ParaView*).
+  Heeft de run nog andere resultaatbestanden, dan noemt een melding ze; open die met
+  *File > Open* in ParaView. Welke ParaView: instelling *ParaView* (§3). Wat ParaView zelf
+  meldt, staat in `<model>_<run-id>_paraview_launch.log`.
+- *AsterStudy* opent het MED-bestand (`_verfijnd.rmed`, `_xfem.rmed`, anders de `.rmed`) in
+  Salome-Meca, module AsterStudy, tabblad *Results*. Een `.pvd` alleen is niet genoeg: zet
+  *MED-bestand voor ParaView* aan. De bridge schrijft het sessiescript
+  `<bestand>_salome.py` naast het MED-bestand en start daarmee een nieuwe Salome-Meca-sessie;
+  dat duurt even. Een tweede klik binnen 60 s geeft een melding in plaats van een tweede
+  Salome-Meca. Welke Salome-Meca: instelling *Salome-Meca-map* (§3). Het sessiescript is
+  nagelopen met Salome-Meca 2025, gestart vanuit Python 3; gestart vanuit Mecway (dit scherm)
+  is het NIET nagelopen.
+
+Ontbreekt het bestand of het programma, dan zegt een melding wat je kunt doen. Start de bridge
+ParaView via een `.bat` (de ParaView van Salome-Meca), dan start hij niet als het pad van het
+bestand of van de installatie een van de tekens `% & ^ ! " < > |` bevat; de melding zegt dat.
+
+![Resultatenscherm met de knoppen Samenvatting, ParaView en AsterStudy](img/results_dialog_nl.png)
+
+1. *Samenvatting*: opent `<model>_<run-id>_aster_summary.txt` van de gekozen run (§5.2).
+2. *ParaView*: opent het resultaat van de gekozen run in ParaView.
+3. *AsterStudy*: opent het MED-bestand van de gekozen run in Salome-Meca, AsterStudy, tabblad
+   *Results*.
+
 ### 5.2 Samenvatting van de Code-Aster-run
 
 Na elke run (route `liml` en `tabel`, ook een mislukte of gestopte run) schrijft de bridge een
 leesbare samenvatting van de Code-Aster-uitvoer naar `<model>_<run-id>_aster_summary.txt` in
 de werkmap van de run, zodat je die terugleest als de Code-Aster-vensters dicht zijn. Openen
-met de knop *Samenvatting* in het resultatenscherm (§5.1, de run die in de lijst gekozen is) of
-in het convergentiescherm (de getoonde run); het bestand opent in de standaard-teksteditor.
-Ontbreekt het bestand (een oudere run, of de instelling staat op `off`), dan maakt de knop het
-uit de `.mess`. Na een run met fouten noemt het statusvak ook het pad.
-
-![Resultatenscherm met de knop Samenvatting](img/results_summary_nl.png)
-
-1. *Samenvatting*: opent `<model>_<run-id>_aster_summary.txt` van de run die in de lijst gekozen is.
+met de knop *Samenvatting* in het resultatenscherm (§5.1, nummer 1 in de afbeelding; de run die
+in de lijst gekozen is) of in het convergentiescherm (de getoonde run); het bestand opent in de
+standaard-teksteditor. Ontbreekt het bestand (een oudere run, of de instelling staat op `off`),
+dan maakt de knop het uit de `.mess`. Na een run met fouten noemt het statusvak ook het pad.
 
 Instelling *Samenvatting Code-Aster-run (_aster_summary.txt)* (`aster_summary`, pagina
 Algemeen):
