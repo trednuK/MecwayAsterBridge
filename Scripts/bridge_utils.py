@@ -94,6 +94,10 @@ CONFIG_BRIDGE = {
     # Also put that text into the .liml as Mecway's "Saved monitor" item
     # (route "liml"; a run without results only if the model has no results).
     "save_monitor_liml": False,
+    # Hide failed elements in Mecway's own result view after loading the
+    # results (bridge_hide_failed, core liml_failed.py; route "liml"). It
+    # rewrites the solution of the model (node copies per failed element).
+    "hide_failed":     False,
     # ParaView for the ParaView buttons of the Results dialog and the
     # convergence window (bridge_viewers). Empty ("") = search
     # automatically: for a .pvd an official ParaView 6.x, else Salome-Meca's;

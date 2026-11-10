@@ -140,7 +140,7 @@ from bridge_results_liml import (splice_results, read_step,
                                  crit_stab_estimate, read_imperfection,
                                  read_step_guard, has_results,
                                  add_section_view, restore_bak)
-from bridge_failure     import report_failures
+from bridge_failure     import report_failures, failed_elements
 from bridge_monitor     import monitor_text, write_summary, SUMMARY_SUFFIX
 from bridge_run_aster   import CONSOLE_SUFFIX
 import bridge_manifest
@@ -158,6 +158,12 @@ import bridge_vibroacoustic_harm
 import bridge_adapt
 import bridge_section_model
 import bridge_section_view
+import bridge_hide_failed
+
+# Setting hide_failed: number of failed elements of the last run
+# (bridge_failure.failed_elements), for the note on elements that failed at
+# the last stored step; None outside a run or with the option off.
+_HIDE = {"expected": None}
 
 
 # ==========================================
@@ -487,6 +493,9 @@ def _run(settings):
         failure_note = report_failures(
             os.path.join(work_dir_path(), run_name(".mess")),
             model_data)
+        _HIDE["expected"] = (len(failed_elements(
+            os.path.join(work_dir_path(), run_name(".mess")), model_data))
+            if bridge_hide_failed.enabled() else None)
         # Summary file of the run (setting aster_summary, every route,
         # also a failed or stopped run) and optionally the same text as
         # Mecway's Saved monitor in the .liml (save_monitor_liml).
@@ -1586,17 +1595,95 @@ def _results_action():
         return False, tr("Resultaten niet ingeladen: {0}",
                          "Results not loaded: {0}").format(reason)
     log("SUCCESS: Results '{0}' written to '{1}'.".format(path, liml))
-    mw.open(liml)
-    if configuration:
-        try:
-            mw.set_active_configuration(configuration)
-        except Exception as e:
-            log(tr("WARNING: Configuratie '{0}' niet actief gemaakt: {1}",
-                   "WARNING: Configuration '{0}' not made active: "
-                   "{1}").format(configuration, e))
+    # Setting hide_failed: hide before the first open (one open less)
+    opened, hide_note = _hide_failed(liml, configuration)
+    if not opened:
+        mw.open(liml)
+        if configuration:
+            _set_configuration(configuration)
     notes = [tr("Resultaten ingeladen: {0}", "Results loaded: {0}").format(
-        os.path.basename(path))] + [n for n in (note, warning) if n]
+        os.path.basename(path))] + [n for n in (note, warning, hide_note)
+                                    if n]
     return True, u"\n".join(notes)
+
+
+def _set_configuration(configuration):
+    """Show that configuration (API: mw.set_active_configuration)."""
+    try:
+        mw.set_active_configuration(configuration)
+    except Exception as e:
+        log(tr("WARNING: Configuratie '{0}' niet actief gemaakt: {1}",
+               "WARNING: Configuration '{0}' not made active: "
+               "{1}").format(configuration, e))
+
+
+def _hide_failed(liml, configuration=None, expected=None):
+    """
+    Setting hide_failed: hide the failed elements in the
+    results of liml (bridge_hide_failed) and open the processed file. The
+    final step after loading results: after a run after the section view
+    (_section_into_results refuses a processed file), after Results... >
+    Load right after the splice. When Mecway does not open the processed
+    file, the unprocessed one is put back and opened. Returns (opened,
+    text for the status box): opened True when this function opened liml
+    in Mecway (and made the configuration active) or tried to (then the
+    caller does not open it again).
+    """
+    if not bridge_hide_failed.enabled():
+        return False, u""
+    try:
+        status, text = bridge_hide_failed.apply(liml, configuration,
+                                                expected)
+    except Exception as e:
+        bridge_hide_failed.restore(liml)
+        log(tr(u"WARNING: Bezweken elementen niet verborgen: {0}",
+               u"WARNING: Failed elements not hidden: {0}").format(e))
+        return False, u""
+    if status != "done":
+        return False, text
+    try:
+        mw.open(liml)
+    except Exception as e:
+        log(tr(u"ERROR: Mecway opent het model met verborgen bezweken "
+               u"elementen niet: {0}",
+               u"ERROR: Mecway does not open the model with hidden failed "
+               u"elements: {0}").format(e))
+        restored = bridge_hide_failed.restore(liml)
+        if restored:
+            mw.open(liml)
+            if configuration:
+                _set_configuration(configuration)
+        return True, (tr(
+            u"Mecway opent het model met verborgen bezweken elementen niet; "
+            u"de resultaten zonder verbergen zijn teruggezet.",
+            u"Mecway does not open the model with hidden failed elements; "
+            u"the results without hiding were put back.") if restored
+            else tr(
+            u"Mecway opent het model met verborgen bezweken elementen niet; "
+            u"de resultaten zonder verbergen staan in {0}.",
+            u"Mecway does not open the model with hidden failed elements; "
+            u"the results without hiding are in {0}.").format(
+                os.path.basename(liml) + bridge_hide_failed.KEEP_SUFFIX))
+    bridge_hide_failed.finish(liml)
+    if configuration:
+        _set_configuration(configuration)
+    return True, text
+
+
+def _hide_after_run():
+    """The final step of a run (also after adaptive refinement): setting
+    hide_failed on the model, after _section_after_run."""
+    if not bridge_hide_failed.enabled():
+        return
+    if CONFIG_BRIDGE.get("result_route", "liml") != "liml":
+        log("INFO: Hide failed elements: not applied with the result route "
+            "'tabel' (it fills Mecway's own solution).")
+        return
+    liml = mw.file_name()
+    configuration, _warning = pick_configuration(liml)
+    _opened, text = _hide_failed(liml, configuration, _HIDE["expected"])
+    if text:
+        _notify(text)
 
 
 def _section_view(warn_directions=True):
@@ -1667,6 +1754,18 @@ def _section_into_results(warn_directions=True):
         return False, tr(
             u"Er zijn nog geen resultaten: bereken het model eerst.",
             u"There are no results yet: calculate the model first.")
+    if bridge_hide_failed.is_processed(liml, configuration):
+        # The node copies of hidden failed elements are not in model_data:
+        # the section view would not fit the solution mesh.
+        return False, tr(
+            u"De resultaten van dit model hebben verborgen bezweken "
+            u"elementen (optie 'Bezweken elementen verbergen'); de doorsnede "
+            u"kan er niet in. Laad ze opnieuw met Resultaten... > Inladen "
+            u"met die optie uit en kies dan Doorsnede in resultaten.",
+            u"The results of this model have hidden failed elements (option "
+            u"'Hide failed elements'); the section cannot be added to them. "
+            u"Load them again with Results... > Load with that option off, "
+            u"then choose Section in results.")
     view, model_data, text = _section_view(warn_directions)
     if view is None:
         return False, text
@@ -1787,6 +1886,7 @@ def main():
                 ok = _run(dict(settings, changes=[], save_errors=[]))
             if ok:
                 _section_after_run()
+                _hide_after_run()
         except Exception as e:
             try:
                 log("CRITICAL ERROR: {0}".format(str(e)))

@@ -1205,6 +1205,23 @@ SETTING_HELP = {
                           u"the result route 'liml'; a run without results "
                           u"only gets a solution with the monitor if the "
                           u"model has no results yet. Off by default."),
+    "hide_failed": (u"Bezweken elementen verdwijnen in Mecway's eigen "
+                    u"resultaatweergave, elk vanaf de stap na het "
+                    u"bezwijken: hun knopen klappen ineen op het "
+                    u"zwaartepunt (precies bij vervormingsschaal 1). Na een "
+                    u"run met de resultaatroute 'liml' en na Resultaten... "
+                    u"> Inladen, alleen voor resultaten met tijdstappen. De "
+                    u"bridge herschrijft daarvoor de oplossing in de .liml; "
+                    u"Resultaten... > Inladen met deze optie uit toont de "
+                    u"elementen weer. Standaard uit.",
+                    u"Failed elements disappear in Mecway's own result view, "
+                    u"each from the step after its failure: their nodes "
+                    u"collapse on the centroid (exact at deformation scale "
+                    u"1). After a run with the result route 'liml' and after "
+                    u"Results... > Load, only for results with time steps. "
+                    u"For this the bridge rewrites the solution in the "
+                    u".liml; Results... > Load with this option off shows "
+                    u"the elements again. Off by default."),
     "convergence_monitor": (u"Bij elke run een apart venster met de "
                             u"voortgang, convergentie en meldingen van "
                             u"Code-Aster. Standaard aan.",
