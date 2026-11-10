@@ -1115,9 +1115,11 @@ class Monitor(object):
             base = _run_file(self.args.mess, "")
             ok, text = getattr(bridge_viewers, name)(base, **settings)
         except Exception as e:
-            log(u"WARNING: {0} not started: {1}".format(title, e))
             ok, text = False, u"{0}".format(e)
-        log(u"INFO: {0}: {1}".format(title, text.replace(u"\n", u" ")))
+        if not ok:
+            log(tr(u"WARNING: {0} niet gestart: {1}",
+                   u"WARNING: {0} not started: {1}").format(
+                title, text.replace(u"\n", u" ")))
         # A plain ParaView start needs no box; a failure, the note on other
         # result files and the slow Salome-Meca start do.
         if not ok or u"\n" in text or name == "open_asterstudy":

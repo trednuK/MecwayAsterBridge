@@ -2223,10 +2223,12 @@ An old `bridge_utils.py` with the key still works (only `GENERAL_SPECS` keys are
   tests never find a real installation.
 - ParaView finder moves from `bridge_utils` to `bridge_viewers`; its Salome part looks for
   `run_paraview.bat` + `W64\ParaView\bin\paraview.exe` under all Salome roots (own check, not the AsterStudy
-  check): fixes the miss of `C:\SALOME-MECA\<ver>`. `bridge_utils.paraview_exe_path` stays as a lazily
-  importing delegate. An explicit `paraview_exe` always wins; automatic: `.pvd` = any ParaView, `.rmed` = a
-  ParaView with a MED reader (Salome's first until official ParaView 6.2 is shown to read `.rmed` without
-  the MEDReader preset; NOT verified, the user installs 6.2 for that test).
+  check): fixes the miss of `C:\SALOME-MECA\<ver>`. `bridge_utils.paraview_exe_path` is removed (its
+  callers now pass the raw setting). An explicit `paraview_exe` always wins; automatic: `.pvd` = official
+  6.x, Salome's, older; `.rmed` = Salome's ParaView only. Gate G1 (10 Nov 2026, pvpython, gate runs of 5
+  cases): official ParaView 6.2.1 loads only vtkPVInitializerPlugin, `OpenDataFile` on every `.rmed` gives
+  "No reader found"; after `LoadDistributedPlugin('MEDReader')` all open. Salome's ParaView 5.13 loads
+  MEDReader at start. Docs tell users of `paraview_exe` = official ParaView to tick *Auto Load*.
 - File choice per run: `_verfijnd.rmed` (HOMARD) or `_xfem.rmed` (crack mesh) first when present, else
   `.pvd`, else `.rmed`; a note names the other files. Several files in one ParaView: NOT verified.
 - AsterStudy: needs a `.rmed` (no converter); writes `<file stem>_salome.py` (session script: activate
@@ -2251,7 +2253,7 @@ An old `bridge_utils.py` with the key still works (only `GENERAL_SPECS` keys are
   static, harmonic (`DEPL_REEL`/`PRES_REEL` under "Other"), `_xfem.rmed`, `_verfijnd.rmed`, a second click
   while Salome is open.
 - Docs NL+EN: settings tables (`salome_meca_dir`, `paraview_exe`), Results dialog (image
-  `results_summary_*` recaptured), convergence window, run-file table (`_salome.py`, `_salome_session.log`,
+  `results_dialog_*` recaptured), convergence window, run-file table (`_salome.py`, `_salome_session.log`,
   `_salome_launch.log`, also for `_verfijnd`/`_xfem`), Breukmechanica/Fracture_mechanics §7.9,
   `ASTER_regels_voorbeelden`, glossary, AGENTS.md (`bridge_viewers.py` in the 2.7-and-3 list).
 

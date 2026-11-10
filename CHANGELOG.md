@@ -9,8 +9,9 @@
 - **Buttons ParaView and AsterStudy** in the Results dialog (for the run chosen in the list; the
   dialog stays open) and in the convergence window (for the run shown). *ParaView* opens
   `_verfijnd.rmed` or `_xfem.rmed` when present, else the `.pvd` (`vtu_export`), else the
-  `.rmed` (`med_export`), and names the other result files of the run; for a `.rmed` it prefers
-  Salome-Meca's ParaView, for a `.pvd` the official ParaView 6.x, and `paraview_exe` still
+  `.rmed` (`med_export`), and names the other result files of the run; a `.rmed` opens in
+  Salome-Meca's ParaView (the official ParaView 6.2.1 does not load its MEDReader plugin), a
+  `.pvd` in the official ParaView 6.x, and `paraview_exe` still
   overrides the search. *AsterStudy* opens the MED file in Salome-Meca, AsterStudy, tab
   *Results*, through a session script `<file>_salome.py` next to it (a new Salome-Meca session
   per click; a second click within 60 s only gives a message). New setting `salome_meca_dir`

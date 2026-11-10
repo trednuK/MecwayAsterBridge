@@ -33,6 +33,8 @@ import bridge_utils  # noqa: E402
 import bridge_viewers as v  # noqa: E402
 
 CFG = bridge_utils.CONFIG_BRIDGE
+# bridge_viewers logs a start: not into the real work folder's log
+bridge_utils.log = lambda *args, **kw: None
 CFG["language"] = "en"
 CFG["paraview_exe"] = ""
 CFG["salome_meca_dir"] = ""
@@ -90,6 +92,8 @@ def build(tmp):
                         "9.13.0"),
          "old": _salome(os.path.join(drive, "Salome_meca", "V2023"),
                         "9.10.0", paraview=False),
+         "noname": _salome(os.path.join(drive, "Salome_meca", "V2099"),
+                           None, paraview=False),
          "pvonly": _salome(os.path.join(pf, "SALOME-9.12"), None,
                            asterstudy=False),
          "pv510": _touch(os.path.join(pf, "ParaView 5.10.1", "bin",
@@ -108,7 +112,8 @@ def test_salome_search(t):
     check(any(_norm(b).endswith(_norm(os.path.join("C", "SALOME-MECA")))
               for b in bases), "bases include %SystemDrive%\\SALOME-MECA")
     check(_norm(v.find_salome("", bases)) == _norm(t["new"]),
-          "AsterStudy root: the newest version (9.13 before 9.10)")
+          "AsterStudy root: the newest version (9.13 before 9.10, and "
+          "before V2099 that only has a folder name)")
     check(v.find_salome("", [os.path.join(t["env"]["ProgramFiles"])]) == "",
           "a Salome without AsterStudy is no AsterStudy root")
     check(_norm(v.find_salome(t["old"], bases)) == _norm(t["old"]),
@@ -143,9 +148,9 @@ def test_paraview_search(t):
                                      old_bat, t["pv510"])],
           ".pvd: ParaView 6.x (newest first), Salome's, then 5.10")
     got = [_norm(p) for p in v.paraview_candidates(True, "", bases, env)]
-    check(got == [_norm(p) for p in (new_bat, old_bat, t["pv610"],
-                                     t["pv62"])],
-          ".rmed: Salome's first, 5.10 (no MED reader) left out")
+    check(got == [_norm(p) for p in (new_bat, old_bat)],
+          ".rmed: only Salome's (official 6.x does not load MEDReader, "
+          "5.10 has none)")
     check(v.paraview_version(t["pv62"]) == (6, 2, 0) and
           v.paraview_version(t["pv510"]) == (5, 10, 1),
           "version from the folder name")
@@ -236,6 +241,12 @@ def test_asterstudy(t, tmp):
     med = _touch(base + ".rmed")
     ok, text = v.open_asterstudy(base, "", FakePopen, [])
     check(not ok and "salome_meca_dir" in text, "no Salome: message")
+    def broken(cmd, **kw):
+        raise OSError("python3.exe missing")
+    ok, text = v.open_asterstudy(base, "", broken, bases)
+    check(not ok and "python3.exe missing" in text and not os.path.isfile(
+        v.salome_files(med)[1]), "failed start: message, no busy session "
+          "log left")
     ok, text = v.open_asterstudy(base, "", FakePopen, bases)
     script, session_log, launch_log = v.salome_files(med)
     cmd, kw = FakePopen.calls[-1]
@@ -280,6 +291,12 @@ def test_asterstudy(t, tmp):
     later = os.path.getmtime(session_log) + v.SALOME_BUSY_SECONDS + 1
     ok, text = v.open_asterstudy(base, "", FakePopen, bases, now=later)
     check(ok and len(FakePopen.calls) == n + 1, "after 60 s: a new session")
+    comma = os.path.join(tmp, "a,b", "M_20261110_140000")
+    _touch(comma + ".rmed")
+    n = len(FakePopen.calls)
+    ok, text = v.open_asterstudy(comma, "", FakePopen, bases)
+    check(not ok and len(FakePopen.calls) == n and "a,b" in text,
+          "comma in the script path: refused (launcher argument separator)")
     _touch(base + "_xfem.rmed")
     ok, text = v.open_asterstudy(base, "", FakePopen, bases,
                                  now=later + 1000)

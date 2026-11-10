@@ -143,12 +143,17 @@ def _version_tuple(text):
 
 
 def _newest_first(roots):
+    """Roots with a SALOME version (README or pyconf) before roots that only
+    have a folder name (V2023 would otherwise sort above 9.13.0), then by
+    version, then by the time of run_salome.bat."""
     def key(root):
         try:
             mtime = os.path.getmtime(os.path.join(root, "run_salome.bat"))
         except OSError:
             mtime = 0.0
-        return (_version_tuple(salome_version(root)), mtime)
+        text = salome_version(root)
+        named = text != os.path.basename(root.rstrip("\\/"))
+        return (named, _version_tuple(text), mtime)
     return sorted(roots, key=key, reverse=True)
 
 
@@ -221,15 +226,17 @@ def official_paraviews(environ=None):
 def paraview_candidates(med=False, salome=None, bases=None, environ=None):
     """ParaViews to try, best first. For a .pvd (med False): official
     ParaView 6.x or newer, Salome's, then older official ones. For a .rmed
-    (med True) Salome's first: it loads its MED reader itself, while an
-    official ParaView 6.x without the MEDReader plugin loaded is NOT
-    verified to open a .rmed; ParaView 5.10 has no MED reader at all (seen
-    22 Oct 2026), so older official ones are left out."""
+    (med True) only Salome's: it loads its MEDReader plugin at start. The
+    official ParaView 6.2.1 ships MEDReader but does not load it: its
+    OpenDataFile on a .rmed gives "No reader found" until the plugin is
+    loaded (pvpython, 10 Nov 2026; in the GUI: Tools > Manage Plugins >
+    MEDReader, Auto Load); ParaView 5.10 has no MED reader at all (seen
+    22 Oct 2026)."""
     official = official_paraviews(environ)
     modern = [p for p in official if paraview_version(p)[0] >= 6]
     older = [p for p in official if p not in modern]
     own = salome_paraviews(salome, bases)
-    order = own + modern if med else modern + own + older
+    order = own if med else modern + own + older
     out = []
     for p in order:
         if p not in out:
@@ -391,14 +398,18 @@ def open_paraview(base, paraview=None, salome=None, popen=None, bases=None,
         return False, tr(
             u"ParaView niet gevonden{0}. Vul in het startscherm 'ParaView' "
             u"(paraview_exe) in, of installeer ParaView (paraview.org) of "
-            u"Salome-Meca. Een .rmed opent in de ParaView van Salome-Meca; "
-            u"ParaView 5.10 kan geen .rmed openen.",
+            u"Salome-Meca. Een .rmed opent de bridge in de ParaView van "
+            u"Salome-Meca; de officiele ParaView 6.x opent een .rmed pas als "
+            u"de plugin MEDReader geladen is (Tools > Manage Plugins > "
+            u"MEDReader, Auto Load) en ParaView 5.10 helemaal niet.",
             u"ParaView not found{0}. Fill in 'ParaView' (paraview_exe) on "
             u"the start screen, or install ParaView (paraview.org) or "
-            u"Salome-Meca. A .rmed opens in Salome-Meca's ParaView; "
-            u"ParaView 5.10 cannot open a .rmed.").format(
+            u"Salome-Meca. The bridge opens a .rmed in Salome-Meca's "
+            u"ParaView; the official ParaView 6.x opens a .rmed only once "
+            u"the MEDReader plugin is loaded (Tools > Manage Plugins > "
+            u"MEDReader, Auto Load), and ParaView 5.10 not at all.").format(
                 u" ({0})".format(exe) if exe else u"")
-    if exe.lower().endswith(".bat"):
+    if exe.lower().endswith((".bat", ".cmd")):
         bad = _unsafe([exe, path])
         if bad:
             return False, _unsafe_text(bad)
@@ -528,7 +539,11 @@ def session_script_text(med_path, log_path):
 
 def salome_command(root, script):
     """What run_salome.bat runs, without its START: Salome's own Python with
-    the launcher "salome" and the session script."""
+    the launcher "salome" and the session script. run_salome.bat of
+    Salome-Meca 2025 also deletes W64\\GUI\\bin\\salome\\opengl32.dll, which
+    its software-rendering launcher (run_mesa_salome.bat) may leave behind;
+    the bridge does not delete files in an installation, so after a Mesa
+    start Salome may come up with software rendering (NOT verified)."""
     return [os.path.join(root, "W64", "Python", "python3.exe"),
             os.path.join(root, "salome"), "start", script]
 
@@ -560,6 +575,11 @@ def open_asterstudy(base, salome=None, popen=None, bases=None, now=None):
             u"start screen.").format(u"; ".join(_search_bases(salome,
                                                                 bases)))
     script, session_log, launch_log = salome_files(path)
+    # The launcher takes "script.py args:a,b": a comma in the script path
+    # would be read as an argument separator. Spaces and non-ASCII
+    # characters in the path: NOT verified with a real Salome start.
+    if u"," in script:
+        return False, _unsafe_text(script)
     now = time.time() if now is None else now
     try:
         busy = now - os.path.getmtime(session_log) < SALOME_BUSY_SECONDS
@@ -587,6 +607,10 @@ def open_asterstudy(base, salome=None, popen=None, bases=None, now=None):
     error = _start(salome_command(root, script), root, launch_log, popen,
                    salome_env())
     if error:
+        try:
+            os.remove(session_log)   # no "already starting" on the next click
+        except OSError:
+            pass
         return False, tr(u"Salome-Meca starten mislukt: {0}",
                          u"Starting Salome-Meca failed: {0}").format(error)
     bridge_utils.log(u"INFO: Salome-Meca started ({0}) for {1}".format(

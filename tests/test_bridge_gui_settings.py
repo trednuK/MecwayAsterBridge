@@ -158,6 +158,11 @@ def test_removed_setting_tolerated():
           "removed setting not offered by the start screen")
     check("advancedtoolshub_dir" not in bridge_utils.CONFIG_BRIDGE,
           "removed setting not in CONFIG_BRIDGE")
+    check(g._parse_and_validate("salome_meca_dir", "folder", None, "  ") ==
+          ("", None) and "salome_meca_dir" in g._GENERAL_DEFAULTS and
+          "salome_meca_dir" in [s[0] for s in g.GENERAL_SPECS],
+          "new setting salome_meca_dir: offered, default known, empty "
+          "allowed (= search automatically)")
     tmp = tempfile.mkdtemp(prefix="mab_removed_")
     try:
         path = os.path.join(tmp, "bridge_utils.py")

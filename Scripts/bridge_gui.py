@@ -1730,13 +1730,16 @@ def _show_winforms_dialog(current, status=u"", model=None):
                     fit_page(page)
                 return handler
 
-            def make_browse(textbox, kind, flt):
+            def make_browse(textbox, kind, flt, key=None):
                 def handler(sender, args):
                     cur = expand_path(textbox.Text)
                     if kind == "folder":
                         dlg = FolderBrowserDialog()
-                        dlg.Description = tr("Kies de werkmap",
-                                             "Choose the work folder")
+                        dlg.Description = (
+                            tr("Kies de map van Salome-Meca",
+                               "Choose the Salome-Meca folder")
+                            if key == "salome_meca_dir" else
+                            tr("Kies de werkmap", "Choose the work folder"))
                         if os.path.isdir(cur):
                             dlg.SelectedPath = cur
                         if dlg.ShowDialog(form) == DialogResult.OK:
@@ -1838,7 +1841,7 @@ def _show_winforms_dialog(current, status=u"", model=None):
                         btn.Height = 25
                         btn.Width = 100
                         btn.Location = Point(x + 428, y - 1)
-                        btn.Click += make_browse(ctrl, kind, extra)
+                        btn.Click += make_browse(ctrl, kind, extra, key)
                         parent.Controls.Add(btn)
                         stretch.setdefault(parent, []).append(
                             ("path", ctrl, btn))
@@ -2658,11 +2661,15 @@ def results_dialog(items, work_dir):
 
             def viewer(name):
                 def handler(sender, args):
-                    if lst.SelectedIndex >= 0 and _open_viewer(
-                            items[lst.SelectedIndex], name, form):
-                        # the started program must be able to come in
-                        # front of this dialog
-                        form.TopMost = False
+                    if lst.SelectedIndex < 0:
+                        return
+                    # the started program must be able to come in front
+                    # of this dialog, also while a message box is open
+                    was_on_top = form.TopMost
+                    form.TopMost = False
+                    if not _open_viewer(items[lst.SelectedIndex], name,
+                                        form):
+                        form.TopMost = was_on_top
                 return handler
 
             buttons = [
@@ -2789,16 +2796,18 @@ def _open_viewer(item, name, owner=None):
     on a note about other result files and for the slow Salome-Meca start.
     Returns True if the program was started."""
     from System.Windows.Forms import MessageBox
-    import bridge_viewers
-    base = bridge_viewers.run_base(item["path"])
+    title = u"ParaView" if name == "open_paraview" else u"AsterStudy"
     try:
+        import bridge_viewers
+        base = bridge_viewers.run_base(item["path"])
         ok, text = getattr(bridge_viewers, name)(base)
     except Exception as e:
         ok, text = False, u"{0}".format(e)
-    bridge_utils.log(u"INFO: {0}: {1}".format(
-        name, text.replace(u"\n", u" ")))
+    if not ok:
+        bridge_utils.log(tr(u"WARNING: {0} niet gestart: {1}",
+                            u"WARNING: {0} not started: {1}").format(
+            title, text.replace(u"\n", u" ")))
     if not ok or u"\n" in text or name == "open_asterstudy":
-        title = u"ParaView" if name == "open_paraview" else u"AsterStudy"
         if owner is None:
             MessageBox.Show(text, title)
         else:
