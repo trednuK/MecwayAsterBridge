@@ -35,11 +35,11 @@ import liml_failed as L  # noqa: E402
 
 # The same pair as PIN_VERSION / PIN_SHA256 in AdvancedToolsHub's
 # tests/unit/test_liml_failed.py. Update both together, with the copy.
-PIN_VERSION = "1.0.0"
-PIN_SHA256 = "500f8cccee09f2ce8cc7e6f0bbbf9c8393c2601db7ff5eab56d129da268550a9"
+PIN_VERSION = "1.0.1"
+PIN_SHA256 = "9cac3065ab8ae3c8151ba0f9e16b1f0b2f65dfcb8f399b69f2e94a9b8e884d63"
 # sha256 (LF) of the golden input and of its processed output, as the hub
 GOLDEN_INPUT_SHA = "02b067d37bd2e3f01fb82eedefc0a17bb96ee4cf6751bb9566ccdf5b4770a85c"
-GOLDEN_OUTPUT_SHA = "1b3a2f0d1672af509e75258377c04b88fde742b7b931505766a4281e104a92e1"
+GOLDEN_OUTPUT_SHA = "23fa0420221c7a56f44dc3d6c4bbb49b75737d05b0ec199bd05ae02fa4e78101"
 
 DATA = os.path.join(_HERE, "data", "liml_failed")
 GOLDEN = os.path.join(DATA, "golden_failed.liml")
@@ -121,18 +121,24 @@ def test_golden(tmp):
           rep["provider"] == exp["provider"], rep["provider"])
     check("failed steps {0}".format(sorted(want.items())),
           rep["failed"] == want, rep["failed"])
-    check("written with the marker", rep["written"] and
-          L.processed_marker(out) == L.VERSION)
+    # marker of core 1.0.1: <globalvariable name="failed_hidden">N</...>,
+    # the hidden count as text
+    check("written with the marker (hidden count)", rep["written"] and
+          L.processed_marker(out) == u"{0}".format(len(want)) and
+          L.marker_count(L.processed_marker(out)) == len(want),
+          L.processed_marker(out))
     check("output sha", lf_sha(read(out)) == GOLDEN_OUTPUT_SHA)
     rep2 = L.scan(GOLDEN, solver="aster")
     check("scan(solver='aster') gives the same steps",
           rep2["failed"] == want and not rep2["written"])
     try:
         L.process(out, os.path.join(tmp, "again.liml"))
-        code = None
+        code, info = None, {}
     except L.LimlFailedError as e:
-        code = e.code
+        code, info = e.code, e.info
     check("a processed file is refused", code == "already_processed", code)
+    check("... with the hidden count in info",
+          info.get("hidden_count") == len(want), info)
 
 
 def run_in_ironpython():

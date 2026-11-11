@@ -7,12 +7,21 @@
 """Hide failed elements per time step in Mecway's own results (STAPPENPLAN E1, OV 57).
 
 Every element that ever fails gets private copies of its nodes in the <solution> mesh of a
-solved .liml (new node numbers above every existing one). Until the failure step the copies
-carry the values of their originals; from the failure step on their displacement puts them on
-the element's frozen centroid (exact at deformation scale 1), so the element shrinks to a point.
-At deformation scale s a collapsed node is drawn at (1 - s) X + s c: the element reappears at
-|1 - s| times its size (full size at s = 0, mirrored at s = 2). The model part of the file
-stays byte for byte; element-node values never change.
+solved .liml (new node numbers above every existing one). The copies carry the values of their
+originals in every step (others="follow", OPEN_VRAGEN 71), except the displacement: from the
+failure step on it puts them on the element's frozen centroid (exact at deformation scale 1), so
+the element shrinks to a point. At deformation scale s a collapsed node is drawn at
+(1 - s) X + s c: the element reappears at |1 - s| times its size (full size at s = 0, mirrored at
+s = 2). The model part of the file stays byte for byte (keep_original adds two <configuration>
+lines after <liml>); element-node values never change.
+
+Processed marker (OPEN_VRAGEN 72): the first line inside the target <results> becomes
+<globalvariable name="failed_hidden">N</globalvariable>, N = number of hidden elements. Mecway
+35.0.9802 keeps a numeric <globalvariable> on <results> level there through re-saves (it moves
+one there itself) and turns a non-numeric text into 0 (research note 10 section 4.3, gate of
+1.0.1: N = 3, 12345678 and 16777217 survived two re-saves, single and double precision).
+Presence decides; N is information. The attribute limlfailed="1.0.0" of version 1.0.0 (dropped
+by Mecway on re-save) is still read.
 
 Self-contained on purpose: Python 2.7 (IronPython 2.7.9) and 3, stdlib only, no imports from
 AdvancedToolsHub. MecwayAsterBridge keeps a byte-identical copy (drift test, STAPPENPLAN E4);
@@ -20,16 +29,20 @@ change this file only here and bump VERSION. Design and review:
 docs/reviews/2026-11-10_E1_kern_plan.md; contract of the variable `failed`:
 docs/design/CONTRACT_FAILED.md. Messages are (code, (en, nl)).
 
-API: process(), scan(), processed_marker(), message(); refusals raise LimlFailedError.
+API: process(), scan(), processed_marker(), marker_count(), message(); refusals raise
+LimlFailedError.
 
 Flag providers, fixed order, the first available decides for the whole file:
   1 `failed`         element-node variable of the bridge (contract failed/1: exactly 0.0/1.0,
                      uniform per element, monotone; refused otherwise);
   2 `Element_status` OpenRadioss /ANIM/ELEM/OFF (dead = all values of the element 0.0);
-  3 events           <run>_events.json of MWradiossHub (DELETE ... ELEMENT lines of the .out;
+  3 events           <run>_events.json of MWradiossHub (the DELETE ... ELEMENT and RUPTURE lines
+                     of the .out, mwradiosshub/events.py; time_upper where present, else time;
                      element_type is ignored: the element ids are the deck ids, which equal the
                      Mecway ids in route 1+plak, unique over all types; the event times are taken
-                     as seconds, like the <timestep time>: SI deck times NOT verified);
+                     as seconds, like the <timestep time>: SI deck times NOT verified). A file
+                     without a usable erosion event (none, or only without time or with unknown
+                     elements) is no source: warning events_empty, next provider (KNOWN_BUGS 76);
   4 stress rule      only when the caller says the result is OpenRadioss: all element-node
                      stress components 0.0 (the prototype's geometric safety net is dropped on
                      purpose: it guessed, the providers above do not).
@@ -53,14 +66,15 @@ import sys
 import time
 from array import array
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 CONTRACT_FAILED = "failed/1"
 
 # --- switches (module constants; tests change them) -------------------------------------
-# Marker attribute on <results> of a processed file. Whether Mecway opens and keeps it on
-# re-save is gate E0(e), NOT verified; set False to write no marker (the input check stays).
+# Marker of a processed file (see the module docstring); False writes no marker (the input
+# check stays).
 WRITE_MARKER = True
-MARKER_ATTR = b"limlfailed"
+MARKER_VAR = b"failed_hidden"      # <globalvariable name=...> on <results> level (1.0.1)
+MARKER_ATTR = b"limlfailed"        # attribute on <results> of 1.0.0: read, removed on force
 # Element_status 0 in the first output step carries no information when that step is t = 0;
 # such elements stay visible. True hides them from step 0 on (decide after gate E0(b)).
 STATUS_HIDE_DEAD_FROM_START = False
@@ -80,10 +94,17 @@ TIME_UNITS = {"s": 1.0, "ms": 1e-3, "us": 1e-6, u"µs": 1e-6, u"μs": 1e-6,
 MODES = ("collapse", "copies", "identity")
 OTHERS = ("zero", "follow")
 SOLVERS = (None, "radioss", "aster")
+# keep_original: names of the two configurations (original first); no white space, Mecway
+# refuses a configuration name with a space ("Configuration ... is not defined", gate 11 Nov
+# 2026 [V Mecway 35])
+KEEP_NAMES = (u"Origineel", u"Bezweken_verborgen")
 B64_WIDTH = 64                 # Mecway's base64 line width (research note 10)
-_TICK = 4096                   # lines between progress/cancel polls
+_TICK = 4096                   # lines between progress/cancel polls (a power of two)
 _TICK_BYTES = 4 << 20          # ... and at least every 4 MB read (long lines)
-_PASS1_SHARE = 0.35
+_PLAN_TICK = 4096              # loop iterations between polls in _plan (a power of two)
+_PASS1_SHARE = 0.30            # process(): pass 1 0-0.30, plan 0.30-0.35, pass 2 0.35-1
+_PLAN_SHARE = 0.05
+_SCAN_PASS1_SHARE = 0.90       # scan(): pass 1 0-0.90, plan 0.90-1
 
 PY3 = sys.version_info[0] >= 3
 
@@ -97,18 +118,28 @@ _TEXT = {
     "not_liml": (u"This is not a Mecway .liml file.", u"Dit is geen Mecway-.liml-bestand."),
     "no_solution": (u"The file has no solved results (<solution>).",
                     u"Het bestand heeft geen opgeloste resultaten (<solution>)."),
-    "configurations": (u"The file holds {0} solutions (configurations); choose one configuration.",
-                       u"Het bestand bevat {0} oplossingen (configuraties); kies een configuratie."),
+    "configurations": (u"The file holds {0} solutions (configurations {1}); choose one configuration.",
+                       u"Het bestand bevat {0} oplossingen (configuraties {1}); kies een "
+                       u"configuratie."),
+    "keep_original_configurations": (u"The original results can only be kept next to the hidden ones "
+                                     u"in a model without configurations.",
+                                     u"De oorspronkelijke resultaten kunnen alleen naast de "
+                                     u"verborgen worden bewaard in een model zonder configuraties."),
     "configuration_not_found": (u"Configuration {0} has no solution in this file.",
                                 u"Configuratie {0} heeft geen oplossing in dit bestand."),
     "modal_result": (u"Modal or buckling results have no time steps; nothing to hide.",
                      u"Modale of knikresultaten hebben geen tijdstappen; er valt niets te verbergen."),
     "no_timesteps": (u"Static results without time steps; nothing to hide.",
                      u"Statische resultaten zonder tijdstappen; er valt niets te verbergen."),
-    "already_processed": (u"This file was already processed (failed elements hidden, version {0}); "
-                          u"start from the original result.",
-                          u"Dit bestand is al bewerkt (bezweken elementen verborgen, versie {0}); "
-                          u"begin bij het oorspronkelijke resultaat."),
+    "already_processed": (u"This file was already processed ({0} failed elements hidden); start from "
+                          u"the original result.",
+                          u"Dit bestand is al bewerkt ({0} bezweken elementen verborgen); begin bij "
+                          u"het oorspronkelijke resultaat."),
+    # text of code already_processed for the attribute of version 1.0.0
+    "already_processed_version": (u"This file was already processed (failed elements hidden, version "
+                                  u"{0}); start from the original result.",
+                                  u"Dit bestand is al bewerkt (bezweken elementen verborgen, versie "
+                                  u"{0}); begin bij het oorspronkelijke resultaat."),
     "no_flag_source": (u"No failure information found: no variable 'failed' or 'Element_status'{0}.",
                        u"Geen gegevens over bezwijken gevonden: geen variabele 'failed' of "
                        u"'Element_status'{1}."),
@@ -143,6 +174,11 @@ _TEXT = {
     # results
     "done": (u"{0} failed elements hidden (source {1}); written to {2}.",
              u"{0} bezweken elementen verborgen (bron {1}); geschreven naar {2}."),
+    "done_two": (u"{0} failed elements hidden (source {1}); written to {2} with two "
+                 u"configurations: {3} (unchanged results) and {4} (failed elements hidden).",
+                 u"{0} bezweken elementen verborgen (bron {1}); geschreven naar {2} met twee "
+                 u"configuraties: {3} (ongewijzigde resultaten) en {4} (bezweken elementen "
+                 u"verborgen)."),
     "scanned": (u"{0} failed elements found (source {1}).",
                 u"{0} bezweken elementen gevonden (bron {1})."),
     "copied": (u"Written without hiding (mode {0}) to {1}.",
@@ -170,6 +206,9 @@ _TEXT = {
                          u"bezwijken; ze blijven zichtbaar."),
     "events_missing": (u"Events file {0} not found; not used.",
                        u"Gebeurtenissenbestand {0} niet gevonden; niet gebruikt."),
+    "events_empty": (u"Events file {0} lists no usable failed element; not used.",
+                     u"Gebeurtenissenbestand {0} noemt geen bruikbaar bezweken element; niet "
+                     u"gebruikt."),
     "events_no_time": (u"{0} events without a time are ignored.",
                        u"{0} gebeurtenissen zonder tijd worden genegeerd."),
     "events_coarse_time": (u"{0} events only have the time of the cycle row before the deletion; "
@@ -200,15 +239,17 @@ _TEXT = {
 }
 
 WARNING_CODES = ("not_covered", "dead_from_start", "dead_before_first_step", "revived",
-                 "status_out_of_range", "bad_displacement", "events_missing", "events_no_time",
+                 "status_out_of_range", "bad_displacement", "events_missing", "events_empty",
+                 "events_no_time",
                  "events_coarse_time", "events_unknown_elements", "events_after_last_step",
                  "events_incomplete", "precision_mixed", "mm_group_mismatch", "version_old",
                  "looks_processed")
 
 
-def message(code, *args):
-    """(code, (en, nl)) with the {n} placeholders filled from args (unicode)."""
-    en, nl = _TEXT[code]
+def message(code, *args, **kw):
+    """(code, (en, nl)) with the {n} placeholders filled from args (unicode); text_key= takes
+    the text of another _TEXT entry under the same code."""
+    en, nl = _TEXT[kw.get("text_key") or code]
     a = [_u(x) for x in args]
     return code, (en.format(*a), nl.format(*a))
 
@@ -237,7 +278,7 @@ class LimlFailedError(Exception):
     """A refusal: .code, .text = (en, nl), .info (dict)."""
 
     def __init__(self, code, *args, **kw):
-        self.code, self.text = message(code, *args)
+        self.code, self.text = message(code, *args, text_key=kw.get("text_key"))
         self.info = kw.get("info") or {}
         Exception.__init__(self, u"{0}: {1}".format(self.code, self.text[0]))
 
@@ -283,15 +324,25 @@ def _unescape(b):
     """XML character references in an attribute value (bytes, UTF-8)."""
     if b is None or b.find(b"&") < 0:
         return b
-
-    def rep(m):
+    # pieces by hand: IronPython 2.7.9's re.sub with a function dropped the named entities
+    # (1.0.1: "A&amp;B" became "AB")
+    out = []
+    last = 0
+    for m in _ENT.finditer(b):
+        out.append(b[last:m.start()])
         g = m.group(1)
         if g in _NAMED:
-            return _NAMED[g]
-        cp = int(g[2:], 16) if g[:2] == b"#x" else int(g[1:])
-        ch = chr(cp) if PY3 else unichr(cp)  # noqa: F821 (py2 only)
-        return ch.encode("utf-8")
-    return _ENT.sub(rep, b)
+            out.append(_NAMED[g])
+        else:
+            try:
+                cp = int(g[2:], 16) if g[:2] == b"#x" else int(g[1:])
+                ch = chr(cp) if PY3 else unichr(cp)  # noqa: F821 (py2 only)
+                out.append(ch.encode("utf-8"))
+            except (ValueError, OverflowError):     # not a character: keep the text
+                out.append(m.group(0))
+        last = m.end()
+    out.append(b[last:])
+    return b"".join(out)
 
 
 def _frombytes(tc, raw):
@@ -330,6 +381,56 @@ def _is_solution_tag(s):
         return False
     nxt = s[9:10]
     return nxt in (b">", b" ", b"\t", b"\r", b"\n", b"/", b"")
+
+
+def _gv_marker(s):
+    """For a stripped line: None when it is not <globalvariable name="failed_hidden">, else
+    (text, complete): the text between the tags (u"" when empty) and whether the element closes
+    on this line. The name is compared exactly; a single-quoted name raises _Layout."""
+    if not s.startswith(b"<globalvariable"):
+        return None
+    if s[15:16] not in (b" ", b"\t", b">", b"/", b"\r", b"\n", b""):
+        return None
+    if _attr(s, b"name") != MARKER_VAR:
+        return None
+    gt = s.find(b">")
+    if gt < 0:
+        return u"", False
+    if s[gt - 1:gt] == b"/":
+        return u"", True
+    end = s.find(b"</globalvariable", gt)
+    if end < 0:
+        return s[gt + 1:].strip().decode("utf-8", "replace"), False
+    return s[gt + 1:end].strip().decode("utf-8", "replace"), True
+
+
+def _conf_list(names):
+    """Text of the configuration names of the solutions (for the refusal)."""
+    return u", ".join(u"-" if n is None else n for n in names)
+
+
+def _xml_attr(text):
+    """Unicode -> escaped UTF-8 bytes for an attribute value in double quotes."""
+    t = text.replace(u"&", u"&amp;").replace(u"<", u"&lt;").replace(u">", u"&gt;")
+    return t.replace(u'"', u"&quot;").encode("utf-8")
+
+
+def _with_conf(raw, name):
+    """The <solution> line with configuration="name" added (it has none: checked in pass 1)."""
+    i = raw.find(b"<solution") + len(b"<solution")
+    return raw[:i] + b' configuration="' + _xml_attr(name) + b'"' + raw[i:]
+
+
+def marker_count(text):
+    """The hidden count of a marker text ('3', '3.0', '3E0'; a unit after a space is ignored),
+    or None when it is not a whole number >= 0."""
+    try:
+        x = float(text.split()[0])
+    except (IndexError, ValueError):
+        return None
+    if not _finite(x) or x < 0 or x != math.floor(x):
+        return None
+    return int(x)
 
 
 def _parse_time(raw):
@@ -519,9 +620,9 @@ class _State(object):
 class _Ticker(object):
     """Progress by bytes read and cancel polling."""
 
-    def __init__(self, path, progress, cancel, base, share, phase):
+    def __init__(self, path, progress, cancel, base, share, phase, extra=0):
         try:
-            self.total = float(max(1, os.path.getsize(path)))
+            self.total = float(max(1, os.path.getsize(path) + extra))
         except OSError:
             self.total = 1.0
         self.progress, self.cancel = progress, cancel
@@ -607,7 +708,12 @@ def _pass1(path, o, ticker):
     st.warnings = {}
     st.info = {}
     st.provider = None
-    st.marker = None
+    st.marker = None                 # marker text of the input (variable, else 1.0.0 attribute)
+    st.marker_old = None             # limlfailed attribute (1.0.0)
+    st.marker_gv = None              # text of the failed_hidden variable (1.0.1)
+    st.model_confs = []              # <configuration name> of the model part (unescaped)
+    st.sol_confs = []                # configuration attribute per <solution> (None: none)
+    st.sol_bytes = 0                 # bytes of the target <solution> block
     npos = None
     shape_ix = {}
     elset = -1
@@ -638,6 +744,8 @@ def _pass1(path, o, ticker):
             ticker.read += len(raw)
             if not (line & (_TICK - 1)) or ticker.read >= ticker.mark:
                 ticker.tick()
+            if where != _OUT:
+                st.sol_bytes += len(raw)
             if skip is not None:
                 if raw.find(skip) >= 0:
                     skip = None
@@ -656,19 +764,27 @@ def _pass1(path, o, ticker):
                     if _is_solution_tag(s):
                         st.n_solutions += 1
                         conf = _unescape(_attr(s, b"configuration"))
+                        st.sol_confs.append(None if conf is None else conf.decode("utf-8", "replace"))
                         if o.configuration is None:
-                            if st.n_solutions > 1:
-                                _refuse("configurations", st.n_solutions)
-                            target = True
+                            target = st.n_solutions == 1     # more: refused with the names below
                         else:
                             target = conf is not None and conf.decode("utf-8", "replace") == o.configuration
                             if target and st.target is not None:
-                                _refuse("configurations", st.n_solutions)
+                                _refuse("configurations", st.n_solutions, _conf_list(st.sol_confs),
+                                        info={"configurations": list(st.sol_confs)})
                         if target:
                             st.target = st.n_solutions - 1
+                            if o.keep and (st.model_confs or conf is not None):
+                                _refuse("keep_original_configurations",
+                                        info={"configurations": list(st.model_confs) or
+                                              [conf.decode("utf-8", "replace")]})
+                            st.sol_bytes = len(raw)
                             where = _SOL
                         elif s.find(b"</solution") < 0:
                             skip = b"</solution"
+                    elif s.startswith(b"<configuration ") and st.n_solutions == 0:
+                        nm = _unescape(_attr(s, b"name"))
+                        st.model_confs.append(u"" if nm is None else nm.decode("utf-8", "replace"))
                     elif s.startswith(b"<node ") and s.find(b' x="') >= 0:
                         n = int(_req(s, b"nid"))
                         if n > st.model_max:
@@ -709,10 +825,7 @@ def _pass1(path, o, ticker):
                         st.precision = _attr(s, b"precision")
                         mk = _attr(s, MARKER_ATTR)
                         if mk is not None:
-                            st.marker = mk.decode("ascii", "replace")
-                            if not o.force:
-                                _refuse("already_processed", st.marker,
-                                        info={"marker_version": st.marker})
+                            st.marker_old = mk.decode("ascii", "replace")
                         npos = _index(st.nids, "node")
                         st.npos = npos
                         st.epos = _index(st.eids, "element")
@@ -722,6 +835,7 @@ def _pass1(path, o, ticker):
                                     _refuse("unknown_node", st.eids[p], n)
                         where = _RES
                     elif s.startswith(b"</solution"):
+                        _sol_end(o, s)
                         where = _OUT
                     continue
                 # where == _RES
@@ -747,10 +861,15 @@ def _pass1(path, o, ticker):
                             blk = None
                     elif s.find(b"</elementnodeids") < 0 and s.rstrip()[-2:] != b"/>":
                         skip = b"</elementnodeids"
+                elif step < 0 and s.startswith(b"<globalvariable"):
+                    mk = _gv_marker(s)
+                    if mk is not None and st.marker_gv is None:
+                        st.marker_gv = mk[0] or u"?"
                 elif s.startswith(b"<timestep "):
                     step += 1
                     st.times.append(_attr(s, b"time"))
                     if step == 0:
+                        _check_marker(st, o)
                         needed, tracker, sec, covered = _choose(st, o, ids_names, prov)
                     prev = cur
                     cur = {}
@@ -787,6 +906,7 @@ def _pass1(path, o, ticker):
                 elif s.startswith(b"<mode "):
                     _refuse("modal_result")
                 elif s.startswith(b"</solution"):
+                    _sol_end(o, s)
                     where = _OUT
             except _Layout as e:
                 _refuse("layout", line, e.args[0] if e.args else "")
@@ -798,6 +918,9 @@ def _pass1(path, o, ticker):
         f.close()
     if not st.seen_liml:
         _refuse("not_liml")
+    if o.configuration is None and st.n_solutions > 1:
+        _refuse("configurations", st.n_solutions, _conf_list(st.sol_confs),
+                info={"configurations": list(st.sol_confs)})
     if st.target is None:
         if o.configuration is not None and st.n_solutions:
             _refuse("configuration_not_found", o.configuration)
@@ -859,6 +982,26 @@ def _block_done1(st, o, blk, ids_names, slot_cache, displ_ix, displ_len, cur, st
             stepvals[blk.name] = vals
 
 
+def _sol_end(o, s):
+    """keep_original copies the target solution up to its closing line: that line must hold
+    only </solution> (e.g. not </solution></liml>)."""
+    if o.keep and s.strip() != b"</solution>":
+        raise _Layout("</solution> not alone on its line")
+
+
+def _check_marker(st, o):
+    """At the first <timestep>: refuse a processed input unless force (the variable wins over
+    the attribute of 1.0.0). info has the same keys either way."""
+    st.marker = st.marker_gv if st.marker_gv is not None else st.marker_old
+    if st.marker is None or (o.force and not o.keep):    # keep_original: never on a processed
+        return                                            # input (the original would be one)
+    count = marker_count(st.marker_gv) if st.marker_gv is not None else None
+    info = {"marker": st.marker, "hidden_count": count, "marker_version": st.marker_old}
+    if st.marker_gv is not None:
+        _refuse("already_processed", st.marker_gv, info=info)
+    _refuse("already_processed", st.marker_old, info=info, text_key="already_processed_version")
+
+
 def _choose(st, o, ids_names, prov):
     """Provider at the first <timestep>: (needed element-node vars, tracker, secondary, covered)."""
     n_e = len(st.eids)
@@ -872,26 +1015,39 @@ def _choose(st, o, ids_names, prov):
         st.provider = "Element_status"
         needed = (STATUS_VAR,)
         tracker = _Tracker(n_e, STATUS_HIDE_DEAD_FROM_START)
-    elif o.events_path is not None and os.path.isfile(o.events_path):
-        st.provider = "events"
-        prov["events"] = _load_events(st, o.events_path)
-        tracker = _Tracker(n_e, True)
-        needed = ()
-        if o.solver == "radioss" and stress:
-            needed = stress
-            sec = _Tracker(n_e, False)
     else:
-        if o.events_path is not None:
+        evs = None
+        empty = False
+        if o.events_path is not None and os.path.isfile(o.events_path):
+            evs = _load_events(st, o.events_path)
+            if not evs:         # no usable erosion event: no source (KNOWN_BUGS 76)
+                evs = None
+                empty = True
+                st.warnings["events_empty"] = 1
+                st.info["events_empty_path"] = o.events_path
+        elif o.events_path is not None:
             st.warnings["events_missing"] = 1
             st.info["events_missing_path"] = o.events_path
-        if o.solver == "radioss" and stress:
+        if evs is not None:
+            st.provider = "events"
+            prov["events"] = evs
+            tracker = _Tracker(n_e, True)
+            needed = ()
+            if o.solver == "radioss" and stress:
+                needed = stress
+                sec = _Tracker(n_e, False)
+        elif o.solver == "radioss" and stress:
             st.provider = "stress"
             needed = stress
             tracker = _Tracker(n_e, False)
         else:
-            extra_en = u", no events file" if o.events_path is None else u", events file missing"
-            extra_nl = u", geen gebeurtenissenbestand" if o.events_path is None else \
-                u", gebeurtenissenbestand ontbreekt"
+            if o.events_path is None:
+                extra_en, extra_nl = u", no events file", u", geen gebeurtenissenbestand"
+            elif empty:
+                extra_en = u", events file without failures"
+                extra_nl = u", gebeurtenissenbestand zonder bezwijken"
+            else:
+                extra_en, extra_nl = u", events file missing", u", gebeurtenissenbestand ontbreekt"
             if o.solver != "radioss":
                 extra_en += u", stress rule only for OpenRadioss"
                 extra_nl += u", spanningsregel alleen voor OpenRadioss"
@@ -1118,17 +1274,51 @@ def _finish1(st, o, prov, tracker, sec, covered):
 
 
 # ----------------------------------------------------------------------------- plan
-def _plan(st, o):
-    """Copies and the rest of what pass 2 needs (copy rule of collapse_eroded.py)."""
+class _PlanTick(object):
+    """Progress (phase "scan") and cancel polling inside _plan (KNOWN_BUGS 72): call with the
+    fraction of the plan done."""
+
+    def __init__(self, progress, cancel, base, share):
+        self.progress, self.cancel = progress, cancel
+        self.base, self.share = base, share
+        self.last = -1.0
+
+    def __call__(self, fr):
+        if self.cancel is not None and self.cancel():
+            _refuse("cancelled")
+        if self.progress is not None:
+            v = self.base + self.share * min(1.0, max(0.0, fr))
+            if v - self.last >= 0.01 or self.last < 0.0:
+                self.last = v
+                self.progress(v, "scan")
+
+
+def _no_tick(fr):
+    return None
+
+
+def _plan(st, o, tick=None):
+    """Copies and the rest of what pass 2 needs (copy rule of collapse_eroded.py). tick(fr):
+    progress and cancel, at the start of every stage and every _PLAN_TICK iterations."""
+    tick = tick or _no_tick
     pl = _State()
     failed = st.failed if o.mode != "identity" else {}
     conn, eoff = st.conn, st.eoff
+    n_e = len(st.eids)
+    n_f = max(1, len(failed))
+    m = _PLAN_TICK - 1
+    tick(0.0)
     fnodes = set()
-    for p in failed:
+    for i, p in enumerate(failed):
+        if not (i & m):
+            tick(0.05 * i / n_f)
         for n in conn[eoff[p]:eoff[p + 1]]:
             fnodes.add(n)
+    tick(0.05)
     owners = {}
-    for p in range(len(st.eids)):
+    for p in range(n_e):
+        if not (p & m):
+            tick(0.05 + 0.3 * p / max(1, n_e))
         for n in conn[eoff[p]:eoff[p + 1]]:
             if n in fnodes:
                 lst = owners.get(n)
@@ -1142,7 +1332,10 @@ def _plan(st, o):
     copy_of = {}
     copy_elem = {}
     kept = {}
-    for p in sorted(failed):
+    tick(0.35)
+    for i, p in enumerate(sorted(failed)):
+        if not (i & m):
+            tick(0.35 + 0.2 * i / n_f)
         mine = {}
         out = []
         for n in conn[eoff[p]:eoff[p + 1]]:
@@ -1189,7 +1382,10 @@ def _plan(st, o):
         members[s] = bytearray(n_nodes)
     copy_set = {}
     aff = set(pl.affected)
-    for p in range(len(st.eids)):
+    tick(0.55)
+    for p in range(n_e):
+        if not (p & m):
+            tick(0.55 + 0.2 * p / max(1, n_e))
         s = st.eset[p]
         if s not in aff:
             continue
@@ -1205,20 +1401,27 @@ def _plan(st, o):
     # tightened structural fingerprint (review finding 4): a node of a failed element above
     # the model's highest id, used by that element only, on the spot of a model node
     cand = {}
-    for p in failed:
+    tick(0.75)
+    for i, p in enumerate(failed):
+        if not (i & m):
+            tick(0.75 + 0.1 * i / n_f)
         for n in set(conn[eoff[p]:eoff[p + 1]]):
             if n > st.model_max and owners.get(n) == [p]:
                 q = st.npos(n)
                 cand[(st.xs[q], st.ys[q], st.zs[q])] = cand.get((st.xs[q], st.ys[q], st.zs[q]), 0) + 1
     hits = 0
     if cand:
+        tick(0.85)
         for q in range(n_nodes):
+            if not (q & m):
+                tick(0.85 + 0.15 * q / max(1, n_nodes))
             if st.nids[q] <= st.model_max:
                 key = (st.xs[q], st.ys[q], st.zs[q])
                 if key in cand:
                     hits += cand.pop(key)
     if hits:
         st.warnings["looks_processed"] = hits
+    tick(1.0)
     return pl
 
 
@@ -1282,6 +1485,8 @@ def _write(st, pl, o, f, g, ticker):
     node_raw = {}
     in_nodes = False
     copies_done = not pl.copies
+    drop_markers = False       # True after our marker: drop failed_hidden lines of the input
+    confs_done = False         # keep_original: <configuration> lines written
     info_of = {}               # nodeids name -> info
     cache = {}
     st.mm_rewritten = 0
@@ -1322,14 +1527,20 @@ def _write(st, pl, o, f, g, ticker):
                     held.append(raw)
                 continue
             if where == _OUT:
-                w(raw)
                 s = raw.lstrip()
                 if _is_solution_tag(s):
                     sol += 1
                     if sol == st.target:
                         where = _SOL
+                        if o.keep:
+                            _copy_original(o, line, _with_conf(raw, o.names[0]), w, ticker)
+                            raw = _with_conf(raw, o.names[1])
                     elif s.find(b"</solution") < 0:
                         skip_copy = b"</solution"
+                w(raw)
+                if o.keep and not confs_done and s.startswith(b"<liml"):
+                    _write_confs(o, raw, w)
+                    confs_done = True
                 continue
             s = raw.lstrip()
             if where == _SOL:
@@ -1357,19 +1568,12 @@ def _write(st, pl, o, f, g, ticker):
                     if not copies_done:
                         _write_copies(pl, node_raw, w)
                         copies_done = True
-                    if collapse and WRITE_MARKER:
-                        ver = VERSION.encode("ascii")
-                        old = _attr(raw, MARKER_ATTR)
-                        if old is not None:      # force on a processed file: one marker only
-                            raw = raw.replace(b" " + MARKER_ATTR + b'="' + old + b'"',
-                                              b" " + MARKER_ATTR + b'="' + ver + b'"', 1)
-                        else:
-                            i = raw.find(b"<results")
-                            gt = raw.find(b">", i)
-                            cut = gt - 1 if raw[gt - 1:gt] == b"/" else gt
-                            raw = raw[:cut] + b" " + MARKER_ATTR + b'="' + ver + b'"' + raw[cut:]
-                    w(raw)
                     where = _RES
+                    if collapse and WRITE_MARKER:
+                        _write_marker(st, raw, w)
+                        drop_markers = True
+                    else:                   # copies / identity: any marker stays verbatim
+                        w(raw)
                 else:
                     w(raw)
                 continue
@@ -1398,6 +1602,10 @@ def _write(st, pl, o, f, g, ticker):
             elif s.startswith(b"</solution"):
                 where = _OUT
                 w(raw)
+            elif drop_markers and step < 0 and _gv_marker(s) is not None:
+                # force on a processed file: the old marker goes, ours is the only one
+                if not _gv_marker(s)[1]:
+                    raise _Layout("marker split over lines")
             else:
                 w(raw)
         except _Layout as e:
@@ -1408,6 +1616,63 @@ def _write(st, pl, o, f, g, ticker):
             _refuse("layout", line, "missing attribute")
     if blk is not None or held is not None:
         _refuse("layout", line, "file ends inside a block")
+
+
+def _write_confs(o, raw, w):
+    """keep_original: the two <configuration> definitions right after the <liml ...> line."""
+    eol = _eol(raw)
+    body = raw[:len(raw) - len(eol)].rstrip()
+    if body.find(b">") != len(body) - 1 or body[-2:] == b"/>":
+        raise _Layout("liml tag not alone on its line")
+    ind = raw[:len(raw) - len(raw.lstrip())] + b"  "
+    for n in o.names:
+        w(ind + b'<configuration name="' + _xml_attr(n) + b'" />' + (eol or b"\n"))
+
+
+def _copy_original(o, line, first, w, ticker):
+    """keep_original: the target <solution> block verbatim from a second handle (its first line
+    `first` with the configuration of the original), up to and including </solution>."""
+    try:
+        h = open(o.in_path, "rb")
+    except (IOError, OSError) as e:
+        _refuse("read_error", o.in_path, e)
+    try:
+        k = 0
+        for raw in h:
+            k += 1
+            if k < line:
+                if not (k & (_TICK - 1)):
+                    ticker.tick()           # cancel while skipping the model part
+                continue
+            ticker.read += len(raw)
+            if not (k & (_TICK - 1)) or ticker.read >= ticker.mark:
+                ticker.tick()
+            if k == line:
+                w(first)
+                continue
+            w(raw)
+            if raw.find(b"</solution") >= 0:
+                return
+    finally:
+        h.close()
+    raise _Layout("file ends inside the solution")
+
+
+def _write_marker(st, raw, w):
+    """The <results ...> line without the 1.0.0 attribute, then the marker line as its first
+    child: indent of <results> + 2 spaces (Mecway: 4 and 6), the line end of <results>."""
+    old = _attr(raw, MARKER_ATTR)
+    if old is not None:
+        raw = raw.replace(b" " + MARKER_ATTR + b'="' + old + b'"', b"", 1)
+    eol = _eol(raw)
+    body = raw[:len(raw) - len(eol)].rstrip()
+    i = body.find(b"<results")
+    if body.find(b">", i) != len(body) - 1 or body[-2:] == b"/>":
+        raise _Layout("results tag not alone on its line")
+    ind = raw[:len(raw) - len(raw.lstrip())]
+    w(raw)
+    w(ind + b"  <globalvariable name=\"" + MARKER_VAR + b"\">" +
+      str(len(st.failed)).encode("ascii") + b"</globalvariable>" + (eol or b"\n"))
 
 
 def _write_copies(pl, node_raw, w):
@@ -1556,7 +1821,7 @@ class _Opts(object):
     pass
 
 
-def _opts(events_path, solver, mode, others, force, configuration):
+def _opts(events_path, solver, mode, others, force, configuration, keep=False, names=KEEP_NAMES):
     if mode not in MODES:
         _refuse("bad_argument", u"mode={0}".format(mode))
     if others not in OTHERS:
@@ -1572,6 +1837,22 @@ def _opts(events_path, solver, mode, others, force, configuration):
     o.others = others
     o.force = force
     o.configuration = None if configuration is None else _u(configuration)
+    o.keep = bool(keep)
+    o.names = None
+    o.in_path = None
+    if o.keep:
+        if mode != "collapse" or o.configuration is not None:
+            _refuse("bad_argument", u"keep_original with mode={0}, configuration={1}".format(
+                mode, o.configuration))
+        try:
+            nm = () if isinstance(names, (type(b""), type(u""))) else tuple(_u(x) for x in names)
+        except TypeError:
+            nm = ()
+        if len(nm) != 2 or nm[0] == nm[1] or \
+                any((not x) or any(c.isspace() or ord(c) < 32 for c in x) for x in nm):
+            _refuse("bad_argument", u"names={0} (two different names without spaces)".format(
+                u", ".join(nm) if nm else names))
+        o.names = nm
     return o
 
 
@@ -1596,6 +1877,7 @@ def _report(st, pl, o, t):
            "nodes": len(st.nids), "failed_count": len(st.failed),
            "failed": dict((st.eids[p], k) for p, (k, c) in st.failed.items()),
            "configuration": o.configuration, "marker": st.marker,
+           "keep_original": o.keep, "configurations": list(o.names) if o.keep else None,
            "seconds": t, "info": dict(st.info)}
     by_shape = {}
     for p in st.failed:
@@ -1615,7 +1897,9 @@ def _messages(rep):
     for code in WARNING_CODES:
         n = rep["warnings"].get(code)
         if n:
-            arg = rep["info"].get("events_missing_path", n) if code == "events_missing" else n
+            arg = n
+            if code in ("events_missing", "events_empty"):
+                arg = rep["info"].get(code + "_path", n)
             msgs.append(message(code, arg))
     return msgs
 
@@ -1631,10 +1915,10 @@ def scan(in_path, events_path=None, solver=None, progress=None, cancel=None, for
 
 def _scan(in_path, events_path, solver, progress, cancel, force, configuration):
     t0 = time.time()
-    o = _opts(events_path, solver, "collapse", "zero", force, configuration)
-    st, ticker = _run1(in_path, o, progress, cancel, 1.0)
+    o = _opts(events_path, solver, "collapse", "follow", force, configuration)
+    st, ticker = _run1(in_path, o, progress, cancel, _SCAN_PASS1_SHARE)
     t1 = time.time()
-    pl = _plan(st, o)
+    pl = _plan(st, o, _PlanTick(progress, cancel, _SCAN_PASS1_SHARE, 1.0 - _SCAN_PASS1_SHARE))
     rep = _report(st, pl, o, {"pass1": t1 - t0, "plan": time.time() - t1, "pass2": 0.0})
     msgs = _messages(rep)
     if st.failed:
@@ -1650,37 +1934,48 @@ def _scan(in_path, events_path, solver, progress, cancel, force, configuration):
 
 
 def process(in_path, out_path, events_path=None, solver=None, progress=None, cancel=None,
-            mode="collapse", force=False, others="zero", configuration=None):
+            mode="collapse", force=False, others="follow", configuration=None,
+            keep_original=False, names=KEEP_NAMES):
     """Write out_path with the failed elements hidden; returns the report (plan §1.2).
 
     mode   "collapse" (product), "copies" (copies only, no collapse, no marker; diagnostic),
            "identity" (decode and re-encode, change nothing; tests).
-    others "zero": every non-displacement node variable of a collapsed node is 0 from the
-           failure step on (pulls the legend range of the affected elsets towards 0, e.g. for
-           a temperature); "follow": those variables keep following the original node.
+    others "follow" (default, OPEN_VRAGEN 71): every non-displacement node variable of a
+           collapsed node keeps following the original node, so the legend ranges stay as
+           they were except for the displacement; "zero": those variables are 0 from the
+           failure step on (pulls the legend range of the affected elsets towards 0).
            Displacements always collapse; reaction-type variables (REACTION_PREFIXES) never
-           get copies.
-    force  skip the processed-marker check (tests).
+           get copies and are never changed.
+    force  skip the processed-marker check (tests); the output then carries one new marker
+           (an input marker and the 1.0.0 attribute are dropped) in mode collapse.
     configuration  name of the configuration whose <solution> to process; None = the file
            must hold exactly one <solution>. Other solutions are copied verbatim.
+    keep_original  True: one output file with two configurations, names[0] (the original
+           <solution>, verbatim) and names[1] (the processed one, with the marker), defined
+           right after <liml ...>; about twice the size. Only mode collapse, configuration
+           None and an input without configurations (else keep_original_configurations: the
+           model part would need <suppressed configuration> copies, not tested in Mecway).
+    names  the two configuration names: different, no white space (Mecway refuses a name
+           with a space), XML-escaped on writing.
     Raises LimlFailedError on refusal; "nothing failed" returns written=False.
     """
     try:
         return _process(in_path, out_path, events_path, solver, progress, cancel, mode, force,
-                        others, configuration)
+                        others, configuration, keep_original, names)
     except MemoryError:         # anywhere (pass 1, plan, pass 2); pass 2 removes its .tmp
         _refuse("too_large")
 
 
 def _process(in_path, out_path, events_path, solver, progress, cancel, mode, force, others,
-             configuration):
+             configuration, keep_original, names):
     t0 = time.time()
-    o = _opts(events_path, solver, mode, others, force, configuration)
+    o = _opts(events_path, solver, mode, others, force, configuration, keep_original, names)
+    o.in_path = in_path
     if _same(in_path, out_path):
         _refuse("same_path")
     st, ticker = _run1(in_path, o, progress, cancel, _PASS1_SHARE)
     t1 = time.time()
-    pl = _plan(st, o)
+    pl = _plan(st, o, _PlanTick(progress, cancel, _PASS1_SHARE, _PLAN_SHARE))
     t2 = time.time()
     if not st.failed and mode != "identity":
         rep = _report(st, pl, o, {"pass1": t1 - t0, "plan": t2 - t1, "pass2": 0.0})
@@ -1689,7 +1984,9 @@ def _process(in_path, out_path, events_path, solver, progress, cancel, mode, for
         if progress is not None:
             progress(1.0, "write")
         return rep
-    ticker2 = _Ticker(in_path, progress, cancel, _PASS1_SHARE, 1.0 - _PASS1_SHARE, "write")
+    base2 = _PASS1_SHARE + _PLAN_SHARE
+    ticker2 = _Ticker(in_path, progress, cancel, base2, 1.0 - base2, "write",
+                      st.sol_bytes if o.keep else 0)
     _pass2(st, pl, o, in_path, out_path, ticker2)
     if st.mm_mismatch:
         st.warnings["mm_group_mismatch"] = st.mm_mismatch
@@ -1697,7 +1994,11 @@ def _process(in_path, out_path, events_path, solver, progress, cancel, mode, for
     rep["written"] = True
     rep["out_path"] = out_path
     rep["mm_rewritten"] = st.mm_rewritten
-    if mode == "collapse":
+    if mode == "collapse" and o.keep:
+        rep["code"] = "done"
+        head = message("done", len(st.failed), st.provider, out_path, o.names[0], o.names[1],
+                       text_key="done_two")
+    elif mode == "collapse":
         rep["code"] = "done"
         head = message("done", len(st.failed), st.provider, out_path)
     else:
@@ -1710,25 +2011,58 @@ def _process(in_path, out_path, events_path, solver, progress, cancel, mode, for
 
 
 def processed_marker(path, configuration=None):
-    """The marker VERSION text of the target <solution>'s <results>, or None. Reads only up to
-    that line (cheap: for a warning on an open processed model, E4)."""
+    """The marker text of the target <solution>'s <results>, or None (never an empty text):
+    the hidden count as written by 1.0.1 (u"3"; u"?" for an empty variable), else the version
+    of the 1.0.0 attribute (u"1.0.0"); the variable wins when both are there. Presence is the
+    signal; marker_count() of the text gives the count. configuration=None: the first
+    <solution>, or, when the model part defines configurations (e.g. a keep_original output),
+    the first marker of any <solution> (then the whole file may be read). Reads up to the
+    <results> line and the <globalvariable> lines right after it
+    (where Mecway and the core put the marker), so it stays cheap (for a warning on an open
+    processed model). process() itself also sees a marker further down, before the first
+    <timestep>."""
     conf = None if configuration is None else _u(configuration)
     sol = False
+    old = None
+    in_res = False
+    every = False               # configuration None in a model with configurations
+    seen_sol = False
     with open(path, "rb") as f:
         for raw in f:
             s = raw.lstrip()
-            if not sol:
-                if _is_solution_tag(s):
-                    c = _unescape(_attr(s, b"configuration"))
-                    if conf is None or (c is not None and c.decode("utf-8", "replace") == conf):
-                        sol = True
+            try:
+                if in_res:
+                    if not s.strip():
+                        continue
+                    if not s.startswith(b"<globalvariable"):
+                        if every and old is None:
+                            in_res = sol = False
+                            continue
+                        return old
+                    mk = _gv_marker(s)
+                    if mk is not None:
+                        return mk[0] or u"?"
+                    continue
+                if not sol:
+                    if _is_solution_tag(s):
+                        seen_sol = True
+                        c = _unescape(_attr(s, b"configuration"))
+                        if conf is None or (c is not None and c.decode("utf-8", "replace") == conf):
+                            sol = True
+                    elif conf is None and not seen_sol and s.startswith(b"<configuration "):
+                        every = True
+                    continue
+                if s.startswith(b"<results"):
+                    mk = _attr(s, MARKER_ATTR)
+                    old = None if mk is None else (mk.decode("ascii", "replace") or u"?")
+                    if s.rstrip()[-2:] == b"/>":
+                        return old
+                    in_res = True
+                elif s.startswith(b"</solution"):
+                    sol = False
+            except _Layout:         # single quotes: not our marker (process() refuses the file)
                 continue
-            if s.startswith(b"<results"):
-                mk = _attr(s, MARKER_ATTR)
-                return None if mk is None else mk.decode("ascii", "replace")
-            if s.startswith(b"</solution"):
-                sol = False
-    return None
+    return old
 
 
 def _same(a, b):

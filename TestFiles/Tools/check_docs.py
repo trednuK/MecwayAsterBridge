@@ -426,10 +426,17 @@ SOLVED_RE = re.compile(r"opgelost|fixed|solved|resolved|vervallen|removed|"
                        r"verwijderd|was\b", re.I)
 
 
+# Unchanged copies of other repositories (AGENTS.md, Runtime): their
+# KNOWN_BUGS numbers are those of their source repository.
+COPIED_SCRIPTS = ("liml_failed.py", "section_stress.py", "section_fem.py",
+                  "section_mesh.py", "section_profiles.py")
+
+
 def check_known_bugs():
     nums = known_bug_numbers()
     files = md_files() + [os.path.join(SCRIPTS, f)
-                          for f in os.listdir(SCRIPTS) if f.endswith(".py")]
+                          for f in os.listdir(SCRIPTS) if f.endswith(".py")
+                          and f not in COPIED_SCRIPTS]
     for path in files:
         if path.endswith("CHANGELOG.md"):
             continue          # history: also refers to solved items

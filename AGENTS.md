@@ -183,8 +183,18 @@ version of the core, pinned in `tests/test_liml_failed_copy.py`).
   (`failed_contract`), an element that is not in the solution mesh (`unknown_element`), a wrong
   value count (`value_count`), a step without the block (`layout`), no time steps
   (`no_timesteps`, `modal_result`), several solutions without a configuration name
-  (`configurations`) and an already processed file (`already_processed`, marker `limlfailed` on
-  `<results>`, read by `processed_marker`).
+  (`configurations`) and an already processed file (`already_processed`, `info` keys `marker`,
+  `hidden_count`, `marker_version`).
+- Processed marker (core 1.0.1): `<globalvariable name="failed_hidden">N</globalvariable>` as the
+  first line inside the processed `<results>`, N = number of hidden elements (the shells of a
+  section view included); a save in Mecway 35 keeps it (verified by AdvancedToolsHub). Presence
+  decides. The attribute `limlfailed="1.0.0"` on `<results>` of core 1.0.0 (dropped by a save in
+  Mecway) is still read. `processed_marker()` returns the count as text (`"1.0.0"` only for old
+  files, `"?"` for an empty variable), `marker_count()` makes it a number.
+  `bridge_hide_failed.is_processed` also finds the variable further down before the first step
+  and, without a marker, the core's node copies of model elements; the status texts count only
+  model elements (not shells). The bridge calls `process()` with the defaults: `others="follow"`
+  (other node variables of collapsed copies follow their original) and no `keep_original`.
 - The empty `<nodes />`/`<values />` (and `<elements />`) tails of every variable block stay in the
   processed file (contract with MecwayAdvancedBeamAnalysis). Tests: `tests/test_liml_failed_copy.py`
   (pin and the hub's golden fixture), `tests/test_failed_contract.py` (this writer through `scan`).

@@ -138,9 +138,11 @@ toe).
     ineengeklapte knoop op (1 - s) X + s c (X de knoop, c het zwaartepunt), zodat het
     element terugkomt op |1 - s| keer zijn grootte (volle grootte bij schaal 0).
   - De verplaatsing van een ineengeklapte knoop is kunstmatig (de weg naar het
-    zwaartepunt) en zijn andere knoopwaarden zijn 0 vanaf het bezwijken. De legenda
-    (maximum en minimum) van een elset met bezweken elementen kan daardoor verschuiven:
-    lees verplaatsingen en spanningen op intacte elementen.
+    zwaartepunt). Zijn andere knoopwaarden zijn die van de knoop waarvan hij een kopie
+    is, zodat hun legenda blijft zoals zonder verbergen. De legenda (maximum en minimum)
+    van de verplaatsing van een elset met bezweken elementen kan wel verschuiven: lees
+    verplaatsingen op intacte elementen. Tot en met V2026.11 waren de andere
+    knoopwaarden 0 vanaf het bezwijken.
   - Een element dat bij de laatste opgeslagen stap bezwijkt, blijft zichtbaar
     (`failed` wordt pas in de stap erna 1). Alleen na een run noemen het log en het
     statusvak hoeveel bezweken elementen van de run zichtbaar blijven (de bridge kent
@@ -153,13 +155,16 @@ toe).
     komt de doorsnede eerst in de resultaten en daarna het verbergen: de doorsnede van
     een bezweken balk verdwijnt mee, en het getal in het statusvak telt alleen
     elementen van het model.
-  - Opslaan in Mecway houdt de verborgen elementen, maar verliest het kenmerk dat de
-    bridge op de resultaten zet (gezien in Mecway 35). De bridge herkent zo'n bestand
-    toch (aan de eigen knopen van de verborgen elementen): opnieuw verbergen en
-    *Doorsnede in resultaten* weigeren het. Dat lukt niet als elk bezweken element
-    alleen knopen deelt met andere bezweken elementen (bijvoorbeeld een heel deel
-    dat bezwijkt): die krijgen geen eigen knopen. Verberg zo'n opgeslagen bestand
-    niet opnieuw; *Resultaten... > Inladen* geeft de oorspronkelijke resultaten terug.
+  - De bridge zet een kenmerk op de resultaten: de globale variabele `failed_hidden`,
+    met het aantal verborgen elementen (inclusief de doorsnede van bezweken balken).
+    Opslaan in Mecway houdt de verborgen elementen en dit kenmerk (Mecway 35); opnieuw
+    verbergen en *Doorsnede in resultaten* weigeren zo'n bestand. Tot en met V2026.11
+    was het kenmerk een attribuut dat Mecway bij opslaan liet vallen. De bridge herkent
+    zo'n ouder opgeslagen bestand toch (aan de eigen knopen van de verborgen elementen),
+    behalve als elk bezweken element alleen knopen deelt met andere bezweken elementen
+    (bijvoorbeeld een heel deel dat bezwijkt): die krijgen geen eigen knopen. Verberg
+    zo'n opgeslagen bestand niet opnieuw; *Resultaten... > Inladen* geeft de
+    oorspronkelijke resultaten terug.
   - Nagelopen in het Mecway-venster (Mecway 35, `BezwijkenTrekstaaf`, 11 nov 2026);
     de bestanden zijn ook offline gecontroleerd.
 

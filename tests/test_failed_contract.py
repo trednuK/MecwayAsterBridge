@@ -262,16 +262,20 @@ def verify(tmp, one, mon, conf, tag):
     for name, src, kw in (("one", one, {}), ("monitor", mon, {}),
                           ("conf", conf, {"configuration": "B"})):
         out = os.path.join(tmp, "{0}_{1}_out.liml".format(tag, name))
-        rep = L.process(src, out, solver="aster", others="zero", **kw)
+        # others: the default "follow", as bridge_hide_failed
+        rep = L.process(src, out, solver="aster", **kw)
         check(tag + ": process {0} written".format(name),
               rep["written"] and rep["code"] == "done", rep["code"])
         check(tag + ": {0} keeps the <nodes /> and <elements /> tails"
               .format(name),
               _count(out, b"<nodes />") == _count(src, b"<nodes />") and
               _count(out, b"<elements />") == _count(src, b"<elements />"))
-        check(tag + ": {0} has the marker".format(name),
+        want = EXPECTED_B if kw.get("configuration") == "B" else EXPECTED
+        check(tag + ": {0} has the marker (hidden count {1})".format(
+                  name, len(want)),
               L.processed_marker(out, kw.get("configuration")) ==
-              L.VERSION)
+              u"{0}".format(len(want)),
+              L.processed_marker(out, kw.get("configuration")))
     check(tag + ": the Saved monitor stays",
           _count(os.path.join(tmp, tag + "_monitor_out.liml"),
                  b"<savedmonitor>") == 1)

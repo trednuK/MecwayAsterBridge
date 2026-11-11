@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **Hide failed elements: core `liml_failed.py` 1.0.1** (copy of AdvancedToolsHub's). Behaviour
+  change: the other node variables of a collapsed node now follow the node it copies, instead
+  of being 0 from the failure on; only the displacement collapses, so the legends of the other
+  variables stay as without hiding.
+- **New marker of hidden results**: the global variable `failed_hidden` (the number of hidden
+  elements) as the first line in `<results>`, instead of the attribute `limlfailed`. A save in
+  Mecway keeps it (Mecway 35), so hiding again and "Section in results" refuse a saved file by
+  its marker; files of V2026.11 are still recognised. Where Mecway's result list shows the
+  variable is NOT verified in the Mecway window.
+
 ## V2026.11 – 11 November 2026
 
 Failed elements can disappear in Mecway's own result view: the new option *Hide failed

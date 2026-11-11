@@ -9,8 +9,10 @@
 # of AdvancedToolsHub's common/liml_failed.py, contract failed/1 in
 # AGENTS.md). The core gives every failed element private node copies in
 # the <solution> mesh and collapses them on the element's centroid from
-# the step where the element variable "failed" becomes 1; the model part
-# of the file stays byte for byte.
+# the step where the element variable "failed" becomes 1; the other node
+# variables of the copies follow their originals (core 1.0.1), the model
+# part of the file stays byte for byte, and the core marks the solution
+# with <globalvariable name="failed_hidden">N</globalvariable> (is_processed).
 #
 # Python 2.7 (IronPython 2.7.9) and 3, stdlib only, no mw: the caller
 # (MecwayAsterBridgeMain._hide_failed) passes mw.open as open_fn to
@@ -91,6 +93,10 @@ def _missing(liml):
 
 _ELEM = re.compile(br'<elem\s+eid="(\d+)"[^>]*?\snodes="([^"]*)"')
 _NID = re.compile(br'<node\s+nid="(\d+)"')
+# <globalvariable name="failed_hidden"> of core 1.0.1 (liml_failed.MARKER_VAR,
+# letters and _ only; not re.escape: IronPython 2.7.9's wants str, not bytes)
+_MARKER = re.compile(br'<globalvariable\s+name="' + liml_failed.MARKER_VAR +
+                     br'"[\s/>]')
 
 
 def _model_max_eid(liml):
@@ -143,12 +149,10 @@ def apply(liml, configuration=None, expected=None, state=None):
         return _not_hidden(tr(u"bestand niet gevonden ({0}).",
                               u"file not found ({0}).").format(liml))
     try:
-        processed = is_processed(liml, configuration)
-        marker = (liml_failed.processed_marker(liml, configuration)
-                  if processed else None)
+        found = _processed_state(liml, configuration)
     except (IOError, OSError) as e:
         return _not_hidden(u"{0}".format(e))
-    if processed:
+    if found["marker"] is not None or found["copies"]:
         return _warning(u"De resultaten in {0} hebben de bezweken elementen "
                         u"al verborgen ({1}); niet opnieuw bewerkt. "
                         u"Resultaten... > Inladen geeft de oorspronkelijke "
@@ -157,14 +161,12 @@ def apply(liml, configuration=None, expected=None, state=None):
                         u"elements hidden ({1}); not processed "
                         u"again. Results... > Load gives back the original "
                         u"results.", os.path.basename(liml),
-                        tr(u"versie {0}", u"version {0}").format(marker)
-                        if marker else
-                        tr(u"kenmerk verloren, bijvoorbeeld door opslaan in "
-                           u"Mecway", u"marker lost, for example by a save "
-                           u"in Mecway"))
+                        _marker_text(found))
     t0 = time.time()
     try:
-        rep = liml_failed.process(liml, tmp, solver="aster", others="zero",
+        # others: the core's default "follow" (core 1.0.1): the other node
+        # variables of a collapsed node keep the values of its original
+        rep = liml_failed.process(liml, tmp, solver="aster",
                                   configuration=configuration,
                                   progress=_progress())
     except liml_failed.LimlFailedError as e:
@@ -393,44 +395,76 @@ def leftover_text(liml):
     return text
 
 
-def is_processed(liml, configuration=None):
+def _marker_text(found):
+    """The part in brackets of the 'already hidden' warning, from
+    _processed_state: the hidden count of the marker when it counts only
+    model elements, else what is known."""
+    marker = found["marker"]
+    if marker is None:
+        return tr(u"kenmerk verloren, bijvoorbeeld door opslaan in Mecway",
+                  u"marker lost, for example by a save in Mecway")
+    count = liml_failed.marker_count(marker)
+    if count is not None and not found["shells"]:
+        return tr(u"{0} element(en)", u"{0} element(s)").format(count)
+    if count is None and marker != u"?":
+        # the attribute limlfailed of core 1.0.0: its version
+        return tr(u"versie {0}", u"version {0}").format(marker)
+    # the count of the marker includes the shells of a section view
+    return tr(u"kenmerk failed_hidden", u"marker failed_hidden")
+
+
+def _processed_state(liml, configuration=None):
     """
-    True when the solution of liml (of that configuration; None = the
-    first) has its failed elements hidden: the core's marker on <results>,
-    or (Mecway 35 drops that marker when it saves the file, but keeps the
-    copies) an element of the model whose nodes in the solution mesh
-    include a node numbered above every node of the model: the core's node
-    copies. The shells of a section view (bridge_section_view.build_view)
-    have node and element numbers above those of the model, so they do not
-    count. Not for cyclic symmetry, whose whole-wheel solution numbers its
-    extra sectors that way. Limit: the core makes no copy of a node that
-    only failed elements share (the last to fail keeps it), so a file whose
-    failed elements are all of that kind is not recognised without the
-    marker.
+    What shows that the solution of liml (of that configuration; None: the
+    first, or every one when the model defines configurations, as the
+    core's processed_marker) has its failed elements hidden. A dict:
+      "marker"  the core's marker text (liml_failed.processed_marker: the
+                hidden count of <globalvariable name="failed_hidden"> of
+                core 1.0.1, or the version of the attribute limlfailed of
+                core 1.0.0), also when the variable is not right after
+                <results> (anywhere before the first step); None without;
+      "copies"  True when an element of the model has a node in the
+                solution mesh numbered above every node of the model: the
+                core's node copies (they survive a save in Mecway, which
+                drops the 1.0.0 attribute);
+      "shells"  True when the solution mesh has elements numbered above
+                every element of the model (the shells of a section view,
+                bridge_section_view.build_view: they copy the 'failed' of
+                their beam, so the marker counts them too).
+    The shells have node numbers above those of the model as well, so they
+    do not count as copies. Cyclic symmetry (its whole-wheel solution
+    numbers its extra sectors that way): only the marker counts. Limit: the
+    core makes no copy of a node that only failed elements share (the last
+    to fail keeps it), so a file whose failed elements are all of that kind
+    is not recognised without the marker. Raises IOError/OSError.
     """
-    try:
-        if liml_failed.processed_marker(liml, configuration):
-            return True
-        # the attribute as it stands in the XML (escaped, as Mecway writes
-        # it; liml_failed.processed_marker unescapes it)
-        conf = (None if configuration is None else
-                b'configuration="' + _xml_escape(
-                    u"{0}".format(configuration),
-                    {u'"': u"&quot;"}).encode("utf-8") + b'"')
-        model_nid = 0
-        model_eid = 0
-        target = False
-        in_solution = False
-        with open(liml, "rb") as f:
-            for raw in f:
-                s = raw.lstrip()
-                if not in_solution:
-                    if s.startswith(b"<cyclicsymmetry"):
-                        return False
-                    if s.startswith(b"<solution"):
-                        in_solution = True
-                        target = conf is None or conf in s
-                        continue
+    found = {"marker": liml_failed.processed_marker(liml, configuration),
+             "copies": False, "shells": False}
+    # the attribute as it stands in the XML (escaped, as Mecway writes it;
+    # liml_failed.processed_marker unescapes it)
+    conf = (None if configuration is None else
+            b'configuration="' + _xml_escape(
+                u"{0}".format(configuration),
+                {u'"': u"&quot;"}).encode("utf-8") + b'"')
+    model_nid = 0
+    model_eid = 0
+    every = False           # configuration None in a model with configurations
+    cyclic = False
+    target = False
+    in_solution = False
+    header = False          # inside the target <results>, before a step
+    with open(liml, "rb") as f:
+        for raw in f:
+            s = raw.lstrip()
+            if not in_solution:
+                if s.startswith(b"<cyclicsymmetry"):
+                    cyclic = True
+                elif s.startswith(b"<solution"):
+                    in_solution = True
+                    target = conf is None or conf in s
+                elif s.startswith(b"<configuration "):
+                    every = conf is None
+                else:
                     m = _NID.match(s)
                     if m:
                         model_nid = max(model_nid, int(m.group(1)))
@@ -438,22 +472,55 @@ def is_processed(liml, configuration=None):
                     m = _ELEM.match(s)
                     if m:
                         model_eid = max(model_eid, int(m.group(1)))
-                    continue
-                if s.startswith(b"</solution"):
-                    if target and conf is None:
-                        return False
-                    in_solution = False
-                    continue
-                if target:
-                    if s.startswith(b"<results"):
-                        return False
-                    m = _ELEM.match(s)
-                    if m and int(m.group(1)) <= model_eid and any(
-                            int(n) > model_nid for n in m.group(2).split()):
-                        return True
+                continue
+            if s.startswith(b"</solution"):
+                if target and not every:
+                    break
+                in_solution = header = False
+                continue
+            if not target:
+                continue
+            if header:
+                if s.startswith(b"<timestep") or s.startswith(b"<mode") or \
+                        s.startswith(b"</results"):
+                    header = False
+                    if not every:
+                        break
+                elif found["marker"] is None and \
+                        s.startswith(b"<globalvariable") and \
+                        _MARKER.match(s):
+                    found["marker"] = (s[s.find(b">") + 1:].split(b"<")[0]
+                                       .strip().decode("utf-8", "replace")
+                                       or u"?")
+                continue
+            if s.startswith(b"<results"):
+                header = True
+                continue
+            m = _ELEM.match(s)
+            if m:
+                eid = int(m.group(1))
+                if eid > model_eid:
+                    found["shells"] = True
+                elif not cyclic and any(int(n) > model_nid
+                                        for n in m.group(2).split()):
+                    found["copies"] = True
+    return found
+
+
+def is_processed(liml, configuration=None):
+    """
+    True when the solution of liml (of that configuration; None: the first,
+    or any when the model defines configurations) has its failed elements
+    hidden: the core's marker (<globalvariable name="failed_hidden"> of
+    core 1.0.1, which a save in Mecway keeps; the attribute limlfailed of
+    core 1.0.0, which it drops), or the core's node copies of model
+    elements (_processed_state). False when the file cannot be read.
+    """
+    try:
+        found = _processed_state(liml, configuration)
     except (IOError, OSError):
         return False
-    return False
+    return found["marker"] is not None or found["copies"]
 
 
 def enabled():

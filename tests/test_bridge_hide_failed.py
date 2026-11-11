@@ -13,8 +13,11 @@
 #     "nothing failed", with the file unchanged;
 #   - a WARNING for other refusals and for an already processed file, with
 #     the model unchanged and the temporary file removed;
-#   - is_processed: the marker, and the node copies of model elements when
-#     the marker is gone (Mecway 35 drops it on a save); apply then warns;
+#   - is_processed: the marker of core 1.0.1 (<globalvariable
+#     name="failed_hidden">, also after a Mecway-like re-save and further
+#     down in the header of <results>), the attribute of core 1.0.0, and
+#     the node copies of model elements when the marker is gone (a save in
+#     Mecway 35 drops the 1.0.0 attribute); apply then warns;
 #   - hide_and_open with a fake Mecway: success, open failure (restore and
 #     open again, both opens failing, restore failing), errors in apply
 #     before and after the rename, a failing rename, a stale
@@ -107,8 +110,20 @@ def test_success(tmp):
           u"2 failed element(s) of the run stay visible" in text, text)
     check("no section-view sentence without shells",
           u"section view" not in text, text)
-    check("model is the processed file",
-          L.processed_marker(liml) == L.VERSION)
+    check("model is the processed file (marker: the hidden count)",
+          L.processed_marker(liml) == u"3", L.processed_marker(liml))
+    # the other node variables of collapsed copies follow their originals
+    # (the core's default since 1.0.1), not "zero"
+    follow = os.path.join(tmp, "follow.liml")
+    zero = os.path.join(tmp, "zero.liml")
+    L.process(GOLDEN, follow, solver="aster")
+    L.process(GOLDEN, zero, solver="aster", others="zero")
+    check("others: follow (the core's default), not zero",
+          read(liml) == read(follow) and read(liml) != read(zero))
+    eol = b"\r\n" if b"\r\n" in original else b"\n"
+    check("the marker is the first line in <results>",
+          b'<results precision="double">' + eol + b'      <globalvariable '
+          b'name="failed_hidden">3</globalvariable>' + eol in read(liml))
     check("unprocessed file kept until finish",
           read(liml + bhf.KEEP_SUFFIX) == original)
     check("no .hide.tmp left", not os.path.exists(liml + bhf.TMP_SUFFIX))
@@ -124,16 +139,71 @@ def test_success(tmp):
           read(liml) == processed)
     # already processed: WARNING, unchanged
     status, text = bhf.apply(liml)
-    check("a processed file gives a warning", status == "warning" and
-          u"already have the failed elements hidden" in text, text)
+    check("a processed file gives a warning with the hidden count",
+          status == "warning" and
+          u"already have the failed elements hidden (3 element(s))" in text,
+          text)
     check("... and stays unchanged", read(liml) == processed and
           not leftovers(liml))
-    # the marker gone (a re-save that drops it, NOT verified): node numbers
+    marker_line = (b'      <globalvariable name="failed_hidden">3'
+                   b'</globalvariable>' + eol)
+    # a save in Mecway keeps the numeric <globalvariable> on <results>
+    # level, in its place (AdvancedToolsHub, Mecway 35); here with
+    # another indent and the number as 3.0 (NOT verified that Mecway
+    # writes it so; the marker counts by presence)
+    resaved = os.path.join(tmp, "resaved.liml")
+    with open(resaved, "wb") as f:
+        f.write(processed.replace(marker_line, b'    <globalvariable '
+                                  b'name="failed_hidden">3.0'
+                                  b'</globalvariable>' + eol))
+    check("re-save: the marker stays",
+          L.marker_count(L.processed_marker(resaved)) == 3)
+    check("re-save: is_processed", bhf.is_processed(resaved))
+    status, text = bhf.apply(resaved)
+    check("re-save: warning with the hidden count", status == "warning" and
+          u"(3 element(s))" in text and not leftovers(resaved), text)
+    # the marker further down in the header of <results> (before the first
+    # step): the core's processed_marker reads only right after <results>,
+    # is_processed and the core's process() see it there too
+    moved = os.path.join(tmp, "moved.liml")
+    first_step = processed.find(b"<timestep ")
+    first_step = processed.rfind(b"\n", 0, first_step) + 1
+    data = processed[:first_step] + marker_line + processed[first_step:]
+    with open(moved, "wb") as f:
+        f.write(data.replace(marker_line, b"", 1))
+    check("moved marker: not right after <results>",
+          L.processed_marker(moved) is None and
+          read(moved).count(b'name="failed_hidden"') == 1)
+    check("moved marker: is_processed", bhf.is_processed(moved))
+    status, text = bhf.apply(moved)
+    check("moved marker: warning with the hidden count",
+          status == "warning" and u"(3 element(s))" in text, text)
+    try:
+        L.scan(moved, solver="aster")
+        code = None
+    except L.LimlFailedError as e:
+        code = e.code
+    check("moved marker: the core refuses it too",
+          code == "already_processed", code)
+    # a file processed by core 1.0.0: the attribute limlfailed on <results>
+    old = os.path.join(tmp, "old_core.liml")
+    with open(old, "wb") as f:
+        f.write(processed.replace(marker_line, b"").replace(
+            b'<results precision="double">',
+            b'<results precision="double" limlfailed="1.0.0">'))
+    check("core 1.0.0 file: marker is its version",
+          L.processed_marker(old) == u"1.0.0")
+    check("core 1.0.0 file: is_processed", bhf.is_processed(old))
+    status, text = bhf.apply(old)
+    check("core 1.0.0 file: warning with the version",
+          status == "warning" and u"(version 1.0.0)" in text, text)
+    # the marker gone (a re-save of a 1.0.0 file drops the attribute):
+    # node numbers
     stripped = os.path.join(tmp, "stripped.liml")
     with open(stripped, "wb") as f:
-        f.write(processed.replace(b' limlfailed="' +
-                                  L.VERSION.encode("ascii") + b'"', b""))
-    check("marker removed in the copy", L.processed_marker(stripped) is None)
+        f.write(processed.replace(marker_line, b""))
+    check("marker removed in the copy", L.processed_marker(stripped) is None
+          and b"failed_hidden" not in read(stripped))
     check("is_processed by the node copies of model elements",
           bhf.is_processed(stripped))
     stripped_before = read(stripped)
@@ -246,7 +316,7 @@ def test_hide_and_open(tmp):
         mw = FakeMecway()
         opened, ok, text = hide(liml, mw)
         check("success: opened once, the processed file", opened and ok and
-              len(mw.opened) == 1 and L.processed_marker(liml) == L.VERSION
+              len(mw.opened) == 1 and L.processed_marker(liml) == u"3"
               and mw.opened[0] == read(liml), text)
         check("success: unprocessed copy dropped, no configuration made "
               "active", not leftovers(liml) and mw.active == [])

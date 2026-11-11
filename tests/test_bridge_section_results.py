@@ -1394,14 +1394,35 @@ check("hide: the log counts the shells separately", [
 bhf.finish(path)
 check("hide: processed (marker)", bhf.is_processed(path))
 processed = raw(path)
+# the core's marker counts the shells too (they copy the 'failed' of their
+# beam): the 'already hidden' warning then names no count
+check("hide: the marker counts the beam and its shells",
+      bhf.liml_failed.processed_marker(path) == u"{0}".format(
+          1 + len(view["parts"][1]["elements"])))
+keep_log = bhf.log
+bhf.log = LOG.append
+try:
+    status, text = bhf.apply(path)
+finally:
+    bhf.log = keep_log
+check("hide: again: the 'already hidden' warning, without the count of "
+      "beam and shells", status == "warning" and
+      u"already have the failed elements hidden (marker failed_hidden)"
+      in text and raw(path) == processed)
+# the marker line gone (as a save in Mecway 35 drops the attribute of core
+# 1.0.0): the node copies remain
+start = processed.find(b('<globalvariable name="failed_hidden">'))
+start = processed.rfind(b("\n"), 0, start) + 1
 stripped = os.path.join(TMP, "hide_stripped.liml")
 f = _builtin_open(stripped, "wb")
 try:
-    f.write(processed.replace(b(' limlfailed="'), b(' x="')))
+    f.write(processed[:start] +
+            processed[processed.find(b("\n"), start) + 1:])
 finally:
     f.close()
-check("hide: marker removed in the copy (as a save in Mecway 35 does)",
-      bhf.liml_failed.processed_marker(stripped) is None)
+check("hide: marker removed in the copy",
+      bhf.liml_failed.processed_marker(stripped) is None and
+      b("failed_hidden") not in raw(stripped))
 check("hide: still processed by the node copies of model elements",
       bhf.is_processed(stripped))
 before = raw(stripped)
