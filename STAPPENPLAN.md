@@ -56,7 +56,7 @@ S7, S8, S5, S9).
 | S15c | Geometric stiffness of (pretensioned) springs in Buckling and Frequency with prestress, as Mecway does (now an ERROR for the spring pretension variant) | later | S15b | split off from S15b (29 Oct 2026); KNOWN_BUGS 47, 124 (b); see §S15b |
 | S16a | 2D and axisymmetric static (S20 `C_PLAN`/`D_PLAN`, SA0 `AXIS`) | done | – | branch worktree-agent-ae20772a64706e75c (28 Oct 2026): `bridge_plane.py`; PL-01 .. PL-06 OK (Kt, Lamé, reaction sums exact, displacements = Mecway headless ≤ 1e-11); LS, FX unchanged; not yet tested in the Mecway GUI |
 | S16b | 2D dynamic response (Mecway D20, DA0) | done | S16a | same branch (28 Oct 2026): `dyna_impl_3d`; PL-10 .. PL-12 OK (bar wave period −0.06%, damped ring −0.05%, histories = Mecway headless ≤ 4e-8); step size with *every n time steps* fixed later (former KNOWN_BUGS 127, MD-08); Mecway 34 has no 2D frequency/buckling type (V20 -> V30, B20 -> S30) |
-| S16c | Thermal 2D / axisymmetric | dropped | – | Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; axisymmetric heat transfer is not supported either); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
+| S16c | Thermal 2D / axisymmetric | dropped | – | reopened as S44d (11 Nov 2026, Code-Aster `PLAN`/`AXIS` on a plane mesh, see §S44); dropped first because Mecway has no thermal 2D type ("All thermal analysis types are 3D", manual v34 §6.7; axisymmetric heat transfer is not supported either); thermal in a plane = shells, already translated (`bridge_thermal`, `PLAN`) |
 | S16d | Acoustic Resonance 2D (Mecway A20; `ACOUSTIQUE` `PLAN`, not `2D_FLUIDE`) | done | S16a | branch worktree-agent-ad04139279cf151f2 (28 Oct 2026): `bridge_plane._apply_acoustic` + the A30 route; AK-10 .. AK-15 OK (quads = Mecway headless ≤ 1e-6, rectangle ≤ 0.05% of f_mn); triangles slightly higher (KNOWN_BUGS 130); identical via a .liml saved by Mecway (126 checks); no axisymmetric acoustic type in Mecway; not yet tested in the Mecway GUI |
 | S16e | 2D extensions: beams/trusses/springs in S20, several thicknesses, moment, line pressure, frictionless, elastic support, oblique directions, constraint equations, error estimator | open | S16a | split off from S16 (28 Oct 2026); KNOWN_BUGS 126 |
 | S17 | Loads on beam faces; hydrostatic pressure on shell edges (KNOWN_BUGS 5) | done | – | branch worktree-agent-afd8b7790c08d6a3d on nacht-int3 (28 Oct 2026): traction on beam side faces = `FORCE_POUTRE` traction x perimeter (`_beam_side_loads`), pressure there no load, hydrostatic pressure on shell edges as nodal forces; LS-92a..h, LS-93a..c OK (equal to Mecway headless, formula +0.06%); not yet tested in the Mecway GUI (see §S17) |
@@ -91,6 +91,14 @@ S7, S8, S5, S9).
 | S43b | Own viewers: buttons "ParaView" and "AsterStudy" in the Results dialog and the convergence window (`bridge_viewers.py`, one Salome search, setting `salome_meca_dir`) | done | S43a | branch `viewers` (c4c48e5, 61ffbd6, 9ca7009 + review fixes); Opus reviews of code and docs; G1: official ParaView 6.2.1 does not load MEDReader (`.rmed` in Salome's ParaView only); G3 (10 Nov 2026, from Code-Aster's Python): `.pvd` in ParaView 6.2.1, harmonic `.rmed` (`DEPL_REEL`/`DEPL_IMAG`, 75 steps) and `_xfem.rmed` in Salome's ParaView 5.13, `.rmed` and `_verfijnd.rmed` in AsterStudy *Results*, second click within 60 s = message; G2: both buttons' code started ParaView 6.2.1 (`.pvd`) and AsterStudy (`.rmed`) from a hidden Mecway 35 process; checked in the Mecway 35 window by the user (11 Nov 2026) |
 | S43c | Remove the beam sidecar `_beams.json` and the node series `_knopen.csv`; VTU array `BEZWEKEN` renamed to `failed` | done | S43a | branch `sidecars` (b861af3, 955d80c + this commit); 578/579 .comm identical; Code-Aster runs LS-30 and BezwijkenTrekstaaf OK; Opus review |
 | S43d | Hide failed elements in Mecway after load-back: copy of AdvancedToolsHub's `liml_failed.py`, contract for the element variable `failed` | done | S43a; the hub core `common/liml_failed.py` exists | branch `hide-failed`: core 1.0.0 pinned (LF-sha256 500f8ccc...), setting `hide_failed` (default off), `bridge_hide_failed.py`; `failed` strict (1 from the step after t_fail; measured static, implicit, explicit: stored state at t_fail before zeroing); end-to-end BezwijkenTrekstaaf 8 hidden from t = 0.7; Mecway 35 opens a processed file without a dialog and keeps the copies on re-save but drops the marker (recognised by the copies); regression 45 cases / 249 checks OK; Opus plan, diff and re-review; checked in the Mecway 35 window by the user (11 Nov 2026); released in V2026.11 |
+| S44 | 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`): thermal stress, nonlinear static, contact, thermal, axisymmetric shells, modal/buckling, axisymmetric acoustics | split | S16a | asked by the user 11 Nov 2026; split into S44a .. S44g (see §S44; research of the input route first); plan reviewed by Opus; order S44c, S44a, S44b, S44d, S44e, S44f later |
+| S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | open | S16a | first sub-step (linear, verified `MECA_STATIQUE` route); starts with the input-route research of §S44 |
+| S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | open | S16a | see §S44 |
+| S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | open | S44a | a frictionless support stays S16e; see §S44 |
+| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | open | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44 |
+| S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
+| S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44 |
+| S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2272,3 +2280,200 @@ at it. Planned in detail when the core exists.
 `docs/Na_een_update.md` / `docs/en/After_an_update.md`. A `bridge_utils.py` without a new key still gives the
 save message "0x instead of 1x" on Start, as for every earlier new setting (the file ships with code, so a
 normal update replaces it): unchanged.
+
+### S44 – 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`)
+**Background:** asked by the user on 11 Nov 2026, who wants it recorded in this plan. Mecway 34's
+only 2D types are S20, SA0, D20, DA0 and A20 (findings S16a, S16d); for anything else in 2D the
+bridge stops with an ERROR (`docs/2D_en_axisymmetrisch.md` / `docs/en/2D_and_axisymmetric.md` §3).
+Code-Aster computes much more in its plane and axisymmetric modelisations: nonlinear material and
+geometry, contact, thermal stress, heat transfer, axisymmetric shells, modes and buckling. Builds
+on `bridge_plane.py` (S16a, S16b, S16d). Plan reviewed by Opus (11 Nov 2026); its findings are
+worked in below.
+**Boundary with S16e:** S16e stays the row for 2D loads and elements inside Mecway's existing
+linear types (beams, trusses and springs in S20, several thicknesses, moment, line pressure,
+frictionless and elastic support, oblique directions, constraint equations, error estimator).
+S44 takes what needs another Code-Aster analysis or element family: contact (S44b; a
+frictionless *support* stays S16e), temperatures (S44c, S44d), axisymmetric shells in an
+axisymmetric model (S44e; beams in S20 stay S16e). A sub-step that needs an S16e load builds
+that load in S16e first.
+**Order (after the review):** S44c first (linear, on the verified `MECA_STATIQUE` route), then
+S44a, S44b, S44d, S44e; S44f later; S44g decided (dropped for `ACOUSTIQUE`, see below).
+
+**Research first: the input route** (before the first sub-step is built; measured in Mecway 34
+headless with `mw_solve.py`, no GUI):
+- *Route A, Mecway's 3D type with a switch (preferred by the review):* the model is an
+  L30/T30/T31 model with plane elements (tri3/tri6/quad4/quad8 in the XY plane), and a `#ASTER`
+  line or a setting tells the bridge to compute it as `C_PLAN`/`D_PLAN`/`AXIS` (thermal
+  `PLAN`/`AXIS`) instead of as shells. Mecway then keeps `<timesteps>`, plasticity, contact and
+  thermal loads natively, and in-plane L30/T30 shells give a real Mecway reference for plane
+  stress. This reopens S16c more cleanly. Research: which of these items Mecway keeps on plane
+  shell elements; the form and name of the switch (NOT decided); that the switched elements are
+  not also translated as shells; the thickness (shell thickness = plane-stress thickness; none
+  for `AXIS`).
+- *Route B, Mecway's 2D type:* the model stays S20/SA0 (or D20/DA0), the user picks the bridge
+  analysis on the start screen (not only `auto`), and what the 2D type cannot hold comes from
+  `#ASTER` lines (`bridge_custom`). An S20/SA0 model has no `<timesteps>`, and `bridge_thermal`
+  derives transient from analysis type T31: route B needs its own source for the step list, the
+  load ramp and the transient switch. Whether Mecway shows more steps, modes or temperatures in
+  an S20/SA0 result file is NOT verified.
+- *Both routes:* `bridge_plane.apply` is extended: `_VERIFIED_SOLVERS` now refuses every solver
+  other than `MECA_STATIQUE` (S20/SA0) and `DYNA_NON_LINE` (D20/DA0), and `_NOT_VERIFIED` stops on
+  contacts, temperatures and thermal stress; each sub-step lifts only what it verifies. Forces
+  keep the 1/t and 1/(2π) factors of S16a; total heat loads (W) and heat flows need the same
+  factors, and the `plane=` reaction scaling of `aster_results_export` must act in every stored
+  step (now one step of linear static).
+- `auto` maps S20/SA0 to `lin_static_3d`: add a WARNING (NL+EN) when the model has plasticity or
+  contact, naming the analysis to choose.
+- *Field mapping:* `EPZZ`/`SIZZ` are the hoop components in `AXIS` and the thickness strain
+  (with stress 0) in `C_PLAN`; plastic strain and internal variables follow the same component
+  order. Mecway's own 2D solution has no strain field (S16a); Mecway's names for strain, plastic
+  strain and temperature in a 2D or plane-shell result are measured per sub-step.
+- *Reference:* Mecway's own solver only where route A gives one (plane-stress membrane in L30/T30,
+  plane thermal in T30/T31); otherwise analytical solutions and Code-Aster test cases
+  (`TEST_RESU` values) per sub-step.
+**Done when (research):** the route is chosen with the user, on a table of which items Mecway
+keeps per route; recorded here as findings.
+
+**S44c – temperature load (thermal stress) in 2D/axisymmetric.**
+**Goal:** node and element temperatures of the model (Mecway *Thermal stress*) in a plane or
+axisymmetric model, in linear static first (with S44a also in nonlinear static).
+**Code-Aster:** `AFFE_VARC` `NOM_VARC='TEMP'` with `VALE_REF` on the `C_PLAN`/`D_PLAN`/`AXIS`
+model, `ALPHA` in `ELAS`, as in 3D; test cases with `AFFE_VARC` in `AXIS`: ssla103, ssla200.
+**Research:** whether the chosen input route holds temperatures and the reference temperature;
+the end condition of a tube: generalised plane strain needs plane ends that may move axially,
+for example `LIAISON_UNIF` on `DY` of the end edge (`AXIS`), while `D_PLAN` is ε_z = 0.
+**Done when:**
+- free thermal expansion of a ring (`AXIS`) and a plate (`C_PLAN`): u = α ΔT r (and α ΔT x)
+  within 1e-6 relative, all stresses below 1e-6 · E α ΔT;
+- plate held in both in-plane directions (`C_PLAN`): σ_xx = σ_yy = −E α ΔT / (1 − ν) within 1e-6
+  relative; the same in `D_PLAN`: −E α ΔT / (1 − 2ν), also σ_zz;
+- thick tube with a steady radial temperature T(r) = T_a + (T_b − T_a) ln(r/a) / ln(b/a) as node
+  temperatures, in `AXIS` with plane free ends (`LIAISON_UNIF` `DY`) and in `D_PLAN`: σ_r, σ_θ,
+  σ_z within 1% of the closed-form solution (Timoshenko & Goodier) at 8 quadratic elements
+  through the wall, axial resultant of the free-end case below 1e-6 of E α ΔT · area;
+- where route A gives a Mecway reference (plate in L30 with a temperature): equal to Mecway
+  headless within 1e-6;
+- 3D cases with temperatures unchanged (regression D.5); docs NL+EN (§3 "Not possible" updated).
+
+**S44a – nonlinear static in 2D/axisymmetric.**
+**Goal:** the bridge's `nonlin_static_3d` on a plane or axisymmetric model: time steps and load
+ramps as in 3D, plasticity, large deformations, the failure loop (`bridge_failure`) where it
+applies to plane cells; results per step as for D20/DA0, reactions with the `plane=` factor in
+every step.
+**Code-Aster:** `STAT_NON_LINE` with `C_PLAN`/`D_PLAN`/`AXIS`. Plane stress is a COMPORTEMENT
+keyword: `ALGO_CPLAN` (default `DEBORST`, or `ANALYTIQUE`; catalogue c_comportement.py 17.4), not
+`DEFORMATION`. `GDEF_LOG` works in `C_PLAN` (ssnp152a, cont007a); `SIMO_MIEHE` is tested in
+`AXIS`/`D_PLAN` (ssna111a, ssnp153a), in `C_PLAN` NOT verified; `GREEN_LAGRANGE` (the bridge's
+large displacements on solids) in 2D NOT verified.
+**Research:** which of the bridge's 3D plasticity models accept `ALGO_CPLAN='ANALYTIQUE'` (else
+`DEBORST`); the step list and ramp from the input route; whether the cell criteria of
+`bridge_failure` read plane cells; the WARNING of `auto`.
+**Done when:**
+- thick cylinder, von Mises, elastic-perfectly plastic, plane strain (`D_PLAN`, and `AXIS` with
+  both ends held axially), internal pressure below the limit pressure
+  p_L = (2/√3) σ_y ln(b/a) (p_L is not reachable under pressure control): at two pressures, with
+  Hill's plastic radius c from p = (σ_y/√3)(1 − c²/b² + 2 ln(c/a)), the outer wall displacement
+  u_b = 2 (1 − ν²) σ_y c² / (√3 E b) within 2% and the elastic-plastic boundary (first Gauss
+  points without plastic strain) within one element of c (Hill takes σ_z as the mean in the
+  plastic zone: if ν = 0.3 misses, check with ν = 0.49);
+- plate with a hole in plane stress (`C_PLAN`) under tension: the nominal stress at first yield
+  = σ_y / Kt within 2% (the Kt mesh error of PL-01);
+- a Code-Aster test case through the bridge (ssnp152a for `GDEF_LOG` in `C_PLAN`, ssna111a or
+  ssnp153a in `AXIS`/`D_PLAN`): its `TEST_RESU` values within the test's own tolerance;
+- 3D nonlinear families (NL, NK) unchanged (regression D.5); docs NL+EN.
+
+**S44b – contact in 2D/axisymmetric.**
+**Goal:** contact in a plane or axisymmetric model to `DEFI_CONTACT` in 2D, with S44a.
+**Code-Aster:** `DEFI_CONTACT` `FORMULATION='CONTINUE'` (penalty as in 3D) on line skins
+(SEG2/SEG3) of `C_PLAN`/`D_PLAN`/`AXIS`; test cases in `AXIS` ssna102, ssna111, ssna122, in
+`D_PLAN` ssnp121, ssnp154. Shrink fit: the interference comes from overlapping geometry and
+`CONTACT_INIT='INTERPENETRE'` (default in 17.4) resolves it; `DIST_ESCL`/`DIST_MAIT` is the
+alternative with non-overlapping geometry.
+**Research:** whether Mecway keeps contact definitions in the model of the chosen route (route A:
+on edges of plane shell elements, which faceid; route B: whether Mecway allows contact in
+S20/SA0 at all, else NOT possible there); skin groups of plane edges in `bridge_mesh`; the
+bridge's contact settings (`contact_smoothing`, the penetration check of S29) in 2D.
+**Done when:**
+- shrink fit of two rings, friction-free, interference δ from overlapping radii, in `AXIS`
+  (generalised plane strain or plane stress, stated) and `D_PLAN`: contact pressure within 1% of
+  the Lamé shrink-fit value for the same end condition;
+- Hertz line contact of a cylinder on a plane in plane strain (`D_PLAN`): contact half-width and
+  peak pressure within 3% at 10 or more elements over the half-width;
+- a Code-Aster contact test case (ssna102 or ssnp121) through the bridge within its `TEST_RESU`
+  tolerance;
+- 3D contact cases unchanged (regression D.5); docs NL+EN.
+
+**S44d – thermal 2D/axisymmetric (steady and transient).**
+**Goal:** steady and transient heat transfer on a plane or axisymmetric mesh; the chain thermal ->
+mechanical (S44c, with S44a also nonlinear) as in 3D. Reopens S16c (dropped because Mecway has no
+thermal 2D type).
+**Code-Aster:** `PHENOMENE='THERMIQUE'` with `PLAN`/`AXIS`, `THER_LINEAIRE`/`THER_NON_LINE` as in
+the bridge's 3D thermal route, edge loads (flux, convection, temperature) in `AFFE_CHAR_THER` on
+line skins; test cases in `AXIS` tpla01, tpla04.
+**Research:** which thermal loads Mecway keeps in the chosen route (route A: T30/T31 loads on
+edges of plane shell elements; route B: none in S20/SA0, so `#ASTER` lines); the transient
+switch and the step list (route B has no T31); total heat loads (W) and heat flows divided by t
+or 2π like forces, reported heat flows multiplied back; what `bridge_thermal` already does for
+shells in a plane (`PLAN`, see the S16c row) with the thickness, and whether `AXIS` is a switch on
+that route.
+**Done when:**
+- radial conduction in a tube (`AXIS`, T_a and T_b): T(r) = T_a + (T_b − T_a) ln(r/a) / ln(b/a)
+  within 0.1% of T_b − T_a, heat flow over 360° Q = 2π k L (T_a − T_b) / ln(b/a) within 0.5%;
+- plane wall with convection on one edge (`PLAN`): the linear profile within 1e-6 relative;
+- transient cooling of a long cylinder (`AXIS`, surface temperature prescribed): the centre
+  temperature within 1% of the initial difference at Fourier numbers 0.05, 0.2 and 0.5, against
+  the Bessel series (6 terms);
+- where route A gives a Mecway reference (T30/T31 on plane shells): equal to Mecway headless
+  within 1e-4 relative;
+- tpla01 through the bridge within its `TEST_RESU` tolerance; the chain: the tube of S44c from
+  the thermal result equal to its node-temperature variant within 1e-6;
+- 3D thermal families (TH, WE) unchanged (regression D.5); docs NL+EN.
+
+**S44e – axisymmetric shells (`COQUE_AXIS`).**
+**Goal:** line elements in an axisymmetric model as axisymmetric shells, thickness from the
+material or section.
+**Code-Aster:** `COQUE_AXIS` with `AFFE_CARA_ELEM` `COQUE` `EPAIS`; test cases ssls100i/j,
+ssls114i, sdls07c. Probably SEG3 only (NOT verified): Mecway's line2 then needs a conversion (a
+midside node) or an ERROR. `COQUE_AXIS` has `DRZ`: a junction with `AXIS` solids needs a liaison
+for the rotation (which one NOT verified).
+**Research:** which line elements and section input Mecway allows in SA0 (or in route A), and
+how the thickness is given; whether Mecway's own SA0 solves them (a Mecway reference); the SEG3
+restriction in the catalogue; Mecway's names for shell results on lines (meridional and hoop,
+top and bottom).
+**Done when:**
+- thin cylinder under internal pressure: hoop stress p R / t and radial displacement
+  p R² / (E t) within 0.5% away from the ends;
+- thin sphere under pressure: σ = p R / (2t), u = p R² (1 − ν) / (2 E t) within 0.5%;
+- cylinder with a clamped end under internal pressure (Timoshenko): edge moment
+  M0 = p / (2β²), β⁴ = 3 (1 − ν²) / (R² t²), within 2%;
+- ssls100i through the bridge within its `TEST_RESU` tolerance; existing SA0 cases (PL)
+  unchanged (regression D.5); docs NL+EN.
+
+**S44f – modal and linear buckling in 2D/axisymmetric (later).**
+**Goal:** frequencies and linear buckling factors of plane and axisymmetric models; only when the
+user asks for it.
+**Code-Aster:** modes with `CALC_MODES` on `C_PLAN`/`D_PLAN`/`AXIS` (in-plane modes, or
+axisymmetric modes n = 0); linear buckling with `CALC_MODES` `TYPE_RESU='MODE_FLAMB'` and
+`RIGI_GEOM` (`CRIT_STAB` is a `STAT_NON_LINE` keyword, the S10c route). Non-axisymmetric modes of
+an axisymmetric body need `AXIS_FOURIER` with `MODE_FOURIER` per harmonic n (a run per n, results
+as separate mode sets); the same modelisation serves non-axisymmetric static loads, recombined
+with `COMB_FOURIER` (test case sslv109). `RIGI_GEOM` for `AXIS_FOURIER` NOT verified.
+**Research:** the input route (Mecway's V30/B30 with plane elements in route A); several
+harmonics in one `.liml`.
+**Prerequisite:** S44e (axisymmetric buckling of a cylinder is better with axisymmetric shells).
+**Done when:**
+- breathing mode of a thin ring (`AXIS`): f = (1 / (2π R)) √(E / ρ) within 0.5%;
+- axisymmetric buckling of a cylinder under axial load (S44e shells):
+  σ_cr = E t / (R √(3 (1 − ν²))) within 3%;
+- the same cylinder's factor within 2% of a 3D shell model of it; modal and buckling families
+  (MO, BU) unchanged (regression D.5); docs NL+EN.
+
+**S44g – axisymmetric acoustics (decided: dropped for `ACOUSTIQUE`).**
+**Finding (review, 11 Nov 2026):** in Code-Aster 17.4 `PHENOMENE='ACOUSTIQUE'` offers only `3D`,
+`PLAN`, `3D_ABSO` and `PLAN_ABSO` (catalogue affe_modele.py); an axisymmetric fluid exists only
+under `MECANIQUE` as `AXIS_FLUIDE` / `AXIS_FLUI_STRU` (`U_P_PHI`, the vibro-acoustic formulation
+of S3b). Mecway has no axisymmetric acoustic type either (S16d).
+**Decision:** dropped for `ACOUSTIQUE`. Axisymmetric acoustics is possible through the S3b route
+(`AXIS_FLUIDE` + `AXIS_FLUI_STRU`), as a new step when the user asks for it.
+
+**Open for the user:** the input route (A or B) after the research, and whether S44f is wanted.
