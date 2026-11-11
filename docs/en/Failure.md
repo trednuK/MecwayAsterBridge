@@ -137,7 +137,9 @@ Code-Aster allows nothing else with an explicit scheme).
     other nodal values are those of the node it is a copy of, so their legend stays as
     without hiding. The legend (maximum and minimum) of the displacement of an elset with
     failed elements can shift: read displacements on intact elements. Up to and including
-    V2026.11 the other nodal values were 0 from the failure on.
+    V2026.11 the other nodal values were 0 from the failure on. A support (a node with a
+    reaction force or moment) does not collapse, also when all its elements fail: it stays
+    in place with its real displacement and reaction, without an element.
   - An element that fails at the last stored step stays visible (`failed` only becomes
     1 in the step after). Only after a run do the log and the status box say how many
     failed elements of the run stay visible (the bridge then knows the failed elements

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Hide failed elements: core `liml_failed.py` 1.0.3**: a support node whose elements all fail
+  no longer collapses; it stays in place with its real displacement and reaction.
 - **Hide failed elements: core `liml_failed.py` 1.0.2** (copy of AdvancedToolsHub's; 1.0.2 treats an
   empty `<solution configuration=... />` as its own solution, so it never reads into the next
   one). Behaviour

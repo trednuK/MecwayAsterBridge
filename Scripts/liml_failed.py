@@ -15,6 +15,19 @@ the element shrinks to a point. At deformation scale s a collapsed node is drawn
 s = 2). The model part of the file stays byte for byte (keep_original adds two <configuration>
 lines after <liml>); element-node values never change.
 
+Copy rule: a node that an intact element also uses stays with the intact elements. When all
+owners of a node fail, the latest-failing owner keeps the original (it collapses with it), the
+others get copies. Supports (1.0.3): an original whose largest |value| of a reaction variable
+(REACTION_PREFIXES) over the steps exceeds REACTION_REL_TOL times the largest of its group
+(reactionforce*, reactionmom*: _react_group) in the file, or that has a NaN/inf reaction, is
+never collapsed: the latest-failing owner gets a copy too, and the original stays in place with
+its real displacement and all its values, used by no element (also in mode "copies"); it then
+counts in the maxandmin group name="" (recomputed, or added as the first component). Up to 1.0.2
+its reaction stayed while its displacement collapsed, so Mecway drew the reaction at a moved
+spot. That Mecway draws the reaction of a node in no element on its place is NOT verified
+(ASSUMPTIONS 73). Pass 1 now also decodes the reaction blocks, so a broken one is refused there
+(layout, bad_base64, value_count), also by scan() and when nothing failed.
+
 Processed marker (OPEN_VRAGEN 72): the first line inside the target <results> becomes
 <globalvariable name="failed_hidden">N</globalvariable>, N = number of hidden elements. Mecway
 35.0.9802 keeps a numeric <globalvariable> on <results> level there through re-saves (it moves
@@ -66,7 +79,7 @@ import sys
 import time
 from array import array
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 CONTRACT_FAILED = "failed/1"
 
 # --- switches (module constants; tests change them) -------------------------------------
@@ -82,8 +95,13 @@ STATUS_HIDE_DEAD_FROM_START = False
 DISPL = (b"displx", b"disply", b"displz")
 DISPLMAG = b"displmag"
 # Extensive node variables: a copy would count them twice in sums over nodes, so they never
-# get copies in their <nodeids> (review finding 1). Prefixes of Mecway's names.
+# get copies in their <nodeids> (review finding 1); their values mark the supports (1.0.3).
+# Prefixes of Mecway's names.
 REACTION_PREFIXES = (b"reaction",)
+# 1.0.3: a node is a support when its largest |reaction| over the steps exceeds this fraction of
+# the largest of its group (_react_group) in the file; below it a value counts as round-off
+# (Code-Aster's REAC_NODA on free nodes, NOT verified on a real result: ASSUMPTIONS 73)
+REACTION_REL_TOL = 1e-3
 FAILED_VAR = b"failed"
 STATUS_VAR = b"Element_status"
 STRESS_VARS = (b"stressxx", b"stressyy", b"stresszz", b"stressxy", b"stressyz", b"stresszx",
@@ -726,6 +744,11 @@ def _pass1(path, o, ticker):
     st.model_confs = []              # <configuration name> of the model part (unescaped)
     st.sol_confs = []                # configuration attribute per <solution> (None: none)
     st.sol_bytes = 0                 # bytes of the target <solution> block
+    st.carry = None                  # 1.0.3: per node position 1 = a support (_react_finish)
+    st.react_pos = {}                # reaction nodeids name -> array: index -> node position
+    st.react_cache = {}              # nodeids bytes -> that array
+    st.react_max = {}                # reaction group -> array: node position -> largest |value|
+    st.react_peak = {}               # reaction group -> largest |value| over nodes and steps
     npos = None
     shape_ix = {}
     elset = -1
@@ -735,7 +758,7 @@ def _pass1(path, o, ticker):
     skip_res = False                 # ... and it has <results>
     blk = None
     var = kind = None
-    want = False
+    want = rwant = False
     step = -1
     ids_names = {}                   # elementnodeids name -> slots (pos, off)
     slot_cache = {}
@@ -861,6 +884,11 @@ def _pass1(path, o, ticker):
                         npos = _index(st.nids, "node")
                         st.npos = npos
                         st.epos = _index(st.eids, "element")
+                        st.carry = bytearray(len(st.nids))      # 1.0.3: see _react_done1
+                        st.react_pos = {}
+                        st.react_cache = {}
+                        st.react_max = {}
+                        st.react_peak = {}
                         for p in range(len(st.eids)):
                             for n in st.conn[st.eoff[p]:st.eoff[p + 1]]:
                                 if npos(n) < 0:
@@ -876,7 +904,7 @@ def _pass1(path, o, ticker):
                 # where == _RES
                 if s.startswith(b"<nodeids "):
                     name = _attr(s, b"name")
-                    if name in DISPL:
+                    if name in DISPL or _is_react(name):
                         blk = _new_block(raw, b"nodeids", name, line)
                         kind = "nodeids"
                         if blk.done():
@@ -916,19 +944,22 @@ def _pass1(path, o, ticker):
                     if step < 0:
                         _refuse("no_timesteps")
                     var = _attr(s, b"name")
+                    rwant = False
                     if s.startswith(b"<nodevariable "):
                         kind = "node"
                         want = var in DISPL
+                        # 1.0.3: reaction values tell which nodes are supports (_plan)
+                        rwant = not want and _is_react(var)
                         end = b"</nodevariable"
                     else:
                         kind = "elem"
                         want = var in needed
                         end = b"</elementnodevariable"
-                    if not want and s.find(end) < 0:
+                    if not want and not rwant and s.find(end) < 0:
                         skip = end
-                elif want and _values_tag(s) is not None:
+                elif (want or rwant) and _values_tag(s) is not None:
                     tag = _values_tag(s)
-                    if (tag == b"valuesdouble") != (st.precision == b"double"):
+                    if want and (tag == b"valuesdouble") != (st.precision == b"double"):
                         mixed += 1
                     blk = _new_block(raw, tag, var, line)
                     if blk.done():
@@ -936,7 +967,7 @@ def _pass1(path, o, ticker):
                                      cur, stepvals, npos, kind)
                         blk = None
                 elif s.startswith(b"</nodevariable") or s.startswith(b"</elementnodevariable"):
-                    want = False
+                    want = rwant = False
                     var = None
                 elif s.startswith(b"<mode "):
                     _refuse("modal_result")
@@ -968,6 +999,8 @@ def _pass1(path, o, ticker):
     st.steps = step + 1
     if mixed:
         st.warnings["precision_mixed"] = mixed
+    _react_finish(st)
+    st.react_max = st.react_peak = st.react_cache = st.react_pos = None     # memory
     _finish1(st, o, prov, tracker, sec, covered)
     return st
 
@@ -989,6 +1022,9 @@ def _new_mesh(st):
 
 def _block_done1(st, o, blk, ids_names, slot_cache, displ_ix, displ_len, cur, stepvals, npos, kind):
     data = blk.data()
+    if blk.name not in DISPL and kind in ("nodeids", "node"):
+        _react_done1(st, blk, data, npos, kind)
+        return
     if blk.tag == b"nodeids":
         ids = _frombytes("i", data)
         ix = array("i", [-1]) * len(st.nids)
@@ -1033,6 +1069,90 @@ def _block_done1(st, o, blk, ids_names, slot_cache, displ_ix, displ_len, cur, st
             if sl is not None and len(vals) != sl[1][-1]:
                 _refuse("value_count", blk.name, len(vals), sl[1][-1])
             stepvals[blk.name] = vals
+
+
+def _is_react(name):
+    """A reaction-type node variable (REACTION_PREFIXES; one prefix at a time: IronPython's
+    str.startswith rejects a tuple of bytes)."""
+    return name is not None and any(name.startswith(p) for p in REACTION_PREFIXES)
+
+
+def _react_group(name):
+    """Reaction variables that share one scale: the name without a trailing x, y, z or mag
+    (reactionforcex/y/z/mag -> reactionforce, reactionmomx -> reactionmom)."""
+    for t in (b"mag", b"x", b"y", b"z"):
+        if name.endswith(t):
+            return name[:len(name) - len(t)]
+    return name
+
+
+def _react_done1(st, blk, data, npos, kind):
+    """1.0.3: <nodeids> and values of a reaction variable: per node position the largest |value|
+    over the steps and per group (_react_group) the largest over all its nodes and steps;
+    _react_finish turns that into st.carry. NaN and inf mark a support at once. Being listed is
+    not enough: Mecway lists every node, with 0.0 away from the supports."""
+    if kind == "nodeids":
+        rp = st.react_cache.get(data)       # the variables of a group share one list
+        if rp is None:
+            ids = _frombytes("i", data)
+            rp = array("i", [-1]) * len(ids)
+            last = None
+            for i in range(len(ids)):
+                n = ids[i]
+                if last is not None and n <= last:
+                    raise _Layout("nodeids not ascending")
+                last = n
+                rp[i] = npos(n)
+            st.react_cache[data] = rp
+        st.react_pos[blk.name] = rp
+        return
+    rp = st.react_pos.get(blk.name)
+    if rp is None:                  # values without <nodeids>: pass 2 leaves them alone too
+        return
+    vals = _frombytes("d" if blk.tag == b"valuesdouble" else "f", data)
+    if len(vals) != len(rp):
+        _refuse("value_count", blk.name, len(vals), len(rp))
+    if vals.count(0.0) == len(vals):
+        return
+    g = _react_group(blk.name)
+    mx = st.react_max.get(g)
+    if mx is None:
+        mx = array("d", [0.0]) * len(st.nids)
+        st.react_max[g] = mx
+    peak = st.react_peak.get(g, 0.0)
+    carry = st.carry
+    for i in range(len(vals)):
+        v = vals[i]
+        if v != 0.0:
+            q = rp[i]
+            if q < 0:
+                continue
+            a = abs(v)
+            if a != a or math.isinf(a):
+                carry[q] = 1
+                continue
+            if a > mx[q]:
+                mx[q] = a
+                if a > peak:
+                    peak = a
+    st.react_peak[g] = peak
+
+
+def _react_finish(st):
+    """1.0.3: st.carry[q] = 1 for a support: a node whose |reaction| exceeds REACTION_REL_TOL
+    times the largest of its group over all nodes and steps (exact 0.0 away from the supports
+    in Mecway's own results; solver round-off of the bridge's REAC_NODA stays below it, NOT
+    verified on a real result)."""
+    carry = st.carry
+    if carry is None:
+        return
+    for g, mx in st.react_max.items():
+        peak = st.react_peak.get(g, 0.0)
+        if peak > 0.0:
+            thr = REACTION_REL_TOL * peak
+            for q in range(len(mx)):
+                if mx[q] > thr:
+                    carry[q] = 1
 
 
 def _sol_end(o, s):
@@ -1385,6 +1505,8 @@ def _plan(st, o, tick=None):
     copy_of = {}
     copy_elem = {}
     kept = {}
+    freed = set()
+    carry = st.carry
     tick(0.35)
     for i, p in enumerate(sorted(failed)):
         if not (i & m):
@@ -1398,10 +1520,16 @@ def _plan(st, o, tick=None):
             own = owners[n]
             keeper = None
             if all(q in failed for q in own):
-                keeper = own[0]
-                for q in own[1:]:
-                    if failed[q][0] > failed[keeper][0]:
-                        keeper = q
+                if carry is not None and carry[st.npos(n)]:
+                    # 1.0.3: a support node (a reaction above round-off) is never
+                    # collapsed: every owner gets a copy, the original keeps its place, its
+                    # real displacement and all values, used by no element ("" group)
+                    freed.add(n)
+                else:
+                    keeper = own[0]
+                    for q in own[1:]:
+                        if failed[q][0] > failed[keeper][0]:
+                            keeper = q
             if keeper == p:
                 kept[n] = p
                 mine[n] = n
@@ -1419,6 +1547,7 @@ def _plan(st, o, tick=None):
     pl.copy_elem = copy_elem
     pl.copies = sorted(copy_of)
     pl.kept = kept
+    pl.freed = freed
     pl.need = set(copy_of.values()) | set(kept)
     pl.affected = sorted(set(st.eset[p] for p in failed))
     # displacement offsets of the collapse per collapsed node: (k, (dx, dy, dz, mag))
@@ -1451,6 +1580,26 @@ def _plan(st, o, tick=None):
                 mb[st.npos(n)] = 1
     pl.members = members
     pl.copy_elset = copy_set
+    # 1.0.3: nodes in no element after the change (maxandmin group name="", first, as the
+    # mecway skill liml-format 9 describes): the free nodes of the input plus the freed
+    # supports. Only with freed supports (otherwise the "" group cannot change) and when no
+    # elset is called "" itself.
+    pl.free = None
+    pl.free_blocked = bool(freed) and b"" in st.elset_names    # counted as mm_group_mismatch
+    if freed and not pl.free_blocked:
+        used = bytearray(n_nodes)
+        for p in range(n_e):
+            if not (p & m):
+                tick(0.75)
+            for n in conn[eoff[p]:eoff[p + 1]]:
+                used[st.npos(n)] = 1
+        free = bytearray(n_nodes)
+        for q in range(n_nodes):
+            if not used[q]:
+                free[q] = 1
+        for n in freed:
+            free[st.npos(n)] = 1
+        pl.free = free
     # tightened structural fingerprint (review finding 4): a node of a failed element above
     # the model's highest id, used by that element only, on the spot of a model node
     cand = {}
@@ -1755,7 +1904,7 @@ def _block_done2(st, pl, o, blk, info_of, cache, held, step, g):
         g.writelines(held)
         g.writelines(blk.emit(data))
         return
-    ext_bytes, copy_slots, kept_slots, mm_pos, n0 = info
+    ext_bytes, copy_slots, kept_slots, mm_pos, n0, lost = info
     if len(vals) != n0:
         _refuse("value_count", blk.name, len(vals), n0)
     mm_new = None
@@ -1777,6 +1926,8 @@ def _block_done2(st, pl, o, blk, info_of, cache, held, step, g):
                     if step >= sl[2]:
                         vals[sl[0]] = sl[3][comp] if comp is not None else 0.0
         mm_new = {}
+        if lost:
+            st.mm_mismatch += 1
         for s, idx in mm_pos.items():
             mx = mn = None
             for i in idx:
@@ -1789,7 +1940,7 @@ def _block_done2(st, pl, o, blk, info_of, cache, held, step, g):
                     mx = v
                 elif v < mn:
                     mn = v
-            mm_new[st.elset_names[s]] = (mx, mn)
+            mm_new[st.elset_names[s] if s >= 0 else b""] = (mx, mn)
     out = []
     seen = set()
     for r in held:
@@ -1814,13 +1965,33 @@ def _block_done2(st, pl, o, blk, info_of, cache, held, step, g):
     if mm_new is not None:
         for nm, (mx, mn) in mm_new.items():
             if nm not in seen and mx is not None:
-                st.mm_mismatch += 1
+                if not (nm == b"" and -1 in mm_pos and _add_free_group(out, mx, mn)):
+                    st.mm_mismatch += 1
     g.writelines(out)
     g.writelines(blk.emit(_tobytes(vals)))
 
 
+def _add_free_group(out, mx, mn):
+    """1.0.3: insert <component name="" .../> as the first line inside <maxandmin> (a freed
+    support made a node free where the input had none); indent and line end of the first
+    component line, else of <maxandmin> + 2 spaces. False when there is no <maxandmin> line
+    of its own (the caller counts mm_group_mismatch)."""
+    for i in range(len(out)):
+        if out[i].strip() == b"<maxandmin>":
+            nxt = out[i + 1] if i + 1 < len(out) else b""
+            comp = nxt.lstrip().startswith(b"<component ")
+            ref = nxt if comp else out[i]
+            ind = ref[:len(ref) - len(ref.lstrip())] + (b"" if comp else b"  ")
+            eol = _eol(ref) or _eol(out[i]) or b"\n"
+            out.insert(i + 1, ind + b'<component name="" max="' + _fmt15(mx) + b'" min="' +
+                       _fmt15(mn) + b'" />' + eol)
+            return True
+    return False
+
+
 def _nodeids_info(st, pl, o, ids, react):
-    """(extended ids bytes, copy slots, kept slots, mm positions per affected elset, n0).
+    """(extended ids bytes, copy slots, kept slots, mm positions per affected elset (-1: the ""
+    group, 1.0.3), n0, lost: the "" group is blocked by an elset called "").
     A slot is (index in the extended list, source index, failure step, offsets)."""
     n0 = len(ids)
     where = {}
@@ -1830,6 +2001,9 @@ def _nodeids_info(st, pl, o, ids, react):
     for s in pl.affected:
         mm_pos[s] = array("i")
         items.append((pl.members[s], mm_pos[s]))
+    if pl.free is not None:         # 1.0.3: the "" group (key -1), kept below only when a
+        mm_pos[-1] = array("i")     # freed support is in this list
+        items.append((pl.free, mm_pos[-1]))
     npos = st.npos
     last = None
     for i in range(n0):
@@ -1844,6 +2018,10 @@ def _nodeids_info(st, pl, o, ids, react):
                     arr.append(i)
         if n in need:
             where[n] = i
+    if -1 in mm_pos and not any(n in where for n in pl.freed):
+        del mm_pos[-1]
+    # an elset called "" blocks the "" group: _block_done2 counts mm_group_mismatch per block
+    lost = pl.free_blocked and any(n in where for n in pl.freed)
     ext = array("i", ids)
     copy_slots = []
     kept_slots = []
@@ -1866,7 +2044,7 @@ def _nodeids_info(st, pl, o, ids, react):
             if i is not None:
                 k, d = pl.coll[n]
                 kept_slots.append((i, i, k, d))
-    return _tobytes(ext), copy_slots, kept_slots, mm_pos, n0
+    return _tobytes(ext), copy_slots, kept_slots, mm_pos, n0, lost
 
 
 # ----------------------------------------------------------------------------- API
@@ -1939,6 +2117,7 @@ def _report(st, pl, o, t):
     rep["failed_by_shape"] = by_shape
     rep["copies"] = len(pl.copy_of) if pl is not None else 0
     rep["kept_originals"] = len(pl.kept) if pl is not None else 0
+    rep["kept_supports"] = len(pl.freed) if pl is not None else 0      # 1.0.3
     rep["affected_elsets"] = [st.elset_names[s].decode("utf-8", "replace")
                               for s in (pl.affected if pl is not None else [])]
     rep["warnings"] = dict(st.warnings)
@@ -1998,7 +2177,9 @@ def process(in_path, out_path, events_path=None, solver=None, progress=None, can
            they were except for the displacement; "zero": those variables are 0 from the
            failure step on (pulls the legend range of the affected elsets towards 0).
            Displacements always collapse; reaction-type variables (REACTION_PREFIXES) never
-           get copies and are never changed.
+           get copies and are never changed. 1.0.3: a node whose owners all fail and that
+           is a support (REACTION_REL_TOL) is never collapsed, also in mode "copies" (report key
+           kept_supports; see the module docstring).
     force  skip the processed-marker check (tests); the output then carries one new marker
            (an input marker and the 1.0.0 attribute are dropped) in mode collapse.
     configuration  name of the configuration whose <solution> to process; None = the file

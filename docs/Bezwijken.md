@@ -142,7 +142,9 @@ toe).
     is, zodat hun legenda blijft zoals zonder verbergen. De legenda (maximum en minimum)
     van de verplaatsing van een elset met bezweken elementen kan wel verschuiven: lees
     verplaatsingen op intacte elementen. Tot en met V2026.11 waren de andere
-    knoopwaarden 0 vanaf het bezwijken.
+    knoopwaarden 0 vanaf het bezwijken. Een steunpunt (een knoop met een reactiekracht
+    of -moment) klapt niet ineen, ook als al zijn elementen bezwijken: het blijft op zijn
+    plaats met zijn echte verplaatsing en reactie, zonder element.
   - Een element dat bij de laatste opgeslagen stap bezwijkt, blijft zichtbaar
     (`failed` wordt pas in de stap erna 1). Alleen na een run noemen het log en het
     statusvak hoeveel bezweken elementen van de run zichtbaar blijven (de bridge kent

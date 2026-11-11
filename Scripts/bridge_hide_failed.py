@@ -241,9 +241,10 @@ def apply(liml, configuration=None, expected=None, state=None):
         _remove(tmp)
         return _not_hidden(u"{0}".format(e))
     log(u"INFO: Hide failed elements: {0} element(s) hidden in '{1}' "
-        u"({2:.1f} s, {3} node copies, {4} section-view shell(s) with "
-        u"them).".format(len(hidden), liml, seconds, rep.get("copies", 0),
-                         shells))
+        u"({2:.1f} s, {3} node copies, {4} support node(s) kept in place, "
+        u"{5} section-view shell(s) with them).".format(
+            len(hidden), liml, seconds, rep.get("copies", 0),
+            rep.get("kept_supports", 0), shells))
     for _code, pair in rep.get("messages", [])[1:]:
         log(u"WARNING: " + _core_text(pair))
     lines = [tr(u"{0} bezweken element(en) verborgen in de resultaten in "
@@ -445,7 +446,10 @@ def _processed_state(liml, configuration=None):
     numbers its extra sectors that way): only the marker counts. Limit: the
     core makes no copy of a node that only failed elements share (the last
     to fail keeps it), so a file whose failed elements are all of that kind
-    is not recognised without the marker. Raises IOError/OSError.
+    is not recognised without the marker. A support among them (core 1.0.3:
+    a reaction above round-off) does get copies for all its elements; the
+    original then belongs to no element, which does not change this check.
+    Raises IOError/OSError.
     """
     found = {"marker": None, "version": False, "copies": False,
              "shells": False}
