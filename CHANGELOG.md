@@ -1,31 +1,54 @@
 # Changelog
 
-## Unreleased
+## V2026.12 – 11 November 2026
 
-- **Hide failed elements: core `liml_failed.py` 1.0.3**: a support node whose elements all fail
-  no longer collapses; it stays in place with its real displacement and reaction. Core 1.0.4:
-  a reaction group that is only round-off (forces of a beam under a pure moment) marks no
-  supports.
-- **Hide failed elements: core `liml_failed.py` 1.0.2** (copy of AdvancedToolsHub's; 1.0.2 treats an
-  empty `<solution configuration=... />` as its own solution, so it never reads into the next
-  one). Behaviour
-  change: the other node variables of a collapsed node now follow the node it copies, instead
-  of being 0 from the failure on; only the displacement collapses, so the legends of the other
-  variables stay as without hiding.
+Results survive Code-Aster's time limit: a nonlinear static or nonlinear dynamic run (also
+thermomechanical) that stops on *Time limit run_aster* now loads the steps computed so far; the
+step loops of element failure and welding stop before the limit, mesh adaptation ends on it.
+*Hide failed elements* gets the core `liml_failed.py` 1.0.5, and a *Fixed support* on shell,
+solid or truss nodes, which Mecway's own solver leaves free, now gives a WARNING. Behaviour
+changes: the other node values of a hidden element follow its original node instead of being 0,
+a support node stays in place even when all its elements fail, and hidden results carry the
+marker `failed_hidden` instead of the attribute `limlfailed`. Measured with Code-Aster 17.4
+headless and offline tests; NOT checked in the Mecway window. The generated `.comm` of 121 of
+the 578 comparable verification cases changes (every nonlinear case); those plus the fastest
+case of every group (147 cases) gave 632 of 635 checks OK, 3 BEKEND (KNOWN_BUGS 43, as before);
+a final run of 43 cases on the release code gave 280 of 280 OK. No status change.
+
+- **Hide failed elements: core `liml_failed.py` 1.0.5** (copy of AdvancedToolsHub's, was
+  1.0.0). Behaviour change: the other node variables of a collapsed node follow the node it
+  copies, instead of being 0 from the failure on; only the displacement collapses, so the
+  legends of the other variables stay as without hiding. A support node whose elements all fail
+  no longer collapses: it stays in place with its real displacement and reaction; a reaction
+  group that is only round-off (forces of a beam under a pure moment) marks no supports. An
+  empty `<solution configuration=... />` is its own solution, so the core never reads into the
+  next one.
+- **WARNING for a Fixed support on nodes that Mecway leaves free** (KNOWN_BUGS 135): on a node
+  selection Mecway's own solver holds only nodes with all rotational DOFs (beam nodes,
+  reference nodes of couplings) and silently leaves shell, solid, 2D and spring-only nodes free
+  (measured with Mecway 35 on quad and hex nodes; trusses, tension-only elements, gaps and
+  dampers count by the manual's rule, NOT measured). The bridge keeps clamping them, as before,
+  and now names per node selection how many nodes Mecway would leave free, with the advice to
+  clamp on faces; truss models get this WARNING too. The generated `.comm` does not change.
+  KNOWN_BUGS 95 (shells expanding less under a temperature) is withdrawn: it came from such a
+  support.
 - **New marker of hidden results**: the global variable `failed_hidden` (the number of hidden
   elements) as the first line in `<results>`, instead of the attribute `limlfailed`. A save in
   Mecway keeps it (Mecway 35), so hiding again and "Section in results" refuse a saved file by
-  its marker; files of V2026.11 are still recognised. Where Mecway's result list shows the
+  its marker; files of V2026.11 are still recognised, except when every failed element shares
+  nodes only with other failed elements (see Failure §4). Where Mecway's result list shows the
   variable is NOT verified in the Mecway window.
 - **Results after the time limit** (nonlinear static and dynamic, thermomechanical): when
   Code-Aster stops on *Time limit run_aster* (`MECANONLINE9_1`/`9_2`, `SUPERVIS_63`), the
   bridge now gives it extra time for the post-processing, so the steps computed so far are
   loaded; before, Code-Aster skipped the post-processing and nothing was loaded. The step
   loops of element failure and of filler material in welding stop themselves before the
-  limit, and a limit reached only in the post-processing gets the same extra time. The
-  status box says so and advises raising the time limit. Linear and thermal analyses
-  still lose the results (KNOWN_BUGS 137).
-  Measured with Code-Aster 17.4 headless; NOT checked in the Mecway window.
+  limit, the adaptive mesh loop (HOMARD) ends on a time stop, and a limit reached only in the
+  post-processing gets the same extra time. The status box and the convergence window say so,
+  and the status box advises raising the time limit; the tooltip of `time_limit` now says it
+  is wall-clock time of which Code-Aster keeps 10 % to close. Linear and thermal analyses
+  still lose the results (KNOWN_BUGS 137). Measured with Code-Aster 17.4 headless; NOT
+  checked in the Mecway window.
 
 ## V2026.11 – 11 November 2026
 
