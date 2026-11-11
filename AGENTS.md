@@ -201,6 +201,8 @@ version of the core, pinned in `tests/test_liml_failed_copy.py`).
   collapses; the original keeps its place and values, used by no element (`kept_supports`).
   From 1.0.4 a group that is only round-off compared with the other one (forces under a pure
   moment, measured on NL-81) marks no supports (`noise_reaction_groups`).
+- Core 1.0.5 (KNOWN_BUGS 88 of AdvancedToolsHub): no change in behaviour (number characters
+  written in pieces in the source).
 - The empty `<nodes />`/`<values />` (and `<elements />`) tails of every variable block stay in the
   processed file (contract with MecwayAdvancedBeamAnalysis). Tests: `tests/test_liml_failed_copy.py`
   (pin and the hub's golden fixture), `tests/test_failed_contract.py` (this writer through `scan`).

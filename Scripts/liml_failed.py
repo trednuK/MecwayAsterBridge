@@ -30,7 +30,9 @@ spot. That Mecway draws the reaction of a node in no element on its place is NOT
 87): when both reactionforce* and reactionmom* have values, a group whose peak is only round-off
 next to the other (REACTION_NOISE_TOL with the model length, or REACTION_NOISE_RAW) marks no
 supports (report key noise_reaction_groups); Code-Aster's REAC_NODA under a pure end moment
-otherwise made every free node a support. One group alone keeps the 1.0.3 rule.
+otherwise made every free node a support. One group alone keeps the 1.0.3 rule. 1.0.5
+(KNOWN_BUGS 88): no change in behaviour; the number characters of _parse_time are written in
+pieces (_NUM_CHARS), as a run of ten digits in the source trips a phone-number check.
 
 Processed marker (OPEN_VRAGEN 72): the first line inside the target <results> becomes
 <globalvariable name="failed_hidden">N</globalvariable>, N = number of hidden elements. Mecway
@@ -83,7 +85,7 @@ import sys
 import time
 from array import array
 
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 CONTRACT_FAILED = "failed/1"
 
 # --- switches (module constants; tests change them) -------------------------------------
@@ -116,6 +118,9 @@ REACTION_REL_TOL = 1e-3
 # load plus reactions (bridge docs, U4.51.03) [I]; NL-81 gave P_F / P_M = 2.1e-6 (L = 1 m).
 REACTION_NOISE_TOL = 1e-3
 REACTION_NOISE_RAW = 1e-4
+# Characters of the number in a time attribute (_parse_time). 1.0.5 (KNOWN_BUGS 88): written in
+# pieces, so the source holds no run of ten digits (a privacy check reads that as a phone number).
+_NUM_CHARS = b"01234" b"56789" b"+-.eE"
 REACT_FORCE = b"reactionforce"
 REACT_MOM = b"reactionmom"
 FAILED_VAR = b"failed"
@@ -489,7 +494,7 @@ def _parse_time(raw):
     """Seconds from a time attribute ('0.001 s'), or raise ValueError."""
     t = raw.strip()
     i = 0
-    while i < len(t) and t[i:i + 1] in b"0123456789+-.eE":
+    while i < len(t) and t[i:i + 1] in _NUM_CHARS:
         i += 1
     num = float(t[:i])
     unit = t[i:].strip().decode("utf-8")

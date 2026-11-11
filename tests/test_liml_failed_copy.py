@@ -35,8 +35,8 @@ import liml_failed as L  # noqa: E402
 
 # The same pair as PIN_VERSION / PIN_SHA256 in AdvancedToolsHub's
 # tests/unit/test_liml_failed.py. Update both together, with the copy.
-PIN_VERSION = "1.0.4"
-PIN_SHA256 = "b3bfcbf5f444d8e009a40b23e5a737c755f2b0f6a3a39b2af321b507399bb4ba"
+PIN_VERSION = "1.0.5"
+PIN_SHA256 = "c2c2d0a4cee198c508aeb64b3261c33dd19e12b45453f3458fa34c56defa13c6"
 # sha256 (LF) of the golden input and of its processed output, as the hub
 GOLDEN_INPUT_SHA = "02b067d37bd2e3f01fb82eedefc0a17bb96ee4cf6751bb9566ccdf5b4770a85c"
 GOLDEN_OUTPUT_SHA = "23fa0420221c7a56f44dc3d6c4bbb49b75737d05b0ec199bd05ae02fa4e78101"
