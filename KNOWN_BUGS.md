@@ -94,7 +94,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    or Code-Aster (NOT checked; which one is closer to reality, also not).
 
 112\. **Buckling: Mecway's beam has no torsional buckling; the bridge is right** (confirmed,
-   Mecway 34 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`; verification BU-30/31).
+   Mecway 34 and 35 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`; verification BU-30/31).
    Fixed column L = 1 m, I 100/50/10/8 mm, 20 elements, 1000 N: bridge 109.72 / 987.46 /
    1230.44 / 2413.87, Mecway 109.72 / 987.46 / 1230.44 / 2743.03. Mecway's 2743.03 is not a
    torsional mode but the third flexural mode (25 × 109.72, the bridge's mode 6); Mecway's
@@ -110,7 +110,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    Nothing to fix in the bridge; open sections with eccentric shear centre: item 115.
 
 113\. **Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right**
-   (confirmed, Mecway 34 headless and Code-Aster 17.4; verification BU-32 … BU-34). L-frame
+   (confirmed, Mecway 34 headless (BU-32 and BU-34 also Mecway 35) and Code-Aster 17.4;
+   verification BU-32 … BU-34). L-frame
    (column along Z 1 m, girder along X 1 m, RectBar 40 × 10 mm, 100 N downwards at the end of
    the girder): bridge 17.27 / 44.53 / 122.44 / 151.95 / 155.45 (and −53.04 / −124.28 /
    −159.97 under the reversed load), Mecway 17.27 / 19.71 / 127.30 / 155.45 / 173.90. The

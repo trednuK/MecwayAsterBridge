@@ -100,7 +100,7 @@ S7, S8, S5, S9).
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
 | S45 | Results after a time limit in linear and thermal analyses (KNOWN_BUGS 137); extra time (`ExecutionParameter` `tpmax`, as `bridge_failure._extend_time`) around those commands, or a `POURSUITE` run for the post-processing | later | – | the nonlinear solves and the step loops are done (branch `time-guard`, 11 Nov 2026: extra time after a `TimeLimitError` and after the solve, and the time guard of the loops, measured with `StopTest_LongRun`; released in V2026.12); scope (11 Nov 2026): only where results exist when the limit hits: after the solve (post-processing) for every analysis, and the archived steps of transient linear/thermal runs; a single linear solve or CALC_MODES that is not finished has no results |
-| S46 | Review all KNOWN_BUGS: per item reproduce with the current versions (Code-Aster 17.4, Mecway 35), check whether it is real or a wrong setting/assumption of the test (as KNOWN_BUGS 95 turned out), then fix or document; priority of the user (11 Nov 2026) | open | – | 74 items in four groups; work per group, headless only |
+| S46 | Review all KNOWN_BUGS: per item reproduce with the current versions (Code-Aster 17.4, Mecway 35), check whether it is real or a wrong setting/assumption of the test (as KNOWN_BUGS 95 turned out), then fix or document; priority of the user (11 Nov 2026) | in progress | – | 74 items in four groups; work per group, headless only; branch `stap-S46`, progress table in §S46 |
 | – | Rotordynamics | later | – | not relevant yet (user, 11 Nov 2026) |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2479,3 +2479,117 @@ of S3b). Mecway has no axisymmetric acoustic type either (S16d).
 (`AXIS_FLUIDE` + `AXIS_FLUI_STRU`), as a new step when the user asks for it.
 
 **Open for the user:** the input route (A or B) after the research, and whether S44f is wanted.
+
+### S46 – Review all KNOWN_BUGS
+**Background:** priority of the user (11 Nov 2026). Former item 95 (Mecway's shells expand
+less than the theory under a temperature) turned out to be a test setting: a `fixed` support on
+shell nodes, which Mecway ignores (now item 135). Every item may hide such a wrong setting or
+assumption, or be outdated by Code-Aster 17.4 or Mecway 35.
+**Procedure per item:** (1) read the item and its origin (code, docs, the cases in
+`TestFiles/Verificatie`, `git log -S`); (2) reproduce it headless with the current versions:
+Code-Aster 17.4 directly, Mecway 35 headless as a reference (a hidden Mecway process started
+and stopped by its own PID only, inputs that cannot open a dialog, a timeout), test models
+only; Mecway 35 is not yet in `TESTED_MECWAY_VERSIONS` (that needs `docs/en/After_an_update.md`
+§2, §5), so its values here are reference measurements, not a support claim; no GUI windows (what needs one becomes a test for the user); (3) decide: **real**, **test
+setting** (the item comes from a wrong setting or assumption), **outdated** (no longer happens)
+or **unchanged limit** (an item of group D that still holds); (4) fix it in the bridge, correct
+the item, or remove it (rules at the top of `KNOWN_BUGS.md`), with docs NL+EN and verification
+where needed. Plans and diffs reviewed by an Opus subagent; independent items in parallel.
+**Work per group** (A .. D below = the four headings of `KNOWN_BUGS.md`) on branch `stap-S46`;
+merge into `develop` and push after each group; no release without the user's OK. Group D
+also restores the number order inside the heading (59 before 58, 72 before 71 now).
+**Progress** (verdict empty = not yet reviewed; Commit = the commit that holds the action):
+
+**Group A – Deviations from Mecway** (14 items)
+
+| Item | Title | Verdict | Action | Commit |
+|---|---|---|---|---|
+| 1 | Hex8 is stiffer than in Mecway |  |  |  |
+| 2 | Shell elements ~0.7% different from Mecway |  |  |  |
+| 3 | Nodal stresses and von Mises different from Mecway |  |  |  |
+| 7 | Stresses per element node stay from Mecway in the table route |  |  |  |
+| 46 | Buckling: negative buckling load factors and Mecway's shift |  |  |  |
+| 60 | Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0 |  |  |  |
+| 62 | Strongly curved hex20/wedge15: frequencies up to 0.8% higher than Mecway |  |  |  |
+| 112 | Buckling: Mecway's beam has no torsional buckling; the bridge is right | real (Mecway 35.0.9802 headless: BU-30/31 109.72 / 987.46 / 1230.44 / 2743.03, hex20 2384.28, identical to Mecway 34) | item: Mecway 34 and 35 | this commit |
+| 113 | Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right | real (Mecway 35.0.9802 headless: BU-32 17.27 / 19.71 / 127.30 / 155.45 / 173.90, BU-34 0.7036, identical to Mecway 34; BU-33 not re-run) | item: Mecway 35 for BU-32 and BU-34 | this commit |
+| 125 | 2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is right |  |  |  |
+| 128 | Bonded contact with shells: displacements differ from Mecway |  |  |  |
+| 130 | Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's |  |  |  |
+| 132 | Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms |  |  |  |
+| 133 | Stress over beam sections: limits |  |  |  |
+
+**Group B – Translation that works differently** (27 items)
+
+| Item | Title | Verdict | Action | Commit |
+|---|---|---|---|---|
+| 8 | Duplicate boundary conditions |  |  |  |
+| 9 | Failure not for beams; kinematic hardening with the current plastic strain |  |  |  |
+| 10 | Contact pairs with shared slave nodes are merged |  |  |  |
+| 11 | Large rotations: beams, prescribed rotations and rigid couplings |  |  |  |
+| 14 | Thermal: transient scheme different from Mecway |  |  |  |
+| 15 | Thermal shells as PLAN with a thickness factor |  |  |  |
+| 17 | Thermal strain: temperature within the element and in time |  |  |  |
+| 19 | Centrifugal force |  |  |  |
+| 20 | Multiple distributed loads on a beam |  |  |  |
+| 21 | Bonded contact (LIAISON_MAIL) |  |  |  |
+| 22 | Compression only |  |  |  |
+| 23 | Gap and tension-only elements |  |  |  |
+| 34 | PLAS_TAB: untranslated fields |  |  |  |
+| 40 | Trusses with large displacements |  |  |  |
+| 43 | Contact: hard and soft formulation differ from Mecway |  |  |  |
+| 48 | Modal: mechanism in a supported model |  |  |  |
+| 53 | Nonlinear buckling: limits of CRIT_STAB and the imperfection |  |  |  |
+| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse |  |  |  |
+| 83 | XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high |  |  |  |
+| 106 | Flexible joint: constraint on an element selection, large rotations |  |  |  |
+| 107 | Line3 beams and trusses: two straight SEG2 cells |  |  |  |
+| 108 | Element offset: small rotations, values at the nodes and combinations |  |  |  |
+| 115 | Buckling of T, C and L beams misses flexural-torsional buckling |  |  |  |
+| 119 | Mass check without the mass for `POU_D_T_GD` beams |  |  |  |
+| 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong |  |  |  |
+| 135 | Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge clamps | real (written 11 Nov 2026 from the KNOWN_BUGS 95 re-check, Mecway 35.0.9802 headless and Code-Aster 17.4) | none | this commit |
+| 137 | A time limit in a linear or thermal analysis loses all results |  |  |  |
+
+**Group C – Open questions** (9 items)
+
+| Item | Title | Verdict | Action | Commit |
+|---|---|---|---|---|
+| 27 | Not verified in a .liml |  |  |  |
+| 37 | Second run in the same session: `solution` after `mw.open` |  |  |  |
+| 38 | Main window non-modal: other Mecway actions not checked |  |  |  |
+| 41 | Explicit: TCHAMWA with a variable step not checked |  |  |  |
+| 47 | Springs and dampers: not compared against a Mecway solution |  |  |  |
+| 116 | Element orientation card: parts not compared with Mecway |  |  |  |
+| 118 | Results after `DVP_2` not seen in a real DVP_2 run |  |  |  |
+| 120 | Hysteretic damping: not on all discrete elements, stresses not checked |  |  |  |
+| 134 | Pinned support in 2D holds every node, not the mean |  |  |  |
+
+**Group D – Not translated** (24 items)
+
+| Item | Title | Verdict | Action | Commit |
+|---|---|---|---|---|
+| 4 | Loads and boundary conditions the bridge does not know |  |  |  |
+| 5 | Frictionless with displacement on curved shells |  |  |  |
+| 6 | Kinematic hardening: no equivalentplasticstrain; non-linear kinematic curve |  |  |  |
+| 16 | Thermal: not translated |  |  |  |
+| 49 | Modal: limits of the prestress and of the complex modes |  |  |  |
+| 51 | Error estimator: only linear static and solid elements |  |  |  |
+| 54 | Response on modal basis and harmonic response: limits |  |  |  |
+| 55 | Acoustics: 2D, acoustic displacement and media with different density not translated; limits of the impedance |  |  |  |
+| 56 | Response spectrum: limits |  |  |  |
+| 57 | Harmonic acoustics: limits |  |  |  |
+| 59 | Vibro-acoustics: coupled modes and harmonic response; limits |  |  |  |
+| 58 | Welding heat source: limits |  |  |  |
+| 61 | Cyclic symmetry: limits |  |  |  |
+| 63 | Fracture mechanics: only linear static, no field, no quarter points |  |  |  |
+| 64 | Welding: limits of the thermal → mechanical chain |  |  |  |
+| 65 | Adaptive refinement: limits |  |  |  |
+| 66 | Fatigue: limits (solids and shells, Miner, critical plane only on solids) |  |  |  |
+| 72 | Welding: limits of the metallurgy |  |  |  |
+| 71 | Welding: filler material that is born, limits |  |  |  |
+| 104 | Formulas: limits |  |  |  |
+| 121 | Result formulas: not every Mecway symbol |  |  |  |
+| 124 | Pre-tension section: limits |  |  |  |
+| 126 | 2D analyses: limits |  |  |  |
+| 131 | Orthotropic and anisotropic material: limits |  |  |  |
