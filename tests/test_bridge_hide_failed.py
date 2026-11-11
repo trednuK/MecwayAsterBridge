@@ -217,6 +217,80 @@ def test_success(tmp):
     check("the original is not processed", not bhf.is_processed(GOLDEN))
 
 
+def _write_bytes(path, data):
+    with open(path, "wb") as f:
+        f.write(data)
+    return path
+
+
+def test_markers(tmp):
+    print("-- markers and configurations (_processed_state)")
+    done = os.path.join(tmp, "markers_done.liml")
+    L.process(GOLDEN, done, solver="aster")
+    processed = read(done)
+    eol = b"\r\n" if b"\r\n" in processed else b"\n"
+    line = (b'      <globalvariable name="failed_hidden">3'
+            b'</globalvariable>' + eol)
+    bare = processed.replace(line, b"")
+    # two configurations: a stub A without results (no end tag), then the
+    # processed solution of B
+    sol = bare.find(b"<solution")
+    liml_tag = bare.find(b"<liml")
+    after_liml = bare.find(b"\n", liml_tag) + 1
+    confs = (b'  <configuration name="A" />' + eol +
+             b'  <configuration name="B" />' + eol)
+    two = (bare[:after_liml] + confs + bare[after_liml:sol] +
+           b'<solution configuration="A" />' + eol + b"  " +
+           bare[sol:].replace(b"<solution", b'<solution configuration="B"',
+                              1).replace(b'<results precision="double">' +
+                                         eol, b'<results precision="double">'
+                                         + eol + line, 1))
+    path = _write_bytes(os.path.join(tmp, "markers_conf.liml"), two)
+    st_b = bhf._processed_state(path, u"B")
+    st_a = bhf._processed_state(path, u"A")
+    check("configuration B: marker and copies",
+          st_b["marker"] == u"3" and st_b["copies"] and not st_b["shells"],
+          st_b)
+    check("configuration A (stub before B): nothing",
+          st_a["marker"] is None and not st_a["copies"], st_a)
+    check("configuration None in a model with configurations: any "
+          "solution", bhf.is_processed(path) and
+          bhf._processed_state(path)["marker"] == u"3")
+    # the stub alone, the marker of B gone: B still by its copies
+    path2 = _write_bytes(os.path.join(tmp, "markers_conf2.liml"),
+                         two.replace(line, b""))
+    st_b = bhf._processed_state(path2, u"B")
+    check("configuration B without marker: by its copies",
+          st_b["marker"] is None and st_b["copies"], st_b)
+    # an empty variable, another attribute before name
+    empty = _write_bytes(os.path.join(tmp, "markers_empty.liml"),
+                         processed.replace(line, b'      <globalvariable '
+                                           b'unit="" name="failed_hidden" />'
+                                           + eol))
+    st = bhf._processed_state(empty)
+    check("empty variable, name not first: marker '?'",
+          st["marker"] == u"?" and not st["version"], st)
+    check("... the warning names the marker, no count",
+          bhf._marker_text(st) == u"marker failed_hidden")
+    # failed_hidden inside a time step does not count
+    step = bare.find(b"<timestep ")
+    step = bare.find(b"\n", step) + 1
+    inside = _write_bytes(os.path.join(tmp, "markers_step.liml"),
+                          bare[:step] + line + bare[step:])
+    st = bhf._processed_state(inside)
+    check("a failed_hidden inside a time step is no marker",
+          st["marker"] is None and st["copies"], st)
+    # the 1.0.0 attribute and the variable: the variable wins
+    both = _write_bytes(os.path.join(tmp, "markers_both.liml"),
+                        processed.replace(b'<results precision="double">',
+                                          b'<results precision="double" '
+                                          b'limlfailed="1.0.0">'))
+    st = bhf._processed_state(both)
+    check("attribute and variable: the variable wins",
+          st["marker"] == u"3" and not st["version"] and
+          L.processed_marker(both) == u"3", st)
+
+
 def test_skip_and_refusals(tmp):
     print("-- skip and refusals")
     liml = os.path.join(tmp, "fake.liml")
@@ -486,6 +560,7 @@ def main():
     bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp
     try:
         test_success(tmp)
+        test_markers(tmp)
         test_skip_and_refusals(tmp)
         test_hide_and_open(tmp)
         with io.open(os.path.join(tmp, bridge_utils.log_file_name()),

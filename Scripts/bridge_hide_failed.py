@@ -93,10 +93,13 @@ def _missing(liml):
 
 _ELEM = re.compile(br'<elem\s+eid="(\d+)"[^>]*?\snodes="([^"]*)"')
 _NID = re.compile(br'<node\s+nid="(\d+)"')
-# <globalvariable name="failed_hidden"> of core 1.0.1 (liml_failed.MARKER_VAR,
-# letters and _ only; not re.escape: IronPython 2.7.9's wants str, not bytes)
-_MARKER = re.compile(br'<globalvariable\s+name="' + liml_failed.MARKER_VAR +
-                     br'"[\s/>]')
+# The processed markers of the core: <globalvariable name="failed_hidden">
+# of 1.0.1 (liml_failed.MARKER_VAR, letters and _ only; not re.escape:
+# IronPython 2.7.9's wants str, not bytes), name in any place, and the
+# attribute limlfailed="<version>" on <results> of 1.0.0 (MARKER_ATTR).
+_MARKER = re.compile(br'<globalvariable\s[^>]*?\bname="' +
+                     liml_failed.MARKER_VAR + br'"')
+_OLD_MARKER = re.compile(br'\s' + liml_failed.MARKER_ATTR + br'="([^"]*)"')
 
 
 def _model_max_eid(liml):
@@ -403,13 +406,13 @@ def _marker_text(found):
     if marker is None:
         return tr(u"kenmerk verloren, bijvoorbeeld door opslaan in Mecway",
                   u"marker lost, for example by a save in Mecway")
+    if found.get("version"):
+        # the attribute limlfailed of core 1.0.0: its version
+        return tr(u"versie {0}", u"version {0}").format(marker)
     count = liml_failed.marker_count(marker)
     if count is not None and not found["shells"]:
         return tr(u"{0} element(en)", u"{0} element(s)").format(count)
-    if count is None and marker != u"?":
-        # the attribute limlfailed of core 1.0.0: its version
-        return tr(u"versie {0}", u"version {0}").format(marker)
-    # the count of the marker includes the shells of a section view
+    # no number, or a count that includes the shells of a section view
     return tr(u"kenmerk failed_hidden", u"marker failed_hidden")
 
 
@@ -418,11 +421,17 @@ def _processed_state(liml, configuration=None):
     What shows that the solution of liml (of that configuration; None: the
     first, or every one when the model defines configurations, as the
     core's processed_marker) has its failed elements hidden. A dict:
-      "marker"  the core's marker text (liml_failed.processed_marker: the
-                hidden count of <globalvariable name="failed_hidden"> of
-                core 1.0.1, or the version of the attribute limlfailed of
-                core 1.0.0), also when the variable is not right after
-                <results> (anywhere before the first step); None without;
+      "marker"  the core's marker text, as liml_failed.processed_marker
+                gives it (the hidden count of <globalvariable
+                name="failed_hidden"> of core 1.0.1, u"?" when empty, else
+                the version of the attribute limlfailed of core 1.0.0; the
+                variable wins), but read here: also when the variable is
+                not right after <results> (anywhere before the first step,
+                where the core refuses it too), and a stub
+                <solution configuration=".." /> without results is skipped
+                (processed_marker of core 1.0.1 would read on into the next
+                solution); None without a marker;
+      "version" True when "marker" is the version of the 1.0.0 attribute;
       "copies"  True when an element of the model has a node in the
                 solution mesh numbered above every node of the model: the
                 core's node copies (they survive a save in Mecway, which
@@ -438,10 +447,9 @@ def _processed_state(liml, configuration=None):
     to fail keeps it), so a file whose failed elements are all of that kind
     is not recognised without the marker. Raises IOError/OSError.
     """
-    found = {"marker": liml_failed.processed_marker(liml, configuration),
-             "copies": False, "shells": False}
-    # the attribute as it stands in the XML (escaped, as Mecway writes it;
-    # liml_failed.processed_marker unescapes it)
+    found = {"marker": None, "version": False, "copies": False,
+             "shells": False}
+    # the attribute as it stands in the XML (escaped, as Mecway writes it)
     conf = (None if configuration is None else
             b'configuration="' + _xml_escape(
                 u"{0}".format(configuration),
@@ -453,6 +461,9 @@ def _processed_state(liml, configuration=None):
     target = False
     in_solution = False
     header = False          # inside the target <results>, before a step
+    steps = False           # in the steps of the target: nothing to look for
+    old = None              # attribute limlfailed of the target <results>
+    variable = None         # text of the failed_hidden variable
     with open(liml, "rb") as f:
         for raw in f:
             s = raw.lstrip()
@@ -460,8 +471,10 @@ def _processed_state(liml, configuration=None):
                 if s.startswith(b"<cyclicsymmetry"):
                     cyclic = True
                 elif s.startswith(b"<solution"):
-                    in_solution = True
-                    target = conf is None or conf in s
+                    # a stub <solution ... /> of a configuration without
+                    # results has no end tag
+                    in_solution = s.rstrip()[-2:] != b"/>"
+                    target = in_solution and (conf is None or conf in s)
                 elif s.startswith(b"<configuration "):
                     every = conf is None
                 else:
@@ -476,25 +489,38 @@ def _processed_state(liml, configuration=None):
             if s.startswith(b"</solution"):
                 if target and not every:
                     break
-                in_solution = header = False
+                in_solution = header = steps = False
                 continue
-            if not target:
+            if not target or steps:
                 continue
             if header:
                 if s.startswith(b"<timestep") or s.startswith(b"<mode") or \
                         s.startswith(b"</results"):
                     header = False
+                    if found["marker"] is None:
+                        # the variable wins over the attribute (as the core)
+                        found["marker"] = variable if variable is not None \
+                            else old
+                        found["version"] = variable is None and \
+                            old is not None
                     if not every:
                         break
-                elif found["marker"] is None and \
+                    steps = True
+                elif variable is None and \
                         s.startswith(b"<globalvariable") and \
                         _MARKER.match(s):
-                    found["marker"] = (s[s.find(b">") + 1:].split(b"<")[0]
-                                       .strip().decode("utf-8", "replace")
-                                       or u"?")
+                    variable = (s[s.find(b">") + 1:].split(b"<")[0]
+                                .strip().decode("utf-8", "replace") or u"?")
                 continue
             if s.startswith(b"<results"):
-                header = True
+                m = _OLD_MARKER.search(s)
+                old = None if m is None else (
+                    m.group(1).decode("ascii", "replace") or u"?")
+                variable = None
+                header = s.rstrip()[-2:] != b"/>"
+                if not header and found["marker"] is None:
+                    found["marker"] = old
+                    found["version"] = old is not None
                 continue
             m = _ELEM.match(s)
             if m:

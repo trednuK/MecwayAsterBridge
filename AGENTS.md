@@ -191,8 +191,9 @@ version of the core, pinned in `tests/test_liml_failed_copy.py`).
   decides. The attribute `limlfailed="1.0.0"` on `<results>` of core 1.0.0 (dropped by a save in
   Mecway) is still read. `processed_marker()` returns the count as text (`"1.0.0"` only for old
   files, `"?"` for an empty variable), `marker_count()` makes it a number.
-  `bridge_hide_failed.is_processed` also finds the variable further down before the first step
-  and, without a marker, the core's node copies of model elements; the status texts count only
+  `bridge_hide_failed.is_processed` reads both markers itself (`_processed_state`: also further
+  down before the first step, and past a stub `<solution ... />`, KNOWN_BUGS 136) and, without a
+  marker, finds the core's node copies of model elements; the status texts count only
   model elements (not shells). The bridge calls `process()` with the defaults: `others="follow"`
   (other node variables of collapsed copies follow their original) and no `keep_original`.
 - The empty `<nodes />`/`<values />` (and `<elements />`) tails of every variable block stay in the

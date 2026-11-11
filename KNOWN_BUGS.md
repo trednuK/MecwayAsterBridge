@@ -678,6 +678,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    *Displacement* in X, Y and Z holds the displacements (measured for spring-only nodes,
    item 47); *Node rotation* on shell nodes is NOT verified in Mecway.
 
+136\. **Core `liml_failed.processed_marker` reads past a stub solution** (confirmed offline,
+   core 1.0.1, `Scripts/liml_failed.py`, an unchanged copy of AdvancedToolsHub's
+   `common/liml_failed.py`: fix it there, then update the copy). With
+   `configuration="A"` and a self-closing `<solution configuration="A" />` (a configuration
+   without results), it goes on into the next `<solution>` and returns that marker, for
+   example the one of a processed B. The bridge does not use it for its decision:
+   `bridge_hide_failed._processed_state` reads the marker itself and skips such a stub
+   (test `tests/test_bridge_hide_failed.py`, markers and configurations).
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Not verified in a .liml** (question). Constraint equation: `constant`

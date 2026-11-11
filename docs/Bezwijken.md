@@ -165,8 +165,11 @@ toe).
     (bijvoorbeeld een heel deel dat bezwijkt): die krijgen geen eigen knopen. Verberg
     zo'n opgeslagen bestand niet opnieuw; *Resultaten... > Inladen* geeft de
     oorspronkelijke resultaten terug.
-  - Nagelopen in het Mecway-venster (Mecway 35, `BezwijkenTrekstaaf`, 11 nov 2026);
-    de bestanden zijn ook offline gecontroleerd.
+  - Nagelopen in het Mecway-venster (Mecway 35, `BezwijkenTrekstaaf`, 11 nov 2026) met
+    de werkwijze van V2026.11; de bestanden zijn ook offline gecontroleerd. Het kenmerk
+    `failed_hidden` en het volgen van de andere knoopwaarden zijn alleen offline
+    gecontroleerd, NIET in het Mecway-venster; dat Mecway het kenmerk bij opslaan houdt,
+    is buiten de bridge gemeten (Mecway 35).
 
 ## 5. Testmodellen
 

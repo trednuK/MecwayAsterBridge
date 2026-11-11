@@ -159,8 +159,11 @@ Code-Aster allows nothing else with an explicit scheme).
     element shares nodes only with other failed elements (for example a whole part that
     fails): those get no own nodes. Do not hide such a saved file again; "Results..." >
     "Load" gives back the original results.
-  - Verified in the Mecway window (Mecway 35, `BezwijkenTrekstaaf`, 11 Nov 2026); the
-    files were also checked offline.
+  - Verified in the Mecway window (Mecway 35, `BezwijkenTrekstaaf`, 11 Nov 2026) with
+    the behaviour of V2026.11; the files were also checked offline. The marker
+    `failed_hidden` and the other nodal values following the original are only checked
+    offline, NOT in the Mecway window; that Mecway keeps the marker on a save was measured
+    outside the bridge (Mecway 35).
 
 ## 5. Test models
 
