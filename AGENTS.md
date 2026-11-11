@@ -192,7 +192,7 @@ version of the core, pinned in `tests/test_liml_failed_copy.py`).
   Mecway) is still read. `processed_marker()` returns the count as text (`"1.0.0"` only for old
   files, `"?"` for an empty variable), `marker_count()` makes it a number.
   `bridge_hide_failed.is_processed` reads both markers itself (`_processed_state`: also further
-  down before the first step, and past a stub `<solution ... />`, KNOWN_BUGS 136) and, without a
+  down before the first step, and past a stub `<solution ... />`, as the core does from 1.0.2) and, without a
   marker, finds the core's node copies of model elements; the status texts count only
   model elements (not shells). The bridge calls `process()` with the defaults: `others="follow"`
   (other node variables of collapsed copies follow their original) and no `keep_original`.

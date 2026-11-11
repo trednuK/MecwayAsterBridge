@@ -66,7 +66,7 @@ import sys
 import time
 from array import array
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 CONTRACT_FAILED = "failed/1"
 
 # --- switches (module constants; tests change them) -------------------------------------
@@ -383,6 +383,24 @@ def _is_solution_tag(s):
     return nxt in (b">", b" ", b"\t", b"\r", b"\n", b"/", b"")
 
 
+# the <solution ...> start tag up to its '>' (quoted attribute values may hold '>')
+_SOL_TAG = re.compile(b"<solution(?:[^>\"']|\"[^\"]*\"|'[^']*')*>")
+
+
+def _sol_empty(s):
+    """For a stripped <solution> line: True when the element also ends on this line
+    (<solution ... /> or <solution ...></solution>, e.g. a configuration without results,
+    KNOWN_BUGS 136 of the bridge): an empty solution of its own that never extends into the
+    next one. False when it stays open; None when the start tag does not close on this line."""
+    m = _SOL_TAG.match(s)
+    if m is None:
+        return None
+    end = m.end()
+    if s[end - 2:end] == b"/>":
+        return True
+    return s.find(b"</solution", end) >= 0
+
+
 def _gv_marker(s):
     """For a stripped line: None when it is not <globalvariable name="failed_hidden">, else
     (text, complete): the text between the tags (u"" when empty) and whether the element closes
@@ -691,18 +709,12 @@ def _pass1(path, o, ticker):
     st.seen_liml = False
     st.n_solutions = 0
     st.target = None                 # ordinal of the target solution
+    # solutions with <results> (1.0.2): only those count for the choice of the target; an
+    # empty <solution .../> or one that closes before <results> is ignored
+    st.n_full = 0                    # all of them
+    st.n_full_match = 0              # those of o.configuration
     st.precision = None
-    st.nids = array("i")
-    st.xs = array("d")
-    st.ys = array("d")
-    st.zs = array("d")
-    st.eids = array("i")
-    st.eoff = array("i", [0])
-    st.conn = array("i")
-    st.eset = array("i")
-    st.eshape = array("i")
-    st.shapes = []
-    st.elset_names = []              # unescaped bytes
+    _new_mesh(st)
     st.steps = 0
     st.times = []                    # raw time attribute per step
     st.warnings = {}
@@ -719,6 +731,8 @@ def _pass1(path, o, ticker):
     elset = -1
     where = _OUT
     skip = None
+    skip_sol = None                  # skipping a <solution>: True when of o.configuration
+    skip_res = False                 # ... and it has <results>
     blk = None
     var = kind = None
     want = False
@@ -747,8 +761,14 @@ def _pass1(path, o, ticker):
             if where != _OUT:
                 st.sol_bytes += len(raw)
             if skip is not None:
+                if skip_sol is not None and not skip_res and raw.find(b"<results") >= 0:
+                    skip_res = True
                 if raw.find(skip) >= 0:
                     skip = None
+                    if skip_sol is not None and skip_res:
+                        st.n_full += 1
+                        st.n_full_match += 1 if skip_sol else 0
+                    skip_sol = None
                 continue
             try:
                 if blk is not None:
@@ -765,23 +785,33 @@ def _pass1(path, o, ticker):
                         st.n_solutions += 1
                         conf = _unescape(_attr(s, b"configuration"))
                         st.sol_confs.append(None if conf is None else conf.decode("utf-8", "replace"))
-                        if o.configuration is None:
-                            target = st.n_solutions == 1     # more: refused with the names below
-                        else:
-                            target = conf is not None and conf.decode("utf-8", "replace") == o.configuration
-                            if target and st.target is not None:
-                                _refuse("configurations", st.n_solutions, _conf_list(st.sol_confs),
-                                        info={"configurations": list(st.sol_confs)})
-                        if target:
+                        # 1.0.2 (bridge KNOWN_BUGS 136): an empty <solution .../> is its own
+                        # solution without results: never the target and nothing to skip, so it
+                        # never swallows the next <solution>. The target is the first solution
+                        # (of o.configuration) that opens while none has been chosen; one that
+                        # closes before <results> is dropped again (see </solution in _SOL).
+                        empty = _sol_empty(s)
+                        if empty is None:
+                            raise _Layout("solution tag not closed on its line")
+                        match = o.configuration is None or (
+                            conf is not None and conf.decode("utf-8", "replace") == o.configuration)
+                        if empty:
+                            pass
+                        elif match and st.target is None:
                             st.target = st.n_solutions - 1
                             if o.keep and (st.model_confs or conf is not None):
                                 _refuse("keep_original_configurations",
                                         info={"configurations": list(st.model_confs) or
                                               [conf.decode("utf-8", "replace")]})
                             st.sol_bytes = len(raw)
+                            _new_mesh(st)       # a target dropped before <results> leaves none
+                            shape_ix = {}
+                            elset = -1
                             where = _SOL
-                        elif s.find(b"</solution") < 0:
+                        else:               # counted after the loop when it has <results>
                             skip = b"</solution"
+                            skip_sol = match
+                            skip_res = False
                     elif s.startswith(b"<configuration ") and st.n_solutions == 0:
                         nm = _unescape(_attr(s, b"name"))
                         st.model_confs.append(u"" if nm is None else nm.decode("utf-8", "replace"))
@@ -822,6 +852,8 @@ def _pass1(path, o, ticker):
                     elif s.startswith(b"</elset"):
                         elset = -1
                     elif s.startswith(b"<results"):
+                        st.n_full += 1
+                        st.n_full_match += 1
                         st.precision = _attr(s, b"precision")
                         mk = _attr(s, MARKER_ATTR)
                         if mk is not None:
@@ -835,7 +867,10 @@ def _pass1(path, o, ticker):
                                     _refuse("unknown_node", st.eids[p], n)
                         where = _RES
                     elif s.startswith(b"</solution"):
+                        # closed before <results>: a solution without results, as an empty
+                        # <solution ... /> (1.0.2): not the target (refused after the loop)
                         _sol_end(o, s)
+                        st.target = None
                         where = _OUT
                     continue
                 # where == _RES
@@ -918,7 +953,10 @@ def _pass1(path, o, ticker):
         f.close()
     if not st.seen_liml:
         _refuse("not_liml")
-    if o.configuration is None and st.n_solutions > 1:
+    # keep_original also never next to or on an empty solution of a configuration (1.0.2)
+    if o.keep and (st.n_solutions > 1 or any(c is not None for c in st.sol_confs)):
+        _refuse("keep_original_configurations", info={"configurations": list(st.sol_confs)})
+    if st.n_full_match > 1:     # two with <results> (of o.configuration); empty ones do not count
         _refuse("configurations", st.n_solutions, _conf_list(st.sol_confs),
                 info={"configurations": list(st.sol_confs)})
     if st.target is None:
@@ -932,6 +970,21 @@ def _pass1(path, o, ticker):
         st.warnings["precision_mixed"] = mixed
     _finish1(st, o, prov, tracker, sec, covered)
     return st
+
+
+def _new_mesh(st):
+    """Empty mesh arrays of the target <solution> (again when a target closed before <results>)."""
+    st.nids = array("i")
+    st.xs = array("d")
+    st.ys = array("d")
+    st.zs = array("d")
+    st.eids = array("i")
+    st.eoff = array("i", [0])
+    st.conn = array("i")
+    st.eset = array("i")
+    st.eshape = array("i")
+    st.shapes = []
+    st.elset_names = []              # unescaped bytes
 
 
 def _block_done1(st, o, blk, ids_names, slot_cache, displ_ix, displ_len, cur, stepvals, npos, kind):
@@ -1535,7 +1588,7 @@ def _write(st, pl, o, f, g, ticker):
                         if o.keep:
                             _copy_original(o, line, _with_conf(raw, o.names[0]), w, ticker)
                             raw = _with_conf(raw, o.names[1])
-                    elif s.find(b"</solution") < 0:
+                    elif not _sol_empty(s):         # an empty <solution .../>: nothing to skip
                         skip_copy = b"</solution"
                 w(raw)
                 if o.keep and not confs_done and s.startswith(b"<liml"):
@@ -1949,12 +2002,18 @@ def process(in_path, out_path, events_path=None, solver=None, progress=None, can
     force  skip the processed-marker check (tests); the output then carries one new marker
            (an input marker and the 1.0.0 attribute are dropped) in mode collapse.
     configuration  name of the configuration whose <solution> to process; None = the file
-           must hold exactly one <solution>. Other solutions are copied verbatim.
+           must hold exactly one <solution> with <results>. Other solutions are copied
+           verbatim. 1.0.2: an empty solution (<solution ... />, <solution ...></solution>, or
+           any <solution> that closes before <results>) is never the target and does not
+           count: none left gives configuration_not_found (no_solution with configuration
+           None); two with <results> (of that configuration) give configurations. A <solution
+           start tag that does not close on its line gives layout.
     keep_original  True: one output file with two configurations, names[0] (the original
            <solution>, verbatim) and names[1] (the processed one, with the marker), defined
            right after <liml ...>; about twice the size. Only mode collapse, configuration
-           None and an input without configurations (else keep_original_configurations: the
-           model part would need <suppressed configuration> copies, not tested in Mecway).
+           None and an input without configurations and with one <solution>, empty ones
+           included (else keep_original_configurations: the model part would need
+           <suppressed configuration> copies, not tested in Mecway).
     names  the two configuration names: different, no white space (Mecway refuses a name
            with a space), XML-escaped on writing.
     Raises LimlFailedError on refusal; "nothing failed" returns written=False.
@@ -2015,8 +2074,13 @@ def processed_marker(path, configuration=None):
     the hidden count as written by 1.0.1 (u"3"; u"?" for an empty variable), else the version
     of the 1.0.0 attribute (u"1.0.0"); the variable wins when both are there. Presence is the
     signal; marker_count() of the text gives the count. configuration=None: the first
-    <solution>, or, when the model part defines configurations (e.g. a keep_original output),
-    the first marker of any <solution> (then the whole file may be read). Reads up to the
+    <solution> with <results>, or, when the model part defines configurations (e.g. a
+    keep_original output), the first marker of any <solution> (then the whole file may be
+    read). An empty <solution ... /> (or <solution ...></solution>, a configuration without
+    results) is a solution of its own without a marker; it never takes the marker of the next
+    <solution> (1.0.2). Two solutions of the configuration: the first with <results> (process()
+    refuses such a file). Raises no LimlFailedError; a split <solution tag counts as open.
+    Reads up to the
     <results> line and the <globalvariable> lines right after it
     (where Mecway and the core put the marker), so it stays cheap (for a warning on an open
     processed model). process() itself also sees a marker further down, before the first
@@ -2046,6 +2110,8 @@ def processed_marker(path, configuration=None):
                 if not sol:
                     if _is_solution_tag(s):
                         seen_sol = True
+                        if _sol_empty(s):   # its own empty solution: no marker, and never the
+                            continue        # next solution's (1.0.2, bridge KNOWN_BUGS 136)
                         c = _unescape(_attr(s, b"configuration"))
                         if conf is None or (c is not None and c.decode("utf-8", "replace") == conf):
                             sol = True

@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- **Hide failed elements: core `liml_failed.py` 1.0.1** (copy of AdvancedToolsHub's). Behaviour
+- **Hide failed elements: core `liml_failed.py` 1.0.2** (copy of AdvancedToolsHub's; 1.0.2 treats an
+  empty `<solution configuration=... />` as its own solution, so it never reads into the next
+  one). Behaviour
   change: the other node variables of a collapsed node now follow the node it copies, instead
   of being 0 from the failure on; only the displacement collapses, so the legends of the other
   variables stay as without hiding.
