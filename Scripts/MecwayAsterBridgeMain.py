@@ -1668,7 +1668,9 @@ def _section_view(warn_directions=True):
     the status box). model_data is read here, before write_mesh renames its
     elsets (bridge_section_view). warn_directions: as build_view.
     """
-    model_data = extract_aster_data_from_liml(mw.file_name())
+    # The run (or a later one) reads the model too and warns there
+    model_data = extract_aster_data_from_liml(mw.file_name(),
+                                              warn_supports=False)
     if model_data is None:
         return None, None, tr(
             u"Het model kon niet worden gelezen (zie het logbestand).",

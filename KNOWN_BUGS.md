@@ -667,8 +667,16 @@ Code-Aster value per node) and logs the largest difference per variable.
    adaptive loop), except LS-62, whose Mecway reference (3% tolerance) has the two shell
    nodes of the clamped edge free. Many spring and damper models (DY, HR, LS-06, MC, MO-05,
    SP, VH) hold spring-only nodes this way (item 47).
-   Not handled: the bridge gives no WARNING. Whether Mecway's GUI offers such a support is
-   NOT verified. Use faces, or *Displacement* plus *Node rotation*.
+   WARNING (`bridge_from_liml._warn_fixed_on_free_nodes`, once per selection per Code-Aster
+   run, so once per pass of the adaptive loop; not in the section view): the number of nodes
+   of the selection that are in a translated element but in no beam element and are not a
+   reference node of a coupling. Trusses (LS-54a .. LS-54c, MO-08, NL-86b) count from the
+   manual's rule, NOT measured; tension-only elements, gaps and dampers are counted like
+   them, NOT verified; tri3/tri6 shells and tet/wedge solids are NOT measured either. Not
+   checked: a face selection of end faces of trusses, springs or dampers, which §9.1 also
+   excludes. Whether Mecway's GUI offers such a support is NOT verified. Use faces;
+   *Displacement* in X, Y and Z holds the displacements (measured for spring-only nodes,
+   item 47); *Node rotation* on shell nodes is NOT verified in Mecway.
 
 ## Open questions (Mecway behaviour not checked)
 

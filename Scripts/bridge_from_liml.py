@@ -1666,6 +1666,81 @@ def _check_position_formulas(tag, params, sel, run_cfg, model_data):
     return True
 
 
+# Beam modelisations: their nodes have all rotational DOFs in Mecway
+_BEAM_MODELISATIONS = frozenset(_ELEM_CHOICES["elem_beam"])
+
+
+def _warn_fixed_on_free_nodes(model_data):
+    """
+    WARNING per Fixed support on a node selection with nodes that Mecway's
+    own solver leaves free (KNOWN_BUGS 135). Mecway manual v35 par. 9.1: a
+    fixed support "can be applied to nodes that have all rotational DOFs
+    (nodes of beam elements and reference nodes of node-surface
+    couplings)"; measured with Mecway 35 headless: shell (quad4, quad8),
+    solid (hex8, hex20), 2D and spring-only nodes stay free, silently.
+    Trusses (BARRE) follow from the manual, NOT measured; tension-only
+    elements (CABLE), gaps and dampers (DIS_T) are counted like them, NOT
+    verified. The bridge keeps clamping every node (FixedBC); this only
+    logs. Counted: nodes of the selection in a translated element (its
+    elset has a modelisation), in no beam element and not a reference node
+    of a coupling; nodes in no element have no DOFs in either solver.
+    Faces and elements are not checked (Mecway holds those; end faces of
+    trusses, springs and dampers are not checked either, KNOWN_BUGS 135).
+    """
+    node_groups = model_data.get("node_groups", {})
+    fixed = []
+    for bc in model_data.get("bcs", []):
+        sel = bc.get("selection")
+        if (bc.get("type") == "fixed" and sel in node_groups and
+                sel not in fixed):
+            fixed.append(sel)
+    if not fixed:
+        return
+
+    def to_int(n):
+        return int(str(n).lstrip("N"))
+
+    mods = model_data.get("elset_modelisations", {})
+    in_elem, beam = set(), set()
+    for _eid, _shape, enodes, elset in model_data.get("mesh_elements", []):
+        mod = mods.get(elset)
+        if mod is None:
+            continue
+        in_elem.update(enodes)
+        if mod in _BEAM_MODELISATIONS:
+            beam.update(enodes)
+    ref = set()
+    for c in model_data.get("couplings", []):
+        ref.update(to_int(n) for n in node_groups.get(c.get("master_group"),
+                                                      []))
+    for sel in fixed:
+        nodes = set(to_int(n) for n in node_groups[sel])
+        free = (nodes & in_elem) - beam - ref
+        if not free:
+            continue
+        log(tr("WARNING: Fixed support op de knoopselectie '{0}': {1} van "
+               "de {2} knopen zijn geen knoop van een balkelement of "
+               "referentieknoop van een coupling (maar van schalen, "
+               "volumes, 2D-elementen, trusses, kabels, veren, dempers of "
+               "gaps). Mecway's eigen solver laat zulke knopen zonder "
+               "melding vrij (manual par. 9.1); de "
+               "bridge zet ze vast. Een vergelijking met Mecway klopt dan "
+               "niet. Zet de inklemming op vlakken (bij schalen de "
+               "randvlakken); Displacement in X, Y en Z op de knopen houdt "
+               "alleen de verplaatsingen vast (KNOWN_BUGS 135).",
+               "WARNING: Fixed support on node selection '{0}': {1} of the "
+               "{2} nodes are not nodes of a beam element or reference "
+               "nodes of a coupling (but of shells, solids, 2D elements, "
+               "trusses, cables, springs, dampers or gaps). Mecway's own "
+               "solver silently leaves such nodes free (manual par. 9.1); "
+               "the bridge clamps them. "
+               "A comparison with Mecway does not hold then. Put the "
+               "support on faces (for shells the edge faces); Displacement "
+               "in X, Y and Z on the nodes only holds the displacements "
+               "(KNOWN_BUGS 135).").format(
+                   sel, len(free), len(nodes)))
+
+
 def _check_bc_params(tag, item, params, sel, model_data):
     """False if the load cannot be translated (reported)."""
     if params.get("_skipped"):
@@ -1761,13 +1836,17 @@ def _plan_result_formula(item, model_data):
                                 ", ".join(sorted(p["symbols"])) or "-"))
 
 
-def extract_aster_data_from_liml(file_path):
+def extract_aster_data_from_liml(file_path, warn_supports=True):
     """
     Parses the .liml file and returns model_data.
 
     Parameters
     ----------
     file_path : str  Absolute path to the active .liml file.
+    warn_supports : bool  False: no WARNING for a Fixed support that Mecway
+                    would ignore (_warn_fixed_on_free_nodes), for a second
+                    read of the same model (section view), so that one run
+                    warns once.
 
     Returns
     -------
@@ -3346,6 +3425,14 @@ def extract_aster_data_from_liml(file_path):
                        "waarde; overgeslagen.",
                        "WARNING: {0} on '{1}' has no direction or value; "
                        "skipped.").format(bc["type"], bc["selection"]))
+        if warn_supports:
+            # Only a message: an error here must not stop the run
+            try:
+                _warn_fixed_on_free_nodes(model_data)
+            except Exception as e:
+                log("INFO: Check of Fixed support on nodes skipped "
+                    "(KNOWN_BUGS 135): {0}: {1}".format(
+                        type(e).__name__, str(e)))
 
     except Exception as e:
         # Do not continue with half a model: everything after the error
