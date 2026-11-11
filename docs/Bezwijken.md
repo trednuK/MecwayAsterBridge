@@ -160,8 +160,8 @@ toe).
     alleen knopen deelt met andere bezweken elementen (bijvoorbeeld een heel deel
     dat bezwijkt): die krijgen geen eigen knopen. Verberg zo'n opgeslagen bestand
     niet opnieuw; *Resultaten... > Inladen* geeft de oorspronkelijke resultaten terug.
-  - In het Mecway-venster NIET nagelopen (de bestanden zijn offline en met
-    `BezwijkenTrekstaaf` gecontroleerd).
+  - Nagelopen in het Mecway-venster (Mecway 35, `BezwijkenTrekstaaf`, 11 nov 2026);
+    de bestanden zijn ook offline gecontroleerd.
 
 ## 5. Testmodellen
 

@@ -826,7 +826,7 @@ komen. Dezelfde knoppen staan in het convergentiescherm, voor de getoonde run
   Salome-Meca. Welke Salome-Meca: instelling *Salome-Meca-map* (§3). Nagelopen met
   Salome-Meca 2025 vanuit de Python van Code-Aster (die van het convergentiescherm; 10 nov
   2026: `.rmed` en `_verfijnd.rmed` in het tabblad *Results*) en vanuit een verborgen
-  Mecway 35; op de knoppen klikken in het geopende Mecway is NIET nagelopen.
+  Mecway 35, en in het Mecway-venster zelf (11 nov 2026).
 
 Is er geen ParaView die een MED-bestand opent (geen Salome-Meca en geen *ParaView* ingevuld),
 dan opent *ParaView* het eerste bestand dat de gevonden ParaView wel kan openen (de `.pvd`) en

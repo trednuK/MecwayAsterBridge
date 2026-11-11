@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## V2026.11 – 11 November 2026
+
+Failed elements can disappear in Mecway's own result view: the new option *Hide failed
+elements* hides each element from the first step after its failure. The element variable
+`failed` changes with it: it is now 1 from that step on, no longer at the failure time itself.
+The convergence window keeps a long file path readable and sits under Mecway's taskbar button.
+Checked in the Mecway 35 window: the new option with `BezwijkenTrekstaaf`, the ParaView and
+AsterStudy buttons of V2026.10, and the taskbar. The generated `.comm` of all 578 comparable
+verification cases is unchanged; a limited regression of 45 cases gave 249 of 249 checks OK.
 
 - **Convergence window**: a long path of the file shown wraps over several lines instead of
   running under the buttons; started from Mecway, the window sits on the taskbar under Mecway's

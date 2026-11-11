@@ -822,7 +822,7 @@ front of it. The same buttons are in the convergence window, for the run shown
   60 s gives a message instead of a second Salome-Meca. Which Salome-Meca: setting
   "Salome-Meca folder" (§3). Verified with Salome-Meca 2025 from Code-Aster's Python (the one
   of the convergence window; 10 Nov 2026: `.rmed` and `_verfijnd.rmed` in the *Results* tab);
-  and from a hidden Mecway 35; clicking the buttons in an open Mecway is NOT verified.
+  and from a hidden Mecway 35, and in the Mecway window itself (11 Nov 2026).
 
 If there is no ParaView that opens a MED file (no Salome-Meca and no "ParaView" filled in),
 "ParaView" opens the first file the ParaView found can open (the `.pvd`) and names the others.

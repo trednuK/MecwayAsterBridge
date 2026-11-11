@@ -155,8 +155,8 @@ Code-Aster allows nothing else with an explicit scheme).
     That does not work when every failed element shares nodes only with other failed
     elements (for example a whole part that fails): those get no own nodes. Do not hide
     such a saved file again; "Results..." > "Load" gives back the original results.
-  - NOT verified in the Mecway window (the files were checked offline and with
-    `BezwijkenTrekstaaf`).
+  - Verified in the Mecway window (Mecway 35, `BezwijkenTrekstaaf`, 11 Nov 2026); the
+    files were also checked offline.
 
 ## 5. Test models
 
