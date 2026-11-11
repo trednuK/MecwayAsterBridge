@@ -861,10 +861,19 @@ class Monitor(object):
             u"errors, alarms, steps, timings) in the text editor; if it is "
             u"missing, it is made from the .mess."))
         self._update_buttons()
-        self.lbl_source = tk.Label(top, text=u"", anchor="w", font=_FONT,
-                                   foreground=_BAR_FG, background=_BAR_BG)
+        # The path of the file shown wraps over several lines in the space
+        # the buttons leave (a long work folder ran under the buttons),
+        # broken after a path separator (_wrap_path).
+        self._source_text = u""
+        self._source_width = 0
+        self.lbl_source = tk.Label(top, text=u"", anchor="w", justify="left",
+                                   font=_FONT, foreground=_BAR_FG,
+                                   background=_BAR_BG, width=1, bd=0,
+                                   padx=0)
+        self._source_font = tk.font.Font(font=self.lbl_source.cget("font"))
         self.lbl_source.pack(side="left", fill="x", expand=True,
                              padx=(_px(10), 0))
+        self.lbl_source.bind("<Configure>", self._on_source_resize)
         self.lbl_status = tk.Label(root, text=u"",
                                    font=("Segoe UI", 11, "bold"), anchor="w",
                                    justify="left", background=_BG)
@@ -1016,6 +1025,18 @@ class Monitor(object):
             os.path.basename(path)))
 
     # ---------- files of the run ----------
+    def _on_source_resize(self, event):
+        if event.width != self._source_width:
+            self._source_width = event.width
+            self._fit_source()
+
+    def _fit_source(self):
+        """The file shown, wrapped to the width of its label."""
+        # bd=0, padx=0: the text has the whole label width
+        width = max(_px(80), self._source_width - _px(2))
+        self.lbl_source.configure(text=_wrap_path(
+            self._source_text, self._source_font.measure, width))
+
     def _update_buttons(self):
         """.comm/.mail disabled if the file of the run shown is missing;
         ParaView, AsterStudy and Folder stay enabled (they explain what is
@@ -1302,7 +1323,9 @@ class Monitor(object):
                             u"INCOMPLETE: results up to t = {0} s").format(
                 data.partial_until))
         self.lbl_status.configure(text=u"   |   ".join(parts))
-        self.lbl_source.configure(text=src.describe())
+        if src.describe() != self._source_text:
+            self._source_text = src.describe()
+            self._fit_source()
 
     # ---------- linear analysis (MECA_STATIQUE) ----------
     def _build_linear(self, grid):
@@ -2003,6 +2026,35 @@ class _Tip(object):
         if self.win is not None:
             self.win.destroy()
             self.win = None
+
+
+def _wrap_path(text, measure, width):
+    """text ("file: C:\\...\\x.mess") in lines of at most width pixels
+    (measure(str) -> pixels): broken after a space or a path separator,
+    a part that is wider than a whole line by characters."""
+    parts = []
+    word = u""
+    for ch in text:
+        word += ch
+        if ch in u" \\/":
+            parts.append(word)
+            word = u""
+    if word:
+        parts.append(word)
+    lines = [u""]
+    for part in parts:
+        if lines[-1] and measure(lines[-1] + part.rstrip()) > width:
+            lines.append(u"")
+        while measure(part.rstrip()) > width and len(part) > 1:
+            # too long for a line of its own: as many characters as fit
+            n = len(part) - 1
+            while n > 1 and measure(lines[-1] + part[:n]) > width:
+                n -= 1
+            lines[-1] += part[:n]
+            lines.append(u"")
+            part = part[n:]
+        lines[-1] += part
+    return u"\n".join(line.rstrip() for line in lines if line.strip())
 
 
 def _run_file(mess_path, suffix):

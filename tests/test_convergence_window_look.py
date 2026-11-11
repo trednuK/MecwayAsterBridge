@@ -161,9 +161,32 @@ def test_scale(root):
     check(m._ROW_DY >= 19, "row distance at least 19 px")
 
 
+def test_wrap_path():
+    """The file shown in the top bar wraps after a path separator within
+    the width the buttons leave (a long work folder ran under them)."""
+    sep = "\\"
+    text = "file: C:" + sep + sep.join(
+        ["Werk", "Projecten", "een_lange_mapnaam_zonder_spaties",
+         "Model_aster", "Model_20261111_061253.mess"])
+
+    def measure(s):
+        return 7 * len(s)        # a fixed-width font, 7 px per character
+    for width in (420, 200, 120):
+        out = m._wrap_path(text, measure, width)
+        lines = out.split("\n")
+        check(all(measure(line) <= width for line in lines) and
+              out.replace("\n", "") == text,
+              "path in lines of at most {0} px, nothing lost".format(width))
+    out = m._wrap_path(text, measure, 420)
+    check(all(line.endswith(sep) for line in out.split("\n")[:-1]),
+          "lines end at a path separator when the parts fit")
+    check(m._wrap_path(text, measure, 5000) == text, "wide: one line")
+
+
 def main():
     test_colours()
     test_button_colours()
+    test_wrap_path()
     root = _tk_root()
     if root is not None:
         try:
