@@ -71,6 +71,13 @@ _COMMAND_RE = re.compile(r"\b(STAT_NON_LINE|DYNA_NON_LINE|THER_NON_LINE)\s*\(")
 _RESI_CRIT_RE = re.compile(r"\bRESI_GLOB_RELA\s*=\s*([-+0-9.eE]+)")
 _ITER_MAX_RE = re.compile(r"\bITER_GLOB_MAXI\s*=\s*(\d+)")
 _PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
+# The id of the stop comes on the line before BRIDGE_ONVOLLEDIG
+# (bridge_failure.PARTIAL_EXCEPT; BRIDGE_TIJD: the time guard of a step
+# loop, bridge_failure.time_guard_check).
+_STOP_ID_RE = re.compile(r"BRIDGE_FOUT_ID\s+(\S+)")
+_TIME_STOP_ID = u"BRIDGE_TIJD"
+# TimeLimitError ids (Messages/mecanonline9.py, supervis.py of 17.4)
+_TIME_LIMIT_IDS = (u"MECANONLINE9_1", u"MECANONLINE9_2", u"SUPERVIS_63")
 # The step guard ended; the job goes on (bridge_to_aster._guarded_solve)
 _GUARD_END_RE = re.compile(r"BRIDGE_VANGNET\s+(\S+)")
 # Element failure (bridge_failure.py, print in the .comm)
@@ -599,6 +606,9 @@ class ConvergenceData(object):
         self.iter_max = None      # ITER_GLOB_MAXI from the command
         self.diagnostic = u""     # DIAGNOSTIC JOB, empty while running
         self.partial_until = None  # BRIDGE_ONVOLLEDIG time
+        # BRIDGE_TIJD_EXTRA: extra time for the post-processing after the
+        # time limit (bridge_failure._extend_time)
+        self.time_extra = False
         self.t_end = None          # BRIDGE_TEND (failure loop), else None
         self.explicit = False      # explicit scheme seen
         self.fin = False           # "<I> <FIN>" seen (study.comm up to FIN)
@@ -660,6 +670,7 @@ class ConvergenceParser(object):
         self._lin_refine = None    # "before" / "after" (MUMPS refinement)
         self._lin_group = u""      # group in the Statistics block
         self._lin_prev = u""       # previous line within MECA_STATIQUE
+        self._stop_id = u""        # last BRIDGE_FOUT_ID
 
     # ---------- input ----------
     def feed(self, text):
@@ -907,14 +918,31 @@ class ConvergenceParser(object):
                 u"Step guard ended at t = {0} s; the analysis continues "
                 u"without it.").format(m.group(1)))
             return
+        if line.startswith(u"BRIDGE_TIJD_EXTRA "):
+            data.time_extra = True
+            return
+        m = _STOP_ID_RE.search(line)
+        if m:
+            self._stop_id = m.group(1)
+            return
         m = _PARTIAL_RE.search(line)
         if m:
             data.partial_until = _to_float(m.group(1))
+            if self._stop_id == _TIME_STOP_ID:
+                text = tr(u"Gestopt door de bridge, voor de tijdslimiet; "
+                          u"resultaten tot t = {0} s.",
+                          u"Stopped by the bridge before the time limit; "
+                          u"results up to t = {0} s.")
+            elif self._stop_id in _TIME_LIMIT_IDS:
+                text = tr(u"Tijdslimiet van Code-Aster bereikt; resultaten "
+                          u"tot t = {0} s.",
+                          u"Code-Aster's time limit reached; results up to "
+                          u"t = {0} s.")
+            else:
+                text = tr(u"Niet geconvergeerd; resultaten tot t = {0} s.",
+                          u"Not converged; results up to t = {0} s.")
             self._add_message("fout", u"BRIDGE_ONVOLLEDIG",
-                              tr(u"Niet geconvergeerd; resultaten tot "
-                                 u"t = {0} s.",
-                                 u"Not converged; results up to "
-                                 u"t = {0} s.").format(m.group(1)))
+                              text.format(m.group(1)))
             return
         m = _FAILURE_RE.search(line)
         if m:

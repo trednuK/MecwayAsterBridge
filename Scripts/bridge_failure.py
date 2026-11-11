@@ -74,6 +74,9 @@
 #        start gave 148 substeps in the first step with GDEF_LOG).
 #   4. Each event appears as a BRIDGE_BEZWIJKEN line in the .mess
 #      (bridge_run_aster.failure_events reads them).
+#   5. Before each next step the time guard (time_guard_check) ends the
+#      loop when that step and the post-processing would no longer fit in
+#      the time limit; the steps up to there are loaded.
 #
 # Limit per material (_criterion), the first that exists:
 #   #ASTER-BEZWIJKEN <material> = <strain> (bridge_custom; '*' = all
@@ -124,6 +127,74 @@ from bridge_utils import log, tr, log_file_name
 # first step, or no 'res') the error is raised again. BRIDGE_FOUT_ID gives
 # bridge_run_aster.py the id of the stopping error. No braces: the text is
 # part of str.format templates.
+#
+# Time limit (TimeLimitError: MECANONLINE9_1 in the Newton iterations,
+# MECANONLINE9_2 between steps, SUPERVIS_63 at the start of a command).
+# Code-Aster's limit is elapsed (wall-clock) time: DEBUT keeps a reserve of
+# 10 % of 'P time_limit' (catalogue Cata/Commands/debut.py RESERVE_CPU;
+# "Reserve CPU prevue" in the .mess) and passes the rest to the commands
+# (ExecutionParameter 'tpmax'). Every command checks the remaining time when
+# it starts (libaster.call_oper, Supervis/ExecuteCommand.py) and raises
+# SUPERVIS_63 below zero: the remaining commands are skipped, so without
+# more time the post-processing and aster_results_export never run (user's
+# run, 17.4: no results although 55 steps were computed). Raising 'tpmax'
+# (ExecutionParameter.set_option, which passes it on to libaster) gives that
+# time back: seen in a 17.4 run (StopTest_LongRun, time_limit 40 s): without
+# it SUPERVIS_63 at the first CALC_CHAMP, with it the post-processing and
+# the export ran and the fragment held the 365 computed steps. The extra
+# time is max(600 s, tpmax) on the original tpmax, given once per job (the
+# original in the environment variable BRIDGE_TPMAX0: a second stop, e.g.
+# in the next pass of the adaptive loop, gets nothing more), so the run
+# takes at most time_limit x 0.9 + max(600 s, time_limit x 0.9) plus the
+# closing; on Windows run_aster does not kill the job at a timeout (ulimit
+# -t only on Linux, run_aster/run.py _get_cmdline). A failure of this (other
+# version) only prints BRIDGE_TIJD_EXTRA_FOUT; the run then stops as before.
+# After the solve POST_TIME gives the same time without a message. A
+# time-limit stop in an analysis without these clauses (linear, thermal)
+# still loses the results (KNOWN_BUGS 137).
+def _extend_time(indent, report=True):
+    """Lines that give Code-Aster time for the post-processing and the
+    export (see above); also before the break of the time guard, and
+    silently (report=False, POST_TIME) after the solve."""
+    pad = " " * indent
+    return "".join(pad + line + "\n" for line in (
+        "# time for the post-processing and the export, once (bridge_failure)",
+        "try:",
+        "    import os as _pe_os") + ((
+        "    # stopped on the time limit: no next pass of the adaptive loop",
+        "    _pe_os.environ['BRIDGE_TIJD_STOP'] = '1'") if report else ()) + (
+        "    from code_aster.Utilities import ExecutionParameter as _pe_xp",
+        "    _pe_tp = float(_pe_xp().get_option('tpmax'))",
+        "    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)",
+        "    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)",
+        "    _pe_new = _pe_tp0 + max(600.0, _pe_tp0)",
+        "    if _pe_tp < _pe_new:",
+        "        _pe_xp().set_option('tpmax', _pe_new)") + ((
+        "        print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))",
+        "except Exception as _pe_err:",
+        "    print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))") if report else (
+        "except Exception:",
+        "    pass")))
+
+
+# After the solve of STAT_NON_LINE/DYNA_NON_LINE (after t_res): the same
+# extra time without a message, so that a limit reached only in the
+# post-processing does not lose the results either. Seen in a 17.4 run
+# (StopTest_LongRun without failure, time_limit 40 s): the solve ended
+# within the limit, SUPERVIS_63 came in the third CALC_CHAMP and nothing was
+# written. The time limit thus bounds the solve; the whole run stays within
+# time_limit x 0.9 + max(600 s, time_limit x 0.9) (once per job). With the
+# adaptive loop bridge_homard.wrap moves it after the loop, and a stop on
+# the time limit (BRIDGE_TIJD_STOP) ends the loop.
+POST_TIME = _extend_time(0, report=False)
+
+
+def _time_extra(indent):
+    """Lines of the except clause: extra time after a TimeLimitError."""
+    return (" " * indent + "if type(err).__name__ == 'TimeLimitError':\n" +
+            _extend_time(indent + 4))
+
+
 PARTIAL_EXCEPT = (
     "except Exception as err:\n"
     "    _pe_id = str(getattr(err, 'id_message', '') or '')\n"
@@ -134,6 +205,7 @@ PARTIAL_EXCEPT = (
     "    if not _pe_id or not _pe_inst or not (\n"
     "            _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):\n"
     "        raise\n"
+    + _time_extra(4) +
     "    print('BRIDGE_FOUT_ID', _pe_id)\n"
     "    print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])\n")
 
@@ -142,8 +214,9 @@ PARTIAL_EXCEPT = (
 # stops with MECANONLINE9_50 (constant load, 17.4 run), a limit point with
 # MECANONLINE9_7 (shallow arch, 17.4 run). Neither may stop a run that works
 # without the guard: _gs_t makes the job continue from the last archived
-# state on the plain time list. Anything else goes as PARTIAL_EXCEPT. No
-# braces (str.format templates).
+# state on the plain time list. Anything else goes as PARTIAL_EXCEPT, a time
+# limit too (TimeLimitError MECANONLINE9_1/9_2: continuing would only hit the
+# limit again). No braces (str.format templates).
 GUARD_EXCEPT = (
     "except Exception as err:\n"
     "    _pe_id = str(getattr(err, 'id_message', '') or '')\n"
@@ -151,14 +224,66 @@ GUARD_EXCEPT = (
     "        _pe_inst = list(res.getAccessParameters()['INST'])\n"
     "    except Exception:\n"
     "        _pe_inst = []\n"
-    "    if _pe_id.startswith('MECANONLINE') and _pe_inst:\n"
+    "    if (_pe_id.startswith('MECANONLINE') and _pe_inst and\n"
+    "            type(err).__name__ != 'TimeLimitError'):\n"
     "        _gs_t = _pe_inst[-1]\n"
     "        print('BRIDGE_VANGNET', _gs_t)\n"
     "    elif not _pe_id or not _pe_inst or len(_pe_inst) < 2:\n"
     "        raise\n"
     "    else:\n"
+    + _time_extra(8) +
     "        print('BRIDGE_FOUT_ID', _pe_id)\n"
     "        print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])\n")
+
+# Time guard of the loops (here and bridge_thermomech._birth_solve): before
+# the next solve the loop ends itself when that solve and the
+# post-processing would no longer fit in the time Code-Aster passes to the
+# commands (time_limit x 0.9, see PARTIAL_EXCEPT); the normal t_res,
+# post-processing and export follow. Clock: time.time() from the top of the
+# .comm (TIME_START, before DEBUT). Python's os.times() is no use: it sums the
+# threads, and its elapsed is 0 on Windows. Code-Aster's own clock started
+# 1-3 s later in 17.4 runs (time_limit 40 s: MECANONLINE9_1 at 34.95 s of
+# this clock with "Temps restant 2", SUPERVIS_63 at 39.3 s with 4 threads),
+# so this one runs slightly ahead. Margin: 1.5 x the elapsed time of the
+# last solve + max(60 s, 10 % of time_limit) for the post-processing. The
+# stop also gives the extra time of _extend_time, so a post-processing that
+# takes longer than the estimate is still covered. In the welding birth loop
+# the last segment (the cooling) can be much longer than the one before; the
+# guard then lets it start and the except clause catches the time limit.
+# The stop prints BRIDGE_FOUT_ID BRIDGE_TIJD and BRIDGE_ONVOLLEDIG <t> (same
+# order as PARTIAL_EXCEPT; bridge_run_aster reports it).
+TIME_START = ("import time as _bt_time\n"
+              "_bt_t0 = _bt_time.time()   # time guard of the step loop "
+              "(bridge_failure)\n")
+TIME_STOP_ID = "BRIDGE_TIJD"
+
+
+def time_guard_setup(time_limit):
+    """Constants of the time guard for the .comm (before the loop)."""
+    try:
+        limit = float(time_limit)
+    except (TypeError, ValueError):
+        limit = 1800.0
+    return ("# time guard: Code-Aster passes time_limit x 0.9 to the "
+            "commands\n"
+            "_bt_limit = {0!r}\n"
+            "_bt_post = {1!r}   # estimate of the post-processing [s]\n"
+            ).format(0.9 * limit, max(60.0, 0.1 * limit))
+
+
+def time_guard_check(indent, seg):
+    """Lines that end the loop before the next solve (break, inside the
+    try); seg: variable with the elapsed time of the last solve."""
+    pad = " " * indent
+    return (pad + "if (_bt_time.time() - _bt_t0 + 1.5 * {0} + _bt_post >\n"
+            .format(seg) + pad + "        _bt_limit):\n" +
+            _extend_time(indent + 4) +
+            "".join(pad + line + "\n" for line in (
+                "    print('BRIDGE_FOUT_ID', '{0}')".format(TIME_STOP_ID),
+                "    print('BRIDGE_ONVOLLEDIG', "
+                "res.getAccessParameters()['INST'][-1])",
+                "    break")))
+
 
 # Per MODELISATION the DEFORMATION forms for which failure has been
 # checked with a Code-Aster run (force drop after failure). DKT/COQUE_3D
@@ -437,7 +562,10 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
                   "first"    : Python expression with extra arguments of
                                the first call (e.g. the initial velocity);
                   "dynamic"  : True: VITE and ACCE in the initial state
-                               after a failure moment.
+                               after a failure moment;
+                  "time_limit": 'P time_limit' of the .export [s] (time
+                               guard, time_guard_check; the .comm then
+                               needs TIME_START before DEBUT).
     """
     crit = "".join("    ({0!r}, {1!r}, {2}, {3}),\n".format(
         p["elset"], float(p["limit"]), weak_names[p["material"]],
@@ -468,8 +596,13 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
         "_bz_extra = {first}\n"
         "_bz_pred = 'TANGENTE'\n"
         "_bz_n = 0\n"
+        "{time_setup}"
+        "_bz_seg = 0.0   # elapsed time of the last solve [s]\n"
         "try:\n"
         "    for _bz_i in range(1, len(_bz_inst)):\n"
+        "        if _bz_i > 1:\n"
+        "{time_check}"
+        "        _bz_t1 = _bt_time.time()\n"
         "        res = {command}(\n"
         "            MODELE=model,\n"
         "            CHAM_MATER=_bz_fm,\n"
@@ -479,6 +612,7 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
         "                         INST_FIN=_bz_inst[_bz_i]),\n"
         "            NEWTON=_F({newton}, PREDICTION=_bz_pred),\n"
         "            **_bz_extra)\n"
+        "        _bz_seg = _bt_time.time() - _bz_t1\n"
         "        _bz_last = res.getLastIndex()\n"
         "        _bz_vari = res.getField('VARI_ELGA', _bz_last)\n"
         "        _bz_new = {{}}\n"
@@ -555,7 +689,11 @@ def build_solve_block(plan, weak_names, affe_entries, varc, call_args):
         "print('BRIDGE_BEZWIJKEN_TOTAAL %d' % sum(len(c) for c in "
         "_bz_failed.values()))\n"
         "t_res = res.getAccessParameters()['INST'][-1]\n"
-    ).format(crit=crit, affe=affe, args=call_args["args"],
+        "{post_time}"
+    ).format(post_time=POST_TIME, crit=crit, affe=affe,
+             args=call_args["args"],
+             time_setup=time_guard_setup(call_args.get("time_limit", 1800)),
+             time_check=time_guard_check(12, "_bz_seg"),
              newton=call_args["newton"], varc=varc_args,
              command=call_args.get("command", "STAT_NON_LINE"),
              segments=call_args.get("segments",

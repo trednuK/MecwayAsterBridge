@@ -7057,7 +7057,8 @@ def _guarded_solve(first, second):
             "if _gs_t is not None:\n"
             "    try:\n" + _indent(second) +
             _indent(bridge_failure.PARTIAL_EXCEPT) +
-            "t_res = res.getAccessParameters()['INST'][-1]\n")
+            "t_res = res.getAccessParameters()['INST'][-1]\n" +
+            bridge_failure.POST_TIME)
 
 
 def _falling_intervals(load_funcs):
@@ -7684,7 +7685,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     else:
         statnonline_block = contact_block + (
             "try:\n" + first_call + bridge_failure.PARTIAL_EXCEPT +
-            "t_res = res.getAccessParameters()['INST'][-1]\n")
+            "t_res = res.getAccessParameters()['INST'][-1]\n" +
+            bridge_failure.POST_TIME)
     if not dynamic and not plan:
         statnonline_block += _jump_check_block(model_data, load_funcs)
 
@@ -7735,6 +7737,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
                 "newton": "REAC_ITER={0}".format(reac_iter),
                 "command": command, "segments": segments, "first": first,
                 "dynamic": dynamic,
+                # as in the .export below
+                "time_limit": analysis.get("time_limit", 1800),
                 "explicit": dynamic and analysis.get("schema", "HHT") in (
                     "DIFF_CENT", "TCHAMWA")})
     if crit_stab:
@@ -7755,6 +7759,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     try:
         template_content = _read_template(analysis["template"])
         _write_comm(comm_path, template_content.format(
+            # clock of the time guard of the failure loop (bridge_failure)
+            time_start_block     = bridge_failure.TIME_START if plan else "",
             defigroup_block      = defigroup_block,
             model_block          = model_block,
             cara_elem_block      = cara_elem_block,

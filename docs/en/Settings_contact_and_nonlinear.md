@@ -484,8 +484,30 @@ solver statistics end up in the `.mess` (convergence window, §4.4). That is abo
 ### 2.7 Other
 
 `time_limit` (Time limit run_aster) [s] and `memory_limit` (Memory limit run_aster)
-[MB] go into the `.export` (limits of `run_aster`). A run aborted by the time limit
-gives no complete results.
+[MB] go into the `.export` (limits of `run_aster`). The time limit is wall-clock time
+from the start of the job, not processor time summed over the threads. Code-Aster keeps
+10 % of it to close and passes the rest to the commands (the `.mess` shows "Réserve CPU
+prévue").
+
+What happens at the limit:
+
+- **Nonlinear** (`STAT_NON_LINE`, `DYNA_NON_LINE`, also thermomechanical): when
+  Code-Aster stops at the limit (`TimeLimitError` `MECANONLINE9_1`/`MECANONLINE9_2`),
+  the bridge gives Code-Aster extra time for the post-processing, once: 90 % of the limit,
+  at least 600 s. The results up to the last time reached are loaded; the run then takes at
+  most 90 % of the limit plus that extra time. This also holds when the solve ends just
+  within the limit and only the post-processing reaches it.
+- **Step loop** (element failure, [Failure.md](Failure.md); filler material in welding,
+  [Welding.md](Welding.md) §11): before each next step the bridge checks whether that
+  step and the post-processing still fit within the limit (1.5 x the duration of the
+  previous step plus 10 % of the limit, at least 60 s). If not, the loop stops itself and
+  the normal post-processing (with the same extra time) and loading follow. Mecway then
+  reports "The bridge stopped the step loop at t = ..., before the time limit".
+- **Linear and thermal**: Code-Aster skips every next
+  command (`SUPERVIS_63`), writing the results too: no results are loaded (KNOWN_BUGS
+  137).
+
+In every case raise `time_limit` to compute further.
 
 `energy_balance` (Energy balance; implicit dynamics only, default off): see §4.4.
 

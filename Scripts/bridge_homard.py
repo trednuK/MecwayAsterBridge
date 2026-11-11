@@ -34,6 +34,7 @@
 import math
 import re
 
+import bridge_failure
 from bridge_utils import log, tr, parse_and_convert, get_active_analysis
 
 # Analyses with the HOMARD loop (solver_command of CONFIG_BRIDGE)
@@ -586,7 +587,14 @@ def wrap(text, plan, model_data):
         return None
     if not check_scope(model_data, None, region):
         return None
-    loop = _loop_code(plan, _indent(region))
+    # The extra time after the solve (bridge_failure.POST_TIME) goes after
+    # the loop: in it, the first pass would use it up and every next pass
+    # would solve beyond the time limit.
+    post_time = ""
+    if bridge_failure.POST_TIME in region:
+        region = region.replace(bridge_failure.POST_TIME, "")
+        post_time = bridge_failure.POST_TIME
+    loop = _loop_code(plan, _indent(region), post_time)
     return "\n".join(lines[:begin[0] + 1] + [loop] + lines[end[0]:])
 
 
@@ -657,7 +665,7 @@ def apply(export_path, model_data, plan, solver):
     return export_path
 
 
-def _loop_code(plan, body):
+def _loop_code(plan, body, post_time=""):
     thermal = plan["kind"] == "thermal"
     solids = tuple(plan["solids"])
     front = []
@@ -745,6 +753,7 @@ def _loop_code(plan, body):
         "{body}\n"
         "    if _adapt_k == 0:\n"
         "        _adapt_model0 = model\n"
+        "{time_stop}"
         "{ind}"
         "    if _adapt_sel is None:\n"
         "        break\n"
@@ -764,6 +773,7 @@ def _loop_code(plan, body):
         "        _adapt_run.homard_failed(_adapt_k)\n"
         "        break\n"
         "    mesh = globals()[_adapt_name]\n"
+        "{post_time}"
         "_adapt_run.summary()\n"
         "_adapt_fine = dict((k, globals()[k]) for k in {proj!r} "
         "if k in globals())\n"
@@ -776,7 +786,14 @@ def _loop_code(plan, body):
             maxel=plan["max_elements"], frac=DORFLER, solids=solids,
             skin=skin, body=body, ind=ind, sel=SELECT_PREFIX,
             extra=extra_kw, proj=projected, med=med, proj_code=proj_code,
-            scripts=_py_str(plan["scripts"]))
+            scripts=_py_str(plan["scripts"]),
+            # time limit (bridge_failure._extend_time): no next pass after
+            # a stop on the time limit, and the extra time for the
+            # post-processing once, after the loop
+            time_stop=(
+                "    if __import__('os').environ.get('BRIDGE_TIJD_STOP'):\n"
+                "        break\n" if post_time else ""),
+            post_time=post_time)
 
 
 # ==========================================

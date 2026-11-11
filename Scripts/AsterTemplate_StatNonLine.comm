@@ -48,6 +48,9 @@
 #                           INST=t_res), or aster_results_export (route
 #                           'liml', all archived time steps)
 #   impr_table_block     -> IMPR_TABLE calls
+#   time_start_block     -> (directly before DEBUT, on its line) the clock
+#                           of the time guard of the failure loop
+#                           (bridge_failure.TIME_START), or empty
 #
 # NOTE braces in this source file:
 #   Code-Aster .comm syntax uses NO braces, so normally nothing
@@ -55,7 +58,7 @@
 #   NOT a placeholder, double it ({{ or }}) so that str.format()
 #   does not raise a KeyError on it.
 
-DEBUT(LANG='EN')
+{time_start_block}DEBUT(LANG='EN')
 
 # =====================================================
 # 1. READ MESH

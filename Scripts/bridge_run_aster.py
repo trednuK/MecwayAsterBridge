@@ -380,7 +380,40 @@ _DVP_HINT = (u"Rekenfout (floating point exception) in een element: dat "
              u"quadratic elements or a finer mesh there, or a smaller load. "
              u"See docs/en/CodeAster_error_messages.md.")
 
+# Time limit (TimeLimitError). The limit is elapsed time; DEBUT keeps 10 %
+# of 'P time_limit' for closing (bridge_failure.PARTIAL_EXCEPT). In a
+# nonlinear analysis the except clause gives Code-Aster time for the
+# post-processing (BRIDGE_TIJD_EXTRA), so the steps up to the stop are
+# loaded; elsewhere SUPERVIS_63 skips every next command, the export too.
+_TIME_HINT = (u"Code-Aster heeft de tijdslimiet bereikt (instelling "
+              u"'Tijdslimiet run_aster', kloktijd; Code-Aster houdt daarvan "
+              u"10 % achter om af te sluiten). In een niet-lineaire analyse "
+              u"geeft de bridge Code-Aster daarna extra tijd voor de "
+              u"nabewerking, zodat de resultaten tot het laatst bereikte "
+              u"tijdstip worden ingeladen. Verhoog 'Tijdslimiet run_aster' "
+              u"om verder te rekenen. Zie docs/Foutmeldingen_CodeAster.md.",
+              u"Code-Aster reached the time limit (setting 'Time limit "
+              u"run_aster', wall-clock time; Code-Aster keeps 10 % of it to "
+              u"close). In a nonlinear analysis the bridge then gives "
+              u"Code-Aster extra time for the post-processing, so the "
+              u"results up to the last time reached are loaded. Raise 'Time "
+              u"limit run_aster' to compute further. See "
+              u"docs/en/CodeAster_error_messages.md.")
+_TIME_SKIP_HINT = (u"Code-Aster heeft de tijdslimiet bereikt en slaat alle "
+                   u"volgende commando's over (ook de nabewerking en het "
+                   u"wegschrijven van de resultaten). Verhoog 'Tijdslimiet "
+                   u"run_aster' (kloktijd; Code-Aster houdt daarvan 10 % "
+                   u"achter om af te sluiten). Zie "
+                   u"docs/Foutmeldingen_CodeAster.md.",
+                   u"Code-Aster reached the time limit and skips every "
+                   u"next command (also the post-processing and writing "
+                   u"the results). Raise 'Time limit run_aster' (wall-clock "
+                   u"time; Code-Aster keeps 10 % of it to close). See "
+                   u"docs/en/CodeAster_error_messages.md.")
+
 _MESS_HINTS = {"FACTOR_10": _SINGULAR_HINT, "DVP_2": _DVP_HINT, "FACTOR_11": _SINGULAR_HINT,
+               "MECANONLINE9_1": _TIME_HINT, "MECANONLINE9_2": _TIME_HINT,
+               "SUPERVIS_63": _TIME_SKIP_HINT,
                "ALGORITH16_52": _CYCLIC_HINT, "ALGORITH16_58": _CYCLIC_HINT,
                "ALGORITH14_94": _CYCLIC_HINT,
                "ALGELINE3_81": _MODES_SINGULAR_HINT,
@@ -402,6 +435,15 @@ def mess_hints():
 _MESS_PARTIAL_RE = re.compile(r"BRIDGE_ONVOLLEDIG\s+(\S+)")
 # Id of the error that stopped the step loop (bridge_failure.PARTIAL_EXCEPT)
 _MESS_STOP_ID_RE = re.compile(r"BRIDGE_FOUT_ID\s+(\S+)")
+# Id with which the time guard of a step loop stops it
+# (bridge_failure.TIME_STOP_ID): no Code-Aster error, but a partial run.
+_MESS_TIME_STOP = "BRIDGE_TIJD"
+# The except clause gave Code-Aster time for the post-processing after a
+# TimeLimitError (bridge_failure._extend_time); BRIDGE_TIJD_EXTRA_FOUT when
+# that failed.
+_MESS_TIME_EXTRA = "BRIDGE_TIJD_EXTRA "
+# TimeLimitError ids (Messages/mecanonline9.py, supervis.py of 17.4)
+_TIME_LIMIT_CODES = ("MECANONLINE9_1", "MECANONLINE9_2", "SUPERVIS_63")
 # The step guard ended and the job went on (bridge_to_aster._guarded_solve):
 # a MECANONLINE exception above this line did not stop the run. An error of
 # the continuation comes after it and counts as usual.
@@ -937,16 +979,30 @@ class AsterJob(object):
                           u"Messages so far: {0} error(s), {1} "
                           u"alarm(s).").format(errors, alarms)
         warning = u""
-        if (self.time_limit and not self.finished() and
+        if getattr(data, "time_extra", False) and not self.finished():
+            # bridge_failure._extend_time: Stop would lose the results
+            warning = tr(u"Tijdslimiet bereikt: de bridge gaf Code-Aster "
+                         u"extra tijd om de resultaten tot daar af te "
+                         u"werken en weg te schrijven. Wacht; Stoppen "
+                         u"verliest ze.",
+                         u"Time limit reached: the bridge gave Code-Aster "
+                         u"extra time to post-process and write the "
+                         u"results up to there. Please wait; Stop loses "
+                         u"them.")
+        elif (self.time_limit and not self.finished() and
                 elapsed > self.time_limit + _TIME_LIMIT_MARGIN):
             warning = tr(u"De run duurt langer dan de tijdslimiet. "
                          u"Code-Aster stopt normaal zelf bij de limiet; "
-                         u"reageert het Code-Aster-venster niet meer, "
-                         u"gebruik dan Stoppen.",
+                         u"na een niet-lineaire berekening krijgt de "
+                         u"nabewerking extra tijd. Gebruik Stoppen alleen "
+                         u"als het Code-Aster-venster niet meer reageert "
+                         u"(de resultaten gaan dan verloren).",
                          u"The run takes longer than the time limit. "
                          u"Code-Aster normally stops by itself at the "
-                         u"limit; if the Code-Aster window no longer "
-                         u"responds, use Stop.")
+                         u"limit; after a nonlinear solve the "
+                         u"post-processing gets extra time. Use Stop only "
+                         u"if the Code-Aster window no longer responds "
+                         u"(the results are then lost).")
         overall = data.overall_progress()
         return {"headline": head, "time": when,
                 "detail": self._detail(data), "messages": messages,
@@ -1499,9 +1555,23 @@ def aster_mess_errors(work_dir, since=None):
         text = _read_mess(mess_path)
         lines = text.splitlines()
         guard_end = -1
+        # Extra time after a time limit (bridge_failure._extend_time): a
+        # SUPERVIS_63 after the last BRIDGE_TIJD_EXTRA line (or a failed
+        # extension) means the post-processing ran out of time too.
+        extra_line = -1
+        extra_failed = False
+        skip_lines = []
         for i, line in enumerate(lines):
             if line.startswith(_MESS_GUARD_END):
                 guard_end = i
+            elif line.startswith(_MESS_TIME_EXTRA):
+                extra_line = i
+            elif line.startswith(_MESS_TIME_EXTRA.strip() + u"_FOUT"):
+                extra_failed = True
+            m = _MESS_ERROR_RE.search(line)
+            if m and m.group(2) == "SUPERVIS_63":
+                skip_lines.append(i)
+        post_lost = extra_failed or any(i > extra_line for i in skip_lines)
         for i, line in enumerate(lines):
             m = _MESS_ERROR_RE.search(line)
             if m:
@@ -1514,12 +1584,19 @@ def aster_mess_errors(work_dir, since=None):
                     if m.group(2) == "FACTOR_57":
                         msg += u" -> " + _resi_advice(
                             _mess_box_text(lines, i, max_chars=2000))
+                    elif m.group(2) in _TIME_LIMIT_CODES:
+                        # results only if the extra time came after this
+                        # stop and the post-processing did not run out
+                        msg += u" -> " + tr(*(
+                            _TIME_HINT if extra_line > i and not post_lost
+                            else _TIME_SKIP_HINT))
                     elif m.group(2) in hints:
                         msg += u" -> " + hints[m.group(2)]
                     partial = _MESS_PARTIAL_RE.search(text)
                     stop_id = _MESS_STOP_ID_RE.search(text)
-                    if partial and (m.group(2).startswith("MECANONLINE") or (
-                            stop_id and stop_id.group(1) == m.group(2))):
+                    if partial and not post_lost and (
+                            m.group(2).startswith("MECANONLINE") or (
+                                stop_id and stop_id.group(1) == m.group(2))):
                         msg += tr(u" Laatste tijdstip met resultaten: {0} s.",
                                   u" Last time with results: {0} s.").format(
                             partial.group(1))
@@ -1528,6 +1605,31 @@ def aster_mess_errors(work_dir, since=None):
             m = _MESS_ALARM_RE.search(line)
             if m and m.group(1) not in alarms:
                 alarms.append(m.group(1))
+        stop_id = _MESS_STOP_ID_RE.search(text)
+        partial = _MESS_PARTIAL_RE.search(text)
+        if stop_id and stop_id.group(1) == _MESS_TIME_STOP:
+            # Time guard of the step loop (bridge_failure.time_guard_check):
+            # counts as an error, so that the run is "partly loaded" and
+            # main() returns False (no next adaptive loop).
+            limit = export_time_limit(os.path.join(work_dir,
+                                                   run_name(".export")))
+            errors.append(tr(
+                u"De bridge stopte de stappenlus bij t = {0} s, voor de "
+                u"tijdslimiet ('Tijdslimiet run_aster' = {1} s): de volgende "
+                u"stap en de nabewerking pasten er niet meer in. {2} Verhoog "
+                u"'Tijdslimiet run_aster' om verder te rekenen.",
+                u"The bridge stopped the step loop at t = {0} s, before the "
+                u"time limit ('Time limit run_aster' = {1} s): the next step "
+                u"and the post-processing would no longer fit. {2} Raise "
+                u"'Time limit run_aster' to compute further.").format(
+                    partial.group(1) if partial else u"?",
+                    u"%g" % limit if limit else u"?",
+                    tr(u"Ook de nabewerking kwam tijd tekort: er zijn geen "
+                       u"resultaten weggeschreven.",
+                       u"The post-processing ran out of time too: no "
+                       u"results were written.") if post_lost else
+                    tr(u"De resultaten tot daar worden ingeladen.",
+                       u"The results up to there are loaded.")))
         modal = _MESS_MODAL_RE.search(text)
         hints = _MODAL_HINTS
         if not modal:

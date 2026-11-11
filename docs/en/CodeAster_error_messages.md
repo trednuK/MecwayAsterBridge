@@ -924,6 +924,35 @@ Step-by-step plan and settings:
   the beams* in the status box ([`Modal_and_buckling.md`](Modal_and_buckling.md) §5.2).
 - **Status**: fixed in the bridge (the run continues).
 
+### `MECANONLINE9_1`, `MECANONLINE9_2`, `SUPERVIS_63` – time limit reached
+
+- **Message** (`TimeLimitError`): "Arrêt par manque de temps CPU" during the Newton
+  iterations (`MECANONLINE9_1`) or between two time steps (`MECANONLINE9_2`), with the
+  mean time per iteration or step and the remaining time; `SUPERVIS_63`: "ARRET PAR
+  MANQUE DE TEMPS CPU, les commandes suivantes sont ignorées, on passe directement dans
+  FIN" when a command starts after the limit.
+- **Cause**: the run takes longer than `time_limit` (*Time limit run_aster*). That is
+  wall-clock time from the start of the job; Code-Aster keeps 10 % of it to close and
+  passes the rest to the commands ("Réserve CPU prévue" at the top of the `.mess`).
+- **What the bridge does**: in `STAT_NON_LINE`/`DYNA_NON_LINE` the job catches the error
+  and gives Code-Aster extra time for the post-processing (`BRIDGE_TIJD_EXTRA` in the
+  `.mess`; after a solve that ended in time, the same extra time without a message), so
+  that the steps up to the stop are loaded (status box: "Last time with
+  results"). Without that, `SUPERVIS_63` would also skip the post-processing and the
+  export, and nothing would be loaded. The step loops (element failure, filler material)
+  stop themselves before the limit (`BRIDGE_FOUT_ID BRIDGE_TIJD`; status box "The
+  bridge stopped the step loop at t = ..."), see
+  [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.7.
+- **Seen**: a user's run (nonlinear static with failure, `time_limit` 1800, 6 cpus:
+  `MECANONLINE9_1` after 55 steps, then `SUPERVIS_63` in the post-processing, no
+  results); `StopTest_LongRun` with `time_limit` 40 s (Code-Aster 17.4): without the
+  extra time `SUPERVIS_63` at the first `CALC_CHAMP`, with it all 365 computed steps
+  loaded.
+- **Solution**: raise *Time limit run_aster*, or make the model cheaper (coarser mesh,
+  fewer steps). A linear or thermal analysis still loses the results (KNOWN_BUGS
+  137).
+- **Status**: fixed in the bridge (nonlinear) / limitation (linear, thermal).
+
 ### `SUBDIVISE_3` – step cannot be reduced
 
 - **Message** (error): the time step cannot be subdivided because the feature is not
@@ -1542,6 +1571,8 @@ and beams in the model).
 | `MECANONLINE5_1` | [5](#mecanonline5_1--explicit-only-prediction-tangente) | fixed in the bridge |
 | `MECANONLINE5_15` | [4](#mecanonline5_15--energy-not-with-continuous-contact) | fixed in the bridge (limitation of Code-Aster) |
 | `MECANONLINE5_80` | [5](#mecanonline5_80--initial-velocity-on-another-model) | cause not determined |
+| `MECANONLINE9_1` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear) / limitation (linear, thermal) |
+| `MECANONLINE9_2` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear) / limitation (linear, thermal) |
 | `MECANONLINE9_3` | [5](#mecanonline9_3--integration-of-the-material-law-failed) | fixed in the bridge (cause 2) / model (cause 1) |
 | `MECANONLINE9_4` | [3](#mecanonline9_4--matrix-not-invertible-nonlinear) | fixed in the bridge (1 for fixed, 4) / model (1 other, 2) / own input (3) / cause not determined (5) |
 | `MECANONLINE9_50` | [5](#mecanonline9_50--step-guard-ended) | fixed in the bridge (the run continues) |
@@ -1590,6 +1621,7 @@ and beams in the model).
 | `RUPTURE0_94` | [7](#rupture0_94--sief_elga-missing-for-calc_g) | fixed in the bridge |
 | `XFEM_63`, `QUALITY1_1`, `MODELE1_63` | [7](#xfem_63-quality1_1-modele1_63--xfem-alarms) | information / fixed in the bridge |
 | `SUPERVIS_4` | [8](#supervis_4--syntax-error-in-a-command) | own input / fixed in the bridge (per case) |
+| `SUPERVIS_63` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear) / limitation (linear, thermal) |
 | `UTILITAI3_5` | [10](#algeline4_77-utilitai3_5--normalisation-and-mode-parameters) | fixed in the bridge |
 | `UTILITAI5_1` | [1](#utilitai5_1--file-for-a-unit-missing) | cause in the test setup, not in the bridge |
 | `UTILITAI_3` | [7](#utilitai_3--fields-with-sub-points-to-nodes) | fixed in the bridge |

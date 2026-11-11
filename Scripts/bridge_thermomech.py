@@ -734,7 +734,8 @@ _bridge_tm_report(res, res_ther, {n_nodes})
 '''
 
 
-def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
+def _birth_solve(birth, concepts, entries, varc, call, with_plastic,
+                 time_limit=1800):
     """
     STAT_NON_LINE with filler material that is born (#ASTER-LASBRON
     geboorte=, bridge_welding._births; step S4c). Per birth step k
@@ -754,7 +755,10 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
     (Code-Aster 17.4, bar WE-12): shrinkage stress after birth at T0 +
     100 K and cooling E alpha 100 K to 1e-4, also with VMIS_ISOT_LINE.
     call: dict with excit, comp, solveur, reac, rech, conv (text as in
-    build_blocks).
+    build_blocks). Before each next solve the time guard of
+    bridge_failure (time_guard_check, 'P time_limit' = time_limit) may end
+    the loop; the .comm then needs bridge_failure.TIME_START before DEBUT
+    (mech_time_start_block).
     """
     import bridge_welding
     return (
@@ -767,9 +771,13 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
         "_gm_new = []\n"
         "_gm_start = 0\n"
         "res = None\n"
+        "{time_setup}"
+        "_gm_seg = 0.0   # elapsed time of the last solve [s]\n"
         "try:\n"
         "    for _gm_k in sorted(_gm_born) + [len(_gm_t)]:\n"
         "        _gm_stop = min(_gm_k - 1, len(_gm_t) - 1)\n"
+        "        if _gm_stop > _gm_start and res is not None:\n"
+        "{time_check}"
         "        if _gm_stop > _gm_start:\n"
         "            _gm_fm = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, AFFE=tuple(\n"
         "                _gm_affe + [_F(GROUP_MA=_g, MATER=_m) for _g, _m in "
@@ -795,6 +803,7 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
         "            elif res is not None:\n"
         "                _gm_kw = dict(reuse=res, RESULTAT=res, "
         "ETAT_INIT=_F(EVOL_NOLI=res))\n"
+        "            _gm_t1 = _bt_time.time()\n"
         "            res = STAT_NON_LINE(\n"
         "                MODELE=model,\n"
         "                CHAM_MATER=_gm_fm,\n"
@@ -809,6 +818,7 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
         "{rech}"
         "                CONVERGENCE=_F({conv}),\n"
         "                **_gm_kw)\n"
+        "            _gm_seg = _bt_time.time() - _gm_t1\n"
         "            _gm_start = _gm_stop\n"
         "            _gm_new = []\n"
         "        if _gm_k < len(_gm_t):\n"
@@ -816,9 +826,12 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic):
         "            _gm_new += [_g for _g, _m in _gm_born[_gm_k]]\n"
         + bridge_failure.PARTIAL_EXCEPT +
         "print('BRIDGE_GEBOORTE_MECA %d' % len(_gm_alive))\n"
-        "t_res = res.getAccessParameters()['INST'][-1]\n").format(
+        "t_res = res.getAccessParameters()['INST'][-1]\n"
+        + bridge_failure.POST_TIME).format(
             affe=",\n    ".join(entries),
             born=bridge_welding.birth_loop_data(birth, concepts, "_gm"),
+            time_setup=bridge_failure.time_guard_setup(time_limit),
+            time_check=bridge_failure.time_guard_check(12, "_gm_seg"),
             varc=varc,
             vari=(
                 "                _gm_v = res.getField('VARI_ELGA', _gm_last)\n"
@@ -957,7 +970,8 @@ def build_blocks(tb, model_data, analysis):
         "        CONVERGENCE=_F({conv}),\n"
         "    )\n"
         + bridge_failure.PARTIAL_EXCEPT +
-        "t_res = res.getAccessParameters()['INST'][-1]\n").format(
+        "t_res = res.getAccessParameters()['INST'][-1]\n"
+        + bridge_failure.POST_TIME).format(
             excit=bta._indent(excit_clause), comp=bta._indent(comportement),
             solveur=bta._indent(bta._build_solveur_ref(analysis)),
             reac=int(analysis.get("newton_reac_iter", 1)),
@@ -982,7 +996,9 @@ def build_blocks(tb, model_data, analysis):
             "reac": int(analysis.get("newton_reac_iter", 1)),
             "rech": ("                RECH_LINEAIRE=_F(ITER_LINE_MAXI=5),\n"
                      if with_plastic else ""),
-            "conv": bta._convergence_args(analysis)}, with_plastic)
+            "conv": bta._convergence_args(analysis)}, with_plastic,
+            # as in the .export (bridge_thermal)
+            analysis.get("time_limit", 1800))
         log("INFO: Thermomechanical: filler material {0} elements, quiet "
             "(E x {1}) until birth, then stress-free in the "
             "state at the start of the birth step; STAT_NON_LINE per "
@@ -1001,6 +1017,8 @@ def build_blocks(tb, model_data, analysis):
             "%.6g" % tref, analysis.get("deformation", "PETIT"),
             "plastic" if with_plastic else "elastic"))
     return {
+        # clock of the time guard of the birth loop (bridge_failure)
+        "mech_time_start_block": bridge_failure.TIME_START if birth else "",
         "mech_defigroup_block": defigroup,
         "mech_model_block": bta._build_model_block(md),
         "mech_materials_block": curves_block + materials_block + (

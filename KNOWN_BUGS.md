@@ -678,6 +678,21 @@ Code-Aster value per node) and logs the largest difference per variable.
    *Displacement* in X, Y and Z holds the displacements (measured for spring-only nodes,
    item 47); *Node rotation* on shell nodes is NOT verified in Mecway.
 
+137\. **A time limit in a linear or thermal analysis loses all results** (confirmed,
+   Code-Aster 17.4). When a command starts after the time limit (`time_limit` x 0.9 of
+   wall-clock time) Code-Aster raises `<TimeLimitError> <SUPERVIS_63>` and skips every
+   next command, the post-processing and `aster_results_export` too: nothing is loaded.
+   For `STAT_NON_LINE`/`DYNA_NON_LINE` (single solve, step-guard continuation, failure
+   loop, thermomechanical solve and birth loop) the bridge gives Code-Aster extra time
+   (`ExecutionParameter` `tpmax`, `bridge_failure._extend_time`): in the except clause
+   (`PARTIAL_EXCEPT`, `GUARD_EXCEPT`), before the stop of the time guard of the step loops
+   (`time_guard_check`) and after the solve (`POST_TIME`); measured with
+   `StopTest_LongRun`. Still lost: linear analyses (`MECA_STATIQUE`, modal, harmonic, ...)
+   and a thermal solve (`THER_LINEAIRE`/`THER_NON_LINE`, also the thermal part of the
+   welding chain). A fix would be the same extra time after (and a try/except around) those
+   solves, or a `POURSUITE` run for the post-processing (STAPPENPLAN S45). Raise *Time
+   limit run_aster* meanwhile.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Not verified in a .liml** (question). Constraint equation: `constant`

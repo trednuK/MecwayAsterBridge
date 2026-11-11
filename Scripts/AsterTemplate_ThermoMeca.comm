@@ -33,10 +33,13 @@
 #   export_block            -> aster_results_export (res = mechanical,
 #                              res_ther / res_flux = thermal)
 #   med_block               -> MED (setting med_export)
+#   mech_time_start_block   -> (before DEBUT) clock of the time guard of the
+#                              birth loop (bridge_failure.TIME_START), or
+#                              empty
 #
 # A brace that is not a placeholder: double it ({{ or }}).
 
-DEBUT(LANG='EN')
+{mech_time_start_block}DEBUT(LANG='EN')
 
 # =====================================================
 # 1. MESH (FORMAT='ASTER', bridge_mesh.py; UNITE=20 = 'F mail ... D 20')

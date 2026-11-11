@@ -99,6 +99,7 @@ S7, S8, S5, S9).
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44 |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
+| S45 | Results after a time limit in linear and thermal analyses (KNOWN_BUGS 137); extra time (`ExecutionParameter` `tpmax`, as `bridge_failure._extend_time`) around those commands, or a `POURSUITE` run for the post-processing | later | – | the nonlinear solves and the step loops are done (branch `time-guard`, 11 Nov 2026: extra time after a `TimeLimitError` and after the solve, and the time guard of the loops, measured with `StopTest_LongRun`) |
 | – | Rotordynamics | later | – | |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |

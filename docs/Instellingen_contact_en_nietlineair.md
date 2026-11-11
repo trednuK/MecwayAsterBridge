@@ -490,8 +490,30 @@ bij, zodat de statistiek van de oplosser in de `.mess` komt (convergentiescherm,
 ### 2.7 Overig
 
 `time_limit` (Tijdslimiet run_aster) [s] en `memory_limit` (Geheugenlimiet run_aster)
-[MB] gaan naar de `.export` (limieten van `run_aster`). Een afgebroken run door de
-tijdslimiet levert geen volledige resultaten.
+[MB] gaan naar de `.export` (limieten van `run_aster`). De tijdslimiet is kloktijd
+vanaf de start van de job, niet opgetelde processortijd van de threads. Code-Aster
+houdt 10 % ervan achter om af te sluiten en geeft de commando's de rest (de `.mess`
+toont "Réserve CPU prévue").
+
+Wat er bij de limiet gebeurt:
+
+- **Niet-lineair** (`STAT_NON_LINE`, `DYNA_NON_LINE`, ook thermomechanisch): stopt
+  Code-Aster op de limiet (`TimeLimitError` `MECANONLINE9_1`/`MECANONLINE9_2`), dan
+  geeft de bridge Code-Aster eenmalig extra tijd voor de nabewerking: 90 % van de limiet,
+  minstens 600 s. De resultaten tot het laatst bereikte tijdstip worden ingeladen; de run
+  duurt dan hooguit 90 % van de limiet plus die extra tijd. Dat geldt ook als de
+  berekening net binnen de limiet klaar is en pas de nabewerking de limiet haalt.
+- **Stappenlus** (bezwijken van elementen, [Bezwijken.md](Bezwijken.md); toevoegmateriaal
+  bij lassen, [Lassen.md](Lassen.md) §11): voor elke volgende stap kijkt de bridge of die
+  stap en de nabewerking nog binnen de limiet passen (1,5 x de duur van de vorige stap plus
+  10 % van de limiet, minstens 60 s). Zo niet, dan stopt de lus zelf en volgen de gewone
+  nabewerking (met dezelfde extra tijd) en het inladen. Mecway meldt dan "De bridge
+  stopte de stappenlus bij t = ..., voor de tijdslimiet".
+- **Lineair en thermisch**: Code-Aster slaat alle
+  volgende commando's over (`SUPERVIS_63`), ook het wegschrijven van de resultaten: er
+  worden geen resultaten ingeladen (KNOWN_BUGS 137).
+
+Verhoog in alle gevallen `time_limit` om verder te rekenen.
 
 `energy_balance` (Energiebalans; alleen impliciete dynamica, standaard uit): zie §4.4.
 

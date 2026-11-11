@@ -15,6 +15,15 @@
   Mecway keeps it (Mecway 35), so hiding again and "Section in results" refuse a saved file by
   its marker; files of V2026.11 are still recognised. Where Mecway's result list shows the
   variable is NOT verified in the Mecway window.
+- **Results after the time limit** (nonlinear static and dynamic, thermomechanical): when
+  Code-Aster stops on *Time limit run_aster* (`MECANONLINE9_1`/`9_2`, `SUPERVIS_63`), the
+  bridge now gives it extra time for the post-processing, so the steps computed so far are
+  loaded; before, Code-Aster skipped the post-processing and nothing was loaded. The step
+  loops of element failure and of filler material in welding stop themselves before the
+  limit, and a limit reached only in the post-processing gets the same extra time. The
+  status box says so and advises raising the time limit. Linear and thermal analyses
+  still lose the results (KNOWN_BUGS 137).
+  Measured with Code-Aster 17.4 headless; NOT checked in the Mecway window.
 
 ## V2026.11 – 11 November 2026
 

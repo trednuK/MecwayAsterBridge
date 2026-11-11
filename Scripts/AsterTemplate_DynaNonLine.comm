@@ -22,10 +22,12 @@
 #   postreleve_block  -> route 'tabel': POST_RELEVE_T over all
 #                        archived time steps (TOUT_ORDRE), including
 #                        velocity (VITE); route 'liml': aster_results_export
+#   time_start_block  -> (before DEBUT) clock of the time guard of the
+#                        failure loop, or empty
 #
 # NOTE braces: write a literal brace as {{ or }}.
 
-DEBUT(LANG='EN')
+{time_start_block}DEBUT(LANG='EN')
 
 # =====================================================
 # 1. READ MESH

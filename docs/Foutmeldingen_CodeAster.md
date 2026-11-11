@@ -939,6 +939,34 @@ Stappenplan en instellingen:
   ([`Modaal_en_knik.md`](Modaal_en_knik.md) §5.2).
 - **Status**: opgelost in de bridge (de run gaat door).
 
+### `MECANONLINE9_1`, `MECANONLINE9_2`, `SUPERVIS_63` – tijdslimiet bereikt
+
+- **Melding** (`TimeLimitError`): "Arrêt par manque de temps CPU" tijdens de
+  Newton-iteraties (`MECANONLINE9_1`) of tussen twee tijdstappen (`MECANONLINE9_2`), met
+  de gemiddelde tijd per iteratie of stap en de resterende tijd; `SUPERVIS_63`: "ARRET
+  PAR MANQUE DE TEMPS CPU, les commandes suivantes sont ignorées, on passe directement
+  dans FIN" als een commando na de limiet begint.
+- **Oorzaak**: de run duurt langer dan `time_limit` (*Tijdslimiet run_aster*). Dat is
+  kloktijd vanaf de start van de job; Code-Aster houdt daarvan 10 % achter om af te
+  sluiten en geeft de rest aan de commando's ("Réserve CPU prévue" bovenaan de `.mess`).
+- **Wat de bridge doet**: in `STAT_NON_LINE`/`DYNA_NON_LINE` vangt de job de fout op en
+  geeft Code-Aster extra tijd voor de nabewerking (`BRIDGE_TIJD_EXTRA` in de `.mess`;
+  na een berekening die op tijd klaar was dezelfde extra tijd zonder melding), zodat de stappen tot de stop worden ingeladen (statusvak: "Laatste tijdstip met
+  resultaten"). Zonder dat zou `SUPERVIS_63` ook de nabewerking en de export overslaan
+  en werd er niets ingeladen. De stappenlussen (bezwijken, toevoegmateriaal) stoppen zelf
+  voor de limiet (`BRIDGE_FOUT_ID BRIDGE_TIJD`; statusvak "De bridge stopte de
+  stappenlus bij t = ..."), zie
+  [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) §2.7.
+- **Gezien**: een run van een gebruiker (niet-lineair statisch met bezwijken,
+  `time_limit` 1800, 6 cpu's: `MECANONLINE9_1` na 55 stappen, daarna `SUPERVIS_63` in de
+  nabewerking, geen resultaten); `StopTest_LongRun` met `time_limit` 40 s (Code-Aster
+  17.4): zonder de extra tijd `SUPERVIS_63` bij de eerste `CALC_CHAMP`, met de extra tijd
+  alle 365 berekende stappen ingeladen.
+- **Oplossing**: verhoog *Tijdslimiet run_aster*, of maak het model goedkoper (grover
+  net, minder stappen). Een lineaire of thermische analyse verliest de resultaten nog
+  wel (KNOWN_BUGS 137).
+- **Status**: opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch).
+
 ### `SUBDIVISE_3` – stap kan niet verkleind worden
 
 - **Melding** (fout): de tijdstap kan niet gedeeld worden, want de functie staat niet
@@ -1567,6 +1595,8 @@ twee drukken en balken in het model).
 | `MECANONLINE5_1` | [5](#mecanonline5_1--expliciet-alleen-prediction-tangente) | opgelost in de bridge |
 | `MECANONLINE5_15` | [4](#mecanonline5_15--energie-niet-met-continu-contact) | opgelost in de bridge (beperking van Code-Aster) |
 | `MECANONLINE5_80` | [5](#mecanonline5_80--beginsnelheid-op-ander-model) | oorzaak niet vastgesteld |
+| `MECANONLINE9_1` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch) |
+| `MECANONLINE9_2` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch) |
 | `MECANONLINE9_3` | [5](#mecanonline9_3--integratie-van-de-materiaalwet-mislukt) | opgelost in de bridge (oorzaak 2) / model (oorzaak 1) |
 | `MECANONLINE9_4` | [3](#mecanonline9_4--matrix-niet-inverteerbaar-niet-lineair) | opgelost in de bridge (1 bij fixed, 4) / model (1 overig, 2) / eigen invoer (3) / oorzaak niet vastgesteld (5) |
 | `MECANONLINE9_50` | [5](#mecanonline9_50--stapbewaking-beëindigd) | opgelost in de bridge (de run gaat door) |
@@ -1615,6 +1645,7 @@ twee drukken en balken in het model).
 | `RUPTURE0_94` | [7](#rupture0_94--sief_elga-ontbreekt-voor-calc_g) | opgelost in de bridge |
 | `XFEM_63`, `QUALITY1_1`, `MODELE1_63` | [7](#xfem_63-quality1_1-modele1_63--xfem-alarmen) | informatie / opgelost in de bridge |
 | `SUPERVIS_4` | [8](#supervis_4--syntaxfout-in-een-commando) | eigen invoer / opgelost in de bridge (per geval) |
+| `SUPERVIS_63` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch) |
 | `UTILITAI3_5` | [10](#algeline4_77-utilitai3_5--normering-en-modeparameters) | opgelost in de bridge |
 | `UTILITAI5_1` | [1](#utilitai5_1--bestand-bij-een-unit-ontbreekt) | oorzaak in de testopzet, niet in de bridge |
 | `UTILITAI_3` | [7](#utilitai_3--velden-met-sub-punten-naar-knopen) | opgelost in de bridge |
