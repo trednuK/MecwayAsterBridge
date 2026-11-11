@@ -1,6 +1,6 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-10 (bridge 821c58a, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-11 (bridge 1620635, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
 **3066 van 3072 controles binnen de tolerantie** (579 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 

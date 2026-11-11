@@ -33,9 +33,14 @@
 #   export_block            -> aster_results_export (res = mechanical,
 #                              res_ther / res_flux = thermal)
 #   med_block               -> MED (setting med_export)
+#   mech_time_start_block   -> (before DEBUT) clock of the time guard of the
+#                              birth loop (bridge_failure.TIME_START), or
+#                              empty
 #
 # A brace that is not a placeholder: double it ({ or }).
 
+import time as _bt_time
+_bt_t0 = _bt_time.time()   # time guard of the step loop (bridge_failure)
 # Language of the messages of the job scripts (aster_*.py)
 # and the setting vtu_export (aster_vtu)
 import os as _bridge_os
@@ -383,9 +388,34 @@ _gm_alive = []
 _gm_new = []
 _gm_start = 0
 res = None
+# time guard: Code-Aster passes time_limit x 0.9 to the commands
+_bt_limit = 1620.0
+_bt_post = 180.0   # estimate of the post-processing [s]
+_gm_seg = 0.0   # elapsed time of the last solve [s]
 try:
     for _gm_k in sorted(_gm_born) + [len(_gm_t)]:
         _gm_stop = min(_gm_k - 1, len(_gm_t) - 1)
+        if _gm_stop > _gm_start and res is not None:
+            if (_bt_time.time() - _bt_t0 + 1.5 * _gm_seg + _bt_post >
+                    _bt_limit):
+                # time for the post-processing and the export, once (bridge_failure)
+                try:
+                    import os as _pe_os
+                    # stopped on the time limit: no next pass of the adaptive loop
+                    _pe_os.environ['BRIDGE_TIJD_STOP'] = '1'
+                    from code_aster.Utilities import ExecutionParameter as _pe_xp
+                    _pe_tp = float(_pe_xp().get_option('tpmax'))
+                    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+                    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+                    _pe_new = _pe_tp0 + max(600.0, _pe_tp0)
+                    if _pe_tp < _pe_new:
+                        _pe_xp().set_option('tpmax', _pe_new)
+                        print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))
+                except Exception as _pe_err:
+                    print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))
+                print('BRIDGE_FOUT_ID', 'BRIDGE_TIJD')
+                print('BRIDGE_ONVOLLEDIG', res.getAccessParameters()['INST'][-1])
+                break
         if _gm_stop > _gm_start:
             _gm_fm = AFFE_MATERIAU(MAILLAGE=mesh, MODELE=model, AFFE=tuple(
                 _gm_affe + [_F(GROUP_MA=_g, MATER=_m) for _g, _m in _gm_alive]),
@@ -411,6 +441,7 @@ try:
                 _gm_pred = 'ELASTIQUE'
             elif res is not None:
                 _gm_kw = dict(reuse=res, RESULTAT=res, ETAT_INIT=_F(EVOL_NOLI=res))
+            _gm_t1 = _bt_time.time()
             res = STAT_NON_LINE(
                 MODELE=model,
                 CHAM_MATER=_gm_fm,
@@ -427,6 +458,7 @@ try:
                 RECH_LINEAIRE=_F(ITER_LINE_MAXI=5),
                 CONVERGENCE=_F(RESI_GLOB_RELA=1e-06, ITER_GLOB_MAXI=20),
                 **_gm_kw)
+            _gm_seg = _bt_time.time() - _gm_t1
             _gm_start = _gm_stop
             _gm_new = []
         if _gm_k < len(_gm_t):
@@ -441,10 +473,38 @@ except Exception as err:
     if not _pe_id or not _pe_inst or not (
             _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
         raise
+    if type(err).__name__ == 'TimeLimitError':
+        # time for the post-processing and the export, once (bridge_failure)
+        try:
+            import os as _pe_os
+            # stopped on the time limit: no next pass of the adaptive loop
+            _pe_os.environ['BRIDGE_TIJD_STOP'] = '1'
+            from code_aster.Utilities import ExecutionParameter as _pe_xp
+            _pe_tp = float(_pe_xp().get_option('tpmax'))
+            _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+            _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+            _pe_new = _pe_tp0 + max(600.0, _pe_tp0)
+            if _pe_tp < _pe_new:
+                _pe_xp().set_option('tpmax', _pe_new)
+                print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))
+        except Exception as _pe_err:
+            print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))
     print('BRIDGE_FOUT_ID', _pe_id)
     print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
 print('BRIDGE_GEBOORTE_MECA %d' % len(_gm_alive))
 t_res = res.getAccessParameters()['INST'][-1]
+# time for the post-processing and the export, once (bridge_failure)
+try:
+    import os as _pe_os
+    from code_aster.Utilities import ExecutionParameter as _pe_xp
+    _pe_tp = float(_pe_xp().get_option('tpmax'))
+    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+    _pe_new = _pe_tp0 + max(600.0, _pe_tp0)
+    if _pe_tp < _pe_new:
+        _pe_xp().set_option('tpmax', _pe_new)
+except Exception:
+    pass
 
 
 # =====================================================

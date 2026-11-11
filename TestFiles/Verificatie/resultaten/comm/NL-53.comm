@@ -22,6 +22,8 @@
 #   postreleve_block  -> route 'tabel': POST_RELEVE_T over all
 #                        archived time steps (TOUT_ORDRE), including
 #                        velocity (VITE); route 'liml': aster_results_export
+#   time_start_block  -> (before DEBUT) clock of the time guard of the
+#                        failure loop, or empty
 #
 # NOTE braces: write a literal brace as { or }.
 
@@ -254,9 +256,37 @@ except Exception as err:
     if not _pe_id or not _pe_inst or not (
             _pe_id.startswith('MECANONLINE') or len(_pe_inst) > 1):
         raise
+    if type(err).__name__ == 'TimeLimitError':
+        # time for the post-processing and the export, once (bridge_failure)
+        try:
+            import os as _pe_os
+            # stopped on the time limit: no next pass of the adaptive loop
+            _pe_os.environ['BRIDGE_TIJD_STOP'] = '1'
+            from code_aster.Utilities import ExecutionParameter as _pe_xp
+            _pe_tp = float(_pe_xp().get_option('tpmax'))
+            _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+            _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+            _pe_new = _pe_tp0 + max(600.0, _pe_tp0)
+            if _pe_tp < _pe_new:
+                _pe_xp().set_option('tpmax', _pe_new)
+                print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))
+        except Exception as _pe_err:
+            print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))
     print('BRIDGE_FOUT_ID', _pe_id)
     print('BRIDGE_ONVOLLEDIG', _pe_inst[-1])
 t_res = res.getAccessParameters()['INST'][-1]
+# time for the post-processing and the export, once (bridge_failure)
+try:
+    import os as _pe_os
+    from code_aster.Utilities import ExecutionParameter as _pe_xp
+    _pe_tp = float(_pe_xp().get_option('tpmax'))
+    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+    _pe_new = _pe_tp0 + max(600.0, _pe_tp0)
+    if _pe_tp < _pe_new:
+        _pe_xp().set_option('tpmax', _pe_new)
+except Exception:
+    pass
 
 
 # =====================================================
