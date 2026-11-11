@@ -48,7 +48,7 @@ ignored with only an INFO, as Mecway itself does.
 | Gravity | Yes | With a time table only for a fixed direction. |
 | Centrifugal force | Partly | Only a constant angular velocity, one per model (no gyroscopic effect); spin softening only on solids (KB19). |
 | Mass, Rotational inertia | Yes | Only on nodes; rotational inertia on one node. |
-| Temperature (`temperature2`) + Thermal stress | Yes | Constant temperature; a time table or formula in t in L30 and D31 (`EVOL_THER`, NL-70..75, DY-70..72). Static/modal/buckling: a time history is left out, as with Mecway's own solver. D30 ignores it like Mecway. Shells: Mecway expands less than the bridge; the bridge gives the theoretical free expansion αΔT·L (measured on a plate: bridge +3% (quad4) and +2% (quad8), Mecway −22% and −44%; solids equal to Mecway). So do not compare with Mecway for shells with thermal strain (KB95). |
+| Temperature (`temperature2`) + Thermal stress | Yes | Constant temperature; a time table or formula in t in L30 and D31 (`EVOL_THER`, NL-70..75, DY-70..72). Static/modal/buckling: a time history is left out, as with Mecway's own solver. D30 ignores it like Mecway. Solids equal to Mecway (TH-03, LS-08); shells too (Mecway 35: free plate quad4 and quad8 exactly αΔT·x; clamped plate quad4 equal to 5 digits, quad8 within 0.07%). For a comparison, do not clamp with *Fixed support* on shell or solid nodes: Mecway ignores it (KB135). |
 | Node temperature (`temperature3`) in a mechanical analysis | Yes | Also after *Transfer temperatures from solution*. Static, nonlinear static, modal (prestress) and buckling, like Temperature; nodes without a temperature at the Thermal stress reference (LS-08). D30 ignores it like Mecway; D31 reported (not in Mecway's list). |
 | Rayleigh damping | Partly | Only on the whole model, not on a selection (KB27). |
 | Initial velocity | Yes | Dynamics only; not with mode superposition (KB54). |
@@ -67,7 +67,7 @@ ignored with only an INFO, as Mecway itself does.
 
 | Mecway | Status | Remark |
 |---|---|---|
-| Fixed support | Yes | Overlap with other constraints: Code-Aster does not clean up duplicate constraints like Mecway; the bridge catches the known cases and reports the rest (WARNING, KB8). |
+| Fixed support | Yes | Overlap with other constraints: Code-Aster does not clean up duplicate constraints like Mecway; the bridge catches the known cases and reports the rest (WARNING, KB8). On a node selection the bridge clamps every node; Mecway only nodes with all rotational DOFs (beam nodes) and silently leaves shell and solid nodes free (KB135). |
 | Pinned support | Yes | Nodes and faces of solid elements, as in Mecway. |
 | Frictionless support | Partly | Not on beams; normal displacement ≠ 0 not on curved shells and shell edges (KB5). Next to a displacement/node rotation 0 on the same nodes (e.g. frictionless on the rim edges of a round plate plus X, Y, Z = 0, GitHub issue #9) the bridge drops the part of the relation that is already fixed, as Mecway reduces it (MO-09, LS-83). On shell edges Mecway also fixes the drilling rotation about the shell normal, the bridge does not; this changes no displacement (LS-84). |
 | Elastic support | Yes | Faces of solids and shell faces. |

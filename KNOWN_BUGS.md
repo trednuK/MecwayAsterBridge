@@ -93,19 +93,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    Suspected: a different integration of distorted quadratic elements in Mecway
    or Code-Aster (NOT checked; which one is closer to reality, also not).
 
-95\. **Thermal strain in shells: Mecway expands less than the bridge** (question, measured
-   with Mecway 34 headless and Code-Aster 17.4). Plate 100 × 40 × 2 mm (4 × 2 elements),
-   `fixed` on the edge x = 0, α = 1.2e-5 1/K, uniform +100 K (`temperature2` on all
-   elements or `temperature3` on all nodes, the same in both programs): max u_x
-   quad8 Mecway 6.68e-5 m, bridge (`COQUE_3D`) 1.224e-4 m; quad4 Mecway 9.37e-5 m,
-   bridge (DKT) 1.236e-4 m. The free expansion is αΔT·L = 1.2e-4 m (the fixed edge
-   only restrains the transverse strain, which if anything increases u_x). A free quad8 plate with
-   ΔT = 1000 K/m · x gave u_x(L, 0) = 4.87e-5 m in Mecway versus exactly αgL²/2 = 6.0e-5 m.
-   Solids do agree (TH-03, LS-08). Why Mecway expands less with shells has NOT been
-   checked (plane stress, or the temperature through the thickness?). User docs: the bridge
-   follows the theory, do not compare with Mecway here (Mecway_functionaliteit §2,
-   Standaardinstellingen §4.4).
-
 112\. **Buckling: Mecway's beam has no torsional buckling; the bridge is right** (confirmed,
    Mecway 34 headless and Code-Aster 17.4, `buckling_3d`, `POU_D_E`; verification BU-30/31).
    Fixed column L = 1 m, I 100/50/10/8 mm, 20 elements, 1000 N: bridge 109.72 / 987.46 /
@@ -658,6 +645,30 @@ Code-Aster value per node) and logs the largest difference per variable.
    message. With cables or gaps next to `POU_D_TG` the step is not purely elastic (`CABLE`,
    `DIS_CHOC`), and not converging stops the run; not measured.
    EDF: not known whether this has been reported (no public issue list).
+
+135\. **Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge
+   clamps** (confirmed, Mecway 35.0.9802 headless and Code-Aster 17.4; `bridge_bcs.FixedBC`).
+   Mecway's manual (§9.1) allows a fixed support on nodes only for nodes with all rotational
+   DOFs (beam nodes, reference nodes of couplings). Mecway's own solver silently leaves other
+   nodes of the selection free (measured on quad4, quad8, hex8, hex20 and 2D quad4/quad8
+   nodes; spring-only nodes: item 47), even when the selection holds every node of the model. Without other supports the model is a
+   mechanism, and Mecway still writes a solution with a rigid-body motion of arbitrary size
+   (4e8 m under 100 N). The bridge clamps every node of the selection.
+   Plate 100 × 40 × 2 mm, +100 K, α = 1.2e-5 1/K, `fixed` on the nodes of the edge x = 0:
+   Mecway gives the free expansion plus a rigid motion (max u_x 9.37e-5 m quad4,
+   6.68e-5 m quad8), the bridge the clamped plate (1.236e-4 m DKT, 1.224e-4 m `COQUE_3D`).
+   With `fixed` on the edge faces both clamp it: quad4 DKT equals Mecway to 5 digits, quad8
+   (DKT and `COQUE_3D`) within 0.07%, 64 × 32 elements both 1.2197e-4 m.
+   This support explained an earlier report that Mecway's shells expand less than the theory
+   under a temperature. They do not: Mecway and the bridge give exactly αΔT·x on a
+   statically determinate plate (quad4, quad8, `temperature2` and `temperature3`).
+   Verification models with shell or solid nodes in such a selection: AD-03, LS-32b, LS-62,
+   NL-02a/b, NL-03a/b, NL-30c and VA-02. They check against theory (AD-03: the ERROR of the
+   adaptive loop), except LS-62, whose Mecway reference (3% tolerance) has the two shell
+   nodes of the clamped edge free. Many spring and damper models (DY, HR, LS-06, MC, MO-05,
+   SP, VH) hold spring-only nodes this way (item 47).
+   Not handled: the bridge gives no WARNING. Whether Mecway's GUI offers such a support is
+   NOT verified. Use faces, or *Displacement* plus *Node rotation*.
 
 ## Open questions (Mecway behaviour not checked)
 

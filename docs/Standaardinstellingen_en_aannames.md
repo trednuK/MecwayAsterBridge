@@ -477,6 +477,7 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Druk positief naar het element toe | `PRES_REP` met `PRES` > 0 = drukkend | bron: Mecway (2026) §9.14; geverifieerd: LS-03, LS-04, LS-05 |
 | Uniforme druk is meebewegend bij grote verplaatsingen | `TYPE_CHARGE='SUIV'` op volumes en `COQUE_3D`; op DKT vast (WARNING, `CALCUL_42`) | bron: Mecway (2026) §9.14; Code-Aster-test ssnv122a (Verificatie, officiële tests) |
 | Overlappende randvoorwaarden | deels opgelost (`SANS_GROUP_*`; een scheve relatie of DDL_IMPO 0 die de ander al dekt wordt gereduceerd), anders gemeld | afwijking: Mecway reduceert zelf (KNOWN_BUGS 8) |
+| *Fixed support* op een knoopselectie | alle knopen vast (verplaatsingen, en rotaties waar de knoop die heeft) | afwijking: Mecway houdt alleen knopen met alle rotatievrijheidsgraden vast (balkknopen; manual v35 §9.1) en laat schaal- en volumeknopen stil vrij; gemeten met Mecway 35 (KNOWN_BUGS 135). Klem schalen en volumes in op vlakken |
 | Voorwaarde op een elementselectie of component met een flexible joint | werkt op de cellen (`GROUP_MA`), dus op de eigen knoop van de joint; een dubbele voorwaarde kan `FACTOR_11` geven (WARNING) | afwijking: Mecway legt hem op de knopen van het element; zet hem op knopen of vlakken (KNOWN_BUGS 106) |
 | Veren en dempers langs hun eigen as | `DISCRET` met `REPERE='LOCAL'` | bron: Mecway (2026) §7.7 ("stiffness only in the direction of its length"); geverifieerd: LS-06 exact; vergelijking met een Mecway-oplossing ontbreekt (KNOWN_BUGS 47) |
 | Traction op het zijvlak van een balk = traction × omtrek per lengte | `FORCE_POUTRE` FX/FY/FZ (globaal) op een celgroep per omtrek (`BRSF<n>`); een formule in de integratiepunten | bron: Mecway 34 headless gemeten (S17: reactie = T × omtrek × L voor alle doorsnedetypes); geverifieerd: LS-92a .. LS-92h (gelijk aan Mecway, formule +0,06% omdat Mecway één punt per element neemt) |
@@ -495,7 +496,7 @@ geverifieerd**, of **afwijking** (bewust anders dan Mecway).
 | Thermische schalen | `PLAN` (diepte 1) met factor f = t / t_ref op λ, ρc en de belastingen | geverifieerd: TH-01e (6e-7); KNOWN_BUGS 15 |
 | Trusses | `BARRE`, geometrisch lineair (ook met `GROT_GDEP`) | gemeten (KNOWN_BUGS 40) |
 | Line3-balken | twee rechte `SEG2`-cellen per element; gekromd (middenknoop naast de koorde): een knik in de middenknoop (WARNING) | recht exact (LS-50); gekromd afwijking: Mecway (CCX) rekent de kromme vorm (KNOWN_BUGS 107) |
-| Thermische rek in schalen | vrije uitzetting αΔT·L zoals de theorie | gemeten op een plaat: bridge +3% (DKT) en +2% (`COQUE_3D`), Mecway −22% (quad4) en −44% (quad8); de bridge volgt de theorie, waarom Mecway minder uitzet is NIET nagegaan (KNOWN_BUGS 95) |
+| Thermische rek in schalen | vrije uitzetting αΔT·L zoals de theorie | gemeten met Mecway 35 headless: vrije plaat quad4 en quad8 exact αΔT·x, net als Mecway; ingeklemde plaat (*Fixed* op de randvlakken) quad4 gelijk aan Mecway op 5 cijfers, quad8 binnen 0,07% |
 | Expliciet met DKT-schalen | geen `INER_ROTA` in `AFFE_CARA_ELEM` | gemeten bij deze review (R-STRIP): uitkragende strook DKT, expliciet en impliciet gelijk, periode +0,6 % / +0,3 %, piek 1,957 × statisch (verwacht ~1,966) |
 
 ### 4.5 Kinematica (`deformation`)

@@ -479,6 +479,7 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Pressure positive towards the element | `PRES_REP` with `PRES` > 0 = compressive | source: Mecway (2026) §9.14; verified: LS-03, LS-04, LS-05 |
 | Uniform pressure follows large displacements | `TYPE_CHARGE='SUIV'` on solids and `COQUE_3D`; fixed on DKT (WARNING, `CALCUL_42`) | source: Mecway (2026) §9.14; Code-Aster test ssnv122a (Verification, official tests) |
 | Overlapping constraints | partly resolved (`SANS_GROUP_*`; a skew relation or DDL_IMPO 0 that the other already covers is reduced), otherwise reported | deviation: Mecway reduces them itself (KNOWN_BUGS 8) |
+| *Fixed support* on a node selection | every node clamped (displacements, and rotations where the node has them) | deviation: Mecway only holds nodes with all rotational DOFs (beam nodes; manual v35 §9.1) and silently leaves shell and solid nodes free; measured with Mecway 35 (KNOWN_BUGS 135). Clamp shells and solids on faces |
 | Constraint on an element selection or component with a flexible joint | acts on the cells (`GROUP_MA`), so on the joint's own node; a double constraint can give `FACTOR_11` (WARNING) | deviation: Mecway applies it to the nodes of the element; put it on nodes or faces (KNOWN_BUGS 106) |
 | Springs and dampers along their own axis | `DISCRET` with `REPERE='LOCAL'` | source: Mecway (2026) §7.7 ("stiffness only in the direction of its length"); verified: LS-06 exact; a comparison with a Mecway solution is missing (KNOWN_BUGS 47) |
 | Traction on the side face of a beam = traction × perimeter per length | `FORCE_POUTRE` FX/FY/FZ (global) on a cell group per perimeter (`BRSF<n>`); a formula at the integration points | source: Mecway 34 measured headless (S17: reaction = T × perimeter × L for all section types); verified: LS-92a .. LS-92h (equal to Mecway, formula +0.06% because Mecway takes one point per element) |
@@ -497,7 +498,7 @@ verified**, or **deviation** (deliberately different from Mecway).
 | Thermal shells | `PLAN` (depth 1) with factor f = t / t_ref on λ, ρc and the loads | verified: TH-01e (6e-7); KNOWN_BUGS 15 |
 | Trusses | `BARRE`, geometrically linear (also with `GROT_GDEP`) | measured (KNOWN_BUGS 40) |
 | Line3 beams | two straight `SEG2` cells per element; curved (midside node off the chord): a kink at the midside node (WARNING) | straight exact (LS-50); curved deviation: Mecway (CCX) computes the curved shape (KNOWN_BUGS 107) |
-| Thermal strain in shells | free expansion αΔT·L as in theory | measured on a plate: bridge +3% (DKT) and +2% (`COQUE_3D`), Mecway −22% (quad4) and −44% (quad8); the bridge follows the theory, why Mecway expands less has NOT been checked (KNOWN_BUGS 95) |
+| Thermal strain in shells | free expansion αΔT·L as in theory | measured with Mecway 35 headless: free plate quad4 and quad8 exactly αΔT·x, as in Mecway; clamped plate (*Fixed* on the edge faces) quad4 equal to Mecway to 5 digits, quad8 within 0.07% |
 | Explicit with DKT shells | no `INER_ROTA` in `AFFE_CARA_ELEM` | measured in this review (R-STRIP): cantilever strip DKT, explicit and implicit equal, period +0.6 % / +0.3 %, peak 1.957 × static (expected ~1.966) |
 
 ### 4.5 Kinematics (`deformation`)

@@ -48,7 +48,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 | Gravity | Ja | Met een tijdstabel alleen bij een vaste richting. |
 | Centrifugal force | Deels | Alleen een constante hoeksnelheid, één per model (geen gyroscopisch effect); spin softening alleen op volumes (KB19). |
 | Mass, Rotational inertia | Ja | Alleen op knopen; rotatietraagheid op één knoop. |
-| Temperature (`temperature2`) + Thermal stress | Ja | Constante temperatuur; een tijdstabel of formule in t in L30 en D31 (`EVOL_THER`, NL-70..75, DY-70..72). Statisch/modaal/knik: een tijdshistorie valt weg, zoals bij Mecway's eigen solver. D30 negeert hem zoals Mecway. Schalen: Mecway zet minder uit dan de bridge; de bridge geeft de theoretische vrije uitzetting αΔT·L (gemeten op een plaat: bridge +3% (quad4) en +2% (quad8), Mecway −22% en −44%; volumes gelijk aan Mecway). Vergelijk bij schalen met thermische rek dus niet met Mecway (KB95). |
+| Temperature (`temperature2`) + Thermal stress | Ja | Constante temperatuur; een tijdstabel of formule in t in L30 en D31 (`EVOL_THER`, NL-70..75, DY-70..72). Statisch/modaal/knik: een tijdshistorie valt weg, zoals bij Mecway's eigen solver. D30 negeert hem zoals Mecway. Volumes gelijk aan Mecway (TH-03, LS-08); schalen ook (Mecway 35: vrije plaat quad4 en quad8 exact αΔT·x; ingeklemde plaat quad4 gelijk op 5 cijfers, quad8 binnen 0,07%). Klem bij een vergelijking niet in met *Fixed support* op schaal- of volumeknopen: die negeert Mecway (KB135). |
 | Node temperature (`temperature3`) in een mechanische analyse | Ja | Ook na *Transfer temperatures from solution*. Statisch, niet-lineair statisch, modaal (voorspanning) en knik, zoals Temperature; knopen zonder temperatuur op de referentie van de Thermal stress (LS-08). D30 negeert hem zoals Mecway; D31 gemeld (niet in Mecway's lijst). |
 | Rayleigh damping | Deels | Alleen op het hele model, niet op een selectie (KB27). |
 | Initial velocity | Ja | Alleen in dynamica; niet bij mode superposition (KB54). |
@@ -67,7 +67,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 
 | Mecway | Status | Opmerking |
 |---|---|---|
-| Fixed support | Ja | Overlap met andere voorwaarden: Code-Aster ruimt dubbele voorwaarden niet op zoals Mecway; de bekende gevallen vangt de bridge af, de rest meldt hij (WARNING, KB8). |
+| Fixed support | Ja | Overlap met andere voorwaarden: Code-Aster ruimt dubbele voorwaarden niet op zoals Mecway; de bekende gevallen vangt de bridge af, de rest meldt hij (WARNING, KB8). Op een knoopselectie zet de bridge alle knopen vast; Mecway alleen knopen met alle rotatievrijheidsgraden (balkknopen), schaal- en volumeknopen laat hij stil vrij (KB135). |
 | Pinned support | Ja | Knopen en vlakken van volume-elementen, zoals Mecway. |
 | Frictionless support | Deels | Niet op balken; normaalverplaatsing ≠ 0 niet op gekromde schalen en schaalranden (KB5). Naast een displacement/node rotation 0 op dezelfde knopen (bijv. frictionless op de randen van een ronde plaat plus X, Y, Z = 0, GitHub issue #9) laat de bridge het deel van de relatie weg dat al vastligt, zoals Mecway het reduceert (MO-09, LS-83). Op schaalranden zet Mecway ook de draairotatie om de schaalnormaal vast, de bridge niet; dat verandert geen verplaatsing (LS-84). |
 | Elastic support | Ja | Vlakken van volumes en schaalvlakken. |
