@@ -13,8 +13,17 @@ verification cases is unchanged; a limited regression of 45 cases gave 249 of 24
 - **Convergence window**: a long path of the file shown wraps over several lines instead of
   running under the buttons; started from Mecway, the window sits on the taskbar under Mecway's
   button (Mecway in Program Files; verified with Mecway 35).
-- **Hide failed elements in Mecway** (new setting `hide_failed`, "Hide failed elements", page General, off by default): after a run with the route `liml` and after Results... > Load, failed elements disappear in Mecway's own result view, each from the step after its failure (their nodes collapse onto the centroid; exact at deformation scale 1). The core `liml_failed.py` is a copy of AdvancedToolsHub's; contract `failed/1` in `AGENTS.md`. "Section in results" refuses results with hidden elements.
-- **Behaviour change of the element variable `failed`** (and the VTU array of the same name): it is now 1 from the first stored step *after* the failure time, no longer at that time itself. The step at the failure time shows the computed state that made the element fail; its stress is about 0 from the next step on (measured with `BezwijkenTrekstaaf`). An element that fails at the last stored step keeps `failed` = 0.
+- **Hide failed elements in Mecway** (new setting `hide_failed`, "Hide failed elements", page
+  General, off by default): after a run with the route `liml` and after Results... > Load,
+  failed elements disappear in Mecway's own result view, each from the step after its failure
+  (their nodes collapse onto the centroid; exact at deformation scale 1). The core
+  `liml_failed.py` is a copy of AdvancedToolsHub's; contract `failed/1` in `AGENTS.md`.
+  "Section in results" refuses results with hidden elements.
+- **Behaviour change of the element variable `failed`** (and the VTU array of the same name):
+  it is now 1 from the first stored step *after* the failure time, no longer at that time
+  itself. The step at the failure time shows the computed state that made the element fail; its
+  stress is about 0 from the next step on (measured with `BezwijkenTrekstaaf`). An element that
+  fails at the last stored step keeps `failed` = 0.
 
 ## V2026.10 – 10 November 2026
 
