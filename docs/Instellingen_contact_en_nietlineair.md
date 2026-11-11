@@ -1085,8 +1085,10 @@ hieronder); bij `THER_LINEAIRE` de meldingen (fouten en alarmen met uitleg in de
 gekozen taal) en de diagnose. Achteraf: de
 knop *Convergentiescherm* in het hoofdvenster van de bridge toont de laatste run uit
 de werkmap; met "Open .mess ..." kies je een ander bestand. De knoppen bovenaan horen bij de getoonde run: *Samenvatting* opent `<model>_<run-id>_aster_summary.txt` in de standaard-teksteditor (gemaakt uit de `.mess` als het ontbreekt; [Handleiding §5.2](Handleiding.md#52-samenvatting-van-de-code-aster-run)), *.comm* en *.mail* openen het bestand in Kladblok (deze extensies hebben geen bestandskoppeling; grijs als het bestand ontbreekt), *Map* opent de Verkenner op de werkmap met de `.mess` geselecteerd, *ParaView* en *AsterStudy* openen de resultaatbestanden van de run (ParaView: `_verfijnd.rmed` of `_xfem.rmed` als die er is, anders de `.pvd`, anders de `.rmed`; AsterStudy: een MED-bestand in Salome-Meca, tabblad *Results*; ontbreekt het bestand, dan zegt het scherm dat; zie [Handleiding §5.1](Handleiding.md#51-resultaten-later-opnieuw-inladen-kleine-liml), zelfde knoppen als in het resultatenscherm), *Opnieuw lezen* leest de bron opnieuw. Het scherm blijft open
-naast Mecway en het hoofdvenster. Het venster draait in de Python van Code-Aster; sluiten
-heeft geen invloed op de run of op Mecway.
+naast Mecway en het hoofdvenster. Een lang pad van het getoonde bestand loopt over meerdere
+regels. Gestart vanuit Mecway staat het venster op de taakbalk bij de knop van Mecway (alleen
+als Mecway in Program Files staat; anders een eigen knop). Het venster draait in de Python van
+Code-Aster; sluiten heeft geen invloed op de run of op Mecway.
 
 | Grafiek | Wat je ziet | Waar je op let |
 |---|---|---|

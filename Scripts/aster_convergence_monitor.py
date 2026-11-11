@@ -31,7 +31,7 @@
 #           [--since <time.time() of the start>] [--resi 1e-6]
 #           [--iter-max 20] [--log <log file>] [--exit-after-finish <s>]
 #           [--lang nl|en] [--paraview <setting paraview_exe>]
-#           [--salome <setting salome_meca_dir>]
+#           [--salome <setting salome_meca_dir>] [--taskbar-id <Mecway's ID>]
 #
 # Buttons in the top bar for the run shown: Summary
 # (<model>_<run_id>_aster_summary.txt in the default text editor, made from
@@ -827,6 +827,11 @@ class Monitor(object):
                                              min(920, sh - 80)))
         root.configure(background=_BG)
         Plot.fit_fonts(root)
+        taskbar = getattr(args, "taskbar_id", None)
+        if taskbar:
+            root.update_idletasks()
+            log(u"INFO: taskbar ID {0}: {1}".format(
+                taskbar, _set_taskbar_id(root, taskbar)))
 
         # Dark bar at the top with the file shown and the buttons, as the
         # header of the bridge windows (bridge_style).
@@ -2028,6 +2033,67 @@ class _Tip(object):
             self.win = None
 
 
+def _set_taskbar_id(root, aumid):
+    """Give the window the taskbar ID (System.AppUserModel.ID) aumid, so
+    Windows shows it under that program's taskbar button (--taskbar-id:
+    Mecway's, from bridge_run_aster.taskbar_id): SHGetPropertyStoreForWindow
+    + IPropertyStore.SetValue/Commit (shell32; propkey.h: PKEY_AppUserModel_ID
+    = {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}, 5). Returns "OK" or why not;
+    never raises (the window works without it). Verified on Windows 11 with
+    Mecway 35 (11 Nov 2026): the window joined Mecway's button."""
+    try:
+        import ctypes
+        import uuid
+
+        class GUID(ctypes.Structure):
+            _fields_ = [("a", ctypes.c_uint32), ("b", ctypes.c_uint16),
+                        ("c", ctypes.c_uint16), ("d", ctypes.c_ubyte * 8)]
+
+        def guid(text):
+            u = uuid.UUID(text)
+            g = GUID(u.fields[0], u.fields[1], u.fields[2])
+            g.d[:] = list(u.bytes[8:])
+            return g
+
+        class PROPERTYKEY(ctypes.Structure):
+            _fields_ = [("fmtid", GUID), ("pid", ctypes.c_uint32)]
+
+        class PROPVARIANT(ctypes.Structure):
+            _fields_ = [("vt", ctypes.c_ushort), ("r1", ctypes.c_ushort),
+                        ("r2", ctypes.c_ushort), ("r3", ctypes.c_ushort),
+                        ("p", ctypes.c_void_p), ("pad", ctypes.c_void_p)]
+
+        hwnd = int(root.wm_frame(), 16)
+        store = ctypes.c_void_p()
+        iid = guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99")   # IPropertyStore
+        hr = ctypes.windll.shell32.SHGetPropertyStoreForWindow(
+            ctypes.c_void_p(hwnd), ctypes.byref(iid), ctypes.byref(store))
+        if hr != 0 or not store:
+            return u"no property store (0x{0:x})".format(hr & 0xffffffff)
+        vtbl = ctypes.cast(store, ctypes.POINTER(
+            ctypes.POINTER(ctypes.c_void_p)))[0]
+        # IUnknown (0-2), GetCount, GetAt, GetValue, SetValue (6), Commit (7)
+        set_value = ctypes.WINFUNCTYPE(
+            ctypes.c_long, ctypes.c_void_p, ctypes.POINTER(PROPERTYKEY),
+            ctypes.POINTER(PROPVARIANT))(vtbl[6])
+        commit = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p)(vtbl[7])
+        release = ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)(vtbl[2])
+        key = PROPERTYKEY(guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), 5)
+        text = ctypes.create_unicode_buffer(aumid)
+        value = PROPVARIANT()
+        value.vt = 31                                      # VT_LPWSTR
+        value.p = ctypes.cast(text, ctypes.c_void_p)
+        try:
+            hr = set_value(store, ctypes.byref(key), ctypes.byref(value))
+            if hr == 0:
+                hr = commit(store)
+        finally:
+            release(store)
+        return u"OK" if hr == 0 else u"0x{0:x}".format(hr & 0xffffffff)
+    except Exception as e:
+        return u"not set: {0}".format(e)
+
+
 def _wrap_path(text, measure, width):
     """text ("file: C:\\...\\x.mess") in lines of at most width pixels
     (measure(str) -> pixels): broken after a space or a path separator,
@@ -2099,6 +2165,9 @@ def main(argv=None):
     ap.add_argument("--paraview", default=None,
                     help=u"instelling paraview_exe voor de knop ParaView; "
                          u"standaard die uit bridge_utils.CONFIG_BRIDGE")
+    ap.add_argument("--taskbar-id", dest="taskbar_id", default=None,
+                    help=u"taakbalk-ID (AppUserModelID) van Mecway, zodat "
+                         u"het venster bij Mecway's taakbalkknop staat")
     ap.add_argument("--salome", default=None,
                     help=u"instelling salome_meca_dir voor de knoppen "
                          u"AsterStudy en ParaView; standaard die uit "

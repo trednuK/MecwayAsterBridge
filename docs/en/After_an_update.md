@@ -151,6 +151,7 @@ it was last verified:
 | Keep the Code-Aster base with a manifest, `keep_base` (V2026.9) | NOT verified | NOT verified: offline tests; with the setting off (default) mesh and `.comm` stay the same |
 | Buttons "ParaView" and "AsterStudy" in the Results window and the convergence window, setting `salome_meca_dir` (V2026.10) | NOT verified | NOT verified in the Mecway window; Mecway 35: started from a hidden Mecway (10 Nov 2026: ParaView 6.2.1 with a `.pvd`, AsterStudy *Results* with a `.rmed`); from the convergence window's Python: `.rmed`, `_xfem.rmed`, `_verfijnd.rmed` |
 | Hiding failed elements, `hide_failed`; `failed` 1 from the step after the failure (after V2026.10) | NOT verified | NOT verified in the Mecway window; files checked offline and with `BezwijkenTrekstaaf` (Code-Aster 17.4, splice under IronPython 2.7.9) |
+| Convergence window under Mecway's taskbar button; long path over several lines (V2026.11) | NOT verified | Mecway 35 in Program Files: a test window with the same taskbar ID sat under Mecway's button (11 Nov 2026); the convergence window itself NOT verified on the taskbar |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

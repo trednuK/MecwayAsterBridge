@@ -1072,6 +1072,48 @@ def _monitor_log(mess_path):
     return stem + "_monitor_log.txt"
 
 
+# Known folders in the implicit taskbar ID (AppUserModelID) Windows gives a
+# program that sets none (Mecway 35 sets none: its window's
+# System.AppUserModel.ID is empty): the program path with the folder
+# replaced by its KNOWNFOLDERID (Windows SDK KnownFolders.h).
+# Only the 64-bit Program Files folder (ProgramW6432 is that folder in 32-
+# and 64-bit processes alike; ProgramFiles is the x86 folder in a 32-bit
+# process): the one case verified.
+_KNOWN_FOLDERS = (
+    ("ProgramW6432", "{6D809377-6AF0-444B-8957-A3773F02200E}"),)
+
+
+def taskbar_id(exe_path, environ=None):
+    """Taskbar ID of the program exe_path when it sets none itself, for
+    the convergence window to join its taskbar button (--taskbar-id):
+    "{6D809377-...}\\Mecway\\mecway.exe" for C:\\Program Files\\Mecway\\
+    mecway.exe. Verified for Mecway 35 in C:\\Program Files (11 Nov 2026,
+    the window joined Mecway's button); other folders NOT verified, so ""
+    there (the window keeps its own button). "" without a path."""
+    env = os.environ if environ is None else environ
+    if not exe_path or not exe_path.lower().endswith(".exe"):
+        return ""
+    path = os.path.normpath(exe_path)
+    for var, folder_id in _KNOWN_FOLDERS:
+        root = env.get(var)
+        if not root:
+            continue
+        root = os.path.normpath(root)
+        if path.lower().startswith(root.lower() + os.sep):
+            return folder_id + path[len(root):]
+    return ""
+
+
+def _host_exe():
+    """Path of the program this script runs in (mecway.exe in Mecway),
+    or "" outside .NET (CPython tests)."""
+    try:
+        from System.Diagnostics import Process
+        return Process.GetCurrentProcess().MainModule.FileName
+    except Exception:
+        return ""
+
+
 def start_convergence_monitor(mess_path, since=0.0, console_path=None,
                               paraview=None, salome=None):
     """
@@ -1123,6 +1165,10 @@ def start_convergence_monitor(mess_path, since=0.0, console_path=None,
             if value is None:
                 value = CONFIG_BRIDGE.get(key, "") or ""
             args += [opt, value]
+        # Taskbar: the window joins Mecway's taskbar button
+        taskbar = taskbar_id(_host_exe())
+        if taskbar:
+            args += ["--taskbar-id", taskbar]
         # PYTHONHOME/PYTHONPATH of another Python must not confuse
         # Code-Aster's Python.
         env = dict((k, v) for k, v in os.environ.items()
