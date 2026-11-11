@@ -26,7 +26,11 @@ counts in the maxandmin group name="" (recomputed, or added as the first compone
 its reaction stayed while its displacement collapsed, so Mecway drew the reaction at a moved
 spot. That Mecway draws the reaction of a node in no element on its place is NOT verified
 (ASSUMPTIONS 73). Pass 1 now also decodes the reaction blocks, so a broken one is refused there
-(layout, bad_base64, value_count), also by scan() and when nothing failed.
+(layout, bad_base64, value_count), also by scan() and when nothing failed. 1.0.4 (KNOWN_BUGS
+87): when both reactionforce* and reactionmom* have values, a group whose peak is only round-off
+next to the other (REACTION_NOISE_TOL with the model length, or REACTION_NOISE_RAW) marks no
+supports (report key noise_reaction_groups); Code-Aster's REAC_NODA under a pure end moment
+otherwise made every free node a support. One group alone keeps the 1.0.3 rule.
 
 Processed marker (OPEN_VRAGEN 72): the first line inside the target <results> becomes
 <globalvariable name="failed_hidden">N</globalvariable>, N = number of hidden elements. Mecway
@@ -79,7 +83,7 @@ import sys
 import time
 from array import array
 
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 CONTRACT_FAILED = "failed/1"
 
 # --- switches (module constants; tests change them) -------------------------------------
@@ -100,8 +104,20 @@ DISPLMAG = b"displmag"
 REACTION_PREFIXES = (b"reaction",)
 # 1.0.3: a node is a support when its largest |reaction| over the steps exceeds this fraction of
 # the largest of its group (_react_group) in the file; below it a value counts as round-off
-# (Code-Aster's REAC_NODA on free nodes, NOT verified on a real result: ASSUMPTIONS 73)
+# (Code-Aster's REAC_NODA on free nodes: measured 1e-9..1e-5 of the peak, bridge 11 Nov 2026,
+# ASSUMPTIONS 73)
 REACTION_REL_TOL = 1e-3
+# 1.0.4 (KNOWN_BUGS 87): of the groups reactionforce (N) and reactionmom (N m) one holds only
+# round-off when its peak is small next to the other (_react_noise): P_F * L < NOISE_TOL * P_M
+# or P_F < NOISE_RAW * P_M for the forces, P_M < NOISE_TOL * P_F * L or P_M < NOISE_RAW * P_F
+# for the moments; L = diagonal of the bounding box of the element nodes (m; a .liml is SI).
+# Such a group marks no supports. NOISE_RAW is the solver's own scale: RESI_GLOB_RELA of
+# Code-Aster divides the largest residual over all DOFs, forces and moments unscaled, by the
+# load plus reactions (bridge docs, U4.51.03) [I]; NL-81 gave P_F / P_M = 2.1e-6 (L = 1 m).
+REACTION_NOISE_TOL = 1e-3
+REACTION_NOISE_RAW = 1e-4
+REACT_FORCE = b"reactionforce"
+REACT_MOM = b"reactionmom"
 FAILED_VAR = b"failed"
 STATUS_VAR = b"Element_status"
 STRESS_VARS = (b"stressxx", b"stressyy", b"stresszz", b"stressxy", b"stressyz", b"stresszx",
@@ -749,6 +765,7 @@ def _pass1(path, o, ticker):
     st.react_cache = {}              # nodeids bytes -> that array
     st.react_max = {}                # reaction group -> array: node position -> largest |value|
     st.react_peak = {}               # reaction group -> largest |value| over nodes and steps
+    st.noise_groups = []             # 1.0.4: reaction groups of round-off only (_react_noise)
     npos = None
     shape_ix = {}
     elset = -1
@@ -1141,18 +1158,87 @@ def _react_done1(st, blk, data, npos, kind):
 def _react_finish(st):
     """1.0.3: st.carry[q] = 1 for a support: a node whose |reaction| exceeds REACTION_REL_TOL
     times the largest of its group over all nodes and steps (exact 0.0 away from the supports
-    in Mecway's own results; solver round-off of the bridge's REAC_NODA stays below it, NOT
-    verified on a real result)."""
+    in Mecway's own results; round-off of the bridge's REAC_NODA on free nodes was 1e-9..1e-5
+    of the peak in Code-Aster 17.4 results, measured by the bridge). 1.0.4: a group of round-off
+    only (_react_noise) marks no supports; NaN/inf still do (_react_done1)."""
     carry = st.carry
     if carry is None:
         return
+    noise = _react_noise(st)
+    st.noise_groups = [g.decode("ascii", "replace") for g in noise]
     for g, mx in st.react_max.items():
         peak = st.react_peak.get(g, 0.0)
-        if peak > 0.0:
+        if peak > 0.0 and g not in noise:
             thr = REACTION_REL_TOL * peak
             for q in range(len(mx)):
                 if mx[q] > thr:
                     carry[q] = 1
+
+
+def _react_noise(st):
+    """1.0.4 (KNOWN_BUGS 87): [REACT_FORCE] or [REACT_MOM] when that group holds only round-off
+    next to the other (REACTION_NOISE_TOL, REACTION_NOISE_RAW), else []. Only when both groups
+    have a peak > 0 (NaN/inf never count in a peak); neither or both: []. The L criterion only
+    with a usable L (_elem_diagonal) and finite products; the raw one always. Products, not
+    quotients: the checker computes the same expressions."""
+    pf = st.react_peak.get(REACT_FORCE, 0.0)
+    pm = st.react_peak.get(REACT_MOM, 0.0)
+    if not (pf > 0.0 and pm > 0.0):
+        return []
+    f_noise = pf < REACTION_NOISE_RAW * pm
+    m_noise = pm < REACTION_NOISE_RAW * pf
+    ln = _elem_diagonal(st)
+    if ln is not None:
+        a = pf * ln
+        c = REACTION_NOISE_TOL * pf * ln
+        if not (math.isinf(a) or math.isinf(c)):
+            f_noise = f_noise or a < REACTION_NOISE_TOL * pm
+            m_noise = m_noise or pm < c
+    if f_noise == m_noise:
+        return []
+    return [REACT_FORCE] if f_noise else [REACT_MOM]
+
+
+def _elem_diagonal(st):
+    """1.0.4: diagonal of the axis-aligned bounding box of the nodes used by an element of the
+    target mesh (undeformed; loose nodes such as reference points do not count); None without
+    elements, with a NaN coordinate, or when it is not finite and > 0."""
+    npos = st.npos
+    xs, ys, zs = st.xs, st.ys, st.zs
+    seen = bytearray(len(st.nids))
+    x0 = y0 = z0 = x1 = y1 = z1 = None
+    for n in st.conn:
+        q = npos(n)
+        if q < 0 or seen[q]:
+            continue
+        seen[q] = 1
+        x, y, z = xs[q], ys[q], zs[q]
+        if x != x or y != y or z != z:     # a NaN coordinate: no length (order-free)
+            return None
+        if x0 is None:
+            x0 = x1 = x
+            y0 = y1 = y
+            z0 = z1 = z
+            continue
+        if x < x0:
+            x0 = x
+        elif x > x1:
+            x1 = x
+        if y < y0:
+            y0 = y
+        elif y > y1:
+            y1 = y
+        if z < z0:
+            z0 = z
+        elif z > z1:
+            z1 = z
+    if x0 is None:
+        return None
+    dx, dy, dz = x1 - x0, y1 - y0, z1 - z0
+    ln = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if not (ln > 0.0) or math.isinf(ln):
+        return None
+    return ln
 
 
 def _sol_end(o, s):
@@ -2118,6 +2204,7 @@ def _report(st, pl, o, t):
     rep["copies"] = len(pl.copy_of) if pl is not None else 0
     rep["kept_originals"] = len(pl.kept) if pl is not None else 0
     rep["kept_supports"] = len(pl.freed) if pl is not None else 0      # 1.0.3
+    rep["noise_reaction_groups"] = list(st.noise_groups)                 # 1.0.4
     rep["affected_elsets"] = [st.elset_names[s].decode("utf-8", "replace")
                               for s in (pl.affected if pl is not None else [])]
     rep["warnings"] = dict(st.warnings)
@@ -2179,7 +2266,8 @@ def process(in_path, out_path, events_path=None, solver=None, progress=None, can
            Displacements always collapse; reaction-type variables (REACTION_PREFIXES) never
            get copies and are never changed. 1.0.3: a node whose owners all fail and that
            is a support (REACTION_REL_TOL) is never collapsed, also in mode "copies" (report key
-           kept_supports; see the module docstring).
+           kept_supports; see the module docstring). 1.0.4: a reaction group of round-off only
+           marks no supports (report key noise_reaction_groups, also in scan()).
     force  skip the processed-marker check (tests); the output then carries one new marker
            (an input marker and the 1.0.0 attribute are dropped) in mode collapse.
     configuration  name of the configuration whose <solution> to process; None = the file

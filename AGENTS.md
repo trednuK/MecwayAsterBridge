@@ -199,6 +199,8 @@ version of the core, pinned in `tests/test_liml_failed_copy.py`).
 - Supports (core 1.0.3, the hub's rule): a node with a reaction above round-off
   (`REACTION_REL_TOL` times the peak of its group `reactionforce*`/`reactionmom*`) never
   collapses; the original keeps its place and values, used by no element (`kept_supports`).
+  From 1.0.4 a group that is only round-off compared with the other one (forces under a pure
+  moment, measured on NL-81) marks no supports (`noise_reaction_groups`).
 - The empty `<nodes />`/`<values />` (and `<elements />`) tails of every variable block stay in the
   processed file (contract with MecwayAdvancedBeamAnalysis). Tests: `tests/test_liml_failed_copy.py`
   (pin and the hub's golden fixture), `tests/test_failed_contract.py` (this writer through `scan`).
