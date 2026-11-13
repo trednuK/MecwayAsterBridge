@@ -2511,8 +2511,8 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 1 | Hex8 is stiffer than in Mecway | real: settings checked (supports one direction per *Displacement*: a first try with x = y = z = 1 held only the diagonal and was singular, an own error); Mecway 35 internal and CCX 0.1892 mm whatever `<incompatiblehex8>` says, the manual has no option (§7.3); independent: Euler-Bernoulli 0.1905 mm, Code-Aster 17.4 `3D` 0.1234 mm (shear locking), `LINE_QUAD` 0.1881 mm | item corrected (no analysis setting, Mecway 35 values) | this commit |
-| 2 | Shell elements ~0.7% different from Mecway | real, discretisation: settings checked (clamp on edge faces, not nodes, item 135); independent: mesh convergence, Mecway and DKT/`COQUE_3D` meet (quad4 40x8: −0.01% deflection, 0.07% rotation); the old "rotations ~10%" was the small Poisson-twist component on a coarse mesh | item corrected with Mecway 35 values | this commit |
+| 1 | Hex8 is stiffer than in Mecway | real: settings checked (supports one direction per *Displacement*: a first try with x = y = z = 1 held only the diagonal and was singular, an own error); Mecway 35 internal and CCX 0.1892 mm whatever `<incompatiblehex8>` says (liml version 27 and 33), the Mecway 35 manual names no option (§7.3); older Mecway versions not checked; independent: Euler-Bernoulli 0.1905 mm, Code-Aster 17.4 `3D` 0.1234 mm (shear locking), `LINE_QUAD` 0.1881 mm | item corrected (no analysis setting, Mecway 35 values) | this commit |
+| 2 | Shell elements ~0.7% different from Mecway | real, discretisation: settings checked (clamp on edge faces, not nodes, item 135); independent: mesh convergence, Mecway and DKT/`COQUE_3D` approach each other (quad4 40x8: −0.01% deflection, 0.07% rotation; common limit not measured); the old "rotations ~10%" probably the small Poisson-twist component (old model not in the repo) | item corrected with Mecway 35 values | this commit |
 | 3 | Nodal stresses and von Mises different from Mecway |  |  |  |
 | 7 | Stresses per element node stay from Mecway in the table route |  |  |  |
 | 46 | Buckling: negative buckling load factors and Mecway's shift |  |  |  |
@@ -2521,12 +2521,12 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 112 | Buckling: Mecway's beam has no torsional buckling; the bridge is right | real (from the item's own measurements, not re-checked today): independent: hex20 in Code-Aster, Mecway's own solver and CCX 2384.28 against bridge 2413.87 (theory G·J·A/I_p), Mecway beam 2743.03 = third flexural mode; doubling J or A changes nothing in Mecway; Mecway 35.0.9802 headless identical to Mecway 34 | item: Mecway 34 and 35 | this commit |
 | 113 | Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right | real (from the item's own measurements, not re-checked today): independent: Code-Aster test case ssll105 (bridge = reference), hex20 and DKT shell models agree in Code-Aster, Mecway and CCX, an own beam code reproduces both; Mecway 35 headless identical for BU-32 and BU-34 (BU-33 not re-run) | item: Mecway 35 for BU-32 and BU-34 | this commit |
 | 125 | 2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is right |  |  |  |
-| 128 | Bonded contact with shells: displacements differ from Mecway |  |  |  |
+| 128 | Bonded contact with shells: displacements differ from Mecway | real, but the old interpretation was wrong: independent solid reference (hex20, perfect bond) 0.1498 mm in Code-Aster and Mecway; bridge shells +13% (mid-surfaces tied without the lever arm), Mecway CCX −44%, Mecway's own solver a mechanism; the old "beam estimate" was the non-composite case | item and docs (Settings contact, Verification) corrected; **follow-up**: tie shell-on-shell faces with the lever arm u_B = u_A + θ_A × d (plan + Fable review, verification against the solid lap) | this commit |
 | 130 | Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's |  |  |  |
 | 132 | Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms |  |  |  |
 | 133 | Stress over beam sections: limits |  |  |  |
 
-**Group B – Translation that works differently** (27 items)
+**Group B – Translation that works differently** (28 items, 138 added in S46)
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
@@ -2557,6 +2557,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong |  |  |  |
 | 135 | Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge clamps | real: Mecway's rule is in its manual (§9.1, fixed on nodes only for nodes with all rotational DOFs); measured on quad4/quad8/hex8/hex20/2D, faces clamp in both; open: whether Mecway's GUI offers such a support at all (if not, it arises only in generated models) | none | this commit |
 | 137 | A time limit in a linear or thermal analysis loses all results |  |  |  |
+| 138 | Fine meshes of thin parts stop with `FACTOR_57` in linear static (new, 13 Nov 2026) | real: MUMPS error 1.7e-6 > `RESI_RELA` 1e-6 on a 160 × 32 quad4 plate and a 7281-node hex20 lap; Mecway solves both; with 1e-4 the result equals Mecway | new item; **question for the user**: larger default `lin_solver_resi` or a retry | this commit |
 
 **Group C – Open questions** (9 items)
 

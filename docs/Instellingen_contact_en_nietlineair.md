@@ -921,10 +921,13 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
   strook en het T-stuk worden daar een mechanisme (headless gemeten, Mecway 34). Een
   vergelijking met Mecway kan dus alleen met een doorlopende mesh.
 - Schalen met overhang (een deel van de slave ligt niet tegenover de master): de bridge
-  laat dezelfde knopen vrij als CCX, maar is slapper dan Mecway en dichter bij een
-  balkschatting (overhangende plaat: bridge 0,309 mm, balkschatting ~0,36 mm, Mecway
-  0,084 mm). De bridge volgt hier bewust de theorie; vergelijk zulke modellen niet met
-  Mecway (KNOWN_BUGS 128).
+  laat dezelfde knopen vrij als CCX.
+- Twee platen vlak op vlak verlijmd (een overlap): de bridge koppelt de middenvlakken
+  zonder de afstand ertussen, dus de overlap werkt bijna als twee losse platen en de
+  overlap is te slap; Mecway (CCX) is veel te stijf. Overlap van twee platen van 2 mm,
+  50 mm overlap, eindlast: volumemodel met een volmaakte verbinding 0,1498 mm (Code-Aster
+  en Mecway), bridge 0,1694 mm (+13 %), Mecway 0,0843 mm (−44 %). Voor een nauwkeurige
+  overlap: modelleer de verbinding met volume-elementen; vergelijk zulke modellen niet met Mecway (KNOWN_BUGS 128).
 - Schalen met een *Element offset* in het contact: de slave-knopen (altijd de
   Mecway-knopen) gaan naar de knopen van de master; alleen bij `LIAISON_MAIL` op een
   master op eigen knopen (volume op een quad8-schaal) naar het verschoven vlak. De

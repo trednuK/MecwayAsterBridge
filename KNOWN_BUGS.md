@@ -18,12 +18,13 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 1\. **Hex8 is stiffer than in Mecway** (confirmed, `bridge_from_liml.py`
    MODELISATION='3D'). Mecway computes hex8 always with incompatible modes (manual v35
-   §7.3, C3D8I in the CCX export); Code-Aster does not have those. The tag
-   `<incompatiblehex8>` of older `.liml` files changes nothing: true, false and absent give
-   the same result in Mecway 35 (internal solver and CCX, headless, 13 Nov 2026).
+   §7.3, which names no option for it; C3D8I in the CCX export); Code-Aster does not have
+   those. The tag `<incompatiblehex8>` (in Mecway's samples of `.liml` version 27) changes
+   nothing in Mecway 35: true, false and absent, in version 27 and 33 files, give the same
+   result (internal solver and CCX, headless, 13 Nov 2026); older Mecway versions NOT checked.
    Measured with Code-Aster 17.4:
    - cantilever beam 100x10x10 mm, 10 hex8 (1 thick), 100 N over the 4 tip nodes: Mecway
-     0.1892 mm (Mecway 34 and 35), Code-Aster 0.1234 mm (analytical 0.1905);
+     0.1892 mm (Mecway 35; the same value in Oct 2026), Code-Aster 0.1234 mm (analytical 0.1905);
    - bar 11 mm with plasticity (250 MPa): Mecway 0.251 mm, Code-Aster 0.039 mm
      (hand calculation 0.251).
    `3D_SI` gave the correct displacements, but bending stress ~0 and wrong REAC_NODA
@@ -46,12 +47,14 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 2\. **Shell elements ~0.7% different from Mecway on coarse meshes** (confirmed, Mecway 35
    headless and Code-Aster 17.4, 13 Nov 2026; discretisation, not an error). Mecway's shell
-   (MITC4-like) and DKT/`COQUE_3D` converge to the same answer. Cantilever plate 100x20 mm,
-   1 mm, `fixed` on the edge faces at x = 0, 1 N at the tip (difference to Mecway, largest
+   (MITC4) and DKT/`COQUE_3D` approach each other with mesh refinement (within 0.01% at
+   40 × 8 quad4; the common limit was not measured, DKT falls and Mecway rises). Cantilever plate 100x20 mm,
+   1 mm, `fixed` on the edge faces at x = 0, 1 N at the tip split equally over the
+   tip nodes, midside nodes included for quad8 (difference to Mecway, largest
    over the nodes, relative to Mecway's largest value): quad4 10x2 DKT deflection +0.63%,
    bending rotation 0.81%, `COQUE_3D` +0.66% / 1.30%; quad4 40x8 DKT −0.01% / 0.07%,
-   `COQUE_3D` +0.10% / 0.38%; quad8 10x2 +0.35% / 1.03%, 40x8 +0.03% / 0.23% (DKT and
-   `COQUE_3D` equal). The secondary rotation about the plate axis (Poisson twist, ~5% of
+   `COQUE_3D` +0.10% / 0.38%; quad8 10x2 +0.35% / 1.03%, 40x8 +0.03% / 0.23% (quad8 is
+   always `COQUE_3D`). The secondary rotation about the plate axis (Poisson twist, ~5% of
    the bending rotation) differs 27% on 10x2 and 1.6% on 40x8; the earlier "rotations up to ~10%"
    probably came from that small component (the old model is not in the repo). Option `elem_shell` = "COQUE_3D" (linear shells via
    LINE_QUAD to QUAD9/TRIA7, with drilling rotation) is not closer to Mecway. A 160x32
@@ -155,8 +158,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    (curved head) differs by up to 0.9% in displacement for the same reason (suspected). Nothing
    to fix in the bridge; do not compare such models with Mecway.
 
-128\. **Bonded contact with shells: displacements differ from Mecway** (decided: the bridge
-   follows the theory, user 29 Oct 2026; documented in Settings contact §3.10;
+128\. **Bonded contact with shells: Mecway too stiff, the bridge too soft for a lap** (confirmed,
+   re-measured 13 Nov 2026, see the end of this item; earlier decision "the bridge follows the
+   theory", user 29 Oct 2026, rested on a non-composite beam estimate; documented in Settings
+   contact §3.10;
    `bridge_mesh._bonded`, Code-Aster 17.4 / Mecway 34 headless, 28 Oct 2026). The bridge
    ties only the slave nodes CCX's `*TIE` ties (`ccx_tied_nodes`: a master face opposite
    the node within the in-face tolerance tolloc, 2.5% of a third of the mean master-triangle
@@ -173,9 +178,20 @@ Code-Aster value per node) and logs the largest difference per variable.
    a block Mecway 0.198 mm, bridge 0.500 mm (before 0.0044 mm), estimate 0.33–0.46 mm.
    Mecway is stiffer than the beam estimate; suspected cause: CCX expands the shells into
    solids and ties the expanded faces (rigid knots), NOT investigated. The existing shell
-   verification cases (LS-07a..k, LS-66, TH-04d) are unchanged. Not adjusted towards Mecway:
-   the bridge is closer to the beam estimate. Remove this item only if the cause in Mecway
-   is found and confirmed.
+   verification cases (LS-07a..k, LS-66, TH-04d) are unchanged.
+   Re-measured (Mecway 35 headless, Code-Aster 17.4): two plates 2 mm × 40 mm face to face
+   (mid-surfaces 2 mm apart), A x = 0 .. 100 mm clamped on its edge faces, B x = 50 .. 150 mm,
+   bonded (`bondedtie`) over the 50 mm overlap, 1 N at the tip of B, quad4 40 × 8 per plate.
+   Reference: the same lap in hex20 (40 × 8 × 2 per plate, shared nodes at the interface =
+   perfect bond, clamped by *Displacement* in X, Y and Z): Mecway 0.1498 mm, Code-Aster
+   0.1498 mm (Euler beam: composite overlap 0.1553, two separate plates 0.1749 mm). Bonded
+   shells: Mecway with CCX 0.0843 mm (−44%), Mecway's own solver a mechanism (it couples no
+   rotations, as in LS-07a), the bridge (DKT) 0.1694 mm (+13%). The bridge ties the
+   mid-surfaces (`LIAISON_MAIL`, translations) without the lever arm between them, so the
+   overlap acts almost as two separate plates; a glued lap acts compositely. A fix would
+   couple u_B = u_A + θ_A × d (d = distance between the mid-surfaces) for shell-on-shell
+   faces (STAPPENPLAN §S46, follow-up); NOT built. Shell edge on a shell (LS-07a..e, T-joints)
+   has no such lever arm and is not affected.
 
 130\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
    (confirmed, Code-Aster 17.4 and Mecway 34 headless; `bridge_acoustic.py`, MODELISATION
@@ -705,6 +721,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    welding chain). A fix would be the same extra time after (and a try/except around) those
    solves, or a `POURSUITE` run for the post-processing (STAPPENPLAN S45). Raise *Time
    limit run_aster* meanwhile.
+
+138\. **Fine meshes of thin parts stop with `FACTOR_57` in linear static** (confirmed,
+   Code-Aster 17.4, 13 Nov 2026; `bridge_to_aster`, setting `lin_solver_resi`, default 1e-6 =
+   the catalogue value). MUMPS' estimate of the error of the linear solution exceeds
+   `RESI_RELA`: cantilever plate 100 × 20 × 1 mm in 160 × 32 quad4 (DKT and `COQUE_3D`, error
+   1.73e-6) and the hex20 lap of item 128 (2 × 640 hex20, 7281 nodes); Mecway 35 solves both.
+   The bridge stops with its hint that names *lin_solver_resi*; with 1e-4 the lap gives the
+   same 0.1498 mm as Mecway. Not changed: whether a larger default (or a retry) is wanted is
+   the user's choice (STAPPENPLAN §S46).
 
 ## Open questions (Mecway behaviour not checked)
 
