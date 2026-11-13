@@ -17,17 +17,19 @@ Code-Aster value per node) and logs the largest difference per variable.
 ## Deviations from Mecway (measured)
 
 1\. **Hex8 is stiffer than in Mecway** (confirmed, `bridge_from_liml.py`
-   MODELISATION='3D'). Mecway computes hex8 with incompatible modes (C3D8I in the
-   CCX export, "Incompatible hex8 elements" in the analysis settings); Code-Aster
-   does not have those. Measured with Code-Aster 17.4:
-   - cantilever beam 100x10x10 mm, 10 hex8 (1 thick), 100 N: Mecway 0.1892 mm,
-     Code-Aster 0.1234 mm (analytical 0.1905);
+   MODELISATION='3D'). Mecway computes hex8 always with incompatible modes (manual v35
+   §7.3, C3D8I in the CCX export); Code-Aster does not have those. The tag
+   `<incompatiblehex8>` of older `.liml` files changes nothing: true, false and absent give
+   the same result in Mecway 35 (internal solver and CCX, headless, 13 Nov 2026).
+   Measured with Code-Aster 17.4:
+   - cantilever beam 100x10x10 mm, 10 hex8 (1 thick), 100 N over the 4 tip nodes: Mecway
+     0.1892 mm (Mecway 34 and 35), Code-Aster 0.1234 mm (analytical 0.1905);
    - bar 11 mm with plasticity (250 MPa): Mecway 0.251 mm, Code-Aster 0.039 mm
      (hand calculation 0.251).
    `3D_SI` gave the correct displacements, but bending stress ~0 and wrong REAC_NODA
    (under-integration). Solution as an option: `elem_hex8` = "LINE_QUAD" (page
    Elements) lets Code-Aster make all linear solid elements quadratic
-   (CREA_MAILLAGE LINE_QUAD); the same beam then gives 0.1886 mm. Only if nothing
+   (CREA_MAILLAGE LINE_QUAD); the same beam then gives 0.1881 mm (13 Nov 2026). Only if nothing
    else stays linear (only solid elements, possibly shells with COQUE_3D) and not
    explicitly; with the default "3D" the bridge warns for hex8
    (`bridge_to_aster._resolve_line_quad`).
