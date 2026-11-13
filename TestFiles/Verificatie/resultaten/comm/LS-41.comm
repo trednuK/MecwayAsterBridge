@@ -244,7 +244,7 @@ res = MECA_STATIQUE(
         _F(CHARGE=load_3),
         _F(CHARGE=load_4),
     ),
-    SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),
+    SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-05),
     INFO=2,
 )
 

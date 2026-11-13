@@ -1,5 +1,56 @@
 # Changelog
 
+## V2026.13 – 13 November 2026
+
+First results of the S46 review of all KNOWN_BUGS items (real bug or test setting, re-measured
+with Mecway 35 and Code-Aster 17.4): three new WARNINGs (an isotropic material without Young's
+modulus, bonded shell faces, linear buckling with DKT shells), items 1, 2, 128 and 135
+re-measured and corrected, item 82 removed, and the default `lin_solver_resi` 1e-5 instead of
+1e-6. Tying bonded shells with their lever arm is planned as step S47. Behaviour change: the
+linear solves of linear static, the imperfection of nonlinear static, the prestress of modal
+and the static step of buckling stop with `FACTOR_57` only above an estimated error of 1e-5, so
+fine meshes of thin parts now compute (KNOWN_BUGS 138, found and fixed in this release).
+Measured with Code-Aster 17.4 and Mecway 35 headless and offline tests; the new WARNINGs and
+the default are NOT checked in the Mecway window. The generated `.comm` of 293 of the 578
+comparable verification cases changes (the `RESI_RELA` of the linear solves); those plus the
+fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (KNOWN_BUGS 83,
+108, 115, as before), 0 NOK/FOUT. No status change.
+
+- **Default `lin_solver_resi` 1e-5** (was 1e-6, Code-Aster's default; KNOWN_BUGS 138, found and
+  fixed in this release): a 160 x 32 quad4 plate and a 7281-node hex20 lap stopped with
+  `FACTOR_57` at an estimated error of 1.7e-6 and 1.9e-6 although Mecway solves them; both
+  compute now and the lap equals Mecway. A mechanism still gives an error of order 1. Applies
+  to linear static, nonlinear static (imperfection), modal (prestress) and buckling (static
+  step); the tooltip, Default settings and the error-message docs name the new value.
+- **WARNING for an isotropic material without Young's modulus** (KNOWN_BUGS 60): the bridge
+  computes it with E = 210 GPa, Mecway with E = 0. One WARNING per run lists the materials
+  concerned; not for a hardening curve in total strain (which sets E), purely thermal or
+  acoustic analyses, or parts named as a fluid.
+- **WARNING for bonded shell faces** (KNOWN_BUGS 128): bonded contact ties the mid-surfaces of
+  shells without the distance between them: a lap of two bonded 2 mm plates gives +13%
+  deflection against a solid hex20 reference with a perfect bond (0.1498 mm in Code-Aster and
+  Mecway; Mecway CCX -44%), plates bonded over their whole length up to 4x. The bridge warns
+  for shell faces bonded face to face and for a shell face and a solid face bonded (either
+  side), only for contacts that tie something. The coupling with the lever arm is step S47. The
+  earlier "the bridge follows the theory" rested on a non-composite estimate and is corrected
+  in the docs.
+- **WARNING for linear buckling with DKT/DST shells** (KNOWN_BUGS 132): Code-Aster's DKT misses
+  in-plane terms of the geometric stiffness and gives wrong factors for shell models of
+  profiles (T beam of BU-43c: DKT only negative factors, `COQUE_3D` 26.64 / -19.91, Mecway on
+  the same mesh 27.26 / 20.34). The WARNING names `COQUE_3D` (other advice when `COQUE_3D` fell
+  back to DKT); DKT stays the default. Modal and buckling §3.5 and §4.
+- **KNOWN_BUGS re-measured and corrected**: item 1 (in Mecway 35, Mecway's hex8 is always
+  incompatible-mode, whatever `<incompatiblehex8>` says; Mecway 35 values), item 2 (the shell
+  difference is discretisation: Mecway and DKT/`COQUE_3D` approach each other within ~0.1%),
+  item 135 (Mecway 35's GUI refuses a *Fixed support* on shell nodes (solid nodes and other
+  versions not checked), so on shell nodes the case probably comes from generated or
+  hand-edited `.liml` files or an older version; the WARNING stays as a safety net).
+- **KNOWN_BUGS 82 removed**: reverse plasticity with the default deformation (`GDEF_LOG`)
+  converges now (VM-11a to t = 3 s in 12 steps, within 0.1% of `PETIT`); Fatigue and
+  Verification docs adjusted.
+- **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46
+  procedure with a progress table of all KNOWN_BUGS items, and the new step S47.
+
 ## V2026.12 – 11 November 2026
 
 Results survive Code-Aster's time limit: a nonlinear static or nonlinear dynamic run (also
