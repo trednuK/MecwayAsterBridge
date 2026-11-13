@@ -16,6 +16,8 @@ PL-40  shrink fit of two rings (AXIS): inner ring a .. b + delta, outer ring
        p = delta / (f_i + f_o)).
 PL-41  the same in plane strain (D_PLAN, quarter rings, symmetry x = 0 and
        y = 0).
+PL-42  Code-Aster test case ssnp121a (two blocks, D_PLAN, non-matching).
+PL-43  the same in C_PLAN (nu = 0: the same state).
 """
 import math
 
@@ -209,3 +211,25 @@ TESTS.append(Case(
          "12x12 op 11x11, niet-passende randen; deformation PETIT zoals de "
          "test (met de standaard GROT_GDEP -> GREEN_LAGRANGE is de druk bij "
          "5% rek 7,6% lager: geometrisch niet-lineair)."))
+
+
+# ------------------------------------------------------------------
+# PL-43 the blocks of PL-42 in plane stress
+# ------------------------------------------------------------------
+# With nu = 0, C_PLAN and D_PLAN give the same uniform state, so the
+# references of ssnp121a hold (contact in C_PLAN). Friction in 2D: the
+# shrink fit of PL-40 with friction 0.3 stops with a singular matrix (its
+# slave end nodes are held axially, KNOWN_BUGS 141); not a case yet.
+def build_pl43():
+    m = build_pl42()
+    m.items = [it.replace("**ASTER-PLANE D_PLAN", "**ASTER-PLANE C_PLAN")
+               for it in m.items]
+    return m
+
+
+_PL42 = [c for c in TESTS if c.id == "PL-42"][0]
+TESTS.append(Case(
+    "PL-43", GROUP, "ssnp121a in vlakke spanning (L30 + **ASTER-PLANE "
+    "C_PLAN)", "nonlin_static_3d", build_pl43, _PL42.checks,
+    settings={"deformation": "PETIT"},
+    note="Als PL-42 met C_PLAN; met nu = 0 dezelfde oplossing."))

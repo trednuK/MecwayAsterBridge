@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 054261f, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 27bc291, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3151 van 3157 controles binnen de tolerantie** (599 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3154 van 3160 controles binnen de tolerantie** (600 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2677,6 +2677,9 @@ Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 054261f, Code-Aster 17.4
 | PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | contactdruk (gemiddeld, slave AB) | 1.0000e+05 Pa | 99769 | -0.23% | 1% | OK |
 | PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | contactdruk laagste knoop (hoeken A, B) | 1.0000e+05 Pa | 97043 | -2.96% | 5% | OK |
 | PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | DY slave AB (gemiddeld) | -0.05 m | -0.050045 | -0.09% | 1% | OK |
+| PL-43 | ssnp121a in vlakke spanning (L30 + **ASTER-PLANE C_PLAN) | contactdruk (gemiddeld, slave AB) | 1.0000e+05 Pa | 99769 | -0.23% | 1% | OK |
+| PL-43 | ssnp121a in vlakke spanning (L30 + **ASTER-PLANE C_PLAN) | contactdruk laagste knoop (hoeken A, B) | 1.0000e+05 Pa | 97043 | -2.96% | 5% | OK |
+| PL-43 | ssnp121a in vlakke spanning (L30 + **ASTER-PLANE C_PLAN) | DY slave AB (gemiddeld) | -0.05 m | -0.050045 | -0.09% | 1% | OK |
 
 ## Boutvoorspanning
 

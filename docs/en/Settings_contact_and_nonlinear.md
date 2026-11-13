@@ -673,7 +673,8 @@ contact = DEFI_CONTACT(
   method with a stiffness per area (Mecway, 2026, §9.9): Mecway allows some
   penetration, Code-Aster does not at the slave points (KNOWN_BUGS 43).
 - **Integration.** On quadratic slave faces (tet10, hex20, quad8 ...) the bridge sets
-  `INTEGRATION='NCOTES'`; linear faces keep the CA default `'AUTO'`. With `'AUTO'` the
+  `INTEGRATION='NCOTES'` (not with `SANS_GROUP_NO`: Code-Aster then requires `'AUTO'`,
+  KNOWN_BUGS 141); linear faces keep the CA default `'AUTO'`. With `'AUTO'` the
   contact patch test on hex20 with non-matching meshes failed (1.5 to 4.6 % error),
   with `'NCOTES'` it is exact (NL-03c to f). Code-Aster then issues the harmless alarm
   `CONTACT3_16` (no `CONT_NOEU`). Your own `#ASTER-ZONE INTEGRATION=...` takes

@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-42)
+### 2D en axisymmetrisch (PL-01 … PL-43)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -953,7 +953,10 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
   bovenkant 0,1 m ingedrukt; deformation `PETIT` zoals de test): gemiddelde
   `contactpressure` 99,77 kPa (−0,23%) en DY van de slave-rand −0,050045 m (−0,09%) tegen
   1e5 Pa en −0,05 m van de test (tolerantie 1%); in de hoeken (de laagste knopen) 97,0 kPa (−3,0%; de test met zijn eigen `SIMPSON`-integratie
-  van orde 4 haalt daar +0,08%, hier gecontroleerd op 5%). De
+  van orde 4 haalt daar +0,08%, hier gecontroleerd op 5%). **PL-43**: hetzelfde in `C_PLAN`
+  (met ν = 0 dezelfde toestand): dezelfde waarden. Wrijving in 2D is nog geen case: de
+  krimpverbinding met wrijving 0,3 stopt met een singuliere matrix omdat de eindknopen van
+  de slave axiaal vastgehouden zijn (KNOWN_BUGS 141). De
   eigen contactinstellingen van de test (`COEF_CONT`, `SIMPSON`, `REAC_GEOM`) zijn niet
   overgenomen: de standaard van de bridge. Met de standaard deformation
   (`GREEN_LAGRANGE` voor elastisch materiaal) is de druk 7,6% lager: bij 5% rek is dat de
@@ -1890,7 +1893,7 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   −1,95238e-6 m). Met de oude standaardintegratie (`AUTO`, voor deze vlakken gelijk
   aan `SIMPSON`) haalde Code-Aster de patchtest niet (STANDARD tot +2,8% / −1,5%,
   PENALISATION +4,6% en penetratie −2,1%); daarom zet de bridge nu `NCOTES` bij een
-  kwadratisch slave-vlak. Met passende meshes is ook `AUTO` exact. `NCOTES` is niet
+  kwadratisch slave-vlak (niet bij `SANS_GROUP_NO`, KNOWN_BUGS 141). Met passende meshes is ook `AUTO` exact. `NCOTES` is niet
   apart getest op tet10 of gekromde vlakken (wel rekenen de Mecway-voorbeelden
   PipeClip en AssemblyWithContact ermee door, zie `bridge_to_aster.py`).
 

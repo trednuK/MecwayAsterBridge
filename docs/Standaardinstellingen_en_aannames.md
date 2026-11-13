@@ -263,7 +263,7 @@ instelling van Mecway's eigen oplosser, geen zoekcentrum (BucklingPlate met shif
 |---|---|---|---|
 | Stapverkleining (`DEFI_LIST_INST` `ECHEC`) | `EVENEMENT='ERREUR'`, `ACTION='DECOUPE'`, `SUBD_PAS=4`, `SUBD_NIVEAU=6` | `SUBD_PAS=4`, `SUBD_NIVEAU=3` (catalogus) | Keuze: meer niveaus (tot 1/4096 van de stap); met alleen `DEFI_LIST_REEL` knipt `STAT_NON_LINE` niet (EDF R&D, U4.51.03; melding `SUBDIVISE_3`) |
 | `NEWTON/PREDICTION` | niet gezet (behalve bij bezwijken en in de keten thermisch → mechanisch met toevoegmateriaal, §3.17) | geen catalogus-standaard; volgt `MATRICE` (NIET geverifieerd) | EDF R&D (U2.04.01) raadt `ELASTIQUE` aan bij problemen |
-| Contact `INTEGRATION` | `'NCOTES'` op kwadratische slave-vlakken, anders `'AUTO'` | `'AUTO'` | Gemeten: `AUTO` haalde de contact-patchtest op hex20 niet (1,5…4,6 %), `NCOTES` exact (NL-03c…f) |
+| Contact `INTEGRATION` | `'NCOTES'` op kwadratische slave-vlakken, anders `'AUTO'` (ook `'AUTO'` bij `SANS_GROUP_NO`, KNOWN_BUGS 141) | `'AUTO'` | Gemeten: `AUTO` haalde de contact-patchtest op hex20 niet (1,5…4,6 %), `NCOTES` exact (NL-03c…f) |
 | Contact `CONTACT_INIT`, `ADAPTATION`, `VERI_NORM` | niet gezet | `'INTERPENETRE'`, `'CYCLAGE'`, `'OUI'` | CA (`defi_contact.py`) |
 | HHT `MODI_EQUI` | niet gezet | `'OUI'` (volledig HHT, tweede orde) | CA; aanbevolen in EDF R&D (U2.06.13) |
 | Expliciet `STOP_CFL` | niet gezet (`'NON'` als er geen element met materiaal is) | `'OUI'` | CA; zonder materiaal kan Code-Aster de grens niet bepalen (`DYNAMIQUE_4`) |

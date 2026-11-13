@@ -265,7 +265,7 @@ the log.
 |---|---|---|---|
 | Step cutting (`DEFI_LIST_INST` `ECHEC`) | `EVENEMENT='ERREUR'`, `ACTION='DECOUPE'`, `SUBD_PAS=4`, `SUBD_NIVEAU=6` | `SUBD_PAS=4`, `SUBD_NIVEAU=3` (catalogue) | Choice: more levels (down to 1/4096 of the step); with only `DEFI_LIST_REEL`, `STAT_NON_LINE` does not cut (EDF R&D, U4.51.03; message `SUBDIVISE_3`) |
 | `NEWTON/PREDICTION` | not set (except with failure and in the thermal → mechanical chain with filler material, §3.17) | no catalogue default; follows `MATRICE` (NOT verified) | EDF R&D (U2.04.01) recommends `ELASTIQUE` in case of problems |
-| Contact `INTEGRATION` | `'NCOTES'` on quadratic slave faces, otherwise `'AUTO'` | `'AUTO'` | Measured: `AUTO` failed the contact patch test on hex20 (1.5…4.6 %), `NCOTES` exact (NL-03c…f) |
+| Contact `INTEGRATION` | `'NCOTES'` on quadratic slave faces, otherwise `'AUTO'` (also `'AUTO'` with `SANS_GROUP_NO`, KNOWN_BUGS 141) | `'AUTO'` | Measured: `AUTO` failed the contact patch test on hex20 (1.5…4.6 %), `NCOTES` exact (NL-03c…f) |
 | Contact `CONTACT_INIT`, `ADAPTATION`, `VERI_NORM` | not set | `'INTERPENETRE'`, `'CYCLAGE'`, `'OUI'` | CA (`defi_contact.py`) |
 | HHT `MODI_EQUI` | not set | `'OUI'` (full HHT, second order) | CA; recommended in EDF R&D (U2.06.13) |
 | Explicit `STOP_CFL` | not set (`'NON'` when there is no element with material) | `'OUI'` | CA; without material Code-Aster cannot determine the limit (`DYNAMIQUE_4`) |

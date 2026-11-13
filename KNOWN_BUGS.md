@@ -751,6 +751,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    logarithmic stress; NOT verified in 3D and NOT verified why. Status: open question; the
    reaction checks of large-strain cases use 1e-3.
 
+141\. **Contact with friction: slave nodes held in the tangential direction** (confirmed,
+   Code-Aster 17.4, measured in STAPPENPLAN S44b, `bridge_mesh._exclude_fixed_slaves`). The
+   bridge leaves only slave nodes with a *Fixed support* out of the contact
+   (`SANS_GROUP_NO`). With friction, a slave node that a *Displacement* or *Symmetry* holds in
+   the tangential direction makes the matrix singular (`MECANONLINE9_4`; the end nodes
+   of the shrink-fit edge of PL-40 held axially, friction 0.3). Workaround: a node selection of those
+   nodes and `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (runs; on a slave edge of one element
+   too few contact nodes remain for a check). `SANS_GROUP_NO` also needs
+   `INTEGRATION='AUTO'` (`CONTACT_97`), so a quadratic slave with excluded nodes keeps `AUTO`
+   instead of `NCOTES` (less accurate in the contact patch test, 1.5 … 4.6% in 3D). 3D NOT
+   checked for the friction case. Status: open; candidate fix: exclude such nodes
+   automatically when there is friction.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Not verified in a .liml** (question). Constraint equation: `constant`

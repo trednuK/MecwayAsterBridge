@@ -6228,7 +6228,18 @@ def _build_contact_block(model_data, analysis=None):
         if friction:
             z += ", COULOMB={0!r}".format(c.get("friction", 0.0))
         z += _penalty_args(c, algo, friction)
-        if "INTEGRATION" not in zone_extra and _quadratic_slave(
+        sans = bool(c.get("sans_groups")) or "SANS_GROUP_NO" in zone_extra
+        if sans and "INTEGRATION" not in zone_extra and _quadratic_slave(
+                model_data, c["slave"]):
+            # SANS_GROUP_NO needs INTEGRATION='AUTO' in the continuous
+            # formulation (<EXCEPTION> CONTACT_97, Code-Aster 17.4, seen in a
+            # 2D shrink fit with friction, S44b): AUTO stays, at the cost of the patch-test accuracy
+            # below (KNOWN_BUGS 141)
+            log("INFO: Contact '{0}': SANS_GROUP_NO -> INTEGRATION='AUTO' "
+                "(CONTACT_97), not NCOTES on the quadratic slave (less "
+                "accurate, KNOWN_BUGS 141).".format(
+                    c["slave"]))
+        elif "INTEGRATION" not in zone_extra and _quadratic_slave(
                 model_data, c["slave"]):
             # Quadratic slave face: INTEGRATION 'AUTO' (= SIMPSON here)
             # did not pass the contact patch test (hex20, non-matching

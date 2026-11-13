@@ -161,7 +161,9 @@ ramps in 2D, make the model as a 3D model and tell the bridge to compute it in 2
    (`SEG2`/`SEG3`) for `DEFI_CONTACT` with the settings of the Nonlinear static page, as in
    3D. Overlapping geometry (a shrink fit) is resolved in the first step. The result
    `contactpressure` is a pressure (no factor t or 2π). Verified frictionless in `AXIS` and
-   `D_PLAN`; friction and `C_PLAN` NOT verified. *Bonded* contact in 2D: ERROR.
+   `D_PLAN` (`C_PLAN` runs, checked only with ν = 0); friction NOT verified: with slave nodes
+   held along the contact edge it stops with a singular matrix; leave those nodes out with a
+   node selection and `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded* contact in 2D: ERROR.
    Whether Mecway's window lets you pick shell edges for a contact is NOT verified.
 
 The bridge analysis is `nonlin_static_3d` (L30) or `lin_static_3d` (S30); the settings of

@@ -70,9 +70,12 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   Static (L30) a *Contact* between edges of the plane elements becomes `DEFI_CONTACT` on edge
   cells, with the contact settings of 3D. Verification PL-40/41: a shrink fit of two rings
   (axisymmetric and plane strain), contact pressure within 0.01% of Lamé; PL-42: the
-  Code-Aster test case ssnp121a (two blocks, plane strain) through the bridge within 0.3%.
-  Not yet: bonded contact in 2D, friction and `C_PLAN` contact (NOT verified), Hertz line
-  contact.
+  Code-Aster test case ssnp121a (two blocks, plane strain) through the bridge within 0.3%,
+  PL-43 the same in plane stress. Not yet: bonded contact in 2D, friction (KNOWN_BUGS 141),
+  Hertz line contact.
+- **Contact with `SANS_GROUP_NO` on a quadratic slave** keeps `INTEGRATION='AUTO'` (it stopped
+  with `CONTACT_97`; seen in 2D, 3D NOT verified). New KNOWN_BUGS 141: with friction, slave nodes held in the
+  tangential direction give a singular matrix (workaround `**ASTER-ZONE SANS_GROUP_NO`).
 - **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
   plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46

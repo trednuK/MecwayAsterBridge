@@ -55749,5 +55749,67 @@
    "deformation": "PETIT"
   },
   "general": {}
+ },
+ "PL-43": {
+  "id": "PL-43",
+  "group": "2D en axisymmetrisch",
+  "title": "ssnp121a in vlakke spanning (L30 + **ASTER-PLANE C_PLAN)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Als PL-42 met C_PLAN; met nu = 0 dezelfde oplossing.",
+  "seconds": 4.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "contactdruk (gemiddeld, slave AB)",
+    "fem": 99769.03119391296,
+    "ref": 100000.0,
+    "rel": -0.002309688060870394,
+    "dev": -230.9688060870394,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "ssnp121a TEST_RESU LAGS_C (VALE_REFE -1e5, 1%)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "contactdruk laagste knoop (hoeken A, B)",
+    "fem": 97042.70901844092,
+    "ref": 100000.0,
+    "rel": -0.02957290981559083,
+    "dev": -2957.290981559083,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.05,
+    "tol_abs": null,
+    "source": "ssnp121a TEST_RESU LAGS_C in A en B (VALE_REFE -1e5); -3,0% met de standaardintegratie van de bridge (de test met SIMPSON orde 4: +0,08%), daarom 5%",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "DY slave AB (gemiddeld)",
+    "fem": -0.05004523102859222,
+    "ref": -0.05,
+    "rel": -0.0009046205718443723,
+    "dev": -4.5231028592218614e-05,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "ssnp121a TEST_RESU DY (VALE_REFE -0.05, 1%)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 313,
+  "n_elem": 265,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
  }
 }

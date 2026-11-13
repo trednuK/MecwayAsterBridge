@@ -162,7 +162,10 @@ en lastopbouw in 2D maak je het model als 3D-model en zeg je de bridge het in 2D
    (`SEG2`/`SEG3`) voor `DEFI_CONTACT` met de instellingen van de pagina Niet-lineair
    statisch, zoals in 3D. Overlappende geometrie (een krimpverbinding) wordt in de eerste
    stap opgelost. Het resultaat `contactpressure` is een druk (geen factor t of 2π).
-   Nagelopen wrijvingsloos in `AXIS` en `D_PLAN`; wrijving en `C_PLAN` NIET nagelopen.
+   Nagelopen wrijvingsloos in `AXIS` en `D_PLAN` (`C_PLAN` rekent, alleen nagelopen met
+   ν = 0); wrijving NIET nagelopen: met slave-knopen die langs de contactrand vastgehouden zijn
+   stopt hij met een singuliere matrix; laat die knopen weg met een knoopselectie en
+   `**ASTER-ZONE SANS_GROUP_NO='<<selectie>>'` (KNOWN_BUGS 141).
    *Bonded* contact in 2D: ERROR. Of Mecway's venster shell-randen laat kiezen voor een
    contact is NIET nagelopen.
 
