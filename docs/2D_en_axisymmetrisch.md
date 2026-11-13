@@ -39,18 +39,21 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
 
 ## 1. Werkwijze stap voor stap
 
-**Twee invoerroutes.** Mecway's eigen 2D-typen (route B) zijn lineair. Voor al het andere is
-het model een 3D-model van vlakke elementen plus een regel die de bridge zegt het in 2D te
-rekenen (route A). Kies de route naar wat je wilt rekenen:
+**Twee invoerroutes.** Mecway's eigen 2D-typen (route B) zijn lineair. Voor plasticiteit,
+grote vervormingen, laststappen en contact is het model een 3D-model van vlakke elementen
+(*Nonlinear Static*) plus een regel die de bridge zegt het in 2D te rekenen (route A). Kies
+de route naar wat je wilt rekenen:
 
-| Wat je wilt | Mecway-analysetype | Materiaal / elementen | Extra regel in de custom model definition | Paragraaf |
-|---|---|---|---|---|
-| Lineair statisch, ook met een temperatuur (thermische spanning) | *Static 2D* (S20) of *Static Axisymmetric* (SA0) | vlakke elementen; S20: *Shell/membrane* met een dikte | geen | §1.1 … §1.3, §2.5 |
-| Lineaire dynamica in de tijd | *Dynamic Response 2D* (D20) of *Axisymmetric* (DA0) | zoals S20 / SA0 | geen | §1.1, §2.4 |
-| Plasticiteit, grote vervormingen, tijdstappen, lasttabellen | *Nonlinear Static* (L30) | vlakke shell-elementen met *Shell/membrane*-dikte | `**ASTER-PLANE C_PLAN`, `D_PLAN` of `AXIS` | §1.4 |
-| Contact (krimpverbinding, delen die elkaar raken) | *Nonlinear Static* (L30) | zoals hierboven, *Contact* tussen randen | `**ASTER-PLANE ...` | §1.4 (punt 6) |
-| Lineair statisch als 3D-model (bijv. om te vergelijken met shells) | *Static 3D* (S30) | zoals hierboven | `**ASTER-PLANE ...` | §1.4 |
-| Warmtetransport in 2D of axisymmetrisch, axisymmetrische schalen | – | – | nog niet (STAPPENPLAN S44d, S44e) | §3 |
+| Wat je wilt | Route | Mecway-analysetype | Materiaal / elementen | Extra regel in de custom model definition | Paragraaf |
+|---|---|---|---|---|---|
+| Lineair statisch, ook met een temperatuur (thermische spanning) | B | *Static 2D* (S20) of *Static Axisymmetric* (SA0) | vlakke elementen; S20: *Shell/membrane* met een dikte | geen | §1.1 … §1.3, §2.5 |
+| Lineaire dynamica in de tijd | B | *Dynamic Response 2D* (D20) of *Axisymmetric* (DA0) | zoals S20 / SA0 | geen | §1.1, §2.4 |
+| Akoestische holtemodes in 2D | – | *Acoustic Resonance 2D* (A20) | vlakke elementen | geen | §4 |
+| Plasticiteit, grote vervormingen, tijdstappen, lasttabellen | A | *Nonlinear Static* (L30), solver CCX | vlakke shell-elementen met *Shell/membrane*-dikte | `**ASTER-PLANE C_PLAN`, `D_PLAN` of `AXIS` | §1.4 |
+| Contact (krimpverbinding, delen die elkaar raken) | A | *Nonlinear Static* (L30), solver CCX | zoals hierboven, *Contact* tussen randen | `**ASTER-PLANE ...` | §1.4 (punt 6) |
+| Lineair statisch als 3D-model (bijv. om te vergelijken met shells) | A | *Static 3D* (S30) | zoals hierboven | `**ASTER-PLANE C_PLAN` (nagelopen; `D_PLAN`/`AXIS` volgen dezelfde route) | §1.4 |
+| Warmtetransport in 2D of axisymmetrisch, axisymmetrische schalen | – | – | – | nog niet | §3 |
+| Niet-lineaire dynamica, modes, knik in 2D | – | – | – | niet mogelijk | §3 |
 
 Route B heeft geen extra regel nodig en Mecway rekent hetzelfde model zelf; route A gebruikt
 Mecway's 3D-analysetypen, zodat Mecway hun tijdstappen, plasticiteit en contact bewaart, en de
@@ -183,7 +186,10 @@ Mecway-GUI moet nog).
 De drie modellen staan in de repository (`TestFiles/Verificatie/modellen/`, gemaakt door
 `tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py` en `tests_vlak_2d_contact.py`);
 open er een in Mecway om elke instelling te zien. Eenheden SI, staal E = 210 GPa, ν = 0,3.
-Voor `AXIS` gelden de assen van de eerste figuur: Y de symmetrieas, X de straal.
+Voor `AXIS` gelden de assen van de eerste figuur: Y de symmetrieas, X de straal. Route A is
+nagelopen met de bridge (resultaten tegen gesloten oplossingen), nog niet in Mecway's
+venster: of Mecway shell-randen laat kiezen voor een *Contact* en hoe het een resultaat van
+route A toont is NIET nagelopen; Mecway's eigen solve van voorbeeld 2 en 3 is niet nodig.
 
 **Voorbeeld 1 – route B: een dikwandige buis met een radiale temperatuur (`PL-24.liml`).**
 
@@ -194,10 +200,12 @@ Voor `AXIS` gelden de assen van de eerste figuur: Y de symmetrieas, X de straal.
 4. Opleggingen: *Displacement* langs Y = 0 op de onderrand en op de bovenrand (beide
    einden axiaal vast = een lange buis in vlakke rek).
 5. Belastingen: *Thermal stress* met referentietemperatuur 293 K en een *Node
-   temperature* per knoop (hier 393 K binnen tot 293 K buiten; in de praktijk uit een
-   thermische oplossing).
+   temperature* per knoop (hier een logaritmisch verloop van 393 K binnen tot 293 K buiten;
+   het kan ook uit een thermische oplossing van een 3D-model komen,
+   [`Thermisch.md`](Thermisch.md)).
 6. Bridge: "Actieve analyse" `auto` (→ `lin_static_3d`), "Resultaten naar Mecway" `liml`.
-   De log toont `MODELISATION='AXIS'` en het temperatuurveld.
+   De log toont `INFO: Elset 'Buis' -> MODELISATION='AXIS' (Mecway SA0).` en de
+   temperaturen.
 7. Resultaten: `stresszz` = tangentiële spanning σ_θ (−220 MPa aan de binnenwand, +140 MPa
    aan de buitenwand), `stressyy` = axiale σ_z, `stressxx` = radiale σ_r; `displx` = radiale
    verplaatsing. Een buis met vrije einden: §2.5 (een `#ASTER`-regel `LIAISON_UNIF`,
@@ -205,15 +213,19 @@ Voor `AXIS` gelden de assen van de eerste figuur: Y de symmetrieas, X de straal.
 
 **Voorbeeld 2 – route A: een elastisch-plastische cilinder onder inwendige druk (`PL-31.liml`).**
 
-1. Analysetype *Nonlinear Static* (L30), *Time period* 1 s, *Time step size* 0,05 s.
+1. Analyse-instellingen: *Nonlinear Static* (L30), solver CCX, *Time period* 1 s, *Time
+   step size* 0,05 s.
 2. Mesh: dezelfde rechthoek X = 0,1 … 0,2 m, Y = 0 … 0,01 m, 16 × 1 quad8, als
    **shell**-elementen (Mecway's quad8 in een 3D-type).
 3. Materiaal: *Shell/membrane* met een dikte (willekeurig; telt niet voor `AXIS`),
-   isotroop, *Plastic* bilineair isotroop met vloeigrens 250 MPa en tangent modulus 0.
+   isotroop, plasticiteit *Bilinear isotropic* met vloeigrens 250 MPa en tangent
+   modulus 0.
 4. Opleggingen: *Displacement* langs Y = 0 op de onder- en bovenrand.
 5. Belasting: *Pressure* op de binnenrand (X = 0,1 m) als tijdtabel: 0 op 0 s, 159,1 MPa op
    0,5 s, 187,6 MPa op 1 s.
-6. De schakelaar: CCX > *Custom model definition* (in de analyse-instellingen), een regel:
+6. De schakelaar: met solver CCX heeft de boom een tak CCX; in CCX > *Custom model
+   definition* een regel (met een andere solver: het vrije veld van die solver, met zijn
+   commentaarteken, [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §1):
 
    ```
    **ASTER-PLANE AXIS
@@ -222,29 +234,35 @@ Voor `AXIS` gelden de assen van de eerste figuur: Y de symmetrieas, X de straal.
 7. Bridge: `auto` (→ `nonlin_static_3d`). De log toont `INFO: Elset '…' -> MODELISATION=
    'AXIS' (Mecway L30)` en dat de shell-dikte niet telt.
 8. Resultaten per stap: `equivalentplasticstrain` (plastische zone tot r ≈ 0,13 m op 0,5 s
-   en 0,16 m op 1 s), `displx` van de buitenwand (0,163 mm op 1 s), `stresszz` =
-   tangentiële spanning.
+   en 0,16 m op 1 s), `displx` van de buitenwand (0,163 mm op 1 s, 1,7% boven Hills
+   0,160 mm: de druk volgt de vervormde wand), `stresszz` = tangentiële spanning.
 
 **Voorbeeld 3 – route A: een krimpverbinding met contact (`PL-40.liml`).**
 
 1. Als voorbeeld 2, maar twee delen: een binnenring X = 0,1 … 0,15005 m en een buitenring
    X = 0,15 … 0,2 m (ze overlappen 0,05 mm), elastisch, *Time period* 1 s in een stap.
-2. Vlakselecties van randen: de buitenrand van de binnenring en de binnenrand van de
-   buitenring; een *Contact* (unilateraal, wrijving 0) ertussen, de fijnste kant als slave.
+2. Mesh 8 × 1 quad8 per ring. Vlakselecties van randen: de buitenrand van de binnenring
+   (slave) en de binnenrand van de buitenring (master); een *Contact* van het type
+   unilateral elastic ertussen, wrijving 0, normal stiffness 1000 GPa/m (Mecway vraagt een
+   waarde; met het standaard contactalgoritme `STANDARD` gebruikt de bridge hem niet).
 3. *Displacement* langs Y = 0 op de onder- en bovenranden van beide ringen;
    `**ASTER-PLANE AXIS`.
-4. Resultaat: `contactpressure` op de slave-rand 12,46 MPa (Lamé: 12,46 MPa); de overlap
-   wordt in de eerste stap opgelost.
+4. Resultaat: de gemiddelde `contactpressure` op de slave-rand 12,46 MPa (Lamé:
+   12,46 MPa); de overlap wordt in de eerste stap opgelost.
 
 ### 1.6 Veelgemaakte fouten
 
 | Wat ging er mis | Melding van de bridge | Oplossing |
 |---|---|---|
 | Mesh niet in het XY-vlak | ERROR: Een 2D-analyse (…) heeft alle knopen in het XY-vlak nodig (Z = 0) … | verplaats of draai de mesh naar Z = 0 |
-| Axisymmetrisch met de as langs X of Z, of knopen bij X < 0 | ERROR: Axisymmetrisch (SA0): alle knopen moeten X >= 0 hebben … | Y is de as, X de straal (eerste figuur) |
+| Knopen bij X < 0 in een axisymmetrisch model | ERROR: Axisymmetrisch (SA0): alle knopen moeten X >= 0 hebben … (ook in route A) | Y is de as, X de straal (eerste figuur) |
+| De as langs X getekend (alle X ≥ 0) | geen: de bridge neemt Y als as | teken de doorsnede met Y als as |
 | Balken, truss of volume-elementen in het model | ERROR: Elset '…' bevat line2 …; in een 2D-analyse … | alleen vlakke elementen; of reken in 3D |
 | `**ASTER-PLANE` in een S20/SA0-model | ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) … (al een 2D-type: haal de regel weg) | route B heeft geen regel nodig; haal hem weg |
-| `**ASTER-PLANE` in een ander 3D-type (T30, V30, D30, …) | dezelfde ERROR | S30 of L30; thermisch 2D is gepland (S44d) |
+| `**ASTER-PLANE` in een ander 3D-type (T30, V30, D30, …) | dezelfde ERROR | S30 of L30; thermisch 2D kan nog niet |
+| `**ASTER-PLANE` met een andere waarde of zonder waarde | ERROR: '#ASTER-PLANE …': verwacht C_PLAN, D_PLAN of AXIS. | schrijf C_PLAN, D_PLAN of AXIS |
+| Twee `**ASTER-PLANE`-regels met verschillende waarden | WARNING: Meerdere #ASTER-PLANE-regels; de laatste telt (…). | houd een regel |
+| *Plane strain* aangevinkt op het materiaal met `**ASTER-PLANE C_PLAN` | WARNING: Materiaal '…' heeft plane strain, maar #ASTER-PLANE zegt C_PLAN; de bridge volgt de regel. | de regel beslist; haal het vinkje weg of schrijf D_PLAN |
 | `#ASTER PLANE AXIS` (spatie in plaats van streepje) | ERROR: '#ASTER PLANE AXIS' is Code-Aster-code en wordt overgeslagen; bedoeld is '#ASTER-PLANE AXIS' | schrijf `**ASTER-PLANE AXIS` |
 | `#ASTER-PLANE` getypt in het CCX-veld | geen van de bridge (die neemt `#`, `**`, `$`); Mecway's eigen CCX-solve kan over de `#`-regel struikelen | gebruik `**` in het CCX-veld, `#` in het OpenRadioss-veld |
 | Route A met `C_PLAN`/`D_PLAN` maar zonder shell-dikte | ERROR: Elset '…': #ASTER-PLANE C_PLAN heeft een dikte nodig … | geef het materiaal *Shell/membrane* met de dikte t |

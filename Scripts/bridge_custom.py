@@ -302,6 +302,12 @@ def parse(texts):
                 # bridge_plane.apply (the last line counts)
                 if body.strip():
                     out["plane"].append(body.strip())
+                else:
+                    log(tr("ERROR: '#ASTER{0}' zonder waarde; verwacht "
+                           "C_PLAN, D_PLAN of AXIS.",
+                           "ERROR: '#ASTER{0}' without a value; expected "
+                           "C_PLAN, D_PLAN or AXIS.").format(kind))
+                    out["plane"].append("?")
             elif kind in ("-METALLURGIE", "-METALLURGY"):
                 # worked out in bridge_metallurgy.parse_specs
                 if body.strip():

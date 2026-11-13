@@ -233,6 +233,9 @@ def test_route_a():
     md = _extract(_liml("S30", PS, loads=_switch("#ASTER PLANE AXIS")))
     check(md is None and any("#ASTER-PLANE AXIS" in m for m in _errors()),
           "literal '#ASTER PLANE AXIS': ERROR and stop")
+    md = _extract(_liml("S30", PS, loads=_switch("**ASTER-PLANE")))
+    check(md is None and _errors(), "'**ASTER-PLANE' without a value: ERROR "
+          "and stop")
     zdisp = ('<displacement selection="Links"><value>0 m</value><x>0</x>'
              '<y>0</y><z>1</z></displacement>')
     # convert_bc runs in bridge_mesh: the whole chain (_comm)
