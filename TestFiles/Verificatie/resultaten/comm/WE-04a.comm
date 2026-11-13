@@ -33,6 +33,8 @@
 #
 # A brace that is not a placeholder: double it ({ or }).
 
+import time as _bt_time
+_bt_t0 = _bt_time.time()   # time guard of the step loop (bridge_failure)
 # Language of the messages of the job scripts (aster_*.py)
 # and the setting vtu_export (aster_vtu)
 import os as _bridge_os
@@ -241,6 +243,27 @@ res = THER_NON_LINE(
     NEWTON=_F(REAC_ITER=1),
     CONVERGENCE=_F(RESI_GLOB_RELA=1.0e-06, ITER_GLOB_MAXI=20),
 )
+# time for the post-processing and the export after the solve, once (bridge_failure.late_time)
+_pe_late = False
+try:
+    import os as _pe_os
+    from code_aster.Utilities import ExecutionParameter as _pe_xp
+    _pe_el = _bt_time.time() - _bt_t0
+    _pe_tp = float(_pe_xp().get_option('tpmax'))
+    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+    _pe_late = _pe_el > _pe_tp0
+    _pe_new = max(_pe_tp0 + max(600.0, _pe_tp0),
+                  _pe_el + max(600.0, _pe_tp0))
+    if _pe_tp < _pe_new:
+        _pe_xp().set_option('tpmax', _pe_new)
+        if _pe_late:
+            print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))
+    if _pe_late:
+        print('BRIDGE_TIJD_LAAT', 'THER_NON_LINE', round(_pe_el, 1))
+except Exception as _pe_err:
+    if _pe_late:
+        print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))
 
 
 # =====================================================

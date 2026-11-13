@@ -26,6 +26,8 @@
 #   excit_clause      -> EXCIT with all loads
 #   cara_elem_ref     -> "    CARA_ELEM=cara,\n" or "" in MECA_STATIQUE
 #   solveur_ref       -> "    SOLVEUR=_F(METHODE=.., ..),\n    INFO=2,\n"
+#   post_solve_block  -> extra time after the solve (bridge_failure.late_time)
+#                        and the CALC_CHAMP SIEF_ELGA of MECA_STATIQUE
 #   calc_champ_block  -> CALC_CHAMP (+ POST_CHAMP for shells), fields
 #                        depending on element types
 #   postreleve_block  -> POST_RELEVE_T tables
@@ -38,6 +40,8 @@
 #   NOT a placeholder, double it ({ or }) so that str.format()
 #   does not raise a KeyError on it.
 
+import time as _bt_time
+_bt_t0 = _bt_time.time()   # time guard of the step loop (bridge_failure)
 # Language of the messages of the job scripts (aster_*.py)
 # and the setting vtu_export (aster_vtu)
 import os as _bridge_os
@@ -212,6 +216,12 @@ load_2 = AFFE_CHAR_MECA(
 # default 1e-6) as the limit for the estimated error of the solution; or GCPC
 # (iterative, PRE_COND='LDLT_INC') with RESI_RELA as residual criterion.
 # INFO=2: solver statistics in the .mess (convergence monitor).
+# OPTION='SANS': MECA_STATIQUE (a Python macro) would otherwise compute
+# SIEF_ELGA (+ STRX_ELGA for multifibre beams) itself with a CALC_CHAMP at
+# its end (MacroCommands/meca_statique_ops._computeStress, 17.4). A solve
+# that ran past the time limit then lost the whole result in that
+# CALC_CHAMP (SUPERVIS_63). post_solve_block first gives the time back
+# (bridge_failure.late_time) and then makes the same CALC_CHAMP call.
 # =====================================================
 res = MECA_STATIQUE(
     MODELE=model,
@@ -221,9 +231,39 @@ res = MECA_STATIQUE(
         _F(CHARGE=load_1),
         _F(CHARGE=load_2),
     ),
+    OPTION='SANS',
     SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-05),
     INFO=2,
 )
+
+# time for the post-processing and the export after the solve, once (bridge_failure.late_time)
+_pe_late = False
+try:
+    import os as _pe_os
+    from code_aster.Utilities import ExecutionParameter as _pe_xp
+    _pe_el = _bt_time.time() - _bt_t0
+    _pe_tp = float(_pe_xp().get_option('tpmax'))
+    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)
+    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)
+    _pe_late = _pe_el > _pe_tp0
+    _pe_new = max(_pe_tp0 + max(600.0, _pe_tp0),
+                  _pe_el + max(600.0, _pe_tp0))
+    if _pe_tp < _pe_new:
+        _pe_xp().set_option('tpmax', _pe_new)
+        if _pe_late:
+            print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))
+    if _pe_late:
+        print('BRIDGE_TIJD_LAAT', 'MECA_STATIQUE', round(_pe_el, 1))
+except Exception as _pe_err:
+    if _pe_late:
+        print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))
+res = CALC_CHAMP(
+    reuse=res,
+    RESULTAT=res,
+    CONTRAINTE=['SIEF_ELGA'] + (
+        ['STRX_ELGA'] if model.existsMultiFiberBeam() else []),
+)
+
 
 # =====================================================
 # 8. COMPUTE POST-PROCESSING FIELDS  (CALC_CHAMP)
