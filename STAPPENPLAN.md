@@ -2585,7 +2585,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 |---|---|---|---|---|
 | 1 | Hex8 is stiffer than in Mecway | medium; real: settings checked (supports one direction per *Displacement*: a first try with x = y = z = 1 held only the diagonal and was singular, an own error); Mecway 35 internal and CCX 0.1892 mm whatever `<incompatiblehex8>` says (liml version 27 and 33), the Mecway 35 manual names no option (§7.3); older Mecway versions not checked; independent: Euler-Bernoulli 0.1905 mm, Code-Aster 17.4 `3D` 0.1234 mm (shear locking), `LINE_QUAD` 0.1881 mm | item corrected (no analysis setting, Mecway 35 values) | this commit |
 | 2 | Shell elements ~0.7% different from Mecway | low; real, discretisation: settings checked (clamp on edge faces, not nodes, item 135); independent: mesh convergence, Mecway and DKT/`COQUE_3D` approach each other (quad4 40x8: −0.01% deflection, 0.07% rotation; at 160 × 32 DKT −0.11%: the limits differ by ~0.1%); the old "rotations ~10%" probably the small Poisson-twist component (old model not in the repo) | item corrected with Mecway 35 values | this commit |
-| 3 | Nodal stresses and von Mises different from Mecway | *draft*: medium (deliberate Code-Aster standard (SIGM_NOEU/SIEQ_NOEU), documented) |  |  |
+| 3 | Nodal stresses and von Mises different from Mecway | medium; unchanged limit (deliberate Code-Aster SIGM_NOEU/SIEQ_NOEU, user's wish; checked only against Mecway; the 7.5 vs 0.09 MPa is the averaging order, von Mises is convex; the −12% surface SIGM has no independent reference) | none (desk review, Opus-checked; not re-run) | this commit |
 | 7 | Stresses per element node stay from Mecway in the table route | *draft*: low (only the non-default table route) |  |  |
 | 46 | Buckling: negative buckling load factors and Mecway's shift | *draft*: low (negative factors shown with a WARNING; Mecway's shift not used) |  |  |
 | 60 | Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0 | medium; real (code: default E = 210 GPa; Mecway E = 0 seen headless in a Frequency model with a speed of sound; no own assumption involved, the bridge's default is in the code) | WARNING `_warn_materials_without_e` (one per run, not with a total-strain curve, thermal or acoustic); docs NL+EN; Opus review processed | this commit |
@@ -2602,11 +2602,11 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 8 | Duplicate boundary conditions | *draft*: medium (overlapping BCs, mostly caught or reported) |  |  |
+| 8 | Duplicate boundary conditions | medium; unchanged limit (ASSEMBLA_26 and "last DDL_IMPO wins" seen in 17.4; FACTOR_42/57 only "may"; Mecway side from manual §9.6; other overlaps warned by `_report_constraint_overlaps`) | none (desk review, Opus-checked; not re-run) | this commit |
 | 9 | Failure not for beams; kinematic hardening with the current plastic strain | *draft*: low (failure on beams is rare, reported) |  |  |
 | 10 | Contact pairs with shared slave nodes are merged | *draft*: low (deliberate merge, logged) |  |  |
-| 11 | Large rotations: beams, prescribed rotations and rigid couplings | *draft*: medium (large rotations warned) |  |  |
-| 14 | Thermal: transient scheme different from Mecway | *draft*: medium (transient thermal scheme, time-step dependent) |  |  |
+| 11 | Large rotations: beams, prescribed rotations and rigid couplings | medium; real (NL-80..90 analytic, Code-Aster test zzzz364a; warned by `_warn_large_rotations`, `_warn_gd_linear_links`, ERROR `_check_gd_beams`; the 0.41 rad stop not checked against a setting; skew axis only in the docs) | none (desk review, Opus-checked; not re-run) | this commit |
+| 14 | Thermal: transient scheme different from Mecway | low; unchanged limit (θ 0.5 = Mecway to 1.5e-5 K, WE-03 within 1% of Rosenthal; default θ 0.57 by choice; with a time table O(Δt) stays because Mecway takes the load at the end of the step) | none (desk review, Opus-checked; not re-run) | this commit |
 | 15 | Thermal shells as PLAN with a thickness factor | *draft*: low (deliberate choice) |  |  |
 | 17 | Thermal strain: temperature within the element and in time | *draft*: low (deliberate choice) |  |  |
 | 19 | Centrifugal force | *draft*: low (rare feature limits) |  |  |
@@ -2617,18 +2617,18 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 34 | PLAS_TAB: untranslated fields | *draft*: low (OpenRadioss niche fields, warned) |  |  |
 | 40 | Trusses with large displacements | *draft*: low (element limit, warned) |  |  |
 | 43 | Contact: hard and soft formulation differ from Mecway | medium; real (from the item: Mecway's own samples PipeClip, AssemblyWithContact and NL-03a, not an own setting; not re-run): STANDARD (Lagrange) is the default by choice, Mecway uses penalty | none: the hint on `MECANONLINE9_4` and lost contact names *Contact method* = PENALISATION (`bridge_run_aster`) | this commit |
-| 48 | Modal: mechanism in a supported model | *draft*: medium (mechanism stops with an ERROR, shift workaround) |  |  |
+| 48 | Modal: mechanism in a supported model | medium; unchanged limit (singular K stops Code-Aster's default shift; a negative `modal_shift_hz` reproduces Mecway; three near-zero modes fit a pin, so no ignored `fixed` on solid nodes) | follow-up: add a verification case (hinge-only beam); desk review, Opus-checked | this commit |
 | 53 | Nonlinear buckling: limits of CRIT_STAB and the imperfection | *draft*: low (advanced analysis limits) |  |  |
 | 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse | medium; outdated: the VM-11a bar without `PETIT` (GDEF_LOG) now runs to t = 3 s in 12 steps without cutting (Code-Aster 17.4, develop 13 Nov 2026); stresses about 0.1% and plastic strain 0.1–0.4% from `PETIT` (3% of the stress near the zero crossing at t = 2.25 s); probable cause (NOT verified): `convergence_resi_rela` 1e-6 → 1e-5 (Oct 2026), whose reason was a stall when unloading a plastic solid with `GDEF_LOG` (Default settings §3.3) | item removed; docs Fatigue and Verification NL+EN adjusted | this commit |
 | 83 | XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high | *draft*: low (niche XFEM, warned) |  |  |
 | 106 | Flexible joint: constraint on an element selection, large rotations | *draft*: low (flexible joint edge cases, warned) |  |  |
 | 107 | Line3 beams and trusses: two straight SEG2 cells | *draft*: low (curved line3 warned) |  |  |
 | 108 | Element offset: small rotations, values at the nodes and combinations | *draft*: low (element offset combinations, warned) |  |  |
-| 115 | Buckling of T, C and L beams misses flexural-torsional buckling | *draft*: medium (T/C/L beams warned, POU_D_TG option exists) |  |  |
+| 115 | Buckling of T, C and L beams misses flexural-torsional buckling | medium; real (Timoshenko & Gere 386.1, hex20 393 in Code-Aster, Mecway and CCX, `POU_D_TG` 384.98; warned for T/C/L) | item completed: no WARNING for an eccentric *General section* on `POU_D_E` (follow-up, low); desk review, Opus-checked | this commit |
 | 119 | Mass check without the mass for `POU_D_T_GD` beams | *draft*: low (INFO only) |  |  |
-| 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong | *draft*: medium (POU_D_TG reactions in spectrum, warned) |  |  |
+| 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong | medium; real (te0342 vs te0346 Fortran, recomputation of 14700 values; LS-96, BU-45, MP-20; workaround `_stress_step`, spectrum reactions warned) | follow-up (low): no message for `#ASTER-XFEM` with `POU_D_TG` (already in the item); desk review, Opus-checked | this commit |
 | 135 | Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge clamps | low (was medium); real: Mecway's rule is in its manual (§9.1, fixed on nodes only for nodes with all rotational DOFs); measured on quad4/quad8/hex8/hex20/2D, faces clamp in both; manual v35 §9.1 states the rule, the Mecway forum has no answer on the GUI (thread on hinged shell supports, Feb 2023); GUI test by the user (13 Nov 2026, Mecway 35.0.9802): the GUI refuses it on shell nodes with an error ("Some nodes do not have all rotational DOFs ..."), so on shell nodes it probably arises only in generated or hand-edited `.liml` files or older versions (solid nodes NOT verified) | item and Default settings (NL+EN) completed with the GUI result; the WARNING stays as a safety net | this commit |
-| 137 | A time limit in a linear or thermal analysis loses all results | *draft*: medium (time limit setting; extra time already for nonlinear solves) |  |  |
+| 137 | A time limit in a linear or thermal analysis loses all results | medium; real (`SUPERVIS_63` at every command start; measured for the nonlinear path; linear/thermal from the code, NOT run; fix planned as S45) | item: "NOT run" for linear/thermal added; desk review, Opus-checked | this commit |
 | 138 | Fine meshes of thin parts stop with `FACTOR_57` in linear static (new, 13 Nov 2026) | high; real: MUMPS error 1.73e-6 (160 × 32 quad4 plate) and 1.91e-6 (7281-node hex20 lap) > `RESI_RELA` 1e-6; Mecway solves both; with 1e-4 the result equals Mecway | default `lin_solver_resi` 1e-6 → 1e-5 in all four analyses (user, 13 Nov 2026); both models compute (lap 0.14975 mm = Mecway, plate 0.93342 mm), 40 × 8 plate bit-identical to 1e-6; item removed | this commit |
 
 **Group C – Open questions** (9 items)
@@ -2668,7 +2668,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 66 | Fatigue: limits (solids and shells, Miner, critical plane only on solids) | *draft*: low (niche, warned) |  |  |
 | 72 | Welding: limits of the metallurgy | *draft*: low (niche) |  |  |
 | 71 | Welding: filler material that is born, limits | *draft*: low (niche) |  |  |
-| 104 | Formulas: limits | *draft*: medium (Mecway ignores some position formulas; others ERROR) |  |  |
+| 104 | Formulas: limits | medium; unchanged limit (LS-40..44, NL-40 analytic; Mecway measurement had a working support, reaction 8000 N; ERROR/WARNING `_not_translated`, `_check_position_formulas`) | none (desk review, Opus-checked; not re-run) | this commit |
 | 121 | Result formulas: not every Mecway symbol | *draft*: low (warned, workaround) |  |  |
 | 124 | Pre-tension section: limits | *draft*: low (niche, ERROR) |  |  |
 | 126 | 2D analyses: limits | *draft*: low (reported limit) |  |  |

@@ -655,7 +655,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    Status: open for the
    default `POU_D_E` (kept like Mecway's Euler beam); solved with the option. A *General
    section* without an `#ASTER-SECTIE` line has no shear centre or C_w even with
-   `POU_D_TG` (WARNING).
+   `POU_D_TG` (WARNING). The buckling WARNING for `POU_D_E` keys on the profile types T, C
+   and L (`_ECCENTRIC_PROFILES`); an eccentric *General section* on `POU_D_E` gets none
+   (desk review S46, NOT run).
 
 119\. **Mass check without the mass for `POU_D_T_GD` beams** (confirmed, Code-Aster 17.4,
    `bridge_to_aster._static_check_block`). `MECA_POU_D_T_GD` cannot compute `POST_ELEM
@@ -734,7 +736,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    (`ExecutionParameter` `tpmax`, `bridge_failure._extend_time`): in the except clause
    (`PARTIAL_EXCEPT`, `GUARD_EXCEPT`), before the stop of the time guard of the step loops
    (`time_guard_check`) and after the solve (`POST_TIME`); measured with
-   `StopTest_LongRun`. Still lost: linear analyses (`MECA_STATIQUE`, modal, harmonic, ...)
+   `StopTest_LongRun`. Still lost (from the code: `SUPERVIS_63` is checked at the start of
+   every command; NOT run for these): linear analyses (`MECA_STATIQUE`, modal, harmonic, ...)
    and a thermal solve (`THER_LINEAIRE`/`THER_NON_LINE`, also the thermal part of the
    welding chain). A fix would be the same extra time after (and a try/except around) those
    solves, or a `POURSUITE` run for the post-processing (STAPPENPLAN S45). Raise *Time
