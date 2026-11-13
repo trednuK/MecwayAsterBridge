@@ -245,7 +245,7 @@ pagina toont alleen de instellingen die bij die analyse horen:
 | Geheugenlimiet run_aster [MB] | alle | 4096 (niet-lineair statisch, dynamisch, thermisch), 2048 (overige) |
 | MUMPS NPREC (-1 = controle uit) | alle | 8 |
 | Lineaire oplosser (MUMPS / GCPC) | statisch | `MUMPS` |
-| Nauwkeurigheid oplosser (RESI_RELA) | statisch | 1e-6 |
+| Nauwkeurigheid oplosser (RESI_RELA) | statisch | 1e-5 |
 | Foutschatter (CALC_ERREUR, alleen volumes) | statisch | aan ([`Foutschatter.md`](Foutschatter.md)) |
 | Scheur: R_INF / R_SUP [m] (0 = automatisch), gladmaken langs het front, Legendre-graad | statisch (alleen met `SCHEUR_`-selecties of `#ASTER-XFEM`; gladmaken en graad niet voor XFEM) | 0 / 0, `LINEAIRE`, 5 ([`Breukmechanica.md`](Breukmechanica.md)) |
 | Adaptieve verfijning (Mecway refine_x2) | statisch | uit ([`Foutschatter.md`](Foutschatter.md) §6) |

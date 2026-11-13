@@ -3282,6 +3282,53 @@ def _ccx_tie_setup(model_data, contacts, group_faces, rn):
 # ==========================================
 # BONDED CONTACT -> LIAISON_MAIL
 # ==========================================
+def _warn_bonded_offset(label, m_type, s_type, slave_kinds):
+    """
+    WARNING for a bonded contact that ties a shell mid-surface without the
+    distance to the bonded face (KNOWN_BUGS 128): LIAISON_MAIL (U4.44.01)
+    projects the slave nodes and has no offset term, nor has
+    _bonded_relations. Shell face on shell face: the mid-surfaces are
+    (t1 + t2)/2 apart, so the joint acts almost as loose plates. Measured
+    13 Nov 2026: two 2 mm plates, 50 mm overlap, tip load, +13% deflection
+    against a hex20 model with a perfect bond (0.1498 mm in Code-Aster and
+    Mecway); two equal plates bonded over their whole length can bend up to
+    4 x as much (2 t^3 against (2 t)^3). Shell face on a solid, or a solid
+    face on a shell: half the plate thickness is missing (NOT measured).
+    Not checked with an Element offset that moves the shell nodes into the
+    bonded plane. Shell edges have no such distance and get no WARNING.
+    """
+    if m_type == "COQUE" and s_type == "COQUE" and             "shellface" in slave_kinds:
+        log(tr("WARNING: {0}: schaalvlakken vlak op vlak verlijmd. De "
+               "bridge koppelt de middenvlakken zonder de afstand ertussen "
+               "(de halve dikte van elke plaat), dus de naad werkt bijna "
+               "als losse platen en is te slap: overlap van twee platen van "
+               "2 mm +13 % doorbuiging tegen een volmaakte lijmverbinding, "
+               "twee platen die over hun hele lengte verlijmd zijn tot 4 x. "
+               "Voor een nauwkeurige naad: modelleer de verbinding met "
+               "volume-elementen (KNOWN_BUGS 128).",
+               "WARNING: {0}: shell faces bonded face to face. The bridge "
+               "ties the mid-surfaces without the distance between them "
+               "(half the thickness of each plate), so the joint acts almost "
+               "as loose plates and is too flexible: lap of two 2 mm plates "
+               "+13 % deflection against a perfect bond, two plates bonded "
+               "over their whole length up to 4 x. For an accurate joint: "
+               "model the connection with solid elements (KNOWN_BUGS "
+               "128).").format(label))
+    elif (m_type, s_type) in (("MASSIF", "COQUE"), ("COQUE", "MASSIF")) and             ("shellface" in slave_kinds or s_type == "MASSIF"):
+        log(tr("WARNING: {0}: een schaalvlak en een volumevlak verlijmd. "
+               "De bridge koppelt het middenvlak van de schaal aan het "
+               "volumevlak zonder de halve plaatdikte ertussen; de "
+               "verbinding is daardoor iets te slap (grootte NIET gemeten). "
+               "Voor een nauwkeurige naad: modelleer de plaat bij de "
+               "verbinding met volume-elementen (KNOWN_BUGS 128).",
+               "WARNING: {0}: a shell face and a solid face bonded. The "
+               "bridge ties the mid-surface of the shell to the solid face "
+               "without the half plate thickness between them; the joint "
+               "is therefore somewhat too flexible (size NOT measured). For "
+               "an accurate joint: model the plate at the joint with solid "
+               "elements (KNOWN_BUGS 128).").format(label))
+
+
 def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
     """
     Mecway bonded contact (manual v33 par. 9.9.1): the slave nodes follow
@@ -3363,28 +3410,6 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
                    "also shell faces); the edge acts as a hinge (no "
                    "moment). Rigid: one component per bonded "
                    "contact.").format(label))
-    if "shellface" in sk and mech:
-        # KNOWN_BUGS 128: the slave nodes are tied to the master
-        # (mid-)surface without the distance between the mid-surfaces (a
-        # half plate thickness per plate), so a lap acts almost as two
-        # loose plates. Measured 13 Nov 2026: two 2 mm plates face to face,
-        # 50 mm overlap, tip load: +13% deflection against a hex20 model
-        # with a perfect bond (Code-Aster and Mecway 0.1498 mm). An offset
-        # term is not in LIAISON_MAIL (U4.44.01) and is not built.
-        log(tr("WARNING: {0}: schaalvlakken vlak op vlak verlijmd. De "
-               "bridge koppelt de middenvlakken zonder de afstand "
-               "ertussen (de halve plaatdikte), dus de naad werkt bijna "
-               "als losse platen en is te slap (overlap van twee platen "
-               "van 2 mm: +13 % doorbuiging tegen een volmaakte "
-               "lijmverbinding). Voor een nauwkeurige naad: modelleer de "
-               "verbinding met volume-elementen (KNOWN_BUGS 128).",
-               "WARNING: {0}: shell faces bonded face to face. The bridge "
-               "ties the mid-surfaces without the distance between them "
-               "(half the plate thickness), so the joint acts almost as "
-               "loose plates and is too flexible (lap of two 2 mm "
-               "plates: +13 % deflection against a perfect bond). For an "
-               "accurate joint: model the connection with solid elements "
-               "(KNOWN_BUGS 128).").format(label))
     if c["type"] == "bondedelastic" and mech:
         model_data.setdefault("skipped_loads", []).append(
             tr("{0}: verende laag (kn={1}, kt={2} Pa/m) niet vertaald, star "
@@ -3468,6 +3493,8 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
     elif distance <= 0.0:
         log("INFO: {0}: automatic tolerance of Mecway; Code-Aster "
             "couples all slave nodes (no DISTANCE_MAX).".format(label))
+    if mech:
+        _warn_bonded_offset(label, m_type, s_type, sk)
     relations, ddl, rot_ddl = None, None, None
     if raccord == "COQUE" and mech:
         # Shell on shell. LIAISON_MAIL cannot handle a quadratic master

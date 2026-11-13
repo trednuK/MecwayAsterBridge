@@ -253,9 +253,39 @@ def test_log_errors():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_bonded_offset():
+    """KNOWN_BUGS 128: WARNING for bonded shell faces (face to face, shell
+    face on a solid, solid face on a shell), none for shell edges."""
+    import bridge_mesh
+    saved = bridge_mesh.log
+    bridge_mesh.log = _log
+    try:
+        for m_type, s_type, kinds, text in (
+                ("COQUE", "COQUE", set(["shellface"]), "vlak op vlak"),
+                ("MASSIF", "COQUE", set(["shellface"]), "volumevlak"),
+                ("COQUE", "MASSIF", set(["solid"]), "volumevlak"),
+                ("COQUE", "COQUE", set(["shelledge"]), None),
+                ("MASSIF", "COQUE", set(["shelledge"]), None),
+                ("MASSIF", "MASSIF", set(["solid"]), None)):
+            del LOG[:]
+            bridge_mesh._warn_bonded_offset("c", m_type, s_type, kinds)
+            warn = _warnings()
+            if text is None:
+                check(not warn, "bonded {0}/{1} {2}: no WARNING, got {3}"
+                      .format(m_type, s_type, sorted(kinds), warn))
+            else:
+                check(len(warn) == 1 and text in warn[0]
+                      and "KNOWN_BUGS 128" in warn[0],
+                      "bonded {0}/{1} {2}: WARNING with '{3}', got {4}"
+                      .format(m_type, s_type, sorted(kinds), text, warn))
+    finally:
+        bridge_mesh.log = saved
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
-                 test_acoustic_density, test_factor57, test_log_errors):
+                 test_acoustic_density, test_factor57, test_log_errors,
+                 test_bonded_offset):
         test()
     if FAILS:
         for f in FAILS:

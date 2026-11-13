@@ -2440,8 +2440,8 @@ schuin, met en zonder vector + 30°):
   P_T = 490,5, P_x = 864,2, gekoppeld 386,1; volumemodel (hex20) 393,03. De balk geeft 616,43: te
   hoog. De bridge waarschuwt nu bij knik met T-, C- en L-profielen; met `elem_beam` =
   `POU_D_TG` 384,98 (BU-38, hieronder).
-- **Volumemodel van het L-raamwerk (BU-37)**: met de standaard `RESI_RELA` 1e-6 stopt
-  de statische stap met `FACTOR_57` (fout van MUMPS 5,0e-5) zonder mechanisme. De
+- **Volumemodel van het L-raamwerk (BU-37)**: met `RESI_RELA` 1e-6 (de standaard tot 13 nov
+  2026; de standaard 1e-5 is ook te klein) stopt de statische stap met `FACTOR_57` (fout van MUMPS 5,0e-5) zonder mechanisme. De
   bridge meldt dan de waarde voor `lin_solver_resi` (hier 1e-3); daarmee rekent het door
   en zijn de factoren gelijk aan een run met `RESI_RELA=-1` (en aan Mecway en CCX op dit
   mesh). Dezelfde controle met Code-Aster 17.4 op een hex20-uitkragende balk 1000 × 40 ×

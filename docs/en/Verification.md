@@ -2431,8 +2431,8 @@ along X and skew, with and without vector + 30°):
   C_w = tb³h²/12·(3b + 2h)/(6b + h)): P_T = 490.5, P_x = 864.2, coupled 386.1; volume model
   (hex20) 393.03. The beam gives 616.43: too high. The bridge now warns for buckling with T, C
   and L profiles; with `elem_beam` = `POU_D_TG` 384.98 (BU-38, below).
-- **Volume model of the L frame (BU-37)**: with the default `RESI_RELA` 1e-6 the static
-  step stops with `FACTOR_57` (MUMPS error 5.0e-5) without a mechanism. The bridge then
+- **Volume model of the L frame (BU-37)**: with `RESI_RELA` 1e-6 (the default until 13 Nov 2026;
+  the default 1e-5 is too small as well) the static step stops with `FACTOR_57` (MUMPS error 5.0e-5) without a mechanism. The bridge then
   reports the value for `lin_solver_resi` (here 1e-3); with it the run completes and the
   factors equal a run with `RESI_RELA=-1` (and Mecway and CCX on this mesh). The same
   check with Code-Aster 17.4 on a hex20 cantilever 1000 × 40 × 10 mm (100 × 4 × 2, 100 N

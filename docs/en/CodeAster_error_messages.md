@@ -663,7 +663,8 @@ from contact (`SANS_GROUP_NO`).
 ### `FACTOR_57` – MUMPS: solution too inaccurate
 
 - **Message** (error): "La solution du système linéaire est trop imprécise: Erreur
-  calculée ... Erreur acceptable 1e-06 (RESI_RELA)". MUMPS estimates the relative error
+  calculée ... Erreur acceptable 1e-05 (RESI_RELA)" (the bridge's default; Code-Aster's
+  own is 1e-6). MUMPS estimates the relative error
   of the solution (condition number × backward error) and stops if it is above
   `RESI_RELA` (U4.50.01 §3.5.3). The size of the *Erreur calculée* tells what is going on.
 - **Cause**: (a) **error of order 1 or more**: a mechanism, as `FACTOR_10/11`, but with
@@ -681,7 +682,7 @@ from contact (`SANS_GROUP_NO`).
   setting they run, with the same results as with `RESI_RELA=-1` and within 0.4% of the
   analytical value / Mecway ([Verification §7](Verification.md)).
 - **Also seen**: a slender thin-walled hex20 part (slenderness 32) next to a separate beam:
-  error 2.5e-6, from that solid part and not from the beam (solid alone 2.3e-6, beam alone
+  error 2.5e-6 (computes with the default 1e-5 since 13 Nov 2026), from that solid part and not from the beam (solid alone 2.3e-6, beam alone
   9e-12). The estimated error is an upper bound: with `RESI_RELA` from 3e-6 to 1e-3 and -1 the
   results were identical bit for bit, and the direct solvers `MULT_FRONT` and `LDLT_SP`
   differed by less than 7e-9. No `MUMPS` option (`RENUM`, `PRETRAITEMENTS`, `ELIM_LAGR`,

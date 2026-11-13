@@ -257,7 +257,7 @@ TESTS.append(Case(
            source="Mecway 34, hex20 200 x 8 x 4 per member (converged)")],
     settings={"lin_solver_resi": 1.0e-3},
     note="RectBar 40 x 10 mm as hex20, 100 x 4 x 2 per member (1616 "
-         "elements), 100 N. lin_solver_resi 1e-3: with the default 1e-6 "
+         "elements), 100 N. lin_solver_resi 1e-3: with 1e-6 (1e-5 too) "
          "the static step stops with FACTOR_57 (MUMPS error estimate "
          "5.0e-5, no mechanism). Same factors as with "
          "RESI_RELA off (-1)."))

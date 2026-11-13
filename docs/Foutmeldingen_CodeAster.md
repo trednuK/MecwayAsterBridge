@@ -670,7 +670,8 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
 ### `FACTOR_57` – MUMPS: oplossing te onnauwkeurig
 
 - **Melding** (fout): "La solution du système linéaire est trop imprécise: Erreur
-  calculée ... Erreur acceptable 1e-06 (RESI_RELA)". MUMPS schat de relatieve fout van
+  calculée ... Erreur acceptable 1e-05 (RESI_RELA)" (de standaard van de bridge; die van
+  Code-Aster is 1e-6). MUMPS schat de relatieve fout van
   de oplossing (conditiegetal × 'backward error') en stopt als die boven `RESI_RELA`
   ligt (U4.50.01 §3.5.3). De grootte van de *Erreur calculée* zegt wat er aan de hand is.
 - **Oorzaak**: (a) **fout van orde 1 of meer**: een mechanisme, als `FACTOR_10/11`, maar
@@ -687,7 +688,7 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
   (knik) 1,1e-6; het hex20-L-raamwerk van BU-37 (knik) 5,0e-5. Met de verhoogde
   instelling rekenen ze door, met dezelfde resultaten als met `RESI_RELA=-1` en
   analytisch / Mecway binnen 0,4% ([Verificatie §7](Verificatie.md)). Ook een slank
-  dunwandig hex20-deel (slankheid 32) naast een losse balk: fout 2,5e-6, door dat volumedeel
+  dunwandig hex20-deel (slankheid 32) naast een losse balk: fout 2,5e-6 (rekent sinds 13 nov 2026 met de standaard 1e-5), door dat volumedeel
   en niet door de balk (alleen het volume 2,3e-6, alleen de balk 9e-12). De geschatte fout is
   een bovengrens: met `RESI_RELA` van 3e-6 tot 1e-3 en -1 waren de resultaten bit voor bit
   gelijk, en de directe oplossers `MULT_FRONT` en `LDLT_SP` weken minder dan 7e-9 af. Geen

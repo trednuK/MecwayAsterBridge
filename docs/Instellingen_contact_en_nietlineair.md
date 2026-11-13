@@ -928,7 +928,8 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
   Mecway (CCX) is veel te stijf. Overlap van twee platen van 2 mm,
   50 mm overlap, eindlast: volumemodel met een volmaakte verbinding 0,1498 mm (Code-Aster
   en Mecway), bridge 0,1694 mm (+13 %), Mecway 0,0843 mm (−44 %). De bridge geeft een
-  WARNING bij elk verlijmd contact met schaalvlakken als slave. Voor een nauwkeurige
+  WARNING bij schaalvlakken die vlak op vlak verlijmd zijn (en bij een schaalvlak op een
+  volumevlak, waar de halve plaatdikte ontbreekt). Voor een nauwkeurige
   overlap: modelleer de verbinding met volume-elementen; vergelijk zulke modellen niet met
   Mecway (KNOWN_BUGS 128).
 - Schalen met een *Element offset* in het contact: de slave-knopen (altijd de

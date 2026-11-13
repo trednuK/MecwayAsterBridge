@@ -196,8 +196,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    point, a signed vector; an *Element offset* changes it) for shell faces on shell faces,
    and the same t/2 for a shell face on a solid (the "shell on a block" case above)
    (STAPPENPLAN S47, only with explicit documentation and a WARNING whenever it is
-   applied); NOT built. Until then the bridge gives a WARNING for every bonded contact
-   with shell faces as slave (`bridge_mesh._bonded`). A shell edge on a shell (LS-07a..e, T-joints)
+   applied); NOT built. Until then the bridge gives a WARNING for shell faces bonded face
+   to face and for a shell face bonded to a solid face (`bridge_mesh._warn_bonded_offset`). A shell edge on a shell (LS-07a..e, T-joints)
    has no such lever arm and is not affected.
 
 130\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**

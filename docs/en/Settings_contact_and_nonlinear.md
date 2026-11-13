@@ -916,8 +916,9 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
   and the lap is more flexible than a perfect bond (a real glue line is softer too);
   Mecway (CCX) is far too stiff. Lap of two 2 mm plates, 50 mm overlap, tip
   load: solid model with a perfect bond 0.1498 mm (Code-Aster and Mecway), bridge 0.1694 mm
-  (+13 %), Mecway 0.0843 mm (−44 %). The bridge gives a WARNING for every bonded
-  contact with shell faces as slave. For an accurate lap: model the joint with solid
+  (+13 %), Mecway 0.0843 mm (−44 %). The bridge gives a WARNING for shell faces bonded
+  face to face (and for a shell face bonded to a solid face, where half the plate
+  thickness is missing). For an accurate lap: model the joint with solid
   elements; do not compare such models with Mecway (KNOWN_BUGS 128).
 - Shells with an *Element offset* in the contact: the slave nodes (always the Mecway
   nodes) are tied to the master nodes; only with `LIAISON_MAIL` on a master on its own

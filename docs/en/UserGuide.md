@@ -253,7 +253,7 @@ analysis:
 | "Memory limit run_aster [MB]" | all | 4096 (nonlinear static, dynamic, thermal), 2048 (others) |
 | "MUMPS NPREC (-1 = check off)" | all | 8 |
 | "Linear solver (MUMPS / GCPC)" | static | `MUMPS` |
-| "Solver accuracy (RESI_RELA)" | static | 1e-6 |
+| "Solver accuracy (RESI_RELA)" | static | 1e-5 |
 | "Error estimator (CALC_ERREUR, solids only)" | static | on ([`Error_estimator.md`](Error_estimator.md)) |
 | "Crack: R_INF [m] (0 = automatic)" / "Crack: R_SUP [m] (0 = automatic)", "Crack: smoothing along the front", "Crack: Legendre degree (0 .. 7)" | static (only with `CRACK_` selections or `#ASTER-XFEM`; smoothing and degree not for XFEM) | 0 / 0, `LINEAIRE`, 5 ([`Fracture_mechanics.md`](Fracture_mechanics.md)) |
 | "Adaptive refinement (Mecway refine_x2)" | static | off ([`Error_estimator.md`](Error_estimator.md) §6) |
