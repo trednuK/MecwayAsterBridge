@@ -826,7 +826,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-41)
+### 2D and axisymmetric (PL-01 … PL-42)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -940,6 +940,14 @@ with plane shell elements and `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E = 21
   12.464 MPa (+0.01%), u_r of the outer ring's inner wall within 0.02%; −σ_r there −0.2%
   (`AXIS`); in the `D_PLAN` quarter rings the nodal σ_r there is +2.4% (extrapolation in
   elements with an aspect ratio of about 5, not checked).
+- **PL-42** (Code-Aster test case ssnp121a rebuilt in Mecway: two blocks 2 × 1 m in
+  `D_PLAN`, quad4 12 × 12 on 11 × 11, non-matching at the contact, E = 2e6 Pa, ν = 0, the
+  top pressed down 0.1 m; deformation `PETIT` as the test): mean `contactpressure` 99.77 kPa
+  (−0.23%) and DY of the slave edge −0.050045 m (−0.09%) against the test's 1e5 Pa and
+  −0.05 m (tolerance 1%); at the corners (the lowest nodes) 97.0 kPa (−3.0%; the test with its own `SIMPSON`
+  integration of order 4 gets +0.08% there, checked here at 5%). The test's own
+  contact settings (`COEF_CONT`, `SIMPSON`, `REAC_GEOM`) are not copied: the bridge's defaults. With the default deformation (`GREEN_LAGRANGE` for elastic
+  material) the pressure is 7.6% lower: at 5% strain that is the geometric nonlinearity.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

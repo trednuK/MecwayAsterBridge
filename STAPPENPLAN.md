@@ -94,7 +94,7 @@ S7, S8, S5, S9).
 | S44 | 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`): thermal stress, nonlinear static, contact, thermal, axisymmetric shells, modal/buckling, axisymmetric acoustics | split | S16a | asked by the user 11 Nov 2026; split into S44a .. S44g (see §S44; research of the input route first); plan reviewed by Opus; order S44c, S44a, S44b, S44d, S44e, S44f later |
 | S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (to confirm by the user, §S44); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
-| S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | in progress | S44a | route A: contact on edges built, shrink fit PL-40/41 (13 Nov 2026); open: Hertz, a Code-Aster contact test case (ssnp152a, ssna102a, ssnp121a), bonded contact, GUI test; see §S44 |
+| S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | in progress | S44a | route A: contact on edges built, shrink fit PL-40/41, Code-Aster test ssnp121a PL-42 (13 Nov 2026); open: Hertz, friction, `C_PLAN`, bonded contact; user test: Mecway's GUI offers shell edges for a contact; see §S44 |
 | S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | open | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44 |
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
@@ -2483,9 +2483,11 @@ for SEG3 slaves and the penetration check's shortest edge also cover SEG (plan r
 Opus). Everything else is the 3D route
 (`DEFI_CONTACT` CONTINUE, STANDARD, `CONTACT_INIT` resolves the overlap of a shrink fit).
 PL-40 (`AXIS`) and PL-41 (`D_PLAN`): mean contact pressure +0.01% against Lamé (plane strain,
-both ends held), u_r within 0.02%. Open (budget of 13 Nov): Hertz line contact, a Code-Aster
-contact test case through the bridge (ssnp152a in `C_PLAN`, ssna111a/ssna102a in `AXIS`,
-ssnp121a/ssnp153a in `D_PLAN`), friction in 2D, bonded contact (`LIAISON_MAIL`) in 2D, the
+both ends held), u_r within 0.02%. PL-42: the Code-Aster test case ssnp121a (`D_PLAN`, two
+blocks, non-matching quad4) through the bridge: contact pressure −0.23% (the corners −3.0% with the bridge's default integration, the test
+with `SIMPSON` order 4 +0.08%), DY −0.09% (test 1%;
+deformation `PETIT` as the test, the default `GREEN_LAGRANGE` gives −7.6% at 5% strain).
+Open: Hertz line contact, ssna102a/ssna111a (`AXIS`, MED meshes), friction in 2D, bonded contact (`LIAISON_MAIL`) in 2D, the
 GUI test (does Mecway's window offer shell edges for a contact).
 
 **S44d – thermal 2D/axisymmetric (steady and transient).**

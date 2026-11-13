@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 3961161, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 054261f, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3148 van 3154 controles binnen de tolerantie** (598 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3151 van 3157 controles binnen de tolerantie** (599 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2674,6 +2674,9 @@ Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 3961161, Code-Aster 17.4
 | PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | u_r buitenring binnenwand | 3.2407e-05 m | 3.2412e-05 | +0.01% | 1% | OK |
 | PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | contactdruk (gemiddeld, slave) | 1.2464e+07 Pa | 1.2465e+07 | +0.01% | 1% | OK |
 | PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | u_r buitenring binnenwand | 3.2407e-05 m | 3.2407e-05 | +0.00% | 1% | OK |
+| PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | contactdruk (gemiddeld, slave AB) | 1.0000e+05 Pa | 99769 | -0.23% | 1% | OK |
+| PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | contactdruk laagste knoop (hoeken A, B) | 1.0000e+05 Pa | 97043 | -2.96% | 5% | OK |
+| PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | DY slave AB (gemiddeld) | -0.05 m | -0.050045 | -0.09% | 1% | OK |
 
 ## Boutvoorspanning
 

@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-41)
+### 2D en axisymmetrisch (PL-01 … PL-42)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -948,6 +948,16 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
   (vlakke rek) 12,464 MPa (+0,01%), u_r van de binnenwand van de buitenring binnen 0,02%;
   −σ_r daar −0,2% (`AXIS`); in de `D_PLAN`-kwart ringen is de knoop-σ_r daar +2,4%
   (extrapolatie in elementen met een verhouding van ongeveer 5, niet gecontroleerd).
+- **PL-42** (Code-Aster-testcase ssnp121a nagebouwd in Mecway: twee blokken 2 × 1 m in
+  `D_PLAN`, quad4 12 × 12 op 11 × 11, niet-passend bij het contact, E = 2e6 Pa, ν = 0, de
+  bovenkant 0,1 m ingedrukt; deformation `PETIT` zoals de test): gemiddelde
+  `contactpressure` 99,77 kPa (−0,23%) en DY van de slave-rand −0,050045 m (−0,09%) tegen
+  1e5 Pa en −0,05 m van de test (tolerantie 1%); in de hoeken (de laagste knopen) 97,0 kPa (−3,0%; de test met zijn eigen `SIMPSON`-integratie
+  van orde 4 haalt daar +0,08%, hier gecontroleerd op 5%). De
+  eigen contactinstellingen van de test (`COEF_CONT`, `SIMPSON`, `REAC_GEOM`) zijn niet
+  overgenomen: de standaard van de bridge. Met de standaard deformation
+  (`GREEN_LAGRANGE` voor elastisch materiaal) is de druk 7,6% lager: bij 5% rek is dat de
+  geometrische niet-lineariteit.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en
