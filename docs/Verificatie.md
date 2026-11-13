@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-36)
+### 2D en axisymmetrisch (PL-01 … PL-41)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -941,6 +941,13 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
 - **PL-36** (de plaat van PL-21 als L30 met `C_PLAN`, Temperature als tijdtabel 293 / 393 /
   493 K op 0 / 1 / 2 s): u = α ΔT(t) x exact in beide stappen. Mecway met CCX geeft voor
   het shell-model precies de helft (en Mecway's interne solver α ΔT x): KNOWN_BUGS 139.
+- **PL-40** / **PL-41** (contact, STAPPENPLAN S44b; `tests_vlak_2d_contact.py`):
+  krimpverbinding van twee ringen a = 0,1 … 0,15 m + 0,05 mm overmaat en 0,15 … 0,2 m,
+  wrijvingsloos *Contact* tussen de randen, quad8 8 per wand; `AXIS` met beide einden
+  axiaal vast en `D_PLAN` kwart ringen: gemiddelde `contactpressure` 12,465 MPa tegen Lamé
+  (vlakke rek) 12,464 MPa (+0,01%), u_r van de binnenwand van de buitenring binnen 0,02%;
+  −σ_r daar −0,2% (`AXIS`); in de `D_PLAN`-kwart ringen is de knoop-σ_r daar +2,4%
+  (extrapolatie in elementen met een verhouding van ongeveer 5, niet gecontroleerd).
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

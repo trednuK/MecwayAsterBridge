@@ -1340,7 +1340,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    to Mecway 35's own S20/SA0 solve headless; that Mecway's GUI offers them in S20/SA0 is
    documented, not tested); nonlinear static (L30, also S30) on plane shells with
    `**ASTER-PLANE C_PLAN|D_PLAN|AXIS` (S44a, PL-30 … PL-36; no failure loop, no element
-   offsets)
+   offsets), with contact on edges (S44b, PL-40/41; no bonded contact)
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
    with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,

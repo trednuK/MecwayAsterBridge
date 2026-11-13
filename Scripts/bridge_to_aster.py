@@ -6071,7 +6071,9 @@ def _convergence_args(analysis):
 def _quadratic_slave(model_data, group):
     """True if the slave face has quadratic boundary elements."""
     faces = model_data.get("group_face_list", {}).get(group, [])
-    return any(f.get("stype") in ("TRIA6", "QUAD8", "QUAD9", "TRIA7")
+    # SEG3: quadratic edges of a 2D model (S44b)
+    return any(f.get("stype") in ("TRIA6", "QUAD8", "QUAD9", "TRIA7",
+                                  "SEG3")
                for f in faces)
 
 
@@ -6109,11 +6111,14 @@ def _slave_edge_min(model_data, groups):
     best = None
     for g in groups:
         for f in faces.get(g, []):
-            nc = 3 if f.get("stype", "").startswith("TRIA") else 4
+            stype = f.get("stype", "")
+            # SEG2/SEG3 edges of a 2D model (S44b): one edge, end to end
+            nc = (2 if stype.startswith("SEG") else
+                  3 if stype.startswith("TRIA") else 4)
             ids = f.get("nodes", [])[:nc]
             if len(ids) < nc or any(n not in nodes for n in ids):
                 continue
-            for k in range(nc):
+            for k in range(nc - 1 if nc == 2 else nc):
                 a, b = nodes[ids[k]], nodes[ids[(k + 1) % nc]]
                 d = math.sqrt(sum((a[i] - b[i]) ** 2 for i in range(3)))
                 if d > 0.0 and (best is None or d < best):

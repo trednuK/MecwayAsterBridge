@@ -26,7 +26,7 @@ Related documents:
 | Default settings and assumptions (why each default) | [`Default_settings_and_assumptions.md`](Default_settings_and_assumptions.md) |
 | Settings for contact and nonlinear analyses, convergence window | [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) |
 | Thermal analyses | [`Thermal.md`](Thermal.md) |
-| 2D analyses: plane stress, plane strain (Static 2D) and axisymmetric (Static Axisymmetric), also dynamic (D20, DA0) | [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) |
+| 2D analyses: plane stress, plane strain (Static 2D) and axisymmetric (Static Axisymmetric), also dynamic (D20, DA0) and with a temperature; nonlinear and contact in 2D as a 3D model with the line `**ASTER-PLANE` (two input routes, decision table and examples in §1) | [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) |
 | Welding: moving heat source (weld bead, transient thermal), residual stress, distortion and metallurgy (phases, hardness) | [`Welding.md`](Welding.md) |
 | Modal analysis (also cyclic symmetry), linear and nonlinear buckling (CRIT_STAB, imperfection) | [`Modal_and_buckling.md`](Modal_and_buckling.md) |
 | Mode superposition (Dynamic Response with Mode superposition) and harmonic response per frequency (`harmonic_3d`) | [`Mode_superposition.md`](Mode_superposition.md) |

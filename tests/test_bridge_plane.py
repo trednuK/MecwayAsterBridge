@@ -25,7 +25,8 @@
 #     that modelisation (thickness from the shell, none for AXIS); ERROR
 #     for S20, T30, an unknown value and the wrong analysis; the literal
 #     '#ASTER PLANE AXIS' gives an ERROR and is not passed as code; DEFORMATION
-#     per plane modelisation (bridge_to_aster._deformation_for).
+#     per plane modelisation (bridge_to_aster._deformation_for); contact
+#     (S44b) only with STAT_NON_LINE.
 #
 #   python tests/test_bridge_plane.py
 
@@ -244,6 +245,31 @@ def test_route_a():
     comm = _comm(_liml("S20", PS, loads=zdisp))
     check(comm and any("Z" in m for m in _errors()),
           "route B: displacement along Z stays an ERROR")
+    # S44b: contact only in STAT_NON_LINE (route A)
+    contact = ('<contact2 selectionmaster="Links" selectionslave="Links2" '
+               'type="unilateralelastic"><normalstiffness>1 GPa/m'
+               '</normalstiffness></contact2><faceselection name="Links2">'
+               '<face eid="2" faceid="2" /></faceselection>')
+    md = _extract(_liml("L30", PS, loads=_switch("#ASTER-PLANE C_PLAN") +
+                        contact), analysis="nonlin_static_3d")
+    check(md is not None and md.get("contacts"),
+          "L30 + switch with a contact passes: {0}".format(_errors()))
+    md = _extract(_liml("S30", PS, loads=_switch("#ASTER-PLANE C_PLAN") +
+                        contact))
+    check(md is None and any("Contact" in m for m in _errors()),
+          "S30 + switch with a contact: ERROR")
+    import bridge_mesh as bm
+    w = bm._edge_integrals({
+        "mesh_nodes": {1: (0.0, 0.0, 0.0), 2: (2.0, 0.0, 0.0),
+                       3: (1.0, 0.0, 0.0), 4: (2.0, 1.0, 0.0)},
+        "group_face_list": {
+            "E": [{"kind": "shelledge", "stype": "SEG3", "nodes": [1, 2, 3]},
+                  {"kind": "shelledge", "stype": "SEG2", "nodes": [2, 4]}],
+            "F": [{"kind": "shellface", "stype": "QUAD4", "nodes": [1]}]}})
+    e = w.get("E", [{}])[0]
+    check("F" not in w and abs(e[1] - 1.0 / 3) < 1e-12 and
+          abs(e[3] - 4.0 / 3) < 1e-12 and abs(e[2] - (1.0 / 3 + 0.5)) < 1e-12,
+          "_edge_integrals: SEG3 L/6, L/6, 2L/3 + SEG2 L/2: {0}".format(w))
     import bridge_to_aster as bta
     for mod, rel, chosen, want in (
             ("C_PLAN", "VMIS_ISOT_LINE", "GROT_GDEP", "GDEF_LOG"),

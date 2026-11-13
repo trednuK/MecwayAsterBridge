@@ -66,6 +66,12 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   Not yet: the failure loop and contact in 2D; opening such a result in the Mecway window is NOT
   checked. A plastic material in S20/SA0 now gives a WARNING (Mecway's 2D types are linear).
   2D docs §1.4.
+- **Contact in 2D and axisymmetric** (STAPPENPLAN S44b): with `**ASTER-PLANE` in Nonlinear
+  Static (L30) a *Contact* between edges of the plane elements becomes `DEFI_CONTACT` on edge
+  cells, with the contact settings of 3D. Verification PL-40/41: a shrink fit of two rings
+  (axisymmetric and plane strain), contact pressure within 0.01% of Lamé. Not yet: bonded
+  contact in 2D, friction and `C_PLAN` contact (NOT verified), Hertz line contact and a
+  Code-Aster contact test case.
 - **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
   plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46

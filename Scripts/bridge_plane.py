@@ -112,7 +112,7 @@ _HANDLED = ("fixed", "pinnedsupport", "displacement", "force",
             "surfacepressure", "traction", "symmetry", "gravity",
             "centrifugal")
 # model_data keys of model items without a verified 2D route
-_NOT_VERIFIED = (("contacts", "Contact"), ("bonded", "Bonded contact"),
+_NOT_VERIFIED = (("bonded", "Bonded contact"),
                  ("couplings", "Node-surface coupling"),
                  ("constraint_equations", "Constraint equation"),
                  ("point_masses", "Point mass"),
@@ -125,6 +125,9 @@ _NOT_VERIFIED = (("contacts", "Contact"), ("bonded", "Bonded contact"),
 _THERMAL = (("thermal_stress", "Thermal stress"),
             ("temperatures", "Temperature"),
             ("node_temperatures", "Node temperature"))
+# Contact (contact2 -> DEFI_CONTACT on edge cells, S44b): only in
+# STAT_NON_LINE (route A, L30); Mecway's 2D types have no contact
+_CONTACT = (("contacts", "Contact"),)
 _DROP_DDL = ("DZ", "DRX", "DRY", "DRZ")
 _DROP_FORCE = ("FZ", "MX", "MY", "MZ")
 _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
@@ -211,7 +214,8 @@ def apply(model_data, run_cfg, elset_shapes):
     axis = (switch == "AXIS") if switch else PLANE_TYPES[atype] == "axis"
     # Model items without a verified 2D route (S16a)
     blocked = _NOT_VERIFIED + (
-        () if solver in ("MECA_STATIQUE", "STAT_NON_LINE") else _THERMAL)
+        () if solver in ("MECA_STATIQUE", "STAT_NON_LINE") else _THERMAL) + (
+        () if solver == "STAT_NON_LINE" else _CONTACT)
     for key, what in blocked:
         if model_data.get(key):
             return _fatal(
@@ -273,14 +277,15 @@ def apply(model_data, run_cfg, elset_shapes):
         else:
             if not thick or thick <= 0.0:
                 return _fatal(
-                    "Elset '{0}': Static 2D (S20) heeft een dikte nodig; geef "
+                    "Elset '{0}': {2} heeft een dikte nodig; geef "
                     "materiaal '{1}' in Mecway een geometrie Shell/membrane "
                     "met een dikte (ook voor plane strain; zonder dikte rekent "
                     "Mecway zelf ook niet).",
-                    "Elset '{0}': Static 2D (S20) needs a thickness; give "
+                    "Elset '{0}': {2} needs a thickness; give "
                     "material '{1}' a Shell/membrane geometry with a "
                     "thickness in Mecway (also for plane strain; Mecway "
-                    "itself does not solve without one).", elset, mat)
+                    "itself does not solve without one).", elset, mat,
+                    "#ASTER-PLANE " + switch if switch else "Static 2D (S20)")
             if switch:
                 mod = switch
                 if geom.get("planestrain") and switch != "D_PLAN":

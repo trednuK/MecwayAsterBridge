@@ -55581,5 +55581,111 @@
    "deformation": "PETIT"
   },
   "general": {}
+ },
+ "PL-40": {
+  "id": "PL-40",
+  "group": "2D en axisymmetrisch",
+  "title": "Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "a = 0,1, b = 0,15, c = 0,2 m, overmaat 0,05 mm, quad8 8x1 per ring, einden axiaal vast, wrijvingsloos.",
+  "seconds": 2.7,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "contactdruk (gemiddeld, slave)",
+    "fem": 12464926.594886959,
+    "ref": 12464387.464387463,
+    "rel": 4.3253669788071517e-05,
+    "dev": 539.1304994951934,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Lame, vlakke rek: p = delta / (f_binnen + f_buiten)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "-sigma_r buitenring binnenwand",
+    "fem": 12441111.018177427,
+    "ref": 12464387.464387463,
+    "rel": -0.0018674360273651784,
+    "dev": -23276.446210036054,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Lame, vlakke rek: p = delta / (f_binnen + f_buiten)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_r buitenring binnenwand",
+    "fem": 3.2412167302283485e-05,
+    "ref": 3.2407407407407394e-05,
+    "rel": 0.00014687675617650208,
+    "dev": 4.759894876090343e-09,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Lame, vlakke rek: p = delta / (f_binnen + f_buiten)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 86,
+  "n_elem": 16,
+  "settings": {},
+  "general": {}
+ },
+ "PL-41": {
+  "id": "PL-41",
+  "group": "2D en axisymmetrisch",
+  "title": "Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Als PL-40 als kwart ringen quad8 8x8, symmetrie x = 0 en y = 0.",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "contactdruk (gemiddeld, slave)",
+    "fem": 12465205.456632534,
+    "ref": 12464387.464387463,
+    "rel": 6.562634926166706e-05,
+    "dev": 817.9922450706363,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Lame, vlakke rek: p = delta / (f_binnen + f_buiten)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_r buitenring binnenwand",
+    "fem": 3.240746844764223e-05,
+    "ref": 3.2407407407407394e-05,
+    "rel": 1.8835272464201537e-06,
+    "dev": 6.104023483769015e-11,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.01,
+    "tol_abs": null,
+    "source": "Lame, vlakke rek: p = delta / (f_binnen + f_buiten)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 450,
+  "n_elem": 128,
+  "settings": {},
+  "general": {}
  }
 }

@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 6854446, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 3961161, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3143 van 3149 controles binnen de tolerantie** (596 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3148 van 3154 controles binnen de tolerantie** (598 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2669,6 +2669,11 @@ Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 6854446, Code-Aster 17.4
 | PL-35 | ssnp159b: trekproef axisymmetrisch, grote rek (L30 + #ASTER-PLANE AXIS) | V1 t = 2 s (ssnp159b) | 0.24715 - | 0.24715 | +0.00% | 1.5% | OK |
 | PL-36 | Vrije plaat, temperatuur als tijdtabel (L30 + #ASTER-PLANE C_PLAN) | u_x rechts t = 1 s | 1.2000e-04 m | 1.2000e-04 | -0.00% | 0.0001% | OK |
 | PL-36 | Vrije plaat, temperatuur als tijdtabel (L30 + #ASTER-PLANE C_PLAN) | u_x rechts t = 2 s | 2.4000e-04 m | 2.4000e-04 | -0.00% | 0.0001% | OK |
+| PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | contactdruk (gemiddeld, slave) | 1.2464e+07 Pa | 1.2465e+07 | +0.00% | 1% | OK |
+| PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | -sigma_r buitenring binnenwand | 1.2464e+07 Pa | 1.2441e+07 | -0.19% | 1% | OK |
+| PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | u_r buitenring binnenwand | 3.2407e-05 m | 3.2412e-05 | +0.01% | 1% | OK |
+| PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | contactdruk (gemiddeld, slave) | 1.2464e+07 Pa | 1.2465e+07 | +0.01% | 1% | OK |
+| PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | u_r buitenring binnenwand | 3.2407e-05 m | 3.2407e-05 | +0.00% | 1% | OK |
 
 ## Boutvoorspanning
 

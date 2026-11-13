@@ -19,7 +19,7 @@ Verwante documenten:
 | Standaardinstellingen en aannames (waarom elke standaardwaarde) | [`Standaardinstellingen_en_aannames.md`](Standaardinstellingen_en_aannames.md) |
 | Instellingen voor contact en niet-lineaire analyses, convergentiescherm | [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) |
 | Thermische analyses | [`Thermisch.md`](Thermisch.md) |
-| 2D-analyses: vlakke spanning, vlakke rek (Static 2D) en axisymmetrisch (Static Axisymmetric), ook dynamisch (D20, DA0) | [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) |
+| 2D-analyses: vlakke spanning, vlakke rek (Static 2D) en axisymmetrisch (Static Axisymmetric), ook dynamisch (D20, DA0) en met een temperatuur; niet-lineair en contact in 2D als 3D-model met de regel `**ASTER-PLANE` (twee invoerroutes, keuzetabel en voorbeelden in §1) | [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) |
 | Lassen: bewegende warmtebron (lasrups, transient thermisch), restspanning, vervorming en metallurgie (fasen, hardheid) | [`Lassen.md`](Lassen.md) |
 | Modale analyse (ook cyclische symmetrie), lineaire en niet-lineaire knik (CRIT_STAB, imperfectie) | [`Modaal_en_knik.md`](Modaal_en_knik.md) |
 | Respons op modale basis (Dynamic Response met Mode superposition) en harmonische respons per frequentie (`harmonic_3d`) | [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md) |

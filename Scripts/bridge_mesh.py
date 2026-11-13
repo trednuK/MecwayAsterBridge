@@ -4564,7 +4564,31 @@ def _report_constraint_overlaps(model_data, group_integrals, group_faces=None):
                     ta, sa, tb, sb, len(common), min(common), dof_txt))
 
 
-def _check_contact_sides(label, master, slave, group_integrals):
+def _edge_integrals(model_data):
+    """Node weights (integral N dl) of the groups of shell edges in a 2D
+    model (S44b), in the layout of group_integrals[g][0]: SEG2 L/2 per
+    end, SEG3 L/6, L/6, 2L/3 (end, end, mid; straight-edge Simpson). Only
+    for the contact checks (_check_contact_sides, _merge_contact_zones,
+    _exclude_fixed_slaves)."""
+    nodes = model_data["mesh_nodes"]
+    out = {}
+    for g, faces in model_data.get("group_face_list", {}).items():
+        if not faces or any(f.get("kind") != "shelledge" for f in faces):
+            continue
+        w = OrderedDict()
+        for f in faces:
+            ns = f["nodes"]
+            a, b = nodes[ns[0]], nodes[ns[1]]
+            length = math.sqrt(sum((a[i] - b[i]) ** 2 for i in range(3)))
+            share = ([length / 6.0, length / 6.0, 2.0 * length / 3.0]
+                     if len(ns) == 3 else [length / 2.0, length / 2.0])
+            for n, s in zip(ns, share):
+                w[n] = w.get(n, 0.0) + s
+        out[g] = [w]
+    return out
+
+
+def _check_contact_sides(label, master, slave, group_integrals, dim=2):
     """
     WARNING if the slave side is clearly coarser than the master. Code-Aster
     only checks the slave points against the master faces (U2.04.04
@@ -4578,9 +4602,12 @@ def _check_contact_sides(label, master, slave, group_integrals):
     def size(group):
         # Characteristic element size: sqrt(area / number of nodes); the
         # area is the sum of the nodal weights (integral N dA).
+        # dim 1: edges in 2D (S44b), the integral is a length
         w = group_integrals.get(group, [{}])[0]
         area = sum(w.values())
-        return (area / len(w)) ** 0.5 if w and area > 0 else None
+        if not w or area <= 0:
+            return None
+        return area / len(w) if dim == 1 else (area / len(w)) ** 0.5
     hm, hs = size(master), size(slave)
     if hm and hs and hs > 2.0 * hm:
         # %-formatting: "{0:.3g}".format() follows the locale in IronPython
@@ -5119,6 +5146,13 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
     # outward normal; DEFI_CONTACT U4.44.11). Shell faces
     # are the shell elements themselves.
     pairs = []
+    # 2D (S44b): edges have no group_integrals (only faces do); the contact
+    # checks below get their node weights from _edge_integrals in a copy,
+    # so the shell-edge code that reads group_integrals is not affected
+    contact_integrals = group_integrals
+    if model_data.get("plane"):
+        contact_integrals = dict(group_integrals)
+        contact_integrals.update(_edge_integrals(model_data))
     for c in model_data.get("contacts", []):
         master, slave = rn(c["master"]), rn(c["slave"])
         label = "contact '{0}' / '{1}'".format(c["master"], c["slave"])
@@ -5135,6 +5169,25 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         kinds = set()
         for g in (master, slave):
             kinds |= group_faces.get(g, {}).get("kinds", set(["?"]))
+        if model_data.get("plane"):
+            # 2D (S44b): edges of the plane elements as SEG boundary cells
+            # with the plane modelisation, oriented outwards (ORIE_PEAU),
+            # as the pressure edges of bridge_plane.convert_bc
+            if not kinds <= set(["shelledge"]):
+                model_data.setdefault("skipped_loads", []).append(label)
+                log(tr("ERROR: {0}: in een 2D-analyse alleen randen van de "
+                       "vlakke elementen (hier {1}). NIET meegenomen.",
+                       "ERROR: {0}: in a 2D analysis only edges of the "
+                       "plane elements (here {1}). NOT included.").format(
+                           label, sorted(kinds)))
+                continue
+            for g in (master, slave):
+                if g not in skin_groups:
+                    skin_groups.append(g)
+            _check_contact_sides(label, master, slave, contact_integrals,
+                                 dim=1)
+            pairs.append(dict(c, master=master, slave=slave))
+            continue
         if not kinds <= set(["solid", "shellface"]):
             model_data.setdefault("skipped_loads", []).append(label)
             log(tr("ERROR: {0}: alleen vlakken van volume-elementen en "
@@ -5150,12 +5203,12 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         _check_contact_sides(label, master, slave, group_integrals)
         pairs.append(dict(c, master=master, slave=slave))
     model_data["contacts"] = _merge_contact_zones(
-        pairs, group_integrals, model_data["group_ma_unions"])
+        pairs, contact_integrals, model_data["group_ma_unions"])
     # --- Couplings (before the overlap check: it uses the Code-Aster
     # names) ---
     _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
                        known)
-    _exclude_fixed_slaves(model_data, group_integrals)
+    _exclude_fixed_slaves(model_data, contact_integrals)
     _report_constraint_overlaps(model_data, group_integrals, group_faces)
     bonded = []
     ccx_tris = _ccx_tie_setup(model_data, model_data.get("bonded", []),
