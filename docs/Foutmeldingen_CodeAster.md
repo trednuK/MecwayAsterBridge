@@ -964,12 +964,16 @@ Stappenplan en instellingen:
   geven (bij `MECA_STATIQUE` al zijn eigen `CALC_CHAMP` van de spanningen). Daarom geeft
   de bridge na die berekening altijd extra tijd voor de nabewerking (90 % van de limiet,
   minstens 600 s, vanaf het einde van de berekening) en laat `MECA_STATIQUE` de spanningen
-  daarna in een eigen `CALC_CHAMP` berekenen, met dezelfde velden. De resultaten worden
-  volledig ingeladen. Eindigde de berekening na de limiet, dan staat
-  `BRIDGE_TIJD_LAAT <commando> <s>` in de `.mess` en een WARNING in de log ("...
-  eindigde na de tijdslimiet ...: de resultaten zijn volledig"); ook het
-  convergentievenster meldt het. Niet bij een thermische berekening met
-  toevoegmateriaal, met *Thermal stress* of met adaptieve verfijning.
+  daarna in een eigen `CALC_CHAMP` berekenen, met dezelfde velden. Past de nabewerking
+  in die extra tijd, dan worden alle berekende resultaten ingeladen. Eindigde de
+  berekening na de limiet (90 % van *Tijdslimiet run_aster*), dan staat
+  `BRIDGE_TIJD_LAAT <commando> <s>` in de `.mess`, meldt het convergentievenster het, en
+  geeft de log een WARNING ("... eindigde ... s na de start, na de tijd die Code-Aster de
+  commando's geeft ...") als de run daarna zonder fouten eindigde. Niet bij een
+  thermische berekening met toevoegmateriaal, met *Thermal stress* of met adaptieve
+  verfijning. Bij welvingsbalken (`POU_D_TG`) met het veld reactiekrachten volgt na de
+  extra tijd nog een eigen berekening van de reacties; haalt die de verlengde limiet niet,
+  dan gaan de resultaten alsnog verloren.
 - **Gezien**: een run van een gebruiker (niet-lineair statisch met bezwijken,
   `time_limit` 1800, 6 cpu's: `MECANONLINE9_1` na 55 stappen, daarna `SUPERVIS_63` in de
   nabewerking, geen resultaten); `StopTest_LongRun` met `time_limit` 40 s (Code-Aster

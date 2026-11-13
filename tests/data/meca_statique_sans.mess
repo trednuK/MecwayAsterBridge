@@ -1,0 +1,375 @@
+res = MECA_STATIQUE(CARA_ELEM=cara,
+                    CHAM_MATER=fieldmat,
+                    EXCIT=(_F(CHARGE=load_1,
+                              TYPE_CHARGE='FIXE_CSTE'),
+                           _F(CHARGE=load_2,
+                              TYPE_CHARGE='FIXE_CSTE')),
+                    INFO=2,
+                    INST=0.0,
+                    MODELE=model,
+                    OPTION='SANS',
+                    SOLVEUR=_F(ACCELERATION='AUTO',
+                               ELIM_LAGR='LAGR2',
+                               GESTION_MEMOIRE='AUTO',
+                               LOW_RANK_SEUIL=0.0,
+                               MATR_DISTRIBUEE='NON',
+                               METHODE='MUMPS',
+                               NB_RHS=1,
+                               NPREC=8,
+                               PCENT_PIVOT=35,
+                               POSTTRAITEMENTS='AUTO',
+                               PRETRAITEMENTS='AUTO',
+                               REDUCTION_MPI=0,
+                               RENUM='AUTO',
+                               RESI_RELA=1e-05,
+                               STOP_SINGULIER='OUI',
+                               TYPE_RESOL='AUTO'))
+
+Le système linéaire à résoudre a 234 degrés de liberté:
+   - 198 sont des degrés de liberté
+physiques
+     (ils sont portés par 33 noeuds du maillage)
+   - 36 sont les couples de paramètres de
+Lagrange associés
+     aux 18 relations linéaires dualisées.
+La matrice est de taille 234 équations.
+  Elle contient 4275 termes non nuls si elle est symétrique
+et 8316 termes non nuls si elle n'est pas symétrique.
+  Soit un taux de remplissage de  15.187 %.
+TEMPS CPU/SYS/ELAPSED ASSEMBLAGE M        :  0.0000D+00 0.0000D+00 0.0000D+00
+
+Entering DMUMPS 5.6.2 with JOB, N, NNZ =   1         234           4041
+      executing #MPI =      1 and #OMP =      2
+
+
+***********CONTROL PARAMETERS (ICNTL)**************
+
+ICNTL(1)   Output stream for error messages        =         6
+ICNTL(2)   Output stream for diagnostic messages   =         6
+ICNTL(3)   Output stream for global information    =         6
+ICNTL(4)   Level of printing                       =         2
+ICNTL(5)   Matrix format  ( keep(55) )             =         0
+ICNTL(6)   Maximum transversal  ( keep(23) )       =         7
+ICNTL(7)   Ordering                                =         7
+ICNTL(12)  LDLT ordering strat ( keep(95) )        =         0
+ICNTL(13)  Parallel root (0=on, 1=off)             =         1
+ICNTL(15)  Analysis by block                       =         1
+ICNTL(18)  Distributed matrix  ( keep(54) )        =         0
+ICNTL(19)  Schur option ( keep(60) 0=off,else=on ) =         0
+ICNTL(22)  Out-of-core option (1=on, off otherwise)=      -999
+ICNTL(58)  Symbolic factorization option           =         0
+ICNTL(8)   Scaling strategy                        =        77
+ICNTL(14)  Percent of memory increase              =        35
+ =================================================
+ MUMPS compiled with option -Dmetis
+ MUMPS compiled with option -Dpord
+ MUMPS compiled with option -Dscotch
+ =================================================
+L D L^T Solver for general symmetric matrices
+Type of parallelism: Working host
+
+ ****** ANALYSIS STEP ********
+
+ Processing a graph of size:        33 with           184 edges
+ Ordering based on AMF
+ Estimated INTEGER space for factors         :            1248
+ INFO(3), est. real space to store factors   :            9828
+ Estimated number of entries in factors      :            7263
+ Current value of space relaxation parameter :              35
+ Estimated size of IS (In Core factorization):            2770
+ Estimated size of S  (In Core factorization):           15993
+ Estimated size of S  (OOC factorization)    :            5094
+
+Leaving analysis phase with  ...
+ INFOG(1)                                       =               0
+ INFOG(2)                                       =               0
+ -- (20) Number of entries in factors (estim.)  =            7263
+ --  (3) Real space for factors    (estimated)  =            9828
+ --  (4) Integer space for factors (estimated)  =            1248
+ --  (5) Maximum frontal size      (estimated)  =              48
+ --  (6) Number of nodes in the tree            =              12
+ -- (32) Type of analysis effectively used      =               1
+ --  (7) Ordering option effectively used       =               2
+ ICNTL (6) Maximum transversal option           =               0
+ ICNTL (7) Pivot order option                   =               7
+ ICNTL(13) Parallelism/splitting of root node   =               1
+ ICNTL(14) Percentage of memory relaxation      =              35
+ ICNTL(15) Analysis by block effectively used   =               1
+ ICNTL(18) Distributed input matrix (on if >0)  =               0
+ ICNTL(58) Symbolic factorization option        =               1
+ Number of level 2 nodes                        =               0
+ Number of split nodes                          =               0
+ RINFOG(1) Operations during elimination (estim)= 2.456D+05
+
+ MEMORY ESTIMATIONS ...
+ Estimations with standard Full-Rank (FR) factorization:
+ Estimated space in MBytes for IC factorization   (INFO(15)):           1
+    Total space in MBytes, IC factorization      (INFOG(17)):           1
+    Total space in MBytes,  OOC factorization    (INFOG(27)):           1
+
+ Elapsed time in analysis driver=       0.0000
+
+***********CONTROL PARAMETERS (ICNTL)**************
+
+ICNTL(1)   Output stream for error messages        =         6
+ICNTL(2)   Output stream for diagnostic messages   =         6
+ICNTL(3)   Output stream for global information    =         6
+ICNTL(4)   Level of printing                       =         2
+ICNTL(5)   Matrix format  ( keep(55) )             =         0
+ICNTL(6)   Maximum transversal  ( keep(23) )       =         7
+ICNTL(7)   Ordering                                =         7
+ICNTL(12)  LDLT ordering strat ( keep(95) )        =         0
+ICNTL(13)  Parallel root (0=on, 1=off)             =         1
+ICNTL(15)  Analysis by block                       =         1
+ICNTL(18)  Distributed matrix  ( keep(54) )        =         0
+ICNTL(19)  Schur option ( keep(60) 0=off,else=on ) =         0
+ICNTL(22)  Out-of-core option (1=on, off otherwise)=      -999
+ICNTL(58)  Symbolic factorization option           =         0
+ICNTL(8)   Scaling strategy                        =        77
+ICNTL(14)  Percent of memory increase              =        35
+
+Entering DMUMPS 5.6.2 with JOB, N, NNZ =   2         234           4041
+      executing #MPI =      1 and #OMP =      2
+
+
+***********CONTROL PARAMETERS (ICNTL)**************
+
+ CNTL(1)   Threshold for numerical pivoting        =      0.1000D-01
+ CNTL(3)   Null pivot detection threshold          =     -0.1000D-07
+ CNTL(4)   Threshold for static pivoting           =     -0.1000D+01
+ CNTL(5)   Fixation for null pivots                =      0.1000D+21
+ CNTL(7)   Dropping threshold for BLR compression  =     -0.9990D+03
+ICNTL(1)   Output stream for error messages        =         6
+ICNTL(2)   Output stream for diagnostic messages   =         6
+ICNTL(3)   Output stream for global information    =         6
+ICNTL(4)   Level of printing                       =         2
+ICNTL(8)   Scaling strategy                        =        77
+ICNTL(14)  Percent of memory increase              =        35
+ICNTL(24)  Null pivot detection (0=off)            =         1
+ICNTL(31)  Discard factors (0=off, else=on)        =         0
+ICNTL(32)  Forward elimination during facto (0=off)=         0
+ICNTL(33)  Compute determinant (0=off)             =         0
+ICNTL(35)  Block Low Rank (BLR, 0=off >0=on)       =         0
+ICNTL(36)  BLR variant                             =         0
+ICNTL(49)  Compact workarray S (end of facto.)     =         0
+
+
+****** FACTORIZATION STEP ********
+
+
+
+****** FACTORIZATION STEP ********
+
+ GLOBAL STATISTICS PRIOR NUMERICAL FACTORIZATION ...
+ Number of working processes                =               1
+ ICNTL(22) Out-of-core option               =               0
+ ICNTL(35) BLR activation (eff. choice)     =               0
+ ICNTL(37) BLR CB compression (eff. choice) =               0
+ ICNTL(49) Compact workarray S (end facto.) =               0
+ ICNTL(14) Memory relaxation                =              35
+ INFOG(3) Real space for factors (estimated)=            9828
+ INFOG(4) Integer space for factors (estim.)=            1248
+ Maximum frontal size (estimated)           =              48
+ Number of nodes in the tree                =              12
+ ICNTL(23) Memory allowed (value on host)   =               3
+           Sum over all procs               =               3
+ Memory provided by user, sum of LWK_USER   =               0
+ Effective threshold for pivoting, CNTL(1)  =      0.1000D-01
+ Max difference from 1 after scaling the entries for ONE-NORM (option 7/8)   = 0.40D+00
+ CNTL(3) for null pivot row detection       =     -1.0000D-08
+ ICNTL(24) null pivot rows detection        =               1
+ ...Zero pivot detection threshold          =      1.0000D-08
+ ...Fixation for null pivots               = 1.251D+20
+ Effective size of S     (based on INFO(39))=               170075
+
+ Elapsed time to reformat/distribute matrix =      0.0020
+
+ Allocated buffers
+ ------------------
+ Size of reception buffer in bytes ...... =     170000
+ Size of async. emission buffer (bytes).. =     170012
+ Small emission buffer (bytes) .......... =         20
+ STATISTICS PRIOR NUMERICAL FACTORIZATION ...
+ Size of internal working array S           =          170075
+ Size of internal working array IS          =            2770
+ Minimum (ICNTL(14)=0) size of S            =           11828
+ Minimum (ICNTL(14)=0) size of IS           =            1300
+ Real space for original matrix             =            4059
+ Integer space for original matrix          =            4059
+ INFO(3) Real space for factors (estimated) =            9828
+ INFO(4) Integer space for factors (estim.) =            1248
+ Maximum frontal size (estimated)           =              48
+
+ Start factorization with total estimated flops (RINFOG(1))                         =  2.456D+05
+
+ LEAVING FACTORIZATION PHASE WITH ...
+ INFO (1)                                      =              0
+  --- (2)                                      =              0
+           Number of nodes in the tree         =             12
+ INFO (9)  Real space for factors              =           9396
+  --- (10) Integer space for factors           =           1200
+  --- (11) Maximum size of frontal matrices    =             42
+  --- (12) Number of negative pivots           =             36
+  --- (13) Number of delayed pivots            =              0
+  --- (14) Number of memory compresses         =              0
+ RINFO(2)  Operations during node assembly     = 3.057D+03
+ -----(3)  Operations during node elimination  = 2.167D+05
+
+ ** Memory allocated, total in Mbytes           (INFOG(19)):           2
+ ** Eff. min. Space MBYTES for facto             (INFO(16)):           2
+ ** Memory effectively used, total in Mbytes    (INFOG(22)):           0
+
+ Elapsed time for factorization                     =      0.0020
+
+Leaving factorization with ...
+ RINFOG (2) Operations in node assembly             = 3.057D+03
+ ------ (3) Operations in node elimination          = 2.167D+05
+ ICNTL  (8) Scaling effectively used                =               7
+ INFOG  (9) Real space for factors                  =            9396
+ INFOG (10) Integer space for factors               =            1200
+ INFOG (11) Maximum front size                      =              42
+ INFOG (29) Number of entries in factors            =            6831
+ INFOG (12) Number of negative pivots               =              36
+ INFOG (13) Number of delayed pivots                =               0
+ Number of 2x2 pivots in type 1 nodes               =              18
+ Number of 2x2 pivots in type 2 nodes               =               0
+ Nb of null pivots detected by ICNTL(24)            =               0
+ INFOG (28) Estimated deficiency                    =               0
+ INFOG (50) Number of negative AND null pivots      =               0
+ INFOG (14) Number of memory compress               =               0
+
+ Elapsed time in factorization driver               =      0.0050
+
+***********CONTROL PARAMETERS (ICNTL)**************
+
+ CNTL(1)   Threshold for numerical pivoting        =      0.1000D-01
+ CNTL(3)   Null pivot detection threshold          =     -0.1000D-07
+ CNTL(4)   Threshold for static pivoting           =     -0.1000D+01
+ CNTL(5)   Fixation for null pivots                =      0.1000D+21
+ CNTL(7)   Dropping threshold for BLR compression  =     -0.9990D+03
+ICNTL(1)   Output stream for error messages        =         6
+ICNTL(2)   Output stream for diagnostic messages   =         6
+ICNTL(3)   Output stream for global information    =         6
+ICNTL(4)   Level of printing                       =         2
+ICNTL(8)   Scaling strategy                        =        77
+ICNTL(14)  Percent of memory increase              =        35
+ICNTL(24)  Null pivot detection (0=off)            =         1
+ICNTL(31)  Discard factors (0=off, else=on)        =         0
+ICNTL(32)  Forward elimination during facto (0=off)=         0
+ICNTL(33)  Compute determinant (0=off)             =         0
+ICNTL(35)  Block Low Rank (BLR, 0=off >0=on)       =         0
+ICNTL(36)  BLR variant                             =         0
+ICNTL(49)  Compact workarray S (end of facto.)     =         0
+TEMPS CPU/SYS/ELAPSED ASSEMBLAGE V        :  0.0000D+00 0.0000D+00 0.0000D+00
+TEMPS CPU/SYS/ELAPSED ASSEMBLAGE V        :  0.0000D+00 0.0000D+00 0.0000D+00
+
+Entering DMUMPS 5.6.2 with JOB, N, NNZ =   3         234           4041
+      executing #MPI =      1 and #OMP =      2
+
+
+
+ ****** SOLVE & CHECK STEP ********
+
+ GLOBAL STATISTICS PRIOR SOLVE PHASE ...........
+ Number of right-hand-sides                    =           1
+ Blocking factor for multiple rhs              =           1
+ ICNTL (9)                                     =           1
+  --- (10)                                     =           4
+  --- (11)                                     =           1
+  --- (20)                                     =           0
+  --- (21)                                     =           0
+  --- (30)                                     =           0
+  --- (35)                                     =           0
+
+
+ BEGIN ITERATIVE REFINEMENT
+                  MAXIMUM NUMBER OF STEPS =   4
+
+
+ ERROR ANALYSIS BEFORE ITERATIVE REFINEMENT
+
+ RESIDUAL IS ............ (MAX-NORM)        = 1.15D-10
+                       .. (2-NORM)          = 2.04D-10
+ RINFOG(4):NORM OF input  Matrix  (MAX-NORM)= 2.55D+09
+ RINFOG(5):NORM OF Computed SOLUT (MAX-NORM)= 1.32D-02
+ RINFOG(6):SCALED RESIDUAL ...... (MAX-NORM)= 3.41D-18
+ RINFOG(7):COMPONENTWISE SCALED RESIDUAL(W1)= 2.43D-16
+ ------(8):---------------------------- (W2)= 0.00D+00
+
+ STATISTICS AFTER ITERATIVE REFINEMENT
+
+ NUMBER OF STEPS OF ITERATIVE REFINEMENTS PERFORMED     0
+
+ RESIDUAL IS ............ (MAX-NORM)        = 1.15D-10
+                       .. (2-NORM)          = 2.04D-10
+ RINFOG(4):NORM OF input  Matrix  (MAX-NORM)= 2.55D+09
+ RINFOG(5):NORM OF Computed SOLUT (MAX-NORM)= 1.32D-02
+ RINFOG(6):SCALED RESIDUAL ...... (MAX-NORM)= 3.41D-18
+ RINFOG(7):COMPONENTWISE SCALED RESIDUAL(W1)= 2.43D-16
+ ------(8):---------------------------- (W2)= 0.00D+00
+ ------(9):Upper bound ERROR ...............= 8.46D-10
+ -----(10):CONDITION NUMBER (1) ............= 3.47D+06
+ -----(11):CONDITION NUMBER (2) ............= 2.67D+02
+
+ END   ITERATIVE REFINEMENT
+ ** Space in MBYTES used for solve                        :         1
+
+ Leaving solve with ...
+ Time to build/scatter RHS        =       0.000000
+ Time in solution step (fwd/bwd)  =       0.000000
+  .. Time in forward (fwd) step   =          0.000000
+  .. Time in backward (bwd) step  =          0.000000
+ Time to gather solution(cent.sol)=       0.000000
+ Time to copy/scale dist. solution=       0.000000
+
+ Elapsed time in solve driver=       0.0040
+Champ stocké <DEPL> à l'instant  0.000000000000e+00 pour le numéro d'ordre 1
+
+Entering DMUMPS 5.6.2 with JOB =  -2
+      executing #MPI =      1 and #OMP =      2
+Statistics:
+- _addLoads called 1 times in 0.000352 s
+- _createTimeStepper called 1 times in 0.000091 s
+- PhysicalState.
+  - zeroInitialState called 1 times in 0.000081 s
+  - createPrimal called 2 times in 0.000067 s
+  - commit called 1 times in 0.000050 s
+- _computeMatrix called 1 times in 0.001435 s
+- DiscreteComputation.
+  - getLinearStiffnessMatrix called 1 times in 0.001032 s
+  - getImposedDualBC called 1 times in 0.000404 s
+  - getNeumannForces called 1 times in 0.000371 s
+  - getVolumetricForces called 1 times in 0.000104 s
+  - getDirichletBC called 1 times in 0.000056 s
+- AssemblyMatrixDisplacementReal.
+  - assemble called 1 times in 0.000367 s
+- MumpsSolver.
+  - factorize called 1 times in 0.007148 s
+  - solve called 1 times in 0.004348 s
+- _computeRhs called 1 times in 0.000928 s
+- StorageManager.
+  - storeState called 1 times in 0.001253 s
+  - _store called 1 times in 0.001226 s
+  - _store_field called 1 times in 0.001048 s
+# Résultat commande #0010 (MECA_STATIQUE): res ('<00000008>') de type <ElasticResult>
+# Mémoire (Mo) :   299.41 /   299.31 /   207.61 /   197.02 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0010   user+syst:        0.05s (syst:        0.00s, elaps:        0.00s)
+# ----------------------------------------------------------------------------------------------
+
+.. _stg1_txt257
+# ----------------------------------------------------------------------------------------------
+# Commande #0011 de
+study.comm.changed.py, ligne 257
+res = CALC_CHAMP(CONTRAINTE='SIEF_ELGA',
+                 CRITERE='RELATIF',
+                 INFO=1,
+                 PARALLELISME_TEMPS='NON',
+                 PRECISION=1e-06,
+                 RESULTAT=res,
+                 reuse=res)
+
+#2      Calculs elementaires et assemblages               CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.00
+# Résultat commande #0011 (CALC_CHAMP): res ('<00000008>') de type <ElasticResult>
+# Mémoire (Mo) :   299.69 /   299.69 /   207.61 /   197.12 (VmPeak / VmSize / Optimum / Minimum)
+# Fin commande #0011   user+syst:        0.00s (syst:        0.00s, elaps:        0.00s)
+--- DIAGNOSTIC JOB : OK

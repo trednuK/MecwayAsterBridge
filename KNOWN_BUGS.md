@@ -739,7 +739,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    (`MECA_STATIQUE` with `OPTION='SANS'`, then `bridge_failure.late_time` and the
    `CALC_CHAMP` `SIEF_ELGA` of the macro) and a plain thermal solve
    (`THER_LINEAIRE`/`THER_NON_LINE`, `bridge_thermal.build_thermal`), measured with
-   delayed runs (FX-04, TH-02a, WE-04b). Still lost (from the code; NOT run): modal,
+   delayed runs (FX-04, TH-02a, WE-04b); a solve after that extension (the elastic
+   `STAT_NON_LINE` of the `POU_D_TG` reactions, `_warping_reaction_block`) gets none of its
+   own (from the code, NOT run). Still lost (from the code; NOT run): modal,
    buckling, spectrum, cyclic, acoustic and vibroacoustic modes (`CALC_MODES`,
    `MODE_ITER_CYCL`), harmonic and response on a modal basis (`DYNA_VIBRA`), and the
    thermal solve with filler material (`bridge_welding.ther_loop`), with the chain to the

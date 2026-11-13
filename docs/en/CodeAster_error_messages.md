@@ -950,11 +950,15 @@ Step-by-step plan and settings:
   its own `CALC_CHAMP` of the stresses). The bridge therefore always gives extra time for
   the post-processing after that solve (90 % of the limit, at least 600 s, from the end of
   the solve) and has `MECA_STATIQUE` compute the stresses afterwards in a `CALC_CHAMP` of
-  its own, with the same fields. The results are loaded completely. If the solve ended
-  after the limit, the `.mess` holds `BRIDGE_TIJD_LAAT <command> <s>` and the log a
-  WARNING ("... ended after the time limit ...: the results are complete"); the
-  convergence window reports it too. Not for a thermal solve with filler material,
-  with *Thermal stress* or with adaptive refinement.
+  its own, with the same fields. If the post-processing fits in that extra time, all
+  computed results are loaded. If the solve ended after the limit (90 % of *Time limit
+  run_aster*), the `.mess` holds `BRIDGE_TIJD_LAAT <command> <s>`, the convergence window
+  reports it, and the log gives a WARNING ("... ended ... s after the start, past the
+  time Code-Aster gives the commands ...") when the run then ended without errors. Not
+  for a thermal solve with filler material, with *Thermal stress* or with adaptive
+  refinement. With warping beams (`POU_D_TG`) and the field reaction forces, a separate
+  solve of the reactions follows the extra time; if it does not make the extended limit,
+  the results are still lost.
 - **Seen**: a user's run (nonlinear static with failure, `time_limit` 1800, 6 cpus:
   `MECANONLINE9_1` after 55 steps, then `SUPERVIS_63` in the post-processing, no
   results); `StopTest_LongRun` with `time_limit` 40 s (Code-Aster 17.4): without the

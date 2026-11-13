@@ -292,11 +292,18 @@ LIN_PHASES = [
     ("post", u"Spanningen + opslag", u"Stresses + storage"),
 ]
 _LIN_PHASE_KEYS = [p[0] for p in LIN_PHASES]
+# MECA_STATIQUE with OPTION='SANS' (AsterTemplate_MecaStatique.comm since
+# S45): the macro only stores the result; the stresses come from a separate
+# CALC_CHAMP after it (not part of this solve). The echo shows the option.
+_LIN_SANS_RE = re.compile(r"\bOPTION\s*=\s*'SANS'")
 
 
-def lin_phase_title(key, method="MUMPS"):
+def lin_phase_title(key, method="MUMPS", stresses=True):
     """Title of a phase in the chosen language; with GCPC 'factor' is the
-    preconditioning (incomplete factorisation)."""
+    preconditioning (incomplete factorisation); stresses=False ('SANS'):
+    'post' is only the storage."""
+    if key == "post" and not stresses:
+        return tr(u"Opslag", u"Storage")
     if key == "factor" and method == "GCPC":
         return tr(u"Voorconditionering (LDLT_INC)",
                   u"Preconditioner (LDLT_INC)")
@@ -341,6 +348,7 @@ class LinearSolve(object):
         self.cpu_total = None
         self.elapsed_total = None
         self.detailed = False         # INFO=2 output seen (ASSEMBLAGE ..)
+        self.stresses = True          # False: OPTION='SANS' in the echo
 
     # ---------- phases ----------
     def method(self):
@@ -927,11 +935,12 @@ class ConvergenceParser(object):
         m = _LATE_RE.match(line)
         if m:
             self._add_message("alarm", u"BRIDGE_TIJD_LAAT", tr(
-                u"{0} eindigde na de tijdslimiet ({1} s); met extra tijd "
-                u"voor de nabewerking zijn de resultaten volledig.",
-                u"{0} ended after the time limit ({1} s); with extra time "
-                u"for the post-processing the results are complete.").format(
-                    m.group(1), m.group(2)))
+                u"{0} eindigde na {1} s, na de tijdslimiet (90 % van "
+                u"'Tijdslimiet run_aster'); de nabewerking kreeg extra "
+                u"tijd.",
+                u"{0} ended after {1} s, past the time limit (90 % of "
+                u"'Time limit run_aster'); the post-processing got extra "
+                u"time.").format(m.group(1), m.group(2)))
             return
         m = _STOP_ID_RE.search(line)
         if m:
@@ -1073,6 +1082,8 @@ class ConvergenceParser(object):
             # Command echo: the values of SOLVEUR (incl. the defaults).
             for m in _LIN_TXT_KW_RE.finditer(line):
                 lin.solver.setdefault(m.group(1), m.group(2))
+            if _LIN_SANS_RE.search(line):
+                lin.stresses = False
             for m in _LIN_NUM_KW_RE.finditer(line):
                 value = _to_float(m.group(2))
                 if value is not None:

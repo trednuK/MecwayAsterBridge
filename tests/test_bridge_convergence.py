@@ -535,6 +535,38 @@ def test_linear_gcpc():
           bc.assess_linear(lin))
 
 
+def test_linear_sans():
+    """MECA_STATIQUE OPTION='SANS' (since S45): real Code-Aster 17.4 output
+    of FX-04 (tests/data/meca_statique_sans.mess, trimmed), the stresses in
+    a separate CALC_CHAMP after the macro."""
+    with io.open(os.path.join(_HERE, "data", "meca_statique_sans.mess"),
+                 encoding="utf-8") as f:
+        text = f.read()
+    p = bc.ConvergenceParser()
+    p.feed(text)
+    p.close()
+    d = p.data
+    lin = d.last_linear()
+    check(len(d.linear) == 1 and lin.status == "klaar" and
+          lin.dofs == 234 and not lin.stresses and
+          lin.solver.get("METHODE") == "MUMPS", (len(d.linear), lin.status,
+                                                 lin.dofs, lin.stresses))
+    check(u"_computeStress" not in lin.stats and
+          lin.phase_seconds("post") == 0.001253,
+          (lin.stats.get(u"_computeStress"), lin.phase_seconds("post")))
+    check(bc.lin_phase_title("post", lin.method(), lin.stresses) ==
+          u"Opslag", bc.lin_phase_title("post", lin.method(), lin.stresses))
+    check(d.messages == [], d.messages)
+    # the older run (default OPTION, _computeStress in the macro)
+    q = bc.ConvergenceParser()
+    q.feed(MESS_LIN_MUMPS)
+    q.close()
+    old = q.data.last_linear()
+    check(old.stresses and bc.lin_phase_title("post", old.method(),
+                                              old.stresses) ==
+          u"Spanningen + opslag", old.stresses)
+
+
 def test_linear_fail():
     p = bc.ConvergenceParser(hints={"FACTOR_57": u"singulier"})
     p.feed(MESS_LIN_FAIL)
@@ -634,6 +666,7 @@ def main(argv):
     test_step_guard()
     test_linear_mumps()
     test_linear_gcpc()
+    test_linear_sans()
     test_linear_fail()
     test_modes()
     test_auto_steps()

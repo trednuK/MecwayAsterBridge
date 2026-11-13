@@ -513,8 +513,10 @@ Wat er bij de limiet gebeurt:
   `THER_NON_LINE`): die berekeningen kijken onderweg niet naar de limiet en rekenen door
   tot het eind. Daarna geeft de bridge Code-Aster altijd extra tijd voor de nabewerking:
   minstens 90 % van de limiet, minstens 600 s, gerekend vanaf het einde van de berekening.
-  De resultaten worden dus volledig ingeladen. Eindigde de berekening pas na de limiet,
-  dan meldt de log dat met een WARNING ("... eindigde na de tijdslimiet ...").
+  Past de nabewerking daarin, dan worden alle berekende resultaten ingeladen. Eindigde de
+  berekening pas na de limiet, dan meldt de log dat met een WARNING ("... eindigde ... s
+  na de start ..."). Bij welvingsbalken (`POU_D_TG`) met het veld reactiekrachten volgt
+  daarna nog een eigen berekening van de reacties, zonder nieuwe extra tijd.
   Uitzonderingen: een thermische berekening met toevoegmateriaal (de stappenlus
   hierboven), met *Thermal stress* (keten naar de mechanische berekening) of met
   adaptieve verfijning.

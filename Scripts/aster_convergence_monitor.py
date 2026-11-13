@@ -1290,7 +1290,8 @@ class Monitor(object):
             if lin.current is not None and not lin.finished():
                 sec = lin.phase_seconds(lin.current, time.time())
                 parts.append(tr(u"fase: {0}", u"phase: {0}").format(
-                    bc.lin_phase_title(lin.current, lin.method())) +
+                    bc.lin_phase_title(lin.current, lin.method(),
+                                        lin.stresses)) +
                     (u" ({0})".format(_secs(sec)) if sec is not None
                      else u""))
             elif lin.status == "klaar":
@@ -1526,7 +1527,8 @@ class Monitor(object):
             color = (_C_BLUE if running else _C_RED if failed else
                      _C_GREEN if ph is not None else _C_MUTED)
             c.create_text(_px(10), y, anchor="w", font=_FONT,
-                          text=bc.lin_phase_title(k, lin.method()),
+                          text=bc.lin_phase_title(k, lin.method(),
+                                                 lin.stresses),
                           fill=_C_TEXT if ph is not None else _C_MUTED)
             c.create_rectangle(x0, y - bh, x1, y + bh, fill="#f2f2f2",
                                outline="")

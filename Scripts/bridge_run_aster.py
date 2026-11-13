@@ -381,24 +381,26 @@ _DVP_HINT = (u"Rekenfout (floating point exception) in een element: dat "
              u"See docs/en/CodeAster_error_messages.md.")
 
 # Time limit (TimeLimitError). The limit is elapsed time; DEBUT keeps 10 %
-# of 'P time_limit' for closing (bridge_failure.PARTIAL_EXCEPT). In a
-# nonlinear analysis the except clause gives Code-Aster time for the
-# post-processing (BRIDGE_TIJD_EXTRA), so the steps up to the stop are
-# loaded; elsewhere SUPERVIS_63 skips every next command, the export too.
+# of 'P time_limit' for closing (bridge_failure.PARTIAL_EXCEPT). This hint
+# is only used when the extra time (BRIDGE_TIJD_EXTRA) came after the stop:
+# the except clause of a nonlinear solve caught it, so the steps up to the
+# stop are loaded. A linear static or thermal solve does not stop at the
+# limit; it gets the extra time after the solve (bridge_failure.late_time,
+# a note, no error). Elsewhere SUPERVIS_63 skips every next command, the
+# export too (_TIME_SKIP_HINT).
 _TIME_HINT = (u"Code-Aster heeft de tijdslimiet bereikt (instelling "
               u"'Tijdslimiet run_aster', kloktijd; Code-Aster houdt daarvan "
-              u"10 % achter om af te sluiten). In een niet-lineaire analyse "
-              u"geeft de bridge Code-Aster daarna extra tijd voor de "
-              u"nabewerking, zodat de resultaten tot het laatst bereikte "
-              u"tijdstip worden ingeladen. Verhoog 'Tijdslimiet run_aster' "
-              u"om verder te rekenen. Zie docs/Foutmeldingen_CodeAster.md.",
+              u"10 % achter om af te sluiten). De bridge gaf Code-Aster "
+              u"daarna extra tijd voor de nabewerking, zodat de resultaten "
+              u"tot het laatst bereikte tijdstip worden ingeladen. Verhoog "
+              u"'Tijdslimiet run_aster' om verder te rekenen. Zie "
+              u"docs/Foutmeldingen_CodeAster.md.",
               u"Code-Aster reached the time limit (setting 'Time limit "
               u"run_aster', wall-clock time; Code-Aster keeps 10 % of it to "
-              u"close). In a nonlinear analysis the bridge then gives "
-              u"Code-Aster extra time for the post-processing, so the "
-              u"results up to the last time reached are loaded. Raise 'Time "
-              u"limit run_aster' to compute further. See "
-              u"docs/en/CodeAster_error_messages.md.")
+              u"close). The bridge then gave Code-Aster extra time for the "
+              u"post-processing, so the results up to the last time reached "
+              u"are loaded. Raise 'Time limit run_aster' to compute further. "
+              u"See docs/en/CodeAster_error_messages.md.")
 _TIME_SKIP_HINT = (u"Code-Aster heeft de tijdslimiet bereikt en slaat alle "
                    u"volgende commando's over (ook de nabewerking en het "
                    u"wegschrijven van de resultaten). Verhoog 'Tijdslimiet "
@@ -838,9 +840,13 @@ class AsterJob(object):
                 self.elapsed() > self.time_limit + _TIME_LIMIT_MARGIN):
             self._limit_warned = True
             log(tr("WARNING: De run duurt langer dan de tijdslimiet ({0} "
-                   "s) van de .export.",
+                   "s) van de .export. Een lineair statische of thermische "
+                   "berekening rekent door tot het eind; daarna krijgt de "
+                   "nabewerking extra tijd.",
                    "WARNING: The run takes longer than the time limit ({0} "
-                   "s) of the .export.").format(int(self.time_limit)))
+                   "s) of the .export. A linear static or thermal solve "
+                   "computes on to its end; after that the post-processing "
+                   "gets extra time.").format(int(self.time_limit)))
         return False
 
     def stop(self, reason="user"):
@@ -984,29 +990,33 @@ class AsterJob(object):
                           u"alarm(s).").format(errors, alarms)
         warning = u""
         if getattr(data, "time_extra", False) and not self.finished():
-            # bridge_failure._extend_time: Stop would lose the results
+            # bridge_failure._extend_time / late_time: Stop would lose the
+            # results
             warning = tr(u"Tijdslimiet bereikt: de bridge gaf Code-Aster "
-                         u"extra tijd om de resultaten tot daar af te "
+                         u"extra tijd om de berekende resultaten af te "
                          u"werken en weg te schrijven. Wacht; Stoppen "
                          u"verliest ze.",
                          u"Time limit reached: the bridge gave Code-Aster "
                          u"extra time to post-process and write the "
-                         u"results up to there. Please wait; Stop loses "
+                         u"computed results. Please wait; Stop loses "
                          u"them.")
         elif (self.time_limit and not self.finished() and
                 elapsed > self.time_limit + _TIME_LIMIT_MARGIN):
-            warning = tr(u"De run duurt langer dan de tijdslimiet. "
-                         u"Code-Aster stopt normaal zelf bij de limiet; "
-                         u"na een niet-lineaire berekening krijgt de "
-                         u"nabewerking extra tijd. Gebruik Stoppen alleen "
-                         u"als het Code-Aster-venster niet meer reageert "
-                         u"(de resultaten gaan dan verloren).",
-                         u"The run takes longer than the time limit. "
-                         u"Code-Aster normally stops by itself at the "
-                         u"limit; after a nonlinear solve the "
-                         u"post-processing gets extra time. Use Stop only "
-                         u"if the Code-Aster window no longer responds "
-                         u"(the results are then lost).")
+            warning = tr(u"De run duurt langer dan de tijdslimiet. Een "
+                         u"niet-lineaire berekening stopt zelf bij de "
+                         u"limiet; een lineair statische of thermische "
+                         u"berekening rekent door tot het eind. Daarna "
+                         u"krijgt de nabewerking extra tijd. Gebruik "
+                         u"Stoppen alleen als het Code-Aster-venster niet "
+                         u"meer reageert (de resultaten gaan dan "
+                         u"verloren).",
+                         u"The run takes longer than the time limit. A "
+                         u"nonlinear solve stops by itself at the limit; a "
+                         u"linear static or thermal solve computes on to "
+                         u"its end. After that the post-processing gets "
+                         u"extra time. Use Stop only if the Code-Aster "
+                         u"window no longer responds (the results are "
+                         u"then lost).")
         overall = data.overall_progress()
         return {"headline": head, "time": when,
                 "detail": self._detail(data), "messages": messages,
@@ -1034,7 +1044,8 @@ class AsterJob(object):
         lin = data.last_linear()
         if lin is not None:
             if lin.current is not None and not lin.finished():
-                phase = lin_phase_title(lin.current, lin.method())
+                phase = lin_phase_title(lin.current, lin.method(),
+                                        lin.stresses)
             elif lin.status == "mislukt":
                 phase = tr(u"mislukt", u"failed")
             elif lin.finished():
@@ -1578,8 +1589,9 @@ def aster_mess_errors(work_dir, since=None):
                 skip_lines.append(i)
         post_lost = extra_failed or any(i > extra_line for i in skip_lines)
         # Solve ended after the limit, extra time given: only a note (no
-        # error, so main() does not say "partly loaded"); a SUPERVIS_63
-        # after the extra time is an error as above
+        # error, so main() does not say "partly loaded"), and only when the
+        # job then ended normally (below); a SUPERVIS_63 after the extra
+        # time is an error as above
         late = None if post_lost else _MESS_LATE_RE.search(text)
         for i, line in enumerate(lines):
             m = _MESS_ERROR_RE.search(line)
@@ -1709,19 +1721,27 @@ def aster_mess_errors(work_dir, since=None):
             continue
         log(tr(u"WARNING: Code-Aster-alarm {0} in study.mess.",
                u"WARNING: Code-Aster alarm {0} in study.mess.").format(alarm))
-    if late:
+    # The note only after a normal end: no error above (also no Python or
+    # export error), not stopped, DIAGNOSTIC without <F>/<S>/<E>, FIN reached
+    if (late and not errors and STOPPED_MARK not in text and
+            _MESS_DONE in text and _MESS_FIN in text and
+            not _diag_failed(_mess_diagnostic(text))):
         limit = export_time_limit(os.path.join(work_dir, run_name(".export")))
-        log(tr(u"WARNING: {0} eindigde na de tijdslimiet ({1} s na de start; "
-               u"'Tijdslimiet run_aster' = {2} s). De bridge gaf Code-Aster "
-               u"extra tijd voor de nabewerking: de resultaten zijn "
-               u"volledig. Verhoog 'Tijdslimiet run_aster' om dat te "
-               u"voorkomen.",
-               u"WARNING: {0} ended after the time limit ({1} s after the "
-               u"start; 'Time limit run_aster' = {2} s). The bridge gave "
-               u"Code-Aster extra time for the post-processing: the results "
-               u"are complete. Raise 'Time limit run_aster' to avoid "
-               u"this.").format(late.group(1), late.group(2),
-                                u"%g" % limit if limit else u"?"))
+        log(tr(u"WARNING: {0} eindigde {1} s na de start, na de tijd die "
+               u"Code-Aster de commando's geeft ({2} s: 'Tijdslimiet "
+               u"run_aster' = {3} s, min 10 % om af te sluiten). De bridge "
+               u"gaf Code-Aster extra tijd voor de nabewerking en de run "
+               u"eindigde zonder fouten. Verhoog 'Tijdslimiet run_aster' om "
+               u"dat te voorkomen.",
+               u"WARNING: {0} ended {1} s after the start, past the time "
+               u"Code-Aster gives the commands ({2} s: 'Time limit "
+               u"run_aster' = {3} s, minus 10 % to close). The bridge gave "
+               u"Code-Aster extra time for the post-processing and the run "
+               u"ended without errors. Raise 'Time limit run_aster' to "
+               u"avoid this.").format(
+                   late.group(1), late.group(2),
+                   u"%g" % (0.9 * limit) if limit else u"?",
+                   u"%g" % limit if limit else u"?"))
     # Messages with the file names of this run (shown in mw.message)
     errors = [run_names(msg) for msg in errors]
     for msg in errors:

@@ -506,9 +506,11 @@ What happens at the limit:
 - **Linear static and thermal** (`MECA_STATIQUE`, `THER_LINEAIRE`,
   `THER_NON_LINE`): these solves do not look at the limit on the way and compute to the
   end. After them the bridge always gives Code-Aster extra time for the post-processing:
-  at least 90 % of the limit, at least 600 s, counted from the end of the solve. The
-  results are therefore loaded completely. If the solve ended only after the limit, the
-  log says so with a WARNING ("... ended after the time limit ..."). Exceptions: a
+  at least 90 % of the limit, at least 600 s, counted from the end of the solve. If the
+  post-processing fits in it, all computed results are loaded. If the solve ended only
+  after the limit, the log says so with a WARNING ("... ended ... s after the start
+  ..."). With warping beams (`POU_D_TG`) and the field reaction forces, a separate solve
+  of the reactions follows, without new extra time. Exceptions: a
   thermal solve with filler material (the step loop above), with *Thermal stress* (chain
   to the mechanical solve) or with adaptive refinement.
 - **Other linear analyses** (modal, buckling, harmonic, spectrum, response on a modal
