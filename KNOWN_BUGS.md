@@ -185,12 +185,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    Reference: the same lap in hex20 (40 × 8 × 2 per plate, shared nodes at the interface =
    perfect bond, clamped by *Displacement* in X, Y and Z): Mecway 0.1498 mm, Code-Aster
    0.1498 mm (Euler beam: composite overlap 0.1553, two separate plates 0.1749 mm). Bonded
-   shells: Mecway with CCX 0.0843 mm (−44%), Mecway's own solver a mechanism (it couples no
-   rotations, as in LS-07a), the bridge (DKT) 0.1694 mm (+13%). The bridge ties the
-   mid-surfaces (`LIAISON_MAIL`, translations) without the lever arm between them, so the
-   overlap acts almost as two separate plates; a glued lap acts compositely. A fix would
-   couple u_B = u_A + θ_A × d (d = distance between the mid-surfaces) for shell-on-shell
-   faces (STAPPENPLAN §S46, follow-up); NOT built. Shell edge on a shell (LS-07a..e, T-joints)
+   shells: Mecway with CCX 0.0843 mm (−44%), Mecway's own solver ~7e8 mm (B apparently not
+   tied at all, perhaps the tolerance 0 at a 2 mm distance; NOT investigated), the bridge
+   (DKT) 0.1694 mm (+13% against the perfect bond; a real glue line is softer). Suspected
+   cause: the bridge ties the slave nodes to the master mid-surface (`LIAISON_MAIL`
+   `TYPE_RACCORD='COQUE'`, translations and the two in-plane rotations; the 189 slave nodes
+   are projected at a distance of 2 mm) without an offset term, so the overlap acts almost
+   as two separate plates (2I); whether `LIAISON_MAIL` adds an offset is NOT verified in the
+   source. Supported by the beam values: 0.1749 × 0.1498 / 0.1553 = 0.1687 mm ≈ 0.1694 mm. A
+   fix would tie u_s = Σ N_i (u_i + θ_i × (x_s − x_p)) with θ_s = θ_A (x_p the projected
+   point, a signed vector; an *Element offset* changes it) for shell faces on shell faces,
+   and the same t/2 for a shell face on a solid (the "shell on a block" case above)
+   (STAPPENPLAN §S46, follow-up); NOT built. A shell edge on a shell (LS-07a..e, T-joints)
    has no such lever arm and is not affected.
 
 130\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
@@ -726,9 +732,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    Code-Aster 17.4, 13 Nov 2026; `bridge_to_aster`, setting `lin_solver_resi`, default 1e-6 =
    the catalogue value). MUMPS' estimate of the error of the linear solution exceeds
    `RESI_RELA`: cantilever plate 100 × 20 × 1 mm in 160 × 32 quad4 (DKT and `COQUE_3D`, error
-   1.73e-6) and the hex20 lap of item 128 (2 × 640 hex20, 7281 nodes); Mecway 35 solves both.
-   The bridge stops with its hint that names *lin_solver_resi*; with 1e-4 the lap gives the
-   same 0.1498 mm as Mecway. Not changed: whether a larger default (or a retry) is wanted is
+   1.73e-6) and the hex20 lap of item 128 (2 × 640 hex20, 7281 nodes, 1.91e-6); Mecway 35
+   solves both. In a run from Mecway the bridge's hint (`bridge_run_aster._resi_advice`) names
+   *lin_solver_resi* (docs/en/CodeAster_error_messages.md, `FACTOR_57`, case b); with 1e-4
+   the lap gives the same 0.1498 mm as Mecway. Not changed: whether a larger default (or a retry) is wanted is
    the user's choice (STAPPENPLAN §S46).
 
 ## Open questions (Mecway behaviour not checked)

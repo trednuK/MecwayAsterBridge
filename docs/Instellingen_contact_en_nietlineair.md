@@ -922,9 +922,10 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
   vergelijking met Mecway kan dus alleen met een doorlopende mesh.
 - Schalen met overhang (een deel van de slave ligt niet tegenover de master): de bridge
   laat dezelfde knopen vrij als CCX.
-- Twee platen vlak op vlak verlijmd (een overlap): de bridge koppelt de middenvlakken
-  zonder de afstand ertussen, dus de overlap werkt bijna als twee losse platen en de
-  overlap is te slap; Mecway (CCX) is veel te stijf. Overlap van twee platen van 2 mm,
+- Twee platen vlak op vlak verlijmd (een overlap): de bridge koppelt de middenvlakken,
+  waarschijnlijk zonder de afstand ertussen, dus de overlap werkt bijna als twee losse
+  platen en is slapper dan een volmaakte verbinding (een echte lijmlaag is ook slapper);
+  Mecway (CCX) is veel te stijf. Overlap van twee platen van 2 mm,
   50 mm overlap, eindlast: volumemodel met een volmaakte verbinding 0,1498 mm (Code-Aster
   en Mecway), bridge 0,1694 mm (+13 %), Mecway 0,0843 mm (−44 %). Voor een nauwkeurige
   overlap: modelleer de verbinding met volume-elementen; vergelijk zulke modellen niet met Mecway (KNOWN_BUGS 128).

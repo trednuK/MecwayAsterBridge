@@ -911,9 +911,10 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
   Mecway is therefore only possible with a continuous mesh.
 - Shells with overhang (part of the slave does not lie opposite the master): the bridge
   leaves the same nodes free as CCX.
-- Two plates bonded face to face (a lap): the bridge ties the mid-surfaces without the
-  distance between them, so the overlap acts almost as two separate plates and the lap is
-  too flexible; Mecway (CCX) is far too stiff. Lap of two 2 mm plates, 50 mm overlap, tip
+- Two plates bonded face to face (a lap): the bridge ties the mid-surfaces, probably
+  without the distance between them, so the overlap acts almost as two separate plates
+  and the lap is more flexible than a perfect bond (a real glue line is softer too);
+  Mecway (CCX) is far too stiff. Lap of two 2 mm plates, 50 mm overlap, tip
   load: solid model with a perfect bond 0.1498 mm (Code-Aster and Mecway), bridge 0.1694 mm
   (+13 %), Mecway 0.0843 mm (−44 %). For an accurate lap: model the joint with solid
   elements; do not compare such models with
