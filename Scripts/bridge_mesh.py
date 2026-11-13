@@ -3363,6 +3363,28 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
                    "also shell faces); the edge acts as a hinge (no "
                    "moment). Rigid: one component per bonded "
                    "contact.").format(label))
+    if "shellface" in sk and mech:
+        # KNOWN_BUGS 128: the slave nodes are tied to the master
+        # (mid-)surface without the distance between the mid-surfaces (a
+        # half plate thickness per plate), so a lap acts almost as two
+        # loose plates. Measured 13 Nov 2026: two 2 mm plates face to face,
+        # 50 mm overlap, tip load: +13% deflection against a hex20 model
+        # with a perfect bond (Code-Aster and Mecway 0.1498 mm). An offset
+        # term is not in LIAISON_MAIL (U4.44.01) and is not built.
+        log(tr("WARNING: {0}: schaalvlakken vlak op vlak verlijmd. De "
+               "bridge koppelt de middenvlakken zonder de afstand "
+               "ertussen (de halve plaatdikte), dus de naad werkt bijna "
+               "als losse platen en is te slap (overlap van twee platen "
+               "van 2 mm: +13 % doorbuiging tegen een volmaakte "
+               "lijmverbinding). Voor een nauwkeurige naad: modelleer de "
+               "verbinding met volume-elementen (KNOWN_BUGS 128).",
+               "WARNING: {0}: shell faces bonded face to face. The bridge "
+               "ties the mid-surfaces without the distance between them "
+               "(half the plate thickness), so the joint acts almost as "
+               "loose plates and is too flexible (lap of two 2 mm "
+               "plates: +13 % deflection against a perfect bond). For an "
+               "accurate joint: model the connection with solid elements "
+               "(KNOWN_BUGS 128).").format(label))
     if c["type"] == "bondedelastic" and mech:
         model_data.setdefault("skipped_loads", []).append(
             tr("{0}: verende laag (kn={1}, kt={2} Pa/m) niet vertaald, star "

@@ -195,7 +195,10 @@ CONFIG_BRIDGE = {
             "lin_solver":     "MUMPS",
             # SOLVEUR RESI_RELA: MUMPS = limit for the estimated relative
             # error of the solution; GCPC = convergence criterion ||r||/||f||.
-            "lin_solver_resi": 1.0e-6,
+            # 1e-5 instead of Code-Aster's 1e-6 (user, 13 Nov 2026): fine
+            # meshes of thin parts estimate 1.7e-6 .. 1.9e-6 without being
+            # singular (S46); a mechanism still gives an error of order 1.
+            "lin_solver_resi": 1.0e-5,
             # Error estimator (CALC_ERREUR ERME, residual estimator, solid
             # elements only): estimated discretisation error per element and
             # node to Mecway (errorestimate*) and the global relative
@@ -334,7 +337,7 @@ CONFIG_BRIDGE = {
             # RESI_RELA of the MECA_STATIQUE of the imperfection (linear
             # buckling before STAT_NON_LINE; see lin_static_3d). STAT_NON_LINE
             # itself does not check it (Code-Aster default -1).
-            "lin_solver_resi":       1.0e-6,
+            "lin_solver_resi":       1.0e-5,
             # Adaptive refinement with HOMARD inside the job
             # (bridge_homard.py, aster_adapt.py; docs/Foutschatter.md par. 7):
             # solve -> ZZ indicator -> refine the Doerfler selection (0.5)
@@ -514,7 +517,7 @@ CONFIG_BRIDGE = {
             "solver_nprec":   8,
             # RESI_RELA of the static step for the prestress (see
             # lin_static_3d; bridge_to_aster._static_step_solveur).
-            "lin_solver_resi": 1.0e-6,
+            "lin_solver_resi": 1.0e-5,
         },
         "dyna_modal_3d": {
             # Response on a modal basis (Mecway D30 with Mode superposition):
@@ -643,7 +646,7 @@ CONFIG_BRIDGE = {
             "solver_nprec":   8,
             # RESI_RELA of the static step (stress state; see
             # lin_static_3d; bridge_to_aster._static_step_solveur).
-            "lin_solver_resi": 1.0e-6,
+            "lin_solver_resi": 1.0e-5,
         },
         "acoustic_modes_3d": {
             # Acoustic cavity modes (Mecway A30, Acoustic Resonance 3D):

@@ -452,7 +452,7 @@ solver statistics end up in the `.mess` (convergence window, §4.4). That is abo
 |---|---|---|
 | `lin_solver` (Linear solver) | `MUMPS` (default): direct solver, factorises the matrix | `SOLVEUR=_F(METHODE='MUMPS', NPREC=..., RESI_RELA=...)` |
 | | `GCPC`: iterative, conjugate gradient with incomplete factorisation | `SOLVEUR=_F(METHODE='GCPC', PRE_COND='LDLT_INC', RESI_RELA=...)` |
-| `lin_solver_resi` (Solver accuracy) | `RESI_RELA`, default 1e-6 (= CA default for `MECA_STATIQUE`) | |
+| `lin_solver_resi` (Solver accuracy) | `RESI_RELA`, default 1e-5 (CA default for `MECA_STATIQUE` 1e-6; fine meshes of thin parts estimate about 2e-6 without being singular) | |
 
 - **MUMPS**: `RESI_RELA` is the bound on the *estimated relative error in the
   displacements*. MUMPS estimates it as condition number × 'backward error'; if it is
@@ -916,9 +916,9 @@ plate 10 × 4 with a rib in the middle of the elements, side load on the rib:
   and the lap is more flexible than a perfect bond (a real glue line is softer too);
   Mecway (CCX) is far too stiff. Lap of two 2 mm plates, 50 mm overlap, tip
   load: solid model with a perfect bond 0.1498 mm (Code-Aster and Mecway), bridge 0.1694 mm
-  (+13 %), Mecway 0.0843 mm (−44 %). For an accurate lap: model the joint with solid
-  elements; do not compare such models with
-  Mecway (KNOWN_BUGS 128).
+  (+13 %), Mecway 0.0843 mm (−44 %). The bridge gives a WARNING for every bonded
+  contact with shell faces as slave. For an accurate lap: model the joint with solid
+  elements; do not compare such models with Mecway (KNOWN_BUGS 128).
 - Shells with an *Element offset* in the contact: the slave nodes (always the Mecway
   nodes) are tied to the master nodes; only with `LIAISON_MAIL` on a master on its own
   nodes (solid on a quad8 shell) to the offset surface. The bridge reports which

@@ -48,7 +48,8 @@ Code-Aster value per node) and logs the largest difference per variable.
 2\. **Shell elements ~0.7% different from Mecway on coarse meshes** (confirmed, Mecway 35
    headless and Code-Aster 17.4, 13 Nov 2026; discretisation, not an error). Mecway's shell
    (MITC4) and DKT/`COQUE_3D` approach each other with mesh refinement (within 0.01% at
-   40 × 8 quad4; the common limit was not measured, DKT falls and Mecway rises). Cantilever plate 100x20 mm,
+   40 × 8 quad4, where they cross: DKT falls and Mecway rises; at 160 × 32 DKT 0.93342 mm,
+   Mecway 0.93446 mm, −0.11%; why the limits differ by ~0.1% is NOT investigated). Cantilever plate 100x20 mm,
    1 mm, `fixed` on the edge faces at x = 0, 1 N at the tip split equally over the
    tip nodes, midside nodes included for quad8 (difference to Mecway, largest
    over the nodes, relative to Mecway's largest value): quad4 10x2 DKT deflection +0.63%,
@@ -57,9 +58,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    always `COQUE_3D`). The secondary rotation about the plate axis (Poisson twist, ~5% of
    the bending rotation) differs 27% on 10x2 and 1.6% on 40x8; the earlier "rotations up to ~10%"
    probably came from that small component (the old model is not in the repo). Option `elem_shell` = "COQUE_3D" (linear shells via
-   LINE_QUAD to QUAD9/TRIA7, with drilling rotation) is not closer to Mecway. A 160x32
-   quad4 mesh of this 1 mm plate stops with `FACTOR_57` (MUMPS error 1.7e-6 > `RESI_RELA`
-   1e-6; the bridge's hint names the setting). With a coarse mesh the difference is larger: wall
+   LINE_QUAD to QUAD9/TRIA7, with drilling rotation) is not closer to Mecway. With a coarse mesh the difference is larger: wall
    1x1 m, 20 mm, 2x2 quad4, pressure: DKT 8% more deflection than Mecway (headless). COQUE_3D falls back to DKT if the shells share nodes
    with elements that stay linear (`bridge_to_aster._resolve_line_quad`).
 
@@ -196,7 +195,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    fix would tie u_s = Σ N_i (u_i + θ_i × (x_s − x_p)) with θ_s = θ_A (x_p the projected
    point, a signed vector; an *Element offset* changes it) for shell faces on shell faces,
    and the same t/2 for a shell face on a solid (the "shell on a block" case above)
-   (STAPPENPLAN §S46, follow-up); NOT built. A shell edge on a shell (LS-07a..e, T-joints)
+   (STAPPENPLAN S47, only with explicit documentation and a WARNING whenever it is
+   applied); NOT built. Until then the bridge gives a WARNING for every bonded contact
+   with shell faces as slave (`bridge_mesh._bonded`). A shell edge on a shell (LS-07a..e, T-joints)
    has no such lever arm and is not affected.
 
 130\. **Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's**
@@ -723,16 +724,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    welding chain). A fix would be the same extra time after (and a try/except around) those
    solves, or a `POURSUITE` run for the post-processing (STAPPENPLAN S45). Raise *Time
    limit run_aster* meanwhile.
-
-138\. **Fine meshes of thin parts stop with `FACTOR_57` in linear static** (confirmed,
-   Code-Aster 17.4, 13 Nov 2026; `bridge_to_aster`, setting `lin_solver_resi`, default 1e-6 =
-   the catalogue value). MUMPS' estimate of the error of the linear solution exceeds
-   `RESI_RELA`: cantilever plate 100 × 20 × 1 mm in 160 × 32 quad4 (DKT and `COQUE_3D`, error
-   1.73e-6) and the hex20 lap of item 128 (2 × 640 hex20, 7281 nodes, 1.91e-6); Mecway 35
-   solves both. In a run from Mecway the bridge's hint (`bridge_run_aster._resi_advice`) names
-   *lin_solver_resi* (docs/en/CodeAster_error_messages.md, `FACTOR_57`, case b); with 1e-4
-   the lap gives the same 0.1498 mm as Mecway. Not changed: whether a larger default (or a retry) is wanted is
-   the user's choice (STAPPENPLAN §S46).
 
 ## Open questions (Mecway behaviour not checked)
 

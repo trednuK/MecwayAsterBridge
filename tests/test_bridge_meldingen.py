@@ -211,11 +211,11 @@ def test_factor57():
     check(line == "SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=0.0001),",
           "_static_step_solveur: {0}".format(line))
     line = bridge_to_aster._static_step_solveur({})
-    check(line == "SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-06),",
+    check(line == "SOLVEUR=_F(METHODE='MUMPS', NPREC=8, RESI_RELA=1e-05),",
           "_static_step_solveur default: {0}".format(line))
     for name in ("lin_static_3d", "nonlin_static_3d", "modal_3d",
                  "buckling_3d"):
-        check(cfg["analyses"][name].get("lin_solver_resi") == 1.0e-6,
+        check(cfg["analyses"][name].get("lin_solver_resi") == 1.0e-5,
               "lin_solver_resi default in {0}".format(name))
 
 

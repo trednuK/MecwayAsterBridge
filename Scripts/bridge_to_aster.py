@@ -129,13 +129,13 @@ def _build_solveur_ref(analysis):
 
 def _resi_rela(analysis):
     """
-    SOLVEUR RESI_RELA as text (setting "lin_solver_resi"; catalogue
-    c_solveur.py v17.4: default 1e-6 for the linear commands such as
-    MECA_STATIQUE, -1 for CALC_MODES and STAT_NON_LINE). %-formatting:
+    SOLVEUR RESI_RELA as text (setting "lin_solver_resi", bridge default
+    1e-5; catalogue c_solveur.py v17.4: default 1e-6 for the linear
+    commands such as MECA_STATIQUE, -1 for CALC_MODES and STAT_NON_LINE). %-formatting:
     always a decimal point; repr() gave in IronPython
     9.9999999999999995e-07 for 1e-6.
     """
-    return "%.10g" % float(analysis.get("lin_solver_resi", 1.0e-6))
+    return "%.10g" % float(analysis.get("lin_solver_resi", 1.0e-5))
 
 
 def _static_step_solveur(analysis):
@@ -187,8 +187,8 @@ def _build_lin_solveur_ref(analysis, refine=False):
     on the model size (seen: ~15 kB extra, also with 270 000
     equations).
 
-    RESI_RELA (setting "lin_solver_resi", catalogue default 1e-6 for
-    MECA_STATIQUE):
+    RESI_RELA (setting "lin_solver_resi", bridge default 1e-5, catalogue
+    default 1e-6 for MECA_STATIQUE):
       MUMPS : bound on the estimated relative error of the solution
               (condition number x 'backward error', RINFOG(9)); if it is
               larger, Code-Aster stops (U4.50.01 par. 3.5.3, U2.08.03 par.

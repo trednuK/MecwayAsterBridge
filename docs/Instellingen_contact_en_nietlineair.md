@@ -457,7 +457,7 @@ bij, zodat de statistiek van de oplosser in de `.mess` komt (convergentiescherm,
 |---|---|---|
 | `lin_solver` (Lineaire oplosser) | `MUMPS` (standaard): directe oplosser, factoriseert de matrix | `SOLVEUR=_F(METHODE='MUMPS', NPREC=..., RESI_RELA=...)` |
 | | `GCPC`: iteratief, geconjugeerde gradiënt met onvolledige factorisatie | `SOLVEUR=_F(METHODE='GCPC', PRE_COND='LDLT_INC', RESI_RELA=...)` |
-| `lin_solver_resi` (Nauwkeurigheid oplosser) | `RESI_RELA`, standaard 1e-6 (= CA-standaard bij `MECA_STATIQUE`) | |
+| `lin_solver_resi` (Nauwkeurigheid oplosser) | `RESI_RELA`, standaard 1e-5 (CA-standaard bij `MECA_STATIQUE` 1e-6; fijne meshes van dunne delen schatten ongeveer 2e-6 zonder singulier te zijn) | |
 
 - **MUMPS**: `RESI_RELA` is de grens voor de *geschatte relatieve fout in de
   verplaatsingen*. MUMPS schat die als conditiegetal × 'backward error'; is ze
@@ -927,8 +927,10 @@ de rib: 1,1342e-2 mm, gedeelde knopen 1,1536e-2 mm (−1,7 %, de knik onder de r
   platen en is slapper dan een volmaakte verbinding (een echte lijmlaag is ook slapper);
   Mecway (CCX) is veel te stijf. Overlap van twee platen van 2 mm,
   50 mm overlap, eindlast: volumemodel met een volmaakte verbinding 0,1498 mm (Code-Aster
-  en Mecway), bridge 0,1694 mm (+13 %), Mecway 0,0843 mm (−44 %). Voor een nauwkeurige
-  overlap: modelleer de verbinding met volume-elementen; vergelijk zulke modellen niet met Mecway (KNOWN_BUGS 128).
+  en Mecway), bridge 0,1694 mm (+13 %), Mecway 0,0843 mm (−44 %). De bridge geeft een
+  WARNING bij elk verlijmd contact met schaalvlakken als slave. Voor een nauwkeurige
+  overlap: modelleer de verbinding met volume-elementen; vergelijk zulke modellen niet met
+  Mecway (KNOWN_BUGS 128).
 - Schalen met een *Element offset* in het contact: de slave-knopen (altijd de
   Mecway-knopen) gaan naar de knopen van de master; alleen bij `LIAISON_MAIL` op een
   master op eigen knopen (volume op een quad8-schaal) naar het verschoven vlak. De

@@ -1427,7 +1427,7 @@ SETTING_HELP = {
                    u"(direct, default) or GCPC (iterative, with a residual "
                    u"plot in the convergence window)."),
     "lin_solver_resi": (u"RESI_RELA van de lineaire oplosser (standaard "
-                        u"1e-6, als Code-Aster): bij MUMPS de maximale "
+                        u"1e-5; Code-Aster 1e-6): bij MUMPS de maximale "
                         u"geschatte relatieve fout van de oplossing "
                         u"(groter = Code-Aster stopt met FACTOR_57), bij "
                         u"GCPC het convergentiecriterium. Statisch: de "
@@ -1438,8 +1438,8 @@ SETTING_HELP = {
                         u"halen; de foutmelding noemt dan de waarde om "
                         u"hier in te vullen. Een mechanisme geeft een fout "
                         u"van orde 1 of FACTOR_11.",
-                        u"RESI_RELA of the linear solver (default 1e-6, "
-                        u"as Code-Aster): with MUMPS the maximum estimated "
+                        u"RESI_RELA of the linear solver (default 1e-5; "
+                        u"Code-Aster 1e-6): with MUMPS the maximum estimated "
                         u"relative error of the solution (larger = "
                         u"Code-Aster stops with FACTOR_57), with GCPC the "
                         u"convergence criterion. Static: the whole "
