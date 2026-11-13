@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-11 (bridge 1620635, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 30de9f1, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3066 van 3072 controles binnen de tolerantie** (579 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3117 van 3123 controles binnen de tolerantie** (588 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2592,6 +2592,57 @@ Gemaakt door `run_verificatie.py` op 2026-11-11 (bridge 1620635, Code-Aster 17.4
 | PL-11 | Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping | u_r binnenwand na uitdempen | 9.0794e-05 m | 9.0748e-05 | -0.05% | 0.2% | OK |
 | PL-11 | Dikwandige ring axisymmetrisch (DA0), stapdruk met Rayleigh-demping | verloop = Mecway | 0 - | 3.0769e-08 | 3.0769e-08 | 1e-06 - | OK |
 | PL-12 | Console vlakke spanning (D20), kracht als tijdtabel | verloop = Mecway | 0 - | 1.6215e-08 | 1.6215e-08 | 1e-06 - | OK |
+| PL-20 | Vrije ring, uniforme temperatuur (AXIS) | u_r binnenwand | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| PL-20 | Vrije ring, uniforme temperatuur (AXIS) | u_r buitenwand | 2.4000e-04 m | 2.4000e-04 | +0.00% | 0.0001% | OK |
+| PL-20 | Vrije ring, uniforme temperatuur (AXIS) | u_y boven | 1.2000e-05 m | 1.2000e-05 | -0.00% | 0.0001% | OK |
+| PL-20 | Vrije ring, uniforme temperatuur (AXIS) | max |sigma_ij| | 0 Pa | 3.1942e-05 | 3.1942e-05 | 252 Pa | OK |
+| PL-21 | Vrije plaat, uniforme temperatuur (C_PLAN) | u_x rechts | 1.2000e-04 m | 1.2000e-04 | +0.00% | 0.0001% | OK |
+| PL-21 | Vrije plaat, uniforme temperatuur (C_PLAN) | u_y boven | 6.0000e-05 m | 6.0000e-05 | -0.00% | 0.0001% | OK |
+| PL-21 | Vrije plaat, uniforme temperatuur (C_PLAN) | max |sigma_ij| | 0 Pa | 2.4745e-06 | 2.4745e-06 | 252 Pa | OK |
+| PL-22 | Plaat rondom vast, uniforme temperatuur (C_PLAN) | sigma_xx | -3.6000e+08 Pa | -3.6000e+08 | -0.00% | 0.0001% | OK |
+| PL-22 | Plaat rondom vast, uniforme temperatuur (C_PLAN) | sigma_yy | -3.6000e+08 Pa | -3.6000e+08 | +0.00% | 0.0001% | OK |
+| PL-22 | Plaat rondom vast, uniforme temperatuur (C_PLAN) | sigma_zz | 0 Pa | 0 | 0 | 252 Pa | OK |
+| PL-22 | Plaat rondom vast, uniforme temperatuur (C_PLAN) | max |sigma_xy| | 0 Pa | 2.9801e-07 | 2.9801e-07 | 252 Pa | OK |
+| PL-22 | Plaat rondom vast, uniforme temperatuur (C_PLAN) | sigma_xx = Mecway | -3.6000e+08 Pa | -3.6000e+08 | -0.00% | 0.0001% | OK |
+| PL-23 | Plaat rondom vast, uniforme temperatuur (D_PLAN) | sigma_xx | -6.3000e+08 Pa | -6.3000e+08 | +0.00% | 0.0001% | OK |
+| PL-23 | Plaat rondom vast, uniforme temperatuur (D_PLAN) | sigma_yy | -6.3000e+08 Pa | -6.3000e+08 | +0.00% | 0.0001% | OK |
+| PL-23 | Plaat rondom vast, uniforme temperatuur (D_PLAN) | sigma_zz | -6.3000e+08 Pa | -6.3000e+08 | +0.00% | 0.0001% | OK |
+| PL-23 | Plaat rondom vast, uniforme temperatuur (D_PLAN) | max |sigma_xy| | 0 Pa | 4.2380e-07 | 4.2380e-07 | 252 Pa | OK |
+| PL-23 | Plaat rondom vast, uniforme temperatuur (D_PLAN) | sigma_zz = Mecway | -6.3000e+08 Pa | -6.3000e+08 | +0.00% | 0.0001% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | u_r binnenwand | 6.0530e-05 m | 6.0531e-05 | +0.00% | 0.01% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | u_r buitenwand | 1.2106e-04 m | 1.2106e-04 | +0.00% | 0.01% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_r midden | -2.8040e+07 Pa | -2.8332e+07 | -1.04% | 1.2% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_theta binnenwand | -2.2031e+08 Pa | -2.1885e+08 | +0.66% | 1% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_theta buitenwand | 1.3969e+08 Pa | 1.3987e+08 | +0.13% | 1% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_z binnenwand | -3.1809e+08 Pa | -3.1774e+08 | +0.11% | 1% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_z buitenwand | 4.1906e+07 Pa | 4.2054e+07 | +0.36% | 1% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | som R_y onder (360 graden) | 9.2155e+06 N | 9.2155e+06 | -0.00% | 0.01% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | som R_y onder = Mecway | 9.2155e+06 N | 9.2155e+06 | -0.00% | 0.0001% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | u_r binnenwand = Mecway | 6.0531e-05 m | 6.0531e-05 | +0.00% | 0.0001% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | u_r buitenwand = Mecway | 1.2106e-04 m | 1.2106e-04 | +0.00% | 0.0001% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | u_r binnenwand | 4.6562e-05 m | 4.6563e-05 | +0.00% | 0.01% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | u_r buitenwand | 9.3123e-05 m | 9.3124e-05 | +0.00% | 0.01% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | sigma_r midden | -2.8040e+07 Pa | -2.8332e+07 | -1.04% | 1.2% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | sigma_theta binnenwand | -2.2031e+08 Pa | -2.1885e+08 | +0.66% | 1% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | sigma_theta buitenwand | 1.3969e+08 Pa | 1.3987e+08 | +0.13% | 1% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | sigma_z binnenwand | -2.2031e+08 Pa | -2.1996e+08 | +0.16% | 1% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | sigma_z buitenwand | 1.3969e+08 Pa | 1.3983e+08 | +0.11% | 1% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | u_y bovenrand | 4.6562e-06 m | 4.6562e-06 | -0.00% | 0.01% | OK |
+| PL-25 | Dikwandige buis, ln-temperatuur, vrije vlakke einden (AXIS) | som R_y onder (axiale resultante) | 0 N | -2.6492e-08 | -2.6492e-08 | 23.7504 N | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | u_r binnenwand | 6.0530e-05 m | 6.0531e-05 | +0.00% | 0.01% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | u_r buitenwand | 1.2106e-04 m | 1.2106e-04 | +0.00% | 0.01% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | sigma_r midden | -2.8040e+07 Pa | -2.8349e+07 | -1.10% | 1.2% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | sigma_theta binnenwand | -2.2031e+08 Pa | -2.1893e+08 | +0.63% | 1% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | sigma_theta buitenwand | 1.3969e+08 Pa | 1.3992e+08 | +0.17% | 1% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | sigma_z binnenwand | -3.1809e+08 Pa | -3.1774e+08 | +0.11% | 1% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | sigma_z buitenwand | 4.1906e+07 Pa | 4.2054e+07 | +0.35% | 1% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | u_r binnenwand = Mecway | 6.0531e-05 m | 6.0531e-05 | -0.00% | 0.0001% | OK |
+| PL-26 | Dikwandige buis, ln-temperatuur, vlakke rek (D_PLAN) | u_r buitenwand = Mecway | 1.2106e-04 m | 1.2106e-04 | -0.00% | 0.0001% | OK |
+| PL-27 | Volle schijf, uniforme temperatuur (AXIS) | u_r buitenwand | 2.4000e-04 m | 2.4000e-04 | -0.00% | 0.0001% | OK |
+| PL-27 | Volle schijf, uniforme temperatuur (AXIS) | u_y boven | 1.2000e-05 m | 1.2000e-05 | +0.00% | 0.0001% | OK |
+| PL-27 | Volle schijf, uniforme temperatuur (AXIS) | max |sigma_ij| | 0 Pa | 1.9767e-05 | 1.9767e-05 | 252 Pa | OK |
+| PL-28 | Plaat, temperatuur op een rand (C_PLAN) | u_x(L, H) = Mecway | -8.8200e-06 m | -8.8200e-06 | -0.00% | 0.0001% | OK |
+| PL-28 | Plaat, temperatuur op een rand (C_PLAN) | u_y(L, H) = Mecway | 2.7260e-05 m | 2.7260e-05 | -0.00% | 0.0001% | OK |
 
 ## Boutvoorspanning
 

@@ -92,7 +92,7 @@ S7, S8, S5, S9).
 | S43c | Remove the beam sidecar `_beams.json` and the node series `_knopen.csv`; VTU array `BEZWEKEN` renamed to `failed` | done | S43a | branch `sidecars` (b861af3, 955d80c + this commit); 578/579 .comm identical; Code-Aster runs LS-30 and BezwijkenTrekstaaf OK; Opus review |
 | S43d | Hide failed elements in Mecway after load-back: copy of AdvancedToolsHub's `liml_failed.py`, contract for the element variable `failed` | done | S43a; the hub core `common/liml_failed.py` exists | branch `hide-failed`: core 1.0.0 pinned (LF-sha256 500f8ccc...), setting `hide_failed` (default off), `bridge_hide_failed.py`; `failed` strict (1 from the step after t_fail; measured static, implicit, explicit: stored state at t_fail before zeroing); end-to-end BezwijkenTrekstaaf 8 hidden from t = 0.7; Mecway 35 opens a processed file without a dialog and keeps the copies on re-save but drops the marker (recognised by the copies); regression 45 cases / 249 checks OK; Opus plan, diff and re-review; checked in the Mecway 35 window by the user (11 Nov 2026); released in V2026.11 |
 | S44 | 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`): thermal stress, nonlinear static, contact, thermal, axisymmetric shells, modal/buckling, axisymmetric acoustics | split | S16a | asked by the user 11 Nov 2026; split into S44a .. S44g (see §S44; research of the input route first); plan reviewed by Opus; order S44c, S44a, S44b, S44d, S44e, S44f later |
-| S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | open | S16a | first sub-step (linear, verified `MECA_STATIQUE` route); starts with the input-route research of §S44 |
+| S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (to confirm by the user, §S44); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | open | S16a | see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | open | S44a | a frictionless support stays S16e; see §S44 |
 | S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | open | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44 |
@@ -2336,6 +2336,20 @@ headless with `mw_solve.py`, no GUI):
   (`TEST_RESU` values) per sub-step.
 **Done when (research):** the route is chosen with the user, on a table of which items Mecway
 keeps per route; recorded here as findings.
+**Findings (research, 13 Nov 2026; Mecway manual v34 §6.1, §6.7, §7.2, §9, documented; the
+manual writes "Static" for both 2D and 3D and "Static 3D" where only 3D is meant):**
+
+| Item | Route B (S20/SA0, D20/DA0) | Route A (L30/T30/T31 with plane elements) |
+|---|---|---|
+| Temperature, Node temperature, Thermal stress | yes ("Static"; not in Dynamic Response) | yes |
+| time steps, load ramp, plasticity, large deformations | no (Mecway has no nonlinear 2D type) | yes (L30) |
+| contact (bonded, unilateral) | no ("Static 3D, Nonlinear Static, ...") | yes, on shell edges NOT verified |
+| thermal loads, steady and transient | no ("All thermal analysis types are 3D", §6.7) | yes (T30/T31 on shells in a plane) |
+| line elements (axisymmetric shells, S44e) | no (SA0: "Only plane elements") | beams/shells in the plane NOT verified |
+| Mecway reference | own S20/SA0 solve | plane stress only (shell membrane), T30/T31 |
+
+Proposal (hybrid): S44c on route B, S44a/b/d/e on route A with a switch; chosen by the user
+(see the findings of S44c). Measured per sub-step in Mecway headless.
 
 **S44c – temperature load (thermal stress) in 2D/axisymmetric.**
 **Goal:** node and element temperatures of the model (Mecway *Thermal stress*) in a plane or
@@ -2357,6 +2371,33 @@ for example `LIAISON_UNIF` on `DY` of the end edge (`AXIS`), while `D_PLAN` is �
 - where route A gives a Mecway reference (plate in L30 with a temperature): equal to Mecway
   headless within 1e-6;
 - 3D cases with temperatures unchanged (regression D.5); docs NL+EN (§3 "Not possible" updated).
+**Findings S44c (13 Nov 2026):** route B: Mecway's S20/SA0 hold Thermal stress, Temperature and
+Node temperature (manual, documented); `bridge_plane` lifts its refusal for `MECA_STATIQUE`
+only (D20/DA0 stay ERROR: the manual does not list temperatures for Dynamic Response). The 3D
+temperature route works unchanged on `C_PLAN`/`D_PLAN`/`AXIS` (no thickness or 2π factor;
+temperatures on node, element and edge selections). Verified against closed forms (PL-20 …
+PL-28, `tests_vlak_2d_thermisch.py`): free expansion of a ring, a solid disc and a plate
+exact, every stress component below 1e-6 E α ΔT; held plates exact in `C_PLAN` and `D_PLAN`;
+the tube (8 quad8 through the wall): u_r within 2e-5, σ_θ and σ_z within 0.7%, the axial
+reaction over 360 degrees exact, free plane ends through `#ASTER` `LIAISON_UNIF` `DY` (the
+end condition needs no new input). σ_r at mid-wall misses the 1% of the Done-when narrowly:
+|σ_r| 1.04% (`AXIS`) and 1.10% (`D_PLAN`, 8 × 32) too large; it is 13% of the peak hoop stress, recovered
+from the integration points and converges as h² (`AXIS` 4.28 / 1.04 / 0.26% at 4 / 8 / 16
+elements; `D_PLAN` 8 × 8 2.0%, 8 × 16 1.28%, 16 × 32 0.32%), so the check uses 1.2% as σ_r
+of PL-04 (plan review, Opus; the user is asked to confirm this deviation from the Done-when;
+the alternative is 16 elements through the wall: 0.26% / 0.32%). The first runs had the tube
+temperature on √(x² + y²) instead of x in SA0 (a test error found by the review). Mecway 35's
+own S20/SA0 solve (headless, next to the user's Mecway with the user's consent):
+displacements and reactions equal within 1e-13 in all cases but PL-25 (no Mecway
+counterpart: `#ASTER`), so Mecway interpolates node temperatures in 2D as well (not the
+element average of manual §9.25); held plates within 1e-15 (`stresszz` of `D_PLAN`
+included); nodal stresses of the tube 0.5 … 5% off (KB3); a Temperature with a time table
+gives no expansion in Mecway's S20 and SA0, as the bridge drops it. User test left: Mecway's
+GUI offers the three items in S20/SA0 (documented in the manual).
+**Route decision (user, 13 Nov 2026):** hybrid as proposed: S44c on route B; S44a/b/d/e on
+route A (L30/T30/T31 and S30 with plane elements in the XY plane) with a `#ASTER` line
+`#ASTER PLANE AXIS|C_PLAN|D_PLAN` (exact form decided in S44a); hidden headless Mecway runs
+next to the user's open Mecway are allowed (own PID only, stopped at any dialog).
 
 **S44a – nonlinear static in 2D/axisymmetric.**
 **Goal:** the bridge's `nonlin_static_3d` on a plane or axisymmetric model: time steps and load

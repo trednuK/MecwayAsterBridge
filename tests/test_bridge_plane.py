@@ -17,7 +17,10 @@
 #     out of the plane skipped;
 #   - _edge_measure: revolved area 2 pi int(r dl) and length x t;
 #   - pinned support on edges and on several nodes (S20, SA0): DDL_IMPO
-#     DX = DY = 0 (docs 2D par. 2.3), no LIAISON_DDL with DZ.
+#     DX = DY = 0 (docs 2D par. 2.3), no LIAISON_DDL with DZ;
+#   - thermal stress (S44c): Temperature / Node temperature pass in S20/SA0
+#     (lin_static_3d), the SA0 thickness WARNING stays, D20/DA0 refused;
+#     a .comm with AFFE_VARC TEMP on the AXIS model.
 #
 #   python tests/test_bridge_plane.py
 
@@ -143,6 +146,43 @@ def test_errors():
     md = _extract(_liml("D20", PS), analysis="dyna_impl_3d")
     check(md is not None and md["elset_modelisations"].get("P") == "C_PLAN",
           "D20 with dyna_impl_3d -> C_PLAN: {0}".format(_errors()))
+
+
+THERMAL = ('<thermalstress><referencetemperature>293 K'
+           '</referencetemperature></thermalstress>'
+           '<temperature2 selection="Tip"><value>393 K</value></temperature2>')
+NODE_T = ('<thermalstress><referencetemperature>293 K'
+          '</referencetemperature></thermalstress>'
+          '<temperature3><nodetemperature nid="3" value="393 K" />'
+          '</temperature3>')
+
+
+def test_thermal():
+    """S44c: thermal stress in S20/SA0 (MECA_STATIQUE) passes, D20 is
+    refused; SA0 with a thickness keeps its WARNING."""
+    for atype, geo, mod in (("S20", PS, "C_PLAN"), ("S20", PE, "D_PLAN"),
+                            ("SA0", "", "AXIS")):
+        for loads in (THERMAL, NODE_T):
+            md = _extract(_liml(atype, geo, loads=loads))
+            check(md is not None and
+                  md["elset_modelisations"].get("P") == mod and
+                  md.get("thermal_stress") is not None,
+                  "{0} {1} with a temperature -> passes: {2}".format(
+                      atype, mod, _errors()))
+    md = _extract(_liml("SA0", PS, loads=THERMAL))
+    check(md is not None and any(
+        m.startswith("WARNING") and "thickness" in m for m in LOG),
+        "SA0 with a thickness and a temperature: WARNING, passes")
+    for atype, geo in (("D20", PS), ("DA0", "")):
+        md = _extract(_liml(atype, geo, loads=THERMAL),
+                      analysis="dyna_impl_3d")
+        check(md is None and any("Thermal stress" in m for m in _errors()),
+              "{0} with a temperature: ERROR ({1})".format(atype, LOG[-2:]))
+    # The temperature field reaches the AXIS model in the .comm
+    comm = _comm(_liml("SA0", "", loads=THERMAL))
+    check(comm is not None and "MODELISATION='AXIS'" in comm and
+          "NOM_VARC='TEMP'" in comm and "VALE_REF=293.0" in comm,
+          "SA0 .comm with AFFE_VARC TEMP on AXIS: {0}".format(_errors()))
 
 
 def test_finish_bcs():
@@ -338,6 +378,7 @@ def test_acoustic():
 if __name__ == "__main__":
     test_modelisations()
     test_errors()
+    test_thermal()
     test_finish_bcs()
     test_edge_measure()
     test_pinned()

@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-12)
+### 2D en axisymmetrisch (PL-01 … PL-28)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -876,6 +876,40 @@ tolerantie 1e-6).
   tijdsverloop = Mecway (1,6e-8). PL-11 en PL-12 hebben *Generate solution every n time steps* >
   1 (n = 10 en 5); de bridge rekent met Mecway's stap. Vóór die correctie rekende hij een
   stap per uitvoerinterval: tijdsverloop 2,7% (PL-11) en 4,6% (PL-12) naast Mecway.
+
+Thermische spanning in S20/SA0 (STAPPENPLAN S44c, `AFFE_VARC` `TEMP`; E = 210 GPa, ν = 0,3,
+α = 1,2e-5 1/K, referentie 293 K, ΔT = 100 K; `tests_vlak_2d_thermisch.py`). "= Mecway" is
+Mecway 35's eigen S20/SA0-oplossing (headless, tolerantie 1e-6): verplaatsingen en reacties
+van alle cases behalve PL-25 binnen 1e-13 (ook Mecway interpoleert de knooptemperaturen), de
+spanningen van PL-22/23 (σ_zz van `D_PLAN` inbegrepen) binnen 1e-15; Mecway's
+knoopspanningen in de buis verschillen 0,5 … 5% (KB3; zijn |σ_r| halverwege de wand 3,3% te
+groot). PL-25 heeft geen Mecway-tegenhanger (Mecway negeert `#ASTER`-regels). Een
+Temperature met een tijdtabel geeft in Mecway's S20 en SA0 geen uitzetting, net als in de
+bridge (WARNING).
+
+- **PL-20** (ring r = 0,1 … 0,2 m, h = 10 mm, `AXIS`, uniforme Temperature op een
+  knoopselectie, Y vast onder) en **PL-27** (hetzelfde als volle schijf r = 0 … 0,2 m,
+  knopen op de as vast in X): u_r = α ΔT r en u_y = α ΔT h binnen 1e-6, alle
+  spanningscomponenten onder 1e-6 E α ΔT.
+- **PL-21** (plaat 100 × 50 mm, t = 10 mm, `C_PLAN`, Temperature op een elementselectie,
+  symmetrie x = 0, y = 0): u = α ΔT x exact, geen spanning. **PL-28** (dezelfde plaat met de
+  Temperature op een vlakselectie van alleen de rechterrand, de andere knopen op de
+  referentie): verplaatsingen = Mecway.
+- **PL-22** / **PL-23** (de plaat rondom vast): σ_xx = σ_yy = −E α ΔT / (1 − ν) = −360 MPa,
+  σ_zz = 0 (`C_PLAN`); −E α ΔT / (1 − 2ν) = −630 MPa in alle drie richtingen (`D_PLAN`);
+  binnen 1e-6, σ_xy onder 1e-6 E α ΔT.
+- **PL-24** … **PL-26** (dikwandige buis a = 0,1 m, b = 0,2 m, Node temperature T(r) = T_a +
+  (T_b − T_a) ln(r/a) / ln(b/a) met T_a = 393 K, T_b = 293 K, 8 quad8 door de wand; gesloten
+  oplossing Timoshenko & Goodier §150): PL-24 `AXIS` met beide einden vast (vlakke rek),
+  PL-25 `AXIS` met vlakke vrije einden (`#ASTER` `LIAISON_UNIF` `DY` op de bovenrand,
+  gegeneraliseerde vlakke rek), PL-26 `D_PLAN` (kwart ring 8 × 32). u_r aan beide wanden
+  binnen 2e-5, u_y van de vrije bovenrand = ε₀ h exact; σ_θ en σ_z aan beide wanden binnen
+  0,7%; Σ R_y van PL-24 over 360 graden = 2π α E ∫θ r dr = 9,2155 MN (de factor 2π onder een
+  thermische belasting). σ_r halverwege de wand (−28,0 MPa, 13% van de grootste
+  omtrekspanning) 1,04% (AXIS) en 1,10% (D_PLAN) te groot in absolute waarde (de tabel
+  toont −1,04%, relatief tot |ref|): geëxtrapoleerd vanuit de
+  integratiepunten, convergeert als h² (AXIS 4,28 / 1,04 / 0,26% bij 4 / 8 / 16 elementen;
+  D_PLAN 8 × 8: 2,0%, 8 × 16: 1,28%, 16 × 32: 0,32%); tolerantie 1,2% zoals σ_r van PL-04.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

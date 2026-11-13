@@ -67,7 +67,9 @@ shells ([`Thermal.md`](Thermal.md)).
    - *Force* on nodes (total, equally per node) or on edges (total, uniform over the
      edge area);
    - *Gravity* in the XY plane (SA0: only along Y);
-   - *Centrifugal force* about Z (S20) or about Y (SA0).
+   - *Centrifugal force* about Z (S20) or about Y (SA0);
+   - S20 and SA0: *Thermal stress* with *Temperature* (on nodes, edges or elements) or
+     *Node temperature*, and the thermal expansion coefficient in the material (§2.5).
    Values may be a time table (dynamics). Dynamics: *Rayleigh damping* on the whole
    model. Other items stop or are skipped with an ERROR (§3, §4).
 
@@ -157,16 +159,54 @@ with *Generate solution every n time steps* > 1: the bridge then computes n step
 output interval and writes only the output times. With the default HHT the bridge gives
 a WARNING (numerical damping).
 
+### 2.5 Thermal stress (S20, SA0)
+
+A *Thermal stress* with *Temperature* or *Node temperature* goes as in 3D: a nodal
+temperature field (`CREA_CHAMP` `NOEU_TEMP_R`, nodes without a temperature at the
+reference temperature) as command variable `AFFE_VARC` `NOM_VARC='TEMP'` with
+`VALE_REF` = the reference temperature, and `ALPHA` in `ELAS` (U4.43.03). A temperature
+is a strain load: no factor t or 2π (§2.2). Code-Aster interpolates the nodal
+temperatures within the element.
+
+| Model | Thermal strain | `stresszz` |
+|---|---|---|
+| plane stress (`C_PLAN`) | α ΔT in X, Y and through the thickness (free) | 0 |
+| plane strain (`D_PLAN`) | α ΔT in all three directions, total ε_zz = 0 | ν(σ_xx + σ_yy) − E α ΔT |
+| axisymmetric (`AXIS`) | α ΔT radial, axial and hoop | hoop stress σ_θ |
+
+End condition of a tube in `AXIS`: an end edge that is held axially (*Displacement* in Y)
+is plane and fixed; an end edge without a support is free but does not stay plane. A long
+tube with free ends (generalised plane strain: plane ends that may move axially, axial
+resultant zero) needs an end edge that stays plane: put on that edge (here the face
+selection `Top`) in the custom model definition
+
+```
+#ASTER plane = AFFE_CHAR_MECA(MODELE=model, LIAISON_UNIF=_F(GROUP_MA='<<Top>>', DDL='DY'))
+#ASTER-EXCIT plane
+```
+
+(`LIAISON_UNIF`: all nodes of the edge get the same DY; [`ASTER_lines_examples.md`](ASTER_lines_examples.md)).
+Verification PL-20 … PL-28 ([`Verification.md`](Verification.md)): free expansion (also a
+solid disc with nodes on the axis and a temperature on edges) and fully held plates
+exact, a thick tube with a logarithmic temperature within 1% of Timoshenko & Goodier
+(|σ_r| 1.04% too large, see there). Displacements and reactions are equal to Mecway's own
+S20/SA0 solution (≤ 1e-13, Mecway 35 headless; Mecway also interpolates the node temperatures
+within the element); nodal stresses differ by the extrapolation (§5).
+
 ## 3. Not possible
 
-KNOWN_BUGS 126; planned step in `STAPPENPLAN.md`: S16e. A20 (acoustics): §4.
+KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md`: S16e (loads and elements in the linear
+types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics): §4.
 
 - Beams, trusses, springs or solids in a 2D analysis (Mecway's S20 allows beams and
   trusses): ERROR, the bridge stops.
 - Several thicknesses, or plane stress and plane strain in one model: ERROR.
 - Moment, line pressure, hydrostatic pressure, frictionless and elastic support,
   compression only, node rotation, constraint equations, couplings, contact, point
-  masses, temperatures (thermal stress): ERROR (stop or skipped).
+  masses: ERROR (stop or skipped).
+- Temperatures (thermal stress) in D20/DA0: ERROR (in S20/SA0 translated, §2.5). A
+  *Temperature* with a time table in S20/SA0 is left out (WARNING), as in 3D Static;
+  Mecway's own S20 and SA0 give no expansion with it either (measured headless).
 - Displacement along an oblique direction, symmetry with an oblique normal: skipped
   (ERROR).
 - S20/SA0 with another analysis than `lin_static_3d`, D20/DA0 with another than
@@ -204,7 +244,7 @@ KNOWN_BUGS 126; planned step in `STAPPENPLAN.md`: S16e. A20 (acoustics): §4.
 | ERROR: A 2D analysis (…) needs all nodes in the XY plane (Z = 0) | mesh not in the XY plane | move or rotate the mesh into the XY plane |
 | ERROR: Axisymmetric (SA0): all nodes must have X >= 0 | part of the mesh at X < 0 | mirror the mesh to X ≥ 0 (Y = axis) |
 | ERROR: Elset '…' contains line2 …; in a 2D analysis … | beams, trusses, springs or solids in the model | remove them or compute in 3D |
-| ERROR: … in a 2D analysis (…) is not translated (yet) | contact, coupling, constraint equation, point mass or temperature | remove it or compute in 3D |
+| ERROR: … in a 2D analysis (…) is not translated (yet) | contact, coupling, constraint equation, point mass, or a temperature in D20/DA0 | remove it or compute in 3D |
 | ERROR: … on '…' in a 2D analysis: … NOT included. | load or constraint without a 2D route (§3) | replace it by a supported load (§1.1) |
 | ERROR: Mecway analysis type A20 (Acoustic Resonance 2D) is only translated to the cavity modes … | another analysis chosen | choose `auto` or `acoustic_modes_3d` ([`Acoustics.md`](Acoustics.md) §3.5) |
 | ERROR: Mecway analysis type D20 (2D) is only translated to dyna_impl_3d, not to … | another analysis chosen on the start screen | choose `auto` or the analysis named |

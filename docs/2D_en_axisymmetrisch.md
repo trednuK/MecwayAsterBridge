@@ -67,7 +67,9 @@ maak je met schalen ([`Thermisch.md`](Thermisch.md)).
    - *Force* op knopen (totaal, gelijk per knoop) of op randen (totaal, uniform over het
      randoppervlak);
    - *Gravity* in het XY-vlak (SA0: alleen langs Y);
-   - *Centrifugal force* om Z (S20) of om Y (SA0).
+   - *Centrifugal force* om Z (S20) of om Y (SA0);
+   - S20 en SA0: *Thermal stress* met *Temperature* (op knopen, randen of elementen) of
+     *Node temperature*, en de uitzettingscoëfficiënt in het materiaal (§2.5).
    Waarden mogen een tijdtabel zijn (dynamica). Dynamica: *Rayleigh damping* op het hele
    model. Andere items stoppen of worden overgeslagen met een ERROR (§3, §4).
 
@@ -158,16 +160,56 @@ ook met *Generate solution every n time steps* > 1: de bridge rekent dan n stapp
 uitvoerinterval en schrijft alleen de uitvoertijden. Met de standaard HHT geeft de bridge
 een WARNING (numerieke demping).
 
+### 2.5 Thermische spanning (S20, SA0)
+
+Een *Thermal stress* met *Temperature* of *Node temperature* gaat zoals in 3D: een
+temperatuurveld in de knopen (`CREA_CHAMP` `NOEU_TEMP_R`, knopen zonder temperatuur op
+de referentietemperatuur) als commandovariabele `AFFE_VARC` `NOM_VARC='TEMP'` met
+`VALE_REF` = de referentietemperatuur, en `ALPHA` in `ELAS` (U4.43.03). Een temperatuur
+is een rekbelasting: geen factor t of 2π (§2.2). Code-Aster interpoleert de
+knooptemperaturen binnen het element.
+
+| Model | Thermische rek | `stresszz` |
+|---|---|---|
+| vlakke spanning (`C_PLAN`) | α ΔT in X, Y en door de dikte (vrij) | 0 |
+| vlakke rek (`D_PLAN`) | α ΔT in alle drie richtingen, totale ε_zz = 0 | ν(σ_xx + σ_yy) − E α ΔT |
+| axisymmetrisch (`AXIS`) | α ΔT radiaal, axiaal en in de omtrek | omtrekspanning σ_θ |
+
+Eindvoorwaarde van een buis in `AXIS`: een eindrand die axiaal is vastgehouden
+(*Displacement* in Y) is vlak en vast; een eindrand zonder oplegging is vrij maar blijft
+niet vlak. Een lange buis met vrije einden (gegeneraliseerde vlakke rek: vlakke einden die
+axiaal mogen bewegen, axiale resultante nul) heeft een eindrand nodig die vlak blijft: zet
+op die rand (hier de vlakselectie `Boven`) in de custom model definition
+
+```
+#ASTER vlak = AFFE_CHAR_MECA(MODELE=model, LIAISON_UNIF=_F(GROUP_MA='<<Boven>>', DDL='DY'))
+#ASTER-EXCIT vlak
+```
+
+(`LIAISON_UNIF`: alle knopen van de rand krijgen dezelfde DY; [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md)).
+Verificatie PL-20 … PL-28 ([`Verificatie.md`](Verificatie.md)): vrije uitzetting (ook
+een volle schijf met knopen op de as en een temperatuur op randen) en rondom
+vastgehouden platen exact, een dikwandige buis met een logaritmische temperatuur binnen
+1% van Timoshenko & Goodier (|σ_r| 1,04% te groot, zie daar). Verplaatsingen en reacties zijn
+gelijk aan Mecway's eigen S20/SA0-oplossing (≤ 1e-13, Mecway 35 headless; ook Mecway
+interpoleert de knooptemperaturen binnen het element); knoopspanningen verschillen door de
+extrapolatie (§5).
+
 ## 3. Niet mogelijk
 
-KNOWN_BUGS 126; geplande stap in `STAPPENPLAN.md`: S16e. A20 (akoestiek): §4.
+KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md`: S16e (belastingen en elementen in de
+lineaire typen), S44 (niet-lineair, contact, thermisch, axisymmetrische schalen). A20
+(akoestiek): §4.
 
 - Balken, truss, veren of volume-elementen in een 2D-analyse (Mecway's S20 kent balken
   en truss): ERROR, de bridge stopt.
 - Meerdere diktes, of vlakke spanning en vlakke rek in een model: ERROR.
 - Moment, line pressure, hydrostatische druk, frictionless en elastic support,
   compression only, node rotation, constraint equations, koppelingen, contact,
-  puntmassa's, temperaturen (thermal stress): ERROR (stop of overgeslagen).
+  puntmassa's: ERROR (stop of overgeslagen).
+- Temperaturen (thermal stress) in D20/DA0: ERROR (in S20/SA0 vertaald, §2.5). Een
+  *Temperature* met een tijdtabel in S20/SA0 valt weg (WARNING), zoals in 3D Static;
+  Mecway's eigen S20 en SA0 geven er ook geen uitzetting mee (headless gemeten).
 - Displacement in een schuine richting, symmetrie met een schuine normaal: overgeslagen
   (ERROR).
 - S20/SA0 met een andere analyse dan `lin_static_3d`, D20/DA0 met een andere dan
@@ -206,7 +248,7 @@ KNOWN_BUGS 126; geplande stap in `STAPPENPLAN.md`: S16e. A20 (akoestiek): §4.
 | ERROR: Een 2D-analyse (…) heeft alle knopen in het XY-vlak nodig (Z = 0) | mesh niet in het XY-vlak | verplaats of draai de mesh naar het XY-vlak |
 | ERROR: Axisymmetrisch (SA0): alle knopen moeten X >= 0 hebben | deel van de mesh bij X < 0 | spiegel de mesh naar X ≥ 0 (Y = as) |
 | ERROR: Elset '…' bevat line2 …; in een 2D-analyse … | balken, truss, veren of volume-elementen in het model | haal ze weg of reken in 3D |
-| ERROR: … in een 2D-analyse (…) wordt (nog) niet vertaald | contact, koppeling, constraint equation, puntmassa of temperatuur | haal het weg of reken in 3D |
+| ERROR: … in een 2D-analyse (…) wordt (nog) niet vertaald | contact, koppeling, constraint equation, puntmassa, of een temperatuur in D20/DA0 | haal het weg of reken in 3D |
 | ERROR: … op '…' in een 2D-analyse: … NIET meegenomen. | belasting of voorwaarde zonder 2D-route (§3) | vervang hem door een ondersteunde belasting (§1.1) |
 | ERROR: Mecway-analysetype A20 (Acoustic Resonance 2D) wordt alleen vertaald naar de holtemodes … | een andere analyse gekozen | kies `auto` of `acoustic_modes_3d` ([`Akoestiek.md`](Akoestiek.md) §3.5) |
 | ERROR: Mecway-analysetype D20 (2D) wordt alleen vertaald naar dyna_impl_3d, niet naar … | een andere analyse gekozen op het startscherm | kies `auto` of de genoemde analyse |

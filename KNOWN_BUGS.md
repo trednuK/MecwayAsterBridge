@@ -1306,7 +1306,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    (largest component positive, side above keeps them); Mecway's rule is NOT verified beyond
    BoltedJoint.
 126\. **2D analyses: limits** (confirmed, `bridge_plane.py`, STAPPENPLAN S16a, S16b,
-   S16d). Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
+   S16d, S44c). Translated: Static 2D (S20, `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`) in
    linear static (`lin_static_3d`), Dynamic Response 2D/Axisymmetric (D20, DA0) in
    `dyna_impl_3d` (implicit, Rayleigh damping, time tables; no explicit scheme, mode
    superposition or initial velocity), Acoustic Resonance 2D (A20, S16d) as the cavity
@@ -1314,15 +1314,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    `PLAN_ABSO`; triangles KNOWN_BUGS 130), plane elements only, one thickness and one type per
    model; fixed, pinned,
    displacement along X/Y, symmetry with normal X/Y, force (nodes, edges), pressure and
-   traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0)
+   traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0),
+   thermal stress with Temperature / Node temperature in S20/SA0 (S44c, PL-20 … PL-28, equal
+   to Mecway 35's own S20/SA0 solve headless; that Mecway's GUI offers them in S20/SA0 is
+   documented, not tested)
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
    with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,
    checked 29 Oct 2026 in the manual §6.9, §9.34, §9.35 and
    headless: an A20 model with fluid pressure 1 Pa gives no solution), nodes with Z ≠ 0 (ERROR, Mecway ignores Z), beams/trusses/springs in S20, several thicknesses, other loads and constraints
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
-   constraint equations, couplings, contact, point masses, temperatures), the error estimator
-   (INFO) and the result route `tabel` (ERROR) (step S16e). Mecway itself has no thermal,
+   constraint equations, couplings, contact, point masses, temperatures in D20/DA0), the error estimator
+   (INFO) and the result route `tabel` (ERROR) (step S16e; nonlinear, contact, thermal and
+   axisymmetric shells: S44). Mecway itself has no thermal,
    frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).
 

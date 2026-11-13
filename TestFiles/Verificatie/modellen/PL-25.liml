@@ -1,0 +1,107 @@
+<liml version="33">
+  <analysis type="SA0" />
+  <node nid="1" x="0.1" y="0" z="0" />
+  <node nid="2" x="0.10625" y="0" z="0" />
+  <node nid="3" x="0.1125" y="0" z="0" />
+  <node nid="4" x="0.1125" y="0.005" z="0" />
+  <node nid="5" x="0.1125" y="0.01" z="0" />
+  <node nid="6" x="0.10625" y="0.01" z="0" />
+  <node nid="7" x="0.1" y="0.01" z="0" />
+  <node nid="8" x="0.1" y="0.005" z="0" />
+  <node nid="9" x="0.11875" y="0" z="0" />
+  <node nid="10" x="0.125" y="0" z="0" />
+  <node nid="11" x="0.125" y="0.005" z="0" />
+  <node nid="12" x="0.125" y="0.01" z="0" />
+  <node nid="13" x="0.11875" y="0.01" z="0" />
+  <node nid="14" x="0.13125" y="0" z="0" />
+  <node nid="15" x="0.1375" y="0" z="0" />
+  <node nid="16" x="0.1375" y="0.005" z="0" />
+  <node nid="17" x="0.1375" y="0.01" z="0" />
+  <node nid="18" x="0.13125" y="0.01" z="0" />
+  <node nid="19" x="0.14375" y="0" z="0" />
+  <node nid="20" x="0.15" y="0" z="0" />
+  <node nid="21" x="0.15" y="0.005" z="0" />
+  <node nid="22" x="0.15" y="0.01" z="0" />
+  <node nid="23" x="0.14375" y="0.01" z="0" />
+  <node nid="24" x="0.15625" y="0" z="0" />
+  <node nid="25" x="0.1625" y="0" z="0" />
+  <node nid="26" x="0.1625" y="0.005" z="0" />
+  <node nid="27" x="0.1625" y="0.01" z="0" />
+  <node nid="28" x="0.15625" y="0.01" z="0" />
+  <node nid="29" x="0.16875" y="0" z="0" />
+  <node nid="30" x="0.175" y="0" z="0" />
+  <node nid="31" x="0.175" y="0.005" z="0" />
+  <node nid="32" x="0.175" y="0.01" z="0" />
+  <node nid="33" x="0.16875" y="0.01" z="0" />
+  <node nid="34" x="0.18125" y="0" z="0" />
+  <node nid="35" x="0.1875" y="0" z="0" />
+  <node nid="36" x="0.1875" y="0.005" z="0" />
+  <node nid="37" x="0.1875" y="0.01" z="0" />
+  <node nid="38" x="0.18125" y="0.01" z="0" />
+  <node nid="39" x="0.19375" y="0" z="0" />
+  <node nid="40" x="0.2" y="0" z="0" />
+  <node nid="41" x="0.2" y="0.005" z="0" />
+  <node nid="42" x="0.2" y="0.01" z="0" />
+  <node nid="43" x="0.19375" y="0.01" z="0" />
+  <elset name="Buis" material="Staal">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="3 9 10 11 12 13 5 4" />
+    <elem eid="3" shape="quad8" nodes="10 14 15 16 17 18 12 11" />
+    <elem eid="4" shape="quad8" nodes="15 19 20 21 22 23 17 16" />
+    <elem eid="5" shape="quad8" nodes="20 24 25 26 27 28 22 21" />
+    <elem eid="6" shape="quad8" nodes="25 29 30 31 32 33 27 26" />
+    <elem eid="7" shape="quad8" nodes="30 34 35 36 37 38 32 31" />
+    <elem eid="8" shape="quad8" nodes="35 39 40 41 42 43 37 36" />
+  </elset>
+  <displacement selection="Onder"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <ccxmodeldefinition>#ASTER vlak = AFFE_CHAR_MECA(MODELE=model, LIAISON_UNIF=_F(GROUP_MA='&lt;&lt;Boven&gt;&gt;', DDL='DY'))
+#ASTER-EXCIT vlak</ccxmodeldefinition>
+  <thermalstress><referencetemperature>293 K</referencetemperature></thermalstress>
+  <temperature3><nodetemperature nid="1" value="393 K" /><nodetemperature nid="2" value="384.253715875 K" /><nodetemperature nid="3" value="376.007499856 K" /><nodetemperature nid="4" value="376.007499856 K" /><nodetemperature nid="5" value="376.007499856 K" /><nodetemperature nid="6" value="384.253715875 K" /><nodetemperature nid="7" value="393 K" /><nodetemperature nid="8" value="393 K" /><nodetemperature nid="9" value="368.207248656 K" /><nodetemperature nid="10" value="360.807190511 K" /><nodetemperature nid="11" value="360.807190511 K" /><nodetemperature nid="12" value="360.807190511 K" /><nodetemperature nid="13" value="368.207248656 K" /><nodetemperature nid="14" value="353.768257722 K" /><nodetemperature nid="15" value="347.056838136 K" /><nodetemperature nid="16" value="347.056838136 K" /><nodetemperature nid="17" value="347.056838136 K" /><nodetemperature nid="18" value="353.768257722 K" /><nodetemperature nid="19" value="340.643804394 K" /><nodetemperature nid="20" value="334.503749928 K" /><nodetemperature nid="21" value="334.503749928 K" /><nodetemperature nid="22" value="334.503749928 K" /><nodetemperature nid="23" value="340.643804394 K" /><nodetemperature nid="24" value="328.614381023 K" /><nodetemperature nid="25" value="322.956028186 K" /><nodetemperature nid="26" value="322.956028186 K" /><nodetemperature nid="27" value="322.956028186 K" /><nodetemperature nid="28" value="328.614381023 K" /><nodetemperature nid="29" value="317.511249784 K" /><nodetemperature nid="30" value="312.264507794 K" /><nodetemperature nid="31" value="312.264507794 K" /><nodetemperature nid="32" value="312.264507794 K" /><nodetemperature nid="33" value="317.511249784 K" /><nodetemperature nid="34" value="307.201900487 K" /><nodetemperature nid="35" value="302.310940439 K" /><nodetemperature nid="36" value="302.310940439 K" /><nodetemperature nid="37" value="302.310940439 K" /><nodetemperature nid="38" value="307.201900487 K" /><nodetemperature nid="39" value="297.580368961 K" /><nodetemperature nid="40" value="293 K" /><nodetemperature nid="41" value="293 K" /><nodetemperature nid="42" value="293 K" /><nodetemperature nid="43" value="297.580368961 K" /></temperature3>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" thermalexpansion="1.2e-05 1/K" />
+  </mat>
+  <faceselection name="Onder">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+    <face eid="5" faceid="1" />
+    <face eid="6" faceid="1" />
+    <face eid="7" faceid="1" />
+    <face eid="8" faceid="1" />
+  </faceselection>
+  <faceselection name="Boven">
+    <face eid="1" faceid="3" />
+    <face eid="2" faceid="3" />
+    <face eid="3" faceid="3" />
+    <face eid="4" faceid="3" />
+    <face eid="5" faceid="3" />
+    <face eid="6" faceid="3" />
+    <face eid="7" faceid="3" />
+    <face eid="8" faceid="3" />
+  </faceselection>
+  <nodeselection name="Ondern">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="19" />
+    <node nid="20" />
+    <node nid="24" />
+    <node nid="25" />
+    <node nid="29" />
+    <node nid="30" />
+    <node nid="34" />
+    <node nid="35" />
+    <node nid="39" />
+    <node nid="40" />
+  </nodeselection>
+</liml>

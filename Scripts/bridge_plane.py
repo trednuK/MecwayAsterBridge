@@ -12,7 +12,17 @@
 # deformation PETIT and one step per Mecway step equal to Mecway's linear
 # Newmark: verification PL-10 .. PL-12, <= 4e-8). Acoustic Resonance 2D
 # (A20, S16d): checks and MODELISATION 'PLAN' of PHENOMENE='ACOUSTIQUE'
-# (_apply_acoustic); the model is written by bridge_acoustic.
+# (_apply_acoustic); the model is written by bridge_acoustic. Thermal stress
+# (S44c): Temperature / Node temperature with a Thermal stress in S20/SA0 go
+# through the 3D route (bridge_to_aster._build_temperature_field, AFFE_VARC
+# TEMP on the C_PLAN/D_PLAN/AXIS model, no thickness or 2 pi factor: a
+# strain load); verification PL-20 .. PL-28 against closed forms and
+# Mecway 35's own S20/SA0 solve (headless: displacements and reactions
+# within 1e-13, Mecway interpolates node temperatures in the element too;
+# a Temperature with a time table gives no expansion in Mecway's S20 and
+# SA0, as the bridge drops it in MECA_STATIQUE). Mecway manual v34 par.
+# 9.23 .. 9.25 lists them for "Static" (2D and 3D), not for Dynamic
+# Response, so D20/DA0 stay refused.
 # bridge_from_liml calls apply() (modelisations, checks), bridge_mesh calls
 # convert_bc() per load and finish_bcs() after all loads, bridge_to_aster
 # uses export_arg() / static_check_arg() for the results.
@@ -100,10 +110,12 @@ _NOT_VERIFIED = (("contacts", "Contact"), ("bonded", "Bonded contact"),
                  ("constraint_equations", "Constraint equation"),
                  ("point_masses", "Point mass"),
                  ("flexible_joints", "Flexible joint"),
-                 ("thermal_stress", "Thermal stress"),
-                 ("temperatures", "Temperature"),
-                 ("node_temperatures", "Node temperature"),
                  ("initial_velocities", "Initial velocity"))
+# Temperature items: verified in linear static (S44c, MECA_STATIQUE), not in
+# D20/DA0 (Mecway ignores temperatures in D30; D20/DA0 not measured)
+_THERMAL = (("thermal_stress", "Thermal stress"),
+            ("temperatures", "Temperature"),
+            ("node_temperatures", "Node temperature"))
 _DROP_DDL = ("DZ", "DRX", "DRY", "DRZ")
 _DROP_FORCE = ("FZ", "MX", "MY", "MZ")
 _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
@@ -174,7 +186,8 @@ def apply(model_data, run_cfg, elset_shapes):
             "forces to the thickness or 360 degrees.", atype)
     axis = PLANE_TYPES[atype] == "axis"
     # Model items without a verified 2D route (S16a)
-    for key, what in _NOT_VERIFIED:
+    blocked = _NOT_VERIFIED + (() if solver == "MECA_STATIQUE" else _THERMAL)
+    for key, what in blocked:
         if model_data.get(key):
             return _fatal(
                 "{0} in een 2D-analyse ({1}) wordt (nog) niet vertaald; "

@@ -826,7 +826,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-12)
+### 2D and axisymmetric (PL-01 … PL-28)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -868,6 +868,39 @@ tolerance 1e-6).
   history = Mecway (1.6e-8). PL-11 and PL-12 have *Generate solution every n time steps* >
   1 (n = 10 and 5); the bridge computes with Mecway's step. Before that fix it computed one
   step per output interval: history 2.7% (PL-11) and 4.6% (PL-12) off Mecway.
+
+Thermal stress in S20/SA0 (STAPPENPLAN S44c, `AFFE_VARC` `TEMP`; E = 210 GPa, ν = 0.3,
+α = 1.2e-5 1/K, reference 293 K, ΔT = 100 K; `tests_vlak_2d_thermisch.py`). "= Mecway" is
+Mecway 35's own S20/SA0 solution (headless, tolerance 1e-6): displacements and reactions of
+all cases except PL-25 within 1e-13 (Mecway interpolates the node temperatures too), the
+stresses of PL-22/23 (σ_zz of `D_PLAN` included) within 1e-15; Mecway's nodal stresses in the
+tube differ by 0.5 … 5% (KB3; its |σ_r| at mid-wall 3.3% too large). PL-25 has no Mecway
+counterpart (Mecway ignores `#ASTER` lines). A Temperature with a time table gives no
+expansion in Mecway's S20 and SA0, as in the bridge (WARNING).
+
+- **PL-20** (ring r = 0.1 … 0.2 m, h = 10 mm, `AXIS`, uniform Temperature on a node
+  selection, Y held at the bottom) and **PL-27** (the same as a solid disc r = 0 … 0.2 m,
+  nodes on the axis held in X): u_r = α ΔT r and u_y = α ΔT h within 1e-6, all stress
+  components below 1e-6 E α ΔT.
+- **PL-21** (plate 100 × 50 mm, t = 10 mm, `C_PLAN`, Temperature on an element selection,
+  symmetry x = 0, y = 0): u = α ΔT x exact, no stress. **PL-28** (the same plate with the
+  Temperature on a face selection of the right edge only, the other nodes at the reference):
+  displacements = Mecway.
+- **PL-22** / **PL-23** (the plate held on all edges): σ_xx = σ_yy = −E α ΔT / (1 − ν)
+  = −360 MPa, σ_zz = 0 (`C_PLAN`); −E α ΔT / (1 − 2ν) = −630 MPa in all three directions
+  (`D_PLAN`); within 1e-6, σ_xy below 1e-6 E α ΔT.
+- **PL-24** … **PL-26** (thick tube a = 0.1 m, b = 0.2 m, Node temperature T(r) = T_a + (T_b −
+  T_a) ln(r/a) / ln(b/a) with T_a = 393 K, T_b = 293 K, 8 quad8 through the wall; closed form
+  Timoshenko & Goodier §150): PL-24 `AXIS` with both ends held (plane strain), PL-25 `AXIS`
+  with plane free ends (`#ASTER` `LIAISON_UNIF` `DY` on the top edge, generalised plane
+  strain), PL-26 `D_PLAN` (quarter ring 8 × 32). u_r at both walls within 2e-5, u_y of the
+  free top edge = ε₀ h exact; σ_θ and σ_z at both walls within 0.7%; Σ R_y of PL-24 over
+  360 degrees = 2π α E ∫θ r dr = 9.2155 MN (the 2π factor under a thermal load). σ_r at
+  mid-wall (−28.0 MPa, 13% of the peak hoop stress) 1.04% (AXIS) and 1.10% (D_PLAN) too
+  large in magnitude (the table shows −1.04%, relative to |ref|):
+  extrapolated from the integration points, converging as h² (AXIS 4.28 / 1.04 / 0.26% at
+  4 / 8 / 16 elements; D_PLAN 8 × 8: 2.0%, 8 × 16: 1.28%, 16 × 32: 0.32%); tolerance 1.2% as
+  σ_r of PL-04.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as
