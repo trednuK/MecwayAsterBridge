@@ -44,12 +44,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    hex8 with `3D`; `3D_SI` is not possible with `ELAS_HYPER` (`ELEMENTSSI_1`), so
    such an elset gets `3D` (`_hyper_hex8`).
 
-2\. **Shell elements ~0.7% different from Mecway** (confirmed). Flat quad4 plate
-   100x20 mm, 1 mm, fixed on one edge: displacements DKT (Code-Aster) and
-   Mecway differ by 0.66%, rotations up to ~10%. Option `elem_shell` = "COQUE_3D"
-   (linear shells via LINE_QUAD to QUAD9/TRIA7, with drilling rotation) gives
-   0.03% / 0.83% on the displacements, the rotations deviate similarly; no
-   formulation follows Mecway exactly. With a coarse mesh the difference is larger: wall
+2\. **Shell elements ~0.7% different from Mecway on coarse meshes** (confirmed, Mecway 35
+   headless and Code-Aster 17.4, 13 Nov 2026; discretisation, not an error). Mecway's shell
+   (MITC4-like) and DKT/`COQUE_3D` converge to the same answer. Cantilever plate 100x20 mm,
+   1 mm, `fixed` on the edge faces at x = 0, 1 N at the tip (difference to Mecway, largest
+   over the nodes, relative to Mecway's largest value): quad4 10x2 DKT deflection +0.63%,
+   bending rotation 0.81%, `COQUE_3D` +0.66% / 1.30%; quad4 40x8 DKT −0.01% / 0.07%,
+   `COQUE_3D` +0.10% / 0.38%; quad8 10x2 +0.35% / 1.03%, 40x8 +0.03% / 0.23% (DKT and
+   `COQUE_3D` equal). The secondary rotation about the plate axis (Poisson twist, ~5% of
+   the bending rotation) differs 27% on 10x2 and 1.6% on 40x8; the earlier "rotations up to ~10%"
+   probably came from that small component (the old model is not in the repo). Option `elem_shell` = "COQUE_3D" (linear shells via
+   LINE_QUAD to QUAD9/TRIA7, with drilling rotation) is not closer to Mecway. A 160x32
+   quad4 mesh of this 1 mm plate stops with `FACTOR_57` (MUMPS error 1.7e-6 > `RESI_RELA`
+   1e-6; the bridge's hint names the setting). With a coarse mesh the difference is larger: wall
    1x1 m, 20 mm, 2x2 quad4, pressure: DKT 8% more deflection than Mecway (headless). COQUE_3D falls back to DKT if the shells share nodes
    with elements that stay linear (`bridge_to_aster._resolve_line_quad`).
 

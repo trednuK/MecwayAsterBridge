@@ -2512,7 +2512,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
 | 1 | Hex8 is stiffer than in Mecway | real: settings checked (supports one direction per *Displacement*: a first try with x = y = z = 1 held only the diagonal and was singular, an own error); Mecway 35 internal and CCX 0.1892 mm whatever `<incompatiblehex8>` says, the manual has no option (§7.3); independent: Euler-Bernoulli 0.1905 mm, Code-Aster 17.4 `3D` 0.1234 mm (shear locking), `LINE_QUAD` 0.1881 mm | item corrected (no analysis setting, Mecway 35 values) | this commit |
-| 2 | Shell elements ~0.7% different from Mecway |  |  |  |
+| 2 | Shell elements ~0.7% different from Mecway | real, discretisation: settings checked (clamp on edge faces, not nodes, item 135); independent: mesh convergence, Mecway and DKT/`COQUE_3D` meet (quad4 40x8: −0.01% deflection, 0.07% rotation); the old "rotations ~10%" was the small Poisson-twist component on a coarse mesh | item corrected with Mecway 35 values | this commit |
 | 3 | Nodal stresses and von Mises different from Mecway |  |  |  |
 | 7 | Stresses per element node stay from Mecway in the table route |  |  |  |
 | 46 | Buckling: negative buckling load factors and Mecway's shift |  |  |  |
