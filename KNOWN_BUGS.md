@@ -656,7 +656,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    default `POU_D_E` (kept like Mecway's Euler beam); solved with the option. A *General
    section* without an `#ASTER-SECTIE` line has no shear centre or C_w even with
    `POU_D_TG` (WARNING). The buckling WARNING for `POU_D_E` keys on the profile types T, C
-   and L (`_ECCENTRIC_PROFILES`); an eccentric *General section* on `POU_D_E` gets none
+   and L (`_ECCENTRIC_PROFILES`); an eccentric *General section* on `POU_D_E`/`POU_D_T` gets none
    (desk review S46, NOT run).
 
 119\. **Mass check without the mass for `POU_D_T_GD` beams** (confirmed, Code-Aster 17.4,
