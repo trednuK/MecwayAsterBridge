@@ -2527,7 +2527,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 125 | 2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is right |  |  |  |
 | 128 | Bonded contact with shells: Mecway too stiff, the bridge too soft for a lap | high; real, but the old interpretation was wrong: independent solid reference (hex20, perfect bond) 0.1498 mm in Code-Aster and Mecway; bridge shells +13% (suspected: mid-surfaces tied without an offset term; beam check 0.1687 ≈ 0.1694), Mecway CCX −44%; the old "beam estimate" was the non-composite case | item and docs (Settings contact, Verification) corrected; **follow-up**: tie shell-on-shell faces with the lever arm u_B = u_A + θ_A × d (plan + Fable review, verification against the solid lap) | this commit |
 | 130 | Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's |  |  |  |
-| 132 | Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms |  |  |  |
+| 132 | Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms | high (wrong factors without a message); real: settings checked (fork supports by *Displacement* per direction, consistent end loads); independent: formula 27.72 / 20.65, Mecway 27.08 / 20.23, Code-Aster `COQUE_3D` 26.64 / −19.91 on the same `.liml`; DKT −7.77 (catalogue R3.07.03 §4.6) | WARNING `_buckling_shell_notes` for buckling with DKT/DST, naming `COQUE_3D`; docs Modal and buckling §3.5 and §4 NL+EN | this commit |
 | 133 | Stress over beam sections: limits |  |  |  |
 
 **Group B – Translation that works differently** (28 items, 138 added in S46)

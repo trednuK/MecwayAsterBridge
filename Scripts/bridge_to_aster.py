@@ -8425,6 +8425,36 @@ def _modal_stress_fields(analysis, buckling):
 _ECCENTRIC_PROFILES = ("T", "C", "L")
 
 
+def _buckling_shell_notes(model_data):
+    """
+    WARNING for linear buckling with DKT/DST shells (KNOWN_BUGS 132): their
+    RIGI_GEOM only has the out-of-plane displacement gradients of each plate
+    (R3.07.03 par. 4.6), so a plate that moves in its own plane in the
+    buckling mode (a profile built from plates: lateral-torsional or
+    flexural buckling) gets no geometric stiffness. Measured on the T beam
+    of BU-43c (200 x 10 quad4 per plate, 13 Nov 2026): DKT -7.77 and no
+    positive factor near the reference, COQUE_3D 26.64 / -19.91 against
+    Mecway 27.08 / -20.23 and the formula 27.72 / -20.65. A plate that
+    buckles out of its plane (BU-34) is right with DKT.
+    """
+    mods = model_data.get("elset_modelisations", {})
+    dkt = sorted(g for g, m in mods.items() if m in ("DKT", "DST"))
+    if dkt:
+        log(tr("WARNING: Knik met DKT-schalen ({0}): hun geometrische "
+               "stijfheid kent alleen de uitbuiging uit het vlak van elke "
+               "plaat. Voor een profiel uit platen (kip, knik met "
+               "verplaatsing in het vlak van een plaat) zijn de "
+               "factoren dan fout; kies Lineaire schalen "
+               "(elem_shell) = COQUE_3D (pagina Elementen) of balken met POU_D_TG.",
+               "WARNING: Buckling with DKT shells ({0}): their geometric "
+               "stiffness only knows the deflection out of the plane of "
+               "each plate. For a profile made of plates (lateral-torsional "
+               "buckling, buckling with displacement in the plane of a "
+               "plate) the factors are then wrong; choose Linear shells "
+               "(elem_shell) = COQUE_3D (page Elements) or beams with "
+               "POU_D_TG.").format(", ".join(dkt)))
+
+
 def _buckling_beam_notes(model_data):
     """
     Log what linear buckling of beams does (KNOWN_BUGS 112, 113, 115).
@@ -8593,6 +8623,7 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
                 model_data["analysis_shift"]))
     if buckling:
         _buckling_beam_notes(model_data)
+        _buckling_shell_notes(model_data)
     # Complex modes with damping (setting modal_complex; default off =
     # real modes like Mecway): bridge_modal_damping.
     damping = bridge_modal_damping.plan(model_data, analysis, buckling)

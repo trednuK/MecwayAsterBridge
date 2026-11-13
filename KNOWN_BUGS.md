@@ -227,9 +227,13 @@ Code-Aster value per node) and logs the largest difference per variable.
    mode is a pure vertical deflection) and −7.77 (stem in compression), Mecway's own
    solver with the same `.liml` 27.26 and 20.34 (400 × 20 elements: 27.08 and 20.23),
    the formula 27.72 and 20.65; `POU_D_TG` (BU-43c) 27.46 and −20.44. A plate that buckles out of its plane (BU-34) is right.
-   Not fixed in the bridge; whether `COQUE_3D` (quadratic shells) has the full geometric
-   stiffness is NOT verified. Use beams with `elem_beam` = `POU_D_TG` or solid elements for
-   the global buckling of profiles.
+   `COQUE_3D` (quadratic shells, `elem_shell`) gets it right (13 Nov 2026, the same T with
+   200 × 10 quad4 per plate): 26.64 and −19.91 against Mecway 27.08 / −20.23 (−1.6% both;
+   DKT on that mesh −7.77 and no right positive factor). The bridge gives a WARNING for
+   buckling with DKT/DST shells (`bridge_to_aster._buckling_shell_notes`) that names
+   `COQUE_3D`; DKT stays the default (a plate buckling out of its plane is right with it).
+   Use `COQUE_3D`, beams with `elem_beam` = `POU_D_TG` or solid elements for the global
+   buckling of profiles.
 
 133\. **Stress over beam sections: limits** (confirmed, `bridge_section_stress.py`, STAPPENPLAN S41,
    LS-97). No stress from restrained warping, so an open section is only right a few decay
