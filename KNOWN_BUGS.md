@@ -706,13 +706,12 @@ Code-Aster value per node) and logs the largest difference per variable.
    manual's rule, NOT measured; tension-only elements, gaps and dampers are counted like
    them, NOT verified; tri3/tri6 shells and tet/wedge solids are NOT measured either. Not
    checked: a face selection of end faces of trusses, springs or dampers, which §9.1 also
-   excludes. Mecway's GUI does not make such a support: on a node selection of shell nodes
-   it stops with the error "Some nodes do not have all rotational DOFs. Fixed support can
-   only be applied to: beam nodes, node-surface coupling reference nodes, faces, or
-   elements." (Mecway 35.0.9802, checked by the user, 13 Nov 2026; solid nodes not checked, the same
-   rule applies). The case arises only in
-   a `.liml` written by a script or edited by hand (as the verification models above), so
-   the WARNING is a safety net. Use faces;
+   excludes. Mecway 35.0.9802's GUI refuses such a support on shell nodes with the error
+   "Some nodes do not have all rotational DOFs. Fixed support can only be applied to: beam
+   nodes, node-surface coupling reference nodes, faces, or elements." (checked by the user,
+   13 Nov 2026; solid nodes and other Mecway versions NOT verified). On shell nodes it then
+   probably comes only from a script, a hand-edited `.liml` (as the verification models
+   above) or an older Mecway version, so the WARNING is a safety net. Use faces;
    *Displacement* in X, Y and Z holds the displacements (measured for spring-only nodes,
    item 47); *Node rotation* on shell nodes is NOT verified in Mecway.
 
