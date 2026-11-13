@@ -509,7 +509,17 @@ Wat er bij de limiet gebeurt:
   10 % van de limiet, minstens 60 s). Zo niet, dan stopt de lus zelf en volgen de gewone
   nabewerking (met dezelfde extra tijd) en het inladen. Mecway meldt dan "De bridge
   stopte de stappenlus bij t = ..., voor de tijdslimiet".
-- **Lineair en thermisch**: Code-Aster slaat alle
+- **Lineair statisch en thermisch** (`MECA_STATIQUE`, `THER_LINEAIRE`,
+  `THER_NON_LINE`): die berekeningen kijken onderweg niet naar de limiet en rekenen door
+  tot het eind. Daarna geeft de bridge Code-Aster altijd extra tijd voor de nabewerking:
+  minstens 90 % van de limiet, minstens 600 s, gerekend vanaf het einde van de berekening.
+  De resultaten worden dus volledig ingeladen. Eindigde de berekening pas na de limiet,
+  dan meldt de log dat met een WARNING ("... eindigde na de tijdslimiet ...").
+  Uitzonderingen: een thermische berekening met toevoegmateriaal (de stappenlus
+  hierboven), met *Thermal stress* (keten naar de mechanische berekening) of met
+  adaptieve verfijning.
+- **Overige lineaire analyses** (modaal, knik, harmonisch, spectrum, respons op modale
+  basis, akoestiek) en de thermische uitzonderingen hierboven: Code-Aster slaat alle
   volgende commando's over (`SUPERVIS_63`), ook het wegschrijven van de resultaten: er
   worden geen resultaten ingeladen (KNOWN_BUGS 137).
 

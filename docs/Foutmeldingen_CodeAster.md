@@ -958,15 +958,34 @@ Stappenplan en instellingen:
   voor de limiet (`BRIDGE_FOUT_ID BRIDGE_TIJD`; statusvak "De bridge stopte de
   stappenlus bij t = ..."), zie
   [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) §2.7.
+- **Lineair statisch en thermisch**: `MECA_STATIQUE`, `THER_LINEAIRE` en
+  `THER_NON_LINE` kijken tijdens het rekenen niet naar de limiet; een berekening die
+  erover loopt rekent door tot het eind, en het volgende commando zou dan `SUPERVIS_63`
+  geven (bij `MECA_STATIQUE` al zijn eigen `CALC_CHAMP` van de spanningen). Daarom geeft
+  de bridge na die berekening altijd extra tijd voor de nabewerking (90 % van de limiet,
+  minstens 600 s, vanaf het einde van de berekening) en laat `MECA_STATIQUE` de spanningen
+  daarna in een eigen `CALC_CHAMP` berekenen, met dezelfde velden. De resultaten worden
+  volledig ingeladen. Eindigde de berekening na de limiet, dan staat
+  `BRIDGE_TIJD_LAAT <commando> <s>` in de `.mess` en een WARNING in de log ("...
+  eindigde na de tijdslimiet ...: de resultaten zijn volledig"); ook het
+  convergentievenster meldt het. Niet bij een thermische berekening met
+  toevoegmateriaal, met *Thermal stress* of met adaptieve verfijning.
 - **Gezien**: een run van een gebruiker (niet-lineair statisch met bezwijken,
   `time_limit` 1800, 6 cpu's: `MECANONLINE9_1` na 55 stappen, daarna `SUPERVIS_63` in de
   nabewerking, geen resultaten); `StopTest_LongRun` met `time_limit` 40 s (Code-Aster
   17.4): zonder de extra tijd `SUPERVIS_63` bij de eerste `CALC_CHAMP`, met de extra tijd
-  alle 365 berekende stappen ingeladen.
+  alle 365 berekende stappen ingeladen. Met een vertraging in de berekening voorbij een
+  `time_limit` van 30 s (Code-Aster 17.4): FX-04 (`MECA_STATIQUE`) gaf zonder de
+  extra tijd `SUPERVIS_63` in de eigen `CALC_CHAMP` en geen resultaten, met de extra tijd
+  dezelfde resultaten als zonder vertraging; TH-02a (`THER_LINEAIRE`, 401 tijdstappen) en
+  WE-04b (`THER_NON_LINE`, 101 tijdstappen) rekenden door na de limiet en gaven alle
+  stappen, gelijk aan een run zonder vertraging.
 - **Oplossing**: verhoog *Tijdslimiet run_aster*, of maak het model goedkoper (grover
-  net, minder stappen). Een lineaire of thermische analyse verliest de resultaten nog
-  wel (KNOWN_BUGS 137).
-- **Status**: opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch).
+  net, minder stappen). Modaal, harmonisch, de andere lineaire analyses en de thermische
+  ketens (toevoegmateriaal, *Thermal stress*, adaptieve verfijning) verliezen de
+  resultaten nog wel (KNOWN_BUGS 137).
+- **Status**: opgelost in de bridge (niet-lineair, lineair statisch, thermisch) /
+  beperking (andere lineaire analyses, thermische ketens).
 
 ### `SUBDIVISE_3` – stap kan niet verkleind worden
 
@@ -1596,8 +1615,8 @@ twee drukken en balken in het model).
 | `MECANONLINE5_1` | [5](#mecanonline5_1--expliciet-alleen-prediction-tangente) | opgelost in de bridge |
 | `MECANONLINE5_15` | [4](#mecanonline5_15--energie-niet-met-continu-contact) | opgelost in de bridge (beperking van Code-Aster) |
 | `MECANONLINE5_80` | [5](#mecanonline5_80--beginsnelheid-op-ander-model) | oorzaak niet vastgesteld |
-| `MECANONLINE9_1` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch) |
-| `MECANONLINE9_2` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch) |
+| `MECANONLINE9_1` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair, lineair statisch, thermisch) / beperking (andere lineaire analyses, thermische ketens) |
+| `MECANONLINE9_2` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair, lineair statisch, thermisch) / beperking (andere lineaire analyses, thermische ketens) |
 | `MECANONLINE9_3` | [5](#mecanonline9_3--integratie-van-de-materiaalwet-mislukt) | opgelost in de bridge (oorzaak 2) / model (oorzaak 1) |
 | `MECANONLINE9_4` | [3](#mecanonline9_4--matrix-niet-inverteerbaar-niet-lineair) | opgelost in de bridge (1 bij fixed, 4) / model (1 overig, 2) / eigen invoer (3) / oorzaak niet vastgesteld (5) |
 | `MECANONLINE9_50` | [5](#mecanonline9_50--stapbewaking-beëindigd) | opgelost in de bridge (de run gaat door) |
@@ -1646,7 +1665,7 @@ twee drukken en balken in het model).
 | `RUPTURE0_94` | [7](#rupture0_94--sief_elga-ontbreekt-voor-calc_g) | opgelost in de bridge |
 | `XFEM_63`, `QUALITY1_1`, `MODELE1_63` | [7](#xfem_63-quality1_1-modele1_63--xfem-alarmen) | informatie / opgelost in de bridge |
 | `SUPERVIS_4` | [8](#supervis_4--syntaxfout-in-een-commando) | eigen invoer / opgelost in de bridge (per geval) |
-| `SUPERVIS_63` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair) / beperking (lineair, thermisch) |
+| `SUPERVIS_63` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--tijdslimiet-bereikt) | opgelost in de bridge (niet-lineair, lineair statisch, thermisch) / beperking (andere lineaire analyses, thermische ketens) |
 | `UTILITAI3_5` | [10](#algeline4_77-utilitai3_5--normering-en-modeparameters) | opgelost in de bridge |
 | `UTILITAI5_1` | [1](#utilitai5_1--bestand-bij-een-unit-ontbreekt) | oorzaak in de testopzet, niet in de bridge |
 | `UTILITAI_3` | [7](#utilitai_3--velden-met-sub-punten-naar-knopen) | opgelost in de bridge |

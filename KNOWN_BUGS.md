@@ -727,21 +727,25 @@ Code-Aster value per node) and logs the largest difference per variable.
    *Displacement* in X, Y and Z holds the displacements (measured for spring-only nodes,
    item 47); *Node rotation* on shell nodes is NOT verified in Mecway.
 
-137\. **A time limit in a linear or thermal analysis loses all results** (confirmed,
-   Code-Aster 17.4). When a command starts after the time limit (`time_limit` x 0.9 of
-   wall-clock time) Code-Aster raises `<TimeLimitError> <SUPERVIS_63>` and skips every
-   next command, the post-processing and `aster_results_export` too: nothing is loaded.
-   For `STAT_NON_LINE`/`DYNA_NON_LINE` (single solve, step-guard continuation, failure
-   loop, thermomechanical solve and birth loop) the bridge gives Code-Aster extra time
-   (`ExecutionParameter` `tpmax`, `bridge_failure._extend_time`): in the except clause
-   (`PARTIAL_EXCEPT`, `GUARD_EXCEPT`), before the stop of the time guard of the step loops
-   (`time_guard_check`) and after the solve (`POST_TIME`); measured with
-   `StopTest_LongRun`. Still lost (from the code: `SUPERVIS_63` is checked at the start of
-   every command; NOT run for these): linear analyses (`MECA_STATIQUE`, modal, harmonic, ...)
-   and a thermal solve (`THER_LINEAIRE`/`THER_NON_LINE`, also the thermal part of the
-   welding chain). A fix would be the same extra time after (and a try/except around) those
-   solves, or a `POURSUITE` run for the post-processing (STAPPENPLAN S45). Raise *Time
-   limit run_aster* meanwhile.
+137\. **A time limit in modal, harmonic and the other linear analyses, and in the thermal
+   chains, loses all results** (confirmed, Code-Aster 17.4). When a command starts after
+   the time limit (`time_limit` x 0.9 of wall-clock time) Code-Aster raises
+   `<TimeLimitError> <SUPERVIS_63>` and skips every next command, the post-processing and
+   `aster_results_export` too: nothing is loaded. Covered by extra time
+   (`ExecutionParameter` `tpmax`): `STAT_NON_LINE`/`DYNA_NON_LINE` (single solve,
+   step-guard continuation, failure loop, thermomechanical solve and birth loop;
+   `bridge_failure._extend_time` in `PARTIAL_EXCEPT`, `GUARD_EXCEPT`, `time_guard_check`
+   and `POST_TIME`, measured with `StopTest_LongRun`), and since S45 phase 1 linear static
+   (`MECA_STATIQUE` with `OPTION='SANS'`, then `bridge_failure.late_time` and the
+   `CALC_CHAMP` `SIEF_ELGA` of the macro) and a plain thermal solve
+   (`THER_LINEAIRE`/`THER_NON_LINE`, `bridge_thermal.build_thermal`), measured with
+   delayed runs (FX-04, TH-02a, WE-04b). Still lost (from the code; NOT run): modal,
+   buckling, spectrum, cyclic, acoustic and vibroacoustic modes (`CALC_MODES`,
+   `MODE_ITER_CYCL`), harmonic and response on a modal basis (`DYNA_VIBRA`), and the
+   thermal solve with filler material (`bridge_welding.ther_loop`), with the chain to the
+   mechanical solve (`bridge_thermomech`) or with the adaptive loop (`bridge_homard`).
+   Planned as STAPPENPLAN S45b (phases 2 and 3, low priority). Raise *Time limit
+   run_aster* meanwhile.
 
 140\. **Reaction forces with `GDEF_LOG` slightly off equilibrium** (confirmed, Code-Aster 17.4,
    measured during STAPPENPLAN S44a; Code-Aster's behaviour). The plate with a hole of PL-32

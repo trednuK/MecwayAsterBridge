@@ -76,6 +76,22 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
 - **Contact with `SANS_GROUP_NO` on a quadratic slave** keeps `INTEGRATION='AUTO'` (it stopped
   with `CONTACT_97`; seen in 2D, 3D NOT verified). New KNOWN_BUGS 141: with friction, slave nodes held in the
   tangential direction give a singular matrix (workaround `**ASTER-ZONE SANS_GROUP_NO`).
+- **Results after a time limit in linear static and thermal analyses** (STAPPENPLAN S45 phase
+  1, KNOWN_BUGS 137 narrowed): `MECA_STATIQUE`, `THER_LINEAIRE` and `THER_NON_LINE` compute
+  on past *Time limit run_aster*, after which the next command stopped with `SUPERVIS_63` and
+  nothing was loaded (for `MECA_STATIQUE` already its own `CALC_CHAMP` of the stresses). After
+  the solve the bridge now always gives Code-Aster extra time for the post-processing, at
+  least max(600 s, 0.9 x the limit) from the end of the solve, and `MECA_STATIQUE` runs with
+  `OPTION='SANS'` followed by the same `CALC_CHAMP` `SIEF_ELGA` it made itself. A solve that
+  ended after the limit gives a WARNING (results complete) and a note in the convergence
+  window. Measured headless with Code-Aster 17.4 and a delay past a 30 s limit: FX-04,
+  TH-02a (401 steps) and WE-04b (101 steps) loaded, results byte-identical to runs without
+  the delay; the 291 verification cases whose `.comm` changes (252 linear static, 39
+  thermal): 1180 of 1182 checks OK, 2 BEKEND as before, 0 NOK/FOUT, every value unchanged.
+  NOT checked in the Mecway window. Not yet: modal, harmonic and the other linear
+  analyses, and the thermal solve with filler material, *Thermal stress* or adaptive
+  refinement (STAPPENPLAN S45b, low priority). Error messages `SUPERVIS_63`, settings for
+  contact and nonlinear §2.7.
 - **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
   plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46

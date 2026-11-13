@@ -503,7 +503,16 @@ What happens at the limit:
   previous step plus 10 % of the limit, at least 60 s). If not, the loop stops itself and
   the normal post-processing (with the same extra time) and loading follow. Mecway then
   reports "The bridge stopped the step loop at t = ..., before the time limit".
-- **Linear and thermal**: Code-Aster skips every next
+- **Linear static and thermal** (`MECA_STATIQUE`, `THER_LINEAIRE`,
+  `THER_NON_LINE`): these solves do not look at the limit on the way and compute to the
+  end. After them the bridge always gives Code-Aster extra time for the post-processing:
+  at least 90 % of the limit, at least 600 s, counted from the end of the solve. The
+  results are therefore loaded completely. If the solve ended only after the limit, the
+  log says so with a WARNING ("... ended after the time limit ..."). Exceptions: a
+  thermal solve with filler material (the step loop above), with *Thermal stress* (chain
+  to the mechanical solve) or with adaptive refinement.
+- **Other linear analyses** (modal, buckling, harmonic, spectrum, response on a modal
+  basis, acoustics) and the thermal exceptions above: Code-Aster skips every next
   command (`SUPERVIS_63`), writing the results too: no results are loaded (KNOWN_BUGS
   137).
 

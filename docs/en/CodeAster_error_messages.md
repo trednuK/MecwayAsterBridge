@@ -944,15 +944,32 @@ Step-by-step plan and settings:
   stop themselves before the limit (`BRIDGE_FOUT_ID BRIDGE_TIJD`; status box "The
   bridge stopped the step loop at t = ..."), see
   [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.7.
+- **Linear static and thermal**: `MECA_STATIQUE`, `THER_LINEAIRE` and `THER_NON_LINE`
+  do not look at the limit while they compute; a solve that runs past it computes to the
+  end, and the next command would then give `SUPERVIS_63` (for `MECA_STATIQUE` already
+  its own `CALC_CHAMP` of the stresses). The bridge therefore always gives extra time for
+  the post-processing after that solve (90 % of the limit, at least 600 s, from the end of
+  the solve) and has `MECA_STATIQUE` compute the stresses afterwards in a `CALC_CHAMP` of
+  its own, with the same fields. The results are loaded completely. If the solve ended
+  after the limit, the `.mess` holds `BRIDGE_TIJD_LAAT <command> <s>` and the log a
+  WARNING ("... ended after the time limit ...: the results are complete"); the
+  convergence window reports it too. Not for a thermal solve with filler material,
+  with *Thermal stress* or with adaptive refinement.
 - **Seen**: a user's run (nonlinear static with failure, `time_limit` 1800, 6 cpus:
   `MECANONLINE9_1` after 55 steps, then `SUPERVIS_63` in the post-processing, no
   results); `StopTest_LongRun` with `time_limit` 40 s (Code-Aster 17.4): without the
   extra time `SUPERVIS_63` at the first `CALC_CHAMP`, with it all 365 computed steps
-  loaded.
+  loaded. With a delay in the solve past a `time_limit` of 30 s (Code-Aster 17.4): FX-04
+  (`MECA_STATIQUE`) gave `SUPERVIS_63` in its own `CALC_CHAMP` and no results without
+  the extra time, and the same results as without the delay with it; TH-02a
+  (`THER_LINEAIRE`, 401 time steps) and WE-04b (`THER_NON_LINE`, 101 time steps)
+  computed on past the limit and gave all steps, equal to a run without the delay.
 - **Solution**: raise *Time limit run_aster*, or make the model cheaper (coarser mesh,
-  fewer steps). A linear or thermal analysis still loses the results (KNOWN_BUGS
+  fewer steps). Modal, harmonic, the other linear analyses and the thermal chains (filler
+  material, *Thermal stress*, adaptive refinement) still lose the results (KNOWN_BUGS
   137).
-- **Status**: fixed in the bridge (nonlinear) / limitation (linear, thermal).
+- **Status**: fixed in the bridge (nonlinear, linear static, thermal) / limitation (other
+  linear analyses, thermal chains).
 
 ### `SUBDIVISE_3` – step cannot be reduced
 
@@ -1572,8 +1589,8 @@ and beams in the model).
 | `MECANONLINE5_1` | [5](#mecanonline5_1--explicit-only-prediction-tangente) | fixed in the bridge |
 | `MECANONLINE5_15` | [4](#mecanonline5_15--energy-not-with-continuous-contact) | fixed in the bridge (limitation of Code-Aster) |
 | `MECANONLINE5_80` | [5](#mecanonline5_80--initial-velocity-on-another-model) | cause not determined |
-| `MECANONLINE9_1` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear) / limitation (linear, thermal) |
-| `MECANONLINE9_2` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear) / limitation (linear, thermal) |
+| `MECANONLINE9_1` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear, linear static, thermal) / limitation (other linear analyses, thermal chains) |
+| `MECANONLINE9_2` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear, linear static, thermal) / limitation (other linear analyses, thermal chains) |
 | `MECANONLINE9_3` | [5](#mecanonline9_3--integration-of-the-material-law-failed) | fixed in the bridge (cause 2) / model (cause 1) |
 | `MECANONLINE9_4` | [3](#mecanonline9_4--matrix-not-invertible-nonlinear) | fixed in the bridge (1 for fixed, 4) / model (1 other, 2) / own input (3) / cause not determined (5) |
 | `MECANONLINE9_50` | [5](#mecanonline9_50--step-guard-ended) | fixed in the bridge (the run continues) |
@@ -1622,7 +1639,7 @@ and beams in the model).
 | `RUPTURE0_94` | [7](#rupture0_94--sief_elga-missing-for-calc_g) | fixed in the bridge |
 | `XFEM_63`, `QUALITY1_1`, `MODELE1_63` | [7](#xfem_63-quality1_1-modele1_63--xfem-alarms) | information / fixed in the bridge |
 | `SUPERVIS_4` | [8](#supervis_4--syntax-error-in-a-command) | own input / fixed in the bridge (per case) |
-| `SUPERVIS_63` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear) / limitation (linear, thermal) |
+| `SUPERVIS_63` | [5](#mecanonline9_1-mecanonline9_2-supervis_63--time-limit-reached) | fixed in the bridge (nonlinear, linear static, thermal) / limitation (other linear analyses, thermal chains) |
 | `UTILITAI3_5` | [10](#algeline4_77-utilitai3_5--normalisation-and-mode-parameters) | fixed in the bridge |
 | `UTILITAI5_1` | [1](#utilitai5_1--file-for-a-unit-missing) | cause in the test setup, not in the bridge |
 | `UTILITAI_3` | [7](#utilitai_3--fields-with-sub-points-to-nodes) | fixed in the bridge |
