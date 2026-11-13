@@ -2492,7 +2492,14 @@ and stopped by its own PID only, inputs that cannot open a dialog, a timeout), t
 only; Mecway 35 is not yet in `TESTED_MECWAY_VERSIONS` (that needs `docs/en/After_an_update.md`
 §2, §5), so its values here are reference measurements, not a support claim; no GUI windows (what needs one becomes a test for the user); (3) decide: **real**, **test
 setting** (the item comes from a wrong setting or assumption), **outdated** (no longer happens)
-or **unchanged limit** (an item of group D that still holds); (4) fix it in the bridge, correct
+or **unchanged limit** (an item of group D that still holds). **Real** only after (a) the
+settings of the test model are checked against what Mecway and Code-Aster actually do with them
+(supports on nodes or faces, element formulation such as incompatible hex8 or MITC4, solver
+internal or CCX, defaults such as ν = 0 without *Poisson ratio*, units, whether Mecway's GUI can
+make the input at all) and (b) an independent check (theory, a Code-Aster test case, another
+element or solver, the manual) shows the difference does not come from an own assumption or a
+misreading of Mecway or Code-Aster; the Verdict column names both. The same values in a newer
+version alone do not make an item real; (4) fix it in the bridge, correct
 the item, or remove it (rules at the top of `KNOWN_BUGS.md`), with docs NL+EN and verification
 where needed. Plans and diffs reviewed by an Opus subagent; independent items in parallel.
 **Work per group** (A .. D below = the four headings of `KNOWN_BUGS.md`) on branch `stap-S46`;
@@ -2509,10 +2516,10 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 3 | Nodal stresses and von Mises different from Mecway |  |  |  |
 | 7 | Stresses per element node stay from Mecway in the table route |  |  |  |
 | 46 | Buckling: negative buckling load factors and Mecway's shift |  |  |  |
-| 60 | Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0 |  |  |  |
+| 60 | Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0 | real (code: default E = 210 GPa; Mecway E = 0 seen headless in a Frequency model with a speed of sound; no own assumption involved, the bridge's default is in the code) | WARNING `_warn_materials_without_e` (one per run, not with a total-strain curve, thermal or acoustic); docs NL+EN; Opus review processed | this commit |
 | 62 | Strongly curved hex20/wedge15: frequencies up to 0.8% higher than Mecway |  |  |  |
-| 112 | Buckling: Mecway's beam has no torsional buckling; the bridge is right | real (Mecway 35.0.9802 headless: BU-30/31 109.72 / 987.46 / 1230.44 / 2743.03, hex20 2384.28, identical to Mecway 34) | item: Mecway 34 and 35 | this commit |
-| 113 | Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right | real (Mecway 35.0.9802 headless: BU-32 17.27 / 19.71 / 127.30 / 155.45 / 173.90, BU-34 0.7036, identical to Mecway 34; BU-33 not re-run) | item: Mecway 35 for BU-32 and BU-34 | this commit |
+| 112 | Buckling: Mecway's beam has no torsional buckling; the bridge is right | real (from the item's own measurements, not re-checked today): independent: hex20 in Code-Aster, Mecway's own solver and CCX 2384.28 against bridge 2413.87 (theory G·J·A/I_p), Mecway beam 2743.03 = third flexural mode; doubling J or A changes nothing in Mecway; Mecway 35.0.9802 headless identical to Mecway 34 | item: Mecway 34 and 35 | this commit |
+| 113 | Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right | real (from the item's own measurements, not re-checked today): independent: Code-Aster test case ssll105 (bridge = reference), hex20 and DKT shell models agree in Code-Aster, Mecway and CCX, an own beam code reproduces both; Mecway 35 headless identical for BU-32 and BU-34 (BU-33 not re-run) | item: Mecway 35 for BU-32 and BU-34 | this commit |
 | 125 | 2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is right |  |  |  |
 | 128 | Bonded contact with shells: displacements differ from Mecway |  |  |  |
 | 130 | Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's |  |  |  |
@@ -2548,7 +2555,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 115 | Buckling of T, C and L beams misses flexural-torsional buckling |  |  |  |
 | 119 | Mass check without the mass for `POU_D_T_GD` beams |  |  |  |
 | 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong |  |  |  |
-| 135 | Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge clamps | real (written 11 Nov 2026 from the KNOWN_BUGS 95 re-check, Mecway 35.0.9802 headless and Code-Aster 17.4) | none | this commit |
+| 135 | Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge clamps | real: Mecway's rule is in its manual (§9.1, fixed on nodes only for nodes with all rotational DOFs); measured on quad4/quad8/hex8/hex20/2D, faces clamp in both; open: whether Mecway's GUI offers such a support at all (if not, it arises only in generated models) | none | this commit |
 | 137 | A time limit in a linear or thermal analysis loses all results |  |  |  |
 
 **Group C – Open questions** (9 items)

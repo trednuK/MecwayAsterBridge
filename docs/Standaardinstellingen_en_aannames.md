@@ -434,6 +434,7 @@ een Keuze van de bridge die niet apart gemeten is.
 | Akoestiek: gelijke dichtheid | relatieve tolerantie 10⁻⁶; daarboven verschillende media (ERROR) | - | - |
 | Akoestiek: bron op een selectie | `#ASTER-BRON` op een `BRON_`-selectie vervangt de standaardsnelheid | - | - |
 | Fluïdum buiten een vibro-akoestische analyse | rekent als vaste stof met E = 210 GPa (WARNING; Mecway rekent met E = 0) | - | - |
+| Isotroop materiaal zonder elasticiteitsmodulus (en zonder geluidssnelheid) | rekent met E = 210 GPa (één WARNING met de gebruikte materialen; niet bij een hardingscurve in totale rek, die E bepaalt, en niet in thermische of akoestische analyses) | - | Mecway E = 0 gezien in een Frequency-model (KNOWN_BUGS 60); zonder geluidssnelheid NIET gecontroleerd in Mecway |
 | Vibro-akoestiek modes: band | `INFO_MODE` vanaf `vibro_freq_min`: bovengrens max(10·f_min, 1 Hz), × 4 tot er genoeg modes zijn (tot 10⁷ Hz), dan twee keer geometrisch gehalveerd; `CALC_MODES` `BANDE` met `COEF_DIM_ESPACE=4` | welke band gerekend wordt | VA-01…05 |
 | Cyclisch: knoopparen (`bridge_cyclic`) | master- en slaveknoop gekoppeld binnen 10⁻⁵ × de grootste coördinaat, anders ERROR | - | CY-01..06 |
 | Cyclisch: hele wiel (`aster_cyclic`) | knopen gekoppeld binnen 10⁻⁶ × de grootste coördinaat; de frequenties op het skelet moeten binnen 10⁻⁹ (relatief) gelijk zijn aan die van de sector, anders gaat alleen de sector naar Mecway | - | CY-01..06 |

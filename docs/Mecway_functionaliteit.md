@@ -127,7 +127,7 @@ Verlijmd contact per combinatie (slave op master):
 
 | Mecway | Status | Opmerking |
 |---|---|---|
-| Isotropic (E, ν, ρ, α) | Ja | Zonder E rekent de bridge met 210 GPa, Mecway met 0 (KB60). |
+| Isotropic (E, ν, ρ, α) | Ja | Zonder E rekent de bridge met 210 GPa met een WARNING, Mecway met 0 (KB60). |
 | Plastic, isotrope hardingscurve | Ja | `VMIS_ISOT_TRAC`. E = helling van het eerste stuk van de curve, zoals Mecway (WARNING als *Young's modulus* anders is; [`Instellingen_contact_en_nietlineair.md`](Instellingen_contact_en_nietlineair.md) §2.4). Niet op balken (elastisch, WARNING; KB6). |
 | Plastic, Bilinear isotropic / kinematic | Ja | `ECRO_LINE`; Mecway's *tangent modulus* is de plastische modulus H, `D_SIGM_EPSI` = E·H/(E+H); ideaal plastisch met tangent modulus 0. |
 | Plastic, Kinematic (curve) | Deels | Alleen een curve met lineaire versteviging (`VMIS_CINE_LINE`); een niet-lineaire curve wordt elastisch gerekend (gemeld). Geen equivalentplasticstrain (KB6). |

@@ -1670,6 +1670,31 @@ def _check_position_formulas(tag, params, sel, run_cfg, model_data):
 _BEAM_MODELISATIONS = frozenset(_ELEM_CHOICES["elem_beam"])
 
 
+def _warn_materials_without_e(model_data):
+    """One WARNING listing the used Isotropic materials without Young's
+    modulus and without a speed of sound (KNOWN_BUGS 60): the bridge then
+    computes E = 210 GPa, Mecway E = 0 (seen headless on a Frequency
+    model: modes of ~1e-7 Hz). Not for a material whose hardening curve
+    in total strain sets E (`E_elastic_tab`, as Mecway does), nor for
+    parts named as a fluid (bridge_vibroacoustic.parse_vibro reports
+    those). Called once per run (warn_supports), not in thermal or
+    acoustic analyses."""
+    mats = model_data.get("materials", {})
+    used = set(mat for es, mat in model_data.get("elsets", {}).items()
+               if not bridge_vibroacoustic._starts(
+                   es, bridge_vibroacoustic.FLUID_PREFIXES))
+    names = [m for m in model_data.get("_materials_without_e", [])
+             if m in used and "E_elastic_tab" not in mats.get(m, {})]
+    if names:
+        log(tr("WARNING: Materia(a)l(en) {0} zonder elasticiteitsmodulus "
+               "(Young's modulus): de bridge rekent dan met E = 210 GPa "
+               "(staal), Mecway niet. Vul de elasticiteitsmodulus in.",
+               "WARNING: Material(s) {0} without Young's modulus: the "
+               "bridge then computes with E = 210 GPa (steel), Mecway does "
+               "not. Enter the Young's modulus.").format(
+                   ", ".join("'{0}'".format(m) for m in names)))
+
+
 def _warn_fixed_on_free_nodes(model_data):
     """
     WARNING per Fixed support on a node selection with nodes that Mecway's
@@ -2243,6 +2268,12 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                             mat_name, k))
 
                     elif mech_type == "Isotropic":
+                        if (not (mech_node.get("youngsmodulus") or
+                                 "").strip() and
+                                not mech_node.get("speedofsound")):
+                            # KNOWN_BUGS 60: warned once the parts are known
+                            model_data.setdefault(
+                                "_materials_without_e", []).append(mat_name)
                         mat_props = {
                             "E":    parse_and_convert(
                                         mech_node.get("youngsmodulus",
@@ -3425,6 +3456,9 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                        "waarde; overgeslagen.",
                        "WARNING: {0} on '{1}' has no direction or value; "
                        "skipped.").format(bc["type"], bc["selection"]))
+        if warn_supports and not acoustic_run and (
+                not thermal_run or thermo_mech):
+            _warn_materials_without_e(model_data)
         if warn_supports:
             # Only a message: an error here must not stop the run
             try:

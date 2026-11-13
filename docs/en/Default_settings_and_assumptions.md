@@ -436,6 +436,7 @@ Choice of the bridge that has not been measured separately.
 | Acoustics: equal density | relative tolerance 10⁻⁶; above it different media (ERROR) | - | - |
 | Acoustics: source on a selection | `#ASTER-BRON` on a `SOURCE_` selection replaces the default velocity | - | - |
 | Fluid outside a vibroacoustic analysis | computed as a solid with E = 210 GPa (WARNING; Mecway uses E = 0) | - | - |
+| Isotropic material without Young's modulus (and without a speed of sound) | computed with E = 210 GPa (one WARNING listing the used materials; not with a hardening curve in total strain, which sets E, nor in thermal or acoustic analyses) | - | Mecway E = 0 seen in a Frequency model (KNOWN_BUGS 60); without a speed of sound NOT checked in Mecway |
 | Vibroacoustic modes: band | `INFO_MODE` from `vibro_freq_min`: upper bound max(10·f_min, 1 Hz), × 4 until there are enough modes (up to 10⁷ Hz), then halved geometrically twice; `CALC_MODES` `BANDE` with `COEF_DIM_ESPACE=4` | which band is computed | VA-01…05 |
 | Cyclic: node pairs (`bridge_cyclic`) | master and slave node paired within 10⁻⁵ × the largest coordinate, otherwise ERROR | - | CY-01..06 |
 | Cyclic: whole wheel (`aster_cyclic`) | nodes matched within 10⁻⁶ × the largest coordinate; the frequencies on the skeleton must equal those of the sector within 10⁻⁹ (relative), otherwise only the sector goes to Mecway | - | CY-01..06 |

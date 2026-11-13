@@ -127,7 +127,7 @@ Bonded contact per combination (slave on master):
 
 | Mecway | Status | Remark |
 |---|---|---|
-| Isotropic (E, ν, ρ, α) | Yes | Without E the bridge uses 210 GPa, Mecway 0 (KB60). |
+| Isotropic (E, ν, ρ, α) | Yes | Without E the bridge uses 210 GPa with a WARNING, Mecway 0 (KB60). |
 | Plastic, isotropic hardening curve | Yes | `VMIS_ISOT_TRAC`. E = slope of the first segment of the curve, as in Mecway (WARNING when *Young's modulus* differs; [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §2.4). Not on beams (elastic, WARNING; KB6). |
 | Plastic, Bilinear isotropic / kinematic | Yes | `ECRO_LINE`; Mecway's *tangent modulus* is the plastic modulus H, `D_SIGM_EPSI` = E·H/(E+H); perfectly plastic with tangent modulus 0. |
 | Plastic, Kinematic (curve) | Partly | Only a curve with linear hardening (`VMIS_CINE_LINE`); a nonlinear curve is computed as elastic (reported). No equivalentplasticstrain (KB6). |

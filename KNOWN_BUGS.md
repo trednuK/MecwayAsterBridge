@@ -77,12 +77,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    (numerically zero); Mecway writes 0 or a small positive number.
 
 60\. **Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0**
-   (suspected, `bridge_from_liml.py`, material block: `youngsmodulus` with default
+   (confirmed in the code, `bridge_from_liml.py`, material block: `youngsmodulus` with default
    "210000000000"). Seen with headless Mecway on a Frequency model in which one
-   material had only *Speed of sound* and *Density*: modes of ~1e-7 Hz (E = 0). The
-   bridge silently computes such a material as steel; only with a speed of sound (a
-   fluid) does it give a WARNING outside `vibroacoustic_modes_3d`
-   (`bridge_vibroacoustic.parse_vibro`). Without a speed of sound NOT checked.
+   material had only *Speed of sound* and *Density*: modes of ~1e-7 Hz (E = 0). The bridge
+   computes such a material as steel, with a WARNING: for a material with a speed of sound (a
+   fluid) outside `vibroacoustic_modes_3d` (`bridge_vibroacoustic.parse_vibro`), otherwise in one
+   WARNING per run that lists the used materials (`bridge_from_liml._warn_materials_without_e`;
+   not for a hardening curve in total strain, which sets E, nor in thermal or acoustic
+   analyses, but in the mechanical part of the thermal → mechanical chain). What Mecway does
+   with a material without a speed of sound is NOT checked.
 
 62\. **Strongly curved hex20/wedge15: frequencies up to 0.8% higher than Mecway** (question,
    measured with Mecway's example Impeller, 66 hex20 + 21 wedge15 with midside nodes up to
