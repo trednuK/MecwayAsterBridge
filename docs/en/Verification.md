@@ -826,7 +826,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-28)
+### 2D and axisymmetric (PL-01 … PL-36)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -901,6 +901,38 @@ expansion in Mecway's S20 and SA0, as in the bridge (WARNING).
   extrapolated from the integration points, converging as h² (AXIS 4.28 / 1.04 / 0.26% at
   4 / 8 / 16 elements; D_PLAN 8 × 8: 2.0%, 8 × 16: 1.28%, 16 × 32: 0.32%); tolerance 1.2% as
   σ_r of PL-04.
+
+Nonlinear static in 2D, route A (STAPPENPLAN S44a: Nonlinear Static L30 or Static 3D S30
+with plane shell elements and `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E = 210 GPa,
+ν = 0.3):
+
+- **PL-30** / **PL-31** (thick cylinder a = 0.1 m, b = 0.2 m, σ_y = 250 MPa, perfectly
+  plastic, internal pressure 159.1 / 187.6 MPa at 0.5 / 1 s = plastic radius c = 0.13 /
+  0.16 m by Hill's relation, limit pressure 200.1 MPa; quad8 16 through the wall;
+  `D_PLAN` quarter ring and `AXIS` ring with both ends held): u_b against
+  2 (1 − ν²) σ_y c² / (√3 E b) +0.6 / +1.7% (default deformation: `GDEF_LOG`, pressure as
+  a follower load), **PL-30p** with `PETIT` +0.1 / +0.5%; the outermost node with plastic
+  strain at 0.128 / 0.159 m (within one element of c); PL-30: Σ R_y on the symmetry
+  edge x = 0 = −p a t (thickness factor in every step). The larger deviation with the
+  default comes from the follower pressure and `GDEF_LOG`, not from Hill's assumption on
+  σ_z (with `PETIT` ≤ 0.5%).
+- **PL-32** (plate with a hole, `C_PLAN`, the geometry of PL-01 with n = 32, bilinear
+  H = 0.01 E, traction rising in 50 steps): nominal stress at the first step with plastic
+  strain +1.8% against σ_y / Kt (Peterson); with n = 16 +3.0%, because Code-Aster yields
+  first at the integration points next to the hole. Σ R_x on x = 0 = −traction · W/2 · t
+  within 2e-4 (`GDEF_LOG`; exact with `PETIT`, KNOWN_BUGS 140).
+- **PL-33** (PL-01-n16 as S30 with `**ASTER-PLANE C_PLAN`): displacements = the S20
+  result (route B) within 1e-6; Mecway's own S30 shell solution (membrane, headless)
+  differs by 1.2e-5.
+- **PL-34** (the tube of PL-24 as L30 with `AXIS`, deformation `PETIT`) = PL-24 within
+  1e-6 (with the default `GREEN_LAGRANGE` 1.5e-4 higher: geometrically nonlinear).
+- **PL-35** (Code-Aster test case ssnp159b rebuilt in Mecway: one quad4 `AXIS`,
+  `VMIS_ISOT_LINE`, `GDEF_LOG`, top edge pulled 290 mm on 1 m): `SIYY` and `V1` at t = 2
+  equal to the test's `VALE_CALC` (1494.795 MPa, 0.247146; tolerance of the test 1 / 1.5%).
+- **PL-36** (the plate of PL-21 as L30 with `C_PLAN`, Temperature as a time table 293 /
+  393 / 493 K at 0 / 1 / 2 s): u = α ΔT(t) x exact in both steps. Mecway with CCX gives
+  exactly half of it for the shell model (and Mecway's internal solver α ΔT x):
+  KNOWN_BUGS 139.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

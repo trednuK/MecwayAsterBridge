@@ -20,7 +20,12 @@
 #     DX = DY = 0 (docs 2D par. 2.3), no LIAISON_DDL with DZ;
 #   - thermal stress (S44c): Temperature / Node temperature pass in S20/SA0
 #     (lin_static_3d), the SA0 thickness WARNING stays, D20/DA0 refused;
-#     a .comm with AFFE_VARC TEMP on the AXIS model.
+#     a .comm with AFFE_VARC TEMP on the AXIS model;
+#   - route A (S44a): S30/L30 with '#ASTER-PLANE C_PLAN|D_PLAN|AXIS' ->
+#     that modelisation (thickness from the shell, none for AXIS); ERROR
+#     for S20, T30, an unknown value and the wrong analysis; the literal
+#     '#ASTER PLANE AXIS' gives an ERROR and is not passed as code; DEFORMATION
+#     per plane modelisation (bridge_to_aster._deformation_for).
 #
 #   python tests/test_bridge_plane.py
 
@@ -183,6 +188,74 @@ def test_thermal():
     check(comm is not None and "MODELISATION='AXIS'" in comm and
           "NOM_VARC='TEMP'" in comm and "VALE_REF=293.0" in comm,
           "SA0 .comm with AFFE_VARC TEMP on AXIS: {0}".format(_errors()))
+
+
+def _switch(value):
+    return "<ccxmodeldefinition>{0}</ccxmodeldefinition>".format(value)
+
+
+def test_route_a():
+    """S44a: '#ASTER-PLANE' on a 3D model of plane shells."""
+    for atype, sw, ana, mod, fac in (
+            ("S30", "C_PLAN", "lin_static_3d", "C_PLAN", 0.01),
+            ("S30", "d_plan", "lin_static_3d", "D_PLAN", 0.01),
+            ("L30", "AXIS", "nonlin_static_3d", "AXIS", 2 * math.pi)):
+        md = _extract(_liml(atype, PS, loads=_switch("#ASTER-PLANE " + sw)),
+                      analysis=ana)
+        check(md is not None and md["elset_modelisations"].get("P") == mod
+              and abs(md["plane"]["factor"] - fac) < 1e-15 and
+              md["plane"]["route"] == "A",
+              "{0} + #ASTER-PLANE {1} -> {2}: {3}".format(
+                  atype, sw, mod, _errors()))
+    md = _extract(_liml("L30", PS, loads=_switch("#ASTER-VLAK C_PLAN") +
+                        THERMAL), analysis="nonlin_static_3d")
+    check(md is not None and md["elset_modelisations"].get("P") == "C_PLAN",
+          "L30 with a temperature and #ASTER-VLAK passes: {0}".format(
+              _errors()))
+    for atype, text, ana, what in (
+            ("S20", "#ASTER-PLANE AXIS", "lin_static_3d", "S20 + switch"),
+            ("T30", "#ASTER-PLANE AXIS", "ther_3d", "T30 + switch"),
+            ("S30", "#ASTER-PLANE PLAN", "lin_static_3d", "unknown value"),
+            ("S30", "#ASTER-PLANE C_PLAN", "nonlin_static_3d",
+             "S30 with nonlin_static_3d"),
+            ("L30", "#ASTER-PLANE C_PLAN", "lin_static_3d",
+             "L30 with lin_static_3d")):
+        md = _extract(_liml(atype, PS, loads=_switch(text)), analysis=ana)
+        check(md is None and _errors(), "{0}: ERROR and stop ({1})".format(
+            what, LOG[-2:]))
+    plastic = ('<plastic type="BilinearIsotropic" yieldstrength="250 MPa" '
+               'tangentmodulus="0 Pa" />')
+    md = _extract(_liml("S20", PS + plastic))
+    check(md is not None and any(m.startswith("WARNING") and "ASTER-PLANE"
+                                 in m for m in LOG),
+          "S20 with plasticity: WARNING naming **ASTER-PLANE")
+    md = _extract(_liml("S30", PS, loads=_switch("#ASTER PLANE AXIS")))
+    check(md is None and any("#ASTER-PLANE AXIS" in m for m in _errors()),
+          "literal '#ASTER PLANE AXIS': ERROR and stop")
+    zdisp = ('<displacement selection="Links"><value>0 m</value><x>0</x>'
+             '<y>0</y><z>1</z></displacement>')
+    # convert_bc runs in bridge_mesh: the whole chain (_comm)
+    comm = _comm(_liml("S30", PS, loads=_switch("#ASTER-PLANE C_PLAN") +
+                       zdisp))
+    check(comm and not _errors() and
+          any(m.startswith("INFO") and "only Z" in m for m in LOG),
+          "route A: zero displacement along Z -> INFO, no ERROR: {0}".format(
+              _errors()))
+    comm = _comm(_liml("S20", PS, loads=zdisp))
+    check(comm and any("Z" in m for m in _errors()),
+          "route B: displacement along Z stays an ERROR")
+    import bridge_to_aster as bta
+    for mod, rel, chosen, want in (
+            ("C_PLAN", "VMIS_ISOT_LINE", "GROT_GDEP", "GDEF_LOG"),
+            ("C_PLAN", "VMIS_ISOT_TRAC", "SIMO_MIEHE", "GDEF_LOG"),
+            ("AXIS", "VMIS_ISOT_TRAC", "SIMO_MIEHE", "SIMO_MIEHE"),
+            ("D_PLAN", "VMIS_CINE_LINE", "SIMO_MIEHE", "GDEF_LOG"),
+            ("AXIS", "ELAS", "GROT_GDEP", "GREEN_LAGRANGE"),
+            ("D_PLAN", "ELAS", "GDEF_LOG", "GDEF_LOG"),
+            ("C_PLAN", "VMIS_ISOT_LINE", "PETIT", "PETIT")):
+        got = bta._deformation_for(mod, rel, chosen, "P")
+        check(got == want, "DEFORMATION {0} {1} {2}: {3} (want {4})".format(
+            mod, rel, chosen, got, want))
 
 
 def test_finish_bcs():
@@ -379,6 +452,7 @@ if __name__ == "__main__":
     test_modelisations()
     test_errors()
     test_thermal()
+    test_route_a()
     test_finish_bcs()
     test_edge_measure()
     test_pinned()

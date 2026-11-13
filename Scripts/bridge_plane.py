@@ -99,7 +99,14 @@ PLANE_SHAPES = frozenset(["tri3", "tri6", "quad4", "quad8"])
 _VERIFIED_SOLVERS = {"S20": "MECA_STATIQUE", "SA0": "MECA_STATIQUE",
                      "D20": "DYNA_NON_LINE", "DA0": "DYNA_NON_LINE"}
 _BRIDGE_ANALYSIS = {"MECA_STATIQUE": "lin_static_3d",
-                    "DYNA_NON_LINE": "dyna_impl_3d"}
+                    "DYNA_NON_LINE": "dyna_impl_3d",
+                    "STAT_NON_LINE": "nonlin_static_3d"}
+# Route A (S44): a Mecway 3D type with plane shell elements in the XY plane
+# and the line '#ASTER-PLANE C_PLAN|D_PLAN|AXIS' (bridge_custom) -> that
+# modelisation. Mecway keeps <timesteps>, plasticity and temperatures of the
+# 3D type; the solver per type:
+ROUTE_A_SOLVERS = {"S30": "MECA_STATIQUE", "L30": "STAT_NON_LINE"}
+_SWITCH_VALUES = ("C_PLAN", "D_PLAN", "AXIS")
 # Loads and constraints with a verified 2D route
 _HANDLED = ("fixed", "pinnedsupport", "displacement", "force",
             "surfacepressure", "traction", "symmetry", "gravity",
@@ -110,7 +117,9 @@ _NOT_VERIFIED = (("contacts", "Contact"), ("bonded", "Bonded contact"),
                  ("constraint_equations", "Constraint equation"),
                  ("point_masses", "Point mass"),
                  ("flexible_joints", "Flexible joint"),
-                 ("initial_velocities", "Initial velocity"))
+                 ("initial_velocities", "Initial velocity"),
+                 # bridge_offset would add nodes at Z != 0 (S44a review)
+                 ("element_offsets", "Element offset"))
 # Temperature items: verified in linear static (S44c, MECA_STATIQUE), not in
 # D20/DA0 (Mecway ignores temperatures in D30; D20/DA0 not measured)
 _THERMAL = (("thermal_stress", "Thermal stress"),
@@ -151,14 +160,29 @@ def apply(model_data, run_cfg, elset_shapes):
     bridge stops before Code-Aster).
     """
     atype = model_data.get("analysis_type", "")
+    switch = _plane_switch(model_data)
+    if switch is False:
+        return False
     if atype in ACOUSTIC_2D:
         # Also for a manually chosen other analysis (otherwise the plane
         # elements would be computed as shells)
         return _apply_acoustic(model_data, run_cfg, elset_shapes, atype)
-    if atype not in PLANE_TYPES:
+    if switch:
+        if atype not in ROUTE_A_SOLVERS:
+            return _fatal(
+                "'#ASTER-PLANE {0}' werkt alleen in Mecway's Static 3D (S30) "
+                "en Nonlinear Static (L30) met vlakke shell-elementen in het "
+                "XY-vlak; dit model is {1}{2}.",
+                "'#ASTER-PLANE {0}' only works in Mecway's Static 3D (S30) "
+                "and Nonlinear Static (L30) with plane shell elements in the "
+                "XY plane; this model is {1}{2}.", switch, atype,
+                tr(" (al een 2D-type: haal de regel weg)",
+                   " (already a 2D type: remove the line)")
+                if atype in PLANE_TYPES else "")
+    elif atype not in PLANE_TYPES:
         return True
     solver = run_cfg.get("solver_command")
-    need = _VERIFIED_SOLVERS[atype]
+    need = (ROUTE_A_SOLVERS if switch else _VERIFIED_SOLVERS)[atype]
     if solver != need:
         return _fatal(
             "Mecway-analysetype {0} (2D) wordt alleen vertaald naar {1}, "
@@ -184,9 +208,10 @@ def apply(model_data, run_cfg, elset_shapes):
             "A 2D analysis ({0}) only works with the result route 'liml' "
             "(General page); the route 'tabel' does not scale the reaction "
             "forces to the thickness or 360 degrees.", atype)
-    axis = PLANE_TYPES[atype] == "axis"
+    axis = (switch == "AXIS") if switch else PLANE_TYPES[atype] == "axis"
     # Model items without a verified 2D route (S16a)
-    blocked = _NOT_VERIFIED + (() if solver == "MECA_STATIQUE" else _THERMAL)
+    blocked = _NOT_VERIFIED + (
+        () if solver in ("MECA_STATIQUE", "STAT_NON_LINE") else _THERMAL)
     for key, what in blocked:
         if model_data.get(key):
             return _fatal(
@@ -211,9 +236,30 @@ def apply(model_data, run_cfg, elset_shapes):
                 elset, ", ".join(sorted(shapes - PLANE_SHAPES)), atype)
         mat = model_data["elsets"].get(elset)
         geom = model_data["mat_geometrics"].get(mat) or {}
+        props = model_data.get("materials", {}).get(mat) or {}
+        if not switch and (props.get("plastic_curve") or
+                           props.get("plastic_bilinear")):
+            # S44a: Mecway's S20/SA0 are linear; plasticity needs route A
+            log(tr("WARNING: Materiaal '{0}' heeft plasticiteit, maar {1} "
+                   "is lineair (ook in Mecway); de bridge rekent elastisch. "
+                   "Voor plasticiteit in 2D: Nonlinear Static (L30) met "
+                   "vlakke shell-elementen en de regel '**ASTER-PLANE "
+                   "C_PLAN|D_PLAN|AXIS' (docs 2D par. 1.4).",
+                   "WARNING: Material '{0}' has plasticity, but {1} is "
+                   "linear (in Mecway too); the bridge computes elastically. "
+                   "For plasticity in 2D: Nonlinear Static (L30) with plane "
+                   "shell elements and the line '**ASTER-PLANE "
+                   "C_PLAN|D_PLAN|AXIS' (docs 2D par. 1.4).").format(
+                       mat, atype))
         thick = geom.get("thickness") if geom.get("geom_type") == "Plate" \
             else None
-        if axis:
+        if axis and switch:
+            # Route A: Mecway's shells need a thickness; AXIS has none
+            mod, t = "AXIS", None
+            if thick:
+                log("INFO: Elset '{0}': the shell thickness ({1} m) does not "
+                    "count with #ASTER-PLANE AXIS.".format(elset, thick))
+        elif axis:
             mod, t = "AXIS", None
             if thick:
                 log(tr("WARNING: Materiaal '{0}' heeft een dikte ({1} m); in "
@@ -235,7 +281,16 @@ def apply(model_data, run_cfg, elset_shapes):
                     "material '{1}' a Shell/membrane geometry with a "
                     "thickness in Mecway (also for plane strain; Mecway "
                     "itself does not solve without one).", elset, mat)
-            mod = "D_PLAN" if geom.get("planestrain") else "C_PLAN"
+            if switch:
+                mod = switch
+                if geom.get("planestrain") and switch != "D_PLAN":
+                    log(tr("WARNING: Materiaal '{0}' heeft plane strain, maar "
+                           "#ASTER-PLANE zegt {1}; de bridge volgt de regel.",
+                           "WARNING: Material '{0}' has plane strain, but "
+                           "#ASTER-PLANE says {1}; the bridge follows the "
+                           "line.").format(mat, switch))
+            else:
+                mod = "D_PLAN" if geom.get("planestrain") else "C_PLAN"
             t = float(thick)
         kinds.setdefault((mod, t), []).append(elset)
         mods[elset] = mod
@@ -264,13 +319,37 @@ def apply(model_data, run_cfg, elset_shapes):
         return False
     factor = 2.0 * math.pi if axis else t
     model_data["plane"] = {"type": atype, "modelisation": mod,
-                           "thickness": t, "factor": factor}
+                           "thickness": t, "factor": factor,
+                           "route": "A" if switch else "B"}
     log("INFO: 2D analysis {0}: MODELISATION='{1}'; concentrated forces / "
         "{2:.6g} and reactions x {2:.6g} ({3}).".format(
             atype, mod, factor,
             "per radian in Code-Aster, 360 degrees in Mecway" if axis else
             "per unit thickness in Code-Aster, thickness t in Mecway"))
     return True
+
+
+def _plane_switch(model_data):
+    """The modelisation of '#ASTER-PLANE ...' (the last line counts), None
+    without the line, False after an ERROR (unknown value)."""
+    lines = (model_data.get("aster_custom") or {}).get("plane") or []
+    if not lines:
+        return None
+    if any(l.startswith("?") for l in lines):
+        # '#ASTER PLANE ...' without the hyphen (bridge_custom already gave
+        # the ERROR): stop, otherwise the model would run as shells
+        return False
+    value = lines[-1].strip().upper()
+    if value not in _SWITCH_VALUES:
+        return _fatal(
+            "'#ASTER-PLANE {0}': verwacht C_PLAN, D_PLAN of AXIS.",
+            "'#ASTER-PLANE {0}': expected C_PLAN, D_PLAN or AXIS.",
+            lines[-1].strip())
+    if len(set(l.strip().upper() for l in lines)) > 1:
+        log(tr("WARNING: Meerdere #ASTER-PLANE-regels; de laatste telt "
+               "({0}).", "WARNING: Several #ASTER-PLANE lines; the last one "
+               "counts ({0}).").format(value))
+    return value
 
 
 def _apply_acoustic(model_data, run_cfg, elset_shapes, atype):
@@ -434,6 +513,13 @@ def convert_bc(model_data, bc, faces, skin_groups):
     edges = bool(kinds) and kinds <= set(["shelledge"])
     axis = p["modelisation"] == "AXIS"
     btype = bc["type"]
+    if p.get("route") == "A" and _z_only(bc):
+        # A 3D shell model (route A) holds Z or the rotations for Mecway's
+        # own solve; the 2D model has no such DOFs: not an error here
+        bc["skip"] = True
+        log("INFO: {0} on '{1}': only Z or rotations, which the 2D model "
+            "does not have (#ASTER-PLANE); left out.".format(btype, sel))
+        return True
     if btype not in _HANDLED:
         _skip(model_data, bc, tr("niet vertaald in 2D (S16a: vast, "
                                  "verplaatsing, kracht, druk, traction, "
@@ -571,6 +657,26 @@ def convert_bc(model_data, bc, faces, skin_groups):
     return False
 
 
+def _z_only(bc):
+    """True for a constraint that only holds what a plane model does not
+    have: a node rotation, a zero displacement along Z, a symmetry with
+    normal Z (route A, S44a)."""
+    btype = bc["type"]
+    if btype == "noderotation":
+        return True
+    params = bc.get("params") or {}
+    d = params.get("dir")
+    if d is None or abs(abs(d[2]) - 1.0) > 1e-12:
+        return False
+    if btype == "symmetry":
+        return not params.get("nodeplane")
+    if btype == "displacement":
+        value = params.get("value", 0.0)
+        return not isinstance(value, list) and not hasattr(
+            value, "scaled") and value in (0, 0.0)
+    return False
+
+
 def finish_bcs(model_data):
     """
     After all loads (bridge_mesh._apply_to_model_data): drop the
@@ -616,6 +722,14 @@ def finish_bcs(model_data):
             new = OrderedDict((k, v) for k, v in d.items()
                               if k not in _DROP_DDL)
             if not new and d:
+                if p.get("route") == "A":
+                    # A 3D shell model (route A) often holds DZ or the
+                    # rotations for Mecway's own solve: not an error here
+                    bc["skip"] = True
+                    log("INFO: {0} on '{1}': only Z or rotations, which "
+                        "the 2D model does not have (#ASTER-PLANE); left "
+                        "out.".format(btype, bc.get("selection") or "-"))
+                    continue
                 _skip(model_data, bc, tr("alleen Z of rotaties",
                                          "only Z or rotations"))
                 continue

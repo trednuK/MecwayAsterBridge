@@ -107,6 +107,49 @@ resultaat opent):
 | `vonmises` | `SIEQ_*` | 3D-von Mises met σ_zz |
 | `reactionforcex/y/mag` | `REAC_NODA` × t of × 2π | voor de hele dikte (S20) of 360 graden (SA0), zoals Mecway |
 
+### 1.4 Niet-lineair in 2D: een 3D-model met `**ASTER-PLANE` (route A)
+
+Mecway heeft geen niet-lineair 2D-type. Voor plasticiteit, grote vervormingen, tijdstappen
+en lastopbouw in 2D maak je het model als 3D-model en zeg je de bridge het in 2D te rekenen:
+
+1. **Analysetype** *Nonlinear Static* (L30), met CCX als Mecway's solver (Mecway rekent L30
+   alleen met CCX). *Static 3D* (S30) kan ook (lineair, zoals S20).
+2. **Mesh**: vlakke shell-elementen tri3, tri6, quad4 of quad8 in het XY-vlak (Z = 0),
+   verder niets; axisymmetrisch: Y is de as, X ≥ 0 (zoals §1.1).
+3. **Materiaal**: een geometrie *Shell/membrane* met een dikte (Mecway heeft hem nodig voor
+   shells; voor `C_PLAN`/`D_PLAN` is het de dikte t van §2.2, voor `AXIS` telt hij niet),
+   plasticiteit (*Bilinear*, *Stress-strain curve*) zoals in 3D.
+4. **De schakelaar**: in CCX > *Custom model definition* een regel
+
+   ```
+   **ASTER-PLANE C_PLAN
+   ```
+
+   met `C_PLAN` (vlakke spanning), `D_PLAN` (vlakke rek) of `AXIS` (axisymmetrisch);
+   `#ASTER-PLANE` in een OpenRadioss-veld en `$ASTER-PLANE` in een Mystran-veld werken ook,
+   `-VLAK` is de Nederlandse spelling ([`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md) §2).
+   Mecway's eigen solver negeert de regel; de bridge rekent dan elke elset met die
+   modelisatie in plaats van als shells (een vinkje *plane strain* op het materiaal telt
+   dan niet).
+5. **Opleggingen en belastingen** zoals in §1.1, op knopen en randen; een *Node
+   rotation*, een *Displacement* nul langs Z en een *Symmetry* met normaal Z (voor
+   Mecway's eigen shell-solve) vallen weg met een INFO. *Thermal stress* met *Temperature* en *Node temperature* zoals in §2.5, ook als
+   tijdtabel.
+
+De bridge-analyse is `nonlin_static_3d` (L30) of `lin_static_3d` (S30); de instellingen van
+de pagina Niet-lineair statisch gelden zoals in 3D. *deformation* `GROT_GDEP` (de standaard)
+wordt `GDEF_LOG` voor plastisch materiaal (`SIMO_MIEHE` als gekozen, alleen in
+`D_PLAN`/`AXIS`) en `GREEN_LAGRANGE` voor elastisch materiaal; een druk is dan een
+meebewegende belasting zoals in 3D. De plasticiteitswetten van de bridge kennen `C_PLAN`
+zelf (catalogus Code-Aster 17.4). Resultaten per stap zoals in §1.3, plus
+`plasticstrainxx/yy/zz/xy` en `equivalentplasticstrain`; de reactiekrachten met de factor t
+of 2π in elke stap (PL-30, PL-32). Verificatie PL-30 … PL-36: een dikwandige cilinder met ideale
+plasticiteit (Hill) in `D_PLAN` en `AXIS`, eerste vloei bij een gat in `C_PLAN`,
+Code-Aster-testcase ssnp159b (`AXIS`, `GDEF_LOG`) door de bridge. NIET meegenomen: de
+bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), contact (S44b), thermische analyses (S44d). Het
+openen van zo'n resultaat in het Mecway-venster is NIET nagelopen (een test in de
+Mecway-GUI moet nog).
+
 ## 2. Hoe de bridge vertaalt
 
 ### 2.1 Elementen en mesh
@@ -215,7 +258,11 @@ lineaire typen), S44 (niet-lineair, contact, thermisch, axisymmetrische schalen)
 - S20/SA0 met een andere analyse dan `lin_static_3d`, D20/DA0 met een andere dan
   `dyna_impl_3d`, expliciete schema's, *Mode superposition* en een beginsnelheid in 2D:
   ERROR. Mecway zelf heeft geen niet-lineair, frequentie- of knik-2D-type (Mecway 34
-  zet V20 om naar V30 en B20 naar S30).
+  zet V20 om naar V30 en B20 naar S30); niet-lineair in 2D: §1.4. S20/SA0 met een
+  plastisch materiaal rekenen elastisch (WARNING).
+- `**ASTER-PLANE` in een ander type dan S30/L30, met een andere waarde dan `C_PLAN`,
+  `D_PLAN`, `AXIS`, of zonder streepje: ERROR. Een element offset in een 2D-analyse (S20,
+  SA0, D20, DA0 of `**ASTER-PLANE`): ERROR.
 - De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).
 
 ## 4. Akoestiek in 2D
@@ -254,3 +301,6 @@ lineaire typen), S44 (niet-lineair, contact, thermisch, axisymmetrische schalen)
 | ERROR: Mecway-analysetype D20 (2D) wordt alleen vertaald naar dyna_impl_3d, niet naar … | een andere analyse gekozen op het startscherm | kies `auto` of de genoemde analyse |
 | ERROR: D20 (2D) wordt vertaald met het impliciete schema … | expliciet schema of *Mode superposition* | kies `NEWMARK` of `HHT`; zet *Mode superposition* in Mecway uit |
 | ERROR: Een 2D-analyse (…) werkt alleen met de resultaatroute 'liml' | route `tabel` gekozen | kies `liml` op de pagina Algemeen |
+| ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) … | de schakelaar in een ander analysetype | gebruik S30 of L30 (§1.4), of haal de regel weg |
+| ERROR: '#ASTER PLANE …' is Code-Aster-code en wordt overgeslagen; bedoeld is '#ASTER-PLANE …' | de schakelaar zonder streepje | schrijf `**ASTER-PLANE` (§1.4) |
+| WARNING: Materiaal '…' heeft plasticiteit, maar S20 is lineair … | plasticiteit in S20/SA0 | Nonlinear Static (L30) met `**ASTER-PLANE` (§1.4) |

@@ -251,6 +251,16 @@ Code-Aster value per node) and logs the largest difference per variable.
    shear centre of the mesh; a statically indeterminate beam without warping, where MT and V
    already lack the coupling (status: limits, no bug).
 
+139\. **Mecway with CCX: half the thermal expansion of shells** (confirmed, Mecway 35
+   headless, measured during STAPPENPLAN S44a; Mecway's behaviour, not the bridge's). A free
+   plate of quad8 shells (100 × 50 mm, t = 10 mm, in the XY plane, symmetry x = 0 and
+   y = 0) with *Thermal stress* and *Temperature* +100 K on an element selection: Mecway's
+   internal solver (S30) gives u_x = α ΔT x exactly, Mecway with CCX (S30 and L30, constant or
+   as a time table) exactly half of it. The bridge (shells, and the same model as
+   `C_PLAN` with `#ASTER-PLANE`, PL-36) gives α ΔT x. Cause NOT verified (how Mecway passes
+   the shell temperature to CCX's expanded elements). Status: open question to Mecway; with
+   CCX as a reference for shells under a temperature, compare with the internal solver.
+
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
@@ -729,6 +739,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    welding chain). A fix would be the same extra time after (and a try/except around) those
    solves, or a `POURSUITE` run for the post-processing (STAPPENPLAN S45). Raise *Time
    limit run_aster* meanwhile.
+
+140\. **Reaction forces with `GDEF_LOG` slightly off equilibrium** (confirmed, Code-Aster 17.4,
+   measured during STAPPENPLAN S44a; Code-Aster's behaviour). The plate with a hole of PL-32
+   (`C_PLAN`, plastic at the hole, traction a dead load): Σ `REAC_NODA` on the symmetry edge
+   is 2e-4 larger than the applied force with `DEFORMATION='GDEF_LOG'` (the default for plastic
+   material) and exact with `PETIT`. Probably the recovery of the nodal forces from the
+   logarithmic stress; NOT verified in 3D and NOT verified why. Status: open question; the
+   reaction checks of large-strain cases use 1e-3.
 
 ## Open questions (Mecway behaviour not checked)
 
@@ -1317,7 +1335,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    traction on edges, gravity in the plane (SA0 along Y), centrifugal about Z (S20) / Y (SA0),
    thermal stress with Temperature / Node temperature in S20/SA0 (S44c, PL-20 … PL-28, equal
    to Mecway 35's own S20/SA0 solve headless; that Mecway's GUI offers them in S20/SA0 is
-   documented, not tested)
+   documented, not tested); nonlinear static (L30, also S30) on plane shells with
+   `**ASTER-PLANE C_PLAN|D_PLAN|AXIS` (S44a, PL-30 … PL-36; no failure loop, no element
+   offsets)
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
    with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,

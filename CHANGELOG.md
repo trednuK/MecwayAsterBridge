@@ -48,6 +48,26 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
 - **KNOWN_BUGS 82 removed**: reverse plasticity with the default deformation (`GDEF_LOG`)
   converges now (VM-11a to t = 3 s in 12 steps, within 0.1% of `PETIT`); Fatigue and
   Verification docs adjusted.
+- **Thermal stress in 2D and axisymmetric** (STAPPENPLAN S44c): *Thermal stress* with
+  *Temperature* (on nodes, edges or elements) or *Node temperature* in Static 2D (S20,
+  `C_PLAN`/`D_PLAN`) and Static Axisymmetric (SA0, `AXIS`), as in 3D (`AFFE_VARC` `TEMP`, no
+  thickness or 2π factor); still refused in D20/DA0. A tube with free plane ends via an `#ASTER`
+  `LIAISON_UNIF` line. Verification PL-20 … PL-28: free expansion and held plates exact, a thick
+  tube with a logarithmic temperature within 1% of Timoshenko & Goodier (σ_r 1.04%), and equal to
+  Mecway 35's own S20/SA0 solution (headless, ≤ 1e-13). 2D docs §2.5.
+- **Nonlinear static in 2D and axisymmetric** (STAPPENPLAN S44a): a Nonlinear Static (L30) or
+  Static 3D (S30) model of plane shell elements in the XY plane with the line
+  `**ASTER-PLANE C_PLAN|D_PLAN|AXIS` in the custom model definition is computed as plane
+  stress, plane strain or axisymmetric (`STAT_NON_LINE` / `MECA_STATIQUE`): plasticity, large
+  deformations (`GDEF_LOG`), time steps, load tables and temperatures as in 3D, reactions for
+  the thickness or 360 degrees in every step. Verification PL-30 … PL-36: Hill's thick cylinder
+  (perfect plasticity) in plane strain and axisymmetric within 2%, first yield at a hole in
+  plane stress +1.8%, the Code-Aster test case ssnp159b through the bridge equal to its values.
+  Not yet: the failure loop and contact in 2D; opening such a result in the Mecway window is NOT
+  checked. A plastic material in S20/SA0 now gives a WARNING (Mecway's 2D types are linear).
+  2D docs §1.4.
+- **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
+  plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46
   procedure with a progress table of all KNOWN_BUGS items, and the new step S47.
 

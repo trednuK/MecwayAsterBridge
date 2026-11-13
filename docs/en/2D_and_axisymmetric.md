@@ -106,6 +106,48 @@ S20/SA0 solution (measured: Mecway adds *displacement*, *stress*, *von Mises str
 | `vonmises` | `SIEQ_*` | 3D von Mises with σ_zz |
 | `reactionforcex/y/mag` | `REAC_NODA` × t or × 2π | for the whole thickness (S20) or 360 degrees (SA0), as Mecway |
 
+### 1.4 Nonlinear in 2D: a 3D model with `**ASTER-PLANE` (route A)
+
+Mecway has no nonlinear 2D type. For plasticity, large deformations, time steps and load
+ramps in 2D, make the model as a 3D model and tell the bridge to compute it in 2D:
+
+1. **Analysis type** *Nonlinear Static* (L30), with CCX as Mecway's solver (Mecway only
+   solves L30 with CCX). *Static 3D* (S30) works too (linear, as S20).
+2. **Mesh**: plane shell elements tri3, tri6, quad4 or quad8 in the XY plane (Z = 0),
+   nothing else; axisymmetric: Y is the axis, X ≥ 0 (as §1.1).
+3. **Material**: a *Shell/membrane* geometry with a thickness (Mecway needs it for shells;
+   for `C_PLAN`/`D_PLAN` it is the thickness t of §2.2, for `AXIS` it does not count),
+   plasticity (*Bilinear*, *Stress-strain curve*) as in 3D.
+4. **The switch**: in CCX > *Custom model definition* one line
+
+   ```
+   **ASTER-PLANE C_PLAN
+   ```
+
+   with `C_PLAN` (plane stress), `D_PLAN` (plane strain) or `AXIS` (axisymmetric);
+   `#ASTER-PLANE` in an OpenRadioss field and `$ASTER-PLANE` in a Mystran field work too,
+   `-VLAK` is the Dutch spelling ([`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2).
+   Mecway's own solver ignores the line; the bridge then computes every elset with that
+   modelisation instead of as shells (a *plane strain* tick on the material does not
+   count then).
+5. **Supports and loads** as in §1.1, on nodes and edges; a *Node rotation*, a zero
+   *Displacement* along Z and a *Symmetry* with normal Z (for Mecway's own shell solve)
+   are left out with an INFO. *Thermal
+   stress* with *Temperature* and *Node temperature* as in §2.5, also as a time table.
+
+The bridge analysis is `nonlin_static_3d` (L30) or `lin_static_3d` (S30); the settings of
+the Nonlinear static page apply as in 3D. *deformation* `GROT_GDEP` (the default) becomes
+`GDEF_LOG` for plastic material (`SIMO_MIEHE` if chosen, only in `D_PLAN`/`AXIS`) and
+`GREEN_LAGRANGE` for elastic material; a pressure is then a follower load as in 3D. The
+plasticity laws of the bridge support `C_PLAN` natively (Code-Aster 17.4 catalogue). Results
+per step as in §1.3, plus `plasticstrainxx/yy/zz/xy` and `equivalentplasticstrain`; the
+reaction forces with the factor t or 2π in every step (PL-30, PL-32). Verification PL-30 … PL-36: a thick
+cylinder with perfect plasticity (Hill) in `D_PLAN` and `AXIS`, first yield at a hole in
+`C_PLAN`, Code-Aster test case ssnp159b (`AXIS`, `GDEF_LOG`) through the bridge. NOT
+included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), contact (S44b), thermal analyses
+(S44d). Opening such a result in the Mecway window is NOT verified (a test in the Mecway
+GUI still to do).
+
 ## 2. How the bridge translates
 
 ### 2.1 Elements and mesh
@@ -212,7 +254,11 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
 - S20/SA0 with another analysis than `lin_static_3d`, D20/DA0 with another than
   `dyna_impl_3d`, explicit schemes, *Mode superposition* and an initial velocity in 2D:
   ERROR. Mecway itself has no nonlinear, frequency or buckling 2D type (Mecway 34
-  converts V20 to V30 and B20 to S30).
+  converts V20 to V30 and B20 to S30); nonlinear in 2D: §1.4. S20/SA0 with a plastic
+  material compute elastically (WARNING).
+- `**ASTER-PLANE` in another type than S30/L30, with another value than `C_PLAN`,
+  `D_PLAN`, `AXIS`, or without the hyphen: ERROR. An element offset in a 2D analysis (S20,
+  SA0, D20, DA0 or `**ASTER-PLANE`): ERROR.
 - The error estimator (INFO) and the result route `tabel` (ERROR).
 
 ## 4. Acoustics in 2D
@@ -250,3 +296,6 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
 | ERROR: Mecway analysis type D20 (2D) is only translated to dyna_impl_3d, not to … | another analysis chosen on the start screen | choose `auto` or the analysis named |
 | ERROR: D20 (2D) is translated with the implicit scheme … | explicit scheme or *Mode superposition* | choose `NEWMARK` or `HHT`; switch off *Mode superposition* in Mecway |
 | ERROR: A 2D analysis (…) only works with the result route 'liml' | route `tabel` chosen | choose `liml` on the General page |
+| ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) … | the switch in another analysis type | use S30 or L30 (§1.4), or remove the line |
+| ERROR: '#ASTER PLANE …' is Code-Aster code and is skipped; meant is '#ASTER-PLANE …' | the switch without the hyphen | write `**ASTER-PLANE` (§1.4) |
+| WARNING: Material '…' has plasticity, but S20 is linear … | plasticity in S20/SA0 | Nonlinear Static (L30) with `**ASTER-PLANE` (§1.4) |

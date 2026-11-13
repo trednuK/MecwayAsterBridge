@@ -152,6 +152,9 @@ _SHAPE_RE = re.compile(r"^\s*\*\*\s*SECTIE-VORM(?:\s+(.*))?$")
 # Directions of a general section (report_directions); the same remark.
 _DIRECTION_RE = re.compile(r"^\s*\*\*\s*SECTIE-RICHTING(?:\s+(.*))?$")
 _PLACEHOLDER_RE = re.compile(r"<<([^<>]+)>>")
+# '#ASTER PLANE AXIS' without the hyphen of '#ASTER-PLANE' (S44a)
+_PLANE_LITERAL_RE = re.compile(r"^\s*(PLANE|VLAK)\s+(C_PLAN|D_PLAN|AXIS)"
+                               r"\s*$", re.I)
 _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-BEZWIJKEN", "-FAILURE", "-SPECTRE", "-SPECTRUM",
           "-BRON", "-SOURCE", "-LASBRON", "-WELD",
@@ -159,7 +162,7 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
           "-XFEM", "-CONSTANT", "-SECTIE", "-SECTION",
-          "-RAND", "-BOUNDARY")
+          "-RAND", "-BOUNDARY", "-PLANE", "-VLAK")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -178,7 +181,7 @@ def empty():
             "phases": [], "hyst": [], "materials": [],
             "fatigue": [], "metallurgy": [],
             "xfem": [], "constant": [], "sections": [], "boundaries": [],
-            "section_shapes": [], "section_directions": []}
+            "section_shapes": [], "section_directions": [], "plane": []}
 
 
 def parse(texts):
@@ -221,6 +224,17 @@ def parse(texts):
                        "overgeslagen: {1}",
                        "ERROR: Unknown line '#ASTER{0}' is skipped: "
                        "{1}").format(kind, raw.strip()))
+                continue
+            if kind == "" and _PLANE_LITERAL_RE.match(body):
+                # '#ASTER PLANE AXIS' would be Code-Aster code (S44a)
+                log(tr("ERROR: '#ASTER {0}' is Code-Aster-code en wordt "
+                       "overgeslagen; bedoeld is '#ASTER-PLANE {1}' (met "
+                       "een streepje).",
+                       "ERROR: '#ASTER {0}' is Code-Aster code and is "
+                       "skipped; meant is '#ASTER-PLANE {1}' (with a "
+                       "hyphen).").format(body.strip(),
+                                          body.split()[-1].upper()))
+                out["plane"].append("?" + body.strip())
                 continue
             if kind == "":
                 out["code"].append(body)
@@ -282,6 +296,12 @@ def parse(texts):
                 # worked out in bridge_homard.parse_boundaries
                 if body.strip():
                     out["boundaries"].append(body.strip())
+            elif kind in ("-PLANE", "-VLAK"):
+                # A 3D model of plane elements computed as C_PLAN/D_PLAN/
+                # AXIS (STAPPENPLAN S44 route A); worked out in
+                # bridge_plane.apply (the last line counts)
+                if body.strip():
+                    out["plane"].append(body.strip())
             elif kind in ("-METALLURGIE", "-METALLURGY"):
                 # worked out in bridge_metallurgy.parse_specs
                 if body.strip():

@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-28)
+### 2D en axisymmetrisch (PL-01 … PL-36)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -910,6 +910,37 @@ bridge (WARNING).
   toont −1,04%, relatief tot |ref|): geëxtrapoleerd vanuit de
   integratiepunten, convergeert als h² (AXIS 4,28 / 1,04 / 0,26% bij 4 / 8 / 16 elementen;
   D_PLAN 8 × 8: 2,0%, 8 × 16: 1,28%, 16 × 32: 0,32%); tolerantie 1,2% zoals σ_r van PL-04.
+
+Niet-lineair statisch in 2D, route A (STAPPENPLAN S44a: Nonlinear Static L30 of Static 3D
+S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E = 210 GPa,
+ν = 0,3):
+
+- **PL-30** / **PL-31** (dikwandige cilinder a = 0,1 m, b = 0,2 m, σ_y = 250 MPa, ideaal
+  plastisch, inwendige druk 159,1 / 187,6 MPa op 0,5 / 1 s = plastische straal c = 0,13 /
+  0,16 m volgens Hill, grensdruk 200,1 MPa; quad8 16 door de wand; `D_PLAN` kwart ring en
+  `AXIS` ring met beide einden vast): u_b tegen 2 (1 − ν²) σ_y c² / (√3 E b) +0,6 / +1,7%
+  (standaard deformation: `GDEF_LOG`, druk als meebewegende belasting), **PL-30p** met
+  `PETIT` +0,1 / +0,5%; de buitenste knoop met plastische rek op 0,128 / 0,159 m (binnen
+  een element van c); PL-30: Σ R_y op de symmetrierand x = 0 = −p a t (diktefactor in elke
+  stap). De grotere afwijking met de standaard komt van de meebewegende druk en `GDEF_LOG`,
+  niet van Hills aanname voor σ_z (met `PETIT` ≤ 0,5%).
+- **PL-32** (plaat met gat, `C_PLAN`, de geometrie van PL-01 met n = 32, bilineair
+  H = 0,01 E, traction oplopend in 50 stappen): nominale spanning bij de eerste stap met
+  plastische rek +1,8% tegen σ_y / Kt (Peterson); met n = 16 +3,0%, omdat Code-Aster eerst
+  vloeit in de integratiepunten naast het gat. Σ R_x op x = 0 = −traction · W/2 · t binnen
+  2e-4 (`GDEF_LOG`; exact met `PETIT`, KNOWN_BUGS 140).
+- **PL-33** (PL-01-n16 als S30 met `**ASTER-PLANE C_PLAN`): verplaatsingen = het
+  S20-resultaat (route B) binnen 1e-6; Mecway's eigen S30-shell-oplossing (membraan,
+  headless) wijkt 1,2e-5 af.
+- **PL-34** (de buis van PL-24 als L30 met `AXIS`, deformation `PETIT`) = PL-24 binnen
+  1e-6 (met de standaard `GREEN_LAGRANGE` 1,5e-4 hoger: geometrisch niet-lineair).
+- **PL-35** (Code-Aster-testcase ssnp159b nagebouwd in Mecway: een quad4 `AXIS`,
+  `VMIS_ISOT_LINE`, `GDEF_LOG`, bovenrand 290 mm uitgetrokken op 1 m): `SIYY` en `V1` op
+  t = 2 gelijk aan `VALE_CALC` van de test (1494,795 MPa, 0,247146; tolerantie van de test
+  1 / 1,5%).
+- **PL-36** (de plaat van PL-21 als L30 met `C_PLAN`, Temperature als tijdtabel 293 / 393 /
+  493 K op 0 / 1 / 2 s): u = α ΔT(t) x exact in beide stappen. Mecway met CCX geeft voor
+  het shell-model precies de helft (en Mecway's interne solver α ΔT x): KNOWN_BUGS 139.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

@@ -1,0 +1,34 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="2 s" stepsize="1 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="1" y="0" z="0" />
+  <node nid="3" x="1" y="1" z="0" />
+  <node nid="4" x="0" y="1" z="0" />
+  <elset name="Blok" material="Staal">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+  </elset>
+  <displacement selection="Onder"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="As"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Boven"><value time="0 s">0 m</value><value time="2 s">0.29 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <ccxmodeldefinition>**ASTER-PLANE AXIS</ccxmodeldefinition>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <fieldvariable name="plastic strain" />
+  <mat name="Staal">
+    <geometric type="Plate" thickness="10 mm" />
+    <mechanical type="Isotropic" youngsmodulus="200000 MPa" poissonratio="0.3" />
+    <plastic type="BilinearIsotropic" yieldstrength="1e+09 Pa" tangentmodulus="2020202020.2 Pa" />
+  </mat>
+  <faceselection name="Onder">
+    <face eid="1" faceid="1" />
+  </faceselection>
+  <faceselection name="Boven">
+    <face eid="1" faceid="3" />
+  </faceselection>
+  <faceselection name="As">
+    <face eid="1" faceid="4" />
+  </faceselection>
+</liml>

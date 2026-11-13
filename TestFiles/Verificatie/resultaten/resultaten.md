@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 30de9f1, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 6854446, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3117 van 3123 controles binnen de tolerantie** (588 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3143 van 3149 controles binnen de tolerantie** (596 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2643,6 +2643,32 @@ Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge 30de9f1, Code-Aster 17.4
 | PL-27 | Volle schijf, uniforme temperatuur (AXIS) | max |sigma_ij| | 0 Pa | 1.9767e-05 | 1.9767e-05 | 252 Pa | OK |
 | PL-28 | Plaat, temperatuur op een rand (C_PLAN) | u_x(L, H) = Mecway | -8.8200e-06 m | -8.8200e-06 | -0.00% | 0.0001% | OK |
 | PL-28 | Plaat, temperatuur op een rand (C_PLAN) | u_y(L, H) = Mecway | 2.7260e-05 m | 2.7260e-05 | -0.00% | 0.0001% | OK |
+| PL-30 | Dikwandige cilinder, ideaal plastisch, vlakke rek (L30 + #ASTER-PLANE D_PLAN) | u_b t = 0.5 s (c = 0.13 m) | 1.0570e-04 m | 1.0629e-04 | +0.55% | 2% | OK |
+| PL-30 | Dikwandige cilinder, ideaal plastisch, vlakke rek (L30 + #ASTER-PLANE D_PLAN) | plastische straal t = 0.5 s | 0.13 m | 0.12813 | -1.44% | 0.00625 m | OK |
+| PL-30 | Dikwandige cilinder, ideaal plastisch, vlakke rek (L30 + #ASTER-PLANE D_PLAN) | som R_x op x = 0, t = 0.5 s | -1.5909e+05 N | -1.5937e+05 | -0.17% | 1% | OK |
+| PL-30 | Dikwandige cilinder, ideaal plastisch, vlakke rek (L30 + #ASTER-PLANE D_PLAN) | u_b t = 1 s (c = 0.16 m) | 1.6012e-04 m | 1.6288e-04 | +1.72% | 2% | OK |
+| PL-30 | Dikwandige cilinder, ideaal plastisch, vlakke rek (L30 + #ASTER-PLANE D_PLAN) | plastische straal t = 1 s | 0.16 m | 0.15938 | -0.39% | 0.00625 m | OK |
+| PL-30 | Dikwandige cilinder, ideaal plastisch, vlakke rek (L30 + #ASTER-PLANE D_PLAN) | som R_x op x = 0, t = 1 s | -1.8764e+05 N | -1.8816e+05 | -0.28% | 1% | OK |
+| PL-30p | Dikwandige cilinder, ideaal plastisch, vlakke rek, PETIT | u_b t = 0.5 s (c = 0.13 m) | 1.0570e-04 m | 1.0580e-04 | +0.09% | 2% | OK |
+| PL-30p | Dikwandige cilinder, ideaal plastisch, vlakke rek, PETIT | plastische straal t = 0.5 s | 0.13 m | 0.12813 | -1.44% | 0.00625 m | OK |
+| PL-30p | Dikwandige cilinder, ideaal plastisch, vlakke rek, PETIT | som R_x op x = 0, t = 0.5 s | -1.5909e+05 N | -1.5909e+05 | -0.00% | 0.0001% | OK |
+| PL-30p | Dikwandige cilinder, ideaal plastisch, vlakke rek, PETIT | u_b t = 1 s (c = 0.16 m) | 1.6012e-04 m | 1.6089e-04 | +0.48% | 2% | OK |
+| PL-30p | Dikwandige cilinder, ideaal plastisch, vlakke rek, PETIT | plastische straal t = 1 s | 0.16 m | 0.15938 | -0.39% | 0.00625 m | OK |
+| PL-30p | Dikwandige cilinder, ideaal plastisch, vlakke rek, PETIT | som R_x op x = 0, t = 1 s | -1.8764e+05 N | -1.8764e+05 | -0.00% | 0.0001% | OK |
+| PL-31 | Dikwandige cilinder, ideaal plastisch, axisymmetrisch (L30 + #ASTER-PLANE AXIS) | u_b t = 0.5 s (c = 0.13 m) | 1.0570e-04 m | 1.0629e-04 | +0.55% | 2% | OK |
+| PL-31 | Dikwandige cilinder, ideaal plastisch, axisymmetrisch (L30 + #ASTER-PLANE AXIS) | plastische straal t = 0.5 s | 0.13 m | 0.12813 | -1.44% | 0.00625 m | OK |
+| PL-31 | Dikwandige cilinder, ideaal plastisch, axisymmetrisch (L30 + #ASTER-PLANE AXIS) | u_b t = 1 s (c = 0.16 m) | 1.6012e-04 m | 1.6288e-04 | +1.72% | 2% | OK |
+| PL-31 | Dikwandige cilinder, ideaal plastisch, axisymmetrisch (L30 + #ASTER-PLANE AXIS) | plastische straal t = 1 s | 0.16 m | 0.15938 | -0.39% | 0.00625 m | OK |
+| PL-32 | Plaat met gat, eerste vloei (L30 + #ASTER-PLANE C_PLAN) | nominale spanning bij eerste vloei | 9.9244e+07 Pa | 1.0103e+08 | +1.80% | 2% | OK |
+| PL-32 | Plaat met gat, eerste vloei (L30 + #ASTER-PLANE C_PLAN) | som R_x symmetrie x = 0, t = 1 s | -4366.7 N | -4367.6 | -0.02% | 0.1% | OK |
+| PL-33 | Plaat met gat, S30 + #ASTER-PLANE C_PLAN = S20 | u_y(0, r) = PL-01-n16 | -5.3937e-06 m | -5.3937e-06 | -0.00% | 0.0001% | OK |
+| PL-33 | Plaat met gat, S30 + #ASTER-PLANE C_PLAN = S20 | u_x(L/2, 0) = PL-01-n16 | 7.3774e-05 m | 7.3774e-05 | +0.00% | 0.0001% | OK |
+| PL-34 | Dikwandige buis, ln-temperatuur, L30 + #ASTER-PLANE AXIS | u_r binnenwand = PL-24 | 6.0531e-05 m | 6.0531e-05 | +0.00% | 0.0001% | OK |
+| PL-34 | Dikwandige buis, ln-temperatuur, L30 + #ASTER-PLANE AXIS | u_r buitenwand = PL-24 | 1.2106e-04 m | 1.2106e-04 | +0.00% | 0.0001% | OK |
+| PL-35 | ssnp159b: trekproef axisymmetrisch, grote rek (L30 + #ASTER-PLANE AXIS) | SIYY t = 2 s (ssnp159b) | 1.4948e+09 Pa | 1.4948e+09 | -0.00% | 1% | OK |
+| PL-35 | ssnp159b: trekproef axisymmetrisch, grote rek (L30 + #ASTER-PLANE AXIS) | V1 t = 2 s (ssnp159b) | 0.24715 - | 0.24715 | +0.00% | 1.5% | OK |
+| PL-36 | Vrije plaat, temperatuur als tijdtabel (L30 + #ASTER-PLANE C_PLAN) | u_x rechts t = 1 s | 1.2000e-04 m | 1.2000e-04 | -0.00% | 0.0001% | OK |
+| PL-36 | Vrije plaat, temperatuur als tijdtabel (L30 + #ASTER-PLANE C_PLAN) | u_x rechts t = 2 s | 2.4000e-04 m | 2.4000e-04 | -0.00% | 0.0001% | OK |
 
 ## Boutvoorspanning
 

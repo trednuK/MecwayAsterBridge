@@ -456,9 +456,15 @@ def failure_plan(model_data, analysis, relation_for, deformation_for):
                         "only in multifiber beams, which the bridge does "
                         "not create").format(mod)
         elif reason is None and mod not in _SUPPORTED_DEFORMATIONS:
-            reason = tr("alleen volume-elementen en schalen ({0} niet)",
-                        "solid and shell elements only ({0} not)").format(
-                            mod or "?")
+            if mod in ("C_PLAN", "D_PLAN", "AXIS"):
+                reason = tr("alleen volume-elementen en schalen ({0} niet: "
+                            "de bezwijklus is in 2D NIET geverifieerd)",
+                            "solid and shell elements only ({0} not: the "
+                            "failure loop is NOT verified in 2D)").format(mod)
+            else:
+                reason = tr("alleen volume-elementen en schalen ({0} niet)",
+                            "solid and shell elements only ({0} "
+                            "not)").format(mod or "?")
         deformation = None
         if reason is None:
             deformation = deformation_for(mod, relation, chosen, elset)

@@ -5574,6 +5574,23 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
         return "GREEN_LAGRANGE"
     if modelisation == "COQUE_3D":
         return "GROT_GDEP"
+    if modelisation in ("C_PLAN", "D_PLAN", "AXIS"):
+        # Plane and axisymmetric continuum (STAPPENPLAN S44a, route A):
+        # as the volume rule. SIMO_MIEHE only in AXIS/D_PLAN (test cases
+        # ssna111a, ssnp153a; in C_PLAN NOT verified) and not with
+        # VMIS_CINE_LINE (catalogue 17.4); plastic otherwise GDEF_LOG
+        # (ssnp152a, ssnp159b). ELAS: GREEN_LAGRANGE (catalogue 17.4 for
+        # ELAS) or GDEF_LOG if chosen.
+        if plastic:
+            if chosen == "SIMO_MIEHE":
+                if modelisation != "C_PLAN" and relation != "VMIS_CINE_LINE":
+                    return "SIMO_MIEHE"
+                log("INFO: Elset '{0}' ({1}, {2}): SIMO_MIEHE not used (C_PLAN "
+                    "NOT verified, VMIS_CINE_LINE COMPOR1_44); "
+                    "DEFORMATION='GDEF_LOG'.".format(elset_name,
+                                                     modelisation, relation))
+            return "GDEF_LOG"
+        return "GDEF_LOG" if chosen == "GDEF_LOG" else "GREEN_LAGRANGE"
     if modelisation.startswith("POU_D"):
         log("INFO: Elset '{0}' ({1}): large displacements not for "
             "this beam formulation (elem_beam = POU_D_T_GD for large "
@@ -5620,6 +5637,15 @@ def _build_comportement_block(model_data, analysis, elastic=False):
     par. 4.6; checked with runs).
     """
     deformation = analysis.get("deformation", "PETIT")
+    plane = model_data.get("plane") or {}
+    if plane.get("route") == "B" and deformation != "PETIT":
+        # Mecway's own 2D types (D20/DA0 here) are linear; the plane
+        # modelisations got PETIT before the plane branch of
+        # _deformation_for (S44a), which is for route A only
+        log("INFO: 2D analysis {0}: DEFORMATION='PETIT' (Mecway's 2D types "
+            "are linear; large deformations in 2D: Nonlinear Static with "
+            "#ASTER-PLANE).".format(plane.get("type")))
+        deformation = "PETIT"
     # One WARNING per run (the details per elset are INFO in the log):
     # since GROT_GDEP is the default, otherwise every nonlinear model with
     # beams or DKT shells would warn per elset.

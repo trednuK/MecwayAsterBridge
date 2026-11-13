@@ -93,7 +93,7 @@ S7, S8, S5, S9).
 | S43d | Hide failed elements in Mecway after load-back: copy of AdvancedToolsHub's `liml_failed.py`, contract for the element variable `failed` | done | S43a; the hub core `common/liml_failed.py` exists | branch `hide-failed`: core 1.0.0 pinned (LF-sha256 500f8ccc...), setting `hide_failed` (default off), `bridge_hide_failed.py`; `failed` strict (1 from the step after t_fail; measured static, implicit, explicit: stored state at t_fail before zeroing); end-to-end BezwijkenTrekstaaf 8 hidden from t = 0.7; Mecway 35 opens a processed file without a dialog and keeps the copies on re-save but drops the marker (recognised by the copies); regression 45 cases / 249 checks OK; Opus plan, diff and re-review; checked in the Mecway 35 window by the user (11 Nov 2026); released in V2026.11 |
 | S44 | 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`): thermal stress, nonlinear static, contact, thermal, axisymmetric shells, modal/buckling, axisymmetric acoustics | split | S16a | asked by the user 11 Nov 2026; split into S44a .. S44g (see §S44; research of the input route first); plan reviewed by Opus; order S44c, S44a, S44b, S44d, S44e, S44f later |
 | S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (to confirm by the user, §S44); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
-| S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | open | S16a | see §S44 |
+| S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | open | S44a | a frictionless support stays S16e; see §S44 |
 | S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | open | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44 |
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
@@ -2425,6 +2425,32 @@ large displacements on solids) in 2D NOT verified.
 - a Code-Aster test case through the bridge (ssnp152a for `GDEF_LOG` in `C_PLAN`, ssna111a or
   ssnp153a in `AXIS`/`D_PLAN`): its `TEST_RESU` values within the test's own tolerance;
 - 3D nonlinear families (NL, NK) unchanged (regression D.5); docs NL+EN.
+**Findings S44a (13 Nov 2026):** route A as decided: `**ASTER-PLANE C_PLAN|D_PLAN|AXIS`
+(kind `-PLANE`/`-VLAK` in `bridge_custom`; a bare `#ASTER PLANE ...` would be Code-Aster code,
+so it gives an ERROR pointing to the hyphen) on Mecway's L30 (`STAT_NON_LINE`) or S30
+(`MECA_STATIQUE`) with plane shell elements; `bridge_plane.apply` shares route B's
+checks (thickness of the shell for `C_PLAN`/`D_PLAN`, none for `AXIS`), refuses element
+offsets (they would add nodes at Z ≠ 0; route B too) and leaves supports that only hold
+Z or rotations out with an INFO. `_deformation_for` has a plane branch (plastic `GDEF_LOG`,
+`SIMO_MIEHE` only in `AXIS`/`D_PLAN`; elastic `GREEN_LAGRANGE`); before it the plane
+modelisations fell through to `PETIT` while the pressure was already a follower load
+(plan review, Opus); route B (D20/DA0) keeps `PETIT` (Mecway's 2D types are linear). The
+bridge's plasticity laws list `C_PLAN` natively (catalogue 17.4; no `ALGO_CPLAN` written).
+The reactions carry the factor in every step (PL-30, PL-32); plastic strain comes back
+under Mecway's names; a missing hyphen (`#ASTER PLANE`) stops the run.
+Verification (`tests_vlak_2d_nonlin.py`): PL-30/31 Hill's thick cylinder in `D_PLAN` and
+`AXIS` (u_b +0.6 / +1.7%, `PETIT` +0.1 / +0.5%, plastic radius within one element); PL-32
+first yield at a hole +1.8% at n = 32 (+3.0% at n = 16: yield starts at the integration
+points); PL-33 route A linear = route B; PL-34 thermal stress in L30 = S44c; PL-35 the
+Code-Aster test case ssnp159b (`AXIS`, `GDEF_LOG`) equal to its `VALE_CALC`; PL-36 a
+temperature table in L30 (the S44c item "plate in L30 with a temperature"): exact against
+α ΔT x, but Mecway with CCX gives half of it for shells (new KNOWN_BUGS 139; Mecway's
+internal solver is exact), so no Mecway reference there. **Correction of the Done-when:**
+ssnp152a, ssnp153a and ssna111a contain `DEFI_CONTACT` (review): they belong to S44b;
+S44a uses ssnp159b. Open: the failure loop in 2D (refused with a WARNING, the internal
+variables of `DEBORST`/`GDEF_LOG` in 2D NOT verified), the `strain` field in 2D, and
+opening a route-A result in the Mecway window (Mecway shows an L30 shell model with only
+X/Y displacements: user test).
 
 **S44b – contact in 2D/axisymmetric.**
 **Goal:** contact in a plane or axisymmetric model to `DEFI_CONTACT` in 2D, with S44a.
