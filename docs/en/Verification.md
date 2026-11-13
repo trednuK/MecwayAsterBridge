@@ -1601,8 +1601,8 @@ curve); shells: the uniaxial route on `res_sup`/`res_inf` (`damage_top`/
   history (two periods: the same damage), `NON_PERIODIQUE` two; `MATAKE_MODI_AV` picks
   a different plane than `MATAKE_MODI_AC` (damage 3.5·10⁻⁴ instead of 9.1·10⁻⁵ on
   sslv135a); `EPSI_NOEU` is the linear strain also with `GDEF_LOG` (0.0060000 at u/L =
-  0.006); with `GDEF_LOG` the reverse loading of VM-11a did not converge (KNOWN_BUGS
-  82). Smoke tests outside the regression: Dang Van in a dynamic run (`dyna_impl_3d`,
+  0.006); with `GDEF_LOG` the reverse loading of VM-11a runs through
+  (13 Nov 2026; earlier it did not converge). Smoke tests outside the regression: Dang Van in a dynamic run (`dyna_impl_3d`,
   diagnostic OK) and a model with a solid and a shell (both damage, diagnostic OK).
 
 #### Conclusion fatigue

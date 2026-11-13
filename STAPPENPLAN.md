@@ -1157,7 +1157,7 @@ Regression (`VERIF_WORK` on D:): 1046 of 1049 checks OK (227 cases), 3 BEKEND (N
 KNOWN_BUGS 43), 0 NOK/FOUT, no previously OK check worse; in `resultaten.json` only
 the VM cases (VM-01..07 were missing from the baseline and are back). Found and not
 fixed: KNOWN_BUGS 82 (reversed plasticity with the default deformation GDEF_LOG
-does not converge on unloading). Limitations: KNOWN_BUGS 66. Open: Mecway GUI test
+does not converge on unloading; no longer reproduced and removed in S46, 13 Nov 2026). Limitations: KNOWN_BUGS 66. Open: Mecway GUI test
 (fields `fatigue_eq`, `fatigue_ratio`, `damage_top/bottom` as a contour). Questions
 for the user: (1) a, b, c per material (now one set for all materials) or rather
 by default from σ₋₁/τ₋₁ (`#ASTER-WOHLER ... sigma_1 = .., tau_1 = ..`)? (2) multiaxial on
@@ -2551,7 +2551,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 43 | Contact: hard and soft formulation differ from Mecway | medium; real (from the item: Mecway's own samples PipeClip, AssemblyWithContact and NL-03a, not an own setting; not re-run): STANDARD (Lagrange) is the default by choice, Mecway uses penalty | none: the hint on `MECANONLINE9_4` and lost contact names *Contact method* = PENALISATION (`bridge_run_aster`) | this commit |
 | 48 | Modal: mechanism in a supported model | *draft*: medium (mechanism stops with an ERROR, shift workaround) |  |  |
 | 53 | Nonlinear buckling: limits of CRIT_STAB and the imperfection | *draft*: low (advanced analysis limits) |  |  |
-| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse | *draft*: medium (reverse plasticity, PETIT works) |  |  |
+| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse | medium; outdated: the VM-11a bar without `PETIT` (GDEF_LOG) now runs to t = 3 s in 12 steps without cutting (Code-Aster 17.4, develop 13 Nov 2026); stresses and plastic strain equal to `PETIT` within 0.1% | item removed; docs Fatigue and Verification NL+EN adjusted | this commit |
 | 83 | XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high | *draft*: low (niche XFEM, warned) |  |  |
 | 106 | Flexible joint: constraint on an element selection, large rotations | *draft*: low (flexible joint edge cases, warned) |  |  |
 | 107 | Line3 beams and trusses: two straight SEG2 cells | *draft*: low (curved line3 warned) |  |  |

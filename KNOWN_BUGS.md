@@ -520,17 +520,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    member in a large frame is guarded more coarsely. Only `PILOTAGE` would follow the
    unstable path properly.
 
-82\. **Nonlinear: back-and-forth plasticity with the default deformation does not converge
-   on reloading in reverse** (confirmed with an offline run, `bridge_to_aster.
-   _deformation_for`; found in S8b). Bar 0.1 × 0.01 × 0.01 m, 2 hex8, bilinear
-   plastic (yield stress 250 MPa, tangent modulus 10 GPa), prescribed elongation 0 →
-   +0.6 → −0.6 → 0 mm (t = 0..3 s, step 0.25 s), symmetry planes (model of VM-11a
-   without `deformation = PETIT`): with the default `GROT_GDEP` (plastic solid →
-   `GDEF_LOG`) `STAT_NON_LINE` stops at t = 2.29 s (`MECANONLINE9_7` after halving 7
-   times, `BRIDGE_ONVOLLEDIG`); with `PETIT` the same bar runs through (VM-11a).
-   Cause not investigated (GDEF_LOG when the strain reverses, or the Newton settings).
-   Advice in docs/Vermoeiing.md §1.9: `deformation = PETIT` for back-and-forth plasticity.
-
 83\. **XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high**
    (confirmed with runs, Code-Aster 17.4; `bridge_xfem._warn_curved`; verification BR-10).
    Circular crack (penny crack, a = 20 mm) in a block under tension, hex8, front

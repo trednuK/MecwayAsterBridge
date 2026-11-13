@@ -1607,8 +1607,8 @@ curve van de bridge); schalen: de uniaxiale route op `res_sup`/`res_inf`
   telt één cyclus per verloop (twee periodes: dezelfde schade), `NON_PERIODIQUE` twee;
   `MATAKE_MODI_AV` kiest een ander vlak dan `MATAKE_MODI_AC` (schade 3,5·10⁻⁴ i.p.v.
   9,1·10⁻⁵ op sslv135a); `EPSI_NOEU` is ook met `GDEF_LOG` de lineaire rek (0,0060000
-  bij u/L = 0,006); met `GDEF_LOG` convergeerde het terugbelasten van VM-11a niet
-  (KNOWN_BUGS 82). Rooktests buiten de regressie: Dang Van in een dynamische run
+  bij u/L = 0,006); met `GDEF_LOG` rekent het terugbelasten van VM-11a door
+  (13 nov 2026; eerder convergeerde het niet). Rooktests buiten de regressie: Dang Van in een dynamische run
   (`dyna_impl_3d`, diagnose OK) en een model met een volume en een schaal (beide
   schade, diagnose OK).
 
