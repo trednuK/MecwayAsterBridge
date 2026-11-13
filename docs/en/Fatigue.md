@@ -284,9 +284,11 @@ with a plastic material and a back-and-forth load or imposed displacement).
 `EPSI_NOEU` is the linear (engineering) strain from the displacement also with large
 deformation, not the logarithmic one (measured with `GDEF_LOG`: 0.0060000 at u/L =
 0.006, ln 1.006 = 0.005982); for strains of a few percent the difference is small.
-For back-and-forth plasticity `deformation = PETIT` (setting *Deformation*) gives
-exactly ε = u/L; the default (plastic solid → `GDEF_LOG`) also runs the reverse loading
-of the bar of VM-11a through (13 Nov 2026, stresses within 0.1%). No mean-stress correction
+For back-and-forth plasticity both work: the default (plastic solid → `GDEF_LOG`)
+runs the reverse loading of the bar of VM-11a through, and `deformation = PETIT`
+(setting *Deformation*) gives about the same stresses and plastic strains (13 Nov 2026:
+about 0.1%, 3% of the stress near the zero crossing); the difference is the logarithmic
+measure in the stress and plastic strain. No mean-stress correction
 (Morrow, Smith-Watson-Topper) and no `Se`: ERROR.
 
 ## 2. Overview of the keywords

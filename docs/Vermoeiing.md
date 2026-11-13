@@ -284,9 +284,11 @@ static* met een plastisch materiaal en een heen-en-weer-last of opgelegde
 verplaatsing). `EPSI_NOEU` is ook bij grote vervorming de lineaire (technische) rek
 uit de verplaatsing, niet de logaritmische (gemeten met `GDEF_LOG`: 0,0060000 bij u/L
 = 0,006, ln 1,006 = 0,005982); bij rekken van enkele procenten is het verschil
-klein. Bij een heen-en-weer-plasticiteit geeft `deformation = PETIT` (instelling
-*Vervorming*) precies ε = u/L; de standaard (plastisch volume → `GDEF_LOG`) rekent het
-terugbelasten van de staaf van VM-11a ook door (13 nov 2026, spanningen binnen 0,1%).
+klein. Bij een heen-en-weer-plasticiteit werken beide: de standaard (plastisch volume →
+`GDEF_LOG`) rekent het terugbelasten van de staaf van VM-11a door, en `deformation =
+PETIT` (instelling *Vervorming*) geeft ongeveer dezelfde spanningen en plastische rekken
+(13 nov 2026: ongeveer 0,1%, 3% van de spanning bij de nuldoorgang); het verschil is de
+logaritmische maat in de spanning en de plastische rek.
 Geen gemiddelde-
 spanningscorrectie (Morrow, Smith-Watson-Topper) en geen `Se`: ERROR.
 

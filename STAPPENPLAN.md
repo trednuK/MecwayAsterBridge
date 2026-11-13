@@ -1163,7 +1163,7 @@ for the user: (1) a, b, c per material (now one set for all materials) or rather
 by default from σ₋₁/τ₋₁ (`#ASTER-WOHLER ... sigma_1 = .., tau_1 = ..`)? (2) multiaxial on
 shells (top/bottom via `CALC_FATIGUE` on `res_sup`) and per Gauss point (`DOMA_ELGA`)
 needed (as S8c)? (3) Morrow/SWT correction for the strain curve wanted? (4) with reversed
-plasticity propose `PETIT` by default (WARNING) or research KNOWN_BUGS 82 first?
+plasticity propose `PETIT` by default (WARNING) or research KNOWN_BUGS 82 first? (moot: item 82 no longer reproduced, S46)
 
 ### S5 – Welding: metallurgy
 **Code-Aster:** `CALC_META`, `DEFI_TRC`, `META_ACIER`. `hsnv101a`/`hsnv102a` are AXIS:
@@ -2543,7 +2543,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 17 | Thermal strain: temperature within the element and in time | *draft*: low (deliberate choice) |  |  |
 | 19 | Centrifugal force | *draft*: low (rare feature limits) |  |  |
 | 20 | Multiple distributed loads on a beam | *draft*: low (load combination edge case, reported) |  |  |
-| 21 | Bonded contact (LIAISON_MAIL) | *draft*: medium (bonded contact, warned) |  |  |
+| 21 | Bonded contact (LIAISON_MAIL) | *draft*: medium (bonded contact, warned); not re-run; part of the 128 follow-up: a shell face on a solid is tied without the t/2 offset too, and the earlier check (0.788 against beam theory 0.785) probably had the plate's mid-surface on the solid face (NOT verified) |  |  |
 | 22 | Compression only | *draft*: low (deliberate formulation, reported) |  |  |
 | 23 | Gap and tension-only elements | *draft*: low (gap/tension-only limits) |  |  |
 | 34 | PLAS_TAB: untranslated fields | *draft*: low (OpenRadioss niche fields, warned) |  |  |
@@ -2551,7 +2551,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 43 | Contact: hard and soft formulation differ from Mecway | medium; real (from the item: Mecway's own samples PipeClip, AssemblyWithContact and NL-03a, not an own setting; not re-run): STANDARD (Lagrange) is the default by choice, Mecway uses penalty | none: the hint on `MECANONLINE9_4` and lost contact names *Contact method* = PENALISATION (`bridge_run_aster`) | this commit |
 | 48 | Modal: mechanism in a supported model | *draft*: medium (mechanism stops with an ERROR, shift workaround) |  |  |
 | 53 | Nonlinear buckling: limits of CRIT_STAB and the imperfection | *draft*: low (advanced analysis limits) |  |  |
-| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse | medium; outdated: the VM-11a bar without `PETIT` (GDEF_LOG) now runs to t = 3 s in 12 steps without cutting (Code-Aster 17.4, develop 13 Nov 2026); stresses and plastic strain equal to `PETIT` within 0.1% | item removed; docs Fatigue and Verification NL+EN adjusted | this commit |
+| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse | medium; outdated: the VM-11a bar without `PETIT` (GDEF_LOG) now runs to t = 3 s in 12 steps without cutting (Code-Aster 17.4, develop 13 Nov 2026); stresses about 0.1% and plastic strain 0.1–0.4% from `PETIT` (3% of the stress near the zero crossing at t = 2.25 s); the cause of the change since S8b (then a stop at t = 2.29 s) was not found | item removed; docs Fatigue and Verification NL+EN adjusted | this commit |
 | 83 | XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high | *draft*: low (niche XFEM, warned) |  |  |
 | 106 | Flexible joint: constraint on an element selection, large rotations | *draft*: low (flexible joint edge cases, warned) |  |  |
 | 107 | Line3 beams and trusses: two straight SEG2 cells | *draft*: low (curved line3 warned) |  |  |
