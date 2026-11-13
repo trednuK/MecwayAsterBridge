@@ -2509,7 +2509,7 @@ where needed. Plans and diffs reviewed by an Opus subagent; independent items in
 **Work per group** (A .. D below = the four headings of `KNOWN_BUGS.md`) on branch `stap-S46`;
 merge into `develop` and push after each group; no release without the user's OK. Group D
 also restores the number order inside the heading (59 before 58, 72 before 71 now).
-**Progress** (verdict empty = not yet reviewed; Commit = the commit that holds the action):
+**Progress** (verdict empty or *draft* = not yet reviewed; a *draft* relevance comes from a quick ranking of the item text (13 Nov 2026) and sets the order of work: high, then medium; Commit = the commit that holds the action):
 
 **Group A – Deviations from Mecway** (14 items)
 
@@ -2517,91 +2517,91 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 |---|---|---|---|---|
 | 1 | Hex8 is stiffer than in Mecway | medium; real: settings checked (supports one direction per *Displacement*: a first try with x = y = z = 1 held only the diagonal and was singular, an own error); Mecway 35 internal and CCX 0.1892 mm whatever `<incompatiblehex8>` says (liml version 27 and 33), the Mecway 35 manual names no option (§7.3); older Mecway versions not checked; independent: Euler-Bernoulli 0.1905 mm, Code-Aster 17.4 `3D` 0.1234 mm (shear locking), `LINE_QUAD` 0.1881 mm | item corrected (no analysis setting, Mecway 35 values) | this commit |
 | 2 | Shell elements ~0.7% different from Mecway | low; real, discretisation: settings checked (clamp on edge faces, not nodes, item 135); independent: mesh convergence, Mecway and DKT/`COQUE_3D` approach each other (quad4 40x8: −0.01% deflection, 0.07% rotation; common limit not measured); the old "rotations ~10%" probably the small Poisson-twist component (old model not in the repo) | item corrected with Mecway 35 values | this commit |
-| 3 | Nodal stresses and von Mises different from Mecway |  |  |  |
-| 7 | Stresses per element node stay from Mecway in the table route |  |  |  |
-| 46 | Buckling: negative buckling load factors and Mecway's shift |  |  |  |
+| 3 | Nodal stresses and von Mises different from Mecway | *draft*: medium (deliberate Code-Aster standard (SIGM_NOEU/SIEQ_NOEU), documented) |  |  |
+| 7 | Stresses per element node stay from Mecway in the table route | *draft*: low (only the non-default table route) |  |  |
+| 46 | Buckling: negative buckling load factors and Mecway's shift | *draft*: low (negative factors shown with a WARNING; Mecway's shift not used) |  |  |
 | 60 | Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0 | medium; real (code: default E = 210 GPa; Mecway E = 0 seen headless in a Frequency model with a speed of sound; no own assumption involved, the bridge's default is in the code) | WARNING `_warn_materials_without_e` (one per run, not with a total-strain curve, thermal or acoustic); docs NL+EN; Opus review processed | this commit |
-| 62 | Strongly curved hex20/wedge15: frequencies up to 0.8% higher than Mecway |  |  |  |
+| 62 | Strongly curved hex20/wedge15: frequencies up to 0.8% higher than Mecway | *draft*: low (strongly curved quadratic elements only) |  |  |
 | 112 | Buckling: Mecway's beam has no torsional buckling; the bridge is right | low; real (from the item's own measurements, not re-checked today): independent: hex20 in Code-Aster, Mecway's own solver and CCX 2384.28 against bridge 2413.87 (theory G·J·A/I_p), Mecway beam 2743.03 = third flexural mode; doubling J or A changes nothing in Mecway; Mecway 35.0.9802 headless identical to Mecway 34 | item: Mecway 34 and 35 | this commit |
 | 113 | Buckling of frames with bending moments: Mecway's beam is too low, the bridge is right | low; real (from the item's own measurements, not re-checked today): independent: Code-Aster test case ssll105 (bridge = reference), hex20 and DKT shell models agree in Code-Aster, Mecway and CCX, an own beam code reproduces both; Mecway 35 headless identical for BU-32 and BU-34 (BU-33 not re-run) | item: Mecway 35 for BU-32 and BU-34 | this commit |
-| 125 | 2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is right |  |  |  |
+| 125 | 2D: pressure on curved quadratic edges, Mecway's resultant too large; the bridge is right | *draft*: low (Mecway's resultant wrong, the bridge right) |  |  |
 | 128 | Bonded contact with shells: Mecway too stiff, the bridge too soft for a lap | high; real, but the old interpretation was wrong: independent solid reference (hex20, perfect bond) 0.1498 mm in Code-Aster and Mecway; bridge shells +13% (suspected: mid-surfaces tied without an offset term; beam check 0.1687 ≈ 0.1694), Mecway CCX −44%; the old "beam estimate" was the non-composite case | item and docs (Settings contact, Verification) corrected; **follow-up**: tie shell-on-shell faces with the lever arm u_B = u_A + θ_A × d (plan + Fable review, verification against the solid lap) | this commit |
-| 130 | Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's |  |  |  |
-| 132 | Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms | high (wrong factors without a message); real: settings checked (fork supports by *Displacement* per direction, consistent end loads); independent: formula 27.72 / 20.65, Mecway 27.08 / 20.23, Code-Aster `COQUE_3D` 26.64 / −19.91 on the same `.liml`; DKT −7.77 (catalogue R3.07.03 §4.6) | WARNING `_buckling_shell_notes` for buckling with DKT/DST, naming `COQUE_3D`; docs Modal and buckling §3.5 and §4 NL+EN | this commit |
-| 133 | Stress over beam sections: limits |  |  |  |
+| 130 | Acoustic Resonance 2D (A20) with triangles: frequencies slightly higher than Mecway's | *draft*: low (A20 triangles only, small difference) |  |  |
+| 132 | Buckling of shell models of profiles: Code-Aster's DKT misses in-plane terms | high (wrong factors without a message); real: settings checked (fork supports by *Displacement* per direction, consistent end loads); independent: formula 27.72 / 20.65, Mecway on the same mesh 27.26 / 20.34 (reversed moments), Code-Aster `COQUE_3D` 26.64 / −19.91 on the same `.liml`; DKT only negative factors (Code-Aster doc R3.07.03 §4.6) | WARNING `_buckling_shell_notes` for buckling with DKT/DST, naming `COQUE_3D` (other advice after a fallback), test; docs Modal and buckling §3.5 and §4 NL+EN | this commit |
+| 133 | Stress over beam sections: limits | *draft*: low (documented limits of section stresses) |  |  |
 
 **Group B – Translation that works differently** (28 items, 138 added in S46)
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 8 | Duplicate boundary conditions |  |  |  |
-| 9 | Failure not for beams; kinematic hardening with the current plastic strain |  |  |  |
-| 10 | Contact pairs with shared slave nodes are merged |  |  |  |
-| 11 | Large rotations: beams, prescribed rotations and rigid couplings |  |  |  |
-| 14 | Thermal: transient scheme different from Mecway |  |  |  |
-| 15 | Thermal shells as PLAN with a thickness factor |  |  |  |
-| 17 | Thermal strain: temperature within the element and in time |  |  |  |
-| 19 | Centrifugal force |  |  |  |
-| 20 | Multiple distributed loads on a beam |  |  |  |
-| 21 | Bonded contact (LIAISON_MAIL) |  |  |  |
-| 22 | Compression only |  |  |  |
-| 23 | Gap and tension-only elements |  |  |  |
-| 34 | PLAS_TAB: untranslated fields |  |  |  |
-| 40 | Trusses with large displacements |  |  |  |
-| 43 | Contact: hard and soft formulation differ from Mecway |  |  |  |
-| 48 | Modal: mechanism in a supported model |  |  |  |
-| 53 | Nonlinear buckling: limits of CRIT_STAB and the imperfection |  |  |  |
-| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse |  |  |  |
-| 83 | XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high |  |  |  |
-| 106 | Flexible joint: constraint on an element selection, large rotations |  |  |  |
-| 107 | Line3 beams and trusses: two straight SEG2 cells |  |  |  |
-| 108 | Element offset: small rotations, values at the nodes and combinations |  |  |  |
-| 115 | Buckling of T, C and L beams misses flexural-torsional buckling |  |  |  |
-| 119 | Mass check without the mass for `POU_D_T_GD` beams |  |  |  |
-| 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong |  |  |  |
+| 8 | Duplicate boundary conditions | *draft*: medium (overlapping BCs, mostly caught or reported) |  |  |
+| 9 | Failure not for beams; kinematic hardening with the current plastic strain | *draft*: low (failure on beams is rare, reported) |  |  |
+| 10 | Contact pairs with shared slave nodes are merged | *draft*: low (deliberate merge, logged) |  |  |
+| 11 | Large rotations: beams, prescribed rotations and rigid couplings | *draft*: medium (large rotations warned) |  |  |
+| 14 | Thermal: transient scheme different from Mecway | *draft*: medium (transient thermal scheme, time-step dependent) |  |  |
+| 15 | Thermal shells as PLAN with a thickness factor | *draft*: low (deliberate choice) |  |  |
+| 17 | Thermal strain: temperature within the element and in time | *draft*: low (deliberate choice) |  |  |
+| 19 | Centrifugal force | *draft*: low (rare feature limits) |  |  |
+| 20 | Multiple distributed loads on a beam | *draft*: low (load combination edge case, reported) |  |  |
+| 21 | Bonded contact (LIAISON_MAIL) | *draft*: medium (bonded contact, warned) |  |  |
+| 22 | Compression only | *draft*: low (deliberate formulation, reported) |  |  |
+| 23 | Gap and tension-only elements | *draft*: low (gap/tension-only limits) |  |  |
+| 34 | PLAS_TAB: untranslated fields | *draft*: low (OpenRadioss niche fields, warned) |  |  |
+| 40 | Trusses with large displacements | *draft*: low (element limit, warned) |  |  |
+| 43 | Contact: hard and soft formulation differ from Mecway | medium; real (from the item: Mecway's own samples PipeClip, AssemblyWithContact and NL-03a, not an own setting; not re-run): STANDARD (Lagrange) is the default by choice, Mecway uses penalty | none: the hint on `MECANONLINE9_4` and lost contact names *Contact method* = PENALISATION (`bridge_run_aster`) | this commit |
+| 48 | Modal: mechanism in a supported model | *draft*: medium (mechanism stops with an ERROR, shift workaround) |  |  |
+| 53 | Nonlinear buckling: limits of CRIT_STAB and the imperfection | *draft*: low (advanced analysis limits) |  |  |
+| 82 | Nonlinear: back-and-forth plasticity with the default deformation does not converge on reloading in reverse | *draft*: medium (reverse plasticity, PETIT works) |  |  |
+| 83 | XFEM: K_I from `CALC_G_XFEM` on a curved front a few percent too high | *draft*: low (niche XFEM, warned) |  |  |
+| 106 | Flexible joint: constraint on an element selection, large rotations | *draft*: low (flexible joint edge cases, warned) |  |  |
+| 107 | Line3 beams and trusses: two straight SEG2 cells | *draft*: low (curved line3 warned) |  |  |
+| 108 | Element offset: small rotations, values at the nodes and combinations | *draft*: low (element offset combinations, warned) |  |  |
+| 115 | Buckling of T, C and L beams misses flexural-torsional buckling | *draft*: medium (T/C/L beams warned, POU_D_TG option exists) |  |  |
+| 119 | Mass check without the mass for `POU_D_T_GD` beams | *draft*: low (INFO only) |  |  |
+| 123 | `SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong | *draft*: medium (POU_D_TG reactions in spectrum, warned) |  |  |
 | 135 | Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge clamps | medium; real: Mecway's rule is in its manual (§9.1, fixed on nodes only for nodes with all rotational DOFs); measured on quad4/quad8/hex8/hex20/2D, faces clamp in both; open: whether Mecway's GUI offers such a support at all (if not, it arises only in generated models) | none | this commit |
-| 137 | A time limit in a linear or thermal analysis loses all results |  |  |  |
+| 137 | A time limit in a linear or thermal analysis loses all results | *draft*: medium (time limit setting; extra time already for nonlinear solves) |  |  |
 | 138 | Fine meshes of thin parts stop with `FACTOR_57` in linear static (new, 13 Nov 2026) | high; real: MUMPS error 1.73e-6 (160 × 32 quad4 plate) and 1.91e-6 (7281-node hex20 lap) > `RESI_RELA` 1e-6; Mecway solves both; with 1e-4 the result equals Mecway | new item; **question for the user**: larger default `lin_solver_resi` or a retry | this commit |
 
 **Group C – Open questions** (9 items)
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 27 | Not verified in a .liml |  |  |  |
-| 37 | Second run in the same session: `solution` after `mw.open` |  |  |  |
-| 38 | Main window non-modal: other Mecway actions not checked |  |  |  |
-| 41 | Explicit: TCHAMWA with a variable step not checked |  |  |  |
-| 47 | Springs and dampers: not compared against a Mecway solution |  |  |  |
-| 116 | Element orientation card: parts not compared with Mecway |  |  |  |
-| 118 | Results after `DVP_2` not seen in a real DVP_2 run |  |  |  |
-| 120 | Hysteretic damping: not on all discrete elements, stresses not checked |  |  |  |
-| 134 | Pinned support in 2D holds every node, not the mean |  |  |  |
+| 27 | Not verified in a .liml | *draft*: low (rarely used inputs) |  |  |
+| 37 | Second run in the same session: `solution` after `mw.open` | *draft*: low (session behaviour) |  |  |
+| 38 | Main window non-modal: other Mecway actions not checked | *draft*: low (GUI behaviour) |  |  |
+| 41 | Explicit: TCHAMWA with a variable step not checked | *draft*: low (niche, unverified) |  |  |
+| 47 | Springs and dampers: not compared against a Mecway solution | *draft*: medium (spring-only nodes with fixed (item 135 rule)) |  |  |
+| 116 | Element orientation card: parts not compared with Mecway | *draft*: low (unverified comparison) |  |  |
+| 118 | Results after `DVP_2` not seen in a real DVP_2 run | *draft*: low (rare failure path) |  |  |
+| 120 | Hysteretic damping: not on all discrete elements, stresses not checked | *draft*: low (niche damping) |  |  |
+| 134 | Pinned support in 2D holds every node, not the mean | *draft*: low (2D pinned support) |  |  |
 
 **Group D – Not translated** (24 items)
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 4 | Loads and boundary conditions the bridge does not know |  |  |  |
-| 5 | Frictionless with displacement on curved shells |  |  |  |
-| 6 | Kinematic hardening: no equivalentplasticstrain; non-linear kinematic curve |  |  |  |
-| 16 | Thermal: not translated |  |  |  |
-| 49 | Modal: limits of the prestress and of the complex modes |  |  |  |
-| 51 | Error estimator: only linear static and solid elements |  |  |  |
-| 54 | Response on modal basis and harmonic response: limits |  |  |  |
-| 55 | Acoustics: 2D, acoustic displacement and media with different density not translated; limits of the impedance |  |  |  |
-| 56 | Response spectrum: limits |  |  |  |
-| 57 | Harmonic acoustics: limits |  |  |  |
-| 59 | Vibro-acoustics: coupled modes and harmonic response; limits |  |  |  |
-| 58 | Welding heat source: limits |  |  |  |
-| 61 | Cyclic symmetry: limits |  |  |  |
-| 63 | Fracture mechanics: only linear static, no field, no quarter points |  |  |  |
-| 64 | Welding: limits of the thermal → mechanical chain |  |  |  |
-| 65 | Adaptive refinement: limits |  |  |  |
-| 66 | Fatigue: limits (solids and shells, Miner, critical plane only on solids) |  |  |  |
-| 72 | Welding: limits of the metallurgy |  |  |  |
-| 71 | Welding: filler material that is born, limits |  |  |  |
-| 104 | Formulas: limits |  |  |  |
-| 121 | Result formulas: not every Mecway symbol |  |  |  |
-| 124 | Pre-tension section: limits |  |  |  |
-| 126 | 2D analyses: limits |  |  |  |
-| 131 | Orthotropic and anisotropic material: limits |  |  |  |
+| 4 | Loads and boundary conditions the bridge does not know | *draft*: medium (unknown loads skipped, reported) |  |  |
+| 5 | Frictionless with displacement on curved shells | *draft*: low (rare) |  |  |
+| 6 | Kinematic hardening: no equivalentplasticstrain; non-linear kinematic curve | *draft*: medium (reported limit) |  |  |
+| 16 | Thermal: not translated | *draft*: medium (reported limit) |  |  |
+| 49 | Modal: limits of the prestress and of the complex modes | *draft*: low (niche modal options) |  |  |
+| 51 | Error estimator: only linear static and solid elements | *draft*: low (optional feature) |  |  |
+| 54 | Response on modal basis and harmonic response: limits | *draft*: low (niche, ERRORs reported) |  |  |
+| 55 | Acoustics: 2D, acoustic displacement and media with different density not translated; limits of the impedance | *draft*: low (niche, reported) |  |  |
+| 56 | Response spectrum: limits | *draft*: low (niche) |  |  |
+| 57 | Harmonic acoustics: limits | *draft*: low (niche, ERROR) |  |  |
+| 59 | Vibro-acoustics: coupled modes and harmonic response; limits | *draft*: low (niche, ERRORs) |  |  |
+| 58 | Welding heat source: limits | *draft*: low (niche) |  |  |
+| 61 | Cyclic symmetry: limits | *draft*: low (niche, ERROR) |  |  |
+| 63 | Fracture mechanics: only linear static, no field, no quarter points | *draft*: low (niche) |  |  |
+| 64 | Welding: limits of the thermal → mechanical chain | *draft*: low (niche, warned) |  |  |
+| 65 | Adaptive refinement: limits | *draft*: low (optional feature) |  |  |
+| 66 | Fatigue: limits (solids and shells, Miner, critical plane only on solids) | *draft*: low (niche, warned) |  |  |
+| 72 | Welding: limits of the metallurgy | *draft*: low (niche) |  |  |
+| 71 | Welding: filler material that is born, limits | *draft*: low (niche) |  |  |
+| 104 | Formulas: limits | *draft*: medium (Mecway ignores some position formulas; others ERROR) |  |  |
+| 121 | Result formulas: not every Mecway symbol | *draft*: low (warned, workaround) |  |  |
+| 124 | Pre-tension section: limits | *draft*: low (niche, ERROR) |  |  |
+| 126 | 2D analyses: limits | *draft*: low (reported limit) |  |  |
+| 131 | Orthotropic and anisotropic material: limits | *draft*: low (reported limit, ERROR) |  |  |

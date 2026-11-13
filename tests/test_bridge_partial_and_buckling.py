@@ -193,6 +193,33 @@ def test_buckling_beam_notes():
         b2a.log = saved
 
 
+def test_buckling_shell_notes():
+    """KNOWN_BUGS 132: WARNING only with DKT/DST shells; another advice
+    when COQUE_3D fell back to DKT."""
+    import bridge_to_aster as b2a
+    lines = []
+    saved, saved_shell = b2a.log, u.CONFIG_BRIDGE.get("elem_shell")
+    b2a.log = lines.append
+    try:
+        for mods, shell, warn, fell_back in (
+                ({"P": "DKT"}, "DKT", True, False),
+                ({"P": "COQUE_3D"}, "COQUE_3D", False, False),
+                ({"P": "DKT"}, "COQUE_3D", True, True),
+                ({"B": "POU_D_E"}, "DKT", False, False)):
+            del lines[:]
+            u.CONFIG_BRIDGE["elem_shell"] = shell
+            b2a._buckling_shell_notes({"elset_modelisations": mods})
+            text = "\n".join(lines)
+            check(("WARNING" in text) == warn and
+                  ("fell back" in text or "viel hier" in text) == fell_back,
+                  "buckling shell note {0} with elem_shell {1}: WARNING {2}, "
+                  "fallback text {3}".format(sorted(mods.items()), shell,
+                                             warn, fell_back))
+    finally:
+        b2a.log = saved
+        u.CONFIG_BRIDGE["elem_shell"] = saved_shell
+
+
 def main():
     saved = dict(u.CONFIG_BRIDGE)
     tmp = tempfile.mkdtemp(prefix="bridge_partial_buckling_")
@@ -202,6 +229,7 @@ def main():
         test_step_guard_ended(tmp)
         test_buckling_truss(tmp)
         test_buckling_beam_notes()
+        test_buckling_shell_notes()
     finally:
         u.CONFIG_BRIDGE.clear()
         u.CONFIG_BRIDGE.update(saved)

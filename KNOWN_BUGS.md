@@ -228,8 +228,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    solver with the same `.liml` 27.26 and 20.34 (400 × 20 elements: 27.08 and 20.23),
    the formula 27.72 and 20.65; `POU_D_TG` (BU-43c) 27.46 and −20.44. A plate that buckles out of its plane (BU-34) is right.
    `COQUE_3D` (quadratic shells, `elem_shell`) gets it right (13 Nov 2026, the same T with
-   200 × 10 quad4 per plate): 26.64 and −19.91 against Mecway 27.08 / −20.23 (−1.6% both;
-   DKT on that mesh −7.77 and no right positive factor). The bridge gives a WARNING for
+   200 × 10 quad4 per plate): 26.64 and −19.91 against Mecway 27.26 and 20.34 (reversed
+   moments) on the same mesh (−2.3% and −2.1%); DKT on that mesh now gives six negative
+   factors (−7.77 .. −59.98) and no positive one, the earlier 18.76 did not come back (NOT
+   investigated). Nonlinear buckling (`CRIT_STAB`) and the buckling step of an imperfection
+   use the same geometric stiffness (NOT verified). The bridge gives a WARNING for
    buckling with DKT/DST shells (`bridge_to_aster._buckling_shell_notes`) that names
    `COQUE_3D`; DKT stays the default (a plate buckling out of its plane is right with it).
    Use `COQUE_3D`, beams with `elem_beam` = `POU_D_TG` or solid elements for the global

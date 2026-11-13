@@ -8432,14 +8432,29 @@ def _buckling_shell_notes(model_data):
     (R3.07.03 par. 4.6), so a plate that moves in its own plane in the
     buckling mode (a profile built from plates: lateral-torsional or
     flexural buckling) gets no geometric stiffness. Measured on the T beam
-    of BU-43c (200 x 10 quad4 per plate, 13 Nov 2026): DKT -7.77 and no
-    positive factor near the reference, COQUE_3D 26.64 / -19.91 against
-    Mecway 27.08 / -20.23 and the formula 27.72 / -20.65. A plate that
-    buckles out of its plane (BU-34) is right with DKT.
+    of BU-43c (200 x 10 quad4 per plate, 13 Nov 2026): the 6 smallest DKT
+    factors all negative (-7.77 .. -59.98), COQUE_3D 26.64 and -19.91,
+    Mecway on the same mesh 27.26 and 20.34 (reversed moments), the
+    formula 27.72 / 20.65. A plate that buckles out of its plane (BU-34) is
+    right with DKT. DST becomes DKT outside static (bridge_from_liml).
     """
     mods = model_data.get("elset_modelisations", {})
     dkt = sorted(g for g, m in mods.items() if m in ("DKT", "DST"))
-    if dkt:
+    if dkt and CONFIG_BRIDGE.get("elem_shell") == "COQUE_3D":
+        # COQUE_3D fell back to DKT (_resolve_line_quad gave its WARNING)
+        log(tr("WARNING: Knik met DKT-schalen ({0}): COQUE_3D viel hier "
+               "terug naar DKT (zie de WARNING daarover). De geometrische "
+               "stijfheid van DKT kent alleen de uitbuiging uit het vlak "
+               "van elke plaat; voor een profiel uit platen zijn de "
+               "factoren dan fout: gebruik balken met POU_D_TG of "
+               "volume-elementen.",
+               "WARNING: Buckling with DKT shells ({0}): COQUE_3D fell back "
+               "to DKT here (see the WARNING about it). The geometric "
+               "stiffness of DKT only knows the deflection out of the plane "
+               "of each plate; for a profile made of plates the factors are "
+               "then wrong: use beams with POU_D_TG or solid "
+               "elements.").format(", ".join(dkt)))
+    elif dkt:
         log(tr("WARNING: Knik met DKT-schalen ({0}): hun geometrische "
                "stijfheid kent alleen de uitbuiging uit het vlak van elke "
                "plaat. Voor een profiel uit platen (kip, knik met "

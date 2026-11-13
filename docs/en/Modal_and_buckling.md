@@ -500,8 +500,10 @@ own solver and CCX ([`Verification.md`](Verification.md) §7, BU-30 … BU-36):
   deflection out of the plane of each plate (R3.07.03 §4.6). A plate that moves in its
   own plane in the buckling mode (the stem of a T in lateral-torsional buckling) gets
   none, and the factors are wrong: T beam of BU-43c in shells (200 × 10 quad4 per plate)
-  DKT −7.77 and no right positive factor, `COQUE_3D` 26.64 / −19.91, Mecway 27.08 /
-  −20.23. The bridge gives a WARNING for buckling with DKT shells; choose *Linear
+  DKT only negative factors (−7.77 …), `COQUE_3D` 26.64 and −19.91, Mecway on the same
+  mesh 27.26 and 20.34 (reversed moments). This probably holds for nonlinear buckling
+  (`CRIT_STAB`, §5) and the buckling shape of an imperfection with DKT too (NOT
+  verified). The bridge gives a WARNING for buckling with DKT shells; choose *Linear
   shells* (`elem_shell`) = `COQUE_3D`. A plate that buckles out of its plane (BU-34) is
   right with DKT (KNOWN_BUGS 132).
 - **Negative factors**: the bridge also gives the factors for the reversed load (for the
@@ -654,7 +656,8 @@ recommends (EDF R&D, U2.08.04 §2.2).
    `POU_D_T_GD` (20 to 40 elements per member;
    [Settings §2.9](Settings_contact_and_nonlinear.md#29-beams-with-large-rotations-elem_beam--pou_d_t_gd)).
    Other beams and DKT/DST shells are geometrically linear in the bridge
-   (KNOWN_BUGS 11): CRIT_STAB works there (as a load factor), but the deflection does
+   (KNOWN_BUGS 11): CRIT_STAB works there (as a load factor; for a profile made of DKT
+   shells probably not, §3.5, KNOWN_BUGS 132), but the deflection does
    not grow with an imperfection (WARNING, and a message in the status box).
    `POU_D_T_GD` beams cannot do CRIT_STAB (ERROR). The imperfection does work with them
    (§5.2), except together with `#ASTER-EXCIT` (ERROR); then put the initial curvature

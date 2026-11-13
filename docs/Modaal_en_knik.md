@@ -508,8 +508,10 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 - **Schaalmodellen van profielen**: de geometrische stijfheid van DKT/DST kent alleen de
   uitbuiging uit het vlak van elke plaat (R3.07.03 §4.6). Een plaat die in de knikvorm in
   haar eigen vlak beweegt (het lijf van een T bij kip) krijgt er geen, en de factoren zijn
-  fout: T-balk van BU-43c in schalen (200 × 10 quad4 per plaat) DKT −7,77 en geen juiste
-  positieve factor, `COQUE_3D` 26,64 / −19,91, Mecway 27,08 / −20,23. De bridge geeft een
+  fout: T-balk van BU-43c in schalen (200 × 10 quad4 per plaat) DKT alleen negatieve
+  factoren (−7,77 …), `COQUE_3D` 26,64 en −19,91, Mecway op dezelfde mesh 27,26 en 20,34
+  (omgekeerde momenten). Dit geldt waarschijnlijk ook voor niet-lineaire knik
+  (`CRIT_STAB`, §5) en de knikvorm van een imperfectie met DKT (NIET geverifieerd). De bridge geeft een
   WARNING bij knik met DKT-schalen; kies *Lineaire schalen* (`elem_shell`) = `COQUE_3D`.
   Een plaat die uit haar vlak knikt (BU-34) is met DKT goed (KNOWN_BUGS 132).
 - **Negatieve factoren**: de bridge geeft ook de factoren voor de omgekeerde last (bij
@@ -664,7 +666,8 @@ aanraadt (EDF R&D, U2.08.04 §2.2).
    `POU_D_T_GD` (20 tot 40 elementen per staaf;
    [Instellingen §2.9](Instellingen_contact_en_nietlineair.md#29-balken-met-grote-rotaties-elem_beam--pou_d_t_gd)).
    Andere balken en DKT/DST-schalen rekenen in de bridge geometrisch lineair
-   (KNOWN_BUGS 11): daar werkt CRIT_STAB wel (als lastfactor), maar groeit de
+   (KNOWN_BUGS 11): daar werkt CRIT_STAB wel (als lastfactor; bij een profiel uit
+   DKT-schalen waarschijnlijk niet, §3.5, KNOWN_BUGS 132), maar groeit de
    uitbuiging met een imperfectie niet (WARNING, en een melding in het statusvak).
    Balken `POU_D_T_GD` kunnen geen CRIT_STAB (ERROR). De imperfectie werkt daar wel
    (§5.2), behalve samen met `#ASTER-EXCIT` (ERROR); leg de beginkromming dan in de
