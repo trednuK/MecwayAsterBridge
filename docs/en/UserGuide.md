@@ -7,6 +7,9 @@ Mecway. You build the model in Mecway (mesh, materials, loads, selections) and r
 the bridge as a script; the bridge translates the `.liml` into a Code-Aster mesh
 and a `.comm`, starts Code-Aster and loads the results.
 
+**Provided as is, without warranty (MPL-2.0, sections 6 and 7). Always check results
+independently before you rely on them.**
+
 **About the language of the software.** The main window, the messages, the
 WARNING/ERROR lines in the log and the `.mess` and the convergence window are available in Dutch and
 English: setting "Taal / Language" on the General page (`en` = English, the default;

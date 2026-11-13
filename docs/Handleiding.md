@@ -7,6 +7,9 @@ Mecway. Je bouwt het model in Mecway (mesh, materialen, belastingen, selecties) 
 start de bridge als script; de bridge vertaalt de `.liml` naar een Code-Aster-mesh
 en een `.comm`, start Code-Aster en laadt de resultaten.
 
+**Geleverd zonder garantie (MPL-2.0, art. 6 en 7). Controleer resultaten altijd onafhankelijk
+voordat je ze gebruikt.**
+
 Verwante documenten:
 
 | Onderwerp | Document |

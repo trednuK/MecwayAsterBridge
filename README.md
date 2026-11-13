@@ -15,6 +15,9 @@ in Mecway's *Custom model definition*.
 Version: **V2026.13** (see [`CHANGELOG.md`](CHANGELOG.md)). Dutch documentation:
 [`docs/Handleiding.md`](docs/Handleiding.md).
 
+**Provided as is, without warranty (MPL-2.0, sections 6 and 7). Always check results
+independently before you rely on them.**
+
 ## Requirements
 
 - **Windows** with **Mecway 33 or 34** (the bridge runs in Mecway's built-in IronPython 2.7
