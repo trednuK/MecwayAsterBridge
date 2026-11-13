@@ -78,6 +78,9 @@ _STOP_ID_RE = re.compile(r"BRIDGE_FOUT_ID\s+(\S+)")
 _TIME_STOP_ID = u"BRIDGE_TIJD"
 # TimeLimitError ids (Messages/mecanonline9.py, supervis.py of 17.4)
 _TIME_LIMIT_IDS = (u"MECANONLINE9_1", u"MECANONLINE9_2", u"SUPERVIS_63")
+# A linear static or plain thermal solve ended after the time limit and got
+# extra time (bridge_failure.late_time): <command> <elapsed s>
+_LATE_RE = re.compile(r"^BRIDGE_TIJD_LAAT\s+(\S+)\s+(\S+)")
 # The step guard ended; the job goes on (bridge_to_aster._guarded_solve)
 _GUARD_END_RE = re.compile(r"BRIDGE_VANGNET\s+(\S+)")
 # Element failure (bridge_failure.py, print in the .comm)
@@ -920,6 +923,15 @@ class ConvergenceParser(object):
             return
         if line.startswith(u"BRIDGE_TIJD_EXTRA "):
             data.time_extra = True
+            return
+        m = _LATE_RE.match(line)
+        if m:
+            self._add_message("alarm", u"BRIDGE_TIJD_LAAT", tr(
+                u"{0} eindigde na de tijdslimiet ({1} s); met extra tijd "
+                u"voor de nabewerking zijn de resultaten volledig.",
+                u"{0} ended after the time limit ({1} s); with extra time "
+                u"for the post-processing the results are complete.").format(
+                    m.group(1), m.group(2)))
             return
         m = _STOP_ID_RE.search(line)
         if m:

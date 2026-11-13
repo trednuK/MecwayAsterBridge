@@ -246,6 +246,9 @@ JOB_LANGUAGE_ENV = "BRIDGE_LANGUAGE"
 # Setting vtu_export for aster_results_export (same name as its VTU_ENV).
 JOB_VTU_ENV = "BRIDGE_VTU"
 _DEBUT_RE = re.compile(r"^DEBUT\s*\(", re.M)
+# The clock of bridge_failure (TIME_START) is set at the start of a line; a
+# .comm that uses it without that line gets it from _with_language.
+_CLOCK_SET_RE = re.compile(r"^_bt_t0\s*=", re.M)
 
 
 def _language_lines():
@@ -263,10 +266,16 @@ def _language_lines():
 
 def _with_language(text):
     """text with _language_lines before the first DEBUT line (all templates
-    have one on a line of its own), or at the top without DEBUT."""
+    have one on a line of its own), or at the top without DEBUT. A text
+    that uses the clock _bt_t0 (bridge_failure.late_time) without setting
+    it also gets bridge_failure.TIME_START there, before the language lines
+    as in the templates with a clock placeholder; any other text is
+    unchanged."""
     m = _DEBUT_RE.search(text)
     pos = m.start() if m else 0
-    return text[:pos] + _language_lines() + text[pos:]
+    clock = (bridge_failure.TIME_START if "_bt_t0" in text and
+             not _CLOCK_SET_RE.search(text) else "")
+    return text[:pos] + clock + _language_lines() + text[pos:]
 
 
 def _write_comm(path, text):
@@ -4631,6 +4640,23 @@ def _render_couplings(couplings):
 # ==========================================
 # BUILDER FOR LINEAR STATIC ANALYSIS  (MECA_STATIQUE)
 # ==========================================
+def _lin_post_solve_block():
+    """
+    Lines directly after MECA_STATIQUE (OPTION='SANS', see the template):
+    the extra time of bridge_failure.late_time, then the CALC_CHAMP that
+    MECA_STATIQUE makes itself with its default OPTION='SIEF_ELGA'
+    (MacroCommands/meca_statique_ops._computeStress, 17.4: SIEF_ELGA, plus
+    STRX_ELGA when the model has multifibre beams), so the same fields.
+    """
+    return (bridge_failure.late_time("MECA_STATIQUE") +
+            "res = CALC_CHAMP(\n"
+            "    reuse=res,\n"
+            "    RESULTAT=res,\n"
+            "    CONTRAINTE=['SIEF_ELGA'] + (\n"
+            "        ['STRX_ELGA'] if model.existsMultiFiberBeam() else []),\n"
+            ")\n")
+
+
 def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
     """
     Generate study.comm and study.export for a MECA_STATIQUE analysis.
@@ -4844,6 +4870,7 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
             cara_elem_ref    = cara_elem_ref,
             solveur_ref      = _build_lin_solveur_ref(
                 analysis, refine=bool(model_data.get("offset_links"))),
+            post_solve_block = _lin_post_solve_block(),
             calc_champ_block = calc_champ_block,
             postreleve_block = postreleve_block,
             impr_table_block = impr_table_block,

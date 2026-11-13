@@ -9,6 +9,8 @@
 #     clock before DEBUT, the .comm is valid Python;
 #   - the extra time after a TimeLimitError (bridge_failure._time_extra in
 #     PARTIAL_EXCEPT and GUARD_EXCEPT);
+#   - the extra time after the solve of linear static and plain thermal
+#     jobs (bridge_failure.late_time, the clock of _with_language);
 #   - the messages (bridge_run_aster.aster_mess_errors, bridge_convergence).
 #
 #   python tests/test_bridge_time_guard.py
@@ -18,6 +20,7 @@ from __future__ import print_function
 import ast
 import io
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -32,6 +35,7 @@ import bridge_failure  # noqa: E402
 from bridge_from_liml import extract_aster_data_from_liml  # noqa: E402
 from bridge_mesh import write_mesh  # noqa: E402
 from bridge_to_aster import generate_AsterSolver_files  # noqa: E402
+import bridge_run_aster  # noqa: E402
 from bridge_run_aster import aster_mess_errors  # noqa: E402
 from bridge_convergence import ConvergenceParser  # noqa: E402
 
@@ -81,6 +85,21 @@ def _post_time(text):
         "print(" not in bridge_failure.POST_TIME
 
 
+def _one_clock(text):
+    """Exactly one clock line (bridge_failure.TIME_START), before DEBUT."""
+    sets = [m.start() for m in re.finditer(r"^_bt_t0\s*=", text, re.M)]
+    return len(sets) == 1 and \
+        text.count(bridge_failure.TIME_START) == 1 and \
+        sets[0] < text.find("\nDEBUT(")
+
+
+def _verif(name):
+    """Path of a verification model, or None if it is not there."""
+    path = os.path.join(_REPO, "TestFiles", "Verificatie", "modellen",
+                        name + ".liml")
+    return path if os.path.isfile(path) else None
+
+
 def test_comm(tmp):
     bar = os.path.join(_REPO, "TestFiles", "BezwijkenTrekstaaf.liml")
     text = _comm(tmp, bar, "nonlin_static_3d", time_limit=1000)
@@ -125,9 +144,29 @@ def test_comm(tmp):
 
     lin = os.path.join(_REPO, "TestFiles", "Voorbeelden", "Voorbeeld_A.liml")
     text = _comm(tmp, lin, "lin_static_3d")
-    check("_bt_" not in text and "TimeLimitError" not in text and
-          "BRIDGE_TPMAX0" not in text,
-          "linear static: unchanged (no guard, no extra time)")
+    late = bridge_failure.late_time("MECA_STATIQUE")
+    solve = text[text.find("res = MECA_STATIQUE("):]
+    solve = solve[:solve.find("\n)\n") + 3]
+    after = text[text.find(solve) + len(solve):].lstrip("\n")
+    check(_one_clock(text) and "TimeLimitError" not in text and
+          "    OPTION='SANS',\n" in solve and after.startswith(late) and
+          after[len(late):].startswith(
+              "res = CALC_CHAMP(\n    reuse=res,\n    RESULTAT=res,\n"
+              "    CONTRAINTE=['SIEF_ELGA'] + (\n        ['STRX_ELGA'] if "
+              "model.existsMultiFiberBeam() else []),\n)\n") and
+          text.count("print('BRIDGE_TIJD_LAAT', 'MECA_STATIQUE'") == 1 and
+          0 < text.find("print('BRIDGE_TIJD_LAAT'") <
+          text.find("    FORCE=('REAC_NODA', ),"),
+          "linear static: clock, OPTION='SANS', late_time, then the "
+          "CALC_CHAMP SIEF_ELGA before calc_champ_block")
+    _parse(text)
+    fx = _verif("FX-04")
+    if fx:
+        text = _comm(tmp, fx, "lin_static_3d")
+        check(_one_clock(text) and text.count(late) == 1 and
+              text.count("    OPTION='SANS',\n") == 1, "linear static FX-04: "
+              "one clock, one late_time")
+        _parse(text)
 
     weld = os.path.join(_REPO, "TestFiles", "Verificatie", "modellen",
                         "WE-12.liml")
@@ -140,7 +179,68 @@ def test_comm(tmp):
               loop.find("'BRIDGE_TIJD'") < loop.find("res = STAT_NON_LINE(")
               and _post_time(text),
               "welding birth loop: clock, guard, extra time after t_res")
+        check(_one_clock(text) and
+              bridge_failure.LATE_TIME_MARK not in text,
+              "welding birth loop: one clock, no late_time (phase 2)")
         _parse(text)
+
+
+def test_comm_thermal(tmp):
+    """late_time directly after the solve of a plain thermal job, not in
+    the chains (birth loop, thermomechanical, adaptive loop)."""
+    for name, command, settings in (
+            ("TH-01b", "THER_LINEAIRE", {}),
+            ("TH-02a", "THER_LINEAIRE", {"theta": 0.57}),
+            ("TH-01e", "THER_NON_LINE", {}),
+            ("WE-04b", "THER_NON_LINE", {})):
+        liml = _verif(name)
+        if not liml:
+            continue
+        text = _comm(tmp, liml, "ther_3d", **settings)
+        late = bridge_failure.late_time(command)
+        solve = text[text.find("res = {0}(".format(command)):]
+        solve = solve[:solve.find("\n)\n") + 3]
+        check(_one_clock(text) and text.count(late) == 1 and
+              text.find(solve + late) > 0 and
+              text.find(late) < text.find("CALC_CHAMP("),
+              "thermal {0}: clock, late_time({1}) right after the solve"
+              .format(name, command))
+        _parse(text)
+    for name, what, settings in (
+            ("MT-01", "thermomechanical chain", {}),
+            ("WE-12", "birth loop", {}),
+            ("AD-10", "adaptive loop", {"adapt_homard": True,
+                                        "adapt_homard_target": 0.15,
+                                        "adapt_homard_max_loops": 10})):
+        liml = _verif(name)
+        if not liml:
+            continue
+        text = _comm(tmp, liml, "ther_3d", **settings)
+        clock = _one_clock(text) if name == "WE-12" else "_bt_" not in text
+        check(bridge_failure.LATE_TIME_MARK not in text and clock,
+              "thermal {0}: {1} without late_time (phase 2)".format(name,
+                                                                    what))
+        _parse(text)
+
+
+def test_clock_insert():
+    """_with_language adds the clock only to a text that uses _bt_t0
+    without setting it; any other text is unchanged."""
+    import bridge_to_aster as bta
+    base = "# x\nDEBUT(LANG='EN')\nFIN()\n"
+    lang = bta._language_lines()
+    check(bta._with_language(base) ==
+          "# x\n" + lang + "DEBUT(LANG='EN')\nFIN()\n",
+          "clock: none without _bt_t0")
+    used = "# x\nDEBUT(LANG='EN')\n_e = _bt_time.time() - _bt_t0\nFIN()\n"
+    check(bta._with_language(used) == "# x\n" + bridge_failure.TIME_START +
+          lang + used[4:], "clock: before the language lines when used")
+    own = bridge_failure.TIME_START + used[4:]
+    check(bta._with_language(own) == bridge_failure.TIME_START + lang +
+          used[4:], "clock: not twice when the text sets it")
+    note = "# _bt_t0 = in a comment\nDEBUT(LANG='EN')\nx = _bt_t0\n"
+    check(bta._with_language(note).count(bridge_failure.TIME_START) == 1,
+          "clock: an assignment only counts at the start of a line")
 
 
 class _Clock(object):
@@ -235,6 +335,78 @@ def _fresh(tpmax):
     os.environ.pop("BRIDGE_TPMAX0", None)
     os.environ.pop("BRIDGE_TIJD_STOP", None)
     _Params.options["tpmax"] = tpmax
+
+
+def _late(now, command="MECA_STATIQUE"):
+    """Run bridge_failure.late_time with the fake clock at now [s]."""
+    out = []
+    exec(bridge_failure.late_time(command),
+         {"_bt_time": _Clock(now), "_bt_t0": 0.0,
+          "print": lambda *a: out.append(a)})
+    return out
+
+
+def test_late_time():
+    _fake_code_aster(True)
+    try:
+        # early (solve within tp0 = 27 s): silent, tp0 + max(600, tp0)
+        _fresh(27.0)
+        out = _late(10.0)
+        check(out == [] and _Params.options["tpmax"] == 627.0 and
+              os.environ.get("BRIDGE_TPMAX0") == repr(27.0) and
+              "BRIDGE_TIJD_STOP" not in os.environ,
+              "late_time early: silent extension to 627 s: {0}".format(out))
+        exec(bridge_failure.POST_TIME, {})
+        check(_Params.options["tpmax"] == 627.0,
+              "late_time early, then POST_TIME: no change")
+        # late: elapsed-aware, EXTRA then LAAT, once
+        _fresh(27.0)
+        out = _late(40.0)
+        check(out == [("BRIDGE_TIJD_EXTRA 613.0",),
+                      ("BRIDGE_TIJD_LAAT", "MECA_STATIQUE", 40.0)] and
+              _Params.options["tpmax"] == 640.0,
+              "late_time late: elapsed + max(600, tp0), EXTRA then LAAT "
+              "once: {0}".format(out))
+        st, out, _ns = _run(bridge_failure.PARTIAL_EXCEPT,
+                            TimeLimitError("SUPERVIS_63"), [0.0, 0.3])
+        check(_Params.options["tpmax"] == 640.0 and
+              not [a for a in out if "BRIDGE_TIJD_EXTRA" in a[0]],
+              "late_time, then _extend_time: no more extra time")
+        # far past 2 x tp0: still elapsed + max(600, tp0)
+        _fresh(1620.0)
+        out = _late(4000.0, "THER_LINEAIRE")
+        check(_Params.options["tpmax"] == 5620.0 and
+              ("BRIDGE_TIJD_LAAT", "THER_LINEAIRE", 4000.0) in out,
+              "late_time far past the limit: 4000 + 1620 s")
+        # POST_TIME first (silent tp0 + max(600, tp0)), late_time later
+        # may still raise further
+        _fresh(27.0)
+        exec(bridge_failure.POST_TIME, {})
+        out = _late(700.0)
+        check(_Params.options["tpmax"] == 1300.0 and
+              out == [("BRIDGE_TIJD_EXTRA 673.0",),
+                      ("BRIDGE_TIJD_LAAT", "MECA_STATIQUE", 700.0)],
+              "POST_TIME, then late_time past it: raised to 1300 s: "
+              "{0}".format(out))
+        _fresh(27.0)
+        exec(bridge_failure.POST_TIME, {})
+        out = _late(20.0)
+        check(_Params.options["tpmax"] == 627.0 and out == [],
+              "POST_TIME, then late_time within the limit: silent, no "
+              "change: {0}".format(out))
+        try:
+            bridge_failure.late_time("X", final=False)
+            check(False, "late_time final=False refused")
+        except ValueError:
+            check(True, "late_time final=False refused")
+        check("{" not in bridge_failure.late_time("THER_NON_LINE"),
+              "late_time: no braces")
+    finally:
+        _fake_code_aster(False)
+        os.environ.pop("BRIDGE_TPMAX0", None)
+        os.environ.pop("BRIDGE_TIJD_STOP", None)
+    out = _late(4000.0)
+    check(out == [], "late_time without ExecutionParameter: silent")
 
 
 def test_time_extra():
@@ -366,6 +538,25 @@ def test_messages(tmp):
                       u" ║ <TimeLimitError> <SUPERVIS_63>   ║\n" + _END)
     check(len(msgs) == 2 and [m for m in msgs if "ran out of time too" in m],
           "time guard, post-processing out of time: {0}".format(msgs))
+    logged = []
+    saved_log = bridge_run_aster.log
+    bridge_run_aster.log = logged.append
+    try:
+        msgs = _mess(tmp, u"BRIDGE_TIJD_EXTRA 613.0\n"
+                          u"BRIDGE_TIJD_LAAT MECA_STATIQUE 40.0\n" + _END)
+        check(msgs == [] and [m for m in logged if m.startswith(
+            "WARNING: MECA_STATIQUE ended after the time limit (40.0 s") and
+            "= 1800 s" in m and "results are complete" in m],
+              "late solve: no error, a WARNING note: {0}".format(logged))
+        del logged[:]
+        msgs = _mess(tmp, u"BRIDGE_TIJD_EXTRA 613.0\n"
+                          u"BRIDGE_TIJD_LAAT THER_LINEAIRE 40.0\n"
+                          u" ║ <TimeLimitError> <SUPERVIS_63>   ║\n" + _END)
+        check(len(msgs) == 1 and "skips every next command" in msgs[0] and
+              not [m for m in logged if "results are complete" in m],
+              "late solve, post-processing out of time: error, no note")
+    finally:
+        bridge_run_aster.log = saved_log
 
 
 def _parsed(text):
@@ -388,6 +579,15 @@ def test_convergence():
     p.feed(u"BRIDGE_TIJD_EXTRA 600.0\n")
     p.close()
     check(p.data.time_extra, "convergence: extra time seen (status box)")
+    p = ConvergenceParser()
+    p.feed(u"BRIDGE_TIJD_EXTRA 613.0\nBRIDGE_TIJD_LAAT MECA_STATIQUE 40.0\n")
+    p.close()
+    late = [m for m in p.data.messages if m["code"] == u"BRIDGE_TIJD_LAAT"]
+    check(p.data.time_extra and len(late) == 1 and
+          late[0]["kind"] == "alarm" and late[0]["text"] ==
+          u"MECA_STATIQUE ended after the time limit (40.0 s); with extra "
+          u"time for the post-processing the results are complete.",
+          "convergence: late solve as an alarm: {0}".format(late))
     check(_parsed(u"BRIDGE_FOUT_ID MECANONLINE9_7\n"
                   u"BRIDGE_ONVOLLEDIG 0.5\n") ==
           [u"Not converged; results up to t = 0.5 s."],
@@ -399,7 +599,10 @@ if __name__ == "__main__":
     work_dir = u.CONFIG_BRIDGE["work_dir"]
     try:
         test_comm(tmp)
+        test_comm_thermal(tmp)
+        test_clock_insert()
         test_guard_runs()
+        test_late_time()
         test_time_extra()
         test_messages(tmp)
         test_convergence()

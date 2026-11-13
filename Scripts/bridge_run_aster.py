@@ -442,6 +442,10 @@ _MESS_TIME_STOP = "BRIDGE_TIJD"
 # TimeLimitError (bridge_failure._extend_time); BRIDGE_TIJD_EXTRA_FOUT when
 # that failed.
 _MESS_TIME_EXTRA = "BRIDGE_TIJD_EXTRA "
+# The solve of a linear static or plain thermal job ended after the time
+# limit and got the extra time (bridge_failure.late_time, LATE_TIME_MARK):
+# <command> <elapsed s>. A note, the results are complete.
+_MESS_LATE_RE = re.compile(r"^BRIDGE_TIJD_LAAT\s+(\S+)\s+(\S+)", re.M)
 # TimeLimitError ids (Messages/mecanonline9.py, supervis.py of 17.4)
 _TIME_LIMIT_CODES = ("MECANONLINE9_1", "MECANONLINE9_2", "SUPERVIS_63")
 # The step guard ended and the job went on (bridge_to_aster._guarded_solve):
@@ -1551,6 +1555,7 @@ def aster_mess_errors(work_dir, since=None):
     errors = []
     seen = set()
     alarms = []
+    late = None
     try:
         text = _read_mess(mess_path)
         lines = text.splitlines()
@@ -1572,6 +1577,10 @@ def aster_mess_errors(work_dir, since=None):
             if m and m.group(2) == "SUPERVIS_63":
                 skip_lines.append(i)
         post_lost = extra_failed or any(i > extra_line for i in skip_lines)
+        # Solve ended after the limit, extra time given: only a note (no
+        # error, so main() does not say "partly loaded"); a SUPERVIS_63
+        # after the extra time is an error as above
+        late = None if post_lost else _MESS_LATE_RE.search(text)
         for i, line in enumerate(lines):
             m = _MESS_ERROR_RE.search(line)
             if m:
@@ -1700,6 +1709,19 @@ def aster_mess_errors(work_dir, since=None):
             continue
         log(tr(u"WARNING: Code-Aster-alarm {0} in study.mess.",
                u"WARNING: Code-Aster alarm {0} in study.mess.").format(alarm))
+    if late:
+        limit = export_time_limit(os.path.join(work_dir, run_name(".export")))
+        log(tr(u"WARNING: {0} eindigde na de tijdslimiet ({1} s na de start; "
+               u"'Tijdslimiet run_aster' = {2} s). De bridge gaf Code-Aster "
+               u"extra tijd voor de nabewerking: de resultaten zijn "
+               u"volledig. Verhoog 'Tijdslimiet run_aster' om dat te "
+               u"voorkomen.",
+               u"WARNING: {0} ended after the time limit ({1} s after the "
+               u"start; 'Time limit run_aster' = {2} s). The bridge gave "
+               u"Code-Aster extra time for the post-processing: the results "
+               u"are complete. Raise 'Time limit run_aster' to avoid "
+               u"this.").format(late.group(1), late.group(2),
+                                u"%g" % limit if limit else u"?"))
     # Messages with the file names of this run (shown in mw.message)
     errors = [run_names(msg) for msg in errors]
     for msg in errors:

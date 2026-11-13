@@ -149,9 +149,11 @@ from bridge_utils import log, tr, log_file_name
 # closing; on Windows run_aster does not kill the job at a timeout (ulimit
 # -t only on Linux, run_aster/run.py _get_cmdline). A failure of this (other
 # version) only prints BRIDGE_TIJD_EXTRA_FOUT; the run then stops as before.
-# After the solve POST_TIME gives the same time without a message. A
-# time-limit stop in an analysis without these clauses (linear, thermal)
-# still loses the results (KNOWN_BUGS 137).
+# After the solve POST_TIME gives the same time without a message, and
+# late_time does so after the solve of linear static and plain thermal
+# analyses. A time-limit stop in an analysis without these clauses (modal,
+# harmonic, the other linear ones, the thermal chains) still loses the
+# results (KNOWN_BUGS 137).
 def _extend_time(indent, report=True):
     """Lines that give Code-Aster time for the post-processing and the
     export (see above); also before the break of the time guard, and
@@ -283,6 +285,72 @@ def time_guard_check(indent, seg):
                 "    print('BRIDGE_ONVOLLEDIG', "
                 "res.getAccessParameters()['INST'][-1])",
                 "    break")))
+
+
+# After the last solve of a linear static (MECA_STATIQUE) or plain thermal
+# (THER_LINEAIRE / THER_NON_LINE) job. Those commands are Python macros in
+# 17.4 (Cata/Commands/meca_statique.py, ther_lineaire.py, ther_non_line.py)
+# whose step loops contain no time check (MacroCommands/meca_statique_ops,
+# ther_lineaire_ops, Solvers/Main/non_linear_operator: no tpmax or
+# TimeLimitError), so the solve itself runs on past the limit; the next
+# command that starts then raises SUPERVIS_63 and a macro result is lost
+# (ExecuteMacro binds it only when the ops function returns). Seen in a 17.4
+# run (FX-04, time_limit 30 s, a delay inside MECA_STATIQUE before its own
+# CALC_CHAMP SIEF_ELGA): SUPERVIS_63 in that CALC_CHAMP, no result fragment.
+# The thermal loops ran on past the limit too (17.4 runs TH-02a THER_LINEAIRE
+# and WE-04b THER_NON_LINE, time_limit 30 s, 35 s delay in step 2: no
+# TimeLimitError in the loop, all 401 / 101 steps, then these lines).
+# Hence AsterTemplate_MecaStatique.comm solves with OPTION='SANS' and makes
+# the same CALC_CHAMP itself after these lines. With them (17.4, FX-04 and the
+# two thermal runs above) every run printed BRIDGE_TIJD_LAAT and its result
+# fragment was byte-identical to that of a run without the delay.
+# The extra time is always given (silently): tpmax becomes the larger of
+# tp0 + max(600 s, tp0) (as _extend_time, so its 'if _pe_tp < _pe_new' makes
+# a later POST_TIME or _extend_time a no-op) and elapsed + max(600 s, tp0)
+# (elapsed-aware: a solve that ran far past the limit still gets that time).
+# tp0 = the original tpmax (BRIDGE_TPMAX0, shared with _extend_time), i.e.
+# time_limit x 0.9 (the limit _bt_limit of time_guard_setup). Only when the
+# solve itself ended after tp0 (bridge clock _bt_t0, which runs 1-3 s ahead
+# of Code-Aster's, see TIME_START) the lines print BRIDGE_TIJD_EXTRA <dt>
+# (status box "please wait"; aster_mess_errors: a SUPERVIS_63 after it is
+# post_lost) and BRIDGE_TIJD_LAAT <command> <elapsed>: a note, the results
+# are complete. No post-processing margin is used: the extension is
+# unconditional. final=False (a conditional form for a solve inside a
+# chain) is not built (STAPPENPLAN S45 phase 2). The clock itself
+# (TIME_START) is put before DEBUT by bridge_to_aster._with_language because
+# these lines use _bt_t0. No braces (str.format templates).
+LATE_TIME_MARK = "BRIDGE_TIJD_LAAT"
+
+
+def late_time(command, final=True):
+    """Lines after the last solve of the job (command: its name for the
+    BRIDGE_TIJD_LAAT line); see above."""
+    if not final:
+        raise ValueError("late_time: only final=True is built")
+    return "".join(line + "\n" for line in (
+        "# time for the post-processing and the export after the solve, "
+        "once (bridge_failure.late_time)",
+        "_pe_late = False",
+        "try:",
+        "    import os as _pe_os",
+        "    from code_aster.Utilities import ExecutionParameter as _pe_xp",
+        "    _pe_el = _bt_time.time() - _bt_t0",
+        "    _pe_tp = float(_pe_xp().get_option('tpmax'))",
+        "    _pe_tp0 = float(_pe_os.environ.get('BRIDGE_TPMAX0') or _pe_tp)",
+        "    _pe_os.environ['BRIDGE_TPMAX0'] = repr(_pe_tp0)",
+        "    _pe_late = _pe_el > _pe_tp0",
+        "    _pe_new = max(_pe_tp0 + max(600.0, _pe_tp0),",
+        "                  _pe_el + max(600.0, _pe_tp0))",
+        "    if _pe_tp < _pe_new:",
+        "        _pe_xp().set_option('tpmax', _pe_new)",
+        "        if _pe_late:",
+        "            print('BRIDGE_TIJD_EXTRA %r' % (_pe_new - _pe_tp))",
+        "    if _pe_late:",
+        "        print('{0}', '{1}', round(_pe_el, 1))".format(LATE_TIME_MARK,
+                                                           command),
+        "except Exception as _pe_err:",
+        "    if _pe_late:",
+        "        print('BRIDGE_TIJD_EXTRA_FOUT', repr(_pe_err))"))
 
 
 # Per MODELISATION the DEFORMATION forms for which failure has been

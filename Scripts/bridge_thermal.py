@@ -2639,6 +2639,16 @@ def build_thermal(work_dir, model_data, msh_path, resu_name, analysis):
                "WARNING: #ASTER-MATERIAL only works with a Thermal stress in "
                "a transient thermal model (thermal -> mechanical chain); "
                "ignored here."))
+    # Extra time after the solve (bridge_failure.late_time): THER_LINEAIRE
+    # and THER_NON_LINE are Python macros without a time check in their step
+    # loop, so a long solve ends past the time limit and the next command
+    # would skip the post-processing and the export (SUPERVIS_63). Only for
+    # a plain thermal job: not with filler material (birth loop), the chain
+    # to the mechanical solve or the adaptive loop (STAPPENPLAN S45 phase 2).
+    import bridge_failure
+    import bridge_homard
+    if not (tb.birth or mech or bridge_homard.settings(model_data)):
+        solve_block += bridge_failure.late_time(command)
 
     # --- Post-processing: heat flux (FLUX_NOEU = -lambda grad T) ---
     # The energy check of the welding source before calc_champ_block: there

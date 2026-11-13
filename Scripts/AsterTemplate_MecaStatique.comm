@@ -26,6 +26,8 @@
 #   excit_clause      -> EXCIT with all loads
 #   cara_elem_ref     -> "    CARA_ELEM=cara,\n" or "" in MECA_STATIQUE
 #   solveur_ref       -> "    SOLVEUR=_F(METHODE=.., ..),\n    INFO=2,\n"
+#   post_solve_block  -> extra time after the solve (bridge_failure.late_time)
+#                        and the CALC_CHAMP SIEF_ELGA of MECA_STATIQUE
 #   calc_champ_block  -> CALC_CHAMP (+ POST_CHAMP for shells), fields
 #                        depending on element types
 #   postreleve_block  -> POST_RELEVE_T tables
@@ -162,12 +164,21 @@ mesh = DEFI_GROUP(
 # default 1e-6) as the limit for the estimated error of the solution; or GCPC
 # (iterative, PRE_COND='LDLT_INC') with RESI_RELA as residual criterion.
 # INFO=2: solver statistics in the .mess (convergence monitor).
+# OPTION='SANS': MECA_STATIQUE (a Python macro) would otherwise compute
+# SIEF_ELGA (+ STRX_ELGA for multifibre beams) itself with a CALC_CHAMP at
+# its end (MacroCommands/meca_statique_ops._computeStress, 17.4). A solve
+# that ran past the time limit then lost the whole result in that
+# CALC_CHAMP (SUPERVIS_63). post_solve_block first gives the time back
+# (bridge_failure.late_time) and then makes the same CALC_CHAMP call.
 # =====================================================
 res = MECA_STATIQUE(
     MODELE=model,
     CHAM_MATER=fieldmat,
 {cara_elem_ref}{excit_clause}
+    OPTION='SANS',
 {solveur_ref})
+
+{post_solve_block}
 
 # =====================================================
 # 8. COMPUTE POST-PROCESSING FIELDS  (CALC_CHAMP)
