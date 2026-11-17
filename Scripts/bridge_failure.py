@@ -119,9 +119,9 @@ from bridge_utils import log, tr, log_file_name
 # holds the steps archived before the stop. Seen with 17.4: ConvergenceError
 # MECANONLINE9_7, and <F> FONCT0_9 (function evaluation in step 12 of 20):
 # INST 0..0.5 present and the post-processing ran. DVP_2 (floating point
-# exception in FULL_MECA) is an <F> message from the element computation as
-# well (same route as FONCT0_9; DVP_2 itself NIET geverifieerd in a run,
-# KNOWN_BUGS 118).
+# exception in FULL_MECA, te0139) is an <EXCEPTION> (AsterError) from the
+# element computation, the same route as FONCT0_9: verification NL-91, DVP_2 in step 0.6, res
+# held t = 0..0.5 and the results file was complete (17 Nov 2026).
 # MECANONLINE*: always continue (as before). Other AsterErrors: only if 'res'
 # has an archived step beyond the initial state; otherwise (error before the
 # first step, or no 'res') the error is raised again. BRIDGE_FOUT_ID gives

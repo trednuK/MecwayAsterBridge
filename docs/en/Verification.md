@@ -2095,6 +2095,27 @@ samples) plus the kinks of the load tables (NL-20).
      a model with `POU_D_T_GD` gives an ERROR beforehand (`CALCUL_37` after the first
      failure, [`Failure.md`](Failure.md)).
 
+### NL-91 Results after a floating point exception (`DVP_2`)
+
+- **Goal**: when Code-Aster stops in the middle of the steps with a numerical error in
+  the element computation (`<EXCEPTION> DVP_2`), the steps up to then go to Mecway
+  (GitHub issue #5).
+- **Model**: block 1 × 1 × 1 m, 2 × 2 × 2 hex8, x = 0 fixed; on x = 1 a force from a
+  time table: 1000 N at t = 0.5 s, 1e300 N from t = 0.6 s.
+- **Reference**: last time 0.5 s; reaction −1000 N at t = 0.5 s (equilibrium);
+  u_x(0.5) = 5 u_x(0.1) (linear elastic).
+- **Result**: `DVP_2` in step 0.6, `BRIDGE_ONVOLLEDIG 0.5`; the checks within 1e-8, the
+  message after the run names 0.5 s as the last time with results.
+- **Interpretation**: `bridge_failure.PARTIAL_EXCEPT` keeps the archived steps after a
+  floating point exception too. Measured while building it: when the overflow does not
+  come in the element computation but only in the post-processing (the same load on
+  beams, or 1e200 N so that every step converges with values around 1e190), the job
+  stops there with `DVP_2` and without results (probably in the squares of magnitudes and
+  von Mises, which overflow above ~1e154; the exact operation NOT checked). In a real
+  failure (a distorted element) the archived steps are converged, finite and far below
+  ~1e154. The `DVP_2` here comes from the Green-Lagrange strain (`GREEN_LAGRANGE`,
+  `matg2e`); with small strains (`PETIT`) step 0.6 probably converges, as with the beams.
+
 ### Bolt pretension (PT)
 
 Mecway's *Pre-tension section* ([Bolt_pretension.md](Bolt_pretension.md)): cut through

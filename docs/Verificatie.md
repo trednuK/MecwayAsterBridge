@@ -2107,6 +2107,27 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
      elementen in een model met `POU_D_T_GD` geeft vooraf een ERROR (`CALCUL_37` na het
      eerste bezwijken, [`Bezwijken.md`](Bezwijken.md)).
 
+### NL-91 Resultaten na een floating point exception (`DVP_2`)
+
+- **Doel**: stopt Code-Aster midden in de stappen met een numerieke fout in de
+  elementberekening (`<EXCEPTION> DVP_2`), dan gaan de stappen tot dan toe naar
+  Mecway (GitHub issue #5).
+- **Model**: blok 1 × 1 × 1 m, 2 × 2 × 2 hex8, x = 0 vast; op x = 1 een kracht uit een
+  tijdstabel: 1000 N bij t = 0,5 s, 1e300 N vanaf t = 0,6 s.
+- **Referentie**: laatste tijdstip 0,5 s; reactie −1000 N bij t = 0,5 s (evenwicht);
+  u_x(0,5) = 5 u_x(0,1) (lineair elastisch).
+- **Resultaat**: `DVP_2` in stap 0,6, `BRIDGE_ONVOLLEDIG 0.5`; de controles binnen 1e-8,
+  de melding na de run noemt 0,5 s als laatste tijdstip met resultaten.
+- **Interpretatie**: `bridge_failure.PARTIAL_EXCEPT` houdt ook na een floating point
+  exception de gearchiveerde stappen. Gemeten bij het maken: komt de overloop niet in
+  de elementberekening maar pas in de nabewerking (dezelfde last op balken, of 1e200 N
+  zodat alle stappen convergeren met waarden rond 1e190), dan stopt de job daar met
+  `DVP_2` en zonder resultaten (waarschijnlijk in de kwadraten van grootte en Von Mises,
+  die boven ~1e154 overlopen; de precieze bewerking NIET nagegaan). Bij een echte fout
+  (een vervormd element) zijn de gearchiveerde stappen geconvergeerd, eindig en ver onder
+  ~1e154. De `DVP_2` komt hier uit de Green-Lagrange-rek (`GREEN_LAGRANGE`, `matg2e`); met
+  kleine rekken (`PETIT`) convergeert stap 0,6 waarschijnlijk wel, zoals bij de balken.
+
 ### Boutvoorspanning (PT)
 
 Mecway's *Pre-tension section* ([Boutvoorspanning.md](Boutvoorspanning.md)): snede door

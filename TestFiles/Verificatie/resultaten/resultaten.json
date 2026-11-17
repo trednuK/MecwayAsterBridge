@@ -56925,5 +56925,82 @@
    "theta": 1.0
   },
   "general": {}
+ },
+ "NL-91": {
+  "id": "NL-91",
+  "group": "Niet-lineair statisch",
+  "title": "Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Verwacht in de .mess: <EXCEPTION> <DVP_2> en BRIDGE_ONVOLLEDIG 0.5 (GitHub issue #5).",
+  "seconds": 3.3,
+  "diagnostic": "OK",
+  "errors": [
+   "DVP_2",
+   "BRIDGE_ONVOLLEDIG"
+  ],
+  "checks": [
+   {
+    "name": "DVP_2 en BRIDGE_ONVOLLEDIG 0.5 in de .mess",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "floating point exception in stap 0,6",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "laatste tijdstip",
+    "fem": 0.5,
+    "ref": 0.5,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-09,
+    "source": "DVP_2 in stap 0,6; BRIDGE_ONVOLLEDIG 0.5",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie x bij t = 0,5",
+    "fem": -1000.0000002637593,
+    "ref": -1000.0,
+    "rel": -2.63759261542873e-10,
+    "dev": -2.63759261542873e-07,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "evenwicht met de kracht van 1000 N",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_x(0,5) / u_x(0,1)",
+    "fem": 4.999999964323981,
+    "ref": 5.0,
+    "rel": -7.135203716757133e-09,
+    "dev": -3.567601858378566e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "lineair elastisch, kracht lineair in t",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 27,
+  "n_elem": 8,
+  "settings": {},
+  "general": {}
  }
 }

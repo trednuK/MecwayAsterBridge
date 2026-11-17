@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge ae25554, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge ba52e8d, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3209 van 3215 controles binnen de tolerantie** (618 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3213 van 3219 controles binnen de tolerantie** (619 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1860,6 +1860,10 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge ae25554, Code-Aster 17.4
 | NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | tiprotatie om X | 1.5708 rad | 1.5708 | -0.00% | 0.01% | OK |
 | NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 1 | -177.62 N.m | -177.62 | +0.00% | 0.01% | OK |
 | NL-90b | POU_D_T_GD: flexible joint met U, V en W vrij, torsie tot 90 graden | reactiemoment X wortel 2 | 0 N.m | 0 | 0 | 0.000177621 N.m | OK |
+| NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | DVP_2 en BRIDGE_ONVOLLEDIG 0.5 in de .mess | 1 - | 1 | +0.00% | 0.5 - | OK |
+| NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | laatste tijdstip | 0.5 s | 0.5 | +0.00% | 1e-09 s | OK |
+| NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | reactie x bij t = 0,5 | -1000 N | -1000 | -0.00% | 0.0001% | OK |
+| NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | u_x(0,5) / u_x(0,1) | 5 - | 5 | -0.00% | 0.0001% | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 
@@ -1870,6 +1874,8 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge ae25554, Code-Aster 17.4
 *NL-51: diagnose OK; ELEMENTS_50*
 
 *NL-51b: diagnose OK; ELEMENTS_50*
+
+*NL-91: diagnose OK; DVP_2; BRIDGE_ONVOLLEDIG*
 
 ## Modaal met demping
 

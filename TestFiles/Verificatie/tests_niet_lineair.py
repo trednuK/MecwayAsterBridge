@@ -812,3 +812,67 @@ TESTS += [
          note="CCX-opmaak met automatictimestepping=\"true\": METHODE='AUTO' "
               "tussen de time points, ARCHIVAGE alleen op de time points."),
 ]
+
+
+# ------------------------------------------------------------------
+# NL-91 Resultaten na een echte DVP_2 (GitHub issue #5): blok 1 x 1 x 1 m,
+# 2 x 2 x 2 hex8, x = 0 vast, op x = 1 een kracht uit een tijdstabel:
+# 1000 N bij t = 0,5, daarna 1e300 N (t = 0,6). In stap 0,6 geeft de
+# elementberekening een floating point exception (<EXCEPTION> DVP_2, gemeten
+# met Code-Aster 17.4, 17 nov 2026); de job houdt de gearchiveerde stappen
+# 0 .. 0,5 (bridge_failure.PARTIAL_EXCEPT, BRIDGE_ONVOLLEDIG 0.5) en de
+# resultaten gaan volledig naar Mecway. Lineair elastisch: de verplaatsing
+# bij t = 0,5 is 5 x die bij t = 0,1, de reactie bij t = 0,5 is -1000 N.
+# De DVP_2 komt uit de Green-Lagrange-rek (DEFORMATION='GREEN_LAGRANGE',
+# matg2e); met PETIT convergeert stap 0,6 waarschijnlijk met waarden rond
+# 1e300 en stopt de job pas in de nabewerking, zonder resultaten.
+# ------------------------------------------------------------------
+def build_nl91():
+    m = Model("L30", timesteps=TS)
+    m.elset("Blok", "Staal")
+    hexmesh(m, "Blok", 2, 2, 2, box(0, 1, 0, 1, 0, 1))
+    m.mat("Staal", '<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+          'poissonratio="0.3" />')
+    m.node_selection("Vast", [i + 1 for i, p in enumerate(m.nodes)
+                              if abs(p[0]) < 1e-9])
+    m.node_selection("Kant", [i + 1 for i, p in enumerate(m.nodes)
+                              if abs(p[0] - 1.0) < 1e-9])
+    m.add('<fixed selection="Vast" />')
+    m.add('<force selection="Kant"><x time="0 s">0 N</x><x time="0.5 s">'
+          '1000 N</x><x time="0.6 s">1e300 N</x><x time="1 s">1e300 N</x>'
+          '<y>0 N</y><z>0 N</z></force>')
+    return m
+
+
+def _nl91_dvp2(r):
+    """1 als de .mess de DVP_2 en BRIDGE_ONVOLLEDIG 0.5 heeft."""
+    import io
+    text = io.open(r.mess, encoding="utf-8", errors="replace").read()
+    return float("<DVP_2>" in text and "BRIDGE_ONVOLLEDIG 0.5" in text)
+
+
+def _nl91_ratio(r):
+    u1 = r.at("displx", (1.0, 0.5, 0.5), time=_t(r, 0.1))
+    u5 = r.at("displx", (1.0, 0.5, 0.5), time=_t(r, 0.5))
+    return u5 / u1
+
+
+TESTS += [
+    Case("NL-91", GROUP, "Blok, kracht springt naar 1e300 N: DVP_2, "
+         "resultaten tot t = 0,5", "nonlin_static_3d", build_nl91,
+         [Check("DVP_2 en BRIDGE_ONVOLLEDIG 0.5 in de .mess", _nl91_dvp2,
+                ref=1.0, tol_abs=0.5, unit="-", in_series=False,
+                source="floating point exception in stap 0,6"),
+          Check("laatste tijdstip", lambda r: r.times()[-1], ref=0.5,
+                tol_abs=1e-9, unit="s", in_series=False,
+                source="DVP_2 in stap 0,6; BRIDGE_ONVOLLEDIG 0.5"),
+          Check("reactie x bij t = 0,5",
+                lambda r: r.total("reactionforcex", "Vast", time=_t(r, 0.5)),
+                ref=-1000.0, tol=1e-6, unit="N", in_series=False,
+                source="evenwicht met de kracht van 1000 N"),
+          Check("u_x(0,5) / u_x(0,1)", _nl91_ratio, ref=5.0, tol=1e-6,
+                unit="-", in_series=False,
+                source="lineair elastisch, kracht lineair in t")],
+         note="Verwacht in de .mess: <EXCEPTION> <DVP_2> en "
+              "BRIDGE_ONVOLLEDIG 0.5 (GitHub issue #5)."),
+]

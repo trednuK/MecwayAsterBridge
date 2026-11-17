@@ -28,7 +28,8 @@
   Wohler curve also applies to beams, trusses, cables or discrete elements, which get no
   damage (item 66); the curved-front WARNING of `#ASTER-XFEM` gives the measured +5.3 % at
   h = a/20 (item 83). New verification MO-11 (modal mechanism in a supported model, item
-  48). Items 5, 9, 10, 22, 34, 46, 54, 55, 58,
+  48) and NL-91 (results up to the last step after a real floating point exception
+  `DVP_2`, item 118 removed). Items 5, 9, 10, 22, 34, 46, 54, 55, 58,
   63, 64, 65, 106, 107, 121, 123, 124 and 131 corrected after a desk review against the code.
 
 ## V2026.13 – 13 November 2026
