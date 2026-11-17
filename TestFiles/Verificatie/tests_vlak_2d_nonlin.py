@@ -46,8 +46,12 @@ def _switch(m, mod):
 
 
 def _fields(m, plastic=True):
+    # Mecway's own outline names only: "plastic strain" gives the box
+    # 'Invalid fieldvariable name' in Mecway 35 (checked headless, 17 Nov
+    # 2026). The bridge writes the plastic strains without a fieldvariable;
+    # Mecway adds it when it saves the result. plastic: kept for the callers.
     for fv in ("displacement", "stress", "von Mises stress",
-               "reaction force") + (("plastic strain",) if plastic else ()):
+               "reaction force"):
         m.add('<fieldvariable name="%s" />' % fv)
 
 
@@ -189,7 +193,6 @@ def build_pl32():
     m.add('<traction selection="Trek">%s<y>0 Pa</y><z>0 Pa</z></traction>'
           % _table("x", [(0.0, _T0), (1.0, _T1)], "Pa"))
     _switch(m, "C_PLAN")
-    m.add('<fieldvariable name="plastic strain" />')
     return m
 
 

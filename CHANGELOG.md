@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-- **Axisymmetric shells** (STAPPENPLAN S44e, piece 1): line3 elements in Static 3D (S30) or
+- **Fix: example models that opened with a message in Mecway 35.** The 2D example and
+  verification models `PL-30`, `PL-30p`, `PL-31`, `PL-32`, `PL-35` (`plastic strain`) and
+  `PL-40` … `PL-46` (`contact`) asked Mecway for a result field it does not know, so Mecway 35
+  showed "Invalid fieldvariable name" on opening. Those lines are gone; the bridge itself
+  writes no field variables, and its results were not affected. All PL models and the other
+  models the docs point to (MD-05, MT-06, MT-07, WE-02, WE-10, WE-13), 68 in all, now open
+  without a message (checked in a hidden Mecway 35).
+
+- **Axisymmetric shells** (STAPPENPLAN S44e): line3 elements in Static 3D (S30) or
   Nonlinear Static (L30) in the XY plane with the line `**ASTER-PLANE AXIS` are computed as
   Code-Aster `COQUE_AXIS` (SEG3). The thickness comes from the new line
   `**ASTER-SHELL <material>: EPAIS=<t>` (also `**ASTER-SCHAAL`, optionally `A_CIS`), or from
@@ -10,11 +18,18 @@
   and the rotation about Z (*Fixed*, *Symmetry*, *Node rotation* about Z); a pressure on the
   side of the line elements (faceid 1) pushes along −n, n = Z × U; forces and moments on nodes
   are for 360 degrees; gravity along Y. Results: displacements, `rotz` and the reactions
-  (`reactionmomz` too) for 360 degrees; the shell stresses come in piece 2. Verification
-  PL-60 … PL-68: thin cylinder and sphere, a clamped circular plate, the clamp moment of a long
-  cylinder (−0.94%), Code-Aster test case ssls114i (exact), a pressure time table in L30, a
-  nodal force, a ring moment and gravity. Not: line2, plasticity, mixing with plane elements,
-  temperatures, contact, centrifugal force, traction (ERROR).
+  (`reactionmomz` too) for 360 degrees; von Mises on the top, middle and bottom surface
+  (`vonmisesu1/m/b`); with the result fields `shell_stresses`, `shell_forces` and
+  `principal_stresses` the stress tensor per surface in global axes (`stresszz…` = hoop
+  stress), the normal forces and bending moments per length along the meridian and the hoop
+  direction (`forceperlengthu/v`, `momentu/v`; S30 only) and the principal stresses. Top
+  (`u1`) is the side the pressure acts on. The transverse shear is left out (Code-Aster's SIXZ
+  of `COQUE_AXIS` is not the physical shear, measured). Verification PL-60 … PL-68: thin
+  cylinder and sphere (hoop stress p R / t, p R / (2t)), a clamped circular plate, the clamp
+  moment and the clamp stress of a long cylinder (−0.94%, −1.1%), Code-Aster test case
+  ssls114i (exact), a pressure time table in L30, a nodal force, a ring moment and gravity.
+  Not: line2, plasticity, mixing with plane elements, temperatures, contact, centrifugal
+  force, traction (ERROR); strain and factor of safety (INFO, WARNING).
 
 - **Heat transfer axisymmetric** (STAPPENPLAN S44d, piece 1): Thermal Steady State (T30) or
   Transient (T31) with plane shell elements in the XY plane and the line

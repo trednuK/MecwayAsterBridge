@@ -592,7 +592,6 @@
   <fieldvariable name="stress" />
   <fieldvariable name="von Mises stress" />
   <fieldvariable name="reaction force" />
-  <fieldvariable name="contact" />
   <mat name="Mat">
     <geometric type="Plate" thickness="1 m" />
     <mechanical type="Isotropic" youngsmodulus="2e6 Pa" poissonratio="0" />

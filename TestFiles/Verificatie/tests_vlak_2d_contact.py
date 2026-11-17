@@ -59,8 +59,12 @@ def _contact(m):
 
 def _finish(m, mod):
     m.add(u"<ccxmodeldefinition>**ASTER-PLANE %s</ccxmodeldefinition>" % mod)
+    # Mecway's own outline names only: an unknown name ("contact") gives
+    # the box 'Invalid fieldvariable name' when the model is opened in
+    # Mecway 35 (user, 17 Nov 2026). The bridge writes contactpressure
+    # without a fieldvariable; Mecway adds it when it saves the result.
     for fv in ("displacement", "stress", "von Mises stress",
-               "reaction force", "contact"):
+               "reaction force"):
         m.add('<fieldvariable name="%s" />' % fv)
 
 

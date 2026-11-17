@@ -788,7 +788,6 @@
   <fieldvariable name="stress" />
   <fieldvariable name="von Mises stress" />
   <fieldvariable name="reaction force" />
-  <fieldvariable name="contact" />
   <displacement selection="CD"><value time="0 s">0 m</value><value time="1 s">-0.01 m</value><value time="2 s">-0.01 m</value><x>0</x><y>1</y><z>0</z></displacement>
   <displacement selection="CD"><value time="0 s">0 m</value><value time="1 s">0 m</value><value time="2 s">0.05 m</value><x>1</x><y>0</y><z>0</z></displacement>
   <mat name="Mat">

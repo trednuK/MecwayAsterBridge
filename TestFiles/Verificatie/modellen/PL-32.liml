@@ -49676,7 +49676,6 @@
   <fieldvariable name="reaction force" />
   <traction selection="Trek"><x time="0 s">71455792.6829 Pa</x><x time="1 s">87334857.7236 Pa</x><y>0 Pa</y><z>0 Pa</z></traction>
   <ccxmodeldefinition>**ASTER-PLANE C_PLAN</ccxmodeldefinition>
-  <fieldvariable name="plastic strain" />
   <mat name="Staal">
     <geometric type="Plate" thickness="1 mm" />
     <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
