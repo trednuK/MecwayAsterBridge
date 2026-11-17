@@ -145,6 +145,9 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   by *Displacement* Mecway 35 equals the bridge in a modal analysis and in a dynamic response
   with a damper (Newmark, to 1e-7; new verification DY-04a/b); earlier failures came from a
   *Fixed support* on spring-only nodes, which Mecway ignores.
+- **2D/axisymmetric docs**: a decision table of the two input routes, step-by-step examples with
+  the model files, new figures (route A/B, tube slice, plate with hole, contact edges) and the
+  exact messages.
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46
   procedure with a progress table of all KNOWN_BUGS items, and the new step S47.
 
