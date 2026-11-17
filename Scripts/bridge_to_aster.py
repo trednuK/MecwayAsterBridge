@@ -8498,16 +8498,19 @@ _ECCENTRIC_PROFILES = ("T", "C", "L")
 
 def _eccentric_general(section):
     """True for a general section whose #ASTER-SECTIE line gives a shear
-    centre away from the centroid (EY or EZ, MecwaySectionProps; more than
-    1e-3 of sqrt(A), so that round-off of a symmetric section does not
-    count). Without that line the shear centre is unknown: False."""
+    centre away from the centroid (EY, EZ from MecwaySectionProps): the
+    same rule as bridge_custom.shear_centre_warning, distance above
+    SHEAR_OFFSET_LIMIT x sqrt(A) (an angle or channel is well above it, a
+    section with two axes of symmetry at 0). Without that line the shear
+    centre is unknown: False."""
     if section.get("geom_type") != "UniformGeneralSection":
         return False
     cara = dict(zip(section.get("cara", ()), section.get("vale", ())))
     if "EY" not in cara and "EZ" not in cara:
         return False
-    size = abs(cara.get("A", 0.0)) ** 0.5
-    return max(abs(cara.get("EY", 0.0)), abs(cara.get("EZ", 0.0))) >         1e-3 * size
+    area = abs(cara.get("A", 0.0))
+    offset = math.sqrt(cara.get("EY", 0.0) ** 2 + cara.get("EZ", 0.0) ** 2)
+    return area > 0.0 and offset > bridge_custom.SHEAR_OFFSET_LIMIT *         math.sqrt(area)
 
 
 def _buckling_shell_notes(model_data):
@@ -8605,8 +8608,8 @@ def _buckling_beam_notes(model_data):
         log(tr("WARNING: Knik met T-, C- of L-profielen of een General "
                "section met een excentrisch dwarskrachtcentrum ({0}): het "
                "dwarskrachtcentrum ligt niet in het zwaartepunt, maar de "
-               "balkelementen rekenen torsie om het zwaartepunt en zonder "
-               "welving. Buig-torsieknik ontbreekt dan en de "
+               "geometrische stijfheid van deze balkelementen rekent torsie "
+               "om het zwaartepunt en zonder welving. Buig-torsieknik ontbreekt dan en de "
                "kniklastfactoren kunnen te hoog zijn (C-profiel: balk 616, "
                "volumemodel 393). Kies elem_beam = POU_D_TG (pagina "
                "Elementen; balk met welving en dwarskrachtcentrum) of "
@@ -8614,8 +8617,9 @@ def _buckling_beam_notes(model_data):
                "(KNOWN_BUGS 115, 132).",
                "WARNING: Buckling with T, C or L profiles or a general "
                "section with an eccentric shear centre ({0}): the shear "
-               "centre is not in the centroid, but the beam elements take "
-               "torsion about the centroid and without warping. "
+               "centre is not in the centroid, but the geometric stiffness "
+               "of these beam elements takes torsion about the centroid and "
+               "without warping. "
                "Flexural-torsional buckling is then missing and the "
                "buckling factors can be too high (C profile: beam 616, "
                "volume model 393). Choose elem_beam = POU_D_TG (Elements "

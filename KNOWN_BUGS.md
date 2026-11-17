@@ -662,8 +662,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    section* without an `#ASTER-SECTIE` line has no shear centre or C_w even with
    `POU_D_TG` (WARNING). The buckling WARNING for `POU_D_E`/`POU_D_T` covers the profile
    types T, C and L (`_ECCENTRIC_PROFILES`) and a *General section* whose `#ASTER-SECTIE`
-   line gives a shear centre off the centroid (`_eccentric_general`, |EY| or |EZ| > 1e-3
-   √A); a general section without that line has no known shear centre and gets none.
+   line gives a shear centre off the centroid (`_eccentric_general`, the rule of
+   `bridge_custom.shear_centre_warning`: distance > 0.1 √A); a general section without that
+   line has no known shear centre and gets none. The buckling factor of such a general
+   section on `POU_D_E` was NOT run (BU-41 only shows that the WARNING fires).
 
 119\. **Mass check without the mass for `POU_D_T_GD` beams** (confirmed, Code-Aster 17.4,
    `bridge_to_aster._static_check_block`). `MECA_POU_D_T_GD` cannot compute `POST_ELEM
