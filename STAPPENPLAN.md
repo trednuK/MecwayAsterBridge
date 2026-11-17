@@ -2661,7 +2661,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 27 | Not verified in a .liml | *draft*: low (rarely used inputs) |  |  |
 | 37 | Second run in the same session: `solution` after `mw.open` | *draft*: low (session behaviour) |  |  |
 | 38 | Main window non-modal: other Mecway actions not checked | *draft*: low (GUI behaviour) |  |  |
-| 41 | Explicit: TCHAMWA with a variable step not checked | *draft*: low (niche, unverified) |  |  |
+| 41 | Explicit: TCHAMWA with a variable step not checked | low; answered, works: bar with an imposed displacement table, kinks at 0.137 and 0.311 ms (not on the ~1 us step): the kinks become INTERVALLE boundaries and TCHAMWA and DIFF_CENT follow the table to 4e-13 m | item removed; new verification DY-20d; docs Default settings and Verification DY-20 NL+EN | this commit |
 | 47 | Springs and dampers: not compared against a Mecway solution (now: tensioned springs in Buckling) | medium; test setting (the old Mecway failures: `fixed` on spring-only nodes, item 135); with the ground held by *Displacement* Mecway 35 headless = bridge in modal (3.55881 Hz = √(k/m)/2π, along X and at 45°) and in a dynamic response with a damper (Newmark: 1e-7 of F/k; both 1.54e-4 from the exact solution); with the default HHT 2e-3, consistent with the documented first step; V30 with a damper: still no Mecway solution | item narrowed to the open part (geometric stiffness of a tensioned spring, S15c); new verification DY-04a/b; docs Verification and Mecway features NL+EN | this commit |
 | 116 | Element orientation card: parts not compared with Mecway | *draft*: low (unverified comparison) |  |  |
 | 118 | Results after `DVP_2` not seen in a real DVP_2 run | *draft*: low (rare failure path) |  |  |

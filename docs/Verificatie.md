@@ -2215,6 +2215,11 @@ U-documentatie gevonden):
   −0,04%, u en v exact, 1D-keten 4,7e-8). DY-20b: u = C op alle uitvoertijden (2,5e-8
   relatief); met de vorige versie 1,8e-12 m (de constante werkte als versnelling).
   DY-20c: u en v exact.
+- **DY-20d**: de staaf van DY-03b met u_x op het eindvlak uit een tijdstabel (0 → 10 µm
+  op 0,137 ms → −5 µm op 0,311 ms → constant), knikken niet op een veelvoud van de stap,
+  TCHAMWA: de bridge legt de knikken op grenzen van `INTERVALLE` (daar een andere
+  stapgrootte) en het eindvlak volgt de tabel tot 4e-13 m op alle uitvoertijden (DIFF_CENT
+  hetzelfde).
 - **Interpretatie**: de omzetting werkt voor alle opgelegde bewegingen. Mecway staat een
   constante ≠ 0 in een constraint equation alleen bij statisch toe (manual §9.42); de
   bridge vertaalt haar toch, met een WARNING.

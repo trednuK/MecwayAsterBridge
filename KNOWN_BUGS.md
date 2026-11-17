@@ -832,15 +832,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    Mecway process; checked in Mecway 34 on 16 October 2026). Whether Mecway allows
    everything else during the loop (e.g. opening another model) has not been tested.
 
-41\. **Explicit: TCHAMWA with a variable step not checked** (question,
-   `bridge_to_aster._explicit_accelerations`). In explicit dynamics (only
-   `FORMULATION='ACCELERATION'`) the bridge converts imposed displacements, rotations,
-   velocities, frictionless (`FACE_IMPO`, `LIAISON_OBLIQUE`) and the constant of a
-   constraint equation into the acceleration imposed by the scheme (DIFF_CENT:
-   DY-03b, DY-20a-c). The TCHAMWA series is derived for a fixed step; with
-   different steps per interval (kinks that are not a multiple of the step) it
-   has NOT been checked with a run.
-
 47\. **Tensioned springs in Buckling: no geometric stiffness** (question). The
    bridge applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`), as Mecway
    (manual v35 §7.7, §7.9: spring = truss without density, damper along its length).

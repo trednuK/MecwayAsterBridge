@@ -55981,5 +55981,40 @@
   "n_elem": 100,
   "settings": {},
   "general": {}
+ },
+ "DY-20d": {
+  "id": "DY-20d",
+  "group": "Dynamica",
+  "title": "Staaf, opgelegde verplaatsing uit een tabel met knikken buiten de stap, expliciet TCHAMWA",
+  "analysis": "dyna_expl_3d",
+  "series": null,
+  "h": null,
+  "note": "TCHAMWA en DIFF_CENT 4e-13 m (17 nov 2026); knikken op 0,137 en 0,311 ms, staptijd ~1 us.",
+  "seconds": 13.9,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um)",
+    "fem": 4.138163251600273e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 4.138163251600273e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-05,
+    "source": "de opgelegde beweging zelf (lineair tussen de tabelpunten)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 404,
+  "n_elem": 100,
+  "settings": {
+   "schema": "TCHAMWA",
+   "deformation": "PETIT"
+  },
+  "general": {}
  }
 }

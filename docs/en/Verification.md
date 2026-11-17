@@ -2204,6 +2204,10 @@ U documentation):
   v exact, 1D chain 4.7e-8). DY-20b: u = C at all output times (2.5e-8 relative); with
   the previous version 1.8e-12 m (the constant acted as an acceleration). DY-20c: u and
   v exact.
+- **DY-20d**: the bar of DY-03b with u_x on the end face from a time table (0 → 10 µm
+  at 0.137 ms → −5 µm at 0.311 ms → constant), kinks not on a multiple of the step,
+  TCHAMWA: the bridge puts the kinks on `INTERVALLE` boundaries (another step size there)
+  and the end face follows the table to 4e-13 m at all output times (DIFF_CENT the same).
 - **Interpretation**: the conversion works for all imposed motions. Mecway allows a
   non-zero constant in a constraint equation only in static analyses (manual §9.42);
   the bridge translates it anyway, with a WARNING.
