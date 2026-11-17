@@ -123,6 +123,9 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   explicit step (`TCHAMWA`, `DIFF_CENT`) follows the table: the kinks become `INTERVALLE`
   boundaries, the end face is within 4e-13 m, also with kinks 2 to 3 steps apart (new
   verification DY-20d/e).
+- **2D/axisymmetric docs**: a decision table of the two input routes, step-by-step examples with
+  the model files, new figures (route A/B, tube slice, plate with hole, contact edges) and the
+  exact messages.
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46
   procedure with a progress table of all KNOWN_BUGS items, and the new step S47.
 

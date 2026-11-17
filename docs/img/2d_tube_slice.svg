@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" width="720" height="320">
+  <rect width="720" height="320" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <!-- axis of symmetry (Mecway Y) and radius (Mecway X) -->
+  <line x1="70" y1="305" x2="70" y2="40" stroke="#333" stroke-width="2" stroke-dasharray="14 5 3 5" marker-end="url(#ah)"/>
+  <text x="82" y="52" font-family="sans-serif" font-size="20" fill="#333">Y</text>
+  <line x1="70" y1="230" x2="700" y2="230" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="697" y="220" font-family="sans-serif" font-size="20" fill="#333">X</text>
+  <text x="52" y="250" font-family="sans-serif" font-size="18" fill="#333">0</text>
+  <!-- the slice of the tube: one row of elements through the wall (height drawn enlarged) -->
+  <polygon points="345,150 620,150 620,230 345,230" fill="#d6e4f0"/>
+  <line x1="400" y1="150" x2="400" y2="230" stroke="#333" stroke-width="1"/>
+  <line x1="455" y1="150" x2="455" y2="230" stroke="#333" stroke-width="1"/>
+  <line x1="510" y1="150" x2="510" y2="230" stroke="#333" stroke-width="1"/>
+  <line x1="565" y1="150" x2="565" y2="230" stroke="#333" stroke-width="1"/>
+  <!-- the four edges -->
+  <line x1="345" y1="150" x2="345" y2="230" stroke="#333" stroke-width="3.5"/>
+  <line x1="620" y1="150" x2="620" y2="230" stroke="#333" stroke-width="3.5"/>
+  <line x1="345" y1="230" x2="620" y2="230" stroke="#333" stroke-width="3.5"/>
+  <line x1="345" y1="150" x2="620" y2="150" stroke="#333" stroke-width="3.5"/>
+  <!-- rollers: displacement along Y = 0 on the bottom and top edges -->
+  <g fill="#ffffff" stroke="#333" stroke-width="1.5">
+    <circle cx="372" cy="237" r="6"/><circle cx="427" cy="237" r="6"/><circle cx="482" cy="237" r="6"/>
+    <circle cx="537" cy="237" r="6"/><circle cx="592" cy="237" r="6"/>
+    <circle cx="372" cy="143" r="6"/><circle cx="427" cy="143" r="6"/><circle cx="482" cy="143" r="6"/>
+    <circle cx="537" cy="143" r="6"/><circle cx="592" cy="143" r="6"/>
+  </g>
+  <line x1="345" y1="244" x2="620" y2="244" stroke="#333" stroke-width="2"/>
+  <line x1="345" y1="136" x2="620" y2="136" stroke="#333" stroke-width="2"/>
+  <path d="M355,244 l-7,8 M380,244 l-7,8 M405,244 l-7,8 M430,244 l-7,8 M455,244 l-7,8 M480,244 l-7,8 M505,244 l-7,8 M530,244 l-7,8 M555,244 l-7,8 M580,244 l-7,8 M605,244 l-7,8" stroke="#333" stroke-width="1.2"/>
+  <path d="M355,136 l7,-8 M380,136 l7,-8 M405,136 l7,-8 M430,136 l7,-8 M455,136 l7,-8 M480,136 l7,-8 M505,136 l7,-8 M530,136 l7,-8 M555,136 l7,-8 M580,136 l7,-8 M605,136 l7,-8" stroke="#333" stroke-width="1.2"/>
+  <!-- dimensions: inner radius a, outer radius b, height h -->
+  <line x1="345" y1="252" x2="345" y2="292" stroke="#333" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="620" y1="252" x2="620" y2="292" stroke="#333" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="70" y1="270" x2="345" y2="270" stroke="#333" stroke-width="1.5" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="200" y="263" font-family="serif" font-style="italic" font-size="22" fill="#333">a</text>
+  <line x1="70" y1="292" x2="620" y2="292" stroke="#333" stroke-width="1.5" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <text x="250" y="286" font-family="serif" font-style="italic" font-size="22" fill="#333">b</text>
+  <line x1="655" y1="150" x2="655" y2="230" stroke="#333" stroke-width="1.5" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <line x1="625" y1="150" x2="663" y2="150" stroke="#333" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="665" y="197" font-family="serif" font-style="italic" font-size="22" fill="#333">h</text>
+  <!-- markers -->
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="45" cy="70" r="11" fill="#c0392b"/><text x="45" y="75">1</text>
+    <circle cx="322" cy="190" r="11" fill="#c0392b"/><text x="322" y="195">2</text>
+    <circle cx="643" cy="190" r="11" fill="#c0392b"/><text x="643" y="195">3</text>
+    <circle cx="482" cy="266" r="11" fill="#c0392b"/><text x="482" y="271">4</text>
+    <circle cx="430" cy="112" r="11" fill="#c0392b"/><text x="430" y="117">5</text>
+    <circle cx="565" cy="112" r="11" fill="#c0392b"/><text x="565" y="117">6</text>
+    <circle cx="482" cy="190" r="11" fill="#c0392b"/><text x="482" y="195">7</text>
+  </g>
+</svg>

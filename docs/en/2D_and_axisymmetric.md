@@ -18,7 +18,7 @@ The bridge analysis is `lin_static_3d` ("Static") for S20 and SA0 and `dyna_impl
 ("Dynamic (implicit)") for D20 and DA0: with "Active analysis (auto = follow Mecway)" =
 `auto` the bridge chooses it. General operation of the bridge:
 [`UserGuide.md`](UserGuide.md). Acoustic Resonance 2D (A20) goes to the acoustic cavity modes `acoustic_modes_3d` (§4). Mecway has no thermal 2D type: a thermal model in a plane is made of
-shells ([`Thermal.md`](Thermal.md)).
+shells ([`Thermal.md`](Thermal.md)); axisymmetric heat transfer: not yet (§3).
 
 ![Axisymmetric: axis of symmetry, radius and hoop direction](../img/2d_axisymmetric_axes.svg)
 
@@ -39,29 +39,59 @@ shells ([`Thermal.md`](Thermal.md)).
 
 ## 1. Step-by-step workflow
 
-**Two input routes.** Mecway's own 2D types (route B) are linear. For plasticity, large
-deformations, load steps and contact the model is a 3D model of plane elements (*Nonlinear
-Static*) plus one line that tells the bridge to compute it in 2D (route A). Pick the route
-from what you want to compute:
+**Choose the route first.** A 2D model reaches the bridge in one of two ways. The mesh is the
+same (plane elements in the XY plane); the routes differ in the Mecway analysis type and in
+one line of text:
 
-| What you want | Route | Mecway analysis type | Material / elements | Extra line in the custom model definition | Section |
+- **Route B: Mecway's own 2D type.** *Static 2D* (S20), *Static Axisymmetric* (SA0),
+  *Dynamic Response 2D* (D20) or *Dynamic Response Axisymmetric* (DA0). Linear only. No extra
+  line. Mecway solves the same model itself, so its own solution is a reference (§5).
+- **Route A: a Mecway 3D type on plane elements.** *Nonlinear Static* (L30) or *Static 3D*
+  (S30). In a 3D type Mecway treats
+  the plane elements as shells, so the material needs a *Shell/membrane* geometry with a
+  thickness. One line in CCX > *Custom model definition*, `**ASTER-PLANE C_PLAN` (plane
+  stress), `**ASTER-PLANE D_PLAN` (plane strain) or `**ASTER-PLANE AXIS` (axisymmetric),
+  makes the bridge compute every element as that 2D element instead of as a shell. Mecway's
+  own solver ignores the line and computes shells. Heat transfer in a plane (T30/T31 without
+  the line) is a 2D thermal model (`PLAN`) already; the line in T30/T31 is an ERROR (§1.6).
+- **Never both.** The line in an S20, SA0, D20 or DA0 model is an ERROR (§1.6). A model has
+  one line; it holds for all elements.
+
+![Route B and route A: the same plane elements in a 2D type and in a 3D type with the line](../img/2d_route_a_b.svg)
+
+1. Route B: a Mecway 2D analysis type (S20, SA0, D20, DA0); the plane elements as they are, nothing to add.
+2. Route A: a Mecway 3D analysis type (L30, S30) on the same plane elements in the XY plane (Z = 0); Mecway treats them as shells.
+3. The shell thickness t (material geometry *Shell/membrane*): Mecway needs it in route A; `C_PLAN` and `D_PLAN` use it as the thickness (§2.2), `AXIS` ignores it.
+4. The text field CCX > *Custom model definition* in the outline tree; it is there when CCX is the solver in *Analysis settings* ([`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1).
+5. The line `**ASTER-PLANE C_PLAN`, `**ASTER-PLANE D_PLAN` or `**ASTER-PLANE AXIS` in that field: the bridge computes the shells as plane stress, plane strain or axisymmetric elements.
+
+**Decision table.** Find the row of what you want to compute; the row gives the Mecway
+analysis type (in *Analysis settings*), the route, the elements and material, the line and
+where it is explained. "Example n" is a worked example with a model file in §1.5.
+
+| What you want | Mecway analysis type | Route | Elements and material | Line in CCX > *Custom model definition* | Where |
 |---|---|---|---|---|---|
-| Linear static, also with a temperature (thermal stress) | B | *Static 2D* (S20) or *Static Axisymmetric* (SA0) | plane elements; S20: *Shell/membrane* with a thickness | none | §1.1 … §1.3, §2.5 |
-| Linear dynamics in time | B | *Dynamic Response 2D* (D20) or *Axisymmetric* (DA0) | as S20 / SA0 | none | §1.1, §2.4 |
-| Acoustic cavity modes in 2D | – | *Acoustic Resonance 2D* (A20) | plane elements | none | §4 |
-| Plasticity, large deformations, time steps, load tables | A | *Nonlinear Static* (L30), solver CCX | plane shell elements with *Shell/membrane* thickness | `**ASTER-PLANE C_PLAN`, `D_PLAN` or `AXIS` | §1.4 |
-| Contact (shrink fit, parts touching) | A | *Nonlinear Static* (L30), solver CCX | as above, *Contact* between edges | `**ASTER-PLANE ...` | §1.4 (item 6) |
-| Linear static as a 3D model (e.g. to compare with shells) | A | *Static 3D* (S30) | as above | `**ASTER-PLANE C_PLAN` (verified; `D_PLAN`/`AXIS` follow the same route) | §1.4 |
-| Heat transfer in 2D or axisymmetric, axisymmetric shells | – | – | – | not yet | §3 |
+| Linear static, plane stress or plane strain, also with a temperature (thermal stress) | *Static 2D* (S20) | B | plane elements; material *Shell/membrane* with the thickness t, for plane strain also *plane strain* ticked | none | §1.1 … §1.3, §2.5 |
+| Linear static, axisymmetric, also with a temperature | *Static Axisymmetric* (SA0) | B | plane elements at X ≥ 0 (Y = axis); material without geometry | none | §1.1 … §1.3, §2.5; example 1 |
+| Linear dynamics in time | *Dynamic Response 2D* (D20) or *Dynamic Response Axisymmetric* (DA0) | B | as S20 / SA0, with a density; no temperature | none | §1.1, §2.4 |
+| Acoustic cavity modes in 2D | *Acoustic Resonance 2D* (A20) | – | plane elements; *Speed of sound* | none | §4 |
+| Plasticity, large deformations, load steps (time tables), plane stress or plane strain | *Nonlinear Static* (L30) | A | plane shell elements in the XY plane; *Shell/membrane* with the thickness t; plasticity as in 3D | `**ASTER-PLANE C_PLAN` or `**ASTER-PLANE D_PLAN` | §1.4; example 3 |
+| The same, axisymmetric | *Nonlinear Static* (L30) | A | plane shell elements at X ≥ 0; *Shell/membrane* with any thickness (it does not count) | `**ASTER-PLANE AXIS` | §1.4; example 2 |
+| Contact between parts (shrink fit, parts that touch), also with friction | only *Nonlinear Static* (L30) | A | as the two rows above, plus a *Contact* (unilateral) between two face selections of edges | `**ASTER-PLANE C_PLAN`, `D_PLAN` or `AXIS` | §1.4 item 6; example 4 |
+| Linear static as a 3D model (e.g. to compare with Mecway's own shell solve) | *Static 3D* (S30) | A | as for L30; no contact | `**ASTER-PLANE C_PLAN` (verified, PL-33); `D_PLAN` and `AXIS` take the same route, not verified in S30 | §1.4; example 3 |
+| Heat transfer in a plane | *Thermal Steady State* (T30) or *Thermal Transient* (T31) | – (3D thermal type, no line) | plane shell elements; the shell thickness counts | none (the bridge computes `PLAN`) | [`Thermal.md`](Thermal.md) |
+| Heat transfer axisymmetric, the thermal -> mechanical chain in 2D | – | – | – | not yet | §3 |
+| Axisymmetric shells (line elements) | – | – | – | not yet | §3 |
 | Nonlinear dynamics, modes, buckling in 2D | – | – | – | not possible | §3 |
 
-Route B needs no extra line and Mecway solves the same model itself; route A uses
-Mecway's 3D analysis types, so Mecway keeps their time steps, plasticity and contact, and the
-line `**ASTER-PLANE` switches the bridge from shells to `C_PLAN` (plane stress), `D_PLAN`
-(plane strain) or `AXIS` (axisymmetric). Do not mix them: the line in an S20/SA0 model is an
-ERROR (§1.6). Worked examples of both routes: §1.5.
+Where to type the line: Mecway solves L30 only with CCX; choose CCX as the solver in
+*Analysis settings* for S30 as well, then the branch CCX with *Custom model
+definition* is in the outline tree. The field of another solver works too, with that
+solver's prefix: `#ASTER-PLANE` in an OpenRadioss field, `$ASTER-PLANE` in a Mystran field
+([`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1); `-VLAK` is the Dutch spelling
+(`**ASTER-VLAK AXIS`). The bridge reads the line whichever solver is chosen.
 
-### 1.1 In Mecway: the model
+### 1.1 In Mecway: the model (route B)
 
 1. **Analysis type.** *Static 2D*, *Static Axisymmetric*, *Dynamic Response 2D* or
    *Dynamic Response Axisymmetric* in the analysis settings (dynamic: *Time period*,
@@ -130,44 +160,60 @@ S20/SA0 solution (measured: Mecway adds *displacement*, *stress*, *von Mises str
 
 ### 1.4 Nonlinear in 2D: a 3D model with `**ASTER-PLANE` (route A)
 
-Mecway has no nonlinear 2D type. For plasticity, large deformations, time steps and load
-ramps in 2D, make the model as a 3D model and tell the bridge to compute it in 2D:
+Mecway has no nonlinear 2D type. For plasticity, large deformations, time steps, load
+ramps and contact in 2D, make the model as a 3D model of plane elements and tell the bridge
+with one line to compute it in 2D (examples 2, 3 and 4 in §1.5):
 
-1. **Analysis type** *Nonlinear Static* (L30), with CCX as Mecway's solver (Mecway only
-   solves L30 with CCX). *Static 3D* (S30) works too (linear, as S20).
-2. **Mesh**: plane shell elements tri3, tri6, quad4 or quad8 in the XY plane (Z = 0),
-   nothing else; axisymmetric: Y is the axis, X ≥ 0 (as §1.1).
-3. **Material**: a *Shell/membrane* geometry with a thickness (Mecway needs it for shells;
-   for `C_PLAN`/`D_PLAN` it is the thickness t of §2.2, for `AXIS` it does not count),
-   plasticity (*Bilinear*, *Stress-strain curve*) as in 3D.
-4. **The switch**: in CCX > *Custom model definition* one line
+1. **Analysis type.** *Nonlinear Static* (L30) in *Analysis settings*, with CCX as the
+   solver (Mecway only solves L30 with CCX). *Static 3D* (S30) works too (linear, as S20;
+   no contact).
+2. **Mesh.** Plane elements tri3, tri6, quad4 or quad8 in the XY plane (Z = 0), nothing
+   else (no beams, trusses, springs or solids); in a 3D type Mecway treats them as shells.
+   Axisymmetric: Y is the axis, X the radius, all nodes at X ≥ 0 (first figure).
+3. **Material.** A *Shell/membrane* geometry with a thickness (Mecway needs it for
+   shells). For `C_PLAN` and `D_PLAN` it is the thickness t: Mecway's forces and the
+   reactions are for t (§2.2). For `AXIS` any value: it does not count (INFO). All elements
+   have the same thickness. Plasticity (*Bilinear isotropic*, *Stress-strain curve*) as in
+   3D.
+4. **The line.** In CCX > *Custom model definition* one line:
 
    ```
    **ASTER-PLANE C_PLAN
    ```
 
-   with `C_PLAN` (plane stress), `D_PLAN` (plane strain) or `AXIS` (axisymmetric);
-   `#ASTER-PLANE` in an OpenRadioss field and `$ASTER-PLANE` in a Mystran field work too,
-   `-VLAK` is the Dutch spelling ([`ASTER_lines_examples.md`](ASTER_lines_examples.md) §2).
-   Mecway's own solver ignores the line; the bridge then computes every elset with that
-   modelisation instead of as shells (a *plane strain* tick on the material does not
-   count then).
-5. **Supports and loads** as in §1.1, on nodes and edges; a *Node rotation*, a zero
-   *Displacement* along Z and a *Symmetry* with normal Z (for Mecway's own shell solve)
-   are left out with an INFO. *Thermal
-   stress* with *Temperature* and *Node temperature* as in §2.5, also as a time table.
-6. **Contact** (L30 only): a *Contact* (unilateral) between two
-   face selections of edges of the plane elements; the bridge writes them as edge cells
-   (`SEG2`/`SEG3`) for `DEFI_CONTACT` with the settings of the Nonlinear static page, as in
-   3D. Overlapping geometry (a shrink fit) is resolved in the first step. The result
-   `contactpressure` is a pressure (no factor t or 2π). Verified in `AXIS` and `D_PLAN`
-   (shrink fit, Hertz line contact, a Code-Aster test case) and with Coulomb friction (a block
-   sliding over a block); `C_PLAN` runs (checked only with ν = 0). With friction, slave nodes
-   that another support holds along the contact edge can make Code-Aster stop with a
-   singular matrix: the bridge then gives a WARNING; leave those nodes out with a node
-   selection and `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded*
-   contact in 2D: ERROR.
-   Whether Mecway's window lets you pick shell edges for a contact is NOT verified.
+   with `C_PLAN` (plane stress), `D_PLAN` (plane strain) or `AXIS` (axisymmetric). Write
+   the hyphen: `**ASTER PLANE AXIS` (with a space) is an ERROR (§1.6). Mecway's own solver
+   ignores the line; the bridge then computes every elset with that modelisation instead of
+   as shells (a *plane strain* tick on the material does not count then; WARNING if it
+   contradicts the line). Other fields and prefixes: see "Where to type the line" in §1.
+5. **Supports and loads** on nodes and on edges, as in §1.1. An edge is a face selection of
+   edges of the plane elements (faceid 1..4, figure in example 4); a face selection of the
+   element faces (faceid 5/6) gives an ERROR ("only edges of plane elements (faceid 1..4),
+   here shellface", §1.6). Supports that only hold Z or rotations (*Node rotation*, a zero
+   *Displacement* along Z, a *Symmetry* with normal Z: often there for Mecway's own shell
+   solve) are left out with an INFO. *Thermal stress* with *Temperature* and *Node
+   temperature* as in §2.5, also as a time table (PL-34, PL-36; Mecway's own CCX solve of
+   the shells gives half the thermal expansion, KNOWN_BUGS 139).
+6. **Contact** (L30 only): a *Contact* (unilateral) between two face selections of edges of
+   the plane elements: the master edge and the slave edge (figure and steps: example 4;
+   which side is master: [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md) §3.2).
+   The bridge writes them as edge cells (`SEG2`/`SEG3`) for `DEFI_CONTACT` with the
+   settings of the Nonlinear static page, as in 3D. Overlapping geometry (a shrink fit) is
+   resolved in the first step. The result `contactpressure` is a pressure (no factor t or
+   2π). Verified in `AXIS` and `D_PLAN` (shrink fit, Hertz line contact, a Code-Aster test
+   case) and with Coulomb friction (a block sliding over a block); `C_PLAN` runs (checked
+   only with ν = 0). With friction, slave nodes that another support holds along the contact
+   edge can make Code-Aster stop with a singular matrix: the bridge then gives a WARNING;
+   leave those nodes out with a node selection and
+   `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded* contact in 2D:
+   ERROR. Whether Mecway's window lets you pick shell edges for a contact is NOT verified.
+7. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `nonlin_static_3d` for
+   L30, `lin_static_3d` for S30) and "Results to Mecway" `liml` (the route `tabel`: ERROR).
+   Check in the log that the line was read: per elset
+   `INFO: Elset '…' -> MODELISATION='C_PLAN', thickness … m (Mecway L30).` (for `AXIS`
+   without the thickness) and once `INFO: 2D analysis L30: MODELISATION='…'; concentrated
+   forces / … and reactions x … (…).` Without these lines the bridge computed the elements
+   as shells (the line is missing or not in a field the bridge reads).
 
 The bridge analysis is `nonlin_static_3d` (L30) or `lin_static_3d` (S30); the settings of
 the Nonlinear static page apply as in 3D. *deformation* `GROT_GDEP` (the default) becomes
@@ -178,97 +224,228 @@ per step as in §1.3, plus `plasticstrainxx/yy/zz/xy` and `equivalentplasticstra
 reaction forces with the factor t or 2π in every step (PL-30, PL-32). Verification PL-30 … PL-36: a thick
 cylinder with perfect plasticity (Hill) in `D_PLAN` and `AXIS`, first yield at a hole in
 `C_PLAN`, Code-Aster test case ssnp159b (`AXIS`, `GDEF_LOG`) through the bridge. NOT
-included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), bonded contact, thermal analyses
-(S44d). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
+included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), bonded contact, the chain
+thermal -> mechanical and axisymmetric heat transfer (§3). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
 Code-Aster test case, friction). Opening such a result in the Mecway window is NOT verified (a test in the Mecway
 GUI still to do).
 
 ### 1.5 Worked examples
 
-The three models are in the repository (`TestFiles/Verificatie/modellen/`, generated by
-`tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py` and `tests_vlak_2d_contact.py`);
-open one in Mecway to see every setting. Units SI, steel E = 210 GPa, ν = 0.3. For `AXIS`
-the axes are those of the first figure: Y the axis of symmetry, X the radius. Route A was
-checked with the bridge (results against closed forms), not yet in Mecway's window: whether
-Mecway lets you pick shell edges for a *Contact* and how it shows a route-A result is NOT
-verified; Mecway's own solve of examples 2 and 3 is not needed.
+Four models in the repository, one per kind of use; open one in Mecway to see every setting:
+
+| Example | File (`TestFiles/Verificatie/modellen/`) | Route | Mecway type | Line | What it shows |
+|---|---|---|---|---|---|
+| 1 | `PL-24.liml` | B | SA0 | none | a tube with a radial temperature (thermal stress) |
+| 2 | `PL-31.liml` | A | L30 | `**ASTER-PLANE AXIS` | plasticity, axisymmetric, a pressure in time steps |
+| 3 | `PL-32.liml` (and `PL-33.liml`) | A | L30 (S30) | `**ASTER-PLANE C_PLAN` | plasticity in plane stress, a plate with a hole |
+| 4 | `PL-40.liml` | A | L30 | `**ASTER-PLANE AXIS` | contact: a shrink fit of two rings |
+
+Before you start:
+
+- Units SI; steel E = 210 GPa (`210000 MPa` in the files), ν = 0.3. Every model has one
+  material `Staal`.
+- The selection names in the files are Dutch: `Onder` = bottom edge, `Boven` = top edge,
+  `Binnenwand` = inner edge, `Einden` = the end edges. Every edge selection is a face
+  selection of edges (faceid 1..4). In example 4 (`PL-40.liml`) `Binnen` and `Buiten` are the
+  elsets of the inner and the outer ring; its edge selections have their own names.
+- The files have no solver set: choose CCX in *Analysis settings* to see the line in CCX >
+  *Custom model definition* (the bridge reads it anyway).
+- The models were made by the scripts `tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py`
+  and `tests_vlak_2d_contact.py` in `TestFiles/Verificatie/`
+  and computed with the bridge (results against closed forms, [`Verification.md`](Verification.md)
+  §2D and axisymmetric). Route A was not yet checked in Mecway's window: whether Mecway lets you
+  pick shell edges for a *Contact* and how it shows a route-A result is NOT verified. Mecway's own
+  solve of the route-A models is not needed (it computes shells).
+
+Examples 1 and 2 use the same slice of a thick tube (a = 0.1 m, b = 0.2 m, h = 0.01 m):
+
+![A slice of a thick tube in the XY plane: edges, supports and dimensions](../img/2d_tube_slice.svg)
+
+1. Mecway's Y axis: the axis of symmetry of the tube (`AXIS`).
+2. The inner edge, X = a = 0.1 m (selection `Binnenwand` in example 2; faceid 4 of the first element).
+3. The outer edge, X = b = 0.2 m (faceid 2 of the last element).
+4. The bottom edge, Y = 0 (selection `Onder`; faceid 1 of every element).
+5. The top edge, Y = h = 0.01 m (selection `Boven`; faceid 3 of every element).
+6. The rollers: *Displacement* along Y with value 0 on the bottom and top edges: both ends of the slice held axially, a long tube in plane strain (examples 1 and 2).
+7. The elements: one row of quad8 through the wall (8 or 16 elements, see the example), in the XY plane.
 
 **Example 1 – route B: a thick tube with a radial temperature (`PL-24.liml`).**
 
-1. Analysis type *Static Axisymmetric* (SA0).
-2. Mesh: a rectangle X = 0.1 … 0.2 m (inner and outer radius), Y = 0 … 0.01 m (a slice
-   of the tube), 8 × 1 quad8.
-3. Material: isotropic, *Thermal expansion* 1.2e-5 1/K; no geometry (SA0).
-4. Supports: *Displacement* along Y = 0 on the bottom edge and on the top edge (both
-   ends held axially = a long tube in plane strain).
-5. Loads: *Thermal stress* with reference temperature 293 K and a *Node temperature* per
-   node (here a logarithmic profile from 393 K inside to 293 K outside; it can also come
-   from a thermal solution of a 3D model, [`Thermal.md`](Thermal.md)).
-6. Bridge: "Active analysis" `auto` (→ `lin_static_3d`), "Results to Mecway" `liml`. The
-   log shows `INFO: Elset 'Buis' -> MODELISATION='AXIS' (Mecway SA0).` and the
-   temperatures.
-7. Results: `stresszz` = hoop stress σ_θ (−220 MPa at the inner wall, +140 MPa at the
-   outer wall), `stressyy` = axial σ_z, `stressxx` = radial σ_r; `displx` = radial
-   displacement. A tube with free ends: §2.5 (an `#ASTER` line `LIAISON_UNIF`,
-   `PL-25.liml`).
+1. *Analysis settings*: *Static Axisymmetric* (SA0).
+2. Mesh: elset `Buis`, 8 × 1 quad8 (8 through the wall, 1 along the axis), X = 0.1 … 0.2 m,
+   Y = 0 … 0.01 m (figure above).
+3. Material `Staal`: isotropic, E, ν, *Thermal expansion* 1.2e-5 1/K; no geometry (SA0).
+4. Supports and loads:
+
+   | Selection | Where (figure above) | Mecway item |
+   |---|---|---|
+   | `Onder` (face selection, 8 edges) | bottom edge (4) | *Displacement* along Y, value 0 |
+   | `Boven` (face selection, 8 edges) | top edge (5) | *Displacement* along Y, value 0 |
+   | all 43 nodes | – | *Node temperature* per node: T(r) = 393 K − 100 K · ln(r/a) / ln(b/a), 393 K at the inner and 293 K at the outer wall |
+   | – | – | *Thermal stress* with *Reference temperature* 293 K |
+
+   The node temperatures can also come from a thermal solution of a 3D model
+   ([`Thermal.md`](Thermal.md)).
+5. Bridge: "Active analysis (auto = follow Mecway)" `auto` (→ `lin_static_3d`), "Results to
+   Mecway" `liml`. The log shows `INFO: Elset 'Buis' -> MODELISATION='AXIS' (Mecway SA0).`
+   and `INFO: 2D analysis SA0: MODELISATION='AXIS'; concentrated forces / 6.28319 and
+   reactions x 6.28319 (per radian in Code-Aster, 360 degrees in Mecway).`
+6. Results: `stresszz` = hoop stress σ_θ (about −219 MPa at the inner wall, +140 MPa at the
+   outer wall), `stressyy` = axial σ_z (about −318 MPa at the inner wall), `stressxx` = radial
+   σ_r (about −28 MPa at mid-wall); `displx` = radial displacement (0.0605 mm at the inner
+   wall, 0.121 mm at the outer wall); the axial reaction (`reactionforcey` summed over the
+   bottom edge, 360 degrees) 9.2155 MN in magnitude. A tube with free ends: §2.5 (an `#ASTER` line
+   `LIAISON_UNIF`, `PL-25.liml`).
 
 **Example 2 – route A: an elastic-plastic cylinder under internal pressure (`PL-31.liml`).**
 
-1. Analysis settings: *Nonlinear Static* (L30), solver CCX, *Time period* 1 s, *Time step
-   size* 0.05 s.
-2. Mesh: the same rectangle X = 0.1 … 0.2 m, Y = 0 … 0.01 m, 16 × 1 quad8, as
-   **shell** elements (Mecway's quad8 in a 3D type).
-3. Material: *Shell/membrane* with a thickness (any value; it does not count for `AXIS`),
-   isotropic, plasticity *Bilinear isotropic* with yield strength 250 MPa and tangent
-   modulus 0.
-4. Supports: *Displacement* along Y = 0 on the bottom and top edges.
-5. Load: *Pressure* on the inner edge (X = 0.1 m) as a time table: 0 at 0 s, 159.1 MPa at
-   0.5 s, 187.6 MPa at 1 s.
-6. The switch: with solver CCX the outline tree has a branch CCX; in CCX > *Custom model
-   definition* one line (with another solver: the custom field of that solver, with its
-   comment prefix, [`ASTER_lines_examples.md`](ASTER_lines_examples.md) §1):
+1. *Analysis settings*: *Nonlinear Static* (L30), solver CCX, *Time period* 1 s, *Time step
+   size* 0.05 s (20 steps).
+2. Mesh: elset `Cilinder`, 16 × 1 quad8, X = 0.1 … 0.2 m, Y = 0 … 0.01 m: the same plane
+   elements, in a 3D type (so shell elements for Mecway).
+3. Material `Staal`: *Shell/membrane* with thickness 10 mm (any value: it does not count for
+   `AXIS`), isotropic E, ν, plasticity *Bilinear isotropic* with yield strength 250 MPa and
+   tangent modulus 0 (perfectly plastic).
+4. Supports and loads:
+
+   | Selection | Where (figure above) | Mecway item |
+   |---|---|---|
+   | `Binnenwand` (face selection, 1 edge) | inner edge (2) | *Pressure* as a time table: 0 at 0 s, 159.1 MPa at 0.5 s, 187.6 MPa at 1 s |
+   | `Onder` (face selection, 16 edges) | bottom edge (4) | *Displacement* along Y, value 0 |
+   | `Boven` (face selection, 16 edges) | top edge (5) | *Displacement* along Y, value 0 |
+
+5. The line: in CCX > *Custom model definition*
 
    ```
    **ASTER-PLANE AXIS
    ```
 
-7. Bridge: `auto` (→ `nonlin_static_3d`). The log shows `INFO: Elset '…' -> MODELISATION=
-   'AXIS' (Mecway L30)` and that the shell thickness does not count.
-8. Results per step: `equivalentplasticstrain` (plastic zone up to r ≈ 0.13 m at 0.5 s and
+6. Bridge: `auto` (→ `nonlin_static_3d`), `liml`, the Nonlinear static page unchanged. The log
+   shows `INFO: Elset 'Cilinder': the shell thickness (0.01 m) does not count with
+   #ASTER-PLANE AXIS.` and `INFO: Elset 'Cilinder' -> MODELISATION='AXIS' (Mecway L30).`
+7. Results per step: `equivalentplasticstrain` (plastic zone up to r ≈ 0.13 m at 0.5 s and
    0.16 m at 1 s), `displx` of the outer wall (0.163 mm at 1 s, 1.7% above Hill's 0.160 mm:
    the pressure follows the deformed wall), `stresszz` = hoop stress.
 
-**Example 3 – route A: a shrink fit with contact (`PL-40.liml`).**
+**Example 3 – route A: first yield at a hole in plane stress (`PL-32.liml`).**
 
-1. As example 2, but two parts: an inner ring X = 0.1 … 0.15005 m and an outer ring X =
-   0.15 … 0.2 m (they overlap by 0.05 mm), elastic, *Time period* 1 s in one step.
-2. Mesh 8 × 1 quad8 per ring. Face selections of edges: the outer edge of the inner ring
-   (slave) and the inner edge of the outer ring (master); a *Contact* type unilateral
-   elastic between them, friction 0, normal stiffness 1000 GPa/m (Mecway requires a
-   value; with the default contact algorithm `STANDARD` the bridge does not use it).
-3. *Displacement* along Y = 0 on the bottom and top edges of both rings; `**ASTER-PLANE AXIS`.
-4. Result: the mean `contactpressure` on the slave edge 12.46 MPa (Lamé: 12.46 MPa); the
-   overlap is resolved in the first step.
+![A quarter of a plate with a hole: symmetry edges and traction](../img/2d_plate_hole.svg)
+
+1. The hole, radius 0.01 m, centre at the origin; the dashed part lies outside the model (symmetry).
+2. The edge X = 0 (Y = 0.01 … 0.05 m): selection `SymX`, *Symmetry* with normal X.
+3. The edge Y = 0 (X = 0.01 … 0.15 m): selection `SymY`, *Symmetry* with normal Y.
+4. The edge X = 0.15 m: selection `Trek`, *Traction* along X.
+5. The plane elements (a quarter of a plate 0.3 × 0.1 m), thickness t = 1 mm normal to the drawing.
+
+Steps:
+
+1. *Analysis settings*: *Nonlinear Static* (L30), solver CCX, *Time period* 1 s, *Time step
+   size* 0.02 s (50 steps).
+2. Mesh: elset `Plaat`, a quarter of a plate 0.3 × 0.1 m with a central hole of radius
+   0.01 m: X = 0 … 0.15 m, Y = 0 … 0.05 m, the hole centre at the origin; 12 288 quad8 (fine,
+   so the run takes a while).
+3. Material `Staal`: *Shell/membrane* with thickness 1 mm (this is t: it counts for
+   `C_PLAN`), E, ν, plasticity *Bilinear isotropic* with yield strength 250 MPa and tangent
+   modulus 2100 MPa (0.01 E).
+4. Supports and loads:
+
+   | Selection | Where (figure above) | Mecway item |
+   |---|---|---|
+   | `SymX` (face selection, 64 edges) | edge X = 0 (2) | *Symmetry* with normal X |
+   | `SymY` (face selection, 128 edges) | edge Y = 0 (3) | *Symmetry* with normal Y |
+   | `Trek` (face selection, 64 edges) | edge X = 0.15 m (4) | *Traction* along X as a time table: 71.46 MPa at 0 s, 87.33 MPa at 1 s |
+
+5. The line: in CCX > *Custom model definition* `**ASTER-PLANE C_PLAN`.
+6. Bridge: `auto` (→ `nonlin_static_3d`), `liml`. The log shows `INFO: Elset 'Plaat' ->
+   MODELISATION='C_PLAN', thickness 0.001 m (Mecway L30).` and `INFO: 2D analysis L30:
+   MODELISATION='C_PLAN'; concentrated forces / 0.001 and reactions x 0.001 (per unit
+   thickness in Code-Aster, thickness t in Mecway).`
+7. Results per step: `equivalentplasticstrain` appears first at the hole (X = 0,
+   Y = 0.01 m), at about 0.6 s: the stress in the net section (traction / 0.8) is then 1.8%
+   above σ_y / Kt = 250 / 2.519 = 99.2 MPa (Peterson). The sum of `reactionforcex` on `SymX`
+   at 1 s is −87.33 MPa × 0.05 m × 0.001 m = −4367 N: the reactions are for the thickness t.
+
+`PL-33.liml` is the same plate with 3 072 quad8 as *Static 3D* (S30), linear, a constant
+*Traction* of 100 MPa on `Trek`, the same line `**ASTER-PLANE C_PLAN`: `displx` at
+(0.15, 0) = 7.377e-5 m and `disply` at (0, 0.01) = −5.394e-6 m, equal to route B
+(`PL-01-n16.liml`, S20) within 1e-6.
+
+**Example 4 – route A: a shrink fit with contact (`PL-40.liml`).**
+
+![Shrink fit of two rings in the XY plane: slave edge, master edge and interference](../img/2d_contact_edges.svg)
+
+1. Mecway's Y axis: the axis of symmetry (`AXIS`).
+2. The inner ring: elset `Binnen`, X = 0.1 … 0.15005 m.
+3. The outer ring: elset `Buiten`, X = 0.15 … 0.2 m. Each ring has its own nodes; the rings are not connected.
+4. The slave edge: the outer edge of the inner ring, X = 0.15005 m (face selection `Binnenring_buiten`, faceid 2 of the last element of `Binnen`).
+5. The master edge: the inner edge of the outer ring, X = 0.15 m (face selection `Buitenring_binnen`, faceid 4 of the first element of `Buiten`).
+6. The interference δ = 0.05 mm: the rings overlap in the mesh (drawn enlarged); the contact resolves it in the first step.
+7. The rollers: *Displacement* along Y with value 0 on the bottom and top edges of both rings (face selection `Einden`, faceid 1 and 3).
+
+Steps:
+
+1. *Analysis settings*: *Nonlinear Static* (L30), solver CCX, *Time period* 1 s, *Time step
+   size* 1 s (one step).
+2. Mesh: two elsets, `Binnen` (X = 0.1 … 0.15005 m) and `Buiten` (X = 0.15 … 0.2 m), both
+   Y = 0 … 0.01 m and 8 × 1 quad8; each ring has its own nodes (do not merge the nodes at the
+   contact).
+3. Material `Staal` for both: *Shell/membrane* with thickness 10 mm (it does not count for
+   `AXIS`), E, ν; elastic.
+4. Supports and contact:
+
+   | Selection | Where (figure above) | Mecway item |
+   |---|---|---|
+   | `Binnenring_buiten` (face selection, 1 edge) | slave edge (4) | *Contact*: slave |
+   | `Buitenring_binnen` (face selection, 1 edge) | master edge (5) | *Contact*: master |
+   | `Einden` (face selection, 32 edges) | bottom and top edges of both rings (7) | *Displacement* along Y, value 0 |
+   | `Slave` (node selection, 3 nodes) | the nodes of the slave edge | none; only to read the mean contact pressure |
+
+   The *Contact*: type *unilateral elastic*, friction coefficient 0, *normal stiffness*
+   1000 GPa/m (Mecway asks for a value; with the bridge's default contact algorithm
+   `STANDARD` it is not used), tolerance 0.
+5. The line: in CCX > *Custom model definition* `**ASTER-PLANE AXIS`.
+6. Bridge: `auto` (→ `nonlin_static_3d`), `liml`; the contact settings of the Nonlinear
+   static page as in 3D.
+7. Result: `contactpressure` on the slave nodes, mean 12.465 MPa (Lamé, plane strain:
+   12.464 MPa); the overlap is resolved in the first step. `PL-41.liml` is the same in
+   `D_PLAN` (quarter rings with *Symmetry*), `PL-46.liml` a contact with friction 0.3
+   (`D_PLAN`).
 
 ### 1.6 Common mistakes
 
+The messages in the log, word for word; '…' stands for a name or number of your model. An
+ERROR with "NOT included" or "Not translated" only skips that item: the run continues without
+it and ends with a note that names it. Every other ERROR below stops the bridge before
+Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
+`**ASTER-PLANE`.
+
 | What went wrong | Message of the bridge | Solution |
 |---|---|---|
-| Mesh not in the XY plane | ERROR: A 2D analysis (…) needs all nodes in the XY plane (Z = 0) … | move or rotate the mesh to Z = 0 |
-| Nodes at X < 0 in an axisymmetric model | ERROR: Axisymmetric (SA0): all nodes must have X >= 0 … (also in route A) | Y is the axis, X the radius (first figure) |
+| Mesh not in the XY plane | ERROR: A 2D analysis (…) needs all nodes in the XY plane (Z = 0); here up to Z = … m. Code-Aster only computes a 2D model with Z = 0 (Mecway ignores Z). | move or rotate the mesh to Z = 0 |
+| Nodes at X < 0 in an axisymmetric model (also route A) | ERROR: Axisymmetric (SA0): all nodes must have X >= 0 (X = radius, Y = axis); here X down to … m. (also in route A, where the model is L30 or S30) | Y is the axis, X the radius (first figure) |
 | The axis drawn along X (all X ≥ 0) | none: the bridge takes Y as the axis | draw the cross-section with Y as the axis |
-| Beams, trusses or solids in the model | ERROR: Elset '…' contains line2 …; in a 2D analysis … | only plane elements; or compute in 3D |
-| `**ASTER-PLANE` in an S20/SA0 model | ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) … (already a 2D type: remove the line) | route B needs no line; remove it |
-| `**ASTER-PLANE` in another 3D type (T30, V30, D30, …) | the same ERROR | S30 or L30; thermal 2D is not yet possible |
-| `**ASTER-PLANE` with another value or none | ERROR: '#ASTER-PLANE …': expected C_PLAN, D_PLAN or AXIS. | write C_PLAN, D_PLAN or AXIS |
+| Beams, trusses, springs or solids in the model | ERROR: Elset '…' contains …; in a 2D analysis (…) the bridge only translates plane elements (tri3, tri6, quad4, quad8), no beams, trusses, springs or solid elements. | only plane elements; or compute in 3D |
+| Route A without the line, or the line in a field the bridge does not read | none: the log has no line `INFO: Elset '…' -> MODELISATION=…`; the bridge computes the elements as shells | type the line in CCX > *Custom model definition* (§1.4 step 4) |
+| `**ASTER-PLANE` in an S20/SA0/D20/DA0 model | ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) with plane shell elements in the XY plane; this model is SA0 (already a 2D type: remove the line). | route B needs no line; remove it |
+| `**ASTER-PLANE` in another 3D type (T30, T31, V30, D30, …) | ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) with plane shell elements in the XY plane; this model is …. | S30 or L30; heat transfer in a plane (T30/T31) needs no line, axisymmetric heat transfer is not possible yet (§3) |
+| `**ASTER-PLANE` with another value | ERROR: '#ASTER-PLANE …': expected C_PLAN, D_PLAN or AXIS. | write C_PLAN, D_PLAN or AXIS |
+| `**ASTER-PLANE` without a value | ERROR: '#ASTER-PLANE' without a value; expected C_PLAN, D_PLAN or AXIS. | write C_PLAN, D_PLAN or AXIS |
+| `**ASTER PLANE AXIS` (space instead of hyphen) | ERROR: '#ASTER PLANE AXIS' is Code-Aster code and is skipped; meant is '#ASTER-PLANE AXIS' (with a hyphen). | write `**ASTER-PLANE AXIS` |
 | Two `**ASTER-PLANE` lines with different values | WARNING: Several #ASTER-PLANE lines; the last one counts (…). | keep one line |
-| *Plane strain* ticked on the material with `**ASTER-PLANE C_PLAN` | WARNING: Material '…' has plane strain, but #ASTER-PLANE says C_PLAN; the bridge follows the line. | the line decides; remove the tick or write D_PLAN |
-| `#ASTER PLANE AXIS` (space instead of hyphen) | ERROR: '#ASTER PLANE AXIS' is Code-Aster code and is skipped; meant is '#ASTER-PLANE AXIS' | write `**ASTER-PLANE AXIS` |
 | `#ASTER-PLANE` typed in the CCX field | none from the bridge (it accepts `#`, `**`, `$`); Mecway's own CCX solve may stumble over the `#` line | use `**` in the CCX field, `#` in the OpenRadioss field |
-| Route A with `C_PLAN`/`D_PLAN` but no shell thickness | ERROR: Elset '…': #ASTER-PLANE C_PLAN needs a thickness … | give the material *Shell/membrane* with the thickness t |
-| Plasticity in an S20/SA0 model | WARNING: Material '…' has plasticity, but S20 is linear … | route A (example 2) |
-| Contact in S30 with `**ASTER-PLANE` | ERROR: Contact in a 2D analysis (S30) is not translated (yet) … | *Nonlinear Static* (L30) |
-| A *Displacement* along Z or a *Node rotation* from the 3D shell model | INFO (route A, left out); ERROR in S20/SA0 | nothing to do in route A |
+| *Plane strain* ticked on the material with `**ASTER-PLANE C_PLAN` | WARNING: Material '…' has plane strain, but #ASTER-PLANE says C_PLAN; the bridge follows the line. | the line decides; remove the tick or write D_PLAN |
+| Route A with `C_PLAN`/`D_PLAN` but no shell thickness | ERROR: Elset '…': #ASTER-PLANE C_PLAN needs a thickness; give material '…' a Shell/membrane geometry with a thickness in Mecway (also for plane strain; Mecway itself does not solve without one). | give the material *Shell/membrane* with the thickness t |
+| Two materials with a different thickness | ERROR: The 2D analysis has elsets with different modelisation or thickness (…); the bridge translates a model with one thickness and one type (plane stress or plane strain). | one thickness for the whole model |
+| Another bridge analysis than `auto` chosen | ERROR: Mecway analysis type L30 (2D) is only translated to nonlin_static_3d, not to …. Choose 'auto' or nonlin_static_3d on the start screen. | `auto` |
+| Result route `tabel` | ERROR: A 2D analysis (…) only works with the result route 'liml' (General page); the route 'tabel' does not scale the reaction forces to the thickness or 360 degrees. | result route `liml` |
+| Plasticity in an S20/SA0 model | WARNING: Material '…' has plasticity, but S20 is linear (in Mecway too); the bridge computes elastically. For plasticity in 2D: Nonlinear Static (L30) with plane shell elements and the line '**ASTER-PLANE C_PLAN\|D_PLAN\|AXIS' (docs 2D par. 1.4). | route A (example 2 or 3) |
+| A load or support on the element faces (faceid 5/6) instead of on edges in route A | ERROR: … on '…' in a 2D analysis: only edges of plane elements (faceid 1..4), here shellface. NOT included. | a face selection of edges |
+| A contact between element faces instead of edges | ERROR: contact '…' / '…': in a 2D analysis only edges of the plane elements (here […]). NOT included. | face selections of edges (example 4) |
+| Contact in S30 with `**ASTER-PLANE` | ERROR: Contact in a 2D analysis (S30) is not translated (yet); remove it or compute the model in 3D. | *Nonlinear Static* (L30) |
+| *Bonded* contact in route A | ERROR: Bonded contact in a 2D analysis (L30) is not translated (yet); remove it or compute the model in 3D. | leave it out, or compute in 3D |
+| Contact with friction, slave nodes also held by a support | WARNING: Contact with friction (slave '…'): slave nodes are also held by '…'. A direction along the contact surface can then be held twice and Code-Aster can stop with a singular matrix (MECANONLINE9_4, KNOWN_BUGS 141). … | leave those nodes out with `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` |
+| The failure loop (`#ASTER-BEZWIJKEN`) in route A | WARNING: Elset '…' (…, limit … from …) cannot fail: solid and shell elements only (… not: the failure loop is NOT verified in 2D). | not possible in 2D (§3) |
+| A *Displacement* along Z or a *Node rotation* from the 3D shell model | route A: INFO: … on '…': only Z or rotations, which the 2D model does not have (#ASTER-PLANE); left out. In S20/SA0: ERROR: … on '…' in a 2D analysis: …. NOT included. | nothing to do in route A |
 
 ## 2. How the bridge translates
 
@@ -365,10 +542,17 @@ within the element); nodal stresses differ by the extrapolation (§5).
 ## 3. Not possible
 
 KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md`: S16e (loads and elements in the linear
-types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics): §4.
+types), S44 (nonlinear and contact: built, §1.4; axisymmetric heat transfer and the chain
+thermal -> mechanical, S44d, and axisymmetric shells, S44e: not yet). A20 (acoustics): §4. The exact messages: §1.6 and §6.
 
 - Beams, trusses, springs or solids in a 2D analysis (Mecway's S20 allows beams and
   trusses): ERROR, the bridge stops.
+- Axisymmetric shells (line elements in an axisymmetric model, Code-Aster `COQUE_AXIS`):
+  not yet (planned as STAPPENPLAN S44e). Line elements in a 2D model give the ERROR
+  "Elset '…' contains line2 …" (§1.6).
+- Route A: contact only in L30 (in S30: ERROR); *Bonded* contact: ERROR; loads, supports and
+  contacts on the element faces (faceid 5/6) instead of edges: ERROR, NOT included; the
+  failure loop (`#ASTER-BEZWIJKEN`): WARNING, the elements cannot fail (NOT verified in 2D).
 - Several thicknesses, or plane stress and plane strain in one model: ERROR.
 - Moment, line pressure, hydrostatic pressure, frictionless and elastic support,
   compression only, node rotation, constraint equations, couplings, contact, point
@@ -383,9 +567,12 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
   ERROR. Mecway itself has no nonlinear, frequency or buckling 2D type (Mecway 34
   converts V20 to V30 and B20 to S30); nonlinear in 2D: §1.4. S20/SA0 with a plastic
   material compute elastically (WARNING).
-- `**ASTER-PLANE` in another type than S30/L30, with another value than `C_PLAN`,
-  `D_PLAN`, `AXIS`, or without the hyphen: ERROR. An element offset in a 2D analysis (S20,
+- `**ASTER-PLANE` is allowed only in S30 and L30; in another type (also T30/T31), with
+  another value than `C_PLAN`, `D_PLAN`, `AXIS`, or without the hyphen: ERROR. An element offset in a 2D analysis (S20,
   SA0, D20, DA0 or `**ASTER-PLANE`): ERROR.
+- Axisymmetric heat transfer and the chain thermal -> mechanical in 2D (`C_PLAN`, `D_PLAN`,
+  `AXIS`): not yet (STAPPENPLAN S44d); `**ASTER-PLANE` in T30/T31 is an ERROR. Heat transfer
+  in a plane: plane shells in T30/T31 without the line (`PLAN`, [`Thermal.md`](Thermal.md)).
 - The error estimator (INFO) and the result route `tabel` (ERROR).
 
 ## 4. Acoustics in 2D
@@ -409,6 +596,8 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
   the inner wall 0.17% smaller than the bridge); the bridge is exact (KB125).
 
 ## 6. Messages and solutions
+
+The messages of route A (`**ASTER-PLANE`, contact on edges), word for word: §1.6.
 
 | Message | Cause | Solution |
 |---|---|---|
