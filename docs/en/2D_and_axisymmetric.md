@@ -473,7 +473,7 @@ the arrows on elements with an *Element orientation* card or a V axis.
 
 ### 1.5 Worked examples
 
-Seven models in the repository, one per kind of use; open one in Mecway to see every setting:
+Eight models in the repository, one per kind of use; open one in Mecway to see every setting:
 
 | Example | File (`TestFiles/Verificatie/modellen/`) | Route | Mecway type | Line | What it shows |
 |---|---|---|---|---|---|
@@ -484,6 +484,7 @@ Seven models in the repository, one per kind of use; open one in Mecway to see e
 | 5 | `PL-50.liml` | A | T30 | `**ASTER-PLANE AXIS` | heat transfer through a tube wall |
 | 6 | `PL-58.liml` (and `PL-59.liml`) | A | T31 | `**ASTER-PLANE AXIS` | the chain thermal -> mechanical: thermal stress in a tube |
 | 7 | `PL-60.liml` (and `PL-62.liml`) | A | S30 | `**ASTER-PLANE AXIS`, `**ASTER-SHELL` | an axisymmetric shell: a thin cylinder under internal pressure |
+| 8 | `PL-47.liml` | A | L30 | `**ASTER-PLANE AXIS` | reading a result in Mecway: a shrink fit with visible values |
 
 Before you start:
 
@@ -758,6 +759,30 @@ Steps:
    | *displacement* X | everywhere | 0 | a plate under pressure does not stretch |
    | *reaction force* magnitude | the edge node | 3142 N | the total over 360 degrees: q π a² |
    | *reaction moment* magnitude | the edge node | 785.4 N m | the total clamp moment over the circumference: 2π a · q a²/8 |
+
+**Example 8 – reading a result in Mecway: a shrink fit (`PL-47.liml`).**
+
+The model of example 4 (two steel rings, a = 0.10 m, b = 0.15 m, c = 0.20 m, 10 mm high,
+frictionless contact, the ends held along Y) with an interference of 0.2 mm instead of
+0.05 mm, so that the values are large enough to see.
+
+1. Open `PL-47.liml`, keep the bridge at `auto` and `liml`, and run.
+2. Mecway gets **two time steps**: t = 0 s is the initial state, with every value 0, and
+   t = 1 s the result. Move the time slider (bottom of Mecway's window) to the last step,
+   or the plot shows only zeros.
+3. Look along Z (front view): the strip of the section, X = radius. The displacement is a
+   tenth of a millimetre, so set the *Deformation scale factor* to about 100 to see the
+   inner ring shrink and the outer ring widen.
+4. Read these values at t = 1 s (Lamé, plane strain; the verification checks them to 1–2%):
+
+   | Mecway variable | Where | Value | Meaning |
+   |---|---|---|---|
+   | `contactpressure` | the slave nodes (outer wall of the inner ring) | 49.9 MPa | the shrink-fit pressure p; 0 on every other node |
+   | `hoopstress` | inner wall of the outer ring (r = b) | +178 MPa | σ_θ = p (c² + b²)/(c² − b²), tension |
+   | `hoopstress` | outer wall of the inner ring | −129 MPa | σ_θ = −p (b² + a²)/(b² − a²), compression |
+   | `radialstress` | the contact wall | −49.9 MPa | σ_r = −p |
+   | `displx` | inner wall of the outer ring | +0.130 mm | the outer ring widens |
+   | `displx` | outer wall of the inner ring | −0.070 mm | the inner ring shrinks; together the 0.2 mm |
 
 ### 1.6 Common mistakes
 

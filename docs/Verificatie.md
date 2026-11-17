@@ -987,6 +987,11 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
   niet-passende netten −0,7%). Met even brede blokken gleed de slave-rand voorbij het eind
   van de master en was de verhouding 1,3% te laag (een knoop voorbij de master draagt geen
   wrijving).
+- **PL-47** (PL-40 met een overmaat van 0,2 mm, het uitgewerkte voorbeeld 8 van
+  [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.5; controles onder de fysische
+  namen): contactdruk 49,87 MPa tegen 49,86 (+0,02%), `hoopstress` aan de binnenwand van de
+  buitenring +0,19%, aan de buitenwand van de binnenring −0,29%, `radialstress` bij het contact
+  −0,14%, u_r van de buitenring +0,06% en van de binnenring −0,11%; tolerantie 1–2%.
 
 Warmtetransport axisymmetrisch en in een vlak (STAPPENPLAN S44d stuk 1; Thermal Steady State
 T30 en Transient T31 met vlakke shell-elementen en `**ASTER-PLANE AXIS` -> `THERMIQUE` `AXIS`;

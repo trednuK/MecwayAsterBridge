@@ -489,7 +489,7 @@ orientation*-kaart of een V-as.
 
 ### 1.5 Uitgewerkte voorbeelden
 
-Zeven modellen in de repository, een per soort gebruik; open er een in Mecway om elke
+Acht modellen in de repository, een per soort gebruik; open er een in Mecway om elke
 instelling te zien:
 
 | Voorbeeld | Bestand (`TestFiles/Verificatie/modellen/`) | Route | Mecway-type | Regel | Wat het laat zien |
@@ -501,6 +501,7 @@ instelling te zien:
 | 5 | `PL-50.liml` | A | T30 | `**ASTER-PLANE AXIS` | warmtetransport door een buiswand |
 | 6 | `PL-58.liml` (en `PL-59.liml`) | A | T31 | `**ASTER-PLANE AXIS` | de keten thermisch -> mechanisch: thermische spanning in een buis |
 | 7 | `PL-60.liml` (en `PL-62.liml`) | A | S30 | `**ASTER-PLANE AXIS`, `**ASTER-SHELL` | een axisymmetrische schaal: een dunne cilinder onder inwendige druk |
+| 8 | `PL-47.liml` | A | L30 | `**ASTER-PLANE AXIS` | een resultaat aflezen in Mecway: een krimpverbinding met zichtbare waarden |
 
 Voordat je begint:
 
@@ -778,6 +779,30 @@ Stappen:
    | *displacement* X | overal | 0 | een plaat onder druk rekt niet |
    | *reaction force* grootte | de randknoop | 3142 N | het totaal over 360 graden: q π a² |
    | *reaction moment* grootte | de randknoop | 785,4 N m | het totale inklemmoment over de omtrek: 2π a · q a²/8 |
+
+**Voorbeeld 8 – een resultaat aflezen in Mecway: een krimpverbinding (`PL-47.liml`).**
+
+Het model van voorbeeld 4 (twee stalen ringen, a = 0,10 m, b = 0,15 m, c = 0,20 m, 10 mm hoog,
+wrijvingsloos contact, de einden langs Y vast) met een overmaat van 0,2 mm in plaats van
+0,05 mm, zodat de waarden groot genoeg zijn om te zien.
+
+1. Open `PL-47.liml`, laat de bridge op `auto` en `liml` staan en start de run.
+2. Mecway krijgt **twee tijdstappen**: t = 0 s is de beginstand, met elke waarde 0, en
+   t = 1 s het resultaat. Zet de tijdschuif (onderaan in Mecway's venster) op de laatste stap,
+   anders toont het beeld alleen nullen.
+3. Kijk langs Z (vooraanzicht): de strook van de doorsnede, X = straal. De verplaatsing is een
+   tiende millimeter, dus zet de *Deformation scale factor* op ongeveer 100 om de binnenring te
+   zien krimpen en de buitenring te zien uitzetten.
+4. Lees deze waarden af op t = 1 s (Lamé, vlakke rek; de verificatie controleert ze tot 1–2%):
+
+   | Mecway-variabele | Waar | Waarde | Betekenis |
+   |---|---|---|---|
+   | `contactpressure` | de slaveknopen (buitenwand van de binnenring) | 49,9 MPa | de krimpdruk p; 0 op elke andere knoop |
+   | `hoopstress` | binnenwand van de buitenring (r = b) | +178 MPa | σ_θ = p (c² + b²)/(c² − b²), trek |
+   | `hoopstress` | buitenwand van de binnenring | −129 MPa | σ_θ = −p (b² + a²)/(b² − a²), druk |
+   | `radialstress` | de contactwand | −49,9 MPa | σ_r = −p |
+   | `displx` | binnenwand van de buitenring | +0,130 mm | de buitenring zet uit |
+   | `displx` | buitenwand van de binnenring | −0,070 mm | de binnenring krimpt; samen de 0,2 mm |
 
 ### 1.6 Veelgemaakte fouten
 

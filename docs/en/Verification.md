@@ -975,6 +975,11 @@ with plane shell elements and `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E = 21
   the fixed bottom 0.2996 against μ = 0.3 (−0.14%; tolerance 1%; with non-matching meshes
   −0.7%). With blocks of the same width the slave edge slid past the
   master's end and the ratio was 1.3% low (a node beyond the master carries no friction).
+- **PL-47** (PL-40 with an interference of 0.2 mm, the worked example 8 of
+  [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.5; checks under the physical names):
+  contact pressure 49.87 MPa against 49.86 (+0.02%), `hoopstress` at the inner wall of the
+  outer ring +0.19%, at the outer wall of the inner ring −0.29%, `radialstress` at the contact
+  −0.14%, u_r of the outer ring +0.06% and of the inner ring −0.11%; tolerance 1–2%.
 
 Heat transfer axisymmetric and in a plane (STAPPENPLAN S44d piece 1; Thermal Steady State T30 and
 Transient T31 with plane shell elements and `**ASTER-PLANE AXIS` -> `THERMIQUE` `AXIS`;

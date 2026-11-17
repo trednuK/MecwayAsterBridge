@@ -68,11 +68,11 @@ def _finish(m, mod):
         m.add('<fieldvariable name="%s" />' % fv)
 
 
-def build_pl40():
+def build_pl40(delta=DELTA):
     m = Model("L30", timesteps=TS)
     m.elset("Binnen", "Staal")
     m.elset("Buiten", "Staal")
-    qi = quadmesh(m, "Binnen", NR, 1, rect(RA, RB + DELTA, 0.0, H), order=2)
+    qi = quadmesh(m, "Binnen", NR, 1, rect(RA, RB + delta, 0.0, H), order=2)
     qo = quadmesh(m, "Buiten", NR, 1, rect(RB, RC, 0.0, H), order=2)
     m.mat("Staal", *STEEL)
     m.face_selection("Binnenring_buiten", qi["edges"]["u1"])
@@ -85,6 +85,48 @@ def build_pl40():
     _contact(m)
     _finish(m, "AXIS")
     return m
+
+
+# PL-47: the worked example of the docs (2D_en_axisymmetrisch sec. 1.5,
+# example 8): PL-40 with a four times larger interference, 0.2 mm, so that
+# the result is visible in Mecway (deformation scale) and every value is
+# four times PL-40's (Lame is linear). The checks use the physical names.
+DELTA47 = 2.0e-4
+P47 = P_FIT * DELTA47 / DELTA
+
+
+def build_pl47():
+    return build_pl40(DELTA47)
+
+
+def _checks47():
+    src = "Lame, overmaat 0,2 mm: p = delta / (f_binnen + f_buiten)"
+    t = 1.0
+    return [
+        Check("contactdruk (gemiddeld, slave)",
+              lambda r: r.mean("contactpressure", "Slave", time=t),
+              ref=P47, tol=0.01, unit="Pa", source=src),
+        Check("hoopstress buitenring binnenwand",
+              lambda r: r.at("hoopstress", (RB, 0.0, 0.0), time=t),
+              ref=P47 * (RC ** 2 + RB ** 2) / (RC ** 2 - RB ** 2), tol=0.02,
+              unit="Pa", source="Lame: p (c^2 + b^2) / (c^2 - b^2)"),
+        Check("hoopstress binnenring buitenwand",
+              lambda r: r.at("hoopstress", (RB + DELTA47, 0.0, 0.0),
+                             time=t),
+              ref=-P47 * (RB ** 2 + RA ** 2) / (RB ** 2 - RA ** 2),
+              tol=0.02, unit="Pa",
+              source="Lame: -p (b^2 + a^2) / (b^2 - a^2)"),
+        Check("radialstress buitenring binnenwand",
+              lambda r: r.at("radialstress", (RB, 0.0, 0.0), time=t),
+              ref=-P47, tol=0.01, unit="Pa", source="Lame: -p"),
+        Check("u_r buitenring binnenwand",
+              lambda r: r.at("displx", (RB, 0.0, 0.0), time=t),
+              ref=P47 * _u_per_p(RB, RB, RC, True), tol=0.01, unit="m",
+              source=src),
+        Check("u_r binnenring buitenwand",
+              lambda r: r.at("displx", (RB + DELTA47, 0.0, 0.0), time=t),
+              ref=P47 * _u_per_p(RB, RA, RB, False), tol=0.01, unit="m",
+              source=src)]
 
 
 def _ring(r0, r1):
@@ -155,6 +197,11 @@ TESTS = [
          build_pl40, _checks(),
          note="a = 0,1, b = 0,15, c = 0,2 m, overmaat 0,05 mm, quad8 8x1 "
               "per ring, einden axiaal vast, wrijvingsloos."),
+    Case("PL-47", GROUP, "Krimpverbinding twee ringen, overmaat 0,2 mm "
+         "(voorbeeld in de documentatie, AXIS)", "nonlin_static_3d",
+         build_pl47, _checks47(),
+         note="PL-40 met overmaat 0,2 mm: het voorbeeld van de "
+              "documentatie, met de fysische namen."),
     Case("PL-41", GROUP, "Krimpverbinding twee ringen, vlakke rek "
          "(L30 + **ASTER-PLANE D_PLAN, contact)", "nonlin_static_3d",
          build_pl41, _checks(plane=True),
