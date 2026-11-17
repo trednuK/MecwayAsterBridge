@@ -102,6 +102,11 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   every node (verification PL-07, equal to Mecway). On edges Mecway holds nothing in 2D; the
   bridge keeps every node there with a WARNING. Behaviour change for 2D models with a pinned
   support on several nodes.
+- **WARNING for harmonic stresses with hysteretic damping** (KNOWN_BUGS 120): Code-Aster's
+  `CALC_CHAMP` computes the stresses of a harmonic result without the loss factor, so their
+  amplitude is low by sqrt(1 + eta^2) (0.5% at eta = 0.1; measured on a bar in tension
+  against F/A). The bridge now says so, with the size, when stresses are requested;
+  displacements are right.
 - **Springs and dampers compared with Mecway** (KNOWN_BUGS 47): with the ground nodes held
   by *Displacement* Mecway 35 equals the bridge in a modal analysis and in a dynamic response
   with a damper (Newmark, to 1e-7; new verification DY-04a/b); earlier failures came from a

@@ -672,6 +672,20 @@ Code-Aster value per node) and logs the largest difference per variable.
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
 
+120\. **Hysteretic damping: stresses without the loss factor; not on all discrete elements**
+   (confirmed, Code-Aster 17.4, 17 Nov 2026; `bridge_harmonic`, S26). The loss factor eta
+   (`loss_factor`, `#ASTER-HYST`) is applied to materials and springs, not to elastic
+   supports, dampers or point masses. `CALC_CHAMP` computes the stresses of the harmonic
+   result with the real E, without `AMOR_HYST`: a solid bar (10 hex8, 1 m, A = 0.01 m²) in
+   quasi-static harmonic tension (1 .. 5 Hz, first axial mode ~1300 Hz, F = 1000 N, PHYS)
+   gives a stress amplitude of 89442.8 Pa with eta = 0.5 instead of F/A = 100000 Pa
+   (equilibrium), i.e. F/A / sqrt(1 + eta^2), and exactly F/A without eta. So the stress
+   amplitude is low by sqrt(1 + eta^2) (0.02% at eta = 0.02, 0.5% at 0.1, 11% at 0.5); the
+   bridge gives a WARNING with the size (`bridge_harmonic`, when stresses are requested).
+   Von Mises follows the stresses; reactions are not a field of this analysis.
+   Displacements are right (HR-06a..d). A fix would multiply the complex stresses by
+   (1 + i eta) per material (STAPPENPLAN §S46, follow-up), NOT built.
+
 123\. **`SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong** (confirmed, Code-Aster
    17.4.0 and `main`, `te0342.F90`; the same text since at least 2014). Three faults: shear
    with `alfay*g*a` instead of `g*a/alfay` (lines 148-149), no shift from the centroid to
@@ -857,13 +871,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    20 steps to λ = 0.02, through inversion (λ = -0.5) and at 300 shear strain. Whether the
    structure is still complete after a floating point exception (signal, not `utmess`)
    is therefore NOT verified.
-
-120\. **Hysteretic damping: not on all discrete elements, stresses not checked** (question,
-   `bridge_harmonic`, S26). The loss factor eta (`loss_factor`, `#ASTER-HYST`) is applied
-   to materials and springs, not to elastic supports, dampers or point masses. Whether
-   `CALC_CHAMP` includes eta in the stresses of a harmonic result is NOT verified; if not,
-   the stress amplitude is low by a factor sqrt(1 + eta^2) (0.5 % at eta = 0.1).
-   Displacements are verified (HR-06a..d).
 
 ## Not translated (the bridge reports it at the end of the run)
 

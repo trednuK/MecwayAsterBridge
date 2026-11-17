@@ -408,7 +408,10 @@ de Code-Aster-testcases sdld313d en sdld21b):
    de projectie op de modes met `PROJ_MATR_BASE` (`PROJ_BASE` neemt alleen reële
    matrices) in volle opslag, dus een complexe gegeneraliseerde stijfheid, exact ook
    als η per materiaal verschilt (dan koppelen de modes); de modes zelf komen uit de
-   reële K. Voor de verfijning rond de pieken telt ξ_i + η/2 (grootste η).
+   reële K. Voor de verfijning rond de pieken telt ξ_i + η/2 (grootste η). De
+   spanningen worden zonder η berekend (`CALC_CHAMP` met de reële E): hun amplitude is
+   1/√(1 + η²) te laag, −0,5% bij η = 0,1, −11% bij η = 0,5 (gemeten op een staaf op trek;
+   WARNING, KNOWN_BUGS 120); de verplaatsingen zijn juist.
 5. **Frequenties:** het bereik (lin/log) of de lijst; bij het bereik per mode in het
    bereik met 0 < ξ < 0,5 nog *n* frequenties over de halfwaardebreedte 2ξf rond de
    piek f·√(1−2ξ²) (`DEFI_LIST_FREQ` `RAFFINEMENT` `CRITERE='LARGEUR_3DB'`,
@@ -507,6 +510,7 @@ de Code-Aster-testcases sdld313d en sdld21b):
 | ERROR: Verliesfactor (loss_factor) ... is ongeldig | negatief of geen getal | een getal ≥ 0 |
 | ERROR: '#ASTER-HYST ...': verwacht 'materiaal = eta' ... / materiaal '...' bestaat niet | schrijffout of onbekende naam | bijv. `** ASTER-HYST Staal = 0.02`, de naam zoals in Mecway (hoofdletters maken niet uit) of `*` |
 | WARNING: Verliesfactor bij het hyperelastische materiaal ... wordt genegeerd | `ELAS_HYPER` kent geen `AMOR_HYST` | geen actie (de harmonische analyse is lineair) |
+| WARNING: Harmonisch met hysteretische demping (verliesfactor tot ...): de spanningen zijn zonder de verliesfactor berekend ... | `CALC_CHAMP` gebruikt de reële E (KNOWN_BUGS 120) | de spanningsamplitude is tot het genoemde % te laag; vermenigvuldig waar nodig met √(1 + η²); verplaatsingen zijn juist |
 | WARNING: Harmonisch: het model heeft geen demping ... | geen Rayleigh, `modal_damping`, `loss_factor` of dempers | demping opgeven of frequenties tussen de eigenfrequenties |
 | WARNING: Harmonisch: dempingsverhouding >= 1 (...), overkritisch ... De berekening gaat door. | een mode met ξ ≥ 1: `modal_damping` ≥ 1, of Rayleigh α (lage modes) of β (hoge modes) te groot | controleer α/β en *Extra modale demping* (vaak een eenheidsfout); ξ per mode in de `.mess` (`BRIDGE_DEMPING`). Bedoeld overkritisch: geen actie nodig |
 | WARNING: Harmonisch: de hoogste frequentie (...) ligt boven de hoogste mode ... | te weinig modes voor het bereik | meer modes (*Number of modes*), basis `PHYS`, of een lagere eindfrequentie |
