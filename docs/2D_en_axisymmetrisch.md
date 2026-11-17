@@ -13,6 +13,7 @@ Code-Aster `MECA_STATIQUE` of `DYNA_NON_LINE` met vlakke elementen (U3.13.01
 | Static Axisymmetric (SA0) | geen geometrie (isotroop materiaal) | `AXIS` | verplaatsing X (radiaal), Y (axiaal); spanning met `stresszz` = tangentiële spanning (hoop stress); reacties voor 360 graden |
 | Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | als S20 / SA0 | als S20 / SA0, in de tijd (§2.4) | als S20 / SA0 per uitvoertijd, plus snelheid en versnelling |
 | Acoustic Resonance 2D (A20) | *Speed of sound* (een dikte telt niet) | `PHENOMENE='ACOUSTIQUE'`, `PLAN` (§4) | per mode de frequentie en het drukveld `pressure`, als A30 |
+| Static 3D (S30), Nonlinear Static (L30) met line3-elementen en `**ASTER-PLANE AXIS` | isotroop elastisch; de dikte uit `**ASTER-SHELL`, *Shell/membrane* of *RectBar* | `COQUE_AXIS` (§1.4.2) | verplaatsing X, Y, rotatie `rotz`; reacties en `reactionmomz` voor 360 graden; nog geen spanningen |
 
 De bridge-analyse is `lin_static_3d` ("Statisch") voor S20 en SA0 en `dyna_impl_3d`
 ("Dynamisch (impliciet)") voor D20 en DA0: met *Actieve analyse (auto = volgens Mecway)*
@@ -84,7 +85,7 @@ uitgelegd. "Voorbeeld n" is een uitgewerkt voorbeeld met een modelbestand in §1
 | Warmtetransport, axisymmetrisch | T30 of T31 | A | vlakke shell-elementen bij X ≥ 0; *Shell/membrane* met een willekeurige dikte; *Thermal conductivity* (T31 ook *Specific heat* en *Density*) | `**ASTER-PLANE AXIS` | §1.4.1; voorbeeld 5 |
 | Thermische spanning uit een axisymmetrisch warmtetransport (keten thermisch -> mechanisch) | *Thermal Transient* (T31) met *Thermal stress* | A | zoals de rij hierboven, plus E, ν, *Thermal expansion* en opleggingen | `**ASTER-PLANE AXIS` | §1.4.1; voorbeeld 6 |
 | De keten thermisch -> mechanisch in vlakke spanning of vlakke rek | – | – | – | kan nog niet | §3 |
-| Axisymmetrische schalen (lijnelementen) | – | – | – | nog niet | §3 |
+| Axisymmetrische schalen (een dunne omwentelingswand, lijnelementen), lineair | *Static 3D* (S30) of *Nonlinear Static* (L30) | A | line3-elementen in het XY-vlak bij X ≥ 0; isotroop elastisch; de dikte uit de regel, *Shell/membrane* of *RectBar* | `**ASTER-PLANE AXIS` en `**ASTER-SHELL <materiaal>: EPAIS=<t>` | §1.4.2; voorbeeld 7 |
 | Niet-lineaire dynamica, modes, knik in 2D | – | – | – | niet mogelijk | §3 |
 
 Waar typ je de regel: Mecway rekent L30 alleen met CCX; kies CCX ook voor S30, T30 en T31 als
@@ -172,8 +173,8 @@ bridge met een regel het in 2D te rekenen (voorbeelden 2, 3 en 4 in §1.5):
    (Mecway rekent L30 alleen met CCX). *Static 3D* (S30) kan ook (lineair, zoals S20; geen
    contact).
 2. **Mesh.** Vlakke elementen tri3, tri6, quad4 of quad8 in het XY-vlak (Z = 0), verder
-   niets (geen balken, truss, veren of volume-elementen); in een 3D-type behandelt Mecway ze
-   als shells. Axisymmetrisch: Y is de as, X de straal, alle knopen bij X ≥ 0 (eerste
+   niets (geen balken, truss, veren of volume-elementen; alleen line3-elementen: §1.4.2); in
+   een 3D-type behandelt Mecway ze als shells. Axisymmetrisch: Y is de as, X de straal, alle knopen bij X ≥ 0 (eerste
    figuur).
 3. **Materiaal.** Een geometrie *Shell/membrane* met een dikte (Mecway heeft hem nodig voor
    shells). Voor `C_PLAN` en `D_PLAN` is het de dikte t: Mecway's krachten en de reacties
@@ -329,10 +330,80 @@ als totale *Heat flow* op de elementen (PL-57), alles binnen 0,7% van de geslote
 axisymmetrisch thermisch type, dus er is geen Mecway-referentie; de Code-Aster-testcase tpla01
 is vervangen door deze gesloten-vorm-gevallen.
 
+### 1.4.2 Axisymmetrische schalen (line3, `COQUE_AXIS`)
+
+Een dunwandig omwentelingslichaam (een buis, een vat, een ronde plaat) kan als schaal langs
+zijn meridiaan gerekend worden: line3-elementen in het XY-vlak, Y de as en X de straal,
+worden Code-Aster's axisymmetrische schaal `COQUE_AXIS` (route A, STAPPENPLAN S44e).
+Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
+
+![Een axisymmetrische schaal: line3-elementen op het middenvlak, de kant van een druk](img/2d_axis_shell_side.svg)
+
+1. Mecway's Y-as: de symmetrieas; X is de straal, alle knopen bij X ≥ 0.
+2. Een line3-element op het middenvlak van de wand: knoop 1, middenknoop, knoop 2 (Mecway's volgorde).
+3. U: van knoop 1 naar knoop 2 van het element.
+4. n = Z × U: de kant van de schaal. Voor een keten die naar boven getekend is (U = +Y) bij X > 0 wijst hij naar de as.
+5. Een positieve *Pressure* op faceid 1 (de zijkant van een lijnelement) duwt langs −n: hier naar buiten, een inwendige druk.
+6. De wanddikte t, gecentreerd op de lijn van de knopen.
+7. Mecway's Z-as, uit de tekening.
+
+1. **Analysetype.** *Static 3D* (S30) of *Nonlinear Static* (L30, solver CCX).
+2. **Mesh.** Alleen line3-elementen in het XY-vlak (Z = 0), alle knopen bij X ≥ 0; geen
+   vlakke elementen in hetzelfde model, geen line2 (ERROR, §1.6). De richting van de elementen
+   bepaalt de kant van een druk (figuur): teken een keten in een richting; buren die de andere
+   kant op lopen geven een WARNING.
+3. **Materiaal.** Isotroop elastisch: E, ν, een dichtheid voor zwaartekracht. Plasticiteit,
+   een hyperelastisch of een orthotroop materiaal: ERROR.
+4. **De regels.** In CCX > *Custom model definition*:
+
+   ```
+   **ASTER-PLANE AXIS
+   **ASTER-SHELL Staal: EPAIS=5 mm
+   ```
+
+   `**ASTER-SHELL <materiaal>: EPAIS=<dikte>` geeft de dikte van de schalen van dat
+   materiaal, in m of met `mm`, `cm`, `m`; eventueel `, A_CIS=<waarde>` (de
+   afschuifcoëfficiënt, zonder de standaard 5/6 van Code-Aster). Nederlandse spelling:
+   `**ASTER-SCHAAL`. De materiaalnaam is alles voor de laatste dubbele punt. Zonder de regel
+   neemt de bridge de dikte uit de geometrie *Shell/membrane* van het materiaal, of uit een
+   *RectBar*: de maat a (langs Mecway's V-as, die standaard in het XY-vlak ligt; b als V langs
+   Z staat). Allebei aanwezig: de regel telt (INFO, of een WARNING als de waarden verschillen).
+   Meerdere regels voor een materiaal: de laatste telt. Helemaal geen dikte: ERROR.
+5. **Opleggingen** op knopen (knoopselectie) of op de elementuiteinden (faceid 2 = knoop 1,
+   faceid 3 = knoop 2): *Fixed support* houdt X, Y en de rotatie om Z vast (een inklemming);
+   *Pinned support* X en Y; *Displacement* langs X of Y; *Node rotation* om Z; *Symmetry* met
+   normaal X of Y houdt ook de rotatie om Z vast (een knoop op de as: normaal X; een
+   symmetrievlak Y = constant: normaal Y). Een knoop op de as (X = 0) zonder X en de rotatie
+   om Z vast: WARNING. Een oplegging in Y tegen beweging langs de as.
+6. **Belastingen.** *Pressure* op faceid 1 van de lijnelementen (de kant zoals in de figuur;
+   een waarde of een tijdtabel); *Force* en *Moment* (om Z) op knopen of elementuiteinden, het
+   totaal van de hele ring (360 graden, zoals de krachten van §2.2); *Gravity* langs Y. Niet
+   vertaald: traction, een kracht op faceid 1, een druk met een formule in x, y, z, line
+   pressure, centrifugaalkracht, temperaturen en contact (§1.6).
+7. **Bridge.** *Actieve analyse (auto = volgens Mecway)* `auto` (→ `lin_static_3d` of
+   `nonlin_static_3d`) en *Resultaten naar Mecway* `liml`. De log toont per elset
+   `INFO: Elset '…' -> MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness … m
+   (Mecway S30).` en een keer `INFO: 2D analysis S30: axisymmetric shells (COQUE_AXIS) about Y;
+   …`. In L30 rekenen de schalen met kleine verplaatsingen (`deformation` anders dan `PETIT`:
+   WARNING; Code-Aster raadt het bijwerken van de geometrie van `COQUE_AXIS` af).
+
+Resultaten in Mecway: `displx` (radiaal), `disply` (axiaal), `displmag`, `rotz` (de rotatie om
+Z, rechtsom: positief draait X naar Y), `reactionforcex`, `reactionforcey`,
+`reactionforcemag` en `reactionmomz`, de reacties voor 360 graden (× 2π). Nog niet: de
+spanningen en snedekrachten van de schaal (meridiaan- en tangentiële spanning, boven- en
+onderkant; STAPPENPLAN S44e deel 2); de log meldt dat (INFO) en de bridge schrijft geen
+spanningsveld. Nagelopen met Code-Aster 17.4 (PL-60 … PL-68, [`Verificatie.md`](Verificatie.md)):
+een membraancilinder en -bol binnen 1e-7, een ingeklemde ronde plaat 0,03% (doorbuiging) en
+0,07% (rotatie), het inklemmoment van een lange cilinder −0,94% (p / (2β²)), de
+Code-Aster-testcase ssls114i exact, een druk als tijdtabel in L30, een knoopkracht, een
+ringmoment (0,23%) en zwaartekracht. NIET geverifieerd: hoe Mecway deze resultaten toont en of
+Mecway's venster de invoer accepteert (een druk op de zijkant van een lijnelement in S30 of
+L30; Mecway's eigen solve rekent de lijnelementen als balken, niet als deze schaal).
+
 ### 1.5 Uitgewerkte voorbeelden
 
-Zes modellen in de repository, een per soort gebruik; open er een in Mecway om elke instelling
-te zien:
+Zeven modellen in de repository, een per soort gebruik; open er een in Mecway om elke
+instelling te zien:
 
 | Voorbeeld | Bestand (`TestFiles/Verificatie/modellen/`) | Route | Mecway-type | Regel | Wat het laat zien |
 |---|---|---|---|---|---|
@@ -342,6 +413,7 @@ te zien:
 | 4 | `PL-40.liml` | A | L30 | `**ASTER-PLANE AXIS` | contact: een krimpverbinding van twee ringen |
 | 5 | `PL-50.liml` | A | T30 | `**ASTER-PLANE AXIS` | warmtetransport door een buiswand |
 | 6 | `PL-58.liml` (en `PL-59.liml`) | A | T31 | `**ASTER-PLANE AXIS` | de keten thermisch -> mechanisch: thermische spanning in een buis |
+| 7 | `PL-60.liml` (en `PL-62.liml`) | A | S30 | `**ASTER-PLANE AXIS`, `**ASTER-SHELL` | een axisymmetrische schaal: een dunne cilinder onder inwendige druk |
 
 Voordat je begint:
 
@@ -579,6 +651,34 @@ Stappen:
    reactie (360 graden) 9,2155 MN in grootte. `PL-59.liml` is hetzelfde met een *Pressure*
    van 50 MPa op `Binnen`.
 
+**Voorbeeld 7 – route A: een axisymmetrische schaal, een dunne cilinder (`PL-60.liml`).**
+
+1. *Analysis settings*: *Static 3D* (S30).
+2. Mesh: elset `Buis`, 20 line3-elementen op de lijn X = 0,5 m, Y = 0 … 1 m, getekend van
+   onder naar boven (knoop 1 van elk element onder zijn knoop 2).
+3. Materiaal `Staal`: isotroop E, ν; geen geometrie (de dikte komt uit de regel).
+4. Opleggingen en belastingen:
+
+   | Selectie | Waar | Mecway-item |
+   |---|---|---|
+   | `Binnen` (vlakselectie, 20 vlakken) | faceid 1 van elk element | *Pressure* 1 MPa (duwt naar buiten: een inwendige druk, figuur van §1.4.2) |
+   | `Onder` (knoopselectie, 1 knoop) | de onderste knoop (0,5, 0) | *Displacement* langs Y, waarde 0 |
+
+5. De regels: in CCX > *Custom model definition*
+
+   ```
+   **ASTER-PLANE AXIS
+   **ASTER-SHELL Staal: EPAIS=0.005
+   ```
+
+6. Bridge: `auto` (→ `lin_static_3d`), `liml`. De log toont `INFO: Elset 'Buis' ->
+   MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness 0.005 m (Mecway S30).`
+7. Resultaten: `displx` = de radiale verplaatsing p R² / (E t) = 0,2381 mm overal, `disply`
+   bovenaan −ν p R L / (E t) = −0,1429 mm (het vrije eind wordt korter). `PL-62.liml` is een
+   ingeklemde ronde plaat (de dikte uit een *RectBar* met a = 10 mm, *Fixed support* aan de
+   rand, *Symmetry* met normaal X op de middelste knoop); `PL-64.liml` is de
+   Code-Aster-testcase ssls114i.
+
 ### 1.6 Veelgemaakte fouten
 
 De meldingen in de log, letterlijk; '…' staat voor een naam of getal uit je model. Een ERROR
@@ -622,6 +722,21 @@ typte.
 | De keten (T31 met *Thermal stress*, `AXIS`) met de resultaatroute `tabel` | ERROR: Een axisymmetrische thermomechanische keten (T31) werkt alleen met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' schaalt de reactiekrachten niet naar 360 graden. | resultaatroute `liml` |
 | Contact, een koppeling tussen knoop en oppervlak, verlijmd contact of een beginsnelheid in de keten | ERROR: … in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. | laat het weg |
 | Een vergelijking tussen vrijheidsgraden, flexibele verbinding of element offset in de keten | WARNING: … op '…' wordt in de keten thermisch -> mechanisch (Thermal stress in een T31-model) niet vertaald; de mechanische berekening rekent zonder. | laat het weg, of reken in 3D |
+| Axisymmetrische schalen (§1.4.2) van line2-elementen | ERROR: Elset '…' bevat line2-elementen; axisymmetrische schalen ('#ASTER-PLANE AXIS', …) alleen met line3 (COQUE_AXIS op SEG3, zoals in alle testgevallen van Code-Aster). Maak de elementen kwadratisch in Mecway. | line3-elementen |
+| Axisymmetrische schalen zonder dikte | ERROR: Elset '…': axisymmetrische schaal zonder dikte. Geef de dikte met de regel '**ASTER-SHELL …: EPAIS=<dikte>' (in CCX > Custom model definition), met een geometrie Shell/membrane van materiaal '…', of met een RectBar (maat a in het XY-vlak). (Met een andere balkgeometrie of een RectBar die niet te lezen is, de reden tussen haakjes na "dikte".) | de regel `**ASTER-SHELL` (§1.4.2 stap 4) |
+| Een verkeerde regel `**ASTER-SHELL` | ERROR: '#ASTER-SHELL …': verwacht '<materiaal>: EPAIS=<dikte>' met een dikte > 0 in m (of met mm, cm), eventueel ', A_CIS=<waarde>'. | schrijf `**ASTER-SHELL Staal: EPAIS=5 mm` (een decimale punt, sleutels gescheiden door komma's) |
+| `**ASTER-SHELL` met een materiaalnaam die niet bestaat | ERROR: #ASTER-SHELL '…': geen materiaal met deze naam (hernoemd?). | de naam van het Mecway-materiaal |
+| `**ASTER-SHELL` en de geometrie van het materiaal geven een andere dikte | WARNING: Elset '…': #ASTER-SHELL EPAIS=… m telt; Shell/membrane van materiaal '…' is … m. | de regel telt; maak ze gelijk |
+| `**ASTER-SHELL` in een model zonder axisymmetrische schalen | WARNING: #ASTER-SHELL telt alleen voor axisymmetrische schalen (line3-elementen met '#ASTER-PLANE AXIS' in Static 3D (S30) of Nonlinear Static (L30)); de regel wordt hier genegeerd. | haal de regel weg |
+| Lijnelementen met `**ASTER-PLANE C_PLAN` of `D_PLAN` | ERROR: Elset '…' bevat line3; met '#ASTER-PLANE C_PLAN' vertaalt de bridge alleen vlakke elementen (tri3, tri6, quad4, quad8). Line3-elementen worden axisymmetrische schalen met '#ASTER-PLANE AXIS', alleen in een model zonder vlakke elementen. | `AXIS`, of alleen vlakke elementen |
+| Axisymmetrische schalen samen met vlakke elementen | ERROR: Axisymmetrische schalen (…) samen met vlakke elementen (…) in een model worden (nog) niet vertaald: de koppeling van DRZ aan het volume is niet geverifieerd. | een soort per model |
+| Een truss, kabel, veer, gap of demper op line3-elementen met `AXIS` | ERROR: Elset '…' (…): met '#ASTER-PLANE AXIS' worden line3-elementen axisymmetrische schalen; truss, kabel, veer, gap en demper worden zo niet vertaald. | een isotroop materiaal |
+| Plasticiteit (of een hyperelastisch of orthotroop materiaal) op axisymmetrische schalen | ERROR: Elset '…': materiaal '…' heeft plasticiteit; axisymmetrische schalen rekenen (nog) alleen isotroop elastisch. | elastisch materiaal |
+| Een temperatuur of contact met axisymmetrische schalen | ERROR: … op axisymmetrische schalen (…) wordt (nog) niet vertaald. | laat het weg |
+| Traction, een kracht op faceid 1 of een centrifugaalkracht op axisymmetrische schalen | ERROR: … op '…' in een 2D-analyse: op axisymmetrische schalen alleen druk op de zijkant (faceid 1) van line3-elementen en kracht op knopen of elementuiteinden (faceid 2, 3); traction en kracht op de zijkant zijn niet geverifieerd. NIET meegenomen. (centrifugaal: … niet geverifieerd op axisymmetrische schalen (COQUE_AXIS). NIET meegenomen.) | een druk op faceid 1 of een kracht op knopen |
+| Aangrenzende line3-elementen in tegengestelde richting onder een druk | WARNING: Druk op '…': aangrenzende line3-elementen lopen in tegengestelde richting (knoop …); de druk werkt daar aan de andere kant (positieve druk duwt langs -n, n = Z x U, U van knoop 1 naar knoop 2). Keer die elementen om in Mecway. | keer de elementen om (figuur van §1.4.2) |
+| Een knoop van een axisymmetrische schaal op de as zonder opleggingen | WARNING: Axisymmetrische schaal: knoop … ligt op de as (X = 0) maar heeft niet zowel X als de rotatie om Z vast. Geef die knopen een Symmetry met normaal X (houdt X en de rotatie om Z vast). | *Symmetry* met normaal X op die knoop |
+| Axisymmetrische schalen in L30 met `deformation` `GROT_GDEP` (de standaard) | WARNING: Axisymmetrische schalen (…) rekenen met kleine verplaatsingen (DEFORMATION='PETIT'), niet met GROT_GDEP: grote verplaatsingen zijn op COQUE_AXIS niet vertaald. | niets te doen (of `PETIT`) |
 
 ## 2. Hoe de bridge vertaalt
 
@@ -650,11 +765,21 @@ rek) en voor 360 graden (gemeten). De bridge doet daarom:
 | druk, traction (Pa) | `PRES_REP`, `FORCE_CONTOUR` | geen |
 | zwaartekracht, centrifugaalkracht | `PESANTEUR`, `ROTATION` | geen |
 | reactiekrachten | `REAC_NODA` | × t of × 2π |
+| axisymmetrische schalen: moment op knopen (N m, totaal) | `FORCE_NODALE` MZ | / 2π |
+| axisymmetrische schalen: druk op faceid 1 (Pa) | `FORCE_COQUE` PRES | geen |
+| axisymmetrische schalen: reactiemomenten | `REAC_NODA` MZ | × 2π |
 
 De massa in de log (`BRIDGE_STATCHECK`) is die van de hele dikte of van 360 graden
 (Code-Aster's `MASS_INER` van `AXIS` is al voor 360 graden, gemeten).
 
 ### 2.3 Voorwaarden
+
+Axisymmetrische schalen (§1.4.2): line3-elementen worden `SEG3`-cellen met `COQUE_AXIS` en
+`AFFE_CARA_ELEM` `COQUE` met `EPAIS` (en `A_CIS`); `MODI_METRIQUE` blijft de standaard `NON`
+van Code-Aster (zoals ssls114i). Hun knopen hebben DX, DY en DRZ: `fixed` houdt ook DRZ vast,
+een `symmetry` met normaal X of Y ook DRZ = 0, een knooprotatie om Z is DRZ. Een druk op faceid
+1 is `FORCE_COQUE` `PRES` op een celgroep `BRAX<n>` van die elementen, met het teken waarmee hij
+langs −n duwt, n = Z × U (Code-Aster's eigen normaal van de cel is U × Z, gemeten: PL-64).
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` op meerdere knopen: de gemiddelde
 verplaatsing nul, `LIAISON_DDL` met gelijke gewichten op DX en DY (zoals Mecway 35: vlakke
@@ -720,14 +845,16 @@ extrapolatie (§5).
 
 KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md`: S16e (belastingen en elementen in de
 lineaire typen), S44 (niet-lineair, contact en thermisch: gebouwd, §1.4 en §1.4.1;
-axisymmetrische schalen, S44e: nog niet). A20 (akoestiek): §4. De letterlijke meldingen: §1.6
+axisymmetrische schalen, S44e: deel 1 gebouwd, §1.4.2). A20 (akoestiek): §4. De letterlijke meldingen: §1.6
 en §6.
 
 - Balken, truss, veren of volume-elementen in een 2D-analyse (Mecway's S20 kent balken
   en truss): ERROR, de bridge stopt.
-- Axisymmetrische schalen (lijnelementen in een axisymmetrisch model, Code-Aster
-  `COQUE_AXIS`): nog niet (gepland als STAPPENPLAN S44e). Lijnelementen in een 2D-model geven
-  de ERROR "Elset '…' bevat line2 …" (§1.6).
+- Axisymmetrische schalen (§1.4.2, Code-Aster `COQUE_AXIS`): nog geen spanningen en
+  snedekrachten (STAPPENPLAN S44e deel 2); line2, plasticiteit, mengen met vlakke elementen,
+  temperaturen, contact, centrifugaalkracht, traction, line pressure en een druk met een
+  formule in x, y, z: ERROR. Lijnelementen in een 2D-model van route B (S20, SA0, D20, DA0)
+  geven de ERROR "Elset '…' bevat line2 …" (§1.6).
 - Route A: contact alleen in L30 (in S30: ERROR); *Bonded* contact: ERROR; belastingen,
   opleggingen en contacten op de elementvlakken (faceid 5/6) in plaats van randen: ERROR, NIET
   meegenomen; de bezwijklus (`#ASTER-BEZWIJKEN`): WARNING, de elementen kunnen niet bezwijken
@@ -735,7 +862,8 @@ en §6.
 - Meerdere diktes, of vlakke spanning en vlakke rek in een model: ERROR.
 - Moment, line pressure, hydrostatische druk, frictionless en elastic support,
   compression only, node rotation, constraint equations, koppelingen, contact,
-  puntmassa's: ERROR (stop of overgeslagen).
+  puntmassa's: ERROR (stop of overgeslagen); op axisymmetrische schalen worden een moment en
+  een knooprotatie om Z vertaald (§1.4.2).
 - Temperaturen (thermal stress) in D20/DA0: ERROR (in S20/SA0 vertaald, §2.5). Een
   *Temperature* met een tijdtabel in S20/SA0 valt weg (WARNING), zoals in 3D Static;
   Mecway's eigen S20 en SA0 geven er ook geen uitzetting mee (headless gemeten).

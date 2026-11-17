@@ -96,7 +96,7 @@ S7, S8, S5, S9).
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | done (user OK pending on the PL-42 corner tolerance 5%) | S44a | route A: contact on edges; shrink fit PL-40/41, ssnp121a PL-42, `C_PLAN` PL-43, Hertz PL-45, friction PL-46 (13 and 17 Nov 2026); bonded contact in 2D not planned (ERROR); user test: Mecway's GUI offers shell edges for a contact; see §S44 |
 | S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | done | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57; piece 2 (chain in AXIS) built, PL-58, PL-59 (17 Nov 2026); open (not verified): the chain in C_PLAN/D_PLAN and a plastic chain in AXIS; tpla01 replaced by closed-form cases |
-| S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
+| S44e | Axisymmetric shells (`COQUE_AXIS`) | in progress | S16a | beams in S20 stay S16e; see §S44; piece 1 built (17 Nov 2026: displacements, `rotz`, reactions, PL-60 … PL-68), piece 2 open (shell stresses and section forces) |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
 | S45 | Results after a time limit in linear and thermal analyses (KNOWN_BUGS 137); extra time (`ExecutionParameter` `tpmax`, as `bridge_failure._extend_time`) around those commands, or a `POURSUITE` run for the post-processing | done (phase 1) | – | phase 1 (branch `stap-S45`, CHANGELOG V2026.13, 13 Nov 2026): linear static (`MECA_STATIQUE` `OPTION='SANS'`, `bridge_failure.late_time`, then the macro's `CALC_CHAMP` `SIEF_ELGA`) and a plain thermal solve, extra time after the solve, `BRIDGE_TIJD_LAAT` note; measured with delayed Code-Aster 17.4 runs (FX-04, TH-02a, WE-04b); phases 2 and 3 split off as S45b (low priority); the nonlinear solves and the step loops are done (branch `time-guard`, 11 Nov 2026: extra time after a `TimeLimitError` and after the solve, and the time guard of the loops, measured with `StopTest_LongRun`; released in V2026.12); scope (11 Nov 2026): only where results exist when the limit hits: after the solve (post-processing) for every analysis, and the archived steps of transient linear/thermal runs; a single linear solve or CALC_MODES that is not finished has no results |
@@ -2587,6 +2587,35 @@ top and bottom).
   M0 = p / (2β²), β⁴ = 3 (1 − ν²) / (R² t²), within 2%;
 - ssls100i through the bridge within its `TEST_RESU` tolerance; existing SA0 cases (PL)
   unchanged (regression D.5); docs NL+EN.
+
+**Findings piece 1 (17 Nov 2026, built in the worktree branch `stap-S44`; plan reviewed by
+Opus).** Input route (user decision 17 Nov 2026): route A, Static 3D (S30) or Nonlinear Static
+(L30) with line3 elements in the XY plane and `**ASTER-PLANE AXIS`; the thickness first from the
+new line `**ASTER-SHELL <material>: EPAIS=<t>[, A_CIS=<k>]` (alias `**ASTER-SCHAAL`, material split
+on the last colon, units m/mm/cm, the last line of a material counts), else the material's
+*Shell/membrane* thickness, else a *RectBar* (a along Mecway's V axis, b when V is along Z; an
+Element orientation card on the elements: ERROR); the line wins (INFO, WARNING when the values
+differ); no thickness: ERROR naming the three ways (`bridge_custom.parse_shells`,
+`bridge_plane._shell_thickness`). Only SEG3: every `COQUE_AXIS` test case of Code-Aster 17.4 uses
+SEG3 (SEG2 NOT verified), so line2 gives an ERROR. DOFs DX, DY, DRZ: *Fixed* holds DRZ, a symmetry
+with normal X or Y also DRZ = 0, a node rotation about Z is DRZ, a moment MZ / 2π, `reactionmomz`
+× 2π. The pressure on faceid 1 is `FORCE_COQUE` `PRES` on a cell group `BRAX<n>`; measured (PL-64,
+ssls114i): Code-Aster's normal of the cell is U × Z (U = node 1 → node 2), so the bridge writes
+`PRES` = −p and a positive pressure pushes along −n, n = Z × U (a chain drawn upwards at X > 0 gets
+an internal pressure). L30: `DEFORMATION='PETIT'` with a WARNING (message PLATE1_9 advises against
+updating the geometry of `COQUE_AXIS`). Refused with an ERROR: plasticity (needs `COQUE_NCOU`),
+mixing with plane elements (the DRZ junction NOT verified), temperatures, contact, centrifugal
+force, traction, force on faceid 1, line pressure, a pressure formula in x, y, z. Verification
+PL-60 … PL-68: membrane cylinder and sphere ≤ 1e-7, clamped plate w0 +0.03% and the rotation at
+a/2 +0.07%, the clamp moment of a long cylinder −0.94% (radial reaction −0.70%), ssls114i
+DX = 1.0000e-9 within 6e-15, a pressure time table in L30, a nodal force, a ring moment (+0.23%),
+gravity. Mecway has no axisymmetric shell type: no Mecway reference; how Mecway shows the result
+and whether Mecway's window accepts a pressure on the side of a line element in S30/L30 NOT
+verified. ssls100i itself not rebuilt (ssls114i and the closed-form plate instead).
+**Open for piece 2:** the shell stresses (`SIGM_ELNO` → `EXTR_COQUE` SUP/MOY/INF: SIXX
+meridional, SIYY hoop (ssls114i: 200 = p R / t)) and section forces (`EFGE_ELNO` NXX, NYY, MXX,
+MYY, QX) with Mecway's names on line elements (NOT verified which), the hoop stress check of the
+Done-when (p R / t, p R / (2t)), `reactionmommag` (not written: only `reactionmomz` exists).
 
 **S44f – modal and linear buckling in 2D/axisymmetric (later).**
 **Goal:** frequencies and linear buckling factors of plane and axisymmetric models; only when the

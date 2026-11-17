@@ -833,7 +833,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-59)
+### 2D en axisymmetrisch (PL-01 … PL-68)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -1028,6 +1028,46 @@ zijn gesloten vormen):
   keten): u_r(a) 1,0593e-04 m tegen de thermische oplossing plus de Lamé-oplossing in vlakke rek
   binnen 6,8e-6; de axiale reactie 8,2730e+06 N (thermisch 2π α E ∫ θ r dr min Lamé
   σ_z π(b² − a²), σ_z = 2νA) binnen 9,5e-7.
+
+Axisymmetrische schalen (STAPPENPLAN S44e deel 1, `tests_vlak_2d_coque.py`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.2):
+line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de dikte uit
+`**ASTER-SHELL` (PL-60, PL-63 … PL-68), *Shell/membrane* met dezelfde regel (PL-61) of een *RectBar*
+(PL-62). E = 210 GPa, ν = 0,3 (PL-64: 200 GPa). Gesloten vormen: Timoshenko & Woinowsky-Krieger
+(membraanoplossingen, de ingeklemde ronde plaat, de lange cilinder met een randbelasting, met
+β⁴ = 3(1 − ν²)/(R²t²)).
+
+- **PL-60** (dunne cilinder R = 0,5 m, t = 5 mm, L = 1 m, 20 line3, inwendige druk 1 MPa op
+  faceid 1, axiaal vrij): u_r = p R²/(E t) = 2,3810e-04 m (1,6e-14) en de axiale verkorting
+  −ν p R L/(E t) = −1,4286e-04 m (1,2e-13); tolerantie 0,5%.
+- **PL-61** (dunne bol R = 1 m, t = 10 mm, een kwart meridiaan van 32 line3, 0,1 MPa, *Symmetry*
+  met normaal Y op de evenaar en normaal X op de pool): u = p R² (1 − ν)/(2 E t) = 1,6667e-05 m
+  op de evenaar (−3,3e-8) en op de pool (+7,7e-8); tolerantie 0,5%.
+- **PL-62** (ingeklemde ronde plaat a = 1 m, t = 10 mm, 20 line3 vanuit het midden, q = 1000 Pa,
+  *Fixed support* aan de rand, *Symmetry* met normaal X in het midden): w0 = q a⁴/(64 D)
+  −8,1227e-04 m (+0,03%), de rotatie om Z bij r = a/2 3 q a³/(128 D) 1,2196e-03 rad
+  (+0,07%, positief: rechtsom om +Z), de som van de reacties q π a² 3141,6 N (4e-11);
+  tolerantie 0,5% en 1e-6.
+- **PL-63** (lange cilinder R = 1 m, t = 10 mm (R/t = 100), L = 0,5 m = 6,4/β, 100 line3 van
+  0,13/β, 0,1 MPa, *Fixed support* in de onderste knoop): het reactiemoment per omtrek
+  `reactionmomz` / (2πR) 299,78 N m/m tegen M0 = p/(2β²) = 302,61 (−0,94%) en de radiale
+  reactie −7725 N/m tegen −p/β = −7779,6 (−0,70%); tolerantie 2% (dunne-schaaltheorie tegen een
+  schaal met dwarsafschuiving).
+- **PL-64** (de Code-Aster-testcase ssls114i nagebouwd: R = 1 m, L = 0,5 m, t = 0,05 m,
+  2 line3 van B (y = 0) naar A, E = 200 GPa, 10 Pa op faceid 1, Y vast in B): DX = 1,0000e-09 m in
+  A, B en N1 tegen de `VALE_CALC` van `FORCE_COQUE` met `MODI_METRIQUE` `NON` (≤ 6e-15;
+  tolerantie 1e-6). Dit legt de kant van een druk vast: Code-Aster's eigen normaal van de cel is
+  U × Z, de bridge schrijft `PRES` = −p zodat een positieve druk langs −n duwt, n = Z × U.
+- **PL-65** (PL-60 als L30 met de druk als tijdtabel 0 … 1 MPa over 1 s in twee stappen,
+  `deformation` `GROT_GDEP` → `PETIT` met een WARNING): u_r op 0,5 s en 1 s (4e-14, 2e-14).
+- **PL-66** (de buis van PL-60, Y vast in de bovenste knoop, een kracht −1000 N langs Y op de
+  onderste knoop, totaal voor de ring): de verlenging F L/(2π R t E) −3,0315e-07 m (1,1e-13) en
+  de reactie 1000 N (1e-13): `FORCE_NODALE` / 2π en `REAC_NODA` × 2π.
+- **PL-67** (lange cilinder R = 1 m, t = 10 mm, L = 0,6 m, 120 line3, *Fixed support* boven,
+  een *Moment* om Z van 2π R × 100 N m/m op de vrije onderste knoop): de randverplaatsing
+  M0/(2β²D) 1,5736e-05 m (−1e-7) en de randrotatie M0/(βD) 4,0549e-04 rad (+0,23%);
+  tolerantie 2%; het moment in de inklemming −0,18 N m (uitgedempt, grens 1,26 N m).
+- **PL-68** (de buis van PL-60 met ρ = 7850 kg/m³, Y vast boven, zwaartekracht −9,81 m/s²
+  langs Y): de reactie ρ g 2π R t L = 1209,6 N (7e-14).
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

@@ -827,7 +827,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-59)
+### 2D and axisymmetric (PL-01 … PL-68)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -1016,6 +1016,46 @@ closed forms):
   chain): u_r(a) 1.0593e-04 m against the thermal solution plus the plane-strain Lamé solution
   within 6.8e-6; the axial reaction 8.2730e+06 N (thermal 2π α E ∫ θ r dr minus Lamé
   σ_z π(b² − a²), σ_z = 2νA) within 9.5e-7.
+
+Axisymmetric shells (STAPPENPLAN S44e piece 1, `tests_vlak_2d_coque.py`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.2):
+line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the thickness from
+`**ASTER-SHELL` (PL-60, PL-63 … PL-68), *Shell/membrane* with the same line (PL-61) or a *RectBar*
+(PL-62). E = 210 GPa, ν = 0.3 (PL-64: 200 GPa). Closed forms: Timoshenko & Woinowsky-Krieger
+(membrane solutions, the clamped circular plate, the edge-loaded long cylinder with
+β⁴ = 3(1 − ν²)/(R²t²)).
+
+- **PL-60** (thin cylinder R = 0.5 m, t = 5 mm, L = 1 m, 20 line3, internal pressure 1 MPa on
+  faceid 1, axially free): u_r = p R²/(E t) = 2.3810e-04 m (1.6e-14) and the axial shortening
+  −ν p R L/(E t) = −1.4286e-04 m (1.2e-13); tolerance 0.5%.
+- **PL-61** (thin sphere R = 1 m, t = 10 mm, a quarter meridian of 32 line3, 0.1 MPa, *Symmetry*
+  with normal Y at the equator and normal X at the pole): u = p R² (1 − ν)/(2 E t) = 1.6667e-05 m
+  at the equator (−3.3e-8) and at the pole (+7.7e-8); tolerance 0.5%.
+- **PL-62** (clamped circular plate a = 1 m, t = 10 mm, 20 line3 from the centre, q = 1000 Pa,
+  *Fixed support* at the edge, *Symmetry* with normal X at the centre): w0 = q a⁴/(64 D)
+  −8.1227e-04 m (+0.03%), the rotation about Z at r = a/2 3 q a³/(128 D) 1.2196e-03 rad
+  (+0.07%, positive: right-handed about +Z), the sum of the reactions q π a² 3141.6 N (4e-11);
+  tolerance 0.5% and 1e-6.
+- **PL-63** (long cylinder R = 1 m, t = 10 mm (R/t = 100), L = 0.5 m = 6.4/β, 100 line3 of
+  0.13/β, 0.1 MPa, *Fixed support* at the bottom node): the reaction moment per circumference
+  `reactionmomz` / (2πR) 299.78 N m/m against M0 = p/(2β²) = 302.61 (−0.94%) and the radial
+  reaction −7725 N/m against −p/β = −7779.6 (−0.70%); tolerance 2% (thin-shell theory against a
+  shell with transverse shear).
+- **PL-64** (the Code-Aster test case ssls114i rebuilt: R = 1 m, L = 0.5 m, t = 0.05 m,
+  2 line3 from B (y = 0) to A, E = 200 GPa, 10 Pa on faceid 1, Y held at B): DX = 1.0000e-09 m at
+  A, B and N1 against the `VALE_CALC` of `FORCE_COQUE` with `MODI_METRIQUE` `NON` (≤ 6e-15;
+  tolerance 1e-6). It fixes the side of a pressure: Code-Aster's own normal of the cell is U × Z,
+  the bridge writes `PRES` = −p so that a positive pressure pushes along −n, n = Z × U.
+- **PL-65** (PL-60 as L30 with the pressure as a time table 0 … 1 MPa over 1 s in two steps,
+  `deformation` `GROT_GDEP` → `PETIT` with a WARNING): u_r at 0.5 s and 1 s (4e-14, 2e-14).
+- **PL-66** (the tube of PL-60, Y held at the top node, a force −1000 N along Y on the bottom
+  node, total for the ring): the elongation F L/(2π R t E) −3.0315e-07 m (1.1e-13) and the
+  reaction 1000 N (1e-13): `FORCE_NODALE` / 2π and `REAC_NODA` × 2π.
+- **PL-67** (long cylinder R = 1 m, t = 10 mm, L = 0.6 m, 120 line3, *Fixed support* at the top,
+  a *Moment* about Z of 2π R × 100 N m/m on the free bottom node): the edge displacement
+  M0/(2β²D) 1.5736e-05 m (−1e-7) and the edge rotation M0/(βD) 4.0549e-04 rad (+0.23%);
+  tolerance 2%; the moment at the clamp −0.18 N m (decayed, limit 1.26 N m).
+- **PL-68** (the tube of PL-60 with ρ = 7850 kg/m³, Y held at the top, gravity −9.81 m/s²
+  along Y): the reaction ρ g 2π R t L = 1209.6 N (7e-14).
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

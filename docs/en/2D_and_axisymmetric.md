@@ -13,6 +13,7 @@ D_PLAN, C_PLAN"):
 | Static Axisymmetric (SA0) | no geometry (isotropic material) | `AXIS` | displacement X (radial), Y (axial); stress with `stresszz` = hoop stress; reactions for 360 degrees |
 | Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | as S20 / SA0 | as S20 / SA0, in time (§2.4) | as S20 / SA0 per output time, plus velocity and acceleration |
 | Acoustic Resonance 2D (A20) | *Speed of sound* (a thickness does not count) | `PHENOMENE='ACOUSTIQUE'`, `PLAN` (§4) | per mode the frequency and the pressure field `pressure`, as A30 |
+| Static 3D (S30), Nonlinear Static (L30) with line3 elements and `**ASTER-PLANE AXIS` | isotropic elastic; the thickness from `**ASTER-SHELL`, *Shell/membrane* or *RectBar* | `COQUE_AXIS` (§1.4.2) | displacement X, Y, rotation `rotz`; reactions and `reactionmomz` for 360 degrees; no stresses yet |
 
 The bridge analysis is `lin_static_3d` ("Static") for S20 and SA0 and `dyna_impl_3d`
 ("Dynamic (implicit)") for D20 and DA0: with "Active analysis (auto = follow Mecway)" =
@@ -83,7 +84,7 @@ where it is explained. "Example n" is a worked example with a model file in §1.
 | Heat transfer, axisymmetric | T30 or T31 | A | plane shell elements at X ≥ 0; *Shell/membrane* with any thickness; *Thermal conductivity* (T31 also *Specific heat* and *Density*) | `**ASTER-PLANE AXIS` | §1.4.1; example 5 |
 | Thermal stress from an axisymmetric heat transfer (chain thermal -> mechanical) | *Thermal Transient* (T31) with *Thermal stress* | A | as the row above, plus E, ν, *Thermal expansion* and supports | `**ASTER-PLANE AXIS` | §1.4.1; example 6 |
 | The chain thermal -> mechanical in plane stress or plane strain | – | – | – | not possible yet | §3 |
-| Axisymmetric shells (line elements) | – | – | – | not yet | §3 |
+| Axisymmetric shells (a thin wall of revolution, line elements), linear | *Static 3D* (S30) or *Nonlinear Static* (L30) | A | line3 elements in the XY plane at X ≥ 0; isotropic elastic; the thickness from the line, *Shell/membrane* or *RectBar* | `**ASTER-PLANE AXIS` and `**ASTER-SHELL <material>: EPAIS=<t>` | §1.4.2; example 7 |
 | Nonlinear dynamics, modes, buckling in 2D | – | – | – | not possible | §3 |
 
 Where to type the line: Mecway solves L30 only with CCX; choose CCX as the solver in
@@ -170,7 +171,8 @@ with one line to compute it in 2D (examples 2, 3 and 4 in §1.5):
    solver (Mecway only solves L30 with CCX). *Static 3D* (S30) works too (linear, as S20;
    no contact).
 2. **Mesh.** Plane elements tri3, tri6, quad4 or quad8 in the XY plane (Z = 0), nothing
-   else (no beams, trusses, springs or solids); in a 3D type Mecway treats them as shells.
+   else (no beams, trusses, springs or solids; line3 elements alone: §1.4.2); in a 3D type
+   Mecway treats them as shells.
    Axisymmetric: Y is the axis, X the radius, all nodes at X ≥ 0 (first figure).
 3. **Material.** A *Shell/membrane* geometry with a thickness (Mecway needs it for
    shells). For `C_PLAN` and `D_PLAN` it is the thickness t: Mecway's forces and the
@@ -317,9 +319,79 @@ shells with convection without the line exactly. Mecway has no axisymmetric ther
 so there is no Mecway reference; the Code-Aster test case tpla01 is replaced by these
 closed-form cases.
 
+### 1.4.2 Axisymmetric shells (line3, `COQUE_AXIS`)
+
+A thin-walled body of revolution (a tube, a vessel, a circular plate) can be computed as a
+shell along its meridian: line3 elements in the XY plane, Y the axis and X the radius,
+become Code-Aster's axisymmetric shell `COQUE_AXIS` (route A, STAPPENPLAN S44e). Worked
+example: example 7 in §1.5.
+
+![An axisymmetric shell: line3 elements on the mid-surface, the side of a pressure](../img/2d_axis_shell_side.svg)
+
+1. Mecway's Y axis: the axis of symmetry; X is the radius, all nodes at X ≥ 0.
+2. A line3 element on the mid-surface of the wall: node 1, midside node, node 2 (Mecway's order).
+3. U: from node 1 to node 2 of the element.
+4. n = Z × U: the side of the shell. For a chain drawn upwards (U = +Y) at X > 0 it points to the axis.
+5. A positive *Pressure* on faceid 1 (the side of a line element) pushes along −n: here outwards, an internal pressure.
+6. The wall thickness t, centred on the line of the nodes.
+7. Mecway's Z axis, out of the drawing.
+
+1. **Analysis type.** *Static 3D* (S30) or *Nonlinear Static* (L30, solver CCX).
+2. **Mesh.** Only line3 elements in the XY plane (Z = 0), all nodes at X ≥ 0; no plane
+   elements in the same model, no line2 (ERROR, §1.6). The direction of the elements sets the
+   side of a pressure (figure): draw a chain in one direction; neighbours that run the other
+   way give a WARNING.
+3. **Material.** Isotropic elastic: E, ν, a density for gravity. Plasticity, a hyperelastic
+   or an orthotropic material: ERROR.
+4. **The lines.** In CCX > *Custom model definition*:
+
+   ```
+   **ASTER-PLANE AXIS
+   **ASTER-SHELL Staal: EPAIS=5 mm
+   ```
+
+   `**ASTER-SHELL <material>: EPAIS=<thickness>` gives the thickness of the shells of that
+   material, in m or with `mm`, `cm`, `m`; optionally `, A_CIS=<value>` (the shear
+   coefficient, Code-Aster's default 5/6 without it). Dutch spelling: `**ASTER-SCHAAL`. The
+   material name is everything before the last colon. Without the line the bridge takes the
+   thickness from the *Shell/membrane* geometry of the material, or from a *RectBar*: the
+   dimension a (along Mecway's V axis, which lies in the XY plane by default; b when V is
+   along Z). Both present: the line counts (INFO, or a WARNING when the values differ). Several
+   lines for one material: the last one counts. No thickness at all: ERROR.
+5. **Supports** on nodes (node selection) or on the element ends (faceid 2 = node 1, faceid 3
+   = node 2): *Fixed support* holds X, Y and the rotation about Z (a clamp); *Pinned support*
+   X and Y; *Displacement* along X or Y; *Node rotation* about Z; *Symmetry* with normal X or
+   Y also holds the rotation about Z (a node on the axis: normal X; a plane of symmetry
+   Y = constant: normal Y). A node on the axis (X = 0) without X and the rotation about Z
+   held: WARNING. One support in Y against motion along the axis.
+6. **Loads.** *Pressure* on faceid 1 of the line elements (the side as in the figure; a value
+   or a time table); *Force* and *Moment* (about Z) on nodes or element ends, the total of the
+   whole ring (360 degrees, as the forces of §2.2); *Gravity* along Y. Not translated:
+   traction, a force on faceid 1, a pressure with a formula in x, y, z, line pressure,
+   centrifugal force, temperatures and contact (§1.6).
+7. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `lin_static_3d` or
+   `nonlin_static_3d`) and "Results to Mecway" `liml`. The log shows per elset
+   `INFO: Elset '…' -> MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness … m
+   (Mecway S30).` and once `INFO: 2D analysis S30: axisymmetric shells (COQUE_AXIS) about Y;
+   …`. In L30 the shells are computed with small displacements (`deformation` other than
+   `PETIT`: WARNING; Code-Aster advises against updating the geometry of `COQUE_AXIS`).
+
+Results in Mecway: `displx` (radial), `disply` (axial), `displmag`, `rotz` (the rotation
+about Z, right-handed: positive turns X towards Y), `reactionforcex`, `reactionforcey`,
+`reactionforcemag` and `reactionmomz`, the reactions for 360 degrees (× 2π). Not yet: the
+stresses and section forces of the shell (meridional and hoop stress, top and bottom;
+STAPPENPLAN S44e piece 2); the log says so (INFO) and the bridge writes no stress field.
+Verified with Code-Aster 17.4 (PL-60 … PL-68, [`Verification.md`](Verification.md)): a
+membrane cylinder and sphere within 1e-7, a clamped circular plate 0.03% (deflection) and
+0.07% (rotation), the clamp moment of a long cylinder −0.94% (p / (2β²)), the Code-Aster test
+case ssls114i exact, a pressure as a time table in L30, a nodal force, a ring moment (0.23%)
+and gravity. NOT verified: how Mecway shows these results and whether Mecway's window accepts
+the inputs (a pressure on the side of a line element in S30 or L30; Mecway's own solve
+computes the line elements as beams, not as this shell).
+
 ### 1.5 Worked examples
 
-Six models in the repository, one per kind of use; open one in Mecway to see every setting:
+Seven models in the repository, one per kind of use; open one in Mecway to see every setting:
 
 | Example | File (`TestFiles/Verificatie/modellen/`) | Route | Mecway type | Line | What it shows |
 |---|---|---|---|---|---|
@@ -329,6 +401,7 @@ Six models in the repository, one per kind of use; open one in Mecway to see eve
 | 4 | `PL-40.liml` | A | L30 | `**ASTER-PLANE AXIS` | contact: a shrink fit of two rings |
 | 5 | `PL-50.liml` | A | T30 | `**ASTER-PLANE AXIS` | heat transfer through a tube wall |
 | 6 | `PL-58.liml` (and `PL-59.liml`) | A | T31 | `**ASTER-PLANE AXIS` | the chain thermal -> mechanical: thermal stress in a tube |
+| 7 | `PL-60.liml` (and `PL-62.liml`) | A | S30 | `**ASTER-PLANE AXIS`, `**ASTER-SHELL` | an axisymmetric shell: a thin cylinder under internal pressure |
 
 Before you start:
 
@@ -342,7 +415,7 @@ Before you start:
 - The files have no solver set: choose CCX in *Analysis settings* to see the line in CCX >
   *Custom model definition* (the bridge reads it anyway).
 - The models were made by the scripts `tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py`,
-  `tests_vlak_2d_contact.py` and `tests_vlak_2d_thermisch_axis.py` in `TestFiles/Verificatie/`
+  `tests_vlak_2d_contact.py`, `tests_vlak_2d_thermisch_axis.py` and `tests_vlak_2d_coque.py` in `TestFiles/Verificatie/`
   and computed with the bridge (results against closed forms, [`Verification.md`](Verification.md)
   §2D and axisymmetric). Route A was not yet checked in Mecway's window: whether Mecway lets you
   pick shell edges for a *Contact* and how it shows a route-A result is NOT verified. Mecway's own
@@ -563,6 +636,34 @@ Steps:
    wall, `stressxx` (σ_r) −28.33 MPa at mid-wall; the axial reaction (360 degrees) 9.2155 MN
    in magnitude. `PL-59.liml` is the same with a *Pressure* of 50 MPa on `Binnen`.
 
+**Example 7 – route A: an axisymmetric shell, a thin cylinder (`PL-60.liml`).**
+
+1. *Analysis settings*: *Static 3D* (S30).
+2. Mesh: elset `Buis`, 20 line3 elements on the line X = 0.5 m, Y = 0 … 1 m, drawn from the
+   bottom to the top (node 1 of every element below its node 2).
+3. Material `Staal`: isotropic E, ν; no geometry (the thickness comes from the line).
+4. Supports and loads:
+
+   | Selection | Where | Mecway item |
+   |---|---|---|
+   | `Binnen` (face selection, 20 faces) | faceid 1 of every element | *Pressure* 1 MPa (pushes outwards: an internal pressure, figure of §1.4.2) |
+   | `Onder` (node selection, 1 node) | the bottom node (0.5, 0) | *Displacement* along Y, value 0 |
+
+5. The lines: in CCX > *Custom model definition*
+
+   ```
+   **ASTER-PLANE AXIS
+   **ASTER-SHELL Staal: EPAIS=0.005
+   ```
+
+6. Bridge: `auto` (→ `lin_static_3d`), `liml`. The log shows `INFO: Elset 'Buis' ->
+   MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness 0.005 m (Mecway S30).`
+7. Results: `displx` = the radial displacement p R² / (E t) = 0.2381 mm everywhere,
+   `disply` at the top −ν p R L / (E t) = −0.1429 mm (the free end shortens). `PL-62.liml` is
+   a clamped circular plate (the thickness from a *RectBar* with a = 10 mm, *Fixed support* at
+   the edge, *Symmetry* with normal X on the centre node); `PL-64.liml` is the Code-Aster test
+   case ssls114i.
+
 ### 1.6 Common mistakes
 
 The messages in the log, word for word; '…' stands for a name or number of your model. An
@@ -606,6 +707,21 @@ Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
 | The chain (T31 with *Thermal stress*, `AXIS`) with the result route `tabel` | ERROR: An axisymmetric thermomechanical chain (T31) only works with the result route 'liml' (General page); the route 'tabel' does not scale the reaction forces to 360 degrees. | result route `liml` |
 | Contact, a node-surface coupling, bonded contact or an initial velocity in the chain | ERROR: … in an axisymmetric thermomechanical chain (T31) is not translated (yet). | leave it out |
 | A constraint equation, flexible joint or element offset in the chain | WARNING: … on '…' is not translated in the thermal -> mechanical chain (Thermal stress in a T31 model); the mechanical solve runs without it. | leave it out, or compute in 3D |
+| Axisymmetric shells (§1.4.2) of line2 elements | ERROR: Elset '…' contains line2 elements; axisymmetric shells ('#ASTER-PLANE AXIS', …) only with line3 (COQUE_AXIS on SEG3, as in all Code-Aster test cases). Make the elements quadratic in Mecway. | line3 elements |
+| Axisymmetric shells without a thickness | ERROR: Elset '…': axisymmetric shell without a thickness. Give the thickness with the line '**ASTER-SHELL …: EPAIS=<thickness>' (in CCX > Custom model definition), with a Shell/membrane geometry of material '…', or with a RectBar (dimension a in the XY plane). (With another beam geometry or a RectBar that cannot be read, its reason in brackets after "thickness".) | the line `**ASTER-SHELL` (§1.4.2 step 4) |
+| A wrong `**ASTER-SHELL` line | ERROR: '#ASTER-SHELL …': expected '<material>: EPAIS=<thickness>' with a thickness > 0 in m (or with mm, cm), optionally ', A_CIS=<value>'. | write `**ASTER-SHELL Staal: EPAIS=5 mm` (a decimal point, keys separated by commas) |
+| `**ASTER-SHELL` with a material name that does not exist | ERROR: #ASTER-SHELL '…': no material with this name (renamed?). | the name of the Mecway material |
+| `**ASTER-SHELL` and the geometry of the material give another thickness | WARNING: Elset '…': #ASTER-SHELL EPAIS=… m counts; Shell/membrane of material '…' is … m. | the line counts; make them equal |
+| `**ASTER-SHELL` in a model without axisymmetric shells | WARNING: #ASTER-SHELL only counts for axisymmetric shells (line3 elements with '#ASTER-PLANE AXIS' in Static 3D (S30) or Nonlinear Static (L30)); the line is ignored here. | remove the line |
+| Line elements with `**ASTER-PLANE C_PLAN` or `D_PLAN` | ERROR: Elset '…' contains line3; with '#ASTER-PLANE C_PLAN' the bridge only translates plane elements (tri3, tri6, quad4, quad8). Line3 elements become axisymmetric shells with '#ASTER-PLANE AXIS', only in a model without plane elements. | `AXIS`, or only plane elements |
+| Axisymmetric shells together with plane elements | ERROR: Axisymmetric shells (…) together with plane elements (…) in one model are not translated (yet): the coupling of DRZ to the solid is not verified. | one kind per model |
+| A truss, cable, spring, gap or damper on line3 elements with `AXIS` | ERROR: Elset '…' (…): with '#ASTER-PLANE AXIS' line3 elements become axisymmetric shells; truss, cable, spring, gap and damper are not translated that way. | an isotropic material |
+| Plasticity (or a hyperelastic or orthotropic material) on axisymmetric shells | ERROR: Elset '…': material '…' has plasticity; axisymmetric shells are only computed isotropic elastic (yet). | elastic material |
+| A temperature or contact with axisymmetric shells | ERROR: … on axisymmetric shells (…) is not translated (yet). | leave it out |
+| Traction, a force on faceid 1 or a centrifugal force on axisymmetric shells | ERROR: … on '…' in a 2D analysis: on axisymmetric shells only pressure on the side (faceid 1) of line3 elements and force on nodes or element ends (faceid 2, 3); traction and force on the side are not verified. NOT included. (centrifugal: … not verified on axisymmetric shells (COQUE_AXIS). NOT included.) | a pressure on faceid 1 or a force on nodes |
+| Neighbouring line3 elements in opposite directions under one pressure | WARNING: Pressure on '…': neighbouring line3 elements run in opposite directions (node …); the pressure acts on the other side there (a positive pressure pushes along -n, n = Z x U, U from node 1 to node 2). Reverse those elements in Mecway. | reverse the elements (figure of §1.4.2) |
+| A node of an axisymmetric shell on the axis without supports | WARNING: Axisymmetric shell: node … lies on the axis (X = 0) but does not have both X and the rotation about Z held. Give those nodes a Symmetry with normal X (holds X and the rotation about Z). | *Symmetry* with normal X on that node |
+| Axisymmetric shells in L30 with `deformation` `GROT_GDEP` (the default) | WARNING: Axisymmetric shells (…) are computed with small displacements (DEFORMATION='PETIT'), not with GROT_GDEP: large displacements are not translated on COQUE_AXIS. | nothing to do (or `PETIT`) |
 
 ## 2. How the bridge translates
 
@@ -634,11 +750,21 @@ strain) and for 360 degrees (measured). The bridge therefore:
 | pressure, traction (Pa) | `PRES_REP`, `FORCE_CONTOUR` | none |
 | gravity, centrifugal force | `PESANTEUR`, `ROTATION` | none |
 | reaction forces | `REAC_NODA` | × t or × 2π |
+| axisymmetric shells: moment on nodes (N m, total) | `FORCE_NODALE` MZ | / 2π |
+| axisymmetric shells: pressure on faceid 1 (Pa) | `FORCE_COQUE` PRES | none |
+| axisymmetric shells: reaction moments | `REAC_NODA` MZ | × 2π |
 
 The mass in the log (`BRIDGE_STATCHECK`) is that of the whole thickness or of 360
 degrees (Code-Aster's `MASS_INER` of `AXIS` is already for 360 degrees, measured).
 
 ### 2.3 Constraints
+
+Axisymmetric shells (§1.4.2): line3 elements become `SEG3` cells with `COQUE_AXIS` and
+`AFFE_CARA_ELEM` `COQUE` with `EPAIS` (and `A_CIS`); `MODI_METRIQUE` stays Code-Aster's
+default `NON` (as ssls114i). Their nodes have DX, DY and DRZ: `fixed` holds DRZ too, a
+`symmetry` with normal X or Y also DRZ = 0, a node rotation about Z is DRZ. A pressure on faceid
+1 is `FORCE_COQUE` `PRES` on a cell group `BRAX<n>` of those elements with the sign that makes
+it push along −n, n = Z × U (Code-Aster's own normal of the cell is U × Z, measured: PL-64).
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` on several nodes: the mean
 displacement zero, `LIAISON_DDL` with equal weights on DX and DY (as Mecway 35: plane
@@ -703,20 +829,23 @@ within the element); nodal stresses differ by the extrapolation (§5).
 
 KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md`: S16e (loads and elements in the linear
 types), S44 (nonlinear, contact and thermal: built, §1.4 and §1.4.1; axisymmetric shells,
-S44e: not yet). A20 (acoustics): §4. The exact messages: §1.6 and §6.
+S44e: piece 1 built, §1.4.2). A20 (acoustics): §4. The exact messages: §1.6 and §6.
 
 - Beams, trusses, springs or solids in a 2D analysis (Mecway's S20 allows beams and
   trusses): ERROR, the bridge stops.
-- Axisymmetric shells (line elements in an axisymmetric model, Code-Aster `COQUE_AXIS`):
-  not yet (planned as STAPPENPLAN S44e). Line elements in a 2D model give the ERROR
-  "Elset '…' contains line2 …" (§1.6).
+- Axisymmetric shells (§1.4.2, Code-Aster `COQUE_AXIS`): no stresses and section forces
+  yet (STAPPENPLAN S44e piece 2); line2, plasticity, mixing with plane elements,
+  temperatures, contact, centrifugal force, traction, line pressure and a pressure with a
+  formula in x, y, z: ERROR. Line elements in a route-B 2D model (S20, SA0, D20, DA0) give the
+  ERROR "Elset '…' contains line2 …" (§1.6).
 - Route A: contact only in L30 (in S30: ERROR); *Bonded* contact: ERROR; loads, supports and
   contacts on the element faces (faceid 5/6) instead of edges: ERROR, NOT included; the
   failure loop (`#ASTER-BEZWIJKEN`): WARNING, the elements cannot fail (NOT verified in 2D).
 - Several thicknesses, or plane stress and plane strain in one model: ERROR.
 - Moment, line pressure, hydrostatic pressure, frictionless and elastic support,
   compression only, node rotation, constraint equations, couplings, contact, point
-  masses: ERROR (stop or skipped).
+  masses: ERROR (stop or skipped); on axisymmetric shells a moment and a node rotation
+  about Z are translated (§1.4.2).
 - Temperatures (thermal stress) in D20/DA0: ERROR (in S20/SA0 translated, §2.5). A
   *Temperature* with a time table in S20/SA0 is left out (WARNING), as in 3D Static;
   Mecway's own S20 and SA0 give no expansion with it either (measured headless).
