@@ -502,7 +502,9 @@ Mecway's eigen solver en CCX ([`Verificatie.md`](Verificatie.md) §7, BU-30 … 
 - **T-, C- en L-profielen**: het dwarskrachtcentrum ligt niet in het zwaartepunt, dus
   buiging en torsie koppelen (buig-torsieknik). `POU_D_E` mist die koppeling en geeft
   dan te hoge factoren: C-kolom 100 × 50 × 6 mm 616 tegen 393 (hex20). De bridge geeft
-  bij knik met deze profielen een WARNING. Kies dan `elem_beam` = `POU_D_TG` (§3.5.1;
+  bij knik met deze profielen een WARNING, en bij een *General section* waarvan de
+  `#ASTER-SECTIE`-regel (MecwaySectionProps) een excentrisch dwarskrachtcentrum geeft
+  (`EY`/`EZ`). Kies dan `elem_beam` = `POU_D_TG` (§3.5.1;
   dezelfde kolom 385,0) of controleer met `COQUE_3D`-schalen of volume-elementen
   (KNOWN_BUGS 115).
 - **Schaalmodellen van profielen**: de geometrische stijfheid van DKT/DST kent alleen de
@@ -624,7 +626,7 @@ U4.42.01 §9.4.3, testcase ssll103a). Mecway heeft geen keuze voor dit element.
 | alarm `ALGELINE2_74` | een van de `VERI_MODE`-controles is niet gehaald | zie de alarmen ervoor en de tabel in de `.mess` |
 | `<EXCEPTION> <FACTOR_57>` in de statische stap; de bridge meldt de geschatte fout | fout < 1e-3: slecht geconditioneerd (slank volumemodel op buiging), geen mechanisme; groter: een mechanisme | kleine fout: *Nauwkeurigheid oplosser (RESI_RELA)* op de waarde uit de melding; anders opleggingen controleren ([Foutmeldingen](Foutmeldingen_CodeAster.md), `FACTOR_57`) |
 | WARNING: Negatieve kniklastfactor(en) | knik bij de omgekeerde last (bijv. trek in plaats van druk) | controleer de richting van de last; alleen positieve factoren horen bij de aangebrachte richting |
-| WARNING: Knik met T-, C- of L-profielen | buig-torsieknik ontbreekt in de balkelementen (dwarskrachtcentrum, welving) | kies `elem_beam` = `POU_D_TG` (§3.5.1) of controleer met `COQUE_3D`-schalen of volume-elementen (KNOWN_BUGS 115) |
+| WARNING: Knik met T-, C- of L-profielen of een General section met een excentrisch dwarskrachtcentrum | buig-torsieknik ontbreekt in de balkelementen (dwarskrachtcentrum, welving) | kies `elem_beam` = `POU_D_TG` (§3.5.1) of controleer met `COQUE_3D`-schalen of volume-elementen (KNOWN_BUGS 115) |
 | WARNING: Knik met DKT-schalen | DKT/DST hebben geen geometrische stijfheid voor een plaat die in haar eigen vlak beweegt (§3.5) | bij een profiel uit platen: kies `elem_shell` = `COQUE_3D`; een plaat die uit haar vlak knikt is goed (KNOWN_BUGS 132) |
 | WARNING: Balk-elset ... (POU_D_TG): geen welvingsconstante en geen dwarskrachtcentrum bekend | *General section* zonder `#ASTER-SECTIE`-regel | maak de doorsnede met MecwaySectionProps (regel met `JG`, `EY`, `EZ`), of kies een I-, T-, C- of L-profiel (§3.5.1) |
 | WARNING: Balk-elset ... (POU_D_TG): #ASTER-SECTIE heeft geen JG | oude regel zonder welvingsconstante | maak de regel opnieuw met MecwaySectionProps |

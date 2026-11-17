@@ -193,6 +193,39 @@ def test_buckling_beam_notes():
         b2a.log = saved
 
 
+def test_buckling_general_eccentric():
+    """KNOWN_BUGS 115: the buckling WARNING also for a general section
+    whose #ASTER-SECTIE line gives an eccentric shear centre."""
+    import bridge_to_aster as b2a
+    lines = []
+    saved = b2a.log
+    b2a.log = lines.append
+    try:
+        cara = ("A", "IY", "IZ", "JX", "EY", "EZ")
+        for vale, mods, warn in (
+                ((1e-3, 1e-6, 2e-6, 1e-8, 0.012, 0.0), {}, True),
+                ((1e-3, 1e-6, 2e-6, 1e-8, 1e-9, 0.0), {}, False),
+                ((1e-3, 1e-6, 2e-6, 1e-8, 0.012, 0.0),
+                 {"G": "POU_D_TG"}, False)):
+            del lines[:]
+            secs = {"G": {"geom_type": "UniformGeneralSection",
+                          "cara": cara, "vale": vale}}
+            b2a._buckling_beam_notes({"beam_sections": secs,
+                                      "elset_modelisations": mods})
+            text = "\n".join(lines)
+            check(("eccentric shear centre" in text) == warn,
+                  "general section EY {0}, {1}: WARNING {2}".format(
+                      vale[4], sorted(mods.items()), warn))
+        del lines[:]
+        b2a._buckling_beam_notes({"beam_sections": {"G": {
+            "geom_type": "UniformGeneralSection", "cara": cara[:4],
+            "vale": (1e-3, 1e-6, 2e-6, 1e-8)}}, "elset_modelisations": {}})
+        check("eccentric shear centre" not in "\n".join(lines),
+              "general section without #ASTER-SECTIE: no WARNING")
+    finally:
+        b2a.log = saved
+
+
 def test_buckling_shell_notes():
     """KNOWN_BUGS 132: WARNING only with DKT/DST shells; another advice
     when COQUE_3D fell back to DKT."""
@@ -230,6 +263,7 @@ def main():
         test_buckling_truss(tmp)
         test_buckling_beam_notes()
         test_buckling_shell_notes()
+        test_buckling_general_eccentric()
     finally:
         u.CONFIG_BRIDGE.clear()
         u.CONFIG_BRIDGE.update(saved)
