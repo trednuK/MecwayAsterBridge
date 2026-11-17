@@ -42,7 +42,8 @@ Voorwaarden:
   (BilinearKinematic of een lineaire kinematische curve) met een *tangent modulus* > 0;
 - de elementen zijn **volume-elementen** (hex, tet, wedge, pyr; ook met de
   hex8-keuze `LINE_QUAD`) of **schalen** (tri3/quad4 als DKT; kwadratisch of met
-  *Lineaire schalen* = `COQUE_3D` als `COQUE_3D`); **geen balken**;
+  *Lineaire schalen* = `COQUE_3D` als `COQUE_3D`); **geen balken** en geen
+  2D-elementen (`C_PLAN`, `D_PLAN`, `AXIS`);
 - het model heeft geen balken met grote rotaties (`elem_beam` = `POU_D_T_GD`): na een
   bezweken element vraagt de volgende stap `RIGI_MECA`, die dat element niet heeft
   (`CALCUL_37`); de bridge stopt vooraf met een ERROR;

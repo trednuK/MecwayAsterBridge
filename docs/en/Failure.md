@@ -41,7 +41,8 @@ Conditions:
   (BilinearKinematic or a linear kinematic curve) with a *tangent modulus* > 0;
 - the elements are **solid elements** (hex, tet, wedge, pyr; also with the hex8
   choice `LINE_QUAD`) or **shells** (tri3/quad4 as DKT; quadratic or with linear
-  shells = `COQUE_3D` as `COQUE_3D`); **no beams**;
+  shells = `COQUE_3D` as `COQUE_3D`); **no beams** and no 2D elements
+  (`C_PLAN`, `D_PLAN`, `AXIS`);
 - the model has no beams with large rotations (`elem_beam` = `POU_D_T_GD`): after a
   failed element the next step needs `RIGI_MECA`, which that element does not have
   (`CALCUL_37`); the bridge stops beforehand with an ERROR;

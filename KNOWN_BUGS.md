@@ -79,13 +79,14 @@ Code-Aster value per node) and logs the largest difference per variable.
 46\. **Buckling: negative buckling load factors and Mecway's shift** (confirmed with runs,
    `bridge_to_aster._calc_modes_block`). The bridge searches for the smallest |CHAR_CRIT|
    (`PLUS_PETITE`) and also shows negative factors (buckling under the reversed load;
-   WARNING). Mecway only searches for positive factors above its *Shift point*: a
-   column in tension gave 8.5e13 in Mecway (meaningless), in the bridge -10.36 / -23.32 /
-   -93.27 (the compression buckling with a minus sign). Mecway's shift is a setting of its
-   solver and is not used (only reported); searching around a buckling load factor
-   is not possible (Code-Aster 17.4 ignores `OPTION='CENTRE'` for buckling). Rigid-body
-   modes of a free model get a frequency of ~1e-4 Hz in the bridge, sometimes negative
-   (numerically zero); Mecway writes 0 or a small positive number.
+   WARNING). Mecway only finds positive factors: a column in tension gave 8.5e13 in Mecway
+   (meaningless), in the bridge -10.36 / -23.32 / -93.27 (equal to the compression factors
+   of BU-01 with a minus sign). Mecway's *Shift point* is a setting of its solver, not a
+   search centre (BucklingPlate with shift 1000 gave factors 7…12); the bridge does not
+   use it (INFO). Searching around a buckling load factor is not offered (Code-Aster 17.4
+   ignores `OPTION='CENTRE'` for buckling; `OPTION='BANDE'` works). Rigid-body modes of a
+   free model get a frequency of ~1e-4 Hz in the bridge, sometimes negative (numerically
+   zero); Mecway writes 0 or a small positive number.
 
 60\. **Isotropic material without Young's modulus: bridge E = 210 GPa, Mecway E = 0**
    (confirmed in the code, `bridge_from_liml.py`, material block: `youngsmodulus` with default
@@ -277,28 +278,31 @@ Code-Aster value per node) and logs the largest difference per variable.
    pinned support, couplings, frictionless/symmetry among each other with different
    relations, and skewed overlap.
 
-9\. **Failure not for beams; kinematic hardening with the current plastic
+9\. **Failure not for beams and 2D; kinematic hardening with the current plastic
    strain** (confirmed; `bridge_failure.py`, `docs/Bezwijken.md`). Code-Aster does not remove
    elements; the bridge gives failed elements (plastic strain above
    `#ASTER-BEZWIJKEN`, PLAS_TAB Eps_p_max or `failure_plastic_strain`) a very low
    stiffness and zero stress, in STAT_NON_LINE and DYNA_NON_LINE. That works for
-   solid elements (PETIT, GDEF_LOG, SIMO_MIEHE) and shells (DKT: PETIT/GREEN_LAGRANGE;
-   COQUE_3D: PETIT/GROT_GDEP), with as criterion the average over all
+   solid elements (PETIT, PETIT_REAC, GDEF_LOG, SIMO_MIEHE) and shells (DKT:
+   PETIT/GREEN_LAGRANGE; COQUE_3D: PETIT/GROT_GDEP), with as criterion the average over all
    integration points, for shells also over the sub-points through the thickness. Not done
-   (message + skipped_loads): beams (Code-Aster only supports plasticity in
-   multifibre beams, POUTRE0_61). With `VMIS_CINE_LINE` the strain comes from the back stress
-   (X = 2/3 H εp, H = Mecway's tangent modulus): that is the current, not the accumulated
-   plastic strain (WARNING), and without hardening (tangent modulus 0) nothing
-   fails. OpenRadioss `/FAIL`: only
-   /FAIL/JOHNSON with a fixed failure strain (D4=D5=0, D2·D3=0) in the material field becomes
-   Eps_p_max; other /FAIL cards and /FAIL in the model definition are reported.
-   Dynamic: only checked at the output times; implicit gives the alarm
-   MECANONLINE4_50.
+   (message + skipped_loads): beams (Code-Aster only supports plasticity in multifibre
+   beams, POUTRE0_61) and 2D elements (C_PLAN, D_PLAN, AXIS: the failure loop is NOT
+   verified in 2D). With `VMIS_CINE_LINE` the strain comes from the back stress
+   (X = 2/3 H εp, H = the plastic modulus: Mecway's tangent modulus, or the slope of a
+   linear kinematic curve; Code-Aster gets Et = E H / (E + H)): that is the current, not the
+   accumulated plastic strain (WARNING), and without hardening (tangent modulus 0) nothing
+   fails (WARNING). OpenRadioss `/FAIL`: only /FAIL/JOHNSON with a fixed failure strain
+   (D4=D5=0, D2·D3=0) in the material field becomes Eps_p_max; other /FAIL cards and /FAIL
+   in the model definition are reported. Dynamic: only checked at the output times;
+   implicit gives the alarm MECANONLINE4_50.
 
 10\. **Contact pairs with shared slave nodes are merged** (confirmed,
    `bridge_mesh._merge_contact_zones`). Code-Aster forbids shared slave nodes
    between zones (CONTACT2_16); the bridge makes one zone of them (master = union,
-   slave = union, largest friction coefficient) and logs that.
+   slave = union, largest friction coefficient and, for `contact_algo` = PENALISATION,
+   largest normal and tangential stiffness; the other settings of the first pair) with a
+   WARNING, and an extra WARNING if the friction coefficients differ.
 
 11\. **Large rotations: beams, prescribed rotations and rigid couplings** (confirmed).
    With `deformation` = GROT_GDEP the bridge chooses a large-displacement formulation per

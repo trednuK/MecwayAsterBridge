@@ -796,9 +796,11 @@ Code-Aster verbiedt knopen die in de slave-vlakken van twee zones zitten
 
 De bridge voegt zulke paren samen tot één zone: master = unie van de masters,
 slave = unie van de slaves (`DEFI_GROUP ... UNION`, groepen `CMAIT<n>`/`CESCL<n>`).
-Wrijving: de grootste coëfficiënt; staat er een WARNING in `<model>_<run-id>_bridge_log.txt` als
-die verschilden (KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master
-en slave wisselen) gebruikt de bridge niet: dan wordt het stijve gereedschap slave.
+Wrijving: de grootste coëfficiënt; met `contact_algo` = PENALISATION ook de grootste
+normaal- en tangentiële stijfheid. Elke samenvoeging zet een WARNING in
+`<model>_<run-id>_bridge_log.txt`, en nog een als de wrijvingscoëfficiënten verschilden
+(KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master en slave wisselen)
+gebruikt de bridge niet: dan wordt het stijve gereedschap slave.
 
 Master- en slave-vlak van **één** zone mogen ook geen knopen delen, anders stopt
 Code-Aster (U2.04.04 §2.3.4). De bridge sluit zulke knopen niet uit.

@@ -2409,8 +2409,9 @@ uit de door de bridge gevulde `.liml` met dezelfde waarden.
   MO-10 geeft die 12 modes van 0 Hz (twee losse blokken) en daarna 1578,9 Hz; met de
   CCX-solver geeft Mecway 6 starre modes en 409,777 Hz, zoals de bridge (headless
   gemeten 29 okt 2026).
-- Teken: BucklingBeam (druk) geeft `CHAR_CRIT` = +41124,7; dezelfde kolom onder trek
-  −10,36 / −23,32 / −93,27 (Mecway zelf 8,5e13; KNOWN_BUGS 46).
+- Teken: BucklingBeam (druk) geeft `CHAR_CRIT` = +41124,7; een kolom onder trek
+  −10,36 / −23,32 / −93,27, de factoren van BU-01 met een minteken (Mecway zelf 8,5e13;
+  KNOWN_BUGS 46).
 
 ### Balkorientatie (MO-20 … MO-29, LS-70 … LS-78, BU-20 … BU-24)
 

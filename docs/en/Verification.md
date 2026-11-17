@@ -2393,8 +2393,9 @@ reads `solution.modes()`, `frequency(m)` / `buckling_factor(m)` and
   solver does not apply bonded contact in a modal analysis: on MO-10 it gives 12 modes
   at 0 Hz (two separate blocks) and then 1578.9 Hz; with the CCX solver Mecway gives
   6 rigid modes and 409.777 Hz, like the bridge (measured headless 29 Oct 2026).
-- Sign: BucklingBeam (compression) gives `CHAR_CRIT` = +41124.7; the same column in
-  tension −10.36 / −23.32 / −93.27 (Mecway itself 8.5e13; KNOWN_BUGS 46).
+- Sign: BucklingBeam (compression) gives `CHAR_CRIT` = +41124.7; a column in
+  tension −10.36 / −23.32 / −93.27, the factors of BU-01 with a minus sign (Mecway itself
+  8.5e13; KNOWN_BUGS 46).
 
 ### Beam orientation (MO-20 … MO-29, LS-70 … LS-78, BU-20 … BU-24)
 

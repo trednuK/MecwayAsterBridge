@@ -785,9 +785,11 @@ that is slave against a blade and against a contour).
 
 The bridge merges such pairs into one zone: master = union of the masters, slave =
 union of the slaves (`DEFI_GROUP ... UNION`, groups `CMAIT<n>`/`CESCL<n>`). Friction:
-the largest coefficient; a WARNING is written to `<model>_<run-id>_bridge_log.txt` if
-they differed (KNOWN_BUGS 10). The solution suggested by `CONTACT2_16` itself (swapping
-master and slave) is not used by the bridge: the stiff tool would then become slave.
+the largest coefficient; with `contact_algo` = PENALISATION also the largest normal and
+tangential stiffness. Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
+with an extra one if the friction coefficients differed (KNOWN_BUGS 10). The solution
+suggested by `CONTACT2_16` itself (swapping master and slave) is not used by the bridge:
+the stiff tool would then become slave.
 
 Master and slave face of **one** zone may not share nodes either, otherwise Code-Aster
 stops (U2.04.04 §2.3.4). The bridge does not exclude such nodes.
