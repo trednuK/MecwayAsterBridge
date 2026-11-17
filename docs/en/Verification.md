@@ -826,7 +826,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-46)
+### 2D and axisymmetric (PL-01 … PL-57)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -965,6 +965,37 @@ with plane shell elements and `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E = 21
   the fixed bottom 0.2996 against μ = 0.3 (−0.14%; tolerance 1%; with non-matching meshes
   −0.7%). With blocks of the same width the slave edge slid past the
   master's end and the ratio was 1.3% low (a node beyond the master carries no friction).
+
+Heat transfer axisymmetric and in a plane (STAPPENPLAN S44d piece 1; Thermal Steady State T30 and
+Transient T31 with plane shell elements and `**ASTER-PLANE AXIS` -> `THERMIQUE` `AXIS`;
+`tests_vlak_2d_thermisch_axis.py`; k = 50 W/m/K, tube a = 0.1 m, b = 0.2 m, h = 10 mm, quad8,
+T_a = 393 K, T_b = 293 K; Mecway has no axisymmetric thermal type, so the references are
+closed forms):
+
+- **PL-50** (radial conduction, T_a and T_b on the walls, 10 quad8): T at r = 0.15 m 334.5 K
+  against 334.5 K (+0.00%; tolerance 0.1 K), radial flux there 48054 against
+  k (T_a − T_b) / (r ln(b/a)) = 48090 W/m² (−0.07%; tolerance 0.5%).
+- **PL-51** (a total heat flow of 500 W for 360 degrees on the inner edge, T_b fixed):
+  T_a − T_b 110.32 K against Q ln(b/a) / (2π k h) = 110.32 K (0.00%; tolerance 0.5%): the
+  total heat flow is spread over the revolved area 2π ∫ r dl.
+- **PL-52** (convection h = 100 W/m²/K to 293 K on the outer edge): T(b) 371.29 K against
+  T_a − (T_a − T_∞) ln(b/a) / (ln(b/a) + k/(h b)) = 371.29 K (+0.00%; tolerance 0.1 K).
+- **PL-53** (a solid cylinder R = 50 mm cooling, surface 293 K, initial 393 K, quad8 20 × 1,
+  Fourier number 1e-3 per step, θ = 0.57, T31): the dimensionless temperature
+  θ = (T − T_s) / (T_i − T_s) at r = 0, 0.5 R and 0.8 R and Fo = 0.05, 0.2 and 0.5 against the
+  Bessel series (6 terms, Carslaw & Jaeger §7.4): within 0.01 (tolerance), the largest
+  deviation 0.0025 (+0.61% of the value 0.40628 at r = 0.8 R, Fo = 0.05; the centre at Fo = 0.5:
+  0.08889 against 0.089215).
+- **PL-54** (radiation, ε = 0.8 to 293 K on the outer edge, inner wall 1000 K): T(b) 913.39 K
+  against the balance conduction = radiation 913.39 K (+0.00%; tolerance 0.707 K).
+- **PL-55** (a plane wall with convection as T30 shells without the line, `PLAN`): T on the
+  right 359.67 K and q_x 16667 W/m² against (T_a − T_∞) / (L/k + 1/h): exact (≤ 0.0001%).
+- **PL-56** (a solid cylinder R = 50 mm, surface 293 K, quad8 10 × 1, *Internal heat
+  generation* 1e6 W/m³): T(0) − T(R) 12.5 K against q R² / (4 k) = 12.5 K (Incropera eq. 3.58;
+  0.00%; tolerance 0.1%).
+- **PL-57** (the same cylinder, the same heat as a total *Heat flow* (W, 360 degrees) on the
+  elements): T(0) − T(R) 12.5 K against 12.5 K (+0.00%; tolerance 0.1%): the total heat flow
+  is spread over the revolved volume.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

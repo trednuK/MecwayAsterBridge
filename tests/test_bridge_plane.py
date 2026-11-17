@@ -293,6 +293,18 @@ def test_route_a():
                        friction), analysis="nonlin_static_3d")
     check(comm and not any("141" in m for m in LOG),
           "friction without held slave nodes: no KNOWN_BUGS 141 WARNING")
+    # S44d: revolved measures (bridge_thermal) against 2 pi r_mean x size
+    import bridge_thermal as bth
+    seg = [(0.1, 0.0, 0.0), (0.3, 0.0, 0.0), (0.2, 0.0, 0.0)]
+    check(abs(bth._seg_revolved(seg) - 2 * math.pi * 0.2 * 0.2) < 1e-12 and
+          abs(bth._seg_revolved(seg[:2]) - 2 * math.pi * 0.2 * 0.2) < 1e-12,
+          "_seg_revolved SEG3/SEG2")
+    q4 = [(0.1, 0.0, 0.0), (0.3, 0.0, 0.0), (0.3, 0.1, 0.0), (0.1, 0.1, 0.0)]
+    t3 = [(0.1, 0.0, 0.0), (0.4, 0.0, 0.0), (0.1, 0.3, 0.0)]
+    check(abs(bth._face_revolved("QUAD4", q4) - 2 * math.pi * 0.2 * 0.02)
+          < 1e-12 and abs(bth._face_revolved("TRIA3", t3) -
+                          2 * math.pi * 0.2 * 0.045) < 1e-12,
+          "_face_revolved QUAD4/TRIA3 = 2 pi r_centroid A")
     import bridge_mesh as bm
     w = bm._edge_integrals({
         "mesh_nodes": {1: (0.0, 0.0, 0.0), 2: (2.0, 0.0, 0.0),

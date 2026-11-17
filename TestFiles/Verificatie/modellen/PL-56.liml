@@ -1,0 +1,91 @@
+<liml version="33">
+  <analysis type="T30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.0025" y="0" z="0" />
+  <node nid="3" x="0.005" y="0" z="0" />
+  <node nid="4" x="0.005" y="0.0025" z="0" />
+  <node nid="5" x="0.005" y="0.005" z="0" />
+  <node nid="6" x="0.0025" y="0.005" z="0" />
+  <node nid="7" x="0" y="0.005" z="0" />
+  <node nid="8" x="0" y="0.0025" z="0" />
+  <node nid="9" x="0.0075" y="0" z="0" />
+  <node nid="10" x="0.01" y="0" z="0" />
+  <node nid="11" x="0.01" y="0.0025" z="0" />
+  <node nid="12" x="0.01" y="0.005" z="0" />
+  <node nid="13" x="0.0075" y="0.005" z="0" />
+  <node nid="14" x="0.0125" y="0" z="0" />
+  <node nid="15" x="0.015" y="0" z="0" />
+  <node nid="16" x="0.015" y="0.0025" z="0" />
+  <node nid="17" x="0.015" y="0.005" z="0" />
+  <node nid="18" x="0.0125" y="0.005" z="0" />
+  <node nid="19" x="0.0175" y="0" z="0" />
+  <node nid="20" x="0.02" y="0" z="0" />
+  <node nid="21" x="0.02" y="0.0025" z="0" />
+  <node nid="22" x="0.02" y="0.005" z="0" />
+  <node nid="23" x="0.0175" y="0.005" z="0" />
+  <node nid="24" x="0.0225" y="0" z="0" />
+  <node nid="25" x="0.025" y="0" z="0" />
+  <node nid="26" x="0.025" y="0.0025" z="0" />
+  <node nid="27" x="0.025" y="0.005" z="0" />
+  <node nid="28" x="0.0225" y="0.005" z="0" />
+  <node nid="29" x="0.0275" y="0" z="0" />
+  <node nid="30" x="0.03" y="0" z="0" />
+  <node nid="31" x="0.03" y="0.0025" z="0" />
+  <node nid="32" x="0.03" y="0.005" z="0" />
+  <node nid="33" x="0.0275" y="0.005" z="0" />
+  <node nid="34" x="0.0325" y="0" z="0" />
+  <node nid="35" x="0.035" y="0" z="0" />
+  <node nid="36" x="0.035" y="0.0025" z="0" />
+  <node nid="37" x="0.035" y="0.005" z="0" />
+  <node nid="38" x="0.0325" y="0.005" z="0" />
+  <node nid="39" x="0.0375" y="0" z="0" />
+  <node nid="40" x="0.04" y="0" z="0" />
+  <node nid="41" x="0.04" y="0.0025" z="0" />
+  <node nid="42" x="0.04" y="0.005" z="0" />
+  <node nid="43" x="0.0375" y="0.005" z="0" />
+  <node nid="44" x="0.0425" y="0" z="0" />
+  <node nid="45" x="0.045" y="0" z="0" />
+  <node nid="46" x="0.045" y="0.0025" z="0" />
+  <node nid="47" x="0.045" y="0.005" z="0" />
+  <node nid="48" x="0.0425" y="0.005" z="0" />
+  <node nid="49" x="0.0475" y="0" z="0" />
+  <node nid="50" x="0.05" y="0" z="0" />
+  <node nid="51" x="0.05" y="0.0025" z="0" />
+  <node nid="52" x="0.05" y="0.005" z="0" />
+  <node nid="53" x="0.0475" y="0.005" z="0" />
+  <elset name="Cilinder" material="Staal">
+    <elem eid="1" shape="quad8" nodes="1 2 3 4 5 6 7 8" />
+    <elem eid="2" shape="quad8" nodes="3 9 10 11 12 13 5 4" />
+    <elem eid="3" shape="quad8" nodes="10 14 15 16 17 18 12 11" />
+    <elem eid="4" shape="quad8" nodes="15 19 20 21 22 23 17 16" />
+    <elem eid="5" shape="quad8" nodes="20 24 25 26 27 28 22 21" />
+    <elem eid="6" shape="quad8" nodes="25 29 30 31 32 33 27 26" />
+    <elem eid="7" shape="quad8" nodes="30 34 35 36 37 38 32 31" />
+    <elem eid="8" shape="quad8" nodes="35 39 40 41 42 43 37 36" />
+    <elem eid="9" shape="quad8" nodes="40 44 45 46 47 48 42 41" />
+    <elem eid="10" shape="quad8" nodes="45 49 50 51 52 53 47 46" />
+  </elset>
+  <temperature2 selection="Oppervlak"><value>293 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <heatgeneration selection="Alles"><value>1e+06 W/m³</value></heatgeneration>
+  <ccxmodeldefinition>**ASTER-PLANE AXIS</ccxmodeldefinition>
+  <mat name="Staal">
+    <geometric type="Plate" thickness="0.01 m" />
+    <density type="Simple" density="7800 kg/m³" />
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" specificheat="500 J/kg/K" />
+  </mat>
+  <faceselection name="Oppervlak">
+    <face eid="10" faceid="2" />
+  </faceselection>
+  <elementselection name="Alles">
+    <element eid="1" />
+    <element eid="2" />
+    <element eid="3" />
+    <element eid="4" />
+    <element eid="5" />
+    <element eid="6" />
+    <element eid="7" />
+    <element eid="8" />
+    <element eid="9" />
+    <element eid="10" />
+  </elementselection>
+</liml>

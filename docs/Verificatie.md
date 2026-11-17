@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-46)
+### 2D en axisymmetrisch (PL-01 … PL-57)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -977,6 +977,37 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
   niet-passende netten −0,7%). Met even brede blokken gleed de slave-rand voorbij het eind
   van de master en was de verhouding 1,3% te laag (een knoop voorbij de master draagt geen
   wrijving).
+
+Warmtetransport axisymmetrisch en in een vlak (STAPPENPLAN S44d stuk 1; Thermal Steady State
+T30 en Transient T31 met vlakke shell-elementen en `**ASTER-PLANE AXIS` -> `THERMIQUE` `AXIS`;
+`tests_vlak_2d_thermisch_axis.py`; k = 50 W/m/K, buis a = 0,1 m, b = 0,2 m, h = 10 mm, quad8,
+T_a = 393 K, T_b = 293 K; Mecway heeft geen axisymmetrisch thermisch type, dus de referenties
+zijn gesloten vormen):
+
+- **PL-50** (radiale geleiding, T_a en T_b op de wanden, 10 quad8): T bij r = 0,15 m 334,5 K
+  tegen 334,5 K (+0,00%; tolerantie 0,1 K), de radiale flux daar 48054 tegen
+  k (T_a − T_b) / (r ln(b/a)) = 48090 W/m² (−0,07%; tolerantie 0,5%).
+- **PL-51** (een totale warmtestroom van 500 W voor 360 graden op de binnenrand, T_b vast):
+  T_a − T_b 110,32 K tegen Q ln(b/a) / (2π k h) = 110,32 K (0,00%; tolerantie 0,5%): de
+  totale warmtestroom wordt verdeeld over het omwentelingsoppervlak 2π ∫ r dl.
+- **PL-52** (convectie h = 100 W/m²/K naar 293 K op de buitenrand): T(b) 371,29 K tegen
+  T_a − (T_a − T_∞) ln(b/a) / (ln(b/a) + k/(h b)) = 371,29 K (+0,00%; tolerantie 0,1 K).
+- **PL-53** (een volle cilinder R = 50 mm koelt af, oppervlak 293 K, begin 393 K, quad8
+  20 × 1, Fourier-getal 1e-3 per stap, θ = 0,57, T31): de dimensieloze temperatuur
+  θ = (T − T_s) / (T_i − T_s) bij r = 0, 0,5 R en 0,8 R en Fo = 0,05, 0,2 en 0,5 tegen de
+  Besselreeks (6 termen, Carslaw & Jaeger §7.4): binnen 0,01 (tolerantie), de grootste
+  afwijking 0,0025 (+0,61% van de waarde 0,40628 bij r = 0,8 R, Fo = 0,05; het midden bij
+  Fo = 0,5: 0,08889 tegen 0,089215).
+- **PL-54** (straling, ε = 0,8 naar 293 K op de buitenrand, binnenwand 1000 K): T(b) 913,39 K
+  tegen de balans geleiding = straling 913,39 K (+0,00%; tolerantie 0,707 K).
+- **PL-55** (een vlakke wand met convectie als T30-schalen zonder de regel, `PLAN`): T rechts
+  359,67 K en q_x 16667 W/m² tegen (T_a − T_∞) / (L/k + 1/h): exact (≤ 0,0001%).
+- **PL-56** (een volle cilinder R = 50 mm, oppervlak 293 K, quad8 10 × 1, *Internal heat
+  generation* 1e6 W/m³): T(0) − T(R) 12,5 K tegen q R² / (4 k) = 12,5 K (Incropera vgl. 3.58;
+  0,00%; tolerantie 0,1%).
+- **PL-57** (dezelfde cilinder, dezelfde warmte als totale *Heat flow* (W, 360 graden) op de
+  elementen): T(0) − T(R) 12,5 K tegen 12,5 K (+0,00%; tolerantie 0,1%): de totale
+  warmtestroom wordt verdeeld over het omwentelingsvolume.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

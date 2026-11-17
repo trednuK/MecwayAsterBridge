@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Heat transfer axisymmetric** (STAPPENPLAN S44d, piece 1): Thermal Steady State (T30) or
+  Transient (T31) with plane shell elements in the XY plane and the line
+  `**ASTER-PLANE AXIS` is computed as Code-Aster `THERMIQUE` `AXIS` about Y (no shell
+  thickness; a total heat flow spread over the revolved area or volume). Verification
+  PL-50 … PL-57: radial conduction, a total heat flow, convection and radiation in a tube,
+  heat generation in a solid cylinder (as *Internal heat generation* and as a total heat
+  flow on the elements), the transient cooling of a cylinder against the Bessel series
+  (within 0.0025 of the initial difference), and the plane wall with convection (`PLAN`,
+  exact). Not yet: the
+  thermal → mechanical chain in 2D/axisymmetric; welding, metallurgy and bonded contact in
+  `AXIS` give an ERROR.
+
 ## V2026.13 – 13 November 2026
 
 First results of the S46 review of all KNOWN_BUGS items (real bug or test setting, re-measured

@@ -18,7 +18,7 @@ De bridge-analyse is `lin_static_3d` ("Statisch") voor S20 en SA0 en `dyna_impl_
 ("Dynamisch (impliciet)") voor D20 en DA0: met *Actieve analyse (auto = volgens Mecway)*
 = `auto` kiest de bridge die. Algemene werking van de bridge:
 [`Handleiding.md`](Handleiding.md). Acoustic Resonance 2D (A20) gaat naar de akoestische holtemodes `acoustic_modes_3d` (§4). Mecway heeft geen thermisch 2D-type: een thermisch model in een vlak
-maak je met schalen ([`Thermisch.md`](Thermisch.md)).
+maak je met schalen ([`Thermisch.md`](Thermisch.md)); axisymmetrisch warmtetransport: §1.4.1.
 
 ![Axisymmetrisch: symmetrieas, straal en tangentiële richting](img/2d_axisymmetric_axes.svg)
 
@@ -52,7 +52,9 @@ de route naar wat je wilt rekenen:
 | Plasticiteit, grote vervormingen, tijdstappen, lasttabellen | A | *Nonlinear Static* (L30), solver CCX | vlakke shell-elementen met *Shell/membrane*-dikte | `**ASTER-PLANE C_PLAN`, `D_PLAN` of `AXIS` | §1.4 |
 | Contact (krimpverbinding, delen die elkaar raken) | A | *Nonlinear Static* (L30), solver CCX | zoals hierboven, *Contact* tussen randen | `**ASTER-PLANE ...` | §1.4 (punt 6) |
 | Lineair statisch als 3D-model (bijv. om te vergelijken met shells) | A | *Static 3D* (S30) | zoals hierboven | `**ASTER-PLANE C_PLAN` (nagelopen; `D_PLAN`/`AXIS` volgen dezelfde route) | §1.4 |
-| Warmtetransport in 2D of axisymmetrisch, axisymmetrische schalen | – | – | – | nog niet | §3 |
+| Warmtetransport in een vlak | A | *Thermal Steady State* (T30) of *Thermal Transient* (T31) | vlakke shell-elementen met *Shell/membrane*-dikte | geen (een `PLAN`-model) | [`Thermisch.md`](Thermisch.md) |
+| Warmtetransport axisymmetrisch | A | T30 of T31 | vlakke shell-elementen in het XY-vlak, X >= 0 | `**ASTER-PLANE AXIS` | §1.4.1 |
+| Axisymmetrische schalen (lijnelementen) | – | – | – | nog niet | §3 |
 | Niet-lineaire dynamica, modes, knik in 2D | – | – | – | niet mogelijk | §3 |
 
 Route B heeft geen extra regel nodig en Mecway rekent hetzelfde model zelf; route A gebruikt
@@ -181,16 +183,66 @@ zelf (catalogus Code-Aster 17.4). Resultaten per stap zoals in §1.3, plus
 of 2π in elke stap (PL-30, PL-32). Verificatie PL-30 … PL-36: een dikwandige cilinder met ideale
 plasticiteit (Hill) in `D_PLAN` en `AXIS`, eerste vloei bij een gat in `C_PLAN`,
 Code-Aster-testcase ssnp159b (`AXIS`, `GDEF_LOG`) door de bridge. NIET meegenomen: de
-bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), verlijmd contact, thermische analyses (S44d).
+bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), verlijmd contact, de keten thermisch -> mechanisch (warmtetransport zelf: §1.4.1).
 Contact: PL-40 … PL-46 (een krimpverbinding binnen 0,01% van Lamé, Hertz-lijncontact, een
 Code-Aster-testcase, wrijving). Het
 openen van zo'n resultaat in het Mecway-venster is NIET nagelopen (een test in de
 Mecway-GUI moet nog).
 
+### 1.4.1 Warmtetransport axisymmetrisch
+
+Mecway heeft geen axisymmetrisch thermisch type; de bridge rekent het uit de thermische
+3D-typen (route A). Warmtetransport in een vlak heeft geen regel nodig: vlakke
+shell-elementen in T30 of T31 zijn al een thermisch 2D-model (`PLAN`,
+[`Thermisch.md`](Thermisch.md)), de schaaldikte telt mee.
+
+1. **Analysetype** *Thermal Steady State* (T30) of *Thermal Transient* (T31).
+2. **Mesh**: vlakke shell-elementen tri3, tri6, quad4 of quad8 in het XY-vlak (Z = 0),
+   alle X >= 0; Y is de symmetrie-as, X de straal.
+3. **Materiaal**: *Shell/membrane* met een dikte (Mecway vraagt hem; in `AXIS` telt hij niet
+   mee), *Thermal conductivity*, voor T31 ook *Specific heat* en *Density*.
+4. **De schakelaar**: in CCX > *Custom model definition* een regel `**ASTER-PLANE AXIS`
+   (schrijfwijzen als in §1.4). Zonder die regel blijven de schalen een `PLAN`-model;
+   `C_PLAN` of `D_PLAN` in T30/T31 geven alleen een INFO dat de regel niet nodig is.
+5. **Lasten** op de randen van de elementen (faceid 1..4) en op de elementen:
+   *Temperature*, *Heat flux*, *Convection*, *Radiation*, *Internal heat generation*,
+   *Heat flow*, ook als tijdtabel en op dezelfde manier als in 3D
+   ([`Thermisch.md`](Thermisch.md); *Internal heat generation* en een *Heat flow* op
+   elementen nagelopen: PL-56, PL-57).
+
+Wat de bridge doet: de elsets worden thermisch `MODELISATION='AXIS'` om Y (INFO "Elset '...'
+-> thermal MODELISATION='AXIS' (the shell thickness does not count)."). Code-Aster rekent
+per radiaal, de temperatuur hangt daar niet van af. Factoren:
+
+- Een last per oppervlak (*Heat flux*, *Convection*, *Radiation*, *Temperature* op een rand)
+  en per volume (*Internal heat generation*) heeft geen factor nodig, en de schaaldikte
+  telt niet mee.
+- Een totale *Heat flow* (W, voor de hele 360 graden) op een rand wordt gedeeld door het
+  omwentelingsoppervlak 2π ∫ r dl van die rand, op elementen door het omwentelingsvolume,
+  en daarna als hierboven toegepast.
+- Resultaten als in 3D: `temperature`, `heatfluxx` = radiale en `heatfluxy` = axiale flux
+  (W/m²).
+
+NIET vertaald (met een melding): lasten op het vlak van de doorsnede (faceid 5/6: in `AXIS`
+is er geen oppervlak) en een *Heat flow* op knopen (gebruik een heat flow op een rand).
+Geweigerd met een ERROR in `AXIS`: *Thermal stress* (de keten thermisch -> mechanisch,
+gepland), `#ASTER-LASBRON` (lassen), `#ASTER-METALLURGIE` en *Bonded* contact. Knopen bij
+X < 0 geven de ERROR van §1.6.
+
+Nagelopen (Code-Aster 17.4, PL-50 … PL-57, [`Verificatie.md`](Verificatie.md) §2D en
+axisymmetrisch): radiale geleiding in een buis, een totale warmtestroom op de binnenrand,
+convectie en straling op de buitenrand, transiënte afkoeling van een volle cilinder tegen de
+Besselreeks, een volle cilinder met *Internal heat generation* (PL-56) en met dezelfde warmte
+als totale *Heat flow* op de elementen (PL-57), alles binnen 0,7% van de gesloten vorm (de stationaire gevallen binnen 0,1 K of
+0,5%), en vlakke schalen met convectie zonder de regel exact. Mecway heeft geen
+axisymmetrisch thermisch type, dus er is geen Mecway-referentie; de Code-Aster-testcase tpla01
+is vervangen door deze gesloten-vorm-gevallen.
+
 ### 1.5 Uitgewerkte voorbeelden
 
-De drie modellen staan in de repository (`TestFiles/Verificatie/modellen/`, gemaakt door
-`tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py` en `tests_vlak_2d_contact.py`);
+De vier modellen staan in de repository (`TestFiles/Verificatie/modellen/`, gemaakt door
+`tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py`, `tests_vlak_2d_contact.py` en
+`tests_vlak_2d_thermisch_axis.py`);
 open er een in Mecway om elke instelling te zien. Eenheden SI, staal E = 210 GPa, ν = 0,3.
 Voor `AXIS` gelden de assen van de eerste figuur: Y de symmetrieas, X de straal. Route A is
 nagelopen met de bridge (resultaten tegen gesloten oplossingen), nog niet in Mecway's
@@ -256,16 +308,42 @@ route A toont is NIET nagelopen; Mecway's eigen solve van voorbeeld 2 en 3 is ni
 4. Resultaat: de gemiddelde `contactpressure` op de slave-rand 12,46 MPa (Lamé:
    12,46 MPa); de overlap wordt in de eerste stap opgelost.
 
+**Voorbeeld 4 – route A: radiale geleiding in een buis (`PL-50.liml`).**
+
+1. Analysetype *Thermal Steady State* (T30).
+2. Mesh: de rechthoek X = 0,1 … 0,2 m (binnen- en buitenstraal), Y = 0 … 0,01 m, 10 × 1
+   quad8, als **shell**-elementen.
+3. Materiaal: *Shell/membrane* met een dikte (willekeurig; hij telt niet mee in `AXIS`),
+   *Thermal conductivity* 50 W/m/K.
+4. Lasten: *Temperature* 393 K op de binnenrand (X = 0,1 m) en 293 K op de buitenrand
+   (X = 0,2 m); de boven- en onderrand blijven geïsoleerd.
+5. De schakelaar: in CCX > *Custom model definition* de regel
+
+   ```
+   **ASTER-PLANE AXIS
+   ```
+
+6. Bridge: `auto` (→ de thermische analyse), "Resultaten naar Mecway" `liml`. De log toont
+   `INFO: ... thermal MODELISATION='AXIS' about Y` en `INFO: Elset '...' -> thermal
+   MODELISATION='AXIS' (the shell thickness does not count).`
+7. Resultaten: `temperature` volgt T(r) = T_a − (T_a − T_b) ln(r/a) / ln(b/a) (334,5 K bij
+   r = 0,15 m); `heatfluxx` is de radiale flux k (T_a − T_b) / (r ln(b/a)) (48,09 kW/m² bij
+   r = 0,15 m, −0,07% in het resultaat), `heatfluxy` is 0.
+
 ### 1.6 Veelgemaakte fouten
 
 | Wat ging er mis | Melding van de bridge | Oplossing |
 |---|---|---|
 | Mesh niet in het XY-vlak | ERROR: Een 2D-analyse (…) heeft alle knopen in het XY-vlak nodig (Z = 0) … | verplaats of draai de mesh naar Z = 0 |
-| Knopen bij X < 0 in een axisymmetrisch model | ERROR: Axisymmetrisch (SA0): alle knopen moeten X >= 0 hebben … (ook in route A) | Y is de as, X de straal (eerste figuur) |
+| Knopen bij X < 0 in een axisymmetrisch model | ERROR: Axisymmetrisch (…): alle knopen moeten X >= 0 hebben … (tussen de haakjes het Mecway-type; ook in route A) | Y is de as, X de straal (eerste figuur) |
 | De as langs X getekend (alle X ≥ 0) | geen: de bridge neemt Y als as | teken de doorsnede met Y als as |
 | Balken, truss of volume-elementen in het model | ERROR: Elset '…' bevat line2 …; in een 2D-analyse … | alleen vlakke elementen; of reken in 3D |
 | `**ASTER-PLANE` in een S20/SA0-model | ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) … (al een 2D-type: haal de regel weg) | route B heeft geen regel nodig; haal hem weg |
-| `**ASTER-PLANE` in een ander 3D-type (T30, V30, D30, …) | dezelfde ERROR | S30 of L30; thermisch 2D kan nog niet |
+| `**ASTER-PLANE` in een ander 3D-type (V30, D30, …) | dezelfde ERROR | S30, L30, of T30/T31 voor warmtetransport (§1.4.1) |
+| `**ASTER-PLANE C_PLAN` of `D_PLAN` in T30/T31 | INFO: '#ASTER-PLANE C_PLAN' in T30: thermal plane shells are a 2D model ('PLAN') already; the line is not needed. | haal de regel weg, of schrijf `AXIS` voor een axisymmetrisch model |
+| *Thermal stress*, `#ASTER-LASBRON`, `#ASTER-METALLURGIE` of *Bonded* contact in een axisymmetrisch thermisch model | ERROR: {what} in een axisymmetrisch thermisch model ('#ASTER-PLANE AXIS' in T31) wordt (nog) niet vertaald. | laat het weg; de keten thermisch -> mechanisch in `AXIS` is gepland |
+| *Heat flow* op knopen in een axisymmetrisch thermisch model | overgeslagen: warmtestroom op knopen in een axisymmetrisch model (AXIS) wordt niet vertaald; gebruik een heat flow op een rand | een *Heat flow* op een rand |
+| Een last op het vlak van de doorsnede (faceid 5/6) in een axisymmetrisch thermisch model | overgeslagen: N vlak(ken) van de doorsnede (faceid 5/6) in '…': in een axisymmetrisch model (AXIS) geen oppervlak; alleen randen (faceid 1..4) | leg de last op een rand (faceid 1..4) of op de elementen |
 | `**ASTER-PLANE` met een andere waarde of zonder waarde | ERROR: '#ASTER-PLANE …': verwacht C_PLAN, D_PLAN of AXIS. | schrijf C_PLAN, D_PLAN of AXIS |
 | Twee `**ASTER-PLANE`-regels met verschillende waarden | WARNING: Meerdere #ASTER-PLANE-regels; de laatste telt (…). | houd een regel |
 | *Plane strain* aangevinkt op het materiaal met `**ASTER-PLANE C_PLAN` | WARNING: Materiaal '…' heeft plane strain, maar #ASTER-PLANE zegt C_PLAN; de bridge volgt de regel. | de regel beslist; haal het vinkje weg of schrijf D_PLAN |
@@ -391,9 +469,13 @@ lineaire typen), S44 (niet-lineair, contact, thermisch, axisymmetrische schalen)
   ERROR. Mecway zelf heeft geen niet-lineair, frequentie- of knik-2D-type (Mecway 34
   zet V20 om naar V30 en B20 naar S30); niet-lineair in 2D: §1.4. S20/SA0 met een
   plastisch materiaal rekenen elastisch (WARNING).
-- `**ASTER-PLANE` in een ander type dan S30/L30, met een andere waarde dan `C_PLAN`,
-  `D_PLAN`, `AXIS`, of zonder streepje: ERROR. Een element offset in een 2D-analyse (S20,
+- `**ASTER-PLANE` mag in S30/L30 (mechanisch) en in T30/T31 (thermisch, `AXIS`;
+  `C_PLAN`/`D_PLAN` geven daar alleen een INFO); in een ander type, met een andere waarde
+  dan `C_PLAN`, `D_PLAN`, `AXIS`, of zonder streepje: ERROR. Een element offset in een 2D-analyse (S20,
   SA0, D20, DA0 of `**ASTER-PLANE`): ERROR.
+- Axisymmetrisch warmtetransport (§1.4.1) met *Thermal stress* (de keten thermisch ->
+  mechanisch in `AXIS`, `C_PLAN`, `D_PLAN`), lassen, metallurgie en *Bonded* contact: ERROR;
+  een *Heat flow* op knopen en lasten op het vlak van de doorsnede: overgeslagen (melding).
 - De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).
 
 ## 4. Akoestiek in 2D
@@ -424,7 +506,7 @@ lineaire typen), S44 (niet-lineair, contact, thermisch, axisymmetrische schalen)
 | ERROR: Elset '…': Static 2D (S20) heeft een dikte nodig | materiaal zonder geometrie *Shell/membrane* | geef het materiaal een dikte (ook voor plane strain) |
 | ERROR: De 2D-analyse heeft elsets met verschillende modelisatie of dikte | twee materialen met een andere dikte of type | een dikte en een type per model; of reken in 3D |
 | ERROR: Een 2D-analyse (…) heeft alle knopen in het XY-vlak nodig (Z = 0) | mesh niet in het XY-vlak | verplaats of draai de mesh naar het XY-vlak |
-| ERROR: Axisymmetrisch (SA0): alle knopen moeten X >= 0 hebben | deel van de mesh bij X < 0 | spiegel de mesh naar X ≥ 0 (Y = as) |
+| ERROR: Axisymmetrisch (…): alle knopen moeten X >= 0 hebben | deel van de mesh bij X < 0 | spiegel de mesh naar X ≥ 0 (Y = as) |
 | ERROR: Elset '…' bevat line2 …; in een 2D-analyse … | balken, truss, veren of volume-elementen in het model | haal ze weg of reken in 3D |
 | ERROR: … in een 2D-analyse (…) wordt (nog) niet vertaald | contact, koppeling, constraint equation, puntmassa, of een temperatuur in D20/DA0 | haal het weg of reken in 3D |
 | ERROR: … op '…' in een 2D-analyse: … NIET meegenomen. | belasting of voorwaarde zonder 2D-route (§3) | vervang hem door een ondersteunde belasting (§1.1) |

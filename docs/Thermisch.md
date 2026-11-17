@@ -191,6 +191,10 @@ Crank-Nicolson gaf in Mecway niet-monotone eerste stappen).
 
 - De berekening staat in °C (vanwege `RAYONNEMENT`); temperaturen gaan in K terug naar
   Mecway.
+- Vlakke shell-elementen in het XY-vlak zijn al een thermisch 2D-model (`PLAN`). Met de regel
+  `**ASTER-PLANE AXIS` in CCX > *Custom model definition* (T30/T31, alle X >= 0, Y de as)
+  rekent de bridge ze axisymmetrisch (`AXIS`, de schaaldikte telt niet mee): zie
+  [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.1.
 - Een schaal is een `PLAN`-laag met factor f = t / t_ref op λ, ρ·cp en de belastingen;
   er is geen temperatuurverloop door de dikte (zoals Mecway, manual §7.4).
 - Stationair met een tijdstabel: de waarde op t = 1 s (zoals Mecway met CCX). Een

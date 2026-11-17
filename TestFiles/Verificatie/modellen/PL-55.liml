@@ -1,0 +1,48 @@
+<liml version="33">
+  <analysis type="T30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.02" y="0" z="0" />
+  <node nid="3" x="0.02" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0.02" y="0.02" z="0" />
+  <node nid="6" x="0" y="0.02" z="0" />
+  <node nid="7" x="0.04" y="0" z="0" />
+  <node nid="8" x="0.04" y="0.01" z="0" />
+  <node nid="9" x="0.04" y="0.02" z="0" />
+  <node nid="10" x="0.06" y="0" z="0" />
+  <node nid="11" x="0.06" y="0.01" z="0" />
+  <node nid="12" x="0.06" y="0.02" z="0" />
+  <node nid="13" x="0.08" y="0" z="0" />
+  <node nid="14" x="0.08" y="0.01" z="0" />
+  <node nid="15" x="0.08" y="0.02" z="0" />
+  <node nid="16" x="0.1" y="0" z="0" />
+  <node nid="17" x="0.1" y="0.01" z="0" />
+  <node nid="18" x="0.1" y="0.02" z="0" />
+  <elset name="Wand" material="Staal">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="2 7 8 3" />
+    <elem eid="4" shape="quad4" nodes="3 8 9 5" />
+    <elem eid="5" shape="quad4" nodes="7 10 11 8" />
+    <elem eid="6" shape="quad4" nodes="8 11 12 9" />
+    <elem eid="7" shape="quad4" nodes="10 13 14 11" />
+    <elem eid="8" shape="quad4" nodes="11 14 15 12" />
+    <elem eid="9" shape="quad4" nodes="13 16 17 14" />
+    <elem eid="10" shape="quad4" nodes="14 17 18 15" />
+  </elset>
+  <temperature2 selection="Links"><value>393 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <convectionbc selection="Rechts"><ambienttemp>293 K</ambienttemp><coefficient>250 W/m²/K</coefficient></convectionbc>
+  <mat name="Staal">
+    <geometric type="Plate" thickness="0.01 m" />
+    <density type="Simple" density="7800 kg/m³" />
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" specificheat="500 J/kg/K" />
+  </mat>
+  <faceselection name="Links">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+  </faceselection>
+  <faceselection name="Rechts">
+    <face eid="9" faceid="2" />
+    <face eid="10" faceid="2" />
+  </faceselection>
+</liml>

@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 2d13eec, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 4c52a1d, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3177 van 3183 controles binnen de tolerantie** (608 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3195 van 3201 controles binnen de tolerantie** (616 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2703,6 +2703,24 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 2d13eec, Code-Aster 17.4
 | PL-45 | Hertz-lijncontact cilinder op blok, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | piekdruk p0 (Hertz-profiel gefit) / p0_Hertz | 1 - | 1.0038 | +0.38% | 3% | OK |
 | PL-45 | Hertz-lijncontact cilinder op blok, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | elementen over b (cilinder, minimaal 10) | 10 - | 10 | +0.00% | 1e-09 - | OK |
 | PL-46 | Wrijving: blok glijdt over blok, vlakke rek (L30 + **ASTER-PLANE D_PLAN, Coulomb 0,3) | |R_x / R_y| onder bij glijden | 0.3 - | 0.29958 | -0.14% | 1% | OK |
+| PL-50 | Radiale geleiding in een buis, thermisch axisymmetrisch (T30 + **ASTER-PLANE AXIS) | T(r) midden | 334.5 K | 334.5 | +0.00% | 0.1 K | OK |
+| PL-50 | Radiale geleiding in een buis, thermisch axisymmetrisch (T30 + **ASTER-PLANE AXIS) | q_r midden | 48090 W/m² | 48054 | -0.07% | 0.5% | OK |
+| PL-51 | Buis met een totale warmtestroom op de binnenrand (T30 + **ASTER-PLANE AXIS) | T_a - T_b | 110.32 K | 110.32 | -0.00% | 0.5% | OK |
+| PL-52 | Buis met convectie op de buitenrand (T30 + **ASTER-PLANE AXIS) | T(b) | 371.29 K | 371.29 | +0.00% | 0.1 K | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0 R Fo = 0.05 | 0.9871 - | 0.98737 | +0.03% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0.5 R Fo = 0.05 | 0.83554 - | 0.8379 | +0.28% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0.8 R Fo = 0.05 | 0.40628 - | 0.40874 | +0.61% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0 R Fo = 0.2 | 0.50149 - | 0.50292 | +0.28% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0.5 R Fo = 0.2 | 0.33797 - | 0.33898 | +0.30% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0.8 R Fo = 0.2 | 0.13584 - | 0.13626 | +0.31% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0 R Fo = 0.5 | 0.08889 - | 0.089215 | +0.37% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0.5 R Fo = 0.5 | 0.05955 - | 0.059768 | +0.37% | 0.01 - | OK |
+| PL-53 | Afkoelende volle cilinder, transient (T31 + **ASTER-PLANE AXIS) | theta r = 0.8 R Fo = 0.5 | 0.023819 - | 0.023906 | +0.37% | 0.01 - | OK |
+| PL-54 | Buis met straling op de buitenrand (T30 + **ASTER-PLANE AXIS) | T(b) | 913.39 K | 913.39 | +0.00% | 0.707 K | OK |
+| PL-55 | Vlakke wand met convectie (T30-schalen, PLAN, zonder regel) | T rechts | 359.67 K | 359.67 | -0.00% | 0.0001% | OK |
+| PL-55 | Vlakke wand met convectie (T30-schalen, PLAN, zonder regel) | q_x | 16667 W/m² | 16667 | +0.00% | 0.0001% | OK |
+| PL-56 | Volle cilinder met warmteproductie (T30 + **ASTER-PLANE AXIS) | T(0) - T(R) | 12.5 K | 12.5 | -0.00% | 0.1% | OK |
+| PL-57 | Volle cilinder met een totale warmtestroom op de elementen (T30 + **ASTER-PLANE AXIS) | T(0) - T(R) | 12.5 K | 12.5 | +0.00% | 0.1% | OK |
 
 ## Boutvoorspanning
 

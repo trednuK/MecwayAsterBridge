@@ -192,6 +192,10 @@ Crank-Nicolson gave non-monotonic first steps in Mecway).
 
 - The analysis is in °C (because of `RAYONNEMENT`); temperatures go back to Mecway in
   K.
+- Plane shell elements in the XY plane are a 2D thermal model (`PLAN`) already. With the line
+  `**ASTER-PLANE AXIS` in CCX > *Custom model definition* (T30/T31, all X >= 0, Y the axis) the
+  bridge computes them axisymmetric (`AXIS`, the shell thickness does not count): see
+  [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.1.
 - A shell is a `PLAN` layer with factor f = t / t_ref on λ, ρ·cp and the loads; there
   is no temperature variation through the thickness (as in Mecway, manual §7.4).
 - Steady state with a time table: the value at t = 1 s (as Mecway with CCX). A

@@ -254,3 +254,53 @@ TESTS = [
                 source="(T_a - T_inf) / (L/k + 1/h)")],
          note="Wand 100 x 20 mm, schaal t = 10 mm, quad4 5x2."),
 ]
+
+
+# ------------------------------------------------------------------
+# PL-56 / PL-57 solid cylinder with internal heat (the revolved volume)
+# ------------------------------------------------------------------
+# A solid cylinder R0, surface at T_s, uniform heat q (W/m3): T(0) - T(R) =
+# q R^2 / (4 k) (Incropera eq. 3.58). PL-56 as Internal heat generation
+# (per volume, no factor), PL-57 as a total Heat flow on the elements
+# (W, 360 degrees: Q = q pi R^2 h, spread over the revolved volume).
+Q56 = 1.0e6
+
+
+def build_pl56(total=False):
+    def build():
+        m = Model("T30")
+        m.elset("Cilinder", "Staal")
+        q = quadmesh(m, "Cilinder", 10, 1, rect(0.0, R0, 0.0, 0.005),
+                     order=2)
+        _mat(m)
+        m.face_selection("Oppervlak", q["edges"]["u1"])
+        m.element_selection("Alles", sorted(q["elems"].values()))
+        m.add(_temp("Oppervlak", TS53))
+        if total:
+            m.add('<heatflow selection="Alles"><value>%.12g W</value>'
+                  '</heatflow>' % (Q56 * math.pi * R0 ** 2 * 0.005))
+        else:
+            m.add('<heatgeneration selection="Alles"><value>%g W/m³'
+                  '</value></heatgeneration>' % Q56)
+        _switch(m)
+        return m
+    return build
+
+
+_D56 = Q56 * R0 ** 2 / (4.0 * K)
+TESTS += [
+    Case("PL-56", GROUP, "Volle cilinder met warmteproductie (T30 + "
+         "**ASTER-PLANE AXIS)", "ther_3d", build_pl56(),
+         [Check("T(0) - T(R)", lambda r: r.at("temperature", (0, 0, 0)) -
+                TS53, ref=_D56, tol=1e-3, unit="K",
+                source="q R^2 / (4 k) (Incropera vgl. 3.58)")],
+         note="R = 50 mm, quad8 10x1, internal heat generation 1e6 W/m3."),
+    Case("PL-57", GROUP, "Volle cilinder met een totale warmtestroom op de "
+         "elementen (T30 + **ASTER-PLANE AXIS)", "ther_3d",
+         build_pl56(total=True),
+         [Check("T(0) - T(R)", lambda r: r.at("temperature", (0, 0, 0)) -
+                TS53, ref=_D56, tol=1e-3, unit="K",
+                source="q R^2 / (4 k) met q = Q / (pi R^2 h)")],
+         note="Als PL-56 met heat flow Q = q pi R^2 h (360 graden) op de "
+              "elementen: verdeeld over het omwentelingsvolume."),
+]

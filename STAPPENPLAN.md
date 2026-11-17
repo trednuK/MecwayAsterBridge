@@ -95,7 +95,7 @@ S7, S8, S5, S9).
 | S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (to confirm by the user, §S44); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | done (user OK pending on the PL-42 corner tolerance 5%) | S44a | route A: contact on edges; shrink fit PL-40/41, ssnp121a PL-42, `C_PLAN` PL-43, Hertz PL-45, friction PL-46 (13 and 17 Nov 2026); bonded contact in 2D not planned (ERROR); user test: Mecway's GUI offers shell edges for a contact; see §S44 |
-| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | open | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44 |
+| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | in progress | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57 (17 Nov 2026); open: the thermal -> mechanical chain in AXIS/C_PLAN/D_PLAN (piece 2); tpla01 replaced by closed-form cases |
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
@@ -2533,6 +2533,21 @@ that route.
 - tpla01 through the bridge within its `TEST_RESU` tolerance; the chain: the tube of S44c from
   the thermal result equal to its node-temperature variant within 1e-6;
 - 3D thermal families (TH, WE) unchanged (regression D.5); docs NL+EN.
+
+**Findings S44d piece 1 (17 Nov 2026):** route A for heat transfer: T30/T31 on plane shell
+elements; without a line they are `PLAN` (existing, PL-55 exact), with `**ASTER-PLANE AXIS` they
+are `AXIS`. `bridge_plane._apply_thermal` checks the elements (plane only, Z = 0, X >= 0), refuses
+(ERROR) Thermal stress, `#ASTER-LASBRON`, `#ASTER-METALLURGIE` and bonded contact, and sets
+`model_data["thermal_axis"]`; `C_PLAN`/`D_PLAN` in T30/T31 only give an INFO. `bridge_thermal`
+(`self.axis`): thickness factor 1, loads per area and volume without a factor, a total heat flow
+on edges and elements divided by the revolved area 2π ∫ r dl and volume (revolved measures);
+heat flow on nodes and faceid 5/6 are skipped with a message. Results PL-50 … PL-57 (Code-Aster
+17.4): the tube T(r) +0.00% and radial flux −0.07%, total heat flow 110.32 K (0.00%), convection
+371.29 K, radiation 913.39 K, the Bessel series within 0.0025 (tolerance 0.01), the plane wall
+exact, a solid cylinder with heat generation T(0) − T(R) = qR²/(4k) = 12.5 K exact as Internal heat generation (PL-56) and as a total heat flow on the elements (PL-57). No Mecway reference exists (no axisymmetric thermal type). tpla01 is replaced by these
+closed-form cases. Open (piece 2): the chain thermal -> mechanical in `AXIS`, `C_PLAN`, `D_PLAN`
+(Thermal stress, equal to the node-temperature variant within 1e-6), welding, metallurgy, bonded
+contact in `AXIS`, heat flow on nodes in `AXIS`.
 
 **S44e – axisymmetric shells (`COQUE_AXIS`).**
 **Goal:** line elements in an axisymmetric model as axisymmetric shells, thickness from the

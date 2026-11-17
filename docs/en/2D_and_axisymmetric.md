@@ -18,7 +18,7 @@ The bridge analysis is `lin_static_3d` ("Static") for S20 and SA0 and `dyna_impl
 ("Dynamic (implicit)") for D20 and DA0: with "Active analysis (auto = follow Mecway)" =
 `auto` the bridge chooses it. General operation of the bridge:
 [`UserGuide.md`](UserGuide.md). Acoustic Resonance 2D (A20) goes to the acoustic cavity modes `acoustic_modes_3d` (§4). Mecway has no thermal 2D type: a thermal model in a plane is made of
-shells ([`Thermal.md`](Thermal.md)).
+shells ([`Thermal.md`](Thermal.md)); axisymmetric heat transfer: §1.4.1.
 
 ![Axisymmetric: axis of symmetry, radius and hoop direction](../img/2d_axisymmetric_axes.svg)
 
@@ -52,7 +52,9 @@ from what you want to compute:
 | Plasticity, large deformations, time steps, load tables | A | *Nonlinear Static* (L30), solver CCX | plane shell elements with *Shell/membrane* thickness | `**ASTER-PLANE C_PLAN`, `D_PLAN` or `AXIS` | §1.4 |
 | Contact (shrink fit, parts touching) | A | *Nonlinear Static* (L30), solver CCX | as above, *Contact* between edges | `**ASTER-PLANE ...` | §1.4 (item 6) |
 | Linear static as a 3D model (e.g. to compare with shells) | A | *Static 3D* (S30) | as above | `**ASTER-PLANE C_PLAN` (verified; `D_PLAN`/`AXIS` follow the same route) | §1.4 |
-| Heat transfer in 2D or axisymmetric, axisymmetric shells | – | – | – | not yet | §3 |
+| Heat transfer in a plane | A | *Thermal Steady State* (T30) or *Thermal Transient* (T31) | plane shell elements with *Shell/membrane* thickness | none (a `PLAN` model) | [`Thermal.md`](Thermal.md) |
+| Heat transfer axisymmetric | A | T30 or T31 | plane shell elements in the XY plane, X >= 0 | `**ASTER-PLANE AXIS` | §1.4.1 |
+| Axisymmetric shells (line elements) | – | – | – | not yet | §3 |
 | Nonlinear dynamics, modes, buckling in 2D | – | – | – | not possible | §3 |
 
 Route B needs no extra line and Mecway solves the same model itself; route A uses
@@ -178,15 +180,62 @@ per step as in §1.3, plus `plasticstrainxx/yy/zz/xy` and `equivalentplasticstra
 reaction forces with the factor t or 2π in every step (PL-30, PL-32). Verification PL-30 … PL-36: a thick
 cylinder with perfect plasticity (Hill) in `D_PLAN` and `AXIS`, first yield at a hole in
 `C_PLAN`, Code-Aster test case ssnp159b (`AXIS`, `GDEF_LOG`) through the bridge. NOT
-included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), bonded contact, thermal analyses
-(S44d). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
+included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), bonded contact, the chain
+thermal -> mechanical (heat transfer itself: §1.4.1). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
 Code-Aster test case, friction). Opening such a result in the Mecway window is NOT verified (a test in the Mecway
 GUI still to do).
 
+### 1.4.1 Heat transfer axisymmetric
+
+Mecway has no axisymmetric thermal type; the bridge computes one from the 3D thermal types
+(route A). Heat transfer in a plane needs no line: plane shell elements in T30 or T31 are
+already a 2D thermal model (`PLAN`, [`Thermal.md`](Thermal.md)), the shell thickness counts.
+
+1. **Analysis type** *Thermal Steady State* (T30) or *Thermal Transient* (T31).
+2. **Mesh**: plane shell elements tri3, tri6, quad4 or quad8 in the XY plane (Z = 0),
+   all X >= 0; Y is the axis of symmetry, X the radius.
+3. **Material**: *Shell/membrane* with a thickness (Mecway needs it; in `AXIS` it does not
+   count), *Thermal conductivity*, for T31 also *Specific heat* and *Density*.
+4. **The switch**: in CCX > *Custom model definition* one line `**ASTER-PLANE AXIS`
+   (spellings as in §1.4). Without it the shells stay a `PLAN` model; `C_PLAN` or `D_PLAN` in
+   T30/T31 only give an INFO that the line is not needed.
+5. **Loads** on the edges of the elements (faceid 1..4) and on the elements: *Temperature*,
+   *Heat flux*, *Convection*, *Radiation*, *Internal heat generation*, *Heat flow*, also as
+   time tables and in the same way as in 3D ([`Thermal.md`](Thermal.md); *Internal heat
+   generation* and a *Heat flow* on elements verified: PL-56, PL-57).
+
+What the bridge does: the elsets become thermal `MODELISATION='AXIS'` about Y (INFO "Elset
+'...' -> thermal MODELISATION='AXIS' (the shell thickness does not count)."). Code-Aster
+computes per radian, the temperature does not depend on that. Factors:
+
+- A load per area (*Heat flux*, *Convection*, *Radiation*, *Temperature* on an edge) and per
+  volume (*Internal heat generation*) needs no factor, and the shell thickness does not
+  count.
+- A total *Heat flow* (W, for the whole 360 degrees) on an edge is divided by the revolved
+  area 2π ∫ r dl of the edge, on elements by the revolved volume, then applied as above.
+- Results as in 3D: `temperature`, `heatfluxx` = radial and `heatfluxy` = axial flux (W/m²).
+
+NOT translated (a message): loads on the face of the cross-section (faceid 5/6: there is no
+surface in `AXIS`) and a *Heat flow* on nodes (use a heat flow on an edge). Refused with an
+ERROR in `AXIS`: *Thermal stress* (the chain thermal -> mechanical, planned),
+`#ASTER-LASBRON` (welding), `#ASTER-METALLURGIE` and *Bonded* contact. Nodes at X < 0 give the
+ERROR of §1.6.
+
+Verified (Code-Aster 17.4, PL-50 … PL-57, [`Verification.md`](Verification.md) §2D and
+axisymmetric): radial conduction in a tube, a total heat flow on the inner edge, convection
+and radiation on the outer edge, transient cooling of a solid cylinder against the Bessel
+series, a solid cylinder with *Internal heat generation* (PL-56) and with the same heat as a
+total *Heat flow* on the elements (PL-57), all within 0.7% of the closed form (steady cases
+within 0.1 K or 0.5%), and plane
+shells with convection without the line exactly. Mecway has no axisymmetric thermal type,
+so there is no Mecway reference; the Code-Aster test case tpla01 is replaced by these
+closed-form cases.
+
 ### 1.5 Worked examples
 
-The three models are in the repository (`TestFiles/Verificatie/modellen/`, generated by
-`tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py` and `tests_vlak_2d_contact.py`);
+The four models are in the repository (`TestFiles/Verificatie/modellen/`, generated by
+`tests_vlak_2d_thermisch.py`, `tests_vlak_2d_nonlin.py`, `tests_vlak_2d_contact.py` and
+`tests_vlak_2d_thermisch_axis.py`);
 open one in Mecway to see every setting. Units SI, steel E = 210 GPa, ν = 0.3. For `AXIS`
 the axes are those of the first figure: Y the axis of symmetry, X the radius. Route A was
 checked with the bridge (results against closed forms), not yet in Mecway's window: whether
@@ -250,16 +299,42 @@ verified; Mecway's own solve of examples 2 and 3 is not needed.
 4. Result: the mean `contactpressure` on the slave edge 12.46 MPa (Lamé: 12.46 MPa); the
    overlap is resolved in the first step.
 
+**Example 4 – route A: radial conduction in a tube (`PL-50.liml`).**
+
+1. Analysis type *Thermal Steady State* (T30).
+2. Mesh: the rectangle X = 0.1 … 0.2 m (inner and outer radius), Y = 0 … 0.01 m, 10 × 1
+   quad8, as **shell** elements.
+3. Material: *Shell/membrane* with a thickness (any value; it does not count in `AXIS`),
+   *Thermal conductivity* 50 W/m/K.
+4. Loads: *Temperature* 393 K on the inner edge (X = 0.1 m) and 293 K on the outer edge
+   (X = 0.2 m); the top and bottom edges stay insulated.
+5. The switch: in CCX > *Custom model definition* the line
+
+   ```
+   **ASTER-PLANE AXIS
+   ```
+
+6. Bridge: `auto` (→ the thermal analysis), "Results to Mecway" `liml`. The log shows
+   `INFO: ... thermal MODELISATION='AXIS' about Y` and `INFO: Elset '...' -> thermal
+   MODELISATION='AXIS' (the shell thickness does not count).`
+7. Results: `temperature` follows T(r) = T_a − (T_a − T_b) ln(r/a) / ln(b/a) (334.5 K at
+   r = 0.15 m); `heatfluxx` is the radial flux k (T_a − T_b) / (r ln(b/a)) (48.09 kW/m² at
+   r = 0.15 m, −0.07% in the result), `heatfluxy` is 0.
+
 ### 1.6 Common mistakes
 
 | What went wrong | Message of the bridge | Solution |
 |---|---|---|
 | Mesh not in the XY plane | ERROR: A 2D analysis (…) needs all nodes in the XY plane (Z = 0) … | move or rotate the mesh to Z = 0 |
-| Nodes at X < 0 in an axisymmetric model | ERROR: Axisymmetric (SA0): all nodes must have X >= 0 … (also in route A) | Y is the axis, X the radius (first figure) |
+| Nodes at X < 0 in an axisymmetric model | ERROR: Axisymmetric (…): all nodes must have X >= 0 … (the Mecway type in the brackets; also in route A) | Y is the axis, X the radius (first figure) |
 | The axis drawn along X (all X ≥ 0) | none: the bridge takes Y as the axis | draw the cross-section with Y as the axis |
 | Beams, trusses or solids in the model | ERROR: Elset '…' contains line2 …; in a 2D analysis … | only plane elements; or compute in 3D |
 | `**ASTER-PLANE` in an S20/SA0 model | ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) … (already a 2D type: remove the line) | route B needs no line; remove it |
-| `**ASTER-PLANE` in another 3D type (T30, V30, D30, …) | the same ERROR | S30 or L30; thermal 2D is not yet possible |
+| `**ASTER-PLANE` in another 3D type (V30, D30, …) | the same ERROR | S30, L30, or T30/T31 for heat transfer (§1.4.1) |
+| `**ASTER-PLANE C_PLAN` or `D_PLAN` in T30/T31 | INFO: '#ASTER-PLANE C_PLAN' in T30: thermal plane shells are a 2D model ('PLAN') already; the line is not needed. | remove the line, or write `AXIS` for an axisymmetric model |
+| *Thermal stress*, `#ASTER-LASBRON`, `#ASTER-METALLURGIE` or *Bonded* contact in an axisymmetric thermal model | ERROR: {what} in an axisymmetric thermal model ('#ASTER-PLANE AXIS' in T31) is not translated (yet). | leave it out; the chain thermal -> mechanical in `AXIS` is planned |
+| *Heat flow* on nodes in an axisymmetric thermal model | skipped: heat flow on nodes in an axisymmetric model (AXIS) is not translated; use a heat flow on an edge | a *Heat flow* on an edge |
+| A load on the face of the cross-section (faceid 5/6) in an axisymmetric thermal model | skipped: N face(s) of the cross-section (faceid 5/6) in '…': no surface in an axisymmetric model (AXIS); only edges (faceid 1..4) | put the load on an edge (faceid 1..4) or on the elements |
 | `**ASTER-PLANE` with another value or none | ERROR: '#ASTER-PLANE …': expected C_PLAN, D_PLAN or AXIS. | write C_PLAN, D_PLAN or AXIS |
 | Two `**ASTER-PLANE` lines with different values | WARNING: Several #ASTER-PLANE lines; the last one counts (…). | keep one line |
 | *Plane strain* ticked on the material with `**ASTER-PLANE C_PLAN` | WARNING: Material '…' has plane strain, but #ASTER-PLANE says C_PLAN; the bridge follows the line. | the line decides; remove the tick or write D_PLAN |
@@ -383,9 +458,13 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
   ERROR. Mecway itself has no nonlinear, frequency or buckling 2D type (Mecway 34
   converts V20 to V30 and B20 to S30); nonlinear in 2D: §1.4. S20/SA0 with a plastic
   material compute elastically (WARNING).
-- `**ASTER-PLANE` in another type than S30/L30, with another value than `C_PLAN`,
-  `D_PLAN`, `AXIS`, or without the hyphen: ERROR. An element offset in a 2D analysis (S20,
+- `**ASTER-PLANE` is allowed in S30/L30 (mechanical) and in T30/T31 (thermal, `AXIS`;
+  `C_PLAN`/`D_PLAN` there only give an INFO); in another type, with another value than
+  `C_PLAN`, `D_PLAN`, `AXIS`, or without the hyphen: ERROR. An element offset in a 2D analysis (S20,
   SA0, D20, DA0 or `**ASTER-PLANE`): ERROR.
+- Axisymmetric heat transfer (§1.4.1) with *Thermal stress* (the chain thermal -> mechanical
+  in `AXIS`, `C_PLAN`, `D_PLAN`), welding, metallurgy and *Bonded* contact: ERROR; a
+  *Heat flow* on nodes and loads on the face of the cross-section: skipped (message).
 - The error estimator (INFO) and the result route `tabel` (ERROR).
 
 ## 4. Acoustics in 2D
@@ -415,7 +494,7 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
 | ERROR: Elset '…': Static 2D (S20) needs a thickness | material without *Shell/membrane* geometry | give the material a thickness (also for plane strain) |
 | ERROR: The 2D analysis has elsets with different modelisation or thickness | two materials with a different thickness or type | one thickness and one type per model; or compute in 3D |
 | ERROR: A 2D analysis (…) needs all nodes in the XY plane (Z = 0) | mesh not in the XY plane | move or rotate the mesh into the XY plane |
-| ERROR: Axisymmetric (SA0): all nodes must have X >= 0 | part of the mesh at X < 0 | mirror the mesh to X ≥ 0 (Y = axis) |
+| ERROR: Axisymmetric (…): all nodes must have X >= 0 | part of the mesh at X < 0 | mirror the mesh to X ≥ 0 (Y = axis) |
 | ERROR: Elset '…' contains line2 …; in a 2D analysis … | beams, trusses, springs or solids in the model | remove them or compute in 3D |
 | ERROR: … in a 2D analysis (…) is not translated (yet) | contact, coupling, constraint equation, point mass, or a temperature in D20/DA0 | remove it or compute in 3D |
 | ERROR: … on '…' in a 2D analysis: … NOT included. | load or constraint without a 2D route (§3) | replace it by a supported load (§1.1) |

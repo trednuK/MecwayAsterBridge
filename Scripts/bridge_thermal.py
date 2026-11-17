@@ -868,7 +868,8 @@ class _Thermal(object):
             if cls == "shell" and fid in (5, 6):
                 if self.axis:
                     # The face of a cross-section has no meaning in AXIS
-                    parts.append(("axisface", 0.0, [], 1.0, 1.0, key))
+                    # (nodes kept: a Temperature on the region still holds)
+                    parts.append(("axisface", 0.0, cn, 1.0, 1.0, key))
                     continue
                 parts.append(("shellface", _face_area(atype, pts(cn)), cn,
                               e["f"], e["t"], key))

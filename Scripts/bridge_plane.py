@@ -510,10 +510,10 @@ def _check_nodes(model_data, atype, axis):
         xmin = min([p[0] for p in pts] + [0.0])
         if xmin < -1.0e-9 * size:
             return _fatal(
-                "Axisymmetrisch (SA0): alle knopen moeten X >= 0 hebben (X = "
+                "Axisymmetrisch ({1}): alle knopen moeten X >= 0 hebben (X = "
                 "straal, Y = as); hier X tot {0} m.",
-                "Axisymmetric (SA0): all nodes must have X >= 0 (X = radius, "
-                "Y = axis); here X down to {0} m.", "%.4g" % xmin)
+                "Axisymmetric ({1}): all nodes must have X >= 0 (X = radius, "
+                "Y = axis); here X down to {0} m.", "%.4g" % xmin, atype)
     return True
 
 
