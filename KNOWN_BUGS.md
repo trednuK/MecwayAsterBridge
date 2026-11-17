@@ -710,9 +710,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    LS-96g, BU-45 .. BU-46, MP-20). **Open**: the nodal reactions of a spectrum analysis, from
    the modes (WARNING `bridge_warping.note_reactions`); the sum per mode is right; `POU_D_T`
    for reactions. The cyclic route uses the same step but has not been run with `POU_D_TG`
-   (no cyclic case with beams). With `#ASTER-XFEM` REAC_NODA stays that of `MECA_STATIQUE`, without a
-   message. With cables or gaps next to `POU_D_TG` the step is not purely elastic (`CABLE`,
-   `DIS_CHOC`), and not converging stops the run; not measured.
+   (no cyclic case with beams). Not affected: `#ASTER-XFEM`, which only runs on a model of
+   solid elements with MODELISATION `3D`; with any beam the run stops before Code-Aster
+   (ERROR, `bridge_xfem._check_model`). With cables or gaps next to `POU_D_TG` the step is
+   not purely elastic (`CABLE`, `DIS_CHOC`), and not converging stops the run; not measured.
    EDF: not known whether this has been reported (no public issue list).
 
 134\. **Pinned support on edges in 2D: Mecway holds nothing, the bridge every node**

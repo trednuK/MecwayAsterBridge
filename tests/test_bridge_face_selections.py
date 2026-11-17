@@ -14,7 +14,8 @@
 #     ERROR naming the selection, no exception (bridge_mesh._build_discretes,
 #     _compression_only);
 #   - #ASTER-XFEM groep=<<selection>> with a selection Code-Aster renames
-#     (bridge_xfem.model_block);
+#     (bridge_xfem.model_block); XFEM with POU_D_TG beams is refused
+#     (bridge_xfem._check_model, KNOWN_BUGS 123);
 #   - thermal face loads on a selection with faces of modelled and
 #     non-modelled elements: only the active skin cells in AFFE_MODELE,
 #     ORIE_PEAU, ECHANGE and FLUX_REP (bridge_thermal._face_targets).
@@ -217,11 +218,18 @@ def _block(nx, ny, nz, lx, ly, lz, x0=0.0, y0=0.0, eid0=1, nid0=1):
     return nodes, elems
 
 
-def _xfem_liml(group, selection):
+def _xfem_liml(group, selection, beam=False):
+    """Hex8 plate with an #ASTER-XFEM half-plane crack; beam: also a line2
+    beam (elset 'Balk', RectBar) along the edge between nodes 1 and 2."""
     nodes, elems = _block(4, 3, 1, 0.1, 0.1, 0.02, y0=-0.05)
+    extra = (['  <elset name="Balk" material="B">',
+              '    <elem eid="13" shape="line2" nodes="1 2" />',
+              '  </elset>', '  <mat name="B">',
+              '<geometric type="RectBar" recta="10 mm" rectb="10 mm" />',
+              STEEL, '  </mat>'] if beam else [])
     lines = (['<liml version="34">', '  <analysis type="S30" />'] + nodes +
              ['  <elset name="Plaat" material="M">'] + elems +
-             ['  </elset>', '  <fixed selection="Onder" />',
+             ['  </elset>'] + extra + ['  <fixed selection="Onder" />',
               '  <ccxmodeldefinition>** ASTER-XFEM vorm=HALFVLAK, '
               'front=(0.05, 0, 0), normaal=(0, 1, 0), richting=(1, 0, 0), '
               'groep=&lt;&lt;%s&gt;&gt;</ccxmodeldefinition>' % group,
@@ -243,6 +251,30 @@ def test_xfem_group():
     md, comm, exc = _run(_xfem_liml("Andere", "Enri zone"), "lin_static_3d")
     check(comm is None and [m for m in _errors() if "'Andere'" in m],
           "XFEM groep=<<Andere>> without that selection: ERROR")
+    # KNOWN_BUGS 123: XFEM never runs with POU_D_TG beams (their SIEF_ELGA
+    # and REAC_NODA outside STAT_NON_LINE are wrong): the model check of
+    # bridge_xfem.model_block refuses every element that is not a solid
+    # with MODELISATION '3D', so the run stops before Code-Aster
+    saved = bridge_utils.CONFIG_BRIDGE.get("elem_beam")
+    bridge_utils.CONFIG_BRIDGE["elem_beam"] = "POU_D_TG"
+    try:
+        md, comm, exc = _run(_xfem_liml("Enri zone", "Enri zone", beam=True),
+                             "lin_static_3d")
+    finally:
+        bridge_utils.CONFIG_BRIDGE["elem_beam"] = saved
+    mods = (md or {}).get("elset_modelisations", {})
+    check(comm is None and exc is None and "POU_D_TG" in mods.values() and
+          [m for m in _errors() if "#ASTER-XFEM" in m],
+          "XFEM with a POU_D_TG beam: ERROR, no .comm ({0}, {1})".format(
+              sorted(mods.values()), _errors()[:1]))
+    # the second guard on its own: a POU_D_TG modelisation without a beam
+    # shape (artificial, pins the branch)
+    del LOG[:]
+    ok = bridge_xfem._check_model({"elem_shapes": {1: "hex8"},
+                                   "elset_modelisations": {"S": "3D",
+                                                           "B": "POU_D_TG"}})
+    check(not ok and [m for m in _errors() if "#ASTER-XFEM" in m],
+          "XFEM model check, MODELISATION POU_D_TG: ERROR")
 
 
 # ---------- thermal ----------
