@@ -317,8 +317,8 @@ opeenvolgende meshes.
   Y kδ/2: δ = P/(3EI/L³ + k/2).
 - **Resultaat**: (a) δ en veerkracht 0,00% af (tol. 0,1%); (b) δ 0,00% (tol. 0,2%).
 - **Interpretatie**: de veer werkt langs zijn eigen as. Vóór de correctie werkte een
-  veer altijd in globaal X, ook als hij langs Y lag (KNOWN_BUGS 47 beschrijft wat nog
-  niet met Mecway is vergeleken).
+  veer altijd in globaal X, ook als hij langs Y lag (vergelijking met Mecway: DY-04 en
+  KNOWN_BUGS 47).
 
 ### LS-07 Verlijmd contact tussen schalen
 
@@ -2133,6 +2133,28 @@ U-documentatie gevonden):
   recursie van het schema 4,5e-8.
 - **Interpretatie**: veer, massa, last, uitvoertijden en schema komen exact in
   Code-Aster aan; de afwijkingen zijn de bekende periodefout van het schema.
+
+### DY-04 Massa-veer-demper, staplast (Mecway *Damper*)
+
+- **Doel**: demper (`DIS_T A_T_D_L`) langs zijn eigen as, in een dynamische respons, en
+  hetzelfde model in Mecway (KNOWN_BUGS 47).
+- **Model**: line2 *Spring* k = 1000 N/m van grond A naar een knoop met m = 2 kg, line2
+  *Damper* c = 2ζ√(km) = 8,944 N·s/m (ζ = 0,1) van die knoop naar grond B; (a) langs X,
+  (b) onder 45° in het XY-vlak. De grondknopen liggen vast met *Displacement* in X, Y en
+  Z (Mecway negeert een *Fixed support* op knopen zonder rotaties, KNOWN_BUGS 135); de
+  massaknoop is alleen vrij langs de as.
+- **Randvoorwaarden en belasting**: F = 10 N langs de as vanaf t = 0, Mecway *Dynamic
+  response* (D30), Δt = 1 ms, 2 s, Newmark (`schema` = `NEWMARK`).
+- **Referentie**: u = F/k·(1 − e^(−ζωt)(cos ω_d t + ζ/√(1 − ζ²) sin ω_d t)) (Clough &
+  Penzien, 1993, hfst. 4).
+- **Resultaat**: grootste afwijking van de exacte respons 1,54e-4 van F/k in (a) en (b),
+  u(2 s) gelijk binnen 0,001%. Mecway 35 headless op hetzelfde model: dezelfde 1,54e-4,
+  en de bridge is gelijk aan Mecway tot 1e-7 van F/k. Met de standaard HHT α = −0,1
+  wijkt de bridge in de eerste 0,5 s 2,0e-3 van F/k af (eerste stap met F₀ = 0, zie
+  hierboven).
+- **Interpretatie**: veer en demper werken langs hun eigen as, zoals in Mecway; de
+  eigenfrequentie van hetzelfde systeem zonder demper is 3,55881 Hz in Mecway en de
+  bridge, gelijk aan √(k/m)/2π.
 
 ### DY-02 Ingeklemde balk, eerste eigenperiode
 

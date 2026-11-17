@@ -802,21 +802,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    different steps per interval (kinks that are not a multiple of the step) it
    has NOT been checked with a run.
 
-47\. **Springs and dampers: not compared against a Mecway solution** (question). The bridge
-   applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`; previously
-   they acted in global X, even along Y: verification LS-06, now exact). This follows
-   Mecway's CCX export (`*ELEMENT,TYPE=SPRINGA` = axial spring).
-   Headless, Mecway could not solve a hand-written spring (line2 + Spring material):
-   the internal solver ignored it (deflection equal to that without the spring; a
-   separate spring gave a singular system) and CCX gave no solution. To be checked
-   with a spring created in the Mecway GUI. Update 28 Oct 2026 (S15b): two hand-written
-   springs in series solve in Mecway 34's internal solver and equal the bridge exactly,
-   along X and inclined (PT-09/10, static), when the end nodes are held with
-   *Displacement* in X, Y and Z; with `<fixed>` on the node selection Mecway did not hold
-   those spring-only nodes (singular, displacements ~1e10 m), which may be the singular
-   system above. Springs in Buckling: Mecway gives a tensioned spring a geometric
-   stiffness, DIS_T does not (measured with a pretensioned spring, KNOWN_BUGS 124);
-   suspected for any spring with an axial force in Buckling and modal with prestress.
+47\. **Springs in Buckling and modal with prestress: no geometric stiffness** (question). The
+   bridge applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`), as Mecway
+   (manual v35 §7.7, §7.9: spring = truss without density, damper along its length).
+   Compared with Mecway 35 headless (13/17 Nov 2026): static (PT-09/10, also inclined), modal
+   (mass on a spring, along X and at 45°: 3.55881 Hz in Mecway, the bridge and √(k/m)/2π) and
+   dynamic response with a damper (DY-04a/b, Newmark: bridge = Mecway to 1e-7 of F/k; with the
+   default HHT the first step differs, see Verification DY). Spring-only nodes must be held
+   with *Displacement* in X, Y and Z: Mecway ignores a `<fixed>` on them (item 135), which was
+   the singular system of earlier hand-written spring models. Still open: Mecway gives a
+   tensioned spring a geometric stiffness in Buckling (measured with a pretensioned spring,
+   item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
+   modal with prestress, NOT measured (STAPPENPLAN S15c).
 
 116\. **Element orientation card: parts not compared with Mecway** (question,
    `bridge_orientation`). Measured headless with Mecway 34 on hand-written cards (Mecway

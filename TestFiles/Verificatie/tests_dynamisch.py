@@ -868,3 +868,99 @@ TESTS += [
                 source="Mecway 34 negeert Temperature in D30 (headless); "
                        "1 N geeft < 1e-8 m (tolerantie 1e-3 alpha dT L)")]),
 ]
+
+
+# ==========================================
+# DY-04 Mass-spring-damper under a step load (Mecway Damper, KNOWN_BUGS 47)
+# ==========================================
+# Spring (line2, k) from ground A to the mass, damper (line2, c) from the
+# mass to ground B, along X (a) and at 45 degrees in XY (b): spring and
+# damper act along their own axis (Mecway manual v35 par. 7.7, 7.9). The
+# ground nodes are held by Displacement in X, Y and Z (Mecway ignores a
+# Fixed support on nodes without rotational DOFs, KNOWN_BUGS 135), so
+# Mecway solves the same model: Mecway 35 headless (D30, own solver)
+# equals the bridge with NEWMARK to 1e-7 of F/k (13/17 Nov 2026). With
+# the default HHT alpha = -0.1 the bridge is 2e-3 of F/k off in the first
+# 0.5 s (first step with F0 = 0, Default settings "HHT, first step").
+K4, M4, F4, Z4 = 1000.0, 2.0, 10.0, 0.1
+C4 = 2.0 * Z4 * math.sqrt(K4 * M4)
+W4 = math.sqrt(K4 / M4)
+WD4 = W4 * math.sqrt(1.0 - Z4 ** 2)
+U4 = F4 / K4
+DT4, TEND4 = 0.001, 2.0
+
+
+def _sdof_damped(t):
+    """Step response of a damped SDOF (Clough & Penzien ch. 4)."""
+    return U4 * (1.0 - math.exp(-Z4 * W4 * t) * (
+        math.cos(WD4 * t) + Z4 / math.sqrt(1.0 - Z4 ** 2) *
+        math.sin(WD4 * t)))
+
+
+def build_dy04(angle):
+    def build():
+        a = math.radians(angle)
+        e = (math.cos(a), math.sin(a), 0.0)
+        p = (-math.sin(a), math.cos(a), 0.0)
+        m = Model("D30", timesteps={"timeperiod": "%r s" % TEND4,
+                                    "stepsize": "%r s" % DT4})
+        g1, n = m.node(0, 0, 0), m.node(*e)
+        g2 = m.node(2 * e[0], 2 * e[1], 0.0)
+        m.elset("Veer", "Veer")
+        m.elem("Veer", "line2", [g1, n])
+        m.mat("Veer", '<mechanical type="Spring" springconstant="%r N/m" />'
+              % K4)
+        m.elset("Demper", "Demper")
+        m.elem("Demper", "line2", [n, g2])
+        m.mat("Demper", '<mechanical type="Damper" '
+              'dampingcoefficient="%r N.s/m" />' % C4)
+        m.node_selection("Grond", [g1, g2])
+        m.node_selection("Massa", [n])
+        for d in ((1, 0, 0), (0, 1, 0), (0, 0, 1)):
+            m.add('<displacement selection="Grond"><value>0 m</value>'
+                  '<x>%d</x><y>%d</y><z>%d</z></displacement>' % d)
+        # mass node free only along the axis of spring and damper
+        for d in (p, (0.0, 0.0, 1.0)):
+            m.add('<displacement selection="Massa"><value>0 m</value>'
+                  '<x>%r</x><y>%r</y><z>%r</z></displacement>' % d)
+        m.add('<mass2 selection="Massa"><value>%r kg</value></mass2>' % M4)
+        m.add('<force selection="Massa"><x>%r N</x><y>%r N</y><z>0 N</z>'
+              '</force>' % (F4 * e[0], F4 * e[1]))
+        return m
+    return build
+
+
+def _dy04_hist(r, angle):
+    a = math.radians(angle)
+    pt = (math.cos(a), math.sin(a), 0.0)
+    hx, hy = r.history("displx", pt), r.history("disply", pt)
+    return [(t, ux * pt[0] + uy * pt[1]) for (t, ux), (_t, uy) in zip(hx, hy)]
+
+
+def _dy04_checks(angle):
+    return [
+        Check("verloop t.o.v. exact", lambda r: max(
+            abs(u - _sdof_damped(t)) for t, u in _dy04_hist(r, angle)) / U4,
+              ref=0.0, tol_abs=5e-4, unit="-",
+              source="max |u - u_exact| / (F/k), u_exact = F/k (1 - e^(-zeta "
+                     "w t) (cos wd t + zeta/sqrt(1 - zeta^2) sin wd t)) "
+                     "(Clough & Penzien ch. 4); Newmark dt = 1 ms gives "
+                     "1.5e-4, as Mecway 35"),
+        Check("u(t = 2 s)", lambda r: _dy04_hist(r, angle)[-1][1],
+              ref=_sdof_damped(TEND4), tol=1e-3, unit="m",
+              source="exact step response, zeta = c / (2 sqrt(k m)) = 0.1"),
+    ]
+
+
+TESTS += [
+    Case("DY-04a", GROUP, "Massa-veer-demper, staplast, Newmark (Mecway "
+         "Damper, langs X)", "dyna_impl_3d", build_dy04(0), _dy04_checks(0),
+         settings={"schema": "NEWMARK"}, timeout=600,
+         note="k 1000 N/m, m 2 kg, c 8.944 N.s/m (zeta 0.1), F 10 N; "
+              "Mecway 35 headless = bridge to 1e-7 of F/k (KNOWN_BUGS 47)."),
+    Case("DY-04b", GROUP, "Massa-veer-demper, staplast, Newmark (Mecway "
+         "Damper, 45 graden in XY)", "dyna_impl_3d", build_dy04(45),
+         _dy04_checks(45), settings={"schema": "NEWMARK"}, timeout=600,
+         note="As DY-04a, spring and damper along (1, 1, 0); checks the "
+              "local axis of DIS_T (REPERE='LOCAL')."),
+]

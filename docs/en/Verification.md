@@ -314,8 +314,8 @@ meshes is given below.
   gives kδ/2 in Y: δ = P/(3EI/L³ + k/2).
 - **Result**: (a) δ and spring force deviate 0.00% (tol. 0.1%); (b) δ 0.00% (tol. 0.2%).
 - **Interpretation**: the spring acts along its own axis. Before the fix a spring always
-  acted in global X, even when it lay along Y (KNOWN_BUGS 47 describes what has not yet
-  been compared with Mecway).
+  acted in global X, even when it lay along Y (Mecway comparison: DY-04 and
+  KNOWN_BUGS 47).
 
 ### LS-07 Bonded contact between shells
 
@@ -2124,6 +2124,27 @@ U documentation):
   of the scheme 4.5e-8.
 - **Interpretation**: spring, mass, load, output times and scheme arrive in Code-Aster
   exactly; the deviations are the known period error of the scheme.
+
+### DY-04 Mass-spring-damper, step load (Mecway *Damper*)
+
+- **Purpose**: damper (`DIS_T A_T_D_L`) along its own axis, in a dynamic response, and the
+  same model in Mecway (KNOWN_BUGS 47).
+- **Model**: line2 *Spring* k = 1000 N/m from ground A to a node with m = 2 kg, line2
+  *Damper* c = 2ζ√(km) = 8.944 N·s/m (ζ = 0.1) from that node to ground B; (a) along X,
+  (b) at 45° in the XY plane. The ground nodes are held by *Displacement* in X, Y and Z
+  (Mecway ignores a *Fixed support* on nodes without rotations, KNOWN_BUGS 135); the
+  mass node is free only along the axis.
+- **Boundary conditions and load**: F = 10 N along the axis from t = 0, Mecway *Dynamic
+  response* (D30), Δt = 1 ms, 2 s, Newmark (`schema` = `NEWMARK`).
+- **Reference**: u = F/k·(1 − e^(−ζωt)(cos ω_d t + ζ/√(1 − ζ²) sin ω_d t)) (Clough &
+  Penzien, 1993, ch. 4).
+- **Result**: largest deviation from the exact response 1.54e-4 of F/k in (a) and (b),
+  u(2 s) equal within 0.001%. Mecway 35 headless on the same model: the same 1.54e-4,
+  and the bridge equals Mecway to 1e-7 of F/k. With the default HHT α = −0.1 the bridge
+  deviates 2.0e-3 of F/k in the first 0.5 s (first step with F₀ = 0, see above).
+- **Interpretation**: spring and damper act along their own axis, as in Mecway; the
+  modal frequency of the same system without the damper is 3.55881 Hz in Mecway and the
+  bridge, equal to √(k/m)/2π.
 
 ### DY-02 Cantilever, first natural period
 

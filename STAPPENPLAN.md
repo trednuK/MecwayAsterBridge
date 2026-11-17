@@ -2661,7 +2661,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 37 | Second run in the same session: `solution` after `mw.open` | *draft*: low (session behaviour) |  |  |
 | 38 | Main window non-modal: other Mecway actions not checked | *draft*: low (GUI behaviour) |  |  |
 | 41 | Explicit: TCHAMWA with a variable step not checked | *draft*: low (niche, unverified) |  |  |
-| 47 | Springs and dampers: not compared against a Mecway solution | *draft*: medium (spring-only nodes with fixed (item 135 rule)) |  |  |
+| 47 | Springs and dampers: not compared against a Mecway solution (now: springs in Buckling and modal with prestress) | medium; answered: settings checked (spring-only nodes held by *Displacement* in X, Y, Z, item 135 trap avoided); Mecway 35 headless = bridge in modal (3.55881 Hz = √(k/m)/2π, along X and at 45°) and dynamic response with a damper (Newmark: 1e-7 of F/k; both 1.54e-4 from the exact solution); with the default HHT 2e-3 (documented first step); static earlier (PT-09/10) | item narrowed to the open part (geometric stiffness of a tensioned spring, S15c); new verification DY-04a/b; docs Verification and Mecway features NL+EN | this commit |
 | 116 | Element orientation card: parts not compared with Mecway | *draft*: low (unverified comparison) |  |  |
 | 118 | Results after `DVP_2` not seen in a real DVP_2 run | *draft*: low (rare failure path) |  |  |
 | 120 | Hysteretic damping: not on all discrete elements, stresses not checked | *draft*: low (niche damping) |  |  |
