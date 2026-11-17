@@ -679,9 +679,12 @@ Code-Aster value per node) and logs the largest difference per variable.
    result with the real E, without `AMOR_HYST`: a solid bar (10 hex8, 1 m, A = 0.01 m²) in
    quasi-static harmonic tension (1 .. 5 Hz, first axial mode ~1300 Hz, F = 1000 N, PHYS)
    gives a stress amplitude of 89442.8 Pa with eta = 0.5 instead of F/A = 100000 Pa
-   (equilibrium), i.e. F/A / sqrt(1 + eta^2), and exactly F/A without eta. So the stress
-   amplitude is low by sqrt(1 + eta^2) (0.02% at eta = 0.02, 0.5% at 0.1, 11% at 0.5); the
-   bridge gives a WARNING with the size (`bridge_harmonic`, when stresses are requested).
+   (equilibrium), i.e. F/A / sqrt(1 + eta^2), real part 80000 Pa = F/A / (1 + eta^2), and
+   exactly F/A without eta. The right complex stress is (1 + i eta) times the computed one:
+   the amplitude is low by sqrt(1 + eta^2) (0.02% at eta = 0.02, 0.5% at 0.1, 11% at 0.5),
+   and the real part, imaginary part and phase (atan eta) differ too. Measured with basis
+   PHYS; GENE runs the same `CALC_CHAMP`, NOT verified. The bridge gives a WARNING with the
+   size (`bridge_harmonic`, when stresses are requested and solids or shells have eta).
    Von Mises follows the stresses; reactions are not a field of this analysis.
    Displacements are right (HR-06a..d). A fix would multiply the complex stresses by
    (1 + i eta) per material (STAPPENPLAN §S46, follow-up), NOT built.

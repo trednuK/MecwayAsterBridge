@@ -752,23 +752,31 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     if etas is None:
         return None
     eta_max = max(etas.values()) if etas else 0.0
-    if etas and any(f in _STRESS_GROUPS for f in fields):
+    solid_etas = [e for n, e in etas.items()
+                  if n not in model_data.get("spring_materials", {})]
+    if solid_etas and (g3d or gsh) and any(f in _STRESS_GROUPS
+                                           for f in fields):
         # KNOWN_BUGS 120: CALC_CHAMP computes the stresses of the harmonic
-        # result with the real E, without AMOR_HYST: measured (17 Nov
-        # 2026) on a bar in quasi-static tension with eta = 0.5, the stress
-        # amplitude F/A / sqrt(1 + eta^2) (89442.8 instead of 100000 Pa);
-        # without eta exactly F/A. Displacements are right (HR-06a..d).
-        low = 100.0 * (1.0 - 1.0 / math.sqrt(1.0 + eta_max ** 2))
+        # result with the real E, without AMOR_HYST: measured (17 Nov 2026,
+        # PHYS; GENE runs the same CALC_CHAMP, NOT verified) on a bar in
+        # quasi-static tension with eta = 0.5: amplitude F/A / sqrt(1 +
+        # eta^2) (89442.8 instead of 100000 Pa), real part F/A / (1 +
+        # eta^2), phase off by atan(eta); without eta exactly F/A. The
+        # right stress is (1 + i eta) times the computed complex stress.
+        eta_s = max(solid_etas)
+        low = 100.0 * (1.0 - 1.0 / math.sqrt(1.0 + eta_s ** 2))
         log(tr("WARNING: Harmonisch met hysteretische demping "
                "(verliesfactor tot {0}): de spanningen zijn zonder de "
-               "verliesfactor berekend; de spanningsamplitude is tot {1} % "
-               "te laag (factor 1/sqrt(1 + eta^2)). Verplaatsingen zijn "
-               "juist (KNOWN_BUGS 120).",
+               "verliesfactor berekend. De juiste complexe spanning is (1 + "
+               "i eta) maal de gegeven: de amplitude is tot {1} % te laag, "
+               "ook reeel deel, imaginair deel en fase wijken af. "
+               "Verplaatsingen zijn juist (KNOWN_BUGS 120).",
                "WARNING: Harmonic with hysteretic damping (loss factor up "
-               "to {0}): the stresses are computed without the loss "
-               "factor; the stress amplitude is up to {1} % too low (factor "
-               "1/sqrt(1 + eta^2)). Displacements are right (KNOWN_BUGS "
-               "120).").format("%g" % eta_max, "%.2g" % low))
+               "to {0}): the stresses are computed without the loss factor. "
+               "The right complex stress is (1 + i eta) times the given one: "
+               "the amplitude is up to {1} % too low, and the real part, "
+               "imaginary part and phase differ too. Displacements are "
+               "right (KNOWN_BUGS 120).").format("%g" % eta_s, "%.2f" % low))
     if not (alpha or beta or zeta or dampers or etas):
         log(tr("WARNING: Harmonisch: het model heeft geen demping (Rayleigh, "
                "modal_damping, loss_factor of dempers): bij een "
