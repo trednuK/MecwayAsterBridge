@@ -39,6 +39,11 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   profiles (T beam of BU-43c: DKT only negative factors, `COQUE_3D` 26.64 / -19.91, Mecway on
   the same mesh 27.26 / 20.34). The WARNING names `COQUE_3D` (other advice when `COQUE_3D` fell
   back to DKT); DKT stays the default. Modal and buckling §3.5 and §4.
+- **Buckling WARNING also for an eccentric general section** (KNOWN_BUGS 115): a General
+  section whose `ASTER-SECTIE` line puts the shear centre off the centroid (distance above
+  0.1 sqrt(A), as `bridge_custom`) gets the WARNING of T, C and L profiles with
+  `POU_D_E`/`POU_D_T`: the geometric stiffness takes torsion about the centroid. The advice
+  names `COQUE_3D` shells; the buckling factor of such a section is NOT measured.
 - **KNOWN_BUGS re-measured and corrected**: item 1 (in Mecway 35, Mecway's hex8 is always
   incompatible-mode, whatever `<incompatiblehex8>` says; Mecway 35 values), item 2 (the shell
   difference is discretisation: Mecway and DKT/`COQUE_3D` approach each other within ~0.1%),
@@ -114,6 +119,10 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   by *Displacement* Mecway 35 equals the bridge in a modal analysis and in a dynamic response
   with a damper (Newmark, to 1e-7; new verification DY-04a/b); earlier failures came from a
   *Fixed support* on spring-only nodes, which Mecway ignores.
+- **KNOWN_BUGS 41 removed**: an imposed displacement from a time table with kinks off the
+  explicit step (`TCHAMWA`, `DIFF_CENT`) follows the table: the kinks become `INTERVALLE`
+  boundaries, the end face is within 4e-13 m, also with kinks 2 to 3 steps apart (new
+  verification DY-20d/e).
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46
   procedure with a progress table of all KNOWN_BUGS items, and the new step S47.
 
