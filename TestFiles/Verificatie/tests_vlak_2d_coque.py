@@ -269,6 +269,36 @@ def build_pl68():
     return m
 
 
+# Stresses and section forces (S44e piece 2): top (u1) = the side n = Z x U,
+# the side a positive pressure acts on; stresszz = hoop, the meridional
+# stress in stressxx/yy/xy; forceperlengthu/momentu along the meridian,
+# forceperlengthv/momentv hoop; momentu > 0 = tension on top.
+FIELDS_AX = ["displacements", "stresses", "vonmises", "reactions",
+             "shell_stresses", "shell_forces", "principal_stresses"]
+S60 = P60 * R60 / T60                       # hoop p R / t
+S61 = P61 * R61 / (2.0 * T61)               # sphere p R / (2 t)
+S62 = 3.0 * Q62 * A62 ** 2 / (4.0 * T62 ** 2)     # radial at the clamp
+S62C = 3.0 * (1.0 + NU) * Q62 * A62 ** 2 / (8.0 * T62 ** 2)   # centre
+R62B = 0.9 * A62                            # a corner node near the clamp
+# Timoshenko, clamped plate: M_r and M_theta at r (positive: sagging)
+MR62 = Q62 * (A62 ** 2 * (1.0 + NU) - R62B ** 2 * (3.0 + NU)) / 16.0
+MT62 = Q62 * (A62 ** 2 * (1.0 + NU) - R62B ** 2 * (1.0 + 3.0 * NU)) / 16.0
+S63 = 6.0 * M063 / T63 ** 2                 # bending at the clamp
+N66 = F66 / (2.0 * math.pi * R60)           # axial force per circumference
+C45 = 0.5 * math.sqrt(2.0)
+
+
+def _stress_checks_60(t=None, factor=1.0):
+    at = (R60, 0.5 * L60, 0.0)
+    return [
+        Check("hoop midden" + ("" if t is None else " t = %g s" % t),
+              lambda r: r.at("stresszzm1", at, time=t), ref=S60 * factor,
+              tol=0.005, unit="Pa", source="membraan: p R / t"),
+        Check("meridiaan midden", lambda r: r.at("stressyym1", at, time=t),
+              ref=0.0, tol_abs=1e-3 * S60, unit="Pa", in_series=False,
+              source="axiaal vrij: 0")]
+
+
 TESTS = []
 TESTS.append(Case(
     "PL-60", GROUP, "Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE "
@@ -277,7 +307,18 @@ TESTS.append(Case(
            ref=U60, tol=0.005, unit="m", source="membraan: p R^2 / (E t)"),
      Check("u_y boven", lambda r: r.at("disply", (R60, L60, 0.0)),
            ref=V60, tol=0.005, unit="m",
-           source="membraan, axiaal vrij: -nu p R L / (E t)")],
+           source="membraan, axiaal vrij: -nu p R L / (E t)")] +
+    _stress_checks_60() + [
+     Check("von Mises boven", lambda r: r.at(
+         "vonmisesu1", (R60, 0.5 * L60, 0.0)), ref=S60, tol=0.005,
+         unit="Pa", source="membraan: alleen de ringspanning"),
+     Check("N_v (ring) midden", lambda r: r.at(
+         "forceperlengthv", (R60, 0.5 * L60, 0.0)), ref=P60 * R60,
+         tol=0.005, unit="N/m", source="membraan: p R"),
+     Check("hoofdspanning 1 boven", lambda r: r.at(
+         "principal1u1", (R60, 0.5 * L60, 0.0)), ref=S60, tol=0.005,
+         unit="Pa", source="membraan: p R / t")],
+    settings={"fields": FIELDS_AX},
     note="R = 0,5 m, t = 5 mm (#ASTER-SHELL), L = 1 m, 20 line3, p = 1 MPa "
          "op faceid 1, Y vast in de onderste knoop."))
 TESTS.append(Case(
@@ -288,7 +329,20 @@ TESTS.append(Case(
            source="membraan: p R^2 (1 - nu) / (2 E t)"),
      Check("u_y pool", lambda r: r.at("disply", (0.0, R61, 0.0)),
            ref=U61, tol=0.005, unit="m",
-           source="membraan: p R^2 (1 - nu) / (2 E t)")],
+           source="membraan: p R^2 (1 - nu) / (2 E t)"),
+     Check("ring evenaar", lambda r: r.at("stresszzm1", (R61, 0.0, 0.0)),
+           ref=S61, tol=0.005, unit="Pa", source="membraan: p R / (2 t)"),
+     Check("meridiaan evenaar", lambda r: r.at(
+         "stressyym1", (R61, 0.0, 0.0)), ref=S61, tol=0.005, unit="Pa",
+         source="membraan: p R / (2 t), langs Y"),
+     Check("xx bij 45 graden", lambda r: r.at(
+         "stressxxm1", (C45 * R61, C45 * R61, 0.0)), ref=0.5 * S61,
+         tol=1e-5, unit="Pa", source="draaiing: sigma / 2"),
+     Check("xy bij 45 graden", lambda r: r.at(
+         "stressxym1", (C45 * R61, C45 * R61, 0.0)), ref=-0.5 * S61,
+         tol=1e-5, unit="Pa",
+         source="draaiing met de raaklijn: -sigma / 2 (koorde: 1e-3)")],
+    settings={"fields": FIELDS_AX},
     note="R = 1 m, t = 10 mm (Shell/membrane en #ASTER-SHELL gelijk), kwart "
          "meridiaan 32 line3, p = 0,1 MPa; symmetrie Y in de evenaar, X in "
          "de pool (houdt ook de rotatie om Z vast)."))
@@ -303,7 +357,32 @@ TESTS.append(Case(
          source="dw/dr = 3 q a^3 / (128 D) (rechtsom om +Z)"),
      Check("som R_y rand", lambda r: r.total("reactionforcey", "Rand"),
            ref=Q62 * math.pi * A62 ** 2, tol=1e-6, unit="N",
-           in_series=False, source="evenwicht: q pi a^2 (360 graden)")],
+           in_series=False, source="evenwicht: q pi a^2 (360 graden)"),
+     Check("radiaal boven r = 0,9 a", lambda r: r.at(
+         "stressxxu1", (R62B, 0.0, 0.0)), ref=-6.0 * MR62 / T62 ** 2,
+         tol=0.005, unit="Pa",
+         source="Timoshenko: -6 M_r / t^2 (trek aan de drukzijde)"),
+     Check("radiaal onder r = 0,9 a", lambda r: r.at(
+         "stressxxb1", (R62B, 0.0, 0.0)), ref=6.0 * MR62 / T62 ** 2,
+         tol=0.005, unit="Pa", source="Timoshenko: 6 M_r / t^2"),
+     Check("ring boven r = 0,9 a", lambda r: r.at(
+         "stresszzu1", (R62B, 0.0, 0.0)), ref=-6.0 * MT62 / T62 ** 2,
+         tol=0.005, unit="Pa", source="Timoshenko: -6 M_theta / t^2"),
+     Check("ring boven midden", lambda r: r.at(
+         "stresszzu1", (0.0, 0.0, 0.0)), ref=-S62C, tol=0.005, unit="Pa",
+         source="Timoshenko: -3 (1 + nu) q a^2 / (8 t^2)"),
+     Check("M_u r = 0,9 a", lambda r: r.at("momentu", (R62B, 0.0, 0.0)),
+           ref=-MR62, tol=0.005, unit="N m/m",
+           source="Timoshenko: -M_r (trek boven)"),
+     Check("M_v r = 0,9 a", lambda r: r.at("momentv", (R62B, 0.0, 0.0)),
+           ref=-MT62, tol=0.005, unit="N m/m",
+           source="Timoshenko: -M_theta (trek boven)"),
+     Check("radiaal boven rand", lambda r: r.at(
+         "stressxxu1", (A62, 0.0, 0.0)), ref=S62, tol=0.05, unit="Pa",
+         in_series=False,
+         source="3 q a^2 / (4 t^2); in de klemknoop lineair per element "
+                "(gemeten -4,4 % met 20 line3)")],
+    settings={"fields": FIELDS_AX},
     note="a = 1 m, t = 10 mm (RectBar a = 10 mm, geen regel), 20 line3 van "
          "het midden naar de rand, q = 1000 Pa op faceid 1 (duwt langs -Y); "
          "rand Fixed, midden symmetrie X."))
@@ -316,7 +395,17 @@ TESTS.append(Case(
                   "(R^2 t^2)"),
      Check("Q0 per omtrek", lambda r: r.total("reactionforcex", "Klem") /
            (2.0 * math.pi * R63), ref=Q063, tol=0.02, unit="N/m",
-           source="Timoshenko: Q0 = p / beta (naar de as)")],
+           source="Timoshenko: Q0 = p / beta (naar de as)"),
+     Check("meridiaan boven klem", lambda r: r.at(
+         "stressyyu1", (R63, 0.0, 0.0)), ref=S63, tol=0.02, unit="Pa",
+         source="6 M0 / t^2, trek aan de binnenkant (boven)"),
+     Check("meridiaan onder klem", lambda r: r.at(
+         "stressyyb1", (R63, 0.0, 0.0)), ref=-S63, tol=0.02, unit="Pa",
+         source="-6 M0 / t^2"),
+     Check("M_u klem", lambda r: r.at("momentu", (R63, 0.0, 0.0)),
+           ref=M063, tol=0.02, unit="N m/m",
+           source="Timoshenko: M0 (trek boven)")],
+    settings={"fields": FIELDS_AX},
     note="R = 1 m, t = 10 mm (R/t = 100), L = 0,5 m = %.1f / beta, 100 line3 "
          "(%.2f / beta), p = 0,1 MPa; Fixed in de onderste knoop, axiaal "
          "vrij." % (L63 * BETA63, L63 / N63 * BETA63)))
@@ -341,7 +430,9 @@ TESTS.append(Case(
     "#ASTER-PLANE AXIS)", "nonlin_static_3d", build_pl60("L30"),
     [Check("u_r t = %g s" % t, lambda r, t=t: r.at(
         "displx", (R60, 0.5 * L60, 0.0), time=t), ref=U60 * t, tol=0.005,
-        unit="m", source="membraan: p(t) R^2 / (E t)") for t in (0.5, 1.0)],
+        unit="m", source="membraan: p(t) R^2 / (E t)") for t in (0.5, 1.0)] +
+    _stress_checks_60(0.5, 0.5)[:1],
+    settings={"fields": FIELDS_AX},
     note="PL-60 als L30, druk 0 .. 1 MPa over 1 s in twee stappen, "
          "deformation GROT_GDEP (standaard) -> PETIT met een WARNING."))
 TESTS.append(Case(
@@ -352,7 +443,14 @@ TESTS.append(Case(
            source="F L / (2 pi R t E)"),
      Check("R_y boven", lambda r: r.total("reactionforcey", "Boven"),
            ref=F66, tol=1e-6, unit="N", in_series=False,
-           source="evenwicht (360 graden)")],
+           source="evenwicht (360 graden)"),
+     Check("N_u midden", lambda r: r.at(
+         "forceperlengthu", (R60, 0.5 * L60, 0.0)), ref=N66, tol=0.005,
+         unit="N/m", source="F / (2 pi R), trek (per lengte omtrek)"),
+     Check("meridiaan midden", lambda r: r.at(
+         "stressyym1", (R60, 0.5 * L60, 0.0)), ref=N66 / T60, tol=0.005,
+         unit="Pa", source="F / (2 pi R t)")],
+    settings={"fields": FIELDS_AX},
     note="De buis van PL-60, Y vast boven, kracht -1000 N langs Y op de "
          "onderste knoop (de hele ring)."))
 TESTS.append(Case(

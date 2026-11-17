@@ -1439,10 +1439,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    the thermal -> mechanical chain in `AXIS` (T31 with *Thermal stress*, S44d piece 2, PL-58, PL-59 with an internal pressure;
    not: the result route `tabel`, contact, node-surface couplings, bonded contact and an initial
    velocity in the chain, welding, metallurgy and bonded contact in `AXIS`, the chain in `C_PLAN`/`D_PLAN`);
-   axisymmetric shells (S44e piece 1, PL-60 … PL-68): line3 elements in S30/L30 with
+   axisymmetric shells (S44e, PL-60 … PL-68): line3 elements in S30/L30 with
    `**ASTER-PLANE AXIS` as `COQUE_AXIS`, the thickness from `**ASTER-SHELL`, *Shell/membrane* or
-   a *RectBar*, displacements, `rotz` and reactions (not yet: the shell stresses and section
-   forces, piece 2; not: line2, plasticity, mixing with plane elements, temperatures, contact,
+   a *RectBar*, displacements, `rotz`, reactions, stresses per surface and section forces
+   (not: transverse shear, strain, factor of safety, section forces in L30, line2, plasticity, mixing with plane elements, temperatures, contact,
    centrifugal force, traction, line pressure, a pressure formula in x, y, z; how Mecway shows
    the result and whether its window accepts a pressure on the side of a line element NOT
    verified)
@@ -1454,7 +1454,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    (moment, line pressure, hydrostatic, frictionless, elastic support, oblique directions,
    constraint equations, couplings, contact, point masses, temperatures in D20/DA0), the error estimator
    (INFO) and the result route `tabel` (ERROR) (step S16e; nonlinear, contact, thermal and
-   axisymmetric shells: S44; the shell stresses: S44e piece 2). Mecway itself has no thermal,
+   axisymmetric shells: S44). Mecway itself has no thermal,
    frequency, buckling, axisymmetric acoustic or nonlinear 2D type (Mecway 34 converts V20 to V30 and B20/T20/L20 to
    S30; thermal 2D is made of shells, `bridge_thermal`).
 

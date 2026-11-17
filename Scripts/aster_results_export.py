@@ -1112,6 +1112,8 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
     if fields.rows is None:
         wanted = [g for g in OPT_IN_GROUPS
                   if _wanted(g, groups_wanted, opt_in)]
+        if _axis_shells() and _wanted("vonmises", groups_wanted, opt_in):
+            wanted.append("axis_vonmises")
         for var in _plan_derived(fields, model, conn, wanted,
                                  **(derived or {})):
             target = elem_vars if var.element else node_vars
@@ -1240,6 +1242,68 @@ _SHELL_FORCE_NAMES = ("forceperlengthu", "forceperlengthv",
                       "forceperlengthuv", "momentu", "momentv", "momentuv",
                       "shearuw", "shearvw")
 
+# Axisymmetric shells (COQUE_AXIS on SEG3, bridge_plane, S44e piece 2;
+# _PLANE["axis_shells"]). Measured with Code-Aster 17.4 (PL-63, chain along
+# +Y at X = 1, clamped at y = 0, internal pressure):
+#   - SIGM_ELNO after EXTR_COQUE: SIXX along the meridian (Code-Aster's
+#     local x = the tangent, node 1 -> node 2), SIYY hoop, SIZZ = 0, SIXZ
+#     transverse; SUP is the side U x Z (the outside there: SIXX SUP =
+#     -6 M0 / t^2 at the clamp, where the inside is in tension).
+#   - SIXZ is equal on all three layers and about 2 Q / (A_CIS t) (A_CIS
+#     5/6: 2.42 Q / t, A_CIS 1: 2.03 Q / t; Q from the reaction), not the
+#     physical transverse shear (zero on the faces); NOT verified in a
+#     te*.F90. It is left out of the tensor, so von Mises (computed here,
+#     no SIEQ in the job) is that of the faces of a thin shell; at the
+#     middle surface the transverse shear is missing.
+#   - EFGE_ELNO: NXX, NYY, NXY (0), MXX, MYY, MXY (0), no QX; NXX/NYY per
+#     length of the meridian/circumference (NYY = p R far from the clamp);
+#     MXX > 0 gives tension on SUP (SIXX SUP = NXX / t + 6 MXX / t^2).
+# Mecway's top (u1) is the side n = Z x U of docs 2D_and_axisymmetric
+# sec. 1.4.2 (the side a positive pressure acts on) = Code-Aster's INF; so
+# u1 from res_inf, b1 from res_sup and momentu = -MXX, momentv = -MYY
+# (momentu > 0 gives tension on top, as for 3D shells). Global tensor with
+# the frame [t, Z, t x Z] per element node: stressxx/yy/xy from the
+# meridional stress, stresszz = hoop (as 2D AXIS solids).
+_AXIS_LEVELS = (("inf", "u"), ("moy", "m"), ("sup", "b"))
+_AXIS_SIGM_IJ = {"SIXX": (0, 0), "SIYY": (1, 1), "SIZZ": (2, 2)}
+_AXIS_FORCE_NAMES = ("forceperlengthu", "forceperlengthv", "momentu",
+                     "momentv")
+# derivatives of the SEG3 shape functions at the cell nodes, in Code-Aster's
+# cell order (end 1, end 2, middle; xi = -1, +1, 0)
+_SEG3_DN = ((-1.5, -0.5, 2.0), (0.5, 1.5, -2.0), (-0.5, 0.5, 0.0))
+
+
+def _axis_shells():
+    return bool(_PLANE.get("axis_shells"))
+
+
+def _shell_levels():
+    """(Code-Aster level, Mecway suffix) per surface."""
+    return _AXIS_LEVELS if _axis_shells() else _SHELL_LEVELS
+
+
+def _shell_sigm_ij():
+    return _AXIS_SIGM_IJ if _axis_shells() else _SIGM_IJ
+
+
+def _axis_frames(xyz, cell_nodes):
+    """Per point of a SEG3 cell (cell order) the frame [t, Z, t x Z] with
+    t the unit tangent of the cell at that node, or None (degenerate or
+    not a SEG3)."""
+    if len(cell_nodes) != 3:
+        return None
+    p = xyz[list(cell_nodes)]
+    z = np.array([0.0, 0.0, 1.0])
+    out = []
+    for dn in _SEG3_DN:
+        t = dn[0] * p[0] + dn[1] * p[1] + dn[2] * p[2]
+        t = t - t.dot(z) * z
+        if np.linalg.norm(t) == 0.0:
+            return None
+        t = t / np.linalg.norm(t)
+        out.append(np.column_stack((t, z, np.cross(t, z))))
+    return out
+
 
 def _elset_of(model):
     out = {}
@@ -1293,8 +1357,10 @@ def _shell_points(fields, rkey, field, cmp0, conn, model, xyz, vectors,
     if found is None:
         return None
     d, _icmp, (start, nbpt, nbsp) = found
+    axis = _axis_shells()
+    shapes = ("line3",) if axis else SHELL_SHAPES
     shells = dict((e, v) for e, v in model["elements"].items()
-                  if v[0] in SHELL_SHAPES)
+                  if v[0] in shapes)
     cells = _element_points(fields, conn, shells, nbpt, nbsp,
                             "{0}:{1}".format(rkey, field),
                             model["elements"])
@@ -1303,16 +1369,25 @@ def _shell_points(fields, rkey, field, cmp0, conn, model, xyz, vectors,
         c = cells[eid][0][0]
         cn = list(conn[c])
         if eid not in frames:
-            frames[eid] = _shell_frame(model, xyz, cn, eid, vectors,
-                                       elset_of)
+            frames[eid] = (_axis_frames(xyz, cn) if axis else
+                           _shell_frame(model, xyz, cn, eid, vectors,
+                                        elset_of))
         if frames[eid] is None:
             continue
-        r, co, si = frames[eid]
+        if axis:
+            # one frame per point (the tangent of a curved SEG3 varies),
+            # U = the meridian: no in-plane angle
+            if len(frames[eid]) != nbpt[c]:
+                continue
+            point_rot, co, si = frames[eid], 1.0, 0.0
+        else:
+            r, co, si = frames[eid]
+            point_rot = [r] * nbpt[c]
         base = len(rows)
         rows.extend(range(start[c], start[c] + nbpt[c]))
         # nodal values at the Mecway nodes (also of offset cells)
         node.extend(_cell_nodes(fields, cn))
-        rot.extend([r] * nbpt[c])
+        rot.extend(point_rot)
         cs.extend([(co, si)] * nbpt[c])
         gather.extend(base + k for _c, k in cells[eid])
         eids.append(eid)
@@ -1376,6 +1451,33 @@ def _shell_forces(fields, plan, rkey):
     qx, qy = col("QX"), col("QY")
     out += [c * qx + s * qy, -s * qx + c * qy]
     return np.column_stack(out)
+
+
+def _axis_forces(fields, plan, rkey):
+    """(points, 4) forceperlengthu/v, momentu/v of axisymmetric shells from
+    EFGE_ELNO (NXX, NYY, -MXX, -MYY; see _AXIS_LEVELS), or None."""
+    d = fields.get(rkey, "EFGE_ELNO", True)
+    if d is None:
+        return None
+    vals = d[1][plan["rows"]]
+
+    def col(name):
+        if name in d[0]:
+            return vals[:, d[0].index(name)]
+        return np.zeros(len(vals))
+    return np.column_stack([col("NXX"), col("NYY"), -col("MXX"),
+                            -col("MYY")])
+
+
+def _von_mises_columns(m):
+    """(points, 1) von Mises of global tensors (points, 6) in
+    _TENSOR_ORDER, or None."""
+    if m is None:
+        return None
+    xx, yy, zz, xy, yz, zx = [m[:, k] for k in range(6)]
+    vm = np.sqrt(0.5 * ((xx - yy) ** 2 + (yy - zz) ** 2 + (zz - xx) ** 2) +
+                 3.0 * (xy ** 2 + yz ** 2 + zx ** 2))
+    return vm.reshape(-1, 1)
 
 
 def _point_vars(plan, name_cols, compute, key):
@@ -1721,11 +1823,11 @@ def _shell_principal_vars(fields, model, conn, wanted, xyz, vectors,
     """
     specs = []
     if "principal_stresses" in wanted:
-        specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _SIGM_IJ,
+        specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _shell_sigm_ij(),
                    ["principal{0}{1}1".format(k, suf) for k in (1, 2, 3)] +
                    ["tresca{0}1".format(suf)])
-                  for lvl, suf in _SHELL_LEVELS]
-    if "principal_strains" in wanted:
+                  for lvl, suf in _shell_levels()]
+    if "principal_strains" in wanted and not _axis_shells():
         specs += [("eps_" + lvl, "EPSI_ELNO", "EPXX", _EPSI_IJ,
                    ["lprincipalstrain{0}{1}1".format(k, suf)
                     for k in (1, 2, 3)])
@@ -1821,7 +1923,8 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
     if solid_frames:
         out += _element_coord_vars(fields, model, conn, solid_frames)
     shell_groups = [g for g in ("shell_stresses", "strain", "shell_forces",
-                                "principal_stresses", "principal_strains")
+                                "principal_stresses", "principal_strains",
+                                "axis_vonmises")
                     if g in wanted]
     if not shell_groups:
         return out
@@ -1832,11 +1935,30 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
     frames = {}
     out += _shell_principal_vars(fields, model, conn, wanted, xyz, vectors,
                                  elset_of, frames)
+    if "axis_vonmises" in wanted:
+        # von Mises per surface of axisymmetric shells (see _AXIS_LEVELS):
+        # node variables vonmisesu1/m/b as for 3D shells (FIELD_TABLE)
+        for lvl, suf in _AXIS_LEVELS:
+            rkey = "res_" + lvl
+            if rkey not in fields.results:
+                continue
+            plan = _shell_points(fields, rkey, "SIGM_ELNO", "SIXX", conn,
+                                 model, xyz, vectors, elset_of, frames)
+            if plan is None:
+                continue
+
+            def compute(fields, plan=plan, rkey=rkey):
+                return lambda: _von_mises_columns(_shell_tensor(
+                    fields, plan, rkey, "SIGM_ELNO", _AXIS_SIGM_IJ))
+            name = "vonmises" + suf + ("1" if suf == "u" else "")
+            out += [v for v in _point_vars(plan, [(name, 0, 1.0)], compute,
+                                           (rkey, "SIGM_ELNO", "vm"))
+                    if not v.element]
     specs = []
     if "shell_stresses" in wanted:
-        specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _SIGM_IJ, "stress",
-                   suf + "1", 1.0) for lvl, suf in _SHELL_LEVELS]
-    if "strain" in wanted:
+        specs += [("res_" + lvl, "SIGM_ELNO", "SIXX", _shell_sigm_ij(),
+                   "stress", suf + "1", 1.0) for lvl, suf in _shell_levels()]
+    if "strain" in wanted and not _axis_shells():
         specs += [("eps_" + lvl, "EPSI_ELNO", "EPXX", _EPSI_IJ, "lstrain",
                    suf, 2.0) for lvl, suf in _SHELL_LEVELS]
     for rkey, field, cmp0, cmap, prefix, suffix, shear in specs:
@@ -1852,7 +1974,17 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
         cols = [(prefix + s + suffix, k, shear if i != j else 1.0)
                 for k, (s, i, j) in enumerate(_TENSOR_ORDER)]
         out += _point_vars(plan, cols, compute, (rkey, field))
-    if "shell_forces" in wanted and "res_efs" in fields.results:
+    if "shell_forces" in wanted and "res_efs" in fields.results and \
+            _axis_shells():
+        plan = _shell_points(fields, "res_efs", "EFGE_ELNO", "NXX", conn,
+                             model, xyz, vectors, elset_of, frames)
+        if plan is not None:
+            def compute(fields, plan=plan):
+                return lambda: _axis_forces(fields, plan, "res_efs")
+            out += _point_vars(plan, [(name, k, 1.0) for k, name in
+                                      enumerate(_AXIS_FORCE_NAMES)],
+                               compute, ("res_efs", "EFGE_ELNO"))
+    elif "shell_forces" in wanted and "res_efs" in fields.results:
         plan = _shell_points(fields, "res_efs", "EFGE_ELNO", "NXX", conn,
                              model, xyz, vectors, elset_of, frames)
         if plan is not None:
@@ -3277,6 +3409,9 @@ def _report_missing(results, groups_wanted, opt_in=frozenset(),
         if group == "beam_forces" and field.replace(
                 "EFGE_", "SIEF_") in names[rkey]:
             continue    # POU_D_T_GD: section forces in SIEF_NOEU/SIEF_ELNO
+        if (_axis_shells() and rkey in ("res_sup", "res_moy", "res_inf")
+                and field.startswith("SIEQ")):
+            continue    # axisymmetric shells: von Mises computed here
         if field not in names[rkey]:
             missing.add("{0}:{1}".format(rkey, field))
     if missing:

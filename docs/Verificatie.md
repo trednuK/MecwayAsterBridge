@@ -1029,7 +1029,7 @@ zijn gesloten vormen):
   binnen 6,8e-6; de axiale reactie 8,2730e+06 N (thermisch 2π α E ∫ θ r dr min Lamé
   σ_z π(b² − a²), σ_z = 2νA) binnen 9,5e-7.
 
-Axisymmetrische schalen (STAPPENPLAN S44e deel 1, `tests_vlak_2d_coque.py`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.2):
+Axisymmetrische schalen (STAPPENPLAN S44e, `tests_vlak_2d_coque.py`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.2):
 line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de dikte uit
 `**ASTER-SHELL` (PL-60, PL-63 … PL-68), *Shell/membrane* met dezelfde regel (PL-61) of een *RectBar*
 (PL-62). E = 210 GPa, ν = 0,3 (PL-64: 200 GPa). Gesloten vormen: Timoshenko & Woinowsky-Krieger
@@ -1070,6 +1070,31 @@ line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de d
   langs Y): de reactie ρ g 2π R t L = 1209,6 N (7e-14) en de massa van de controle van de
   bridge (`BRIDGE_STATCHECK`) ρ 2π R t L = 123,31 kg (3e-15): `MASS_INER` van `COQUE_AXIS` is al de massa
   van 360 graden, zoals bij `AXIS`.
+
+Spanningen en snedekrachten van de schalen (S44e deel 2; PL-60 … PL-63, PL-65 en PL-66 met de
+resultaatvelden `shell_stresses`, `shell_forces` en `principal_stresses`; boven `u1` = de kant
+n = Z × U, de kant van de druk):
+
+- **PL-60**: de ringspanning `stresszzm1` p R / t = 1e8 Pa (3e-14), `vonmisesu1` en
+  `principal1u1` hetzelfde (1e-14, 2e-14), `forceperlengthv` p R = 5e5 N/m (3e-14), de
+  meridiaanspanning `stressyym1` 3,7e-6 Pa (grens 1e5 Pa).
+- **PL-61**: in de evenaar `stresszzm1` en `stressyym1` p R / (2t) = 5e6 Pa (−7e-9, −1e-9);
+  op de meridiaan onder 45 graden `stressxxm1` = σ/2 en `stressxym1` = −σ/2 (1e-9, tolerantie
+  1e-5; de koorde in plaats van de raaklijn zou 1e-3 geven): de draaiing met de raaklijn van
+  het element.
+- **PL-62**: bij r = 0,9 a (een hoekknoop twee elementen van de inklemming) de radiale
+  spanning −6 M_r/t² boven +5,1551e6 Pa (+0,12%, trek aan de belaste kant) en onder
+  −5,1551e6 Pa, de ringspanning −6 M_θ/t² (+0,29%), `momentu` −M_r = 85,92 N m/m (+0,12%),
+  `momentv` −M_θ = 14,98 N m/m (+0,29%);
+  de ringspanning boven in het midden −3(1 + ν) q a²/(8 t²) −4,886e6 Pa (+0,23%); tolerantie
+  0,5%. In de ingeklemde knoop zelf 3 q a²/(4 t²) 7,173e6 Pa (−4,4%, grens 5%): de spanning
+  van `COQUE_AXIS` is lineair over een element, en bij de inklemming verandert het moment snel.
+- **PL-63**: de meridiaanspanning bij de inklemming ±6 M0/t² = ±1,8157e7 Pa: boven (de
+  binnenkant) +1,7959e7 Pa (−1,09%), onder −1,7958e7 Pa (−1,10%), `momentu` 299,30 N m/m
+  tegen M0 302,61 (−1,09%); tolerantie 2%.
+- **PL-65**: de ringspanning op 0,5 s 5e7 Pa (5e-14); `shell_forces` geeft in L30 een INFO.
+- **PL-66**: `forceperlengthu` F/(2π R) = 318,31 N/m en `stressyym1` F/(2π R t) = 63662 Pa
+  (1e-13): per lengte van de omtrek.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

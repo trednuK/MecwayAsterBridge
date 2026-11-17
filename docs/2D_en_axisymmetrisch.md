@@ -13,7 +13,7 @@ Code-Aster `MECA_STATIQUE` of `DYNA_NON_LINE` met vlakke elementen (U3.13.01
 | Static Axisymmetric (SA0) | geen geometrie (isotroop materiaal) | `AXIS` | verplaatsing X (radiaal), Y (axiaal); spanning met `stresszz` = tangentiële spanning (hoop stress); reacties voor 360 graden |
 | Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | als S20 / SA0 | als S20 / SA0, in de tijd (§2.4) | als S20 / SA0 per uitvoertijd, plus snelheid en versnelling |
 | Acoustic Resonance 2D (A20) | *Speed of sound* (een dikte telt niet) | `PHENOMENE='ACOUSTIQUE'`, `PLAN` (§4) | per mode de frequentie en het drukveld `pressure`, als A30 |
-| Static 3D (S30), Nonlinear Static (L30) met line3-elementen en `**ASTER-PLANE AXIS` | isotroop elastisch; de dikte uit `**ASTER-SHELL`, *Shell/membrane* of *RectBar* | `COQUE_AXIS` (§1.4.2) | verplaatsing X, Y, rotatie `rotz`; reacties en `reactionmomz` voor 360 graden; nog geen spanningen |
+| Static 3D (S30), Nonlinear Static (L30) met line3-elementen en `**ASTER-PLANE AXIS` | isotroop elastisch; de dikte uit `**ASTER-SHELL`, *Shell/membrane* of *RectBar* | `COQUE_AXIS` (§1.4.2) | verplaatsing X, Y, rotatie `rotz`; reacties en `reactionmomz` voor 360 graden; von Mises per oppervlak, en met de resultaatvelden `shell_stresses`, `shell_forces`, `principal_stresses` de spanningen, snedekrachten en hoofdspanningen per oppervlak (§1.4.2) |
 
 De bridge-analyse is `lin_static_3d` ("Statisch") voor S20 en SA0 en `dyna_impl_3d`
 ("Dynamisch (impliciet)") voor D20 en DA0: met *Actieve analyse (auto = volgens Mecway)*
@@ -346,6 +346,8 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
 5. Een positieve *Pressure* op faceid 1 (de zijkant van een lijnelement) duwt langs −n: hier naar buiten, een inwendige druk.
 6. De wanddikte t, gecentreerd op de lijn van de knopen.
 7. Mecway's Z-as, uit de tekening.
+8. Het bovenoppervlak (resultaten `…u1`): het vlak aan de kant van n, waar een positieve druk op werkt.
+9. Het onderoppervlak (resultaten `…b`, `…b1`): het vlak aan de andere kant.
 
 1. **Analysetype.** *Static 3D* (S30) of *Nonlinear Static* (L30, solver CCX).
 2. **Mesh.** Alleen line3-elementen in het XY-vlak (Z = 0), alle knopen bij X ≥ 0; geen
@@ -387,19 +389,61 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
    …`. In L30 rekenen de schalen met kleine verplaatsingen (`deformation` anders dan `PETIT`:
    WARNING; Code-Aster raadt het bijwerken van de geometrie van `COQUE_AXIS` af).
 
-Resultaten in Mecway: `displx` (radiaal), `disply` (axiaal), `displmag`, `rotz` (de rotatie om
-Z, rechtsom: positief draait X naar Y), `reactionforcex`, `reactionforcey`,
-`reactionforcemag`, `reactionmomz` en `reactionmommag` (= |`reactionmomz`|), de reacties voor
-360 graden (× 2π). Nog niet: de
-spanningen en snedekrachten van de schaal (meridiaan- en tangentiële spanning, boven- en
-onderkant; STAPPENPLAN S44e deel 2); de log meldt dat (INFO) en de bridge schrijft geen
-spanningsveld. Nagelopen met Code-Aster 17.4 (PL-60 … PL-68, [`Verificatie.md`](Verificatie.md)):
-een membraancilinder en -bol binnen 1e-7, een ingeklemde ronde plaat 0,03% (doorbuiging) en
-0,07% (rotatie), het inklemmoment van een lange cilinder −0,94% (p / (2β²)), de
-Code-Aster-testcase ssls114i exact, een druk als tijdtabel in L30, een knoopkracht, een
-ringmoment (+0,24%) en zwaartekracht. NIET geverifieerd: hoe Mecway deze resultaten toont en of
-Mecway's venster de invoer accepteert (een druk op de zijkant van een lijnelement in S30 of
-L30; Mecway's eigen solve rekent de lijnelementen als balken, niet als deze schaal).
+**Resultaten in Mecway.**
+
+| Mecway-variabele | Betekenis | Resultaatveld (startscherm) |
+|---|---|---|
+| `displx`, `disply`, `displmag` | radiale en axiale verplaatsing | `displacements` |
+| `rotz` | de rotatie om Z, rechtsom: positief draait X naar Y | `displacements` |
+| `reactionforcex`, `reactionforcey`, `reactionforcemag`, `reactionmomz`, `reactionmommag` | de reacties voor 360 graden (× 2π); `reactionmommag` = \|`reactionmomz`\| | `reactions` |
+| `vonmisesu1`, `vonmisesm`, `vonmisesb` | von Mises op het bovenoppervlak, het middenvlak en het onderoppervlak (knoopwaarden) | `vonmises` |
+| `stressxxu1` … `stresszxu1`, `…m1`, `…b1` | de spanningstensor per oppervlak in globaal X, Y, Z: `stresszz…` = de tangentiële spanning (ringspanning), de meridiaanspanning in `stressxx…`, `stressyy…`, `stressxy…` (een cilinder langs Y: `stressyy…`; een ronde plaat langs X: `stressxx…`); `stressyz…`, `stresszx…` = 0 | `shell_stresses` |
+| `forceperlengthu`, `forceperlengthv` | de normaalkracht per lengte langs de meridiaan (u) en in de omtreksrichting (v), N/m | `shell_forces` (alleen S30) |
+| `momentu`, `momentv` | het buigend moment per lengte dat de buigspanning langs de meridiaan (u) of in de omtreksrichting (v) geeft, N m/m; positief geeft trek aan het bovenoppervlak | `shell_forces` (alleen S30) |
+| `principal1u1` … `principal3b1`, `trescau1` … `trescab1` | hoofdspanningen en Tresca per oppervlak | `principal_stresses` |
+
+Boven (`u1`) is het vlak aan de kant van n = Z × U (marker 8 in de figuur): voor een keten die
+omhoog getekend is bij X > 0 de binnenkant, voor een plaat die van de as naar buiten getekend
+is (U = +X) het vlak aan de kant van +Y. Een positieve druk werkt op dat vlak. Draai de
+elementen om in Mecway om boven en onder te wisselen. De spanningstensor, de snedekrachten en
+de hoofdspanningen gaan ook per element-knoop naar Mecway.
+
+- **Dwarsschuifspanning weggelaten.** De spanningen en von Mises zijn die van de theorie
+  voor dunne schalen, zonder de dwarsschuifspanning: exact op het boven- en onderoppervlak,
+  waar de dwarsschuif nul is. Op het middenvlak ontbreekt de schuif. Code-Asters eigen
+  dwarsspanning SIXZ van `COQUE_AXIS` is op alle drie de oppervlakken gelijk. Gemeten is
+  ze ongeveer 2 Q / (A_CIS t): twee keer de gemiddelde schuifspanning Q / t, gedeeld door
+  A_CIS. Ze is niet de fysische schuifspanning, dus de bridge gebruikt haar niet. Er is geen
+  dwarskracht (`shearuw`): Code-Aster geeft die niet voor `COQUE_AXIS`.
+- **Spanning in een ingeklemde knoop.** Waar het moment snel verandert, bij een
+  inklemming, is de spanning in de ingeklemde knoop zelf te laag: −4,4% met 20 elementen op
+  de straal van een ronde plaat (PL-62), terwijl ze twee elementen verder naar binnen
+  binnen 0,3% klopt. De element-knoopwaarden van één element liggen op een rechte lijn
+  (gezien in PL-62; de oorzaak in Code-Aster NIET geverifieerd). Op de lange cilinder van
+  PL-63 (100 elementen) is de spanning bij de inklemming −1,1%, grotendeels het
+  inklemmoment zelf (−0,94%). Gebruik kleine elementen bij inklemmingen.
+- **Niet voor axisymmetrische schalen.** Deze resultaatvelden werken niet op
+  axisymmetrische schalen:
+  - `strain` en `principal_strains`: INFO, niets te berekenen;
+  - `safety_factor`: WARNING, geen `factorofsafety`;
+  - `shell_forces` in L30: INFO, omdat Code-Aster stopt in `EFGE_ELNO` na
+    `STAT_NON_LINE` (`shell_forces` is een standaardveld van L30). De spanningen per
+    oppervlak komen wel.
+
+Nagelopen met Code-Aster 17.4 (PL-60 … PL-68, [`Verificatie.md`](Verificatie.md)):
+- **Membraangevallen.** Een cilinder en een bol binnen 1e-7. De ringspanning is p R / t, de
+  bolspanning p R / (2t), en op een meridiaan onder 45 graden `stressxx` = −`stressxy` = σ / 2.
+- **Ronde plaat (ingeklemd).** De doorbuiging 0,03%, de rotatie 0,07%, de spanningen en de
+  momenten bij r = 0,9 a binnen 0,3%, de ringspanning in het midden 0,23%.
+- **Lange cilinder, aan één eind ingeklemd.** Het inklemmoment −0,94% (p / (2β²)). De
+  meridiaanspanning bij de inklemming ±6 M0 / t² −1,1%, trek aan de binnenkant.
+- **Overige gevallen.** De Code-Aster-testcase ssls114i exact; een druk als tijdtabel in L30;
+  een knoopkracht (ook `forceperlengthu` = F / (2π R)); een ringmoment (+0,24%);
+  zwaartekracht.
+
+NIET geverifieerd: hoe Mecway deze resultaten op lijnelementen toont, en of Mecway's venster
+de invoer accepteert (een druk op de zijkant van een lijnelement in S30 of L30). Mecway's eigen
+solve rekent de lijnelementen als balken, niet als deze schaal.
 
 ### 1.5 Uitgewerkte voorbeelden
 
@@ -675,7 +719,10 @@ Stappen:
 6. Bridge: `auto` (→ `lin_static_3d`), `liml`. De log toont `INFO: Elset 'Buis' ->
    MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness 0.005 m (Mecway S30).`
 7. Resultaten: `displx` = de radiale verplaatsing p R² / (E t) = 0,2381 mm overal, `disply`
-   bovenaan −ν p R L / (E t) = −0,1429 mm (het vrije eind wordt korter). `PL-62.liml` is een
+   bovenaan −ν p R L / (E t) = −0,1429 mm (het vrije eind wordt korter), de ringspanning
+   `stresszzm1` p R / t = 100 MPa (ook `vonmisesu1`, `vonmisesm`, `vonmisesb`), `stressyym1`
+   0 en `forceperlengthv` p R = 500 kN/m; de resultaatvelden `shell_stresses`, `shell_forces`
+   en `principal_stresses` staan in dit model aan. `PL-62.liml` is een
    ingeklemde ronde plaat (de dikte uit een *RectBar* met a = 10 mm, *Fixed support* aan de
    rand, *Symmetry* met normaal X op de middelste knoop); `PL-64.liml` is de
    Code-Aster-testcase ssls114i.
@@ -737,6 +784,8 @@ typte.
 | Traction, een kracht op faceid 1 of een centrifugaalkracht op axisymmetrische schalen | ERROR: … op '…' in een 2D-analyse: op axisymmetrische schalen alleen druk op de zijkant (faceid 1) van line3-elementen en kracht op knopen of elementuiteinden (faceid 2, 3); traction en kracht op de zijkant zijn niet geverifieerd. NIET meegenomen. (centrifugaal: … niet geverifieerd op axisymmetrische schalen (COQUE_AXIS). NIET meegenomen.) | een druk op faceid 1 of een kracht op knopen |
 | Aangrenzende line3-elementen in tegengestelde richting onder een druk | WARNING: Druk op '…': aangrenzende line3-elementen lopen in tegengestelde richting (knoop …); de druk werkt daar aan de andere kant (positieve druk duwt langs -n, n = Z x U, U van knoop 1 naar knoop 2). Keer die elementen om in Mecway. | keer de elementen om (figuur van §1.4.2) |
 | Een knoop van een axisymmetrische schaal op de as zonder opleggingen | WARNING: Axisymmetrische schaal: knoop … ligt op de as (X = 0) maar heeft niet zowel X als de rotatie om Z vast. Geef die knopen een Symmetry met normaal X (houdt X en de rotatie om Z vast). | *Symmetry* met normaal X op die knoop |
+| Resultaatveld `safety_factor` bij axisymmetrische schalen | WARNING: Resultaatveld safety_factor: niet voor axisymmetrische schalen (COQUE_AXIS); Mecway krijgt geen factorofsafety. Gebruik vonmisesu1/vonmisesb. | vergelijk `vonmisesu1`/`vonmisesb` zelf met de sterkte |
+| Resultaatveld `shell_forces` bij axisymmetrische schalen in L30 | INFO: Result field shell_forces: on axisymmetric shells (COQUE_AXIS) only in Static 3D (S30); Code-Aster stops in EFGE_ELNO after STAT_NON_LINE. Mecway gets no forceperlengthu/v and momentu/v; it does get the stresses per surface (shell_stresses). | S30, of de spanningen per oppervlak |
 | Axisymmetrische schalen in L30 met `deformation` `GROT_GDEP` (de standaard) of een andere keuze dan `PETIT` | WARNING: Axisymmetrische schalen (…) rekenen met kleine verplaatsingen (DEFORMATION='PETIT'), niet met GROT_GDEP: grote verplaatsingen en het bijwerken van de geometrie (PETIT_REAC) zijn op COQUE_AXIS niet vertaald. | niets te doen (of `PETIT`) |
 
 ## 2. Hoe de bridge vertaalt
@@ -781,6 +830,12 @@ van Code-Aster (zoals ssls114i). Hun knopen hebben DX, DY en DRZ: `fixed` houdt 
 een `symmetry` met normaal X of Y ook DRZ = 0, een knooprotatie om Z is DRZ. Een druk op faceid
 1 is `FORCE_COQUE` `PRES` op een celgroep `BRAX<n>` van die elementen, met het teken waarmee hij
 langs −n duwt, n = Z × U (Code-Aster's eigen normaal van de cel is U × Z, gemeten: PL-64).
+Spanningen: `SIGM_ELNO` en `POST_CHAMP` `EXTR_COQUE` (`SUP`, `MOY`, `INF`) zoals bij 3D-schalen,
+zonder `SIEQ`. Code-Asters `SUP` is de kant U × Z, dus Mecway's boven (`…u1`) komt uit
+`INF`. In de job draait de bridge SIXX (meridiaan) met de raaklijn van het element in elke
+knoop naar globaal X, Y en zet SIYY (ring) in Z, zonder SIXZ, en berekent daaruit von Mises.
+De snedekrachten komen uit `EFGE_ELNO` (`NXX`, `NYY`, `MXX`, `MYY`; `momentu` = −`MXX`),
+alleen na `MECA_STATIQUE`.
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` op meerdere knopen: de gemiddelde
 verplaatsing nul, `LIAISON_DDL` met gelijke gewichten op DX en DY (zoals Mecway 35: vlakke
@@ -846,13 +901,13 @@ extrapolatie (§5).
 
 KNOWN_BUGS 126; geplande stappen in `STAPPENPLAN.md`: S16e (belastingen en elementen in de
 lineaire typen), S44 (niet-lineair, contact en thermisch: gebouwd, §1.4 en §1.4.1;
-axisymmetrische schalen, S44e: deel 1 gebouwd, §1.4.2). A20 (akoestiek): §4. De letterlijke meldingen: §1.6
+axisymmetrische schalen, S44e: gebouwd, §1.4.2). A20 (akoestiek): §4. De letterlijke meldingen: §1.6
 en §6.
 
 - Balken, truss, veren of volume-elementen in een 2D-analyse (Mecway's S20 kent balken
   en truss): ERROR, de bridge stopt.
-- Axisymmetrische schalen (§1.4.2, Code-Aster `COQUE_AXIS`): nog geen spanningen en
-  snedekrachten (STAPPENPLAN S44e deel 2); line2, plasticiteit, mengen met vlakke elementen,
+- Axisymmetrische schalen (§1.4.2, Code-Aster `COQUE_AXIS`): geen rek, veiligheidsfactor of
+  dwarsschuif, geen snedekrachten in L30; line2, plasticiteit, mengen met vlakke elementen,
   temperaturen, contact, centrifugaalkracht, traction, line pressure en een druk met een
   formule in x, y, z: ERROR. Lijnelementen in een 2D-model van route B (S20, SA0, D20, DA0)
   geven de ERROR "Elset '…' bevat line2 …" (§1.6).

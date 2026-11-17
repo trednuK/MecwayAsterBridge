@@ -1017,7 +1017,7 @@ closed forms):
   within 6.8e-6; the axial reaction 8.2730e+06 N (thermal 2π α E ∫ θ r dr minus Lamé
   σ_z π(b² − a²), σ_z = 2νA) within 9.5e-7.
 
-Axisymmetric shells (STAPPENPLAN S44e piece 1, `tests_vlak_2d_coque.py`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.2):
+Axisymmetric shells (STAPPENPLAN S44e, `tests_vlak_2d_coque.py`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.2):
 line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the thickness from
 `**ASTER-SHELL` (PL-60, PL-63 … PL-68), *Shell/membrane* with the same line (PL-61) or a *RectBar*
 (PL-62). E = 210 GPa, ν = 0.3 (PL-64: 200 GPa). Closed forms: Timoshenko & Woinowsky-Krieger
@@ -1058,6 +1058,31 @@ line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the 
   along Y): the reaction ρ g 2π R t L = 1209.6 N (7e-14) and the mass of the bridge's
   check (`BRIDGE_STATCHECK`) ρ 2π R t L = 123.31 kg (3e-15): `MASS_INER` of `COQUE_AXIS` is already the
   mass of 360 degrees, as with `AXIS`.
+
+Stresses and section forces of the shells (S44e piece 2; PL-60 … PL-63, PL-65 and PL-66 with
+the result fields `shell_stresses`, `shell_forces` and `principal_stresses`; top `u1` = the
+side n = Z × U, the side of the pressure):
+
+- **PL-60**: the hoop stress `stresszzm1` p R / t = 1e8 Pa (3e-14), `vonmisesu1` and
+  `principal1u1` the same (1e-14, 2e-14), `forceperlengthv` p R = 5e5 N/m (3e-14), the
+  meridional stress `stressyym1` 3.7e-6 Pa (limit 1e5 Pa).
+- **PL-61**: at the equator `stresszzm1` and `stressyym1` p R / (2t) = 5e6 Pa (−7e-9, −1e-9);
+  on the meridian at 45 degrees `stressxxm1` = σ/2 and `stressxym1` = −σ/2 (1e-9, tolerance
+  1e-5; the chord instead of the tangent would give 1e-3): the rotation with the tangent of
+  the element.
+- **PL-62**: at r = 0.9 a (a corner node two elements from the clamp) the radial stress
+  −6 M_r/t² on top +5.1551e6 Pa (+0.12%, tension on the loaded side) and on the bottom
+  −5.1551e6 Pa, the hoop stress −6 M_θ/t² (+0.29%), `momentu` −M_r = 85.92 N m/m (+0.12%),
+  `momentv` −M_θ = 14.98 N m/m (+0.29%);
+  the hoop stress on top at the centre −3(1 + ν) q a²/(8 t²) −4.886e6 Pa (+0.23%); tolerance
+  0.5%. At the clamp node itself 3 q a²/(4 t²) 7.173e6 Pa (−4.4%, limit 5%): the stress
+  of `COQUE_AXIS` is linear over an element, and at the clamp the moment changes fast.
+- **PL-63**: the meridional stress at the clamp ±6 M0/t² = ±1.8157e7 Pa: on top (the inside)
+  +1.7959e7 Pa (−1.09%), on the bottom −1.7958e7 Pa (−1.10%), `momentu` 299.30 N m/m against
+  M0 302.61 (−1.09%); tolerance 2%.
+- **PL-65**: the hoop stress at 0.5 s 5e7 Pa (5e-14); `shell_forces` gives an INFO in L30.
+- **PL-66**: `forceperlengthu` F/(2π R) = 318.31 N/m and `stressyym1` F/(2π R t) = 63662 Pa
+  (1e-13): per length of the circumference.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

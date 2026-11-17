@@ -13,7 +13,7 @@ D_PLAN, C_PLAN"):
 | Static Axisymmetric (SA0) | no geometry (isotropic material) | `AXIS` | displacement X (radial), Y (axial); stress with `stresszz` = hoop stress; reactions for 360 degrees |
 | Dynamic Response 2D (D20), Dynamic Response Axisymmetric (DA0) | as S20 / SA0 | as S20 / SA0, in time (§2.4) | as S20 / SA0 per output time, plus velocity and acceleration |
 | Acoustic Resonance 2D (A20) | *Speed of sound* (a thickness does not count) | `PHENOMENE='ACOUSTIQUE'`, `PLAN` (§4) | per mode the frequency and the pressure field `pressure`, as A30 |
-| Static 3D (S30), Nonlinear Static (L30) with line3 elements and `**ASTER-PLANE AXIS` | isotropic elastic; the thickness from `**ASTER-SHELL`, *Shell/membrane* or *RectBar* | `COQUE_AXIS` (§1.4.2) | displacement X, Y, rotation `rotz`; reactions and `reactionmomz` for 360 degrees; no stresses yet |
+| Static 3D (S30), Nonlinear Static (L30) with line3 elements and `**ASTER-PLANE AXIS` | isotropic elastic; the thickness from `**ASTER-SHELL`, *Shell/membrane* or *RectBar* | `COQUE_AXIS` (§1.4.2) | displacement X, Y, rotation `rotz`; reactions and `reactionmomz` for 360 degrees; von Mises per surface, and with the result fields `shell_stresses`, `shell_forces`, `principal_stresses` the stresses, section forces and principal stresses per surface (§1.4.2) |
 
 The bridge analysis is `lin_static_3d` ("Static") for S20 and SA0 and `dyna_impl_3d`
 ("Dynamic (implicit)") for D20 and DA0: with "Active analysis (auto = follow Mecway)" =
@@ -335,6 +335,8 @@ example: example 7 in §1.5.
 5. A positive *Pressure* on faceid 1 (the side of a line element) pushes along −n: here outwards, an internal pressure.
 6. The wall thickness t, centred on the line of the nodes.
 7. Mecway's Z axis, out of the drawing.
+8. The top surface (results `…u1`): the face on the side of n, where a positive pressure acts.
+9. The bottom surface (results `…b`, `…b1`): the face on the other side.
 
 1. **Analysis type.** *Static 3D* (S30) or *Nonlinear Static* (L30, solver CCX).
 2. **Mesh.** Only line3 elements in the XY plane (Z = 0), all nodes at X ≥ 0; no plane
@@ -376,19 +378,58 @@ example: example 7 in §1.5.
    …`. In L30 the shells are computed with small displacements (`deformation` other than
    `PETIT`: WARNING; Code-Aster advises against updating the geometry of `COQUE_AXIS`).
 
-Results in Mecway: `displx` (radial), `disply` (axial), `displmag`, `rotz` (the rotation
-about Z, right-handed: positive turns X towards Y), `reactionforcex`, `reactionforcey`,
-`reactionforcemag`, `reactionmomz` and `reactionmommag` (= |`reactionmomz`|), the reactions for
-360 degrees (× 2π). Not yet: the
-stresses and section forces of the shell (meridional and hoop stress, top and bottom;
-STAPPENPLAN S44e piece 2); the log says so (INFO) and the bridge writes no stress field.
-Verified with Code-Aster 17.4 (PL-60 … PL-68, [`Verification.md`](Verification.md)): a
-membrane cylinder and sphere within 1e-7, a clamped circular plate 0.03% (deflection) and
-0.07% (rotation), the clamp moment of a long cylinder −0.94% (p / (2β²)), the Code-Aster test
-case ssls114i exact, a pressure as a time table in L30, a nodal force, a ring moment (+0.24%)
-and gravity. NOT verified: how Mecway shows these results and whether Mecway's window accepts
-the inputs (a pressure on the side of a line element in S30 or L30; Mecway's own solve
-computes the line elements as beams, not as this shell).
+**Results in Mecway.**
+
+| Mecway variable | Meaning | Result field (start screen) |
+|---|---|---|
+| `displx`, `disply`, `displmag` | radial and axial displacement | `displacements` |
+| `rotz` | the rotation about Z, right-handed: positive turns X towards Y | `displacements` |
+| `reactionforcex`, `reactionforcey`, `reactionforcemag`, `reactionmomz`, `reactionmommag` | the reactions for 360 degrees (× 2π); `reactionmommag` = \|`reactionmomz`\| | `reactions` |
+| `vonmisesu1`, `vonmisesm`, `vonmisesb` | von Mises on the top surface, the middle surface and the bottom surface (node values) | `vonmises` |
+| `stressxxu1` … `stresszxu1`, `…m1`, `…b1` | the stress tensor per surface in global X, Y, Z: `stresszz…` = the hoop stress, the meridional stress in `stressxx…`, `stressyy…`, `stressxy…` (a cylinder along Y: `stressyy…`; a circular plate along X: `stressxx…`); `stressyz…`, `stresszx…` = 0 | `shell_stresses` |
+| `forceperlengthu`, `forceperlengthv` | the normal force per length along the meridian (u) and in the hoop direction (v), N/m | `shell_forces` (S30 only) |
+| `momentu`, `momentv` | the bending moment per length that gives the bending stress along the meridian (u) or in the hoop direction (v), N m/m; positive gives tension on the top surface | `shell_forces` (S30 only) |
+| `principal1u1` … `principal3b1`, `trescau1` … `trescab1` | principal stresses and Tresca per surface | `principal_stresses` |
+
+Top (`u1`) is the face on the side of n = Z × U (marker 8 in the figure): for a chain drawn
+upwards at X > 0 the inside, for a plate drawn from the axis outwards (U = +X) the face at
++Y. A positive pressure acts on that face. Reverse the elements in Mecway to swap top and
+bottom. The stress tensor, the section forces and the principal stresses also go to Mecway
+per element node.
+
+- **Transverse shear is left out.** The stresses and von Mises are those of thin-shell
+  theory, without the transverse shear stress: exact on the top and bottom surface, where the
+  transverse shear is zero. On the middle surface the shear is missing. Code-Aster's own
+  transverse stress SIXZ of `COQUE_AXIS` is the same at all three surfaces. Measured, it is
+  about 2 Q / (A_CIS t): twice the mean shear stress Q / t divided by A_CIS. It is not the
+  physical shear stress, so the bridge does not use it. There is no transverse shear force
+  (`shearuw`): Code-Aster gives none for `COQUE_AXIS`.
+- **Stress at a clamped node.** Where the moment changes fast, at a clamp, the stress in
+  the clamped node itself is too low: −4.4% with 20 elements on the radius of a circular
+  plate (PL-62), while two elements further in it is within 0.3%. The element-node values
+  of one element lie on a straight line (seen in PL-62; the cause in Code-Aster NOT
+  verified). On the long cylinder of PL-63 (100 elements) the clamp stress is −1.1%, most
+  of it the clamp moment itself (−0.94%). Use small elements near clamps.
+- **Not for axisymmetric shells.** These result fields do not work on axisymmetric shells:
+  - `strain` and `principal_strains`: INFO, nothing to compute;
+  - `safety_factor`: WARNING, no `factorofsafety`;
+  - `shell_forces` in L30: INFO, because Code-Aster stops in `EFGE_ELNO` after
+    `STAT_NON_LINE` (`shell_forces` is a default field of L30). The stresses per surface
+    do come.
+
+Verified with Code-Aster 17.4 (PL-60 … PL-68, [`Verification.md`](Verification.md)):
+- **Membrane cases.** A cylinder and a sphere within 1e-7. The hoop stress is p R / t, the
+  sphere stress p R / (2t), and on a meridian at 45 degrees `stressxx` = −`stressxy` = σ / 2.
+- **Circular plate (clamped).** The deflection 0.03%, the rotation 0.07%, the stresses and
+  the moments at r = 0.9 a within 0.3%, the hoop stress at the centre 0.23%.
+- **Long cylinder, clamped at one end.** The clamp moment −0.94% (p / (2β²)). The meridional
+  stress at the clamp ±6 M0 / t² −1.1%, tension on the inside.
+- **Other cases.** The Code-Aster test case ssls114i exact; a pressure as a time table in L30;
+  a nodal force (also `forceperlengthu` = F / (2π R)); a ring moment (+0.24%); gravity.
+
+NOT verified: how Mecway shows these results on line elements, and whether Mecway's window
+accepts the inputs (a pressure on the side of a line element in S30 or L30). Mecway's own
+solve computes the line elements as beams, not as this shell.
 
 ### 1.5 Worked examples
 
@@ -660,7 +701,10 @@ Steps:
 6. Bridge: `auto` (→ `lin_static_3d`), `liml`. The log shows `INFO: Elset 'Buis' ->
    MODELISATION='COQUE_AXIS' (axisymmetric shell, SEG3), thickness 0.005 m (Mecway S30).`
 7. Results: `displx` = the radial displacement p R² / (E t) = 0.2381 mm everywhere,
-   `disply` at the top −ν p R L / (E t) = −0.1429 mm (the free end shortens). `PL-62.liml` is
+   `disply` at the top −ν p R L / (E t) = −0.1429 mm (the free end shortens), the hoop stress
+   `stresszzm1` p R / t = 100 MPa (also `vonmisesu1`, `vonmisesm`, `vonmisesb`), `stressyym1`
+   0 and `forceperlengthv` p R = 500 kN/m; the result fields `shell_stresses`,
+   `shell_forces` and `principal_stresses` are on in this model. `PL-62.liml` is
    a clamped circular plate (the thickness from a *RectBar* with a = 10 mm, *Fixed support* at
    the edge, *Symmetry* with normal X on the centre node); `PL-64.liml` is the Code-Aster test
    case ssls114i.
@@ -722,6 +766,8 @@ Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
 | Traction, a force on faceid 1 or a centrifugal force on axisymmetric shells | ERROR: … on '…' in a 2D analysis: on axisymmetric shells only pressure on the side (faceid 1) of line3 elements and force on nodes or element ends (faceid 2, 3); traction and force on the side are not verified. NOT included. (centrifugal: … not verified on axisymmetric shells (COQUE_AXIS). NOT included.) | a pressure on faceid 1 or a force on nodes |
 | Neighbouring line3 elements in opposite directions under one pressure | WARNING: Pressure on '…': neighbouring line3 elements run in opposite directions (node …); the pressure acts on the other side there (a positive pressure pushes along -n, n = Z x U, U from node 1 to node 2). Reverse those elements in Mecway. | reverse the elements (figure of §1.4.2) |
 | A node of an axisymmetric shell on the axis without supports | WARNING: Axisymmetric shell: node … lies on the axis (X = 0) but does not have both X and the rotation about Z held. Give those nodes a Symmetry with normal X (holds X and the rotation about Z). | *Symmetry* with normal X on that node |
+| Result field `safety_factor` with axisymmetric shells | WARNING: Result field safety_factor: not for axisymmetric shells (COQUE_AXIS); Mecway gets no factorofsafety. Use vonmisesu1/vonmisesb. | compare `vonmisesu1`/`vonmisesb` with the strength yourself |
+| Result field `shell_forces` with axisymmetric shells in L30 | INFO: Result field shell_forces: on axisymmetric shells (COQUE_AXIS) only in Static 3D (S30); Code-Aster stops in EFGE_ELNO after STAT_NON_LINE. Mecway gets no forceperlengthu/v and momentu/v; it does get the stresses per surface (shell_stresses). | S30, or the stresses per surface |
 | Axisymmetric shells in L30 with `deformation` `GROT_GDEP` (the default) or another choice than `PETIT` | WARNING: Axisymmetric shells (…) are computed with small displacements (DEFORMATION='PETIT'), not with GROT_GDEP: large displacements and updating the geometry (PETIT_REAC) are not translated on COQUE_AXIS. | nothing to do (or `PETIT`) |
 
 ## 2. How the bridge translates
@@ -766,6 +812,12 @@ default `NON` (as ssls114i). Their nodes have DX, DY and DRZ: `fixed` holds DRZ 
 `symmetry` with normal X or Y also DRZ = 0, a node rotation about Z is DRZ. A pressure on faceid
 1 is `FORCE_COQUE` `PRES` on a cell group `BRAX<n>` of those elements with the sign that makes
 it push along −n, n = Z × U (Code-Aster's own normal of the cell is U × Z, measured: PL-64).
+Stresses: `SIGM_ELNO` and `POST_CHAMP` `EXTR_COQUE` (`SUP`, `MOY`, `INF`) as for 3D shells,
+without `SIEQ`. Code-Aster's `SUP` is the side U × Z, so Mecway's top (`…u1`) comes from
+`INF`. In the job the bridge rotates SIXX (meridional) with the tangent of the element at
+each node into global X, Y and puts SIYY (hoop) in Z, without SIXZ, and computes von Mises
+from that. The section forces come from `EFGE_ELNO` (`NXX`, `NYY`, `MXX`, `MYY`; `momentu`
+= −`MXX`), only after `MECA_STATIQUE`.
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` on several nodes: the mean
 displacement zero, `LIAISON_DDL` with equal weights on DX and DY (as Mecway 35: plane
@@ -830,12 +882,12 @@ within the element); nodal stresses differ by the extrapolation (§5).
 
 KNOWN_BUGS 126; planned steps in `STAPPENPLAN.md`: S16e (loads and elements in the linear
 types), S44 (nonlinear, contact and thermal: built, §1.4 and §1.4.1; axisymmetric shells,
-S44e: piece 1 built, §1.4.2). A20 (acoustics): §4. The exact messages: §1.6 and §6.
+S44e: built, §1.4.2). A20 (acoustics): §4. The exact messages: §1.6 and §6.
 
 - Beams, trusses, springs or solids in a 2D analysis (Mecway's S20 allows beams and
   trusses): ERROR, the bridge stops.
-- Axisymmetric shells (§1.4.2, Code-Aster `COQUE_AXIS`): no stresses and section forces
-  yet (STAPPENPLAN S44e piece 2); line2, plasticity, mixing with plane elements,
+- Axisymmetric shells (§1.4.2, Code-Aster `COQUE_AXIS`): no strain, factor of safety or
+  transverse shear, no section forces in L30; line2, plasticity, mixing with plane elements,
   temperatures, contact, centrifugal force, traction, line pressure and a pressure with a
   formula in x, y, z: ERROR. Line elements in a route-B 2D model (S20, SA0, D20, DA0) give the
   ERROR "Elset '…' contains line2 …" (§1.6).

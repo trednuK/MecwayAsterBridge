@@ -1370,6 +1370,23 @@ def _result_groups(model_data, verbose=False):
     return g3d, gsh, gbm
 
 
+# Axisymmetric shells (bridge_plane, S44e): stresses per surface through
+# POST_CHAMP EXTR_COQUE like DKT, but without SIEQ: aster_results_export
+# computes von Mises itself without the transverse shear SIXZ (measured
+# with Code-Aster 17.4 on PL-63: SIXZ is equal on all three layers and about
+# 2 Q / (A_CIS t), not the physical shear, which is zero on the faces; NOT
+# verified in a te*.F90). Do not add SIEQ_NOEU for these groups: the
+# FIELD_TABLE row of res_sup would then win over the computed von Mises.
+_AXIS_SHELL = "COQUE_AXIS"
+
+
+def _axis_shell_groups(model_data):
+    """Elsets with MODELISATION 'COQUE_AXIS' (axisymmetric shells)."""
+    return sorted(g for g, mod in
+                  model_data.get("elset_modelisations", {}).items()
+                  if mod == _AXIS_SHELL)
+
+
 def _active_analysis():
     """The active analysis config, or {} if there is none (yet)."""
     try:
@@ -1412,7 +1429,7 @@ def _failure_strengths(model_data):
 _SHELL_FORCES_WARNED = set()
 
 
-def _shell_forces_warning():
+def _shell_forces_warning(axis=False):
     """WARNING (once per run) that the result field shell_forces is on in a
     model with shells: what it adds, its effect and how to switch it off.
     Effect measured on flat static plates with 3500 and 12000 quad4 and
@@ -1424,6 +1441,24 @@ def _shell_forces_warning():
     if run in _SHELL_FORCES_WARNED:
         return
     _SHELL_FORCES_WARNED.add(run)
+    if axis:
+        log(tr("WARNING: Resultaatveld shell_forces staat aan: 4 extra "
+               "variabelen per knoop en per element-knoop van de "
+               "axisymmetrische schalen in Mecway (forceperlengthu/v, "
+               "momentu/v: krachten en momenten per lengte langs de "
+               "meridiaan (u) en in de omtreksrichting (v)). De andere "
+               "resultaten veranderen niet. Niet nodig? Vink shell_forces "
+               "uit op het startscherm: pagina van de analyse, "
+               "Resultaatvelden naar Mecway.",
+               "WARNING: Result field shell_forces is on: 4 extra "
+               "variables per node and per element node of the "
+               "axisymmetric shells in Mecway (forceperlengthu/v, "
+               "momentu/v: forces and moments per length along the "
+               "meridian (u) and in the hoop direction (v)). The other "
+               "results do not change. Not needed? Untick shell_forces on "
+               "the start screen: page of the analysis, Result fields to "
+               "Mecway."))
+        return
     log(tr("WARNING: Resultaatveld shell_forces staat aan en het model heeft "
            "schalen: 8 extra variabelen per knoop en per element-knoop in "
            "Mecway (forceperlengthu/v/uv, momentu/v/uv, shearuw/vw: krachten "
@@ -1449,20 +1484,51 @@ def _optional_fields(model_data, fields, quiet=False):
     OPT_IN_GROUPS) that yield something in this model; for the rest an
     INFO (not with quiet)."""
     g3d, gsh, _gbm = _result_groups(model_data)
+    gax = _axis_shell_groups(model_data)
     applies = {
         "strain": bool(g3d or gsh),
         "beam_forces": bool(_beam_groups(model_data)),
-        "shell_stresses": bool(gsh),
-        "shell_forces": bool(gsh),
+        "shell_stresses": bool(gsh or gax),
+        "shell_forces": bool(gsh or gax),
         "safety_factor": bool(_failure_strengths(model_data)),
         "contact": bool(model_data.get("contacts")),
-        "principal_stresses": bool(g3d or gsh),
+        "principal_stresses": bool(g3d or gsh or gax),
         "principal_strains": bool(g3d or gsh),
     }
     out = [f for f in fields if applies.get(f)]
     idle = [f for f in fields if f in applies and not applies[f]]
+    if gax and "safety_factor" in out:
+        # the factor of safety of shells comes from SIEQ of res_sup/res_inf,
+        # which the axisymmetric shells do not get (see _AXIS_SHELL)
+        out.remove("safety_factor")
+        if not quiet:
+            log(tr("WARNING: Resultaatveld safety_factor: niet voor "
+                   "axisymmetrische schalen (COQUE_AXIS); Mecway krijgt "
+                   "geen factorofsafety. Gebruik vonmisesu1/vonmisesb.",
+                   "WARNING: Result field safety_factor: not for "
+                   "axisymmetric shells (COQUE_AXIS); Mecway gets no "
+                   "factorofsafety. Use vonmisesu1/vonmisesb."))
+    if (gax and "shell_forces" in out and
+            _active_analysis().get("solver_command") != "MECA_STATIQUE"):
+        # CALC_CHAMP EFGE_ELNO on COQUE_AXIS after STAT_NON_LINE stops with
+        # <EXCEPTION> DVP_1 in te0185.F90 line 153 (Code-Aster 17.4 run,
+        # PL-65); after MECA_STATIQUE it works.
+        out.remove("shell_forces")
+        # INFO, not WARNING: shell_forces is in the default fields of L30
+        if not quiet:
+            log("INFO: Result field shell_forces: on axisymmetric shells "
+                "(COQUE_AXIS) only in Static 3D (S30); Code-Aster stops in "
+                "EFGE_ELNO after STAT_NON_LINE. Mecway gets no "
+                "forceperlengthu/v and momentu/v; it does get the stresses "
+                "per surface (shell_stresses).")
+    if gax and not quiet:
+        for f in ("strain", "principal_strains"):
+            if f in fields:
+                log("INFO: Result field {0}: not for axisymmetric shells "
+                    "(COQUE_AXIS); nothing to compute.".format(f))
+        idle = [f for f in idle if f not in ("strain", "principal_strains")]
     if "shell_forces" in out and not quiet:
-        _shell_forces_warning()
+        _shell_forces_warning(axis=bool(gax) and not gsh)
     if idle and not quiet:
         log("INFO: Result fields with nothing to compute in this model "
             "(no matching elements, contact or failure criterion): "
@@ -1602,11 +1668,15 @@ def _optional_field_blocks(model_data, fields, strain_kind):
                 "res = CALC_CHAMP(reuse=res, RESULTAT=res, GROUP_MA={0}, "
                 "CONTRAINTE=('SIEF_ELNO', 'SIEF_NOEU', ))".format(
                     _fmt_groups(gd)), ""]
-    if "shell_forces" in fields and gsh:
+    gax = _axis_shell_groups(model_data)
+    if "shell_forces" in fields and (gsh or gax):
+        # COQUE_AXIS: NXX, NYY, MXX, MYY (NXY = MXY = 0, no QX; seen in a
+        # Code-Aster 17.4 run, S44e piece 2)
         out += ["# Forces and moments per length of shells "
                 "(result field shell_forces).",
                 "res_efs = CALC_CHAMP(RESULTAT=res, GROUP_MA={0}, "
-                "CONTRAINTE=('EFGE_ELNO', ))".format(_fmt_groups(gsh)), ""]
+                "CONTRAINTE=('EFGE_ELNO', ))".format(
+                    _fmt_groups(list(gsh) + list(gax))), ""]
     return "\n".join(out) + ("\n" if out else "")
 
 
@@ -1808,6 +1878,7 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
         Only for RECTANGLE and CERCLE, see _SIPM_SECTIONS.
     """
     g3d, gsh, gbm = _result_groups(model_data, verbose=True)
+    gax = _axis_shell_groups(model_data)
 
     out = [] if not reactions else [
         "res = CALC_CHAMP(",
@@ -1834,7 +1905,8 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
             "res = CALC_CHAMP(",
             "    reuse=res,",
             "    RESULTAT=res,",
-            "    GROUP_MA={0},".format(_fmt_groups(list(g3d) + list(gsh))),
+            "    GROUP_MA={0},".format(_fmt_groups(list(g3d) + list(gsh) +
+                                               list(gax))),
             "    CONTRAINTE=('SIGM_ELNO', ),",
             ")",
             "res = CALC_CHAMP(",
@@ -1875,12 +1947,19 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
                "WARNING: Plastic material but no 3D elsets; "
                "EPSP_NOEU/VARI_NOEU are not computed."))
 
-    if gsh:
-        groups = _fmt_groups(gsh)
+    if gsh or gax:
+        groups = _fmt_groups(list(gsh) + list(gax))
         out += [
             "# Shells: stresses per layer (sub-points) -> extract top, middle",
             "# and bottom surface separately (POST_CHAMP EXTR_COQUE).",
         ]
+        if gax:
+            out += [
+                "# Axisymmetric shells (COQUE_AXIS): SIXX meridional, SIYY "
+                "hoop;",
+                "# von Mises is computed in aster_results_export (without "
+                "SIXZ).",
+            ]
         if not elno:
             out += [
                 "res = CALC_CHAMP(",
@@ -1908,10 +1987,17 @@ def _build_calc_champ_block(model_data, with_plastic=False, reactions=True,
                 # elements of the model. That gives <EXCEPTION> CALCULEL_58
                 # ("Il manque la composante : SIXX") on the first 3D or
                 # beam element (seen in a run with Code-Aster 17.4).
-                "{0} = CALC_CHAMP(reuse={0}, RESULTAT={0}, GROUP_MA={1}, "
-                "CRITERES=('SIEQ_ELNO', ))".format(concept, groups),
-                "{0} = CALC_CHAMP(reuse={0}, RESULTAT={0}, GROUP_MA={1}, "
-                "CRITERES=('SIEQ_NOEU', ))".format(concept, groups),
+            ]
+            if gsh:
+                out += [
+                    "{0} = CALC_CHAMP(reuse={0}, RESULTAT={0}, GROUP_MA={1}, "
+                    "CRITERES=('SIEQ_ELNO', ))".format(concept,
+                                                       _fmt_groups(gsh)),
+                    "{0} = CALC_CHAMP(reuse={0}, RESULTAT={0}, GROUP_MA={1}, "
+                    "CRITERES=('SIEQ_NOEU', ))".format(concept,
+                                                       _fmt_groups(gsh)),
+                ]
+            out += [
                 "",
             ]
 

@@ -639,8 +639,10 @@ def _finish_axis_shells(model_data, atype, line_elsets, kinds,
     log("INFO: 2D analysis {0}: axisymmetric shells (COQUE_AXIS) about Y; "
         "concentrated forces and moments / 2 pi, reactions x 2 pi (per "
         "radian in Code-Aster, 360 degrees in Mecway). Results: "
-        "displacements, rotz and reactions; the shell stresses and section "
-        "forces are not written yet (STAPPENPLAN S44e piece 2).".format(
+        "displacements, rotz, reactions and von Mises per surface (vonmisesu1/m/b); "
+        "the result fields shell_stresses, shell_forces (S30 only) and "
+        "principal_stresses add the stresses, section forces and principal "
+        "stresses per surface.".format(
             atype))
     return True
 
@@ -1374,8 +1376,13 @@ def export_arg(model_data):
     p = info(model_data)
     if p is None:
         return ""
-    return ", plane={0!r}".format({"modelisation": str(p["modelisation"]),
-                                   "factor": float(p["factor"])})
+    arg = {"modelisation": str(p["modelisation"]),
+           "factor": float(p["factor"])}
+    if p.get("shells"):
+        # axisymmetric shells (COQUE_AXIS, S44e piece 2): stresses and
+        # section forces of the line3 cells in the job
+        arg["axis_shells"] = True
+    return ", plane={0!r}".format(arg)
 
 
 def static_check_arg(model_data):

@@ -96,7 +96,7 @@ S7, S8, S5, S9).
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | done (PL-42 corner tolerance 5% accepted by the user, 17 Nov 2026) | S44a | route A: contact on edges; shrink fit PL-40/41, ssnp121a PL-42, `C_PLAN` PL-43, Hertz PL-45, friction PL-46 (13 and 17 Nov 2026); bonded contact in 2D not planned (ERROR); user test: Mecway's GUI offers shell edges for a contact; see §S44 |
 | S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | done | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57; piece 2 (chain in AXIS) built, PL-58, PL-59 (17 Nov 2026); open (not verified): the chain in C_PLAN/D_PLAN and a plastic chain in AXIS; tpla01 replaced by closed-form cases |
-| S44e | Axisymmetric shells (`COQUE_AXIS`) | in progress | S16a | beams in S20 stay S16e; see §S44; piece 1 built (17 Nov 2026: displacements, `rotz`, reactions, PL-60 … PL-68), piece 2 open (shell stresses and section forces) |
+| S44e | Axisymmetric shells (`COQUE_AXIS`) | done | S16a | beams in S20 stay S16e; see §S44; piece 1 (17 Nov 2026: displacements, `rotz`, reactions) and piece 2 (17 Nov 2026: stresses per surface, section forces, principal stresses) built, PL-60 … PL-68; ssls100i not rebuilt |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
 | S45 | Results after a time limit in linear and thermal analyses (KNOWN_BUGS 137); extra time (`ExecutionParameter` `tpmax`, as `bridge_failure._extend_time`) around those commands, or a `POURSUITE` run for the post-processing | done (phase 1) | – | phase 1 (branch `stap-S45`, CHANGELOG V2026.13, 13 Nov 2026): linear static (`MECA_STATIQUE` `OPTION='SANS'`, `bridge_failure.late_time`, then the macro's `CALC_CHAMP` `SIEF_ELGA`) and a plain thermal solve, extra time after the solve, `BRIDGE_TIJD_LAAT` note; measured with delayed Code-Aster 17.4 runs (FX-04, TH-02a, WE-04b); phases 2 and 3 split off as S45b (low priority); the nonlinear solves and the step loops are done (branch `time-guard`, 11 Nov 2026: extra time after a `TimeLimitError` and after the solve, and the time guard of the loops, measured with `StopTest_LongRun`; released in V2026.12); scope (11 Nov 2026): only where results exist when the limit hits: after the solve (post-processing) for every analysis, and the archived steps of transient linear/thermal runs; a single linear solve or CALC_MODES that is not finished has no results |
@@ -2616,6 +2616,27 @@ verified. ssls100i itself not rebuilt (ssls114i and the closed-form plate instea
 meridional, SIYY hoop (ssls114i: 200 = p R / t)) and section forces (`EFGE_ELNO` NXX, NYY, MXX,
 MYY, QX) with Mecway's names on line elements (NOT verified which), the hoop stress check of the
 Done-when (p R / t, p R / (2t)), `reactionmommag` (not written: only `reactionmomz` exists).
+
+**Findings piece 2 (17 Nov 2026, worktree branch `stap-S44`; plan reviewed by Opus).** Measured
+with Code-Aster 17.4 on PL-63 (probe): `SIGM_ELNO` and `POST_CHAMP` `EXTR_COQUE` work on
+`COQUE_AXIS`; SIXX meridional (local x = the tangent node 1 → node 2), SIYY hoop, SIZZ = 0;
+`SUP` is the side U × Z (SIXX `SUP` = −6 M0 / t² at the clamp, tension inside); `EFGE_ELNO` has
+NXX, NYY, NXY = 0, MXX, MYY, MXY = 0 and no QX, MXX > 0 = tension on `SUP`. SIXZ is equal on all
+three layers and about 2 Q / (A_CIS t) (A_CIS 5/6: 2.42 Q / t; 1.0: 2.03 Q / t), not the
+physical transverse shear: left out (NOT verified in a te*.F90). `EFGE_ELNO` after
+`STAT_NON_LINE` stops with DVP_1 in te0185.F90 line 153: `shell_forces` only in S30 (WARNING in
+L30). Built: same result fields and Mecway names as 3D shells; top (`u1`) = the side
+n = Z × U (where a positive pressure acts, review decision) = Code-Aster's `INF`, so
+`momentu` = −MXX; global tensor with the frame [t, Z, t × Z] per element node (the tangent from
+the SEG3 shape functions, not the chord): `stresszz…` = hoop; von Mises computed in the job
+without SIXZ (no `SIEQ` on these groups), node variables `vonmisesu1/m/b`; `forceperlengthu/v`,
+`momentu/v`; `principal…`/`tresca…` per surface. Not: strain, principal strains (INFO),
+`safety_factor` (WARNING), transverse shear force; `shell_forces` in L30 (INFO, it is a
+default field there). Verification (in PL-60 … PL-66): hoop p R / t ≤ 3e-14 and p R / (2t)
+≤ 1e-8, the 45-degree rotation 1e-9 (a chord frame would give 1e-3), `momentv` at r = 0.9 a, the clamped plate at r = 0.9 a
+≤ 0.29% and at the centre 0.23%, the clamp stress of the long cylinder −1.1%, N = F / (2π R)
+exact; the stress at a clamped node itself is linear per element (PL-62: −4.4% with 20
+elements). How Mecway shows these variables on line elements NOT verified (user test).
 
 **S44f – modal and linear buckling in 2D/axisymmetric (later).**
 **Goal:** frequencies and linear buckling factors of plane and axisymmetric models; only when the
