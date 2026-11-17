@@ -102,7 +102,7 @@ Stand 17 november 2026. De hele tabel komt uit één revisie: de regressie in
 (V2026.13; Code-Aster 17.4): 607 testcases, 3174 controles, 3168 OK, 6 BEKEND, 0 NOK/FOUT.
 Nieuw ten opzichte van de vorige tabel (579 testcases, run op `821c58a`) zijn 28 testcases en
 102 controles: 2D en axisymmetrisch (PL-07 pinned support als gemiddelde, PL-20 .. PL-28
-thermische spanning, PL-30 .. PL-36 niet-lineair statisch, PL-40 .. PL-46 contact; S44) en
+thermische spanning, PL-30 .. PL-36 niet-lineair statisch, PL-40 .. PL-43, PL-45, PL-46 contact; S44) en
 dynamica (DY-04a/b veren en dempers tegen Mecway, DY-20d/e tijdtabellen met knikken buiten de
 stap). Geen statuswijziging ten opzichte van de vastgelegde resultaten (`a2f0e43`); daar
 verschilt alleen het verval van AI-06 (2e-6 relatief), ruim binnen de tolerantie.
@@ -148,6 +148,10 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
   hex20-volumes stopt (NL-03a, 3 controles). Gebruik PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I uit `CALC_G_XFEM` op een gekromd front +5,3 % (BR-10, 1 controle,
   tolerantie 5 %). Gebruik daar K uit `POST_K1_K2_K3` (+1,6 %) of uit G (+1,0 %).
+- KNOWN_BUGS 108: randlast op een schaal met element offset, de doorbuiging van de tip naast
+  Mecway (LS-67, 1 controle).
+- KNOWN_BUGS 115: knik van een C-kolom met balken mist de buig-torsieknik (BU-35, 1 controle,
+  +57%).
 
 **Fouten in de bridge die deze verificatie vond en die zijn opgelost**:
 - Foutschatter: Code-Aster's `ERME` rekent `FORCE_FACE` met het omgekeerde teken (blok onder
@@ -860,6 +864,11 @@ tolerantie 1e-6).
 - **PL-06** (ring r = 0,1 … 0,2 m, h = 20 mm, axisymmetrisch): knoopkracht, kracht op een
   rand, radiale traction, zwaartekracht langs Y en centrifugaalkracht om Y: Σ R_y =
   −3144,23 N exact, massa ρπ(b² − a²)h exact; u_r en u_y = Mecway.
+- **PL-07** (plaat 100 × 100 mm, t = 10 mm, vlakke spanning, quad4 10 × 10, ν = 0,3, trek
+  10 MPa op de rechterrand, *Pinned support* op de 11 knopen van de linkerrand; KNOWN_BUGS 134):
+  het gemiddelde van u_x en u_y op de linkerrand is 0 (≤ 1e-12 m), u_x van de rechterrand en de
+  grootste u_y van de linkerrand = Mecway 35 (headless; +0,03%). Mecway houdt bij een pinned
+  support op knopen het ongewogen gemiddelde vast, niet elke knoop.
 
 - **PL-10** (Dynamic Response 2D, strook 1 m × 50 mm, vlakke spanning, ν = 0, quad8
   40 × 1, staptraction 10 MPa, Newmark-stap T/200): periode van de tip 4L/c = 7,709e-4 s

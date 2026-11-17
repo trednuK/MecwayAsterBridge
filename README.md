@@ -22,7 +22,7 @@ independently before you rely on them.**
 
 - **Windows** with **Mecway 33 or 34** (the bridge runs in Mecway's built-in IronPython 2.7
   scripting environment). Developed and verified with Mecway 34; Mecway 33 is supported,
-  last fully verified with V2026.2 (features added since are verified with Mecway 34 only,
+  last fully verified with V2026.2 (features added since are verified with Mecway 34, or measured headless with Mecway 35,
   see [After an update](docs/en/After_an_update.md#6-mecway-versions--compatibility)); older
   versions have not been tested.
 - **Code-Aster 17.4 for Windows**. Windows builds are available from

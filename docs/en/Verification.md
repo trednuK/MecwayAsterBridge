@@ -100,7 +100,7 @@ Status 17 November 2026. The whole table comes from one revision: the regression
 (V2026.13; Code-Aster 17.4): 607 test cases, 3174 checks, 3168 OK, 6 BEKEND (known),
 0 NOK/FOUT. New compared with the previous table (579 test cases, run on `821c58a`) are 28
 test cases and 102 checks: 2D and axisymmetric (PL-07 pinned support as the mean, PL-20 ..
-PL-28 thermal stress, PL-30 .. PL-36 nonlinear static, PL-40 .. PL-46 contact; S44) and
+PL-28 thermal stress, PL-30 .. PL-36 nonlinear static, PL-40 .. PL-43, PL-45, PL-46 contact; S44) and
 dynamics (DY-04a/b springs and dampers against Mecway, DY-20d/e time tables with kinks off the
 step). No status change compared with the stored results (`a2f0e43`); there only the decay of
 AI-06 differs (2e-6 relative), well within the tolerance.
@@ -145,6 +145,10 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
   hex20 solids stops (NL-03a, 3 checks). Use PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I from `CALC_G_XFEM` on a curved front +5.3 % (BR-10, 1 check,
   tolerance 5 %). Use K from `POST_K1_K2_K3` (+1.6 %) or from G (+1.0 %) there.
+- KNOWN_BUGS 108: an edge load on a shell with an element offset, the tip deflection next to
+  Mecway (LS-67, 1 check).
+- KNOWN_BUGS 115: buckling of a C column with beams misses flexural-torsional buckling (BU-35,
+  1 check, +57%).
 
 **Bridge errors found by this verification and fixed**:
 - Error estimator: Code-Aster's `ERME` computes `FORCE_FACE` with the reversed sign (block under
@@ -852,6 +856,11 @@ tolerance 1e-6).
 - **PL-06** (ring r = 0.1 … 0.2 m, h = 20 mm, axisymmetric): nodal force, force on an edge,
   radial traction, gravity along Y and centrifugal force about Y: Σ R_y = −3144.23 N exact,
   mass ρπ(b² − a²)h exact; u_r and u_y = Mecway.
+- **PL-07** (plate 100 × 100 mm, t = 10 mm, plane stress, quad4 10 × 10, ν = 0.3, tension
+  10 MPa on the right edge, *Pinned support* on the 11 nodes of the left edge; KNOWN_BUGS 134):
+  the mean of u_x and u_y on the left edge is 0 (≤ 1e-12 m), u_x of the right edge and the
+  largest u_y of the left edge = Mecway 35 (headless; +0.03%). For a pinned support on nodes
+  Mecway holds the unweighted mean, not every node.
 
 - **PL-10** (Dynamic Response 2D, strip 1 m × 50 mm, plane stress, ν = 0, quad8 40 × 1,
   step traction 10 MPa, Newmark step T/200): period of the tip 4L/c = 7.709e-4 s −0.06%,

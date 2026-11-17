@@ -3,8 +3,8 @@
 ## V2026.13 – 17 November 2026
 
 2D and axisymmetric models get much further: nonlinear static (plasticity, large deformations)
-and contact between edges of plane elements (also friction), both through the line
-`**ASTER-PLANE` in an L30/S30 model, and *Thermal stress* in Static 2D and Static
+and contact between edges of plane elements (also friction), through the line
+`**ASTER-PLANE` in an L30/S30 model (contact in L30 only), and *Thermal stress* in Static 2D and Static
 Axisymmetric (STAPPENPLAN S44a-c), with a rewritten 2D guide: a decision table of the two
 input routes, worked examples on the repo's model files, figures and the exact messages.
 Linear static and thermal runs keep their results after Code-Aster's time limit (S45 phase
@@ -15,7 +15,8 @@ harmonic stresses with hysteretic damping, friction on held slave nodes), severa
 re-measured, corrected or removed, and the default `lin_solver_resi` 1e-5 instead of 1e-6.
 Behaviour changes: the linear solves stop with `FACTOR_57` only above an estimated error of
 1e-5 (KNOWN_BUGS 138), a pinned support on several nodes in 2D holds the mean displacement as
-in Mecway (KNOWN_BUGS 134), and `MECA_STATIQUE` runs with `OPTION='SANS'` followed by the same
+in Mecway (KNOWN_BUGS 134), an element offset is an ERROR in every 2D analysis (also S20/SA0),
+and `MECA_STATIQUE` runs with `OPTION='SANS'` followed by the same
 `CALC_CHAMP` of the stresses. Measured with Code-Aster 17.4 and Mecway 35 headless and offline
 tests; NOT checked in the Mecway window. Full regression on c5c459f: 3168 of 3174 checks OK
 (607 test cases), 6 BEKEND (KNOWN_BUGS 43, 83, 108, 115, as before), 0 NOK/FOUT, no status
@@ -73,8 +74,8 @@ change.
   the thickness or 360 degrees in every step. Verification PL-30 … PL-36: Hill's thick cylinder
   (perfect plasticity) in plane strain and axisymmetric within 2%, first yield at a hole in
   plane stress +1.8%, the Code-Aster test case ssnp159b through the bridge equal to its values.
-  Not yet: the failure loop and contact in 2D; opening such a result in the Mecway window is NOT
-  checked. A plastic material in S20/SA0 now gives a WARNING (Mecway's 2D types are linear).
+  Not yet: the failure loop in 2D (contact: see the next item); opening such a result in the
+  Mecway window is NOT checked. A plastic material in S20/SA0 now gives a WARNING (Mecway's 2D types are linear).
   2D docs §1.4.
 - **Contact in 2D and axisymmetric** (STAPPENPLAN S44b): with `**ASTER-PLANE` in Nonlinear
   Static (L30) a *Contact* between edges of the plane elements becomes `DEFI_CONTACT` on edge
@@ -106,6 +107,14 @@ change.
   analyses, and the thermal solve with filler material, *Thermal stress* or adaptive
   refinement (STAPPENPLAN S45b, low priority). Error messages `SUPERVIS_63`, settings for
   contact and nonlinear §2.7.
+- **Checks of the 2D input** (S44a): an *Element offset* is now an ERROR in every 2D analysis,
+  also Static 2D/Axisymmetric (S20/SA0, which computed with it before; the offset arms would
+  add nodes outside the XY plane). `**ASTER-PLANE` without a value, or written without the
+  hyphen (`#ASTER PLANE ...`), stops the run with an ERROR.
+- **KNOWN_BUGS 140 (new)**: with `DEFORMATION='GDEF_LOG'` the sum of `REAC_NODA` is about 2e-4
+  off the applied force (Code-Aster's behaviour, measured on PL-32).
+- **README and user guide**: the bridge is provided without warranty; check results
+  independently.
 - **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
   plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
 - **Pinned support on several nodes in 2D holds the mean displacement** (KNOWN_BUGS 134):
