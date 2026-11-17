@@ -63,7 +63,7 @@ _MESS_ERROR_RE = re.compile(
 # Without a message box, after a Python exception in a command.
 _MESS_UNCAUGHT = "after an uncaught exception"
 _MESS_ALARM_RE = re.compile(r"<A>\s*<([A-Za-z0-9_]+)>")
-# Explanation of CALC_MODES alarms (bridge_to_aster._calc_modes_block:
+# Explanation of known alarms, e.g. CALC_MODES (bridge_to_aster._calc_modes_block:
 # VERI_MODE STOP_ERREUR='NON', so alarms instead of errors). Text of the
 # messages from Code-Aster 17.4 (seen with Mecway's BucklingBeam).
 _ALARM_HINTS = {
@@ -101,6 +101,23 @@ _ALARM_HINTS = {
         u"duplicate cells (same nodes). Normal in vibroacoustics for a shell "
         u"on an air or fluid face (shell and coupling face are separate "
         u"cells); otherwise: check the mesh for duplicate elements."),
+    # POST_RELEVE_T of SIGM_NOEU (mixed models) or EFGE_NOEU (beam_forces
+    # in result route 'tabel') without REPERE: Code-Aster reads them in the
+    # local system of the elements (bridge_to_aster._build_postreleve_block;
+    # seen in Mecway 35 GUI tests, 17 Nov 2026, beam forces equal to Mecway).
+    "POSTRELE_70": (
+        u"route tabel: de snedekrachten van balken worden in het lokale "
+        u"assenstelsel van de balk gelezen, zoals bedoeld; in een gemengd "
+        u"model blijven de spanningen van de volume-elementen globaal. "
+        u"Onschuldig. Waar de waarden in een knoop verspringen (een hoek, een "
+        u"aansluiting, een puntlast of steunpunt op de balk) is de "
+        u"knoopwaarde een gemiddelde (niet gemeten): gebruik daar route liml.",
+        u"route tabel: the section forces of beams are read in the local "
+        u"system of the beam, as intended; in a mixed model the stresses of "
+        u"the solid elements stay global. Harmless. Where the values jump at "
+        u"a node (a corner, a junction, a point load or support on the beam) "
+        u"the node value is an average (not measured): use route liml "
+        u"there."),
     "MODELISA8_13": (
         u"zie MODELISA4_8 (dubbele cellen).",
         u"see MODELISA4_8 (duplicate cells)."),

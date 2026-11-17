@@ -1152,7 +1152,8 @@ de oplossing is berekend, maar de commando's erna worden overgeslagen.
   dat is wat de bridge wil. Waar balken met verschillende lokale assen in één knoop
   samenkomen (een hoek, een knik) is die knoopwaarde een gemiddelde over assen die niet
   bij elkaar horen (NIET gemeten); gebruik daar route `liml` (waarden per elementknoop).
-- **Gezien**: elk gemengd model; route `tabel` met balken (17 nov 2026).
+- **Gezien**: route `tabel`: elk gemengd model en balken (17 nov 2026). De WARNING in de
+  log geeft deze uitleg mee.
 - **Oplossing**: geen nodig.
 - **Status**: onschuldig.
 

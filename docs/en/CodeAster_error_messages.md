@@ -1133,7 +1133,8 @@ export): the solution has been computed, but the commands that follow are skippe
   different local axes meet at one node (a corner, a kink) that node value is an average
   over axes that do not belong together (NOT measured); use route `liml` there (values per
   element node).
-- **Seen**: every mixed model; route `tabel` with beams (17 Nov 2026).
+- **Seen**: route `tabel`: every mixed model and beams (17 Nov 2026). The WARNING in the
+  log carries this explanation.
 - **Solution**: none needed.
 - **Status**: harmless.
 
