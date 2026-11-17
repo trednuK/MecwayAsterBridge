@@ -103,6 +103,7 @@ S7, S8, S5, S9).
 | S46 | Review all KNOWN_BUGS: per item reproduce with the current versions (Code-Aster 17.4, Mecway 35), check whether it is real or a wrong setting/assumption of the test (as KNOWN_BUGS 95 turned out), then fix or document; priority of the user (11 Nov 2026) | in progress | – | 74 items in four groups; work per group, headless only; branch `stap-S46`, progress table in §S46 |
 | S45b | Results after a time limit, phases 2 and 3 of S45 (KNOWN_BUGS 137): extra time after `CALC_MODES` in modal, spectrum, cyclic and acoustic (phase 2, D2), the thermal chains (thermomechanical D7, filler material D9, HOMARD D10), the message for a solve without intermediate results (D6); partial results of `DYNA_VIBRA` (phase 3, D5, after a measurement) | later | S45 | **low priority** (user, 13 Nov 2026): after S44 and the S46 KNOWN_BUGS sweep; the value there is mostly a clearer message, and raising *Time limit run_aster* works too |
 | S47 | Bonded shell faces with the distance between the mid-surfaces (lever arm), KNOWN_BUGS 128 | later | S46 | asked 13 Nov 2026: interesting, but not a formulation of the solver manuals, so only with explicit documentation (NL+EN, theory and limits) and a WARNING whenever it is applied; until then a WARNING for shell faces bonded face to face and for a shell face bonded to a solid face (S46, `bridge_mesh._warn_bonded_offset`); see §S47 |
+| S48 | Mecway 36: support it (§2/§5/§6 of After_an_update) and use its new scripting API (`mw.liml_text()`, `solution.set_element_node_variable()`) | planned (plan reviewed 17 Nov 2026) | Mecway 36 installed by the user | see §S48; order 1a, 1b, 2, then the API items one by one, each with its own reviewed plan |
 | – | Rotordynamics | later | – | not relevant yet (user, 11 Nov 2026) |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2811,3 +2812,35 @@ point, a signed vector; an *Element offset* changes it), written as `LIAISON_DDL
 **Done when:** the lap within 2% of the solid reference; a plate on a block against a solid
 model; LS-07 family unchanged; plan reviewed by Fable.
 
+### S48 – Mecway 36: support and the new scripting API
+**Background:** Mecway 36 (release candidate, Nov 2026; replaces 35) adds `mw.liml_text()` (the model as
+`.liml` text) and `solution.set_element_node_variable()` (values at element nodes). Signatures are NOT
+verified until the manual of 36 and a probe on an installed 36 confirm them. `TESTED_MECWAY_VERSIONS` is
+still ("33", "34"), although many rows of `docs/en/After_an_update.md` §6 were verified on 35.
+**Plan (reviewed by Fable and Opus, 17 Nov 2026):**
+1. **1a** before the install: keep a Mecway 35 baseline (coupling cases saved by 35; 36 next to 35 if
+   possible, `run_verificatie.py` reads `MECWAY_EXE`). **1b** after it: manual chapter of 36, signatures by
+   reflection on `mecway.exe` (no window), behaviour probe in a hidden Mecway 36 (is the text equal to what
+   `save` writes, encoding/declaration, `<solution>` included, side effects; value layout, node order and
+   index base of `set_element_node_variable`; the String that `set_variable` returns).
+2. **Support:** normal regression, then `--mecway-opslaan` with 36 (new `vergelijking.md`), results of every
+   field group opened in 36, the §6 rows that depend on Mecway, a 35/36 column decision, then
+   `TESTED_MECWAY_VERSIONS`, docs NL+EN, CHANGELOG. GUI rows are user tests.
+3. **`liml_text()`** (detected with `hasattr`, the old path stays as the fallback): reader from text (strip
+   BOM/declaration, cut at `<solution` before encoding); *Show section* without saving; a model-only
+   snapshot in the work folder as the job's `liml_path` (fatigue reads it in route `tabel` too); route
+   `tabel` without saving or reopening. Optional, a user decision: route `liml` saves only when results are
+   spliced (with a check that the saved model equals the snapshot).
+4. **`set_element_node_variable()`**: route `tabel` clears Mecway's stale element-node values (KNOWN_BUGS 7,
+   part); optional, a user decision: route `tabel` loads the result fragment through the API (a rewrite of
+   the route). `failed`, hiding failed elements and the section view stay route-`liml` only; the
+   beam-analysis marker does not change; beam variables already go through `set_variable` in route `tabel`
+   (to record in KNOWN_BUGS: the beam analysis reads them as Mecway's own).
+**Backward compatibility:** option A (chosen for now): `hasattr`, today's code as the fallback, so Mecway
+33–35 keep working. Option B, only when a feature would need a second implementation: a minimum Mecway 36
+from a given release, older Mecway with the last release before it.
+**Mecway 36's own Code_aster export** (nonlinear static 3D with beams, trusses, springs, gap,
+tension-only, quadratic shells) overlaps the bridge's nonlinear static core only; usable as a second opinion
+on element formulations, not as a replacement.
+**Done when:** 36 in `TESTED_MECWAY_VERSIONS` with a §6 column; each API item built after its own reviewed
+plan, tested in a hidden Mecway 36 process and on 33–35 through the fallback.
