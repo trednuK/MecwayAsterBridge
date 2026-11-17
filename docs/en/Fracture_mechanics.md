@@ -461,9 +461,9 @@ Advice:
 - **Straight fronts**: hex8 with h ≈ a/20 gives K and G within 0.3 %; hex20 is not
   needed. The front and the crack plane may lie anywhere in the mesh.
 - **Curved fronts** (CIRCLE, ELLIPSE): `CALC_G_XFEM` has no curvature correction (the
-  meshed crack does, `FORM_FISS='CERCLE'`, §2.1): K from `CALC_G_XFEM` is 3 to 5 % too
-  high at h = a/20 and more on a coarser mesh. Use **K from `POST_K1_K2_K3`** (column
-  `K1_POST_K`, +1.6 %) or K from G: K = √(G E/(1 − ν²)) (plane strain, mode I;
+  meshed crack does, `FORM_FISS='CERCLE'`, §2.1): K from `CALC_G_XFEM` is just over 5 %
+  too high at h = a/20 (+5.3 %) and more on a coarser mesh (+15 % at a/5). Use **K from
+  `POST_K1_K2_K3`** (column `K1_POST_K`, +1.6 %) or K from G: K = √(G E/(1 − ν²)) (plane strain, mode I;
   +1.0 %). The bridge gives a WARNING.
 - **Mesh**: h ≤ a/20 perpendicular to the front; above a/10 the bridge gives a
   WARNING. Refine only around the front (a tube of a few elements); the rest may be

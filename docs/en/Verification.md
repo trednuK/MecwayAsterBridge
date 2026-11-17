@@ -576,8 +576,9 @@ meshes is given below.
   (b) and (f) would fail with swapped axes. If the node has no other element with
   rotations (c, d), it gets a POI1 `DIS_TR` without stiffness and the remaining
   rotation(s) set to 0 (unless a constraint fixes them, d). A fixed constraint on an
-  *element selection* containing the element with the joint stops with `FACTOR_11`
-  (KNOWN_BUGS 106); put it on nodes or faces.
+  *element selection* containing the element with the joint acts on the joint's own node:
+  the result can differ and Code-Aster can stop with `FACTOR_11` (KNOWN_BUGS 106); put it
+  on nodes or faces.
 
 ### LS-52, LS-53 Flexible joint with element offset and section forces per element
 

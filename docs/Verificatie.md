@@ -580,7 +580,8 @@ opeenvolgende meshes.
   Mecway; (b) en (f) zouden met verwisselde assen fout gaan. Heeft de knoop geen ander
   element met rotaties (c, d), dan krijgt hij een POI1 `DIS_TR` zonder stijfheid en de
   overgebleven rotatie(s) op 0 (tenzij een voorwaarde ze vastlegt, d). Een vaste
-  voorwaarde op een *elementselectie* met het element met de joint stopt met `FACTOR_11`
+  voorwaarde op een *elementselectie* met het element met de joint werkt op de eigen knoop
+  van de joint: het resultaat kan afwijken en Code-Aster kan stoppen met `FACTOR_11`
   (KNOWN_BUGS 106); leg hem op knopen of vlakken.
 
 ### LS-52, LS-53 Flexible joint met element offset en snedekrachten per element

@@ -434,8 +434,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    IronPython several times slower): noticeable for very large bonded faces.
 
 22\. **Compression only** (confirmed). Hard (LIAISON_UNIL, like the internal solver),
-   only in nonlinear analyses (MECA_STATIQUE stops with an ERROR), not in a
-   model with contact2 (one DEFI_CONTACT per calculation; reported). On shell faces
+   only in nonlinear analyses (linear analyses stop with an ERROR, `_check_linear`), not in
+   a model with contact2 (one DEFI_CONTACT per calculation; reported). On shell faces
    only the normal displacement, the rotations stay free.
 
 23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap
@@ -449,12 +449,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    and LS-54b/c do not change (< 1e-12 relative). Both only nonlinear.
 
 34\. **PLAS_TAB: untranslated fields** (confirmed, `bridge_radioss.parse_plas_tab`).
-   Kinematic/mixed hardening (C_hard > 0; 0 is isotropic, Altair /MAT/LAW36),
-   Eps_t/Eps_m/Eps_f, fct_IDp and the E evolution (Fct_IDE/EInf/CE) are reported
-   (WARNING) and computed as isotropic; F_smooth/F_cut/VP (strain rate) only INFO. A
-   different unit system (`/BEGIN`, or E/RHO outside the SI range) is reported, not
-   converted. Kinematic with a curve: VMIS_ECMI_TRAC is only exact for a
-   bilinear curve, so not built in.
+   Kinematic/mixed hardening (C_hard > 0; 0 is isotropic, Altair /MAT/LAW36) is reported
+   (WARNING) and computed as isotropic (equal under monotonic loading, different on
+   unloading); Eps_t/Eps_m, Eps_f, fct_IDp and the E evolution (Fct_IDE/EInf/CE) are
+   reported (WARNING) and ignored; F_smooth/F_cut/VP (strain rate) only INFO. A different
+   unit system (`/BEGIN`, or E/RHO outside the SI range) is reported, not converted.
+   Kinematic with a curve is not built in: the kinematic part of `VMIS_CINE_LINE` and
+   `VMIS_ECMI_*` is linear (Prager), so it matches a curve only when the hardening is
+   linear (as `bridge_from_liml._kinematic_curve`; NOT verified in the U doc).
 
 40\. **Trusses with large displacements** (confirmed with runs, `bridge_from_liml`
    `_split_trusses`). BARRE is geometrically linear in Code-Aster 17.4: GROT_GDEP is
@@ -563,8 +565,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    `LIAISON_DDL` (verification LS-51, equal to Mecway). (a) A fixed
    constraint (fixed, displacement, ...) on an *element selection* or component that contains the
    element with the joint also fixes that own node in Code-Aster (`GROUP_MA`);
-   together with the coupling that is double and Code-Aster stops with `FACTOR_11` (seen in
-   a run: fixed on the end elements, joint on an end face). Put the constraint on
+   together with the coupling that is double and Code-Aster can stop with `FACTOR_11` (seen
+   in a run: fixed on the end elements, joint on an end face). Put the constraint on
    nodes or faces (then only on the Mecway node, like Mecway); WARNING before the run
    (`bridge_mesh._warn_joint_element_constraints`). Not always fatal: two offline runs of
    LS-51a variants (fixed on elements 6+7 with the joint at N7; fixed on element 10 with the
@@ -602,10 +604,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    Euler theory (B32R expanded as one C3D20R over the cross-section; the same beam with line2
    in Mecway's own solver is exact); a round bar (SECTION=PIPE with inner radius 0)
    is not computed by CCX there ("nonpositive jacobian").
-   A line3 truss (`BARRE`) is split the same way; its midside node is tied across the
-   chord to the mean of the end nodes (`bridge_mesh._line3_truss_links`; verification
-   LS-54, MO-08). A direction that a fixed support, pinned support or displacement fixes
-   on all three nodes is skipped (else the matrix is singular). A *symmetry* or
+   A line3 truss (`BARRE`) or tension-only cable (`CABLE`) is split the same way; its
+   midside node is tied across the chord to the mean of the end nodes
+   (`bridge_mesh._line3_truss_links`; verification LS-54a..c, MO-08). A direction that a
+   fixed support, pinned support or displacement fixes on all three nodes is skipped (else
+   the matrix is singular). A *symmetry* or
    *frictionless* condition counts only with explicit global DX/DY/DZ: its per-node
    directions are made later in `write_mesh`, so a plane line3 truss held out of plane
    only by symmetry or frictionless may still stop with a singular matrix (zero pivot)

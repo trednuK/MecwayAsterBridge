@@ -465,7 +465,8 @@ Advies:
   nodig. Het front en het scheurvlak mogen overal in het mesh liggen.
 - **Gekromde fronten** (CIRKEL, ELLIPSE): `CALC_G_XFEM` heeft geen
   krommingscorrectie (de gemeshte scheur wel, `FORM_FISS='CERCLE'`, §2.1): K uit
-  `CALC_G_XFEM` ligt 3 tot 5 % te hoog bij h = a/20 en meer op een grover mesh.
+  `CALC_G_XFEM` ligt ruim 5 % te hoog bij h = a/20 (+5,3 %) en meer op een grover
+  mesh (+15 % bij a/5).
   Gebruik **K uit `POST_K1_K2_K3`** (kolom `K1_POST_K`, +1,6 %) of K uit G:
   K = √(G E/(1 − ν²)) (vlakke rek, modus I; +1,0 %). De bridge geeft een WARNING.
 - **Mesh**: h ≤ a/20 loodrecht op het front; boven a/10 geeft de bridge een WARNING.

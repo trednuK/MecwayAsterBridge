@@ -1156,13 +1156,15 @@ def _warn_curved(spec):
     if spec["kind"] in _CURVED or spec.get("curved"):
         log(tr("WARNING: #ASTER-XFEM (scheur {0}): gekromd front; K uit "
                "CALC_G_XFEM (interactie-integraal) heeft geen "
-               "krommingscorrectie en ligt enkele procenten te hoog "
-               "(gemeten +3 tot +5 %, docs/Breukmechanica.md par. 7.4). "
+               "krommingscorrectie en ligt te hoog "
+               "(gemeten +5,3 % bij h = a/20, tot +15 % op een grover mesh, "
+               "docs/Breukmechanica.md par. 7.4). "
                "Gebruik K uit POST_K1_K2_K3 (kolom K1_POST_K) of G.",
                "WARNING: #ASTER-XFEM (crack {0}): curved front; K from "
                "CALC_G_XFEM (interaction integral) has no curvature "
-               "correction and is a few percent too high (measured +3 to "
-               "+5 %, docs/en/Fracture_mechanics.md par. 7.4). Use K from "
+               "correction and is too high (measured +5.3 % at "
+               "h = a/20, up to +15 % on a coarser mesh, "
+               "docs/en/Fracture_mechanics.md par. 7.4). Use K from "
                "POST_K1_K2_K3 (column K1_POST_K) or G.").format(
                    spec["name"]))
 
