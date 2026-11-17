@@ -996,7 +996,8 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
 - **PL-47** (PL-40 met een overmaat van 0,2 mm, het uitgewerkte voorbeeld 8 van
   [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.5; controles onder de fysische
   namen): contactdruk 49,87 MPa tegen 49,86 (+0,02%), `hoopstress` aan de binnenwand van de
-  buitenring +0,19%, aan de buitenwand van de binnenring −0,29%, `radialstress` bij het contact
+  buitenring +0,19%, aan de buitenwand van de binnenring −0,29%, aan haar binnenwand (het
+  minimum, −2p b²/(b² − a²)) −0,32%, `radialstress` bij het contact
   −0,14%, u_r van de buitenring +0,06% en van de binnenring −0,11%; tolerantie 1–2%.
 
 Warmtetransport axisymmetrisch en in een vlak (STAPPENPLAN S44d stuk 1; Thermal Steady State

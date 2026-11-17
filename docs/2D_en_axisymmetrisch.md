@@ -174,7 +174,7 @@ dunne vlakke plaat in het 3D-beeld, axisymmetrische schalen (§1.4.2) als de lij
 meridiaan. Draai het beeld zodat je langs Z kijkt (Z naar je toe) om de doorsnede te zien zoals in de
 figuren van deze pagina. Voor een beeld van het hele lichaam: de knop ParaView (hieronder).
 
-**Rood in Mecway's boom is normaal.** Gezien door de gebruiker in Mecway 35 (17 nov 2026): in
+**Rood in Mecway's boom is normaal.** Gezien in het venster van Mecway 35 (17 nov 2026): in
 een model van route A met contact (PL-40) zijn de analyse, de componenten en het contact rood;
 in modellen met axisymmetrische schalen (PL-60, PL-62) het component, de druk en de symmetrie.
 Rood markeert wat Mecway's eigen solver niet zou rekenen (oorzaak NIET geverifieerd; Mecway's
@@ -477,7 +477,7 @@ Nagelopen met Code-Aster 17.4 (PL-60 … PL-68, [`Verificatie.md`](Verificatie.m
   een knoopkracht (ook `forceperlengthu` = F / (2π R)); een ringmoment (+0,24%);
   zwaartekracht.
 
-Gezien door de gebruiker in Mecway 35 (PL-60, PL-62): Mecway's venster accepteert een
+Gezien in het venster van Mecway 35 (PL-60, PL-62): Mecway's venster accepteert een
 *Pressure* op de zijvlakken van line3-elementen in S30 en tekent de pijlen op het vlak waar de
 bridge de druk laat werken; Mecway tekent de meridiaanlijn (X = straal, Y = as), niet de
 omwentelingsschaal, en toont `displacement`, `rotation Z`, `reaction force` en `reaction
@@ -771,7 +771,7 @@ Stappen:
    rand, *Symmetry* met normaal X op de middelste knoop); `PL-64.liml` is de
    Code-Aster-testcase ssls114i.
 8. Wat je in Mecway afleest na een run van `PL-62.liml` (ingeklemde ronde plaat, a = 1 m,
-   t = 10 mm, q = 1000 Pa, E = 210 GPa, ν = 0,3; gemeten door de gebruiker in Mecway 35):
+   t = 10 mm, q = 1000 Pa, E = 210 GPa, ν = 0,3; afgelezen in het venster van Mecway 35):
 
    | Mecway-item | Waar | Waarde | Controle |
    |---|---|---|---|
@@ -800,9 +800,22 @@ wrijvingsloos contact, de einden langs Y vast) met een overmaat van 0,2 mm in pl
    | `contactpressure` | de slaveknopen (buitenwand van de binnenring) | 49,9 MPa | de krimpdruk p; 0 op elke andere knoop |
    | `hoopstress` | binnenwand van de buitenring (r = b) | +178 MPa | σ_θ = p (c² + b²)/(c² − b²), trek |
    | `hoopstress` | buitenwand van de binnenring | −129 MPa | σ_θ = −p (b² + a²)/(b² − a²), druk |
+   | `hoopstress` | binnenwand van de binnenring (r = a) | −179 MPa | σ_θ = −2 p b²/(b² − a²): de grootste druk, het minimum van de legenda |
    | `radialstress` | de contactwand | −49,9 MPa | σ_r = −p |
    | `displx` | binnenwand van de buitenring | +0,130 mm | de buitenring zet uit |
    | `displx` | buitenwand van de binnenring | −0,070 mm | de binnenring krimpt; samen de 0,2 mm |
+
+   Mecway noemt `contactpressure` en `contactstate` *contact stress pressure* en *contact
+   state*. Het resultaat in het Mecway-venster, Mecway 36 (36.0.9815, 17 nov 2026):
+
+   ![PL-47 in Mecway 36: hoopstress op de laatste tijdstap](img/2d_result_mecway.png)
+
+   1. `hoopstress` in de boom (*Node values* of *Element values*); `radialstress`, `axialstress` en `shearstressrz` erboven en eronder.
+   2. De legenda: van +178,4 MPa (binnenwand van de buitenring) tot −178,9 MPa (binnenwand van de binnenring).
+   3. De tijdstap: t = 1 s, de laatste (t = 0 s toont alleen nullen).
+   4. De binnenring: druk (blauw).
+   5. De buitenring: trek (rood).
+   6. De deformation scale factor 100.
 
 ### 1.6 Veelgemaakte fouten
 
@@ -908,8 +921,8 @@ van Code-Aster (zoals ssls114i). Hun knopen hebben DX, DY en DRZ: `fixed` houdt 
 een `symmetry` met normaal X of Y ook DRZ = 0, een knooprotatie om Z is DRZ. Een druk op faceid
 1 is `FORCE_COQUE` `PRES` op een celgroep `BRAX<n>` van die elementen, met het teken waarmee hij
 langs n = Z × U duwt, zoals Mecway de pijlen tekent (Code-Asters eigen normaal van de cel is
-U × Z en `PRES` > 0 duwt daartegenin, gemeten: PL-64; Mecway's kant gezien door de gebruiker
-in Mecway 35 op PL-60, voor elementen zonder oriëntatie: met een *Element orientation*-kaart of
+U × Z en `PRES` > 0 duwt daartegenin, gemeten: PL-64; Mecway's kant gezien in het venster(
+)van Mecway 35 op PL-60, voor elementen zonder oriëntatie: met een *Element orientation*-kaart of
 een V-as op belaste elementen geeft de bridge een WARNING).
 Spanningen: `SIGM_ELNO` en `POST_CHAMP` `EXTR_COQUE` (`SUP`, `MOY`, `INF`) zoals bij 3D-schalen,
 zonder `SIEQ`. Code-Asters `SUP` is de kant U × Z, het vlak met de drukpijlen, dus Mecway's

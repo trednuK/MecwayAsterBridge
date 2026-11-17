@@ -11,7 +11,7 @@
   it stops before Code-Aster starts. With route `liml` and *Mecway solve first* on, such a
   solve now gives a WARNING that the comparison with Mecway is lost; the run goes on.
 
-- **Readable 2D and axisymmetric results** (after the user's test in Mecway 35):
+- **Readable 2D and axisymmetric results** (after a test in the Mecway 35 window):
   - the stresses of an axisymmetric model also under their physical names `radialstress`,
     `axialstress`, `hoopstress`, `shearstressrz` (same values as `stressxx`, `stressyy`,
     `stresszz`, `stressxy`); axisymmetric shells per surface `meridionalstress…` and

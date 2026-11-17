@@ -172,7 +172,7 @@ as a thin flat plate in the 3D view, axisymmetric shells (§1.4.2) as the line o
 Turn the view so that you look along Z (Z towards you) to see the section as drawn in the figures of this page.
 For a view of the whole body use the ParaView button (below).
 
-**Red in Mecway's tree is expected.** Seen by the user in Mecway 35 (17 Nov 2026): in a route A
+**Red in Mecway's tree is expected.** Seen in the Mecway 35 window (17 Nov 2026): in a route A
 model with contact (PL-40) the analysis, the components and the contact are red; in models
 with axisymmetric shells (PL-60, PL-62) the component, the pressure and the symmetry. Red marks
 what Mecway's own solver would not compute (cause NOT verified; Mecway's manual §7.5 lists
@@ -462,7 +462,7 @@ Verified with Code-Aster 17.4 (PL-60 … PL-68, [`Verification.md`](Verification
 - **Other cases.** The Code-Aster test case ssls114i exact; a pressure as a time table in L30;
   a nodal force (also `forceperlengthu` = F / (2π R)); a ring moment (+0.24%); gravity.
 
-Seen by the user in Mecway 35 (PL-60, PL-62): Mecway's window accepts a *Pressure* on the side
+Seen in the Mecway 35 window (PL-60, PL-62): Mecway's window accepts a *Pressure* on the side
 faces of line3 elements in S30 and draws its arrows on the face where the bridge applies it;
 Mecway draws the meridian line (X = radius, Y = axis), not the revolved shell, and shows
 `displacement`, `rotation Z`, `reaction force` and `reaction moment`. The component, the
@@ -751,7 +751,7 @@ Steps:
    the edge, *Symmetry* with normal X on the centre node); `PL-64.liml` is the Code-Aster test
    case ssls114i.
 8. What to read in Mecway after a run of `PL-62.liml` (clamped circular plate, a = 1 m,
-   t = 10 mm, q = 1000 Pa, E = 210 GPa, ν = 0.3; measured by the user in Mecway 35):
+   t = 10 mm, q = 1000 Pa, E = 210 GPa, ν = 0.3; read in the Mecway 35 window):
 
    | Mecway item | Where | Value | Check |
    |---|---|---|---|
@@ -780,9 +780,22 @@ frictionless contact, the ends held along Y) with an interference of 0.2 mm inst
    | `contactpressure` | the slave nodes (outer wall of the inner ring) | 49.9 MPa | the shrink-fit pressure p; 0 on every other node |
    | `hoopstress` | inner wall of the outer ring (r = b) | +178 MPa | σ_θ = p (c² + b²)/(c² − b²), tension |
    | `hoopstress` | outer wall of the inner ring | −129 MPa | σ_θ = −p (b² + a²)/(b² − a²), compression |
+   | `hoopstress` | inner wall of the inner ring (r = a) | −179 MPa | σ_θ = −2 p b²/(b² − a²): the largest compression, the minimum of the legend |
    | `radialstress` | the contact wall | −49.9 MPa | σ_r = −p |
    | `displx` | inner wall of the outer ring | +0.130 mm | the outer ring widens |
    | `displx` | outer wall of the inner ring | −0.070 mm | the inner ring shrinks; together the 0.2 mm |
+
+   Mecway lists `contactpressure` and `contactstate` as *contact stress pressure* and
+   *contact state*. The result in the Mecway window, Mecway 36 (36.0.9815, 17 Nov 2026):
+
+   ![PL-47 in Mecway 36: hoopstress at the last time step](../img/2d_result_mecway.png)
+
+   1. `hoopstress` in the tree (*Node values* or *Element values*); `radialstress`, `axialstress` and `shearstressrz` above and below it.
+   2. The legend: from +178.4 MPa (inner wall of the outer ring) to −178.9 MPa (inner wall of the inner ring).
+   3. The time step: t = 1 s, the last one (t = 0 s shows only zeros).
+   4. The inner ring: compression (blue).
+   5. The outer ring: tension (red).
+   6. The deformation scale factor 100.
 
 ### 1.6 Common mistakes
 
@@ -888,8 +901,8 @@ default `NON` (as ssls114i). Their nodes have DX, DY and DRZ: `fixed` holds DRZ 
 `symmetry` with normal X or Y also DRZ = 0, a node rotation about Z is DRZ. A pressure on faceid
 1 is `FORCE_COQUE` `PRES` on a cell group `BRAX<n>` of those elements with the sign that makes
 it push along n = Z × U, the way Mecway draws the arrows (Code-Aster's own normal of the cell
-is U × Z and `PRES` > 0 pushes against it, measured: PL-64; Mecway's side seen by the user in
-Mecway 35 on PL-60, for elements without an orientation: with an *Element orientation* card
+is U × Z and `PRES` > 0 pushes against it, measured: PL-64; Mecway's side seen in the(
+)Mecway 35 window on PL-60, for elements without an orientation: with an *Element orientation* card
 or a V axis on pressed elements the bridge gives a WARNING).
 Stresses: `SIGM_ELNO` and `POST_CHAMP` `EXTR_COQUE` (`SUP`, `MOY`, `INF`) as for 3D shells,
 without `SIEQ`. Code-Aster's `SUP` is the side U × Z, the face with the pressure arrows, so
