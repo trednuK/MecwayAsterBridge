@@ -628,9 +628,10 @@ def build_dy20_constraint():
                if abs(p[0] - L3) < 1e-12]
         m.node_selection("Tipknopen", tip)
         for n in tip:
-            m.add('<constraintequation><term coefficient="1 1/m" nid="%d" '
-                  'dof="ux" /><constant>%r</constant></constraintequation>'
-                  % (n, UC20))
+            # constant as the attribute: Mecway 35 ignores <constant> as an
+            # element (KNOWN_BUGS 27)
+            m.add('<constraintequation constant="%r"><term coefficient="1 1/m" '
+                  'nid="%d" dof="ux" /></constraintequation>' % (UC20, n))
         return m
     return build
 

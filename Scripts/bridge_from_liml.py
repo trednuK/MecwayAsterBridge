@@ -1488,10 +1488,10 @@ def _parse_model_item(item, root, model_data):
         log("INFO: Rayleigh damping {0}.".format(model_data["rayleigh"]))
     elif tag == "constraintequation":
         # Mecway (manual v33 par. 9.42): A dof1 + B dof2 + ... = C.
-        # <term coefficient="1 1/m" nid="49" dof="ux" />. Whether constant is
-        # a child element or an attribute is NOT seen in a .liml: both are
-        # read. The constant must be 0 with CCX and dynamics (manual par.
-        # 9.42).
+        # <term coefficient="1 1/m" nid="49" dof="ux" />, the constant as the
+        # attribute constant=".." (Mecway 35 reads and writes only that,
+        # see below). The constant must be 0 with CCX and dynamics (manual
+        # par. 9.42).
         # Tutorials/ConstraintEquations.liml itself contains no equation
         # (you create it in the tutorial, manual par. 17.14).
         terms = []
@@ -1507,9 +1507,33 @@ def _parse_model_item(item, root, model_data):
                 term.get("coefficient"), dof[1])))
         if not terms:
             return
+        # Mecway 35 reads the constant only as the attribute constant="..":
+        # <constant>..</constant> as an element is ignored there (C = 0) and
+        # dropped when Mecway saves the model, measured headless 17 Nov 2026
+        # (KNOWN_BUGS 27). The bridge takes the attribute when it is there,
+        # else the element value, with a WARNING when that is non-zero.
+        elem_text = item.findtext("constant")
+        attr_text = item.get("constant")
         constant = parse_and_convert(
-            item.findtext("constant") or item.get("constant") or "0",
+            (attr_text if attr_text is not None else elem_text) or "0",
             "dimensionless")
+        if attr_text is None and elem_text is not None and constant:
+            log(tr("WARNING: Constraint equation: de constante staat als "
+                   "element <constant>{0}</constant>; Mecway 35 leest alleen "
+                   "het attribuut constant=\"...\" en rekent hier met 0, en "
+                   "bij opslaan in Mecway gaat het element verloren. De "
+                   "bridge gebruikt {0}; zet hem als attribuut "
+                   "constant=\"{0}\" (KNOWN_BUGS 27).",
+                   "WARNING: Constraint equation: the constant is an element "
+                   "<constant>{0}</constant>; Mecway 35 only reads the "
+                   "attribute constant=\"...\" and computes with 0 here, and "
+                   "saving in Mecway drops the element. The bridge uses {0}; "
+                   "write it as the attribute constant=\"{0}\" (KNOWN_BUGS "
+                   "27).").format(elem_text.strip()))
+        elif attr_text is not None and elem_text is not None and                 elem_text.strip() != attr_text.strip():
+            log("INFO: Constraint equation: element <constant>{0}</constant> "
+                "ignored, the attribute constant=\"{1}\" is used (as "
+                "Mecway).".format(elem_text.strip(), attr_text))
         model_data["constraint_equations"].append(
             {"terms": terms, "constant": constant})
         log("INFO: Constraint equation {0} = {1}.".format(terms, constant))

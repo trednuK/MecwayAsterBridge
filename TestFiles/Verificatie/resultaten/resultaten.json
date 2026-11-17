@@ -29068,7 +29068,7 @@
   "series": null,
   "h": null,
   "note": "LIAISON_DDL met COEF_IMPO als functie (AFFE_CHAR_MECA_F): C in de eerste rekenstap, daarna constant.",
-  "seconds": 14.0,
+  "seconds": 11.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [

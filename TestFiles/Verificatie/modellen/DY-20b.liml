@@ -508,10 +508,10 @@
     <elem eid="100" shape="hex8" nodes="397 401 402 398 399 403 404 400" />
   </elset>
   <fixed selection="Inklemming" />
-  <constraintequation><term coefficient="1 1/m" nid="401" dof="ux" /><constant>1e-05</constant></constraintequation>
-  <constraintequation><term coefficient="1 1/m" nid="402" dof="ux" /><constant>1e-05</constant></constraintequation>
-  <constraintequation><term coefficient="1 1/m" nid="403" dof="ux" /><constant>1e-05</constant></constraintequation>
-  <constraintequation><term coefficient="1 1/m" nid="404" dof="ux" /><constant>1e-05</constant></constraintequation>
+  <constraintequation constant="1e-05"><term coefficient="1 1/m" nid="401" dof="ux" /></constraintequation>
+  <constraintequation constant="1e-05"><term coefficient="1 1/m" nid="402" dof="ux" /></constraintequation>
+  <constraintequation constant="1e-05"><term coefficient="1 1/m" nid="403" dof="ux" /></constraintequation>
+  <constraintequation constant="1e-05"><term coefficient="1 1/m" nid="404" dof="ux" /></constraintequation>
   <mat name="Staal">
     <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0" />
     <density type="Simple" density="7850 kg/m³" />

@@ -2704,7 +2704,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 27 | Not verified in a .liml | *draft*: low (rarely used inputs) |  |  |
+| 27 | Not verified in a .liml | low (rarely used inputs); headless Mecway 35 against the bridge (own beam models, 17 Nov 2026): rx/ry/rz and rotational inertia axis 1/2/3 equal to Mecway; Mecway reads the constraint-equation constant only as an attribute (the element form is ignored, C = 0), the bridge read both silently; a hand-written gap is not used by Mecway 35 at all (5 variants), so the gap stays NOT compared with Mecway | WARNING for `<constant>` as an element (`bridge_from_liml`, test); DY-20b written with the attribute (result unchanged); item rewritten; Mecway features NL/EN | this commit |
 | 37 | Second run in the same session: `solution` after `mw.open` | *draft*: low (session behaviour) |  |  |
 | 38 | Main window non-modal: other Mecway actions not checked | *draft*: low (GUI behaviour) |  |  |
 | 41 | Explicit: TCHAMWA with a variable step not checked | low; answered, works: bar with an imposed displacement table, kinks at 0.137 and 0.311 ms (not on the ~1 us step): the kinks become INTERVALLE boundaries and TCHAMWA and DIFF_CENT follow the table to 4e-13 m | item removed; new verification DY-20d and DY-20e (kinks 2 .. 3 steps apart, the series not yet decayed: 7.8e-8); docs Default settings and Verification DY-20 NL+EN | this commit |

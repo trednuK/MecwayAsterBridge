@@ -825,12 +825,29 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 ## Open questions (Mecway behaviour not checked)
 
-27\. **Not verified in a .liml** (question). Constraint equation: `constant`
-   (element or attribute; the bridge reads both) and the DOF names rx/ry/rz; rotational
-   inertia: axis 1/2 = X/Y (only 3 = Z seen); more than one node gives an ERROR. Rayleigh
-   damping only on the whole model and not on discrete elements (Mecway: α on every node
-   with mass, manual par. 9.26). Confirmed: the Rayleigh XML (DampedVibratingStrip). Gap
-   attributes `initialclearance`/`openforce`: not seen in a .liml.
+27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;
+   Mecway 35.0.9802 internal solver against the bridge, 17 Nov 2026, own beam models).
+   Constraint equation: the DOF names `rx`/`ry`/`rz` work in Mecway as in the bridge
+   (rotation 0.01 rad imposed, both); the constant is read by Mecway only as the attribute
+   `constant=".."`, an element `<constant>..</constant>` is ignored there (C = 0) and dropped
+   when Mecway saves the model; the bridge takes the attribute when present (as Mecway),
+   else the element value with a WARNING when it is non-zero (`bridge_from_liml`,
+   `tests/test_bridge_meldingen.py`). Rotational inertia: axis 1/2/3 =
+   X/Y/Z, frequencies equal to Mecway to 4 decimals (tip inertia 1 kg m² on a cantilever:
+   9.8003 / 13.7528 / 9.1685 Hz). More than one node gives an ERROR. Rayleigh damping only
+   on the whole model and not on discrete elements (Mecway: α on every node with mass,
+   manual par. 9.26). Confirmed: the Rayleigh XML (DampedVibratingStrip). Gap: Mecway reads
+   the names `closedstiffness`, `initialclearance` and `openforce` of type `Gap` (it wrote
+   them back, normalised, into its CCX solution file), and the bridge matches a hand
+   calculation with and without clearance (8.88e-4 / 1.332e-3 m). But Mecway 35 headless gave
+   the free solution in all 5 Static 3D variants with the internal solver (push and pull, both
+   node orders, 1 and 10 mm between the nodes; cause unknown: model, headless solve path or
+   Mecway); Nonlinear Static gave no solution with the internal solver (gaps there only in
+   Static 3D, manual par. 7.10.1) and an empty one with CCX (cause not examined). So the gap
+   is NOT compared with Mecway; a gap model saved in the GUI is needed (item 23). Also: the
+   manual names *Initial clearance* and *Force of open gap* only for CCX (par. 7.10.2), while
+   the bridge applies `initialclearance` in every analysis, also in a Static 3D model for the
+   internal solver (NOT compared).
 
 37\. **Second run in the same session: `solution` after `mw.open`** (question,
    `MecwayAsterBridgeMain`). The main window stays open, so a second run uses

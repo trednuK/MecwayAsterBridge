@@ -273,6 +273,61 @@ def test_harm_stress_eta():
               "{3})".format(sorted(etas.items()), g3d, got, want))
 
 
+_CE_LIML = u"""<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="1" y="0" z="0" />
+  <elset name="Balk" material="Staal">
+    <elem eid="1" shape="line2" nodes="1 2" />
+  </elset>
+  <fixed selection="Vast" />
+  {ce}
+  <mat name="Staal">
+    <geometric type="RectBar" recta="0.02 m" rectb="0.03 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <nodeselection name="Vast"><node nid="1" /></nodeselection>
+</liml>
+"""
+
+
+def test_constraint_constant():
+    """KNOWN_BUGS 27: Mecway 35 reads the constant of a constraint equation
+    only as an attribute; a non-zero <constant> element gives a WARNING,
+    the value is still used."""
+    from bridge_from_liml import extract_aster_data_from_liml
+    term = u'<term coefficient="1 1/m" nid="2" dof="ux" />'
+    tmp = tempfile.mkdtemp(prefix="mab_ce_")
+    try:
+        for ce, value, warn in (
+                (u'<constraintequation constant="0.001">' + term +
+                 u'</constraintequation>', 0.001, False),
+                (u'<constraintequation>' + term +
+                 u'<constant>0.001</constant></constraintequation>', 0.001,
+                 True),
+                (u'<constraintequation>' + term +
+                 u'<constant>0</constant></constraintequation>', 0.0, False),
+                (u'<constraintequation constant="0.002">' + term +
+                 u'<constant>0.001</constant></constraintequation>', 0.002,
+                 False)):
+            path = os.path.join(tmp, "m.liml")
+            with io.open(path, "w", encoding="utf-8") as f:
+                f.write(_CE_LIML.replace(u"{ce}", ce))
+            bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp
+            bridge_utils.CONFIG_BRIDGE["active_analysis"] = "lin_static_3d"
+            del LOG[:]
+            md = extract_aster_data_from_liml(path)
+            eqs = (md or {}).get("constraint_equations", [])
+            got = [m for m in LOG if "WARNING" in m and "<constant>" in m]
+            check(len(eqs) == 1 and abs(eqs[0]["constant"] - value) < 1e-15
+                  and bool(got) == warn,
+                  u"constraint equation {0}: C {1}, WARNING {2}".format(
+                      ce[:40], eqs[0]["constant"] if eqs else None,
+                      bool(got)))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_bonded_offset():
     """KNOWN_BUGS 128: WARNING for bonded shell faces (face to face, shell
     face on a solid, solid face on a shell), none for shell edges."""
@@ -305,7 +360,8 @@ def test_bonded_offset():
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
                  test_acoustic_density, test_factor57, test_log_errors,
-                 test_bonded_offset, test_harm_stress_eta):
+                 test_bonded_offset, test_harm_stress_eta,
+                 test_constraint_constant):
         test()
     if FAILS:
         for f in FAILS:
