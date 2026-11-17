@@ -2197,7 +2197,7 @@ U-documentatie gevonden):
   Impliciet geeft met hetzelfde mesh een gladder golffront (piek −2,7% tegen −0,6%
   expliciet) met ~12× minder stappen.
 
-### DY-20 Expliciet: frictionless en constraint equation als opgelegde beweging
+### DY-20 Expliciet: frictionless, constraint equation en een tijdstabel als opgelegde beweging
 
 - **Doel**: in expliciete dynamica legt `FORMULATION='ACCELERATION'` ook bij
   `FACE_IMPO`, `LIAISON_OBLIQUE` en `LIAISON_DDL` de versnelling op; de bridge zet die
@@ -2219,7 +2219,9 @@ U-documentatie gevonden):
   op 0,137 ms → −5 µm op 0,311 ms → constant), knikken niet op een veelvoud van de stap,
   TCHAMWA: de bridge legt de knikken op grenzen van `INTERVALLE` (daar een andere
   stapgrootte) en het eindvlak volgt de tabel tot 4e-13 m op alle uitvoertijden (DIFF_CENT
-  hetzelfde).
+  hetzelfde). DY-20e: knikken op 0,137, 0,1395 en 0,1418 ms (3 en 2 stappen na elkaar),
+  dus de TCHAMWA-reeks van een knik is bij de volgende nog niet uitgedempt: 7,8e-8 van
+  10 µm.
 - **Interpretatie**: de omzetting werkt voor alle opgelegde bewegingen. Mecway staat een
   constante ≠ 0 in een constraint equation alleen bij statisch toe (manual §9.42); de
   bridge vertaalt haar toch, met een WARNING.

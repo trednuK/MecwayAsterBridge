@@ -980,34 +980,54 @@ TESTS += [
 PTS20D = [(0.0, 0.0), (1.37e-4, 1.0e-5), (3.11e-4, -0.5e-5), (6.0e-4, -0.5e-5)]
 
 
-def _table20d(t):
-    for (a, ua), (b, ub) in zip(PTS20D[:-1], PTS20D[1:]):
+# DY-20e: kinks 2 .. 3 steps apart (0.137, 0.1395, 0.1418 ms), so the
+# TCHAMWA series of a kink has not decayed when the next one comes (the
+# branch v = v_cur in _explicit_accelerations).
+PTS20E = [(0.0, 0.0), (1.37e-4, 1.0e-5), (1.395e-4, 2.0e-5),
+          (1.418e-4, 0.5e-5), (6.0e-4, 0.5e-5)]
+
+
+def _table20d(t, pts=None):
+    pts = pts or PTS20D
+    for (a, ua), (b, ub) in zip(pts[:-1], pts[1:]):
         if a <= t <= b:
             return ua + (ub - ua) * (t - a) / (b - a)
-    return PTS20D[-1][1]
+    return pts[-1][1]
 
 
-def build_dy20d():
-    m = build_dy03("velocity", TEND3, DTO3)()
-    m.items = [x for x in m.items if "<velocity" not in x]
-    m.add('<displacement selection="Eindvlak">' + "".join(
-        '<value time="%r s">%r m</value>' % p for p in PTS20D) +
-        '<x>1</x><y>0</y><z>0</z></displacement>')
-    return m
+def build_dy20d(pts=None):
+    def build():
+        m = build_dy03("velocity", TEND3, DTO3)()
+        m.items = [x for x in m.items if "<velocity" not in x]
+        m.add('<displacement selection="Eindvlak">' + "".join(
+            '<value time="%r s">%r m</value>' % p for p in (pts or PTS20D)) +
+            '<x>1</x><y>0</y><z>0</z></displacement>')
+        return m
+    return build
+
+
+def _dy20d_check(pts=None):
+    return [Check("u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um)",
+                  lambda r: max(abs(u - _table20d(t, pts)) for t, u in
+                                r.history("displx", (L3, 0, 0))) / 1.0e-5,
+                  ref=0.0, tol_abs=1e-5, unit="-",
+                  source="de opgelegde beweging zelf (lineair tussen de "
+                         "tabelpunten)")]
 
 
 TESTS += [
     Case("DY-20d", GROUP, "Staaf, opgelegde verplaatsing uit een tabel met "
          "knikken buiten de stap, expliciet TCHAMWA", "dyna_expl_3d",
-         build_dy20d,
-         [Check("u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um)",
-                lambda r: max(abs(u - _table20d(t)) for t, u in
-                              r.history("displx", (L3, 0, 0))) / 1.0e-5,
-                ref=0.0, tol_abs=1e-5, unit="-",
-                source="de opgelegde beweging zelf (lineair tussen de "
-                       "tabelpunten)")],
+         build_dy20d(), _dy20d_check(),
          settings={"schema": "TCHAMWA", "deformation": "PETIT"},
          timeout=1200,
          note="TCHAMWA en DIFF_CENT 4e-13 m (17 nov 2026); knikken op "
               "0,137 en 0,311 ms, staptijd ~1 us."),
+    Case("DY-20e", GROUP, "Staaf, opgelegde verplaatsing met knikken 2 .. 3 "
+         "stappen na elkaar, expliciet TCHAMWA", "dyna_expl_3d",
+         build_dy20d(PTS20E), _dy20d_check(PTS20E),
+         settings={"schema": "TCHAMWA", "deformation": "PETIT"},
+         timeout=1200,
+         note="De TCHAMWA-reeks van een knik is nog niet uitgedempt bij de "
+              "volgende knik (v = v_cur in _explicit_accelerations)."),
 ]

@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bbeab8e, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 35a0ca3, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3163 van 3169 controles binnen de tolerantie** (604 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3164 van 3170 controles binnen de tolerantie** (605 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -976,6 +976,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bbeab8e, Code-Aster 17.4
 | DY-20c | Plaat, frictionless schaalvlak met normaalverplaatsing, expliciet (LIAISON_OBLIQUE) | normaalverplaatsing eind (|uz| gemiddeld) | 1.5000e-04 m | 1.5000e-04 | +0.00% | 0.0001% | OK |
 | DY-20c | Plaat, frictionless schaalvlak met normaalverplaatsing, expliciet (LIAISON_OBLIQUE) | normaalsnelheid (|vz| gemiddeld, laatste uitvoertijd) | 0.25 m/s | 0.25 | +0.00% | 0.01% | OK |
 | DY-20d | Staaf, opgelegde verplaatsing uit een tabel met knikken buiten de stap, expliciet TCHAMWA | u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um) | 0 - | 4.1382e-08 | 4.1382e-08 | 1e-05 - | OK |
+| DY-20e | Staaf, opgelegde verplaatsing met knikken 2 .. 3 stappen na elkaar, expliciet TCHAMWA | u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um) | 0 - | 7.8318e-08 | 7.8318e-08 | 1e-05 - | OK |
 | DY-30 | Snedekrachten in DYNA_NON_LINE, quasi-statisch | M_v inklemming | 300 N.m | 300.16 | +0.05% | 2% | OK |
 | DY-70 | Staaf met verhinderde uitzetting, constante temperatuur (KNOWN_BUGS 94) | gemiddelde sigma_xx op x = L/2, t = 0.0002 s | -1.3250e+08 Pa | -1.3227e+08 | +0.18% | 1% | OK |
 | DY-70 | Staaf met verhinderde uitzetting, constante temperatuur (KNOWN_BUGS 94) | gemiddelde sigma_xx op x = L/2, t = 0.002 s | -1.3250e+08 Pa | -1.3237e+08 | +0.10% | 1% | OK |

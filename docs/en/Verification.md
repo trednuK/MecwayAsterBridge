@@ -2187,7 +2187,7 @@ U documentation):
   Implicit gives a smoother wave front on the same mesh (peak −2.7% against −0.6%
   explicit) with ~12× fewer steps.
 
-### DY-20 Explicit: frictionless and constraint equation as imposed motion
+### DY-20 Explicit: frictionless, constraint equation and a time table as imposed motion
 
 - **Goal**: in explicit dynamics `FORMULATION='ACCELERATION'` also makes `FACE_IMPO`,
   `LIAISON_OBLIQUE` and `LIAISON_DDL` impose the acceleration; the bridge converts those
@@ -2208,6 +2208,8 @@ U documentation):
   at 0.137 ms → −5 µm at 0.311 ms → constant), kinks not on a multiple of the step,
   TCHAMWA: the bridge puts the kinks on `INTERVALLE` boundaries (another step size there)
   and the end face follows the table to 4e-13 m at all output times (DIFF_CENT the same).
+  DY-20e: kinks at 0.137, 0.1395 and 0.1418 ms (3 and 2 steps apart), so the TCHAMWA
+  series of a kink has not decayed at the next one: 7.8e-8 of 10 µm.
 - **Interpretation**: the conversion works for all imposed motions. Mecway allows a
   non-zero constant in a constraint equation only in static analyses (manual §9.42);
   the bridge translates it anyway, with a WARNING.
