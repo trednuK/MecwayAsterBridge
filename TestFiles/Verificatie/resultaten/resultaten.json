@@ -1322,7 +1322,7 @@
   "series": "LS-03 DKT quad4",
   "h": 0.25,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 2.6,
+  "seconds": 3.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -3073,7 +3073,7 @@
   "series": null,
   "h": null,
   "note": "knoopwaarden exact (1D-Galerkin, lineaire elementen); tolerantie = afronding",
-  "seconds": 2.6,
+  "seconds": 4.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4383,7 +4383,7 @@
   "series": null,
   "h": null,
   "note": "statisch bepaald opgelegd (drie symmetrievlakken); uniforme rek is exact met hex8",
-  "seconds": 2.7,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4881,7 +4881,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E met consistente massa; 20 elementen.",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6157,7 +6157,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E; RIGI_GEOM + RIGI_ROTA (spin softening).",
-  "seconds": 2.8,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7630,7 +7630,7 @@
   "series": null,
   "h": null,
   "note": "10 x line2 (POU_D_E), tipmassa 10 kg (mass2), balk 1 kg/m3; 3 modes; Mecway stepsize 0,01 s, 1 s.",
-  "seconds": 3.1,
+  "seconds": 3.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9499,7 +9499,7 @@
   "series": null,
   "h": null,
   "note": "f1/f2 = 4.393/5.491 Hz, Sa = 6.0855/6.7684 m/s2 (lineair in T).",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -10237,7 +10237,7 @@
   "series": null,
   "h": null,
   "note": "grens van de WARNING voor kwadratische elementen.",
-  "seconds": 3.6,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12768,7 +12768,7 @@
   "series": null,
   "h": null,
   "note": "Geen constructie: 3D_FLUIDE met twee materialen; de 0-Hz-mode (constante potentiaal) valt onder vibro_freq_min.",
-  "seconds": 2.8,
+  "seconds": 3.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13668,7 +13668,7 @@
   "series": null,
   "h": null,
   "note": "Mecway TempDependent -> THER_NL, THER_NON_LINE",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14883,7 +14883,7 @@
   "series": null,
   "h": null,
   "note": "Alleen y >= 0; ligament symmetry, alleen SCHEUR_LIP_BOVEN.",
-  "seconds": 6.3,
+  "seconds": 6.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18207,7 +18207,7 @@
   "series": "AD-01 hex20",
   "h": 0.02,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 12 elementen geven.",
-  "seconds": 3.9,
+  "seconds": 3.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18239,7 +18239,7 @@
   "series": "AD-01 hex20",
   "h": 0.01,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 96 elementen geven.",
-  "seconds": 3.8,
+  "seconds": 3.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18271,7 +18271,7 @@
   "series": "AD-01 hex20",
   "h": 0.005,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 768 elementen geven.",
-  "seconds": 5.5,
+  "seconds": 4.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18303,7 +18303,7 @@
   "series": "AD-01 hex20",
   "h": 0.0025,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 6144 elementen geven.",
-  "seconds": 10.1,
+  "seconds": 8.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18335,7 +18335,7 @@
   "series": "AD-01 hex20",
   "h": 0.00125,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 49152 elementen geven.",
-  "seconds": 26.1,
+  "seconds": 24.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18367,7 +18367,7 @@
   "series": "AD-01 hex20",
   "h": 0.000625,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 393216 elementen geven.",
-  "seconds": 102.9,
+  "seconds": 91.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18399,7 +18399,7 @@
   "series": null,
   "h": null,
   "note": "Lus uit bridge_adapt (doel 1,5%, max. 6 lussen, Dorfler 0,5, geen buren) met headless Mecway (refine_x2); tussenmodellen modellen/AD-02-L<k>.liml.",
-  "seconds": 30.4,
+  "seconds": 26.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18515,7 +18515,7 @@
   "series": null,
   "h": null,
   "note": "Balk hex20 4x1x1, fixed op de knopen van x = 0 (knoopselectie), traction op het eindvlak; de grootste fout zit bij de inklemming.",
-  "seconds": 2.8,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19105,7 +19105,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 2.6,
+  "seconds": 3.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19137,7 +19137,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 0,5 Pa = ONDE_FLUI PRES 1 (zoals ahlv101a).",
-  "seconds": 2.7,
+  "seconds": 3.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19284,7 +19284,7 @@
   "series": null,
   "h": null,
   "note": "source_velocity 0,014 m/s de fluid in; ahlv100b VNOR naar buiten (teken omgekeerd).",
-  "seconds": 2.9,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -22604,7 +22604,7 @@
   "series": null,
   "h": null,
   "note": "Moet gelijk zijn aan AK-01 (harde wanden): decay rate (c/L) rho c / Z = 1,4e-4 1/s. De niet-oscillerende mode (n = 0, decay 1,4e-4) valt numeriek samen met de constante druk (lambda = 0) en wordt niet vergeleken.",
-  "seconds": 3.6,
+  "seconds": 5.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26566,7 +26566,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T = 900 - 1000 t graden C op alle knopen (0..0,88 s), dt = 0,02 s; staal=16MND5, begin=austeniet",
-  "seconds": 5.5,
+  "seconds": 5.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33234,7 +33234,7 @@
   "series": null,
   "h": null,
   "note": "Voorheen gelijk aan het model zonder temperatuur (alarm MECANONLINE2_97).",
-  "seconds": 2.9,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -35135,7 +35135,7 @@
   "series": null,
   "h": null,
   "note": "Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de waarde op het laatste tabelpunt (50 K).",
-  "seconds": 2.7,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37329,7 +37329,7 @@
   "series": null,
   "h": null,
   "note": "I 100/50/10/8 mm, L = 1 m, 20 POU_D_E, P = 1000 N. The torsional factor is a multiple eigenvalue (one per element; Sturm alarm ALGELINE5_23). Mecway 34 beam: 109.72 / 987.46 / 1230.44 / 2743.03 = 25 x factor 1, no torsional buckling (KNOWN_BUGS 112).",
-  "seconds": 2.8,
+  "seconds": 2.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -41120,7 +41120,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a zonder Rayleigh, loss_factor 0,02 (PROJ_BASE van RIGI_MECA_HYST, STOCKAGE PLEIN).",
-  "seconds": 3.5,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41550,7 +41550,7 @@
   "series": null,
   "h": null,
   "note": "Mecway 34 headless op hetzelfde model: alle vier gelijk aan de bridge binnen 4e-14 relatief.",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -43870,7 +43870,7 @@
   "series": "PL-03 quad8",
   "h": 0.05,
   "note": "2D-tegenhanger van LS-04: kwart ring, symmetry x = 0 en y = 0, Mecway S20 plane strain (dikte 10 mm).",
-  "seconds": 2.5,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -46320,7 +46320,7 @@
   "series": null,
   "h": null,
   "note": "tri3: Code-Aster integreert de massa met 1 punt, Mecway exact (consistent): de bridge ligt hoger (KNOWN_BUGS 130).",
-  "seconds": 3.8,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -47658,7 +47658,7 @@
   "series": null,
   "h": null,
   "note": "Mecway gebruikt bij een veer altijd de length adjustment, ook met force=\"true\"; de bridge zet die om in twee knoopkrachten k d naar elkaar toe.",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -47940,7 +47940,7 @@
   "series": null,
   "h": null,
   "note": "Element attributes orientationux..vz; U = (1, 1, 0), V = (-1, 1, 1) (projected).",
-  "seconds": 2.7,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -52266,7 +52266,7 @@
   "series": null,
   "h": null,
   "note": "Rechte kolom, 15 kN dwars op het midden vanaf t = 0, 10 stappen.",
-  "seconds": 2.8,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57219,7 +57219,7 @@
   "series": null,
   "h": null,
   "note": "R = 0,5 m, t = 5 mm (#ASTER-SHELL), L = 1 m, 20 line3, p = 1 MPa op faceid 1, Y vast in de onderste knoop.",
-  "seconds": 2.7,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57485,7 +57485,7 @@
   "series": null,
   "h": null,
   "note": "a = 1 m, t = 10 mm (RectBar a = 10 mm, b = 20 mm, geen regel), 20 line3 van de rand naar het midden, q = 1000 Pa op faceid 1 (duwt langs -Y); rand Fixed, midden symmetrie X.",
-  "seconds": 2.8,
+  "seconds": 5.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57681,7 +57681,7 @@
   "series": null,
   "h": null,
   "note": "R = 1 m, t = 10 mm (R/t = 100), L = 0,5 m = 6.4 / beta, 100 line3 (0.06 / beta), p = 0,1 MPa; Fixed in de onderste knoop, axiaal vrij.",
-  "seconds": 2.8,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57779,7 +57779,7 @@
   "series": null,
   "h": null,
   "note": "Het net van ssls114i (2 SEG3 van A naar B), E = 200000 MPa, t = 0,05 m, druk 10 Pa op faceid 1, Y vast in B.",
-  "seconds": 2.8,
+  "seconds": 3.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57839,7 +57839,7 @@
   "series": null,
   "h": null,
   "note": "PL-60 als L30, druk 0 .. 1 MPa over 1 s in twee stappen, deformation GROT_GDEP (standaard) -> PETIT met een WARNING.",
-  "seconds": 2.7,
+  "seconds": 3.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -58530,7 +58530,7 @@
   "series": null,
   "h": null,
   "note": "PL-40 met overmaat 0,2 mm: het voorbeeld van de documentatie, met de fysische namen.",
-  "seconds": 2.7,
+  "seconds": 3.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
