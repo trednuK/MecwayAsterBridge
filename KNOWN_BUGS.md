@@ -863,6 +863,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    0.888 mm with three *Displacements*. Nonlinear Static with the internal solver gave no
    solution and with CCX an empty one, probably for the same reason (not re-checked).
 
+37\. **A table-route run after `mw.open` in the same bridge window** (question,
+   `MecwayAsterBridgeMain`). The bridge writes the table route through the `solution` object
+   that Mecway gave at the start of the script. A liml run, *Results...* or *Section in
+   results* reopen the model with `mw.open`; a table-route run after that in the same window
+   writes through that `solution` (`set_variable`, `check_solution_mesh`): NOT verified.
+   Checked in the Mecway 35 GUI (17 Nov 2026, cantilever, "Mecway solve first"): two liml
+   runs in one window and two table runs in one window all complete; run 2 of the liml pair
+   compares against a new Mecway solve (its Mecway values differ from the bridge values that
+   run 1 wrote), so reading through `solution` follows the reopened model. A table run never
+   calls `mw.open` itself. Run 2 of the liml pair also compared the beam forces, run 1 not
+   (cause NOT verified; possibly the reopened `.liml` holds them). If in doubt, restart the
+   bridge.
+
 38\. **Main window non-modal: other Mecway actions not checked** (question,
    `bridge_gui.run_settings_dialog`). The window uses `Show()` with its own message
    loop (`Application.DoEvents`), so Mecway stays usable while it is open. A second

@@ -48,7 +48,8 @@
   closed gap equal to Mecway 35; open and with clearance against a hand calculation, item
   23). Items 5, 9, 10, 22, 23, 27, 34, 38, 46, 54, 55, 58, 63, 64, 65, 106, 107, 116, 121,
   123, 124, 131 and 135 corrected after a desk review against the code, headless runs or
-  GUI tests in Mecway 35; item 37 (a second run in one session) removed after GUI tests.
+  GUI tests in Mecway 35; item 37 narrowed to a table-route run after `mw.open` in the same
+  window.
 
 ## V2026.13 – 17 November 2026
 

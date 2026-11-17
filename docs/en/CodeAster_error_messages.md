@@ -1124,13 +1124,16 @@ export): the solution has been computed, but the commands that follow are skippe
 
 ### `POSTRELE_70` – SIGM_NOEU in the local coordinate system
 
-- **Message** (alarm): with structural elements `SIGM_NOEU` is only meaningful in the
-  local coordinate system; `REPERE` is ignored.
+- **Message** (alarm): with structural elements `SIGM_NOEU` (or `EFGE_NOEU`) is only
+  meaningful in the local coordinate system; `REPERE` is ignored.
 - **Cause**: mixed models. In the bridge `SIGM_NOEU` exists only on the 3D elements and
   is in the global system there (`_build_postreleve_block`). The same message comes with
   result route `tabel` and the field `beam_forces`: the section forces `EFGE_NOEU` are read
-  in the local system of the beam, which is what the bridge wants.
-- **Seen**: every mixed model; route `tabel` with beams (17 Nov 2026, Mecway 35).
+  in the local system of the beam, which is what the bridge wants. Where beams with
+  different local axes meet at one node (a corner, a kink) that node value is an average
+  over axes that do not belong together (NOT measured); use route `liml` there (values per
+  element node).
+- **Seen**: every mixed model; route `tabel` with beams (17 Nov 2026).
 - **Solution**: none needed.
 - **Status**: harmless.
 

@@ -2308,6 +2308,10 @@ def _build_postreleve_block(model_data, result_selector="NUME_ORDRE=1",
         only on 3D elements and is in the global coordinate system there.
         REPERE='LOCAL' is deliberately NOT used: for a node list that is
         the tangent/normal plane of the path (U4.81.21 par. 5.2.4).
+        The same alarm comes for tab_efge (EFGE_NOEU, beam_forces): seen in
+        the .mess (17 Nov 2026), the section forces are read in the local
+        system of the beam, as intended; the check in op0051.F90 for
+        EFGE_NOEU NOT verified.
     """
     tables = _result_tables(model_data, with_plastic, with_velocity)
     lines = []

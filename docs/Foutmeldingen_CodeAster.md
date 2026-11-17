@@ -1143,14 +1143,16 @@ de oplossing is berekend, maar de commando's erna worden overgeslagen.
 
 ### `POSTRELE_70` – SIGM_NOEU in het lokale assenstelsel
 
-- **Melding** (alarm): met structuurelementen heeft `SIGM_NOEU` alleen betekenis in het
-  lokale assenstelsel; `REPERE` wordt genegeerd.
+- **Melding** (alarm): met structuurelementen heeft `SIGM_NOEU` (of `EFGE_NOEU`) alleen
+  betekenis in het lokale assenstelsel; `REPERE` wordt genegeerd.
 - **Oorzaak**: gemengde modellen. In de bridge bestaat `SIGM_NOEU` alleen op de
   3D-elementen en staat daar in het globale assenstelsel (`_build_postreleve_block`).
   Dezelfde melding komt met resultaatroute `tabel` en het veld `beam_forces`: de
   snedekrachten `EFGE_NOEU` worden in het lokale assenstelsel van de balk uitgelezen, en
-  dat is wat de bridge wil.
-- **Gezien**: elk gemengd model; route `tabel` met balken (17 nov 2026, Mecway 35).
+  dat is wat de bridge wil. Waar balken met verschillende lokale assen in één knoop
+  samenkomen (een hoek, een knik) is die knoopwaarde een gemiddelde over assen die niet
+  bij elkaar horen (NIET gemeten); gebruik daar route `liml` (waarden per elementknoop).
+- **Gezien**: elk gemengd model; route `tabel` met balken (17 nov 2026).
 - **Oplossing**: geen nodig.
 - **Status**: onschuldig.
 
