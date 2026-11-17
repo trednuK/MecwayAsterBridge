@@ -400,12 +400,17 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 21\. **Bonded contact (LIAISON_MAIL)** (confirmed, `bridge_mesh._bonded`).
    `bondedelastic` becomes rigidly bonded (stiffness not translated, reported). Shell face
-   (slave) on solid (master): only the displacements are coupled (MASSIF;
-   measured equal to shared nodes). Mecway itself deviates here (measured headless,
+   (slave) on solid (master): only the displacements are coupled (MASSIF), without the
+   half plate thickness between the shell's mid-surface and the solid face (item 128;
+   WARNING `bridge_mesh._warn_bonded_offset`, the size of the effect NOT measured, a fix
+   is step S47); "equal to shared nodes" was measured on the same offset-free geometry.
+   Mecway itself deviates here (measured headless,
    beam 1x0.1x0.1 m with a 10 mm plate bonded on top, end load): the internal
    solver does not connect the plate (plate at rest, deflection equal to without
    plate); with CCX the deflection drops to 0.869 of that without plate, Code-Aster
-   (LINE_QUAD + COQUE_3D) 0.788, beam theory 0.785. Shell edges of one component on a
+   (LINE_QUAD + COQUE_3D) 0.788, beam theory 0.785 (probably with the plate's mid-surface on
+   the solid face, NOT verified; Mecway's own solver not connecting the plate may be the
+   tolerance effect seen in item 128, NOT verified). Shell edges of one component on a
    solid: COQUE_MASSIF (rigid, also the rotations); edges of several components or
    mixed with faces: MASSIF, the edge then acts as a hinge (WARNING). Whether Mecway
    also connects a shell edge on a solid rigidly has NOT been verified. Beam ends as slave:
@@ -869,14 +874,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    mass2, rotationalinertia, constraintequation, flexiblejoint, offset (element
    offset), rayleighdamping, temperature2 and temperature3 with
    thermalstress, nodesurfacecoupling (rbe3/rigidbody), contact2 (unilateral and
-   bonded, no self-contact), materials Gap/Damper/TensionOnly and an
-   initial velocity; OpenRadioss material PLAS_TAB (`bridge_radioss.py`); in
-   acoustics fluidpressure 0 (`bridge_acoustic.py`, item 55). Other tags
+   bonded, no self-contact), pretensionsection (item 124), materials
+   Gap/Damper/TensionOnly and an initial velocity; OpenRadioss material PLAS_TAB
+   (`bridge_radioss.py`); in acoustics fluidpressure 0 and impedance (`bridge_acoustic.py`,
+   item 55); thermal loads in `bridge_thermal.py` (item 16). Other tags
    with a selection (self-contact, cyclic symmetry outside a modal analysis (item
-   61), pre-tension, ...),
+   61), ...),
    OpenRadioss cards except /FUNCT (e.g. /RBODY, /BCS, /IMPDISP), other
-   OpenRadioss laws and VOID materials end up in `model_data["skipped_loads"]`.
-   Via `#ASTER` lines the user can add Code-Aster commands themselves.
+   OpenRadioss laws and VOID materials end up in `model_data["skipped_loads"]`
+   (ERROR). An unknown tag without `selection`, `selectionsurface` or
+   `selectionmaster` is passed over without a message (`bridge_from_liml`, desk review
+   S46); which Mecway tags that concerns is NOT verified. Via `#ASTER` lines the user can add Code-Aster commands themselves.
 
 5\. **Frictionless with displacement on curved shells** (confirmed). Frictionless on
    curved shell faces and shell edges becomes LIAISON_OBLIQUE per nodal normal
@@ -896,8 +904,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    different from CCX) and a Kinematic curve with linear hardening (VMIS_CINE_LINE,
    `bridge_from_liml._kinematic_curve`). A non-linear Kinematic curve is
    reported and computed elastically. With kinematic hardening no
-   equivalentplasticstrain goes to Mecway (VARI V1 is the back stress there), but
-   EPSP_NOEU does. Plasticity on beams is computed elastically (WARNING; Code-Aster knows
+   equivalentplasticstrain goes to Mecway (VARI V1 is the back stress there, NOT verified
+   in R5.03.02), but EPSP_NOEU does; as soon as any material of the model is kinematic
+   the field is left out for the whole model, isotropic materials included (INFO only). Plasticity on beams is computed elastically (WARNING; Code-Aster knows
    plasticity only in multifibre beams). ('Simple' is not a plasticity type but
    the type of `<density>`.)
 
@@ -909,7 +918,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    a formula in x, y, z for a total `heatflow` or as initial temperature, formulas
    in material properties, unilateral contact and couplings (node-surface coupling)
    in a thermal analysis (bonded contact is supported: docs/Thermisch.md par. 3; not in
-   a model with solids and shells together). A
+   a model with solids and shells together). A material without thermal conductivity
+   gets a WARNING and its elements are left out of the thermal solve. A
    `temperature2` with `starttime`/`endtime` is imposed for the whole analysis. (Formulas
    in the other thermal loads and temperature-dependent λ/c are translated,
    docs/Thermisch.md par. 3.)

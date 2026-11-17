@@ -102,7 +102,7 @@ S7, S8, S5, S9).
 | S45 | Results after a time limit in linear and thermal analyses (KNOWN_BUGS 137); extra time (`ExecutionParameter` `tpmax`, as `bridge_failure._extend_time`) around those commands, or a `POURSUITE` run for the post-processing | done (phase 1) | – | phase 1 (branch `stap-S45`, CHANGELOG V2026.13, 13 Nov 2026): linear static (`MECA_STATIQUE` `OPTION='SANS'`, `bridge_failure.late_time`, then the macro's `CALC_CHAMP` `SIEF_ELGA`) and a plain thermal solve, extra time after the solve, `BRIDGE_TIJD_LAAT` note; measured with delayed Code-Aster 17.4 runs (FX-04, TH-02a, WE-04b); phases 2 and 3 split off as S45b (low priority); the nonlinear solves and the step loops are done (branch `time-guard`, 11 Nov 2026: extra time after a `TimeLimitError` and after the solve, and the time guard of the loops, measured with `StopTest_LongRun`; released in V2026.12); scope (11 Nov 2026): only where results exist when the limit hits: after the solve (post-processing) for every analysis, and the archived steps of transient linear/thermal runs; a single linear solve or CALC_MODES that is not finished has no results |
 | S46 | Review all KNOWN_BUGS: per item reproduce with the current versions (Code-Aster 17.4, Mecway 35), check whether it is real or a wrong setting/assumption of the test (as KNOWN_BUGS 95 turned out), then fix or document; priority of the user (11 Nov 2026) | in progress | – | 74 items in four groups; work per group, headless only; branch `stap-S46`, progress table in §S46 |
 | S45b | Results after a time limit, phases 2 and 3 of S45 (KNOWN_BUGS 137): extra time after `CALC_MODES` in modal, spectrum, cyclic and acoustic (phase 2, D2), the thermal chains (thermomechanical D7, filler material D9, HOMARD D10), the message for a solve without intermediate results (D6); partial results of `DYNA_VIBRA` (phase 3, D5, after a measurement) | later | S45 | **low priority** (user, 13 Nov 2026): after S44 and the S46 KNOWN_BUGS sweep; the value there is mostly a clearer message, and raising *Time limit run_aster* works too |
-| S47 | Bonded shell faces with the distance between the mid-surfaces (lever arm), KNOWN_BUGS 128 | later | S46 | asked 13 Nov 2026: interesting, but not a formulation of the solver manuals, so only with explicit documentation (NL+EN, theory and limits) and a WARNING whenever it is applied; until then a WARNING for shell faces as slave (S46); see §S47 |
+| S47 | Bonded shell faces with the distance between the mid-surfaces (lever arm), KNOWN_BUGS 128 | later | S46 | asked 13 Nov 2026: interesting, but not a formulation of the solver manuals, so only with explicit documentation (NL+EN, theory and limits) and a WARNING whenever it is applied; until then a WARNING for shell faces bonded face to face and for a shell face bonded to a solid face (S46, `bridge_mesh._warn_bonded_offset`); see §S47 |
 | – | Rotordynamics | later | – | not relevant yet (user, 11 Nov 2026) |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2634,7 +2634,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 17 | Thermal strain: temperature within the element and in time | *draft*: low (deliberate choice) |  |  |
 | 19 | Centrifugal force | *draft*: low (rare feature limits) |  |  |
 | 20 | Multiple distributed loads on a beam | *draft*: low (load combination edge case, reported) |  |  |
-| 21 | Bonded contact (LIAISON_MAIL) | *draft*: medium (bonded contact, warned); not re-run; part of the 128 follow-up: a shell face on a solid is tied without the t/2 offset too, and the earlier check (0.788 against beam theory 0.785) probably had the plate's mid-surface on the solid face (NOT verified) |  |  |
+| 21 | Bonded contact (LIAISON_MAIL) | medium; real, partly outdated (shell face on solid tied without the t/2 offset, item 128/S47; the old "equal to shared nodes" used the same offset-free geometry; Opus desk review, not re-run) | item rewritten (no offset, WARNING, S47; the 0.788 check probably offset-free); S47 wording aligned with the code; open: `MASSIF_COQUE` lever arm NOT verified | this commit |
 | 22 | Compression only | *draft*: low (deliberate formulation, reported) |  |  |
 | 23 | Gap and tension-only elements | *draft*: low (gap/tension-only limits) |  |  |
 | 34 | PLAS_TAB: untranslated fields | *draft*: low (OpenRadioss niche fields, warned) |  |  |
@@ -2672,10 +2672,10 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 
 | Item | Title | Verdict | Action | Commit |
 |---|---|---|---|---|
-| 4 | Loads and boundary conditions the bridge does not know | *draft*: medium (unknown loads skipped, reported) |  |  |
+| 4 | Loads and boundary conditions the bridge does not know | low; unchanged limit (unknown tags with a selection: ERROR + skipped_loads; Opus desk review, not re-run) | item corrected: pretensionsection and impedance are translated; tags without a selection attribute pass silently (NOT verified which) | this commit |
 | 5 | Frictionless with displacement on curved shells | *draft*: low (rare) |  |  |
-| 6 | Kinematic hardening: no equivalentplasticstrain; non-linear kinematic curve | *draft*: medium (reported limit) |  |  |
-| 16 | Thermal: not translated | *draft*: medium (reported limit) |  |  |
+| 6 | Kinematic hardening: no equivalentplasticstrain; non-linear kinematic curve | low; unchanged limit (non-linear kinematic curve: WARNING, ERROR, elastic; beams elastic with WARNING; Opus desk review, not re-run) | item: equivalentplasticstrain left out for the whole model once any material is kinematic (INFO only); possible follow-up (low): only for kinematic materials | this commit |
+| 16 | Thermal: not translated | medium; unchanged limit (every listed limit reported with ERROR + skipped_loads; Opus desk review, not re-run) | item: WARNING for a material without conductivity named; follow-up (low): thermal `COQUE` for curved shells NOT verified | this commit |
 | 49 | Modal: limits of the prestress and of the complex modes | *draft*: low (niche modal options) |  |  |
 | 51 | Error estimator: only linear static and solid elements | *draft*: low (optional feature) |  |  |
 | 54 | Response on modal basis and harmonic response: limits | *draft*: low (niche, ERRORs reported) |  |  |
@@ -2706,7 +2706,9 @@ for a shell face on a solid (half the thickness). Model: as described in KNOWN_B
 **User's conditions (13 Nov 2026):** an own coupling is not in Code-Aster's or Mecway's
 manuals, so it is allowed only when it is explicitly and clearly documented (theory, limits,
 verification, NL+EN) and always gives a WARNING when it is applied. Until then (S46): a WARNING
-for every bonded contact with shell faces as slave.
+for shell faces bonded face to face and for a shell face and a solid face bonded (either side).
+Open: whether `LIAISON_MAIL` `MASSIF_COQUE` already includes the lever arm (U4.44.01) is NOT
+verified; if so, the WARNING for a solid slave on a shell master is too strict.
 **Idea:** per slave node u_s = Σ N_i (u_i + θ_i × (x_s − x_p)), θ_s = θ_A (x_p the projected
 point, a signed vector; an *Element offset* changes it), written as `LIAISON_DDL`
 (`bridge_mesh._bonded_relations` already does this for skewed masters); small rotations only.
