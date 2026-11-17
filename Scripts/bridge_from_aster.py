@@ -359,6 +359,34 @@ def _keep_shell_values(solution, arrays, shells):
     return kept
 
 
+def empty_solution_reason(solution, solved_now=False):
+    """
+    Reason text when Mecway has no solution of the model: solution is
+    None or has no nodes. Mecway's own solve raises no exception when it
+    fails (e.g. contact on shell edges, a component without a material);
+    it then leaves a solution with 0 nodes. "" when the solution has
+    nodes, and also when its nodes cannot be read (check_solution_mesh
+    then reports that). solved_now: mw.solve() just ran in this run.
+    """
+    if solution is not None:
+        try:
+            for _nid in solution.all_nodes():
+                return ""       # one node is enough
+        except Exception:
+            return ""
+    if solved_now:
+        return tr("Er is geen Mecway-solution van dit model: de "
+                  "Mecway-solve liep zonder fout, maar liet een solution "
+                  "zonder knopen achter.",
+                  "There is no Mecway solution of this model: the Mecway "
+                  "solve ran without an error, but left a solution "
+                  "without nodes.")
+    return tr("Er is geen Mecway-solution van dit model: de "
+              "Mecway-solve is mislukt of niet uitgevoerd.",
+              "There is no Mecway solution of this model: the Mecway "
+              "solve failed or was not run.")
+
+
 def check_solution_mesh(mw, solution, max_checked=2000):
     """
     Check whether the nodes of the Mecway solution match those of
@@ -381,9 +409,9 @@ def check_solution_mesh(mw, solution, max_checked=2000):
     -------
     (bool, str) - (True, "") if it matches; otherwise (False, reason).
     """
-    if solution is None:
-        return False, tr("Er is nog geen Mecway-solution.",
-                         "There is no Mecway solution yet.")
+    empty = empty_solution_reason(solution)
+    if empty:
+        return False, empty
     try:
         model_nodes = list(mw.all_nodes())
     except Exception as e:

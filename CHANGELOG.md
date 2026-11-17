@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Fix: clear message when route `tabel` has no Mecway solution.** Route `tabel` writes the
+  results into Mecway's own solution. On a model that Mecway's own solver cannot solve (for
+  example contact on shell edges) Mecway leaves a solution without nodes. The bridge then said
+  "The solution has 0 nodes, the model 86. The solution predates the last change to the
+  model." It now says that there is no Mecway solution of the model (the Mecway solve failed
+  or was not run, or ran without an error but left none) and advises route `liml`. As before
+  it stops before Code-Aster starts. With route `liml` and *Mecway solve first* on, such a
+  solve now gives a WARNING that the comparison with Mecway is lost; the run goes on.
+
 - **Fix: example models that opened with a message in Mecway 35.** The 2D example and
   verification models `PL-30`, `PL-30p`, `PL-31`, `PL-32`, `PL-35` (`plastic strain`) and
   `PL-40` … `PL-46` (`contact`) asked Mecway for a result field it does not know, so Mecway 35

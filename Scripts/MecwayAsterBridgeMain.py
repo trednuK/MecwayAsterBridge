@@ -79,8 +79,9 @@
 #      (Results...). After a run the window comes back, with the outcome
 #      in the status box; Close stops the bridge.
 #   1. Optional: solve the model in Mecway (check: are there errors?)
-#   1b. Does the Mecway solution match the model? Otherwise stop (the
-#      results can only be loaded on the nodes of the solution)
+#   1b. Route tabel: does the Mecway solution match the model? Otherwise
+#      stop (the results can only be loaded on the nodes of the
+#      solution; a solution without nodes gets a message of its own)
 #   2. Save the model (.liml)
 #   3. Read mesh, BCs, materials and selections from the .liml file
 #      (stops if there are no materials). With active_analysis = "auto"
@@ -129,6 +130,7 @@ from bridge_run_aster   import (run_AsterSolver, aster_mess_errors,
                                 penetration_report)
 from bridge_convergence import stopped_text
 from bridge_from_aster  import (AsterToMecway_results, check_solution_mesh,
+                                empty_solution_reason,
                                 _compare_with_mecway,
                                 _compare_modes_with_mecway)
 from bridge_results_liml import (splice_results, read_step,
@@ -305,8 +307,40 @@ def _run(settings):
         # mesh refined from 12 to 45 nodes) the results on 33 nodes were
         # silently dropped. Hence the check before the Code-Aster run.
         # Only needed for the table route (set_variable); the liml route
-        # writes the solution itself.
+        # writes the solution itself. A Mecway solve that fails raises
+        # nothing and leaves a solution without nodes (e.g. contact on
+        # shell edges): then a message of its own, not "predates the
+        # last change to the model".
         route = CONFIG_BRIDGE.get("result_route", "liml")
+        solved_now = CONFIG_BRIDGE.get("mecway_solve_first", False)
+        empty = (empty_solution_reason(solution, solved_now)
+                 if route == "tabel" or solved_now else "")
+        if empty and route == "tabel":
+            needs = tr("De route 'tabel' schrijft de resultaten in die "
+                       "solution en heeft er een nodig.",
+                       "The route 'tabel' writes the results into that "
+                       "solution and needs one.")
+            log("ERROR: {0} {1}".format(empty, needs))
+            _notify(empty + " " + needs + tr(
+                "\n\nKies de route 'liml' (standaard, pagina Algemeen): "
+                "die heeft geen Mecway-solution nodig. 2D-analyses en "
+                "modellen die Mecway zelf niet kan oplossen (bijvoorbeeld "
+                "contact op schaalranden) werken alleen zo.",
+                "\n\nChoose the route 'liml' (the default, General page): "
+                "it needs no Mecway solution. 2D analyses and models that "
+                "Mecway cannot solve itself (for example contact on shell "
+                "edges) only work that way.") + ("" if solved_now else tr(
+                    " Kan Mecway het model wel oplossen, los het dan eerst "
+                    "op in Mecway.",
+                    " If Mecway can solve the model, solve it in Mecway "
+                    "first.")) + tr(" Code-Aster wordt niet gestart.",
+                                    " Code-Aster is not started."))
+            return False
+        if empty and solved_now:
+            # route liml: the run goes on, only the comparison is lost
+            log(tr("WARNING: {0} De vergelijking met Mecway vervalt.",
+                   "WARNING: {0} There is no comparison with "
+                   "Mecway.").format(empty))
         sol_ok, sol_reason = (check_solution_mesh(mw, solution)
                               if route == "tabel" else (True, ""))
         if not sol_ok:

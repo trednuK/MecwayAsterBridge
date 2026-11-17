@@ -927,6 +927,37 @@ FEWER = {1: (0.0, 0.0, 0.0)}
 check("table: too few nodes still a mismatch",
       not bridge_from_aster.check_solution_mesh(
           mw, FakeSolution(FEWER))[0])
+check("table: too few nodes keep the node-count text",
+      "predates" in bridge_from_aster.check_solution_mesh(
+          mw, FakeSolution(FEWER))[1])
+
+# A failed Mecway solve leaves a solution without nodes: its own reason,
+# not "predates the last change to the model".
+NO_SOL = bridge_from_aster.empty_solution_reason(None)
+check("table: empty reason for a normal solution",
+      bridge_from_aster.empty_solution_reason(FakeSolution(NODES)) == "")
+check("table: no solution has a reason", bool(NO_SOL) and
+      "predates" not in NO_SOL)
+check("table: no solution in check_solution_mesh",
+      bridge_from_aster.check_solution_mesh(mw, None) == (False, NO_SOL))
+check("table: solution without nodes",
+      bridge_from_aster.check_solution_mesh(mw, FakeSolution({}))
+      == (False, NO_SOL))
+SOLVED = bridge_from_aster.empty_solution_reason(FakeSolution({}), True)
+check("table: own text right after mw.solve()",
+      SOLVED and SOLVED != NO_SOL and "without an error" in SOLVED)
+
+
+class UnreadableSolution(FakeSolution):
+    def all_nodes(self):
+        raise SystemError("not readable")
+
+
+check("table: unreadable nodes are not 'empty'",
+      bridge_from_aster.empty_solution_reason(UnreadableSolution({})) == "")
+check("table: unreadable nodes keep their own reason",
+      "Cannot read the nodes of the solution" in
+      bridge_from_aster.check_solution_mesh(mw, UnreadableSolution({}))[1])
 
 RESU = ("INTITULE NOEUD DX DY DZ DRX DRY DRZ\n"
         "displacements 1 0.0 0.0 0.0 0.0 0.0 0.0\n"
