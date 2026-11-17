@@ -831,6 +831,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    decides). A friction case without held slave nodes is exact (PL-46). Status: limits,
    WARNING.
 
+142\. **Centre of gravity of an axisymmetric model on the wrong axis** (confirmed, Code-Aster
+   17.4, seen in STAPPENPLAN S44e; `aster_results_export.print_static_check`,
+   `MecwayAsterBridgeMain`). In `AXIS` and `COQUE_AXIS` the `BRIDGE_STATCHECK` line holds the
+   axial position of the centre of gravity in `CDG_Z`, not in Y (Mecway's axis): PL-06 (ring of
+   height 20 mm from y = 0) `ZWP=0,0,0.01`, PL-68 (tube y = 0 … 1 m) `ZWP=0,0,0.5`. The mass
+   is correct (360 degrees). The log line "centre of gravity (…) m" then shows the Y value as
+   Z. Cause NOT verified in the U doc (U4.81.22 for the axisymmetric case). Status: open; only
+   the information line, no results.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;

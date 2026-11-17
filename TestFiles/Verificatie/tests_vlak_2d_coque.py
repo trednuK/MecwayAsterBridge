@@ -34,11 +34,13 @@ PL-66  cylinder with an axial force on its bottom node (FORCE_NODALE / 2
 PL-67  long cylinder with a ring moment on its free end (MZ / 2 pi): the
        edge displacement M0 / (2 beta^2 D) and rotation M0 / (beta D).
 PL-68  cylinder under its own weight (gravity along -Y): the reaction
-       rho g 2 pi R t L.
+       rho g 2 pi R t L and the bridge's mass check (BRIDGE_STATCHECK:
+       MASS_INER of COQUE_AXIS is already the mass of 360 degrees,
+       rho 2 pi R t L = 123.3 kg, measured with Code-Aster 17.4).
 """
 import math
 
-from verif_lib import Case, Check, Model
+from verif_lib import Case, Check, Model, static_check
 
 GROUP = "2D en axisymmetrisch"
 E, NU = 210e9, 0.3
@@ -374,6 +376,9 @@ TESTS.append(Case(
     "lin_static_3d", build_pl68,
     [Check("R_y boven", lambda r: r.total("reactionforcey", "Boven"),
            ref=W68, tol=1e-6, unit="N", in_series=False,
-           source="evenwicht: rho g 2 pi R t L")],
+           source="evenwicht: rho g 2 pi R t L"),
+     Check("massa (controle)", lambda r: static_check(r, "M"),
+           ref=W68 / G68, tol=1e-6, unit="kg", in_series=False,
+           source="rho 2 pi R t L (POST_ELEM MASS_INER, 360 graden)")],
     note="De buis van PL-60 met rho = 7850 kg/m3, Y vast boven, "
          "zwaartekracht -9,81 m/s2 langs Y."))

@@ -34,7 +34,10 @@
 #     for no thickness, line2, C_PLAN, X < 0, an unknown material,
 #     plasticity, mixing with plane elements, temperatures, centrifugal,
 #     traction; the .comm (EPAIS, DX DY DRZ, FORCE_COQUE PRES = -p, MZ and
-#     FY / 2 pi) and the axis node WARNING.
+#     FY / 2 pi, DRZ of a node rotation), the axis node WARNING, the WARNING
+#     for neighbouring elements in opposite directions under a pressure,
+#     the list of handled loads in the skip reason and DEFORMATION 'PETIT'
+#     for every choice (PETIT_REAC included) with its WARNING.
 #
 #   python tests/test_bridge_plane.py
 
@@ -42,6 +45,7 @@ from __future__ import print_function
 
 import math
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -315,7 +319,9 @@ def test_route_a():
             '<y>1</y><z>0</z></displacement>')
     comm = _comm(_liml("L30", PS, loads=_switch("**ASTER-PLANE C_PLAN") +
                        friction + held), analysis="nonlin_static_3d")
-    check(comm and "COULOMB=0.3" in comm and any(
+    # COULOMB by repr: 0.29999999999999999 in IronPython 2.7.9
+    mu = re.findall(r"COULOMB=([0-9.eE+-]+)", comm)
+    check(comm and mu and abs(float(mu[0]) - 0.3) < 1e-15 and any(
         m.startswith("WARNING") and "141" in m for m in LOG),
         "friction + held slave node: WARNING KNOWN_BUGS 141 ({0})".format(
             [m[:60] for m in LOG if m.startswith(("WARNING", "ERROR"))]))
@@ -598,8 +604,10 @@ def test_axis_shells():
              '<force selection="Boven"><x>0 N</x><y>12.566370614359172 N</y>'
              '<z>5 N</z></force>')
     comm = _comm(_shell_liml(custom=line, loads=loads))
-    check("MODELISATION='COQUE_AXIS'" in comm and
-          "COQUE=_F(GROUP_MA='S', EPAIS=0.005)" in comm,
+    # EPAIS by repr: 0.0050000000000000001 in IronPython 2.7.9
+    epais = re.findall(r"COQUE=_F\(GROUP_MA='S', EPAIS=([0-9.eE+-]+)\)", comm)
+    check("MODELISATION='COQUE_AXIS'" in comm and len(epais) == 1 and
+          abs(float(epais[0]) - 0.005) < 1e-15,
           "COQUE_AXIS .comm with EPAIS: {0}".format(_errors()))
     check("DX=0.0, DY=0.0, DRZ=0.0" in comm.replace("'", ""),
           "Fixed -> DX, DY, DRZ")
@@ -622,6 +630,48 @@ def test_axis_shells():
            '<value>0.01 rad</value><x>0</x><y>0</y><z>1</z></noderotation>')
     comm = _comm(_shell_liml(custom=line, loads=rot))
     check("DRZ=0.01" in comm, "node rotation about Z -> DRZ")
+    # neighbouring elements in opposite directions: the pressure acts on
+    # the other side there (WARNING naming the shared node 3)
+    press = ('<fixed selection="Onder" /><surfacepressure selection="Zij">'
+             '<normal>3 Pa</normal></surfacepressure>')
+    comm = _comm(_shell_liml(custom=line, loads=press))
+    check("FORCE_COQUE" in comm and not any(
+        "opposite" in m for m in LOG if m.startswith("WARNING")),
+          "one chain direction: no opposite-direction WARNING")
+    comm = _comm(_shell_liml(custom=line, loads=press).replace(
+        'nodes="3 4 5"', 'nodes="5 4 3"'))
+    check("FORCE_COQUE" in comm and any(
+        m.startswith("WARNING") and "opposite" in m and "(node 3)" in m
+        for m in LOG), "opposite element directions: WARNING ({0})".format(
+            [m[:60] for m in LOG if m.startswith("WARNING")]))
+    # a load type without a route: the reason lists the shell types
+    comm = _comm(_shell_liml(custom=line, loads=(
+        '<fixed selection="Onder" /><frictionless selection="Zij" />')))
+    why = [m for m in _errors() if "frictionless" in m]
+    check(why and "axisymmetric shells" in why[0] and "node rotation" in
+          why[0] and "moment" in why[0] and "centrifugal" not in why[0],
+          "unhandled load on shells: own list ({0})".format(why[:1]))
+    # DEFORMATION: always PETIT on COQUE_AXIS, PETIT_REAC included, with
+    # the WARNING for every choice other than PETIT
+    import bridge_to_aster as bta
+    for chosen in ("PETIT", "PETIT_REAC", "GROT_GDEP", "GREEN_LAGRANGE",
+                   "GDEF_LOG", "SIMO_MIEHE"):
+        got = bta._deformation_for("COQUE_AXIS", "ELAS", chosen, "S")
+        check(got == "PETIT", "COQUE_AXIS DEFORMATION {0}: {1}".format(
+            chosen, got))
+    md = _extract(_shell_liml("L30", custom=line),
+                  analysis="nonlin_static_3d")
+    for chosen, warn in (("PETIT_REAC", True), ("GROT_GDEP", True),
+                         ("PETIT", False)):
+        del LOG[:]
+        block = bta._build_comportement_block(md, {"deformation": chosen})
+        w = [m for m in LOG if m.startswith("WARNING") and
+             "Axisymmetric shells" in m]
+        check("GROUP_MA='S'" in block and "DEFORMATION='PETIT'" in block and
+              "PETIT_REAC" not in block and bool(w) == warn and
+              (not w or chosen in w[0]),
+              "COMPORTEMENT COQUE_AXIS with {0}: PETIT, WARNING {1} "
+              "({2})".format(chosen, warn, w[:1]))
     # finish_bcs on its own: BLOCAGE and moments
     md = {"plane": {"type": "S30", "modelisation": "AXIS", "factor":
                     2 * math.pi, "route": "A", "shells": True},
@@ -740,7 +790,8 @@ def test_acoustic():
             shutil.rmtree(tmp, ignore_errors=True)
 
 
-if __name__ == "__main__":
+# run_ipy.ps1 executes the file with another __name__ (IronPython: "cli")
+if __name__ == "__main__" or sys.platform == "cli":
     test_modelisations()
     test_errors()
     test_thermal()

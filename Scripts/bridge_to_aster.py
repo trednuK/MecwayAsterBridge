@@ -5571,7 +5571,8 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
                              GROT_GDEP, U4.51.11; test case ssnl103a);
                              bridge_from_liml._gd_beam_choice makes the
                              beam POU_D_T for PETIT/PETIT_REAC.
-    PETIT and PETIT_REAC pass through unchanged.
+    PETIT and PETIT_REAC pass through unchanged, except on COQUE_AXIS
+    (always PETIT).
     """
     if modelisation == _GD_BEAM:
         return "GROT_GDEP"
@@ -5584,6 +5585,13 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
                 "'GREEN_LAGRANGE' (setting deformation = {1} not used)."
                 .format(elset_name, chosen))
         return "GREEN_LAGRANGE"
+    if modelisation == "COQUE_AXIS":
+        # Axisymmetric shell (S44e): "la réactualisation de la géométrie
+        # est déconseillée pour les éléments COQUE_AXIS" (message PLATE1_9,
+        # Messages/plate1.py, Code-Aster 17.4) and only ELAS is translated
+        # (PLATE1_8): small displacements, also for PETIT_REAC (WARNING in
+        # _build_comportement_block)
+        return "PETIT"
     if chosen not in _LARGE_DEFORMATIONS:
         return chosen
     plastic = relation.startswith("VMIS")
@@ -5615,13 +5623,6 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
         return "GREEN_LAGRANGE"
     if modelisation == "COQUE_3D":
         return "GROT_GDEP"
-    if modelisation == "COQUE_AXIS":
-        # Axisymmetric shell (S44e): "la réactualisation de la géométrie
-        # est déconseillée pour les éléments COQUE_AXIS" (message PLATE1_9,
-        # Messages/plate1.py, Code-Aster 17.4) and only ELAS is translated
-        # (PLATE1_8): small displacements (WARNING in
-        # _build_comportement_block)
-        return "PETIT"
     if modelisation in ("C_PLAN", "D_PLAN", "AXIS"):
         # Plane and axisymmetric continuum (STAPPENPLAN S44a, route A):
         # as the volume rule. SIMO_MIEHE only in AXIS/D_PLAN (test cases
@@ -5715,13 +5716,17 @@ def _build_comportement_block(model_data, analysis, elastic=False):
                    "elem_shell = COQUE_3D (Elements page).").format(
                 deformation, ", ".join(small)))
     axis_shells = sorted(model_data.get("axis_shells", {}))
-    if axis_shells and deformation in _LARGE_DEFORMATIONS and not elastic:
+    if axis_shells and not elastic and (
+            deformation in _LARGE_DEFORMATIONS or
+            deformation == "PETIT_REAC"):
         log(tr("WARNING: Axisymmetrische schalen ({0}) rekenen met kleine "
                "verplaatsingen (DEFORMATION='PETIT'), niet met {1}: grote "
-               "verplaatsingen zijn op COQUE_AXIS niet vertaald.",
+               "verplaatsingen en het bijwerken van de geometrie "
+               "(PETIT_REAC) zijn op COQUE_AXIS niet vertaald.",
                "WARNING: Axisymmetric shells ({0}) are computed with small "
                "displacements (DEFORMATION='PETIT'), not with {1}: large "
-               "displacements are not translated on COQUE_AXIS.").format(
+               "displacements and updating the geometry (PETIT_REAC) are "
+               "not translated on COQUE_AXIS.").format(
                    ", ".join(axis_shells), deformation))
     spring_mat_names = set(model_data.get("spring_materials", {}).keys())
     entries = []

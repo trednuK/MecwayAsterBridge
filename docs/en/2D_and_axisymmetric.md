@@ -378,13 +378,14 @@ example: example 7 in §1.5.
 
 Results in Mecway: `displx` (radial), `disply` (axial), `displmag`, `rotz` (the rotation
 about Z, right-handed: positive turns X towards Y), `reactionforcex`, `reactionforcey`,
-`reactionforcemag` and `reactionmomz`, the reactions for 360 degrees (× 2π). Not yet: the
+`reactionforcemag`, `reactionmomz` and `reactionmommag` (= |`reactionmomz`|), the reactions for
+360 degrees (× 2π). Not yet: the
 stresses and section forces of the shell (meridional and hoop stress, top and bottom;
 STAPPENPLAN S44e piece 2); the log says so (INFO) and the bridge writes no stress field.
 Verified with Code-Aster 17.4 (PL-60 … PL-68, [`Verification.md`](Verification.md)): a
 membrane cylinder and sphere within 1e-7, a clamped circular plate 0.03% (deflection) and
 0.07% (rotation), the clamp moment of a long cylinder −0.94% (p / (2β²)), the Code-Aster test
-case ssls114i exact, a pressure as a time table in L30, a nodal force, a ring moment (0.23%)
+case ssls114i exact, a pressure as a time table in L30, a nodal force, a ring moment (+0.24%)
 and gravity. NOT verified: how Mecway shows these results and whether Mecway's window accepts
 the inputs (a pressure on the side of a line element in S30 or L30; Mecway's own solve
 computes the line elements as beams, not as this shell).
@@ -721,7 +722,7 @@ Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
 | Traction, a force on faceid 1 or a centrifugal force on axisymmetric shells | ERROR: … on '…' in a 2D analysis: on axisymmetric shells only pressure on the side (faceid 1) of line3 elements and force on nodes or element ends (faceid 2, 3); traction and force on the side are not verified. NOT included. (centrifugal: … not verified on axisymmetric shells (COQUE_AXIS). NOT included.) | a pressure on faceid 1 or a force on nodes |
 | Neighbouring line3 elements in opposite directions under one pressure | WARNING: Pressure on '…': neighbouring line3 elements run in opposite directions (node …); the pressure acts on the other side there (a positive pressure pushes along -n, n = Z x U, U from node 1 to node 2). Reverse those elements in Mecway. | reverse the elements (figure of §1.4.2) |
 | A node of an axisymmetric shell on the axis without supports | WARNING: Axisymmetric shell: node … lies on the axis (X = 0) but does not have both X and the rotation about Z held. Give those nodes a Symmetry with normal X (holds X and the rotation about Z). | *Symmetry* with normal X on that node |
-| Axisymmetric shells in L30 with `deformation` `GROT_GDEP` (the default) | WARNING: Axisymmetric shells (…) are computed with small displacements (DEFORMATION='PETIT'), not with GROT_GDEP: large displacements are not translated on COQUE_AXIS. | nothing to do (or `PETIT`) |
+| Axisymmetric shells in L30 with `deformation` `GROT_GDEP` (the default) or another choice than `PETIT` | WARNING: Axisymmetric shells (…) are computed with small displacements (DEFORMATION='PETIT'), not with GROT_GDEP: large displacements and updating the geometry (PETIT_REAC) are not translated on COQUE_AXIS. | nothing to do (or `PETIT`) |
 
 ## 2. How the bridge translates
 

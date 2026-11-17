@@ -157,6 +157,25 @@ _SHELL_DROP_FORCE = ("FZ", "MX", "MY")
 # node rotation (DRZ) and a moment on a node (MZ)
 _SHELL_HANDLED = tuple(t for t in _HANDLED if t != "centrifugal") + (
     "noderotation", "moment")
+
+
+def _not_handled(shells):
+    """Reason in skipped_loads for a load type without a 2D route: the
+    types that do have one (_HANDLED, or _SHELL_HANDLED for axisymmetric
+    shells, where traction is refused on the side, _line_face_load)."""
+    if shells:
+        return tr("niet vertaald op axisymmetrische schalen (S44e: vast, "
+                  "verplaatsing, knooprotatie, kracht, moment, druk, "
+                  "symmetrie, zwaartekracht)",
+                  "not translated on axisymmetric shells (S44e: fixed, "
+                  "displacement, node rotation, force, moment, pressure, "
+                  "symmetry, gravity)")
+    return tr("niet vertaald in 2D (S16a: vast, verplaatsing, kracht, druk, "
+              "traction, symmetrie, zwaartekracht, centrifugaal)",
+              "not translated in 2D (S16a: fixed, displacement, force, "
+              "pressure, traction, symmetry, gravity, centrifugal)")
+
+
 # Relative difference of two thickness sources that counts as equal
 _THICKNESS_TOL = 1.0e-9
 _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
@@ -926,12 +945,7 @@ def convert_bc(model_data, bc, faces, skin_groups):
                                  "axisymmetric shells (COQUE_AXIS)"))
         return True
     if btype not in (_SHELL_HANDLED if sh else _HANDLED):
-        _skip(model_data, bc, tr("niet vertaald in 2D (S16a: vast, "
-                                 "verplaatsing, kracht, druk, traction, "
-                                 "symmetrie, zwaartekracht, centrifugaal)",
-                                 "not translated in 2D (S16a: fixed, "
-                                 "displacement, force, pressure, traction, "
-                                 "symmetry, gravity, centrifugal)"))
+        _skip(model_data, bc, _not_handled(sh))
         return True
     if lines and btype in ("surfacepressure", "traction", "force"):
         return _line_face_load(model_data, bc, sel)
@@ -1143,8 +1157,7 @@ def finish_bcs(model_data):
             continue
         btype = bc["type"]
         if btype not in (_SHELL_HANDLED if sh else _HANDLED):
-            _skip(model_data, bc, tr("niet vertaald in 2D",
-                                     "not translated in 2D"))
+            _skip(model_data, bc, _not_handled(sh))
             continue
         kw = bc.get("aster_keyword") or ""
         d = bc.get("aster_dict") or {}
@@ -1368,7 +1381,9 @@ def export_arg(model_data):
 def static_check_arg(model_data):
     """Extra arguments for aster_results_export.print_static_check: the
     reactions and the mass of the whole body (thickness t or 360 degrees;
-    MASS_INER of AXIS is already for 360 degrees, see there)."""
+    MASS_INER of AXIS, and of the axisymmetric shells COQUE_AXIS, is
+    already for 360 degrees, see there; COQUE_AXIS measured in PL-68: 123.3
+    kg = rho 2 pi R t L)."""
     p = info(model_data)
     if p is None:
         return ""

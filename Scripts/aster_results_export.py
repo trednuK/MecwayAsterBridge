@@ -1125,7 +1125,10 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
     for name, var in node_vars.items():
         for mag, parts in (MAGNITUDES.items() if magnitudes else ()):
             need = [p for p in parts if p not in optional]
-            if parts[0] == name and all(p in node_vars for p in need):
+            # before the first component present: reactionmommag of
+            # axisymmetric shells (COQUE_AXIS, S44e) has only reactionmomz
+            first = [p for p in parts if p in node_vars][:1]
+            if first == [name] and all(p in node_vars for p in need):
                 out.append(_magnitude_var(
                     mag, [node_vars[p] for p in need],
                     [node_vars[p] for p in parts
@@ -2395,7 +2398,8 @@ def print_static_check(res, model, fieldmat, cara=None, mass=True,
     (AXIS, per radian), as Mecway reports them; mass_scale: the same for
     the mass (C_PLAN/D_PLAN: t; AXIS: 1, MASS_INER is already the mass of
     360 degrees, measured in a Code-Aster 17.4 run: ring 92.38 kg / 2 pi
-    = rho pi (b^2 - a^2) h = 14.70 kg).
+    = rho pi (b^2 - a^2) h = 14.70 kg; COQUE_AXIS likewise, verification
+    PL-68: 123.3 kg = rho 2 pi R t L).
     """
     try:
         if not mass:

@@ -1048,9 +1048,9 @@ line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de d
   (+0,07%, positief: rechtsom om +Z), de som van de reacties q π a² 3141,6 N (4e-11);
   tolerantie 0,5% en 1e-6.
 - **PL-63** (lange cilinder R = 1 m, t = 10 mm (R/t = 100), L = 0,5 m = 6,4/β, 100 line3 van
-  0,13/β, 0,1 MPa, *Fixed support* in de onderste knoop): het reactiemoment per omtrek
+  0,005 m = 0,064/β, 0,1 MPa, *Fixed support* in de onderste knoop): het reactiemoment per omtrek
   `reactionmomz` / (2πR) 299,78 N m/m tegen M0 = p/(2β²) = 302,61 (−0,94%) en de radiale
-  reactie −7725 N/m tegen −p/β = −7779,6 (−0,70%); tolerantie 2% (dunne-schaaltheorie tegen een
+  reactie −7725 N/m tegen −p/β = −7779,6 (+0,70%); tolerantie 2% (dunne-schaaltheorie tegen een
   schaal met dwarsafschuiving).
 - **PL-64** (de Code-Aster-testcase ssls114i nagebouwd: R = 1 m, L = 0,5 m, t = 0,05 m,
   2 line3 van B (y = 0) naar A, E = 200 GPa, 10 Pa op faceid 1, Y vast in B): DX = 1,0000e-09 m in
@@ -1064,10 +1064,12 @@ line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de d
   de reactie 1000 N (1e-13): `FORCE_NODALE` / 2π en `REAC_NODA` × 2π.
 - **PL-67** (lange cilinder R = 1 m, t = 10 mm, L = 0,6 m, 120 line3, *Fixed support* boven,
   een *Moment* om Z van 2π R × 100 N m/m op de vrije onderste knoop): de randverplaatsing
-  M0/(2β²D) 1,5736e-05 m (−1e-7) en de randrotatie M0/(βD) 4,0549e-04 rad (+0,23%);
+  M0/(2β²D) 1,5736e-05 m (−1e-7) en de randrotatie M0/(βD) 4,0549e-04 rad (+0,24%);
   tolerantie 2%; het moment in de inklemming −0,18 N m (uitgedempt, grens 1,26 N m).
 - **PL-68** (de buis van PL-60 met ρ = 7850 kg/m³, Y vast boven, zwaartekracht −9,81 m/s²
-  langs Y): de reactie ρ g 2π R t L = 1209,6 N (7e-14).
+  langs Y): de reactie ρ g 2π R t L = 1209,6 N (7e-14) en de massa van de controle van de
+  bridge (`BRIDGE_STATCHECK`) ρ 2π R t L = 123,31 kg (3e-15): `MASS_INER` van `COQUE_AXIS` is al de massa
+  van 360 graden, zoals bij `AXIS`.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

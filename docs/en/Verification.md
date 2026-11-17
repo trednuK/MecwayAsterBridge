@@ -1036,9 +1036,9 @@ line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the 
   (+0.07%, positive: right-handed about +Z), the sum of the reactions q π a² 3141.6 N (4e-11);
   tolerance 0.5% and 1e-6.
 - **PL-63** (long cylinder R = 1 m, t = 10 mm (R/t = 100), L = 0.5 m = 6.4/β, 100 line3 of
-  0.13/β, 0.1 MPa, *Fixed support* at the bottom node): the reaction moment per circumference
+  0.005 m = 0.064/β, 0.1 MPa, *Fixed support* at the bottom node): the reaction moment per circumference
   `reactionmomz` / (2πR) 299.78 N m/m against M0 = p/(2β²) = 302.61 (−0.94%) and the radial
-  reaction −7725 N/m against −p/β = −7779.6 (−0.70%); tolerance 2% (thin-shell theory against a
+  reaction −7725 N/m against −p/β = −7779.6 (+0.70%); tolerance 2% (thin-shell theory against a
   shell with transverse shear).
 - **PL-64** (the Code-Aster test case ssls114i rebuilt: R = 1 m, L = 0.5 m, t = 0.05 m,
   2 line3 from B (y = 0) to A, E = 200 GPa, 10 Pa on faceid 1, Y held at B): DX = 1.0000e-09 m at
@@ -1052,10 +1052,12 @@ line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the 
   reaction 1000 N (1e-13): `FORCE_NODALE` / 2π and `REAC_NODA` × 2π.
 - **PL-67** (long cylinder R = 1 m, t = 10 mm, L = 0.6 m, 120 line3, *Fixed support* at the top,
   a *Moment* about Z of 2π R × 100 N m/m on the free bottom node): the edge displacement
-  M0/(2β²D) 1.5736e-05 m (−1e-7) and the edge rotation M0/(βD) 4.0549e-04 rad (+0.23%);
+  M0/(2β²D) 1.5736e-05 m (−1e-7) and the edge rotation M0/(βD) 4.0549e-04 rad (+0.24%);
   tolerance 2%; the moment at the clamp −0.18 N m (decayed, limit 1.26 N m).
 - **PL-68** (the tube of PL-60 with ρ = 7850 kg/m³, Y held at the top, gravity −9.81 m/s²
-  along Y): the reaction ρ g 2π R t L = 1209.6 N (7e-14).
+  along Y): the reaction ρ g 2π R t L = 1209.6 N (7e-14) and the mass of the bridge's
+  check (`BRIDGE_STATCHECK`) ρ 2π R t L = 123.31 kg (3e-15): `MASS_INER` of `COQUE_AXIS` is already the
+  mass of 360 degrees, as with `AXIS`.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

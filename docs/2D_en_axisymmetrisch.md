@@ -389,14 +389,15 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
 
 Resultaten in Mecway: `displx` (radiaal), `disply` (axiaal), `displmag`, `rotz` (de rotatie om
 Z, rechtsom: positief draait X naar Y), `reactionforcex`, `reactionforcey`,
-`reactionforcemag` en `reactionmomz`, de reacties voor 360 graden (× 2π). Nog niet: de
+`reactionforcemag`, `reactionmomz` en `reactionmommag` (= |`reactionmomz`|), de reacties voor
+360 graden (× 2π). Nog niet: de
 spanningen en snedekrachten van de schaal (meridiaan- en tangentiële spanning, boven- en
 onderkant; STAPPENPLAN S44e deel 2); de log meldt dat (INFO) en de bridge schrijft geen
 spanningsveld. Nagelopen met Code-Aster 17.4 (PL-60 … PL-68, [`Verificatie.md`](Verificatie.md)):
 een membraancilinder en -bol binnen 1e-7, een ingeklemde ronde plaat 0,03% (doorbuiging) en
 0,07% (rotatie), het inklemmoment van een lange cilinder −0,94% (p / (2β²)), de
 Code-Aster-testcase ssls114i exact, een druk als tijdtabel in L30, een knoopkracht, een
-ringmoment (0,23%) en zwaartekracht. NIET geverifieerd: hoe Mecway deze resultaten toont en of
+ringmoment (+0,24%) en zwaartekracht. NIET geverifieerd: hoe Mecway deze resultaten toont en of
 Mecway's venster de invoer accepteert (een druk op de zijkant van een lijnelement in S30 of
 L30; Mecway's eigen solve rekent de lijnelementen als balken, niet als deze schaal).
 
@@ -736,7 +737,7 @@ typte.
 | Traction, een kracht op faceid 1 of een centrifugaalkracht op axisymmetrische schalen | ERROR: … op '…' in een 2D-analyse: op axisymmetrische schalen alleen druk op de zijkant (faceid 1) van line3-elementen en kracht op knopen of elementuiteinden (faceid 2, 3); traction en kracht op de zijkant zijn niet geverifieerd. NIET meegenomen. (centrifugaal: … niet geverifieerd op axisymmetrische schalen (COQUE_AXIS). NIET meegenomen.) | een druk op faceid 1 of een kracht op knopen |
 | Aangrenzende line3-elementen in tegengestelde richting onder een druk | WARNING: Druk op '…': aangrenzende line3-elementen lopen in tegengestelde richting (knoop …); de druk werkt daar aan de andere kant (positieve druk duwt langs -n, n = Z x U, U van knoop 1 naar knoop 2). Keer die elementen om in Mecway. | keer de elementen om (figuur van §1.4.2) |
 | Een knoop van een axisymmetrische schaal op de as zonder opleggingen | WARNING: Axisymmetrische schaal: knoop … ligt op de as (X = 0) maar heeft niet zowel X als de rotatie om Z vast. Geef die knopen een Symmetry met normaal X (houdt X en de rotatie om Z vast). | *Symmetry* met normaal X op die knoop |
-| Axisymmetrische schalen in L30 met `deformation` `GROT_GDEP` (de standaard) | WARNING: Axisymmetrische schalen (…) rekenen met kleine verplaatsingen (DEFORMATION='PETIT'), niet met GROT_GDEP: grote verplaatsingen zijn op COQUE_AXIS niet vertaald. | niets te doen (of `PETIT`) |
+| Axisymmetrische schalen in L30 met `deformation` `GROT_GDEP` (de standaard) of een andere keuze dan `PETIT` | WARNING: Axisymmetrische schalen (…) rekenen met kleine verplaatsingen (DEFORMATION='PETIT'), niet met GROT_GDEP: grote verplaatsingen en het bijwerken van de geometrie (PETIT_REAC) zijn op COQUE_AXIS niet vertaald. | niets te doen (of `PETIT`) |
 
 ## 2. Hoe de bridge vertaalt
 
