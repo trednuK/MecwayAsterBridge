@@ -620,3 +620,52 @@ TESTS.append(Case(
      for k, f in enumerate(F8)],
     note="Line3-truss als twee SEG2-cellen (BARRE), middenknoop dwars "
          "gekoppeld (GitHub issue #6). Mecway 34 zelf: 450 en 1030 Hz."))
+
+
+# ------------------------------------------------------------------
+# MO-11 Balk die alleen in een scharnier vastzit (KNOWN_BUGS 48): de
+# balk van MO-01 met een pinned support in x = 0 (alleen translaties).
+# K is singulier ondanks de oplegging (draaien om het scharnier in Y en Z
+# en torsie): zonder verschuiving stopt Code-Aster met ALGELINE3_81, met
+# modal_shift_hz = -500 Hz geeft de bridge de 3 starre modes bij 0 Hz en
+# daarna de buigmodes van de scharnierend-vrije balk, tan(lambda L) =
+# tanh(lambda L): 3,92660, 7,06858 (Blevins tabel 8-1). Mecway 35 op hetzelfde
+# model: 0 / 0 / 0,0007 / 73,277 / 109,916 / 237,467 Hz.
+# ------------------------------------------------------------------
+LAMBDA_PF = (3.92660231, 7.06858275)
+# Mecway 35.0.9802 headless (internal solver) on modellen/MO-11.liml, modes 4..6
+MW_MO11 = (73.2771560422038, 109.915734061491, 237.467227552384)
+
+
+def build_mo11():
+    m = Model("V30", attrs={"maxmode": 6})
+    m.elset("Balk", "Staal")
+    _eids, nids = linemesh(m, "Balk", 20, (0, 0, 0), (L1, 0, 0))
+    m.mat("Staal", '<geometric type="RectBar" recta="%g m" rectb="%g m" />'
+          % (A1, B1), STEEL, DENS)
+    m.node_selection("Scharnier", [nids[0]])
+    m.add('<pinnedsupport selection="Scharnier" />')
+    return m
+
+
+_PF = [(f_cf(LAMBDA_PF[0], IZ1), "Y1"), (f_cf(LAMBDA_PF[0], IY1), "Z1"),
+       (f_cf(LAMBDA_PF[1], IZ1), "Y2")]
+
+TESTS.append(Case(
+    "MO-11", GROUP, "Balk alleen in een scharnier: mechanisme met een "
+    "oplegging (modal_shift_hz -500)", "modal_3d", build_mo11,
+    [Check("f%d (star)" % k, lambda r, k=k: r.mode(k), ref=0.0,
+           tol_abs=0.05, unit="Hz", source="draaien om het scharnier "
+           "(Y, Z) en torsie: 0 Hz")
+     for k in (1, 2, 3)] +
+    [_mode_check(k + 4, f, 0.002,
+                 "Euler-Bernoulli scharnierend-vrij %s, lambda L = %.4f "
+                 "(Blevins 8-1)" % (plane, LAMBDA_PF[int(plane[1]) - 1]))
+     for k, (f, plane) in enumerate(_PF)] +
+    [Check("f%d t.o.v. Mecway 35" % (k + 4), lambda r, k=k: r.mode(k + 4),
+           ref=f, tol=0.001, unit="Hz", in_series=False,
+           source="Mecway 35 headless, internal solver, same .liml")
+     for k, f in enumerate(MW_MO11)],
+    settings={"modal_shift_hz": -500.0},
+    note="POU_D_E, 20 elementen; zonder modal_shift_hz stopt Code-Aster met "
+         "ALGELINE3_81 (KNOWN_BUGS 48)."))

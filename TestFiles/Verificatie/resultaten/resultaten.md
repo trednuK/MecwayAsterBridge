@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge b804a79, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 2d13eec, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3168 van 3174 controles binnen de tolerantie** (607 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3177 van 3183 controles binnen de tolerantie** (608 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2039,6 +2039,15 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge b804a79, Code-Aster 17.4
 | MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f6 (star) | 0 Hz | 9.5714e-04 | 9.5714e-04 | 0.5 Hz | OK |
 | MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f7 | 415.35 Hz | 409.78 | -1.34% | 3% | OK |
 | MO-10 | Vrije staaf uit twee verlijmde hex20-blokken (alleen verbindingen, geen opleggingen) | f7 t.o.v. Mecway CCX | 409.78 Hz | 409.78 | -0.00% | 0.3% | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f1 (star) | 0 Hz | -2.6603e-05 | -2.6603e-05 | 0.05 Hz | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f2 (star) | 0 Hz | 1.0118e-04 | 1.0118e-04 | 0.05 Hz | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f3 (star) | 0 Hz | 1.1203e-04 | 1.1203e-04 | 0.05 Hz | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f4 | 73.277 Hz | 73.277 | +0.00% | 0.2% | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f5 | 109.92 Hz | 109.92 | +0.00% | 0.2% | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f6 | 237.46 Hz | 237.47 | +0.00% | 0.2% | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f4 t.o.v. Mecway 35 | 73.277 Hz | 73.277 | +0.00% | 0.1% | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f5 t.o.v. Mecway 35 | 109.92 Hz | 109.92 | +0.00% | 0.1% | OK |
+| MO-11 | Balk alleen in een scharnier: mechanisme met een oplegging (modal_shift_hz -500) | f6 t.o.v. Mecway 35 | 237.47 Hz | 237.47 | -0.00% | 0.1% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f1 | 8.3552 Hz | 8.3552 | +0.00% | 0.2% | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | mode 1 langs W | 1 - | 1 | +0.00% | 0.0001 - | OK |
 | MO-20 | Balkorientatie modaal: langs X, standaard | f2 | 33.421 Hz | 33.421 | +0.00% | 0.2% | OK |

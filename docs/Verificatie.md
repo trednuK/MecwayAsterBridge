@@ -2278,7 +2278,7 @@ U-documentatie gevonden):
   `RIGI_MECA` + `RIGI_GEOM` → `CALC_MODES TYPE_RESU='MODE_FLAMB'` `PLUS_PETITE`;
   kniklastfactor = `CHAR_CRIT`.
 
-Modules `tests_modaal.py` (MO, 12 cases; MO-09 in `tests_scheve_opleggingen.py`) en `tests_knik.py` (BU, 7 cases), draaien met
+Modules `tests_modaal.py` (MO, 13 cases; MO-09 in `tests_scheve_opleggingen.py`) en `tests_knik.py` (BU, 7 cases), draaien met
 `python run_verificatie.py MO BU` (ca. 1 minuut). Gebruikersdocumentatie:
 [Modaal_en_knik.md](Modaal_en_knik.md). Toleranties: discrete modellen en balken
 0,01–0,2% (een Euler-balk met 20 elementen wijkt < 0,002% af); mesh-reeksen als in §4
@@ -2297,6 +2297,7 @@ DX = 0 op x = 0 en DY = 0 in een hoek, zodat de spanning zuiver eenassig is.
 | MO-07 | ingeklemde balk als MO-02, hex20 50 × 2 × 3, 6 modes, `fields` met `stresses` en `vonmises` | Euler-Bernoulli: rotatiefractie om de inklemming mode 1 = 3(∫W₁x dx)²/L⁴ = 0,97069; som over de modes → I = m(L²/3 + a²/12); σ_xx(L/2, a/2) = E·(a/2)·W₁''(L/2)/√(ρAL) (massagenormeerd); Mecway headless | rotatie mode 1 / 2 −0,03 / −0,02%; som 6 modes −0,15%; σ_xx +0,43%; t.o.v. Mecway σ_xx +0,01%, fracties 0,0000% |
 | MO-08 | NAFEMS Challenge Problem 5: twee line3-truss-elementen (1-6-2 en 3-4-5, knoop 5 met constraint equations aan knoop 2), staal, D = 10 mm, uz = 0 overal, 2 modes (GitHub issue #6) | NAFEMS CP5: 451,1 / 1049,9 Hz; Mecway 34 zelf 450 / 1030 Hz | 451,15 / 1049,9 Hz (+0,01 / 0,00%) |
 | MO-10 | vrije staaf 0,8 × 0,05 × 0,05 m uit twee hex20-blokken (elk 8 × 2 × 2, eigen knopen op x = 0,4 m) met verlijmd contact en zonder oplegging, 8 modes (GitHub issue #9) | 6 starre modes; mode 7 Euler-Bernoulli vrij-vrij (βL)² = 22,373 (Blevins, 1979, tabel 8-1), 415,35 Hz; Timoshenko ongeveer −1,5% (L/h = 16) | \|f1…f6\| < 1e-3 Hz; f7 409,78 Hz (−1,34%); t.o.v. Mecway 34 met CCX (6 starre modes, f7 409,777 Hz) 0,00%; eerder: `ALGELINE3_81` |
+| MO-11 | balk van MO-01 (1 m, 20 × POU_D_E, 0,02 × 0,03 m) die alleen in x = 0 met een *Pinned support* vastzit: een mechanisme ondanks de oplegging, `modal_shift_hz` = −500 Hz, 6 modes (KNOWN_BUGS 48) | 3 starre modes (draaien om het scharnier in Y en Z, torsie) bij 0 Hz; Euler-Bernoulli scharnierend-vrij λL = 3,9266 / 7,0686 (Blevins, 1979, tabel 8-1): 73,277 / 109,92 / 237,46 Hz; Mecway 35 headless op dezelfde `.liml`: 0 / 0 / 0,0007 / 73,277 / 109,916 / 237,467 Hz | \|f1…f3\| < 2e-4 Hz; f4…f6 +0,00%, t.o.v. Mecway 35 0,00%; aparte run zonder `modal_shift_hz` (17 nov 2026): Code-Aster stopt met `ALGELINE3_81`, met de hint naar een negatieve zoekfrequentie |
 | BU-01 | ingeklemde kolom, 20 `POU_D_E`, druk 1000 N | Pcr = (2i−1)²π²EI/(4L²), beide vlakken (Timoshenko & Gere, 1961) | factoren 10,363 / 23,317 / 93,268 exact; tip mode 1 = 1/√(EI(π/2L)⁴L/2) (φᵀKφ = 1) exact |
 | BU-02 | scharnierende kolom, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0,002% |
 | BU-03 | ingeklemde kolom hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` op de kop | Euler | +0,20% / +0,13% (zelfde modelfout als MO-02) |

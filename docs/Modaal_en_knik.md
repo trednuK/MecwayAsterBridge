@@ -56,7 +56,7 @@ superposition*): [`Respons_op_modale_basis.md`](Respons_op_modale_basis.md).
      starre modes.
    - Een mechanisme in een verder opgelegd model (bijv. een balk die alleen
      scharnierend vastzit, een los onderdeel): Code-Aster stopt met `ALGELINE3_81`;
-     oplossing in §4 (KNOWN_BUGS 48).
+     oplossing in §4 (KNOWN_BUGS 48; verificatie MO-11).
    - Knik zonder opleggingen, of met alleen verbindingen tussen de delen, kan niet
      (de statische berekening is singulier): ERROR.
    - Verbindingen uit `#ASTER`-code (`LIAISON_ELEM`, `LIAISON_MAIL`, `DDL_IMPO`, ...)
@@ -430,7 +430,8 @@ De bridge doet dit ook als de enige kinematische voorwaarden verbindingen zijn
 (`LIAISON_MAIL` van verlijmd contact, `LIAISON_SOLIDE`/`LIAISON_RBE3` van koppelingen):
 die verbinden delen maar leggen niets vast in de ruimte (MO-10; eerder:
 `ALGELINE3_81`). Een mechanisme in een model dat ergens wel is opgelegd wordt niet
-herkend: kies daar zelf een negatieve *Zoekfrequentie* (§4).
+herkend: kies daar zelf een negatieve *Zoekfrequentie* (§4; MO-11: een balk die alleen
+scharnierend vastzit, met −500 Hz de 3 starre modes bij ~1e-4 Hz en daarna de buigmodes).
 
 ### 3.3 Wat niet kan
 

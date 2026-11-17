@@ -2263,7 +2263,7 @@ U documentation):
   `SIEF_ELGA` → `RIGI_MECA` + `RIGI_GEOM` → `CALC_MODES TYPE_RESU='MODE_FLAMB'`
   `PLUS_PETITE`; buckling factor = `CHAR_CRIT`.
 
-Modules `tests_modaal.py` (MO, 12 cases; MO-09 in `tests_scheve_opleggingen.py`) and `tests_knik.py` (BU, 7 cases), run with
+Modules `tests_modaal.py` (MO, 13 cases; MO-09 in `tests_scheve_opleggingen.py`) and `tests_knik.py` (BU, 7 cases), run with
 `python run_verificatie.py MO BU` (about 1 minute). User documentation:
 [Modal_and_buckling.md](Modal_and_buckling.md). Tolerances: discrete models and beams
 0.01–0.2% (an Euler beam with 20 elements deviates < 0.002%); mesh series as in §4 with
@@ -2282,6 +2282,7 @@ on x = 0 and DY = 0 at one corner, so the stress is purely uniaxial.
 | MO-07 | clamped beam as MO-02, hex20 50 × 2 × 3, 6 modes, `fields` with `stresses` and `vonmises` | Euler-Bernoulli: rotation fraction about the clamp mode 1 = 3(∫W₁x dx)²/L⁴ = 0.97069; sum over the modes → I = m(L²/3 + a²/12); σ_xx(L/2, a/2) = E·(a/2)·W₁''(L/2)/√(ρAL) (mass-normalised); Mecway headless | rotation mode 1 / 2 −0.03 / −0.02%; sum 6 modes −0.15%; σ_xx +0.43%; against Mecway σ_xx +0.01%, fractions 0.0000% |
 | MO-08 | NAFEMS Challenge Problem 5: two line3 truss elements (1-6-2 and 3-4-5, node 5 tied to node 2 with constraint equations), steel, D = 10 mm, uz = 0 everywhere, 2 modes (GitHub issue #6) | NAFEMS CP5: 451.1 / 1049.9 Hz; Mecway 34 itself 450 / 1030 Hz | 451.15 / 1049.9 Hz (+0.01 / 0.00%) |
 | MO-10 | free bar 0.8 × 0.05 × 0.05 m of two hex20 blocks (8 × 2 × 2 each, own nodes at x = 0.4 m) with bonded contact and no support, 8 modes (GitHub issue #9) | 6 rigid modes; mode 7 Euler-Bernoulli free-free (βL)² = 22.373 (Blevins, 1979, table 8-1), 415.35 Hz; Timoshenko about −1.5% (L/h = 16) | \|f1…f6\| < 1e-3 Hz; f7 409.78 Hz (−1.34%); against Mecway 34 with CCX (6 rigid modes, f7 409.777 Hz) 0.00%; before: `ALGELINE3_81` |
+| MO-11 | beam of MO-01 (1 m, 20 × POU_D_E, 0.02 × 0.03 m) held only by a *Pinned support* at x = 0: a mechanism despite the support, `modal_shift_hz` = −500 Hz, 6 modes (KNOWN_BUGS 48) | 3 rigid modes (rotation about the hinge in Y and Z, torsion) at 0 Hz; Euler-Bernoulli pinned-free λL = 3.9266 / 7.0686 (Blevins, 1979, table 8-1): 73.277 / 109.92 / 237.46 Hz; Mecway 35 headless on the same `.liml`: 0 / 0 / 0.0007 / 73.277 / 109.916 / 237.467 Hz | \|f1…f3\| < 2e-4 Hz; f4…f6 +0.00%, against Mecway 35 0.00%; separate run without `modal_shift_hz` (17 Nov 2026): Code-Aster stops with `ALGELINE3_81`, with the hint to a negative search frequency |
 | BU-01 | clamped column, 20 `POU_D_E`, compression 1000 N | Pcr = (2i−1)²π²EI/(4L²), both planes (Timoshenko & Gere, 1961) | factors 10.363 / 23.317 / 93.268 exact; tip mode 1 = 1/√(EI(π/2L)⁴L/2) (φᵀKφ = 1) exact |
 | BU-02 | pinned column, idem | Pcr = i²π²EI/L² (Timoshenko & Gere, 1961) | < 0.002% |
 | BU-03 | clamped column hex20 50 × 2 × 3 / 100 × 4 × 6, `traction` on the top | Euler | +0.20% / +0.13% (same model error as MO-02) |

@@ -52,7 +52,8 @@ superposition*): [`Mode_superposition.md`](Mode_superposition.md).
      static analysis is then singular and the bridge stops beforehand with an ERROR
      (§4); switch off the prestress for the rigid modes.
    - A mechanism in an otherwise supported model (e.g. a beam held only by a hinge, a
-     loose part): Code-Aster stops with `ALGELINE3_81`; solution in §4 (KNOWN_BUGS 48).
+     loose part): Code-Aster stops with `ALGELINE3_81`; solution in §4 (KNOWN_BUGS 48;
+     verification MO-11).
    - Buckling without supports, or with only connections between the parts, is not
      possible (the static analysis is singular): ERROR.
    - Connections from `#ASTER` code (`LIAISON_ELEM`, `LIAISON_MAIL`, `DDL_IMPO`, ...)
@@ -421,7 +422,8 @@ The bridge also does this when the only kinematic conditions are connections
 (`LIAISON_MAIL` of bonded contact, `LIAISON_SOLIDE`/`LIAISON_RBE3` of couplings): they
 tie parts together but fix nothing in space (MO-10; before: `ALGELINE3_81`). A
 mechanism in a model that is supported somewhere is not detected: there choose a
-negative *Search frequency* yourself (§4).
+negative *Search frequency* yourself (§4; MO-11: a beam held only by a hinge, with
+−500 Hz the 3 rigid modes at ~1e-4 Hz and then the bending modes).
 
 ### 3.3 Not possible
 

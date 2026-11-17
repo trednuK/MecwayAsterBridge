@@ -499,12 +499,14 @@ Code-Aster value per node) and logs the largest difference per variable.
 48\. **Modal: mechanism in a supported model** (confirmed with runs,
    `bridge_to_aster._calc_modes_block`). If K is singular while there are
    supports (e.g. a beam that is only held by a hinge), Code-Aster stops with
-   `<EXCEPTION> ALGELINE3_81`; Mecway gives the rigid-body modes at 0 Hz (same model:
-   Mecway 0 / 0 / 0.0007 / 73.277 / 109.916 / 237.467 Hz). The bridge uses the
-   shifted search frequency only without any support (free-free); with a
-   negative `modal_shift_hz` (e.g. -500 Hz) the bridge gives the same values as
-   Mecway. Always shifting does not work: a fixed factor far above the first mode
-   gave not a single mode with a fine hex20 mesh (ALGELINE5_49/3_78).
+   `<EXCEPTION> ALGELINE3_81` (the bridge's hint names a negative search frequency);
+   Mecway gives the rigid-body modes at 0 Hz (verification MO-11, a beam pinned at one
+   end: Mecway 35: 0 / 0 / 0.0007 / 73.277 / 109.916 / 237.467 Hz, Euler-Bernoulli
+   pinned-free 73.277 / 109.92 / 237.46 Hz). The bridge uses the shifted search
+   frequency only without any support (free-free); with a negative `modal_shift_hz`
+   (-500 Hz in MO-11) the bridge gives the same values (rigid modes below 2e-4 Hz).
+   Always shifting does not work: a fixed factor far above the first mode gave not a
+   single mode with a fine hex20 mesh (ALGELINE5_49/3_78).
 
 53\. **Nonlinear buckling: limits of CRIT_STAB and the imperfection** (confirmed with
    runs, `bridge_to_aster._crit_stab_kind`, `_imperfection_blocks`;
