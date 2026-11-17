@@ -29,10 +29,12 @@
   damage (item 66); a WARNING when the constant of a constraint equation is written as an
   element `<constant>`, which Mecway 35 ignores (item 27); the curved-front WARNING of
   `#ASTER-XFEM` gives the measured +5.3 % at h = a/20 (item 83). New verification MO-11
-  (modal mechanism in a supported model, item 48) and NL-91 (results up to the last step
-  after a real floating point exception `DVP_2`, item 118 removed). Items 5, 9, 10, 22, 27,
-  34, 46, 54, 55, 58, 63, 64, 65, 106, 107, 121, 123, 124 and 131 corrected after a desk
-  review against the code or headless runs.
+  (modal mechanism in a supported model, item 48), NL-91 (results up to the last step
+  after a real floating point exception `DVP_2`, item 118 removed) and NL-92 .. NL-92c (a
+  closed gap equal to Mecway 35; open and with clearance against a hand calculation, item
+  23). Items 5, 9, 10, 22, 23, 27, 34, 37, 38, 46, 54, 55, 58, 63, 64, 65, 106,
+  107, 116, 121, 123, 124, 131 and 135 corrected after a desk review against the code,
+  headless runs or GUI tests in Mecway 35.
 
 ## V2026.13 – 17 November 2026
 

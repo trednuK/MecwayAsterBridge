@@ -57002,5 +57002,129 @@
   "n_elem": 8,
   "settings": {},
   "general": {}
+ },
+ "NL-92": {
+  "id": "NL-92",
+  "group": "Niet-lineair statisch",
+  "title": "Gap sluit direct (geen speling), tegen Mecway 35",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "DIS_CHOC; de grondknoop met Displacements (geen Fixed, KNOWN_BUGS 135).",
+  "seconds": 3.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip",
+    "fem": 0.0008880994671401233,
+    "ref": 0.0008880994671403197,
+    "rel": -2.2121107029482445e-13,
+    "dev": -1.964574336543734e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "F / (k + EA/L), gap gesloten",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 0.0008880994671401233,
+    "ref": 0.00088809946714,
+    "rel": 1.3880628417511364e-13,
+    "dev": 1.2327378701160185e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 interne solver, Static 3D (GUI, weergegeven 0,00088809946714032 m)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92b": {
+  "id": "NL-92b",
+  "group": "Niet-lineair statisch",
+  "title": "Gap met speling 5 mm",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "initialclearance: in Mecway alleen voor CCX (manual par. 7.10.2); niet met Mecway vergeleken.",
+  "seconds": 3.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t = 0,5 (open)",
+    "fem": 0.003968253968253969,
+    "ref": 0.003968253968253968,
+    "rel": 2.185751579730777e-16,
+    "dev": 8.673617379884035e-19,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "0,5 F L/EA, gap nog open (dicht vanaf t = 0,63)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_x tip t = 1 (dicht)",
+    "fem": 0.005328596802841722,
+    "ref": 0.0053285968028419185,
+    "rel": -3.6949899158885316e-14,
+    "dev": -1.968911145233676e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "c + (F - EA/L c) / (k + EA/L)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92c": {
+  "id": "NL-92c",
+  "group": "Niet-lineair statisch",
+  "title": "Gap getrokken: open, geen stijfheid",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Eenzijdig: de gap draagt geen trek.",
+  "seconds": 3.4,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip",
+    "fem": -0.007936507936507938,
+    "ref": -0.007936507936507936,
+    "rel": -2.185751579730777e-16,
+    "dev": -1.734723475976807e-18,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "-F L/EA, gap open",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
  }
 }

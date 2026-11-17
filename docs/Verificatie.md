@@ -2133,6 +2133,23 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   ~1e154. De `DVP_2` komt hier uit de Green-Lagrange-rek (`GREEN_LAGRANGE`, `matg2e`); met
   kleine rekken (`PETIT`) convergeert stap 0,6 waarschijnlijk wel, zoals bij de balken.
 
+### NL-92 Gap tegen Mecway 35
+
+- **Doel**: een gap-element (line2 met materiaal *Gap*, Code-Aster `DIS_CHOC`) rekent als
+  Mecway.
+- **Model**: balk 1 m (4 × line2, 20 × 30 mm, E = 210 GPa, EA/L = 1,26e8 N/m) vast in
+  x = 0; een gap (k = 1e9 N/m) van de tip naar een knoop 10 mm verder, die met drie
+  *Displacements* (x, y, z = 0) vastzit; 1 MN in +x op de tip. NL-92b: *Initial clearance*
+  5 mm en de kracht als tijdstabel 0 .. 1 MN; NL-92c: −1 MN (trekken, gap open).
+- **Referentie**: NL-92 u = F / (k + EA/L) (gap direct dicht) en Mecway 35 (interne solver,
+  Static 3D, in de GUI) 0,00088809946714032 m; NL-92b bij t = 0,5 u = 0,5 F L/EA (open),
+  bij t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA.
+- **Resultaat**: alle controles binnen 3e-13, ook tegen Mecway (NL-92).
+- **Interpretatie**: de grondknoop zit met *Displacements* vast, niet met *Fixed support*:
+  die negeert Mecway op een knoop met alleen een gap (KNOWN_BUGS 135). *Initial clearance*
+  is in Mecway een CCX-invoer; NL-92b is alleen tegen de handberekening. Een vaste kracht
+  werkt statisch vanaf de eerste stap volledig; daarom heeft NL-92b een tijdstabel.
+
 ### Boutvoorspanning (PT)
 
 Mecway's *Pre-tension section* ([Boutvoorspanning.md](Boutvoorspanning.md)): snede door
@@ -3939,7 +3956,8 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
   balken met grote rotaties: `POU_D_T_GD`, NL-80 .. NL-90), en bij `POU_D_T_GD` grote
   opgelegde rotaties, element offset en koppelingen (een flexible joint alleen met U, V
   en W vrij, NL-90);
-- gap- en tension-only-elementen, dempers in transiente dynamica (DY, MD; dempers wel
+- gap- en tension-only-elementen in transiente dynamica (statisch wel: LS-54b/c,
+  NL-92 .. NL-92c), dempers in transiente dynamica (DY, MD; dempers wel
   harmonisch en in complexe modes: HR-01d, MC, VH-04c).
 
 Wel gedekt en daarom niet meer in deze lijst: een temperatuurveld als belasting in een

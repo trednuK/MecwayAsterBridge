@@ -2121,6 +2121,23 @@ samples) plus the kinks of the load tables (NL-20).
   ~1e154. The `DVP_2` here comes from the Green-Lagrange strain (`GREEN_LAGRANGE`,
   `matg2e`); with small strains (`PETIT`) step 0.6 probably converges, as with the beams.
 
+### NL-92 Gap against Mecway 35
+
+- **Goal**: a gap element (line2 with material *Gap*, Code-Aster `DIS_CHOC`) computes like
+  Mecway.
+- **Model**: beam 1 m (4 × line2, 20 × 30 mm, E = 210 GPa, EA/L = 1.26e8 N/m) fixed at
+  x = 0; a gap (k = 1e9 N/m) from the tip to a node 10 mm further, held by three
+  *Displacements* (x, y, z = 0); 1 MN in +x on the tip. NL-92b: *Initial clearance* 5 mm and
+  the force as a time table 0 .. 1 MN; NL-92c: −1 MN (pulling, gap open).
+- **Reference**: NL-92 u = F / (k + EA/L) (gap closed at once) and Mecway 35 (internal
+  solver, Static 3D, in the GUI) 0.00088809946714032 m; NL-92b at t = 0.5 u = 0.5 F L/EA
+  (open), at t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA.
+- **Result**: all checks within 3e-13, also against Mecway (NL-92).
+- **Interpretation**: the ground node is held by *Displacements*, not by *Fixed support*:
+  Mecway ignores that on a node with only a gap (KNOWN_BUGS 135). *Initial clearance* is a CCX
+  input in Mecway; NL-92b is against the hand calculation only. A constant force acts in
+  full from the first static step; that is why NL-92b has a time table.
+
 ### Bolt pretension (PT)
 
 Mecway's *Pre-tension section* ([Bolt_pretension.md](Bolt_pretension.md)): cut through
@@ -3925,7 +3942,8 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
   with large rotations: `POU_D_T_GD`, NL-80 .. NL-90), and with `POU_D_T_GD` large imposed
   rotations, element offset and couplings (a flexible joint only with U, V and W free,
   NL-90);
-- gap and tension-only elements, dampers in transient dynamics (DY, MD; dampers are
+- gap and tension-only elements in transient dynamics (covered in statics: LS-54b/c,
+  NL-92 .. NL-92c), dampers in transient dynamics (DY, MD; dampers are
   covered in harmonic response and complex modes: HR-01d, MC, VH-04c).
 
 Covered and therefore no longer in this list: a temperature field as a load in a

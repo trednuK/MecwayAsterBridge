@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge b810cac, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 0336889, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3213 van 3219 controles binnen de tolerantie** (619 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3218 van 3224 controles binnen de tolerantie** (622 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1864,6 +1864,11 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge b810cac, Code-Aster 17.4
 | NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | laatste tijdstip | 0.5 s | 0.5 | +0.00% | 1e-09 s | OK |
 | NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | reactie x bij t = 0,5 | -1000 N | -1000 | -0.00% | 0.0001% | OK |
 | NL-91 | Blok, kracht springt naar 1e300 N: DVP_2, resultaten tot t = 0,5 | u_x(0,5) / u_x(0,1) | 5 - | 5 | -0.00% | 0.0001% | OK |
+| NL-92 | Gap sluit direct (geen speling), tegen Mecway 35 | u_x tip | 8.8810e-04 m | 8.8810e-04 | -0.00% | 0.0001% | OK |
+| NL-92 | Gap sluit direct (geen speling), tegen Mecway 35 | u_x tip t.o.v. Mecway 35 | 8.8810e-04 m | 8.8810e-04 | +0.00% | 0.0001% | OK |
+| NL-92b | Gap met speling 5 mm | u_x tip t = 0,5 (open) | 0.0039683 m | 0.0039683 | +0.00% | 0.0001% | OK |
+| NL-92b | Gap met speling 5 mm | u_x tip t = 1 (dicht) | 0.0053286 m | 0.0053286 | -0.00% | 0.0001% | OK |
+| NL-92c | Gap getrokken: open, geen stijfheid | u_x tip | -0.0079365 m | -0.0079365 | -0.00% | 0.0001% | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 

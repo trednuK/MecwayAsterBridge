@@ -440,7 +440,13 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap
    (U against node 1 -> 2), skewed U or coincident nodes (reported, element
-   without stiffness); the 'force of open gap' of CCX is not used. Tension
+   without stiffness); the 'force of open gap' of CCX is not used. A closed gap is equal
+   to Mecway 35 (internal solver, Static 3D, GUI) to 1e-12 (NL-92); pulled open it carries
+   nothing (NL-92c, against the hand calculation only);
+   the clearance `initialclearance` is a CCX input in Mecway (manual par. 7.10.2), the
+   bridge applies it whatever solver the model is set to (NL-92b, open until it closes,
+   against a hand calculation, NOT compared with Mecway); linear static stops with an ERROR
+   (gaps need `nonlin_static_3d`). Tension
    only (CABLE, GROT_GDEP): compressive stiffness 1e-4 E (Code-Aster EC_SUR_E). A
    straight cable without prestress has no transverse stiffness; the bridge therefore
    writes a small `N_INIT` = `cable_n_init_factor` x E x A (default 1e-6, INFO in the
@@ -745,7 +751,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    Mecway's manual (§9.1) allows a fixed support on nodes only for nodes with all rotational
    DOFs (beam nodes, reference nodes of couplings). Mecway's own solver silently leaves other
    nodes of the selection free (measured on quad4, quad8, hex8, hex20 and 2D quad4/quad8
-   nodes; spring-only nodes: item 47), even when the selection holds every node of the model. Without other supports the model is a
+   nodes; spring-only nodes: item 47; a node with only a gap element: Mecway 35 GUI, 17 Nov
+   2026, the support shown red, free solution 7.94 mm), even when the selection holds every
+   node of the model. Without other supports the model is a
    mechanism, and Mecway still writes a solution with a rigid-body motion of arbitrary size
    (4e8 m under 100 N). The bridge clamps every node of the selection.
    Plate 100 × 40 × 2 mm, +100 K, α = 1.2e-5 1/K, `fixed` on the nodes of the edge x = 0:
@@ -765,8 +773,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    run, so once per pass of the adaptive loop; not in the section view): the number of nodes
    of the selection that are in a translated element but in no beam element and are not a
    reference node of a coupling. Trusses (LS-54a .. LS-54c, MO-08, NL-86b) count from the
-   manual's rule, NOT measured; tension-only elements, gaps and dampers are counted like
-   them, NOT verified; tri3/tri6 shells and tet/wedge solids are NOT measured either. Not
+   manual's rule, NOT measured; gaps measured in the Mecway GUI (17 Nov 2026, above);
+   tension-only elements and dampers are counted like them, NOT verified; tri3/tri6 shells and tet/wedge solids are NOT measured either. Not
    checked: a face selection of end faces of trusses, springs or dampers, which §9.1 also
    excludes. Mecway 35.0.9802's GUI refuses such a support on shell nodes with the error
    "Some nodes do not have all rotational DOFs. Fixed support can only be applied to: beam
@@ -836,32 +844,36 @@ Code-Aster value per node) and logs the largest difference per variable.
    X/Y/Z, frequencies equal to Mecway to 4 decimals (tip inertia 1 kg m² on a cantilever:
    9.8003 / 13.7528 / 9.1685 Hz). More than one node gives an ERROR. Rayleigh damping only
    on the whole model and not on discrete elements (Mecway: α on every node with mass,
-   manual par. 9.26). Confirmed: the Rayleigh XML (DampedVibratingStrip). Gap: Mecway reads
-   the names `closedstiffness`, `initialclearance` and `openforce` of type `Gap` (it wrote
-   them back, normalised, into its CCX solution file), and the bridge matches a hand
-   calculation with and without clearance (8.88e-4 / 1.332e-3 m). But Mecway 35 headless gave
-   the free solution in all 5 Static 3D variants with the internal solver (push and pull, both
-   node orders, 1 and 10 mm between the nodes; cause unknown: model, headless solve path or
-   Mecway); Nonlinear Static gave no solution with the internal solver (gaps there only in
-   Static 3D, manual par. 7.10.1) and an empty one with CCX (cause not examined). So the gap
-   is NOT compared with Mecway; a gap model saved in the GUI is needed (item 23). Also: the
-   manual names *Initial clearance* and *Force of open gap* only for CCX (par. 7.10.2), while
-   the bridge applies `initialclearance` in every analysis, also in a Static 3D model for the
-   internal solver (NOT compared).
+   manual par. 9.26). Confirmed: the Rayleigh XML (DampedVibratingStrip). Gap: a gap saved in
+   the Mecway 35 GUI is `<mechanical type="Gap" closedstiffness="1000000000 N/m" />` (the form
+   the bridge reads; *Initial clearance* and *Force of open gap* are greyed out with the
+   internal solver), and a closed gap is equal to Mecway (NL-92, item 23). The first
+   headless tests gave the free solution because the ground node of the gap had a *Fixed
+   support*, which Mecway ignores on a node with only a gap element (item 135): the model of
+   the headless runs gave 7.94 mm in the GUI with the *Fixed support* (shown red) and
+   0.888 mm with three *Displacements*. Nonlinear Static with the internal solver gave no
+   solution and with CCX an empty one, probably for the same reason (not re-checked).
 
 37\. **Second run in the same session: `solution` after `mw.open`** (question,
    `MecwayAsterBridgeMain`). The main window stays open, so a second run uses
    the `solution` that Mecway gave at the start of the script, while run 1 reopened the
    model with `mw.open`. Only relevant for route `tabel` and "Mecway solve first as a
    check" (comparison). Whether Mecway carries that object along is not stated
-   in the API documentation; if in doubt, restart the bridge.
+   in the API documentation; if in doubt, restart the bridge. Checked in the Mecway 35 GUI
+   (17 Nov 2026, cantilever of 4 line2, route `liml`, "Mecway solve first" on): two runs
+   in one session both complete, the comparison of run 2 uses a new Mecway solve (equal to
+   run 1, Mecway -35.273 mm, the bridge -35.298 mm with the shear of `POU_D_TG`) and the
+   results are written and reopened. Route `tabel` NOT checked.
 
 38\. **Main window non-modal: other Mecway actions not checked** (question,
    `bridge_gui.run_settings_dialog`). The window uses `Show()` with its own message
    loop (`Application.DoEvents`), so Mecway stays usable while it is open. A second
    start of the bridge is refused (`bridge_gui.claim_instance`, named semaphore per
-   Mecway process; checked in Mecway 34 on 16 October 2026). Whether Mecway allows
-   everything else during the loop (e.g. opening another model) has not been tested.
+   Mecway process; checked in Mecway 34 on 16 October 2026). Opening another model in Mecway
+   while the window is open closes the window without a message (Mecway 35 GUI, 17 Nov 2026);
+   the bridge then starts again normally in the same Mecway (the lock is released); in the
+   test it did not run on the other model. Why the window closes (Mecway ending the script)
+   is NOT verified. Other Mecway actions during the loop (solve, selections) NOT tested.
 
 47\. **Tensioned springs in Buckling: no geometric stiffness** (question). The
    bridge applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`), as Mecway
@@ -882,8 +894,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    `bridge_orientation`). Measured headless with Mecway 34 on hand-written cards (Mecway
    writes them back unchanged in its solution file): beams with vector, angle, formulas,
    a card on part of the elements, overlap and the refusals (MO-31, LS-79–82, BU-25).
-   NOT compared: a card created in the Mecway GUI (the XML form is the same as Mecway
-   writes it), the U axis of a card on shells against Mecway's own `forceperlength*`/
+   A card created in the Mecway 35 GUI (17 Nov 2026: V along Z on all elements of a
+   cantilever, saved with `ux..vz`, `angleu` and an element selection with `direct="true"`)
+   gives the same tip displacement as Mecway, -0.0793650793651 m (to 1e-12). NOT compared:
+   the U axis of a card on shells against Mecway's own `forceperlength*`/
    `moment*` (Mecway headless only wrote displacements; LS-31d checks it against the
    attribute variant and theory), a card on gaps, and the "element centre" of a formula
    for quadratic elements and shells (the bridge takes the mean of all element nodes;

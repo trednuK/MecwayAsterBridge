@@ -19,7 +19,7 @@ Toelichting, bronnen en interpretatie: doc_niet_lineair.md.
 """
 import math
 from verif_lib import (Case, Check, Model, hexmesh, quadmesh, box,
-                       rect, HEX_FACE)
+                       rect, HEX_FACE, linemesh)
 
 GROUP = "Niet-lineair statisch"
 # Zoals Mecway's samples (PipeClip): vaste stap 0,1 s. De bridge rekent
@@ -875,4 +875,88 @@ TESTS += [
                 source="lineair elastisch, kracht lineair in t")],
          note="Verwacht in de .mess: <EXCEPTION> <DVP_2> en "
               "BRIDGE_ONVOLLEDIG 0.5 (GitHub issue #5)."),
+]
+
+
+# ------------------------------------------------------------------
+# NL-92 Gap (line2, Gap, DIS_CHOC) tegen Mecway 35 (KNOWN_BUGS 23, 27): balk
+# 1 m (4 x line2, 20 x 30 mm) vast in x = 0; een gap van de tip naar een knoop
+# 10 mm verder, die met drie Displacements (x, y, z = 0) vastzit (een Fixed
+# support op een knoop met alleen een gap negeert Mecway, KNOWN_BUGS 135);
+# 1 MN in +x op de tip. De gap sluit direct (geen speling):
+# u = F / (k + EA/L), k = 1e9 N/m. Mecway 35 (interne solver, Static 3D, in
+# de GUI, 17 nov 2026): 0,00088809946714 m. NL-92b: met initialclearance
+# 5 mm (in Mecway alleen voor CCX) en de kracht als tijdstabel 0 .. 1 MN
+# (een vaste kracht werkt statisch vanaf de eerste stap volledig): open tot
+# t = 0,63 (u(0,5) = 0,5 F L/EA),
+# daarna u = c + (F - EA/L c) / (k + EA/L). NL-92c: trekken (-1 MN), de gap
+# gaat open: u = -F L/EA (alleen tegen de handberekening: de headless
+# Mecway-run had een vrije grondknoop en zegt dus niets over de gap).
+# ------------------------------------------------------------------
+L92, F92, K92, C92 = 1.0, 1.0e6, 1.0e9, 5.0e-3
+EAL92 = 210e9 * 0.02 * 0.03 / L92
+
+
+def build_nl92(clearance, force=F92, ramp=False):
+    def build():
+        m = Model("L30", timesteps=TS)
+        m.elset("Balk", "Staal")
+        _e, n = linemesh(m, "Balk", 4, (0, 0, 0), (L92, 0, 0))
+        m.mat("Staal", '<geometric type="RectBar" recta="0.02 m" '
+              'rectb="0.03 m" />', '<mechanical type="Isotropic" '
+              'youngsmodulus="210000 MPa" poissonratio="0.3" />')
+        g = m.node(L92 + 0.01, 0, 0)
+        m.elset("Spleet", "GapMat")
+        m.elem("Spleet", "line2", [n[-1], g])
+        m.mat("GapMat", '<mechanical type="Gap" '
+              'closedstiffness="1000000000 N/m"%s />'
+              % (' initialclearance="%g mm"' % (clearance * 1e3)
+                 if clearance else ""))
+        m.node_selection("Vast", [n[0]])
+        m.node_selection("Tip", [n[-1]])
+        m.node_selection("Grond", [g])
+        m.add('<fixed selection="Vast" />')
+        for d in ("x", "y", "z"):
+            m.add('<displacement selection="Grond"><value>0 mm</value>'
+                  '<x>%d</x><y>%d</y><z>%d</z></displacement>'
+                  % (d == "x", d == "y", d == "z"))
+        fx = ('<x time="0 s">0 N</x><x time="1 s">%r N</x>' % force if ramp
+              else '<x>%r N</x>' % force)
+        m.add('<force selection="Tip">%s<y>0 N</y><z>0 N</z></force>' % fx)
+        return m
+    return build
+
+
+def _nl92_tip(r, t=1.0):
+    return r.at("displx", (L92, 0, 0), time=_t(r, t))
+
+
+TESTS += [
+    Case("NL-92", GROUP, "Gap sluit direct (geen speling), tegen Mecway 35",
+         "nonlin_static_3d", build_nl92(0.0),
+         [Check("u_x tip", _nl92_tip, ref=F92 / (K92 + EAL92), tol=1e-6,
+                unit="m", in_series=False,
+                source="F / (k + EA/L), gap gesloten"),
+          Check("u_x tip t.o.v. Mecway 35", _nl92_tip,
+                ref=0.00088809946714, tol=1e-6, unit="m", in_series=False,
+                source="Mecway 35 interne solver, Static 3D (GUI, "
+                "weergegeven 0,00088809946714032 m)")],
+         note="DIS_CHOC; de grondknoop met Displacements (geen Fixed, "
+              "KNOWN_BUGS 135)."),
+    Case("NL-92b", GROUP, "Gap met speling 5 mm", "nonlin_static_3d",
+         build_nl92(C92, ramp=True),
+         [Check("u_x tip t = 0,5 (open)", lambda r: _nl92_tip(r, 0.5),
+                ref=0.5 * F92 / EAL92, tol=1e-6, unit="m", in_series=False,
+                source="0,5 F L/EA, gap nog open (dicht vanaf t = 0,63)"),
+          Check("u_x tip t = 1 (dicht)", _nl92_tip,
+                ref=C92 + (F92 - EAL92 * C92) / (K92 + EAL92), tol=1e-6,
+                unit="m", in_series=False,
+                source="c + (F - EA/L c) / (k + EA/L)")],
+         note="initialclearance: in Mecway alleen voor CCX (manual par. "
+              "7.10.2); niet met Mecway vergeleken."),
+    Case("NL-92c", GROUP, "Gap getrokken: open, geen stijfheid",
+         "nonlin_static_3d", build_nl92(0.0, -F92),
+         [Check("u_x tip", _nl92_tip, ref=-F92 / EAL92, tol=1e-6, unit="m",
+                in_series=False, source="-F L/EA, gap open")],
+         note="Eenzijdig: de gap draagt geen trek."),
 ]
