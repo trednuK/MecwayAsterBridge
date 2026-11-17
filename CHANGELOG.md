@@ -34,21 +34,27 @@
   34, 46, 54, 55, 58, 63, 64, 65, 106, 107, 121, 123, 124 and 131 corrected after a desk
   review against the code or headless runs.
 
-## V2026.13 – 13 November 2026
+## V2026.13 – 17 November 2026
 
-First results of the S46 review of all KNOWN_BUGS items (real bug or test setting, re-measured
-with Mecway 35 and Code-Aster 17.4): three new WARNINGs (an isotropic material without Young's
-modulus, bonded shell faces, linear buckling with DKT shells), items 1, 2, 128 and 135
-re-measured and corrected, item 82 removed, and the default `lin_solver_resi` 1e-5 instead of
-1e-6. Tying bonded shells with their lever arm is planned as step S47. Behaviour change: the
-linear solves of linear static, the imperfection of nonlinear static, the prestress of modal
-and the static step of buckling stop with `FACTOR_57` only above an estimated error of 1e-5, so
-fine meshes of thin parts now compute (KNOWN_BUGS 138, found and fixed in this release).
-Measured with Code-Aster 17.4 and Mecway 35 headless and offline tests; the new WARNINGs and
-the default are NOT checked in the Mecway window. The generated `.comm` of 293 of the 578
-comparable verification cases changes (the `RESI_RELA` of the linear solves); those plus the
-fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (KNOWN_BUGS 83,
-108, 115, as before), 0 NOK/FOUT. No status change.
+2D and axisymmetric models get much further: nonlinear static (plasticity, large deformations)
+and contact between edges of plane elements (also friction), through the line
+`**ASTER-PLANE` in an L30/S30 model (contact in L30 only), and *Thermal stress* in Static 2D and Static
+Axisymmetric (STAPPENPLAN S44a-c), with a rewritten 2D guide: a decision table of the two
+input routes, worked examples on the repo's model files, figures and the exact messages.
+Linear static and thermal runs keep their results after Code-Aster's time limit (S45 phase
+1). The S46 review of all KNOWN_BUGS items (real bug or test setting, re-measured with
+Mecway 35 and Code-Aster 17.4) brings new WARNINGs (an isotropic material without Young's
+modulus, bonded shell faces, linear buckling with DKT shells or an eccentric general section,
+harmonic stresses with hysteretic damping, friction on held slave nodes), several items
+re-measured, corrected or removed, and the default `lin_solver_resi` 1e-5 instead of 1e-6.
+Behaviour changes: the linear solves stop with `FACTOR_57` only above an estimated error of
+1e-5 (KNOWN_BUGS 138), a pinned support on several nodes in 2D holds the mean displacement as
+in Mecway (KNOWN_BUGS 134), an element offset is an ERROR in every 2D analysis (also S20/SA0),
+and `MECA_STATIQUE` runs with `OPTION='SANS'` followed by the same
+`CALC_CHAMP` of the stresses. Measured with Code-Aster 17.4 and Mecway 35 headless and offline
+tests; NOT checked in the Mecway window. Full regression on c5c459f: 3168 of 3174 checks OK
+(607 test cases), 6 BEKEND (KNOWN_BUGS 43, 83, 108, 115, as before), 0 NOK/FOUT, no status
+change.
 
 - **Default `lin_solver_resi` 1e-5** (was 1e-6, Code-Aster's default; KNOWN_BUGS 138, found and
   fixed in this release): a 160 x 32 quad4 plate and a 7281-node hex20 lap stopped with
@@ -73,6 +79,11 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   profiles (T beam of BU-43c: DKT only negative factors, `COQUE_3D` 26.64 / -19.91, Mecway on
   the same mesh 27.26 / 20.34). The WARNING names `COQUE_3D` (other advice when `COQUE_3D` fell
   back to DKT); DKT stays the default. Modal and buckling §3.5 and §4.
+- **Buckling WARNING also for an eccentric general section** (KNOWN_BUGS 115): a General
+  section whose `ASTER-SECTIE` line puts the shear centre off the centroid (distance above
+  0.1 sqrt(A), as `bridge_custom`) gets the WARNING of T, C and L profiles with
+  `POU_D_E`/`POU_D_T`: the geometric stiffness takes torsion about the centroid. The advice
+  names `COQUE_3D` shells; the buckling factor of such a section is NOT measured.
 - **KNOWN_BUGS re-measured and corrected**: item 1 (in Mecway 35, Mecway's hex8 is always
   incompatible-mode, whatever `<incompatiblehex8>` says; Mecway 35 values), item 2 (the shell
   difference is discretisation: Mecway and DKT/`COQUE_3D` approach each other within ~0.1%),
@@ -97,8 +108,8 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   the thickness or 360 degrees in every step. Verification PL-30 … PL-36: Hill's thick cylinder
   (perfect plasticity) in plane strain and axisymmetric within 2%, first yield at a hole in
   plane stress +1.8%, the Code-Aster test case ssnp159b through the bridge equal to its values.
-  Not yet: the failure loop and contact in 2D; opening such a result in the Mecway window is NOT
-  checked. A plastic material in S20/SA0 now gives a WARNING (Mecway's 2D types are linear).
+  Not yet: the failure loop in 2D (contact: see the next item); opening such a result in the
+  Mecway window is NOT checked. A plastic material in S20/SA0 now gives a WARNING (Mecway's 2D types are linear).
   2D docs §1.4.
 - **Contact in 2D and axisymmetric** (STAPPENPLAN S44b): with `**ASTER-PLANE` in Nonlinear
   Static (L30) a *Contact* between edges of the plane elements becomes `DEFI_CONTACT` on edge
@@ -130,6 +141,14 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   analyses, and the thermal solve with filler material, *Thermal stress* or adaptive
   refinement (STAPPENPLAN S45b, low priority). Error messages `SUPERVIS_63`, settings for
   contact and nonlinear §2.7.
+- **Checks of the 2D input** (S44a): an *Element offset* is now an ERROR in every 2D analysis,
+  also Static 2D/Axisymmetric (S20/SA0, which computed with it before; the offset arms would
+  add nodes outside the XY plane). `**ASTER-PLANE` without a value, or written without the
+  hyphen (`#ASTER PLANE ...`), stops the run with an ERROR.
+- **KNOWN_BUGS 140 (new)**: with `DEFORMATION='GDEF_LOG'` the sum of `REAC_NODA` is about 2e-4
+  off the applied force (Code-Aster's behaviour, measured on PL-32).
+- **README and user guide**: the bridge is provided without warranty; check results
+  independently.
 - **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
   plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
 - **Pinned support on several nodes in 2D holds the mean displacement** (KNOWN_BUGS 134):
@@ -148,6 +167,10 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   by *Displacement* Mecway 35 equals the bridge in a modal analysis and in a dynamic response
   with a damper (Newmark, to 1e-7; new verification DY-04a/b); earlier failures came from a
   *Fixed support* on spring-only nodes, which Mecway ignores.
+- **KNOWN_BUGS 41 removed**: an imposed displacement from a time table with kinks off the
+  explicit step (`TCHAMWA`, `DIFF_CENT`) follows the table: the kinks become `INTERVALLE`
+  boundaries, the end face is within 4e-13 m, also with kinks 2 to 3 steps apart (new
+  verification DY-20d/e).
 - **2D/axisymmetric docs**: a decision table of the two input routes, step-by-step examples with
   the model files, new figures (route A/B, tube slice, plate with hole, contact edges) and the
   exact messages.

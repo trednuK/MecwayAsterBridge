@@ -684,10 +684,10 @@ End condition of a tube in `AXIS`: an end edge that is held axially (*Displaceme
 is plane and fixed; an end edge without a support is free but does not stay plane. A long
 tube with free ends (generalised plane strain: plane ends that may move axially, axial
 resultant zero) needs an end edge that stays plane: put on that edge (here the face
-selection `Top`) in the custom model definition
+selection `Boven`, Dutch for top) in the custom model definition
 
 ```
-#ASTER plane = AFFE_CHAR_MECA(MODELE=model, LIAISON_UNIF=_F(GROUP_MA='<<Top>>', DDL='DY'))
+#ASTER plane = AFFE_CHAR_MECA(MODELE=model, LIAISON_UNIF=_F(GROUP_MA='<<Boven>>', DDL='DY'))
 #ASTER-EXCIT plane
 ```
 

@@ -97,19 +97,15 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 10 november 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `821c58a`
-(voor V2026.9; Code-Aster 17.4): 579 testcases, 3072 controles, 3066 OK, 6 BEKEND, 0 NOK/FOUT.
-Nieuw ten opzichte van de vorige tabel (546 testcases, run op `373d13a` met losse aanvullingen)
-zijn 33 testcases en 90 controles: spanningen en reacties van `POU_D_TG` uit één elastische
-stap (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b; KNOWN_BUGS 123), spanning over
-balkdoorsneden (LS-97a .. LS-97l, S41) en niet-lineaire knik met grote-rotatiebalken
-(NK-05 .. NK-10, issue #10). Geen statuswijziging ten opzichte van de vastgelegde resultaten
-(`bfa15fa`) en van een volledige run op `f4a51aa` (zelfde aantallen). FEM-waarden die meer
-dan 0,1 % verschillen zijn grootheden dicht bij nul (fasen van de orde 1e-10, sommen van
-reacties van de orde 1e-12, K_II van de orde 1e-7), plus de verschillen t.o.v. Mecway van
-CY-01/CY-03 (5,3e-3 → 5,2e-3) en het verval van AI-03 (+0,2 %), die van run tot run iets
-wisselen en ruim binnen de tolerantie blijven.
+Stand 17 november 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `c5c459f`
+(V2026.13; Code-Aster 17.4): 607 testcases, 3174 controles, 3168 OK, 6 BEKEND, 0 NOK/FOUT.
+Nieuw ten opzichte van de vorige tabel (579 testcases, run op `821c58a`) zijn 28 testcases en
+102 controles: 2D en axisymmetrisch (PL-07 pinned support als gemiddelde, PL-20 .. PL-28
+thermische spanning, PL-30 .. PL-36 niet-lineair statisch, PL-40 .. PL-43, PL-45, PL-46 contact; S44) en
+dynamica (DY-04a/b veren en dempers tegen Mecway, DY-20d/e tijdtabellen met knikken buiten de
+stap). Geen statuswijziging ten opzichte van de vastgelegde resultaten (`a2f0e43`); daar
+verschilt alleen het verval van AI-06 (2e-6 relatief), ruim binnen de tolerantie.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -119,7 +115,7 @@ wisselen en ruim binnen de tolerantie blijven.
 | Akoestiek impedantie | 10 | 227 | 227 | 0 |
 | Cyclische symmetrie | 6 | 171 | 171 | 0 |
 | Breukmechanica | 14 | 63 | 62 | 1 |
-| Dynamica | 16 | 47 | 47 | 0 |
+| Dynamica | 20 | 53 | 53 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 15 | 53 | 53 | 0 |
 | Knik | 37 | 94 | 93 | 1 |
@@ -140,9 +136,9 @@ wisselen en ruim binnen de tolerantie blijven.
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
 | Orthotroop | 19 | 174 | 174 | 0 |
-| 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
+| 2D en axisymmetrisch | 43 | 161 | 161 | 0 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **579** | **3072** | **3066** | **6** |
+| **Totaal** | **607** | **3174** | **3168** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -152,6 +148,10 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
   hex20-volumes stopt (NL-03a, 3 controles). Gebruik PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I uit `CALC_G_XFEM` op een gekromd front +5,3 % (BR-10, 1 controle,
   tolerantie 5 %). Gebruik daar K uit `POST_K1_K2_K3` (+1,6 %) of uit G (+1,0 %).
+- KNOWN_BUGS 108: randlast op een schaal met element offset, de doorbuiging van de tip naast
+  Mecway (LS-67, 1 controle).
+- KNOWN_BUGS 115: knik van een C-kolom met balken mist de buig-torsieknik (BU-35, 1 controle,
+  +57%).
 
 **Fouten in de bridge die deze verificatie vond en die zijn opgelost**:
 - Foutschatter: Code-Aster's `ERME` rekent `FORCE_FACE` met het omgekeerde teken (blok onder
@@ -865,6 +865,11 @@ tolerantie 1e-6).
 - **PL-06** (ring r = 0,1 … 0,2 m, h = 20 mm, axisymmetrisch): knoopkracht, kracht op een
   rand, radiale traction, zwaartekracht langs Y en centrifugaalkracht om Y: Σ R_y =
   −3144,23 N exact, massa ρπ(b² − a²)h exact; u_r en u_y = Mecway.
+- **PL-07** (plaat 100 × 100 mm, t = 10 mm, vlakke spanning, quad4 10 × 10, ν = 0,3, trek
+  10 MPa op de rechterrand, *Pinned support* op de 11 knopen van de linkerrand; KNOWN_BUGS 134):
+  het gemiddelde van u_x en u_y op de linkerrand is 0 (≤ 1e-12 m), u_x van de rechterrand en de
+  grootste u_y van de linkerrand = Mecway 35 (headless; +0,03%). Mecway houdt bij een pinned
+  support op knopen het ongewogen gemiddelde vast, niet elke knoop.
 
 - **PL-10** (Dynamic Response 2D, strook 1 m × 50 mm, vlakke spanning, ν = 0, quad8
   40 × 1, staptraction 10 MPa, Newmark-stap T/200): periode van de tip 4L/c = 7,709e-4 s

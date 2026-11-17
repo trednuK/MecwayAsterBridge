@@ -95,19 +95,15 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 10 November 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `821c58a`
-(before V2026.9; Code-Aster 17.4): 579 test cases, 3072 checks, 3066 OK, 6 BEKEND (known),
-0 NOK/FOUT. New compared with the previous table (546 test cases, run on `373d13a` with
-separate additions) are 33 test cases and 90 checks: stresses and reactions of `POU_D_TG`
-from one elastic step (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b; KNOWN_BUGS
-123), stress over beam sections (LS-97a .. LS-97l, S41) and nonlinear buckling with large
-rotation beams (NK-05 .. NK-10, issue #10). No status change compared with the stored
-results (`bfa15fa`) and with a full run on `f4a51aa` (same counts). FEM values that differ by
-more than 0.1% are quantities close to zero (phases of order 1e-10, sums of reactions of
-order 1e-12, K_II of order 1e-7), plus the differences against Mecway of CY-01/CY-03
-(5.3e-3 → 5.2e-3) and the decay of AI-03 (+0.2%), which vary slightly from run to run and
-stay well within the tolerance.
+Status 17 November 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `c5c459f`
+(V2026.13; Code-Aster 17.4): 607 test cases, 3174 checks, 3168 OK, 6 BEKEND (known),
+0 NOK/FOUT. New compared with the previous table (579 test cases, run on `821c58a`) are 28
+test cases and 102 checks: 2D and axisymmetric (PL-07 pinned support as the mean, PL-20 ..
+PL-28 thermal stress, PL-30 .. PL-36 nonlinear static, PL-40 .. PL-43, PL-45, PL-46 contact; S44) and
+dynamics (DY-04a/b springs and dampers against Mecway, DY-20d/e time tables with kinks off the
+step). No status change compared with the stored results (`a2f0e43`); there only the decay of
+AI-06 differs (2e-6 relative), well within the tolerance.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -117,7 +113,7 @@ stay well within the tolerance.
 | Acoustics impedance | 10 | 227 | 227 | 0 |
 | Cyclic symmetry | 6 | 171 | 171 | 0 |
 | Fracture mechanics | 14 | 63 | 62 | 1 |
-| Dynamics | 16 | 47 | 47 | 0 |
+| Dynamics | 20 | 53 | 53 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 15 | 53 | 53 | 0 |
 | Buckling | 37 | 94 | 93 | 1 |
@@ -138,9 +134,9 @@ stay well within the tolerance.
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
 | Orthotropic material | 19 | 174 | 174 | 0 |
-| 2D and axisymmetric | 19 | 65 | 65 | 0 |
+| 2D and axisymmetric | 43 | 161 | 161 | 0 |
 | Bolt pretension | 13 | 87 | 87 | 0 |
-| **Total** | **579** | **3072** | **3066** | **6** |
+| **Total** | **607** | **3174** | **3168** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
@@ -149,6 +145,10 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
   hex20 solids stops (NL-03a, 3 checks). Use PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I from `CALC_G_XFEM` on a curved front +5.3 % (BR-10, 1 check,
   tolerance 5 %). Use K from `POST_K1_K2_K3` (+1.6 %) or from G (+1.0 %) there.
+- KNOWN_BUGS 108: an edge load on a shell with an element offset, the tip deflection next to
+  Mecway (LS-67, 1 check).
+- KNOWN_BUGS 115: buckling of a C column with beams misses flexural-torsional buckling (BU-35,
+  1 check, +57%).
 
 **Bridge errors found by this verification and fixed**:
 - Error estimator: Code-Aster's `ERME` computes `FORCE_FACE` with the reversed sign (block under
@@ -857,6 +857,11 @@ tolerance 1e-6).
 - **PL-06** (ring r = 0.1 … 0.2 m, h = 20 mm, axisymmetric): nodal force, force on an edge,
   radial traction, gravity along Y and centrifugal force about Y: Σ R_y = −3144.23 N exact,
   mass ρπ(b² − a²)h exact; u_r and u_y = Mecway.
+- **PL-07** (plate 100 × 100 mm, t = 10 mm, plane stress, quad4 10 × 10, ν = 0.3, tension
+  10 MPa on the right edge, *Pinned support* on the 11 nodes of the left edge; KNOWN_BUGS 134):
+  the mean of u_x and u_y on the left edge is 0 (≤ 1e-12 m), u_x of the right edge and the
+  largest u_y of the left edge = Mecway 35 (headless; +0.03%). For a pinned support on nodes
+  Mecway holds the unweighted mean, not every node.
 
 - **PL-10** (Dynamic Response 2D, strip 1 m × 50 mm, plane stress, ν = 0, quad8 40 × 1,
   step traction 10 MPa, Newmark step T/200): period of the tip 4L/c = 7.709e-4 s −0.06%,
