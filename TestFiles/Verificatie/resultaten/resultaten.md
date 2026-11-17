@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge f61b424, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 5e5959a, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3158 van 3164 controles binnen de tolerantie** (602 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3161 van 3167 controles binnen de tolerantie** (603 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2590,6 +2590,9 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge f61b424, Code-Aster 17.4
 | PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | massa (BRIDGE_STATCHECK) | 14.703 kg | 14.703 | -0.00% | 0.0001% | OK |
 | PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | u_r(b, h) = Mecway | 2.4211e-06 m | 2.4211e-06 | +0.00% | 0.0001% | OK |
 | PL-06 | Belastingtypen axisymmetrisch (AXIS): knoopkracht, kracht op rand, traction, zwaartekracht, centrifugaal | u_y(a, h) = Mecway | -1.4964e-07 m | -1.4964e-07 | +0.00% | 0.0001% | OK |
+| PL-07 | Pinned support op 11 knopen in 2D: ongewogen gemiddelde (KNOWN_BUGS 134) | u_x rechterrand (gemiddeld) | 4.8529e-06 m | 4.8529e-06 | +0.00% | 0.01% | OK |
+| PL-07 | Pinned support op 11 knopen in 2D: ongewogen gemiddelde (KNOWN_BUGS 134) | gemiddelde u_x linkerrand | 0 m | 1.6243e-23 | 1.6243e-23 | 1e-12 m | OK |
+| PL-07 | Pinned support op 11 knopen in 2D: ongewogen gemiddelde (KNOWN_BUGS 134) | gemiddelde u_y linkerrand | 0 m | 4.8472e-23 | 4.8472e-23 | 1e-12 m | OK |
 | PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | periode tip | 7.7090e-04 s | 7.7042e-04 | -0.06% | 1% | OK |
 | PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | gemiddelde u_x tip | 4.7619e-05 m | 4.7620e-05 | +0.00% | 1% | OK |
 | PL-10 | Staafgolf in een strook, vlakke spanning (D20), staplast | verloop = Mecway | 0 - | 3.2101e-08 | 3.2101e-08 | 1e-06 - | OK |

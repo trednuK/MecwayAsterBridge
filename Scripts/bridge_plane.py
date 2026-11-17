@@ -541,17 +541,32 @@ def convert_bc(model_data, bc, faces, skin_groups):
                                      ", ".join(sorted(kinds))))
         return True
     if btype == "pinnedsupport":
-        # docs 2D par. 2.3: DDL_IMPO DX = DY = 0 on the nodes or the edges.
-        # Not the mean-zero LIAISON_DDL of 3D (bridge_mesh._pinned_to_mean):
-        # that route also writes DZ, which a 2D node does not carry
-        # (Code-Aster 17.4: <EXCEPTION> CHARGES2_31), and it refuses edges.
+        # Mecway's pinned support holds the mean displacement (manual v35
+        # par. 9.3). Measured in 2D (Mecway 35 headless, 17 Nov 2026,
+        # KNOWN_BUGS 134): on nodes the unweighted mean, as in 3D
+        # (bridge_mesh._pinned_to_mean): a tension plate with the 11 nodes
+        # of an edge pinned gives +1.912% against sigma L / E in Mecway and
+        # in an own calculation with equal weights. Here LIAISON_DDL on DX
+        # and DY only (a 2D node has no DZ, CHARGES2_31). On edges Mecway
+        # holds nothing (a mechanism); the bridge holds every node there.
         if edges:
             n = len(set(nid for f in model_data.get(
                 "group_face_list", {}).get(sel, []) for nid in f["nodes"]))
             bc["aster_target"] = "GROUP_MA"
         elif sel in model_data.get("node_groups", {}):
-            n = len(model_data["node_groups"][sel])
+            ids = [int(str(i).lstrip("N"))
+                   for i in model_data["node_groups"][sel]]
+            n = len(ids)
             bc["aster_target"] = "GROUP_NO"
+            if n > 1:
+                bc["aster_keyword"] = "LIAISON_DDL"
+                bc["aster_dict"] = OrderedDict()
+                bc["pin_weights"] = [(i, 1.0 / n) for i in ids]
+                bc["pin_ddl"] = ("DX", "DY")
+                bc["_plane"] = True
+                log("INFO: Pinned support '{0}': mean displacement zero "
+                    "over {1} nodes (LIAISON_DDL DX, DY; 2D).".format(sel, n))
+                return True
         else:
             # element selection: refused, as in 3D (_pinned_to_mean)
             _skip(model_data, bc, tr("pinned support alleen op knopen en "
@@ -561,39 +576,19 @@ def convert_bc(model_data, bc, faces, skin_groups):
         bc["aster_keyword"] = "DDL_IMPO"
         bc["aster_dict"] = OrderedDict([("DX", 0.0), ("DY", 0.0)])
         bc["_plane"] = True
-        # Measured (Mecway 35 headless, 17 Nov 2026, KNOWN_BUGS 134): on
-        # several nodes Mecway keeps the mean displacement at zero, but its
-        # result is not that of a mean constraint (tension plate +1.9%
-        # against the exact sigma L / E that any mean constraint allows,
-        # also with the rotation held; cause NOT investigated); on edges it
-        # holds nothing. Design choice: DDL_IMPO on every node, as a
-        # Displacement in X and Y, which gives the same result in both.
-        if n > 1 and edges:
+        if n > 1:
             log(tr("WARNING: Pinned support op rand '{0}' in een "
                    "2D-analyse: de bridge houdt elk van de {1} knopen vast "
                    "(DX = DY = 0). Mecway houdt in 2D op randen niets vast "
-                   "en geeft op knopen een ander resultaat dan de gemiddelde "
-                   "verplaatsing (gemeten, Mecway 35); gebruik Displacement "
-                   "in X en Y voor hetzelfde resultaat (KNOWN_BUGS 134).",
+                   "(gemeten, Mecway 35; op knopen de gemiddelde "
+                   "verplaatsing); gebruik Displacement in X en Y of een "
+                   "knoopselectie (KNOWN_BUGS 134).",
                    "WARNING: Pinned support on edge '{0}' in a 2D analysis: "
                    "the bridge holds each of the {1} nodes (DX = DY = 0). In "
-                   "2D Mecway holds nothing on edges and gives on nodes a "
-                   "result other than the mean displacement (measured, "
-                   "Mecway 35); use Displacement in X and Y for the same "
-                   "result (KNOWN_BUGS 134).").format(sel, n))
-        elif n > 1:
-            log(tr("WARNING: Pinned support op '{0}' in een 2D-analyse: elk "
-                   "van de {1} knopen wordt vastgehouden (DX = DY = 0). "
-                   "Mecway houdt de gemiddelde verplaatsing op nul, maar "
-                   "zijn resultaat wijkt daar ook van af (gemeten, Mecway "
-                   "35); gebruik Displacement in X en Y voor hetzelfde "
-                   "resultaat (KNOWN_BUGS 134).",
-                   "WARNING: Pinned support on '{0}' in a 2D analysis: "
-                   "each of the {1} nodes is held (DX = DY = 0). Mecway "
-                   "keeps the mean displacement at zero, but its result "
-                   "also differs from that (measured, Mecway 35); use "
-                   "Displacement in X and Y for the same result (KNOWN_BUGS "
-                   "134).").format(sel, n))
+                   "2D Mecway holds nothing on edges (measured, Mecway 35; "
+                   "on nodes the mean displacement); use Displacement in X "
+                   "and Y or a node selection (KNOWN_BUGS 134).").format(
+                       sel, n))
         log("INFO: Pinned support '{0}' -> DDL_IMPO DX=DY=0 (2D).".format(sel))
         return True
     if btype == "surfacepressure":

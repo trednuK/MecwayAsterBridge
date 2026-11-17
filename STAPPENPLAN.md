@@ -2666,7 +2666,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 116 | Element orientation card: parts not compared with Mecway | *draft*: low (unverified comparison) |  |  |
 | 118 | Results after `DVP_2` not seen in a real DVP_2 run | *draft*: low (rare failure path) |  |  |
 | 120 | Hysteretic damping: not on all discrete elements, stresses not checked | *draft*: low (niche damping) |  |  |
-| 134 | Pinned support in 2D holds every node; Mecway's result is not reproducible | low; real: settings checked (tension plate, pinned on 11 edge nodes, also with the rotation held by *Displacement* Y on a corner; reference *Displacement* X, Y); independent: a mean constraint allows the exact σL/E, Mecway gives +1.91% with zero mean (not a mean constraint, cause NOT investigated), nothing on edge faces; bridge every node (= *Displacement*) | item rewritten and moved to "Translation that works differently"; WARNING texts for nodes and edges advise *Displacement* (NL+EN); docs 2D §2.3 NL+EN; behaviour kept (design choice) | this commit |
+| 134 | Pinned support in 2D holds every node, not the mean (now: on edges) | low; real: settings checked (tension plate, pinned on 11 edge nodes, rotation held by *Displacement* Y on a corner); independent: an own Q4 calculation with an equal-weight mean gives +1.912%, Mecway 35 the same 4.85293e-6 m; on edge faces Mecway holds nothing | fixed for nodes: `LIAISON_DDL` mean on DX, DY (`pin_ddl`), verification PL-07 (= Mecway), unit test; edges keep every node with a WARNING; item narrowed and moved to "Translation that works differently"; docs 2D §2.3 NL+EN; CHANGELOG V2026.13 | this commit |
 
 **Group D – Not translated** (24 items)
 

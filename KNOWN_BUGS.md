@@ -690,21 +690,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    `DIS_CHOC`), and not converging stops the run; not measured.
    EDF: not known whether this has been reported (no public issue list).
 
-134\. **Pinned support in 2D holds every node; Mecway's result is not reproducible**
-   (confirmed, Mecway 35 headless, 17 Nov 2026; `bridge_plane.convert_bc`). In
-   S20/SA0/D20/DA0 a pinned support on nodes or edges becomes `DDL_IMPO` DX = DY = 0 on every
-   node (docs 2D §2.3), with a WARNING when more than one node is held. Measured (square
-   plate 100 × 100 mm, Static 2D plane stress, ν = 0.3, uniform tension σ on the right edge,
-   pinned support on the 11 nodes of the left edge): Mecway keeps the mean displacement of
-   those nodes at zero (to 1e-23 m), lets them move (u_y ±1.30e-6 m, u_x up to 7.6e-6 m) and
-   gives u_x(L) +1.91% against σL/E, also with *Displacement* Y on one corner node to hold
-   the rotation (then u_x up to 1.3e-6 m). Any mean constraint, whatever the weights,
-   allows the exact uniform field (u_x(L) = σL/E, u_y = ±νσ/E · 0.05 = ±0.714e-6 m), so
-   Mecway's result is not that of a mean constraint; cause NOT investigated. On the edge
-   as *faces* Mecway holds nothing (u ~ 1e9 m; the manual allows pinned only on nodes and
-   solid faces). The bridge holds every node (−1.27%, with the corner held −1.64%), equal to
-   *Displacement* in X and Y in both programs. Design choice: kept; the WARNING advises
-   *Displacement* in X and Y for the same result in both programs.
+134\. **Pinned support on edges in 2D: Mecway holds nothing, the bridge every node**
+   (confirmed, Mecway 35 headless, 17 Nov 2026; `bridge_plane.convert_bc`). On several
+   nodes the bridge now does what Mecway does: the unweighted mean displacement zero
+   (`LIAISON_DDL` on DX and DY with equal weights, as `bridge_mesh._pinned_to_mean` in 3D;
+   verification PL-07: tension plate with the 11 nodes of an edge pinned and the rotation
+   held by one *Displacement* Y, 4.85293e-6 m = Mecway, +1.912% against σL/E, equal to an
+   own Q4 calculation with equal weights; with consistent weights it would be exact). On the
+   edge as *faces* Mecway 35 holds nothing in 2D (u ~ 1e9 m; the manual allows pinned only on
+   nodes and solid faces); the bridge holds every node there with `DDL_IMPO` DX = DY = 0 and
+   a WARNING. A pinned support alone leaves the rotation free in 2D: Code-Aster stops with
+   `FACTOR_11`, Mecway gives an arbitrary rotation.
 
 135\. **Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge
    clamps** (confirmed, Mecway 35.0.9802 headless and Code-Aster 17.4; `bridge_bcs.FixedBC`).

@@ -55907,5 +55907,65 @@
    "schema": "NEWMARK"
   },
   "general": {}
+ },
+ "PL-07": {
+  "id": "PL-07",
+  "group": "2D en axisymmetrisch",
+  "title": "Pinned support op 11 knopen in 2D: ongewogen gemiddelde (KNOWN_BUGS 134)",
+  "analysis": "lin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "100 x 100 mm, 10 mm, quad4 10 x 10, nu 0.3, 10 MPa; sigma L / E = 4.7619e-06 m.",
+  "seconds": 5.9,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x rechterrand (gemiddeld)",
+    "fem": 4.852931036154633e-06,
+    "ref": 4.85293e-06,
+    "rel": 2.1351114328606018e-07,
+    "dev": 1.03615463258722e-12,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 35 headless; eigen Q4-berekening met gelijke gewichten +1,912% t.o.v. sigma L / E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "gemiddelde u_x linkerrand",
+    "fem": 1.624281930104127e-23,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.624281930104127e-23,
+    "ok": true,
+    "unit": "m",
+    "tol": null,
+    "tol_abs": 1e-12,
+    "source": "pinned support: gemiddelde verplaatsing 0",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "gemiddelde u_y linkerrand",
+    "fem": 4.8471946431571474e-23,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 4.8471946431571474e-23,
+    "ok": true,
+    "unit": "m",
+    "tol": null,
+    "tol_abs": 1e-12,
+    "source": "pinned support: gemiddelde verplaatsing 0",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 121,
+  "n_elem": 100,
+  "settings": {},
+  "general": {}
  }
 }

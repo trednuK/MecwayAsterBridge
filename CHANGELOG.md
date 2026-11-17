@@ -96,6 +96,16 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   contact and nonlinear §2.7.
 - **KNOWN_BUGS 139 (new)**: Mecway with CCX gives exactly half the thermal expansion of a shell
   plate under a temperature (Mecway's internal solver and the bridge give α ΔT x).
+- **Pinned support on several nodes in 2D holds the mean displacement** (KNOWN_BUGS 134):
+  measured in Mecway 35 (Static 2D), its pinned support on nodes is the unweighted mean, as in
+  3D; the bridge now writes `LIAISON_DDL` with equal weights on DX and DY instead of holding
+  every node (verification PL-07, equal to Mecway). On edges Mecway holds nothing in 2D; the
+  bridge keeps every node there with a WARNING. Behaviour change for 2D models with a pinned
+  support on several nodes.
+- **Springs and dampers compared with Mecway** (KNOWN_BUGS 47): with the ground nodes held
+  by *Displacement* Mecway 35 equals the bridge in a modal analysis and in a dynamic response
+  with a damper (Newmark, to 1e-7; new verification DY-04a/b); earlier failures came from a
+  *Fixed support* on spring-only nodes, which Mecway ignores.
 - **STAPPENPLAN**: user priorities of 11 Nov 2026 (S5b dropped, several steps later), the S46
   procedure with a progress table of all KNOWN_BUGS items, and the new step S47.
 

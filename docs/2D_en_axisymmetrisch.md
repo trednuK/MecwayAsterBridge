@@ -306,13 +306,15 @@ De massa in de log (`BRIDGE_STATCHECK`) is die van de hele dikte of van 360 grad
 
 ### 2.3 Voorwaarden
 
-`fixed`, `pinnedsupport`: `DDL_IMPO` DX = DY = 0; `displacement` langs X of Y:
+`fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` op meerdere knopen: de gemiddelde
+verplaatsing nul, `LIAISON_DDL` met gelijke gewichten op DX en DY (zoals Mecway, PL-07),
+op één knoop of op randen `DDL_IMPO` DX = DY = 0; `displacement` langs X of Y:
 `DDL_IMPO`; `symmetry` met normaal X of Y: `DDL_IMPO` DX = 0 of DY = 0. Componenten die
-het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg. Een pinned support op meer dan
-een knoop houdt elke knoop vast (WARNING). Mecway 35 houdt in 2D de gemiddelde verplaatsing
-van de knopen op nul, maar zijn resultaat wijkt ook af van dat van een voorwaarde
-op het gemiddelde, en op randen houdt het niets vast; voor hetzelfde resultaat in beide
-programma's: *Displacement* in X en Y (KNOWN_BUGS 134).
+het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg. Een pinned support op meerdere
+knopen laat de knopen ten opzichte van elkaar bewegen en samen draaien: zonder ander
+steunpunt tegen die rotatie is het model een mechanisme (Code-Aster stopt met
+`FACTOR_11`; Mecway geeft een willekeurige rotatie). Op randen houdt Mecway 35 in 2D niets
+vast; de bridge houdt daar elke knoop vast (WARNING; KNOWN_BUGS 134).
 
 ### 2.4 Dynamica (D20, DA0)
 

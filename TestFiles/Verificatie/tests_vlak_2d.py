@@ -601,3 +601,54 @@ for _c in TESTS:
             unit="-", in_series=False,
             source="max |bridge - Mecway| / max |Mecway| op de opgeslagen "
                    "tijden; Mecway 34 headless, eigen D20/DA0-oplossing"))
+
+
+# ------------------------------------------------------------------
+# PL-07 Pinned support on several nodes in 2D: the unweighted mean
+# (KNOWN_BUGS 134). Square plate L x L, plane stress, uniform tension on
+# the right edge; Pinned support on the 11 nodes of the left edge (Mecway:
+# mean displacement zero, manual v35 par. 9.3) and Displacement Y on the
+# lower right corner node to hold the rotation that the mean leaves free.
+# With equal weights every pinned node takes sigma A / 11, also the two
+# corner nodes, where a uniform traction has half: the plate is softer
+# than sigma L / E. An own Q4 calculation with an equal-weight mean gives
+# +1.912% (consistent weights: 0.000%); Mecway 35 headless 4.85293e-6 m
+# (17 Nov 2026), u_y of the left edge +-1.300e-6 m in both.
+L7, SIG7, N7 = 0.1, 1.0e7, 10
+U7 = SIG7 * L7 / 2.1e11
+MW_PL07 = 4.85293e-6
+
+
+def build_pl07():
+    m = Model("S20")
+    m.elset("Plaat", "Staal")
+    q = quadmesh(m, "Plaat", N7, N7, rect(0, L7, 0, L7), order=1)
+    m.mat("Staal", '<geometric type="Plate" thickness="10 mm" />', STEEL)
+    m.face_selection("Trek", q["edges"]["u1"])
+    m.add('<traction selection="Trek"><x>%g Pa</x><y>0 Pa</y><z>0 Pa</z>'
+          '</traction>' % SIG7)
+    m.node_selection("Links", sorted(q["nodes"]["u0"]))
+    m.add('<pinnedsupport selection="Links" />')
+    right = sorted(q["nodes"]["u1"])
+    m.node_selection("Rechts", right)
+    m.node_selection("Hoek", [right[0]])
+    m.add('<displacement selection="Hoek"><value>0 m</value><x>0</x>'
+          '<y>1</y><z>0</z></displacement>')
+    return m
+
+
+TESTS.append(Case(
+    "PL-07", GROUP, "Pinned support op 11 knopen in 2D: ongewogen gemiddelde "
+    "(KNOWN_BUGS 134)", "lin_static_3d", build_pl07,
+    [Check("u_x rechterrand (gemiddeld)",
+           lambda r: r.mean("displx", "Rechts"), ref=MW_PL07, tol=1e-4,
+           unit="m", source="Mecway 35 headless; eigen Q4-berekening met "
+                            "gelijke gewichten +1,912% t.o.v. sigma L / E"),
+     Check("gemiddelde u_x linkerrand", lambda r: r.mean("displx", "Links"),
+           ref=0.0, tol_abs=1e-12, unit="m",
+           source="pinned support: gemiddelde verplaatsing 0"),
+     Check("gemiddelde u_y linkerrand", lambda r: r.mean("disply", "Links"),
+           ref=0.0, tol_abs=1e-12, unit="m",
+           source="pinned support: gemiddelde verplaatsing 0")],
+    note="100 x 100 mm, 10 mm, quad4 10 x 10, nu 0.3, 10 MPa; "
+         "sigma L / E = %.4e m." % U7))

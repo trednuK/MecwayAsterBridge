@@ -16,8 +16,9 @@
 #   - finish_bcs: DZ dropped, FORCE_NODALE / thickness or / 2 pi, gravity
 #     out of the plane skipped;
 #   - _edge_measure: revolved area 2 pi int(r dl) and length x t;
-#   - pinned support on edges and on several nodes (S20, SA0): DDL_IMPO
-#     DX = DY = 0 (docs 2D par. 2.3), no LIAISON_DDL with DZ;
+#   - pinned support on edges (S20, SA0): DDL_IMPO on every node with a
+#     WARNING (docs 2D par. 2.3); on several nodes the mean (LIAISON_DDL
+#     on DX and DY only, no DZ; KNOWN_BUGS 134);
 #   - thermal stress (S44c): Temperature / Node temperature pass in S20/SA0
 #     (lin_static_3d), the SA0 thickness WARNING stays, D20/DA0 refused;
 #     a .comm with AFFE_VARC TEMP on the AXIS model;
@@ -364,14 +365,25 @@ def test_pinned():
             text = _liml(atype, geo, loads='  <pinnedsupport selection='
                          '"%s" />\n%s' % (sel, extra))
             comm = _comm(text)
-            want = "_F({0}='{1}', DX=0.0, DY=0.0)".format(target, sel)
-            check(want in comm and "LIAISON_DDL" not in comm and
-                  not _errors(), "{0} pinned on '{1}': {2} ({3})".format(
-                      atype, sel, want, _errors()[:1]))
-            check([m for m in LOG if m.startswith("WARNING") and
-                   "'{0}'".format(sel) in m and "mean" in m],
-                  "{0} pinned on '{1}' (2 nodes): WARNING about Mecway's "
-                  "mean displacement".format(atype, sel))
+            warn = [m for m in LOG if m.startswith("WARNING") and
+                    "'{0}'".format(sel) in m and "mean" in m]
+            if target == "GROUP_MA":
+                # edge: every node held (Mecway holds nothing), WARNING
+                want = "_F({0}='{1}', DX=0.0, DY=0.0)".format(target, sel)
+                check(want in comm and "LIAISON_DDL" not in comm and
+                      not _errors(), "{0} pinned on '{1}': {2} ({3})".format(
+                          atype, sel, want, _errors()[:1]))
+                check(warn, "{0} pinned on edge '{1}': WARNING".format(
+                    atype, sel))
+            else:
+                # nodes: the unweighted mean, DX and DY only (KNOWN_BUGS 134)
+                check("LIAISON_DDL" in comm and "DDL=('DX',)*2" in comm and
+                      "DDL=('DY',)*2" in comm and "'DZ'" not in comm and
+                      "COEF_MULT=(0.5, 0.5" in comm and not _errors(),
+                      "{0} pinned on 2 nodes: LIAISON_DDL mean of DX, DY "
+                      "({1})".format(atype, _errors()[:1]))
+                check(not warn, "{0} pinned on 2 nodes: no WARNING".format(
+                    atype))
     # element selection: refused with an ERROR (as in 3D), no GROUP_NO on an
     # element group
     comm = _comm(_liml("S20", PS, loads='  <pinnedsupport selection="E" />\n'

@@ -3352,6 +3352,8 @@ def _render_bc(bc, aster_dict=None):
     - pin_weights (pinned support, bridge_mesh._pinned_to_mean): per
       direction LIAISON_DDL sum(w_i * u_i) = 0 over the nodes. NOEUD
       instead of GROUP_NO: the order of the nodes must match COEF_MULT.
+      pin_ddl: the directions (default DX, DY, DZ; 2D: DX, DY, because a
+      2D node has no DZ, CHARGES2_31; bridge_plane.convert_bc).
     - Otherwise: _F(<target>='<groep>', key=value, ...); without selection
       (gravity) only the keys. aster_dict replaces bc["aster_dict"]
       (constant or time-dependent part, see _build_charges).
@@ -3363,7 +3365,7 @@ def _render_bc(bc, aster_dict=None):
         return ["_F(NOEUD={0},\n        DDL=('{1}',)*{2},\n"
                 "        COEF_MULT={3},\n        COEF_IMPO=0.0)".format(
                     names, ddl, len(pw), coefs)
-                for ddl in ("DX", "DY", "DZ")]
+                for ddl in bc.get("pin_ddl", ("DX", "DY", "DZ"))]
     if aster_dict is None:
         aster_dict = bc["aster_dict"]
     parts = ", ".join("{0}={1}".format(k, v) for k, v in aster_dict.items())
