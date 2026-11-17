@@ -282,6 +282,50 @@ res = CALC_CHAMP(
     FORCE=('REAC_NODA', ),
 )
 
+# Shells: stresses per layer (sub-points) -> extract top, middle
+# and bottom surface separately (POST_CHAMP EXTR_COQUE).
+# Axisymmetric shells (COQUE_AXIS): SIXX meridional, SIYY hoop;
+# von Mises is computed in aster_results_export (without SIXZ).
+res = CALC_CHAMP(
+    reuse=res,
+    RESULTAT=res,
+    GROUP_MA=('Buis',),
+    CONTRAINTE=('SIGM_ELNO', ),
+)
+
+res_sup = POST_CHAMP(
+    RESULTAT=res,
+    GROUP_MA=('Buis',),
+    EXTR_COQUE=_F(
+        NOM_CHAM=('SIGM_ELNO', ),
+        NUME_COUCHE=1,
+        NIVE_COUCHE='SUP',
+    ),
+)
+
+res_moy = POST_CHAMP(
+    RESULTAT=res,
+    GROUP_MA=('Buis',),
+    EXTR_COQUE=_F(
+        NOM_CHAM=('SIGM_ELNO', ),
+        NUME_COUCHE=1,
+        NIVE_COUCHE='MOY',
+    ),
+)
+
+res_inf = POST_CHAMP(
+    RESULTAT=res,
+    GROUP_MA=('Buis',),
+    EXTR_COQUE=_F(
+        NOM_CHAM=('SIGM_ELNO', ),
+        NUME_COUCHE=1,
+        NIVE_COUCHE='INF',
+    ),
+)
+
+# Forces and moments per length of shells (result field shell_forces).
+res_efs = CALC_CHAMP(RESULTAT=res, GROUP_MA=('Buis',), CONTRAINTE=('EFGE_ELNO', ))
+
 # Mass and reaction check (Aubry 2019, par. 4.13-4.14): mass,
 # centre of gravity and sum of REAC_NODA in the .mess
 import sys
@@ -330,7 +374,7 @@ aster_results_export.export_results(
                         'eps_inf', 'res_efs')
                        if k in globals()),
     failures=globals().get('_bz_events'),
-    precision='double', plane={'modelisation': 'AXIS', 'factor': 6.283185307179586})
+    precision='double', opt_in=['shell_stresses', 'shell_forces', 'principal_stresses'], plane={'modelisation': 'AXIS', 'factor': 6.283185307179586, 'axis_shells': True})
 
 
 # =====================================================

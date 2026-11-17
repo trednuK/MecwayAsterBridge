@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bf1946b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge a3c3736, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3261 van 3267 controles binnen de tolerantie** (636 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3299 van 3305 controles binnen de tolerantie** (637 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2668,6 +2668,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bf1946b, Code-Aster 17.4
 | PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_theta buitenwand | 1.3969e+08 Pa | 1.3987e+08 | +0.13% | 1% | OK |
 | PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_z binnenwand | -3.1809e+08 Pa | -3.1774e+08 | +0.11% | 1% | OK |
 | PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | sigma_z buitenwand | 4.1906e+07 Pa | 4.2054e+07 | +0.36% | 1% | OK |
+| PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | radial/hoop/axial/shearstressrz = stressxx/zz/yy/xy | 0 Pa | 0 | 0 | 1e-06 Pa | OK |
 | PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | som R_y onder (360 graden) | 9.2155e+06 N | 9.2155e+06 | -0.00% | 0.01% | OK |
 | PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | som R_y onder = Mecway | 9.2155e+06 N | 9.2155e+06 | -0.00% | 0.0001% | OK |
 | PL-24 | Dikwandige buis, ln-temperatuur, vlakke rek (AXIS) | u_r binnenwand = Mecway | 6.0531e-05 m | 6.0531e-05 | +0.00% | 0.0001% | OK |
@@ -2723,8 +2724,13 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bf1946b, Code-Aster 17.4
 | PL-36 | Vrije plaat, temperatuur als tijdtabel (L30 + #ASTER-PLANE C_PLAN) | u_x rechts t = 2 s | 2.4000e-04 m | 2.4000e-04 | -0.00% | 0.0001% | OK |
 | PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | contactdruk (gemiddeld, slave) | 1.2464e+07 Pa | 1.2465e+07 | +0.00% | 1% | OK |
 | PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | -sigma_r buitenring binnenwand | 1.2464e+07 Pa | 1.2441e+07 | -0.19% | 1% | OK |
+| PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | contactdruk buiten het contact (binnenwand binnenring) | 0 Pa | 0 | 0 | 12.4644 Pa | OK |
+| PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | contactstatus buiten het contact | 0 - | 0 | 0 | 1e-09 - | OK |
+| PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | hoopstress buitenring binnenwand | 4.4516e+07 Pa | 4.4522e+07 | +0.02% | 2% | OK |
 | PL-40 | Krimpverbinding twee ringen, axisymmetrisch (L30 + **ASTER-PLANE AXIS, contact) | u_r buitenring binnenwand | 3.2407e-05 m | 3.2412e-05 | +0.01% | 1% | OK |
 | PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | contactdruk (gemiddeld, slave) | 1.2464e+07 Pa | 1.2465e+07 | +0.01% | 1% | OK |
+| PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | contactdruk buiten het contact (binnenwand binnenring) | 0 Pa | 0 | 0 | 12.4644 Pa | OK |
+| PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | contactstatus buiten het contact | 0 - | 0 | 0 | 1e-09 - | OK |
 | PL-41 | Krimpverbinding twee ringen, vlakke rek (L30 + **ASTER-PLANE D_PLAN, contact) | u_r buitenring binnenwand | 3.2407e-05 m | 3.2406e-05 | -0.00% | 1% | OK |
 | PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | contactdruk (gemiddeld, slave AB) | 1.0000e+05 Pa | 99769 | -0.23% | 1% | OK |
 | PL-42 | ssnp121a: twee blokken in contact, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | contactdruk laagste knoop (hoeken A, B) | 1.0000e+05 Pa | 97043 | -2.96% | 5% | OK |
@@ -2736,6 +2742,12 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bf1946b, Code-Aster 17.4
 | PL-45 | Hertz-lijncontact cilinder op blok, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | piekdruk p0 (Hertz-profiel gefit) / p0_Hertz | 1 - | 1.0038 | +0.38% | 3% | OK |
 | PL-45 | Hertz-lijncontact cilinder op blok, vlakke rek (L30 + **ASTER-PLANE D_PLAN) | elementen over b (cilinder, minimaal 10) | 10 - | 10 | +0.00% | 1e-09 - | OK |
 | PL-46 | Wrijving: blok glijdt over blok, vlakke rek (L30 + **ASTER-PLANE D_PLAN, Coulomb 0,3) | |R_x / R_y| onder bij glijden | 0.3 - | 0.29958 | -0.14% | 1% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | contactdruk (gemiddeld, slave) | 4.9858e+07 Pa | 4.9866e+07 | +0.02% | 1% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | hoopstress buitenring binnenwand | 1.7806e+08 Pa | 1.7840e+08 | +0.19% | 2% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | hoopstress binnenring buitenwand | -1.2963e+08 Pa | -1.2925e+08 | +0.29% | 2% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | radialstress buitenring binnenwand | -4.9858e+07 Pa | -4.9788e+07 | +0.14% | 1% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | u_r buitenring binnenwand | 1.2963e-04 m | 1.2971e-04 | +0.06% | 1% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | u_r binnenring buitenwand | -7.0370e-05 m | -7.0294e-05 | +0.11% | 1% | OK |
 | PL-50 | Radiale geleiding in een buis, thermisch axisymmetrisch (T30 + **ASTER-PLANE AXIS) | T(r) midden | 334.5 K | 334.5 | +0.00% | 0.1 K | OK |
 | PL-50 | Radiale geleiding in een buis, thermisch axisymmetrisch (T30 + **ASTER-PLANE AXIS) | q_r midden | 48090 W/m² | 48054 | -0.07% | 0.5% | OK |
 | PL-51 | Buis met een totale warmtestroom op de binnenrand (T30 + **ASTER-PLANE AXIS) | T_a - T_b | 110.32 K | 110.32 | -0.00% | 0.5% | OK |
@@ -2770,20 +2782,46 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bf1946b, Code-Aster 17.4
 | PL-59 | Thermomechanische keten met inwendige druk (T31 + Thermal stress + **ASTER-PLANE AXIS) | som R_y onder (360 graden) | 8.2730e+06 N | 8.2730e+06 | +0.00% | 0.1% | OK |
 | PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | u_r halverwege | 2.3810e-04 m | 2.3810e-04 | +0.00% | 0.5% | OK |
 | PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | u_y boven | -1.4286e-04 m | -1.4286e-04 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | hoop midden | 1.0000e+08 Pa | 1.0000e+08 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | meridiaan midden | 0 Pa | 3.6810e-06 | 3.6810e-06 | 100000 Pa | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | von Mises boven | 1.0000e+08 Pa | 1.0000e+08 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | N_v (ring) midden | 5.0000e+05 N/m | 5.0000e+05 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | hoofdspanning 1 boven | 1.0000e+08 Pa | 1.0000e+08 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | hoopstressm1 midden | 1.0000e+08 Pa | 1.0000e+08 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | meridionalstressm1 midden | 0 Pa | 3.6810e-06 | 3.6810e-06 | 100000 Pa | OK |
 | PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | u_r evenaar | 1.6667e-05 m | 1.6667e-05 | -0.00% | 0.5% | OK |
 | PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | u_y pool | 1.6667e-05 m | 1.6667e-05 | +0.00% | 0.5% | OK |
+| PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | ring evenaar | 5.0000e+06 Pa | 5.0000e+06 | -0.00% | 0.5% | OK |
+| PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | meridiaan evenaar | 5.0000e+06 Pa | 5.0000e+06 | -0.00% | 0.5% | OK |
+| PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | xx bij 45 graden | 2.5000e+06 Pa | 2.5000e+06 | -0.00% | 0.001% | OK |
+| PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | xy bij 45 graden | -2.5000e+06 Pa | -2.5000e+06 | +0.00% | 0.001% | OK |
 | PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | w midden | -8.1250e-04 m | -8.1227e-04 | +0.03% | 0.5% | OK |
 | PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | rotatie om Z bij r = a/2 | 0.0012187 rad | 0.0012196 | +0.07% | 0.5% | OK |
 | PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | som R_y rand | 3141.6 N | 3141.6 | -0.00% | 0.0001% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | radiaal boven r = 0,9 a | 5.1488e+06 Pa | 5.1551e+06 | +0.12% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | radiaal onder r = 0,9 a | -5.1488e+06 Pa | -5.1551e+06 | -0.12% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | ring boven r = 0,9 a | 8.9625e+05 Pa | 8.9884e+05 | +0.29% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | ring boven midden | -4.8750e+06 Pa | -4.8860e+06 | -0.23% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | M_u r = 0,9 a | 85.812 N m/m | 85.919 | +0.12% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | meridionalstressu1 r = 0,9 a | 5.1488e+06 Pa | 5.1551e+06 | +0.12% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | hoopstressu1 r = 0,9 a | 8.9625e+05 Pa | 8.9884e+05 | +0.29% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | M_v r = 0,9 a | 14.937 N m/m | 14.981 | +0.29% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | radiaal boven rand | 7.5000e+06 Pa | 7.1730e+06 | -4.36% | 5% | OK |
 | PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | M0 per omtrek | 302.61 N m/m | 299.78 | -0.94% | 2% | OK |
 | PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | Q0 per omtrek | -7779.6 N/m | -7725 | +0.70% | 2% | OK |
+| PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | meridiaan boven klem | 1.8157e+07 Pa | 1.7959e+07 | -1.09% | 2% | OK |
+| PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | meridiaan onder klem | -1.8157e+07 Pa | -1.7958e+07 | +1.10% | 2% | OK |
+| PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | M_u klem | 302.61 N m/m | 299.3 | -1.09% | 2% | OK |
 | PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in A (ssls114i) | 1.0000e-09 m | 1.0000e-09 | +0.00% | 0.0001% | OK |
-| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in B (ssls114i) | 1.0000e-09 m | 1.0000e-09 | -0.00% | 0.0001% | OK |
-| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in N1 (ssls114i) | 1.0000e-09 m | 1.0000e-09 | -0.00% | 0.0001% | OK |
+| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in B (ssls114i) | 1.0000e-09 m | 1.0000e-09 | +0.00% | 0.0001% | OK |
+| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in N1 (ssls114i) | 1.0000e-09 m | 1.0000e-09 | +0.00% | 0.0001% | OK |
 | PL-65 | Dunne cilinder, druk als tijdtabel (L30 + #ASTER-PLANE AXIS) | u_r t = 0.5 s | 1.1905e-04 m | 1.1905e-04 | +0.00% | 0.5% | OK |
 | PL-65 | Dunne cilinder, druk als tijdtabel (L30 + #ASTER-PLANE AXIS) | u_r t = 1 s | 2.3810e-04 m | 2.3810e-04 | +0.00% | 0.5% | OK |
+| PL-65 | Dunne cilinder, druk als tijdtabel (L30 + #ASTER-PLANE AXIS) | hoop midden t = 0.5 s | 5.0000e+07 Pa | 5.0000e+07 | +0.00% | 0.5% | OK |
 | PL-66 | Cilinder met een axiale knoopkracht (COQUE_AXIS) | u_y onder | -3.0315e-07 m | -3.0315e-07 | +0.00% | 0.5% | OK |
 | PL-66 | Cilinder met een axiale knoopkracht (COQUE_AXIS) | R_y boven | 1000 N | 1000 | -0.00% | 0.0001% | OK |
+| PL-66 | Cilinder met een axiale knoopkracht (COQUE_AXIS) | N_u midden | 318.31 N/m | 318.31 | -0.00% | 0.5% | OK |
+| PL-66 | Cilinder met een axiale knoopkracht (COQUE_AXIS) | meridiaan midden | 63662 Pa | 63662 | -0.00% | 0.5% | OK |
 | PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | u_r rand | 1.5736e-05 m | 1.5736e-05 | -0.00% | 2% | OK |
 | PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | rotatie om Z rand | 4.0454e-04 rad | 4.0549e-04 | +0.24% | 2% | OK |
 | PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | M_z inklemming | 0 N m | -0.17987 | -0.17987 | 1.25664 N m | OK |
