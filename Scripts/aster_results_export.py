@@ -1122,6 +1122,10 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
     if _PLANE:
         _plane_zero_stresses(node_vars)
         _plane_zero_stresses(elem_vars)
+        if _PLANE.get("modelisation") == "AXIS" and not _axis_shells():
+            _axis_named_stresses(node_vars)
+            _axis_named_stresses(elem_vars)
+        _pad_contact(node_vars, model)
     optional = OPTIONAL_PARTS | (_PLANE_OPTIONAL if _PLANE else frozenset())
     out = []
     for name, var in node_vars.items():
@@ -1164,6 +1168,69 @@ def _plane_zero_stresses(variables):
                     zero = _zero_var(var)
                     zero.name = extra
                     variables[extra] = zero
+
+
+# Axisymmetric continuum (AXIS: SA0/DA0, route A AXIS, the AXIS thermal
+# chain; S44 readable results, user 17 Nov 2026): the stress tensor also
+# under physical names, as node and element-node variables, after
+# stresszx. Mecway's axes: X = radius, Y = axis, Z = hoop. Bridge-own names
+# (Mecway writes stressxx .. stresszx only); route 'liml' only.
+_AXIS_NAMES = (("radialstress", "stressxx"), ("axialstress", "stressyy"),
+               ("hoopstress", "stresszz"), ("shearstressrz", "stressxy"))
+
+
+def _axis_named_stresses(variables):
+    """Add the aliases of _AXIS_NAMES after stresszx (or the last stress
+    component present); a new _Var per alias sharing ids and getter."""
+    if not any(src in variables for _n, src in _AXIS_NAMES):
+        return
+    after = None
+    for key in ("stresszx", "stressyz", "stressxy", "stresszz",
+                "stressyy", "stressxx"):
+        if key in variables:
+            after = key
+            break
+    items = list(variables.items())
+    variables.clear()
+    for name, var in items:
+        variables[name] = var
+        if name == after:
+            for alias, src in _AXIS_NAMES:
+                if src in dict(items) and alias not in dict(items):
+                    s = dict(items)[src]
+                    variables[alias] = _Var(alias, s.element, s.ids,
+                                            s.getter)
+
+
+# Contact in a 2D analysis: contactpressure and contactstate on every node
+# of the model elements, 0 where Code-Aster has no contact value (the slave
+# nodes only have LAGS_C), so that Mecway shows no node without a value.
+# 3D keeps the slave nodes only (as before).
+_CONTACT_PADDED = ("contactpressure", "contactstate")
+
+
+def _pad_contact(variables, model):
+    """Replace the contact node variables by full-length ones (2D)."""
+    targets = [n for n in _CONTACT_PADDED if n in variables]
+    if not targets:
+        return
+    used = set()
+    for _shape, nids in model["elements"].values():
+        used.update(nids)
+    for name in targets:
+        var = variables[name]
+        ids = np.array(sorted(used | set(int(i) for i in var.ids)),
+                       dtype="<i4")
+        pos = np.searchsorted(ids, var.ids)
+
+        def getter(fields, var=var, ids=ids, pos=pos):
+            vals = var.getter(fields)
+            if vals is None:
+                return None
+            out = np.zeros(len(ids))
+            out[pos] = vals
+            return out
+        variables[name] = _Var(name, False, ids, getter)
 
 
 def _elem_magnitude_var(name, parts):
@@ -1247,8 +1314,9 @@ _SHELL_FORCE_NAMES = ("forceperlengthu", "forceperlengthv",
                       "shearuw", "shearvw")
 
 # Axisymmetric shells (COQUE_AXIS on SEG3, bridge_plane, S44e piece 2;
-# _PLANE["axis_shells"]). Measured with Code-Aster 17.4 (PL-63, chain along
-# +Y at X = 1, clamped at y = 0, internal pressure):
+# _PLANE["axis_shells"]). Measured with Code-Aster 17.4 (a probe on PL-63
+# as it was then: elements drawn along +Y at X = 1, clamped at y = 0,
+# internal pressure; PL-63 now draws them downwards):
 #   - SIGM_ELNO after EXTR_COQUE: SIXX along the meridian (Code-Aster's
 #     local x = the tangent, node 1 -> node 2), SIYY hoop, SIZZ = 0, SIXZ
 #     transverse; SUP is the side U x Z (the outside there: SIXX SUP =
@@ -1980,6 +2048,33 @@ def _plan_derived(fields, model, conn, wanted, shell_vectors=None,
         cols = [(prefix + s + suffix, k, shear if i != j else 1.0)
                 for k, (s, i, j) in enumerate(_TENSOR_ORDER)]
         out += _point_vars(plan, cols, compute, (rkey, field))
+    if "shell_stresses" in wanted and _axis_shells():
+        # axisymmetric shells: the meridional (SIXX, along the meridian)
+        # and hoop (SIYY) stress per surface under their own names (the
+        # global stress<ij> above split the meridional stress over xx, yy,
+        # xy); same points, own cache key
+        for lvl, suf in _AXIS_LEVELS:
+            rkey = "res_" + lvl
+            if rkey not in fields.results:
+                continue
+            plan = _shell_points(fields, rkey, "SIGM_ELNO", "SIXX", conn,
+                                 model, xyz, vectors, elset_of, frames)
+            if plan is None:
+                continue
+
+            def compute(fields, plan=plan, rkey=rkey):
+                def run():
+                    d = fields.get(rkey, "SIGM_ELNO", True)
+                    if d is None or "SIXX" not in d[0] or "SIYY" not in d[0]:
+                        return None
+                    vals = d[1][plan["rows"]]
+                    return np.column_stack([vals[:, d[0].index("SIXX")],
+                                            vals[:, d[0].index("SIYY")]])
+                return run
+            out += _point_vars(plan, [("meridionalstress" + suf + "1", 0,
+                                       1.0),
+                                      ("hoopstress" + suf + "1", 1, 1.0)],
+                               compute, (rkey, "SIGM_ELNO", "named"))
     if "shell_forces" in wanted and "res_efs" in fields.results and \
             _axis_shells():
         plan = _shell_points(fields, "res_efs", "EFGE_ELNO", "NXX", conn,

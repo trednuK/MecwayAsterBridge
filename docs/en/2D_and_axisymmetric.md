@@ -158,8 +158,42 @@ S20/SA0 solution (measured: Mecway adds *displacement*, *stress*, *von Mises str
 | `stressxx`, `stressyy`, `stressxy` | `SIGM_NOEU`/`SIGM_ELNO` | in-plane stresses (SA0: σ_r, σ_z, τ_rz) |
 | `stresszz` | `SIGM_*` SIZZ | 0 in plane stress, ν(σ_xx + σ_yy) in plane strain, **hoop stress** in SA0 |
 | `stressyz`, `stresszx` | – | 0 (as Mecway) |
+| `radialstress`, `axialstress`, `hoopstress`, `shearstressrz` | `SIGM_*` SIXX, SIYY, SIZZ, SIXY | axisymmetric only (SA0, DA0, route A with `AXIS`, the `AXIS` thermal chain): σ_r, σ_z, σ_θ, τ_rz under their own names, the same values as `stressxx`, `stressyy`, `stresszz`, `stressxy` (bridge names; route `liml`) |
 | `vonmises` | `SIEQ_*` | 3D von Mises with σ_zz |
 | `reactionforcex/y/mag` | `REAC_NODA` × t or × 2π | for the whole thickness (S20) or 360 degrees (SA0), as Mecway |
+| `contactpressure`, `contactstate` | `LAGS_C`, `CONT_NOEU` | route A with contact (§1.4): on every node of the model, 0 outside the contact (a 3D model has them on the slave nodes only) |
+
+Axisymmetric shells have their own names per surface (§1.4.2).
+
+**The axes.** Mecway draws the section, not the body of revolution: X is the radius and Y the
+axis of symmetry (axisymmetric), Z the hoop direction; in plane stress and plane strain X and
+Y lie in the plane and Z is the thickness direction. Route A (§1.4) draws the plane elements
+as a thin flat plate in the 3D view, axisymmetric shells (§1.4.2) as the line of the meridian.
+Look along Z (Mecway's front view) to see the section as drawn in the figures of this page.
+For a view of the whole body use the ParaView button (below).
+
+**Red in Mecway's tree is expected.** Seen by the user in Mecway 35 (17 Nov 2026): in a route A
+model with contact (PL-40) the analysis, the components and the contact are red; in models
+with axisymmetric shells (PL-60, PL-62) the component, the pressure and the symmetry. Red marks
+what Mecway's own solver would not compute (cause NOT verified; Mecway's manual §7.5 lists
+line3 beams only with the CCX solver). It is harmless: the bridge computes these items.
+
+**Revolved view in ParaView.** With *VTU/PVD files for ParaView* (`vtu_export`) on, the
+bridge writes `<model>_<run-id>_paraview_axis.py` next to the result of an axisymmetric run,
+and the ParaView button (Results window and convergence window,
+[`UserGuide.md`](UserGuide.md) §5.1) opens the result as a body of revolution: the section
+turned 270 degrees about Y, so that the cut-away shows the section.
+
+![The result of PL-24 revolved in ParaView](../img/2d_paraview_axis.png)
+
+1. The cut face: the section as Mecway draws it (X = radius).
+2. The axis of symmetry Y.
+3. The colour scale: `vonmises` (axisymmetric shells: `vonmisesu1`); choose another variable in ParaView's toolbar.
+
+The vectors (`displx`, `disply`, `DEPL`) are copied, not turned: `displx` stays the radial
+displacement of the section, so ParaView's *Warp By Vector* on the revolved body is wrong.
+Without `vtu_export` (only *MED file for ParaView*) the button opens the section flat, as
+before.
 
 ### 1.4 Nonlinear in 2D: a 3D model with `**ASTER-PLANE` (route A)
 
@@ -387,6 +421,7 @@ example: example 7 in §1.5.
 | `reactionforcex`, `reactionforcey`, `reactionforcemag`, `reactionmomz`, `reactionmommag` | the reactions for 360 degrees (× 2π); `reactionmommag` = \|`reactionmomz`\| | `reactions` |
 | `vonmisesu1`, `vonmisesm`, `vonmisesb` | von Mises on the top surface, the middle surface and the bottom surface (node values) | `vonmises` |
 | `stressxxu1` … `stresszxu1`, `…m1`, `…b1` | the stress tensor per surface in global X, Y, Z: `stresszz…` = the hoop stress, the meridional stress in `stressxx…`, `stressyy…`, `stressxy…` (a cylinder along Y: `stressyy…`; a circular plate along X: `stressxx…`); `stressyz…`, `stresszx…` = 0 | `shell_stresses` |
+| `meridionalstressu1`, `…m1`, `…b1`, `hoopstressu1`, `…m1`, `…b1` | the stress along the meridian (the shell's own direction, not split over X and Y) and the hoop stress (= `stresszz…`) per surface (bridge names) | `shell_stresses` |
 | `forceperlengthu`, `forceperlengthv` | the normal force per length along the meridian (u) and in the hoop direction (v), N/m | `shell_forces` (S30 only) |
 | `momentu`, `momentv` | the bending moment per length that gives the bending stress along the meridian (u) or in the hoop direction (v), N m/m; positive gives tension on the top surface | `shell_forces` (S30 only) |
 | `principal1u1` … `principal3b1`, `trescau1` … `trescab1` | principal stresses and Tresca per surface | `principal_stresses` |
@@ -714,6 +749,15 @@ Steps:
    a clamped circular plate (the thickness from a *RectBar* with a = 10 mm, *Fixed support* at
    the edge, *Symmetry* with normal X on the centre node); `PL-64.liml` is the Code-Aster test
    case ssls114i.
+8. What to read in Mecway after a run of `PL-62.liml` (clamped circular plate, a = 1 m,
+   t = 10 mm, q = 1000 Pa, E = 210 GPa, ν = 0.3; measured by the user in Mecway 35):
+
+   | Mecway item | Where | Value | Check |
+   |---|---|---|---|
+   | *displacement* Y | the centre (X = 0) | −8.123e-4 m | the deflection q a⁴/(64 D) = 8.125e-4 m, D = E t³/(12(1 − ν²)) |
+   | *displacement* X | everywhere | 0 | a plate under pressure does not stretch |
+   | *reaction force* magnitude | the edge node | 3142 N | the total over 360 degrees: q π a² |
+   | *reaction moment* magnitude | the edge node | 785.4 N m | the total clamp moment over the circumference: 2π a · q a²/8 |
 
 ### 1.6 Common mistakes
 

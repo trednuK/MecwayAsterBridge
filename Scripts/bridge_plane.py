@@ -539,8 +539,7 @@ def _rect_thickness(model_data, elset, geom):
         else:
             found.add("?")
     for card in model_data.get("orientation_cards") or []:
-        if eids & set(model_data.get("element_selections", {}).get(
-                card["selection"], ())):
+        if eids & _card_elements(model_data, card):
             return None, tr("een Element orientation-kaart op deze "
                             "elementen", "an Element orientation card on "
                             "these elements")
@@ -1260,6 +1259,17 @@ def _line_face_load(model_data, bc, sel):
 _ASTER_NORMAL_SIGN = 1.0
 
 
+def _card_elements(model_data, card):
+    """The elements of an Element orientation card. card["selection"] is
+    Mecway's name; bridge_mesh may have renamed the element selections for
+    Code-Aster (selection_renames) before the loads are converted."""
+    sel = card.get("selection", "")
+    sels = model_data.get("element_selections", {})
+    if sel not in sels:
+        sel = model_data.get("selection_renames", {}).get(sel, sel)
+    return set(sels.get(sel, ()))
+
+
 def _scaled(value, k):
     """value (float or list (t, v)) times k."""
     if isinstance(value, list):
@@ -1309,8 +1319,7 @@ def _line_pressure(model_data, bc, sel, sides):
     oriented = set(e for e in eids
                    if e in model_data.get("beam_orientations", {}))
     for card in model_data.get("orientation_cards") or []:
-        oriented |= set(eids) & set(model_data.get(
-            "element_selections", {}).get(card["selection"], ()))
+        oriented |= set(eids) & _card_elements(model_data, card)
     if oriented:
         log(tr("WARNING: Druk op '{0}': {1} line3-element(en) hebben een "
                "orientatie (Element orientation-kaart of V-as); de bridge "

@@ -780,6 +780,7 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knoppen *ParaView* (als er geen `.pvd` is) en *AsterStudy* in het resultatenscherm en het convergentiescherm openen hem (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; de knop *ParaView* opent de `.pvd` (§5.1); met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_paraview_launch.log` | uitvoer van de ParaView die de knop *ParaView* startte (§5.1) |
+| `<model>_<run-id>_paraview_axis.py` | alleen bij een axisymmetrische run met *VTU/PVD-bestanden voor ParaView*: het ParaView-script waarmee de knop *ParaView* het resultaat als omwentelingslichaam toont ([`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.3). Mag weg |
 | `<model>_<run-id>_salome.py`, `_salome_session.log`, `_salome_launch.log` | van de knop *AsterStudy* (§5.1): het sessiescript dat Salome-Meca de `.rmed` laat openen, de log van dat script en de uitvoer van Salome-Meca; ook als `<model>_<run-id>_verfijnd_salome.py` of `<model>_<run-id>_xfem_salome.py` enz. wanneer de knop dat MED-bestand opende. Mogen weg |
 | `<model>_<run-id>_vergelijking.csv` | vergelijking met de Mecway-solve (alleen met *Eerst Mecway-solve ter controle*) |
 | `<model>_<run-id>_monitor_log.txt` | log van het convergentie- en meldingenscherm |
@@ -822,7 +823,9 @@ komen. Dezelfde knoppen staan in het convergentiescherm, voor de getoonde run
   `.pvd` (*VTU/PVD-bestanden voor ParaView*), anders de `.rmed` (*MED-bestand voor ParaView*).
   Heeft de run nog andere resultaatbestanden, dan noemt een melding ze; open die met
   *File > Open* in ParaView. Welke ParaView: instelling *ParaView* (§3). Wat ParaView zelf
-  meldt, staat in `<model>_<run-id>_paraview_launch.log`.
+  meldt, staat in `<model>_<run-id>_paraview_launch.log`. Een axisymmetrische run opent als
+  omwentelingslichaam (de `.pvd` met `<model>_<run-id>_paraview_axis.py`,
+  [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.3).
 - *AsterStudy* opent het MED-bestand (`_verfijnd.rmed`, `_xfem.rmed`, anders de `.rmed`) in
   Salome-Meca, module AsterStudy, tabblad *Results*. Een `.pvd` alleen is niet genoeg: zet
   *MED-bestand voor ParaView* aan (een `_verfijnd.rmed` van adaptieve verfijning komt er ook

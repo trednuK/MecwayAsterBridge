@@ -11,6 +11,19 @@
   it stops before Code-Aster starts. With route `liml` and *Mecway solve first* on, such a
   solve now gives a WARNING that the comparison with Mecway is lost; the run goes on.
 
+- **Readable 2D and axisymmetric results** (after the user's test in Mecway 35):
+  - the stresses of an axisymmetric model also under their physical names `radialstress`,
+    `axialstress`, `hoopstress`, `shearstressrz` (same values as `stressxx`, `stressyy`,
+    `stresszz`, `stressxy`); axisymmetric shells per surface `meridionalstress…` and
+    `hoopstress…` (with `shell_stresses`);
+  - `contactpressure` and `contactstate` in a 2D model on every node, 0 outside the contact
+    (3D unchanged: the slave nodes);
+  - the ParaView button opens an axisymmetric result as a body of revolution (270 degrees about
+    Y), with "VTU/PVD files for ParaView" on (`<model>_<run-id>_paraview_axis.py`);
+  - docs: the axes, the variable names, "red in Mecway's tree is expected" and a worked check
+    of `PL-62.liml` in [`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md) §1.3
+    and §1.5.
+
 - **Error estimator on a model without solid elements**: an INFO instead of a WARNING (the
   setting is on by default, so every shell, beam or axisymmetric-shell model showed it); still
   a WARNING when the model asks for the estimate with `#ASTER-OPTIE error_estimator`.
@@ -30,7 +43,8 @@
   the material's *Shell/membrane* thickness or a *RectBar*; the line wins. Supports hold X, Y
   and the rotation about Z (*Fixed*, *Symmetry*, *Node rotation* about Z); a pressure on the
   side of the line elements (faceid 1) pushes along n = Z × U, exactly as Mecway draws the
-  arrows (seen in Mecway 35); forces and moments on nodes
+  arrows (seen in Mecway 35; a WARNING when such elements have an orientation, where Mecway's
+  side is not verified); forces and moments on nodes
   are for 360 degrees; gravity along Y. Results: displacements, `rotz` and the reactions
   (`reactionmomz` too) for 360 degrees; von Mises on the top, middle and bottom surface
   (`vonmisesu1/m/b`); with the result fields `shell_stresses`, `shell_forces` and

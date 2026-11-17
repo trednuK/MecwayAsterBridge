@@ -1044,15 +1044,15 @@ E = 210 GPa, ν = 0,3 (PL-64: 200 GPa). Gesloten vormen: Timoshenko & Woinowsky-
 β⁴ = 3(1 − ν²)/(R²t²)).
 
 - **PL-60** (dunne cilinder R = 0,5 m, t = 5 mm, L = 1 m, 20 line3, inwendige druk 1 MPa op
-  faceid 1, axiaal vrij): u_r = p R²/(E t) = 2,3810e-04 m (1,6e-14) en de axiale verkorting
-  −ν p R L/(E t) = −1,4286e-04 m (1,2e-13); tolerantie 0,5%.
+  faceid 1, axiaal vrij): u_r = p R²/(E t) = 2,3810e-04 m (3,9e-14) en de axiale verkorting
+  −ν p R L/(E t) = −1,4286e-04 m (1,3e-13); tolerantie 0,5%.
 - **PL-61** (dunne bol R = 1 m, t = 10 mm, een kwart meridiaan van 32 line3, 0,1 MPa, *Symmetry*
   met normaal Y op de evenaar en normaal X op de pool): u = p R² (1 − ν)/(2 E t) = 1,6667e-05 m
   op de evenaar (−3,3e-8) en op de pool (+7,7e-8); tolerantie 0,5%.
 - **PL-62** (ingeklemde ronde plaat a = 1 m, t = 10 mm, 20 line3, q = 1000 Pa,
   *Fixed support* aan de rand, *Symmetry* met normaal X in het midden): w0 = q a⁴/(64 D)
   −8,1227e-04 m (+0,03%), de rotatie om Z bij r = a/2 3 q a³/(128 D) 1,2196e-03 rad
-  (+0,07%, positief: rechtsom om +Z), de som van de reacties q π a² 3141,6 N (4e-11);
+  (+0,07%, positief: rechtsom om +Z), de som van de reacties q π a² 3141,6 N (6e-11);
   tolerantie 0,5% en 1e-6.
 - **PL-63** (lange cilinder R = 1 m, t = 10 mm (R/t = 100), L = 0,5 m = 6,4/β, 100 line3 van
   0,005 m = 0,064/β, 0,1 MPa, *Fixed support* in de onderste knoop): het reactiemoment per omtrek
@@ -1066,16 +1066,16 @@ E = 210 GPa, ν = 0,3 (PL-64: 200 GPa). Gesloten vormen: Timoshenko & Woinowsky-
   U × Z (hier −X, de `VECT_NORM` van ssls114i), de bridge schrijft `PRES` = +p, zodat een
   positieve druk langs n = Z × U duwt, zoals Mecway hem tekent.
 - **PL-65** (PL-60 als L30 met de druk als tijdtabel 0 … 1 MPa over 1 s in twee stappen,
-  `deformation` `GROT_GDEP` → `PETIT` met een WARNING): u_r op 0,5 s en 1 s (4e-14, 2e-14).
+  `deformation` `GROT_GDEP` → `PETIT` met een WARNING): u_r op 0,5 s en 1 s (5e-14, 2e-14).
 - **PL-66** (de buis van PL-60, Y vast in de bovenste knoop, een kracht −1000 N langs Y op de
-  onderste knoop, totaal voor de ring): de verlenging F L/(2π R t E) −3,0315e-07 m (1,1e-13) en
-  de reactie 1000 N (1e-13): `FORCE_NODALE` / 2π en `REAC_NODA` × 2π.
+  onderste knoop, totaal voor de ring): de verlenging F L/(2π R t E) −3,0315e-07 m (1,4e-13) en
+  de reactie 1000 N (2e-13): `FORCE_NODALE` / 2π en `REAC_NODA` × 2π.
 - **PL-67** (lange cilinder R = 1 m, t = 10 mm, L = 0,6 m, 120 line3, *Fixed support* boven,
   een *Moment* om Z van 2π R × 100 N m/m op de vrije onderste knoop): de randverplaatsing
   M0/(2β²D) 1,5736e-05 m (−1e-7) en de randrotatie M0/(βD) 4,0549e-04 rad (+0,24%);
   tolerantie 2%; het moment in de inklemming −0,18 N m (uitgedempt, grens 1,26 N m).
 - **PL-68** (de buis van PL-60 met ρ = 7850 kg/m³, Y vast boven, zwaartekracht −9,81 m/s²
-  langs Y): de reactie ρ g 2π R t L = 1209,6 N (7e-14) en de massa van de controle van de
+  langs Y): de reactie ρ g 2π R t L = 1209,6 N (1,1e-13) en de massa van de controle van de
   bridge (`BRIDGE_STATCHECK`) ρ 2π R t L = 123,31 kg (3e-15): `MASS_INER` van `COQUE_AXIS` is al de massa
   van 360 graden, zoals bij `AXIS`.
 
@@ -1083,8 +1083,8 @@ Spanningen en snedekrachten van de schalen (S44e deel 2; PL-60 … PL-63, PL-65 
 resultaatvelden `shell_stresses`, `shell_forces` en `principal_stresses`; boven `u1` = het
 vlak met de drukpijlen, tegenover n = Z × U):
 
-- **PL-60**: de ringspanning `stresszzm1` p R / t = 1e8 Pa (3e-14), `vonmisesu1` en
-  `principal1u1` hetzelfde (1e-14, 2e-14), `forceperlengthv` p R = 5e5 N/m (3e-14), de
+- **PL-60**: de ringspanning `stresszzm1` p R / t = 1e8 Pa (5e-14), `vonmisesu1` en
+  `principal1u1` hetzelfde (4e-14, 5e-14), `forceperlengthv` p R = 5e5 N/m (5e-14), de
   meridiaanspanning `stressyym1` 3,7e-6 Pa (grens 1e5 Pa).
 - **PL-61**: in de evenaar `stresszzm1` en `stressyym1` p R / (2t) = 5e6 Pa (−7e-9, −1e-9);
   op de meridiaan onder 45 graden `stressxxm1` = σ/2 en `stressxym1` = −σ/2 (1e-9, tolerantie
@@ -1100,9 +1100,9 @@ vlak met de drukpijlen, tegenover n = Z × U):
 - **PL-63**: de meridiaanspanning bij de inklemming ±6 M0/t² = ±1,8157e7 Pa: boven (de
   binnenkant) +1,7959e7 Pa (−1,09%), onder −1,7958e7 Pa (−1,10%), `momentu` 299,30 N m/m
   tegen M0 302,61 (−1,09%); tolerantie 2%.
-- **PL-65**: de ringspanning op 0,5 s 5e7 Pa (5e-14); `shell_forces` geeft in L30 een INFO.
+- **PL-65**: de ringspanning op 0,5 s 5e7 Pa (6e-14); `shell_forces` geeft in L30 een INFO.
 - **PL-66**: `forceperlengthu` F/(2π R) = 318,31 N/m en `stressyym1` F/(2π R t) = 63662 Pa
-  (1e-13): per lengte van de omtrek.
+  (2e-13): per lengte van de omtrek.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

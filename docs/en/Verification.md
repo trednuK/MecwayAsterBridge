@@ -1032,15 +1032,15 @@ E = 210 GPa, ν = 0.3 (PL-64: 200 GPa). Closed forms: Timoshenko & Woinowsky-Kri
 β⁴ = 3(1 − ν²)/(R²t²)).
 
 - **PL-60** (thin cylinder R = 0.5 m, t = 5 mm, L = 1 m, 20 line3, internal pressure 1 MPa on
-  faceid 1, axially free): u_r = p R²/(E t) = 2.3810e-04 m (1.6e-14) and the axial shortening
-  −ν p R L/(E t) = −1.4286e-04 m (1.2e-13); tolerance 0.5%.
+  faceid 1, axially free): u_r = p R²/(E t) = 2.3810e-04 m (3.9e-14) and the axial shortening
+  −ν p R L/(E t) = −1.4286e-04 m (1.3e-13); tolerance 0.5%.
 - **PL-61** (thin sphere R = 1 m, t = 10 mm, a quarter meridian of 32 line3, 0.1 MPa, *Symmetry*
   with normal Y at the equator and normal X at the pole): u = p R² (1 − ν)/(2 E t) = 1.6667e-05 m
   at the equator (−3.3e-8) and at the pole (+7.7e-8); tolerance 0.5%.
 - **PL-62** (clamped circular plate a = 1 m, t = 10 mm, 20 line3, q = 1000 Pa,
   *Fixed support* at the edge, *Symmetry* with normal X at the centre): w0 = q a⁴/(64 D)
   −8.1227e-04 m (+0.03%), the rotation about Z at r = a/2 3 q a³/(128 D) 1.2196e-03 rad
-  (+0.07%, positive: right-handed about +Z), the sum of the reactions q π a² 3141.6 N (4e-11);
+  (+0.07%, positive: right-handed about +Z), the sum of the reactions q π a² 3141.6 N (6e-11);
   tolerance 0.5% and 1e-6.
 - **PL-63** (long cylinder R = 1 m, t = 10 mm (R/t = 100), L = 0.5 m = 6.4/β, 100 line3 of
   0.005 m = 0.064/β, 0.1 MPa, *Fixed support* at the bottom node): the reaction moment per circumference
@@ -1054,16 +1054,16 @@ E = 210 GPa, ν = 0.3 (PL-64: 200 GPa). Closed forms: Timoshenko & Woinowsky-Kri
   (−X here, the `VECT_NORM` of ssls114i), the bridge writes `PRES` = +p, so that a positive
   pressure pushes along n = Z × U, as Mecway draws it.
 - **PL-65** (PL-60 as L30 with the pressure as a time table 0 … 1 MPa over 1 s in two steps,
-  `deformation` `GROT_GDEP` → `PETIT` with a WARNING): u_r at 0.5 s and 1 s (4e-14, 2e-14).
+  `deformation` `GROT_GDEP` → `PETIT` with a WARNING): u_r at 0.5 s and 1 s (5e-14, 2e-14).
 - **PL-66** (the tube of PL-60, Y held at the top node, a force −1000 N along Y on the bottom
-  node, total for the ring): the elongation F L/(2π R t E) −3.0315e-07 m (1.1e-13) and the
-  reaction 1000 N (1e-13): `FORCE_NODALE` / 2π and `REAC_NODA` × 2π.
+  node, total for the ring): the elongation F L/(2π R t E) −3.0315e-07 m (1.4e-13) and the
+  reaction 1000 N (2e-13): `FORCE_NODALE` / 2π and `REAC_NODA` × 2π.
 - **PL-67** (long cylinder R = 1 m, t = 10 mm, L = 0.6 m, 120 line3, *Fixed support* at the top,
   a *Moment* about Z of 2π R × 100 N m/m on the free bottom node): the edge displacement
   M0/(2β²D) 1.5736e-05 m (−1e-7) and the edge rotation M0/(βD) 4.0549e-04 rad (+0.24%);
   tolerance 2%; the moment at the clamp −0.18 N m (decayed, limit 1.26 N m).
 - **PL-68** (the tube of PL-60 with ρ = 7850 kg/m³, Y held at the top, gravity −9.81 m/s²
-  along Y): the reaction ρ g 2π R t L = 1209.6 N (7e-14) and the mass of the bridge's
+  along Y): the reaction ρ g 2π R t L = 1209.6 N (1.1e-13) and the mass of the bridge's
   check (`BRIDGE_STATCHECK`) ρ 2π R t L = 123.31 kg (3e-15): `MASS_INER` of `COQUE_AXIS` is already the
   mass of 360 degrees, as with `AXIS`.
 
@@ -1071,8 +1071,8 @@ Stresses and section forces of the shells (S44e piece 2; PL-60 … PL-63, PL-65 
 the result fields `shell_stresses`, `shell_forces` and `principal_stresses`; top `u1` = the
 face with the pressure arrows, opposite n = Z × U):
 
-- **PL-60**: the hoop stress `stresszzm1` p R / t = 1e8 Pa (3e-14), `vonmisesu1` and
-  `principal1u1` the same (1e-14, 2e-14), `forceperlengthv` p R = 5e5 N/m (3e-14), the
+- **PL-60**: the hoop stress `stresszzm1` p R / t = 1e8 Pa (5e-14), `vonmisesu1` and
+  `principal1u1` the same (4e-14, 5e-14), `forceperlengthv` p R = 5e5 N/m (5e-14), the
   meridional stress `stressyym1` 3.7e-6 Pa (limit 1e5 Pa).
 - **PL-61**: at the equator `stresszzm1` and `stressyym1` p R / (2t) = 5e6 Pa (−7e-9, −1e-9);
   on the meridian at 45 degrees `stressxxm1` = σ/2 and `stressxym1` = −σ/2 (1e-9, tolerance
@@ -1088,9 +1088,9 @@ face with the pressure arrows, opposite n = Z × U):
 - **PL-63**: the meridional stress at the clamp ±6 M0/t² = ±1.8157e7 Pa: on top (the inside)
   +1.7959e7 Pa (−1.09%), on the bottom −1.7958e7 Pa (−1.10%), `momentu` 299.30 N m/m against
   M0 302.61 (−1.09%); tolerance 2%.
-- **PL-65**: the hoop stress at 0.5 s 5e7 Pa (5e-14); `shell_forces` gives an INFO in L30.
+- **PL-65**: the hoop stress at 0.5 s 5e7 Pa (6e-14); `shell_forces` gives an INFO in L30.
 - **PL-66**: `forceperlengthu` F/(2π R) = 318.31 N/m and `stressyym1` F/(2π R t) = 63662 Pa
-  (1e-13): per length of the circumference.
+  (2e-13): per length of the circumference.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

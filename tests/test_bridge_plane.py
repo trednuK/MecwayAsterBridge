@@ -653,6 +653,16 @@ def test_axis_shells():
     check("FORCE_COQUE" in comm and any(
         m.startswith("WARNING") and "orientation" in m for m in LOG),
           "orientation on a pressed axisymmetric shell: WARNING")
+    # an Element orientation card on a selection the bridge renames (a
+    # space): still found, WARNING
+    card = ('<elementselection name="Wand A"><element eid="2" />'
+            '</elementselection><orientation selection="Wand A"><vx>-1</vx>'
+            '<vy>0</vy><vz>0</vz></orientation>')
+    comm = _comm(_shell_liml(custom=line, loads=press + card))
+    check("FORCE_COQUE" in comm and any(
+        m.startswith("WARNING") and "orientation" in m for m in LOG),
+          "orientation card on a renamed selection: WARNING ({0})".format(
+              [m[:70] for m in LOG if m.startswith("WARNING")]))
     # a load type without a route: the reason lists the shell types
     comm = _comm(_shell_liml(custom=line, loads=(
         '<fixed selection="Onder" /><frictionless selection="Zij" />')))

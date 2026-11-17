@@ -389,6 +389,16 @@ TESTS.append(Case(
     "PL-24", GROUP, "Dikwandige buis, ln-temperatuur, vlakke rek (AXIS)",
     "lin_static_3d", build_tube_axis(False),
     _tube_checks(False, ("stressxx", "stresszz", "stressyy")) + [
+        # the physical names (S44, readable 2D results): the same values
+        Check("radial/hoop/axial/shearstressrz = stressxx/zz/yy/xy",
+              lambda r: max(abs(r.at(a, (0.5 * (RA + RB), 0.0, 0.0)) -
+                                r.at(b, (0.5 * (RA + RB), 0.0, 0.0)))
+                            for a, b in (("radialstress", "stressxx"),
+                                         ("hoopstress", "stresszz"),
+                                         ("axialstress", "stressyy"),
+                                         ("shearstressrz", "stressxy"))),
+              ref=0.0, tol_abs=1e-6, unit="Pa", in_series=False,
+              source="zelfde waarden onder fysische namen"),
         Check("som R_y onder (360 graden)",
               lambda r: r.total("reactionforcey", "Ondern"),
               ref=2.0 * math.pi * ALPHA * E * _IB, tol=1e-4, unit="N",

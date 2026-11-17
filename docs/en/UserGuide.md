@@ -779,6 +779,7 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" (when there is no `.pvd`) and "AsterStudy" buttons in the Results window and the convergence window open it (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; the "ParaView" button opens the `.pvd` (§5.1); with failure also the cell fields `failed` (0 intact, 1 failed) and `T_BEZWIJK`; with beam forces also the section forces per element end as the cell fields `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_paraview_launch.log` | output of the ParaView that the "ParaView" button started (§5.1) |
+| `<model>_<run-id>_paraview_axis.py` | only for an axisymmetric run with "VTU/PVD files for ParaView": the ParaView script with which the "ParaView" button shows the result as a body of revolution ([`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.3). Can be deleted |
 | `<model>_<run-id>_salome.py`, `_salome_session.log`, `_salome_launch.log` | from the "AsterStudy" button (§5.1): the session script that makes Salome-Meca open the `.rmed`, the log of that script and the output of Salome-Meca; also as `<model>_<run-id>_verfijnd_salome.py` or `<model>_<run-id>_xfem_salome.py` etc. when the button opened that MED file. Can be deleted |
 | `<model>_<run-id>_vergelijking.csv` | comparison with the Mecway solve (only with "Mecway solve first as a check") |
 | `<model>_<run-id>_monitor_log.txt` | log of the convergence and messages window |
@@ -820,7 +821,9 @@ front of it. The same buttons are in the convergence window, for the run shown
   `.pvd` ("VTU/PVD files for ParaView"), else the `.rmed` ("MED file for ParaView"). If the run
   has other result files too, a message names them; open those with *File > Open* in
   ParaView. Which ParaView: setting "ParaView" (§3). What ParaView itself reports is in
-  `<model>_<run-id>_paraview_launch.log`.
+  `<model>_<run-id>_paraview_launch.log`. An axisymmetric run opens as a body of revolution
+  (the `.pvd` with `<model>_<run-id>_paraview_axis.py`,
+  [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.3).
 - "AsterStudy" opens the MED file (`_verfijnd.rmed`, `_xfem.rmed`, else the `.rmed`) in
   Salome-Meca, module AsterStudy, tab *Results*. A `.pvd` alone is not enough: turn on "MED
   file for ParaView" (a `_verfijnd.rmed` of adaptive refinement is written without it too). The bridge writes the session script `<file>_salome.py` next to the MED

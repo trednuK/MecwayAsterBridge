@@ -48,7 +48,7 @@
   <text x="428" y="46" font-family="serif" font-style="italic" font-size="22" fill="#333">t</text>
   <!-- radius R of the shell -->
   <line x1="120" y1="372" x2="380" y2="372" stroke="#333" stroke-width="1" stroke-dasharray="5 4"/>
-  <!-- top surface (u1, side of n) and bottom surface (b1) -->
+  <!-- top surface (u1, the face with the pressure arrows, opposite n) and bottom surface (b1) -->
   <line x1="351" y1="200" x2="371" y2="200" stroke="#c0392b" stroke-width="1.5"/>
   <line x1="389" y1="180" x2="409" y2="180" stroke="#c0392b" stroke-width="1.5"/>
   <!-- markers -->

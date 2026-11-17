@@ -55,8 +55,9 @@ def linemesh3(m, elset, n, curve, reverse=True):
     end, mid, end). Returns (eids, nids of the end nodes in the order of
     s). reverse (default): every element runs against s (node 1 at the
     larger s), so that a positive pressure, which pushes along n = Z x U as
-    Mecway draws it, is an internal pressure on a chain drawn upwards at
-    X > 0 and pushes along -Y on a plate drawn outwards."""
+    Mecway draws it, is an internal pressure on a wall whose curve s goes
+    upwards at X > 0 (the elements are drawn downwards) and pushes along -Y
+    on a plate whose curve s goes outwards (elements drawn inwards)."""
     ends = [m.node(*curve(float(i) / n)) for i in range(n + 1)]
     eids = []
     for i in range(n):
@@ -326,7 +327,14 @@ TESTS.append(Case(
          tol=0.005, unit="N/m", source="membraan: p R"),
      Check("hoofdspanning 1 boven", lambda r: r.at(
          "principal1u1", (R60, 0.5 * L60, 0.0)), ref=S60, tol=0.005,
-         unit="Pa", source="membraan: p R / t")],
+         unit="Pa", source="membraan: p R / t"),
+     Check("hoopstressm1 midden", lambda r: r.at(
+         "hoopstressm1", (R60, 0.5 * L60, 0.0)), ref=S60, tol=0.005,
+         unit="Pa", source="membraan: p R / t (eigen naam)"),
+     Check("meridionalstressm1 midden", lambda r: r.at(
+         "meridionalstressm1", (R60, 0.5 * L60, 0.0)), ref=0.0,
+         tol_abs=1e-3 * S60, unit="Pa", in_series=False,
+         source="axiaal vrij: 0 (eigen naam)")],
     settings={"fields": FIELDS_AX},
     note="R = 0,5 m, t = 5 mm (#ASTER-SHELL), L = 1 m, 20 line3, p = 1 MPa "
          "op faceid 1, Y vast in de onderste knoop."))
@@ -383,6 +391,13 @@ TESTS.append(Case(
      Check("M_u r = 0,9 a", lambda r: r.at("momentu", (R62B, 0.0, 0.0)),
            ref=-MR62, tol=0.005, unit="N m/m",
            source="Timoshenko: -M_r (trek boven)"),
+     Check("meridionalstressu1 r = 0,9 a", lambda r: r.at(
+         "meridionalstressu1", (R62B, 0.0, 0.0)),
+         ref=-6.0 * MR62 / T62 ** 2, tol=0.005, unit="Pa",
+         source="Timoshenko: -6 M_r / t^2 (eigen naam)"),
+     Check("hoopstressu1 r = 0,9 a", lambda r: r.at(
+         "hoopstressu1", (R62B, 0.0, 0.0)), ref=-6.0 * MT62 / T62 ** 2,
+         tol=0.005, unit="Pa", source="Timoshenko: -6 M_theta / t^2"),
      Check("M_v r = 0,9 a", lambda r: r.at("momentv", (R62B, 0.0, 0.0)),
            ref=-MT62, tol=0.005, unit="N m/m",
            source="Timoshenko: -M_theta (trek boven)"),

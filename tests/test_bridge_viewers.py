@@ -217,6 +217,22 @@ def test_open_paraview(t, base):
           "no window, output to a log, clean environment")
     check("Model_20261110_120000.rmed" in text,
           "message names the other result file")
+    # axisymmetric run: <base>_paraview_axis.py next to it -> --script,
+    # the .pvd in BRIDGE_PV_FILE
+    script = v.axis_script_path(base)
+    _touch(script)
+    ok, text = v.open_paraview(base, "", "", FakePopen, bases, env)
+    cmd, kw = FakePopen.calls[-1]
+    check(ok and [_norm(c) for c in cmd] == [
+        _norm(t["pv610"]), "--script=" + _norm(script)] and
+        _norm(kw["env"].get("BRIDGE_PV_FILE", "")) == _norm(base + ".pvd")
+        and "revol" in text,
+        "axisymmetric run: ParaView with --script, the .pvd in the "
+        "environment")
+    os.remove(script)
+    check("from paraview.simple import" in v.AXIS_SCRIPT and
+          "RotationAxis = [0.0, 1.0, 0.0]" in v.AXIS_SCRIPT,
+          "the script revolves about Y")
     os.remove(base + ".pvd")
     ok, text = v.open_paraview(base, "", "", FakePopen, bases, env)
     check(ok and _norm(FakePopen.calls[-1][0][0]) == _norm(os.path.join(

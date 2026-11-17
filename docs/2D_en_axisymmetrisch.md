@@ -160,8 +160,43 @@ resultaat opent):
 | `stressxx`, `stressyy`, `stressxy` | `SIGM_NOEU`/`SIGM_ELNO` | spanningen in het vlak (SA0: σ_r, σ_z, τ_rz) |
 | `stresszz` | `SIGM_*` SIZZ | 0 bij vlakke spanning, ν(σ_xx + σ_yy) bij vlakke rek, **tangentiële spanning** in SA0 |
 | `stressyz`, `stresszx` | – | 0 (zoals Mecway) |
+| `radialstress`, `axialstress`, `hoopstress`, `shearstressrz` | `SIGM_*` SIXX, SIYY, SIZZ, SIXY | alleen axisymmetrisch (SA0, DA0, route A met `AXIS`, de thermische `AXIS`-keten): σ_r, σ_z, σ_θ, τ_rz onder een eigen naam, dezelfde waarden als `stressxx`, `stressyy`, `stresszz`, `stressxy` (namen van de bridge; route `liml`) |
 | `vonmises` | `SIEQ_*` | 3D-von Mises met σ_zz |
 | `reactionforcex/y/mag` | `REAC_NODA` × t of × 2π | voor de hele dikte (S20) of 360 graden (SA0), zoals Mecway |
+| `contactpressure`, `contactstate` | `LAGS_C`, `CONT_NOEU` | route A met contact (§1.4): op elke knoop van het model, 0 buiten het contact (een 3D-model heeft ze alleen op de slaveknopen) |
+
+Axisymmetrische schalen hebben eigen namen per oppervlak (§1.4.2).
+
+**De assen.** Mecway tekent de doorsnede, niet het omwentelingslichaam: X is de straal en Y de
+symmetrieas (axisymmetrisch), Z de omtreksrichting; bij vlakke spanning en vlakke rek liggen X
+en Y in het vlak en is Z de dikterichting. Route A (§1.4) tekent de vlakke elementen als een
+dunne vlakke plaat in het 3D-beeld, axisymmetrische schalen (§1.4.2) als de lijn van de
+meridiaan. Kijk langs Z (Mecway's vooraanzicht) om de doorsnede te zien zoals in de figuren
+van deze pagina. Voor een beeld van het hele lichaam: de knop ParaView (hieronder).
+
+**Rood in Mecway's boom is normaal.** Gezien door de gebruiker in Mecway 35 (17 nov 2026): in
+een model van route A met contact (PL-40) zijn de analyse, de componenten en het contact rood;
+in modellen met axisymmetrische schalen (PL-60, PL-62) het component, de druk en de symmetrie.
+Rood markeert wat Mecway's eigen solver niet zou rekenen (oorzaak NIET geverifieerd; Mecway's
+handleiding §7.5 noemt line3-balken alleen bij de CCX-solver). Het is onschuldig: de bridge
+rekent deze onderdelen wel.
+
+**Omwentelingsbeeld in ParaView.** Met *VTU/PVD-bestanden voor ParaView* (`vtu_export`) aan
+schrijft de bridge `<model>_<run-id>_paraview_axis.py` naast het resultaat van een
+axisymmetrische run, en de knop ParaView (Resultatenvenster en convergentievenster,
+[`Handleiding.md`](Handleiding.md) §5.1) opent het resultaat als omwentelingslichaam: de
+doorsnede 270 graden gedraaid om Y, zodat het uitgesneden deel de doorsnede laat zien.
+
+![Het resultaat van PL-24 als omwentelingslichaam in ParaView](img/2d_paraview_axis.png)
+
+1. Het snijvlak: de doorsnede zoals Mecway hem tekent (X = straal).
+2. De symmetrieas Y.
+3. De kleurschaal: `vonmises` (axisymmetrische schalen: `vonmisesu1`); kies een andere variabele in de werkbalk van ParaView.
+
+De vectoren (`displx`, `disply`, `DEPL`) worden gekopieerd, niet meegedraaid: `displx` blijft de
+radiale verplaatsing van de doorsnede, dus ParaView's *Warp By Vector* op het
+omwentelingslichaam klopt niet. Zonder `vtu_export` (alleen *MED-bestand voor ParaView*) opent de
+knop de doorsnede plat, zoals voorheen.
 
 ### 1.4 Niet-lineair in 2D: een 3D-model met `**ASTER-PLANE` (route A)
 
@@ -398,6 +433,7 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
 | `reactionforcex`, `reactionforcey`, `reactionforcemag`, `reactionmomz`, `reactionmommag` | de reacties voor 360 graden (× 2π); `reactionmommag` = \|`reactionmomz`\| | `reactions` |
 | `vonmisesu1`, `vonmisesm`, `vonmisesb` | von Mises op het bovenoppervlak, het middenvlak en het onderoppervlak (knoopwaarden) | `vonmises` |
 | `stressxxu1` … `stresszxu1`, `…m1`, `…b1` | de spanningstensor per oppervlak in globaal X, Y, Z: `stresszz…` = de tangentiële spanning (ringspanning), de meridiaanspanning in `stressxx…`, `stressyy…`, `stressxy…` (een cilinder langs Y: `stressyy…`; een ronde plaat langs X: `stressxx…`); `stressyz…`, `stresszx…` = 0 | `shell_stresses` |
+| `meridionalstressu1`, `…m1`, `…b1`, `hoopstressu1`, `…m1`, `…b1` | de spanning langs de meridiaan (de eigen richting van de schaal, niet verdeeld over X en Y) en de ringspanning (= `stresszz…`) per oppervlak (namen van de bridge) | `shell_stresses` |
 | `forceperlengthu`, `forceperlengthv` | de normaalkracht per lengte langs de meridiaan (u) en in de omtreksrichting (v), N/m | `shell_forces` (alleen S30) |
 | `momentu`, `momentv` | het buigend moment per lengte dat de buigspanning langs de meridiaan (u) of in de omtreksrichting (v) geeft, N m/m; positief geeft trek aan het bovenoppervlak | `shell_forces` (alleen S30) |
 | `principal1u1` … `principal3b1`, `trescau1` … `trescab1` | hoofdspanningen en Tresca per oppervlak | `principal_stresses` |
@@ -733,6 +769,15 @@ Stappen:
    ingeklemde ronde plaat (de dikte uit een *RectBar* met a = 10 mm, *Fixed support* aan de
    rand, *Symmetry* met normaal X op de middelste knoop); `PL-64.liml` is de
    Code-Aster-testcase ssls114i.
+8. Wat je in Mecway afleest na een run van `PL-62.liml` (ingeklemde ronde plaat, a = 1 m,
+   t = 10 mm, q = 1000 Pa, E = 210 GPa, ν = 0,3; gemeten door de gebruiker in Mecway 35):
+
+   | Mecway-item | Waar | Waarde | Controle |
+   |---|---|---|---|
+   | *displacement* Y | het midden (X = 0) | −8,123e-4 m | de doorbuiging q a⁴/(64 D) = 8,125e-4 m, D = E t³/(12(1 − ν²)) |
+   | *displacement* X | overal | 0 | een plaat onder druk rekt niet |
+   | *reaction force* grootte | de randknoop | 3142 N | het totaal over 360 graden: q π a² |
+   | *reaction moment* grootte | de randknoop | 785,4 N m | het totale inklemmoment over de omtrek: 2π a · q a²/8 |
 
 ### 1.6 Veelgemaakte fouten
 

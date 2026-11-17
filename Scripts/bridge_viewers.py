@@ -380,6 +380,65 @@ def _unsafe_text(path):
               u"without those characters.").format(CMD_UNSAFE, path)
 
 
+# An axisymmetric run (AXIS, also the axisymmetric shells and the AXIS
+# thermal runs) gets <model>_<run_id>_paraview_axis.py next to its result
+# files (bridge_to_aster.generate_AsterSolver_files, only with vtu_export):
+# open_paraview then starts ParaView with that script, which shows the
+# section revolved about Mecway's Y axis (the axis of symmetry) over 270
+# degrees. ParaView's RotationalExtrusion needs polydata (ExtractSurface
+# first) and turns about RotationAxis. Vector arrays are copied, not
+# rotated: displx stays the radial displacement of the section. Only for a
+# .pvd; a .rmed opens flat as before (the MEDReader pipeline NOT verified).
+AXIS_SCRIPT_SUFFIX = "_paraview_axis.py"
+AXIS_SCRIPT = u'''# -*- coding: utf-8 -*-
+# Written by MecwayAsterBridge (bridge_viewers.py): shows an axisymmetric
+# result as a body of revolution in ParaView (270 degrees about Mecway's Y
+# axis, the axis of symmetry). The ParaView button of the bridge starts
+# ParaView with this script. Safe to delete.
+import os
+from paraview.simple import (ColorBy, ExtractSurface, GetActiveViewOrCreate,
+                             GetAnimationScene, PVDReader, Render,
+                             RotationalExtrusion, Show)
+
+path = os.environ.get("BRIDGE_PV_FILE", "")
+if not path:
+    try:
+        path = __file__[:-len("_paraview_axis.py")] + ".pvd"
+    except NameError:
+        path = ""
+reader = PVDReader(registrationName=os.path.basename(path), FileName=path)
+surface = ExtractSurface(registrationName="section", Input=reader)
+body = RotationalExtrusion(registrationName="revolved 270 deg about Y",
+                           Input=surface)
+body.RotationAxis = [0.0, 1.0, 0.0]
+body.Angle = 270.0
+body.Resolution = 54
+view = GetActiveViewOrCreate("RenderView")
+shown = Show(body, view)
+names = body.PointData.keys()
+for name in ("vonmises", "vonmisesu1", "temperature", "displmag"):
+    if name in names:
+        ColorBy(shown, ("POINTS", name))
+        shown.RescaleTransferFunctionToDataRange(True, False)
+        shown.SetScalarBarVisibility(view, True)
+        break
+GetAnimationScene().UpdateAnimationUsingDataTimeSteps()
+# an oblique view: looking along Z the body of revolution is seen edge-on
+# (a plate or a short ring is then a line)
+view.ResetCamera()
+camera = view.GetActiveCamera()
+camera.Elevation(35.0)
+camera.Azimuth(30.0)
+view.ResetCamera()
+Render()
+'''
+
+
+def axis_script_path(base):
+    """<base>_paraview_axis.py (base = <dir>/<model>_<run_id>)."""
+    return base + AXIS_SCRIPT_SUFFIX
+
+
 def open_paraview(base, paraview=None, salome=None, popen=None, bases=None,
                   environ=None):
     """
@@ -418,18 +477,34 @@ def open_paraview(base, paraview=None, salome=None, popen=None, bases=None,
             u"the MEDReader plugin is loaded (Tools > Manage Plugins > "
             u"MEDReader, Auto Load), and ParaView 5.10 not at all.").format(
                 u" ({0})".format(exe) if exe else u"")
+    script = axis_script_path(base)
+    revolved = (path.lower().endswith(".pvd") and os.path.isfile(script))
     if exe.lower().endswith((".bat", ".cmd")):
-        bad = _unsafe([exe, path])
+        bad = _unsafe([exe, path] + ([script] if revolved else []))
         if bad:
             return False, _unsafe_text(bad)
     log_path = base + "_paraview_launch.log"
-    error = _start([exe, path], os.path.dirname(os.path.abspath(path)),
-                   log_path, popen)
+    if revolved:
+        # axisymmetric run: the section revolved about Y (AXIS_SCRIPT)
+        error = _start([exe, "--script=" + script],
+                       os.path.dirname(os.path.abspath(path)), log_path,
+                       popen, env=_clean_env({"BRIDGE_PV_FILE": path}))
+    else:
+        error = _start([exe, path], os.path.dirname(os.path.abspath(path)),
+                       log_path, popen)
     if error:
         return False, tr(u"ParaView starten mislukt: {0}\n{1}",
                          u"Starting ParaView failed: {0}\n{1}").format(
                              exe, error)
-    bridge_utils.log(u"INFO: ParaView started: {0} {1}".format(exe, path))
+    bridge_utils.log(u"INFO: ParaView started: {0} {1}{2}".format(
+        exe, path, u" (revolved, {0})".format(os.path.basename(script))
+        if revolved else u""))
+    if revolved:
+        return True, tr(
+            u"ParaView opent {0} als omwentelingslichaam (270 graden om "
+            u"de Y-as).", u"ParaView opens {0} as a body of revolution (270 "
+            u"degrees about the Y axis).").format(
+                os.path.basename(path)) + _others_note(others)
     return True, tr(u"ParaView opent {0}.", u"ParaView opens {0}.").format(
         os.path.basename(path)) + _others_note(others)
 

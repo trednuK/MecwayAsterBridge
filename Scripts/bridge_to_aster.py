@@ -2067,7 +2067,8 @@ def _erme_force_face(entry):
 def _error_estimator_groups(model_data, analysis):
     """
     Volume groups for the error estimator, or [] if it does not run (off,
-    or no volume elements: WARNING). Only MECA_STATIQUE (see
+    or no volume elements: INFO, a WARNING when #ASTER-OPTIE
+    error_estimator asks for it). Only MECA_STATIQUE (see
     bridge_utils.error_estimator_requested).
     """
     if not analysis.get("error_estimator", False):
@@ -9337,7 +9338,33 @@ def generate_AsterSolver_files(work_dir, model_data, msh_path, resu_name):
         bridge_manifest.prepare_base(result, work_dir, model_data, analysis,
                                      adapt_plan is not None,
                                      _has_cara(model_data))
+        _write_axis_paraview(work_dir, model_data)
     return result
+
+
+def _write_axis_paraview(work_dir, model_data):
+    """
+    <model>_<run_id>_paraview_axis.py next to the run files of an
+    axisymmetric run (AXIS: SA0/DA0, route A, axisymmetric shells, the AXIS
+    thermal runs and chain) with the setting vtu_export: the ParaView button
+    (bridge_viewers.open_paraview) then shows the section revolved about Y.
+    Without vtu_export nothing (the button opens a .rmed flat).
+    """
+    plane = bridge_plane.info(model_data) or {}
+    if plane.get("modelisation") != "AXIS" and             not model_data.get("thermal_axis"):
+        return
+    if not CONFIG_BRIDGE.get("vtu_export", False):
+        return
+    import bridge_viewers
+    path = os.path.join(work_dir,
+                        run_name(bridge_viewers.AXIS_SCRIPT_SUFFIX))
+    try:
+        with io.open(path, "w", encoding="utf-8") as f:
+            f.write(bridge_viewers.AXIS_SCRIPT)
+        log("INFO: ParaView script for the revolved view: {0}".format(path))
+    except (IOError, OSError) as e:
+        log("INFO: ParaView script for the revolved view not written "
+            "({0}); the ParaView button opens the section flat.".format(e))
 
 
 def _check_lost_contacts(model_data, solver_cmd):

@@ -126,10 +126,23 @@ def _checks(plane=False):
         Check("-sigma_r buitenring binnenwand",
               lambda r: -r.at("stressxx", (RB, 0.0, 0.0), time=1.0),
               ref=P_FIT, tol=0.01, unit="Pa", source=src)]
+    # 2D: contactpressure on every node, 0 outside the contact (S44,
+    # readable 2D results); the hoop stress under its own name (AXIS)
+    extra = [
+        Check("contactdruk buiten het contact (binnenwand binnenring)",
+              lambda r: r.at("contactpressure", (RA, 0.0, 0.0), time=1.0),
+              ref=0.0, tol_abs=1e-6 * P_FIT, unit="Pa", in_series=False,
+              source="geen contact: 0 (elke knoop heeft een waarde)")]
+    if not plane:
+        extra.append(Check(
+            "hoopstress buitenring binnenwand",
+            lambda r: r.at("hoopstress", (RB, 0.0, 0.0), time=1.0),
+            ref=P_FIT * (RC ** 2 + RB ** 2) / (RC ** 2 - RB ** 2), tol=0.02,
+            unit="Pa", source="Lame: p (c^2 + b^2) / (c^2 - b^2)"))
     return [
         Check("contactdruk (gemiddeld, slave)",
               lambda r: r.mean("contactpressure", "Slave", time=1.0),
-              ref=P_FIT, tol=0.01, unit="Pa", source=src)] + sr + [
+              ref=P_FIT, tol=0.01, unit="Pa", source=src)] + sr + extra + [
         Check("u_r buitenring binnenwand",
               lambda r: r.at("displx", (RB, 0.0, 0.0), time=1.0),
               ref=P_FIT * _u_per_p(RB, RB, RC, True), tol=0.01, unit="m",

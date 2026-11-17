@@ -109,6 +109,39 @@ def test_rotation():
           "forceperlengthu/v = NXX/NYY, momentu/v = MXX/MYY")
 
 
+def test_named_and_padded():
+    """AXIS continuum: radial/axial/hoop/shearstressrz after stresszx with
+    the ids and values of stressxx/yy/zz/xy (own _Var objects); 2D contact:
+    contactpressure on every node of the model elements, 0 elsewhere."""
+    from collections import OrderedDict
+    ids = np.array([1, 2, 3], dtype="<i4")
+    vals = dict((c, np.array([1.0, 2.0, 3.0]) * (k + 1))
+                for k, c in enumerate(("xx", "yy", "zz", "xy", "yz", "zx")))
+    v = OrderedDict(("stress" + c, are._Var("stress" + c, False, ids,
+                                             (lambda c: lambda f: vals[c])(c)))
+                    for c in ("xx", "yy", "zz", "xy", "yz", "zx"))
+    v["vonmises"] = are._Var("vonmises", False, ids, lambda f: vals["xx"])
+    are._axis_named_stresses(v)
+    names = list(v)
+    check(names[6:10] == ["radialstress", "axialstress", "hoopstress",
+                          "shearstressrz"] and names[-1] == "vonmises",
+          "aliases right after stresszx ({0})".format(names))
+    check(np.allclose(v["hoopstress"].getter(None), vals["zz"]) and
+          v["hoopstress"] is not v["stresszz"] and
+          v["hoopstress"].ids is v["stresszz"].ids,
+          "hoopstress = stresszz, own _Var with the same ids")
+    model = {"elements": {1: ("quad4", [1, 2, 5, 4]),
+                          2: ("quad4", [2, 3, 6, 5])}}
+    c = OrderedDict([("contactpressure", are._Var(
+        "contactpressure", False, np.array([2, 5], dtype="<i4"),
+        lambda f: np.array([7.0, 8.0])))])
+    are._pad_contact(c, model)
+    cp = c["contactpressure"]
+    check(list(cp.ids) == [1, 2, 3, 4, 5, 6] and
+          np.allclose(cp.getter(None), [0, 7, 0, 0, 8, 0]),
+          "contactpressure padded with 0 on every node")
+
+
 def _comm(tmp, analysis, fields):
     work = tempfile.mkdtemp(dir=tmp)
     liml = os.path.join(work, "model.liml")
@@ -164,6 +197,7 @@ def main():
     try:
         test_frames()
         test_rotation()
+        test_named_and_padded()
         test_comm(tmp)
     finally:
         for k, v in saved_fields.items():
