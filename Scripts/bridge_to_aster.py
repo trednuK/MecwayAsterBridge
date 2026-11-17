@@ -2900,13 +2900,13 @@ def _prepare_gaps(model_data):
                 if proj < 0.0:
                     reason = tr(
                         "trek-gap: U wijst (deels) van knoop 2 naar knoop 1, "
-                        "(x2 - x1) . U = {0:.6g} m < 0. Mecway sluit die als "
+                        "(x2 - x1) . U = {0} m < 0. Mecway sluit die als "
                         "de knopen langs U uit elkaar gaan, DIS_CHOC sluit "
                         "alleen als ze naar elkaar toe gaan",
                         "tension gap: U points (partly) from node 2 to node "
-                        "1, (x2 - x1) . U = {0:.6g} m < 0. Mecway closes it "
+                        "1, (x2 - x1) . U = {0} m < 0. Mecway closes it "
                         "when the nodes move apart along U, DIS_CHOC only "
-                        "closes when they approach").format(proj)
+                        "closes when they approach").format(repr(round(proj, 9)))
                     hint = tr(
                         " Mecway gebruikt de knoopposities verder niet: leg "
                         "knoop 2 op knoop 1 (zonder speling) of voorbij "
