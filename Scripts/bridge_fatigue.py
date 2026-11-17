@@ -825,6 +825,10 @@ def _check_routes(model_data, plan, analysis):
     multi = plan["options"]["criterion"] != "GEEN"
     vol = _volume_materials(model_data)
     shell = _materials_of(model_data, _SHELL)
+    # materials of beams, trusses and springs (KNOWN_BUGS 66): no damage
+    others = _materials_of(model_data, set(
+        model_data.get("elset_modelisations", {}).values()) -
+        set(_VOLUME + _SHELL))
     model_data["_fat_curves"] = plan["curves"]
     curves = []
     for c in plan["curves"]:
@@ -854,11 +858,27 @@ def _check_routes(model_data, plan, analysis):
         if not on_vol and not on_shell:
             log(tr(u"WARNING: Vermoeiing: materiaal '{0}' zit niet in "
                    u"volume- of schaalelementen; vermoeiing alleen op "
-                   u"volume-elementen en schalen (balken niet).",
+                   u"volume-elementen en schalen (balken, staven en veren "
+                   u"niet).",
                    u"WARNING: Fatigue: material '{0}' is not in solid or "
                    u"shell elements; fatigue only on solid elements and "
-                   u"shells (not beams).").format(c["material"]))
+                   u"shells (not beams, trusses or springs).").format(
+                       c["material"]))
             continue
+        on_other = _curve_materials(model_data, c, others)
+        if on_other:
+            log(tr(u"WARNING: Vermoeiing: de Wohler-curve van '{0}' geldt "
+                   u"ook voor {1} op balken, staven, kabels of discrete "
+                   u"elementen (veren, gaps, dempers); die elementen "
+                   u"krijgen geen schade (vermoeiing alleen op "
+                   u"volume-elementen en schalen).",
+                   u"WARNING: Fatigue: the Wohler curve of '{0}' also "
+                   u"applies to {1} on beams, trusses, cables or discrete "
+                   u"elements (springs, gaps, dampers); those elements get "
+                   u"no damage (fatigue only on solid elements and "
+                   u"shells).").format(
+                       c["material"], u", ".join(
+                           u"'{0}'".format(m) for m in sorted(on_other))))
         if c["form"] == "strain" and not _resolve_strain_E(model_data, c,
                                                            on_vol):
             return None

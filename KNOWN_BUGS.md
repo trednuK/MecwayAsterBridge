@@ -1129,8 +1129,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    (via c(T)); the
    mechanical chain has its own limits (item 64). The formula is evaluated per Gauss point in Python:
    with a large source group (route B on the whole model) that takes long (WE-02: 9,700
-   elements in the source group, 60 steps, ~2 min; with THER_NON_LINE, WE-05, ~9 min).
-   The energy check computes at five instants, not per step.
+   elements in the source group, 60 steps, 77 s; with THER_NON_LINE, WE-05, ~6 min;
+   last regression, resultaten.csv). The energy check computes at five instants, not per
+   step.
 
 61\. **Cyclic symmetry: limits** (confirmed with runs, `bridge_cyclic.py`,
    `aster_cyclic.py`, docs/Modaal_en_knik.md par. 7). Translated: Mecway *Cyclic
@@ -1176,33 +1177,35 @@ Code-Aster value per node) and logs the largest difference per variable.
    does not move nodes, because the result export checks the coordinates against
    the `.liml` (`aster_results_export._check_node_order`); with quarter points in the
    `.liml` itself it does work (BR-04), but Mecway cannot create them. Without
-   quarter points `POST_K1_K2_K3` is 3-5 % too low with hex20 and 9-14 % with hex8
-   (`CALC_G` < 1 % resp. 2 % on K); (e) XFEM (`#ASTER-XFEM`, `bridge_xfem.py`,
-   S6b, BR-07..12; docs/Breukmechanica.md §7): only linear static and only
-   solid elements with MODELISATION `3D` (ERROR otherwise); no contact on the lips,
-   no crack growth (`PROPA_FISS`); K from `CALC_G_XFEM` has no curvature correction
+   quarter points `POST_K1_K2_K3` is ~3 % too low with hex20 and 9-11 % with hex8
+   (BR-01 mesh study, docs/Breukmechanica.md §3; `CALC_G` < 1 % resp. 2 % on K); (e) XFEM
+   (`#ASTER-XFEM`, `bridge_xfem.py`, S6b, BR-07..12; docs/Breukmechanica.md §7): only linear
+   static and only solid elements with MODELISATION `3D` (ERROR otherwise); no contact on
+   the lips, no crack growth (`PROPA_FISS`); K from `CALC_G_XFEM` has no curvature correction
    on a curved front (BR-10: +5 %; WARNING, use `POST_K1_K2_K3` or G);
    only nodal fields go to Mecway (displacement and stress via `POST_CHAM_XFEM`
    + `PROJ_CHAMP`, no `SIGM_ELNO`); a node exactly on the crack plane gets the
    value of one lip; `REAC_NODA` on nodes of cut elements is only the
-   classical part (NOT verified); error estimator and fatigue not together with XFEM
-   (WARNING); tet10/wedge15/pyr13 and `groep=` (`GROUP_MA_ENRI`) NOT verified,
-   `LINE_QUAD` only outside the regression (BR-07 with LINE_QUAD: K_I 0.0 %), `result_route`
-   `tabel` NOT verified; a crack from an `XFEM_` face selection (BR-13) always lies
-   on a node layer; a curved crack plane or front, tet and quadratic
-   elements from a selection NOT verified; (f) a crack on
-   an interface between materials, thermal strain and pressure on the lips in `CALC_G`:
-   NOT verified; (g) a curved front that is not a circle: K from `CALC_G` without
-   curvature correction (WARNING; forma07a without correction +5.6 %). In the Mecway GUI
-   NOT checked: opening a crack with *Disconnect elements* and *Merge
-   nearby nodes* with a node selection (manual v33 par. 4.2.10/4.2.11) and the text in
-   the status box.
+   classical part (NOT verified); fatigue not together with XFEM (WARNING), the error
+   estimator neither (INFO: it is on by default); tet10/wedge15/pyr13 and `groep=`
+   (`GROUP_MA_ENRI`) NOT verified, `LINE_QUAD` only outside the regression (BR-07 with
+   LINE_QUAD: K_I 0.0 %), `result_route` `tabel` NOT verified; a crack from an `XFEM_` face
+   selection (BR-13) always lies on a node layer; a curved crack plane or front, tet and
+   quadratic elements from a selection NOT verified; (f) a crack on an interface between
+   materials (WARNING), thermal strain and pressure on the lips in `CALC_G`: NOT verified;
+   (g) a curved front that is not a circle: K from `CALC_G` without curvature correction
+   (WARNING; forma07a without correction +5.6 %). In the Mecway GUI NOT checked: opening a
+   crack with *Disconnect elements* and *Merge nearby nodes* with a node selection (manual
+   v33 par. 4.2.10/4.2.11) and the text in the status box.
 
 64\. **Welding: limits of the thermal → mechanical chain** (confirmed,
    `bridge_thermomech.py`, docs/Lassen.md §9). Only in a transient thermal
    analysis (T31 with a Thermal stress) and only with solid elements (ERROR with
-   shells, beams, springs); the chain does not compute contact and couplings, nor element
-   offset, flexible joint and constraint equation (WARNING). The
+   shells, beams, springs; since S44d also plane shells with `**ASTER-PLANE AXIS`, where
+   contact and couplings stop the run with an ERROR, item 126); contact and couplings are
+   not translated in a thermal analysis and so not in the chain either (ERROR "Not
+   translated" in the log and `skipped_loads`, the run goes on), element offset, flexible
+   joint and constraint equation not in the chain (WARNING). The
    mechanical steps are the thermal ones (one Mecway *Time step*, also for
    cooling). Without `geboorte=` the bead is present from t = 0 and carries load
    (filler material that is born: item 71); metallurgy only
@@ -1212,8 +1215,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    Linear hex8 ('3D') 'lock' under plastic yielding: WE-10 gave σxx in the weld
    1.3–2.6 × SY (top–bottom) and σzz 190 MPa in the middle of a 5 mm plate (WARNING, advice
    LINE_QUAD). With LINE_QUAD and plasticity Newton converged only with
-   line search (`RECH_LINEAIRE`, now always with plasticity) and a step takes ~35 s
-   CPU on 2,000 hex20 (WE-10b, ~1 hour; not in the standard regression). `GDEF_LOG`
+   line search (`RECH_LINEAIRE`, now always with plasticity); WE-10b (2,000 hex20, 200
+   steps) takes ~1 hour and is not in the standard regression. `GDEF_LOG`
    in the chain and kinematic hardening with temperature-dependent ET: NOT
    verified. Whether Mecway's GUI lets you add or shows Thermal stress, Fixed support and Displacement in a
    T31 model: NOT checked (headless, Mecway 33 stores and ignores
@@ -1227,14 +1230,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    AD-02 the worst hex20 drops to 0.04 (WARNING) without the error rising.
    Node selections with a condition are not refined along by Mecway: ERROR before
    refining (AD-03). HOMARD route for thermal and nonlinear static (§7, S35b): solids
-   only, loads and constraints on face selections; ERROR for shells, beams, node
-   selections with more than one node (HOMARD keeps node groups with their old nodes
-   only), contact, couplings, compression only, element failure, LINE_QUAD, route
-   'tabel' (AD-12). After the projection onto the Mecway mesh the element-node values
-   lose the jump between coarse elements (one refined neighbour gives the value at a
-   shared node) and the reactions are not passed on (WARNING). Only cylinders and
-   spheres are recognised for boundary following (no cones; #ASTER-RAND as fallback).
-   Each nonlinear loop recomputes the whole load history. The HOMARD loop was checked
+   only, loads and constraints on face selections; ERROR (`bridge_homard.check_scope`) for
+   shells, beams, springs and masses, contact (also bonded), couplings, constraint equations,
+   pre-tension sections, flexible joints, compression only, element failure, LINE_QUAD, 2D,
+   route 'tabel' and node selections with more than one node in a load or constraint (HOMARD
+   keeps node groups with their old nodes only; AD-12). After the projection onto the Mecway
+   mesh the element-node values lose the jump between coarse elements (one refined neighbour
+   gives the value at a shared node) and the reactions are not passed on (WARNING). Only
+   cylinders and spheres are recognised for boundary following (no cones; #ASTER-RAND as
+   fallback). Each nonlinear loop recomputes the whole load history. The HOMARD loop was checked
    with real Code-Aster runs, not in the Mecway GUI. Mecway route: each loop waits for Code-Aster (status window or OK click,
    setting `wait_for_aster`). The loop in the
    Mecway GUI has NOT been checked, only headless (`mecway.exe <model> script`).
@@ -1247,7 +1251,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    static or the time steps of `STAT_NON_LINE`/`DYNA_NON_LINE`; shells on the top
    and bottom surface (`SIEQ_NOEU` of `POST_CHAMP EXTR_COQUE`); multiaxial with
    `CALC_FATIGUE FATIGUE_MULTI DOMA_NOEUD` (Dang Van, Matake, Crossland, own formula;
-   sslv135a). Not: (a) beams (WARNING); shells with a strain curve or a criterion
+   sslv135a). Not: (a) beams, trusses and springs (no damage, WARNING); shells with a
+   strain curve or a criterion
    (WARNING, shells skipped); (b) multiaxial per Gauss point (`DOMA_ELGA`),
    Papadopoulos (only via `criterium = FORMULE` with `RAYSPH`), Fatemi-Socie
    (`FATESOCI_MODI_AV`), `COEF_PREECROU`, `INST_INIT_CYCL`, constants a/b/c per
@@ -1267,8 +1272,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    With a time history `damage`/`life` are in every time step with the same value
    (Mecway's API reads them, headless); the display in the Mecway GUI has NOT been checked
    (question). The history is held in memory as nodes × time steps (float64);
-   the rainflow per node is Python (measured outside Code-Aster: 20,000 nodes × 200
-   steps with noise, 1.26 million cycles, 3.3 s); a large dynamic model in a real
+   the rainflow per node is Python (measured outside Code-Aster, not in the repo: 20,000
+   nodes × 200 steps with noise, 1.26 million cycles, 3.3 s); a large dynamic model in a real
    run has NOT been measured.
 
 72\. **Welding: limits of the metallurgy** (confirmed with runs, `bridge_metallurgy.py`,
@@ -1345,9 +1350,9 @@ Code-Aster value per node) and logs the largest difference per variable.
 121\. **Result formulas: not every Mecway symbol** (confirmed, Mecway 34, GitHub issue #8;
    S33). The bridge evaluates Mecway's result formulas (*Solution > Formula*) in the job
    (`bridge_formula`, `aster_results_export._formula_vars`), but only with symbols of fields it
-   writes. Not: Green-Lagrange principal values `GLe1`.. (`e1` works: in a nonlinear analysis
-   it is the Green-Lagrange principal strain; `s1`..`s3`, `tr`, `e1`..`e3` need the fields
-   `principal_stresses` / `principal_strains`, S34), stresses in element coordinates
+   writes (`s1`..`s3`, `tr`, `e1`..`e3`, `GLe1`..`GLe3` need the fields `principal_stresses` /
+   `principal_strains`, S34, S34b; with Green-Lagrange strain Mecway rewrites `e1` to `GLe1`,
+   FX-05; `g`, `e2`, `e3` there NOT verified). Not: stresses in element coordinates
    (`s.uu`..), shell forces `ML`/`FL`, Zienkiewicz-Zhu stresses, `FE`, `Ue`/`UE`, electric
    symbols and material properties (`youngsmodulus`, ...). Such a formula keeps no values and is
    invalid (red) after loading; `bridge_from_liml._plan_result_formula` gives a WARNING and lists
@@ -1363,17 +1368,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    static and implicit dynamics (`MECA_STATIQUE`, `STAT_NON_LINE`, `DYNA_NON_LINE` with
    HHT/NEWMARK; PT-06 .. PT-08 equal to Mecway's CCX within 0.06%); not in explicit
    dynamics (`DIFF_CENT`: the reference node has no mass; Lagrange relations there NOT
-   verified) or on a modal basis (ERROR). (b) Mecway's spring element variant only in
-   linear static (two nodal forces k d, PT-09/10 exact against Mecway's internal solver).
-   Mecway also allows it in Frequency and Buckling, but gives the tensioned spring a
-   geometric stiffness there (cantilever with a pretensioned spring from base to tip:
-   buckling factor 6.991 in Mecway, 1.748 with the nodal forces in Code-Aster, measured 28
-   Oct 2026); DIS_T has none, so the bridge gives an ERROR. A fix would need the spring's
-   geometric stiffness N/L across its axis (e.g. an extra element), NOT built. (c) Loads, supports and contact on faces that touch the section: the boundary
-   cells of the elements below the section get the copies of the section nodes, except
-   cells that only carry supports (those stay on the Mecway node: a support on both the node
-   and its copy repeats the tie, `FACTOR_11`, seen in PT-01); node-based quantities that
-   `bridge_mesh` derives from the face lists (pinned support weights, per-node normals of
+   verified), modal, buckling or on a modal basis (ERROR). (b) Mecway's spring element
+   variant only in linear static (two nodal forces k d, PT-09/10 exact against Mecway's
+   internal solver). Mecway also allows it in Frequency and Buckling, but gives the
+   tensioned spring a geometric stiffness there (cantilever with a pretensioned spring from
+   base to tip: buckling factor 6.991 in Mecway, 1.748 with the nodal forces in Code-Aster,
+   measured 28 Oct 2026); DIS_T has none, so the bridge gives an ERROR. A fix would need the
+   spring's geometric stiffness N/L across its axis (e.g. an extra element), NOT built. (c)
+   Loads, supports and contact on faces that touch the section: the boundary cells of the
+   elements below the section get the copies of the section nodes, except cells that only
+   carry supports (those stay on the Mecway node: a support on both the node and its copy
+   repeats the tie, `FACTOR_11`, seen in PT-01); node-based quantities that `bridge_mesh`
+   derives from the face lists (pinned support weights, per-node normals of
    frictionless/compression only) use the Mecway node. The difference is at most the
    shortening, comparable to Mecway's inserted layer that carries no loads. (d) `LINE_QUAD`
    (quadratic Code-Aster cells from hex8) is not applied with a section (WARNING): the new
@@ -1423,8 +1429,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    because `DEFI_MATERIAU` has no general anisotropic elasticity for solids (catalogue
    v17.4: only `ELAS_ORTH`/`ELAS_ISTR`; permanent unless via MFront, which the Windows
    build lacks); orthotropic material on quadratic shells (COQUE_3D), membranes and offset shells,
-   shells in other analyses than linear static, and *Composite* laminates (ERROR, step S13e); explicit dynamics, mode superposition, harmonic, spectrum, the thermal -> mechanical chain
-   and acoustics (ERROR, step S13c; modal with prestress, complex modes, cyclic symmetry and
-   Rayleigh damping allowed but not verified separately), orthotropic thermal
-   conductivity; *stress in element coordinates* (`lamuu` ..) is written in linear static only
-   (not per mode in modal/buckling) and not for shells.
+   shells in other analyses than linear static (ERROR), and *Composite* laminates (step
+   S13e; the run stops with the ERROR "Elset(s) without a usable material", after the
+   WARNING "Unknown mechanical type"; NOT verified with a `.liml`); explicit dynamics, mode
+   superposition, harmonic, spectrum, the thermal -> mechanical chain and acoustics (ERROR,
+   step S13c; modal with prestress, complex modes, cyclic symmetry and Rayleigh damping
+   allowed but not verified separately), orthotropic thermal conductivity; *stress in
+   element coordinates* (`lamuu` ..) is written in linear static only (not per mode in
+   modal/buckling) and not for shells.

@@ -2729,19 +2729,19 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 56 | Response spectrum: limits | low (own analysis type); unchanged limit; desk review, Opus-checked, not re-run | none | this commit |
 | 57 | Harmonic acoustics: limits | low (complex Z rare, clear ERROR); unchanged limit; desk review, Opus-checked, not re-run | none | this commit |
 | 59 | Vibro-acoustics: coupled modes and harmonic response; limits | low-medium; item corrected: volume damping, AMOR_HYST and modal_damping are not offered (no setting), not an ERROR; `#ASTER-HYST` was ignored silently in `vibroacoustic_harm_3d`, now a WARNING; desk review, Opus-checked, not re-run | item, WARNING `bridge_vibroacoustic_harm`, Acoustics NL/EN | this commit |
-| 58 | Welding heat source: limits | *draft*: low (niche) |  |  |
-| 61 | Cyclic symmetry: limits | *draft*: low (niche, ERROR) |  |  |
-| 63 | Fracture mechanics: only linear static, no field, no quarter points | *draft*: low (niche) |  |  |
-| 64 | Welding: limits of the thermal → mechanical chain | *draft*: low (niche, warned) |  |  |
-| 65 | Adaptive refinement: limits | *draft*: low (optional feature) |  |  |
-| 66 | Fatigue: limits (solids and shells, Miner, critical plane only on solids) | *draft*: low (niche, warned) |  |  |
-| 72 | Welding: limits of the metallurgy | *draft*: low (niche) |  |  |
-| 71 | Welding: filler material that is born, limits | *draft*: low (niche) |  |  |
+| 58 | Welding heat source: limits | low; unchanged limit; timings updated from the last regression (WE-02 77 s, WE-05 ~6 min); a path that doubles back may be ordered wrongly without a message (stated); desk review: Sonnet draft, Opus-checked, not re-run | item (timings) | this commit |
+| 61 | Cyclic symmetry: limits | low; unchanged limit (the double eigenvalue in ND 0, +1.3 %, has no reliable test before or after the run, so no message); desk review: Sonnet draft, Opus-checked, not re-run | none | this commit |
+| 63 | Fracture mechanics: only linear static, no field, no quarter points | medium (hex8 POST_K1_K2_K3 accuracy); item corrected: POST_K1_K2_K3 ~3 % (hex20) and 9-11 % (hex8) low as in Fracture mechanics §3, the error estimator with XFEM is an INFO, a crack on an interface gets a WARNING; desk review: Sonnet draft, Opus-checked, not re-run | item | this commit |
+| 64 | Welding: limits of the thermal → mechanical chain | medium; item corrected: contact and couplings are not translated in the thermal analysis (ERROR "Not translated", the run goes on), the ~35 s per step had no source (WE-10b: 200 steps, ~1 hour); desk review: Sonnet draft, Opus-checked, not re-run | item | this commit |
+| 65 | Adaptive refinement: limits | low-medium; item corrected: the full refusal list of `bridge_homard.check_scope`, AD-12 only for node selections; desk review: Sonnet draft, Opus-checked, not re-run | item | this commit |
+| 66 | Fatigue: limits (solids and shells, Miner, critical plane only on solids) | medium; real gap: a Wohler curve whose material (or a `*` curve) is also on beams, trusses or springs skipped those without a message; now a WARNING (`_check_routes`, `tests/test_bridge_fatigue_routes.py`); rainflow timing marked as not in the repo; desk review: Sonnet draft, Opus-checked, not re-run | WARNING `bridge_fatigue`, item, Fatigue NL/EN | this commit |
+| 72 | Welding: limits of the metallurgy | low; unchanged limit (MT-02 shows both claims); desk review: Sonnet draft, Opus-checked, not re-run | none | this commit |
+| 71 | Welding: filler material that is born, limits | low-medium; unchanged limit; desk review: Sonnet draft, Opus-checked, not re-run | none | this commit |
 | 104 | Formulas: limits | medium; unchanged limit (LS-40..44, NL-40 analytic; Mecway measurement had a working support, reaction 8000 N; ERROR/WARNING `_not_translated`, `_check_position_formulas`) | none (desk review, Opus-checked; not re-run) | this commit |
-| 121 | Result formulas: not every Mecway symbol | *draft*: low (warned, workaround) |  |  |
-| 124 | Pre-tension section: limits | *draft*: low (niche, ERROR) |  |  |
-| 126 | 2D analyses: limits | *draft*: low (reported limit) |  |  |
-| 131 | Orthotropic and anisotropic material: limits | *draft*: low (reported limit, ERROR) |  |  |
+| 121 | Result formulas: not every Mecway symbol | low; item corrected: `GLe1`..`GLe3` are supported (S34b, FX-05); desk review: Sonnet draft, Opus-checked, not re-run | item | this commit |
+| 124 | Pre-tension section: limits | medium; item corrected: the prism variant is also refused in modal and buckling (ERROR); desk review: Sonnet draft, Opus-checked, not re-run | item | this commit |
+| 126 | 2D analyses: limits | medium (common use, mostly loud ERRORs); unchanged limit; desk review: Sonnet draft, Opus-checked, not re-run | none | this commit |
+| 131 | Orthotropic and anisotropic material: limits | low-medium; item corrected: a *Composite* laminate gives "Unknown mechanical type" and then the ERROR "Elset(s) without a usable material", no dedicated ERROR; desk review: Sonnet draft, Opus-checked, not re-run | item | this commit |
 
 ### S47 – Bonded shell faces with the lever arm between the mid-surfaces
 **Background:** S46 (KNOWN_BUGS 128): two plates bonded face to face are tied at their

@@ -24,10 +24,12 @@
 - **S46 review continued** (KNOWN_BUGS): the harmonic WARNING about stresses without the loss
   factor (item 120) now only counts materials of solid elements, the only ones with stresses
   in that analysis (shell-only models no longer get it); a new WARNING when `#ASTER-HYST` is
-  used in harmonic vibro-acoustics, where it has no effect (item 59); the curved-front WARNING
-  of `#ASTER-XFEM` gives the measured +5.3 % at h = a/20 (item 83). New verification MO-11
-  (modal mechanism in a supported model, item 48). Items 5, 9, 10, 22, 34, 46, 54, 55, 106,
-  107 and 123 corrected after a desk review against the code.
+  used in harmonic vibro-acoustics, where it has no effect (item 59); a new WARNING when a
+  Wohler curve also applies to beams, trusses, cables or discrete elements, which get no
+  damage (item 66); the curved-front WARNING of `#ASTER-XFEM` gives the measured +5.3 % at
+  h = a/20 (item 83). New verification MO-11 (modal mechanism in a supported model, item
+  48). Items 5, 9, 10, 22, 34, 46, 54, 55, 58,
+  63, 64, 65, 106, 107, 121, 123, 124 and 131 corrected after a desk review against the code.
 
 ## V2026.13 – 13 November 2026
 

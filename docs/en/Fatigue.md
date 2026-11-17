@@ -29,7 +29,8 @@ General operation of the bridge: [`UserGuide.md`](UserGuide.md).
 1. **Solid elements** (hex, tet, wedge, pyramid) and/or **shells** (plate or shell
    elements, DKT/COQUE_3D). The damage of solids comes from the nodal stress
    `SIGM_NOEU` (or the strain `EPSI_NOEU` with a strain curve), that of shells from
-   the stress on the top and bottom side (§1.8). Beams get no damage (WARNING, §4).
+   the stress on the top and bottom side (§1.8). Beams, trusses and springs get no damage
+   (WARNING, §4).
 2. **An analysis with a load history**:
    - *Static* (S30, `lin_static_3d`): the static stress is the stress of "one unit
      load"; you give the history as **blocks** or a **signal** (§1.3);
@@ -262,7 +263,7 @@ and bottom have the same range but an opposite mean: with Goodman the damage dif
 (VM-10).
 
 Not for shells: a strain curve and a multiaxial criterion (WARNING, shells skipped).
-Beams: no damage.
+Beams, trusses and springs: no damage.
 
 ### 1.9 Strain life: Manson-Coffin
 
@@ -361,7 +362,7 @@ with `POST_FATIGUE` during the build):
 
 ## 4. What is not possible
 
-- **Beams:** no damage; WARNING.
+- **Beams, trusses and springs:** no damage; WARNING.
 - **Shells with a strain curve or a multiaxial criterion:** not built (WARNING, shells
   skipped); shells work uniaxially (§1.8).
 - **Multiaxial per Gauss point** (`DOMA_ELGA`), **Papadopoulos** (`RAYSPH`, only via
@@ -420,6 +421,7 @@ See also KNOWN_BUGS 66.
 | WARNING: ... criterion = ... only works on solid elements | criterion on shells | no criterion for shells (§1.8) |
 | WARNING: ... the strain curve ... only works on solid elements | strain curve on shells | a stress curve for the shells |
 | WARNING: ... material '...' is not in solid or shell elements | curve on beams | solids and shells only (§4) |
+| WARNING: ... the Wohler curve of '...' also applies to '...' on beams, trusses, cables or discrete elements | the material (or a `*` curve) is also on beams, trusses or springs | those get no damage; the solids and shells do (§4) |
 | WARNING: Fatigue (#ASTER-WOHLER) only works for ... | other analysis | use linear static with blocks/signal or a nonlinear/dynamic run |
 | WARNING: Fatigue: damage D = ... >= 1 | failure according to Miner | lower stress, fewer repetitions or another curve |
 | WARNING: ... an amplitude exceeds the highest S of the Wohler table | stress outside the table | extend the table; N is now extrapolated (`PROL_DROITE`) |

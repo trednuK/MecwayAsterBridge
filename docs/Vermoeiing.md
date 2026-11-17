@@ -29,8 +29,8 @@ Algemene werking van de bridge: [`Handleiding.md`](Handleiding.md).
 1. **Volume-elementen** (hex, tet, wedge, piramide) en/of **schalen** (plaat- of
    schaalelementen, DKT/COQUE_3D). De schade van volumes komt uit de knoopspanning
    `SIGM_NOEU` (of de rek `EPSI_NOEU` bij een rekcurve), die van schalen uit de
-   spanning op de boven- en onderzijde (§1.8). Balken krijgen geen schade (WARNING,
-   §4).
+   spanning op de boven- en onderzijde (§1.8). Balken, staven en veren krijgen geen
+   schade (WARNING, §4).
 2. **Een analyse met een belastingsverloop**:
    - *Static* (S30, `lin_static_3d`): de statische spanning is de spanning van "één
      eenheid last"; het verloop geef je als **blokken** of een **signaal** (§1.3);
@@ -262,7 +262,7 @@ schaal speelt geen rol. Bij buiging hebben boven en onder hetzelfde bereik maar 
 tegengesteld gemiddelde: met Goodman verschilt de schade (VM-10).
 
 Niet bij schalen: een rekcurve en een multiaxiaal criterium (WARNING, schalen
-overgeslagen). Balken: geen schade.
+overgeslagen). Balken, staven en veren: geen schade.
 
 ### 1.9 Rek-levensduur: Manson-Coffin
 
@@ -362,7 +362,7 @@ bouw nagelopen met `POST_FATIGUE`):
 
 ## 4. Wat niet kan
 
-- **Balken:** geen schade; WARNING.
+- **Balken, staven en veren:** geen schade; WARNING.
 - **Schalen met een rekcurve of een multiaxiaal criterium:** niet gebouwd (WARNING,
   schalen overgeslagen); schalen werken uniaxiaal (§1.8).
 - **Multiaxiaal per Gauss-punt** (`DOMA_ELGA`), **Papadopoulos** (`RAYSPH`, alleen via
@@ -422,6 +422,7 @@ Zie ook KNOWN_BUGS 66.
 | WARNING: ... criterium = ... werkt alleen op volume-elementen | criterium op schalen | voor schalen geen criterium (§1.8) |
 | WARNING: ... de rekcurve ... werkt alleen op volume-elementen | rekcurve op schalen | een spanningscurve voor de schalen |
 | WARNING: ... materiaal '...' zit niet in volume- of schaalelementen | curve op balken | alleen volumes en schalen (§4) |
+| WARNING: ... de Wohler-curve van '...' geldt ook voor '...' op balken, staven, kabels of discrete elementen | het materiaal (of een `*`-curve) zit ook op balken, staven of veren | die krijgen geen schade; de volumes en schalen wel (§4) |
 | WARNING: Vermoeiing (#ASTER-WOHLER) werkt alleen bij ... | andere analyse | gebruik lineair statisch met blokken/signaal of een niet-lineaire/dynamische run |
 | WARNING: Vermoeiing: schade D = ... >= 1 | breuk volgens Miner | lagere spanning, minder herhalingen of een andere curve |
 | WARNING: ... een amplitude groter dan de hoogste S van de Wöhler-tabel | spanning buiten de tabel | tabel uitbreiden; nu is N doorgetrokken (`PROL_DROITE`) |
