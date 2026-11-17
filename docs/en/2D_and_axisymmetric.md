@@ -53,7 +53,7 @@ from what you want to compute:
 | Contact (shrink fit, parts touching) | A | *Nonlinear Static* (L30), solver CCX | as above, *Contact* between edges | `**ASTER-PLANE ...` | §1.4 (item 6) |
 | Linear static as a 3D model (e.g. to compare with shells) | A | *Static 3D* (S30) | as above | `**ASTER-PLANE C_PLAN` (verified; `D_PLAN`/`AXIS` follow the same route) | §1.4 |
 | Heat transfer in a plane | A | *Thermal Steady State* (T30) or *Thermal Transient* (T31) | plane shell elements with *Shell/membrane* thickness | none (a `PLAN` model) | [`Thermal.md`](Thermal.md) |
-| Heat transfer axisymmetric | A | T30 or T31 | plane shell elements in the XY plane, X >= 0 | `**ASTER-PLANE AXIS` | §1.4.1 |
+| Heat transfer axisymmetric, also with *Thermal stress* (chain, T31) | A | T30 or T31 | plane shell elements in the XY plane, X >= 0 | `**ASTER-PLANE AXIS` | §1.4.1 |
 | Axisymmetric shells (line elements) | – | – | – | not yet | §3 |
 | Nonlinear dynamics, modes, buckling in 2D | – | – | – | not possible | §3 |
 
@@ -181,7 +181,7 @@ reaction forces with the factor t or 2π in every step (PL-30, PL-32). Verificat
 cylinder with perfect plasticity (Hill) in `D_PLAN` and `AXIS`, first yield at a hole in
 `C_PLAN`, Code-Aster test case ssnp159b (`AXIS`, `GDEF_LOG`) through the bridge. NOT
 included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), bonded contact, the chain
-thermal -> mechanical (heat transfer itself: §1.4.1). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
+thermal -> mechanical (heat transfer itself and the chain in `AXIS`: §1.4.1). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
 Code-Aster test case, friction). Opening such a result in the Mecway window is NOT verified (a test in the Mecway
 GUI still to do).
 
@@ -216,10 +216,29 @@ computes per radian, the temperature does not depend on that. Factors:
 - Results as in 3D: `temperature`, `heatfluxx` = radial and `heatfluxy` = axial flux (W/m²).
 
 NOT translated (a message): loads on the face of the cross-section (faceid 5/6: there is no
-surface in `AXIS`) and a *Heat flow* on nodes (use a heat flow on an edge). Refused with an
-ERROR in `AXIS`: *Thermal stress* (the chain thermal -> mechanical, planned),
+surface in `AXIS`) and a *Heat flow* on nodes (use a heat flow on an edge). A *Thermal stress* in
+T30 has no effect (the chain needs T31), as in 3D. Refused with an ERROR in `AXIS`:
 `#ASTER-LASBRON` (welding), `#ASTER-METALLURGIE` and *Bonded* contact. Nodes at X < 0 give the
 ERROR of §1.6.
+
+**Thermal stress (chain, T31).** A *Thermal Transient* model (T31) with a *Thermal stress* and
+the line `**ASTER-PLANE AXIS` is computed as the chain of [`Welding.md`](Welding.md) §9: first
+the thermal steps (`THERMIQUE` `AXIS`, above), then `STAT_NON_LINE` with the temperature field
+of every step as the load, also `AXIS` (supports and loads as in route A of §1.4; the reactions
+are for 360 degrees, `stresszz` is the hoop stress). Only `AXIS`: the chain with `C_PLAN` or
+`D_PLAN` is not possible yet, and a plastic (nonlinear) material in the chain with `AXIS` is not
+verified. ERROR in this chain: the result route `tabel` (the reactions are not scaled to 360
+degrees), contact, node-surface couplings, bonded contact and an initial velocity. Point masses
+are ignored with an INFO; constraint equations, flexible joints and element offsets are skipped
+by the reader already with a WARNING (not an ERROR of the chain). In `AXIS` (with or without the
+chain) `#ASTER-LASBRON` (welding), `#ASTER-METALLURGIE` and bonded contact also give an ERROR.
+Verified: PL-58 (the thick tube of PL-24 as T31, 10 steps of 2000 s, θ = 1, steady): equal to
+PL-24 (the same tube with the exact ln temperature in the nodes, MECA_STATIQUE) within 1.0e-6
+(u_r at both walls and the axial reaction); against the closed form u_r 1.5e-5, σ_θ +0.66% and
++0.13%, σ_z +0.11% and +0.36%, σ_r −1.04% (tolerance 1.2%, as PL-24), the steady temperature at
+mid-wall 1e-8 K; the axial reaction 2π α E ∫ θ r dr (factor 2π) 9e-7. PL-59 is PL-58 with an
+internal pressure of 50 MPa on the inner edge (an edge load in the chain): u_r(a) against the
+thermal solution plus the plane-strain Lamé solution 6.8e-6, the axial reaction 9.5e-7.
 
 Verified (Code-Aster 17.4, PL-50 … PL-57, [`Verification.md`](Verification.md) §2D and
 axisymmetric): radial conduction in a tube, a total heat flow on the inner edge, convection
@@ -332,7 +351,9 @@ verified; Mecway's own solve of examples 2 and 3 is not needed.
 | `**ASTER-PLANE` in an S20/SA0 model | ERROR: '#ASTER-PLANE …' only works in Mecway's Static 3D (S30) and Nonlinear Static (L30) … (already a 2D type: remove the line) | route B needs no line; remove it |
 | `**ASTER-PLANE` in another 3D type (V30, D30, …) | the same ERROR | S30, L30, or T30/T31 for heat transfer (§1.4.1) |
 | `**ASTER-PLANE C_PLAN` or `D_PLAN` in T30/T31 | INFO: '#ASTER-PLANE C_PLAN' in T30: thermal plane shells are a 2D model ('PLAN') already; the line is not needed. | remove the line, or write `AXIS` for an axisymmetric model |
-| *Thermal stress*, `#ASTER-LASBRON`, `#ASTER-METALLURGIE` or *Bonded* contact in an axisymmetric thermal model | ERROR: {what} in an axisymmetric thermal model ('#ASTER-PLANE AXIS' in T31) is not translated (yet). | leave it out; the chain thermal -> mechanical in `AXIS` is planned |
+| `#ASTER-LASBRON`, `#ASTER-METALLURGIE` or *Bonded* contact in an axisymmetric thermal model | ERROR: Bonded contact in an axisymmetric thermal model ('#ASTER-PLANE AXIS' in T31) is not translated (yet). (or the name of the other item) | leave it out, or compute in 3D |
+| The chain (T31 with *Thermal stress*, `AXIS`) with the result route `tabel` | ERROR: An axisymmetric thermomechanical chain (T31) only works with the result route 'liml' (General page); the route 'tabel' does not scale the reaction forces to 360 degrees. | result route `liml` |
+| Contact, node-surface couplings, bonded contact or an initial velocity in the chain (point masses: INFO, ignored; constraint equations, flexible joints and element offsets: WARNING of the reader, skipped) | ERROR: {what} in an axisymmetric thermomechanical chain (T31) is not translated (yet). | leave it out |
 | *Heat flow* on nodes in an axisymmetric thermal model | skipped: heat flow on nodes in an axisymmetric model (AXIS) is not translated; use a heat flow on an edge | a *Heat flow* on an edge |
 | A load on the face of the cross-section (faceid 5/6) in an axisymmetric thermal model | skipped: N face(s) of the cross-section (faceid 5/6) in '…': no surface in an axisymmetric model (AXIS); only edges (faceid 1..4) | put the load on an edge (faceid 1..4) or on the elements |
 | `**ASTER-PLANE` with another value or none | ERROR: '#ASTER-PLANE …': expected C_PLAN, D_PLAN or AXIS. | write C_PLAN, D_PLAN or AXIS |
@@ -462,8 +483,9 @@ types), S44 (nonlinear, contact, thermal, axisymmetric shells). A20 (acoustics):
   `C_PLAN`/`D_PLAN` there only give an INFO); in another type, with another value than
   `C_PLAN`, `D_PLAN`, `AXIS`, or without the hyphen: ERROR. An element offset in a 2D analysis (S20,
   SA0, D20, DA0 or `**ASTER-PLANE`): ERROR.
-- Axisymmetric heat transfer (§1.4.1) with *Thermal stress* (the chain thermal -> mechanical
-  in `AXIS`, `C_PLAN`, `D_PLAN`), welding, metallurgy and *Bonded* contact: ERROR; a
+- Axisymmetric heat transfer (§1.4.1) with *Thermal stress*: the chain thermal -> mechanical
+  runs in `AXIS` (T31); in `C_PLAN` and `D_PLAN` it is not possible yet. Welding, metallurgy and
+  bonded contact: ERROR; a
   *Heat flow* on nodes and loads on the face of the cross-section: skipped (message).
 - The error estimator (INFO) and the result route `tabel` (ERROR).
 

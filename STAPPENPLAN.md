@@ -95,7 +95,7 @@ S7, S8, S5, S9).
 | S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (to confirm by the user, §S44); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | done (user OK pending on the PL-42 corner tolerance 5%) | S44a | route A: contact on edges; shrink fit PL-40/41, ssnp121a PL-42, `C_PLAN` PL-43, Hertz PL-45, friction PL-46 (13 and 17 Nov 2026); bonded contact in 2D not planned (ERROR); user test: Mecway's GUI offers shell edges for a contact; see §S44 |
-| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | in progress | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57 (17 Nov 2026); open: the thermal -> mechanical chain in AXIS/C_PLAN/D_PLAN (piece 2); tpla01 replaced by closed-form cases |
+| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | done | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57; piece 2 (chain in AXIS) built, PL-58, PL-59 (17 Nov 2026); open (not verified): the chain in C_PLAN/D_PLAN and a plastic chain in AXIS; tpla01 replaced by closed-form cases |
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
@@ -2545,9 +2545,28 @@ heat flow on nodes and faceid 5/6 are skipped with a message. Results PL-50 … 
 17.4): the tube T(r) +0.00% and radial flux −0.07%, total heat flow 110.32 K (0.00%), convection
 371.29 K, radiation 913.39 K, the Bessel series within 0.0025 (tolerance 0.01), the plane wall
 exact, a solid cylinder with heat generation T(0) − T(R) = qR²/(4k) = 12.5 K exact as Internal heat generation (PL-56) and as a total heat flow on the elements (PL-57). No Mecway reference exists (no axisymmetric thermal type). tpla01 is replaced by these
-closed-form cases. Open (piece 2): the chain thermal -> mechanical in `AXIS`, `C_PLAN`, `D_PLAN`
-(Thermal stress, equal to the node-temperature variant within 1e-6), welding, metallurgy, bonded
-contact in `AXIS`, heat flow on nodes in `AXIS`.
+closed-form cases. Open after piece 1 (the chain in `AXIS` was done in piece 2, see below): the chain in
+`C_PLAN`/`D_PLAN`, welding, metallurgy, bonded contact in `AXIS`, heat flow on nodes in `AXIS`.
+
+**Findings S44d piece 2 (17 Nov 2026):** the thermal -> mechanical chain (`bridge_thermomech`) on an
+axisymmetric model. `bridge_plane._apply_thermal` now allows Thermal stress and, when `thermo_mech`
+is set, makes the mechanical setup of `AXIS` for the elsets (`elset_modelisations` `AXIS`, no shell
+upgrades, `model_data["plane"]` with factor 2π, route A); ERROR for the result route `tabel`, for
+contact, node-surface couplings, bonded contact and an initial velocity (point masses: INFO,
+constraint equations, flexible joints and element offsets: WARNING of the reader, not an ERROR of
+the chain), and in `AXIS` (also without the chain) for welding, metallurgy and bonded contact.
+`bridge_thermomech` accepts `AXIS` cells in `_check_elements`, the summary skips `DZ`/`SIZZ`
+when absent (no `DZ` in `AXIS`), and the export gets the plane factor
+(`bridge_plane.export_arg`). Results PL-58 (the tube of PL-24 as T31, 10 steps of 2000 s,
+θ = 1): equal to PL-24 (the same tube with the exact ln temperature in the nodes, MECA_STATIQUE)
+within 1.0e-6 (u_r at both walls and the axial reaction; checked at 1e-4); against the closed form
+u_r 1.5e-5, σ_r −1.04% (tolerance 1.2%), σ_θ +0.66%/+0.13%, σ_z +0.11%/+0.36%, the steady
+temperature at mid-wall 1e-8 K; axial reaction 9.2155e+06 N = 2π α E ∫ θ r dr within 9e-7. The
+chain criterion of the Done-when (from the thermal result equal to its node-temperature variant
+within 1e-6) is met (1.0e-6). PL-59 (PL-58 with an internal pressure of 50 MPa on the inner edge)
+covers an edge load in the chain: u_r(a) against thermal plus plane-strain Lamé 6.8e-6, axial
+reaction 9.5e-7. Scope cut, open and NOT verified: the chain in `C_PLAN`/`D_PLAN` and a plastic
+(nonlinear material) chain in `AXIS`. tpla01 stays replaced by closed-form cases.
 
 **S44e – axisymmetric shells (`COQUE_AXIS`).**
 **Goal:** line elements in an axisymmetric model as axisymmetric shells, thickness from the

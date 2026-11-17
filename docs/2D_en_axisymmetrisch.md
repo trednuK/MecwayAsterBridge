@@ -53,7 +53,7 @@ de route naar wat je wilt rekenen:
 | Contact (krimpverbinding, delen die elkaar raken) | A | *Nonlinear Static* (L30), solver CCX | zoals hierboven, *Contact* tussen randen | `**ASTER-PLANE ...` | §1.4 (punt 6) |
 | Lineair statisch als 3D-model (bijv. om te vergelijken met shells) | A | *Static 3D* (S30) | zoals hierboven | `**ASTER-PLANE C_PLAN` (nagelopen; `D_PLAN`/`AXIS` volgen dezelfde route) | §1.4 |
 | Warmtetransport in een vlak | A | *Thermal Steady State* (T30) of *Thermal Transient* (T31) | vlakke shell-elementen met *Shell/membrane*-dikte | geen (een `PLAN`-model) | [`Thermisch.md`](Thermisch.md) |
-| Warmtetransport axisymmetrisch | A | T30 of T31 | vlakke shell-elementen in het XY-vlak, X >= 0 | `**ASTER-PLANE AXIS` | §1.4.1 |
+| Warmtetransport axisymmetrisch, ook met *Thermal stress* (keten, T31) | A | T30 of T31 | vlakke shell-elementen in het XY-vlak, X >= 0 | `**ASTER-PLANE AXIS` | §1.4.1 |
 | Axisymmetrische schalen (lijnelementen) | – | – | – | nog niet | §3 |
 | Niet-lineaire dynamica, modes, knik in 2D | – | – | – | niet mogelijk | §3 |
 
@@ -183,7 +183,7 @@ zelf (catalogus Code-Aster 17.4). Resultaten per stap zoals in §1.3, plus
 of 2π in elke stap (PL-30, PL-32). Verificatie PL-30 … PL-36: een dikwandige cilinder met ideale
 plasticiteit (Hill) in `D_PLAN` en `AXIS`, eerste vloei bij een gat in `C_PLAN`,
 Code-Aster-testcase ssnp159b (`AXIS`, `GDEF_LOG`) door de bridge. NIET meegenomen: de
-bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), verlijmd contact, de keten thermisch -> mechanisch (warmtetransport zelf: §1.4.1).
+bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), verlijmd contact, de keten thermisch -> mechanisch (warmtetransport zelf en de keten in `AXIS`: §1.4.1).
 Contact: PL-40 … PL-46 (een krimpverbinding binnen 0,01% van Lamé, Hertz-lijncontact, een
 Code-Aster-testcase, wrijving). Het
 openen van zo'n resultaat in het Mecway-venster is NIET nagelopen (een test in de
@@ -225,9 +225,31 @@ per radiaal, de temperatuur hangt daar niet van af. Factoren:
 
 NIET vertaald (met een melding): lasten op het vlak van de doorsnede (faceid 5/6: in `AXIS`
 is er geen oppervlak) en een *Heat flow* op knopen (gebruik een heat flow op een rand).
-Geweigerd met een ERROR in `AXIS`: *Thermal stress* (de keten thermisch -> mechanisch,
-gepland), `#ASTER-LASBRON` (lassen), `#ASTER-METALLURGIE` en *Bonded* contact. Knopen bij
+Een *Thermal stress* in T30 heeft geen effect (de keten vraagt T31), zoals in 3D. Geweigerd
+met een ERROR in `AXIS`:
+`#ASTER-LASBRON` (lassen), `#ASTER-METALLURGIE` en *Bonded* contact. Knopen bij
 X < 0 geven de ERROR van §1.6.
+
+**Thermal stress (keten, T31).** Een *Thermal Transient*-model (T31) met een *Thermal stress* en
+de regel `**ASTER-PLANE AXIS` wordt gerekend als de keten van [`Lassen.md`](Lassen.md) §9: eerst
+de thermische stappen (`THERMIQUE` `AXIS`, hierboven), daarna `STAT_NON_LINE` met het
+temperatuurveld van elke stap als belasting, ook `AXIS` (steunen en lasten zoals in route A van
+§1.4; de reacties gelden voor 360 graden, `stresszz` is de tangentiële spanning). Alleen `AXIS`:
+de keten met `C_PLAN` of `D_PLAN` kan nog niet, en een plastisch (niet-lineair) materiaal in
+de keten met `AXIS` is niet nagelopen. ERROR in deze keten: de resultaatroute `tabel` (de
+reacties worden niet naar 360 graden geschaald), contact, koppelingen tussen knoop en
+oppervlak, verlijmd contact en een beginsnelheid. Puntmassa's worden met een INFO genegeerd;
+vergelijkingen tussen vrijheidsgraden, flexibele verbindingen en element offsets slaat de
+lezer al met een WARNING over (geen ERROR van de keten). In `AXIS` (met of zonder keten) geeft
+ook `#ASTER-LASBRON` (lassen), `#ASTER-METALLURGIE` en verlijmd contact een ERROR.
+Nagelopen: PL-58 (de dikwandige buis van PL-24 als T31, 10 stappen van 2000 s, θ = 1,
+stationair): gelijk aan PL-24 (dezelfde buis met de exacte ln-temperatuur in de knopen,
+MECA_STATIQUE) binnen 1,0e-6 (u_r aan beide wanden en de axiale reactie); tegen de gesloten
+vorm u_r 1,5e-5, σ_θ +0,66% en +0,13%, σ_z +0,11% en +0,36%, σ_r −1,04% (tolerantie 1,2%, als
+PL-24), de stationaire temperatuur in het midden 1e-8 K; de axiale reactie 2π α E ∫ θ r dr
+(factor 2π) 9e-7. PL-59 is PL-58 met een inwendige druk van 50 MPa op de binnenrand (een
+randbelasting in de keten): u_r(a) tegen de thermische oplossing plus de Lamé-oplossing in
+vlakke rek 6,8e-6, de axiale reactie 9,5e-7.
 
 Nagelopen (Code-Aster 17.4, PL-50 … PL-57, [`Verificatie.md`](Verificatie.md) §2D en
 axisymmetrisch): radiale geleiding in een buis, een totale warmtestroom op de binnenrand,
@@ -341,7 +363,9 @@ route A toont is NIET nagelopen; Mecway's eigen solve van voorbeeld 2 en 3 is ni
 | `**ASTER-PLANE` in een S20/SA0-model | ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) … (al een 2D-type: haal de regel weg) | route B heeft geen regel nodig; haal hem weg |
 | `**ASTER-PLANE` in een ander 3D-type (V30, D30, …) | dezelfde ERROR | S30, L30, of T30/T31 voor warmtetransport (§1.4.1) |
 | `**ASTER-PLANE C_PLAN` of `D_PLAN` in T30/T31 | INFO: '#ASTER-PLANE C_PLAN' in T30: thermal plane shells are a 2D model ('PLAN') already; the line is not needed. | haal de regel weg, of schrijf `AXIS` voor een axisymmetrisch model |
-| *Thermal stress*, `#ASTER-LASBRON`, `#ASTER-METALLURGIE` of *Bonded* contact in een axisymmetrisch thermisch model | ERROR: {what} in een axisymmetrisch thermisch model ('#ASTER-PLANE AXIS' in T31) wordt (nog) niet vertaald. | laat het weg; de keten thermisch -> mechanisch in `AXIS` is gepland |
+| `#ASTER-LASBRON`, `#ASTER-METALLURGIE` of *Bonded* contact in een axisymmetrisch thermisch model | ERROR: Bonded contact in een axisymmetrisch thermisch model ('#ASTER-PLANE AXIS' in T31) wordt (nog) niet vertaald. (of de naam van het andere item) | laat het weg, of reken in 3D |
+| De keten (T31 met *Thermal stress*, `AXIS`) met de resultaatroute `tabel` | ERROR: Een axisymmetrische thermomechanische keten (T31) werkt alleen met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' schaalt de reactiekrachten niet naar 360 graden. | resultaatroute `liml` |
+| Contact, koppelingen tussen knoop en oppervlak, verlijmd contact of een beginsnelheid in de keten (puntmassa's: INFO, genegeerd; vergelijkingen, flexibele verbindingen en element offsets: WARNING van de lezer, overgeslagen) | ERROR: {what} in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. | laat het weg |
 | *Heat flow* op knopen in een axisymmetrisch thermisch model | overgeslagen: warmtestroom op knopen in een axisymmetrisch model (AXIS) wordt niet vertaald; gebruik een heat flow op een rand | een *Heat flow* op een rand |
 | Een last op het vlak van de doorsnede (faceid 5/6) in een axisymmetrisch thermisch model | overgeslagen: N vlak(ken) van de doorsnede (faceid 5/6) in '…': in een axisymmetrisch model (AXIS) geen oppervlak; alleen randen (faceid 1..4) | leg de last op een rand (faceid 1..4) of op de elementen |
 | `**ASTER-PLANE` met een andere waarde of zonder waarde | ERROR: '#ASTER-PLANE …': verwacht C_PLAN, D_PLAN of AXIS. | schrijf C_PLAN, D_PLAN of AXIS |
@@ -473,8 +497,9 @@ lineaire typen), S44 (niet-lineair, contact, thermisch, axisymmetrische schalen)
   `C_PLAN`/`D_PLAN` geven daar alleen een INFO); in een ander type, met een andere waarde
   dan `C_PLAN`, `D_PLAN`, `AXIS`, of zonder streepje: ERROR. Een element offset in een 2D-analyse (S20,
   SA0, D20, DA0 of `**ASTER-PLANE`): ERROR.
-- Axisymmetrisch warmtetransport (§1.4.1) met *Thermal stress* (de keten thermisch ->
-  mechanisch in `AXIS`, `C_PLAN`, `D_PLAN`), lassen, metallurgie en *Bonded* contact: ERROR;
+- Axisymmetrisch warmtetransport (§1.4.1) met *Thermal stress*: de keten thermisch ->
+  mechanisch werkt in `AXIS` (T31); in `C_PLAN` en `D_PLAN` kan het nog niet. Lassen,
+  metallurgie en *Bonded* contact: ERROR;
   een *Heat flow* op knopen en lasten op het vlak van de doorsnede: overgeslagen (melding).
 - De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).
 

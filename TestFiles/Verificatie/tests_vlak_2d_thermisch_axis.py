@@ -304,3 +304,136 @@ TESTS += [
          note="Als PL-56 met heat flow Q = q pi R^2 h (360 graden) op de "
               "elementen: verdeeld over het omwentelingsvolume."),
 ]
+
+
+# ------------------------------------------------------------------
+# PL-58 thermal -> mechanical chain in AXIS (S44d piece 2)
+# ------------------------------------------------------------------
+# The tube of PL-24 (tests_vlak_2d_thermisch) as T31: the inner edge at 393
+# K, the outer at 293 K, start 293 K, Thermal stress with reference 293 K,
+# both ends held axially (plane strain); ten steps of 2000 s with theta = 1
+# (steady after about 2.5 diffusion times R^2/alpha), so the last state is
+# the steady ln profile. Checks against the closed form with the
+# tolerances of PL-24 (the FE temperatures at the nodes are not the exact
+# ln values that PL-24 puts in, so not "= PL-24 within 1e-6").
+import tests_vlak_2d_thermisch as p2t
+
+
+def build_pl58():
+    m = Model("T31", timesteps={"timeperiod": "20000 s",
+                                "stepsize": "2000 s"})
+    m.elset("Buis", "Staal")
+    q = quadmesh(m, "Buis", p2t.NR, 1, rect(RA, RB, 0.0, H), order=2)
+    m.mat("Staal", '<geometric type="Plate" thickness="10 mm" />',
+          p2t.STEEL, '<density type="Simple" density="%g kg/m³" />' % RHO,
+          '<thermal type="Isotropic" thermalconductivity="%g W/m/K" '
+          'specificheat="%g J/kg/K" />' % (K, CP))
+    e = q["edges"]
+    m.face_selection("Binnen", e["u0"])
+    m.face_selection("Buiten", e["u1"])
+    m.face_selection("Onder", e["v0"])
+    m.face_selection("Boven", e["v1"])
+    m.node_selection("Ondern", sorted(q["nodes"]["v0"]))
+    m.node_selection("Alle", list(range(1, len(m.nodes) + 1)))
+    for sel in ("Onder", "Boven"):
+        m.add('<displacement selection="%s"><value>0 m</value><x>0</x>'
+              '<y>1</y><z>0</z></displacement>' % sel)
+    m.add(_temp("Binnen", TA))
+    m.add(_temp("Buiten", TB))
+    m.add(u"<initialconditions>\n    " + _temp("Alle", TB) +
+          u"\n  </initialconditions>")
+    m.add('<thermalstress><referencetemperature>%g K</referencetemperature>'
+          '</thermalstress>' % TB)
+    for fv in ("displacement", "stress", "reaction force"):
+        m.add('<fieldvariable name="%s" />' % fv)
+    _switch(m)
+    return m
+
+
+T58 = 20000.0
+
+
+def _checks58():
+    src = "Timoshenko & Goodier par. 150, vlakke rek (als PL-24)"
+    at = lambda var, pt: lambda r: r.at(var, pt, time=T58)
+    return [
+        Check("u_r binnenwand", at("displx", (RA, 0, 0)),
+              ref=p2t.u_r(RA, False), tol=1e-3, unit="m", source=src),
+        Check("u_r buitenwand", at("displx", (RB, 0, 0)),
+              ref=p2t.u_r(RB, False), tol=1e-3, unit="m", source=src),
+        Check("sigma_r midden", at("stressxx", (p2t.RM, 0, 0)),
+              ref=p2t.sig_r(p2t.RM), tol=0.012, unit="Pa", source=src),
+        Check("sigma_theta binnenwand", at("stresszz", (RA, 0, 0)),
+              ref=p2t.sig_t(RA), tol=0.01, unit="Pa", source=src),
+        Check("sigma_theta buitenwand", at("stresszz", (RB, 0, 0)),
+              ref=p2t.sig_t(RB), tol=0.01, unit="Pa", source=src),
+        Check("sigma_z binnenwand", at("stressyy", (RA, 0, 0)),
+              ref=p2t.sig_z(RA, False), tol=0.01, unit="Pa", source=src),
+        Check("sigma_z buitenwand", at("stressyy", (RB, 0, 0)),
+              ref=p2t.sig_z(RB, False), tol=0.01, unit="Pa", source=src),
+        Check("T(r) midden (thermisch deel)", at("temperature",
+                                                 (p2t.RM, 0, 0)),
+              ref=_ln_profile(p2t.RM), tol_abs=1e-3 * (TA - TB), unit="K",
+              source="T_a + (T_b - T_a) ln(r/a) / ln(b/a) (stationair)"),
+        Check("som R_y onder (360 graden)",
+              lambda r: r.total("reactionforcey", "Ondern", time=T58),
+              ref=2.0 * math.pi * p2t.ALPHA * p2t.E * p2t._IB, tol=1e-3,
+              unit="N", in_series=False,
+              source="2 pi alpha E int theta r dr (de factor 2 pi in de "
+                     "keten)")] + [
+        Check("%s = PL-24 (knooptemperaturen)" % name,
+              fn, ref=ref, tol=1e-4, unit=unit, in_series=False,
+              source="PL-24 (MECA_STATIQUE met de exacte ln-temperatuur "
+                     "in de knopen, = Mecway SA0); 1e-4: de FE-temperaturen "
+                     "van de keten zijn niet de exacte ln-waarden")
+        for name, fn, ref, unit in (
+            ("u_r binnenwand", at("displx", (RA, 0, 0)), p2t.MW["PL-24"][0],
+             "m"),
+            ("u_r buitenwand", at("displx", (RB, 0, 0)), p2t.MW["PL-24"][1],
+             "m"),
+            ("som R_y onder", lambda r: r.total("reactionforcey", "Ondern",
+                                                time=T58),
+             p2t.MW["PL-24"][2], "N"))]
+
+
+TESTS.append(Case(
+    "PL-58", GROUP, "Thermomechanische keten, dikwandige buis (T31 + "
+    "Thermal stress + **ASTER-PLANE AXIS)", "ther_3d", build_pl58,
+    _checks58(), settings={"theta": 1.0}, timeout=3600,
+    note="De buis van PL-24 als T31: binnen 393 K, buiten 293 K, 10 stappen "
+         "van 2000 s, theta 1, Thermal stress 293 K, einden axiaal vast."))
+
+
+# PL-59: PL-58 with an internal pressure P59 on the inner edge (edge loads
+# in the chain): the plane-strain Lame solution superposed on the thermal
+# one (linear elastic): u_r(a) and the axial reaction.
+P59 = 50.0e6
+_A59 = P59 * RA ** 2 / (RB ** 2 - RA ** 2)
+_B59 = P59 * RA ** 2 * RB ** 2 / (RB ** 2 - RA ** 2)
+_UR59 = (1.0 + p2t.NU) / p2t.E * ((1.0 - 2.0 * p2t.NU) * _A59 * RA +
+                                  _B59 / RA)
+
+
+def build_pl59():
+    m = build_pl58()
+    m.add('<surfacepressure selection="Binnen"><normal>%g Pa</normal>'
+          '</surfacepressure>' % P59)
+    return m
+
+
+TESTS.append(Case(
+    "PL-59", GROUP, "Thermomechanische keten met inwendige druk (T31 + "
+    "Thermal stress + **ASTER-PLANE AXIS)", "ther_3d", build_pl59,
+    [Check("u_r binnenwand", lambda r: r.at("displx", (RA, 0, 0), time=T58),
+           ref=p2t.u_r(RA, False) + _UR59, tol=1e-3, unit="m",
+           source="thermisch (Timoshenko & Goodier par. 150) + Lame, vlakke "
+                  "rek"),
+     Check("som R_y onder (360 graden)",
+           lambda r: r.total("reactionforcey", "Ondern", time=T58),
+           ref=2.0 * math.pi * p2t.ALPHA * p2t.E * p2t._IB -
+           2.0 * p2t.NU * _A59 * math.pi * (RB ** 2 - RA ** 2), tol=1e-3,
+           unit="N", in_series=False,
+           source="thermisch 2 pi alpha E int theta r dr min Lame sigma_z "
+                  "pi (b^2 - a^2), sigma_z = 2 nu A")],
+    settings={"theta": 1.0}, timeout=3600,
+    note="Als PL-58 met 50 MPa inwendige druk op de binnenrand."))

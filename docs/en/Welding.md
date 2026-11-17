@@ -311,6 +311,10 @@ bridge then reads them. Without a Thermal stress it stays an ordinary thermal an
 analysis and no setting to switch on: `auto` sends T31 to *Thermal* (`ther_3d`) and
 the Thermal stress switches the chain on.
 
+The chain also runs on an **axisymmetric model** (plane shell elements and the line
+`**ASTER-PLANE AXIS`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.1), not yet
+with welding sources (`#ASTER-LASBRON`).
+
 ### 9.1 Workflow in Mecway, step by step
 
 Example: `TestFiles/Verificatie/modellen/WE-10.liml` (open it in Mecway): a half plate

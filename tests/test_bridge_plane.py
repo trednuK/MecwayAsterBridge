@@ -216,6 +216,24 @@ def test_route_a():
           and md.get("shell_sections", {}).get("P"),
           "T30 + AXIS: thermal_axis, no plane, shells kept: {0}".format(
               _errors()))
+    # S44d piece 2: T31 + Thermal stress + AXIS -> the chain in AXIS
+    ts = ('<thermalstress><referencetemperature>293 K'
+          '</referencetemperature></thermalstress>')
+    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE AXIS") + ts),
+                  analysis="ther_3d")
+    check(md is not None and md.get("thermal_axis") and
+          (md.get("plane") or {}).get("modelisation") == "AXIS" and
+          md["elset_modelisations"].get("P") == "AXIS" and
+          not md.get("shell_upgrades", {}).get("P"),
+          "T31 chain + AXIS: plane AXIS, modelisation AXIS: {0}".format(
+              _errors()))
+    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE AXIS") + ts),
+                  analysis="ther_3d", route="tabel")
+    check(md is None and _errors(), "T31 chain + AXIS, route tabel: ERROR")
+    md = _extract(_liml("T31", PS, loads=_switch(
+        "**ASTER-PLANE AXIS" + chr(10) + "**ASTER-LASBRON Q=1000")), analysis="ther_3d")
+    check(md is None and any("LASBRON" in m for m in _errors()),
+          "T31 + AXIS + #ASTER-LASBRON: ERROR ({0})".format(LOG[-2:]))
     md = _extract(_liml("T30", PS, x0=-0.5,
                         loads=_switch("**ASTER-PLANE AXIS")),
                   analysis="ther_3d")

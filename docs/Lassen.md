@@ -308,6 +308,10 @@ thermische analyse (de mechanische voorwaarden tellen niet mee, INFO in de log).
 Er is geen aparte analyse en geen instelling om aan te zetten: `auto` stuurt T31 naar
 *Thermisch* (`ther_3d`) en de Thermal stress schakelt de keten in.
 
+De keten werkt ook op een **axisymmetrisch model** (vlakke shell-elementen en de regel
+`**ASTER-PLANE AXIS`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.1), nog niet
+met lasbronnen (`#ASTER-LASBRON`).
+
 ### 9.1 Werkwijze in Mecway, stap voor stap
 
 Voorbeeld: `TestFiles/Verificatie/modellen/WE-10.liml` (openen in Mecway): een halve

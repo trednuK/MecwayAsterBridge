@@ -342,21 +342,39 @@ def apply(model_data, run_cfg, elset_shapes):
 def _apply_thermal(model_data, elset_shapes, atype, switch):
     """T30/T31 with '**ASTER-PLANE' (S44d). AXIS: checks (plane elements
     only, Z = 0, X >= 0) and model_data["thermal_axis"] = True for
-    bridge_thermal (MODELISATION 'AXIS'; no model_data["plane"]: there are no
-    forces or reactions to scale, and the shell data stay for
-    bridge_thermal). C_PLAN/D_PLAN: the plane shells are a 2D thermal model
-    ('PLAN') already without the line (INFO). Refused in AXIS (NOT
-    verified): the thermal -> mechanical chain (Thermal stress in T31),
-    welding (filler material uses 3D_DIAG), metallurgy and bonded contact."""
+    bridge_thermal (MODELISATION 'AXIS'). Without a chain there is no
+    model_data["plane"] (no forces or reactions to scale) and the shell data
+    stay for bridge_thermal. With the thermal -> mechanical chain (Thermal
+    stress in T31, bridge_thermomech, S44d piece 2) the mechanical part is
+    set up as route A: AXIS cells, model_data["plane"] with factor 2 pi,
+    result route liml, the 2D refusals of _NOT_VERIFIED and contact.
+    C_PLAN/D_PLAN: the plane shells are a 2D thermal model ('PLAN') already
+    without the line (INFO). Refused in AXIS (NOT verified): welding
+    (filler material uses 3D_DIAG), metallurgy and bonded contact."""
     if switch != "AXIS":
         log("INFO: '#ASTER-PLANE {0}' in {1}: thermal plane shells are a 2D "
             "model ('PLAN') already; the line is not needed.".format(
                 switch, atype))
         return True
     custom = model_data.get("aster_custom") or {}
+    chain = bool(model_data.get("thermo_mech"))
+    if chain and CONFIG_BRIDGE.get("result_route", "liml") != "liml":
+        return _fatal(
+            "Een axisymmetrische thermomechanische keten ({0}) werkt alleen "
+            "met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' "
+            "schaalt de reactiekrachten niet naar 360 graden.",
+            "An axisymmetric thermomechanical chain ({0}) only works with "
+            "the result route 'liml' (General page); the route 'tabel' does "
+            "not scale the reaction forces to 360 degrees.", atype)
+    blocked = (_NOT_VERIFIED + _CONTACT) if chain else ()
+    for key, what in blocked:
+        if model_data.get(key):
+            return _fatal(
+                "{0} in een axisymmetrische thermomechanische keten ({1}) "
+                "wordt (nog) niet vertaald.",
+                "{0} in an axisymmetric thermomechanical chain ({1}) is not "
+                "translated (yet).", what, atype)
     for present, what in (
-            (model_data.get("thermo_mech"), "Thermal stress (thermal -> "
-             "mechanical)"),
             (custom.get("welding"), "#ASTER-LASBRON"),
             (custom.get("metallurgy"), "#ASTER-METALLURGIE"),
             (model_data.get("bonded"), "Bonded contact")):
@@ -388,6 +406,23 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
     if not _check_nodes(model_data, atype, True):
         return False
     model_data["thermal_axis"] = True
+    if chain:
+        # The mechanical part of the chain (bridge_thermomech, S44d piece
+        # 2): the same cells as AXIS, the 2D load translation of
+        # convert_bc/finish_bcs and the reaction factor 2 pi in the export.
+        # bridge_thermal.classify does not need the shell data in AXIS; the
+        # shell upgrades must go (no COQUE_3D / LINE_QUAD cells).
+        for elset in list(model_data.get("elset_modelisations", {})):
+            if set(elset_shapes.get(elset, ())):
+                model_data["elset_modelisations"][elset] = "AXIS"
+                model_data["elset_dims"][elset] = "2D"
+                for key in ("shell_sections", "shell_upgrades"):
+                    model_data.get(key, {}).pop(elset, None)
+        model_data["plane"] = {"type": atype, "modelisation": "AXIS",
+                               "thickness": None, "factor": 2.0 * math.pi,
+                               "route": "A"}
+        log("INFO: {0}: the mechanical part of the thermomechanical chain "
+            "as MODELISATION='AXIS' (reactions x 2 pi).".format(atype))
     log("INFO: {0} with '#ASTER-PLANE AXIS': thermal MODELISATION='AXIS' "
         "about Y (per radian in Code-Aster, 360 degrees in Mecway).".format(
             atype))

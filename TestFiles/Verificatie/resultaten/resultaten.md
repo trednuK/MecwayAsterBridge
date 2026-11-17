@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 4c52a1d, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge ae25554, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3195 van 3201 controles binnen de tolerantie** (616 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3209 van 3215 controles binnen de tolerantie** (618 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2721,6 +2721,20 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 4c52a1d, Code-Aster 17.4
 | PL-55 | Vlakke wand met convectie (T30-schalen, PLAN, zonder regel) | q_x | 16667 W/m² | 16667 | +0.00% | 0.0001% | OK |
 | PL-56 | Volle cilinder met warmteproductie (T30 + **ASTER-PLANE AXIS) | T(0) - T(R) | 12.5 K | 12.5 | -0.00% | 0.1% | OK |
 | PL-57 | Volle cilinder met een totale warmtestroom op de elementen (T30 + **ASTER-PLANE AXIS) | T(0) - T(R) | 12.5 K | 12.5 | +0.00% | 0.1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r binnenwand | 6.0530e-05 m | 6.0531e-05 | +0.00% | 0.1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r buitenwand | 1.2106e-04 m | 1.2106e-04 | +0.00% | 0.1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | sigma_r midden | -2.8040e+07 Pa | -2.8332e+07 | -1.04% | 1.2% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | sigma_theta binnenwand | -2.2031e+08 Pa | -2.1885e+08 | +0.66% | 1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | sigma_theta buitenwand | 1.3969e+08 Pa | 1.3987e+08 | +0.13% | 1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | sigma_z binnenwand | -3.1809e+08 Pa | -3.1774e+08 | +0.11% | 1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | sigma_z buitenwand | 4.1906e+07 Pa | 4.2054e+07 | +0.36% | 1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | T(r) midden (thermisch deel) | 334.5 K | 334.5 | +0.00% | 0.1 K | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | som R_y onder (360 graden) | 9.2155e+06 N | 9.2155e+06 | +0.00% | 0.1% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r binnenwand = PL-24 (knooptemperaturen) | 6.0531e-05 m | 6.0531e-05 | +0.00% | 0.01% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r buitenwand = PL-24 (knooptemperaturen) | 1.2106e-04 m | 1.2106e-04 | +0.00% | 0.01% | OK |
+| PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | som R_y onder = PL-24 (knooptemperaturen) | 9.2155e+06 N | 9.2155e+06 | +0.00% | 0.01% | OK |
+| PL-59 | Thermomechanische keten met inwendige druk (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r binnenwand | 1.0593e-04 m | 1.0593e-04 | +0.00% | 0.1% | OK |
+| PL-59 | Thermomechanische keten met inwendige druk (T31 + Thermal stress + **ASTER-PLANE AXIS) | som R_y onder (360 graden) | 8.2730e+06 N | 8.2730e+06 | +0.00% | 0.1% | OK |
 
 ## Boutvoorspanning
 

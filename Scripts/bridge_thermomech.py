@@ -60,6 +60,7 @@ from collections import OrderedDict
 
 from bridge_utils import log, tr, CONFIG_BRIDGE
 import bridge_failure
+import bridge_plane
 
 # Own template with the thermal and the mechanical solve.
 TEMPLATE = "AsterTemplate_ThermoMeca.comm"
@@ -399,7 +400,10 @@ def _check_elements(tb, model_data):
     """Volume elements only, and every mechanical elset also thermal.
     False (ERROR) otherwise."""
     mods = model_data.get("elset_modelisations", {})
-    other = sorted(e for e, m in mods.items() if m not in ("3D", "3D_SI"))
+    # AXIS: the chain on an axisymmetric model ('**ASTER-PLANE AXIS', S44d)
+    ok = ("3D", "3D_SI", "AXIS") if model_data.get("thermal_axis") else \
+        ("3D", "3D_SI")
+    other = sorted(e for e, m in mods.items() if m not in ok)
     if other or model_data.get("poi1_groups") or model_data.get("discretes"):
         log(tr("ERROR: Thermomechanisch (Thermal stress in een thermisch "
                "model): alleen volume-elementen; elsets {0} (schalen, "
@@ -704,6 +708,8 @@ def _bridge_tm_report(res, res_ther, n_nodes):
         c, v, m = vals(res, 'DEPL', idx)
         uu = np.zeros(v.shape[0])
         for name in ('DX', 'DY', 'DZ'):
+            if name not in c:      # AXIS: no DZ (S44d)
+                continue
             k = c.index(name)
             out += [(name + '_min', float(v[m[:, k], k].min())),
                     (name + '_max', float(v[m[:, k], k].max()))]
@@ -711,6 +717,8 @@ def _bridge_tm_report(res, res_ther, n_nodes):
         out.append(('U_max', float(np.sqrt(uu.max()))))
         c, v, m = vals(res, 'SIGM_NOEU', idx)
         for name in ('SIXX', 'SIYY', 'SIZZ'):
+            if name not in c:
+                continue
             k = c.index(name)
             out += [(name + '_min', float(v[m[:, k], k].min())),
                     (name + '_max', float(v[m[:, k], k].max()))]
@@ -1051,12 +1059,14 @@ def export_block(work_dir, model_data, fields):
         "    extra_results=dict((k, globals()[k]) for k in\n"
         "                       ('res_ther', 'res_flux') if k in globals()),\n"
         "    precision='single', static=False, fields={fields!r}"
-        "{formulas})\n").format(
+        "{formulas}{plane})\n").format(
             scripts=bta._py_str(scripts),
             fragment=bta._py_str(bta.results_file(work_dir)),
             liml=bta._py_str(model_data.get("liml_path", "")),
             fields=[str(f) for f in fields],
-            formulas=bta.formulas_arg(model_data))
+            formulas=bta.formulas_arg(model_data),
+            # the reaction factor 2 pi of an AXIS chain (S44d)
+            plane=bridge_plane.export_arg(model_data))
 
 
 def med_block():

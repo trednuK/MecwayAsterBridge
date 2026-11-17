@@ -833,7 +833,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-57)
+### 2D en axisymmetrisch (PL-01 … PL-59)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -1009,6 +1009,20 @@ zijn gesloten vormen):
 - **PL-57** (dezelfde cilinder, dezelfde warmte als totale *Heat flow* (W, 360 graden) op de
   elementen): T(0) − T(R) 12,5 K tegen 12,5 K (+0,00%; tolerantie 0,1%): de totale
   warmtestroom wordt verdeeld over het omwentelingsvolume.
+- **PL-58** (de dikwandige buis van PL-24, a = 0,1 m, b = 0,2 m, binnen 393 K, buiten 293 K,
+  *Thermal stress* 293 K, beide einden axiaal vast, als T31 met `**ASTER-PLANE AXIS`: de keten
+  thermisch -> mechanisch in 10 stappen van 2000 s met θ = 1, stationair): u_r aan de binnen- en
+  buitenwand 6,0531e-05 en 1,2106e-04 m (+0,00%), σ_r in het midden −28,33 MPa (−1,04%;
+  tolerantie 1,2%), σ_θ −218,9 en 139,9 MPa (+0,66%, +0,13%; tolerantie 1%), σ_z aan de
+  binnenwand −317,7 MPa (+0,11%; naast +0,36% buitenwand); gelijk aan PL-24 (dezelfde buis met
+  de exacte ln-temperatuur in de knopen, MECA_STATIQUE) binnen 1,0e-6 (u_r aan beide wanden en
+  de axiale reactie; gecontroleerd met 1e-4); tegen de gesloten vorm u_r 1,5e-5, de stationaire
+  temperatuur in het midden 1e-8 K; de axiale reactie (360 graden) 9,2155e+06 N is gelijk aan
+  2π α E ∫ θ r dr binnen 9e-7: de factor 2π zit in de keten.
+- **PL-59** (PL-58 met een inwendige druk van 50 MPa op de binnenrand, een randbelasting in de
+  keten): u_r(a) 1,0593e-04 m tegen de thermische oplossing plus de Lamé-oplossing in vlakke rek
+  binnen 6,8e-6; de axiale reactie 8,2730e+06 N (thermisch 2π α E ∫ θ r dr min Lamé
+  σ_z π(b² − a²), σ_z = 2νA) binnen 9,5e-7.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

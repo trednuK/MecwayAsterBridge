@@ -827,7 +827,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-57)
+### 2D and axisymmetric (PL-01 … PL-59)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -997,6 +997,20 @@ closed forms):
 - **PL-57** (the same cylinder, the same heat as a total *Heat flow* (W, 360 degrees) on the
   elements): T(0) − T(R) 12.5 K against 12.5 K (+0.00%; tolerance 0.1%): the total heat flow
   is spread over the revolved volume.
+- **PL-58** (the thick tube of PL-24, a = 0.1 m, b = 0.2 m, inner 393 K, outer 293 K, *Thermal
+  stress* 293 K, both ends held axially, as T31 with `**ASTER-PLANE AXIS`: the thermal ->
+  mechanical chain in 10 steps of 2000 s with θ = 1, steady): u_r at the inner and outer wall
+  6.0531e-05 and 1.2106e-04 m (+0.00%), σ_r in the middle −28.33 MPa (−1.04%; tolerance 1.2%),
+  σ_θ −218.9 and 139.9 MPa (+0.66%, +0.13%; tolerance 1%), σ_z at the inner wall −317.7 MPa
+  (+0.11%; +0.36% at the outer wall); equal to PL-24 (the same tube with the exact ln
+  temperature in the nodes, MECA_STATIQUE) within 1.0e-6 (u_r at both walls and the axial
+  reaction; checked at 1e-4); against the closed form u_r 1.5e-5, the steady temperature at
+  mid-wall 1e-8 K; the axial reaction (360 degrees) 9.2155e+06 N equals 2π α E ∫ θ r dr within
+  9e-7: the factor 2π is in the chain.
+- **PL-59** (PL-58 with an internal pressure of 50 MPa on the inner edge, an edge load in the
+  chain): u_r(a) 1.0593e-04 m against the thermal solution plus the plane-strain Lamé solution
+  within 6.8e-6; the axial reaction 8.2730e+06 N (thermal 2π α E ∫ θ r dr minus Lamé
+  σ_z π(b² − a²), σ_z = 2νA) within 9.5e-7.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

@@ -10,9 +10,16 @@
   heat generation in a solid cylinder (as *Internal heat generation* and as a total heat
   flow on the elements), the transient cooling of a cylinder against the Bessel series
   (within 0.0025 of the initial difference), and the plane wall with convection (`PLAN`,
-  exact). Not yet: the
-  thermal → mechanical chain in 2D/axisymmetric; welding, metallurgy and bonded contact in
-  `AXIS` give an ERROR.
+  exact). Piece 2: the thermal → mechanical chain on an axisymmetric model (T31 with a
+  *Thermal stress* and `**ASTER-PLANE AXIS`: first `THERMIQUE` `AXIS`, then `STAT_NON_LINE`
+  `AXIS` with the temperature field; reactions for 360 degrees, `stresszz` = hoop stress).
+  Verification PL-58: the thick tube of PL-24 as T31 (10 steps, steady) equals PL-24 within
+  1.0e-6 and the closed form (u_r 1.5e-5; stresses within 1.2%), the axial reaction
+  2π α E ∫ θ r dr within 9e-7; PL-59 adds an internal pressure of 50 MPa (an edge load in the
+  chain, within 7e-6). Not yet: the chain in `C_PLAN`/`D_PLAN` and a plastic material in the
+  `AXIS` chain (not verified); the result route `tabel`, contact, node-surface couplings, bonded
+  contact and an initial velocity in the `AXIS` chain give an ERROR (welding and metallurgy in
+  `AXIS` too).
 
 ## V2026.13 – 13 November 2026
 

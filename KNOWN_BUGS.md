@@ -1391,8 +1391,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    documented, not tested); nonlinear static (L30, also S30) on plane shells with
    `**ASTER-PLANE C_PLAN|D_PLAN|AXIS` (S44a, PL-30 … PL-36; no failure loop, no element
    offsets), with contact on edges (S44b, PL-40 … PL-46; no bonded contact); heat transfer
-   axisymmetric (T30/T31 on plane shells with `**ASTER-PLANE AXIS`, S44d, PL-50 … PL-57; not:
-   the thermal -> mechanical chain, welding, metallurgy and bonded contact in `AXIS`)
+   axisymmetric (T30/T31 on plane shells with `**ASTER-PLANE AXIS`, S44d, PL-50 … PL-57) and
+   the thermal -> mechanical chain in `AXIS` (T31 with *Thermal stress*, S44d piece 2, PL-58, PL-59 with an internal pressure;
+   not: the result route `tabel`, contact, node-surface couplings, bonded contact and an initial
+   velocity in the chain, welding, metallurgy and bonded contact in `AXIS`, the chain in `C_PLAN`/`D_PLAN`)
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
    with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,
