@@ -47,12 +47,14 @@ Related documents:
 
 ## 1. Requirements
 
-- **Mecway 33 or 34.** The bridge runs in Mecway's IronPython 2.7 scripting environment
-  (Mecway Ltd., 2026, §16.2) and has been tested with `.liml` files of versions 33 and
-  34: developed and verified with Mecway 34; Mecway 33 was last fully verified with
-  V2026.2 (which features are verified per version:
-  [`After_an_update.md`](After_an_update.md) §6). Other versions have not been tested
-  (assumption: the `.liml` format is the same); the bridge then warns.
+- **Mecway 33, 34 or 36.** The bridge runs in Mecway's IronPython 2.7 scripting environment
+  (Mecway Ltd., 2026, §16.2) and has been tested with `.liml` files of versions 33, 34 and
+  36: developed and verified with Mecway 34; Mecway 36 (36.0.9815) was verified headless on
+  the development state of V2026.14, not yet from the Mecway window; Mecway 33 was last fully
+  verified with V2026.2 (which features are verified per version:
+  [`After_an_update.md`](After_an_update.md) §6). Mecway 35 is not in the list of tested
+  versions (single features were checked on it, see the same table); other versions have not
+  been tested (assumption: the `.liml` format is the same); the bridge then warns.
 - **Code-Aster 17.4 for Windows**; the path to `run_aster.bat` is in
   `CONFIG_BRIDGE["exe_aster"]` (`Scripts/bridge_utils.py`; default
   `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, the location of the

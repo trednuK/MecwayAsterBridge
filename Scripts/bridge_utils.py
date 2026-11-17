@@ -27,7 +27,7 @@ BRIDGE_VERSION = "V2026.13"
 # WARNING, the run continues. Mecway: the version attribute of <liml>;
 # Code-Aster: major.minor. Update after a successful regression, see
 # docs/Na_een_update.md.
-TESTED_MECWAY_VERSIONS = ("33", "34")
+TESTED_MECWAY_VERSIONS = ("33", "34", "36")
 TESTED_ASTER_VERSIONS = ("17.4",)
 
 

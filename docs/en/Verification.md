@@ -26,10 +26,20 @@ Contents: 1 Method · 2 Running · 3 Summary · 4 Linear static (LS) and error e
   With `--mecway-opslaan` (§2) Mecway first opens each model and saves it again
   (its own XML layout and order, units on every value, defaults such as `colorrgb`, an
   empty `<solution>`), so the bridge reads the file as a user saves it in Mecway.
-  Outcome (7 October 2026, bridge 8742df0): all 270 test cases could go through
-  Mecway, and all 1611 checks are identical to the normal run (same status, same FEM
-  value); the `.comm` is the same, apart from the last digits in 15 cases (Mecway
-  writes numbers with 15 significant digits).
+  Outcome with Mecway 36 (36.0.9815, 18 November 2026, bridge d9780c5): 630 of the 631
+  test cases could go through Mecway; 3262 of the 3267 checks are identical to the normal
+  run (same status, same FEM value), 1 differs only in round-off (LS-97c, a torque of the
+  order of 1e-12 N·m). LS-20e cannot: that model is inconsistent on purpose (the active
+  configuration does not exist) and Mecway 36 stops on it with *Configuration is not
+  defined*. The `.comm` is the same, apart from the last digits in 51 cases (Mecway writes
+  numbers with 15 significant digits) and the name of a formula that is also a Mecway
+  variable: on saving, Mecway 36 turns `s1`, `tr` and `e1` into `s1(2)`, `tr(2)` and `e1(2)`
+  (FX-02, FX-05; the same results).
+  Before, with Mecway 34 (7 October 2026, bridge 8742df0): all 270 test cases, all 1611
+  checks identical. `resultaten/mecway/vergelijking.md` holds this run together with a rerun of
+  122 cases on bridge 4cdb284 ([`After_an_update.md`](After_an_update.md) §6), so its totals
+  differ; the `.comm` of MT-* and WE-* differs there because the stored `.comm` of the normal
+  run predates S44d, not because of Mecway.
 - **Settings**: the defaults of `CONFIG_BRIDGE` (`Scripts/bridge_utils.py`), unless
   stated otherwise for a test.
 - **Comparison**: per check the FEM value, the reference, the deviation and the

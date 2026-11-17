@@ -150,9 +150,12 @@ must be the same: a file of another version gives a WARNING and its table is not
 The beam analysis recognises a solution of this bridge by the empty `<nodes />` (and
 `<values />`) that `aster_results_export` writes at the end of every `<nodevariable>` of the
 result fragment (`beam_utils._from_bridge`, on the first node variable after `<results>`);
-Mecway 35 does not write them, and drops them when the user saves an opened result (then it
-reads as Mecway's own; Mecway 33 and 34 NOT verified). Keep those tags: without them the beam
-analysis reads Code-Aster results as Mecway's own. `add_section_view` keeps the tail of every
+Mecway 35 and 36 do not write them, and drop them when an opened result is saved (then it
+reads as Mecway's own; Mecway 36.0.9815 measured headless with `mw.save_as`, 17 Nov 2026;
+Mecway 33 and 34 NOT verified). A save in Mecway 36 also adds, for every configuration
+without results, a `<solution configuration="..">` with only `<analysis>` and `<elset>`
+inside, which may come before the solution with results. Keep those tags: without them the
+beam analysis reads Code-Aster results as Mecway's own. `add_section_view` keeps the tail of every
 copied block (`_rewrite_block`) and puts its own variables (without the tags) after them. A
 change of this marker needs the same change there.
 
@@ -187,12 +190,16 @@ version of the core, pinned in `tests/test_liml_failed_copy.py`).
   `hidden_count`, `marker_version`).
 - Processed marker (core 1.0.1): `<globalvariable name="failed_hidden">N</globalvariable>` as the
   first line inside the processed `<results>`, N = number of hidden elements (the shells of a
-  section view included); a save in Mecway 35 keeps it (verified by AdvancedToolsHub). Presence
+  section view included); a save in Mecway 35 keeps it (verified by AdvancedToolsHub), and so
+  does a save in Mecway 36 (36.0.9815, measured headless with `mw.save_as`, 17 Nov 2026,
+  `BezwijkenTrekstaaf`). Presence
   decides. The attribute `limlfailed="1.0.0"` on `<results>` of core 1.0.0 (dropped by a save in
   Mecway) is still read. `processed_marker()` returns the count as text (`"1.0.0"` only for old
   files, `"?"` for an empty variable), `marker_count()` makes it a number.
   `bridge_hide_failed.is_processed` reads both markers itself (`_processed_state`: also further
-  down before the first step, and past a stub `<solution ... />`, as the core does from 1.0.2) and, without a
+  down before the first step, and past a stub `<solution ... />` or the stub with only
+  `<analysis>`/`<elset>` that a save in Mecway 36 writes, as the core does from 1.0.2;
+  `tests/test_bridge_hide_failed.py`) and, without a
   marker, finds the core's node copies of model elements; the status texts count only
   model elements (not shells). The bridge calls `process()` with the defaults: `others="follow"`
   (other node variables of collapsed copies follow their original) and no `keep_original`.

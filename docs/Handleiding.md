@@ -40,12 +40,14 @@ Verwante documenten:
 
 ## 1. Benodigd
 
-- **Mecway 33 of 34.** De bridge draait in Mecway's IronPython 2.7-scriptomgeving
-  (Mecway Ltd., 2026, §16.2) en is getest met `.liml`-bestanden van versie 33 en 34:
-  ontwikkeld en geverifieerd met Mecway 34; Mecway 33 is voor het laatst volledig
-  geverifieerd met V2026.2 (welke functies per versie geverifieerd zijn:
-  [`Na_een_update.md`](Na_een_update.md) §6). Andere versies zijn niet getest
-  (aanname: het `.liml`-formaat is gelijk); de bridge waarschuwt dan.
+- **Mecway 33, 34 of 36.** De bridge draait in Mecway's IronPython 2.7-scriptomgeving
+  (Mecway Ltd., 2026, §16.2) en is getest met `.liml`-bestanden van versie 33, 34 en 36:
+  ontwikkeld en geverifieerd met Mecway 34; Mecway 36 (36.0.9815) is headless geverifieerd
+  op de ontwikkelstand van V2026.14, nog niet vanuit het Mecway-venster; Mecway 33 is voor
+  het laatst volledig geverifieerd met V2026.2 (welke functies per versie geverifieerd zijn:
+  [`Na_een_update.md`](Na_een_update.md) §6). Mecway 35 staat niet in de lijst van geteste
+  versies (losse functies zijn erop nagelopen, zie dezelfde tabel); andere versies zijn niet
+  getest (aanname: het `.liml`-formaat is gelijk); de bridge waarschuwt dan.
 - **Code-Aster 17.4 voor Windows**; het pad naar `run_aster.bat` staat in
   `CONFIG_BRIDGE["exe_aster"]` (`Scripts/bridge_utils.py`; standaard
   `%LOCALAPPDATA%\code_aster\v2025\17.4\bin\run_aster.bat`, de plek van het

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Mecway 36** (36.0.9815) is a tested version: a model saved by Mecway 36 no longer gives
+  the "not tested" WARNING. Verified headless: the full verification, also on models saved
+  by Mecway 36, the references of Mecway's own solver measured again, and results opened by
+  Mecway 36 ([`docs/en/After_an_update.md`](docs/en/After_an_update.md) §6); not yet from the
+  Mecway 36 window. Mecway 35 is not in the list of tested versions. Mecway 36 with CCX gives
+  beams about
+  12 times too stiff; references measured with Mecway 34 and CCX stay Mecway 34 values.
+  Measured on the release candidate 36.0.9815; the check covers every 36.x build (it
+  compares the major version); run §2 of After_an_update.md again on the final build.
+
 - **Gaps with their own direction, and no lateral stiffness** (KNOWN_BUGS 23). A gap whose
   *Element orientation* card gives a U that is not along node 1 -> 2 is now translated: a U
   oblique to the element, a ground node offset to the side, and a gap between coincident

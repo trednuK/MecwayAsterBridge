@@ -256,6 +256,23 @@ def test_markers(tmp):
     check("configuration None in a model with configurations: any "
           "solution", bhf.is_processed(path) and
           bhf._processed_state(path)["marker"] == u"3")
+    # the stub as a save in Mecway 36 writes it (36.0.9815, measured headless
+    # 17 Nov 2026): an end tag, with only <analysis> and <elset> inside
+    stub36 = (b'<solution configuration="A">' + eol +
+              b'    <analysis type="S30" />' + eol +
+              b'    <elset name="Default" colorrgb="DADADA" '
+              b'expanded="true" />' + eol + b'  </solution>' + eol)
+    path36 = _write_bytes(os.path.join(tmp, "markers_conf36.liml"),
+                          two.replace(b'<solution configuration="A" />' + eol,
+                                      stub36, 1))
+    st_b = bhf._processed_state(path36, u"B")
+    st_a = bhf._processed_state(path36, u"A")
+    check("Mecway 36 stub before B: B has marker and copies",
+          st_b["marker"] == u"3" and st_b["copies"], st_b)
+    check("Mecway 36 stub before B: A has nothing",
+          st_a["marker"] is None and not st_a["copies"], st_a)
+    check("Mecway 36 stub: the core reads the marker of B",
+          L.processed_marker(path36, configuration=u"B") == u"3")
     # the stub alone, the marker of B gone: B still by its copies
     path2 = _write_bytes(os.path.join(tmp, "markers_conf2.liml"),
                          two.replace(line, b""))

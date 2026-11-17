@@ -854,6 +854,16 @@ Code-Aster value per node) and logs the largest difference per variable.
    Z. Cause NOT verified in the U doc (U4.81.22 for the axisymmetric case). Status: open; only
    the information line, no results.
 
+143\. **A stub solution written on one line hides the next solution from the hide-failed
+   check** (suspected, offline probe in the review of the Mecway 36 procedure;
+   `bridge_hide_failed._processed_state`). A stub is only recognised as one when the line ends
+   in `/>`; `<solution configuration="A"><analysis type="S30" /></solution>` on one line is
+   taken as an open solution, so the next one (with the marker) counts as configuration A:
+   for configuration B no marker and `is_processed` False. The core (`liml_failed._sol_empty`)
+   reads it correctly. Mecway 36 writes the stub over several lines (handled,
+   `tests/test_bridge_hide_failed.py`), so only a hand-edited or other-tool file is hit.
+   Status: open.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;

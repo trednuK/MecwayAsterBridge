@@ -167,8 +167,8 @@ def _with_plate(support):
           % (F, F))
     if support:
         m.face_selection("Vlak", q["faces"])
-        m.add('<elasticsupport selection="Vlak"><modulus>1e8 N/m³</modulus>'
-              '<tangential>0 N/m³</tangential></elasticsupport>')
+        m.add('<elasticsupport selection="Vlak"><modulus>1e8 Pa/m</modulus>'
+              '<tangential>0 Pa/m</tangential></elasticsupport>')
     return m
 
 

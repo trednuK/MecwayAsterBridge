@@ -27,10 +27,20 @@ Inhoud: 1 Werkwijze · 2 Uitvoeren · 3 Samenvatting · 4 Lineair statisch (LS) 
   Mecway. Met `--mecway-opslaan` (§2) opent Mecway elk model eerst en slaat het zelf
   weer op (eigen XML-opmaak en volgorde, eenheden bij elke waarde, standaardwaarden
   zoals `colorrgb`, een lege `<solution>`), zodat de bridge het bestand leest zoals
-  een gebruiker het in Mecway bewaart. Uitkomst (7 oktober 2026, bridge 8742df0): alle
-  270 testcases konden door Mecway, en alle 1611 controles zijn identiek aan de gewone
-  run (zelfde status, zelfde FEM-waarde); de `.comm` is gelijk, op de laatste cijfers
-  van 15 cases na (Mecway schrijft getallen met 15 significante cijfers).
+  een gebruiker het in Mecway bewaart. Uitkomst met Mecway 36 (36.0.9815, 18 november
+  2026, bridge d9780c5): 630 van de 631 testcases konden door Mecway; 3262 van de 3267
+  controles zijn identiek aan de gewone run (zelfde status, zelfde FEM-waarde), 1 verschilt
+  alleen in de afronding (LS-97c, een torsiemoment van orde 1e-12 N·m). LS-20e kan niet:
+  dat model is bewust inconsistent (de actieve configuratie bestaat niet) en Mecway 36
+  stopt erop met *Configuration is not defined*. De `.comm` is gelijk, op de laatste
+  cijfers van 51 cases na (Mecway schrijft getallen met 15 significante cijfers) en op de
+  naam van een formule die ook een variabele van Mecway is: Mecway 36 maakt bij opslaan
+  van `s1`, `tr` en `e1` `s1(2)`, `tr(2)` en `e1(2)` (FX-02, FX-05; dezelfde resultaten). Eerder,
+  met Mecway 34 (7 oktober 2026, bridge 8742df0): alle 270 testcases, alle 1611 controles identiek.
+  `resultaten/mecway/vergelijking.md` bevat deze run samen met een herhaling van 122 cases op
+  bridge 4cdb284 ([`Na_een_update.md`](Na_een_update.md) §6), dus de totalen daar zijn anders;
+  de `.comm` van MT-* en WE-* verschilt daar omdat de vastgelegde `.comm` van de gewone run
+  van vóór S44d is, niet door Mecway.
 - **Instellingen**: de standaardwaarden van `CONFIG_BRIDGE`
   (`Scripts/bridge_utils.py`), tenzij bij een test anders vermeld.
 - **Vergelijken**: per controle de FEM-waarde, de referentie, de afwijking en de

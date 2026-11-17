@@ -61,7 +61,7 @@
   </elset>
   <fixed selection="Inklemming" />
   <force selection="Last"><x>0 N</x><y>1000 N</y><z>1000 N</z></force>
-  <elasticsupport selection="Vlak"><modulus>1e8 N/m³</modulus><tangential>0 N/m³</tangential></elasticsupport>
+  <elasticsupport selection="Vlak"><modulus>1e8 Pa/m</modulus><tangential>0 Pa/m</tangential></elasticsupport>
   <mat name="Mat">
     <geometric type="C" ca="50 mm" cb="100 mm" cc="6 mm" cd="6 mm" />
     <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />

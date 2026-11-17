@@ -9,8 +9,9 @@
 # test: python tests/test_bridge_version.py).
 #
 #   Mecway     : attribute version of the <liml> root (Mecway 33 writes
-#                version="33", Mecway 34 version="34"; seen in the
-#                test models in TestFiles).
+#                version="33", Mecway 34 version="34", Mecway 36
+#                version="36"; seen in the test models in TestFiles and
+#                in files saved by Mecway 36.0.9815).
 #   Code-Aster : before the run from the path of the launcher
 #                (...\<version>\bin\run_aster.bat, the Windows package
 #                folder); after the run from the .mess header, the line
