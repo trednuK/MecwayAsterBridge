@@ -409,11 +409,14 @@ de Code-Aster-testcases sdld313d en sdld21b):
    matrices) in volle opslag, dus een complexe gegeneraliseerde stijfheid, exact ook
    als η per materiaal verschilt (dan koppelen de modes); de modes zelf komen uit de
    reële K. Voor de verfijning rond de pieken telt ξ_i + η/2 (grootste η). De
-   spanningen worden zonder η berekend (`CALC_CHAMP` met de reële E): de juiste
-   complexe spanning is (1 + iη) maal de gegeven, dus de amplitude is
-   1/√(1 + η²) te laag (−0,5% bij η = 0,1, −11% bij η = 0,5), en ook reëel deel, imaginair
-   deel en fase wijken af (gemeten op een staaf op trek met basis `PHYS`; WARNING,
-   KNOWN_BUGS 120); de verplaatsingen zijn juist.
+   spanningen zijn de totale spanningen E(1 + iη)ε van elk materiaal: `CALC_CHAMP`
+   rekent Eε met de reële E (zonder de correctie zou de amplitude 1/√(1 + η²) te laag
+   zijn, −11% bij η = 0,5), de bridge vermenigvuldigt met (1 + iη). Bij verschillende η
+   per materiaal: een `CALC_CHAMP` per verliesfactor, per knoop gecombineerd als het
+   gemiddelde over de elementen van (1 + iη_e)σ_e, dus ook exact in de knopen tussen twee
+   materialen (HR-06e … HR-06g, `PHYS` en `GENE`). Viskeuze dempingsspanning (Rayleigh β,
+   modale demping) zit er niet in; de `SIGM_NOEU` van `res` die `#ASTER-POST`-code ziet,
+   blijft Eε.
 5. **Frequenties:** het bereik (lin/log) of de lijst; bij het bereik per mode in het
    bereik met 0 < ξ < 0,5 nog *n* frequenties over de halfwaardebreedte 2ξf rond de
    piek f·√(1−2ξ²) (`DEFI_LIST_FREQ` `RAFFINEMENT` `CRITERE='LARGEUR_3DB'`,
@@ -512,7 +515,7 @@ de Code-Aster-testcases sdld313d en sdld21b):
 | ERROR: Verliesfactor (loss_factor) ... is ongeldig | negatief of geen getal | een getal ≥ 0 |
 | ERROR: '#ASTER-HYST ...': verwacht 'materiaal = eta' ... / materiaal '...' bestaat niet | schrijffout of onbekende naam | bijv. `** ASTER-HYST Staal = 0.02`, de naam zoals in Mecway (hoofdletters maken niet uit) of `*` |
 | WARNING: Verliesfactor bij het hyperelastische materiaal ... wordt genegeerd | `ELAS_HYPER` kent geen `AMOR_HYST` | geen actie (de harmonische analyse is lineair) |
-| WARNING: Harmonisch met hysteretische demping (verliesfactor tot ...): de spanningen zijn zonder de verliesfactor berekend ... | `CALC_CHAMP` gebruikt de reële E (KNOWN_BUGS 120) | de juiste complexe spanning is (1 + iη) maal de gegeven (amplitude tot het genoemde % te laag, ook reëel deel, imaginair deel en fase wijken af); verplaatsingen zijn juist |
+| WARNING: Verliesfactor van ... niet toegepast: geen ELAS in DEFI_MATERIAU | een materiaal van volume-elementen heeft geen `ELAS`-blok om `AMOR_HYST` in te zetten | dat materiaal krijgt geen hysteretische demping en zijn spanningen geen (1 + iη); gebruik een isotroop elastisch materiaal |
 | WARNING: Harmonisch: het model heeft geen demping ... | geen Rayleigh, `modal_damping`, `loss_factor` of dempers | demping opgeven of frequenties tussen de eigenfrequenties |
 | WARNING: Harmonisch: dempingsverhouding >= 1 (...), overkritisch ... De berekening gaat door. | een mode met ξ ≥ 1: `modal_damping` ≥ 1, of Rayleigh α (lage modes) of β (hoge modes) te groot | controleer α/β en *Extra modale demping* (vaak een eenheidsfout); ξ per mode in de `.mess` (`BRIDGE_DEMPING`). Bedoeld overkritisch: geen actie nodig |
 | WARNING: Harmonisch: de hoogste frequentie (...) ligt boven de hoogste mode ... | te weinig modes voor het bereik | meer modes (*Number of modes*), basis `PHYS`, of een lagere eindfrequentie |

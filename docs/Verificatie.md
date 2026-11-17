@@ -3110,6 +3110,9 @@ MD-05 (1000 N in Z, β = 1e-4 s, 6 modes), 1–300 Hz (60) + 5 per mode.
 | HR-06b | idem met `#ASTER-HYST Veer = 0.04`, PHYS, lijst met f_n | exact | \|U\| 3,8e-8, fase 6,8e-6°; \|U(f_n)\| = 0,25000 m = u_st/η, fase −90,00° |
 | HR-06c | balk van HR-02 zonder Rayleigh, `loss_factor` 0,02, GENE 8 modes met verrijking (`PROJ_MATR_BASE` van `RIGI_MECA_HYST`) | Euler-Bernoulli exact met E(1 + iη); piek (12/λ₁⁴)·u_st/η | 2,1e-4 (fase 0,012°) over 1–200 Hz; piek 0,99997 × (12/λ₁⁴)·u_st/η |
 | HR-06d | idem met `#ASTER-HYST Staal = 0.02`, PHYS | Euler-Bernoulli exact met E(1 + iη) | 2,1e-4 (fase 0,012°) |
+| HR-06e | stalen staaf 1 × 0,1 × 0,1 m (10 hex8, ν = 0), 1000 N axiaal, `loss_factor` 0,5, PHYS, 1, 3 en 800 Hz | spanning in elke knoop: amplitude en reëel deel F/A (1 en 3 Hz); bij 800 Hz E(1 + iη)ε uit de eigen complexe verplaatsingen | 6,3e-7 (1 Hz), 5,3e-6 (3 Hz: traagheid (3/1293)²); 6,4e-8 |
+| HR-06f | idem, GENE (10 modes + statische verrijking) | idem | 6,3e-7, 5,4e-6; 1,1e-7 |
+| HR-06g | idem met twee materialen in serie, `#ASTER-HYST` 0,5 en 0,1, de verre helft eerst genummerd, PHYS | idem, ook in de knopen tussen de materialen; 800 Hz bij x = 0,3, 0,5 en 0,7 | 6,3e-7, 5,6e-6; ≤ 1,4e-7 |
 
 Waarnemingen:
 - **Fase-afspraak** (gemeten in een prototype op de hex20-console): `PHAS_DEG` = φ

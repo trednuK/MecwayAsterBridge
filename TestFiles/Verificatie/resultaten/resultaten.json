@@ -13936,7 +13936,7 @@
   "series": null,
   "h": null,
   "note": "Veer 1000 N/m, mass2 2 kg (f_n = 3,559 Hz), F0 = 10 N; 0,5 .. 7 Hz (27) + 5 rond de resonantie.",
-  "seconds": 4.9,
+  "seconds": 5.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14062,7 +14062,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a met Rayleigh alpha = 2,236 1/s.",
-  "seconds": 5.2,
+  "seconds": 4.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14173,7 +14173,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01b, direct (harm_basis PHYS).",
-  "seconds": 5.1,
+  "seconds": 4.1,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14285,7 +14285,7 @@
   "series": null,
   "h": null,
   "note": "Damper 17.89 N.s/m (line2), frequentielijst met f_n.",
-  "seconds": 5.0,
+  "seconds": 4.4,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14351,7 +14351,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a; last met tabel F(f) en #ASTER-FASE Last = 90; frequenties met #ASTER-OPTIE.",
-  "seconds": 4.4,
+  "seconds": 4.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14430,7 +14430,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a met een tweede kracht 4 N op dezelfde knoop, fase 180 graden.",
-  "seconds": 4.9,
+  "seconds": 4.1,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -14481,7 +14481,7 @@
   "series": null,
   "h": null,
   "note": "20 x line2 POU_D_E, RectBar 20 x 30 mm, 100 N in Y op de tip, alpha = 4.2 1/s (zeta 0,02 in mode 1, 16.71 Hz); 1 .. 200 Hz (100) + 5 per mode; modes in Y: 16,7 / 104,7 / 293 / 575 Hz.",
-  "seconds": 5.2,
+  "seconds": 7.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14548,7 +14548,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a, harm_basis PHYS (C = alpha M).",
-  "seconds": 5.1,
+  "seconds": 5.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14602,7 +14602,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a, static_correction uit: alleen de 8 modes.",
-  "seconds": 4.4,
+  "seconds": 4.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14670,7 +14670,7 @@
   "series": null,
   "h": null,
   "note": "10 x 2 x 1 hex20, 1000 N in Z op het eindvlak, beta = 1e-4 s; 1 .. 300 Hz (60) + 5 per mode; modes in Z: 42,3 / 262,9 Hz.",
-  "seconds": 5.4,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14739,7 +14739,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-03a, harm_basis PHYS (C = beta K).",
-  "seconds": 6.4,
+  "seconds": 7.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19137,7 +19137,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 0,5 Pa = ONDE_FLUI PRES 1 (zoals ahlv101a).",
-  "seconds": 3.5,
+  "seconds": 7.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19284,7 +19284,7 @@
   "series": null,
   "h": null,
   "note": "source_velocity 0,014 m/s de fluid in; ahlv100b VNOR naar buiten (teken omgekeerd).",
-  "seconds": 3.2,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19417,7 +19417,7 @@
   "series": null,
   "h": null,
   "note": "De frequentie komt uit #ASTER-OPTIE (instelling 100 Hz).",
-  "seconds": 3.0,
+  "seconds": 5.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19507,7 +19507,7 @@
   "series": null,
   "h": null,
   "note": "Een druk-eenheid in #ASTER-BRON maakt een invallende golf.",
-  "seconds": 3.8,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19583,7 +19583,7 @@
   "series": null,
   "h": null,
   "note": "m = 0.05 kg, k = 3000 N/m (f0 = 38.98 Hz), rho c A = 4.08 N.s/m (zeta = 0.167), F0 = 1 N.",
-  "seconds": 2.7,
+  "seconds": 4.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19972,7 +19972,7 @@
   "series": null,
   "h": null,
   "note": "Z_in = rho c (1 + R e^(-2ikL)) / (1 - R e^(-2ikL)), R = 1/3.",
-  "seconds": 2.8,
+  "seconds": 5.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20328,7 +20328,7 @@
   "series": null,
   "h": null,
   "note": "alpha = 200 1/s: alpha m = 10 N.s/m naast rho c A = 4,08 N.s/m; de demping werkt alleen op de constructie.",
-  "seconds": 2.8,
+  "seconds": 7.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20684,7 +20684,7 @@
   "series": null,
   "h": null,
   "note": "Tabel: kolom 'time' = frequentie [Hz] (DEFI_FONCTION NOM_PARA='FREQ' als FONC_MULT), zoals harmonic_3d (HR-04).",
-  "seconds": 2.9,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -20760,7 +20760,7 @@
   "series": null,
   "h": null,
   "note": "beta = 2e-3 s: beta k = 6 N.s/m.",
-  "seconds": 2.8,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21116,7 +21116,7 @@
   "series": null,
   "h": null,
   "note": "AMOR_MECA van de demper (DIS_T); alarm MODELISA8_13: veer en demper op dezelfde twee knopen (onschuldig).",
-  "seconds": 2.8,
+  "seconds": 5.0,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -21472,7 +21472,7 @@
   "series": null,
   "h": null,
   "note": "incident_pressure 1 Pa (standaard); geen andere demping dan de inlaat (ONDE_FLUI is ook absorberend).",
-  "seconds": 2.8,
+  "seconds": 5.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21618,7 +21618,7 @@
   "series": null,
   "h": null,
   "note": "OPEN_ = DDL_IMPO PRES = PHI = 0, zoals in de modes (S3b).",
-  "seconds": 2.7,
+  "seconds": 5.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -21722,7 +21722,7 @@
   "series": null,
   "h": null,
   "note": "Schaal op een vlak van het fluidum: automatisch koppelvlak; spanningen alleen op volumes (hier geen).",
-  "seconds": 2.8,
+  "seconds": 8.2,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -40957,7 +40957,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-01a zonder viskeuze demping, met loss_factor 0,04 (K (1 + i eta), RIGI_MECA_HYST); verfijning met xi = eta / 2.",
-  "seconds": 4.5,
+  "seconds": 5.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -41026,7 +41026,7 @@
   "series": null,
   "h": null,
   "note": "Verliesfactor per materiaal (#ASTER-HYST), direct; frequentielijst met f_n.",
-  "seconds": 4.2,
+  "seconds": 3.1,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -41120,7 +41120,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-02a zonder Rayleigh, loss_factor 0,02 (PROJ_BASE van RIGI_MECA_HYST, STOCKAGE PLEIN).",
-  "seconds": 3.1,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41188,7 +41188,7 @@
   "series": null,
   "h": null,
   "note": "Als HR-06c, verliesfactor per materiaal, harm_basis PHYS.",
-  "seconds": 3.6,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -58622,6 +58622,323 @@
   "n_nodes": 86,
   "n_elem": 16,
   "settings": {},
+  "general": {}
+ },
+ "HR-06e": {
+  "id": "HR-06e",
+  "group": "Harmonische respons",
+  "title": "Staaf (hex8), verliesfactor 0,5, PHYS: totale spanning E (1 + i eta) eps",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "KNOWN_BUGS 120: zonder de correctie was de amplitude F/A / sqrt(1 + eta^2) = 0,894 F/A, het reele deel 0,8 F/A.",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel deel)",
+    "fem": 6.25e-07,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 6.25e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-05,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx t.o.v. F/A, alle knopen, 3 Hz",
+    "fem": 5.3125e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 5.3125e-06,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 2e-05,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps (traagheid ~5e-6)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.0,
+    "source": "aster_harmonic_export",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "von Mises t.o.v. F/A, 1 Hz, x = L/2",
+    "fem": 100000.046875,
+    "ref": 100000.0,
+    "rel": 4.6875e-07,
+    "dev": 0.046875,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 1e-05,
+    "tol_abs": null,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0.5",
+    "fem": 6.421500570827638e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 6.421500570827638e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "E (1 + i eta) eps uit de eigen complexe verplaatsingen (displx + i displix) van de elementen links en rechts",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 44,
+  "n_elem": 10,
+  "settings": {
+   "harm_freq_list": "1, 3, 800",
+   "fields": [
+    "displacements",
+    "stresses",
+    "vonmises"
+   ],
+   "harm_basis": "PHYS",
+   "loss_factor": 0.5
+  },
+  "general": {}
+ },
+ "HR-06f": {
+  "id": "HR-06f",
+  "group": "Harmonische respons",
+  "title": "Idem GENE (10 modes + statische verrijking)",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "",
+  "seconds": 3.2,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel deel)",
+    "fem": 6.25e-07,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 6.25e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-05,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps; GENE met statische verrijking",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx t.o.v. F/A, alle knopen, 3 Hz",
+    "fem": 5.390625e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 5.390625e-06,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 2e-05,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps; GENE met statische verrijking (traagheid ~5e-6)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.0,
+    "source": "aster_harmonic_export",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "von Mises t.o.v. F/A, 1 Hz, x = L/2",
+    "fem": 100000.046875,
+    "ref": 100000.0,
+    "rel": 4.6875e-07,
+    "dev": 0.046875,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 1e-05,
+    "tol_abs": null,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0.5",
+    "fem": 1.1104688320985437e-07,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.1104688320985437e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "E (1 + i eta) eps uit de eigen complexe verplaatsingen (displx + i displix) van de elementen links en rechts",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 44,
+  "n_elem": 10,
+  "settings": {
+   "harm_freq_list": "1, 3, 800",
+   "fields": [
+    "displacements",
+    "stresses",
+    "vonmises"
+   ],
+   "loss_factor": 0.5
+  },
+  "general": {}
+ },
+ "HR-06g": {
+  "id": "HR-06g",
+  "group": "Harmonische respons",
+  "title": "Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens",
+  "analysis": "harmonic_3d",
+  "series": null,
+  "h": null,
+  "note": "Per verliesfactor een CALC_CHAMP, per knoop het gemiddelde over de elementen van (1 + i eta_e) sigma_e; het verre deel is eerst genummerd.",
+  "seconds": 3.0,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel deel)",
+    "fem": 6.25e-07,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 6.25e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-05,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx t.o.v. F/A, alle knopen, 3 Hz",
+    "fem": 5.625e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 5.625e-06,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 2e-05,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps (traagheid ~5e-6)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.0,
+    "source": "aster_harmonic_export",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "von Mises t.o.v. F/A, 1 Hz, x = L/2",
+    "fem": 100000.046875,
+    "ref": 100000.0,
+    "rel": 4.6875e-07,
+    "dev": 0.046875,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 1e-05,
+    "tol_abs": null,
+    "source": "evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de totale spanning E (1 + i eta) eps",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0.5",
+    "fem": 1.1433780429706656e-07,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.1433780429706656e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "E (1 + i eta) eps uit de eigen complexe verplaatsingen (displx + i displix) van de elementen links en rechts",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0,3 (eta 0,5)",
+    "fem": 8.437580260889344e-08,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 8.437580260889344e-08,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "E (1 + i eta) eps uit de eigen complexe verplaatsingen (displx + i displix) van de elementen links en rechts",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0,7 (eta 0,1)",
+    "fem": 1.3611968240332608e-07,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.3611968240332608e-07,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "E (1 + i eta) eps uit de eigen complexe verplaatsingen (displx + i displix) van de elementen links en rechts",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 44,
+  "n_elem": 10,
+  "settings": {
+   "harm_freq_list": "1, 3, 800",
+   "fields": [
+    "displacements",
+    "stresses",
+    "vonmises"
+   ],
+   "harm_basis": "PHYS"
+  },
   "general": {}
  }
 }

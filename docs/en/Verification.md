@@ -3094,6 +3094,9 @@ of MD-05 (1000 N in Z, β = 1e-4 s, 6 modes), 1–300 Hz (60) + 5 per mode.
 | HR-06b | same with `#ASTER-HYST Veer = 0.04`, PHYS, list with f_n | exact | \|U\| 3.8e-8, phase 6.8e-6°; \|U(f_n)\| = 0.25000 m = u_st/η, phase −90.00° |
 | HR-06c | beam of HR-02 without Rayleigh, `loss_factor` 0.02, GENE 8 modes with enrichment (`PROJ_MATR_BASE` of `RIGI_MECA_HYST`) | Euler-Bernoulli exact with E(1 + iη); peak (12/λ₁⁴)·u_st/η | 2.1e-4 (phase 0.012°) over 1–200 Hz; peak 0.99997 × (12/λ₁⁴)·u_st/η |
 | HR-06d | same with `#ASTER-HYST Staal = 0.02`, PHYS | Euler-Bernoulli exact with E(1 + iη) | 2.1e-4 (phase 0.012°) |
+| HR-06e | steel bar 1 × 0.1 × 0.1 m (10 hex8, ν = 0), 1000 N axial, `loss_factor` 0.5, PHYS, 1, 3 and 800 Hz | stress at every node: amplitude and real part F/A (1 and 3 Hz); at 800 Hz E(1 + iη)ε from the own complex displacements | 6.3e-7 (1 Hz), 5.3e-6 (3 Hz: inertia (3/1293)²); 6.4e-8 |
+| HR-06f | same, GENE (10 modes + static enrichment) | same | 6.3e-7, 5.4e-6; 1.1e-7 |
+| HR-06g | same with two materials in series, `#ASTER-HYST` 0.5 and 0.1, the far half numbered first, PHYS | same, also at the nodes between the materials; 800 Hz at x = 0.3, 0.5 and 0.7 | 6.3e-7, 5.6e-6; ≤ 1.4e-7 |
 
 Observations:
 - **Phase convention** (measured in a prototype on the hex20 cantilever): `PHAS_DEG`

@@ -409,11 +409,14 @@ from the Code-Aster test cases sdld313d and sdld21b):
    modes with `PROJ_MATR_BASE` (`PROJ_BASE` only takes real matrices) in full storage,
    so a complex generalised stiffness, exact also when η differs per material (the modes
    then couple); the modes themselves come from the real K. For the refinement around
-   the peaks ξ_i + η/2 counts (largest η). The stresses are computed without η
-   (`CALC_CHAMP` with the real E): the right complex stress is (1 + iη) times the given
-   one, so the amplitude is 1/√(1 + η²) too low (−0.5% at η = 0.1, −11% at η = 0.5),
-   and the real part, imaginary part and phase differ too (measured on a bar in tension
-   with basis `PHYS`; WARNING, KNOWN_BUGS 120); the displacements are right. (HR-01a computed with
+   the peaks ξ_i + η/2 counts (largest η). The stresses are the total stresses
+   E(1 + iη)ε of each material: `CALC_CHAMP` computes Eε with the real E (without the
+   correction the amplitude would be 1/√(1 + η²) too low, −11% at η = 0.5), the bridge
+   multiplies by (1 + iη). With different η per material: one `CALC_CHAMP` per loss
+   factor, combined per node as the mean over the elements of (1 + iη_e)σ_e, so also exact
+   at the nodes between two materials (HR-06e … HR-06g, `PHYS` and `GENE`). Viscous damping
+   stress (Rayleigh β, modal damping) is not included; the `SIGM_NOEU` of `res` that
+   `#ASTER-POST` code sees stays Eε. (HR-01a computed with
    ζ = 1.5: |U| within 4.4e-8 of the exact solution).
 5. **Frequencies:** the range (lin/log) or the list; with the range, for every mode in
    the range with 0 < ξ < 0.5, *n* more frequencies over the half-power bandwidth 2ξf
@@ -514,7 +517,7 @@ from the Code-Aster test cases sdld313d and sdld21b):
 | ERROR: Loss factor (loss_factor) ... is invalid | negative or not a number | a number ≥ 0 |
 | ERROR: '#ASTER-HYST ...': expected 'material = eta' ... / material '...' does not exist | typo or unknown name | e.g. `** ASTER-HYST Steel = 0.02`, the name as in Mecway (case does not matter) or `*` |
 | WARNING: Loss factor of the hyperelastic material ... is ignored | `ELAS_HYPER` has no `AMOR_HYST` | no action (the harmonic analysis is linear) |
-| WARNING: Harmonic with hysteretic damping (loss factor up to ...): the stresses are computed without the loss factor ... | `CALC_CHAMP` uses the real E (KNOWN_BUGS 120) | the right complex stress is (1 + iη) times the given one (amplitude up to the stated % too low, real part, imaginary part and phase differ too); displacements are right |
+| WARNING: Loss factor of ... not applied: no ELAS in DEFI_MATERIAU | a material of solid elements has no `ELAS` block to put `AMOR_HYST` in | that material gets no hysteretic damping and its stresses no (1 + iη); use an isotropic elastic material |
 | WARNING: Harmonic: the model has no damping ... | no Rayleigh, `modal_damping`, `loss_factor` or dampers | specify damping or choose frequencies between the natural frequencies |
 | WARNING: Harmonic: damping ratio >= 1 (...), overdamped ... The computation continues. | a mode with ξ ≥ 1: `modal_damping` ≥ 1, or Rayleigh α (low modes) or β (high modes) too large | check α/β and *Extra modal damping* (often a unit error); ξ per mode in the `.mess` (`BRIDGE_DEMPING`). Overdamped on purpose: no action needed |
 | WARNING: Harmonic: the highest frequency (...) is above the highest mode ... | too few modes for the range | more modes (*Number of modes*), basis `PHYS`, or a lower end frequency |

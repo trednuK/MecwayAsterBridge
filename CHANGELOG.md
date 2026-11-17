@@ -78,6 +78,12 @@
   contact and an initial velocity in the `AXIS` chain give an ERROR (welding and metallurgy in
   `AXIS` too).
 
+- **Harmonic stresses with hysteretic damping are now the total stresses** (KNOWN_BUGS 120): E
+  (1 + i eta) eps per material instead of Code-Aster's E eps, which was up to 11 % too low in
+  amplitude at eta = 0.5 and wrong in phase; with different loss factors per material exact
+  also at the nodes between them (HR-06e .. HR-06g, `PHYS` and `GENE`). Viscous damping stress
+  (Rayleigh, modal damping) is not included. The WARNING about it is gone; a new WARNING when a
+  material without `ELAS` cannot get its loss factor.
 - **Element orientation card on shells and gaps compared with Mecway 35** (KNOWN_BUGS 116,
   removed): with an oblique U axis and a flipped normal the shell forces per length are equal
   to Mecway's (quad4 at every node, quad8 at mid-length) and the moments at the centre within

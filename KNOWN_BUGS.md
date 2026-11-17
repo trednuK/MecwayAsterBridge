@@ -705,23 +705,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    is still reported. Possible improvement: mass per group without the GD beams (their
    mass from rho·A·L).
 
-120\. **Hysteretic damping: stresses without the loss factor; not on all discrete elements**
-   (confirmed, Code-Aster 17.4, 17 Nov 2026; `bridge_harmonic`, S26). The loss factor eta
-   (`loss_factor`, `#ASTER-HYST`) is applied to materials and springs, not to elastic
-   supports, dampers or point masses. `CALC_CHAMP` computes the stresses of the harmonic
-   result with the real E, without `AMOR_HYST`: a solid bar (10 hex8, 1 m, A = 0.01 m²) in
-   quasi-static harmonic tension (1 .. 5 Hz, first axial mode ~1300 Hz, F = 1000 N, PHYS)
-   gives a stress amplitude of 89442.8 Pa with eta = 0.5 instead of F/A = 100000 Pa
-   (equilibrium), i.e. F/A / sqrt(1 + eta^2), real part 80000 Pa = F/A / (1 + eta^2), and
-   exactly F/A without eta. The right complex stress is (1 + i eta) times the computed one:
-   the amplitude is low by sqrt(1 + eta^2) (0.02% at eta = 0.02, 0.5% at 0.1, 11% at 0.5),
-   and the real part, imaginary part and phase (atan eta) differ too. Measured with basis
-   PHYS; GENE runs the same `CALC_CHAMP`, NOT verified. The bridge gives a WARNING with the
-   size (`bridge_harmonic._solid_stress_eta`, when stresses are requested and a material of
-   a solid element has eta; shells and beams get no stresses in this analysis).
-   Von Mises follows the stresses; reactions are not a field of this analysis.
-   Displacements are right (HR-06a..d). A fix would multiply the complex stresses by
-   (1 + i eta) per material (STAPPENPLAN §S46, follow-up), NOT built.
+120\. **Hysteretic damping: not on all discrete elements** (confirmed, Code-Aster 17.4;
+   `bridge_harmonic`, S26). The loss factor eta (`loss_factor`, `#ASTER-HYST`) is applied to
+   materials and springs, not to elastic supports, dampers or point masses. The stresses are
+   the total stresses E (1 + i eta) eps per material (fixed 17 Nov 2026: `CALC_CHAMP` computes
+   E eps; one `SIGM_NOEU` per loss factor, combined per node, `aster_harmonic_export`; HR-06e
+   .. HR-06g, `PHYS` and `GENE`, also at the nodes between two materials); viscous damping
+   stress (Rayleigh beta, modal damping) is not included, and the `SIGM_NOEU` of `res` that
+   `#ASTER-POST` code sees stays E eps. A material of solid elements without an `ELAS` block
+   gets no `AMOR_HYST` (WARNING) and no stress correction.
 
 123\. **`SIEF_ELGA` of `POU_D_TG` outside `STAT_NON_LINE` is wrong** (confirmed, Code-Aster
    17.4.0 and `main`, `te0342.F90`; the same text since at least 2014). Three faults: shear
@@ -1032,7 +1024,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    (base) motion <> 0, dampers on modal basis (supported with `harm_basis` PHYS),
    `modal_damping` with PHYS, thermal strain and non-linear parts; not
    built: a loss factor on discrete elements other than Mecway springs
-   (the loss factor itself is built, HR-06; the stresses miss it, item 120), stresses in
+   (the loss factor itself is built, HR-06, with the stresses, item 120), stresses in
    shells and beams (only displacements/rotations), reactions and element
    nodal stresses. Without damping and with a list, a frequency may fall on
    an (infinite) resonance; the bridge only warns that there is no damping.

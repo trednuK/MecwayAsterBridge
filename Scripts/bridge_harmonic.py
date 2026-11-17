@@ -327,8 +327,12 @@ def _loss_factors(model_data, analysis):
 def _add_amor_hyst(materials_block, cara_elem_block, model_data, etas):
     """AMOR_HYST in ELAS=_F(...) of each material with eta and in the
     K_T_D_L entry of the springs of that material (_build_materials_block
-    and _build_cara_elem_block of bridge_to_aster write those texts)."""
+    and _build_cara_elem_block of bridge_to_aster write those texts).
+    Returns (materials_block, cara_elem_block, patched): patched = the
+    names of the materials whose ELAS got AMOR_HYST (the stress
+    correction, _stress_classes, uses only those)."""
     concepts = b2a._material_concepts(model_data)
+    patched = set()
     for name, eta in etas.items():
         concept = concepts.get(name)
         if not concept:
@@ -345,6 +349,7 @@ def _add_amor_hyst(materials_block, cara_elem_block, model_data, etas):
         materials_block = (materials_block[:pos] +
                            "AMOR_HYST={0}, ".format("%.10g" % eta) +
                            materials_block[pos:])
+        patched.add(name)
     for elset, mat in model_data.get("elsets", {}).items():
         eta = etas.get(mat)
         if not eta or elset not in model_data.get("spring_sections", {}):
@@ -353,7 +358,7 @@ def _add_amor_hyst(materials_block, cara_elem_block, model_data, etas):
                "           CARA='K_T_D_L', REPERE='LOCAL',\n").format(elset)
         cara_elem_block = cara_elem_block.replace(
             old, old + "           AMOR_HYST={0},\n".format("%.10g" % eta))
-    return materials_block, cara_elem_block
+    return materials_block, cara_elem_block, patched
 
 
 def _check_model(model_data, analysis, basis):
@@ -658,14 +663,48 @@ def _damping_matrix_block(alpha, beta, dampers):
         for m, c in terms))
 
 
-def _solid_stress_eta(model_data, etas, g3d):
-    """Largest loss factor of a material on a solid elset, or None
-    (KNOWN_BUGS 120). Only solid elsets get stresses in this analysis
+def _stress_classes(model_data, etas, patched, g3d):
+    """
+    Loss factor classes of the solid groups for the stress correction:
+    OrderedDict {eta: [groups]} over all groups of g3d (eta 0 included),
+    eta from the material of the group if its ELAS got AMOR_HYST
+    (patched), else 0. Only solid elsets get stresses in this analysis
     (CALC_CHAMP on g3d); the eta of shells, beams and springs does not
-    touch them."""
-    mats = set(model_data.get("elsets", {}).get(g) for g in g3d)
-    vals = [e for n, e in etas.items() if n in mats and e > 0.0]
-    return max(vals) if vals else None
+    touch them.
+
+    Why: CALC_CHAMP computes the stresses of the complex harmonic result
+    with the real E, without AMOR_HYST (measured, Code-Aster 17.4, PHYS:
+    a bar in quasi-static tension with eta = 0.5 gave the amplitude
+    F/A / sqrt(1 + eta^2) and the real part F/A / (1 + eta^2); without
+    eta exactly F/A). With K (1 + i eta) the total stress of an element
+    is E (1 + i eta) eps = (1 + i eta) times the computed one; the sign
+    of K (1 + i eta) is that of u(t) = Re(U e^(i w t)) (header; HR-06b:
+    phase -90 degrees at the natural frequency). Viscous (Rayleigh,
+    modal) damping stress is not added.
+    """
+    out = OrderedDict()
+    for g in g3d:
+        mat = model_data.get("elsets", {}).get(g)
+        eta = etas.get(mat, 0.0) if mat in patched else 0.0
+        out.setdefault(float(eta), []).append(g)
+    return out
+
+
+def _stress_args(classes, stress_eta):
+    """Extra arguments of export_harmonic for the stress correction
+    (_stress_classes): one loss factor for all solids -> stress_eta,
+    several -> stress_classes [(eta, result concept, groups)], none -> ''.
+    """
+    # "%.10g" as the AMOR_HYST value (repr differs in IronPython 2.7)
+    if stress_eta is not None:
+        return ",\n    stress_eta={0}".format("%.10g" % stress_eta)
+    if len(classes) > 1:
+        return ",\n    stress_classes=[{0}]".format(", ".join(
+            "({0}, bridge_sig{1}, [{2}])".format(
+                "%.10g" % e, k + 1,
+                ", ".join("'{0}'".format(g) for g in groups))
+            for k, (e, groups) in enumerate(classes.items())))
+    return ""
 
 
 def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
@@ -762,28 +801,6 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     if etas is None:
         return None
     eta_max = max(etas.values()) if etas else 0.0
-    eta_s = _solid_stress_eta(model_data, etas, g3d) if stresses else None
-    if eta_s:
-        # KNOWN_BUGS 120: CALC_CHAMP computes the stresses of the harmonic
-        # result with the real E, without AMOR_HYST: measured (17 Nov 2026,
-        # PHYS; GENE runs the same CALC_CHAMP, NOT verified) on a bar in
-        # quasi-static tension with eta = 0.5: amplitude F/A / sqrt(1 +
-        # eta^2) (89442.8 instead of 100000 Pa), real part F/A / (1 +
-        # eta^2), phase off by atan(eta); without eta exactly F/A. The
-        # right stress is (1 + i eta) times the computed complex stress.
-        low = 100.0 * (1.0 - 1.0 / math.sqrt(1.0 + eta_s ** 2))
-        log(tr("WARNING: Harmonisch met hysteretische demping "
-               "(verliesfactor tot {0}): de spanningen zijn zonder de "
-               "verliesfactor berekend. De juiste complexe spanning is (1 + "
-               "i eta) maal de gegeven: de amplitude is tot {1} % te laag, "
-               "ook reeel deel, imaginair deel en fase wijken af. "
-               "Verplaatsingen zijn juist (KNOWN_BUGS 120).",
-               "WARNING: Harmonic with hysteretic damping (loss factor up "
-               "to {0}): the stresses are computed without the loss factor. "
-               "The right complex stress is (1 + i eta) times the given one: "
-               "the amplitude is up to {1} % too low, and the real part, "
-               "imaginary part and phase differ too. Displacements are "
-               "right (KNOWN_BUGS 120).").format("%g" % eta_s, "%.2f" % low))
     if not (alpha or beta or zeta or dampers or etas):
         log(tr("WARNING: Harmonisch: het model heeft geen demping (Rayleigh, "
                "modal_damping, loss_factor of dempers): bij een "
@@ -814,9 +831,36 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     cara_ref = "    CARA_ELEM=cara,\n" if cara else ""
     materials_block = b2a._build_materials_block(model_data, analysis)
     fieldmat_block = b2a._build_fieldmat_block(model_data)
+    patched = set()
     if etas:
-        materials_block, cara_elem_block = _add_amor_hyst(
+        materials_block, cara_elem_block, patched = _add_amor_hyst(
             materials_block, cara_elem_block, model_data, etas)
+        lost = sorted(set(model_data.get("elsets", {}).get(g) for g in g3d)
+                      & (set(etas) - patched))
+        if lost:
+            log(tr("WARNING: Verliesfactor van {0} niet toegepast: geen "
+                   "ELAS in DEFI_MATERIAU (de stijfheid heeft dan geen "
+                   "hysteretische demping).",
+                   "WARNING: Loss factor of {0} not applied: no ELAS in "
+                   "DEFI_MATERIAU (the stiffness then has no hysteretic "
+                   "damping).").format(", ".join(
+                       "'{0}'".format(m) for m in lost)))
+    classes = _stress_classes(model_data, etas, patched, g3d) \
+        if stresses else OrderedDict()
+    stress_eta = None
+    if any(e > 0.0 for e in classes):
+        if len(classes) == 1:
+            stress_eta = list(classes)[0]
+        log("INFO: Harmonic with hysteretic damping: the stresses are the "
+            "total stresses E (1 + i eta) eps per material ({0}; "
+            "CALC_CHAMP gives E eps, the job multiplies by (1 + i eta){1}); "
+            "viscous (Rayleigh, modal) damping stress is not "
+            "included.".format(
+                ", ".join("eta {0}: {1}".format("%g" % e, ", ".join(g))
+                          for e, g in classes.items()),
+                "" if stress_eta is not None else
+                ", per loss factor a CALC_CHAMP, combined per node as the "
+                "mean over the elements"))
     load_funcs_block = _freq_funcs_block(load_funcs)
     loads_block, _excit = b2a._render_charges(charges, model_data)
     loads_block = ("bridge_f0 = DEFI_CONSTANTE(VALE=0.0)\n"
@@ -991,6 +1035,22 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
             "    GROUP_MA={1},\n"
             "    CONTRAINTE=('SIGM_NOEU',),\n"
             ")\n").format(cara_ref, b2a._fmt_groups(g3d))
+        if stress_eta is None and len(classes) > 1:
+            # One SIGM_NOEU per loss factor class (its own nodal mean
+            # over the elements of the class); the job combines them per
+            # node as sum n_k (1 + i eta_k) sigma_k / sum n_k (n_k = number
+            # of class-k elements at the node) = the mean over all solid
+            # elements of (1 + i eta_e) sigma_e (aster_harmonic_export).
+            calc_champ_block += "".join(
+                "bridge_sig{0} = CALC_CHAMP(\n"
+                "    RESULTAT=res,\n"
+                "    MODELE=model,\n"
+                "    CHAM_MATER=fieldmat,\n"
+                "{1}"
+                "    GROUP_MA={2},\n"
+                "    CONTRAINTE=('SIGM_NOEU',),\n"
+                ")\n".format(k + 1, cara_ref, b2a._fmt_groups(groups))
+                for k, groups in enumerate(classes.values()))
     else:
         calc_champ_block = "#-- no stresses requested (fields) --\n"
     probe_text = "{" + ", ".join("{0}: [{1}]".format(
@@ -1006,12 +1066,13 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
         "    probes={3},\n"
         "    csv_path={4},\n"
         "    language={5},\n"
-        "    basis={6!r})\n").format(
+        "    basis={6!r}{7})\n").format(
             b2a._py_str(b2a.results_file(work_dir)),
             b2a._py_str(model_data.get("liml_path", "")),
             [str(f) for f in fields], probe_text,
             b2a._py_str(os.path.join(work_dir, run_name(PROBE_SUFFIX))),
-            b2a._py_str(CONFIG_BRIDGE.get("language", "en")), basis)
+            b2a._py_str(CONFIG_BRIDGE.get("language", "en")), basis,
+            _stress_args(classes, stress_eta))
     if CONFIG_BRIDGE.get("med_export", False):
         impr_resu_block = (
             "IMPR_RESU(FORMAT='MED', UNITE=80, RESU=(\n"
@@ -1111,11 +1172,16 @@ def _key_values(text):
     return out
 
 
+_MESS_HYST = re.compile(r"^BRIDGE_HARM_HYST_STRESS\s+(.*)$")
+
+
 def read_mess_summary(mess_path):
     """{"list": {N, FMIN, FMAX, VERFIJND, BASIS}, "warn": {FMAX, FMODE} or
-    None, "warn_xi": {MODE, XI, N} or None, "modes": [(nr, f, xi)]} from
-    the .mess; empty if it is missing."""
-    out = {"list": {}, "warn": None, "warn_xi": None, "modes": []}
+    None, "warn_xi": {MODE, XI, N} or None, "modes": [(nr, f, xi)],
+    "hyst": {ETA or CLASSES, UNMATCHED} or None} from the .mess; empty if
+    it is missing."""
+    out = {"list": {}, "warn": None, "warn_xi": None, "modes": [],
+           "hyst": None}
     if not mess_path or not os.path.isfile(mess_path):
         return out
     f = open(mess_path, "rb")
@@ -1136,6 +1202,10 @@ def read_mess_summary(mess_path):
             m = _MESS_WARN_XI.match(line.strip())
             if m:
                 out["warn_xi"] = _key_values(m.group(1))
+                continue
+            m = _MESS_HYST.match(line.strip())
+            if m:
+                out["hyst"] = _key_values(m.group(1))
                 continue
             m = _MESS_XI.match(line.strip())
             if m:
@@ -1214,6 +1284,15 @@ def report_harmonic(work_dir, frequencies):
         log(damping_warning(int(mess["warn_xi"].get("MODE", 0) or 0),
                             float(mess["warn_xi"].get("XI", 0.0) or 0.0),
                             int(mess["warn_xi"].get("N", 1) or 1)))
+    unmatched = int(float((mess["hyst"] or {}).get("UNMATCHED", 0) or 0))
+    if unmatched:
+        log(tr("WARNING: Harmonisch met hysteretische demping: {0} knopen "
+               "met spanning horen bij geen verliesfactorklasse; daar is de "
+               "spanning E eps zonder (1 + i eta) (KNOWN_BUGS 120).",
+               "WARNING: Harmonic with hysteretic damping: {0} nodes with "
+               "stress belong to no loss factor class; there the stress is "
+               "E eps without (1 + i eta) (KNOWN_BUGS 120).").format(
+                   unmatched))
     path = os.path.join(work_dir, run_name(PROBE_SUFFIX))
     by_name = OrderedDict()
     for name, f, amp, acc in read_probes(path):

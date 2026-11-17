@@ -789,3 +789,158 @@ TESTS += [
          settings=dict(BEAM_RANGE, harm_basis="PHYS"), timeout=300,
          note="Als HR-06c, verliesfactor per materiaal, harm_basis PHYS."),
 ]
+
+
+# ------------------------------------------------------------------
+# HR-06e .. HR-06g Total stress with hysteretic damping (KNOWN_BUGS 120):
+# CALC_CHAMP gives E eps, the bridge reports E (1 + i eta) eps per material
+# (bridge_harmonic._stress_classes, aster_harmonic_export header). Steel bar
+# 1 x 0.1 x 0.1 m, 10 hex8, nu = 0 (uniaxial: sigma_xx = F/A exactly in the
+# whole bar, no Poisson disturbance at the clamp), fixed on x = 0, 1000 N
+# axial on the end face. 1 and 3 Hz quasi-static (first axial mode
+# c / 4L = 1293 Hz): sigma = F/A in amplitude AND real part (a wrong sign
+# (1 - i eta) gives Re = F/A (1 - eta^2)/(1 + eta^2) = 0.6 F/A, no factor
+# 0.8 F/A). 800 Hz: the complex constitutive check at a node, sigma = E/2
+# ((1 + i eta_l) eps_l + (1 + i eta_r) eps_r) with eps = du/dx of the
+# elements left and right (u complex: displx + i displix; with nu = 0 and
+# hex8 the strain is constant per element), against the real part and the
+# amplitude; independent of the modal truncation of GENE.
+# ------------------------------------------------------------------
+E_06, A_06, F_06, H_06 = 210e9, 0.01, 1000.0, 0.1
+ETA_06, ETA_06B = 0.5, 0.1
+STEEL_NU0 = ('<mechanical type="Isotropic" youngsmodulus="210000 MPa" '
+             'poissonratio="0" />')
+HR06_LIST = "1, 3, 800"
+
+
+def build_bar06(two=False, extra=()):
+    def build():
+        m = Model("V30", attrs={"maxmode": 10})
+        if two:
+            # the far half first: element and node numbers do not follow x
+            m.elset("Deel2", "Staal2")
+            far = hexmesh(m, "Deel2", 5, 1, 1, box(0.5, 1.0, 0, 0.1, 0, 0.1))
+            m.elset("Deel1", "Staal")
+            near = hexmesh(m, "Deel1", 5, 1, 1, box(0.0, 0.5, 0, 0.1, 0, 0.1))
+            m.mat("Staal2", STEEL_NU0, DENS)
+        else:
+            m.elset("Staaf", "Staal")
+            near = far = hexmesh(m, "Staaf", 10, 1, 1,
+                                 box(0, 1.0, 0, 0.1, 0, 0.1))
+        m.mat("Staal", STEEL_NU0, DENS)
+        m.face_selection("Inklemming", near["faces"]["u0"])
+        m.face_selection("Eindvlak", far["faces"]["u1"])
+        m.add('<fixed selection="Inklemming" />')
+        m.add('<force selection="Eindvlak"><x>%r N</x><y>0 N</y><z>0 N</z>'
+              '</force>' % F_06)
+        for line in extra:
+            m.add(line)
+        return m
+    return build
+
+
+def _d06(r, f0):
+    return min(_steps(r), key=lambda s: abs(s[0] - f0))[1]
+
+
+def _hr06_fa_dev(r, f0):
+    """Largest |sigma - F/A| / (F/A) over all stress nodes, from the
+    amplitude and the real part (sigma_xx must be real F/A)."""
+    d = _d06(r, f0)
+    sa = F_06 / A_06
+    out = 0.0
+    for nid, amp in d["stressampxx"].items():
+        out = max(out, abs(amp - sa) / sa, abs(d["stressxx"][nid] - sa) / sa)
+    return out
+
+
+def _u06(r, d, x):
+    nid = r.nearest((x, 0.0, 0.0))
+    return complex(d["displx"][nid], d["displix"][nid])
+
+
+def _hr06_const_dev(eta_l, eta_r, x):
+    """At the node (x, 0, 0): max of |Re sigma - stressxx| and
+    |abs(sigma) - stressampxx|, relative to abs(sigma), with sigma from the
+    complex strains of the elements left and right (header)."""
+    def fn(r):
+        d = _d06(r, 800.0)
+        eps_l = (_u06(r, d, x) - _u06(r, d, x - H_06)) / H_06
+        eps_r = (_u06(r, d, x + H_06) - _u06(r, d, x)) / H_06
+        sig = 0.5 * E_06 * ((1 + 1j * eta_l) * eps_l +
+                            (1 + 1j * eta_r) * eps_r)
+        nid = r.nearest((x, 0.0, 0.0))
+        return max(abs(sig.real - d["stressxx"][nid]),
+                   abs(abs(sig) - d["stressampxx"][nid])) / abs(sig)
+    return fn
+
+
+def _hr06_marker(r):
+    """1.0 if the .mess has the correction marker with UNMATCHED=0."""
+    import io as _io
+    if not r.mess:
+        return 0.0
+    for line in _io.open(r.mess, encoding="utf-8", errors="replace"):
+        if line.startswith("BRIDGE_HARM_HYST_STRESS "):
+            return 1.0 if line.split()[-1] == "UNMATCHED=0" else 0.0
+    return 0.0
+
+
+_SRC06 = ("evenwicht: sigma_xx = F/A, reeel (quasi-statisch, nu = 0); de "
+          "totale spanning E (1 + i eta) eps")
+_SRC06C = ("E (1 + i eta) eps uit de eigen complexe verplaatsingen "
+           "(displx + i displix) van de elementen links en rechts")
+
+
+def _hr06_checks(eta_l, eta_r, x_const, src_note=""):
+    return [
+        Check("sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel "
+              "deel)", lambda r: _hr06_fa_dev(r, 1.0), ref=0.0, tol_abs=1e-5,
+              unit="-", source=_SRC06 + src_note),
+        Check("sigma_xx t.o.v. F/A, alle knopen, 3 Hz", lambda r:
+              _hr06_fa_dev(r, 3.0), ref=0.0, tol_abs=2e-5, unit="-",
+              source=_SRC06 + src_note + " (traagheid ~5e-6)"),
+        Check("correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0)",
+              _hr06_marker, ref=1.0, tol_abs=0.0, unit="-",
+              source="aster_harmonic_export"),
+        Check("von Mises t.o.v. F/A, 1 Hz, x = L/2", lambda r: _d06(r, 1.0)[
+            "vonmises"][r.nearest((0.5, 0.0, 0.0))], ref=F_06 / A_06,
+            tol=1e-5, unit="Pa", source=_SRC06),
+        Check("800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = %g" %
+              x_const, _hr06_const_dev(eta_l, eta_r, x_const), ref=0.0,
+              tol_abs=1e-6, unit="-", source=_SRC06C)]
+
+
+HR06_SET = {"harm_freq_list": HR06_LIST,
+            "fields": ["displacements", "stresses", "vonmises"]}
+TESTS += [
+    Case("HR-06e", GROUP, "Staaf (hex8), verliesfactor 0,5, PHYS: totale "
+         "spanning E (1 + i eta) eps", "harmonic_3d", build_bar06(),
+         _hr06_checks(ETA_06, ETA_06, 0.5),
+         settings=dict(HR06_SET, harm_basis="PHYS", loss_factor=ETA_06),
+         timeout=300, note="KNOWN_BUGS 120: zonder de correctie was de "
+         "amplitude F/A / sqrt(1 + eta^2) = 0,894 F/A, het reele deel 0,8 "
+         "F/A."),
+    Case("HR-06f", GROUP, "Idem GENE (10 modes + statische verrijking)",
+         "harmonic_3d", build_bar06(),
+         _hr06_checks(ETA_06, ETA_06, 0.5,
+                      "; GENE met statische verrijking"),
+         settings=dict(HR06_SET, loss_factor=ETA_06), timeout=300),
+    Case("HR-06g", GROUP, "Twee materialen in serie (eta 0,5 en 0,1, "
+         "#ASTER-HYST), PHYS, ook de knopen op de grens", "harmonic_3d",
+         build_bar06(two=True, extra=(
+             "<ccxmodeldefinition>** ASTER-HYST Staal = %r\n"
+             "** ASTER-HYST Staal2 = %r</ccxmodeldefinition>"
+             % (ETA_06, ETA_06B),)),
+         _hr06_checks(ETA_06, ETA_06B, 0.5) + [
+             Check("800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0,3 "
+                   "(eta 0,5)", _hr06_const_dev(ETA_06, ETA_06, 0.3),
+                   ref=0.0, tol_abs=1e-6, unit="-", source=_SRC06C),
+             Check("800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0,7 "
+                   "(eta 0,1)", _hr06_const_dev(ETA_06B, ETA_06B, 0.7),
+                   ref=0.0, tol_abs=1e-6, unit="-", source=_SRC06C)],
+         settings=dict(HR06_SET, harm_basis="PHYS"), timeout=300,
+         note="Per verliesfactor een CALC_CHAMP, per knoop het gemiddelde "
+              "over de elementen van (1 + i eta_e) sigma_e; het verre deel "
+              "is eerst genummerd."),
+]

@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 8997dbb, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge d75c22b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3299 van 3305 controles binnen de tolerantie** (637 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3316 van 3322 controles binnen de tolerantie** (640 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1123,6 +1123,23 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 8997dbb, Code-Aster 17.4
 | HR-06c | Console (balk), verliesfactor eta = 0,02, GENE 8 modes + statische verrijking | tip bij f_1: |U| eta / (12 / lambda_1^4 u_st) | 1 - | 0.99997 | -0.00% | 2% | OK |
 | HR-06d | Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct) | tip t.o.v. Euler-Bernoulli, 1 .. 200 Hz (max. |U - U_ex| / |U_ex|) | 0 - | 2.0952e-04 | 2.0952e-04 | 0.01 - | OK |
 | HR-06d | Console (balk), #ASTER-HYST Staal = 0,02, PHYS (direct) | fase t.o.v. Euler-Bernoulli (max. afwijking) | 0 graden | 0.012004 | 0.012004 | 1 graden | OK |
+| HR-06e | Staaf (hex8), verliesfactor 0,5, PHYS: totale spanning E (1 + i eta) eps | sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel deel) | 0 - | 6.2500e-07 | 6.2500e-07 | 1e-05 - | OK |
+| HR-06e | Staaf (hex8), verliesfactor 0,5, PHYS: totale spanning E (1 + i eta) eps | sigma_xx t.o.v. F/A, alle knopen, 3 Hz | 0 - | 5.3125e-06 | 5.3125e-06 | 2e-05 - | OK |
+| HR-06e | Staaf (hex8), verliesfactor 0,5, PHYS: totale spanning E (1 + i eta) eps | correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0) | 1 - | 1 | +0.00% | 0 - | OK |
+| HR-06e | Staaf (hex8), verliesfactor 0,5, PHYS: totale spanning E (1 + i eta) eps | von Mises t.o.v. F/A, 1 Hz, x = L/2 | 1.0000e+05 Pa | 1.0000e+05 | +0.00% | 0.001% | OK |
+| HR-06e | Staaf (hex8), verliesfactor 0,5, PHYS: totale spanning E (1 + i eta) eps | 800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0.5 | 0 - | 6.4215e-08 | 6.4215e-08 | 1e-06 - | OK |
+| HR-06f | Idem GENE (10 modes + statische verrijking) | sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel deel) | 0 - | 6.2500e-07 | 6.2500e-07 | 1e-05 - | OK |
+| HR-06f | Idem GENE (10 modes + statische verrijking) | sigma_xx t.o.v. F/A, alle knopen, 3 Hz | 0 - | 5.3906e-06 | 5.3906e-06 | 2e-05 - | OK |
+| HR-06f | Idem GENE (10 modes + statische verrijking) | correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0) | 1 - | 1 | +0.00% | 0 - | OK |
+| HR-06f | Idem GENE (10 modes + statische verrijking) | von Mises t.o.v. F/A, 1 Hz, x = L/2 | 1.0000e+05 Pa | 1.0000e+05 | +0.00% | 0.001% | OK |
+| HR-06f | Idem GENE (10 modes + statische verrijking) | 800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0.5 | 0 - | 1.1105e-07 | 1.1105e-07 | 1e-06 - | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | sigma_xx t.o.v. F/A, alle knopen, 1 Hz (amplitude en reeel deel) | 0 - | 6.2500e-07 | 6.2500e-07 | 1e-05 - | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | sigma_xx t.o.v. F/A, alle knopen, 3 Hz | 0 - | 5.6250e-06 | 5.6250e-06 | 2e-05 - | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | correctie gelopen (BRIDGE_HARM_HYST_STRESS, UNMATCHED=0) | 1 - | 1 | +0.00% | 0 - | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | von Mises t.o.v. F/A, 1 Hz, x = L/2 | 1.0000e+05 Pa | 1.0000e+05 | +0.00% | 0.001% | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | 800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0.5 | 0 - | 1.1434e-07 | 1.1434e-07 | 1e-06 - | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | 800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0,3 (eta 0,5) | 0 - | 8.4376e-08 | 8.4376e-08 | 1e-06 - | OK |
+| HR-06g | Twee materialen in serie (eta 0,5 en 0,1, #ASTER-HYST), PHYS, ook de knopen op de grens | 800 Hz: sigma_xx t.o.v. E (1 + i eta) eps bij x = 0,7 (eta 0,1) | 0 - | 1.3612e-07 | 1.3612e-07 | 1e-06 - | OK |
 
 ## Lineair statisch
 

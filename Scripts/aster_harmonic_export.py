@@ -49,6 +49,16 @@
 # q_RI^2) (exact; R and I in phase: the von Mises of |S|). Based on the
 # node-averaged stress SIGM_NOEU (Code-Aster's SIEQ_NOEU averages the von
 # Mises per element; equal for a fine mesh).
+# Hysteretic damping (KNOWN_BUGS 120, bridge_harmonic._stress_classes):
+# CALC_CHAMP computes SIGM_NOEU with the real E; the total stress of an
+# element is (1 + i eta) times it. One loss factor for all solid groups
+# (stress_eta): SIGM_NOEU times (1 + i eta). Several (stress_classes,
+# one SIGM_NOEU per class computed on the groups of that class): per node
+# sum n_k (1 + i eta_k) sigma_k / sum n_k, n_k = number of class-k cells at
+# the node, i.e. the mean over all solid cells of (1 + i eta_e) sigma_e
+# (SIGM_NOEU is the plain mean of the ELNO values of the cells at a node:
+# aster_results_export header). The SIGM_NOEU of res itself stays
+# uncorrected (#ASTER-POST code sees that one).
 #
 # Do not use f-strings: same style as the rest of the bridge.
 
@@ -101,12 +111,15 @@ class _HarmFields(object):
     """Complex DEPL and SIGM_NOEU per frequency (row i = Mecway node
     i+1); the role of aster_results_export._Fields for _write_fragment."""
 
-    def __init__(self, res, n, freqs):
+    def __init__(self, res, n, freqs, stress_eta=None, classes=None):
         self.res = res
         self.n = n
         self.freqs = freqs
         self.index = None
         self.cache = {}
+        self.stress_eta = stress_eta    # one loss factor (see header)
+        self.classes = classes          # [(eta, result, counts (n,))]
+        self.unmatched = 0              # stress nodes without a class cell
 
     def set_index(self, index):
         self.index = index
@@ -115,20 +128,51 @@ class _HarmFields(object):
     def omega(self):
         return 2.0 * math.pi * float(self.freqs.get(self.index, 0.0))
 
+    def _read(self, res, name):
+        """(components, complex values (n, ncmp), mask) of res or None."""
+        try:
+            fld = res.getField(name, self.index)
+        except Exception:
+            return None
+        sf = fld.toSimpleFieldOnNodes()
+        vals, mask = sf.getValues()
+        vals = np.array(vals, dtype=complex)[:self.n]
+        mask = np.array(mask, dtype=bool)[:self.n]
+        return (list(sf.getComponents()), vals, mask)
+
     def field(self, name):
-        """(components, complex values (n, ncmp), mask) or None."""
+        """(components, complex values (n, ncmp), mask) or None. SIGM_NOEU
+        is the total stress with hysteretic damping (header)."""
         if name not in self.cache:
-            self.cache[name] = None
-            try:
-                fld = self.res.getField(name, self.index)
-            except Exception:
-                return None
-            sf = fld.toSimpleFieldOnNodes()
-            vals, mask = sf.getValues()
-            vals = np.array(vals, dtype=complex)[:self.n]
-            mask = np.array(mask, dtype=bool)[:self.n]
-            self.cache[name] = (list(sf.getComponents()), vals, mask)
+            d = self._read(self.res, name)
+            if d is not None and name == "SIGM_NOEU":
+                d = self._total_stress(d)
+            self.cache[name] = d
         return self.cache[name]
+
+    def _total_stress(self, d):
+        cmps, vals, mask = d
+        if self.stress_eta:
+            return (cmps, vals * (1.0 + 1j * self.stress_eta), mask)
+        if not self.classes:
+            return d
+        num = np.zeros_like(vals)
+        den = np.zeros(self.n)
+        for eta, res_k, counts in self.classes:
+            dk = self._read(res_k, "SIGM_NOEU")
+            if dk is None:
+                continue
+            idx = [dk[0].index(c) for c in cmps]
+            w = np.where(dk[2][:, idx].all(axis=1), counts, 0.0)
+            num += (w * (1.0 + 1j * eta))[:, None] * np.where(
+                w[:, None] > 0.0, dk[1][:, idx], 0.0)
+            den += w
+        ok = den > 0.0
+        rows = mask.any(axis=1)
+        self.unmatched = max(self.unmatched, int(np.sum(rows & ~ok)))
+        out = np.where(ok[:, None], num / np.where(ok, den, 1.0)[:, None],
+                       vals)
+        return (cmps, out, mask)
 
     def column(self, name, cmp_):
         d = self.field(name)
@@ -311,7 +355,7 @@ def probe_rows(data, indexes, probes):
 def export_harmonic(res, out_path, liml_path, fields=None, probes=None,
                     csv_path=None, language="en", basis="GENE",
                     precision="single", pressure=False, microphones=None,
-                    mic_csv_path=None):
+                    mic_csv_path=None, stress_eta=None, stress_classes=None):
     """
     Write the harmonic response as a Mecway <results> fragment (one
     <mode> per frequency) and the probes.
@@ -324,6 +368,10 @@ def export_harmonic(res, out_path, liml_path, fields=None, probes=None,
     pressure : also the pressure (component PRES of DEPL, vibro-acoustics).
     microphones, mic_csv_path : {name: [node numbers]} and the CSV of the
                microphones (like aster_acoustic_export), or None.
+    stress_eta : one loss factor of all solid groups, or None.
+    stress_classes : [(eta, result with SIGM_NOEU on the groups, [groups])]
+               when the solid groups have different loss factors, or None
+               (header; bridge_harmonic._stress_classes).
     Returns dict with statistics, or None on an error (message in the
     .mess).
     """
@@ -331,7 +379,7 @@ def export_harmonic(res, out_path, liml_path, fields=None, probes=None,
     try:
         return _export(res, out_path, liml_path, fields, probes, csv_path,
                        language, basis, precision, t0, pressure,
-                       microphones, mic_csv_path)
+                       microphones, mic_csv_path, stress_eta, stress_classes)
     except Exception as e:
         traceback.print_exc()
         print(are.tr("aster_results_export: FOUT: aster_harmonic_export: "
@@ -341,9 +389,26 @@ def export_harmonic(res, out_path, liml_path, fields=None, probes=None,
         return None
 
 
+def class_counts(mesh, groups, n, conn=None):
+    """Number of cells of the groups at each of the first n mesh nodes
+    (each cell once; getCells and getConnectivity are 0-based, as in
+    aster_adapt). conn: mesh.getConnectivity(), read once by the caller."""
+    if conn is None:
+        conn = mesh.getConnectivity()
+    cells = set()
+    for g in groups:
+        cells.update(int(c) for c in mesh.getCells(g))
+    counts = np.zeros(n)
+    for c in cells:
+        for node in conn[c]:
+            if 0 <= int(node) < n:
+                counts[int(node)] += 1.0
+    return counts
+
+
 def _export(res, out_path, liml_path, fields, probes, csv_path, language,
             basis, precision, t0, pressure=False, microphones=None,
-            mic_csv_path=None):
+            mic_csv_path=None, stress_eta=None, stress_classes=None):
     model = are.read_liml_model(liml_path)
     n = model["coords"].shape[0]
     err = are._check_node_order(res.getMesh(), model["coords"])
@@ -363,7 +428,13 @@ def _export(res, out_path, liml_path, fields, probes, csv_path, language,
                      "aster_results_export: ERROR: no frequencies in the "
                      "result."))
         return None
-    data = _HarmFields(res, n, freqs)
+    classes = None
+    if stress_classes and not stress_eta:
+        mesh = res.getMesh()
+        conn = mesh.getConnectivity()
+        classes = [(float(eta), res_k, class_counts(mesh, groups, n, conn))
+                   for eta, res_k, groups in stress_classes]
+    data = _HarmFields(res, n, freqs, stress_eta, classes)
     data.set_index(indexes[0])
     variables = _plan(data, fields, pressure)
     if not variables:
@@ -381,6 +452,14 @@ def _export(res, out_path, liml_path, fields, probes, csv_path, language,
                             model, ("frequency", freqs))
         size = f.tell()
     os.replace(tmp, out_path)
+    if stress_eta or classes:
+        # read by bridge_harmonic.report_harmonic (WARNING if UNMATCHED > 0:
+        # nodes with stress outside every class keep E eps) and by the
+        # verification (HR-06e .. HR-06g)
+        print("BRIDGE_HARM_HYST_STRESS {0} UNMATCHED={1}".format(
+            "ETA={0}".format(are._num(stress_eta)) if stress_eta else
+            "CLASSES={0}".format(",".join(are._num(c[0]) for c in classes)),
+            data.unmatched))
     rows = probe_rows(data, indexes, probes)
     _print_probes(rows)
     if csv_path and rows:

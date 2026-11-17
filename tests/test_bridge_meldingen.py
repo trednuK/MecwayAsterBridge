@@ -14,9 +14,9 @@
 #     MUMPS error estimate gives the page and value for lin_solver_resi, a
 #     large one the singular-matrix hint; the SOLVEUR line of the static
 #     step of modal/buckling (bridge_to_aster._static_step_solveur);
-#   - harmonic stresses without the loss factor (KNOWN_BUGS 120): only the
-#     eta of materials on solid elsets counts (bridge_harmonic.
-#     _solid_stress_eta).
+#   - harmonic total stresses with the loss factor (KNOWN_BUGS 120): the
+#     classes of solid groups per eta, only materials whose ELAS got
+#     AMOR_HYST (bridge_harmonic._stress_classes, _stress_args).
 #
 #   python tests/test_bridge_meldingen.py
 
@@ -257,20 +257,39 @@ def test_log_errors():
 
 
 def test_harm_stress_eta():
-    """KNOWN_BUGS 120: the WARNING about stresses without the loss factor
-    counts only the eta of materials on solid elsets (only they get
-    stresses in a harmonic analysis)."""
-    md = {"elsets": {"Blok": "Staal", "Plaat": "Alu", "Veer": "V"}}
-    for etas, g3d, want in (
-            ({"Staal": 0.1}, ["Blok"], 0.1),
-            ({"Alu": 0.5}, [], None),
-            ({"Alu": 0.5}, ["Blok"], None),
-            ({"Staal": 0.02, "Alu": 0.5}, ["Blok"], 0.02),
-            ({"V": 0.3}, ["Blok"], None),
-            ({"Staal": 0.0}, ["Blok"], None)):
-        got = bh._solid_stress_eta(md, etas, g3d)
-        check(got == want, "harmonic stress eta {0} on {1}: {2} (want "
+    """KNOWN_BUGS 120: the stress correction (1 + i eta) uses the loss
+    factor per solid group, only of materials whose ELAS got AMOR_HYST;
+    one class -> stress_eta, several -> stress_classes."""
+    md = {"elsets": {"Blok": "Staal", "Blok2": "Rubber", "Plaat": "Alu",
+                     "Veer": "V"}}
+    for etas, patched, g3d, want in (
+            ({"Staal": 0.1}, {"Staal"}, ["Blok"], [(0.1, ["Blok"])]),
+            ({"Alu": 0.5}, {"Alu"}, ["Blok"], [(0.0, ["Blok"])]),
+            ({"Staal": 0.1}, set(), ["Blok"], [(0.0, ["Blok"])]),
+            ({"Staal": 0.02, "Rubber": 0.5}, {"Staal", "Rubber"},
+             ["Blok", "Blok2"], [(0.02, ["Blok"]), (0.5, ["Blok2"])]),
+            ({"Rubber": 0.5}, {"Rubber"}, ["Blok", "Blok2"],
+             [(0.0, ["Blok"]), (0.5, ["Blok2"])]),
+            ({"Staal": 0.3, "Rubber": 0.3}, {"Staal", "Rubber"},
+             ["Blok", "Blok2"], [(0.3, ["Blok", "Blok2"])])):
+        got = list(bh._stress_classes(md, etas, patched, g3d).items())
+        check(got == want, "harmonic stress classes {0} on {1}: {2} (want "
               "{3})".format(sorted(etas.items()), g3d, got, want))
+    one = bh._stress_args({0.3: ["A", "B"]}, 0.3)
+    check(one == ",\n    stress_eta=0.3", "stress_eta argument: " + one)
+    two = bh._stress_args({0.0: ["A"], 0.1: ["B", "C"]}, None)
+    check(two == ",\n    stress_classes=[(0, bridge_sig1, ['A']), "
+          "(0.1, bridge_sig2, ['B', 'C'])]", "stress_classes argument: " +
+          two)
+    import tempfile
+    path = os.path.join(tempfile.mkdtemp(), "x.mess")
+    f = open(path, "w")
+    f.write("BRIDGE_HARM_HYST_STRESS CLASSES=0,0.5 UNMATCHED=3\n")
+    f.close()
+    hyst = bh.read_mess_summary(path)["hyst"]
+    check(hyst == {"CLASSES": "0,0.5", "UNMATCHED": 3.0},
+          "BRIDGE_HARM_HYST_STRESS read: {0}".format(hyst))
+    check(bh._stress_args({0.0: ["A"]}, None) == "", "no correction")
 
 
 _CE_LIML = u"""<liml version="33">
