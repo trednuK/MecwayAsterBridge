@@ -204,7 +204,7 @@ NAFEMS style: **few cases, but conclusive**, each with a number and a tolerance.
      summary in `docs/Verificatie.md` §3 stays at the last full run.
    **Bar**: baseline 2356 of 2362 checks OK (439 test cases), 6 BEKEND (KNOWN_BUGS
    43: 3 in NL-03a; 83: 1 in BR-10; 108: 1 in LS-67; 115: 1 in BU-35), 0 NOK/FOUT
-   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 10 Nov (821c58a, before V2026.9): 3066 of 3072, 579 test cases:
+   (full regression on bridge f14f6c7, 2026-10-23, after V2026.4; since 10 Nov (821c58a, before V2026.9): 3066 of 3072, 579 test cases; since 17 Nov (c5c459f, V2026.13): 3168 of 3174, 607 test cases, the same 6 BEKEND:
    `TestFiles/Verificatie/resultaten/resultaten.md`). After the step: 0 NOK/FOUT and no previously OK check that is now
    BEKEND/NOK. Commit changed `modellen/` and `resultaten/` along with it; after a full run
    update the summary in `docs/Verificatie.md` §3 and the EN version.

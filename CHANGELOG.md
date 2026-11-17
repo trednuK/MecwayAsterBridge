@@ -1,20 +1,25 @@
 # Changelog
 
-## V2026.13 – 13 November 2026
+## V2026.13 – 17 November 2026
 
-First results of the S46 review of all KNOWN_BUGS items (real bug or test setting, re-measured
-with Mecway 35 and Code-Aster 17.4): three new WARNINGs (an isotropic material without Young's
-modulus, bonded shell faces, linear buckling with DKT shells), items 1, 2, 128 and 135
-re-measured and corrected, item 82 removed, and the default `lin_solver_resi` 1e-5 instead of
-1e-6. Tying bonded shells with their lever arm is planned as step S47. Behaviour change: the
-linear solves of linear static, the imperfection of nonlinear static, the prestress of modal
-and the static step of buckling stop with `FACTOR_57` only above an estimated error of 1e-5, so
-fine meshes of thin parts now compute (KNOWN_BUGS 138, found and fixed in this release).
-Measured with Code-Aster 17.4 and Mecway 35 headless and offline tests; the new WARNINGs and
-the default are NOT checked in the Mecway window. The generated `.comm` of 293 of the 578
-comparable verification cases changes (the `RESI_RELA` of the linear solves); those plus the
-fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (KNOWN_BUGS 83,
-108, 115, as before), 0 NOK/FOUT. No status change.
+2D and axisymmetric models get much further: nonlinear static (plasticity, large deformations)
+and contact between edges of plane elements (also friction), both through the line
+`**ASTER-PLANE` in an L30/S30 model, and *Thermal stress* in Static 2D and Static
+Axisymmetric (STAPPENPLAN S44a-c), with a rewritten 2D guide: a decision table of the two
+input routes, worked examples on the repo's model files, figures and the exact messages.
+Linear static and thermal runs keep their results after Code-Aster's time limit (S45 phase
+1). The S46 review of all KNOWN_BUGS items (real bug or test setting, re-measured with
+Mecway 35 and Code-Aster 17.4) brings new WARNINGs (an isotropic material without Young's
+modulus, bonded shell faces, linear buckling with DKT shells or an eccentric general section,
+harmonic stresses with hysteretic damping, friction on held slave nodes), several items
+re-measured, corrected or removed, and the default `lin_solver_resi` 1e-5 instead of 1e-6.
+Behaviour changes: the linear solves stop with `FACTOR_57` only above an estimated error of
+1e-5 (KNOWN_BUGS 138), a pinned support on several nodes in 2D holds the mean displacement as
+in Mecway (KNOWN_BUGS 134), and `MECA_STATIQUE` runs with `OPTION='SANS'` followed by the same
+`CALC_CHAMP` of the stresses. Measured with Code-Aster 17.4 and Mecway 35 headless and offline
+tests; NOT checked in the Mecway window. Full regression on c5c459f: 3168 of 3174 checks OK
+(607 test cases), 6 BEKEND (KNOWN_BUGS 43, 83, 108, 115, as before), 0 NOK/FOUT, no status
+change.
 
 - **Default `lin_solver_resi` 1e-5** (was 1e-6, Code-Aster's default; KNOWN_BUGS 138, found and
   fixed in this release): a 160 x 32 quad4 plate and a 7281-node hex20 lap stopped with

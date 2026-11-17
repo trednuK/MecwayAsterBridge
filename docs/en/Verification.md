@@ -95,19 +95,15 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 10 November 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `821c58a`
-(before V2026.9; Code-Aster 17.4): 579 test cases, 3072 checks, 3066 OK, 6 BEKEND (known),
-0 NOK/FOUT. New compared with the previous table (546 test cases, run on `373d13a` with
-separate additions) are 33 test cases and 90 checks: stresses and reactions of `POU_D_TG`
-from one elastic step (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b; KNOWN_BUGS
-123), stress over beam sections (LS-97a .. LS-97l, S41) and nonlinear buckling with large
-rotation beams (NK-05 .. NK-10, issue #10). No status change compared with the stored
-results (`bfa15fa`) and with a full run on `f4a51aa` (same counts). FEM values that differ by
-more than 0.1% are quantities close to zero (phases of order 1e-10, sums of reactions of
-order 1e-12, K_II of order 1e-7), plus the differences against Mecway of CY-01/CY-03
-(5.3e-3 → 5.2e-3) and the decay of AI-03 (+0.2%), which vary slightly from run to run and
-stay well within the tolerance.
+Status 17 November 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `c5c459f`
+(V2026.13; Code-Aster 17.4): 607 test cases, 3174 checks, 3168 OK, 6 BEKEND (known),
+0 NOK/FOUT. New compared with the previous table (579 test cases, run on `821c58a`) are 28
+test cases and 102 checks: 2D and axisymmetric (PL-07 pinned support as the mean, PL-20 ..
+PL-28 thermal stress, PL-30 .. PL-36 nonlinear static, PL-40 .. PL-46 contact; S44) and
+dynamics (DY-04a/b springs and dampers against Mecway, DY-20d/e time tables with kinks off the
+step). No status change compared with the stored results (`a2f0e43`); there only the decay of
+AI-06 differs (2e-6 relative), well within the tolerance.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -117,7 +113,7 @@ stay well within the tolerance.
 | Acoustics impedance | 10 | 227 | 227 | 0 |
 | Cyclic symmetry | 6 | 171 | 171 | 0 |
 | Fracture mechanics | 14 | 63 | 62 | 1 |
-| Dynamics | 16 | 47 | 47 | 0 |
+| Dynamics | 20 | 53 | 53 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 15 | 53 | 53 | 0 |
 | Buckling | 37 | 94 | 93 | 1 |
@@ -138,9 +134,9 @@ stay well within the tolerance.
 | Vibroacoustics | 8 | 29 | 29 | 0 |
 | Vibroacoustics harmonic | 13 | 175 | 175 | 0 |
 | Orthotropic material | 19 | 174 | 174 | 0 |
-| 2D and axisymmetric | 19 | 65 | 65 | 0 |
+| 2D and axisymmetric | 43 | 161 | 161 | 0 |
 | Bolt pretension | 13 | 87 | 87 | 0 |
-| **Total** | **579** | **3072** | **3066** | **6** |
+| **Total** | **607** | **3174** | **3168** | **6** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

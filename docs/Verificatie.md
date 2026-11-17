@@ -97,19 +97,15 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 10 november 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `821c58a`
-(voor V2026.9; Code-Aster 17.4): 579 testcases, 3072 controles, 3066 OK, 6 BEKEND, 0 NOK/FOUT.
-Nieuw ten opzichte van de vorige tabel (546 testcases, run op `373d13a` met losse aanvullingen)
-zijn 33 testcases en 90 controles: spanningen en reacties van `POU_D_TG` uit één elastische
-stap (LS-96 .. LS-96g, BU-45 .. BU-45d, BU-46, MP-20, MP-20b; KNOWN_BUGS 123), spanning over
-balkdoorsneden (LS-97a .. LS-97l, S41) en niet-lineaire knik met grote-rotatiebalken
-(NK-05 .. NK-10, issue #10). Geen statuswijziging ten opzichte van de vastgelegde resultaten
-(`bfa15fa`) en van een volledige run op `f4a51aa` (zelfde aantallen). FEM-waarden die meer
-dan 0,1 % verschillen zijn grootheden dicht bij nul (fasen van de orde 1e-10, sommen van
-reacties van de orde 1e-12, K_II van de orde 1e-7), plus de verschillen t.o.v. Mecway van
-CY-01/CY-03 (5,3e-3 → 5,2e-3) en het verval van AI-03 (+0,2 %), die van run tot run iets
-wisselen en ruim binnen de tolerantie blijven.
+Stand 17 november 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `c5c459f`
+(V2026.13; Code-Aster 17.4): 607 testcases, 3174 controles, 3168 OK, 6 BEKEND, 0 NOK/FOUT.
+Nieuw ten opzichte van de vorige tabel (579 testcases, run op `821c58a`) zijn 28 testcases en
+102 controles: 2D en axisymmetrisch (PL-07 pinned support als gemiddelde, PL-20 .. PL-28
+thermische spanning, PL-30 .. PL-36 niet-lineair statisch, PL-40 .. PL-46 contact; S44) en
+dynamica (DY-04a/b veren en dempers tegen Mecway, DY-20d/e tijdtabellen met knikken buiten de
+stap). Geen statuswijziging ten opzichte van de vastgelegde resultaten (`a2f0e43`); daar
+verschilt alleen het verval van AI-06 (2e-6 relatief), ruim binnen de tolerantie.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -119,7 +115,7 @@ wisselen en ruim binnen de tolerantie blijven.
 | Akoestiek impedantie | 10 | 227 | 227 | 0 |
 | Cyclische symmetrie | 6 | 171 | 171 | 0 |
 | Breukmechanica | 14 | 63 | 62 | 1 |
-| Dynamica | 16 | 47 | 47 | 0 |
+| Dynamica | 20 | 53 | 53 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 15 | 53 | 53 | 0 |
 | Knik | 37 | 94 | 93 | 1 |
@@ -140,9 +136,9 @@ wisselen en ruim binnen de tolerantie blijven.
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
 | Orthotroop | 19 | 174 | 174 | 0 |
-| 2D en axisymmetrisch | 19 | 65 | 65 | 0 |
+| 2D en axisymmetrisch | 43 | 161 | 161 | 0 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **579** | **3072** | **3066** | **6** |
+| **Totaal** | **607** | **3174** | **3168** | **6** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
