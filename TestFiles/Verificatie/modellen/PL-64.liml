@@ -6,8 +6,8 @@
   <node nid="4" x="1" y="0.125" z="0" />
   <node nid="5" x="1" y="0.375" z="0" />
   <elset name="Cilinder" material="Staal">
-    <elem eid="1" shape="line3" nodes="1 4 2" />
-    <elem eid="2" shape="line3" nodes="2 5 3" />
+    <elem eid="1" shape="line3" nodes="2 4 1" />
+    <elem eid="2" shape="line3" nodes="3 5 2" />
   </elset>
   <surfacepressure selection="Druk"><normal>10 Pa</normal></surfacepressure>
   <displacement selection="PB"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>

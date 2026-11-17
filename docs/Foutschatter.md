@@ -257,7 +257,7 @@ Andere gevallen met thermische spanning: NIET geverifieerd.
 | Melding | Oorzaak | Oplossing |
 |---|---|---|
 | INFO: Foutschatter: niet meegenomen lasten (FORCE_NODALE, ...) | puntlasten of lasten op schalen/balken | normaal; rond die lasten is de geschatte fout groter |
-| WARNING: Foutschatter: het model heeft geen volume-elementen | alleen schalen/balken | geen schatting mogelijk; zet de instelling uit om de melding te vermijden |
+| INFO: Error estimator: the model has no solid elements (een WARNING als het model de schatting vraagt met `#ASTER-OPTIE error_estimator`) | alleen schalen, balken of axisymmetrische schalen; de instelling staat standaard aan | normaal: geen schatting mogelijk voor deze elementen |
 | WARNING: Foutschatter: ... op overlappende vlakken | twee drukken/tractions op hetzelfde vlak | de schatter neemt er één mee; voor een betrouwbare schatting de lasten samenvoegen in Mecway |
 | WARNING: Foutschatter: geen last of vrij vlak voor CALC_ERREUR | alle randen opgelegd en geen vlaklast | geen schatting |
 | WARNING: Foutschatter (error_estimator) werkt alleen bij lineair statisch | instelling bij een andere analyse | normaal; geen schatting |

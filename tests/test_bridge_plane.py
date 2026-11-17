@@ -33,9 +33,10 @@
 #     line), Shell/membrane or RectBar a (precedence, INFO/WARNING); ERROR
 #     for no thickness, line2, C_PLAN, X < 0, an unknown material,
 #     plasticity, mixing with plane elements, temperatures, centrifugal,
-#     traction; the .comm (EPAIS, DX DY DRZ, FORCE_COQUE PRES = -p, MZ and
+#     traction; the .comm (EPAIS, DX DY DRZ, FORCE_COQUE PRES = +p, MZ and
 #     FY / 2 pi, DRZ of a node rotation), the axis node WARNING, the WARNING
-#     for neighbouring elements in opposite directions under a pressure,
+#     for neighbouring elements in opposite directions under a pressure and
+#     for an orientation on pressed elements,
 #     the list of handled loads in the skip reason and DEFORMATION 'PETIT'
 #     for every choice (PETIT_REAC included) with its WARNING.
 #
@@ -612,8 +613,9 @@ def test_axis_shells():
     check("DX=0.0, DY=0.0, DRZ=0.0" in comm.replace("'", ""),
           "Fixed -> DX, DY, DRZ")
     check("DX=0.0, DRZ=0.0" in comm, "symmetry normal X -> DX, DRZ")
-    check("FORCE_COQUE=_F(GROUP_MA='BRAX1', PRES=-3.0)" in comm,
-          "pressure on faceid 1 -> FORCE_COQUE PRES = -p")
+    check("FORCE_COQUE=_F(GROUP_MA='BRAX1', PRES=3.0)" in comm,
+          "pressure on faceid 1 -> FORCE_COQUE PRES = +p (along Z x U, as "
+          "Mecway draws it)")
     check("MZ=1.0" in comm and "FY=2.0" in comm and "FZ" not in comm,
           "moment MZ / 2 pi, force FY / 2 pi, FZ dropped")
     comm = _comm(_shell_liml(custom=line, loads=(
@@ -644,6 +646,13 @@ def test_axis_shells():
         m.startswith("WARNING") and "opposite" in m and "(node 3)" in m
         for m in LOG), "opposite element directions: WARNING ({0})".format(
             [m[:60] for m in LOG if m.startswith("WARNING")]))
+    # an orientation (V axis) on a pressed element: WARNING (Mecway's side
+    # of the arrows NOT verified then)
+    comm = _comm(_shell_liml(custom=line, loads=press).replace(
+        'nodes="3 4 5"', 'nodes="3 4 5" orientationvx="-1"'))
+    check("FORCE_COQUE" in comm and any(
+        m.startswith("WARNING") and "orientation" in m for m in LOG),
+          "orientation on a pressed axisymmetric shell: WARNING")
     # a load type without a route: the reason lists the shell types
     comm = _comm(_shell_liml(custom=line, loads=(
         '<fixed selection="Onder" /><frictionless selection="Zij" />')))

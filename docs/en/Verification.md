@@ -1024,7 +1024,10 @@ closed forms):
 Axisymmetric shells (STAPPENPLAN S44e, `tests_vlak_2d_coque.py`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.2):
 line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the thickness from
 `**ASTER-SHELL` (PL-60, PL-63 … PL-68), *Shell/membrane* with the same line (PL-61) or a *RectBar*
-(PL-62). E = 210 GPa, ν = 0.3 (PL-64: 200 GPa). Closed forms: Timoshenko & Woinowsky-Krieger
+(PL-62). Every chain is drawn against its coordinate (tubes from the top down, the plate from
+the edge to the centre, the sphere from the pole to the equator), so that the pressure, which
+pushes along n = Z × U as Mecway draws it, is an internal pressure (the plate: downwards).
+E = 210 GPa, ν = 0.3 (PL-64: 200 GPa). Closed forms: Timoshenko & Woinowsky-Krieger
 (membrane solutions, the clamped circular plate, the edge-loaded long cylinder with
 β⁴ = 3(1 − ν²)/(R²t²)).
 
@@ -1034,7 +1037,7 @@ line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the 
 - **PL-61** (thin sphere R = 1 m, t = 10 mm, a quarter meridian of 32 line3, 0.1 MPa, *Symmetry*
   with normal Y at the equator and normal X at the pole): u = p R² (1 − ν)/(2 E t) = 1.6667e-05 m
   at the equator (−3.3e-8) and at the pole (+7.7e-8); tolerance 0.5%.
-- **PL-62** (clamped circular plate a = 1 m, t = 10 mm, 20 line3 from the centre, q = 1000 Pa,
+- **PL-62** (clamped circular plate a = 1 m, t = 10 mm, 20 line3, q = 1000 Pa,
   *Fixed support* at the edge, *Symmetry* with normal X at the centre): w0 = q a⁴/(64 D)
   −8.1227e-04 m (+0.03%), the rotation about Z at r = a/2 3 q a³/(128 D) 1.2196e-03 rad
   (+0.07%, positive: right-handed about +Z), the sum of the reactions q π a² 3141.6 N (4e-11);
@@ -1045,10 +1048,11 @@ line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the 
   reaction −7725 N/m against −p/β = −7779.6 (+0.70%); tolerance 2% (thin-shell theory against a
   shell with transverse shear).
 - **PL-64** (the Code-Aster test case ssls114i rebuilt: R = 1 m, L = 0.5 m, t = 0.05 m,
-  2 line3 from B (y = 0) to A, E = 200 GPa, 10 Pa on faceid 1, Y held at B): DX = 1.0000e-09 m at
+  2 line3 from A to B (y = 0), E = 200 GPa, 10 Pa on faceid 1, Y held at B): DX = 1.0000e-09 m at
   A, B and N1 against the `VALE_CALC` of `FORCE_COQUE` with `MODI_METRIQUE` `NON` (≤ 6e-15;
-  tolerance 1e-6). It fixes the side of a pressure: Code-Aster's own normal of the cell is U × Z,
-  the bridge writes `PRES` = −p so that a positive pressure pushes along −n, n = Z × U.
+  tolerance 1e-6). It fixes the side of a pressure: Code-Aster's own normal of the cell is U × Z
+  (−X here, the `VECT_NORM` of ssls114i), the bridge writes `PRES` = +p, so that a positive
+  pressure pushes along n = Z × U, as Mecway draws it.
 - **PL-65** (PL-60 as L30 with the pressure as a time table 0 … 1 MPa over 1 s in two steps,
   `deformation` `GROT_GDEP` → `PETIT` with a WARNING): u_r at 0.5 s and 1 s (4e-14, 2e-14).
 - **PL-66** (the tube of PL-60, Y held at the top node, a force −1000 N along Y on the bottom
@@ -1065,7 +1069,7 @@ line3 elements in S30 or L30 with `**ASTER-PLANE AXIS` become `COQUE_AXIS`; the 
 
 Stresses and section forces of the shells (S44e piece 2; PL-60 … PL-63, PL-65 and PL-66 with
 the result fields `shell_stresses`, `shell_forces` and `principal_stresses`; top `u1` = the
-side n = Z × U, the side of the pressure):
+face with the pressure arrows, opposite n = Z × U):
 
 - **PL-60**: the hoop stress `stresszzm1` p R / t = 1e8 Pa (3e-14), `vonmisesu1` and
   `principal1u1` the same (1e-14, 2e-14), `forceperlengthv` p R = 5e5 N/m (3e-14), the

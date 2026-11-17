@@ -43,26 +43,26 @@
   <node nid="40" x="0.5" y="0.925" z="0" />
   <node nid="41" x="0.5" y="0.975" z="0" />
   <elset name="Buis" material="Staal">
-    <elem eid="1" shape="line3" nodes="1 22 2" />
-    <elem eid="2" shape="line3" nodes="2 23 3" />
-    <elem eid="3" shape="line3" nodes="3 24 4" />
-    <elem eid="4" shape="line3" nodes="4 25 5" />
-    <elem eid="5" shape="line3" nodes="5 26 6" />
-    <elem eid="6" shape="line3" nodes="6 27 7" />
-    <elem eid="7" shape="line3" nodes="7 28 8" />
-    <elem eid="8" shape="line3" nodes="8 29 9" />
-    <elem eid="9" shape="line3" nodes="9 30 10" />
-    <elem eid="10" shape="line3" nodes="10 31 11" />
-    <elem eid="11" shape="line3" nodes="11 32 12" />
-    <elem eid="12" shape="line3" nodes="12 33 13" />
-    <elem eid="13" shape="line3" nodes="13 34 14" />
-    <elem eid="14" shape="line3" nodes="14 35 15" />
-    <elem eid="15" shape="line3" nodes="15 36 16" />
-    <elem eid="16" shape="line3" nodes="16 37 17" />
-    <elem eid="17" shape="line3" nodes="17 38 18" />
-    <elem eid="18" shape="line3" nodes="18 39 19" />
-    <elem eid="19" shape="line3" nodes="19 40 20" />
-    <elem eid="20" shape="line3" nodes="20 41 21" />
+    <elem eid="1" shape="line3" nodes="2 22 1" />
+    <elem eid="2" shape="line3" nodes="3 23 2" />
+    <elem eid="3" shape="line3" nodes="4 24 3" />
+    <elem eid="4" shape="line3" nodes="5 25 4" />
+    <elem eid="5" shape="line3" nodes="6 26 5" />
+    <elem eid="6" shape="line3" nodes="7 27 6" />
+    <elem eid="7" shape="line3" nodes="8 28 7" />
+    <elem eid="8" shape="line3" nodes="9 29 8" />
+    <elem eid="9" shape="line3" nodes="10 30 9" />
+    <elem eid="10" shape="line3" nodes="11 31 10" />
+    <elem eid="11" shape="line3" nodes="12 32 11" />
+    <elem eid="12" shape="line3" nodes="13 33 12" />
+    <elem eid="13" shape="line3" nodes="14 34 13" />
+    <elem eid="14" shape="line3" nodes="15 35 14" />
+    <elem eid="15" shape="line3" nodes="16 36 15" />
+    <elem eid="16" shape="line3" nodes="17 37 16" />
+    <elem eid="17" shape="line3" nodes="18 38 17" />
+    <elem eid="18" shape="line3" nodes="19 39 18" />
+    <elem eid="19" shape="line3" nodes="20 40 19" />
+    <elem eid="20" shape="line3" nodes="21 41 20" />
   </elset>
   <surfacepressure selection="Binnen"><normal time="0 s">0 Pa</normal><normal time="1 s">1000000.0 Pa</normal></surfacepressure>
   <displacement selection="Onder"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>

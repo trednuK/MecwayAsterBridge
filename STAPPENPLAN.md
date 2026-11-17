@@ -2639,6 +2639,18 @@ default field there). Verification (in PL-60 … PL-66): hoop p R / t ≤ 3e-14 
 exact; the stress at a clamped node itself is linear per element (PL-62: −4.4% with 20
 elements). How Mecway shows these variables on line elements NOT verified (user test).
 
+**Fix after the user's GUI test (17 Nov 2026; plan reviewed by Opus).** In Mecway 35 the user saw
+PL-60's pressure arrows on the +X face pointing to −X: Mecway draws a positive *Pressure* on faceid
+1 of a line3 pushing along its default V axis, n = Z × U (manual §9.14 "towards the element",
+§7.5 default V), while piece 1 let the bridge push along −n. The bridge now writes `PRES` = +p
+(pushes along n, as drawn; `_ASTER_NORMAL_SIGN` = +1), top `u1` = the face with the arrows =
+Code-Aster `SUP`, `momentu` = `MXX`; an orientation on pressed elements gives a WARNING (Mecway's
+side then NOT verified). The verification chains are drawn against their coordinate (`linemesh3`
+reverse) so the same physics holds: PL-60 … PL-68 all OK. PL-62's RectBar b 1 m → 20 mm (Mecway
+drew a 1 m wide plate). Seen by the user in Mecway 35: the pressure on line3 side faces is
+accepted in S30; the result shows displacement, rotation Z and the reactions on the meridian
+line; the component, the pressure and the symmetry are red in the tree (cause NOT verified).
+
 **S44f – modal and linear buckling in 2D/axisymmetric (later).**
 **Goal:** frequencies and linear buckling factors of plane and axisymmetric models; only when the
 user asks for it.

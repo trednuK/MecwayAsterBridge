@@ -26,7 +26,7 @@ PL-63  long cylinder clamped at one end, internal pressure, axially free:
 PL-64  Code-Aster test case ssls114i rebuilt (R = 1, L = 0.5, t = 0.05,
        2 SEG3, pressure 10 Pa, DY = 0 at the bottom): DX = 1.0000e-9
        (VALE_CALC of FORCE_COQUE with MODI_METRIQUE 'NON'); the side of the
-       pressure (n = Z x U).
+       pressure (pushes along n = Z x U, as Mecway draws it).
 PL-65  PL-60 in L30 with the pressure as a time table: small
        displacements forced (WARNING), u_r at t = 0.5 and 1 s.
 PL-66  cylinder with an axial force on its bottom node (FORCE_NODALE / 2
@@ -50,14 +50,21 @@ RHO = 7850.0
 DENS = '<density type="Simple" density="7850 kg/m&#179;" />'
 
 
-def linemesh3(m, elset, n, curve):
+def linemesh3(m, elset, n, curve, reverse=True):
     """n line3 elements along curve(s), s = 0 .. 1 (Mecway's node order:
-    end, mid, end). Returns (eids, nids of the end nodes)."""
+    end, mid, end). Returns (eids, nids of the end nodes in the order of
+    s). reverse (default): every element runs against s (node 1 at the
+    larger s), so that a positive pressure, which pushes along n = Z x U as
+    Mecway draws it, is an internal pressure on a chain drawn upwards at
+    X > 0 and pushes along -Y on a plate drawn outwards."""
     ends = [m.node(*curve(float(i) / n)) for i in range(n + 1)]
     eids = []
     for i in range(n):
         mid = m.node(*curve((i + 0.5) / n))
-        eids.append(m.elem(elset, "line3", [ends[i], mid, ends[i + 1]]))
+        nodes = [ends[i], mid, ends[i + 1]]
+        if reverse:
+            nodes.reverse()
+        eids.append(m.elem(elset, "line3", nodes))
     return eids, ends
 
 
@@ -159,7 +166,7 @@ def build_pl62():
     m.elset("Plaat", "Staal")
     eids, ends = linemesh3(m, "Plaat", 20, line((0.0, 0.0), (A62, 0.0)))
     # thickness from a RectBar (dimension a in the XY plane, default V)
-    m.mat("Staal", '<geometric type="RectBar" recta="10 mm" rectb="1 m" />',
+    m.mat("Staal", '<geometric type="RectBar" recta="10 mm" rectb="20 mm" />',
           STEEL)
     _pressure(m, "Druk", eids, '<normal>%r Pa</normal>' % Q62)
     m.node_selection("Rand", [ends[-1]])
@@ -197,7 +204,9 @@ def build_pl63():
 # M2 = N2 A N1 (SEG3: end, end, mid); Mecway's line3 is end, mid, end.
 # E = 2e11, nu = 0.3, EPAIS 0.05; DDL_IMPO DY = 0 at B; FORCE_COQUE PRES =
 # 10 Pa with ORIE_NORM_COQUE VECT_NORM (-1, 0) (the normal towards the
-# axis, = Z x U for B -> A). TEST_RESU of RESM (CARA_ELEM CA, MODI_METRIQUE
+# axis). Here the elements run A -> B (linemesh3 reverse): Code-Aster's own
+# cell normal U x Z is then -X = VECT_NORM, and the bridge's PRES = +p pushes
+# along n = Z x U = +X: ssls114i without ORIE_NORM_COQUE. TEST_RESU of RESM (CARA_ELEM CA, MODI_METRIQUE
 # 'NON'): DX = 1.00000000e-09 at A, B and N1 (VALE_CALC).
 def build_pl64():
     m = Model("S30")
@@ -269,8 +278,8 @@ def build_pl68():
     return m
 
 
-# Stresses and section forces (S44e piece 2): top (u1) = the side n = Z x U,
-# the side a positive pressure acts on; stresszz = hoop, the meridional
+# Stresses and section forces (S44e piece 2): top (u1) = the face a positive
+# pressure acts on (where Mecway draws the arrows, the side U x Z); stresszz = hoop, the meridional
 # stress in stressxx/yy/xy; forceperlengthu/momentu along the meridian,
 # forceperlengthv/momentv hoop; momentu > 0 = tension on top.
 FIELDS_AX = ["displacements", "stresses", "vonmises", "reactions",
@@ -383,8 +392,9 @@ TESTS.append(Case(
          source="3 q a^2 / (4 t^2); in de klemknoop lineair per element "
                 "(gemeten -4,4 % met 20 line3)")],
     settings={"fields": FIELDS_AX},
-    note="a = 1 m, t = 10 mm (RectBar a = 10 mm, geen regel), 20 line3 van "
-         "het midden naar de rand, q = 1000 Pa op faceid 1 (duwt langs -Y); "
+    note="a = 1 m, t = 10 mm (RectBar a = 10 mm, b = 20 mm, geen regel), "
+         "20 line3 van de rand naar het midden, q = 1000 Pa op faceid 1 "
+         "(duwt langs -Y); "
          "rand Fixed, midden symmetrie X."))
 TESTS.append(Case(
     "PL-63", GROUP, "Lange cilinder met ingeklemd uiteinde, inwendige druk "
@@ -423,7 +433,7 @@ TESTS.append(Case(
                                                  (1.0, 0.375, 0.0)),
            ref=1.0e-9, tol=1e-6, unit="m",
            source="ssls114i TEST_RESU RESM DX (VALE_CALC)")],
-    note="Het net van ssls114i (2 SEG3 van B naar A), E = 200000 MPa, "
+    note="Het net van ssls114i (2 SEG3 van A naar B), E = 200000 MPa, "
          "t = 0,05 m, druk 10 Pa op faceid 1, Y vast in B."))
 TESTS.append(Case(
     "PL-65", GROUP, "Dunne cilinder, druk als tijdtabel (L30 + "

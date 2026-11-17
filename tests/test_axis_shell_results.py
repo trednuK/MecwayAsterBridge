@@ -9,9 +9,10 @@
 #   - aster_results_export: the frame [t, Z, t x Z] per point of a SEG3 cell
 #     (tangent from the shape functions, cell order end, end, middle), the
 #     rotation of the meridional stress, SIXZ left out, von Mises, the
-#     levels (u1 = INF) and the section forces (momentu = -MXX);
+#     levels (u1 = SUP, the face with Mecway's pressure arrows) and the
+#     section forces (momentu = MXX);
 #   - bridge_to_aster: POST_CHAMP EXTR_COQUE without SIEQ on the shells,
-#     res_efs in S30, no res_efs (WARNING) in L30.
+#     res_efs in S30, no res_efs (INFO) in L30.
 # Verification in Code-Aster: PL-60 .. PL-66 (TestFiles/Verificatie/
 # tests_vlak_2d_coque.py).
 #
@@ -97,14 +98,15 @@ def test_rotation():
     vm = are._von_mises_columns(m)
     check(np.allclose(vm[0, 0], math.sqrt(4.0 + 25.0 - 10.0)),
           "von Mises of meridional 2 and hoop 5 (no transverse shear)")
-    check(are._AXIS_LEVELS[0] == ("inf", "u") and
-          are._AXIS_LEVELS[2] == ("sup", "b"),
-          "u1 from INF (the side n = Z x U), b1 from SUP")
+    check(are._AXIS_LEVELS[0] == ("sup", "u") and
+          are._AXIS_LEVELS[2] == ("inf", "b"),
+          "u1 from SUP (the side U x Z, where the pressure acts), b1 from "
+          "INF")
     f = _Fields(["NXX", "NYY", "NXY", "MXX", "MYY", "MXY"],
                 [[1.0, 2.0, 0.0, 3.0, 4.0, 0.0]])
     out = are._axis_forces(f, {"rows": np.array([0])}, "res_efs")
-    check(np.allclose(out[0], [1.0, 2.0, -3.0, -4.0]),
-          "forceperlengthu/v = NXX/NYY, momentu/v = -MXX/-MYY")
+    check(np.allclose(out[0], [1.0, 2.0, 3.0, 4.0]),
+          "forceperlengthu/v = NXX/NYY, momentu/v = MXX/MYY")
 
 
 def _comm(tmp, analysis, fields):

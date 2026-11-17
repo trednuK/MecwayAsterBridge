@@ -54,7 +54,7 @@ from collections import OrderedDict
 from bridge_bcs import _value_at
 from bridge_results_liml import RESULTS_SUFFIX
 from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
-                          run_name, template_path)
+                          run_name, template_path, parse_yes_no)
 
 
 # ==========================================
@@ -2074,12 +2074,21 @@ def _error_estimator_groups(model_data, analysis):
         return []
     g3d = _result_groups(model_data)[0]
     if not g3d:
-        log(tr("WARNING: Foutschatter: het model heeft geen volume-elementen; "
-               "CALC_ERREUR (ERME) bestaat in de bridge alleen voor volumes. "
-               "Geen foutschatting.",
-               "WARNING: Error estimator: the model has no solid elements; "
-               "CALC_ERREUR (ERME) is only used for solids in the bridge. "
-               "No error estimate."))
+        # The setting is on by default (bridge_utils), so a shell, beam or
+        # axisymmetric-shell model gets an INFO; a WARNING only when the
+        # user asked for the estimate in the model (#ASTER-OPTIE).
+        options = (model_data.get("aster_custom") or {}).get("options") or {}
+        if parse_yes_no(options.get("error_estimator")):
+            log(tr("WARNING: Foutschatter: het model heeft geen "
+                   "volume-elementen; CALC_ERREUR (ERME) bestaat in de bridge "
+                   "alleen voor volumes. Geen foutschatting.",
+                   "WARNING: Error estimator: the model has no solid "
+                   "elements; CALC_ERREUR (ERME) is only used for solids in "
+                   "the bridge. No error estimate."))
+        else:
+            log("INFO: Error estimator: the model has no solid elements; "
+                "CALC_ERREUR (ERME) is only used for solids in the bridge. "
+                "No error estimate.")
         return []
     return g3d
 

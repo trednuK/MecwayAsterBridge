@@ -329,13 +329,13 @@ example: example 7 in §1.5.
 ![An axisymmetric shell: line3 elements on the mid-surface, the side of a pressure](../img/2d_axis_shell_side.svg)
 
 1. Mecway's Y axis: the axis of symmetry; X is the radius, all nodes at X ≥ 0.
-2. A line3 element on the mid-surface of the wall: node 1, midside node, node 2 (Mecway's order).
-3. U: from node 1 to node 2 of the element.
-4. n = Z × U: the side of the shell. For a chain drawn upwards (U = +Y) at X > 0 it points to the axis.
-5. A positive *Pressure* on faceid 1 (the side of a line element) pushes along −n: here outwards, an internal pressure.
+2. A line3 element on the mid-surface of the wall: node 1, midside node, node 2 (Mecway's order); here node 1 is at the top.
+3. U: from node 1 to node 2 of the element; here downwards.
+4. n = Z × U (Mecway's default V axis of the element). For a chain drawn downwards (U = −Y) at X > 0 it points away from the axis.
+5. A positive *Pressure* on faceid 1 (the side of a line element) pushes along n, exactly as Mecway draws its arrows: on the face opposite n, pointing along n. Here outwards: an internal pressure.
 6. The wall thickness t, centred on the line of the nodes.
 7. Mecway's Z axis, out of the drawing.
-8. The top surface (results `…u1`): the face on the side of n, where a positive pressure acts.
+8. The top surface (results `…u1`): the face with the pressure arrows, opposite n.
 9. The bottom surface (results `…b`, `…b1`): the face on the other side.
 
 1. **Analysis type.** *Static 3D* (S30) or *Nonlinear Static* (L30, solver CCX).
@@ -391,10 +391,10 @@ example: example 7 in §1.5.
 | `momentu`, `momentv` | the bending moment per length that gives the bending stress along the meridian (u) or in the hoop direction (v), N m/m; positive gives tension on the top surface | `shell_forces` (S30 only) |
 | `principal1u1` … `principal3b1`, `trescau1` … `trescab1` | principal stresses and Tresca per surface | `principal_stresses` |
 
-Top (`u1`) is the face on the side of n = Z × U (marker 8 in the figure): for a chain drawn
-upwards at X > 0 the inside, for a plate drawn from the axis outwards (U = +X) the face at
-+Y. A positive pressure acts on that face. Reverse the elements in Mecway to swap top and
-bottom. The stress tensor, the section forces and the principal stresses also go to Mecway
+Top (`u1`) is the face a positive pressure acts on, where Mecway draws the pressure arrows
+(marker 8 in the figure; the side opposite n = Z × U): for a chain drawn downwards at X > 0
+the inside, for a plate drawn from the edge to the axis (U = −X) the face at +Y. Reverse the
+elements in Mecway to swap top and bottom. The stress tensor, the section forces and the principal stresses also go to Mecway
 per element node.
 
 - **Transverse shear is left out.** The stresses and von Mises are those of thin-shell
@@ -427,9 +427,14 @@ Verified with Code-Aster 17.4 (PL-60 … PL-68, [`Verification.md`](Verification
 - **Other cases.** The Code-Aster test case ssls114i exact; a pressure as a time table in L30;
   a nodal force (also `forceperlengthu` = F / (2π R)); a ring moment (+0.24%); gravity.
 
-NOT verified: how Mecway shows these results on line elements, and whether Mecway's window
-accepts the inputs (a pressure on the side of a line element in S30 or L30). Mecway's own
-solve computes the line elements as beams, not as this shell.
+Seen by the user in Mecway 35 (PL-60, PL-62): Mecway's window accepts a *Pressure* on the side
+faces of line3 elements in S30 and draws its arrows on the face where the bridge applies it;
+Mecway draws the meridian line (X = radius, Y = axis), not the revolved shell, and shows
+`displacement`, `rotation Z`, `reaction force` and `reaction moment`. The component, the
+pressure and the symmetry are shown in red in Mecway's tree (cause NOT verified; Mecway's own
+beams are line3 only with the CCX solver, manual §7.5); the bridge computes them all the same.
+NOT verified: how Mecway shows the stresses of this section on line elements, and the side of
+the arrows on elements with an *Element orientation* card or a V axis.
 
 ### 1.5 Worked examples
 
@@ -682,7 +687,8 @@ Steps:
 
 1. *Analysis settings*: *Static 3D* (S30).
 2. Mesh: elset `Buis`, 20 line3 elements on the line X = 0.5 m, Y = 0 … 1 m, drawn from the
-   bottom to the top (node 1 of every element below its node 2).
+   top to the bottom (node 1 of every element above its node 2). Mecway draws the pressure
+   arrows on the inside of the wall, pointing outwards.
 3. Material `Staal`: isotropic E, ν; no geometry (the thickness comes from the line).
 4. Supports and loads:
 
@@ -764,7 +770,8 @@ Code-Aster. The bridge writes the line as `#ASTER-PLANE`, also when you typed
 | Plasticity (or a hyperelastic or orthotropic material) on axisymmetric shells | ERROR: Elset '…': material '…' has plasticity; axisymmetric shells are only computed isotropic elastic (yet). | elastic material |
 | A temperature or contact with axisymmetric shells | ERROR: … on axisymmetric shells (…) is not translated (yet). | leave it out |
 | Traction, a force on faceid 1 or a centrifugal force on axisymmetric shells | ERROR: … on '…' in a 2D analysis: on axisymmetric shells only pressure on the side (faceid 1) of line3 elements and force on nodes or element ends (faceid 2, 3); traction and force on the side are not verified. NOT included. (centrifugal: … not verified on axisymmetric shells (COQUE_AXIS). NOT included.) | a pressure on faceid 1 or a force on nodes |
-| Neighbouring line3 elements in opposite directions under one pressure | WARNING: Pressure on '…': neighbouring line3 elements run in opposite directions (node …); the pressure acts on the other side there (a positive pressure pushes along -n, n = Z x U, U from node 1 to node 2). Reverse those elements in Mecway. | reverse the elements (figure of §1.4.2) |
+| Neighbouring line3 elements in opposite directions under one pressure | WARNING: Pressure on '…': neighbouring line3 elements run in opposite directions (node …); the pressure acts on the other side there (a positive pressure pushes along +n, n = Z x U, U from node 1 to node 2, as Mecway draws the arrows). Reverse those elements in Mecway. | reverse the elements (figure of §1.4.2) |
+| An *Element orientation* card or a V axis on line3 elements under a pressure | WARNING: Pressure on '…': … line3 element(s) have an orientation (Element orientation card or V axis); the bridge lets the pressure push along n = Z x U, the default V axis. Which side Mecway then draws is NOT verified: check the arrows in Mecway. | compare Mecway's arrows with the figure of §1.4.2, or remove the orientation |
 | A node of an axisymmetric shell on the axis without supports | WARNING: Axisymmetric shell: node … lies on the axis (X = 0) but does not have both X and the rotation about Z held. Give those nodes a Symmetry with normal X (holds X and the rotation about Z). | *Symmetry* with normal X on that node |
 | Result field `safety_factor` with axisymmetric shells | WARNING: Result field safety_factor: not for axisymmetric shells (COQUE_AXIS); Mecway gets no factorofsafety. Use vonmisesu1/vonmisesb. | compare `vonmisesu1`/`vonmisesb` with the strength yourself |
 | Result field `shell_forces` with axisymmetric shells in L30 | INFO: Result field shell_forces: on axisymmetric shells (COQUE_AXIS) only in Static 3D (S30); Code-Aster stops in EFGE_ELNO after STAT_NON_LINE. Mecway gets no forceperlengthu/v and momentu/v; it does get the stresses per surface (shell_stresses). | S30, or the stresses per surface |
@@ -811,13 +818,16 @@ Axisymmetric shells (§1.4.2): line3 elements become `SEG3` cells with `COQUE_AX
 default `NON` (as ssls114i). Their nodes have DX, DY and DRZ: `fixed` holds DRZ too, a
 `symmetry` with normal X or Y also DRZ = 0, a node rotation about Z is DRZ. A pressure on faceid
 1 is `FORCE_COQUE` `PRES` on a cell group `BRAX<n>` of those elements with the sign that makes
-it push along −n, n = Z × U (Code-Aster's own normal of the cell is U × Z, measured: PL-64).
+it push along n = Z × U, the way Mecway draws the arrows (Code-Aster's own normal of the cell
+is U × Z and `PRES` > 0 pushes against it, measured: PL-64; Mecway's side seen by the user in
+Mecway 35 on PL-60, for elements without an orientation: with an *Element orientation* card
+or a V axis on pressed elements the bridge gives a WARNING).
 Stresses: `SIGM_ELNO` and `POST_CHAMP` `EXTR_COQUE` (`SUP`, `MOY`, `INF`) as for 3D shells,
-without `SIEQ`. Code-Aster's `SUP` is the side U × Z, so Mecway's top (`…u1`) comes from
-`INF`. In the job the bridge rotates SIXX (meridional) with the tangent of the element at
+without `SIEQ`. Code-Aster's `SUP` is the side U × Z, the face with the pressure arrows, so
+Mecway's top (`…u1`) comes from `SUP`. In the job the bridge rotates SIXX (meridional) with the tangent of the element at
 each node into global X, Y and puts SIYY (hoop) in Z, without SIXZ, and computes von Mises
 from that. The section forces come from `EFGE_ELNO` (`NXX`, `NYY`, `MXX`, `MYY`; `momentu`
-= −`MXX`), only after `MECA_STATIQUE`.
+= `MXX`), only after `MECA_STATIQUE`.
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` on several nodes: the mean
 displacement zero, `LIAISON_DDL` with equal weights on DX and DY (as Mecway 35: plane

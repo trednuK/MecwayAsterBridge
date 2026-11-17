@@ -340,13 +340,13 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
 ![Een axisymmetrische schaal: line3-elementen op het middenvlak, de kant van een druk](img/2d_axis_shell_side.svg)
 
 1. Mecway's Y-as: de symmetrieas; X is de straal, alle knopen bij X ≥ 0.
-2. Een line3-element op het middenvlak van de wand: knoop 1, middenknoop, knoop 2 (Mecway's volgorde).
-3. U: van knoop 1 naar knoop 2 van het element.
-4. n = Z × U: de kant van de schaal. Voor een keten die naar boven getekend is (U = +Y) bij X > 0 wijst hij naar de as.
-5. Een positieve *Pressure* op faceid 1 (de zijkant van een lijnelement) duwt langs −n: hier naar buiten, een inwendige druk.
+2. Een line3-element op het middenvlak van de wand: knoop 1, middenknoop, knoop 2 (Mecway's volgorde); hier zit knoop 1 boven.
+3. U: van knoop 1 naar knoop 2 van het element; hier naar beneden.
+4. n = Z × U (Mecway's standaard-V-as van het element). Voor een keten die naar beneden getekend is (U = −Y) bij X > 0 wijst hij van de as af.
+5. Een positieve *Pressure* op faceid 1 (de zijkant van een lijnelement) duwt langs n, precies zoals Mecway de pijlen tekent: op het vlak tegenover n, wijzend langs n. Hier naar buiten: een inwendige druk.
 6. De wanddikte t, gecentreerd op de lijn van de knopen.
 7. Mecway's Z-as, uit de tekening.
-8. Het bovenoppervlak (resultaten `…u1`): het vlak aan de kant van n, waar een positieve druk op werkt.
+8. Het bovenoppervlak (resultaten `…u1`): het vlak met de drukpijlen, tegenover n.
 9. Het onderoppervlak (resultaten `…b`, `…b1`): het vlak aan de andere kant.
 
 1. **Analysetype.** *Static 3D* (S30) of *Nonlinear Static* (L30, solver CCX).
@@ -402,10 +402,10 @@ Uitgewerkt voorbeeld: voorbeeld 7 in §1.5.
 | `momentu`, `momentv` | het buigend moment per lengte dat de buigspanning langs de meridiaan (u) of in de omtreksrichting (v) geeft, N m/m; positief geeft trek aan het bovenoppervlak | `shell_forces` (alleen S30) |
 | `principal1u1` … `principal3b1`, `trescau1` … `trescab1` | hoofdspanningen en Tresca per oppervlak | `principal_stresses` |
 
-Boven (`u1`) is het vlak aan de kant van n = Z × U (marker 8 in de figuur): voor een keten die
-omhoog getekend is bij X > 0 de binnenkant, voor een plaat die van de as naar buiten getekend
-is (U = +X) het vlak aan de kant van +Y. Een positieve druk werkt op dat vlak. Draai de
-elementen om in Mecway om boven en onder te wisselen. De spanningstensor, de snedekrachten en
+Boven (`u1`) is het vlak waar een positieve druk op werkt, waar Mecway de drukpijlen tekent
+(marker 8 in de figuur; de kant tegenover n = Z × U): voor een keten die naar beneden getekend
+is bij X > 0 de binnenkant, voor een plaat die van de rand naar de as getekend is (U = −X) het
+vlak aan de kant van +Y. Draai de elementen om in Mecway om boven en onder te wisselen. De spanningstensor, de snedekrachten en
 de hoofdspanningen gaan ook per element-knoop naar Mecway.
 
 - **Dwarsschuifspanning weggelaten.** De spanningen en von Mises zijn die van de theorie
@@ -441,9 +441,15 @@ Nagelopen met Code-Aster 17.4 (PL-60 … PL-68, [`Verificatie.md`](Verificatie.m
   een knoopkracht (ook `forceperlengthu` = F / (2π R)); een ringmoment (+0,24%);
   zwaartekracht.
 
-NIET geverifieerd: hoe Mecway deze resultaten op lijnelementen toont, en of Mecway's venster
-de invoer accepteert (een druk op de zijkant van een lijnelement in S30 of L30). Mecway's eigen
-solve rekent de lijnelementen als balken, niet als deze schaal.
+Gezien door de gebruiker in Mecway 35 (PL-60, PL-62): Mecway's venster accepteert een
+*Pressure* op de zijvlakken van line3-elementen in S30 en tekent de pijlen op het vlak waar de
+bridge de druk laat werken; Mecway tekent de meridiaanlijn (X = straal, Y = as), niet de
+omwentelingsschaal, en toont `displacement`, `rotation Z`, `reaction force` en `reaction
+moment`. Het component, de druk en de symmetrie staan rood in Mecway's boom (oorzaak NIET
+geverifieerd; Mecway's eigen balken zijn alleen met de CCX-solver line3, handleiding §7.5); de
+bridge rekent ze toch. NIET geverifieerd: hoe Mecway de spanningen van deze paragraaf op
+lijnelementen toont, en de kant van de pijlen bij elementen met een *Element
+orientation*-kaart of een V-as.
 
 ### 1.5 Uitgewerkte voorbeelden
 
@@ -700,7 +706,8 @@ Stappen:
 
 1. *Analysis settings*: *Static 3D* (S30).
 2. Mesh: elset `Buis`, 20 line3-elementen op de lijn X = 0,5 m, Y = 0 … 1 m, getekend van
-   onder naar boven (knoop 1 van elk element onder zijn knoop 2).
+   boven naar beneden (knoop 1 van elk element boven zijn knoop 2). Mecway tekent de
+   drukpijlen aan de binnenkant van de wand, naar buiten wijzend.
 3. Materiaal `Staal`: isotroop E, ν; geen geometrie (de dikte komt uit de regel).
 4. Opleggingen en belastingen:
 
@@ -782,7 +789,8 @@ typte.
 | Plasticiteit (of een hyperelastisch of orthotroop materiaal) op axisymmetrische schalen | ERROR: Elset '…': materiaal '…' heeft plasticiteit; axisymmetrische schalen rekenen (nog) alleen isotroop elastisch. | elastisch materiaal |
 | Een temperatuur of contact met axisymmetrische schalen | ERROR: … op axisymmetrische schalen (…) wordt (nog) niet vertaald. | laat het weg |
 | Traction, een kracht op faceid 1 of een centrifugaalkracht op axisymmetrische schalen | ERROR: … op '…' in een 2D-analyse: op axisymmetrische schalen alleen druk op de zijkant (faceid 1) van line3-elementen en kracht op knopen of elementuiteinden (faceid 2, 3); traction en kracht op de zijkant zijn niet geverifieerd. NIET meegenomen. (centrifugaal: … niet geverifieerd op axisymmetrische schalen (COQUE_AXIS). NIET meegenomen.) | een druk op faceid 1 of een kracht op knopen |
-| Aangrenzende line3-elementen in tegengestelde richting onder een druk | WARNING: Druk op '…': aangrenzende line3-elementen lopen in tegengestelde richting (knoop …); de druk werkt daar aan de andere kant (positieve druk duwt langs -n, n = Z x U, U van knoop 1 naar knoop 2). Keer die elementen om in Mecway. | keer de elementen om (figuur van §1.4.2) |
+| Aangrenzende line3-elementen in tegengestelde richting onder een druk | WARNING: Druk op '…': aangrenzende line3-elementen lopen in tegengestelde richting (knoop …); de druk werkt daar aan de andere kant (positieve druk duwt langs +n, n = Z x U, U van knoop 1 naar knoop 2, zoals Mecway de pijlen tekent). Keer die elementen om in Mecway. | keer de elementen om (figuur van §1.4.2) |
+| Een *Element orientation*-kaart of een V-as op line3-elementen onder een druk | WARNING: Druk op '…': … line3-element(en) hebben een orientatie (Element orientation-kaart of V-as); de bridge laat de druk duwen langs n = Z x U, de standaard-V-as. Welke kant Mecway dan tekent is NIET geverifieerd: controleer de pijlen in Mecway. | vergelijk Mecway's pijlen met de figuur van §1.4.2, of haal de oriëntatie weg |
 | Een knoop van een axisymmetrische schaal op de as zonder opleggingen | WARNING: Axisymmetrische schaal: knoop … ligt op de as (X = 0) maar heeft niet zowel X als de rotatie om Z vast. Geef die knopen een Symmetry met normaal X (houdt X en de rotatie om Z vast). | *Symmetry* met normaal X op die knoop |
 | Resultaatveld `safety_factor` bij axisymmetrische schalen | WARNING: Resultaatveld safety_factor: niet voor axisymmetrische schalen (COQUE_AXIS); Mecway krijgt geen factorofsafety. Gebruik vonmisesu1/vonmisesb. | vergelijk `vonmisesu1`/`vonmisesb` zelf met de sterkte |
 | Resultaatveld `shell_forces` bij axisymmetrische schalen in L30 | INFO: Result field shell_forces: on axisymmetric shells (COQUE_AXIS) only in Static 3D (S30); Code-Aster stops in EFGE_ELNO after STAT_NON_LINE. Mecway gets no forceperlengthu/v and momentu/v; it does get the stresses per surface (shell_stresses). | S30, of de spanningen per oppervlak |
@@ -829,12 +837,15 @@ Axisymmetrische schalen (§1.4.2): line3-elementen worden `SEG3`-cellen met `COQ
 van Code-Aster (zoals ssls114i). Hun knopen hebben DX, DY en DRZ: `fixed` houdt ook DRZ vast,
 een `symmetry` met normaal X of Y ook DRZ = 0, een knooprotatie om Z is DRZ. Een druk op faceid
 1 is `FORCE_COQUE` `PRES` op een celgroep `BRAX<n>` van die elementen, met het teken waarmee hij
-langs −n duwt, n = Z × U (Code-Aster's eigen normaal van de cel is U × Z, gemeten: PL-64).
+langs n = Z × U duwt, zoals Mecway de pijlen tekent (Code-Asters eigen normaal van de cel is
+U × Z en `PRES` > 0 duwt daartegenin, gemeten: PL-64; Mecway's kant gezien door de gebruiker
+in Mecway 35 op PL-60, voor elementen zonder oriëntatie: met een *Element orientation*-kaart of
+een V-as op belaste elementen geeft de bridge een WARNING).
 Spanningen: `SIGM_ELNO` en `POST_CHAMP` `EXTR_COQUE` (`SUP`, `MOY`, `INF`) zoals bij 3D-schalen,
-zonder `SIEQ`. Code-Asters `SUP` is de kant U × Z, dus Mecway's boven (`…u1`) komt uit
-`INF`. In de job draait de bridge SIXX (meridiaan) met de raaklijn van het element in elke
+zonder `SIEQ`. Code-Asters `SUP` is de kant U × Z, het vlak met de drukpijlen, dus Mecway's
+boven (`…u1`) komt uit `SUP`. In de job draait de bridge SIXX (meridiaan) met de raaklijn van het element in elke
 knoop naar globaal X, Y en zet SIYY (ring) in Z, zonder SIXZ, en berekent daaruit von Mises.
-De snedekrachten komen uit `EFGE_ELNO` (`NXX`, `NYY`, `MXX`, `MYY`; `momentu` = −`MXX`),
+De snedekrachten komen uit `EFGE_ELNO` (`NXX`, `NYY`, `MXX`, `MYY`; `momentu` = `MXX`),
 alleen na `MECA_STATIQUE`.
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` op meerdere knopen: de gemiddelde

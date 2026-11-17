@@ -11,6 +11,10 @@
   it stops before Code-Aster starts. With route `liml` and *Mecway solve first* on, such a
   solve now gives a WARNING that the comparison with Mecway is lost; the run goes on.
 
+- **Error estimator on a model without solid elements**: an INFO instead of a WARNING (the
+  setting is on by default, so every shell, beam or axisymmetric-shell model showed it); still
+  a WARNING when the model asks for the estimate with `#ASTER-OPTIE error_estimator`.
+
 - **Fix: example models that opened with a message in Mecway 35.** The 2D example and
   verification models `PL-30`, `PL-30p`, `PL-31`, `PL-32`, `PL-35` (`plastic strain`) and
   `PL-40` … `PL-46` (`contact`) asked Mecway for a result field it does not know, so Mecway 35
@@ -25,14 +29,15 @@
   `**ASTER-SHELL <material>: EPAIS=<t>` (also `**ASTER-SCHAAL`, optionally `A_CIS`), or from
   the material's *Shell/membrane* thickness or a *RectBar*; the line wins. Supports hold X, Y
   and the rotation about Z (*Fixed*, *Symmetry*, *Node rotation* about Z); a pressure on the
-  side of the line elements (faceid 1) pushes along −n, n = Z × U; forces and moments on nodes
+  side of the line elements (faceid 1) pushes along n = Z × U, exactly as Mecway draws the
+  arrows (seen in Mecway 35); forces and moments on nodes
   are for 360 degrees; gravity along Y. Results: displacements, `rotz` and the reactions
   (`reactionmomz` too) for 360 degrees; von Mises on the top, middle and bottom surface
   (`vonmisesu1/m/b`); with the result fields `shell_stresses`, `shell_forces` and
   `principal_stresses` the stress tensor per surface in global axes (`stresszz…` = hoop
   stress), the normal forces and bending moments per length along the meridian and the hoop
   direction (`forceperlengthu/v`, `momentu/v`; S30 only) and the principal stresses. Top
-  (`u1`) is the side the pressure acts on. The transverse shear is left out (Code-Aster's SIXZ
+  (`u1`) is the face the pressure acts on, where Mecway draws the arrows. The transverse shear is left out (Code-Aster's SIXZ
   of `COQUE_AXIS` is not the physical shear, measured). Verification PL-60 … PL-68: thin
   cylinder and sphere (hoop stress p R / t, p R / (2t)), a clamped circular plate, the clamp
   moment and the clamp stress of a long cylinder (−0.94%, −1.1%), Code-Aster test case

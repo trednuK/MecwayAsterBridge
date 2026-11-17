@@ -66,38 +66,38 @@
   <node nid="64" x="0.0735645635997" y="0.997290456679" z="0" />
   <node nid="65" x="0.0245412285229" y="0.999698818696" z="0" />
   <elset name="Bol" material="Staal">
-    <elem eid="1" shape="line3" nodes="1 34 2" />
-    <elem eid="2" shape="line3" nodes="2 35 3" />
-    <elem eid="3" shape="line3" nodes="3 36 4" />
-    <elem eid="4" shape="line3" nodes="4 37 5" />
-    <elem eid="5" shape="line3" nodes="5 38 6" />
-    <elem eid="6" shape="line3" nodes="6 39 7" />
-    <elem eid="7" shape="line3" nodes="7 40 8" />
-    <elem eid="8" shape="line3" nodes="8 41 9" />
-    <elem eid="9" shape="line3" nodes="9 42 10" />
-    <elem eid="10" shape="line3" nodes="10 43 11" />
-    <elem eid="11" shape="line3" nodes="11 44 12" />
-    <elem eid="12" shape="line3" nodes="12 45 13" />
-    <elem eid="13" shape="line3" nodes="13 46 14" />
-    <elem eid="14" shape="line3" nodes="14 47 15" />
-    <elem eid="15" shape="line3" nodes="15 48 16" />
-    <elem eid="16" shape="line3" nodes="16 49 17" />
-    <elem eid="17" shape="line3" nodes="17 50 18" />
-    <elem eid="18" shape="line3" nodes="18 51 19" />
-    <elem eid="19" shape="line3" nodes="19 52 20" />
-    <elem eid="20" shape="line3" nodes="20 53 21" />
-    <elem eid="21" shape="line3" nodes="21 54 22" />
-    <elem eid="22" shape="line3" nodes="22 55 23" />
-    <elem eid="23" shape="line3" nodes="23 56 24" />
-    <elem eid="24" shape="line3" nodes="24 57 25" />
-    <elem eid="25" shape="line3" nodes="25 58 26" />
-    <elem eid="26" shape="line3" nodes="26 59 27" />
-    <elem eid="27" shape="line3" nodes="27 60 28" />
-    <elem eid="28" shape="line3" nodes="28 61 29" />
-    <elem eid="29" shape="line3" nodes="29 62 30" />
-    <elem eid="30" shape="line3" nodes="30 63 31" />
-    <elem eid="31" shape="line3" nodes="31 64 32" />
-    <elem eid="32" shape="line3" nodes="32 65 33" />
+    <elem eid="1" shape="line3" nodes="2 34 1" />
+    <elem eid="2" shape="line3" nodes="3 35 2" />
+    <elem eid="3" shape="line3" nodes="4 36 3" />
+    <elem eid="4" shape="line3" nodes="5 37 4" />
+    <elem eid="5" shape="line3" nodes="6 38 5" />
+    <elem eid="6" shape="line3" nodes="7 39 6" />
+    <elem eid="7" shape="line3" nodes="8 40 7" />
+    <elem eid="8" shape="line3" nodes="9 41 8" />
+    <elem eid="9" shape="line3" nodes="10 42 9" />
+    <elem eid="10" shape="line3" nodes="11 43 10" />
+    <elem eid="11" shape="line3" nodes="12 44 11" />
+    <elem eid="12" shape="line3" nodes="13 45 12" />
+    <elem eid="13" shape="line3" nodes="14 46 13" />
+    <elem eid="14" shape="line3" nodes="15 47 14" />
+    <elem eid="15" shape="line3" nodes="16 48 15" />
+    <elem eid="16" shape="line3" nodes="17 49 16" />
+    <elem eid="17" shape="line3" nodes="18 50 17" />
+    <elem eid="18" shape="line3" nodes="19 51 18" />
+    <elem eid="19" shape="line3" nodes="20 52 19" />
+    <elem eid="20" shape="line3" nodes="21 53 20" />
+    <elem eid="21" shape="line3" nodes="22 54 21" />
+    <elem eid="22" shape="line3" nodes="23 55 22" />
+    <elem eid="23" shape="line3" nodes="24 56 23" />
+    <elem eid="24" shape="line3" nodes="25 57 24" />
+    <elem eid="25" shape="line3" nodes="26 58 25" />
+    <elem eid="26" shape="line3" nodes="27 59 26" />
+    <elem eid="27" shape="line3" nodes="28 60 27" />
+    <elem eid="28" shape="line3" nodes="29 61 28" />
+    <elem eid="29" shape="line3" nodes="30 62 29" />
+    <elem eid="30" shape="line3" nodes="31 63 30" />
+    <elem eid="31" shape="line3" nodes="32 64 31" />
+    <elem eid="32" shape="line3" nodes="33 65 32" />
   </elset>
   <surfacepressure selection="Binnen"><normal>100000.0 Pa</normal></surfacepressure>
   <symmetry selection="Evenaar"><x>0</x><y>1</y><z>0</z></symmetry>

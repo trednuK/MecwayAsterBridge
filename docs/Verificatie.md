@@ -1036,7 +1036,10 @@ zijn gesloten vormen):
 Axisymmetrische schalen (STAPPENPLAN S44e, `tests_vlak_2d_coque.py`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.2):
 line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de dikte uit
 `**ASTER-SHELL` (PL-60, PL-63 … PL-68), *Shell/membrane* met dezelfde regel (PL-61) of een *RectBar*
-(PL-62). E = 210 GPa, ν = 0,3 (PL-64: 200 GPa). Gesloten vormen: Timoshenko & Woinowsky-Krieger
+(PL-62). Elke keten is tegen zijn coördinaat in getekend (buizen van boven naar beneden, de
+plaat van de rand naar het midden, de bol van de pool naar de evenaar), zodat de druk, die
+langs n = Z × U duwt zoals Mecway hem tekent, een inwendige druk is (de plaat: naar beneden).
+E = 210 GPa, ν = 0,3 (PL-64: 200 GPa). Gesloten vormen: Timoshenko & Woinowsky-Krieger
 (membraanoplossingen, de ingeklemde ronde plaat, de lange cilinder met een randbelasting, met
 β⁴ = 3(1 − ν²)/(R²t²)).
 
@@ -1046,7 +1049,7 @@ line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de d
 - **PL-61** (dunne bol R = 1 m, t = 10 mm, een kwart meridiaan van 32 line3, 0,1 MPa, *Symmetry*
   met normaal Y op de evenaar en normaal X op de pool): u = p R² (1 − ν)/(2 E t) = 1,6667e-05 m
   op de evenaar (−3,3e-8) en op de pool (+7,7e-8); tolerantie 0,5%.
-- **PL-62** (ingeklemde ronde plaat a = 1 m, t = 10 mm, 20 line3 vanuit het midden, q = 1000 Pa,
+- **PL-62** (ingeklemde ronde plaat a = 1 m, t = 10 mm, 20 line3, q = 1000 Pa,
   *Fixed support* aan de rand, *Symmetry* met normaal X in het midden): w0 = q a⁴/(64 D)
   −8,1227e-04 m (+0,03%), de rotatie om Z bij r = a/2 3 q a³/(128 D) 1,2196e-03 rad
   (+0,07%, positief: rechtsom om +Z), de som van de reacties q π a² 3141,6 N (4e-11);
@@ -1057,10 +1060,11 @@ line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de d
   reactie −7725 N/m tegen −p/β = −7779,6 (+0,70%); tolerantie 2% (dunne-schaaltheorie tegen een
   schaal met dwarsafschuiving).
 - **PL-64** (de Code-Aster-testcase ssls114i nagebouwd: R = 1 m, L = 0,5 m, t = 0,05 m,
-  2 line3 van B (y = 0) naar A, E = 200 GPa, 10 Pa op faceid 1, Y vast in B): DX = 1,0000e-09 m in
+  2 line3 van A naar B (y = 0), E = 200 GPa, 10 Pa op faceid 1, Y vast in B): DX = 1,0000e-09 m in
   A, B en N1 tegen de `VALE_CALC` van `FORCE_COQUE` met `MODI_METRIQUE` `NON` (≤ 6e-15;
-  tolerantie 1e-6). Dit legt de kant van een druk vast: Code-Aster's eigen normaal van de cel is
-  U × Z, de bridge schrijft `PRES` = −p zodat een positieve druk langs −n duwt, n = Z × U.
+  tolerantie 1e-6). Dit legt de kant van een druk vast: Code-Asters eigen normaal van de cel is
+  U × Z (hier −X, de `VECT_NORM` van ssls114i), de bridge schrijft `PRES` = +p, zodat een
+  positieve druk langs n = Z × U duwt, zoals Mecway hem tekent.
 - **PL-65** (PL-60 als L30 met de druk als tijdtabel 0 … 1 MPa over 1 s in twee stappen,
   `deformation` `GROT_GDEP` → `PETIT` met een WARNING): u_r op 0,5 s en 1 s (4e-14, 2e-14).
 - **PL-66** (de buis van PL-60, Y vast in de bovenste knoop, een kracht −1000 N langs Y op de
@@ -1076,8 +1080,8 @@ line3-elementen in S30 of L30 met `**ASTER-PLANE AXIS` worden `COQUE_AXIS`; de d
   van 360 graden, zoals bij `AXIS`.
 
 Spanningen en snedekrachten van de schalen (S44e deel 2; PL-60 … PL-63, PL-65 en PL-66 met de
-resultaatvelden `shell_stresses`, `shell_forces` en `principal_stresses`; boven `u1` = de kant
-n = Z × U, de kant van de druk):
+resultaatvelden `shell_stresses`, `shell_forces` en `principal_stresses`; boven `u1` = het
+vlak met de drukpijlen, tegenover n = Z × U):
 
 - **PL-60**: de ringspanning `stresszzm1` p R / t = 1e8 Pa (3e-14), `vonmisesu1` en
   `principal1u1` hetzelfde (1e-14, 2e-14), `forceperlengthv` p R = 5e5 N/m (3e-14), de

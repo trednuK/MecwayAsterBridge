@@ -34,8 +34,9 @@
 # or Y also DRZ, a node rotation about Z is DRZ, a moment on a node MZ / 2 pi
 # (as the forces), reactionmomz x 2 pi. Pressure on faceid 1 of a line
 # element: FORCE_COQUE PRES (Pa, per area of the mid-surface) pushing along
-# -n with n = Z x U (U = node 1 -> node 2; Mecway's default V of a line in
-# the XY plane), _line_pressure; verification PL-60 .. PL-68.
+# +n with n = Z x U (U = node 1 -> node 2; Mecway's default V of a line in
+# the XY plane), as Mecway draws it, _line_pressure; verification PL-60 ..
+# PL-68.
 # bridge_from_liml calls apply() (modelisations, checks), bridge_mesh calls
 # convert_bc() per load and finish_bcs() after all loads, bridge_to_aster
 # uses export_arg() / static_check_arg() for the results.
@@ -1244,15 +1245,19 @@ def _line_face_load(model_data, bc, sel):
     return True
 
 
-# Code-Aster's normal of a COQUE_AXIS cell relative to the bridge's n = Z x U
-# (U = node 1 -> node 2 of the Mecway element, the SEG3 in the same order):
-# FORCE_COQUE PRES pushes along -n of Code-Aster (ssls114i: ORIE_NORM_COQUE
-# VECT_NORM (-1, 0) and PRES = +10 Pa give DX = +1e-9 on a cylinder of
-# radius 1). Without ORIE_NORM_COQUE Code-Aster's normal is U x Z = -(Z x U):
-# measured with Code-Aster 17.4 (verification PL-64, the mesh of ssls114i
-# B (y = 0) -> A (y = 0.5), U = +Y: PRES = +10 Pa gave DX = -1.0000e-9, and
-# so did PL-60 .. PL-63). Hence PRES = -p.
-_ASTER_NORMAL_SIGN = -1.0
+# The side of a pressure on faceid 1 of a line element follows Mecway's
+# drawing: Mecway 35 draws a positive pressure on the side face of a line3
+# in the XY plane pushing along its V axis, n = Z x U (U = node 1 -> node 2;
+# the default V, bridge_mesh._mecway_v_axis; manual sec. 9.14: positive =
+# towards the element). Seen by the user in Mecway 35 on PL-60 (17 Nov
+# 2026): a chain drawn upwards at X = 0.5 shows the arrows on the +X face
+# pointing to -X. Code-Aster: FORCE_COQUE PRES pushes along -(cell normal)
+# (ssls114i: ORIE_NORM_COQUE VECT_NORM (-1, 0) and PRES = +10 Pa give DX =
+# +1e-9 on a cylinder of radius 1); without ORIE_NORM_COQUE the cell normal
+# is U x Z (measured with Code-Aster 17.4 on the mesh of ssls114i B (y = 0)
+# -> A (y = 0.5), U = +Y: PRES = +10 Pa gave DX = -1.0000e-9). So PRES = +p
+# pushes along +(Z x U), as Mecway draws it.
+_ASTER_NORMAL_SIGN = 1.0
 
 
 def _scaled(value, k):
@@ -1265,11 +1270,13 @@ def _scaled(value, k):
 def _line_pressure(model_data, bc, sel, sides):
     """Pressure on faceid 1 of line elements of axisymmetric shells (S44e):
     FORCE_COQUE PRES (Pa on the mid-surface, Code-Aster integrates it per
-    radian) on a new cell group BRAX<n> of those elements. The bridge's side:
-    a positive pressure pushes along -n, n = Z x U (U = node 1 -> node 2;
-    Mecway's default V of a line in the XY plane): a chain from bottom to
-    top on the outside of the axis gets an internal pressure. Neighbouring
-    elements in opposite directions push to opposite sides: WARNING."""
+    radian) on a new cell group BRAX<n> of those elements. The side, as
+    Mecway draws it: a positive pressure pushes along +n, n = Z x U (U =
+    node 1 -> node 2; Mecway's default V of a line in the XY plane): a chain
+    from top to bottom at X > 0 gets an internal pressure. Neighbouring
+    elements in opposite directions push to opposite sides: WARNING. An
+    orientation (card or per element) on those elements: WARNING (which
+    side Mecway then draws is NOT verified)."""
     import bridge_bcs
     value = bc["aster_dict"].get("PRES")
     if value is None or bridge_bcs.is_position(value):
@@ -1290,14 +1297,31 @@ def _line_pressure(model_data, bc, sel, sides):
     if flipped:
         log(tr("WARNING: Druk op '{0}': aangrenzende line3-elementen lopen "
                "in tegengestelde richting (knoop {1}); de druk werkt daar "
-               "aan de andere kant (positieve druk duwt langs -n, n = Z x U, "
-               "U van knoop 1 naar knoop 2). Keer die elementen om in "
-               "Mecway.",
+               "aan de andere kant (positieve druk duwt langs +n, n = Z x U, "
+               "U van knoop 1 naar knoop 2, zoals Mecway de pijlen tekent). "
+               "Keer die elementen om in Mecway.",
                "WARNING: Pressure on '{0}': neighbouring line3 elements run "
                "in opposite directions (node {1}); the pressure acts on the "
-               "other side there (a positive pressure pushes along -n, n = Z "
-               "x U, U from node 1 to node 2). Reverse those elements in "
-               "Mecway.").format(sel, ", ".join(str(n) for n in flipped[:10])))
+               "other side there (a positive pressure pushes along +n, n = Z "
+               "x U, U from node 1 to node 2, as Mecway draws the arrows). "
+               "Reverse those elements in Mecway.").format(
+                   sel, ", ".join(str(n) for n in flipped[:10])))
+    oriented = set(e for e in eids
+                   if e in model_data.get("beam_orientations", {}))
+    for card in model_data.get("orientation_cards") or []:
+        oriented |= set(eids) & set(model_data.get(
+            "element_selections", {}).get(card["selection"], ()))
+    if oriented:
+        log(tr("WARNING: Druk op '{0}': {1} line3-element(en) hebben een "
+               "orientatie (Element orientation-kaart of V-as); de bridge "
+               "laat de druk duwen langs n = Z x U, de standaard-V-as. Welke "
+               "kant Mecway dan tekent is NIET geverifieerd: controleer de "
+               "pijlen in Mecway.",
+               "WARNING: Pressure on '{0}': {1} line3 element(s) have an "
+               "orientation (Element orientation card or V axis); the bridge "
+               "lets the pressure push along n = Z x U, the default V axis. "
+               "Which side Mecway then draws is NOT verified: check the "
+               "arrows in Mecway.").format(sel, len(oriented)))
     groups = model_data.setdefault("extra_ma_groups", OrderedDict())
     taken = set(model_data.get("mesh_group_names", set())) | set(groups)
     n = 1
@@ -1312,8 +1336,8 @@ def _line_pressure(model_data, bc, sel, sides):
                                      _scaled(value, _ASTER_NORMAL_SIGN))])
     bc["_plane"] = True
     log("INFO: Pressure on the side of {0} line3 element(s) in '{1}' -> "
-        "FORCE_COQUE PRES on {2} (axisymmetric shell; pushes along -n, n = "
-        "Z x U).".format(len(eids), sel, name))
+        "FORCE_COQUE PRES on {2} (axisymmetric shell; pushes along +n, n = "
+        "Z x U, as Mecway draws it).".format(len(eids), sel, name))
     return True
 
 

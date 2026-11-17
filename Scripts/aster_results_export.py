@@ -1262,13 +1262,15 @@ _SHELL_FORCE_NAMES = ("forceperlengthu", "forceperlengthv",
 #   - EFGE_ELNO: NXX, NYY, NXY (0), MXX, MYY, MXY (0), no QX; NXX/NYY per
 #     length of the meridian/circumference (NYY = p R far from the clamp);
 #     MXX > 0 gives tension on SUP (SIXX SUP = NXX / t + 6 MXX / t^2).
-# Mecway's top (u1) is the side n = Z x U of docs 2D_and_axisymmetric
-# sec. 1.4.2 (the side a positive pressure acts on) = Code-Aster's INF; so
-# u1 from res_inf, b1 from res_sup and momentu = -MXX, momentv = -MYY
-# (momentu > 0 gives tension on top, as for 3D shells). Global tensor with
+# Mecway's top (u1) is the face a positive pressure acts on, where Mecway
+# draws the arrows (docs 2D_and_axisymmetric sec. 1.4.2): the side U x Z
+# (the pressure pushes along Z x U, bridge_plane._ASTER_NORMAL_SIGN) =
+# Code-Aster's SUP; so u1 from res_sup, b1 from res_inf and momentu = MXX,
+# momentv = MYY (momentu > 0 gives tension on top, as for 3D shells; MYY >
+# 0 = tension on SUP checked end to end by PL-62 momentv). Global tensor with
 # the frame [t, Z, t x Z] per element node: stressxx/yy/xy from the
 # meridional stress, stresszz = hoop (as 2D AXIS solids).
-_AXIS_LEVELS = (("inf", "u"), ("moy", "m"), ("sup", "b"))
+_AXIS_LEVELS = (("sup", "u"), ("moy", "m"), ("inf", "b"))
 _AXIS_SIGM_IJ = {"SIXX": (0, 0), "SIYY": (1, 1), "SIZZ": (2, 2)}
 _AXIS_FORCE_NAMES = ("forceperlengthu", "forceperlengthv", "momentu",
                      "momentv")
@@ -1459,7 +1461,7 @@ def _shell_forces(fields, plan, rkey):
 
 def _axis_forces(fields, plan, rkey):
     """(points, 4) forceperlengthu/v, momentu/v of axisymmetric shells from
-    EFGE_ELNO (NXX, NYY, -MXX, -MYY; see _AXIS_LEVELS), or None."""
+    EFGE_ELNO (NXX, NYY, MXX, MYY; see _AXIS_LEVELS), or None."""
     d = fields.get(rkey, "EFGE_ELNO", True)
     if d is None:
         return None
@@ -1469,8 +1471,8 @@ def _axis_forces(fields, plan, rkey):
         if name in d[0]:
             return vals[:, d[0].index(name)]
         return np.zeros(len(vals))
-    return np.column_stack([col("NXX"), col("NYY"), -col("MXX"),
-                            -col("MYY")])
+    return np.column_stack([col("NXX"), col("NYY"), col("MXX"),
+                            col("MYY")])
 
 
 def _von_mises_columns(m):

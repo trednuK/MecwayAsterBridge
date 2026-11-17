@@ -258,7 +258,7 @@ The log lines are in the language of the bridge (`tr()`); the English text is sh
 | Message | Cause | Solution |
 |---|---|---|
 | INFO: Error estimator: loads not included (FORCE_NODALE, ...) | point loads or loads on shells/beams | normal; around those loads the estimated error is larger |
-| WARNING: Error estimator: the model has no solid elements | only shells/beams | no estimate possible; switch the setting off to avoid the message |
+| INFO: Error estimator: the model has no solid elements (a WARNING when the model asks for the estimate with `#ASTER-OPTIE error_estimator`) | only shells, beams or axisymmetric shells; the setting is on by default | normal: no estimate possible for these elements |
 | WARNING: Error estimator: ... on overlapping faces | two pressures/tractions on the same face | the estimator takes one; for a reliable estimate merge the loads in Mecway |
 | WARNING: Error estimator: no load or free face for CALC_ERREUR | all boundaries constrained and no face load | no estimate |
 | WARNING: Error estimator (error_estimator) only works for linear static | setting with another analysis | normal; no estimate |
