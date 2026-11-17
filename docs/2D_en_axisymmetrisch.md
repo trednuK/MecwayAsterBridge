@@ -309,10 +309,10 @@ De massa in de log (`BRIDGE_STATCHECK`) is die van de hele dikte of van 360 grad
 `fixed`, `pinnedsupport`: `DDL_IMPO` DX = DY = 0; `displacement` langs X of Y:
 `DDL_IMPO`; `symmetry` met normaal X of Y: `DDL_IMPO` DX = 0 of DY = 0. Componenten die
 het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg. Een pinned support op meer dan
-een knoop houdt elke knoop vast (WARNING). Mecway 35 houdt in 2D alleen de gemiddelde
-verplaatsing van de knopen vast (die kunnen ten opzichte van elkaar bewegen en samen
-draaien, dus een model met alleen zo'n steunpunt is daar een mechanisme) en op randen
-niets; voor hetzelfde resultaat als Mecway: één knoop, of *Displacement* (KNOWN_BUGS 134).
+een knoop houdt elke knoop vast (WARNING). Mecway 35 houdt in 2D de gemiddelde verplaatsing
+van de knopen op nul, maar zijn resultaat wijkt ook af van dat van een voorwaarde
+op het gemiddelde, en op randen houdt het niets vast; voor hetzelfde resultaat in beide
+programma's: *Displacement* in X en Y (KNOWN_BUGS 134).
 
 ### 2.4 Dynamica (D20, DA0)
 

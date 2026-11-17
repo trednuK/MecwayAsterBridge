@@ -562,35 +562,38 @@ def convert_bc(model_data, bc, faces, skin_groups):
         bc["aster_dict"] = OrderedDict([("DX", 0.0), ("DY", 0.0)])
         bc["_plane"] = True
         # Measured (Mecway 35 headless, 17 Nov 2026, KNOWN_BUGS 134): on
-        # nodes Mecway holds only the mean displacement, the selection may
-        # contract and rotate (alone a mechanism with an arbitrary
-        # rotation); on edges it holds nothing (a mechanism). Kept as
-        # DDL_IMPO on every node: a mean-only coupling would leave such a
-        # model singular in Code-Aster.
+        # several nodes Mecway keeps the mean displacement at zero, but its
+        # result is not that of a mean constraint (tension plate +1.9%
+        # against the exact sigma L / E that any mean constraint allows,
+        # also with the rotation held; cause NOT investigated); on edges it
+        # holds nothing. Design choice: DDL_IMPO on every node, as a
+        # Displacement in X and Y, which gives the same result in both.
         if n > 1 and edges:
             log(tr("WARNING: Pinned support op rand '{0}' in een "
                    "2D-analyse: de bridge houdt elk van de {1} knopen vast "
                    "(DX = DY = 0). Mecway houdt in 2D op randen niets vast "
-                   "(gemeten, Mecway 35) en op knopen alleen de gemiddelde "
-                   "verplaatsing; gebruik Fixed support of Displacement "
-                   "(KNOWN_BUGS 134).",
+                   "en geeft op knopen een ander resultaat dan de gemiddelde "
+                   "verplaatsing (gemeten, Mecway 35); gebruik Displacement "
+                   "in X en Y voor hetzelfde resultaat (KNOWN_BUGS 134).",
                    "WARNING: Pinned support on edge '{0}' in a 2D analysis: "
-                   "the bridge holds each of the {1} nodes (DX = DY = 0). "
-                   "In 2D Mecway holds nothing on edges (measured, Mecway "
-                   "35) and on nodes only the mean displacement; use Fixed "
-                   "support or Displacement (KNOWN_BUGS 134).").format(
-                       sel, n))
+                   "the bridge holds each of the {1} nodes (DX = DY = 0). In "
+                   "2D Mecway holds nothing on edges and gives on nodes a "
+                   "result other than the mean displacement (measured, "
+                   "Mecway 35); use Displacement in X and Y for the same "
+                   "result (KNOWN_BUGS 134).").format(sel, n))
         elif n > 1:
             log(tr("WARNING: Pinned support op '{0}' in een 2D-analyse: elk "
                    "van de {1} knopen wordt vastgehouden (DX = DY = 0). "
-                   "Mecway houdt alleen de gemiddelde verplaatsing op nul: "
-                   "de knopen kunnen ten opzichte van elkaar bewegen en "
-                   "samen draaien (gemeten, Mecway 35; KNOWN_BUGS 134).",
+                   "Mecway houdt de gemiddelde verplaatsing op nul, maar "
+                   "zijn resultaat wijkt daar ook van af (gemeten, Mecway "
+                   "35); gebruik Displacement in X en Y voor hetzelfde "
+                   "resultaat (KNOWN_BUGS 134).",
                    "WARNING: Pinned support on '{0}' in a 2D analysis: "
                    "each of the {1} nodes is held (DX = DY = 0). Mecway "
-                   "holds only the mean displacement at zero: the nodes "
-                   "can move relative to each other and rotate together "
-                   "(measured, Mecway 35; KNOWN_BUGS 134).").format(sel, n))
+                   "keeps the mean displacement at zero, but its result "
+                   "also differs from that (measured, Mecway 35); use "
+                   "Displacement in X and Y for the same result (KNOWN_BUGS "
+                   "134).").format(sel, n))
         log("INFO: Pinned support '{0}' -> DDL_IMPO DX=DY=0 (2D).".format(sel))
         return True
     if btype == "surfacepressure":
