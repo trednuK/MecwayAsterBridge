@@ -174,7 +174,11 @@ def _checks(plane=False):
         Check("contactdruk buiten het contact (binnenwand binnenring)",
               lambda r: r.at("contactpressure", (RA, 0.0, 0.0), time=1.0),
               ref=0.0, tol_abs=1e-6 * P_FIT, unit="Pa", in_series=False,
-              source="geen contact: 0 (elke knoop heeft een waarde)")]
+              source="geen contact: 0 (elke knoop heeft een waarde)"),
+        Check("contactstatus buiten het contact",
+              lambda r: r.at("contactstate", (RA, 0.0, 0.0), time=1.0),
+              ref=0.0, tol_abs=1e-9, unit="-", in_series=False,
+              source="geen contact: 0")]
     if not plane:
         extra.append(Check(
             "hoopstress buitenring binnenwand",

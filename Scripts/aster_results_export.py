@@ -1122,6 +1122,9 @@ def _plan_variables(fields, model, conn, groups_wanted, magnitudes=True,
     if _PLANE:
         _plane_zero_stresses(node_vars)
         _plane_zero_stresses(elem_vars)
+        # not _axis_shells(): axisymmetric shells cannot be mixed with plane
+        # elements (bridge_plane refuses it); if that ever changes, the
+        # solids of such a model need these names too
         if _PLANE.get("modelisation") == "AXIS" and not _axis_shells():
             _axis_named_stresses(node_vars)
             _axis_named_stresses(elem_vars)
@@ -1179,6 +1182,15 @@ _AXIS_NAMES = (("radialstress", "stressxx"), ("axialstress", "stressyy"),
                ("hoopstress", "stresszz"), ("shearstressrz", "stressxy"))
 
 
+def _bridge_alias(name):
+    """True for the bridge's own alias names (_AXIS_NAMES and the
+    meridional/hoop stress per surface of axisymmetric shells)."""
+    if name in dict(_AXIS_NAMES):
+        return True
+    return any(name == p + s + "1" for p in ("meridionalstress", "hoopstress")
+               for s in ("u", "m", "b"))
+
+
 def _axis_named_stresses(variables):
     """Add the aliases of _AXIS_NAMES after stresszx (or the last stress
     component present); a new _Var per alias sharing ids and getter."""
@@ -1191,13 +1203,14 @@ def _axis_named_stresses(variables):
             after = key
             break
     items = list(variables.items())
+    by_name = dict(items)
     variables.clear()
     for name, var in items:
         variables[name] = var
         if name == after:
             for alias, src in _AXIS_NAMES:
-                if src in dict(items) and alias not in dict(items):
-                    s = dict(items)[src]
+                if src in by_name and alias not in by_name:
+                    s = by_name[src]
                     variables[alias] = _Var(alias, s.element, s.ids,
                                             s.getter)
 
@@ -2880,6 +2893,15 @@ def _formula_vars(formulas, variables, model, times, fields):
                      u"skipped: {1} not in the results.").format(
                          label, ", ".join(missing)))
             continue
+        if name in taken and _bridge_alias(name):
+            # a user formula with the name of one of the bridge's own
+            # alias variables (radialstress, hoopstress, ...): the
+            # formula wins, as before those names existed
+            variables[:] = [v for v in variables if v.name != name]
+            nodes.pop(name, None)
+            taken.discard(name)
+            print(u"aster_results_export: INFO: formula {0} replaces the "
+                  u"bridge variable '{1}'.".format(label, name))
         if name in taken:
             print(tr(u"aster_results_export: WAARSCHUWING: formule {0} "
                      u"overgeslagen: de naam '{1}' bestaat al.",

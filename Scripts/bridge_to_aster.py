@@ -9351,7 +9351,9 @@ def _write_axis_paraview(work_dir, model_data):
     Without vtu_export nothing (the button opens a .rmed flat).
     """
     plane = bridge_plane.info(model_data) or {}
-    if plane.get("modelisation") != "AXIS" and             not model_data.get("thermal_axis"):
+    axis = (plane.get("modelisation") == "AXIS" or
+            bool(model_data.get("thermal_axis")))
+    if not axis:
         return
     if not CONFIG_BRIDGE.get("vtu_export", False):
         return

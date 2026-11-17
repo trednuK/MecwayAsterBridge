@@ -158,10 +158,10 @@ S20/SA0 solution (measured: Mecway adds *displacement*, *stress*, *von Mises str
 | `stressxx`, `stressyy`, `stressxy` | `SIGM_NOEU`/`SIGM_ELNO` | in-plane stresses (SA0: σ_r, σ_z, τ_rz) |
 | `stresszz` | `SIGM_*` SIZZ | 0 in plane stress, ν(σ_xx + σ_yy) in plane strain, **hoop stress** in SA0 |
 | `stressyz`, `stresszx` | – | 0 (as Mecway) |
-| `radialstress`, `axialstress`, `hoopstress`, `shearstressrz` | `SIGM_*` SIXX, SIYY, SIZZ, SIXY | axisymmetric only (SA0, DA0, route A with `AXIS`, the `AXIS` thermal chain): σ_r, σ_z, σ_θ, τ_rz under their own names, the same values as `stressxx`, `stressyy`, `stresszz`, `stressxy` (bridge names; route `liml`) |
+| `radialstress`, `axialstress`, `hoopstress`, `shearstressrz` | `SIGM_*` SIXX, SIYY, SIZZ, SIXY | axisymmetric only (SA0, DA0, route A with `AXIS`, the `AXIS` thermal chain): σ_r, σ_z, σ_θ, τ_rz under their own names, the same values as `stressxx`, `stressyy`, `stresszz`, `stressxy` (bridge names; route `liml`; a result formula of your own with one of these names replaces it) |
 | `vonmises` | `SIEQ_*` | 3D von Mises with σ_zz |
 | `reactionforcex/y/mag` | `REAC_NODA` × t or × 2π | for the whole thickness (S20) or 360 degrees (SA0), as Mecway |
-| `contactpressure`, `contactstate` | `LAGS_C`, `CONT_NOEU` | route A with contact (§1.4): on every node of the model, 0 outside the contact (a 3D model has them on the slave nodes only) |
+| `contactpressure`, `contactstate` | `LAGS_C`, `CONT_NOEU` | route A with contact (§1.4): on every node of the model, 0 outside the contact (a 3D model has them on the slave nodes only); so the minimum per component is 0, and a result formula with `contactpressure` is computed on every node |
 
 Axisymmetric shells have their own names per surface (§1.4.2).
 
@@ -169,7 +169,7 @@ Axisymmetric shells have their own names per surface (§1.4.2).
 axis of symmetry (axisymmetric), Z the hoop direction; in plane stress and plane strain X and
 Y lie in the plane and Z is the thickness direction. Route A (§1.4) draws the plane elements
 as a thin flat plate in the 3D view, axisymmetric shells (§1.4.2) as the line of the meridian.
-Look along Z (Mecway's front view) to see the section as drawn in the figures of this page.
+Turn the view so that you look along Z (Z towards you) to see the section as drawn in the figures of this page.
 For a view of the whole body use the ParaView button (below).
 
 **Red in Mecway's tree is expected.** Seen by the user in Mecway 35 (17 Nov 2026): in a route A
@@ -187,13 +187,13 @@ turned 270 degrees about Y, so that the cut-away shows the section.
 ![The result of PL-24 revolved in ParaView](../img/2d_paraview_axis.png)
 
 1. The cut face: the section as Mecway draws it (X = radius).
-2. The axis of symmetry Y.
-3. The colour scale: `vonmises` (axisymmetric shells: `vonmisesu1`); choose another variable in ParaView's toolbar.
+2. The Y axis of ParaView's orientation axes: the direction of the axis of symmetry.
+3. The colour scale at the last time step: `vonmises` (axisymmetric shells `vonmisesu1`, a thermal run `temperature`, else `displmag`); choose another variable in ParaView's toolbar.
 
 The vectors (`displx`, `disply`, `DEPL`) are copied, not turned: `displx` stays the radial
 displacement of the section, so ParaView's *Warp By Vector* on the revolved body is wrong.
-Without `vtu_export` (only *MED file for ParaView*) the button opens the section flat, as
-before.
+Without `vtu_export` (only *MED file for ParaView*), and for a run whose MED file the button
+prefers (`_xfem.rmed`), the button opens the section flat, as before.
 
 ### 1.4 Nonlinear in 2D: a 3D model with `**ASTER-PLANE` (route A)
 
@@ -770,7 +770,7 @@ frictionless contact, the ends held along Y) with an interference of 0.2 mm inst
 2. Mecway gets **two time steps**: t = 0 s is the initial state, with every value 0, and
    t = 1 s the result. Move the time slider (bottom of Mecway's window) to the last step,
    or the plot shows only zeros.
-3. Look along Z (front view): the strip of the section, X = radius. The displacement is a
+3. Look along Z (Z towards you): the strip of the section, X = radius. The displacement is a
    tenth of a millimetre, so set the *Deformation scale factor* to about 100 to see the
    inner ring shrink and the outer ring widen.
 4. Read these values at t = 1 s (Lamé, plane strain; the verification checks them to 1–2%):

@@ -140,6 +140,26 @@ def test_named_and_padded():
     check(list(cp.ids) == [1, 2, 3, 4, 5, 6] and
           np.allclose(cp.getter(None), [0, 7, 0, 0, 8, 0]),
           "contactpressure padded with 0 on every node")
+    # element-node aliases, contactstate and a step without values
+    e = OrderedDict([("stresszz", are._Var("stresszz", True, ids,
+                                             lambda f: vals["zz"]))])
+    are._axis_named_stresses(e)
+    check("hoopstress" in e and e["hoopstress"].element and
+          np.allclose(e["hoopstress"].getter(None), vals["zz"]),
+          "element-node hoopstress alias")
+    c = OrderedDict([("contactstate", are._Var(
+        "contactstate", False, np.array([5], dtype="<i4"),
+        lambda f: np.array([1.0]))), ("contactpressure", are._Var(
+            "contactpressure", False, np.array([5], dtype="<i4"),
+            lambda f: None))])
+    are._pad_contact(c, model)
+    check(np.allclose(c["contactstate"].getter(None), [0, 0, 0, 0, 1, 0])
+          and c["contactpressure"].getter(None) is None,
+          "contactstate padded; a step without values stays None")
+    check(are._bridge_alias("hoopstress") and
+          are._bridge_alias("meridionalstressb1") and
+          not are._bridge_alias("stresszz"),
+          "bridge alias names (a formula with such a name wins)")
 
 
 def _comm(tmp, analysis, fields):
@@ -188,9 +208,31 @@ def test_comm(tmp):
           "shell_forces: on axisymmetric shells" in log,
           "L30: no EFGE_ELNO (DVP_1 in te0185), INFO")
 
+    # the ParaView script of the revolved view: only for an axisymmetric
+    # run with vtu_export (bridge_to_aster._write_axis_paraview)
+    def axis_script(model, vtu):
+        u.CONFIG_BRIDGE["vtu_export"] = vtu
+        work = tempfile.mkdtemp(dir=tmp)
+        liml = os.path.join(work, "model.liml")
+        shutil.copy(model, liml)
+        u.CONFIG_BRIDGE["work_dir"] = work
+        u.CONFIG_BRIDGE["active_analysis"] = "lin_static_3d"
+        md = extract_aster_data_from_liml(liml)
+        mail = os.path.join(work, "m.mail")
+        ok = (md is not None and write_mesh(mail, md) and
+              generate_AsterSolver_files(work, md, mail, "test.resu"))
+        return bool(ok) and os.path.isfile(os.path.join(
+            work, u.run_name("_paraview_axis.py")))
+    plate = os.path.join(os.path.dirname(_MODEL), "PL-01-n1.liml")
+    check(axis_script(_MODEL, True) and not axis_script(_MODEL, False) and
+          not axis_script(plate, True),
+          "paraview_axis.py: axisymmetric + vtu_export only (not without "
+          "vtu_export, not for C_PLAN)")
+
 
 def main():
     saved = dict(u.CONFIG_BRIDGE)
+    saved_vtu = u.CONFIG_BRIDGE.get("vtu_export", False)
     saved_fields = dict((k, list(v.get("fields", [])))
                         for k, v in u.CONFIG_BRIDGE["analyses"].items())
     tmp = tempfile.mkdtemp(prefix="bridge_axis_shell_")
@@ -202,6 +244,7 @@ def main():
     finally:
         for k, v in saved_fields.items():
             u.CONFIG_BRIDGE["analyses"][k]["fields"] = v
+        u.CONFIG_BRIDGE["vtu_export"] = saved_vtu
         u.CONFIG_BRIDGE.clear()
         u.CONFIG_BRIDGE.update(saved)
         shutil.rmtree(tmp, ignore_errors=True)

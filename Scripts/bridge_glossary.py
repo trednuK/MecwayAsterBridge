@@ -1021,11 +1021,13 @@ GLOSSARY = OrderedDict([
                            u"Off by default.")),
     ("contact", ("file", u"Resultaatveld: contactdruk (contactpressure, "
                  u"-LAGS_C) en contactstatus (contactstate: 0 open, 1 "
-                 u"gesloten, 2 glijdend) op de slave-knopen; niet-lineair "
-                 u"en dynamisch.",
+                 u"gesloten, 2 glijdend) op de slave-knopen (in een "
+                 u"2D-model op elke knoop, 0 buiten het contact); "
+                 u"niet-lineair en dynamisch.",
                  u"Result field: contact pressure (contactpressure, "
                  u"-LAGS_C) and contact state (contactstate: 0 open, 1 "
-                 u"closed, 2 sliding) on the slave nodes; nonlinear and "
+                 u"closed, 2 sliding) on the slave nodes (in a 2D model on "
+                 u"every node, 0 outside the contact); nonlinear and "
                  u"dynamic.")),
     ("run_aster.bat", ("file", u"Het startprogramma van Code-Aster in de "
                        u"installatiemap (bin).",

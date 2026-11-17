@@ -160,10 +160,10 @@ resultaat opent):
 | `stressxx`, `stressyy`, `stressxy` | `SIGM_NOEU`/`SIGM_ELNO` | spanningen in het vlak (SA0: σ_r, σ_z, τ_rz) |
 | `stresszz` | `SIGM_*` SIZZ | 0 bij vlakke spanning, ν(σ_xx + σ_yy) bij vlakke rek, **tangentiële spanning** in SA0 |
 | `stressyz`, `stresszx` | – | 0 (zoals Mecway) |
-| `radialstress`, `axialstress`, `hoopstress`, `shearstressrz` | `SIGM_*` SIXX, SIYY, SIZZ, SIXY | alleen axisymmetrisch (SA0, DA0, route A met `AXIS`, de thermische `AXIS`-keten): σ_r, σ_z, σ_θ, τ_rz onder een eigen naam, dezelfde waarden als `stressxx`, `stressyy`, `stresszz`, `stressxy` (namen van de bridge; route `liml`) |
+| `radialstress`, `axialstress`, `hoopstress`, `shearstressrz` | `SIGM_*` SIXX, SIYY, SIZZ, SIXY | alleen axisymmetrisch (SA0, DA0, route A met `AXIS`, de thermische `AXIS`-keten): σ_r, σ_z, σ_θ, τ_rz onder een eigen naam, dezelfde waarden als `stressxx`, `stressyy`, `stresszz`, `stressxy` (namen van de bridge; route `liml`; een eigen resultaatformule met een van deze namen vervangt hem) |
 | `vonmises` | `SIEQ_*` | 3D-von Mises met σ_zz |
 | `reactionforcex/y/mag` | `REAC_NODA` × t of × 2π | voor de hele dikte (S20) of 360 graden (SA0), zoals Mecway |
-| `contactpressure`, `contactstate` | `LAGS_C`, `CONT_NOEU` | route A met contact (§1.4): op elke knoop van het model, 0 buiten het contact (een 3D-model heeft ze alleen op de slaveknopen) |
+| `contactpressure`, `contactstate` | `LAGS_C`, `CONT_NOEU` | route A met contact (§1.4): op elke knoop van het model, 0 buiten het contact (een 3D-model heeft ze alleen op de slaveknopen); het minimum per component is dus 0, en een resultaatformule met `contactpressure` wordt op elke knoop berekend |
 
 Axisymmetrische schalen hebben eigen namen per oppervlak (§1.4.2).
 
@@ -171,8 +171,8 @@ Axisymmetrische schalen hebben eigen namen per oppervlak (§1.4.2).
 symmetrieas (axisymmetrisch), Z de omtreksrichting; bij vlakke spanning en vlakke rek liggen X
 en Y in het vlak en is Z de dikterichting. Route A (§1.4) tekent de vlakke elementen als een
 dunne vlakke plaat in het 3D-beeld, axisymmetrische schalen (§1.4.2) als de lijn van de
-meridiaan. Kijk langs Z (Mecway's vooraanzicht) om de doorsnede te zien zoals in de figuren
-van deze pagina. Voor een beeld van het hele lichaam: de knop ParaView (hieronder).
+meridiaan. Draai het beeld zodat je langs Z kijkt (Z naar je toe) om de doorsnede te zien zoals in de
+figuren van deze pagina. Voor een beeld van het hele lichaam: de knop ParaView (hieronder).
 
 **Rood in Mecway's boom is normaal.** Gezien door de gebruiker in Mecway 35 (17 nov 2026): in
 een model van route A met contact (PL-40) zijn de analyse, de componenten en het contact rood;
@@ -190,13 +190,13 @@ doorsnede 270 graden gedraaid om Y, zodat het uitgesneden deel de doorsnede laat
 ![Het resultaat van PL-24 als omwentelingslichaam in ParaView](img/2d_paraview_axis.png)
 
 1. Het snijvlak: de doorsnede zoals Mecway hem tekent (X = straal).
-2. De symmetrieas Y.
-3. De kleurschaal: `vonmises` (axisymmetrische schalen: `vonmisesu1`); kies een andere variabele in de werkbalk van ParaView.
+2. De Y-as van ParaView's oriëntatieassen: de richting van de symmetrieas.
+3. De kleurschaal op de laatste tijdstap: `vonmises` (axisymmetrische schalen `vonmisesu1`, een thermische run `temperature`, anders `displmag`); kies een andere variabele in de werkbalk van ParaView.
 
 De vectoren (`displx`, `disply`, `DEPL`) worden gekopieerd, niet meegedraaid: `displx` blijft de
 radiale verplaatsing van de doorsnede, dus ParaView's *Warp By Vector* op het
-omwentelingslichaam klopt niet. Zonder `vtu_export` (alleen *MED-bestand voor ParaView*) opent de
-knop de doorsnede plat, zoals voorheen.
+omwentelingslichaam klopt niet. Zonder `vtu_export` (alleen *MED-bestand voor ParaView*), en bij een run waarvan de knop het
+MED-bestand voorrang geeft (`_xfem.rmed`), opent de knop de doorsnede plat, zoals voorheen.
 
 ### 1.4 Niet-lineair in 2D: een 3D-model met `**ASTER-PLANE` (route A)
 
@@ -790,7 +790,7 @@ wrijvingsloos contact, de einden langs Y vast) met een overmaat van 0,2 mm in pl
 2. Mecway krijgt **twee tijdstappen**: t = 0 s is de beginstand, met elke waarde 0, en
    t = 1 s het resultaat. Zet de tijdschuif (onderaan in Mecway's venster) op de laatste stap,
    anders toont het beeld alleen nullen.
-3. Kijk langs Z (vooraanzicht): de strook van de doorsnede, X = straal. De verplaatsing is een
+3. Kijk langs Z (Z naar je toe): de strook van de doorsnede, X = straal. De verplaatsing is een
    tiende millimeter, dus zet de *Deformation scale factor* op ongeveer 100 om de binnenring te
    zien krimpen en de buitenring te zien uitzetten.
 4. Lees deze waarden af op t = 1 s (Lamé, vlakke rek; de verificatie controleert ze tot 1–2%):

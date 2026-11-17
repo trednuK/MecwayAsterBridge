@@ -415,6 +415,11 @@ body.Angle = 270.0
 body.Resolution = 54
 view = GetActiveViewOrCreate("RenderView")
 shown = Show(body, view)
+# the last time step first: a nonlinear or transient run starts with the
+# initial state (all 0), the colour range would be empty there
+scene = GetAnimationScene()
+scene.UpdateAnimationUsingDataTimeSteps()
+scene.GoToLast()
 names = body.PointData.keys()
 for name in ("vonmises", "vonmisesu1", "temperature", "displmag"):
     if name in names:
@@ -422,7 +427,6 @@ for name in ("vonmises", "vonmisesu1", "temperature", "displmag"):
         shown.RescaleTransferFunctionToDataRange(True, False)
         shown.SetScalarBarVisibility(view, True)
         break
-GetAnimationScene().UpdateAnimationUsingDataTimeSteps()
 # an oblique view: looking along Z the body of revolution is seen edge-on
 # (a plate or a short ring is then a line)
 view.ResetCamera()
