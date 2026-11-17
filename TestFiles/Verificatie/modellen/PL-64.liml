@@ -1,0 +1,29 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="1" y="0" z="0" />
+  <node nid="2" x="1" y="0.25" z="0" />
+  <node nid="3" x="1" y="0.5" z="0" />
+  <node nid="4" x="1" y="0.125" z="0" />
+  <node nid="5" x="1" y="0.375" z="0" />
+  <elset name="Cilinder" material="Staal">
+    <elem eid="1" shape="line3" nodes="1 4 2" />
+    <elem eid="2" shape="line3" nodes="2 5 3" />
+  </elset>
+  <surfacepressure selection="Druk"><normal>10 Pa</normal></surfacepressure>
+  <displacement selection="PB"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <ccxmodeldefinition>**ASTER-PLANE AXIS
+**ASTER-SHELL Staal: EPAIS=0.05</ccxmodeldefinition>
+  <mat name="Staal">
+    <mechanical type="Isotropic" youngsmodulus="200000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Druk">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+  </faceselection>
+  <nodeselection name="PB">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="PA">
+    <node nid="3" />
+  </nodeselection>
+</liml>

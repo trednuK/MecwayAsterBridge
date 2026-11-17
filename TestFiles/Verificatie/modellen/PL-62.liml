@@ -1,0 +1,102 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.05" y="0" z="0" />
+  <node nid="3" x="0.1" y="0" z="0" />
+  <node nid="4" x="0.15" y="0" z="0" />
+  <node nid="5" x="0.2" y="0" z="0" />
+  <node nid="6" x="0.25" y="0" z="0" />
+  <node nid="7" x="0.3" y="0" z="0" />
+  <node nid="8" x="0.35" y="0" z="0" />
+  <node nid="9" x="0.4" y="0" z="0" />
+  <node nid="10" x="0.45" y="0" z="0" />
+  <node nid="11" x="0.5" y="0" z="0" />
+  <node nid="12" x="0.55" y="0" z="0" />
+  <node nid="13" x="0.6" y="0" z="0" />
+  <node nid="14" x="0.65" y="0" z="0" />
+  <node nid="15" x="0.7" y="0" z="0" />
+  <node nid="16" x="0.75" y="0" z="0" />
+  <node nid="17" x="0.8" y="0" z="0" />
+  <node nid="18" x="0.85" y="0" z="0" />
+  <node nid="19" x="0.9" y="0" z="0" />
+  <node nid="20" x="0.95" y="0" z="0" />
+  <node nid="21" x="1" y="0" z="0" />
+  <node nid="22" x="0.025" y="0" z="0" />
+  <node nid="23" x="0.075" y="0" z="0" />
+  <node nid="24" x="0.125" y="0" z="0" />
+  <node nid="25" x="0.175" y="0" z="0" />
+  <node nid="26" x="0.225" y="0" z="0" />
+  <node nid="27" x="0.275" y="0" z="0" />
+  <node nid="28" x="0.325" y="0" z="0" />
+  <node nid="29" x="0.375" y="0" z="0" />
+  <node nid="30" x="0.425" y="0" z="0" />
+  <node nid="31" x="0.475" y="0" z="0" />
+  <node nid="32" x="0.525" y="0" z="0" />
+  <node nid="33" x="0.575" y="0" z="0" />
+  <node nid="34" x="0.625" y="0" z="0" />
+  <node nid="35" x="0.675" y="0" z="0" />
+  <node nid="36" x="0.725" y="0" z="0" />
+  <node nid="37" x="0.775" y="0" z="0" />
+  <node nid="38" x="0.825" y="0" z="0" />
+  <node nid="39" x="0.875" y="0" z="0" />
+  <node nid="40" x="0.925" y="0" z="0" />
+  <node nid="41" x="0.975" y="0" z="0" />
+  <elset name="Plaat" material="Staal">
+    <elem eid="1" shape="line3" nodes="1 22 2" />
+    <elem eid="2" shape="line3" nodes="2 23 3" />
+    <elem eid="3" shape="line3" nodes="3 24 4" />
+    <elem eid="4" shape="line3" nodes="4 25 5" />
+    <elem eid="5" shape="line3" nodes="5 26 6" />
+    <elem eid="6" shape="line3" nodes="6 27 7" />
+    <elem eid="7" shape="line3" nodes="7 28 8" />
+    <elem eid="8" shape="line3" nodes="8 29 9" />
+    <elem eid="9" shape="line3" nodes="9 30 10" />
+    <elem eid="10" shape="line3" nodes="10 31 11" />
+    <elem eid="11" shape="line3" nodes="11 32 12" />
+    <elem eid="12" shape="line3" nodes="12 33 13" />
+    <elem eid="13" shape="line3" nodes="13 34 14" />
+    <elem eid="14" shape="line3" nodes="14 35 15" />
+    <elem eid="15" shape="line3" nodes="15 36 16" />
+    <elem eid="16" shape="line3" nodes="16 37 17" />
+    <elem eid="17" shape="line3" nodes="17 38 18" />
+    <elem eid="18" shape="line3" nodes="18 39 19" />
+    <elem eid="19" shape="line3" nodes="19 40 20" />
+    <elem eid="20" shape="line3" nodes="20 41 21" />
+  </elset>
+  <surfacepressure selection="Druk"><normal>1000.0 Pa</normal></surfacepressure>
+  <fixed selection="Rand" />
+  <symmetry selection="As"><x>1</x><y>0</y><z>0</z></symmetry>
+  <ccxmodeldefinition>**ASTER-PLANE AXIS</ccxmodeldefinition>
+  <mat name="Staal">
+    <geometric type="RectBar" recta="10 mm" rectb="1 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Druk">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+    <face eid="5" faceid="1" />
+    <face eid="6" faceid="1" />
+    <face eid="7" faceid="1" />
+    <face eid="8" faceid="1" />
+    <face eid="9" faceid="1" />
+    <face eid="10" faceid="1" />
+    <face eid="11" faceid="1" />
+    <face eid="12" faceid="1" />
+    <face eid="13" faceid="1" />
+    <face eid="14" faceid="1" />
+    <face eid="15" faceid="1" />
+    <face eid="16" faceid="1" />
+    <face eid="17" faceid="1" />
+    <face eid="18" faceid="1" />
+    <face eid="19" faceid="1" />
+    <face eid="20" faceid="1" />
+  </faceselection>
+  <nodeselection name="Rand">
+    <node nid="21" />
+  </nodeselection>
+  <nodeselection name="As">
+    <node nid="1" />
+  </nodeselection>
+</liml>

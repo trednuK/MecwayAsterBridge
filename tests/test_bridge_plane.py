@@ -27,7 +27,14 @@
 #     for S20, T30, an unknown value and the wrong analysis; the literal
 #     '#ASTER PLANE AXIS' gives an ERROR and is not passed as code; DEFORMATION
 #     per plane modelisation (bridge_to_aster._deformation_for); contact
-#     (S44b) only with STAT_NON_LINE.
+#     (S44b) only with STAT_NON_LINE;
+#   - axisymmetric shells (S44e piece 1): line3 + '#ASTER-PLANE AXIS' ->
+#     COQUE_AXIS with the thickness of '#ASTER-SHELL' (parse, units, last
+#     line), Shell/membrane or RectBar a (precedence, INFO/WARNING); ERROR
+#     for no thickness, line2, C_PLAN, X < 0, an unknown material,
+#     plasticity, mixing with plane elements, temperatures, centrifugal,
+#     traction; the .comm (EPAIS, DX DY DRZ, FORCE_COQUE PRES = -p, MZ and
+#     FY / 2 pi) and the axis node WARNING.
 #
 #   python tests/test_bridge_plane.py
 
@@ -465,6 +472,184 @@ AIR = ('<mechanical type="Isotropic" speedofsound="340 m/s" />'
        '<density type="Simple" density="1.2 kg/m&#179;" />')
 
 
+def _shell_liml(atype="S30", geo="", custom="**ASTER-PLANE AXIS",
+                shape="line3", loads="", extra_elem="", mech=STEEL, x=1.0):
+    """S44e: two line3 elements along x = x, y = 0 .. 1 (Mecway's node
+    order end, mid, end); node 1 at the bottom, node 5 at the top."""
+    lines = ['<liml version="34">', '  <analysis type="%s" />' % atype]
+    for i in range(5):
+        lines.append('  <node nid="%d" x="%r" y="%r" z="0" />' % (
+            i + 1, x, 0.25 * i))
+    if shape == "line3":
+        elems = ['    <elem eid="1" shape="line3" nodes="1 2 3" />',
+                 '    <elem eid="2" shape="line3" nodes="3 4 5" />']
+    else:
+        elems = ['    <elem eid="1" shape="line2" nodes="1 3" />',
+                 '    <elem eid="2" shape="line2" nodes="3 5" />']
+    lines += ['  <elset name="S" material="M">'] + elems + [
+        extra_elem, '  </elset>', loads,
+        '  <mat name="M">', geo, mech, '  </mat>',
+        '  <nodeselection name="Onder"><node nid="1" /></nodeselection>',
+        '  <nodeselection name="Boven"><node nid="5" /></nodeselection>',
+        '  <faceselection name="Zij"><face eid="1" faceid="1" />'
+        '<face eid="2" faceid="1" /></faceselection>',
+        '  <ccxmodeldefinition>%s</ccxmodeldefinition>' % custom
+        if custom else '', '</liml>']
+    return "\n".join(l for l in lines if l)
+
+
+def test_axis_shells():
+    """S44e piece 1: line3 + '#ASTER-PLANE AXIS' in S30/L30 -> COQUE_AXIS."""
+    import bridge_custom
+    bridge_custom.log = _log
+    # --- the line: parse, units, keys, last line counts ---
+    del LOG[:]
+    got, ok = bridge_custom.parse_shells(
+        ["Staal: EPAIS=5 mm", "Plaat:Rand: EPAIS=0.01, A_CIS=0.9",
+         "Staal: EPAIS=0.006"])
+    check(ok and abs(got["Staal"]["epais"] - 0.006) < 1e-15 and
+          got["Plaat:Rand"] == {"epais": 0.01, "a_cis": 0.9} and
+          any(m.startswith("WARNING") and "last" in m for m in LOG),
+          "parse_shells: units, last colon, last line counts: {0}".format(
+              got))
+    for body in ("Staal EPAIS=5", "Staal: EPAIS=-1", "Staal: EPAIS=5 in",
+                 "Staal: EPAIS=5, DIKTE=3", "Staal: A_CIS=0.8",
+                 "Staal: EPAIS=0,005", "Staal: EPAIS=5, A_CIS=1 mm", ": EPAIS=1"):
+        del LOG[:]
+        got, ok = bridge_custom.parse_shells([body])
+        check(not ok and not got and _errors(),
+              "parse_shells '{0}': ERROR".format(body))
+    out = bridge_custom.parse(["**ASTER-SCHAAL M: EPAIS=0.01"])
+    check(out["shells"] == ["M: EPAIS=0.01"], "#ASTER-SCHAAL alias")
+    line = "**ASTER-PLANE AXIS\n**ASTER-SHELL M: EPAIS=5 mm"
+    plate = '<geometric type="Plate" thickness="5 mm" />'
+    # --- the modelisation, thickness sources and precedence ---
+    for atype, ana in (("S30", "lin_static_3d"),
+                       ("L30", "nonlin_static_3d")):
+        md = _extract(_shell_liml(atype, custom=line), analysis=ana)
+        sec = (md or {}).get("axis_shells", {}).get("S", {})
+        check(md is not None and
+              md["elset_modelisations"].get("S") == "COQUE_AXIS" and
+              abs(sec.get("epais", 0) - 0.005) < 1e-15 and
+              md["plane"].get("shells") and
+              abs(md["plane"]["factor"] - 2 * math.pi) < 1e-15 and
+              not md.get("beam_sections", {}).get("S"),
+              "{0} + AXIS + SHELL line -> COQUE_AXIS 5 mm: {1}".format(
+                  atype, _errors()))
+        check(not any(m.startswith("WARNING") for m in LOG),
+              "{0} shells: no WARNING ({1})".format(atype, [
+                  m[:70] for m in LOG if m.startswith("WARNING")]))
+    md = _extract(_shell_liml(geo=plate))
+    check(md is not None and abs(md["axis_shells"]["S"]["epais"] - 0.005)
+          < 1e-15, "thickness from the Shell/membrane geometry")
+    rect = '<geometric type="RectBar" recta="7 mm" rectb="20 mm" />'
+    md = _extract(_shell_liml(geo=rect))
+    check(md is not None and abs(md["axis_shells"]["S"]["epais"] - 0.007)
+          < 1e-15, "thickness from RectBar a (default V)")
+    md = _extract(_shell_liml(geo=rect, custom=line))
+    check(md is not None and abs(md["axis_shells"]["S"]["epais"] - 0.005)
+          < 1e-15 and any(m.startswith("WARNING") and "RectBar" in m
+                          for m in LOG),
+          "line wins over RectBar, WARNING for a different value")
+    md = _extract(_shell_liml(geo=plate, custom=line))
+    check(md is not None and not any(m.startswith("WARNING") for m in LOG)
+          and any(m.startswith("INFO") and "same" in m for m in LOG),
+          "line and Shell/membrane equal: INFO")
+    circ = '<geometric type="CircularBar" roundod="10 mm" />'
+    for text, what, needle in (
+            (_shell_liml(), "no thickness", "ASTER-SHELL"),
+            (_shell_liml(geo=circ), "CircularBar without the line",
+             "CircularBar"),
+            (_shell_liml(shape="line2", custom=line), "line2", "line2"),
+            (_shell_liml(custom="**ASTER-PLANE C_PLAN"), "C_PLAN with lines",
+             "line3"),
+            (_shell_liml(custom=line, x=-0.5), "X < 0", "X"),
+            (_shell_liml(custom=line + "\n**ASTER-SHELL Q: EPAIS=1"),
+             "unknown material", "Q"),
+            (_shell_liml(custom=line, mech=STEEL + (
+                '<plastic type="BilinearIsotropic" yieldstrength="250 MPa" '
+                'tangentmodulus="0 Pa" />')), "plasticity", "elastic"),
+            (_shell_liml(custom=line, extra_elem=(
+                '  </elset><elset name="P" material="M"><elem eid="3" '
+                'shape="quad4" nodes="1 3 6 7" />'), loads=(
+                    '<node nid="6" x="2" y="0.5" z="0" /><node nid="7" '
+                    'x="2" y="0" z="0" />')), "mixed with plane elements",
+             "plane"),
+            (_shell_liml(custom=line, loads=THERMAL.replace("Tip", "Boven")),
+             "temperature", "on axisymmetric shells")):
+        md = _extract(text)
+        check(md is None and any(needle in m for m in _errors()),
+              "{0}: ERROR naming '{1}' ({2})".format(what, needle,
+                                                     _errors()[-1:]))
+    # the line outside the shell route: WARNING, ignored
+    md = _extract(_liml("S30", PS, loads=_switch("**ASTER-SHELL M: "
+                                                 "EPAIS=1 mm")))
+    check(md is not None and any(m.startswith("WARNING") and "ASTER-SHELL"
+                                 in m for m in LOG),
+          "#ASTER-SHELL in a 3D model: WARNING")
+    # --- supports and loads (.comm through the whole chain) ---
+    loads = ('<fixed selection="Onder" />'
+             '<symmetry selection="Boven"><x>1</x><y>0</y><z>0</z>'
+             '</symmetry>'
+             '<surfacepressure selection="Zij"><normal>3 Pa</normal>'
+             '</surfacepressure>'
+             '<moment selection="Boven"><x>0 N.m</x><y>0 N.m</y>'
+             '<z>6.283185307179586 N.m</z></moment>'
+             '<force selection="Boven"><x>0 N</x><y>12.566370614359172 N</y>'
+             '<z>5 N</z></force>')
+    comm = _comm(_shell_liml(custom=line, loads=loads))
+    check("MODELISATION='COQUE_AXIS'" in comm and
+          "COQUE=_F(GROUP_MA='S', EPAIS=0.005)" in comm,
+          "COQUE_AXIS .comm with EPAIS: {0}".format(_errors()))
+    check("DX=0.0, DY=0.0, DRZ=0.0" in comm.replace("'", ""),
+          "Fixed -> DX, DY, DRZ")
+    check("DX=0.0, DRZ=0.0" in comm, "symmetry normal X -> DX, DRZ")
+    check("FORCE_COQUE=_F(GROUP_MA='BRAX1', PRES=-3.0)" in comm,
+          "pressure on faceid 1 -> FORCE_COQUE PRES = -p")
+    check("MZ=1.0" in comm and "FY=2.0" in comm and "FZ" not in comm,
+          "moment MZ / 2 pi, force FY / 2 pi, FZ dropped")
+    comm = _comm(_shell_liml(custom=line, loads=(
+        '<centrifugal><x>0 rad/s</x><y>10 rad/s</y><z>0 rad/s</z>'
+        '</centrifugal><fixed selection="Onder" />')))
+    check(any("centrifugal" in m or "Centrifugal" in m for m in _errors()),
+          "centrifugal on shells: ERROR")
+    comm = _comm(_shell_liml(custom=line, loads=(
+        '<traction selection="Zij"><x>1 Pa</x><y>0 Pa</y><z>0 Pa</z>'
+        '</traction><fixed selection="Onder" />')))
+    check(any("traction" in m for m in _errors()), "traction on shells: "
+          "ERROR")
+    rot = ('<fixed selection="Boven" /><noderotation selection="Onder">'
+           '<value>0.01 rad</value><x>0</x><y>0</y><z>1</z></noderotation>')
+    comm = _comm(_shell_liml(custom=line, loads=rot))
+    check("DRZ=0.01" in comm, "node rotation about Z -> DRZ")
+    # finish_bcs on its own: BLOCAGE and moments
+    md = {"plane": {"type": "S30", "modelisation": "AXIS", "factor":
+                    2 * math.pi, "route": "A", "shells": True},
+          "mesh_nodes": {1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0)},
+          "mesh_elements": [(1, "line3", [1, 3, 2], "S")],
+          "node_groups": {"A": ["N1"]},
+          "bcs": [{"type": "fixed", "aster_keyword": "DDL_IMPO",
+                   "aster_dict": {"BLOCAGE": ("DEPLACEMENT", "ROTATION")},
+                   "selection": "A"},
+                  {"type": "force", "aster_keyword": "FORCE_NODALE",
+                   "aster_dict": {"MZ": 2 * math.pi, "MX": 1.0},
+                   "selection": "B"}]}
+    del LOG[:]
+    bridge_plane.finish_bcs(md)
+    check(dict(md["bcs"][0]["aster_dict"]) == {"DX": 0.0, "DY": 0.0,
+                                               "DRZ": 0.0} and
+          dict(md["bcs"][1]["aster_dict"]) == {"MZ": 1.0},
+          "finish_bcs shells: {0}".format([b["aster_dict"]
+                                           for b in md["bcs"]]))
+    check(not any("axis" in m for m in LOG if m.startswith("WARNING")),
+          "node on the axis held by Fixed: no WARNING")
+    md["bcs"] = []
+    del LOG[:]
+    bridge_plane.finish_bcs(md)
+    check(any(m.startswith("WARNING") and "axis" in m for m in LOG),
+          "node on the axis without DX/DRZ: WARNING")
+
+
 def _acoustic_liml(z=0.0, extra_elem="", impedance=False):
     """Two quad4 of air (A20), p = 0 on the left edge, optionally an
     impedance on the right edge (face 2 of element 2)."""
@@ -564,6 +749,7 @@ if __name__ == "__main__":
     test_edge_measure()
     test_pinned()
     test_acoustic()
+    test_axis_shells()
     for f in FAILS:
         print("FAIL:", f)
     print("{0} failure(s)".format(len(FAILS)))

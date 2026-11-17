@@ -65,11 +65,12 @@ from bridge_utils import (log, tr, CONFIG_BRIDGE, get_active_analysis,
 
 def _has_cara(model_data):
     """True if AFFE_CARA_ELEM is needed (beams, shells, springs, POI1,
-    discrete elements, cables, material axes of orthotropic solids)."""
+    discrete elements, cables, material axes of orthotropic solids,
+    axisymmetric shells)."""
     return any(bool(model_data.get(k)) for k in (
         "beam_sections", "shell_sections", "spring_sections", "poi1_groups",
         "discretes", "discrete_sections", "cable_sections",
-        "massif_orientations"))
+        "massif_orientations", "axis_shells"))
 
 
 def bonded_nprec(model_data, analysis, lin=False):
@@ -1063,8 +1064,18 @@ def _build_cara_elem_block(model_data):
     lines = ["cara = AFFE_CARA_ELEM(", "    MODELE=model,"]
 
     # --- COQUE (shell elements) ---
-    if shell_secs:
-        shell_entries = []
+    # Axisymmetric shells (COQUE_AXIS, bridge_plane, S44e): EPAIS and
+    # optionally A_CIS (catalogue affe_cara_elem.py v17.4; test cases
+    # ssls114i, ssls100j); MODI_METRIQUE stays Code-Aster's default 'NON'
+    # (ssls114i: DX = 1.0000e-9 with 'NON'). No VECTEUR: the cell lies in
+    # the XY plane.
+    axis_entries = [
+        "        _F(GROUP_MA='{0}', EPAIS={1!r}{2}),".format(
+            elset_name, float(sec["epais"]), "" if sec.get("a_cis") is None
+            else ", A_CIS={0!r}".format(float(sec["a_cis"])))
+        for elset_name, sec in model_data.get("axis_shells", {}).items()]
+    if shell_secs or axis_entries:
+        shell_entries = list(axis_entries)
         for elset_name, sec in shell_secs.items():
             vect = _shell_ref_vector(model_data, elset_name)
             # Element offset on DKT/DST: own group with EXCENTREMENT
@@ -5604,6 +5615,13 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
         return "GREEN_LAGRANGE"
     if modelisation == "COQUE_3D":
         return "GROT_GDEP"
+    if modelisation == "COQUE_AXIS":
+        # Axisymmetric shell (S44e): "la réactualisation de la géométrie
+        # est déconseillée pour les éléments COQUE_AXIS" (message PLATE1_9,
+        # Messages/plate1.py, Code-Aster 17.4) and only ELAS is translated
+        # (PLATE1_8): small displacements (WARNING in
+        # _build_comportement_block)
+        return "PETIT"
     if modelisation in ("C_PLAN", "D_PLAN", "AXIS"):
         # Plane and axisymmetric continuum (STAPPENPLAN S44a, route A):
         # as the volume rule. SIMO_MIEHE only in AXIS/D_PLAN (test cases
@@ -5696,6 +5714,15 @@ def _build_comportement_block(model_data, analysis, elastic=False):
                    "elem_beam = POU_D_T_GD (nonlinear static only) or "
                    "elem_shell = COQUE_3D (Elements page).").format(
                 deformation, ", ".join(small)))
+    axis_shells = sorted(model_data.get("axis_shells", {}))
+    if axis_shells and deformation in _LARGE_DEFORMATIONS and not elastic:
+        log(tr("WARNING: Axisymmetrische schalen ({0}) rekenen met kleine "
+               "verplaatsingen (DEFORMATION='PETIT'), niet met {1}: grote "
+               "verplaatsingen zijn op COQUE_AXIS niet vertaald.",
+               "WARNING: Axisymmetric shells ({0}) are computed with small "
+               "displacements (DEFORMATION='PETIT'), not with {1}: large "
+               "displacements are not translated on COQUE_AXIS.").format(
+                   ", ".join(axis_shells), deformation))
     spring_mat_names = set(model_data.get("spring_materials", {}).keys())
     entries = []
 

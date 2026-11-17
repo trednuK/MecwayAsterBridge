@@ -368,14 +368,19 @@ LINE_SHAPES = frozenset(["line2", "line3"])
 _PLANE = {}
 # Mecway variables that scale with the factor in a 2D analysis
 _PLANE_SCALED = frozenset(["reactionforcex", "reactionforcey",
-                           "reactionforcez"])
+                           "reactionforcez",
+                           # axisymmetric shells (COQUE_AXIS, S44e): REAC_NODA
+                           # DRZ per radian
+                           "reactionmomx", "reactionmomy", "reactionmomz"])
 # Tensor components a 2D cell does not have (SIGM_ELNO of C_PLAN/D_PLAN/
 # AXIS: SIXX, SIYY, SIZZ, SIXY; seen in a Code-Aster 17.4 run); Mecway
 # writes them as 0 in S20/SA0.
 _PLANE_ZERO = frozenset(["SIXZ", "SIYZ", "EPXZ", "EPYZ"])
 # Magnitude components a 2D model does not have (Mecway's S20/SA0 solution:
 # displmag from displx, disply; reactionforcemag from x, y)
-_PLANE_OPTIONAL = frozenset(["displz", "reactionforcez", "velz", "accz"])
+_PLANE_OPTIONAL = frozenset(["displz", "reactionforcez", "velz", "accz",
+                             # COQUE_AXIS (S44e): only DRZ
+                             "reactionmomx", "reactionmomy"])
 
 
 def _continuum_shapes():

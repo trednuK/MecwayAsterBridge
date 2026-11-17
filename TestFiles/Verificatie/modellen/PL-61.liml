@@ -1,0 +1,151 @@
+<liml version="33">
+  <analysis type="S30" />
+  <node nid="1" x="1" y="0" z="0" />
+  <node nid="2" x="0.998795456205" y="0.0490676743274" z="0" />
+  <node nid="3" x="0.995184726672" y="0.0980171403296" z="0" />
+  <node nid="4" x="0.989176509965" y="0.146730474455" z="0" />
+  <node nid="5" x="0.980785280403" y="0.195090322016" z="0" />
+  <node nid="6" x="0.970031253195" y="0.242980179903" z="0" />
+  <node nid="7" x="0.956940335732" y="0.290284677254" z="0" />
+  <node nid="8" x="0.941544065183" y="0.336889853392" z="0" />
+  <node nid="9" x="0.923879532511" y="0.382683432365" z="0" />
+  <node nid="10" x="0.903989293123" y="0.42755509343" z="0" />
+  <node nid="11" x="0.881921264348" y="0.471396736826" z="0" />
+  <node nid="12" x="0.85772861" y="0.514102744193" z="0" />
+  <node nid="13" x="0.831469612303" y="0.55557023302" z="0" />
+  <node nid="14" x="0.803207531481" y="0.595699304492" z="0" />
+  <node nid="15" x="0.773010453363" y="0.634393284164" z="0" />
+  <node nid="16" x="0.740951125355" y="0.671558954847" z="0" />
+  <node nid="17" x="0.707106781187" y="0.707106781187" z="0" />
+  <node nid="18" x="0.671558954847" y="0.740951125355" z="0" />
+  <node nid="19" x="0.634393284164" y="0.773010453363" z="0" />
+  <node nid="20" x="0.595699304492" y="0.803207531481" z="0" />
+  <node nid="21" x="0.55557023302" y="0.831469612303" z="0" />
+  <node nid="22" x="0.514102744193" y="0.85772861" z="0" />
+  <node nid="23" x="0.471396736826" y="0.881921264348" z="0" />
+  <node nid="24" x="0.42755509343" y="0.903989293123" z="0" />
+  <node nid="25" x="0.382683432365" y="0.923879532511" z="0" />
+  <node nid="26" x="0.336889853392" y="0.941544065183" z="0" />
+  <node nid="27" x="0.290284677254" y="0.956940335732" z="0" />
+  <node nid="28" x="0.242980179903" y="0.970031253195" z="0" />
+  <node nid="29" x="0.195090322016" y="0.980785280403" z="0" />
+  <node nid="30" x="0.146730474455" y="0.989176509965" z="0" />
+  <node nid="31" x="0.0980171403296" y="0.995184726672" z="0" />
+  <node nid="32" x="0.0490676743274" y="0.998795456205" z="0" />
+  <node nid="33" x="6.12323399574e-17" y="1" z="0" />
+  <node nid="34" x="0.999698818696" y="0.0245412285229" z="0" />
+  <node nid="35" x="0.997290456679" y="0.0735645635997" z="0" />
+  <node nid="36" x="0.992479534599" y="0.122410675199" z="0" />
+  <node nid="37" x="0.985277642389" y="0.17096188876" z="0" />
+  <node nid="38" x="0.975702130039" y="0.219101240157" z="0" />
+  <node nid="39" x="0.963776065795" y="0.266712757475" z="0" />
+  <node nid="40" x="0.949528180593" y="0.313681740399" z="0" />
+  <node nid="41" x="0.932992798835" y="0.359895036535" z="0" />
+  <node nid="42" x="0.914209755704" y="0.405241314005" z="0" />
+  <node nid="43" x="0.893224301196" y="0.449611329655" z="0" />
+  <node nid="44" x="0.870086991109" y="0.49289819223" z="0" />
+  <node nid="45" x="0.84485356525" y="0.534997619887" z="0" />
+  <node nid="46" x="0.817584813152" y="0.575808191418" z="0" />
+  <node nid="47" x="0.788346427627" y="0.615231590581" z="0" />
+  <node nid="48" x="0.757208846506" y="0.653172842954" z="0" />
+  <node nid="49" x="0.724247082951" y="0.689540544737" z="0" />
+  <node nid="50" x="0.689540544737" y="0.724247082951" z="0" />
+  <node nid="51" x="0.653172842954" y="0.757208846506" z="0" />
+  <node nid="52" x="0.615231590581" y="0.788346427627" z="0" />
+  <node nid="53" x="0.575808191418" y="0.817584813152" z="0" />
+  <node nid="54" x="0.534997619887" y="0.84485356525" z="0" />
+  <node nid="55" x="0.49289819223" y="0.870086991109" z="0" />
+  <node nid="56" x="0.449611329655" y="0.893224301196" z="0" />
+  <node nid="57" x="0.405241314005" y="0.914209755704" z="0" />
+  <node nid="58" x="0.359895036535" y="0.932992798835" z="0" />
+  <node nid="59" x="0.313681740399" y="0.949528180593" z="0" />
+  <node nid="60" x="0.266712757475" y="0.963776065795" z="0" />
+  <node nid="61" x="0.219101240157" y="0.975702130039" z="0" />
+  <node nid="62" x="0.17096188876" y="0.985277642389" z="0" />
+  <node nid="63" x="0.122410675199" y="0.992479534599" z="0" />
+  <node nid="64" x="0.0735645635997" y="0.997290456679" z="0" />
+  <node nid="65" x="0.0245412285229" y="0.999698818696" z="0" />
+  <elset name="Bol" material="Staal">
+    <elem eid="1" shape="line3" nodes="1 34 2" />
+    <elem eid="2" shape="line3" nodes="2 35 3" />
+    <elem eid="3" shape="line3" nodes="3 36 4" />
+    <elem eid="4" shape="line3" nodes="4 37 5" />
+    <elem eid="5" shape="line3" nodes="5 38 6" />
+    <elem eid="6" shape="line3" nodes="6 39 7" />
+    <elem eid="7" shape="line3" nodes="7 40 8" />
+    <elem eid="8" shape="line3" nodes="8 41 9" />
+    <elem eid="9" shape="line3" nodes="9 42 10" />
+    <elem eid="10" shape="line3" nodes="10 43 11" />
+    <elem eid="11" shape="line3" nodes="11 44 12" />
+    <elem eid="12" shape="line3" nodes="12 45 13" />
+    <elem eid="13" shape="line3" nodes="13 46 14" />
+    <elem eid="14" shape="line3" nodes="14 47 15" />
+    <elem eid="15" shape="line3" nodes="15 48 16" />
+    <elem eid="16" shape="line3" nodes="16 49 17" />
+    <elem eid="17" shape="line3" nodes="17 50 18" />
+    <elem eid="18" shape="line3" nodes="18 51 19" />
+    <elem eid="19" shape="line3" nodes="19 52 20" />
+    <elem eid="20" shape="line3" nodes="20 53 21" />
+    <elem eid="21" shape="line3" nodes="21 54 22" />
+    <elem eid="22" shape="line3" nodes="22 55 23" />
+    <elem eid="23" shape="line3" nodes="23 56 24" />
+    <elem eid="24" shape="line3" nodes="24 57 25" />
+    <elem eid="25" shape="line3" nodes="25 58 26" />
+    <elem eid="26" shape="line3" nodes="26 59 27" />
+    <elem eid="27" shape="line3" nodes="27 60 28" />
+    <elem eid="28" shape="line3" nodes="28 61 29" />
+    <elem eid="29" shape="line3" nodes="29 62 30" />
+    <elem eid="30" shape="line3" nodes="30 63 31" />
+    <elem eid="31" shape="line3" nodes="31 64 32" />
+    <elem eid="32" shape="line3" nodes="32 65 33" />
+  </elset>
+  <surfacepressure selection="Binnen"><normal>100000.0 Pa</normal></surfacepressure>
+  <symmetry selection="Evenaar"><x>0</x><y>1</y><z>0</z></symmetry>
+  <symmetry selection="Pool"><x>1</x><y>0</y><z>0</z></symmetry>
+  <ccxmodeldefinition>**ASTER-PLANE AXIS
+**ASTER-SHELL Staal: EPAIS=0.01</ccxmodeldefinition>
+  <mat name="Staal">
+    <geometric type="Plate" thickness="10 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <faceselection name="Binnen">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+    <face eid="5" faceid="1" />
+    <face eid="6" faceid="1" />
+    <face eid="7" faceid="1" />
+    <face eid="8" faceid="1" />
+    <face eid="9" faceid="1" />
+    <face eid="10" faceid="1" />
+    <face eid="11" faceid="1" />
+    <face eid="12" faceid="1" />
+    <face eid="13" faceid="1" />
+    <face eid="14" faceid="1" />
+    <face eid="15" faceid="1" />
+    <face eid="16" faceid="1" />
+    <face eid="17" faceid="1" />
+    <face eid="18" faceid="1" />
+    <face eid="19" faceid="1" />
+    <face eid="20" faceid="1" />
+    <face eid="21" faceid="1" />
+    <face eid="22" faceid="1" />
+    <face eid="23" faceid="1" />
+    <face eid="24" faceid="1" />
+    <face eid="25" faceid="1" />
+    <face eid="26" faceid="1" />
+    <face eid="27" faceid="1" />
+    <face eid="28" faceid="1" />
+    <face eid="29" faceid="1" />
+    <face eid="30" faceid="1" />
+    <face eid="31" faceid="1" />
+    <face eid="32" faceid="1" />
+  </faceselection>
+  <nodeselection name="Evenaar">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Pool">
+    <node nid="33" />
+  </nodeselection>
+</liml>

@@ -96,6 +96,13 @@
 #                            selection for FRONTIERE_ANALYTIQUE (also BOL x,
 #                            y, z, r and GEEN; English #ASTER-BOUNDARY,
 #                            CYLINDER/SPHERE/NONE). See bridge_homard.py.
+#   #ASTER-SHELL material: EPAIS=t[, A_CIS=k]
+#                            thickness of the axisymmetric shells
+#                            (COQUE_AXIS, '#ASTER-PLANE AXIS' on line3
+#                            elements, STAPPENPLAN S44e) of a Mecway
+#                            material, in m or with a unit (mm, cm, m);
+#                            also #ASTER-SCHAAL. See parse_shells and
+#                            bridge_plane._shell_thickness.
 #   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
 #                            that selection (bridge_mesh renames names)
 #
@@ -162,7 +169,7 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-WOHLER", "-VERMOEIING", "-FATIGUE", "-BLOK", "-BLOCK",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
           "-XFEM", "-CONSTANT", "-SECTIE", "-SECTION",
-          "-RAND", "-BOUNDARY", "-PLANE", "-VLAK")
+          "-RAND", "-BOUNDARY", "-PLANE", "-VLAK", "-SHELL", "-SCHAAL")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -181,7 +188,8 @@ def empty():
             "phases": [], "hyst": [], "materials": [],
             "fatigue": [], "metallurgy": [],
             "xfem": [], "constant": [], "sections": [], "boundaries": [],
-            "section_shapes": [], "section_directions": [], "plane": []}
+            "section_shapes": [], "section_directions": [], "plane": [],
+            "shells": []}
 
 
 def parse(texts):
@@ -308,6 +316,10 @@ def parse(texts):
                            "ERROR: '#ASTER{0}' without a value; expected "
                            "C_PLAN, D_PLAN or AXIS.").format(kind))
                     out["plane"].append("?")
+            elif kind in ("-SHELL", "-SCHAAL"):
+                # Thickness of axisymmetric shells (S44e); worked out in
+                # parse_shells (bridge_plane.apply)
+                out["shells"].append(body.strip())
             elif kind in ("-METALLURGIE", "-METALLURGY"):
                 # worked out in bridge_metallurgy.parse_specs
                 if body.strip():
@@ -339,6 +351,9 @@ def parse(texts):
                 len(out["xfem"]), len(out["constant"]),
                 len(out["hyst"]),
                 len(out["sections"])))
+    if out["shells"]:
+        log("INFO: {0} #ASTER-SHELL line(s) (thickness of axisymmetric "
+            "shells, bridge_plane).".format(len(out["shells"])))
     return out
 
 
@@ -391,6 +406,75 @@ def parse_directions(bodies):
             continue
         out[name] = found
     return out
+
+
+# '#ASTER-SHELL <material>: EPAIS=<t>[, A_CIS=<k>]' (S44e): a number with an
+# optional length unit (SI without a unit)
+_SHELL_VALUE_RE = re.compile(r"^\s*([-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)"
+                             r"(?:[eE][-+]?[0-9]+)?)\s*([A-Za-z]*)\s*$")
+_SHELL_UNITS = {"": 1.0, "m": 1.0, "cm": 1.0e-2, "mm": 1.0e-3}
+_SHELL_KEYS = ("EPAIS", "A_CIS")
+
+
+def _shell_value(text, key):
+    """SI value of one key of a SHELL line, or None when it is anything
+    else (A_CIS has no unit)."""
+    m = _SHELL_VALUE_RE.match(text)
+    if not m:
+        return None
+    unit = m.group(2)
+    if (key == "A_CIS" and unit) or unit not in _SHELL_UNITS:
+        return None
+    value = float(m.group(1)) * _SHELL_UNITS[unit]
+    if math.isnan(value) or math.isinf(value) or value <= 0.0:
+        return None
+    return value
+
+
+def parse_shells(bodies):
+    """
+    The '#ASTER-SHELL' lines (S44e): ({material: {"epais": t [m],
+    "a_cis": k or None}}, ok). The material name is split on the last
+    colon (as the SECTIE lines); keys EPAIS (required, > 0, m or with the
+    unit mm, cm or m) and A_CIS (shear coefficient, optional, > 0;
+    Code-Aster's default otherwise), separated by commas. A bad line gives
+    an ERROR and ok False (the run stops: otherwise another thickness would
+    be used silently). Several lines for one material: the last one counts,
+    with a WARNING when the values differ. Python 2.7 and 3, no mw.
+    """
+    out = OrderedDict()
+    ok = True
+    for body in bodies:
+        name, sep, rest = body.rpartition(":")
+        name = name.strip()
+        found = {}
+        bad = not sep or not name
+        for part in ([] if bad else rest.split(",")):
+            key, eq, raw = part.partition("=")
+            key = key.strip().upper()
+            value = _shell_value(raw, key) if eq else None
+            if key not in _SHELL_KEYS or key in found or value is None:
+                bad = True
+                break
+            found[key] = value
+        if bad or "EPAIS" not in found:
+            log(tr(u"ERROR: '#ASTER-SHELL {0}': verwacht '<materiaal>: "
+                   u"EPAIS=<dikte>' met een dikte > 0 in m (of met mm, cm), "
+                   u"eventueel ', A_CIS=<waarde>'.",
+                   u"ERROR: '#ASTER-SHELL {0}': expected '<material>: "
+                   u"EPAIS=<thickness>' with a thickness > 0 in m (or with "
+                   u"mm, cm), optionally ', A_CIS=<value>'.").format(body))
+            ok = False
+            continue
+        new = {"epais": found["EPAIS"], "a_cis": found.get("A_CIS")}
+        if name in out and out[name] != new:
+            log(tr(u"WARNING: Meerdere #ASTER-SHELL-regels voor materiaal "
+                   u"'{0}'; de laatste telt (EPAIS={1} m).",
+                   u"WARNING: Several #ASTER-SHELL lines for material "
+                   u"'{0}'; the last one counts (EPAIS={1} m).").format(
+                       name, "%.6g" % new["epais"]))
+        out[name] = new
+    return out, ok
 
 
 def _angle(a, b, either_sign=False):

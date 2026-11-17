@@ -23,6 +23,19 @@
 # SA0, as the bridge drops it in MECA_STATIQUE). Mecway manual v34 par.
 # 9.23 .. 9.25 lists them for "Static" (2D and 3D), not for Dynamic
 # Response, so D20/DA0 stay refused.
+# Axisymmetric shells (S44e piece 1): line3 elements of an S30/L30 model
+# with '#ASTER-PLANE AXIS' -> MODELISATION 'COQUE_AXIS' (SEG3: every
+# COQUE_AXIS test case of Code-Aster 17.4 uses SEG3, hpla100b, ssls100i/j,
+# ssls114i, sslv114b, zzzz295a; SEG2 NOT verified, so line2 gives an ERROR),
+# thickness from '#ASTER-SHELL <material>:
+# EPAIS=..' (bridge_custom.parse_shells), the material's Shell/membrane
+# thickness or a RectBar section (_shell_thickness), AFFE_CARA_ELEM COQUE
+# EPAIS. DOFs DX, DY, DRZ: Fixed holds all three, a symmetry with normal X
+# or Y also DRZ, a node rotation about Z is DRZ, a moment on a node MZ / 2 pi
+# (as the forces), reactionmomz x 2 pi. Pressure on faceid 1 of a line
+# element: FORCE_COQUE PRES (Pa, per area of the mid-surface) pushing along
+# -n with n = Z x U (U = node 1 -> node 2; Mecway's default V of a line in
+# the XY plane), _line_pressure; verification PL-60 .. PL-68.
 # bridge_from_liml calls apply() (modelisations, checks), bridge_mesh calls
 # convert_bc() per load and finish_bcs() after all loads, bridge_to_aster
 # uses export_arg() / static_check_arg() for the results.
@@ -94,6 +107,9 @@ PLANE_MODELISATIONS = ("C_PLAN", "D_PLAN", "AXIS")
 # D30, T30, T31, E30, A20, A30, B30).
 ACOUSTIC_2D = {"A20": "Acoustic Resonance 2D"}
 PLANE_SHAPES = frozenset(["tri3", "tri6", "quad4", "quad8"])
+# Line elements of axisymmetric shells (S44e)
+LINE_SHAPES = frozenset(["line2", "line3"])
+AXIS_SHELL = "COQUE_AXIS"
 # Solver command with a verified 2D route per Mecway type (S16a linear
 # static, S16b implicit dynamics)
 _VERIFIED_SOLVERS = {"S20": "MECA_STATIQUE", "SA0": "MECA_STATIQUE",
@@ -133,6 +149,16 @@ _THERMAL = (("thermal_stress", "Thermal stress"),
 _CONTACT = (("contacts", "Contact"),)
 _DROP_DDL = ("DZ", "DRX", "DRY", "DRZ")
 _DROP_FORCE = ("FZ", "MX", "MY", "MZ")
+# Axisymmetric shells (COQUE_AXIS, S44e) keep DRZ and MZ
+_SHELL_DROP_DDL = ("DZ", "DRX", "DRY")
+_SHELL_DROP_FORCE = ("FZ", "MX", "MY")
+# Loads and constraints with a route on axisymmetric shells (S44e): the
+# 2D set without centrifugal force (NOT verified on COQUE_AXIS), plus a
+# node rotation (DRZ) and a moment on a node (MZ)
+_SHELL_HANDLED = tuple(t for t in _HANDLED if t != "centrifugal") + (
+    "noderotation", "moment")
+# Relative difference of two thickness sources that counts as equal
+_THICKNESS_TOL = 1.0e-9
 _SEG_GAUSS = [(-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
               (0.774596669241483, 5.0 / 9.0)]
 
@@ -169,6 +195,15 @@ def apply(model_data, run_cfg, elset_shapes):
     switch = _plane_switch(model_data)
     if switch is False:
         return False
+    if (model_data.get("aster_custom") or {}).get("shells") and \
+            not axis_shells_wanted(model_data):
+        log(tr("WARNING: #ASTER-SHELL telt alleen voor axisymmetrische "
+               "schalen (line3-elementen met '#ASTER-PLANE AXIS' in Static "
+               "3D (S30) of Nonlinear Static (L30)); de regel wordt hier "
+               "genegeerd.",
+               "WARNING: #ASTER-SHELL only counts for axisymmetric shells "
+               "(line3 elements with '#ASTER-PLANE AXIS' in Static 3D (S30) "
+               "or Nonlinear Static (L30)); the line is ignored here."))
     if atype in ACOUSTIC_2D:
         # Also for a manually chosen other analysis (otherwise the plane
         # elements would be computed as shells)
@@ -230,11 +265,38 @@ def apply(model_data, run_cfg, elset_shapes):
                 "it or compute the model in 3D.", what, atype)
     mods = model_data["elset_modelisations"]
     kinds = OrderedDict()           # (modelisation, thickness) -> [elsets]
+    shell_lines = None              # '#ASTER-SHELL' lines (S44e)
+    line_elsets = []                # elsets of axisymmetric shells
     for elset in list(mods):
         shapes = set(elset_shapes.get(elset, ()))
         if not shapes:
             continue
+        if axis and switch and shapes <= LINE_SHAPES:
+            # S44e: line elements as axisymmetric shells; kept out of kinds
+            # (several thicknesses are fine)
+            if shell_lines is None:
+                shell_lines, ok = _shell_lines(model_data)
+                if not ok:
+                    return False
+            if not _axis_shell(model_data, elset, shapes, atype,
+                               shell_lines):
+                return False
+            line_elsets.append(elset)
+            continue
         if not shapes <= PLANE_SHAPES:
+            if switch and shapes & LINE_SHAPES:
+                return _fatal(
+                    "Elset '{0}' bevat {1}; met '#ASTER-PLANE {2}' vertaalt "
+                    "de bridge alleen vlakke elementen (tri3, tri6, quad4, "
+                    "quad8). Line3-elementen worden axisymmetrische schalen "
+                    "met '#ASTER-PLANE AXIS', alleen in een model zonder "
+                    "vlakke elementen.",
+                    "Elset '{0}' contains {1}; with '#ASTER-PLANE {2}' the "
+                    "bridge only translates plane elements (tri3, tri6, "
+                    "quad4, quad8). Line3 elements become axisymmetric "
+                    "shells with '#ASTER-PLANE AXIS', only in a model "
+                    "without plane elements.",
+                    elset, ", ".join(sorted(shapes - PLANE_SHAPES)), switch)
             return _fatal(
                 "Elset '{0}' bevat {1}; in een 2D-analyse ({2}) vertaalt de "
                 "bridge alleen vlakke elementen (tri3, tri6, quad4, quad8), "
@@ -310,6 +372,9 @@ def apply(model_data, run_cfg, elset_shapes):
         log("INFO: Elset '{0}' -> MODELISATION='{1}'{2} (Mecway {3}).".format(
             elset, mod, "" if t is None else ", thickness {0} m".format(t),
             atype))
+    if line_elsets:
+        return _finish_axis_shells(model_data, atype, line_elsets, kinds,
+                                   shell_lines)
     if not kinds:
         return _fatal("Geen vlakke elementen in de 2D-analyse {0}.",
                       "No plane elements in the 2D analysis {0}.", atype)
@@ -336,6 +401,228 @@ def apply(model_data, run_cfg, elset_shapes):
             atype, mod, factor,
             "per radian in Code-Aster, 360 degrees in Mecway" if axis else
             "per unit thickness in Code-Aster, thickness t in Mecway"))
+    return True
+
+
+def axis_shells_wanted(model_data):
+    """True when line elements become axisymmetric shells (S44e): the last
+    '#ASTER-PLANE' line says AXIS in Static 3D (S30) or Nonlinear Static
+    (L30). Quiet (_plane_switch reports the lines); bridge_from_liml uses it
+    in STEP 2, before apply()."""
+    lines = (model_data.get("aster_custom") or {}).get("plane") or []
+    return (bool(lines) and lines[-1].strip().upper() == "AXIS" and
+            model_data.get("analysis_type") in ROUTE_A_SOLVERS)
+
+
+def _shell_lines(model_data):
+    """The '#ASTER-SHELL' lines of the model (bridge_custom.parse_shells),
+    with an ERROR (ok False) for a material that does not exist."""
+    import bridge_custom
+    lines, ok = bridge_custom.parse_shells(
+        (model_data.get("aster_custom") or {}).get("shells") or [])
+    known = set(model_data.get("elsets", {}).values()) | set(
+        model_data.get("materials", {})) | set(
+            model_data.get("mat_geometrics", {}))
+    for name in lines:
+        if name not in known:
+            log(tr("ERROR: #ASTER-SHELL '{0}': geen materiaal met deze naam "
+                   "(hernoemd?).",
+                   "ERROR: #ASTER-SHELL '{0}': no material with this name "
+                   "(renamed?).").format(name))
+            ok = False
+    return lines, ok
+
+
+_MATERIAL_WORDS = (("plastic_curve", "plasticiteit", "plasticity"),
+                   ("plastic_bilinear", "plasticiteit", "plasticity"),
+                   ("hyper", "hyperelasticiteit", "hyperelasticity"),
+                   ("ortho", "een orthotroop materiaal",
+                    "an orthotropic material"))
+
+
+def _axis_shell(model_data, elset, shapes, atype, shell_lines):
+    """One elset of line elements as COQUE_AXIS (S44e): checks, thickness,
+    model_data["axis_shells"][elset] = {"epais", "a_cis"}. False after an
+    ERROR."""
+    if "line2" in shapes:
+        return _fatal(
+            "Elset '{0}' bevat line2-elementen; axisymmetrische schalen "
+            "('#ASTER-PLANE AXIS', {1}) alleen met line3 (COQUE_AXIS op "
+            "SEG3, zoals in alle testgevallen van Code-Aster). Maak de "
+            "elementen kwadratisch in Mecway.",
+            "Elset '{0}' contains line2 elements; axisymmetric shells "
+            "('#ASTER-PLANE AXIS', {1}) only with line3 (COQUE_AXIS on SEG3, "
+            "as in all Code-Aster test cases). Make the elements quadratic "
+            "in Mecway.", elset, atype)
+    mods = model_data["elset_modelisations"]
+    if mods.get(elset) != AXIS_SHELL:
+        return _fatal(
+            "Elset '{0}' ({1}): met '#ASTER-PLANE AXIS' worden line3-"
+            "elementen axisymmetrische schalen; truss, kabel, veer, gap en "
+            "demper worden zo niet vertaald.",
+            "Elset '{0}' ({1}): with '#ASTER-PLANE AXIS' line3 elements "
+            "become axisymmetric shells; truss, cable, spring, gap and "
+            "damper are not translated that way.", elset, mods.get(elset))
+    mat = model_data["elsets"].get(elset)
+    props = model_data.get("materials", {}).get(mat) or {}
+    for key, nl, en in _MATERIAL_WORDS:
+        if props.get(key):
+            # COQUE_AXIS with plasticity needs COQUE_NCOU layers (NOT
+            # verified); only ELAS for now
+            return _fatal(
+                "Elset '{0}': materiaal '{1}' heeft {2}; axisymmetrische "
+                "schalen rekenen (nog) alleen isotroop elastisch.",
+                "Elset '{0}': material '{1}' has {2}; axisymmetric shells "
+                "are only computed isotropic elastic (yet).", elset, mat,
+                tr(nl, en))
+    found = _shell_thickness(model_data, elset, mat, shell_lines)
+    if found is None:
+        return False
+    t, a_cis = found
+    model_data.setdefault("axis_shells", OrderedDict())[elset] = {
+        "epais": t, "a_cis": a_cis}
+    for key in ("beam_sections", "shell_sections", "shell_upgrades",
+                "cable_sections"):
+        model_data.get(key, {}).pop(elset, None)
+    model_data["elset_dims"][elset] = "1D"
+    log("INFO: Elset '{0}' -> MODELISATION='COQUE_AXIS' (axisymmetric "
+        "shell, SEG3), thickness {1} m{2} (Mecway {3}).".format(
+            elset, "%.6g" % t, "" if a_cis is None else
+            ", A_CIS {0}".format("%.6g" % a_cis), atype))
+    return True
+
+
+def _rect_thickness(model_data, elset, geom):
+    """The in-plane thickness of a RectBar on the line elements of elset:
+    dimension a along Mecway's V axis (bridge_mesh._mecway_v_axis; HY =
+    recta along V), so a for V in the XY plane (the default V = Z x U), b
+    for V along Z. Returns (value, None), or (None, why) when V is oblique,
+    differs between the elements or comes from an Element orientation card
+    (the cards only act on beams, so it is not known which side is
+    meant)."""
+    import bridge_mesh
+    nodes = model_data["mesh_nodes"]
+    orient = model_data.get("beam_orientations", {})
+    eids = set()
+    found = set()
+    for eid, shape, nids, es in model_data.get("mesh_elements", []):
+        if es != elset or shape not in LINE_SHAPES:
+            continue
+        eids.add(eid)
+        # Mecway's line3: end, mid, end
+        v = bridge_mesh._mecway_v_axis(nodes[nids[0]], nodes[nids[-1]],
+                                       orient.get(eid))
+        if abs(v[2]) < 1.0e-6:
+            found.add("a")
+        elif abs(abs(v[2]) - 1.0) < 1.0e-6:
+            found.add("b")
+        else:
+            found.add("?")
+    for card in model_data.get("orientation_cards") or []:
+        if eids & set(model_data.get("element_selections", {}).get(
+                card["selection"], ())):
+            return None, tr("een Element orientation-kaart op deze "
+                            "elementen", "an Element orientation card on "
+                            "these elements")
+    if found == set(["a"]):
+        return float(geom["vale"][0]), None
+    if found == set(["b"]):
+        return float(geom["vale"][1]), None
+    return None, tr("de V-as ligt niet overal in het XY-vlak of overal "
+                    "langs Z", "the V axis does not lie everywhere in the "
+                    "XY plane or everywhere along Z")
+
+
+def _shell_thickness(model_data, elset, mat, shell_lines):
+    """(thickness, A_CIS or None) of an axisymmetric shell elset (S44e), or
+    None after an ERROR. Sources (user decision 17 Nov 2026): C the line
+    '#ASTER-SHELL <material>: EPAIS=..' first, then A the material's
+    Shell/membrane thickness, then B a RectBar (_rect_thickness). With
+    several sources the line wins: INFO, or WARNING when the values
+    differ. Any other geometry without the line: ERROR naming the three
+    ways."""
+    geom = model_data.get("mat_geometrics", {}).get(mat) or {}
+    line = shell_lines.get(mat)
+    other, what, why = None, None, None
+    if geom.get("geom_type") == "Plate" and (geom.get("thickness") or 0) > 0:
+        other, what = float(geom["thickness"]), "Shell/membrane"
+    elif geom.get("geom_type") == "RectBar":
+        other, why = _rect_thickness(model_data, elset, geom)
+        what = "RectBar"
+        if other is not None and other <= 0.0:
+            other = None
+    elif geom.get("geom_type"):
+        why = tr("geometrie {0}", "geometry {0}").format(geom["geom_type"])
+    if line is not None:
+        t = line["epais"]
+        if other is not None:
+            if abs(other - t) <= _THICKNESS_TOL * t:
+                log("INFO: Elset '{0}': #ASTER-SHELL EPAIS={1} m counts; "
+                    "the {2} of material '{3}' is the same.".format(
+                        elset, "%.6g" % t, what, mat))
+            else:
+                log(tr("WARNING: Elset '{0}': #ASTER-SHELL EPAIS={1} m "
+                       "telt; {2} van materiaal '{3}' is {4} m.",
+                       "WARNING: Elset '{0}': #ASTER-SHELL EPAIS={1} m "
+                       "counts; {2} of material '{3}' is {4} m.").format(
+                           elset, "%.6g" % t, what, mat, "%.6g" % other))
+        return t, line["a_cis"]
+    if other is not None:
+        log("INFO: Elset '{0}': shell thickness {1} m from the {2} of "
+            "material '{3}'.".format(elset, "%.6g" % other, what, mat))
+        return other, None
+    _fatal("Elset '{0}': axisymmetrische schaal zonder dikte{2}. Geef de "
+           "dikte met de regel '**ASTER-SHELL {1}: EPAIS=<dikte>' (in "
+           "CCX > Custom model definition), met een geometrie "
+           "Shell/membrane van materiaal '{1}', of met een RectBar (maat a "
+           "in het XY-vlak).",
+           "Elset '{0}': axisymmetric shell without a thickness{2}. Give the "
+           "thickness with the line '**ASTER-SHELL {1}: EPAIS=<thickness>' "
+           "(in CCX > Custom model definition), with a Shell/membrane "
+           "geometry of material '{1}', or with a RectBar (dimension a in "
+           "the XY plane).", elset, mat,
+           "" if why is None else " ({0})".format(why))
+    return None
+
+
+def _finish_axis_shells(model_data, atype, line_elsets, kinds,
+                        shell_lines):
+    """After the elset loop of apply with axisymmetric shells (S44e):
+    refusals (mixing with plane elements, temperatures, contact), node
+    checks and model_data["plane"] (AXIS, factor 2 pi, "shells")."""
+    if kinds:
+        return _fatal(
+            "Axisymmetrische schalen ({0}) samen met vlakke elementen "
+            "({1}) in een model worden (nog) niet vertaald: de koppeling "
+            "van DRZ aan het volume is niet geverifieerd.",
+            "Axisymmetric shells ({0}) together with plane elements ({1}) "
+            "in one model are not translated (yet): the coupling of DRZ to "
+            "the solid is not verified.", ", ".join(line_elsets),
+            ", ".join(e for es in kinds.values() for e in es))
+    for key, what in _THERMAL + _CONTACT:
+        if model_data.get(key):
+            return _fatal(
+                "{0} op axisymmetrische schalen ({1}) wordt (nog) niet "
+                "vertaald.", "{0} on axisymmetric shells ({1}) is not "
+                "translated (yet).", what, atype)
+    used = set(model_data["elsets"].get(e) for e in line_elsets)
+    for name in shell_lines:
+        if name not in used:
+            log(tr("WARNING: #ASTER-SHELL '{0}': dit materiaal zit niet op "
+                   "line3-elementen; de regel telt niet.",
+                   "WARNING: #ASTER-SHELL '{0}': this material is not on "
+                   "line3 elements; the line does not count.").format(name))
+    if not _check_nodes(model_data, atype, True, LINE_SHAPES):
+        return False
+    model_data["plane"] = {"type": atype, "modelisation": "AXIS",
+                           "thickness": None, "factor": 2.0 * math.pi,
+                           "route": "A", "shells": True}
+    log("INFO: 2D analysis {0}: axisymmetric shells (COQUE_AXIS) about Y; "
+        "concentrated forces and moments / 2 pi, reactions x 2 pi (per "
+        "radian in Code-Aster, 360 degrees in Mecway). Results: "
+        "displacements, rotz and reactions; the shell stresses and section "
+        "forces are not written yet (STAPPENPLAN S44e piece 2).".format(
+            atype))
     return True
 
 
@@ -528,13 +815,14 @@ def _apply_acoustic(model_data, run_cfg, elset_shapes, atype):
     return True
 
 
-def _check_nodes(model_data, atype, axis):
-    """Nodes of the plane elements in the XY plane (Mecway ignores Z,
+def _check_nodes(model_data, atype, axis, shapes=PLANE_SHAPES):
+    """Nodes of the plane elements (shapes: the line elements of
+    axisymmetric shells, S44e) in the XY plane (Mecway ignores Z,
     Code-Aster needs Z = 0 for a 2D mesh) and X >= 0 for an axisymmetric
     model (Mecway manual v34 par. 6.1.3). False after an ERROR."""
     used = set()
     for _eid, shape, nids, _es in model_data.get("mesh_elements", []):
-        if shape in PLANE_SHAPES:
+        if shape in shapes:
             used.update(nids)
     pts = [model_data["mesh_nodes"][n] for n in used
            if n in model_data["mesh_nodes"]]
@@ -617,17 +905,27 @@ def convert_bc(model_data, bc, faces, skin_groups):
         return False
     sel = bc["selection"]
     kinds = (faces or {}).get("kinds") or set()
-    edges = bool(kinds) and kinds <= set(["shelledge"])
+    sh = bool(p.get("shells"))
+    # Faces of the line elements of axisymmetric shells (S44e): faceid 1 =
+    # the side, 2/3 = the ends (bridge_mesh, kind "beam"; in the mesh
+    # only a node group)
+    lines = sh and bool(kinds) and kinds <= set(["beam"])
+    edges = bool(kinds) and (kinds <= set(["shelledge"]) or lines)
     axis = p["modelisation"] == "AXIS"
     btype = bc["type"]
-    if p.get("route") == "A" and _z_only(bc):
+    if p.get("route") == "A" and _z_only(bc, sh):
         # A 3D shell model (route A) holds Z or the rotations for Mecway's
         # own solve; the 2D model has no such DOFs: not an error here
         bc["skip"] = True
         log("INFO: {0} on '{1}': only Z or rotations, which the 2D model "
             "does not have (#ASTER-PLANE); left out.".format(btype, sel))
         return True
-    if btype not in _HANDLED:
+    if sh and btype == "centrifugal":
+        _skip(model_data, bc, tr("niet geverifieerd op axisymmetrische "
+                                 "schalen (COQUE_AXIS)", "not verified on "
+                                 "axisymmetric shells (COQUE_AXIS)"))
+        return True
+    if btype not in (_SHELL_HANDLED if sh else _HANDLED):
         _skip(model_data, bc, tr("niet vertaald in 2D (S16a: vast, "
                                  "verplaatsing, kracht, druk, traction, "
                                  "symmetrie, zwaartekracht, centrifugaal)",
@@ -635,6 +933,8 @@ def convert_bc(model_data, bc, faces, skin_groups):
                                  "displacement, force, pressure, traction, "
                                  "symmetry, gravity, centrifugal)"))
         return True
+    if lines and btype in ("surfacepressure", "traction", "force"):
+        return _line_face_load(model_data, bc, sel)
     if kinds and not edges:
         _skip(model_data, bc, tr("alleen randen van vlakke elementen "
                                  "(faceid 1..4), hier {0}",
@@ -656,7 +956,8 @@ def convert_bc(model_data, bc, faces, skin_groups):
         if edges:
             n = len(set(nid for f in model_data.get(
                 "group_face_list", {}).get(sel, []) for nid in f["nodes"]))
-            bc["aster_target"] = "GROUP_MA"
+            # faces of line elements are a node group in the mesh
+            bc["aster_target"] = "GROUP_NO" if lines else "GROUP_MA"
         elif sel in model_data.get("node_groups", {}):
             ids = list(OrderedDict((int(str(i).lstrip("N")), None)
                                    for i in model_data["node_groups"][sel]))
@@ -762,12 +1063,29 @@ def convert_bc(model_data, bc, faces, skin_groups):
                                      "Y"))
             return True
         # Symmetry plane perpendicular to X or Y: that displacement zero
-        # (Mecway manual v34: displacement normal to the plane = 0).
+        # (Mecway manual v34: displacement normal to the plane = 0). A
+        # shell crossing the plane also has no rotation about Z there
+        # (S44e: Z lies in the plane).
         bc["aster_keyword"] = "DDL_IMPO"
-        bc["aster_dict"] = {comp: 0.0}
+        bc["aster_dict"] = OrderedDict([(comp, 0.0)] + (
+            [("DRZ", 0.0)] if sh else []))
+        if lines:
+            bc["aster_target"] = "GROUP_NO"
         bc["_plane"] = True
-        log("INFO: Symmetry '{0}' -> DDL_IMPO {1}=0 (2D).".format(sel, comp))
+        log("INFO: Symmetry '{0}' -> DDL_IMPO {1}=0 (2D).".format(
+            sel, ", ".join(bc["aster_dict"])))
         return True
+    if btype == "noderotation":
+        # S44e: only about Z (DRZ); _z_only left out rotations about an
+        # axis in the XY plane
+        d = bc["params"].get("dir")
+        if d is None or abs(abs(d[2]) - 1.0) > 1.0e-12:
+            _skip(model_data, bc, tr("rotatie alleen om Z",
+                                     "rotation only about Z"))
+            return True
+        if lines:
+            bc["aster_target"] = "GROUP_NO"
+        return False
     if btype == "displacement":
         d = bc["params"].get("dir")
         if d is not None and abs(d[2]) > 1.0e-12:
@@ -783,15 +1101,17 @@ def convert_bc(model_data, bc, faces, skin_groups):
     return False
 
 
-def _z_only(bc):
+def _z_only(bc, shells=False):
     """True for a constraint that only holds what a plane model does not
     have: a node rotation, a zero displacement along Z, a symmetry with
-    normal Z (route A, S44a)."""
+    normal Z (route A, S44a). shells (axisymmetric shells, S44e): a node
+    rotation counts only when its axis lies in the XY plane (rotation about
+    Z is DRZ)."""
     btype = bc["type"]
-    if btype == "noderotation":
-        return True
     params = bc.get("params") or {}
     d = params.get("dir")
+    if btype == "noderotation":
+        return not shells or (d is not None and abs(d[2]) < 1.0e-12)
     if d is None or abs(abs(d[2]) - 1.0) > 1e-12:
         return False
     if btype == "symmetry":
@@ -815,11 +1135,14 @@ def finish_bcs(model_data):
         return
     axis = p["modelisation"] == "AXIS"
     factor = p["factor"]
+    sh = bool(p.get("shells"))
+    drop_ddl = _SHELL_DROP_DDL if sh else _DROP_DDL
+    drop_force = _SHELL_DROP_FORCE if sh else _DROP_FORCE
     for bc in model_data.get("bcs", []):
         if bc.get("skip"):
             continue
         btype = bc["type"]
-        if btype not in _HANDLED:
+        if btype not in (_SHELL_HANDLED if sh else _HANDLED):
             _skip(model_data, bc, tr("niet vertaald in 2D",
                                      "not translated in 2D"))
             continue
@@ -846,7 +1169,7 @@ def finish_bcs(model_data):
             continue
         if kw == "DDL_IMPO" and "BLOCAGE" not in d:
             new = OrderedDict((k, v) for k, v in d.items()
-                              if k not in _DROP_DDL)
+                              if k not in drop_ddl)
             if not new and d:
                 if p.get("route") == "A":
                     # A 3D shell model (route A) often holds DZ or the
@@ -861,11 +1184,13 @@ def finish_bcs(model_data):
                 continue
             bc["aster_dict"] = new
         elif kw == "DDL_IMPO":
-            bc["aster_dict"] = {"DX": 0.0, "DY": 0.0}
+            # BLOCAGE (Fixed with rotations): axisymmetric shells also DRZ
+            bc["aster_dict"] = OrderedDict(
+                [("DX", 0.0), ("DY", 0.0)] + ([("DRZ", 0.0)] if sh else []))
         elif kw == "FORCE_NODALE":
             new = OrderedDict()
             for k, v in sorted(d.items()):
-                if k in _DROP_FORCE:
+                if k in drop_force:
                     if v not in (0, 0.0):
                         log(tr("WARNING: {0} op '{1}': component {2} telt "
                                "niet in een 2D-analyse.",
@@ -876,6 +1201,153 @@ def finish_bcs(model_data):
                 new[k] = _div(v, factor)
             bc["aster_dict"] = new
         bc["_plane"] = True
+    if sh:
+        _check_axis_nodes(model_data)
+
+
+def _line_face_load(model_data, bc, sel):
+    """Pressure, traction or force on faces of the line elements of
+    axisymmetric shells (S44e). Pressure on faceid 1 (the side):
+    FORCE_COQUE PRES on a cell group BRAX<n> (_line_pressure). Force on the
+    ends (faceid 2, 3): the generic route (nodes, FORCE_NODALE, / 2 pi in
+    finish_bcs), returns False. The rest: not translated (NOT verified)."""
+    faces = model_data.get("group_face_list", {}).get(sel, [])
+    sides = [f for f in faces if f["fid"] == 1]
+    btype = bc["type"]
+    if btype == "force" and not sides:
+        return False
+    if btype == "surfacepressure" and len(sides) == len(faces):
+        return _line_pressure(model_data, bc, sel, sides)
+    _skip(model_data, bc, tr(
+        "op axisymmetrische schalen alleen druk op de zijkant (faceid 1) "
+        "van line3-elementen en kracht op knopen of elementuiteinden "
+        "(faceid 2, 3); traction en kracht op de zijkant zijn niet "
+        "geverifieerd",
+        "on axisymmetric shells only pressure on the side (faceid 1) of "
+        "line3 elements and force on nodes or element ends (faceid 2, 3); "
+        "traction and force on the side are not verified"))
+    return True
+
+
+# Code-Aster's normal of a COQUE_AXIS cell relative to the bridge's n = Z x U
+# (U = node 1 -> node 2 of the Mecway element, the SEG3 in the same order):
+# FORCE_COQUE PRES pushes along -n of Code-Aster (ssls114i: ORIE_NORM_COQUE
+# VECT_NORM (-1, 0) and PRES = +10 Pa give DX = +1e-9 on a cylinder of
+# radius 1). Without ORIE_NORM_COQUE Code-Aster's normal is U x Z = -(Z x U):
+# measured with Code-Aster 17.4 (verification PL-64, the mesh of ssls114i
+# B (y = 0) -> A (y = 0.5), U = +Y: PRES = +10 Pa gave DX = -1.0000e-9, and
+# so did PL-60 .. PL-63). Hence PRES = -p.
+_ASTER_NORMAL_SIGN = -1.0
+
+
+def _scaled(value, k):
+    """value (float or list (t, v)) times k."""
+    if isinstance(value, list):
+        return [(tt, v * k) for tt, v in value]
+    return value * k
+
+
+def _line_pressure(model_data, bc, sel, sides):
+    """Pressure on faceid 1 of line elements of axisymmetric shells (S44e):
+    FORCE_COQUE PRES (Pa on the mid-surface, Code-Aster integrates it per
+    radian) on a new cell group BRAX<n> of those elements. The bridge's side:
+    a positive pressure pushes along -n, n = Z x U (U = node 1 -> node 2;
+    Mecway's default V of a line in the XY plane): a chain from bottom to
+    top on the outside of the axis gets an internal pressure. Neighbouring
+    elements in opposite directions push to opposite sides: WARNING."""
+    import bridge_bcs
+    value = bc["aster_dict"].get("PRES")
+    if value is None or bridge_bcs.is_position(value):
+        _skip(model_data, bc, tr(
+            "druk met een formule in x, y, z op axisymmetrische schalen is "
+            "niet geverifieerd", "pressure with a formula in x, y, z on "
+            "axisymmetric shells is not verified"))
+        return True
+    eids = sorted(set(f["eid"] for f in sides))
+    elems = dict((e[0], e) for e in model_data.get("mesh_elements", []))
+    starts, ends = {}, {}
+    for eid in eids:
+        nids = elems[eid][2]
+        starts[nids[0]] = starts.get(nids[0], 0) + 1
+        ends[nids[-1]] = ends.get(nids[-1], 0) + 1
+    flipped = sorted(n for n in set(starts) | set(ends)
+                     if starts.get(n, 0) > 1 or ends.get(n, 0) > 1)
+    if flipped:
+        log(tr("WARNING: Druk op '{0}': aangrenzende line3-elementen lopen "
+               "in tegengestelde richting (knoop {1}); de druk werkt daar "
+               "aan de andere kant (positieve druk duwt langs -n, n = Z x U, "
+               "U van knoop 1 naar knoop 2). Keer die elementen om in "
+               "Mecway.",
+               "WARNING: Pressure on '{0}': neighbouring line3 elements run "
+               "in opposite directions (node {1}); the pressure acts on the "
+               "other side there (a positive pressure pushes along -n, n = Z "
+               "x U, U from node 1 to node 2). Reverse those elements in "
+               "Mecway.").format(sel, ", ".join(str(n) for n in flipped[:10])))
+    groups = model_data.setdefault("extra_ma_groups", OrderedDict())
+    taken = set(model_data.get("mesh_group_names", set())) | set(groups)
+    n = 1
+    while "BRAX{0}".format(n) in taken:
+        n += 1
+    name = "BRAX{0}".format(n)
+    groups[name] = eids
+    bc["selection"] = name
+    bc["aster_target"] = "GROUP_MA"
+    bc["aster_keyword"] = "FORCE_COQUE"
+    bc["aster_dict"] = OrderedDict([("PRES",
+                                     _scaled(value, _ASTER_NORMAL_SIGN))])
+    bc["_plane"] = True
+    log("INFO: Pressure on the side of {0} line3 element(s) in '{1}' -> "
+        "FORCE_COQUE PRES on {2} (axisymmetric shell; pushes along -n, n = "
+        "Z x U).".format(len(eids), sel, name))
+    return True
+
+
+def _bc_nodes(model_data, bc):
+    """Node ids of the selection of a constraint (node group or faces)."""
+    sel = bc.get("selection")
+    ids = model_data.get("node_groups", {}).get(sel)
+    if ids is not None:
+        return set(int(str(i).lstrip("N")) for i in ids)
+    return set(n for f in model_data.get("group_face_list", {}).get(sel, [])
+               for n in f["nodes"])
+
+
+def _check_axis_nodes(model_data):
+    """Axisymmetric shells (S44e): a node on the axis (X = 0) needs DX = 0
+    and DRZ = 0 (Mecway manual v34 par. 7.2 holds the axis nodes in X; a
+    shell crossing the axis has no slope there). WARNING when a node misses
+    one of them."""
+    nodes = model_data.get("mesh_nodes", {})
+    used = set()
+    for _eid, shape, nids, _es in model_data.get("mesh_elements", []):
+        if shape in LINE_SHAPES:
+            used.update(nids)
+    pts = [nodes[n] for n in used if n in nodes]
+    size = max([max(abs(q[0]), abs(q[1])) for q in pts] + [1.0e-30])
+    on_axis = set(n for n in used if n in nodes and
+                  abs(nodes[n][0]) <= 1.0e-9 * size)
+    if not on_axis:
+        return
+    held = {"DX": set(), "DRZ": set()}
+    for bc in model_data.get("bcs", []):
+        if bc.get("skip") or bc.get("aster_keyword") != "DDL_IMPO":
+            continue
+        d = bc.get("aster_dict") or {}
+        for comp in held:
+            if comp in d:
+                held[comp] |= _bc_nodes(model_data, bc)
+    missing = sorted(n for n in on_axis
+                     if n not in held["DX"] or n not in held["DRZ"])
+    if missing:
+        log(tr("WARNING: Axisymmetrische schaal: knoop {0} ligt op de as "
+               "(X = 0) maar heeft niet zowel X als de rotatie om Z vast. "
+               "Geef die knopen een Symmetry met normaal X (houdt X en de "
+               "rotatie om Z vast).",
+               "WARNING: Axisymmetric shell: node {0} lies on the axis (X = "
+               "0) but does not have both X and the rotation about Z held. "
+               "Give those nodes a Symmetry with normal X (holds X and the "
+               "rotation about Z).").format(
+                   ", ".join(str(n) for n in missing[:10])))
 
 
 def skin_modelisation(model_data, default="3D"):

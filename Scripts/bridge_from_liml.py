@@ -76,6 +76,8 @@ _ROT_DOF_MODELISATIONS = frozenset({
     "POU_D_T", "POU_D_E", "POU_D_T_GD", "POU_D_TG",
     "COQUE_3D", "DKT", "DST", "Q4G",
     "DIS_TR",
+    # axisymmetric shell (S44e, bridge_plane): DX, DY, DRZ
+    "COQUE_AXIS",
 })
 
 # Choices for the element formulation (CONFIG_BRIDGE "elem_*"): allowed
@@ -1756,7 +1758,8 @@ def _warn_fixed_on_free_nodes(model_data):
         if mod is None:
             continue
         in_elem.update(enodes)
-        if mod in _BEAM_MODELISATIONS:
+        # COQUE_AXIS (S44e): line elements, beams in Mecway's own model
+        if mod in _BEAM_MODELISATIONS or mod == "COQUE_AXIS":
             beam.update(enodes)
     ref = set()
     for c in model_data.get("couplings", []):
@@ -2224,6 +2227,9 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         model_data["aster_custom"] = bridge_custom.parse(
             [el.text for tag in bridge_custom.CUSTOM_TAGS
              for el in root.findall(tag)])
+        # '#ASTER-PLANE AXIS' in S30/L30: line elements become
+        # axisymmetric shells (COQUE_AXIS, S44e; checks in bridge_plane)
+        axis_lines = bridge_plane.axis_shells_wanted(model_data)
         section_extras = _section_extras(
             model_data["aster_custom"].get("sections", []))
         mat_names = set(m.get("name") for m in root.findall("mat"))
@@ -2622,7 +2628,12 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                     # (code_aster catalogue phenomenons_modelisations.py).
                     modelisation = beam_mod
                     model_data["has_1d"] = True
-                    if "line3" in shapes and not thermal_run:
+                    if axis_lines:
+                        # Axisymmetric shell on SEG3 (S44e): no beam, no
+                        # split; bridge_plane.apply checks the shapes and
+                        # the thickness
+                        modelisation = "COQUE_AXIS"
+                    elif "line3" in shapes and not thermal_run:
                         # Quadratic beam (Mecway: only with CCX, manual
                         # v33 par. 7.5): bridge_mesh.write_mesh splits each
                         # line3 element at the mid node into two SEG2 cells
@@ -3352,6 +3363,11 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
             if geom is None:
                 continue
 
+            if dim == "1D" and model_data["elset_modelisations"].get(
+                    elset_name) == "COQUE_AXIS":
+                # The thickness comes from bridge_plane.apply (S44e): no
+                # beam section, shear coefficients or warping
+                continue
             if dim == "1D":
                 if "aster_section" in geom:
                     mod = model_data["elset_modelisations"].get(elset_name)
@@ -3394,7 +3410,8 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                 if ("line3" in elset_shapes_map.get(elset_name, ()) and
                         model_data["elset_dims"].get(elset_name) == "1D" and
                         mod not in ("POU_D_E", "POU_D_T", GD_BEAM,
-                                    WARP_BEAM, "BARRE", "CABLE")):
+                                    WARP_BEAM, "BARRE", "CABLE",
+                                    "COQUE_AXIS")):
                     _drop_elset(
                         model_data, elset_name,
                         tr("elset '{0}': line3-elementen ({1})",

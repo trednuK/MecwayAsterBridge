@@ -4958,7 +4958,7 @@ def _couplings_to_mesh(model_data, rn, nonempty_names, node_face_groups,
 # Dicts with an elset as key (renaming, dropping empty elsets).
 _ELSET_KEYS = ("elsets", "elset_dims", "elset_modelisations", "beam_sections",
                "shell_sections", "spring_sections", "shell_upgrades",
-               "cable_sections", "discrete_sections")
+               "cable_sections", "discrete_sections", "axis_shells")
 
 
 def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
