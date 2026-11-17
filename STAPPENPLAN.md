@@ -94,7 +94,7 @@ S7, S8, S5, S9).
 | S44 | 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`): thermal stress, nonlinear static, contact, thermal, axisymmetric shells, modal/buckling, axisymmetric acoustics | split | S16a | asked by the user 11 Nov 2026; split into S44a .. S44g (see §S44; research of the input route first); plan reviewed by Opus; order S44c, S44a, S44b, S44d, S44e, S44f later |
 | S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (to confirm by the user, §S44); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
 | S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
-| S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | in progress | S44a | route A: contact on edges built, shrink fit PL-40/41, Code-Aster test ssnp121a PL-42, `C_PLAN` PL-43 (13 Nov 2026); open: Hertz, friction (KB141), bonded contact; user test: Mecway's GUI offers shell edges for a contact; see §S44 |
+| S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | done (user OK pending on the PL-42 corner tolerance 5%) | S44a | route A: contact on edges; shrink fit PL-40/41, ssnp121a PL-42, `C_PLAN` PL-43, Hertz PL-45, friction PL-46 (13 and 17 Nov 2026); bonded contact in 2D not planned (ERROR); user test: Mecway's GUI offers shell edges for a contact; see §S44 |
 | S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | open | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44 |
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | open | S16a | beams in S20 stay S16e; see §S44 |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
@@ -2493,7 +2493,19 @@ PL-43: the same in `C_PLAN` runs (with ν = 0 the same state, nothing specific t
 stops with `MECANONLINE9_4` (slave end nodes held axially; new KNOWN_BUGS 141, workaround
 `**ASTER-ZONE SANS_GROUP_NO`); `SANS_GROUP_NO` needs `INTEGRATION='AUTO'` (`CONTACT_97`), so
 the bridge no longer writes `NCOTES` then (seen in 2D; 3D NOT verified).
-Open: Hertz line contact, ssna102a/ssna111a (`AXIS`, MED meshes), friction in 2D, bonded contact (`LIAISON_MAIL`) in 2D, the
+**Findings S44b (17 Nov 2026, completed):** PL-45 Hertz line contact (`D_PLAN`, a quarter
+cylinder on a block, displacement control, graded quad8, 10.8 elements over b): half-width
+−0.01%, peak pressure +0.38% (Done-when 3%; p0 from a fit of the Hertz profile, the nodal
+LAGS_C alternate by ±10%). It needed `INTEGRATION='AUTO'` on the curved
+SEG3 slave: `NCOTES` gave a zero pivot on `LAGS_C` at the initial point contact, so SEG3 is
+out of `_quadratic_slave` again (PL-40/41 are the same with `AUTO`). PL-46 friction 0.3
+(blocks, sliding, matching at the start): |R_x/R_y| −0.14% (non-matching −0.7%; a first
+version where the slave slid past the master's end was 1.3% low). A WARNING (`bridge_mesh._warn_friction_held_slaves`, NL+EN) names the
+KNOWN_BUGS 141 situation (friction + slave nodes held by another support) and the
+workaround; the user decides (no automatic exclusion). Not done: ssna102a/ssna111a (`AXIS`,
+MED meshes; the `AXIS` contact is covered by PL-40), bonded contact in 2D (ERROR stays; a
+new step when asked).
+Earlier open list: Hertz line contact, ssna102a/ssna111a (`AXIS`, MED meshes), friction in 2D, bonded contact (`LIAISON_MAIL`) in 2D, the
 GUI test (does Mecway's window offer shell edges for a contact).
 
 **S44d – thermal 2D/axisymmetric (steady and transient).**

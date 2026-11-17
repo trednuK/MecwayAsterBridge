@@ -244,7 +244,7 @@ contact = DEFI_CONTACT(
     FORMULATION='CONTINUE',
     FROTTEMENT='SANS',
     ZONE=(
-        _F(GROUP_MA_MAIT='Buitenring_binnen', GROUP_MA_ESCL='Binnenring_buiten', INTEGRATION='NCOTES'),
+        _F(GROUP_MA_MAIT='Buitenring_binnen', GROUP_MA_ESCL='Binnenring_buiten'),
     ),
 )
 try:

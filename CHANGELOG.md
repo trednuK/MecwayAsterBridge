@@ -71,11 +71,13 @@ fastest case of every group (313 cases) gave 1333 of 1336 checks OK, 3 BEKEND (K
   cells, with the contact settings of 3D. Verification PL-40/41: a shrink fit of two rings
   (axisymmetric and plane strain), contact pressure within 0.01% of Lamé; PL-42: the
   Code-Aster test case ssnp121a (two blocks, plane strain) through the bridge within 0.3%,
-  PL-43 the same in plane stress. Not yet: bonded contact in 2D, friction (KNOWN_BUGS 141),
-  Hertz line contact.
+  PL-43 the same in plane stress, PL-45 Hertz line contact (half-width −0.01%, peak
+  pressure +0.38%), PL-46 Coulomb friction (a sliding block, −0.14%). Bonded contact in 2D
+  stays an ERROR.
 - **Contact with `SANS_GROUP_NO` on a quadratic slave** keeps `INTEGRATION='AUTO'` (it stopped
   with `CONTACT_97`; seen in 2D, 3D NOT verified). New KNOWN_BUGS 141: with friction, slave nodes held in the
-  tangential direction give a singular matrix (workaround `**ASTER-ZONE SANS_GROUP_NO`).
+  tangential direction give a singular matrix; the bridge warns and names the workaround
+  (`**ASTER-ZONE SANS_GROUP_NO`).
 - **Results after a time limit in linear static and thermal analyses** (STAPPENPLAN S45 phase
   1, KNOWN_BUGS 137 narrowed): `MECA_STATIQUE`, `THER_LINEAIRE` and `THER_NON_LINE` compute
   on past *Time limit run_aster*, after which the next command stopped with `SUPERVIS_63` and

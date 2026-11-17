@@ -262,6 +262,22 @@ def test_route_a():
                         contact))
     check(md is None and any("Contact" in m for m in _errors()),
           "S30 + switch with a contact: ERROR")
+    # KNOWN_BUGS 141: friction with a slave node held by a displacement
+    friction = contact.replace("</normalstiffness>", "</normalstiffness>"
+                               "<frictioncoefficient>0.3"
+                               "</frictioncoefficient>")
+    held = ('<displacement selection="Links2"><value>0 m</value><x>0</x>'
+            '<y>1</y><z>0</z></displacement>')
+    comm = _comm(_liml("L30", PS, loads=_switch("**ASTER-PLANE C_PLAN") +
+                       friction + held), analysis="nonlin_static_3d")
+    check(comm and "COULOMB=0.3" in comm and any(
+        m.startswith("WARNING") and "141" in m for m in LOG),
+        "friction + held slave node: WARNING KNOWN_BUGS 141 ({0})".format(
+            [m[:60] for m in LOG if m.startswith(("WARNING", "ERROR"))]))
+    comm = _comm(_liml("L30", PS, loads=_switch("**ASTER-PLANE C_PLAN") +
+                       friction), analysis="nonlin_static_3d")
+    check(comm and not any("141" in m for m in LOG),
+          "friction without held slave nodes: no KNOWN_BUGS 141 WARNING")
     import bridge_mesh as bm
     w = bm._edge_integrals({
         "mesh_nodes": {1: (0.0, 0.0, 0.0), 2: (2.0, 0.0, 0.0),
@@ -327,7 +343,7 @@ def test_edge_measure():
     check(abs(a - 0.01) < 1e-15, "length x t {0}".format(a))
 
 
-def _comm(text):
+def _comm(text, analysis="lin_static_3d"):
     """.comm of a 2D model ("" after an ERROR)."""
     import bridge_mesh
     import bridge_to_aster
@@ -337,7 +353,7 @@ def _comm(text):
     work = bridge_utils.CONFIG_BRIDGE["work_dir"]
     try:
         bridge_utils.CONFIG_BRIDGE["work_dir"] = tmp
-        bridge_utils.CONFIG_BRIDGE["active_analysis"] = "lin_static_3d"
+        bridge_utils.CONFIG_BRIDGE["active_analysis"] = analysis
         path = os.path.join(tmp, "m.liml")
         with open(path, "w") as f:
             f.write(text)

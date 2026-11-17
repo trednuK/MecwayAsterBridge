@@ -692,7 +692,8 @@ contact = DEFI_CONTACT(
   penalty-methode met een stijfheid per oppervlak (Mecway, 2026, §9.9):
   Mecway laat iets penetratie toe, Code-Aster op de slave-punten niet (KNOWN_BUGS 43).
 - **Integratie.** Op kwadratische slave-vlakken (tet10, hex20, quad8 ...) zet de bridge
-  `INTEGRATION='NCOTES'` (niet bij `SANS_GROUP_NO`: Code-Aster eist dan `'AUTO'`,
+  `INTEGRATION='NCOTES'` (niet op de randen van een 2D-model: een beginnend puntcontact gaf
+  daar een nulpivot, PL-45; niet bij `SANS_GROUP_NO`: Code-Aster eist dan `'AUTO'`,
   KNOWN_BUGS 141); lineaire vlakken houden de CA-standaard `'AUTO'`. Met
   `'AUTO'` haalde de contact-patchtest op hex20 met niet-passende meshes het niet
   (1,5 tot 4,6 % fout), met `'NCOTES'` exact (NL-03c tot f). Code-Aster meldt dan het

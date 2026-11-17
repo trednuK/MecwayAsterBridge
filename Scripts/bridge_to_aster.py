@@ -6100,9 +6100,11 @@ def _convergence_args(analysis):
 def _quadratic_slave(model_data, group):
     """True if the slave face has quadratic boundary elements."""
     faces = model_data.get("group_face_list", {}).get(group, [])
-    # SEG3: quadratic edges of a 2D model (S44b)
-    return any(f.get("stype") in ("TRIA6", "QUAD8", "QUAD9", "TRIA7",
-                                  "SEG3")
+    # Not SEG3 (edges of a 2D model, S44b): with NCOTES the initial point
+    # contact of a cylinder on a block (PL-45) gave a zero pivot on LAGS_C
+    # in the first step, with AUTO it is within 2% of Hertz; the shrink fits
+    # PL-40/41 are the same with AUTO (+0.01% against Lame)
+    return any(f.get("stype") in ("TRIA6", "QUAD8", "QUAD9", "TRIA7")
                for f in faces)
 
 

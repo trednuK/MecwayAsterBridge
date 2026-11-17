@@ -806,8 +806,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    too few contact nodes remain for a check). `SANS_GROUP_NO` also needs
    `INTEGRATION='AUTO'` (`CONTACT_97`), so a quadratic slave with excluded nodes keeps `AUTO`
    instead of `NCOTES` (less accurate in the contact patch test, 1.5 … 4.6% in 3D). 3D NOT
-   checked for the friction case. Status: open; candidate fix: exclude such nodes
-   automatically when there is friction.
+   checked for the friction case. The bridge gives a WARNING for a contact with friction whose
+   slave nodes a *Displacement*, *Symmetry*, *Pinned* or *Frictionless* support holds
+   (`bridge_mesh._warn_friction_held_slaves`); it does not exclude them itself (the user
+   decides). A friction case without held slave nodes is exact (PL-46). Status: limits,
+   WARNING.
 
 ## Open questions (Mecway behaviour not checked)
 
@@ -1377,7 +1380,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    to Mecway 35's own S20/SA0 solve headless; that Mecway's GUI offers them in S20/SA0 is
    documented, not tested); nonlinear static (L30, also S30) on plane shells with
    `**ASTER-PLANE C_PLAN|D_PLAN|AXIS` (S44a, PL-30 … PL-36; no failure loop, no element
-   offsets), with contact on edges (S44b, PL-40/41; no bonded contact)
+   offsets), with contact on edges (S44b, PL-40 … PL-46; no bonded contact)
    ([`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md)). Not: the harmonic
    pressure field in 2D (A20 with `acoustic_harm_3d`: ERROR; `auto` keeps the cavity modes
    with a source selection; not translatable: Mecway has no 2D harmonic acoustic input,

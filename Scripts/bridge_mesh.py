@@ -4021,6 +4021,62 @@ def _exclude_fixed_slaves(model_data, group_integrals):
                 "fixed condition ({2}) and are excluded with "
                 "SANS_GROUP_NO (U4.44.11 par. 3.1.3).".format(
                     c["slave"], len(count), ", ".join(sans)))
+        if (c.get("friction") or 0.0) > 0.0:
+            _warn_friction_held_slaves(model_data, c, slave - count,
+                                       group_integrals, to_int)
+
+
+# Supports that hold a slave node in some direction but are not a Fixed
+# support (KNOWN_BUGS 141)
+_FRICTION_HELD_BCS = ("displacement", "symmetry", "pinnedsupport",
+                      "frictionless")
+
+
+def _warn_friction_held_slaves(model_data, c, slave, group_integrals,
+                               to_int):
+    """WARNING when a contact with friction has slave nodes that another
+    support holds (KNOWN_BUGS 141): a direction along the contact surface
+    then carries both the support and the friction condition, and
+    STAT_NON_LINE stopped with a singular matrix (MECANONLINE9_4; 2D shrink
+    fit with friction, S44b; 3D NOT verified). The bridge does not exclude
+    them itself: the user decides (an **ASTER-ZONE SANS_GROUP_NO)."""
+    zones = (model_data.get("aster_custom") or {}).get("zone") or []
+    if any("SANS_GROUP_NO" in z.upper() for z in zones):
+        # The user has followed the advice (or excludes nodes anyway)
+        return
+    node_groups = model_data.get("node_groups", {})
+    held = []
+    for bc in model_data.get("bcs", []):
+        sel = bc.get("selection")
+        if bc.get("type") not in _FRICTION_HELD_BCS or not sel or \
+                bc.get("skip"):
+            continue
+        if sel in node_groups:
+            nodes = set(to_int(n) for n in node_groups[sel])
+        elif sel in group_integrals:
+            nodes = set(to_int(n) for n in group_integrals[sel][0])
+        else:
+            continue
+        if slave & nodes and sel not in held:
+            held.append(sel)
+    if held:
+        log(tr("WARNING: Contact met wrijving (slave '{0}'): slave-knopen "
+               "worden ook vastgehouden door {1}. Een richting langs het "
+               "contactvlak kan dan dubbel vastliggen en Code-Aster kan "
+               "stoppen met een singuliere matrix (MECANONLINE9_4, KNOWN_BUGS "
+               "141). Laat die knopen weg uit het contact met een "
+               "knoopselectie en '**ASTER-ZONE SANS_GROUP_NO='<<selectie>>'' "
+               "(die vervangt de uitsluiting van knopen met een Fixed "
+               "support: neem die ook op; in 3D NIET nagelopen).",
+               "WARNING: Contact with friction (slave '{0}'): slave nodes "
+               "are also held by {1}. A direction along the contact surface "
+               "can then be held twice and Code-Aster can stop with a "
+               "singular matrix (MECANONLINE9_4, KNOWN_BUGS 141). Leave those "
+               "nodes out of the contact with a node selection and "
+               "'**ASTER-ZONE SANS_GROUP_NO='<<selection>>'' (it replaces "
+               "the exclusion of nodes with a Fixed support: include those "
+               "too; NOT verified in 3D).").format(
+                   c["slave"], ", ".join("'{0}'".format(h) for h in held)))
 
 
 # Conditions written as a relation (LIAISON_*) or partial DDL_IMPO;

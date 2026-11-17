@@ -160,10 +160,13 @@ ramps in 2D, make the model as a 3D model and tell the bridge to compute it in 2
    face selections of edges of the plane elements; the bridge writes them as edge cells
    (`SEG2`/`SEG3`) for `DEFI_CONTACT` with the settings of the Nonlinear static page, as in
    3D. Overlapping geometry (a shrink fit) is resolved in the first step. The result
-   `contactpressure` is a pressure (no factor t or 2π). Verified frictionless in `AXIS` and
-   `D_PLAN` (`C_PLAN` runs, checked only with ν = 0); friction NOT verified: with slave nodes
-   held along the contact edge it stops with a singular matrix; leave those nodes out with a
-   node selection and `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded* contact in 2D: ERROR.
+   `contactpressure` is a pressure (no factor t or 2π). Verified in `AXIS` and `D_PLAN`
+   (shrink fit, Hertz line contact, a Code-Aster test case) and with Coulomb friction (a block
+   sliding over a block); `C_PLAN` runs (checked only with ν = 0). With friction, slave nodes
+   that another support holds along the contact edge can make Code-Aster stop with a
+   singular matrix: the bridge then gives a WARNING; leave those nodes out with a node
+   selection and `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded*
+   contact in 2D: ERROR.
    Whether Mecway's window lets you pick shell edges for a contact is NOT verified.
 
 The bridge analysis is `nonlin_static_3d` (L30) or `lin_static_3d` (S30); the settings of
@@ -176,8 +179,8 @@ reaction forces with the factor t or 2π in every step (PL-30, PL-32). Verificat
 cylinder with perfect plasticity (Hill) in `D_PLAN` and `AXIS`, first yield at a hole in
 `C_PLAN`, Code-Aster test case ssnp159b (`AXIS`, `GDEF_LOG`) through the bridge. NOT
 included: the failure loop (`#ASTER-BEZWIJKEN`, WARNING), bonded contact, thermal analyses
-(S44d). Contact: PL-40 and PL-41 (a shrink fit, contact pressure within 0.01% of
-Lamé). Opening such a result in the Mecway window is NOT verified (a test in the Mecway
+(S44d). Contact: PL-40 … PL-46 (a shrink fit within 0.01% of Lamé, Hertz line contact, a
+Code-Aster test case, friction). Opening such a result in the Mecway window is NOT verified (a test in the Mecway
 GUI still to do).
 
 ### 1.5 Worked examples

@@ -162,9 +162,11 @@ en lastopbouw in 2D maak je het model als 3D-model en zeg je de bridge het in 2D
    (`SEG2`/`SEG3`) voor `DEFI_CONTACT` met de instellingen van de pagina Niet-lineair
    statisch, zoals in 3D. Overlappende geometrie (een krimpverbinding) wordt in de eerste
    stap opgelost. Het resultaat `contactpressure` is een druk (geen factor t of 2π).
-   Nagelopen wrijvingsloos in `AXIS` en `D_PLAN` (`C_PLAN` rekent, alleen nagelopen met
-   ν = 0); wrijving NIET nagelopen: met slave-knopen die langs de contactrand vastgehouden zijn
-   stopt hij met een singuliere matrix; laat die knopen weg met een knoopselectie en
+   Nagelopen in `AXIS` en `D_PLAN` (krimpverbinding, Hertz-lijncontact, een
+   Code-Aster-testcase) en met Coulomb-wrijving (een blok dat over een blok glijdt); `C_PLAN`
+   rekent (alleen nagelopen met ν = 0). Met wrijving kunnen slave-knopen die een andere
+   oplegging langs de contactrand vasthoudt Code-Aster laten stoppen met een singuliere
+   matrix: de bridge geeft dan een WARNING; laat die knopen weg met een knoopselectie en
    `**ASTER-ZONE SANS_GROUP_NO='<<selectie>>'` (KNOWN_BUGS 141).
    *Bonded* contact in 2D: ERROR. Of Mecway's venster shell-randen laat kiezen voor een
    contact is NIET nagelopen.
@@ -180,7 +182,8 @@ of 2π in elke stap (PL-30, PL-32). Verificatie PL-30 … PL-36: een dikwandige 
 plasticiteit (Hill) in `D_PLAN` en `AXIS`, eerste vloei bij een gat in `C_PLAN`,
 Code-Aster-testcase ssnp159b (`AXIS`, `GDEF_LOG`) door de bridge. NIET meegenomen: de
 bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), verlijmd contact, thermische analyses (S44d).
-Contact: PL-40 en PL-41 (een krimpverbinding, contactdruk binnen 0,01% van Lamé). Het
+Contact: PL-40 … PL-46 (een krimpverbinding binnen 0,01% van Lamé, Hertz-lijncontact, een
+Code-Aster-testcase, wrijving). Het
 openen van zo'n resultaat in het Mecway-venster is NIET nagelopen (een test in de
 Mecway-GUI moet nog).
 

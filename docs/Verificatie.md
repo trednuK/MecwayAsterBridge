@@ -832,7 +832,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-43)
+### 2D en axisymmetrisch (PL-01 … PL-46)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -954,13 +954,29 @@ S30 met vlakke shell-elementen en `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E 
   `contactpressure` 99,77 kPa (−0,23%) en DY van de slave-rand −0,050045 m (−0,09%) tegen
   1e5 Pa en −0,05 m van de test (tolerantie 1%); in de hoeken (de laagste knopen) 97,0 kPa (−3,0%; de test met zijn eigen `SIMPSON`-integratie
   van orde 4 haalt daar +0,08%, hier gecontroleerd op 5%). **PL-43**: hetzelfde in `C_PLAN`
-  (met ν = 0 dezelfde toestand): dezelfde waarden. Wrijving in 2D is nog geen case: de
-  krimpverbinding met wrijving 0,3 stopt met een singuliere matrix omdat de eindknopen van
-  de slave axiaal vastgehouden zijn (KNOWN_BUGS 141). De
+  (met ν = 0 dezelfde toestand): dezelfde waarden. De
   eigen contactinstellingen van de test (`COEF_CONT`, `SIMPSON`, `REAC_GEOM`) zijn niet
   overgenomen: de standaard van de bridge. Met de standaard deformation
   (`GREEN_LAGRANGE` voor elastisch materiaal) is de druk 7,6% lager: bij 5% rek is dat de
   geometrische niet-lineariteit.
+- **PL-45** (Hertz-lijncontact, `D_PLAN`: een kwart cilinder R = 50 mm op een blok
+  200 × 200 mm, t = 10 mm, staal, wrijvingsloos, de vlakke bovenrand van de cilinder 0,26 mm
+  omlaag, gegradeerde quad8-netten, deformation `PETIT`): F′ = 10,41 MN/m uit de reacties,
+  halve breedte b (uit het tweede moment van de contactdruk, b = 2 √(∫p x² / ∫p), exact voor
+  de elliptische Hertz-druk) −0,01% en piekdruk +0,38% tegen Hertz (Johnson 1985 §4.2:
+  b = √(4F′R/(πE*)) = 2,40 mm, p₀ = 2F′/(πb) = 2,77 GPa; tolerantie 3%), 10,8 quad8 over b.
+  De contactdrukken in de knopen wisselen ongeveer ±10% (hoek- en middenknopen,
+  `INTEGRATION='AUTO'`), dus p₀ is de piek van het Hertz-profiel gefit aan de knopen tot
+  0,9 b, niet een enkele knoop. Met
+  `INTEGRATION='NCOTES'` op de kwadratische slave gaf het beginnende puntcontact een
+  nulpivot op `LAGS_C`; de bridge houdt `AUTO` op randen in 2D.
+- **PL-46** (Coulomb-wrijving 0,3, `D_PLAN`: de blokken van PL-42 met een onderblok van
+  3 m, quad4 18 × 12 onder en 12 × 12 boven, bij de start passend, eerst 0,01 m
+  samengedrukt, dan de bovenrand 0,05 m zijwaarts): zodra het grensvlak glijdt is
+  |R_x / R_y| op de vaste onderkant 0,2996 tegen μ = 0,3 (−0,14%; tolerantie 1%; met
+  niet-passende netten −0,7%). Met even brede blokken gleed de slave-rand voorbij het eind
+  van de master en was de verhouding 1,3% te laag (een knoop voorbij de master draagt geen
+  wrijving).
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

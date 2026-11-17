@@ -826,7 +826,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-43)
+### 2D and axisymmetric (PL-01 … PL-46)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -946,11 +946,25 @@ with plane shell elements and `**ASTER-PLANE`; `tests_vlak_2d_nonlin.py`; E = 21
   (−0.23%) and DY of the slave edge −0.050045 m (−0.09%) against the test's 1e5 Pa and
   −0.05 m (tolerance 1%); at the corners (the lowest nodes) 97.0 kPa (−3.0%; the test with its own `SIMPSON`
   integration of order 4 gets +0.08% there, checked here at 5%). **PL-43**: the same in
-  `C_PLAN` (with ν = 0 the same state): the same values. Friction in 2D is not a case yet:
-  the shrink fit with friction 0.3 stops with a singular matrix because its slave end nodes
-  are held axially (KNOWN_BUGS 141). The test's own
+  `C_PLAN` (with ν = 0 the same state): the same values. The test's own
   contact settings (`COEF_CONT`, `SIMPSON`, `REAC_GEOM`) are not copied: the bridge's defaults. With the default deformation (`GREEN_LAGRANGE` for elastic
   material) the pressure is 7.6% lower: at 5% strain that is the geometric nonlinearity.
+- **PL-45** (Hertz line contact, `D_PLAN`: a quarter cylinder R = 50 mm on a block
+  200 × 200 mm, t = 10 mm, steel, frictionless, the cylinder's flat top edge pushed down
+  0.26 mm, graded quad8 meshes, deformation `PETIT`): F′ = 10.41 MN/m from the reactions,
+  half-width b (from the second moment of the contact pressure, b = 2 √(∫p x² / ∫p), exact
+  for the elliptic Hertz pressure) −0.01% and peak pressure +0.38% against Hertz (Johnson
+  1985 §4.2: b = √(4F′R/(πE*)) = 2.40 mm, p₀ = 2F′/(πb) = 2.77 GPa; tolerance 3%), 10.8 quad8
+  over b. The nodal contact pressures alternate by about ±10% (corner and midside nodes,
+  `INTEGRATION='AUTO'`), so p₀ is the peak of the Hertz profile fitted to the nodes up to
+  0.9 b, not one node. With `INTEGRATION='NCOTES'` on the quadratic slave the initial point contact gave a
+  zero pivot on `LAGS_C`; the bridge keeps `AUTO` on edges in 2D.
+- **PL-46** (Coulomb friction 0.3, `D_PLAN`: the blocks of PL-42 with a lower block of
+  3 m, quad4 18 × 12 below and 12 × 12 above, matching at the start, first pressed together
+  0.01 m, then the top edge moved 0.05 m sideways): once the interface slides |R_x / R_y| at
+  the fixed bottom 0.2996 against μ = 0.3 (−0.14%; tolerance 1%; with non-matching meshes
+  −0.7%). With blocks of the same width the slave edge slid past the
+  master's end and the ratio was 1.3% low (a node beyond the master carries no friction).
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as
