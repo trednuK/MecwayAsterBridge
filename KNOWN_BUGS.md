@@ -854,17 +854,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    0.888 mm with three *Displacements*. Nonlinear Static with the internal solver gave no
    solution and with CCX an empty one, probably for the same reason (not re-checked).
 
-37\. **Second run in the same session: `solution` after `mw.open`** (question,
-   `MecwayAsterBridgeMain`). The main window stays open, so a second run uses
-   the `solution` that Mecway gave at the start of the script, while run 1 reopened the
-   model with `mw.open`. Only relevant for route `tabel` and "Mecway solve first as a
-   check" (comparison). Whether Mecway carries that object along is not stated
-   in the API documentation; if in doubt, restart the bridge. Checked in the Mecway 35 GUI
-   (17 Nov 2026, cantilever of 4 line2, route `liml`, "Mecway solve first" on): two runs
-   in one session both complete, the comparison of run 2 uses a new Mecway solve (equal to
-   run 1, Mecway -35.273 mm, the bridge -35.298 mm with the shear of `POU_D_TG`) and the
-   results are written and reopened. Route `tabel` NOT checked.
-
 38\. **Main window non-modal: other Mecway actions not checked** (question,
    `bridge_gui.run_settings_dialog`). The window uses `Show()` with its own message
    loop (`Application.DoEvents`), so Mecway stays usable while it is open. A second

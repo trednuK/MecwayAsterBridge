@@ -1147,7 +1147,10 @@ de oplossing is berekend, maar de commando's erna worden overgeslagen.
   lokale assenstelsel; `REPERE` wordt genegeerd.
 - **Oorzaak**: gemengde modellen. In de bridge bestaat `SIGM_NOEU` alleen op de
   3D-elementen en staat daar in het globale assenstelsel (`_build_postreleve_block`).
-- **Gezien**: elk gemengd model.
+  Dezelfde melding komt met resultaatroute `tabel` en het veld `beam_forces`: de
+  snedekrachten `EFGE_NOEU` worden in het lokale assenstelsel van de balk uitgelezen, en
+  dat is wat de bridge wil.
+- **Gezien**: elk gemengd model; route `tabel` met balken (17 nov 2026, Mecway 35).
 - **Oplossing**: geen nodig.
 - **Status**: onschuldig.
 

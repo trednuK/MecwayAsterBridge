@@ -32,9 +32,9 @@
   (modal mechanism in a supported model, item 48), NL-91 (results up to the last step
   after a real floating point exception `DVP_2`, item 118 removed) and NL-92 .. NL-92c (a
   closed gap equal to Mecway 35; open and with clearance against a hand calculation, item
-  23). Items 5, 9, 10, 22, 23, 27, 34, 37, 38, 46, 54, 55, 58, 63, 64, 65, 106,
-  107, 116, 121, 123, 124, 131 and 135 corrected after a desk review against the code,
-  headless runs or GUI tests in Mecway 35.
+  23). Items 5, 9, 10, 22, 23, 27, 34, 38, 46, 54, 55, 58, 63, 64, 65, 106, 107, 116, 121,
+  123, 124, 131 and 135 corrected after a desk review against the code, headless runs or
+  GUI tests in Mecway 35; item 37 (a second run in one session) removed after GUI tests.
 
 ## V2026.13 – 17 November 2026
 
