@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 0336889, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 8e2f4b0, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3218 van 3224 controles binnen de tolerantie** (622 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3239 van 3245 controles binnen de tolerantie** (631 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2746,6 +2746,27 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 0336889, Code-Aster 17.4
 | PL-58 | Thermomechanische keten, dikwandige buis (T31 + Thermal stress + **ASTER-PLANE AXIS) | som R_y onder = PL-24 (knooptemperaturen) | 9.2155e+06 N | 9.2155e+06 | +0.00% | 0.01% | OK |
 | PL-59 | Thermomechanische keten met inwendige druk (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r binnenwand | 1.0593e-04 m | 1.0593e-04 | +0.00% | 0.1% | OK |
 | PL-59 | Thermomechanische keten met inwendige druk (T31 + Thermal stress + **ASTER-PLANE AXIS) | som R_y onder (360 graden) | 8.2730e+06 N | 8.2730e+06 | +0.00% | 0.1% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | u_r halverwege | 2.3810e-04 m | 2.3810e-04 | +0.00% | 0.5% | OK |
+| PL-60 | Dunne cilinder, inwendige druk (S30 + #ASTER-PLANE AXIS, COQUE_AXIS) | u_y boven | -1.4286e-04 m | -1.4286e-04 | +0.00% | 0.5% | OK |
+| PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | u_r evenaar | 1.6667e-05 m | 1.6667e-05 | -0.00% | 0.5% | OK |
+| PL-61 | Dunne bol, inwendige druk (COQUE_AXIS) | u_y pool | 1.6667e-05 m | 1.6667e-05 | +0.00% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | w midden | -8.1250e-04 m | -8.1227e-04 | +0.03% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | rotatie om Z bij r = a/2 | 0.0012187 rad | 0.0012196 | +0.07% | 0.5% | OK |
+| PL-62 | Ingeklemde ronde plaat onder druk (COQUE_AXIS) | som R_y rand | 3141.6 N | 3141.6 | -0.00% | 0.0001% | OK |
+| PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | M0 per omtrek | 302.61 N m/m | 299.78 | -0.94% | 2% | OK |
+| PL-63 | Lange cilinder met ingeklemd uiteinde, inwendige druk (COQUE_AXIS) | Q0 per omtrek | -7779.6 N/m | -7725 | +0.70% | 2% | OK |
+| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in A (ssls114i) | 1.0000e-09 m | 1.0000e-09 | +0.00% | 0.0001% | OK |
+| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in B (ssls114i) | 1.0000e-09 m | 1.0000e-09 | -0.00% | 0.0001% | OK |
+| PL-64 | ssls114i: cilinder COQUE_AXIS onder druk | DX in N1 (ssls114i) | 1.0000e-09 m | 1.0000e-09 | -0.00% | 0.0001% | OK |
+| PL-65 | Dunne cilinder, druk als tijdtabel (L30 + #ASTER-PLANE AXIS) | u_r t = 0.5 s | 1.1905e-04 m | 1.1905e-04 | +0.00% | 0.5% | OK |
+| PL-65 | Dunne cilinder, druk als tijdtabel (L30 + #ASTER-PLANE AXIS) | u_r t = 1 s | 2.3810e-04 m | 2.3810e-04 | +0.00% | 0.5% | OK |
+| PL-66 | Cilinder met een axiale knoopkracht (COQUE_AXIS) | u_y onder | -3.0315e-07 m | -3.0315e-07 | +0.00% | 0.5% | OK |
+| PL-66 | Cilinder met een axiale knoopkracht (COQUE_AXIS) | R_y boven | 1000 N | 1000 | -0.00% | 0.0001% | OK |
+| PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | u_r rand | 1.5736e-05 m | 1.5736e-05 | -0.00% | 2% | OK |
+| PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | rotatie om Z rand | 4.0454e-04 rad | 4.0549e-04 | +0.24% | 2% | OK |
+| PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | M_z inklemming | 0 N m | -0.17987 | -0.17987 | 1.25664 N m | OK |
+| PL-68 | Cilinder onder eigen gewicht (COQUE_AXIS) | R_y boven | 1209.6 N | 1209.6 | -0.00% | 0.0001% | OK |
+| PL-68 | Cilinder onder eigen gewicht (COQUE_AXIS) | massa (controle) | 123.31 kg | 123.31 | -0.00% | 0.0001% | OK |
 
 ## Boutvoorspanning
 
