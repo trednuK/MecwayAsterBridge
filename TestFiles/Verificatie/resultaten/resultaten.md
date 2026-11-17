@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge d75c22b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 17921d2, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3316 van 3322 controles binnen de tolerantie** (640 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3335 van 3341 controles binnen de tolerantie** (649 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1908,6 +1908,25 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge d75c22b, Code-Aster 17.4
 | NL-92b | Gap met speling 5 mm | u_x tip t = 1 (dicht) | 0.0053286 m | 0.0053286 | -0.00% | 0.0001% | OK |
 | NL-92c | Gap getrokken: open, geen stijfheid | u_x tip | -0.0079365 m | -0.0079365 | -0.00% | 0.0001% | OK |
 | NL-92d | Gap met een Element orientation-kaart langs knoop 1 -> 2, tegen Mecway 35 | u_x tip t.o.v. Mecway 35 | 8.8810e-04 m | 8.8810e-04 | +0.00% | 0.0001% | OK |
+| NL-92e | Gap tussen samenvallende knopen, U = +X, duwen | u_x tip t.o.v. Mecway 35 | 8.8810e-04 m | 8.8810e-04 | +0.00% | 0.0001% | OK |
+| NL-92e | Gap tussen samenvallende knopen, U = +X, duwen | R_x grond t.o.v. Mecway 35 | -8.8810e+05 N | -8.8810e+05 | -0.00% | 0.0001% | OK |
+| NL-92f | Gap tussen samenvallende knopen, U = +X, trekken | u_x tip t.o.v. Mecway 35 | -0.0079365 m | -0.0079365 | +0.00% | 0.0001% | OK |
+| NL-92g | Trek-gap tussen samenvallende knopen (U = -X), trekken | u_x tip t.o.v. Mecway 35 | -8.8810e-04 m | -8.8810e-04 | +0.00% | 0.0001% | OK |
+| NL-92g | Trek-gap tussen samenvallende knopen (U = -X), trekken | R_x grond t.o.v. Mecway 35 | 8.8810e+05 N | 8.8810e+05 | +0.00% | 0.0001% | OK |
+| NL-92h | Gap tussen samenvallende knopen, U = (1, 1, 0) | u_x tip | 0.0079357 m | 0.0079357 | +0.00% | 0.0001% | OK |
+| NL-92h | Gap tussen samenvallende knopen, U = (1, 1, 0) | u_x tip t.o.v. Mecway 35 | 0.0079357 m | 0.0079357 | -0.00% | 0.0001% | OK |
+| NL-92h | Gap tussen samenvallende knopen, U = (1, 1, 0) | u_y tip t.o.v. Mecway 35 | -0.0079355 m | -0.0079355 | -0.00% | 0.0001% | OK |
+| NL-92h | Gap tussen samenvallende knopen, U = (1, 1, 0) | R_x grond t.o.v. Mecway 35 | -99.987 N | -99.987 | +0.00% | 0.0001% | OK |
+| NL-92i | Gap met zijdelings verschoven grondknoop (5 mm), U = +X | u_x tip t.o.v. Mecway 35 | 8.8810e-04 m | 8.8810e-04 | +0.00% | 0.0001% | OK |
+| NL-92j | Gap op een lijn, U = (1, 1, 0) schuin op het element | u_x tip | 0.0079357 m | 0.0079357 | +0.00% | 0.0001% | OK |
+| NL-92j | Gap op een lijn, U = (1, 1, 0) schuin op het element | u_x tip t.o.v. Mecway 35 | 0.0079357 m | 0.0079357 | -0.00% | 0.0001% | OK |
+| NL-92j | Gap op een lijn, U = (1, 1, 0) schuin op het element | u_y tip t.o.v. Mecway 35 | -0.0079355 m | -0.0079355 | -0.00% | 0.0001% | OK |
+| NL-92j | Gap op een lijn, U = (1, 1, 0) schuin op het element | R_x grond t.o.v. Mecway 35 | -99.987 N | -99.987 | +0.00% | 0.0001% | OK |
+| NL-92k | Gap langs X met U = +Y: draagt niets | u_x tip t.o.v. Mecway 35 | 0.0079365 m | 0.0079365 | -0.00% | 0.0001% | OK |
+| NL-92l | Gap langs +Y (geen kaart) met kracht langs de balk: geen dwarsstijfheid | u_x tip t.o.v. Mecway 35 | 7.9365e-06 m | 7.9365e-06 | -0.00% | 0.0001% | OK |
+| NL-92l | Gap langs +Y (geen kaart) met kracht langs de balk: geen dwarsstijfheid | u_y tip t.o.v. Mecway 35 | 9.9999e-04 m | 9.9999e-04 | -0.00% | 0.0001% | OK |
+| NL-92m | Twee gaps met verschillende U: (1, 1, 0) samenvallend en (1, -1, 0) op een lijn | u_x tip | 8.8810e-04 m | 8.8810e-04 | -0.00% | 0.0001% | OK |
+| NL-92m | Twee gaps met verschillende U: (1, 1, 0) samenvallend en (1, -1, 0) op een lijn | u_y tip | 0 m | -1.7811e-17 | -1.7811e-17 | 1e-12 m | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 

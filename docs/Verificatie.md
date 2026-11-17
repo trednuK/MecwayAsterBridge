@@ -2228,16 +2228,33 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   x = 0; een gap (k = 1e9 N/m) van de tip naar een knoop 10 mm verder, die met drie
   *Displacements* (x, y, z = 0) vastzit; 1 MN in +x op de tip. NL-92b: *Initial clearance*
   5 mm en de kracht als tijdstabel 0 .. 1 MN; NL-92c: −1 MN (trekken, gap open); NL-92d:
-  als NL-92 met een *Element orientation*-kaart U = +X op de gap.
+  als NL-92 met een *Element orientation*-kaart U = +X op de gap. NL-92e … NL-92m: gaps
+  met een eigen richting of plaats: NL-92e/f samenvallende knopen U = +X, duwen en trekken; NL-92g samenvallend
+  U = −X (trek-gap), trekken; NL-92h samenvallend U = (1, 1, 0); NL-92i grondknoop 5 mm
+  zijdelings verschoven, U = +X; NL-92j grondknoop 10 mm verder, U = (1, 1, 0); NL-92k
+  idem U = +Y; NL-92l een gap langs +Y zonder kaart, 1 MN in +y en 1 kN langs de balk;
+  NL-92m twee gaps, U = (1, 1, 0) samenvallend en U = (1, −1, 0) 10 mm verder.
 - **Referentie**: NL-92 u = F / (k + EA/L) (gap direct dicht) en Mecway 35 (interne solver,
   Static 3D, in de GUI) 0,00088809946714032 m; NL-92b bij t = 0,5 u = 0,5 F L/EA (open),
   bij t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA; NL-92d Mecway 35
-  headless (Static 3D) met dezelfde geometrie, belasting en kaart, 0,00088809946714 m.
-- **Resultaat**: alle controles binnen 3e-13, ook tegen Mecway (NL-92, NL-92d).
+  headless (Static 3D) met dezelfde geometrie, belasting en kaart, 0,00088809946714 m;
+  NL-92e … NL-92l Mecway 35 headless (interne solver, Static 3D, 17 nov 2026) met dezelfde
+  modellen, en de handberekening (K_tip + k U Uᵀ) u = F met K_tip = diag(EA/L, 3EI/L³);
+  NL-92m alleen de handberekening (beide dicht: u_x = F / (EA/L + k), u_y = 0).
+- **Resultaat**: alle controles binnen 3e-13, ook tegen Mecway (NL-92, NL-92d … NL-92l);
+  de grondreacties binnen 5e-12.
 - **Interpretatie**: de grondknoop zit met *Displacements* vast, niet met *Fixed support*:
   die negeert Mecway op een knoop met alleen een gap (KNOWN_BUGS 135). *Initial clearance*
   is in Mecway een CCX-invoer; NL-92b is alleen tegen de handberekening. Een vaste kracht
   werkt statisch vanaf de eerste stap volledig; daarom heeft NL-92b een tijdstabel.
+  Mecway's gap is een veer k U Uᵀ tussen de knopen, dicht als (u1 − u2) · U ≥ 0, zonder
+  dwarsstijfheid; de plaats van de knopen telt verder niet (NL-92e = NL-92, NL-92h =
+  NL-92j). `DIS_CHOC` sluit als (x2 − x1) · x + (u2 − u1) · x ≤ DIST_1 + DIST_2 langs de
+  lokale x-as; de bridge zet x = U (`ORIENTATION` `VECT_X_Y`, op een cel met lengte met
+  `PRECISION`) en DIST_1 + DIST_2 = (x2 − x1) · U. Een trek-gap op gescheiden knopen zou een
+  negatieve DIST nodig hebben en wordt gemeld (KNOWN_BUGS 23). NL-92l: vóór de stijfheid
+  `K_T_D_L` in `REPERE='LOCAL'` had een dichte gap die niet langs globaal X ligt
+  dwarsstijfheid (u_x 8,9e-7 m in plaats van 7,9e-6 m).
 
 ### Boutvoorspanning (PT)
 
@@ -2630,7 +2647,7 @@ schuin, met en zonder vector + 30°):
   daar 135,1 (zwakke hoofdas) en 601,0 (G·J·A/I_p om het zwaartepunt; de echte
   buig-torsieknik van een hoekprofiel ligt lager, KNOWN_BUGS 115).
 
-### Orientatiekaart (MO-31, LS-79 … LS-82, BU-25, LS-31d … LS-31i, NL-92d)
+### Orientatiekaart (MO-31, LS-79 … LS-82, BU-25, LS-31d … LS-31i, NL-92d … NL-92m)
 
 - **Doel**: Mecway 34 slaat de orientatie ook op als item in Loads & Constraints
   (*Element orientation* op een elementselectie): `<orientation selection="…">` met
@@ -2672,8 +2689,9 @@ schuin, met en zonder vector + 30°):
   uit Mecway's eigen spanningen: afwijking 7e-15 m; het hoekgemiddelde, het isoparametrische
   midden en het zwaartepunt vallen af) en één waarde per element. NL-92d: een kaart langs knoop 1 → 2 op
   een gap geeft hetzelfde als zonder kaart; Mecway gebruikt de kaart echt (U = +Y: de gap
-  draagt niets). Een trek-gap (U tegen knoop 1 → 2), een zijdelingse verschuiving of
-  samenvallende knopen rekent Mecway wel, de bridge meldt ze (ERROR, KNOWN_BUGS 23).
+  draagt niets). Een U schuin op het element, een zijdelingse verschuiving en samenvallende
+  knopen rekent de bridge zoals Mecway (NL-92e … NL-92l; NL-92m tegen de handberekening); een
+  trek-gap op gescheiden knopen meldt hij (ERROR, KNOWN_BUGS 23).
   Niet gemeten: het elementmidden bij volume-elementen, tri3/tri6 en line3.
 
 ### Scheve oplegging naast een opgelegde verplaatsing (MO-09, LS-83)
@@ -4066,7 +4084,7 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
   opgelegde rotaties, element offset en koppelingen (een flexible joint alleen met U, V
   en W vrij, NL-90);
 - gap- en tension-only-elementen in transiente dynamica (statisch wel: LS-54b/c,
-  NL-92 .. NL-92d), dempers in transiente dynamica (DY, MD; dempers wel
+  NL-92 .. NL-92m), dempers in transiente dynamica (DY, MD; dempers wel
   harmonisch en in complexe modes: HR-01d, MC, VH-04c).
 
 Wel gedekt en daarom niet meer in deze lijst: een temperatuurveld als belasting in een

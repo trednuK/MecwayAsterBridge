@@ -1131,12 +1131,14 @@ def _build_cara_elem_block(model_data):
             lines.extend(beam_entries)
             lines.append("    ),")
 
-    # --- ORIENTATION (beams with their own V axis) ---
+    # --- ORIENTATION (beams with their own V axis, gaps with their own
+    # U axis) ---
     orient_entries = []
     for group, v in model_data.get("beam_vect_y", {}).items():
         orient_entries.append(
             "        _F(GROUP_MA='{0}', CARA='VECT_Y', VALE=({1}, {2}, "
             "{3})),".format(group, v[0], v[1], v[2]))
+    orient_entries += _gap_orientation_entries(model_data)
     if len(orient_entries) == 1:
         lines.append("    ORIENTATION={0},".format(
             orient_entries[0].strip().rstrip(",")))
@@ -1276,7 +1278,11 @@ def _discrete_cara_entries(model_data):
             # along the damper's own axis (see the spring above)
             entry(elset, "A_T_D_L", (sec["c"], 0.0, 0.0), local=True)
     for group, gap in model_data.get("gap_groups", {}).items():
-        entry(group, "K_T_D_L", (gap["k"], 0.0, 0.0))
+        # REPERE='LOCAL': DIS_CHOC takes the lateral stiffness from this
+        # matrix in the local frame (dis_choc_frot_syme.F90 raide(2), (3));
+        # in the default GLOBAL frame a closed gap not along global X got
+        # lateral stiffness (up to k; Mecway's gap has none, NL-92l).
+        entry(group, "K_T_D_L", (gap["k"], 0.0, 0.0), local=True)
     return out
 
 
@@ -2781,9 +2787,10 @@ def _build_materials_block(model_data, analysis, plastic_func_map=None):
     out += bridge_orthotropic.composite_block(model_data, concepts)
     for group, gap in model_data.get("gap_groups", {}).items():
         # DIS_CHOC on SEG2: contact as soon as the node distance along the
-        # element axis <= DIST_1 + DIST_2 (checked with a run, Code-Aster
+        # local x axis <= DIST_1 + DIST_2 (checked with a run, Code-Aster
         # 17.4: SEG2 of 0.1 m with DIST_1 = DIST_2 = 0 only closed after
-        # 0.1 m). _prepare_gaps chooses DIST_1 + DIST_2 = L - clearance.
+        # 0.1 m). _prepare_gaps chooses DIST_1 + DIST_2 = (x2 - x1) . U -
+        # clearance.
         out += ("MAT_{0} = DEFI_MATERIAU(DIS_CONTACT=_F(RIGI_NOR={1!r}, "
                 "DIST_1={2!r}, DIST_2={2!r}),)\n").format(
                     group, gap["k"], gap["dist"] / 2.0)
@@ -2804,20 +2811,52 @@ def _elas_args(props, thermal, rayleigh, factor=1.0):
     return elas
 
 
+def _gap_y_axis(u):
+    """Unit vector perpendicular to the unit vector u, deterministic: the
+    cross product of u with the global axis least aligned with u (the local
+    y of VECT_X_Y; no effect on a gap, which has no lateral stiffness)."""
+    axis = min(range(3), key=lambda k: (abs(u[k]), k))
+    e = [0.0, 0.0, 0.0]
+    e[axis] = 1.0
+    y = [u[1] * e[2] - u[2] * e[1], u[2] * e[0] - u[0] * e[2],
+         u[0] * e[1] - u[1] * e[0]]
+    ny = math.sqrt(sum(c * c for c in y))
+    return tuple(c / ny for c in y)
+
+
 def _prepare_gaps(model_data):
     """
-    Gap elements (Mecway manual v33 par. 7.9): unilateral contact between
-    two nodes along U (default node 1 -> 2), closed at an
-    approach displacement >= initial clearance c (default 0, also if the
-    nodes are apart). Code-Aster DIS_CHOC closes at distance <=
-    DIST_1 + DIST_2, so DIST_1 + DIST_2 = L - c per element; elements with
-    the same value share a group and a DEFI_MATERIAU.
-    Not translated (reported): U against the direction node 1 -> 2
-    (tension gap), U oblique to the element, coincident nodes, c > L.
+    Gap elements (Mecway manual v35 par. 7.10): unilateral contact between
+    two nodes along U (default node 1 -> 2, or the U of an Element
+    orientation card / the element attributes), closed at an approach
+    displacement (u1 - u2) . U >= initial clearance c (default 0, also if
+    the nodes are apart). Mecway 35 does not use the node positions
+    otherwise (coincident nodes, a lateral offset and nodes in line give
+    the same result for the same U; NL-92e .. NL-92l), and the gap has no
+    lateral stiffness.
+
+    Code-Aster DIS_CHOC on a SEG2 (dis_choc_frot_syme.F90, v17.4.26):
+    closed when (x2 - x1) . x + (u2 - u1) . x <= DIST_1 + DIST_2, x the
+    local x axis, force along x only (lateral stiffness from the local
+    K_T_D_L, which is 0 here). So x = U and DIST_1 + DIST_2 = D =
+    (x2 - x1) . U - c, which must be >= 0 (catalogue defi_materiau.py:
+    val_min 0):
+      - U along node 1 -> 2: no ORIENTATION (x = node 1 -> 2), D = L - c;
+      - otherwise, also for coincident nodes: ORIENTATION VECT_X_Y with
+        x = U; on a cell of non-zero length only with PRECISION above its
+        length (affe_cara_elem.py; without it <EXCEPTION> MODELISA_90,
+        seen with Code-Aster 17.4), Code-Aster then takes the cell as of
+        zero length (alarm MODELISA_95).
+    Elements with the same D, k and U share a group BRGAP<n> (material,
+    K_T_D_L, orientation). Not translated (ERROR, element without
+    stiffness): D < 0 (tension gap on separate nodes, clearance on
+    coincident nodes, clearance larger than the node distance along U) and
+    coincident nodes without U (Mecway 35 gives no solution either).
     """
     nodes = model_data.get("mesh_nodes", {})
     u_axes = model_data.get("elem_u_axes", {})
     gaps = OrderedDict()
+    groups = model_data.setdefault("gap_groups", OrderedDict())
     extra = model_data.setdefault("extra_ma_groups", OrderedDict())
     for eid, shape, enodes, elset in model_data.get("mesh_elements", []):
         sec = model_data.get("discrete_sections", {}).get(
@@ -2827,39 +2866,109 @@ def _prepare_gaps(model_data):
         p1, p2 = nodes[enodes[0]], nodes[enodes[1]]
         d = [p2[k] - p1[k] for k in range(3)]
         length = math.sqrt(sum(c * c for c in d))
-        reason = None
-        if length <= 0.0:
-            reason = tr("samenvallende knopen", "coincident nodes")
-        elif eid in u_axes:
-            u = u_axes[eid]
-            nu = math.sqrt(sum(c * c for c in u))
-            cos = sum(a * b for a, b in zip(u, d)) / (nu * length) \
-                if nu > 0.0 else 0.0
-            if cos < 1.0 - 1.0e-6:
-                reason = tr("U-as niet langs knoop 1 -> 2 (trek-gap of "
-                            "schuine gap)",
-                            "U axis not along node 1 -> 2 (tension gap or "
-                            "oblique gap)")
-        dist = length - sec["clearance"]
-        if reason is None and dist < 0.0:
-            reason = tr("speling groter dan de elementlengte",
-                        "clearance larger than the element length")
+        # Zero length relative to the coordinates (the mesh is written with
+        # 15 significant digits); Code-Aster itself tests seglong > 0.
+        tol = 1.0e-9 * max([1.0] + [abs(c) for c in tuple(p1) + tuple(p2)])
+        u = u_axes.get(eid)
+        nu = math.sqrt(sum(c * c for c in u)) if u else 0.0
+        reason, hint, unit = None, "", None
+        if nu > 0.0:
+            # a zero vector (attributes 0 0 0) counts as no U
+            unit = tuple(c / nu for c in u)
+        # Without U a short cell keeps its own axis (as before); only an
+        # exact zero length has no direction.
+        zero = length <= (tol if unit is not None else 0.0)
+        if zero and unit is None:
+            reason = tr(
+                "samenvallende knopen zonder U-as: de richting is niet "
+                "bepaald (Mecway 35 rekent dit ook niet)",
+                "coincident nodes without a U axis: the direction is "
+                "undefined (Mecway 35 does not solve this either)")
+            hint = tr(" Geef het element een Element orientation-kaart met U.",
+                      " Give the element an Element orientation card with U.")
+        elif unit is not None and not zero and sum(
+                a * b for a, b in zip(unit, d)) / length > 1.0 - 1.0e-6:
+            unit = None     # U along node 1 -> 2: Code-Aster's own axis
+        if reason is None:
+            if unit is None:
+                dist = length - sec["clearance"]
+            else:
+                proj = 0.0 if zero else sum(a * b for a, b in zip(unit, d))
+                if abs(proj) <= tol:
+                    proj = 0.0
+                dist = proj - sec["clearance"]
+                if proj < 0.0:
+                    reason = tr(
+                        "trek-gap: U wijst (deels) van knoop 2 naar knoop 1, "
+                        "(x2 - x1) . U = {0:.6g} m < 0. Mecway sluit die als "
+                        "de knopen langs U uit elkaar gaan, DIS_CHOC sluit "
+                        "alleen als ze naar elkaar toe gaan",
+                        "tension gap: U points (partly) from node 2 to node "
+                        "1, (x2 - x1) . U = {0:.6g} m < 0. Mecway closes it "
+                        "when the nodes move apart along U, DIS_CHOC only "
+                        "closes when they approach").format(proj)
+                    hint = tr(
+                        " Mecway gebruikt de knoopposities verder niet: leg "
+                        "knoop 2 op knoop 1 (zonder speling) of voorbij "
+                        "knoop 1 langs U, dan rekent de bridge hem wel "
+                        "(alleen als knoop 2 een aparte steunknoop is; een "
+                        "knoop van andere elementen verplaatsen verandert de "
+                        "constructie).",
+                        " Mecway does not use the node positions otherwise: "
+                        "put node 2 on node 1 (without clearance) or beyond "
+                        "node 1 along U, then the bridge translates it (only "
+                        "if node 2 is a separate support node; moving a node "
+                        "of other elements changes the structure).")
+            if reason is None and dist < 0.0:
+                if zero:
+                    reason = tr(
+                        "speling op samenvallende knopen: DIS_CHOC zou "
+                        "DIST_1 + DIST_2 = -speling nodig hebben (minimaal 0)",
+                        "clearance on coincident nodes: DIS_CHOC would need "
+                        "DIST_1 + DIST_2 = -clearance (minimum 0)")
+                else:
+                    reason = tr(
+                        "speling groter dan de afstand van de knopen langs U",
+                        "clearance larger than the distance of the nodes "
+                        "along U")
         if reason:
             model_data.setdefault("skipped_loads", []).append(
                 tr("gap-element {0}", "gap element {0}").format(eid))
-            log(tr("ERROR: Gap-element {0}: {1}; DIS_CHOC kan dat niet. "
-                   "NIET meegenomen (element zonder stijfheid).",
-                   "ERROR: Gap element {0}: {1}; DIS_CHOC cannot do that. "
-                   "NOT included (element without stiffness).").format(
-                    eid, reason))
+            log(tr("ERROR: Gap-element {0}: {1}. NIET meegenomen (element "
+                   "zonder stijfheid).{2}",
+                   "ERROR: Gap element {0}: {1}. NOT included (element "
+                   "without stiffness).{2}").format(eid, reason, hint))
             continue
-        key = (round(dist, 12), sec["k"])
+        ukey = None if unit is None else tuple(round(c, 9) for c in unit)
+        key = (round(dist, 12), sec["k"], ukey)
         if key not in gaps:
             gaps[key] = "BRGAP{0}".format(len(gaps) + 1)
-            model_data.setdefault("gap_groups", OrderedDict())[gaps[key]] = {
-                "k": sec["k"], "dist": dist}
+            groups[gaps[key]] = {"k": sec["k"], "dist": dist, "u": unit,
+                                 "length": 0.0}
             extra[gaps[key]] = []
         extra[gaps[key]].append(eid)
+        group = groups[gaps[key]]
+        group["length"] = max(group["length"], length)
+
+
+def _gap_orientation_entries(model_data):
+    """AFFE_CARA_ELEM ORIENTATION entries of the gap groups with their own
+    U axis (_prepare_gaps): VECT_X_Y = (U, y), and PRECISION above the
+    longest cell when a cell has a length > 0 (Code-Aster: a cell longer
+    than PRECISION gives <EXCEPTION> MODELISA_90, affori.F90)."""
+    out = []
+    for group, gap in model_data.get("gap_groups", {}).items():
+        u = gap.get("u")
+        if u is None:
+            continue
+        vals = ", ".join(repr(float(c)) for c in tuple(u) + _gap_y_axis(u))
+        prec = ""
+        if gap.get("length", 0.0) > 0.0:
+            prec = ", PRECISION={0!r}".format(
+                max(2.0 * gap["length"], 1.0e-9))
+        out.append("        _F(GROUP_MA='{0}', CARA='VECT_X_Y', VALE=({1})"
+                   "{2}),".format(group, vals, prec))
+    return out
 
 
 # ==========================================

@@ -1382,7 +1382,7 @@
   "series": "LS-03 DKT quad4",
   "h": 0.125,
   "note": "Randknopen DX = DY = DZ = 0, rotatie om de randnormaal 0 (hard vrij opgelegd); in het midden is sigma_x = sigma_y en tau_xy = 0, dus von Mises = |sigma_x|.",
-  "seconds": 2.6,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4443,7 +4443,7 @@
   "series": null,
   "h": null,
   "note": "uniforme spanningstoestand: exact met hex8",
-  "seconds": 2.7,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6407,7 +6407,7 @@
   "series": null,
   "h": 0.1,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 4.2,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6469,7 +6469,7 @@
   "series": null,
   "h": 0.05,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 4.7,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6531,7 +6531,7 @@
   "series": null,
   "h": 0.025,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 5.4,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6607,7 +6607,7 @@
   "series": null,
   "h": 0.0125,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 10.1,
+  "seconds": 5.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6683,7 +6683,7 @@
   "series": null,
   "h": 0.00625,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 47.5,
+  "seconds": 29.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7341,7 +7341,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E (PETIT): kritische lastfactor per stap; P tot 0,9 Pcr in 10 stappen.",
-  "seconds": 2.9,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7630,7 +7630,7 @@
   "series": null,
   "h": null,
   "note": "10 x line2 (POU_D_E), tipmassa 10 kg (mass2), balk 1 kg/m3; 3 modes; Mecway stepsize 0,01 s, 1 s.",
-  "seconds": 3.2,
+  "seconds": 3.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9589,7 +9589,7 @@
   "series": null,
   "h": null,
   "note": "rho_12 = 0.1656 (xi = 0.05); CQC t.o.v. SRSS u m2 -6.5%.",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -10237,7 +10237,7 @@
   "series": null,
   "h": null,
   "note": "grens van de WARNING voor kwadratische elementen.",
-  "seconds": 2.9,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11702,7 +11702,7 @@
   "series": null,
   "h": null,
   "note": "Veer 1000 N/m, mass2 2 kg, Damper 8.944 N.s/m (line2).",
-  "seconds": 3.0,
+  "seconds": 2.7,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12588,7 +12588,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde model als VA-01, koppelvlakken handmatig (KOPPEL_).",
-  "seconds": 2.9,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13876,7 +13876,7 @@
   "series": null,
   "h": null,
   "note": "TEMP_IMPO, ECHANGE COEF_H en FLUX_REP FLUN als FORMULE van X, Y, Z; eenheden mm/m/graden C uit de attributen",
-  "seconds": 2.8,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14883,7 +14883,7 @@
   "series": null,
   "h": null,
   "note": "Alleen y >= 0; ligament symmetry, alleen SCHEUR_LIP_BOVEN.",
-  "seconds": 6.5,
+  "seconds": 6.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18207,7 +18207,7 @@
   "series": "AD-01 hex20",
   "h": 0.02,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 12 elementen geven.",
-  "seconds": 3.3,
+  "seconds": 3.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18239,7 +18239,7 @@
   "series": "AD-01 hex20",
   "h": 0.01,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 96 elementen geven.",
-  "seconds": 3.5,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18271,7 +18271,7 @@
   "series": "AD-01 hex20",
   "h": 0.005,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 768 elementen geven.",
-  "seconds": 4.5,
+  "seconds": 4.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18303,7 +18303,7 @@
   "series": "AD-01 hex20",
   "h": 0.0025,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 6144 elementen geven.",
-  "seconds": 8.0,
+  "seconds": 8.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18335,7 +18335,7 @@
   "series": "AD-01 hex20",
   "h": 0.00125,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 49152 elementen geven.",
-  "seconds": 24.3,
+  "seconds": 23.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18367,7 +18367,7 @@
   "series": "AD-01 hex20",
   "h": 0.000625,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 393216 elementen geven.",
-  "seconds": 91.5,
+  "seconds": 91.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18399,7 +18399,7 @@
   "series": null,
   "h": null,
   "note": "Lus uit bridge_adapt (doel 1,5%, max. 6 lussen, Dorfler 0,5, geen buren) met headless Mecway (refine_x2); tussenmodellen modellen/AD-02-L<k>.liml.",
-  "seconds": 26.3,
+  "seconds": 25.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18515,7 +18515,7 @@
   "series": null,
   "h": null,
   "note": "Balk hex20 4x1x1, fixed op de knopen van x = 0 (knoopselectie), traction op het eindvlak; de grootste fout zit bij de inklemming.",
-  "seconds": 3.0,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -22250,7 +22250,7 @@
   "series": null,
   "h": null,
   "note": "Zachte rand: f_n = (2n - 1) c / (4L), decay rate (c/L) artanh(Z / (rho c)) = 182,3 1/s.",
-  "seconds": 3.8,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26566,7 +26566,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T = 900 - 1000 t graden C op alle knopen (0..0,88 s), dt = 0,02 s; staal=16MND5, begin=austeniet",
-  "seconds": 5.7,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -27726,7 +27726,7 @@
   "series": null,
   "h": null,
   "note": "DKT quad4 10 x 2, t = 2 mm, randmomenten.",
-  "seconds": 2.6,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -33234,7 +33234,7 @@
   "series": null,
   "h": null,
   "note": "Voorheen gelijk aan het model zonder temperatuur (alarm MECANONLINE2_97).",
-  "seconds": 2.8,
+  "seconds": 3.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41624,7 +41624,7 @@
   "series": null,
   "h": null,
   "note": "Instelling fields met 'strain' (e.xx) en de hoofdwaarden (s1, tr, e1); zonder geeft de bridge een WARNING en laat de formule weg.",
-  "seconds": 2.7,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -42279,7 +42279,7 @@
   "series": null,
   "h": null,
   "note": "T 100 x 10 x 10 x 90 mm, L = 1 m, 20 POU_D_TG, P = 1000 N. The bridge adds the thickness warping C_w = 3.08e-11 m^6 of the plates (thin-walled theory: 0), restrained at the foot.",
-  "seconds": 2.9,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -46320,7 +46320,7 @@
   "series": null,
   "h": null,
   "note": "tri3: Code-Aster integreert de massa met 1 punt, Mecway exact (consistent): de bridge ligt hoger (KNOWN_BUGS 130).",
-  "seconds": 3.1,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -47658,7 +47658,7 @@
   "series": null,
   "h": null,
   "note": "Mecway gebruikt bij een veer altijd de length adjustment, ook met force=\"true\"; de bridge zet die om in twee knoopkrachten k d naar elkaar toe.",
-  "seconds": 2.9,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -48834,7 +48834,7 @@
   "series": null,
   "h": null,
   "note": "ComplianceMatrix s11..s66 of the same material.",
-  "seconds": 2.7,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -54140,7 +54140,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 23.4,
+  "seconds": 20.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -55556,7 +55556,7 @@
   "series": null,
   "h": null,
   "note": "De plaat van PL-21 als L30, temperature2 293 / 393 / 493 K op 0 / 1 / 2 s, deformation PETIT.",
-  "seconds": 2.5,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57095,7 +57095,7 @@
   "series": null,
   "h": null,
   "note": "DIS_CHOC; de grondknoop met Displacements (geen Fixed, KNOWN_BUGS 135).",
-  "seconds": 2.7,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57141,7 +57141,7 @@
   "series": null,
   "h": null,
   "note": "initialclearance: in Mecway alleen voor CCX (manual par. 7.10.2); niet met Mecway vergeleken.",
-  "seconds": 2.8,
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -57187,7 +57187,7 @@
   "series": null,
   "h": null,
   "note": "Eenzijdig: de gap draagt geen trek.",
-  "seconds": 2.8,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -58098,8 +58098,8 @@
   "analysis": "nonlin_static_3d",
   "series": null,
   "h": null,
-  "note": "Mecway gebruikt de kaart echt: U = +Y laat de gap niets dragen (7,94 mm). Een trek-gap (U tegen knoop 1 -> 2), een zijdelingse verschuiving of samenvallende knopen rekent Mecway wel; de bridge meldt ze (ERROR, KNOWN_BUGS 23).",
-  "seconds": 3.3,
+  "note": "Mecway gebruikt de kaart echt: U = +Y laat de gap niets dragen (7,94 mm, NL-92k). Een trek-gap op gescheiden knopen (U tegen knoop 1 -> 2) rekent Mecway wel, de bridge meldt hem (ERROR, KNOWN_BUGS 23); samenvallende knopen en een U schuin op het element: NL-92e .. NL-92m.",
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -58939,6 +58939,434 @@
    ],
    "harm_basis": "PHYS"
   },
+  "general": {}
+ },
+ "NL-92e": {
+  "id": "NL-92e",
+  "group": "Niet-lineair statisch",
+  "title": "Gap tussen samenvallende knopen, U = +X, duwen",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Cel van lengte nul met ORIENTATION VECT_X_Y (x = U), DIST_1 = DIST_2 = 0; alarmen MODELISA8_15/MODELISA4_9.",
+  "seconds": 3.0,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 0.0008880994671401225,
+    "ref": 0.00088809946714,
+    "rel": 1.3795171602276027e-13,
+    "dev": 1.22514845490862e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 interne solver, Static 3D, headless (F / (k + EA/L), dicht)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "R_x grond t.o.v. Mecway 35",
+    "fem": -888099.4671403446,
+    "ref": -888099.46714032,
+    "rel": -2.7658650651574125e-14,
+    "dev": -2.4563632905483246e-08,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35: reactie in de grondknoop",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92f": {
+  "id": "NL-92f",
+  "group": "Niet-lineair statisch",
+  "title": "Gap tussen samenvallende knopen, U = +X, trekken",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Eenzijdig op de geori\u00ebnteerde route: open bij trekken.",
+  "seconds": 2.8,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": -0.007936507936507938,
+    "ref": -0.00793650793651,
+    "rel": 2.598858628299218e-13,
+    "dev": 2.0625862129364236e-15,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 headless (-F L/EA, open)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92g": {
+  "id": "NL-92g",
+  "group": "Niet-lineair statisch",
+  "title": "Trek-gap tussen samenvallende knopen (U = -X), trekken",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Op samenvallende knopen kan een trek-gap wel (op gescheiden knopen niet: KNOWN_BUGS 23). Duwen: open, 7,94 mm (Mecway 35 headless 0,00793650793650794 m).",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": -0.0008880994671401225,
+    "ref": -0.00088809946714032,
+    "rel": 2.223098007764212e-13,
+    "dev": 1.9743321560961036e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 headless (-F / (k + EA/L), dicht)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "R_x grond t.o.v. Mecway 35",
+    "fem": 888099.4671403446,
+    "ref": 888099.46714032,
+    "rel": 2.7658650651574125e-14,
+    "dev": 2.4563632905483246e-08,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35: reactie in de grondknoop",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92h": {
+  "id": "NL-92h",
+  "group": "Niet-lineair statisch",
+  "title": "Gap tussen samenvallende knopen, U = (1, 1, 0)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "U schuin: de tip wijkt zijdelings uit tot (u1 - u2) . U ~ 0.",
+  "seconds": 3.0,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip",
+    "fem": 0.007935714385066928,
+    "ref": 0.007935714385066912,
+    "rel": 1.9673731344427188e-15,
+    "dev": 1.5612511283791264e-17,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "(K_tip + k U U^T) u = F",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 0.007935714385066928,
+    "ref": 0.00793571438506693,
+    "rel": -2.1859701493807939e-16,
+    "dev": -1.734723475976807e-18,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 interne solver, Static 3D, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_y tip t.o.v. Mecway 35",
+    "fem": -0.007935514410104106,
+    "ref": -0.00793551441010379,
+    "rel": -3.978565929207978e-14,
+    "dev": -3.157196726277789e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 interne solver, Static 3D, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "R_x grond t.o.v. Mecway 35",
+    "fem": -99.98748156731082,
+    "ref": -99.9874815676068,
+    "rel": 2.9602073916432944e-12,
+    "dev": 2.9598368200822733e-10,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35: de gap draagt bijna niets, de tip wijkt zijdelings uit",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92i": {
+  "id": "NL-92i",
+  "group": "Niet-lineair statisch",
+  "title": "Gap met zijdelings verschoven grondknoop (5 mm), U = +X",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Cel van lengte 11,2 mm met VECT_X_Y en PRECISION; DIST_1 + DIST_2 = 10 mm; alarmen MODELISA_95/MODELISA2_7.",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 0.0008880994671401233,
+    "ref": 0.00088809946714,
+    "rel": 1.3880628417511364e-13,
+    "dev": 1.2327378701160185e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 headless: gelijk aan zonder verschuiving",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92j": {
+  "id": "NL-92j",
+  "group": "Niet-lineair statisch",
+  "title": "Gap op een lijn, U = (1, 1, 0) schuin op het element",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Gelijk aan NL-92h: Mecway gebruikt de knoopposities niet.",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip",
+    "fem": 0.007935714385066921,
+    "ref": 0.007935714385066912,
+    "rel": 1.0929850746903992e-15,
+    "dev": 8.673617379884035e-18,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "(K_tip + k U U^T) u = F",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 0.007935714385066921,
+    "ref": 0.00793571438506693,
+    "rel": -1.0929850746903969e-15,
+    "dev": -8.673617379884035e-18,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 interne solver, Static 3D, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_y tip t.o.v. Mecway 35",
+    "fem": -0.007935514410104065,
+    "ref": -0.00793551441010379,
+    "rel": -3.453919872609124e-14,
+    "dev": -2.740863092043355e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 interne solver, Static 3D, headless",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "R_x grond t.o.v. Mecway 35",
+    "fem": -99.98748156717116,
+    "ref": -99.9874815676068,
+    "rel": 4.357025052727907e-12,
+    "dev": 4.3564796214923263e-10,
+    "ok": true,
+    "unit": "N",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35: de gap draagt bijna niets, de tip wijkt zijdelings uit",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92k": {
+  "id": "NL-92k",
+  "group": "Niet-lineair statisch",
+  "title": "Gap langs X met U = +Y: draagt niets",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "DIST_1 + DIST_2 = (x2 - x1) . U = 0: de gap staat precies op sluiten, de tip beweegt niet langs U.",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 0.007936507936507938,
+    "ref": 0.00793650793651,
+    "rel": -2.598858628299218e-13,
+    "dev": -2.0625862129364236e-15,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 headless (F L/EA)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92l": {
+  "id": "NL-92l",
+  "group": "Niet-lineair statisch",
+  "title": "Gap langs +Y (geen kaart) met kracht langs de balk: geen dwarsstijfheid",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "V\u00f3\u00f3r K_T_D_L REPERE='LOCAL' (KNOWN_BUGS 23) gaf de bridge u_x = 8,9e-7 m: de dichte gap had dwarsstijfheid k.",
+  "seconds": 2.9,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip t.o.v. Mecway 35",
+    "fem": 7.936507936507452e-06,
+    "ref": 7.93650793650794e-06,
+    "rel": -6.147426317992808e-14,
+    "dev": -4.87890977618477e-19,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 headless (Fx L/EA: de gap draagt niets dwars)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_y tip t.o.v. Mecway 35",
+    "fem": 0.0009999874001585362,
+    "ref": 0.000999987400158758,
+    "rel": -2.218305595203668e-13,
+    "dev": -2.218277644905342e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "Mecway 35 headless (Fy / (k + 3EI/L^3), dicht)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 6,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "NL-92m": {
+  "id": "NL-92m",
+  "group": "Niet-lineair statisch",
+  "title": "Twee gaps met verschillende U: (1, 1, 0) samenvallend en (1, -1, 0) op een lijn",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Twee groepen met elk een eigen ORIENTATION; alleen tegen de handberekening (Mecway niet gedraaid).",
+  "seconds": 2.9,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x tip",
+    "fem": 0.0008880994671400566,
+    "ref": 0.0008880994671403197,
+    "rel": -2.9629098653727315e-13,
+    "dev": -2.6313586726223193e-16,
+    "ok": true,
+    "unit": "m",
+    "tol": 1e-06,
+    "tol_abs": null,
+    "source": "beide dicht: k (U1 U1^T + U2 U2^T) = k I in het xy-vlak, u_x = F / (EA/L + k)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "u_y tip",
+    "fem": -1.7811319816891313e-17,
+    "ref": 0.0,
+    "rel": null,
+    "dev": -1.7811319816891313e-17,
+    "ok": true,
+    "unit": "m",
+    "tol": null,
+    "tol_abs": 1e-12,
+    "source": "symmetrie: u_y = 0",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 7,
+  "n_elem": 6,
+  "settings": {},
   "general": {}
  }
 }

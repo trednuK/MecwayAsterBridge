@@ -121,6 +121,31 @@ _ALARM_HINTS = {
     "MODELISA8_13": (
         u"zie MODELISA4_8 (dubbele cellen).",
         u"see MODELISA4_8 (duplicate cells)."),
+    # Gap with its own U axis (bridge_to_aster._prepare_gaps): a zero-length
+    # cell between coincident nodes, or ORIENTATION VECT_X_Y with PRECISION
+    # on a cell of non-zero length (seen with Code-Aster 17.4, NL-92e .. m).
+    "MODELISA8_15": (
+        u"een cel met samenvallende knopen: normaal voor een gap tussen "
+        u"samenvallende knopen; anders: controleer het mesh.",
+        u"a cell with coincident nodes: normal for a gap between coincident "
+        u"nodes; otherwise: check the mesh."),
+    "MODELISA4_9": (
+        u"zie MODELISA8_15 (cel met samenvallende knopen).",
+        u"see MODELISA8_15 (cell with coincident nodes)."),
+    "MODELISA_95": (
+        u"normaal voor een gap met een eigen U-as die niet langs knoop 1 -> 2 "
+        u"ligt: Code-Aster neemt die cel als lengte nul, zodat hij de "
+        u"richting U krijgt.",
+        u"normal for a gap with its own U axis not along node 1 -> 2: "
+        u"Code-Aster takes that cell as of zero length, so that it gets the "
+        u"direction U."),
+    "MODELISA2_7": (
+        u"normaal voor een gap met een eigen U-as (de richting U vervangt de "
+        u"richting van de cel); anders heeft een element twee oriëntaties "
+        u"gekregen en geldt de laatste.",
+        u"normal for a gap with its own U axis (the direction U replaces the "
+        u"direction of the cell); otherwise an element got two orientations "
+        u"and the last one counts."),
     "ALGELINE2_74": (
         u"de controle van de modes (VERI_MODE: fout per mode en Sturm) is "
         u"niet gehaald; zie de tabel in study.mess.",

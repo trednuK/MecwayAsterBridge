@@ -975,8 +975,195 @@ TESTS += [
                 "U = +X geven 0,00088809946714 m, gelijk aan zonder "
                 "kaart")],
          note="Mecway gebruikt de kaart echt: U = +Y "
-              "laat de gap niets dragen (7,94 mm). Een trek-gap (U tegen "
-              "knoop 1 -> 2), een zijdelingse verschuiving of "
-              "samenvallende knopen rekent Mecway wel; de bridge meldt ze "
-              "(ERROR, KNOWN_BUGS 23)."),
+              "laat de gap niets dragen (7,94 mm, NL-92k). Een trek-gap op "
+              "gescheiden knopen (U tegen knoop 1 -> 2) rekent Mecway wel, "
+              "de bridge meldt hem (ERROR, KNOWN_BUGS 23); samenvallende "
+              "knopen en een U schuin op het element: NL-92e .. NL-92m."),
+]
+
+
+# ------------------------------------------------------------------
+# NL-92e .. NL-92m: gaps met een eigen U-as (Element orientation-kaart op
+# het gap-element) tegen Mecway 35 (interne solver, Static 3D, headless,
+# 17 nov 2026), zelfde balk als NL-92. Mecway's gap is een veer k U U^T
+# tussen de knopen, dicht als (u1 - u2) . U >= 0, zonder dwarsstijfheid;
+# de plaats van de knopen telt verder niet (samenvallende knopen, een
+# zijdelingse verschuiving en knopen op een lijn geven hetzelfde). De bridge
+# geeft de cel dan ORIENTATION VECT_X_Y met x = U (met PRECISION als de cel
+# lengte heeft), DIST_1 + DIST_2 = (x2 - x1) . U. Handberekening als de gap
+# dicht is: (K_tip + k U U^T) u = F, K_tip = diag(EA/L, 3EI/L^3), I = 2e-8
+# m^4 (buiging in y over de 20 mm). NL-92l: een gap langs +Y zonder kaart,
+# met 1 kN langs de balk: de gesloten gap mag die niet dragen (vóór de fix
+# K_T_D_L REPERE='LOCAL' droeg hij 89 %).
+# ------------------------------------------------------------------
+B92 = 3 * 210e9 * (0.03 * 0.02 ** 3 / 12) / L92 ** 3
+TIP92 = 5           # tipknoop van de balk (linemesh: knopen 1 .. 5)
+
+
+def build_nl92g(gaps, fx=F92, fy=0.0):
+    """Balk van NL-92 met gaps van de tip naar eigen grondknopen.
+    gaps: [(grondpunt, kaart-U of None)]; een grondpunt op de tip wordt een
+    eigen knoop (samenvallend, buiten de positie-ontdubbeling van
+    Model.node)."""
+    def build():
+        m = Model("L30", timesteps=TS)
+        m.elset("Balk", "Staal")
+        _e, n = linemesh(m, "Balk", 4, (0, 0, 0), (L92, 0, 0))
+        m.mat("Staal", '<geometric type="RectBar" recta="0.02 m" '
+              'rectb="0.03 m" />', '<mechanical type="Isotropic" '
+              'youngsmodulus="210000 MPa" poissonratio="0.3" />')
+        m.elset("Spleet", "GapMat")
+        m.mat("GapMat", '<mechanical type="Gap" '
+              'closedstiffness="1000000000 N/m" />')
+        grounds = []
+        for i, (p, card_u) in enumerate(gaps):
+            m.nodes.append(tuple(float(c) for c in p))
+            g = len(m.nodes)
+            grounds.append(g)
+            eid = m.elem("Spleet", "line2", [n[-1], g])
+            if card_u:
+                m.element_selection("GapOrient%d" % (i + 1), [eid])
+                m.add('<orientation selection="GapOrient%d"><ux>%r</ux>'
+                      '<uy>%r</uy><uz>%r</uz><vx>0</vx><vy>0</vy><vz>0</vz>'
+                      '<angleu>0 rad</angleu></orientation>'
+                      % ((i + 1,) + tuple(float(c) for c in card_u)))
+        m.node_selection("Vast", [n[0]])
+        m.node_selection("Tip", [n[-1]])
+        m.node_selection("Grond", grounds)
+        m.add('<fixed selection="Vast" />')
+        for d in ("x", "y", "z"):
+            m.add('<displacement selection="Grond"><value>0 mm</value>'
+                  '<x>%d</x><y>%d</y><z>%d</z></displacement>'
+                  % (d == "x", d == "y", d == "z"))
+        m.add('<force selection="Tip"><x>%r N</x><y>%r N</y><z>0 N</z>'
+              '</force>' % (float(fx), float(fy)))
+        return m
+    return build
+
+
+def _nl92g(var):
+    return lambda r: r.node(var, TIP92)
+
+
+def _nl92g_rx(r):
+    return r.total("reactionforcex", "Grond")
+
+
+def _nl92g_closed(n, fx=F92):
+    """Tip (u_x, u_y) with one closed gap along unit n (x, y components)."""
+    kxx, kxy, kyy = EAL92 + K92 * n[0] ** 2, K92 * n[0] * n[1], \
+        B92 + K92 * n[1] ** 2
+    det = kxx * kyy - kxy * kxy
+    return fx * kyy / det, -fx * kxy / det
+
+
+R2 = 0.5 ** 0.5
+UX45, UY45 = _nl92g_closed((R2, R2))
+# Mecway 35, U = (1, 1, 0) at 45 degrees (headless, 17 nov 2026), with
+# coincident nodes; with the ground node 10 mm further Mecway gives the same
+# to 11 digits (u_x 0.00793571438507, R_x -99.9874815667)
+MW45 = (0.00793571438506693, -0.00793551441010379, -99.9874815676068)
+
+
+def _nl92g_45(case_id, title, ground, note):
+    return Case(
+        case_id, GROUP, title, "nonlin_static_3d",
+        build_nl92g([(ground, (1.0, 1.0, 0.0))]),
+        [Check("u_x tip", _nl92g("displx"), ref=UX45, tol=1e-6, unit="m",
+               in_series=False, source="(K_tip + k U U^T) u = F"),
+         Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"), ref=MW45[0],
+               tol=1e-6, unit="m", in_series=False,
+               source="Mecway 35 interne solver, Static 3D, headless"),
+         Check("u_y tip t.o.v. Mecway 35", _nl92g("disply"), ref=MW45[1],
+               tol=1e-6, unit="m", in_series=False,
+               source="Mecway 35 interne solver, Static 3D, headless"),
+         Check("R_x grond t.o.v. Mecway 35", _nl92g_rx, ref=MW45[2],
+               tol=1e-6, unit="N", in_series=False,
+               source="Mecway 35: de gap draagt bijna niets, de tip wijkt "
+               "zijdelings uit")],
+        note=note)
+
+
+TESTS += [
+    Case("NL-92e", GROUP, "Gap tussen samenvallende knopen, U = +X, duwen",
+         "nonlin_static_3d",
+         build_nl92g([((L92, 0, 0), (1.0, 0.0, 0.0))]),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"),
+                ref=0.00088809946714, tol=1e-6, unit="m", in_series=False,
+                source="Mecway 35 interne solver, Static 3D, headless "
+                "(F / (k + EA/L), dicht)"),
+          Check("R_x grond t.o.v. Mecway 35", _nl92g_rx,
+                ref=-888099.46714032, tol=1e-6, unit="N", in_series=False,
+                source="Mecway 35: reactie in de grondknoop")],
+         note="Cel van lengte nul met ORIENTATION VECT_X_Y (x = U), "
+              "DIST_1 = DIST_2 = 0; alarmen MODELISA8_15/MODELISA4_9."),
+    Case("NL-92f", GROUP, "Gap tussen samenvallende knopen, U = +X, trekken",
+         "nonlin_static_3d",
+         build_nl92g([((L92, 0, 0), (1.0, 0.0, 0.0))], fx=-F92),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"),
+                ref=-0.00793650793651, tol=1e-6, unit="m", in_series=False,
+                source="Mecway 35 headless (-F L/EA, open)")],
+         note="Eenzijdig op de georiënteerde route: open bij trekken."),
+    Case("NL-92g", GROUP, "Trek-gap tussen samenvallende knopen (U = -X), "
+         "trekken", "nonlin_static_3d",
+         build_nl92g([((L92, 0, 0), (-1.0, 0.0, 0.0))], fx=-F92),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"),
+                ref=-0.00088809946714032, tol=1e-6, unit="m",
+                in_series=False,
+                source="Mecway 35 headless (-F / (k + EA/L), dicht)"),
+          Check("R_x grond t.o.v. Mecway 35", _nl92g_rx,
+                ref=888099.46714032, tol=1e-6, unit="N", in_series=False,
+                source="Mecway 35: reactie in de grondknoop")],
+         note="Op samenvallende knopen kan een trek-gap wel (op gescheiden "
+              "knopen niet: KNOWN_BUGS 23). Duwen: open, 7,94 mm (Mecway "
+              "35 headless 0,00793650793650794 m)."),
+    _nl92g_45("NL-92h", "Gap tussen samenvallende knopen, U = (1, 1, 0)",
+              (L92, 0, 0), "U schuin: de tip wijkt zijdelings uit tot "
+              "(u1 - u2) . U ~ 0."),
+    Case("NL-92i", GROUP, "Gap met zijdelings verschoven grondknoop "
+         "(5 mm), U = +X", "nonlin_static_3d",
+         build_nl92g([((L92 + 0.01, 0.005, 0), (1.0, 0.0, 0.0))]),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"),
+                ref=0.00088809946714, tol=1e-6, unit="m", in_series=False,
+                source="Mecway 35 headless: gelijk aan zonder "
+                "verschuiving")],
+         note="Cel van lengte 11,2 mm met VECT_X_Y en PRECISION; DIST_1 + "
+              "DIST_2 = 10 mm; alarmen MODELISA_95/MODELISA2_7."),
+    _nl92g_45("NL-92j", "Gap op een lijn, U = (1, 1, 0) schuin op het "
+              "element", (L92 + 0.01, 0, 0),
+              "Gelijk aan NL-92h: Mecway gebruikt de knoopposities niet."),
+    Case("NL-92k", GROUP, "Gap langs X met U = +Y: draagt niets",
+         "nonlin_static_3d",
+         build_nl92g([((L92 + 0.01, 0, 0), (0.0, 1.0, 0.0))]),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"),
+                ref=0.00793650793651, tol=1e-6, unit="m", in_series=False,
+                source="Mecway 35 headless (F L/EA)")],
+         note="DIST_1 + DIST_2 = (x2 - x1) . U = 0: de gap staat precies "
+              "op sluiten, de tip beweegt niet langs U."),
+    Case("NL-92l", GROUP, "Gap langs +Y (geen kaart) met kracht langs de "
+         "balk: geen dwarsstijfheid", "nonlin_static_3d",
+         build_nl92g([((L92, 0.01, 0), None)], fx=1.0e3, fy=F92),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92g("displx"),
+                ref=7.93650793650794e-06, tol=1e-6, unit="m",
+                in_series=False,
+                source="Mecway 35 headless (Fx L/EA: de gap draagt niets "
+                "dwars)"),
+          Check("u_y tip t.o.v. Mecway 35", _nl92g("disply"),
+                ref=0.000999987400158758, tol=1e-6, unit="m",
+                in_series=False,
+                source="Mecway 35 headless (Fy / (k + 3EI/L^3), dicht)")],
+         note="Vóór K_T_D_L REPERE='LOCAL' (KNOWN_BUGS 23) gaf de bridge "
+              "u_x = 8,9e-7 m: de dichte gap had dwarsstijfheid k."),
+    Case("NL-92m", GROUP, "Twee gaps met verschillende U: (1, 1, 0) "
+         "samenvallend en (1, -1, 0) op een lijn", "nonlin_static_3d",
+         build_nl92g([((L92, 0, 0), (1.0, 1.0, 0.0)),
+                      ((L92 + 0.01, 0, 0), (1.0, -1.0, 0.0))]),
+         [Check("u_x tip", _nl92g("displx"), ref=F92 / (EAL92 + K92),
+                tol=1e-6, unit="m", in_series=False,
+                source="beide dicht: k (U1 U1^T + U2 U2^T) = k I in het "
+                "xy-vlak, u_x = F / (EA/L + k)"),
+          Check("u_y tip", _nl92g("disply"), ref=0.0, tol_abs=1e-12, unit="m",
+                in_series=False, source="symmetrie: u_y = 0")],
+         note="Twee groepen met elk een eigen ORIENTATION; alleen tegen de "
+              "handberekening (Mecway niet gedraaid)."),
 ]

@@ -2216,16 +2216,34 @@ samples) plus the kinks of the load tables (NL-20).
   x = 0; a gap (k = 1e9 N/m) from the tip to a node 10 mm further, held by three
   *Displacements* (x, y, z = 0); 1 MN in +x on the tip. NL-92b: *Initial clearance* 5 mm and
   the force as a time table 0 .. 1 MN; NL-92c: −1 MN (pulling, gap open); NL-92d: as NL-92
-  with an *Element orientation* card U = +X on the gap.
+  with an *Element orientation* card U = +X on the gap. NL-92e … NL-92m: gaps with their
+  own direction or position: NL-92e/f coincident
+  nodes U = +X, pushing and pulling; NL-92g coincident U = −X (tension gap), pulling; NL-92h
+  coincident U = (1, 1, 0); NL-92i ground node offset 5 mm to the side, U = +X; NL-92j
+  ground node 10 mm further, U = (1, 1, 0); NL-92k the same with U = +Y; NL-92l a gap along
+  +Y without a card, 1 MN in +y and 1 kN along the beam; NL-92m two gaps, U = (1, 1, 0)
+  coincident and U = (1, −1, 0) 10 mm further.
 - **Reference**: NL-92 u = F / (k + EA/L) (gap closed at once) and Mecway 35 (internal
   solver, Static 3D, in the GUI) 0.00088809946714032 m; NL-92b at t = 0.5 u = 0.5 F L/EA
   (open), at t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA; NL-92d Mecway 35
-  headless (Static 3D) with the same geometry, load and card, 0.00088809946714 m.
-- **Result**: all checks within 3e-13, also against Mecway (NL-92, NL-92d).
+  headless (Static 3D) with the same geometry, load and card, 0.00088809946714 m;
+  NL-92e … NL-92l Mecway 35 headless (internal solver, Static 3D, 17 Nov 2026) with the same
+  models, and the hand calculation (K_tip + k U Uᵀ) u = F with K_tip = diag(EA/L, 3EI/L³);
+  NL-92m the hand calculation only (both closed: u_x = F / (EA/L + k), u_y = 0).
+- **Result**: all checks within 3e-13, also against Mecway (NL-92, NL-92d … NL-92l); the
+  ground reactions within 5e-12.
 - **Interpretation**: the ground node is held by *Displacements*, not by *Fixed support*:
   Mecway ignores that on a node with only a gap (KNOWN_BUGS 135). *Initial clearance* is a CCX
   input in Mecway; NL-92b is against the hand calculation only. A constant force acts in
   full from the first static step; that is why NL-92b has a time table.
+  Mecway's gap is a spring k U Uᵀ between the nodes, closed when (u1 − u2) · U ≥ 0, without
+  lateral stiffness; the node positions do not count otherwise (NL-92e = NL-92, NL-92h =
+  NL-92j). `DIS_CHOC` closes when (x2 − x1) · x + (u2 − u1) · x ≤ DIST_1 + DIST_2 along the
+  local x axis; the bridge sets x = U (`ORIENTATION` `VECT_X_Y`, on a cell with a length
+  with `PRECISION`) and DIST_1 + DIST_2 = (x2 − x1) · U. A tension gap on separate nodes
+  would need a negative DIST and is reported (KNOWN_BUGS 23). NL-92l: before the stiffness
+  `K_T_D_L` in `REPERE='LOCAL'` a closed gap not along global X had lateral stiffness
+  (u_x 8.9e-7 m instead of 7.9e-6 m).
 
 ### Bolt pretension (PT)
 
@@ -2615,7 +2633,7 @@ along X and skew, with and without vector + 30°):
   axis) and 601.0 (G·J·A/I_p about the centroid; the real flexural-torsional factor of an
   angle is lower, KNOWN_BUGS 115).
 
-### Element orientation card (MO-31, LS-79 … LS-82, BU-25, LS-31d … LS-31i, NL-92d)
+### Element orientation card (MO-31, LS-79 … LS-82, BU-25, LS-31d … LS-31i, NL-92d … NL-92m)
 
 - **Goal**: Mecway 34 also stores the orientation as an item in Loads & Constraints
   (*Element orientation* on an element selection): `<orientation selection="…">` with
@@ -2657,9 +2675,9 @@ along X and skew, with and without vector + 30°):
   separate probe trapezoids in quad4 and quad8; backed out from Mecway's own stresses:
   deviation 7e-15 m; the corner mean, the isoparametric centre and the area centroid are
   ruled out) and with one value per element. NL-92d: a card along node 1 → 2 on a gap gives the same as no
-  card; Mecway does use the card (U = +Y: the gap carries nothing). A tension gap (U against
-  node 1 → 2), a lateral offset or coincident nodes Mecway does compute, the bridge reports
-  them (ERROR, KNOWN_BUGS 23). Not measured: the element centre of solids, tri3/tri6 and
+  card; Mecway does use the card (U = +Y: the gap carries nothing). A U oblique to the
+  element, a lateral offset and coincident nodes the bridge computes as Mecway does
+  (NL-92e … NL-92l; NL-92m against the hand calculation); a tension gap on separate nodes it reports (ERROR, KNOWN_BUGS 23). Not measured: the element centre of solids, tri3/tri6 and
   line3.
 
 ### Skew support next to an imposed displacement (MO-09, LS-83)
@@ -4052,7 +4070,7 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
   rotations, element offset and couplings (a flexible joint only with U, V and W free,
   NL-90);
 - gap and tension-only elements in transient dynamics (covered in statics: LS-54b/c,
-  NL-92 .. NL-92d), dampers in transient dynamics (DY, MD; dampers are
+  NL-92 .. NL-92m), dampers in transient dynamics (DY, MD; dampers are
   covered in harmonic response and complex modes: HR-01d, MC, VH-04c).
 
 Covered and therefore no longer in this list: a temperature field as a load in a

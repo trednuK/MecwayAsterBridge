@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Gaps with their own direction, and no lateral stiffness** (KNOWN_BUGS 23). A gap whose
+  *Element orientation* card gives a U that is not along node 1 -> 2 is now translated: a U
+  oblique to the element, a ground node offset to the side, and a gap between coincident
+  nodes (also a tension gap there). The result equals Mecway 35 (NL-92e .. NL-92l; NL-92m
+  against the hand calculation). Fix: a
+  closed gap that does not lie along global X had lateral stiffness (up to its closed
+  stiffness k) and carried forces across its axis; Mecway's gap does not (NL-92l). Models with
+  such gaps give different, correct results now. Still refused (ERROR, with the reason): a
+  tension gap on separate nodes, a clearance on coincident nodes, coincident nodes without a
+  card.
+
 - **Fix: clear message when route `tabel` has no Mecway solution.** Route `tabel` writes the
   results into Mecway's own solution. On a model that Mecway's own solver cannot solve (for
   example contact on shell edges) Mecway leaves a solution without nodes. The bridge then said

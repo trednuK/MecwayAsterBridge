@@ -52,9 +52,10 @@
 #   beams (POU_*)     V and angle -> model_data["beam_orientations"]
 #                     (bridge_mesh: VECT_Y per beam cell)
 #   gaps              U -> model_data["elem_u_axes"] (gap direction,
-#                     bridge_to_aster._prepare_gaps; only along node
-#                     1 -> 2, NL-92d; Mecway 35 also computes a tension
-#                     gap, an offset or coincident nodes, KNOWN_BUGS 23)
+#                     bridge_to_aster._prepare_gaps: ORIENTATION
+#                     VECT_X_Y when U is not along node 1 -> 2, also on
+#                     coincident nodes, NL-92d .. NL-92m; not a tension
+#                     gap on separate nodes, KNOWN_BUGS 23)
 #   shells            U -> model_data["card_u_axes"] (U,V of the result
 #                     field shell_forces, aster_results_export u_axes);
 #                     no effect on the solution with isotropic material;

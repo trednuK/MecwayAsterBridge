@@ -446,15 +446,22 @@ Code-Aster value per node) and logs the largest difference per variable.
    a model with contact2 (one DEFI_CONTACT per calculation; reported). On shell faces
    only the normal displacement, the rotations stay free.
 
-23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap
-   (U against node 1 -> 2), skewed U or coincident nodes (reported, element
-   without stiffness), although Mecway 35 computes all three (headless, 17 Nov 2026, the
-   NL-92 model with an *Element orientation* card on the gap, Static 3D): U = -X is open
-   when pushed and closed when pulled (0.888 mm), coincident nodes with U = +X close when
-   pushed, a ground node 5 mm to the side with U = +X closes as without offset, and
-   U = +Y leaves the gap without force (so Mecway does use the card; NL-92d: a card along
-   node 1 -> 2 equals no card); U at 45 degrees to the element (nodes in line) leaves the gap
-   with almost no force (ground reaction 100 N of 1 MN). The 'force of open gap' of CCX is not
+23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap on
+   separate nodes (U from node 2 to node 1 with the nodes apart; reported, element without
+   stiffness). Mecway 35 closes it when the nodes move apart along U; DIS_CHOC closes only
+   when (x2 - x1) . x + (u2 - u1) . x <= DIST_1 + DIST_2 (dis_choc_frot_syme.F90, 17.4.26),
+   which would need a negative DIST (catalogue: val_min 0), and no other Code-Aster discrete
+   law closes on elongation (CHOC_ELAS_TRAC, DIS_BILI_ELAS: source read). The ERROR advises
+   putting node 2 on node 1 when it is a separate support node: Mecway does not use the node
+   positions otherwise (NL-92e .. NL-92l), and a tension gap between coincident nodes is
+   supported (NL-92g). Also reported: a clearance on coincident nodes (same reason) and
+   coincident nodes without a U axis (Mecway 35 gives no solution either). Equal to Mecway 35
+   since 17 Nov 2026: a U oblique to the element, a lateral offset and coincident nodes
+   (`ORIENTATION` `VECT_X_Y`, on a cell with a length with `PRECISION`; NL-92e .. NL-92l, two
+   gaps with different U in NL-92m against the hand calculation),
+   and a closed gap has no lateral stiffness (`K_T_D_L` in `REPERE='LOCAL'`; before that a
+   closed gap not along global X got lateral stiffness up to k, NL-92l). An oriented gap in
+   `DYNA_NON_LINE`: NOT verified. The 'force of open gap' of CCX is not
    used. A closed gap is equal
    to Mecway 35 (internal solver, Static 3D, GUI) to 1e-12 (NL-92); pulled open it carries
    nothing (NL-92c, against the hand calculation only);

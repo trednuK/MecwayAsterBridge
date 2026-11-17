@@ -1,0 +1,44 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="0.1 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.25" y="0" z="0" />
+  <node nid="3" x="0.5" y="0" z="0" />
+  <node nid="4" x="0.75" y="0" z="0" />
+  <node nid="5" x="1" y="0" z="0" />
+  <node nid="6" x="1" y="0" z="0" />
+  <elset name="Balk" material="Staal">
+    <elem eid="1" shape="line2" nodes="1 2" />
+    <elem eid="2" shape="line2" nodes="2 3" />
+    <elem eid="3" shape="line2" nodes="3 4" />
+    <elem eid="4" shape="line2" nodes="4 5" />
+  </elset>
+  <elset name="Spleet" material="GapMat">
+    <elem eid="5" shape="line2" nodes="5 6" />
+  </elset>
+  <orientation selection="GapOrient1"><ux>1.0</ux><uy>0.0</uy><uz>0.0</uz><vx>0</vx><vy>0</vy><vz>0</vz><angleu>0 rad</angleu></orientation>
+  <fixed selection="Vast" />
+  <displacement selection="Grond"><value>0 mm</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Grond"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Grond"><value>0 mm</value><x>0</x><y>0</y><z>1</z></displacement>
+  <force selection="Tip"><x>1000000.0 N</x><y>0.0 N</y><z>0 N</z></force>
+  <mat name="Staal">
+    <geometric type="RectBar" recta="0.02 m" rectb="0.03 m" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+  </mat>
+  <mat name="GapMat">
+    <mechanical type="Gap" closedstiffness="1000000000 N/m" />
+  </mat>
+  <elementselection name="GapOrient1">
+    <element eid="5" />
+  </elementselection>
+  <nodeselection name="Vast">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Tip">
+    <node nid="5" />
+  </nodeselection>
+  <nodeselection name="Grond">
+    <node nid="6" />
+  </nodeselection>
+</liml>
