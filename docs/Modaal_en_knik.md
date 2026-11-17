@@ -890,7 +890,9 @@ kwadratisch: (K + s C + s² M) φ = 0, met s = −ζω_n ± i·ω_d. Per mode ge
 **Wat Mecway doet** (Mecway 33, headless gemeten): een *Frequency*-analyse (V30)
 negeert Rayleigh-demping (massa op een balk met α = 3,55 1/s: dezelfde frequenties
 5,6494 / 8,4741 / 564,94 Hz als zonder, geen decay rate) en geeft met een
-*Damper*-element geen oplossing. Rayleigh-demping hoort volgens de manual bij
+*Damper*-element geen oplossing (opnieuw met Mecway 35, grondknopen vast met
+*Displacement*, 17 nov 2026; in een *Dynamic response* werkt de demper wel en is gelijk aan
+de bridge, Verificatie DY-04). Rayleigh-demping hoort volgens de manual bij
 *Dynamic Response* (Mecway Ltd., 2026, §9.26). Complexe modes kent Mecway alleen in
 de akoestiek met impedantie (§6.9.2). De bridge volgt daarom Code-Aster
 (`CALC_MODES` met `MATR_AMOR`, testcase sdld21c) als **optie**; standaard rekent hij

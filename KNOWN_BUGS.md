@@ -817,13 +817,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    different steps per interval (kinks that are not a multiple of the step) it
    has NOT been checked with a run.
 
-47\. **Springs in Buckling and modal with prestress: no geometric stiffness** (question). The
+47\. **Tensioned springs in Buckling: no geometric stiffness** (question). The
    bridge applies k and c along the element's own axis (DISCRET `REPERE='LOCAL'`), as Mecway
    (manual v35 §7.7, §7.9: spring = truss without density, damper along its length).
    Compared with Mecway 35 headless (13/17 Nov 2026): static (PT-09/10, also inclined), modal
    (mass on a spring, along X and at 45°: 3.55881 Hz in Mecway, the bridge and √(k/m)/2π) and
    dynamic response with a damper (DY-04a/b, Newmark: bridge = Mecway to 1e-7 of F/k; with the
-   default HHT the first step differs, see Verification DY). Spring-only nodes must be held
+   default HHT the bridge is 2e-3 of F/k off, consistent with its documented first step,
+   Verification DY-01/DY-04). Mecway 35 gives no Frequency solution with a damper, also with
+   the ground held by *Displacement* (17 Nov 2026). Spring-only nodes must be held
    with *Displacement* in X, Y and Z: Mecway ignores a `<fixed>` on them (item 135), which was
    the singular system of earlier hand-written spring models. Still open: Mecway gives a
    tensioned spring a geometric stiffness in Buckling (measured with a pretensioned spring,

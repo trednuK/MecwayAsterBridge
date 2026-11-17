@@ -2148,7 +2148,7 @@ U-documentatie gevonden):
 - **Referentie**: u = F/k·(1 − e^(−ζωt)(cos ω_d t + ζ/√(1 − ζ²) sin ω_d t)) (Clough &
   Penzien, 1993, hfst. 4).
 - **Resultaat**: grootste afwijking van de exacte respons 1,54e-4 van F/k in (a) en (b),
-  u(2 s) gelijk binnen 0,001%. Mecway 35 headless op hetzelfde model: dezelfde 1,54e-4,
+  u(2 s) gelijk binnen 0,002%. Mecway 35 headless op hetzelfde model: dezelfde 1,54e-4,
   en de bridge is gelijk aan Mecway tot 1e-7 van F/k. Met de standaard HHT α = −0,1
   wijkt de bridge in de eerste 0,5 s 2,0e-3 van F/k af (eerste stap met F₀ = 0, zie
   hierboven).

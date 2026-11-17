@@ -934,6 +934,8 @@ def _dy04_hist(r, angle):
     a = math.radians(angle)
     pt = (math.cos(a), math.sin(a), 0.0)
     hx, hy = r.history("displx", pt), r.history("disply", pt)
+    if [t for t, _u in hx] != [t for t, _u in hy]:
+        raise ValueError("displx and disply have different output times")
     return [(t, ux * pt[0] + uy * pt[1]) for (t, ux), (_t, uy) in zip(hx, hy)]
 
 

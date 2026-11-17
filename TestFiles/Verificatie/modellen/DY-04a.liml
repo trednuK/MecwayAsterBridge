@@ -1,0 +1,33 @@
+<liml version="33">
+  <analysis type="D30" />
+  <timesteps timeperiod="2.0 s" stepsize="0.001 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="1" y="0" z="0" />
+  <node nid="3" x="2" y="0" z="0" />
+  <elset name="Veer" material="Veer">
+    <elem eid="1" shape="line2" nodes="1 2" />
+  </elset>
+  <elset name="Demper" material="Demper">
+    <elem eid="2" shape="line2" nodes="2 3" />
+  </elset>
+  <displacement selection="Grond"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Grond"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Grond"><value>0 m</value><x>0</x><y>0</y><z>1</z></displacement>
+  <displacement selection="Massa"><value>0 m</value><x>-0.0</x><y>1.0</y><z>0.0</z></displacement>
+  <displacement selection="Massa"><value>0 m</value><x>0.0</x><y>0.0</y><z>1.0</z></displacement>
+  <mass2 selection="Massa"><value>2.0 kg</value></mass2>
+  <force selection="Massa"><x>10.0 N</x><y>0.0 N</y><z>0 N</z></force>
+  <mat name="Veer">
+    <mechanical type="Spring" springconstant="1000.0 N/m" />
+  </mat>
+  <mat name="Demper">
+    <mechanical type="Damper" dampingcoefficient="8.94427190999916 N.s/m" />
+  </mat>
+  <nodeselection name="Grond">
+    <node nid="1" />
+    <node nid="3" />
+  </nodeselection>
+  <nodeselection name="Massa">
+    <node nid="2" />
+  </nodeselection>
+</liml>

@@ -2139,7 +2139,7 @@ U documentation):
 - **Reference**: u = F/k·(1 − e^(−ζωt)(cos ω_d t + ζ/√(1 − ζ²) sin ω_d t)) (Clough &
   Penzien, 1993, ch. 4).
 - **Result**: largest deviation from the exact response 1.54e-4 of F/k in (a) and (b),
-  u(2 s) equal within 0.001%. Mecway 35 headless on the same model: the same 1.54e-4,
+  u(2 s) equal within 0.002%. Mecway 35 headless on the same model: the same 1.54e-4,
   and the bridge equals Mecway to 1e-7 of F/k. With the default HHT α = −0.1 the bridge
   deviates 2.0e-3 of F/k in the first 0.5 s (first step with F₀ = 0, see above).
 - **Interpretation**: spring and damper act along their own axis, as in Mecway; the

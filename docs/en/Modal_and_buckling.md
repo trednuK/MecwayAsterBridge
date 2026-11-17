@@ -876,7 +876,8 @@ damping (matrix C) a mode decays and the eigenvalue problem becomes quadratic:
 **What Mecway does** (Mecway 33, measured headless): a *Frequency* analysis (V30)
 ignores Rayleigh damping (mass on a beam with α = 3.55 1/s: the same frequencies
 5.6494 / 8.4741 / 564.94 Hz as without, no decay rate) and gives no solution with a
-*Damper* element. According to the manual Rayleigh damping belongs to *Dynamic
+*Damper* element (again with Mecway 35, ground nodes held by *Displacement*, 17 Nov 2026;
+in a *Dynamic response* the damper works and equals the bridge, Verification DY-04). According to the manual Rayleigh damping belongs to *Dynamic
 Response* (Mecway Ltd., 2026, §9.26). Mecway only knows complex modes in acoustics
 with impedance (§6.9.2). The bridge therefore follows Code-Aster (`CALC_MODES` with
 `MATR_AMOR`, test case sdld21c) as an **option**; by default it computes like Mecway.

@@ -7,7 +7,7 @@
   "series": null,
   "h": 0.05,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 3.3,
+  "seconds": 3.9,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -55809,6 +55809,102 @@
   "n_elem": 265,
   "settings": {
    "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "DY-04a": {
+  "id": "DY-04a",
+  "group": "Dynamica",
+  "title": "Massa-veer-demper, staplast, Newmark (Mecway Damper, langs X)",
+  "analysis": "dyna_impl_3d",
+  "series": null,
+  "h": null,
+  "note": "k 1000 N/m, m 2 kg, c 8.944 N.s/m (zeta 0.1), F 10 N; Mecway 35 headless = bridge to 1e-7 of F/k (KNOWN_BUGS 47).",
+  "seconds": 47.2,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "verloop t.o.v. exact",
+    "fem": 0.00015351651752575773,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.00015351651752575773,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.0005,
+    "source": "max |u - u_exact| / (F/k), u_exact = F/k (1 - e^(-zeta w t) (cos wd t + zeta/sqrt(1 - zeta^2) sin wd t)) (Clough & Penzien ch. 4); Newmark dt = 1 ms gives 1.5e-4, as Mecway 35",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u(t = 2 s)",
+    "fem": 0.009894788265228271,
+    "ref": 0.009894927980899975,
+    "rel": -1.4119928105952517e-05,
+    "dev": -1.3971567170388555e-07,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "exact step response, zeta = c / (2 sqrt(k m)) = 0.1",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 3,
+  "n_elem": 2,
+  "settings": {
+   "schema": "NEWMARK"
+  },
+  "general": {}
+ },
+ "DY-04b": {
+  "id": "DY-04b",
+  "group": "Dynamica",
+  "title": "Massa-veer-demper, staplast, Newmark (Mecway Damper, 45 graden in XY)",
+  "analysis": "dyna_impl_3d",
+  "series": null,
+  "h": null,
+  "note": "As DY-04a, spring and damper along (1, 1, 0); checks the local axis of DIS_T (REPERE='LOCAL').",
+  "seconds": 50.1,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "verloop t.o.v. exact",
+    "fem": 0.0001535536160264181,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0001535536160264181,
+    "ok": true,
+    "unit": "-",
+    "tol": null,
+    "tol_abs": 0.0005,
+    "source": "max |u - u_exact| / (F/k), u_exact = F/k (1 - e^(-zeta w t) (cos wd t + zeta/sqrt(1 - zeta^2) sin wd t)) (Clough & Penzien ch. 4); Newmark dt = 1 ms gives 1.5e-4, as Mecway 35",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u(t = 2 s)",
+    "fem": 0.009894787966033257,
+    "ref": 0.009894927980899975,
+    "rel": -1.4150165315847076e-05,
+    "dev": -1.4001486671813557e-07,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "exact step response, zeta = c / (2 sqrt(k m)) = 0.1",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 3,
+  "n_elem": 2,
+  "settings": {
+   "schema": "NEWMARK"
   },
   "general": {}
  }

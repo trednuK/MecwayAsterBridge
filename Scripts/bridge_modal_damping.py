@@ -18,7 +18,9 @@
 # 2026; docs/Modaal_en_knik.md sec. 6): a Frequency analysis (V30) ignores
 # Rayleigh damping (mass on a beam with alpha = 3,55 1/s: the same
 # frequencies 5,6494 / 8,4741 / 564,94 Hz as without, no decay rate) and
-# computes no solution with a Damper element (line2); according to the
+# computes no solution with a Damper element (line2; again with Mecway 35
+# and the ground held by Displacement, 17 Nov 2026, KNOWN_BUGS 47, while
+# a Dynamic response with that damper equals the bridge, DY-04); per the
 # manual, Rayleigh only belongs to Dynamic Response (manual v33 sec. 9.26
 # "Analysis types"). Mecway only knows complex modes in acoustics with
 # impedance (sec. 6.9.2): <mode frequency=".. Hz" decayrate=".. 1/s"> with

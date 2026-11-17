@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge a020b17, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge f61b424, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3154 van 3160 controles binnen de tolerantie** (600 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3158 van 3164 controles binnen de tolerantie** (602 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -962,6 +962,10 @@ Gemaakt door `run_verificatie.py` op 2026-11-13 (bridge a020b17, Code-Aster 17.4
 | DY-03c | Staafgolf, staplast, impliciet (HHT, dt=T/77) | tipsnelheid | 0.24629 m/s | 0.24817 | +0.76% | 1.4% | OK |
 | DY-03c | Staafgolf, staplast, impliciet (HHT, dt=T/77) | max. tipverplaatsing | 9.5238e-05 m | 9.2696e-05 | -2.67% | 4.3% | OK |
 | DY-03c | Staafgolf, staplast, impliciet (HHT, dt=T/77) | verloop t.o.v. 1D-keten | 0 - | 3.9249e-08 | 3.9249e-08 | 1e-05 - | OK |
+| DY-04a | Massa-veer-demper, staplast, Newmark (Mecway Damper, langs X) | verloop t.o.v. exact | 0 - | 1.5352e-04 | 1.5352e-04 | 0.0005 - | OK |
+| DY-04a | Massa-veer-demper, staplast, Newmark (Mecway Damper, langs X) | u(t = 2 s) | 0.0098949 m | 0.0098948 | -0.00% | 0.1% | OK |
+| DY-04b | Massa-veer-demper, staplast, Newmark (Mecway Damper, 45 graden in XY) | verloop t.o.v. exact | 0 - | 1.5355e-04 | 1.5355e-04 | 0.0005 - | OK |
+| DY-04b | Massa-veer-demper, staplast, Newmark (Mecway Damper, 45 graden in XY) | u(t = 2 s) | 0.0098949 m | 0.0098948 | -0.00% | 0.1% | OK |
 | DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | spanning midden | 1.0150e+07 Pa | 1.0158e+07 | +0.08% | 0.32% | OK |
 | DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | reactie na reflectie | 2030.1 N | 2029.2 | -0.04% | 0.26% | OK |
 | DY-20a | Staafgolf, frictionless met normaalverplaatsing, expliciet (FACE_IMPO) | tipverplaatsing eind | 1.5000e-04 m | 1.5000e-04 | +0.00% | 0.01% | OK |

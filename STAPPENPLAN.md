@@ -473,7 +473,8 @@ First read `docs/Modaal_en_knik.md` and KNOWN_BUGS 46-49. Existing route:
 - *S10f (done):* Mecway (measured headless) has no damped modes: V30 ignores
   Rayleigh damping (same frequencies, no decay rate; according to manual
   §9.26 Rayleigh belongs to D30/D31) and gives no solution with a Damper element (D30 ignored the
-  hand-written damper too, cf. KNOWN_BUGS 47). Mecway only knows complex modes
+  hand-written damper too, cf. KNOWN_BUGS 47; S46, 17 Nov 2026: with the ground held by
+  *Displacement* V30 still gives no solution, but D30 does and equals the bridge, DY-04). Mecway only knows complex modes
   acoustically (`<mode frequency=".. Hz" decayrate=".. 1/s">`, seen headless). Built
   as an option: setting `modal_complex` (page Modal, off by default = real modes
   like Mecway, INFO when there is damping in the model), `bridge_modal_damping.py`: C = αM + βK
@@ -2661,7 +2662,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 37 | Second run in the same session: `solution` after `mw.open` | *draft*: low (session behaviour) |  |  |
 | 38 | Main window non-modal: other Mecway actions not checked | *draft*: low (GUI behaviour) |  |  |
 | 41 | Explicit: TCHAMWA with a variable step not checked | *draft*: low (niche, unverified) |  |  |
-| 47 | Springs and dampers: not compared against a Mecway solution (now: springs in Buckling and modal with prestress) | medium; answered: settings checked (spring-only nodes held by *Displacement* in X, Y, Z, item 135 trap avoided); Mecway 35 headless = bridge in modal (3.55881 Hz = √(k/m)/2π, along X and at 45°) and dynamic response with a damper (Newmark: 1e-7 of F/k; both 1.54e-4 from the exact solution); with the default HHT 2e-3 (documented first step); static earlier (PT-09/10) | item narrowed to the open part (geometric stiffness of a tensioned spring, S15c); new verification DY-04a/b; docs Verification and Mecway features NL+EN | this commit |
+| 47 | Springs and dampers: not compared against a Mecway solution (now: tensioned springs in Buckling) | medium; test setting (the old Mecway failures: `fixed` on spring-only nodes, item 135); with the ground held by *Displacement* Mecway 35 headless = bridge in modal (3.55881 Hz = √(k/m)/2π, along X and at 45°) and in a dynamic response with a damper (Newmark: 1e-7 of F/k; both 1.54e-4 from the exact solution); with the default HHT 2e-3, consistent with the documented first step; V30 with a damper: still no Mecway solution | item narrowed to the open part (geometric stiffness of a tensioned spring, S15c); new verification DY-04a/b; docs Verification and Mecway features NL+EN | this commit |
 | 116 | Element orientation card: parts not compared with Mecway | *draft*: low (unverified comparison) |  |  |
 | 118 | Results after `DVP_2` not seen in a real DVP_2 run | *draft*: low (rare failure path) |  |  |
 | 120 | Hysteretic damping: not on all discrete elements, stresses not checked | *draft*: low (niche damping) |  |  |
