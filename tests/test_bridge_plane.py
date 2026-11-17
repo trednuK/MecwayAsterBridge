@@ -230,6 +230,11 @@ def test_route_a():
     md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE AXIS") + ts),
                   analysis="ther_3d", route="tabel")
     check(md is None and _errors(), "T31 chain + AXIS, route tabel: ERROR")
+    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE C_PLAN") + ts),
+                  analysis="ther_3d")
+    check(md is None and any("only AXIS" in m or "alleen AXIS" in m
+                             for m in _errors()),
+          "T31 chain + C_PLAN: ERROR (only AXIS)")
     md = _extract(_liml("T31", PS, loads=_switch(
         "**ASTER-PLANE AXIS" + chr(10) + "**ASTER-LASBRON Q=1000")), analysis="ther_3d")
     check(md is None and any("LASBRON" in m for m in _errors()),

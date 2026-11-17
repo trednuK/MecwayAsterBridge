@@ -351,6 +351,13 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
     C_PLAN/D_PLAN: the plane shells are a 2D thermal model ('PLAN') already
     without the line (INFO). Refused in AXIS (NOT verified): welding
     (filler material uses 3D_DIAG), metallurgy and bonded contact."""
+    if switch != "AXIS" and model_data.get("thermo_mech"):
+        # The chain would run its mechanical part as shells (NOT verified)
+        return _fatal(
+            "Thermal stress (thermisch -> mechanische keten) met '#ASTER-PLANE "
+            "{0}' in {1} wordt (nog) niet vertaald; alleen AXIS.",
+            "Thermal stress (thermal -> mechanical chain) with '#ASTER-PLANE "
+            "{0}' in {1} is not translated (yet); only AXIS.", switch, atype)
     if switch != "AXIS":
         log("INFO: '#ASTER-PLANE {0}' in {1}: thermal plane shells are a 2D "
             "model ('PLAN') already; the line is not needed.".format(
