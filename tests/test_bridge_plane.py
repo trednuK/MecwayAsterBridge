@@ -209,6 +209,21 @@ def test_route_a():
               md["plane"]["route"] == "A",
               "{0} + #ASTER-PLANE {1} -> {2}: {3}".format(
                   atype, sw, mod, _errors()))
+    # S44d: T30/T31 + AXIS -> thermal_axis, shell data kept for bridge_thermal
+    md = _extract(_liml("T30", PS, loads=_switch("**ASTER-PLANE AXIS")),
+                  analysis="ther_3d")
+    check(md is not None and md.get("thermal_axis") and "plane" not in md
+          and md.get("shell_sections", {}).get("P"),
+          "T30 + AXIS: thermal_axis, no plane, shells kept: {0}".format(
+              _errors()))
+    md = _extract(_liml("T30", PS, x0=-0.5,
+                        loads=_switch("**ASTER-PLANE AXIS")),
+                  analysis="ther_3d")
+    check(md is None and _errors(), "T30 + AXIS with X < 0: ERROR")
+    md = _extract(_liml("T30", PS, loads=_switch("**ASTER-PLANE C_PLAN")),
+                  analysis="ther_3d")
+    check(md is not None and not md.get("thermal_axis"),
+          "T30 + C_PLAN: INFO, thermal PLAN as before")
     md = _extract(_liml("L30", PS, loads=_switch("#ASTER-VLAK C_PLAN") +
                         THERMAL), analysis="nonlin_static_3d")
     check(md is not None and md["elset_modelisations"].get("P") == "C_PLAN",
@@ -216,7 +231,7 @@ def test_route_a():
               _errors()))
     for atype, text, ana, what in (
             ("S20", "#ASTER-PLANE AXIS", "lin_static_3d", "S20 + switch"),
-            ("T30", "#ASTER-PLANE AXIS", "ther_3d", "T30 + switch"),
+            ("V30", "#ASTER-PLANE AXIS", "modal_3d", "V30 + switch"),
             ("S30", "#ASTER-PLANE PLAN", "lin_static_3d", "unknown value"),
             ("S30", "#ASTER-PLANE C_PLAN", "nonlin_static_3d",
              "S30 with nonlin_static_3d"),

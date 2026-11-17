@@ -574,6 +574,31 @@ def _face_area(stype, pts):
     return sum(bridge_mesh._face_integrals(stype, pts)[0])
 
 
+def _face_revolved(stype, pts):
+    """2 pi int r dA of a plane cell about the Y axis (r = X): with
+    isoparametric shape functions r = sum N_i x_i, so int r dA = sum x_i
+    int N_i dA (exact with the nodal weights of _face_integrals)."""
+    w = bridge_mesh._face_integrals(stype, pts)[0]
+    return 2.0 * math.pi * sum(wi * p[0] for wi, p in zip(w, pts))
+
+
+def _seg_revolved(pts):
+    """2 pi int r dl of a SEG2 (2 points) or SEG3 (corner, corner, middle;
+    3-point Gauss) about the Y axis (r = X)."""
+    total = 0.0
+    for xi, w in ((-0.774596669241483, 5.0 / 9.0), (0.0, 8.0 / 9.0),
+                  (0.774596669241483, 5.0 / 9.0)):
+        if len(pts) == 3:
+            sh = (0.5 * xi * (xi - 1.0), 0.5 * xi * (xi + 1.0), 1.0 - xi * xi)
+            d = (xi - 0.5, xi + 0.5, -2.0 * xi)
+        else:
+            sh, d = (0.5 * (1.0 - xi), 0.5 * (1.0 + xi)), (-0.5, 0.5)
+        x = sum(s * p[0] for s, p in zip(sh, pts))
+        t = [sum(dk * p[c] for dk, p in zip(d, pts)) for c in range(3)]
+        total += w * math.sqrt(sum(c * c for c in t)) * x
+    return 2.0 * math.pi * total
+
+
 # Tetrahedra (corner indices, Code-Aster order) per volume type; exact for
 # elements with straight edges and flat faces (otherwise an approximation).
 _TETS = {
@@ -614,6 +639,10 @@ class _Thermal(object):
         self.used_names = set(model_data.get("mesh_group_names", set()))
         self.nodes = model_data["mesh_nodes"]
         self.transient = th["transient"]
+        # **ASTER-PLANE AXIS (S44d, bridge_plane.apply): the plane shells as
+        # an axisymmetric model about Y (MODELISATION 'AXIS' instead of
+        # 'PLAN'; no thickness, sizes of edges and elements revolved)
+        self.axis = bool(model_data.get("thermal_axis"))
         self.nonlinear = False
         self.has_exchange = False  # ECHANGE / RAYONNEMENT / SOUR_NL
         self.counter = 0
@@ -705,6 +734,15 @@ class _Thermal(object):
                 continue
             info = {"cls": "solid" if dim == "3D" else "shell", "mat": mat,
                     "t": 1.0, "f": 1.0, "n": len(elems)}
+            if dim == "2D" and self.axis:
+                # AXIS: the shell thickness does not count (the model is per
+                # radian about Y); Z = 0 was checked in bridge_plane
+                log("INFO: Elset '{0}' -> thermal MODELISATION='AXIS' (the "
+                    "shell thickness does not count).".format(elset))
+                self.elsets[elset] = dict(info, t=1.0, f=1.0)
+                for eid, atype, cn in elems:
+                    self.elem[eid] = (elset, info["cls"], atype, cn)
+                continue
             if dim == "2D":
                 t = md.get("shell_sections", {}).get(elset, {}).get(
                     "thickness")
@@ -828,6 +866,10 @@ class _Thermal(object):
             e = self.elsets[elset]
             pts = lambda ns: [self.nodes[n] for n in ns]
             if cls == "shell" and fid in (5, 6):
+                if self.axis:
+                    # The face of a cross-section has no meaning in AXIS
+                    parts.append(("axisface", 0.0, [], 1.0, 1.0, key))
+                    continue
                 parts.append(("shellface", _face_area(atype, pts(cn)), cn,
                               e["f"], e["t"], key))
                 continue
@@ -840,9 +882,10 @@ class _Thermal(object):
                 parts.append(("solid", _face_area(stype, pts(snodes)),
                               snodes, 1.0, 1.0, key))
             else:
-                parts.append(("shelledge",
-                              _seg_length(pts(snodes)) * e["t"], snodes,
-                              e["f"], e["t"], key))
+                size = (_seg_revolved(pts(snodes)) if self.axis else
+                        _seg_length(pts(snodes)) * e["t"])
+                parts.append(("shelledge", size, snodes, e["f"], e["t"],
+                              key))
         return parts
 
     def _shells_group(self):
@@ -925,6 +968,16 @@ class _Thermal(object):
     def _face_targets(self, sel, label):
         parts = self.face_parts(sel)
         kinds = OrderedDict()     # kind -> OrderedDict((f, t) -> True)
+        axisfaces = sum(1 for p in parts if p[0] == "axisface")
+        if axisfaces:
+            self.skip(tr("{0}: {1} vlak(ken) van de doorsnede (faceid 5/6) "
+                         "in '{2}': in een axisymmetrisch model (AXIS) geen "
+                         "oppervlak; alleen randen (faceid 1..4)",
+                         "{0}: {1} face(s) of the cross-section (faceid "
+                         "5/6) in '{2}': no surface in an axisymmetric model "
+                         "(AXIS); only edges (faceid 1..4)").format(
+                             label, axisfaces, sel))
+            parts = [p for p in parts if p[0] != "axisface"]
         for kind, _a, _n, f, t, _key in parts:
             if kind != "inactive":
                 kinds.setdefault(kind, OrderedDict())[(f, t)] = True
@@ -1163,6 +1216,8 @@ class _Thermal(object):
             pts = [self.nodes[n] for n in cn]
             if cls == "solid":
                 vol += _solid_volume(atype, pts)
+            elif self.axis:
+                vol += _face_revolved(atype, pts)
             else:
                 vol += _face_area(atype, pts) * e["t"]
             kinds.setdefault(cls, OrderedDict()).setdefault(
@@ -1812,6 +1867,17 @@ class _Thermal(object):
             self.skip(tr("{0}: formule in x, y, z op knopen",
                          "{0}: formula in x, y, z on nodes").format(label))
             return
+        if self.axis:
+            # A point source in AXIS is a ring source per radian: NOT
+            # verified (the MASS_THER route below is per radian, the factor
+            # would be 1 / (2 pi r) per node)
+            self.skip(tr("{0}: warmtestroom op knopen in een axisymmetrisch "
+                         "model (AXIS) wordt niet vertaald; gebruik een "
+                         "heat flow op een rand",
+                         "{0}: heat flow on nodes in an axisymmetric model "
+                         "(AXIS) is not translated; use a heat flow on an "
+                         "edge").format(label))
+            return
         nodes = self.selection_nodes(load["sel"], "node")
         tgt = self.node_target(load["sel"], "node", load["tag"])
         if tgt is None or not nodes:
@@ -2058,7 +2124,9 @@ class _Thermal(object):
         solids = [g for g, i in self.elsets.items() if i["cls"] == "solid"]
         shells = [g for g, i in self.elsets.items() if i["cls"] == "shell"]
         affe = []
-        for groups, mod in ((solids, "3D"), (shells + self.edges, "PLAN"),
+        for groups, mod in ((solids, "3D"),
+                            (shells + self.edges,
+                             "AXIS" if self.axis else "PLAN"),
                             (self.skin3d, "3D")):
             if groups:
                 affe.append("_F(GROUP_MA={0}, PHENOMENE='THERMIQUE', "

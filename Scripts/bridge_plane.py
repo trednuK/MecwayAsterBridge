@@ -106,6 +106,9 @@ _BRIDGE_ANALYSIS = {"MECA_STATIQUE": "lin_static_3d",
 # modelisation. Mecway keeps <timesteps>, plasticity and temperatures of the
 # 3D type; the solver per type:
 ROUTE_A_SOLVERS = {"S30": "MECA_STATIQUE", "L30": "STAT_NON_LINE"}
+# Thermal types with the line (S44d): bridge_thermal computes plane shells as
+# 'PLAN' already; '**ASTER-PLANE AXIS' makes them 'AXIS' (_apply_thermal)
+THERMAL_TYPES = ("T30", "T31")
 _SWITCH_VALUES = ("C_PLAN", "D_PLAN", "AXIS")
 # Loads and constraints with a verified 2D route
 _HANDLED = ("fixed", "pinnedsupport", "displacement", "force",
@@ -170,6 +173,8 @@ def apply(model_data, run_cfg, elset_shapes):
         # Also for a manually chosen other analysis (otherwise the plane
         # elements would be computed as shells)
         return _apply_acoustic(model_data, run_cfg, elset_shapes, atype)
+    if switch and atype in THERMAL_TYPES:
+        return _apply_thermal(model_data, elset_shapes, atype, switch)
     if switch:
         if atype not in ROUTE_A_SOLVERS:
             return _fatal(
@@ -331,6 +336,61 @@ def apply(model_data, run_cfg, elset_shapes):
             atype, mod, factor,
             "per radian in Code-Aster, 360 degrees in Mecway" if axis else
             "per unit thickness in Code-Aster, thickness t in Mecway"))
+    return True
+
+
+def _apply_thermal(model_data, elset_shapes, atype, switch):
+    """T30/T31 with '**ASTER-PLANE' (S44d). AXIS: checks (plane elements
+    only, Z = 0, X >= 0) and model_data["thermal_axis"] = True for
+    bridge_thermal (MODELISATION 'AXIS'; no model_data["plane"]: there are no
+    forces or reactions to scale, and the shell data stay for
+    bridge_thermal). C_PLAN/D_PLAN: the plane shells are a 2D thermal model
+    ('PLAN') already without the line (INFO). Refused in AXIS (NOT
+    verified): the thermal -> mechanical chain (Thermal stress in T31),
+    welding (filler material uses 3D_DIAG), metallurgy and bonded contact."""
+    if switch != "AXIS":
+        log("INFO: '#ASTER-PLANE {0}' in {1}: thermal plane shells are a 2D "
+            "model ('PLAN') already; the line is not needed.".format(
+                switch, atype))
+        return True
+    custom = model_data.get("aster_custom") or {}
+    for present, what in (
+            (model_data.get("thermo_mech"), "Thermal stress (thermal -> "
+             "mechanical)"),
+            (custom.get("welding"), "#ASTER-LASBRON"),
+            (custom.get("metallurgy"), "#ASTER-METALLURGIE"),
+            (model_data.get("bonded"), "Bonded contact")):
+        if present:
+            return _fatal(
+                "{0} in een axisymmetrisch thermisch model ('#ASTER-PLANE "
+                "AXIS' in {1}) wordt (nog) niet vertaald.",
+                "{0} in an axisymmetric thermal model ('#ASTER-PLANE AXIS' "
+                "in {1}) is not translated (yet).", what, atype)
+    found = False
+    for elset in list(model_data.get("elset_modelisations", {})):
+        shapes = set(elset_shapes.get(elset, ()))
+        if not shapes:
+            continue
+        if not shapes <= PLANE_SHAPES:
+            return _fatal(
+                "Elset '{0}' bevat {1}; met '#ASTER-PLANE AXIS' ({2}) "
+                "vertaalt de bridge alleen vlakke elementen (tri3, tri6, "
+                "quad4, quad8).",
+                "Elset '{0}' contains {1}; with '#ASTER-PLANE AXIS' ({2}) "
+                "the bridge only translates plane elements (tri3, tri6, "
+                "quad4, quad8).", elset, ", ".join(sorted(shapes -
+                                                          PLANE_SHAPES)),
+                atype)
+        found = True
+    if not found:
+        return _fatal("Geen vlakke elementen in de 2D-analyse {0}.",
+                      "No plane elements in the 2D analysis {0}.", atype)
+    if not _check_nodes(model_data, atype, True):
+        return False
+    model_data["thermal_axis"] = True
+    log("INFO: {0} with '#ASTER-PLANE AXIS': thermal MODELISATION='AXIS' "
+        "about Y (per radian in Code-Aster, 360 degrees in Mecway).".format(
+            atype))
     return True
 
 
