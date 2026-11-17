@@ -2358,8 +2358,9 @@ def _static_check_block(model_data):
     Only information for a hand check: no comparison with the loads.
     Never stops the run: an element that cannot compute the option (e.g.
     POU_D_T_GD, POST_ELEM MASS_INER gives CALCUL_37, Code-Aster 17.4) only
-    skips the check (BRIDGE_STATCHECK_SKIPPED in the .mess). With POU_D_T_GD
-    beams the mass part is not even tried: Code-Aster writes the CALCUL_37
+    skips that part (BRIDGE_STATCHECK_FOUT in the .mess;
+    BRIDGE_STATCHECK_SKIPPED only if print_static_check itself fails). With
+    POU_D_T_GD beams the mass part is not even tried: Code-Aster writes the CALCUL_37
     exception into the .mess before Python catches it, and the bridge would
     then report the run as failed (KNOWN_BUGS 119); the reactions remain.
     """

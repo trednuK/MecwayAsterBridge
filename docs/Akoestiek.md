@@ -927,8 +927,8 @@ Met `med_export` aan schrijft de bridge `DEPL_REEL`/`DEPL_IMAG` (met `PRES`) in 
 - **Schuine inval** of een bolgolf: `ONDE_FLUI` en `3D_FLUI_ABSO` zijn exact voor een
   loodrecht invallende vlakke golf; schuin kaatst deels terug (zoals §5.4).
 - Volumedemping in het fluïdum, poreuze materialen, hysteretische demping van de
-  constructie (`AMOR_HYST`), extra modale demping (`modal_damping`; de berekening is
-  direct).
+  constructie (`AMOR_HYST`; een regel `#ASTER-HYST` geeft hier een WARNING), extra
+  modale demping (`modal_damping`; de berekening is direct).
 - Een bron op een knoop of in het volume (bronnen alleen op vlakselecties, microfoons
   alleen op knoopselecties: WARNING).
 - Alles wat in de gekoppelde modes niet kan (§6.6): twee fluïda met een verschillende
@@ -948,6 +948,7 @@ Met `med_export` aan schrijft de bridge `DEPL_REEL`/`DEPL_IMAG` (met `PRES`) in 
 | ERROR: … selectie '…' is zowel … als … | dezelfde selectie met twee rollen | aparte selecties |
 | ERROR: … '#ASTER-BRON …': verwacht 'selectie = snelheid [m/s, mm/s, …] of druk [Pa, N/m2, …] [, fase in graden]' (eventueel: eenheid '…' niet herkend) | schrijffout of een onbekende eenheid | bijv. `** ASTER-BRON Inlaat = 2 mm/s, 90` (punt als decimaalteken) |
 | ERROR: … impedantie op '…' is complex / Re Z moet een getal > 0 zijn | *specific impedance* met Im ≠ 0 of Re ≤ 0 | alleen een reële Z > 0 |
+| WARNING: Vibro-akoestiek harmonisch: '#ASTER-HYST' wordt hier niet gebruikt … | de regel geldt alleen in `harmonic_3d` | haal de regel weg, of kies `harmonic_3d` (alleen de constructie) |
 | ERROR: … fluid pressure op '…' is …; een opgelegde druk != 0 … | *fluid pressure* met een waarde | `OPEN_` (p = 0) of een bron |
 | ERROR: … opgelegde verplaatsing of rotatie <> 0 | basisbeweging | waarde 0; de belasting als kracht of bron |
 | ERROR: … frequentielijst / frequentiebereik … is ongeldig | instellingen | bijv. `100, 250, 500`, of `0` voor het bereik |

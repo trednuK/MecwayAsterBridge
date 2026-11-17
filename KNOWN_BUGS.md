@@ -696,7 +696,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    the amplitude is low by sqrt(1 + eta^2) (0.02% at eta = 0.02, 0.5% at 0.1, 11% at 0.5),
    and the real part, imaginary part and phase (atan eta) differ too. Measured with basis
    PHYS; GENE runs the same `CALC_CHAMP`, NOT verified. The bridge gives a WARNING with the
-   size (`bridge_harmonic`, when stresses are requested and solids or shells have eta).
+   size (`bridge_harmonic._solid_stress_eta`, when stresses are requested and a material of
+   a solid element has eta; shells and beams get no stresses in this analysis).
    Von Mises follows the stresses; reactions are not a field of this analysis.
    Displacements are right (HR-06a..d). A fix would multiply the complex stresses by
    (1 + i eta) per material (STAPPENPLAN §S46, follow-up), NOT built.
@@ -905,9 +906,13 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 5\. **Frictionless with displacement on curved shells** (confirmed). Frictionless on
    curved shell faces and shell edges becomes LIAISON_OBLIQUE per nodal normal
-   (`bridge_mesh._frictionless_per_node`); not computed against Mecway. Not yet:
-   frictionless with normal displacement ≠ 0 on curved shells/shell edges. With
-   LINE_QUAD, new midside nodes get no frictionless. (The load part of this item was
+   (`bridge_mesh._frictionless_per_node`). Shell edges are compared with Mecway 34: LS-84
+   (straight edge) and MO-09/LS-83 (curved rim, but there X = Y = Z = 0 on the same nodes
+   covers the normal displacement, so only the rotation about the edge is compared); curved
+   shell faces NOT compared. Not yet: frictionless with normal displacement ≠ 0 on curved
+   shell faces and on any shell edge (ERROR, NOT included). With LINE_QUAD, new midside
+   nodes between nodes of different normals (curved geometry) get no frictionless (no
+   message). (The load part of this item was
    solved in S17: pressure/traction on shell edges and beam ends as nodal forces, traction
    on beam side faces as `FORCE_POUTRE` = traction × perimeter, pressure there no load,
    hydrostatic pressure on shell edges; LS-92, LS-93.)
@@ -991,7 +996,8 @@ Code-Aster value per node) and logs the largest difference per variable.
 54\. **Response on modal basis and harmonic response: limits** (confirmed,
    `bridge_dyna_modal.py`, `bridge_harmonic.py`, docs/Respons_op_modale_basis.md).
    Mecway D30 with Mode superposition becomes `CALC_MODES` + `DYNA_VIBRA` GENE
-   (verification MD-01..07, equal to Mecway). Not translated (ERROR with the solution
+   (verification MD-01..06, equal to Mecway where Mecway has the input; MD-04 and
+   MD-06b have none). Not translated (ERROR with the solution
    `dyna_impl_3d`): an imposed displacement or rotation <> 0, also with a
    time table (requires static modes / `MULT_APPUI`), an initial velocity
    (`ETAT_INIT` on modal basis), thermal strain, dampers (Mecway neither) and
@@ -1006,7 +1012,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    (base) motion <> 0, dampers on modal basis (supported with `harm_basis` PHYS),
    `modal_damping` with PHYS, thermal strain and non-linear parts; not
    built: a loss factor on discrete elements other than Mecway springs
-   (the loss factor itself is built, HR-06), stresses in
+   (the loss factor itself is built, HR-06; the stresses miss it, item 120), stresses in
    shells and beams (only displacements/rotations), reactions and element
    nodal stresses. Without damping and with a list, a frequency may fall on
    an (infinite) resonance; the bridge only warns that there is no damping.
@@ -1016,8 +1022,8 @@ Code-Aster value per node) and logs the largest difference per variable.
    reads them (headless script on HR-02a), the display in the GUI (list *Mode 1..n*,
    contour, animation without decay rate) has NOT been checked (question).
 
-55\. **Acoustics: 2D, acoustic displacement and media with different density not
-   translated; limits of the impedance** (confirmed, `bridge_acoustic.py`,
+55\. **Acoustics: 2D harmonic field, acoustic displacement and media with different
+   density not translated; limits of the impedance** (confirmed, `bridge_acoustic.py`,
    `aster_acoustic_complex.py`, docs/Akoestiek.md §3). Cavity modes with rigid walls and
    pressure nodes (*fluid pressure* 0) are equal to Mecway (verification AK). *Impedance*
    (S2b): complex modes with frequency, *decay rate* and `pressure`/`pressurei` (the
@@ -1034,7 +1040,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    display of the complex modes in the Mecway GUI (decay rate under *Solution*,
    animation of `pressure` + `pressurei`) has NOT been checked (question). Also not:
    the harmonic pressure field in 2D (A20, ERROR; the cavity modes of A20 are translated,
-   KNOWN_BUGS 126, 128), Mecway's *acoustic displacement* as a field, contact,
+   KNOWN_BUGS 126, 130), Mecway's *acoustic displacement* as a field, contact,
    couplings and constraint equations in acoustics (ERROR, skipped_loads), pyramids.
    Code-Aster's `RIGI_ACOU`/`MASS_ACOU` do not contain the density (measured): at an
    interface dp/dn is continuous, correct only for equal density; media with
@@ -1093,9 +1099,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    **different density** (measured error: 188.23 instead of 306.47 Hz; ERROR); a
    shell with fluid on both sides (ERROR); impedance and *fluid pressure* != 0 in
    the modes (ERROR); in the harmonic response a **complex or
-   frequency-dependent impedance** and *fluid pressure* != 0 (ERROR), volume damping,
-   `AMOR_HYST`, `modal_damping`, a base motion (ERROR), stresses in shells and
-   beams, reactions; prestress, gravity on a free surface (sloshing);
+   frequency-dependent impedance**, *fluid pressure* != 0 and a base motion (ERROR),
+   stresses in shells and beams, reactions; prestress, gravity on a free surface
+   (sloshing); volume damping, `AMOR_HYST` and `modal_damping` (not offered: no setting;
+   `#ASTER-HYST` gives a WARNING);
    effective mass per mode; modes below `vibro_freq_min` (including rigid modes).
    `ONDE_FLUI` and `3D_FLUI_ABSO` are exact for normal incidence (oblique: partial
    reflection, NOT measured). NOT verified: `elem_hex8` = `LINE_QUAD` with a

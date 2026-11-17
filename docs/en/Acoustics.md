@@ -925,7 +925,8 @@ from `#ASTER-EXCIT` only count as supports (as in the harmonic response).
   for a plane wave at normal incidence; oblique waves are partly reflected (as in
   §5.4).
 - Volume damping in the fluid, porous materials, hysteretic damping of the structure
-  (`AMOR_HYST`), extra modal damping (`modal_damping`; the computation is direct).
+  (`AMOR_HYST`; a line `#ASTER-HYST` gives a WARNING here), extra modal damping
+  (`modal_damping`; the computation is direct).
 - A source on a node or in the volume (sources only on face selections, microphones
   only on node selections: WARNING).
 - Everything that is not possible in the coupled modes (§6.6): two fluids with a
@@ -945,6 +946,7 @@ from `#ASTER-EXCIT` only count as supports (as in the harmonic response).
 | ERROR: … selection '…' is both … and … | the same selection with two roles | separate selections |
 | ERROR: … '#ASTER-BRON …': expected 'selection = velocity [m/s, mm/s, …] or pressure [Pa, N/m2, …] [, phase in degrees]' (possibly: unit '…' not recognised) | typing error or an unknown unit | e.g. `** ASTER-BRON Inlet = 2 mm/s, 90` (point as decimal separator) |
 | ERROR: … impedance on '…' is complex / Re Z must be a number > 0 | *specific impedance* with Im ≠ 0 or Re ≤ 0 | only a real Z > 0 |
+| WARNING: Vibroacoustics harmonic: '#ASTER-HYST' is not used here … | the line only applies in `harmonic_3d` | remove the line, or choose `harmonic_3d` (structure only) |
 | ERROR: … fluid pressure on '…' is …; an imposed pressure != 0 … | *fluid pressure* with a value | `OPEN_` (p = 0) or a source |
 | ERROR: … imposed displacement or rotation <> 0 | base motion | value 0; the load as a force or source |
 | ERROR: … frequency list / frequency range … is invalid | settings | e.g. `100, 250, 500`, or `0` for the range |

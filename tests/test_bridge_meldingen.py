@@ -13,7 +13,10 @@
 #   - FACTOR_57 (bridge_run_aster._resi_advice, aster_mess_errors): a small
 #     MUMPS error estimate gives the page and value for lin_solver_resi, a
 #     large one the singular-matrix hint; the SOLVEUR line of the static
-#     step of modal/buckling (bridge_to_aster._static_step_solveur).
+#     step of modal/buckling (bridge_to_aster._static_step_solveur);
+#   - harmonic stresses without the loss factor (KNOWN_BUGS 120): only the
+#     eta of materials on solid elsets counts (bridge_harmonic.
+#     _solid_stress_eta).
 #
 #   python tests/test_bridge_meldingen.py
 
@@ -253,6 +256,23 @@ def test_log_errors():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_harm_stress_eta():
+    """KNOWN_BUGS 120: the WARNING about stresses without the loss factor
+    counts only the eta of materials on solid elsets (only they get
+    stresses in a harmonic analysis)."""
+    md = {"elsets": {"Blok": "Staal", "Plaat": "Alu", "Veer": "V"}}
+    for etas, g3d, want in (
+            ({"Staal": 0.1}, ["Blok"], 0.1),
+            ({"Alu": 0.5}, [], None),
+            ({"Alu": 0.5}, ["Blok"], None),
+            ({"Staal": 0.02, "Alu": 0.5}, ["Blok"], 0.02),
+            ({"V": 0.3}, ["Blok"], None),
+            ({"Staal": 0.0}, ["Blok"], None)):
+        got = bh._solid_stress_eta(md, etas, g3d)
+        check(got == want, "harmonic stress eta {0} on {1}: {2} (want "
+              "{3})".format(sorted(etas.items()), g3d, got, want))
+
+
 def test_bonded_offset():
     """KNOWN_BUGS 128: WARNING for bonded shell faces (face to face, shell
     face on a solid, solid face on a shell), none for shell edges."""
@@ -285,7 +305,7 @@ def test_bonded_offset():
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
                  test_acoustic_density, test_factor57, test_log_errors,
-                 test_bonded_offset):
+                 test_bonded_offset, test_harm_stress_eta):
         test()
     if FAILS:
         for f in FAILS:
@@ -293,7 +313,7 @@ def main():
                 "ascii"))
         return 1
     print("OK: meldingen (harmonisch xi >= 1, akoestiek medium zonder "
-          "dichtheid, FACTOR_57)")
+          "dichtheid, FACTOR_57, verliesfactor spanningen)")
     return 0
 
 

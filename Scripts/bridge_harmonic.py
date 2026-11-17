@@ -658,6 +658,16 @@ def _damping_matrix_block(alpha, beta, dampers):
         for m, c in terms))
 
 
+def _solid_stress_eta(model_data, etas, g3d):
+    """Largest loss factor of a material on a solid elset, or None
+    (KNOWN_BUGS 120). Only solid elsets get stresses in this analysis
+    (CALC_CHAMP on g3d); the eta of shells, beams and springs does not
+    touch them."""
+    mats = set(model_data.get("elsets", {}).get(g) for g in g3d)
+    vals = [e for n, e in etas.items() if n in mats and e > 0.0]
+    return max(vals) if vals else None
+
+
 def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     """
     Generate the .comm and .export for the harmonic response (analysis
@@ -752,10 +762,8 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
     if etas is None:
         return None
     eta_max = max(etas.values()) if etas else 0.0
-    solid_etas = [e for n, e in etas.items()
-                  if n not in model_data.get("spring_materials", {})]
-    if solid_etas and (g3d or gsh) and any(f in _STRESS_GROUPS
-                                           for f in fields):
+    eta_s = _solid_stress_eta(model_data, etas, g3d) if stresses else None
+    if eta_s:
         # KNOWN_BUGS 120: CALC_CHAMP computes the stresses of the harmonic
         # result with the real E, without AMOR_HYST: measured (17 Nov 2026,
         # PHYS; GENE runs the same CALC_CHAMP, NOT verified) on a bar in
@@ -763,7 +771,6 @@ def build_harmonic(work_dir, model_data, msh_path, resu_name, analysis):
         # eta^2) (89442.8 instead of 100000 Pa), real part F/A / (1 +
         # eta^2), phase off by atan(eta); without eta exactly F/A. The
         # right stress is (1 + i eta) times the computed complex stress.
-        eta_s = max(solid_etas)
         low = 100.0 * (1.0 - 1.0 / math.sqrt(1.0 + eta_s ** 2))
         log(tr("WARNING: Harmonisch met hysteretische demping "
                "(verliesfactor tot {0}): de spanningen zijn zonder de "

@@ -396,6 +396,15 @@ def build_vibroacoustic_harm(work_dir, model_data, msh_path, resu_name,
                 "apply the load as a force, pressure or source").format(
                     ", ".join("'{0}'".format(s) for s in nonzero)))
         return None
+    if model_data.get("aster_custom", {}).get("hyst"):
+        # #ASTER-HYST is read by bridge_harmonic only (harmonic_3d); this
+        # analysis has no loss factor (KNOWN_BUGS 59)
+        log(tr("WARNING: Vibro-akoestiek harmonisch: '#ASTER-HYST' wordt hier "
+               "niet gebruikt (alleen in harmonic_3d); de constructie krijgt "
+               "geen verliesfactor (KNOWN_BUGS 59).",
+               "WARNING: Vibroacoustics harmonic: '#ASTER-HYST' is not used "
+               "here (only in harmonic_3d); the structure gets no loss factor "
+               "(KNOWN_BUGS 59)."))
     if model_data.get("initial_velocities"):
         log("INFO: Harmonic vibro-acoustics: the initial velocity is not "
             "used (steady-state response).")

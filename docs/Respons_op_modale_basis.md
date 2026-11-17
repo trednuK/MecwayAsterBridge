@@ -409,8 +409,8 @@ de Code-Aster-testcases sdld313d en sdld21b):
    matrices) in volle opslag, dus een complexe gegeneraliseerde stijfheid, exact ook
    als η per materiaal verschilt (dan koppelen de modes); de modes zelf komen uit de
    reële K. Voor de verfijning rond de pieken telt ξ_i + η/2 (grootste η). De
-   spanningen worden zonder η berekend (`CALC_CHAMP` met de reële E): hun amplitude is
-   de juiste complexe spanning is (1 + iη) maal de gegeven, dus de amplitude is
+   spanningen worden zonder η berekend (`CALC_CHAMP` met de reële E): de juiste
+   complexe spanning is (1 + iη) maal de gegeven, dus de amplitude is
    1/√(1 + η²) te laag (−0,5% bij η = 0,1, −11% bij η = 0,5), en ook reëel deel, imaginair
    deel en fase wijken af (gemeten op een staaf op trek met basis `PHYS`; WARNING,
    KNOWN_BUGS 120); de verplaatsingen zijn juist.
