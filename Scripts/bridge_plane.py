@@ -542,20 +542,22 @@ def convert_bc(model_data, bc, faces, skin_groups):
         return True
     if btype == "pinnedsupport":
         # Mecway's pinned support holds the mean displacement (manual v35
-        # par. 9.3). Measured in 2D (Mecway 35 headless, 17 Nov 2026,
-        # KNOWN_BUGS 134): on nodes the unweighted mean, as in 3D
+        # par. 9.3). Measured (Mecway 35 headless, 17 Nov 2026, KNOWN_BUGS
+        # 134): on nodes the unweighted mean, as in 3D
         # (bridge_mesh._pinned_to_mean): a tension plate with the 11 nodes
         # of an edge pinned gives +1.912% against sigma L / E in Mecway and
-        # in an own calculation with equal weights. Here LIAISON_DDL on DX
-        # and DY only (a 2D node has no DZ, CHARGES2_31). On edges Mecway
-        # holds nothing (a mechanism); the bridge holds every node there.
+        # in an own calculation with equal weights (S20 plane stress,
+        # PL-07); S20 plane strain and SA0 equal to Mecway to 7 digits;
+        # D20/DA0 NOT verified. Here LIAISON_DDL on DX and DY only (a 2D
+        # node has no DZ, CHARGES2_31). On edges Mecway holds nothing (a
+        # mechanism); the bridge holds every node there.
         if edges:
             n = len(set(nid for f in model_data.get(
                 "group_face_list", {}).get(sel, []) for nid in f["nodes"]))
             bc["aster_target"] = "GROUP_MA"
         elif sel in model_data.get("node_groups", {}):
-            ids = [int(str(i).lstrip("N"))
-                   for i in model_data["node_groups"][sel]]
+            ids = list(OrderedDict((int(str(i).lstrip("N")), None)
+                                   for i in model_data["node_groups"][sel]))
             n = len(ids)
             bc["aster_target"] = "GROUP_NO"
             if n > 1:

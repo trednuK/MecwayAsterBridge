@@ -696,7 +696,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    (`LIAISON_DDL` on DX and DY with equal weights, as `bridge_mesh._pinned_to_mean` in 3D;
    verification PL-07: tension plate with the 11 nodes of an edge pinned and the rotation
    held by one *Displacement* Y, 4.85293e-6 m = Mecway, +1.912% against σL/E, equal to an
-   own Q4 calculation with equal weights; with consistent weights it would be exact). On the
+   own Q4 calculation with equal weights; with consistent weights it would be exact; plane
+   strain and SA0, a ring section with an axial tension, equal to Mecway to 7 digits; D20/DA0
+   NOT verified). On the
    edge as *faces* Mecway 35 holds nothing in 2D (u ~ 1e9 m; the manual allows pinned only on
    nodes and solid faces); the bridge holds every node there with `DDL_IMPO` DX = DY = 0 and
    a WARNING. A pinned support alone leaves the rotation free in 2D: Code-Aster stops with

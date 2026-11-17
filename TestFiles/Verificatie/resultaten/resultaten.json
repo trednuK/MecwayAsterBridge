@@ -55916,7 +55916,7 @@
   "series": null,
   "h": null,
   "note": "100 x 100 mm, 10 mm, quad4 10 x 10, nu 0.3, 10 MPa; sigma L / E = 4.7619e-06 m.",
-  "seconds": 5.9,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -55931,6 +55931,20 @@
     "tol": 0.0001,
     "tol_abs": null,
     "source": "Mecway 35 headless; eigen Q4-berekening met gelijke gewichten +1,912% t.o.v. sigma L / E",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "grootste u_y linkerrand",
+    "fem": 1.3004247504647721e-06,
+    "ref": 1.3e-06,
+    "rel": 0.000326731126747758,
+    "dev": 4.247504647720854e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "Mecway 35 headless +-1.300e-6 m; eigen Q4-berekening +-0,273 sigma L / E",
     "in_series": true,
     "known": null
    },

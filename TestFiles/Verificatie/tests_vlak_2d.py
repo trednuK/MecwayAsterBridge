@@ -644,6 +644,11 @@ TESTS.append(Case(
            lambda r: r.mean("displx", "Rechts"), ref=MW_PL07, tol=1e-4,
            unit="m", source="Mecway 35 headless; eigen Q4-berekening met "
                             "gelijke gewichten +1,912% t.o.v. sigma L / E"),
+     Check("grootste u_y linkerrand", lambda r: max(
+         r.step()["disply"][n] for n in r.model.nodesel["Links"]),
+           ref=1.300e-6, tol=2e-3, unit="m",
+           source="Mecway 35 headless +-1.300e-6 m; eigen Q4-berekening "
+                  "+-0,273 sigma L / E"),
      Check("gemiddelde u_x linkerrand", lambda r: r.mean("displx", "Links"),
            ref=0.0, tol_abs=1e-12, unit="m",
            source="pinned support: gemiddelde verplaatsing 0"),

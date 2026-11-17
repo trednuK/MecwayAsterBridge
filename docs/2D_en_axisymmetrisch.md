@@ -307,7 +307,8 @@ De massa in de log (`BRIDGE_STATCHECK`) is die van de hele dikte of van 360 grad
 ### 2.3 Voorwaarden
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` op meerdere knopen: de gemiddelde
-verplaatsing nul, `LIAISON_DDL` met gelijke gewichten op DX en DY (zoals Mecway, PL-07),
+verplaatsing nul, `LIAISON_DDL` met gelijke gewichten op DX en DY (zoals Mecway 35: vlakke
+spanning PL-07, vlakke rek en axisymmetrisch gelijk gemeten; D20/DA0 NIET geverifieerd),
 op één knoop of op randen `DDL_IMPO` DX = DY = 0; `displacement` langs X of Y:
 `DDL_IMPO`; `symmetry` met normaal X of Y: `DDL_IMPO` DX = 0 of DY = 0. Componenten die
 het 2D-model niet heeft (DZ, rotaties, FZ) vallen weg. Een pinned support op meerdere

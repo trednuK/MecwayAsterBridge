@@ -301,7 +301,8 @@ degrees (Code-Aster's `MASS_INER` of `AXIS` is already for 360 degrees, measured
 ### 2.3 Constraints
 
 `fixed`: `DDL_IMPO` DX = DY = 0; `pinnedsupport` on several nodes: the mean
-displacement zero, `LIAISON_DDL` with equal weights on DX and DY (as Mecway, PL-07), on one
+displacement zero, `LIAISON_DDL` with equal weights on DX and DY (as Mecway 35: plane
+stress PL-07, plane strain and axisymmetric measured equal; D20/DA0 NOT verified), on one
 node or on edges `DDL_IMPO` DX = DY = 0; `displacement` along X or Y:
 `DDL_IMPO`; `symmetry` with normal X or Y: `DDL_IMPO` DX = 0 or DY = 0. Components the
 2D model does not have (DZ, rotations, FZ) are left out. A pinned support on several nodes
