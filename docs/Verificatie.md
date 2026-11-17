@@ -74,7 +74,13 @@ gegenereerde `.comm` per test in `resultaten/comm/` (absolute paden daarin verva
 `mecway.exe <model>.liml script TestFiles/Tools/mw_save_as.py` (Mecway-handleiding
 §16.1: het model openen, het script draaien, afsluiten; zonder venster en zonder
 solve, dus ook voor analyses die Mecway zelf niet kan rekenen, zoals XFEM, lassen
-en vermoeiing). Het script doet alleen `mw.save_as()`. De bridge rekent
+en vermoeiing). Het script doet alleen `mw.save_as()`. Mecway draait verborgen met een
+bewaking (`verif_lib.run_mecway`, ook voor de verfijningslus van AD-02 en
+`TestFiles/Tools/mw_solve.py`): een meldingsvenster van Mecway is ongeveer 0,1 s
+zichtbaar, dan wordt dat Mecway-proces gestopt, zodat de run niet blijft hangen; de case meldt
+het (`MECWAY_DIALOOG`, een ander venster dat open blijft: `MECWAY_VENSTER`), en een wijziging
+van Mecway's `user.config` tijdens de run geeft een WARNING. Een eigen Mecway-venster wordt
+nooit aangeraakt. De bridge rekent
 daarna die Mecway-kopie (in `VERIF_WORK/_mecway/`); `run_verificatie` controleert
 vooraf dat Mecway knoopnummers, coördinaten en knoopselecties niet veranderd heeft.
 Uitvoer in `resultaten/mecway/` (de gewone resultaten blijven ongewijzigd) en

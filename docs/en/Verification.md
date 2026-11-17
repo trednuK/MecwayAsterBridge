@@ -73,7 +73,13 @@ generated `.comm` per test in `resultaten/comm/` (absolute paths in it replaced 
 `mecway.exe <model>.liml script TestFiles/Tools/mw_save_as.py` (Mecway manual §16.1:
 open the model, run the script, exit; no window and no solve, so it also works for
 analyses Mecway cannot solve itself, such as XFEM, welding and fatigue). The script
-only calls `mw.save_as()`. The bridge then solves that Mecway copy (in
+only calls `mw.save_as()`. Mecway runs hidden with a watchdog
+(`verif_lib.run_mecway`, also for the refinement loop of AD-02 and
+`TestFiles/Tools/mw_solve.py`): a Mecway message box is visible for about 0.1 s, then that
+Mecway process is stopped, so the run does not hang; the case reports it
+(`MECWAY_DIALOOG`, another window that stays open: `MECWAY_VENSTER`), and a change of
+Mecway's `user.config` during the run gives a WARNING. A Mecway window of your own is never
+touched. The bridge then solves that Mecway copy (in
 `VERIF_WORK/_mecway/`); `run_verificatie` first checks that Mecway did not change node
 numbers, coordinates or node selections. Output in `resultaten/mecway/` (the normal
 results are left unchanged) and `resultaten/mecway/vergelijking.md` (only that file is in the repo): per check the

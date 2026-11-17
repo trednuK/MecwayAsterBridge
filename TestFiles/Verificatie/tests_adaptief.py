@@ -293,9 +293,16 @@ def mecway_refine(liml_in, liml_out, eids, work):
     io.open(script, "w", encoding="utf-8").write(_REFINE_SCRIPT.format(
         scripts=V.SCRIPTS, work=work, status=status, out=liml_out,
         eids=sorted(eids)))
+    # hidden, with the dialog watchdog (verif_lib.run_mecway): a Mecway
+    # message box no longer hangs the loop or stays on the user's screen
     try:
-        subprocess.call([MECWAY, liml_in, "script", script], timeout=600)
+        state, _rc, wins = V.run_mecway([MECWAY, liml_in, "script", script],
+                                        timeout=600)
     except Exception:
+        return False
+    if state != "ok":
+        print("AD-02: Mecway refine stopped (%s): %s" % (state, "; ".join(
+            " / ".join([w[0]] + list(w[2][:8])) for w in wins)))
         return False
     ok = (os.path.isfile(status) and
           io.open(status).read().startswith("OK") and

@@ -580,3 +580,167 @@ class Case(object):
 
     def liml_path(self):
         return os.path.join(MODELS, self.id + ".liml")
+
+
+# ------------------------------------------------------------------
+# Hidden Mecway with a dialog watchdog (AD-02 refine_x2, --mecway-opslaan,
+# TestFiles/Tools/mw_solve.py). "mecway.exe <model> script <py>" keeps the
+# main window hidden, but an error opens a modal box on the user's desktop
+# and blocks the process until someone clicks OK (skill "mecway",
+# headless-and-testing). run_mecway starts Mecway with SW_HIDE and looks
+# every 0.1 s at the VISIBLE top-level windows of that one process (read
+# only: never clicks, never activates, never touches another Mecway, such as
+# the user's own window): a dialog (class #32770, or a button OK/Yes/No) is
+# killed at once with its process tree; another visible window only after
+# other_grace seconds (None: never, for "solve", whose solver window is
+# normal). Measured 17 Nov 2026: 68 models opened and 11 refine runs in
+# script mode showed no visible window at all; the box "Invalid
+# fieldvariable name" was caught within 0.1 s. Also warns when Mecway's
+# user.config changed (a second Mecway may rewrite it; the user's Mecway
+# reads it).
+# ------------------------------------------------------------------
+# not "Cancel": a solver progress window may have one
+_DIALOG_BUTTONS = ("OK", "Yes", "No", "Ja", "Nee")
+
+
+def _windows_of(pid):
+    """[(title, class, child texts, (left, top, right, bottom))] of the
+    visible top-level windows of process pid (Windows only)."""
+    import ctypes
+    from ctypes import wintypes as wt
+    u32 = ctypes.WinDLL("user32", use_last_error=True)
+    proc = ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)
+    u32.EnumWindows.argtypes = (proc, wt.LPARAM)
+    u32.EnumChildWindows.argtypes = (wt.HWND, proc, wt.LPARAM)
+    u32.GetWindowThreadProcessId.argtypes = (wt.HWND,
+                                             ctypes.POINTER(wt.DWORD))
+    u32.GetWindowThreadProcessId.restype = wt.DWORD
+    u32.IsWindowVisible.argtypes = (wt.HWND,)
+    u32.GetWindowTextW.argtypes = (wt.HWND, wt.LPWSTR, ctypes.c_int)
+    u32.GetClassNameW.argtypes = (wt.HWND, wt.LPWSTR, ctypes.c_int)
+    u32.GetWindowRect.argtypes = (wt.HWND, ctypes.POINTER(wt.RECT))
+    out = []
+
+    def text(h):
+        b = ctypes.create_unicode_buffer(256)
+        u32.GetWindowTextW(h, b, 256)
+        return b.value
+
+    def top(h, _l):
+        try:
+            p = wt.DWORD()
+            u32.GetWindowThreadProcessId(h, ctypes.byref(p))
+            if p.value != pid or not u32.IsWindowVisible(h):
+                return True
+            c = ctypes.create_unicode_buffer(64)
+            u32.GetClassNameW(h, c, 64)
+            r = wt.RECT()
+            u32.GetWindowRect(h, ctypes.byref(r))
+            kids = []
+
+            def child(hc, _l2):
+                try:
+                    t = text(hc)
+                    if t:
+                        kids.append(t)
+                except Exception:
+                    pass
+                return True
+            child_cb = proc(child)
+            u32.EnumChildWindows(h, child_cb, 0)
+            out.append((text(h), c.value, kids,
+                        (r.left, r.top, r.right, r.bottom)))
+        except Exception:
+            pass
+        return True
+    top_cb = proc(top)
+    u32.EnumWindows(top_cb, 0)
+    return out
+
+
+def _is_dialog(win):
+    _title, cls, kids, _rect = win
+    return cls == "#32770" or any(k.replace("&", "") in _DIALOG_BUTTONS
+                                  for k in kids)
+
+
+def _on_screen(win):
+    left, top, right, bottom = win[3]
+    return right - left > 0 and bottom - top > 0 and right > 0 and \
+        bottom > 0 and left > -10000 and top > -10000
+
+
+def _mecway_configs():
+    import glob
+    import hashlib
+    paths = glob.glob(os.path.join(os.environ.get("LOCALAPPDATA", ""),
+                                   "Mecway_Limited", "*", "*",
+                                   "user.config"))
+    out = {}
+    for p in paths:
+        try:
+            out[p] = hashlib.sha256(open(p, "rb").read()).hexdigest()
+        except (IOError, OSError):
+            pass
+    return out
+
+
+def run_mecway(args, env=None, timeout=600, other_grace=10.0):
+    """
+    Run mecway.exe (args, a list) hidden with the watchdog above. Returns
+    (status, returncode, windows): status "ok", "dialog", "window" (another
+    visible window longer than other_grace s) or "timeout"; windows the
+    [(title, class, texts, rect)] that made it stop.
+    """
+    import subprocess
+    import time
+    if os.name != "nt":
+        try:
+            return "ok", subprocess.call(args, env=env, timeout=timeout), []
+        except subprocess.TimeoutExpired:
+            return "timeout", None, []
+    before = _mecway_configs()
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = 0                      # SW_HIDE
+    p = subprocess.Popen(args, env=env, startupinfo=si)
+    t0 = time.time()
+    first = {}
+    status, seen = "ok", []
+    while p.poll() is None:
+        now = time.time()
+        wins = _windows_of(p.pid)
+        dialogs = [w for w in wins if _is_dialog(w)]
+        others = [w for w in wins if not _is_dialog(w) and _on_screen(w)]
+        for key in list(first):            # a closed window starts again
+            if key not in set((w[0], w[1]) for w in others):
+                del first[key]
+        for w in others:
+            first.setdefault((w[0], w[1]), now)
+        if dialogs:
+            status, seen = "dialog", dialogs
+        elif other_grace is not None and any(
+                now - first[(w[0], w[1])] > other_grace for w in others):
+            status, seen = "window", others
+        elif now - t0 > timeout:
+            status, seen = "timeout", wins
+        if status != "ok":
+            if p.poll() is None:            # not a reused PID
+                subprocess.call(["taskkill", "/PID", str(p.pid), "/T", "/F"],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
+            try:
+                p.kill()
+            except OSError:
+                pass
+            p.wait()
+            print("run_mecway: %s, Mecway stopped (pid %d): %r"
+                  % (status, p.pid, [(w[0], w[1], w[2][:8]) for w in seen]))
+            break
+        time.sleep(0.1)
+    after = _mecway_configs()
+    changed = [k for k in after if before.get(k) != after[k]]
+    if changed:
+        print("run_mecway: WARNING: Mecway's user.config changed during the "
+              "run: %s" % ", ".join(changed))
+    return status, p.returncode, seen

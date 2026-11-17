@@ -91,17 +91,16 @@ def mecway_resave(liml, model, root):
     dst = os.path.join(d, os.path.basename(liml))
     if os.path.isfile(dst):
         os.remove(dst)
-    si = None
-    if hasattr(subprocess, "STARTUPINFO"):
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        si.wShowWindow = 0          # SW_HIDE
     env = dict(os.environ, MAB_MW_OUT=dst)
-    try:
-        subprocess.call([MECWAY_EXE, liml, "script", MW_SAVE], env=env,
-                        startupinfo=si, timeout=600)
-    except subprocess.TimeoutExpired:
+    # hidden, with the dialog watchdog (verif_lib.run_mecway)
+    state, _rc, wins = V.run_mecway([MECWAY_EXE, liml, "script", MW_SAVE],
+                                    env=env, timeout=600)
+    if state == "timeout":
         return None, ["MECWAY_TIMEOUT (opslaan)"]
+    if state != "ok":
+        label = "MECWAY_DIALOOG" if state == "dialog" else "MECWAY_VENSTER"
+        return None, ["%s (opslaan): %s" % (label, "; ".join(
+            " / ".join([w[0]] + list(w[2][:8])) for w in wins))]
     if not os.path.isfile(dst):
         return None, ["Mecway heeft het model niet opgeslagen"]
     errors = []

@@ -360,5 +360,6 @@ def main():
     return 1 if _FAILED else 0
 
 
-if __name__ == "__main__":
+# run_ipy.ps1 executes the file with another __name__ (IronPython: "cli")
+if __name__ == "__main__" or sys.platform == "cli":
     sys.exit(main())
