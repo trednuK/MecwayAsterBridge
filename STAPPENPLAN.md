@@ -2665,7 +2665,7 @@ also restores the number order inside the heading (59 before 58, 72 before 71 no
 | 116 | Element orientation card: parts not compared with Mecway | *draft*: low (unverified comparison) |  |  |
 | 118 | Results after `DVP_2` not seen in a real DVP_2 run | *draft*: low (rare failure path) |  |  |
 | 120 | Hysteretic damping: not on all discrete elements, stresses not checked | *draft*: low (niche damping) |  |  |
-| 134 | Pinned support in 2D holds every node, not the mean | *draft*: low (2D pinned support) |  |  |
+| 134 | Pinned support in 2D holds every node, not the mean | low; answered, real: settings checked (tension plate, pinned on the 11 edge nodes, reference *Displacement* X, Y); independent: σL/E; Mecway 35 holds only the mean (edge contracts and rotates, +1.9%), nothing on edge faces (mechanism); bridge every node (−1.27%, = *Displacement*) | item rewritten and moved to "Translation that works differently"; WARNING texts for nodes and edges (NL+EN); docs 2D §2.3 NL+EN; behaviour kept (a mean-only coupling leaves such a model singular in Code-Aster) | this commit |
 
 **Group D – Not translated** (24 items)
 

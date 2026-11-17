@@ -690,6 +690,21 @@ Code-Aster value per node) and logs the largest difference per variable.
    `DIS_CHOC`), and not converging stops the run; not measured.
    EDF: not known whether this has been reported (no public issue list).
 
+134\. **Pinned support in 2D holds every node, Mecway only the mean** (confirmed, Mecway 35
+   headless, 17 Nov 2026; `bridge_plane.convert_bc`). In S20/SA0/D20/DA0 a pinned support on
+   nodes or edges becomes `DDL_IMPO` DX = DY = 0 on every node (docs 2D §2.3), with a WARNING
+   when more than one node is held. Measured (square plate 100 × 100 mm, Static 2D plane
+   stress, ν = 0.3, uniform tension on the right edge, pinned support on the 11 nodes of the
+   left edge): Mecway holds only the mean displacement, like in 3D (manual v35 §9.3): the edge
+   contracts and its nodes move in x (up to 7.6e-6 m), u_x(L) +1.9% against σL/E, and the
+   edge can rotate freely (with only this support the model is a mechanism and Mecway gives an
+   arbitrary rotation). The bridge holds every node: −1.27%, equal to *Displacement* in X and
+   Y on those nodes in both programs. On the left edge as *faces* Mecway holds nothing
+   (u ~ 1e9 m; the manual allows pinned only on nodes and solid faces); the bridge holds every
+   node. Not changed: a mean-only coupling (as `bridge_mesh._pinned_to_mean` in 3D, but DX and
+   DY only: the 3D route writes DZ, `CHARGES2_31`) would leave a model with only this support
+   singular in Code-Aster. The WARNING names both differences.
+
 135\. **Fixed support on a node selection of shell or solid nodes: Mecway ignores it, the bridge
    clamps** (confirmed, Mecway 35.0.9802 headless and Code-Aster 17.4; `bridge_bcs.FixedBC`).
    Mecway's manual (§9.1) allows a fixed support on nodes only for nodes with all rotational
@@ -843,15 +858,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    `CALC_CHAMP` includes eta in the stresses of a harmonic result is NOT verified; if not,
    the stress amplitude is low by a factor sqrt(1 + eta^2) (0.5 % at eta = 0.1).
    Displacements are verified (HR-06a..d).
-
-134\. **Pinned support in 2D holds every node, not the mean** (question,
-   `bridge_plane.convert_bc`). In S20/SA0/D20/DA0 a pinned support on nodes or edges
-   becomes `DDL_IMPO` DX = DY = 0 on every node (docs 2D §2.3), with a WARNING when
-   more than one node is held. In 3D Mecway's pinned support holds the mean displacement
-   (manual par. 9.3, `bridge_mesh._pinned_to_mean`); whether Mecway does the same in 2D is
-   NOT verified. The 3D route cannot be used as it is: `bridge_to_aster._render_bc` writes
-   `LIAISON_DDL` for DX, DY and DZ, and a 2D node has no DZ (Code-Aster 17.4:
-   `<EXCEPTION> CHARGES2_31`).
 
 ## Not translated (the bridge reports it at the end of the run)
 

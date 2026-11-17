@@ -561,17 +561,36 @@ def convert_bc(model_data, bc, faces, skin_groups):
         bc["aster_keyword"] = "DDL_IMPO"
         bc["aster_dict"] = OrderedDict([("DX", 0.0), ("DY", 0.0)])
         bc["_plane"] = True
-        if n > 1:
+        # Measured (Mecway 35 headless, 17 Nov 2026, KNOWN_BUGS 134): on
+        # nodes Mecway holds only the mean displacement, the selection may
+        # contract and rotate (alone a mechanism with an arbitrary
+        # rotation); on edges it holds nothing (a mechanism). Kept as
+        # DDL_IMPO on every node: a mean-only coupling would leave such a
+        # model singular in Code-Aster.
+        if n > 1 and edges:
+            log(tr("WARNING: Pinned support op rand '{0}' in een "
+                   "2D-analyse: de bridge houdt elk van de {1} knopen vast "
+                   "(DX = DY = 0). Mecway houdt in 2D op randen niets vast "
+                   "(gemeten, Mecway 35) en op knopen alleen de gemiddelde "
+                   "verplaatsing; gebruik Fixed support of Displacement "
+                   "(KNOWN_BUGS 134).",
+                   "WARNING: Pinned support on edge '{0}' in a 2D analysis: "
+                   "the bridge holds each of the {1} nodes (DX = DY = 0). "
+                   "In 2D Mecway holds nothing on edges (measured, Mecway "
+                   "35) and on nodes only the mean displacement; use Fixed "
+                   "support or Displacement (KNOWN_BUGS 134).").format(
+                       sel, n))
+        elif n > 1:
             log(tr("WARNING: Pinned support op '{0}' in een 2D-analyse: elk "
                    "van de {1} knopen wordt vastgehouden (DX = DY = 0). "
-                   "Mecway houdt bij een pinned support de gemiddelde "
-                   "verplaatsing op nul (manual par. 9.3); in 2D NIET "
-                   "geverifieerd tegen Mecway (KNOWN_BUGS 134).",
+                   "Mecway houdt alleen de gemiddelde verplaatsing op nul: "
+                   "de knopen kunnen ten opzichte van elkaar bewegen en "
+                   "samen draaien (gemeten, Mecway 35; KNOWN_BUGS 134).",
                    "WARNING: Pinned support on '{0}' in a 2D analysis: "
-                   "each of the {1} nodes is held (DX = DY = 0). Mecway's "
-                   "pinned support holds the mean displacement at zero "
-                   "(manual par. 9.3); in 2D NOT verified against Mecway "
-                   "(KNOWN_BUGS 134).").format(sel, n))
+                   "each of the {1} nodes is held (DX = DY = 0). Mecway "
+                   "holds only the mean displacement at zero: the nodes "
+                   "can move relative to each other and rotate together "
+                   "(measured, Mecway 35; KNOWN_BUGS 134).").format(sel, n))
         log("INFO: Pinned support '{0}' -> DDL_IMPO DX=DY=0 (2D).".format(sel))
         return True
     if btype == "surfacepressure":

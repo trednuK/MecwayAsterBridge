@@ -303,8 +303,10 @@ degrees (Code-Aster's `MASS_INER` of `AXIS` is already for 360 degrees, measured
 `fixed`, `pinnedsupport`: `DDL_IMPO` DX = DY = 0; `displacement` along X or Y:
 `DDL_IMPO`; `symmetry` with normal X or Y: `DDL_IMPO` DX = 0 or DY = 0. Components the
 2D model does not have (DZ, rotations, FZ) are left out. A pinned support on more than
-one node holds every node (WARNING); Mecway's pinned support holds the mean
-displacement (in 3D, KNOWN_BUGS 134).
+one node holds every node (WARNING). Mecway 35 in 2D holds only the mean displacement
+of the nodes (they can move relative to each other and rotate together, so a model
+with only such a support is a mechanism there) and nothing on edges; for the same
+result as Mecway use one node, or *Displacement* (KNOWN_BUGS 134).
 
 ### 2.4 Dynamics (D20, DA0)
 
