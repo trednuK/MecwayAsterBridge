@@ -272,6 +272,185 @@ def _ls31_checks(order, swap=False):
 L32, A32, SIG32, TAU32 = 0.100, 0.010, 100e6, 50e6
 
 
+# ------------------------------------------------------------------
+# LS-31f .. LS-31i Element orientation card on shells against Mecway 35
+# (S46). Mecway 35 headless (17 Nov 2026, internal solver,
+# fieldvariables "force per length" and "moment per length": Mecway only
+# stores the shell forces when they are requested; solution.node_value
+# then reads them). LS-31f: the LS-31 strip with an extra in-plane end
+# force of 200 N along e2 and a card U = global X (projected on the
+# inclined strip: all components non-zero); LS-31g: the same with the
+# element node order reversed (W flipped; the edge selections keep their
+# face numbers, so clamp and load sit on other edges than in LS-31f: the
+# same input in both programs, a check of the flipped W, not a twin of
+# LS-31f); LS-31h: as LS-31f in quad8 (COQUE_3D). Membrane forces: quad4
+# equal to Mecway's to ~1e-10 at every node; quad8 0.02 % at x = L/2, up
+# to 11 % of the peak at the clamp corner. Moments at the centre node of
+# x = L/2 within 0.1 % (LS-31f), 1.4 % (LS-31g), 0.6 % (LS-31h); at the
+# edge nodes of x = L/2 quad8 up to 4.5 % (DKT / COQUE_3D against
+# Mecway's shell). LS-31i: plate 1 x 0.2 m of quad8 with
+# the midside nodes of the X-parallel edges moved by 0.1 h along the
+# edge, a formula card ux = 1, uy = 5 (x - 0.5): Mecway evaluates the
+# formula at the mean of all element nodes (backed out per element node
+# from Mecway's global mid-surface stresses and its forceperlength*:
+# deviation 7e-15 m; corner mean 2.5 mm, isoparametric centre 7.5 mm and
+# area centroid 2.2 mm off, the latter on trapezoids of a separate
+# probe), one value per element. The check backs the angle out of the
+# bridge's own output (independent of the solver difference) and compares
+# it with the centre Mecway uses and with Mecway's own angles of elements
+# 1 and 19.
+# ------------------------------------------------------------------
+SRC_MW35 = "Mecway 35 headless, zelfde model (17 nov 2026)"
+P31_CENTRE = tuple(X31 * E1_31[k] + B31 / 2 * E2_31[k] for k in range(3))
+SHELL_FV = ('<fieldvariable name="stress" />',
+            '<fieldvariable name="force per length" />',
+            '<fieldvariable name="moment per length" />')
+
+
+def _card(m, sel, comps):
+    """Element orientation card on all elements (comps: ux, uy, uz as
+    numbers or formula texts)."""
+    m.element_selection(sel, range(1, m.n_elem + 1))
+    xml = []
+    for key, val in zip(("ux", "uy", "uz"), comps):
+        if isinstance(val, str):
+            xml.append('<%s unit="" timeunit="s" positionunit="m">%s</%s>'
+                       % (key, val, key))
+        else:
+            xml.append("<%s>%r</%s>" % (key, val, key))
+    m.add('<orientation selection="%s">%s<vx>0</vx><vy>0</vy><vz>0</vz>'
+          '<angleu>0 rad</angleu></orientation>' % (sel, "".join(xml)))
+
+
+def build_ls31f(order, flip=False):
+    def build():
+        m = build_ls31(order)()
+        m.items = [it for it in m.items if not it.startswith("<force")]
+        fv = [F31 * E1_31[k] - P31 * N_31[k] + 200.0 * E2_31[k]
+              for k in range(3)]
+        m.add('<force selection="Eind"><x>%r N</x><y>%r N</y><z>%r N</z>'
+              '</force>' % tuple(fv))
+        if flip:
+            name, mat, elems = m.elsets[0]
+            idx = [0, 3, 2, 1] if order == 1 else [0, 7, 6, 5, 4, 3, 2, 1]
+            m.elsets[0] = (name, mat, [(e, sh, [n[i] for i in idx], a)
+                                       for e, sh, n, a in elems])
+        _card(m, "Orient", (1.0, 0.0, 0.0))
+        for f in SHELL_FV:
+            m.add(f)
+        return m
+    return build
+
+
+def _ls31f_checks(ref, mom_tol, force_tol):
+    """ref: Mecway's values at the centre node of x = L/2."""
+    out = []
+    for var in ("forceperlengthu", "forceperlengthv", "forceperlengthuv"):
+        out.append(Check(var + " midden", (lambda v: lambda r: r.at(
+            v, P31_CENTRE))(var), ref=ref[var], tol=force_tol, unit="N/m",
+            source=SRC_MW35))
+    for var in ("momentu", "momentv", "momentuv"):
+        out.append(Check(var + " midden", (lambda v: lambda r: r.at(
+            v, P31_CENTRE))(var), ref=ref[var], tol=mom_tol, unit="N",
+            source=SRC_MW35 + "; DKT/COQUE_3D tegen Mecway's schaal"))
+    return out
+
+
+LS31F_MW = {"forceperlengthu": 18550.708458934387,
+            "forceperlengthv": 41446.78587669802,
+            "forceperlengthuv": 28914.529894171756,
+            "momentu": 6.683487191042818, "momentv": 8.33540936408458,
+            "momentuv": 7.456875519683626}
+LS31G_MW = {"forceperlengthu": 18536.05462581732,
+            "forceperlengthv": 41451.145911186715,
+            "forceperlengthuv": -28901.85941979968,
+            "momentu": -5.201627350790183, "momentv": -8.177725197019154,
+            "momentuv": 6.606578581537585}
+LS31H_MW = {"forceperlengthu": 9310.764626419557,
+            "forceperlengthv": 50693.607395781786,
+            "forceperlengthuv": 27889.305839562163,
+            "momentu": 6.640184297751679, "momentv": 8.293334601070315,
+            "momentuv": 7.462419366154299}
+K31I, NX31I, NY31I, S31I, T31I = 5.0, 10, 2, 0.1, 0.002
+
+
+def build_ls31i():
+    m = Model("S30")
+    m.elset("Plaat", "P")
+    h, hy = 1.0 / NX31I, 0.2 / NY31I
+    for i in range(NX31I):
+        for j in range(NY31I):
+            c = [(i * h + a * h, j * hy + b * hy)
+                 for a, b in ((0, 0), (1, 0), (1, 1), (0, 1))]
+            nids = []
+            for k in range(4):
+                a, b = c[k], c[(k + 1) % 4]
+                mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+                if abs(a[1] - b[1]) < 1e-12:      # X-parallel edge
+                    mid[0] += S31I * h
+                nids += [m.node(a[0], a[1], 0.0),
+                         m.node(mid[0], mid[1], 0.0)]
+            m.elem("Plaat", "quad8", nids)
+    m.mat("P", '<geometric type="Plate" thickness="%g m" />' % T31I, STEEL)
+    first = [e for e in range(1, m.n_elem + 1) if (e - 1) // NY31I == 0]
+    last = [e for e in range(1, m.n_elem + 1)
+            if (e - 1) // NY31I == NX31I - 1]
+    m.face_selection("Klem", [(e, 4) for e in first])
+    m.face_selection("Eind", [(e, 2) for e in last])
+    m.add('<fixed selection="Klem" />')
+    m.add('<force selection="Eind"><x>4000 N</x><y>300 N</y><z>0 N</z>'
+          '</force>')
+    _card(m, "Orient", (1.0, "%g*(x-0.5)" % K31I, 0.0))
+    for f in SHELL_FV:
+        m.add(f)
+    return m
+
+
+def _phi(a, b, c):
+    return 0.5 * math.atan2(2 * b, a - c)
+
+
+LS31I_MW_THETA = {1: -1.15050053461664, 19: 1.1546243288646734}
+
+
+def _ls31i_theta(r, eid):
+    """Mean U angle (rad, from global X) of element eid, backed out as in
+    _ls31i_dev."""
+    g = [r.elem(v).get(eid) for v in ("stressxxm1", "stressxym1",
+                                      "stressyym1", "forceperlengthu",
+                                      "forceperlengthuv", "forceperlengthv")]
+    if not all(g):
+        return float("nan")
+    th = []
+    for k in range(len(g[0])):
+        t = (_phi(*(T31I * g[i][k] for i in range(3)))
+             - _phi(g[3][k], g[4][k], g[5][k]))
+        th.append((t + math.pi / 2) % math.pi - math.pi / 2)
+    return sum(th) / len(th)
+
+
+def _ls31i_dev(r):
+    """Largest deviation (rad) of the U angle per element node (backed out
+    from the global mid-surface stresses and forceperlength*) from
+    atan(k (xc - 0.5)), xc = mean of all element nodes (Mecway 35)."""
+    worst = 0.0
+    g = [r.elem(v) for v in ("stressxxm1", "stressxym1", "stressyym1",
+                             "forceperlengthu", "forceperlengthuv",
+                             "forceperlengthv")]
+    if not all(g):
+        return float("nan")
+    for _n, _m, elems in r.model.elsets:
+        for eid, _sh, nids, _a in elems:
+            xc = sum(r.model.nodes[n - 1][0] for n in nids) / len(nids)
+            want = math.atan(K31I * (xc - 0.5))
+            for k in range(len(nids)):
+                t = (_phi(*(T31I * g[i][eid][k] for i in range(3)))
+                     - _phi(g[3][eid][k], g[4][eid][k], g[5][eid][k]))
+                t = (t + math.pi / 2) % math.pi - math.pi / 2
+                worst = max(worst, abs(t - want))
+    return worst
+
+
 def build_ls32a():
     m = Model("S30")
     m.elset("Staaf", "Staal")
@@ -585,6 +764,40 @@ TESTS = [
          settings={"fields": _fields("shell_forces")},
          note="Als LS-31c, U-as uit een orientatiekaart op een "
               "elementselectie in plaats van de attributen."),
+    Case("LS-31f", GROUP_LS, "Orientatiekaart op schalen, schuine U-as "
+         "(quad4), tegen Mecway 35", "lin_static_3d", build_ls31f(1),
+         _ls31f_checks(LS31F_MW, 0.01, 1e-6),
+         settings={"fields": _fields("shell_forces")},
+         note="U = globaal X, geprojecteerd op de scheve "
+              "strook; extra eindkracht langs de breedte."),
+    Case("LS-31g", GROUP_LS, "Idem met omgekeerde knoopvolgorde (W "
+         "omgedraaid)", "lin_static_3d", build_ls31f(1, flip=True),
+         _ls31f_checks(LS31G_MW, 0.02, 1e-6),
+         settings={"fields": _fields("shell_forces")},
+         note="De randselecties houden hun randnummers: klem en last "
+              "zitten daardoor op andere randen dan in LS-31f (zelfde "
+              "invoer in beide programma's; controle van de omgedraaide "
+              "W)."),
+    Case("LS-31h", GROUP_LS, "Idem LS-31f in quad8 (COQUE_3D)",
+         "lin_static_3d", build_ls31f(2),
+         _ls31f_checks(LS31H_MW, 0.01, 1e-3),
+         settings={"fields": _fields("shell_forces")}),
+    Case("LS-31i", GROUP_LS, "Formule in een orientatiekaart op quad8: "
+         "elementmidden zoals Mecway 35", "lin_static_3d", build_ls31i,
+         [Check("U-hoek t.o.v. atan(k (xc - 0,5)), xc = gemiddelde van "
+                "alle elementknopen", _ls31i_dev, ref=0.0, tol_abs=1e-9,
+                unit="rad", source=SRC_MW35 + ": Mecway rekent de formule "
+                "in het gemiddelde van alle elementknopen")] + [
+             Check("U-hoek element %d t.o.v. Mecway" % e,
+                   (lambda e: lambda r: _ls31i_theta(r, e))(e),
+                   ref=th, tol_abs=1e-9, unit="rad", source=SRC_MW35
+                   + " (teruggerekend uit Mecway's spanningen en "
+                   "forceperlength*)")
+             for e, th in sorted(LS31I_MW_THETA.items())],
+         settings={"fields": _fields("shell_stresses", "shell_forces")},
+         note="Middenknopen van de X-randen 0,1 h langs de rand "
+              "verschoven: hoekgemiddelde, isoparametrisch midden en "
+              "zwaartepunt vallen niet samen met het knoopgemiddelde."),
     Case("LS-32", GROUP_LS, "Totale rek en factor of safety, eenassige "
          "trek (hex8)", "lin_static_3d", build_ls32a, _ls32a_checks(),
          settings={"fields": _fields("strain", "safety_factor")}),

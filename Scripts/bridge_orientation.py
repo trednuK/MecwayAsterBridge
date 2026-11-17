@@ -52,10 +52,14 @@
 #   beams (POU_*)     V and angle -> model_data["beam_orientations"]
 #                     (bridge_mesh: VECT_Y per beam cell)
 #   gaps              U -> model_data["elem_u_axes"] (gap direction,
-#                     bridge_to_aster._prepare_gaps)
+#                     bridge_to_aster._prepare_gaps; only along node
+#                     1 -> 2, NL-92d; Mecway 35 also computes a tension
+#                     gap, an offset or coincident nodes, KNOWN_BUGS 23)
 #   shells            U -> model_data["card_u_axes"] (U,V of the result
 #                     field shell_forces, aster_results_export u_axes);
-#                     no effect on the solution with isotropic material
+#                     no effect on the solution with isotropic material;
+#                     forces and moments equal to Mecway 35 with an
+#                     oblique U and a flipped W (LS-31f .. LS-31h)
 #   solids            U, V and angle -> model_data["solid_orientations"]
 #                     (material axes of an orthotropic material,
 #                     bridge_orthotropic; no effect when isotropic)
@@ -174,9 +178,12 @@ def parse(item, model_data):
 
 
 def _centre(model_data, nodes):
-    """Element centre for a formula: mean of all element nodes (for line2
-    equal to Mecway, LS-81; quadratic elements and shells NOT verified,
-    KNOWN_BUGS 116)."""
+    """Element centre for a formula: mean of all element nodes, as Mecway
+    (line2: LS-81; quad8 shells with midside nodes moved along their
+    edge: LS-31i; quad4 and quad8 trapezoids in a separate probe; Mecway
+    35 headless: the corner mean, the isoparametric centre and the area
+    centroid ruled out; one value per element). Solids, tri3/tri6 and
+    line3 NOT verified."""
     xyz = model_data["mesh_nodes"]
     pts = [xyz[n] for n in nodes if n in xyz]
     if not pts:

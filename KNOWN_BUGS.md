@@ -47,20 +47,28 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 2\. **Shell elements ~0.7% different from Mecway on coarse meshes** (confirmed, Mecway 35
    headless and Code-Aster 17.4, 13 Nov 2026; discretisation, not an error). Mecway's shell
-   (MITC4) and DKT/`COQUE_3D` approach each other with mesh refinement (within 0.01% at
-   40 × 8 quad4, where they cross: DKT falls and Mecway rises; at 160 × 32 DKT 0.93342 mm,
-   Mecway 0.93446 mm, −0.11%; why the limits differ by ~0.1% is NOT investigated). Cantilever plate 100x20 mm,
-   1 mm, `fixed` on the edge faces at x = 0, 1 N at the tip split equally over the
-   tip nodes, midside nodes included for quad8 (difference to Mecway, largest
-   over the nodes, relative to Mecway's largest value): quad4 10x2 DKT deflection +0.63%,
-   bending rotation 0.81%, `COQUE_3D` +0.66% / 1.30%; quad4 40x8 DKT −0.01% / 0.07%,
-   `COQUE_3D` +0.10% / 0.38%; quad8 10x2 +0.35% / 1.03%, 40x8 +0.03% / 0.23% (quad8 is
-   always `COQUE_3D`). The secondary rotation about the plate axis (Poisson twist, ~5% of
-   the bending rotation) differs 27% on 10x2 and 1.6% on 40x8; the earlier "rotations up to ~10%"
-   probably came from that small component (the old model is not in the repo). Option `elem_shell` = "COQUE_3D" (linear shells via
-   LINE_QUAD to QUAD9/TRIA7, with drilling rotation) is not closer to Mecway. With a coarse mesh the difference is larger: wall
-   1x1 m, 20 mm, 2x2 quad4, pressure: DKT 8% more deflection than Mecway (headless). COQUE_3D falls back to DKT if the shells share nodes
-   with elements that stay linear (`bridge_to_aster._resolve_line_quad`).
+   (MITC4) and DKT/`COQUE_3D` approach each other with mesh refinement (within 0.01% at 40 × 8
+   quad4, where they cross: DKT falls and Mecway rises; at 160 × 32 DKT 0.93342 mm, Mecway
+   0.93446 mm, −0.11%; why the limits differ by ~0.1% is NOT investigated). Cantilever plate
+   100x20 mm, 1 mm, `fixed` on the edge faces at x = 0, 1 N at the tip split equally over the
+   tip nodes, midside nodes included for quad8 (difference to Mecway, largest over the nodes,
+   relative to Mecway's largest value): quad4 10x2 DKT deflection +0.63%, bending rotation
+   0.81%, `COQUE_3D` +0.66% / 1.30%; quad4 40x8 DKT −0.01% / 0.07%, `COQUE_3D` +0.10% / 0.38%;
+   quad8 10x2 +0.35% / 1.03%, 40x8 +0.03% / 0.23% (quad8 is always `COQUE_3D`). Section forces
+   of the LS-31 strip (10 x 2, Mecway 35 headless, 17 Nov 2026): membrane forces per length of
+   quad4 equal to ~1e-10 at every node; quad8 0.02% at x = L/2 but up to 11% of the peak at the
+   clamp corner (19% for `forceperlengthv` of LS-31b); moments at the centre node of x = L/2
+   within ~1%, at its edge nodes quad8 up to 4.5%; the transverse shear `shearuw` of DKT is 11%
+   low in the width mean at x = L/2 (-133 against -150 N/m = -P/b, Mecway exact; why NOT
+   investigated), `COQUE_3D` (quad8) exact; at the clamp and the loaded edge the node values of
+   moments and shear differ much more (up to 80% of the peak; Mecway's own node values scatter
+   there). The secondary rotation about the plate axis (Poisson twist, ~5% of the bending
+   rotation) differs 27% on 10x2 and 1.6% on 40x8; the earlier "rotations up to ~10%" probably
+   came from that small component (the old model is not in the repo). Option `elem_shell` =
+   "COQUE_3D" (linear shells via LINE_QUAD to QUAD9/TRIA7, with drilling rotation) is not
+   closer to Mecway. With a coarse mesh the difference is larger: wall 1x1 m, 20 mm, 2x2 quad4,
+   pressure: DKT 8% more deflection than Mecway (headless). COQUE_3D falls back to DKT if the
+   shells share nodes with elements that stay linear (`bridge_to_aster._resolve_line_quad`).
 
 3\. **Nodal stresses and von Mises different from Mecway** (confirmed in Mecway; deliberate
    choice). The bridge follows the Code-Aster standard: SIGM_NOEU (extrapolation of
@@ -440,7 +448,14 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 23\. **Gap and tension-only elements** (confirmed). Gap (DIS_CHOC): no tension gap
    (U against node 1 -> 2), skewed U or coincident nodes (reported, element
-   without stiffness); the 'force of open gap' of CCX is not used. A closed gap is equal
+   without stiffness), although Mecway 35 computes all three (headless, 17 Nov 2026, the
+   NL-92 model with an *Element orientation* card on the gap, Static 3D): U = -X is open
+   when pushed and closed when pulled (0.888 mm), coincident nodes with U = +X close when
+   pushed, a ground node 5 mm to the side with U = +X closes as without offset, and
+   U = +Y leaves the gap without force (so Mecway does use the card; NL-92d: a card along
+   node 1 -> 2 equals no card); U at 45 degrees to the element (nodes in line) leaves the gap
+   with almost no force (ground reaction 100 N of 1 MN). The 'force of open gap' of CCX is not
+   used. A closed gap is equal
    to Mecway 35 (internal solver, Static 3D, GUI) to 1e-12 (NL-92); pulled open it carries
    nothing (NL-92c, against the hand calculation only);
    the clearance `initialclearance` is a CCX input in Mecway (manual par. 7.10.2), the
@@ -887,19 +902,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    tensioned spring a geometric stiffness in Buckling (measured with a pretensioned spring,
    item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
    modal with prestress, NOT measured (STAPPENPLAN S15c).
-
-116\. **Element orientation card: parts not compared with Mecway** (question,
-   `bridge_orientation`). Measured headless with Mecway 34 on hand-written cards (Mecway
-   writes them back unchanged in its solution file): beams with vector, angle, formulas,
-   a card on part of the elements, overlap and the refusals (MO-31, LS-79–82, BU-25).
-   A card created in the Mecway 35 GUI (17 Nov 2026: V along Z on all elements of a
-   cantilever, saved with `ux..vz`, `angleu` and an element selection with `direct="true"`)
-   gives the same tip displacement as Mecway, -0.0793650793651 m (to 1e-12). NOT compared:
-   the U axis of a card on shells against Mecway's own `forceperlength*`/
-   `moment*` (Mecway headless only wrote displacements; LS-31d checks it against the
-   attribute variant and theory), a card on gaps, and the "element centre" of a formula
-   for quadratic elements and shells (the bridge takes the mean of all element nodes;
-   for line2 that is Mecway's result, LS-81).
 
 ## Not translated (the bridge reports it at the end of the run)
 

@@ -672,6 +672,10 @@ vergelijking met Mecway's oplossing.
 | LS-31b | idem quad8 (COQUE_3D) | idem + `shearuw` (gemiddeld over de breedte) | -P/b = -150 N/m | ≤ 0,6%; Q exact |
 | LS-31c | idem quad4 met `orientationu*` langs de breedte | `forceperlengthv` = N_u, `momentv`, `forceperlengthu` ≈ 0 | idem | exact |
 | LS-31d | idem met de U-as uit een *Element orientation*-kaart | als LS-31c | idem | exact, gelijk aan LS-31c |
+| LS-31f | idem quad4 met een kaart U = globaal X (schuin geprojecteerd) en 200 N extra langs de breedte | `forceperlengthu`/`v`/`uv`, `momentu`/`v`/`uv` in het midden op x = L/2 | Mecway 35 headless, zelfde model | krachten ≤ 1e-6, momenten ≤ 0,11% |
+| LS-31g | idem LS-31f met omgekeerde knoopvolgorde (W omgedraaid; randnummers ongewijzigd, dus klem en last op andere randen) | idem | idem | krachten ≤ 1e-6, momenten ≤ 1,4% (tekens gelijk) |
+| LS-31h | idem LS-31f in quad8 (COQUE_3D) | idem | idem | krachten ≤ 0,02%, momenten ≤ 0,7% |
+| LS-31i | plaat 1 x 0,2 m, quad8 met verschoven middenknopen, kaart met formule uy = 5 (x − 0,5) | U-hoek per elementknoop (uit `stress<ij>m1` en `forceperlength*`) | atan(5 (xc − 0,5)), xc = gemiddelde van alle elementknopen (zoals Mecway 35); Mecway's hoek van element 1 en 19 | 1,4e-13 rad |
 | LS-32 / LS-32b | staaf hex8 eenassige trek 100 MPa; kubus zuivere afschuiving 50 MPa | `lstrainxx/yy/zz`, `lstrainxy` (γ), `factorofsafety` | σ/E, -νσ/E, τ/G; S/σ, S/(√3 τ) | exact |
 | NL-30 / NL-30b | contact-patchtest hex8 passend (STANDARD, `CONT_NOEU`) en hex20 (PENALISATION, alleen `LAGS_C`) | `contactpressure` (gemiddeld, kleinste), `contactstate` | p = F/A = 10 MPa, status 1 | exact |
 | NL-30c | twee balken met de tips op elkaar (NL-03b) | `contactstate` tip 1, begin slave-zone 0; `contactpressure` daar | open: 0 | status exact; druk 448 Pa (0,06% van de piek, numeriek) |
@@ -2207,11 +2211,13 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
 - **Model**: balk 1 m (4 × line2, 20 × 30 mm, E = 210 GPa, EA/L = 1,26e8 N/m) vast in
   x = 0; een gap (k = 1e9 N/m) van de tip naar een knoop 10 mm verder, die met drie
   *Displacements* (x, y, z = 0) vastzit; 1 MN in +x op de tip. NL-92b: *Initial clearance*
-  5 mm en de kracht als tijdstabel 0 .. 1 MN; NL-92c: −1 MN (trekken, gap open).
+  5 mm en de kracht als tijdstabel 0 .. 1 MN; NL-92c: −1 MN (trekken, gap open); NL-92d:
+  als NL-92 met een *Element orientation*-kaart U = +X op de gap.
 - **Referentie**: NL-92 u = F / (k + EA/L) (gap direct dicht) en Mecway 35 (interne solver,
   Static 3D, in de GUI) 0,00088809946714032 m; NL-92b bij t = 0,5 u = 0,5 F L/EA (open),
-  bij t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA.
-- **Resultaat**: alle controles binnen 3e-13, ook tegen Mecway (NL-92).
+  bij t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA; NL-92d Mecway 35
+  headless (Static 3D) met dezelfde geometrie, belasting en kaart, 0,00088809946714 m.
+- **Resultaat**: alle controles binnen 3e-13, ook tegen Mecway (NL-92, NL-92d).
 - **Interpretatie**: de grondknoop zit met *Displacements* vast, niet met *Fixed support*:
   die negeert Mecway op een knoop met alleen een gap (KNOWN_BUGS 135). *Initial clearance*
   is in Mecway een CCX-invoer; NL-92b is alleen tegen de handberekening. Een vaste kracht
@@ -2608,7 +2614,7 @@ schuin, met en zonder vector + 30°):
   daar 135,1 (zwakke hoofdas) en 601,0 (G·J·A/I_p om het zwaartepunt; de echte
   buig-torsieknik van een hoekprofiel ligt lager, KNOWN_BUGS 115).
 
-### Orientatiekaart (MO-31, LS-79 … LS-82, BU-25, LS-31d)
+### Orientatiekaart (MO-31, LS-79 … LS-82, BU-25, LS-31d … LS-31i, NL-92d)
 
 - **Doel**: Mecway 34 slaat de orientatie ook op als item in Loads & Constraints
   (*Element orientation* op een elementselectie): `<orientation selection="…">` met
@@ -2636,6 +2642,23 @@ schuin, met en zonder vector + 30°):
   tipverplaatsingen en -rotaties ≤ 3e-8 (raamwerk), formule en halve kaart ≤ 6e-10.
   Sinds deze versie krijgt elke balk Mecway's V-as expliciet als `VECT_Y` (ook zonder
   orientatie); alle bestaande balkcases gaven daarmee exact dezelfde uitkomst.
+- **Schalen en gaps tegen Mecway 35 (headless, 17 nov 2026)**: Mecway slaat de krachten en
+  momenten per lengte van schalen alleen op als het model de veldvariabelen *force per
+  length* en *moment per length* vraagt. LS-31f … LS-31h: een kaart met een schuine U-as
+  (globaal X, op de scheve strook geprojecteerd, alle componenten ongelijk nul), ook met
+  omgekeerde knoopvolgorde (W omgedraaid; de randen houden hun nummers, dus klem en last
+  zitten in LS-31g op andere randen) en in quad8: de krachten per lengte zijn gelijk aan die
+  van Mecway (quad4 in elke knoop ~1e-10; quad8 0,02% op x = L/2, bij de klemhoek tot 11% van
+  de piek), de momenten in het midden van x = L/2 binnen ~1% (quad8 aan de randknopen tot
+  4,5%) met dezelfde tekens; assen U, V = W × U en W zijn dus die van Mecway. LS-31i: Mecway
+  rekent een formule in het gemiddelde van alle elementknopen, net als de bridge (quad8 met
+  verschoven middenknopen, en in een losse proef trapezia in quad4 en quad8; teruggerekend
+  uit Mecway's eigen spanningen: afwijking 7e-15 m; het hoekgemiddelde, het isoparametrische
+  midden en het zwaartepunt vallen af) en één waarde per element. NL-92d: een kaart langs knoop 1 → 2 op
+  een gap geeft hetzelfde als zonder kaart; Mecway gebruikt de kaart echt (U = +Y: de gap
+  draagt niets). Een trek-gap (U tegen knoop 1 → 2), een zijdelingse verschuiving of
+  samenvallende knopen rekent Mecway wel, de bridge meldt ze (ERROR, KNOWN_BUGS 23).
+  Niet gemeten: het elementmidden bij volume-elementen, tri3/tri6 en line3.
 
 ### Scheve oplegging naast een opgelegde verplaatsing (MO-09, LS-83)
 
@@ -4024,7 +4047,7 @@ WE-12 WE-13`). Gebruikersdocumentatie: [Lassen.md](Lassen.md) §11.
   opgelegde rotaties, element offset en koppelingen (een flexible joint alleen met U, V
   en W vrij, NL-90);
 - gap- en tension-only-elementen in transiente dynamica (statisch wel: LS-54b/c,
-  NL-92 .. NL-92c), dempers in transiente dynamica (DY, MD; dempers wel
+  NL-92 .. NL-92d), dempers in transiente dynamica (DY, MD; dempers wel
   harmonisch en in complexe modes: HR-01d, MC, VH-04c).
 
 Wel gedekt en daarom niet meer in deze lijst: een temperatuurveld als belasting in een

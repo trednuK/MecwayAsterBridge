@@ -897,7 +897,7 @@ L92, F92, K92, C92 = 1.0, 1.0e6, 1.0e9, 5.0e-3
 EAL92 = 210e9 * 0.02 * 0.03 / L92
 
 
-def build_nl92(clearance, force=F92, ramp=False):
+def build_nl92(clearance, force=F92, ramp=False, card_u=None):
     def build():
         m = Model("L30", timesteps=TS)
         m.elset("Balk", "Staal")
@@ -923,6 +923,12 @@ def build_nl92(clearance, force=F92, ramp=False):
         fx = ('<x time="0 s">0 N</x><x time="1 s">%r N</x>' % force if ramp
               else '<x>%r N</x>' % force)
         m.add('<force selection="Tip">%s<y>0 N</y><z>0 N</z></force>' % fx)
+        if card_u:
+            # Element orientation card on the gap
+            m.element_selection("GapOrient", [m.n_elem])
+            m.add('<orientation selection="GapOrient"><ux>%r</ux>'
+                  '<uy>%r</uy><uz>%r</uz><vx>0</vx><vy>0</vy><vz>0</vz>'
+                  '<angleu>0 rad</angleu></orientation>' % tuple(card_u))
         return m
     return build
 
@@ -959,4 +965,18 @@ TESTS += [
          [Check("u_x tip", _nl92_tip, ref=-F92 / EAL92, tol=1e-6, unit="m",
                 in_series=False, source="-F L/EA, gap open")],
          note="Eenzijdig: de gap draagt geen trek."),
+    Case("NL-92d", GROUP, "Gap met een Element orientation-kaart langs "
+         "knoop 1 -> 2, tegen Mecway 35", "nonlin_static_3d",
+         build_nl92(0.0, card_u=(1.0, 0.0, 0.0)),
+         [Check("u_x tip t.o.v. Mecway 35", _nl92_tip,
+                ref=0.00088809946714, tol=1e-6, unit="m", in_series=False,
+                source="Mecway 35 interne solver, Static 3D, headless "
+                "(17 nov 2026): dezelfde geometrie, belasting en kaart "
+                "U = +X geven 0,00088809946714 m, gelijk aan zonder "
+                "kaart")],
+         note="Mecway gebruikt de kaart echt: U = +Y "
+              "laat de gap niets dragen (7,94 mm). Een trek-gap (U tegen "
+              "knoop 1 -> 2), een zijdelingse verschuiving of "
+              "samenvallende knopen rekent Mecway wel; de bridge meldt ze "
+              "(ERROR, KNOWN_BUGS 23)."),
 ]

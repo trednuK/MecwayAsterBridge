@@ -59,6 +59,14 @@
   contact and an initial velocity in the `AXIS` chain give an ERROR (welding and metallurgy in
   `AXIS` too).
 
+- **Element orientation card on shells and gaps compared with Mecway 35** (KNOWN_BUGS 116,
+  removed): with an oblique U axis and a flipped normal the shell forces per length are equal
+  to Mecway's (quad4 at every node, quad8 at mid-length) and the moments at the centre within
+  ~1 % (LS-31f .. LS-31h); a formula is evaluated at the mean of all element nodes, as in
+  Mecway (LS-31i, quad8 with moved midside nodes); a gap card along the gap equals no card
+  (NL-92d). Mecway also computes a tension gap, a lateral offset and coincident nodes, which
+  the bridge still refuses (KNOWN_BUGS 23); the transverse shear of DKT shells is 11 % low on a
+  coarse mesh (KNOWN_BUGS 2).
 - **S46 review continued** (KNOWN_BUGS): the harmonic WARNING about stresses without the loss
   factor (item 120) now only counts materials of solid elements, the only ones with stresses
   in that analysis (shell-only models no longer get it); a new WARNING when `#ASTER-HYST` is

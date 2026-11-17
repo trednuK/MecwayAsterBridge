@@ -1225,7 +1225,11 @@ def _magnitude_var(name, parts, optional=()):
 #     forceperlengthu/v/uv (N/m), momentu/v/uv (N.m/m; momentu > 0 gives
 #     tension on top), shearuw/shearvw (transverse shear per length). U =
 #     projection of the orientation vector or the edge from node 1 to 2
-#     (quadratic: 1 to 3), V = W x U (manual v34 sec. 7.4.2).
+#     (quadratic: 1 to 3), V = W x U (manual v34 sec. 7.4.2). Compared
+#     with Mecway 35 headless (17 Nov 2026, fieldvariables "force per
+#     length" and "moment per length"; without them Mecway stores none):
+#     equal axes and signs with an oblique U card and a flipped W
+#     (LS-31f .. LS-31h).
 # Nodal values are the average of the element values at the node
 # (as Mecway and Code-Aster's _NOEU); in addition as elementnodevariable.
 # Curved quadratic shells: the normal is that of the plane through the

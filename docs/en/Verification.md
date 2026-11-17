@@ -668,6 +668,10 @@ Mecway's solution follows the table.
 | LS-31b | same, quad8 (COQUE_3D) | same + `shearuw` (mean over the width) | -P/b = -150 N/m | ≤ 0.6%; Q exact |
 | LS-31c | same, quad4 with `orientationu*` along the width | `forceperlengthv` = N_u, `momentv`, `forceperlengthu` ≈ 0 | same | exact |
 | LS-31d | same with the U axis from an *Element orientation* card | as LS-31c | same | exact, equal to LS-31c |
+| LS-31f | same, quad4 with a card U = global X (projected obliquely) and 200 N extra along the width | `forceperlengthu`/`v`/`uv`, `momentu`/`v`/`uv` in the middle at x = L/2 | Mecway 35 headless, same model | forces ≤ 1e-6, moments ≤ 0.11% |
+| LS-31g | same as LS-31f with the node order reversed (W flipped; edge numbers unchanged, so clamp and load on other edges) | same | same | forces ≤ 1e-6, moments ≤ 1.4% (same signs) |
+| LS-31h | same as LS-31f in quad8 (COQUE_3D) | same | same | forces ≤ 0.02%, moments ≤ 0.7% |
+| LS-31i | plate 1 x 0.2 m, quad8 with moved midside nodes, card with the formula uy = 5 (x − 0.5) | U angle per element node (from `stress<ij>m1` and `forceperlength*`) | atan(5 (xc − 0.5)), xc = mean of all element nodes (as Mecway 35); Mecway's angle of elements 1 and 19 | 1.4e-13 rad |
 | LS-32 / LS-32b | hex8 bar uniaxial tension 100 MPa; cube pure shear 50 MPa | `lstrainxx/yy/zz`, `lstrainxy` (γ), `factorofsafety` | σ/E, -νσ/E, τ/G; S/σ, S/(√3 τ) | exact |
 | NL-30 / NL-30b | contact patch test hex8 matching (STANDARD, `CONT_NOEU`) and hex20 (PENALISATION, `LAGS_C` only) | `contactpressure` (mean, smallest), `contactstate` | p = F/A = 10 MPa, state 1 | exact |
 | NL-30c | two beams with their tips touching (NL-03b) | `contactstate` tip 1, start of the slave zone 0; `contactpressure` there | open: 0 | state exact; pressure 448 Pa (0.06% of the peak, numerical) |
@@ -2195,11 +2199,13 @@ samples) plus the kinks of the load tables (NL-20).
 - **Model**: beam 1 m (4 × line2, 20 × 30 mm, E = 210 GPa, EA/L = 1.26e8 N/m) fixed at
   x = 0; a gap (k = 1e9 N/m) from the tip to a node 10 mm further, held by three
   *Displacements* (x, y, z = 0); 1 MN in +x on the tip. NL-92b: *Initial clearance* 5 mm and
-  the force as a time table 0 .. 1 MN; NL-92c: −1 MN (pulling, gap open).
+  the force as a time table 0 .. 1 MN; NL-92c: −1 MN (pulling, gap open); NL-92d: as NL-92
+  with an *Element orientation* card U = +X on the gap.
 - **Reference**: NL-92 u = F / (k + EA/L) (gap closed at once) and Mecway 35 (internal
   solver, Static 3D, in the GUI) 0.00088809946714032 m; NL-92b at t = 0.5 u = 0.5 F L/EA
-  (open), at t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA.
-- **Result**: all checks within 3e-13, also against Mecway (NL-92).
+  (open), at t = 1 u = c + (F − c EA/L) / (k + EA/L); NL-92c u = −F L/EA; NL-92d Mecway 35
+  headless (Static 3D) with the same geometry, load and card, 0.00088809946714 m.
+- **Result**: all checks within 3e-13, also against Mecway (NL-92, NL-92d).
 - **Interpretation**: the ground node is held by *Displacements*, not by *Fixed support*:
   Mecway ignores that on a node with only a gap (KNOWN_BUGS 135). *Initial clearance* is a CCX
   input in Mecway; NL-92b is against the hand calculation only. A constant force acts in
@@ -2593,7 +2599,7 @@ along X and skew, with and without vector + 30°):
   axis) and 601.0 (G·J·A/I_p about the centroid; the real flexural-torsional factor of an
   angle is lower, KNOWN_BUGS 115).
 
-### Element orientation card (MO-31, LS-79 … LS-82, BU-25, LS-31d)
+### Element orientation card (MO-31, LS-79 … LS-82, BU-25, LS-31d … LS-31i, NL-92d)
 
 - **Goal**: Mecway 34 also stores the orientation as an item in Loads & Constraints
   (*Element orientation* on an element selection): `<orientation selection="…">` with
@@ -2622,6 +2628,23 @@ along X and skew, with and without vector + 30°):
   5e-12, tip displacements and rotations ≤ 3e-8 (frame), formula and half card ≤ 6e-10.
   Since this version every beam gets Mecway's V axis explicitly as `VECT_Y` (also without
   orientation); all existing beam cases gave exactly the same result with it.
+- **Shells and gaps against Mecway 35 (headless, 17 Nov 2026)**: Mecway stores the forces
+  and moments per length of shells only when the model asks for the field variables *force
+  per length* and *moment per length*. LS-31f … LS-31h: a card with an oblique U axis
+  (global X, projected on the inclined strip, all components non-zero), also with the node
+  order reversed (W flipped; the edges keep their numbers, so clamp and load sit on other
+  edges in LS-31g) and in quad8: the forces per length are equal to Mecway's (quad4 at every
+  node ~1e-10; quad8 0.02% at x = L/2, up to 11% of the peak at the clamp corner), the moments
+  at the centre of x = L/2 within ~1% (quad8 at the edge nodes up to 4.5%) with the same signs;
+  so the axes U, V = W × U and W are Mecway's. LS-31i: Mecway evaluates a formula at
+  the mean of all element nodes, as the bridge does (quad8 with moved midside nodes, and in a
+  separate probe trapezoids in quad4 and quad8; backed out from Mecway's own stresses:
+  deviation 7e-15 m; the corner mean, the isoparametric centre and the area centroid are
+  ruled out) and with one value per element. NL-92d: a card along node 1 → 2 on a gap gives the same as no
+  card; Mecway does use the card (U = +Y: the gap carries nothing). A tension gap (U against
+  node 1 → 2), a lateral offset or coincident nodes Mecway does compute, the bridge reports
+  them (ERROR, KNOWN_BUGS 23). Not measured: the element centre of solids, tri3/tri6 and
+  line3.
 
 ### Skew support next to an imposed displacement (MO-09, LS-83)
 
@@ -4010,7 +4033,7 @@ WE-12 WE-13`). User documentation: [Welding.md](Welding.md) §11.
   rotations, element offset and couplings (a flexible joint only with U, V and W free,
   NL-90);
 - gap and tension-only elements in transient dynamics (covered in statics: LS-54b/c,
-  NL-92 .. NL-92c), dampers in transient dynamics (DY, MD; dampers are
+  NL-92 .. NL-92d), dampers in transient dynamics (DY, MD; dampers are
   covered in harmonic response and complex modes: HR-01d, MC, VH-04c).
 
 Covered and therefore no longer in this list: a temperature field as a load in a

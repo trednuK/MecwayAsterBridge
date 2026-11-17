@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 8e2f4b0, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge bf1946b, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3239 van 3245 controles binnen de tolerantie** (631 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3261 van 3267 controles binnen de tolerantie** (636 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1313,6 +1313,27 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 8e2f4b0, Code-Aster 17.4
 | LS-31d | Idem met de U-as als Element orientation-kaart | N_u (forceperlengthv) | 30000 N/m | 30000 | -0.00% | 0.1% | OK |
 | LS-31d | Idem met de U-as als Element orientation-kaart | M_u (momentv) | 7.5 N | 7.5 | -0.00% | 1% | OK |
 | LS-31d | Idem met de U-as als Element orientation-kaart | N_v (forceperlengthu) | 0 N/m | 0.12041 | 0.12041 | 30 N/m | OK |
+| LS-31f | Orientatiekaart op schalen, schuine U-as (quad4), tegen Mecway 35 | forceperlengthu midden | 18551 N/m | 18551 | +0.00% | 0.0001% | OK |
+| LS-31f | Orientatiekaart op schalen, schuine U-as (quad4), tegen Mecway 35 | forceperlengthv midden | 41447 N/m | 41447 | +0.00% | 0.0001% | OK |
+| LS-31f | Orientatiekaart op schalen, schuine U-as (quad4), tegen Mecway 35 | forceperlengthuv midden | 28915 N/m | 28915 | -0.00% | 0.0001% | OK |
+| LS-31f | Orientatiekaart op schalen, schuine U-as (quad4), tegen Mecway 35 | momentu midden | 6.6835 N | 6.6799 | -0.05% | 1% | OK |
+| LS-31f | Orientatiekaart op schalen, schuine U-as (quad4), tegen Mecway 35 | momentv midden | 8.3354 N | 8.3302 | -0.06% | 1% | OK |
+| LS-31f | Orientatiekaart op schalen, schuine U-as (quad4), tegen Mecway 35 | momentuv midden | 7.4569 N | 7.4493 | -0.10% | 1% | OK |
+| LS-31g | Idem met omgekeerde knoopvolgorde (W omgedraaid) | forceperlengthu midden | 18536 N/m | 18536 | +0.00% | 0.0001% | OK |
+| LS-31g | Idem met omgekeerde knoopvolgorde (W omgedraaid) | forceperlengthv midden | 41451 N/m | 41451 | +0.00% | 0.0001% | OK |
+| LS-31g | Idem met omgekeerde knoopvolgorde (W omgedraaid) | forceperlengthuv midden | -28902 N/m | -28902 | +0.00% | 0.0001% | OK |
+| LS-31g | Idem met omgekeerde knoopvolgorde (W omgedraaid) | momentu midden | -5.2016 N | -5.2715 | -1.34% | 2% | OK |
+| LS-31g | Idem met omgekeerde knoopvolgorde (W omgedraaid) | momentv midden | -8.1777 N | -8.2468 | -0.84% | 2% | OK |
+| LS-31g | Idem met omgekeerde knoopvolgorde (W omgedraaid) | momentuv midden | 6.6066 N | 6.6128 | +0.09% | 2% | OK |
+| LS-31h | Idem LS-31f in quad8 (COQUE_3D) | forceperlengthu midden | 9310.8 N/m | 9312.3 | +0.02% | 0.1% | OK |
+| LS-31h | Idem LS-31f in quad8 (COQUE_3D) | forceperlengthv midden | 50694 N/m | 50690 | -0.01% | 0.1% | OK |
+| LS-31h | Idem LS-31f in quad8 (COQUE_3D) | forceperlengthuv midden | 27889 N/m | 27886 | -0.01% | 0.1% | OK |
+| LS-31h | Idem LS-31f in quad8 (COQUE_3D) | momentu midden | 6.6402 N | 6.6803 | +0.60% | 1% | OK |
+| LS-31h | Idem LS-31f in quad8 (COQUE_3D) | momentv midden | 8.2933 N | 8.3304 | +0.45% | 1% | OK |
+| LS-31h | Idem LS-31f in quad8 (COQUE_3D) | momentuv midden | 7.4624 N | 7.4491 | -0.18% | 1% | OK |
+| LS-31i | Formule in een orientatiekaart op quad8: elementmidden zoals Mecway 35 | U-hoek t.o.v. atan(k (xc - 0,5)), xc = gemiddelde van alle elementknopen | 0 rad | 1.3575e-13 | 1.3575e-13 | 1e-09 rad | OK |
+| LS-31i | Formule in een orientatiekaart op quad8: elementmidden zoals Mecway 35 | U-hoek element 1 t.o.v. Mecway | -1.1505 rad | -1.1505 | -0.00% | 1e-09 rad | OK |
+| LS-31i | Formule in een orientatiekaart op quad8: elementmidden zoals Mecway 35 | U-hoek element 19 t.o.v. Mecway | 1.1546 rad | 1.1546 | +0.00% | 1e-09 rad | OK |
 | LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainxx | 4.7619e-04  | 4.7619e-04 | +0.00% | 0.01% | OK |
 | LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainyy | -1.4286e-04  | -1.4286e-04 | -0.00% | 0.01% | OK |
 | LS-32 | Totale rek en factor of safety, eenassige trek (hex8) | lstrainzz | -1.4286e-04  | -1.4286e-04 | -0.00% | 0.01% | OK |
@@ -1869,6 +1890,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 8e2f4b0, Code-Aster 17.4
 | NL-92b | Gap met speling 5 mm | u_x tip t = 0,5 (open) | 0.0039683 m | 0.0039683 | +0.00% | 0.0001% | OK |
 | NL-92b | Gap met speling 5 mm | u_x tip t = 1 (dicht) | 0.0053286 m | 0.0053286 | -0.00% | 0.0001% | OK |
 | NL-92c | Gap getrokken: open, geen stijfheid | u_x tip | -0.0079365 m | -0.0079365 | -0.00% | 0.0001% | OK |
+| NL-92d | Gap met een Element orientation-kaart langs knoop 1 -> 2, tegen Mecway 35 | u_x tip t.o.v. Mecway 35 | 8.8810e-04 m | 8.8810e-04 | +0.00% | 0.0001% | OK |
 
 *NL-03a: diagnose <A>_ALARM; MECANONLINE9_4; BRIDGE_ONVOLLEDIG*
 
