@@ -31,12 +31,14 @@
 #
 # Compatible with IronPython 2.7.9.
 
+import io
 import math
+import os
 import re
 from collections import OrderedDict
 
 from bridge_utils import (log, tr, error_estimator_requested,
-                          get_active_analysis)
+                          get_active_analysis, CONFIG_BRIDGE)
 from bridge_bcs import SUPPORTED_BCS, _angl_naut, _scale, is_position
 import bridge_custom
 import bridge_warping
@@ -1864,6 +1866,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                          dict((rn(k), v) for k, v in group_weights.items()),
                          dict((rn(k), v) for k, v in group_integrals.items()),
                          dict((rn(k), v) for k, v in group_faces.items()))
+    if not write_moved_nodes(mail_path, model_data):
+        return False
     # The free faces in the model (boundary elements, ORIE_PEAU), so that the
     # error estimator sees a load on them (bridge_to_aster._error_estimator_block).
     model_data["error_free_group"] = ERR_FREE_GROUP if free_members else None
@@ -3164,14 +3168,15 @@ def ccx_tie_tolloc(tris):
 
 
 def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance,
-                   distances=None, masters=None):
+                   distances=None, masters=None, planes=None):
     """
     (tied, untied) slave node ids by CCX's rule (gentiedmpc.f, see the
     comment above _CCX_FACE_CORNERS); tris from _ccx_triangles for the
     master of one tie, tolerance the position tolerance (m). With a dict
     as distances: per tied node its distance normal to the master triangle
     it was tied to (m; _bonded_gap_warning). With a dict as masters: per
-    tied node the nodes of the master face of that triangle.
+    tied node the nodes of the master face of that triangle; with a dict as
+    planes: per tied node (unit normal, offset) of that triangle's plane.
     """
     tietol = tolerance if tolerance >= 1.0e-10 else tolloc
     owner = {}
@@ -3257,6 +3262,8 @@ def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance,
                     distances[s] = dist
                 if masters is not None and len(t) > 5:
                     masters[s] = t[5]
+                if planes is not None:
+                    planes[s] = (t[2], t[3])
         (tied if found is not None else untied).append(s)
     return tied, untied
 
@@ -3452,6 +3459,272 @@ def _check_bonded_gap(model_data, label, faces, master, slave, mk, sk, tris,
             sk == set(["solid"])))
 
 
+# Analyses whose results export passes moved_nodes (bridge_to_aster.
+# moved_nodes_arg in both export_results calls).
+_CLOSE_GAP_ANALYSES = ("lin_static_3d", "nonlin_static_3d", "modal_3d",
+                       "buckling_3d")
+
+
+def _close_gap_moves(slave_faces, tied, distances, masters, planes, nodes,
+                     tolloc, busy, conn=None):
+    """
+    Moves that put tied slave nodes on the plane of their master triangle
+    (CCX moves bonded slave nodes onto the master, manual of Mecway par.
+    9.9.1; bonded_close_gap). Pure. Returns (moves {nid: (x, y, z)},
+    skipped {reason: set(nid)}). A node with a distance <= tolloc stays.
+    Not moved: busy nodes (other contact pairs, couplings, constraint
+    equations, supports), a curved master face (not all its nodes within
+    tolloc of the triangle plane: the projection would land on the chord),
+    a move larger than 0.1 x the shortest distance to another node of an
+    element at the node (conn {eid: (type, nodes)}; without conn the
+    shortest corner edge of the slave faces; bridge rule, not CCX's: a
+    thin layer under the face must not invert), and every node of a slave
+    face of
+    which another node needs a move that is not made (all or nothing per
+    face, so that a face stays flat).
+    """
+    shortest = {}
+    face_nodes = set(n for f in slave_faces for n in f["nodes"])
+    for _eid, (_typ, en) in (conn or {}).items():
+        hit = [n for n in en if n in face_nodes]
+        for n in hit:
+            for m in en:
+                if m != n:
+                    d = _vsub(nodes[n], nodes[m])
+                    d = math.sqrt(_vdot(d, d))
+                    if d > 0.0:
+                        shortest[n] = min(shortest.get(n, d), d)
+    for f in slave_faces:
+        fn = f["nodes"]
+        nc = 3 if len(fn) in (3, 6) else 4
+        edge = min(math.sqrt(_vdot(_vsub(nodes[fn[i]], nodes[fn[(i + 1) % nc]]),
+                                   _vsub(nodes[fn[i]], nodes[fn[(i + 1) % nc]])))
+                   for i in range(nc))
+        for n in fn:
+            shortest[n] = min(shortest.get(n, edge), edge)
+    moves, skipped = {}, OrderedDict()
+    need = set()
+    for s in tied:
+        d = distances.get(s, 0.0)
+        if d <= tolloc or s not in planes:
+            continue
+        need.add(s)
+        nrm, off = planes[s]
+        why = None
+        if s in busy:
+            why = "busy"
+        elif s not in masters or any(abs(_vdot(nrm, nodes[m]) + off) > tolloc
+                                     for m in masters[s]):
+            why = "curved"
+        elif d > 0.1 * shortest.get(s, 0.0):
+            why = "large"
+        if why:
+            skipped.setdefault(why, set()).add(s)
+            continue
+        p = nodes[s]
+        h = _vdot(nrm, p) + off
+        moves[s] = tuple(p[k] - h * nrm[k] for k in range(3))
+    changed = True
+    while changed:
+        changed = False
+        for f in slave_faces:
+            fn = f["nodes"]
+            if any(n in need and n not in moves for n in fn):
+                for n in fn:
+                    if n in moves:
+                        del moves[n]
+                        skipped.setdefault("face", set()).add(n)
+                        changed = True
+    return moves, skipped
+
+
+def _close_gap_busy(model_data, c):
+    """Nodes that a gap closure of bonded contact c must not move: nodes of
+    the other bonded pairs and of the unilateral contact pairs, of
+    node-surface couplings, constraint equations and supports."""
+    faces = model_data.get("group_face_list", {})
+    rn = model_data.get("selection_renames") or model_data.get(
+        "group_renames", {})
+    unions = model_data.get("group_ma_unions", {})
+    busy = set()
+
+    def face_nodes(g):
+        out = set()
+        for part in unions.get(g, [g]):
+            out.update(n for f in faces.get(part, []) for n in f["nodes"])
+        return out
+    for other in model_data.get("_bonded_input", []):
+        if other is c:
+            continue
+        for g in (other.get("master"), other.get("slave")):
+            busy |= face_nodes(rn.get(g, g))
+    for pair in model_data.get("contacts", []):
+        for g in (pair.get("master"), pair.get("slave")):
+            busy |= face_nodes(g)
+    for cp in model_data.get("couplings", []):
+        busy |= _bc_nodes(model_data, cp.get("master_group"))
+        busy |= face_nodes(cp.get("slave_group_ma") or "")
+        busy |= _bc_nodes(model_data, cp.get("slave_group_ma") or
+                          cp.get("slave_group"))
+    for ce in model_data.get("constraint_equations", []):
+        busy.update(n for n, _d, _c in ce.get("terms", []))
+    for bc in model_data.get("bcs", []):
+        if not bc.get("skip") and bc.get("selection"):
+            busy |= _bc_nodes(model_data, bc["selection"])
+    return busy
+
+
+def _close_bonded_gap(model_data, c, label, kinds, slave_faces, tied,
+                      distances, masters, planes, tolloc):
+    """
+    bonded_close_gap: move the tied slave nodes of a solid-on-solid bonded
+    contact onto the master in the written mesh (model_data["mesh_nodes"]
+    and model_data["_moved_nodes"]; write_mesh rewrites their lines in the
+    .mail and writes <run>_moved.json for the results checks). The .liml is
+    not changed. Not for shells (the offset term is missing, KNOWN_BUGS
+    128), cyclic symmetry, 2D models, adaptive refinement, or when a CCX
+    keyword modification sets ADJUST to off for this kind of contact.
+    """
+    nodes = model_data["mesh_nodes"]
+    why = None
+    if kinds != ("MASSIF", "MASSIF"):
+        why = tr("alleen volume op volume (met een schaal ontbreekt de "
+                 "afstand van het middenvlak, KNOWN_BUGS 128)",
+                 "solid on solid only (with a shell the mid-surface distance "
+                 "is missing, KNOWN_BUGS 128)")
+    elif model_data.get("plane"):
+        why = tr("niet in 2D", "not in 2D")
+    elif model_data.get("cyclic"):
+        why = tr("niet bij cyclische symmetrie", "not with cyclic symmetry")
+    elif bridge_homard.settings(model_data) is not None:
+        why = tr("niet bij adaptief verfijnen", "not with adaptive refinement")
+    elif CONFIG_BRIDGE.get("active_analysis") not in _CLOSE_GAP_ANALYSES or \
+            model_data.get("thermal_data") is not None:
+        # the other analyses (and the thermal -> mechanical chain) export
+        # results through routes that do not pass moved_nodes yet
+        why = tr("alleen in lineair en niet-lineair statisch, modaal en "
+                 "knik", "only in linear and nonlinear static, modal and "
+                 "buckling")
+    else:
+        kw = "CONTACT PAIR" if c.get("type") == "bondedelastic" else "TIE"
+        for k in model_data.get("ccx_keywords", []):
+            if (k.get("keyword", "").upper() == kw and
+                    k.get("setparameter", "").upper() == "ADJUST" and
+                    k.get("value", "").strip().upper() in ("NO", "0", "0.0")):
+                why = tr("de CCX-trefwoordwijziging zet ADJUST uit, dus ook "
+                         "CCX schuift niets", "the CCX keyword modification "
+                         "turns ADJUST off, so CCX moves nothing either")
+    if why:
+        if any(d > tolloc for d in distances.values()):
+            log(tr("WARNING: {0}: spleet sluiten (bonded_close_gap) niet "
+                   "toegepast: {1}.",
+                   "WARNING: {0}: closing the gap (bonded_close_gap) not "
+                   "applied: {1}.").format(label, why))
+        return
+    moves, skipped = _close_gap_moves(slave_faces, tied, distances, masters,
+                                      planes, nodes, tolloc,
+                                      _close_gap_busy(model_data, c),
+                                      model_data.get("_conn"))
+    if moves:
+        largest = max(math.sqrt(_vdot(_vsub(nodes[n], x), _vsub(nodes[n], x)))
+                      for n, x in moves.items())
+        orig = model_data.setdefault("_moved_from", {})
+        for n, x in moves.items():
+            orig.setdefault(n, nodes[n])
+            nodes[n] = x
+            distances[n] = 0.0
+        model_data.setdefault("_moved_nodes", {}).update(moves)
+        log("INFO: {0}: {1} slave node(s) moved onto the master in the "
+            "written mesh (bonded_close_gap, largest move {2} m); the .liml "
+            "is unchanged.".format(label, len(moves), "%.3g" % largest))
+    if skipped:
+        texts = {"busy": tr("ook in een ander contact, koppeling, "
+                            "vergelijking, oplegging of belasting",
+                            "also in another contact, coupling, equation, "
+                            "support or load"),
+                 "curved": tr("gebogen mastervlak", "curved master face"),
+                 "large": tr("verschuiving groter dan 0,1 x de kortste "
+                             "aangrenzende rand", "move larger than 0.1 x "
+                             "the shortest neighbouring edge"),
+                 "face": tr("een ander knooppunt van hun vlak kon niet mee",
+                            "another node of their face could not move")}
+        log(tr("WARNING: {0}: {1} slave-knopen niet verschoven ({2}); daar "
+               "blijft de spleet (KNOWN_BUGS 146).",
+               "WARNING: {0}: {1} slave nodes not moved ({2}); the gap stays "
+               "there (KNOWN_BUGS 146).").format(
+                   label, sum(len(v) for v in skipped.values()),
+                   "; ".join("{0}: {1}".format(texts[k], len(v))
+                             for k, v in skipped.items())))
+
+
+def write_moved_nodes(mail_path, model_data):
+    """
+    Rewrite the COOR_3D lines of the nodes bonded_close_gap moved
+    (model_data["_moved_nodes"]) in the written .mail, and list them in
+    <run>_moved.json next to it (bridge_results_liml.check_results_fit and
+    aster_results_export._check_node_order skip them). True if done or
+    nothing to do; False (ERROR) if the file could not be rewritten.
+    """
+    moved = model_data.get("_moved_nodes") or {}
+    side = os.path.splitext(mail_path)[0] + "_moved.json"
+    if not moved:
+        if os.path.exists(side):
+            try:
+                os.remove(side)      # from an earlier run with the same name
+            except OSError:
+                pass
+        return True
+    try:
+        f = io.open(mail_path, encoding="utf-8", newline="")
+        try:
+            text = f.read()
+        finally:
+            f.close()
+        nl = "\r\n" if "\r\n" in text else "\n"
+        lines = text.split(nl)
+        inside, done = False, set()
+        for i, line in enumerate(lines):
+            word = line.strip()
+            if word == "COOR_3D":
+                inside = True
+                continue
+            if inside:
+                if word == "FINSF":
+                    break
+                parts = word.split()
+                if parts and parts[0][:1] == "N" and parts[0][1:].isdigit():
+                    nid = int(parts[0][1:])
+                    if nid in moved:
+                        lines[i] = " N{0} {1}".format(nid, " ".join(
+                            _real(v) for v in moved[nid]))
+                        done.add(nid)
+        if done != set(moved):
+            raise ValueError("nodes not found in COOR_3D: {0}".format(
+                sorted(set(moved) - done)[:10]))
+        tmp = mail_path + ".tmp"
+        f = io.open(tmp, "w", encoding="utf-8", newline="")
+        try:
+            f.write(nl.join(lines))
+        finally:
+            f.close()
+        if os.path.exists(mail_path):
+            os.remove(mail_path)
+        os.rename(tmp, mail_path)
+        f = io.open(side, "w", encoding="utf-8")
+        try:
+            f.write(u"{\"moved_nodes\": [" + u", ".join(
+                str(n) for n in sorted(moved)) + u"]}\n")
+        finally:
+            f.close()
+    except (IOError, OSError, ValueError) as e:
+        log(tr("ERROR: Verschoven knopen (bonded_close_gap) niet in het mesh "
+               "gezet: {0}",
+               "ERROR: Moved nodes (bonded_close_gap) not written to the "
+               "mesh: {0}").format(e))
+        return False
+    return True
+
+
 def _bonded_expected_offset(model_data, faces, kinds):
     """Half the largest shell thickness of the shell-face elements in faces
     (0.0 for solid faces and shell edges), or None if a shell face has no
@@ -3587,11 +3860,15 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
         shell = (m_type, s_type) != ("MASSIF", "MASSIF")
         normal_tol = (model_data.get("_ccx_shell_tol", 0.0) if shell
                       else distance)
-        gap_dist, tie_masters = {}, {}
+        gap_dist, tie_masters, tie_planes = {}, {}, {}
         tied, untied = ccx_tied_nodes(ccx_tris, slave_set,
                                       model_data["mesh_nodes"], tolloc,
                                       normal_tol, distances=gap_dist,
-                                      masters=tie_masters)
+                                      masters=tie_masters, planes=tie_planes)
+        if CONFIG_BRIDGE.get("bonded_close_gap", False):
+            _close_bonded_gap(model_data, c, label, (m_type, s_type),
+                              faces.get(slave, []), tied, gap_dist,
+                              tie_masters, tie_planes, tolloc)
         # %-formatting: '{0:.3g}' gives a decimal comma in IronPython
         # (bridge_to_aster._warn_large_rotations)
         if shell:
@@ -5680,6 +5957,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
     _exclude_fixed_slaves(model_data, contact_integrals)
     _report_constraint_overlaps(model_data, group_integrals, group_faces)
     bonded = []
+    model_data["_bonded_input"] = list(model_data.get("bonded", []))
     ccx_tris = _ccx_tie_setup(model_data, model_data.get("bonded", []),
                               group_faces, rn)
     for k, c in enumerate(model_data.get("bonded", [])):

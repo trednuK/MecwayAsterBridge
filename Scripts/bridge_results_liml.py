@@ -2171,6 +2171,23 @@ def _worst_node(nodes, coords):
     return worst, worst_nid
 
 
+def moved_nodes(mail_path):
+    """Node ids in <run>_moved.json next to the run's .mail (written by
+    bridge_mesh.write_moved_nodes), or [] (no file, unreadable)."""
+    side = os.path.splitext(mail_path)[0] + "_moved.json"
+    if not os.path.exists(side):
+        return []
+    try:
+        import json
+        f = open(side, "r")
+        try:
+            return [int(n) for n in json.load(f).get("moved_nodes", [])]
+        finally:
+            f.close()
+    except (IOError, OSError, ValueError, TypeError, AttributeError):
+        return []
+
+
 def check_results_fit(model_liml, fragment_path, mail_path=None):
     """
     Does result file fragment_path match the mesh of model_liml?
@@ -2219,6 +2236,11 @@ def check_results_fit(model_liml, fragment_path, mail_path=None):
             "Mesh file of this run not found; only node and element "
             "numbers checked, not the coordinates.")
     coords = _mail_coords(mail_path)
+    # Nodes the bridge moved on purpose in the run's mesh (bonded_close_gap,
+    # bridge_mesh.write_moved_nodes): compared at Mecway's position
+    for nid in moved_nodes(mail_path):
+        if nid in coords and nid in nodes:
+            coords[nid] = nodes[nid]
     if set(coords) != set(nodes):
         return False, tr(
             "Het mesh van de run ({0} knopen) verschilt van het model "

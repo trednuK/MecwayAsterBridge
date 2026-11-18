@@ -53,6 +53,12 @@
   penetration p/kn. If you keep your own `Scripts/bridge_utils.py` from an older version
   (saved start-screen settings), it still says `STANDARD`: choose `auto` once on the page
   Contact. Hard contact without penetration: choose `STANDARD`.
+- **Option: close bonded gaps like CCX** (*Bonded contact: close gaps like CCX*, page
+  General, off by default). On: the tied slave nodes of a solid-on-solid bonded contact are
+  moved onto the master in the mesh for Code-Aster, as CCX does; the `.liml` stays as it is.
+  Only with a flat master face and a move up to 0.1 × the shortest neighbouring edge, in
+  linear and nonlinear static, modal and buckling analyses, not for nodes in another
+  contact, coupling, equation, support or load. LS-07o (0.2 mm gap) now equals Mecway.
 - **Friction with parts held only by contact** no longer stops in the first step: zones
   with friction get `SEUIL_INIT` (initial friction threshold; the result does not depend
   on its value). Known: the tangential stiffness kt has almost no effect in Code-Aster,

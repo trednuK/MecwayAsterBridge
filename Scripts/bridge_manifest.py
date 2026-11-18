@@ -385,6 +385,18 @@ def _components(model_data):
     return out
 
 
+def _liml_nodes(model_data):
+    """mesh_nodes with Mecway's positions for the nodes bonded_close_gap
+    moved (model_data["_moved_from"])."""
+    nodes = model_data.get("mesh_nodes", {})
+    orig = model_data.get("_moved_from") or {}
+    if not orig:
+        return nodes
+    out = dict(nodes)
+    out.update(orig)
+    return out
+
+
 def build_manifest(model_data, kept, run_id, aster_version, memory_limit):
     """The manifest as a dict; see the header of this file. Without the
     data of note_mesh there is no manifest (ValueError)."""
@@ -408,8 +420,10 @@ def build_manifest(model_data, kept, run_id, aster_version, memory_limit):
         "deformation": kept["deformation"],
         "deformation_by_component": _deformation_by_component(model_data),
         "base": os.path.basename(run_name(BASE_SUFFIX)),
+        # Mecway's positions (the .liml), also for nodes that
+        # bonded_close_gap moved in the mesh (bridge_mesh._close_bonded_gap)
         "fingerprint": mesh_fingerprint(
-            model_data.get("mesh_nodes", {}),
+            _liml_nodes(model_data),
             [e[0] for e in model_data.get("mesh_elements", [])]),
         "concepts": {
             "result": "res", "mesh": "mesh", "model": "model",

@@ -453,10 +453,13 @@ def read_liml_model(liml_path):
             "uaxes": uaxes}
 
 
-def _check_node_order(mesh, coords):
+def _check_node_order(mesh, coords, moved_nodes=None):
     """
     Check that row i of the Code-Aster mesh is node i+1 of the .liml
-    (same coordinates). Returns an error message (str) or None.
+    (same coordinates). moved_nodes: Mecway node ids that the bridge moved
+    in the written mesh on purpose (bonded_close_gap,
+    bridge_mesh.write_moved_nodes); they are left out of the comparison.
+    Returns an error message (str) or None.
     """
     xyz = np.asarray(mesh.getCoordinates().getValues(), dtype=float)
     xyz = xyz.reshape(-1, 3)
@@ -465,7 +468,11 @@ def _check_node_order(mesh, coords):
                   "Mesh has {0} nodes, the .liml {1}.").format(
             xyz.shape[0], coords.shape[0])
     size = max(1.0, float(np.abs(coords).max()))
-    diff = float(np.abs(xyz[:coords.shape[0]] - coords).max())
+    delta = np.abs(xyz[:coords.shape[0]] - coords)
+    if moved_nodes:
+        rows = [n - 1 for n in moved_nodes if 0 < n <= coords.shape[0]]
+        delta[rows, :] = 0.0
+    diff = float(delta.max()) if delta.size else 0.0
     if diff > 1.0e-9 * size:
         return tr("Knoopvolgorde van het mesh wijkt af van de .liml (max. "
                   "coordinaatverschil {0}).",
@@ -3011,7 +3018,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
                    shell_vectors=None, strengths=None, u_axes=None,
                    failures=None, formulas=None, plane=None,
-                   solid_frames=None):
+                   solid_frames=None, moved_nodes=None):
     """
     Write all archived time steps of res as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
@@ -3075,6 +3082,9 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                     .export_arg): Mecway's "stress in element coordinates"
                     lamuu .. lamwu of all solids from SIGM_ELNO
                     (_element_coord_vars, S13d); None = not written.
+    moved_nodes   : Mecway node ids the bridge moved on purpose in the
+                    written mesh (bonded_close_gap); left out of the
+                    node-order check.
 
     Returns
     -------
@@ -3090,7 +3100,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                        cyclic, opt_in, {"shell_vectors": shell_vectors,
                                         "strengths": strengths,
                                         "solid_frames": solid_frames},
-                       u_axes, failures, formulas)
+                       u_axes, failures, formulas, moved_nodes=moved_nodes)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -3104,7 +3114,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
 def _export(res, out_path, liml_path, fields, extra_results, precision,
             static, t0, rigi_geo=None, mass=None, node_fields=None,
             cyclic=None, opt_in=None, derived=None, u_axes=None,
-            failures=None, formulas=None):
+            failures=None, formulas=None, moved_nodes=None):
     """Work of export_results (without the error handling)."""
     model = read_liml_model(liml_path)
     for vec, ranges in u_axes or ():
@@ -3124,7 +3134,7 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
         rows, err = aster_cyclic.node_rows(xyz, model["coords"])
         n = model["coords"].shape[0]
     else:
-        err = _check_node_order(mesh, model["coords"])
+        err = _check_node_order(mesh, model["coords"], moved_nodes)
     if err:
         print(tr("aster_results_export: FOUT: {0}",
                  "aster_results_export: ERROR: {0}").format(err))

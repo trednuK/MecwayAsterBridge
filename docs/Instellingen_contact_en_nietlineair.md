@@ -813,9 +813,24 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   elementgrootte van de master (hoogstens die halve dikte) en de pijlhoogte van een gebogen
   master; meestal verschijnt dan ook het Code-Aster-alarm `CALCULEL5_48`. Niet
   gecontroleerd met een *Element offset* of een schaal zonder dikte (INFO). Sluit de
-  spleet in het mesh (KNOWN_BUGS 146). Mecway's
+  spleet in het mesh of zet de instelling hieronder aan (KNOWN_BUGS 146). Mecway's
   *CCX keyword*-wijzigingen zoals `ADJUST` op `*CONTACT PAIR` veranderen alleen de
-  CalculiX-invoer; de bridge meldt en negeert ze.
+  CalculiX-invoer; de bridge meldt ze en gebruikt ze alleen om te zien of `ADJUST` uit
+  staat (dan sluit hij de spleet ook niet).
+  Met de instelling *Verlijmd contact: spleet sluiten zoals CCX* (`bonded_close_gap`,
+  pagina Algemeen, standaard uit) schuift de bridge de gekoppelde slave-knopen in het mesh
+  voor Code-Aster op de master (de `.liml` blijft gelijk), zoals CCX doet: alleen volume op
+  volume, met een vlak mastervlak en een verschuiving tot 0,1 × de kortste aangrenzende
+  rand (de kortste afstand tot een andere knoop van een element bij de knoop; een regel van
+  de bridge, niet van CCX), in
+  lineair en niet-lineair statisch, modaal en knik (niet in de thermische keten en de
+  andere analyses); niet voor knopen die ook in een
+  ander contact, een koppeling, een vergelijking, een oplegging of een belasting zitten,
+  niet bij
+  cyclische symmetrie, in 2D of bij adaptief verfijnen, en niet als een *CCX
+  keyword*-wijziging `ADJUST` uitzet. Een slave-vlak schuift helemaal of niet; wat blijft,
+  krijgt de WARNING. Verificatie LS-07o: de overlapnaad van LS-07m met 0,2 mm spleet geeft
+  0,230166 mm, gelijk aan Mecway (zonder de optie +0,26 %).
 
 ### 3.5 Zones die slave-knopen delen
 

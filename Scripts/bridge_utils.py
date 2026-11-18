@@ -98,6 +98,11 @@ CONFIG_BRIDGE = {
     # results (bridge_hide_failed, core liml_failed.py; route "liml"). It
     # rewrites the solution of the model (node copies per failed element).
     "hide_failed":     False,
+    # Bonded contact across a gap (KNOWN_BUGS 146): True = move the tied
+    # slave nodes of a solid-on-solid bonded contact onto the master in the
+    # mesh for Code-Aster, as CCX does (bridge_mesh._close_bonded_gap; the
+    # .liml is not changed); False = tie across the gap, with a WARNING.
+    "bonded_close_gap": False,
     # ParaView for the ParaView buttons of the Results dialog and the
     # convergence window (bridge_viewers). Empty ("") = search
     # automatically: for a .pvd an official ParaView 6.x, else Salome-Meca's;

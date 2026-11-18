@@ -925,8 +925,10 @@ Code-Aster value per node) and logs the largest difference per variable.
    nodes and its tied springs of `bondedelastic` start stretched by the whole gap: a large
    tension at the first step instead of compression, an artefact of CCX, not something
    the bridge should copy. `bondedce` NOT checked.
-   Status: reported; the geometry is not adjusted (moving the slave nodes as CCX does
-   would be an option at most).
+   Status: reported; with the setting `bonded_close_gap` (off by default) the bridge moves
+   the slave nodes as CCX does, solid on solid with a flat master only
+   (`bridge_mesh._close_bonded_gap`, verification LS-07o equal to Mecway); shells need the
+   offset term of item 128.
 
 147\. **Bonded contact with a support on the same nodes: what is still double** (confirmed,
    Code-Aster 17.4, 18 Nov 2026; `bridge_mesh._drop_bonded_redundant`). A tied slave node

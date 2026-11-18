@@ -1072,6 +1072,16 @@ TESTS += [
          note="Spleet binnen de tolerantie: gekoppeld (CCX schuift de "
               "knopen op het mastervlak, LIAISON_MAIL koppelt over de "
               "spleet)."),
+    Case("LS-07o", GROUP, "Als LS-07m met bonded_close_gap: de bridge "
+         "schuift de slave-knopen op de master zoals CCX",
+         "lin_static_3d", build_ls07_lap(0.0002, 0.0005),
+         [Check("doorbuiging tip t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Tip"), ref=MW_LS07M,
+                tol=0.001, unit="m", source="Mecway 34 (CCX), headless",
+                in_series=False)],
+         general={"bonded_close_gap": True},
+         note="24 slave-knopen 0,2 mm verschoven in het mesh voor "
+              "Code-Aster (niet in de .liml); gelijk aan Mecway."),
 ]
 
 

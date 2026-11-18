@@ -163,7 +163,8 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
-regressie): LS-07n (2 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS 148).
+regressie): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+148).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 148: de tangentiële stijfheid kt heeft in Code-Aster bijna geen effect (NL-03h,
@@ -406,7 +407,7 @@ opeenvolgende meshes.
   QUAD9-middenknoop, `CHARGES2_31`); de rotaties blijven bij `LIAISON_MAIL`, zodat de
   middenknoop meetelt. Met de rotaties zonder middenknoop was (i) 8,7 % te slap.
 
-### LS-07l/m Verlijmd contact tussen volumes, slave steekt voorbij de master uit
+### LS-07l/m/o Verlijmd contact tussen volumes, slave steekt voorbij de master uit
 
 - **Doel**: welke slave-knopen verlijmd contact koppelt als het slave-vlak voorbij de
   master doorloopt (KNOWN_BUGS 128). Mecway schrijft verlijmd contact voor CCX als `*TIE`
@@ -429,7 +430,9 @@ opeenvolgende meshes.
   slave-knopen aan de rand van A: 0,00908 mm, 25x te stijf. Mecway's eigen solver met
   *Constraint equations* geeft dezelfde 0,230773 mm. (m) 0,230773 mm, +0,26% t.o.v. Mecway
   (CCX schuift de slave-knopen op de master, `ADJUST`; `LIAISON_MAIL` koppelt over de
-  spleet).
+  spleet). LS-07o: (m) met `bonded_close_gap` aan: de bridge schuift de 24 gekoppelde
+  slave-knopen 0,2 mm op de master in het mesh voor Code-Aster: 0,230166 mm, gelijk aan
+  Mecway (0,00%).
 - **Interpretatie**: de slave-knopen die CCX vrij laat, zijn nu ook in Code-Aster vrij.
   Ook nagelopen op Samples/BoltedJoint met de drie contacten verlijmd (lineair statisch):
   de bridge laat dezelfde 58 knopen vrij die CCX in `WarnNodeMissTiedContact.nam` noemt;

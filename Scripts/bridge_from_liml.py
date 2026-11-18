@@ -1250,6 +1250,10 @@ def _report_ccx_keywords(root, model_data):
         desc = u"*{0}: {1}".format(item.get("keyword", "?"),
                                    u" ".join(p for p in parts if p))
         active.append(desc)
+        # kept for bridge_mesh._close_bonded_gap (ADJUST off: no move)
+        model_data.setdefault("ccx_keywords", []).append(dict(
+            (k, item.get(k, "")) for k in ("keyword", "action",
+                                           "setparameter", "value")))
         log(tr(u"WARNING: CCX-trefwoordwijziging {0} is CalculiX-invoer; "
                u"Code-Aster gebruikt die niet.",
                u"WARNING: CCX keyword modification {0} is CalculiX input; "

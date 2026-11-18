@@ -2531,7 +2531,8 @@ def _results_route(work_dir, model_data, postreleve_block, impr_table_block,
     scripts = os.path.dirname(os.path.abspath(__file__))
     fragment = results_file(work_dir)
     extra = _derived_args(model_data, chosen) + formulas_arg(model_data) + \
-        bridge_plane.export_arg(model_data) + extra
+        bridge_plane.export_arg(model_data) + moved_nodes_arg(model_data) + \
+        extra
     # Orthotropic solids: Mecway's "stress in element coordinates" (S13d)
     extra += bridge_orthotropic.export_arg(
         model_data, analysis.get("fields", []) if fields is None else fields)
@@ -6370,6 +6371,16 @@ def _drop_keys(args, keys):
     return "".join(", " + p for p in kept)
 
 
+def moved_nodes_arg(model_data):
+    """', moved_nodes=[...]' for export_results: the Mecway nodes that
+    bonded_close_gap moved in the written mesh (bridge_mesh.
+    write_moved_nodes), or ''."""
+    moved = model_data.get("_moved_nodes") or {}
+    if not moved:
+        return ""
+    return ", moved_nodes={0!r}".format(sorted(int(n) for n in moved))
+
+
 def _penalty_args(c, algo, friction):
     """Extra zone arguments for ALGO_CONT='PENALISATION' (or "")."""
     if algo != "PENALISATION":
@@ -8764,7 +8775,8 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
         "aster_results_export.export_results(@N"
         "    res, {fragment}, {liml},@N"
         "{extra}"
-        "    fields={fields!r}, precision='double'{norm}{cmass}{formulas})@N"
+        "    fields={fields!r}, precision='double'{norm}{cmass}{formulas}"
+        "{moved})@N"
     ).replace("@N", chr(10)).format(
         scripts=_py_str(scripts), fragment=_py_str(results_file(work_dir)),
         liml=_py_str(model_data.get("liml_path", "")),
@@ -8772,7 +8784,7 @@ def _modes_export_block(work_dir, model_data, stiffness_norm=False,
             "@N", chr(10)), fields=[str(f) for f in fields],
         norm=", rigi_geo=rigi_geo" if stiffness_norm else "",
         cmass=", mass=masse" if complex_modes else "",
-        formulas=formulas_arg(model_data))
+        formulas=formulas_arg(model_data), moved=moved_nodes_arg(model_data))
 
 
 # Fields that can go to Mecway per mode in a modal analysis (setting

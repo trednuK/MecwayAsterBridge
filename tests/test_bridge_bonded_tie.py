@@ -201,6 +201,90 @@ check("drop: 'Pin' split, DZ kept on the slave ({0})".format(
       len(copies) == 1 and copies[0]["aster_dict"] == {"DZ": 0.0} and
       groups[copies[0]["selection"]] == [108] and
       groups[pin["selection"]] == [edge[0]])
+# bonded_close_gap: moves onto the triangle plane, gate, busy, curved,
+# all or nothing per face (_close_gap_moves); a flat master face z = 0
+cg_nodes = {1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0), 3: (1.0, 1.0, 0.0),
+            4: (0.0, 1.0, 0.0),
+            11: (0.2, 0.2, 0.05), 12: (0.8, 0.2, 0.05), 13: (0.8, 0.8, 0.05),
+            14: (0.2, 0.8, 0.05)}
+plane = ((0.0, 0.0, 1.0), 0.0)
+sl = [11, 12, 13, 14]
+face = [{"nodes": sl}]
+masters_cg = dict((s, (1, 2, 3, 4)) for s in sl)
+planes_cg = dict((s, plane) for s in sl)
+dist = dict((s, 0.05) for s in sl)
+mv, sk = bm._close_gap_moves(face, sl, dist, masters_cg, planes_cg, cg_nodes,
+                             1e-4, set())
+check("close gap: all four slave nodes onto z = 0 ({0})".format(mv),
+      sorted(mv) == sl and all(abs(x[2]) < 1e-15 for x in mv.values())
+      and abs(mv[11][0] - 0.2) < 1e-15)
+mv, sk = bm._close_gap_moves(face, sl, dist, masters_cg, planes_cg, cg_nodes,
+                             1e-4, set([12]))
+check("close gap: a busy node keeps its whole face in place ({0})".format(
+    dict(sk)), not mv and sk.get("busy") == set([12]))
+far = dict((s, 0.2) for s in sl)
+mv, sk = bm._close_gap_moves(face, sl, far, masters_cg, planes_cg, cg_nodes,
+                             1e-4, set())
+check("close gap: move > 0.1 x shortest edge (0.06) not made",
+      not mv and sk.get("large"))
+bent = dict(cg_nodes)
+bent[3] = (1.0, 1.0, 0.01)
+mv, sk = bm._close_gap_moves(face, sl, dist, masters_cg, planes_cg, bent,
+                             1e-4, set())
+check("close gap: curved (warped) master face not used", not mv and
+      sk.get("curved"))
+# a thin element under the slave face (node 15 at 0.01 below node 11):
+# the gate uses the shortest distance in the elements at the node
+thin = dict(cg_nodes)
+thin[15] = (0.2, 0.2, 0.04)
+mv, sk = bm._close_gap_moves(face, sl, dist, masters_cg, planes_cg, thin,
+                             1e-4, set(), {1: ("HEXA8", [11, 12, 13, 14,
+                                                         15, 15, 15, 15])})
+check("close gap: thin layer under the face -> move too large ({0})".format(
+    dict(sk)), not mv and sk.get("large"))
+mv, sk = bm._close_gap_moves(face, sl, dist, {}, planes_cg, cg_nodes, 1e-4,
+                             set())
+check("close gap: no master data -> not moved", not mv and sk.get("curved"))
+# _close_bonded_gap end to end on a small model_data: moves in a static
+# analysis, refuses (nothing moved) in an analysis whose export does not
+# pass moved_nodes
+cfg = bridge_utils.CONFIG_BRIDGE
+saved_active = cfg.get("active_analysis")
+try:
+    for active, expect in (("lin_static_3d", True), ("dyna_impl_3d", False)):
+        cfg["active_analysis"] = active
+        md = {"mesh_nodes": dict(cg_nodes), "_conn": {}, "bcs": [],
+              "group_face_list": {}}
+        d2 = dict(dist)
+        bm._close_bonded_gap(md, {"type": "bondedtie"}, "c",
+                             ("MASSIF", "MASSIF"), face, sl, d2, masters_cg,
+                             planes_cg, 1e-4)
+        moved = sorted(md.get("_moved_nodes", {}))
+        check("close gap end to end in {0}: moved {1}".format(active, moved),
+              (moved == sl and md["mesh_nodes"][11][2] == 0.0 and
+               md["_moved_from"][11] == cg_nodes[11] and d2[11] == 0.0)
+              if expect else not moved)
+finally:
+    cfg["active_analysis"] = saved_active
+# write_moved_nodes rewrites only the moved COOR_3D lines, plus the sidecar
+import tempfile, shutil, json
+tmpd = tempfile.mkdtemp(prefix="cgap")
+try:
+    mail = os.path.join(tmpd, "m_1.mail")
+    with open(mail, "w") as f:
+        f.write("TITRE\n x\nFINSF\nCOOR_3D\n N1 0.0 0.0 0.0\n"
+                " N11 0.2 0.2 0.05\nFINSF\nFIN\n")
+    ok = bm.write_moved_nodes(mail, {"_moved_nodes": {11: (0.2, 0.2, 0.0)}})
+    text = open(mail).read()
+    side = json.load(open(os.path.join(tmpd, "m_1_moved.json")))
+    check("write_moved_nodes: line rewritten, sidecar ({0})".format(side),
+          ok and " N11 0.2 0.2 0.0\n" in text and " N1 0.0 0.0 0.0" in text
+          and side == {"moved_nodes": [11]})
+    import bridge_results_liml as brl
+    check("results check reads the sidecar",
+          brl.moved_nodes(mail) == [11])
+finally:
+    shutil.rmtree(tmpd, ignore_errors=True)
 tied, untied = bm.ccx_tied_nodes([], slaves, nodes, tolloc, 0.0)
 check("no master triangles: nothing tied", tied == [] and
       len(untied) == len(slaves))

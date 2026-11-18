@@ -1214,6 +1214,23 @@ SETTING_HELP = {
                           u"the result route 'liml'; a run without results "
                           u"only gets a solution with the monitor if the "
                           u"model has no results yet. Off by default."),
+    "bonded_close_gap": (
+        u"Verlijmd contact met een spleet: CCX (Mecway) schuift de "
+        u"slave-knopen eerst op de master; Code-Aster koppelt ze waar ze "
+        u"liggen. Aan: de bridge schuift ze in het mesh voor Code-Aster "
+        u"(niet in de .liml) op het mastervlak, alleen volume op volume met "
+        u"een vlak mastervlak en een verschuiving tot 0,1 x de kortste "
+        u"aangrenzende rand, "
+        u"in lineair en niet-lineair statisch, modaal en knik. "
+        u"Uit (standaard): de spleet blijft, met een WARNING.",
+        u"Bonded contact with a gap: CCX (Mecway) first moves the slave nodes "
+        u"onto the master; Code-Aster ties them where they are. On: the bridge "
+        u"moves them onto the master face in the mesh for Code-Aster (not in "
+        u"the .liml), solid on solid only, with a flat master face and a move "
+        u"up to 0.1 x the shortest neighbouring edge, in linear and nonlinear "
+        u"static, modal "
+        u"and buckling. Off (default): the gap stays, with a "
+        u"WARNING."),
     "hide_failed": (u"Bezweken elementen verdwijnen in Mecway's eigen "
                     u"resultaatweergave, elk vanaf de stap na het "
                     u"bezwijken: hun knopen klappen ineen op het "

@@ -159,7 +159,8 @@ no value that moves more than 1e-6 relative compared with the stored results.
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
-regression): LS-07n (2 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS 148).
+regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+148).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 148: the tangential stiffness kt has almost no effect in Code-Aster (NL-03h,
@@ -404,7 +405,7 @@ meshes is given below.
   centre node counts. With the rotations without the centre node, (i) was 8.7 % too
   flexible.
 
-### LS-07l/m Bonded contact between solids, slave overhanging the master
+### LS-07l/m/o Bonded contact between solids, slave overhanging the master
 
 - **Purpose**: which slave nodes bonded contact ties when the slave face extends beyond
   the master (KNOWN_BUGS 128). Mecway writes bonded contact for CCX as `*TIE` with the
@@ -426,7 +427,9 @@ meshes is given below.
   45 free (WARNING). Before the fix `LIAISON_MAIL` tied all slave nodes to the edge of A:
   0.00908 mm, 25x too stiff. Mecway's own solver with *Constraint equations* gives the same
   0.230773 mm. (m) 0.230773 mm, +0.26% from Mecway (CCX moves the slave nodes onto the
-  master, `ADJUST`; `LIAISON_MAIL` ties across the gap).
+  master, `ADJUST`; `LIAISON_MAIL` ties across the gap). LS-07o: (m) with `bonded_close_gap`
+  on: the bridge moves the 24 tied slave nodes 0.2 mm onto the master in the mesh for
+  Code-Aster: 0.230166 mm, equal to Mecway (0.00%).
 - **Interpretation**: the slave nodes that CCX leaves free are now free in Code-Aster
   too. Also checked on Samples/BoltedJoint with its three contacts made bonded (linear
   static): the bridge leaves the same 58 nodes free as CCX lists in

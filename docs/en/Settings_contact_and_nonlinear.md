@@ -801,8 +801,20 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   half-thickness) and the sagitta of a curved master; Code-Aster's alarm `CALCULEL5_48`
   then usually appears too. Not checked with an *Element offset* or a shell without a
   thickness (INFO). Close the gap in
-  the mesh (KNOWN_BUGS 146). Mecway's *CCX keyword* modifications such as `ADJUST` on
-  `*CONTACT PAIR` only change the CalculiX input; the bridge reports and ignores them.
+  the mesh or turn on the setting below (KNOWN_BUGS 146). Mecway's *CCX keyword* modifications such as `ADJUST` on
+  `*CONTACT PAIR` only change the CalculiX input; the bridge reports them and uses them
+  only to see whether `ADJUST` is turned off (then it does not close the gap either).
+  With the setting *Bonded contact: close gaps like CCX* (`bonded_close_gap`, page General,
+  off by default) the bridge moves the tied slave nodes onto the master in the mesh for
+  Code-Aster (the `.liml` is not changed), as CCX does: only solid on solid, with a flat
+  master face and a move up to 0.1 × the shortest neighbouring edge (the shortest distance
+  to another node of an element at the node; a bridge rule, not CCX's), in linear and
+  nonlinear static, modal and buckling analyses (not in the thermal chain and the other
+  analyses); not for nodes that are also in another contact, a coupling, a constraint
+  equation, a support or a load, not with cyclic symmetry, in 2D or with adaptive refinement, and
+  not when a *CCX keyword* modification turns `ADJUST` off. A slave face moves as a whole
+  or not at all; what stays gets the WARNING. Verification LS-07o: the lap of LS-07m with
+  a 0.2 mm gap gives 0.230166 mm, equal to Mecway (without the option +0.26 %).
 
 ### 3.5 Zones sharing slave nodes
 
