@@ -877,6 +877,14 @@ Code-Aster value per node) and logs the largest difference per variable.
    above 0.05 (`_CPLAN_LARGE_LIMIT`); docs 2D §1.4. Status: open; large plastic strains in 2D: use
    `D_PLAN`, `AXIS` or 3D.
 
+145\. **Two offline tests depend on the saved start-screen settings** (confirmed, contract
+   check before V2026.14, 18 Nov 2026; `tests/test_bridge_manifest.py`,
+   `tests/test_bridge_warping.py`). They read `CONFIG_BRIDGE` from `Scripts/bridge_utils.py`
+   as the start screen last saved it. With a local `elem_beam` = `POU_D_TG` and other
+   non-default settings, the manifest test gives 3 failures and the warping test a
+   TypeError (line 358); on a clean checkout both pass (manifest 192 OK). The code is not
+   affected. Fix: set the settings a test depends on in the test itself. Status: open.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;
