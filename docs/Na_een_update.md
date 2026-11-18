@@ -106,7 +106,7 @@ kolom toe aan de tabel in §6 met wat daarin is nagelopen.
 ## 6. Mecway-versies / compatibiliteit
 
 De bridge vertakt niet op de Mecway-versie: hij herkent functies aan wat in de `.liml` staat
-(een tag of attribuut). Een item dat een Mecway-versie niet schrijft ontbreekt gewoon, en de
+(een tag of attribuut), of aan wat de scripting-API biedt (`mw.liml_text()` van Mecway 36). Een item dat een Mecway-versie niet schrijft ontbreekt gewoon, en de
 bridge gedraagt zich dan als zonder dat item. Stand per onderdeel, met de release waarin het
 het laatst is nagelopen:
 
@@ -173,6 +173,7 @@ het laatst is nagelopen:
 | De thermomechanische keten (T31 met *Thermal stress*) met `**ASTER-PLANE C_PLAN` of `D_PLAN`, en met plasticiteit in `AXIS` (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: headless gemeten met Code-Aster 17.4 (PL-75 … PL-80 tegen gesloten oplossingen) | NIET nagelopen in het Mecway-venster (headless runs hangen niet af van de Mecway-versie) |
 | Gaps met een eigen U-as (*Element orientation*-kaart), geen zijdelingse stijfheid van een gesloten gap, KNOWN_BUGS 23 (V2026.14) | NIET nagelopen | Mecway 35 (35.0.9802) headless: NL-92e … NL-92l gelijk aan Mecway's eigen oplossing; NL-92m tegen de handberekening | NIET nagelopen (Mecway's eigen gap niet op Mecway 36 opnieuw gemeten) |
 | Route `tabel` zonder Mecway-oplossing: duidelijke melding en stop vóór Code-Aster (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: offline tests | NIET nagelopen in het Mecway-venster (route `tabel` met een gewone oplossing wel, 18 nov 2026) |
+| Het model als tekst via `mw.liml_text()`: route `tabel` en *Doorsnede tonen* zonder het model op te slaan (V2026.15) | n.v.t. (geen `mw.liml_text()`: het model wordt opgeslagen zoals eerder) | n.v.t. (geen `mw.liml_text()`: het model wordt opgeslagen zoals eerder) | headless nagelopen (36.0.9815, 18 nov 2026: route `tabel` en *Doorsnede tonen* in een verborgen Mecway, het modelbestand ongewijzigd, dezelfde `.comm`, hetzelfde mesh en dezelfde vermoeiingsuitkomst als met opslaan); NIET nagelopen in het Mecway-venster |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten

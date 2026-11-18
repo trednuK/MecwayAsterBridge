@@ -107,7 +107,8 @@ to the table in §6 with what was verified in it.
 ## 6. Mecway versions / compatibility
 
 The bridge does not branch on the Mecway version: it recognises features by what is in the
-`.liml` (a tag or attribute). An item that a Mecway version does not write is simply absent,
+`.liml` (a tag or attribute), or by what the scripting API offers (`mw.liml_text()` of
+Mecway 36). An item that a Mecway version does not write is simply absent,
 and the bridge then behaves as without that item. Status per area, with the release in which
 it was last verified:
 
@@ -174,6 +175,7 @@ it was last verified:
 | The thermomechanical chain (T31 with *Thermal stress*) with `**ASTER-PLANE C_PLAN` or `D_PLAN`, and with plasticity in `AXIS` (V2026.14) | NOT verified | NOT verified in the Mecway window: measured headless with Code-Aster 17.4 (PL-75 … PL-80 against closed forms) | NOT verified in the Mecway window (headless runs do not depend on the Mecway version) |
 | Gaps with their own U axis (*Element orientation* card), no lateral stiffness of a closed gap, KNOWN_BUGS 23 (V2026.14) | NOT verified | Mecway 35 (35.0.9802) headless: NL-92e … NL-92l equal to Mecway's own solution; NL-92m against the hand calculation | NOT verified (Mecway's own gap not re-measured on Mecway 36) |
 | Route `tabel` without a Mecway solution: a clear message and a stop before Code-Aster (V2026.14) | NOT verified | NOT verified in the Mecway window: offline tests | NOT verified in the Mecway window (route `tabel` with a normal solution was, 18 Nov 2026) |
+| The model as text through `mw.liml_text()`: route `tabel` and "Show section" without saving the model (V2026.15) | n/a (no `mw.liml_text()`: the model is saved as before) | n/a (no `mw.liml_text()`: the model is saved as before) | verified headless (36.0.9815, 18 Nov 2026: route `tabel` and "Show section" in a hidden Mecway, the model file unchanged, the same `.comm`, mesh and fatigue result as with saving); NOT verified in the Mecway window |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured

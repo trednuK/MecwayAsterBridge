@@ -2365,11 +2365,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
                      not section_shown, on_section, tr(
                         "Toont de echte vorm van General sections op de "
                         "balken, als tijdelijke elementen, om hem vóór een "
-                        "berekening te zien. Slaat het model eerst op. De "
-                        "vorm komt uit MecwaySectionProps.",
+                        "berekening te zien. Slaat het model eerst op "
+                        "(Mecway 36 en later: het model wordt niet "
+                        "opgeslagen). De vorm komt uit MecwaySectionProps.",
                         "Shows the real shape of general sections on the "
                         "beams, as temporary elements, to see it before a "
-                        "calculation. Saves the model first. The shape "
+                        "calculation. Saves the model first (Mecway 36 "
+                        "and later: the model is not saved). The shape "
                         "comes from MecwaySectionProps.")),
                     ("section_hide",
                      tr("Doorsnede verbergen", "Hide section"),
@@ -2429,9 +2431,13 @@ def _show_winforms_dialog(current, status=u"", model=None):
                 "stays open next to Mecway."))
             ok_btn = add_button(tr("Starten", "Start"), 130, on_ok, tr(
                 "Instellingen opslaan, het model opslaan en Code-Aster "
-                "starten. Na de run komt dit venster terug.",
-                "Save the settings, save the model and start Code-Aster. "
-                "This window returns after the run."), right=True,
+                "starten (route 'tabel' met Mecway 36 en later: het "
+                "model wordt niet opgeslagen). Na de run komt dit "
+                "venster terug.",
+                "Save the settings, save the model and start Code-Aster "
+                "(route 'tabel' with Mecway 36 and later: the model is "
+                "not saved). This window returns after the run."),
+                right=True,
                 primary=True)
             cancel_btn = add_button(tr("Sluiten", "Close"), 100,
                                     guarded(lambda: form.Close()),

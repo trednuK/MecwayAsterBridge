@@ -82,7 +82,9 @@
 #   1b. Route tabel: does the Mecway solution match the model? Otherwise
 #      stop (the results can only be loaded on the nodes of the
 #      solution; a solution without nodes gets a message of its own)
-#   2. Save the model (.liml)
+#   2. Save the model (.liml); route tabel with mw.liml_text() (Mecway 36):
+#      not saved, a model-only copy <model>_<run_id>_model.liml instead
+#      (bridge_liml_text), which steps 3-6 read
 #   3. Read mesh, BCs, materials and selections from the .liml file
 #      (stops if there are no materials). With active_analysis = "auto"
 #      the analysis follows the Mecway analysis type (for this run only).
@@ -103,7 +105,8 @@
 # (bridge_utils.run_name): _bridge_log.txt, .mail, .comm, .export, .mess,
 # _console.txt, _results.xml (the results, which can be reloaded later with
 # the Results... button in the main window) and, depending on the
-# settings, .rmed, .resu and _vergelijking.csv.
+# settings, .rmed, .resu and _vergelijking.csv; with route tabel and
+# mw.liml_text() also _model.liml (the model the run read).
 
 import os
 import shutil
@@ -161,6 +164,7 @@ import bridge_adapt
 import bridge_section_model
 import bridge_section_view
 import bridge_hide_failed
+import bridge_liml_text
 
 # Setting hide_failed: "expected" the failed elements of the last run
 # (bridge_failure.failed_elements, element numbers as text), for the note
@@ -283,6 +287,9 @@ def _run(settings):
                "WARNING: Saving setting failed: {0}").format(err))
 
     configured_analysis = CONFIG_BRIDGE["active_analysis"]
+    # The copy of the model (route 'tabel', step 2): removed again when the
+    # run stops before Code-Aster starts (finally below).
+    model_copy = {"path": None, "job": False}
     try:
         # --- Step 1: Solve in Mecway (optional check for errors) ---
         # The Mecway API documents no return value for mw.solve(); an
@@ -354,18 +361,35 @@ def _run(settings):
                               sol_reason))
             return False
 
-        # --- Step 2: Save ---
-        save_error = _save_model()
-        if save_error:
-            _notify(save_error + tr(" Code-Aster wordt niet gestart.",
-                                    " Code-Aster is not started."))
-            return False
+        # --- Step 2: Save, or a copy of the model (route 'tabel') ---
+        # Route 'tabel' fills Mecway's own solution through the API and
+        # needs the model only to read it: with mw.liml_text() (Mecway 36)
+        # the user's file is not saved; the run reads a model-only copy in
+        # the work folder (bridge_liml_text), which is also the job's
+        # liml_path. Route 'liml' writes the results into the user's file,
+        # so it saves first, as before; so does every Mecway without the
+        # API, and an untitled model.
+        model_liml = None
+        if route == "tabel" and mw.file_name():
+            model_liml = bridge_liml_text.write_snapshot(
+                mw, os.path.join(work_dir_path(), run_name("_model.liml")))
+        if model_liml:
+            model_copy["path"] = model_liml
+            log("INFO: Route 'tabel': model not saved; the run reads the "
+                "copy {0} (mw.liml_text).".format(model_liml))
+        else:
+            save_error = _save_model()
+            if save_error:
+                _notify(save_error + tr(" Code-Aster wordt niet gestart.",
+                                        " Code-Aster is not started."))
+                return False
+            model_liml = mw.file_name()
         active_liml = mw.file_name()  # Path to the active .liml file
-        version_notes["mecway"] = bridge_version.check_mecway(active_liml)[1]
+        version_notes["mecway"] = bridge_version.check_mecway(model_liml)[1]
 
         # --- Step 3: Read model_data from the .liml file ---
         mark = log_size()
-        model_data = extract_aster_data_from_liml(active_liml)
+        model_data = extract_aster_data_from_liml(model_liml)
         _LAST["model_data"] = model_data      # adaptive refinement
         if model_data is None:
             _notify(_prep_failed(tr("Het model kon niet gelezen worden.",
@@ -480,6 +504,7 @@ def _run(settings):
         # 'mw' and 'solution' are passed on so that the external modules
         # can handle pop-ups and results outside the scripting context.
         run_start = time.time()
+        model_copy["job"] = True
         job = run_AsterSolver(export_file, work_dir_path(), resu_name, mw)
         if not job:
             bridge_manifest.finish_run(work_dir_path(), model_data,
@@ -631,6 +656,8 @@ def _run(settings):
                "ERROR: Unexpected error in main(): {0}").format(str(e)))
         raise  # Pass the error on so that the except block below logs it
     finally:
+        if model_copy["path"] and not model_copy["job"]:
+            bridge_liml_text.remove(model_copy["path"])
         # Always show version warnings (bridge_version), also if the
         # run above stopped: a different version may be the cause.
         for key in ("mecway", "aster"):
@@ -1696,14 +1723,15 @@ def _hide_after_run():
     return ok
 
 
-def _section_view(warn_directions=True):
+def _section_view(warn_directions=True, path=None):
     """
-    (view, model_data, None) of the saved model, or (None, None, text for
-    the status box). model_data is read here, before write_mesh renames its
-    elsets (bridge_section_view). warn_directions: as build_view.
+    (view, model_data, None) of the saved model (or of path, a copy of the
+    open model), or (None, None, text for the status box). model_data is
+    read here, before write_mesh renames its elsets (bridge_section_view).
+    warn_directions: as build_view.
     """
     # The run (or a later one) reads the model too and warns there
-    model_data = extract_aster_data_from_liml(mw.file_name(),
+    model_data = extract_aster_data_from_liml(path or mw.file_name(),
                                               warn_supports=False)
     if model_data is None:
         return None, None, tr(
@@ -1740,11 +1768,19 @@ def _section_show_action(show=True):
     elif not show:
         return True, tr(u"Doorsnede was al verborgen.",
                         u"Section was already hidden.")
-    # Orientation and outline are read from the file: it has to be current.
-    save_error = _save_model()
-    if save_error:
-        return False, save_error
-    view, _, text = _section_view()
+    # Orientation and outline are read from the model: with mw.liml_text()
+    # (Mecway 36) from a temporary copy of the open model, without saving
+    # it; otherwise from the file, which has to be current: saved first.
+    snapshot = (bridge_liml_text.temp_snapshot(mw) if mw.file_name()
+                else None)
+    try:
+        if snapshot is None:
+            save_error = _save_model()
+            if save_error:
+                return False, save_error
+        view, _, text = _section_view(path=snapshot)
+    finally:
+        bridge_liml_text.remove(snapshot)
     if view is None:
         return False, text
     bridge_section_model.show_shape(mw, view, Vector)

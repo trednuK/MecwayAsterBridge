@@ -84,7 +84,9 @@ Related documents:
    [`README.md`](../../README.md)).
 3. The **main window** appears (§3). Check the settings and click "Start"
    ("Close" stops the bridge without a run).
-4. The bridge saves the model (`mw.save()`), reads the `.liml`, writes the mesh,
+4. The bridge saves the model (`mw.save()`; not with route `tabel` and Mecway 36 or
+   later: it then reads a copy of the open model, `<model>_<run-id>_model.liml`), reads
+   the `.liml`, writes the mesh,
    `<model>_<run-id>.comm` and `.export` to the work folder (§5) and starts Code-Aster
    in a **separate window**. With route `tabel` it first checks that the Mecway
    solution matches the mesh; if not, it stops with a message. Route `tabel` therefore
@@ -183,10 +185,10 @@ are at the bottom right, the other buttons on the left.
 | 4 | "Browse..." | Chooses the file or folder of a path field in a Windows dialog |
 | 5 | Status box | The outcome of the last action and the messages |
 | 6 | "Results..." | Saves the settings; then load an earlier run, remove the results from the model (small `.liml`), or open the result files of a run in ParaView or AsterStudy (§5.1). Then the window comes back |
-| 7 | "Section ▾" | A menu for the shape of General sections (§4.3). "Show section" saves the settings and the model and shows the shape on the beams as temporary elements, before a calculation; "Hide section" removes them again. "Section in results" saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model; after a Code-Aster run this happens automatically |
+| 7 | "Section ▾" | A menu for the shape of General sections (§4.3). "Show section" saves the settings and the model (the model not with Mecway 36 or later) and shows the shape on the beams as temporary elements, before a calculation; "Hide section" removes them again. "Section in results" saves the settings and the model, puts that shape with its values in the results in the `.liml` and reopens the model; after a Code-Aster run this happens automatically |
 | 8 | "Convergence window" | Opens the convergence and messages window as a separate window (stays open next to Mecway) for the newest run of the open model in the work folder the window shows (the "Work folder" field, or with "Work folder next to the model" the folder next to the model); if there is no run of this model, the newest `.mess` in that folder. Without a run the status box says there is nothing to show |
 | 9 | "Close" | Closes the bridge. Settings changed after the last Start, Results... or action in the Section menu are not saved |
-| 10 | "Start" | Saves the settings, saves the model and starts Code-Aster (§2). Then the window comes back |
+| 10 | "Start" | Saves the settings, saves the model (not with route `tabel` and Mecway 36 or later) and starts Code-Aster (§2). Then the window comes back |
 
 - **Tooltips:** hover over a setting for an explanation; for a choice list the
   meaning of each option is shown too.
@@ -625,7 +627,8 @@ window (§3):
 4. Status box: the outcome of these actions and the messages, see the table at the end of this
    chapter.
 
-**Before a calculation.** "Show section" in the Section menu saves the model and puts the shape on the
+**Before a calculation.** "Show section" in the Section menu saves the model (not with Mecway 36 or
+later: the bridge then reads the open model itself) and puts the shape on the
 beams with a General section, as temporary elements in component `Doorsnede_tijdelijk`. The
 menu then offers "Hide section". The temporary elements go:
 
@@ -778,6 +781,7 @@ overwrites nothing. Messages show the real name. The working directory is the fo
 | `<model>_<run-id>_results.xml` | **the results** in Mecway's own format (route `liml`); the bridge puts them into the `.liml` and keeps the file, so you can load them again later (§5.1) |
 | `<model>.liml.bak` | the `.liml` from before results were read in or removed, or from before the shape went into the results (by hand or at the end of a run) |
 | `<model>_<run-id>.resu` | result tables, only with route `tabel` |
+| `<model>_<run-id>_model.liml` | the model as the run read it (without results), only with route `tabel` and Mecway 36 or later: the bridge then does not save the model. Can be deleted |
 | `<model>_<run-id>.rmed` | results in MED (ParaView/Salome), only with "MED file for ParaView"; the "ParaView" (when there is no `.pvd`) and "AsterStudy" buttons in the Results window and the convergence window open it (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | results in VTK (ParaView), only with "VTU/PVD files for ParaView"; the "ParaView" button opens the `.pvd` (§5.1); with failure also the cell fields `failed` (0 intact, 1 failed) and `T_BEZWIJK`; with beam forces also the section forces per element end as the cell fields `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_paraview_launch.log` | output of the ParaView that the "ParaView" button started (§5.1) |
