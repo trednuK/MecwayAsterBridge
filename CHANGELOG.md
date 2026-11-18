@@ -1,6 +1,6 @@
 # Changelog
 
-## V2026.14 – 19 November 2026
+## V2026.14 – 18 November 2026
 
 Mecway 36 is a tested version: verified headless and with ten checks in the Mecway 36 window
 (release candidate 36.0.9815). Axisymmetric models get shells (`COQUE_AXIS`), and 2D and
