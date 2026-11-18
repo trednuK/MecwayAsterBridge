@@ -1271,6 +1271,8 @@ def _bridge_tm_report(res, res_ther, n_nodes):
         c, v, m = vals(res, 'DEPL', idx)
         uu = np.zeros(v.shape[0])
         for name in ('DX', 'DY', 'DZ'):
+            if name not in c:      # AXIS: no DZ (S44d)
+                continue
             k = c.index(name)
             out += [(name + '_min', float(v[m[:, k], k].min())),
                     (name + '_max', float(v[m[:, k], k].max()))]
@@ -1278,6 +1280,8 @@ def _bridge_tm_report(res, res_ther, n_nodes):
         out.append(('U_max', float(np.sqrt(uu.max()))))
         c, v, m = vals(res, 'SIGM_NOEU', idx)
         for name in ('SIXX', 'SIYY', 'SIZZ'):
+            if name not in c:
+                continue
             k = c.index(name)
             out += [(name + '_min', float(v[m[:, k], k].min())),
                     (name + '_max', float(v[m[:, k], k].max()))]

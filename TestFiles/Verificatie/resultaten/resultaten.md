@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-18 (bridge dd0cc73, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-18 (bridge 02905aa, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3446 van 3454 controles binnen de tolerantie** (670 testcases); 8 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3447 van 3455 controles binnen de tolerantie** (670 testcases); 8 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2781,6 +2781,7 @@ Gemaakt door `run_verificatie.py` op 2026-11-18 (bridge dd0cc73, Code-Aster 17.4
 | PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | contactdruk (gemiddeld, slave) | 4.9858e+07 Pa | 4.9866e+07 | +0.02% | 1% | OK |
 | PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | hoopstress buitenring binnenwand | 1.7806e+08 Pa | 1.7840e+08 | +0.19% | 2% | OK |
 | PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | hoopstress binnenring buitenwand | -1.2963e+08 Pa | -1.2925e+08 | +0.29% | 2% | OK |
+| PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | hoopstress binnenring binnenwand (minimum) | -1.7949e+08 Pa | -1.7891e+08 | +0.32% | 2% | OK |
 | PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | radialstress buitenring binnenwand | -4.9858e+07 Pa | -4.9788e+07 | +0.14% | 1% | OK |
 | PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | u_r buitenring binnenwand | 1.2963e-04 m | 1.2971e-04 | +0.06% | 1% | OK |
 | PL-47 | Krimpverbinding twee ringen, overmaat 0,2 mm (voorbeeld in de documentatie, AXIS) | u_r binnenring buitenwand | -7.0370e-05 m | -7.0294e-05 | +0.11% | 1% | OK |

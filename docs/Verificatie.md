@@ -113,15 +113,18 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 17 november 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `c5c459f`
-(V2026.13; Code-Aster 17.4): 607 testcases, 3174 controles, 3168 OK, 6 BEKEND, 0 NOK/FOUT.
-Nieuw ten opzichte van de vorige tabel (579 testcases, run op `821c58a`) zijn 28 testcases en
-102 controles: 2D en axisymmetrisch (PL-07 pinned support als gemiddelde, PL-20 .. PL-28
-thermische spanning, PL-30 .. PL-36 niet-lineair statisch, PL-40 .. PL-43, PL-45, PL-46 contact; S44) en
-dynamica (DY-04a/b veren en dempers tegen Mecway, DY-20d/e tijdtabellen met knikken buiten de
-stap). Geen statuswijziging ten opzichte van de vastgelegde resultaten (`a2f0e43`); daar
-verschilt alleen het verval van AI-06 (2e-6 relatief), ruim binnen de tolerantie.
+Stand 18 november 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `02905aa`
+(V2026.14; Code-Aster 17.4): 670 testcases, 3455 controles, 3447 OK, 8 BEKEND, 0 NOK/FOUT.
+Nieuw ten opzichte van de vorige tabel (607 testcases, run op `c5c459f`, V2026.13) zijn 63
+testcases en 281 controles: 2D en axisymmetrisch (PL-47 leesbare 2D-resultaten, PL-50 .. PL-59
+axisymmetrisch warmtetransport en de thermomechanische keten, PL-60 .. PL-68 axisymmetrische
+schalen, PL-70 .. PL-74 bezwijken, PL-75 .. PL-80 de keten in `C_PLAN`/`D_PLAN` en plasticiteit
+in de keten; S44), gaps (NL-92 .. NL-92m), een echte drijvendekommafout (NL-91), het
+mechanisme in een modale analyse (MO-11), de element orientation-kaart op schalen (LS-31f ..
+LS-31i) en harmonische spanningen met hysteretische demping (HR-06e .. HR-06g). Geen
+statuswijziging en geen waarde die meer dan 1e-6 relatief verschuift ten opzichte van de
+vastgelegde resultaten.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -133,15 +136,15 @@ verschilt alleen het verval van AI-06 (2e-6 relatief), ruim binnen de tolerantie
 | Breukmechanica | 14 | 63 | 62 | 1 |
 | Dynamica | 20 | 53 | 53 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
-| Harmonische respons | 15 | 53 | 53 | 0 |
+| Harmonische respons | 18 | 70 | 70 | 0 |
 | Knik | 37 | 94 | 93 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 154 | 507 | 506 | 1 |
+| Lineair statisch | 158 | 528 | 527 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
-| Modaal | 25 | 239 | 239 | 0 |
+| Modaal | 26 | 248 | 248 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 9 | 44 | 44 | 0 |
-| Niet-lineair statisch | 56 | 220 | 217 | 3 |
+| Niet-lineair statisch | 70 | 249 | 246 | 3 |
 | Niet-lineaire knik | 12 | 36 | 36 | 0 |
 | Respons op modale basis | 10 | 25 | 25 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
@@ -152,9 +155,9 @@ verschilt alleen het verval van AI-06 (2e-6 relatief), ruim binnen de tolerantie
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
 | Vibro-akoestiek harmonisch | 13 | 175 | 175 | 0 |
 | Orthotroop | 19 | 174 | 174 | 0 |
-| 2D en axisymmetrisch | 43 | 161 | 161 | 0 |
+| 2D en axisymmetrisch | 84 | 366 | 364 | 2 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **607** | **3174** | **3168** | **6** |
+| **Totaal** | **670** | **3455** | **3447** | **8** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).
@@ -168,6 +171,9 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
   Mecway (LS-67, 1 controle).
 - KNOWN_BUGS 115: knik van een C-kolom met balken mist de buig-torsieknik (BU-35, 1 controle,
   +57%).
+- KNOWN_BUGS 144: vlakke spanning (`C_PLAN`) met grote rekken, de dikte volgt de rek niet; de
+  reactie in plastisch vloeien ongeveer 1 % te hoog (PL-70, PL-70r, 2 controles). Gebruik
+  `D_PLAN`, `AXIS` of 3D.
 
 **Fouten in de bridge die deze verificatie vond en die zijn opgelost**:
 - Foutschatter: Code-Aster's `ERME` rekent `FORCE_FACE` met het omgekeerde teken (blok onder
