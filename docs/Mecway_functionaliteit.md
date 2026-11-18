@@ -149,7 +149,7 @@ Verlijmd contact per combinatie (slave op master):
 | Mecway-veld | Status | Opmerking |
 |---|---|---|
 | Verplaatsing, rotatie | Ja | Modaal en knik: de vormen. |
-| Spanningstensor volume-elementen (knoop en element-knoop) | Ja | Code-Aster-middeling, anders dan Mecway (KB3). Route `tabel`: KB7. |
+| Spanningstensor volume-elementen (knoop en element-knoop) | Ja | Code-Aster-middeling, anders dan Mecway (KB3). Route `tabel`: met Mecway 36 of later en een solution zonder tijdstappen zijn de waarden per element-knoop de knoopwaarden van Code-Aster; anders KB7. |
 | von Mises (volumes; schalen boven/midden/onder) | Ja | KB3. |
 | Spanningstensor schalen (globaal, boven/midden/onder), krachten en momenten per lengte | Ja | Velden `shell_stresses` (standaard uit) en `shell_forces`; alleen route `liml`. `shell_forces` staat aan bij statisch en niet-lineair en maakt de resultaten bij schalen ca. 2,5 keer zo groot (WARNING; uitvinken op de pagina van de analyse). Mecway's *stress in element coordinates* van schalen niet (van volume-elementen met orthotroop materiaal wel: `lamuu` .., [`Orthotroop_materiaal.md`](Orthotroop_materiaal.md) §4). U-as uit *Element properties* of een *Element orientation*-kaart ([`Handleiding.md`](Handleiding.md) §4.1). |
 | Balkspanning | Deels | Kleinste/grootste axiale spanning bij rechthoekige en ronde doorsneden (`beamsixxmin/max`; niet met `POU_D_T_GD`, WARNING). General sections met omtrek en I, T, L, C: von Mises, langs- en schuifspanning over de doorsnede (`beamvonmisesmax`, `beamsixxabsmax`, `beamtaumax`, schalen van de doorsnede; [Handleiding §4.3](Handleiding.md#43-de-vorm-van-een-general-section)). Geen welvingsspanning. |

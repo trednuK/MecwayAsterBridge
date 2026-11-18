@@ -103,7 +103,7 @@ S7, S8, S5, S9).
 | S46 | Review all KNOWN_BUGS: per item reproduce with the current versions (Code-Aster 17.4, Mecway 35), check whether it is real or a wrong setting/assumption of the test (as KNOWN_BUGS 95 turned out), then fix or document; priority of the user (11 Nov 2026) | in progress | – | 74 items in four groups; work per group, headless only; branch `stap-S46`, progress table in §S46 |
 | S45b | Results after a time limit, phases 2 and 3 of S45 (KNOWN_BUGS 137): extra time after `CALC_MODES` in modal, spectrum, cyclic and acoustic (phase 2, D2), the thermal chains (thermomechanical D7, filler material D9, HOMARD D10), the message for a solve without intermediate results (D6); partial results of `DYNA_VIBRA` (phase 3, D5, after a measurement) | later | S45 | **low priority** (user, 13 Nov 2026): after S44 and the S46 KNOWN_BUGS sweep; the value there is mostly a clearer message, and raising *Time limit run_aster* works too |
 | S47 | Bonded shell faces with the distance between the mid-surfaces (lever arm), KNOWN_BUGS 128 | later | S46 | asked 13 Nov 2026: interesting, but not a formulation of the solver manuals, so only with explicit documentation (NL+EN, theory and limits) and a WARNING whenever it is applied; until then a WARNING for shell faces bonded face to face and for a shell face bonded to a solid face (S46, `bridge_mesh._warn_bonded_offset`); see §S47 |
-| S48 | Mecway 36: support it (§2/§5/§6 of After_an_update) and use its new scripting API (`mw.liml_text()`, `solution.set_element_node_variable()`) | in progress (plan reviewed 17 Nov 2026; item 2 done 18 Nov 2026; item 3 built 18 Nov 2026, user decisions open); API items: target V2026.15, after V2026.14 (user, 17 Nov 2026) | V2026.14 published (it brings the Mecway 36 support) | see §S48; Mecway 36 support (item 2) is done for V2026.14; then the API items one by one, starting with `mw.liml_text()`, then `solution.set_element_node_variable()`, each with its own reviewed plan |
+| S48 | Mecway 36: support it (§2/§5/§6 of After_an_update) and use its new scripting API (`mw.liml_text()`, `solution.set_element_node_variable()`) | in progress (plan reviewed 17 Nov 2026; item 2 done 18 Nov 2026; items 3 and 4 built 18 Nov 2026, user decisions open); API items: target V2026.15, after V2026.14 (user, 17 Nov 2026) | V2026.14 published (it brings the Mecway 36 support) | see §S48; Mecway 36 support (item 2) is done for V2026.14; then the API items one by one, starting with `mw.liml_text()`, then `solution.set_element_node_variable()`, each with its own reviewed plan |
 | – | Rotordynamics | later | – | not relevant yet (user, 11 Nov 2026) |
 | – | Soil-structure interaction (MISS3D) | not planned | – | |
 | – | Hex block mesher as Tools script | not planned | – | |
@@ -2886,6 +2886,15 @@ run; whether not saving in route `tabel` should be an option (unsaved edits are 
 crashes during a long run); the Configuration list of the start screen still comes from the saved
 file (from `liml_text` it would cost about 0.1 s per MB of model each time the window opens), so in
 route `tabel` a configuration added since the last save is not in the list.
+**Status of item 4 (18 Nov 2026, plan reviewed twice by Fable):** built the non-optional part with
+`bridge_element_node.py`: route `tabel` replaces Mecway's own values per element node (stresses,
+strains, von Mises, shell layers) by Code-Aster's node values on the elements Mecway had them for
+(decided by `element_node_value`, so 2D works too); cleared shell components are cleared per element
+node. Skipped with a WARNING: no `set_element_node_variable`, time steps or modes, a section view, a
+value node outside those elements. Beam variables untouched (KNOWN_BUGS 148 records the beam-analysis
+point). Tested: `tests/test_bridge_element_node.py` (CPython and IronPython) and hidden Mecway 36 runs
+(VM-01a, a solid with a shell skin and a beam; with and without the function). Not built (user
+decision): loading the whole result fragment through the API in route `tabel`.
 **Release split (user, 17 Nov 2026):** V2026.14 brings the Mecway 36 support (item 2, done 18 Nov 2026: Mecway 36.0.9815 installed, procedure of `docs/en/After_an_update.md` §2/§5 run headless); V2026.15 brings the API items 3 and 4, `mw.liml_text()` first. The API reference of Mecway 36 (Help menu) documents both functions: `liml_text(solution=True)` returns what saving as `.liml` would write (LF line endings); `set_element_node_variable(variable, values, time_step=None, mode=None)` takes one list per element (index 0 = element 1) of values per element node, and like `set_variable` returns the actual variable name.
 **Backward compatibility:** option A (chosen for now): `hasattr`, today's code as the fallback, so Mecway
 33–35 keep working. Option B, only when a feature would need a second implementation: a minimum Mecway 36

@@ -80,9 +80,14 @@ Code-Aster value per node) and logs the largest difference per variable.
 
 7\. **Stresses per element node stay from Mecway in the table route** (confirmed
    in Mecway). Only with `result_route` "tabel": `solution.set_variable()` writes
-   only nodal values, the `<elementnodevariable>` (e.g. `stressxx`) of the last
-   Mecway solve remains. The default route "liml" does write SIGM_ELNO/SIEQ_ELNO
-   of solid elements (`bridge_to_aster._build_calc_champ_block`).
+   only nodal values, the values per element node (e.g. `stressxx`, `vonmises`) of the
+   last Mecway solve remain. With `solution.set_element_node_variable()` (Mecway 36)
+   `bridge_element_node.finish` replaces them by Code-Aster's node values (measured in a
+   hidden Mecway 36.0.9815, 18 Nov 2026). It remains, with a WARNING, for: a Mecway without
+   that function (33-35), a solution with time steps or modes (NOT probed), a section view in
+   the solution, and a variable with a value on a node that lies in no element with values
+   per element node. The default route "liml" does write SIGM_ELNO/SIEQ_ELNO of solid
+   elements (`bridge_to_aster._build_calc_champ_block`).
 
 46\. **Buckling: negative buckling load factors and Mecway's shift** (confirmed with runs,
    `bridge_to_aster._calc_modes_block`). The bridge searches for the smallest |CHAR_CRIT|
@@ -940,6 +945,15 @@ Code-Aster value per node) and logs the largest difference per variable.
    couplings and constraint equations on slave nodes, and the thermal tie (`TEMP_IMPO`
    with `LIAISON_MAIL` on TEMP, probably the same, NOT verified). How CCX resolves the
    double condition is NOT verified. Status: partly fixed.
+
+148\. **Route `tabel`: beam variables look like Mecway's own to the beam analysis**
+   (suspected, from the contract; `bridge_from_aster.AsterToMecway_results`). Route `tabel`
+   writes the beam forces (`tensileforce`, `sheary`, ... per node, merged over the elements)
+   with `solution.set_variable()` into Mecway's own solution, without the empty
+   `<nodes />`/`<values />` tails of route `liml` (contract with MecwayAdvancedBeamAnalysis),
+   so the beam analysis takes them as Mecway's own; the values per element node of Mecway's
+   beam variables stay Mecway's (`bridge_element_node` leaves beam variables alone on
+   purpose). Not measured with the beam analysis. Status: open; use route `liml` for beams.
 
 ## Open questions (Mecway behaviour not checked)
 

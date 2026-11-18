@@ -149,7 +149,7 @@ Bonded contact per combination (slave on master):
 | Mecway field | Status | Remark |
 |---|---|---|
 | Displacement, rotation | Yes | Modal and buckling: the mode shapes. |
-| Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). Route `tabel`: KB7. |
+| Stress tensor of solid elements (node and element node) | Yes | Code-Aster averaging, different from Mecway (KB3). Route `tabel`: with Mecway 36 or later and a solution without time steps the values per element node are Code-Aster's node values; otherwise KB7. |
 | von Mises (solids; shells top/middle/bottom) | Yes | KB3. |
 | Stress tensor of shells (global, top/middle/bottom), forces and moments per length | Yes | Fields `shell_stresses` (off by default) and `shell_forces`; route `liml` only. `shell_forces` is on for static and nonlinear and makes the results about 2.5 times larger with shells (WARNING; untick it on the page of the analysis). Mecway's *stress in element coordinates* of shells not (of solids with orthotropic material it is: `lamuu` .., [`Orthotropic_material.md`](Orthotropic_material.md) §4). U axis from *Element properties* or an *Element orientation* card ([`UserGuide.md`](UserGuide.md) §4.1). |
 | Beam stress | Partly | Smallest/largest axial stress for rectangular and circular sections (`beamsixxmin/max`; not with `POU_D_T_GD`, WARNING). General sections with an outline and I, T, L, C: von Mises, longitudinal and shear stress over the section (`beamvonmisesmax`, `beamsixxabsmax`, `beamtaumax`, shells of the section; [UserGuide §4.3](UserGuide.md#43-the-shape-of-a-general-section)). No warping stress. |
