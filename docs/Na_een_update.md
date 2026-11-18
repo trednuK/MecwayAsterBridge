@@ -171,6 +171,8 @@ het laatst is nagelopen:
 | WARNING voor lineaire knik met een excentrische algemene doorsnede (`ASTER-SECTIE` met afschuifmiddelpunt naast het zwaartepunt), KNOWN_BUGS 115 (V2026.13) | NIET nagelopen | NIET nagelopen in het Mecway-venster: offline tests; de knikfactor van zo'n doorsnede is niet gemeten | n.v.t. (hangt niet van Mecway af) |
 | Bezwijken van elementen (`#ASTER-BEZWIJKEN`) in 2D en axisymmetrisch met `**ASTER-PLANE` in L30, WARNING voor KNOWN_BUGS 144 (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: headless gemeten met Code-Aster 17.4 (PL-70 … PL-74 tegen gesloten oplossingen) | NIET nagelopen in het Mecway-venster (headless runs hangen niet af van de Mecway-versie) |
 | De thermomechanische keten (T31 met *Thermal stress*) met `**ASTER-PLANE C_PLAN` of `D_PLAN`, en met plasticiteit in `AXIS` (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: headless gemeten met Code-Aster 17.4 (PL-75 … PL-80 tegen gesloten oplossingen) | NIET nagelopen in het Mecway-venster (headless runs hangen niet af van de Mecway-versie) |
+| Gaps met een eigen U-as (*Element orientation*-kaart), geen zijdelingse stijfheid van een gesloten gap, KNOWN_BUGS 23 (V2026.14) | NIET nagelopen | Mecway 35 (35.0.9802) headless: NL-92e … NL-92l gelijk aan Mecway's eigen oplossing; NL-92m tegen de handberekening | NIET nagelopen (Mecway's eigen gap niet op Mecway 36 opnieuw gemeten) |
+| Route `tabel` zonder Mecway-oplossing: duidelijke melding en stop vóór Code-Aster (V2026.14) | NIET nagelopen | NIET nagelopen in het Mecway-venster: offline tests | NIET nagelopen in het Mecway-venster (route `tabel` met een gewone oplossing wel, 18 nov 2026) |
 
 "Nagelopen" betekent de verificatie van §2 en een run in Mecway met die versie. Vergelijkingen
 met Mecway's eigen solver in de andere documenten noemen de Mecway-versie waarmee ze gemeten
@@ -209,13 +211,13 @@ nagelopen, met Code-Aster 17.4:
 - de bridge start in Mecway 36 (`mw.version()` geeft 36) en vertaalt `Voorbeeld_A.liml`
   (lineair en niet-lineair statisch).
 
-In het Mecway 36-venster (17 en 18 november 2026, bridge d86a39b): PL-47, PL-60 en PL-62, en
-tien controles: het startscherm met de versieregel en een tweede start; lineair statisch met
+In het Mecway 36-venster: PL-47, PL-60 en PL-62 (17 november 2026), en tien controles
+(18 november 2026, bridge d86a39b): het startscherm met de versieregel en een tweede start; lineair statisch met
 route `liml` (`Voorbeeld_A.liml` met de regels van voorbeeld 1 van
 [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.md); contour per element zonder
 zwarte vlakken); configuraties (LS-20a); de Saved monitor; bezweken elementen verbergen
 (`BezwijkenTrekstaaf`); de doorsnede tonen en verbergen (LS-97a); het statusvenster en het
 convergentiescherm; de knoppen ParaView en AsterStudy; `mw.face_nodes` (PL-07, LS-92a); route
-`tabel` (een uitkragende balk, tipverplaatsing −35,3 mm). Alle tien zoals verwacht (zie de tabel). De
+`tabel` (een uitkragende balk, tipverplaatsing −35,3 mm). Alle tien zoals verwacht (zie de tabel, waar een rij bestaat). De
 versiecontrole vergelijkt alleen het hoofdnummer, dus 36 dekt ook de definitieve build van
 Mecway 36: draai §2 met `--mecway-opslaan` opnieuw op die build.

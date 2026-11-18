@@ -115,7 +115,7 @@ Status 18 November 2026. The whole table comes from one revision: the regression
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `02905aa`
 (V2026.14; Code-Aster 17.4): 670 test cases, 3455 checks, 3447 OK, 8 BEKEND (known),
 0 NOK/FOUT. New compared with the previous table (607 test cases, run on `c5c459f`, V2026.13)
-are 63 test cases and 281 checks: 2D and axisymmetric (PL-47 readable 2D results, PL-50 ..
+are 63 test cases and 281 checks (6 of them new in PL-24, PL-40 and PL-41): 2D and axisymmetric (PL-47 readable 2D results, PL-50 ..
 PL-59 axisymmetric heat transfer and the thermomechanical chain, PL-60 .. PL-68 axisymmetric
 shells, PL-70 .. PL-74 element failure, PL-75 .. PL-80 the chain in `C_PLAN`/`D_PLAN` and
 plasticity in the chain; S44), gaps (NL-92 .. NL-92m), a real floating point exception (NL-91),

@@ -172,6 +172,8 @@ it was last verified:
 | WARNING for linear buckling with an eccentric general section (`ASTER-SECTIE` with the shear centre off the centroid), KNOWN_BUGS 115 (V2026.13) | NOT verified | NOT verified in the Mecway window: offline tests; the buckling factor of such a section is not measured | n/a (does not depend on Mecway) |
 | Element failure (`#ASTER-BEZWIJKEN`) in 2D and axisymmetric with `**ASTER-PLANE` in L30, WARNING for KNOWN_BUGS 144 (V2026.14) | NOT verified | NOT verified in the Mecway window: measured headless with Code-Aster 17.4 (PL-70 … PL-74 against closed forms) | NOT verified in the Mecway window (headless runs do not depend on the Mecway version) |
 | The thermomechanical chain (T31 with *Thermal stress*) with `**ASTER-PLANE C_PLAN` or `D_PLAN`, and with plasticity in `AXIS` (V2026.14) | NOT verified | NOT verified in the Mecway window: measured headless with Code-Aster 17.4 (PL-75 … PL-80 against closed forms) | NOT verified in the Mecway window (headless runs do not depend on the Mecway version) |
+| Gaps with their own U axis (*Element orientation* card), no lateral stiffness of a closed gap, KNOWN_BUGS 23 (V2026.14) | NOT verified | Mecway 35 (35.0.9802) headless: NL-92e … NL-92l equal to Mecway's own solution; NL-92m against the hand calculation | NOT verified (Mecway's own gap not re-measured on Mecway 36) |
+| Route `tabel` without a Mecway solution: a clear message and a stop before Code-Aster (V2026.14) | NOT verified | NOT verified in the Mecway window: offline tests | NOT verified in the Mecway window (route `tabel` with a normal solution was, 18 Nov 2026) |
 
 "Verified" means the verification of §2 and a run in Mecway with that version. Comparisons
 with Mecway's own solver in the other documents name the Mecway version they were measured
@@ -210,13 +212,13 @@ with Code-Aster 17.4:
 - the bridge starts in Mecway 36 (`mw.version()` gives 36) and translates
   `Voorbeeld_A.liml` (linear and nonlinear static).
 
-In the Mecway 36 window (17 and 18 November 2026, bridge d86a39b): PL-47, PL-60 and PL-62, and
-ten checks: the start screen with the version line and a second start; linear static with
+In the Mecway 36 window: PL-47, PL-60 and PL-62 (17 November 2026), and ten checks
+(18 November 2026, bridge d86a39b): the start screen with the version line and a second start; linear static with
 route `liml` (`Voorbeeld_A.liml` with the lines of example 1 of
 [`ASTER_lines_examples.md`](ASTER_lines_examples.md); contour per element without black
 faces); configurations (LS-20a); the Saved monitor; hiding failed elements
 (`BezwijkenTrekstaaf`); showing and hiding the section (LS-97a); the status window and the
 convergence window; the buttons ParaView and AsterStudy; `mw.face_nodes` (PL-07, LS-92a); route
-`tabel` (a cantilever beam, tip displacement −35.3 mm). All ten as expected (see the table). The check
+`tabel` (a cantilever beam, tip displacement −35.3 mm). All ten as expected (see the table, where a row exists). The check
 of the version compares the major version only, so 36 also covers the final build of Mecway 36: run
 §2 with `--mecway-opslaan` again on that build.

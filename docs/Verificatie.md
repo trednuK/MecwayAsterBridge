@@ -117,7 +117,7 @@ Stand 18 november 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `02905aa`
 (V2026.14; Code-Aster 17.4): 670 testcases, 3455 controles, 3447 OK, 8 BEKEND, 0 NOK/FOUT.
 Nieuw ten opzichte van de vorige tabel (607 testcases, run op `c5c459f`, V2026.13) zijn 63
-testcases en 281 controles: 2D en axisymmetrisch (PL-47 leesbare 2D-resultaten, PL-50 .. PL-59
+testcases en 281 controles (waarvan 6 nieuwe in PL-24, PL-40 en PL-41): 2D en axisymmetrisch (PL-47 leesbare 2D-resultaten, PL-50 .. PL-59
 axisymmetrisch warmtetransport en de thermomechanische keten, PL-60 .. PL-68 axisymmetrische
 schalen, PL-70 .. PL-74 bezwijken, PL-75 .. PL-80 de keten in `C_PLAN`/`D_PLAN` en plasticiteit
 in de keten; S44), gaps (NL-92 .. NL-92m), een echte drijvendekommafout (NL-91), het

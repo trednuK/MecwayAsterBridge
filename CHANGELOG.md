@@ -2,17 +2,24 @@
 
 ## V2026.14 – 19 November 2026
 
-Mecway 36 is a tested version: verified headless and in the Mecway 36 window. 2D and
-axisymmetric models get axisymmetric shells (`COQUE_AXIS`), heat transfer and the thermal ->
-mechanical chain (`AXIS`, `C_PLAN`, `D_PLAN`), element failure and readable results under
-physical names (STAPPENPLAN S44d/e and the remaining S44 items). The S46 review of the
+Mecway 36 is a tested version: verified headless and with ten checks in the Mecway 36 window
+(release candidate 36.0.9815). Axisymmetric models get shells (`COQUE_AXIS`), and 2D and
+axisymmetric models get heat transfer and the thermal -> mechanical chain (`AXIS`, `C_PLAN`,
+`D_PLAN`), element failure and readable results under physical names (STAPPENPLAN S44d/e and
+the failure loop of S44a). The S46 review of the
 KNOWN_BUGS items goes on: gaps with their own direction, total harmonic stresses with
 hysteretic damping, and a clear stop when route `tabel` has no Mecway solution.
 Behaviour changes:
-- a 2D model with a failure limit now really fails;
+- a 2D or axisymmetric model with `**ASTER-PLANE` in Nonlinear Static and a failure limit now
+  really fails;
 - a closed gap that does not lie along global X no longer has lateral stiffness, so such
   models give different, correct results;
 - harmonic stresses with hysteretic damping are the total stresses.
+
+Measured with Code-Aster 17.4, Mecway 35 and 36 headless and offline tests; element failure in
+2D and the `C_PLAN`/`D_PLAN` chain NOT checked in the Mecway window. Full regression on
+02905aa: 3447 of 3455 checks OK (670 test cases), 8 BEKEND (KNOWN_BUGS 43, 83, 108, 115 as
+before, and 144 in PL-70/PL-70r), 0 NOK/FOUT, no status change.
 
 - **Mecway 36** (36.0.9815) is a tested version: a model saved by Mecway 36 no longer gives
   the "not tested" WARNING. Verified headless: the full verification, also on models saved
@@ -22,8 +29,7 @@ Behaviour changes:
   `liml`, configurations, Saved monitor, hiding failed elements, the section view, the status
   and convergence windows, the ParaView and AsterStudy buttons, `mw.face_nodes` and route
   `tabel`, all as expected. Mecway 35 is not in the list of tested versions. Beams with CCX in
-  Mecway 36 agree with Mecway 34 within 1e-4 (displacements; re-measured: an earlier reading
-  compared a wrong node and took them as about 12 times too stiff).
+  Mecway 36 agree with Mecway 34 within 1e-4 (displacements of NL-82, NL-83 and LS-50).
   Measured on the release candidate 36.0.9815; the check covers every 36.x build (it
   compares the major version); run §2 of After_an_update.md again on the final build.
 
@@ -36,6 +42,7 @@ Behaviour changes:
   (D20/DA0): a WARNING, the elements do not fail. `C_PLAN` with large strains gives forces
   about √(1 + ε) too high, because the thickness does not follow the strain (KNOWN_BUGS 144;
   a WARNING for a failure limit above 0.05).
+
 - **The thermal -> mechanical chain in plane stress and plane strain.** A *Thermal
   Transient* model (T31) with *Thermal stress* and `**ASTER-PLANE C_PLAN` or `D_PLAN` is now
   computed (thermal `PLAN`, mechanical `C_PLAN`/`D_PLAN` with the shell thickness; one
@@ -74,8 +81,8 @@ Behaviour changes:
   - the ParaView button opens an axisymmetric result as a body of revolution (270 degrees about
     Y), with "VTU/PVD files for ParaView" on (`<model>_<run-id>_paraview_axis.py`);
   - docs: the axes, the variable names, "red in Mecway's tree is expected" and a worked check
-    of `PL-62.liml` in [`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md) §1.3
-    and §1.5.
+    of `PL-62.liml` and worked example 8 (`PL-47.liml`) in
+    [`docs/en/2D_and_axisymmetric.md`](docs/en/2D_and_axisymmetric.md) §1.3 and §1.5.
 
 - **Error estimator on a model without solid elements**: an INFO instead of a WARNING (the
   setting is on by default, so every shell, beam or axisymmetric-shell model showed it); still
@@ -126,8 +133,7 @@ Behaviour changes:
   Verification PL-58: the thick tube of PL-24 as T31 (10 steps, steady) equals PL-24 within
   1.0e-6 and the closed form (u_r 1.5e-5; stresses within 1.2%), the axial reaction
   2π α E ∫ θ r dr within 9e-7; PL-59 adds an internal pressure of 50 MPa (an edge load in the
-  chain, within 7e-6). Not yet: the chain in `C_PLAN`/`D_PLAN` and a plastic material in the
-  `AXIS` chain (not verified); the result route `tabel`, contact, node-surface couplings, bonded
+  chain, within 7e-6). The result route `tabel`, contact, node-surface couplings, bonded
   contact and an initial velocity in the `AXIS` chain give an ERROR (welding and metallurgy in
   `AXIS` too).
 
@@ -137,14 +143,16 @@ Behaviour changes:
   also at the nodes between them (HR-06e .. HR-06g, `PHYS` and `GENE`). Viscous damping stress
   (Rayleigh, modal damping) is not included. The WARNING about it is gone; a new WARNING when a
   material without `ELAS` cannot get its loss factor.
+
 - **Element orientation card on shells and gaps compared with Mecway 35** (KNOWN_BUGS 116,
   removed): with an oblique U axis and a flipped normal the shell forces per length are equal
   to Mecway's (quad4 at every node, quad8 at mid-length) and the moments at the centre within
-  ~1 % (LS-31f .. LS-31h); a formula is evaluated at the mean of all element nodes, as in
+  1.4 % (LS-31f .. LS-31h); a formula is evaluated at the mean of all element nodes, as in
   Mecway (LS-31i, quad8 with moved midside nodes); a gap card along the gap equals no card
   (NL-92d). Mecway also computes a tension gap, a lateral offset and coincident nodes, which
   the bridge still refuses (KNOWN_BUGS 23); the transverse shear of DKT shells is 11 % low on a
   coarse mesh (KNOWN_BUGS 2).
+
 - **S46 review continued** (KNOWN_BUGS): the harmonic WARNING about stresses without the loss
   factor (item 120) now only counts materials of solid elements, the only ones with stresses
   in that analysis (shell-only models no longer get it); a new WARNING when `#ASTER-HYST` is
