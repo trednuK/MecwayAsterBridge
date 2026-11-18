@@ -1,8 +1,13 @@
-# Mecway headless laten rekenen (referentie voor verificatie, geen GUI nodig).
-# gebruik (CPython): python mw_solve.py <in.liml> <uit_basisnaam>  -> <uit>_sol.liml
-# Mecway rekent met de solver uit <analysis> (solver="ccx" voor CCX). Het
-# resultaat lezen: aster_results_export-formaat, zie TestFiles/Verificatie/verif_lib.py.
-# Omgeving: MWT = tijdslimiet in s (standaard 300).
+# Let Mecway solve headless (reference for the verification, no GUI needed).
+# Usage (CPython): python mw_solve.py <in.liml> <out_base>  -> <out>_sol.liml
+# Mecway solves with the solver of <analysis> (solver="ccx" for CCX). Reading the
+# result: aster_results_export format, see TestFiles/Verificatie/verif_lib.py.
+# Mecway 36 with CCX returns a beam on the hex8/hex20 elements CCX expands it into,
+# with their own node numbers (4 or 8 nodes around the section per beam node): read a
+# beam node as the mean of the solution nodes around it, not by node id (only
+# displacements checked this way, on LS-50, NL-82, NL-83). verif_lib.Results does
+# not do this: it reads node ids, so average the nodes before evaluating a check.
+# Environment: MWT = time limit in s (default 300).
 import sys, os, io, re, subprocess, time
 # hidden, with the dialog watchdog of the verification (verif_lib.run_mecway;
 # the solver window of a solve is normal, so only dialogs and the time limit

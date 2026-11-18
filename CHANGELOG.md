@@ -4,11 +4,11 @@
 
 - **Mecway 36** (36.0.9815) is a tested version: a model saved by Mecway 36 no longer gives
   the "not tested" WARNING. Verified headless: the full verification, also on models saved
-  by Mecway 36, the references of Mecway's own solver measured again, and results opened by
-  Mecway 36 ([`docs/en/After_an_update.md`](docs/en/After_an_update.md) §6); not yet from the
-  Mecway 36 window. Mecway 35 is not in the list of tested versions. Mecway 36 with CCX gives
-  beams about
-  12 times too stiff; references measured with Mecway 34 and CCX stay Mecway 34 values.
+  by Mecway 36, the references of Mecway's own solver and of CCX measured again, and results
+  opened by Mecway 36 ([`docs/en/After_an_update.md`](docs/en/After_an_update.md) §6); not yet
+  from the Mecway 36 window. Mecway 35 is not in the list of tested versions. Beams with CCX in
+  Mecway 36 agree with Mecway 34 within 1e-4 (displacements; re-measured: an earlier reading
+  compared a wrong node and took them as about 12 times too stiff).
   Measured on the release candidate 36.0.9815; the check covers every 36.x build (it
   compares the major version); run §2 of After_an_update.md again on the final build.
 

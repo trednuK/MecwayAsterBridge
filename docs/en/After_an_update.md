@@ -116,7 +116,7 @@ it was last verified:
 | Translation up to V2026.2 (reading the `.liml`, mesh, loads, constraints, materials, analyses, results back into the `.liml`) | verified (V2026.2) | verified (V2026.4) | verified headless (36.0.9815, 17–18 Nov 2026) |
 | Results in a model with configurations (V2026.2; Mecway 34 could not open the earlier format) | verified (V2026.2) | verified (V2026.4) | verified headless (36.0.9815, 17 Nov 2026: results of LS-20a opened; a save adds an empty solution for each configuration without results); in the Mecway window (18 Nov 2026): LS-20a, after reopening the results are under the right configuration and the other ones stay empty |
 | Waiting for Code-Aster, convergence window, version check (V2026.2) | verified (V2026.2) | verified (V2026.4) | version check verified headless (36.0.9815, 17–18 Nov 2026); waiting and the convergence window checked in the Mecway window (18 Nov 2026) |
-| Beams with large rotations `POU_D_T_GD` (V2026.3) | NOT verified | verified (V2026.3) | verified headless (36.0.9815, 17–18 Nov 2026) |
+| Beams with large rotations `POU_D_T_GD` (V2026.3) | NOT verified | verified (V2026.3) | verified headless (36.0.9815, 17–18 Nov 2026; the Mecway + CCX references of NL-82/NL-83 re-measured on Mecway 36: equal within 1e-4) |
 | *Element orientation* cards in Loads & Constraints (V2026.3) | n/a (Mecway 33 has no such card) | verified (V2026.3) | verified headless (36.0.9815, 17–18 Nov 2026) |
 | Explicit `ORIENTATION` `VECT_Y` for every beam (V2026.3) | NOT verified | verified (V2026.3) | verified headless (36.0.9815, 17–18 Nov 2026) |
 | Start screen: status box, missing model folder, second window (V2026.3) | NOT verified | verified (V2026.3) | partly in the Mecway window (18 Nov 2026): the start screen opens, the version line without the WARNING "not tested", a second start gives the message that the bridge is busy; status box and missing model folder NOT verified |
@@ -194,15 +194,15 @@ with Code-Aster 17.4:
   axisymmetric shells): with `--mecway-opslaan` 122 test cases: those that the changes touch
   (`TestFiles/Tools/regression_scope.py`), all PL cases and the fastest case of every group; all
   checks identical to the normal run or OK where the normal run has no value yet (PL-47);
-- the references that came from Mecway's own solver, measured again with Mecway 36: 547 of
-  the 589 checks that can be compared agree within 1e-4 relative; the others come from
-  another reference model, from rounding of the stored value, or are the beams with CCX
-  below;
-- Mecway 36 with CCX gives beams about 12 times too stiff (a cantilever of 40 line2 elements:
-  0.0286 m against 0.3333 m from theory and from Mecway's own solver; Mecway 34 with CCX
-  gave the right value). The references of NL-82, NL-83 and LS-50 measured with Mecway 34
-  and CCX cannot be measured again with Mecway 36 and stay Mecway 34 values; CCX on solids
-  is unchanged;
+- the references that came from Mecway (its own solver and CCX), measured again with
+  Mecway 36: 557 of the 589 checks that can be compared agree within 1e-4 relative; the
+  others come from another reference model or from rounding of the stored value;
+- Mecway 36 with CCX returns a beam as the solid elements CCX expands it into (hex8 for
+  line2, hex20 for line3), with their own node numbers: 4 or 8 nodes around the section per
+  node of the beam. Their mean is the displacement of the beam node; measured that way,
+  NL-82, NL-83 and LS-50 give the references of Mecway 34 with CCX back within 1e-4. Only
+  displacements were compared; rotations, beam forces and shells with CCX were NOT checked
+  on Mecway 36; CCX on solids is unchanged;
 - results of the bridge opened by Mecway 36 (`node_value`, `element_node_value`): 4826
   values equal to what the bridge wrote; a save in Mecway 36 keeps the Saved monitor and
   `failed_hidden`, drops the empty `<nodes />`/`<values />` tails (as Mecway 35) and adds an

@@ -115,7 +115,7 @@ het laatst is nagelopen:
 | Vertaling t/m V2026.2 (`.liml` lezen, mesh, belastingen, randvoorwaarden, materialen, analyses, resultaten terug in de `.liml`) | nagelopen (V2026.2) | nagelopen (V2026.4) | headless nagelopen (36.0.9815, 17–18 nov 2026) |
 | Resultaten in een model met configuraties (V2026.2; Mecway 34 kon het eerdere formaat niet openen) | nagelopen (V2026.2) | nagelopen (V2026.4) | headless nagelopen (36.0.9815, 17 nov 2026: resultaten van LS-20a geopend; opslaan voegt een lege solution toe voor elke configuratie zonder resultaten); in het Mecway-venster (18 nov 2026): LS-20a, na heropenen staan de resultaten onder de juiste configuratie en blijven de andere leeg |
 | Wachten op Code-Aster, convergentiescherm, versiecontrole (V2026.2) | nagelopen (V2026.2) | nagelopen (V2026.4) | versiecontrole headless nagelopen (36.0.9815, 17–18 nov 2026); wachten en convergentiescherm nagelopen in het Mecway-venster (18 nov 2026) |
-| Balken met grote rotaties `POU_D_T_GD` (V2026.3) | NIET nagelopen | nagelopen (V2026.3) | headless nagelopen (36.0.9815, 17–18 nov 2026) |
+| Balken met grote rotaties `POU_D_T_GD` (V2026.3) | NIET nagelopen | nagelopen (V2026.3) | headless nagelopen (36.0.9815, 17–18 nov 2026; de referenties van Mecway + CCX van NL-82/NL-83 op Mecway 36 opnieuw gemeten: gelijk binnen 1e-4) |
 | *Element orientation*-kaarten in Loads & Constraints (V2026.3) | n.v.t. (Mecway 33 heeft die kaart niet) | nagelopen (V2026.3) | headless nagelopen (36.0.9815, 17–18 nov 2026) |
 | Expliciete `ORIENTATION` `VECT_Y` voor elke balk (V2026.3) | NIET nagelopen | nagelopen (V2026.3) | headless nagelopen (36.0.9815, 17–18 nov 2026) |
 | Startscherm: statusvak, ontbrekende modelmap, tweede venster (V2026.3) | NIET nagelopen | nagelopen (V2026.3) | deels in het Mecway-venster (18 nov 2026): het startscherm opent, de versieregel zonder WARNING "niet getest", een tweede start geeft de melding dat de bridge bezig is; statusvak en ontbrekende modelmap NIET nagelopen |
@@ -193,15 +193,15 @@ nagelopen, met Code-Aster 17.4:
   axisymmetrische schalen): met `--mecway-opslaan` 122 testcases: die welke de wijzigingen raken
   (`TestFiles/Tools/regression_scope.py`), alle PL-cases en de snelste case van elke groep; alle
   controles identiek aan de gewone run, of OK waar de gewone run nog geen waarde heeft (PL-47);
-- de referenties die uit Mecway's eigen solver kwamen, opnieuw gemeten met Mecway 36: 547 van
-  de 589 vergelijkbare controles kloppen binnen 1e-4 relatief; de rest komt van een ander
-  referentiemodel, van afronding van de vastgelegde waarde, of zijn de balken met CCX
-  hieronder;
-- Mecway 36 met CCX geeft balken ongeveer 12 keer te stijf (een uitkragende balk van 40
-  line2-elementen: 0,0286 m tegen 0,3333 m uit de theorie en uit Mecway's eigen solver;
-  Mecway 34 met CCX gaf de juiste waarde). De referenties van NL-82, NL-83 en LS-50 die met
-  Mecway 34 en CCX gemeten zijn, zijn met Mecway 36 niet opnieuw te meten en blijven
-  Mecway 34-waarden; CCX op volume-elementen is ongewijzigd;
+- de referenties die uit Mecway kwamen (eigen solver en CCX), opnieuw gemeten met Mecway 36:
+  557 van de 589 vergelijkbare controles kloppen binnen 1e-4 relatief; de rest komt van een
+  ander referentiemodel of van afronding van de vastgelegde waarde;
+- Mecway 36 met CCX geeft een balk terug als de volume-elementen waarin CCX hem uitzet (hex8
+  bij line2, hex20 bij line3), met eigen knoopnummers: per knoop van de balk 4 of 8 knopen
+  rond de doorsnede. Hun gemiddelde is de verplaatsing van de balkknoop; zo gemeten geven
+  NL-82, NL-83 en LS-50 de referenties van Mecway 34 met CCX terug binnen 1e-4. Alleen
+  verplaatsingen zijn vergeleken; rotaties, balkkrachten en schalen met CCX zijn op Mecway 36
+  NIET nagelopen; CCX op volume-elementen is ongewijzigd;
 - resultaten van de bridge geopend door Mecway 36 (`node_value`, `element_node_value`): 4826
   waarden gelijk aan wat de bridge schreef; opslaan in Mecway 36 houdt de Saved monitor en
   `failed_hidden`, laat de lege staarten `<nodes />`/`<values />` vallen (zoals Mecway 35)
