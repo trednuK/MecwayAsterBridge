@@ -6350,6 +6350,26 @@ def _quadratic_slave(model_data, group):
                for f in faces)
 
 
+# Initial friction threshold (Pa) for zones with friction (see
+# _build_contact_block); only a start value for the first iteration.
+_SEUIL_INIT = 1.0e6
+_ZONE_KEY_RE = re.compile(r"(?:^|,)\s*([A-Za-z_][A-Za-z0-9_]*)\s*=")
+
+
+def _zone_keys(zone_extra):
+    """Upper-case keyword names in the #ASTER-ZONE text (', K=V, ...')."""
+    return set(k.upper() for k in _ZONE_KEY_RE.findall(zone_extra or ""))
+
+
+def _drop_keys(args, keys):
+    """args (', K=V, K=V') without the pieces whose keyword is in keys."""
+    if not args or not keys:
+        return args
+    pieces = [p for p in args.split(", ") if p]
+    kept = [p for p in pieces if p.split("=")[0].strip().upper() not in keys]
+    return "".join(", " + p for p in kept)
+
+
 def _penalty_args(c, algo, friction):
     """Extra zone arguments for ALGO_CONT='PENALISATION' (or "")."""
     if algo != "PENALISATION":
@@ -6415,7 +6435,7 @@ def _penetration_limit_line(model_data, analysis, pairs, algo):
     NOT verified in the source) and left no results (17.4, test run).
     Returns "" if not applicable.
     """
-    if algo != "PENALISATION":
+    if algo not in ("PENALISATION", "AUTO"):
         return ""
     try:
         frac = float(analysis.get("contact_pene_maxi", 0.0) or 0.0)
@@ -6445,7 +6465,9 @@ def _build_contact_block(model_data, analysis=None):
     per area (manual v33 par. 9.9; normalstiffness > 0 required).
     Code-Aster: continuous formulation (U4.44.11), per zone ALGO_CONT
     (catalogue defi_contact.py v17.4):
-      - contact_algo "STANDARD" (default): augmented Lagrangian, no
+      - contact_algo "auto" (default for nonlinear static since V2026.15):
+        PENALISATION for zones with kn > 0 in 3D, otherwise STANDARD;
+      - "STANDARD" (default in dynamics): augmented Lagrangian, no
         stiffness needed, no penetration;
       - "PENALISATION": COEF_PENA_CONT = Mecway's normalstiffness (Pa/m;
         contact pressure = coef x penetration, like Mecway); with friction
@@ -6459,12 +6481,18 @@ def _build_contact_block(model_data, analysis=None):
     """
     if analysis is None:
         analysis = CONFIG_BRIDGE["analyses"].get(get_active_analysis(), {})
-    algo = "{0}".format(analysis.get("contact_algo", "STANDARD")).upper()
-    if algo not in ("STANDARD", "PENALISATION"):
-        log(tr("WARNING: contact_algo '{0}' onbekend; STANDARD gebruikt.",
-               "WARNING: contact_algo '{0}' unknown; STANDARD used.").format(
+    # "auto" (default since V2026.15): PENALISATION for every zone with
+    # Mecway's normal stiffness (kn > 0, as Mecway computes), else
+    # STANDARD. Measured against Mecway 36 + CCX (18 Nov 2026): the contact
+    # patch tests NL-03c/NL-30 2e-5 against 0.50 with STANDARD (no
+    # penetration p/kn), Voorbeeld_C 3.2% against 7.0%, line contact
+    # NL-03a/NL-30c runs where STANDARD stops (MECANONLINE9_4).
+    algo = "{0}".format(analysis.get("contact_algo", "auto")).upper()
+    if algo not in ("STANDARD", "PENALISATION", "AUTO"):
+        log(tr("WARNING: contact_algo '{0}' onbekend; auto gebruikt.",
+               "WARNING: contact_algo '{0}' unknown; auto used.").format(
             algo))
-        algo = "STANDARD"
+        algo = "AUTO"
     pairs = model_data.get("contacts", [])
     unil = [bc for bc in model_data["bcs"] if bc.get("unil_zones")]
     if unil and pairs:
@@ -6500,7 +6528,39 @@ def _build_contact_block(model_data, analysis=None):
             c["master"], c["slave"])
         if friction:
             z += ", COULOMB={0!r}".format(c.get("friction", 0.0))
-        z += _penalty_args(c, algo, friction)
+        kn = c.get("kn", 0.0) or 0.0
+        zone_algo = "PENALISATION" if algo == "PENALISATION" or (
+            algo == "AUTO" and kn > 0.0 and not model_data.get("plane")) \
+            else "STANDARD"
+        if algo == "AUTO" and zone_algo == "STANDARD":
+            log("INFO: Contact '{0}': STANDARD (contact_algo auto: {1})."
+                .format(c["slave"], "2D model, not measured with penalty"
+                        if model_data.get("plane") else
+                        "no normal stiffness"))
+        # A key of the user's #ASTER-ZONE wins; the bridge leaves out its
+        # own argument (the same keyword twice is a Python error in the
+        # .comm). ALGO_CONT from the user: no penalty arguments at all.
+        user_keys = _zone_keys(zone_extra)
+        if "ALGO_CONT" in user_keys:
+            log("INFO: Contact '{0}': ALGO_CONT from #ASTER-ZONE; the "
+                "bridge writes no penalty arguments.".format(c["slave"]))
+        else:
+            # the user's ALGO_FROT also decides on COEF_PENA_FROT (only
+            # allowed with ALGO_FROT='PENALISATION', catalogue 17.4)
+            drop = set(user_keys)
+            if "ALGO_FROT" in drop:
+                drop.add("COEF_PENA_FROT")
+            z += _drop_keys(_penalty_args(c, zone_algo, friction), drop)
+        if friction and c.get("friction", 0.0) > 0.0 and \
+                "SEUIL_INIT" not in user_keys:
+            # Initial friction threshold (zone keyword SEUIL_INIT, catalogue
+            # defi_contact.py 17.4, block CONTINUE + COULOMB): without it a
+            # part held only by contact has no tangential stiffness in the
+            # first Newton iteration and Code-Aster stopped in step 1 with
+            # MECANONLINE9_4 (STANDARD and PENALISATION, 17.4, compression
+            # then shear, mu 0.5); with it the run converged and the result
+            # did not depend on the value (1e3, 1e6 and 1e9 Pa identical).
+            z += ", SEUIL_INIT={0!r}".format(_SEUIL_INIT)
         sans = bool(c.get("sans_groups")) or "SANS_GROUP_NO" in zone_extra
         if sans and "INTEGRATION" not in zone_extra and _quadratic_slave(
                 model_data, c["slave"]):

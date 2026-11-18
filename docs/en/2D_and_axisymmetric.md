@@ -679,8 +679,8 @@ Steps:
    | `Slave` (node selection, 3 nodes) | the nodes of the slave edge | none; only to read the mean contact pressure |
 
    The *Contact*: type *unilateral elastic*, friction coefficient 0, *normal stiffness*
-   1000 GPa/m (Mecway asks for a value; with the bridge's default contact algorithm
-   `STANDARD` it is not used), tolerance 0.
+   1000 GPa/m (Mecway asks for a value; in 2D the bridge's default contact method `auto`
+   gives `STANDARD`, which does not use it), tolerance 0.
 5. The line: in CCX > *Custom model definition* `**ASTER-PLANE AXIS`.
 6. Bridge: `auto` (→ `nonlin_static_3d`), `liml`; the contact settings of the Nonlinear
    static page as in 3D.

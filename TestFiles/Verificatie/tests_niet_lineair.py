@@ -451,6 +451,54 @@ def build_nl03_patch(kn=KN4, n_lo=2, extra=None):
     return m
 
 
+# NL-03h: as the patch test, lower block clamped at its bottom, upper block
+# held only by the contact (y held on its y = 0 face above the interface):
+# 4000 N compression until t = 0.5, then 800 N shear in X (tau = 2 MPa,
+# mu 0.5: sticking). Mecway 36 with CCX, headless (18 Nov 2026): mean top
+# displacement w = -1.9156e-6 m, u = 2.0752e-6 m (kn = kt = 1e13 Pa/m).
+MW_NL03H = (1.9156e-6, 2.0752e-6)
+
+
+def build_nl03_friction():
+    m = Model("L30", timesteps=_timesteps(1.0))
+    m.elset("Onderblok", "Staal")
+    lo = hexmesh(m, "Onderblok", 2, 2, 1, box(0, A4, 0, A4, -H4, 0),
+                 order=2)
+    m._index = {}
+    m.elset("Bovenblok", "Staal")
+    up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, A4, 0, A4, 0, H4), order=2)
+    _elastic_mat(m, "Staal", NU4)
+    m.node_selection("Bodem", sorted(lo["nodes"]["w0"]))
+    for ax in "xyz":
+        d = dict((a, 1 if a == ax else 0) for a in "xyz")
+        m.add('<displacement selection="Bodem"><value>0 mm</value><x>{x}</x>'
+              '<y>{y}</y><z>{z}</z></displacement>'.format(**d))
+    m.node_selection("TopY", sorted(up["nodes"]["v0"] - up["nodes"]["w0"]))
+    m.add('<displacement selection="TopY"><value>0 mm</value><x>0</x>'
+          '<y>1</y><z>0</z></displacement>')
+    m.node_selection("Top", sorted(up["nodes"]["w1"]))
+    m.face_selection("Bovenkant", up["faces"]["w1"])
+    m.add('<force selection="Bovenkant">{0}<y>0 N</y>{1}</force>'.format(
+        _history("x", [(0.0, 0.0), (0.5, 0.0), (1.0, 800.0)], "N"),
+        _history("z", [(0.0, 0.0), (0.5, -F4), (1.0, -F4)], "N")))
+    m.face_selection("ContactOnder", lo["faces"]["w1"])
+    m.face_selection("ContactBoven", up["faces"]["w0"])
+    m.add('<contact2 selectionmaster="ContactOnder" selectionslave='
+          '"ContactBoven" type="unilateralelastic"><tolerance>0 m</tolerance>'
+          '<normalstiffness>%g GPa/m</normalstiffness>'
+          '<tangentialstiffness>%g GPa/m</tangentialstiffness>'
+          '<frictioncoefficient>0.5</frictioncoefficient></contact2>'
+          % (KN4 / 1e9, KN4 / 1e9))
+    return m
+
+
+def _mean_top(r, var):
+    """Mean of var over the node selection Top."""
+    nids = r.model.nodesel["Top"]
+    d = r.step()[var]
+    return sum(d[n] for n in nids) / float(len(nids))
+
+
 def _at_body(r, var, pt, upper):
     """var in de knoop op pt van het onderste (eerst gemaakte) of het
     bovenste lichaam: op het contactvlak liggen twee knopen op dezelfde
@@ -549,6 +597,23 @@ TESTS = [
          _nl03_patch_checks(True), settings={"contact_algo": "PENALISATION"},
          note="Als NL-03d met #ASTER-ZONE INTEGRATION='NCOTES' (nu gelijk "
               "aan de standaard van de bridge)."),
+    Case("NL-03g", GROUP, "Contact-patchtest met de standaardinstelling "
+         "(contact_algo auto)", "nonlin_static_3d", build_nl03_patch,
+         _nl03_patch_checks(True),
+         note="Zonder eigen instelling: auto kiest PENALISATION met "
+              "Mecway's normaalstijfheid; penetratie p/kn = 1 um, zoals "
+              "Mecway met CCX."),
+    Case("NL-03h", GROUP, "Wrijving, blok alleen door contact "
+         "vastgehouden (SEUIL_INIT)", "nonlin_static_3d", build_nl03_friction,
+         [Check("w bovenkant t.o.v. Mecway", lambda r: -_mean_top(
+             r, "displz"), ref=MW_NL03H[0], tol=0.005, unit="m",
+                source="Mecway 36 (CCX), headless"),
+          Check("u bovenkant t.o.v. Mecway", lambda r: _mean_top(
+              r, "displx"), ref=MW_NL03H[1], tol=0.02, unit="m",
+                source="Mecway 36 (CCX), headless",
+                known="KNOWN_BUGS 148")],
+         note="Eerst 10 MPa druk, dan 2 MPa schuif, mu 0,5 (plakken). Zonder "
+              "SEUIL_INIT stopte Code-Aster in stap 1 (MECANONLINE9_4)."),
     Case("NL-03p", GROUP, "Contact-patchtest (PENALISATION), te slappe "
          "normal stiffness: penetratiecontrole", "nonlin_static_3d",
          lambda: build_nl03_patch(kn=1.0e10),

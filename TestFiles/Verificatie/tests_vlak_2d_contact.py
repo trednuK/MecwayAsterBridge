@@ -557,3 +557,11 @@ TESTS.append(Case(
     note="Blokken als PL-42 (onderblok 3 m breed, quad4 18x12 onder en "
          "12x12 boven, bij de start passend): eerst 0,01 m samengedrukt, dan "
          "de bovenrand 0,05 m zijwaarts; wrijvingscoefficient 0,3."))
+
+
+# These cases check hard contact (interference fits against Lame and
+# Code-Aster test cases without penetration): STANDARD, also now that the
+# default contact_algo is "auto" (PENALISATION with Mecway's normal
+# stiffness, V2026.15).
+for _case in TESTS:
+    _case.settings.setdefault("contact_algo", "STANDARD")

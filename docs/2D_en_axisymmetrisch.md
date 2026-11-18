@@ -701,8 +701,8 @@ Stappen:
    | `Slave` (knoopselectie, 3 knopen) | de knopen van de slave-rand | geen; alleen om de gemiddelde contactdruk af te lezen |
 
    Het *Contact*: type *unilateral elastic*, wrijvingscoëfficiënt 0, *normal stiffness*
-   1000 GPa/m (Mecway vraagt een waarde; met het standaard contactalgoritme `STANDARD` van de
-   bridge wordt hij niet gebruikt), tolerantie 0.
+   1000 GPa/m (Mecway vraagt een waarde; in 2D geeft de standaard contactmethode `auto` van
+   de bridge `STANDARD`, en dat gebruikt hem niet), tolerantie 0.
 5. De regel: in CCX > *Custom model definition* `**ASTER-PLANE AXIS`.
 6. Bridge: `auto` (→ `nonlin_static_3d`), `liml`; de contactinstellingen van de pagina
    Niet-lineair statisch zoals in 3D.

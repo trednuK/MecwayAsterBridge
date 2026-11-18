@@ -65,7 +65,7 @@ All files of a run are named `<model>_<run-id>.*` (see
    `Scripts/bridge_run_aster.py`):
    - `FACTOR_10`, `FACTOR_11`, `FACTOR_42`, `FACTOR_57`: singular stiffness matrix;
    - `MECANONLINE9_4`: the same, plus the advice for a pivot on `LAGS_C` (contact):
-     *Contact method* = PENALISATION (not `solver_nprec` = -1: it does run through, but
+     *Contact method* = `auto` or PENALISATION (not `solver_nprec` = -1: it does run through, but
      is inaccurate, −1.6% / +2.8% in NL-03a, R-NPREC-CONTACT in
      [Default settings §5](Default_settings_and_assumptions.md#5-check-runs-for-this-review));
    - `MECANONLINE9_7`: Newton does not converge, with the next steps (see
@@ -764,7 +764,7 @@ from contact (`SANS_GROUP_NO`).
   the catalogue advises at `FACTOR_10/11`; another condition on slave nodes: remove the
   node from the slave selection in Mecway or use
   `#ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (applies to every zone and replaces the
-  automatic one). 2 *Contact method* = PENALISATION with Mecway's *normal stiffness*
+  automatic one). 2 *Contact method* = `auto` or PENALISATION with Mecway's *normal stiffness*
   (NL-03b: tip −0.01%, contact force −0.07%). 3 add `#ASTER-EXCIT`. 4 in the bridge:
   `EC_SUR_E` = 1e-4 (default of the catalogue `defi_materiau.py`). 5 not determined.
   6 in Mecway: a weak *Elastic support* on a large face of that part, a real support, or
@@ -914,7 +914,7 @@ Step-by-step plan and settings:
   4. increase *Substeps per time interval* / *Solver steps per Mecway time step* and
      *Max. Newton iterations*, and switch on the nonlinearities one at a time
      ([Settings §4.2](Settings_contact_and_nonlinear.md#42-step-by-step-plan)); with
-     contact *Contact method* = PENALISATION;
+     contact *Contact method* = `auto` or PENALISATION;
   5. not via the bridge;
   6. check the skipped loads in `<model>_<run-id>_bridge_log.txt`;
   7. not an error: the load at the last time is the load capacity. Continuing past
@@ -1291,8 +1291,8 @@ Examples and pitfalls: [`ASTER_lines_examples.md`](ASTER_lines_examples.md). See
   `SyntaxError`, e.g. `SyntaxError: keyword argument repeated: FROTTEMENT`. The `.mess`
   ends without `<FIN>`, often with `DIAGNOSTIC JOB : OK`.
 - **Cause**: a typo in `#ASTER` lines, or a keyword the bridge already writes:
-  `FROTTEMENT` via `#ASTER-CONTACT`, or `ALGO_CONT` via `#ASTER-ZONE` while *Contact
-  method* = PENALISATION.
+  `FROTTEMENT` via `#ASTER-CONTACT` (before V2026.15 also `ALGO_CONT` via `#ASTER-ZONE`
+  while *Contact method* = PENALISATION; now the user's zone keywords win).
 - **Seen**: both cases recomputed on 06-10-2026; the bridge reports "Python error in
   `<model>_<run-id>.comm`: SyntaxError: keyword argument repeated: ..." with the error
   line.

@@ -274,7 +274,7 @@ analysis:
 | "Convergence criterion (RELA / MAXI / RELA or MAXI)" | nonlinear static, dynamic implicit | `RELA` (choice `RELA`, `MAXI`, `RELA_OF_MAXI`) |
 | "Convergence RESI_GLOB_RELA" | nonlinear static, dynamic implicit, thermal (`THER_NON_LINE` only) | 1e-5 (nonlinear static, dynamic implicit; Code-Aster default 1e-6), 1e-6 (thermal) |
 | "Convergence RESI_GLOB_MAXI [N]" | nonlinear static, dynamic implicit (with `MAXI` and `RELA_OF_MAXI`) | 1e-3 |
-| "Contact method (STANDARD / PENALISATION)" | nonlinear static, dynamic | `STANDARD` |
+| "Contact method (auto / STANDARD / PENALISATION)" | nonlinear static, dynamic | `auto` (nonlinear static), `STANDARD` (dynamic) |
 | "Strain definition hardening curve" | nonlinear static, dynamic | `auto` |
 | "COMPORTEMENT DEFORMATION" | nonlinear static, dynamic | `GROT_GDEP` |
 | "Time scheme (SCHEMA_TEMPS)" | dynamic | `HHT` (implicit; choice `HHT`/`NEWMARK`), `DIFF_CENT` (explicit; choice `DIFF_CENT`/`TCHAMWA`) |

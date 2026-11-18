@@ -30,6 +30,22 @@
   time step (nonlinear); now they give Mecway's result (verification LS-07n). Their `.comm`
   changes: the support goes to a node group without those nodes. Double conditions it
   cannot resolve get a WARNING.
+- **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
+  (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
+  in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway
+  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. Dynamics and 2D
+  models keep `STANDARD` (not measured with penalty). Your own `ALGO_CONT`, `COEF_PENA_*` or
+  `ALGO_FROT` in `#ASTER-ZONE` now take precedence over the bridge's (before: `SyntaxError`
+  with *Contact method* = PENALISATION). Measured against Mecway 36 with CCX: the contact patch tests now agree to
+  2e-5 (before 50 %, no penetration p/kn), Voorbeeld_C 3.2 % (before 7.0 %), and line contact
+  between beams runs where `STANDARD` stopped. Results of contact models change by the
+  penetration p/kn. If you keep your own `Scripts/bridge_utils.py` from an older version
+  (saved start-screen settings), it still says `STANDARD`: choose `auto` once on the page
+  Contact. Hard contact without penetration: choose `STANDARD`.
+- **Friction with parts held only by contact** no longer stops in the first step: zones
+  with friction get `SEUIL_INIT` (initial friction threshold; the result does not depend
+  on its value). Known: the tangential stiffness kt has almost no effect in Code-Aster,
+  Mecway adds an elastic slip τ/kt (KNOWN_BUGS 148).
 
 ## V2026.14 – 18 November 2026
 

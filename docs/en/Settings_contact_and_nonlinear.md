@@ -648,11 +648,22 @@ contact = DEFI_CONTACT(
 )
 ```
 
-- **Formulation (`contact_algo`, label "Contact method (STANDARD / PENALISATION)").** `CONTINUE` with per zone
+- **Formulation (`contact_algo`, label "Contact method (auto / STANDARD / PENALISATION)").** `CONTINUE` with per zone
   `ALGO_CONT`:
-  - `STANDARD` (default, CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
+  - `auto` (default for Nonlinear Static since V2026.15): `PENALISATION` for every zone
+    with Mecway's *normal stiffness* (Mecway requires one, so in practice every zone),
+    otherwise `STANDARD`; 2D models (`**ASTER-PLANE`) keep `STANDARD` (penalty not measured
+    there). Dynamics keeps the default `STANDARD` (penalty not measured; in explicit
+    dynamics a stiff spring can lower the stable time step).
+    Measured against Mecway 36 with CCX (headless, largest node deviation / largest
+    displacement): contact patch tests NL-03c and NL-30 2e-5 with `PENALISATION`
+    against 0.50 with `STANDARD` (no penetration p/kn), Voorbeeld_C 3.2 % against 7.0 %,
+    line contact NL-03a/NL-30c runs where `STANDARD` stops. Verification NL-03g. A
+    start screen saved before V2026.15 keeps its explicit `STANDARD`: choose `auto` once.
+  - `STANDARD` (CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
     the contact pressure as an extra unknown on the slave side; no stiffness needed, no
-    penetration.
+    penetration. Use it for hard contact without penetration (the interference-fit
+    cases PL-40 … PL-47 compare with Lamé this way).
   - `PENALISATION`: contact pressure = `COEF_PENA_CONT` × penetration, with
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); with friction
     `ALGO_FROT='PENALISATION'` with `COEF_PENA_FROT` = *tangential stiffness* (if that
@@ -711,7 +722,13 @@ contact = DEFI_CONTACT(
   `DEFI_CONTACT` per analysis; KNOWN_BUGS 22).
 - **Friction.** If at least one pair has a friction coefficient > 0, then
   `FROTTEMENT='COULOMB'` for all zones, with `COULOMB=` per zone (0 for pairs without
-  friction).
+  friction). Zones with friction get `SEUIL_INIT=1e6` (Pa, the initial friction
+  threshold, catalogue `defi_contact.py` 17.4): without it a part held only by contact has
+  no tangential stiffness in the first Newton iteration and Code-Aster stopped in step 1
+  with `MECANONLINE9_4` (verification NL-03h); the converged result did not depend on the
+  value (1e3, 1e6 and 1e9 identical). Your own `#ASTER-ZONE SEUIL_INIT=...` takes precedence.
+  The tangential stiffness has almost no effect in Code-Aster: sticking is nearly rigid,
+  Mecway adds an elastic slip τ/kt (KNOWN_BUGS 148).
 - **Adaptation.** CA default `ADAPTATION='CYCLAGE'`: if a contact point keeps
   switching status, Code-Aster switches there to penalty with a maximum penetration
   (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Then check the penetration in the
@@ -1082,7 +1099,8 @@ cause, not a numerical one.
 5. **Friction later.** Start without friction (coefficient 0 in Mecway) (U2.04.04
    §4.1).
 6. **Contact method.** With line contact, contact that is lost or `MECANONLINE9_4`
-   with `LAGS_C`: `contact_algo` = `PENALISATION` (§3.1, NL-03b).
+   with `LAGS_C`: `contact_algo` = `auto` (default in Nonlinear Static) or `PENALISATION`
+   (§3.1, NL-03b).
 7. **Smaller steps.** Reduce Mecway's *Time step size* (static; without a step size
    increase `substeps_per_interval`) or increase `substeps_per_output` (implicit; or reduce Mecway's *Time step size*). Code-Aster already cuts a failed step itself
    (`DECOUPE`, up to 6 levels, §2.1); smaller initial steps help when it keeps getting

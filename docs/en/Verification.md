@@ -158,7 +158,12 @@ no value that moves more than 1e-6 relative compared with the stored results.
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 
+Added since this regression and run on their own (19 Nov 2026, not yet in a full
+regression): LS-07n (2 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS 148).
+
 **Known limitations** (status BEKEND):
+- KNOWN_BUGS 148: the tangential stiffness kt has almost no effect in Code-Aster (NL-03h,
+  1 check, u 10 % below Mecway's 2.0752 µm: Mecway adds the slip τ/kt).
 - KNOWN_BUGS 43: Lagrange contact (`contact_algo` = STANDARD) on a line contact between
   hex20 solids stops (NL-03a, 3 checks). Use PENALISATION (NL-03b: exact).
 - KNOWN_BUGS 83: K_I from `CALC_G_XFEM` on a curved front +5.3 % (BR-10, 1 check,
@@ -2120,6 +2125,16 @@ samples) plus the kinks of the load tables (NL-20).
   `NCOTES` has not been tested separately on tet10 or curved faces (the Mecway samples
   PipeClip and AssemblyWithContact do run with it, see `bridge_to_aster.py`).
 
+- **NL-03g** (default `contact_algo` = `auto`): the patch test without its own setting:
+  auto chooses `PENALISATION` with Mecway's normal stiffness; top 1.9524 µm = 2pH/E + p/kn,
+  as NL-03d and as Mecway with CCX.
+- **NL-03h** (friction, a block held only by contact): the patch test with the lower block
+  clamped at its bottom, the upper block held only by the contact (Y fixed on its y = 0
+  face above the interface), 10 MPa compression, then 2 MPa shear, μ = 0.5 (sticking),
+  kn = kt = 1e13 Pa/m. Without `SEUIL_INIT` Code-Aster stopped in step 1
+  (`MECANONLINE9_4`); with it: w = 1.9156 µm, equal to Mecway 36 with CCX (1.9156 µm);
+  u = 1.8636 µm against Mecway 2.0752 µm (BEKEND, KNOWN_BUGS 148: Code-Aster's
+  penalised friction sticks almost rigidly, Mecway adds the slip τ/kt).
 - **NL-03p** (penetration check): the patch test of NL-03d with kn = 1e10 Pa/m:
   penetration p/kn = 1 mm (exact), 15 % of the edge of the slave face (6.67 mm); the
   bridge gives a WARNING after the run (`contact_pene_maxi` 0.05). NL-03b/d/f (1 µm)

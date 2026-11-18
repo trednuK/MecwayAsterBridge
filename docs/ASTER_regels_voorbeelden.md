@@ -140,12 +140,14 @@ geeft `ERROR: #ASTER: selectie 'X' bestaat niet in het mesh.` in
   Voorbeeld 1 zonder `#ASTER-EXCIT`: de balk hangt los, `FACTOR_11` of `FACTOR_42`
   (*Statisch*, afhankelijk van het model; met `solver_nprec` -1 ook `FACTOR_57`) of `MECANONLINE9_4` (*Niet-lineair statisch*). Bij *Modaal* en *Knik* geldt hetzelfde:
   zonder `#ASTER-EXCIT` ontbreekt de verbinding in de matrices (`ALGELINE3_81`).
-- **Niets herhalen wat de bridge schrijft**: bijv. `FROTTEMENT` via `#ASTER-CONTACT`, of
-  `ALGO_CONT`/`COEF_PENA_CONT` via `#ASTER-ZONE` als *Contactmethode* = PENALISATION.
+- **Niets herhalen wat de bridge schrijft**: bijv. `FROTTEMENT` via `#ASTER-CONTACT`.
   Python stopt dan met `SyntaxError: keyword argument repeated: ...`. Zo'n fout staat
   alleen in het Code-Aster-venster en in `<model>_<run-id>_console.txt`, niet in de
   `.mess` (die eindigt zonder `<FIN>`, met `DIAGNOSTIC JOB : OK`). De bridge leest de
   console-uitvoer en meldt de Python-fout met de foutregel.
+  (`ALGO_CONT`, `COEF_PENA_CONT`, `ALGO_FROT`, `COEF_PENA_FROT`, `SEUIL_INIT`,
+  `INTEGRATION`, `SANS_GROUP_NO` via `#ASTER-ZONE` mogen: de bridge laat dan zijn eigen
+  weg.)
 - **Resultaat in de tijd**: `t_res` (het laatst berekende tijdstip) bestaat alleen bij
   niet-lineair statisch en dynamica (tabel in §2); gebruik anders `NUME_ORDRE=1`.
 
@@ -377,7 +379,7 @@ Valkuilen:
 
 Doel: de contactformulering van de bridge (`FORMULATION='CONTINUE'`) per zone aanpassen.
 Voor penalty-contact met Mecway's eigen stijfheid is de instelling *Contactmethode* =
-PENALISATION de eerste keus ([Instellingen §3](Instellingen_contact_en_nietlineair.md#3-contact));
+`auto` (de standaard bij niet-lineair statisch) of PENALISATION de eerste keus ([Instellingen §3](Instellingen_contact_en_nietlineair.md#3-contact));
 dit voorbeeld laat zien hoe het met `#ASTER`-regels gaat, bijv. als Mecway geen
 *normal stiffness* heeft. Sleutelwoorden volgens de catalogus `defi_contact.py`
 (EDF R&D, 2026a; achtergrond EDF R&D, 2021b).
@@ -412,9 +414,11 @@ met *normal stiffness* 100000 GPa/m (= 1e14 Pa/m) in Mecway geeft dezelfde 42,36
 Valkuilen:
 - `ALGO_RESO_GEOM`/`ALGO_RESO_CONT` horen bij `DEFI_CONTACT` (`#ASTER-CONTACT`),
   `ALGO_CONT`/`COEF_PENA_CONT`/`CONTACT_INIT`/`INTEGRATION` bij `ZONE` (`#ASTER-ZONE`).
-- Niet samen met *Contactmethode* = PENALISATION: `ALGO_CONT` staat er dan twee keer
-  (doorgerekend: `SyntaxError: keyword argument repeated: ALGO_CONT`). Zonder *normal
-  stiffness* in Mecway valt die instelling terug op STANDARD (WARNING).
+- Een eigen `ALGO_CONT` gaat voor *Contactmethode*: de bridge schrijft dan zelf geen
+  penalty-argumenten; een eigen `COEF_PENA_*` of `ALGO_FROT` vervangt alleen het
+  argument van de bridge met dezelfde naam (sinds V2026.15; daarvoor gaf `ALGO_CONT`
+  samen met *Contactmethode* = PENALISATION `SyntaxError: keyword argument repeated:
+  ALGO_CONT`).
 - Niet herhalen wat de bridge schrijft: `FORMULATION`, `FROTTEMENT`, `COULOMB`,
   `GROUP_MA_MAIT`/`GROUP_MA_ESCL` (§4).
 - Zonder Mecway-contact worden `-CONTACT`/`-ZONE` genegeerd.
@@ -1281,7 +1285,7 @@ opgewekt.
 | 3 | `FORCE_NODALE` + `DDL_IMPO` | Mystran + OpenRadioss | Statisch, Niet-lineair statisch | OK |
 | 4 | `AFFE_CHAR_MECA_F` + `DEFI_FONCTION` | OpenRadioss (beide velden) | Niet-lineair statisch (Statisch: last 0) | OK |
 | 5 | penalty + `ALGO_RESO_GEOM` | OpenRadioss | Niet-lineair statisch met contact | OK (42,36 kN, model C; zonder 47,41 kN) |
-| 5 | idem met *Contactmethode* = PENALISATION | OpenRadioss | idem | `SyntaxError` (verwacht, §4) |
+| 5 | idem met *Contactmethode* = PENALISATION | OpenRadioss | idem | voor V2026.15 `SyntaxError`; nu wint de eigen `ALGO_CONT` (unittest, niet opnieuw doorgerekend) |
 | 6 | `CONTACT_INIT`, `POINT_FIXE`, `#ASTER-OPTIE` | OpenRadioss | Niet-lineair statisch met contact | OK; onbekende sleutel geeft ERROR |
 | 7 | reactiekracht, `POST_RELEVE_T` + `IMPR_TABLE` | OpenRadioss | Niet-lineair statisch; Statisch met `NUME_ORDRE=1` | OK |
 | 8 | `EXTREMA` van `SIEQ_NOEU` | OpenRadioss | Statisch, Niet-lineair statisch | OK |

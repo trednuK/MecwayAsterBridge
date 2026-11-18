@@ -265,11 +265,13 @@ CONFIG_BRIDGE = {
             # (bridge_to_aster._auto_listinst_block); False = fixed steps as
             # without the flag. Without the flag in the .liml no effect.
             "auto_time_stepping":    True,
-            # Contact (DEFI_CONTACT CONTINUE, per zone): "STANDARD" =
-            # Lagrange, no penetration; "PENALISATION" = spring with Mecway's
+            # Contact (DEFI_CONTACT CONTINUE, per zone): "auto" (default,
+            # V2026.15) = "PENALISATION" for zones with Mecway's normal
+            # stiffness in 3D, else "STANDARD"; "STANDARD" = Lagrange, no
+            # penetration; "PENALISATION" = spring with Mecway's
             # normalstiffness (COEF_PENA_CONT, Pa/m) and with friction
             # tangentialstiffness (COEF_PENA_FROT), like Mecway/CCX.
-            "contact_algo":          "STANDARD",
+            "contact_algo":          "auto",
             # DEFI_CONTACT LISSAGE (S28): smoothed normals for faceted
             # curved contact surfaces; not across sharp edges.
             "contact_smoothing":     False,

@@ -63,7 +63,7 @@ Alle bestanden van een run heten `<model>_<run-id>.*` (zie
    `Scripts/bridge_run_aster.py`):
    - `FACTOR_10`, `FACTOR_11`, `FACTOR_42`, `FACTOR_57`: singuliere stijfheidsmatrix;
    - `MECANONLINE9_4`: idem, met de aanvulling voor een pivot op `LAGS_C`
-     (contact): *Contactmethode* = PENALISATION (niet `solver_nprec` = -1: dat rekent
+     (contact): *Contactmethode* = `auto` of PENALISATION (niet `solver_nprec` = -1: dat rekent
      wel door, maar is onnauwkeurig, −1,6% / +2,8% in NL-03a, R-NPREC-CONTACT in
      [Standaardinstellingen §5](Standaardinstellingen_en_aannames.md#5-controleruns-bij-deze-review));
    - `MECANONLINE9_7`: Newton convergeert niet, met de vervolgstappen (zie
@@ -775,7 +775,7 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
   log), zoals de catalogus bij `FACTOR_10/11` aanraadt; een andere voorwaarde op
   slave-knopen: in Mecway uit de slave-selectie halen of
   `#ASTER-ZONE SANS_GROUP_NO='<<selectie>>'` (geldt voor elke zone en vervangt de
-  automatische). 2 *Contactmethode* = PENALISATION met Mecway's *normal stiffness*
+  automatische). 2 *Contactmethode* = `auto` of PENALISATION met Mecway's *normal stiffness*
   (NL-03b: tip −0,01%, contactkracht −0,07%). 3 `#ASTER-EXCIT` toevoegen. 4 in de
   bridge: `EC_SUR_E` = 1e-4 (standaard van de catalogus `defi_materiau.py`). 5 niet
   vastgesteld. 6 in Mecway: een zwakke *Elastic support* op een groot vlak van dat deel,
@@ -930,7 +930,7 @@ Stappenplan en instellingen:
   4. *Substappen per tijdsinterval* / *Rekenstappen per Mecway-tijdstap* en
      *Max. Newton-iteraties* verhogen, en de niet-lineariteiten één voor één aanzetten
      ([Instellingen §4.2](Instellingen_contact_en_nietlineair.md#42-stappenplan)); bij
-     contact *Contactmethode* = PENALISATION;
+     contact *Contactmethode* = `auto` of PENALISATION;
   5. niet via de bridge;
   6. controleer in `<model>_<run-id>_bridge_log.txt` de overgeslagen belastingen;
   7. geen fout: de last op het laatste tijdstip is de draagkracht. Verder rekenen
@@ -1315,8 +1315,9 @@ Zie ook `MODELISA7_75` (onbekende selectie), `FACTOR_42`/`MECANONLINE9_4` (last 
   `SyntaxError`, bijv. `SyntaxError: keyword argument repeated: FROTTEMENT`. De `.mess`
   eindigt zonder `<FIN>`, vaak met `DIAGNOSTIC JOB : OK`.
 - **Oorzaak**: een tikfout in `#ASTER`-regels, of een sleutelwoord dat de bridge al
-  schrijft: `FROTTEMENT` via `#ASTER-CONTACT`, of `ALGO_CONT` via `#ASTER-ZONE` terwijl
-  *Contactmethode* = PENALISATION.
+  schrijft: `FROTTEMENT` via `#ASTER-CONTACT` (voor V2026.15 ook `ALGO_CONT` via
+  `#ASTER-ZONE` terwijl *Contactmethode* = PENALISATION; nu winnen de eigen
+  zonesleutels).
 - **Gezien**: beide gevallen opnieuw doorgerekend op 06-10-2026; de bridge meldt
   "Python-fout in `<model>_<run-id>.comm`: SyntaxError: keyword argument repeated: ..."
   met de foutregel.

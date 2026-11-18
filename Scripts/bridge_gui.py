@@ -282,9 +282,9 @@ ANALYSIS_SPECS = [
     ("line_search", ("Lijnzoeken RECH_LINEAIRE (auto = kabels)",
                      "Line search RECH_LINEAIRE (auto = cables)"), "choice",
      ("auto", "on", "off")),
-    ("contact_algo", ("Contactmethode (STANDARD / PENALISATION)",
-                      "Contact method (STANDARD / PENALISATION)"), "choice",
-     ("STANDARD", "PENALISATION")),
+    ("contact_algo", ("Contactmethode (auto / STANDARD / PENALISATION)",
+                      "Contact method (auto / STANDARD / PENALISATION)"),
+     "choice", ("auto", "STANDARD", "PENALISATION")),
     # DEFI_CONTACT LISSAGE='OUI' (S28; bridge_to_aster._build_contact_block)
     ("contact_smoothing", ("Normalen gladstrijken (LISSAGE, gebogen vlakken)",
                            "Smooth normals (LISSAGE, curved faces)"), "bool",

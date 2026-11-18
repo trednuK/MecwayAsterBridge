@@ -484,12 +484,28 @@ def test_ccx_keywords():
         bfl.log = saved
 
 
+def test_zone_keys():
+    """#ASTER-ZONE keys win over the bridge's penalty arguments (no
+    'keyword argument repeated')."""
+    import bridge_to_aster as b
+    keys = b._zone_keys(", algo_frot='PENALISATION', COEF_PENA_FROT=1e9, "
+                        "SANS_GROUP_NO=('A', 'B')")
+    check(keys == set(["ALGO_FROT", "COEF_PENA_FROT", "SANS_GROUP_NO"]),
+          "zone keys: {0}".format(sorted(keys)))
+    args = (", ALGO_CONT='PENALISATION', COEF_PENA_CONT=1e13, "
+            "ALGO_FROT='PENALISATION', COEF_PENA_FROT=1e13")
+    got = b._drop_keys(args, keys)
+    check(got == ", ALGO_CONT='PENALISATION', COEF_PENA_CONT=1e13",
+          "drop keys: {0}".format(got))
+    check(b._drop_keys(args, set()) == args, "no user keys: unchanged")
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
                  test_acoustic_density, test_factor57, test_log_errors,
                  test_bonded_offset, test_harm_stress_eta,
                  test_constraint_constant, test_bonded_gap, test_alarm_hint,
-                 test_ccx_keywords):
+                 test_ccx_keywords, test_zone_keys):
         test()
     if FAILS:
         for f in FAILS:

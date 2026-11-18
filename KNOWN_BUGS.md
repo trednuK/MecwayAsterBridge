@@ -270,6 +270,17 @@ Code-Aster value per node) and logs the largest difference per variable.
    the shell temperature to CCX's expanded elements). Status: open question to Mecway; with
    CCX as a reference for shells under a temperature, compare with the internal solver.
 
+148\. **Contact with friction: the tangential stiffness kt has almost no effect** (confirmed,
+   Code-Aster 17.4 and Mecway 36 with CCX headless, 18 Nov 2026; `bridge_to_aster._penalty_args`,
+   verification NL-03h). Two hex20 blocks, 10 MPa compression, then 2 MPa shear, μ = 0.5
+   (sticking), `ALGO_FROT='PENALISATION'` with `COEF_PENA_FROT` = Mecway's tangential
+   stiffness kt: the mean tangential displacement of the top is 1.8636 µm for kt = 1e13 and
+   for kt = 1e12 Pa/m (1.8653 µm with 1e9). Mecway: 2.0752 µm and 3.881 µm, i.e. an elastic
+   slip τ/kt (0.2 µm and 2 µm). Code-Aster's penalised friction in `CONTINUE` sticks almost
+   rigidly; how `COEF_PENA_FROT` enters is NOT verified (U doc and source not checked).
+   The normal direction is equal to Mecway (1.9156 µm). Status: open; with a small kt the
+   bridge is stiffer in shear than Mecway.
+
 ## Translation that works differently from Mecway
 
 8\. **Duplicate boundary conditions** (confirmed, partly caught). Mecway reduces
@@ -498,8 +509,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    3.06798 m.
 
 43\. **Contact: hard and soft formulation differ from Mecway** (confirmed).
-   `contact_algo` = STANDARD (Lagrange, default) allows no penetration; Mecway
-   computes penalty. Samples/PipeClip loses contact with STANDARD (1.1 mm penetration
+   `contact_algo` = STANDARD (Lagrange; the default in dynamics and what `auto` gives in
+   2D; in Nonlinear Static 3D the default before V2026.15, now `auto` = penalty) allows no
+   penetration; Mecway computes penalty. Samples/PipeClip loses contact with STANDARD (1.1 mm penetration
    at t = 0.8), AssemblyWithContact (Fixed_support) stops with MECANONLINE9_4 (pivot on
    LAGS_C); with PENALISATION (Mecway's stiffness) both follow Mecway (2..8% and −1.1%,
    headless). Configuration Quadratic_ramp of AssemblyWithContact (friction 0.5 +

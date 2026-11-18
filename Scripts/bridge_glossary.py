@@ -749,10 +749,17 @@ GLOSSARY = OrderedDict([
               u"Convergence criterion RESI_GLOB_MAXI (absolute, in N); for "
               u"a motion without resistance.")),
     ("STANDARD", ("solver", u"Contact (ALGO_CONT) met Lagrange-"
-                  u"multiplicatoren: geen penetratie, geen stijfheid nodig. "
-                  u"Standaard.",
+                  u"multiplicatoren: geen penetratie, geen stijfheid nodig.",
                   u"Contact (ALGO_CONT) with Lagrange multipliers: no "
-                  u"penetration, no stiffness needed. Default.")),
+                  u"penetration, no stiffness needed.")),
+    ("auto (contact)", ("solver", u"Contact (ALGO_CONT): PENALISATION als "
+                        u"het 3D-contact in Mecway een normaalstijfheid "
+                        u"heeft, anders STANDARD (ook in 2D). Standaard bij "
+                        u"niet-lineair statisch; in dynamica niet gemeten.",
+                        u"Contact (ALGO_CONT): PENALISATION if the 3D "
+                        u"contact has a normal stiffness in Mecway, "
+                        u"otherwise STANDARD (also in 2D). Default in "
+                        u"nonlinear static; not measured in dynamics.")),
     ("PENALISATION", ("solver", u"Contact (ALGO_CONT) als veer met een "
                       u"stijfheid per oppervlak (Mecway's normal stiffness): "
                       u"kleine penetratie, zoals Mecway.",
@@ -1527,19 +1534,22 @@ SETTING_HELP = {
         u"choose it small compared with the expected forces. "
         u"Default 1e-3 N."),
     "contact_algo": (
-        u"STANDARD (standaard) = Lagrange-contact van Code-Aster: geen "
-        u"penetratie, "
-        u"geen stijfheid nodig. PENALISATION = contact als veer met de "
-        u"normaalstijfheid uit Mecway (en de tangentiele stijfheid bij "
-        u"wrijving), zoals Mecway zelf rekent: kleine penetratie, vaak "
-        u"robuuster bij lijncontact of een deel dat het contact kan "
-        u"verliezen.",
-        u"STANDARD (default) = Code-Aster Lagrange contact: no "
-        u"penetration, no "
-        u"stiffness needed. PENALISATION = contact as a spring with the "
-        u"normal stiffness from Mecway (and the tangential stiffness with "
-        u"friction), as Mecway itself computes: small penetration, often "
-        u"more robust for line contact or a part that can lose contact."),
+        u"auto (standaard bij niet-lineair statisch) = PENALISATION voor "
+        u"elk 3D-contact met een normaalstijfheid in Mecway, anders "
+        u"STANDARD (standaard bij dynamica). STANDARD = "
+        u"Lagrange-contact van Code-Aster: geen penetratie, geen stijfheid "
+        u"nodig. PENALISATION = contact als veer met de normaalstijfheid uit "
+        u"Mecway (en de tangentiele stijfheid bij wrijving), zoals Mecway "
+        u"zelf rekent: kleine penetratie, vaak robuuster bij lijncontact of "
+        u"een deel dat het contact kan verliezen.",
+        u"auto (default in nonlinear static) = PENALISATION for every 3D "
+        u"contact with a normal stiffness in Mecway, otherwise STANDARD "
+        u"(default in dynamics). STANDARD = Code-Aster "
+        u"Lagrange contact: no penetration, no stiffness needed. "
+        u"PENALISATION = contact as a spring with the normal stiffness from "
+        u"Mecway (and the tangential stiffness with friction), as Mecway "
+        u"itself computes: small penetration, often more robust for line "
+        u"contact or a part that can lose contact."),
     "line_search": (
         u"Lijnzoeken (RECH_LINEAIRE, methode CORDE, max. 3 iteraties): "
         u"Newton schaalt elke correctie zodat het residu daalt. Helpt "
@@ -2223,6 +2233,7 @@ _OPTION_TERMS = {
     ("wait_for_aster", "auto"): "auto (wait)",
     ("configuration", "auto"): "auto (configuration)",
     ("line_search", "auto"): "auto (line search)",
+    ("contact_algo", "auto"): "auto (contact)",
     ("line_search", "on"): "on (line search)",
     ("line_search", "off"): "off (line search)",
     ("aster_summary", "summary"): "summary (aster)",

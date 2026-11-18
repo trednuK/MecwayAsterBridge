@@ -139,12 +139,14 @@ A solid face named in `#ASTER` code is added to the model as a boundary element
   without `#ASTER-EXCIT`: the beam is loose, `FACTOR_11` or `FACTOR_42` (*Static*,
   depending on the model; with `solver_nprec` -1 also `FACTOR_57`) or `MECANONLINE9_4` (*Nonlinear static*). The same applies to *Modal* and *Buckling*: without
   `#ASTER-EXCIT` the connection is missing from the matrices (`ALGELINE3_81`).
-- **Do not repeat what the bridge writes**: e.g. `FROTTEMENT` via `#ASTER-CONTACT`, or
-  `ALGO_CONT`/`COEF_PENA_CONT` via `#ASTER-ZONE` when *Contact method* = PENALISATION.
+- **Do not repeat what the bridge writes**: e.g. `FROTTEMENT` via `#ASTER-CONTACT`.
   Python then stops with `SyntaxError: keyword argument repeated: ...`. Such an error is
   only shown in the Code-Aster window and in `<model>_<run-id>_console.txt`, not in the
   `.mess` (which ends without `<FIN>`, with `DIAGNOSTIC JOB : OK`). The bridge reads the
   console output and reports the Python error with the error line.
+  (`ALGO_CONT`, `COEF_PENA_CONT`, `ALGO_FROT`, `COEF_PENA_FROT`, `SEUIL_INIT`,
+  `INTEGRATION`, `SANS_GROUP_NO` via `#ASTER-ZONE` are fine: the bridge then leaves its own
+  out.)
 - **Result over time**: `t_res` (the last computed time) only exists in nonlinear static
   and dynamics (table in §2); otherwise use `NUME_ORDRE=1`.
 
@@ -372,8 +374,8 @@ Pitfalls:
 ### Example 5 – Contact: penalty and Newton for the geometry
 
 Goal: change the bridge's contact formulation (`FORMULATION='CONTINUE'`) per zone. For
-penalty contact with Mecway's own stiffness the setting *Contact method* = PENALISATION
-is the first choice ([Settings §3](Settings_contact_and_nonlinear.md#3-contact)); this
+penalty contact with Mecway's own stiffness the setting *Contact method* = `auto` (the
+default in Nonlinear Static) or PENALISATION is the first choice ([Settings §3](Settings_contact_and_nonlinear.md#3-contact)); this
 example shows how to do it with `#ASTER` lines, e.g. when Mecway has no *normal
 stiffness*. Keywords according to the catalogue `defi_contact.py` (EDF R&D, 2026a;
 background EDF R&D, 2021b).
@@ -408,9 +410,11 @@ contact spring 1e14 Pa/m × 4·10⁻⁴ m² = 4·10¹⁰ N/m in series with the 
 Pitfalls:
 - `ALGO_RESO_GEOM`/`ALGO_RESO_CONT` belong to `DEFI_CONTACT` (`#ASTER-CONTACT`),
   `ALGO_CONT`/`COEF_PENA_CONT`/`CONTACT_INIT`/`INTEGRATION` to `ZONE` (`#ASTER-ZONE`).
-- Not together with *Contact method* = PENALISATION: `ALGO_CONT` then appears twice
-  (computed: `SyntaxError: keyword argument repeated: ALGO_CONT`). Without *normal
-  stiffness* in Mecway that setting falls back to STANDARD (WARNING).
+- Your own `ALGO_CONT` takes precedence over *Contact method*: the bridge then writes no
+  penalty arguments of its own; your `COEF_PENA_*` or `ALGO_FROT` replace only the
+  bridge's argument of the same name (since V2026.15; before, `ALGO_CONT` together with
+  *Contact method* = PENALISATION gave `SyntaxError: keyword argument repeated:
+  ALGO_CONT`).
 - Do not repeat what the bridge writes: `FORMULATION`, `FROTTEMENT`, `COULOMB`,
   `GROUP_MA_MAIT`/`GROUP_MA_ESCL` (§4).
 - Without Mecway contact, `-CONTACT`/`-ZONE` are ignored.
@@ -1278,7 +1282,7 @@ last column were provoked with a deliberately wrong line.
 | 3 | `FORCE_NODALE` + `DDL_IMPO` | Mystran + OpenRadioss | Static, Nonlinear static | OK |
 | 4 | `AFFE_CHAR_MECA_F` + `DEFI_FONCTION` | OpenRadioss (both fields) | Nonlinear static (Static: load 0) | OK |
 | 5 | penalty + `ALGO_RESO_GEOM` | OpenRadioss | Nonlinear static with contact | OK (42.36 kN, model C; without 47.41 kN) |
-| 5 | same with *Contact method* = PENALISATION | OpenRadioss | same | `SyntaxError` (expected, §4) |
+| 5 | same with *Contact method* = PENALISATION | OpenRadioss | same | before V2026.15 `SyntaxError`; now the user's `ALGO_CONT` wins (unit test, not recomputed) |
 | 6 | `CONTACT_INIT`, `POINT_FIXE`, `#ASTER-OPTIE` | OpenRadioss | Nonlinear static with contact | OK; unknown key gives ERROR |
 | 7 | reaction force, `POST_RELEVE_T` + `IMPR_TABLE` | OpenRadioss | Nonlinear static; Static with `NUME_ORDRE=1` | OK |
 | 8 | `EXTREMA` of `SIEQ_NOEU` | OpenRadioss | Static, Nonlinear static | OK |

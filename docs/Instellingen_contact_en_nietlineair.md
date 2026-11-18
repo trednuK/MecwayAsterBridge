@@ -657,11 +657,22 @@ contact = DEFI_CONTACT(
 )
 ```
 
-- **Formulering (`contact_algo`, label "Contactmethode").** `CONTINUE` met per zone
+- **Formulering (`contact_algo`, label "Contactmethode (auto / STANDARD / PENALISATION)").** `CONTINUE` met per zone
   `ALGO_CONT`:
-  - `STANDARD` (standaard, CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
+  - `auto` (standaard bij niet-lineair statisch sinds V2026.15): `PENALISATION` voor elke
+    zone met Mecway's *normal stiffness* (Mecway eist die, dus in de praktijk elke zone),
+    anders `STANDARD`; 2D-modellen (`**ASTER-PLANE`) houden `STANDARD` (penalty daar niet
+    gemeten). Dynamica houdt de standaard `STANDARD` (penalty niet gemeten; bij expliciete
+    dynamica kan een stijve veer de stabiele tijdstap verkleinen). Gemeten tegen Mecway 36 met CCX (headless, grootste knoopafwijking /
+    grootste verplaatsing): contact-patchtests NL-03c en NL-30 2e-5 met `PENALISATION`
+    tegen 0,50 met `STANDARD` (geen penetratie p/kn), Voorbeeld_C 3,2 % tegen 7,0 %,
+    lijncontact NL-03a/NL-30c rekent door waar `STANDARD` stopt. Verificatie NL-03g. Een
+    startscherm dat voor V2026.15 is opgeslagen, houdt zijn expliciete `STANDARD`: kies
+    eenmalig `auto`.
+  - `STANDARD` (CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
     met contactdruk als extra onbekende op de slave-kant; geen stijfheid nodig, geen
-    penetratie.
+    penetratie. Gebruik dit voor hard contact zonder penetratie (de krimpverbindingen
+    PL-40 … PL-47 vergelijken zo met Lamé).
   - `PENALISATION`: contactdruk = `COEF_PENA_CONT` × penetratie, met
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); bij wrijving
     `ALGO_FROT='PENALISATION'` met `COEF_PENA_FROT` = *tangential stiffness* (is die 0,
@@ -720,7 +731,14 @@ contact = DEFI_CONTACT(
   `contact2` (één `DEFI_CONTACT` per berekening; KNOWN_BUGS 22).
 - **Wrijving.** Heeft minstens één paar een wrijvingscoëfficiënt > 0, dan
   `FROTTEMENT='COULOMB'` voor alle zones, met `COULOMB=` per zone (0 voor paren
-  zonder wrijving).
+  zonder wrijving). Zones met wrijving krijgen `SEUIL_INIT=1e6` (Pa, de
+  begindrempel van de wrijving, catalogus `defi_contact.py` 17.4): zonder die drempel
+  heeft een deel dat alleen door contact vastzit in de eerste Newton-iteratie geen
+  tangentiële stijfheid en stopte Code-Aster in stap 1 met `MECANONLINE9_4`
+  (verificatie NL-03h); het geconvergeerde resultaat hing niet af van de waarde (1e3, 1e6
+  en 1e9 gelijk). Een eigen `#ASTER-ZONE SEUIL_INIT=...` gaat voor. De tangentiële
+  stijfheid heeft in Code-Aster bijna geen effect: plakken is vrijwel star, Mecway
+  voegt een elastische slip τ/kt toe (KNOWN_BUGS 148).
 - **Adaptatie.** CA-standaard `ADAPTATION='CYCLAGE'`: wisselt een contactpunt
   steeds van status, dan schakelt Code-Aster daar zelf over op penalty met een
   maximale penetratie (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Controleer
@@ -1099,7 +1117,8 @@ fysische oorzaak, geen numerieke.
 5. **Wrijving later.** Begin zonder wrijving (coëfficiënt 0 in Mecway)
    (U2.04.04 §4.1).
 6. **Contactmethode.** Bij lijncontact, contact dat verloren gaat of
-   `MECANONLINE9_4` met `LAGS_C`: `contact_algo` = `PENALISATION` (§3.1, NL-03b).
+   `MECANONLINE9_4` met `LAGS_C`: `contact_algo` = `auto` (standaard bij niet-lineair
+   statisch) of `PENALISATION` (§3.1, NL-03b).
 7. **Kleinere stappen.** Verklein Mecway's *Time step size* (statisch; zonder
    stapgrootte `substeps_per_interval` verhogen) of verhoog `substeps_per_output`
    (impliciet; of verklein Mecway's *Time step size*). Code-Aster knipt een mislukte stap al zelf
