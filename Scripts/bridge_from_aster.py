@@ -37,6 +37,7 @@ from collections import OrderedDict
 
 from bridge_utils import (log, get_active_analysis, CONFIG_BRIDGE, tr,
                           run_name)
+import bridge_element_node
 
 
 # POST_RELEVE_T reads INTITULE into a character(len=16) (rvtecn.F90 et al.,
@@ -835,12 +836,19 @@ def AsterToMecway_results(work_dir, resu_name, mw, solution):
     # --------------------------------------------------
     # SECTION VIEW: set_variable() must not clear its nodes
     # --------------------------------------------------
-    if _keep_shell_values(solution, arrays,
-                          section_view_nodes(mw, solution)):
+    shell_view = section_view_nodes(mw, solution)
+    if _keep_shell_values(solution, arrays, shell_view):
         log(tr("WARNING: De doorsnede in de solution houdt de waarden van "
                "de vorige berekening; voeg hem opnieuw toe.",
                "WARNING: The section view in the solution keeps the values "
                "of the previous calculation; add it again."))
+
+    # Values per element node of Mecway's own solve (KNOWN_BUGS 7): which
+    # elements have them, before set_variable below (bridge_element_node).
+    element_nodes = bridge_element_node.prepare(
+        solution, [n for n, v in arrays.items()
+                   if any(x is not None for x in v)], shell_view,
+        _MECWAY_SHELL_TENSOR_VARS)
 
     # --------------------------------------------------
     # INJECT INTO MECWAY
@@ -913,6 +921,13 @@ def AsterToMecway_results(work_dir, resu_name, mw, solution):
         if cleared:
             log("INFO: Mecway shell components cleared (no Code-Aster "
                 "equivalent in global XYZ): {0}".format(", ".join(cleared)))
+    else:
+        cleared = []
+
+    # Mecway 36: the values per element node follow the node values just
+    # written (and the cleared shell components), see bridge_element_node.
+    if any_loaded:
+        bridge_element_node.finish(solution, element_nodes, arrays, cleared)
 
     if any_loaded:
         mw.set_solution_active()

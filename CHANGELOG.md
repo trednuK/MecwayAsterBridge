@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Mecway 36: route `tabel` replaces Mecway's own stresses per element node** (KNOWN_BUGS 7).
+  Route `tabel` wrote Code-Aster's results per node only, and Mecway kept showing the stresses
+  per element node of its own solve. With Mecway's new `solution.set_element_node_variable()`
+  the values per element node of stresses, strains, von Mises and the shell layers now become
+  Code-Aster's node values too (only on elements that Mecway had them for). Not done, with a
+  WARNING: a Mecway without that function (older versions: NOT verified), a solution with time
+  steps or modes (so not Nonlinear static), a section view in the solution, a value on a node
+  outside those elements.
+  Beam forces are not touched. Route `liml` (the default) has Code-Aster's own values per
+  element. Verified headless in Mecway 36, not yet in the Mecway window.
+
 - **Mecway 36: route `tabel` and *Show section* without saving the model.** With Mecway's
   new `mw.liml_text()` the bridge reads the open model itself: route `tabel` no longer saves
   the `.liml` before a run (it reads a copy, `<model>_<run-id>_model.liml` in the work folder,

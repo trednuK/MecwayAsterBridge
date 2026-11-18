@@ -42,6 +42,10 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job), *Show
   section* a temporary one. Equal to what `mw.save_as` writes minus `<solution>` (measured); every
   caller falls back to saving when it returns None.
+- `solution.set_element_node_variable()` (Mecway 36) only through `bridge_element_node.py` (route
+  `tabel`, 2.7 and 3; test: `python tests/test_bridge_element_node.py`): replaces Mecway's own values
+  per element node of the written stress/strain names on the elements that have them; beam variables
+  are never touched (contract with MecwayAdvancedBeamAnalysis).
 
 ## Branches and files
 
