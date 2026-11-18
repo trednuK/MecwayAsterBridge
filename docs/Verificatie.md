@@ -433,6 +433,25 @@ opeenvolgende meshes.
   wijken af van Mecway; bij platen die vlak op vlak verlijmd zijn wijken beide af van een
   volumemodel (KNOWN_BUGS 128).
 
+### LS-07n Verlijmde blokken met symmetrievlakken op beide (KNOWN_BUGS 147)
+
+- **Doel**: een oplegging op gekoppelde slave-knopen in een richting waarin hun
+  masterknopen net zo vastliggen, is een dubbele voorwaarde (oplegging en `LIAISON_MAIL`);
+  voor de reparatie stopte Code-Aster met `FACTOR_11` (lineair) of een nul-pivot in elke
+  stap (niet-lineair, geen tijdstap berekend). De bridge laat de oplegging nu weg op die
+  knopen in die richtingen (`bridge_mesh._drop_bonded_redundant`).
+- **Model**: twee blokken 20 × 20 × 10 mm, hex20, onder 2 × 2 × 1, boven 3 × 3 × 1 met
+  eigen knopen, *Bonded* (*Tie*) op z = 0 (master = bovenkant van het onderste blok).
+- **Randvoorwaarden en belasting**: *Displacement* 0 in X op x = 0 en in Y op y = 0 op de
+  knopen van beide blokken, Z = 0 op de onderkant; 4000 N in −Z op het bovenvlak
+  (p = 10 MPa).
+- **Referentie**: Mecway 36 met CCX, headless: gemiddelde verplaatsing bovenkant
+  0,954065 µm; eenassig 2pH/E = 0,952381 µm (H = 10 mm per blok).
+- **Resultaat**: 0,954065 µm, gelijk aan Mecway (0,00%), +0,18% t.o.v. eenassig (de
+  niet-passende meshes); 7 slave-knopen per symmetrievlak verliezen de oplegging (INFO).
+  Eenmalige controle (18 nov 2026, geen case): hetzelfde model in Nonlinear Static geeft
+  0,954130 µm, gelijk aan Mecway's 0,954130 µm.
+
 ### LS-08 Node temperature (thermische spanning per knoop)
 
 - **Doel**: Mecway's *Node temperature* (`temperature3`, een temperatuur per knoop, ook

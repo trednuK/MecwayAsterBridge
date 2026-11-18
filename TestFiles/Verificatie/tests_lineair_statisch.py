@@ -1076,6 +1076,65 @@ TESTS += [
 
 
 # ------------------------------------------------------------------
+# LS-07n Two blocks bonded face to face with symmetry planes on both
+# (KNOWN_BUGS 147)
+# ------------------------------------------------------------------
+# Blocks 20 x 20 x 10 mm (2 x 2 x 1 and 3 x 3 x 1 hex20, own nodes), tie
+# at z = 0, symmetry planes x = 0 and y = 0 as Displacement 0 on the nodes
+# of both blocks, bottom z = -10 mm held in z, 4000 N (-Z) on the top face
+# (p = 10 MPa). The slave nodes on the planes are held twice (support and
+# tie): before the fix FACTOR_11; the bridge leaves the support out there
+# (bridge_mesh._drop_bonded_redundant). Uniaxial: w = 2 p H / E
+# = 9.5238e-7 m; Mecway 36 with CCX (bondedtie, S30, headless, 18 Nov
+# 2026): 9.54065e-7 m (mean over the 40 top-face nodes).
+MW_LS07N = 9.54065e-7
+
+
+def build_ls07n():
+    m = Model("S30", solver="ccx")
+    _steel(m)
+    m.elset("Onderblok", "Staal")
+    lo = hexmesh(m, "Onderblok", 2, 2, 1, box(0, 0.02, 0, 0.02, -0.01, 0),
+                 order=2)
+    m._index = {}                        # upper block: own nodes
+    m.elset("Bovenblok", "Staal")
+    up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, 0.02, 0, 0.02, 0, 0.01),
+                 order=2)
+    m.node_selection("SymX", sorted(lo["nodes"]["u0"] | up["nodes"]["u0"]))
+    m.node_selection("SymY", sorted(lo["nodes"]["v0"] | up["nodes"]["v0"]))
+    m.node_selection("Bodem", sorted(lo["nodes"]["w0"]))
+    m.node_selection("Top", sorted(up["nodes"]["w1"]))
+    for name, ax in (("SymX", "x"), ("SymY", "y"), ("Bodem", "z")):
+        d = dict((a, 1 if a == ax else 0) for a in "xyz")
+        m.add('<displacement selection="{0}"><value>0 mm</value><x>{x}</x>'
+              '<y>{y}</y><z>{z}</z></displacement>'.format(name, **d))
+    m.face_selection("Lijm_A", lo["faces"]["w1"])
+    m.face_selection("Lijm_B", up["faces"]["w0"])
+    m.face_selection("Bovenkant", up["faces"]["w1"])
+    m.add(BOND.format("Lijm_A", "Lijm_B"))
+    m.add('<force selection="Bovenkant"><x>0 N</x><y>0 N</y>'
+          '<z>-4000 N</z></force>')
+    return m
+
+
+TESTS += [
+    Case("LS-07n", GROUP, "Twee blokken verlijmd met symmetrievlakken op "
+         "beide (dubbele oplegging op slave-knopen, KNOWN_BUGS 147)",
+         "lin_static_3d", build_ls07n,
+         [Check("indrukking bovenkant t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Top"), ref=MW_LS07N,
+                tol=0.005, unit="m", source="Mecway 36 (CCX), headless",
+                in_series=False),
+          Check("indrukking bovenkant, eenassig", lambda r: -_mean(
+              r, "displz", "Top"), ref=2 * 1e7 * 0.01 / E, tol=0.005,
+                unit="m", source="w = 2 p H / E (eenassige druk)",
+                in_series=False)],
+         note="De slave-knopen op de symmetrievlakken volgen de master; de "
+              "bridge laat daar de oplegging weg (zonder: FACTOR_11)."),
+]
+
+
+# ------------------------------------------------------------------
 # LS-08 Node temperature (Mecway temperature3) voor thermische spanning
 # ------------------------------------------------------------------
 # Mecway Node temperature (manual v34 par. 9.24): een temperatuur per

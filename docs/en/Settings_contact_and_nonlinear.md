@@ -828,6 +828,20 @@ are reported by the bridge beforehand with a WARNING listing the selection names
 (`bridge_mesh._report_constraint_overlaps`); resolve them in Mecway. See also
 KNOWN_BUGS 8 (duplicate boundary conditions).
 
+**Bonded contact and supports on slave nodes.** A tied slave node follows its master
+(`LIAISON_MAIL`). If a support also holds it in a direction in which all master nodes
+that weigh in its tie are held with the same constant value (a symmetry plane as
+*Displacement* 0 through both parts, a *Fixed support* across the joint), the condition
+is double and Code-Aster would stop with a singular matrix. For a solid-on-solid tie with
+the slave node on the master face, the bridge leaves the support out on those slave
+nodes in those directions (INFO; the tie gives them the same value; verification LS-07n);
+a *Fixed support* only on solid nodes. Every double condition it does not resolve gets a
+WARNING: master nodes held with another value or time-dependent, a gap, a shell on
+either side, the bridge's own relations (`LIAISON_DDL`), a selection that cannot be split
+(shell faces, elements), two pairs that tie each other, and symmetry or frictionless
+relations on the slave and master nodes. A support only on the slave side (masters free)
+is no double condition and stays (KNOWN_BUGS 147).
+
 ### 3.8 Alternatives in Code-Aster
 
 The bridge does not set these options itself (except `LIAISON_MAIL`). You can pass them

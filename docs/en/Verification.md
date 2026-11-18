@@ -430,6 +430,24 @@ meshes is given below.
   as CCX, but the displacements differ from Mecway; for plates bonded face to face both
   differ from a solid model (KNOWN_BUGS 128).
 
+### LS-07n Bonded blocks with symmetry planes on both (KNOWN_BUGS 147)
+
+- **Purpose**: a support on tied slave nodes in a direction in which their master nodes
+  are held the same way is a double condition (support and `LIAISON_MAIL`); before the
+  fix Code-Aster stopped with `FACTOR_11` (linear) or a zero pivot in every increment
+  (nonlinear, no time step computed). The bridge now leaves the support out on those
+  nodes in those directions (`bridge_mesh._drop_bonded_redundant`).
+- **Model**: two blocks 20 × 20 × 10 mm, hex20, lower 2 × 2 × 1, upper 3 × 3 × 1 with own
+  nodes, *Bonded* (*Tie*) at z = 0 (master = top of the lower block).
+- **Boundary conditions and load**: *Displacement* 0 in X on x = 0 and in Y on y = 0 on the
+  nodes of both blocks, Z = 0 on the bottom; 4000 N in −Z on the top face (p = 10 MPa).
+- **Reference**: Mecway 36 with CCX, headless: mean top displacement 0.954065 µm; uniaxial
+  2pH/E = 0.952381 µm (H = 10 mm per block).
+- **Result**: 0.954065 µm, equal to Mecway (0.00%), +0.18% from uniaxial (the
+  non-matching meshes); 7 slave nodes per symmetry plane lose the support (INFO). One-off check
+  (18 Nov 2026, not a case): the same model in Nonlinear Static gives 0.954130 µm, equal to
+  Mecway's 0.954130 µm.
+
 ### LS-08 Node temperature (thermal stress per node)
 
 - **Purpose**: Mecway's *Node temperature* (`temperature3`, a temperature per node, also

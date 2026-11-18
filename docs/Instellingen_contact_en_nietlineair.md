@@ -840,6 +840,21 @@ koppelingen) meldt de bridge vooraf met een WARNING met de selectienamen
 (`bridge_mesh._report_constraint_overlaps`); oplossen doe je in Mecway. Zie ook
 KNOWN_BUGS 8 (dubbele randvoorwaarden).
 
+**Verlijmd contact en opleggingen op slave-knopen.** Een gekoppelde slave-knoop volgt
+zijn master (`LIAISON_MAIL`). Houdt een oplegging hem ook vast in een richting waarin
+alle masterknopen die in zijn koppeling meetellen met dezelfde constante waarde
+vastliggen (een symmetrievlak als *Displacement* 0 door beide delen, een *Fixed support*
+over de naad), dan is de voorwaarde dubbel en zou Code-Aster stoppen met een singuliere
+matrix. Bij volume op volume met de slave-knoop op het mastervlak laat de bridge de
+oplegging dan weg op die slave-knopen in die richtingen (INFO; de koppeling geeft ze
+dezelfde waarde; verificatie LS-07n); een *Fixed support* alleen op volumeknopen. Elke
+dubbele voorwaarde die de bridge niet oplost, krijgt een WARNING: masterknopen met een
+andere waarde of tijdsafhankelijk, een spleet, een schaal aan een van beide kanten, de
+eigen relaties van de bridge (`LIAISON_DDL`), een selectie die niet te splitsen is
+(schaalvlakken, elementen), twee paren die elkaar koppelen, en symmetrie- of
+frictionless-relaties op de slave- en masterknopen. Een oplegging alleen aan de slavekant
+(masters vrij) is geen dubbele voorwaarde en blijft (KNOWN_BUGS 147).
+
 ### 3.8 Alternatieven in Code-Aster
 
 De bridge zet deze opties (behalve `LIAISON_MAIL`) niet zelf. Je kunt ze meegeven met `#ASTER`-regels

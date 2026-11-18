@@ -113,6 +113,94 @@ hinge = [((1, 2, 3), None, (0.0, 0.0, 1.0), 0.0, None),
          ((2, 1, 4), None, (-_m.sin(0.2), 0.0, _m.cos(0.2)), 0.0, None)]
 check("curved master: sagitta L theta / 8",
       abs(bm.master_sagitta(hinge, hn) - 2 ** 0.5 * 0.2 / 8.0) < 1e-12)
+# KNOWN_BUGS 147: master face nodes per tied node, weights, redundancy
+masters = {}
+bm.ccx_tied_nodes(tris, slaves, nodes, tolloc, 0.0, masters=masters)
+face1 = tuple(faces[0]["nodes"])
+check("masters: face nodes of the triangle ({0})".format(masters.get(101)),
+      set(masters.get(101, ())) == set(face1))
+# slave 107 on the shared edge x = 1: only the two edge nodes weigh
+w107 = bm._tie_weight_nodes(masters[107], nodes, nodes[107])
+check("weights: node on a face edge -> only the edge nodes ({0})".format(
+    w107), sorted(nodes[n][0] for n in w107) == [1.0, 1.0])
+edge = [n for n in face1 if nodes[n][0] == 0.0]
+held = dict((n, {"DX": 0.0}) for n in edge)
+nodes[108] = (0.0, 0.5, 0.0)
+held[108] = {"DX": 0.0, "DZ": 0.0}
+tie = {"raccord": "MASSIF", "selections": ("M", "S"),
+       "tie_masters": {108: face1}}
+red, warn = bm._tied_overlaps([tie], held, nodes)
+check("slave on x = 0 held in DX like its edge masters: DX redundant; DZ "
+      "held only on the slave is no double condition ({0}, {1})".format(
+          red, dict(warn)), red == {108: set(["DX"])} and not warn)
+for n in edge:
+    held[n]["DZ"] = 1e-3
+red, warn = bm._tied_overlaps([tie], held, nodes)
+check("masters held in DZ with another value: WARNING",
+      red == {108: set(["DX"])} and list(warn.values()) == [set([108])])
+red, warn = bm._tied_overlaps([tie], {108: {"DX": 0.0}}, nodes,
+                              dict((n, set(["DX"])) for n in edge))
+check("masters time-dependent in DX: WARNING, nothing dropped",
+      not red and list(warn.values()) == [set([108])])
+for racc in ("COQUE", "MASSIF_COQUE"):
+    tie["raccord"] = racc
+    red, warn = bm._tied_overlaps([tie], held, nodes)
+    check("raccord {0}: nothing dropped, WARNING".format(racc),
+          not red and warn)
+tie["raccord"] = "MASSIF"
+tie["tie_gap"], tie["tie_tolloc"] = {108: 0.01}, 1e-4
+red, warn = bm._tied_overlaps([tie], held, nodes)
+check("slave across a gap: nothing dropped, WARNING", not red and warn)
+tie["tie_gap"] = {108: 0.0}
+red, warn = bm._tied_overlaps([tie], held, nodes, None, set([108] + edge))
+check("symmetry relation on slave and masters: WARNING",
+      red == {108: set(["DX"])} and list(warn.values()) == [set([108])])
+# two pairs tying each other (slave 120 on a face with corner 121 at the
+# same point, slave 121 on a face with corner 120): neither support may go
+cn = {120: (5.0, 5.0, 5.0), 121: (5.0, 5.0, 5.0), 122: (6.0, 5.0, 5.0),
+      123: (6.0, 6.0, 5.0), 124: (5.0, 6.0, 5.0)}
+nodes.update(cn)
+cyc = [{"raccord": "MASSIF", "selections": ("A", "B"),
+        "tie_masters": {120: (121, 122, 123, 124)}},
+       {"raccord": "MASSIF", "selections": ("B", "A"),
+        "tie_masters": {121: (120, 122, 123, 124)}}]
+red, warn = bm._tied_overlaps(cyc, {120: {"DX": 0.0}, 121: {"DX": 0.0}},
+                              nodes)
+check("cyclic ties: neither support dropped ({0}, {1})".format(
+    red, dict(warn)), not red and sum(len(v) for v in warn.values()) == 2)
+for n in cn:
+    del nodes[n]
+
+# _drop_bonded_redundant on a small model_data: node selection 'Sym' (DX
+# 0) on slave 108 and the master edge, 'Pin' (DX, DZ 0) on 108 only:
+# 'Sym' loses 108, 'Pin' is split into DZ on 108 and the rest
+from collections import OrderedDict as _OD
+md = {"bonded": [{"raccord": "MASSIF", "selections": ("M", "S"),
+                  "tie_masters": {108: face1}, "tie_gap": {108: 0.0},
+                  "tie_tolloc": 1e-4}],
+      "node_groups": {"Sym": ["N%d" % n for n in edge + [108]],
+                      "Pin": ["N108", "N%d" % edge[0]]},
+      "extra_node_groups": _OD(), "group_face_list": {},
+      "mesh_nodes": dict(list(nodes.items()) + [(108, (0.0, 0.5, 0.0))]),
+      "_conn": dict(conn),
+      "bcs": [{"type": "displacement", "selection": "Sym",
+               "aster_keyword": "DDL_IMPO", "aster_dict": {"DX": 0.0}},
+              {"type": "displacement", "selection": "Pin",
+               "aster_keyword": "DDL_IMPO",
+               "aster_dict": {"DX": 0.0, "DZ": 0.0}}]}
+bm._drop_bonded_redundant(md)
+groups = md["extra_node_groups"]
+sym, pin = md["bcs"][0], md["bcs"][1]
+check("drop: 'Sym' without the slave ({0})".format(
+    groups.get(sym["selection"])),
+      sym["aster_target"] == "GROUP_NO" and
+      sorted(groups[sym["selection"]]) == sorted(edge))
+copies = md["bcs"][2:]
+check("drop: 'Pin' split, DZ kept on the slave ({0})".format(
+    [(c["aster_dict"], groups.get(c["selection"])) for c in copies]),
+      len(copies) == 1 and copies[0]["aster_dict"] == {"DZ": 0.0} and
+      groups[copies[0]["selection"]] == [108] and
+      groups[pin["selection"]] == [edge[0]])
 tied, untied = bm.ccx_tied_nodes([], slaves, nodes, tolloc, 0.0)
 check("no master triangles: nothing tied", tied == [] and
       len(untied) == len(slaves))

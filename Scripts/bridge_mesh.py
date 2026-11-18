@@ -3147,7 +3147,10 @@ def _ccx_triangles(faces, nodes, conn):
                 e = _vunit(_vcross(vec, nrm))
                 edges.append((e, -_vdot(e, q)))
             cg = tuple(sum(q[c] for q in p) / 3.0 for c in range(3))
-            tris.append((ids, cg, nrm, -_vdot(nrm, p[0]), edges))
+            # [5]: all nodes of the face (master nodes of the tie,
+            # _drop_bonded_redundant)
+            tris.append((ids, cg, nrm, -_vdot(nrm, p[0]), edges,
+                         tuple(loc)))
     return tris
 
 
@@ -3161,13 +3164,14 @@ def ccx_tie_tolloc(tris):
 
 
 def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance,
-                   distances=None):
+                   distances=None, masters=None):
     """
     (tied, untied) slave node ids by CCX's rule (gentiedmpc.f, see the
     comment above _CCX_FACE_CORNERS); tris from _ccx_triangles for the
     master of one tie, tolerance the position tolerance (m). With a dict
     as distances: per tied node its distance normal to the master triangle
-    it was tied to (m; _bonded_gap_warning).
+    it was tied to (m; _bonded_gap_warning). With a dict as masters: per
+    tied node the nodes of the master face of that triangle.
     """
     tietol = tolerance if tolerance >= 1.0e-10 else tolloc
     owner = {}
@@ -3248,8 +3252,11 @@ def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance,
             dist = abs(_vdot(t[2], p) + t[3])
             if dist > tietol:
                 found = None
-            elif distances is not None:
-                distances[s] = dist
+            else:
+                if distances is not None:
+                    distances[s] = dist
+                if masters is not None and len(t) > 5:
+                    masters[s] = t[5]
         (tied if found is not None else untied).append(s)
     return tied, untied
 
@@ -3566,6 +3573,7 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
     distance = c.get("tolerance", 0.0)
     untied = None
     gap_warned = False
+    tie_masters = {}
     if ccx_tris is not None:
         # The slave nodes CCX ties (KNOWN_BUGS 128, ccx_tied_nodes); the
         # others stay free, as in Mecway. The selection replaces
@@ -3579,10 +3587,11 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
         shell = (m_type, s_type) != ("MASSIF", "MASSIF")
         normal_tol = (model_data.get("_ccx_shell_tol", 0.0) if shell
                       else distance)
-        gap_dist = {}
+        gap_dist, tie_masters = {}, {}
         tied, untied = ccx_tied_nodes(ccx_tris, slave_set,
                                       model_data["mesh_nodes"], tolloc,
-                                      normal_tol, distances=gap_dist)
+                                      normal_tol, distances=gap_dist,
+                                      masters=tie_masters)
         # %-formatting: '{0:.3g}' gives a decimal comma in IronPython
         # (bridge_to_aster._warn_large_rotations)
         if shell:
@@ -3733,6 +3742,11 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
            "conductance": c.get("conductance")}
     if untied is not None:
         out["untied"] = untied
+        # tied slave node -> nodes of its master face and its distance to
+        # it (KNOWN_BUGS 147, _drop_bonded_redundant)
+        out["tie_masters"] = tie_masters
+        out["tie_gap"] = gap_dist
+        out["tie_tolloc"] = model_data.get("_ccx_tolloc", 0.0)
     if thermal:
         log("INFO: {0}: thermal coupling in bridge_thermal "
             "(LIAISON_MAIL on TEMP or ECHANGE_PAROI).".format(label))
@@ -4315,6 +4329,261 @@ def _bc_dofs(bc, faces=None):
         return set(("DX", "DY", "DZ"))
     keys = [k for k in d if k in _ALL_DOFS]
     return _global_dofs(keys, d.get("ANGL_NAUT")) if keys else set(_ALL_DOFS)
+
+
+_TRANSLATIONS = ("DX", "DY", "DZ")
+_SOLID_TYPES = ("HEXA", "PENTA", "TETRA", "PYRAM")
+
+
+def _bc_nodes(model_data, sel, group_integrals=None):
+    """Node ids of a selection (node group, extra node group, faces,
+    elements), as _report_constraint_overlaps.nodes_of."""
+    node_groups = model_data.get("node_groups", {})
+    extra = model_data.get("extra_node_groups", {})
+    face_list = model_data.get("group_face_list", {})
+    elem_sel = model_data.get("element_selections", {})
+    conn = model_data.get("_conn", {})
+    if sel in node_groups:
+        return set(int(str(n).lstrip("N")) for n in node_groups[sel])
+    if sel in extra:
+        return set(extra[sel])
+    if sel in face_list:
+        return set(n for f in face_list[sel] for n in f["nodes"])
+    if sel in elem_sel:
+        return set(n for e in elem_sel[sel] if e in conn
+                   for n in conn[e][1])
+    if group_integrals and sel in group_integrals:
+        return set(int(str(n).lstrip("N")) for n in group_integrals[sel][0])
+    return set()
+
+
+def _held_dofs(bc):
+    """{DOF: value} a support holds with constant values along the global
+    axes (DDL_IMPO const, or fixed = all DOFs 0), else None."""
+    if bc.get("skip"):
+        return None
+    if bc["type"] == "fixed":
+        return dict((d, 0.0) for d in _ALL_DOFS)
+    if _ddl_kind(bc) != "const":
+        return None
+    return _ddl_values([bc])
+
+
+_FACE_TYPES = {3: "TRIA3", 4: "QUAD4", 6: "TRIA6", 8: "QUAD8"}
+# master nodes whose shape function at the projection is below this do not
+# take part in the tie relation (e.g. a slave node on the edge of a face)
+_TIE_WEIGHT_TOL = 1.0e-6
+
+
+def _tie_weight_nodes(masters, nodes, p):
+    """Master face nodes with a non-zero weight in the tie of the point p
+    (shape functions of the face at the projection of p, _project_on_face;
+    Code-Aster's projection of LIAISON_MAIL, U4.44.01, onto the same face is
+    assumed, NOT verified across a gap)."""
+    atype = _FACE_TYPES.get(len(masters))
+    if atype is None:
+        return list(masters)
+    _d, n, _x, _tx, _te = _project_on_face(
+        atype, [nodes[m] for m in masters], p)
+    return [m for m, w in zip(masters, n) if abs(w) > _TIE_WEIGHT_TOL]
+
+
+def _tied_overlaps(ties, held, nodes, held_other=None, relation_nodes=None):
+    """
+    (redundant, warn): per tied slave node the translations its support
+    holds that all master nodes with a weight in its tie hold with the same
+    constant value (redundant: {nid: set(DOF)}), and per contact the slave
+    nodes held in a tied direction in which all those master nodes are held
+    too, but not that way (warn: {label: set(nid)}).
+    Only resolvable for TYPE_RACCORD 'MASSIF' through LIAISON_MAIL with the
+    slave node on the master face (gap at most the CCX in-face tolerance;
+    across a gap Code-Aster's weights are NOT verified); 'MASSIF_COQUE'
+    also ties the rotations of the shell master (U4.44.01), other raccords
+    and the LIAISON_DDL route (_bonded_relations) only warn. A slave whose
+    weighted master is itself redundant in that DOF (two pairs tying each
+    other) is not resolved either: both supports would go. A slave held
+    where its masters are free is no double condition (the support acts on
+    the masters through the tie) and gives nothing.
+    ties: bonded dicts with tie_masters (and tie_gap, tie_tolloc); held:
+    {nid: {DOF: value}} of the constant supports; held_other: {nid:
+    set(DOF)} of the time-dependent DDL_IMPO; relation_nodes: nodes of a
+    symmetry or frictionless support (relations, not looked at: WARNING
+    when slave and masters are all in one). Pure (no model_data).
+    """
+    held_other = held_other or {}
+    relation_nodes = relation_nodes or set()
+    redundant = {}
+    warn = OrderedDict()
+    weigh = {}
+    for b in ties:
+        tie_ok = b["raccord"] == "MASSIF" and "relations" not in b
+        gaps = b.get("tie_gap", {})
+        touch = b.get("tie_tolloc", 0.0)
+        label = "'{0}' / '{1}'".format(*b.get("selections", ("?", "?")))
+        for s, face in b["tie_masters"].items():
+            mine = held.get(s, {})
+            other = held_other.get(s, set())
+            masters = None
+            if s in relation_nodes:
+                masters = _tie_weight_nodes(face, nodes, nodes[s])
+                if all(m in relation_nodes for m in masters):
+                    warn.setdefault(label, set()).add(s)
+            if not any(d in mine or d in other for d in _TRANSLATIONS):
+                continue
+            if masters is None:
+                masters = _tie_weight_nodes(face, nodes, nodes[s])
+            on_face = gaps.get(s, 0.0) <= touch
+            for d in _TRANSLATIONS:
+                if d not in mine and d not in other:
+                    continue
+                if not all(d in held.get(m, {}) or
+                           d in held_other.get(m, ()) for m in masters):
+                    continue        # masters free in d: no double condition
+                if tie_ok and on_face and d in mine and d not in other and all(
+                        d in held.get(m, {}) and held[m][d] == mine[d]
+                        and d not in held_other.get(m, ())
+                        for m in masters):
+                    redundant.setdefault(s, set()).add(d)
+                    weigh[(s, d)] = (label, masters)
+                else:
+                    warn.setdefault(label, set()).add(s)
+    first = dict((s, set(ds)) for s, ds in redundant.items())
+    for (s, d), (label, masters) in list(weigh.items()):
+        if any(d in first.get(m, ()) for m in masters if m != s):
+            redundant[s].discard(d)
+            warn.setdefault(label, set()).add(s)
+    redundant = dict((s, ds) for s, ds in redundant.items() if ds)
+    return redundant, warn
+
+
+def _drop_bonded_redundant(model_data, group_integrals=None):
+    """
+    KNOWN_BUGS 147: a tied slave node of a bonded contact (LIAISON_MAIL,
+    translations) that a support also holds in a direction in which all
+    master nodes with a weight in its tie are held with the same constant
+    value is held twice: the tie relation then depends on the supports and
+    Code-Aster stops (FACTOR_11 in MECA_STATIQUE, a zero pivot in every
+    increment of STAT_NON_LINE; measured with Code-Aster 17.4, two blocks
+    with symmetry planes as Displacement 0). The tie already gives the
+    slave that value (the weights of the projection sum to 1), so the
+    support is left out on those nodes in those directions: the selection
+    becomes a node group without them, plus a copy with the remaining
+    directions (DDL_IMPO knows GROUP_NO, catalogue affe_char_meca.py 17.4).
+    Resolved (see _tied_overlaps): constant supports along global axes
+    (displacement, pinned support on nodes) and fixed supports on solid
+    nodes (never split), on node selections, solid faces, shell edges and
+    beam ends (as _drop_covered_ddl). Every double condition that stays
+    gets a WARNING (with the reason), also for symmetry/frictionless
+    relations on tied slave nodes whose masters are in one too.
+    """
+    ties = [b for b in model_data.get("bonded", []) if b.get("tie_masters")]
+    if not ties:
+        return
+    bcs = model_data.get("bcs", [])
+    held, held_other, relation_nodes = {}, {}, set()
+    for bc in bcs:
+        if bc.get("skip"):
+            continue
+        vals = _held_dofs(bc)
+        if not vals:
+            if _ddl_kind(bc) == "timed":
+                for n in _bc_nodes(model_data, bc["selection"],
+                                   group_integrals):
+                    held_other.setdefault(n, set()).update(
+                        _ddl_values([bc]))
+            elif bc["type"] in ("symmetry", "frictionless"):
+                relation_nodes |= _bc_nodes(model_data, bc["selection"],
+                                            group_integrals)
+            continue
+        for n in _bc_nodes(model_data, bc["selection"],
+                           group_integrals):
+            held.setdefault(n, {}).update(vals)
+    redundant, warn = _tied_overlaps(ties, held, model_data["mesh_nodes"],
+                                     held_other, relation_nodes)
+    conn = model_data.get("_conn", {})
+    rot_nodes = set(n for e in conn.values()
+                    if not any(e[0].startswith(s) for s in _SOLID_TYPES)
+                    for n in e[1])
+    face_list = model_data.get("group_face_list", {})
+    node_groups = model_data.get("node_groups", {})
+    extra = model_data.get("extra_node_groups", {})
+    new_bcs = []
+    for bc in bcs:
+        vals = _held_dofs(bc)
+        if not vals:
+            continue
+        sel = bc["selection"]
+        kinds = set(f["kind"] for f in face_list.get(sel, []))
+        if sel not in node_groups and sel not in extra and not (
+                kinds and kinds <= set(["solid", "shelledge", "beam"])):
+            continue
+        nodes = _bc_nodes(model_data, sel, group_integrals)
+        hit = dict((n, redundant[n] & set(vals)) for n in nodes
+                   if redundant.get(n, set()) & set(vals))
+        if bc["type"] == "fixed":
+            hit = dict((n, h) for n, h in hit.items()
+                       if h == set(_TRANSLATIONS) and n not in rot_nodes)
+        if not hit:
+            continue
+        rest = nodes - set(hit)
+        by_left = OrderedDict()
+        for n, h in sorted(hit.items()):
+            left = tuple(d for d in _ALL_DOFS if d in vals and d not in h)
+            by_left.setdefault(left, []).append(n)
+        log("INFO: {0} '{1}': {2} tied slave node(s) of a bonded contact "
+            "already follow master nodes held the same way; the support is "
+            "left out there in {3} (double condition, KNOWN_BUGS 147)."
+            .format(bc["type"], sel, len(hit), "/".join(sorted(
+                set(d for h in hit.values() for d in h)))))
+        for left, nids in by_left.items():
+            if not left or bc["type"] == "fixed":
+                continue
+            copy = dict(bc)
+            copy["aster_dict"] = dict(
+                (k, v) for k, v in (bc.get("aster_dict") or {}).items()
+                if k not in _ALL_DOFS or k in left)
+            copy["selection"] = _extra_node_group(model_data, "BROV", nids)
+            copy["aster_target"] = "GROUP_NO"
+            new_bcs.append(copy)
+        if rest:
+            bc["selection"] = _extra_node_group(model_data, "BROV", rest)
+            bc["aster_target"] = "GROUP_NO"
+        else:
+            bc["skip"] = True
+    bcs.extend(new_bcs)
+    # Redundant directions a support still holds (a selection that cannot
+    # be split, fixed on nodes with rotations or only partly redundant)
+    left_over = set()
+    for bc in bcs:
+        vals = _held_dofs(bc)
+        if not vals:
+            continue
+        for n in _bc_nodes(model_data, bc["selection"], group_integrals):
+            if redundant.get(n, set()) & set(vals):
+                left_over.add(n)
+    if left_over:
+        warn.setdefault("", set()).update(left_over)
+    for label, nids in warn.items():
+        log(tr("WARNING: Verlijmd contact {0}: {1} slave-knopen worden door "
+               "een oplegging vastgehouden in een richting die de koppeling "
+               "ook vastlegt, terwijl hun masterknopen ook vastliggen; die "
+               "dubbele voorwaarde lost de bridge hier niet op (andere of "
+               "tijdsafhankelijke waarde, een spleet, schaal of een "
+               "symmetrie-/frictionless-relatie). Code-Aster kan stoppen met "
+               "een singuliere matrix (FACTOR_11 of nul-pivot). Haal de "
+               "oplegging van de slave-knopen af (KNOWN_BUGS 147). Knopen: "
+               "{2}.",
+               "WARNING: Bonded contact {0}: {1} slave nodes are held by a "
+               "support in a direction that the tie also fixes, while their "
+               "master nodes are held as well; the bridge does not resolve "
+               "that double condition here (another or time-dependent "
+               "value, a gap, a shell, or a symmetry/frictionless "
+               "relation). Code-Aster can stop with a singular matrix "
+               "(FACTOR_11 or a zero pivot). Take the support off the slave "
+               "nodes (KNOWN_BUGS 147). Nodes: {2}.").format(
+                   label or "-", len(nids), ", ".join(
+                       str(n) for n in sorted(nids)[:20]) + (
+                       " ..." if len(nids) > 20 else "")))
 
 
 def _ddl_kind(bc):
@@ -5418,6 +5687,7 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
         if b is not None:
             bonded.append(b)
     model_data["bonded"] = bonded
+    _drop_bonded_redundant(model_data, group_integrals)
     model_data["temperatures"] = [
         dict(t, selection=rn(t["selection"]))
         for t in model_data.get("temperatures", [])]

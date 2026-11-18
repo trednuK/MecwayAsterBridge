@@ -911,18 +911,23 @@ Code-Aster value per node) and logs the largest difference per variable.
    Status: reported; the geometry is not adjusted (moving the slave nodes as CCX does
    would be an option at most).
 
-147\. **Bonded contact with a support on the same nodes: singular matrix** (confirmed,
-   Code-Aster 17.4, 18 Nov 2026; `bridge_mesh._bonded`). Two hex20 blocks with non-matching
-   meshes bonded face to face (`bondedtie` or `bondedelastic`), symmetry planes x = 0 and
-   y = 0 as a *Displacement* 0 on the nodes of both blocks. The slave nodes on those planes
-   get DX (DY) = 0 and also the `LIAISON_MAIL` relation to master nodes that are held in the
-   same direction: redundant, so `FACTOR_11` in linear static and a zero pivot in every
-   increment of `STAT_NON_LINE` (`BRIDGE_ONVOLLEDIG`, no time step computed). Mecway/CCX
-   solves the same model (how CCX resolves the double constraint is NOT verified).
-   Unilateral contact has
-   this handled (`_exclude_fixed_slaves`, item 8), bonded contact not. Fix (NOT built): leave
-   the support's DOF out on tied slave nodes whose master nodes carry the same support
-   (SANS_GROUP_NO on the DDL_IMPO / symmetry relation), or report it. Status: open.
+147\. **Bonded contact with a support on the same nodes: what is still double** (confirmed,
+   Code-Aster 17.4, 18 Nov 2026; `bridge_mesh._drop_bonded_redundant`). A tied slave node
+   held by a support in a direction in which all master nodes that weigh in its tie are
+   held with the same constant value is a double condition (support plus `LIAISON_MAIL`):
+   `FACTOR_11` in linear static, a zero pivot in every increment of `STAT_NON_LINE`.
+   Resolved for `TYPE_RACCORD='MASSIF'` (solid on solid) with the slave node on the master
+   face: constant supports along global axes (*Displacement*, pinned support on nodes) and
+   *Fixed* on solid nodes lose those directions on those nodes (verification LS-07n, equal
+   to Mecway/CCX). Not resolved, with a WARNING: master nodes held with another value or
+   time-dependent, a gap (Code-Aster's weights across a gap NOT verified), `MASSIF_COQUE`
+   (also the rotations of the shell master are tied), shell ties, the `LIAISON_DDL` route
+   (`_bonded_relations`), a selection that cannot be split (shell faces, element
+   selections), *Fixed* on nodes with rotations, two pairs that tie each other, and
+   symmetry/frictionless relations on slave and masters. Not looked at: node-surface
+   couplings and constraint equations on slave nodes, and the thermal tie (`TEMP_IMPO`
+   with `LIAISON_MAIL` on TEMP, probably the same, NOT verified). How CCX resolves the
+   double condition is NOT verified. Status: partly fixed.
 
 ## Open questions (Mecway behaviour not checked)
 

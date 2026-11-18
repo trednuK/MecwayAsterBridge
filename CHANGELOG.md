@@ -13,6 +13,14 @@
   master, Code-Aster ties them where they are, so the gap stays (KNOWN_BUGS 146); close the
   gap in the mesh. Code-Aster's alarm `CALCULEL5_48` now has an explanation in the log.
   The generated `.comm` is unchanged.
+- **Bonded contact with supports on slave nodes** (KNOWN_BUGS 147): a symmetry plane as
+  *Displacement* 0 through both bonded parts (or another constant support that holds the
+  tied slave nodes and their master nodes the same way) no longer stops Code-Aster with a
+  singular matrix: the bridge leaves the support out on those slave nodes, which follow
+  the master (INFO). Such models stopped before with `FACTOR_11` (linear) or computed no
+  time step (nonlinear); now they give Mecway's result (verification LS-07n). Their `.comm`
+  changes: the support goes to a node group without those nodes. Double conditions it
+  cannot resolve get a WARNING.
 
 ## V2026.14 – 18 November 2026
 
