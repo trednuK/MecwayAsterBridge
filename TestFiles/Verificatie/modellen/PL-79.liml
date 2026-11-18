@@ -1,0 +1,117 @@
+<liml version="33">
+  <analysis type="T31" />
+  <timesteps timeperiod="100 s" stepsize="10 s" />
+  <node nid="1" x="0" y="0" z="0" />
+  <node nid="2" x="0.005" y="0" z="0" />
+  <node nid="3" x="0.005" y="0.01" z="0" />
+  <node nid="4" x="0" y="0.01" z="0" />
+  <node nid="5" x="0.01" y="0" z="0" />
+  <node nid="6" x="0.01" y="0.01" z="0" />
+  <node nid="7" x="0.015" y="0" z="0" />
+  <node nid="8" x="0.015" y="0.01" z="0" />
+  <node nid="9" x="0.02" y="0" z="0" />
+  <node nid="10" x="0.02" y="0.01" z="0" />
+  <node nid="11" x="0.025" y="0" z="0" />
+  <node nid="12" x="0.025" y="0.01" z="0" />
+  <node nid="13" x="0.03" y="0" z="0" />
+  <node nid="14" x="0.03" y="0.01" z="0" />
+  <node nid="15" x="0.035" y="0" z="0" />
+  <node nid="16" x="0.035" y="0.01" z="0" />
+  <node nid="17" x="0.04" y="0" z="0" />
+  <node nid="18" x="0.04" y="0.01" z="0" />
+  <node nid="19" x="0.045" y="0" z="0" />
+  <node nid="20" x="0.045" y="0.01" z="0" />
+  <node nid="21" x="0.05" y="0" z="0" />
+  <node nid="22" x="0.05" y="0.01" z="0" />
+  <elset name="Strook" material="Staal">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="2 5 6 3" />
+    <elem eid="3" shape="quad4" nodes="5 7 8 6" />
+    <elem eid="4" shape="quad4" nodes="7 9 10 8" />
+    <elem eid="5" shape="quad4" nodes="9 11 12 10" />
+    <elem eid="6" shape="quad4" nodes="11 13 14 12" />
+    <elem eid="7" shape="quad4" nodes="13 15 16 14" />
+    <elem eid="8" shape="quad4" nodes="15 17 18 16" />
+    <elem eid="9" shape="quad4" nodes="17 19 20 18" />
+    <elem eid="10" shape="quad4" nodes="19 21 22 20" />
+  </elset>
+  <displacement selection="Links"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Rechts"><value>0 m</value><x>1</x><y>0</y><z>0</z></displacement>
+  <displacement selection="Punt"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <temperature2 selection="Onder"><value>493 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <temperature2 selection="Boven"><value>493 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <initialconditions>
+    <temperature2 selection="Alle"><value>293 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  </initialconditions>
+  <thermalstress><referencetemperature>293 K</referencetemperature></thermalstress>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="reaction force" />
+  <ccxmodeldefinition>**ASTER-PLANE C_PLAN</ccxmodeldefinition>
+  <mat name="Staal">
+    <geometric type="Plate" thickness="1 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" thermalexpansion="1.2e-05 1/K" />
+    <density type="Simple" density="7800 kg/m³" />
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" specificheat="500 J/kg/K" />
+    <plastic type="BilinearIsotropic" yieldstrength="2.5e+08 Pa" tangentmodulus="2.1e+09 Pa" />
+  </mat>
+  <faceselection name="Onder">
+    <face eid="1" faceid="1" />
+    <face eid="2" faceid="1" />
+    <face eid="3" faceid="1" />
+    <face eid="4" faceid="1" />
+    <face eid="5" faceid="1" />
+    <face eid="6" faceid="1" />
+    <face eid="7" faceid="1" />
+    <face eid="8" faceid="1" />
+    <face eid="9" faceid="1" />
+    <face eid="10" faceid="1" />
+  </faceselection>
+  <faceselection name="Boven">
+    <face eid="1" faceid="3" />
+    <face eid="2" faceid="3" />
+    <face eid="3" faceid="3" />
+    <face eid="4" faceid="3" />
+    <face eid="5" faceid="3" />
+    <face eid="6" faceid="3" />
+    <face eid="7" faceid="3" />
+    <face eid="8" faceid="3" />
+    <face eid="9" faceid="3" />
+    <face eid="10" faceid="3" />
+  </faceselection>
+  <nodeselection name="Links">
+    <node nid="1" />
+    <node nid="4" />
+  </nodeselection>
+  <nodeselection name="Rechts">
+    <node nid="21" />
+    <node nid="22" />
+  </nodeselection>
+  <nodeselection name="Punt">
+    <node nid="1" />
+  </nodeselection>
+  <nodeselection name="Alle">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="13" />
+    <node nid="14" />
+    <node nid="15" />
+    <node nid="16" />
+    <node nid="17" />
+    <node nid="18" />
+    <node nid="19" />
+    <node nid="20" />
+    <node nid="21" />
+    <node nid="22" />
+  </nodeselection>
+</liml>

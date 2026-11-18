@@ -847,7 +847,7 @@ Measured during the build (not in the regression): `sqrt(u.x^2+u.y^2+u.z^2)/x` l
 the 9 nodes at x = 0, as Mecway does (180 of 189 nodes); a formula with `t` in a static
 analysis and a formula with `e.xx` without the field `strain` are left out with a warning.
 
-### 2D and axisymmetric (PL-01 … PL-68)
+### 2D and axisymmetric (PL-01 … PL-80)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) and
 their *Dynamic Response* (D20, DA0; `dyna_impl_3d` with NEWMARK, PETIT and one step per
@@ -1113,6 +1113,53 @@ face with the pressure arrows, opposite n = Z × U):
 - **PL-65**: the hoop stress at 0.5 s 5e7 Pa (6e-14); `shell_forces` gives an INFO in L30.
 - **PL-66**: `forceperlengthu` F/(2π R) = 318.31 N/m and `stressyym1` F/(2π R t) = 63662 Pa
   (2e-13): per length of the circumference.
+
+Element failure in route A (`tests_vlak_2d_bezwijken.py`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md)
+§1.4): a strip of five quad4 (50 × 10 mm) pulled to 2 mm in 20 steps, perfectly plastic
+σ_y = 250 MPa; all elements alike, only the middle one has a material with
+`#ASTER-BEZWIJKEN`, so the field is uniform up to the failure and the failure step follows from
+p = ln(1 + u/L) − σ_y/E (`D_PLAN`: J2 in plane strain, integrated numerically). The limit lies
+halfway between two steps. Every case: the failure step of the closed form, `failed` still 0
+at that step and 1 from the next, only the elements with the limit failed:
+
+- **PL-70** (`C_PLAN`, `GDEF_LOG`): failure at 0.55 s; the reaction after failure 0.19 N (of
+  2446 N). The reaction before failure is +1.07% (KNOWN (KNOWN_BUGS 144): ≈ √(1 + u/L); the
+  ratio is checked at 0.2 and 0.4 s within 2e-3). **PL-70p** (`PETIT`): 2500 N exact;
+  **PL-70r** (`PETIT_REAC`): +1.12%, the same deviation (KNOWN, the ratio checked likewise).
+- **PL-71** (`D_PLAN`), **PL-71s** (`SIMO_MIEHE`), **PL-71p** (`PETIT`), **PL-71r**
+  (`PETIT_REAC`, +0.09%): failure at 0.5 s, the reaction before failure equal to the
+  numerical plane-strain solution (< 1e-5).
+- **PL-72** (`AXIS`, a tube 0.10 … 0.11 m pulled along Y), **PL-72s** (`SIMO_MIEHE`),
+  **PL-72p** (`PETIT`), **PL-72r** (`PETIT_REAC`, +0.05%), **PL-72c** (a hardening curve,
+  `VMIS_ISOT_TRAC`), **PL-72k** (kinematic `BilinearKinematic`, H = 2.1 GPa, `GDEF_LOG`:
+  τ = σ_y + H p): failure at 0.55 s, the reaction τ A0/(1 + u/L) × 2π (< 1e-5).
+- **PL-73** (kinematic hardening `BilinearKinematic`, H = 2.1 GPa, `C_PLAN`, `PETIT`): simple
+  shear of one row of quad4 (every node prescribed) to γ = 0.08; the strain from the back stress
+  (with the shear component): failure at 0.5 s, the shear force τ L t before (8542.8 N) and
+  4/5 of it after (the other four elements carry), both within 1e-5.
+- **PL-74** (`AXIS`, parallel: two concentric rings, the inner one with the limit): the
+  reaction of both rings before the failure, of the outer ring alone after it (< 2e-5).
+
+The chain thermal -> mechanical in plane stress and plane strain, and with plasticity
+(`tests_vlak_2d_keten.py`, [`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4.1); T31 with
+*Thermal stress* (reference = start = 293 K), 10 steps of 10 s, θ = 1:
+
+- **PL-75** (`C_PLAN`, strip 50 × 10 mm, t = 1 mm, quad8 10 × 4, 393 K at the bottom, 293 K at
+  the top, both ends held along x): σ_xx = −E α ΔT = −252 MPa at the hot edge, 0 at the cold
+  edge, u_y(W) = (1 + ν) α W ΔT/2, the end reaction E α t ∫ΔT dy = 1260 N, all within 1e-6.
+- **PL-76** (the same in `D_PLAN`): σ_xx = σ_zz = −E α ΔT/(1 − ν) = −360 MPa, u_y with
+  (1 + ν)/(1 − ν), the reaction 1800 N, within 1e-6.
+- **PL-77** (PL-75 with 50 MPa pressure on the top edge, bottom held in y): σ_yy = −p,
+  σ_xx = −E α ΔT − ν p, the bottom reaction p L t = 2500 N, within 1e-6.
+- **PL-78** (`AXIS`, a ring 0.10 … 0.11 m heated uniformly by 200 K, ends held axially,
+  bilinear isotropic σ_y = 250 MPa, H = 2.1 GPa): σ_z = −(σ_y + H p) = −252.5 MPa,
+  p = (E α ΔT − σ_y)/(E + H) = 1.1975e-3, u_r(b) and the reaction × 2π, within 1e-6.
+- **PL-79** (the plastic case of PL-78 in `C_PLAN`, a strip of one row of quad4): the same
+  closed form, within 1e-6.
+- **PL-80** (`D_PLAN`, t = 2 mm: a *Heat flow* of 50 W on the bottom edge, 293 K at the top, a
+  force of 2000 N on the top edge): the bottom temperature T0 + Q W/(k L t) = 393 K and
+  q_y = Q/(L t) (the heat flow per length × thickness), σ_yy = −F/(L t), σ_xx, σ_zz, u_y and
+  both reactions, within 1e-6.
 
 Measured during the build (not in the regression): tri3, tri6, quad4 and quad8 (cantilever in
 plane stress) and eleven single load cases in S20/SA0 give the same displacements and reactions as

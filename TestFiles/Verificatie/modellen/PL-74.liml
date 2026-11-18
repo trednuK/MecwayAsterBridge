@@ -1,0 +1,64 @@
+<liml version="33">
+  <analysis type="L30" />
+  <timesteps timeperiod="1 s" stepsize="0.05 s" />
+  <node nid="1" x="0.1" y="0" z="0" />
+  <node nid="2" x="0.105" y="0" z="0" />
+  <node nid="3" x="0.105" y="0.01" z="0" />
+  <node nid="4" x="0.1" y="0.01" z="0" />
+  <node nid="5" x="0.105" y="0.02" z="0" />
+  <node nid="6" x="0.1" y="0.02" z="0" />
+  <node nid="7" x="0.105" y="0.03" z="0" />
+  <node nid="8" x="0.1" y="0.03" z="0" />
+  <node nid="9" x="0.105" y="0.04" z="0" />
+  <node nid="10" x="0.1" y="0.04" z="0" />
+  <node nid="11" x="0.105" y="0.05" z="0" />
+  <node nid="12" x="0.1" y="0.05" z="0" />
+  <node nid="13" x="0.11" y="0" z="0" />
+  <node nid="14" x="0.11" y="0.01" z="0" />
+  <node nid="15" x="0.11" y="0.02" z="0" />
+  <node nid="16" x="0.11" y="0.03" z="0" />
+  <node nid="17" x="0.11" y="0.04" z="0" />
+  <node nid="18" x="0.11" y="0.05" z="0" />
+  <elset name="Taai" material="Taai">
+    <elem eid="6" shape="quad4" nodes="2 13 14 3" />
+    <elem eid="7" shape="quad4" nodes="3 14 15 5" />
+    <elem eid="8" shape="quad4" nodes="5 15 16 7" />
+    <elem eid="9" shape="quad4" nodes="7 16 17 9" />
+    <elem eid="10" shape="quad4" nodes="9 17 18 11" />
+  </elset>
+  <elset name="Bros" material="Bros">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="6 5 7 8" />
+    <elem eid="4" shape="quad4" nodes="8 7 9 10" />
+    <elem eid="5" shape="quad4" nodes="10 9 11 12" />
+  </elset>
+  <displacement selection="Vast"><value>0 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Trek"><value time="0 s">0 mm</value><value time="1 s">2 mm</value><x>0</x><y>1</y><z>0</z></displacement>
+  <ccxmodeldefinition>**ASTER-PLANE AXIS
+** ASTER-BEZWIJKEN Bros = 0.01959</ccxmodeldefinition>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="von Mises stress" />
+  <fieldvariable name="reaction force" />
+  <mat name="Bros">
+    <geometric type="Plate" thickness="1 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <plastic type="BilinearIsotropic" yieldstrength="2.5e+08 Pa" tangentmodulus="0 Pa" />
+  </mat>
+  <mat name="Taai">
+    <geometric type="Plate" thickness="1 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" />
+    <plastic type="BilinearIsotropic" yieldstrength="2.5e+08 Pa" tangentmodulus="0 Pa" />
+  </mat>
+  <nodeselection name="Vast">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="13" />
+  </nodeselection>
+  <nodeselection name="Trek">
+    <node nid="11" />
+    <node nid="12" />
+    <node nid="18" />
+  </nodeselection>
+</liml>

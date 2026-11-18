@@ -93,9 +93,9 @@ S7, S8, S5, S9).
 | S43d | Hide failed elements in Mecway after load-back: copy of AdvancedToolsHub's `liml_failed.py`, contract for the element variable `failed` | done | S43a; the hub core `common/liml_failed.py` exists | branch `hide-failed`: core 1.0.0 pinned (LF-sha256 500f8ccc...), setting `hide_failed` (default off), `bridge_hide_failed.py`; `failed` strict (1 from the step after t_fail; measured static, implicit, explicit: stored state at t_fail before zeroing); end-to-end BezwijkenTrekstaaf 8 hidden from t = 0.7; Mecway 35 opens a processed file without a dialog and keeps the copies on re-save but drops the marker (recognised by the copies); regression 45 cases / 249 checks OK; Opus plan, diff and re-review; checked in the Mecway 35 window by the user (11 Nov 2026); released in V2026.11 |
 | S44 | 2D and axisymmetric analyses beyond Mecway's own types (Code-Aster `AXIS`, `C_PLAN`, `D_PLAN`): thermal stress, nonlinear static, contact, thermal, axisymmetric shells, modal/buckling, axisymmetric acoustics | split | S16a | asked by the user 11 Nov 2026; split into S44a .. S44g (see §S44; research of the input route first); plan reviewed by Opus; order S44c, S44a, S44b, S44d, S44e, S44f later |
 | S44c | 2D/axisymmetric: temperature load (thermal stress, `AFFE_VARC`) in `C_PLAN`/`D_PLAN`/`AXIS`, linear static first | done | S16a | route B (S20/SA0, user 13 Nov 2026); PL-20 … PL-28 against closed forms and Mecway 35 headless (≤ 1e-13); σ_r tolerance 1.2% instead of 1% (accepted by the user, 17 Nov 2026); user test: Mecway's GUI offers the three items in S20/SA0 (documented); see §S44 |
-| S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; open: failure loop in 2D, opening the result in the Mecway GUI (user test); see §S44 |
+| S44a | 2D/axisymmetric: nonlinear static (`STAT_NON_LINE`, plasticity with `ALGO_CPLAN`, `GDEF_LOG`, time steps, failure loop) | done | S16a | route A: L30/S30 plane shells + `**ASTER-PLANE` (13 Nov 2026); PL-30 … PL-36 incl. ssnp159b; failure loop in 2D built 18 Nov 2026 (PL-70 … PL-74, KNOWN_BUGS 144); open: opening the result in the Mecway GUI (user test); see §S44 |
 | S44b | 2D/axisymmetric: contact (`DEFI_CONTACT` in 2D; shrink fit, Hertz line contact) | done (PL-42 corner tolerance 5% accepted by the user, 17 Nov 2026) | S44a | route A: contact on edges; shrink fit PL-40/41, ssnp121a PL-42, `C_PLAN` PL-43, Hertz PL-45, friction PL-46 (13 and 17 Nov 2026); bonded contact in 2D not planned (ERROR); user test: Mecway's GUI offers shell edges for a contact; see §S44 |
-| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | done | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57; piece 2 (chain in AXIS) built, PL-58, PL-59 (17 Nov 2026); open (not verified): the chain in C_PLAN/D_PLAN and a plastic chain in AXIS; tpla01 replaced by closed-form cases |
+| S44d | Thermal 2D/axisymmetric, steady and transient (`PLAN`/`AXIS`), chain to the mechanical sub-steps | done | S16a (the nonlinear chain: S44a) | reopens S16c; see §S44; piece 1 (AXIS thermal) built, PL-50 … PL-57; piece 2 (chain in AXIS) built, PL-58, PL-59 (17 Nov 2026); the chain in C_PLAN/D_PLAN built and a plastic chain verified in AXIS and C_PLAN (18 Nov 2026, PL-75 … PL-80); tpla01 replaced by closed-form cases |
 | S44e | Axisymmetric shells (`COQUE_AXIS`) | done | S16a | beams in S20 stay S16e; see §S44; piece 1 (17 Nov 2026: displacements, `rotz`, reactions) and piece 2 (17 Nov 2026: stresses per surface, section forces, principal stresses) built, PL-60 … PL-68; ssls100i not rebuilt |
 | S44f | Modal and linear buckling in 2D/axisymmetric (`CALC_MODES`, `TYPE_RESU='MODE_FLAMB'`, `AXIS_FOURIER` per harmonic) | later | S44e | only when the user asks; see §S44; not relevant yet (user, 11 Nov 2026) |
 | S44g | Axisymmetric acoustics | dropped | – | Code-Aster 17.4 `ACOUSTIQUE` has only `3D`, `PLAN`, `3D_ABSO`, `PLAN_ABSO` (affe_modele.py); an axisymmetric fluid only via `MECANIQUE` `AXIS_FLUIDE`/`AXIS_FLUI_STRU` (`U_P_PHI`, the S3b route): a new step when the user asks; see §S44 |
@@ -2677,6 +2677,25 @@ under `MECANIQUE` as `AXIS_FLUIDE` / `AXIS_FLUI_STRU` (`U_P_PHI`, the vibro-acou
 of S3b). Mecway has no axisymmetric acoustic type either (S16d).
 **Decision:** dropped for `ACOUSTIQUE`. Axisymmetric acoustics is possible through the S3b route
 (`AXIS_FLUIDE` + `AXIS_FLUI_STRU`), as a new step when the user asks for it.
+
+**S44 leftovers (18 Nov 2026, asked by the user: "what works, build it"; bonded contact in 2D
+skipped, it stays an ERROR).** Plan reviewed by Fable (route-A gate, measure every
+whitelisted combination, a pinning check and a WARNING for the C_PLAN deviation, chain cases
+with a heat flow in W, a force in N and t ≠ 1 mm, a parallel failure case).
+- *Failure loop in 2D* (`bridge_failure`): works after enabling `C_PLAN`, `D_PLAN`, `AXIS` in
+  `_SUPPORTED_DEFORMATIONS`, only in route A with `STAT_NON_LINE` and without contact
+  (WARNING otherwise). The loop itself was generic (V1 per cell, zeroing all components,
+  `failed` from cell names). PL-70 … PL-74 (strip of five quad4, uniform up to failure):
+  failure step, `failed`, the load afterwards; `PETIT`, `PETIT_REAC`, `GDEF_LOG`,
+  `SIMO_MIEHE`, bilinear, curve, kinematic in shear (the measure from X incl. XCINXY), series
+  and parallel. Finding: `C_PLAN` with large strains, KNOWN_BUGS 144.
+- *The chain in C_PLAN/D_PLAN* (`bridge_plane._plane_chain`, `bridge_thermal.classify`,
+  `bridge_thermomech._check_elements`): works after the change; thermal `PLAN` with the
+  thickness from `model_data["plane"]`, mechanical `C_PLAN`/`D_PLAN` with factor t, one
+  thickness, the refusals of the AXIS chain. PL-75 … PL-77, PL-80 within 1e-6.
+- *Plastic chain in AXIS*: works as is (PL-78; PL-79 the same in `C_PLAN`).
+- The chain has no failure loop (3D too): now a WARNING instead of silence
+  (`bridge_thermomech._warn_failure_limits`).
 
 **Open for the user:** the input route (A or B) after the research, and whether S44f is wanted.
 

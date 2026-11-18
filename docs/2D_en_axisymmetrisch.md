@@ -83,8 +83,8 @@ uitgelegd. "Voorbeeld n" is een uitgewerkt voorbeeld met een modelbestand in §1
 | Lineair statisch als 3D-model (bijv. om te vergelijken met Mecway's eigen shell-solve) | *Static 3D* (S30) | A | zoals bij L30; geen contact | `**ASTER-PLANE C_PLAN` (nagelopen, PL-33); `D_PLAN` en `AXIS` volgen dezelfde route, niet nagelopen in S30 | §1.4; voorbeeld 3 |
 | Warmtetransport in een vlak | *Thermal Steady State* (T30) of *Thermal Transient* (T31) | – (thermisch 3D-type, geen regel) | vlakke shell-elementen; de shell-dikte telt mee | geen (de bridge rekent `PLAN`) | [`Thermisch.md`](Thermisch.md) |
 | Warmtetransport, axisymmetrisch | T30 of T31 | A | vlakke shell-elementen bij X ≥ 0; *Shell/membrane* met een willekeurige dikte; *Thermal conductivity* (T31 ook *Specific heat* en *Density*) | `**ASTER-PLANE AXIS` | §1.4.1; voorbeeld 5 |
-| Thermische spanning uit een axisymmetrisch warmtetransport (keten thermisch -> mechanisch) | *Thermal Transient* (T31) met *Thermal stress* | A | zoals de rij hierboven, plus E, ν, *Thermal expansion* en opleggingen | `**ASTER-PLANE AXIS` | §1.4.1; voorbeeld 6 |
-| De keten thermisch -> mechanisch in vlakke spanning of vlakke rek | – | – | – | kan nog niet | §3 |
+| Thermische spanning uit een axisymmetrisch warmtetransport (keten thermisch -> mechanisch) | *Thermal Transient* (T31) met *Thermal stress* | A | zoals de rij hierboven, plus E, ν, *Thermal expansion* en opleggingen; plasticiteit zoals in L30 | `**ASTER-PLANE AXIS` | §1.4.1; voorbeeld 6 |
+| De keten thermisch -> mechanisch in vlakke spanning of vlakke rek | *Thermal Transient* (T31) met *Thermal stress* | A | vlakke shell-elementen in het XY-vlak; *Shell/membrane* met een dikte t voor het hele model; thermische en mechanische eigenschappen zoals hierboven | `**ASTER-PLANE C_PLAN` of `D_PLAN` | §1.4.1 |
 | Axisymmetrische schalen (een dunne omwentelingswand, lijnelementen), lineair | *Static 3D* (S30) of *Nonlinear Static* (L30) | A | line3-elementen in het XY-vlak bij X ≥ 0; isotroop elastisch; de dikte uit de regel, *Shell/membrane* of *RectBar* | `**ASTER-PLANE AXIS` en `**ASTER-SHELL <materiaal>: EPAIS=<t>` | §1.4.2; voorbeeld 7 |
 | Niet-lineaire dynamica, modes, knik in 2D | – | – | – | niet mogelijk | §3 |
 
@@ -248,7 +248,8 @@ bridge met een regel het in 2D te rekenen (voorbeelden 2, 3 en 4 in §1.5):
    slave-knopen die een andere oplegging langs de contactrand vasthoudt Code-Aster laten
    stoppen met een singuliere matrix: de bridge geeft dan een WARNING; laat die knopen weg met
    een knoopselectie en `**ASTER-ZONE SANS_GROUP_NO='<<selectie>>'` (KNOWN_BUGS 141).
-   *Bonded* contact in 2D: ERROR. Of Mecway's venster shell-randen laat kiezen voor een
+   *Bonded* contact in 2D kan niet: een ERROR, de bridge stopt (haal het weg of reken het
+   model in 3D). Of Mecway's venster shell-randen laat kiezen voor een
    contact is NIET nagelopen.
 7. **Bridge.** *Actieve analyse (auto = volgens Mecway)* `auto` (→ `nonlin_static_3d` voor
    L30, `lin_static_3d` voor S30) en *Resultaten naar Mecway* `liml` (de route `tabel`:
@@ -267,8 +268,27 @@ zelf (catalogus Code-Aster 17.4). Resultaten per stap zoals in §1.3, plus
 `plasticstrainxx/yy/zz/xy` en `equivalentplasticstrain`; de reactiekrachten met de factor t
 of 2π in elke stap (PL-30, PL-32). Verificatie PL-30 … PL-36: een dikwandige cilinder met ideale
 plasticiteit (Hill) in `D_PLAN` en `AXIS`, eerste vloei bij een gat in `C_PLAN`,
-Code-Aster-testcase ssnp159b (`AXIS`, `GDEF_LOG`) door de bridge. NIET meegenomen: de
-bezwijklus (`#ASTER-BEZWIJKEN`, WARNING), verlijmd contact, de keten thermisch -> mechanisch (warmtetransport zelf en de keten in `AXIS`: §1.4.1).
+Code-Aster-testcase ssnp159b (`AXIS`, `GDEF_LOG`) door de bridge. NIET meegenomen:
+verlijmd contact (ERROR), de keten thermisch -> mechanisch (warmtetransport zelf en de keten:
+§1.4.1).
+
+**Bezwijken van elementen in 2D.** `#ASTER-BEZWIJKEN` (en de andere bezwijkgrenzen van
+[`Bezwijken.md`](Bezwijken.md)) werkt in route A in *Nonlinear Static* (L30) met `C_PLAN`,
+`D_PLAN` en `AXIS`, zoals in 3D: een element waarvan de gemiddelde plastische rek de grens
+haalt, krijgt een zacht materiaal, en de elementvariabele `failed` verbergt het vanaf de
+volgende stap. Nagelopen (Code-Aster 17.4, PL-70 … PL-74): de bezwijkstap van de gesloten
+oplossing, alleen de elementen met een grens, de last daarna gedragen door de andere
+elementen. Gemeten: `PETIT`, `PETIT_REAC` en `GDEF_LOG` in alle drie, `SIMO_MIEHE` in
+`D_PLAN` en `AXIS`, alle met *Bilinear isotropic*; een verstevigingskromme (`AXIS`),
+kinematische versteviging bij afschuiving (`C_PLAN`, `PETIT`) en bij trek (`AXIS`,
+`GDEF_LOG`). Andere combinaties gebruiken dezelfde lus (NIET een voor een nagelopen). Niet
+samen met contact in hetzelfde model, niet op axisymmetrische schalen en niet in Mecway's
+2D-typen (D20/DA0): een WARNING, de elementen bezwijken niet. `C_PLAN` met grote rek
+(`GDEF_LOG`, de standaard voor plastisch materiaal, of `PETIT_REAC`): de dikte volgt de rek
+niet, dus krachten en reacties zijn bij eenassig plastisch vloeien ongeveer √(1 + ε) te hoog
+(+1,07% bij 2,2% rek, KNOWN_BUGS 144), ook zonder bezwijken. De bridge waarschuwt alleen bij
+een bezwijkgrens boven 0,05. Grote plastische rek: gebruik `D_PLAN`, `AXIS` of 3D.
+
 Contact: PL-40 … PL-46 (een krimpverbinding binnen 0,01% van Lamé, Hertz-lijncontact, een
 Code-Aster-testcase, wrijving). Het
 openen van zo'n resultaat in het Mecway-venster is NIET nagelopen (een test in de
@@ -291,7 +311,7 @@ shell-elementen in T30 of T31 zijn al een thermisch 2D-model (`PLAN`,
 4. **De regel.** In CCX > *Custom model definition* een regel `**ASTER-PLANE AXIS`
    (schrijfwijzen als in §1.4). Zonder die regel blijven de schalen een `PLAN`-model;
    `C_PLAN` of `D_PLAN` in T30/T31 geven alleen een INFO dat de regel niet nodig is (in T31 met
-   *Thermal stress*: een ERROR, zie de keten hieronder).
+   *Thermal stress* kiezen ze vlakke spanning of vlakke rek voor de keten hieronder).
 5. **Lasten** op de randen van de elementen (faceid 1..4) en op de elementen:
    *Temperature*, *Heat flux*, *Convection*, *Radiation*, *Internal heat generation*,
    *Heat flow*, ook als tijdtabel en op dezelfde manier als in 3D
@@ -336,17 +356,31 @@ naast de stappen 1 tot 6:
 9. ***Thermal stress*** met de begintemperatuur als *Reference temperature*.
 
 De log toont dan ook `INFO: T31: the mechanical part of the thermomechanical chain as
-MODELISATION='AXIS' (reactions x 2 pi).` Alleen `AXIS`: de keten met `C_PLAN` of `D_PLAN` kan
-nog niet (T31 met *Thermal stress* en de regel `C_PLAN`/`D_PLAN` geeft de ERROR "Thermal stress
-(thermisch -> mechanische keten) met '#ASTER-PLANE C_PLAN' in T31 wordt (nog) niet vertaald;
-alleen AXIS.", §1.6), en een plastisch (niet-lineair) materiaal in de keten met `AXIS` is niet
-nagelopen. ERROR in deze keten: de
-resultaatroute `tabel` (de reacties worden niet naar 360 graden geschaald), contact,
-koppelingen tussen knoop en oppervlak, verlijmd contact en een beginsnelheid. Puntmassa's
+MODELISATION='AXIS' (reactions x 2 pi).` Een plastisch materiaal (zoals in L30) werkt in de
+keten: PL-78 (een ring die gelijkmatig 200 K opwarmt, einden vast, bilineair isotroop) geeft de
+gesloten oplossing voor de axiale spanning, de plastische rek, u_r en de reactie (alle binnen
+1e-6).
+
+**De keten in vlakke spanning of vlakke rek.** Hetzelfde T31-model in het XY-vlak met de regel
+`**ASTER-PLANE C_PLAN` of `**ASTER-PLANE D_PLAN` (in plaats van `AXIS`; X < 0 mag): het
+thermische deel blijft het 2D-model `PLAN` (de shell-dikte telt voor een *Heat flow* in W), het
+mechanische deel wordt `C_PLAN` of `D_PLAN` met de dikte t zoals in §1.4 (krachten / t,
+reacties × t). Alle elsets hebben dezelfde dikte nodig (anders een ERROR). De log toont
+`INFO: T31: the mechanical part of the thermomechanical chain as MODELISATION='C_PLAN'
+(concentrated forces / 0.001, reactions x 0.001: per unit thickness in Code-Aster, thickness t
+in Mecway).` (hier t = 1 mm) Nagelopen (PL-75 … PL-80): een strook met een lineaire temperatuur en beide einden
+vast (σ_xx = −E α ΔT, in `D_PLAN` /(1 − ν), en σ_zz), met een druk, een kracht in N en een
+warmtestroom in W op een rand (2 mm dik), en met plasticiteit: alle binnen 1e-6 van de
+gesloten oplossing.
+
+ERROR in de keten (`AXIS`, `C_PLAN`, `D_PLAN`): de resultaatroute `tabel` (de reacties worden
+niet naar 360 graden of de dikte geschaald), contact, koppelingen tussen knoop en oppervlak,
+verlijmd contact en een beginsnelheid. Een bezwijkgrens (`#ASTER-BEZWIJKEN`) geeft een
+WARNING: de keten heeft geen bezwijklus, de elementen bezwijken niet (ook in 3D). Puntmassa's
 worden met een INFO genegeerd; vergelijkingen tussen vrijheidsgraden, flexibele verbindingen
 en element offsets slaat de lezer al met een WARNING over (geen ERROR van de keten). In `AXIS`
-(met of zonder keten) geeft ook `#ASTER-LASBRON` (lassen), `#ASTER-METALLURGIE` en verlijmd
-contact een ERROR.
+(met of zonder keten) en in de keten met `C_PLAN` of `D_PLAN` geeft ook `#ASTER-LASBRON`
+(lassen), `#ASTER-METALLURGIE` en verlijmd contact een ERROR.
 Nagelopen: PL-58 (de dikwandige buis van PL-24 als T31, 10 stappen van 2000 s, θ = 1,
 stationair): gelijk aan PL-24 (dezelfde buis met de exacte ln-temperatuur in de knopen,
 MECA_STATIQUE) binnen 1,0e-6 (u_r aan beide wanden en de axiale reactie); tegen de gesloten
@@ -835,7 +869,7 @@ typte.
 | `**ASTER-PLANE` in een S20/SA0/D20/DA0-model | ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) met vlakke shell-elementen in het XY-vlak; dit model is SA0 (al een 2D-type: haal de regel weg). | route B heeft geen regel nodig; haal hem weg |
 | `**ASTER-PLANE` in een ander 3D-type (V30, D30, …) | ERROR: '#ASTER-PLANE …' werkt alleen in Mecway's Static 3D (S30) en Nonlinear Static (L30) met vlakke shell-elementen in het XY-vlak; dit model is …. | S30, L30, of T30/T31 voor warmtetransport (§1.4.1) |
 | `**ASTER-PLANE C_PLAN` of `D_PLAN` in T30/T31 (zonder *Thermal stress*) | INFO: '#ASTER-PLANE C_PLAN' in T30: thermal plane shells are a 2D model ('PLAN') already; the line is not needed. | haal de regel weg, of schrijf `AXIS` voor een axisymmetrisch model |
-| `**ASTER-PLANE C_PLAN` of `D_PLAN` in T31 met *Thermal stress* (de keten) | ERROR: Thermal stress (thermisch -> mechanische keten) met '#ASTER-PLANE C_PLAN' in T31 wordt (nog) niet vertaald; alleen AXIS. | `AXIS` (voorbeeld 6), of reken in 3D |
+| De keten met `**ASTER-PLANE C_PLAN` of `D_PLAN` en elsets met verschillende dikte | ERROR: De 2D thermomechanische keten (T31, '#ASTER-PLANE C_PLAN') heeft elsets met verschillende dikte (…); de bridge vertaalt een model met een enkele dikte. | een dikte, of reken in 3D |
 | `**ASTER-PLANE` met een andere waarde | ERROR: '#ASTER-PLANE …': verwacht C_PLAN, D_PLAN of AXIS. | schrijf C_PLAN, D_PLAN of AXIS |
 | `**ASTER-PLANE` zonder waarde | ERROR: '#ASTER-PLANE' zonder waarde; verwacht C_PLAN, D_PLAN of AXIS. | schrijf C_PLAN, D_PLAN of AXIS |
 | `**ASTER PLANE AXIS` (spatie in plaats van streepje) | ERROR: '#ASTER PLANE AXIS' is Code-Aster-code en wordt overgeslagen; bedoeld is '#ASTER-PLANE AXIS' (met een streepje). | schrijf `**ASTER-PLANE AXIS` |
@@ -852,13 +886,15 @@ typte.
 | Contact in S30 met `**ASTER-PLANE` | ERROR: Contact in een 2D-analyse (S30) wordt (nog) niet vertaald; haal het weg of reken het model in 3D. | *Nonlinear Static* (L30) |
 | *Bonded* contact in route A | ERROR: Bonded contact in een 2D-analyse (L30) wordt (nog) niet vertaald; haal het weg of reken het model in 3D. | laat het weg, of reken in 3D |
 | Contact met wrijving, slave-knopen ook vastgehouden door een oplegging | WARNING: Contact met wrijving (slave '…'): slave-knopen worden ook vastgehouden door '…'. Een richting langs het contactvlak kan dan dubbel vastliggen en Code-Aster kan stoppen met een singuliere matrix (MECANONLINE9_4, KNOWN_BUGS 141). … | laat die knopen weg met `**ASTER-ZONE SANS_GROUP_NO='<<selectie>>'` |
-| De bezwijklus (`#ASTER-BEZWIJKEN`) in route A | WARNING: Elset '…' (…, grens … uit …) kan niet bezwijken: alleen volume-elementen en schalen (… niet: de bezwijklus is in 2D NIET geverifieerd). | niet mogelijk in 2D (§3) |
+| De bezwijklus (`#ASTER-BEZWIJKEN`) met contact in route A, of in D20/DA0 | WARNING: Elset '…' (…, grens … uit …) kan niet bezwijken: bezwijken samen met contact is in 2D NIET geverifieerd. (D20/DA0: … in 2D alleen in Nonlinear Static (L30) met '#ASTER-PLANE' (de bezwijklus is in D20 NIET geverifieerd).) | zonder contact, in L30 met `**ASTER-PLANE` |
+| Een bezwijkgrens boven 0,05 in `C_PLAN` met grote rek | WARNING: Elset '…' (…): vlakke spanning (C_PLAN) met grote rek (GDEF_LOG) en een bezwijkgrens van …: de dikte volgt de rek niet, de reactiekrachten zijn tot ongeveer … % te hoog (KNOWN_BUGS 144). Reken grote rek liever met D_PLAN, AXIS of in 3D. | `D_PLAN`, `AXIS` of 3D, of neem de afwijking voor lief |
+| Een bezwijkgrens in de keten (T31 met *Thermal stress*) | WARNING: Bezwijkgrenzen in het model (…), maar de thermomechanische keten (Thermal stress in T31) heeft geen bezwijklus: elementen bezwijken niet. | reken het bezwijken in L30 met *Temperature*-lasten (route A, §1.4), of laat de grens weg |
 | Een *Displacement* langs Z of een *Node rotation* uit het 3D-shell-model | route A: INFO: … on '…': only Z or rotations, which the 2D model does not have (#ASTER-PLANE); left out. In S20/SA0: ERROR: … op '…' in een 2D-analyse: …. NIET meegenomen. | niets te doen in route A |
 | `#ASTER-LASBRON`, `#ASTER-METALLURGIE` of *Bonded* contact in een axisymmetrisch thermisch model | ERROR: Bonded contact in een axisymmetrisch thermisch model ('#ASTER-PLANE AXIS' in T30) wordt (nog) niet vertaald. (of de naam van het andere item; T31 net zo). In T31 met *Thermal stress* (de keten) geeft verlijmd contact: ERROR: Bonded contact in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. | laat het weg, of reken in 3D |
 | *Heat flow* op knopen in een axisymmetrisch thermisch model | ERROR: Niet vertaald: … op '…': warmtestroom op knopen in een axisymmetrisch model (AXIS) wordt niet vertaald; gebruik een heat flow op een rand. | een *Heat flow* op een rand |
 | Een thermische last op het vlak van de doorsnede (faceid 5/6) in een axisymmetrisch thermisch model | ERROR: Niet vertaald: … op '…': N vlak(ken) van de doorsnede (faceid 5/6) in '…': in een axisymmetrisch model (AXIS) geen oppervlak; alleen randen (faceid 1..4). | leg de last op een rand (faceid 1..4) of op de elementen |
-| De keten (T31 met *Thermal stress*, `AXIS`) met de resultaatroute `tabel` | ERROR: Een axisymmetrische thermomechanische keten (T31) werkt alleen met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' schaalt de reactiekrachten niet naar 360 graden. | resultaatroute `liml` |
-| Contact, een koppeling tussen knoop en oppervlak, verlijmd contact of een beginsnelheid in de keten | ERROR: … in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. | laat het weg |
+| De keten (T31 met *Thermal stress*) met de resultaatroute `tabel` | ERROR: Een axisymmetrische thermomechanische keten (T31) werkt alleen met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' schaalt de reactiekrachten niet naar 360 graden. (`C_PLAN`/`D_PLAN`: Een 2D thermomechanische keten (T31, '#ASTER-PLANE C_PLAN') … naar de dikte.) | resultaatroute `liml` |
+| Contact, een koppeling tussen knoop en oppervlak, verlijmd contact of een beginsnelheid in de keten | ERROR: … in een axisymmetrische thermomechanische keten (T31) wordt (nog) niet vertaald. (`C_PLAN`/`D_PLAN`: … in een 2D thermomechanische keten (T31, '#ASTER-PLANE C_PLAN') wordt (nog) niet vertaald.) | laat het weg |
 | Een vergelijking tussen vrijheidsgraden, flexibele verbinding of element offset in de keten | WARNING: … op '…' wordt in de keten thermisch -> mechanisch (Thermal stress in een T31-model) niet vertaald; de mechanische berekening rekent zonder. | laat het weg, of reken in 3D |
 | Axisymmetrische schalen (§1.4.2) van line2-elementen | ERROR: Elset '…' bevat line2-elementen; axisymmetrische schalen ('#ASTER-PLANE AXIS', …) alleen met line3 (COQUE_AXIS op SEG3, zoals in alle testgevallen van Code-Aster). Maak de elementen kwadratisch in Mecway. | line3-elementen |
 | Axisymmetrische schalen zonder dikte | ERROR: Elset '…': axisymmetrische schaal zonder dikte. Geef de dikte met de regel '**ASTER-SHELL …: EPAIS=<dikte>' (in CCX > Custom model definition), met een geometrie Shell/membrane van materiaal '…', of met een RectBar (maat a in het XY-vlak). (Met een andere balkgeometrie of een RectBar die niet te lezen is, de reden tussen haakjes na "dikte".) | de regel `**ASTER-SHELL` (§1.4.2 stap 4) |
@@ -1007,8 +1043,8 @@ en §6.
   geven de ERROR "Elset '…' bevat line2 …" (§1.6).
 - Route A: contact alleen in L30 (in S30: ERROR); *Bonded* contact: ERROR; belastingen,
   opleggingen en contacten op de elementvlakken (faceid 5/6) in plaats van randen: ERROR, NIET
-  meegenomen; de bezwijklus (`#ASTER-BEZWIJKEN`): WARNING, de elementen kunnen niet bezwijken
-  (in 2D NIET geverifieerd).
+  meegenomen; de bezwijklus (`#ASTER-BEZWIJKEN`) samen met contact: WARNING, de elementen
+  bezwijken niet (NIET geverifieerd); `C_PLAN` met grote rek: KNOWN_BUGS 144 (§1.4).
 - Meerdere diktes, of vlakke spanning en vlakke rek in een model: ERROR.
 - Moment, line pressure, hydrostatische druk, frictionless en elastic support,
   compression only, node rotation, constraint equations, koppelingen, contact,
@@ -1025,12 +1061,12 @@ en §6.
   zet V20 om naar V30 en B20 naar S30); niet-lineair in 2D: §1.4. S20/SA0 met een
   plastisch materiaal rekenen elastisch (WARNING).
 - `**ASTER-PLANE` mag in S30/L30 (mechanisch) en in T30/T31 (thermisch, `AXIS`;
-  `C_PLAN`/`D_PLAN` geven daar alleen een INFO, in de keten een ERROR); in een ander type, met een andere waarde
+  `C_PLAN`/`D_PLAN` geven daar alleen een INFO, in de keten vlakke spanning of vlakke rek); in een ander type, met een andere waarde
   dan `C_PLAN`, `D_PLAN`, `AXIS`, of zonder streepje: ERROR. Een element offset in een 2D-analyse (S20,
   SA0, D20, DA0 of `**ASTER-PLANE`): ERROR.
-- Axisymmetrisch warmtetransport (§1.4.1) met *Thermal stress*: de keten thermisch ->
-  mechanisch werkt in `AXIS` (T31); in `C_PLAN` en `D_PLAN` kan het nog niet (ERROR), en een
-  plastisch materiaal in de keten is niet nagelopen. Lassen, metallurgie en *Bonded* contact:
+- Warmtetransport (§1.4.1) met *Thermal stress*: de keten thermisch -> mechanisch werkt in
+  `AXIS`, `C_PLAN` en `D_PLAN` (T31; een dikte, plasticiteit inbegrepen). Geen bezwijklus in
+  de keten (WARNING). Lassen, metallurgie en *Bonded* contact:
   ERROR; een *Heat flow* op knopen en lasten op het vlak van de doorsnede: overgeslagen (ERROR
   "Niet vertaald: …").
 - De foutschatter (INFO) en de resultaatroute `tabel` (ERROR).

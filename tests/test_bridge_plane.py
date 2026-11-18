@@ -28,6 +28,10 @@
 #     '#ASTER PLANE AXIS' gives an ERROR and is not passed as code; DEFORMATION
 #     per plane modelisation (bridge_to_aster._deformation_for); contact
 #     (S44b) only with STAT_NON_LINE;
+#   - the chain T31 + Thermal stress with C_PLAN/D_PLAN (plane, factor t;
+#     ERROR for route tabel, welding, two thicknesses); the failure loop in
+#     route A (C_PLAN, D_PLAN, AXIS), the KNOWN_BUGS 144 WARNING, and
+#     WARNING without the loop for contact and route B (D20);
 #   - axisymmetric shells (S44e piece 1): line3 + '#ASTER-PLANE AXIS' ->
 #     COQUE_AXIS with the thickness of '#ASTER-SHELL' (parse, units, last
 #     line), Shell/membrane or RectBar a (precedence, INFO/WARNING); ERROR
@@ -242,11 +246,57 @@ def test_route_a():
     md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE AXIS") + ts),
                   analysis="ther_3d", route="tabel")
     check(md is None and _errors(), "T31 chain + AXIS, route tabel: ERROR")
-    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE C_PLAN") + ts),
-                  analysis="ther_3d")
-    check(md is None and any("only AXIS" in m or "alleen AXIS" in m
+    # S44 leftovers: the chain in C_PLAN / D_PLAN (bridge_plane._plane_chain)
+    for sw in ("C_PLAN", "D_PLAN"):
+        md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE " + sw) +
+                            ts), analysis="ther_3d")
+        plane = (md or {}).get("plane") or {}
+        check(md is not None and not md.get("thermal_axis") and
+              plane.get("modelisation") == sw and
+              abs(plane.get("factor", 0) - 0.01) < 1e-15 and
+              md["elset_modelisations"].get("P") == sw and
+              not md.get("shell_sections", {}).get("P"),
+              "T31 chain + {0}: plane {0}, factor t: {1}".format(
+                  sw, _errors()))
+    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE C_PLAN") +
+                        ts), analysis="ther_3d", route="tabel")
+    check(md is None and any("thickness" in m for m in _errors()),
+          "T31 chain + C_PLAN, route tabel: ERROR")
+    md = _extract(_liml("T31", PS, loads=_switch(
+        "**ASTER-PLANE C_PLAN" + chr(10) + "**ASTER-LASBRON Q=1000") + ts),
+        analysis="ther_3d")
+    check(md is None and any("LASBRON" in m for m in _errors()),
+          "T31 chain + C_PLAN + #ASTER-LASBRON: ERROR")
+    two = _liml("T31", PS, loads=_switch("**ASTER-PLANE C_PLAN") + ts)
+    two = two.replace(
+        "  </elset>", "  </elset>\n  <elset name=\"Q\" material=\"N\">\n"
+        "    <elem eid=\"3\" shape=\"quad4\" nodes=\"1 2 5 4\" />\n"
+        "  </elset>", 1).replace(
+        "</liml>", "  <mat name=\"N\"><geometric type=\"Plate\" "
+        "thickness=\"20 mm\" />" + STEEL + "</mat>\n</liml>")
+    md = _extract(two, analysis="ther_3d")
+    check(md is None and any("thicknesses" in m for m in _errors()),
+          "T31 chain + C_PLAN with two thicknesses: ERROR ({0})".format(
+              _errors()))
+    md = _extract(_liml("T31", "", loads=_switch("**ASTER-PLANE D_PLAN") +
+                        ts), analysis="ther_3d")
+    check(md is None and any("needs a thickness" in m for m in _errors()),
+          "T31 chain + D_PLAN without a thickness: ERROR ({0})".format(
+              _errors()))
+    md = _extract(_liml("T31", PE, loads=_switch("**ASTER-PLANE C_PLAN") +
+                        ts), analysis="ther_3d")
+    check(md is not None and any(m.startswith("WARNING") and "plane strain"
+                                 in m for m in LOG),
+          "T31 chain + C_PLAN on a plane-strain material: WARNING")
+    contact = ('<contact2 selectionmaster="Links" selectionslave="Links2" '
+               'type="unilateralelastic"><normalstiffness>1 GPa/m'
+               '</normalstiffness></contact2><faceselection name="Links2">'
+               '<face eid="2" faceid="2" /></faceselection>')
+    md = _extract(_liml("T31", PS, loads=_switch("**ASTER-PLANE C_PLAN") +
+                        ts + contact), analysis="ther_3d")
+    check(md is None and any("2D thermomechanical chain" in m
                              for m in _errors()),
-          "T31 chain + C_PLAN: ERROR (only AXIS)")
+          "T31 chain + C_PLAN with contact: ERROR ({0})".format(_errors()))
     md = _extract(_liml("T31", PS, loads=_switch(
         "**ASTER-PLANE AXIS" + chr(10) + "**ASTER-LASBRON Q=1000")), analysis="ther_3d")
     check(md is None and any("LASBRON" in m for m in _errors()),
@@ -366,6 +416,92 @@ def test_route_a():
         got = bta._deformation_for(mod, rel, chosen, "P")
         check(got == want, "DEFORMATION {0} {1} {2}: {3} (want {4})".format(
             mod, rel, chosen, got, want))
+
+
+def test_failure():
+    """S44 leftovers: the failure loop (bridge_failure) in route A; route
+    B, contact and C_PLAN with a large limit (KNOWN_BUGS 144)."""
+    plastic = ('<plastic type="BilinearIsotropic" yieldstrength="250 MPa" '
+               'tangentmodulus="0 Pa" />')
+    steps = '<timesteps timeperiod="1 s" stepsize="0.5 s" />'
+
+    def lim(value):
+        return "** ASTER-BEZWIJKEN M = {0}".format(value)
+
+    for sw in ("C_PLAN", "D_PLAN", "AXIS"):
+        comm = _comm(_liml("L30", PS + plastic, loads=steps + _switch(
+            "#ASTER-PLANE " + sw + chr(10) + lim(0.02))),
+            analysis="nonlin_static_3d")
+        check(comm and "BRIDGE_BEZWIJKEN" in comm and not any(
+            "cannot fail" in m for m in LOG) and not any(
+            "144" in m for m in LOG),
+            "L30 + {0} + #ASTER-BEZWIJKEN: failure loop, no WARNING ({1})"
+            .format(sw, [m[:70] for m in LOG if m.startswith("WARNING")]))
+    comm = _comm(_liml("L30", PS + plastic, loads=steps + _switch(
+        "#ASTER-PLANE C_PLAN" + chr(10) + lim(0.1))),
+        analysis="nonlin_static_3d")
+    check(comm and "BRIDGE_BEZWIJKEN" in comm and any(
+        m.startswith("WARNING") and "144" in m for m in LOG),
+        "C_PLAN, GDEF_LOG, limit 0.1: WARNING KNOWN_BUGS 144")
+    comm = _comm(_liml("L30", PS + plastic, loads=steps + _switch(
+        "#ASTER-PLANE D_PLAN" + chr(10) + lim(0.1))),
+        analysis="nonlin_static_3d")
+    check(comm and not any("144" in m for m in LOG),
+          "D_PLAN, limit 0.1: no KNOWN_BUGS 144 WARNING")
+    contact = ('<contact2 selectionmaster="Links" selectionslave="Links2" '
+               'type="unilateralelastic"><normalstiffness>1 GPa/m'
+               '</normalstiffness></contact2><faceselection name="Links2">'
+               '<face eid="2" faceid="2" /></faceselection>')
+    comm = _comm(_liml("L30", PS + plastic, loads=steps + contact + _switch(
+        "#ASTER-PLANE C_PLAN" + chr(10) + lim(0.02))),
+        analysis="nonlin_static_3d")
+    check(comm and "BRIDGE_BEZWIJKEN" not in comm and any(
+        "cannot fail" in m and "contact" in m for m in LOG),
+        "route A with contact: WARNING, no failure loop ({0})".format(
+            [m[:90] for m in LOG if m.startswith(("WARNING", "ERROR"))]))
+    dens = '<density type="Simple" density="7800 kg/m&#179;" />'
+    comm = _comm(_liml("D20", PS + plastic + dens, loads=steps + _switch(
+        lim(0.02))), analysis="dyna_impl_3d")
+    check(comm and "BRIDGE_BEZWIJKEN" not in comm and any(
+        "cannot fail" in m and "D20" in m for m in LOG),
+        "route B (D20): WARNING, no failure loop ({0})".format(
+            [m[:90] for m in LOG if m.startswith(("WARNING", "ERROR"))]))
+    import bridge_failure as bfa
+    md = {"materials": {"M": {"plastic_bilinear": {"sy": 2.5e8, "et": 0.0}}},
+          "elsets": {"P": "M"}, "elset_modelisations": {"P": "C_PLAN"},
+          "plane": {"route": "A"}, "aster_custom": {"failure": {"M": 0.1}}}
+    bfa.log = _log
+    for mod, deform, want in (("C_PLAN", "PETIT_REAC", True),
+                              ("C_PLAN", "PETIT", False),
+                              ("COQUE_AXIS", "PETIT", False)):
+        md["elset_modelisations"]["P"] = mod
+        del LOG[:]
+        plan = bfa.failure_plan(
+            md, {"solver_command": "STAT_NON_LINE"},
+            lambda m: "VMIS_ISOT_LINE",
+            lambda m, r, c, e, d=deform: d)
+        if mod == "COQUE_AXIS":
+            check(not plan and any("COQUE_AXIS" in m and "cannot fail" in m
+                                   for m in LOG),
+                  "COQUE_AXIS with a limit: own WARNING ({0})".format(LOG))
+        else:
+            check(len(plan) == 1 and want == any("144" in m for m in LOG),
+                  "failure_plan {0} {1}: KNOWN_BUGS 144 WARNING {2} ({3})"
+                  .format(mod, deform, want, LOG))
+    # The thermomechanical chain has no failure loop: WARNING, not silent
+    import bridge_thermomech as btm
+    btm.log = _log
+    del LOG[:]
+    md = {"aster_custom": {"failure": {"M": 0.1}}, "elsets": {"P": "M"},
+          "elset_modelisations": {"P": "C_PLAN"}, "materials": {"M": {}}}
+    btm._warn_failure_limits(md)
+    check(any(m.startswith("WARNING") and "chain" in m for m in LOG) and
+          len(md.get("skipped_loads", [])) == 1,
+          "chain with #ASTER-BEZWIJKEN: WARNING and skipped ({0})".format(LOG))
+    del LOG[:]
+    md["aster_custom"] = {}
+    btm._warn_failure_limits(md)
+    check(not LOG, "chain without a failure limit: no WARNING")
 
 
 def test_finish_bcs():
@@ -815,6 +951,7 @@ if __name__ == "__main__" or sys.platform == "cli":
     test_errors()
     test_thermal()
     test_route_a()
+    test_failure()
     test_finish_bcs()
     test_edge_measure()
     test_pinned()

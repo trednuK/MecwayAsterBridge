@@ -93,8 +93,22 @@
 # passes ACCE. Whether that prevents the recomputation is NOT verified; the
 # force history in the test run was physically plausible (drop to ~0, ringing).
 #
-# Limitations (with a message): only volume elements and shells
-# (_SUPPORTED_DEFORMATIONS); not beams: Code-Aster has plasticity
+# 2D (STAPPENPLAN S44, route A: '#ASTER-PLANE C_PLAN|D_PLAN|AXIS' in L30,
+# STAT_NON_LINE): the same loop on the plane cells. Measured with Code-Aster
+# 17.4 (verification PL-70 ... PL-74: a strip of five quad4 with a uniform
+# field up to the failure): the failure step of the closed form, 'failed'
+# from the next step, only the elements with a limit, the load carried by
+# the others afterwards; with PETIT, PETIT_REAC, GDEF_LOG and (D_PLAN, AXIS)
+# SIMO_MIEHE, isotropic bilinear and curve, and kinematic in simple shear
+# (the measure from X incl. XCINXY). C_PLAN with GDEF_LOG or PETIT_REAC:
+# the reactions are about sqrt(1 + eps) too high in uniaxial plastic flow
+# (KNOWN_BUGS 144, WARNING in failure_plan for a limit above
+# _CPLAN_LARGE_LIMIT). Not in route B (Mecway's 2D types: S20/SA0 linear,
+# D20/DA0 dynamics NOT verified) and not together with contact (NOT
+# verified): WARNING, the elements do not fail.
+#
+# Limitations (with a message): only volume elements, shells and plane
+# elements of route A (_SUPPORTED_DEFORMATIONS); not beams: Code-Aster has plasticity
 # only in multifibre beams (POU_D_EM/POU_D_TGM; <EXCEPTION> POUTRE0_61
 # with VMIS_ISOT_LINE on POU_D_E, test run), which the bridge does not make.
 # Kinematic hardening without slope (Et = 0: X stays 0, no measure
@@ -107,6 +121,7 @@
 # Compatible with IronPython 2.7.9.
 
 import io
+import math
 import re
 from collections import OrderedDict
 
@@ -367,7 +382,15 @@ _SUPPORTED_DEFORMATIONS = {
     "3D_SI": ("PETIT", "PETIT_REAC", "GDEF_LOG", "SIMO_MIEHE"),
     "DKT": ("PETIT", "GREEN_LAGRANGE"),
     "COQUE_3D": ("PETIT", "GROT_GDEP"),
+    # 2D route A: every deformation listed measured (PL-70 ... PL-74)
+    "C_PLAN": ("PETIT", "PETIT_REAC", "GDEF_LOG"),
+    "D_PLAN": ("PETIT", "PETIT_REAC", "GDEF_LOG", "SIMO_MIEHE"),
+    "AXIS": ("PETIT", "PETIT_REAC", "GDEF_LOG", "SIMO_MIEHE"),
 }
+_PLANE = ("C_PLAN", "D_PLAN", "AXIS")
+# KNOWN_BUGS 144: above this limit the C_PLAN reactions with large strains
+# are up to about sqrt(1 + limit) - 1 (2.5 % at 0.05) too high: WARNING
+_CPLAN_LARGE_LIMIT = 0.05
 _ISOTROPIC = ("VMIS_ISOT_LINE", "VMIS_ISOT_TRAC")
 _KINEMATIC = "VMIS_CINE_LINE"
 
@@ -423,7 +446,7 @@ def mecway_name(model_data, group):
 
 
 def failure_candidates(model_data, analysis):
-    """Elsets (solid or shell) with a failure limit while 'Element failure'
+    """Elsets (solid, shell or plane) with a failure limit while 'Element failure'
     is on: those for which failure_plan may build the failure loop. No
     messages (failure_plan gives them); for checks beforehand, e.g.
     bridge_to_aster._check_gd_beams (after a failure the loop restarts with
@@ -527,16 +550,36 @@ def failure_plan(model_data, analysis, relation_for, deformation_for):
                         "beams ({0}) not: Code-Aster supports plasticity "
                         "only in multifiber beams, which the bridge does "
                         "not create").format(mod)
+        elif reason is None and mod in _PLANE and (
+                (model_data.get("plane") or {}).get("route") != "A" or
+                analysis.get("solver_command", "STAT_NON_LINE") !=
+                "STAT_NON_LINE"):
+            # Route B (Mecway's 2D types, D20/DA0 in DYNA_NON_LINE): NOT
+            # verified
+            reason = tr("in 2D alleen in Nonlinear Static (L30) met "
+                        "'#ASTER-PLANE' (de bezwijklus is in {0} NIET "
+                        "geverifieerd)",
+                        "in 2D only in Nonlinear Static (L30) with "
+                        "'#ASTER-PLANE' (the failure loop is NOT verified "
+                        "in {0})").format(model_data.get("analysis_type")
+                                          or mod)
+        elif reason is None and mod in _PLANE and model_data.get("contacts"):
+            reason = tr("bezwijken samen met contact is in 2D NIET "
+                        "geverifieerd",
+                        "failure together with contact is NOT verified in "
+                        "2D")
+        elif reason is None and mod == "COQUE_AXIS":
+            reason = tr("axisymmetrische schalen (COQUE_AXIS) worden alleen "
+                        "elastisch gerekend; de bezwijklus is daar NIET "
+                        "geverifieerd",
+                        "axisymmetric shells (COQUE_AXIS) are computed "
+                        "elastic only; the failure loop is NOT verified "
+                        "there")
         elif reason is None and mod not in _SUPPORTED_DEFORMATIONS:
-            if mod in ("C_PLAN", "D_PLAN", "AXIS"):
-                reason = tr("alleen volume-elementen en schalen ({0} niet: "
-                            "de bezwijklus is in 2D NIET geverifieerd)",
-                            "solid and shell elements only ({0} not: the "
-                            "failure loop is NOT verified in 2D)").format(mod)
-            else:
-                reason = tr("alleen volume-elementen en schalen ({0} niet)",
-                            "solid and shell elements only ({0} "
-                            "not)").format(mod or "?")
+            reason = tr("alleen volume-elementen, schalen en vlakke "
+                        "elementen met '#ASTER-PLANE' ({0} niet)",
+                        "solid, shell and plane elements with "
+                        "'#ASTER-PLANE' only ({0} not)").format(mod or "?")
         deformation = None
         if reason is None:
             deformation = deformation_for(mod, relation, chosen, elset)
@@ -558,6 +601,21 @@ def failure_plan(model_data, analysis, relation_for, deformation_for):
             continue
         log("INFO: Failure: elset '{0}' ({1}) at a plastic strain of "
             "{2} ({3}).".format(label[elset], mat_name, limit, source))
+        if mod == "C_PLAN" and deformation in ("GDEF_LOG", "PETIT_REAC") \
+                and float(limit) > _CPLAN_LARGE_LIMIT:
+            log(tr("WARNING: Elset '{0}' ({1}): vlakke spanning (C_PLAN) met "
+                   "grote rek ({2}) en een bezwijkgrens van {3}: de dikte "
+                   "volgt de rek niet, de reactiekrachten zijn tot ongeveer "
+                   "{4:.1f} % te hoog (KNOWN_BUGS 144). Reken grote rek "
+                   "liever met D_PLAN, AXIS of in 3D.",
+                   "WARNING: Elset '{0}' ({1}): plane stress (C_PLAN) with "
+                   "large strain ({2}) and a failure limit of {3}: the "
+                   "thickness does not follow the strain, the reaction "
+                   "forces are up to about {4:.1f} % too high (KNOWN_BUGS "
+                   "144). Compute large strains with D_PLAN, AXIS or in "
+                   "3D instead.").format(
+                       label[elset], mat_name, deformation, limit,
+                       100.0 * (math.sqrt(1.0 + float(limit)) - 1.0)))
         if coef is not None:
             log(tr("WARNING: Elset '{0}' ({1}) heeft kinematische "
                    "versteviging: de bezwijkgrens geldt voor de huidige "

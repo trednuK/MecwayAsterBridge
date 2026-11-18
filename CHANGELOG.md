@@ -12,6 +12,23 @@
   Measured on the release candidate 36.0.9815; the check covers every 36.x build (it
   compares the major version); run §2 of After_an_update.md again on the final build.
 
+- **Element failure in 2D and axisymmetric.** `#ASTER-BEZWIJKEN` (and the other failure
+  limits) now works with `**ASTER-PLANE C_PLAN|D_PLAN|AXIS` in *Nonlinear Static* (L30), as
+  in 3D; before, the elements could not fail (WARNING). A model with a failure limit, or the
+  setting "Failure limit all plastic mat." above 0, therefore now fails in route A. Verified
+  headless with Code-Aster 17.4 against closed forms (PL-70 … PL-74, also kinematic hardening
+  and two strips side by side). Not together with contact and not in Mecway's 2D types
+  (D20/DA0): a WARNING, the elements do not fail. `C_PLAN` with large strains gives forces
+  about √(1 + ε) too high, because the thickness does not follow the strain (KNOWN_BUGS 144;
+  a WARNING for a failure limit above 0.05).
+- **The thermal -> mechanical chain in plane stress and plane strain.** A *Thermal
+  Transient* model (T31) with *Thermal stress* and `**ASTER-PLANE C_PLAN` or `D_PLAN` is now
+  computed (thermal `PLAN`, mechanical `C_PLAN`/`D_PLAN` with the shell thickness; one
+  thickness per model); before it was an ERROR. Plasticity in the chain is verified in `AXIS`
+  and `C_PLAN` (PL-75 … PL-80, headless, Code-Aster 17.4, all within 1e-6 of the closed form).
+  A failure limit in the chain (in 3D too) now gives a WARNING: the chain has no failure
+  loop; before it was ignored without a message. Bonded contact in 2D stays an ERROR.
+
 - **Gaps with their own direction, and no lateral stiffness** (KNOWN_BUGS 23). A gap whose
   *Element orientation* card gives a U that is not along node 1 -> 2 is now translated: a U
   oblique to the element, a ground node offset to the side, and a gap between coincident

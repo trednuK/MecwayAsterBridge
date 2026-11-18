@@ -42,8 +42,12 @@ Voorwaarden:
   (BilinearKinematic of een lineaire kinematische curve) met een *tangent modulus* > 0;
 - de elementen zijn **volume-elementen** (hex, tet, wedge, pyr; ook met de
   hex8-keuze `LINE_QUAD`) of **schalen** (tri3/quad4 als DKT; kwadratisch of met
-  *Lineaire schalen* = `COQUE_3D` als `COQUE_3D`); **geen balken** en geen
-  2D-elementen (`C_PLAN`, `D_PLAN`, `AXIS`);
+  *Lineaire schalen* = `COQUE_3D` als `COQUE_3D`); **geen balken**. Vlakke elementen
+  (`C_PLAN`, `D_PLAN`, `AXIS`) alleen in route A: *Nonlinear Static* (L30) met
+  `**ASTER-PLANE`, zonder contact ([`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md)
+  §1.4; `C_PLAN` met grote rek: KNOWN_BUGS 144); niet in Mecway's 2D-typen en niet in de
+  thermomechanische keten (T31 met *Thermal stress*): een WARNING, de elementen bezwijken
+  niet;
 - het model heeft geen balken met grote rotaties (`elem_beam` = `POU_D_T_GD`): na een
   bezweken element vraagt de volgende stap `RIGI_MECA`, die dat element niet heeft
   (`CALCUL_37`); de bridge stopt vooraf met een ERROR;

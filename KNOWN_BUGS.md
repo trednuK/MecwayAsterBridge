@@ -864,6 +864,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    `tests/test_bridge_hide_failed.py`), so only a hand-edited or other-tool file is hit.
    Status: open.
 
+144\. **Plane stress (`C_PLAN`) with large strains: the thickness does not follow the
+   strain** (confirmed, Code-Aster 17.4, measured in the S44 leftovers, 18 Nov 2026;
+   Code-Aster's behaviour, cause NOT verified in the source). Route A (`**ASTER-PLANE
+   C_PLAN` in L30) with `DEFORMATION='GDEF_LOG'` (the default for plastic material) or
+   `PETIT_REAC`: in a strip in uniaxial perfectly plastic flow the reaction is about
+   √(1 + u/L) times σ_y A0/(1 + u/L) (+1.07% with `GDEF_LOG`, +1.12% with `PETIT_REAC` at
+   2.2% strain; the ratio pinned at 0.2 and 0.4 s in PL-70 and PL-70r), consistent with a
+   current width and the original thickness; `PETIT`, `D_PLAN` and `AXIS` are exact
+   (PL-70p, PL-71, PL-72). It also holds without failure (plain plasticity in route A, no
+   message there); `bridge_failure.failure_plan` gives a WARNING only for a failure limit
+   above 0.05 (`_CPLAN_LARGE_LIMIT`); docs 2D §1.4. Status: open; large plastic strains in 2D: use
+   `D_PLAN`, `AXIS` or 3D.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;

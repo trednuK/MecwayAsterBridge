@@ -1,0 +1,73 @@
+<liml version="33">
+  <analysis type="T31" />
+  <timesteps timeperiod="100 s" stepsize="10 s" />
+  <node nid="1" x="0.1" y="0" z="0" />
+  <node nid="2" x="0.11" y="0" z="0" />
+  <node nid="3" x="0.11" y="0.0025" z="0" />
+  <node nid="4" x="0.1" y="0.0025" z="0" />
+  <node nid="5" x="0.11" y="0.005" z="0" />
+  <node nid="6" x="0.1" y="0.005" z="0" />
+  <node nid="7" x="0.11" y="0.0075" z="0" />
+  <node nid="8" x="0.1" y="0.0075" z="0" />
+  <node nid="9" x="0.11" y="0.01" z="0" />
+  <node nid="10" x="0.1" y="0.01" z="0" />
+  <elset name="Ring" material="Staal">
+    <elem eid="1" shape="quad4" nodes="1 2 3 4" />
+    <elem eid="2" shape="quad4" nodes="4 3 5 6" />
+    <elem eid="3" shape="quad4" nodes="6 5 7 8" />
+    <elem eid="4" shape="quad4" nodes="8 7 9 10" />
+  </elset>
+  <displacement selection="Onder"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <displacement selection="Boven"><value>0 m</value><x>0</x><y>1</y><z>0</z></displacement>
+  <temperature2 selection="Binnen"><value>493 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <temperature2 selection="Buiten"><value>493 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  <initialconditions>
+    <temperature2 selection="Alle"><value>293 K</value><starttime>0 s</starttime><endtime>0 s</endtime></temperature2>
+  </initialconditions>
+  <thermalstress><referencetemperature>293 K</referencetemperature></thermalstress>
+  <fieldvariable name="displacement" />
+  <fieldvariable name="stress" />
+  <fieldvariable name="reaction force" />
+  <ccxmodeldefinition>**ASTER-PLANE AXIS</ccxmodeldefinition>
+  <mat name="Staal">
+    <geometric type="Plate" thickness="10 mm" />
+    <mechanical type="Isotropic" youngsmodulus="210000 MPa" poissonratio="0.3" thermalexpansion="1.2e-05 1/K" />
+    <density type="Simple" density="7800 kg/m³" />
+    <thermal type="Isotropic" thermalconductivity="50 W/m/K" specificheat="500 J/kg/K" />
+    <plastic type="BilinearIsotropic" yieldstrength="2.5e+08 Pa" tangentmodulus="2.1e+09 Pa" />
+  </mat>
+  <faceselection name="Binnen">
+    <face eid="1" faceid="4" />
+    <face eid="2" faceid="4" />
+    <face eid="3" faceid="4" />
+    <face eid="4" faceid="4" />
+  </faceselection>
+  <faceselection name="Buiten">
+    <face eid="1" faceid="2" />
+    <face eid="2" faceid="2" />
+    <face eid="3" faceid="2" />
+    <face eid="4" faceid="2" />
+  </faceselection>
+  <faceselection name="Onder">
+    <face eid="1" faceid="1" />
+  </faceselection>
+  <faceselection name="Boven">
+    <face eid="4" faceid="3" />
+  </faceselection>
+  <nodeselection name="Ondern">
+    <node nid="1" />
+    <node nid="2" />
+  </nodeselection>
+  <nodeselection name="Alle">
+    <node nid="1" />
+    <node nid="2" />
+    <node nid="3" />
+    <node nid="4" />
+    <node nid="5" />
+    <node nid="6" />
+    <node nid="7" />
+    <node nid="8" />
+    <node nid="9" />
+    <node nid="10" />
+  </nodeselection>
+</liml>

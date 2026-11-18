@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 17921d2, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-18 (bridge dd0cc73, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3335 van 3341 controles binnen de tolerantie** (649 testcases); 6 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3446 van 3454 controles binnen de tolerantie** (670 testcases); 8 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -2863,6 +2863,119 @@ Gemaakt door `run_verificatie.py` op 2026-11-17 (bridge 17921d2, Code-Aster 17.4
 | PL-67 | Lange cilinder met een randmoment (COQUE_AXIS) | M_z inklemming | 0 N m | -0.17987 | -0.17987 | 1.25664 N m | OK |
 | PL-68 | Cilinder onder eigen gewicht (COQUE_AXIS) | R_y boven | 1209.6 N | 1209.6 | -0.00% | 0.0001% | OK |
 | PL-68 | Cilinder onder eigen gewicht (COQUE_AXIS) | massa (controle) | 123.31 kg | 123.31 | -0.00% | 0.0001% | OK |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | reactie t = 0.55 s (voor bezwijken) | 2446.2 N | 2472.4 | +1.07% | 0.5% | BEKEND (KNOWN_BUGS 144) |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | reactie t = 1 s (na bezwijken) | 0 N | 0.18552 | 0.18552 | 25 N | OK |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | C_PLAN GDEF_LOG: reactie / exact t = 0.2 s (KNOWN_BUGS 144) | 1.004  | 1.0038 | -0.02% | 0.2% | OK |
+| PL-70 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | C_PLAN GDEF_LOG: reactie / exact t = 0.4 s (KNOWN_BUGS 144) | 1.008  | 1.0077 | -0.02% | 0.2% | OK |
+| PL-70p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-70p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-70p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-70p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT) | reactie t = 0.55 s (voor bezwijken) | 2500 N | 2500 | +0.00% | 0.5% | OK |
+| PL-70p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT) | reactie t = 1 s (na bezwijken) | 0 N | 0.21893 | 0.21893 | 25 N | OK |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | reactie t = 0.55 s (voor bezwijken) | 2446.2 N | 2473.6 | +1.12% | 0.5% | BEKEND (KNOWN_BUGS 144) |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | reactie t = 1 s (na bezwijken) | 0 N | 0.20196 | 0.20196 | 25 N | OK |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | C_PLAN PETIT_REAC: reactie / exact t = 0.2 s (KNOWN_BUGS 144) | 1.004  | 1.0042 | +0.02% | 0.2% | OK |
+| PL-70r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | C_PLAN PETIT_REAC: reactie / exact t = 0.4 s (KNOWN_BUGS 144) | 1.008  | 1.0082 | +0.03% | 0.2% | OK |
+| PL-71 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN) | bezwijkstap (eerste stap met p >= grens) | 0.5 s | 0.5 | +0.00% | 1e-06 s | OK |
+| PL-71 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN) | aantal bezweken op t = 0.5 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-71 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-71 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN) | reactie t = 0.5 s (voor bezwijken) | 2830.1 N | 2830.1 | +0.00% | 0.5% | OK |
+| PL-71 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN) | reactie t = 1 s (na bezwijken) | 0 N | 0.24699 | 0.24699 | 25 N | OK |
+| PL-71p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT) | bezwijkstap (eerste stap met p >= grens) | 0.5 s | 0.5 | +0.00% | 1e-06 s | OK |
+| PL-71p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT) | aantal bezweken op t = 0.5 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-71p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-71p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT) | reactie t = 0.5 s (voor bezwijken) | 2886.8 N | 2886.8 | -0.00% | 0.5% | OK |
+| PL-71p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT) | reactie t = 1 s (na bezwijken) | 0 N | 0.29749 | 0.29749 | 25 N | OK |
+| PL-71r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | bezwijkstap (eerste stap met p >= grens) | 0.5 s | 0.5 | +0.00% | 1e-06 s | OK |
+| PL-71r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | aantal bezweken op t = 0.5 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-71r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-71r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | reactie t = 0.5 s (voor bezwijken) | 2830.1 N | 2832.6 | +0.09% | 0.5% | OK |
+| PL-71r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC) | reactie t = 1 s (na bezwijken) | 0 N | 0.27144 | 0.27144 | 25 N | OK |
+| PL-71s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, SIMO_MIEHE) | bezwijkstap (eerste stap met p >= grens) | 0.5 s | 0.5 | +0.00% | 1e-06 s | OK |
+| PL-71s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, SIMO_MIEHE) | aantal bezweken op t = 0.5 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-71s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, SIMO_MIEHE) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-71s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, SIMO_MIEHE) | reactie t = 0.5 s (voor bezwijken) | 2830.1 N | 2830.1 | -0.00% | 0.5% | OK |
+| PL-71s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, SIMO_MIEHE) | reactie t = 1 s (na bezwijken) | 0 N | 0.26796 | 0.26796 | 25 N | OK |
+| PL-72 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-72 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-72 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-72 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | reactie t = 0.55 s (voor bezwijken) | 1.6138e+06 N | 1.6138e+06 | -0.00% | 0.5% | OK |
+| PL-72 | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | reactie t = 1 s (na bezwijken) | 0 N | 148.73 | 148.73 | 16493.4 N | OK |
+| PL-72c | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, verstevigingskromme (VMIS_ISOT_TRAC)) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-72c | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, verstevigingskromme (VMIS_ISOT_TRAC)) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-72c | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, verstevigingskromme (VMIS_ISOT_TRAC)) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-72c | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, verstevigingskromme (VMIS_ISOT_TRAC)) | reactie t = 0.55 s (voor bezwijken) | 1.6138e+06 N | 1.6138e+06 | -0.00% | 0.5% | OK |
+| PL-72c | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, verstevigingskromme (VMIS_ISOT_TRAC)) | reactie t = 1 s (na bezwijken) | 0 N | 148.73 | 148.73 | 16493.4 N | OK |
+| PL-72k | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, kinematisch (VMIS_CINE_LINE)) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-72k | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, kinematisch (VMIS_CINE_LINE)) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-72k | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, kinematisch (VMIS_CINE_LINE)) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-72k | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, kinematisch (VMIS_CINE_LINE)) | reactie t = 0.55 s (voor bezwijken) | 1.8899e+06 N | 1.8899e+06 | -0.00% | 0.5% | OK |
+| PL-72k | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, kinematisch (VMIS_CINE_LINE)) | reactie t = 1 s (na bezwijken) | 0 N | 149.95 | 149.95 | 16493.4 N | OK |
+| PL-72p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-72p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-72p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-72p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT) | reactie t = 0.55 s (voor bezwijken) | 1.6493e+06 N | 1.6493e+06 | -0.00% | 0.5% | OK |
+| PL-72p | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT) | reactie t = 1 s (na bezwijken) | 0 N | 177.3 | 177.3 | 16493.4 N | OK |
+| PL-72r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT_REAC) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-72r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT_REAC) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-72r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT_REAC) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-72r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT_REAC) | reactie t = 0.55 s (voor bezwijken) | 1.6138e+06 N | 1.6147e+06 | +0.05% | 0.5% | OK |
+| PL-72r | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT_REAC) | reactie t = 1 s (na bezwijken) | 0 N | 161.91 | 161.91 | 16493.4 N | OK |
+| PL-72s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, SIMO_MIEHE) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-72s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, SIMO_MIEHE) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-72s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, SIMO_MIEHE) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-72s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, SIMO_MIEHE) | reactie t = 0.55 s (voor bezwijken) | 1.6138e+06 N | 1.6138e+06 | +0.00% | 0.5% | OK |
+| PL-72s | Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, SIMO_MIEHE) | reactie t = 1 s (na bezwijken) | 0 N | 159.86 | 159.86 | 16493.4 N | OK |
+| PL-73 | Bezwijken in 2D met kinematische versteviging, afschuiving (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | bezwijkstap (eerste stap met p >= grens) | 0.5 s | 0.5 | +0.00% | 1e-06 s | OK |
+| PL-73 | Bezwijken in 2D met kinematische versteviging, afschuiving (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | aantal bezweken op t = 0.5 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-73 | Bezwijken in 2D met kinematische versteviging, afschuiving (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-73 | Bezwijken in 2D met kinematische versteviging, afschuiving (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | schuifreactie t = 0.5 s (voor bezwijken) | -8542.8 N | -8542.8 | +0.00% | 0.5% | OK |
+| PL-73 | Bezwijken in 2D met kinematische versteviging, afschuiving (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN) | schuifreactie t = 1 s (na bezwijken: 4/5 van L) | -7944.6 N | -7944.7 | -0.00% | 0.5% | OK |
+| PL-74 | Bezwijken in 2D, parallel: twee ringen (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | bezwijkstap (eerste stap met p >= grens) | 0.55 s | 0.55 | -0.00% | 1e-06 s | OK |
+| PL-74 | Bezwijken in 2D, parallel: twee ringen (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | aantal bezweken op t = 0.55 s | 0  | 0 | 0 | 0.5  | OK |
+| PL-74 | Bezwijken in 2D, parallel: twee ringen (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | bezweken = de elementen van 'Bros' (t = 1 s) | 1  | 1 | +0.00% | 0.5  | OK |
+| PL-74 | Bezwijken in 2D, parallel: twee ringen (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | reactie t = 0.55 s (voor bezwijken, beide ringen) | 1.6138e+06 N | 1.6138e+06 | -0.00% | 0.5% | OK |
+| PL-74 | Bezwijken in 2D, parallel: twee ringen (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN) | reactie t = 1 s (na bezwijken, alleen de buitenring) | 8.1183e+05 N | 8.1184e+05 | +0.00% | 0.5% | OK |
+| PL-75 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | sigma_xx onderrand (heet) | -2.5200e+08 Pa | -2.5200e+08 | +0.00% | 0.2% | OK |
+| PL-75 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | sigma_xx bovenrand (koud) | 0 Pa | 1.1782e-05 | 1.1782e-05 | 504000 Pa | OK |
+| PL-75 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | sigma_yy onderrand | 0 Pa | -2.0554e-06 | -2.0554e-06 | 504000 Pa | OK |
+| PL-75 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | u_y bovenrand | 7.8000e-06 m | 7.8000e-06 | +0.00% | 0.2% | OK |
+| PL-75 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | som R_x links (dikte 1 mm) | 1260 N | 1260 | -0.00% | 0.2% | OK |
+| PL-75 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | T midden (thermisch deel, stationair) | 343 K | 343 | +0.00% | 0.1 K | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_xx onderrand (heet) | -3.6000e+08 Pa | -3.6000e+08 | +0.00% | 0.2% | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_xx bovenrand (koud) | 0 Pa | 1.5976e-05 | 1.5976e-05 | 504000 Pa | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_zz onderrand | -3.6000e+08 Pa | -3.6000e+08 | +0.00% | 0.2% | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_yy onderrand | 0 Pa | -3.2058e-06 | -3.2058e-06 | 504000 Pa | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | u_y bovenrand | 1.1143e-05 m | 1.1143e-05 | +0.00% | 0.2% | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | som R_x links (dikte 1 mm) | 1800 N | 1800 | -0.00% | 0.2% | OK |
+| PL-76 | Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | T midden (thermisch deel, stationair) | 343 K | 343 | +0.00% | 0.1 K | OK |
+| PL-77 | Thermomechanische keten in 2D met druk op een rand (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | sigma_yy midden | -5.0000e+07 Pa | -5.0000e+07 | +0.00% | 0.2% | OK |
+| PL-77 | Thermomechanische keten in 2D met druk op een rand (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | sigma_xx onderrand (heet) | -2.6700e+08 Pa | -2.6700e+08 | +0.00% | 0.2% | OK |
+| PL-77 | Thermomechanische keten in 2D met druk op een rand (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | u_y bovenrand | 5.6333e-06 m | 5.6333e-06 | -0.00% | 0.2% | OK |
+| PL-77 | Thermomechanische keten in 2D met druk op een rand (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | som R_y onder (dikte 1 mm) | 2500 N | 2500 | +0.00% | 0.2% | OK |
+| PL-77 | Thermomechanische keten in 2D met druk op een rand (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | som R_x links (dikte 1 mm) | 1410 N | 1410 | +0.00% | 0.2% | OK |
+| PL-78 | Thermomechanische keten met plasticiteit, axisymmetrisch (T31 + Thermal stress + **ASTER-PLANE AXIS) | axiale spanning | -2.5251e+08 Pa | -2.5251e+08 | +0.00% | 0.2% | OK |
+| PL-78 | Thermomechanische keten met plasticiteit, axisymmetrisch (T31 + Thermal stress + **ASTER-PLANE AXIS) | equivalentplasticstrain | 0.0011975  | 0.0011975 | +0.00% | 0.5% | OK |
+| PL-78 | Thermomechanische keten met plasticiteit, axisymmetrisch (T31 + Thermal stress + **ASTER-PLANE AXIS) | u_r buitenwand | 3.6955e-04 m | 3.6955e-04 | -0.00% | 0.5% | OK |
+| PL-78 | Thermomechanische keten met plasticiteit, axisymmetrisch (T31 + Thermal stress + **ASTER-PLANE AXIS) | som reactie (360 graden) | 1.6659e+06 N | 1.6659e+06 | +0.00% | 0.3% | OK |
+| PL-79 | Thermomechanische keten met plasticiteit in vlakke spanning (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | sigma_xx | -2.5251e+08 Pa | -2.5251e+08 | +0.00% | 0.2% | OK |
+| PL-79 | Thermomechanische keten met plasticiteit in vlakke spanning (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | equivalentplasticstrain | 0.0011975  | 0.0011975 | +0.00% | 0.5% | OK |
+| PL-79 | Thermomechanische keten met plasticiteit in vlakke spanning (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | u_y bovenrand | 3.3595e-05 m | 3.3595e-05 | +0.00% | 0.5% | OK |
+| PL-79 | Thermomechanische keten met plasticiteit in vlakke spanning (T31 + Thermal stress + **ASTER-PLANE C_PLAN) | som reactie (dikte 1 mm) | 2525.1 N | 2525.1 | +0.00% | 0.3% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | T onderrand (warmtestroom in W) | 393 K | 393 | -0.00% | 0.1 K | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | warmteflux q_y | 5.0000e+05 W/m2 | 5.0000e+05 | -0.00% | 0.2% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_yy midden (kracht in N) | -2.0000e+07 Pa | -2.0000e+07 | +0.00% | 0.2% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_xx onderrand | -3.6857e+08 Pa | -3.6857e+08 | +0.00% | 0.2% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | sigma_zz onderrand | -3.6857e+08 Pa | -3.6857e+08 | +0.00% | 0.2% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | u_y bovenrand | 1.0435e-05 m | 1.0435e-05 | -0.00% | 0.2% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | som R_y onder (dikte 2 mm) | 2000 N | 2000 | -0.00% | 0.2% | OK |
+| PL-80 | Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN) | som R_x links (dikte 2 mm) | 3771.4 N | 3771.4 | -0.00% | 0.2% | OK |
 
 ## Boutvoorspanning
 

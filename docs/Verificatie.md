@@ -853,7 +853,7 @@ knopen op x = 0 weg, zoals Mecway (180 van 189 knopen); een formule met `t` in e
 statische analyse en een formule met `e.xx` zonder het veld `strain` vallen weg met een
 waarschuwing.
 
-### 2D en axisymmetrisch (PL-01 … PL-68)
+### 2D en axisymmetrisch (PL-01 … PL-80)
 
 Mecway's *Static 2D* (S20, `C_PLAN`/`D_PLAN`), *Static Axisymmetric* (SA0, `AXIS`) en
 hun *Dynamic Response* (D20, DA0; `dyna_impl_3d` met NEWMARK, PETIT en een stap per
@@ -1125,6 +1125,56 @@ vlak met de drukpijlen, tegenover n = Z × U):
 - **PL-65**: de ringspanning op 0,5 s 5e7 Pa (6e-14); `shell_forces` geeft in L30 een INFO.
 - **PL-66**: `forceperlengthu` F/(2π R) = 318,31 N/m en `stressyym1` F/(2π R t) = 63662 Pa
   (2e-13): per lengte van de omtrek.
+
+Bezwijken van elementen in route A (`tests_vlak_2d_bezwijken.py`,
+[`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4): een strook van vijf quad4 (50 × 10
+mm) getrokken tot 2 mm in 20 stappen, ideaal plastisch σ_y = 250 MPa; alle elementen gelijk,
+alleen het middelste heeft een materiaal met `#ASTER-BEZWIJKEN`, dus het veld is uniform tot
+het bezwijken en de bezwijkstap volgt uit p = ln(1 + u/L) − σ_y/E (`D_PLAN`: J2 in vlakke rek,
+numeriek geïntegreerd). De grens ligt halverwege twee stappen. Elk geval: de bezwijkstap van
+de gesloten oplossing, `failed` op die stap nog 0 en vanaf de volgende 1, alleen de elementen
+met de grens bezweken:
+
+- **PL-70** (`C_PLAN`, `GDEF_LOG`): bezwijken op 0,55 s; de reactie na het bezwijken 0,19 N
+  (van 2446 N). De reactie voor het bezwijken is +1,07% (BEKEND (KNOWN_BUGS 144): ≈ √(1 +
+  u/L); de verhouding is op 0,2 en 0,4 s gecontroleerd binnen 2e-3). **PL-70p** (`PETIT`):
+  2500 N exact; **PL-70r** (`PETIT_REAC`): +1,12%, dezelfde afwijking (BEKEND, de verhouding
+  net zo gecontroleerd).
+- **PL-71** (`D_PLAN`), **PL-71s** (`SIMO_MIEHE`), **PL-71p** (`PETIT`), **PL-71r**
+  (`PETIT_REAC`, +0,09%): bezwijken op 0,5 s, de reactie voor het bezwijken gelijk aan de
+  numerieke oplossing in vlakke rek (< 1e-5).
+- **PL-72** (`AXIS`, een buis 0,10 … 0,11 m getrokken langs Y), **PL-72s** (`SIMO_MIEHE`),
+  **PL-72p** (`PETIT`), **PL-72r** (`PETIT_REAC`, +0,05%), **PL-72c** (een
+  verstevigingskromme, `VMIS_ISOT_TRAC`), **PL-72k** (kinematisch `BilinearKinematic`, H = 2,1
+  GPa, `GDEF_LOG`: τ = σ_y + H p): bezwijken op 0,55 s, de reactie τ A0/(1 + u/L) × 2π (<
+  1e-5).
+- **PL-73** (kinematische versteviging `BilinearKinematic`, H = 2,1 GPa, `C_PLAN`, `PETIT`):
+  afschuiving van een rij quad4 (alle knopen opgelegd) tot γ = 0,08; de rek uit de
+  terugspanning (met de schuifcomponent): bezwijken op 0,5 s, de schuifkracht τ L t ervoor
+  (8542,8 N) en 4/5 daarvan erna (de andere vier elementen dragen), beide binnen 1e-5.
+- **PL-74** (`AXIS`, parallel: twee concentrische ringen, de binnenste met de grens): de
+  reactie van beide ringen voor het bezwijken, van de buitenring alleen erna (< 2e-5).
+
+De keten thermisch -> mechanisch in vlakke spanning en vlakke rek, en met plasticiteit
+(`tests_vlak_2d_keten.py`, [`2D_en_axisymmetrisch.md`](2D_en_axisymmetrisch.md) §1.4.1); T31 met
+*Thermal stress* (referentie = begin = 293 K), 10 stappen van 10 s, θ = 1:
+
+- **PL-75** (`C_PLAN`, strook 50 × 10 mm, t = 1 mm, quad8 10 × 4, 393 K onder, 293 K boven,
+  beide einden vast in x): σ_xx = −E α ΔT = −252 MPa aan de hete rand, 0 aan de koude rand,
+  u_y(W) = (1 + ν) α W ΔT/2, de reactie van een einde E α t ∫ΔT dy = 1260 N, alle binnen 1e-6.
+- **PL-76** (hetzelfde in `D_PLAN`): σ_xx = σ_zz = −E α ΔT/(1 − ν) = −360 MPa, u_y met
+  (1 + ν)/(1 − ν), de reactie 1800 N, binnen 1e-6.
+- **PL-77** (PL-75 met 50 MPa druk op de bovenrand, onderrand vast in y): σ_yy = −p,
+  σ_xx = −E α ΔT − ν p, de onderreactie p L t = 2500 N, binnen 1e-6.
+- **PL-78** (`AXIS`, een ring 0,10 … 0,11 m gelijkmatig 200 K opgewarmd, einden axiaal vast,
+  bilineair isotroop σ_y = 250 MPa, H = 2,1 GPa): σ_z = −(σ_y + H p) = −252,5 MPa,
+  p = (E α ΔT − σ_y)/(E + H) = 1,1975e-3, u_r(b) en de reactie × 2π, binnen 1e-6.
+- **PL-79** (het plastische geval van PL-78 in `C_PLAN`, een strook van een rij quad4): dezelfde
+  gesloten oplossing, binnen 1e-6.
+- **PL-80** (`D_PLAN`, t = 2 mm: een *Heat flow* van 50 W op de onderrand, 293 K boven, een
+  kracht van 2000 N op de bovenrand): de temperatuur onder T0 + Q W/(k L t) = 393 K en
+  q_y = Q/(L t) (de warmtestroom per lengte × dikte), σ_yy = −F/(L t), σ_xx, σ_zz, u_y en
+  beide reacties, binnen 1e-6.
 
 Gemeten tijdens de bouw (niet in de regressie): tri3, tri6, quad4 en quad8 (console in
 vlakke spanning) en elf losse belastinggevallen in S20/SA0 geven dezelfde verplaatsingen en

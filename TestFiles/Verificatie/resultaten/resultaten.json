@@ -57,8 +57,8 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "schema": "HHT",
-   "hht_alpha": -0.1
+   "hht_alpha": -0.1,
+   "schema": "HHT"
   },
   "general": {}
  },
@@ -70,7 +70,7 @@
   "series": "DY-01 Newmark dt",
   "h": 0.1,
   "note": "Veer (line2, DIS_T K_T_D_L) + knoopmassa (POI1), alleen X vrij; staplast vanaf t = 0.",
-  "seconds": 3.0,
+  "seconds": 2.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -2450,9 +2450,9 @@
   "n_nodes": 32,
   "n_elem": 2,
   "settings": {
-   "convergence_resi_rela": 1e-06,
    "convergence_criterion": "RELA_OF_MAXI",
-   "convergence_resi_maxi": 0.05
+   "convergence_resi_maxi": 0.05,
+   "convergence_resi_rela": 1e-06
   },
   "general": {}
  },
@@ -3133,7 +3133,7 @@
   "series": null,
   "h": null,
   "note": "kwadratisch element: exact voor kwadratische T",
-  "seconds": 2.7,
+  "seconds": 5.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -4383,7 +4383,7 @@
   "series": null,
   "h": null,
   "note": "statisch bepaald opgelegd (drie symmetrievlakken); uniforme rek is exact met hex8",
-  "seconds": 3.0,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -6407,7 +6407,7 @@
   "series": null,
   "h": 0.1,
   "note": "Model van LS-02-h8; globale schatting uit de .mess (CALC_ERREUR).",
-  "seconds": 2.8,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7341,7 +7341,7 @@
   "series": null,
   "h": null,
   "note": "POU_D_E (PETIT): kritische lastfactor per stap; P tot 0,9 Pcr in 10 stappen.",
-  "seconds": 3.0,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -7704,7 +7704,7 @@
   "series": null,
   "h": null,
   "note": "Als MD-01, Rayleigh alpha = 2 zeta w = 3,550 1/s.",
-  "seconds": 3.2,
+  "seconds": 2.8,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -8062,8 +8062,8 @@
   "n_nodes": 11,
   "n_elem": 10,
   "settings": {
-   "schema": "NEWMARK",
-   "deformation": "PETIT"
+   "deformation": "PETIT",
+   "schema": "NEWMARK"
   },
   "general": {}
  },
@@ -9679,7 +9679,7 @@
   "series": null,
   "h": null,
   "note": "Missing mass: pseudo-mode (MODE_STATIQUE) met het spectrum op de hoogste gerekende frequentie (hier f1).",
-  "seconds": 2.7,
+  "seconds": 2.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -9743,8 +9743,8 @@
   "n_nodes": 3,
   "n_elem": 2,
   "settings": {
-   "modal_combination": "SRSS",
-   "missing_mass": true
+   "missing_mass": true,
+   "modal_combination": "SRSS"
   },
   "general": {}
  },
@@ -9792,8 +9792,8 @@
   "n_nodes": 3,
   "n_elem": 2,
   "settings": {
-   "modal_combination": "SRSS",
-   "missing_mass": false
+   "missing_mass": false,
+   "modal_combination": "SRSS"
   },
   "general": {}
  },
@@ -9841,8 +9841,8 @@
   "n_nodes": 3,
   "n_elem": 2,
   "settings": {
-   "modal_combination": "SRSS",
-   "direction_combination": "SRSS"
+   "direction_combination": "SRSS",
+   "modal_combination": "SRSS"
   },
   "general": {}
  },
@@ -9890,8 +9890,8 @@
   "n_nodes": 3,
   "n_elem": 2,
   "settings": {
-   "modal_combination": "SRSS",
-   "direction_combination": "100-30-30"
+   "direction_combination": "100-30-30",
+   "modal_combination": "SRSS"
   },
   "general": {}
  },
@@ -9939,8 +9939,8 @@
   "n_nodes": 3,
   "n_elem": 2,
   "settings": {
-   "modal_combination": "SRSS",
-   "direction_combination": "100-40-40"
+   "direction_combination": "100-40-40",
+   "modal_combination": "SRSS"
   },
   "general": {}
  },
@@ -10044,14 +10044,14 @@
   "n_nodes": 2079,
   "n_elem": 300,
   "settings": {
-   "missing_mass": false,
    "fields": [
     "displacements",
     "accelerations",
     "stresses",
     "vonmises",
     "reactions"
-   ]
+   ],
+   "missing_mass": false
   },
   "general": {}
  },
@@ -10237,7 +10237,7 @@
   "series": null,
   "h": null,
   "note": "grens van de WARNING voor kwadratische elementen.",
-  "seconds": 2.8,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -11702,7 +11702,7 @@
   "series": null,
   "h": null,
   "note": "Veer 1000 N/m, mass2 2 kg, Damper 8.944 N.s/m (line2).",
-  "seconds": 2.7,
+  "seconds": 2.5,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -12500,7 +12500,7 @@
   "series": null,
   "h": null,
   "note": "Lage-frequentiebenadering 13.8285 Hz; exacte wortel 13.82768 Hz.",
-  "seconds": 3.0,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -12588,7 +12588,7 @@
   "series": null,
   "h": null,
   "note": "Zelfde model als VA-01, koppelvlakken handmatig (KOPPEL_).",
-  "seconds": 3.1,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -13668,7 +13668,7 @@
   "series": null,
   "h": null,
   "note": "Mecway TempDependent -> THER_NL, THER_NON_LINE",
-  "seconds": 2.9,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -14042,15 +14042,15 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "harm_freq_start": 0.5,
-   "harm_freq_end": 7.0,
-   "harm_freq_count": 27,
-   "harm_refine_points": 5,
-   "modal_damping": 0.05,
    "fields": [
     "displacements",
     "accelerations"
-   ]
+   ],
+   "harm_freq_count": 27,
+   "harm_freq_end": 7.0,
+   "harm_freq_start": 0.5,
+   "harm_refine_points": 5,
+   "modal_damping": 0.05
   },
   "general": {}
  },
@@ -14154,14 +14154,14 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "harm_freq_start": 0.5,
-   "harm_freq_end": 7.0,
-   "harm_freq_count": 27,
-   "harm_refine_points": 5,
    "fields": [
     "displacements",
     "accelerations"
-   ]
+   ],
+   "harm_freq_count": 27,
+   "harm_freq_end": 7.0,
+   "harm_freq_start": 0.5,
+   "harm_refine_points": 5
   },
   "general": {}
  },
@@ -14265,15 +14265,15 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "harm_freq_start": 0.5,
-   "harm_freq_end": 7.0,
-   "harm_freq_count": 27,
-   "harm_refine_points": 5,
-   "harm_basis": "PHYS",
    "fields": [
     "displacements",
     "accelerations"
-   ]
+   ],
+   "harm_basis": "PHYS",
+   "harm_freq_count": 27,
+   "harm_freq_end": 7.0,
+   "harm_freq_start": 0.5,
+   "harm_refine_points": 5
   },
   "general": {}
  },
@@ -14335,10 +14335,10 @@
   "n_nodes": 3,
   "n_elem": 2,
   "settings": {
-   "harm_basis": "PHYS",
    "fields": [
     "displacements"
    ],
+   "harm_basis": "PHYS",
    "harm_freq_list": "0.5, 1, 2, 3, 3.5588127170858854, 4, 5, 7"
   },
   "general": {}
@@ -14415,10 +14415,10 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "modal_damping": 0.05,
    "fields": [
     "displacements"
-   ]
+   ],
+   "modal_damping": 0.05
   },
   "general": {}
  },
@@ -14466,10 +14466,10 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "modal_damping": 0.05,
    "fields": [
     "displacements"
-   ]
+   ],
+   "modal_damping": 0.05
   },
   "general": {}
  },
@@ -14531,12 +14531,12 @@
   "n_nodes": 21,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 200.0,
-   "harm_freq_count": 100,
    "fields": [
     "displacements"
-   ]
+   ],
+   "harm_freq_count": 100,
+   "harm_freq_end": 200.0,
+   "harm_freq_start": 1.0
   },
   "general": {}
  },
@@ -14584,13 +14584,13 @@
   "n_nodes": 21,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 200.0,
-   "harm_freq_count": 100,
    "fields": [
     "displacements"
    ],
-   "harm_basis": "PHYS"
+   "harm_basis": "PHYS",
+   "harm_freq_count": 100,
+   "harm_freq_end": 200.0,
+   "harm_freq_start": 1.0
   },
   "general": {}
  },
@@ -14652,12 +14652,12 @@
   "n_nodes": 21,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 200.0,
-   "harm_freq_count": 100,
    "fields": [
     "displacements"
    ],
+   "harm_freq_count": 100,
+   "harm_freq_end": 200.0,
+   "harm_freq_start": 1.0,
    "static_correction": false
   },
   "general": {}
@@ -14720,14 +14720,14 @@
   "n_nodes": 203,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 300.0,
-   "harm_freq_count": 60,
    "fields": [
     "displacements",
     "stresses",
     "vonmises"
-   ]
+   ],
+   "harm_freq_count": 60,
+   "harm_freq_end": 300.0,
+   "harm_freq_start": 1.0
   },
   "general": {}
  },
@@ -14761,15 +14761,15 @@
   "n_nodes": 203,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 300.0,
-   "harm_freq_count": 60,
    "fields": [
     "displacements",
     "stresses",
     "vonmises"
    ],
-   "harm_basis": "PHYS"
+   "harm_basis": "PHYS",
+   "harm_freq_count": 60,
+   "harm_freq_end": 300.0,
+   "harm_freq_start": 1.0
   },
   "general": {}
  },
@@ -14883,7 +14883,7 @@
   "series": null,
   "h": null,
   "note": "Alleen y >= 0; ligament symmetry, alleen SCHEUR_LIP_BOVEN.",
-  "seconds": 6.4,
+  "seconds": 6.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -15255,7 +15255,7 @@
   "series": null,
   "h": null,
   "note": "hex20, 6 per segment; starre modes in ND 0 en 1; het hele wiel naar Mecway",
-  "seconds": 3.0,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18207,7 +18207,7 @@
   "series": "AD-01 hex20",
   "h": 0.02,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 12 elementen geven.",
-  "seconds": 3.2,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18239,7 +18239,7 @@
   "series": "AD-01 hex20",
   "h": 0.01,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 96 elementen geven.",
-  "seconds": 3.4,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18271,7 +18271,7 @@
   "series": "AD-01 hex20",
   "h": 0.005,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 768 elementen geven.",
-  "seconds": 4.4,
+  "seconds": 4.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18303,7 +18303,7 @@
   "series": "AD-01 hex20",
   "h": 0.0025,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 6144 elementen geven.",
-  "seconds": 8.5,
+  "seconds": 8.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18335,7 +18335,7 @@
   "series": "AD-01 hex20",
   "h": 0.00125,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 49152 elementen geven.",
-  "seconds": 23.3,
+  "seconds": 27.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18367,7 +18367,7 @@
   "series": "AD-01 hex20",
   "h": 0.000625,
   "note": "Kwart plaat d/W = 0,2, plak 10 mm met symmetrie op beide z-vlakken (vlakke rek), 1 laag; Refine x2 op alles zou 393216 elementen geven.",
-  "seconds": 91.4,
+  "seconds": 138.2,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18515,7 +18515,7 @@
   "series": null,
   "h": null,
   "note": "Balk hex20 4x1x1, fixed op de knopen van x = 0 (knoopselectie), traction op het eindvlak; de grootste fout zit bij de inklemming.",
-  "seconds": 3.1,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -18547,7 +18547,7 @@
   "series": null,
   "h": null,
   "note": "sigma = 100 MPa, #ASTER-BLOK 2.0, 0, 1e4: S_a = 200 MPa.",
-  "seconds": 2.7,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19507,7 +19507,7 @@
   "series": null,
   "h": null,
   "note": "Een druk-eenheid in #ASTER-BRON maakt een invallende golf.",
-  "seconds": 4.9,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -19955,12 +19955,12 @@
   "n_nodes": 141,
   "n_elem": 12,
   "settings": {
-   "harm_freq_list": "5.0, 20.0, 35.0, 39.0, 45.0, 60.0, 100.0, 200.0",
    "fields": [
     "displacements",
     "stresses",
     "vonmises"
-   ]
+   ],
+   "harm_freq_list": "5.0, 20.0, 35.0, 39.0, 45.0, 60.0, 100.0, 200.0"
   },
   "general": {}
  },
@@ -22250,7 +22250,7 @@
   "series": null,
   "h": null,
   "note": "Zachte rand: f_n = (2n - 1) c / (4L), decay rate (c/L) artanh(Z / (rho c)) = 182,3 1/s.",
-  "seconds": 2.9,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -26566,7 +26566,7 @@
   "series": null,
   "h": null,
   "note": "staaf 4 hex8; T = 900 - 1000 t graden C op alle knopen (0..0,88 s), dt = 0,02 s; staal=16MND5, begin=austeniet",
-  "seconds": 3.1,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -37104,7 +37104,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 2.7,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -39665,8 +39665,8 @@
    "convergence_resi_maxi": 1e-06
   },
   "general": {
-   "elem_beam": "POU_D_T_GD",
-   "configuration": "GQ"
+   "configuration": "GQ",
+   "elem_beam": "POU_D_T_GD"
   }
  },
  "NL-87b": {
@@ -39717,8 +39717,8 @@
    "convergence_resi_maxi": 1e-06
   },
   "general": {
-   "elem_beam": "POU_D_T_GD",
-   "configuration": "G"
+   "configuration": "G",
+   "elem_beam": "POU_D_T_GD"
   }
  },
  "NL-89": {
@@ -41007,14 +41007,14 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "harm_freq_start": 0.5,
-   "harm_freq_end": 7.0,
-   "harm_freq_count": 27,
-   "harm_refine_points": 5,
-   "loss_factor": 0.04,
    "fields": [
     "displacements"
-   ]
+   ],
+   "harm_freq_count": 27,
+   "harm_freq_end": 7.0,
+   "harm_freq_start": 0.5,
+   "harm_refine_points": 5,
+   "loss_factor": 0.04
   },
   "general": {}
  },
@@ -41104,10 +41104,10 @@
   "n_nodes": 2,
   "n_elem": 1,
   "settings": {
-   "harm_basis": "PHYS",
    "fields": [
     "displacements"
    ],
+   "harm_basis": "PHYS",
    "harm_freq_list": "0.5, 1, 2, 3, 3.4, 3.5588127170858854, 3.7, 4, 5, 7"
   },
   "general": {}
@@ -41170,12 +41170,12 @@
   "n_nodes": 21,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 200.0,
-   "harm_freq_count": 100,
    "fields": [
     "displacements"
    ],
+   "harm_freq_count": 100,
+   "harm_freq_end": 200.0,
+   "harm_freq_start": 1.0,
    "loss_factor": 0.02
   },
   "general": {}
@@ -41224,13 +41224,13 @@
   "n_nodes": 21,
   "n_elem": 20,
   "settings": {
-   "harm_freq_start": 1.0,
-   "harm_freq_end": 200.0,
-   "harm_freq_count": 100,
    "fields": [
     "displacements"
    ],
-   "harm_basis": "PHYS"
+   "harm_basis": "PHYS",
+   "harm_freq_count": 100,
+   "harm_freq_end": 200.0,
+   "harm_freq_start": 1.0
   },
   "general": {}
  },
@@ -42153,8 +42153,8 @@
   "n_elem": 20,
   "settings": {},
   "general": {
-   "elem_beam": "POU_D_TG",
-   "beam_warping": "free"
+   "beam_warping": "free",
+   "elem_beam": "POU_D_TG"
   }
  },
  "LS-90c": {
@@ -42911,7 +42911,7 @@
   "series": null,
   "h": null,
   "note": "Zonder het veld strain: de bridge vraagt EPSI_ELNO van de schalen zelf aan voor de hoofdrekken. Mecway 34 headless op hetzelfde model (MITC4): op x = L/2 de dominante hoofdwaarden binnen 0,05% van de bridge (DKT); tresca en de waarden ~0 tot 1% van het maximum (dwarsschuif boven/onder bij MITC4, niet bij DKT).",
-  "seconds": 2.7,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -44636,8 +44636,8 @@
   "n_nodes": 203,
   "n_elem": 40,
   "settings": {
-   "schema": "NEWMARK",
    "deformation": "PETIT",
+   "schema": "NEWMARK",
    "substeps_per_output": 1
   },
   "general": {}
@@ -44686,8 +44686,8 @@
   "n_nodes": 23,
   "n_elem": 4,
   "settings": {
-   "schema": "NEWMARK",
    "deformation": "PETIT",
+   "schema": "NEWMARK",
    "substeps_per_output": 1
   },
   "general": {}
@@ -44722,8 +44722,8 @@
   "n_nodes": 165,
   "n_elem": 40,
   "settings": {
-   "schema": "NEWMARK",
    "deformation": "PETIT",
+   "schema": "NEWMARK",
    "substeps_per_output": 1
   },
   "general": {}
@@ -44801,8 +44801,8 @@
   "n_elem": 12,
   "settings": {
    "adapt_homard": true,
-   "adapt_homard_target": 0.15,
-   "adapt_homard_max_loops": 10
+   "adapt_homard_max_loops": 10,
+   "adapt_homard_target": 0.15
   },
   "general": {}
  },
@@ -44851,8 +44851,8 @@
   "n_elem": 12,
   "settings": {
    "adapt_homard": true,
-   "adapt_homard_target": 0.15,
-   "adapt_homard_max_loops": 10
+   "adapt_homard_max_loops": 10,
+   "adapt_homard_target": 0.15
   },
   "general": {}
  },
@@ -44957,8 +44957,8 @@
   "n_elem": 12,
   "settings": {
    "adapt_homard": true,
-   "adapt_homard_target": 0.4,
-   "adapt_homard_max_loops": 10
+   "adapt_homard_max_loops": 10,
+   "adapt_homard_target": 0.4
   },
   "general": {}
  },
@@ -46320,7 +46320,7 @@
   "series": null,
   "h": null,
   "note": "tri3: Code-Aster integreert de massa met 1 punt, Mecway exact (consistent): de bridge ligt hoger (KNOWN_BUGS 130).",
-  "seconds": 2.9,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -47192,7 +47192,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 2.8,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -47658,7 +47658,7 @@
   "series": null,
   "h": null,
   "note": "Mecway gebruikt bij een veer altijd de length adjustment, ook met force=\"true\"; de bridge zet die om in twee knoopkrachten k d naar elkaar toe.",
-  "seconds": 2.7,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -47814,8 +47814,8 @@
   "n_nodes": 11,
   "n_elem": 10,
   "settings": {
-   "schema": "NEWMARK",
-   "deformation": "PETIT"
+   "deformation": "PETIT",
+   "schema": "NEWMARK"
   },
   "general": {}
  },
@@ -47863,8 +47863,8 @@
   "n_nodes": 11,
   "n_elem": 10,
   "settings": {
-   "schema": "NEWMARK",
-   "deformation": "PETIT"
+   "deformation": "PETIT",
+   "schema": "NEWMARK"
   },
   "general": {}
  },
@@ -49604,7 +49604,7 @@
   "series": null,
   "h": null,
   "note": "Field stresses; lam* = R sigma R^T, at the interface the mean of the element-node values.",
-  "seconds": 2.7,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -53946,7 +53946,7 @@
   "series": null,
   "h": null,
   "note": "MECA_STATIQUE as the stress state gives 1.60.",
-  "seconds": 2.9,
+  "seconds": 2.5,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -53980,7 +53980,7 @@
   "series": null,
   "h": null,
   "note": "Uniform traction on the free end: resultant through the centroid. maxmode 2: the +/- pairs stop CALC_MODES with more modes (ALGELINE5_75).",
-  "seconds": 22.9,
+  "seconds": 34.3,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -54012,7 +54012,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 3.0,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -54046,7 +54046,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 31.6,
+  "seconds": 51.4,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -54078,7 +54078,7 @@
   "series": null,
   "h": null,
   "note": "MECA_STATIQUE as the stress state gives -21.4, 109.6 and 232.4 Hz.",
-  "seconds": 3.0,
+  "seconds": 2.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -54140,7 +54140,7 @@
   "series": null,
   "h": null,
   "note": "",
-  "seconds": 20.2,
+  "seconds": 32.6,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -56096,8 +56096,8 @@
   "n_nodes": 404,
   "n_elem": 100,
   "settings": {
-   "schema": "TCHAMWA",
-   "deformation": "PETIT"
+   "deformation": "PETIT",
+   "schema": "TCHAMWA"
   },
   "general": {}
  },
@@ -56131,8 +56131,8 @@
   "n_nodes": 404,
   "n_elem": 100,
   "settings": {
-   "schema": "TCHAMWA",
-   "deformation": "PETIT"
+   "deformation": "PETIT",
+   "schema": "TCHAMWA"
   },
   "general": {}
  },
@@ -56782,7 +56782,7 @@
   "series": null,
   "h": null,
   "note": "De buis van PL-24 als T31: binnen 393 K, buiten 293 K, 10 stappen van 2000 s, theta 1, Thermal stress 293 K, einden axiaal vast.",
-  "seconds": 2.8,
+  "seconds": 2.7,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -58632,7 +58632,7 @@
   "series": null,
   "h": null,
   "note": "KNOWN_BUGS 120: zonder de correctie was de amplitude F/A / sqrt(1 + eta^2) = 0,894 F/A, het reele deel 0,8 F/A.",
-  "seconds": 2.9,
+  "seconds": 2.6,
   "diagnostic": "<A>_ALARM",
   "errors": [],
   "checks": [
@@ -58710,13 +58710,13 @@
   "n_nodes": 44,
   "n_elem": 10,
   "settings": {
-   "harm_freq_list": "1, 3, 800",
    "fields": [
     "displacements",
     "stresses",
     "vonmises"
    ],
    "harm_basis": "PHYS",
+   "harm_freq_list": "1, 3, 800",
    "loss_factor": 0.5
   },
   "general": {}
@@ -58807,12 +58807,12 @@
   "n_nodes": 44,
   "n_elem": 10,
   "settings": {
-   "harm_freq_list": "1, 3, 800",
    "fields": [
     "displacements",
     "stresses",
     "vonmises"
    ],
+   "harm_freq_list": "1, 3, 800",
    "loss_factor": 0.5
   },
   "general": {}
@@ -58931,13 +58931,13 @@
   "n_nodes": 44,
   "n_elem": 10,
   "settings": {
-   "harm_freq_list": "1, 3, 800",
    "fields": [
     "displacements",
     "stresses",
     "vonmises"
    ],
-   "harm_basis": "PHYS"
+   "harm_basis": "PHYS",
+   "harm_freq_list": "1, 3, 800"
   },
   "general": {}
  },
@@ -59367,6 +59367,1996 @@
   "n_nodes": 7,
   "n_elem": 6,
   "settings": {},
+  "general": {}
+ },
+ "PL-70": {
+  "id": "PL-70",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01959.",
+  "seconds": 5.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 2472.3569020988016,
+    "ref": 2446.183953033268,
+    "rel": 0.010699501577990066,
+    "dev": 26.17294906553343,
+    "ok": false,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (dikte 1 mm)",
+    "in_series": false,
+    "known": "KNOWN_BUGS 144"
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.1855236317603372,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.1855236317603372,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "C_PLAN GDEF_LOG: reactie / exact t = 0.2 s (KNOWN_BUGS 144)",
+    "fem": 1.0037530311100946,
+    "ref": 1.0039920318408906,
+    "rel": -0.00023805042591597438,
+    "dev": -0.0002390007307959685,
+    "ok": true,
+    "unit": "",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "gemeten afwijking ~ sqrt(1 + u/L): de dikte volgt de grote rek niet (oorzaak NIET geverifieerd)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "C_PLAN GDEF_LOG: reactie / exact t = 0.4 s (KNOWN_BUGS 144)",
+    "fem": 1.0077283060958016,
+    "ref": 1.0079682534683323,
+    "rel": -0.00023805052560446055,
+    "dev": -0.0002399473725307466,
+    "ok": true,
+    "unit": "",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "gemeten afwijking ~ sqrt(1 + u/L): de dikte volgt de grote rek niet (oorzaak NIET geverifieerd)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "PL-70p": {
+  "id": "PL-70p",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01981, PETIT.",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 2500.0000017470984,
+    "ref": 2500.0,
+    "rel": 6.988393579376861e-10,
+    "dev": 1.7470983948442154e-06,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (dikte 1 mm)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.21892753436499995,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.21892753436499995,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "PL-70r": {
+  "id": "PL-70r",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01959, PETIT_REAC.",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 2473.5753677785915,
+    "ref": 2446.183953033268,
+    "rel": 0.011197610347888184,
+    "dev": 27.391414745323345,
+    "ok": false,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (dikte 1 mm)",
+    "in_series": false,
+    "known": "KNOWN_BUGS 144"
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.20195954816012116,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.20195954816012116,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "C_PLAN PETIT_REAC: reactie / exact t = 0.2 s (KNOWN_BUGS 144)",
+    "fem": 1.0042375019834822,
+    "ref": 1.0039920318408906,
+    "rel": 0.00024449411430236965,
+    "dev": 0.00024547014259157507,
+    "ok": true,
+    "unit": "",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "gemeten afwijking ~ sqrt(1 + u/L): de dikte volgt de grote rek niet (oorzaak NIET geverifieerd)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "C_PLAN PETIT_REAC: reactie / exact t = 0.4 s (KNOWN_BUGS 144)",
+    "fem": 1.0082205901608372,
+    "ref": 1.0079682534683323,
+    "rel": 0.0002503419047540808,
+    "dev": 0.0002523366925049064,
+    "ok": true,
+    "unit": "",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "gemeten afwijking ~ sqrt(1 + u/L): de dikte volgt de grote rek niet (oorzaak NIET geverifieerd)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT_REAC"
+  },
+  "general": {}
+ },
+ "PL-71": {
+  "id": "PL-71",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.02024.",
+  "seconds": 3.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5,
+    "ref": 0.5,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.5 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.5 s (voor bezwijken)",
+    "fem": 2830.14865834011,
+    "ref": 2830.1483783805174,
+    "rel": 9.892046468510775e-08,
+    "dev": 0.00027995959271720494,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = J2 vlakke rek (dikte 1 mm)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.2469860383338826,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.2469860383338826,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "PL-71p": {
+  "id": "PL-71p",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.02045, PETIT.",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5,
+    "ref": 0.5,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.5 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.5 s (voor bezwijken)",
+    "fem": 2886.7513458515077,
+    "ref": 2886.7513459481324,
+    "rel": -3.347178386249967e-11,
+    "dev": -9.66247171163559e-08,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = J2 vlakke rek (dikte 1 mm)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.29748522274889055,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.29748522274889055,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "PL-71r": {
+  "id": "PL-71r",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, PETIT_REAC)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.02024, PETIT_REAC.",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5,
+    "ref": 0.5,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.5 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.5 s (voor bezwijken)",
+    "fem": 2832.590553729914,
+    "ref": 2830.1483783805174,
+    "rel": 0.0008629142443740336,
+    "dev": 2.4421753493966207,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = J2 vlakke rek (dikte 1 mm)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.2714414467472273,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.2714414467472273,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT_REAC"
+  },
+  "general": {}
+ },
+ "PL-71s": {
+  "id": "PL-71s",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE D_PLAN + #ASTER-BEZWIJKEN, SIMO_MIEHE)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.02024, SIMO_MIEHE.",
+  "seconds": 5.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5,
+    "ref": 0.5,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.5 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.5 s (voor bezwijken)",
+    "fem": 2830.1418477733087,
+    "ref": 2830.1483783805174,
+    "rel": -2.307514071938808e-06,
+    "dev": -0.006530607208787842,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = J2 vlakke rek (dikte 1 mm)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 0.26795994197069045,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.26795994197069045,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 25.000000000000004,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "SIMO_MIEHE"
+  },
+  "general": {}
+ },
+ "PL-72": {
+  "id": "PL-72",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01959.",
+  "seconds": 3.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 1613831.833216928,
+    "ref": 1613831.8425974946,
+    "rel": -5.812604762853516e-09,
+    "dev": -0.009380566654726863,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (x 2 pi: hele ring)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 148.73330577481588,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 148.73330577481588,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 16493.361431346395,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "PL-72c": {
+  "id": "PL-72c",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, verstevigingskromme (VMIS_ISOT_TRAC))",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01959, verstevigingskromme (VMIS_ISOT_TRAC).",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 1613831.833216835,
+    "ref": 1613831.8425974946,
+    "rel": -5.812662327355818e-09,
+    "dev": -0.00938065955415368,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (x 2 pi: hele ring)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 148.73330579315387,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 148.73330579315387,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 16493.361431346395,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "PL-72k": {
+  "id": "PL-72k",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, kinematisch (VMIS_CINE_LINE))",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.0194, kinematisch (VMIS_CINE_LINE).",
+  "seconds": 3.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 1889935.342212612,
+    "ref": 1889935.3514699973,
+    "rel": -4.898254994381117e-09,
+    "dev": -0.009257385274395347,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (x 2 pi: hele ring)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 149.951924259037,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 149.951924259037,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 16493.361431346395,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {},
+  "general": {}
+ },
+ "PL-72p": {
+  "id": "PL-72p",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01981, PETIT.",
+  "seconds": 3.2,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 1649336.1431346312,
+    "ref": 1649336.1431346396,
+    "rel": -5.081985989592826e-15,
+    "dev": -8.381903171539307e-09,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (x 2 pi: hele ring)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 177.30249567577073,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 177.30249567577073,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 16493.361431346395,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "PL-72r": {
+  "id": "PL-72r",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, PETIT_REAC)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01959, PETIT_REAC.",
+  "seconds": 3.2,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 1614658.2894995206,
+    "ref": 1613831.8425974946,
+    "rel": 0.0005121022402778804,
+    "dev": 826.4469020259567,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (x 2 pi: hele ring)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 161.91428504739542,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 161.91428504739542,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 16493.361431346395,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT_REAC"
+  },
+  "general": {}
+ },
+ "PL-72s": {
+  "id": "PL-72s",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken van een element in 2D (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN, SIMO_MIEHE)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook van 5 quad4 (L = 50 mm), ideaal plastisch sigma_y = 250 MPa, verlenging 2 mm in 20 stappen; alleen het middelste element heeft #ASTER-BEZWIJKEN = 0.01959, SIMO_MIEHE.",
+  "seconds": 3.0,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken)",
+    "fem": 1613831.8449447735,
+    "ref": 1613831.8425974946,
+    "rel": 1.4544754988781751e-09,
+    "dev": 0.0023472788743674755,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "F = T_xx A0 / (1 + u/L), T_xx = sigma_y (x 2 pi: hele ring)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken)",
+    "fem": 159.8648231315371,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 159.8648231315371,
+    "ok": true,
+    "unit": "N",
+    "tol": null,
+    "tol_abs": 16493.361431346395,
+    "source": "zacht element in serie: ~0 (factor 1e-6)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "SIMO_MIEHE"
+  },
+  "general": {}
+ },
+ "PL-73": {
+  "id": "PL-73",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken in 2D met kinematische versteviging, afschuiving (L30 + #ASTER-PLANE C_PLAN + #ASTER-BEZWIJKEN)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Rij van 5 quad4, onderrand vast, bovenrand verschoven tot gamma = 0,08 (alle knopen opgelegd), BilinearKinematic sigma_y = 250 MPa, H = 2,1 GPa, PETIT; grens 0.02073.",
+  "seconds": 3.0,
+  "diagnostic": "<A>_ALARM",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5,
+    "ref": 0.5,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.5 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "schuifreactie t = 0.5 s (voor bezwijken)",
+    "fem": -8542.840414610364,
+    "ref": -8542.840414610366,
+    "rel": 2.1292559795860586e-16,
+    "dev": 1.8189894035458565e-12,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "tau = (sigma_y + H p) / sqrt3, gamma = tau / G + sqrt3 p; F = tau L t",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "schuifreactie t = 1 s (na bezwijken: 4/5 van L)",
+    "fem": -7944.68137434425,
+    "ref": -7944.649066651941,
+    "rel": -4.0665977864636595e-06,
+    "dev": -0.03230769230867736,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "'Bros' zacht, de vier andere elementen dragen",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 12,
+  "n_elem": 5,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "PL-74": {
+  "id": "PL-74",
+  "group": "2D en axisymmetrisch",
+  "title": "Bezwijken in 2D, parallel: twee ringen (L30 + #ASTER-PLANE AXIS + #ASTER-BEZWIJKEN)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Binnenring 100 .. 105 mm ('Bros'), buitenring 105 .. 110 mm, elk 5 quad4 over 50 mm, axiaal getrokken tot 2 mm; grens 0.01959.",
+  "seconds": 3.1,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "bezwijkstap (eerste stap met p >= grens)",
+    "fem": 0.5499999999999999,
+    "ref": 0.55,
+    "rel": -2.0185873175002846e-16,
+    "dev": -1.1102230246251565e-16,
+    "ok": true,
+    "unit": "s",
+    "tol": null,
+    "tol_abs": 1e-06,
+    "source": "closed form p(t) bij een uniform veld",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "aantal bezweken op t = 0.55 s",
+    "fem": 0.0,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "failed = 1 pas vanaf de stap na t_fail (contract)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "bezweken = de elementen van 'Bros' (t = 1 s)",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "alleen 'Bros' heeft een grens",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 0.55 s (voor bezwijken, beide ringen)",
+    "fem": 1613831.8332169268,
+    "ref": 1613831.8425974946,
+    "rel": -5.812605484213194e-09,
+    "dev": -0.009380567818880081,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "T = sigma_y, F = T A0 / (1 + u/L) (x 2 pi)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "reactie t = 1 s (na bezwijken, alleen de buitenring)",
+    "fem": 811841.7151644431,
+    "ref": 811829.8323579376,
+    "rel": 1.4637065591725006e-05,
+    "dev": 11.882806505542248,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "de binnenring zacht: sigma_y x de buitenring",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 18,
+  "n_elem": 10,
+  "settings": {},
+  "general": {}
+ },
+ "PL-75": {
+  "id": "PL-75",
+  "group": "2D en axisymmetrisch",
+  "title": "Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE C_PLAN)",
+  "analysis": "ther_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook 50 x 10 mm, quad8 10 x 4, onder 393 K, boven 293 K, einden vast in x; 10 stappen van 10 s (stationair).",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_xx onderrand (heet)",
+    "fem": -252000000.0,
+    "ref": -252000000.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "exact veld bij T lineair in y en u_x = 0 (C_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx bovenrand (koud)",
+    "fem": 1.1781696230173111e-05,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.1781696230173111e-05,
+    "ok": true,
+    "unit": "Pa",
+    "tol": null,
+    "tol_abs": 504000.0,
+    "source": "exact veld bij T lineair in y en u_x = 0 (C_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_yy onderrand",
+    "fem": -2.0554009552142816e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": -2.0554009552142816e-06,
+    "ok": true,
+    "unit": "Pa",
+    "tol": null,
+    "tol_abs": 504000.0,
+    "source": "exact veld bij T lineair in y en u_x = 0 (C_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_y bovenrand",
+    "fem": 7.800000275892671e-06,
+    "ref": 7.8e-06,
+    "rel": 3.5370855299853756e-08,
+    "dev": 2.758926713388593e-13,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "exact veld bij T lineair in y en u_x = 0 (C_PLAN), T gemiddeld dT/2",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "som R_x links (dikte 1 mm)",
+    "fem": 1259.999999999998,
+    "ref": 1260.0,
+    "rel": -1.6240976817373718e-15,
+    "dev": -2.0463630789890885e-12,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "E alpha t int dT dy (factor t in de keten)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "T midden (thermisch deel, stationair)",
+    "fem": 343.0,
+    "ref": 343.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "K",
+    "tol": null,
+    "tol_abs": 0.1,
+    "source": "lineair profiel",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 149,
+  "n_elem": 40,
+  "settings": {
+   "theta": 1.0
+  },
+  "general": {}
+ },
+ "PL-76": {
+  "id": "PL-76",
+  "group": "2D en axisymmetrisch",
+  "title": "Thermomechanische keten in 2D, strook met lineaire temperatuur (T31 + Thermal stress + **ASTER-PLANE D_PLAN)",
+  "analysis": "ther_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook 50 x 10 mm, quad8 10 x 4, onder 393 K, boven 293 K, einden vast in x; 10 stappen van 10 s (stationair).",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_xx onderrand (heet)",
+    "fem": -360000000.0,
+    "ref": -360000000.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "exact veld bij T lineair in y en u_x = 0 (D_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx bovenrand (koud)",
+    "fem": 1.597590744495392e-05,
+    "ref": 0.0,
+    "rel": null,
+    "dev": 1.597590744495392e-05,
+    "ok": true,
+    "unit": "Pa",
+    "tol": null,
+    "tol_abs": 504000.0,
+    "source": "exact veld bij T lineair in y en u_x = 0 (D_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_zz onderrand",
+    "fem": -360000000.0,
+    "ref": -360000000.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "exact veld bij T lineair in y en u_x = 0 (D_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_yy onderrand",
+    "fem": -3.2058310353022534e-06,
+    "ref": 0.0,
+    "rel": null,
+    "dev": -3.2058310353022534e-06,
+    "ok": true,
+    "unit": "Pa",
+    "tol": null,
+    "tol_abs": 504000.0,
+    "source": "exact veld bij T lineair in y en u_x = 0 (D_PLAN)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_y bovenrand",
+    "fem": 1.1142857147206087e-05,
+    "ref": 1.1142857142857145e-05,
+    "rel": 3.902896298608899e-10,
+    "dev": 4.348941589878488e-15,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "exact veld bij T lineair in y en u_x = 0 (D_PLAN), T gemiddeld dT/2",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "som R_x links (dikte 1 mm)",
+    "fem": 1799.999999999998,
+    "ref": 1800.0,
+    "rel": -1.1368683772161603e-15,
+    "dev": -2.0463630789890885e-12,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "E alpha t int dT dy / (1 - nu) (factor t in de keten)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "T midden (thermisch deel, stationair)",
+    "fem": 343.0,
+    "ref": 343.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "K",
+    "tol": null,
+    "tol_abs": 0.1,
+    "source": "lineair profiel",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 149,
+  "n_elem": 40,
+  "settings": {
+   "theta": 1.0
+  },
+  "general": {}
+ },
+ "PL-77": {
+  "id": "PL-77",
+  "group": "2D en axisymmetrisch",
+  "title": "Thermomechanische keten in 2D met druk op een rand (T31 + Thermal stress + **ASTER-PLANE C_PLAN)",
+  "analysis": "ther_3d",
+  "series": null,
+  "h": null,
+  "note": "Als PL-75 met 50 MPa druk op de bovenrand en de onderrand vast in y.",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_yy midden",
+    "fem": -50000000.0,
+    "ref": -50000000.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "PL-75 + uniforme druk p op de bovenrand (vlakke spanning, u_x = 0)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx onderrand (heet)",
+    "fem": -267000000.0,
+    "ref": -267000000.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "PL-75 + uniforme druk p op de bovenrand (vlakke spanning, u_x = 0)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_y bovenrand",
+    "fem": 5.633333330479218e-06,
+    "ref": 5.633333333333333e-06,
+    "rel": -5.066477453708861e-10,
+    "dev": -2.8541156322559914e-15,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "PL-75 + uniforme druk p op de bovenrand (vlakke spanning, u_x = 0)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "som R_y onder (dikte 1 mm)",
+    "fem": 2500.0000762939453,
+    "ref": 2500.0,
+    "rel": 3.0517578125e-08,
+    "dev": 7.62939453125e-05,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "evenwicht p L t (de druk per eenheid dikte, factor t)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "som R_x links (dikte 1 mm)",
+    "fem": 1410.0,
+    "ref": 1410.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "E alpha t int dT dy + nu p W t",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 149,
+  "n_elem": 40,
+  "settings": {
+   "theta": 1.0
+  },
+  "general": {}
+ },
+ "PL-78": {
+  "id": "PL-78",
+  "group": "2D en axisymmetrisch",
+  "title": "Thermomechanische keten met plasticiteit, axisymmetrisch (T31 + Thermal stress + **ASTER-PLANE AXIS)",
+  "analysis": "ther_3d",
+  "series": null,
+  "h": null,
+  "note": "Ring 100 .. 110 mm, quad4 1 x 4, 200 K gelijkmatig verwarmd, einden axiaal vast; bilineair sigma_y = 250 MPa, H = 2,1 GPa.",
+  "seconds": 2.7,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "axiale spanning",
+    "fem": -252514848.0,
+    "ref": -252514851.48514852,
+    "rel": 1.3801756604730036e-08,
+    "dev": 3.4851485192775726,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "eenassig, bilineair isotroop: sigma = sigma_y + H p, p = (E alpha dT - sigma_y) / (E + H)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "equivalentplasticstrain",
+    "fem": 0.0011975483503192663,
+    "ref": 0.0011975483262611976,
+    "rel": 2.0089434522753088e-08,
+    "dev": 2.4058068688256884e-11,
+    "ok": true,
+    "unit": "",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig, bilineair isotroop: sigma = sigma_y + H p, p = (E alpha dT - sigma_y) / (E + H)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_r buitenwand",
+    "fem": 0.00036954606184735894,
+    "ref": 0.00036954606317774635,
+    "rel": -3.600058392457468e-09,
+    "dev": -1.3303874061426635e-12,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eps_theta = alpha dT + nu |sigma| / E + p / 2 (vrij radiaal)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "som reactie (360 graden)",
+    "fem": 1665927.5,
+    "ref": 1665927.4849309246,
+    "rel": 9.045456978607105e-09,
+    "dev": 0.015069075394421816,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.003,
+    "tol_abs": null,
+    "source": "sigma A (A = pi (b^2 - a^2) of W t)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 10,
+  "n_elem": 4,
+  "settings": {
+   "theta": 1.0
+  },
+  "general": {}
+ },
+ "PL-79": {
+  "id": "PL-79",
+  "group": "2D en axisymmetrisch",
+  "title": "Thermomechanische keten met plasticiteit in vlakke spanning (T31 + Thermal stress + **ASTER-PLANE C_PLAN)",
+  "analysis": "ther_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook 50 x 10 mm, quad4 10 x 1, 200 K gelijkmatig verwarmd, einden vast in x; bilineair als PL-78.",
+  "seconds": 2.8,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "sigma_xx",
+    "fem": -252514672.0,
+    "ref": -252514851.48514852,
+    "rel": 7.107904642584314e-07,
+    "dev": 179.48514851927757,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "eenassig, bilineair isotroop: sigma = sigma_y + H p, p = (E alpha dT - sigma_y) / (E + H)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "equivalentplasticstrain",
+    "fem": 0.0011975483503192663,
+    "ref": 0.0011975483262611976,
+    "rel": 2.0089434522753088e-08,
+    "dev": 2.4058068688256884e-11,
+    "ok": true,
+    "unit": "",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eenassig, bilineair isotroop: sigma = sigma_y + H p, p = (E alpha dT - sigma_y) / (E + H)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_y bovenrand",
+    "fem": 3.359510446898639e-05,
+    "ref": 3.35950966525224e-05,
+    "rel": 2.3266681074714622e-07,
+    "dev": 7.816463994884514e-12,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.005,
+    "tol_abs": null,
+    "source": "eps_yy = alpha dT + nu |sigma| / E + p / 2",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "som reactie (dikte 1 mm)",
+    "fem": 2525.148681640625,
+    "ref": 2525.1485148514853,
+    "rel": 6.605121985140696e-08,
+    "dev": 0.00016678913971190923,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.003,
+    "tol_abs": null,
+    "source": "sigma A (A = pi (b^2 - a^2) of W t)",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 22,
+  "n_elem": 10,
+  "settings": {
+   "theta": 1.0
+  },
+  "general": {}
+ },
+ "PL-80": {
+  "id": "PL-80",
+  "group": "2D en axisymmetrisch",
+  "title": "Thermomechanische keten in vlakke rek met warmtestroom en kracht (T31 + Thermal stress + **ASTER-PLANE D_PLAN)",
+  "analysis": "ther_3d",
+  "series": null,
+  "h": null,
+  "note": "Strook 50 x 10 mm, dikte 2 mm, quad8 10 x 4: 50 W op de onderrand, 293 K boven, 2000 N op de bovenrand; onderrand vast in y, einden in x.",
+  "seconds": 5.6,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "T onderrand (warmtestroom in W)",
+    "fem": 392.99993896484375,
+    "ref": 393.0,
+    "rel": -1.553057410941476e-07,
+    "dev": -6.103515625e-05,
+    "ok": true,
+    "unit": "K",
+    "tol": null,
+    "tol_abs": 0.1,
+    "source": "T0 + Q W / (k L t): de stroom per lengte x dikte",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "warmteflux q_y",
+    "fem": 499999.71875,
+    "ref": 500000.0,
+    "rel": -5.625e-07,
+    "dev": -0.28125,
+    "ok": true,
+    "unit": "W/m2",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "q = Q / (L t)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_yy midden (kracht in N)",
+    "fem": -20000000.0,
+    "ref": -20000000.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "-F / (L t)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_xx onderrand",
+    "fem": -368571232.0,
+    "ref": -368571428.5714286,
+    "rel": 5.333333334026411e-07,
+    "dev": 196.57142859697342,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "D_PLAN, q = Q / (L t), sigma_yy = -F / (L t), eps_xx = eps_zz = 0",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "sigma_zz onderrand",
+    "fem": -368571232.0,
+    "ref": -368571428.5714286,
+    "rel": 5.333333334026411e-07,
+    "dev": 196.57142859697342,
+    "ok": true,
+    "unit": "Pa",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "D_PLAN, q = Q / (L t), sigma_yy = -F / (L t), eps_xx = eps_zz = 0",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_y bovenrand",
+    "fem": 1.0435366675665136e-05,
+    "ref": 1.0435374149659865e-05,
+    "rel": -7.162172262843739e-07,
+    "dev": -7.473994728709045e-12,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "D_PLAN, q = Q / (L t), sigma_yy = -F / (L t), eps_xx = eps_zz = 0",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "som R_y onder (dikte 2 mm)",
+    "fem": 1999.9999237060547,
+    "ref": 2000.0,
+    "rel": -3.814697265625e-08,
+    "dev": -7.62939453125e-05,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "evenwicht: F (de kracht / t in Code-Aster, reactie x t)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "som R_x links (dikte 2 mm)",
+    "fem": 3771.42618227005,
+    "ref": 3771.428571428572,
+    "rel": -6.334890020360199e-07,
+    "dev": -0.0023891585219644185,
+    "ok": true,
+    "unit": "N",
+    "tol": 0.002,
+    "tol_abs": null,
+    "source": "-sigma_xx gemiddeld x W t",
+    "in_series": false,
+    "known": null
+   }
+  ],
+  "n_nodes": 149,
+  "n_elem": 40,
+  "settings": {
+   "theta": 1.0
+  },
   "general": {}
  }
 }

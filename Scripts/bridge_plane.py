@@ -657,23 +657,28 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
     set up as route A: AXIS cells, model_data["plane"] with factor 2 pi,
     result route liml, the 2D refusals of _NOT_VERIFIED and contact.
     C_PLAN/D_PLAN: the plane shells are a 2D thermal model ('PLAN') already
-    without the line (INFO). Refused in AXIS (NOT verified): welding
-    (filler material uses 3D_DIAG), metallurgy and bonded contact."""
-    if switch != "AXIS" and model_data.get("thermo_mech"):
-        # The chain would run its mechanical part as shells (NOT verified)
-        return _fatal(
-            "Thermal stress (thermisch -> mechanische keten) met '#ASTER-PLANE "
-            "{0}' in {1} wordt (nog) niet vertaald; alleen AXIS.",
-            "Thermal stress (thermal -> mechanical chain) with '#ASTER-PLANE "
-            "{0}' in {1} is not translated (yet); only AXIS.", switch, atype)
-    if switch != "AXIS":
+    without the line (INFO); with the chain the mechanical part is
+    C_PLAN/D_PLAN with the shell thickness as the factor (_plane_chain).
+    Refused in AXIS (NOT verified): welding (filler material uses 3D_DIAG),
+    metallurgy and bonded contact."""
+    custom = model_data.get("aster_custom") or {}
+    chain = bool(model_data.get("thermo_mech"))
+    if switch != "AXIS" and not chain:
         log("INFO: '#ASTER-PLANE {0}' in {1}: thermal plane shells are a 2D "
             "model ('PLAN') already; the line is not needed.".format(
                 switch, atype))
         return True
-    custom = model_data.get("aster_custom") or {}
-    chain = bool(model_data.get("thermo_mech"))
     if chain and CONFIG_BRIDGE.get("result_route", "liml") != "liml":
+        if switch != "AXIS":
+            return _fatal(
+                "Een 2D thermomechanische keten ({0}, '#ASTER-PLANE {1}') "
+                "werkt alleen met de resultaatroute 'liml' (pagina Algemeen); "
+                "de route 'tabel' schaalt de reactiekrachten niet naar de "
+                "dikte.",
+                "A 2D thermomechanical chain ({0}, '#ASTER-PLANE {1}') only "
+                "works with the result route 'liml' (General page); the route "
+                "'tabel' does not scale the reaction forces to the "
+                "thickness.", atype, switch)
         return _fatal(
             "Een axisymmetrische thermomechanische keten ({0}) werkt alleen "
             "met de resultaatroute 'liml' (pagina Algemeen); de route 'tabel' "
@@ -684,11 +689,19 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
     blocked = (_NOT_VERIFIED + _CONTACT) if chain else ()
     for key, what in blocked:
         if model_data.get(key):
+            if switch != "AXIS":
+                return _fatal(
+                    "{0} in een 2D thermomechanische keten ({1}, "
+                    "'#ASTER-PLANE {2}') wordt (nog) niet vertaald.",
+                    "{0} in a 2D thermomechanical chain ({1}, '#ASTER-PLANE "
+                    "{2}') is not translated (yet).", what, atype, switch)
             return _fatal(
                 "{0} in een axisymmetrische thermomechanische keten ({1}) "
                 "wordt (nog) niet vertaald.",
                 "{0} in an axisymmetric thermomechanical chain ({1}) is not "
                 "translated (yet).", what, atype)
+    if switch != "AXIS":
+        return _plane_chain(model_data, elset_shapes, atype, switch, custom)
     for present, what in (
             (custom.get("welding"), "#ASTER-LASBRON"),
             (custom.get("metallurgy"), "#ASTER-METALLURGIE"),
@@ -741,6 +754,95 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
     log("INFO: {0} with '#ASTER-PLANE AXIS': thermal MODELISATION='AXIS' "
         "about Y (per radian in Code-Aster, 360 degrees in Mecway).".format(
             atype))
+    return True
+
+
+def _plane_chain(model_data, elset_shapes, atype, switch, custom):
+    """The thermal -> mechanical chain (T31 with Thermal stress) with
+    '**ASTER-PLANE C_PLAN|D_PLAN': the thermal part stays 'PLAN'
+    (bridge_thermal, the shell thickness from model_data["plane"]), the
+    mechanical part (bridge_thermomech) gets MODELISATION C_PLAN or D_PLAN
+    and the 2D load translation with the factor t, as route A (apply).
+    One thickness and plane elements only; welding, metallurgy and bonded
+    contact refused as in AXIS (NOT verified; bonded contact already in
+    _NOT_VERIFIED, _apply_thermal). False after an ERROR."""
+    for present, what in (
+            (custom.get("welding"), "#ASTER-LASBRON"),
+            (custom.get("metallurgy"), "#ASTER-METALLURGIE")):
+        if present:
+            return _fatal(
+                "{0} in een 2D thermomechanische keten ({1}, '#ASTER-PLANE "
+                "{2}') wordt (nog) niet vertaald.",
+                "{0} in a 2D thermomechanical chain ({1}, '#ASTER-PLANE "
+                "{2}') is not translated (yet).", what, atype, switch)
+    mods = model_data.get("elset_modelisations", {})
+    thicknesses = OrderedDict()     # thickness -> [elsets]
+    for elset in list(mods):
+        shapes = set(elset_shapes.get(elset, ()))
+        if not shapes:
+            continue
+        if not shapes <= PLANE_SHAPES:
+            return _fatal(
+                "Elset '{0}' bevat {1}; met '#ASTER-PLANE {2}' ({3}) "
+                "vertaalt de bridge alleen vlakke elementen (tri3, tri6, "
+                "quad4, quad8).",
+                "Elset '{0}' contains {1}; with '#ASTER-PLANE {2}' ({3}) "
+                "the bridge only translates plane elements (tri3, tri6, "
+                "quad4, quad8).", elset, ", ".join(sorted(shapes -
+                                                          PLANE_SHAPES)),
+                switch, atype)
+        mat = model_data["elsets"].get(elset)
+        geom = model_data["mat_geometrics"].get(mat) or {}
+        thick = geom.get("thickness") if geom.get("geom_type") == "Plate" \
+            else None
+        if not thick or thick <= 0.0:
+            return _fatal(
+                "Elset '{0}': {2} heeft een dikte nodig; geef "
+                "materiaal '{1}' in Mecway een geometrie Shell/membrane "
+                "met een dikte (ook voor plane strain; zonder dikte rekent "
+                "Mecway zelf ook niet).",
+                "Elset '{0}': {2} needs a thickness; give "
+                "material '{1}' a Shell/membrane geometry with a "
+                "thickness in Mecway (also for plane strain; Mecway "
+                "itself does not solve without one).", elset, mat,
+                "#ASTER-PLANE " + switch)
+        if geom.get("planestrain") and switch != "D_PLAN":
+            log(tr("WARNING: Materiaal '{0}' heeft plane strain, maar "
+                   "#ASTER-PLANE zegt {1}; de bridge volgt de regel.",
+                   "WARNING: Material '{0}' has plane strain, but "
+                   "#ASTER-PLANE says {1}; the bridge follows the "
+                   "line.").format(mat, switch))
+        thicknesses.setdefault(float(thick), []).append(elset)
+    if not thicknesses:
+        return _fatal("Geen vlakke elementen in de 2D-analyse {0}.",
+                      "No plane elements in the 2D analysis {0}.", atype)
+    if len(thicknesses) > 1:
+        return _fatal(
+            "De 2D thermomechanische keten ({0}, '#ASTER-PLANE {1}') heeft "
+            "elsets met verschillende dikte ({2}); de bridge vertaalt een "
+            "model met een enkele dikte.",
+            "The 2D thermomechanical chain ({0}, '#ASTER-PLANE {1}') has "
+            "elsets with different thicknesses ({2}); the bridge translates "
+            "a model with one thickness.", atype, switch,
+            "; ".join("{0} m: {1}".format(t, ", ".join(e))
+                      for t, e in thicknesses.items()))
+    if not _check_nodes(model_data, atype, False):
+        return False
+    t = list(thicknesses)[0]
+    for elset in thicknesses[t]:
+        mods[elset] = switch
+        model_data["elset_dims"][elset] = "2D"
+        for key in ("shell_sections", "shell_upgrades"):
+            model_data.get(key, {}).pop(elset, None)
+        log("INFO: Elset '{0}' -> MODELISATION='{1}', thickness {2} m "
+            "(mechanical part of the chain; thermal 'PLAN').".format(
+                elset, switch, t))
+    model_data["plane"] = {"type": atype, "modelisation": switch,
+                           "thickness": t, "factor": t, "route": "A"}
+    log("INFO: {0}: the mechanical part of the thermomechanical chain as "
+        "MODELISATION='{1}' (concentrated forces / {2:.6g}, reactions x "
+        "{2:.6g}: per unit thickness in Code-Aster, thickness t in "
+        "Mecway).".format(atype, switch, t))
     return True
 
 

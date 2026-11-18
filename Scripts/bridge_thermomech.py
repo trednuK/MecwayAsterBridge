@@ -397,12 +397,19 @@ def _check_reference(tb, model_data, tref):
 
 
 def _check_elements(tb, model_data):
-    """Volume elements only, and every mechanical elset also thermal.
+    """Volume elements only (in 2D: the plane elements of AXIS or of
+    C_PLAN/D_PLAN, bridge_plane), and every mechanical elset also thermal.
     False (ERROR) otherwise."""
     mods = model_data.get("elset_modelisations", {})
-    # AXIS: the chain on an axisymmetric model ('**ASTER-PLANE AXIS', S44d)
-    ok = ("3D", "3D_SI", "AXIS") if model_data.get("thermal_axis") else \
-        ("3D", "3D_SI")
+    # AXIS: the chain on an axisymmetric model ('**ASTER-PLANE AXIS', S44d);
+    # C_PLAN/D_PLAN: '**ASTER-PLANE C_PLAN|D_PLAN' (bridge_plane._plane_chain)
+    plane = (model_data.get("plane") or {}).get("modelisation")
+    if model_data.get("thermal_axis"):
+        ok = ("3D", "3D_SI", "AXIS")
+    elif plane in ("C_PLAN", "D_PLAN"):
+        ok = (plane,)
+    else:
+        ok = ("3D", "3D_SI")
     other = sorted(e for e, m in mods.items() if m not in ok)
     if other or model_data.get("poi1_groups") or model_data.get("discretes"):
         log(tr("ERROR: Thermomechanisch (Thermal stress in een thermisch "
@@ -852,6 +859,33 @@ def _birth_solve(birth, concepts, entries, varc, call, with_plastic,
             **call)
 
 
+def _warn_failure_limits(model_data):
+    """The chain has no failure loop (bridge_failure runs in STAT_NON_LINE
+    and DYNA_NON_LINE only): a failure limit (#ASTER-BEZWIJKEN, PLAS_TAB
+    Eps_p_max) of a material of the mechanical part gives a WARNING and an
+    entry in skipped_loads instead of being dropped without a word."""
+    custom = model_data.get("aster_custom", {}).get("failure", {})
+    mods = model_data.get("elset_modelisations", {})
+    mats = []
+    for elset, mat in model_data.get("elsets", {}).items():
+        if elset in mods and mat not in mats and bridge_failure._criterion(
+                mat, model_data.get("materials", {}).get(mat, {}), custom,
+                0.0)[0] is not None:
+            mats.append(mat)
+    if not mats:
+        return
+    log(tr("WARNING: Bezwijkgrenzen in het model ({0}), maar de "
+           "thermomechanische keten (Thermal stress in T31) heeft geen "
+           "bezwijklus: elementen bezwijken niet.",
+           "WARNING: Failure limits in the model ({0}), but the "
+           "thermomechanical chain (Thermal stress in T31) has no failure "
+           "loop: elements do not fail.").format(", ".join(mats)))
+    model_data.setdefault("skipped_loads", []).append(
+        tr("bezwijken van {0} (thermomechanische keten)",
+           "failure of {0} (thermomechanical chain)").format(
+               ", ".join(mats)))
+
+
 def build_blocks(tb, model_data, analysis):
     """
     The mechanical blocks for TEMPLATE (dict placeholder -> text), or
@@ -867,6 +901,7 @@ def build_blocks(tb, model_data, analysis):
         return None
     if not _check_elements(tb, model_data):
         return None
+    _warn_failure_limits(model_data)
     tref = _tref(model_data)
     _check_reference(tb, model_data, tref)
     specs = parse_materials(model_data.get("aster_custom", {}).get(

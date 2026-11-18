@@ -746,6 +746,12 @@ class _Thermal(object):
             if dim == "2D":
                 t = md.get("shell_sections", {}).get(elset, {}).get(
                     "thickness")
+                if not t and md.get("elset_modelisations", {}).get(
+                        elset) in ("C_PLAN", "D_PLAN"):
+                    # The chain with '**ASTER-PLANE C_PLAN|D_PLAN'
+                    # (bridge_plane._plane_chain): the shell data went to
+                    # the mechanical route; one thickness for the model
+                    t = (md.get("plane") or {}).get("thickness")
                 zs = [_dot(zrow, self.nodes[n])
                       for _e, _a, cn in elems for n in cn]
                 if not t:

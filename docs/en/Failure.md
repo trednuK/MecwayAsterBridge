@@ -41,8 +41,11 @@ Conditions:
   (BilinearKinematic or a linear kinematic curve) with a *tangent modulus* > 0;
 - the elements are **solid elements** (hex, tet, wedge, pyr; also with the hex8
   choice `LINE_QUAD`) or **shells** (tri3/quad4 as DKT; quadratic or with linear
-  shells = `COQUE_3D` as `COQUE_3D`); **no beams** and no 2D elements
-  (`C_PLAN`, `D_PLAN`, `AXIS`);
+  shells = `COQUE_3D` as `COQUE_3D`); **no beams**. Plane elements (`C_PLAN`, `D_PLAN`,
+  `AXIS`) only in route A: *Nonlinear Static* (L30) with `**ASTER-PLANE`, without contact
+  ([`2D_and_axisymmetric.md`](2D_and_axisymmetric.md) §1.4; `C_PLAN` with large strains:
+  KNOWN_BUGS 144); not in Mecway's 2D types and not in the thermomechanical chain (T31
+  with *Thermal stress*): a WARNING, the elements do not fail;
 - the model has no beams with large rotations (`elem_beam` = `POU_D_T_GD`): after a
   failed element the next step needs `RIGI_MECA`, which that element does not have
   (`CALCUL_37`); the bridge stops beforehand with an ERROR;
