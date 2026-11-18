@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Mecway 36: route `tabel` and *Show section* without saving the model.** With Mecway's
+  new `mw.liml_text()` the bridge reads the open model itself: route `tabel` no longer saves
+  the `.liml` before a run (it reads a copy, `<model>_<run-id>_model.liml` in the work folder,
+  which the Code-Aster job reads too, e.g. for fatigue), and *Show section* no longer saves
+  it either. Route `liml` still saves first (the results go into the `.liml`). Unsaved
+  changes stay unsaved: save the model yourself before a long run in route `tabel`. Older
+  Mecway versions (no `mw.liml_text()`) behave as before. Verified headless in Mecway 36,
+  not yet in the Mecway window.
+
 - **CCX keyword modifications** (Mecway's *CCX keyword*, e.g. `ADJUST` on `*CONTACT PAIR`)
   are CalculiX input: the bridge now reports them, a WARNING per active modification and one
   line in the list of items not translated (KNOWN_BUGS 4), also for harmless ones such as

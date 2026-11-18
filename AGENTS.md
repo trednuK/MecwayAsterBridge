@@ -37,6 +37,11 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   locally possibly `API_reference Mecway.txt`, copyright Mecway Ltd, not in the repo). There is no API to
   read loads/constraints, so take BCs, materials and selections from the
   `.liml` XML (`bridge_from_liml.py`). Code-Aster: v17.4.
+- `mw.liml_text()` (Mecway 36) only through `bridge_liml_text.py` (`hasattr`, 2.7 and 3; test:
+  `python tests/test_bridge_liml_text.py`): route `tabel` reads a model-only copy
+  `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job), *Show
+  section* a temporary one. Equal to what `mw.save_as` writes minus `<solution>` (measured); every
+  caller falls back to saving when it returns None.
 
 ## Branches and files
 
