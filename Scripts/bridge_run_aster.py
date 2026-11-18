@@ -118,6 +118,22 @@ _ALARM_HINTS = {
         u"a node (a corner, a junction, a point load or support on the beam) "
         u"the node value is an average (not measured): use route liml "
         u"there."),
+    # Nodes projected onto distant cells (PROJ_CHAMP, LIAISON_MAIL); the
+    # alarm fires beyond 1/10 of the cell size (text of 17.4), so also for a
+    # correct shell/solid tie at half the shell thickness. A real gap of a
+    # bonded contact gets its own WARNING (bridge_mesh._bonded_gap_warning,
+    # KNOWN_BUGS 146; seen with Code-Aster 17.4, 18 Nov 2026).
+    "CALCULEL5_48": (
+        u"knopen zijn op cellen op afstand geprojecteerd. Bij verlijmd "
+        u"contact met een schaal is dat normaal op de halve schaaldikte "
+        u"(de bridge koppelt het middenvlak); een echte spleet krijgt een "
+        u"eigen WARNING van de bridge in het log (KNOWN_BUGS 146). Bij "
+        u"andere projecties: controleer of de meshes elkaar overlappen.",
+        u"nodes were projected onto cells at a distance. With a bonded "
+        u"contact on a shell that is normal at half the shell thickness "
+        u"(the bridge ties the mid-surface); a real gap gets its own "
+        u"WARNING from the bridge in the log (KNOWN_BUGS 146). With other "
+        u"projections: check that the meshes overlap."),
     "MODELISA8_13": (
         u"zie MODELISA4_8 (dubbele cellen).",
         u"see MODELISA4_8 (duplicate cells)."),

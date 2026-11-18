@@ -376,11 +376,120 @@ def test_bonded_offset():
         bridge_mesh.log = saved
 
 
+def test_bonded_gap():
+    """KNOWN_BUGS 146: WARNING for tied slave nodes farther from the master
+    than the shell offset plus the tolerance; none within it. Cases:
+    stacked plates at (t1 + t2)/2, a solid at t/2 and at 0 from a shell, a
+    shell edge on a shell face (expected t_m/2, node at the mid-surface),
+    solid on solid with a gap; skipped with an Element offset or a shell
+    without a thickness."""
+    import bridge_mesh as bm
+    saved = bm.log
+    bm.log = _log
+    try:
+        t1, t2, tol = 0.002, 0.004, 1e-4
+        for name, dist, expected, warn in (
+                ("plates stacked", 0.5 * (t1 + t2), 0.5 * (t1 + t2), False),
+                ("solid on shell surface", 0.5 * t1, 0.5 * t1, False),
+                ("solid on mid-surface", 0.0, 0.5 * t1, False),
+                ("shell edge on face", 0.0, 0.5 * t1, False),
+                ("solid on solid touching", 0.5 * tol, 0.0, False),
+                ("solid on solid, gap", 0.002, 0.0, True),
+                ("solid above shell, gap", 0.002, 0.5 * t1, True)):
+            del LOG[:]
+            got = bm._bonded_gap_warning("c", {1: 0.0, 2: dist}, expected,
+                                         tol)
+            warn_lines = _warnings()
+            check(got == warn and len(warn_lines) == (1 if warn else 0),
+                  "bonded gap '{0}': warned {1}, {2}".format(
+                      name, got, warn_lines))
+            if warn:
+                check("1 van de 2" in warn_lines[0] and
+                      "KNOWN_BUGS 146" in warn_lines[0] and
+                      ("%.3g" % dist) in warn_lines[0],
+                      "bonded gap text: {0}".format(warn_lines[0]))
+        # expected offset from the shell sections; skip conditions
+        md = {"shell_sections": {"P": {"thickness": t1}},
+              "_elem_elset": {1: "P", 2: "Q"}}
+        face = [{"kind": "shellface", "eid": 1}]
+        check(bm._bonded_expected_offset(md, face, set(["shellface"]))
+              == 0.5 * t1, "expected offset t/2")
+        check(bm._bonded_expected_offset(md, [{"kind": "shellface",
+                                               "eid": 2}],
+                                         set(["shellface"])) is None,
+              "no thickness: None")
+        check(bm._bonded_expected_offset(md, face, set(["solid"])) == 0.0,
+              "solid: 0")
+        del LOG[:]
+        check(not bm._check_bonded_gap(
+            md, "c", {"M": [{"kind": "shellface", "eid": 2}]}, "M", "S",
+            set(["shellface"]), set(["solid"]), [], {1: 1.0}, False) and
+            not _warnings() and any("without a thickness" in m for m in LOG),
+            "shell without a thickness: INFO, no WARNING")
+        del LOG[:]
+        bm._bonded_gap_warning("c", {1: 0.01}, 0.0, 1e-4, stiffer=False)
+        check(_warnings() and "kan afwijken" in _warnings()[0],
+              "shell on shell gap: 'can deviate'")
+        del LOG[:]
+        md["element_offsets"] = [{"selection": "x"}]
+        check(not bm._check_bonded_gap(md, "c", {}, "M", "S",
+                                       set(["solid"]), set(["solid"]), [],
+                                       {1: 1.0}, False) and
+              not _warnings() and any("Element offset" in m for m in LOG),
+              "Element offset: INFO, no WARNING")
+    finally:
+        bm.log = saved
+
+
+def test_alarm_hint():
+    """CALCULEL5_48 has an explanation in both languages (KNOWN_BUGS 146)."""
+    import bridge_run_aster as bra
+    hint = bra._ALARM_HINTS.get("CALCULEL5_48")
+    check(hint is not None and len(hint) == 2 and
+          all("KNOWN_BUGS 146" in h for h in hint),
+          "CALCULEL5_48 hint: {0!r}".format(hint))
+
+
+def test_ccx_keywords():
+    """KNOWN_BUGS 4: active CCX keyword modifications give a WARNING each
+    and one combined skipped_loads entry; suppressed ones nothing."""
+    import xml.etree.ElementTree as ET
+    import bridge_from_liml as bfl
+    saved = bfl.log
+    bfl.log = _log
+    try:
+        root = ET.fromstring(
+            '<liml><ccxmodifykeyword action="setparameter" keyword="STATIC" '
+            'setparameter="SOLVER" value="PARDISO" omitparameter="" '
+            'suppressed="true" />'
+            '<ccxmodifykeyword action="setparameter" keyword="CONTACT PAIR" '
+            'setparameter="ADJUST" value="0" omitparameter="" />'
+            '<ccxmodifykeyword action="omitparameter" keyword="STEP" '
+            'setparameter="" value="" omitparameter="NLGEOM" /></liml>')
+        md = {"skipped_loads": []}
+        del LOG[:]
+        bfl._report_ccx_keywords(root, md)
+        warn = _warnings()
+        check(len(warn) == 2 and "*CONTACT PAIR: setparameter ADJUST=0"
+              in warn[0] and "*STEP: omitparameter NLGEOM" in warn[1],
+              "ccx keyword WARNINGs: {0}".format(warn))
+        check(len(md["skipped_loads"]) == 1 and
+              "(2," in md["skipped_loads"][0] and
+              "PARDISO" not in md["skipped_loads"][0],
+              "ccx keyword skipped_loads: {0}".format(md["skipped_loads"]))
+        md = {"skipped_loads": []}
+        bfl._report_ccx_keywords(ET.fromstring("<liml />"), md)
+        check(md["skipped_loads"] == [], "no ccx keywords: nothing")
+    finally:
+        bfl.log = saved
+
+
 def main():
     for test in (test_harm_check_model, test_harm_comm, test_harm_report,
                  test_acoustic_density, test_factor57, test_log_errors,
                  test_bonded_offset, test_harm_stress_eta,
-                 test_constraint_constant):
+                 test_constraint_constant, test_bonded_gap, test_alarm_hint,
+                 test_ccx_keywords):
         test()
     if FAILS:
         for f in FAILS:

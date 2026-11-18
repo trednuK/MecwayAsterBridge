@@ -75,7 +75,8 @@ Alle bestanden van een run heten `<model>_<run-id>.*` (zie
    Alarmen (`<A>`) komen niet in die melding, maar als
    `WARNING: Code-Aster-alarm <CODE> in <model>_<run-id>.mess.` in
    `<model>_<run-id>_bridge_log.txt`; voor `ALGELINE5_23`, `ALGELINE3_82`,
-   `ALGELINE2_74`, `MODELISA4_8`/`MODELISA8_13` (dubbele cellen) en, bij complexe modes,
+   `ALGELINE2_74`, `MODELISA4_8`/`MODELISA8_13` (dubbele cellen), `CALCULEL5_48`
+   (knopen op afstand geprojecteerd) en, bij complexe modes,
    `ALGELINE5_79` en `FACTOR_11` met uitleg (`_ALARM_HINTS`):
    `WARNING: Code-Aster-alarm <CODE> in <model>_<run-id>.mess: <uitleg>`. Het convergentie- en meldingenscherm toont fouten en alarmen per
    run, met uitleg bij een pivot nul per soort vrijheidsgraad
@@ -519,6 +520,24 @@ in dat bestand, niet op het model.
 - **Oplossing**: in de bridge (`bridge_mesh._bonded`): master = de volume-elementen naast
   het vlak, slave = de knopen van het vlak (`GROUP_NO_ESCL`).
 - **Status**: opgelost in de bridge.
+
+### `CALCULEL5_48` – knopen op afstand geprojecteerd
+
+- **Melding** (alarm): `LIAISON_MAIL` (of `PROJ_CHAMP`) heeft knopen geprojecteerd op
+  cellen die verder weg liggen dan 1/10 van de celgrootte; de `.mess` noemt de vijf
+  verste knopen.
+- **Oorzaak**: bij verlijmd contact met een schaal is dat normaal: de bridge koppelt het
+  middenvlak van de schaal, op de halve schaaldikte van het verlijmde vlak. Een echte
+  spleet tussen de verlijmde vlakken geeft hetzelfde alarm: CCX (Mecway) schuift de
+  slave-knopen eerst op de master, Code-Aster koppelt ze waar ze liggen, dus de spleet
+  blijft in de geometrie.
+- **Oplossing**: de bridge geeft een eigen WARNING voor knopen die verder van de master
+  liggen dan de halve schaaldikte aan elke schaalkant (`bridge_mesh._bonded_gap_warning`);
+  sluit dan de spleet in het mesh. Zonder die WARNING is het alarm onschuldig, tenzij het
+  log de INFO heeft dat de afstand niet is gecontroleerd (Element offset, schaal zonder
+  dikte).
+- **Status**: uitgelegd in het log (`_ALARM_HINTS`); de spleet zelf wordt niet gesloten
+  (KNOWN_BUGS 146).
 
 ### `CHARGES2_31` – vrijheidsgraad bestaat niet op de knoop
 
@@ -1577,6 +1596,7 @@ twee drukken en balken in het model).
 | `CALCULEL2_92` | [2](#calculel2_92--meer-dan-één-verdeelde-last-op-een-balk) | opgelost in de bridge, op de genoemde gevallen na |
 | `CALCULEL_33` | [7](#calculel_33--result1_39--ander-materiaal-in-calc_champ-thermisch) | opgelost in de bridge (`CALCULEL_33`) / onschuldig (`RESULT1_39`) |
 | `CALCULEL_39` | [11](#calculel_39-result1_40-result1_65--andere-lasten-dan-in-het-resultaat) | opgelost in de bridge |
+| `CALCULEL5_48` | [2](#calculel5_48--knopen-op-afstand-geprojecteerd) | onschuldig / model (spleet, KNOWN_BUGS 146) |
 | `CALCULEL_54` | [2](#mecanonline_3-met-alarm-calculel_54--element-niet-voor-niet-lineair) | opgelost in de bridge |
 | `CALCULEL_58` | [7](#calculel_58--component-ontbreekt) | opgelost in de bridge |
 | `CALCUL_20` | [2](#calcul_20--materiaal-ontbreekt) | opgelost in de bridge (als melding) |

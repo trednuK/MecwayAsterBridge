@@ -787,6 +787,17 @@ penetratie actief. Tolerantie: 1e-6 × de kleinste ribbe (U2.04.04 §4.4.1).
   2026, §6.2.3): begincontact (spleet nul), zwakke veren (elastic support), of eerst
   een stap met opgelegde verplaatsing tot er contact is. In dynamica mag een
   star-lichaambeweging wel.
+- **Verlijmd contact over een spleet.** CCX (Mecway) schuift verlijmde slave-knopen
+  eerst op de master, dus een spleet verdwijnt uit de geometrie. `LIAISON_MAIL` (U4.44.01)
+  koppelt ze waar ze liggen: de spleet blijft en de verbinding kan stijver uitvallen. De
+  bridge geeft een WARNING voor gekoppelde slave-knopen die verder van de master liggen
+  dan de halve schaaldikte aan elke schaalkant (0 voor volumes) plus een tiende van de
+  elementgrootte van de master (hoogstens die halve dikte) en de pijlhoogte van een gebogen
+  master; meestal verschijnt dan ook het Code-Aster-alarm `CALCULEL5_48`. Niet
+  gecontroleerd met een *Element offset* of een schaal zonder dikte (INFO). Sluit de
+  spleet in het mesh (KNOWN_BUGS 146). Mecway's
+  *CCX keyword*-wijzigingen zoals `ADJUST` op `*CONTACT PAIR` veranderen alleen de
+  CalculiX-invoer; de bridge meldt en negeert ze.
 
 ### 3.5 Zones die slave-knopen delen
 

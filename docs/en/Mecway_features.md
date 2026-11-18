@@ -85,6 +85,7 @@ ignored with only an INFO, as Mecway itself does.
 | Contact, Unilateral, on shell edges or beams | No | Reported. |
 | Contact, Bonded *Tie* / *Constraint equations* | Yes | `LIAISON_MAIL` (rigid), see the table below. Also works in linear analyses. Only the slave nodes that Mecway (CCX `*TIE`) ties: with a master face opposite them (in-face tolerance 2.5% of a typical element size) and, solid on solid, within the *Tolerance* of it (0 = that same CCX default; with shells Mecway does not limit the distance); the others stay free, as in Mecway (WARNING with the nodes). Solid on solid measured equal to Mecway 34 (Samples/BoltedJoint with bonded contacts: the same 58 untied nodes as CCX, displacements equal; LS-07l/m); with shells the same untied nodes, but other displacements (KB128). |
 | Contact, Bonded *Elastic* | Partly | Rigidly bonded; the stiffness is not translated (reported, KB21). |
+| Bonded contact across a gap | Partly | CCX first moves the slave nodes onto the master, Code-Aster ties them where they are, so the gap stays: WARNING for nodes farther from the master than half the shell thickness on each shell side (KB146; not checked with an *Element offset*). |
 | Bonded contact in T30/T31 | Yes | *Tie* / *Constraint equations*: `AFFE_CHAR_THER` `LIAISON_MAIL` (also non-conforming and shell on shell). *Elastic*: thermal resistance (*Thermal conductance per unit area*) as `ECHANGE_PAROI` for solid faces that are node-to-node opposite each other, otherwise ideally bonded (reported). Not in a model with solids and shells together (ERROR; shared nodes). [Thermal.md](Thermal.md) sec. 3, verification TH-04. |
 | Bonded contact in acoustics | No | Reported (KB55). |
 
@@ -186,3 +187,4 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | CCX > custom element type (e.g. Hex8 → C3D8R) | No | CalculiX only: WARNING, Code-Aster uses the *Elements* page (hex8 `3D` = C3D8, `LINE_QUAD` = C3D20; C3D8R/C3D8I have no equal). [`Settings_contact_and_nonlinear.md`](Settings_contact_and_nonlinear.md), hyperelastic material. |
 | Configurations | Yes | One per run, chosen on the start screen (*Configuration*); results in the solution of that configuration ([`UserGuide.md`](UserGuide.md) §4, LS-20). |
 | Custom model definition (CCX, OpenRadioss, Nastran) | Partly | Only `#ASTER` lines; ordinary CCX cards are ignored without a message. |
+| CCX keyword modifications (e.g. `ADJUST` on `*CONTACT PAIR`) | No | CalculiX input only: a WARNING per active modification and one line in the list of items not translated (KB4). |

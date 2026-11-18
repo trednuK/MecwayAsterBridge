@@ -77,7 +77,8 @@ All files of a run are named `<model>_<run-id>.*` (see
    Alarms (`<A>`) are not part of that message, but appear as
    `WARNING: Code-Aster alarm <CODE> in <model>_<run-id>.mess.` in
    `<model>_<run-id>_bridge_log.txt`; for `ALGELINE5_23`, `ALGELINE3_82`,
-   `ALGELINE2_74`, `MODELISA4_8`/`MODELISA8_13` (duplicate cells) and, with complex
+   `ALGELINE2_74`, `MODELISA4_8`/`MODELISA8_13` (duplicate cells), `CALCULEL5_48`
+   (nodes projected at a distance) and, with complex
    modes, `ALGELINE5_79` and `FACTOR_11` with an explanation (`_ALARM_HINTS`):
    `WARNING: Code-Aster alarm <CODE> in <model>_<run-id>.mess: <explanation>`. The convergence and messages window shows errors and
    alarms per run, with an explanation for a zero pivot per kind of degree of freedom
@@ -514,6 +515,22 @@ that file, not in the model.
 - **Solution**: in the bridge (`bridge_mesh._bonded`): master = the solid elements next
   to the face, slave = the nodes of the face (`GROUP_NO_ESCL`).
 - **Status**: fixed in the bridge.
+
+### `CALCULEL5_48` – nodes projected at a distance
+
+- **Message** (alarm): `LIAISON_MAIL` (or `PROJ_CHAMP`) projected nodes onto cells
+  farther away than 1/10 of the cell size; the `.mess` lists the five farthest nodes.
+- **Cause**: with bonded contact on a shell this is normal: the bridge ties the shell's
+  mid-surface, half the shell thickness from the bonded face. A real gap between the
+  bonded faces gives the same alarm: CCX (Mecway) first moves the slave nodes onto the
+  master, Code-Aster ties them where they are, so the gap stays in the geometry.
+- **Solution**: the bridge gives a WARNING of its own for nodes farther from the master
+  than half the shell thickness on each shell side (`bridge_mesh._bonded_gap_warning`);
+  then close the gap in the mesh. Without that WARNING the alarm is harmless, unless the
+  log has the INFO that the distance was not checked (Element offset, shell without a
+  thickness).
+- **Status**: explained in the log (`_ALARM_HINTS`); the gap itself is not closed
+  (KNOWN_BUGS 146).
 
 ### `CHARGES2_31` – degree of freedom does not exist on the node
 
@@ -1551,6 +1568,7 @@ and beams in the model).
 | `CALCULEL2_92` | [2](#calculel2_92--more-than-one-distributed-load-on-a-beam) | fixed in the bridge, except for the cases named |
 | `CALCULEL_33` | [7](#calculel_33--result1_39--different-material-in-calc_champ-thermal) | fixed in the bridge (`CALCULEL_33`) / harmless (`RESULT1_39`) |
 | `CALCULEL_39` | [11](#calculel_39-result1_40-result1_65--other-loads-than-in-the-result) | fixed in the bridge |
+| `CALCULEL5_48` | [2](#calculel5_48--nodes-projected-at-a-distance) | harmless / model (gap, KNOWN_BUGS 146) |
 | `CALCULEL_54` | [2](#mecanonline_3-with-alarm-calculel_54--element-not-for-nonlinear-analysis) | fixed in the bridge |
 | `CALCULEL_58` | [7](#calculel_58--component-missing) | fixed in the bridge |
 | `CALCUL_20` | [2](#calcul_20--material-missing) | fixed in the bridge (as a message) |

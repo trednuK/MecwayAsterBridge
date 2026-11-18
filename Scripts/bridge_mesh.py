@@ -3160,11 +3160,14 @@ def ccx_tie_tolloc(tris):
     return 0.025 * total / len(tris)
 
 
-def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance):
+def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance,
+                   distances=None):
     """
     (tied, untied) slave node ids by CCX's rule (gentiedmpc.f, see the
     comment above _CCX_FACE_CORNERS); tris from _ccx_triangles for the
-    master of one tie, tolerance the position tolerance (m).
+    master of one tie, tolerance the position tolerance (m). With a dict
+    as distances: per tied node its distance normal to the master triangle
+    it was tied to (m; _bonded_gap_warning).
     """
     tietol = tolerance if tolerance >= 1.0e-10 else tolloc
     owner = {}
@@ -3242,8 +3245,11 @@ def ccx_tied_nodes(tris, slave_nids, nodes, tolloc, tolerance):
                 old, itri = itri, step
         if found is not None:
             t = tris[found]
-            if abs(_vdot(t[2], p) + t[3]) > tietol:
+            dist = abs(_vdot(t[2], p) + t[3])
+            if dist > tietol:
                 found = None
+            elif distances is not None:
+                distances[s] = dist
         (tied if found is not None else untied).append(s)
     return tied, untied
 
@@ -3327,6 +3333,135 @@ def _warn_bonded_offset(label, m_type, s_type, slave_kinds):
                "is therefore somewhat too flexible (size NOT measured). For "
                "an accurate joint: model the plate at the joint with solid "
                "elements (KNOWN_BUGS 128).").format(label))
+
+
+def bonded_gap_tolerance(tris, expected, nodes=None):
+    """
+    Allowed excess distance of a bonded slave node beyond the expected
+    shell offset (m): a tenth of the mean height of the master triangles
+    (tolloc = 0.025 x mean(h / 3), ccx_tie_tolloc, so 0.1 h = 12 tolloc;
+    the same 1/10 of the cell size as Code-Aster's alarm CALCULEL5_48,
+    text of 17.4), at most the expected offset itself, so that a gap as
+    large as a shell half-thickness still warns on a coarse mesh; plus the
+    sagitta of a curved master (master_sagitta, with nodes).
+    """
+    tol = 12.0 * ccx_tie_tolloc(tris)
+    if expected > 0.0:
+        tol = min(tol, expected)
+    return tol + (master_sagitta(tris, nodes) if nodes else 0.0)
+
+
+def master_sagitta(tris, nodes):
+    """
+    Largest distance (m) a node on the true curved surface can have from
+    the flat master triangles: per pair of triangles sharing an edge, with
+    angle theta between their normals (orientation ignored) and L the
+    longest edge of the two, L theta / 8 (sagitta of a circular arc with
+    chord c and angle phi per element: R phi^2 / 8 = c phi / 8; L >= c, so
+    on the safe side). 0.0 for a flat master.
+    """
+    owner = {}
+    longest = []
+    for k, t in enumerate(tris):
+        ids = t[0]
+        lengths = []
+        for a, b in ((1, 2), (2, 0), (0, 1)):
+            owner.setdefault(frozenset((ids[a], ids[b])), []).append(k)
+            d = _vsub(nodes[ids[a]], nodes[ids[b]])
+            lengths.append(math.sqrt(_vdot(d, d)))
+        longest.append(max(lengths))
+    best = 0.0
+    for ks in owner.values():
+        for i in range(len(ks)):
+            for j in range(i + 1, len(ks)):
+                c = abs(_vdot(tris[ks[i]][2], tris[ks[j]][2]))
+                theta = math.acos(min(1.0, c))
+                best = max(best, max(longest[ks[i]], longest[ks[j]]) *
+                           theta / 8.0)
+    return best
+
+
+def _bonded_gap_warning(label, distances, expected, tol, thermal_only=False,
+                        stiffer=True):
+    """
+    WARNING for tied slave nodes farther from the master than the shell
+    offset (expected: half the thickness of every shell side, 0 for
+    solids) plus tol (KNOWN_BUGS 146). CCX (Mecway) first moves bonded
+    slave nodes onto the master; LIAISON_MAIL (U4.44.01) ties them where
+    they are, so the geometry keeps the gap. distances: {nid: m} from
+    ccx_tied_nodes. stiffer: a solid on a shell (measured stiffer, KNOWN_BUGS
+    146); shell on shell or solid on solid: "can deviate". Returns True if
+    it warned.
+    """
+    far = [d for d in distances.values() if d > expected + tol]
+    if not far:
+        return False
+    # %-formatting: '{0:.3g}' gives a decimal comma in IronPython
+    log(tr("WARNING: {0}: {1} van de {2} gekoppelde slave-knopen liggen tot "
+           "{3} m van de master (verwacht {4} m: de halve schaaldikte aan "
+           "elke schaalkant, 0 voor volumes). Mecway/CCX schuift ze eerst "
+           "op de master; Code-Aster koppelt ze waar ze liggen, dus de "
+           "spleet blijft in de geometrie{5}. Sluit de spleet in het mesh "
+           "(KNOWN_BUGS 146).",
+           "WARNING: {0}: {1} of the {2} tied slave nodes lie up to {3} m "
+           "from the master (expected {4} m: half the shell thickness on "
+           "each shell side, 0 for solids). Mecway/CCX first moves them "
+           "onto the master; Code-Aster ties them where they are, so the "
+           "geometry keeps the gap{5}. Close the gap in the mesh "
+           "(KNOWN_BUGS 146).").format(
+               label, len(far), len(distances), "%.3g" % max(far),
+               "%.3g" % expected,
+               "" if thermal_only else (tr(
+                   " en de verbinding kan stijver uitvallen",
+                   " and the joint can come out stiffer") if stiffer else tr(
+                   " en de verbinding kan afwijken",
+                   " and the joint can deviate"))))
+    return True
+
+
+def _check_bonded_gap(model_data, label, faces, master, slave, mk, sk, tris,
+                      distances, thermal_only):
+    """Gap check of one bonded contact (_bonded_gap_warning); skipped with
+    an INFO when an Element offset moves shells (the mid-surface is then
+    not where the nodes are) or a shell has no thickness. True if it
+    warned."""
+    if not distances:
+        return False
+    if model_data.get("element_offsets"):
+        log("INFO: {0}: distance of the slave nodes not checked (Element "
+            "offset in the model).".format(label))
+        return False
+    exp_m = _bonded_expected_offset(model_data, faces.get(master, []), mk)
+    exp_s = _bonded_expected_offset(model_data, faces.get(slave, []), sk)
+    if exp_m is None or exp_s is None:
+        log("INFO: {0}: distance of the slave nodes not checked (shell "
+            "without a thickness).".format(label))
+        return False
+    expected = exp_m + exp_s
+    return _bonded_gap_warning(
+        label, distances, expected,
+        bonded_gap_tolerance(tris, expected, model_data["mesh_nodes"]),
+        thermal_only, stiffer=(mk == set(["solid"])) != (
+            sk == set(["solid"])))
+
+
+def _bonded_expected_offset(model_data, faces, kinds):
+    """Half the largest shell thickness of the shell-face elements in faces
+    (0.0 for solid faces and shell edges), or None if a shell face has no
+    known thickness."""
+    if "shellface" not in kinds:
+        return 0.0
+    sections = model_data.get("shell_sections", {})
+    elem_elset = model_data.get("_elem_elset", {})
+    t_max = 0.0
+    for f in faces:
+        if f.get("kind") != "shellface":
+            continue
+        t = (sections.get(elem_elset.get(f["eid"])) or {}).get("thickness")
+        if not t:
+            return None
+        t_max = max(t_max, t)
+    return 0.5 * t_max
 
 
 def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
@@ -3430,6 +3565,7 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
     slave_set = set(n for f in faces.get(slave, []) for n in f["nodes"])
     distance = c.get("tolerance", 0.0)
     untied = None
+    gap_warned = False
     if ccx_tris is not None:
         # The slave nodes CCX ties (KNOWN_BUGS 128, ccx_tied_nodes); the
         # others stay free, as in Mecway. The selection replaces
@@ -3443,9 +3579,10 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
         shell = (m_type, s_type) != ("MASSIF", "MASSIF")
         normal_tol = (model_data.get("_ccx_shell_tol", 0.0) if shell
                       else distance)
+        gap_dist = {}
         tied, untied = ccx_tied_nodes(ccx_tris, slave_set,
                                       model_data["mesh_nodes"], tolloc,
-                                      normal_tol)
+                                      normal_tol, distances=gap_dist)
         # %-formatting: '{0:.3g}' gives a decimal comma in IronPython
         # (bridge_to_aster._warn_large_rotations)
         if shell:
@@ -3490,10 +3627,17 @@ def _bonded(model_data, c, group_faces, rn, ccx_tris=None):
             return None
         slave_set = set(tied)
         distance = 0.0
+        gap_warned = _check_bonded_gap(model_data, label, faces, master,
+                                       slave, mk, sk, ccx_tris, gap_dist,
+                                       not mech)
     elif distance <= 0.0:
         log("INFO: {0}: automatic tolerance of Mecway; Code-Aster "
             "couples all slave nodes (no DISTANCE_MAX).".format(label))
-    if mech:
+    if mech and not (gap_warned and "MASSIF" in (m_type, s_type)):
+        # A shell bonded to a solid across a gap: the half-thickness WARNING
+        # (joint too flexible) would contradict the gap WARNING (joint
+        # stiffer, KNOWN_BUGS 146). Shell on shell keeps it (measured +13 %,
+        # KNOWN_BUGS 128; a gap adds no lever arm there).
         _warn_bonded_offset(label, m_type, s_type, sk)
     relations, ddl, rot_ddl = None, None, None
     if raccord == "COQUE" and mech:

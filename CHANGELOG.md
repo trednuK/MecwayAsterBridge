@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **CCX keyword modifications** (Mecway's *CCX keyword*, e.g. `ADJUST` on `*CONTACT PAIR`)
+  are CalculiX input: the bridge now reports them, a WARNING per active modification and one
+  line in the list of items not translated (KNOWN_BUGS 4), also for harmless ones such as
+  a solver choice. Before they were skipped without a message.
+- **Bonded contact across a gap**: a WARNING when tied slave nodes lie farther from the
+  master than half the shell thickness on each shell side (0 for solids) plus a small
+  tolerance (a tenth of the master element size, and the sagitta of a curved master); not
+  checked with an *Element offset* or a shell without a thickness (INFO). CCX first moves them onto the
+  master, Code-Aster ties them where they are, so the gap stays (KNOWN_BUGS 146); close the
+  gap in the mesh. Code-Aster's alarm `CALCULEL5_48` now has an explanation in the log.
+  The generated `.comm` is unchanged.
+
 ## V2026.14 – 18 November 2026
 
 Mecway 36 is a tested version: verified headless and with ten checks in the Mecway 36 window

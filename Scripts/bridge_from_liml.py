@@ -1224,6 +1224,43 @@ def _parse_model_root(file_path):
     return ET.fromstring(data)
 
 
+def _report_ccx_keywords(root, model_data):
+    """
+    Mecway's CCX keyword modifications (<ccxmodifykeyword keyword="CONTACT
+    PAIR" action="setparameter" setparameter="ADJUST" value="0"
+    omitparameter="" suppressed="true"/>) only change the CalculiX input
+    deck; Code-Aster has no use for them (KNOWN_BUGS 4, forum question on
+    ADJUST). Per active modification a WARNING, and one combined entry in
+    skipped_loads, so that the end-of-run note does not grow a line per
+    modification. Suppressed ones (also per configuration or group,
+    _apply_suppression) are passed over.
+    """
+    active = []
+    for item in root.findall("ccxmodifykeyword"):
+        if item.get("suppressed", "") == "true":
+            continue
+        parts = [item.get("action", "")]
+        if item.get("setparameter"):
+            parts.append(u"{0}={1}".format(item.get("setparameter"),
+                                           item.get("value", "")))
+        elif item.get("value"):
+            parts.append(item.get("value"))
+        if item.get("omitparameter"):
+            parts.append(item.get("omitparameter"))
+        desc = u"*{0}: {1}".format(item.get("keyword", "?"),
+                                   u" ".join(p for p in parts if p))
+        active.append(desc)
+        log(tr(u"WARNING: CCX-trefwoordwijziging {0} is CalculiX-invoer; "
+               u"Code-Aster gebruikt die niet.",
+               u"WARNING: CCX keyword modification {0} is CalculiX input; "
+               u"Code-Aster does not use it.").format(desc))
+    if active:
+        model_data["skipped_loads"].append(
+            tr(u"CCX-trefwoordwijzigingen ({0}, alleen CalculiX): {1}",
+               u"CCX keyword modifications ({0}, CalculiX only): {1}").format(
+                len(active), u"; ".join(active)))
+
+
 def _suppressed_in(elem, configuration):
     """True if elem is suppressed: suppressed="true" (in all
     configurations) or a child <suppressed configuration="name"/> for
@@ -3252,6 +3289,7 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                        "ERROR: Load/boundary condition '{0}' on '{1}' is "
                        "not supported and is NOT included.").format(
                         tag, item.get("selection", "")))
+        _report_ccx_keywords(root, model_data)
 
         # ==========================================
         # STEP 2b: THERMAL (materials, loads, initial conditions)

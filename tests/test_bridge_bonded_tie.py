@@ -85,6 +85,34 @@ check("tolerance 0.1: the gap is tied, the overhang is not ({0})".format(
 tied, untied = bm.ccx_tied_nodes(tris, slaves, nodes, tolloc, 10.0)
 check("large tolerance: the overhang still stays free (in-face tolloc)",
       untied == [104, 106])
+dist = {}
+tied, untied = bm.ccx_tied_nodes(tris, slaves, nodes, tolloc, 0.1,
+                                 distances=dist)
+check("distances: one per tied node ({0})".format(sorted(dist)),
+      sorted(dist) == tied)
+check("distances: normal distance to the master (103: {0:.6g})".format(
+    dist.get(103, -1.0)), abs(dist.get(103, -1.0) - 2.0 * tolloc) < 1e-15
+      and abs(dist.get(101, -1.0)) < 1e-15)
+# KNOWN_BUGS 146: gap tolerance 0.1 x mean triangle height, at most the
+# expected shell offset
+check("gap tolerance = 12 tolloc for solids",
+      abs(bm.bonded_gap_tolerance(tris, 0.0) - 12.0 * tolloc) < 1e-15)
+check("gap tolerance capped at the expected offset",
+      bm.bonded_gap_tolerance(tris, 1e-3) == 1e-3)
+check("flat master: no sagitta",
+      bm.master_sagitta(tris, nodes) == 0.0 and
+      bm.bonded_gap_tolerance(tris, 0.0, nodes) ==
+      bm.bonded_gap_tolerance(tris, 0.0))
+# two unit triangles hinged on the edge (0,0,0)-(0,1,0), 0.2 rad apart:
+# sagitta = longest edge (sqrt 2) x 0.2 / 8
+import math as _m
+hn = {1: (0.0, 0.0, 0.0), 2: (0.0, 1.0, 0.0),
+      3: (-1.0, 0.0, 0.0),
+      4: (_m.cos(0.2), 0.0, _m.sin(0.2))}
+hinge = [((1, 2, 3), None, (0.0, 0.0, 1.0), 0.0, None),
+         ((2, 1, 4), None, (-_m.sin(0.2), 0.0, _m.cos(0.2)), 0.0, None)]
+check("curved master: sagitta L theta / 8",
+      abs(bm.master_sagitta(hinge, hn) - 2 ** 0.5 * 0.2 / 8.0) < 1e-12)
 tied, untied = bm.ccx_tied_nodes([], slaves, nodes, tolloc, 0.0)
 check("no master triangles: nothing tied", tied == [] and
       len(untied) == len(slaves))

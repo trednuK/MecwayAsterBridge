@@ -776,6 +776,16 @@ are active. Tolerance: 1e-6 × the smallest edge (U2.04.04 §4.4.1).
   initial contact (zero gap), weak springs (elastic support), or first a step with an
   imposed displacement until there is contact. In dynamics a rigid-body motion is
   allowed.
+- **Bonded contact across a gap.** CCX (Mecway) first moves bonded slave nodes onto
+  the master, so a gap disappears from the geometry. `LIAISON_MAIL` (U4.44.01) ties them
+  where they are: the gap stays and the joint can come out stiffer. The bridge gives a
+  WARNING for tied slave nodes farther from the master than half the shell thickness on
+  each shell side (0 for solids) plus a tenth of the master's element size (at most that
+  half-thickness) and the sagitta of a curved master; Code-Aster's alarm `CALCULEL5_48`
+  then usually appears too. Not checked with an *Element offset* or a shell without a
+  thickness (INFO). Close the gap in
+  the mesh (KNOWN_BUGS 146). Mecway's *CCX keyword* modifications such as `ADJUST` on
+  `*CONTACT PAIR` only change the CalculiX input; the bridge reports and ignores them.
 
 ### 3.5 Zones sharing slave nodes
 
