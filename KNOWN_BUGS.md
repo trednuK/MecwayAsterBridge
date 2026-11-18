@@ -885,6 +885,31 @@ Code-Aster value per node) and logs the largest difference per variable.
    TypeError (line 358); on a clean checkout both pass (manifest 192 OK). The code is not
    affected. Fix: set the settings a test depends on in the test itself. Status: open.
 
+146\. **Bonded contact across a gap: Code-Aster ties at a distance, CCX moves the slave
+   nodes** (confirmed, Mecway 36.0.9815 with CCX headless and Code-Aster 17.4, 18 Nov 2026;
+   `bridge_mesh._bonded`). A solid block bonded to a fixed shell plate, with a gap of seven
+   plate half-thicknesses between the plate surface and the block, pushed onto the plate
+   (L30). CCX (Mecway's default deck, `bondedtie` and `bondedelastic`) moves the slave
+   nodes onto the master before the analysis (they end on the expanded shell's surface), so
+   the gap disappears from the geometry. The bridge (`LIAISON_MAIL`, U4.44.01) ties the
+   slave nodes to their projection where they are, so the gap stays and acts as a rigid
+   link; with a shell the CCX tie rule ties every node opposite a master face, whatever
+   the distance (item 128). Code-Aster only reports alarm `CALCULEL5_48` in the `.mess`
+   (nodes projected at a distance), which the bridge counts but does not explain
+   (`bridge_run_aster._ALARM_HINTS`). The bridge gives no WARNING about the distance;
+   the half-thickness WARNING of item 128 (`_warn_bonded_offset`) that it does give says
+   the joint is somewhat too flexible, while here it is stiffer. In that
+   model the rigid result was +2.6% stiffer than Mecway's `bondedtie` (mostly the block
+   length that CCX's move adds, plus hex8, item 1). With the parameter `ADJUST=0` on
+   `*CONTACT PAIR` (a Mecway *CCX keyword* modification, item 4) CCX does not move the
+   nodes and its tied springs of `bondedelastic` start stretched by the whole gap: a large
+   tension at the first step instead of compression, an artefact of CCX, not something
+   the bridge should copy. `bondedce` NOT checked.
+   Fix (NOT built): a WARNING when bonded slave nodes lie farther from the master than
+   the shell offset (t/2 for a shell on a solid, (t1 + t2)/2 for shell on shell, 0 for
+   solids) plus a tolerance, and a hint for `CALCULEL5_48`; moving the slave nodes as CCX
+   does would be an option at most. Status: open.
+
 ## Open questions (Mecway behaviour not checked)
 
 27\. **Inputs checked headless only, not from a model saved in the Mecway GUI** (question;
@@ -952,7 +977,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    OpenRadioss laws and VOID materials end up in `model_data["skipped_loads"]`
    (ERROR). An unknown tag without `selection`, `selectionsurface` or
    `selectionmaster` is passed over without a message (`bridge_from_liml`, desk review
-   S46); which Mecway tags that concerns is NOT verified. Via `#ASTER` lines the user can add Code-Aster commands themselves.
+   S46); which Mecway tags that concerns is NOT verified, except `<ccxmodifykeyword>`
+   (Mecway's *CCX keyword* modifications, e.g. `ADJUST` on `CONTACT PAIR`): confirmed
+   with an offline run, 18 Nov 2026 (only a DEBUG line in the log). They are CalculiX
+   input and have no Code-Aster meaning, but a user who set one gets no hint that it does
+   not apply (fix: an INFO or WARNING per active modification). Via `#ASTER` lines the user can add Code-Aster commands themselves.
 
 5\. **Frictionless with displacement on curved shells** (confirmed). Frictionless on
    curved shell faces and shell edges becomes LIAISON_OBLIQUE per nodal normal
