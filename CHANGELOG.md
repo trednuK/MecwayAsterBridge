@@ -1,12 +1,27 @@
 # Changelog
 
-## Unreleased
+## V2026.14 – 19 November 2026
+
+Mecway 36 is a tested version: verified headless and in the Mecway 36 window. 2D and
+axisymmetric models get axisymmetric shells (`COQUE_AXIS`), heat transfer and the thermal ->
+mechanical chain (`AXIS`, `C_PLAN`, `D_PLAN`), element failure and readable results under
+physical names (STAPPENPLAN S44d/e and the remaining S44 items). The S46 review of the
+KNOWN_BUGS items goes on: gaps with their own direction, total harmonic stresses with
+hysteretic damping, and a clear stop when route `tabel` has no Mecway solution.
+Behaviour changes:
+- a 2D model with a failure limit now really fails;
+- a closed gap that does not lie along global X no longer has lateral stiffness, so such
+  models give different, correct results;
+- harmonic stresses with hysteretic damping are the total stresses.
 
 - **Mecway 36** (36.0.9815) is a tested version: a model saved by Mecway 36 no longer gives
   the "not tested" WARNING. Verified headless: the full verification, also on models saved
   by Mecway 36, the references of Mecway's own solver and of CCX measured again, and results
-  opened by Mecway 36 ([`docs/en/After_an_update.md`](docs/en/After_an_update.md) §6); not yet
-  from the Mecway 36 window. Mecway 35 is not in the list of tested versions. Beams with CCX in
+  opened by Mecway 36 ([`docs/en/After_an_update.md`](docs/en/After_an_update.md) §6). In
+  the Mecway 36 window (18 November 2026) ten checks: start screen, linear static with route
+  `liml`, configurations, Saved monitor, hiding failed elements, the section view, the status
+  and convergence windows, the ParaView and AsterStudy buttons, `mw.face_nodes` and route
+  `tabel`, all as expected. Mecway 35 is not in the list of tested versions. Beams with CCX in
   Mecway 36 agree with Mecway 34 within 1e-4 (displacements; re-measured: an earlier reading
   compared a wrong node and took them as about 12 times too stiff).
   Measured on the release candidate 36.0.9815; the check covers every 36.x build (it
