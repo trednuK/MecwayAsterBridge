@@ -678,6 +678,12 @@ def _mess_finished(work_dir, since):
         return False
 
 
+def mess_finished(work_dir, since):
+    """Public name of _mess_finished, for MecwayAsterBridgeMain (whether
+    the model copy of a confirmed run may be removed)."""
+    return _mess_finished(work_dir, since)
+
+
 def _mess_box_text(lines, start, max_chars=300):
     """Content of the message box after line 'start', on one line."""
     body = []

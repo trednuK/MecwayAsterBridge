@@ -2886,6 +2886,18 @@ run; whether not saving in route `tabel` should be an option (unsaved edits are 
 crashes during a long run); the Configuration list of the start screen still comes from the saved
 file (from `liml_text` it would cost about 0.1 s per MB of model each time the window opens), so in
 route `tabel` a configuration added since the last save is not in the list.
+**Item 3 follow-up (19 Nov 2026, user answers; plan reviewed by Fable):** not saving in route `tabel`
+stays (no option); route `liml` reads the copy too and saves only right before the results go into the
+`.liml` (`_save_before_write`: first a check that the open model still equals the copy), so a run
+without results leaves the file as it was (the Saved monitor of a failed run still saves); a read-only
+model or a missing folder stops before Code-Aster (`_save_check`); the copy is removed after a clean job
+and kept after a failed one (the `.comm` reads it for a run by hand); route `tabel` also for an untitled
+model; the Results... list names the model, not the copy (`run_files`). The Configuration list is unchanged
+(explained to the user 19 Nov 2026, no decision yet). Tested: `tests/test_bridge_liml_text.py` (decisions, `run_files`) and
+hidden Mecway 36 runs (VM-01a route `liml`: success, launcher missing, without the API, read-only,
+Code-Aster error with and without the Saved monitor; route `tabel` saved and untitled; LS-20a with
+three configurations twice). Next (user, 19 Nov 2026): phase out route `tabel`; results must stay
+storable outside the `.liml` and reloadable (Results...).
 **Status of item 4 (18 Nov 2026, plan reviewed twice by Fable):** built the non-optional part with
 `bridge_element_node.py`: route `tabel` replaces Mecway's own values per element node (stresses,
 strains, von Mises, shell layers) by Code-Aster's node values on the elements Mecway had them for

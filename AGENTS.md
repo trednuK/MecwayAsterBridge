@@ -38,9 +38,13 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   read loads/constraints, so take BCs, materials and selections from the
   `.liml` XML (`bridge_from_liml.py`). Code-Aster: v17.4.
 - `mw.liml_text()` (Mecway 36) only through `bridge_liml_text.py` (`hasattr`, 2.7 and 3; test:
-  `python tests/test_bridge_liml_text.py`): route `tabel` reads a model-only copy
-  `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job), *Show
-  section* a temporary one. Equal to what `mw.save_as` writes minus `<solution>` (measured); every
+  `python tests/test_bridge_liml_text.py`): a run reads a model-only copy
+  `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job; route
+  `liml` saves right before the results go into the `.liml`, after checking that the open model
+  still equals the copy; an untitled model in route `liml` is still saved first; removed after
+  a clean job whose results were loaded, kept otherwise), *Show section* a
+  temporary one. The decisions are pure functions there (`wants_snapshot`, `save_problem`,
+  `same_text`, `clean_end`). Equal to what `mw.save_as` writes minus `<solution>` (measured); every
   caller falls back to saving when it returns None.
 - `solution.set_element_node_variable()` (Mecway 36) only through `bridge_element_node.py` (route
   `tabel`, 2.7 and 3; test: `python tests/test_bridge_element_node.py`): replaces Mecway's own values

@@ -13,14 +13,17 @@
   Beam forces are not touched. Route `liml` (the default) has Code-Aster's own values per
   element. Verified headless in Mecway 36, not yet in the Mecway window.
 
-- **Mecway 36: route `tabel` and *Show section* without saving the model.** With Mecway's
-  new `mw.liml_text()` the bridge reads the open model itself: route `tabel` no longer saves
-  the `.liml` before a run (it reads a copy, `<model>_<run-id>_model.liml` in the work folder,
-  which the Code-Aster job reads too, e.g. for fatigue), and *Show section* no longer saves
-  it either. Route `liml` still saves first (the results go into the `.liml`). Unsaved
-  changes stay unsaved: save the model yourself before a long run in route `tabel`. Older
-  Mecway versions (no `mw.liml_text()`) behave as before. Verified headless in Mecway 36,
-  not yet in the Mecway window.
+- **Mecway 36: a run and *Show section* read the open model without saving it first.**
+  With Mecway's new `mw.liml_text()` the bridge reads a copy of the open model
+  (`<model>_<run-id>_model.liml` in the work folder, which the Code-Aster job reads too, e.g.
+  for fatigue). Route `liml` saves the `.liml` only right before the results go into it, so
+  a run that ends without results (an error, Stop) leaves the file as it was; route `tabel`
+  does not save it at all, also for a model that was never saved (route `liml` still saves
+  such a model first). In route `liml` a read-only model or a folder that is gone still
+  stops the run before Code-Aster. The copy is removed after a run without errors whose
+  results were loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes stay unsaved during the run: save the model yourself before a long
+  run. *Show section* no longer saves either. Older Mecway versions (no `mw.liml_text()`)
+  behave as before. Verified headless in Mecway 36, not yet in the Mecway window.
 
 - **CCX keyword modifications** (Mecway's *CCX keyword*, e.g. `ADJUST` on `*CONTACT PAIR`)
   are CalculiX input: the bridge now reports them, a WARNING per active modification and one
