@@ -1194,16 +1194,17 @@ SETTING_HELP = {
                       u"'Summary' in the Results window and the convergence "
                       u"window. Default summary."),
     "save_monitor_liml": (u"Zet de samenvatting ook in de .liml als Mecway's "
-                          u"item Saved monitor (onder Solution). Alleen met "
-                          u"de resultaatroute 'liml'; een run zonder "
-                          u"resultaten krijgt alleen een solution met de "
-                          u"monitor als het model nog geen resultaten heeft. "
+                          u"item Saved monitor (onder Solution). Een run "
+                          u"zonder resultaten krijgt alleen een solution met "
+                          u"de monitor als het model nog geen resultaten "
+                          u"heeft; het model wordt dan wel opgeslagen. "
                           u"Standaard uit.",
                           u"Also put the summary into the .liml as Mecway's "
-                          u"item Saved monitor (under Solution). Only with "
-                          u"the result route 'liml'; a run without results "
-                          u"only gets a solution with the monitor if the "
-                          u"model has no results yet. Off by default."),
+                          u"item Saved monitor (under Solution). A run "
+                          u"without results only gets a solution with the "
+                          u"monitor if the model has no results yet; the "
+                          u"model is saved then all the same. Off by "
+                          u"default."),
     "bonded_close_gap": (
         u"Verlijmd contact met een spleet: CCX (Mecway) schuift de "
         u"slave-knopen eerst op de master; Code-Aster koppelt ze waar ze "
@@ -1225,16 +1226,16 @@ SETTING_HELP = {
                     u"resultaatweergave, elk vanaf de stap na het "
                     u"bezwijken: hun knopen klappen ineen op het "
                     u"zwaartepunt (precies bij vervormingsschaal 1). Na een "
-                    u"run met de resultaatroute 'liml' en na Resultaten... "
-                    u"> Inladen, alleen voor resultaten met tijdstappen. De "
+                    u"run en na Resultaten... > Inladen, alleen voor "
+                    u"resultaten met tijdstappen. De "
                     u"bridge herschrijft daarvoor de oplossing in de .liml; "
                     u"Resultaten... > Inladen met deze optie uit toont de "
                     u"elementen weer. Standaard uit.",
                     u"Failed elements disappear in Mecway's own result view, "
                     u"each from the step after its failure: their nodes "
                     u"collapse on the centroid (exact at deformation scale "
-                    u"1). After a run with the result route 'liml' and after "
-                    u"Results... > Load, only for results with time steps. "
+                    u"1). After a run and after Results... > Load, only for "
+                    u"results with time steps. "
                     u"For this the bridge rewrites the solution in the "
                     u".liml; Results... > Load with this option off shows "
                     u"the elements again. Off by default."),
@@ -1285,14 +1286,13 @@ SETTING_HELP = {
                    u"MED-lezer). Dezelfde velden als Mecway krijgt: "
                    u"knoopvelden als puntdata (plus de vector DEPL voor de "
                    u"vervorming), velden per element als celgemiddelde. "
-                   u"Alleen met de resultaatroute 'liml'. "
                    u"Standaard uit.",
                    u"Also write <model>_<run_id>.pvd with one .vtu per time "
                    u"step (VTK format, read by any ParaView, also without a "
                    u"MED reader). The same fields as Mecway gets: nodal "
                    u"fields as point data (plus the vector DEPL for the "
                    u"deformation), fields per element as the cell average. "
-                   u"Only with the result route 'liml'. Off by default."),
+                   u"Off by default."),
     "paraview_exe": (
         u"paraview.exe voor de knoppen ParaView in het venster Resultaten en "
         u"in het convergentiescherm. Leeg (standaard) = automatisch zoeken: "

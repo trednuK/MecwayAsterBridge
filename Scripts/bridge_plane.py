@@ -647,7 +647,7 @@ def _apply_thermal(model_data, elset_shapes, atype, switch):
     stay for bridge_thermal. With the thermal -> mechanical chain (Thermal
     stress in T31, bridge_thermomech, S44d piece 2) the mechanical part is
     set up as route A: AXIS cells, model_data["plane"] with factor 2 pi,
-    result route liml, the 2D refusals of _NOT_VERIFIED and contact.
+    the 2D refusals of _NOT_VERIFIED and contact.
     C_PLAN/D_PLAN: the plane shells are a 2D thermal model ('PLAN') already
     without the line (INFO); with the chain the mechanical part is
     C_PLAN/D_PLAN with the shell thickness as the factor (_plane_chain).

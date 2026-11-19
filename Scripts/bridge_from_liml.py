@@ -2315,8 +2315,6 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         # ==========================================
         for item in root:
             tag = item.tag
-            log("DEBUG tag: '{0}' selection='{1}'".format(
-                tag, item.get("selection", "")))
 
             # --------------------------------------------------
             # 2a. MATERIALS
