@@ -12,7 +12,7 @@
 #     failed or stopped runs) as the file <model>_<run_id>_aster_summary.txt
 #     in the work folder (write_summary; opened with the buttons in the
 #     Results window and the convergence window, ensure_summary);
-#   - optionally (setting save_monitor_liml, off by default, route liml) in
+#   - optionally (setting save_monitor_liml, off by default) in
 #     the .liml as Mecway's "Saved monitor" item;
 #     bridge_results_liml.splice_results writes it.
 #

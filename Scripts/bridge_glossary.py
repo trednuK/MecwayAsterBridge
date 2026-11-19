@@ -906,11 +906,10 @@ GLOSSARY = OrderedDict([
                     u"superposition; harmonic omega x |U|).")),
     ("accelerations", ("file", u"Resultaatveld: versnellingen (accx/y/z, "
                        u"zoals Mecway; harmonisch omega^2 x |U|, "
-                       u"responsspectrum de maximale absolute versnelling). "
-                       u"Alleen route liml.",
+                       u"responsspectrum de maximale absolute versnelling).",
                        u"Result field: accelerations (accx/y/z, as Mecway; "
                        u"harmonic omega^2 x |U|, response spectrum the "
-                       u"maximum absolute acceleration). Route liml only.")),
+                       u"maximum absolute acceleration).")),
     ("reactions", ("file", u"Resultaatveld: reactiekrachten en -momenten "
                    u"per knoop (REAC_NODA; reactionforcex.., "
                    u"reactionmomx..).",
@@ -1195,16 +1194,17 @@ SETTING_HELP = {
                       u"window. Default summary."),
     "save_monitor_liml": (u"Zet de samenvatting ook in de .liml als Mecway's "
                           u"item Saved monitor (onder Solution). Een run "
-                          u"zonder resultaten krijgt alleen een solution met "
-                          u"de monitor als het model nog geen resultaten "
-                          u"heeft; het model wordt dan wel opgeslagen. "
-                          u"Standaard uit.",
+                          u"zonder resultaten slaat het model (met wat nog "
+                          u"niet was opgeslagen) toch op zodra Code-Aster "
+                          u"gedraaid heeft; alleen een model zonder "
+                          u"resultaten krijgt dan een solution met de "
+                          u"monitor. Standaard uit.",
                           u"Also put the summary into the .liml as Mecway's "
                           u"item Saved monitor (under Solution). A run "
-                          u"without results only gets a solution with the "
-                          u"monitor if the model has no results yet; the "
-                          u"model is saved then all the same. Off by "
-                          u"default."),
+                          u"without results still saves the model (with "
+                          u"unsaved changes) once Code-Aster has run; only "
+                          u"a model without results then gets a solution "
+                          u"with the monitor. Off by default."),
     "bonded_close_gap": (
         u"Verlijmd contact met een spleet: CCX (Mecway) schuift de "
         u"slave-knopen eerst op de master; Code-Aster koppelt ze waar ze "

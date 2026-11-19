@@ -960,7 +960,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    (NL-03h −10% at kt 1e13).
 
 152\. **The mouse wheel over a choice list changes its value while scrolling a page**
-   (confirmed in the Mecway 36 window, 19 Nov 2026; `bridge_gui.py`, Windows Forms
+   (start screen; confirmed in the Mecway 36 window, 19 Nov 2026; `bridge_gui.py`, Windows Forms
    `ComboBox`). Scrolling the settings page with the wheel while the pointer passes a choice
    list (e.g. *Active analysis*) changes that setting instead of scrolling (seen: `auto` became
    `ther_3d`). Standard Windows Forms behaviour; the changed value is used at the next *Start*.
@@ -1023,11 +1023,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    (19 Nov 2026). Status: open.
 
 151\. **Mecway asks "Save changes?" after a run that stopped without results** (question;
-   seen 5 times in the Mecway 36.0.9815 window, 19 Nov 2026, bridge a434d50). After a run that
-   stopped without loading results (a read-only model, an untitled model, a Code-Aster error,
-   an `#ASTER` ERROR), Mecway asks "Save changes?" when the next model is opened or Mecway is
-   closed, although the user edited nothing; not after a run whose results were loaded (that
-   run reopens the model). Answering *No* is safe (the file on disk is the user's last save);
+   Mecway 36.0.9815 window, 19 Nov 2026, bridge a434d50). After runs that stopped before
+   Code-Aster without any edit in Mecway (a read-only model, two `#ASTER` ERRORs: checks A5, B3
+   and B10 of the GUI checks), Mecway asked "Save changes?" when the next model was opened;
+   not after a run whose results were loaded (that run reopens the model). It was also seen
+   after an edited model (A3a) and an untitled one (A9), where the question is expected. Answering *No* is safe (the file on disk is the user's last save);
    *Yes* saves the model as it is in Mecway. The bridge itself changes nothing in the model on
    these paths (`_run` returns before saving; `bridge_section_model.remove_shape` does nothing
    without the temporary shells). Probed headless (hidden Mecway 36, VM-01a): neither
@@ -1035,7 +1035,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    model ask, but a real change (`mw.new_node`) does not either, and the window title shows
    no change marker in script mode: the flag cannot be read there, and the API has no call to
    read or clear it. Most likely Mecway marks a model as changed after any script ran (NOT
-   verified). A user meets it after every run that ends without results. Status: open; a
+   verified). A user meets it after a run that stops before Code-Aster, or that ends without
+   results with *Summary also as Saved monitor in the .liml* off (with it on, the model is
+   saved). Status: open; a
    check in the Mecway window with a script that does nothing would settle it.
 
 ## Not translated (the bridge reports it at the end of the run)

@@ -81,8 +81,8 @@
 #   1. Optional: solve the model in Mecway (check: are there errors?)
 #   2. Save the model (.liml); with mw.liml_text() (Mecway 36): not saved
 #      now, a model-only copy <model>_<run_id>_model.liml instead
-#      (bridge_liml_text), which steps 3-6 read; route liml saves the
-#      model at step 6, right before the results go into it
+#      (bridge_liml_text), which steps 3-6 read; the model is saved at
+#      step 6, right before the results (or the Saved monitor) go into it
 #   3. Read mesh, BCs, materials and selections from the .liml file
 #      (stops if there are no materials). With active_analysis = "auto"
 #      the analysis follows the Mecway analysis type (for this run only).

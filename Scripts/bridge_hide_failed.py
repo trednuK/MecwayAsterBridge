@@ -554,5 +554,5 @@ def is_processed(liml, configuration=None):
 
 
 def enabled():
-    """Setting hide_failed (route liml only)."""
+    """Setting hide_failed."""
     return bool(CONFIG_BRIDGE.get("hide_failed", False))
