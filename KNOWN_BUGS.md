@@ -492,7 +492,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    3.06798 m.
 
 43\. **Contact: hard and soft formulation differ from Mecway** (confirmed).
-   `contact_algo` = STANDARD (Lagrange; the default in explicit dynamics and what `auto` gives in
+   `contact_algo` = STANDARD (Lagrange; what `auto` gives in
    2D; in Nonlinear Static 3D and implicit dynamics the default before V2026.15, now
    `auto` = penalty) allows no
    penetration; Mecway computes penalty. Samples/PipeClip loses contact with STANDARD (1.1 mm penetration
@@ -956,10 +956,19 @@ Code-Aster value per node) and logs the largest difference per variable.
    steps; both AssemblyWithContact configurations complete; Mecway's own CCX result of
    *Friction* is unusable, 3.6e6 m, so not compared), with a WARNING per run. The creep stays:
    at most 1e-8 × that size per step at full friction (NL-03i, 25 shear steps: +0.1% against
-   the Lagrange stick). Implicit dynamics too since V2026.15 (NL-03l); explicit dynamics and
-   2D still write kt as `COEF_PENA_FROT` (not measured).
+   the Lagrange stick). Implicit dynamics too since V2026.15 (NL-03l); 2D still writes kt as
+   `COEF_PENA_FROT` (not measured; explicit dynamics: no contact, item 153).
    Status: limitation of Code-Aster 17.4; the bridge is stiffer in shear than Mecway by τ/kt
    (NL-03h −10% at kt 1e13).
+
+150\. **Friction with tangential stiffness 0** (confirmed, Mecway 36 with CCX and Code-Aster
+   17.4, 19 Nov 2026; `bridge_to_aster._penalty_args`, verification NL-03n). Mecway/CCX with
+   friction and kt = 0 gave no usable result (NL-03h with kt 0: stopped at t = 0.4 with
+   displacements of 1e10 m). The bridge wrote Lagrange friction (`ALGO_FROT='STANDARD'`)
+   then, which stopped AssemblyWithContact *Friction* in step 1 (`MECANONLINE9_4`); since
+   V2026.15 kt = 0 gets the same rigid penalty stick as kt > 0 (item 149) in Nonlinear
+   Static and implicit dynamics (NL-03n: the rigid result of NL-03h). 2D keeps Lagrange
+   friction (explicit dynamics: no contact, item 153). Status: works differently from Mecway, whose result is unusable.
 
 152\. **The mouse wheel over a choice list changes its value while scrolling a page**
    (start screen; confirmed in the Mecway 36 window, 19 Nov 2026; `bridge_gui.py`, Windows Forms
@@ -1017,12 +1026,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    tensioned spring a geometric stiffness in Buckling (measured with a pretensioned spring,
    item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
    modal with prestress, NOT measured (STAPPENPLAN S15c).
-
-150\. **Friction with tangential stiffness 0** (question; `bridge_to_aster._penalty_args`).
-   With kt = 0 the bridge writes Lagrange friction (`ALGO_FROT='STANDARD'`); what Mecway/CCX
-   does with kt = 0 is not checked. On AssemblyWithContact *Friction* `ALGO_FROT='STANDARD'`
-   stopped in step 1 (`MECANONLINE9_4`) where the penalised rigid stick of item 149 completes
-   (19 Nov 2026). Status: open.
 
 151\. **Mecway asks "Save changes?" after a run that stopped without results** (question;
    Mecway 36.0.9815 window, 19 Nov 2026, bridge a434d50). After runs that stopped before
@@ -1606,3 +1609,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    allowed but not verified separately), orthotropic thermal conductivity; *stress in
    element coordinates* (`lamuu` ..) is written in linear static only (not per mode in
    modal/buckling) and not for shells.
+
+153\. **Contact in explicit dynamics** (confirmed, Code-Aster 17.4, 19 Nov 2026;
+   `bridge_to_aster._check_explicit_contact`). Code-Aster stops before the first step with
+   `MECANONLINE5_22` ("le contact n'est pas possible") for `DEFI_CONTACT` with an explicit
+   scheme (`DIFF_CENT`), with `STANDARD` and with `PENALISATION` (NL-03m as
+   `dyna_expl_3d`). The bridge stops before the run with an ERROR that advises an implicit
+   scheme (HHT or NEWMARK; contact there: NL-03j … NL-03m). Compression only
+   (`LIAISON_UNIL`) in explicit dynamics NOT verified. Status: limitation of Code-Aster.

@@ -475,7 +475,7 @@ MW_NL03H = (1.9156e-6, 2.0752e-6)
 RIGID_NL03I = 1.86378e-6
 
 
-def build_nl03_friction(step=0.1, analysis="L30"):
+def build_nl03_friction(step=0.1, analysis="L30", kt=KN4):
     ts = _timesteps(1.0)
     ts["stepsize"] = "%g s" % step
     if analysis == "D31":           # NL-03l: Mecway's form for CCX
@@ -510,7 +510,7 @@ def build_nl03_friction(step=0.1, analysis="L30"):
           '<normalstiffness>%g GPa/m</normalstiffness>'
           '<tangentialstiffness>%g GPa/m</tangentialstiffness>'
           '<frictioncoefficient>0.5</frictioncoefficient></contact2>'
-          % (KN4 / 1e9, KN4 / 1e9))
+          % (KN4 / 1e9, kt / 1e9))
     return m
 
 
@@ -686,6 +686,18 @@ TESTS = [
          note="Mecway 36 met CCX (D31, headless, 19 nov 2026): bovenkant "
               "1,9524 um, penetratie 0,99998 um, 10 stappen; voor V2026.15 "
               "las de bridge stepsize bij D31 niet (alleen t = 1 s)."),
+    Case("NL-03o", GROUP, "Als NL-03j met 'Generate solution every n time "
+         "steps' = 3 (D31)", "dyna_impl_3d",
+         lambda: build_nl03_patch(analysis="D31", ts={
+             "timeperiod": "1 s", "stepsize": "0.1 s",
+             "keepeverynthtimestep": "3"}),
+         _nl03_patch_checks(True) + [
+             Check("uitvoertijdstippen (som)", lambda r: sum(
+                 x for x in r.times() if x > 0.0), ref=2.8, tol=1e-9,
+                 source="Mecway 36 met CCX (D31): 0,3, 0,6, 0,9 en 1 s")],
+         settings={"contact_algo": "PENALISATION"},
+         note="Mecway schrijft elke derde stap plus het eind; de bridge "
+              "rekent per 0,1 s en schrijft dezelfde tijdstippen."),
     Case("NL-03k", GROUP, "Contact in impliciete dynamica (D31): duwen en "
          "loslaten tegen Mecway/CCX (standaard contact_algo auto)",
          "dyna_impl_3d",
@@ -735,6 +747,19 @@ TESTS = [
                 source="contact_pene_maxi 0,05")],
          note="De penetratie blijft onder contact_pene_maxi; het blok "
               "trilt na de botsing rond zijn statische stand."),
+    Case("NL-03n", GROUP, "Wrijving met tangentiele stijfheid 0 (NL-03h met "
+         "kt = 0): star plakken", "nonlin_static_3d",
+         lambda: build_nl03_friction(kt=0.0),
+         [Check("w bovenkant t.o.v. Mecway (kt 1e13)", lambda r: -_mean_top(
+             r, "displz"), ref=MW_NL03H[0], tol=0.005, unit="m",
+                source="Mecway 36 (CCX), NL-03h; met kt = 0 gaf Mecway "
+                       "geen bruikbaar resultaat (gestopt op t = 0,4)"),
+          Check("u bovenkant t.o.v. star plakken", lambda r: _mean_top(
+              r, "displx"), ref=RIGID_NL03I, tol=0.003, unit="m",
+                source="NL-03h met ALGO_FROT='STANDARD' (Lagrange, star)")],
+         note="KNOWN_BUGS 150: kt = 0 geeft sinds V2026.15 hetzelfde starre "
+              "penalty-plakken als kt > 0 (voorheen Lagrange-wrijving, die "
+              "AssemblyWithContact Friction in stap 1 liet stoppen)."),
     Case("NL-03p", GROUP, "Contact-patchtest (PENALISATION), te slappe "
          "normal stiffness: penetratiecontrole", "nonlin_static_3d",
          lambda: build_nl03_patch(kn=1.0e10),

@@ -704,8 +704,10 @@ contact = DEFI_CONTACT(
       **Wrijving** (met kt als `COEF_PENA_FROT` stopte de run bij t = 0,00024 s;
       `STANDARD` w −52 %).
 
-    Niet gemeten: expliciete dynamica (`auto` geeft daar `STANDARD`, met een INFO: een stijve
-    contactveer kan de stabiele tijdstap verkleinen) en `NEWMARK` met botsingen. Een
+    Met `NEWMARK` rekent de botsing van NL-03m ook door (19 nov 2026). Expliciete
+    dynamica: Code-Aster 17.4 kan geen contact rekenen (`MECANONLINE5_22`, met `STANDARD`
+    en met `PENALISATION`); de bridge stopt voor de run met een ERROR die een impliciet
+    tijdschema aanraadt (KNOWN_BUGS 153). Een
     startscherm dat voor V2026.15 is opgeslagen, houdt ook voor dynamica zijn expliciete
     `STANDARD`: kies eenmalig `auto` op de pagina van de dynamische analyse.
   - `STANDARD` (CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
@@ -714,7 +716,7 @@ contact = DEFI_CONTACT(
     PL-40 … PL-47 vergelijken zo met Lamé).
   - `PENALISATION`: contactdruk = `COEF_PENA_CONT` × penetratie, met
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); bij wrijving
-    `ALGO_FROT='PENALISATION'` (is de *tangential stiffness* 0, dan Lagrange-wrijving),
+    `ALGO_FROT='PENALISATION'` (met *tangential stiffness* 0 in 2D Lagrange-wrijving),
     zie **Wrijving** hieronder voor `COEF_PENA_FROT`. Zo rekent Mecway zelf de
     normaalrichting (Mecway, 2026, §9.9.2). Kies dit als
     `STANDARD` het contact verliest of stopt met `MECANONLINE9_4` met `LAGS_C` in de
@@ -791,7 +793,8 @@ contact = DEFI_CONTACT(
   10, en Tutorials/AssemblyWithContact *Friction* en *Quadratic_ramp* stopten (nu rekenen
   ze door). Impliciete dynamica plakt sinds V2026.15 op dezelfde manier star (NL-03l; de
   grens voor de kruip telt per rekenstap, ook tussenstappen en automatische halveringen).
-  Expliciete dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt (niet gemeten);
+  2D (met `PENALISATION` gekozen) schrijft nog kt (niet gemeten; expliciete dynamica kent
+  in Code-Aster geen contact, KNOWN_BUGS 153);
   stopt zo'n run, geef de zone dan een eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv.
   1/(1e-8 × de diagonaal van de contactvlakken in m)); die gaat voor.
 
@@ -928,8 +931,8 @@ Code-Aster verbiedt knopen die in de slave-vlakken van twee zones zitten
 De bridge voegt zulke paren samen tot één zone: master = unie van de masters,
 slave = unie van de slaves (`DEFI_GROUP ... UNION`, groepen `CMAIT<n>`/`CESCL<n>`).
 Wrijving: de grootste coëfficiënt; met `contact_algo` = PENALISATION ook de grootste
-normaal- en tangentiële stijfheid (de tangentiële alleen bij expliciete dynamica en 2D: 3D
-statisch en impliciet plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
+normaal- en tangentiële stijfheid (de tangentiële alleen in 2D: 3D statisch en impliciet
+plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
 `<model>_<run-id>_bridge_log.txt`, en nog een als de wrijvingscoëfficiënten verschilden
 (KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master en slave wisselen)
 gebruikt de bridge niet: dan wordt het stijve gereedschap slave.

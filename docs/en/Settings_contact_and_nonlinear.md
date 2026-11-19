@@ -694,8 +694,10 @@ contact = DEFI_CONTACT(
       **Friction** (with kt as `COEF_PENA_FROT` the run stopped at t = 0.00024 s;
       `STANDARD` w −52 %).
 
-    Not measured: explicit dynamics (`auto` gives `STANDARD` there, with an INFO: a stiff
-    contact spring can lower the stable time step) and `NEWMARK` with impacts. A start
+    With `NEWMARK` the impact of NL-03m completes too (19 Nov 2026). Explicit dynamics:
+    Code-Aster 17.4 cannot compute contact (`MECANONLINE5_22`, with `STANDARD` and with
+    `PENALISATION`); the bridge stops before the run with an ERROR that advises an
+    implicit scheme (KNOWN_BUGS 153). A start
     screen saved before V2026.15 keeps its explicit `STANDARD` for dynamics too: choose
     `auto` once on the page of the dynamic analysis.
   - `STANDARD` (CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
@@ -704,7 +706,7 @@ contact = DEFI_CONTACT(
     cases PL-40 … PL-47 compare with Lamé this way).
   - `PENALISATION`: contact pressure = `COEF_PENA_CONT` × penetration, with
     `COEF_PENA_CONT` = Mecway's *normal stiffness* (Pa/m); with friction
-    `ALGO_FROT='PENALISATION'` (if the *tangential stiffness* is 0, Lagrange friction),
+    `ALGO_FROT='PENALISATION'` (with *tangential stiffness* 0 in 2D, Lagrange friction),
     see **Friction** below for `COEF_PENA_FROT`. This is how Mecway itself computes the
     normal direction (Mecway, 2026, §9.9.2). Choose this if `STANDARD` loses the contact or stops with
     `MECANONLINE9_4` with `LAGS_C` in the message (line contact). Verified: the
@@ -778,7 +780,8 @@ contact = DEFI_CONTACT(
   instead of 10, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* stopped
   (now they complete). Implicit dynamics sticks rigidly the same way since V2026.15 (NL-03l;
   the creep bound counts per solver step, including substeps and automatic step cuts).
-  Explicit dynamics and 2D (with `PENALISATION` chosen) still write kt (not measured); if
+  2D (with `PENALISATION` chosen) still writes kt (not measured; explicit dynamics has no
+  contact in Code-Aster, KNOWN_BUGS 153); if
   such a run stops, give the zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g.
   1/(1e-8 × the diagonal of the contact faces in m)); it takes precedence.
 
@@ -909,8 +912,8 @@ that is slave against a blade and against a contour).
 The bridge merges such pairs into one zone: master = union of the masters, slave =
 union of the slaves (`DEFI_GROUP ... UNION`, groups `CMAIT<n>`/`CESCL<n>`). Friction:
 the largest coefficient; with `contact_algo` = PENALISATION also the largest normal and
-tangential stiffness (the tangential one only in explicit dynamics and 2D: 3D static and implicit
-stick rigidly, KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
+tangential stiffness (the tangential one only in 2D: 3D static and implicit stick rigidly,
+KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.txt`,
 with an extra one if the friction coefficients differed (KNOWN_BUGS 10). The solution
 suggested by `CONTACT2_16` itself (swapping master and slave) is not used by the bridge:
 the stiff tool would then become slave.

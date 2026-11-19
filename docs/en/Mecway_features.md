@@ -179,7 +179,7 @@ field belongs to which Mecway name: [`UserGuide.md`](UserGuide.md) §4.1.
 | Shift point (buckling) | No | INFO only (KB46). |
 | Mode superposition (D30) | Yes | §1. |
 | Time period | Yes | |
-| Time step size | Yes | D30, D20, DA0 and D31 (D31 since V2026.15, verified against Mecway 36 with CCX: NL-03j; *every n time steps* with D31 NOT verified; solver step = Mecway's step, also with *every n time steps*; with mode superposition at most Mecway's step), T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). With *Automatic time stepping* see the row below. |
+| Time step size | Yes | D30, D20, DA0 and D31 (D31 since V2026.15, verified against Mecway 36 with CCX: NL-03j; *every n time steps* with D31: NL-03o; solver step = Mecway's step, also with *every n time steps*; with mode superposition at most Mecway's step), T31 and L30 (L30: Mecway's steps up to the period plus the kinks of the load tables; without a step size `substeps_per_interval`). With *Automatic time stepping* see the row below. |
 | Output times, *Generate solution every n time steps* | Yes | |
 | Automatic time stepping | Yes | L30 (nonlinear static): `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, `ARCHIVAGE` at those times; setting `auto_time_stepping`. Dynamic not: fixed steps, cutting on divergence. |
 | Incompatible hex8 | No | KB1. |

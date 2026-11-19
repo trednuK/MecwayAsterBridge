@@ -160,7 +160,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -2143,6 +2143,10 @@ samples) plus the kinks of the load tables (NL-20).
   Mecway writes for CCX), loaded slowly, `PENALISATION`: top 1.9524 µm, penetration
   1.000 µm and 10 output steps, equal to Mecway 36 with CCX (D31, headless). Before
   V2026.15 the bridge ignored the step size of a D31 model (one step at t = 1 s).
+- **NL-03n** (friction with tangential stiffness 0): NL-03h with kt = 0: u = 1.8641 µm, the
+  rigid stick (KNOWN_BUGS 150; Mecway/CCX gave no usable result with kt = 0).
+- **NL-03o** (D31 with *Generate solution every n time steps* = 3): as NL-03j; output at
+  0.3, 0.6, 0.9 and 1 s as Mecway 36 with CCX, the same top displacement.
 - **NL-03k/l/m** (contact in implicit dynamics, default `contact_algo` = `auto`, D31 with
   steel's density and *Time step size* 2 µs, against Mecway 36 with CCX, headless): k: a
   force pulse (4000 N on in 20 µs, held to 50 µs, off at 70 µs; then the upper block comes

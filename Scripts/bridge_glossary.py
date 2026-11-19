@@ -1543,8 +1543,8 @@ SETTING_HELP = {
     "contact_algo": (
         u"auto (standaard bij niet-lineair statisch en impliciete "
         u"dynamica) = PENALISATION voor elk 3D-contact met een "
-        u"normaalstijfheid in Mecway, anders STANDARD (ook bij expliciete "
-        u"dynamica). STANDARD = "
+        u"normaalstijfheid in Mecway, anders STANDARD (contact bij "
+        u"expliciete dynamica kan Code-Aster niet: ERROR). STANDARD = "
         u"Lagrange-contact van Code-Aster: geen penetratie, geen stijfheid "
         u"nodig. PENALISATION = contact als veer met de normaalstijfheid uit "
         u"Mecway, zoals Mecway zelf rekent: kleine penetratie, vaak "
@@ -1555,7 +1555,8 @@ SETTING_HELP = {
         u"heeft geen tegenhanger in Code-Aster (KNOWN_BUGS 149).",
         u"auto (default in nonlinear static and implicit dynamics) = "
         u"PENALISATION for every 3D contact with a normal stiffness in "
-        u"Mecway, otherwise STANDARD (also in explicit dynamics). "
+        u"Mecway, otherwise STANDARD (contact in explicit dynamics: "
+        u"Code-Aster cannot, ERROR). "
         u"STANDARD = Code-Aster "
         u"Lagrange contact: no penetration, no stiffness needed. "
         u"PENALISATION = contact as a spring with the normal stiffness from "

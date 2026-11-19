@@ -51,8 +51,8 @@
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
   (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway
-  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. Explicit dynamics
-  and 2D models keep `STANDARD` (not measured with penalty; implicit dynamics: see below). Your own `ALGO_CONT`, `COEF_PENA_*` or
+  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. 2D models keep
+  `STANDARD` (not measured with penalty; implicit dynamics and explicit dynamics: see below). Your own `ALGO_CONT`, `COEF_PENA_*` or
   `ALGO_FROT` in `#ASTER-ZONE` now take precedence over the bridge's (before: `SyntaxError`
   with *Contact method* = PENALISATION). Measured against Mecway 36 with CCX: the contact patch tests now agree to
   2e-5 (before 50 %, no penetration p/kn), Voorbeeld_C 3.2 % (before 7.0 %), and line contact
@@ -87,8 +87,13 @@
   friction sticks rigidly (also when you chose `PENALISATION`: kt is no longer written as
   `COEF_PENA_FROT` there). Measured against Mecway 36 with CCX: a force pulse with release
   within 4.7 % of the largest displacement (Lagrange: 59 % too stiff, then it stopped), an impact across a gap completes
-  where Lagrange and CCX stopped (verification NL-03j/k/l/m). Explicit dynamics keeps
-  `STANDARD`. A saved start screen keeps its `STANDARD` for dynamics: choose `auto` once.
+  where Lagrange and CCX stopped (verification NL-03j/k/l/m). Explicit dynamics has no
+  contact in Code-Aster (below). A saved start screen keeps its `STANDARD` for dynamics: choose `auto` once.
+- **Contact in explicit dynamics stops with a clear ERROR before the run**: Code-Aster
+  cannot compute it (`MECANONLINE5_22`, KNOWN_BUGS 153); choose an implicit scheme.
+- **Friction with tangential stiffness 0** now sticks rigidly like kt > 0 (KNOWN_BUGS 150;
+  Lagrange friction stopped AssemblyWithContact *Friction*; Mecway/CCX gives no usable
+  result with kt = 0; verification NL-03n).
 - **Nonlinear dynamics (D31) with a *Time step size*: the bridge now uses it** (bug fix,
   changes results). Before, a D31 model in the form Mecway writes for CCX (`stepsize`) got only
   the points of its load tables as time steps (a 200 µs pulse: 4 steps instead of 100); now
