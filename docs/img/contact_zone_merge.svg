@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 290" width="720" height="290">
+  <rect width="720" height="290" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2c5d8a"/>
+    </marker>
+    <marker id="as" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a0522d"/>
+    </marker>
+  </defs>
+  <!-- two contact zones whose slave faces share nodes: S1 (blue) against master A, S2 (sienna) against master B, the shared corner node; right: merged into one zone (masters A and B, slaves S1 and S2) -->
+  <rect x="60" y="40" width="90" height="230" fill="#e6e6e6" stroke="#333" stroke-width="1.5"/>
+  <rect x="150" y="200" width="420" height="70" fill="#e6e6e6" stroke="#333" stroke-width="1.5"/>
+  <rect x="150" y="70" width="240" height="130" fill="#d6e4f0" stroke="#333" stroke-width="1.5"/>
+  <line x1="150" y1="70" x2="150" y2="200" stroke="#2c5d8a" stroke-width="4"/>
+  <line x1="150" y1="200" x2="390" y2="200" stroke="#a0522d" stroke-width="4"/>
+  <circle cx="150" cy="70" r="5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="150" cy="102.5" r="5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="150" cy="135" r="5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="150" cy="167.5" r="5" fill="#2c5d8a" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="210" cy="200" r="5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="270" cy="200" r="5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="330" cy="200" r="5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="390" cy="200" r="5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <circle cx="150" cy="200" r="8" fill="#2c5d8a" stroke="#a0522d" stroke-width="3"/>
+  <line x1="470" y1="120" x2="520" y2="120" stroke="#333" stroke-width="2.5" marker-end="url(#ah)"/>
+  <rect x="560" y="60" width="30" height="120" fill="#e6e6e6" stroke="#333" stroke-width="1.5"/>
+  <rect x="590" y="150" width="110" height="30" fill="#e6e6e6" stroke="#333" stroke-width="1.5"/>
+  <rect x="590" y="80" width="80" height="70" fill="#d6e4f0" stroke="#333" stroke-width="1.5"/>
+  <line x1="590" y1="80" x2="590" y2="150" stroke="#2c5d8a" stroke-width="4"/>
+  <line x1="590" y1="150" x2="670" y2="150" stroke="#2c5d8a" stroke-width="4"/>
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <circle cx="90" cy="240" r="11" fill="#c0392b"/><text x="90" y="245">1</text>
+    <circle cx="480" cy="240" r="11" fill="#c0392b"/><text x="480" y="245">2</text>
+    <line x1="124" y1="120" x2="146" y2="120" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="124" cy="120" r="11" fill="#c0392b"/><text x="124" y="125">3</text>
+    <line x1="270" y1="226" x2="270" y2="204" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="270" cy="226" r="11" fill="#c0392b"/><text x="270" y="231">4</text>
+    <line x1="176" y1="226" x2="156" y2="206" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="176" cy="226" r="11" fill="#c0392b"/><text x="176" y="231">5</text>
+    <circle cx="645" cy="110" r="11" fill="#c0392b"/><text x="645" y="115">6</text>
+  </g>
+</svg>

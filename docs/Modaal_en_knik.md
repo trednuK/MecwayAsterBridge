@@ -358,6 +358,16 @@ andere velden zoals in [`ASTER_regels_voorbeelden.md`](ASTER_regels_voorbeelden.
   andere analyses wordt de regel genegeerd (WARNING).
 - De stijfheidsnormering van de modes (RIGI_GENE) gebruikt dan K + Kg(constant).
 
+![Knik met een constante en een variabele last: de factor geldt alleen voor de variabele last](img/buckling_constant_variable.svg)
+
+1. De constante last P_d (`#ASTER-CONSTANT`): die wordt niet vermenigvuldigd.
+2. De variabele last P, zoals ingevoerd (factor 1).
+3. λ_1·P: de factor maal alleen de variabele last. Kniklast k = P_d + λ_k·P; met
+   hetzelfde lastpatroon voor beide (zoals in BU-40) is λ_k = (P_cr,k − P_d)/P.
+4. De volgende kniklast P_cr,2 met λ_2.
+5. De eerste kritieke last P_cr,1.
+6. De constante last alleen al op of boven P_cr,1: de job stopt met een ERROR (§4).
+
 ### 2.3 Normering
 
 | Normering | Betekenis | Gebruik |
@@ -1101,6 +1111,21 @@ cyclische symmetrie (INFO of WARNING in de log).
    elementen van alle sectoren in de modelkopie van `<solution>`, precies zoals
    Mecway's eigen cyclische oplossing (hieronder). Lukt het wiel niet, dan gaat de
    sector naar Mecway (WARNING in de `.mess`, §7.6).
+
+![Eén sector van een cyclisch model gezien langs de as: de twee snijvlakken, een knooppaar en de volgende sector](img/cyclic_sector.svg)
+
+Gezien vanaf de +as (hier z, het papier uit); gestreept: de buursectoren.
+
+1. De symmetrie-as door de oorsprong; de knopen erop vormen het interface `AXE`. Bij een
+   X- of Y-as verwisselt de bridge de coördinaten zodat dit Z is (stap 2 van de lijst
+   hierboven).
+2. `DROITE`: het snijvlak bij de kleinste hoek.
+3. `GAUCHE`: het andere snijvlak, 360°/N tegen de klok in vanaf `DROITE`.
+4. Een knooppaar: een knoop van `DROITE` en de knoop van `GAUCHE` op +360°/N. Welk vlak in
+   Mecway de master is, maakt niet uit.
+5. Het hele wiel: sector j is sector 0 gedraaid over +j·360°/N (tegen de klok in); het
+   `DROITE`-vlak van sector 1 valt op het `GAUCHE`-vlak van sector 0.
+6. De sectorhoek 360°/N.
 
 **Mecway's formaat van het hele wiel** (headless gemeten met Mecway 33 op CY-01,
 CY-04, CY-05, Mecway's Impeller en varianten met twee elsets, een losse knoop en

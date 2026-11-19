@@ -341,6 +341,19 @@ van E afwijkt; de bridge controleert dat vooraf en stopt dan met een ERROR met b
 waarden (bijv. een curve als plastische rek waarvan de eerste plastische rek niet 0
 is). Verificatie NL-04 (isotroop) en NL-04b (kinematisch).
 
+![Een verstevigingscurve in totale rek en dezelfde curve in plastische rek](img/plastic_curve_definitions.svg)
+
+1. De curve in totale rek (`total`; `auto` met (0, 0) of een eerste rek > 0), zoals
+   Mecway hem leest.
+2. Het vloeipunt (σy/E, σy): het eerste punt van `TRACTION`.
+3. Dezelfde curve in plastische rek, beginnend bij (0, σy) (`plastic`; `auto` met een
+   WARNING).
+4. De omrekening ε_totaal = ε_plastisch + σ/E: de verschuiving groeit met σ.
+5. E bij een curve in totale rek: de helling van de oorsprong naar het eerste punt met
+   rek > 0 (WARNING als die afwijkt van het tabblad *Elastic*). Een curve in plastische
+   rek gebruikt E van het tabblad *Elastic*.
+6. E van het tabblad *Elastic* (gestreept; anders getekend dan bij punt 5).
+
 Begint de curve met (0, σ > 0), dan leest `auto` hem als plastische rek, met
 een WARNING dat Mecway dezelfde curve als totale rek leest (de Mecway-oplossing kan
 dan afwijken); kies `plastic` of `total` om de melding te vermijden. Gemeten op NL-01
@@ -962,6 +975,16 @@ plakt star, KNOWN_BUGS 149). Elke samenvoeging zet een WARNING in
 `<model>_<run-id>_bridge_log.txt`, en nog een als de wrijvingscoëfficiënten verschilden
 (KNOWN_BUGS 10). De oplossing die `CONTACT2_16` zelf voorstelt (master en slave wisselen)
 gebruikt de bridge niet: dan wordt het stijve gereedschap slave.
+
+![Twee contactzones waarvan de slave-vlakken knopen delen, en de ene zone waarin ze samengaan](img/contact_zone_merge.svg)
+
+1. Master A.
+2. Master B.
+3. Slave S1, de zone tegen A.
+4. Slave S2, de zone tegen B.
+5. Een knoop in beide slaves: niet toegestaan in twee zones (`CONTACT2_16`).
+6. De samengevoegde zone: master A ∪ B, slave S1 ∪ S2; een slave-punt hoort bij het
+   dichtstbijzijnde masterelement van A ∪ B.
 
 Master- en slave-vlak van **één** zone mogen ook geen knopen delen, anders stopt
 Code-Aster (U2.04.04 §2.3.4). De bridge sluit zulke knopen niet uit.

@@ -338,6 +338,19 @@ point differs from E by more than 1%; the bridge checks this beforehand and then
 with an ERROR showing both values (e.g. a curve as plastic strain whose first plastic
 strain is not 0). Verification NL-04 (isotropic) and NL-04b (kinematic).
 
+![A hardening curve in total strain and the same curve in plastic strain](../img/plastic_curve_definitions.svg)
+
+1. The curve in total strain (`total`; `auto` with (0, 0) or a first strain > 0), as
+   Mecway reads it.
+2. The yield point (σy/E, σy): the first point of `TRACTION`.
+3. The same curve in plastic strain, starting at (0, σy) (`plastic`; `auto` with a
+   WARNING).
+4. The conversion ε_total = ε_plastic + σ/E: the shift grows with σ.
+5. E for a curve in total strain: the slope from the origin to the first point with
+   strain > 0 (WARNING when it differs from the *Elastic* tab). A curve in plastic strain
+   uses E of the *Elastic* tab.
+6. E of the *Elastic* tab (dashed; drawn different from item 5).
+
 If the curve starts with (0, σ > 0), `auto` reads it as plastic strain, with a WARNING that
 Mecway reads the same curve as total strain (the Mecway solution may then differ);
 choose `plastic` or `total` to avoid the message. Measured on NL-01 with `auto`: curve
@@ -942,6 +955,16 @@ KNOWN_BUGS 149). Every merge writes a WARNING to `<model>_<run-id>_bridge_log.tx
 with an extra one if the friction coefficients differed (KNOWN_BUGS 10). The solution
 suggested by `CONTACT2_16` itself (swapping master and slave) is not used by the bridge:
 the stiff tool would then become slave.
+
+![Two contact zones whose slave faces share nodes, and the one zone they are merged into](../img/contact_zone_merge.svg)
+
+1. Master A.
+2. Master B.
+3. Slave S1, the zone against A.
+4. Slave S2, the zone against B.
+5. A node in both slaves: not allowed in two zones (`CONTACT2_16`).
+6. The merged zone: master A ∪ B, slave S1 ∪ S2; a slave point is paired with the
+   nearest master element of A ∪ B.
 
 Master and slave face of **one** zone may not share nodes either, otherwise Code-Aster
 stops (U2.04.04 §2.3.4). The bridge does not exclude such nodes.
