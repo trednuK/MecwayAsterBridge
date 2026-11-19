@@ -427,6 +427,8 @@ def _resolve_line_quad(model_data):
         for g in bonded:
             model_data["elset_modelisations"][g] = "DKT"
             upgrades.pop(g, None)
+        # Groups that fell back to DKT (_buckling_shell_notes)
+        model_data.setdefault("_coque3d_fallback", []).extend(sorted(bonded))
         shell_lq = [g for g in shell_lq if g not in bonded]
         edges = model_data.get("edge_groups", {})
         for sel in list(edges):
@@ -535,10 +537,64 @@ def _resolve_line_quad(model_data):
             for g in shell_lq:
                 model_data["elset_modelisations"][g] = "DKT"
                 upgrades.pop(g, None)
+            model_data.setdefault("_coque3d_fallback", []).extend(shell_lq)
             shell_lq = []
             # Shell edges in the model (FORCE_ARETE, bridge_mesh) already got
             # the shell's modelisation: update it, otherwise COQUE_3D
             # on SEG2 -> <EXCEPTION> MODELISA6_96 (Code-Aster 17.4).
+            edges = model_data.get("edge_groups", {})
+            for sel in list(edges):
+                parent = bridge_mesh._shell_edge_parent(model_data, sel)
+                if parent:
+                    edges[sel] = parent
+
+    # A constraint on an edge selection that lies only partly on these
+    # shells: the job converts only groups that lie entirely on the
+    # converted cells (_bridge_lq_groups), so the new mid-side nodes on
+    # the constrained edges would stay free (LS-98b with one clamp over a
+    # COQUE_3D and two DKT strips: tip 5 % too soft, Code-Aster 17.4,
+    # 19 Nov 2026). Then DKT for those shells (KNOWN_BUGS 162); repeated
+    # until nothing changes (a demoted shell can make another selection
+    # partial). Shell faces themselves are converted in place, so only
+    # edges count.
+    if shell_lq and not tout:
+        faces = model_data.get("group_face_list", {})
+        elem_elset = model_data.get("_elem_elset", {})
+        partial, sels = set(), set()
+        changed = True
+        while changed and shell_lq:
+            changed = False
+            for bc in model_data.get("bcs", []):
+                sel = bc.get("selection")
+                if bc.get("type") not in _KINEMATIC_BCS or \
+                        bc.get("aster_target") != "GROUP_MA" or not sel:
+                    continue
+                owners = set(elem_elset.get(f["eid"])
+                             for f in faces.get(sel, [])
+                             if f.get("kind") == "shelledge")
+                hit = owners & set(shell_lq)
+                if hit and owners - hit:
+                    partial |= hit
+                    sels.add(sel)
+                    shell_lq = [g for g in shell_lq if g not in hit]
+                    changed = True
+        if partial:
+            log(tr("WARNING: COQUE_3D niet toegepast op schalen {0}: "
+                   "voorwaarde(n) op {1} liggen ook op andere elementen, "
+                   "dan zouden de nieuwe middenknopen op die randen vrij "
+                   "blijven. DKT gebruikt; geef deze schalen in Mecway een "
+                   "eigen selectie voor de voorwaarde.",
+                   "WARNING: COQUE_3D not applied to shells {0}: "
+                   "constraint(s) on {1} also lie on other elements, so the "
+                   "new mid-side nodes on those edges would stay free. DKT "
+                   "used; give these shells their own selection for the "
+                   "constraint in Mecway.").format(
+                       ", ".join(sorted(partial)), ", ".join(sorted(sels))))
+            for g in partial:
+                model_data["elset_modelisations"][g] = "DKT"
+                upgrades.pop(g, None)
+            model_data.setdefault("_coque3d_fallback", []).extend(
+                sorted(partial))
             edges = model_data.get("edge_groups", {})
             for sel in list(edges):
                 parent = bridge_mesh._shell_edge_parent(model_data, sel)
@@ -3839,10 +3895,13 @@ def _follower_pressure_groups(model_data, analysis):
     """
     if analysis.get("deformation", "PETIT") not in _LARGE_DEFORMATIONS:
         return set()
+    # COQUE_3D is PETIT in DYNA_NON_LINE (_deformation_for): no follower
+    # load there.
+    dyna = analysis.get("solver_command") == "DYNA_NON_LINE"
     mods = model_data.get("elset_modelisations", {})
     elem_elset = model_data.get("_elem_elset", {})
     faces = model_data.get("group_face_list", {})
-    out, fixed = set(), []
+    out, fixed, fixed_dyna = set(), [], []
     for bc in model_data.get("bcs", []):
         if (bc["type"] != "surfacepressure" or bc.get("hydro") is not None
                 or bc.get("aster_keyword") != "PRES_REP"
@@ -3850,13 +3909,18 @@ def _follower_pressure_groups(model_data, analysis):
                 or is_position(bc["aster_dict"].get("PRES"))):
             # pressure with a formula in x, y, z: not uniform, stays fixed
             continue
-        ok = True
+        ok, small = True, False
         for f in faces.get(bc["selection"], []):
-            if f.get("kind") == "shellface" and mods.get(
-                    elem_elset.get(f["eid"])) != "COQUE_3D":
+            if f.get("kind") != "shellface":
+                continue
+            if mods.get(elem_elset.get(f["eid"])) != "COQUE_3D":
                 ok = False
-        if ok:
+            elif dyna:
+                small = True
+        if ok and not small:
             out.add(bc["selection"])
+        elif ok:
+            fixed_dyna.append(bc["selection"])
         else:
             fixed.append(bc["selection"])
     if fixed:
@@ -3867,6 +3931,16 @@ def _follower_pressure_groups(model_data, analysis):
                "(Mecway: follower load in a nonlinear analysis); Code-Aster "
                "can do that only on COQUE_3D (elem_shell, Elements page).")
             .format(", ".join(sorted(set(fixed)))))
+    if fixed_dyna:
+        log(tr("WARNING: Druk op COQUE_3D-schalen ({0}) blijft in dynamica "
+               "een vaste last (Mecway: meebewegend in een niet-lineaire "
+               "analyse): de schalen rekenen daar met kleine verplaatsingen "
+               "(ELEMENTS3_91).",
+               "WARNING: Pressure on COQUE_3D shells ({0}) stays a fixed "
+               "load in dynamics (Mecway: follower load in a nonlinear "
+               "analysis): the shells are computed there with small "
+               "displacements (ELEMENTS3_91).").format(
+                   ", ".join(sorted(set(fixed_dyna)))))
     if out:
         log("INFO: Pressure as follower load (TYPE_CHARGE='SUIV') on "
             "{0}.".format(", ".join(sorted(out))))
@@ -4737,7 +4811,8 @@ def _build_lin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # always returns an empty plan here.
     bridge_failure.failure_plan(
         model_data, analysis,
-        lambda mat: _relation_for(model_data, mat), _deformation_for)
+        lambda mat: _relation_for(model_data, mat),
+        _solver_deformation_for(analysis))
 
     # --------------------------------------------------
     # PRE-PROCESSING: collapse time history to the last value.
@@ -5670,7 +5745,24 @@ _LARGE_DEFORMATIONS = ("GROT_GDEP", "GREEN_LAGRANGE", "GDEF_LOG",
                        "SIMO_MIEHE")
 
 
-def _deformation_for(modelisation, relation, chosen, elset_name):
+# Runs and elsets for which the COQUE_3D-in-dynamics WARNING was written
+# (_deformation_for; once per run, also when failure_plan asks first).
+_COQUE3D_DYNA_WARNED = set()
+
+
+def _solver_deformation_for(analysis):
+    """_deformation_for with the solver of analysis (for
+    bridge_failure.failure_plan, which calls it with four arguments)."""
+    solver = analysis.get("solver_command")
+
+    def deformation_for(modelisation, relation, chosen, elset_name):
+        return _deformation_for(modelisation, relation, chosen, elset_name,
+                                solver)
+    return deformation_for
+
+
+def _deformation_for(modelisation, relation, chosen, elset_name,
+                     solver=None):
     """
     DEFORMATION per elset for the analysis' choice "deformation". Large
     displacements do not work in Code-Aster 17.4 with one form for
@@ -5686,7 +5778,13 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
                              WARNING: in 17.4 GREEN_LAGRANGE on DKT gave
                              the same results as PETIT (QA run, no
                              effect of large rotations);
-      COQUE_3D             : GROT_GDEP (alarm COMPOR1_47: rotations < 2 pi);
+      COQUE_3D             : GROT_GDEP (alarm COMPOR1_47: rotations < 2 pi),
+                             but PETIT in DYNA_NON_LINE (solver): Code-Aster
+                             17.4 has no mass for COQUE_3D with GROT_GDEP
+                             (<EXCEPTION> ELEMENTS3_91 in MASS_MECA, LS-07b
+                             strip with elem_shell COQUE_3D, test run), and
+                             large rotations of COQUE_3D require GROT_GDEP
+                             (ELEMENTS3_93), so there is no other form;
       beams POU_D_E/_T     : PETIT with a WARNING (large rotations require
                              POU_D_T_GD with ELAS_POUTRE_GR; GROT_GDEP on
                              POU_D_E did not converge).
@@ -5745,6 +5843,21 @@ def _deformation_for(modelisation, relation, chosen, elset_name):
             .format(elset_name, modelisation))
         return "GREEN_LAGRANGE"
     if modelisation == "COQUE_3D":
+        if solver == "DYNA_NON_LINE":
+            key = (run_name(""), elset_name)
+            if key in _COQUE3D_DYNA_WARNED:
+                return "PETIT"
+            _COQUE3D_DYNA_WARNED.add(key)
+            log(tr("WARNING: Elset '{0}' (COQUE_3D): grote rotaties van "
+                   "schalen kunnen niet in dynamica: Code-Aster heeft voor "
+                   "COQUE_3D met GROT_GDEP geen massamatrix (ELEMENTS3_91). "
+                   "De schaal rekent met kleine verplaatsingen (PETIT).",
+                   "WARNING: Elset '{0}' (COQUE_3D): large rotations of "
+                   "shells are not possible in dynamics: Code-Aster has no "
+                   "mass matrix for COQUE_3D with GROT_GDEP (ELEMENTS3_91). "
+                   "The shell is computed with small displacements "
+                   "(PETIT).").format(elset_name))
+            return "PETIT"
         return "GROT_GDEP"
     if modelisation in ("C_PLAN", "D_PLAN", "AXIS"):
         # Plane and axisymmetric continuum (STAPPENPLAN S44a, route A):
@@ -5894,7 +6007,8 @@ def _build_comportement_block(model_data, analysis, elastic=False):
             # Elastic beam with large rotations (U4.51.11: ELAS_POUTRE_GR
             # for POU_D_T_GD, only with GROT_GDEP; test case ssnl103a).
             relation = "ELAS_POUTRE_GR"
-        form = _deformation_for(mod, relation, deformation, elset_name)
+        form = _deformation_for(mod, relation, deformation, elset_name,
+                                analysis.get("solver_command"))
         entries.append(
             "        _F(GROUP_MA='{0}', RELATION='{1}', "
             "DEFORMATION='{2}'),".format(elset_name, relation, form)
@@ -6693,31 +6807,166 @@ def _build_unil_block(unil_bcs):
     return block, "    CONTACT=contact,\n"
 
 
-def _build_etat_init_block(model_data):
+# Shell modelisations whose mass matrix is (nearly) singular in the
+# rotations: implicit DYNA_NON_LINE then computes a wrong initial
+# acceleration (KNOWN_BUGS 156, fixed here; measured with Code-Aster 17.4 on the LS-07b
+# strip, DKT quad4: alarm MECANONLINE_78, pivot on DRY of a free-edge node,
+# tip up to about +10 mm against a 1 N -Z step load, static 0.94 mm down).
+# COQUE_3D has a regular mass (no alarm, right response); DST/Q4G cannot be used in
+# DYNA_NON_LINE (bridge_from_liml makes them DKT).
+_SINGULAR_MASS_SHELLS = ("DKT",)
+
+# MODELISATIONs with DRX/DRY/DRZ (bridge_from_liml._ROT_DOF_MODELISATIONS
+# without COQUE_AXIS, which is 2D and never meets DKT; checked in
+# tests/test_bridge_shell_dynamics.py).
+_ROT_DOF_3D_MODELISATIONS = ("POU_D_T", "POU_D_E", "POU_D_T_GD", "POU_D_TG",
+                             "COQUE_3D", "DKT", "DST", "Q4G", "DIS_TR")
+
+# The extra first solver step with a zero initial acceleration: this
+# fraction of the first solver step (_zero_acce_first_step).
+_ZERO_ACCE_STEP_FRACTION = 0.01
+
+
+def _zero_initial_acceleration(model_data, analysis):
     """
-    Initial velocity (Mecway <initialconditions><velocity>) as field VITE
-    for ETAT_INIT of DYNA_NON_LINE (CREA_CHAMP AFFE, U4.72.04). Mecway:
-    perpendicular components are zero (manual v33 par. 9.8). Returns
-    (block, "    ETAT_INIT=..") or ("", "").
+    True when DYNA_NON_LINE gets a zero initial acceleration (ETAT_INIT
+    ACCE) and an extra small first solver step: implicit scheme (HHT,
+    NEWMARK) and at least one elset that is still DKT after
+    bridge_from_liml (DST -> DKT outside MECA_STATIQUE) and
+    _resolve_line_quad (COQUE_3D -> DKT fallback). Used by both
+    _build_dyna_listinst_block and _build_etat_init_block, so that they
+    always agree.
+
+    Without ACCE, DYNA_NON_LINE solves M a0 = F(0) - K u0 (mess: "On
+    estime une accélération initiale"); with the nearly singular DKT mass
+    that a0 is wrong as soon as a load is non-zero at t = 0 (a Mecway step
+    load, gravity) or with damping and an initial velocity. a0 = 0 is an
+    approximation: the load then acts as a ramp over the first solver step
+    (identical to all digits, HHT and NEWMARK, measured). That step is
+    therefore made small (1/100 of the first solver step): measured on a
+    hex20 bar in the same model, zero against computed a0 on the same time
+    grid 0.03% of the peak (2.9% without the small step, a lag of dt/2);
+    not when an imposed displacement jumps at t = 0
+    (_kinematic_jump_at_start). A constant temperature reaches its full
+    value at 1e-4 of the duration (_temperature_delta), which can lie
+    after the small step (NOT measured).
+    Code-Aster's own DKT tests in DYNA_NON_LINE start their loads at 0
+    (sdls116a, sdls124a, zzzz369a), where a0 is 0 anyway. Explicit schemes
+    (MASS_DIAG) do not have the problem (DKT strip: -0.978 mm at 6 ms
+    against -0.976 mm with CCX).
+    """
+    if analysis.get("solver_command") != "DYNA_NON_LINE":
+        return False
+    if analysis.get("schema", "HHT") in ("DIFF_CENT", "TCHAMWA"):
+        return False
+    return any(m in _SINGULAR_MASS_SHELLS for m in
+               model_data.get("elset_modelisations", {}).values())
+
+
+def _rotation_dof_groups(model_data):
+    """GROUP_MAs of the model whose nodes have DRX/DRY/DRZ (Code-Aster
+    names, as in AFFE_MODELE), sorted (the same .comm on every run)."""
+    groups = set(g for g, m in model_data.get("elset_modelisations",
+                                              {}).items()
+                 if m in _ROT_DOF_3D_MODELISATIONS)
+    groups.update(g for g, m in model_data.get("poi1_groups", {}).items()
+                  if m in _ROT_DOF_3D_MODELISATIONS)
+    groups.update(g for g, d in model_data.get("discretes", {}).items()
+                  if d.get("mod") in _ROT_DOF_3D_MODELISATIONS)
+    return sorted(groups)
+
+
+def _kinematic_jump_at_start(model_data):
+    """
+    True when an imposed displacement, rotation or velocity history is not
+    zero at t = 0 (a constant value, or a table that starts above 0). It
+    then jumps within the first solver step; with the small first step of
+    _zero_acce_first_step that jump would come within 1/100 of the step
+    (measured on the LS-07b strip with u = -1 mm on the tip edge: mid-span
+    velocities up to 12 m/s with NEWMARK instead of 2 m/s, 1.7 against 1.1
+    m/s with HHT). Without the small step the run is the same as before
+    the zero initial acceleration (to all digits, HHT and NEWMARK: with
+    only imposed motion a0 was 0 already). Oblique and unilateral
+    conditions and constraint equations are not looked at
+    (_explicit_kinematic_values).
+    """
+    for _idx, _key, value in _explicit_kinematic_values(model_data):
+        if _interp_history(value, 0.0) != 0.0:
+            return True
+    return False
+
+
+def _zero_acce_first_step(intervals, t_end):
+    """
+    Implicit time list (_build_dyna_listinst_block) with an extra small
+    first solver step for _zero_initial_acceleration. intervals: [(t,
+    NOMBRE)] from t = 0. The first solver step dt1 = t1 / NOMBRE of the
+    first interval becomes tiny + (dt1 - tiny); from dt1 on the solver
+    steps are unchanged, so the first interval gets one step more:
+    [(tiny, 1), (dt1, 1), (t1, NOMBRE - 1)] (without the last entry when
+    NOMBRE = 1). tiny = dt1 / 100, at least 1e-8 * t_end (above the
+    1e-9 * t_end of _merge_times) and at most dt1 / 2.
+    Returns (intervals, tiny).
+    """
+    t1, count = intervals[0]
+    dt1 = t1 / float(count)
+    tiny = _round_time(min(max(dt1 * _ZERO_ACCE_STEP_FRACTION,
+                               1.0e-8 * t_end), dt1 / 2.0))
+    first = [(tiny, 1)]
+    if count > 1:
+        first += [(_round_time(dt1), 1), (t1, count - 1)]
+    else:
+        first.append((t1, 1))
+    return first + list(intervals[1:]), tiny
+
+
+def _build_etat_init_block(model_data, analysis=None):
+    """
+    ETAT_INIT of DYNA_NON_LINE (CREA_CHAMP AFFE, U4.72.04):
+    - initial velocity (Mecway <initialconditions><velocity>) as field
+      VITE. Mecway: perpendicular components are zero (manual v33 par.
+      9.8);
+    - a zero initial acceleration ACCE when _zero_initial_acceleration
+      (DKT in implicit dynamics, KNOWN_BUGS 156 fixed). Both fields then also
+      set DRX/DRY/DRZ = 0 on the groups with rotations (otherwise
+      MECANONLINE5_80 "complété par des zéros", same result). Without
+      ACCE the velocity field is unchanged.
+    Returns (block, "    ETAT_INIT=..") or ("", "").
     """
     vels = model_data.get("initial_velocities", [])
-    if not vels:
+    zero = analysis is not None and _zero_initial_acceleration(model_data,
+                                                               analysis)
+    if not vels and not zero:
         return "", ""
-    affe = ["_F(TOUT='OUI', NOM_CMP=('DX', 'DY', 'DZ'), "
-            "VALE=(0.0, 0.0, 0.0))"]
-    for sel, target, v in vels:
-        affe.append("_F({0}='{1}', NOM_CMP=('DX', 'DY', 'DZ'), "
-                    "VALE=({2!r}, {3!r}, {4!r}))".format(
-                        target, sel, v[0], v[1], v[2]))
-    block = (
-        "vite0 = CREA_CHAMP(\n"
+    tout = ("_F(TOUT='OUI', NOM_CMP=('DX', 'DY', 'DZ'), "
+            "VALE=(0.0, 0.0, 0.0))")
+    rot = []
+    if zero:
+        groups = _rotation_dof_groups(model_data)
+        if groups:
+            rot = ["_F(GROUP_MA=({0},), NOM_CMP=('DRX', 'DRY', 'DRZ'), "
+                   "VALE=(0.0, 0.0, 0.0))".format(
+                       ", ".join("'{0}'".format(g) for g in groups))]
+    template = (
+        "{0} = CREA_CHAMP(\n"
         "    TYPE_CHAM='NOEU_DEPL_R',\n"
         "    OPERATION='AFFE',\n"
         "    MODELE=model,\n"
-        "    AFFE=(\n        {0},\n    ),\n"
-        ")\n"
-    ).format(",\n        ".join(affe))
-    return block, "    ETAT_INIT=_F(VITE=vite0),\n"
+        "    AFFE=(\n        {1},\n    ),\n"
+        ")\n")
+    block, keys = "", []
+    if vels:
+        affe = [tout] + rot
+        for sel, target, v in vels:
+            affe.append("_F({0}='{1}', NOM_CMP=('DX', 'DY', 'DZ'), "
+                        "VALE=({2!r}, {3!r}, {4!r}))".format(
+                            target, sel, v[0], v[1], v[2]))
+        block += template.format("vite0", ",\n        ".join(affe))
+        keys.append("VITE=vite0")
+    if zero:
+        block += template.format("acce0", ",\n        ".join([tout] + rot))
+        keys.append("ACCE=acce0")
+    return block, "    ETAT_INIT=_F({0}),\n".format(", ".join(keys))
 
 
 def _round_time(t):
@@ -7280,6 +7529,20 @@ def _build_dyna_listinst_block(model_data, load_funcs, analysis):
                 k = max(1, int(math.ceil((t - prev) / step - 1.0e-6)))
             intervals.append((t, k * n))
             prev = t
+        if (_zero_initial_acceleration(model_data, analysis)
+                and _kinematic_jump_at_start(model_data)):
+            log("INFO: DKT shells in implicit dynamics: zero initial "
+                "acceleration (ETAT_INIT ACCE; the computed one is wrong "
+                "with the nearly singular DKT mass, MECANONLINE_78); no "
+                "extra small first step, because an imposed displacement "
+                "is not zero at t = 0 and would jump within it.")
+        elif _zero_initial_acceleration(model_data, analysis):
+            intervals, tiny = _zero_acce_first_step(intervals, t_end)
+            log("INFO: DKT shells in implicit dynamics: zero initial "
+                "acceleration (ETAT_INIT ACCE; the computed one is wrong "
+                "with the nearly singular DKT mass, MECANONLINE_78) and "
+                "an extra first solver step of {0} s (not stored in "
+                "the results).".format(tiny))
         if step:
             log("INFO: Implicit dynamics: solver step = Mecway's step size "
                 "{0} s / substeps_per_output {1}; {2} steps, results at {3} "
@@ -8018,7 +8281,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         explicit=explicit)
     extra = ""
     if dynamic:
-        etat_block, etat_ref = _build_etat_init_block(model_data)
+        etat_block, etat_ref = _build_etat_init_block(model_data,
+                                                      analysis)
         schema = analysis.get("schema", "HHT")
         if schema in ("DIFF_CENT", "TCHAMWA"):
             schema_clause = (
@@ -8108,7 +8372,8 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     )
     plan = bridge_failure.failure_plan(
         model_data, analysis,
-        lambda mat: _relation_for(model_data, mat), _deformation_for)
+        lambda mat: _relation_for(model_data, mat),
+        _solver_deformation_for(analysis))
     _warn_plastic_hex8(model_data, plan)
     first_call = solve_call.format(
         restart="", increment="LIST_INST=listinst", **solve_args)
@@ -8903,7 +9168,9 @@ def _buckling_shell_notes(model_data):
     """
     mods = model_data.get("elset_modelisations", {})
     dkt = sorted(g for g, m in mods.items() if m in ("DKT", "DST"))
-    if dkt and CONFIG_BRIDGE.get("elem_shell") == "COQUE_3D":
+    fell = set(model_data.get("_coque3d_fallback") or ())
+    if any(g in fell for g in dkt):
+        dkt = [g for g in dkt if g in fell]
         # COQUE_3D fell back to DKT (_resolve_line_quad gave its WARNING)
         log(tr("WARNING: Knik met DKT-schalen ({0}): COQUE_3D viel hier "
                "terug naar DKT (zie de WARNING daarover). De geometrische "
@@ -9084,7 +9351,8 @@ def _build_modal(work_dir, model_data, msh_path, resu_name, analysis):
         return None
     bridge_failure.failure_plan(
         model_data, analysis,
-        lambda mat: _relation_for(model_data, mat), _deformation_for)
+        lambda mat: _relation_for(model_data, mat),
+        _solver_deformation_for(analysis))
     _collapse_histories(model_data, "CALC_MODES")
     # Cyclic symmetry (Mecway Cyclic symmetry, modal only):
     # MODE_ITER_CYCL in bridge_cyclic.py.

@@ -605,13 +605,17 @@ GLOSSARY = OrderedDict([
                    u"toestaat (volume: GREEN_LAGRANGE of GDEF_LOG; "
                    u"COQUE_3D: GROT_GDEP). Balken en DKT/DST-schalen blijven "
                    u"geometrisch lineair (WARNING in de log); kies voor "
-                   u"grote rotaties van schalen COQUE_3D.",
+                   u"grote rotaties van schalen COQUE_3D. In dynamica rekent "
+                   u"ook COQUE_3D met kleine verplaatsingen (Code-Aster heeft "
+                   u"daar geen massa voor GROT_GDEP, ELEMENTS3_91).",
                    u"Large displacements and rotations. The bridge chooses "
                    u"the form Code-Aster allows per element type (solid: "
                    u"GREEN_LAGRANGE or GDEF_LOG; COQUE_3D: GROT_GDEP). Beams "
                    u"and DKT/DST shells stay geometrically linear (WARNING "
                    u"in the log); for large rotations of shells choose "
-                   u"COQUE_3D.")),
+                   u"COQUE_3D. In dynamics COQUE_3D is computed with small "
+                   u"displacements too (Code-Aster has no mass for "
+                   u"GROT_GDEP there, ELEMENTS3_91).")),
     ("GDEF_LOG", ("deformation", u"Grote vervormingen met logaritmische "
                   u"rek; voor plastische volume-elementen.",
                   u"Large deformations with logarithmic strain; for plastic "

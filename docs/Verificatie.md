@@ -165,7 +165,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
 (1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), LS-07w (3 OK), LS-07x (3 OK), LS-07y (3 OK), LS-07z (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK), LS-98a (6 OK), LS-98b (6 OK).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangentiële stijfheid kt wordt niet gemodelleerd, Code-Aster
@@ -521,7 +521,8 @@ opeenvolgende meshes.
   dubbele voorwaarde). Bij XFEM verliezen de slave-knopen ook de `DDL_IMPO` op hun
   XFEM-vrijheidsgraden; dat verandert niets: met de oplegging op de slave- in plaats van
   de masterknopen komt hetzelfde uit. De schaalroutes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE)
-  rekenen in dynamica ook zonder dubbele voorwaarde niet (KNOWN_BUGS 156). HOMARD
+  rekenen in dynamica sinds de beginversnelling nul voor DKT, met hetzelfde resultaat als
+  de strook uit één stuk LS-07b (DY-40c..e). HOMARD
   (`adapt_homard`) weigert verlijmd contact voor de run.
 
 ### LS-08 Node temperature (thermische spanning per knoop)
@@ -1378,6 +1379,30 @@ coordinates* slaat Mecway `lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu` =
 - **NIET geverifieerd**: een elementoffset via deze route; I, T, L, C op `POU_D_TG`, waar de solver de
   dunwandige EY, EZ heeft en de spanning het dwarskrachtcentrum van het mesh; een verdeelde last op `POU_D_T`,
   `POU_D_TG` en line3 via deze spanning; kleuren in Mecway's venster.
+
+### LS-98 Element per component (`#ASTER-ELEMENT`)
+
+- **Doel**: verschillende Code-Aster-elementen in één model, per Mecway-component
+  ([ASTER-regels §2](ASTER_regels_voorbeelden.md#2-soorten-regels)).
+- **Model**: drie losse LS-07b-stroken (20 × 4 quad4, 0,2 × 0,02 × 0,002 m, staal, elk 1 N
+  op de vrije rand): `Strook_DKT` met de algemene instelling `DKT`, `Strook_DST` en
+  `Strook_Q3D` met `**ASTER-ELEMENT ...: DST` en `COQUE_3D`. LS-98a: elke strook een eigen
+  inklemming; LS-98b: één inklemming over de drie stroken.
+- **Referentie**: dezelfde strook alleen, met het element als algemene instelling
+  (Code-Aster 17.4, 19 nov 2026), en Mecway 34 op LS-07b (9,41484·10⁻⁴ m).
+
+| Test | Strook | Referentie (alleen) | Resultaat | t.o.v. Mecway |
+|---|---|---|---|---|
+| LS-98a | DKT | 9,4257·10⁻⁴ m | 9,4257·10⁻⁴ m | +0,12 % |
+| LS-98a | DST | 9,4291·10⁻⁴ m | 9,4291·10⁻⁴ m | +0,15 % |
+| LS-98a | COQUE_3D | 9,4341·10⁻⁴ m | 9,4341·10⁻⁴ m | +0,20 % |
+| LS-98b | COQUE_3D (terug naar DKT) | 9,4257·10⁻⁴ m | 9,4257·10⁻⁴ m | +0,12 % |
+
+Elke strook is gelijk aan zijn eigen run. In LS-98b ligt de inklemming ook op de
+DKT-stroken; met `COQUE_3D` bleven de nieuwe middenknopen op de ingeklemde rand dan vrij
+(tip 9,9206·10⁻⁴ m, 5 % te slap), daarom rekent de bridge die strook met DKT en geeft een
+WARNING (KNOWN_BUGS 162). Niet gedekt: balken en volume-elementen per component (wel de
+unit-test `tests/test_element_override.py`), en de Mecway-GUI.
 
 ### Conclusie lineair statisch
 
@@ -2636,6 +2661,40 @@ U-documentatie gevonden):
 - **Interpretatie**: de omzetting werkt voor alle opgelegde bewegingen. Mecway staat een
   constante ≠ 0 in een constraint equation alleen bij statisch toe (manual §9.42); de
   bridge vertaalt haar toch, met een WARNING.
+
+### DY-40 Schalen in impliciete dynamica (KNOWN_BUGS 156 opgelost)
+
+- **Doel**: DKT in `DYNA_NON_LINE` met een last die op t = 0 niet nul is: de bridge
+  schrijft een beginversnelling nul en een extra kleine eerste rekenstap
+  ([Instellingen §2.5](Instellingen_contact_en_nietlineair.md#25-tijdschema-dynamica-schema-hht_alpha));
+  `COQUE_3D` met `PETIT` in dynamica (`ELEMENTS3_91`).
+- **Modellen**: de strook van LS-07b (0,2 × 0,02 × 0,002 m, 20 × 4 quad4, staal, dichtheid
+  7850 kg/m³), ingeklemd, staplast 1 N −Z op de tiprand, 0 … 0,05 s, uitvoer elke 0,5 ms
+  (eerste mode 42 Hz, T = 23,8 ms). DY-40a standaardinstellingen (HHT, `GROT_GDEP`), DY-40b
+  `NEWMARK`; DY-40c de verlijmde strook LS-07a (`LIAISON_MAIL` COQUE), DY-40d LS-07f
+  (`LIAISON_DDL`, 30°), DY-40e LS-07r (LS-07f met een dubbele voorwaarde, KNOWN_BUGS 147);
+  DY-40f dezelfde strook in quad8 (`COQUE_3D`, standaardinstellingen); DY-40g de strook en
+  een losse hex20-balk van dezelfde maat in één model; DY-40h de strook met u_z = −1 mm op
+  de tip vanaf t = 0 (een sprong) en zonder kracht.
+- **Referentie**: Mecway 36 met CCX op dezelfde modellen (headless, stapgrootte 0,5 ms; de
+  tip als gemiddelde van de knopen van het uitgezette mesh): grootste doorbuiging
+  −1,83997 mm (quad4), −1,83305 mm (quad8), balk −1,83144 mm; statisch −0,93915 mm. Ook
+  het aantal opgeslagen tijdstippen (101: de kleine stap wordt niet opgeslagen). DY-40h:
+  dezelfde run met de bridge van voor de beginversnelling nul (Code-Aster 17.4): midden
+  −0,80341 mm.
+- **Resultaat**: piek −1,85286 mm (+0,70 %), NEWMARK −1,84248 mm (+0,14 %), verlijmde
+  stroken −1,85177 mm (+0,64 %, gelijk voor LS-07a, f en r), quad8 −1,85433 mm (+1,16 %),
+  balk −1,83615 mm (+0,26 %); DY-40h gelijk in alle cijfers (geen kleine stap); overal 101
+  opgeslagen tijdstippen, geen `MECANONLINE_78`. Voor de oplossing: DKT tot ongeveer
+  +10 mm (snelheden van 4e11 m/s), de verlijmde stroken
+  stopten met `MECANONLINE9_7`, quad8 met `ELEMENTS3_91`.
+- **Interpretatie**: een beginversnelling nul laat de last over de eerste rekenstap
+  opkomen; met de kleine stap is die vertraging verwaarloosbaar: de balk in DY-40g wijkt
+  0,03 % van de piek af van dezelfde run met de eigen beginversnelling van Code-Aster
+  (2,9 % met een beginversnelling nul over een hele stap, een vertraging van een halve
+  stap). Het resterende verschil met CCX is de
+  discretisatie in de tijd (48 stappen per periode) en van de schalen (statisch DKT
+  +0,36 %, KNOWN_BUGS 2).
 
 ### DY-70 .. DY-73 Temperatuur in dynamica
 

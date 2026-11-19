@@ -825,14 +825,20 @@ voorwaarde, vaak door contact (`SANS_GROUP_NO`).
 - **Melding** (alarm): de massamatrix voor de beginversnelling is bijna singulier; de
   beginversnelling kan op enkele knopen te groot zijn.
 - **Oorzaak**: vrijheidsgraden zonder massa: een materiaal zonder dichtheid, of
-  rotaties zonder rotatietraagheid.
+  rotaties zonder rotatietraagheid. DKT-schalen: hun massa is in de rotaties bijna
+  singulier; zonder de maatregel hieronder was de beginversnelling dan fout bij een last
+  die op t = 0 niet nul is (LS-07b-strook, staplast 1 N: tip tot ongeveer +10 mm in plaats van
+  rond 0,94 mm omlaag; verlijmde stroken `MECANONLINE9_7`; KNOWN_BUGS 156, opgelost).
 - **Gezien**: D12_rotinertia (maximale hoek 0,012611, gelijk aan de theorie), F4_model,
   en voorbeeld 1 van `ASTER_regels_voorbeelden.md` in *Dynamisch (impliciet)* (balk
-  zonder dichtheid; 06-10-2026). De bridge waarschuwt vooraf bij een elset zonder
-  dichtheid.
-- **Oplossing**: geef het materiaal in Mecway een dichtheid; verder geen nodig als de
-  resultaten kloppen.
-- **Status**: onschuldig (in de geziene gevallen) / model (geen dichtheid).
+  zonder dichtheid; 06-10-2026); DKT: verificatie DY-40 (19-11-2026). De bridge
+  waarschuwt vooraf bij een elset zonder dichtheid.
+- **Oplossing**: geef het materiaal in Mecway een dichtheid. Met DKT in impliciete
+  dynamica schrijft de bridge een beginversnelling nul (`ETAT_INIT` `ACCE`) en een extra
+  kleine eerste rekenstap ([Instellingen §2.5](Instellingen_contact_en_nietlineair.md#25-tijdschema-dynamica-schema-hht_alpha));
+  het alarm komt dan niet meer.
+- **Status**: opgelost in de bridge (DKT) / model (geen dichtheid); verder onschuldig in
+  de geziene gevallen.
 
 ---
 
@@ -1150,6 +1156,21 @@ opnieuw doorgerekend op 06-10-2026).
   slaveknopen (voorbeeld 9), of een masterknoop zonder rotatievrijheidsgraden. Alleen met
   eigen code.
 - **Status**: beperking.
+
+### `ELEMENTS3_91` – geen massa voor COQUE_3D met grote rotaties
+
+- **Melding** (fout): de massaberekening is niet geïmplementeerd voor
+  `COQUE_3D`-elementen met grote rotaties, deformatie `GROT_GDEP` (optie `MASS_MECA`).
+- **Oorzaak**: `DYNA_NON_LINE` met `COQUE_3D` (kwadratische schalen, of `elem_shell` =
+  `COQUE_3D`) en `DEFORMATION='GROT_GDEP'`, de standaard-`deformation` van
+  `dyna_impl_3d`. Grote rotaties van `COQUE_3D` vragen `GROT_GDEP` (`ELEMENTS3_93`),
+  dus er is geen andere vorm.
+- **Gezien**: de LS-07b-strook met `elem_shell` = `COQUE_3D` en een quad8-strook in
+  *Dynamisch (impliciet)* (19-11-2026).
+- **Oplossing**: in de bridge: `COQUE_3D` krijgt in dynamica `PETIT`, met een WARNING
+  (verificatie DY-40f); druk op die schalen blijft dan een vaste last. Grote rotaties
+  van schalen in dynamica kunnen niet (KNOWN_BUGS 159).
+- **Status**: opgelost in de bridge (beperking: kleine verplaatsingen).
 
 Verder bij grote rotaties: `COMPOR5_22`, `COMPOR1_44`, `COMPOR1_47`, `COMPOR1_99`,
 `DVP_2` (`POU_D_T_GD` met `ELAS`), `CALCUL_37` (`POU_D_T_GD` met
@@ -1648,6 +1669,7 @@ twee drukken en balken in het model).
 | `DVP_2` | [2](#dvp_2--floating-point-exception) | opgelost in de bridge (a, b); melding met resultaten tot de fout (d) |
 | `DYNAMIQUE_4` | [5](#dynamique_4--stabiliteitsgrens-niet-te-berekenen-expliciet) | opgelost in de bridge |
 | `ELEMENTS2_63` | [2](#elements2_63--ther_nl-ontbreekt-in-het-materiaal-thermisch) | opgelost in de bridge |
+| `ELEMENTS3_91` | [6](#elements3_91--geen-massa-voor-coque_3d-met-grote-rotaties) | opgelost in de bridge |
 | `ELEMENTS4_4` | [7](#elements4_4-elements4_64--sipm_elno-niet-mogelijk) | opgelost in de bridge |
 | `ELEMENTS4_64` | [7](#elements4_4-elements4_64--sipm_elno-niet-mogelijk) | opgelost in de bridge |
 | `ELEMENTS4_92` | [2](#elements4_92--druk-als-functie-op-een-schaal) | opgelost in de bridge |
@@ -1676,7 +1698,7 @@ twee drukken en balken in het model).
 | `MECANONLINE9_50` | [5](#mecanonline9_50--stapbewaking-beëindigd) | opgelost in de bridge (de run gaat door) |
 | `MECANONLINE9_7` | [5](#mecanonline9_7--newton-convergeert-niet) | model / beperking (per geval) |
 | `MECANONLINE_3` | [2](#mecanonline_3-met-alarm-calculel_54--element-niet-voor-niet-lineair) | opgelost in de bridge |
-| `MECANONLINE_78` | [3](#mecanonline_78--massamatrix-bijna-singulier) | onschuldig (in de geziene gevallen) / model (geen dichtheid) |
+| `MECANONLINE_78` | [3](#mecanonline_78--massamatrix-bijna-singulier) | opgelost in de bridge (DKT) / model (geen dichtheid) |
 | `MESH1_4` | [1](#mesh1_4--line_quad-op-een-deel-van-het-mesh) | onschuldig |
 | `MODELE1_14` | [2](#modele1_3-modele1_14-modele1_53-charges2_4--thermische-schalen-als-plan) | onschuldig (bewuste keuze) |
 | `MODELE1_3` | [2](#modele1_3-modele1_14-modele1_53-charges2_4--thermische-schalen-als-plan) | onschuldig (bewuste keuze) |

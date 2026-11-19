@@ -1032,3 +1032,176 @@ TESTS += [
          note="De TCHAMWA-reeks van een knik is nog niet uitgedempt bij de "
               "volgende knik (v = v_cur in _explicit_accelerations)."),
 ]
+
+
+# ==========================================
+# DY-40 Shells in implicit dynamics (KNOWN_BUGS 156): the LS-07 strip
+# (0.2 x 0.02 x 0.002 m, steel, density 7850) under a 1 N -Z step load at
+# the tip, 0 .. 0.05 s, output every 0.5 ms (T1 = 23.8 ms). DKT gets a
+# zero initial acceleration and a small first solver step
+# (bridge_to_aster._zero_initial_acceleration); quad8 (COQUE_3D) is PETIT
+# in dynamics (ELEMENTS3_91). Mecway 36 (CCX, headless via
+# TestFiles/Tools/mw_solve.py, stepsize 0.5 ms; the tip as the mean of the
+# nodes of the expanded mesh at x = L): quad4 strip -1.839974e-3 m
+# (static -9.391492e-4), quad8 strip -1.833047e-3 m (static
+# -9.345322e-4), strip + hex20 bar in one model: strip -1.839974e-3,
+# bar -1.831437e-3 m (CCX gave no solution with a beam in the model).
+# ==========================================
+import tests_lineair_statisch as _LS  # noqa: E402
+
+MW40_Q4, MW40_Q8, MW40_BAR = -1.839974e-3, -1.833047e-3, -1.831437e-3
+T40, DT40 = 0.05, 5e-4
+N40 = 101                     # stored instants: t = 0 and 100 output times
+
+
+def _dyn40(build):
+    def b():
+        m = build()
+        m.analysis = "D31"
+        m.timesteps = _timesteps(T40, DT40)
+        m.mats = [s if "density" in s else
+                  s.replace("\n  </mat>", "\n    %s\n  </mat>" % _LS.DENS7)
+                  for s in m.mats]
+        return m
+    return b
+
+
+def _strip40_q8():
+    m = Model("S30")
+    m.mat("Plaat2", _LS.PLATE2, _LS.STEEL)
+    m.elset("Plaat", "Plaat2")
+    q = quadmesh(m, "Plaat", 20, 4, rect(0, _LS.L7, 0, _LS.B7), order=2)
+    m.face_selection("Inklemming", q["edges"]["u0"])
+    m.face_selection("Vrij_eind", q["edges"]["u1"])
+    m.node_selection("Tip", sorted(q["nodes"]["u1"]))
+    m.add('<fixed selection="Inklemming" />')
+    m.add('<force selection="Vrij_eind"><x>0 N</x><y>0 N</y><z>-1 N</z>'
+          '</force>')
+    return m
+
+
+def _strip40_bar():
+    """LS-07b strip plus a separate hex20 bar 0.2 x 0.02 x 0.002 m (own
+    nodes, y = 0.05 .. 0.07) with its own clamp and 1 N -Z at its end."""
+    m = _LS.build_ls07_strip(False)()
+    m.mat("Vol", _LS.STEEL)
+    m.elset("Blok", "Vol")
+    s = hexmesh(m, "Blok", 20, 2, 1, box(0, _LS.L7, 0.05, 0.07, -0.001,
+                                           0.001), order=2)
+    m.face_selection("Klem_blok", s["faces"]["u0"])
+    m.face_selection("Eind_blok", s["faces"]["u1"])
+    m.node_selection("Tip_blok", sorted(s["nodes"]["u1"]))
+    m.add('<fixed selection="Klem_blok" />')
+    m.add('<force selection="Eind_blok"><x>0 N</x><y>0 N</y><z>-1 N</z>'
+          '</force>')
+    return m
+
+
+def _peak40(sel, rotated=False):
+    """Largest deflection (most negative w) over the history; rotated:
+    against the plate normal of LS-07f (sign as displz)."""
+    def f(r):
+        nids = r.model.nodesel[sel]
+        out = []
+        for _t, d in r.steps:
+            z = sum(d["displz"][n] for n in nids) / len(nids)
+            if rotated:
+                y = sum(d["disply"][n] for n in nids) / len(nids)
+                z = -(_LS.S7 * y - _LS.C7 * z)
+            out.append(z)
+        return min(out)
+    return f
+
+
+def _checks40(ref, tol, source, sel="Tip", rotated=False):
+    return [Check("grootste doorbuiging tip (stap 1 N)", _peak40(sel, rotated),
+                  ref=ref, tol=tol, unit="m", source=source, in_series=False),
+            Check("opgeslagen tijdstippen (de kleine eerste stap niet)",
+                  lambda r: len(r.steps), ref=N40, tol_abs=0.5, unit="-",
+                  source="t = 0 en de 100 uitvoertijden", in_series=False)]
+
+
+
+def _strip40_jump():
+    """LS-07b strip with u_z = -1 mm on the tip nodes from t = 0 (no time
+    history), no force: the jump case of _kinematic_jump_at_start."""
+    m = _LS.build_ls07_strip(False)()
+    m.items = [i if "<force" not in i else
+               '  <displacement selection="Tip"><value>-1 mm</value>'
+               '<x>0</x><y>0</y><z>1</z></displacement>' for i in m.items]
+    m.node_selection("Midden", [i + 1 for i, q in enumerate(m.nodes)
+                                if abs(q[0] - 0.5 * _LS.L7) < 1e-9])
+    return m
+
+
+def _min40(sel):
+    def f(r):
+        nids = r.model.nodesel[sel]
+        return min(sum(d["displz"][n] for n in nids) / len(nids)
+                   for _t, d in r.steps)
+    return f
+
+
+# Code-Aster 17.4 with the bridge before the zero initial acceleration
+# (19 Nov 2026; with only imposed motion a0 was already 0, so the run is
+# the same): largest mid-span deflection of _strip40_jump, HHT.
+REF40H = -8.034149e-4
+
+SRC40 = "Mecway 36 (CCX), headless, zelfde strook (DKT in Code-Aster)"
+TESTS += [
+    Case("DY-40a", GROUP, "Plaatstrook DKT, staplast, impliciet (HHT, "
+         "standaardinstellingen, KNOWN_BUGS 156)", "dyna_impl_3d",
+         _dyn40(_LS.build_ls07_strip(False)), _checks40(MW40_Q4, 0.01, SRC40),
+         timeout=900,
+         note="Zonder de oplossing: tip tot +10 mm (beginversnelling uit de "
+              "bijna singuliere DKT-massa, MECANONLINE_78)."),
+    Case("DY-40b", GROUP, "Plaatstrook DKT, staplast, impliciet NEWMARK",
+         "dyna_impl_3d", _dyn40(_LS.build_ls07_strip(False)),
+         _checks40(MW40_Q4, 0.01, SRC40),
+         settings={"schema": "NEWMARK", "deformation": "PETIT"}, timeout=900),
+    Case("DY-40c", GROUP, "Plaatstrook uit twee verlijmde delen (LS-07a, "
+         "LIAISON_MAIL), staplast, impliciet", "dyna_impl_3d",
+         _dyn40(_LS.build_ls07_strip(True)), _checks40(MW40_Q4, 0.01, SRC40),
+         timeout=900, note="Zonder de oplossing: MECANONLINE9_7."),
+    Case("DY-40d", GROUP, "Verlijmde strook 30 graden gedraaid (LS-07f, "
+         "LIAISON_DDL), staplast, impliciet", "dyna_impl_3d",
+         _dyn40(_LS.build_ls07_strip_rot()),
+         _checks40(MW40_Q4, 0.01, SRC40, rotated=True), timeout=900,
+         note="Zonder de oplossing: MECANONLINE9_7 in de eerste stap."),
+    Case("DY-40e", GROUP, "LS-07f met Displacement X = 0 op alle knopen "
+         "(LS-07r, dubbele voorwaarde, KNOWN_BUGS 147), staplast, impliciet",
+         "dyna_impl_3d", _dyn40(_LS.build_ls07r),
+         _checks40(MW40_Q4, 0.01, SRC40, rotated=True), timeout=900),
+    Case("DY-40f", GROUP, "Quad8-strook (COQUE_3D), staplast, impliciet, "
+         "standaardinstellingen (COQUE_3D met PETIT)", "dyna_impl_3d",
+         _dyn40(_strip40_q8), _checks40(MW40_Q8, 0.015, "Mecway 36 (CCX), "
+                                        "headless, zelfde quad8-strook"),
+         timeout=900,
+         note="Zonder de oplossing: ELEMENTS3_91 (geen massa voor COQUE_3D "
+              "met GROT_GDEP)."),
+    Case("DY-40g", GROUP, "Strook DKT en losse hex20-balk in een model, "
+         "staplast, impliciet", "dyna_impl_3d", _dyn40(_strip40_bar),
+         _checks40(MW40_Q4, 0.01, "Mecway 36 (CCX), headless, zelfde model")
+         + [Check("grootste doorbuiging eind hex20-balk",
+                  _peak40("Tip_blok"), ref=MW40_BAR, tol=0.01, unit="m",
+                  source="Mecway 36 (CCX), headless, zelfde model",
+                  in_series=False)],
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="De nul-beginversnelling geldt voor het hele model; de kleine "
+              "eerste stap houdt de balk gelijk aan de berekende "
+              "beginversnelling (0,03% van de piek)."),
+    Case("DY-40h", GROUP, "Plaatstrook DKT, opgelegde verplaatsing vanaf "
+         "t = 0 (sprong), impliciet: geen kleine eerste stap",
+         "dyna_impl_3d", _dyn40(_strip40_jump),
+         [Check("grootste doorbuiging midden", _min40("Midden"),
+                ref=REF40H, tol=0.001, unit="m",
+                source="Code-Aster 17.4, bridge voor de nul-beginversnelling "
+                       "(zelfde run)", in_series=False),
+          Check("opgeslagen tijdstippen", lambda r: len(r.steps), ref=N40,
+                tol_abs=0.5, unit="-", source="t = 0 en de 100 uitvoertijden",
+                in_series=False)],
+         settings={"deformation": "PETIT"}, timeout=900,
+         note="Met de kleine stap sprong de rand binnen 1/100 van de stap: "
+              "snelheden in het midden tot 12 m/s (NEWMARK) in plaats van "
+              "2 m/s."),
+]

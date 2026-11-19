@@ -311,7 +311,7 @@ details per elset staan als INFO in het log.
 | volume, elastisch | `GREEN_LAGRANGE`, of `GDEF_LOG` als dat gekozen is | `GROT_GDEP` mag niet op 3D (`COMPOR5_22`) |
 | volume, plastisch | `GDEF_LOG`, of `SIMO_MIEHE` als dat gekozen is (met `VMIS_CINE_LINE` altijd `GDEF_LOG`) | `GREEN_LAGRANGE` met `VMIS_*` geweigerd, `SIMO_MIEHE` met `VMIS_CINE_LINE` ook (`COMPOR1_44`) |
 | DKT/DST | `GREEN_LAGRANGE` (met `VMIS_CINE_LINE` `PETIT`) | `GROT_GDEP` convergeerde niet, `GDEF_LOG` geweigerd (`COMPOR1_99`); `GREEN_LAGRANGE` gaf dezelfde uitkomst als `PETIT`, dus in feite geometrisch lineair. Grote rotaties van schalen: `elem_shell` = `COQUE_3D` |
-| `COQUE_3D` | `GROT_GDEP` | alarm `COMPOR1_47`: rotaties < 2π; NL-02b exact |
+| `COQUE_3D` | `GROT_GDEP`; in dynamica `PETIT` | alarm `COMPOR1_47`: rotaties < 2π; NL-02b exact. Dynamica: geen massa met `GROT_GDEP` (`ELEMENTS3_91`), dus kleine verplaatsingen met een WARNING (DY-40f, KNOWN_BUGS 159) |
 | balk `POU_D_E`/`POU_D_T` | `PETIT` | `GROT_GDEP` op `POU_D_E` convergeerde niet (KNOWN_BUGS 11); voor grote rotaties `elem_beam` = `POU_D_T_GD` |
 | balk `POU_D_T_GD` | `GROT_GDEP` met `ELAS_POUTRE_GR` | grote rotaties van balken (§2.9) |
 | kabel (tension only) | altijd `GROT_GDEP` | `RELATION='CABLE'` vraagt dat; kleine voorspanning `N_INIT` = `cable_n_init_factor` × E × A (standaard 1e-6, pagina **Elementen**), anders is een rechte kabel singulier |
@@ -321,7 +321,7 @@ details per elset staan als INFO in het log.
 
 **Meebewegende lasten.** Met een vorm voor grote verplaatsingen is uniforme druk een
 meebewegende last (`TYPE_CHARGE='SUIV'`), zoals in Mecway (Mecway, 2026, §9.14), op
-volumes en `COQUE_3D`; op DKT/DST kan Code-Aster dat niet (`CALCUL_42`), daar blijft
+volumes en `COQUE_3D` (niet in dynamica, waar `COQUE_3D` `PETIT` is: WARNING); op DKT/DST kan Code-Aster dat niet (`CALCUL_42`), daar blijft
 de druk vast (WARNING). Hydrostatische druk blijft vast. Centrifugaalkracht gebruikt in
 `STAT_NON_LINE` de vervormde straal (spin softening, zoals Mecway §9.20) als alleen
 volumes draaien. Plasticiteit op balken wordt elastisch gerekend (WARNING).
@@ -483,6 +483,31 @@ parameterstudie en kies de waarde het dichtst bij nul die nog een goede oplossin
 geeft. Met -0,3 volgde DY-01 het schema exact (periode +1,21 %, piek −0,87 %,
 R-ALPHA). Een staplast krijgt bij HHT in de eerste stap een iets te kleine impuls
 (Code-Aster gebruikt F₀ = 0; DY-01a: piek −0,44 %).
+
+**Beginversnelling bij DKT-schalen (KNOWN_BUGS 156, opgelost).** Zonder begintoestand berekent
+`DYNA_NON_LINE` de beginversnelling uit M a₀ = F(0) − K u₀. De massa van DKT-schalen is in
+de rotaties bijna singulier (`MECANONLINE_78`), en a₀ was dan fout zodra een last op t = 0
+niet nul is (een staplast, zwaartekracht): de LS-07b-strook ging tot ongeveer +10 mm omhoog
+bij een last van 1 N omlaag (statisch 0,94 mm). Met een DKT-elset in `HHT` of `NEWMARK` schrijft de
+bridge daarom een beginversnelling nul (`ETAT_INIT` `ACCE`, samen met `VITE` bij een
+beginsnelheid) en een extra eerste rekenstap van 1/100 van de eerste stap (INFO in de log;
+niet in de resultaten). Dat is een benadering, niet wat Mecway doet: de last komt over die
+kleine stap op (een vertraging van de helft ervan), en de snelheid daarna mist a₀ maal de
+halve stap (bij zwaartekracht g·Δt/200, met Δt de eerste rekenstap). Gemeten (DY-40):
+piek van de strook +0,70 % t.o.v. Mecway met CCX; een hex20-balk in hetzelfde model 0,03 %
+van de piek, t.o.v. dezelfde run met de eigen beginversnelling van Code-Aster (2,9 %
+zonder de kleine stap). Geen kleine stap als een opgelegde verplaatsing, rotatie of
+snelheid op t = 0 niet nul is: die zou erbinnen springen (snelheden in het midden tot
+12 m/s in plaats van 2 m/s met `NEWMARK`); zo'n run is gelijk aan die van voorheen
+(DY-40h), en een staplast in hetzelfde model komt dan een halve eerste stap later op. Een
+constante temperatuur heeft zijn volle waarde na 1e-4 van de duur, wat na de kleine stap
+kan liggen (NIET gemeten). Expliciete schema's (`MASS_DIAG`) en `COQUE_3D` hebben het
+niet nodig.
+
+**`COQUE_3D` in dynamica.** Code-Aster heeft geen massamatrix voor `COQUE_3D` met
+`GROT_GDEP` (`ELEMENTS3_91`); in `DYNA_NON_LINE` rekent de bridge die schalen met `PETIT`
+(WARNING), ook als `deformation` om grote verplaatsingen vraagt (§2.3, KNOWN_BUGS 159).
+Expliciete dynamica met `COQUE_3D` rekent helemaal niet (KNOWN_BUGS 160).
 
 **`MODI_EQUI`.** De bridge laat de CA-standaard `'OUI'` staan: het volledige
 HHT-schema, tweede orde, dat vooral hoge frequenties dempt en dat U2.06.13

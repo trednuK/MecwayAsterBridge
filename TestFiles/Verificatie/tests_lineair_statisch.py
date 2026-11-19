@@ -1697,3 +1697,79 @@ TESTS += [
          build_ls08_bend(1, 10), _ls08_bend_checks(),
          general={"elem_hex8": "LINE_QUAD"}),
 ]
+
+
+# ------------------------------------------------------------------
+# LS-98 Code-Aster element per component (#ASTER-ELEMENT)
+# ------------------------------------------------------------------
+# (a) Three separate LS-07b strips (20 x 4 quad4, own nodes and clamps) in
+# one model: Strook_DKT keeps the general elem_shell = DKT, Strook_DST and
+# Strook_Q3D get DST and COQUE_3D through '**ASTER-ELEMENT' lines. Each tip
+# must equal the run of the same strip alone with that element as the
+# general setting (Code-Aster 17.4, lin_static_3d, 19 Nov 2026: DKT
+# -9.4257e-4, DST -9.4291e-4, COQUE_3D -9.4341e-4 m) and Mecway (LS-07b).
+# (b) the same with one clamp selection over the three strips: COQUE_3D
+# falls back to DKT (bridge_to_aster._resolve_line_quad).
+LS98_ALONE = {"DKT": 9.4257e-4, "DST": 9.4291e-4, "Q3D": 9.4341e-4}
+
+
+def build_ls98_strips(shared_clamp=False):
+    def build():
+        m = Model("S30")
+        m.mat("Plaat2", PLATE2, STEEL)
+        clamp = []
+        for k, name in enumerate(("DKT", "DST", "Q3D")):
+            es = m.elset("Strook_" + name, "Plaat2")
+            q = quadmesh(m, es, 20, 4, rect(0, L7, 0.1 * k, 0.1 * k + B7))
+            clamp += q["edges"]["u0"]
+            if not shared_clamp:
+                m.face_selection("Klem_" + name, q["edges"]["u0"])
+                m.add('<fixed selection="Klem_%s" />' % name)
+            m.node_selection("Tip_" + name, sorted(q["nodes"]["u1"]))
+            # one load per strip: an edge load over shells of different
+            # elements is not translated (KNOWN_BUGS 161)
+            m.face_selection("Eind_" + name, q["edges"]["u1"])
+            m.add('<force selection="Eind_%s"><x>0 N</x><y>0 N</y>'
+                  '<z>-%g N</z></force>' % (name, P7))
+        if shared_clamp:
+            m.face_selection("Inklemming", clamp)
+            m.add('<fixed selection="Inklemming" />')
+        m.add('<ccxmodeldefinition>**ASTER-ELEMENT Strook_DST: DST\n'
+              '**ASTER-ELEMENT Strook_Q3D: COQUE_3D</ccxmodeldefinition>')
+        return m
+    return build
+
+
+def _ls98_checks(q3d_as="Q3D"):
+    out = []
+    for name in ("DKT", "DST", "Q3D"):
+        tip = "Tip_" + name
+        alone = LS98_ALONE[q3d_as if name == "Q3D" else name]
+        out += [Check("doorbuiging tip {0}".format(name),
+                      lambda r, t=tip: -_mean(r, "displz", t),
+                      ref=alone, tol=0.0005, unit="m",
+                      source="dezelfde strook alleen, element als algemene "
+                             "instelling (Code-Aster 17.4)"),
+                Check("doorbuiging tip {0} t.o.v. Mecway".format(name),
+                      lambda r, t=tip: -_mean(r, "displz", t),
+                      ref=9.41484e-4, tol=0.005, unit="m",
+                      source="Mecway 34, doorlopende strook (LS-07b)",
+                      in_series=False)]
+    return out
+
+
+TESTS += [
+    Case("LS-98a", GROUP, "Drie losse plaatstroken in één model: DKT "
+         "(algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT)",
+         "lin_static_3d", build_ls98_strips(), _ls98_checks(),
+         note="Elke strook heeft zijn eigen inklemming en 1 N op zijn vrije "
+              "rand."),
+    Case("LS-98b", GROUP, "Als LS-98a met één inklemming over de drie "
+         "stroken: COQUE_3D valt terug naar DKT", "lin_static_3d",
+         build_ls98_strips(True), _ls98_checks("DKT"),
+         note="De gedeelde inklemming ligt ook op de DKT-stroken; met "
+              "COQUE_3D (LINE_QUAD) zouden de nieuwe middenknopen op de "
+              "ingeklemde rand vrij blijven (gemeten: tip 5 % te slap). De "
+              "bridge rekent die strook dan met DKT (WARNING, KNOWN_BUGS "
+              "162)."),
+]

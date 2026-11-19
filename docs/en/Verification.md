@@ -161,7 +161,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
 (1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), LS-07w (3 OK), LS-07x (3 OK), LS-07y (3 OK), LS-07z (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK), LS-98a (6 OK), LS-98b (6 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -513,9 +513,9 @@ meshes is given below.
   symmetry plane +0.27%, `POST_K1_K2_K3` −3%: the bonded layers, not the double
   condition). With XFEM the slave nodes also lose the `DDL_IMPO` on their XFEM degrees of
   freedom; that changes nothing: with the support on the slave instead of the master nodes
-  the result is the same. The shell routes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE) do not compute in
-  dynamics without a double condition either (KNOWN_BUGS 156). HOMARD (`adapt_homard`)
-  refuses bonded contact before the run.
+  the result is the same. The shell routes (LS-07r `LIAISON_DDL`, LS-07a `LIAISON_MAIL` COQUE)
+  compute in dynamics since the zero initial acceleration for DKT, with the same result as
+  the one-piece strip LS-07b (DY-40c..e). HOMARD (`adapt_homard`) refuses bonded contact before the run.
 
 ### LS-08 Node temperature (thermal stress per node)
 
@@ -1356,6 +1356,30 @@ axes. With the field *stress in element coordinates* Mecway stores `lamuu`, `lam
 - **NOT verified**: an element offset through this route; I, T, L, C on `POU_D_TG`, where the solver has the
   thin-walled EY, EZ and the stress the shear centre of the mesh; a distributed load on `POU_D_T`,
   `POU_D_TG` and line3 through this stress; colours in Mecway's window.
+
+### LS-98 Element per component (`#ASTER-ELEMENT`)
+
+- **Goal**: different Code-Aster elements in one model, per Mecway component
+  ([ASTER lines §2](ASTER_lines_examples.md#2-kinds-of-lines)).
+- **Model**: three separate LS-07b strips (20 × 4 quad4, 0.2 × 0.02 × 0.002 m, steel, each 1 N
+  on the free edge): `Strook_DKT` with the general setting `DKT`, `Strook_DST` and
+  `Strook_Q3D` with `**ASTER-ELEMENT ...: DST` and `COQUE_3D`. LS-98a: each strip its own
+  clamp; LS-98b: one clamp over the three strips.
+- **Reference**: the same strip alone, with the element as the general setting
+  (Code-Aster 17.4, 19 Nov 2026), and Mecway 34 on LS-07b (9.41484·10⁻⁴ m).
+
+| Test | Strip | Reference (alone) | Result | vs Mecway |
+|---|---|---|---|---|
+| LS-98a | DKT | 9.4257·10⁻⁴ m | 9.4257·10⁻⁴ m | +0.12 % |
+| LS-98a | DST | 9.4291·10⁻⁴ m | 9.4291·10⁻⁴ m | +0.15 % |
+| LS-98a | COQUE_3D | 9.4341·10⁻⁴ m | 9.4341·10⁻⁴ m | +0.20 % |
+| LS-98b | COQUE_3D (back to DKT) | 9.4257·10⁻⁴ m | 9.4257·10⁻⁴ m | +0.12 % |
+
+Each strip equals its own run. In LS-98b the clamp also lies on the DKT strips; with
+`COQUE_3D` the new mid-side nodes on the clamped edge then stayed free (tip
+9.9206·10⁻⁴ m, 5 % too soft), so the bridge computes that strip with DKT and gives a
+WARNING (KNOWN_BUGS 162). Not covered: beams and solid elements per component (the unit
+test `tests/test_element_override.py` does cover them), and the Mecway GUI.
 
 ### Conclusion linear static
 
@@ -2615,6 +2639,37 @@ U documentation):
 - **Interpretation**: the conversion works for all imposed motions. Mecway allows a
   non-zero constant in a constraint equation only in static analyses (manual §9.42);
   the bridge translates it anyway, with a WARNING.
+
+### DY-40 Shells in implicit dynamics (KNOWN_BUGS 156 fixed)
+
+- **Purpose**: DKT in `DYNA_NON_LINE` with a load that is not zero at t = 0: the bridge
+  writes a zero initial acceleration and an extra small first solver step
+  ([Settings §2.5](Settings_contact_and_nonlinear.md#25-time-scheme-dynamics-schema-hht_alpha));
+  `COQUE_3D` with `PETIT` in dynamics (`ELEMENTS3_91`).
+- **Models**: the strip of LS-07b (0.2 × 0.02 × 0.002 m, 20 × 4 quad4, steel, density
+  7850 kg/m³), clamped, 1 N −Z step load on the tip edge, 0 … 0.05 s, output every 0.5 ms
+  (first mode 42 Hz, T = 23.8 ms). DY-40a default settings (HHT, `GROT_GDEP`), DY-40b
+  `NEWMARK`; DY-40c the bonded strip LS-07a (`LIAISON_MAIL` COQUE), DY-40d LS-07f
+  (`LIAISON_DDL`, 30°), DY-40e LS-07r (LS-07f with a double condition, KNOWN_BUGS 147);
+  DY-40f the same strip in quad8 (`COQUE_3D`, default settings); DY-40g the strip and a
+  separate hex20 bar of the same size in one model; DY-40h the strip with u_z = −1 mm on
+  the tip from t = 0 (a jump) and no force.
+- **Reference**: Mecway 36 with CCX on the same models (headless, step size 0.5 ms; the tip
+  as the mean of the nodes of the expanded mesh): largest deflection −1.83997 mm (quad4),
+  −1.83305 mm (quad8), bar −1.83144 mm; static −0.93915 mm. Also the number of stored
+  instants (101: the small step is not stored). DY-40h: the same run with the bridge before
+  the zero initial acceleration (Code-Aster 17.4): mid-span −0.80341 mm.
+- **Result**: peak −1.85286 mm (+0.70 %), NEWMARK −1.84248 mm (+0.14 %), bonded strips
+  −1.85177 mm (+0.64 %, the same for LS-07a, f and r), quad8 −1.85433 mm (+1.16 %), bar
+  −1.83615 mm (+0.26 %); DY-40h equal to all digits (no small step); 101 stored instants
+  everywhere, no `MECANONLINE_78`. Before the fix: DKT up to about +10 mm (velocities of
+  4e11 m/s), the bonded strips stopped with
+  `MECANONLINE9_7`, quad8 with `ELEMENTS3_91`.
+- **Interpretation**: a zero initial acceleration lets the load rise over the first solver
+  step; with the small step that lag is negligible: the bar in DY-40g differs 0.03 % of
+  the peak from the same run with Code-Aster's own initial acceleration (2.9 % with a zero
+  initial acceleration over a full step, a lag of half a step). The remaining difference with CCX is the discretisation in
+  time (48 steps per period) and of the shells (static DKT +0.36 %, KNOWN_BUGS 2).
 
 ### DY-70 .. DY-73 Temperature in dynamics
 
