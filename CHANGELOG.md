@@ -19,8 +19,10 @@
   With Mecway's new `mw.liml_text()` the bridge reads a copy of the open model
   (`<model>_<run-id>_model.liml` in the work folder, which the Code-Aster job reads too, e.g.
   for fatigue) and saves the `.liml` only right before the results go into it, so a run that
-  ends without results (an error, Stop) leaves the file as it was. A model that was never
-  saved is still saved first. A read-only model or a folder that is gone still stops the run
+  ends without results (an error, Stop) leaves the file as it was, unless *Summary also as
+  Saved monitor in the .liml* (`save_monitor_liml`) is on: then the model is saved (with the
+  run's monitor text when it has no results yet). A model that was never saved is still
+  saved first. A read-only model or a folder that is gone still stops the run
   before Code-Aster. The copy is removed after a run without errors whose results were
   loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
   stay unsaved during the run: save the model yourself before a long run. *Show section* no
