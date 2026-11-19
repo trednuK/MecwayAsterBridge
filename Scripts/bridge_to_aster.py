@@ -6235,8 +6235,8 @@ def _rigid_friction_coef(size):
 
 def _penalty_args(c, algo, friction, rigid_size=False, note=True):
     """Extra zone arguments for ALGO_CONT='PENALISATION' (or "").
-    rigid_size: False = COEF_PENA_FROT = Mecway's kt (analyses other than
-    nonlinear static 3D, not measured with the rigid rule); else the
+    rigid_size: False = COEF_PENA_FROT = Mecway's kt (explicit dynamics
+    and 2D, not measured with the rigid rule); else the
     diagonal of the zone's contact faces (m) or None: rigid stick
     (_rigid_friction_coef). note: log the friction INFO (False when the
     user's #ASTER-ZONE replaces COEF_PENA_FROT)."""
@@ -6336,7 +6336,8 @@ def _penetration_limit_line(model_data, analysis, pairs, algo):
                 limit, edge))
 
 
-def _build_contact_block(model_data, analysis=None, rigid_stick=False):
+def _build_contact_block(model_data, analysis=None, rigid_stick=False,
+                         explicit=False):
     """
     DEFI_CONTACT for the contact2 pairs (bridge_mesh.py has aligned the
     names and put the faces in skin_groups).
@@ -6345,17 +6346,19 @@ def _build_contact_block(model_data, analysis=None, rigid_stick=False):
     per area (manual v33 par. 9.9; normalstiffness > 0 required).
     Code-Aster: continuous formulation (U4.44.11), per zone ALGO_CONT
     (catalogue defi_contact.py v17.4):
-      - contact_algo "auto" (default for nonlinear static since V2026.15):
-        PENALISATION for zones with kn > 0 in 3D, otherwise STANDARD;
-      - "STANDARD" (default in dynamics): augmented Lagrangian, no
+      - contact_algo "auto" (default for nonlinear static and implicit
+        dynamics since V2026.15): PENALISATION for zones with kn > 0 in
+        3D, otherwise STANDARD; explicit dynamics (explicit=True):
+        STANDARD;
+      - "STANDARD" (default in explicit dynamics): augmented Lagrangian, no
         stiffness needed, no penetration;
       - "PENALISATION": COEF_PENA_CONT = Mecway's normalstiffness (Pa/m;
         contact pressure = coef x penetration, like Mecway); with friction
         ALGO_FROT='PENALISATION' (Lagrange friction if Mecway's
         tangentialstiffness is 0); COEF_PENA_FROT (1/m) for a rigid stick
         from the size of the contact faces with rigid_stick (nonlinear
-        static 3D, _FRIC_SLIP_REL), else = tangentialstiffness (dynamics,
-        2D: not measured). Tested (headless against Mecway):
+        static and implicit dynamics in 3D, _FRIC_SLIP_REL), else =
+        tangentialstiffness (explicit dynamics, 2D: not measured). Tested (headless against Mecway):
         Samples/PipeClip follows Mecway within ~3% (STANDARD lost the
         contact), AssemblyWithContact Fixed_support computes on (STANDARD:
         pivot on LAGS_C, MECANONLINE9_4).
@@ -6376,6 +6379,14 @@ def _build_contact_block(model_data, analysis=None, rigid_stick=False):
                "WARNING: contact_algo '{0}' unknown; auto used.").format(
             algo))
         algo = "AUTO"
+    if explicit and algo == "AUTO":
+        # Explicit dynamics: penalty not measured, and a stiff contact
+        # spring can lower the stable time step; auto keeps STANDARD there
+        # (implicit dynamics: auto measured against Mecway 36 + CCX D31,
+        # 19 Nov 2026, NL-03k/NL-03l/NL-03m).
+        algo = "STANDARD"
+        if model_data.get("contacts"):
+            log("INFO: contact_algo auto in explicit dynamics: STANDARD.")
     pairs = model_data.get("contacts", [])
     unil = [bc for bc in model_data["bcs"] if bc.get("unil_zones")]
     if unil and pairs:
@@ -7858,9 +7869,13 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # NEWTON / CONVERGENCE / SOLVEUR values from CONFIG_BRIDGE["analyses"][...].
     # --------------------------------------------------
     reac_iter      = analysis.get("newton_reac_iter",      1)
+    # explicit scheme (no Newton): DIFF_CENT / TCHAMWA
+    explicit = dynamic and analysis.get("schema", "HHT") in ("DIFF_CENT",
+                                                             "TCHAMWA")
     contact_block, contact_ref = _build_contact_block(
         model_data, analysis,
-        rigid_stick=not dynamic and not model_data.get("plane"))
+        rigid_stick=not explicit and not model_data.get("plane"),
+        explicit=explicit)
     extra = ""
     if dynamic:
         etat_block, etat_ref = _build_etat_init_block(model_data)
@@ -7907,8 +7922,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # Line search (S27); in 'extra', so also in the failure loop
     extra += _line_search_args(
         model_data, analysis, contact_block,
-        dynamic and analysis.get("schema", "HHT") in ("DIFF_CENT",
-                                                      "TCHAMWA"))
+        explicit)
     # Stability criterion per step (nonlinear buckling; only static)
     crit_stab = (not dynamic) and bool(analysis.get("crit_stab", False))
     if crit_stab:
@@ -8028,8 +8042,7 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
                 "dynamic": dynamic,
                 # as in the .export below
                 "time_limit": analysis.get("time_limit", 1800),
-                "explicit": dynamic and analysis.get("schema", "HHT") in (
-                    "DIFF_CENT", "TCHAMWA")})
+                "explicit": explicit})
     if crit_stab:
         statnonline_block += _crit_stab_report(crit_kind)
     if imperfection:

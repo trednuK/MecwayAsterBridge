@@ -4,9 +4,9 @@
 # (IronPython): gui_cap.py <repo> <uitmap> [nl|en] [status]
 # omgeving: CAP_SMALL=1 (venster op MinimumSize), CAP_BIG=1, CAP_SCROLL=1,
 #           CAP_KEYS=1 (test of the navigation scrollbar with keys, wheel
-#           and drag, the Section menu and the status box; window messages
-#           only, safe on a hidden desktop; with CAP_SMALL=1; exit code 1 on
-#           a failure), CAP_SENDKEYS=1 (Ctrl+Tab etc. with real keyboard
+#           and drag, the Section menu, the status box and the wheel over a
+#           closed choice list; window messages only, safe on a hidden
+#           desktop; with CAP_SMALL=1; exit code 1 on a failure), CAP_SENDKEYS=1 (Ctrl+Tab etc. with real keyboard
 #           input; only on the input desktop), CAP_SHOWN=1 (the section
 #           shape counts as shown), CAP_SECTION=show|hide|results (choose
 #           that item of the Section menu instead of closing),
@@ -39,8 +39,8 @@ def _env(name):
 clr.AddReference("System.Windows.Forms")
 clr.AddReference("System.Drawing")
 from System.Windows.Forms import (Application, MethodInvoker, ListBox,
-                                  ComboBox, SendKeys, TextBox, Button,
-                                  TextRenderer)
+                                  ComboBox, ComboBoxStyle, SendKeys,
+                                  TextBox, Button, TextRenderer)
 from System.Drawing import Bitmap, Rectangle, Point, Size
 from System.Drawing.Imaging import ImageFormat
 from System.Threading import Thread, ThreadStart
@@ -269,6 +269,72 @@ def keys_test(f, nav, host):
 
     for fn in (run, menu, status):
         f.Invoke(MethodInvoker(fn))
+    choice_wheel_test(f, nav, host)
+
+
+def choice_wheel_test(f, nav, host):
+    """The wheel over a closed choice list scrolls the page and leaves the
+    value alone (formerly KNOWN_BUGS 152); an unhooked list as a control
+    does change, so the message really reaches the list."""
+    found = {}
+    first = []
+    f.Invoke(MethodInvoker(lambda: first.append(nav.SelectedIndex)))
+
+    def pick(i):
+        def fn():
+            nav.SelectedIndex = i
+        return fn
+
+    def probe():
+        for page in host.Controls:
+            if not page.Visible or not page.VerticalScroll.Visible:
+                continue
+            for c in find_all(page, ComboBox, []):
+                if (c.Visible and c.Enabled and
+                        0 <= c.SelectedIndex < c.Items.Count - 1):
+                    found["page"], found["combo"] = page, c
+                    return
+
+    for i in range(nav.Items.Count):
+        f.Invoke(MethodInvoker(pick(i)))
+        Thread.Sleep(150)
+        f.Invoke(MethodInvoker(probe))
+        if found:
+            break
+    check(bool(found), "a scrolling page with a choice list for the wheel")
+    if not found:
+        return
+
+    def run():
+        page, combo = found["page"], found["combo"]
+        page.AutoScrollPosition = Point(0, 0)
+        room = page.DisplayRectangle.Height - page.ClientSize.Height
+        before = combo.SelectedIndex
+        wheel(combo, -120)
+        check(combo.SelectedIndex == before,
+              "wheel down over a closed choice list: value unchanged")
+        check(-page.AutoScrollPosition.Y == min(120, room),
+              "... and the page scrolled %d px (want %d)"
+              % (-page.AutoScrollPosition.Y, min(120, room)))
+        wheel(combo, 120)
+        check(combo.SelectedIndex == before and
+              page.AutoScrollPosition.Y == 0,
+              "wheel up: value unchanged, page back at the top")
+        ref = ComboBox()
+        ref.DropDownStyle = ComboBoxStyle.DropDownList
+        for item in ("a", "b", "c"):
+            ref.Items.Add(item)
+        ref.SelectedIndex = 0
+        page.Controls.Add(ref)
+        wheel(ref, -120)
+        check(ref.SelectedIndex == 1,
+              "control: a list without the handler changes with the wheel "
+              "(index %d)" % ref.SelectedIndex)
+        page.Controls.Remove(ref)
+        ref.Dispose()
+        page.AutoScrollPosition = Point(0, 0)
+        nav.SelectedIndex = first[0]
+    f.Invoke(MethodInvoker(run))
 
 
 def _on_input_desktop():

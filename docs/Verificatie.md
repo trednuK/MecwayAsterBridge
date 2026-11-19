@@ -164,7 +164,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangentiële stijfheid kt wordt niet gemodelleerd, Code-Aster
@@ -2160,6 +2160,15 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   vorm die Mecway voor CCX schrijft), langzaam belast, `PENALISATION`: bovenkant 1,9524 µm,
   penetratie 1,000 µm en 10 uitvoerstappen, gelijk aan Mecway 36 met CCX (D31, headless).
   Voor V2026.15 negeerde de bridge de stapgrootte van een D31-model (één stap op t = 1 s).
+- **NL-03k/l/m** (contact in impliciete dynamica, standaard `contact_algo` = `auto`, D31 met
+  de dichtheid van staal en *Time step size* 2 µs, tegen Mecway 36 met CCX, headless): k: een
+  krachtpuls (4000 N aan in 20 µs, vast tot 50 µs, uit op 70 µs; daarna komt het bovenste blok
+  los): bovenkant −2,2230 µm op 20 µs en −2,1154 µm op 50 µs (Mecway −2,223 / −2,109),
+  +5,985 µm op 200 µs in de vrije vlucht (Mecway +6,28 µm: −4,7 % met HHT, +4,7 % met NEWMARK,
+  het tijdschema); `STANDARD` was 59 % te stijf en stopte bij het loslaten. l: NL-03h als
+  D31: w = Mecway, u BEKEND (KNOWN_BUGS 149). m: het bovenste blok begint 2 µm boven het
+  onderste: −1,9779 µm op 12 µs (Mecway −1,972, voor de botsing), de run rekent door tot
+  200 µs zonder penetratiewaarschuwing (Mecway/CCX en `STANDARD` stopten bij de botsing).
 - **NL-03i** (wrijving, aantal stappen): NL-03h met stap 0,02 s (25 schuifstappen in
   plaats van 5). Gepenaliseerde wrijving slipt per stap (τ/(μp))/`COEF_PENA_FROT`
   (KNOWN_BUGS 149), hier samen ongeveer 1,5 nm. u = 1,8656 µm tegen 1,8638 µm van NL-03h

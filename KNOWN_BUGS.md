@@ -492,8 +492,9 @@ Code-Aster value per node) and logs the largest difference per variable.
    3.06798 m.
 
 43\. **Contact: hard and soft formulation differ from Mecway** (confirmed).
-   `contact_algo` = STANDARD (Lagrange; the default in dynamics and what `auto` gives in
-   2D; in Nonlinear Static 3D the default before V2026.15, now `auto` = penalty) allows no
+   `contact_algo` = STANDARD (Lagrange; the default in explicit dynamics and what `auto` gives in
+   2D; in Nonlinear Static 3D and implicit dynamics the default before V2026.15, now
+   `auto` = penalty) allows no
    penetration; Mecway computes penalty. Samples/PipeClip loses contact with STANDARD (1.1 mm penetration
    at t = 0.8), AssemblyWithContact (Fixed_support) stops with MECANONLINE9_4 (pivot on
    LAGS_C); with PENALISATION (Mecway's stiffness) both follow Mecway (2..8% and −1.1%,
@@ -955,18 +956,18 @@ Code-Aster value per node) and logs the largest difference per variable.
    steps; both AssemblyWithContact configurations complete; Mecway's own CCX result of
    *Friction* is unusable, 3.6e6 m, so not compared), with a WARNING per run. The creep stays:
    at most 1e-8 × that size per step at full friction (NL-03i, 25 shear steps: +0.1% against
-   the Lagrange stick). Dynamics and 2D still write kt as `COEF_PENA_FROT` (not measured).
+   the Lagrange stick). Implicit dynamics too since V2026.15 (NL-03l); explicit dynamics and
+   2D still write kt as `COEF_PENA_FROT` (not measured).
    Status: limitation of Code-Aster 17.4; the bridge is stiffer in shear than Mecway by τ/kt
    (NL-03h −10% at kt 1e13).
 
-152\. **The mouse wheel over a choice list changes its value while scrolling a page**
-   (start screen; confirmed in the Mecway 36 window, 19 Nov 2026; `bridge_gui.py`, Windows Forms
-   `ComboBox`). Scrolling the settings page with the wheel while the pointer passes a choice
-   list (e.g. *Active analysis*) changes that setting instead of scrolling (seen: `auto` became
-   `ther_3d`). Standard Windows Forms behaviour; the changed value is used at the next *Start*.
-   Workaround: scroll with the scrollbar or keep the pointer off the lists, and check the
-   settings before *Start*. Status: open, low priority (fix: ignore the wheel on a closed list
-   and pass it to the page).
+153\. **The convergence windows of earlier runs stay open** (confirmed in the Mecway 36
+   window, 19 Nov 2026; `bridge_run_aster.start_convergence_monitor`). With *Convergence and
+   message window* on, every run opens its own window (a separate process), and it stays open
+   after the run so that its summary can still be read; after several runs they pile up (four
+   in the GUI checks). Workaround: close them with their close button. Status: open, low
+   priority (possible fix: an option to close the window of the previous run at the next
+   *Start*).
 
 ## Open questions (Mecway behaviour not checked)
 

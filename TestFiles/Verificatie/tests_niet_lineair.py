@@ -419,17 +419,21 @@ NCOTES = ("<ccxmodeldefinition>** ASTER-ZONE INTEGRATION='NCOTES'"
           "</ccxmodeldefinition>")
 
 
-def build_nl03_patch(kn=KN4, n_lo=2, extra=None, analysis="L30", ts=None):
+def build_nl03_patch(kn=KN4, n_lo=2, extra=None, analysis="L30", ts=None,
+                     force=None, gap=0.0):
     """analysis "D31" (with ts, e.g. {"timeperiod": "1 s", "stepsize":
     "0.1 s"}, the form Mecway writes for CCX): the same model as a
-    nonlinear dynamic run with steel's density (NL-03j)."""
+    nonlinear dynamic run with steel's density (NL-03j). force: [(t, Fz)]
+    on the top (default the ramp to -F4 at t = 1 s); gap: the upper block
+    starts this far above the lower one (NL-03m)."""
     m = Model(analysis, timesteps=ts or _timesteps(1.0))
     m.elset("Onderblok", "Staal")
     lo = hexmesh(m, "Onderblok", n_lo, n_lo, 1, box(0, A4, 0, A4, -H4, 0),
                  order=2)
     m._index = {}          # bovenblok: eigen knopen
     m.elset("Bovenblok", "Staal")
-    up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, A4, 0, A4, 0, H4), order=2)
+    up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, A4, 0, A4, gap, H4 + gap),
+                 order=2)
     _elastic_mat(m, "Staal", NU4, ('<density type="Simple" density="7850 '
                                    'kg/m³" />',) if analysis == "D31"
                  else ())
@@ -444,7 +448,7 @@ def build_nl03_patch(kn=KN4, n_lo=2, extra=None, analysis="L30", ts=None):
     m.face_selection("ContactOnder", lo["faces"]["w1"])
     m.face_selection("ContactBoven", up["faces"]["w0"])
     m.add('<force selection="Bovenkant"><x>0 N</x><y>0 N</y>{0}</force>'
-          .format(_history("z", [(0.0, 0.0), (1.0, -F4)], "N")))
+          .format(_history("z", force or [(0.0, 0.0), (1.0, -F4)], "N")))
     m.add('<contact2 selectionmaster="ContactOnder" selectionslave='
           '"ContactBoven" type="unilateralelastic"><tolerance>0 m</tolerance>'
           '<normalstiffness>%g GPa/m</normalstiffness>'
@@ -471,17 +475,21 @@ MW_NL03H = (1.9156e-6, 2.0752e-6)
 RIGID_NL03I = 1.86378e-6
 
 
-def build_nl03_friction(step=0.1):
+def build_nl03_friction(step=0.1, analysis="L30"):
     ts = _timesteps(1.0)
     ts["stepsize"] = "%g s" % step
-    m = Model("L30", timesteps=ts)
+    if analysis == "D31":           # NL-03l: Mecway's form for CCX
+        ts = {"timeperiod": "1 s", "stepsize": "%g s" % step}
+    m = Model(analysis, timesteps=ts)
     m.elset("Onderblok", "Staal")
     lo = hexmesh(m, "Onderblok", 2, 2, 1, box(0, A4, 0, A4, -H4, 0),
                  order=2)
     m._index = {}
     m.elset("Bovenblok", "Staal")
     up = hexmesh(m, "Bovenblok", 3, 3, 1, box(0, A4, 0, A4, 0, H4), order=2)
-    _elastic_mat(m, "Staal", NU4)
+    _elastic_mat(m, "Staal", NU4, ('<density type="Simple" density="7850 '
+                                   'kg/m³" />',) if analysis == "D31"
+                 else ())
     m.node_selection("Bodem", sorted(lo["nodes"]["w0"]))
     for ax in "xyz":
         d = dict((a, 1 if a == ax else 0) for a in "xyz")
@@ -510,6 +518,32 @@ def _mean_top(r, var):
     """Mean of var over the node selection Top."""
     nids = r.model.nodesel["Top"]
     d = r.step()[var]
+    return sum(d[n] for n in nids) / float(len(nids))
+
+
+# NL-03k/l/m: implicit dynamics (D31, default contact_algo auto) against Mecway
+# 36 with CCX (D31, headless, 19 Nov 2026), mean top displacement w of the
+# upper block. NL-03k: 4000 N ramped on in 20 us, held to 50 us, off at
+# 70 us; then the upper block comes loose. Mecway: -2.223e-6 m at 20 us,
+# -2.109e-6 m at 50 us, +6.28e-6 m at 200 us (in free flight; the bridge's
+# HHT alpha -0.1 gives -4.7 %, NEWMARK +4.7 %: the time scheme, not the
+# contact; STANDARD: -59 % in compression and stopped at the release with
+# MECANONLINE9_4). NL-03m: the upper block 2 um above the lower one, 4000 N
+# ramped on in 20 us and held: Mecway -1.972e-6 m at 12 us (before the
+# impact); Mecway/CCX and STANDARD stopped at the impact, penalty completes.
+PULSE_NL03K = [(0.0, 0.0), (2e-5, -F4), (5e-5, -F4), (7e-5, 0.0),
+               (2e-4, 0.0)]
+MW_NL03K = {2e-5: -2.223e-6, 5e-5: -2.109e-6, 2e-4: 6.28e-6}
+MW_NL03M = -1.972e-6
+DYN_TS = {"timeperiod": "0.0002 s", "stepsize": "2e-06 s"}
+
+
+def _top_w(r, t, z=None):
+    """Mean displz over the top nodes of the upper block at time t."""
+    zt = H4 if z is None else z
+    nids = [i + 1 for i, q in enumerate(r.model.nodes)
+            if abs(q[2] - zt) < 1e-12]
+    d = r.step(_t(r, t))["displz"]
     return sum(d[n] for n in nids) / float(len(nids))
 
 
@@ -652,6 +686,55 @@ TESTS = [
          note="Mecway 36 met CCX (D31, headless, 19 nov 2026): bovenkant "
               "1,9524 um, penetratie 0,99998 um, 10 stappen; voor V2026.15 "
               "las de bridge stepsize bij D31 niet (alleen t = 1 s)."),
+    Case("NL-03k", GROUP, "Contact in impliciete dynamica (D31): duwen en "
+         "loslaten tegen Mecway/CCX (standaard contact_algo auto)",
+         "dyna_impl_3d",
+         lambda: build_nl03_patch(analysis="D31", ts=DYN_TS,
+                                  force=PULSE_NL03K),
+         [Check("w bovenkant t = 20 us", lambda r: _top_w(r, 2e-5),
+                ref=MW_NL03K[2e-5], tol=0.01, unit="m",
+                source="Mecway 36 met CCX (D31), headless"),
+          Check("w bovenkant t = 50 us", lambda r: _top_w(r, 5e-5),
+                ref=MW_NL03K[5e-5], tol=0.01, unit="m",
+                source="Mecway 36 met CCX (D31), headless"),
+          Check("w bovenkant t = 200 us (vrij, na loslaten)",
+                lambda r: _top_w(r, 2e-4), ref=MW_NL03K[2e-4], tol=0.06,
+                unit="m", source="Mecway 36 met CCX (D31); HHT -4,7 %, "
+                                 "NEWMARK +4,7 % (tijdschema)"),
+          Check("laatste tijdstip", lambda r: r.times()[-1], ref=2e-4,
+                tol=1e-9, unit="s", source="de run rekent door na het "
+                "loslaten (STANDARD stopte op 70 us)")],
+         note="STANDARD: -59 % tijdens het duwen en gestopt bij het "
+              "loslaten (MECANONLINE9_4)."),
+    Case("NL-03l", GROUP, "Wrijving in impliciete dynamica (NL-03h als D31, "
+         "standaard contact_algo auto)", "dyna_impl_3d",
+         lambda: build_nl03_friction(0.1, "D31"),
+         [Check("w bovenkant t.o.v. Mecway", lambda r: -_mean_top(
+             r, "displz"), ref=MW_NL03H[0], tol=0.005, unit="m",
+                source="Mecway 36 (CCX), statisch, headless"),
+          Check("u bovenkant t.o.v. Mecway", lambda r: _mean_top(
+              r, "displx"), ref=MW_NL03H[1], tol=0.02, unit="m",
+                source="Mecway 36 (CCX), statisch, headless",
+                known="KNOWN_BUGS 149")],
+         note="Langzaam belast: gelijk aan NL-03h. Met kt als COEF_PENA_FROT "
+              "stopte de run bij t = 0,00024 s; met STANDARD w -52 %."),
+    Case("NL-03m", GROUP, "Contact in impliciete dynamica: botsing over een "
+         "spleet van 2 um (standaard contact_algo auto)", "dyna_impl_3d",
+         lambda: build_nl03_patch(analysis="D31", ts=DYN_TS, gap=2e-6,
+                                  force=[(0.0, 0.0), (2e-5, -F4),
+                                         (2e-4, -F4)]),
+         [Check("w bovenkant t = 12 us (voor de botsing)",
+                lambda r: _top_w(r, 1.2e-5, H4 + 2e-6), ref=MW_NL03M,
+                tol=0.01, unit="m", source="Mecway 36 met CCX (D31)"),
+          Check("laatste tijdstip", lambda r: r.times()[-1], ref=2e-4,
+                tol=1e-9, unit="s",
+                source="de run rekent na de botsing door (Mecway/CCX en "
+                       "STANDARD stopten bij de botsing)"),
+          Check("penetratie-waarschuwing", lambda r: _pene_warnings(r),
+                ref=0, tol_abs=0, in_series=False,
+                source="contact_pene_maxi 0,05")],
+         note="De penetratie blijft onder contact_pene_maxi; het blok "
+              "trilt na de botsing rond zijn statische stand."),
     Case("NL-03p", GROUP, "Contact-patchtest (PENALISATION), te slappe "
          "normal stiffness: penetratiecontrole", "nonlin_static_3d",
          lambda: build_nl03_patch(kn=1.0e10),

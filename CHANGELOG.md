@@ -27,7 +27,12 @@
   loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes
   stay unsaved during the run: save the model yourself before a long run. *Show section* no
   longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
-  Verified headless in Mecway 36, not yet in the Mecway window.
+  Verified in the Mecway 36 window (36.0.9815).
+
+- **Start screen: the mouse wheel over a closed choice list scrolls the page** and no longer
+  changes the setting (it did when the pointer was over a list while scrolling the page, e.g.
+  *Active analysis*; KNOWN_BUGS 152). An open list scrolls as before; the arrow keys still
+  change the focused list.
 
 - **CCX keyword modifications** (Mecway's *CCX keyword*, e.g. `ADJUST` on `*CONTACT PAIR`)
   are CalculiX input: the bridge now reports them, a WARNING per active modification and one
@@ -51,8 +56,8 @@
 - **Behaviour change: contact method `auto` is the new default in Nonlinear Static**
   (`contact_algo`, page Contact). Every unilateral contact with Mecway's *normal stiffness*
   in a 3D Nonlinear Static analysis is now computed with penalty (`PENALISATION`), as Mecway
-  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. Dynamics and 2D
-  models keep `STANDARD` (not measured with penalty). Your own `ALGO_CONT`, `COEF_PENA_*` or
+  does; before it was Lagrange (`STANDARD`) unless you chose otherwise. Explicit dynamics
+  and 2D models keep `STANDARD` (not measured with penalty; implicit dynamics: see below). Your own `ALGO_CONT`, `COEF_PENA_*` or
   `ALGO_FROT` in `#ASTER-ZONE` now take precedence over the bridge's (before: `SyntaxError`
   with *Contact method* = PENALISATION). Measured against Mecway 36 with CCX: the contact patch tests now agree to
   2e-5 (before 50 %, no penetration p/kn), Voorbeeld_C 3.2 % (before 7.0 %), and line contact
@@ -82,6 +87,13 @@
   same (it already stuck almost rigidly), but convergence is much better: NL-03h 10 steps
   instead of 754, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* now
   complete (they stopped). Your own `#ASTER-ZONE COEF_PENA_FROT=...` still wins.
+- **Contact in implicit dynamics: default contact method `auto`** (behaviour change).
+  Like Nonlinear static since V2026.15: penalty contact with Mecway's normal stiffness, and
+  friction sticks rigidly (also when you chose `PENALISATION`: kt is no longer written as
+  `COEF_PENA_FROT` there). Measured against Mecway 36 with CCX: a force pulse with release
+  within 4.7 % of the largest displacement (Lagrange: 59 % too stiff, then it stopped), an impact across a gap completes
+  where Lagrange and CCX stopped (verification NL-03j/k/l/m). Explicit dynamics keeps
+  `STANDARD`. A saved start screen keeps its `STANDARD` for dynamics: choose `auto` once.
 - **Nonlinear dynamics (D31) with a *Time step size*: the bridge now uses it** (bug fix,
   changes results). Before, a D31 model in the form Mecway writes for CCX (`stepsize`) got only
   the points of its load tables as time steps (a 200 µs pulse: 4 steps instead of 100); now
