@@ -2233,7 +2233,7 @@ def _warn_overlapping_faces(model_data, merged):
 
 def results_file(work_dir):
     """
-    Path of the result file of the current run (result_route "liml"):
+    Path of the result file of the current run:
     <model>_<run_id>_results.xml. It stays after loading, so that the
     results can be loaded again later (button Results...).
     """
