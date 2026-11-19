@@ -33,8 +33,17 @@
   change).** A constraint selection that also lay on other elements left the new
   mid-side nodes of the converted shells free (5 % too soft in LS-98b); those shells
   now stay DKT with a WARNING (KNOWN_BUGS 162). This also applies to the general
-  setting `elem_shell` = `COQUE_3D` when a clamp spans shells and other elements. New KNOWN_BUGS 161: a load on edges
-  over shells of different elements is not translated.
+  setting `elem_shell` = `COQUE_3D` when a clamp spans shells and other elements.
+- **Force on shell edges of several components: shared like Mecway (results change).**
+  A force on an edge selection over shells with different elements was not translated,
+  and over shells of different thickness it was shared by length only. Mecway shares it
+  by length × thickness (two strips of 2 and 4 mm: 2/3 and 4/3 of the force, Mecway 36
+  measured headless); the bridge now writes one edge group per component with its share
+  (verification LS-98c, LS-98d). A force with a time history over components of
+  different thickness is not translated, with an ERROR (the share would have to change
+  the history; before, it was shared by length). A line load over several components gets the same force per length on
+  each. An edge between two shells selected from both sides now counts once (it got half
+  the force).
 - **DKT shells in implicit dynamics: right response (KNOWN_BUGS 156; results change).**
   Code-Aster computed the initial acceleration from the nearly singular DKT mass
   (`MECANONLINE_78`): with a step load the LS-07b strip moved up to about +10 mm instead of

@@ -331,11 +331,12 @@ def _aster_names(names, reserved=()):
 # BRGAP (gaps), BRCT (mid nodes) and tab_<concept>_n<i>
 # (result tables); bridge_thermal TH/THS/THN; bridge_xfem BRXF<n>S/F
 # (crack from an XFEM_ face selection); bridge_homard BRRAND<n> (curved
-# boundary) and BRADAP<k> (refined cells per loop). A user name of
+# boundary) and BRADAP<k> (refined cells per loop); bridge_mesh
+# BRED<n> (part of a shell-edge selection, _split_shell_edges). A user name of
 # that form is renamed, so that it cannot clash with a generated group.
 _GENERATED_NAME_RE = re.compile(
     r"^(?:(?:BRSY|BRCO|BRESCL|BROV|BRFR|BRMAIT|CMAIT|CESCL|BRES|BRMA|BRRI|BOR|"
-    r"BRGAP|BRCT|BRRAND|BRADAP|THS|THN|TH)\d+|BRXF\d+[SF]|BRPOI1[TR]|"
+    r"BRGAP|BRCT|BRRAND|BRADAP|BRED|THS|THN|TH)\d+|BRXF\d+[SF]|BRPOI1[TR]|"
     r"all_elems|all_nodes|"
     r"tab_\w+_n\d+)$")
 
@@ -1293,6 +1294,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     skin_by_key = {}
     skin_count = [0]
     face_groups = OrderedDict()       # name -> [element names]
+    # name -> [(eid, cell)] of the shell edges (_split_shell_edges)
+    edge_cells = OrderedDict()
     face_group_nodes = OrderedDict()  # name -> set(nid), beam faces only
     group_areas = {}
     group_weights = {}                # name -> {nid: int(N dA)}, volume faces
@@ -1422,6 +1425,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
                 for n, w in zip(snodes, fw):
                     gw[n] = gw.get(n, 0.0) + w
                 group_areas[fname] = group_areas.get(fname, 0.0) + sum(fw)
+            else:
+                edge_cells.setdefault(fname, []).append(
+                    (eid, skin_by_key[key]))
             members.append(skin_by_key[key])
         if members:
             # A cell only once per group: face 5 and 6 of the same
@@ -1799,6 +1805,9 @@ def write_mesh(mail_path, model_data, face_nodes=None):
         group_ma[name] = members
     for name, members in crack_members.items():
         group_ma[name] = members
+    model_data["edge_splits"] = _split_shell_edges(
+        model_data, edge_cells, group_faces, group_face_list, elements, rn,
+        group_ma)
 
     group_no = OrderedDict()
     for name, ids in model_data.get("node_groups", {}).items():
@@ -2325,6 +2334,102 @@ def _traction(model_data, bc, faces, skin_groups):
         sel, plan))
 
 
+def _split_shell_edges(model_data, edge_cells, group_faces, group_face_list,
+                       elements, rn, group_ma):
+    """
+    Edge selections over shells of several components that differ in
+    element, LINE_QUAD or thickness (was KNOWN_BUGS item 161): one mesh
+    group per component (BRED<n>, written with the other groups), because
+    the edge cells enter AFFE_MODELE with the modelisation of their shell
+    (edge_groups) and a force on them is shared by length times thickness:
+    Mecway (36, internal solver, headless, 19 Nov 2026) gave two separate
+    strips of 2 and 4 mm with one 2 N force on both free edges 0.667 and
+    1.333 N (tips -6.2764e-4 and -1.5719e-4 m). An edge cell shared by two
+    components goes to the first one only (once in the model, the load
+    once), with its thickness: the share against Mecway for such an edge
+    between components of different thickness is NOT verified. Names here are the Mecway names (before the renames of
+    _apply_to_model_data); adds group_face_list entries for the parts.
+    Returns {rn(selection): [{"group", "thickness"}]}.
+    """
+    mods = model_data.get("elset_modelisations", {})
+    ups = model_data.get("shell_upgrades", {})
+    secs = model_data.get("shell_sections", {})
+    eid_es = dict((eid, es) for eid, _shape, _en, es in elements)
+    # only selections with a force or line load (constraints use nodes)
+    loaded = set(bc.get("selection") for bc in model_data.get("bcs", [])
+                 if bc.get("type") in ("force", "linepressure"))
+    splits = OrderedDict()
+    count = 0
+    for fname, cells in edge_cells.items():
+        if group_faces.get(fname, {}).get("kinds") != set(["shelledge"]) \
+                or fname not in loaded:
+            continue
+        owner = OrderedDict()
+        for eid, cell in cells:
+            owner.setdefault(cell, eid_es.get(eid))
+        parents = list(OrderedDict.fromkeys(eid_es.get(eid)
+                                            for eid, _c in cells))
+        # parents in cell order: a component whose edges are all shared
+        # with an earlier one gets no part
+        if len(parents) < 2 or None in parents or not all(
+                mods.get(es) in ("DKT", "DST", "COQUE_3D") for es in parents):
+            # 2D (bridge_plane) and other elements: not here
+            continue
+        thick = dict((es, (secs.get(es) or {}).get("thickness"))
+                     for es in parents)
+        lq = any("LINE_QUAD" in (ups.get(es) or ()) for es in parents)
+        kinds = set((mods.get(es), thick[es]) for es in parents)
+        if len(kinds) < 2 and not lq:
+            continue
+        parts = []
+        for es in parents:
+            mine = [c for c, o in owner.items() if o == es]
+            if not mine:
+                continue
+            count += 1
+            name = "BRED{0}".format(count)
+            # not a group name, nor a Mecway selection name (also renamed
+            # ones: rn maps them, and group_face_list is renamed with rn)
+            while name in group_ma or name in group_face_list or \
+                    rn(name) != name:
+                count += 1
+                name = "BRED{0}".format(count)
+            group_ma[name] = mine
+            taken = set(mine)
+            faces, seen = [], set()
+            for (eid, cell), f in zip(cells, [
+                    f for f in group_face_list.get(fname, [])
+                    if f["kind"] == "shelledge"]):
+                if cell in taken and cell not in seen:
+                    seen.add(cell)
+                    faces.append(f)
+            group_face_list[name] = faces
+            parts.append({"group": name, "thickness": thick[es]})
+        splits[rn(fname)] = parts
+        log("INFO: Shell-edge selection '{0}' over {1} components with "
+            "different elements or thickness: one group per component "
+            "({2}).".format(fname, len(parents),
+                            ", ".join(p["group"] for p in parts)))
+    return splits
+
+
+def _edge_parts(model_data, sel):
+    """[(group, MODELISATION, thickness, length)] of a split shell-edge
+    selection (_split_shell_edges), or None when sel is not split or a
+    part has no single shell type or no thickness."""
+    parts = model_data.get("edge_splits", {}).get(sel)
+    if not parts:
+        return None
+    out = []
+    for p in parts:
+        parent = _shell_edge_parent(model_data, p["group"])
+        length = _edge_length(model_data, p["group"])
+        if not parent or not p["thickness"] or length <= 0.0:
+            return None
+        out.append((p["group"], parent, p["thickness"], length))
+    return out
+
+
 def _shell_edge_parent(model_data, sel):
     """MODELISATION of the shells behind edge group sel (DKT/DST/COQUE_3D),
     or None if that is not unambiguously one shell type."""
@@ -2342,8 +2447,14 @@ def _edge_length(model_data, sel):
     mid node as two straight pieces)."""
     nodes = model_data["mesh_nodes"]
     total = 0.0
+    seen = set()
     for f in model_data.get("group_face_list", {}).get(sel, []):
         ns = f["nodes"]
+        # an edge between two shells, selected from both sides, is one
+        # cell in the mesh: count it once (else half the force)
+        if frozenset(ns) in seen:
+            continue
+        seen.add(frozenset(ns))
         path = [ns[0], ns[2], ns[1]] if len(ns) == 3 else ns[:2]
         for a, b in zip(path[:-1], path[1:]):
             d = _vsub(nodes[b], nodes[a])
@@ -2367,6 +2478,18 @@ def _line_pressure(model_data, bc, faces):
             ["POU_D_E", "POU_D_T", "POU_D_T_GD", "POU_D_TG", "BARRE"]):
         bc["aster_keyword"] = "FORCE_POUTRE"
         return
+    if kinds == set(["shelledge"]) and not local and \
+            sel in model_data.get("edge_splits", {}):
+        # Shell edges of several components (_split_shell_edges): the
+        # same force per length on every part
+        parts = _edge_parts(model_data, sel)
+        if parts:
+            edges = model_data.setdefault("edge_groups", OrderedDict())
+            for g, parent, _t, _l in parts:
+                edges[g] = parent
+            bc["aster_keyword"] = "FORCE_ARETE"
+            bc["aster_parts"] = [(g, 1.0) for g, _p, _t, _l in parts]
+            return
     if kinds == set(["shelledge"]) and not local:
         # The edges must be in the model, with the modelisation of the shell
         # (<EXCEPTION> MODELISA6_96 without, Code-Aster 17.4).
@@ -6173,6 +6296,41 @@ def _apply_to_model_data(model_data, rn, rn_es, nonempty_names, poi1_groups,
                     bc["params"])
                 log("INFO: Force on shell faces '{0}': area {1} m2 "
                     "-> FORCE_COQUE.".format(sel, area))
+            elif (group_faces.get(sel, {}).get("kinds") == set(["shelledge"])
+                    and _edge_parts(model_data, sel)):
+                # Shell edges of several components (_split_shell_edges):
+                # FORCE_ARETE per part, shared by length x thickness as
+                # Mecway does
+                parts = _edge_parts(model_data, sel)
+                timed = any(isinstance(v, list) for k, v in
+                            bc["params"].items() if not k.startswith("_"))
+                t1 = parts[0][2]
+                if timed and any(abs(p[2] - t1) > 1e-12 * t1 for p in parts):
+                    _not_translated(
+                        model_data, bc, tr("Kracht", "Force"),
+                        tr("schaalranden van componenten met verschillende "
+                           "dikte en een tijdsverloop (het aandeel per "
+                           "component zou het verloop veranderen); geef elke "
+                           "component een eigen selectie",
+                           "shell edges of components with different "
+                           "thickness and a time history (the share per "
+                           "component would change the history); give each "
+                           "component its own selection"))
+                else:
+                    denom = sum(p[2] * p[3] for p in parts)
+                    edges = model_data.setdefault("edge_groups",
+                                                  OrderedDict())
+                    for g, parent, _t, _l in parts:
+                        edges[g] = parent
+                    bc["params"] = _per_area(bc["params"], denom / t1)
+                    bc["aster_keyword"] = "FORCE_ARETE"
+                    bc["aster_dict"] = SUPPORTED_BCS["force"].to_aster_dict(
+                        bc["params"])
+                    bc["aster_parts"] = [(g, t / t1)
+                                         for g, _p, t, _l in parts]
+                    log("INFO: Force on shell edges '{0}': {1} parts "
+                        "(length x thickness {2} m2) -> FORCE_ARETE per "
+                        "part.".format(sel, len(parts), denom))
             elif (group_faces.get(sel, {}).get("kinds") == set(["shelledge"])
                     and _shell_edge_parent(model_data, sel)):
                 # Shell edges: total force / edge length -> FORCE_ARETE

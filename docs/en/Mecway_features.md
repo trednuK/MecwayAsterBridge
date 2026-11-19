@@ -39,7 +39,7 @@ ignored with only an INFO, as Mecway itself does.
 
 | Mecway | Status | Remark |
 |---|---|---|
-| Force (nodes, faces, elements) | Yes | On nodes divided equally, on faces as force per area. |
+| Force (nodes, faces, elements) | Yes | On nodes divided equally, on faces as force per area; on shell edges of several components by length × thickness, as Mecway does (LS-98d). |
 | Pressure | Yes | Follower load in nonlinear analyses (a formula in x, y, z stays fixed). On shell edges (length × thickness) and beam ends (area) as nodal forces; on the side face of a beam no load (see below). |
 | Traction | Yes | On a shell face with the moment of half the thickness, as in Mecway. |
 | Line pressure | Yes | Global or local (U, V, W). Combinations on one beam are summed; local and global on the same beam: No (ERROR, KB20). |

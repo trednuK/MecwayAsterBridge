@@ -161,7 +161,7 @@ No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Offi
 Added since this regression and run on their own (19 Nov 2026, not yet in a full
 regression): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
 (1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), LS-07w (3 OK), LS-07x (3 OK), LS-07y (3 OK), LS-07z (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK), LS-98a (6 OK), LS-98b (6 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK), LS-98a (6 OK), LS-98b (6 OK), LS-98c (6 OK), LS-98d (3 OK).
 
 **Known limitations** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangential stiffness kt is not modelled, Code-Aster sticks
@@ -1364,9 +1364,12 @@ axes. With the field *stress in element coordinates* Mecway stores `lamuu`, `lam
 - **Model**: three separate LS-07b strips (20 × 4 quad4, 0.2 × 0.02 × 0.002 m, steel, each 1 N
   on the free edge): `Strook_DKT` with the general setting `DKT`, `Strook_DST` and
   `Strook_Q3D` with `**ASTER-ELEMENT ...: DST` and `COQUE_3D`. LS-98a: each strip its own
-  clamp; LS-98b: one clamp over the three strips.
+  clamp; LS-98b: one clamp over the three strips; LS-98c: as LS-98a with one
+  force of 3 N over the three free edges. LS-98d: two separate DKT strips of 2 and 4 mm,
+  one force of 2 N over both free edges.
 - **Reference**: the same strip alone, with the element as the general setting
-  (Code-Aster 17.4, 19 Nov 2026), and Mecway 34 on LS-07b (9.41484·10⁻⁴ m).
+  (Code-Aster 17.4, 19 Nov 2026), and Mecway 34 on LS-07b (9.41484·10⁻⁴ m); LS-98d:
+  Mecway 36 (internal solver, headless) on the same model.
 
 | Test | Strip | Reference (alone) | Result | vs Mecway |
 |---|---|---|---|---|
@@ -1374,11 +1377,16 @@ axes. With the field *stress in element coordinates* Mecway stores `lamuu`, `lam
 | LS-98a | DST | 9.4291·10⁻⁴ m | 9.4291·10⁻⁴ m | +0.15 % |
 | LS-98a | COQUE_3D | 9.4341·10⁻⁴ m | 9.4341·10⁻⁴ m | +0.20 % |
 | LS-98b | COQUE_3D (back to DKT) | 9.4257·10⁻⁴ m | 9.4257·10⁻⁴ m | +0.12 % |
+| LS-98c | DKT, DST, COQUE_3D | as LS-98a | equal to LS-98a | as LS-98a |
+| LS-98d | 2 mm | Mecway 6.2764·10⁻⁴ m | 6.2838·10⁻⁴ m | +0.12 % |
+| LS-98d | 4 mm | Mecway 1.5719·10⁻⁴ m | 1.5710·10⁻⁴ m | −0.06 % |
 
 Each strip equals its own run. In LS-98b the clamp also lies on the DKT strips; with
 `COQUE_3D` the new mid-side nodes on the clamped edge then stayed free (tip
 9.9206·10⁻⁴ m, 5 % too soft), so the bridge computes that strip with DKT and gives a
-WARNING (KNOWN_BUGS 162). Not covered: beams and solid elements per component (the unit
+WARNING (KNOWN_BUGS 162). Mecway shares a force on edges by length × thickness (LS-98d:
+2/3 N on the 2 mm strip, 4/3 N on the 4 mm one); the bridge makes an edge group per
+component (`BRED`) with its share. Not covered: beams and solid elements per component (the unit
 test `tests/test_element_override.py` does cover them), and the Mecway GUI.
 
 ### Conclusion linear static

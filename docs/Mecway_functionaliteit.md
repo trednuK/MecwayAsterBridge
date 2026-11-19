@@ -39,7 +39,7 @@ negeert de bridge met alleen een INFO, net als Mecway zelf.
 
 | Mecway | Status | Opmerking |
 |---|---|---|
-| Force (knopen, vlakken, elementen) | Ja | Op knopen gelijk verdeeld, op vlakken als kracht per oppervlak. |
+| Force (knopen, vlakken, elementen) | Ja | Op knopen gelijk verdeeld, op vlakken als kracht per oppervlak; op schaalranden van meer componenten naar lengte × dikte, zoals Mecway (LS-98d). |
 | Pressure | Ja | Meebewegend in niet-lineaire analyses (een formule in x, y, z blijft vast). Op schaalranden (lengte × dikte) en balkuiteinden (oppervlak) als knoopkrachten; op het zijvlak van een balk geen last (zie onder). |
 | Traction | Ja | Op een schaalvlak met het moment van de halve dikte, zoals Mecway. |
 | Line pressure | Ja | Globaal of lokaal (U, V, W). Combinaties op één balk worden opgeteld; lokaal en globaal op dezelfde balk: Nee (ERROR, KB20). |

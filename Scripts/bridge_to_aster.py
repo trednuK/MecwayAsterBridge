@@ -3446,6 +3446,18 @@ def _render_bc(bc, aster_dict=None):
                 for ddl in bc.get("pin_ddl", ("DX", "DY", "DZ"))]
     if aster_dict is None:
         aster_dict = bc["aster_dict"]
+    if bc.get("aster_parts"):
+        # A shell-edge selection over several components
+        # (bridge_mesh._split_shell_edges): one _F per part, numbers times
+        # the part's factor (thickness share; only 1.0 with a history)
+        out = []
+        for group, factor in bc["aster_parts"]:
+            vals = ", ".join("{0}={1}".format(
+                k, v * factor if factor != 1.0 and isinstance(
+                    v, (int, float)) and not isinstance(v, bool) else v)
+                for k, v in aster_dict.items())
+            out.append("_F(GROUP_MA='{0}', {1})".format(group, vals))
+        return out
     parts = ", ".join("{0}={1}".format(k, v) for k, v in aster_dict.items())
     if bc["selection"]:
         return ["_F({0}='{1}', {2})".format(

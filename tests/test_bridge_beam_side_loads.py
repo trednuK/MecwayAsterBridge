@@ -77,7 +77,9 @@ for xml, ref in (
         ('<geometric type="UniformGeneralSection" area="100 mm²" '
          'iyy="1000 mm⁴" izz="2000 mm⁴" torsionconstant="500 mm⁴" '
          'perimeter="77 mm" />', 0.077)):
-    g = bfl._parse_geometric_props(ET.fromstring(xml))
+    # bytes: IronPython 2.7's ElementTree encodes a text string as ASCII
+    # (UnicodeEncodeError on mm² / mm⁴)
+    g = bfl._parse_geometric_props(ET.fromstring(xml.encode("utf-8")))
     check(g is not None and close(g.get("perimeter", -1.0), ref),
           "perimeter {0}: {1}".format(xml[:45], g and g.get("perimeter")))
 g = bfl._parse_geometric_props(ET.fromstring(
