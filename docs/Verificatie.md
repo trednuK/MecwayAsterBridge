@@ -165,7 +165,7 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
 regressie): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
 (1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), LS-07w (3 OK), LS-07x (3 OK), LS-07y (3 OK), LS-07z (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
-149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
+149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK), LS-98a (6 OK), LS-98b (6 OK).
 
 **Bekende beperkingen** (status BEKEND):
 - KNOWN_BUGS 149: Mecway's tangentiële stijfheid kt wordt niet gemodelleerd, Code-Aster
@@ -1379,6 +1379,30 @@ coordinates* slaat Mecway `lamuu`, `lamvv`, `lamww`, `lamuv`, `lamvw`, `lamwu` =
 - **NIET geverifieerd**: een elementoffset via deze route; I, T, L, C op `POU_D_TG`, waar de solver de
   dunwandige EY, EZ heeft en de spanning het dwarskrachtcentrum van het mesh; een verdeelde last op `POU_D_T`,
   `POU_D_TG` en line3 via deze spanning; kleuren in Mecway's venster.
+
+### LS-98 Element per component (`#ASTER-ELEMENT`)
+
+- **Doel**: verschillende Code-Aster-elementen in één model, per Mecway-component
+  ([ASTER-regels §2](ASTER_regels_voorbeelden.md#2-soorten-regels)).
+- **Model**: drie losse LS-07b-stroken (20 × 4 quad4, 0,2 × 0,02 × 0,002 m, staal, elk 1 N
+  op de vrije rand): `Strook_DKT` met de algemene instelling `DKT`, `Strook_DST` en
+  `Strook_Q3D` met `**ASTER-ELEMENT ...: DST` en `COQUE_3D`. LS-98a: elke strook een eigen
+  inklemming; LS-98b: één inklemming over de drie stroken.
+- **Referentie**: dezelfde strook alleen, met het element als algemene instelling
+  (Code-Aster 17.4, 19 nov 2026), en Mecway 34 op LS-07b (9,41484·10⁻⁴ m).
+
+| Test | Strook | Referentie (alleen) | Resultaat | t.o.v. Mecway |
+|---|---|---|---|---|
+| LS-98a | DKT | 9,4257·10⁻⁴ m | 9,4257·10⁻⁴ m | +0,12 % |
+| LS-98a | DST | 9,4291·10⁻⁴ m | 9,4291·10⁻⁴ m | +0,15 % |
+| LS-98a | COQUE_3D | 9,4341·10⁻⁴ m | 9,4341·10⁻⁴ m | +0,20 % |
+| LS-98b | COQUE_3D (terug naar DKT) | 9,4257·10⁻⁴ m | 9,4257·10⁻⁴ m | +0,12 % |
+
+Elke strook is gelijk aan zijn eigen run. In LS-98b ligt de inklemming ook op de
+DKT-stroken; met `COQUE_3D` bleven de nieuwe middenknopen op de ingeklemde rand dan vrij
+(tip 9,9206·10⁻⁴ m, 5 % te slap), daarom rekent de bridge die strook met DKT en geeft een
+WARNING (KNOWN_BUGS 162). Niet gedekt: balken en volume-elementen per component (wel de
+unit-test `tests/test_element_override.py`), en de Mecway-GUI.
 
 ### Conclusie lineair statisch
 

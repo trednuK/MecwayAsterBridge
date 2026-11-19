@@ -241,7 +241,10 @@ def test_buckling_shell_notes():
                 ({"B": "POU_D_E"}, "DKT", False, False)):
             del lines[:]
             u.CONFIG_BRIDGE["elem_shell"] = shell
-            b2a._buckling_shell_notes({"elset_modelisations": mods})
+            # _resolve_line_quad records the fall-back (also for a
+            # COQUE_3D chosen per component with #ASTER-ELEMENT)
+            b2a._buckling_shell_notes({"elset_modelisations": mods,
+                                       "_coque3d_fallback": ["P"] if fell_back else []})
             text = "\n".join(lines)
             check(("WARNING" in text) == warn and
                   ("fell back" in text or "viel hier" in text) == fell_back,

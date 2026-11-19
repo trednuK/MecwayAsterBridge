@@ -456,6 +456,141 @@ def _warp_beam_choice(beam_mod, run_cfg, shapes, thermal_run):
     return beam_mod
 
 
+# Kind of element set each '#ASTER-ELEMENT' value is for (dim of the elset)
+_OVERRIDE_DIMS = {"3D": "3D", "3D_SI": "3D", "DKT": "2D", "DST": "2D",
+                  "COQUE_3D": "2D", "POU_D_E": "1D", "POU_D_T": "1D",
+                  GD_BEAM: "1D", WARP_BEAM: "1D"}
+_OVERRIDE_BEAMS = frozenset(v for v, d in _OVERRIDE_DIMS.items()
+                            if d == "1D")
+
+
+def _element_override(elset_name, value, shapes, run_cfg, thermal_run,
+                      hex8_general):
+    """
+    MODELISATION of one component from its '#ASTER-ELEMENT' line, after the
+    same checks as the general settings elem_hex8/elem_shell/elem_beam, or
+    None (ERROR, the run stops): a value for another kind of element, 3D_SI
+    on an elset that is not hex8 only, DKT/DST on quadratic shells (Code-Aster
+    17.4 has only COQUE_3D on TRIA7/QUAD9), a solid choice next to the
+    general elem_hex8 = LINE_QUAD (that converts the whole mesh). Depending
+    on the analysis, as the general setting and with a WARNING: DST -> DKT
+    outside MECA_STATIQUE, 3D_SI -> 3D in explicit dynamics,
+    _gd_beam_choice and _warp_beam_choice for beams.
+    """
+    if shapes & _DIM_1D_SHAPES:
+        dim = "1D"
+    elif shapes & _DIM_2D_SHAPES:
+        dim = "2D"
+    else:
+        dim = "3D"
+    allowed = sorted(v for v, d in _OVERRIDE_DIMS.items() if d == dim)
+    line = u"#ASTER-ELEMENT {0}: {1}".format(elset_name, value)
+    quadratic = shapes & set(["tri6", "quad8"])
+    if _OVERRIDE_DIMS.get(value) != dim or (dim == "2D" and quadratic and
+                                            value != "COQUE_3D"):
+        if dim == "2D" and quadratic:
+            allowed = ["COQUE_3D"]
+        log(tr(u"ERROR: '{0}': deze component heeft {1}-elementen ({2}); "
+               u"toegestaan is {3}.",
+               u"ERROR: '{0}': this component has {1} elements ({2}); "
+               u"allowed is {3}.").format(
+                   line, dim, u", ".join(sorted(shapes)) or u"-",
+                   u", ".join(allowed)))
+        return None
+    solver = run_cfg.get("solver_command")
+    explicit = (solver == "DYNA_NON_LINE" and
+                run_cfg.get("schema", "HHT") in _EXPLICIT_SCHEMAS)
+    if dim == "3D":
+        if hex8_general == "LINE_QUAD":
+            log(tr(u"ERROR: '{0}': niet samen met de algemene instelling "
+                   u"elem_hex8 = LINE_QUAD (die maakt alle volume-elementen "
+                   u"kwadratisch). Kies elem_hex8 = 3D of laat de regel weg.",
+                   u"ERROR: '{0}': not together with the general setting "
+                   u"elem_hex8 = LINE_QUAD (that makes all solid elements "
+                   u"quadratic). Choose elem_hex8 = 3D or leave the line "
+                   u"out.").format(line))
+            return None
+        if value == "3D_SI" and shapes != set(["hex8"]):
+            log(tr(u"ERROR: '{0}': 3D_SI alleen voor een component met "
+                   u"uitsluitend hex8; deze heeft {1}.",
+                   u"ERROR: '{0}': 3D_SI only for a component with hex8 "
+                   u"only; this one has {1}.").format(
+                       line, u", ".join(sorted(shapes)) or u"-"))
+            return None
+        if value == "3D_SI" and explicit:
+            log(tr(u"WARNING: '{0}': 3D_SI werkt niet met een expliciet "
+                   u"schema; deze hex8 worden 3D.",
+                   u"WARNING: '{0}': 3D_SI does not work with an explicit "
+                   u"scheme; these hex8 become 3D.").format(line))
+            return "3D"
+    elif dim == "2D":
+        if value == "DST" and solver != "MECA_STATIQUE":
+            log(tr(u"WARNING: '{0}': DST werkt in Code-Aster alleen lineair "
+                   u"(MECA_STATIQUE); voor {1} wordt deze component DKT.",
+                   u"WARNING: '{0}': DST only works linearly in Code-Aster "
+                   u"(MECA_STATIQUE); for {1} this component becomes "
+                   u"DKT.").format(line, solver))
+            return "DKT"
+    else:
+        got = _warp_beam_choice(_gd_beam_choice(value, run_cfg, shapes,
+                                                thermal_run),
+                                run_cfg, shapes, thermal_run)
+        if got != value:
+            log(u"INFO: The WARNING above is about the line '{0}'.".format(
+                line))
+        return got
+    return value
+
+
+def _check_element_requests(model_data, overrides, requests, seen, failed):
+    """
+    After the modelisations are final (bridge_plane.apply included): True
+    when every '#ASTER-ELEMENT' line was applied. ERROR (False, the run
+    stops) for a component that is not in the model, a component whose
+    element follows from its Mecway element type (truss, cable, spring:
+    the final modelisation differs from the request) and beams with large
+    rotations (POU_D_T_GD) mixed with other beams: the result export reads
+    EFGE_* for the one and SIEF_* for the other under the same Mecway names
+    and keeps only the first source (aster_results_export._plan_variables),
+    so the forces of one kind would be lost.
+    """
+    ok = not failed
+    unknown = sorted(set(overrides) - set(seen))
+    if unknown:
+        log(tr(u"ERROR: #ASTER-ELEMENT voor {0}: geen component met die naam "
+               u"in het model (componenten: {1}).",
+               u"ERROR: #ASTER-ELEMENT for {0}: no component with that name "
+               u"in the model (components: {1}).").format(
+                   u", ".join(u"'{0}'".format(n) for n in unknown),
+                   u", ".join(u"'{0}'".format(n) for n in sorted(seen))))
+        ok = False
+    mods = model_data.get("elset_modelisations", {})
+    for elset in sorted(requests):
+        got = mods.get(elset)
+        if got is not None and got != requests[elset]:
+            log(tr(u"ERROR: '#ASTER-ELEMENT {0}: {1}' niet toegepast: het "
+                   u"element van deze component volgt uit het Mecway-"
+                   u"elementtype ({2}).",
+                   u"ERROR: '#ASTER-ELEMENT {0}: {1}' not applied: the "
+                   u"element of this component follows from the Mecway "
+                   u"element type ({2}).").format(
+                       elset, overrides[elset], got))
+            ok = False
+    beams = set(m for m in mods.values() if m in _OVERRIDE_BEAMS)
+    if requests and GD_BEAM in beams and len(beams) > 1:
+        log(tr(u"ERROR: Balken met grote rotaties (POU_D_T_GD) samen met "
+               u"andere balken ({0}): de snedekrachten van een van beide "
+               u"zouden in Mecway ontbreken. Gebruik POU_D_T_GD voor alle "
+               u"balken of voor geen enkele (#ASTER-ELEMENT).",
+               u"ERROR: Beams with large rotations (POU_D_T_GD) together "
+               u"with other beams ({0}): the section forces of one of them "
+               u"would be missing in Mecway. Use POU_D_T_GD for all beams "
+               u"or for none (#ASTER-ELEMENT).").format(
+                   u", ".join(sorted(beams - set([GD_BEAM])))))
+        ok = False
+    return ok
+
+
 def _positive_int(text, default=1):
     """Integer >= 1 from an attribute, otherwise default."""
     try:
@@ -2269,6 +2404,26 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
         model_data["aster_custom"] = bridge_custom.parse(
             [el.text for tag in bridge_custom.CUSTOM_TAGS
              for el in root.findall(tag)])
+        # Code-Aster element per component (_element_override)
+        element_overrides, overrides_ok = bridge_custom.parse_elements(
+            model_data["aster_custom"]["elements"])
+        if not overrides_ok:
+            return None
+        if element_overrides and (
+                thermal_run or acoustic_run or
+                model_data["aster_custom"]["plane"] or
+                bridge_plane.is_plane_type(model_data["analysis_type"])):
+            log(tr(u"WARNING: #ASTER-ELEMENT-regels worden in deze analyse "
+                   u"niet gebruikt (thermisch, akoestiek, 2D-analyse of "
+                   u"#ASTER-PLANE: de elementen volgen daar uit de "
+                   u"analyse).",
+                   u"WARNING: #ASTER-ELEMENT lines are not used in this "
+                   u"analysis (thermal, acoustics, 2D analysis or "
+                   u"#ASTER-PLANE: the elements follow from the analysis "
+                   u"there)."))
+            element_overrides = {}
+        element_requests, seen_elsets = {}, []
+        override_failed = False
         # '#ASTER-PLANE AXIS' in S30/L30: line elements become
         # axisymmetric shells (COQUE_AXIS, S44e; checks in bridge_plane)
         axis_lines = bridge_plane.axis_shells_wanted(model_data)
@@ -2630,6 +2785,32 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                         elset_name] = mat_assigned
 
                 shapes = elset_shapes_map.get(elset_name, set())
+                seen_elsets.append(elset_name)
+                # Per component: '#ASTER-ELEMENT' over the general choice
+                e_hex8, e_shell, e_beam = hex8_mod, shell_mod, beam_mod
+                if elset_name in element_overrides and not shapes:
+                    log(tr(u"WARNING: '#ASTER-ELEMENT {0}': deze component "
+                           u"heeft geen elementen; de regel wordt niet "
+                           u"gebruikt.",
+                           u"WARNING: '#ASTER-ELEMENT {0}': this component "
+                           u"has no elements; the line is not used.").format(
+                               elset_name))
+                elif elset_name in element_overrides:
+                    got = _element_override(
+                        elset_name, element_overrides[elset_name], shapes,
+                        run_cfg, thermal_run, hex8_mod)
+                    if got is None:
+                        override_failed = True
+                    else:
+                        element_requests[elset_name] = got
+                        log("INFO: Elset '{0}': element {1} "
+                            "(#ASTER-ELEMENT).".format(elset_name, got))
+                        if got in ("3D", "3D_SI"):
+                            e_hex8 = got
+                        elif got in _OVERRIDE_BEAMS:
+                            e_beam = got
+                        else:
+                            e_shell = got
                 # An elset gets one MODELISATION (1D over 2D over 3D);
                 # Code-Aster then does not model elements of another
                 # dimension (AFFE_MODELE does not assign that type). Report.
@@ -2666,7 +2847,7 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                     # SECTION='GENERALE' (STEP 3,
                     # _add_shear_coefs). POU_D_E exists only on SEG2
                     # (code_aster catalogue phenomenons_modelisations.py).
-                    modelisation = beam_mod
+                    modelisation = e_beam
                     model_data["has_1d"] = True
                     if axis_lines:
                         # Axisymmetric shell on SEG3 (S44e): no beam, no
@@ -2682,7 +2863,7 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                         log("INFO: Elset '{0}' contains line3 beams; each "
                             "element is split at the mid node into "
                             "two SEG2 cells ({1}).".format(
-                                elset_name, beam_mod))
+                                elset_name, e_beam))
                 elif shapes & _DIM_2D_SHAPES:
                     dim          = "2D"
                     model_data["has_2d"] = True
@@ -2700,7 +2881,7 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                         if "tri6" in shapes:
                             upgrades.append("TRIA6_7")
                         model_data["shell_upgrades"][elset_name] = upgrades
-                    elif shell_mod == "COQUE_3D" and not quadratic:
+                    elif e_shell == "COQUE_3D" and not quadratic:
                         # Choice COQUE_3D for linear shells: Code-Aster
                         # first makes them quadratic (LINE_QUAD, then
                         # QUAD8_9/TRIA6_7); bridge_to_aster._resolve_line_quad
@@ -2715,7 +2896,7 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                     else:
                         # DKT (default) or DST via CONFIG_BRIDGE
                         # ["elem_shell"]; both on TRIA3/QUAD4.
-                        modelisation = (shell_mod if shell_mod != "COQUE_3D"
+                        modelisation = (e_shell if e_shell != "COQUE_3D"
                                         else "DKT")
                         if quadratic:
                             model_data["skipped_loads"].append(tr(
@@ -2741,7 +2922,7 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
                         model_data["has_3d"] = True
                     # 3D_SI (reduced integration) only for elsets with
                     # hex8 only; otherwise it stays 3D.
-                    if hex8_mod == "3D_SI" and shapes:
+                    if e_hex8 == "3D_SI" and shapes:
                         if shapes == set(["hex8"]):
                             modelisation = "3D_SI"
                             log(tr("WARNING: Elset '{0}' -> 3D_SI "
@@ -3506,6 +3687,10 @@ def extract_aster_data_from_liml(file_path, warn_supports=True):
 
         # 2D analysis (S20, SA0, D20, DA0): plane modelisations (bridge_plane)
         if not bridge_plane.apply(model_data, run_cfg, elset_shapes_map):
+            return None
+        if element_overrides and not _check_element_requests(
+                model_data, element_overrides, element_requests,
+                seen_elsets, override_failed):
             return None
 
         # ==========================================

@@ -103,6 +103,13 @@
 #                            material, in m or with a unit (mm, cm, m);
 #                            also #ASTER-SCHAAL. See parse_shells and
 #                            bridge_plane._shell_thickness.
+#   #ASTER-ELEMENT component: MODELISATION
+#                            Code-Aster element of one Mecway component
+#                            (element set) instead of the general setting
+#                            elem_hex8/elem_shell/elem_beam: 3D, 3D_SI,
+#                            DKT, DST, COQUE_3D, POU_D_E, POU_D_T,
+#                            POU_D_T_GD, POU_D_TG. See parse_elements and
+#                            bridge_from_liml._element_override.
 #   <<Mecway-selectie>>      in all lines: the Code-Aster group name of
 #                            that selection (bridge_mesh renames names)
 #
@@ -170,7 +177,7 @@ _KINDS = ("", "-EXCIT", "-CONTACT", "-ZONE", "-OPTIE", "-POST",
           "-SIGNAAL", "-SIGNAL", "-METALLURGIE", "-METALLURGY",
           "-XFEM", "-CONSTANT", "-SECTIE", "-SECTION",
           "-RAND", "-BOUNDARY", "-PLANE", "-VLAK", "-SHELL", "-SCHAAL",
-          "-BONDED")
+          "-BONDED", "-ELEMENT")
 # Fatigue (bridge_fatigue.py): kind -> key in out["fatigue"]
 _FATIGUE_KINDS = {"-WOHLER": "wohler", "-VERMOEIING": "options",
                   "-FATIGUE": "options", "-BLOK": "block", "-BLOCK": "block",
@@ -327,7 +334,7 @@ def empty():
             "fatigue": [], "metallurgy": [],
             "xfem": [], "constant": [], "sections": [], "boundaries": [],
             "section_shapes": [], "section_directions": [], "plane": [],
-            "shells": []}
+            "shells": [], "elements": []}
 
 
 def parse(texts):
@@ -461,6 +468,10 @@ def parse(texts):
                 # Thickness of axisymmetric shells (S44e); worked out in
                 # parse_shells (bridge_plane.apply)
                 out["shells"].append(body.strip())
+            elif kind == "-ELEMENT":
+                # Code-Aster element per Mecway component; worked out in
+                # parse_elements (bridge_from_liml)
+                out["elements"].append(body.strip())
             elif kind in ("-METALLURGIE", "-METALLURGY"):
                 # worked out in bridge_metallurgy.parse_specs
                 if body.strip():
@@ -492,6 +503,9 @@ def parse(texts):
                 len(out["xfem"]), len(out["constant"]),
                 len(out["hyst"]),
                 len(out["sections"])))
+    if out["elements"]:
+        log("INFO: {0} #ASTER-ELEMENT line(s) (Code-Aster element per "
+            "component).".format(len(out["elements"])))
     if out["shells"]:
         log("INFO: {0} #ASTER-SHELL line(s) (thickness of axisymmetric "
             "shells, bridge_plane).".format(len(out["shells"])))
@@ -615,6 +629,55 @@ def parse_shells(bodies):
                    u"'{0}'; the last one counts (EPAIS={1} m).").format(
                        name, "%.6g" % new["epais"]))
         out[name] = new
+    return out, ok
+
+
+# Values of '#ASTER-ELEMENT' (the per-component choice; LINE_QUAD converts
+# the whole mesh and stays a general setting only)
+ELEMENT_VALUES = ("3D", "3D_SI", "DKT", "DST", "COQUE_3D", "POU_D_E",
+                  "POU_D_T", "POU_D_T_GD", "POU_D_TG")
+
+
+def parse_elements(bodies):
+    """
+    The '#ASTER-ELEMENT' lines: (OrderedDict {component: MODELISATION},
+    ok). The component name is everything before the last colon (as the
+    SECTIE lines); the value is upper-cased and must be one of
+    ELEMENT_VALUES. A bad line gives an ERROR and ok False (the run stops:
+    otherwise another element would be used silently). Several lines for
+    one component: the last one counts, with a WARNING when they differ.
+    Python 2.7 and 3, no mw.
+    """
+    out = OrderedDict()
+    ok = True
+    for body in bodies:
+        name, sep, value = body.rpartition(":")
+        name = name.strip()
+        value = value.strip().upper()
+        if not sep or not name or value not in ELEMENT_VALUES:
+            if value == "LINE_QUAD":
+                log(tr(u"ERROR: '#ASTER-ELEMENT {0}': LINE_QUAD maakt het "
+                       u"hele mesh kwadratisch en kan alleen als algemene "
+                       u"instelling elem_hex8 (pagina Elementen).",
+                       u"ERROR: '#ASTER-ELEMENT {0}': LINE_QUAD makes the "
+                       u"whole mesh quadratic and is only possible as the "
+                       u"general setting elem_hex8 (Elements page).").format(
+                           body))
+            else:
+                log(tr(u"ERROR: '#ASTER-ELEMENT {0}': verwacht "
+                       u"'<component>: <element>' met als element een van "
+                       u"{1}.",
+                       u"ERROR: '#ASTER-ELEMENT {0}': expected "
+                       u"'<component>: <element>' with as element one of "
+                       u"{1}.").format(body, u", ".join(ELEMENT_VALUES)))
+            ok = False
+            continue
+        if name in out and out[name] != value:
+            log(tr(u"WARNING: Meerdere #ASTER-ELEMENT-regels voor component "
+                   u"'{0}'; de laatste telt ({1}).",
+                   u"WARNING: Several #ASTER-ELEMENT lines for component "
+                   u"'{0}'; the last one counts ({1}).").format(name, value))
+        out[name] = value
     return out, ok
 
 

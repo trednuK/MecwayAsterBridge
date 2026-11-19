@@ -420,6 +420,8 @@ def _resolve_line_quad(model_data):
         for g in bonded:
             model_data["elset_modelisations"][g] = "DKT"
             upgrades.pop(g, None)
+        # Groups that fell back to DKT (_buckling_shell_notes)
+        model_data.setdefault("_coque3d_fallback", []).extend(sorted(bonded))
         shell_lq = [g for g in shell_lq if g not in bonded]
         edges = model_data.get("edge_groups", {})
         for sel in list(edges):
@@ -528,10 +530,64 @@ def _resolve_line_quad(model_data):
             for g in shell_lq:
                 model_data["elset_modelisations"][g] = "DKT"
                 upgrades.pop(g, None)
+            model_data.setdefault("_coque3d_fallback", []).extend(shell_lq)
             shell_lq = []
             # Shell edges in the model (FORCE_ARETE, bridge_mesh) already got
             # the shell's modelisation: update it, otherwise COQUE_3D
             # on SEG2 -> <EXCEPTION> MODELISA6_96 (Code-Aster 17.4).
+            edges = model_data.get("edge_groups", {})
+            for sel in list(edges):
+                parent = bridge_mesh._shell_edge_parent(model_data, sel)
+                if parent:
+                    edges[sel] = parent
+
+    # A constraint on an edge selection that lies only partly on these
+    # shells: the job converts only groups that lie entirely on the
+    # converted cells (_bridge_lq_groups), so the new mid-side nodes on
+    # the constrained edges would stay free (LS-98b with one clamp over a
+    # COQUE_3D and two DKT strips: tip 5 % too soft, Code-Aster 17.4,
+    # 19 Nov 2026). Then DKT for those shells (KNOWN_BUGS 162); repeated
+    # until nothing changes (a demoted shell can make another selection
+    # partial). Shell faces themselves are converted in place, so only
+    # edges count.
+    if shell_lq and not tout:
+        faces = model_data.get("group_face_list", {})
+        elem_elset = model_data.get("_elem_elset", {})
+        partial, sels = set(), set()
+        changed = True
+        while changed and shell_lq:
+            changed = False
+            for bc in model_data.get("bcs", []):
+                sel = bc.get("selection")
+                if bc.get("type") not in _KINEMATIC_BCS or \
+                        bc.get("aster_target") != "GROUP_MA" or not sel:
+                    continue
+                owners = set(elem_elset.get(f["eid"])
+                             for f in faces.get(sel, [])
+                             if f.get("kind") == "shelledge")
+                hit = owners & set(shell_lq)
+                if hit and owners - hit:
+                    partial |= hit
+                    sels.add(sel)
+                    shell_lq = [g for g in shell_lq if g not in hit]
+                    changed = True
+        if partial:
+            log(tr("WARNING: COQUE_3D niet toegepast op schalen {0}: "
+                   "voorwaarde(n) op {1} liggen ook op andere elementen, "
+                   "dan zouden de nieuwe middenknopen op die randen vrij "
+                   "blijven. DKT gebruikt; geef deze schalen in Mecway een "
+                   "eigen selectie voor de voorwaarde.",
+                   "WARNING: COQUE_3D not applied to shells {0}: "
+                   "constraint(s) on {1} also lie on other elements, so the "
+                   "new mid-side nodes on those edges would stay free. DKT "
+                   "used; give these shells their own selection for the "
+                   "constraint in Mecway.").format(
+                       ", ".join(sorted(partial)), ", ".join(sorted(sels))))
+            for g in partial:
+                model_data["elset_modelisations"][g] = "DKT"
+                upgrades.pop(g, None)
+            model_data.setdefault("_coque3d_fallback", []).extend(
+                sorted(partial))
             edges = model_data.get("edge_groups", {})
             for sel in list(edges):
                 parent = bridge_mesh._shell_edge_parent(model_data, sel)
@@ -9101,7 +9157,9 @@ def _buckling_shell_notes(model_data):
     """
     mods = model_data.get("elset_modelisations", {})
     dkt = sorted(g for g, m in mods.items() if m in ("DKT", "DST"))
-    if dkt and CONFIG_BRIDGE.get("elem_shell") == "COQUE_3D":
+    fell = set(model_data.get("_coque3d_fallback") or ())
+    if any(g in fell for g in dkt):
+        dkt = [g for g in dkt if g in fell]
         # COQUE_3D fell back to DKT (_resolve_line_quad gave its WARNING)
         log(tr("WARNING: Knik met DKT-schalen ({0}): COQUE_3D viel hier "
                "terug naar DKT (zie de WARNING daarover). De geometrische "

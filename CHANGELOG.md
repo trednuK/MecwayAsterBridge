@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Code-Aster element per component: `#ASTER-ELEMENT component: element`.** A line
+  in the CCX *custom model definition* chooses the element of one Mecway component
+  instead of the general setting `elem_hex8`/`elem_shell`/`elem_beam`: `3D`, `3D_SI`,
+  `DKT`, `DST`, `COQUE_3D`, `POU_D_E`, `POU_D_T`, `POU_D_T_GD`, `POU_D_TG`, so several
+  shell (or beam, or solid) elements can be combined in one model. The analysis rules
+  of the general settings apply per component (e.g. `DST` only in linear static);
+  a combination Code-Aster does not have stops the run with an ERROR. Verification
+  LS-98a/b: each strip equals its own run. Defaults unchanged.
+- **`COQUE_3D` on linear shells: no free mid-side nodes on a shared clamp (results
+  change).** A constraint selection that also lay on other elements left the new
+  mid-side nodes of the converted shells free (5 % too soft in LS-98b); those shells
+  now stay DKT with a WARNING (KNOWN_BUGS 162). This also applies to the general
+  setting `elem_shell` = `COQUE_3D` when a clamp spans shells and other elements. New KNOWN_BUGS 161: a load on edges
+  over shells of different elements is not translated.
 - **DKT shells in implicit dynamics: right response (KNOWN_BUGS 156; results change).**
   Code-Aster computed the initial acceleration from the nearly singular DKT mass
   (`MECANONLINE_78`): with a step load the LS-07b strip moved up to about +10 mm instead of
