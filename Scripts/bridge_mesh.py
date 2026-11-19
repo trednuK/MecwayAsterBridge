@@ -460,6 +460,56 @@ class _MailWriter(object):
             self._buf = []
             self._size = 0
 
+    def close(self):
+        self.flush()
+
+
+def _write_aster_mail(mail_path, nids, nodes, extra_nodes, by_type,
+                      group_ma, group_no):
+    """Write the ASTER mesh. ``aster_fast mail`` writes the same bytes
+    when the helper is present (``bridge_fast``). A missing or failing
+    helper returns False and the caller uses the Python writer."""
+    try:
+        import bridge_fast
+        return bridge_fast.write_mail(
+            mail_path, nids, nodes, extra_nodes, by_type, group_ma, group_no)
+    except Exception as exc:
+        log("WARNING: aster_fast mail was not used ({0}); writing the "
+            "mesh in Python.".format(exc))
+        return False
+
+
+def _write_aster_mail_py(mail_path, nids, nodes, extra_nodes, by_type,
+                         group_ma, group_no):
+    """Python writer. Same bytes as ``aster_fast mail`` and as the
+    chunked writer inside ``write_mesh``."""
+    f = open(mail_path, "w")
+    try:
+        out = _MailWriter(f)
+        out.extend(["TITRE", " Mecway-model via MecwayAsterBridge", "FINSF",
+                    "COOR_3D"])
+        for nid in nids:
+            out.append(" N" + str(nid) + " " + " ".join(
+                map(_real, nodes[nid])))
+        for nid, xyz in extra_nodes:
+            out.append(" N" + str(nid) + " " + " ".join(map(_real, xyz)))
+        out.append("FINSF")
+        for atype, items in by_type.items():
+            out.append(atype)
+            for name, cn in items:
+                out.extend(_wrap([name] + ["N" + str(n) for n in cn]))
+            out.append("FINSF")
+        for kind, groups in (("GROUP_MA", group_ma), ("GROUP_NO", group_no)):
+            for name, members in groups.items():
+                out.append(kind)
+                out.append(" {0}".format(name))
+                out.extend(_wrap(members))
+                out.append("FINSF")
+        out.append("FIN")
+        out.flush()
+    finally:
+        f.close()
+
 
 # ==========================================
 # FACES
@@ -1864,6 +1914,8 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     # Mecway elements (Code-Aster 17.4 has no getCellName).
     model_data["cell_names"] = [name for items in by_type.values()
                                 for name, _cn in items]
+    extra_nodes = ((offset_plan or {}).get("new_nodes", []) +
+                   list(joint_nodes.items()) + list(pret_nodes.items()))
     # Written to a temporary file next to it, which replaces the .mail
     # only when complete: a failure while writing keeps an existing .mail
     # (a failing rename after the remove loses it; write_mesh then returns
@@ -1871,42 +1923,10 @@ def write_mesh(mail_path, model_data, face_nodes=None):
     tmp_path = mail_path + ".tmp"
     f = None
     try:
-        f = open(tmp_path, "w")
-        out = _MailWriter(f)
-        out.extend(["TITRE", " Mecway-model via MecwayAsterBridge", "FINSF",
-                    "COOR_3D"])
-        # " N" + str() and map() give the same text as " N{0} {1}".format()
-        # with a generator, faster in IronPython (most of the time of this
-        # step is building the lines, not writing them).
-        for nid in nids:
-            # 15 significant digits: the line stays under 80 characters.
-            out.append(" N" + str(nid) + " " + " ".join(
-                map(_real, nodes[nid])))
-        # Nodes of offset elements (bridge_offset) and then those of
-        # flexible joints after the Mecway nodes, numbered ascending (the
-        # results are read back by node index: row i < N stays
-        # Mecway node i+1)
-        # and then the copies and reference nodes of pre-tension sections
-        for nid, xyz in ((offset_plan or {}).get("new_nodes", []) +
-                         list(joint_nodes.items()) +
-                         list(pret_nodes.items())):
-            out.append(" N" + str(nid) + " " + " ".join(map(_real, xyz)))
-        out.append("FINSF")
-        for atype, items in by_type.items():
-            out.append(atype)
-            for name, cn in items:
-                out.extend(_wrap([name] + ["N" + str(n) for n in cn]))
-            out.append("FINSF")
-        for kind, groups in (("GROUP_MA", group_ma), ("GROUP_NO", group_no)):
-            for name, members in groups.items():
-                out.append(kind)
-                out.append(" {0}".format(name))
-                out.extend(_wrap(members))
-                out.append("FINSF")
-        out.append("FIN")
-        out.flush()
-        f.close()
-        f = None
+        if not _write_aster_mail(tmp_path, nids, nodes, extra_nodes,
+                                 by_type, group_ma, group_no):
+            _write_aster_mail_py(tmp_path, nids, nodes, extra_nodes,
+                                 by_type, group_ma, group_no)
         if os.path.exists(mail_path):
             os.remove(mail_path)
         os.rename(tmp_path, mail_path)

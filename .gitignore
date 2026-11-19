@@ -11,6 +11,9 @@ WorkDir/
 *.pyc
 __pycache__/
 
+# Rust helper build (Scripts/aster_fast.exe is the copy Mecway runs)
+rust/aster_fast/target/
+
 # Claude Code worktrees
 .claude/worktrees/
 

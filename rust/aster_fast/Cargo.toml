@@ -1,0 +1,10 @@
+[package]
+name = "aster_fast"
+version = "0.1.0"
+edition = "2021"
+description = "Fast .liml mesh extract and ASTER .mail writer for MecwayAsterBridge"
+license = "MPL-2.0"
+
+[[bin]]
+name = "aster_fast"
+path = "src/main.rs"
