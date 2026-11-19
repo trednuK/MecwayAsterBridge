@@ -586,6 +586,15 @@ zonder melding: trager en veel schijfruimte in de werkmap van de job. Na een lin
 statische run (analyse *Statisch*) meldt de bridge dat (WARNING met het geheugen dat
 MUMPS nodig had).
 
+![Startscherm, pagina Statisch: Geheugenlimiet run_aster en MUMPS-geheugen](img/static_memory_nl.png)
+
+1. De pagina van de analyse in de navigatielijst, hier *Statisch* (elke analyse heeft
+   deze velden op haar eigen pagina).
+2. Kop *Code-Aster-run*.
+3. *Geheugenlimiet run_aster [MB]* (`memory_limit`, §2.7).
+4. Kop *Oplosser*.
+5. *MUMPS-geheugen* (`mumps_memory`).
+
 | Waarde | Code-Aster | Waar |
 |---|---|---|
 | `auto` (standaard) | niets: Code-Aster kiest | |

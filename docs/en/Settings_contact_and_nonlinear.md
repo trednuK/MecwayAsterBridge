@@ -579,6 +579,15 @@ without a message: slower, and a lot of disk space in the work folder of the job
 a linear static run (analysis *Static*) the bridge reports this (WARNING with the memory
 MUMPS needed).
 
+![Start screen, page Static: Memory limit run_aster and MUMPS memory](../img/static_memory_en.png)
+
+1. The page of the analysis in the navigation list, here *Static* (every analysis has
+   these fields on its own page).
+2. Heading *Code-Aster run*.
+3. *Memory limit run_aster [MB]* (`memory_limit`, §2.7).
+4. Heading *Solver*.
+5. *MUMPS memory* (`mumps_memory`).
+
 | Value | Code-Aster | Where |
 |---|---|---|
 | `auto` (default) | nothing: Code-Aster decides | |
