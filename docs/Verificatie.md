@@ -163,7 +163,8 @@ Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK
 0 NOOK).
 
 Toegevoegd na deze regressie en apart gedraaid (19 nov 2026, nog niet in een volledige
-regressie): LS-07n (2 OK), LS-07o (1 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
+regressie): LS-07n (2 OK), LS-07o (1 OK), LS-07p (1 OK), LS-07q (1 OK), LS-07r (1 OK), LS-07s
+(1 OK), LS-07t (1 OK), LS-07u (1 OK), LS-07v (3 OK), NL-03g (4 OK), NL-03h (1 OK, 1 BEKEND: KNOWN_BUGS
 149), NL-03i (1 OK), NL-03j (5 OK), NL-03k (3 OK), NL-03l (1 OK, 1 BEKEND: KNOWN_BUGS 149), NL-03m (3 OK), NL-03n (2 OK), NL-03o (5 OK), TH-04e (4 OK), TH-04f (4 OK), TH-04g (4 OK).
 
 **Bekende beperkingen** (status BEKEND):
@@ -460,6 +461,34 @@ opeenvolgende meshes.
   niet-passende meshes); 7 slave-knopen per symmetrievlak verliezen de oplegging (INFO).
   Eenmalige controle (18 nov 2026, geen case): hetzelfde model in Nonlinear Static geeft
   0,954130 µm, gelijk aan Mecway's 0,954130 µm.
+
+### LS-07p–v Dubbele voorwaarden met relaties en op de LIAISON_DDL-route (KNOWN_BUGS 147)
+
+- **Doel**: de rest van KNOWN_BUGS 147. (p, q) Een *Symmetry* (`LIAISON_OBLIQUE` per
+  knoopgroep) of *Frictionless support* (`FACE_IMPO` DNOR) op slave- en masterknopen is
+  dezelfde dubbele voorwaarde als bij LS-07n; voor de reparatie `FACTOR_11` (lineair) en
+  `MECANONLINE9_4` (niet-lineair, geen stap). De bridge haalt de slave-knopen uit de
+  relatie (een knoopgroep zonder hen, of `SANS_GROUP_NO`). (r, s) Bij de eigen relaties
+  van de bridge (`LIAISON_DDL`) valt een koppelrelatie in een verplaatsing weg als alle
+  knopen erin met dezelfde waarde vastliggen; voor de reparatie `FACTOR_57` (r, NPREC = -1)
+  en `FACTOR_11` (s).
+- **Model**: (p) LS-07n met *Symmetry* op de vlakselecties x = 0 en y = 0 van beide
+  blokken, (q) idem met *Frictionless support*; (t, u) (p) en (q) in Nonlinear Static;
+  (v) (p) modaal (dichtheid 7850 kg/m³, zonder kracht). (r) LS-07f met *Displacement* X = 0
+  op alle knopen (de membraanverplaatsing van deze strook in zuivere buiging is 0); (s)
+  LS-07i met de voetknoop van de rib op de ingeklemde rand vast in X, Y en Z (gewicht 1
+  op een ingeklemde middenknoop).
+- **Referentie**: (p, q, t, u) Mecway 36 met CCX, headless, op (p) en (q): 0,9540648 µm.
+  (r, s) hetzelfde model zonder de extra oplegging (LS-07f 0,94220 mm, LS-07i
+  1,134186e-5 m). (v) Code-Aster 17.4 op hetzelfde model met *Displacement* 0 op de
+  vlakknopen zonder de gekoppelde slave-knopen (geen dubbele voorwaarde): 56659,69,
+  56726,25 en 56734,77 Hz.
+- **Resultaat**: (p, q) 0,954065 µm, (t, u) 0,954133 µm, gelijk aan Mecway (0,00% en
+  +0,01%); 7 slave-knopen per vlak gaan uit de relatie (INFO). (r) 0,94220 mm, 8 DX-rijen
+  weggelaten; (s) 1,1342e-5 m, 3 rijen weggelaten (INFO); beide gelijk aan het model zonder
+  de oplegging. (v) de drie frequenties gelijk aan de referentie; zonder de reparatie gaf
+  CALC_MODES dezelfde frequenties, maar met de ALARMen `ALGELINE3_79` (singuliere matrix)
+  en `ALGELINE5_23` (telling van Sturm). Andere analyses (dynamica, knik) NIET nagelopen.
 
 ### LS-08 Node temperature (thermische spanning per knoop)
 

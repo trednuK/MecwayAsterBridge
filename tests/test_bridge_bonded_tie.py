@@ -234,6 +234,274 @@ check("drop: 'Pin' split, DZ kept on the slave ({0})".format(
       len(copies) == 1 and copies[0]["aster_dict"] == {"DZ": 0.0} and
       groups[copies[0]["selection"]] == [108] and
       groups[pin["selection"]] == [edge[0]])
+
+# KNOWN_BUGS 147, relations: a symmetry/frictionless relation 0 along a
+# global axis (rel_held) counts as a support 0 in the master test
+tie = {"raccord": "MASSIF", "selections": ("M", "S"),
+       "tie_masters": {108: face1}, "tie_gap": {108: 0.0}, "tie_tolloc": 1e-4}
+rel = dict((n, {"DX": 0.0}) for n in edge + [108])
+red, warn = bm._tied_overlaps([tie], {}, nodes, None, None, rel)
+check("relation on slave and masters: DX redundant ({0}, {1})".format(
+    red, dict(warn)), red == {108: set(["DX"])} and not warn)
+red, warn = bm._tied_overlaps([tie], dict((n, {"DX": 0.0}) for n in edge),
+                              nodes, None, None, {108: {"DX": 0.0}})
+check("relation on the slave, masters by DDL_IMPO: DX redundant",
+      red == {108: set(["DX"])} and not warn)
+red, warn = bm._tied_overlaps([tie], {108: {"DX": 0.0}}, nodes, None, None,
+                              dict((n, {"DX": 0.0}) for n in edge))
+check("DDL_IMPO on the slave, masters by a relation: DX redundant",
+      red == {108: set(["DX"])} and not warn)
+red, warn = bm._tied_overlaps([tie], {108: {"DX": 1e-3}}, nodes, None, None,
+                              dict((n, {"DX": 0.0}) for n in edge))
+check("slave DX 1 mm, masters in a relation 0: WARNING, nothing dropped",
+      not red and list(warn.values()) == [set([108])])
+corner = [n for n in face1 if nodes[n][0] == 0.0 and nodes[n][1] == 0.0]
+nodes[109] = (0.0, 0.0, 0.0)
+tie2 = dict(tie, tie_masters={109: face1}, tie_gap={109: 0.0})
+red, warn = bm._tied_overlaps(
+    [tie2], {}, nodes, None, None,
+    dict((n, {"DX": 0.0, "DY": 0.0}) for n in corner + [109]))
+check("corner node in two planes: DX and DY redundant ({0})".format(red),
+      red == {109: set(["DX", "DY"])} and not warn)
+red, warn = bm._tied_overlaps([tie], {}, nodes, None, set(edge + [108]))
+check("oblique plane (relation not along an axis): WARNING only",
+      not red and list(warn.values()) == [set([108])])
+red, warn = bm._tied_overlaps([tie], {}, nodes, None, set([108]),
+                              dict((n, {"DX": 0.0}) for n in edge))
+check("oblique relation on the slave, masters in an axis plane: WARNING",
+      not red and list(warn.values()) == [set([108])])
+fixed_m = dict((n, dict((d, 0.0) for d in bm._ALL_DOFS)) for n in edge)
+red, warn = bm._tied_overlaps([tie], fixed_m, nodes, None, set([108]))
+check("oblique relation on the slave, masters fixed: WARNING",
+      not red and list(warn.values()) == [set([108])])
+red, warn = bm._tied_overlaps([tie], dict((n, {"DY": 0.0}) for n in edge),
+                              nodes, None, set([108]))
+check("oblique relation on the slave, masters held by DDL_IMPO: WARNING",
+      not red and list(warn.values()) == [set([108])])
+red, warn = bm._tied_overlaps([tie], {}, nodes,
+                              dict((n, set(["DZ"])) for n in edge), set([108]))
+check("oblique relation on the slave, masters time-dependent: WARNING",
+      not red and list(warn.values()) == [set([108])])
+red, warn = bm._tied_overlaps([tie], {edge[0]: {"DX": 0.0}}, nodes, None,
+                              set([108]))
+check("oblique relation on the slave, a master free: nothing",
+      not red and not warn)
+# end to end: oblique symmetry on the slave, Fixed on the masters only
+md = {"bonded": [dict(tie)], "node_groups": {"Vast": ["N%d" % n
+                                                      for n in edge]},
+      "extra_node_groups": _OD([("BRSY1", [108])]), "group_face_list": {},
+      "mesh_nodes": dict(nodes), "_conn": dict(conn),
+      "bcs": [{"type": "fixed", "selection": "Vast",
+               "aster_dict": {"BLOCAGE": ("DEPLACEMENT",)}},
+              {"type": "symmetry", "selection": "Sym", "aster_dict": {},
+               "oblique": [("BRSY1", (30.0, 0.0, 0.0), ("DX",))]}]}
+logged = []
+_log = bm.log
+bm.log = lambda msg: logged.append(msg)
+try:
+    bm._drop_bonded_redundant(md)
+finally:
+    bm.log = _log
+check("end to end: oblique relation on the slave, fixed masters: WARNING",
+      any(m.startswith("WARNING: Bonded contact") and "108" in m
+          for m in logged))
+nodes.update(cn)
+red, warn = bm._tied_overlaps(cyc, {}, nodes, None, None,
+                              {120: {"DX": 0.0}, 121: {"DX": 0.0}})
+check("relation, two pairs tying each other: neither dropped",
+      not red and sum(len(v) for v in warn.values()) == 2)
+for n in cn:
+    del nodes[n]
+tie_ddl = dict(tie, relations=[([108], ["DX"], [1.0])])
+red, warn = bm._tied_overlaps([tie_ddl], {}, nodes, None, None, rel)
+check("a pair on the LIAISON_DDL route is left to _tied_rows",
+      not red and not warn)
+
+# _exact_relation_dofs: DNOR 0 on a flat face -> the normal DOF, DNOR != 0
+# or an oblique ANGL_NAUT -> None (WARNING route)
+fx_md = {"extra_node_groups": _OD([("G1", [1, 2])])}
+fr = {"type": "frictionless", "selection": "F", "aster_keyword": "FACE_IMPO",
+      "aster_dict": {"DNOR": -0.0}}
+flat = {"normals": [(1.0, 0.0, 0.0), (-1.0, 0.0, 0.0)]}
+nof = lambda sel: set([1, 2])
+check("frictionless DNOR 0 on a flat face: DX",
+      bm._exact_relation_dofs(fx_md, fr, nof, flat) ==
+      {1: set(["DX"]), 2: set(["DX"])})
+check("frictionless DNOR != 0: None",
+      bm._exact_relation_dofs(fx_md, dict(fr, aster_dict={"DNOR": -1e-3}),
+                              nof, flat) is None)
+sy = {"type": "symmetry", "selection": "S", "oblique": [
+    ("G1", (30.0, 0.0, 0.0), ("DX",))]}
+check("symmetry in an oblique plane: None",
+      bm._exact_relation_dofs(fx_md, sy, nof, None) is None)
+sy["oblique"] = [("G1", (0.0, 0.0, 0.0), ("DX",), {"DX": 1e-3})]
+check("relation with a non-zero value (4th element): None",
+      bm._exact_relation_dofs(fx_md, sy, nof, None) is None)
+
+
+def rel_md(bcs, groups):
+    return {"bonded": [dict(tie)],
+            "node_groups": {}, "extra_node_groups": _OD(groups),
+            "group_face_list": {}, "mesh_nodes": dict(nodes),
+            "_conn": dict(conn), "bcs": bcs}
+
+
+# Symmetry as LIAISON_OBLIQUE groups: a solid group (DX) and a group of the
+# same nodes with DX, DRY and a 4th element: the slave leaves DX only
+md = rel_md([{"type": "symmetry", "selection": "Sym", "aster_dict": {},
+              "oblique": [("BRSY1", (0.0, 0.0, 0.0), ("DX",)),
+                          ("BRSY2", (0.0, 0.0, 0.0), ("DX", "DRY"),
+                           {"DX": 0.0})]}],
+            [("BRSY1", sorted(edge + [108])), ("BRSY2", sorted(edge + [108]))])
+bm._drop_bonded_redundant(md)
+ob = md["bcs"][0]["oblique"]
+g = md["extra_node_groups"]
+check("symmetry: slave out of the DX group, group reused ({0})".format(ob),
+      ob[0][0] == "BRSY1" and sorted(g["BRSY1"]) == sorted(edge))
+check("symmetry: the other ddls and the 4th element stay on the slave",
+      ob[1][0] == "BRSY2" and sorted(g["BRSY2"]) == sorted(edge) and
+      ob[2][1:] == ((0.0, 0.0, 0.0), ("DRY",), {"DX": 0.0}) and
+      g[ob[2][0]] == [108])
+# Frictionless FACE_IMPO DNOR 0 on a flat face (group_faces normals):
+# SANS_GROUP_NO with the slave; a face with only tied slave nodes skipped
+face_list = {"Fr": [{"kind": "solid", "nodes": edge + [108]}],
+             "Fr2": [{"kind": "solid", "nodes": [108]}]}
+md = rel_md([{"type": "frictionless", "selection": "Fr",
+              "aster_keyword": "FACE_IMPO", "aster_target": "GROUP_MA",
+              "aster_dict": {"DNOR": -0.0}}], [])
+md["group_face_list"] = face_list
+gf = {"Fr": {"normals": [(-1.0, 0.0, 0.0)]}}
+bm._drop_bonded_redundant(md, None, gf)
+fb = md["bcs"][0]
+check("frictionless: SANS_GROUP_NO with the slave ({0})".format(
+    fb.get("sans_group_no")), len(fb.get("sans_group_no", [])) == 1 and
+      md["extra_node_groups"][fb["sans_group_no"][0]] == [108]
+      and not fb.get("skip"))
+md = rel_md([{"type": "frictionless", "selection": "Fr",
+              "aster_keyword": "FACE_IMPO", "aster_target": "GROUP_MA",
+              "aster_dict": {"DNOR": -0.0}},
+             {"type": "frictionless", "selection": "Fr2",
+              "aster_keyword": "FACE_IMPO", "aster_target": "GROUP_MA",
+              "aster_dict": {"DNOR": -0.0}}], [])
+md["group_face_list"] = face_list
+gf["Fr2"] = {"normals": [(-1.0, 0.0, 0.0)]}
+bm._drop_bonded_redundant(md, None, gf)
+check("frictionless on only the slave node: skipped, never emptied",
+      md["bcs"][1].get("skip") and not md["bcs"][1].get("sans_group_no"))
+# Fixed support on the masters (SANS_*: the relation does not hold them,
+# the fixed support does) and a relation on the slave: slave out
+md = rel_md([{"type": "fixed", "selection": "Vast", "aster_dict":
+              {"BLOCAGE": ("DEPLACEMENT",)}},
+             {"type": "symmetry", "selection": "Sym", "aster_dict": {},
+              "oblique": [("BRSY1", (0.0, 0.0, 0.0), ("DX",))]}],
+            [("BRSY1", sorted(edge + [108]))])
+md["node_groups"] = {"Vast": ["N%d" % n for n in edge]}
+bm._drop_bonded_redundant(md)
+check("fixed masters, relation on the slave: slave out of the relation",
+      sorted(md["extra_node_groups"]["BRSY1"]) == sorted(edge))
+# Fixed slave (solid) on an oblique plane, masters fixed: the fixed support
+# stays (without it the oblique relation would hold the slave), WARNING
+md = rel_md([{"type": "fixed", "selection": "Vast", "aster_dict":
+              {"BLOCAGE": ("DEPLACEMENT",)}},
+             {"type": "symmetry", "selection": "Sym", "aster_dict": {},
+              "oblique": [("BRSY1", (30.0, 0.0, 0.0), ("DX",))]}],
+            [("BRSY1", sorted(edge + [108]))])
+md["node_groups"] = {"Vast": ["N%d" % n for n in edge + [108]]}
+bm._drop_bonded_redundant(md)
+check("fixed slave in an oblique relation: fixed support kept",
+      md["bcs"][0]["selection"] == "Vast" and not md["bcs"][0].get("skip"))
+# Fixed slave in an axis-aligned relation, masters fixed: the fixed support
+# loses the slave and so does the relation
+md = rel_md([{"type": "fixed", "selection": "Vast", "aster_dict":
+              {"BLOCAGE": ("DEPLACEMENT",)}},
+             {"type": "symmetry", "selection": "Sym", "aster_dict": {},
+              "oblique": [("BRSY1", (0.0, 0.0, 0.0), ("DX",))]}],
+            [("BRSY1", sorted(edge + [108]))])
+md["node_groups"] = {"Vast": ["N%d" % n for n in edge + [108]]}
+bm._drop_bonded_redundant(md)
+check("fixed slave in an axis relation: out of both ({0})".format(
+    md["extra_node_groups"]),
+      sorted(md["extra_node_groups"][md["bcs"][0]["selection"]]) ==
+      sorted(edge) and sorted(md["extra_node_groups"]["BRSY1"]) ==
+      sorted(edge))
+
+# KNOWN_BUGS 147, LIAISON_DDL route: _tied_rows. Slave 201 tied to 202, 203
+# (weights 0.5); translation rows DX, DY and two rotation rows.
+rows = [([201, 202, 203], ["DX"] * 3, [1.0, -0.5, -0.5]),
+        ([201, 202, 203], ["DY"] * 3, [1.0, -0.5, -0.5]),
+        ([201, 201, 202, 202, 203, 203], ["DRX", "DRY"] * 3,
+         [0.6, 0.8, -0.3, -0.4, -0.3, -0.4])]
+hx = dict((n, {"DX": 0.0}) for n in (201, 202, 203))
+kept, removed, w = bm._tied_rows(rows, hx)
+check("rows: DX row removed, others kept ({0}, {1})".format(removed, w),
+      removed == 1 and kept == rows[1:] and not w)
+kept, removed, w = bm._tied_rows(rows, dict(list(hx.items()) + [(203, {"DX": 1e-3})]))
+check("rows: another value on a row node -> WARNING, row kept",
+      removed == 0 and w == set([201]))
+kept, removed, w = bm._tied_rows(rows, {201: {"DX": 0.0}},
+                                 {202: set(["DX"]), 203: set(["DX"])})
+check("rows: time-dependent on the row nodes -> WARNING",
+      removed == 0 and w == set([201]))
+kept, removed, w = bm._tied_rows(rows, {201: {"DX": 0.0}, 202: {"DX": 0.0}})
+check("rows: a row node free -> nothing", removed == 0 and not w)
+kept, removed, w = bm._tied_rows(rows, {}, None,
+                                 dict((n, {"DX": 0.0}) for n in rows[0][0]))
+check("rows: symmetry relation on all row nodes -> WARNING, row kept",
+      removed == 0 and w == set([201]))
+rot = dict((n, {"DRX": 0.0, "DRY": 0.0}) for n in (201, 202, 203))
+kept, removed, w = bm._tied_rows(rows, rot)
+check("rows: rotation row fully held -> WARNING kept, not removed",
+      removed == 0 and kept == rows and w == set([201]))
+kept, removed, w = bm._tied_rows(rows[:2], {201: {"DRX": 0.0},
+                                            202: {"DRX": 0.0},
+                                            203: {"DRX": 0.0}},
+                                 rot_ddl=("DRX", "DRY"))
+check("rows: LIAISON_MAIL rotation (quadratic master) held -> WARNING",
+      removed == 0 and w == set([201]))
+kept, removed, w = bm._tied_rows(rows, {}, None, None, set([201, 202, 203]))
+check("rows: all row nodes in an oblique relation -> WARNING",
+      w == set([201]))
+kept, removed, w = bm._tied_rows(
+    rows, dict((n, dict((d, 0.0) for d in bm._ALL_DOFS))
+               for n in (202, 203)), None, None, set([201]))
+check("rows: slave in a relation, row nodes fixed -> WARNING",
+      removed == 0 and w == set([201]))
+kept, removed, w = bm._tied_rows(rows, {202: {"DZ": 0.0}}, None, None,
+                                 set([201, 203]))
+check("rows: slave in a relation, row nodes in a relation or held -> WARNING",
+      w == set([201]))
+kept, removed, w = bm._tied_rows(rows, {202: {"DZ": 0.0}}, None, None,
+                                 set([201]))
+check("rows: slave in a relation, a row node free -> nothing", not w)
+both = dict((n, {"DX": 0.0, "DY": 0.0}) for n in (201, 202, 203))
+kept, removed, w = bm._tied_rows(rows[:2], both)
+check("rows: every row removed -> empty list", removed == 2 and kept == [])
+# _render_mpcs with an empty relations list: no LIAISON_DDL, no LIAISON_MAIL
+import bridge_to_aster as bta
+out = bta._render_mpcs({"bonded": [{"relations": [], "master": "M",
+                                    "slave": "S", "raccord": "COQUE",
+                                    "selections": ("A", "B")}]})
+check("render_mpcs: empty relations -> nothing ({0})".format(dict(out)),
+      not out.get("LIAISON_DDL") and not out.get("LIAISON_MAIL"))
+out = bta._render_mpcs({"bonded": [{"relations": [], "master": "M",
+                                    "slave": "S", "raccord": "COQUE",
+                                    "ddl": ("DRX", "DRY"),
+                                    "selections": ("A", "B")}]})
+check("render_mpcs: empty relations with rotations -> LIAISON_MAIL only",
+      not out.get("LIAISON_DDL") and len(out.get("LIAISON_MAIL", [])) == 1)
+# _drop_bonded_redundant end to end on the route (no tie_masters needed)
+md = {"bonded": [{"raccord": "COQUE", "selections": ("P", "R"),
+                  "relations": list(rows)}],
+      "node_groups": {"H": ["N201", "N202", "N203"]},
+      "extra_node_groups": _OD(), "group_face_list": {},
+      "mesh_nodes": {201: (0, 0, 0), 202: (0, 0, 0), 203: (1, 0, 0)},
+      "_conn": {}, "_bonded_nprec_off": True,
+      "bcs": [{"type": "displacement", "selection": "H",
+               "aster_keyword": "DDL_IMPO", "aster_dict": {"DX": 0.0}}]}
+bm._drop_bonded_redundant(md)
+check("route: DX row removed, support kept",
+      md["bonded"][0]["relations"] == rows[1:] and
+      md["bcs"][0]["selection"] == "H")
 # bonded_close_gap: moves onto the triangle plane, gate, busy, curved,
 # all or nothing per face (_close_gap_moves); a flat master face z = 0
 cg_nodes = {1: (0.0, 0.0, 0.0), 2: (1.0, 0.0, 0.0), 3: (1.0, 1.0, 0.0),
