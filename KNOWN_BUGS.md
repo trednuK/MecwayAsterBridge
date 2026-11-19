@@ -1039,17 +1039,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    strip with a 1 N step load: −0.978 mm at 6 ms against −0.976 mm with CCX). Smallest fix: an ERROR before the run when `dyna_expl_3d` meets `COQUE_3D`, with
    the advice to use `dyna_impl_3d` or linear shells. Status: open.
 
-161\. **A load on shell edges of different elements is not translated** (confirmed,
-   Code-Aster 17.4, 19 Nov 2026; `bridge_mesh._shell_edge_parent`). A force (or line load)
-   on an edge selection that runs over shells with different Code-Aster elements (e.g. one
-   component `DKT`, another `COQUE_3D` through `#ASTER-ELEMENT`, or linear `DKT` shells next
-   to quadratic ones) gets no single edge modelisation, so the load is skipped with
-   `ERROR: Force on '..': only faces of solid or shell elements are supported` (a
-   misleading text). Seen while building LS-98a, with one force selection over three
-   strips. Workaround:
-   one selection per component (LS-98a). Smallest fix: split the edge group per parent
-   modelisation in `bridge_mesh` (FORCE_ARETE per part) and a clear message. Status: open.
-
 162\. **`COQUE_3D` on linear shells falls back to DKT when a constraint selection also lies
    on other elements** (confirmed, Code-Aster 17.4, 19 Nov 2026;
    `bridge_to_aster._resolve_line_quad`). The job converts only the edge/face groups that

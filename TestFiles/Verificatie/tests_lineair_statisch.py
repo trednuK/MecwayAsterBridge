@@ -1709,15 +1709,20 @@ TESTS += [
 # general setting (Code-Aster 17.4, lin_static_3d, 19 Nov 2026: DKT
 # -9.4257e-4, DST -9.4291e-4, COQUE_3D -9.4341e-4 m) and Mecway (LS-07b).
 # (b) the same with one clamp selection over the three strips: COQUE_3D
-# falls back to DKT (bridge_to_aster._resolve_line_quad).
+# falls back to DKT (bridge_to_aster._resolve_line_quad). (c) LS-98a with
+# one force over the three free edges (KNOWN_BUGS 161 was: not translated).
+# (d) two DKT strips of 2 and 4 mm with one 2 N force: Mecway 36 (internal
+# solver, headless, 19 Nov 2026) shares it by length x thickness, tips
+# -6.2764e-4 and -1.5719e-4 m (by length they would be -9.41e-4 and
+# -1.18e-4).
 LS98_ALONE = {"DKT": 9.4257e-4, "DST": 9.4291e-4, "Q3D": 9.4341e-4}
 
 
-def build_ls98_strips(shared_clamp=False):
+def build_ls98_strips(shared_clamp=False, one_force=False):
     def build():
         m = Model("S30")
         m.mat("Plaat2", PLATE2, STEEL)
-        clamp = []
+        clamp, end = [], []
         for k, name in enumerate(("DKT", "DST", "Q3D")):
             es = m.elset("Strook_" + name, "Plaat2")
             q = quadmesh(m, es, 20, 4, rect(0, L7, 0.1 * k, 0.1 * k + B7))
@@ -1726,16 +1731,43 @@ def build_ls98_strips(shared_clamp=False):
                 m.face_selection("Klem_" + name, q["edges"]["u0"])
                 m.add('<fixed selection="Klem_%s" />' % name)
             m.node_selection("Tip_" + name, sorted(q["nodes"]["u1"]))
-            # one load per strip: an edge load over shells of different
-            # elements is not translated (KNOWN_BUGS 161)
-            m.face_selection("Eind_" + name, q["edges"]["u1"])
-            m.add('<force selection="Eind_%s"><x>0 N</x><y>0 N</y>'
-                  '<z>-%g N</z></force>' % (name, P7))
+            if one_force:
+                end += q["edges"]["u1"]
+            else:
+                m.face_selection("Eind_" + name, q["edges"]["u1"])
+                m.add('<force selection="Eind_%s"><x>0 N</x><y>0 N</y>'
+                      '<z>-%g N</z></force>' % (name, P7))
         if shared_clamp:
             m.face_selection("Inklemming", clamp)
             m.add('<fixed selection="Inklemming" />')
+        if one_force:
+            # one force over the three strips (bridge_mesh._split_shell_edges)
+            m.face_selection("Eind", end)
+            m.add('<force selection="Eind"><x>0 N</x><y>0 N</y>'
+                  '<z>-%g N</z></force>' % (3 * P7))
         m.add('<ccxmodeldefinition>**ASTER-ELEMENT Strook_DST: DST\n'
               '**ASTER-ELEMENT Strook_Q3D: COQUE_3D</ccxmodeldefinition>')
+        return m
+    return build
+
+
+def build_ls98_thick():
+    def build():
+        m = Model("S30")
+        m.mat("P2", PLATE2, STEEL)
+        m.mat("P4", '<geometric type="Plate" thickness="4 mm" />', STEEL)
+        clamp, end = [], []
+        for k, (es, mat) in enumerate((("A", "P2"), ("B", "P4"))):
+            m.elset(es, mat)
+            q = quadmesh(m, es, 20, 4, rect(0, L7, 0.1 * k, 0.1 * k + B7))
+            clamp += q["edges"]["u0"]
+            end += q["edges"]["u1"]
+            m.node_selection("Tip_" + es, sorted(q["nodes"]["u1"]))
+        m.face_selection("Klem", clamp)
+        m.face_selection("Eind", end)
+        m.add('<fixed selection="Klem" />')
+        m.add('<force selection="Eind"><x>0 N</x><y>0 N</y><z>-2 N</z>'
+              '</force>')
         return m
     return build
 
@@ -1772,4 +1804,26 @@ TESTS += [
               "ingeklemde rand vrij blijven (gemeten: tip 5 % te slap). De "
               "bridge rekent die strook dan met DKT (WARNING, KNOWN_BUGS "
               "162)."),
+    Case("LS-98c", GROUP, "Als LS-98a met één kracht (3 N) over de drie "
+         "vrije randen", "lin_static_3d", build_ls98_strips(one_force=True),
+         _ls98_checks(),
+         note="De randselectie loopt over drie elementtypes: de bridge "
+              "maakt per component een groep (BRED) en verdeelt de kracht "
+              "naar lengte x dikte, zoals Mecway."),
+    Case("LS-98d", GROUP, "Twee losse stroken van 2 en 4 mm, één kracht van "
+         "2 N over beide vrije randen", "lin_static_3d", build_ls98_thick(),
+         [Check("doorbuiging tip 2 mm t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Tip_A"), ref=6.2764e-4,
+                tol=0.005, unit="m",
+                source="Mecway 36 (eigen solver), zelfde model"),
+          Check("doorbuiging tip 4 mm t.o.v. Mecway",
+                lambda r: -_mean(r, "displz", "Tip_B"), ref=1.5719e-4,
+                tol=0.01, unit="m",
+                source="Mecway 36 (eigen solver), zelfde model"),
+          Check("kracht 2 mm-strook (2/3 N)",
+                lambda r: -_mean(r, "displz", "Tip_A") / LS98_ALONE["DKT"],
+                ref=2.0 / 3.0, tol=0.001, unit="N",
+                source="F t_k / som(L t): 2 N x 2 / (2 + 4)")],
+         note="Mecway verdeelt een kracht op randen naar lengte x dikte; "
+              "de bridge maakt per component een groep (BRED)."),
 ]
