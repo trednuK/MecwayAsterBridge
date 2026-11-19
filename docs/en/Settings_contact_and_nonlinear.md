@@ -84,7 +84,7 @@ when you omit the keyword (catalogue 17.4).
 
 | Key (label) | Analysis | What it does | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load and without `<timesteps>` 0 to `default_time_end`. Without *Quasi-static* (no `<timesteps>`) only up to t = 1 s: Mecway takes every load table there (WARNING when a table runs further). With CCX *time points* (no step size, *Automatic time stepping* off) up to the *Time period*, also when the tables end earlier (the held part held); the output times then differ from Mecway's (KNOWN_BUGS 158). With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
+| `substeps_per_interval` (Substeps per time interval) | static | Only for a model without Mecway's *Time step size*: solver steps per interval between the time points of the time-dependent loads (`DEFI_LIST_REEL`, `NOMBRE`); without a time load and without `<timesteps>` 0 to `default_time_end`. Without *Quasi-static* (no `<timesteps>`) only up to t = 1 s: Mecway takes every load table there (WARNING when a table runs further). With CCX *time points* (no step size, *Automatic time stepping* off) up to the *Time period*, also when the tables end earlier (the held part held); as Mecway, only the end state goes to Mecway (with t = 0; every step when the run stops earlier, with element failure and with fatigue). With a step size the bridge computes Mecway's steps plus the kinks of the load tables (§2.1). | 10 | - |
 | `auto_time_stepping` (Follow Mecway's Automatic time stepping) | static | Only with Mecway's *Automatic time stepping*: on = `DEFI_LIST_INST METHODE='AUTO'` between Mecway's output times, results at those times (§2.1); off = fixed steps. | on | - |
 | `substeps_per_output` (Solver steps per Mecway time step) | implicit | Solver steps per Mecway time step: with Dynamic Response (D30, D20, DA0) and D31 per *Time step size*, also with *Generate solution every n time steps* > 1 (then n × this value per output interval; results only at the output times); otherwise (`timepointsincrement`) per output interval. Kinks of load functions are added as extra time points. | 1 | - |
 | `default_time_end` (End time without time load) [s] | all | End time when the model has no `<timesteps>` and (static) no time load; with `<timesteps>` the period counts. | 1.0 | - |
@@ -94,7 +94,11 @@ when you omit the keyword (catalogue 17.4).
 `DEFI_LIST_INST` with automatic cutting (see below); with only a `DEFI_LIST_REEL`,
 Code-Aster would not reduce the step (EDF R&D, U4.51.03; message `SUBDIVISE_3`). Sent to
 Mecway: all archived solver steps up to the last time reached (the
-bridge sets no `ARCHIVAGE`). The solver steps
+bridge sets no `ARCHIVAGE`). Except with CCX *time points* without *Automatic time
+stepping*: Mecway then stores only the end state, and the bridge sends only the first
+step and the end state at the period (every step if the run stops earlier, with element
+failure or with fatigue; NL-75e..g). To see the whole load path, set a *Time step size*
+or turn on *Automatic time stepping*. The solver steps
 are Mecway's (*Time step size*, `<timesteps stepsize>`: dt, 2 dt, ... up to the period),
 plus the kinks of the load tables that fall in between; so Mecway shows the same times
 as with Mecway's own solver. Load times after the period are dropped. If Mecway's
@@ -1213,7 +1217,8 @@ same supports (bolt displacements within ~20%, stresses within ~35% on this coar
 - Mecway shows the message with the error code, advice and "Last time with results:
   ... s".
 - **Dynamic**: all output times up to that time go to Mecway.
-- **Static**: all archived steps up to that time (§2.1).
+- **Static**: all archived steps up to that time (§2.1; the exception with CCX *time
+  points* does not apply then: the end was not reached).
 - Another Code-Aster error in the step loop (e.g. `DVP_2`, an element that is too
   distorted) is handled the same way, once a step beyond the start has been archived: on
   every Code-Aster error the result with the steps so far is available in the `.comm`

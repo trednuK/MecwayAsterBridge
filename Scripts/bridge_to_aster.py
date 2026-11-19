@@ -5550,6 +5550,8 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
         block_str : DEFI_LIST_REEL call
         t_end     : float  last time point
     """
+    if model_data is not None:
+        model_data.pop("_end_only", None)
     auto = _auto_listinst_block(load_funcs, analysis, model_data)
     if auto:
         return auto
@@ -5581,6 +5583,14 @@ def _build_listinst_block(load_funcs, analysis, model_data=None):
             log("INFO: Load table runs up to t = {0} s; computed up to "
                 "Mecway's period {1} s (like Mecway).".format(
                     "%g" % last, "%g" % period))
+        if not ts.get("automatic") and                 ts.get("outputtimes", "regular") == "regular":
+            # Mecway (CCX time points, Automatic time stepping off) stores
+            # only the end state: the export sends t = 0 and the period
+            # (aster_results_export._end_state_only; NL-75e/f/g, measured
+            # with outputtimes="regular" and a timepointsincrement; other
+            # output times and <timesteps> with only a period NOT
+            # verified)
+            model_data["_end_only"] = period
         if (last_table is not None and
                 last_table < period * (1.0 - 1.0e-9)):
             # tables held after their last point (Mecway: the value
@@ -7956,7 +7966,9 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
     # Only add plastic strain if at least 1 material has a
     # plastic curve.
     # --------------------------------------------------
-    # The result export (aster_results_export) takes all archived times.
+    # The result export (aster_results_export) takes all archived times;
+    # with CCX time points and Automatic time stepping off only t = 0 and
+    # the end state (end_only, like Mecway), not with fatigue or failure.
     # Fatigue (#ASTER-WOHLER, bridge_fatigue): the time steps of the run
     # are the signal per node
     fatigue = bridge_fatigue.fatigue_block(model_data, analysis, work_dir)
@@ -7970,9 +7982,17 @@ def _build_nonlin_static(work_dir, model_data, msh_path, resu_name, analysis):
         _custom_code(model_data, 'post') + fatigue[0])
     # Static double (like Mecway's own static results), dynamic
     # single (like Mecway's OpenRadioss results).
+    end_only = (model_data.get("_end_only") if not dynamic and
+                not fatigue[0] else None)
+    if end_only:
+        log("INFO: CCX time points without Automatic time stepping: only "
+            "t = 0 and the end state (t = {0} s) go to Mecway, like Mecway "
+            "(every step if the run stops earlier or with element "
+            "failure).".format(end_only))
     postreleve_block, impr_table_block = _results_route(
         work_dir, model_data, "", "",
-        "single" if dynamic else "double", extra=fatigue[1])
+        "single" if dynamic else "double", extra=fatigue[1] + (
+            ", end_only={0!r}".format(end_only) if end_only else ""))
 
     # --------------------------------------------------
     # STAT_NON_LINE call: built entirely here and filled in as

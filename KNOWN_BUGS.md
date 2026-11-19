@@ -1073,16 +1073,6 @@ Code-Aster value per node) and logs the largest difference per variable.
    item 124), DIS_T does not; suspected for any spring with an axial force in Buckling and
    modal with prestress, NOT measured (STAPPENPLAN S15c).
 
-158\. **Output times with CCX *time points* and automatic time stepping off** (question,
-   `bridge_to_aster._build_listinst_block`, `build_nonlin_static`). Nonlinear static with
-   `<timesteps>` without `stepsize` and without *Automatic time stepping* (or with the
-   setting `auto_time_stepping` off): the bridge computes `substeps_per_interval` steps per
-   interval of the load tables up to the period and stores every step; Mecway 36 with CCX
-   gave one result, at the period (headless, 19 Nov 2026, NL-75e/f). The last time and its
-   values are equal (NL-75e/f); the extra times are not in Mecway's solution. Not changed:
-   the failure loop and the `failed` contract need every step stored. Whether Mecway
-   writes the *time points* with other settings (e.g. *Output times*) is NOT verified.
-
 ## Not translated (the bridge reports it at the end of the run)
 
 4\. **Loads and boundary conditions the bridge does not know** (confirmed). Supported

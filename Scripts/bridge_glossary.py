@@ -1482,7 +1482,9 @@ SETTING_HELP = {
                               u"Code-Aster een stap die niet convergeert. "
                               u"Zonder Quasi-static alleen tot t = 1 s: "
                               u"Mecway neemt elke tabel daar; met time "
-                              u"points tot de periode. "
+                              u"points tot de periode (zonder Automatic "
+                              u"time stepping alleen de eindtoestand naar "
+                              u"Mecway, zoals Mecway). "
                               u"Meer = robuuster, langzamer. Standaard 10.",
                               u"Number of solver steps per time interval of "
                               u"the load table, only for a model without "
@@ -1492,7 +1494,9 @@ SETTING_HELP = {
                               u"a step that does not converge. Without "
                               u"Quasi-static only up to t = 1 s: Mecway takes "
                               u"every table there; with time points up to the "
-                              u"period. More = more "
+                              u"period (without Automatic time stepping only "
+                              u"the end state to Mecway, like Mecway). More = "
+                              u"more "
                               u"robust, slower. Default 10."),
     "newton_max_iter": (u"Maximum aantal Newton-iteraties per stap "
                         u"(ITER_GLOB_MAXI); daarna wordt de stap opgedeeld. "

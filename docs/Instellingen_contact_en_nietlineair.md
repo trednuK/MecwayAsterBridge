@@ -83,7 +83,7 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 
 | Sleutel (label) | Analyse | Wat het doet | Bridge | CA |
 |---|---|---|---|---|
-| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast en zonder `<timesteps>` 0 tot `default_time_end`. Zonder *Quasi-static* (geen `<timesteps>`) alleen tot t = 1 s: Mecway neemt elke lasttabel daar (WARNING als een tabel verder loopt). Met CCX-*time points* (geen stapgrootte, *Automatic time stepping* uit) tot de *Time period*, ook als de tabellen eerder ophouden (daarna vastgehouden); de uitvoertijden wijken dan af van die van Mecway (KNOWN_BUGS 158). Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
+| `substeps_per_interval` (Substappen per tijdsinterval) | statisch | Alleen voor een model zonder Mecway's *Time step size*: rekenstappen per interval tussen de tijdspunten van de tijdsafhankelijke lasten (`DEFI_LIST_REEL`, `NOMBRE`); zonder tijdslast en zonder `<timesteps>` 0 tot `default_time_end`. Zonder *Quasi-static* (geen `<timesteps>`) alleen tot t = 1 s: Mecway neemt elke lasttabel daar (WARNING als een tabel verder loopt). Met CCX-*time points* (geen stapgrootte, *Automatic time stepping* uit) tot de *Time period*, ook als de tabellen eerder ophouden (daarna vastgehouden); zoals Mecway gaat alleen de eindtoestand naar Mecway (met t = 0; elke stap als de run eerder stopt, bij bezwijken en bij vermoeiing). Met een stapgrootte rekent de bridge Mecway's stappen plus de knikken van de lasttabellen (§2.1). | 10 | - |
 | `auto_time_stepping` (Mecway's Automatic time stepping volgen) | statisch | Alleen met Mecway's *Automatic time stepping*: aan = `DEFI_LIST_INST METHODE='AUTO'` tussen Mecway's uitvoertijden, resultaten op die tijden (§2.1); uit = vaste stappen. | aan | - |
 | `substeps_per_output` (Rekenstappen per Mecway-tijdstap) | impliciet | Rekenstappen per tijdstap van Mecway: bij Dynamic Response (D30, D20, DA0) en D31 per *Time step size*, ook met *Generate solution every n time steps* > 1 (dan n × deze waarde per uitvoerinterval; resultaten alleen op de uitvoertijden); anders (`timepointsincrement`) per uitvoerinterval. Knikpunten van lastfuncties komen er als extra tijdspunt bij. | 1 | - |
 | `default_time_end` (Eindtijd zonder tijdsbelasting) [s] | alle | Eindtijd als het model geen `<timesteps>` en (statisch) geen tijdslast heeft; met `<timesteps>` geldt de periode. | 1.0 | - |
@@ -93,7 +93,11 @@ Code-Aster-standaard als je het sleutelwoord weglaat (catalogus 17.4).
 `DEFI_LIST_INST` met automatisch knippen (zie hieronder); met alleen een
 `DEFI_LIST_REEL` zou Code-Aster de stap niet verkleinen (EDF R&D, U4.51.03; melding
 `SUBDIVISE_3`). Naar Mecway gaan alle gearchiveerde rekenstappen tot
-het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`). De rekenstappen zijn die van Mecway (*Time step size*,
+het laatst bereikte tijdstip (de bridge zet geen `ARCHIVAGE`). Behalve bij CCX-*time
+points* zonder *Automatic time stepping*: Mecway bewaart dan alleen de eindtoestand, en de
+bridge stuurt alleen de eerste stap en de eindtoestand op de periode (elke stap als de run
+eerder stopt, bij bezwijken of bij vermoeiing; NL-75e..g). Wil je het hele lastpad zien,
+geef dan een *Time step size* of zet *Automatic time stepping* aan. De rekenstappen zijn die van Mecway (*Time step size*,
 `<timesteps stepsize>`: dt, 2 dt, ... tot de periode), plus de knikken van de
 lasttabellen die ertussen vallen; zo staan in Mecway dezelfde tijdstippen als bij
 Mecway's eigen solver. Lasttijden na de periode vallen weg. Staat Mecway's *Automatic time stepping* aan (`automatictimestepping="true"`, met de
@@ -1241,7 +1245,8 @@ op dit grove mesh van 76 hex20-elementen).
 - In Mecway verschijnt de melding met de foutcode, een advies en "Laatste tijdstip
   met resultaten: ... s".
 - **Dynamisch**: alle uitvoertijden tot dat tijdstip gaan naar Mecway.
-- **Statisch**: alle gearchiveerde stappen tot dat tijdstip (§2.1).
+- **Statisch**: alle gearchiveerde stappen tot dat tijdstip (§2.1; de uitzondering bij
+  CCX-*time points* geldt dan niet: het eind is niet bereikt).
 - Een andere Code-Aster-fout in de stappenlus (bijv. `DVP_2`, een te sterk vervormd
   element) gaat op dezelfde manier, als er al een stap na het begin gearchiveerd is: bij
   elke Code-Aster-fout staat het resultaat met de stappen tot dan in de `.comm`

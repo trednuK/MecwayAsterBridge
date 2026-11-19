@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge 777ccb6, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3462 van 3470 controles binnen de tolerantie** (675 testcases); 8 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3468 van 3476 controles binnen de tolerantie** (676 testcases); 8 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -1829,9 +1829,15 @@ Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge 777ccb6, Code-Aster 17.4
 | NL-75e | Vrije staaf, krachttabel tot 2 s met CCX time points tot 1,5 s (zonder automatic time stepping) | u_x(L) op t = 1.5 s | 7.5000e-06 m | 7.5000e-06 | +0.00% | 0.1% | OK |
 | NL-75e | Vrije staaf, krachttabel tot 2 s met CCX time points tot 1,5 s (zonder automatic time stepping) | u_x(L) t.o.v. Mecway (CCX) | 7.4992e-06 m | 7.5000e-06 | +0.01% | 0.02% | OK |
 | NL-75e | Vrije staaf, krachttabel tot 2 s met CCX time points tot 1,5 s (zonder automatic time stepping) | laatste rekentijd | 1.5 s | 1.5 | +0.00% | 1e-07% | OK |
+| NL-75e | Vrije staaf, krachttabel tot 2 s met CCX time points tot 1,5 s (zonder automatic time stepping) | aantal tijden na t = 0 | 1  | 1 | +0.00% | 0.5  | OK |
 | NL-75f | Vrije staaf, krachttabel tot 1 s met CCX time points tot 1,5 s (tabelwaarde vastgehouden) | u_x(L) op t = 1.5 s | 5.0000e-06 m | 5.0000e-06 | +0.00% | 0.1% | OK |
 | NL-75f | Vrije staaf, krachttabel tot 1 s met CCX time points tot 1,5 s (tabelwaarde vastgehouden) | u_x(L) t.o.v. Mecway (CCX) | 4.9996e-06 m | 5.0000e-06 | +0.01% | 0.01% | OK |
 | NL-75f | Vrije staaf, krachttabel tot 1 s met CCX time points tot 1,5 s (tabelwaarde vastgehouden) | laatste rekentijd | 1.5 s | 1.5 | +0.00% | 1e-07% | OK |
+| NL-75f | Vrije staaf, krachttabel tot 1 s met CCX time points tot 1,5 s (tabelwaarde vastgehouden) | aantal tijden na t = 0 | 1  | 1 | +0.00% | 0.5  | OK |
+| NL-75g | Vrije staaf, krachttabel tot 2 s met CCX time points 0,25 s tot 1 s (alleen de eindtoestand) | u_x(L) op t = 1 s | 5.0000e-06 m | 5.0000e-06 | +0.00% | 0.1% | OK |
+| NL-75g | Vrije staaf, krachttabel tot 2 s met CCX time points 0,25 s tot 1 s (alleen de eindtoestand) | u_x(L) t.o.v. Mecway (CCX) | 4.9996e-06 m | 5.0000e-06 | +0.01% | 0.01% | OK |
+| NL-75g | Vrije staaf, krachttabel tot 2 s met CCX time points 0,25 s tot 1 s (alleen de eindtoestand) | laatste rekentijd | 1 s | 1 | +0.00% | 1e-07% | OK |
+| NL-75g | Vrije staaf, krachttabel tot 2 s met CCX time points 0,25 s tot 1 s (alleen de eindtoestand) | aantal tijden na t = 0 | 1  | 1 | +0.00% | 0.5  | OK |
 | NL-80 | POU_D_T_GD: ingeklemde balk, kleine eindkracht (Timoshenko) | doorbuiging tip | 9.5246e-04 m | 9.5231e-04 | -0.02% | 0.1% | OK |
 | NL-80b | POU_D_T_GD in lineair statisch: wordt POU_D_T | doorbuiging tip | 9.5246e-04 m | 9.5246e-04 | +0.00% | 0.1% | OK |
 | NL-80c | POU_D_T_GD: constante eindkracht en eindmoment (geen tijdtabel) | doorbuiging tip | 0.0016667 m | 0.0016666 | -0.01% | 0.1% | OK |

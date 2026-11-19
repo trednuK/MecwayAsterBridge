@@ -3012,14 +3012,33 @@ def _times(res, indexes):
         return dict((i, float(i)) for i in indexes)
 
 
+def _end_state_only(times, indexes, t_end):
+    """
+    Indexes to write when Mecway stores only the end state (nonlinear
+    static with CCX time points and automatic time stepping off: Mecway 36
+    with CCX gave one result, at the period, headless, 19 Nov 2026,
+    NL-75e/f/g): the first index (t = 0) and the last one, but only when
+    the last archived time is the end time t_end (relative 1e-9). A run
+    that stopped earlier (divergence, time limit) keeps every step, so
+    that its partial result stays visible. Pure (times {index: time}).
+    """
+    if len(indexes) <= 2:
+        return list(indexes)
+    last = times.get(indexes[-1])
+    if last is None or abs(last - t_end) > 1.0e-9 * abs(t_end):
+        return list(indexes)
+    return [indexes[0], indexes[-1]]
+
+
 def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                    precision="single", static=None, rigi_geo=None,
                    mass=None, node_fields=None, cyclic=None, opt_in=None,
                    shell_vectors=None, strengths=None, u_axes=None,
                    failures=None, formulas=None, plane=None,
-                   solid_frames=None, moved_nodes=None):
+                   solid_frames=None, moved_nodes=None, end_only=None):
     """
-    Write all archived time steps of res as a Mecway <results>
+    Write the archived time steps of res (all of them, or the first and
+    the last with end_only) as a Mecway <results>
     fragment (bytes, CRLF, indented for placement in <solution>).
 
     Parameters
@@ -3084,6 +3103,12 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
     moved_nodes   : Mecway node ids the bridge moved on purpose in the
                     written mesh (bonded_close_gap); left out of the
                     node-order check.
+    end_only      : end time (nonlinear static with CCX time points and
+                    automatic time stepping off, bridge_to_aster): only
+                    t = 0 and the end state go to Mecway, as Mecway stores
+                    only the end state (_end_state_only); not with the
+                    failure loop (failures), which needs every step.
+                    None = every archived step.
 
     Returns
     -------
@@ -3099,7 +3124,8 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
                        cyclic, opt_in, {"shell_vectors": shell_vectors,
                                         "strengths": strengths,
                                         "solid_frames": solid_frames},
-                       u_axes, failures, formulas, moved_nodes=moved_nodes)
+                       u_axes, failures, formulas, moved_nodes=moved_nodes,
+                       end_only=end_only)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -3113,7 +3139,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
 def _export(res, out_path, liml_path, fields, extra_results, precision,
             static, t0, rigi_geo=None, mass=None, node_fields=None,
             cyclic=None, opt_in=None, derived=None, u_axes=None,
-            failures=None, formulas=None, moved_nodes=None):
+            failures=None, formulas=None, moved_nodes=None, end_only=None):
     """Work of export_results (without the error handling)."""
     model = read_liml_model(liml_path)
     for vec, ranges in u_axes or ():
@@ -3149,6 +3175,14 @@ def _export(res, out_path, liml_path, fields, extra_results, precision,
         static = _is_static(res, indexes)
     if static:
         indexes = indexes[:1]
+    elif end_only is not None and failures is None and not modes:
+        kept = _end_state_only(_times(res, indexes), indexes, end_only)
+        if len(kept) < len(indexes):
+            print("aster_results_export: INFO: only the first step and the "
+                  "end state (t = {0}) to Mecway ({1} archived steps), like "
+                  "Mecway with time points without Automatic time "
+                  "stepping.".format(end_only, len(indexes)))
+        indexes = kept
     groups = set(fields) if fields is not None else None
     conn = mesh.getConnectivity()
     lump = None

@@ -2263,8 +2263,9 @@ samples) plus the kinks of the load tables (NL-20).
   without *Automatic time stepping*) with that force table (e) or with (0 s; 0 N),
   (1 s; 1050 N) (f): Mecway 36 with CCX computes up to the period and gives one result there
   (7.49916e-6 / 4.99963e-6 m: the table value at 1.5 s, held after its last point); the
-  bridge ends at 1.5 s too (7.5000e-6 / 5.0000e-6 m; its other stored steps are not in
-  Mecway's solution, KNOWN_BUGS 158).
+  bridge ends at 1.5 s too (7.5000e-6 / 5.0000e-6 m) and, like Mecway, sends only the end
+  state (with t = 0). NL-75g: time points 0.25 s, period 1 s: Mecway gives one result
+  (4.99963e-6 m, without a `<timestep>`), the bridge t = 0 and t = 1 s (5.0000e-6 m).
 ### NL-40 Formula in y and t
 
 - **Purpose**: a formula in x, y, z and t in `STAT_NON_LINE` (`FORMULE` of Y and

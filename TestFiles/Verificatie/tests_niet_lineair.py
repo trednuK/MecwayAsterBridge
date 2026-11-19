@@ -887,7 +887,7 @@ def _with_force7(build, table=None):
     return b
 
 
-def _ux_force7(dt, mw, t_end=1.0, force=1050.0, tol_mw=1e-4):
+def _ux_force7(dt, mw, t_end=1.0, force=1050.0, tol_mw=1e-4, n_after=None):
     ref = ALPHA7 * dt * L7 + force * L7 / (E7 * B7 * B7)
     return [Check("u_x(L) op t = %g s" % t_end,
                   lambda r: r.at("displx", (L7, 0, 0), _t(r, t_end)),
@@ -905,7 +905,13 @@ def _ux_force7(dt, mw, t_end=1.0, force=1050.0, tol_mw=1e-4):
             Check("laatste rekentijd", lambda r: r.times()[-1], ref=t_end,
                   tol=1e-9, unit="s",
                   source="Mecway rekent tot t = %g s (ook als de "
-                         "krachttabel tot 2 s loopt)" % t_end)]
+                         "krachttabel tot 2 s loopt)" % t_end)] + (
+        [Check("aantal tijden na t = 0", lambda r: len([t for t in r.times()
+                                                        if t > 0.0]),
+               ref=n_after, tol_abs=0.5, unit="",
+               source="Mecway met time points zonder Automatic time "
+                      "stepping: alleen de eindtoestand (Mecway 36 met "
+                      "CCX, headless)")] if n_after is not None else [])
 
 
 # NL-75e/f: CCX time points zonder stapgrootte en zonder Automatic time
@@ -913,9 +919,14 @@ def _ux_force7(dt, mw, t_end=1.0, force=1050.0, tol_mw=1e-4):
 # (Mecway 36.0.9815 met CCX, headless, 19 nov 2026: tabel tot 2 s gaf
 # u_x(L) = 7,49916e-6 m (F(1,5 s) = 1575 N), tabel (0; 0), (1 s; 1050 N)
 # gaf 4,99963e-6 m op t = 1,5 s). Alleen de laatste tijd is vergelijkbaar:
-# Mecway geeft daar 1 resultaat, de bridge elke rekenstap (KNOWN_BUGS 158).
+# Mecway geeft daar 1 resultaat; de bridge stuurt t = 0 en de eindtoestand
+# (aster_results_export._end_state_only), na een vroege stop elke stap.
 # CCX ligt iets lager en het verschil groeit met de last (7,4e-5 bij 1050 N,
 # 1,12e-4 bij 1575 N): NL-75e krijgt daarom 2e-4 t.o.v. Mecway.
+TP7G = OrderedDict([("timeperiod", "1 s"),
+                    ("automatictimestepping", "false"),
+                    ("outputtimes", "regular"), ("timepointsstart", "0 s"),
+                    ("timepointsincrement", "0.25 s")])
 TP7 = OrderedDict([("timeperiod", "1.5 s"),
                    ("automatictimestepping", "false"),
                    ("outputtimes", "regular"), ("timepointsstart", "0 s"),
@@ -1030,7 +1041,7 @@ TESTS += [
          _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
                                  timesteps=TP7)),
          _ux_force7(0.0, 7.49916e-6, t_end=1.5, force=1575.0,
-                    tol_mw=2e-4),
+                    tol_mw=2e-4, n_after=1),
          settings=PETIT7,
          note="Mecway rekent tot de periode 1,5 s en neemt de tabel daar "
               "(Mecway 36 met CCX); de bridge ook."),
@@ -1039,10 +1050,18 @@ TESTS += [
          _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
                                  timesteps=TP7),
                       table=[(0.0, 0.0), (1.0, 1050.0)]),
-         _ux_force7(0.0, 4.99963e-6, t_end=1.5, force=1050.0),
+         _ux_force7(0.0, 4.99963e-6, t_end=1.5, force=1050.0, n_after=1),
          settings=PETIT7,
          note="Na het laatste tabelpunt blijft de waarde staan tot de "
-              "periode; de bridge rekent dat stuk in 1 stap."),
+              "periode."),
+    Case("NL-75g", GROUP, "Vrije staaf, krachttabel tot 2 s met CCX time "
+         "points 0,25 s tot 1 s (alleen de eindtoestand)", "nonlin_static_3d",
+         _with_force7(build_nl70("<value>%.12g K</value>" % TREF7,
+                                 timesteps=TP7G)),
+         _ux_force7(0.0, 4.99963e-6, t_end=1.0, force=1050.0, n_after=1),
+         settings=PETIT7,
+         note="Mecway 36 met CCX: 1 resultaat (zonder <timestep>, zoals "
+              "zonder tijdstappen); de bridge stuurt t = 0 en t = 1 s."),
 ]
 
 

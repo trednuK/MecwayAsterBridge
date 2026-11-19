@@ -159,5 +159,78 @@ check("temperature cut: one WARNING", len([m for m in LOG
 # checked by reading the code; the verification cases NL-75..75d run with
 # default_time_end = 1.)
 
+# 11. end state only to Mecway (NL-75e/f/g): flag only for time points
+#     with Mecway's Automatic time stepping off
+def end_flag(md, analysis=ANALYSIS):
+    md = dict(md)
+    b._build_listinst_block([("f", [(0.0, 0.0), (2.0, 1.0)])], analysis, md)
+    return md.get("_end_only")
+check("end only: time points, automatic off", end_flag(TP15) == 1.5)
+check("end only: not with Mecway's automatic on (setting off)",
+      end_flag(md_auto, an_off) is None)
+check("end only: not without <timesteps>", end_flag({}) is None)
+
+# 12. the export filter (aster_results_export runs in Code-Aster's
+#     Python 3; only checked under CPython 3)
+if sys.version_info[0] >= 3:
+    import aster_results_export as x
+    T3 = {0: 0.0, 1: 0.5, 2: 1.0, 3: 1.5}
+    check("export: end reached -> t = 0 and the end",
+          x._end_state_only(T3, [0, 1, 2, 3], 1.5) == [0, 3])
+    check("export: stopped early -> every step",
+          x._end_state_only(T3, [0, 1, 2], 1.5) == [0, 1, 2])
+    check("export: end within 1e-9", x._end_state_only(
+        {0: 0.0, 1: 0.5, 2: 1.5 * (1 + 1e-12)}, [0, 1, 2], 1.5) == [0, 2])
+    check("export: two steps unchanged",
+          x._end_state_only({0: 0.0, 1: 1.5}, [0, 1], 1.5) == [0, 1])
+    check("export: unknown last time -> every step",
+          x._end_state_only({0: 0.0, 1: 0.5}, [0, 1, 2], 1.5) == [0, 1, 2])
+
+# 13. gating in the generated job (NL-75e: CCX time points, Automatic time
+#     stepping off): end_only in study.comm, not with fatigue (#ASTER-WOHLER)
+#     (smoke test as in AGENTS.md: CPython only)
+import io as _io
+import shutil
+import tempfile
+from bridge_from_liml import extract_aster_data_from_liml  # noqa: E402
+from bridge_mesh import write_mesh  # noqa: E402
+from bridge_to_aster import generate_AsterSolver_files  # noqa: E402
+SRC = os.path.join(_HERE, "..", "TestFiles", "Verificatie", "modellen",
+                   "NL-75e.liml")
+
+
+def comm_of(liml_text):
+    tmp = tempfile.mkdtemp(prefix="steptime_")
+    try:
+        _io.open(os.path.join(tmp, "model.liml"), "w",
+                 encoding="utf-8").write(liml_text)
+        u.CONFIG_BRIDGE["work_dir"] = tmp
+        u.CONFIG_BRIDGE["active_analysis"] = "nonlin_static_3d"
+        md = extract_aster_data_from_liml(os.path.join(tmp, "model.liml"))
+        if not write_mesh(os.path.join(tmp, "model_mesh.mail"), md):
+            return ""
+        if not generate_AsterSolver_files(tmp, md, os.path.join(
+                tmp, "model_mesh.mail"), "test.resu"):
+            return ""
+        return _io.open(os.path.join(tmp, "study.comm"),
+                        encoding="utf-8").read()
+    finally:
+        shutil.rmtree(tmp, True)
+
+
+if sys.version_info[0] < 3:
+    print("SKIP job checks: CPython 3 only (write_mesh without Mecway)")
+elif os.path.exists(SRC):
+    text = _io.open(SRC, encoding="utf-8").read()
+    c = comm_of(text)
+    check("job: time points -> end_only=1.5 in study.comm",
+          "end_only=1.5" in c)
+    wohler = (u"<ccxmodeldefinition>** ASTER-WOHLER Staal: S = [100, 150, "
+              u"250, 400] MPa, N = [1e7, 2e6, 2e5, 1e4]</ccxmodeldefinition>")
+    c = comm_of(text.replace(u"</liml>", wohler + u"\n</liml>"))
+    check("job: with #ASTER-WOHLER no end_only", c and "end_only" not in c)
+else:
+    print("SKIP job checks: " + SRC)
+
 print("{0} failure(s)".format(len(FAILS)))
 sys.exit(1 if FAILS else 0)

@@ -2283,8 +2283,9 @@ Code-Aster-standaard 1e-6 stagneert bij NL-01, zie daar); de rekenstappen zijn M
   periode 1,5 s, zonder *Automatic time stepping*) met die krachttabel (e) of met (0 s; 0 N),
   (1 s; 1050 N) (f): Mecway 36 met CCX rekent tot de periode en geeft daar één resultaat
   (7,49916e-6 / 4,99963e-6 m: de tabelwaarde op 1,5 s, na het laatste punt vastgehouden);
-  de bridge eindigt ook op 1,5 s (7,5000e-6 / 5,0000e-6 m; zijn andere opgeslagen stappen
-  staan niet in Mecway's oplossing, KNOWN_BUGS 158).
+  de bridge eindigt ook op 1,5 s (7,5000e-6 / 5,0000e-6 m) en stuurt, zoals Mecway, alleen de
+  eindtoestand (met t = 0). NL-75g: time points 0,25 s, periode 1 s: Mecway geeft één
+  resultaat (4,99963e-6 m, zonder `<timestep>`), de bridge t = 0 en t = 1 s (5,0000e-6 m).
 ### NL-40 Formule in y en t
 
 - **Doel**: een formule in x, y, z én t in `STAT_NON_LINE` (`FORMULE` van Y en `INST`)

@@ -35135,7 +35135,7 @@
   "series": null,
   "h": null,
   "note": "Mecway 34 met CCX: 1,2e-4 m (dT = 100 K op t = 1 s), niet de waarde op het laatste tabelpunt (50 K).",
-  "seconds": 3.3,
+  "seconds": 2.8,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -41406,7 +41406,7 @@
   "series": null,
   "h": null,
   "note": "CCX-opmaak met automatictimestepping=\"true\": METHODE='AUTO' tussen de time points, ARCHIVAGE alleen op de time points.",
-  "seconds": 3.2,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -61443,7 +61443,7 @@
   "series": null,
   "h": null,
   "note": "Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.",
-  "seconds": 3.1,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -61505,7 +61505,7 @@
   "series": null,
   "h": null,
   "note": "Zonder Quasi-static rekent Mecway een stap en neemt elke tabel op t = 1 s (Mecway 36 met CCX); de bridge rekent tot 1 s.",
-  "seconds": 3.1,
+  "seconds": 2.9,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -61567,7 +61567,7 @@
   "series": null,
   "h": null,
   "note": "Mecway rekent tot de periode 1,5 s en neemt de tabel daar (Mecway 36 met CCX); de bridge ook.",
-  "seconds": 3.1,
+  "seconds": 3.0,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -61612,6 +61612,20 @@
     "source": "Mecway rekent tot t = 1.5 s (ook als de krachttabel tot 2 s loopt)",
     "in_series": true,
     "known": null
+   },
+   {
+    "name": "aantal tijden na t = 0",
+    "fem": 1.0,
+    "ref": 1,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "Mecway met time points zonder Automatic time stepping: alleen de eindtoestand (KNOWN_BUGS 158 opgelost)",
+    "in_series": true,
+    "known": null
    }
   ],
   "n_nodes": 20,
@@ -61628,8 +61642,8 @@
   "analysis": "nonlin_static_3d",
   "series": null,
   "h": null,
-  "note": "Na het laatste tabelpunt blijft de waarde staan tot de periode; de bridge rekent dat stuk in 1 stap.",
-  "seconds": 3.3,
+  "note": "Na het laatste tabelpunt blijft de waarde staan tot de periode.",
+  "seconds": 3.1,
   "diagnostic": "OK",
   "errors": [],
   "checks": [
@@ -61672,6 +61686,96 @@
     "tol": 1e-09,
     "tol_abs": null,
     "source": "Mecway rekent tot t = 1.5 s (ook als de krachttabel tot 2 s loopt)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "aantal tijden na t = 0",
+    "fem": 1.0,
+    "ref": 1,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "Mecway met time points zonder Automatic time stepping: alleen de eindtoestand (KNOWN_BUGS 158 opgelost)",
+    "in_series": true,
+    "known": null
+   }
+  ],
+  "n_nodes": 20,
+  "n_elem": 4,
+  "settings": {
+   "deformation": "PETIT"
+  },
+  "general": {}
+ },
+ "NL-75g": {
+  "id": "NL-75g",
+  "group": "Niet-lineair statisch",
+  "title": "Vrije staaf, krachttabel tot 2 s met CCX time points 0,25 s tot 1 s (alleen de eindtoestand)",
+  "analysis": "nonlin_static_3d",
+  "series": null,
+  "h": null,
+  "note": "Mecway 36 met CCX: 1 resultaat (zonder <timestep>, zoals zonder tijdstappen); de bridge stuurt t = 0 en t = 1 s.",
+  "seconds": 2.9,
+  "diagnostic": "OK",
+  "errors": [],
+  "checks": [
+   {
+    "name": "u_x(L) op t = 1 s",
+    "fem": 5.0000000000000665e-06,
+    "ref": 5e-06,
+    "rel": 1.3213713977167084e-14,
+    "dev": 6.606856988583543e-20,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.001,
+    "tol_abs": null,
+    "source": "alpha dT L + F(1 s) L/(EA), F = 1050 N (puntkrachten op de hoekknopen: 1e-3)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "u_x(L) t.o.v. Mecway (CCX)",
+    "fem": 5.0000000000000665e-06,
+    "ref": 4.99963e-06,
+    "rel": 7.400547641856319e-05,
+    "dev": 3.7000000006654106e-10,
+    "ok": true,
+    "unit": "m",
+    "tol": 0.0001,
+    "tol_abs": null,
+    "source": "Mecway 36 met CCX, headless (CCX lager, groeit met de last: 3,6e-5 / 7,4e-5 / 1,12e-4 bij 0,5 / 1 / 1,5 s; waarschijnlijk NLGEOM in CCX, NIET geverifieerd)",
+    "in_series": false,
+    "known": null
+   },
+   {
+    "name": "laatste rekentijd",
+    "fem": 1.0,
+    "ref": 1.0,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "s",
+    "tol": 1e-09,
+    "tol_abs": null,
+    "source": "Mecway rekent tot t = 1 s (ook als de krachttabel tot 2 s loopt)",
+    "in_series": true,
+    "known": null
+   },
+   {
+    "name": "aantal tijden na t = 0",
+    "fem": 1.0,
+    "ref": 1,
+    "rel": 0.0,
+    "dev": 0.0,
+    "ok": true,
+    "unit": "",
+    "tol": null,
+    "tol_abs": 0.5,
+    "source": "Mecway met time points zonder Automatic time stepping: alleen de eindtoestand (KNOWN_BUGS 158 opgelost)",
     "in_series": true,
     "known": null
    }
