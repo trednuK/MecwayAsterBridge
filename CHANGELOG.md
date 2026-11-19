@@ -31,7 +31,9 @@ model copy and contact on a434d50, the "Save changes?" question on 47b6fd4 (Mecw
 KNOWN_BUGS 151) and the wait window on 9556f23. The later changes (contact in implicit
 dynamics, time points, shells in dynamics, element per component, edge forces, large models
 apart from the wait window) were measured headless with Code-Aster 17.4 and Mecway 36 only.
-REGRESSION_LINE
+Full regression on 9004b32: 3568 of 3578 checks OK (713 test cases), 10 BEKEND (KNOWN_BUGS
+43, 83, 108, 115 and 144 as before, and 149 in NL-03h/NL-03l), 0 NOK/FOUT, no status change
+and no value moved more than 1e-6 relative against V2026.14.
 
 - **Very large models: faster preparation and a MUMPS memory setting.** Ideas from the
   public fork larsmei/MecwayAsterBridge, written anew. The `.mail` is written in pieces

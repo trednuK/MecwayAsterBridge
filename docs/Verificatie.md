@@ -113,18 +113,19 @@ Een test toevoegen: een `Case` in een `tests_<groep>.py` met een functie die een
 
 ## 3. Samenvatting
 
-Stand 18 november 2026. De hele tabel komt uit één revisie: de regressie in
-`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `02905aa`
-(V2026.14; Code-Aster 17.4): 670 testcases, 3455 controles, 3447 OK, 8 BEKEND, 0 NOK/FOUT.
-Nieuw ten opzichte van de vorige tabel (607 testcases, run op `c5c459f`, V2026.13) zijn 63
-testcases en 281 controles (waarvan 6 nieuwe in PL-24, PL-40 en PL-41): 2D en axisymmetrisch (PL-47 leesbare 2D-resultaten, PL-50 .. PL-59
-axisymmetrisch warmtetransport en de thermomechanische keten, PL-60 .. PL-68 axisymmetrische
-schalen, PL-70 .. PL-74 bezwijken, PL-75 .. PL-80 de keten in `C_PLAN`/`D_PLAN` en plasticiteit
-in de keten; S44), gaps (NL-92 .. NL-92m), een echte drijvendekommafout (NL-91), het
-mechanisme in een modale analyse (MO-11), de element orientation-kaart op schalen (LS-31f ..
-LS-31i) en harmonische spanningen met hysteretische demping (HR-06e .. HR-06g). Geen
+Stand 19 november 2026. De hele tabel komt uit één revisie: de regressie in
+`TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `9004b32`
+(V2026.15; Code-Aster 17.4): 713 testcases, 3578 controles, 3568 OK, 10 BEKEND, 0 NOK/FOUT.
+Nieuw ten opzichte van de vorige tabel (670 testcases, run op `02905aa`, V2026.14) zijn 43
+testcases en 123 controles: contact tegen Mecway 36 met CCX (NL-03g .. NL-03o: contactmethode
+`auto`, star kleven bij wrijving, impliciete dynamica, D31-stapgrootte; LS-07n .. LS-07z:
+verlijmd contact met opleggingen op slave-knopen, ook in dynamica, knik en XFEM; TH-04e ..
+TH-04g thermisch verlijmd contact), lasttabellen zonder *Quasi-static* en met CCX-*time
+points* (NL-75b .. NL-75g), schalen in impliciete dynamica (DY-40a .. DY-40h) en het element
+per component en randkrachten op meer schaalcomponenten (LS-98a .. LS-98d). De 2 nieuwe
+BEKEND zijn KNOWN_BUGS 149 (kt niet gebruikt bij wrijving) in NL-03h en NL-03l. Geen
 statuswijziging en geen waarde die meer dan 1e-6 relatief verschuift ten opzichte van de
-vastgelegde resultaten.
+vastgelegde resultaten van V2026.14.
 
 | Groep | Testcases | Controles | OK | Bekend |
 |---|---|---|---|---|
@@ -134,22 +135,22 @@ vastgelegde resultaten.
 | Akoestiek impedantie | 10 | 227 | 227 | 0 |
 | Cyclische symmetrie | 6 | 171 | 171 | 0 |
 | Breukmechanica | 14 | 63 | 62 | 1 |
-| Dynamica | 20 | 53 | 53 | 0 |
+| Dynamica | 28 | 70 | 70 | 0 |
 | Foutschatter | 10 | 32 | 32 | 0 |
 | Harmonische respons | 18 | 70 | 70 | 0 |
 | Knik | 37 | 94 | 93 | 1 |
 | Lassen | 18 | 117 | 117 | 0 |
-| Lineair statisch | 158 | 528 | 527 | 1 |
+| Lineair statisch | 175 | 573 | 572 | 1 |
 | Metallurgie | 8 | 56 | 56 | 0 |
 | Modaal | 26 | 248 | 248 | 0 |
 | Modaal met demping | 7 | 47 | 47 | 0 |
 | Modaal (voorspanning) | 9 | 44 | 44 | 0 |
-| Niet-lineair statisch | 70 | 249 | 246 | 3 |
+| Niet-lineair statisch | 85 | 298 | 293 | 5 |
 | Niet-lineaire knik | 12 | 36 | 36 | 0 |
 | Respons op modale basis | 10 | 25 | 25 | 0 |
 | Responsspectrum | 9 | 41 | 41 | 0 |
 | Resultaatformules | 5 | 38 | 38 | 0 |
-| Thermisch | 24 | 92 | 92 | 0 |
+| Thermisch | 27 | 104 | 104 | 0 |
 | Thermische spanning | 2 | 7 | 7 | 0 |
 | Vermoeiing | 25 | 52 | 52 | 0 |
 | Vibro-akoestiek | 8 | 29 | 29 | 0 |
@@ -157,7 +158,7 @@ vastgelegde resultaten.
 | Orthotroop | 19 | 174 | 174 | 0 |
 | 2D en axisymmetrisch | 84 | 366 | 364 | 2 |
 | Boutvoorspanning | 13 | 87 | 87 | 0 |
-| **Totaal** | **670** | **3455** | **3447** | **8** |
+| **Totaal** | **713** | **3578** | **3568** | **10** |
 
 Geen NOK of FOUT (WE-10b, alleen met `VERIF_ZWAAR=1`, niet meegeteld: 9 van 9 OK). Officiële Code-Aster-tests: 19 van 19 OK (1598 TEST_RESU-controles,
 0 NOOK).

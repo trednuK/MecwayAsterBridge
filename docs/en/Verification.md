@@ -111,17 +111,19 @@ and a list of `Check`s (see `verif_lib.py` and the existing modules).
 
 ## 3. Summary
 
-Status 18 November 2026. The whole table comes from one revision: the regression in
-`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `02905aa`
-(V2026.14; Code-Aster 17.4): 670 test cases, 3455 checks, 3447 OK, 8 BEKEND (known),
-0 NOK/FOUT. New compared with the previous table (607 test cases, run on `c5c459f`, V2026.13)
-are 63 test cases and 281 checks (6 of them new in PL-24, PL-40 and PL-41): 2D and axisymmetric (PL-47 readable 2D results, PL-50 ..
-PL-59 axisymmetric heat transfer and the thermomechanical chain, PL-60 .. PL-68 axisymmetric
-shells, PL-70 .. PL-74 element failure, PL-75 .. PL-80 the chain in `C_PLAN`/`D_PLAN` and
-plasticity in the chain; S44), gaps (NL-92 .. NL-92m), a real floating point exception (NL-91),
-the mechanism in a modal analysis (MO-11), the element orientation card on shells (LS-31f ..
-LS-31i) and harmonic stresses with hysteretic damping (HR-06e .. HR-06g). No status change and
-no value that moves more than 1e-6 relative compared with the stored results.
+Status 19 November 2026. The whole table comes from one revision: the regression in
+`TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `9004b32`
+(V2026.15; Code-Aster 17.4): 713 test cases, 3578 checks, 3568 OK, 10 BEKEND (known),
+0 NOK/FOUT. New compared with the previous table (670 test cases, run on `02905aa`, V2026.14)
+are 43 test cases and 123 checks: contact against Mecway 36 with CCX (NL-03g .. NL-03o:
+contact method `auto`, rigid friction stick, implicit dynamics, D31 step size; LS-07n ..
+LS-07z: bonded contact with supports on slave nodes, also in dynamics, buckling and XFEM;
+TH-04e .. TH-04g thermal bonded contact), load tables without *Quasi-static* and with CCX
+*time points* (NL-75b .. NL-75g), shells in implicit dynamics (DY-40a .. DY-40h) and the
+element per component and edge forces on several shell components (LS-98a .. LS-98d). The 2
+new BEKEND are KNOWN_BUGS 149 (kt not used with friction) in NL-03h and NL-03l. No status
+change and no value that moves more than 1e-6 relative compared with the stored results of
+V2026.14.
 
 | Group | Test cases | Checks | OK | Known |
 |---|---|---|---|---|
@@ -131,22 +133,22 @@ no value that moves more than 1e-6 relative compared with the stored results.
 | Acoustics impedance | 10 | 227 | 227 | 0 |
 | Cyclic symmetry | 6 | 171 | 171 | 0 |
 | Fracture mechanics | 14 | 63 | 62 | 1 |
-| Dynamics | 20 | 53 | 53 | 0 |
+| Dynamics | 28 | 70 | 70 | 0 |
 | Error estimator | 10 | 32 | 32 | 0 |
 | Harmonic response | 18 | 70 | 70 | 0 |
 | Buckling | 37 | 94 | 93 | 1 |
 | Welding | 18 | 117 | 117 | 0 |
-| Linear static | 158 | 528 | 527 | 1 |
+| Linear static | 175 | 573 | 572 | 1 |
 | Metallurgy | 8 | 56 | 56 | 0 |
 | Modal | 26 | 248 | 248 | 0 |
 | Modal with damping | 7 | 47 | 47 | 0 |
 | Modal (prestress) | 9 | 44 | 44 | 0 |
-| Nonlinear static | 70 | 249 | 246 | 3 |
+| Nonlinear static | 85 | 298 | 293 | 5 |
 | Nonlinear buckling | 12 | 36 | 36 | 0 |
 | Mode superposition | 10 | 25 | 25 | 0 |
 | Response spectrum | 9 | 41 | 41 | 0 |
 | Result formulas | 5 | 38 | 38 | 0 |
-| Thermal | 24 | 92 | 92 | 0 |
+| Thermal | 27 | 104 | 104 | 0 |
 | Thermal stress | 2 | 7 | 7 | 0 |
 | Fatigue | 25 | 52 | 52 | 0 |
 | Vibroacoustics | 8 | 29 | 29 | 0 |
@@ -154,7 +156,7 @@ no value that moves more than 1e-6 relative compared with the stored results.
 | Orthotropic material | 19 | 174 | 174 | 0 |
 | 2D and axisymmetric | 84 | 366 | 364 | 2 |
 | Bolt pretension | 13 | 87 | 87 | 0 |
-| **Total** | **670** | **3455** | **3447** | **8** |
+| **Total** | **713** | **3578** | **3568** | **10** |
 
 No NOK or FOUT (WE-10b, only with `VERIF_ZWAAR=1`, not counted: 9 of 9 OK). Official Code-Aster tests: 19 of 19 OK (1598 TEST_RESU checks, 0 NOOK).
 

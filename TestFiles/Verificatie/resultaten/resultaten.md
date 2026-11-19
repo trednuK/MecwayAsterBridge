@@ -1,8 +1,8 @@
 # Verificatieresultaten MecwayAsterBridge
 
-Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
+Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge 9004b32, Code-Aster 17.4). Toelichting en bronnen: `docs/Verificatie.md`.
 
-**3468 van 3476 controles binnen de tolerantie** (676 testcases); 8 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
+**3568 van 3578 controles binnen de tolerantie** (713 testcases); 10 buiten de tolerantie door een bekende beperking (BEKEND, zie `KNOWN_BUGS.md`), 0 onverwacht (NOK/FOUT).
 
 ## Adaptieve verfijning
 
@@ -978,6 +978,23 @@ Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4
 | DY-20d | Staaf, opgelegde verplaatsing uit een tabel met knikken buiten de stap, expliciet TCHAMWA | u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um) | 0 - | 4.1382e-08 | 4.1382e-08 | 1e-05 - | OK |
 | DY-20e | Staaf, opgelegde verplaatsing met knikken 2 .. 3 stappen na elkaar, expliciet TCHAMWA | u eindvlak t.o.v. de tabel (max. |u - u_tabel| / 10 um) | 0 - | 7.8318e-08 | 7.8318e-08 | 1e-05 - | OK |
 | DY-30 | Snedekrachten in DYNA_NON_LINE, quasi-statisch | M_v inklemming | 300 N.m | 300.16 | +0.05% | 2% | OK |
+| DY-40a | Plaatstrook DKT, staplast, impliciet (HHT, standaardinstellingen, KNOWN_BUGS 156) | grootste doorbuiging tip (stap 1 N) | -0.00184 m | -0.0018529 | -0.70% | 1% | OK |
+| DY-40a | Plaatstrook DKT, staplast, impliciet (HHT, standaardinstellingen, KNOWN_BUGS 156) | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40b | Plaatstrook DKT, staplast, impliciet NEWMARK | grootste doorbuiging tip (stap 1 N) | -0.00184 m | -0.0018425 | -0.14% | 1% | OK |
+| DY-40b | Plaatstrook DKT, staplast, impliciet NEWMARK | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40c | Plaatstrook uit twee verlijmde delen (LS-07a, LIAISON_MAIL), staplast, impliciet | grootste doorbuiging tip (stap 1 N) | -0.00184 m | -0.0018518 | -0.64% | 1% | OK |
+| DY-40c | Plaatstrook uit twee verlijmde delen (LS-07a, LIAISON_MAIL), staplast, impliciet | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40d | Verlijmde strook 30 graden gedraaid (LS-07f, LIAISON_DDL), staplast, impliciet | grootste doorbuiging tip (stap 1 N) | -0.00184 m | -0.0018518 | -0.64% | 1% | OK |
+| DY-40d | Verlijmde strook 30 graden gedraaid (LS-07f, LIAISON_DDL), staplast, impliciet | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40e | LS-07f met Displacement X = 0 op alle knopen (LS-07r, dubbele voorwaarde, KNOWN_BUGS 147), staplast, impliciet | grootste doorbuiging tip (stap 1 N) | -0.00184 m | -0.0018518 | -0.64% | 1% | OK |
+| DY-40e | LS-07f met Displacement X = 0 op alle knopen (LS-07r, dubbele voorwaarde, KNOWN_BUGS 147), staplast, impliciet | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40f | Quad8-strook (COQUE_3D), staplast, impliciet, standaardinstellingen (COQUE_3D met PETIT) | grootste doorbuiging tip (stap 1 N) | -0.001833 m | -0.0018543 | -1.16% | 1.5% | OK |
+| DY-40f | Quad8-strook (COQUE_3D), staplast, impliciet, standaardinstellingen (COQUE_3D met PETIT) | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40g | Strook DKT en losse hex20-balk in een model, staplast, impliciet | grootste doorbuiging tip (stap 1 N) | -0.00184 m | -0.0018529 | -0.70% | 1% | OK |
+| DY-40g | Strook DKT en losse hex20-balk in een model, staplast, impliciet | opgeslagen tijdstippen (de kleine eerste stap niet) | 101 - | 101 | +0.00% | 0.5 - | OK |
+| DY-40g | Strook DKT en losse hex20-balk in een model, staplast, impliciet | grootste doorbuiging eind hex20-balk | -0.0018314 m | -0.0018362 | -0.26% | 1% | OK |
+| DY-40h | Plaatstrook DKT, opgelegde verplaatsing vanaf t = 0 (sprong), impliciet: geen kleine eerste stap | grootste doorbuiging midden | -8.0341e-04 m | -8.0341e-04 | +0.00% | 0.1% | OK |
+| DY-40h | Plaatstrook DKT, opgelegde verplaatsing vanaf t = 0 (sprong), impliciet: geen kleine eerste stap | opgeslagen tijdstippen | 101 - | 101 | +0.00% | 0.5 - | OK |
 | DY-70 | Staaf met verhinderde uitzetting, constante temperatuur (KNOWN_BUGS 94) | gemiddelde sigma_xx op x = L/2, t = 0.0002 s | -1.3250e+08 Pa | -1.3227e+08 | +0.18% | 1% | OK |
 | DY-70 | Staaf met verhinderde uitzetting, constante temperatuur (KNOWN_BUGS 94) | gemiddelde sigma_xx op x = L/2, t = 0.002 s | -1.3250e+08 Pa | -1.3237e+08 | +0.10% | 1% | OK |
 | DY-71 | Vrije staaf, temperatuur langzaam oplopend (tijdstabel, quasi-statisch) | u_x(L) op t = 0.005 s | 6.0000e-05 m | 5.9999e-05 | -0.00% | 1% | OK |
@@ -1256,6 +1273,30 @@ Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4
 | LS-07k | Quad8-plaat met rib, 30 graden gedraaid (scheve kwadratische master) | verplaatsing ribtop t.o.v. LS-07j | 1.1536e-05 m | 1.1336e-05 | -1.74% | 3% | OK |
 | LS-07l | Overlapnaad van twee hex20-platen, verlijmd; plaat B steekt uit voorbij plaat A (tolerantie 0) | doorbuiging tip t.o.v. Mecway | 2.3077e-04 m | 2.3077e-04 | +0.00% | 0.5% | OK |
 | LS-07m | Als LS-07l met 0,2 mm spleet en tolerantie 0,5 mm | doorbuiging tip t.o.v. Mecway | 2.3017e-04 m | 2.3077e-04 | +0.26% | 1% | OK |
+| LS-07n | Twee blokken verlijmd met symmetrievlakken op beide (dubbele oplegging op slave-knopen, KNOWN_BUGS 147) | indrukking bovenkant t.o.v. Mecway | 9.5406e-07 m | 9.5406e-07 | -0.00% | 0.5% | OK |
+| LS-07n | Twee blokken verlijmd met symmetrievlakken op beide (dubbele oplegging op slave-knopen, KNOWN_BUGS 147) | indrukking bovenkant, eenassig | 9.5238e-07 m | 9.5406e-07 | +0.18% | 0.5% | OK |
+| LS-07o | Als LS-07m met bonded_close_gap: de bridge schuift de slave-knopen op de master zoals CCX | doorbuiging tip t.o.v. Mecway | 2.3017e-04 m | 2.3017e-04 | +0.00% | 0.1% | OK |
+| LS-07p | Als LS-07n met Symmetry op de vlakselecties (LIAISON_OBLIQUE op slave en master, KNOWN_BUGS 147) | indrukking bovenkant t.o.v. Mecway | 9.5406e-07 m | 9.5406e-07 | +0.00% | 0.5% | OK |
+| LS-07q | Als LS-07n met Frictionless support op de vlakselecties (FACE_IMPO DNOR, KNOWN_BUGS 147) | indrukking bovenkant t.o.v. Mecway | 9.5406e-07 m | 9.5406e-07 | +0.00% | 0.5% | OK |
+| LS-07r | LS-07f met Displacement X = 0 op alle knopen (LIAISON_DDL-route, KNOWN_BUGS 147) | doorbuiging tip t.o.v. LS-07f | 9.4220e-04 m | 9.4220e-04 | +0.00% | 0.1% | OK |
+| LS-07s | LS-07i met de voetknoop van de rib vast in X, Y en Z (LIAISON_DDL-route, KNOWN_BUGS 147) | zijdelingse verplaatsing ribtop t.o.v. LS-07i | 1.1342e-05 m | 1.1342e-05 | +0.00% | 0.1% | OK |
+| LS-07t | LS-07p in Nonlinear Static | indrukking bovenkant t.o.v. Mecway | 9.5406e-07 m | 9.5413e-07 | +0.01% | 0.5% | OK |
+| LS-07u | LS-07q in Nonlinear Static | indrukking bovenkant t.o.v. Mecway | 9.5406e-07 m | 9.5413e-07 | +0.01% | 0.5% | OK |
+| LS-07v | LS-07p modaal (CALC_MODES, KNOWN_BUGS 147) | f1 t.o.v. model zonder dubbele voorwaarde | 56660 Hz | 56660 | -0.00% | 0.1% | OK |
+| LS-07v | LS-07p modaal (CALC_MODES, KNOWN_BUGS 147) | f2 t.o.v. model zonder dubbele voorwaarde | 56726 Hz | 56726 | -0.00% | 0.1% | OK |
+| LS-07v | LS-07p modaal (CALC_MODES, KNOWN_BUGS 147) | f3 t.o.v. model zonder dubbele voorwaarde | 56735 Hz | 56735 | +0.00% | 0.1% | OK |
+| LS-07w | LS-07p in Nonlinear Dynamic, langzaam opgebrachte kracht (KNOWN_BUGS 147) | indrukking bovenkant eind helling t.o.v. Mecway statisch | 9.5406e-07 m | 9.5406e-07 | -0.00% | 0.5% | OK |
+| LS-07w | LS-07p in Nonlinear Dynamic, langzaam opgebrachte kracht (KNOWN_BUGS 147) | indrukking bovenkant t = 1,5 ms t.o.v. Mecway statisch | 9.5406e-07 m | 9.5408e-07 | +0.00% | 0.5% | OK |
+| LS-07w | LS-07p in Nonlinear Dynamic, langzaam opgebrachte kracht (KNOWN_BUGS 147) | indrukking bovenkant t = 0,5 ms t.o.v. model zonder dubbele voorwaarde | 4.7702e-07 m | 4.7702e-07 | +0.00% | 0.1% | OK |
+| LS-07x | LS-07s in Nonlinear Dynamic, staplast (LIAISON_DDL-route, KNOWN_BUGS 147) | zijdelingse verplaatsing ribtop t = 0.001 s t.o.v. LS-07i | 8.5066e-06 m | 8.5066e-06 | +0.00% | 0.1% | OK |
+| LS-07x | LS-07s in Nonlinear Dynamic, staplast (LIAISON_DDL-route, KNOWN_BUGS 147) | zijdelingse verplaatsing ribtop t = 0.002 s t.o.v. LS-07i | 1.9280e-05 m | 1.9280e-05 | +0.00% | 0.1% | OK |
+| LS-07x | LS-07s in Nonlinear Dynamic, staplast (LIAISON_DDL-route, KNOWN_BUGS 147) | zijdelingse verplaatsing ribtop t = 0.008 s t.o.v. LS-07i | 1.8326e-05 m | 1.8326e-05 | +0.00% | 0.1% | OK |
+| LS-07y | Kolom uit twee verlijmde blokken met Symmetry op beide, knik (KNOWN_BUGS 147) | kniklastfactor 1 t.o.v. model zonder dubbele voorwaarde | 43.446 - | 43.446 | +0.00% | 0.1% | OK |
+| LS-07y | Kolom uit twee verlijmde blokken met Symmetry op beide, knik (KNOWN_BUGS 147) | kniklastfactor 2 t.o.v. model zonder dubbele voorwaarde | 368.36 - | 368.36 | +0.00% | 0.1% | OK |
+| LS-07y | Kolom uit twee verlijmde blokken met Symmetry op beide, knik (KNOWN_BUGS 147) | kniklastfactor 1, Euler | 43.18 - | 43.446 | +0.62% | 1% | OK |
+| LS-07z | XFEM-oppervlaktescheur in twee verlijmde lagen met Symmetry op beide (KNOWN_BUGS 147) | K_I CALC_G_XFEM op het symmetrievlak t.o.v. model zonder dubbele voorwaarde | 3.1789e+07 Pa.m^0.5 | 3.1789e+07 | +0.00% | 0.1% | OK |
+| LS-07z | XFEM-oppervlaktescheur in twee verlijmde lagen met Symmetry op beide (KNOWN_BUGS 147) | K_I CALC_G_XFEM midden t.o.v. model zonder dubbele voorwaarde | 3.2060e+07 Pa.m^0.5 | 3.2060e+07 | +0.00% | 0.1% | OK |
+| LS-07z | XFEM-oppervlaktescheur in twee verlijmde lagen met Symmetry op beide (KNOWN_BUGS 147) | K_I CALC_G_XFEM midden t.o.v. één mesh | 3.2081e+07 Pa.m^0.5 | 3.2060e+07 | -0.06% | 0.5% | OK |
 | LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | sigma_xx | -2.5200e+08 Pa | -2.5200e+08 | -0.00% | 0.0001% | OK |
 | LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | u_y zijkant | 1.5600e-04 m | 1.5600e-04 | +0.00% | 0.0001% | OK |
 | LS-08a | Staaf ingeklemd in x, Node temperature op alle knopen | |reactie x| op x = L | 2.5200e+06 N | 2.5200e+06 | +0.00% | 0.0001% | OK |
@@ -1673,6 +1714,27 @@ Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4
 | LS-97l | Stress over a T section on POU_D_T_GD, small load | |sigma| at the clamp, value of mid-element | 5.8555e+05 Pa | 5.8555e+05 | -0.00% | 0.1% | OK |
 | LS-97l | Stress over a T section on POU_D_T_GD, small load | the same value at both ends of the element | 1 - | 1 | +0.00% | 1e-07% | OK |
 | LS-97l | Stress over a T section on POU_D_T_GD, small load | tau at the clamp | 23605 Pa | 23611 | +0.03% | 4% | OK |
+| LS-98a | Drie losse plaatstroken in één model: DKT (algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT) | doorbuiging tip DKT | 9.4257e-04 m | 9.4257e-04 | +0.00% | 0.05% | OK |
+| LS-98a | Drie losse plaatstroken in één model: DKT (algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT) | doorbuiging tip DKT t.o.v. Mecway | 9.4148e-04 m | 9.4257e-04 | +0.12% | 0.5% | OK |
+| LS-98a | Drie losse plaatstroken in één model: DKT (algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT) | doorbuiging tip DST | 9.4291e-04 m | 9.4291e-04 | +0.00% | 0.05% | OK |
+| LS-98a | Drie losse plaatstroken in één model: DKT (algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT) | doorbuiging tip DST t.o.v. Mecway | 9.4148e-04 m | 9.4291e-04 | +0.15% | 0.5% | OK |
+| LS-98a | Drie losse plaatstroken in één model: DKT (algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT) | doorbuiging tip Q3D | 9.4341e-04 m | 9.4341e-04 | +0.00% | 0.05% | OK |
+| LS-98a | Drie losse plaatstroken in één model: DKT (algemeen), DST en COQUE_3D per component (#ASTER-ELEMENT) | doorbuiging tip Q3D t.o.v. Mecway | 9.4148e-04 m | 9.4341e-04 | +0.20% | 0.5% | OK |
+| LS-98b | Als LS-98a met één inklemming over de drie stroken: COQUE_3D valt terug naar DKT | doorbuiging tip DKT | 9.4257e-04 m | 9.4257e-04 | +0.00% | 0.05% | OK |
+| LS-98b | Als LS-98a met één inklemming over de drie stroken: COQUE_3D valt terug naar DKT | doorbuiging tip DKT t.o.v. Mecway | 9.4148e-04 m | 9.4257e-04 | +0.12% | 0.5% | OK |
+| LS-98b | Als LS-98a met één inklemming over de drie stroken: COQUE_3D valt terug naar DKT | doorbuiging tip DST | 9.4291e-04 m | 9.4291e-04 | +0.00% | 0.05% | OK |
+| LS-98b | Als LS-98a met één inklemming over de drie stroken: COQUE_3D valt terug naar DKT | doorbuiging tip DST t.o.v. Mecway | 9.4148e-04 m | 9.4291e-04 | +0.15% | 0.5% | OK |
+| LS-98b | Als LS-98a met één inklemming over de drie stroken: COQUE_3D valt terug naar DKT | doorbuiging tip Q3D | 9.4257e-04 m | 9.4257e-04 | +0.00% | 0.05% | OK |
+| LS-98b | Als LS-98a met één inklemming over de drie stroken: COQUE_3D valt terug naar DKT | doorbuiging tip Q3D t.o.v. Mecway | 9.4148e-04 m | 9.4257e-04 | +0.12% | 0.5% | OK |
+| LS-98c | Als LS-98a met één kracht (3 N) over de drie vrije randen | doorbuiging tip DKT | 9.4257e-04 m | 9.4257e-04 | +0.00% | 0.05% | OK |
+| LS-98c | Als LS-98a met één kracht (3 N) over de drie vrije randen | doorbuiging tip DKT t.o.v. Mecway | 9.4148e-04 m | 9.4257e-04 | +0.12% | 0.5% | OK |
+| LS-98c | Als LS-98a met één kracht (3 N) over de drie vrije randen | doorbuiging tip DST | 9.4291e-04 m | 9.4291e-04 | +0.00% | 0.05% | OK |
+| LS-98c | Als LS-98a met één kracht (3 N) over de drie vrije randen | doorbuiging tip DST t.o.v. Mecway | 9.4148e-04 m | 9.4291e-04 | +0.15% | 0.5% | OK |
+| LS-98c | Als LS-98a met één kracht (3 N) over de drie vrije randen | doorbuiging tip Q3D | 9.4341e-04 m | 9.4341e-04 | +0.00% | 0.05% | OK |
+| LS-98c | Als LS-98a met één kracht (3 N) over de drie vrije randen | doorbuiging tip Q3D t.o.v. Mecway | 9.4148e-04 m | 9.4341e-04 | +0.20% | 0.5% | OK |
+| LS-98d | Twee losse stroken van 2 en 4 mm, één kracht van 2 N over beide vrije randen | doorbuiging tip 2 mm t.o.v. Mecway | 6.2764e-04 m | 6.2838e-04 | +0.12% | 0.5% | OK |
+| LS-98d | Twee losse stroken van 2 en 4 mm, één kracht van 2 N over beide vrije randen | doorbuiging tip 4 mm t.o.v. Mecway | 1.5719e-04 m | 1.5710e-04 | -0.06% | 1% | OK |
+| LS-98d | Twee losse stroken van 2 en 4 mm, één kracht van 2 N over beide vrije randen | kracht 2 mm-strook (2/3 N) | 0.66667 N | 0.66667 | +0.00% | 0.1% | OK |
 
 ## Niet-lineair statisch
 
@@ -1721,6 +1783,34 @@ Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
 | NL-03f | Contact-patchtest (PENALISATION, NCOTES) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-03g | Contact-patchtest met de standaardinstelling (contact_algo auto) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03g | Contact-patchtest met de standaardinstelling (contact_algo auto) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03g | Contact-patchtest met de standaardinstelling (contact_algo auto) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03g | Contact-patchtest met de standaardinstelling (contact_algo auto) | penetratie | 1.0000e-06 m | 1.0000e-06 | +0.00% | 0.5% | OK |
+| NL-03h | Wrijving, blok alleen door contact vastgehouden (SEUIL_INIT) | w bovenkant t.o.v. Mecway | 1.9156e-06 m | 1.9156e-06 | +0.00% | 0.5% | OK |
+| NL-03h | Wrijving, blok alleen door contact vastgehouden (SEUIL_INIT) | u bovenkant t.o.v. Mecway | 2.0752e-06 m | 1.8641e-06 | -10.17% | 2% | BEKEND (KNOWN_BUGS 149) |
+| NL-03i | Wrijving als NL-03h met 5x zoveel stappen: verwaarloosbare kruip door de penalty-wrijving | u bovenkant t.o.v. star plakken | 1.8638e-06 m | 1.8656e-06 | +0.10% | 0.3% | OK |
+| NL-03j | Contact-patchtest als niet-lineaire dynamica (D31, stepsize zoals Mecway schrijft), langzaam belast | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03j | Contact-patchtest als niet-lineaire dynamica (D31, stepsize zoals Mecway schrijft), langzaam belast | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03j | Contact-patchtest als niet-lineaire dynamica (D31, stepsize zoals Mecway schrijft), langzaam belast | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03j | Contact-patchtest als niet-lineaire dynamica (D31, stepsize zoals Mecway schrijft), langzaam belast | penetratie | 1.0000e-06 m | 1.0000e-06 | -0.00% | 0.5% | OK |
+| NL-03j | Contact-patchtest als niet-lineaire dynamica (D31, stepsize zoals Mecway schrijft), langzaam belast | aantal uitvoerstappen (stepsize) | 10  | 10 | +0.00% | 0  | OK |
+| NL-03k | Contact in impliciete dynamica (D31): duwen en loslaten tegen Mecway/CCX (standaard contact_algo auto) | w bovenkant t = 20 us | -2.2230e-06 m | -2.2230e-06 | -0.00% | 1% | OK |
+| NL-03k | Contact in impliciete dynamica (D31): duwen en loslaten tegen Mecway/CCX (standaard contact_algo auto) | w bovenkant t = 50 us | -2.1090e-06 m | -2.1154e-06 | -0.30% | 1% | OK |
+| NL-03k | Contact in impliciete dynamica (D31): duwen en loslaten tegen Mecway/CCX (standaard contact_algo auto) | w bovenkant t = 200 us (vrij, na loslaten) | 6.2800e-06 m | 5.9854e-06 | -4.69% | 6% | OK |
+| NL-03k | Contact in impliciete dynamica (D31): duwen en loslaten tegen Mecway/CCX (standaard contact_algo auto) | laatste tijdstip | 2.0000e-04 s | 2.0000e-04 | +0.00% | 1e-07% | OK |
+| NL-03l | Wrijving in impliciete dynamica (NL-03h als D31, standaard contact_algo auto) | w bovenkant t.o.v. Mecway | 1.9156e-06 m | 1.9156e-06 | +0.00% | 0.5% | OK |
+| NL-03l | Wrijving in impliciete dynamica (NL-03h als D31, standaard contact_algo auto) | u bovenkant t.o.v. Mecway | 2.0752e-06 m | 1.8641e-06 | -10.17% | 2% | BEKEND (KNOWN_BUGS 149) |
+| NL-03m | Contact in impliciete dynamica: botsing over een spleet van 2 um (standaard contact_algo auto) | w bovenkant t = 12 us (voor de botsing) | -1.9720e-06 m | -1.9779e-06 | -0.30% | 1% | OK |
+| NL-03m | Contact in impliciete dynamica: botsing over een spleet van 2 um (standaard contact_algo auto) | laatste tijdstip | 2.0000e-04 s | 2.0000e-04 | +0.00% | 1e-07% | OK |
+| NL-03m | Contact in impliciete dynamica: botsing over een spleet van 2 um (standaard contact_algo auto) | penetratie-waarschuwing | 0  | 0 | 0 | 0  | OK |
+| NL-03n | Wrijving met tangentiele stijfheid 0 (NL-03h met kt = 0): star plakken | w bovenkant t.o.v. Mecway (kt 1e13) | 1.9156e-06 m | 1.9156e-06 | +0.00% | 0.5% | OK |
+| NL-03n | Wrijving met tangentiele stijfheid 0 (NL-03h met kt = 0): star plakken | u bovenkant t.o.v. star plakken | 1.8638e-06 m | 1.8641e-06 | +0.02% | 0.3% | OK |
+| NL-03o | Als NL-03j met 'Generate solution every n time steps' = 3 (D31) | w contactvlak onder | 4.7619e-07 m | 4.7622e-07 | +0.01% | 0.5% | OK |
+| NL-03o | Als NL-03j met 'Generate solution every n time steps' = 3 (D31) | w boven (A,A) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03o | Als NL-03j met 'Generate solution every n time steps' = 3 (D31) | w boven (A/3,2A/3) | 1.9524e-06 m | 1.9524e-06 | +0.00% | 0.5% | OK |
+| NL-03o | Als NL-03j met 'Generate solution every n time steps' = 3 (D31) | penetratie | 1.0000e-06 m | 1.0000e-06 | -0.00% | 0.5% | OK |
+| NL-03o | Als NL-03j met 'Generate solution every n time steps' = 3 (D31) | uitvoertijdstippen (som) | 2.8  | 2.8 | +0.00% | 1e-07% | OK |
 | NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie | 0.001 m | 0.001 | +0.00% | 0.5% | OK |
 | NL-03p | Contact-patchtest (PENALISATION), te slappe normal stiffness: penetratiecontrole | penetratie-waarschuwing | 1  | 1 | +0.00% | 0  | OK |
 | NL-04 | Trekstaaf, hardingscurve met E (tabblad) != helling van de curve | F t=1 (elastisch) | 10492 N | 10492 | +0.00% | 0.2% | OK |
@@ -3226,6 +3316,18 @@ Gemaakt door `run_verificatie.py` op 2026-11-19 (bridge eafe799, Code-Aster 17.4
 | TH-04d | Verlijmd contact, schaalrand op schaalvlak (PLAN) | T naad (kant B) | 350 K | 350.04 | +0.01% | 0.1% | OK |
 | TH-04d | Verlijmd contact, schaalrand op schaalvlak (PLAN) | T (x = L/5) | 320 K | 320 | -0.00% | 0.1% | OK |
 | TH-04d | Verlijmd contact, schaalrand op schaalvlak (PLAN) | flux x (x = 3L/4) | -50000 W/m² | -49979 | +0.04% | 0.5% | OK |
+| TH-04e | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (conform) | T naad (kant A) | 350 K | 350 | -0.00% | 0.0001% | OK |
+| TH-04e | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (conform) | T naad (kant B) | 350 K | 350 | -0.00% | 0.0001% | OK |
+| TH-04e | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (conform) | T (x = L/5) | 320 K | 320 | +0.00% | 0.0001% | OK |
+| TH-04e | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (conform) | flux x (x = 3L/4) | -50000 W/m² | -50000 | +0.00% | 0.001% | OK |
+| TH-04f | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (niet-conform) | T naad (kant A) | 350 K | 350 | -0.00% | 0.0001% | OK |
+| TH-04f | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (niet-conform) | T naad (kant B) | 350 K | 350 | +0.00% | 0.0001% | OK |
+| TH-04f | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (niet-conform) | T (x = L/5) | 320 K | 320 | +0.00% | 0.0001% | OK |
+| TH-04f | Verlijmd contact met dezelfde temperatuur aan beide kanten van de naad (niet-conform) | flux x (x = 3L/4) | -50000 W/m² | -50000 | -0.00% | 0.001% | OK |
+| TH-04g | Verlijmd contact, dezelfde temperatuur op een lijn van de naad aan beide kanten (niet-conform) | T naad (kant A) | 350 K | 349.96 | -0.01% | 0.1% | OK |
+| TH-04g | Verlijmd contact, dezelfde temperatuur op een lijn van de naad aan beide kanten (niet-conform) | T naad (kant B) | 350 K | 349.96 | -0.01% | 0.1% | OK |
+| TH-04g | Verlijmd contact, dezelfde temperatuur op een lijn van de naad aan beide kanten (niet-conform) | T (x = L/5) | 320 K | 319.96 | -0.01% | 0.1% | OK |
+| TH-04g | Verlijmd contact, dezelfde temperatuur op een lijn van de naad aan beide kanten (niet-conform) | flux x (x = 3L/4) | -50000 W/m² | -50126 | -0.25% | 0.5% | OK |
 | TH-40 | Drie warmtebronnen als formule, overlappend | T - T0 (x = 0.3 L) | 29.95 K | 29.95 | +0.00% | 0.001% | OK |
 | TH-40 | Drie warmtebronnen als formule, overlappend | T - T0 (x = 0.5 L) | 39.583 K | 39.583 | +0.00% | 0.001% | OK |
 | TH-40 | Drie warmtebronnen als formule, overlappend | T - T0 (x = 0.7 L) | 35.75 K | 35.75 | +0.00% | 0.001% | OK |
