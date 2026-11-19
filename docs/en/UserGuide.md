@@ -64,6 +64,10 @@ Related documents:
   `Scripts/MecwayAsterBridgeMain.py`; Code-Aster loads
   `Scripts/aster_results_export.py` from that location during the run. The `.comm`
   templates (`AsterTemplate_*.comm`) are also in `Scripts/`; they need no setting.
+- **Large meshes (optional).** `Scripts/aster_fast.exe`, included in the Windows release,
+  reads the mesh and writes the Code-Aster mesh file outside IronPython. Without that
+  file the bridge still runs, but a model of hundreds of thousands of nodes can take a
+  long time before Code-Aster starts. Installation: [`README.md`](../../README.md).
 - **Optional: [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps)**, for
   beams with a General section (§4.3). A separate Mecway script with its own installation.
 - A work folder with a short path: work folder plus file name together may not exceed

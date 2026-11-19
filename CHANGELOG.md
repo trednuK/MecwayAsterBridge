@@ -11,8 +11,9 @@
   executable, or when `ASTER_FAST=0`, the bridge behaves as before. Build with
   `cargo build --release --manifest-path rust/aster_fast/Cargo.toml` and copy
   `target/release/aster_fast` (Windows: `aster_fast.exe`) next to `Scripts/`, or set
-  `ASTER_FAST` to that path. IronPython cannot load a Rust extension, so this is a
-  separate program. `tests/test_bridge_fast.py`.
+  `ASTER_FAST` to that path. The Windows executable is attached to fork release
+  **V2026.14-fast.1** (and is already inside `Scripts/` in the Windows zip). IronPython
+  cannot load a Rust extension, so this is a separate program. `tests/test_bridge_fast.py`.
 
 ## V2026.15 – 19 November 2026
 

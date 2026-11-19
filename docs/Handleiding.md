@@ -57,6 +57,11 @@ Verwante documenten:
   `Scripts/MecwayAsterBridgeMain.py`; Code-Aster laadt tijdens de run
   `Scripts/aster_results_export.py` vanaf die plek. Ook de `.comm`-templates
   (`AsterTemplate_*.comm`) staan in `Scripts/`; ze hoeven niet ingesteld te worden.
+- **Grote modellen (optioneel).** `Scripts/aster_fast.exe`, meegeleverd in de
+  Windows-release, leest de mesh en schrijft het Code-Aster-meshbestand buiten
+  IronPython. Zonder dat bestand werkt de bridge nog, maar een model van
+  honderdduizenden knopen kan lang duren voordat Code-Aster start. Installatie:
+  [`README.md`](../README.md).
 - **Optioneel: [MecwaySectionProps](https://github.com/trednuK/MecwaySectionProps)**, voor
   balken met een General section (§4.3). Een los Mecway-script met een eigen installatie.
 - Een werkmap met een kort pad: werkmap plus bestandsnaam mogen samen niet langer zijn
