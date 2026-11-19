@@ -207,6 +207,20 @@ nappe or formula). Verification SP-01 (test case sdld25a).
   displacement 1.566·S/ω₁², total reaction 0.613·m·S (Euler-Bernoulli, from the shape
   of Blevins, 1979, table 8-1; verification SP-07).
 
+![Response spectrum over the period, with the periods of the modes and of the cut-off frequency](../img/spectrum_modes_cutoff.svg)
+
+1. A point of the spectrum table: period T, spectral acceleration S.
+2. Between the points: linear in T (in f when the setting *Spectrum table: column
+   'time' is* is `frequency`).
+3. Outside the table: the first or the last value.
+4. The periods T_i = 1/f_i of the other computed modes, each with the S_i that Code-Aster
+   takes; mode 1, the longest period, is on the right. With an own `#ASTER-SPECTRE`
+   nappe S_i also depends on the damping of the mode.
+5. T_c = 1/f_c, the period of the last (highest) computed mode: the missing mass is
+   included with the S there.
+6. The value at short periods (ZPA): T_c should lie where S has reached it.
+7. The plateau: if T_c still lies here, compute more modes.
+
 ## 4. What is not possible
 
 - A spectrum per support (`MULT_APPUI`, different ground motions) and `ENVELOPPE`:

@@ -207,6 +207,20 @@ sdld25a).
   1,566·S/ω₁², totale reactie 0,613·m·S (Euler-Bernoulli, uit de vorm van Blevins,
   1979, tabel 8-1; verificatie SP-07).
 
+![Responsspectrum over de periode, met de perioden van de modes en van de afsnijfrequentie](img/spectrum_modes_cutoff.svg)
+
+1. Een punt van de spectrumtabel: periode T, spectrale versnelling S.
+2. Tussen de punten: lineair in T (in f als de instelling *Spectrumtabel: kolom
+   'time' is* op `frequency` staat).
+3. Buiten de tabel: de eerste of de laatste waarde.
+4. De perioden T_i = 1/f_i van de andere berekende modes, elk met de S_i die Code-Aster
+   neemt; mode 1, de langste periode, staat rechts. Met een eigen `#ASTER-SPECTRE`-nappe
+   hangt S_i ook af van de demping van de mode.
+5. T_c = 1/f_c, de periode van de laatste (hoogste) berekende mode: de ontbrekende
+   massa wordt meegenomen met de S daar.
+6. De waarde bij korte perioden (ZPA): T_c hoort te liggen waar S die bereikt heeft.
+7. Het plateau: ligt T_c nog hier, reken dan meer modes.
+
 ## 4. Wat niet kan
 
 - Een spectrum per steunpunt (`MULT_APPUI`, verschillende grondbewegingen) en
