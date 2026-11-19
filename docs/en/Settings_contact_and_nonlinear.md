@@ -656,13 +656,20 @@ contact = DEFI_CONTACT(
     contact to compare with. With `PENALISATION` chosen (19 Nov 2026, PL-40 … PL-47 with
     kn = 1e12 Pa/m) every 2D case runs, and the shrink fits give exactly the solution with an
     elastic interface, p = δ/(C + 1/kn) (PL-40: 9.977 MPa against 9.9774 MPa, 20 % below
-    hard contact); the Hertz contact PL-45 then spreads over 4.8 times the Hertz width. Dynamics keeps the default `STANDARD` (penalty not measured; in explicit
-    dynamics a stiff spring can lower the stable time step).
+    hard contact); the Hertz contact PL-45 then spreads over 4.8 times the Hertz width. Dynamics keeps the default `STANDARD` (see the end of this item).
     Measured against Mecway 36 with CCX (headless, largest node deviation / largest
     displacement): contact patch tests NL-03c and NL-30 2e-5 with `PENALISATION`
     against 0.50 with `STANDARD` (no penetration p/kn), Voorbeeld_C 3.2 % against 7.0 %,
     line contact NL-03a/NL-30c runs where `STANDARD` stops. Verification NL-03g. A
     start screen saved before V2026.15 keeps its explicit `STANDARD`: choose `auto` once.
+    Dynamics, measured (19 Nov 2026, implicit, the patch tests of NL-03g/NL-03h as a slow
+    1 s load, headless): with `PENALISATION` the top of NL-03g settles exactly
+    2pH/E + p/kn (as NL-03g), with `STANDARD` 51 % less (no penetration); NL-03h (friction)
+    with `PENALISATION` and kt as `COEF_PENA_FROT` stopped at t = 0.00024 s, with the
+    coefficient of the rigid stick (see **Friction**) it completed with the static result.
+    That is quasi-static only: no impact or release is compared with Mecway's own
+    dynamics, so the default stays `STANDARD` (in explicit dynamics a stiff spring can also
+    lower the stable time step).
   - `STANDARD` (CA default): augmented Lagrangian (EDF R&D, U4.44.11), with
     the contact pressure as an extra unknown on the slave side; no stiffness needed, no
     penetration. Use it for hard contact without penetration (the interference-fit
@@ -741,8 +748,10 @@ contact = DEFI_CONTACT(
   the bridge is stiffer in shear (NL-03h: −10% at kt = 1e13 Pa/m). Before V2026.15 kt
   itself was written as `COEF_PENA_FROT`: just as rigid, but NL-03h needed 754 steps
   instead of 10, and Tutorials/AssemblyWithContact *Friction* and *Quadratic_ramp* stopped
-  (now they complete). Dynamics and 2D (with `PENALISATION` chosen) still write kt (not
-  measured). Your own `#ASTER-ZONE COEF_PENA_FROT=...` takes precedence.
+  (now they complete). Dynamics and 2D (with `PENALISATION` chosen) still write kt; in
+  implicit dynamics that stopped NL-03h at t = 0.00024 s (19 Nov 2026), so there give the
+  zone your own `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, e.g. 1/(1e-8 × the diagonal of the contact
+  faces in m)); it takes precedence.
 - **Adaptation.** CA default `ADAPTATION='CYCLAGE'`: if a contact point keeps
   switching status, Code-Aster switches there to penalty with a maximum penetration
   (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Then check the penetration in the

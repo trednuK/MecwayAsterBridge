@@ -666,13 +666,20 @@ contact = DEFI_CONTACT(
     met kn = 1e12 Pa/m) rekent elke 2D-case door, en de krimpverbindingen geven precies de
     oplossing met een elastisch grensvlak, p = δ/(C + 1/kn) (PL-40: 9,977 MPa tegen
     9,9774 MPa, 20 % onder hard contact); het Hertz-contact PL-45 spreidt dan over 4,8 keer
-    de Hertz-breedte. Dynamica houdt de standaard `STANDARD` (penalty niet gemeten; bij expliciete
-    dynamica kan een stijve veer de stabiele tijdstap verkleinen). Gemeten tegen Mecway 36 met CCX (headless, grootste knoopafwijking /
+    de Hertz-breedte. Dynamica houdt de standaard `STANDARD` (zie het eind van dit punt). Gemeten tegen Mecway 36 met CCX (headless, grootste knoopafwijking /
     grootste verplaatsing): contact-patchtests NL-03c en NL-30 2e-5 met `PENALISATION`
     tegen 0,50 met `STANDARD` (geen penetratie p/kn), Voorbeeld_C 3,2 % tegen 7,0 %,
     lijncontact NL-03a/NL-30c rekent door waar `STANDARD` stopt. Verificatie NL-03g. Een
     startscherm dat voor V2026.15 is opgeslagen, houdt zijn expliciete `STANDARD`: kies
-    eenmalig `auto`.
+    eenmalig `auto`. Dynamica, gemeten (19 nov 2026, impliciet, de patchtests van
+    NL-03g/NL-03h als langzame belasting in 1 s, headless): met `PENALISATION` zakt de
+    bovenkant van NL-03g precies 2pH/E + p/kn (zoals NL-03g), met `STANDARD` 51 % minder
+    (geen penetratie); NL-03h (wrijving) met `PENALISATION` en kt als `COEF_PENA_FROT`
+    stopte bij t = 0,00024 s, met de coëfficiënt van het starre plakken (zie **Wrijving**)
+    rekende hij door met het statische resultaat. Dat is alleen quasi-statisch: geen
+    botsing of loslaten is vergeleken met Mecway's eigen dynamica, dus de standaard blijft
+    `STANDARD` (bij expliciete dynamica kan een stijve veer ook de stabiele tijdstap
+    verkleinen).
   - `STANDARD` (CA-standaard): augmented-Lagrangiaan (EDF R&D, U4.44.11),
     met contactdruk als extra onbekende op de slave-kant; geen stijfheid nodig, geen
     penetratie. Gebruik dit voor hard contact zonder penetratie (de krimpverbindingen
@@ -754,8 +761,10 @@ contact = DEFI_CONTACT(
   in afschuiving (NL-03h: −10% bij kt = 1e13 Pa/m). Voor V2026.15 werd kt zelf als
   `COEF_PENA_FROT` geschreven: even star, maar NL-03h had 754 stappen nodig in plaats van
   10, en Tutorials/AssemblyWithContact *Friction* en *Quadratic_ramp* stopten (nu rekenen
-  ze door). Dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt (niet gemeten).
-  Een eigen `#ASTER-ZONE COEF_PENA_FROT=...` gaat voor.
+  ze door). Dynamica en 2D (met `PENALISATION` gekozen) schrijven nog kt; bij impliciete
+  dynamica stopte NL-03h daarmee bij t = 0,00024 s (19 nov 2026), geef de zone daar dus een
+  eigen `#ASTER-ZONE COEF_PENA_FROT=...` (1/m, bijv. 1/(1e-8 × de diagonaal van de
+  contactvlakken in m)); die gaat voor.
 - **Adaptatie.** CA-standaard `ADAPTATION='CYCLAGE'`: wisselt een contactpunt
   steeds van status, dan schakelt Code-Aster daar zelf over op penalty met een
   maximale penetratie (U4.44.11, "Operand ADAPTATION"; U2.04.04 §4.1). Controleer

@@ -935,9 +935,11 @@ Code-Aster value per node) and logs the largest difference per variable.
    (`_bonded_relations`), a selection that cannot be split (shell faces, element
    selections), *Fixed* on nodes with rotations, two pairs that tie each other, and
    symmetry/frictionless relations on slave and masters. Not looked at: node-surface
-   couplings and constraint equations on slave nodes, and the thermal tie (`TEMP_IMPO`
-   with `LIAISON_MAIL` on TEMP, probably the same, NOT verified). How CCX resolves the
-   double condition is NOT verified. Status: partly fixed.
+   couplings and constraint equations on slave nodes. Thermal tie (`TEMP_IMPO` with
+   `LIAISON_MAIL` on TEMP, `bridge_thermal`): measured (19 Nov 2026, TH-04a with a fixed
+   temperature on the seam): the same value on the slave and the master seam nodes gives
+   `FACTOR_11` (no result), Mecway solves it; on one side only it computes. Not resolved.
+   How CCX resolves the double condition is NOT verified. Status: partly fixed.
 
 148\. **Route `tabel`: beam variables look like Mecway's own to the beam analysis**
    (suspected, from the contract; `bridge_from_aster.AsterToMecway_results`). Route `tabel`
