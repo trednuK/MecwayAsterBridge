@@ -639,6 +639,15 @@ with `MECANONLINE9_4` (seen 06-10-2026). Code-Aster's own advice is in the catal
 restrained rigid motion, a Lagrange degree of freedom to a redundant condition, often
 from contact (`SANS_GROUP_NO`).
 
+![Three models that give a singular matrix, and a shell joined to a solid over a face](../img/singular_free_parts.svg)
+
+1. A solid held only by a *Pinned support* on one face: it fixes the mean displacement
+   of that face (as in Mecway), so the part can still rotate.
+2. A part held only by contact, with a gap: in statics nothing holds it as long as there
+   is no contact ([Settings §3.11](Settings_contact_and_nonlinear.md#311-parts-held-only-by-contact)).
+3. A shell joined to a solid along a single line of nodes: a hinge.
+4. Better: the shell joined over a face of the solid.
+
 ### `FACTOR_10` / `FACTOR_11` – (nearly) singular matrix
 
 - **Message** (error): "la matrice est singulière ou presque singulière": (near) zero

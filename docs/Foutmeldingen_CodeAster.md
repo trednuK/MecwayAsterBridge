@@ -648,6 +648,17 @@ catalogus bij `FACTOR_10/11` (EDF R&D, 2026a): een fysieke vrijheidsgraad wijst 
 slecht vastgehouden starre beweging, een Lagrange-vrijheidsgraad op een overbodige
 voorwaarde, vaak door contact (`SANS_GROUP_NO`).
 
+![Drie modellen die een singuliere matrix geven, en een schaal die over een vlak aan een volume vastzit](img/singular_free_parts.svg)
+
+1. Een volume dat alleen door een *Pinned support* op één vlak wordt vastgehouden: die
+   legt de gemiddelde verplaatsing van dat vlak vast (zoals in Mecway), dus het deel kan
+   nog draaien.
+2. Een deel dat alleen door contact vastzit, met een spleet: in de statica houdt niets
+   het vast zolang er geen contact is
+   ([Instellingen §3.11](Instellingen_contact_en_nietlineair.md#311-delen-die-alleen-door-contact-vastzitten)).
+3. Een schaal die langs één lijn knopen aan een volume vastzit: een scharnier.
+4. Beter: de schaal over een vlak van het volume verbonden.
+
 ### `FACTOR_10` / `FACTOR_11` – (bijna) singuliere matrix
 
 - **Melding** (fout): "la matrice est singulière ou presque singulière": pivot (bijna)

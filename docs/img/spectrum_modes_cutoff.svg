@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 290" width="720" height="290">
+  <rect width="720" height="290" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+    <marker id="as" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a0522d"/>
+    </marker>
+  </defs>
+  <!-- response spectrum S over the period T: table points, linear between, constant outside; mode periods T1 (right) .. T3; T_c of the highest computed mode (sienna) on the flat ZPA part at short periods -->
+  <line x1="70" y1="250" x2="700" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="70" y1="250" x2="70" y2="40" stroke="#333" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="696" y="270" font-family="serif" font-style="italic" font-size="16" fill="#333">T</text>
+  <text x="50" y="50" font-family="serif" font-style="italic" font-size="16" fill="#333">S</text>
+  <polyline points="80,178 120,178 160,70 260,70 360,160 500,205 620,220" fill="none" stroke="#2c5d8a" stroke-width="3" stroke-linejoin="round"/>
+  <polyline points="620,220 690,220" fill="none" stroke="#2c5d8a" stroke-width="2.5" stroke-dasharray="7 5" stroke-linejoin="round"/>
+  <polyline points="70,178 80,178" fill="none" stroke="#2c5d8a" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="80" cy="178" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="120" cy="178" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="160" cy="70" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="260" cy="70" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="360" cy="160" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="500" cy="205" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="620" cy="220" r="5" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <line x1="104" y1="250" x2="104" y2="184" stroke="#a0522d" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <circle cx="104" cy="178" r="5" fill="#a0522d" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="200" y1="250" x2="200" y2="76" stroke="#333" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <circle cx="200" cy="70" r="5" fill="#333" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="300" y1="250" x2="300" y2="112" stroke="#333" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <circle cx="300" cy="106" r="5" fill="#333" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="430" y1="250" x2="430" y2="188.5" stroke="#333" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <circle cx="430" cy="182.5" r="5" fill="#333" stroke="#ffffff" stroke-width="1.2"/>
+  <g font-family="sans-serif" font-weight="bold" font-size="14" fill="#ffffff" text-anchor="middle">
+    <line x1="260" y1="46" x2="258" y2="66" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="260" cy="46" r="11" fill="#c0392b"/><text x="260" y="51">1</text>
+    <line x1="420" y1="150" x2="410" y2="176" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="420" cy="150" r="11" fill="#c0392b"/><text x="420" y="155">2</text>
+    <line x1="655" y1="196" x2="655" y2="216" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="655" cy="196" r="11" fill="#c0392b"/><text x="655" y="201">3</text>
+    <line x1="300" y1="272" x2="300" y2="252" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="300" cy="272" r="11" fill="#c0392b"/><text x="300" y="277">4</text>
+    <line x1="104" y1="272" x2="104" y2="252" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="104" cy="272" r="11" fill="#c0392b"/><text x="104" y="277">5</text>
+    <line x1="60" y1="150" x2="90" y2="175" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="60" cy="150" r="11" fill="#c0392b"/><text x="60" y="155">6</text>
+    <line x1="232" y1="46" x2="232" y2="66" stroke="#c0392b" stroke-width="1.5"/>
+    <circle cx="232" cy="46" r="11" fill="#c0392b"/><text x="232" y="51">7</text>
+  </g>
+</svg>

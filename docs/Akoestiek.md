@@ -125,6 +125,18 @@ Mecway 0-Hz-modes willekeurig weglaat).
 - **Twee media:** op het grensvlak zijn de druk en ∂p/∂n continu (zoals bij gelijke
   dichtheid); verificatie AK-05.
 
+![Druk langs een pijp: harde wanden aan beide einden (boven) en p = 0 aan één einde (onder)](img/acoustics_pipe_modes.svg)
+
+De krommen zijn de druk p van een mode langs de pijp (het teken is willekeurig).
+
+1. Een harde wand: een vlak zonder voorwaarde (∂p/∂n = 0); daar heeft de
+   druk een buik (|p| maximaal).
+2. *Fluid pressure* = 0: een drukknoop, zoals bij een open einde.
+3. Dicht-dicht, n = 0: de constante druk bij 0 Hz (§3.1).
+4. Dicht-dicht, n = 1: een halve golf, f = c/(2L); in het midden is de druk nul.
+5. Open-dicht, eerste mode: een kwart golf, f = c/(4L).
+6. De lengte L van de pijp.
+
 ## 2. Hoe de bridge vertaalt
 
 `bridge_acoustic.py` maakt de `.comm` (template `AsterTemplate_Akoestiek.comm`);

@@ -125,6 +125,18 @@ nearest frequency, because Mecway drops 0 Hz modes at random).
 - **Two media:** at the interface the pressure and ∂p/∂n are continuous (as with equal
   density); verification AK-05.
 
+![Pressure along a pipe: hard walls at both ends (top) and p = 0 at one end (bottom)](../img/acoustics_pipe_modes.svg)
+
+The curves are the pressure p of a mode along the pipe (the sign is arbitrary).
+
+1. A hard wall: a face without a condition (∂p/∂n = 0); there the
+   pressure has an antinode (|p| maximal).
+2. *Fluid pressure* = 0: a pressure node, as at an open end.
+3. Closed-closed, n = 0: the constant pressure at 0 Hz (§3.1).
+4. Closed-closed, n = 1: a half wave, f = c/(2L); zero pressure in the middle.
+5. Open-closed, first mode: a quarter wave, f = c/(4L).
+6. The length L of the pipe.
+
 ## 2. How the bridge translates
 
 `bridge_acoustic.py` writes the `.comm` (template `AsterTemplate_Akoestiek.comm`);
