@@ -139,6 +139,24 @@ is waar die boven de smelttemperatuur komt) en de isothermen achter de bron.
 Een onbekende sleutel, een ontbrekende verplichte waarde of een waarde die geen getal
 is, geeft een ERROR en de run stopt (§8).
 
+![Goldak-lasbron: bovenaanzicht van het lasvlak en een doorsnede langs de baan](img/weld_source_goldak.svg)
+
+Boven: het lasvlak van bovenaf gezien; onder: een doorsnede langs de baan. ξ is de
+lasrichting, η dwars (hier niet het rendement `eta`), ζ de diepte (§3). De omtrekken
+van de bron liggen waar q is gezakt tot e⁻³ ≈ 5% van de piek van die helft.
+
+1. `start`: het beginpunt van de baan (met `pad` begint de keten bij de knoop die het
+   dichtst bij `start` ligt).
+2. `richting`: de richting van een rechte baan (met `pad` heeft elk segment tussen twee
+   knopen zijn eigen richting).
+3. De plaats van de bron op tijdstip t: s = v·(t − t0) langs de baan.
+4. `af`: de halve as vóór de bron (ξ ≥ 0).
+5. `ar`: de halve as achter de bron.
+6. `b`: de halve breedte.
+7. `c`: de diepte.
+8. `diepte`: de richting het materiaal in, standaard (0, 0, −1); de bridge maakt die
+   loodrecht op de baan.
+
 ## 3. Hoe de bridge vertaalt
 
 - **Bronvorm** (Goldak e.a., 1984), met ξ langs de lasrichting t.o.v. de huidige

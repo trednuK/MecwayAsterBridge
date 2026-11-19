@@ -141,6 +141,24 @@ it exceeds the melting temperature) and the isotherms behind the source.
 An unknown key, a missing required value or a value that is not a number gives an
 ERROR and the run stops (§8).
 
+![Goldak weld source: top view of the weld face and a section along the path](../img/weld_source_goldak.svg)
+
+Top: the weld face seen from above; bottom: a section along the path. ξ is the weld
+direction, η transverse (here not the efficiency `eta`), ζ the depth (§3). The outlines
+of the source are where q has dropped to e⁻³ ≈ 5% of the peak of that half.
+
+1. `start`: the start point of the path (with `pad` the chain starts at the node closest
+   to `start`).
+2. `richting`: the direction of a straight path (with `pad` each segment between two
+   nodes has its own direction).
+3. The position of the source at time t: s = v·(t − t0) along the path.
+4. `af`: the semi-axis in front of the source (ξ ≥ 0).
+5. `ar`: the semi-axis behind the source.
+6. `b`: the half width.
+7. `c`: the depth.
+8. `diepte`: the direction into the material, default (0, 0, −1); the bridge makes it
+   perpendicular to the path.
+
 ## 3. How the bridge translates
 
 - **Source shape** (Goldak et al., 1984), with ξ along the weld direction relative to
