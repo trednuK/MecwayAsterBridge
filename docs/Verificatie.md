@@ -117,10 +117,10 @@ Stand 19 november 2026. De hele tabel komt uit één revisie: de regressie in
 `TestFiles/Verificatie/resultaten/resultaten.md`, een volledige run op bridge `9004b32`
 (V2026.15; Code-Aster 17.4): 713 testcases, 3578 controles, 3568 OK, 10 BEKEND, 0 NOK/FOUT.
 Nieuw ten opzichte van de vorige tabel (670 testcases, run op `02905aa`, V2026.14) zijn 43
-testcases en 123 controles: contact tegen Mecway 36 met CCX (NL-03g .. NL-03o: contactmethode
-`auto`, star kleven bij wrijving, impliciete dynamica, D31-stapgrootte; LS-07n .. LS-07z:
-verlijmd contact met opleggingen op slave-knopen, ook in dynamica, knik en XFEM; TH-04e ..
-TH-04g thermisch verlijmd contact), lasttabellen zonder *Quasi-static* en met CCX-*time
+testcases en 123 controles: contact (NL-03g .. NL-03o tegen Mecway 36 met CCX: contactmethode
+`auto`, star plakken bij wrijving, impliciete dynamica, D31-stapgrootte; LS-07n .. LS-07z:
+verlijmd contact met opleggingen op slave-knopen, ook in dynamica, knik en XFEM, en
+`bonded_close_gap` in LS-07o; TH-04e .. TH-04g: thermisch verlijmd contact), lasttabellen zonder *Quasi-static* en met CCX-*time
 points* (NL-75b .. NL-75g), schalen in impliciete dynamica (DY-40a .. DY-40h) en het element
 per component en randkrachten op meer schaalcomponenten (LS-98a .. LS-98d). De 2 nieuwe
 BEKEND zijn KNOWN_BUGS 149 (kt niet gebruikt bij wrijving) in NL-03h en NL-03l. Geen

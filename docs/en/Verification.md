@@ -115,10 +115,10 @@ Status 19 November 2026. The whole table comes from one revision: the regression
 `TestFiles/Verificatie/resultaten/resultaten.md`, a full run on bridge `9004b32`
 (V2026.15; Code-Aster 17.4): 713 test cases, 3578 checks, 3568 OK, 10 BEKEND (known),
 0 NOK/FOUT. New compared with the previous table (670 test cases, run on `02905aa`, V2026.14)
-are 43 test cases and 123 checks: contact against Mecway 36 with CCX (NL-03g .. NL-03o:
+are 43 test cases and 123 checks: contact (NL-03g .. NL-03o against Mecway 36 with CCX:
 contact method `auto`, rigid friction stick, implicit dynamics, D31 step size; LS-07n ..
-LS-07z: bonded contact with supports on slave nodes, also in dynamics, buckling and XFEM;
-TH-04e .. TH-04g thermal bonded contact), load tables without *Quasi-static* and with CCX
+LS-07z: bonded contact with supports on slave nodes, also in dynamics, buckling and XFEM,
+and `bonded_close_gap` in LS-07o; TH-04e .. TH-04g: thermal bonded contact), load tables without *Quasi-static* and with CCX
 *time points* (NL-75b .. NL-75g), shells in implicit dynamics (DY-40a .. DY-40h) and the
 element per component and edge forces on several shell components (LS-98a .. LS-98d). The 2
 new BEKEND are KNOWN_BUGS 149 (kt not used with friction) in NL-03h and NL-03l. No status

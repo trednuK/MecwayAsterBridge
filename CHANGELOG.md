@@ -8,10 +8,11 @@ With Mecway 36 a run reads a copy of the open model (`mw.liml_text()`), so the m
 only when the results go into it. Contact was reviewed against Mecway 36 with CCX: contact
 method `auto` as the default in Nonlinear Static and implicit dynamics, rigid friction stick,
 WARNINGs for bonded contact across a gap and for CCX keyword modifications, and an option to
-close bonded gaps like CCX. Further: the Code-Aster element per component
-(`#ASTER-ELEMENT`), shells in implicit dynamics, load tables and CCX *time points* like
-Mecway, faster preparation of very large models with a MUMPS memory setting, and figures and
-"where to set it" screenshots across the documentation.
+close bonded gaps like CCX; `#ASTER` contact lines are checked and `#ASTER-BONDED` is new.
+Further: the Code-Aster element per component (`#ASTER-ELEMENT`), shells in implicit
+dynamics, load tables and CCX *time points* like Mecway, faster preparation of very large
+models with a MUMPS memory setting and a "Please wait" window, and figures and "where to set
+it" screenshots across the documentation.
 Behaviour changes (results of such models change):
 - contact method `auto` (penalty with Mecway's normal stiffness) in Nonlinear Static and
   implicit dynamics; a saved start screen keeps its `STANDARD` until you choose `auto`;
@@ -24,13 +25,21 @@ Behaviour changes (results of such models change):
 - D31 with a *Time step size* uses that step as solver and output step;
 - `COQUE_3D` stays DKT where a constraint selection also lies on other elements
   (KNOWN_BUGS 162);
-- contact in explicit dynamics stops with an ERROR before the run.
+- contact in explicit dynamics stops with an ERROR before the run;
+- explicit dynamics writes its output per step, and a run with element failure restarts per
+  step;
+- an edge selected from the shells on both sides counts once (it got half the force);
+- an `#ASTER-ZONE` or `#ASTER-CONTACT` line with a keyword the bridge writes itself, a
+  duplicate keyword or a piece without `key=value` stops the run with an ERROR.
 
 Checked in the Mecway 36 window (36.0.9815, 19 Nov 2026): 22 checks of the route removal, the
 model copy and contact on a434d50, the "Save changes?" question on 47b6fd4 (Mecway behaviour,
-KNOWN_BUGS 151) and the wait window on 9556f23. The later changes (contact in implicit
-dynamics, time points, shells in dynamics, element per component, edge forces, large models
-apart from the wait window) were measured headless with Code-Aster 17.4 and Mecway 36 only.
+KNOWN_BUGS 151) and the wait window and the out-of-core WARNING on 9556f23. The other
+changes after a434d50 were not checked in the window: among them contact in implicit and
+explicit dynamics, kt = 0, the rest of KNOWN_BUGS 147, load tables and time points, shells
+in dynamics, edge forces and `mumps_memory`, measured headless with Code-Aster 17.4 and
+Mecway 36; the element per component (offline and with Code-Aster 17.4, reference Mecway 34)
+and the mouse wheel on the start screen (offscreen test).
 Full regression on 9004b32: 3568 of 3578 checks OK (713 test cases), 10 BEKEND (KNOWN_BUGS
 43, 83, 108, 115 and 144 as before, and 149 in NL-03h/NL-03l), 0 NOK/FOUT, no status change
 and no value moved more than 1e-6 relative against V2026.14.
@@ -138,7 +147,6 @@ and no value moved more than 1e-6 relative against V2026.14.
   does that after every script); "No" is safe if you edited nothing. *Show section* no
   longer saves either. Older Mecway versions (no `mw.liml_text()`) behave as before.
   Verified in the Mecway 36 window (36.0.9815).
-
 - **Documentation: figures and where to set it.** About 25 new figures (contact
   master/slave, time steps, shell axes and layers, beam section forces, failure timing, the
   files of one run and more) and, in about 26 pages, the page, heading and field where each
