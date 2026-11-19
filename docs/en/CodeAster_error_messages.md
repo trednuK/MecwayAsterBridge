@@ -115,7 +115,7 @@ All files of a run are named `<model>_<run-id>.*` (see
 5. **Running again without Mecway**: `run_aster.bat <model>_<run-id>.export` in the work
    folder. This lets you edit the `.comm` of that run by hand and try a solution. With
    Mecway 36 or later the `.comm` reads the model from `<model>_<run-id>_model.liml`; it
-   stays after a failed run and is removed after a run without errors.
+   stays after a failed run and is removed after a run without errors whose results were loaded.
 
 ## Adding a message
 

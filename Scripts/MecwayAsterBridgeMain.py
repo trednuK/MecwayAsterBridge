@@ -544,7 +544,6 @@ def _run(settings):
         model_copy["keep"] = True     # until the job is known to be clean
         job = run_AsterSolver(export_file, work_dir_path(), resu_name, mw)
         if not job:
-            model_copy["keep"] = False
             bridge_manifest.finish_run(work_dir_path(), model_data,
                                        export_file, False)
             _notify(tr("Code-Aster kon niet gestart worden. Controleer "
@@ -584,7 +583,7 @@ def _run(settings):
         model_copy["keep"] = not bridge_liml_text.clean_end(
             job.state, job.exit_code, mess_errors,
             job.state == "confirmed" and
-            bridge_run_aster._mess_finished(work_dir_path(), run_start))
+            bridge_run_aster.mess_finished(work_dir_path(), run_start))
         # Version that actually ran (header of the .mess of this run);
         # takes precedence over the estimate from the launcher path.
         mess_version = (bridge_version.aster_version_from_mess(mess_path)
@@ -619,6 +618,8 @@ def _run(settings):
                     "Mecway solution through the API).")
             loaded = AsterToMecway_results(work_dir_path(),
                                            resu_name, mw, solution)
+        # results not in Mecway: the copy stays for a run by hand too
+        model_copy["keep"] = model_copy["keep"] or not loaded
         # also when _run returns False below (.mess errors, stopped); the
         # route 'tabel' only logs that hiding does not apply to it
         _HIDE["loaded"] = bool(loaded)
@@ -806,24 +807,32 @@ def _save_before_write(snapshot, fragment=None):
     """
     if not snapshot:
         return True
+    # fragment None: the Saved monitor of a run without results
     keep = (tr(u" Resultaatbestand (met Resultaten... later in te laden): "
                u"{0}", u" Result file (can be loaded later with "
                u"Results...): {0}").format(fragment) if fragment else u"")
+    what = (tr(u"de resultaten zijn niet in de .liml gezet",
+               u"the results were not written into the .liml")
+            if fragment else
+            tr(u"de Saved monitor is niet in de .liml gezet",
+               u"the Saved monitor was not written into the .liml"))
     same = bridge_liml_text.same_text(bridge_liml_text.model_text(mw),
                                       snapshot)
     if not same:
-        log(tr(u"ERROR: Het model in Mecway is tijdens de run veranderd (of "
-               u"niet te lezen); het is niet opgeslagen en de resultaten "
-               u"zijn niet in de .liml gezet.{0}",
-               u"ERROR: The model in Mecway changed during the run (or "
-               u"cannot be read); it was not saved and the results were not "
-               u"written into the .liml.{0}").format(keep))
+        text = tr(u"Het model in Mecway is tijdens de run veranderd (of niet "
+                  u"te lezen); het is niet opgeslagen en {0}.{1}",
+                  u"The model in Mecway changed during the run (or cannot be "
+                  u"read); it was not saved and {0}.{1}").format(what, keep)
+        log(u"ERROR: " + text)
+        _notify(text)
         return False
-    if _save_model():
-        log(tr(u"ERROR: Resultaten niet in de .liml gezet: het model kon "
-               u"niet opgeslagen worden.{0}",
-               u"ERROR: Results not written into the .liml: the model could "
-               u"not be saved.{0}").format(keep))
+    problem = _save_model()
+    if problem:
+        text = tr(u"Het model kon niet opgeslagen worden, dus {0}.{1}",
+                  u"The model could not be saved, so {0}.{1}").format(
+                      what, keep)
+        log(u"ERROR: " + text)
+        _notify(problem + u"\n\n" + text)
         return False
     log("INFO: Model saved before the results were written into it.")
     return True

@@ -41,7 +41,8 @@ Planned extensions and the procedure for them are in `STAPPENPLAN.md` (run with 
   `python tests/test_bridge_liml_text.py`): a run reads a model-only copy
   `run_name("_model.liml")` instead of saving (it is `model_data["liml_path"]` for the job; route
   `liml` saves right before the results go into the `.liml`, after checking that the open model
-  still equals the copy; removed after a clean job, kept after a failed one), *Show section* a
+  still equals the copy; an untitled model in route `liml` is still saved first; removed after
+  a clean job whose results were loaded, kept otherwise), *Show section* a
   temporary one. The decisions are pure functions there (`wants_snapshot`, `save_problem`,
   `same_text`, `clean_end`). Equal to what `mw.save_as` writes minus `<solution>` (measured); every
   caller falls back to saving when it returns None.

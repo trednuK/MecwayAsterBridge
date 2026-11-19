@@ -18,10 +18,10 @@
   (`<model>_<run-id>_model.liml` in the work folder, which the Code-Aster job reads too, e.g.
   for fatigue). Route `liml` saves the `.liml` only right before the results go into it, so
   a run that ends without results (an error, Stop) leaves the file as it was; route `tabel`
-  does not save it at all, also for a model that was never saved. A read-only model or a
-  folder that is gone still stops the run before Code-Aster. The copy is removed after a run
-  without errors and stays after a failed one (the `.comm` reads it when run again by
-  hand). Unsaved changes stay unsaved during the run: save the model yourself before a long
+  does not save it at all, also for a model that was never saved (route `liml` still saves
+  such a model first). In route `liml` a read-only model or a folder that is gone still
+  stops the run before Code-Aster. The copy is removed after a run without errors whose
+  results were loaded, and stays otherwise (the `.comm` reads it when run again by hand). Unsaved changes stay unsaved during the run: save the model yourself before a long
   run. *Show section* no longer saves either. Older Mecway versions (no `mw.liml_text()`)
   behave as before. Verified headless in Mecway 36, not yet in the Mecway window.
 

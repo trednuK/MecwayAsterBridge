@@ -79,10 +79,12 @@ Verwante documenten:
 4. De bridge slaat het model op (`mw.save()`). Met Mecway 36 of later niet: dan leest hij
    een kopie van het open model, `<model>_<run-id>_model.liml`, en slaat route `liml` het
    model pas op vlak voordat de resultaten erin gaan; een run zonder resultaten laat je
-   `.liml` dan zoals hij was (met *Samenvatting ook als Saved monitor in de .liml* aan wordt hij voor de monitor wel
-   opgeslagen). Wijzigingen die je nog niet hebt opgeslagen, blijven tijdens de run dus
-   onopgeslagen: loopt Mecway vast, dan ben je ze kwijt. Een alleen-lezen model of een
-   verdwenen map stopt de run meteen. Daarna leest hij de `.liml`, schrijft het mesh,
+   `.liml` dan zoals hij was (met *Samenvatting ook als Saved monitor in de .liml* aan wordt
+   hij voor de monitor wel opgeslagen, ook als het model al resultaten heeft). Een model dat
+   nog nooit is opgeslagen, slaat route `liml` wel eerst op. Wijzigingen die je nog niet hebt
+   opgeslagen, blijven tijdens de run dus onopgeslagen: loopt Mecway vast, dan ben je ze
+   kwijt. In route `liml` (en zonder `mw.liml_text()` in elke route) stopt een alleen-lezen
+   model of een verdwenen map de run meteen. Daarna leest hij de `.liml`, schrijft het mesh,
    `<model>_<run-id>.comm` en `.export` in de werkmap (§5) en start Code-Aster in een
    **apart venster**. Met route `tabel` controleert hij eerst of de Mecway-solution
    bij het mesh past; zo niet, dan stopt hij met een melding. Route `tabel` vraagt dus een
@@ -787,7 +789,7 @@ volgende run niets. In meldingen staat de echte naam. De werkmap is de map uit h
 | `<model>_<run-id>_results.xml` | **de resultaten** in Mecway's eigen formaat (route `liml`); de bridge zet ze in de `.liml` en laat het bestand staan, zodat je ze later opnieuw kunt inladen (§5.1) |
 | `<model>.liml.bak` | de `.liml` van vóór het inlezen of verwijderen van resultaten, of van vóór het toevoegen van de vorm aan de resultaten (met de hand of aan het eind van een run) |
 | `<model>_<run-id>.resu` | resultaattabellen, alleen bij route `tabel` |
-| `<model>_<run-id>_model.liml` | het model zoals de run het las (zonder resultaten), met Mecway 36 of later. Na een run zonder fouten verwijderd; na een mislukte of gestopte run blijft hij staan, want de `.comm` leest hem bij opnieuw draaien met `run_aster.bat` |
+| `<model>_<run-id>_model.liml` | het model zoals de run het las (zonder resultaten), met Mecway 36 of later. Verwijderd na een run zonder fouten waarvan de resultaten zijn ingeladen; anders (een mislukte of gestopte run) blijft hij staan, want de `.comm` leest hem bij opnieuw draaien met `run_aster.bat` |
 | `<model>_<run-id>.rmed` | resultaten in MED (ParaView/Salome), alleen met *MED-bestand voor ParaView*; de knoppen *ParaView* (als er geen `.pvd` is) en *AsterStudy* in het resultatenscherm en het convergentiescherm openen hem (§5.1) |
 | `<model>_<run-id>.pvd`, `_<k>.vtu` | resultaten in VTK (ParaView), alleen met *VTU/PVD-bestanden voor ParaView*; de knop *ParaView* opent de `.pvd` (§5.1); met bezwijken ook de celvelden `failed` (0 intact, 1 bezweken) en `T_BEZWIJK`; met balkkrachten ook de snedekrachten per element-uiteinde als celvelden `EFGE_<N/VY/VZ/MT/MFY/MFZ>_1/_2` |
 | `<model>_<run-id>_paraview_launch.log` | uitvoer van de ParaView die de knop *ParaView* startte (§5.1) |

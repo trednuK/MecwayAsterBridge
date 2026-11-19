@@ -939,7 +939,7 @@ Code-Aster value per node) and logs the largest difference per variable.
    with `LIAISON_MAIL` on TEMP, probably the same, NOT verified). How CCX resolves the
    double condition is NOT verified. Status: partly fixed.
 
-148\. **Route `tabel`: the beam analysis reads Mecway's own beam forces, labelled Mecway internal**
+148\. **Route `tabel`: the beam analysis can read Mecway's own beam forces, labelled Mecway internal**
    (measured headless, Mecway 36.0.9815, 19 Nov 2026, LS-51a: Mecway solve, then
    `set_variable` of the six beam forces as route `tabel` does; MecwayAdvancedBeamAnalysis
    V2026.3 read, not run). After the `set_variable`, `node_value` gives the bridge's value but

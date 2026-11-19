@@ -2060,7 +2060,10 @@ def _model_of_copy(liml, stem):
     """The model a .comm names. A run with mw.liml_text() reads a copy
     <model>_<run_id>_model.liml in the work folder (bridge_liml_text),
     removed after a clean run: then the model is named <model>.liml
-    (model_stem of the Mecway file, without its folder), not the copy."""
+    (model_stem of the Mecway file, without its folder), not the copy.
+    Only for display (Results... list, Saved monitor header): the name is
+    the sanitised stem, e.g. "Mijn Model (v2).liml" shows as
+    Mijn_Model_v2.liml."""
     if os.path.basename(liml) == stem + "_model.liml":
         m = _RUN_STEM.match(stem)
         if m:

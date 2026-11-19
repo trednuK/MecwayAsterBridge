@@ -115,7 +115,7 @@ Alle bestanden van een run heten `<model>_<run-id>.*` (zie
    werkmap. Zo kun je de `.comm` van die run met de hand aanpassen en een oplossing
    proberen. Met Mecway 36 of later leest de `.comm` het model uit
    `<model>_<run-id>_model.liml`; die blijft na een mislukte run staan en wordt na een run
-   zonder fouten verwijderd.
+   zonder fouten verwijderd als de resultaten zijn ingeladen.
 
 ## Een melding toevoegen
 
