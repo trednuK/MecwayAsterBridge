@@ -3088,7 +3088,7 @@ def export_results(res, out_path, liml_path, fields=None, extra_results=None,
     Returns
     -------
     dict with statistics (steps, variables, bytes, seconds), or None on
-    an error (message in the .mess; the .resu route then remains usable).
+    an error (message in the .mess).
     """
     t0 = time.time()
     _PLANE.clear()

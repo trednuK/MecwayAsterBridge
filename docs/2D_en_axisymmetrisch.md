@@ -250,7 +250,7 @@ bridge met een regel het in 2D te rekenen (voorbeelden 2, 3 en 4 in §1.5):
    model in 3D). Of Mecway's venster shell-randen laat kiezen voor een
    contact is NIET nagelopen.
 7. **Bridge.** *Actieve analyse (auto = volgens Mecway)* `auto` (→ `nonlin_static_3d` voor
-   L30, `lin_static_3d` voor S30) Controleer in de log dat de regel gelezen is: per elset
+   L30, `lin_static_3d` voor S30). Controleer in de log dat de regel gelezen is: per elset
    `INFO: Elset '…' -> MODELISATION='C_PLAN', thickness … m (Mecway L30).` (bij `AXIS` zonder
    de dikte) en een keer `INFO: 2D analysis L30: MODELISATION='…'; concentrated forces / …
    and reactions x … (…).` Zonder deze regels heeft de bridge de elementen als shells
@@ -1063,6 +1063,7 @@ en §6.
   de keten (WARNING). Lassen, metallurgie en *Bonded* contact:
   ERROR; een *Heat flow* op knopen en lasten op het vlak van de doorsnede: overgeslagen (ERROR
   "Niet vertaald: …").
+- De foutschatter (INFO).
 
 ## 4. Akoestiek in 2D
 

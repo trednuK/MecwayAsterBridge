@@ -61,7 +61,7 @@ import io
 import os
 import re
 
-from bridge_utils import (log, tr, run_name, CONFIG_BRIDGE, parse_and_convert,
+from bridge_utils import (log, tr, run_name, parse_and_convert,
                           _unit_key, work_dir_path)
 
 CSV_SUFFIX = "_vermoeiing.csv"

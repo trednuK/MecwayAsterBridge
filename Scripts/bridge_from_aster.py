@@ -35,8 +35,7 @@ from bridge_utils import log, tr, run_name
 # ==========================================
 RESULT_FIELD_SPECS = OrderedDict([
     # Rotations (DRX/DRY/DRZ, radians) only exist on nodes of beams,
-    # shells and DIS_TR elements; on volume nodes the .resu has '-' and
-    # the value stays None (as in Mecway's own solution).
+    # shells and DIS_TR elements; on volume nodes the value stays None (as in Mecway's own solution).
     ('displacements', OrderedDict([
         ('DX', 'displx'),
         ('DY', 'disply'),
@@ -93,8 +92,7 @@ RESULT_FIELD_SPECS = OrderedDict([
     #
     # plastic_strain_eq (VARI_NOEU)  gives the accumulated
     # equivalent plastic strain as internal variable V1
-    # (for isotropic hardening). INTITULE in the .resu: 'plastic_strain_e'
-    # (16 characters); the parser maps it back via _intitule_lookup().
+    # (for isotropic hardening).
     #
     # Mecway names: after a CCX solve with *EL FILE PEEQ, Mecway 33
     # itself creates 'equivalentplasticstrain' (field "equivalent plastic

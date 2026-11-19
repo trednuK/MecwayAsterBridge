@@ -80,11 +80,11 @@ Verwante documenten:
    `<model>_<run-id>_model.liml`, en slaat hij het model pas op vlak voordat de
    resultaten erin gaan; een run zonder resultaten laat je `.liml` dan zoals hij was (met
    *Samenvatting ook als Saved monitor in de .liml* aan wordt hij voor de monitor wel
-   opgeslagen, ook als het model al resultaten heeft). Een model dat nog nooit is
-   opgeslagen, slaat hij wel eerst op. Zonder `mw.liml_text()` (eerdere Mecway-versies)
-   slaat hij het model eerst op (`mw.save()`). Wijzigingen die je nog niet hebt
+   opgeslagen, ook als het model al resultaten heeft). Wijzigingen die je nog niet hebt
    opgeslagen, blijven tijdens de run dus onopgeslagen: loopt Mecway vast, dan ben je ze
-   kwijt. Een alleen-lezen model of een verdwenen map stopt de run meteen. Daarna leest
+   kwijt. Een model dat nog nooit is opgeslagen, slaat hij wel eerst op. Zonder
+   `mw.liml_text()` (eerdere Mecway-versies) slaat hij het model eerst op (`mw.save()`).
+   Een alleen-lezen model of een verdwenen map stopt de run meteen. Daarna leest
    hij de `.liml`, schrijft het mesh, `<model>_<run-id>.comm` en `.export` in de werkmap
    (§5) en start Code-Aster in een **apart venster**.
 5. Het **statusvenster** "Code-Aster-run" verschijnt (instelling *Wachten op Code-Aster* =

@@ -108,12 +108,12 @@ _ALARM_HINTS = {
     # Mecway 35 GUI tests, 17 Nov 2026).
     "POSTRELE_70": (
         u"je eigen POST_RELEVE_T (#ASTER-POST) leest een veld van balk- of "
-        u"schaalelementen in het lokale assenstelsel van die elementen; geef "
-        u"REPERE op als je globale waarden wilt. De resultaten van de bridge "
-        u"in Mecway raakt dit niet.",
+        u"schaalelementen in het lokale assenstelsel van die elementen (REPERE "
+        u"telt daar niet). De resultaten van de bridge in Mecway raakt dit "
+        u"niet.",
         u"your own POST_RELEVE_T (#ASTER-POST) reads a field of beam or "
-        u"shell elements in the local system of those elements; give REPERE "
-        u"if you want global values. The bridge's results in Mecway are not "
+        u"shell elements in the local system of those elements (REPERE does "
+        u"not count there). The bridge's results in Mecway are not "
         u"affected."),
     # Nodes projected onto distant cells (PROJ_CHAMP, LIAISON_MAIL); the
     # alarm fires beyond 1/10 of the cell size (text of 17.4), so also for a

@@ -1175,7 +1175,7 @@ de oplossing is berekend, maar de commando's erna worden overgeslagen.
   schaalelementen uitleest: dat gebeurt in het lokale assenstelsel van die elementen.
   Waar balken met verschillende lokale assen in één knoop samenkomen (een hoek, een
   knik) is een knoopwaarde een gemiddelde over assen die niet bij elkaar horen (NIET
-  gemeten). Geef `REPERE` mee voor waarden in het globale stelsel. De resultaten
+  gemeten). Die waarden blijven lokaal, ook met `REPERE`. De resultaten
   in Mecway worden hier niet door beïnvloed: die schrijft Code-Aster zelf (per
   elementknoop) en de bridge zet ze in de `.liml`.
 - **Gezien**: met de voormalige tabelroute (inmiddels verwijderd, 17 nov 2026), elk

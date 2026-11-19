@@ -12,7 +12,8 @@
   kept from an older bridge with `"result_route": "tabel"` gives one WARNING and the run goes
   through the `.liml` (remove that line). Results stay storable apart from the model:
   *Results...* takes them out of the `.liml` and loads any run again later. The generated
-  `.comm` of a run is unchanged.
+  `.comm` of a run is unchanged. Code-Aster's alarm `POSTRELE_70` now explains a user's own
+  `POST_RELEVE_T` (`#ASTER-POST`) on beam or shell fields; write own tables with `UNITE=6`.
 
 - **Mecway 36: a run and *Show section* read the open model without saving it first.**
   With Mecway's new `mw.liml_text()` the bridge reads a copy of the open model

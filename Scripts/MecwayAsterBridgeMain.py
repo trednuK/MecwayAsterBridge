@@ -103,7 +103,7 @@
 # (bridge_utils.run_name): _bridge_log.txt, .mail, .comm, .export, .mess,
 # _console.txt, _results.xml (the results, which can be reloaded later with
 # the Results... button in the main window) and, depending on the
-# settings, .rmed, .resu and _vergelijking.csv; with mw.liml_text() also
+# settings, .rmed and _vergelijking.csv; with mw.liml_text() also
 # _model.liml (the model the run read), removed after a clean run.
 
 import os

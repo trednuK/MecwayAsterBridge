@@ -88,10 +88,10 @@ Related documents:
    `<model>_<run-id>_model.liml`, and saves the model only right before the results go
    into it; a run without results then leaves your `.liml` as it was (with "Summary also
    as Saved monitor in the .liml" on it is saved for the monitor, also when the model
-   already has results). A model that was never saved is still saved first. Without
-   `mw.liml_text()` (earlier Mecway versions) it saves the model first (`mw.save()`).
-   Changes you have not saved therefore stay unsaved during the run: if Mecway crashes,
-   they are lost. A read-only model or a folder that is gone stops the run at once. Then
+   already has results). Changes you have not saved therefore stay unsaved during the
+   run: if Mecway crashes, they are lost. A model that was never saved is still saved
+   first. Without `mw.liml_text()` (earlier Mecway versions) it saves the model first
+   (`mw.save()`). A read-only model or a folder that is gone stops the run at once. Then
    it reads the `.liml`, writes the mesh, `<model>_<run-id>.comm` and `.export` to the
    work folder (§5) and starts Code-Aster in a **separate window**.
 5. The **status window** "Code-Aster run" appears (setting "Waiting for Code-Aster" =

@@ -244,7 +244,7 @@ with one line to compute it in 2D (examples 2, 3 and 4 in §1.5):
    `**ASTER-ZONE SANS_GROUP_NO='<<selection>>'` (KNOWN_BUGS 141). *Bonded* contact in 2D
    is not possible: an ERROR, the bridge stops (remove it or compute the model in 3D). Whether Mecway's window lets you pick shell edges for a contact is NOT verified.
 7. **Bridge.** "Active analysis (auto = follow Mecway)" `auto` (→ `nonlin_static_3d` for
-   L30, `lin_static_3d` for S30) Check in the log that the line was read: per elset
+   L30, `lin_static_3d` for S30). Check in the log that the line was read: per elset
    `INFO: Elset '…' -> MODELISATION='C_PLAN', thickness … m (Mecway L30).` (for `AXIS`
    without the thickness) and once `INFO: 2D analysis L30: MODELISATION='…'; concentrated
    forces / … and reactions x … (…).` Without these lines the bridge computed the elements
@@ -1038,6 +1038,7 @@ S44e: built, §1.4.2). A20 (acoustics): §4. The exact messages: §1.6 and §6.
   the chain (WARNING). Welding, metallurgy and bonded contact: ERROR; a
   *Heat flow* on nodes and loads on the face of the cross-section: skipped (ERROR "Not
   translated: …").
+- The error estimator (INFO).
 
 ## 4. Acoustics in 2D
 

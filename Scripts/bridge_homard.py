@@ -510,7 +510,6 @@ def check_scope(model_data, analysis, comm_region=None):
     if model_data.get("line_quad"):
         errors.append(tr("LINE_QUAD (elem_hex8) niet ondersteund",
                          "LINE_QUAD (elem_hex8) not supported"))
-    import bridge_utils
     if model_data.get("analysis_2d") or model_data.get("plane"):
         errors.append(tr("alleen 3D", "3D only"))
     if comm_region is not None:

@@ -91,7 +91,7 @@
 import math
 from collections import OrderedDict
 
-from bridge_utils import CONFIG_BRIDGE, log, tr
+from bridge_utils import log, tr
 
 # Mecway analysis type -> kind of 2D analysis. D20/DA0 (Dynamic Response 2D /
 # Axisymmetric, S16b): linear Newmark like D30, bridge analysis dyna_impl_3d.

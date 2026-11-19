@@ -1153,8 +1153,8 @@ export): the solution has been computed, but the commands that follow are skippe
 - **Cause**: your own `POST_RELEVE_T` (through `#ASTER-POST`) that reads a field of beam
   or shell elements: that happens in the local coordinate system of those elements.
   Where beams with different local axes meet at one node (a corner, a kink) a node value
-  is an average over axes that do not belong together (NOT measured). Give `REPERE` for
-  values in the global system. The results in Mecway are not affected: Code-Aster writes
+  is an average over axes that do not belong together (NOT measured). Those values stay
+  local, also with `REPERE`. The results in Mecway are not affected: Code-Aster writes
   those itself (per element node) and the bridge puts them into the `.liml`.
 - **Seen**: with the former table route (since removed, 17 Nov 2026), every mixed model
   and beams.

@@ -41,7 +41,7 @@ def check(cond, text):
 
 
 def test_note():
-    u._LEGACY_ROUTE["noted"] = False
+    u._LEGACY_ROUTE["runs"].clear()
     check(u.legacy_route_note({}) == u"", "no key: no note")
     check(u.legacy_route_note({"result_route": "liml"}) == u"",
           "liml: no note")
@@ -50,11 +50,17 @@ def test_note():
           u"result_route" in note and u"Results..." in note,
           "tabel: WARNING with the value and the hint")
     check(u.legacy_route_note({"result_route": "tabel"}) == u"",
-          "the note comes once per session")
-    u._LEGACY_ROUTE["noted"] = False
+          "the note comes once per run")
+    u.set_run_log("20261119_120000", "m.liml")
+    try:
+        check(u.legacy_route_note({"result_route": "tabel"}) != u"",
+              "the next run (own log file) gets the note again")
+    finally:
+        u.set_run_log(None)
+    u._LEGACY_ROUTE["runs"].clear()
     check(u"'foo'" in u.legacy_route_note({"result_route": "foo"}),
           "any other value: the note")
-    u._LEGACY_ROUTE["noted"] = False
+    u._LEGACY_ROUTE["runs"].clear()
 
 
 def test_no_reader():

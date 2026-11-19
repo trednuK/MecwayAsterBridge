@@ -890,7 +890,7 @@ def work_dir_path():
                             _MODEL["path"])
 
 
-_LEGACY_ROUTE = {"noted": False}
+_LEGACY_ROUTE = {"runs": set()}
 
 
 def legacy_route_note(config=None):
@@ -898,15 +898,16 @@ def legacy_route_note(config=None):
     The result route 'tabel' was removed in V2026.15; results always go
     through the .liml. A bridge_utils.py kept from an older bridge may still
     hold "result_route": "tabel" (the start screen no longer shows or
-    rewrites that line). Returns, once per Mecway session, the WARNING
-    text for such a value (anything but "liml"), else "". config: the
-    settings dict (default CONFIG_BRIDGE).
+    rewrites that line). Returns, once per run (run_name, so every run log
+    gets it), the WARNING text for such a value (anything but "liml"),
+    else "". config: the settings dict (default CONFIG_BRIDGE).
     """
     value = (CONFIG_BRIDGE if config is None else config).get(
         "result_route", "liml")
-    if value == "liml" or _LEGACY_ROUTE["noted"]:
+    run = run_name("")
+    if value == "liml" or run in _LEGACY_ROUTE["runs"]:
         return u""
-    _LEGACY_ROUTE["noted"] = True
+    _LEGACY_ROUTE["runs"].add(run)
     return tr(u"WARNING: De resultaatroute '{0}' bestaat niet meer (sinds "
               u"V2026.15); de resultaten gaan via de .liml. Haal de regel "
               u"\"result_route\" weg uit bridge_utils.py. Resultaten... "
